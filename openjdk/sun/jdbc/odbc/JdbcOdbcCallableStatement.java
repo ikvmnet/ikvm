@@ -31,8 +31,9 @@ import java.sql.*;
 import java.util.Calendar;
 import java.util.Map;
 
-import cli.System.Data.ParameterDirection;
+import cli.System.Data.*;
 import cli.System.Data.Common.*;
+import cli.System.Data.Odbc.*;
 
 
 
@@ -43,8 +44,8 @@ public class JdbcOdbcCallableStatement extends JdbcOdbcPreparedStatement impleme
 
     private final Parameters parameters = new Parameters();
     
-    public JdbcOdbcCallableStatement(JdbcOdbcConnection jdbcConn, DbCommand command, String sql){
-        super(jdbcConn, command, sql);
+    public JdbcOdbcCallableStatement(JdbcOdbcConnection jdbcConn, OdbcCommand command, String sql, int resultSetType, int resultSetConcurrency){
+        super(jdbcConn, command, sql, resultSetType, resultSetConcurrency);
     }
 
 
@@ -349,11 +350,7 @@ public class JdbcOdbcCallableStatement extends JdbcOdbcPreparedStatement impleme
 
 
     public void registerOutParameter(int parameterIndex, int sqlType) throws SQLException{
-        DbParameter para = getPara(parameterIndex);
-        int direction = para.get_Value() == null ? ParameterDirection.Output : ParameterDirection.InputOutput;
-        para.set_Direction(ParameterDirection.wrap(direction));
-        para.set_Size(1999); //TODO the value should depend of the type
-        //TODO the type should be set 
+        registerOutParameter(parameterIndex, sqlType, -1);
     }
 
 
@@ -362,12 +359,22 @@ public class JdbcOdbcCallableStatement extends JdbcOdbcPreparedStatement impleme
     }
 
 
-    public void registerOutParameter(int parameterIndex, int sqlType, int scale) throws SQLException{
+    public void registerOutParameter(int parameterIndex, int sqlType, int scaleOrLength) throws SQLException{
         DbParameter para = getPara(parameterIndex);
         int direction = para.get_Value() == null ? ParameterDirection.Output : ParameterDirection.InputOutput;
         para.set_Direction(ParameterDirection.wrap(direction));
-        para.set_Scale((byte)scale);
-        //TODO see above
+
+        if(sqlType != Types.OTHER){
+            para.set_DbType(DbType.wrap(JdbcOdbcUtils.convertJdbc2AdoNetType(sqlType)));
+        }
+        
+        if(scaleOrLength >= 0){
+            switch(sqlType){
+                case Types.DECIMAL:
+                case Types.NUMERIC:
+                    para.set_Scale((byte)scaleOrLength);
+            }
+        }
     }
 
 

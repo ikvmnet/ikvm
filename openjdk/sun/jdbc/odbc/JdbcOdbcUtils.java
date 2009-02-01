@@ -30,6 +30,9 @@ import java.sql.*;
 import java.util.Calendar;
 import java.util.HashMap;
 
+import cli.System.DBNull;
+import cli.System.TimeSpan;
+import cli.System.Data.DbType;
 import cli.System.Data.Common.DbException;
 import cli.System.Data.Odbc.*;
 
@@ -76,6 +79,9 @@ public class JdbcOdbcUtils{
      * @return a Java Object
      */
     public static java.lang.Object convertNet2Java(java.lang.Object obj){
+        if(obj instanceof cli.System.Int64){
+            return Long.valueOf(CIL.unbox_long(obj));
+        }
         if(obj instanceof cli.System.Int32){
             return Integer.valueOf(CIL.unbox_int(obj));
         }
@@ -85,6 +91,15 @@ public class JdbcOdbcUtils{
         if(obj instanceof cli.System.Byte){
             return Byte.valueOf(CIL.unbox_byte(obj));
         }
+        if(obj instanceof cli.System.Double){
+            return Double.valueOf(CIL.unbox_double(obj));
+        }
+        if(obj instanceof cli.System.Single){
+            return Float.valueOf(CIL.unbox_float(obj));
+        }
+        if(obj instanceof cli.System.Boolean){
+            return Boolean.valueOf(CIL.unbox_boolean(obj));
+        }
         if(obj instanceof cli.System.Decimal){
             return new BigDecimal(((cli.System.Decimal)obj).toString());
         }
@@ -93,7 +108,72 @@ public class JdbcOdbcUtils{
         }
         if(obj instanceof cli.System.TimeSpan){
             cli.System.TimeSpan ts = (cli.System.TimeSpan)obj;
-            return new Time(ts.get_Hours(), ts.get_Minutes() - 1, ts.get_Seconds());
+            return new Time(ts.get_Hours(), ts.get_Minutes(), ts.get_Seconds());
+        }
+        if(obj instanceof cli.System.DBNull){
+            return null;
+        }
+        return obj;
+    }
+
+
+    /**
+     * Convert a Java Object in the equals .NET Object.
+     * 
+     * @param obj
+     *            Java Object
+     * @param length
+     *            the length of data if obj is a stream
+     * @return .NET Object
+     */
+    public static Object convertJava2Net(Object obj, int length){
+        // TODO use the length with streams
+        return convertJava2Net(obj);
+    }
+
+
+    /**
+     * Convert a Java Object in the equals .NET Object.
+     * 
+     * @param obj
+     *            Java Object
+     * @return a .NET Object
+     */
+    public static Object convertJava2Net(Object obj){
+        if(obj == null){
+            return DBNull.Value;
+        }
+        if(obj instanceof Double){
+            return CIL.box_double(((Double)obj).doubleValue());
+        }
+        if(obj instanceof Float){
+            return CIL.box_float(((Float)obj).floatValue());
+        }
+        if(obj instanceof Long){
+            return CIL.box_long(((Long)obj).longValue());
+        }
+        if(obj instanceof Integer){
+            return CIL.box_int(((Integer)obj).intValue());
+        }
+        if(obj instanceof Short){
+            return CIL.box_short(((Short)obj).shortValue());
+        }
+        if(obj instanceof Byte){
+            return CIL.box_byte(((Byte)obj).byteValue());
+        }
+        if(obj instanceof Boolean){
+            return CIL.box_boolean(((Boolean)obj).booleanValue());
+        }
+        if(obj instanceof Time){
+            Time ts = (Time)obj;
+            return new TimeSpan(ts.getHours(), ts.getMinutes(), ts.getSeconds());
+        }
+        if(obj instanceof java.util.Date){
+            long ticks = getNetTicks((java.util.Date)obj);
+            return new cli.System.DateTime(ticks);
+        }
+        if(obj instanceof BigDecimal){
+            return cli.System.Decimal.Parse(obj.toString());
         }
         return obj;
     }
@@ -110,6 +190,20 @@ public class JdbcOdbcUtils{
         // calculation copied from System.currentTimeMillis()
         long january_1st_1970 = 62135596800000L;
         return dt.get_Ticks() / 10000L - january_1st_1970;
+    }
+
+
+    /**
+     * Get the ticks for a System.DateTime from a java.util.Date
+     * 
+     * @param date
+     *            the java.util.Date
+     * @return ticks
+     */
+    public static long getNetTicks(java.util.Date date){
+        // inverse from getJavaMillis
+        long january_1st_1970 = 62135596800000L;
+        return (date.getTime() + january_1st_1970) * 10000L;
     }
 
 
@@ -145,13 +239,13 @@ public class JdbcOdbcUtils{
             return;
         }
         cal.setTimeInMillis(date.getTime());
-        date.setYear(cal.get(Calendar.YEAR)-1900);
+        date.setYear(cal.get(Calendar.YEAR) - 1900);
         date.setMonth(cal.get(Calendar.MONTH));
         date.setDate(cal.get(Calendar.DAY_OF_MONTH));
         date.setHours(cal.get(Calendar.HOUR_OF_DAY));
         date.setMinutes(cal.get(Calendar.MINUTE));
         date.setSeconds(cal.get(Calendar.SECOND));
-     }
+    }
 
 
     /**
@@ -189,4 +283,76 @@ public class JdbcOdbcUtils{
         return new SQLException(th);
     }
 
+
+    /**
+     * Convert a value from java.sql.Types to a value from to a System.Data.DbType
+     * 
+     * @param type
+     *            a JDBC type
+     * @return a ADO.NET type
+     * @throws SQLException
+     *             if the type can not be converted
+     */
+    public static int convertJdbc2AdoNetType(int type) throws SQLException{
+        switch(type){
+            case Types.BIGINT:
+                return DbType.Int64;
+            case Types.BINARY:
+            case Types.BLOB:
+            case Types.LONGVARBINARY:
+            case Types.VARBINARY:
+                return DbType.Binary;
+            case Types.BIT:
+            case Types.BOOLEAN:
+                return DbType.Boolean;
+            case Types.CHAR:
+                return DbType.AnsiStringFixedLength;
+            case Types.CLOB:
+            case Types.DATALINK:
+            case Types.LONGVARCHAR:
+            case Types.NULL: // we hope that the DBMS can map any NULL values from VARCHAR
+            case Types.VARCHAR:
+                return DbType.AnsiString;
+            case Types.DATE:
+                return DbType.Date;
+            case Types.DECIMAL:
+            case Types.NUMERIC:
+                return DbType.Decimal;
+            case Types.DOUBLE:
+                return DbType.Double;
+            case Types.FLOAT:
+            case Types.REAL:
+                return DbType.Single;
+            case Types.INTEGER:
+                return DbType.Int32;
+            case Types.JAVA_OBJECT:
+                return DbType.Object;
+            case Types.LONGNVARCHAR:
+            case Types.NCLOB:
+            case Types.NVARCHAR:
+                return DbType.String;
+            case Types.NCHAR:
+                return DbType.StringFixedLength;
+            case Types.ROWID:
+                return DbType.Guid;
+            case Types.SMALLINT:
+                return DbType.Int16;
+            case Types.SQLXML:
+                return DbType.Xml;
+            case Types.TIME:
+                return DbType.Time;
+            case Types.TIMESTAMP:
+                return DbType.DateTime;
+            case Types.TINYINT:
+                return DbType.Byte;
+            case Types.ARRAY:
+            case Types.DISTINCT:
+            case Types.OTHER:
+            case Types.REF:
+            case Types.STRUCT:
+                break;
+
+        }
+        throw new SQLException("Not supported JDBC type:" + type);
+    }
 }

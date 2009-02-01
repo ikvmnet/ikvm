@@ -23,11 +23,10 @@
  */
 package sun.jdbc.odbc;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.sql.RowIdLifetime;
-import java.sql.SQLException;
+import ikvm.lang.CIL;
+
+import java.sql.*;
+import java.util.HashSet;
 
 import cli.System.Data.*;
 import cli.System.Data.Common.*;
@@ -38,10 +37,14 @@ import cli.System.Data.Odbc.*;
  */
 public class JdbcOdbcDatabaseMetaData implements DatabaseMetaData{
 
-    private final DbConnection netConn;
+    private JdbcOdbcConnection jdbcConn;
 
+    private final OdbcConnection netConn;
 
-    public JdbcOdbcDatabaseMetaData(DbConnection netConn){
+    private DataRow dataSourceInfo;
+
+    public JdbcOdbcDatabaseMetaData(JdbcOdbcConnection jdbcConn, OdbcConnection netConn){
+        this.jdbcConn = jdbcConn;
         this.netConn = netConn;
     }
 
@@ -58,9 +61,8 @@ public class JdbcOdbcDatabaseMetaData implements DatabaseMetaData{
     }
 
 
-    public boolean autoCommitFailureClosesAllResultSets() throws SQLException{
-        // TODO Auto-generated method stub
-        return false;
+    public boolean autoCommitFailureClosesAllResultSets(){
+        throw new UnsupportedOperationException();
     }
 
 
@@ -89,9 +91,8 @@ public class JdbcOdbcDatabaseMetaData implements DatabaseMetaData{
 
 
     public ResultSet getAttributes(String catalog, String schemaPattern, String typeNamePattern,
-            String attributeNamePattern) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+            String attributeNamePattern){
+        throw new UnsupportedOperationException();
     }
 
 
@@ -120,9 +121,8 @@ public class JdbcOdbcDatabaseMetaData implements DatabaseMetaData{
     }
 
 
-    public ResultSet getClientInfoProperties() throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public ResultSet getClientInfoProperties(){
+        throw new UnsupportedOperationException();
     }
 
 
@@ -135,14 +135,19 @@ public class JdbcOdbcDatabaseMetaData implements DatabaseMetaData{
 
     public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
             throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+        try{
+            // the description of the restrictions can you request with GetSchema("Restrictions")
+            String[] restrictions = new String[]{catalog, schemaPattern, tableNamePattern, columnNamePattern};
+            DataTable data = netConn.GetSchema(OdbcMetaDataCollectionNames.Columns, restrictions);
+            return new JdbcOdbcDTResultSet(data);
+        }catch(Throwable th){
+            throw JdbcOdbcUtils.createSQLException(th);
+        }
     }
 
 
-    public Connection getConnection() throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public Connection getConnection(){
+        return jdbcConn;
     }
 
 
@@ -153,57 +158,67 @@ public class JdbcOdbcDatabaseMetaData implements DatabaseMetaData{
     }
 
 
-    public int getDatabaseMajorVersion() throws SQLException{
-        // TODO Auto-generated method stub
-        return 0;
+    public int getDatabaseMajorVersion(){
+        String version = netConn.get_ServerVersion().trim();
+        for(int i = 0; i < version.length(); i++){
+            char ch = version.charAt(i);
+            if(ch < '0' || ch > '9'){
+                return Integer.parseInt(version.substring(0, i));
+            }
+        }
+        return Integer.parseInt(version);
     }
 
 
-    public int getDatabaseMinorVersion() throws SQLException{
-        // TODO Auto-generated method stub
-        return 0;
+    public int getDatabaseMinorVersion(){
+        String version = netConn.get_ServerVersion().trim();
+        int idx = version.indexOf('.');
+        if(idx < 0){
+            return 0;
+        }
+        version = version.substring(idx + 1);
+        for(int i = 0; i < version.length(); i++){
+            char ch = version.charAt(i);
+            if(ch < '0' || ch > '9'){
+                return Integer.parseInt(version.substring(0, i));
+            }
+        }
+        return Integer.parseInt(version);
     }
 
 
     public String getDatabaseProductName() throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+        return String.valueOf(getInfo(DbMetaDataColumnNames.DataSourceProductName));
     }
 
 
-    public String getDatabaseProductVersion() throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public String getDatabaseProductVersion(){
+        return netConn.get_ServerVersion();
     }
 
 
-    public int getDefaultTransactionIsolation() throws SQLException{
-        // TODO Auto-generated method stub
-        return 0;
+    public int getDefaultTransactionIsolation(){
+        return Connection.TRANSACTION_READ_COMMITTED;
     }
 
 
     public int getDriverMajorVersion(){
-        // TODO Auto-generated method stub
-        return 0;
+        return 2;
     }
 
 
     public int getDriverMinorVersion(){
-        // TODO Auto-generated method stub
-        return 0;
+        return 1;
     }
 
 
-    public String getDriverName() throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public String getDriverName(){
+        return "JDBC-ODBC Bridge (" + netConn.get_Driver() + ")";
     }
 
 
-    public String getDriverVersion() throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public String getDriverVersion(){
+        return "2.0001";
     }
 
 
@@ -213,28 +228,32 @@ public class JdbcOdbcDatabaseMetaData implements DatabaseMetaData{
     }
 
 
-    public String getExtraNameCharacters() throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public String getExtraNameCharacters(){
+        return "";
     }
 
 
     public ResultSet getFunctionColumns(String catalog, String schemaPattern, String functionNamePattern,
-            String columnNamePattern) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+            String columnNamePattern){
+        throw new UnsupportedOperationException();
     }
 
 
-    public ResultSet getFunctions(String catalog, String schemaPattern, String functionNamePattern) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public ResultSet getFunctions(String catalog, String schemaPattern, String functionNamePattern){
+        throw new UnsupportedOperationException();
     }
 
 
     public String getIdentifierQuoteString() throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+        String quote = (String)getInfo(DbMetaDataColumnNames.QuotedIdentifierPattern);
+        if(quote.length()>=2){
+            char ch1 = quote.charAt(0);
+            char ch2 = quote.charAt(quote.length()-1);
+            if(ch1 == ch2){
+                return quote.substring(0,1);
+            }
+        }
+        return "\""; // ANSI SQL and should work with the most DBMS
     }
 
 
@@ -246,19 +265,23 @@ public class JdbcOdbcDatabaseMetaData implements DatabaseMetaData{
 
     public ResultSet getIndexInfo(String catalog, String schema, String table, boolean unique, boolean approximate)
             throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+        try{
+            // the description of the restrictions can you request with GetSchema("Restrictions")
+            String[] restrictions = new String[]{catalog, schema, table};
+            DataTable data = netConn.GetSchema(OdbcMetaDataCollectionNames.Indexes, restrictions);
+            return new JdbcOdbcDTResultSet(data);
+        }catch(Throwable th){
+            throw JdbcOdbcUtils.createSQLException(th);
+        }
     }
 
 
-    public int getJDBCMajorVersion() throws SQLException{
-        // TODO Auto-generated method stub
-        return 0;
+    public int getJDBCMajorVersion(){
+        return 2;
     }
 
 
-    public int getJDBCMinorVersion() throws SQLException{
-        // TODO Auto-generated method stub
+    public int getJDBCMinorVersion(){
         return 0;
     }
 
@@ -397,8 +420,22 @@ public class JdbcOdbcDatabaseMetaData implements DatabaseMetaData{
 
     public ResultSet getProcedureColumns(String catalog, String schemaPattern, String procedureNamePattern,
             String columnNamePattern) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+        try{
+            // the description of the restrictions can you request with GetSchema("Restrictions")
+            String[] restrictions = new String[]{catalog, schemaPattern, procedureNamePattern, columnNamePattern};
+            DataTable dt1 = netConn.GetSchema(OdbcMetaDataCollectionNames.ProcedureColumns, restrictions);
+            DataTable dt2 = netConn.GetSchema(OdbcMetaDataCollectionNames.ProcedureParameters, restrictions);
+            // concatenate the both DataTable
+            DataRowCollection rows1 = dt1.get_Rows();
+            DataRowCollection rows2 = dt2.get_Rows();
+            for(int i = 0; i < rows2.get_Count(); i++){
+                DataRow row = rows2.get_Item(i);
+                rows1.Add(row.get_ItemArray());
+            }
+            return new JdbcOdbcDTResultSet(dt1);
+        }catch(Throwable th){
+            throw JdbcOdbcUtils.createSQLException(th);
+        }
     }
 
 
@@ -410,28 +447,44 @@ public class JdbcOdbcDatabaseMetaData implements DatabaseMetaData{
 
     public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern)
             throws SQLException{
-        // the description of the restrictions can you request with GetSchema("Restrictions")
-        String[] restrictions = new String[]{catalog, schemaPattern, procedureNamePattern};
-        DataTable data = netConn.GetSchema(OdbcMetaDataCollectionNames.Procedures, restrictions);
-        return new JdbcOdbcDTResultSet(data);
+        try{
+            // the description of the restrictions can you request with GetSchema("Restrictions")
+            String[] restrictions = new String[]{catalog, schemaPattern, procedureNamePattern};
+            DataTable data = netConn.GetSchema(OdbcMetaDataCollectionNames.Procedures, restrictions);
+            return new JdbcOdbcDTResultSet(data);
+        }catch(Throwable th){
+            throw JdbcOdbcUtils.createSQLException(th);
+        }
     }
 
 
-    public int getResultSetHoldability() throws SQLException{
-        // TODO Auto-generated method stub
-        return 0;
+    public int getResultSetHoldability(){
+        throw new UnsupportedOperationException();
     }
 
 
-    public RowIdLifetime getRowIdLifetime() throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public RowIdLifetime getRowIdLifetime(){
+        throw new UnsupportedOperationException();
     }
 
 
     public String getSQLKeywords() throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+        try{
+            DataTable dt = netConn.GetSchema(DbMetaDataCollectionNames.ReservedWords);
+            final DataRowCollection rows = dt.get_Rows();
+            final int count = rows.get_Count();
+            final StringBuilder builder = new StringBuilder();
+            for(int i=0; i<count; i++){
+                String word = (String)rows.get_Item(i).get_Item(0);
+                if(builder.length() > 0){
+                    builder.append(',');
+                }
+                builder.append(word);
+            }
+            return builder.toString();
+        }catch(Throwable th){
+            throw JdbcOdbcUtils.createSQLException(th);
+        }
     }
 
 
@@ -453,9 +506,8 @@ public class JdbcOdbcDatabaseMetaData implements DatabaseMetaData{
     }
 
 
-    public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public ResultSet getSchemas(String catalog, String schemaPattern){
+        throw new UnsupportedOperationException();
     }
 
 
@@ -471,15 +523,13 @@ public class JdbcOdbcDatabaseMetaData implements DatabaseMetaData{
     }
 
 
-    public ResultSet getSuperTables(String catalog, String schemaPattern, String tableNamePattern) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public ResultSet getSuperTables(String catalog, String schemaPattern, String tableNamePattern){
+        throw new UnsupportedOperationException();
     }
 
 
-    public ResultSet getSuperTypes(String catalog, String schemaPattern, String typeNamePattern) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public ResultSet getSuperTypes(String catalog, String schemaPattern, String typeNamePattern){
+        throw new UnsupportedOperationException();
     }
 
 
@@ -504,8 +554,36 @@ public class JdbcOdbcDatabaseMetaData implements DatabaseMetaData{
 
     public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types)
             throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+        try{
+            // the description of the restrictions can you request with GetSchema("Restrictions")
+            String[] restrictions = new String[]{catalog, schemaPattern, tableNamePattern};
+            DataTable dt1 = netConn.GetSchema(OdbcMetaDataCollectionNames.Tables, restrictions);
+            DataTable dt2 = netConn.GetSchema(OdbcMetaDataCollectionNames.Views, restrictions);
+            // concatenate the both DataTable
+            DataRowCollection rows1 = dt1.get_Rows();
+            DataRowCollection rows2 = dt2.get_Rows();
+            for(int i = 0; i < rows2.get_Count(); i++){
+                DataRow row = rows2.get_Item(i);
+                rows1.Add(row.get_ItemArray());
+            }
+            if(types != null){
+                RowLoop:
+                // Filter the types
+                for(int i = rows1.get_Count() - 1; i >= 0; i--){
+                    DataRow row = rows1.get_Item(i);
+                    Object tableType = row.get_Item("TABLE_TYPE");
+                    for(String type : types){
+                        if(type.equals(tableType)){
+                            continue RowLoop;
+                        }
+                    }
+                    rows1.RemoveAt(i);
+                }
+            }
+            return new JdbcOdbcDTResultSet(dt1);
+        }catch(Throwable th){
+            throw JdbcOdbcUtils.createSQLException(th);
+        }
     }
 
 
@@ -516,15 +594,18 @@ public class JdbcOdbcDatabaseMetaData implements DatabaseMetaData{
 
 
     public ResultSet getTypeInfo() throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+        try{
+            //TODO Column Names and order are wrong
+            DataTable data = netConn.GetSchema(DbMetaDataCollectionNames.DataTypes);
+            return new JdbcOdbcDTResultSet(data);
+        }catch(Throwable th){
+            throw JdbcOdbcUtils.createSQLException(th);
+        }
     }
 
 
-    public ResultSet getUDTs(String catalog, String schemaPattern, String typeNamePattern, int[] types)
-            throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public ResultSet getUDTs(String catalog, String schemaPattern, String typeNamePattern, int[] types){
+        throw new UnsupportedOperationException();
     }
 
 
@@ -564,9 +645,8 @@ public class JdbcOdbcDatabaseMetaData implements DatabaseMetaData{
     }
 
 
-    public boolean locatorsUpdateCopy() throws SQLException{
-        // TODO Auto-generated method stub
-        return false;
+    public boolean locatorsUpdateCopy(){
+        throw new UnsupportedOperationException();
     }
 
 
@@ -799,8 +879,8 @@ public class JdbcOdbcDatabaseMetaData implements DatabaseMetaData{
 
 
     public boolean supportsFullOuterJoins() throws SQLException{
-        // TODO Auto-generated method stub
-        return false;
+        int join = CIL.unbox_int(getInfo(DbMetaDataColumnNames.SupportedJoinOperators));
+        return (join & SupportedJoinOperators.FullOuter) > 0;
     }
 
 
@@ -811,20 +891,20 @@ public class JdbcOdbcDatabaseMetaData implements DatabaseMetaData{
 
 
     public boolean supportsGroupBy() throws SQLException{
-        // TODO Auto-generated method stub
-        return false;
+        int behavior = CIL.unbox_int(getInfo(DbMetaDataColumnNames.GroupByBehavior));
+        return behavior != GroupByBehavior.NotSupported;
     }
 
 
     public boolean supportsGroupByBeyondSelect() throws SQLException{
-        // TODO Auto-generated method stub
-        return false;
+        int behavior = CIL.unbox_int(getInfo(DbMetaDataColumnNames.GroupByBehavior));
+        return behavior == GroupByBehavior.MustContainAll;
     }
 
 
     public boolean supportsGroupByUnrelated() throws SQLException{
-        // TODO Auto-generated method stub
-        return false;
+        int behavior = CIL.unbox_int(getInfo(DbMetaDataColumnNames.GroupByBehavior));
+        return behavior == GroupByBehavior.Unrelated;
     }
 
 
@@ -835,14 +915,13 @@ public class JdbcOdbcDatabaseMetaData implements DatabaseMetaData{
 
 
     public boolean supportsLikeEscapeClause() throws SQLException{
-        // TODO Auto-generated method stub
-        return false;
+        return getSQLKeywords().toUpperCase().indexOf(",LIKE,") > 0;
     }
 
 
     public boolean supportsLimitedOuterJoins() throws SQLException{
-        // TODO Auto-generated method stub
-        return false;
+        int join = CIL.unbox_int(getInfo(DbMetaDataColumnNames.SupportedJoinOperators));
+        return join > 0;
     }
 
 
@@ -853,14 +932,14 @@ public class JdbcOdbcDatabaseMetaData implements DatabaseMetaData{
 
 
     public boolean supportsMixedCaseIdentifiers() throws SQLException{
-        // TODO Auto-generated method stub
-        return false;
+        int identifierCase = CIL.unbox_int(getInfo(DbMetaDataColumnNames.IdentifierCase));
+        return identifierCase == IdentifierCase.Sensitive;
     }
 
 
     public boolean supportsMixedCaseQuotedIdentifiers() throws SQLException{
-        // TODO Auto-generated method stub
-        return false;
+        int identifierCase = CIL.unbox_int(getInfo(DbMetaDataColumnNames.QuotedIdentifierCase));
+        return identifierCase == IdentifierCase.Sensitive;
     }
 
 
@@ -919,14 +998,13 @@ public class JdbcOdbcDatabaseMetaData implements DatabaseMetaData{
 
 
     public boolean supportsOrderByUnrelated() throws SQLException{
-        // TODO Auto-generated method stub
-        return false;
+        return CIL.unbox_boolean( getInfo(DbMetaDataColumnNames.OrderByColumnsInSelect));
     }
 
 
     public boolean supportsOuterJoins() throws SQLException{
-        // TODO Auto-generated method stub
-        return false;
+        int join = CIL.unbox_int(getInfo(DbMetaDataColumnNames.SupportedJoinOperators));
+        return (join & SupportedJoinOperators.LeftOuter) > 0 || (join & SupportedJoinOperators.RightOuter) > 0;
     }
 
 
@@ -948,9 +1026,8 @@ public class JdbcOdbcDatabaseMetaData implements DatabaseMetaData{
     }
 
 
-    public boolean supportsResultSetHoldability(int holdability) throws SQLException{
-        // TODO Auto-generated method stub
-        return false;
+    public boolean supportsResultSetHoldability(int holdability){
+        throw new UnsupportedOperationException();
     }
 
 
@@ -1002,15 +1079,13 @@ public class JdbcOdbcDatabaseMetaData implements DatabaseMetaData{
     }
 
 
-    public boolean supportsStatementPooling() throws SQLException{
-        // TODO Auto-generated method stub
-        return false;
+    public boolean supportsStatementPooling(){
+        throw new UnsupportedOperationException();
     }
 
 
     public boolean supportsStoredFunctionsUsingCallSyntax() throws SQLException{
-        // TODO Auto-generated method stub
-        return false;
+        throw new UnsupportedOperationException();
     }
 
 
@@ -1104,4 +1179,15 @@ public class JdbcOdbcDatabaseMetaData implements DatabaseMetaData{
         throw new SQLException(this.getClass().getName() + " does not implements " + iface.getName() + ".", "01000");
     }
 
+    private Object getInfo(String key) throws SQLException{
+        try{
+            if(dataSourceInfo == null){
+                DataTable td = netConn.GetSchema(DbMetaDataCollectionNames.DataSourceInformation);
+                dataSourceInfo = td.get_Rows().get_Item(0);
+            }
+            return dataSourceInfo.get_Item(key);
+        }catch(Throwable th){
+            throw JdbcOdbcUtils.createSQLException(th);
+        }
+    }
 }

@@ -36,7 +36,7 @@ import java.util.Properties;
  */
 public class JdbcOdbcConnection implements Connection{
 
-    private final DbConnection netConn;
+    private final OdbcConnection netConn;
 
     private DbTransaction transaction;
 
@@ -86,61 +86,52 @@ public class JdbcOdbcConnection implements Connection{
     }
 
 
-    public Array createArrayOf(String typeName, Object[] elements) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public Array createArrayOf(String typeName, Object[] elements){
+        throw new UnsupportedOperationException();
     }
 
 
-    public Blob createBlob() throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public Blob createBlob(){
+        throw new UnsupportedOperationException();
     }
 
 
-    public Clob createClob() throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public Clob createClob(){
+        throw new UnsupportedOperationException();
     }
 
 
-    public NClob createNClob() throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public NClob createNClob(){
+        throw new UnsupportedOperationException();
     }
 
 
-    public SQLXML createSQLXML() throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public SQLXML createSQLXML(){
+        throw new UnsupportedOperationException();
     }
 
 
     public Statement createStatement() throws SQLException{
+        return createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+    }
+
+
+    public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException{
         try{
-            return new JdbcOdbcStatement(this, netConn.CreateCommand());
+            return new JdbcOdbcStatement(this, netConn.CreateCommand(), resultSetType, resultSetConcurrency);
         }catch(Throwable ex){
             throw JdbcOdbcUtils.createSQLException(ex);
         }
     }
 
 
-    public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability){
+        throw new UnsupportedOperationException();
     }
 
 
-    public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability)
-            throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-
-    public Struct createStruct(String typeName, Object[] attributes) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public Struct createStruct(String typeName, Object[] attributes){
+        throw new UnsupportedOperationException();
     }
 
 
@@ -224,33 +215,28 @@ public class JdbcOdbcConnection implements Connection{
     }
 
 
-    public String getClientInfo(String name) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public String getClientInfo(String name){
+        throw new UnsupportedOperationException();
     }
 
 
-    public Properties getClientInfo() throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public Properties getClientInfo(){
+        throw new UnsupportedOperationException();
     }
 
 
-    public int getHoldability() throws SQLException{
-        // TODO Auto-generated method stub
-        return 0;
+    public int getHoldability(){
+        throw new UnsupportedOperationException();
     }
 
 
-    public DatabaseMetaData getMetaData() throws SQLException{
-        // TODO Auto-generated method stub
-        return new JdbcOdbcDatabaseMetaData(netConn);
+    public DatabaseMetaData getMetaData(){
+        return new JdbcOdbcDatabaseMetaData(this, netConn);
     }
 
 
-    public Map<String, Class<?>> getTypeMap() throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public Map<String, Class<?>> getTypeMap(){
+        throw new UnsupportedOperationException();
     }
 
 
@@ -272,81 +258,81 @@ public class JdbcOdbcConnection implements Connection{
 
 
     public boolean isValid(int timeout) throws SQLException{
-        // TODO Auto-generated method stub
-        return true;
+        throw new UnsupportedOperationException();
     }
 
 
     public String nativeSQL(String sql) throws SQLException{
         // TODO Auto-generated method stub
-        return null;
+        return sql;
     }
 
 
     public CallableStatement prepareCall(String sql) throws SQLException{
-        return new JdbcOdbcCallableStatement(this, netConn.CreateCommand(), sql);
+        return prepareCall(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
     }
 
 
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+        try{
+            return new JdbcOdbcCallableStatement(this, netConn.CreateCommand(), sql, resultSetType,
+                    resultSetConcurrency);
+        }catch(Throwable th){
+            throw JdbcOdbcUtils.createSQLException(th);
+        }
     }
 
 
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency,
-            int resultSetHoldability) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+            int resultSetHoldability){
+        throw new UnsupportedOperationException();
     }
 
 
     public PreparedStatement prepareStatement(String sql) throws SQLException{
-        return new JdbcOdbcPreparedStatement(this, netConn.CreateCommand(), sql);
+        return prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
     }
 
 
     public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency)
             throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+        try{
+            return new JdbcOdbcPreparedStatement(this, netConn.CreateCommand(), sql, resultSetType,
+                    resultSetConcurrency);
+        }catch(Throwable th){
+            throw JdbcOdbcUtils.createSQLException(th);
+        }
     }
 
 
     public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency,
-            int resultSetHoldability) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+            int resultSetHoldability){
+        throw new UnsupportedOperationException();
     }
 
 
-    public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys){
+        throw new UnsupportedOperationException();
     }
 
 
-    public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public PreparedStatement prepareStatement(String sql, int[] columnIndexes){
+        throw new UnsupportedOperationException();
     }
 
 
-    public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public PreparedStatement prepareStatement(String sql, String[] columnNames){
+        throw new UnsupportedOperationException();
     }
 
 
-    public void releaseSavepoint(Savepoint savepoint) throws SQLException{
-        // TODO Auto-generated method stub
-
+    public void releaseSavepoint(Savepoint savepoint){
+        throw new UnsupportedOperationException();
     }
 
 
-    public void rollback(Savepoint savepoint) throws SQLException{
-        // TODO Auto-generated method stub
-
+    public void rollback(Savepoint savepoint){
+        throw new UnsupportedOperationException();
     }
 
 
@@ -359,26 +345,23 @@ public class JdbcOdbcConnection implements Connection{
     }
 
 
-    public String getCatalog() throws SQLException{
+    public String getCatalog(){
         return netConn.get_Database();
     }
 
 
-    public void setClientInfo(String name, String value) throws SQLClientInfoException{
-        // TODO Auto-generated method stub
-
+    public void setClientInfo(String name, String value){
+        throw new UnsupportedOperationException();
     }
 
 
-    public void setClientInfo(Properties properties) throws SQLClientInfoException{
-        // TODO Auto-generated method stub
-
+    public void setClientInfo(Properties properties){
+        throw new UnsupportedOperationException();
     }
 
 
-    public void setHoldability(int holdability) throws SQLException{
-        // TODO Auto-generated method stub
-
+    public void setHoldability(int holdability){
+        throw new UnsupportedOperationException();
     }
 
 
@@ -398,9 +381,8 @@ public class JdbcOdbcConnection implements Connection{
     }
 
 
-    public void setTypeMap(Map<String, Class<?>> map) throws SQLException{
-        // TODO Auto-generated method stub
-
+    public void setTypeMap(Map<String, Class<?>> map){
+        throw new UnsupportedOperationException();
     }
 
 

@@ -28,8 +28,8 @@ import java.sql.*;
 import cli.System.Data.*;
 
 /**
- * This JDBC Driver is a wrapper to the ODBC.NET Data Provider. This ResultSet based on DataTable.
- * It is read only and scrollable.
+ * This JDBC Driver is a wrapper to the ODBC.NET Data Provider. This ResultSet based on DataTable. It is read only and
+ * scrollable.
  */
 public class JdbcOdbcDTResultSet extends JdbcOdbcResultSet{
 
@@ -43,7 +43,10 @@ public class JdbcOdbcDTResultSet extends JdbcOdbcResultSet{
 
 
     public JdbcOdbcDTResultSet(DataTable data){
-        super(null, TYPE_SCROLL_INSENSITIVE, CONCUR_READ_ONLY);
+        this(data, CONCUR_READ_ONLY);
+    }
+    public JdbcOdbcDTResultSet(DataTable data, int concurrency){
+        super(null, TYPE_SCROLL_INSENSITIVE, concurrency);
         this.data = data;
         this.rows = data.get_Rows();
         this.rowIndex = -1;
@@ -59,21 +62,21 @@ public class JdbcOdbcDTResultSet extends JdbcOdbcResultSet{
         int count = dataRows.get_Count();
         if(rowPosition > 0){
             if(rowPosition > count){
-                row = null;
                 rowIndex = count;
+                setDataRow();
                 return false;
             }
             rowIndex = rowPosition - 1;
-            row = dataRows.get_Item(rowIndex);
+            setDataRow();
             return true;
         }else{
             if(-rowPosition > count){
-                row = null;
                 rowIndex = -1;
+                setDataRow();
                 return false;
             }
             rowIndex = count + rowPosition;
-            row = dataRows.get_Item(rowIndex);
+            setDataRow();
             return true;
         }
     }
@@ -81,15 +84,15 @@ public class JdbcOdbcDTResultSet extends JdbcOdbcResultSet{
 
     @Override
     public void afterLast() throws SQLException{
-        row = null;
         rowIndex = getRows().get_Count();
+        setDataRow();
     }
 
 
     @Override
-    public void beforeFirst(){
-        row = null;
+    public void beforeFirst() throws SQLException{
         rowIndex = -1;
+        setDataRow();
     }
 
 
@@ -171,11 +174,12 @@ public class JdbcOdbcDTResultSet extends JdbcOdbcResultSet{
     public boolean next() throws SQLException{
         DataRowCollection dataRows = getRows();
         if(rowIndex + 1 < dataRows.get_Count()){
-            row = dataRows.get_Item(++rowIndex);
+            ++rowIndex;
+            setDataRow();
             return true;
         }else{
             rowIndex = dataRows.get_Count();
-            row = null;
+            setDataRow();
             return false;
         }
     }
@@ -184,11 +188,12 @@ public class JdbcOdbcDTResultSet extends JdbcOdbcResultSet{
     @Override
     public boolean previous() throws SQLException{
         if(rowIndex > 0){
-            row = getRows().get_Item(--rowIndex);
+            --rowIndex;
+            setDataRow();
             return true;
         }else{
             rowIndex = -1;
-            row = null;
+            setDataRow();
             return false;
         }
     }
@@ -206,17 +211,17 @@ public class JdbcOdbcDTResultSet extends JdbcOdbcResultSet{
         int newRowIndex = rowIndex + rowPositions;
         if(newRowIndex < 0){
             rowIndex = -1;
-            row = null;
+            setDataRow();
             return false;
         }
         int count = dataRows.get_Count();
         if(newRowIndex >= dataRows.get_Count()){
             rowIndex = count;
-            row = null;
+            setDataRow();
             return false;
         }
         rowIndex = newRowIndex;
-        row = getRows().get_Item(newRowIndex);
+        setDataRow();
         return true;
     }
 
@@ -226,14 +231,11 @@ public class JdbcOdbcDTResultSet extends JdbcOdbcResultSet{
      */
     @Override
     protected Object getObjectImpl(int columnIndex) throws SQLException{
-        getRows(); // checks if ResultSet is closed
-        if(row == null){
-            throw new SQLException("No current row", "S1109");
-        }
         try{
-            return row.get_Item(columnIndex - 1);
+            return getDataRow().get_Item(columnIndex - 1);
         }catch(ArrayIndexOutOfBoundsException ex){
-            throw new SQLException( "Invalid column number ("+columnIndex+"). A number between 1 and "+data.get_Columns().get_Count()+" is valid.", "S1002");
+            throw new SQLException("Invalid column number (" + columnIndex + "). A number between 1 and "
+                    + data.get_Columns().get_Count() + " is valid.", "S1002");
         }
     }
 
@@ -245,10 +247,41 @@ public class JdbcOdbcDTResultSet extends JdbcOdbcResultSet{
      * @throws SQLException
      *             If the ResultSet is closed.
      */
-    private DataRowCollection getRows() throws SQLException{
+    protected DataRowCollection getRows() throws SQLException{
         if(rows == null){
             throw new SQLException("ResultSet is closed.", "24000");
         }
         return rows;
     }
+
+
+    /**
+     * Get the current DataRow
+     * 
+     * @return the DataRow
+     * @throws SQLException
+     *             if closed or no current Row
+     */
+    protected DataRow getDataRow() throws SQLException{
+        getRows(); // checks if ResultSet is closed
+        if(row == null){
+            throw new SQLException("No current row", "S1109");
+        }
+        return row;
+    }
+    
+    /**
+     * Set the current row from the current rowIndex. If the rowIndex was not change
+     * then the row variable will be new set.
+     * @throws SQLException If the ResultSet is closed.
+     */
+    protected void setDataRow() throws SQLException{
+        DataRowCollection dataRows = getRows();
+        if(rowIndex < 0 || rowIndex >= dataRows.get_Count()){
+            row = null;
+        }else{
+            row = dataRows.get_Item(rowIndex);
+        }
+    }
+
 }

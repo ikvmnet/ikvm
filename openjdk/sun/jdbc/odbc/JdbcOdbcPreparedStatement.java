@@ -45,19 +45,17 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Calendar;
 
-import cli.System.DBNull;
-import cli.System.Data.ParameterDirection;
-import cli.System.Data.Common.DbCommand;
-import cli.System.Data.Common.DbParameter;
-import cli.System.Data.Common.DbParameterCollection;
+import cli.System.Data.*;
+import cli.System.Data.Common.*;
+import cli.System.Data.Odbc.*;
 
 /**
  * @author Volker Berlin
  */
 public class JdbcOdbcPreparedStatement extends JdbcOdbcStatement implements PreparedStatement{
 
-    public JdbcOdbcPreparedStatement(JdbcOdbcConnection jdbcConn, DbCommand command, String sql){
-        super(jdbcConn, command);
+    public JdbcOdbcPreparedStatement(JdbcOdbcConnection jdbcConn, OdbcCommand command, String sql, int resultSetType, int resultSetConcurrency){
+        super(jdbcConn, command, resultSetType, resultSetConcurrency);
         command.set_CommandText(sql);
         command.Prepare();
     }
@@ -69,9 +67,9 @@ public class JdbcOdbcPreparedStatement extends JdbcOdbcStatement implements Prep
     }
 
 
-    public void clearParameters() throws SQLException{
-        // TODO Auto-generated method stub
-
+    public void clearParameters(){
+        DbParameterCollection params = command.get_Parameters();
+        params.Clear();
     }
 
 
@@ -91,12 +89,18 @@ public class JdbcOdbcPreparedStatement extends JdbcOdbcStatement implements Prep
 
 
     public ResultSetMetaData getMetaData() throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+        ResultSet rs = getResultSet();
+        if(rs != null){
+            rs.getMetaData();
+        }
+        DbDataReader reader = command.ExecuteReader(CommandBehavior.wrap(CommandBehavior.SchemaOnly));
+        JdbcOdbcResultSetMetaData metadata = new JdbcOdbcResultSetMetaData(reader);
+        reader.Close();
+        return metadata;
     }
 
 
-    public ParameterMetaData getParameterMetaData() throws SQLException{
+    public ParameterMetaData getParameterMetaData(){
         throw new UnsupportedOperationException();
     }
 
@@ -273,23 +277,33 @@ public class JdbcOdbcPreparedStatement extends JdbcOdbcStatement implements Prep
 
 
     public void setObject(int parameterIndex, Object x) throws SQLException{
-        DbParameter para = getPara(parameterIndex);
-        para.set_Value(x == null ? DBNull.Value : x);
-        if(para.get_Direction().Value == ParameterDirection.Output){
-            para.set_Direction(ParameterDirection.wrap(ParameterDirection.InputOutput));
-        }
+        setObject(parameterIndex, x, Types.OTHER, -1);
     }
 
 
     public void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException{
-        // TODO Auto-generated method stub
-        setObject(parameterIndex, x);
+        setObject(parameterIndex, x, targetSqlType, -1);
     }
 
 
     public void setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength) throws SQLException{
-        // TODO Auto-generated method stub
-        setObject(parameterIndex, x);
+        DbParameter para = getPara(parameterIndex);
+        para.set_Value(JdbcOdbcUtils.convertJava2Net(x, scaleOrLength));
+        if(para.get_Direction().Value == ParameterDirection.Output){
+            para.set_Direction(ParameterDirection.wrap(ParameterDirection.InputOutput));
+        }
+        
+        if(targetSqlType != Types.OTHER){
+            para.set_DbType(DbType.wrap(JdbcOdbcUtils.convertJdbc2AdoNetType(targetSqlType)));
+        }
+        
+        if(scaleOrLength >= 0){
+            switch(targetSqlType){
+                case Types.DECIMAL:
+                case Types.NUMERIC:
+                    para.set_Scale((byte)scaleOrLength);
+            }
+        }
     }
 
 

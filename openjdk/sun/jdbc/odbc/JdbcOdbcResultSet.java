@@ -311,322 +311,322 @@ public class JdbcOdbcResultSet extends JdbcOdbcObject implements ResultSet{
 
 
     public void updateArray(int columnIndex, Array x) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, x);
     }
 
 
     public void updateArray(String columnLabel, Array x) throws SQLException{
-        throwReadOnly();
+        updateArray(findColumn(columnLabel), x);
     }
 
 
     public void updateAsciiStream(int columnIndex, InputStream x, int length) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, x, length);
     }
 
 
     public void updateAsciiStream(String columnLabel, InputStream x, int length) throws SQLException{
-        throwReadOnly();
+        updateObject(findColumn(columnLabel), x, length);
     }
 
 
     public void updateAsciiStream(int columnIndex, InputStream x, long length) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, x, (int)length);
     }
 
 
     public void updateAsciiStream(String columnLabel, InputStream x, long length) throws SQLException{
-        throwReadOnly();
+        updateObject(findColumn(columnLabel), x, (int)length);
     }
 
 
     public void updateAsciiStream(int columnIndex, InputStream x) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, x);
     }
 
 
     public void updateAsciiStream(String columnLabel, InputStream x) throws SQLException{
-        throwReadOnly();
+        updateObject(findColumn(columnLabel), x);
     }
 
 
     public void updateBigDecimal(int columnIndex, BigDecimal x) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, x);
     }
 
 
     public void updateBigDecimal(String columnLabel, BigDecimal x) throws SQLException{
-        throwReadOnly();
+        updateObject(findColumn(columnLabel), x);
     }
 
 
     public void updateBinaryStream(int columnIndex, InputStream x, int length) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, x, length);
     }
 
 
     public void updateBinaryStream(String columnLabel, InputStream x, int length) throws SQLException{
-        throwReadOnly();
+        updateObject(findColumn(columnLabel), x, length);
     }
 
 
     public void updateBinaryStream(int columnIndex, InputStream x, long length) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, x, (int)length);
     }
 
 
     public void updateBinaryStream(String columnLabel, InputStream x, long length) throws SQLException{
-        throwReadOnly();
+        updateObject(findColumn(columnLabel), x, (int)length);
     }
 
 
     public void updateBinaryStream(int columnIndex, InputStream x) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, x);
     }
 
 
     public void updateBinaryStream(String columnLabel, InputStream x) throws SQLException{
-        throwReadOnly();
+        updateObject(findColumn(columnLabel), x);
     }
 
 
     public void updateBlob(int columnIndex, Blob x) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, x);
     }
 
 
     public void updateBlob(String columnLabel, Blob x) throws SQLException{
-        throwReadOnly();
+        updateObject(findColumn(columnLabel), x);
     }
 
 
-    public void updateBlob(int columnIndex, InputStream inputStream, long length) throws SQLException{
-        throwReadOnly();
+    public void updateBlob(int columnIndex, InputStream x, long length) throws SQLException{
+        updateObject(columnIndex, x, (int)length);
     }
 
 
-    public void updateBlob(String columnLabel, InputStream inputStream, long length) throws SQLException{
-        throwReadOnly();
+    public void updateBlob(String columnLabel, InputStream x, long length) throws SQLException{
+        updateObject(findColumn(columnLabel), x, (int)length);
     }
 
 
-    public void updateBlob(int columnIndex, InputStream inputStream) throws SQLException{
-        throwReadOnly();
+    public void updateBlob(int columnIndex, InputStream x) throws SQLException{
+        updateObject(columnIndex, x);
     }
 
 
-    public void updateBlob(String columnLabel, InputStream inputStream) throws SQLException{
-        throwReadOnly();
+    public void updateBlob(String columnLabel, InputStream x) throws SQLException{
+        updateObject(findColumn(columnLabel), x);
     }
 
 
     public void updateBoolean(int columnIndex, boolean x) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, Boolean.valueOf(x));
     }
 
 
     public void updateBoolean(String columnLabel, boolean x) throws SQLException{
-        throwReadOnly();
+        updateObject(findColumn(columnLabel), Boolean.valueOf(x));
     }
 
 
     public void updateByte(int columnIndex, byte x) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, Byte.valueOf(x));
     }
 
 
     public void updateByte(String columnLabel, byte x) throws SQLException{
-        throwReadOnly();
+        updateObject(findColumn(columnLabel), Byte.valueOf(x));
     }
 
 
     public void updateBytes(int columnIndex, byte[] x) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, x);
     }
 
 
     public void updateBytes(String columnLabel, byte[] x) throws SQLException{
-        throwReadOnly();
+        updateObject(findColumn(columnLabel), x);
     }
 
 
     public void updateCharacterStream(int columnIndex, Reader x, int length) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, x, length);
     }
 
 
-    public void updateCharacterStream(String columnLabel, Reader reader, int length) throws SQLException{
-        throwReadOnly();
+    public void updateCharacterStream(String columnLabel, Reader x, int length) throws SQLException{
+        updateObject(findColumn(columnLabel), x, length);
     }
 
 
     public void updateCharacterStream(int columnIndex, Reader x, long length) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, x, (int)length);
     }
 
 
-    public void updateCharacterStream(String columnLabel, Reader reader, long length) throws SQLException{
-        throwReadOnly();
+    public void updateCharacterStream(String columnLabel, Reader x, long length) throws SQLException{
+        updateObject(findColumn(columnLabel), x, (int)length);
     }
 
 
     public void updateCharacterStream(int columnIndex, Reader x) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, x);
     }
 
 
-    public void updateCharacterStream(String columnLabel, Reader reader) throws SQLException{
-        throwReadOnly();
+    public void updateCharacterStream(String columnLabel, Reader x) throws SQLException{
+        updateObject(findColumn(columnLabel), x);
     }
 
 
     public void updateClob(int columnIndex, Clob x) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, x);
     }
 
 
     public void updateClob(String columnLabel, Clob x) throws SQLException{
-        throwReadOnly();
+        updateObject(findColumn(columnLabel), x);
     }
 
 
-    public void updateClob(int columnIndex, Reader reader, long length) throws SQLException{
-        throwReadOnly();
+    public void updateClob(int columnIndex, Reader x, long length) throws SQLException{
+        updateObject(columnIndex, x, (int)length);
     }
 
 
-    public void updateClob(String columnLabel, Reader reader, long length) throws SQLException{
-        throwReadOnly();
+    public void updateClob(String columnLabel, Reader x, long length) throws SQLException{
+        updateObject(findColumn(columnLabel), x, (int)length);
     }
 
 
-    public void updateClob(int columnIndex, Reader reader) throws SQLException{
-        throwReadOnly();
+    public void updateClob(int columnIndex, Reader x) throws SQLException{
+        updateObject(columnIndex, x);
     }
 
 
-    public void updateClob(String columnLabel, Reader reader) throws SQLException{
-        throwReadOnly();
+    public void updateClob(String columnLabel, Reader x) throws SQLException{
+        updateObject(findColumn(columnLabel), x);
     }
 
 
     public void updateDate(int columnIndex, Date x) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, x);
     }
 
 
     public void updateDate(String columnLabel, Date x) throws SQLException{
-        throwReadOnly();
+        updateObject(findColumn(columnLabel), x);
     }
 
 
     public void updateDouble(int columnIndex, double x) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, Double.valueOf(x));
     }
 
 
     public void updateDouble(String columnLabel, double x) throws SQLException{
-        throwReadOnly();
+        updateObject(findColumn(columnLabel), Double.valueOf(x));
     }
 
 
     public void updateFloat(int columnIndex, float x) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, Float.valueOf(x));
     }
 
 
     public void updateFloat(String columnLabel, float x) throws SQLException{
-        throwReadOnly();
+        updateObject(findColumn(columnLabel), Float.valueOf(x));
     }
 
 
     public void updateInt(int columnIndex, int x) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, Integer.valueOf(x));
     }
 
 
     public void updateInt(String columnLabel, int x) throws SQLException{
-        throwReadOnly();
+        updateObject(findColumn(columnLabel), Integer.valueOf(x));
     }
 
 
     public void updateLong(int columnIndex, long x) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, Long.valueOf(x));
     }
 
 
     public void updateLong(String columnLabel, long x) throws SQLException{
-        throwReadOnly();
+        updateObject(findColumn(columnLabel), Long.valueOf(x));
     }
 
 
     public void updateNCharacterStream(int columnIndex, Reader x, long length) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, x, (int)length);
     }
 
 
-    public void updateNCharacterStream(String columnLabel, Reader reader, long length) throws SQLException{
-        throwReadOnly();
+    public void updateNCharacterStream(String columnLabel, Reader x, long length) throws SQLException{
+        updateObject(findColumn(columnLabel), x, (int)length);
     }
 
 
     public void updateNCharacterStream(int columnIndex, Reader x) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, x);
     }
 
 
-    public void updateNCharacterStream(String columnLabel, Reader reader) throws SQLException{
-        throwReadOnly();
+    public void updateNCharacterStream(String columnLabel, Reader x) throws SQLException{
+        updateObject(findColumn(columnLabel), x);
     }
 
 
-    public void updateNClob(int columnIndex, NClob clob) throws SQLException{
-        throwReadOnly();
+    public void updateNClob(int columnIndex, NClob x) throws SQLException{
+        updateObject(columnIndex, x);
     }
 
 
-    public void updateNClob(String columnLabel, NClob clob) throws SQLException{
-        throwReadOnly();
+    public void updateNClob(String columnLabel, NClob x) throws SQLException{
+        updateObject(findColumn(columnLabel), x);
     }
 
 
-    public void updateNClob(int columnIndex, Reader reader, long length) throws SQLException{
-        throwReadOnly();
+    public void updateNClob(int columnIndex, Reader x, long length) throws SQLException{
+        updateObject(columnIndex, x, (int)length);
     }
 
 
-    public void updateNClob(String columnLabel, Reader reader, long length) throws SQLException{
-        throwReadOnly();
+    public void updateNClob(String columnLabel, Reader x, long length) throws SQLException{
+        updateObject(findColumn(columnLabel), x, (int)length);
     }
 
 
-    public void updateNClob(int columnIndex, Reader reader) throws SQLException{
-        throwReadOnly();
+    public void updateNClob(int columnIndex, Reader x) throws SQLException{
+        updateObject(columnIndex, x);
     }
 
 
-    public void updateNClob(String columnLabel, Reader reader) throws SQLException{
-        throwReadOnly();
+    public void updateNClob(String columnLabel, Reader x) throws SQLException{
+        updateObject(findColumn(columnLabel), x);
     }
 
 
-    public void updateNString(int columnIndex, String string) throws SQLException{
-        throwReadOnly();
+    public void updateNString(int columnIndex, String x) throws SQLException{
+        updateObject(columnIndex, x);
     }
 
 
-    public void updateNString(String columnLabel, String string) throws SQLException{
-        throwReadOnly();
+    public void updateNString(String columnLabel, String x) throws SQLException{
+        updateObject(findColumn(columnLabel), x);
     }
 
 
     public void updateNull(int columnIndex) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, null);
     }
 
 
     public void updateNull(String columnLabel) throws SQLException{
-        throwReadOnly();
+        updateObject(findColumn(columnLabel), null);
     }
 
 
@@ -636,27 +636,27 @@ public class JdbcOdbcResultSet extends JdbcOdbcObject implements ResultSet{
 
 
     public void updateObject(int columnIndex, Object x) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, x, -1);
     }
 
 
     public void updateObject(String columnLabel, Object x, int scaleOrLength) throws SQLException{
-        throwReadOnly();
+        updateObject(findColumn(columnLabel), x, scaleOrLength);
     }
 
 
     public void updateObject(String columnLabel, Object x) throws SQLException{
-        throwReadOnly();
+        updateObject(findColumn(columnLabel), x);
     }
 
 
     public void updateRef(int columnIndex, Ref x) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, x);
     }
 
 
     public void updateRef(String columnLabel, Ref x) throws SQLException{
-        throwReadOnly();
+        updateObject(findColumn(columnLabel), x);
     }
 
 
@@ -666,62 +666,62 @@ public class JdbcOdbcResultSet extends JdbcOdbcObject implements ResultSet{
 
 
     public void updateRowId(int columnIndex, RowId x) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, x);
     }
 
 
     public void updateRowId(String columnLabel, RowId x) throws SQLException{
-        throwReadOnly();
+        updateObject(findColumn(columnLabel), x);
     }
 
 
-    public void updateSQLXML(int columnIndex, SQLXML xmlObject) throws SQLException{
-        throwReadOnly();
+    public void updateSQLXML(int columnIndex, SQLXML x) throws SQLException{
+        updateObject(columnIndex, x);
     }
 
 
-    public void updateSQLXML(String columnLabel, SQLXML xmlObject) throws SQLException{
-        throwReadOnly();
+    public void updateSQLXML(String columnLabel, SQLXML x) throws SQLException{
+        updateObject(findColumn(columnLabel), x);
     }
 
 
     public void updateShort(int columnIndex, short x) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, Short.valueOf(x));
     }
 
 
     public void updateShort(String columnLabel, short x) throws SQLException{
-        throwReadOnly();
+        updateObject(findColumn(columnLabel), Short.valueOf(x));
     }
 
 
     public void updateString(int columnIndex, String x) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, x);
     }
 
 
     public void updateString(String columnLabel, String x) throws SQLException{
-        throwReadOnly();
+        updateObject(findColumn(columnLabel), x);
     }
 
 
     public void updateTime(int columnIndex, Time x) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, x);
     }
 
 
     public void updateTime(String columnLabel, Time x) throws SQLException{
-        throwReadOnly();
+        updateObject(findColumn(columnLabel), x);
     }
 
 
     public void updateTimestamp(int columnIndex, Timestamp x) throws SQLException{
-        throwReadOnly();
+        updateObject(columnIndex, x);
     }
 
 
     public void updateTimestamp(String columnLabel, Timestamp x) throws SQLException{
-        throwReadOnly();
+        updateObject(findColumn(columnLabel), x);
     }
 
 
@@ -772,7 +772,7 @@ public class JdbcOdbcResultSet extends JdbcOdbcObject implements ResultSet{
             try{
                 return datareader.get_Item(columnIndex-1);
             }catch(ArrayIndexOutOfBoundsException aioobe){
-                throw new SQLException( "Invalid column number ("+columnIndex+"). A number between 1 and "+datareader.get_FieldCount()+" is valid.", "S1002");
+                throw new SQLException( "Invalid column number ("+columnIndex+"). A number between 1 and "+datareader.get_FieldCount()+" is valid.", "S1002", aioobe);
             }
         }catch(Throwable ex){
             throw JdbcOdbcUtils.createSQLException(ex);

@@ -25,7 +25,9 @@ package sun.jdbc.odbc;
 
 import java.sql.*;
 
+import cli.System.Data.*;
 import cli.System.Data.Common.*;
+import cli.System.Data.Odbc.*;
 
 /**
  * This JDBC Driver is a wrapper to the ODBC.NET Data Provider.
@@ -34,8 +36,12 @@ public class JdbcOdbcStatement implements Statement{
 
     private final JdbcOdbcConnection jdbcConn;
 
-    protected final DbCommand command;
+    protected final OdbcCommand command;
 
+    private final int resultSetType;
+    
+    private final int resultSetConcurrency;
+    
     private DbDataReader reader;
     
     private ResultSet rs;
@@ -46,9 +52,11 @@ public class JdbcOdbcStatement implements Statement{
     
     private ResultSet moreResults;
 
-    public JdbcOdbcStatement(JdbcOdbcConnection jdbcConn, DbCommand command){
+    public JdbcOdbcStatement(JdbcOdbcConnection jdbcConn, OdbcCommand command, int resultSetType, int resultSetConcurrency){
         this.jdbcConn = jdbcConn;
         this.command = command;
+        this.resultSetType = resultSetType;
+        this.resultSetConcurrency = resultSetConcurrency;
     }
 
 
@@ -130,8 +138,19 @@ public class JdbcOdbcStatement implements Statement{
             if(sql != null){
                 command.set_CommandText(sql);
             }
-            reader = command.ExecuteReader();
-            rs = new JdbcOdbcResultSet(this, reader);
+            if(resultSetConcurrency == ResultSet.CONCUR_UPDATABLE){
+                rs = new JdbcOdbcUpdateableResultSet(command);
+            }else{
+                if(resultSetType == ResultSet.TYPE_FORWARD_ONLY){
+                    reader = command.ExecuteReader();
+                    rs = new JdbcOdbcResultSet(this, reader);
+                }else{
+                    OdbcDataAdapter da = new OdbcDataAdapter(command);
+                    DataTable dt = new DataTable();
+                    da.Fill(dt);
+                    rs = new JdbcOdbcDTResultSet(dt);
+                }
+            }
             return rs;
         }catch(Throwable ex){
             throw JdbcOdbcUtils.createSQLException(ex);
@@ -172,14 +191,12 @@ public class JdbcOdbcStatement implements Statement{
     }
 
 
-    public int getFetchDirection() throws SQLException{
-        // TODO Auto-generated method stub
-        return 0;
+    public int getFetchDirection(){
+        return ResultSet.FETCH_UNKNOWN;
     }
 
 
-    public int getFetchSize() throws SQLException{
-        // TODO Auto-generated method stub
+    public int getFetchSize(){
         return 0;
     }
 
@@ -237,9 +254,8 @@ public class JdbcOdbcStatement implements Statement{
     }
 
 
-    public int getResultSetConcurrency() throws SQLException{
-        // TODO Auto-generated method stub
-        return 0;
+    public int getResultSetConcurrency(){
+        return resultSetConcurrency;
     }
 
 
@@ -249,9 +265,8 @@ public class JdbcOdbcStatement implements Statement{
     }
 
 
-    public int getResultSetType() throws SQLException{
-        // TODO Auto-generated method stub
-        return 0;
+    public int getResultSetType(){
+        return resultSetType;
     }
 
 
@@ -283,15 +298,13 @@ public class JdbcOdbcStatement implements Statement{
     }
 
 
-    public void setFetchDirection(int direction) throws SQLException{
-        // TODO Auto-generated method stub
-
+    public void setFetchDirection(int direction){
+        // ignore it
     }
 
 
-    public void setFetchSize(int rows) throws SQLException{
-        // TODO Auto-generated method stub
-
+    public void setFetchSize(int rows){
+        // ignore it
     }
 
 
@@ -307,15 +320,13 @@ public class JdbcOdbcStatement implements Statement{
     }
 
 
-    public boolean isPoolable() throws SQLException{
-        // TODO Auto-generated method stub
+    public boolean isPoolable(){
         return false;
     }
 
 
     public void setPoolable(boolean poolable) throws SQLException{
-        // TODO Auto-generated method stub
-
+        // ignore it
     }
 
 
