@@ -82,6 +82,7 @@ class IkvmcCompiler
 		DateTime start = DateTime.Now;
 		AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
 		System.Threading.Thread.CurrentThread.Name = "compiler";
+		Tracer.EnableTraceConsoleListener();
 		Tracer.EnableTraceForDebug();
 		List<string> argList = GetArgs(args);
 		if (argList.Count == 0)

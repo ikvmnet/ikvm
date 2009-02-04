@@ -89,7 +89,6 @@ namespace IKVM.Internal
 			try
 			{
 				Trace.AutoFlush = true;
-				Trace.Listeners.Add(new MyTextWriterTraceListener(Console.Error));
 				/* If the app config file gives some method trace - add it */
 				string trace = ConfigurationManager.AppSettings["Traced Methods"];
 				if(trace != null)
@@ -107,6 +106,11 @@ namespace IKVM.Internal
 		public static void EnableTraceForDebug()
 		{
 			SetTraceLevel("*", TraceLevel.Verbose);
+		}
+
+		public static void EnableTraceConsoleListener()
+		{
+			Trace.Listeners.Add(new MyTextWriterTraceListener(Console.Error));
 		}
 
 		public static void HandleMethodTrace(string name)

@@ -38,6 +38,7 @@ public class NetExp
 
 	public static int Main(string[] args)
 	{
+		IKVM.Internal.Tracer.EnableTraceConsoleListener();
 		IKVM.Internal.Tracer.EnableTraceForDebug();
 		string assemblyNameOrPath = null;
 		bool continueOnError = false;

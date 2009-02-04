@@ -101,6 +101,7 @@ public class Starter
 	[IKVM.Attributes.HideFromJava]
 	static int Main(string[] args)
 	{
+		Tracer.EnableTraceConsoleListener();
 		Tracer.EnableTraceForDebug();
 		System.Collections.Hashtable props = new System.Collections.Hashtable();
 		string classpath = Environment.GetEnvironmentVariable("CLASSPATH");
