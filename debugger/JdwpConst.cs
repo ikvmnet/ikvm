@@ -51,6 +51,13 @@ namespace ikvm.debugger
         internal const int InstanceCounts = 21;
     }
 
+    static class EventRequest
+    {
+        internal const int Set = 1;
+        internal const int Clear = 2;
+        internal const int ClearAllBreakpoints = 3;
+    }
+
     static class Error
     {
         internal const int NONE = 0;

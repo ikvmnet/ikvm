@@ -75,7 +75,7 @@ namespace ikvm.debugger
 
         internal void SendPacket(Packet packet)
         {
-            throw new NotImplementedException();
+            packet.Send(stream);
         }
     }
 }

@@ -23,14 +23,17 @@ namespace ikvm.debugger
             while (true)
             {
                 Packet packet = conn.ReadPacket();
-                Console.WriteLine(packet.CommandSet + " " + packet.Command + " " + packet.Id);
+                Console.WriteLine(packet.CommandSet + " " + packet.Command);
                 switch (packet.CommandSet)
                 {
                     case CommandSet.VirtualMachine:
                         CommandSetVirtualMachine(packet);
                         break;
+                    case CommandSet.EventRequest:
+                        CommandSetEventRequest(packet);
+                        break;
                     default:
-                        NotImplemented(packet);
+                        NotImplementedPacket(packet);
                         break;
                 }
             }
@@ -50,13 +53,24 @@ namespace ikvm.debugger
                     conn.SendPacket(packet);
                     break;
                 default:
-                    NotImplemented(packet);
+                    NotImplementedPacket(packet);
                     break;
             }
         }
 
-        private void NotImplemented(Packet packet)
+        private void CommandSetEventRequest(Packet packet)
         {
+            switch (packet.Command)
+            {
+                default:
+                    NotImplementedPacket(packet);
+                    break;
+            }
+        }
+
+        private void NotImplementedPacket(Packet packet)
+        {
+            Console.Error.WriteLine("Not Implemented Packet:" + packet.CommandSet + "-" + packet.Command);
             packet.Error = Error.NOT_IMPLEMENTED;
             conn.SendPacket(packet);
         }

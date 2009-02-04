@@ -26,8 +26,17 @@ namespace ikvm.debugger
         private byte cmd;
         private short errorCode;
 
+        private Stream output = new MemoryStream();
+
         private Packet() { }
 
+        /// <summary>
+        /// Create a packet from the stream.
+        /// </summary>
+        /// <param name="header">The first 11 bytes of the data.</param>
+        /// <param name="stream">The stream with the data</param>
+        /// <returns>a new Packet</returns>
+        /// <exception cref="IOException">If the data in the stream are invalid.</exception>
         internal static Packet Read(byte[] header, Stream stream)
         {
             Packet packet = new Packet();
@@ -52,6 +61,24 @@ namespace ikvm.debugger
             DebuggerUtils.ReadFully(stream, packet.data);
             packet.offset = 0;
             return packet;
+        }
+
+        internal void Send(Stream stream)
+        {
+            MemoryStream ms = (MemoryStream)output;
+            try
+            {
+                output = stream;
+                WriteInt((int)ms.Length + 11);
+                WriteInt(id);
+                WriteByte(Reply);
+                WriteShort(errorCode);
+                ms.WriteTo(stream);
+            }
+            finally
+            {
+                output = ms; //remove the external stream
+            }
         }
 
         internal int ReadInt()
@@ -93,9 +120,23 @@ namespace ikvm.debugger
             set { errorCode = value; }
         }
 
-        internal void WriteInt(int size)
+        internal void WriteInt(int value)
         {
-            throw new NotImplementedException();
+            output.WriteByte((byte)(value >> 24));
+            output.WriteByte((byte)(value >> 16));
+            output.WriteByte((byte)(value >> 8));
+            output.WriteByte((byte)(value));
+        }
+
+        internal void WriteShort(int value)
+        {
+            output.WriteByte((byte)(value >> 8));
+            output.WriteByte((byte)(value));
+        }
+
+        internal void WriteByte(int value)
+        {
+            output.WriteByte((byte)(value));
         }
     }
 }
