@@ -84,7 +84,8 @@ namespace IKVM.Reflection.Emit
 			{
 				if (type.IsArray)
 				{
-					if (type.FullName.EndsWith("[]", StringComparison.Ordinal))
+					// we look at the Type.Name property, because for arrays of generic parameters (T[]) the FullName returns null
+					if (type.Name.EndsWith("[]", StringComparison.Ordinal))
 					{
 						bb.Write(ELEMENT_TYPE_SZARRAY);
 					}
