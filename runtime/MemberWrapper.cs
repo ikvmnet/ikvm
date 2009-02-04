@@ -434,7 +434,7 @@ namespace IKVM.Internal
 		{
 			if ((IsPublic || IsProtected) && (returnTypeWrapper != null && parameterTypeWrappers != null))
 			{
-				if (!returnTypeWrapper.IsPublic)
+				if (!returnTypeWrapper.IsPublic && !returnTypeWrapper.IsUnloadable)
 				{
 					SetNonPublicTypeInSignatureFlag();
 				}
@@ -442,7 +442,7 @@ namespace IKVM.Internal
 				{
 					foreach (TypeWrapper tw in parameterTypeWrappers)
 					{
-						if (!tw.IsPublic)
+						if (!tw.IsPublic && !tw.IsUnloadable)
 						{
 							SetNonPublicTypeInSignatureFlag();
 							break;
@@ -1152,7 +1152,7 @@ namespace IKVM.Internal
 		{
 			if ((IsPublic || IsProtected) && fieldType != null)
 			{
-				if (!fieldType.IsPublic)
+				if (!fieldType.IsPublic && !fieldType.IsUnloadable)
 				{
 					SetNonPublicTypeInSignatureFlag();
 				}
