@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2008 Jeroen Frijters
+  Copyright (C) 2002-2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -2400,7 +2400,7 @@ namespace IKVM.Internal
 			{
 				try
 				{
-					Assembly reference = Assembly.ReflectionOnlyLoadFrom(r);
+					Assembly reference = LoadReferencedAssembly(r);
 					if(IsCoreAssembly(reference))
 					{
 						JVM.CoreAssembly = reference;
@@ -2669,7 +2669,7 @@ namespace IKVM.Internal
 					{
 						try
 						{
-							asm = Assembly.ReflectionOnlyLoadFrom(StaticCompiler.runtimeAssembly.CodeBase + "\\..\\" + name.Name + ".dll");
+							asm = LoadReferencedAssembly(StaticCompiler.runtimeAssembly.CodeBase + "/../" + name.Name + ".dll");
 						}
 						catch(FileNotFoundException)
 						{
@@ -2712,6 +2712,41 @@ namespace IKVM.Internal
 				FakeTypes.Load(JVM.CoreAssembly);
 			}
 			return 0;
+		}
+
+		private static Assembly LoadReferencedAssembly(string r)
+		{
+			Assembly asm = Assembly.ReflectionOnlyLoadFrom(r);
+			if (asm.GetManifestResourceInfo("ikvm.exports") != null)
+			{
+				// If this is the main assembly in a multi assembly group, try to pre-load all the assemblies.
+				// (This is required to make Assembly.ReflectionOnlyLoad() work later on (because it doesn't fire the ReflectionOnlyAssemblyResolve event).)
+				using (Stream stream = asm.GetManifestResourceStream("ikvm.exports"))
+				{
+					BinaryReader rdr = new BinaryReader(stream);
+					int assemblyCount = rdr.ReadInt32();
+					for (int i = 0; i < assemblyCount; i++)
+					{
+						AssemblyName name = new AssemblyName(rdr.ReadString());
+						int typeCount = rdr.ReadInt32();
+						if (typeCount > 0)
+						{
+							for (int j = 0; j < typeCount; j++)
+							{
+								rdr.ReadInt32();
+							}
+							try
+							{
+								Assembly.ReflectionOnlyLoadFrom(asm.CodeBase + "/../" + name.Name + ".dll");
+							}
+							catch
+							{
+							}
+						}
+					}
+				}
+			}
+			return asm;
 		}
 
 		private int Compile()
