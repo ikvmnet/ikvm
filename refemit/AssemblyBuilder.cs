@@ -68,12 +68,24 @@ namespace IKVM.Reflection.Emit
 
 		public AssemblyName GetName()
 		{
-			return name;
+			AssemblyName n = new AssemblyName();
+			n.Name = name.Name;
+			n.Version = name.Version ?? new Version(0, 0, 0, 0);
+			n.CultureInfo = name.CultureInfo ?? System.Globalization.CultureInfo.InvariantCulture;
+			if (name.KeyPair != null)
+			{
+				n.SetPublicKey(name.KeyPair.PublicKey);
+			}
+			else
+			{
+				n.SetPublicKey(new byte[0]);
+			}
+			return n;
 		}
 
 		public string FullName
 		{
-			get { return name.FullName; }
+			get { return GetName().FullName; }
 		}
 
 		public ModuleBuilder DefineDynamicModule(string name, string fileName, bool emitSymbolInfo)
