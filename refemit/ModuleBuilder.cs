@@ -603,37 +603,19 @@ namespace IKVM.Reflection.Emit
 			if (!referencedAssemblies.TryGetValue(asm, out token))
 			{
 				TableHeap.AssemblyRefTable.Record rec = new TableHeap.AssemblyRefTable.Record();
-				Version ver = asm.Version ?? new Version(0, 0, 0, 0);
+				Version ver = asm.Version;
 				rec.MajorVersion = (short)ver.Major;
 				rec.MinorVersion = (short)ver.Minor;
 				rec.BuildNumber = (short)ver.Build;
 				rec.RevisionNumber = (short)ver.Revision;
 				rec.Flags = 0;
-				byte[] pubkey = asm.GetPublicKeyToken();
-				if (pubkey == null && asm.KeyPair != null)
-				{
-					pubkey = GetPublicKeyToken(asm.KeyPair);
-				}
-				if (pubkey != null)
-				{
-					rec.PublicKeyOrToken = this.Blobs.Add(ByteBuffer.Wrap(pubkey));
-				}
+				rec.PublicKeyOrToken = this.Blobs.Add(ByteBuffer.Wrap(asm.GetPublicKeyToken()));
 				rec.Name = this.Strings.Add(asm.Name);
 				rec.Culture = 0;
 				rec.HashValue = 0;
 				token = 0x23000000 | this.Tables.AssemblyRef.AddRecord(rec);
 				referencedAssemblies.Add(asm, token);
 			}
-			return token;
-		}
-
-		private byte[] GetPublicKeyToken(StrongNameKeyPair strongNameKeyPair)
-		{
-			SHA1Managed sha1 = new SHA1Managed();
-			byte[] hash = sha1.ComputeHash(strongNameKeyPair.PublicKey);
-			byte[] token = new byte[8];
-			Buffer.BlockCopy(hash, hash.Length - 8, token, 0, 8);
-			Array.Reverse(token);
 			return token;
 		}
 
