@@ -2218,6 +2218,15 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal bool IsFakeNestedType
+		{
+			get
+			{
+				TypeWrapper outer = this.DeclaringTypeWrapper;
+				return outer != null && outer.IsFakeTypeContainer;
+			}
+		}
+
 		// a ghost is an interface that appears to be implemented by a .NET type
 		// (e.g. System.String (aka java.lang.String) appears to implement java.lang.CharSequence,
 		// so java.lang.CharSequence is a ghost)

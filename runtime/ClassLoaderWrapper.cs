@@ -1715,6 +1715,10 @@ namespace IKVM.Internal
 		internal Assembly GetAssembly(TypeWrapper wrapper)
 		{
 			Debug.Assert(wrapper.GetClassLoader() == this);
+			while (wrapper.IsFakeNestedType)
+			{
+				wrapper = wrapper.DeclaringTypeWrapper;
+			}
 			return wrapper.TypeAsBaseType.Assembly;
 		}
 
