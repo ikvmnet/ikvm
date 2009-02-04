@@ -352,8 +352,10 @@ public class Deflater
    */
   public void setInput(byte[] input, int off, int len)
   {
-    if ((state & IS_FINISHING) != 0)
-      throw new IllegalStateException("finish()/end() already called");
+    if (input == null)
+        throw new NullPointerException();
+    if (off < 0 || len < 0 || off > input.length - len)
+        throw new ArrayIndexOutOfBoundsException();
     engine.setInput(input, off, len);
   }
 

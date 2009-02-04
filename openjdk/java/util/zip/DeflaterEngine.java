@@ -37,7 +37,7 @@ exception statement from your version. */
 
 package java.util.zip;
 
-class DeflaterEngine implements DeflaterConstants
+final class DeflaterEngine implements DeflaterConstants
 {
   private static final int TOO_FAR = 4096;
 
@@ -672,23 +672,12 @@ class DeflaterEngine implements DeflaterConstants
     return progress;
   }
 
-  public void setInput(byte[] buf, int off, int len)
+  void setInput(byte[] buf, int off, int len)
   {
-    if (inputOff < inputEnd)
-      throw new IllegalStateException
-        ("Old input was not completely processed");
-
-    int end = off + len;
-
-    /* We want to throw an ArrayIndexOutOfBoundsException early.  The
-     * check is very tricky: it also handles integer wrap around.  
-     */
-    if (0 > off || off > end || end > buf.length)
-      throw new ArrayIndexOutOfBoundsException();
-
+    // caller has already checked parameters
     inputBuf = buf;
     inputOff = off;
-    inputEnd = end;
+    inputEnd = off + len;
   }
 
   public final boolean needsInput()
