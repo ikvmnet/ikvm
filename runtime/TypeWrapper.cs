@@ -145,7 +145,6 @@ namespace IKVM.Internal
 		private static Type typeofModifiers = JVM.LoadType(typeof(Modifiers));
 		private static Type typeofSourceFileAttribute = JVM.LoadType(typeof(SourceFileAttribute));
 		private static Type typeofLineNumberTableAttribute = JVM.LoadType(typeof(LineNumberTableAttribute));
-		private static Type typeofEnclosingMethodAttribute = JVM.LoadType(typeof(EnclosingMethodAttribute));
 #endif // STATIC_COMPILER
 #endif // !COMPACT_FRAMEWORK
 		private static Type typeofRemappedClassAttribute = JVM.LoadType(typeof(RemappedClassAttribute));
@@ -167,6 +166,7 @@ namespace IKVM.Internal
 		private static Type typeofAnnotationAttributeAttribute = JVM.LoadType(typeof(AnnotationAttributeAttribute));
 		private static Type typeofNonNestedInnerClassAttribute = JVM.LoadType(typeof(NonNestedInnerClassAttribute));
 		private static Type typeofNonNestedOuterClassAttribute = JVM.LoadType(typeof(NonNestedOuterClassAttribute));
+		private static Type typeofEnclosingMethodAttribute = JVM.LoadType(typeof(EnclosingMethodAttribute));
 
 #if STATIC_COMPILER && !COMPACT_FRAMEWORK
 		private static object ParseValue(ClassLoaderWrapper loader, TypeWrapper tw, string val)
@@ -1765,6 +1765,29 @@ namespace IKVM.Internal
 		internal static bool IsNoPackagePrefix(Type type)
 		{
 			return IsDefined(type, typeofNoPackagePrefixAttribute) || IsDefined(type.Assembly, typeofNoPackagePrefixAttribute);
+		}
+
+		internal static EnclosingMethodAttribute GetEnclosingMethodAttribute(Type type)
+		{
+			if (type.Assembly.ReflectionOnly)
+			{
+				foreach (CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
+				{
+					if (MatchTypes(cad.Constructor.DeclaringType, typeofEnclosingMethodAttribute))
+					{
+						return new EnclosingMethodAttribute((string)cad.ConstructorArguments[0].Value, (string)cad.ConstructorArguments[1].Value, (string)cad.ConstructorArguments[2].Value);
+					}
+				}
+			}
+			else
+			{
+				object[] attr = type.GetCustomAttributes(typeof(EnclosingMethodAttribute), false);
+				if (attr.Length == 1)
+				{
+					return (EnclosingMethodAttribute)attr[0];
+				}
+			}
+			return null;
 		}
 
 #if STATIC_COMPILER && !COMPACT_FRAMEWORK
@@ -9441,10 +9464,9 @@ namespace IKVM.Internal
 
 		internal override string[] GetEnclosingMethod()
 		{
-			object[] attr = type.GetCustomAttributes(typeof(EnclosingMethodAttribute), false);
-			if(attr.Length == 1)
+			EnclosingMethodAttribute enc = AttributeHelper.GetEnclosingMethodAttribute(type);
+			if (enc != null)
 			{
-				EnclosingMethodAttribute enc = (EnclosingMethodAttribute)attr[0];
 				return new string[] { enc.ClassName, enc.MethodName, enc.MethodSignature };
 			}
 			return null;
@@ -11787,7 +11809,7 @@ namespace IKVM.Internal
 			else
 			{
 				Type type = ((MethodInfo)mb).ReturnType;
-				if(type.IsPointer || type.IsByRef)
+				if(IsPointerType(type) || type.IsByRef)
 				{
 					name = null;
 					sig = null;
