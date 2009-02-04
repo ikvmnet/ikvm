@@ -471,8 +471,8 @@ namespace IKVM.Internal
 			{
 				return null;
 			}
-			Type type = GetType(DotNetTypeWrapper.DemangleTypeName(name.Substring(0, pos)));
-			if(type == null || !type.IsGenericTypeDefinition)
+			Type type = GetGenericTypeDefinition(DotNetTypeWrapper.DemangleTypeName(name.Substring(0, pos)));
+			if(type == null)
 			{
 				return null;
 			}
@@ -890,7 +890,7 @@ namespace IKVM.Internal
 			return type.IsArray && type.Name.EndsWith("[]");
 		}
 
-		internal virtual Type GetType(string name)
+		internal virtual Type GetGenericTypeDefinition(string name)
 		{
 			return null;
 		}
@@ -1335,11 +1335,11 @@ namespace IKVM.Internal
 			return false;
 		}
 
-		internal override Type GetType(string name)
+		internal override Type GetGenericTypeDefinition(string name)
 		{
 			foreach(ClassLoaderWrapper loader in delegates)
 			{
-				Type t = loader.GetType(name);
+				Type t = loader.GetGenericTypeDefinition(name);
 				if(t != null)
 				{
 					return t;
@@ -1712,14 +1712,19 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal override Type GetType(string name)
+		internal override Type GetGenericTypeDefinition(string name)
 		{
 			try
 			{
-				// TODO do we want to support this for multi assembly shared class loaders?
-				return assemblyLoader.Assembly.GetType(name);
+				// we only have to look in the main assembly, because only a .NET assembly can contain generic type definitions
+				// and it cannot be part of a multi assembly sharedclassloader group
+				Type type = assemblyLoader.Assembly.GetType(name);
+				if (type != null && type.IsGenericTypeDefinition)
+				{
+					return type;
+				}
 			}
-			catch(FileLoadException x)
+			catch (FileLoadException x)
 			{
 				// this can only happen if the assembly was loaded in the ReflectionOnly
 				// context and the requested type references a type in another assembly

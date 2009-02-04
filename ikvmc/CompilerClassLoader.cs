@@ -298,11 +298,11 @@ namespace IKVM.Internal
 			return type;
 		}
 
-		internal override Type GetType(string name)
+		internal override Type GetGenericTypeDefinition(string name)
 		{
 			foreach(AssemblyClassLoader loader in referencedAssemblies)
 			{
-				Type type = loader.GetType(name);
+				Type type = loader.GetGenericTypeDefinition(name);
 				if(type != null)
 				{
 					return type;
