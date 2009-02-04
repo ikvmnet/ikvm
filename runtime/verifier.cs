@@ -3575,6 +3575,11 @@ class MethodAnalyzer
 				{
 					type = InstructionState.FindCommonBaseType(type, GetLocalTypeWrapper(store + 1, localIndex));
 				}
+				else if(method.Instructions[store].NormalizedOpCode == NormalizedByteCode.__static_error)
+				{
+					// it's an __invokespecial that turned into a __static_error
+					// (since a __static_error doesn't continue, we don't need to set type)
+				}
 				else
 				{
 					Debug.Assert(IsStoreLocal(method.Instructions[store].NormalizedOpCode));
