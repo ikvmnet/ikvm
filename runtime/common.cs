@@ -142,11 +142,12 @@ namespace IKVM.NativeCode.ikvm.@internal
 		{
 			public static string getAssemblyName(object c)
 			{
-				ClassLoaderWrapper loader = TypeWrapper.FromClass(c).GetClassLoader();
+				TypeWrapper wrapper = TypeWrapper.FromClass(c);
+				ClassLoaderWrapper loader = wrapper.GetClassLoader();
 				IKVM.Internal.AssemblyClassLoader acl = loader as IKVM.Internal.AssemblyClassLoader;
 				if(acl != null)
 				{
-					return acl.Assembly.FullName;
+					return acl.GetAssembly(wrapper).FullName;
 				}
 				else
 				{
@@ -244,7 +245,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 			Assembly[] assemblies = wrapper.FindResourceAssemblies(name, firstOnly);
 			if(assemblies == null || assemblies.Length == 0)
 			{
-				Tracer.Info(Tracer.ClassLoading, "Failed to find resource \"{0}\" in {1}", name, wrapper.Assembly.FullName);
+				Tracer.Info(Tracer.ClassLoading, "Failed to find resource \"{0}\" in {1}", name, assembly.FullName);
 				return null;
 			}
 			foreach(Assembly asm in assemblies)
@@ -254,10 +255,11 @@ namespace IKVM.NativeCode.ikvm.runtime
 			return assemblies;
 		}
 
-		public static Assembly GetAssemblyFromClassLoader(object classLoader)
+		public static Assembly GetAssemblyFromClass(object clazz)
 		{
-			AssemblyClassLoader_ acl = ClassLoaderWrapper.GetClassLoaderWrapper(classLoader) as AssemblyClassLoader_;
-			return acl != null ? acl.Assembly : null;
+			TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
+			AssemblyClassLoader_ acl = wrapper.GetClassLoader() as AssemblyClassLoader_;
+			return acl != null ? acl.GetAssembly(wrapper) : null;
 		}
 
 		// NOTE the array may contain duplicates!
@@ -292,11 +294,6 @@ namespace IKVM.NativeCode.ikvm.runtime
 #else
 			return ClassLoaderWrapper.GetGenericClassLoaderId(ClassLoaderWrapper.GetClassLoaderWrapper(classLoader));
 #endif
-		}
-
-		public static Assembly GetBootClassLoaderAssembly()
-		{
-			return ClassLoaderWrapper.GetBootstrapClassLoader().Assembly;
 		}
 
 		public static string GetGenericClassLoaderName(object classLoader)

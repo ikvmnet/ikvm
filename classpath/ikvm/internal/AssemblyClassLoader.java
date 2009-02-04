@@ -128,12 +128,7 @@ public final class AssemblyClassLoader extends ClassLoader
             }
             if(c != null)
             {
-                classLoader = c.getClassLoader();
-                if(classLoader == null)
-                {
-                    return makeIkvmresURL(GetBootClassLoaderAssembly(), name);
-                }
-		assembly = GetAssemblyFromClassLoader(classLoader);
+		assembly = GetAssemblyFromClass(c);
                 if(assembly != null)
                 {
                     return makeIkvmresURL(assembly, name);
@@ -144,7 +139,7 @@ public final class AssemblyClassLoader extends ClassLoader
                     // TODO this obviously isn't persistable, we should use a list of assemblies instead.
                     try
                     {
-                        return new URL("ikvmres", "gen", GetGenericClassLoaderId(classLoader), "/" + name);
+                        return new URL("ikvmres", "gen", GetGenericClassLoaderId(c.getClassLoader()), "/" + name);
                     }
                     catch(MalformedURLException x)
                     {
@@ -159,9 +154,8 @@ public final class AssemblyClassLoader extends ClassLoader
     private static native boolean IsReflectionOnly(Assembly asm);
     private static native Assembly[] FindResourceAssemblies(Assembly assembly, String name, boolean firstOnly);
     private static native int GetGenericClassLoaderId(ClassLoader classLoader);
-    private static native Assembly GetBootClassLoaderAssembly();
     private static native String GetGenericClassLoaderName(Object classLoader);
-    private static native Assembly GetAssemblyFromClassLoader(ClassLoader classLoader);
+    private static native Assembly GetAssemblyFromClass(Class clazz);
     // also used by VMClassLoader
     @Internal
     public static native String[] GetPackages(Assembly assembly);

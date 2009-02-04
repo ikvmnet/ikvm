@@ -1712,6 +1712,12 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal Assembly GetAssembly(TypeWrapper wrapper)
+		{
+			Debug.Assert(wrapper.GetClassLoader() == this);
+			return wrapper.TypeAsBaseType.Assembly;
+		}
+
 		internal override Type GetGenericTypeDefinition(string name)
 		{
 			try

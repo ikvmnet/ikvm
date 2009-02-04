@@ -473,7 +473,7 @@ namespace IKVM.NativeCode.java
 						{
 							ClassLoaderWrapper classLoader = tw.GetClassLoader();
 							AssemblyClassLoader acl = classLoader as AssemblyClassLoader;
-							if (acl == null || acl.Assembly != typeof(object).Assembly)
+							if (acl == null || acl.GetAssembly(tw) != typeof(object).Assembly)
 							{
 								object javaClassLoader = classLoader.GetJavaClassLoader();
 								if (javaClassLoader != null)
