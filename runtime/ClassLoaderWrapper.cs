@@ -1745,8 +1745,14 @@ namespace IKVM.Internal
 			return null;
 		}
 
-		private Assembly LoadAssembly(AssemblyName name)
+		private Assembly LoadAssemblyOrClearName(ref AssemblyName nameRef)
 		{
+			AssemblyName name = nameRef;
+			if (name == null)
+			{
+				// previous load attemp failed
+				return null;
+			}
 			try
 			{
 				if (isReflectionOnly)
@@ -1760,6 +1766,9 @@ namespace IKVM.Internal
 			}
 			catch
 			{
+				// cache failure by clearing out the name the caller uses
+				nameRef = null;
+				// should we issue a warning error (in ikvmc)?
 				return null;
 			}
 		}
@@ -1781,8 +1790,7 @@ namespace IKVM.Internal
 						AssemblyLoader loader = exportedAssemblies[index];
 						if (loader == null)
 						{
-							// TODO consider throttling the Load attempts (or caching failure)
-							Assembly asm = LoadAssembly(exportedAssemblyNames[index]);
+							Assembly asm = LoadAssemblyOrClearName(ref exportedAssemblyNames[index]);
 							if (asm == null)
 							{
 								continue;
@@ -1888,8 +1896,7 @@ namespace IKVM.Internal
 			{
 				if(delegates[i] == null)
 				{
-					// TODO consider throttling the Load attempts (or caching failure)
-					Assembly asm = LoadAssembly(references[i]);
+					Assembly asm = LoadAssemblyOrClearName(ref references[i]);
 					if(asm != null)
 					{
 						delegates[i] = ClassLoaderWrapper.GetAssemblyClassLoader(asm);
@@ -1935,8 +1942,7 @@ namespace IKVM.Internal
 						AssemblyLoader loader = exportedAssemblies[index];
 						if(loader == null)
 						{
-							// TODO consider throttling the Load attempts (or caching failure)
-							Assembly asm = LoadAssembly(exportedAssemblyNames[index]);
+							Assembly asm = LoadAssemblyOrClearName(ref exportedAssemblyNames[index]);
 							if(asm == null)
 							{
 								continue;
@@ -1962,8 +1968,7 @@ namespace IKVM.Internal
 			{
 				if(delegates[i] == null)
 				{
-					// TODO consider throttling the Load attempts (or caching failure)
-					Assembly asm = LoadAssembly(references[i]);
+					Assembly asm = LoadAssemblyOrClearName(ref references[i]);
 					if(asm != null)
 					{
 						delegates[i] = ClassLoaderWrapper.GetAssemblyClassLoader(asm);
