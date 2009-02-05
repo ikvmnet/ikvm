@@ -101,6 +101,7 @@ namespace IKVM.Internal
 				weakRef = freeList.WeakRef;
 				freeList = freeList.Next;
 				freeCount--;
+				weakRef.Target = key;
 			}
 			else
 			{
