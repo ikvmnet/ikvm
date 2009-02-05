@@ -58,6 +58,7 @@ namespace ikvm.debugger
                 packet.errorCode = packet.ReadShort();
             }
             packet.data = new byte[len - 11];
+Console.WriteLine("Data Size:" + packet.data.Length);
             DebuggerUtils.ReadFully(stream, packet.data);
             packet.offset = 0;
             return packet;
@@ -99,6 +100,16 @@ namespace ikvm.debugger
             return data[offset++];
         }
 
+        internal String ReadString()
+        {
+            System.Text.UTF8Encoding encoding = new System.Text.UTF8Encoding();
+            int length = ReadInt();
+            char[] chars = encoding.GetChars(data, offset, length);
+            offset += length;
+            return new String(chars);
+        }
+
+
         internal int Id
         {
             get { return id; }
@@ -137,6 +148,14 @@ namespace ikvm.debugger
         internal void WriteByte(int value)
         {
             output.WriteByte((byte)(value));
+        }
+
+        internal void WriteString(String value)
+        {
+            System.Text.UTF8Encoding encoding = new System.Text.UTF8Encoding();
+            byte[] bytes = encoding.GetBytes(value);
+            WriteInt(bytes.Length);
+            output.Write(bytes, 0, bytes.Length);
         }
     }
 }

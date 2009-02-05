@@ -43,6 +43,13 @@ namespace ikvm.debugger
         {
             switch (packet.Command)
             {
+                case VirtualMachine.Version:
+                    packet.WriteString("IKVM Debugger");
+                    packet.WriteInt(1);
+                    packet.WriteInt(6);
+                    packet.WriteString("1.6.0");
+                    packet.WriteString("IKVM.NET");
+                    break;
                 case VirtualMachine.IDSizes:
                     int size = System.IntPtr.Size;
                     packet.WriteInt(size); // fieldID size in bytes
@@ -62,6 +69,18 @@ namespace ikvm.debugger
         {
             switch (packet.Command)
             {
+                case EventRequest.Set:
+                    byte eventKind = packet.ReadByte();
+                    byte suspendPolicy = packet.ReadByte();
+                    int count = packet.ReadInt();
+Console.Error.WriteLine("Set:" + eventKind + "-" + suspendPolicy + "-" + count);
+                    for (int i = 0; i < count; i++)
+                    {
+                        byte modKind = packet.ReadByte();
+                        NotImplementedPacket(packet);
+                    }
+                    conn.SendPacket(packet);
+                    break;
                 default:
                     NotImplementedPacket(packet);
                     break;
