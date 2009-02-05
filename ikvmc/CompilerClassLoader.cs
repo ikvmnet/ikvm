@@ -3199,7 +3199,7 @@ namespace IKVM.Internal
 			AssemblyClassLoader acl = loader as AssemblyClassLoader;
 			if(acl != null)
 			{
-				return tw.Name + ", " + acl.Assembly.FullName;
+				return tw.Name + ", " + acl.GetAssembly(tw).FullName;
 			}
 			CompilerClassLoader ccl = loader as CompilerClassLoader;
 			if(ccl != null)
