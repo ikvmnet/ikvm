@@ -1919,15 +1919,13 @@ namespace IKVM.Internal
 		}
 
 #if !STATIC_COMPILER
-		internal Assembly[] FindResourceAssemblies(string unmangledName, bool firstOnly)
+		internal Assembly FindResourceAssembliesImpl(string unmangledName, string name, bool firstOnly, ref List<Assembly> list)
 		{
-			List<Assembly> list = null;
-			string name = JVM.MangleResourceName(unmangledName);
 			if(assemblyLoader.Assembly.GetManifestResourceInfo(name) != null)
 			{
 				if(firstOnly)
 				{
-					return new Assembly[] { assemblyLoader.Assembly };
+					return assemblyLoader.Assembly;
 				}
 				list = new List<Assembly>();
 				list.Add(assemblyLoader.Assembly);
@@ -1953,7 +1951,7 @@ namespace IKVM.Internal
 						{
 							if(firstOnly)
 							{
-								return new Assembly[] { loader.Assembly };
+								return loader.Assembly;
 							}
 							if(list == null)
 							{
@@ -1963,6 +1961,18 @@ namespace IKVM.Internal
 						}
 					}
 				}
+			}
+			return null;
+		}
+
+		internal Assembly[] FindResourceAssemblies(string unmangledName, bool firstOnly)
+		{
+			List<Assembly> list = null;
+			string name = JVM.MangleResourceName(unmangledName);
+			Assembly first = FindResourceAssembliesImpl(unmangledName, name, firstOnly, ref list);
+			if(first != null)
+			{
+				return new Assembly[] { first };
 			}
 			for(int i = 0; i < delegates.Length; i++)
 			{
@@ -1976,19 +1986,10 @@ namespace IKVM.Internal
 				}
 				if(delegates[i] != null)
 				{
-					// TODO should delegates that are part of a shared class loader group be treated as such?
-					// well, obviously we must do this for the boot class loader
-					if(delegates[i].Assembly.GetManifestResourceInfo(name) != null)
+					first = delegates[i].FindResourceAssembliesImpl(unmangledName, name, firstOnly, ref list);
+					if(first != null)
 					{
-						if(firstOnly)
-						{
-							return new Assembly[] { delegates[i].Assembly };
-						}
-						if(list == null)
-						{
-							list = new List<Assembly>();
-						}
-						list.Add(delegates[i].Assembly);
+						return new Assembly[] { first };
 					}
 				}
 			}
