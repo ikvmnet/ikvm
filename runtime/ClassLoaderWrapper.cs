@@ -1381,7 +1381,7 @@ namespace IKVM.Internal
 				}
 				else
 				{
-					sb.Append(((AssemblyClassLoader)loader).Assembly.FullName);
+					sb.Append(((AssemblyClassLoader)loader).MainAssembly.FullName);
 				}
 				sb.Append(']');
 			}
@@ -1720,7 +1720,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal Assembly Assembly
+		internal Assembly MainAssembly
 		{
 			get
 			{

@@ -267,7 +267,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 		{
 			IKVM.Internal.AssemblyClassLoader wrapper = ClassLoaderWrapper.GetAssemblyClassLoader(assembly);
 			string[] packages = new string[0];
-			foreach(Module m in wrapper.Assembly.GetModules(false))
+			foreach(Module m in wrapper.MainAssembly.GetModules(false))
 			{
 				object[] attr = m.GetCustomAttributes(typeof(PackageListAttribute), false);
 				foreach(PackageListAttribute p in attr)

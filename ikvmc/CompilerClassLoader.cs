@@ -427,7 +427,7 @@ namespace IKVM.Internal
 			// delegates to them at runtime.
 			for(int i = 0;i < referencedAssemblies.Length; i++)
 			{
-				Type[] types = referencedAssemblies[i].Assembly.GetExportedTypes();
+				Type[] types = referencedAssemblies[i].MainAssembly.GetExportedTypes();
 				if(types.Length > 0)
 				{
 					mb.GetTypeToken(types[0]);
