@@ -94,6 +94,7 @@ namespace ikvm.awt
         private Font netfont;
         private Brush brush;
         private Pen pen;
+        private java.awt.Composite composite = java.awt.AlphaComposite.SrcOver;
 
         protected NetGraphics(Graphics g, java.awt.Font font, Color bgcolor)
         {
@@ -598,7 +599,11 @@ namespace ikvm.awt
 
         public override void setComposite(java.awt.Composite comp)
         {
-            throw new NotImplementedException();
+            if (comp == null)
+            {
+                throw new java.lang.IllegalArgumentException("null Composite");
+            }
+            this.composite = comp;
         }
 
         public override void setPaint(java.awt.Paint paint)
@@ -891,7 +896,7 @@ namespace ikvm.awt
 
         public override java.awt.Composite getComposite()
         {
-            throw new NotImplementedException();
+            return composite;
         }
 
         public override void setBackground(java.awt.Color color)
@@ -915,7 +920,7 @@ namespace ikvm.awt
 
         public override java.awt.font.FontRenderContext getFontRenderContext()
         {
-            throw new NotImplementedException();
+            return new java.awt.font.FontRenderContext(getTransform(), false, false);
         }
 
         public override void drawGlyphVector(java.awt.font.GlyphVector g, float x, float y)
