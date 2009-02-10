@@ -2601,13 +2601,18 @@ namespace IKVM.Internal
 		internal bool IsAccessibleFrom(TypeWrapper wrapper)
 		{
 			return IsPublic
-				|| (IsInternal && GetClassLoader().InternalsVisibleTo(wrapper.GetClassLoader()))
+				|| (IsInternal && InternalsVisibleTo(wrapper))
 				|| IsPackageAccessibleFrom(wrapper);
+		}
+
+		internal bool InternalsVisibleTo(TypeWrapper wrapper)
+		{
+			return GetClassLoader().InternalsVisibleToImpl(this, wrapper);
 		}
 
 		internal bool IsPackageAccessibleFrom(TypeWrapper wrapper)
 		{
-			return MatchingPackageNames(name, wrapper.name) && GetClassLoader().InternalsVisibleTo(wrapper.GetClassLoader());
+			return MatchingPackageNames(name, wrapper.name) && InternalsVisibleTo(wrapper);
 		}
 
 		private static bool MatchingPackageNames(string name1, string name2)
@@ -3952,7 +3957,7 @@ namespace IKVM.Internal
 					// we only support HasCallerID instance methods on final types, because we don't support interface stubs with CallerID
 					if(m.HasCallerIDAnnotation
 						&& (m.IsStatic || classFile.IsFinal)
-						&& CoreClasses.java.lang.Object.Wrapper.GetClassLoader().InternalsVisibleTo(wrapper.GetClassLoader()))
+						&& CoreClasses.java.lang.Object.Wrapper.InternalsVisibleTo(wrapper))
 					{
 						flags |= MemberFlags.CallerID;
 					}
@@ -5743,7 +5748,7 @@ namespace IKVM.Internal
 					{
 						// RULE 4: package methods can only be overridden in the same package
 						if(baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper)
-							|| (baseMethod.IsInternal && baseMethod.DeclaringType.GetClassLoader().InternalsVisibleTo(wrapper.GetClassLoader())))
+							|| (baseMethod.IsInternal && baseMethod.DeclaringType.InternalsVisibleTo(wrapper)))
 						{
 							return baseMethod;
 						}

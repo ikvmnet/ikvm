@@ -311,8 +311,10 @@ namespace IKVM.Internal
 			return null;
 		}
 
-		internal override bool InternalsVisibleTo(ClassLoaderWrapper other)
+		internal override bool InternalsVisibleToImpl(TypeWrapper wrapper, TypeWrapper friend)
 		{
+			Debug.Assert(wrapper.GetClassLoader() == this);
+			ClassLoaderWrapper other = friend.GetClassLoader();
 			// TODO ideally we should also respect InternalsVisibleToAttribute.Annotation here
 			if (this == other || internalsVisibleTo.Contains(other))
 			{

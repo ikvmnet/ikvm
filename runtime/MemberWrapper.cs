@@ -143,7 +143,7 @@ namespace IKVM.Internal
 				return (IsPublic ||
 					caller == DeclaringType ||
 					(IsProtected && caller.IsSubTypeOf(DeclaringType) && (IsStatic || instance.IsSubTypeOf(caller))) ||
-					(IsInternal && DeclaringType.GetClassLoader().InternalsVisibleTo(caller.GetClassLoader())) ||
+					(IsInternal && DeclaringType.InternalsVisibleTo(caller)) ||
 					(!IsPrivate && DeclaringType.IsPackageAccessibleFrom(caller)))
 					// The JVM supports accessing members that have non-public types in their signature from another package,
 					// but the CLI doesn't. It would be nice if we worked around that by emitting extra accessors, but for now
@@ -164,7 +164,7 @@ namespace IKVM.Internal
 				return true;
 			}
 #endif
-			return DeclaringType.GetClassLoader().InternalsVisibleTo(caller.GetClassLoader());
+			return DeclaringType.InternalsVisibleTo(caller);
 		}
 
 		internal bool IsHideFromReflection

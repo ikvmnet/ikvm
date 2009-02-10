@@ -1303,9 +1303,10 @@ namespace IKVM.Internal
 		}
 #endif
 
-		internal virtual bool InternalsVisibleTo(ClassLoaderWrapper other)
+		internal virtual bool InternalsVisibleToImpl(TypeWrapper wrapper, TypeWrapper friend)
 		{
-			return this == other;
+			Debug.Assert(wrapper.GetClassLoader() == this);
+			return this == friend.GetClassLoader();
 		}
 	}
 
@@ -1394,7 +1395,6 @@ namespace IKVM.Internal
 		private AssemblyLoader assemblyLoader;
 		private AssemblyName[] references;
 		private AssemblyClassLoader[] delegates;
-		private AssemblyName[] internalsVisibleTo;
 		private bool isReflectionOnly;
 #if !STATIC_COMPILER
 		private Thread initializerThread;
@@ -1413,6 +1413,7 @@ namespace IKVM.Internal
 			private Module[] modules;
 			private Dictionary<string, string> nameMap;
 			private bool hasDotNetModule;
+			private AssemblyName[] internalsVisibleTo;
 
 			internal AssemblyLoader(Assembly assembly)
 			{
@@ -1658,6 +1659,22 @@ namespace IKVM.Internal
 					return new DotNetTypeWrapper(type, name);
 				}
 			}
+
+			internal bool InternalsVisibleTo(AssemblyName otherName)
+			{
+				if (internalsVisibleTo == null)
+				{
+					internalsVisibleTo = AttributeHelper.GetInternalsVisibleToAttributes(assembly);
+				}
+				foreach (AssemblyName name in internalsVisibleTo)
+				{
+					if (AssemblyName.ReferenceMatchesDefinition(name, otherName))
+					{
+						return true;
+					}
+				}
+				return false;
+			}
 		}
 
 		internal AssemblyClassLoader(Assembly assembly, object javaClassLoader, bool hasCustomClassLoader)
@@ -1673,7 +1690,6 @@ namespace IKVM.Internal
 			this.isReflectionOnly = assembly.ReflectionOnly;
 			this.hasCustomClassLoader = hasCustomClassLoader;
 			delegates = new AssemblyClassLoader[references.Length];
-			internalsVisibleTo = AttributeHelper.GetInternalsVisibleToAttributes(assembly);
 			if(assembly.GetType("__<MainAssembly>") != null)
 			{
 				using(Stream stream = assembly.GetManifestResourceStream("ikvm.exports"))
@@ -2104,8 +2120,9 @@ namespace IKVM.Internal
 			return tw != null ? tw : DoLoad(name);
 		}
 
-		internal override bool InternalsVisibleTo(ClassLoaderWrapper other)
+		internal override bool InternalsVisibleToImpl(TypeWrapper wrapper, TypeWrapper friend)
 		{
+			ClassLoaderWrapper other = friend.GetClassLoader();
 			if(this == other)
 			{
 				return true;
@@ -2124,16 +2141,9 @@ namespace IKVM.Internal
 			{
 				return false;
 			}
-			otherName = acl.Assembly.GetName();
+			otherName = acl.GetAssembly(friend).GetName();
 #endif
-			foreach(AssemblyName name in internalsVisibleTo)
-			{
-				if(AssemblyName.ReferenceMatchesDefinition(name, otherName))
-				{
-					return true;
-				}
-			}
-			return false;
+			return GetLoaderForExportedAssembly(GetAssembly(wrapper)).InternalsVisibleTo(otherName);
 		}
 	}
 
