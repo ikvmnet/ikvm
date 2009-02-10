@@ -48,7 +48,8 @@ namespace ikvm.debugger
         {
             debugger = new NDebugger();
             System.Diagnostics.Process sysProcess = System.Diagnostics.Process.GetProcessById(pid);
-            debugger.Attach(sysProcess);
+            process = debugger.Attach(sysProcess);
+            process.Exited += new EventHandler(ProcessExited);
         }
 
         /// <summary>
@@ -64,6 +65,12 @@ namespace ikvm.debugger
                 ids[i] = (int)list[0].ID;
             }
             return ids;
+        }
+
+
+        void ProcessExited(object sender, EventArgs ev)
+        {
+            Environment.Exit(0);
         }
     }
 }
