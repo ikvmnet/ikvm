@@ -29,6 +29,7 @@ import javax.imageio.ImageWriteParam;
 import javax.imageio.IIOImage;
 import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.metadata.IIOMetadata;
+import javax.imageio.plugins.jpeg.JPEGImageWriteParam;
 import javax.imageio.spi.ImageWriterSpi;
 import javax.imageio.stream.ImageOutputStream;
 import java.awt.image.BufferedImage;
@@ -96,5 +97,11 @@ public class JPEGImageWriter extends ImageWriter {
         imgOutput.write(stream.GetBuffer(), 0, (int)stream.get_Length());
     }
 
-
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ImageWriteParam getDefaultWriteParam() {
+        return new JPEGImageWriteParam(null);
+    }
 }
