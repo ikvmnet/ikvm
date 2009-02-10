@@ -1031,6 +1031,33 @@ namespace IKVM.NativeCode.java
 				}
 			}
 
+			private abstract class VfsExecutable : VfsEntry
+			{
+				internal override bool IsDirectory { get { return false; } }
+				internal override long Size { get { return 0; } }
+
+				internal override System.IO.Stream Open()
+				{
+					return System.IO.Stream.Null;
+				}
+
+				internal abstract string GetPath();
+			}
+
+			private class VfsJavaExe : VfsExecutable
+			{
+				private string path;
+
+				internal override string GetPath()
+				{
+					if (path == null)
+					{
+						path = new System.Uri(Assembly.GetEntryAssembly().CodeBase + "/../ikvm.exe").LocalPath;
+					}
+					return path;
+				}
+			}
+
 			private static void Initialize()
 			{
 				// this is a weird loop back, the vfs.zip resource is loaded from vfs,
@@ -1055,6 +1082,10 @@ namespace IKVM.NativeCode.java
 				dict[RootPath + "bin" + sep + global::java.lang.System.mapLibraryName("jaas_unix")] = new VfsDummyEntry(false);
 				dict[RootPath + "bin" + sep + global::java.lang.System.mapLibraryName("unpack")] = new VfsDummyEntry(false);
 				dict[RootPath + "bin" + sep + global::java.lang.System.mapLibraryName("net")] = new VfsDummyEntry(false);
+				dict[RootPath + "bin" + sep + "java"] = new VfsJavaExe();
+				dict[RootPath + "bin" + sep + "javaw"] = new VfsJavaExe();
+				dict[RootPath + "bin" + sep + "java.exe"] = new VfsJavaExe();
+				dict[RootPath + "bin" + sep + "javaw.exe"] = new VfsJavaExe();
 				if (Interlocked.CompareExchange(ref entries, dict, null) != null)
 				{
 					// we lost the race, so we close our zip file
@@ -1260,6 +1291,16 @@ namespace IKVM.NativeCode.java
 				const int BA_DIRECTORY = 0x04;
 				return entry.IsDirectory ? BA_EXISTS | BA_DIRECTORY : BA_EXISTS | BA_REGULAR;
 #endif
+			}
+
+			internal static string MapExecutable(string path)
+			{
+				VfsExecutable entry = GetVfsEntry(path) as VfsExecutable;
+				if (entry == null)
+				{
+					return path;
+				}
+				return entry.GetPath();
 			}
 		}
 
@@ -3663,6 +3704,18 @@ namespace IKVM.NativeCode.java
 #if !FIRST_PASS
 				jlThread.currentThread().die();
 #endif
+			}
+		}
+
+		static class ProcessImpl
+		{
+			public static string mapVfsExecutable(string path)
+			{
+				if (IKVM.NativeCode.java.io.VirtualFileSystem.IsVirtualFS(path))
+				{
+					return IKVM.NativeCode.java.io.VirtualFileSystem.MapExecutable(path);
+				}
+				return path;
 			}
 		}
 

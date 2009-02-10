@@ -67,6 +67,9 @@ final class ProcessImpl extends Process {
     {
         // Win32 CreateProcess requires cmd[0] to be normalized
         cmd[0] = new File(cmd[0]).getPath();
+        
+        // give the runtime an opportunity to map executables from VFS to a real executable
+        cmd[0] = mapVfsExecutable(cmd[0]);
 
         StringBuilder cmdbuf = new StringBuilder(80);
         for (int i = 1; i < cmd.length; i++) {
@@ -131,6 +134,8 @@ final class ProcessImpl extends Process {
         stdout_stream = new BufferedInputStream(new FileInputStream(FileDescriptor.fromStream(proc.get_StandardOutput().get_BaseStream())));
         stderr_stream = new FileInputStream(FileDescriptor.fromStream(proc.get_StandardError().get_BaseStream()));
     }
+    
+    private static native String mapVfsExecutable(String path);
 
     public OutputStream getOutputStream() {
         return stdin_stream;
