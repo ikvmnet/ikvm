@@ -1295,12 +1295,16 @@ namespace IKVM.NativeCode.java
 
 			internal static string MapExecutable(string path)
 			{
+#if FIRST_PASS
+				return null;
+#else
 				VfsExecutable entry = GetVfsEntry(path) as VfsExecutable;
 				if (entry == null)
 				{
 					return path;
 				}
 				return entry.GetPath();
+#endif
 			}
 		}
 
