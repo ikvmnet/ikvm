@@ -457,9 +457,11 @@ namespace IKVM.NativeCode.java
 
 			public static object latestUserDefinedLoader()
 			{
-				for (int i = 1; ; i++)
+				// testing shows that it is cheaper the get the full stack trace and then look at a few frames than getting the frames individually
+				StackTrace trace = new StackTrace(2, false);
+				for (int i = 0; ; i++)
 				{
-					StackFrame frame = new StackFrame(i);
+					StackFrame frame = trace.GetFrame(i);
 					MethodBase method = frame.GetMethod();
 					if (method == null)
 					{
