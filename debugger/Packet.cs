@@ -81,7 +81,7 @@ namespace ikvm.debugger
                 packet.errorCode = packet.ReadShort();
             }
             packet.data = new byte[len - 11];
-Console.WriteLine("Data Size:" + packet.data.Length);
+Console.Error.WriteLine("Data Size:" + packet.data.Length);
             DebuggerUtils.ReadFully(stream, packet.data);
             packet.offset = 0;
             return packet;
@@ -182,6 +182,12 @@ Console.WriteLine("Data Size:" + packet.data.Length);
         }
 
         internal void WriteObjectID(int value)
+        {
+            // TODO 64 Bit
+            WriteInt(value);
+        }
+
+        internal void WriteFieldID(int value)
         {
             // TODO 64 Bit
             WriteInt(value);

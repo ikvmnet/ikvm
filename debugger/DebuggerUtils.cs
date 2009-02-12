@@ -54,5 +54,15 @@ namespace ikvm.debugger
             }
         }
 
+        /// <summary>
+        /// Convert a JNI signature of the class (for example, "Ljava/lang/String;").   
+        /// </summary>
+        /// <param name="jniName"></param>
+        /// <returns></returns>
+        internal static String ConvertJniClassName(String jniName)
+        {
+            String name = jniName.Substring(1, jniName.Length-2).Replace('/', '.');
+            return name;
+        }
     }
 }

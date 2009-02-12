@@ -74,11 +74,26 @@ namespace ikvm.debugger
         internal const int InstanceCounts = 21;
     }
 
-    static class EventRequest
+    static class ReferenceType
     {
-        internal const int Set = 1;
-        internal const int Clear = 2;
-        internal const int ClearAllBreakpoints = 3;
+        internal const int Signature = 1;
+        internal const int ClassLoader = 2;
+        internal const int Modifiers = 3;
+        internal const int Fields = 4;
+        internal const int Methods = 5;
+        internal const int GetValues = 6;
+        internal const int SourceFile = 7;
+        internal const int NestedTypes = 8;
+        internal const int Status = 9;
+        internal const int Interfaces = 10;
+        internal const int ClassObject = 11;
+        internal const int SourceDebugExtension = 12;
+        internal const int SignatureWithGeneric = 13;
+        internal const int FieldsWithGeneric = 14;
+        internal const int MethodsWithGeneric = 15;
+        internal const int Instances = 16;
+        internal const int ClassFileVersion = 17;
+        internal const int ConstantPool = 18;
     }
 
     static class Error
@@ -151,7 +166,6 @@ namespace ikvm.debugger
         internal const int USER_DEFINED = 5;
         internal const int THREAD_START = 6;
         internal const int THREAD_DEATH = 7;
-        internal const int THREAD_END = 7;
         internal const int CLASS_PREPARE = 8;
         internal const int CLASS_UNLOAD = 9;
         internal const int CLASS_LOAD = 10;
@@ -166,9 +180,24 @@ namespace ikvm.debugger
         internal const int MONITOR_WAIT = 45;
         internal const int MONITOR_WAITED = 46;
         internal const int VM_START = 90;
-        internal const int VM_INIT = 90;
         internal const int VM_DEATH = 99;
         internal const int VM_DISCONNECTED = 100;
+    }
+
+    static class EventModifierKind
+    {
+        internal const int Count = 1;
+        internal const int Conditional = 2;
+        internal const int ThreadOnly = 3;
+        internal const int ClassOnly = 4;
+        internal const int ClassMatch = 5;
+        internal const int ClassExclude = 6;
+        internal const int LocationOnly = 7;
+        internal const int ExceptionOnly = 8;
+        internal const int FieldOnly = 9;
+        internal const int Step = 10;
+        internal const int InstanceOnly = 11;
+        internal const int SourceNameMatch = 12;
     }
 
     static class ThreadStatus

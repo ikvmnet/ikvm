@@ -50,11 +50,14 @@ namespace ikvm.debugger
             while (true)
             {
                 Packet packet = conn.ReadPacket();
-                Console.WriteLine(packet.CommandSet + " " + packet.Command);
+                Console.Error.WriteLine("Packet:"+packet.CommandSet + " " + packet.Command);
                 switch (packet.CommandSet)
                 {
                     case CommandSet.VirtualMachine:
                         CommandSetVirtualMachine(packet);
+                        break;
+                    case CommandSet.ReferenceType:
+                        CommandSetReferenceType(packet);
                         break;
                     case CommandSet.EventRequest:
                         CommandSetEventRequest(packet);
@@ -80,6 +83,17 @@ namespace ikvm.debugger
                     packet.WriteInt(6);
                     packet.WriteString("1.6.0");
                     packet.WriteString("IKVM.NET");
+                    conn.SendPacket(packet);
+                    break;
+                case VirtualMachine.ClassesBySignature:
+                    String jniClassName = packet.ReadString();
+                    packet.WriteInt(1); // count
+
+                    packet.WriteByte(TypeTag.CLASS);
+                    packet.WriteFieldID(target.GetTypeID(jniClassName)); //TODO should be a ID
+                    packet.WriteInt(ClassStatus.INITIALIZED);
+
+                    conn.SendPacket(packet);
                     break;
                 case VirtualMachine.AllThreads:
                     int[] ids = target.GetThreadIDs();
@@ -99,27 +113,54 @@ namespace ikvm.debugger
                     packet.WriteInt(size); // frameID size in bytes
                     conn.SendPacket(packet);
                     break;
+                case VirtualMachine.Exit:
+                    target.Exit();
+                    break;
                 default:
                     NotImplementedPacket(packet);
                     break;
             }
         }
 
+        /// <summary>
+        /// http://java.sun.com/javase/6/docs/platform/jpda/jdwp/jdwp-protocol.html#JDWP_ReferenceType
+        /// </summary>
+        /// <param name="packet"></param>
+        private void CommandSetReferenceType(Packet packet)
+        {
+            switch (packet.Command)
+            {
+                case ReferenceType.MethodsWithGeneric:
+                    int refType = packet.ReadInt();
+                    Console.Error.WriteLine(refType);
+                    NotImplementedPacket(packet);
+                    break;
+                default:
+                    NotImplementedPacket(packet);
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// http://java.sun.com/javase/6/docs/platform/jpda/jdwp/jdwp-protocol.html#JDWP_EventRequest
+        /// </summary>
+        /// <param name="packet"></param>
         private void CommandSetEventRequest(Packet packet)
         {
             switch (packet.Command)
             {
-                case EventRequest.Set:
-                    byte eventKind = packet.ReadByte();
-                    byte suspendPolicy = packet.ReadByte();
-                    int count = packet.ReadInt();
-Console.Error.WriteLine("Set:" + eventKind + "-" + suspendPolicy + "-" + count);
-                    for (int i = 0; i < count; i++)
+                case EventRequest.CmdSet:
+                    EventRequest eventRequest = EventRequest.create(packet);
+                    Console.Error.WriteLine(eventRequest);
+                    if (eventRequest == null)
                     {
-                        byte modKind = packet.ReadByte();
                         NotImplementedPacket(packet);
                     }
-                    conn.SendPacket(packet);
+                    else
+                    {
+                        packet.WriteInt(packet.Id); // should be EventID and not PacketID
+                        conn.SendPacket(packet);
+                    }
                     break;
                 default:
                     NotImplementedPacket(packet);
