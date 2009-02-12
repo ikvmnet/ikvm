@@ -2242,26 +2242,9 @@ class Compiler
 					StoreLocal(instr);
 					break;
 				case NormalizedByteCode.__dstore_conv:
-				{
-					LocalVar v = StoreLocal(instr);
-					if(v != null && !v.isArg)
-					{
-						// HACK this appears to be the fastest way to do the equivalent of
-						// an explicit conv.r8. Simply doing a conv.r8 can result in the
-						// CLR JIT using an unaligned stack address for the conversion
-						// and that is ridiculously expensive. Doing this indirect load
-						// triggers the stack alignment and according to my reading
-						// of the ECMA CLI spec is guaranteed to result in a converted
-						// value (and in practice it actually works and seems to
-						// perform reasonably well). The downside is that it affects
-						// performance negatively on x64 where a conv.r8 is free.
-						ilGenerator.Emit(OpCodes.Ldloca, v.builder);
-						ilGenerator.Emit(OpCodes.Volatile);
-						ilGenerator.Emit(OpCodes.Ldind_R8);
-						ilGenerator.Emit(OpCodes.Pop);
-					}
+					ilGenerator.Emit(OpCodes.Conv_R8);
+					StoreLocal(instr);
 					break;
-				}
 				case NormalizedByteCode.__dstore:
 					StoreLocal(instr);
 					break;
@@ -3648,20 +3631,6 @@ class Compiler
 		if(v.isArg)
 		{
 			int i = m.ArgMap[instr.NormalizedArg1];
-			if(v.type == PrimitiveTypeWrapper.DOUBLE)
-			{
-				ilGenerator.Emit(OpCodes.Ldarga, (short)i);
-				ilGenerator.Emit(OpCodes.Volatile);
-				ilGenerator.Emit(OpCodes.Ldind_R8);
-				return v;
-			}
-			if(v.type == PrimitiveTypeWrapper.FLOAT)
-			{
-				ilGenerator.Emit(OpCodes.Ldarga, (short)i);
-				ilGenerator.Emit(OpCodes.Volatile);
-				ilGenerator.Emit(OpCodes.Ldind_R4);
-				return v;
-			}
 			switch(i)
 			{
 				case 0:
@@ -3686,6 +3655,14 @@ class Compiler
 						ilGenerator.Emit(OpCodes.Ldarg, (short)i);
 					}
 					break;
+			}
+			if(v.type == PrimitiveTypeWrapper.DOUBLE)
+			{
+				ilGenerator.Emit(OpCodes.Conv_R8);
+			}
+			if(v.type == PrimitiveTypeWrapper.FLOAT)
+			{
+				ilGenerator.Emit(OpCodes.Conv_R4);
 			}
 		}
 		else if(v.type == VerifierTypeWrapper.Null)
