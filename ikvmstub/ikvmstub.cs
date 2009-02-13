@@ -42,6 +42,7 @@ public class NetExp
 		IKVM.Internal.Tracer.EnableTraceForDebug();
 		string assemblyNameOrPath = null;
 		bool continueOnError = false;
+		bool autoLoadSharedClassLoaderAssemblies = false;
 		foreach(string s in args)
 		{
 			if(s.StartsWith("-") || assemblyNameOrPath != null)
@@ -53,6 +54,10 @@ public class NetExp
 				else if(s == "-skiperror")
 				{
 					continueOnError = true;
+				}
+				else if(s == "-shared")
+				{
+					autoLoadSharedClassLoaderAssemblies = true;
 				}
 				else if(s.StartsWith("-r:") || s.StartsWith("-reference:"))
 				{
@@ -116,6 +121,10 @@ public class NetExp
 		}
 		else
 		{
+			if (assembly.ReflectionOnly && IsJavaModule(assembly.ManifestModule))
+			{
+				Console.Error.WriteLine("Warning: Running ikvmstub on ikvmc compiled assemblies is not supported.");
+			}
 			try
 			{
 				using (zipFile = new ZipOutputStream(new java.io.FileOutputStream(assembly.GetName().Name + ".jar")))
@@ -123,7 +132,23 @@ public class NetExp
 					zipFile.setComment(ikvm.runtime.Startup.getVersionAndCopyrightInfo());
 					try
 					{
-						rc = ProcessAssembly(assembly, continueOnError);
+						List<Assembly> assemblies = new List<Assembly>();
+						assemblies.Add(assembly);
+						if (autoLoadSharedClassLoaderAssemblies)
+						{
+							LoadSharedClassLoaderAssemblies(assembly, assemblies);
+						}
+						foreach (Assembly asm in assemblies)
+						{
+							if (ProcessAssembly(asm, continueOnError) != 0)
+							{
+								rc = 1;
+								if (!continueOnError)
+								{
+									break;
+								}
+							}
+						}
 					}
 					catch (ReflectionTypeLoadException x)
 					{
@@ -161,6 +186,52 @@ public class NetExp
 			}
 		}
 		return rc;
+	}
+
+	private static bool IsJavaModule(Module module)
+	{
+		foreach (CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(module))
+		{
+			if (cad.Constructor.DeclaringType.FullName == "IKVM.Attributes.JavaModuleAttribute")
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private static void LoadSharedClassLoaderAssemblies(Assembly assembly, List<Assembly> assemblies)
+	{
+		if (assembly.GetManifestResourceInfo("ikvm.exports") != null)
+		{
+			// If this is the main assembly in a multi assembly group, try to pre-load all the assemblies.
+			// (This is required to make Assembly.ReflectionOnlyLoad() work later on (because it doesn't fire the ReflectionOnlyAssemblyResolve event).)
+			using (Stream stream = assembly.GetManifestResourceStream("ikvm.exports"))
+			{
+				BinaryReader rdr = new BinaryReader(stream);
+				int assemblyCount = rdr.ReadInt32();
+				for (int i = 0; i < assemblyCount; i++)
+				{
+					AssemblyName name = new AssemblyName(rdr.ReadString());
+					int typeCount = rdr.ReadInt32();
+					if (typeCount > 0)
+					{
+						for (int j = 0; j < typeCount; j++)
+						{
+							rdr.ReadInt32();
+						}
+						try
+						{
+							assemblies.Add(Assembly.Load(name));
+						}
+						catch
+						{
+							Console.WriteLine("Warning: Unable to load shared class loader assembly: {0}", name.Name);
+						}
+					}
+				}
+			}
+		}
 	}
 
 	private static Assembly CurrentDomain_ReflectionOnlyAssemblyResolve(object sender, ResolveEventArgs args)
