@@ -26,11 +26,11 @@
     </target>
 
     <target name="ikvm.japi" depends="jar,japize">
-	<exec program="../bin/japize.exe" useruntimeengine="true" commandline="unzip as IKVM-${IKVM_VERSION} apis IKVM.OpenJDK.ClassLibrary.jar +java +javax +org -java.awt.dnd.peer -java.awt.peer -org.apache -org.w3c.dom.css -org.w3c.dom.events -org.w3c.dom.html -org.w3c.dom.stylesheets -org.w3c.dom.traversal -org.w3c.dom.views -java.text.resources" />
+	<exec program="../bin/japize.exe" useruntimeengine="true" commandline="unzip as IKVM-${IKVM_VERSION} apis IKVM.OpenJDK.Core.jar +java +javax +org -java.awt.dnd.peer -java.awt.peer -org.apache -org.w3c.dom.css -org.w3c.dom.events -org.w3c.dom.html -org.w3c.dom.stylesheets -org.w3c.dom.traversal -org.w3c.dom.views -java.text.resources" />
     </target>
 
     <target name="jar">
-	<exec program="../bin/ikvmstub.exe" useruntimeengine="true" commandline="-serialver IKVM.OpenJDK.ClassLibrary" />
+	<exec program="../bin/ikvmstub.exe" useruntimeengine="true" commandline="-serialver -shared IKVM.OpenJDK.Core" />
     </target>
 
     <target name="japize">
@@ -40,7 +40,7 @@
     <target name="clean">
         <delete failonerror="false">
 	    <fileset>
-                <include name="IKVM.OpenJDK.ClassLibrary.jar" />
+                <include name="IKVM.OpenJDK.Core.jar" />
                 <include name="japi1.diff" />
                 <include name="japi2.diff" />
                 <include name="${REFERENCE_API_NAME}.japi" />
