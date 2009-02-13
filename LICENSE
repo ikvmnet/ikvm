@@ -1,13 +1,13 @@
 IMPORTANT NOTICE
 
-  Copyright (C) 1998-2007 Free Software Foundation, Inc.
-  Copyright (C) 1996-2007 Sun Microsystems, Inc.
-  Copyright (C) 2002-2007 Jeroen Frijters
+  Copyright (C) 1998-2008 Free Software Foundation, Inc.
+  Copyright (C) 1996-2009 Sun Microsystems, Inc.
+  Copyright (C) 2002-2009 Jeroen Frijters
 
   Some files in this distribution are part of GNU Classpath or OpenJDK and
   are licensed under the GNU General Public License (GPL) version 2
   with "Classpath" exception. This applies in particular to:
-    - IKVM.GNU.Classpath.dll
+    - IKVM.OpenJDK.*.dll
     - some of the *.java files (see each file header for license)
 
   See http://www.gnu.org/software/classpath/ for information on the
@@ -18,7 +18,7 @@ IMPORTANT NOTICE
 
 -----------------------------------------------------------------------------
 
-  Copyright (C) 2002-2007 Jeroen Frijters
+  Copyright (C) 2002-2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -388,3 +388,38 @@ as provided by Sun in the LICENSE file that accompanied this code."
     you modify this library, you may extend this exception to your version of
     the library, but you are not obligated to do so.  If you do not wish to do
     so, delete this exception statement from your version.
+
+-----------------------------------------------------------------------------
+
+ -------------------------------------------------------------------------
+        $Id: JMath.java 4369 2007-01-16 16:58:08Z fviale $
+ -------------------------------------------------------------------------
+        Copyright (c) 1999 Visual Numerics Inc. All Rights Reserved.
+
+ Permission to use, copy, modify, and distribute this software is freely
+ granted by Visual Numerics, Inc., provided that the copyright notice
+ above and the following warranty disclaimer are preserved in human
+ readable form.
+
+ Because this software is licenses free of charge, it is provided
+ "AS IS", with NO WARRANTY.  TO THE EXTENT PERMITTED BY LAW, VNI
+ DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+ TO ITS PERFORMANCE, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ VNI WILL NOT BE LIABLE FOR ANY DAMAGES WHATSOEVER ARISING OUT OF THE USE
+ OF OR INABILITY TO USE THIS SOFTWARE, INCLUDING BUT NOT LIMITED TO DIRECT,
+ INDIRECT, SPECIAL, CONSEQUENTIAL, PUNITIVE, AND EXEMPLARY DAMAGES, EVEN
+ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+
+ This Java code is based on C code in the package fdlibm,
+ which can be obtained from www.netlib.org.
+ The original fdlibm C code contains the following notice.
+
+ Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+
+ Developed at SunSoft, a Sun Microsystems, Inc. business.
+ Permission to use, copy, modify, and distribute this
+ software is freely granted, provided that this notice
+ is preserved.
+
+-----------------------------------------------------------------------------
