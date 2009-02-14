@@ -123,6 +123,11 @@ Console.Error.WriteLine("Data Size:" + packet.data.Length);
             return data[offset++];
         }
 
+        internal bool ReadBool()
+        {
+            return data[offset++] != 0;
+        }
+
         internal String ReadString()
         {
             System.Text.UTF8Encoding encoding = new System.Text.UTF8Encoding();
@@ -132,6 +137,23 @@ Console.Error.WriteLine("Data Size:" + packet.data.Length);
             return new String(chars);
         }
 
+
+        internal int ReadObjectID()
+        {
+            return ReadInt();
+        }
+
+        internal Location ReadLocation()
+        {
+            Location loc = new Location();
+            loc.tagType = ReadByte();
+            loc.classID = ReadObjectID();
+            loc.methodID = ReadObjectID();
+            loc.index = new byte[8];
+            Array.Copy(data, offset, loc.index, 0, 8);
+            offset += 8;
+            return loc;
+        }
 
         internal int Id
         {
@@ -173,6 +195,11 @@ Console.Error.WriteLine("Data Size:" + packet.data.Length);
             output.WriteByte((byte)(value));
         }
 
+        internal void WriteBool(bool value)
+        {
+            output.WriteByte(value ? (byte)1 : (byte)0);
+        }
+
         internal void WriteString(String value)
         {
             System.Text.UTF8Encoding encoding = new System.Text.UTF8Encoding();
@@ -183,14 +210,16 @@ Console.Error.WriteLine("Data Size:" + packet.data.Length);
 
         internal void WriteObjectID(int value)
         {
-            // TODO 64 Bit
             WriteInt(value);
         }
 
-        internal void WriteFieldID(int value)
-        {
-            // TODO 64 Bit
-            WriteInt(value);
-        }
+    }
+
+    struct Location
+    {
+        internal byte tagType;
+        internal int classID;
+        internal int methodID;
+        internal byte[] index;
     }
 }

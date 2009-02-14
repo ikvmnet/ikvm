@@ -21,9 +21,11 @@
   jeroen@frijters.net
   
 */
+
 using System;
 using System.Collections.Generic;
 using System.Text;
+using ikvm.debugger.requests;
 
 namespace ikvm.debugger
 {
@@ -90,7 +92,7 @@ namespace ikvm.debugger
                     packet.WriteInt(1); // count
 
                     packet.WriteByte(TypeTag.CLASS);
-                    packet.WriteFieldID(target.GetTypeID(jniClassName)); //TODO should be a ID
+                    packet.WriteObjectID(target.GetTypeID(jniClassName)); //TODO should be a ID
                     packet.WriteInt(ClassStatus.INITIALIZED);
 
                     conn.SendPacket(packet);
@@ -104,8 +106,7 @@ namespace ikvm.debugger
                     }
                     break;
                 case VirtualMachine.IDSizes:
-                    // TODO 64 Bit
-                    int size = System.IntPtr.Size;
+                    int size = 4; //we use a size of 4, a value of 8 is also possible
                     packet.WriteInt(size); // fieldID size in bytes
                     packet.WriteInt(size); // methodID size in bytes
                     packet.WriteInt(size); // objectID size in bytes
