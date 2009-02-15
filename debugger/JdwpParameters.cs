@@ -45,53 +45,70 @@ namespace ikvm.debugger
         /// <param name="command">a JDWP parameter</param>
         internal void Parse(String command)
         {
+            int length = 0;
             if (command.StartsWith("-Xrunjdwp:"))
             {
-                String str = command.Substring("-Xrunjdwp:".Length);
-                String[] tokens = str.Split(',');
-                for (int i = 0; i < tokens.Length; i++)
+                length = "-Xrunjdwp:".Length;
+            }
+            else if (command.StartsWith("-agentlib:jdwp="))
+            {
+                length = "-agentlib:jdwp=".Length;
+            }
+
+            if (length == 0)
+            {
+                PrintHelp();
+                Exit(1);
+            }
+
+            String str = command.Substring(length);
+            String[] tokens = str.Split(',');
+            for (int i = 0; i < tokens.Length; i++)
+            {
+                String token = tokens[i].Trim();
+                if ("help".Equals(token))
                 {
-                    String token = tokens[i].Trim();
-                    if ("help".Equals(token))
-                    {
-                        PrintHelp();
-                        Exit(0);
-                    }
-                    String[] keyValue = token.Split('=');
-                    if (keyValue.Length != 2)
-                    {
-                        Console.WriteLine("Sytax error with: " + token);
+                    PrintHelp();
+                    Exit(0);
+                }
+                String[] keyValue = token.Split('=');
+                if (keyValue.Length != 2)
+                {
+                    Console.WriteLine("Sytax error with: " + token);
+                    PrintHelp();
+                    Exit(1);
+                }
+                String key = keyValue[0].Trim();
+                String value = keyValue[1].Trim();
+                switch (key)
+                {
+                    case "transport":
+                        if (!value.Equals("dt_socket"))
+                        {
+                            Console.WriteLine("Only transport=dt_socket is supported.");
+                            Exit(1);
+                        }
+                        break;
+                    case "address":
+                        String[] hostPort = value.Split(':');
+                        if (hostPort.Length != 2)
+                        {
+                            Console.WriteLine("Wrong address: " + value);
+                            Exit(1);
+                        }
+                        host = hostPort[0];
+                        port = Int32.Parse(hostPort[1]);
+                        break;
+                    case "server":
+                        server = "y".Equals(value);
+                        break;
+                    default:
+                        Console.WriteLine("Not supported parameter: " + key);
                         PrintHelp();
                         Exit(1);
-                    }
-                    String key = keyValue[0].Trim();
-                    String value = keyValue[1].Trim();
-                    switch (key)
-                    {
-                        case "transport":
-                            if(!value.Equals("dt_socket")){
-                                Console.WriteLine("Only transport=dt_socket is supported.");
-                                Exit(1);
-                            }
-                            break;
-                        case "address":
-                            String[] hostPort = value.Split(':');
-                            if (hostPort.Length != 2)
-                            {
-                                Console.WriteLine("Wrong address: " + value);
-                                Exit(1);
-                            }
-                            host = hostPort[0];
-                            port = Int32.Parse(hostPort[1]);
-                            break;
-                        case "server":
-                            server = "y".Equals(value);
-                            break;
-                    }
+                        break;
                 }
             }
-            //    || str.startsWith("-agentlib:jdwp")
-
         }
 
         internal String Host
@@ -104,6 +121,11 @@ namespace ikvm.debugger
             get { return port; }
         }
 
+        /// <summary>
+        /// If the debugger should listen as server.
+        /// true - listen as server;
+        /// false - connect to the debugger;
+        /// </summary>
         internal bool Server
         {
             get { return server; }
