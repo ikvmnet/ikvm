@@ -38,6 +38,8 @@ namespace ikvm.debugger
 
         private bool server;
 
+        private bool suspend = true;
+
         /// <summary>
         /// Parse the command line parameters. 
         /// Terminate the program if invalid or help parameter.
@@ -101,6 +103,9 @@ namespace ikvm.debugger
                         break;
                     case "server":
                         server = "y".Equals(value);
+                        break;
+                    case "suspend":
+                        suspend = "y".Equals(value);
                         break;
                     default:
                         Console.WriteLine("Not supported parameter: " + key);
