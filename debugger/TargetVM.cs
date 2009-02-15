@@ -75,6 +75,11 @@ namespace ikvm.debugger
             return ids;
         }
 
+        internal void Suspend()
+        {
+            process.Break();
+        }
+
         internal void Exit()
         {
             process.Terminate();
@@ -115,7 +120,7 @@ namespace ikvm.debugger
                     try
                     {
                         DebugType type = types[t];
-                        Console.Error.WriteLine(type + " " + type.FullName);
+                        //Console.Error.WriteLine(type + " " + type.FullName);
                         typeMap.Add(type.FullName, type);
                     }
                     catch (ArgumentException)
@@ -127,7 +132,6 @@ namespace ikvm.debugger
             catch (System.Exception ex)
             {
                 Console.Error.WriteLine(ex);
-                Console.Error.WriteLine(ex.StackTrace);
             }
             Console.Error.WriteLine("ModuleLoaded:" + typeMap.Count);
         }

@@ -104,6 +104,7 @@ namespace ikvm.debugger
                     {
                         packet.WriteObjectID(ids[i]);
                     }
+                    conn.SendPacket(packet);
                     break;
                 case VirtualMachine.IDSizes:
                     int size = 4; //we use a size of 4, a value of 8 is also possible
@@ -114,11 +115,16 @@ namespace ikvm.debugger
                     packet.WriteInt(size); // frameID size in bytes
                     conn.SendPacket(packet);
                     break;
+                case VirtualMachine.Suspend:
+                    target.Suspend();
+                    conn.SendPacket(packet);
+                    break;
                 case VirtualMachine.Exit:
                     target.Exit();
+                    //no SendPacket
                     break;
                 default:
-                    NotImplementedPacket(packet);
+                    NotImplementedPacket(packet); // include a SendPacket
                     break;
             }
         }
