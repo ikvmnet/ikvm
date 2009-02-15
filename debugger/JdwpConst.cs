@@ -249,16 +249,37 @@ namespace ikvm.debugger
         internal const int CLASS_OBJECT = 99;
     }
 
+    /// <summary>
+    /// http://java.sun.com/javase/6/docs/platform/jpda/jdwp/jdwp-protocol.html#JDWP_StepDepth
+    /// </summary>
     static class StepDepth
     {
+        /// <summary>
+        /// Step into any method calls that occur before the end of the step.
+        /// </summary>
         internal const int INTO = 0;
+        /// <summary>
+        /// Step over any method calls that occur before the end of the step.
+        /// </summary>
         internal const int OVER = 1;
+        /// <summary>
+        /// Step out of the current method.
+        /// </summary>
         internal const int OUT = 2;
     }
 
+    /// <summary>
+    /// http://java.sun.com/javase/6/docs/platform/jpda/jdwp/jdwp-protocol.html#JDWP_StepSize
+    /// </summary>
     static class StepSize
     {
+        /// <summary>
+        /// Step by the minimum possible amount (often a bytecode instruction).   
+        /// </summary>
         internal const int MIN = 0;
+        /// <summary>
+        /// Step to the next source line unless there is no line number information in which case a MIN step is done instead.
+        /// </summary>
         internal const int LINE = 1;
     }
 
