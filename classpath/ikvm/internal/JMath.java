@@ -47,7 +47,7 @@ import java.util.Random;
  */
 @ikvm.lang.Internal
 public final class JMath {
-    static public final double PI = Double.longBitsToDouble(0x400921fb54442d18L); /* 3.14159265358979323846 */
+    static public final double PI = 0x1.921fb54442d18p1; /* 3.14159265358979323846 */
     static public final double E = 2.7182818284590452354;
     static private Random random;
 
@@ -344,10 +344,10 @@ public final class JMath {
     }
 
     static private final double[] TWO52 = {
-            Double.longBitsToDouble(0x4330000000000000L), /*  4.50359962737049600000e+15 */
-            Double.longBitsToDouble(0xc330000000000000L) /* -4.50359962737049600000e+15 */
+            0x1.0p52, /*  4.50359962737049600000e+15 */
+            -0x1.0p52 /* -4.50359962737049600000e+15 */
         };
-    static private final double NEGATIVE_ZERO = Double.longBitsToDouble(0x8000000000000000L);
+    static private final double NEGATIVE_ZERO = -0x0.0p0;
 
     /**
      *        Returns the value of its argument rounded toward
@@ -594,23 +594,23 @@ public final class JMath {
     }
 
     static private final double[] halF = { 0.5, -0.5 };
-    static private final double twom1000 = Double.longBitsToDouble(0x0170000000000000L); /* 2**-1000=9.33263618503218878990e-302 */
-    static private final double o_threshold = Double.longBitsToDouble(0x40862e42fefa39efL); /* 7.09782712893383973096e+02 */
-    static private final double u_threshold = Double.longBitsToDouble(0xc0874910d52d3051L); /* -7.45133219101941108420e+02 */
+    static private final double twom1000 = 0x1.0p-1000; /* 2**-1000=9.33263618503218878990e-302 */
+    static private final double o_threshold = 0x1.62e42fefa39efp9; /* 7.09782712893383973096e+02 */
+    static private final double u_threshold = -0x1.74910d52d3051p9; /* -7.45133219101941108420e+02 */
     static private final double[] ln2HI = {
-            Double.longBitsToDouble(0x3fe62e42fee00000L), /*  6.93147180369123816490e-01 */
-            Double.longBitsToDouble(0xbfe62e42fee00000L)
+            0x1.62e42feep-1, /*  6.93147180369123816490e-01 */
+            -0x1.62e42feep-1
         }; /* -6.93147180369123816490e-01 */
     static private final double[] ln2LO = {
-            Double.longBitsToDouble(0x3dea39ef35793c76L), /*  1.90821492927058770002e-10 */
-            Double.longBitsToDouble(0xbdea39ef35793c76L)
+            0x1.a39ef35793c76p-33, /*  1.90821492927058770002e-10 */
+            -0x1.a39ef35793c76p-33
         }; /* -1.90821492927058770002e-10 */
-    static private final double invln2 = Double.longBitsToDouble(0x3ff71547652b82feL); /* 1.44269504088896338700e+00 */
-    static private final double P1 = Double.longBitsToDouble(0x3fc555555555553eL); /*  1.66666666666666019037e-01 */
-    static private final double P2 = Double.longBitsToDouble(0xbf66c16c16bebd93L); /* -2.77777777770155933842e-03 */
-    static private final double P3 = Double.longBitsToDouble(0x3f11566aaf25de2cL); /*  6.61375632143793436117e-05 */
-    static private final double P4 = Double.longBitsToDouble(0xbebbbd41c5d26bf1L); /* -1.65339022054652515390e-06 */
-    static private final double P5 = Double.longBitsToDouble(0x3e66376972bea4d0L); /*  4.13813679705723846039e-08 */
+    static private final double invln2 = 0x1.71547652b82fep0; /* 1.44269504088896338700e+00 */
+    static private final double P1 = 0x1.555555555553ep-3; /*  1.66666666666666019037e-01 */
+    static private final double P2 = -0x1.6c16c16bebd93p-9; /* -2.77777777770155933842e-03 */
+    static private final double P3 = 0x1.1566aaf25de2cp-14; /*  6.61375632143793436117e-05 */
+    static private final double P4 = -0x1.bbd41c5d26bf1p-20; /* -1.65339022054652515390e-06 */
+    static private final double P5 = 0x1.6376972bea4dp-25; /*  4.13813679705723846039e-08 */
 
     /* exp(x)
      * Returns the exponential of x.
@@ -744,15 +744,15 @@ public final class JMath {
         return Double.longBitsToDouble(iy);
     }
 
-    static private final double ln2_hi = Double.longBitsToDouble(0x3fe62e42fee00000L); /* 6.93147180369123816490e-01 */
-    static private final double ln2_lo = Double.longBitsToDouble(0x3dea39ef35793c76L); /* 1.90821492927058770002e-10 */
-    static private final double Lg1 = Double.longBitsToDouble(0x3fe5555555555593L); /* 6.666666666666735130e-01 */
-    static private final double Lg2 = Double.longBitsToDouble(0x3fd999999997fa04L); /* 3.999999999940941908e-01 */
-    static private final double Lg3 = Double.longBitsToDouble(0x3fd2492494229359L); /* 2.857142874366239149e-01 */
-    static private final double Lg4 = Double.longBitsToDouble(0x3fcc71c51d8e78afL); /* 2.222219843214978396e-01 */
-    static private final double Lg5 = Double.longBitsToDouble(0x3fc7466496cb03deL); /* 1.818357216161805012e-01 */
-    static private final double Lg6 = Double.longBitsToDouble(0x3fc39a09d078c69fL); /* 1.531383769920937332e-01 */
-    static private final double Lg7 = Double.longBitsToDouble(0x3fc2f112df3e5244L); /* 1.479819860511658591e-01 */
+    static private final double ln2_hi = 0x1.62e42feep-1; /* 6.93147180369123816490e-01 */
+    static private final double ln2_lo = 0x1.a39ef35793c76p-33; /* 1.90821492927058770002e-10 */
+    static private final double Lg1 = 0x1.5555555555593p-1; /* 6.666666666666735130e-01 */
+    static private final double Lg2 = 0x1.999999997fa04p-2; /* 3.999999999940941908e-01 */
+    static private final double Lg3 = 0x1.2492494229359p-2; /* 2.857142874366239149e-01 */
+    static private final double Lg4 = 0x1.c71c51d8e78afp-3; /* 2.222219843214978396e-01 */
+    static private final double Lg5 = 0x1.7466496cb03dep-3; /* 1.818357216161805012e-01 */
+    static private final double Lg6 = 0x1.39a09d078c69fp-3; /* 1.531383769920937332e-01 */
+    static private final double Lg7 = 0x1.2f112df3e5244p-3; /* 1.479819860511658591e-01 */
 
     /*
      * Return the logrithm of x
@@ -894,7 +894,6 @@ public final class JMath {
      *        @return        Returns the sine of x.
      */
     static public double sin(double x) {
-        double[] y = new double[2];
         double z = 0.0;
         int n;
         int ix = __HI(x);
@@ -910,6 +909,7 @@ public final class JMath {
         } else {
 
             /* argument reduction needed */
+            double[] y = new double[2];
             n = __ieee754_rem_pio2(x, y);
             switch (n & 3) {
             case 0:
@@ -924,12 +924,12 @@ public final class JMath {
         }
     }
 
-    static private double S1 = -1.66666666666666324348e-01; /* 0xBFC55555, 0x55555549 */
-    static private double S2 = 8.33333333332248946124e-03; /* 0x3F811111, 0x1110F8A6 */
-    static private double S3 = -1.98412698298579493134e-04; /* 0xBF2A01A0, 0x19C161D5 */
-    static private double S4 = 2.75573137070700676789e-06; /* 0x3EC71DE3, 0x57B1FE7D */
-    static private double S5 = -2.50507602534068634195e-08; /* 0xBE5AE5E6, 0x8A2B9CEB */
-    static private double S6 = 1.58969099521155010221e-10; /* 0x3DE5D93A, 0x5ACFD57C */
+    static private final double S1 = -1.66666666666666324348e-01; /* 0xBFC55555, 0x55555549 */
+    static private final double S2 = 8.33333333332248946124e-03; /* 0x3F811111, 0x1110F8A6 */
+    static private final double S3 = -1.98412698298579493134e-04; /* 0xBF2A01A0, 0x19C161D5 */
+    static private final double S4 = 2.75573137070700676789e-06; /* 0x3EC71DE3, 0x57B1FE7D */
+    static private final double S5 = -2.50507602534068634195e-08; /* 0xBE5AE5E6, 0x8A2B9CEB */
+    static private final double S6 = 1.58969099521155010221e-10; /* 0x3DE5D93A, 0x5ACFD57C */
 
     /*
      * kernel sin function on [-pi/4, pi/4], pi/4 ~ 0.7854
@@ -985,7 +985,6 @@ public final class JMath {
      */
     static public double cos(double x) {
         double z = 0.0;
-        double[] y = new double[2];
         int n;
         int ix;
 
@@ -1003,6 +1002,7 @@ public final class JMath {
 
             /* argument reduction needed */
         } else {
+            double[] y = new double[2];
             n = __ieee754_rem_pio2(x, y);
             switch (n & 3) {
             case 0:
@@ -1017,13 +1017,13 @@ public final class JMath {
         }
     }
 
-    static private final double one = Double.longBitsToDouble(0x3ff0000000000000L); /*  1.00000000000000000000e+00 */
-    static private final double C1 = Double.longBitsToDouble(0x3fa555555555554cL); /*  4.16666666666666019037e-02 */
-    static private final double C2 = Double.longBitsToDouble(0xbf56c16c16c15177L); /* -1.38888888888741095749e-03 */
-    static private final double C3 = Double.longBitsToDouble(0x3efa01a019cb1590L); /*  2.48015872894767294178e-05 */
-    static private final double C4 = Double.longBitsToDouble(0xbe927e4f809c52adL); /* -2.75573143513906633035e-07 */
-    static private final double C5 = Double.longBitsToDouble(0x3e21ee9ebdb4b1c4L); /*  2.08757232129817482790e-09 */
-    static private final double C6 = Double.longBitsToDouble(0xbda8fae9be8838d4L); /* -1.13596475577881948265e-11 */
+    static private final double one = 0x1.0p0; /*  1.00000000000000000000e+00 */
+    static private final double C1 = 0x1.555555555554cp-5; /*  4.16666666666666019037e-02 */
+    static private final double C2 = -0x1.6c16c16c15177p-10; /* -1.38888888888741095749e-03 */
+    static private final double C3 = 0x1.a01a019cb159p-16; /*  2.48015872894767294178e-05 */
+    static private final double C4 = -0x1.27e4f809c52adp-22; /* -2.75573143513906633035e-07 */
+    static private final double C5 = 0x1.1ee9ebdb4b1c4p-29; /*  2.08757232129817482790e-09 */
+    static private final double C6 = -0x1.8fae9be8838d4p-37; /* -1.13596475577881948265e-11 */
 
     /*
      * kernel cos function on [-pi/4, pi/4], pi/4 ~ 0.785398164
@@ -1122,22 +1122,22 @@ public final class JMath {
         }
     }
 
-    static private final double pio4 = Double.longBitsToDouble(0x3fe921fb54442d18L); /* 7.85398163397448278999e-01 */
-    static private final double pio4lo = Double.longBitsToDouble(0x3c81a62633145c07L); /* 3.06161699786838301793e-17 */
+    static private final double pio4 = 0x1.921fb54442d18p-1; /* 7.85398163397448278999e-01 */
+    static private final double pio4lo = 0x1.1a62633145c07p-55; /* 3.06161699786838301793e-17 */
     static private final double[] T = {
-            Double.longBitsToDouble(0x3fd5555555555563L), /* 3.33333333333334091986e-01 */
-            Double.longBitsToDouble(0x3fc111111110fe7aL), /* 1.33333333333201242699e-01 */
-            Double.longBitsToDouble(0x3faba1ba1bb341feL), /* 5.39682539762260521377e-02 */
-            Double.longBitsToDouble(0x3f9664f48406d637L), /* 2.18694882948595424599e-02 */
-            Double.longBitsToDouble(0x3f8226e3e96e8493L), /* 8.86323982359930005737e-03 */
-            Double.longBitsToDouble(0x3f6d6d22c9560328L), /* 3.59207910759131235356e-03 */
-            Double.longBitsToDouble(0x3f57dbc8fee08315L), /* 1.45620945432529025516e-03 */
-            Double.longBitsToDouble(0x3f4344d8f2f26501L), /* 5.88041240820264096874e-04 */
-            Double.longBitsToDouble(0x3f3026f71a8d1068L), /* 2.46463134818469906812e-04 */
-            Double.longBitsToDouble(0x3f147e88a03792a6L), /* 7.81794442939557092300e-05 */
-            Double.longBitsToDouble(0x3f12b80f32f0a7e9L), /* 7.14072491382608190305e-05 */
-            Double.longBitsToDouble(0xbef375cbdb605373L), /* -1.85586374855275456654e-05 */
-            Double.longBitsToDouble(0x3efb2a7074bf7ad4L) /* 2.59073051863633712884e-05 */
+            0x1.5555555555563p-2, /* 3.33333333333334091986e-01 */
+            0x1.111111110fe7ap-3, /* 1.33333333333201242699e-01 */
+            0x1.ba1ba1bb341fep-5, /* 5.39682539762260521377e-02 */
+            0x1.664f48406d637p-6, /* 2.18694882948595424599e-02 */
+            0x1.226e3e96e8493p-7, /* 8.86323982359930005737e-03 */
+            0x1.d6d22c9560328p-9, /* 3.59207910759131235356e-03 */
+            0x1.7dbc8fee08315p-10, /* 1.45620945432529025516e-03 */
+            0x1.344d8f2f26501p-11, /* 5.88041240820264096874e-04 */
+            0x1.026f71a8d1068p-12, /* 2.46463134818469906812e-04 */
+            0x1.47e88a03792a6p-14, /* 7.81794442939557092300e-05 */
+            0x1.2b80f32f0a7e9p-14, /* 7.14072491382608190305e-05 */
+            -0x1.375cbdb605373p-16, /* -1.85586374855275456654e-05 */
+            0x1.b2a7074bf7ad4p-16 /* 2.59073051863633712884e-05 */
         };
 
     /*
@@ -1250,21 +1250,21 @@ public final class JMath {
         }
     }
 
-    static private final double pio2_hi = Double.longBitsToDouble(0x3FF921FB54442D18L); /* 1.57079632679489655800e+00 */
-    static private final double pio2_lo = Double.longBitsToDouble(0x3C91A62633145C07L); /* 6.12323399573676603587e-17 */
-    static private final double pio4_hi = Double.longBitsToDouble(0x3FE921FB54442D18L); /* 7.85398163397448278999e-01 */
+    static private final double pio2_hi = 0x1.921fb54442d18p0; /* 1.57079632679489655800e+00 */
+    static private final double pio2_lo = 0x1.1a62633145c07p-54; /* 6.12323399573676603587e-17 */
+    static private final double pio4_hi = 0x1.921fb54442d18p-1; /* 7.85398163397448278999e-01 */
 
     /* coefficient for R(x^2) */
-    static private final double pS0 = Double.longBitsToDouble(0x3fc5555555555555L); /*  1.66666666666666657415e-01 */
-    static private final double pS1 = Double.longBitsToDouble(0xbfd4d61203eb6f7dL); /* -3.25565818622400915405e-01 */
-    static private final double pS2 = Double.longBitsToDouble(0x3fc9c1550e884455L); /*  2.01212532134862925881e-01 */
-    static private final double pS3 = Double.longBitsToDouble(0xbfa48228b5688f3bL); /* -4.00555345006794114027e-02 */
-    static private final double pS4 = Double.longBitsToDouble(0x3f49efe07501b288L); /*  7.91534994289814532176e-04 */
-    static private final double pS5 = Double.longBitsToDouble(0x3f023de10dfdf709L); /*  3.47933107596021167570e-05 */
-    static private final double qS1 = Double.longBitsToDouble(0xc0033a271c8a2d4bL); /* -2.40339491173441421878e+00 */
-    static private final double qS2 = Double.longBitsToDouble(0x40002ae59c598ac8L); /*  2.02094576023350569471e+00 */
-    static private final double qS3 = Double.longBitsToDouble(0xbfe6066c1b8d0159L); /* -6.88283971605453293030e-01 */
-    static private final double qS4 = Double.longBitsToDouble(0x3fb3b8c5b12e9282L); /*  7.70381505559019352791e-02 */
+    static private final double pS0 = 0x1.5555555555555p-3; /*  1.66666666666666657415e-01 */
+    static private final double pS1 = -0x1.4d61203eb6f7dp-2; /* -3.25565818622400915405e-01 */
+    static private final double pS2 = 0x1.9c1550e884455p-3; /*  2.01212532134862925881e-01 */
+    static private final double pS3 = -0x1.48228b5688f3bp-5; /* -4.00555345006794114027e-02 */
+    static private final double pS4 = 0x1.9efe07501b288p-11; /*  7.91534994289814532176e-04 */
+    static private final double pS5 = 0x1.23de10dfdf709p-15; /*  3.47933107596021167570e-05 */
+    static private final double qS1 = -0x1.33a271c8a2d4bp1; /* -2.40339491173441421878e+00 */
+    static private final double qS2 = 0x1.02ae59c598ac8p1; /*  2.02094576023350569471e+00 */
+    static private final double qS3 = -0x1.6066c1b8d0159p-1; /* -6.88283971605453293030e-01 */
+    static private final double qS4 = 0x1.3b8c5b12e9282p-4; /*  7.70381505559019352791e-02 */
 
     /*
      *        asin(x)
@@ -1452,29 +1452,29 @@ public final class JMath {
     }
 
     static private final double[] atanhi = {
-            Double.longBitsToDouble(0x3fddac670561bb4fL), /* 4.63647609000806093515e-01 atan(0.5)hi  */
-            Double.longBitsToDouble(0x3fe921fb54442d18L), /* 7.85398163397448278999e-01 atan(1.0)hi  */
-            Double.longBitsToDouble(0x3fef730bd281f69bL), /* 9.82793723247329054082e-01 atan(1.5)hi  */
-            Double.longBitsToDouble(0x3ff921fb54442d18L) /* 1.57079632679489655800e+00 atan(inf)hi  */
+            0x1.dac670561bb4fp-2, /* 4.63647609000806093515e-01 atan(0.5)hi  */
+            0x1.921fb54442d18p-1, /* 7.85398163397448278999e-01 atan(1.0)hi  */
+            0x1.f730bd281f69bp-1, /* 9.82793723247329054082e-01 atan(1.5)hi  */
+            0x1.921fb54442d18p0   /* 1.57079632679489655800e+00 atan(inf)hi  */
         };
     static private final double[] atanlo = {
-            Double.longBitsToDouble(0x3c7a2b7f222f65e2L), /* 2.26987774529616870924e-17 atan(0.5)lo  */
-            Double.longBitsToDouble(0x3c81a62633145c07L), /* 3.06161699786838301793e-17 atan(1.0)lo  */
-            Double.longBitsToDouble(0x3c7007887af0cbbdL), /* 1.39033110312309984516e-17 atan(1.5)lo  */
-            Double.longBitsToDouble(0x3c91a62633145c07L) /* 6.12323399573676603587e-17 atan(inf)lo  */
+            0x1.a2b7f222f65e2p-56, /* 2.26987774529616870924e-17 atan(0.5)lo  */
+            0x1.1a62633145c07p-55, /* 3.06161699786838301793e-17 atan(1.0)lo  */
+            0x1.007887af0cbbdp-56, /* 1.39033110312309984516e-17 atan(1.5)lo  */
+            0x1.1a62633145c07p-54  /* 6.12323399573676603587e-17 atan(inf)lo  */
         };
     static private final double[] aT = {
-            Double.longBitsToDouble(0x3fd555555555550dL), /*  3.33333333333329318027e-01 */
-            Double.longBitsToDouble(0xbfc999999998ebc4L), /* -1.99999999998764832476e-01 */
-            Double.longBitsToDouble(0x3fc24924920083ffL), /*  1.42857142725034663711e-01 */
-            Double.longBitsToDouble(0xbfbc71c6fe231671L), /* -1.11111104054623557880e-01 */
-            Double.longBitsToDouble(0x3fb745cdc54c206eL), /*  9.09088713343650656196e-02 */
-            Double.longBitsToDouble(0xbfb3b0f2af749a6dL), /* -7.69187620504482999495e-02 */
-            Double.longBitsToDouble(0x3fb10d66a0d03d51L), /*  6.66107313738753120669e-02 */
-            Double.longBitsToDouble(0xbfadde2d52defd9aL), /* -5.83357013379057348645e-02 */
-            Double.longBitsToDouble(0x3fa97b4b24760debL), /*  4.97687799461593236017e-02 */
-            Double.longBitsToDouble(0xbfa2b4442c6a6c2fL), /* -3.65315727442169155270e-02 */
-            Double.longBitsToDouble(0x3f90ad3ae322da11L) /*  1.62858201153657823623e-02 */
+            0x1.555555555550dp-2,  /*  3.33333333333329318027e-01 */
+            -0x1.999999998ebc4p-3, /* -1.99999999998764832476e-01 */
+            0x1.24924920083ffp-3,  /*  1.42857142725034663711e-01 */
+            -0x1.c71c6fe231671p-4, /* -1.11111104054623557880e-01 */
+            0x1.745cdc54c206ep-4,  /*  9.09088713343650656196e-02 */
+            -0x1.3b0f2af749a6dp-4, /* -7.69187620504482999495e-02 */
+            0x1.10d66a0d03d51p-4,  /*  6.66107313738753120669e-02 */
+            -0x1.dde2d52defd9ap-5, /* -5.83357013379057348645e-02 */
+            0x1.97b4b24760debp-5,  /*  4.97687799461593236017e-02 */
+            -0x1.2b4442c6a6c2fp-5, /* -3.65315727442169155270e-02 */
+            0x1.0ad3ae322da11p-6   /*  1.62858201153657823623e-02 */
         };
 
     /*
@@ -1570,9 +1570,9 @@ public final class JMath {
         }
     }
 
-    static private final double pi_o_4 = Double.longBitsToDouble(0x3fe921fb54442d18L); /* 7.8539816339744827900e-01 */
-    static private final double pi_o_2 = Double.longBitsToDouble(0x3ff921fb54442d18L); /* 1.5707963267948965580e+00 */
-    static private final double pi_lo = Double.longBitsToDouble(0x3ca1a62633145c07L); /* 1.2246467991473531772e-16 */
+    static private final double pi_o_4 = 0x1.921fb54442d18p-1; /* 7.8539816339744827900e-01 */
+    static private final double pi_o_2 = 0x1.921fb54442d18p0; /* 1.5707963267948965580e+00 */
+    static private final double pi_lo = 0x1.1a62633145c07p-53; /* 1.2246467991473531772e-16 */
 
     /*
      * Method :
@@ -1765,15 +1765,15 @@ public final class JMath {
             0x404858eb, 0x404921fb
         };
     static private final double zero = 0.00000000000000000000e+00; // 0x0000000000000000 
-    static private final double half = Double.longBitsToDouble(0x3fe0000000000000L); /* 5.00000000000000000000e-01 */
-    static private final double two24 = Double.longBitsToDouble(0x4170000000000000L); /* 1.67772160000000000000e+07 */
-    static private final double invpio2 = Double.longBitsToDouble(0x3fe45f306dc9c883L); /* 6.36619772367581382433e-01 53 bits of 2/pi */
-    static private final double pio2_1 = Double.longBitsToDouble(0x3ff921fb54400000L); /* 1.57079632673412561417e+00 first  33 bit of pi/2 */
-    static private final double pio2_1t = Double.longBitsToDouble(0x3dd0b4611a626331L); /* 6.07710050650619224932e-11 pi/2 - pio2_1 */
-    static private final double pio2_2 = Double.longBitsToDouble(0x3dd0b4611a600000L); /* 6.07710050630396597660e-11 second 33 bit of pi/2 */
-    static private final double pio2_2t = Double.longBitsToDouble(0x3ba3198a2e037073L); /* 2.02226624879595063154e-21 pi/2 - (pio2_1+pio2_2) */
-    static private final double pio2_3 = Double.longBitsToDouble(0x3ba3198a2e000000L); /* 2.02226624871116645580e-21 third  33 bit of pi/2 */
-    static private final double pio2_3t = Double.longBitsToDouble(0x397b839a252049c1L); /* 8.47842766036889956997e-32 pi/2 - (pio2_1+pio2_2+pio2_3) */
+    static private final double half = 0x1.0p-1; /* 5.00000000000000000000e-01 */
+    static private final double two24 = 0x1.0p24; /* 1.67772160000000000000e+07 */
+    static private final double invpio2 = 0x1.45f306dc9c883p-1; /* 6.36619772367581382433e-01 53 bits of 2/pi */
+    static private final double pio2_1 = 0x1.921fb544p0; /* 1.57079632673412561417e+00 first  33 bit of pi/2 */
+    static private final double pio2_1t = 0x1.0b4611a626331p-34; /* 6.07710050650619224932e-11 pi/2 - pio2_1 */
+    static private final double pio2_2 = 0x1.0b4611a6p-34; /* 6.07710050630396597660e-11 second 33 bit of pi/2 */
+    static private final double pio2_2t = 0x1.3198a2e037073p-69; /* 2.02226624879595063154e-21 pi/2 - (pio2_1+pio2_2) */
+    static private final double pio2_3 = 0x1.3198a2ep-69; /* 2.02226624871116645580e-21 third  33 bit of pi/2 */
+    static private final double pio2_3t = 0x1.b839a252049c1p-104; /* 8.47842766036889956997e-32 pi/2 - (pio2_1+pio2_2+pio2_3) */
 
     /*
      *        Return the remainder of x % pi/2 in y[0]+y[1]
@@ -1784,7 +1784,6 @@ public final class JMath {
         double t;
         double r;
         double fn;
-        double[] tx = new double[3];
         int i;
         int j;
         int nx;
@@ -1879,6 +1878,7 @@ public final class JMath {
         }
 
         /* set z = scalbn(|x|,ilogb(x)-23) */
+        double[] tx = new double[3];
         long lx = Double.doubleToLongBits(x);
         long exp = (0x7ff0000000000000L & lx) >> 52;
         exp -= 1046;
@@ -2020,16 +2020,16 @@ public final class JMath {
      * to produce the hexadecimal values shown.
      */
     static final private double[] PIo2 = {
-            Double.longBitsToDouble(0x3ff921fb40000000L), /* 1.57079625129699707031e+00 */
-            Double.longBitsToDouble(0x3e74442d00000000L), /* 7.54978941586159635335e-08 */
-            Double.longBitsToDouble(0x3cf8469880000000L), /* 5.39030252995776476554e-15 */
-            Double.longBitsToDouble(0x3b78cc5160000000L), /* 3.28200341580791294123e-22 */
-            Double.longBitsToDouble(0x39f01b8380000000L), /* 1.27065575308067607349e-29 */
-            Double.longBitsToDouble(0x387a252040000000L), /* 1.22933308981111328932e-36 */
-            Double.longBitsToDouble(0x36e3822280000000L), /* 2.73370053816464559624e-44 */
-            Double.longBitsToDouble(0x3569f31d00000000L) /* 2.16741683877804819444e-51 */
+            0x1.921fb4p0, /* 1.57079625129699707031e+00 */
+            0x1.4442dp-24, /* 7.54978941586159635335e-08 */
+            0x1.846988p-48, /* 5.39030252995776476554e-15 */
+            0x1.8cc516p-72, /* 3.28200341580791294123e-22 */
+            0x1.01b838p-96, /* 1.27065575308067607349e-29 */
+            0x1.a25204p-120, /* 1.22933308981111328932e-36 */
+            0x1.382228p-145, /* 2.73370053816464559624e-44 */
+            0x1.9f31dp-169 /* 2.16741683877804819444e-51 */
         };
-    static final private double twon24 = Double.longBitsToDouble(0x3E70000000000000L); /* 5.96046447753906250000e-08 */
+    static final private double twon24 = 0x1.0p-24; /* 5.96046447753906250000e-08 */
 
     static private int __kernel_rem_pio2(double[] x, double[] y, int e0, int nx) {
         int jz;
@@ -2206,30 +2206,30 @@ public final class JMath {
 
     static final private double[] bp = { 1.0, 1.5, };
     static final private double[] dp_h = {
-            0.0, Double.longBitsToDouble(0x3fe2b80340000000L)
+            0.0, 0x1.2b8034p-1
         }; /* 5.84962487220764160156e-01 */
     static final private double[] dp_l = {
-            0.0, Double.longBitsToDouble(0x3e4cfdeb43cfd006L)
+            0.0, 0x1.cfdeb43cfd006p-27
         }; /* 1.35003920212974897128e-08 */
-    static final private double two53 = Double.longBitsToDouble(0x4340000000000000L); /* 9007199254740992.0 */
+    static final private double two53 = 0x1.0p53; /* 9007199254740992.0 */
 
     /* poly coefs for (3/2)*(log(x)-2s-2/3*s**3 */
-    static final private double L1 = Double.longBitsToDouble(0x3fe3333333333303L); /* 5.99999999999994648725e-01 */
-    static final private double L2 = Double.longBitsToDouble(0x3fdb6db6db6fabffL); /*  4.28571428578550184252e-01 */
-    static final private double L3 = Double.longBitsToDouble(0x3fd55555518f264dL); /*  3.33333329818377432918e-01 */
-    static final private double L4 = Double.longBitsToDouble(0x3fd17460a91d4101L); /*  2.72728123808534006489e-01 */
-    static final private double L5 = Double.longBitsToDouble(0x3fcd864a93c9db65L); /*  2.30660745775561754067e-01 */
-    static final private double L6 = Double.longBitsToDouble(0x3fca7e284a454eefL); /*  2.06975017800338417784e-01 */
-    static final private double lg2 = Double.longBitsToDouble(0x3fe62e42fefa39efL); /*  6.93147180559945286227e-01 */
-    static final private double lg2_h = Double.longBitsToDouble(0x3fe62e4300000000L); /*  6.93147182464599609375e-01 */
+    static final private double L1 = 0x1.3333333333303p-1; /* 5.99999999999994648725e-01 */
+    static final private double L2 = 0x1.b6db6db6fabffp-2; /*  4.28571428578550184252e-01 */
+    static final private double L3 = 0x1.55555518f264dp-2; /*  3.33333329818377432918e-01 */
+    static final private double L4 = 0x1.17460a91d4101p-2; /*  2.72728123808534006489e-01 */
+    static final private double L5 = 0x1.d864a93c9db65p-3; /*  2.30660745775561754067e-01 */
+    static final private double L6 = 0x1.a7e284a454eefp-3; /*  2.06975017800338417784e-01 */
+    static final private double lg2 = 0x1.62e42fefa39efp-1; /*  6.93147180559945286227e-01 */
+    static final private double lg2_h = 0x1.62e43p-1; /*  6.93147182464599609375e-01 */
     static final private double lg2_l = -1.90465429995776804525e-09; /* 0xbe205c610ca86c39 */
     static final private double ovt = 8.0085662595372944372e-17; /* -(1024-log2(ovfl+.5ulp)) */
-    static final private double cp = Double.longBitsToDouble(0x3feec709dc3a03fdL); /*  9.61796693925975554329e-01 = 2/(3ln2) */
-    static final private double cp_h = Double.longBitsToDouble(0x3feec709e0000000L); /*  9.61796700954437255859e-01 = (float)cp */
-    static final private double cp_l = Double.longBitsToDouble(0xbe3e2fe0145b01f5L); /* -7.02846165095275826516e-09 = tail of cp_h*/
-    static final private double ivln2 = Double.longBitsToDouble(0x3ff71547652b82feL); /*  1.44269504088896338700e+00 = 1/ln2 */
-    static final private double ivln2_h = Double.longBitsToDouble(0x3ff7154760000000L); /*  1.44269502162933349609e+00 = 24b 1/ln2*/
-    static final private double ivln2_l = Double.longBitsToDouble(0x3e54ae0bf85ddf44L); /*  1.92596299112661746887e-08 = 1/ln2 tail*/
+    static final private double cp = 0x1.ec709dc3a03fdp-1; /*  9.61796693925975554329e-01 = 2/(3ln2) */
+    static final private double cp_h = 0x1.ec709ep-1; /*  9.61796700954437255859e-01 = (float)cp */
+    static final private double cp_l = -0x1.e2fe0145b01f5p-28; /* -7.02846165095275826516e-09 = tail of cp_h*/
+    static final private double ivln2 = 0x1.71547652b82fep0; /*  1.44269504088896338700e+00 = 1/ln2 */
+    static final private double ivln2_h = 0x1.715476p0; /*  1.44269502162933349609e+00 = 24b 1/ln2*/
+    static final private double ivln2_l = 0x1.4ae0bf85ddf44p-26; /*  1.92596299112661746887e-08 = 1/ln2 tail*/
 
     /*
      *        Returns x to the power y
@@ -2577,14 +2577,14 @@ public final class JMath {
      * with the sign bit of y.
      */
     static private double copysign(double x, double y) {
-        long ix = Double.doubleToLongBits(x);
-        long iy = Double.doubleToLongBits(y);
-        ix = (0x7fffffffffffffffL * ix) | (0x8000000000000000L & iy);
+        long ix = Double.doubleToRawLongBits(x);
+        long iy = Double.doubleToRawLongBits(y);
+        ix = (0x7fffffffffffffffL & ix) | (0x8000000000000000L & iy);
         return Double.longBitsToDouble(ix);
     }
 
-    static private final double two54 = Double.longBitsToDouble(0x4350000000000000L); /*  1.80143985094819840000e+16 */
-    static private final double twom54 = Double.longBitsToDouble(0x3c90000000000000L); /*  5.55111512312578270212e-17 */
+    static private final double two54 = 0x1.0p54; /*  1.80143985094819840000e+16 */
+    static private final double twom54 = 0x1.0p-54; /*  5.55111512312578270212e-17 */
 
     /*
      * scalbn (double x, int n)
@@ -2638,24 +2638,24 @@ public final class JMath {
     }
 
     static private double setLO(double x, int newLowPart) {
-        long lx = Double.doubleToLongBits(x);
+        long lx = Double.doubleToRawLongBits(x);
         lx &= 0xFFFFFFFF00000000L;
         lx |= newLowPart;
         return Double.longBitsToDouble(lx);
     }
 
     static private double setHI(double x, int newHiPart) {
-        long lx = Double.doubleToLongBits(x);
+        long lx = Double.doubleToRawLongBits(x);
         lx &= 0x00000000FFFFFFFFL;
         lx |= (((long) newHiPart) << 32);
         return Double.longBitsToDouble(lx);
     }
 
     static private int __HI(double x) {
-        return (int) (0xFFFFFFFF & (Double.doubleToLongBits(x) >> 32));
+        return (int) (0xFFFFFFFF & (Double.doubleToRawLongBits(x) >> 32));
     }
 
     static private int __LO(double x) {
-        return (int) (0xFFFFFFFF & Double.doubleToLongBits(x));
+        return (int) (0xFFFFFFFF & Double.doubleToRawLongBits(x));
     }
 } 
