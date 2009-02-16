@@ -1611,10 +1611,6 @@ class Compiler
 					{
 						ilGenerator.Emit(OpCodes.Conv_R8);
 					}
-					else if(tw == PrimitiveTypeWrapper.FLOAT)
-					{
-						ilGenerator.Emit(OpCodes.Conv_R4);
-					}
 					field.EmitSet(ilGenerator);
 					break;
 				}
@@ -1631,10 +1627,6 @@ class Compiler
 					else if(tw == PrimitiveTypeWrapper.DOUBLE)
 					{
 						ilGenerator.Emit(OpCodes.Conv_R8);
-					}
-					else if(tw == PrimitiveTypeWrapper.FLOAT)
-					{
-						ilGenerator.Emit(OpCodes.Conv_R4);
 					}
 					field.EmitSet(ilGenerator);
 					break;
@@ -2234,10 +2226,7 @@ class Compiler
 				case NormalizedByteCode.__lstore:
 					StoreLocal(instr);
 					break;
-				case NormalizedByteCode.__fstore_conv:
-					ilGenerator.Emit(OpCodes.Conv_R4);
-					StoreLocal(instr);
-					break;
+				case NormalizedByteCode.__fstore_conv:	// since we convert after every FP-operation, we don't need this convert anymore
 				case NormalizedByteCode.__fstore:
 					StoreLocal(instr);
 					break;
@@ -2455,19 +2444,10 @@ class Compiler
 				case NormalizedByteCode.__faload:
 					ilGenerator.Emit(OpCodes.Ldelem_R4);
 					break;
+				case NormalizedByteCode.__fastore_conv:	// since we convert after every FP-operation, we don't need this convert anymore
 				case NormalizedByteCode.__fastore:
 					ilGenerator.Emit(OpCodes.Stelem_R4);
 					break;
-				case NormalizedByteCode.__fastore_conv:
-				{
-					// see dastore_conv comment
-					LocalBuilder local = ilGenerator.UnsafeAllocTempLocal(typeof(float));
-					ilGenerator.Emit(OpCodes.Stloc, local);
-					ilGenerator.Emit(OpCodes.Ldloc, local);
-					ilGenerator.Emit(OpCodes.Conv_R4);
-					ilGenerator.Emit(OpCodes.Stelem_R4);
-					break;
-				}
 				case NormalizedByteCode.__daload:
 					ilGenerator.Emit(OpCodes.Ldelem_R8);
 					break;
@@ -2613,10 +2593,7 @@ class Compiler
 					break;
 				case NormalizedByteCode.__fadd:
 					ilGenerator.Emit(OpCodes.Add);
-					if(strictfp)
-					{
-						ilGenerator.Emit(OpCodes.Conv_R4);
-					}
+					ilGenerator.Emit(OpCodes.Conv_R4);
 					break;
 				case NormalizedByteCode.__dadd:
 					ilGenerator.Emit(OpCodes.Add);
@@ -2631,10 +2608,7 @@ class Compiler
 					break;
 				case NormalizedByteCode.__fsub:
 					ilGenerator.Emit(OpCodes.Sub);
-					if(strictfp)
-					{
-						ilGenerator.Emit(OpCodes.Conv_R4);
-					}
+					ilGenerator.Emit(OpCodes.Conv_R4);
 					break;
 				case NormalizedByteCode.__dsub:
 					ilGenerator.Emit(OpCodes.Sub);
@@ -2661,10 +2635,7 @@ class Compiler
 					break;
 				case NormalizedByteCode.__fmul:
 					ilGenerator.Emit(OpCodes.Mul);
-					if(strictfp)
-					{
-						ilGenerator.Emit(OpCodes.Conv_R4);
-					}
+					ilGenerator.Emit(OpCodes.Conv_R4);
 					break;
 				case NormalizedByteCode.__dmul:
 					ilGenerator.Emit(OpCodes.Mul);
@@ -2681,10 +2652,7 @@ class Compiler
 					break;
 				case NormalizedByteCode.__fdiv:
 					ilGenerator.Emit(OpCodes.Div);
-					if(strictfp)
-					{
-						ilGenerator.Emit(OpCodes.Conv_R4);
-					}
+					ilGenerator.Emit(OpCodes.Conv_R4);
 					break;
 				case NormalizedByteCode.__ddiv:
 					ilGenerator.Emit(OpCodes.Div);
@@ -2724,10 +2692,7 @@ class Compiler
 				}
 				case NormalizedByteCode.__frem:
 					ilGenerator.Emit(OpCodes.Rem);
-					if(strictfp)
-					{
-						ilGenerator.Emit(OpCodes.Conv_R4);
-					}
+					ilGenerator.Emit(OpCodes.Conv_R4);
 					break;
 				case NormalizedByteCode.__drem:
 					ilGenerator.Emit(OpCodes.Rem);
