@@ -2452,22 +2452,9 @@ class Compiler
 					ilGenerator.Emit(OpCodes.Ldelem_R8);
 					break;
 				case NormalizedByteCode.__dastore_conv:
-				{
-					// HACK the intermediate local is to work around a CLR JIT flaw,
-					// without the intermediate local it will actually do an explicit
-					// fstp/fld for the conv.r8, but with intermediate it notices
-					// that the explicit conversion isn't needed since the array store
-					// will already result in the conversion. Note that we still need
-					// do the conv.r8, because otherwise it would be legal
-					// (per ECMA CLI spec) for the JIT to reuse the unconverted value
-					// on the FPU stack.
-					LocalBuilder local = ilGenerator.UnsafeAllocTempLocal(typeof(double));
-					ilGenerator.Emit(OpCodes.Stloc, local);
-					ilGenerator.Emit(OpCodes.Ldloc, local);
 					ilGenerator.Emit(OpCodes.Conv_R8);
 					ilGenerator.Emit(OpCodes.Stelem_R8);
 					break;
-				}
 				case NormalizedByteCode.__dastore:
 					ilGenerator.Emit(OpCodes.Stelem_R8);
 					break;
