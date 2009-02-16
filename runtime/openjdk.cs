@@ -3503,51 +3503,82 @@ namespace IKVM.NativeCode.java
 		{
 			public static double sin(double d)
 			{
-				return Math.Sin(d);
+#if FIRST_PASS
+				return 0;
+#else
+				return global::ikvm.@internal.JMath.sin(d);
+#endif
 			}
 
 			public static double cos(double d)
 			{
-				return Math.Cos(d);
+#if FIRST_PASS
+				return 0;
+#else
+				return global::ikvm.@internal.JMath.cos(d);
+#endif
 			}
 
 			public static double tan(double d)
 			{
-				return Math.Tan(d);
+#if FIRST_PASS
+				return 0;
+#else
+				return global::ikvm.@internal.JMath.tan(d);
+#endif
 			}
 
 			public static double asin(double d)
 			{
-				return Math.Asin(d);
+#if FIRST_PASS
+				return 0;
+#else
+				return global::ikvm.@internal.JMath.asin(d);
+#endif
 			}
 
 			public static double acos(double d)
 			{
-				return Math.Acos(d);
+#if FIRST_PASS
+				return 0;
+#else
+				return global::ikvm.@internal.JMath.acos(d);
+#endif
 			}
 
 			public static double atan(double d)
 			{
-				return Math.Atan(d);
+#if FIRST_PASS
+				return 0;
+#else
+				return global::ikvm.@internal.JMath.atan(d);
+#endif
 			}
 
 			public static double exp(double d)
 			{
-				return Math.Exp(d);
+#if FIRST_PASS
+				return 0;
+#else
+				return global::ikvm.@internal.JMath.exp(d);
+#endif
 			}
 
 			public static double log(double d)
 			{
+				// FPU behavior is correct
 				return Math.Log(d);
 			}
 
 			public static double log10(double d)
 			{
+				// FPU behavior is correct
 				return Math.Log10(d);
 			}
 
 			public static double sqrt(double d)
 			{
+				// FPU behavior is correct
 				return Math.Sqrt(d);
 			}
 
@@ -3558,60 +3589,47 @@ namespace IKVM.NativeCode.java
 
 			public static double IEEEremainder(double f1, double f2)
 			{
-				if (SystemDouble.IsInfinity(f2) && !SystemDouble.IsInfinity(f1))
-				{
-					return f1;
-				}
-				return Math.IEEERemainder(f1, f2);
+#if FIRST_PASS
+				return 0;
+#else
+				return global::ikvm.@internal.JMath.IEEEremainder(f1, f2);
+#endif
 			}
 
 			public static double ceil(double d)
 			{
-				return Math.Ceiling(d);
+#if FIRST_PASS
+				return 0;
+#else
+				return global::ikvm.@internal.JMath.ceil(d);
+#endif
 			}
 
 			public static double floor(double d)
 			{
-				return Math.Floor(d);
+#if FIRST_PASS
+				return 0;
+#else
+				return global::ikvm.@internal.JMath.floor(d);
+#endif
 			}
 
 			public static double atan2(double y, double x)
 			{
-				if (SystemDouble.IsInfinity(y) && SystemDouble.IsInfinity(x))
-				{
-					if (SystemDouble.IsPositiveInfinity(y))
-					{
-						if (SystemDouble.IsPositiveInfinity(x))
-						{
-							return Math.PI / 4.0;
-						}
-						else
-						{
-							return Math.PI * 3.0 / 4.0;
-						}
-					}
-					else
-					{
-						if (SystemDouble.IsPositiveInfinity(x))
-						{
-							return -Math.PI / 4.0;
-						}
-						else
-						{
-							return -Math.PI * 3.0 / 4.0;
-						}
-					}
-				}
-				return Math.Atan2(y, x);
+#if FIRST_PASS
+				return 0;
+#else
+				return global::ikvm.@internal.JMath.atan2(y, x);
+#endif
 			}
 
 			public static double pow(double x, double y)
 			{
-				if (Math.Abs(x) == 1.0 && SystemDouble.IsInfinity(y))
-				{
-					return SystemDouble.NaN;
-				}
-				return Math.Pow(x, y);
+#if FIRST_PASS
+				return 0;
+#else
+				return global::ikvm.@internal.JMath.pow(x, y);
+#endif
 			}
 
 			public static double sinh(double d)
@@ -3631,7 +3649,11 @@ namespace IKVM.NativeCode.java
 
 			public static double rint(double d)
 			{
-				return Math.Round(d);
+#if FIRST_PASS
+				return 0;
+#else
+				return global::ikvm.@internal.JMath.rint(d);
+#endif
 			}
 
 			public static double hypot(double a, double b)
