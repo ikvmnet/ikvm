@@ -353,10 +353,8 @@ namespace ikvm.awt
 
         public override void drawString(string str, int x, int y)
         {
-            int descent = netfont.FontFamily.GetCellDescent(netfont.Style);
-            int descentPixel = (int)Math.Round(netfont.Size * descent / netfont.FontFamily.GetEmHeight(netfont.Style));
-			g.DrawString(str, netfont, brush, x, y - netfont.Height + descentPixel);
-        }
+			drawString(str, (float)x, (float)y);
+		}
 
         public override void fill3DRect(int param1, int param2, int param3, int param4, bool param5)
         {
@@ -567,8 +565,10 @@ namespace ikvm.awt
 
         public override void drawString(string text, float x, float y)
         {
-            g.DrawString(text, netfont, brush, x, y);
-        }
+			float descent = netfont.FontFamily.GetCellDescent(netfont.Style);
+			float descentPixel = netfont.Size / netfont.FontFamily.GetEmHeight(netfont.Style) * descent;
+			g.DrawString(text, netfont, brush, new PointF(x, y - netfont.GetHeight(g) + descentPixel));
+		}
 
         public override void drawString(java.text.AttributedCharacterIterator iterator, float x, float y)
         {
