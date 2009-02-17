@@ -41,7 +41,7 @@ namespace ikvm.awt
         private readonly Bitmap bitmap;
 
         internal BitmapGraphics(Bitmap bitmap)
-            : base(Graphics.FromImage(bitmap), null, Color.White)
+            : base(Graphics.FromImage(bitmap), null, Color.White, Color.Black)
         {
             this.bitmap = bitmap;
         }
@@ -63,7 +63,7 @@ namespace ikvm.awt
         private readonly Control control;
 
         internal ComponentGraphics(NetComponentPeer peer)
-            : base(peer.control.CreateGraphics(), peer.component.getFont(), peer.control.BackColor)
+            : base(peer.control.CreateGraphics(), peer.component.getFont(), peer.control.ForeColor, peer.control.BackColor)
         {
             control = peer.control;
         }
@@ -86,7 +86,7 @@ namespace ikvm.awt
         protected Graphics g;
         private java.awt.Color javaColor;
         private java.awt.Paint javaPaint;
-        private Color color = SystemColors.WindowText;
+        private Color color;
         private Color bgcolor;
         private java.awt.Font font;
         private java.awt.Stroke stroke;
@@ -96,7 +96,7 @@ namespace ikvm.awt
         private Pen pen;
         private java.awt.Composite composite = java.awt.AlphaComposite.SrcOver;
 
-        protected NetGraphics(Graphics g, java.awt.Font font, Color bgcolor)
+        protected NetGraphics(Graphics g, java.awt.Font font, Color fgcolor, Color bgcolor)
         {
             if (font == null)
             {
@@ -104,6 +104,7 @@ namespace ikvm.awt
             }
             this.font = font;
             netfont = ((NetFontPeer)font.getPeer()).netFont;
+			this.color = fgcolor;
             this.bgcolor = bgcolor;
             init(g);
         }
