@@ -119,8 +119,12 @@ namespace ikvm.debugger
                     target.Suspend();
                     conn.SendPacket(packet);
                     break;
+                case VirtualMachine.Resume:
+                    target.Resume();
+                    conn.SendPacket(packet);
+                    break;
                 case VirtualMachine.Exit:
-                    target.Exit();
+                    target.Exit(packet.ReadInt());
                     //no SendPacket
                     break;
                 default:

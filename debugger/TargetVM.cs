@@ -28,6 +28,8 @@ using System.Text;
 using Debugger;
 using System.Collections;
 using Debugger.MetaData;
+using System.Windows.Forms;
+
 
 namespace ikvm.debugger
 {
@@ -44,7 +46,7 @@ namespace ikvm.debugger
         private readonly Dictionary<String, DebugType> typeMap = new Dictionary<String, DebugType>();
 
         /// <summary>
-        /// 
+        /// Create a new target VM for the giveb process id.
         /// </summary>
         /// <param name="pid">Process ID of the IKVM</param>
         internal TargetVM(int pid)
@@ -77,12 +79,17 @@ namespace ikvm.debugger
 
         internal void Suspend()
         {
-            process.Break();
+            debugger.MTA2STA.Call(delegate { process.Break(); });
         }
 
-        internal void Exit()
+        internal void Resume()
         {
-            process.Terminate();
+            debugger.MTA2STA.Call(delegate { process.Continue(); });
+        }
+
+        internal void Exit(int exitCode)
+        {
+            debugger.MTA2STA.Call(delegate { process.Terminate(); });
         }
 
         internal int GetTypeID(String jniClassName)
