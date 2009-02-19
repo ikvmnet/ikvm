@@ -1619,6 +1619,15 @@ class Thread implements Runnable {
         }
         contextClassLoader = cl;
     }
+    
+    // [IKVM] called by sun.misc.Launcher to initialize the context class loader
+    @ikvm.lang.Internal
+    public void initContextClassLoader(ClassLoader cl) {
+        // we only set contextClassLoader if it hasn't been set (by user code) previously
+        if (contextClassLoader == ClassLoader.DUMMY) {
+            contextClassLoader = cl;
+        }
+    }
 
     /**
      * Returns <tt>true</tt> if and only if the current thread holds the

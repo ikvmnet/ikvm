@@ -83,7 +83,10 @@ public class Launcher {
         }
 
         // Also set the context class loader for the primordial thread.
-        Thread.currentThread().setContextClassLoader(loader);
+        // [IKVM] The JDK uses setContextClassLoader() here, but we don't
+        // want to overwrite the context class loader if it has already
+        // been set.
+        Thread.currentThread().initContextClassLoader(loader);
 
         // Finally, install a security manager if requested
         String s = System.getProperty("java.security.manager");
