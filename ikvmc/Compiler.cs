@@ -693,6 +693,11 @@ class IkvmcCompiler
 					ProcessFile(null, f);
 				}
 			}
+			if(options.targetIsModule && options.sharedclassloader != null)
+			{
+				Console.Error.WriteLine("Error: -target:module and -sharedclassloader options cannot be combined.");
+				return 1;
+			}
 		}
 #if MULTI_TARGET
 		if(nonleaf)
