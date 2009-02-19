@@ -422,15 +422,20 @@ namespace IKVM.Internal
 			((DynamicClassLoader)this.GetTypeWrapperFactory()).FinishAll();
 
 			ModuleBuilder mb = GetTypeWrapperFactory().ModuleBuilder;
-			// HACK force all referenced assemblies to end up as references in the assembly
-			// (even if they are otherwise unused), to make sure that the assembly class loader
-			// delegates to them at runtime.
-			for(int i = 0;i < referencedAssemblies.Length; i++)
+			if(targetIsModule)
 			{
-				Type[] types = referencedAssemblies[i].MainAssembly.GetExportedTypes();
-				if(types.Length > 0)
+				// HACK force all referenced assemblies to end up as references in the assembly
+				// (even if they are otherwise unused), to make sure that the assembly class loader
+				// delegates to them at runtime.
+				// NOTE now we only do this for modules, when we're an assembly we store the exported
+				// assemblies in the ikvm.exports resource.
+				for(int i = 0;i < referencedAssemblies.Length; i++)
 				{
-					mb.GetTypeToken(types[0]);
+					Type[] types = referencedAssemblies[i].MainAssembly.GetExportedTypes();
+					if(types.Length > 0)
+					{
+						mb.GetTypeToken(types[0]);
+					}
 				}
 			}
 			mb.CreateGlobalFunctions();
@@ -454,18 +459,19 @@ namespace IKVM.Internal
 				mb.SetCustomAttribute(cab);
 			}
 
-			// add a package list
+			// add a package list and export map
 			if(options.sharedclassloader == null || options.sharedclassloader[0] == this)
 			{
 				string[] list = new string[packages.Count];
 				packages.Keys.CopyTo(list, 0);
 				mb.SetCustomAttribute(new CustomAttributeBuilder(JVM.LoadType(typeof(PackageListAttribute)).GetConstructor(new Type[] { typeof(string[]) }), new object[] { list }));
-			}
-
-			// if we're the main assembly in a shared class loader group, add a resource that lists all the types available in the other assemblies
-			if(options.sharedclassloader != null && options.sharedclassloader.Count > 1 && options.sharedclassloader[0] == this)
-			{
-				WriteExportMap();
+				// We can't add the resource when we're a module, because a multi-module assembly has a single resource namespace
+				// and since you cannot combine -target:module with -sharedclassloader we don't need an export map
+				// (the wildcard exports have already been added above, by making sure that we statically reference the assemblies).
+				if(!targetIsModule)
+				{
+					WriteExportMap();
+				}
 			}
 
 			if(targetIsModule)
@@ -482,40 +488,51 @@ namespace IKVM.Internal
 			}
 		}
 
-		private static void AddExportMapEntry(Dictionary<CompilerClassLoader, List<string>> map, CompilerClassLoader ccl, string name)
+		private static void AddExportMapEntry(Dictionary<AssemblyName, List<string>> map, CompilerClassLoader ccl, string name)
 		{
+			AssemblyName asm = ccl.assemblyBuilder.GetName();
 			List<string> list;
-			if (!map.TryGetValue(ccl, out list))
+			if (!map.TryGetValue(asm, out list))
 			{
 				list = new List<string>();
-				map.Add(ccl, list);
+				map.Add(asm, list);
 			}
-			list.Add(name);
+			if (list != null) // if list is null, we already have a wildcard export for this assembly
+			{
+				list.Add(name);
+			}
 		}
 
 		private void WriteExportMap()
 		{
-			Dictionary<CompilerClassLoader, List<string>> exportedNamesPerAssembly = new Dictionary<CompilerClassLoader, List<string>>();
+			Dictionary<AssemblyName, List<string>> exportedNamesPerAssembly = new Dictionary<AssemblyName, List<string>>();
+			foreach (AssemblyClassLoader acl in referencedAssemblies)
+			{
+				exportedNamesPerAssembly.Add(acl.MainAssembly.GetName(), null);
+			}
 			foreach (TypeWrapper tw in dynamicallyImportedTypes)
 			{
 				AddExportMapEntry(exportedNamesPerAssembly, (CompilerClassLoader)tw.GetClassLoader(), tw.Name);
 			}
-			foreach (CompilerClassLoader ccl in options.sharedclassloader)
+			if (options.sharedclassloader != null)
 			{
-				if (ccl != this)
+				foreach (CompilerClassLoader ccl in options.sharedclassloader)
 				{
-					if (ccl.options.resources != null)
+					if (ccl != this)
 					{
-						foreach (string name in ccl.options.resources.Keys)
+						if (ccl.options.resources != null)
 						{
-							AddExportMapEntry(exportedNamesPerAssembly, ccl, name);
+							foreach (string name in ccl.options.resources.Keys)
+							{
+								AddExportMapEntry(exportedNamesPerAssembly, ccl, name);
+							}
 						}
-					}
-					if (ccl.options.externalResources != null)
-					{
-						foreach (string name in ccl.options.externalResources.Keys)
+						if (ccl.options.externalResources != null)
 						{
-							AddExportMapEntry(exportedNamesPerAssembly, ccl, name);
+							foreach (string name in ccl.options.externalResources.Keys)
+							{
+								AddExportMapEntry(exportedNamesPerAssembly, ccl, name);
+							}
 						}
 					}
 				}
@@ -523,13 +540,22 @@ namespace IKVM.Internal
 			MemoryStream ms = new MemoryStream();
 			BinaryWriter bw = new BinaryWriter(ms);
 			bw.Write(exportedNamesPerAssembly.Count);
-			foreach (KeyValuePair<CompilerClassLoader, List<string>> kv in exportedNamesPerAssembly)
+			foreach (KeyValuePair<AssemblyName, List<string>> kv in exportedNamesPerAssembly)
 			{
-				bw.Write(kv.Key.assemblyBuilder.GetName().FullName);
-				bw.Write(kv.Value.Count);
-				foreach (string name in kv.Value)
+				bw.Write(kv.Key.FullName);
+				if (kv.Value == null)
 				{
-					bw.Write(JVM.PersistableHash(name));
+					// wildcard export
+					bw.Write(0);
+				}
+				else
+				{
+					Debug.Assert(kv.Value.Count != 0);
+					bw.Write(kv.Value.Count);
+					foreach (string name in kv.Value)
+					{
+						bw.Write(JVM.PersistableHash(name));
+					}
 				}
 			}
 			ms.Position = 0;
@@ -2331,10 +2357,6 @@ namespace IKVM.Internal
 			foreach (CompilerClassLoader compiler in compilers)
 			{
 				compiler.EmitRemappedTypes2ndPass();
-			}
-			if (!compilingCoreAssembly)
-			{
-				ClassLoaderWrapper.SetBootstrapClassLoader(ClassLoaderWrapper.GetAssemblyClassLoader(JVM.CoreAssembly));
 			}
 			Dictionary<CompilerClassLoader, CustomAttributeBuilder> mainAssemblyCabs = new Dictionary<CompilerClassLoader, CustomAttributeBuilder>();
 			foreach (CompilerClassLoader compiler in compilers)

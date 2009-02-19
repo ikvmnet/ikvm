@@ -71,6 +71,7 @@ namespace IKVM.Internal
 
 #if STATIC_COMPILER
 		// HACK this is used by the ahead-of-time compiler to overrule the bootstrap classloader
+		// when we're compiling the core class libraries
 		internal static void SetBootstrapClassLoader(ClassLoaderWrapper bootstrapClassLoader)
 		{
 			Debug.Assert(ClassLoaderWrapper.bootstrapClassLoader == null);
@@ -1057,11 +1058,15 @@ namespace IKVM.Internal
 							return loader;
 						}
 					}
-#if !STATIC_COMPILER && !FIRST_PASS
 					if(assembly == JVM.CoreAssembly)
 					{
-						return GetBootstrapClassLoader();
+						// This cast is necessary for ikvmc and a no-op for the runtime.
+						// Note that the cast cannot fail, because ikvmc will only return a non AssemblyClassLoader
+						// from GetBootstrapClassLoader() when compiling the core assembly and in that case JVM.CoreAssembly
+						// will be null.
+						return (AssemblyClassLoader)GetBootstrapClassLoader();
 					}
+#if !STATIC_COMPILER && !FIRST_PASS
 					if(!assembly.ReflectionOnly)
 					{
 						Type customClassLoaderClass = null;
@@ -1678,20 +1683,20 @@ namespace IKVM.Internal
 		}
 
 		internal AssemblyClassLoader(Assembly assembly, object javaClassLoader, bool hasCustomClassLoader)
-			: this(assembly, assembly.GetReferencedAssemblies(), javaClassLoader, hasCustomClassLoader)
+			: this(assembly, null, javaClassLoader, hasCustomClassLoader)
 		{
 		}
 
-		internal AssemblyClassLoader(Assembly assembly, AssemblyName[] references, object javaClassLoader, bool hasCustomClassLoader)
+		internal AssemblyClassLoader(Assembly assembly, AssemblyName[] fixedReferences, object javaClassLoader, bool hasCustomClassLoader)
 			: base(CodeGenOptions.None, javaClassLoader)
 		{
 			this.assemblyLoader = new AssemblyLoader(assembly);
-			this.references = references;
+			this.references = fixedReferences;
 			this.isReflectionOnly = assembly.ReflectionOnly;
 			this.hasCustomClassLoader = hasCustomClassLoader;
-			delegates = new AssemblyClassLoader[references.Length];
-			if(assembly.GetType("__<MainAssembly>") != null)
+			if(assembly.GetManifestResourceInfo("ikvm.exports") != null)
 			{
+				List<AssemblyName> wildcardExports = new List<AssemblyName>();
 				using(Stream stream = assembly.GetManifestResourceStream("ikvm.exports"))
 				{
 					BinaryReader rdr = new BinaryReader(stream);
@@ -1704,6 +1709,10 @@ namespace IKVM.Internal
 					{
 						exportedAssemblyNames[i] = new AssemblyName(rdr.ReadString());
 						int typeCount = rdr.ReadInt32();
+						if(typeCount == 0 && references == null)
+						{
+							wildcardExports.Add(exportedAssemblyNames[i]);
+						}
 						for(int j = 0; j < typeCount; j++)
 						{
 							int hash = rdr.ReadInt32();
@@ -1717,7 +1726,16 @@ namespace IKVM.Internal
 						}
 					}
 				}
+				if(references == null)
+				{
+					references = wildcardExports.ToArray();
+				}
 			}
+			else
+			{
+				references = assembly.GetReferencedAssemblies();
+			}
+			delegates = new AssemblyClassLoader[references.Length];
 		}
 
 		internal Assembly MainAssembly
