@@ -21,12 +21,14 @@
   jeroen@frijters.net
   
 */
+
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using ikvm.debugger.win;
 
 namespace ikvm.debugger
 {
@@ -37,6 +39,10 @@ namespace ikvm.debugger
     {
         static void Main(string[] args)
         {
+            System.Diagnostics.TextWriterTraceListener writer = new
+   System.Diagnostics.TextWriterTraceListener(System.Console.Out);
+            System.Diagnostics.Debug.Listeners.Add(writer);
+
             JdwpParameters parameters = null;
             int pid = 0;
             for (int i = 0; i < args.Length; i++)

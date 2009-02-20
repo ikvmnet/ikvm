@@ -26,6 +26,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using ikvm.debugger.requests;
+using ikvm.debugger.win;
 
 namespace ikvm.debugger
 {
@@ -89,11 +90,16 @@ namespace ikvm.debugger
                     break;
                 case VirtualMachine.ClassesBySignature:
                     String jniClassName = packet.ReadString();
-                    packet.WriteInt(1); // count
+                    IList<TargetType> types = target.FindTypes(jniClassName);
+                    packet.WriteInt(types.Count); // count
 
-                    packet.WriteByte(TypeTag.CLASS);
-                    packet.WriteObjectID(target.GetTypeID(jniClassName)); //TODO should be a ID
-                    packet.WriteInt(ClassStatus.INITIALIZED);
+                    foreach (TargetType type in types)
+                    {
+                        Console.Error.WriteLine("FindTypes:" + jniClassName + ":" + type.TypeId);
+                        packet.WriteByte(TypeTag.CLASS); //TODO can also a interface
+                        packet.WriteObjectID(type.TypeId);
+                        packet.WriteInt(ClassStatus.INITIALIZED);
+                    }
 
                     conn.SendPacket(packet);
                     break;
@@ -141,10 +147,34 @@ namespace ikvm.debugger
         {
             switch (packet.Command)
             {
+                case ReferenceType.Signature:
+                    int typeID = packet.ReadObjectID();
+                    TargetType type = target.FindType(typeID);
+                    Console.Error.WriteLine(typeID + ":" + type.GetJniSignature());
+                    packet.WriteString(type.GetJniSignature());
+                    conn.SendPacket(packet);
+                    break;
+                case ReferenceType.ClassLoader:
+                    int classLoaderID = packet.ReadObjectID();
+                    packet.WriteObjectID(0); //TODO 0 - System Classloader, we can use module ID instead
+                    conn.SendPacket(packet);
+                    break;
                 case ReferenceType.MethodsWithGeneric:
-                    int refType = packet.ReadInt();
-                    Console.Error.WriteLine(refType);
-                    NotImplementedPacket(packet);
+                    typeID = packet.ReadObjectID();
+                    Console.Error.WriteLine(typeID);
+                    type = target.FindType(typeID);
+                    IList<TargetMethod> methods = type.GetMethods();
+                    packet.WriteInt(methods.Count);
+                    foreach (TargetMethod method in methods)
+                    {
+                        Console.Error.WriteLine(method.MethodId + ":" + method.Name + ":" + method.JniSignature + ":" + method.GenericSignature+":"+method.AccessFlags);
+                        packet.WriteObjectID(method.MethodId);
+                        packet.WriteString(method.Name);
+                        packet.WriteString(method.JniSignature);
+                        packet.WriteString(method.GenericSignature);
+                        packet.WriteInt(method.AccessFlags);
+                    }
+                    conn.SendPacket(packet);
                     break;
                 default:
                     NotImplementedPacket(packet);
