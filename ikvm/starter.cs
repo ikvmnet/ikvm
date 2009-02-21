@@ -33,6 +33,7 @@ using java.util.jar;
 using java.io;
 
 using Console = System.Console;
+using System.Diagnostics;
 
 public class Starter
 {
@@ -117,41 +118,44 @@ public class Starter
 		bool showVersion = false;
 		string mainClass = null;
 		int vmargsIndex = -1;
+        bool debug = false;
+        String debugArg = null;
 		for(int i = 0; i < args.Length; i++)
 		{
-			if(args[i][0] == '-')
+            String arg = args[i];
+			if(arg[0] == '-')
 			{
-				if(args[i] == "-help" || args[i] == "-?")
+				if(arg == "-help" || arg == "-?")
 				{
 					break;
 				}
-				else if(args[i] == "-Xsave")
+				else if(arg == "-Xsave")
 				{
 					saveAssembly = true;
 					IKVM.Internal.Starter.PrepareForSaveDebugImage();
 				}
-				else if(args[i] == "-XXsave")
+				else if(arg == "-XXsave")
 				{
 					saveAssemblyX = true;
 					IKVM.Internal.Starter.PrepareForSaveDebugImage();
 				}
-				else if(args[i] == "-Xtime")
+				else if(arg == "-Xtime")
 				{
 					new Timer();
 				}
-				else if(args[i] == "-Xwait")
+				else if(arg == "-Xwait")
 				{
 					waitOnExit = true;
 				}
-				else if(args[i] == "-Xbreak")
+				else if(arg == "-Xbreak")
 				{
 					System.Diagnostics.Debugger.Break();
 				}
-				else if(args[i] == "-jar")
+				else if(arg == "-jar")
 				{
 					jar = true;
 				}
-				else if(args[i] == "-version")
+				else if(arg == "-version")
 				{
 					Console.WriteLine(Startup.getVersionAndCopyrightInfo());
 					Console.WriteLine();
@@ -177,11 +181,11 @@ public class Starter
 					}
 					return 0;
 				}
-				else if(args[i] == "-showversion")
+				else if(arg == "-showversion")
 				{
 					showVersion = true;
 				}
-				else if(args[i].StartsWith("-D"))
+				else if(arg.StartsWith("-D"))
 				{
 					string[] keyvalue = args[i].Substring(2).Split('=');
 					if(keyvalue.Length != 2)
@@ -190,69 +194,82 @@ public class Starter
 					}
 					props[keyvalue[0]] = keyvalue[1];
 				}
-				else if(args[i] == "-ea" || args[i] == "-enableassertions")
+				else if(arg == "-ea" || arg == "-enableassertions")
 				{
 					IKVM.Runtime.Assertions.EnableAssertions();
 				}
-				else if(args[i] == "-da" || args[i] == "-disableassertions")
+				else if(arg == "-da" || arg == "-disableassertions")
 				{
 					IKVM.Runtime.Assertions.DisableAssertions();
 				}
-				else if(args[i] == "-esa" || args[i] == "-enablesystemassertions")
+				else if(arg == "-esa" || arg == "-enablesystemassertions")
 				{
 					IKVM.Runtime.Assertions.EnableSystemAssertions();
 				}
-				else if(args[i] == "-dsa" || args[i] == "-disablesystemassertions")
+				else if(arg == "-dsa" || arg == "-disablesystemassertions")
 				{
 					IKVM.Runtime.Assertions.DisableSystemAssertions();
 				}
-				else if(args[i].StartsWith("-ea:") || args[i].StartsWith("-enableassertions:"))
+				else if(arg.StartsWith("-ea:") || arg.StartsWith("-enableassertions:"))
 				{
-					IKVM.Runtime.Assertions.EnableAssertions(args[i].Substring(args[i].IndexOf(':') + 1));
+					IKVM.Runtime.Assertions.EnableAssertions(arg.Substring(arg.IndexOf(':') + 1));
 				}
-				else if(args[i].StartsWith("-da:") || args[i].StartsWith("-disableassertions:"))
+				else if(arg.StartsWith("-da:") || arg.StartsWith("-disableassertions:"))
 				{
-					IKVM.Runtime.Assertions.DisableAssertions(args[i].Substring(args[i].IndexOf(':') + 1));
+					IKVM.Runtime.Assertions.DisableAssertions(arg.Substring(arg.IndexOf(':') + 1));
 				}
-				else if(args[i] == "-cp" || args[i] == "-classpath")
+				else if(arg == "-cp" || arg == "-classpath")
 				{
 					props["java.class.path"] = args[++i];
 				}
-				else if(args[i].StartsWith("-Xtrace:"))
+				else if(arg.StartsWith("-Xtrace:"))
 				{
-					Tracer.SetTraceLevel(args[i].Substring(8));
+					Tracer.SetTraceLevel(arg.Substring(8));
 				}
-				else if(args[i].StartsWith("-Xmethodtrace:"))
+				else if(arg.StartsWith("-Xmethodtrace:"))
 				{
-					Tracer.HandleMethodTrace(args[i].Substring(14));
+					Tracer.HandleMethodTrace(arg.Substring(14));
 				}
-				else if(args[i].StartsWith("-Xms")
-					|| args[i].StartsWith("-Xmx")
-					|| args[i].StartsWith("-Xss")
-					|| args[i] == "-Xmixed"
-					|| args[i] == "-Xint"
-					|| args[i] == "-Xnoclassgc"
-					|| args[i] == "-Xincgc"
-					|| args[i] == "-Xbatch"
-					|| args[i] == "-Xfuture"
-					|| args[i] == "-Xrs"
-					|| args[i] == "-Xcheck:jni"
-					|| args[i] == "-Xshare:off"
-					|| args[i] == "-Xshare:auto"
-					|| args[i] == "-Xshare:on"
-					)
-				{
-					Console.Error.WriteLine("Unsupported option ignored: {0}", args[i]);
-				}
-				else
-				{
-					Console.Error.WriteLine("{0}: illegal argument", args[i]);
-					break;
-				}
+                else if(arg == "-Xdebug")
+                {
+                    debug = true;
+                }
+                else if (arg == "-Xnoagent")
+                {
+                    //ignore it, disable support for oldjdb
+                }
+                else if (arg.StartsWith("-Xrunjdwp") || arg.StartsWith("-agentlib:jdwp"))
+                {
+                    debugArg = arg;
+                    debug = true;
+                }
+                else if (arg.StartsWith("-Xms")
+                    || arg.StartsWith("-Xmx")
+                    || arg.StartsWith("-Xss")
+                    || arg == "-Xmixed"
+                    || arg == "-Xint"
+                    || arg == "-Xnoclassgc"
+                    || arg == "-Xincgc"
+                    || arg == "-Xbatch"
+                    || arg == "-Xfuture"
+                    || arg == "-Xrs"
+                    || arg == "-Xcheck:jni"
+                    || arg == "-Xshare:off"
+                    || arg == "-Xshare:auto"
+                    || arg == "-Xshare:on"
+                    )
+                {
+                    Console.Error.WriteLine("Unsupported option ignored: {0}", arg);
+                }
+                else
+                {
+                    Console.Error.WriteLine("{0}: illegal argument", arg);
+                    break;
+                }
 			}
 			else
 			{
-				mainClass = args[i];
+				mainClass = arg;
 				vmargsIndex = i + 2;
 				break;
 			}
@@ -293,6 +310,26 @@ public class Starter
 		}
 		try
 		{
+            if (debug)
+            {
+                // Starting the debugger
+                Assembly asm = Assembly.GetExecutingAssembly();
+                String arguments = debugArg + " -pid:" + System.Diagnostics.Process.GetCurrentProcess().Id;
+                String program = new FileInfo(asm.Location).DirectoryName + "\\debugger.exe";
+                try
+                {
+                    ProcessStartInfo info = new ProcessStartInfo(program, arguments);
+                    info.UseShellExecute = false;
+                    Process debugger = new Process();
+                    debugger.StartInfo = info;
+                    debugger.Start();
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine(program + " " + arguments);
+                    throw ex;
+                }
+            }
 			if(jar)
 			{
 				props["java.class.path"] = mainClass;
