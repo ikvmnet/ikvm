@@ -69,6 +69,7 @@ namespace ikvm.debugger
                         NotImplementedPacket(packet);
                         break;
                 }
+                conn.SendPacket(packet);
             }
         }
 
@@ -86,7 +87,6 @@ namespace ikvm.debugger
                     packet.WriteInt(6);
                     packet.WriteString("1.6.0");
                     packet.WriteString("IKVM.NET");
-                    conn.SendPacket(packet);
                     break;
                 case VirtualMachine.ClassesBySignature:
                     String jniClassName = packet.ReadString();
@@ -101,7 +101,6 @@ namespace ikvm.debugger
                         packet.WriteInt(ClassStatus.INITIALIZED);
                     }
 
-                    conn.SendPacket(packet);
                     break;
                 case VirtualMachine.AllThreads:
                     int[] ids = target.GetThreadIDs();
@@ -110,7 +109,6 @@ namespace ikvm.debugger
                     {
                         packet.WriteObjectID(ids[i]);
                     }
-                    conn.SendPacket(packet);
                     break;
                 case VirtualMachine.IDSizes:
                     int size = 4; //we use a size of 4, a value of 8 is also possible
@@ -119,19 +117,58 @@ namespace ikvm.debugger
                     packet.WriteInt(size); // objectID size in bytes
                     packet.WriteInt(size); // referenceTypeID size in bytes
                     packet.WriteInt(size); // frameID size in bytes
-                    conn.SendPacket(packet);
                     break;
                 case VirtualMachine.Suspend:
                     target.Suspend();
-                    conn.SendPacket(packet);
                     break;
                 case VirtualMachine.Resume:
                     target.Resume();
-                    conn.SendPacket(packet);
                     break;
                 case VirtualMachine.Exit:
                     target.Exit(packet.ReadInt());
-                    //no SendPacket
+                    break;
+                case VirtualMachine.Capabilities:
+                    packet.WriteBool(false); // Can the VM watch field modification, and therefore can it send the Modification Watchpoint Event?  
+                    packet.WriteBool(false); // Can the VM watch field access, and therefore can it send the Access Watchpoint Event?  
+                    packet.WriteBool(false); // Can the VM get the bytecodes of a given method? 
+                    packet.WriteBool(false); // Can the VM determine whether a field or method is synthetic? (that is, can the VM determine if the method or the field was invented by the compiler?)  
+                    packet.WriteBool(false); // Can the VM get the owned monitors infornation for a thread?
+                    packet.WriteBool(false); // Can the VM get the current contended monitor of a thread?  
+                    packet.WriteBool(false); // Can the VM get the monitor information for a given object?   
+                    break;
+                case VirtualMachine.CapabilitiesNew:
+                    packet.WriteBool(false); // Can the VM watch field modification, and therefore can it send the Modification Watchpoint Event?  
+                    packet.WriteBool(false); // Can the VM watch field access, and therefore can it send the Access Watchpoint Event?  
+                    packet.WriteBool(false); // Can the VM get the bytecodes of a given method? 
+                    packet.WriteBool(false); // Can the VM determine whether a field or method is synthetic? (that is, can the VM determine if the method or the field was invented by the compiler?)  
+                    packet.WriteBool(false); // Can the VM get the owned monitors infornation for a thread?
+                    packet.WriteBool(false); // Can the VM get the current contended monitor of a thread?  
+                    packet.WriteBool(false); // Can the VM get the monitor information for a given object?   
+                    packet.WriteBool(false); // Can the VM redefine classes? 
+                    packet.WriteBool(false); // Can the VM add methods when redefining classes? 
+                    packet.WriteBool(false); // Can the VM redefine classesin arbitrary ways?  
+                    packet.WriteBool(false); // Can the VM pop stack frames?  
+                    packet.WriteBool(false); // Can the VM filter events by specific object? 
+                    packet.WriteBool(false); // Can the VM get the source debug extension? 
+                    packet.WriteBool(false); // Can the VM request VM death events?  
+                    packet.WriteBool(false); // Can the VM set a default stratum?  
+                    packet.WriteBool(false); // Can the VM return instances, counts of instances of classes and referring objects?  
+                    packet.WriteBool(false); // Can the VM request monitor events?  
+                    packet.WriteBool(false); // Can the VM get monitors with frame depth info?  
+                    packet.WriteBool(false); // Can the VM filter class prepare events by source name?
+                    packet.WriteBool(false); // Can the VM return the constant pool information?  
+                    packet.WriteBool(false); // Can the VM force early return from a method?  
+                    packet.WriteBool(false); // reserved22
+                    packet.WriteBool(false); // reserved23
+                    packet.WriteBool(false); // reserved24
+                    packet.WriteBool(false); // reserved25
+                    packet.WriteBool(false); // reserved26
+                    packet.WriteBool(false); // reserved27
+                    packet.WriteBool(false); // reserved28
+                    packet.WriteBool(false); // reserved29
+                    packet.WriteBool(false); // reserved30
+                    packet.WriteBool(false); // reserved31
+                    packet.WriteBool(false); // reserved32
                     break;
                 default:
                     NotImplementedPacket(packet); // include a SendPacket
@@ -152,12 +189,10 @@ namespace ikvm.debugger
                     TargetType type = target.FindType(typeID);
                     Console.Error.WriteLine(typeID + ":" + type.GetJniSignature());
                     packet.WriteString(type.GetJniSignature());
-                    conn.SendPacket(packet);
                     break;
                 case ReferenceType.ClassLoader:
                     int classLoaderID = packet.ReadObjectID();
                     packet.WriteObjectID(0); //TODO 0 - System Classloader, we can use module ID instead
-                    conn.SendPacket(packet);
                     break;
                 case ReferenceType.MethodsWithGeneric:
                     typeID = packet.ReadObjectID();
@@ -174,7 +209,6 @@ namespace ikvm.debugger
                         packet.WriteString(method.GenericSignature);
                         packet.WriteInt(method.AccessFlags);
                     }
-                    conn.SendPacket(packet);
                     break;
                 default:
                     NotImplementedPacket(packet);
@@ -199,8 +233,7 @@ namespace ikvm.debugger
                     }
                     else
                     {
-                        packet.WriteInt(packet.Id); // should be EventID and not PacketID
-                        conn.SendPacket(packet);
+                        packet.WriteInt(packet.Id); // TODO should be EventID and not PacketID
                     }
                     break;
                 default:
@@ -211,9 +244,10 @@ namespace ikvm.debugger
 
         private void NotImplementedPacket(Packet packet)
         {
+            Console.Error.WriteLine("================================");
             Console.Error.WriteLine("Not Implemented Packet:" + packet.CommandSet + "-" + packet.Command);
+            Console.Error.WriteLine("================================");
             packet.Error = Error.NOT_IMPLEMENTED;
-            conn.SendPacket(packet);
         }
     }
 }
