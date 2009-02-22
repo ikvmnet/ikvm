@@ -3081,6 +3081,9 @@ class Compiler
 				case NormalizedByteCode.__nop:
 					ilGenerator.Emit(OpCodes.Nop);
 					break;
+				case NormalizedByteCode.__intrinsic_gettypehandlevalue:
+					EmitHelper.GetTypeHandleValue(ilGenerator);
+					break;
 				case NormalizedByteCode.__static_error:
 				{
 					TypeWrapper exceptionType;

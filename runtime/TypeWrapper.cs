@@ -121,6 +121,15 @@ namespace IKVM.Internal
 			EmitHelper.Throw(ilgen, "java.lang.IncompatibleClassChangeError");
 			ilgen.MarkLabel(ok);
 		}
+
+		internal static void GetTypeHandleValue(CodeEmitter ilgen)
+		{
+			ilgen.Emit(OpCodes.Call, typeof(Type).GetMethod("GetTypeHandle"));
+			LocalBuilder local = ilgen.DeclareLocal(typeof(RuntimeTypeHandle));
+			ilgen.Emit(OpCodes.Stloc, local);
+			ilgen.Emit(OpCodes.Ldloca, local);
+			ilgen.Emit(OpCodes.Call, typeof(RuntimeTypeHandle).GetMethod("get_Value"));
+		}
 	}
 #endif
 

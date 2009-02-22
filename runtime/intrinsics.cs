@@ -84,6 +84,7 @@ namespace IKVM.Internal
 		private static Dictionary<IntrinsicKey, Emitter> Register()
 		{
 			Dictionary<IntrinsicKey, Emitter> intrinsics = new Dictionary<IntrinsicKey, Emitter>();
+			intrinsics.Add(new IntrinsicKey("java.lang.Object", "getClass", "()Ljava.lang.Class;"), Object_getClass);
 			intrinsics.Add(new IntrinsicKey("java.lang.Float", "floatToRawIntBits", "(F)I"), Float_floatToRawIntBits);
 			intrinsics.Add(new IntrinsicKey("java.lang.Float", "intBitsToFloat", "(I)F"), Float_intBitsToFloat);
 			intrinsics.Add(new IntrinsicKey("java.lang.Double", "doubleToRawLongBits", "(D)J"), Double_doubleToRawLongBits);
@@ -109,6 +110,33 @@ namespace IKVM.Internal
 		{
 			// note that intrinsics can always refuse to emit code and the code generator will fall back to a normal method call
 			return intrinsics[new IntrinsicKey(method)](context, ilgen, method, ma, opcodeIndex, caller, classFile, code);
+		}
+
+		private static bool Object_getClass(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		{
+			// this is the null-check idiom that javac uses (both in its own source and in the code it generates)
+			if (code[opcodeIndex + 1].NormalizedOpCode == NormalizedByteCode.__pop)
+			{
+				ilgen.Emit(OpCodes.Dup);
+				EmitHelper.NullCheck(ilgen);
+				return true;
+			}
+			// this optimizes obj1.getClass() ==/!= obj2.getClass()
+			else if (opcodeIndex + 3 < code.Length
+				&& !code[opcodeIndex + 1].IsBranchTarget && code[opcodeIndex + 1].NormalizedOpCode == NormalizedByteCode.__aload
+				&& !code[opcodeIndex + 2].IsBranchTarget && code[opcodeIndex + 2].NormalizedOpCode == NormalizedByteCode.__invokevirtual
+				&& !code[opcodeIndex + 3].IsBranchTarget && (code[opcodeIndex + 3].NormalizedOpCode == NormalizedByteCode.__if_acmpeq || code[opcodeIndex + 3].NormalizedOpCode == NormalizedByteCode.__if_acmpne))
+			{
+				ClassFile.ConstantPoolItemMI cpi = classFile.GetMethodref(code[opcodeIndex + 2].Arg1);
+				if (cpi.Class == "java.lang.Object" && cpi.Name == "getClass" && cpi.Signature == "()Ljava.lang.Class;")
+				{
+					// we can't patch the current opcode, so we have to emit the first call to GetTypeHandle here
+					EmitHelper.GetTypeHandleValue(ilgen);
+					code[opcodeIndex + 2].PatchOpCode(NormalizedByteCode.__intrinsic_gettypehandlevalue);
+					return true;
+				}
+			}
+			return false;
 		}
 
 		private static bool Float_floatToRawIntBits(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
