@@ -503,13 +503,18 @@ namespace IKVM.Internal
 			}
 		}
 
+		private void AddWildcardExports(Dictionary<AssemblyName, List<string>> exportedNamesPerAssembly)
+		{
+			foreach (AssemblyClassLoader acl in referencedAssemblies)
+			{
+				exportedNamesPerAssembly[acl.MainAssembly.GetName()] = null;
+			}
+		}
+
 		private void WriteExportMap()
 		{
 			Dictionary<AssemblyName, List<string>> exportedNamesPerAssembly = new Dictionary<AssemblyName, List<string>>();
-			foreach (AssemblyClassLoader acl in referencedAssemblies)
-			{
-				exportedNamesPerAssembly.Add(acl.MainAssembly.GetName(), null);
-			}
+			AddWildcardExports(exportedNamesPerAssembly);
 			foreach (TypeWrapper tw in dynamicallyImportedTypes)
 			{
 				AddExportMapEntry(exportedNamesPerAssembly, (CompilerClassLoader)tw.GetClassLoader(), tw.Name);
@@ -520,6 +525,7 @@ namespace IKVM.Internal
 				{
 					if (ccl != this)
 					{
+						ccl.AddWildcardExports(exportedNamesPerAssembly);
 						if (ccl.options.resources != null)
 						{
 							foreach (string name in ccl.options.resources.Keys)
