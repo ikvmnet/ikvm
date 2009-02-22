@@ -36,21 +36,25 @@ namespace ikvm.debugger
     /// </summary>
     class Packet
     {
-        public const byte NoFlags = 0x0;
-        public const byte Reply = 0x80;
-        public const byte ReplyNoError = 0x0;
+        private static int packetCounter;
+
+        private const byte NoFlags = 0x0;
+        private const byte Reply = 0x80;
 
         private byte[] data;
         private int offset;
 
         private int id;
-        private byte flags;
         private byte cmdSet;
         private byte cmd;
         private short errorCode;
+        private bool isEvent;
 
         private Stream output = new MemoryStream();
 
+        /// <summary>
+        /// Private constructor, use the factory methods
+        /// </summary>
         private Packet() { }
 
         /// <summary>
@@ -65,13 +69,13 @@ namespace ikvm.debugger
             Packet packet = new Packet();
             packet.data = header;
             int len = packet.ReadInt();
-            if (len < 0)
+            if (len < 11)
             {
                 throw new IOException("protocol error - invalid length");
             }
             packet.id = packet.ReadInt();
-            packet.flags = packet.ReadByte();
-            if ((packet.flags & Packet.Reply) == 0)
+            int flags = packet.ReadByte();
+            if ((flags & Reply) == 0)
             {
                 packet.cmdSet = packet.ReadByte();
                 packet.cmd = packet.ReadByte();
@@ -81,12 +85,29 @@ namespace ikvm.debugger
                 packet.errorCode = packet.ReadShort();
             }
             packet.data = new byte[len - 11];
-Console.Error.WriteLine("Data Size:" + packet.data.Length);
             DebuggerUtils.ReadFully(stream, packet.data);
             packet.offset = 0;
             return packet;
         }
 
+        /// <summary>
+        /// Create a empty packet to send an Event from the target VM (debuggee) to the debugger.
+        /// </summary>
+        /// <returns>a new packet</returns>
+        internal static Packet CreateEventPacket()
+        {
+            Packet packet = new Packet();
+            packet.id = ++packetCounter;
+            packet.cmdSet = ikvm.debugger.CommandSet.Event;
+            packet.cmd = 100;
+            packet.isEvent = true;
+            return packet;
+        }
+
+        /// <summary>
+        /// Is used from JdwpConnection. You should use jdwpConnection.Send(Packet).
+        /// </summary>
+        /// <param name="stream"></param>
         internal void Send(Stream stream)
         {
             MemoryStream ms = (MemoryStream)output;
@@ -95,8 +116,17 @@ Console.Error.WriteLine("Data Size:" + packet.data.Length);
                 output = stream;
                 WriteInt((int)ms.Length + 11);
                 WriteInt(id);
-                WriteByte(Reply);
-                WriteShort(errorCode);
+                if (!isEvent)
+                {
+                    WriteByte(Reply);
+                    WriteShort(errorCode);
+                }
+                else
+                {
+                    WriteByte(NoFlags);
+                    WriteByte(cmdSet);
+                    WriteByte(cmd);
+                }
                 ms.WriteTo(stream);
             }
             finally

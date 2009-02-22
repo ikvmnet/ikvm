@@ -30,6 +30,7 @@ using System.Collections;
 using Debugger.MetaData;
 using System.Windows.Forms;
 using Debugger.Wrappers.MetaData;
+using ikvm.debugger.requests;
 
 
 namespace ikvm.debugger.win
@@ -46,12 +47,18 @@ namespace ikvm.debugger.win
 
         private readonly Dictionary<String, IList<TargetType>> nameTypeMap = new Dictionary<String, IList<TargetType>>();
 
+        private readonly JdwpEventHandler jdwpEventHandler = null;
+
+
+        private EventRequest threadStartEventRequest;
+
         /// <summary>
         /// Create a new target VM for the giveb process id.
         /// </summary>
         /// <param name="pid">Process ID of the IKVM</param>
-        internal TargetVM(int pid)
+        internal TargetVM(int pid, JdwpEventHandler jdwpEventHandler)
         {
+            this.jdwpEventHandler = jdwpEventHandler;
             debugger = new NDebugger();
             System.Diagnostics.Process sysProcess = System.Diagnostics.Process.GetProcessById(pid);
             process = debugger.Attach(sysProcess);
@@ -60,7 +67,7 @@ namespace ikvm.debugger.win
             process.ModuleLoaded += new EventHandler<ModuleEventArgs>(ModuleLoaded);
             process.Paused += new EventHandler<ProcessEventArgs>(Paused);
             process.Resumed += new EventHandler<ProcessEventArgs>(Resumed);
-
+            process.ThreadStarted += new EventHandler<ThreadEventArgs>(ThreadStarted);
         }
 
         /// <summary>
@@ -171,15 +178,34 @@ namespace ikvm.debugger.win
             }
         }
 
-        void Paused(object sender, ProcessEventArgs ev)
+        private void Paused(object sender, ProcessEventArgs ev)
         {
             Console.Error.WriteLine("Paused:" + ev);
         }
 
-        void Resumed(object sender, ProcessEventArgs ev)
+        private void Resumed(object sender, ProcessEventArgs ev)
         {
             Console.Error.WriteLine("Resumed:" + ev);
         }
+
+        private void ThreadStarted(object sender, ThreadEventArgs ev)
+        {
+            EventRequest eventRequest = threadStartEventRequest;
+            if (eventRequest != null)
+            {
+                Thread th = ev.Thread;
+                jdwpEventHandler.Send(SuspendPolicy.EVENT_THREAD, EventKind.THREAD_START, eventRequest.RequestId, (int)th.ID);
+                ev.Thread.Exited += new EventHandler<ThreadEventArgs>(ThreadExited);
+            }
+            Console.Error.WriteLine("ThreadStarted:" + ev.Thread.ID+ " " + eventRequest);
+        }
+
+        private void ThreadExited(object sender, ThreadEventArgs ev)
+        {
+            Console.Error.WriteLine("ThreadExited:" + ev.Thread.ID);
+        }
+
+
 
         private IList<DebugType> FindTypesInModules(String name)
         {
@@ -207,6 +233,18 @@ namespace ikvm.debugger.win
             return result;
         }
 
-
+        /// <summary>
+        /// Set an EventRequest received from debugger. 
+        /// </summary>
+        /// <param name="eventRequest">the new EventRequest</param>
+        internal void AddEventRequest(ikvm.debugger.requests.EventRequest eventRequest)
+        {
+            switch (eventRequest.EventKind)
+            {
+                case EventKind.THREAD_START:
+                    threadStartEventRequest = eventRequest;
+                    break;
+            }
+        }
     }
 }

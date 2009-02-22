@@ -233,7 +233,8 @@ namespace ikvm.debugger
                     }
                     else
                     {
-                        packet.WriteInt(packet.Id); // TODO should be EventID and not PacketID
+                        target.AddEventRequest(eventRequest);
+                        packet.WriteInt(eventRequest.RequestId);
                     }
                     break;
                 default:

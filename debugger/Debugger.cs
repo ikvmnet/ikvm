@@ -66,7 +66,7 @@ namespace ikvm.debugger
                 JdwpConnection conn = new JdwpConnection(parameters);
                 conn.Connect();
                 Console.Error.WriteLine("Started");
-                TargetVM target = new TargetVM(pid);
+                TargetVM target = new TargetVM(pid, new JdwpEventHandler(conn));
                 JdwpHandler handler = new JdwpHandler(conn, target);
                 handler.Run();
                 //System.Threading.Thread.Sleep(5000);

@@ -36,15 +36,19 @@ namespace ikvm.debugger.requests
         internal const int CmdClear = 2;
         internal const int CmdClearAllBreakpoints = 3;
 
-        private byte eventKind;
-        private byte suspendPolicy;
-        private List<EventModifier> modifiers;
+        private static int eventRequestCounter;
+
+        private readonly byte eventKind;
+        private readonly byte suspendPolicy;
+        private readonly List<EventModifier> modifiers;
+        private readonly int requestId;
 
         private EventRequest(byte eventKind, byte suspendPolicy, List<EventModifier> modifiers)
         {
             this.eventKind = eventKind;
             this.suspendPolicy = suspendPolicy;
             this.modifiers = modifiers;
+            this.requestId = ++eventRequestCounter;
         }
 
         /// <summary>
@@ -57,29 +61,29 @@ namespace ikvm.debugger.requests
             byte eventKind = packet.ReadByte(); // class EventKind
             switch (eventKind)
             {
-                case EventKind.SINGLE_STEP:
-                case EventKind.BREAKPOINT:
-                case EventKind.FRAME_POP:
-                case EventKind.EXCEPTION:
-                case EventKind.USER_DEFINED:
-                case EventKind.THREAD_START:
-                case EventKind.THREAD_DEATH:
-                case EventKind.CLASS_PREPARE:
-                case EventKind.CLASS_UNLOAD:
-                case EventKind.CLASS_LOAD:
-                case EventKind.FIELD_ACCESS:
-                case EventKind.FIELD_MODIFICATION:
-                case EventKind.EXCEPTION_CATCH:
-                case EventKind.METHOD_ENTRY:
-                case EventKind.METHOD_EXIT:
-                case EventKind.METHOD_EXIT_WITH_RETURN_VALUE:
-                case EventKind.MONITOR_CONTENDED_ENTER:
-                case EventKind.MONITOR_CONTENDED_ENTERED:
-                case EventKind.MONITOR_WAIT:
-                case EventKind.MONITOR_WAITED:
-                case EventKind.VM_START:
-                case EventKind.VM_DEATH:
-                case EventKind.VM_DISCONNECTED:
+                case ikvm.debugger.EventKind.SINGLE_STEP:
+                case ikvm.debugger.EventKind.BREAKPOINT:
+                case ikvm.debugger.EventKind.FRAME_POP:
+                case ikvm.debugger.EventKind.EXCEPTION:
+                case ikvm.debugger.EventKind.USER_DEFINED:
+                case ikvm.debugger.EventKind.THREAD_START:
+                case ikvm.debugger.EventKind.THREAD_DEATH:
+                case ikvm.debugger.EventKind.CLASS_PREPARE:
+                case ikvm.debugger.EventKind.CLASS_UNLOAD:
+                case ikvm.debugger.EventKind.CLASS_LOAD:
+                case ikvm.debugger.EventKind.FIELD_ACCESS:
+                case ikvm.debugger.EventKind.FIELD_MODIFICATION:
+                case ikvm.debugger.EventKind.EXCEPTION_CATCH:
+                case ikvm.debugger.EventKind.METHOD_ENTRY:
+                case ikvm.debugger.EventKind.METHOD_EXIT:
+                case ikvm.debugger.EventKind.METHOD_EXIT_WITH_RETURN_VALUE:
+                case ikvm.debugger.EventKind.MONITOR_CONTENDED_ENTER:
+                case ikvm.debugger.EventKind.MONITOR_CONTENDED_ENTERED:
+                case ikvm.debugger.EventKind.MONITOR_WAIT:
+                case ikvm.debugger.EventKind.MONITOR_WAITED:
+                case ikvm.debugger.EventKind.VM_START:
+                case ikvm.debugger.EventKind.VM_DEATH:
+                case ikvm.debugger.EventKind.VM_DISCONNECTED:
                     break;
                 default:
                     return null; //Invalid or not supported EventKind
@@ -137,6 +141,16 @@ namespace ikvm.debugger.requests
                 modifiers.Add(modifier);
             }
             return new EventRequest(eventKind, suspendPolicy, modifiers);
+        }
+
+        internal int RequestId
+        {
+            get { return requestId; }
+        }
+
+        internal int EventKind
+        {
+            get { return eventKind; }
         }
 
         public override String ToString()

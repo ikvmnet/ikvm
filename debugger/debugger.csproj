@@ -69,6 +69,7 @@
     <Compile Include="EventRequest.cs" />
     <Compile Include="JdwpConnection.cs" />
     <Compile Include="JdwpConst.cs" />
+    <Compile Include="JdwpEventHandler.cs" />
     <Compile Include="JdwpHandler.cs" />
     <Compile Include="JdwpParameters.cs" />
     <Compile Include="Packet.cs" />

@@ -36,9 +36,14 @@ namespace ikvm.debugger
 
         private TcpClient client;
 
-        BufferedStream stream;
+        Stream stream;
 
+        /// <summary>
+        /// Shared buffer for reading and monitor for reading
+        /// </summary>
         private readonly byte[] readHeader = new byte[11];
+
+        private readonly Object writeMonitor = new Object();
 
         internal JdwpConnection(JdwpParameters parameters)
         {
@@ -59,7 +64,8 @@ namespace ikvm.debugger
             {
                 client = new TcpClient(parameters.Host, parameters.Port);
             }
-            stream = new BufferedStream(client.GetStream());
+            stream = client.GetStream(); //TODO Bug in BufferedStream, work not asynchron
+            //stream = new BufferedStream(client.GetStream());
             System.Text.UTF8Encoding encoding = new System.Text.UTF8Encoding();
             byte[] hello = encoding.GetBytes("JDWP-Handshake");
             stream.Write(hello, 0, hello.Length);
@@ -98,7 +104,10 @@ namespace ikvm.debugger
 
         internal void SendPacket(Packet packet)
         {
-            packet.Send(stream);
+            lock (writeMonitor)
+            {
+                packet.Send(stream);
+            }
         }
     }
 }
