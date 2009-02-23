@@ -125,18 +125,27 @@ namespace IKVM.Internal
 			else if (opcodeIndex + 3 < code.Length
 				&& !code[opcodeIndex + 1].IsBranchTarget && code[opcodeIndex + 1].NormalizedOpCode == NormalizedByteCode.__aload
 				&& !code[opcodeIndex + 2].IsBranchTarget && code[opcodeIndex + 2].NormalizedOpCode == NormalizedByteCode.__invokevirtual
-				&& !code[opcodeIndex + 3].IsBranchTarget && (code[opcodeIndex + 3].NormalizedOpCode == NormalizedByteCode.__if_acmpeq || code[opcodeIndex + 3].NormalizedOpCode == NormalizedByteCode.__if_acmpne))
+				&& !code[opcodeIndex + 3].IsBranchTarget && (code[opcodeIndex + 3].NormalizedOpCode == NormalizedByteCode.__if_acmpeq || code[opcodeIndex + 3].NormalizedOpCode == NormalizedByteCode.__if_acmpne)
+				&& (IsSafeForGetClassOptimization(ma.GetStackTypeWrapper(opcodeIndex, 0)) || IsSafeForGetClassOptimization(ma.GetStackTypeWrapper(opcodeIndex + 2, 0))))
 			{
 				ClassFile.ConstantPoolItemMI cpi = classFile.GetMethodref(code[opcodeIndex + 2].Arg1);
 				if (cpi.Class == "java.lang.Object" && cpi.Name == "getClass" && cpi.Signature == "()Ljava.lang.Class;")
 				{
 					// we can't patch the current opcode, so we have to emit the first call to GetTypeHandle here
+					ilgen.Emit(OpCodes.Dup);
+					EmitHelper.NullCheck(ilgen);
 					EmitHelper.GetTypeHandleValue(ilgen);
 					code[opcodeIndex + 2].PatchOpCode(NormalizedByteCode.__intrinsic_gettypehandlevalue);
 					return true;
 				}
 			}
 			return false;
+		}
+
+		private static bool IsSafeForGetClassOptimization(TypeWrapper tw)
+		{
+			// because of ghost arrays, we don't optimize if both types are either java.lang.Object or an array
+			return tw != CoreClasses.java.lang.Object.Wrapper && !tw.IsArray;
 		}
 
 		private static bool Float_floatToRawIntBits(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)

@@ -3082,6 +3082,8 @@ class Compiler
 					ilGenerator.Emit(OpCodes.Nop);
 					break;
 				case NormalizedByteCode.__intrinsic_gettypehandlevalue:
+					ilGenerator.Emit(OpCodes.Dup);
+					EmitHelper.NullCheck(ilGenerator);
 					EmitHelper.GetTypeHandleValue(ilGenerator);
 					break;
 				case NormalizedByteCode.__static_error:
