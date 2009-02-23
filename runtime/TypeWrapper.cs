@@ -53,6 +53,8 @@ namespace IKVM.Internal
 	{
 		private static MethodInfo objectToString = typeof(object).GetMethod("ToString", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
 		private static MethodInfo verboseCastFailure = JVM.SafeGetEnvironmentVariable("IKVM_VERBOSE_CAST") == null ? null : ByteCodeHelperMethods.VerboseCastFailure;
+		private static MethodInfo getTypeHandle = typeof(Type).GetMethod("GetTypeHandle", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(object) }, null);
+		private static MethodInfo get_Value = typeof(RuntimeTypeHandle).GetMethod("get_Value", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
 
 		internal static void Throw(CodeEmitter ilgen, string dottedClassName)
 		{
@@ -124,11 +126,11 @@ namespace IKVM.Internal
 
 		internal static void GetTypeHandleValue(CodeEmitter ilgen)
 		{
-			ilgen.Emit(OpCodes.Call, typeof(Type).GetMethod("GetTypeHandle"));
+			ilgen.Emit(OpCodes.Call, getTypeHandle);
 			LocalBuilder local = ilgen.DeclareLocal(typeof(RuntimeTypeHandle));
 			ilgen.Emit(OpCodes.Stloc, local);
 			ilgen.Emit(OpCodes.Ldloca, local);
-			ilgen.Emit(OpCodes.Call, typeof(RuntimeTypeHandle).GetMethod("get_Value"));
+			ilgen.Emit(OpCodes.Call, get_Value);
 		}
 	}
 #endif
