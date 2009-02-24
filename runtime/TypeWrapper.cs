@@ -2065,22 +2065,30 @@ namespace IKVM.Internal
 			get
 			{
 				Debug.Assert(!IsUnloadable && !IsVerifierType);
-				lock(this)
+				if (classObject == null)
 				{
-					if(classObject == null)
-					{
-#if !COMPACT_FRAMEWORK
-						// DynamicTypeWrapper should haved already had SetClassObject explicitly
-						Debug.Assert(!(this is DynamicTypeWrapper));
-#endif // !COMPACT_FRAMEWORK
-#if !FIRST_PASS
-						java.lang.Class clazz = java.lang.Class.newClass();
-						SetTypeWrapperHack(ref clazz.typeWrapper, this);
-						classObject = clazz;
-#endif
-					}
+					LazyInitClass();
 				}
 				return classObject;
+			}
+		}
+
+		private void LazyInitClass()
+		{
+			lock (this)
+			{
+				if (classObject == null)
+				{
+#if !COMPACT_FRAMEWORK
+					// DynamicTypeWrapper should haved already had SetClassObject explicitly
+					Debug.Assert(!(this is DynamicTypeWrapper));
+#endif // !COMPACT_FRAMEWORK
+#if !FIRST_PASS
+					java.lang.Class clazz = java.lang.Class.newClass();
+					SetTypeWrapperHack(ref clazz.typeWrapper, this);
+					System.Threading.Interlocked.Exchange(ref classObject, clazz);
+#endif
+				}
 			}
 		}
 
