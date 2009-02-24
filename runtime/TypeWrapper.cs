@@ -9710,6 +9710,7 @@ namespace IKVM.Internal
 		internal const string GenericAttributeAnnotationTypeName = "ikvm.internal.AttributeAnnotation`1";
 		internal const string GenericAttributeAnnotationReturnValueTypeName = "ikvm.internal.AttributeAnnotationReturnValue`1";
 		internal const string GenericAttributeAnnotationMultipleTypeName = "ikvm.internal.AttributeAnnotationMultiple`1";
+		private static readonly Dictionary<Type, TypeWrapper> types = new Dictionary<Type, TypeWrapper>();
 		private readonly Type type;
 		private TypeWrapper[] innerClasses;
 		private TypeWrapper outerClass;
@@ -11168,8 +11169,20 @@ namespace IKVM.Internal
 
 		internal static TypeWrapper GetWrapperFromDotNetType(Type type)
 		{
-			// TODO this might benefit from caching
-			return ClassLoaderWrapper.GetAssemblyClassLoader(type.Assembly).GetWrapperFromAssemblyType(type);
+			TypeWrapper tw;
+			lock (types)
+			{
+				types.TryGetValue(type, out tw);
+			}
+			if (tw == null)
+			{
+				tw = ClassLoaderWrapper.GetAssemblyClassLoader(type.Assembly).GetWrapperFromAssemblyType(type);
+				lock (types)
+				{
+					types[type] = tw;
+				}
+			}
+			return tw;
 		}
 
 		private static TypeWrapper GetBaseTypeWrapper(Type type)
