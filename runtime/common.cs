@@ -340,6 +340,10 @@ namespace IKVM.NativeCode.ikvm.runtime
 
 	static class Util
 	{
+#if !FIRST_PASS
+		private static readonly global::java.util.concurrent.ConcurrentHashMap instanceTypeWrappers = new global::java.util.concurrent.ConcurrentHashMap();
+#endif
+
 		public static object getClassFromObject(object o)
 		{
 			return GetTypeWrapperFromObject(o).ClassObject;
@@ -347,17 +351,31 @@ namespace IKVM.NativeCode.ikvm.runtime
 
 		internal static TypeWrapper GetTypeWrapperFromObject(object o)
 		{
-			Type t = o.GetType();
-			if(t.IsPrimitive || (ClassLoaderWrapper.IsRemappedType(t) && !t.IsSealed))
-			{
-				return DotNetTypeWrapper.GetWrapperFromDotNetType(t);
-			}
+#if FIRST_PASS
+            return null;
+#else
 			TypeWrapper ghostType = GhostTag.GetTag(o);
 			if(ghostType != null)
 			{
 				return ghostType;
 			}
-			return ClassLoaderWrapper.GetWrapperFromType(t);
+			Type t = o.GetType();
+			TypeWrapper tw = (TypeWrapper)instanceTypeWrappers.get(t);
+			if(tw != null)
+			{
+				return tw;
+			}
+			if(t.IsPrimitive || (ClassLoaderWrapper.IsRemappedType(t) && !t.IsSealed))
+			{
+				tw = DotNetTypeWrapper.GetWrapperFromDotNetType(t);
+			}
+			else
+			{
+				tw = ClassLoaderWrapper.GetWrapperFromType(t);
+			}
+			instanceTypeWrappers.put(t, tw);
+			return tw;
+#endif
 		}
 
 		public static object getClassFromTypeHandle(RuntimeTypeHandle handle)
