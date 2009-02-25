@@ -7283,6 +7283,32 @@ namespace IKVM.NativeCode.sun.reflect
 #endif
 		}
 
+		sealed class ActivatorConstructorAccessor : srConstructorAccessor
+		{
+			private readonly Type type;
+
+			internal ActivatorConstructorAccessor(MethodWrapper mw)
+			{
+				this.type = mw.DeclaringType.TypeAsBaseType;
+			}
+
+			public object newInstance(object[] objarr)
+			{
+				return Activator.CreateInstance(type);
+			}
+
+			internal static bool IsSuitable(MethodWrapper mw)
+			{
+				MethodBase mb = mw.GetMethod();
+				return mb != null
+					&& mb.IsConstructor
+					&& mb.IsPublic
+					&& mb.DeclaringType.IsPublic
+					&& mb.DeclaringType == mw.DeclaringType.TypeAsBaseType
+					&& mb.GetParameters().Length == 0;
+			}
+		}
+
 		public static object newConstructorAccessor0(object thisFactory, object constructor)
 		{
 #if FIRST_PASS
@@ -7293,6 +7319,13 @@ namespace IKVM.NativeCode.sun.reflect
 			if (mw is ICustomInvoke)
 			{
 				return new ConstructorAccessorImpl(cons);
+			}
+			else if (ActivatorConstructorAccessor.IsSuitable(mw))
+			{
+				// we special case public default constructors, because in that case using Activator.CreateInstance()
+				// is almost as fast as FastConstructorAccessorImpl, but it saves us significantly in working set and
+				// startup time (because often during startup a sun.nio.cs.* encoder is instantiated using reflection)
+				return new ActivatorConstructorAccessor(mw);
 			}
 			else
 			{
