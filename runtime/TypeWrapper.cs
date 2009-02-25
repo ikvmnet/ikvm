@@ -2086,7 +2086,8 @@ namespace IKVM.Internal
 #if !FIRST_PASS
 					java.lang.Class clazz = java.lang.Class.newClass();
 					SetTypeWrapperHack(ref clazz.typeWrapper, this);
-					System.Threading.Interlocked.Exchange(ref classObject, clazz);
+					// MONOBUG Interlocked.Exchange is broken on Mono, so we use CompareExchange
+					System.Threading.Interlocked.CompareExchange(ref classObject, clazz, null);
 #endif
 				}
 			}
