@@ -6239,6 +6239,32 @@ namespace IKVM.NativeCode.sun.reflect
 			}
 		}
 
+		sealed class ActivatorConstructorAccessor : srConstructorAccessor
+		{
+			private readonly Type type;
+
+			internal ActivatorConstructorAccessor(MethodWrapper mw)
+			{
+				this.type = mw.DeclaringType.TypeAsBaseType;
+			}
+
+			public object newInstance(object[] objarr)
+			{
+				return Activator.CreateInstance(type);
+			}
+
+			internal static bool IsSuitable(MethodWrapper mw)
+			{
+				MethodBase mb = mw.GetMethod();
+				return mb != null
+					&& mb.IsConstructor
+					&& mb.IsPublic
+					&& mb.DeclaringType.IsPublic
+					&& mb.DeclaringType == mw.DeclaringType.TypeAsBaseType
+					&& mb.GetParameters().Length == 0;
+			}
+		}
+
 		private abstract class FieldAccessorImplBase : srFieldAccessor
 		{
 			protected readonly FieldWrapper fw;
@@ -7277,32 +7303,6 @@ namespace IKVM.NativeCode.sun.reflect
 				return new FastMethodAccessorImpl(m, false);
 			}
 #endif
-		}
-
-		sealed class ActivatorConstructorAccessor : srConstructorAccessor
-		{
-			private readonly Type type;
-
-			internal ActivatorConstructorAccessor(MethodWrapper mw)
-			{
-				this.type = mw.DeclaringType.TypeAsBaseType;
-			}
-
-			public object newInstance(object[] objarr)
-			{
-				return Activator.CreateInstance(type);
-			}
-
-			internal static bool IsSuitable(MethodWrapper mw)
-			{
-				MethodBase mb = mw.GetMethod();
-				return mb != null
-					&& mb.IsConstructor
-					&& mb.IsPublic
-					&& mb.DeclaringType.IsPublic
-					&& mb.DeclaringType == mw.DeclaringType.TypeAsBaseType
-					&& mb.GetParameters().Length == 0;
-			}
 		}
 
 		public static object newConstructorAccessor0(object thisFactory, object constructor)
