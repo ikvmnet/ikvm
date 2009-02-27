@@ -2610,10 +2610,6 @@ namespace IKVM.NativeCode.java
 
 		static class Class
 		{
-			public static void registerNatives()
-			{
-			}
-
 			public static object forName0(string name, bool initialize, object loader)
 			{
 #if FIRST_PASS

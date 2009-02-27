@@ -121,11 +121,6 @@ public final
     private static final int ENUM      = 0x00004000;
     private static final int SYNTHETIC = 0x00001000;
 
-    private static native void registerNatives();
-    static {
-        registerNatives();
-    }
-
     /*
      * Constructor. Only the Java Virtual Machine creates Class
      * objects.
@@ -2245,11 +2240,11 @@ public final
 
     // Incremented by the VM on each call to JVM TI RedefineClasses()
     // that redefines this class or a superclass.
-    private volatile transient int classRedefinedCount = 0;
+    private volatile transient int classRedefinedCount;
 
     // Value of classRedefinedCount when we last cleared the cached values
     // that are sensitive to class redefinition.
-    private volatile transient int lastRedefinedCount = 0;
+    private volatile transient int lastRedefinedCount;
 
     // Clears cached values that might possibly have been obsoleted by
     // a class redefinition.
@@ -2982,7 +2977,7 @@ public final
         }
         return enumConstants;
     }
-    private volatile transient T[] enumConstants = null;
+    private volatile transient T[] enumConstants;
 
     /**
      * Returns a map from simple name to enum constant.  This package-private
@@ -3004,7 +2999,7 @@ public final
         }
         return enumConstantDirectory;
     }
-    private volatile transient Map<String, T> enumConstantDirectory = null;
+    private volatile transient Map<String, T> enumConstantDirectory;
 
     /**
      * Casts an object to the class or interface represented
