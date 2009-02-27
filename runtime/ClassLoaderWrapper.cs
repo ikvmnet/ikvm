@@ -1701,53 +1701,71 @@ namespace IKVM.Internal
 			this.references = fixedReferences;
 			this.isReflectionOnly = assembly.ReflectionOnly;
 			this.hasCustomClassLoader = hasCustomClassLoader;
-			if(assembly.GetManifestResourceInfo("ikvm.exports") != null)
+		}
+
+		private void DoInitializeExports()
+		{
+			lock (this)
 			{
-				List<string> wildcardExports = new List<string>();
-				using(Stream stream = assembly.GetManifestResourceStream("ikvm.exports"))
+				if (delegates == null)
 				{
-					BinaryReader rdr = new BinaryReader(stream);
-					int assemblyCount = rdr.ReadInt32();
-					exports = new Dictionary<int, List<int>>();
-					exportedAssemblies = new AssemblyLoader[assemblyCount];
-					exportedAssemblyNames = new string[assemblyCount];
-					exportedLoaders = new Dictionary<Assembly, AssemblyLoader>();
-					for (int i = 0; i < assemblyCount; i++)
+					if (!(assemblyLoader.Assembly is AssemblyBuilder) && assemblyLoader.Assembly.GetManifestResourceInfo("ikvm.exports") != null)
 					{
-						exportedAssemblyNames[i] = rdr.ReadString();
-						int typeCount = rdr.ReadInt32();
-						if(typeCount == 0 && references == null)
+						List<string> wildcardExports = new List<string>();
+						using (Stream stream = assemblyLoader.Assembly.GetManifestResourceStream("ikvm.exports"))
 						{
-							wildcardExports.Add(exportedAssemblyNames[i]);
-						}
-						for(int j = 0; j < typeCount; j++)
-						{
-							int hash = rdr.ReadInt32();
-							List<int> assemblies;
-							if(!exports.TryGetValue(hash, out assemblies))
+							BinaryReader rdr = new BinaryReader(stream);
+							int assemblyCount = rdr.ReadInt32();
+							exports = new Dictionary<int, List<int>>();
+							exportedAssemblies = new AssemblyLoader[assemblyCount];
+							exportedAssemblyNames = new string[assemblyCount];
+							exportedLoaders = new Dictionary<Assembly, AssemblyLoader>();
+							for (int i = 0; i < assemblyCount; i++)
 							{
-								assemblies = new List<int>();
-								exports.Add(hash, assemblies);
+								exportedAssemblyNames[i] = rdr.ReadString();
+								int typeCount = rdr.ReadInt32();
+								if (typeCount == 0 && references == null)
+								{
+									wildcardExports.Add(exportedAssemblyNames[i]);
+								}
+								for (int j = 0; j < typeCount; j++)
+								{
+									int hash = rdr.ReadInt32();
+									List<int> assemblies;
+									if (!exports.TryGetValue(hash, out assemblies))
+									{
+										assemblies = new List<int>();
+										exports.Add(hash, assemblies);
+									}
+									assemblies.Add(i);
+								}
 							}
-							assemblies.Add(i);
+						}
+						if (references == null)
+						{
+							references = wildcardExports.ToArray();
 						}
 					}
-				}
-				if(references == null)
-				{
-					references = wildcardExports.ToArray();
+					else
+					{
+						AssemblyName[] refNames = assemblyLoader.Assembly.GetReferencedAssemblies();
+						references = new string[refNames.Length];
+						for (int i = 0; i < references.Length; i++)
+						{
+							references[i] = refNames[i].FullName;
+						}
+					}
+					delegates = new AssemblyClassLoader[references.Length];
 				}
 			}
-			else
+		}
+
+		private void LazyInitExports()
+		{
+			if (delegates == null)
 			{
-				AssemblyName[] refNames = assemblyLoader.Assembly.GetReferencedAssemblies();
-				references = new string[refNames.Length];
-				for (int i = 0; i < references.Length; i++)
-				{
-					references[i] = refNames[i].FullName;
-				}
+				DoInitializeExports();
 			}
-			delegates = new AssemblyClassLoader[references.Length];
 		}
 
 		internal Assembly MainAssembly
@@ -1825,6 +1843,7 @@ namespace IKVM.Internal
 			{
 				return RegisterInitiatingLoader(tw);
 			}
+			LazyInitExports();
 			if (exports != null)
 			{
 				List<int> assemblies;
@@ -1864,6 +1883,7 @@ namespace IKVM.Internal
 
 		private AssemblyLoader GetLoaderForExportedAssembly(Assembly assembly)
 		{
+			LazyInitExports();
 			AssemblyLoader loader;
 			lock (exportedLoaders)
 			{
@@ -1937,6 +1957,7 @@ namespace IKVM.Internal
 
 		internal TypeWrapper LoadReferenced(string name)
 		{
+			LazyInitExports();
 			for(int i = 0; i < delegates.Length; i++)
 			{
 				if(delegates[i] == null)
@@ -1975,6 +1996,7 @@ namespace IKVM.Internal
 				list = new List<Assembly>();
 				list.Add(assemblyLoader.Assembly);
 			}
+			LazyInitExports();
 			if(exports != null)
 			{
 				List<int> assemblies;
