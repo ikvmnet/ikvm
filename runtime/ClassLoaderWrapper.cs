@@ -1709,7 +1709,10 @@ namespace IKVM.Internal
 			{
 				if (delegates == null)
 				{
+#pragma warning disable 184
+					// during ikvmc build: warning CS0184: The given expression is never of the provided ('IKVM.Reflection.Emit.AssemblyBuilder') type
 					if (!(assemblyLoader.Assembly is AssemblyBuilder) && assemblyLoader.Assembly.GetManifestResourceInfo("ikvm.exports") != null)
+#pragma warning restore 184
 					{
 						List<string> wildcardExports = new List<string>();
 						using (Stream stream = assemblyLoader.Assembly.GetManifestResourceStream("ikvm.exports"))
