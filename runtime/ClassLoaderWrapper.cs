@@ -918,6 +918,13 @@ namespace IKVM.Internal
 			return matchingLoader;
 		}
 
+#if !STATIC_COMPILER && !FIRST_PASS
+		internal static object DoPrivileged(java.security.PrivilegedAction action)
+		{
+			return java.security.AccessController.doPrivileged(action, ikvm.@internal.CallerID.create(typeof(java.lang.ClassLoader).TypeHandle));
+		}
+#endif
+
 		private static ClassLoaderWrapper GetGenericClassLoaderByKey(ClassLoaderWrapper[] key)
 		{
 			lock(wrapperLock)
@@ -935,7 +942,7 @@ namespace IKVM.Internal
 				}
 				object javaClassLoader = null;
 #if !STATIC_COMPILER && !FIRST_PASS
-				javaClassLoader = java.security.AccessController.doPrivileged(new CreateAssemblyClassLoader(null));
+				javaClassLoader = DoPrivileged(new CreateAssemblyClassLoader(null));
 #endif
 				GenericClassLoader newLoader = new GenericClassLoader(key, javaClassLoader);
 				SetWrapperForClassLoader(javaClassLoader, newLoader);
@@ -1138,7 +1145,7 @@ namespace IKVM.Internal
 					}
 					if(javaClassLoader == null)
 					{
-						javaClassLoader = java.security.AccessController.doPrivileged(new CreateAssemblyClassLoader(assembly));
+						javaClassLoader = DoPrivileged(new CreateAssemblyClassLoader(assembly));
 					}
 #endif
 					loader = new AssemblyClassLoader(assembly, javaClassLoader, customClassLoaderCtor != null);
@@ -1160,7 +1167,7 @@ namespace IKVM.Internal
 			{
 				try
 				{
-					java.security.AccessController.doPrivileged(new CustomClassLoaderCtorCaller(customClassLoaderCtor, javaClassLoader, assembly));
+					DoPrivileged(new CustomClassLoaderCtorCaller(customClassLoaderCtor, javaClassLoader, assembly));
 				}
 				finally
 				{

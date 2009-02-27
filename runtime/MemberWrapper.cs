@@ -53,7 +53,7 @@ namespace IKVM.Internal
 	class MemberWrapper
 	{
 #if !STATIC_COMPILER && !FIRST_PASS
-		protected static readonly sun.reflect.ReflectionFactory reflectionFactory = (sun.reflect.ReflectionFactory)java.security.AccessController.doPrivileged(new sun.reflect.ReflectionFactory.GetReflectionFactoryAction());
+		protected static readonly sun.reflect.ReflectionFactory reflectionFactory = (sun.reflect.ReflectionFactory)ClassLoaderWrapper.DoPrivileged(new sun.reflect.ReflectionFactory.GetReflectionFactoryAction());
 #endif
 		private System.Runtime.InteropServices.GCHandle handle;
 		private TypeWrapper declaringType;
