@@ -1405,7 +1405,7 @@ namespace IKVM.Internal
 	class AssemblyClassLoader : ClassLoaderWrapper
 	{
 		private AssemblyLoader assemblyLoader;
-		private AssemblyName[] references;
+		private string[] references;
 		private AssemblyClassLoader[] delegates;
 		private bool isReflectionOnly;
 #if !STATIC_COMPILER
@@ -1414,7 +1414,7 @@ namespace IKVM.Internal
 #endif
 		private bool hasCustomClassLoader;
 		private Dictionary<int, List<int>> exports;
-		private AssemblyName[] exportedAssemblyNames;
+		private string[] exportedAssemblyNames;
 		private AssemblyLoader[] exportedAssemblies;
 		private Dictionary<Assembly, AssemblyLoader> exportedLoaders;
 
@@ -1694,7 +1694,7 @@ namespace IKVM.Internal
 		{
 		}
 
-		internal AssemblyClassLoader(Assembly assembly, AssemblyName[] fixedReferences, object javaClassLoader, bool hasCustomClassLoader)
+		internal AssemblyClassLoader(Assembly assembly, string[] fixedReferences, object javaClassLoader, bool hasCustomClassLoader)
 			: base(CodeGenOptions.None, javaClassLoader)
 		{
 			this.assemblyLoader = new AssemblyLoader(assembly);
@@ -1703,18 +1703,18 @@ namespace IKVM.Internal
 			this.hasCustomClassLoader = hasCustomClassLoader;
 			if(assembly.GetManifestResourceInfo("ikvm.exports") != null)
 			{
-				List<AssemblyName> wildcardExports = new List<AssemblyName>();
+				List<string> wildcardExports = new List<string>();
 				using(Stream stream = assembly.GetManifestResourceStream("ikvm.exports"))
 				{
 					BinaryReader rdr = new BinaryReader(stream);
 					int assemblyCount = rdr.ReadInt32();
 					exports = new Dictionary<int, List<int>>();
 					exportedAssemblies = new AssemblyLoader[assemblyCount];
-					exportedAssemblyNames = new AssemblyName[assemblyCount];
+					exportedAssemblyNames = new string[assemblyCount];
 					exportedLoaders = new Dictionary<Assembly, AssemblyLoader>();
 					for (int i = 0; i < assemblyCount; i++)
 					{
-						exportedAssemblyNames[i] = new AssemblyName(rdr.ReadString());
+						exportedAssemblyNames[i] = rdr.ReadString();
 						int typeCount = rdr.ReadInt32();
 						if(typeCount == 0 && references == null)
 						{
@@ -1740,7 +1740,12 @@ namespace IKVM.Internal
 			}
 			else
 			{
-				references = assembly.GetReferencedAssemblies();
+				AssemblyName[] refNames = assemblyLoader.Assembly.GetReferencedAssemblies();
+				references = new string[refNames.Length];
+				for (int i = 0; i < references.Length; i++)
+				{
+					references[i] = refNames[i].FullName;
+				}
 			}
 			delegates = new AssemblyClassLoader[references.Length];
 		}
@@ -1786,9 +1791,8 @@ namespace IKVM.Internal
 			return null;
 		}
 
-		private Assembly LoadAssemblyOrClearName(ref AssemblyName nameRef)
+		private Assembly LoadAssemblyOrClearName(ref string name)
 		{
-			AssemblyName name = nameRef;
 			if (name == null)
 			{
 				// previous load attemp failed
@@ -1798,7 +1802,7 @@ namespace IKVM.Internal
 			{
 				if (isReflectionOnly)
 				{
-					return Assembly.ReflectionOnlyLoad(name.FullName);
+					return Assembly.ReflectionOnlyLoad(name);
 				}
 				else
 				{
@@ -1808,7 +1812,7 @@ namespace IKVM.Internal
 			catch
 			{
 				// cache failure by clearing out the name the caller uses
-				nameRef = null;
+				name = null;
 				// should we issue a warning error (in ikvmc)?
 				return null;
 			}
@@ -2175,9 +2179,9 @@ namespace IKVM.Internal
 	class BootstrapClassLoader : AssemblyClassLoader
 	{
 		internal BootstrapClassLoader()
-			: base(JVM.CoreAssembly, new AssemblyName[] {
-				typeof(object).Assembly.GetName(),		// mscorlib
-				typeof(System.Uri).Assembly.GetName()	// System
+			: base(JVM.CoreAssembly, new string[] {
+				typeof(object).Assembly.FullName,		// mscorlib
+				typeof(System.Uri).Assembly.FullName	// System
 			}, null, false)
 		{
 		}
