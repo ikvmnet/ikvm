@@ -100,9 +100,9 @@ static class AtomicReferenceFieldUpdaterEmitter
 				tb.CreateType();
 			});
 		}
-		ilgen.Emit(OpCodes.Pop);
-		ilgen.Emit(OpCodes.Pop);
-		ilgen.Emit(OpCodes.Pop);
+		ilgen.LazyEmitPop();
+		ilgen.LazyEmitPop();
+		ilgen.LazyEmitPop();
 		ilgen.Emit(OpCodes.Newobj, cb);
 	}
 

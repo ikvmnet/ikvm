@@ -160,7 +160,7 @@ class Compiler
 	private static MethodInfo monitorEnterMethod;
 	private static MethodInfo monitorExitMethod;
 	private static MethodInfo keepAliveMethod;
-	private static MethodWrapper getClassFromTypeHandle;
+	internal static MethodWrapper getClassFromTypeHandle;
 	private static TypeWrapper java_lang_Object;
 	private static TypeWrapper java_lang_Class;
 	private static TypeWrapper java_lang_Throwable;
@@ -785,7 +785,7 @@ class Compiler
 				case StackType.Null:
 				case StackType.This:
 				case StackType.UnitializedThis:
-					compiler.ilGenerator.Emit(OpCodes.Pop);
+					compiler.ilGenerator.LazyEmitPop();
 					break;
 				case StackType.New:
 					// new objects aren't really there on the stack
@@ -1639,7 +1639,7 @@ class Compiler
 					DynamicGetPutField(instr, i);
 					break;
 				case NormalizedByteCode.__aconst_null:
-					ilGenerator.Emit(OpCodes.Ldnull);
+					ilGenerator.LazyEmitLdnull();
 					break;
 				case NormalizedByteCode.__iconst:
 					ilGenerator.LazyEmitLdc_I4(instr.NormalizedArg1);
@@ -1729,13 +1729,11 @@ class Compiler
 								{
 									tw = tw.ElementTypeWrapper;
 								}
-								ilGenerator.Emit(OpCodes.Ldtoken, ArrayTypeWrapper.MakeArrayType(tw.TypeAsTBD, rank));
-								getClassFromTypeHandle.EmitCall(ilGenerator);
+								ilGenerator.LazyEmitLoadClass(ArrayTypeWrapper.MakeArrayType(tw.TypeAsTBD, rank));
 							}
 							else
 							{
-								ilGenerator.Emit(OpCodes.Ldtoken, tw.IsRemapped ? tw.TypeAsBaseType : tw.TypeAsTBD);
-								getClassFromTypeHandle.EmitCall(ilGenerator);
+								ilGenerator.LazyEmitLoadClass(tw.IsRemapped ? tw.TypeAsBaseType : tw.TypeAsTBD);
 							}
 							break;
 						}
@@ -2208,7 +2206,7 @@ class Compiler
 						// any unitialized reference is always the this reference, we don't store anything
 						// here (because CLR won't allow unitialized references in locals) and then when
 						// the unitialized ref is loaded we redirect to the this reference
-						ilGenerator.Emit(OpCodes.Pop);
+						ilGenerator.LazyEmitPop();
 					}
 					else
 					{
@@ -2917,17 +2915,17 @@ class Compiler
 					TypeWrapper type1 = ma.GetRawStackTypeWrapper(i, 0);
 					if(type1.IsWidePrimitive)
 					{
-						ilGenerator.Emit(OpCodes.Pop);
+						ilGenerator.LazyEmitPop();
 					}
 					else
 					{
 						if(!VerifierTypeWrapper.IsNew(type1))
 						{
-							ilGenerator.Emit(OpCodes.Pop);
+							ilGenerator.LazyEmitPop();
 						}
 						if(!VerifierTypeWrapper.IsNew(ma.GetRawStackTypeWrapper(i, 1)))
 						{
-							ilGenerator.Emit(OpCodes.Pop);
+							ilGenerator.LazyEmitPop();
 						}
 					}
 					break;
@@ -2936,7 +2934,7 @@ class Compiler
 					// if the TOS is a new object, it isn't really there, so we don't need to pop it
 					if(!VerifierTypeWrapper.IsNew(ma.GetRawStackTypeWrapper(i, 0)))
 					{
-						ilGenerator.Emit(OpCodes.Pop);
+						ilGenerator.LazyEmitPop();
 					}
 					break;
 				case NormalizedByteCode.__monitorenter:
@@ -3647,7 +3645,7 @@ class Compiler
 		if(v == null)
 		{
 			// dead store
-			ilGenerator.Emit(OpCodes.Pop);
+			ilGenerator.LazyEmitPop();
 		}
 		else if(v.isArg)
 		{
@@ -3663,7 +3661,7 @@ class Compiler
 		}
 		else if(v.type == VerifierTypeWrapper.Null)
 		{
-			ilGenerator.Emit(OpCodes.Pop);
+			ilGenerator.LazyEmitPop();
 		}
 		else
 		{

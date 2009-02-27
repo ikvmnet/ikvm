@@ -85,6 +85,7 @@ namespace IKVM.Internal
 		{
 			Dictionary<IntrinsicKey, Emitter> intrinsics = new Dictionary<IntrinsicKey, Emitter>();
 			intrinsics.Add(new IntrinsicKey("java.lang.Object", "getClass", "()Ljava.lang.Class;"), Object_getClass);
+			intrinsics.Add(new IntrinsicKey("java.lang.Class", "desiredAssertionStatus", "()Z"), Class_desiredAssertionStatus);
 			intrinsics.Add(new IntrinsicKey("java.lang.Float", "floatToRawIntBits", "(F)I"), Float_floatToRawIntBits);
 			intrinsics.Add(new IntrinsicKey("java.lang.Float", "intBitsToFloat", "(I)F"), Float_intBitsToFloat);
 			intrinsics.Add(new IntrinsicKey("java.lang.Double", "doubleToRawLongBits", "(D)J"), Double_doubleToRawLongBits);
@@ -140,6 +141,20 @@ namespace IKVM.Internal
 				}
 			}
 			return false;
+		}
+
+		private static bool Class_desiredAssertionStatus(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		{
+			if (caller.DeclaringType.GetClassLoader().RemoveAsserts)
+			{
+				ilgen.LazyEmitPop();
+				ilgen.LazyEmitLdc_I4(0);
+				return true;
+			}
+			else
+			{
+				return false;
+			}
 		}
 
 		private static bool IsSafeForGetClassOptimization(TypeWrapper tw)
@@ -314,7 +329,7 @@ namespace IKVM.Internal
 				&& code[opcodeIndex - 1].NormalizedOpCode == NormalizedByteCode.__iconst
 				&& code[opcodeIndex - 1].Arg1 == 2)
 			{
-				ilgen.Emit(OpCodes.Pop);
+				ilgen.LazyEmitPop();
 				int arg = caller.GetParametersForDefineMethod().Length - 1;
 				if (!caller.IsStatic)
 				{
