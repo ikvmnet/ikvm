@@ -581,7 +581,7 @@ namespace IKVM.Internal
 		internal void LazyEmitPop()
 		{
 			Expr exp = PeekStack();
-			if (exp == null || exp.HasSideEffect)
+			if (exp == null || exp.HasSideEffect || exp.IsIncomplete)
 			{
 				Emit(OpCodes.Pop);
 			}
@@ -905,6 +905,8 @@ namespace IKVM.Internal
 		{
 			internal bool HasSideEffect { get { return false; } }	// for now we only have side-effect free expressions
 
+			internal virtual bool IsIncomplete { get { return false; } }
+
 			internal abstract void Emit(CodeEmitter ilgen);
 		}
 
@@ -917,6 +919,11 @@ namespace IKVM.Internal
 			{
 				this.Expr = expr;
 				this.Type = type;
+			}
+
+			internal override bool IsIncomplete
+			{
+				get { return Expr == null; }
 			}
 
 			internal override void Emit(CodeEmitter ilgen)
@@ -1160,6 +1167,14 @@ namespace IKVM.Internal
 				this.Type = type;
 			}
 
+			internal override bool IsIncomplete
+			{
+				get
+				{
+					return true;
+				}
+			}
+
 			internal override void Emit(CodeEmitter ilgen)
 			{
 				ilgen.Emit(OpCodes.Isinst, this.Type);
@@ -1172,6 +1187,14 @@ namespace IKVM.Internal
 		{
 			internal CmpExpr()
 			{
+			}
+
+			internal override bool IsIncomplete
+			{
+				get
+				{
+					return true;
+				}
 			}
 
 			internal abstract void EmitBcc(CodeEmitter ilgen, Comparison comp, CodeEmitterLabel label);
