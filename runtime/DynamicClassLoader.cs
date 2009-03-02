@@ -216,7 +216,11 @@ namespace IKVM.Internal
 					types[f.Name] = type;
 #if !STATIC_COMPILER && !FIRST_PASS
 					java.lang.Class clazz = java.lang.Class.newClass();
+#if __MonoCS__
 					TypeWrapper.SetTypeWrapperHack(ref clazz.typeWrapper, type);
+#else
+					clazz.typeWrapper = type;
+#endif
 					clazz.pd = (java.security.ProtectionDomain)protectionDomain;
 					type.SetClassObject(clazz);
 #endif

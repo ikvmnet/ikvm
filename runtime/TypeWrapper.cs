@@ -2085,7 +2085,11 @@ namespace IKVM.Internal
 #endif // !COMPACT_FRAMEWORK
 #if !FIRST_PASS
 					java.lang.Class clazz = java.lang.Class.newClass();
+#if __MonoCS__
 					SetTypeWrapperHack(ref clazz.typeWrapper, this);
+#else
+					clazz.typeWrapper = this;
+#endif
 					// MONOBUG Interlocked.Exchange is broken on Mono, so we use CompareExchange
 					System.Threading.Interlocked.CompareExchange(ref classObject, clazz, null);
 #endif
@@ -2093,11 +2097,13 @@ namespace IKVM.Internal
 			}
 		}
 
+#if __MonoCS__
 		// MONOBUG this method is to work around an mcs bug
 		internal static void SetTypeWrapperHack<T>(ref T field, TypeWrapper type)
 		{
 			field = (T)(object)type;
 		}
+#endif
 
 		internal static TypeWrapper FromClass(object classObject)
 		{

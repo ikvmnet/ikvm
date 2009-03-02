@@ -818,8 +818,12 @@ namespace IKVM.Internal
 #if FIRST_PASS
 				ClassLoaderWrapper wrapper = null;
 #else
-				// MONOBUG the redundant cast to ClassLoaderWrapper is to workaround an mcs bug
-				ClassLoaderWrapper wrapper = (ClassLoaderWrapper)(object)((java.lang.ClassLoader)javaClassLoader).wrapper;
+				ClassLoaderWrapper wrapper = 
+#if __MonoCS__
+					// MONOBUG the redundant cast to ClassLoaderWrapper is to workaround an mcs bug
+					(ClassLoaderWrapper)(object)
+#endif
+					((java.lang.ClassLoader)javaClassLoader).wrapper;
 #endif
 				if(wrapper == null)
 				{
@@ -951,7 +955,7 @@ namespace IKVM.Internal
 			}
 		}
 
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && __MonoCS__
 		// MONOBUG this weird hack is to work around an mcs bug
 		private static void SetClassLoadWrapperHack<T>(ref T field, ClassLoaderWrapper wrapper)
 		{
@@ -962,7 +966,11 @@ namespace IKVM.Internal
 		private static void SetWrapperForClassLoader(object javaClassLoader, ClassLoaderWrapper wrapper)
 		{
 #if !STATIC_COMPILER && !FIRST_PASS
+#if __MonoCS__
 			SetClassLoadWrapperHack(ref ((java.lang.ClassLoader)javaClassLoader).wrapper, wrapper);
+#else
+			((java.lang.ClassLoader)javaClassLoader).wrapper = wrapper;
+#endif
 #endif
 		}
 
