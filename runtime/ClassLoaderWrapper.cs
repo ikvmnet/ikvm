@@ -1434,7 +1434,18 @@ namespace IKVM.Internal
 				isJavaModule = new bool[modules.Length];
 				for (int i = 0; i < modules.Length; i++)
 				{
-					object[] attr = AttributeHelper.GetJavaModuleAttributes(modules[i]);
+					object[] attr;
+					try
+					{
+						attr = AttributeHelper.GetJavaModuleAttributes(modules[i]);
+					}
+					catch (Exception x)
+					{
+						// HACK we handle exceptions here, because there is at least one obfuscator that produces
+						// invalid assemblies that cause Module.GetCustomAttributes() to throw an exception
+						JVM.CriticalFailure("Unexpected exception", x);
+						throw null;
+					}
 					if (attr.Length > 0)
 					{
 						isJavaModule[i] = true;
