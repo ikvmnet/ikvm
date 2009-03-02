@@ -1722,18 +1722,9 @@ class Compiler
 								ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicClassLiteral);
 								java_lang_Class.EmitCheckcast(clazz, ilGenerator);
 							}
-							else if(tw.IsGhostArray)
-							{
-								int rank = tw.ArrayRank;
-								while(tw.IsArray)
-								{
-									tw = tw.ElementTypeWrapper;
-								}
-								ilGenerator.LazyEmitLoadClass(ArrayTypeWrapper.MakeArrayType(tw.TypeAsTBD, rank));
-							}
 							else
 							{
-								ilGenerator.LazyEmitLoadClass(tw.IsRemapped ? tw.TypeAsBaseType : tw.TypeAsTBD);
+								ilGenerator.LazyEmitLoadClass(tw);
 							}
 							break;
 						}

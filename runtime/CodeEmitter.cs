@@ -591,7 +591,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal void LazyEmitLoadClass(Type type)
+		internal void LazyEmitLoadClass(TypeWrapper type)
 		{
 			PushStack(new ClassLiteralExpr(type));
 		}
@@ -870,6 +870,16 @@ namespace IKVM.Internal
 			{
 				PopStack();
 				return str.str;
+			}
+			return null;
+		}
+
+		internal TypeWrapper PeekLazyClassLiteral()
+		{
+			ClassLiteralExpr lit = PeekStack() as ClassLiteralExpr;
+			if (lit != null)
+			{
+				return lit.Type;
 			}
 			return null;
 		}
@@ -1335,16 +1345,29 @@ namespace IKVM.Internal
 
 		class ClassLiteralExpr : Expr
 		{
-			private readonly Type type;
+			internal readonly TypeWrapper Type;
 
-			internal ClassLiteralExpr(Type type)
+			internal ClassLiteralExpr(TypeWrapper type)
 			{
-				this.type = type;
+				this.Type = type;
 			}
 
 			internal override void Emit(CodeEmitter ilgen)
 			{
-				ilgen.Emit(OpCodes.Ldtoken, type);
+				TypeWrapper tw = Type;
+				if (tw.IsGhostArray)
+				{
+					int rank = tw.ArrayRank;
+					while (tw.IsArray)
+					{
+						tw = tw.ElementTypeWrapper;
+					}
+					ilgen.Emit(OpCodes.Ldtoken, ArrayTypeWrapper.MakeArrayType(tw.TypeAsTBD, rank));
+				}
+				else
+				{
+					ilgen.Emit(OpCodes.Ldtoken, tw.IsRemapped ? tw.TypeAsBaseType : tw.TypeAsTBD);
+				}
 				Compiler.getClassFromTypeHandle.EmitCall(ilgen);
 			}
 		}

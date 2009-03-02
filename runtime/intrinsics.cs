@@ -145,7 +145,8 @@ namespace IKVM.Internal
 
 		private static bool Class_desiredAssertionStatus(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
 		{
-			if (caller.DeclaringType.GetClassLoader().RemoveAsserts)
+			TypeWrapper classLiteral = ilgen.PeekLazyClassLiteral();
+			if (classLiteral != null && classLiteral.GetClassLoader().RemoveAsserts)
 			{
 				ilgen.LazyEmitPop();
 				ilgen.LazyEmitLdc_I4(0);
