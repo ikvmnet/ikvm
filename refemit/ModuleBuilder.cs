@@ -387,7 +387,7 @@ namespace IKVM.Reflection.Emit
 			TypeBase tb = type as TypeBase;
 			if (tb != null && tb.ModuleBuilder == this)
 			{
-				return new TypeToken(tb.MetadataToken);
+				return new TypeToken(tb.GetTypeToken());
 			}
 			else
 			{
@@ -395,10 +395,28 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 
+		private TypeToken GetTypeTokenForMemberRef(Type type)
+		{
+			if (type.IsGenericTypeDefinition)
+			{
+				return GetTypeToken(type.MakeGenericType(type.GetGenericArguments()));
+			}
+			else
+			{
+				return GetTypeToken(type);
+			}
+		}
+
+		private static bool IsFromGenericTypeDefinition(MemberInfo member)
+		{
+			Type decl = member.DeclaringType;
+			return decl != null && decl.IsGenericTypeDefinition;
+		}
+
 		public FieldToken GetFieldToken(FieldInfo field)
 		{
 			FieldBuilder fb = field as FieldBuilder;
-			if (fb != null && fb.ModuleBuilder == this)
+			if (fb != null && fb.ModuleBuilder == this && !IsFromGenericTypeDefinition(fb))
 			{
 				return new FieldToken(fb.MetadataToken);
 			}
@@ -411,7 +429,7 @@ namespace IKVM.Reflection.Emit
 		public MethodToken GetMethodToken(MethodInfo method)
 		{
 			MethodBuilder mb = method as MethodBuilder;
-			if (mb != null && mb.ModuleBuilder == this)
+			if (mb != null && mb.ModuleBuilder == this && !IsFromGenericTypeDefinition(mb))
 			{
 				return new MethodToken(mb.MetadataToken);
 			}
@@ -424,7 +442,7 @@ namespace IKVM.Reflection.Emit
 		public ConstructorToken GetConstructorToken(ConstructorInfo constructor)
 		{
 			ConstructorBuilder cb = constructor as ConstructorBuilder;
-			if (cb != null && cb.ModuleBuilder == this)
+			if (cb != null && cb.ModuleBuilder == this && !IsFromGenericTypeDefinition(cb))
 			{
 				return new ConstructorToken(cb.MetadataToken);
 			}
@@ -524,7 +542,7 @@ namespace IKVM.Reflection.Emit
 				throw new NotImplementedException();
 			}
 			TableHeap.MemberRefTable.Record rec = new TableHeap.MemberRefTable.Record();
-			rec.Class = GetTypeToken(method.DeclaringType).Token;
+			rec.Class = GetTypeTokenForMemberRef(method.DeclaringType).Token;
 			rec.Name = this.Strings.Add(method.Name);
 			ByteBuffer bb = new ByteBuffer(16);
 			SignatureHelper.WriteMethodSig(this, bb, method);
@@ -539,7 +557,7 @@ namespace IKVM.Reflection.Emit
 				throw new NotImplementedException();
 			}
 			TableHeap.MemberRefTable.Record rec = new TableHeap.MemberRefTable.Record();
-			rec.Class = GetTypeToken(declaringType).Token;
+			rec.Class = GetTypeTokenForMemberRef(declaringType).Token;
 			rec.Name = this.Strings.Add(name);
 			ByteBuffer bb = new ByteBuffer(16);
 			bb.Write(SignatureHelper.FIELD);

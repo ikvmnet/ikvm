@@ -216,7 +216,15 @@ namespace IKVM.Reflection.Emit.Impl
 			return ArrayType.Make(this);
 		}
 
-		public abstract override int MetadataToken { get; }
+		public override int MetadataToken
+		{
+			get { throw new NotImplementedException(); }
+		}
+
+		internal virtual int GetTypeToken()
+		{
+			return MetadataToken;
+		}
 
 		internal abstract ModuleBuilder ModuleBuilder { get; }
 

@@ -32,15 +32,20 @@ using System.Runtime.CompilerServices;
 
 namespace IKVM.Reflection.Emit
 {
-	public class GenericTypeParameterBuilder
+	public class GenericTypeParameterBuilder : Impl.TypeBase
 	{
 		private readonly ModuleBuilder moduleBuilder;
 		private readonly int owner;
+		private readonly int position;
+		private readonly bool method;
+		private int token;
 
-		internal GenericTypeParameterBuilder(ModuleBuilder moduleBuilder, int owner)
+		internal GenericTypeParameterBuilder(ModuleBuilder moduleBuilder, int owner, int position, bool method)
 		{
 			this.moduleBuilder = moduleBuilder;
 			this.owner = owner;
+			this.position = position;
+			this.method = method;
 		}
 
 		public void SetBaseTypeConstraint(Type baseTypeConstraint)
@@ -49,6 +54,77 @@ namespace IKVM.Reflection.Emit
 			rec.Owner = owner;
 			rec.Constraint = moduleBuilder.GetTypeToken(baseTypeConstraint).Token;
 			moduleBuilder.Tables.GenericParamConstraint.AddRecord(rec);
+		}
+
+		public override bool IsGenericParameter
+		{
+			get { return true; }
+		}
+
+		public override int GenericParameterPosition
+		{
+			get { return position; }
+		}
+
+		public override string AssemblyQualifiedName
+		{
+			get { throw new NotImplementedException(); }
+		}
+
+		public override Type BaseType
+		{
+			get { throw new NotImplementedException(); }
+		}
+
+		public override string FullName
+		{
+			get { throw new NotImplementedException(); }
+		}
+
+		protected override TypeAttributes GetAttributeFlagsImpl()
+		{
+			throw new NotImplementedException();
+		}
+
+		protected override MethodInfo GetMethodImpl(string name, BindingFlags bindingAttr, Binder binder, CallingConventions callConvention, Type[] types, ParameterModifier[] modifiers)
+		{
+			throw new NotImplementedException();
+		}
+
+		protected override bool HasElementTypeImpl()
+		{
+			return false;
+		}
+
+		protected override bool IsArrayImpl()
+		{
+			throw new NotImplementedException();
+		}
+
+		protected override bool IsByRefImpl()
+		{
+			throw new NotImplementedException();
+		}
+
+		internal override int GetTypeToken()
+		{
+			if (token == 0)
+			{
+				ByteBuffer spec = new ByteBuffer(5);
+				SignatureHelper.WriteType(moduleBuilder, spec, this);
+				token = 0x1B000000 | this.ModuleBuilder.Tables.TypeSpec.AddRecord(this.ModuleBuilder.Blobs.Add(spec));
+			}
+			return token;
+		}
+
+		internal override ModuleBuilder ModuleBuilder
+		{
+			get { return moduleBuilder; }
+		}
+
+		internal bool IsMethodParameter
+		{
+			get { return method; }
 		}
 	}
 
@@ -66,6 +142,7 @@ namespace IKVM.Reflection.Emit
 		private List<PropertyBuilder> properties;
 		private TypeAttributes attribs;
 		private TypeFlags typeFlags;
+		private GenericTypeParameterBuilder[] gtpb;
 
 		[Flags]
 		private enum TypeFlags
@@ -311,7 +388,7 @@ namespace IKVM.Reflection.Emit
 		public GenericTypeParameterBuilder[] DefineGenericParameters(params string[] names)
 		{
 			typeFlags |= TypeFlags.IsGenericTypeDefinition;
-			GenericTypeParameterBuilder[] gtpb = new GenericTypeParameterBuilder[names.Length];
+			gtpb = new GenericTypeParameterBuilder[names.Length];
 			for (int i = 0; i < names.Length; i++)
 			{
 				TableHeap.GenericParamTable.Record rec = new TableHeap.GenericParamTable.Record();
@@ -319,9 +396,14 @@ namespace IKVM.Reflection.Emit
 				rec.Flags = 0;
 				rec.Owner = token;
 				rec.Name = this.ModuleBuilder.Strings.Add(names[i]);
-				gtpb[i] = new GenericTypeParameterBuilder(this.ModuleBuilder, this.ModuleBuilder.Tables.GenericParam.AddRecord(rec));
+				gtpb[i] = new GenericTypeParameterBuilder(this.ModuleBuilder, this.ModuleBuilder.Tables.GenericParam.AddRecord(rec), i, false);
 			}
-			return gtpb;
+			return (GenericTypeParameterBuilder[])gtpb.Clone();
+		}
+
+		public override Type[] GetGenericArguments()
+		{
+			return (Type[])gtpb.Clone();
 		}
 
 		public Type CreateType()
@@ -658,18 +740,15 @@ namespace IKVM.Reflection.Emit
 			get { return type.ModuleBuilder; }
 		}
 
-		public override int MetadataToken
+		internal override int GetTypeToken()
 		{
-			get
+			if (token == 0)
 			{
-				if (token == 0)
-				{
-					ByteBuffer spec = new ByteBuffer(5);
-					SignatureHelper.WriteType(this.ModuleBuilder, spec, this);
-					token = 0x1B000000 | this.ModuleBuilder.Tables.TypeSpec.AddRecord(this.ModuleBuilder.Blobs.Add(spec));
-				}
-				return token;
+				ByteBuffer spec = new ByteBuffer(5);
+				SignatureHelper.WriteType(this.ModuleBuilder, spec, this);
+				token = 0x1B000000 | this.ModuleBuilder.Tables.TypeSpec.AddRecord(this.ModuleBuilder.Blobs.Add(spec));
 			}
+			return token;
 		}
 	}
 
@@ -922,18 +1001,15 @@ namespace IKVM.Reflection.Emit
 			get { return false; }
 		}
 
-		public override int MetadataToken
+		internal override int GetTypeToken()
 		{
-			get
+			if (token == 0)
 			{
-				if (token == 0)
-				{
-					ByteBuffer spec = new ByteBuffer(5);
-					SignatureHelper.WriteGenericSignature(typeBuilder.ModuleBuilder, spec, typeBuilder, typeArguments);
-					token = 0x1B000000 | this.ModuleBuilder.Tables.TypeSpec.AddRecord(this.ModuleBuilder.Blobs.Add(spec));
-				}
-				return token;
+				ByteBuffer spec = new ByteBuffer(5);
+				SignatureHelper.WriteGenericSignature(typeBuilder.ModuleBuilder, spec, typeBuilder, typeArguments);
+				token = 0x1B000000 | this.ModuleBuilder.Tables.TypeSpec.AddRecord(this.ModuleBuilder.Blobs.Add(spec));
 			}
+			return token;
 		}
 
 		internal override ModuleBuilder ModuleBuilder

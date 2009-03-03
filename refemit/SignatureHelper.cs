@@ -183,6 +183,11 @@ namespace IKVM.Reflection.Emit
 			}
 			else if (type.IsGenericParameter)
 			{
+				GenericTypeParameterBuilder gtpb = type as GenericTypeParameterBuilder;
+				if (gtpb != null)
+				{
+					genericParameter = gtpb.IsMethodParameter ? GenericParameterType.Method : GenericParameterType.Type;
+				}
 				switch (genericParameter)
 				{
 					case GenericParameterType.Type:
