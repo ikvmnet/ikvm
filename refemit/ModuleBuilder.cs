@@ -395,7 +395,7 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 
-		private TypeToken GetTypeTokenForMemberRef(Type type)
+		internal TypeToken GetTypeTokenForMemberRef(Type type)
 		{
 			if (type.IsGenericTypeDefinition)
 			{

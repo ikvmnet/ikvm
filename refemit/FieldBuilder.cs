@@ -203,6 +203,16 @@ namespace IKVM.Reflection.Emit
 			get { return pseudoToken; }
 		}
 
+		public override Type[] GetOptionalCustomModifiers()
+		{
+			return MethodBuilder.Copy(optionalCustomModifiers);
+		}
+
+		public override Type[] GetRequiredCustomModifiers()
+		{
+			return MethodBuilder.Copy(requiredCustomModifiers);
+		}
+
 		internal void WriteFieldRecords(MetadataWriter mw)
 		{
 			mw.Write((short)attribs);
@@ -223,6 +233,94 @@ namespace IKVM.Reflection.Emit
 		internal int ImportTo(ModuleBuilder other)
 		{
 			return other.ImportField(typeBuilder, name, fieldType, optionalCustomModifiers, requiredCustomModifiers);
+		}
+	}
+
+	sealed class FieldInstance : FieldInfo
+	{
+		private readonly Type type;
+		private readonly FieldInfo field;
+
+		internal FieldInstance(Type type, FieldInfo field)
+		{
+			this.type = type;
+			this.field = field;
+		}
+
+		public override bool Equals(object obj)
+		{
+			FieldInstance other = obj as FieldInstance;
+			return other != null && other.type == type && other.field == field;
+		}
+
+		public override int GetHashCode()
+		{
+			return type.GetHashCode() * 23 + field.GetHashCode();
+		}
+
+		public override FieldAttributes Attributes
+		{
+			get { throw new NotImplementedException(); }
+		}
+
+		public override RuntimeFieldHandle FieldHandle
+		{
+			get { throw new NotImplementedException(); }
+		}
+
+		public override Type FieldType
+		{
+			get { return field.FieldType; }
+		}
+
+		public override object GetValue(object obj)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override void SetValue(object obj, object value, BindingFlags invokeAttr, Binder binder, System.Globalization.CultureInfo culture)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override Type DeclaringType
+		{
+			get { return type; }
+		}
+
+		public override object[] GetCustomAttributes(Type attributeType, bool inherit)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override object[] GetCustomAttributes(bool inherit)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override bool IsDefined(Type attributeType, bool inherit)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override string Name
+		{
+			get { return field.Name; }
+		}
+
+		public override Type ReflectedType
+		{
+			get { return type; }
+		}
+
+		public override Type[] GetOptionalCustomModifiers()
+		{
+			return field.GetOptionalCustomModifiers();
+		}
+
+		public override Type[] GetRequiredCustomModifiers()
+		{
+			return field.GetRequiredCustomModifiers();
 		}
 	}
 }

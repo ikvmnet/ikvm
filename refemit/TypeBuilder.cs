@@ -594,6 +594,11 @@ namespace IKVM.Reflection.Emit
 			get { return token; }
 		}
 
+		public static FieldInfo GetField(Type type, FieldInfo field)
+		{
+			return new FieldInstance(type, field);
+		}
+
 		internal void WriteTypeDefRecord(MetadataWriter mw, ref int fieldList, ref int methodList)
 		{
 			mw.Write((int)attribs);
@@ -999,6 +1004,11 @@ namespace IKVM.Reflection.Emit
 		public override bool IsGenericTypeDefinition
 		{
 			get { return false; }
+		}
+
+		public override Type GetGenericTypeDefinition()
+		{
+			return typeBuilder;
 		}
 
 		internal override int GetTypeToken()

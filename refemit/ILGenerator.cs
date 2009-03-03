@@ -618,7 +618,14 @@ namespace IKVM.Reflection.Emit
 		public void Emit(OpCode opc, Type type)
 		{
 			Emit(opc);
-			code.Write(moduleBuilder.GetTypeToken(type).Token);
+			if (opc.Value == OpCodes.Ldtoken.Value)
+			{
+				code.Write(moduleBuilder.GetTypeToken(type).Token);
+			}
+			else
+			{
+				code.Write(moduleBuilder.GetTypeTokenForMemberRef(type).Token);
+			}
 		}
 
 		public void EmitCall(OpCode opc, MethodInfo methodInfo, Type[] optionalParameterTypes)
