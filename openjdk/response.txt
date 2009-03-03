@@ -597,7 +597,6 @@ assembly.class
     ../../classpath-0.95/java/awt/image/*.class
     ../../classpath-0.95/java/awt/image/renderable/*.class
     ../../classpath-0.95/java/awt/peer/*.class
-    ../../classpath-0.95/java/awt/print/*.class
     ../../classpath-0.95/javax/swing/*.class
     ../../classpath-0.95/javax/swing/border/*.class
     ../../classpath-0.95/javax/swing/colorchooser/*.class
@@ -617,6 +616,7 @@ assembly.class
     ../../classpath-0.95/javax/swing/undo/*.class
     ../../openjdk6-b12/control/build/linux-amd64/gensrc/com/sun/accessibility/internal/resources/*.class
     ../../openjdk6-b12/jdk/src/share/classes/java/awt/image/*.class
+    ../../openjdk6-b12/jdk/src/share/classes/java/awt/print/*.class
     ../../openjdk6-b12/jdk/src/share/classes/sun/awt/image/*.class
     ../../openjdk6-b12/jdk/src/share/classes/sun/java2d/*.class
     ../../openjdk6-b12/jdk/src/share/classes/sun/java2d/cmm/*.class
@@ -927,6 +927,7 @@ assembly.class
     ../../openjdk6-b12/jdk/src/share/classes/sun/net/spi/nameservice/dns/*.class
     ../../openjdk6-b12/jdk/src/share/classes/sun/net/www/protocol/gopher/*.class
     ../../openjdk6-b12/jdk/src/share/classes/sun/net/www/protocol/netdoc/*.class
+    ../../openjdk6-b12/jdk/src/share/classes/sun/print/*.class
     ../../openjdk6-b12/jdk/src/share/classes/sun/rmi/log/*.class
     ../../openjdk6-b12/jdk/src/share/classes/sun/rmi/registry/*.class
     ../../openjdk6-b12/jdk/src/share/classes/sun/rmi/runtime/*.class
