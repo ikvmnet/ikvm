@@ -10,6 +10,7 @@
                 <include name="fonts-0.95.cs" />
                 <include name="graphics.cs" />
                 <include name="images.cs" />
+            	<include name="printing.cs" />
                 <include name="robot.cs" />
                 <include name="toolkit-0.95.cs" />
             </sources>

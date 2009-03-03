@@ -37,6 +37,7 @@ using java.awt.image;
 using java.awt.peer;
 using java.net;
 using java.util;
+using ikvm.awt.printing;
 
 namespace ikvm.awt
 {
@@ -89,54 +90,54 @@ namespace ikvm.awt
 	}
 
     public class NetToolkit : gnu.java.awt.ClasspathToolkit, ikvm.awt.IkvmToolkit
-	{
+    {
         internal static java.awt.EventQueue eventQueue = new java.awt.EventQueue();
-		internal static volatile Form bogusForm;
-		private static Delegate createControlInstance;
-		private int resolution;
+        internal static volatile Form bogusForm;
+        private static Delegate createControlInstance;
+        private int resolution;
 
         private delegate NetComponentPeer CreateControlInstanceDelegate(Type controlType, java.awt.Component target, Type peerType);
 
-		private static void MessageLoop()
-		{
-			createControlInstance = new CreateControlInstanceDelegate(CreateControlImpl);
-			using(Form form = new Form())
-			{
-				form.CreateControl();
-				// HACK I have no idea why this line is necessary...
-				IntPtr p = form.Handle;
-				if(p == IntPtr.Zero)
-				{
-					// shut up compiler warning
-				}
-				bogusForm = form;
-				// FXBUG to make sure we can be aborted (Thread.Abort) we need to periodically
-				// fire an event (because otherwise we'll be blocking in unmanaged code and
-				// the Abort cannot be handled there).
-				System.Windows.Forms.Timer t = new System.Windows.Forms.Timer();
-				t.Interval = 100;
-				t.Start();
-				Application.Run();
-			}
-		}
+        private static void MessageLoop()
+        {
+            createControlInstance = new CreateControlInstanceDelegate(CreateControlImpl);
+            using (Form form = new Form())
+            {
+                form.CreateControl();
+                // HACK I have no idea why this line is necessary...
+                IntPtr p = form.Handle;
+                if (p == IntPtr.Zero)
+                {
+                    // shut up compiler warning
+                }
+                bogusForm = form;
+                // FXBUG to make sure we can be aborted (Thread.Abort) we need to periodically
+                // fire an event (because otherwise we'll be blocking in unmanaged code and
+                // the Abort cannot be handled there).
+                System.Windows.Forms.Timer t = new System.Windows.Forms.Timer();
+                t.Interval = 100;
+                t.Start();
+                Application.Run();
+            }
+        }
 
         internal static NetComponentPeer CreateControlImpl(Type controlType, java.awt.Component target, Type peerType)
-		{
+        {
             Control control = (Control)Activator.CreateInstance(controlType);
             control.CreateControl();
             // HACK here we go again...
-			IntPtr p = control.Handle;
-			if(p == IntPtr.Zero)
-			{
-				// shut up compiler warning
-			}
+            IntPtr p = control.Handle;
+            if (p == IntPtr.Zero)
+            {
+                // shut up compiler warning
+            }
             NetComponentPeer peer = (NetComponentPeer)Activator.CreateInstance(peerType, new object[] { target, control });
             peer.initEvents();
             return peer;
         }
 
         internal static NetComponentPeer CreatePeer(Type controlType, java.awt.Component target, Type peerType)
-		{
+        {
             java.awt.Container parent = target.getParent();
             if (parent != null && parent.getPeer() == null)
             {
@@ -147,302 +148,302 @@ namespace ikvm.awt
             NetComponentPeer peer = (NetComponentPeer)bogusForm.Invoke(createControlInstance, new object[] { controlType, target, peerType });
             peer.init();
             return peer;
-		}
+        }
 
-		public NetToolkit()
-		{
-			lock(typeof(NetToolkit))
-			{
-				System.Diagnostics.Debug.Assert(bogusForm == null);
+        public NetToolkit()
+        {
+            lock (typeof(NetToolkit))
+            {
+                System.Diagnostics.Debug.Assert(bogusForm == null);
 
-				Thread thread = new Thread(new ThreadStart(MessageLoop));
-				thread.SetApartmentState(ApartmentState.STA);
-				thread.Name = "IKVM AWT WinForms Message Loop";
-				thread.IsBackground = true;
-				thread.Start();
-				// TODO don't use polling...
-				while(bogusForm == null && thread.IsAlive)
-				{
-					Thread.Sleep(1);
-				}
-			}
-		}
+                Thread thread = new Thread(new ThreadStart(MessageLoop));
+                thread.SetApartmentState(ApartmentState.STA);
+                thread.Name = "IKVM AWT WinForms Message Loop";
+                thread.IsBackground = true;
+                thread.Start();
+                // TODO don't use polling...
+                while (bogusForm == null && thread.IsAlive)
+                {
+                    Thread.Sleep(1);
+                }
+            }
+        }
 
-		protected override void loadSystemColors(int[] systemColors)
-		{
-			// initialize all colors to purple to make the ones we might have missed stand out
-			for(int i = 0; i < systemColors.Length; i++)
-			{
-				systemColors[i] = Color.Purple.ToArgb();
-			}
-			systemColors[java.awt.SystemColor.DESKTOP] = SystemColors.Desktop.ToArgb();
-			systemColors[java.awt.SystemColor.ACTIVE_CAPTION] = SystemColors.ActiveCaption.ToArgb();
-			systemColors[java.awt.SystemColor.ACTIVE_CAPTION_TEXT] = SystemColors.ActiveCaptionText.ToArgb();
-			systemColors[java.awt.SystemColor.ACTIVE_CAPTION_BORDER] = SystemColors.ActiveBorder.ToArgb();
-			systemColors[java.awt.SystemColor.INACTIVE_CAPTION] = SystemColors.InactiveCaption.ToArgb();
-			systemColors[java.awt.SystemColor.INACTIVE_CAPTION_TEXT] = SystemColors.InactiveCaptionText.ToArgb();
-			systemColors[java.awt.SystemColor.INACTIVE_CAPTION_BORDER] = SystemColors.InactiveBorder.ToArgb();
-			systemColors[java.awt.SystemColor.WINDOW] = SystemColors.Window.ToArgb();
-			systemColors[java.awt.SystemColor.WINDOW_BORDER] = SystemColors.WindowFrame.ToArgb();
-			systemColors[java.awt.SystemColor.WINDOW_TEXT] = SystemColors.WindowText.ToArgb();
-			systemColors[java.awt.SystemColor.MENU] = SystemColors.Menu.ToArgb();
-			systemColors[java.awt.SystemColor.MENU_TEXT] = SystemColors.MenuText.ToArgb();
-			systemColors[java.awt.SystemColor.TEXT] = SystemColors.Window.ToArgb();
-			systemColors[java.awt.SystemColor.TEXT_TEXT] = SystemColors.WindowText.ToArgb();
-			systemColors[java.awt.SystemColor.TEXT_HIGHLIGHT] = SystemColors.Highlight.ToArgb();
-			systemColors[java.awt.SystemColor.TEXT_HIGHLIGHT_TEXT] = SystemColors.HighlightText.ToArgb();
-			systemColors[java.awt.SystemColor.TEXT_INACTIVE_TEXT] = SystemColors.GrayText.ToArgb();
-			systemColors[java.awt.SystemColor.CONTROL] = SystemColors.Control.ToArgb();
-			systemColors[java.awt.SystemColor.CONTROL_TEXT] = SystemColors.ControlText.ToArgb();
-			systemColors[java.awt.SystemColor.CONTROL_HIGHLIGHT] = SystemColors.ControlLight.ToArgb();
-			systemColors[java.awt.SystemColor.CONTROL_LT_HIGHLIGHT] = SystemColors.ControlLightLight.ToArgb();
-			systemColors[java.awt.SystemColor.CONTROL_SHADOW] = SystemColors.ControlDark.ToArgb();
-			systemColors[java.awt.SystemColor.CONTROL_DK_SHADOW] = SystemColors.ControlDarkDark.ToArgb();
-			systemColors[java.awt.SystemColor.SCROLLBAR] = SystemColors.ScrollBar.ToArgb();
-			systemColors[java.awt.SystemColor.INFO] = SystemColors.Info.ToArgb();
-			systemColors[java.awt.SystemColor.INFO_TEXT] = SystemColors.InfoText.ToArgb();
-		}
+        protected override void loadSystemColors(int[] systemColors)
+        {
+            // initialize all colors to purple to make the ones we might have missed stand out
+            for (int i = 0; i < systemColors.Length; i++)
+            {
+                systemColors[i] = Color.Purple.ToArgb();
+            }
+            systemColors[java.awt.SystemColor.DESKTOP] = SystemColors.Desktop.ToArgb();
+            systemColors[java.awt.SystemColor.ACTIVE_CAPTION] = SystemColors.ActiveCaption.ToArgb();
+            systemColors[java.awt.SystemColor.ACTIVE_CAPTION_TEXT] = SystemColors.ActiveCaptionText.ToArgb();
+            systemColors[java.awt.SystemColor.ACTIVE_CAPTION_BORDER] = SystemColors.ActiveBorder.ToArgb();
+            systemColors[java.awt.SystemColor.INACTIVE_CAPTION] = SystemColors.InactiveCaption.ToArgb();
+            systemColors[java.awt.SystemColor.INACTIVE_CAPTION_TEXT] = SystemColors.InactiveCaptionText.ToArgb();
+            systemColors[java.awt.SystemColor.INACTIVE_CAPTION_BORDER] = SystemColors.InactiveBorder.ToArgb();
+            systemColors[java.awt.SystemColor.WINDOW] = SystemColors.Window.ToArgb();
+            systemColors[java.awt.SystemColor.WINDOW_BORDER] = SystemColors.WindowFrame.ToArgb();
+            systemColors[java.awt.SystemColor.WINDOW_TEXT] = SystemColors.WindowText.ToArgb();
+            systemColors[java.awt.SystemColor.MENU] = SystemColors.Menu.ToArgb();
+            systemColors[java.awt.SystemColor.MENU_TEXT] = SystemColors.MenuText.ToArgb();
+            systemColors[java.awt.SystemColor.TEXT] = SystemColors.Window.ToArgb();
+            systemColors[java.awt.SystemColor.TEXT_TEXT] = SystemColors.WindowText.ToArgb();
+            systemColors[java.awt.SystemColor.TEXT_HIGHLIGHT] = SystemColors.Highlight.ToArgb();
+            systemColors[java.awt.SystemColor.TEXT_HIGHLIGHT_TEXT] = SystemColors.HighlightText.ToArgb();
+            systemColors[java.awt.SystemColor.TEXT_INACTIVE_TEXT] = SystemColors.GrayText.ToArgb();
+            systemColors[java.awt.SystemColor.CONTROL] = SystemColors.Control.ToArgb();
+            systemColors[java.awt.SystemColor.CONTROL_TEXT] = SystemColors.ControlText.ToArgb();
+            systemColors[java.awt.SystemColor.CONTROL_HIGHLIGHT] = SystemColors.ControlLight.ToArgb();
+            systemColors[java.awt.SystemColor.CONTROL_LT_HIGHLIGHT] = SystemColors.ControlLightLight.ToArgb();
+            systemColors[java.awt.SystemColor.CONTROL_SHADOW] = SystemColors.ControlDark.ToArgb();
+            systemColors[java.awt.SystemColor.CONTROL_DK_SHADOW] = SystemColors.ControlDarkDark.ToArgb();
+            systemColors[java.awt.SystemColor.SCROLLBAR] = SystemColors.ScrollBar.ToArgb();
+            systemColors[java.awt.SystemColor.INFO] = SystemColors.Info.ToArgb();
+            systemColors[java.awt.SystemColor.INFO_TEXT] = SystemColors.InfoText.ToArgb();
+        }
 
-		protected override java.awt.peer.ButtonPeer createButton(java.awt.Button target)
-		{
+        protected override java.awt.peer.ButtonPeer createButton(java.awt.Button target)
+        {
             return (NetButtonPeer)CreatePeer(typeof(Button), target, typeof(NetButtonPeer));
-		}
+        }
 
-		protected override java.awt.peer.TextFieldPeer createTextField(java.awt.TextField target)
-		{
+        protected override java.awt.peer.TextFieldPeer createTextField(java.awt.TextField target)
+        {
             return (NetTextFieldPeer)CreatePeer(typeof(TextBox), target, typeof(NetTextFieldPeer));
         }
 
-		protected override java.awt.peer.LabelPeer createLabel(java.awt.Label target)
-		{
+        protected override java.awt.peer.LabelPeer createLabel(java.awt.Label target)
+        {
             return (NetLabelPeer)CreatePeer(typeof(Label), target, typeof(NetLabelPeer));
-		}
+        }
 
-		protected override java.awt.peer.ListPeer createList(java.awt.List target)
-		{
+        protected override java.awt.peer.ListPeer createList(java.awt.List target)
+        {
             return (NetListPeer)CreatePeer(typeof(ListBox), target, typeof(NetListPeer));
-		}
+        }
 
-		protected override java.awt.peer.CheckboxPeer createCheckbox(java.awt.Checkbox target)
-		{
+        protected override java.awt.peer.CheckboxPeer createCheckbox(java.awt.Checkbox target)
+        {
             return (NetCheckboxPeer)CreatePeer(typeof(CheckBox), target, typeof(NetCheckboxPeer));
-		}
+        }
 
-		protected override java.awt.peer.ScrollbarPeer createScrollbar(java.awt.Scrollbar target)
-		{
-			throw new NotImplementedException();
-		}
+        protected override java.awt.peer.ScrollbarPeer createScrollbar(java.awt.Scrollbar target)
+        {
+            throw new NotImplementedException();
+        }
 
-		protected override java.awt.peer.ScrollPanePeer createScrollPane(java.awt.ScrollPane target)
-		{
-			throw new NotImplementedException();
-		}
+        protected override java.awt.peer.ScrollPanePeer createScrollPane(java.awt.ScrollPane target)
+        {
+            throw new NotImplementedException();
+        }
 
-		protected override java.awt.peer.TextAreaPeer createTextArea(java.awt.TextArea target)
-		{
+        protected override java.awt.peer.TextAreaPeer createTextArea(java.awt.TextArea target)
+        {
             return (NetTextAreaPeer)CreatePeer(typeof(TextBox), target, typeof(NetTextAreaPeer));
-		}
+        }
 
-		protected override java.awt.peer.ChoicePeer createChoice(java.awt.Choice target)
-		{
+        protected override java.awt.peer.ChoicePeer createChoice(java.awt.Choice target)
+        {
             return (NetChoicePeer)CreatePeer(typeof(ComboBox), target, typeof(NetChoicePeer));
-		}
+        }
 
-		protected override java.awt.peer.FramePeer createFrame(java.awt.Frame target)
-		{
+        protected override java.awt.peer.FramePeer createFrame(java.awt.Frame target)
+        {
             if (!target.isFontSet())
             {
                 java.awt.Font font = new java.awt.Font("Dialog", java.awt.Font.PLAIN, 12);
                 target.setFont(font);
             }
             return (NetFramePeer)CreatePeer(typeof(MyForm), target, typeof(NetFramePeer));
-		}
+        }
 
-		protected override java.awt.peer.CanvasPeer createCanvas(java.awt.Canvas target)
-		{
+        protected override java.awt.peer.CanvasPeer createCanvas(java.awt.Canvas target)
+        {
             return (NewCanvasPeer)CreatePeer(typeof(MyControl), target, typeof(NewCanvasPeer));
-		}
+        }
 
-		protected override java.awt.peer.PanelPeer createPanel(java.awt.Panel target)
-		{
+        protected override java.awt.peer.PanelPeer createPanel(java.awt.Panel target)
+        {
             return (NetPanelPeer)CreatePeer(typeof(ContainerControl), target, typeof(NetPanelPeer));
-		}
+        }
 
-		protected override java.awt.peer.WindowPeer createWindow(java.awt.Window target)
-		{
+        protected override java.awt.peer.WindowPeer createWindow(java.awt.Window target)
+        {
             return (NetWindowPeer)CreatePeer(typeof(UndecoratedForm), target, typeof(NetWindowPeer));
-		}
+        }
 
-		protected override java.awt.peer.DialogPeer createDialog(java.awt.Dialog target)
-		{
+        protected override java.awt.peer.DialogPeer createDialog(java.awt.Dialog target)
+        {
             return (NetDialogPeer)CreatePeer(typeof(MyForm), target, typeof(NetDialogPeer));
-		}
+        }
 
-		protected override java.awt.peer.MenuBarPeer createMenuBar(java.awt.MenuBar target)
-		{
-			throw new NotImplementedException();
-		}
+        protected override java.awt.peer.MenuBarPeer createMenuBar(java.awt.MenuBar target)
+        {
+            throw new NotImplementedException();
+        }
 
-		protected override java.awt.peer.MenuPeer createMenu(java.awt.Menu target)
-		{
-			throw new NotImplementedException();
-		}
+        protected override java.awt.peer.MenuPeer createMenu(java.awt.Menu target)
+        {
+            throw new NotImplementedException();
+        }
 
-		protected override java.awt.peer.PopupMenuPeer createPopupMenu(java.awt.PopupMenu target)
-		{
-			throw new NotImplementedException();
-		}
+        protected override java.awt.peer.PopupMenuPeer createPopupMenu(java.awt.PopupMenu target)
+        {
+            throw new NotImplementedException();
+        }
 
-		protected override java.awt.peer.MenuItemPeer createMenuItem(java.awt.MenuItem target)
-		{
-			throw new NotImplementedException();
-		}
+        protected override java.awt.peer.MenuItemPeer createMenuItem(java.awt.MenuItem target)
+        {
+            throw new NotImplementedException();
+        }
 
-		protected override java.awt.peer.FileDialogPeer createFileDialog(java.awt.FileDialog target)
-		{
-			return new NetFileDialogPeer(target);
-		}
+        protected override java.awt.peer.FileDialogPeer createFileDialog(java.awt.FileDialog target)
+        {
+            return new NetFileDialogPeer(target);
+        }
 
-		protected override java.awt.peer.CheckboxMenuItemPeer createCheckboxMenuItem(java.awt.CheckboxMenuItem target)
-		{
-			throw new NotImplementedException();
-		}
+        protected override java.awt.peer.CheckboxMenuItemPeer createCheckboxMenuItem(java.awt.CheckboxMenuItem target)
+        {
+            throw new NotImplementedException();
+        }
 
-		[Obsolete]
-		protected override java.awt.peer.FontPeer getFontPeer(string name, int style)
-		{
-			throw new NotImplementedException();
-		}
+        [Obsolete]
+        protected override java.awt.peer.FontPeer getFontPeer(string name, int style)
+        {
+            throw new NotImplementedException();
+        }
 
-		public override java.awt.Dimension getScreenSize()
-		{
-			return new java.awt.Dimension(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
-		}
+        public override java.awt.Dimension getScreenSize()
+        {
+            return new java.awt.Dimension(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
+        }
 
-		public override int getScreenResolution()
-		{
-			if(resolution == 0)
-			{
-				using(Graphics g = bogusForm.CreateGraphics())
-				{
-					resolution = (int)Math.Round(g.DpiY);
-				}
-			}
-			return resolution;
-		}
+        public override int getScreenResolution()
+        {
+            if (resolution == 0)
+            {
+                using (Graphics g = bogusForm.CreateGraphics())
+                {
+                    resolution = (int)Math.Round(g.DpiY);
+                }
+            }
+            return resolution;
+        }
 
-		public override ColorModel getColorModel()
-		{
-			throw new NotImplementedException();
-		}
+        public override ColorModel getColorModel()
+        {
+            throw new NotImplementedException();
+        }
 
-		[Obsolete]
-		public override string[] getFontList()
-		{
-			// This method is deprecated and Sun's JDK only returns these fonts as well
-			return new string[] { "Dialog", "SansSerif", "Serif", "Monospaced", "DialogInput" };
-		}
+        [Obsolete]
+        public override string[] getFontList()
+        {
+            // This method is deprecated and Sun's JDK only returns these fonts as well
+            return new string[] { "Dialog", "SansSerif", "Serif", "Monospaced", "DialogInput" };
+        }
 
-		[Obsolete]
-		public override java.awt.FontMetrics getFontMetrics(java.awt.Font font)
-		{
-			return new NetFontMetrics(font);
-		}
+        [Obsolete]
+        public override java.awt.FontMetrics getFontMetrics(java.awt.Font font)
+        {
+            return new NetFontMetrics(font);
+        }
 
-		public override void sync()
-		{
-			throw new NotImplementedException();
-		}
+        public override void sync()
+        {
+            throw new NotImplementedException();
+        }
 
-		public override java.awt.Image getImage(string filename)
-		{
-			try
-			{
-				filename = new java.io.File(filename).getPath(); //convert a Java file name to .NET filename (slahes, backslasches, etc)
-				using(System.IO.FileStream stream = new System.IO.FileStream(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite))
-				{
-					return new BufferedImage(new Bitmap(Image.FromStream(stream)));
-				}
-			}
-			catch(Exception)
-			{
+        public override java.awt.Image getImage(string filename)
+        {
+            try
+            {
+                filename = new java.io.File(filename).getPath(); //convert a Java file name to .NET filename (slahes, backslasches, etc)
+                using (System.IO.FileStream stream = new System.IO.FileStream(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite))
+                {
+                    return new BufferedImage(new Bitmap(Image.FromStream(stream)));
+                }
+            }
+            catch (Exception)
+            {
                 return new NoImage();
-			}
-		}
+            }
+        }
 
-		public override java.awt.Image getImage(URL url)
-		{
-			// TODO extremely lame...
-			System.IO.MemoryStream mem = new System.IO.MemoryStream();
-			java.io.InputStream inS = url.openStream();
-			int b;
-			while((b = inS.read()) >= 0)
-			{
-				mem.WriteByte((byte)b);
-			}
-			try
-			{
-				mem.Position = 0;
-				return new BufferedImage(new Bitmap(Image.FromStream(mem)));
-			}
-			catch
-			{
-				return new NoImage();
-			}
-		}
+        public override java.awt.Image getImage(URL url)
+        {
+            // TODO extremely lame...
+            System.IO.MemoryStream mem = new System.IO.MemoryStream();
+            java.io.InputStream inS = url.openStream();
+            int b;
+            while ((b = inS.read()) >= 0)
+            {
+                mem.WriteByte((byte)b);
+            }
+            try
+            {
+                mem.Position = 0;
+                return new BufferedImage(new Bitmap(Image.FromStream(mem)));
+            }
+            catch
+            {
+                return new NoImage();
+            }
+        }
 
-		public override java.awt.Image createImage(string filename)
-		{
-			return getImage(filename);
-		}
+        public override java.awt.Image createImage(string filename)
+        {
+            return getImage(filename);
+        }
 
-		public override java.awt.Image createImage(URL url)
-		{
-			return getImage(url);
-		}
+        public override java.awt.Image createImage(URL url)
+        {
+            return getImage(url);
+        }
 
-		const int ERROR = java.awt.image.ImageObserver.__Fields.ERROR;
-		const int ABORT = java.awt.image.ImageObserver.__Fields.ABORT;
-		const int WIDTH = java.awt.image.ImageObserver.__Fields.WIDTH;
-		const int HEIGHT = java.awt.image.ImageObserver.__Fields.HEIGHT;
-		const int FRAMEBITS = java.awt.image.ImageObserver.__Fields.FRAMEBITS;
-		const int ALLBITS = java.awt.image.ImageObserver.__Fields.ALLBITS;
+        const int ERROR = java.awt.image.ImageObserver.__Fields.ERROR;
+        const int ABORT = java.awt.image.ImageObserver.__Fields.ABORT;
+        const int WIDTH = java.awt.image.ImageObserver.__Fields.WIDTH;
+        const int HEIGHT = java.awt.image.ImageObserver.__Fields.HEIGHT;
+        const int FRAMEBITS = java.awt.image.ImageObserver.__Fields.FRAMEBITS;
+        const int ALLBITS = java.awt.image.ImageObserver.__Fields.ALLBITS;
 
-		public override bool prepareImage(java.awt.Image image, int width, int height, java.awt.image.ImageObserver observer)
-		{
-			// HACK for now we call checkImage to obtain the status and fire the observer
-			return (checkImage(image, width, height, observer) & (ALLBITS | ERROR | ABORT)) != 0;
-		}
+        public override bool prepareImage(java.awt.Image image, int width, int height, java.awt.image.ImageObserver observer)
+        {
+            // HACK for now we call checkImage to obtain the status and fire the observer
+            return (checkImage(image, width, height, observer) & (ALLBITS | ERROR | ABORT)) != 0;
+        }
 
-		public override int checkImage(java.awt.Image image, int width, int height, java.awt.image.ImageObserver observer)
-		{
-			if(image.getWidth(null) == -1)
-			{
-				if(observer != null)
-				{
-					observer.imageUpdate(image, ERROR | ABORT, 0, 0, -1, -1);
-				}
-				return ERROR | ABORT;
-			}
-			if(observer != null)
-			{
-				observer.imageUpdate(image, WIDTH + HEIGHT + FRAMEBITS + ALLBITS, 0, 0, image.getWidth(null), image.getHeight(null));
-			}
-			return WIDTH + HEIGHT + FRAMEBITS + ALLBITS;
-		}
+        public override int checkImage(java.awt.Image image, int width, int height, java.awt.image.ImageObserver observer)
+        {
+            if (image.getWidth(null) == -1)
+            {
+                if (observer != null)
+                {
+                    observer.imageUpdate(image, ERROR | ABORT, 0, 0, -1, -1);
+                }
+                return ERROR | ABORT;
+            }
+            if (observer != null)
+            {
+                observer.imageUpdate(image, WIDTH + HEIGHT + FRAMEBITS + ALLBITS, 0, 0, image.getWidth(null), image.getHeight(null));
+            }
+            return WIDTH + HEIGHT + FRAMEBITS + ALLBITS;
+        }
 
-		public override java.awt.Image createImage(java.awt.image.ImageProducer producer)
-		{
-			NetProducerImage img = new NetProducerImage(producer);
-			if(producer != null)
-			{
-				producer.startProduction(img);
-			}
-			return img;
-		}
+        public override java.awt.Image createImage(java.awt.image.ImageProducer producer)
+        {
+            NetProducerImage img = new NetProducerImage(producer);
+            if (producer != null)
+            {
+                producer.startProduction(img);
+            }
+            return img;
+        }
 
-		public override java.awt.Image createImage(byte[] imagedata, int imageoffset, int imagelength)
-		{
+        public override java.awt.Image createImage(byte[] imagedata, int imageoffset, int imagelength)
+        {
             try
             {
                 return new BufferedImage(new Bitmap(new MemoryStream(imagedata, imageoffset, imagelength, false)));
@@ -451,39 +452,39 @@ namespace ikvm.awt
             {
                 return new NoImage();//TODO should throw the exception unstead of NoImage()
             }
-		}
+        }
 
-		public override java.awt.PrintJob getPrintJob(java.awt.Frame frame, string jobtitle, Properties props)
-		{
-			throw new NotImplementedException();
-		}
+        public override java.awt.PrintJob getPrintJob(java.awt.Frame frame, string jobtitle, Properties props)
+        {
+            throw new NotImplementedException();
+        }
 
-		public override void beep()
+        public override void beep()
         {
 #if !COMPACT_FRAMEWORK
             Console.Beep();
 #endif
-		}
+        }
 
-		public override java.awt.datatransfer.Clipboard getSystemClipboard()
-		{
-			throw new NotImplementedException();
-		}
+        public override java.awt.datatransfer.Clipboard getSystemClipboard()
+        {
+            throw new NotImplementedException();
+        }
 
-		protected override java.awt.EventQueue getSystemEventQueueImpl()
-		{
-			return eventQueue;
-		}
+        protected override java.awt.EventQueue getSystemEventQueueImpl()
+        {
+            return eventQueue;
+        }
 
-		public override java.awt.dnd.peer.DragSourceContextPeer createDragSourceContextPeer(java.awt.dnd.DragGestureEvent dge)
-		{
-			throw new NotImplementedException();
-		}
+        public override java.awt.dnd.peer.DragSourceContextPeer createDragSourceContextPeer(java.awt.dnd.DragGestureEvent dge)
+        {
+            throw new NotImplementedException();
+        }
 
-		public override Map mapInputMethodHighlight(java.awt.im.InputMethodHighlight highlight)
-		{
-			throw new NotImplementedException();
-		}
+        public override Map mapInputMethodHighlight(java.awt.im.InputMethodHighlight highlight)
+        {
+            throw new NotImplementedException();
+        }
 
 #if false
 		protected override java.awt.peer.LightweightPeer createComponent(java.awt.Component target)
@@ -496,54 +497,71 @@ namespace ikvm.awt
 		}
 #endif
 
-		public override java.awt.Font createFont(int format, java.io.InputStream stream)
-		{
-			throw new NotImplementedException();
-		}
+        public override java.awt.Font createFont(int format, java.io.InputStream stream)
+        {
+            throw new NotImplementedException();
+        }
 
-		public override gnu.java.awt.peer.ClasspathFontPeer getClasspathFontPeer(string name, java.util.Map attrs)
-		{
-			return new NetFontPeer(name, attrs);
-		}
+        public override gnu.java.awt.peer.ClasspathFontPeer getClasspathFontPeer(string name, java.util.Map attrs)
+        {
+            return new NetFontPeer(name, attrs);
+        }
 
-		public override java.awt.GraphicsEnvironment getLocalGraphicsEnvironment()
-		{
-			return new NetGraphicsEnvironment();
-		}
+        public override java.awt.GraphicsEnvironment getLocalGraphicsEnvironment()
+        {
+            return new NetGraphicsEnvironment();
+        }
 
-		public override RobotPeer createRobot(java.awt.GraphicsDevice screen)
-		{
+        public override RobotPeer createRobot(java.awt.GraphicsDevice screen)
+        {
             if (Environment.OSVersion.Platform == PlatformID.Win32NT || Environment.OSVersion.Platform == PlatformID.Win32Windows)
             {
                 return new WindowsRobot(screen);
             }
             throw new java.awt.AWTException("Robot not supported for this OS");
-		}
+        }
 
-		public override gnu.java.awt.peer.EmbeddedWindowPeer createEmbeddedWindow(gnu.java.awt.EmbeddedWindow ew)
-		{
-			throw new NotImplementedException();
-		}
+        public override gnu.java.awt.peer.EmbeddedWindowPeer createEmbeddedWindow(gnu.java.awt.EmbeddedWindow ew)
+        {
+            throw new NotImplementedException();
+        }
 
-		protected override DesktopPeer createDesktopPeer(java.awt.Desktop target)
-		{
-			return new NetDesktopPeer();
-		}
+        protected override DesktopPeer createDesktopPeer(java.awt.Desktop target)
+        {
+            return new NetDesktopPeer();
+        }
 
-		public override java.awt.Cursor createCustomCursor(java.awt.Image cursor, java.awt.Point hotSpot, string name)
-		{
-			throw new java.awt.AWTException("Not implemented");
-		}
-		
-		/*===============================
-		 * Implementations of interface IkvmToolkit
-		 */
-		 
-		public java.awt.Graphics2D createGraphics(System.Drawing.Bitmap bitmap)
-		{
-		    return new BitmapGraphics(bitmap);
-		}
-	}
+        public override java.awt.Cursor createCustomCursor(java.awt.Image cursor, java.awt.Point hotSpot, string name)
+        {
+            throw new java.awt.AWTException("Not implemented");
+        }
+
+        /*===============================
+         * Implementations of interface IkvmToolkit
+         */
+
+        public java.awt.Graphics2D createGraphics(System.Drawing.Bitmap bitmap)
+        {
+            return new BitmapGraphics(bitmap);
+        }
+
+        /// <summary>
+        /// Get a helper class for implementing the print API
+        /// </summary>
+        /// <returns></returns>
+        public sun.print.PrintPeer getPrintPeer()
+        {
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            {
+                return new Win32PrintPeer();
+            }
+            else
+            {
+                return new LinuxPrintPeer();
+            }
+        }
+
+    }
 
 	class NetLightweightComponentPeer : NetComponentPeer, java.awt.peer.LightweightPeer
 	{
@@ -553,25 +571,25 @@ namespace ikvm.awt
 		}
 	}
 
-	class NetLightweightContainerPeer : NetContainerPeer, java.awt.peer.LightweightPeer
-	{
-		public NetLightweightContainerPeer(java.awt.Container target)
-			: base(target, GetContainerControl(target.getParent()))
-		{
-		}
+    class NetLightweightContainerPeer : NetContainerPeer, java.awt.peer.LightweightPeer
+    {
+        public NetLightweightContainerPeer(java.awt.Container target)
+            : base(target, GetContainerControl(target.getParent()))
+        {
+        }
 
-		private static ContainerControl GetContainerControl(java.awt.Container aContainer)
-		{
-			ContainerControl control = null;
+        private static ContainerControl GetContainerControl(java.awt.Container aContainer)
+        {
+            ContainerControl control = null;
 
-			if (aContainer != null)
-			{
-				control = (ContainerControl) ((NetContainerPeer) aContainer.getPeer()).control;
-			}
+            if (aContainer != null)
+            {
+                control = (ContainerControl)((NetContainerPeer)aContainer.getPeer()).control;
+            }
 
-			return control;
-		}
-	}
+            return control;
+        }
+    }
 
 	class NetComponentPeer : ComponentPeer
 	{

@@ -771,6 +771,7 @@ assembly.class
     com/sun/imageio/plugins/jpeg/*.class
     icedtea/rt/com/sun/media/sound/*.class
     sun/net/dns/*.class
+    sun/print/*.class
     ServiceUI.class
     ../../openjdk6-b12/control/build/linux-amd64/impsrc/com/sun/activation/registries/*.class
     ../../openjdk6-b12/control/build/linux-amd64/impsrc/javax/activation/*.class
@@ -944,7 +945,6 @@ assembly.class
     -recurse:../../openjdk6-b12/control/build/linux-amd64/j2re-image/lib/resources.jar/javax/sql/*
     -r:System.Data
     java/sql/*.class
-    sun/jdbc/odbc/*.class
     ../../openjdk6-b12/jdk/src/share/classes/java/sql/*.class
     ../../openjdk6-b12/jdk/src/share/classes/javax/sql/*.class
     ../../openjdk6-b12/jdk/src/share/classes/javax/sql/rowset/*.class
