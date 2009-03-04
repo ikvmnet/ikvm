@@ -652,9 +652,12 @@ namespace IKVM.NativeCode.java
 					throw x.ToJava();
 				}
 				Type type = wrapper.TypeAsTBD;
-				if (!type.IsArray && type.TypeInitializer != null && runClassInit)
+				if (!type.IsArray && type.TypeInitializer != null)
 				{
-					wrapper.RunClassInit();
+					if (runClassInit)
+					{
+						wrapper.RunClassInit();
+					}
 					return !AttributeHelper.IsHideFromJava(type.TypeInitializer);
 				}
 				return false;
