@@ -53,4 +53,9 @@ public class SunToolkit
     {
         throw new Error("Not implemented");
     }
+    
+    public static void invokeLaterOnAppContext(AppContext appContext, Runnable dispatcher)
+    {
+        throw new Error("Not implemented");
+    }
 }

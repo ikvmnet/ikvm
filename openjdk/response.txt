@@ -585,8 +585,6 @@ assembly.class
     ../../classpath-0.95/gnu/javax/swing/tree/*.class
     ../../classpath-0.95/java/applet/*.class
     ../../classpath-0.95/java/awt/*.class
-    ../../classpath-0.95/java/awt/dnd/*.class
-    ../../classpath-0.95/java/awt/dnd/peer/*.class
     ../../classpath-0.95/java/awt/font/*.class
     ../../classpath-0.95/java/awt/im/*.class
     ../../classpath-0.95/java/awt/im/spi/*.class
@@ -613,12 +611,15 @@ assembly.class
     ../../openjdk6-b12/control/build/linux-amd64/gensrc/com/sun/accessibility/internal/resources/*.class
     ../../openjdk6-b12/jdk/src/share/classes/java/awt/color/*.class
     ../../openjdk6-b12/jdk/src/share/classes/java/awt/datatransfer/*.class
+    ../../openjdk6-b12/jdk/src/share/classes/java/awt/dnd/*.class
+    ../../openjdk6-b12/jdk/src/share/classes/java/awt/dnd/peer/*.class
     ../../openjdk6-b12/jdk/src/share/classes/java/awt/event/*.class
     ../../openjdk6-b12/jdk/src/share/classes/java/awt/geom/*.class
     ../../openjdk6-b12/jdk/src/share/classes/java/awt/image/*.class
     ../../openjdk6-b12/jdk/src/share/classes/java/awt/print/*.class
     ../../openjdk6-b12/jdk/src/share/classes/sun/awt/*.class
     ../../openjdk6-b12/jdk/src/share/classes/sun/awt/datatransfer/*.class
+    ../../openjdk6-b12/jdk/src/share/classes/sun/awt/dnd/*.class
     ../../openjdk6-b12/jdk/src/share/classes/sun/awt/geom/*.class
     ../../openjdk6-b12/jdk/src/share/classes/sun/awt/image/*.class
     ../../openjdk6-b12/jdk/src/share/classes/sun/java2d/*.class
