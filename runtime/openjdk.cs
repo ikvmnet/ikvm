@@ -630,8 +630,12 @@ namespace IKVM.NativeCode.java
 
 		static class ObjectStreamClass
 		{
+			private static bool runClassInit;
+
 			public static void initNative()
 			{
+				// HACK if we're being run from ikvmstub, don't run the static initializer
+				runClassInit = !"true".Equals(ClassLoaderWrapper.DoPrivileged(new global::sun.security.action.GetPropertyAction("ikvm.stubgen.serialver")));
 			}
 
 			public static bool hasStaticInitializer(object cl)
@@ -646,7 +650,7 @@ namespace IKVM.NativeCode.java
 					throw x.ToJava();
 				}
 				Type type = wrapper.TypeAsTBD;
-				if (!type.IsArray && type.TypeInitializer != null)
+				if (!type.IsArray && type.TypeInitializer != null && runClassInit)
 				{
 					wrapper.RunClassInit();
 					return !AttributeHelper.IsHideFromJava(type.TypeInitializer);
