@@ -974,6 +974,7 @@ java/util/zip/ZipEntry.java
 java/util/zip/ZipFile.java
 ServiceUI.java
 sun/awt/AppContext.java
+sun/awt/IkvmDataTransferer.java
 sun/awt/SunToolkit.java
 sun/awt/image/ByteComponentRaster.java
 sun/awt/image/BytePackedRaster.java

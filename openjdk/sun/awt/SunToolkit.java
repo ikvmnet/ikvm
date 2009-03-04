@@ -41,7 +41,7 @@ public class SunToolkit
     
     public static String getDataTransfererClassName()
     {
-        throw new Error("Not implemented");
+	return "sun.awt.IkvmDataTransferer";
     }
     
     public static void executeOnEventHandlerThread(Object target, Runnable runnable)
