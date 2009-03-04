@@ -591,7 +591,6 @@ assembly.class
     ../../classpath-0.95/java/awt/dnd/peer/*.class
     ../../classpath-0.95/java/awt/event/*.class
     ../../classpath-0.95/java/awt/font/*.class
-    ../../classpath-0.95/java/awt/geom/*.class
     ../../classpath-0.95/java/awt/im/*.class
     ../../classpath-0.95/java/awt/im/spi/*.class
     ../../classpath-0.95/java/awt/image/*.class
@@ -615,8 +614,10 @@ assembly.class
     ../../classpath-0.95/javax/swing/tree/*.class
     ../../classpath-0.95/javax/swing/undo/*.class
     ../../openjdk6-b12/control/build/linux-amd64/gensrc/com/sun/accessibility/internal/resources/*.class
+    ../../openjdk6-b12/jdk/src/share/classes/java/awt/geom/*.class
     ../../openjdk6-b12/jdk/src/share/classes/java/awt/image/*.class
     ../../openjdk6-b12/jdk/src/share/classes/java/awt/print/*.class
+    ../../openjdk6-b12/jdk/src/share/classes/sun/awt/geom/*.class
     ../../openjdk6-b12/jdk/src/share/classes/sun/awt/image/*.class
     ../../openjdk6-b12/jdk/src/share/classes/sun/java2d/*.class
     ../../openjdk6-b12/jdk/src/share/classes/sun/java2d/cmm/*.class
