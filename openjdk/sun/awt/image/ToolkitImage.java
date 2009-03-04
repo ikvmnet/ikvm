@@ -22,35 +22,9 @@
 
 */
 
-package sun.awt;
+package sun.awt.image;
 
-import java.awt.AWTEvent;
-import java.awt.GraphicsEnvironment;
-
-public class SunToolkit
+public abstract class ToolkitImage extends java.awt.Image
 {
-    public static AppContext targetToAppContext(Object target)
-    {
-	if (target == null || GraphicsEnvironment.isHeadless())
-        {
-	    return null;
-        }
-	// we only support a single AppContext
-	return AppContext.getAppContext();
-    }
-    
-    public static String getDataTransfererClassName()
-    {
-        throw new Error("Not implemented");
-    }
-    
-    public static void executeOnEventHandlerThread(Object target, Runnable runnable)
-    {
-        throw new Error("Not implemented");
-    }
-    
-    public static void postEvent(AppContext appContext, AWTEvent event)
-    {
-        throw new Error("Not implemented");
-    }
+    public abstract ImageRepresentation getImageRep();
 }

@@ -24,14 +24,41 @@
 
 package sun.awt;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.beans.PropertyChangeListener;
+
 public final class AppContext extends java.util.Hashtable
 {
-  private static final AppContext instance = new AppContext();
+    public static final String DISPOSED_PROPERTY_NAME = "disposed";
+    private static final AppContext instance = new AppContext();
 
-  private AppContext() {}
+    private AppContext() {}
 
-  public static AppContext getAppContext()
-  {
-    return instance;
-  }
+    public static AppContext getAppContext()
+    {
+        return instance;
+    }
+    
+    public static Set<AppContext> getAppContexts()
+    {
+        HashSet<AppContext> set = new HashSet<AppContext>();
+        set.add(instance);
+        return set;
+    }
+    
+    public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener)
+    {
+        throw new Error("Not implemented");
+    }
+    
+    public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener)
+    {
+        throw new Error("Not implemented");
+    }
+    
+    public boolean isDisposed()
+    {
+        return false;
+    }
 }
