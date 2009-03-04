@@ -174,13 +174,6 @@
 ../../classpath-0.95/java/awt/CheckboxMenuItem.java
 ../../classpath-0.95/java/awt/Choice.java
 ../../classpath-0.95/java/awt/Color.java
-../../classpath-0.95/java/awt/color/CMMException.java
-../../classpath-0.95/java/awt/color/ColorSpace.java
-../../classpath-0.95/java/awt/color/ICC_ColorSpace.java
-../../classpath-0.95/java/awt/color/ICC_Profile.java
-../../classpath-0.95/java/awt/color/ICC_ProfileGray.java
-../../classpath-0.95/java/awt/color/ICC_ProfileRGB.java
-../../classpath-0.95/java/awt/color/ProfileDataException.java
 ../../classpath-0.95/java/awt/ColorPaintContext.java
 ../../classpath-0.95/java/awt/Component.java
 ../../classpath-0.95/java/awt/ComponentOrientation.java
@@ -7406,6 +7399,13 @@ SystemProperties.java
 ../../openjdk6-b12/jdk/src/share/classes/com/sun/security/sasl/gsskerb/GssKrb5Server.java
 ../../openjdk6-b12/jdk/src/share/classes/com/sun/security/sasl/util/AbstractSaslImpl.java
 ../../openjdk6-b12/jdk/src/share/classes/com/sun/security/sasl/util/PolicyUtils.java
+../../openjdk6-b12/jdk/src/share/classes/java/awt/color/CMMException.java
+../../openjdk6-b12/jdk/src/share/classes/java/awt/color/ColorSpace.java
+../../openjdk6-b12/jdk/src/share/classes/java/awt/color/ICC_ColorSpace.java
+../../openjdk6-b12/jdk/src/share/classes/java/awt/color/ICC_Profile.java
+../../openjdk6-b12/jdk/src/share/classes/java/awt/color/ICC_ProfileGray.java
+../../openjdk6-b12/jdk/src/share/classes/java/awt/color/ICC_ProfileRGB.java
+../../openjdk6-b12/jdk/src/share/classes/java/awt/color/ProfileDataException.java
 ../../openjdk6-b12/jdk/src/share/classes/java/awt/geom/AffineTransform.java
 ../../openjdk6-b12/jdk/src/share/classes/java/awt/geom/Arc2D.java
 ../../openjdk6-b12/jdk/src/share/classes/java/awt/geom/ArcIterator.java
@@ -9618,6 +9618,9 @@ SystemProperties.java
 ../../openjdk6-b12/jdk/src/share/classes/sun/java2d/cmm/CMSManager.java
 ../../openjdk6-b12/jdk/src/share/classes/sun/java2d/cmm/ColorTransform.java
 ../../openjdk6-b12/jdk/src/share/classes/sun/java2d/cmm/PCMM.java
+../../openjdk6-b12/jdk/src/share/classes/sun/java2d/cmm/ProfileActivator.java
+../../openjdk6-b12/jdk/src/share/classes/sun/java2d/cmm/ProfileDeferralInfo.java
+../../openjdk6-b12/jdk/src/share/classes/sun/java2d/cmm/ProfileDeferralMgr.java
 ../../openjdk6-b12/jdk/src/share/classes/sun/java2d/DefaultDisposerRecord.java
 ../../openjdk6-b12/jdk/src/share/classes/sun/java2d/Disposer.java
 ../../openjdk6-b12/jdk/src/share/classes/sun/java2d/DisposerRecord.java
