@@ -783,6 +783,26 @@ namespace ikvm.awt
 			return modifiers;
 		}
 
+		private sealed class RunnableWrapper : java.lang.Runnable
+		{
+			private readonly ThreadStart action;
+
+			internal RunnableWrapper(ThreadStart action)
+			{
+				this.action = action;
+			}
+
+			public void run()
+			{
+				action();
+			}
+		}
+
+		private void InvokeLater(ThreadStart action)
+		{
+			java.awt.EventQueue.invokeLater(new RunnableWrapper(action));
+		}
+
         private void OnKeyDown(object sender, KeyEventArgs e)
 		{
 			long when = java.lang.System.currentTimeMillis();
@@ -791,7 +811,9 @@ namespace ikvm.awt
 			// TODO set keyChar
 			char keyChar = ' ';
 			int keyLocation = java.awt.@event.KeyEvent.KEY_LOCATION_STANDARD;
-			postEvent(new java.awt.@event.KeyEvent(component, java.awt.@event.KeyEvent.KEY_PRESSED, when, modifiers, keyCode, keyChar, keyLocation));
+			InvokeLater(delegate {
+				postEvent(new java.awt.@event.KeyEvent(component, java.awt.@event.KeyEvent.KEY_PRESSED, when, modifiers, keyCode, keyChar, keyLocation));
+			});
 		}
 
         private void OnKeyUp(object sender, KeyEventArgs e)
@@ -802,7 +824,9 @@ namespace ikvm.awt
 			// TODO set keyChar
 			char keyChar = ' ';
 			int keyLocation = java.awt.@event.KeyEvent.KEY_LOCATION_STANDARD;
-			postEvent(new java.awt.@event.KeyEvent(component, java.awt.@event.KeyEvent.KEY_RELEASED, when, modifiers, keyCode, keyChar, keyLocation));
+			InvokeLater(delegate {
+				postEvent(new java.awt.@event.KeyEvent(component, java.awt.@event.KeyEvent.KEY_RELEASED, when, modifiers, keyCode, keyChar, keyLocation));
+			});
 		}
 
 		protected virtual void OnKeyPress(object sender, KeyPressEventArgs e)
@@ -811,8 +835,10 @@ namespace ikvm.awt
 			int modifiers = GetModifiers(Control.ModifierKeys);
 			int keyCode = java.awt.@event.KeyEvent.VK_UNDEFINED;
 			char keyChar = e.KeyChar;
-			int keyLocation = java.awt.@event.KeyEvent.KEY_LOCATION_STANDARD;
-			postEvent(new java.awt.@event.KeyEvent(component, java.awt.@event.KeyEvent.KEY_TYPED, when, modifiers, keyCode, keyChar, keyLocation));
+			int keyLocation = java.awt.@event.KeyEvent.KEY_LOCATION_UNKNOWN;
+			InvokeLater(delegate {
+				postEvent(new java.awt.@event.KeyEvent(component, java.awt.@event.KeyEvent.KEY_TYPED, when, modifiers, keyCode, keyChar, keyLocation));
+			});
 		}
 
         private void postMouseEvent(MouseEventArgs ev, int id)
@@ -823,7 +849,9 @@ namespace ikvm.awt
             int clickCount = ev.Clicks;
             int x = ev.X + getInsetsLeft(); //The Inset correctur is needed for Window and extended classes
             int y = ev.Y + getInsetsTop();
-            postEvent(new java.awt.@event.MouseEvent(component, id, when, modifiers, x, y, clickCount, false, button));
+			InvokeLater(delegate {
+				postEvent(new java.awt.@event.MouseEvent(component, id, when, modifiers, x, y, clickCount, false, button));
+			});
         }
 
         private void postMouseEvent(EventArgs ev, int id)
@@ -834,7 +862,9 @@ namespace ikvm.awt
             int clickCount = 0;
             int x = Control.MousePosition.X - control.Location.X;
             int y = Control.MousePosition.Y - control.Location.Y;
-            postEvent(new java.awt.@event.MouseEvent(component, id, when, modifiers, x, y, clickCount, false, button));
+			InvokeLater(delegate {
+	            postEvent(new java.awt.@event.MouseEvent(component, id, when, modifiers, x, y, clickCount, false, button));
+			});
         }
 
         protected virtual void OnMouseMove(object sender, MouseEventArgs ev)
@@ -904,12 +934,16 @@ namespace ikvm.awt
 
 		private void OnGotFocus(object sender, EventArgs e)
 		{
-			postEvent(new java.awt.@event.FocusEvent(component, java.awt.@event.FocusEvent.FOCUS_GAINED));
+			InvokeLater(delegate {
+				postEvent(new java.awt.@event.FocusEvent(component, java.awt.@event.FocusEvent.FOCUS_GAINED));
+			});
 		}
 
 		private void OnLostFocus(object sender, EventArgs e)
 		{
-			postEvent(new java.awt.@event.FocusEvent(component, java.awt.@event.FocusEvent.FOCUS_LOST));
+			InvokeLater(delegate {
+				postEvent(new java.awt.@event.FocusEvent(component, java.awt.@event.FocusEvent.FOCUS_LOST));
+			});
 		}
 
         /// <summary>

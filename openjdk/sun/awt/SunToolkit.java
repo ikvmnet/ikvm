@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2007 Jeroen Frijters
+  Copyright (C) 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -24,14 +24,17 @@
 
 package sun.awt;
 
-public final class AppContext extends java.util.Hashtable
+import java.awt.GraphicsEnvironment;
+
+public class SunToolkit
 {
-  private static final AppContext instance = new AppContext();
-
-  private AppContext() {}
-
-  public static AppContext getAppContext()
-  {
-    return instance;
-  }
+    public static AppContext targetToAppContext(Object target)
+    {
+	if (target == null || GraphicsEnvironment.isHeadless())
+        {
+	    return null;
+        }
+	// we only support a single AppContext
+	return AppContext.getAppContext();
+    }
 }

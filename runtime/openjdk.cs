@@ -7561,3 +7561,21 @@ namespace IKVM.NativeCode.com.sun.media.sound
 		}
 	}
 }
+
+namespace IKVM.NativeCode.java.awt.@event
+{
+	static class InputEvent
+	{
+		public static void initIDs() { }
+	}
+
+	static class MouseEvent
+	{
+		public static void initIDs() { }
+	}
+
+	static class KeyEvent
+	{
+		public static void initIDs() { }
+	}
+}
