@@ -120,6 +120,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="runtime\ReflectUtil.cs" />
+    <Compile Include="runtime\RuntimeHelperTypes.cs" />
     <Compile Include="runtime\tracer.cs" />
     <Compile Include="runtime\TypeWrapper.cs">
       <SubType>Code</SubType>

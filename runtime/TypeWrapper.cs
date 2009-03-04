@@ -6934,7 +6934,7 @@ namespace IKVM.Internal
 				{
 					if (classObjectField == null)
 					{
-						classObjectField = typeBuilder.DefineField("__<classObject>", typeof(object), FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.SpecialName);
+						classObjectField = RuntimeHelperTypes.GetClassLiteralField(typeBuilder);
 					}
 					return classObjectField;
 				}
@@ -7613,25 +7613,9 @@ namespace IKVM.Internal
 				internal static void Generate(DynamicTypeWrapper.FinishContext context, CodeEmitter ilGenerator, DynamicTypeWrapper wrapper, MethodWrapper mw, TypeBuilder typeBuilder, ClassFile classFile, ClassFile.Method m, TypeWrapper[] args, bool thruProxy)
 				{
 					LocalBuilder syncObject = null;
-					FieldInfo classObjectField;
-					if (thruProxy)
-					{
-						classObjectField = typeBuilder.DefineField("__<classObject>", typeof(object), FieldAttributes.Static | FieldAttributes.Private | FieldAttributes.SpecialName);
-					}
-					else
-					{
-						classObjectField = context.ClassObjectField;
-					}
 					if (m.IsSynchronized && m.IsStatic)
 					{
-						ilGenerator.Emit(OpCodes.Ldsfld, classObjectField);
-						CodeEmitterLabel label = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Brtrue_S, label);
-						ilGenerator.Emit(OpCodes.Ldtoken, wrapper.TypeAsTBD);
-						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.GetClassFromTypeHandle);
-						ilGenerator.Emit(OpCodes.Stsfld, classObjectField);
-						ilGenerator.MarkLabel(label);
-						ilGenerator.Emit(OpCodes.Ldsfld, classObjectField);
+						ilGenerator.Emit(OpCodes.Ldsfld, context.ClassObjectField);
 						ilGenerator.Emit(OpCodes.Dup);
 						syncObject = ilGenerator.DeclareLocal(typeof(object));
 						ilGenerator.Emit(OpCodes.Stloc, syncObject);
@@ -7699,16 +7683,7 @@ namespace IKVM.Internal
 					else
 					{
 						ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
-
-						ilGenerator.Emit(OpCodes.Ldsfld, classObjectField);
-						CodeEmitterLabel label = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Brtrue_S, label);
-						ilGenerator.Emit(OpCodes.Ldtoken, wrapper.TypeAsTBD);
-						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.GetClassFromTypeHandle);
-						ilGenerator.Emit(OpCodes.Stsfld, classObjectField);
-						ilGenerator.MarkLabel(label);
-						ilGenerator.Emit(OpCodes.Ldsfld, classObjectField);
-
+						ilGenerator.Emit(OpCodes.Ldsfld, context.ClassObjectField);
 						ilGenerator.Emit(OpCodes.Call, makeLocalRef);
 					}
 					for (int j = 0; j < args.Length; j++)

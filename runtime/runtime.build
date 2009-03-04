@@ -80,6 +80,7 @@
                 <include name="PassiveWeakDictionary.cs" />
                 <include name="profiler.cs" />
                 <include name="ReflectUtil.cs" />
+                <include name="RuntimeHelperTypes.cs" />
                 <include name="tracer.cs" />
                 <include name="TypeWrapper.cs" />
                 <include name="verifier.cs" />

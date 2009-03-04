@@ -886,13 +886,6 @@ class Compiler
 			if(m.IsSynchronized && m.IsStatic)
 			{
 				ilGenerator.Emit(OpCodes.Ldsfld, context.ClassObjectField);
-				CodeEmitterLabel label = ilGenerator.DefineLabel();
-				ilGenerator.Emit(OpCodes.Brtrue_S, label);
-				ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
-				getClassFromTypeHandle.EmitCall(ilGenerator);
-				ilGenerator.Emit(OpCodes.Stsfld, context.ClassObjectField);
-				ilGenerator.MarkLabel(label);
-				ilGenerator.Emit(OpCodes.Ldsfld, context.ClassObjectField);
 				ilGenerator.Emit(OpCodes.Dup);
 				LocalBuilder monitor = ilGenerator.DeclareLocal(typeof(object));
 				ilGenerator.Emit(OpCodes.Stloc, monitor);

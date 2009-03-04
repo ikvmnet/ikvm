@@ -130,6 +130,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="ReflectUtil.cs" />
+    <Compile Include="RuntimeHelperTypes.cs" />
     <Compile Include="tracer.cs">
       <SubType>Code</SubType>
     </Compile>

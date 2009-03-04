@@ -2360,6 +2360,10 @@ namespace IKVM.Internal
 					}
 				}
 			}
+			if (compilingCoreAssembly)
+			{
+				RuntimeHelperTypes.Create(compilers[0]);
+			}
 			foreach (CompilerClassLoader compiler in compilers)
 			{
 				compiler.EmitRemappedTypes2ndPass();

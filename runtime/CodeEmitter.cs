@@ -1362,13 +1362,22 @@ namespace IKVM.Internal
 					{
 						tw = tw.ElementTypeWrapper;
 					}
-					ilgen.Emit(OpCodes.Ldtoken, ArrayTypeWrapper.MakeArrayType(tw.TypeAsTBD, rank));
+					ilgen.Emit(OpCodes.Ldsfld, RuntimeHelperTypes.GetClassLiteralField(ArrayTypeWrapper.MakeArrayType(tw.TypeAsTBD, rank)));
 				}
 				else
 				{
-					ilgen.Emit(OpCodes.Ldtoken, tw.IsRemapped ? tw.TypeAsBaseType : tw.TypeAsTBD);
+					Type type = tw.IsRemapped ? tw.TypeAsBaseType : tw.TypeAsTBD;
+					if (type == typeof(void))
+					{
+						// the CLR doesn't allow System.Void to be used as a type parameter, so we have to special case it
+						ilgen.Emit(OpCodes.Ldtoken, type);
+						Compiler.getClassFromTypeHandle.EmitCall(ilgen);
+					}
+					else
+					{
+						ilgen.Emit(OpCodes.Ldsfld, RuntimeHelperTypes.GetClassLiteralField(type));
+					}
 				}
-				Compiler.getClassFromTypeHandle.EmitCall(ilgen);
 			}
 		}
 	}
