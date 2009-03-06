@@ -3862,6 +3862,10 @@ namespace IKVM.Internal
 			{
 				throw new VerifyError("Delegate must have both BeginInvoke and EndInvoke or neither");
 			}
+			if (!constructor.IsPublic)
+			{
+				throw new VerifyError("Delegate constructor must be public");
+			}
 			if (constructor.Instructions.Length < 3
 				|| constructor.Instructions[0].NormalizedOpCode != NormalizedByteCode.__aload
 				|| constructor.Instructions[0].NormalizedArg1 != 0
@@ -4514,19 +4518,29 @@ namespace IKVM.Internal
 
 			private sealed class DelegateConstructorMethodWrapper : MethodWrapper
 			{
+				private ConstructorBuilder constructor;
+				private MethodInfo invoke;
+
 				internal DelegateConstructorMethodWrapper(DynamicTypeWrapper tw, ClassFile.Method m)
 					: base(tw, m.Name, m.Signature, null, null, null, m.Modifiers, MemberFlags.None)
 				{
 				}
 
+				protected override void DoLinkMethod()
+				{
+					MethodAttributes attribs = MethodAttributes.HideBySig | MethodAttributes.Public;
+					constructor = this.DeclaringType.TypeAsBuilder.DefineConstructor(attribs, CallingConventions.Standard, new Type[] { typeof(object), typeof(IntPtr) }, null, null);
+					constructor.SetImplementationFlags(MethodImplAttributes.Runtime);
+					MethodWrapper mw = GetParameters()[0].GetMethods()[0];
+					mw.Link();
+					invoke = (MethodInfo)mw.GetMethod();
+				}
+
 				internal override void EmitNewobj(CodeEmitter ilgen, MethodAnalyzer ma, int opcodeIndex)
 				{
 					ilgen.Emit(OpCodes.Dup);
-					MethodWrapper mw = GetParameters()[0].GetMethods()[0];
-					// TODO linking here is not safe
-					mw.Link();
-					ilgen.Emit(OpCodes.Ldvirtftn, (MethodInfo)mw.GetMethod());
-					ilgen.Emit(OpCodes.Newobj, (ConstructorBuilder)GetMethod());
+					ilgen.Emit(OpCodes.Ldvirtftn, invoke);
+					ilgen.Emit(OpCodes.Newobj, constructor);
 				}
 			}
 
@@ -6216,16 +6230,8 @@ namespace IKVM.Internal
 						{
 							setModifiers = true;
 						}
-						if(methods[index] is DelegateConstructorMethodWrapper)
-						{
-							method = typeBuilder.DefineConstructor(attribs, CallingConventions.Standard, new Type[] { typeof(object), typeof(IntPtr) }, null, null);
-							((ConstructorBuilder)method).SetImplementationFlags(MethodImplAttributes.Runtime);
-						}
-						else
-						{
-							method = typeBuilder.DefineConstructor(attribs, CallingConventions.Standard, methods[index].GetParametersForDefineMethod(), null, modopt);
-							((ConstructorBuilder)method).SetImplementationFlags(MethodImplAttributes.NoInlining);
-						}
+						method = typeBuilder.DefineConstructor(attribs, CallingConventions.Standard, methods[index].GetParametersForDefineMethod(), null, modopt);
+						((ConstructorBuilder)method).SetImplementationFlags(MethodImplAttributes.NoInlining);
 					}
 					else if(m.IsClassInitializer)
 					{
@@ -7183,7 +7189,15 @@ namespace IKVM.Internal
 				{
 					ClassFile.Method m = classFile.Methods[i];
 					MethodBase mb = methods[i].GetMethod();
-					if (mb is ConstructorBuilder)
+					if (mb == null)
+					{
+						// method doesn't really exist (e.g. delegate constructor)
+						if (m.Name == StringConstants.INIT)
+						{
+							hasConstructor = true;
+						}
+					}
+					else if (mb is ConstructorBuilder)
 					{
 						if (m.IsClassInitializer)
 						{
@@ -7196,11 +7210,8 @@ namespace IKVM.Internal
 						{
 							hasConstructor = true;
 						}
-						if ((mb.GetMethodImplementationFlags() & MethodImplAttributes.Runtime) == 0)
-						{
-							CodeEmitter ilGenerator = CodeEmitter.Create((ConstructorBuilder)mb);
-							CompileConstructorBody(this, ilGenerator, i, invokespecialstubcache);
-						}
+						CodeEmitter ilGenerator = CodeEmitter.Create((ConstructorBuilder)mb);
+						CompileConstructorBody(this, ilGenerator, i, invokespecialstubcache);
 					}
 					else
 					{
@@ -7524,6 +7535,10 @@ namespace IKVM.Internal
 				{
 					ClassFile.Method m = classFile.Methods[i];
 					MethodBase mb = methods[i].GetMethod();
+					if (mb == null)
+					{
+						continue;
+					}
 					ParameterBuilder returnParameter = null;
 					ParameterBuilder[] parameterBuilders = null;
 					string[] parameterNames = null;
@@ -9300,6 +9315,7 @@ namespace IKVM.Internal
 		private sealed class DelegateConstructorMethodWrapper : MethodWrapper
 		{
 			private readonly ConstructorInfo constructor;
+			private MethodInfo invoke;
 
 			private DelegateConstructorMethodWrapper(TypeWrapper tw, TypeWrapper iface, ExModifiers mods)
 				: base(tw, StringConstants.INIT, "(" + iface.SigName + ")V", null, PrimitiveTypeWrapper.VOID, new TypeWrapper[] { iface }, mods.Modifiers, mods.IsInternal ? MemberFlags.InternalAccess : MemberFlags.None)
@@ -9312,13 +9328,17 @@ namespace IKVM.Internal
 				constructor = (ConstructorInfo)method;
 			}
 
+			protected override void DoLinkMethod()
+			{
+				MethodWrapper mw = GetParameters()[0].GetMethods()[0];
+				mw.Link();
+				invoke = (MethodInfo)mw.GetMethod();
+			}
+
 			internal override void EmitNewobj(CodeEmitter ilgen, MethodAnalyzer ma, int opcodeIndex)
 			{
 				ilgen.Emit(OpCodes.Dup);
-				MethodWrapper mw = GetParameters()[0].GetMethods()[0];
-				// TODO is linking here safe?
-				mw.Link();
-				ilgen.Emit(OpCodes.Ldvirtftn, (MethodInfo)mw.GetMethod());
+				ilgen.Emit(OpCodes.Ldvirtftn, invoke);
 				ilgen.Emit(OpCodes.Newobj, constructor);
 			}
 		}

@@ -589,7 +589,7 @@ namespace IKVM.Internal
 					{
 						try
 						{
-							method = this.DeclaringType.LinkMethod(this);
+							DoLinkMethod();
 						}
 						catch
 						{
@@ -602,6 +602,11 @@ namespace IKVM.Internal
 					}
 				}
 			}
+		}
+
+		protected virtual void DoLinkMethod()
+		{
+			method = this.DeclaringType.LinkMethod(this);
 		}
 
 		[Conditional("DEBUG")]
