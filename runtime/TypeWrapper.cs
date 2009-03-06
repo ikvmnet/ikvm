@@ -3755,29 +3755,18 @@ namespace IKVM.Internal
 				{
 					throw new IncompatibleClassChangeError("Class " + f.Name + " has interface " + BaseTypeWrapper.Name + " as superclass");
 				}
-				if(!f.IsFinal)
-				{
-					if(BaseTypeWrapper.TypeAsTBD == typeof(ValueType) || BaseTypeWrapper.TypeAsTBD == typeof(Enum))
-					{
-						throw new VerifyError("Value types must be final");
-					}
-					if(BaseTypeWrapper.TypeAsTBD == typeof(MulticastDelegate))
-					{
-						throw new VerifyError("Delegates must be final");
-					}
-				}
 				if(BaseTypeWrapper.TypeAsTBD == typeof(Delegate))
 				{
 					throw new VerifyError(BaseTypeWrapper.Name + " cannot be used as a base class");
 				}
-				// NOTE defining value types, enums and delegates is not supported in IKVM v1
+				// NOTE defining value types, enums is not supported in IKVM v1
 				if(BaseTypeWrapper.TypeAsTBD == typeof(ValueType) || BaseTypeWrapper.TypeAsTBD == typeof(Enum))
 				{
 					throw new VerifyError("Defining value types in Java is not implemented in IKVM v1");
 				}
-				if(BaseTypeWrapper.TypeAsTBD == typeof(MulticastDelegate))
+				if(IsDelegate)
 				{
-					throw new VerifyError("Defining delegates in Java is not implemented in IKVM v1");
+					VerifyDelegate(f);
 				}
 			}
 
@@ -3810,6 +3799,126 @@ namespace IKVM.Internal
 			}
 
 			impl = new JavaTypeImpl(f, this);
+		}
+
+		private void VerifyDelegate(ClassFile f)
+		{
+			if (!f.IsFinal)
+			{
+				throw new VerifyError("Delegate must be final");
+			}
+			ClassFile.Method invoke = null;
+			ClassFile.Method beginInvoke = null;
+			ClassFile.Method endInvoke = null;
+			ClassFile.Method constructor = null;
+			foreach (ClassFile.Method m in f.Methods)
+			{
+				if (m.Name == "Invoke")
+				{
+					if (invoke != null)
+					{
+						throw new VerifyError("Delegate may only have a single Invoke method");
+					}
+					invoke = m;
+				}
+				else if (m.Name == "BeginInvoke")
+				{
+					if (beginInvoke != null)
+					{
+						throw new VerifyError("Delegate may only have a single BeginInvoke method");
+					}
+					beginInvoke = m;
+				}
+				else if (m.Name == "EndInvoke")
+				{
+					if (endInvoke != null)
+					{
+						throw new VerifyError("Delegate may only have a single EndInvoke method");
+					}
+					endInvoke = m;
+				}
+				else if (m.Name == "<init>")
+				{
+					if (constructor != null)
+					{
+						throw new VerifyError("Delegate may only have a single constructor");
+					}
+					constructor = m;
+				}
+				else if (m.IsNative)
+				{
+					throw new VerifyError("Delegate may not have any native methods besides Invoke, BeginInvoke and EndInvoke");
+				}
+			}
+			if (invoke == null || constructor == null)
+			{
+				throw new VerifyError("Delegate must have a constructor and an Invoke method");
+			}
+			if (!invoke.IsPublic || !invoke.IsNative || invoke.IsFinal || invoke.IsStatic)
+			{
+				throw new VerifyError("Delegate Invoke method must be a public native non-final instance method");
+			}
+			if ((beginInvoke != null && endInvoke == null) || (beginInvoke == null && endInvoke != null))
+			{
+				throw new VerifyError("Delegate must have both BeginInvoke and EndInvoke or neither");
+			}
+			if (constructor.Instructions.Length < 3
+				|| constructor.Instructions[0].NormalizedOpCode != NormalizedByteCode.__aload
+				|| constructor.Instructions[0].NormalizedArg1 != 0
+				|| constructor.Instructions[1].NormalizedOpCode != NormalizedByteCode.__invokespecial
+				|| constructor.Instructions[2].NormalizedOpCode != NormalizedByteCode.__return)
+			{
+				throw new VerifyError("Delegate constructor must be empty");
+			}
+			if (f.Fields.Length != 0)
+			{
+				throw new VerifyError("Delegate may not declare any fields");
+			}
+			// the inner class is required, if it doesn't exist LoadTypeWrapper will throw a NoClassDefFoundError
+			TypeWrapper iface = LoadTypeWrapper(classLoader, f.Name + DotNetTypeWrapper.DelegateInterfaceSuffix);
+			DelegateInnerClassCheck(iface != null);
+			DelegateInnerClassCheck(iface.IsInterface);
+			DelegateInnerClassCheck(iface.IsPublic);
+			DelegateInnerClassCheck(iface.GetClassLoader() == classLoader);
+			MethodWrapper[] methods = iface.GetMethods();
+			DelegateInnerClassCheck(methods.Length == 1 && methods[0].Name == "Invoke");
+			if (methods[0].Signature != invoke.Signature)
+			{
+				throw new VerifyError("Delegate Invoke method signature must be identical to inner interface Invoke method signature");
+			}
+			if (iface.Interfaces.Length != 0)
+			{
+				throw new VerifyError("Delegate inner interface may not extend any interfaces");
+			}
+			if (constructor.Signature != "(" + iface.SigName + ")V")
+			{
+				throw new VerifyError("Delegate constructor must take a single argument of type inner Method interface");
+			}
+			if (beginInvoke.Signature != invoke.Signature.Substring(0, invoke.Signature.IndexOf(')')) + "Lcli.System.AsyncCallback;Ljava.lang.Object;)Lcli.System.IAsyncResult;")
+			{
+				throw new VerifyError("Delegate BeginInvoke method has incorrect signature");
+			}
+			if (endInvoke.Signature != "(Lcli.System.IAsyncResult;)" + invoke.Signature.Substring(invoke.Signature.IndexOf(')') + 1))
+			{
+				throw new VerifyError("Delegate EndInvoke method has incorrect signature");
+			}
+		}
+
+		private static void DelegateInnerClassCheck(bool cond)
+		{
+			if (!cond)
+			{
+				throw new VerifyError("Delegate must have a public inner interface named Method with a single method named Invoke");
+			}
+		}
+
+		private bool IsDelegate
+		{
+			get
+			{
+				TypeWrapper baseTypeWrapper = BaseTypeWrapper;
+				return baseTypeWrapper != null && baseTypeWrapper.TypeAsTBD == typeof(MulticastDelegate);
+			}
 		}
 
 		internal override ClassLoaderWrapper GetClassLoader()
@@ -3990,6 +4099,10 @@ namespace IKVM.Internal
 					if(wrapper.IsGhost)
 					{
 						methods[i] = new MethodWrapper.GhostMethodWrapper(wrapper, m.Name, m.Signature, null, null, null, m.Modifiers, flags);
+					}
+					else if(ReferenceEquals(m.Name, StringConstants.INIT) && wrapper.IsDelegate)
+					{
+						methods[i] = new DelegateConstructorMethodWrapper(wrapper, m);
 					}
 					else if(ReferenceEquals(m.Name, StringConstants.INIT) || m.IsClassInitializer)
 					{
@@ -4396,6 +4509,24 @@ namespace IKVM.Internal
 				catch(Exception x)
 				{
 					JVM.CriticalFailure("Exception during JavaTypeImpl.CreateStep2NoFail", x);
+				}
+			}
+
+			private sealed class DelegateConstructorMethodWrapper : MethodWrapper
+			{
+				internal DelegateConstructorMethodWrapper(DynamicTypeWrapper tw, ClassFile.Method m)
+					: base(tw, m.Name, m.Signature, null, null, null, m.Modifiers, MemberFlags.None)
+				{
+				}
+
+				internal override void EmitNewobj(CodeEmitter ilgen, MethodAnalyzer ma, int opcodeIndex)
+				{
+					ilgen.Emit(OpCodes.Dup);
+					MethodWrapper mw = GetParameters()[0].GetMethods()[0];
+					// TODO linking here is not safe
+					mw.Link();
+					ilgen.Emit(OpCodes.Ldvirtftn, (MethodInfo)mw.GetMethod());
+					ilgen.Emit(OpCodes.Newobj, (ConstructorBuilder)GetMethod());
 				}
 			}
 
@@ -6085,8 +6216,16 @@ namespace IKVM.Internal
 						{
 							setModifiers = true;
 						}
-						method = typeBuilder.DefineConstructor(attribs, CallingConventions.Standard, methods[index].GetParametersForDefineMethod(), null, modopt);
-						((ConstructorBuilder)method).SetImplementationFlags(MethodImplAttributes.NoInlining);
+						if(methods[index] is DelegateConstructorMethodWrapper)
+						{
+							method = typeBuilder.DefineConstructor(attribs, CallingConventions.Standard, new Type[] { typeof(object), typeof(IntPtr) }, null, null);
+							((ConstructorBuilder)method).SetImplementationFlags(MethodImplAttributes.Runtime);
+						}
+						else
+						{
+							method = typeBuilder.DefineConstructor(attribs, CallingConventions.Standard, methods[index].GetParametersForDefineMethod(), null, modopt);
+							((ConstructorBuilder)method).SetImplementationFlags(MethodImplAttributes.NoInlining);
+						}
 					}
 					else if(m.IsClassInitializer)
 					{
@@ -7057,8 +7196,11 @@ namespace IKVM.Internal
 						{
 							hasConstructor = true;
 						}
-						CodeEmitter ilGenerator = CodeEmitter.Create((ConstructorBuilder)mb);
-						CompileConstructorBody(this, ilGenerator, i, invokespecialstubcache);
+						if ((mb.GetMethodImplementationFlags() & MethodImplAttributes.Runtime) == 0)
+						{
+							CodeEmitter ilGenerator = CodeEmitter.Create((ConstructorBuilder)mb);
+							CompileConstructorBody(this, ilGenerator, i, invokespecialstubcache);
+						}
 					}
 					else
 					{
@@ -7088,6 +7230,11 @@ namespace IKVM.Internal
 						{
 							if ((mb.Attributes & MethodAttributes.PinvokeImpl) != 0)
 							{
+								continue;
+							}
+							if (wrapper.IsDelegate)
+							{
+								((MethodBuilder)mb).SetImplementationFlags(mb.GetMethodImplementationFlags() | MethodImplAttributes.Runtime);
 								continue;
 							}
 							Profiler.Enter("JavaTypeImpl.Finish.Native");
@@ -9150,8 +9297,35 @@ namespace IKVM.Internal
 			}
 		}
 
+		private sealed class DelegateConstructorMethodWrapper : MethodWrapper
+		{
+			private readonly ConstructorInfo constructor;
+
+			private DelegateConstructorMethodWrapper(TypeWrapper tw, TypeWrapper iface, ExModifiers mods)
+				: base(tw, StringConstants.INIT, "(" + iface.SigName + ")V", null, PrimitiveTypeWrapper.VOID, new TypeWrapper[] { iface }, mods.Modifiers, mods.IsInternal ? MemberFlags.InternalAccess : MemberFlags.None)
+			{
+			}
+
+			internal DelegateConstructorMethodWrapper(TypeWrapper tw, MethodBase method)
+				: this(tw, tw.GetClassLoader().LoadClassByDottedName(tw.Name + DotNetTypeWrapper.DelegateInterfaceSuffix), AttributeHelper.GetModifiers(method, false))
+			{
+				constructor = (ConstructorInfo)method;
+			}
+
+			internal override void EmitNewobj(CodeEmitter ilgen, MethodAnalyzer ma, int opcodeIndex)
+			{
+				ilgen.Emit(OpCodes.Dup);
+				MethodWrapper mw = GetParameters()[0].GetMethods()[0];
+				// TODO is linking here safe?
+				mw.Link();
+				ilgen.Emit(OpCodes.Ldvirtftn, (MethodInfo)mw.GetMethod());
+				ilgen.Emit(OpCodes.Newobj, constructor);
+			}
+		}
+
 		protected override void LazyPublishMembers()
 		{
+			bool isDelegate = type.BaseType == typeof(MulticastDelegate);
 			clinitMethod = type.GetMethod("__<clinit>", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
 			List<MethodWrapper> methods = new List<MethodWrapper>();
 			List<FieldWrapper> fields = new List<FieldWrapper>();
@@ -9167,6 +9341,10 @@ namespace IKVM.Internal
 							(method.Name == "op_Implicit" || method.Name.StartsWith("__<")))
 						{
 							// skip
+						}
+						else if(isDelegate && method.IsConstructor && !method.IsStatic)
+						{
+							methods.Add(new DelegateConstructorMethodWrapper(this, method));
 						}
 						else
 						{
@@ -11215,6 +11393,14 @@ namespace IKVM.Internal
 			return ClassLoaderWrapper.GetAssemblyClassLoader(type.Assembly);
 		}
 
+		private sealed class MulticastDelegateCtorMethodWrapper : MethodWrapper
+		{
+			internal MulticastDelegateCtorMethodWrapper(TypeWrapper declaringType)
+				: base(declaringType, "<init>", "()V", null, PrimitiveTypeWrapper.VOID, TypeWrapper.EmptyArray, Modifiers.Protected, MemberFlags.None)
+			{
+			}
+		}
+
 		private class DelegateMethodWrapper : MethodWrapper
 		{
 			private ConstructorInfo delegateConstructor;
@@ -11555,6 +11741,12 @@ namespace IKVM.Internal
 					TypeWrapper iface = InnerClasses[0];
 					DelegateMethodWrapper mw = new DelegateMethodWrapper(this, (DelegateInnerClassTypeWrapper)iface);
 					methodsList.Add(mw.Name + mw.Signature, mw);
+				}
+
+				// add a protected default constructor to MulticastDelegate to make it easier to define a delegate in Java
+				if(type == typeof(MulticastDelegate))
+				{
+					methodsList.Add("<init>()V", new MulticastDelegateCtorMethodWrapper(this));
 				}
 
 				ConstructorInfo[] constructors = type.GetConstructors(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
