@@ -3878,8 +3878,12 @@ namespace IKVM.Internal
 			{
 				throw new VerifyError("Delegate may not declare any fields");
 			}
-			// the inner class is required, if it doesn't exist LoadTypeWrapper will throw a NoClassDefFoundError
-			TypeWrapper iface = LoadTypeWrapper(classLoader, f.Name + DotNetTypeWrapper.DelegateInterfaceSuffix);
+			TypeWrapper iface;
+#if STATIC_COMPILER
+			iface = classLoader.LoadCircularDependencyHack(this, f.Name + DotNetTypeWrapper.DelegateInterfaceSuffix);
+#else
+			iface = classLoader.LoadClassByDottedNameFast(f.Name + DotNetTypeWrapper.DelegateInterfaceSuffix);
+#endif
 			DelegateInnerClassCheck(iface != null);
 			DelegateInnerClassCheck(iface.IsInterface);
 			DelegateInnerClassCheck(iface.IsPublic);
@@ -3898,11 +3902,11 @@ namespace IKVM.Internal
 			{
 				throw new VerifyError("Delegate constructor must take a single argument of type inner Method interface");
 			}
-			if (beginInvoke.Signature != invoke.Signature.Substring(0, invoke.Signature.IndexOf(')')) + "Lcli.System.AsyncCallback;Ljava.lang.Object;)Lcli.System.IAsyncResult;")
+			if (beginInvoke != null && beginInvoke.Signature != invoke.Signature.Substring(0, invoke.Signature.IndexOf(')')) + "Lcli.System.AsyncCallback;Ljava.lang.Object;)Lcli.System.IAsyncResult;")
 			{
 				throw new VerifyError("Delegate BeginInvoke method has incorrect signature");
 			}
-			if (endInvoke.Signature != "(Lcli.System.IAsyncResult;)" + invoke.Signature.Substring(invoke.Signature.IndexOf(')') + 1))
+			if (endInvoke != null && endInvoke.Signature != "(Lcli.System.IAsyncResult;)" + invoke.Signature.Substring(invoke.Signature.IndexOf(')') + 1))
 			{
 				throw new VerifyError("Delegate EndInvoke method has incorrect signature");
 			}
@@ -4232,7 +4236,7 @@ namespace IKVM.Internal
 						{
 							try
 							{
-								outerClassWrapper = wrapper.GetClassLoader().LoadClassByDottedNameFast(outerClassName) as DynamicTypeWrapper;
+								outerClassWrapper = wrapper.GetClassLoader().LoadCircularDependencyHack(wrapper, outerClassName) as DynamicTypeWrapper;
 							}
 							catch(RetargetableJavaException x)
 							{

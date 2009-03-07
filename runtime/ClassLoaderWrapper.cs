@@ -53,6 +53,7 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 		private static ClassLoaderWrapper bootstrapClassLoader;
 		private TypeWrapperFactory factory;
+		private TypeWrapper circularDependencyHack;
 #else
 		private static AssemblyClassLoader bootstrapClassLoader;
 #endif
@@ -256,6 +257,32 @@ namespace IKVM.Internal
 				return null;
 			}
 		}
+
+#if STATIC_COMPILER
+		internal TypeWrapper LoadCircularDependencyHack(TypeWrapper tw, string name)
+		{
+			if (circularDependencyHack == null)
+			{
+				circularDependencyHack = tw;
+				try
+				{
+					return LoadClassByDottedNameFast(name);
+				}
+				finally
+				{
+					circularDependencyHack = null;
+				}
+			}
+			else if (circularDependencyHack.Name == name)
+			{
+				return circularDependencyHack;
+			}
+			else
+			{
+				return LoadClassByDottedNameFast(name);
+			}
+		}
+#endif
 
 		protected virtual void CheckDefineClassAllowed(string className)
 		{
