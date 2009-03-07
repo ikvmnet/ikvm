@@ -365,7 +365,7 @@ namespace IKVM.Internal
 				TypeWrapper type;
 				lock(types)
 				{
-					if(!types.TryGetValue(name, out type))
+					if(types.TryGetValue(name, out type) && type == null)
 					{
 						Thread defineThread;
 						if(defineClassInProgress.TryGetValue(name, out defineThread))
