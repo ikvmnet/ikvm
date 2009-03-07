@@ -893,6 +893,7 @@
 ../classpath/ikvm/lang/Property.java
 ../classpath/ikvm/runtime/AppDomainAssemblyClassLoader.java
 ../classpath/ikvm/runtime/ClassPathAssemblyClassLoader.java
+../classpath/ikvm/runtime/Delegates.java
 ../classpath/ikvm/runtime/Startup.java
 ../classpath/ikvm/runtime/Util.java
 ../classpath/java/lang/ExceptionHelper.java
