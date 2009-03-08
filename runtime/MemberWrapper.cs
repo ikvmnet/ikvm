@@ -792,6 +792,7 @@ namespace IKVM.Internal
 				{
 					try
 					{
+						ResolveMethod();
 						InvokeArgsProcessor proc = new InvokeArgsProcessor(this, method, obj, UnboxArgs(args), ikvm.@internal.CallerID.create(callerID));
 						object o = method.Invoke(proc.GetObj(), proc.GetArgs());
 						TypeWrapper retType = this.ReturnType;
