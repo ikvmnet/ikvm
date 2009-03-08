@@ -49,7 +49,7 @@ namespace IKVM.Internal
 #endif
 			}
 #if !IKVM_REF_EMIT
-			if (!(type is TypeBuilder))
+			if (!IsTypeBuilder(type))
 			{
 				return classLiteralType.MakeGenericType(type).GetField("Value", BindingFlags.Public | BindingFlags.Static);
 			}
@@ -59,6 +59,11 @@ namespace IKVM.Internal
 				classLiteralField = classLiteralType.GetField("Value", BindingFlags.Public | BindingFlags.Static);
 			}
 			return TypeBuilder.GetField(classLiteralType.MakeGenericType(type), classLiteralField);
+		}
+
+		private static bool IsTypeBuilder(Type type)
+		{
+			return type is TypeBuilder || (type.HasElementType && IsTypeBuilder(type.GetElementType()));
 		}
 
 #if STATIC_COMPILER
