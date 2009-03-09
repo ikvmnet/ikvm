@@ -52,6 +52,70 @@ public final class FileDescriptor {
 
     private volatile cli.System.IO.Stream stream;
     private volatile cli.System.Net.Sockets.Socket socket;
+    
+    /**
+     * HACK
+     *   JRuby uses reflection to get at the handle (on Windows) and fd (on non-Windows)
+     *   fields to convert it into a native handle and query if it is a tty.
+     */
+    @ikvm.lang.Property(get = "get_handle")
+    private long handle;
+    
+    @ikvm.lang.Property(get = "get_fd")
+    private int fd;
+    
+    private long get_handle()
+    {
+        if (ikvm.internal.Util.WINDOWS)
+        {
+            if (stream instanceof cli.System.IO.FileStream)
+            {
+                cli.System.IO.FileStream fs = (cli.System.IO.FileStream)stream;
+                return fs.get_Handle().ToInt64();
+            }
+            else if (this == in)
+            {
+                return GetStdHandle(-10).ToInt64();
+            }
+            else if (this == out)
+            {
+                return GetStdHandle(-11).ToInt64();
+            }
+            else if (this == err)
+            {
+                return GetStdHandle(-12).ToInt64();
+            }
+        }
+        return -1;
+    }
+    
+    private int get_fd()
+    {
+        if (!ikvm.internal.Util.WINDOWS)
+        {
+            if (stream instanceof cli.System.IO.FileStream)
+            {
+                cli.System.IO.FileStream fs = (cli.System.IO.FileStream)stream;
+                return fs.get_Handle().ToInt32();
+            }
+            else if (this == in)
+            {
+                return 0;
+            }
+            else if (this == out)
+            {
+                return 1;
+            }
+            else if (this == err)
+            {
+                return 2;
+            }
+        }
+        return -1;
+    }
+    
+    @DllImportAttribute.Annotation("kernel32")
+    private static native cli.System.IntPtr GetStdHandle(int nStdHandle);
 
     /**
      * A use counter for tracking the FIS/FOS/RAF instances that
