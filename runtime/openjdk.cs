@@ -3241,7 +3241,7 @@ namespace IKVM.NativeCode.java
 					if (java.io.VirtualFileSystem.IsVirtualFS(name))
 					{
 						// we fake success for native libraries loaded from VFS
-						SetHandle(thisNativeLibrary, -1);
+						((global::java.lang.ClassLoader.NativeLibrary)thisNativeLibrary).handle = -1;
 					}
 					else
 					{
@@ -3255,21 +3255,10 @@ namespace IKVM.NativeCode.java
 				[MethodImpl(MethodImplOptions.NoInlining)]
 				private static void doLoad(object thisNativeLibrary, string name)
 				{
-					jlClass fromClass = ((global::java.lang.ClassLoader.NativeLibrary)thisNativeLibrary).fromClass;
-					if (IKVM.Runtime.JniHelper.LoadLibrary(name, TypeWrapper.FromClass(fromClass).GetClassLoader()) == 1)
-					{
-						SetHandle(thisNativeLibrary, -1);
-					}
+					global::java.lang.ClassLoader.NativeLibrary lib = (global::java.lang.ClassLoader.NativeLibrary)thisNativeLibrary;
+					lib.handle = IKVM.Runtime.JniHelper.LoadLibrary(name, TypeWrapper.FromClass(lib.fromClass).GetClassLoader());
 				}
 #endif
-
-
-				private static void SetHandle(object thisNativeLibrary, long handle)
-				{
-#if !FIRST_PASS
-					((global::java.lang.ClassLoader.NativeLibrary)thisNativeLibrary).handle = handle;
-#endif
-				}
 
 				public static long find(object thisNativeLibrary, string name)
 				{
@@ -3279,8 +3268,14 @@ namespace IKVM.NativeCode.java
 
 				public static void unload(object thisNativeLibrary)
 				{
-					// TODO
-					throw new NotImplementedException();
+#if !FIRST_PASS
+					global::java.lang.ClassLoader.NativeLibrary lib = (global::java.lang.ClassLoader.NativeLibrary)thisNativeLibrary;
+					long handle = Interlocked.Exchange(ref lib.handle, 0);
+					if (handle != 0)
+					{
+						IKVM.Runtime.JniHelper.UnloadLibrary(handle, TypeWrapper.FromClass(lib.fromClass).GetClassLoader());
+					}
+#endif
 				}
 			}
 

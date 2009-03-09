@@ -391,12 +391,18 @@ namespace IKVM.Runtime
 		internal static readonly object JniLock = new object();
 
 		// MONOBUG with mcs we can't pass ClassLoaderWrapper from IKVM.Runtime.dll to IKVM.Runtime.JNI.dll
-		internal unsafe static int LoadLibrary(string filename, object loader)
+		internal unsafe static long LoadLibrary(string filename, object loader)
 		{
 			return LoadLibrary(filename, (ClassLoaderWrapper)loader);
 		}
 
-		private unsafe static int LoadLibrary(string filename, ClassLoaderWrapper loader)
+		// MONOBUG with mcs we can't pass ClassLoaderWrapper from IKVM.Runtime.dll to IKVM.Runtime.JNI.dll
+		internal static void UnloadLibrary(long handle, object loader)
+		{
+			UnloadLibrary(handle, (ClassLoaderWrapper)loader);
+		}
+
+		private unsafe static long LoadLibrary(string filename, ClassLoaderWrapper loader)
 		{
 			Tracer.Info(Tracer.Jni, "loadLibrary: {0}, class loader: {1}", filename, loader);
 			lock(JniLock)
@@ -417,7 +423,7 @@ namespace IKVM.Runtime
 							// no need to do anything
 							ikvm_FreeLibrary(p);
 							Tracer.Warning(Tracer.Jni, "Library was already loaded: {0}", filename);
-							return 1;
+							return p.ToInt64();
 						}
 					}
 					if(nativeLibraries.Contains(p))
@@ -453,13 +459,41 @@ namespace IKVM.Runtime
 					}
 					nativeLibraries.Add(p);
 					loader.RegisterNativeLibrary(p);
-					return 1;
+					return p.ToInt64();
 				}
 				catch
 				{
 					ikvm_FreeLibrary(p);
 					throw;
 				}
+			}
+		}
+
+		private unsafe static void UnloadLibrary(long handle, ClassLoaderWrapper loader)
+		{
+			lock (JniLock)
+			{
+				Tracer.Info(Tracer.Jni, "Unloading library: handle = 0x{0:X}, class loader = {1}", handle, loader);
+				IntPtr p = (IntPtr)handle;
+				IntPtr onunload = ikvm_GetProcAddress(p, "JNI_OnUnload", IntPtr.Size * 2);
+				if (onunload != IntPtr.Zero)
+				{
+					Tracer.Info(Tracer.Jni, "Calling JNI_OnUnload on: handle = 0x{0:X}", handle);
+					JNI.Frame f = new JNI.Frame();
+					ClassLoaderWrapper prevLoader = f.Enter(loader);
+					try
+					{
+						// TODO on Whidbey we should be able to use Marshal.GetDelegateForFunctionPointer to call OnLoad
+						ikvm_CallOnLoad(onunload, JavaVM.pJavaVM, null);
+					}
+					finally
+					{
+						f.Leave(prevLoader);
+					}
+				}
+				nativeLibraries.Remove(p);
+				loader.UnregisterNativeLibrary(p);
+				ikvm_FreeLibrary((IntPtr)handle);
 			}
 		}
 	}

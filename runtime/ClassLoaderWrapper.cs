@@ -1327,6 +1327,14 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal void UnregisterNativeLibrary(IntPtr p)
+		{
+			lock(this)
+			{
+				nativeLibraries.Remove(p);
+			}
+		}
+
 		internal IntPtr[] GetNativeLibraries()
 		{
 			lock(this)
