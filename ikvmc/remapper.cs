@@ -1089,6 +1089,18 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
+	[XmlType("newarr")]
+	public sealed class Newarr : Instruction
+	{
+		[XmlAttribute("sig")]
+		public string Sig;
+
+		internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
+		{
+			ilgen.Emit(OpCodes.Newarr, context.ClassLoader.FieldTypeWrapperFromSig(Sig).TypeAsArrayType);
+		}
+	}
+
 	[XmlType("ldtoken")]
 	public sealed class Ldtoken : Instruction
 	{
@@ -1198,6 +1210,7 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(ConditionalInstruction))]
 		[XmlElement(typeof(Volatile))]
 		[XmlElement(typeof(Ldelema))]
+		[XmlElement(typeof(Newarr))]
 		[XmlElement(typeof(Ldtoken))]
 		[XmlElement(typeof(Leave))]
 		[XmlElement(typeof(RunClassInit))]
