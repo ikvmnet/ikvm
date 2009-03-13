@@ -844,7 +844,8 @@ namespace IKVM.Reflection.Emit
 					rec.Flags = (int)type.Attributes;
 					rec.TypeDefId = type.MetadataToken & 0xFFFFFF;
 					rec.TypeName = manifestModule.Strings.Add(type.Name);
-					rec.TypeNamespace = manifestModule.Strings.Add(type.Namespace);
+					string ns = type.Namespace;
+					rec.TypeNamespace = ns == null ? 0 : manifestModule.Strings.Add(ns);
 					if (type.IsNested)
 					{
 						rec.Implementation = declaringTypes[type.DeclaringType];
