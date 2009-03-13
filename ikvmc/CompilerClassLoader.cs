@@ -1583,9 +1583,9 @@ namespace IKVM.Internal
 							method.Link();
 							fields.Add(new GetterFieldWrapper(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), null, f.Name, f.Sig, new ExModifiers((Modifiers)f.Modifiers, false), (MethodInfo)method.GetMethod(), null));
 						}
-						else if(true || (f.Modifiers & IKVM.Internal.MapXml.MapModifiers.Static) != 0)
+						else if((f.Modifiers & IKVM.Internal.MapXml.MapModifiers.Static) != 0)
 						{
-							FieldAttributes attr = MapFieldAccessModifiers(f.Modifiers);// | FieldAttributes.Static;
+							FieldAttributes attr = MapFieldAccessModifiers(f.Modifiers) | FieldAttributes.Static;
 							if(f.Constant != null)
 							{
 								attr |= FieldAttributes.Literal;
@@ -1593,10 +1593,6 @@ namespace IKVM.Internal
 							else if((f.Modifiers & IKVM.Internal.MapXml.MapModifiers.Final) != 0)
 							{
 								attr |= FieldAttributes.InitOnly;
-							}
-							if((f.Modifiers & IKVM.Internal.MapXml.MapModifiers.Static) != 0)
-							{
-								attr |= FieldAttributes.Static;
 							}
 							FieldBuilder fb = tb.DefineField(f.Name, GetClassLoader().FieldTypeWrapperFromSig(f.Sig).TypeAsSignatureType, attr);
 							if(f.Attributes != null)
