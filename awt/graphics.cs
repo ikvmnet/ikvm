@@ -346,9 +346,16 @@ namespace ikvm.awt
                 g.DrawPath(pen, gp);
         }
 
-        public override void drawString(java.text.AttributedCharacterIterator param1, int param2, int param3)
+        public override void drawString(java.text.AttributedCharacterIterator iterator, int x, int y)
         {
-            throw new NotImplementedException();
+            if (iterator == null) {
+                throw new java.lang.NullPointerException("AttributedCharacterIterator is null");
+            }
+            if (iterator.getBeginIndex() == iterator.getEndIndex()) {
+                return; /* nothing to draw */
+            }
+            java.awt.font.TextLayout tl = new java.awt.font.TextLayout(iterator, getFontRenderContext());
+            tl.draw(this, (float) x, (float) y);        
         }
 
         public override void drawString(string str, int x, int y)
@@ -356,9 +363,26 @@ namespace ikvm.awt
 			drawString(str, (float)x, (float)y);
 		}
 
-        public override void fill3DRect(int param1, int param2, int param3, int param4, bool param5)
+        public override void fill3DRect(int x, int y, int width, int height, bool raised)
         {
-            throw new NotImplementedException();
+            java.awt.Paint p = getPaint();
+            java.awt.Color c = getColor();
+            java.awt.Color brighter = c.brighter();
+            java.awt.Color darker = c.darker();
+
+            if( !raised ) {
+                setColor(darker);
+            } else if( p != c ) {
+                setColor(c);
+            }
+            fillRect(x + 1, y + 1, width - 2, height - 2);
+            setColor(raised ? brighter : darker);
+            fillRect(x, y, 1, height);
+            fillRect(x + 1, y, width - 2, 1);
+            setColor(raised ? darker : brighter);
+            fillRect(x + 1, y + height - 1, width - 1, 1);
+            fillRect(x + width - 1, y, 1, height - 1);
+            setPaint(p);
         }
 
         public override void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle)
@@ -523,6 +547,9 @@ namespace ikvm.awt
 
         public override void setXORMode(java.awt.Color param)
         {
+            if( param == null ) {
+                throw new java.lang.IllegalArgumentException("null XORColor");
+            }
             throw new NotImplementedException();
         }
 
@@ -541,21 +568,47 @@ namespace ikvm.awt
             }
         }
 
-        public override bool drawImage(java.awt.Image image, java.awt.geom.AffineTransform xform, ImageObserver obs)
+        public override bool drawImage(java.awt.Image img, java.awt.geom.AffineTransform xform, ImageObserver observer)
         {
-            Console.WriteLine(new System.Diagnostics.StackTrace());
-            throw new NotImplementedException();
+            if (img == null) {
+                return true;
+            }
+     
+            if (xform == null || xform.isIdentity()) {
+                return drawImage(img, 0, 0, null, observer);
+            }
+
+            throw new NotImplementedException("drawImage(Image,AffineTransform,ImageObserver) not implemented for non-null or non-identity AffineTransform!");
         }
 
         public override void drawImage(java.awt.image.BufferedImage image, BufferedImageOp op, int x, int y)
         {
-            Console.WriteLine(new System.Diagnostics.StackTrace());
-            throw new NotImplementedException();
+
+            if( op == null ) {
+                drawImage(image, x, y, null);
+            } else {
+                if( !(op is AffineTransformOp) ) {
+                    drawImage(op.filter(image, null), x, y, null);
+                } else {
+                    Console.WriteLine(new System.Diagnostics.StackTrace());
+                    throw new NotImplementedException();
+                }
+            }
         }
 
-        public override void drawRenderedImage(java.awt.image.RenderedImage image, java.awt.geom.AffineTransform xform)
+        public override void drawRenderedImage(java.awt.image.RenderedImage img, java.awt.geom.AffineTransform xform)
         {
-            throw new NotImplementedException();
+            if (img == null) {
+                return;
+            }
+    
+            // BufferedImage case: use a simple drawImage call
+            if (img is BufferedImage) {
+                BufferedImage bufImg = (BufferedImage)img;
+                drawImage(bufImg,xform,null);
+                return;
+            }            
+            throw new NotImplementedException("drawRenderedImage not implemented for images which are not BufferedImages.");
         }
 
         public override void drawRenderableImage(java.awt.image.renderable.RenderableImage image, java.awt.geom.AffineTransform xform)
@@ -572,7 +625,14 @@ namespace ikvm.awt
 
         public override void drawString(java.text.AttributedCharacterIterator iterator, float x, float y)
         {
-            throw new NotImplementedException();
+            if( iterator == null ) {
+                throw new java.lang.NullPointerException("AttributedCharacterIterator is null");
+            }
+            if( iterator.getBeginIndex() == iterator.getEndIndex() ) {
+                return; /* nothing to draw */
+            }
+            java.awt.font.TextLayout tl = new java.awt.font.TextLayout(iterator, getFontRenderContext());
+            tl.draw(this, x, y);
         }
 
         public override void fill(java.awt.Shape shape)
@@ -892,6 +952,9 @@ namespace ikvm.awt
 
         public override java.awt.Paint getPaint()
         {
+            if( javaPaint == null ) {
+                javaPaint = new java.awt.Color(color.ToArgb());
+            }
             return javaPaint;
         }
 
@@ -916,7 +979,7 @@ namespace ikvm.awt
             {
                 return defaultStroke;
             }
-            return stroke;
+            return stroke; 
         }
 
         public override java.awt.font.FontRenderContext getFontRenderContext()
@@ -924,9 +987,10 @@ namespace ikvm.awt
             return new java.awt.font.FontRenderContext(getTransform(), false, false);
         }
 
-        public override void drawGlyphVector(java.awt.font.GlyphVector g, float x, float y)
+        public override void drawGlyphVector(java.awt.font.GlyphVector gv, float x, float y)
         {
-            throw new NotImplementedException();
+            char[] text = ((NetGlyphVector)gv).getText();
+            drawString(new string(text), x, y);
         }
     }
 

@@ -400,6 +400,10 @@ namespace ikvm.awt
             throw new NotImplementedException();
         }
 
+        public char[] getText()
+        {
+            return text;
+        }
 }
 
     class NetLineMetrics : LineMetrics
