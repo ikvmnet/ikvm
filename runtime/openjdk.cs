@@ -6775,7 +6775,7 @@ namespace IKVM.NativeCode.sun.reflect
 				{
 					ilgen.BeginExceptionBlock();
 					ilgen.Emit(OpCodes.Ldarg_0);
-					ilgen.Emit(OpCodes.Castclass, fw.DeclaringType.TypeAsTBD);
+					ilgen.Emit(OpCodes.Castclass, fw.DeclaringType.TypeAsBaseType);
 					fw.EmitGet(ilgen);
 					fw.FieldTypeWrapper.EmitConvSignatureTypeToStackType(ilgen);
 					LocalBuilder local = ilgen.DeclareLocal(fieldType);
@@ -6818,7 +6818,7 @@ namespace IKVM.NativeCode.sun.reflect
 				{
 					ilgen.BeginExceptionBlock();
 					ilgen.Emit(OpCodes.Ldarg_0);
-					ilgen.Emit(OpCodes.Castclass, fw.DeclaringType.TypeAsTBD);
+					ilgen.Emit(OpCodes.Castclass, fw.DeclaringType.TypeAsBaseType);
 					ilgen.Emit(OpCodes.Ldarg_1);
 					fw.FieldTypeWrapper.EmitConvStackTypeToSignatureType(ilgen, null);
 					fw.EmitSet(ilgen);
