@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
+  Copyright (C) 2003, 2004, 2005, 2006, 2007, 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -28,22 +28,22 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.util.ArrayList;
+import cli.System.Runtime.Serialization.IObjectReference;
+import cli.System.Runtime.Serialization.ISerializable;
+import cli.System.Runtime.Serialization.OnSerializingAttribute;
+import cli.System.Runtime.Serialization.SerializationInfo;
+import cli.System.Runtime.Serialization.StreamingContext;
 
 @ikvm.lang.Internal
 public final class ExceptionHelper
 {
-    // the contents of the NULL_STRING should be empty (because when the exception propagates to other .NET code
-    // it will return that text as the Message property), but it *must* be a copy, because we need to be
-    // able to distinguish it from a user specified blank string
-    private static final String NULL_STRING = new String();
+    private static final Key EXCEPTION_DATA_KEY = new Key();
     private static final ikvm.internal.WeakIdentityMap exceptions = new ikvm.internal.WeakIdentityMap();
     private static final boolean cleanStackTrace = SafeGetEnvironmentVariable("IKVM_DISABLE_STACKTRACE_CLEANING") == null;
     private static final cli.System.Type System_Reflection_MethodBase = cli.System.Type.GetType("System.Reflection.MethodBase, mscorlib");
     private static final cli.System.Type System_Exception = cli.System.Type.GetType("System.Exception, mscorlib");
     // we use Activator.CreateInstance to prevent the exception from being added to the exceptions map
     private static final Throwable NOT_REMAPPED = (Throwable)cli.System.Activator.CreateInstance(System_Exception);
-    // non-private because it is used by the ExceptionInfoHelper inner class
-    /*private*/ static final Throwable CAUSE_NOT_SET = (Throwable)cli.System.Activator.CreateInstance(System_Exception);
     private static final java.util.Hashtable failedTypes = new java.util.Hashtable();
 
     static
@@ -51,18 +51,41 @@ public final class ExceptionHelper
         // make sure the exceptions map continues to work during AppDomain finalization
         cli.System.GC.SuppressFinalize(exceptions);
     }
+    
+    @cli.System.SerializableAttribute.Annotation
+    private static final class Key implements ISerializable
+    {
+        @cli.System.SerializableAttribute.Annotation
+        private static final class Helper implements IObjectReference
+        {
+            public Object GetRealObject(StreamingContext context)
+            {
+                return EXCEPTION_DATA_KEY;
+            }
+        }
 
+        public void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            info.SetType(ikvm.runtime.Util.getInstanceTypeFromClass(Helper.class));
+        }
+    }
+
+    @cli.System.SerializableAttribute.Annotation
     private static final class ExceptionInfoHelper
     {
-	private cli.System.Diagnostics.StackTrace tracePart1;
-	private cli.System.Diagnostics.StackTrace tracePart2;
-	private cli.System.Collections.ArrayList stackTrace;
-	private Throwable cause;
-        private Throwable original;
+	private transient cli.System.Diagnostics.StackTrace tracePart1;
+	private transient cli.System.Diagnostics.StackTrace tracePart2;
+	private StackTraceElement[] stackTrace;
 
-        ExceptionInfoHelper()
+        ExceptionInfoHelper(StackTraceElement[] stackTrace)
         {
-            cause = CAUSE_NOT_SET;
+            this.stackTrace = stackTrace;
+        }
+
+        ExceptionInfoHelper(cli.System.Diagnostics.StackTrace tracePart1, cli.System.Diagnostics.StackTrace tracePart2)
+        {
+            this.tracePart1 = tracePart1;
+            this.tracePart2 = tracePart2;
         }
 
 	ExceptionInfoHelper(Throwable x, boolean captureAdditionalStackTrace)
@@ -72,71 +95,14 @@ public final class ExceptionHelper
             {
 	        tracePart2 = new cli.System.Diagnostics.StackTrace(true);
             }
-	    cause = getInnerException(x);
-	    if(cause == null)
-	    {
-		cause = CAUSE_NOT_SET;
-	    }
 	}
 
-	void captureCause(Throwable x)
-	{
-	    Throwable cause = getInnerException(x);
-	    if(cause != null)
-	    {
-		this.cause = cause;
-	    }
-	}
-
-        void captureStack(Throwable x)
+        @OnSerializingAttribute.Annotation
+        private void OnSerializing(StreamingContext context)
         {
-            if(tracePart1 == null && tracePart2 == null && stackTrace == null)
-            {
-                tracePart1 = new cli.System.Diagnostics.StackTrace(x, true);
-                tracePart2 = new cli.System.Diagnostics.StackTrace(true);
-            }
+            // make sure the stack trace is computed before serializing
+            get_StackTrace(null);
         }
-
-        Throwable getOriginal()
-        {
-            Throwable org = original;
-            original = null;
-            return org;
-        }
-
-        void setOriginal(Throwable org)
-        {
-            original = org;
-        }
-
-	Throwable getCauseForSerialization(Throwable t)
-	{
-	    return cause == CAUSE_NOT_SET ? t : cause;
-	}
-
-	Throwable get_Cause()
-	{
-	    return cause == CAUSE_NOT_SET ? null : cause;
-	}
-
-	void set_Cause(Throwable value)
-	{
-	    if(cause == CAUSE_NOT_SET)
-	    {
-		cause = value;
-	    }
-	    else
-	    {
-		throw new IllegalStateException("Throwable cause already initialized");
-	    }
-	}
-
-	void ResetStackTrace()
-	{
-	    stackTrace = null;
-            tracePart1 = null;
-            tracePart2 = new cli.System.Diagnostics.StackTrace(true);
-	}
 
 	private static boolean IsPrivateScope(cli.System.Reflection.MethodBase mb)
 	{
@@ -157,7 +123,7 @@ public final class ExceptionHelper
 	    {
 		if(stackTrace == null)
 		{
-		    stackTrace = new cli.System.Collections.ArrayList();
+		    cli.System.Collections.ArrayList stackTrace = new cli.System.Collections.ArrayList();
                     if(tracePart1 != null)
                     {
 		        int skip1 = 0;
@@ -240,20 +206,14 @@ public final class ExceptionHelper
 		    }
 		    tracePart1 = null;
 		    tracePart2 = null;
+	            StackTraceElement[] array = new StackTraceElement[stackTrace.get_Count()];
+	            stackTrace.CopyTo((cli.System.Array)(Object)array);
+	            this.stackTrace = array;
 		}
 	    }
-	    StackTraceElement[] array = new StackTraceElement[stackTrace.get_Count()];
-	    stackTrace.CopyTo((cli.System.Array)(Object)array);
-	    return array;
+	    return stackTrace.clone();
 	}
 	
-	void set_StackTrace(StackTraceElement[] value)
-	{
-	    stackTrace = new cli.System.Collections.ArrayList((cli.System.Collections.ICollection)(Object)value);
-	    tracePart1 = null;
-	    tracePart2 = null;
-	}
-
 	static void Append(cli.System.Collections.ArrayList stackTrace, cli.System.Diagnostics.StackTrace st, int skip)
 	{
 	    for(int i = skip; i < st.get_FrameCount(); i++)
@@ -309,8 +269,6 @@ public final class ExceptionHelper
 
     // NOTE these should all be private, but they're used from the inner class and we don't want the accessor methods
     static native boolean IsHideFromJava(cli.System.Reflection.MethodBase mb);
-    static native cli.System.Exception getInnerException(Throwable t);
-    static native String getMessageFromCliException(Throwable t);
     static native boolean IsNative(cli.System.Reflection.MethodBase mb);
     static native String GetMethodName(cli.System.Reflection.MethodBase mb);
     static native String getClassNameFromType(cli.System.Type type);
@@ -321,6 +279,13 @@ public final class ExceptionHelper
     static native cli.System.Type getTypeFromObject(Object o);
 
     private static native String SafeGetEnvironmentVariable(String name);
+    
+    // native methods implemented in map.xml
+    private static native Throwable getCauseForSerialization(Throwable t);
+    private static native cli.System.Exception getOriginalAndClear(Throwable t);
+    private static native void setOriginal(Throwable t, cli.System.Exception org);
+    private static native boolean needStackTraceInfo(Throwable t);
+    private static native void setStackTraceInfo(Throwable t, cli.System.Diagnostics.StackTrace part1, cli.System.Diagnostics.StackTrace part2);
 
     static void printStackTrace(Throwable x)
     {
@@ -329,26 +294,28 @@ public final class ExceptionHelper
 
     static void printStackTrace(Throwable x, java.io.PrintStream printStream)
     {
-	for(String line : buildStackTrace(x))
-	{
-	    printStream.println(line);
+        synchronized (printStream)
+        {
+	    for (String line : buildStackTrace(x))
+	    {
+	        printStream.println(line);
+	    }
 	}
     }
 
     static void printStackTrace(Throwable x, java.io.PrintWriter printWriter)
     {
-	for(String line : buildStackTrace(x))
-	{
-	    printWriter.println(line);
+        synchronized (printWriter)
+        {
+	    for (String line : buildStackTrace(x))
+	    {
+	        printWriter.println(line);
+	    }
 	}
     }
 
     private static ArrayList<String> buildStackTrace(Throwable x)
     {
-	if(x == null)
-	{
-	    throw new NullPointerException();
-	}
 	ArrayList<String> list = new ArrayList<String>();
 	list.add(x.toString());
 	StackTraceElement[] stack = x.getStackTrace();
@@ -400,126 +367,84 @@ public final class ExceptionHelper
 	}
 	return list;
     }
-
-    private static ExceptionInfoHelper getExceptionInfoHelper(Throwable t)
+    
+    static void checkInitCause(Throwable _this, Throwable _this_cause, Throwable cause)
     {
-        Object o = exceptions.get(t);
-        if(o == null || o instanceof ExceptionInfoHelper)
+        if (_this_cause != _this)
         {
-            return (ExceptionInfoHelper)o;
+            throw new IllegalStateException("Can't overwrite cause");
         }
-        else if(o == NOT_REMAPPED)
+        if (cause == _this)
         {
-            ExceptionInfoHelper eih = new ExceptionInfoHelper(t, false);
-            exceptions.put(t, eih);
-            return eih;
+            throw new IllegalArgumentException("Self-causation not permitted");
         }
-        else
+    }
+
+    static void FixateException(cli.System.Exception x)
+    {
+        exceptions.put(x, NOT_REMAPPED);
+    }
+    
+    static Throwable getCause(Throwable _this, Throwable cause)
+    {
+        return cause == _this ? null : cause;
+    }
+    
+    static StackTraceElement[] computeStackTrace(Throwable t, cli.System.Diagnostics.StackTrace part1, cli.System.Diagnostics.StackTrace part2)
+    {
+        ExceptionInfoHelper eih = new ExceptionInfoHelper(part1, part2);
+        return eih.get_StackTrace(t);
+    }
+
+    static StackTraceElement[] getStackTrace(cli.System.Exception x)
+    {
+        synchronized (x)
         {
-            o = exceptions.get(o);
-            if(o instanceof ExceptionInfoHelper)
+            ExceptionInfoHelper eih = null;
+            cli.System.Collections.IDictionary data = x.get_Data();
+            if (data != null && !data.get_IsReadOnly())
             {
-                return (ExceptionInfoHelper)o;
+                synchronized (data)
+                {
+                    eih = (ExceptionInfoHelper)data.get_Item(EXCEPTION_DATA_KEY);
+                }
             }
-            Throwable remapped = (Throwable)o;
-            ExceptionInfoHelper eih = (ExceptionInfoHelper)exceptions.get(remapped);
-            if(eih == null)
-            {
-                eih = new ExceptionInfoHelper(t, false);
-                exceptions.put(remapped, eih);
-            }
-            return eih;
-        }
-    }
-
-    static Throwable initCause(Throwable x, Throwable cause)
-    {
-	if(x == null)
-	{
-	    throw new NullPointerException();
-	}
-	if(cause == x)
-	{
-	    throw new IllegalArgumentException("Cause cannot be self");
-	}
-        // HACK since the compiler abuses initCause(null) to trigger creation
-        // of an ExceptionInfoHelper for explicitly created non-Java exceptions,
-        // we allow that
-        if(x instanceof cli.System.Exception && cause != null)
-        {
-            throw new IllegalStateException("Throwable cause already initialized");
-        }
-	ExceptionInfoHelper eih = getExceptionInfoHelper(x);
-	if(eih == null)
-	{
-	    eih = new ExceptionInfoHelper();
-	    exceptions.put(x, eih);
-	}
-	eih.set_Cause(cause);
-	return x;
-    }
-
-    static Throwable getCause(Throwable x)
-    {
-	if(x == null)
-	{
-	    throw new NullPointerException();
-	}
-	ExceptionInfoHelper eih = getExceptionInfoHelper(x);
-	if(eih == null)
-	{
-	    return getInnerException(x);
-	}
-	return eih.get_Cause();
-    }
-
-    static StackTraceElement[] getStackTrace(Throwable x)
-    {
-	if(x == null)
-	{
-	    throw new NullPointerException();
-	}
-	ExceptionInfoHelper ei = getExceptionInfoHelper(x);
-	if(ei == null)
-	{
-	    return new StackTraceElement[0];
-	}
-	return ei.get_StackTrace(x);
-    }
-
-    static void setStackTrace(Throwable x, StackTraceElement[] stackTrace)
-    {
-	if(x == null)
-	{
-	    throw new NullPointerException();
-	}
-	for(int i = 0; i < stackTrace.length; i++)
-	{
-	    if(stackTrace[i] == null)
+	    if (eih == null)
 	    {
-		throw new NullPointerException();
+	        return new StackTraceElement[0];
 	    }
+	    return eih.get_StackTrace(x);
 	}
-	ExceptionInfoHelper ei = getExceptionInfoHelper(x);
-	if(ei == null)
-	{
-	    ei = new ExceptionInfoHelper();
-	    ei.captureCause(x);
-	    exceptions.put(x, ei);
-	}
-	ei.set_StackTrace(stackTrace);
+    }
+    
+    static StackTraceElement[] checkStackTrace(StackTraceElement[] original)
+    {
+        StackTraceElement[] copy = original.clone();
+        for (int i = 0; i < copy.length; i++)
+        {
+            copy[i].getClass(); // efficient null check
+        }
+        return copy;
     }
 
-    static String get_NullString()
+    static void setStackTrace(cli.System.Exception x, StackTraceElement[] stackTrace)
     {
-	return NULL_STRING;
+        ExceptionInfoHelper eih = new ExceptionInfoHelper(checkStackTrace(stackTrace));
+        cli.System.Collections.IDictionary data = x.get_Data();
+        if (data != null && !data.get_IsReadOnly())
+        {
+            synchronized (data)
+            {
+                data.set_Item(EXCEPTION_DATA_KEY, eih);
+            }
+        }
     }
 
     static String FilterMessage(String message)
     {
 	if(message == null)
 	{
-	    message = NULL_STRING;
+	    message = "";
 	}
 	return message;
     }
@@ -528,19 +453,9 @@ public final class ExceptionHelper
     {
 	if(cause == null)
 	{
-	    return NULL_STRING;
+	    return "";
 	}
 	return cause.toString();
-    }
-
-    static String getMessage(Throwable x)
-    {
-	String message = getMessageFromCliException(x);
-	if(message == NULL_STRING)
-	{
-	    message = null;
-	}
-	return message;
     }
 
     static String getLocalizedMessage(Throwable x)
@@ -548,21 +463,20 @@ public final class ExceptionHelper
 	return x.getMessage();
     }
 
-    static Throwable fillInStackTrace(Throwable x)
+    static void fillInStackTrace(cli.System.Exception x)
     {
-	if(x == null)
-	{
-	    throw new NullPointerException();
-	}
-	ExceptionInfoHelper eih = getExceptionInfoHelper(x);
-	if(eih == null)
-	{
-	    eih = new ExceptionInfoHelper();
-	    eih.captureCause(x);
-	    exceptions.put(x, eih);
-	}
-        eih.ResetStackTrace();
-	return x;
+        synchronized (x)
+        {
+            ExceptionInfoHelper eih = new ExceptionInfoHelper(null, new cli.System.Diagnostics.StackTrace(true));
+            cli.System.Collections.IDictionary data = x.get_Data();
+            if (data != null && !data.get_IsReadOnly())
+            {
+                synchronized (data)
+                {
+                    data.set_Item(EXCEPTION_DATA_KEY, eih);
+                }
+            }
+        }
     }
 
     static String toString(Throwable x)
@@ -575,19 +489,16 @@ public final class ExceptionHelper
 	return x.getClass().getName() + ": " + message;
     }
 
-    static Throwable UnmapException(Throwable t)
+    // also used by ikvm.extensions.ExtensionMethods.printStackTrace()
+    public static Throwable UnmapException(Throwable t)
     {
         if(!(t instanceof cli.System.Exception))
         {
-            ExceptionInfoHelper eih = (ExceptionInfoHelper)exceptions.get(t);
-            if(eih != null)
+            cli.System.Exception org = getOriginalAndClear(t);
+            if(org != null)
             {
-                Throwable org = eih.getOriginal();
-                if(org != null)
-                {
-		    exceptions.put(org, t);
-                    t = org;
-                }
+	        exceptions.put(org, t);
+                t = org;
             }
         }
         return t;
@@ -603,81 +514,69 @@ public final class ExceptionHelper
     {
         Throwable org = t;
         boolean nonJavaException = t instanceof cli.System.Exception;
-        if(nonJavaException && remap)
+        if (nonJavaException && remap)
         {
-            if(t instanceof cli.System.TypeInitializationException)
+            if (t instanceof cli.System.TypeInitializationException)
             {
                 return MapTypeInitializeException((cli.System.TypeInitializationException)t, handler);
             }
             Object obj = exceptions.get(t);
-            if(obj instanceof ExceptionInfoHelper)
+            Throwable remapped = (Throwable)obj;
+            if (remapped == null)
             {
-                // we don't need to capture the stack later
-                nonJavaException = false;
-            }
-            else
-            {
-                Throwable remapped = (Throwable)obj;
-                if(remapped == null)
+                remapped = MapExceptionImpl(t);
+                if (remapped == t)
                 {
-                    remapped = MapExceptionImpl(t);
-                    if(remapped == t)
-                    {
-                        exceptions.put(t, NOT_REMAPPED);
-                    }
-                    else
-                    {
-                        exceptions.put(t, remapped);
-                        t = remapped;
-                    }
+                    exceptions.put(t, NOT_REMAPPED);
                 }
-                else if(remapped != NOT_REMAPPED)
+                else
                 {
+                    exceptions.put(t, remapped);
                     t = remapped;
                 }
             }
+            else if (remapped != NOT_REMAPPED)
+            {
+                t = remapped;
+            }
         }
 
-        if(handler == null || isInstanceOfType(t, handler, remap))
+        if (handler == null || isInstanceOfType(t, handler, remap))
         {
-            if(t != org || nonJavaException)
+            if (t instanceof cli.System.Exception)
             {
-                ExceptionInfoHelper eih = t != org ? (ExceptionInfoHelper)exceptions.get(t) : null;
-                if(eih == null)
+                cli.System.Exception x = (cli.System.Exception)t;
+                cli.System.Collections.IDictionary data = x.get_Data();
+                if (data != null && !data.get_IsReadOnly())
                 {
-                    // the exception is escaping into the wild for the first time,
-                    // so we have to capture the stack trace
-                    eih = new ExceptionInfoHelper(org, true);
-                    if(t != org)
+                    synchronized (data)
                     {
-                        eih.setOriginal(org);
-			exceptions.remove(org);
+                        if (!data.Contains(EXCEPTION_DATA_KEY))
+                        {
+                            data.Add(EXCEPTION_DATA_KEY, new ExceptionInfoHelper(t, true));
+                        }
                     }
-                    exceptions.put(t, eih);
-                    Throwable inner = getInnerException(org);
-                    if(inner != null && !exceptions.containsKey(inner))
-                    {
-                        exceptions.put(inner, new ExceptionInfoHelper(inner, true));
-                    }
-                }
-                else
-                {
-                    eih.setOriginal(org);
-		    exceptions.remove(org);
                 }
             }
             else
             {
-                ExceptionInfoHelper eih = (ExceptionInfoHelper)exceptions.get(t);
-                if(eih == null)
+                if (needStackTraceInfo(t))
                 {
-                    eih = new ExceptionInfoHelper(t, true);
-                    exceptions.put(t, eih);
+	            cli.System.Diagnostics.StackTrace tracePart1 = new cli.System.Diagnostics.StackTrace(org, true);
+                    cli.System.Diagnostics.StackTrace tracePart2 = new cli.System.Diagnostics.StackTrace(true);
+                    setStackTraceInfo(t, tracePart1, tracePart2);
                 }
-                else
-                {
-                    eih.captureStack(t);
-                }
+            }
+            
+            if (nonJavaException && !remap)
+            {
+                exceptions.put(t, NOT_REMAPPED);
+            }
+            
+            if (t != org)
+            {
+                setOriginal(t, (cli.System.Exception)org);
+	        exceptions.remove(org);
             }
             return t;
         }
@@ -704,21 +603,19 @@ public final class ExceptionHelper
 
     static void writeObject(Throwable t, ObjectOutputStream s) throws IOException
     {
-	ObjectOutputStream.PutField fields = s.putFields();
-	fields.put("detailMessage", t.getMessage());
-	Throwable cause;
-	ExceptionInfoHelper eih = getExceptionInfoHelper(t);
-	if(eih == null)
-	{
-	    cause = getInnerException(t);
+        synchronized (t)
+        {
+	    ObjectOutputStream.PutField fields = s.putFields();
+	    fields.put("detailMessage", t.getMessage());
+	    Throwable cause = t.getCause();
+	    if (cause == null && !(t instanceof cli.System.Exception))
+	    {
+	        cause = getCauseForSerialization(t);
+	    }
+	    fields.put("cause", cause);
+	    fields.put("stackTrace", t.getStackTrace());
+	    s.writeFields();
 	}
-	else
-	{
-	    cause = eih.getCauseForSerialization(t);
-	}
-	fields.put("cause", cause);
-	fields.put("stackTrace", t.getStackTrace());
-	s.writeFields();	    
     }
 
     static void readObject(Throwable t, ObjectInputStream s) throws IOException, ClassNotFoundException
@@ -726,7 +623,7 @@ public final class ExceptionHelper
 	ObjectInputStream.GetField fields = s.readFields();
 	initThrowable(t, fields.get("detailMessage", null), fields.get("cause", null));
 	StackTraceElement[] stackTrace = (StackTraceElement[])fields.get("stackTrace", null);
-	setStackTrace(t, stackTrace == null ? new StackTraceElement[0] : stackTrace);
+	t.setStackTrace(stackTrace == null ? new StackTraceElement[0] : stackTrace);
     }
 
     static Throwable MapTypeInitializeException(cli.System.TypeInitializationException t, cli.System.Type handler)
@@ -752,7 +649,7 @@ public final class ExceptionHelper
         if(wrapped)
         {
             // transplant the stack trace
-            setStackTrace(r, new ExceptionInfoHelper(t, true).get_StackTrace(t));
+            r.setStackTrace(new ExceptionInfoHelper(t, true).get_StackTrace(t));
         }
         return r;
     }

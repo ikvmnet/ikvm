@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!--
-  Copyright (C) 2002-2008 Jeroen Frijters
+  Copyright (C) 2002-2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -908,10 +908,20 @@
             <field name="suppressFillInStackTrace" sig="Z" modifiers="private static">
                 <attribute type="System.ThreadStaticAttribute" sig="()V" />
             </field>
+            <field name="emptyStackTrace" sig="[Ljava.lang.StackTraceElement;" modifiers="private static final" />
+            <field name="detailMessage" sig="Ljava.lang.String;" />
+            <field name="cause" sig="Ljava.lang.Throwable;" />
+            <field name="original" sig="Ljava.lang.Throwable;" />
+            <field name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
+            <field name="tracePart1" sig="Lcli.System.Diagnostics.StackTrace;" />
+            <field name="tracePart2" sig="Lcli.System.Diagnostics.StackTrace;" />
             <clinit>
                 <body>
                     <call class="java.lang.ExceptionHelper" name="getPersistentFields" sig="()[Ljava.io.ObjectStreamField;" />
                     <stsfld class="java.lang.Throwable" name="serialPersistentFields" sig="[Ljava.io.ObjectStreamField;" />
+                    <ldc_i4_0 />
+                    <newarr sig="Ljava.lang.StackTraceElement;" />
+                    <stsfld class="java.lang.Throwable" name="emptyStackTrace" sig="[Ljava.lang.StackTraceElement;" />
                     <ret />
                 </body>
             </clinit>
@@ -968,6 +978,18 @@
                     <ret />
                 </body>
             </method>
+            <method name="__&lt;fixate&gt;" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" modifiers="public static">
+                <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
+                <attribute type="System.ComponentModel.EditorBrowsableAttribute" sig="(Lcli.System.ComponentModel.EditorBrowsableState;)V">
+                    <parameter>Never</parameter>
+                </attribute>
+                <body>
+                    <ldarg_0 />
+                    <call class="java.lang.ExceptionHelper" name="FixateException" sig="(Lcli.System.Exception;)V" />
+                    <ldarg_0 />
+                    <ret />
+                </body>
+            </method>
             <method name="readObject" sig="(Ljava.io.ObjectInputStream;)V" modifiers="private">
                 <throws class="java.io.IOException" />
                 <throws class="java.lang.ClassNotFoundException" />
@@ -990,13 +1012,19 @@
             <constructor sig="()V" modifiers="public">
                 <body>
                     <ldarg_0 />
-                    <call class="java.lang.ExceptionHelper" name="get_NullString" sig="()Ljava.lang.String;" />
+                    <ldstr value="" />
                     <call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;)V" />
+                    <ldarg_0 />
+                    <ldarg_0 />
+                    <stfld class="java.lang.Throwable" name="cause" sig="Ljava.lang.Throwable;" />
                     <!-- Start fillInStackTrace call -->
                     <ldsfld class="java.lang.Throwable" name="suppressFillInStackTrace" sig="Z" />
                     <ldc_i4_0 />
                     <stsfld class="java.lang.Throwable" name="suppressFillInStackTrace" sig="Z" />
                     <brtrue name="skipFillInStackTrace" />
+                    <ldarg_0 />
+                    <ldsfld class="java.lang.Throwable" name="emptyStackTrace" sig="[Ljava.lang.StackTraceElement;" />
+                    <stfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
                     <ldarg_0 />
                     <callvirt class="java.lang.Throwable" name="fillInStackTrace" sig="()Ljava.lang.Throwable;" />
                     <pop />
@@ -1012,16 +1040,25 @@
                     <ldarg_1 />
                     <call class="java.lang.ExceptionHelper" name="FilterMessage" sig="(Ljava.lang.String;)Ljava.lang.String;" />
                     <call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;)V" />
+                    <ldarg_0 />
+                    <ldarg_0 />
+                    <stfld class="java.lang.Throwable" name="cause" sig="Ljava.lang.Throwable;" />
                     <!-- Start fillInStackTrace call -->
                     <ldsfld class="java.lang.Throwable" name="suppressFillInStackTrace" sig="Z" />
                     <ldc_i4_0 />
                     <stsfld class="java.lang.Throwable" name="suppressFillInStackTrace" sig="Z" />
                     <brtrue name="skipFillInStackTrace" />
                     <ldarg_0 />
+                    <ldsfld class="java.lang.Throwable" name="emptyStackTrace" sig="[Ljava.lang.StackTraceElement;" />
+                    <stfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
+                    <ldarg_0 />
                     <callvirt class="java.lang.Throwable" name="fillInStackTrace" sig="()Ljava.lang.Throwable;" />
                     <pop />
                     <label name="skipFillInStackTrace" />
                     <!-- End fillInStackTrace call -->
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <stfld class="java.lang.Throwable" name="detailMessage" sig="Ljava.lang.String;" />
                     <ret />
                 </body>
             </constructor>
@@ -1034,23 +1071,28 @@
                     <call class="java.lang.ExceptionHelper" name="FilterMessage" sig="(Ljava.lang.String;)Ljava.lang.String;" />
                     <ldarg_2 />
                     <call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" />
+                    <ldarg_0 />
+                    <ldarg_0 />
+                    <stfld class="java.lang.Throwable" name="cause" sig="Ljava.lang.Throwable;" />
                     <!-- Start fillInStackTrace call -->
                     <ldsfld class="java.lang.Throwable" name="suppressFillInStackTrace" sig="Z" />
                     <ldc_i4_0 />
                     <stsfld class="java.lang.Throwable" name="suppressFillInStackTrace" sig="Z" />
                     <brtrue name="skipFillInStackTrace" />
                     <ldarg_0 />
+                    <ldsfld class="java.lang.Throwable" name="emptyStackTrace" sig="[Ljava.lang.StackTraceElement;" />
+                    <stfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
+                    <ldarg_0 />
                     <callvirt class="java.lang.Throwable" name="fillInStackTrace" sig="()Ljava.lang.Throwable;" />
                     <pop />
                     <label name="skipFillInStackTrace" />
                     <!-- End fillInStackTrace call -->
-                    <ldarg_2 />
-                    <brtrue name="skip" />
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <stfld class="java.lang.Throwable" name="detailMessage" sig="Ljava.lang.String;" />
                     <ldarg_0 />
                     <ldarg_2 />
-                    <call class="java.lang.ExceptionHelper" name="initCause" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;)Ljava.lang.Throwable;" />
-                    <pop />
-                    <label name="skip" />
+                    <stfld class="java.lang.Throwable" name="cause" sig="Ljava.lang.Throwable;" />
                     <ret />
                 </body>
             </constructor>
@@ -1062,23 +1104,32 @@
                     <call class="java.lang.ExceptionHelper" name="GetMessageFromCause" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" />
                     <ldarg_1 />
                     <call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" />
+                    <ldarg_0 />
+                    <ldarg_0 />
+                    <stfld class="java.lang.Throwable" name="cause" sig="Ljava.lang.Throwable;" />
                     <!-- Start fillInStackTrace call -->
                     <ldsfld class="java.lang.Throwable" name="suppressFillInStackTrace" sig="Z" />
                     <ldc_i4_0 />
                     <stsfld class="java.lang.Throwable" name="suppressFillInStackTrace" sig="Z" />
                     <brtrue name="skipFillInStackTrace" />
                     <ldarg_0 />
+                    <ldsfld class="java.lang.Throwable" name="emptyStackTrace" sig="[Ljava.lang.StackTraceElement;" />
+                    <stfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
+                    <ldarg_0 />
                     <callvirt class="java.lang.Throwable" name="fillInStackTrace" sig="()Ljava.lang.Throwable;" />
                     <pop />
                     <label name="skipFillInStackTrace" />
                     <!-- End fillInStackTrace call -->
                     <ldarg_1 />
-                    <brtrue name="skip" />
+                    <brfalse name="no_cause" />
                     <ldarg_0 />
                     <ldarg_1 />
-                    <call class="java.lang.ExceptionHelper" name="initCause" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;)Ljava.lang.Throwable;" />
-                    <pop />
-                    <label name="skip" />
+                    <callvirt class="java.lang.Throwable" name="toString" sig="()Ljava.lang.String;" />
+                    <stfld class="java.lang.Throwable" name="detailMessage" sig="Ljava.lang.String;" />
+                    <label name="no_cause" />
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <stfld class="java.lang.Throwable" name="cause" sig="Ljava.lang.Throwable;" />
                     <ret />
                 </body>
             </constructor>
@@ -1094,27 +1145,182 @@
                 <redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;Ljava.io.PrintWriter;)V" type="static" />
             </method>
             <method type="virtual" name="getMessage" sig="()Ljava.lang.String;" modifiers="public">
-                <redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
+                <body>
+                    <ldarg_0 />
+                    <ldfld class="java.lang.Throwable" name="detailMessage" sig="Ljava.lang.String;" />
+                    <ret />
+                </body>
+                <alternateBody>
+                    <ldarg_0 />
+                    <callvirt class="cli.System.Exception" name="get_Message" sig="()Ljava.lang.String;" />
+                    <ret />
+                </alternateBody>
             </method>
             <method type="virtual" name="getLocalizedMessage" sig="()Ljava.lang.String;" modifiers="public">
                 <redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
             </method>
             <method type="virtual" name="fillInStackTrace" sig="()Ljava.lang.Throwable;" modifiers="public">
-                <redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" type="static" />
+                <body>
+                    <ldarg_0 />
+                    <call type="System.Threading.Monitor" name="Enter" sig="(Ljava.lang.Object;)V" />
+                    <exceptionBlock>
+                        <try>
+                            <!--
+	                    stackTrace = null;
+                            tracePart1 = null;
+                            tracePart2 = new cli.System.Diagnostics.StackTrace(true);
+                            -->
+                            <ldarg_0 />
+                            <ldnull />
+                            <stfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
+                            <ldarg_0 />
+                            <ldnull />
+                            <stfld class="java.lang.Throwable" name="tracePart1" sig="Lcli.System.Diagnostics.StackTrace;" />
+                            <ldarg_0 />
+                            <ldc_i4_1 />
+                            <newobj type="System.Diagnostics.StackTrace" name=".ctor" sig="(Z)V" />
+                            <stfld class="java.lang.Throwable" name="tracePart2" sig="Lcli.System.Diagnostics.StackTrace;" />
+                        </try>
+                        <finally>
+                            <ldarg_0 />
+                            <call type="System.Threading.Monitor" name="Exit" sig="(Ljava.lang.Object;)V" />
+                        </finally>
+                    </exceptionBlock>
+                    <ldarg_0 />
+                    <ret />
+                </body>
+                <alternateBody>
+                    <ldarg_0 />
+                    <call class="java.lang.ExceptionHelper" name="fillInStackTrace" sig="(Lcli.System.Exception;)V" />
+                    <ldarg_0 />
+                    <ret />
+                </alternateBody>
             </method>
             <method type="virtual" name="initCause" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" modifiers="public">
                 <parameter name="cause" />
-                <redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;)Ljava.lang.Throwable;" type="static" />
+                <body>
+                    <ldarg_0 />
+                    <call type="System.Threading.Monitor" name="Enter" sig="(Ljava.lang.Object;)V" />
+                    <exceptionBlock>
+                        <try>
+                            <ldarg_0 />
+                            <ldarg_0 />
+                            <ldfld class="java.lang.Throwable" name="cause" sig="Ljava.lang.Throwable;" />
+                            <ldarg_1 />
+                            <call class="java.lang.ExceptionHelper" name="checkInitCause" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;Ljava.lang.Throwable;)V" />
+                            <ldarg_0 />
+                            <ldarg_1 />
+                            <stfld class="java.lang.Throwable" name="cause" sig="Ljava.lang.Throwable;" />
+                        </try>
+                        <finally>
+                            <ldarg_0 />
+                            <call type="System.Threading.Monitor" name="Exit" sig="(Ljava.lang.Object;)V" />
+                        </finally>
+                    </exceptionBlock>
+                    <ldarg_0 />
+                    <ret />
+                </body>
+                <alternateBody>
+                    <!-- non-Java exception cannot have its cause changed, so we call checkInitCause in a way that will always throw -->
+                    <ldarg_0 />
+                    <ldnull />
+                    <ldnull />
+                    <call class="java.lang.ExceptionHelper" name="checkInitCause" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;Ljava.lang.Throwable;)V" />
+                    <ldarg_0 />
+                    <ret />
+                </alternateBody>
             </method>
             <method type="virtual" name="getCause" sig="()Ljava.lang.Throwable;" modifiers="public">
-                <redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" type="static" />
+                <body>
+                    <ldarg_0 />
+                    <ldarg_0 />
+                    <ldfld class="java.lang.Throwable" name="cause" sig="Ljava.lang.Throwable;" />
+                    <call class="java.lang.ExceptionHelper" name="getCause" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;)Ljava.lang.Throwable;" />
+                    <ret />
+                </body>
+                <alternateBody>
+                    <ldarg_0 />
+                    <call class="cli.System.Exception" name="get_InnerException" sig="()Ljava.lang.Throwable;" />
+                    <ret />
+                </alternateBody>
             </method>
             <method type="virtual" name="getStackTrace" sig="()[Ljava.lang.StackTraceElement;" modifiers="public">
-                <redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;" type="static" />
+                <body>
+                    <ldarg_0 />
+                    <call class="java.lang.Throwable" name="getOurStackTrace" sig="()[Ljava.lang.StackTraceElement;" />
+                    <callvirt type="System.Array" name="Clone" sig="()Ljava.lang.Object;" />
+                    <castclass class="[Ljava.lang.StackTraceElement;" />
+                    <ret />
+                </body>
+                <alternateBody>
+                    <ldarg_0 />
+                    <call class="java.lang.ExceptionHelper" name="getStackTrace" sig="(Lcli.System.Exception;)[Ljava.lang.StackTraceElement;" />
+                    <ret />
+                </alternateBody>
+            </method>
+            <method name="getOurStackTrace" sig="()[Ljava.lang.StackTraceElement;" modifiers="private">
+                <body>
+                    <ldarg_0 />
+                    <call type="System.Threading.Monitor" name="Enter" sig="(Ljava.lang.Object;)V" />
+                    <exceptionBlock>
+                        <try>
+                            <ldarg_0 />
+                            <ldfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
+                            <brfalse name="gen" />
+                            <leave name="ok" />
+                            <label name="gen" />
+                            <ldarg_0 />
+                            <ldarg_0 />
+                            <ldarg_0 />
+                            <ldfld class="java.lang.Throwable" name="tracePart1" sig="Lcli.System.Diagnostics.StackTrace;" />
+                            <ldarg_0 />
+                            <ldfld class="java.lang.Throwable" name="tracePart2" sig="Lcli.System.Diagnostics.StackTrace;" />
+                            <call class="java.lang.ExceptionHelper" name="computeStackTrace" sig="(Ljava.lang.Throwable;Lcli.System.Diagnostics.StackTrace;Lcli.System.Diagnostics.StackTrace;)[Ljava.lang.StackTraceElement;" />
+                            <stfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
+                            <ldarg_0 />
+                            <ldnull />
+                            <stfld class="java.lang.Throwable" name="tracePart1" sig="Lcli.System.Diagnostics.StackTrace;" />
+                            <ldarg_0 />
+                            <ldnull />
+                            <stfld class="java.lang.Throwable" name="tracePart2" sig="Lcli.System.Diagnostics.StackTrace;" />
+                        </try>
+                        <finally>
+                            <ldarg_0 />
+                            <call type="System.Threading.Monitor" name="Exit" sig="(Ljava.lang.Object;)V" />
+                        </finally>
+                    </exceptionBlock>
+                    <label name="ok" />
+                    <ldarg_0 />
+                    <ldfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
+                    <ret />
+                </body>
+                <alternateBody>
+                    <ldarg_0 />
+                    <call class="java.lang.ExceptionHelper" name="getStackTrace" sig="(Lcli.System.Exception;)[Ljava.lang.StackTraceElement;" />
+                    <ret />
+                </alternateBody>
             </method>
             <method type="virtual" name="setStackTrace" sig="([Ljava.lang.StackTraceElement;)V" modifiers="public">
                 <parameter name="stackTrace" />
-                <redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;[Ljava.lang.StackTraceElement;)V" type="static" />
+                <body>
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <call class="java.lang.ExceptionHelper" name="checkStackTrace" sig="([Ljava.lang.StackTraceElement;)[Ljava.lang.StackTraceElement;" />
+                    <stfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
+                    <ldarg_0 />
+                    <ldnull />
+                    <stfld class="java.lang.Throwable" name="tracePart1" sig="Lcli.System.Diagnostics.StackTrace;" />
+                    <ldarg_0 />
+                    <ldnull />
+                    <stfld class="java.lang.Throwable" name="tracePart2" sig="Lcli.System.Diagnostics.StackTrace;" />
+                    <ret />
+                </body>
+                <alternateBody>
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <call class="java.lang.ExceptionHelper" name="setStackTrace" sig="(Lcli.System.Exception;[Ljava.lang.StackTraceElement;)V" />
+                    <ret />
+                </alternateBody>
             </method>
             <method type="virtual" name="toString" sig="()Ljava.lang.String;" modifiers="public">
                 <redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
@@ -1765,6 +1971,71 @@
                     <redirect class="ikvm.internal.Formatter" type="static" name="ToString" sig="(Ljava.lang.Double;Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;" />
                 </method>
             </implements>
+        </class>
+        <class name="java.lang.ExceptionHelper">
+            <method name="getCauseForSerialization" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;">
+                <body>
+                    <ldarg_0 />
+                    <castclass_impl class="java.lang.Throwable" />
+                    <ldfld class="java.lang.Throwable" name="cause" sig="Ljava.lang.Throwable;" />
+                    <ret />
+                </body>
+            </method>
+            <method name="getOriginalAndClear" sig="(Ljava.lang.Throwable;)Lcli.System.Exception;">
+                <body>
+                    <ldarg_0 />
+                    <castclass_impl class="java.lang.Throwable" />
+                    <ldfld class="java.lang.Throwable" name="original" sig="Ljava.lang.Throwable;" />
+                    <ldarg_0 />
+                    <castclass_impl class="java.lang.Throwable" />
+                    <ldnull />
+                    <stfld class="java.lang.Throwable" name="original" sig="Ljava.lang.Throwable;" />
+                    <ret />
+                </body>
+            </method>
+            <method name="setOriginal" sig="(Ljava.lang.Throwable;Lcli.System.Exception;)V">
+                <body>
+                    <ldarg_0 />
+                    <castclass_impl class="java.lang.Throwable" />
+                    <ldarg_1 />
+                    <stfld class="java.lang.Throwable" name="original" sig="Ljava.lang.Throwable;" />
+                    <ret />
+                </body>
+            </method>
+            <method name="needStackTraceInfo" sig="(Ljava.lang.Throwable;)Z">
+                <body>
+                    <ldarg_0 />
+                    <castclass_impl class="java.lang.Throwable" />
+                    <ldfld class="java.lang.Throwable" name="tracePart1" sig="Lcli.System.Diagnostics.StackTrace;" />
+                    <brtrue name="no" />
+                    <ldarg_0 />
+                    <castclass_impl class="java.lang.Throwable" />
+                    <ldfld class="java.lang.Throwable" name="tracePart2" sig="Lcli.System.Diagnostics.StackTrace;" />
+                    <brtrue name="no" />
+                    <ldarg_0 />
+                    <castclass_impl class="java.lang.Throwable" />
+                    <ldfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
+                    <brtrue name="no" />
+                    <ldc_i4_1 />
+                    <ret />
+                    <label name="no" />
+                    <ldc_i4_0 />
+                    <ret />
+                </body>
+            </method>
+            <method name="setStackTraceInfo" sig="(Ljava.lang.Throwable;Lcli.System.Diagnostics.StackTrace;Lcli.System.Diagnostics.StackTrace;)V">
+                <body>
+                    <ldarg_0 />
+                    <castclass_impl class="java.lang.Throwable" />
+                    <ldarg_1 />
+                    <stfld class="java.lang.Throwable" name="tracePart1" sig="Lcli.System.Diagnostics.StackTrace;" />
+                    <ldarg_0 />
+                    <castclass_impl class="java.lang.Throwable" />
+                    <ldarg_2 />
+                    <stfld class="java.lang.Throwable" name="tracePart2" sig="Lcli.System.Diagnostics.StackTrace;" />
+                    <ret />
+                </body>
+            </method>
         </class>
         <class name="java.lang.Runtime">
             <method name="addShutdownHook" sig="(Ljava.lang.Thread;)V">

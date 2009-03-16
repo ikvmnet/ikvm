@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2008 Jeroen Frijters
+  Copyright (C) 2002-2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -154,7 +154,7 @@ class Compiler
 	private static MethodInfo mapExceptionMethod;
 	internal static MethodInfo mapExceptionFastMethod;
 	private static MethodInfo unmapExceptionMethod;
-	private static MethodWrapper initCauseMethod;
+	private static MethodInfo fixateExceptionMethod;
 	private static MethodInfo suppressFillInStackTraceMethod;
 	private static MethodInfo getTypeFromHandleMethod;
 	private static MethodInfo monitorEnterMethod;
@@ -214,6 +214,9 @@ class Compiler
 			mw = java_lang_Throwable.GetMethodWrapper("__<unmap>", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false);
 			mw.Link();
 			unmapExceptionMethod = (MethodInfo)mw.GetMethod();
+			mw = java_lang_Throwable.GetMethodWrapper("__<fixate>", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false);
+			mw.Link();
+			fixateExceptionMethod = (MethodInfo)mw.GetMethod();
 		}
 		else
 		{
@@ -221,8 +224,8 @@ class Compiler
 			mapExceptionFastMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<map>", new Type[] { typeof(Exception), typeof(bool) });
 			suppressFillInStackTraceMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<suppressFillInStackTrace>", Type.EmptyTypes);
 			unmapExceptionMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<unmap>", new Type[] { typeof(Exception) });
+			fixateExceptionMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<fixate>", new Type[] { typeof(Exception) });
 		}
-		initCauseMethod = java_lang_Throwable.GetMethodWrapper("initCause", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false);
 		getClassFromTypeHandle = ClassLoaderWrapper.LoadClassCritical("ikvm.runtime.Util").GetMethodWrapper("getClassFromTypeHandle", "(Lcli.System.RuntimeTypeHandle;)Ljava.lang.Class;", false);
 		getClassFromTypeHandle.Link();
 	}
@@ -1876,10 +1879,12 @@ class Compiler
 								// exceptions (because then the suppress flag won't be cleared),
 								// but this case is handled by the "is fillInStackTrace overridden?"
 								// test, because cli.System.Exception overrides fillInStackTrace.
-								if(code[i + 1].NormalizedOpCode == NormalizedByteCode.__athrow
-									&& thisType.GetMethodWrapper("fillInStackTrace", "()Ljava.lang.Throwable;", true).DeclaringType == java_lang_Throwable)
+								if(code[i + 1].NormalizedOpCode == NormalizedByteCode.__athrow)
 								{
-									ilGenerator.Emit(OpCodes.Call, suppressFillInStackTraceMethod);
+									if(thisType.GetMethodWrapper("fillInStackTrace", "()Ljava.lang.Throwable;", true).DeclaringType == java_lang_Throwable)
+									{
+										ilGenerator.Emit(OpCodes.Call, suppressFillInStackTraceMethod);
+									}
 									if(!code[i + 1].IsBranchTarget)
 									{
 										code[i + 1].PatchOpCode(NormalizedByteCode.__athrow_no_unmap);
@@ -1889,13 +1894,8 @@ class Compiler
 							method.EmitNewobj(ilGenerator, ma, i);
 							if(!thisType.IsUnloadable && thisType.IsSubTypeOf(cli_System_Exception))
 							{
-								// HACK we call Throwable.initCause(null) to force creation of an ExceptionInfoHelper
-								// (which disables future remapping of the exception) and to prevent others from
-								// setting the cause.
-								ilGenerator.Emit(OpCodes.Dup);
-								ilGenerator.Emit(OpCodes.Ldnull);
-								initCauseMethod.EmitCallvirt(ilGenerator);
-								ilGenerator.Emit(OpCodes.Pop);
+								// we call Throwable.__<fixate>() to disable remapping the exception
+								ilGenerator.Emit(OpCodes.Call, fixateExceptionMethod);
 							}
 							if(nontrivial)
 							{

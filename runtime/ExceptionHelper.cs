@@ -52,16 +52,6 @@ namespace IKVM.NativeCode.java.lang
 			}
 		}
 
-		public static Exception getInnerException(Exception t)
-		{
-			return t.InnerException;
-		}
-
-		public static string getMessageFromCliException(Exception t)
-		{
-			return t.Message;
-		}
-
 		public static bool IsNative(MethodBase m)
 		{
 			object[] methodFlagAttribs = m.GetCustomAttributes(typeof(ModifiersAttribute), false);
