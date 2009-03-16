@@ -362,6 +362,22 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
+	[XmlType("castclass_impl")]
+	public sealed class Castclass_impl : Instruction
+	{
+		[XmlAttribute("class")]
+		public string Class;
+
+		public Castclass_impl()
+		{
+		}
+
+		internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
+		{
+			ilgen.Emit(OpCodes.Castclass, context.ClassLoader.LoadClassByDottedName(Class).TypeAsBaseType);
+		}
+	}
+
 	public abstract class TypeInstruction : Instruction
 	{
 		[XmlAttribute("type")]
@@ -1146,6 +1162,7 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(Pop))]
 		[XmlElement(typeof(IsInst))]
 		[XmlElement(typeof(Castclass))]
+		[XmlElement(typeof(Castclass_impl))]
 		[XmlElement(typeof(Ldobj))]
 		[XmlElement(typeof(Unbox))]
 		[XmlElement(typeof(Box))]
