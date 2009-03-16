@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2008 Jeroen Frijters
+  Copyright (C) 2008, 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -27,170 +27,40 @@ using System.Diagnostics.SymbolStore;
 
 namespace IKVM.Reflection.Emit.Impl
 {
+	[StructLayout(LayoutKind.Sequential)]
+	public struct IMAGE_DEBUG_DIRECTORY
+	{
+		internal uint Characteristics;
+		internal uint TimeDateStamp;
+		internal ushort MajorVersion;
+		internal ushort MinorVersion;
+		internal uint Type;
+		internal uint SizeOfData;
+		internal uint AddressOfRawData;
+		internal uint PointerToRawData;
+	}
+
+	public interface ISymbolWriterImpl : ISymbolWriter
+	{
+		byte[] GetDebugInfo(ref IMAGE_DEBUG_DIRECTORY idd);
+		void RemapToken(int oldToken, int newToken);
+	}
+
 	static class PdbSupport
 	{
-		[StructLayout(LayoutKind.Sequential)]
-		internal struct IMAGE_DEBUG_DIRECTORY
-		{
-			internal uint Characteristics;
-			internal uint TimeDateStamp;
-			internal ushort MajorVersion;
-			internal ushort MinorVersion;
-			internal uint Type;
-			internal uint SizeOfData;
-			internal uint AddressOfRawData;
-			internal uint PointerToRawData;
-		}
-
-#if HAS_ISYMWRAPPER
-		[Guid("809c652e-7396-11d2-9771-00a0c9b4d50c")]
-		[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-		[CoClass(typeof(MetaDataDispenserClass))]
-		[ComImport]
-		private interface IMetaDataDispenser
-		{
-			void DefineScope(
-				[In]  ref Guid rclsid,
-				[In]  int dwCreateFlags,
-				[In]  ref Guid riid,
-				[Out, MarshalAs(UnmanagedType.IUnknown)] out object punk);
-		}
-
-		[Guid("e5cb7a31-7512-11d2-89ce-0080c792e5d8")]
-		[ComImport]
-		private class MetaDataDispenserClass { }
-
-		[Guid("7dac8207-d3ae-4c75-9b67-92801a497d44")]
-		[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-		[ComImport]
-		private interface IMetadataImport { }
-
-		[Guid("ba3fee4c-ecb9-4e41-83b7-183fa41cd859")]
-		[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-		[ComImport]
-		private interface IMetaDataEmit { }
-
-		[Guid("ed14aa72-78e2-4884-84e2-334293ae5214")]
-		[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-		[ComImport]
-		[CoClass(typeof(CorSymWriterClass))]
-		private interface ISymUnmanagedWriter
-		{
-			void PlaceHolder_DefineDocument();
-			void PlaceHolder_SetUserEntryPoint();
-			void PlaceHolder_OpenMethod();
-			void PlaceHolder_CloseMethod();
-			void PlaceHolder_OpenScope();
-			void PlaceHolder_CloseScope();
-			void PlaceHolder_SetScopeRange();
-			void PlaceHolder_DefineLocalVariable();
-			void PlaceHolder_DefineParameter();
-			void PlaceHolder_DefineField();
-			void PlaceHolder_DefineGlobalVariable();
-			void PlaceHolder_Close();
-			void PlaceHolder_SetSymAttribute();
-			void PlaceHolder_OpenNamespace();
-			void PlaceHolder_CloseNamespace();
-			void PlaceHolder_UsingNamespace();
-			void PlaceHolder_SetMethodSourceRange();
-			void PlaceHolder_Initialize();
-
-			void GetDebugInfo(
-				[In, Out] ref IMAGE_DEBUG_DIRECTORY pIDD,
-				[In]  uint cData,
-				[Out] out uint pcData,
-				[Out, MarshalAs(UnmanagedType.LPArray)] byte[] data);
-
-			void PlaceHolder_DefineSequencePoints();
-
-			void RemapToken(
-				[In] int oldToken,
-				[In] int newToken);
-		}
-
-		[Guid("108296c1-281e-11d3-bd22-0000f80849bd")]
-		[ComImport]
-		private class CorSymWriterClass { }
-
-		private sealed class MySymWriter : SymWriter
-		{
-			private readonly IntPtr ppISymUnmanagedWriter = Marshal.AllocHGlobal(IntPtr.Size);
-			private readonly ISymUnmanagedWriter symUnmanagedWriter = new ISymUnmanagedWriter();
-			private readonly IntPtr pISymUnmanagedWriter;
-
-			internal MySymWriter(string fileName)
-			{
-				pISymUnmanagedWriter = Marshal.GetComInterfaceForObject(symUnmanagedWriter, typeof(ISymUnmanagedWriter));
-				Marshal.WriteIntPtr(ppISymUnmanagedWriter, pISymUnmanagedWriter);
-				SetUnderlyingWriter(ppISymUnmanagedWriter);
-				IMetaDataDispenser disp = new IMetaDataDispenser();
-				object emitter;
-				Guid CLSID_CorMetaDataRuntime = new Guid("005023ca-72b1-11d3-9fc4-00c04f79a0a3");
-				Guid IID_IMetaDataEmit = typeof(IMetaDataEmit).GUID;
-				disp.DefineScope(ref CLSID_CorMetaDataRuntime, 0, ref IID_IMetaDataEmit, out emitter);
-				IntPtr emitterPtr = Marshal.GetComInterfaceForObject(emitter, typeof(IMetaDataEmit));
-				try
-				{
-					Initialize(emitterPtr, fileName, true);
-				}
-				finally
-				{
-					Marshal.Release(emitterPtr);
-				}
-				Marshal.ReleaseComObject(disp);
-				Marshal.ReleaseComObject(emitter);
-			}
-
-			~MySymWriter()
-			{
-				Marshal.Release(pISymUnmanagedWriter);
-				Marshal.FreeHGlobal(ppISymUnmanagedWriter);
-			}
-
-			internal byte[] GetDebugInfo(ref IMAGE_DEBUG_DIRECTORY idd)
-			{
-				uint cData;
-				symUnmanagedWriter.GetDebugInfo(ref idd, 0, out cData, null);
-				byte[] buf = new byte[cData];
-				symUnmanagedWriter.GetDebugInfo(ref idd, (uint)buf.Length, out cData, buf);
-				return buf;
-			}
-
-			internal void RemapToken(int oldToken, int newToken)
-			{
-				symUnmanagedWriter.RemapToken(oldToken, newToken);
-			}
-		}
-
 		internal static ISymbolWriter CreateSymbolWriter(string fileName)
 		{
-			return new MySymWriter(fileName);
+			return (ISymbolWriterImpl)Activator.CreateInstance(Type.GetType("IKVM.Reflection.Emit.Impl.SymbolWriter, IKVM.PdbWriter"), fileName);
 		}
 
 		internal static byte[] GetDebugInfo(ISymbolWriter writer, ref IMAGE_DEBUG_DIRECTORY idd)
 		{
-			return ((MySymWriter)writer).GetDebugInfo(ref idd);
+			return ((ISymbolWriterImpl)writer).GetDebugInfo(ref idd);
 		}
 
 		internal static void RemapToken(ISymbolWriter writer, int oldToken, int newToken)
 		{
-			((MySymWriter)writer).RemapToken(oldToken, newToken);
+			((ISymbolWriterImpl)writer).RemapToken(oldToken, newToken);
 		}
-#else
-		internal static ISymbolWriter CreateSymbolWriter(string fileName)
-		{
-			throw new NotImplementedException();
-		}
-
-		internal static byte[] GetDebugInfo(ISymbolWriter writer, ref IMAGE_DEBUG_DIRECTORY idd)
-		{
-			throw new NotImplementedException();
-		}
-
-		internal static void RemapToken(ISymbolWriter writer, int oldToken, int newToken)
-		{
-			throw new NotImplementedException();
-		}
-#endif
 	}
 }

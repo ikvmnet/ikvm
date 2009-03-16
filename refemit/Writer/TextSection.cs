@@ -173,7 +173,7 @@ namespace IKVM.Reflection.Emit.Writer
 			{
 				if (moduleBuilder.symbolWriter != null)
 				{
-					PdbSupport.IMAGE_DEBUG_DIRECTORY idd = new PdbSupport.IMAGE_DEBUG_DIRECTORY();
+					IMAGE_DEBUG_DIRECTORY idd = new IMAGE_DEBUG_DIRECTORY();
 					return (uint)PdbSupport.GetDebugInfo(moduleBuilder.symbolWriter, ref idd).Length;
 				}
 				return 0;
@@ -381,7 +381,7 @@ namespace IKVM.Reflection.Emit.Writer
 		{
 			if (moduleBuilder.symbolWriter != null)
 			{
-				PdbSupport.IMAGE_DEBUG_DIRECTORY idd = new PdbSupport.IMAGE_DEBUG_DIRECTORY();
+				IMAGE_DEBUG_DIRECTORY idd = new IMAGE_DEBUG_DIRECTORY();
 				idd.Characteristics = 0;
 				idd.TimeDateStamp = peWriter.Headers.FileHeader.TimeDateStamp;
 				byte[] buf = PdbSupport.GetDebugInfo(moduleBuilder.symbolWriter, ref idd);
