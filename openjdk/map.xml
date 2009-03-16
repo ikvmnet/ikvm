@@ -25,6 +25,7 @@
 <root>
     <assembly>
         <class name="java.lang.Object" shadows="System.Object" modifiers="public">
+            <attribute type="System.SerializableAttribute" sig="()V" />
             <constructor sig="()V" modifiers="public" />
             <method name="notifyAll" sig="()V" modifiers="public final">
                 <body>
@@ -1802,6 +1803,9 @@
                     <ret />
                 </body>
             </method>
+        </class>
+        <class name="java.lang.StackTraceElement">
+            <attribute type="System.SerializableAttribute" sig="()V" />
         </class>
     </assembly>
     <exceptionMappings>
