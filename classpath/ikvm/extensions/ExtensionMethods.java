@@ -34,7 +34,9 @@ public final class ExtensionMethods
     @cli.IKVM.Attributes.HideFromJavaAttribute.Annotation
     public static void printStackTrace(Throwable t)
     {
-        ikvm.runtime.Util.mapException(t).printStackTrace();
+        t = ikvm.runtime.Util.mapException(t);
+        t.printStackTrace();
+        java.lang.ExceptionHelper.UnmapException(t);
     }
 
     @ExtensionAttribute.Annotation
