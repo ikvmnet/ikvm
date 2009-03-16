@@ -245,5 +245,11 @@ namespace IKVM.Reflection.Emit.Impl
 			}
 			return underlying.GetHashCode();
 		}
+
+		// MONOBUG we need to override IsGenericTypeDefinition, because Mono's Type.IsGenericTypeDefinition will crash when called on a non-MonoType.
+		public override bool IsGenericTypeDefinition
+		{
+			get { return false; }
+		}
 	}
 }
