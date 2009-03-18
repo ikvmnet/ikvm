@@ -1027,4 +1027,129 @@ namespace IKVM.Reflection.Emit
 			get { return typeBuilder.ModuleBuilder; }
 		}
 	}
+
+	public sealed class MonoHackGenericType : Impl.TypeBase
+	{
+		private readonly Type type;
+		private readonly Type[] typeArguments;
+
+		public static Type Make(Type type, params Type[] typeArguments)
+		{
+			return new MonoHackGenericType(type, (Type[])typeArguments.Clone());
+		}
+
+		private MonoHackGenericType(Type type, Type[] typeArguments)
+		{
+			this.type = type;
+			this.typeArguments = typeArguments;
+		}
+
+		public override string AssemblyQualifiedName
+		{
+			get { throw new NotImplementedException(); }
+		}
+
+		public override Type BaseType
+		{
+			get { throw new NotImplementedException(); }
+		}
+
+		public override string FullName
+		{
+			get { throw new NotImplementedException(); }
+		}
+
+		public override string Name
+		{
+			get { throw new NotImplementedException(); }
+		}
+
+		public override Type[] GetGenericArguments()
+		{
+			return (Type[])typeArguments.Clone();
+		}
+
+		protected override TypeAttributes GetAttributeFlagsImpl()
+		{
+			throw new NotImplementedException();
+		}
+
+		protected override MethodInfo GetMethodImpl(string name, BindingFlags bindingAttr, Binder binder, CallingConventions callConvention, Type[] types, ParameterModifier[] modifiers)
+		{
+			throw new NotImplementedException();
+		}
+
+		protected override bool HasElementTypeImpl()
+		{
+			return false;
+		}
+
+		protected override bool IsArrayImpl()
+		{
+			return false;
+		}
+
+		protected override bool IsByRefImpl()
+		{
+			return false;
+		}
+
+		public override Type DeclaringType
+		{
+			get { return type.DeclaringType; }
+		}
+
+		public override bool Equals(object o)
+		{
+			MonoHackGenericType gt = o as MonoHackGenericType;
+			if (gt != null && gt.type == type)
+			{
+				for (int i = 0; i < typeArguments.Length; i++)
+				{
+					if (typeArguments[i] != gt.typeArguments[i])
+					{
+						return false;
+					}
+				}
+				return true;
+			}
+			return false;
+		}
+
+		public override int GetHashCode()
+		{
+			int hash = type.GetHashCode();
+			for (int i = 0; i < typeArguments.Length; i++)
+			{
+				hash *= 37;
+				hash ^= typeArguments[i].GetHashCode();
+			}
+			return hash;
+		}
+
+		public override bool IsGenericType
+		{
+			get { return true; }
+		}
+
+		public override bool IsGenericTypeDefinition
+		{
+			get { return false; }
+		}
+
+		public override Type GetGenericTypeDefinition()
+		{
+			return type;
+		}
+
+		internal override int GetTypeToken()
+		{
+			throw new InvalidOperationException();
+		}
+
+		internal override ModuleBuilder ModuleBuilder
+		{
+			get { return null; }
+		}
+	}
 }

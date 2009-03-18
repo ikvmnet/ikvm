@@ -58,7 +58,12 @@ namespace IKVM.Internal
 			{
 				classLiteralField = classLiteralType.GetField("Value", BindingFlags.Public | BindingFlags.Static);
 			}
+#if IKVM_REF_EMIT
+			// MONOBUG https://bugzilla.novell.com/show_bug.cgi?id=486307
+			return TypeBuilder.GetField(MonoHackGenericType.Make(classLiteralType, type), classLiteralField);
+#else
 			return TypeBuilder.GetField(classLiteralType.MakeGenericType(type), classLiteralField);
+#endif
 		}
 
 		private static bool IsTypeBuilder(Type type)
