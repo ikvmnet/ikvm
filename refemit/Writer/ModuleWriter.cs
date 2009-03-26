@@ -81,7 +81,7 @@ namespace IKVM.Reflection.Emit.Writer
 						writer.Headers.OptionalHeader.SizeOfHeapCommit = 0x2000;
 						break;
 					default:
-						throw new ArgumentOutOfRangeException("imageFileName");
+						throw new ArgumentOutOfRangeException("imageFileMachine");
 				}
 				if (fileKind == PEFileKinds.Dll)
 				{
@@ -338,7 +338,7 @@ namespace IKVM.Reflection.Emit.Writer
 			}
 			sum += fs.Length;
 
-			// write the PE checksum, note that it is always of offset 0xD8 in the file
+			// write the PE checksum, note that it is always at offset 0xD8 in the file
 			ByteBuffer bb = new ByteBuffer(4);
 			bb.Write((int)sum);
 			fs.Seek(0xD8, SeekOrigin.Begin);
