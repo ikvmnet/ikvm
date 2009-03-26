@@ -241,11 +241,16 @@ public class VMSystemProperties
                         }
                         break;
                     case 6:
+                        // since there appears to be no managed way to differentiate between Client/Server, we report client names
                         switch(minor)
                         {
                             case 0:
                                 osver = "6.0";
                                 osname = "Windows Vista";
+                                break;
+                            case 1:
+                                osver = "6.1";
+                                osname = "Windows 7";
                                 break;
                         }
                         break;
