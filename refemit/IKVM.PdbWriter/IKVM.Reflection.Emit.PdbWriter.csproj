@@ -9,7 +9,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>IKVM.PdbWriter</RootNamespace>
-    <AssemblyName>IKVM.PdbWriter</AssemblyName>
+    <AssemblyName>IKVM.Reflection.Emit.PdbWriter</AssemblyName>
     <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
