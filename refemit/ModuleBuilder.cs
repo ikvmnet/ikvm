@@ -139,7 +139,7 @@ namespace IKVM.Reflection.Emit
 			this.fileName = fileName;
 			if (emitSymbolInfo)
 			{
-				symbolWriter = PdbSupport.CreateSymbolWriter(Path.Combine(Path.GetDirectoryName(fileName), Path.GetFileNameWithoutExtension(fileName) + ".pdb"));
+				symbolWriter = PdbSupport.CreateSymbolWriterFor(this);
 			}
 			// <Module> must be the first record in the TypeDef table
 			moduleType = new TypeBuilder(this, "<Module>", null, 0);
@@ -943,6 +943,33 @@ namespace IKVM.Reflection.Emit
 		public Type ResolveType(int metadataToken)
 		{
 			return types[(metadataToken & 0xFFFFFF) - 1];
+		}
+
+		public MethodBase ResolveMethod(int metadataToken)
+		{
+			// HACK if we're given a SymbolToken, we need to convert back
+			if ((metadataToken & 0xFF000000) == 0x06000000)
+			{
+				metadataToken = -(metadataToken & 0x00FFFFFF);
+			}
+			// TODO this is very inefficient (but currently not used, it exists only because the symbol writer for Mono potentially needs it)
+			foreach (Type type in types)
+			{
+				MethodBase method = ((TypeBuilder)type).LookupMethod(metadataToken);
+				if (method != null)
+				{
+					return method;
+				}
+			}
+			return ((TypeBuilder)moduleType).LookupMethod(metadataToken);
+		}
+
+		public string FullyQualifiedName
+		{
+			get
+			{
+				return Path.GetFullPath(fileName);
+			}
 		}
 	}
 }

@@ -661,6 +661,19 @@ namespace IKVM.Reflection.Emit
 		{
 			get { return (typeFlags & TypeFlags.HasNestedTypes) != 0; }
 		}
+
+		// helper for ModuleBuilder.ResolveMethod()
+		internal MethodBase LookupMethod(int token)
+		{
+			foreach (MethodBuilder method in methods)
+			{
+				if (method.MetadataToken == token)
+				{
+					return method;
+				}
+			}
+			return null;
+		}
 	}
 
 	sealed class ArrayType : Impl.TypeBase

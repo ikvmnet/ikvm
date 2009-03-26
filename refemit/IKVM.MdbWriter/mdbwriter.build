@@ -1,18 +1,18 @@
 <?xml version="1.0"?>
-<project name="PdbWriter" default="IKVM.PdbWriter">
-    <target name="IKVM.PdbWriter">
-        <property name="defs" value="IKVM_PDBWRITER" />
+<project name="MdbWriter" default="IKVM.MdbWriter">
+    <target name="IKVM.MdbWriter">
+        <property name="defs" value="IKVM_MDBWRITER" />
         <if test="${property::exists('signed')}">
             <property name="defs" value="${defs};${signed}" />
         </if>
-        <csc target="library" output="../../bin/IKVM.Reflection.Emit.PdbWriter.dll" define="${defs}">
+        <csc target="library" output="../../bin/IKVM.Reflection.Emit.MdbWriter.dll" define="${defs}">
             <sources>
                 <include name="../../CommonAssemblyInfo.cs" />
                 <include name="Properties/AssemblyInfo.cs" />
                 <include name="SymbolWriter.cs" />
             </sources>
             <references>
-                <include name="${framework::get-assembly-directory(framework::get-target-framework())}/ISymWrapper.dll" />
+                <include name="${path::combine(framework::get-assembly-directory('mono-2.0'), 'Mono.CompilerServices.SymbolWriter.dll')}" />
                 <include name="../../bin/IKVM.Reflection.Emit.dll" />
             </references>
         </csc>

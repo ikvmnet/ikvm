@@ -159,7 +159,7 @@ namespace IKVM.Reflection.Emit.Writer
 		{
 			get
 			{
-				if (moduleBuilder.symbolWriter != null)
+				if (DebugDirectoryContentsLength != 0)
 				{
 					return 28;
 				}

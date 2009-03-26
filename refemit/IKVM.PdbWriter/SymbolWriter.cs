@@ -103,8 +103,9 @@ namespace IKVM.Reflection.Emit.Impl
 		private readonly ISymUnmanagedWriter symUnmanagedWriter = new ISymUnmanagedWriter();
 		private readonly IntPtr pISymUnmanagedWriter;
 
-		public SymbolWriter(string fileName)
+		public SymbolWriter(ModuleBuilder moduleBuilder)
 		{
+			string fileName = System.IO.Path.ChangeExtension(moduleBuilder.FullyQualifiedName, ".pdb");
 			pISymUnmanagedWriter = Marshal.GetComInterfaceForObject(symUnmanagedWriter, typeof(ISymUnmanagedWriter));
 			Marshal.WriteIntPtr(ppISymUnmanagedWriter, pISymUnmanagedWriter);
 			SetUnderlyingWriter(ppISymUnmanagedWriter);

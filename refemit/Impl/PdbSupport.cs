@@ -30,14 +30,14 @@ namespace IKVM.Reflection.Emit.Impl
 	[StructLayout(LayoutKind.Sequential)]
 	public struct IMAGE_DEBUG_DIRECTORY
 	{
-		internal uint Characteristics;
-		internal uint TimeDateStamp;
-		internal ushort MajorVersion;
-		internal ushort MinorVersion;
-		internal uint Type;
-		internal uint SizeOfData;
-		internal uint AddressOfRawData;
-		internal uint PointerToRawData;
+		public uint Characteristics;
+		public uint TimeDateStamp;
+		public ushort MajorVersion;
+		public ushort MinorVersion;
+		public uint Type;
+		public uint SizeOfData;
+		public uint AddressOfRawData;
+		public uint PointerToRawData;
 	}
 
 	public interface ISymbolWriterImpl : ISymbolWriter
@@ -48,9 +48,25 @@ namespace IKVM.Reflection.Emit.Impl
 
 	static class PdbSupport
 	{
-		internal static ISymbolWriter CreateSymbolWriter(string fileName)
+		private static readonly Type symbolWriterType = GetSymbolWriterType();
+
+		private static Type GetSymbolWriterType()
 		{
-			return (ISymbolWriterImpl)Activator.CreateInstance(Type.GetType("IKVM.Reflection.Emit.Impl.SymbolWriter, IKVM.PdbWriter"), fileName);
+			string symbolAssembly = Environment.GetEnvironmentVariable("IKVM_REFEMIT_SYMBOLWRITER_ASSEMBLY");
+			if (symbolAssembly == null)
+			{
+				string baseAssembly = typeof(PdbSupport).Assembly.FullName;
+				string suffix = RunningOnMono ? ".MdbWriter" : ".PdbWriter";
+				symbolAssembly = baseAssembly.Insert(baseAssembly.IndexOf(','), suffix);
+			}
+			return Type.GetType("IKVM.Reflection.Emit.Impl.SymbolWriter, " + symbolAssembly, true);
+		}
+
+		private static bool RunningOnMono { get { return Type.GetType("Mono.Runtime") != null; } }
+
+		internal static ISymbolWriter CreateSymbolWriterFor(ModuleBuilder moduleBuilder)
+		{
+			return (ISymbolWriterImpl)Activator.CreateInstance(symbolWriterType, moduleBuilder);
 		}
 
 		internal static byte[] GetDebugInfo(ISymbolWriter writer, ref IMAGE_DEBUG_DIRECTORY idd)

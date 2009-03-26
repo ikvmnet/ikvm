@@ -41,5 +41,8 @@
         <if test="${file::exists(path::combine(framework::get-assembly-directory(framework::get-target-framework()), 'ISymWrapper.dll'))}">
             <nant buildfile="IKVM.PdbWriter/pdbwriter.build" />
         </if>
+        <if test="${file::exists(path::combine(framework::get-assembly-directory('mono-2.0'), 'Mono.CompilerServices.SymbolWriter.dll'))}">
+            <nant buildfile="IKVM.MdbWriter/mdbwriter.build" />
+        </if>
     </target>
 </project>
