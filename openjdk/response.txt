@@ -730,6 +730,8 @@ assembly.class
     icedtea/rt/com/sun/jmx/snmp/*.class
     icedtea/rt/com/sun/jmx/snmp/daemon/*.class
     sun/management/*.class
+    ../../openjdk6-b12/control/build/linux-amd64/classes/javax/management/remote/rmi/*.class
+    ../../openjdk6-b12/control/build/linux-amd64/classes/org/omg/stub/javax/management/remote/rmi/*.class
     ../../openjdk6-b12/control/build/linux-amd64/gensrc/javax/management/remote/rmi/*.class
     ../../openjdk6-b12/jdk/src/share/classes/com/sun/jmx/defaults/*.class
     ../../openjdk6-b12/jdk/src/share/classes/com/sun/jmx/interceptor/*.class
@@ -777,6 +779,11 @@ assembly.class
     sun/net/dns/*.class
     sun/print/*.class
     ServiceUI.class
+    ../../openjdk6-b12/control/build/linux-amd64/classes/com/sun/jndi/rmi/registry/*.class
+    ../../openjdk6-b12/control/build/linux-amd64/classes/java/rmi/activation/*.class
+    ../../openjdk6-b12/control/build/linux-amd64/classes/sun/rmi/registry/*.class
+    ../../openjdk6-b12/control/build/linux-amd64/classes/sun/rmi/server/*.class
+    ../../openjdk6-b12/control/build/linux-amd64/classes/sun/rmi/transport/*.class
     ../../openjdk6-b12/control/build/linux-amd64/impsrc/com/sun/activation/registries/*.class
     ../../openjdk6-b12/control/build/linux-amd64/impsrc/javax/activation/*.class
     ../../openjdk6-b12/control/build/linux-amd64/impsrc/javax/activity/*.class
