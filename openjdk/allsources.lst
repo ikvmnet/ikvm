@@ -985,6 +985,7 @@ sun/awt/image/OffScreenImageSource.java
 sun/awt/image/ShortComponentRaster.java
 sun/awt/image/SunWritableRaster.java
 sun/awt/image/ToolkitImage.java
+sun/java2d/cmm/lcms/LCMS.java
 sun/jdbc/odbc/JdbcOdbcCallableStatement.java
 sun/jdbc/odbc/JdbcOdbcConnection.java
 sun/jdbc/odbc/JdbcOdbcDatabaseMetaData.java
