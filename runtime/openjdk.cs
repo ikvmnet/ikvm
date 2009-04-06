@@ -459,13 +459,13 @@ namespace IKVM.NativeCode.java
 			{
 				// testing shows that it is cheaper the get the full stack trace and then look at a few frames than getting the frames individually
 				StackTrace trace = new StackTrace(2, false);
-				for (int i = 0; ; i++)
+				for (int i = 0; i < trace.FrameCount; i++)
 				{
 					StackFrame frame = trace.GetFrame(i);
 					MethodBase method = frame.GetMethod();
 					if (method == null)
 					{
-						return null;
+						continue;
 					}
 					Type type = method.DeclaringType;
 					if (type != null)
@@ -486,6 +486,7 @@ namespace IKVM.NativeCode.java
 						}
 					}
 				}
+				return null;
 			}
 		}
 
