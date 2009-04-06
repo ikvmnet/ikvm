@@ -7359,6 +7359,7 @@ namespace IKVM.Internal
 							LineNumberTableAttribute.LineNumberWriter lineNumberTable = null;
 							bool nonleaf = false;
 							Compiler.Compile(this, wrapper, methods[i], classFile, m, ilGenerator, ref nonleaf, invokespecialstubcache, ref lineNumberTable);
+							ilGenerator.CheckLabels();
 							if (nonleaf)
 							{
 								mbld.SetImplementationFlags(mbld.GetMethodImplementationFlags() | MethodImplAttributes.NoInlining);
@@ -7418,6 +7419,7 @@ namespace IKVM.Internal
 					{
 						ilGenerator.Emit(OpCodes.Ret);
 					}
+					ilGenerator.CheckLabels();
 				}
 
 				// add all interfaces that we implement (including the magic ones) and handle ghost conversions

@@ -951,7 +951,6 @@ class Compiler
 				//ilGenerator.Emit(OpCodes.Br, - (ilGenerator.GetILOffset() + 5));
 				ilGenerator.Emit(OpCodes.Br_S, (sbyte)-2);
 			}
-			ilGenerator.Finish();
 			nonleaf = c.nonleaf;
 		}
 		finally

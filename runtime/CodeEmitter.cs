@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2004, 2005, 2006, 2008 Jeroen Frijters
+  Copyright (C) 2002, 2004, 2005, 2006, 2008, 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -900,7 +900,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal void Finish()
+		internal void CheckLabels()
 		{
 #if LABELCHECK
 			foreach(System.Diagnostics.StackFrame frame in labels.Values)
