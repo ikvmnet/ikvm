@@ -1233,7 +1233,7 @@ class Compiler
 				{
 					// this is the Jikes & Eclipse Java Compiler synchronization block exit
 					ilGenerator.BeginFaultBlock();
-					LoadLocal(m.Instructions[handlerIndex]);
+					LoadLocal(handlerIndex);
 					ilGenerator.Emit(OpCodes.Call, monitorExitMethod);
 					ilGenerator.EndExceptionBlock();
 					// HACK to keep the verifier happy we need this bogus jump
@@ -1251,7 +1251,7 @@ class Compiler
 				{
 					// this is the javac synchronization block exit
 					ilGenerator.BeginFaultBlock();
-					LoadLocal(m.Instructions[handlerIndex + 1]);
+					LoadLocal(handlerIndex + 1);
 					ilGenerator.Emit(OpCodes.Call, monitorExitMethod);
 					ilGenerator.EndExceptionBlock();
 					// HACK to keep the verifier happy we need this bogus jump
@@ -2102,7 +2102,7 @@ class Compiler
 					}
 					else
 					{
-						LocalVar v = LoadLocal(instr);
+						LocalVar v = LoadLocal(i);
 						if(!type.IsUnloadable && (v.type.IsUnloadable || !v.type.IsAssignableTo(type)))
 						{
 							type.EmitCheckcast(type, ilGenerator);
@@ -2116,7 +2116,7 @@ class Compiler
 					// NOTE we use "int" to track the return address of a jsr
 					if(VerifierTypeWrapper.IsRet(type))
 					{
-						StoreLocal(instr);
+						StoreLocal(i);
 					}
 					else if(VerifierTypeWrapper.IsNew(type))
 					{
@@ -2132,7 +2132,7 @@ class Compiler
 					}
 					else
 					{
-						StoreLocal(instr);
+						StoreLocal(i);
 					}
 					break;
 				}
@@ -2140,22 +2140,22 @@ class Compiler
 				case NormalizedByteCode.__lload:
 				case NormalizedByteCode.__fload:
 				case NormalizedByteCode.__dload:
-					LoadLocal(instr);
+					LoadLocal(i);
 					break;
 				case NormalizedByteCode.__istore:
 				case NormalizedByteCode.__lstore:
-					StoreLocal(instr);
+					StoreLocal(i);
 					break;
 				case NormalizedByteCode.__fstore_conv:	// since we convert after every FP-operation, we don't need this convert anymore
 				case NormalizedByteCode.__fstore:
-					StoreLocal(instr);
+					StoreLocal(i);
 					break;
 				case NormalizedByteCode.__dstore_conv:
 					ilGenerator.Emit(OpCodes.Conv_R8);
-					StoreLocal(instr);
+					StoreLocal(i);
 					break;
 				case NormalizedByteCode.__dstore:
-					StoreLocal(instr);
+					StoreLocal(i);
 					break;
 				case NormalizedByteCode.__new:
 				{
@@ -2913,10 +2913,10 @@ class Compiler
 					ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.DefaultOffset));
 					break;
 				case NormalizedByteCode.__iinc:
-					LoadLocal(instr);
+					LoadLocal(i);
 					ilGenerator.LazyEmitLdc_I4(instr.Arg2);
 					ilGenerator.Emit(OpCodes.Add);
-					StoreLocal(instr);
+					StoreLocal(i);
 					break;
 				case NormalizedByteCode.__i2b:
 					ilGenerator.Emit(OpCodes.Conv_I1);
@@ -2980,7 +2980,7 @@ class Compiler
 					{
 						if(m.Instructions[callsites[j]].IsReachable)
 						{
-							LoadLocal(instr);
+							LoadLocal(i);
 							ilGenerator.LazyEmitLdc_I4(j);
 							ilGenerator.Emit(OpCodes.Beq, block.GetLabel(m.Instructions[callsites[j] + 1].PC));
 						}
@@ -3502,11 +3502,12 @@ class Compiler
 		return m.PcIndexMap[target];
 	}
 
-	private LocalVar LoadLocal(ClassFile.Method.Instruction instr)
+	private LocalVar LoadLocal(int instructionIndex)
 	{
-		LocalVar v = ma.GetLocalVar(FindPcIndex(instr.PC));
+		LocalVar v = ma.GetLocalVar(instructionIndex);
 		if(v.isArg)
 		{
+			ClassFile.Method.Instruction instr = m.Instructions[instructionIndex];
 			int i = m.ArgMap[instr.NormalizedArg1];
 			switch(i)
 			{
@@ -3561,9 +3562,9 @@ class Compiler
 		return v;
 	}
 
-	private LocalVar StoreLocal(ClassFile.Method.Instruction instr)
+	private LocalVar StoreLocal(int instructionIndex)
 	{
-		LocalVar v = ma.GetLocalVar(FindPcIndex(instr.PC));
+		LocalVar v = ma.GetLocalVar(instructionIndex);
 		if(v == null)
 		{
 			// dead store
@@ -3571,6 +3572,7 @@ class Compiler
 		}
 		else if(v.isArg)
 		{
+			ClassFile.Method.Instruction instr = m.Instructions[instructionIndex];
 			int i = m.ArgMap[instr.NormalizedArg1];
 			if(i < 256)
 			{
