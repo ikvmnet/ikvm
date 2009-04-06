@@ -1198,55 +1198,6 @@ class Compiler
 
 	private void Compile(Block block)
 	{
-		int[] scope = null;
-		// if we're emitting debugging information, we need to use scopes for local variables
-		if(debug)
-		{
-			scope = new int[m.Instructions.Length];
-			LocalVariableTableEntry[] lvt = m.LocalVariableTableAttribute;
-			if(lvt != null)
-			{
-				for(int i = 0; i < lvt.Length; i++)
-				{
-					// TODO validate the contents of the LVT entry
-					int startIndex = SafeFindPcIndex(lvt[i].start_pc);
-					if(startIndex > 0)
-					{
-						// NOTE javac (correctly) sets start_pc of the LVT entry to the instruction
-						// following the store that first initializes the local, so we have to
-						// detect that case and adjust our local scope (because we'll be creating
-						// the local when we encounter the first store).
-						LocalVar v = ma.GetLocalVar(startIndex - 1);
-						if(v != null && v.local == lvt[i].index)
-						{
-							startIndex--;
-						}
-					}
-					int end = lvt[i].start_pc + lvt[i].length;
-					int endIndex;
-					if(end == m.Instructions[m.Instructions.Length - 1].PC)
-					{
-						endIndex = m.Instructions.Length - 1;
-					}
-					else
-					{
-						endIndex = SafeFindPcIndex(end);
-					}
-					if(startIndex != -1 && endIndex != -1)
-					{
-						scope[startIndex]++;
-						scope[endIndex]--;
-					}
-					else
-					{
-						// the LVT range is invalid, but we need to have a scope for the variable,
-						// so we create an artificial scope that spans the method
-						scope[0]++;
-						scope[m.Instructions.Length - 1]--;
-					}
-				}
-			}
-		}
 		int exceptionIndex = 0;
 		Instruction[] code = m.Instructions;
 		Stack<Block> blockStack = new Stack<Block>();
@@ -1254,18 +1205,6 @@ class Compiler
 		for(int i = 0; i < code.Length; i++)
 		{
 			Instruction instr = code[i];
-
-			if(scope != null)
-			{
-				for(int j = scope[i]; j < 0; j++)
-				{
-					ilGenerator.EndScope();
-				}
-				for(int j = scope[i]; j > 0; j--)
-				{
-					ilGenerator.BeginScope();
-				}
-			}
 
 			// if we've left the current exception block, do the exit processing
 			while(block.End == instr.PC)
