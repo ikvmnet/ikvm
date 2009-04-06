@@ -81,7 +81,7 @@ namespace IKVM.Internal
 		private CodeEmitterLabel lazyBranch;
 		private LocalBuilder[] tempLocals = new LocalBuilder[32];
 #if LABELCHECK
-		private Dictionary<Label, System.Diagnostics.StackFrame> labels = new Dictionary<Label, System.Diagnostics.StackFrame>();
+		private Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame> labels = new Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame>();
 #endif
 
 		internal static CodeEmitter Create(MethodBuilder mb)
@@ -259,11 +259,11 @@ namespace IKVM.Internal
 
 		internal CodeEmitterLabel DefineLabel()
 		{
-			Label label = ilgen_real.DefineLabel();
+			CodeEmitterLabel label = new CodeEmitterLabel(ilgen_real.DefineLabel());
 #if LABELCHECK
 			labels.Add(label, new System.Diagnostics.StackFrame(1, true));
 #endif
-			return new CodeEmitterLabel(label);
+			return label;
 		}
 
 		internal void Emit(OpCode opcode)
@@ -533,7 +533,7 @@ namespace IKVM.Internal
 			}
 			LazyGen();
 #if LABELCHECK
-			labels.Remove(loc.Label);
+			labels.Remove(loc);
 #endif
 			ilgen_real.MarkLabel(loc.Label);
 			loc.Offset = offset;
