@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2008 Jeroen Frijters
+  Copyright (C) 2002-2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -2460,15 +2460,6 @@ namespace IKVM.Internal
 				}
 			}
 
-			// maps a PC to an index in the Instruction[], invalid PCs return -1
-			internal int[] PcIndexMap
-			{
-				get
-				{
-					return code.pcIndexMap;
-				}
-			}
-
 			internal ExceptionTableEntry[] ExceptionTable
 			{
 				get
@@ -2499,7 +2490,6 @@ namespace IKVM.Internal
 				internal ushort max_stack;
 				internal ushort max_locals;
 				internal Instruction[] instructions;
-				internal int[] pcIndexMap;
 				internal ExceptionTableEntry[] exception_table;
 				internal int[] argmap;
 				internal LineNumberTableEntry[] lineNumberTable;
@@ -2534,6 +2524,48 @@ namespace IKVM.Internal
 					}
 					this.instructions = new Instruction[instructionIndex];
 					Array.Copy(instructions, 0, this.instructions, 0, instructionIndex);
+					// build the pcIndexMap
+					int[] pcIndexMap = new int[this.instructions[instructionIndex - 1].PC + 1];
+					for(int i = 0; i < pcIndexMap.Length; i++)
+					{
+						pcIndexMap[i] = -1;
+					}
+					for(int i = 0; i < instructionIndex - 1; i++)
+					{
+						pcIndexMap[this.instructions[i].PC] = i;
+					}
+					// convert branch offsets to indexes
+					for(int i = 0; i < instructionIndex - 1; i++)
+					{
+						switch(this.instructions[i].NormalizedOpCode)
+						{
+							case NormalizedByteCode.__ifeq:
+							case NormalizedByteCode.__ifne:
+							case NormalizedByteCode.__iflt:
+							case NormalizedByteCode.__ifge:
+							case NormalizedByteCode.__ifgt:
+							case NormalizedByteCode.__ifle:
+							case NormalizedByteCode.__if_icmpeq:
+							case NormalizedByteCode.__if_icmpne:
+							case NormalizedByteCode.__if_icmplt:
+							case NormalizedByteCode.__if_icmpge:
+							case NormalizedByteCode.__if_icmpgt:
+							case NormalizedByteCode.__if_icmple:
+							case NormalizedByteCode.__if_acmpeq:
+							case NormalizedByteCode.__if_acmpne:
+							case NormalizedByteCode.__ifnull:
+							case NormalizedByteCode.__ifnonnull:
+							case NormalizedByteCode.__goto:
+							case NormalizedByteCode.__jsr:
+								this.instructions[i].SetTargetIndex(pcIndexMap[this.instructions[i].Arg1 + this.instructions[i].PC]);
+								break;
+							case NormalizedByteCode.__tableswitch:
+							case NormalizedByteCode.__lookupswitch:
+								this.instructions[i].SetSwitchTargets(pcIndexMap);
+								break;
+						}
+					}
+					// read exception table
 					ushort exception_table_length = br.ReadUInt16();
 					exception_table = new ExceptionTableEntry[exception_table_length];
 					for(int i = 0; i < exception_table_length; i++)
@@ -2550,11 +2582,13 @@ namespace IKVM.Internal
 							throw new ClassFormatError("Illegal exception table: {0}.{1}{2}", classFile.Name, method.Name, method.Signature);
 						}
 						exception_table[i] = new ExceptionTableEntry();
-						exception_table[i].start_pc = start_pc;
-						exception_table[i].end_pc = end_pc;
-						exception_table[i].handler_pc = handler_pc;
 						exception_table[i].catch_type = catch_type;
 						exception_table[i].ordinal = i;
+						// if start_pc, end_pc or handler_pc is invalid (i.e. doesn't point to the start of an instruction),
+						// the index will be -1 and this will be handled by the verifier
+						exception_table[i].startIndex = pcIndexMap[start_pc];
+						exception_table[i].endIndex = pcIndexMap[end_pc];
+						exception_table[i].handlerIndex = pcIndexMap[handler_pc];
 					}
 					ushort attributes_count = br.ReadUInt16();
 					for(int i = 0; i < attributes_count; i++)
@@ -2613,16 +2647,6 @@ namespace IKVM.Internal
 								break;
 						}
 					}
-					// build the pcIndexMap
-					pcIndexMap = new int[this.instructions[instructionIndex - 1].PC + 1];
-					for(int i = 0; i < pcIndexMap.Length; i++)
-					{
-						pcIndexMap[i] = -1;
-					}
-					for(int i = 0; i < instructionIndex - 1; i++)
-					{
-						pcIndexMap[this.instructions[i].PC] = i;
-					}
 					// build the argmap
 					string sig = method.Signature;
 					List<int> args = new List<int>();
@@ -2675,9 +2699,9 @@ namespace IKVM.Internal
 
 			internal sealed class ExceptionTableEntry
 			{
-				internal ushort start_pc;
-				internal ushort end_pc;
-				internal ushort handler_pc;
+				internal int startIndex;
+				internal int endIndex;
+				internal int handlerIndex;
 				internal ushort catch_type;
 				internal int ordinal;
 			}
@@ -2703,7 +2727,7 @@ namespace IKVM.Internal
 				struct SwitchEntry
 				{
 					internal int value;
-					internal int target_offset;
+					internal int target;
 				}
 
 				internal void SetHardError(HardError error, int messageId)
@@ -2756,11 +2780,25 @@ namespace IKVM.Internal
 					this.arg1 = arg1;
 				}
 
+				internal void SetTargetIndex(int targetIndex)
+				{
+					this.arg1 = targetIndex;
+				}
+
 				internal void SetTermNop(ushort pc)
 				{
 					// TODO what happens if we already have exactly the maximum number of instructions?
 					this.pc = pc;
 					this.normopcode = NormalizedByteCode.__nop;
+				}
+
+				internal void SetSwitchTargets(int[] pcIndexMap)
+				{
+					arg1 = pcIndexMap[arg1 + pc];
+					for (int i = 0; i < switch_entries.Length; i++)
+					{
+						switch_entries[i].target = pcIndexMap[switch_entries[i].target + pc];
+					}
 				}
 
 				internal void Read(ushort pc, BigEndianBinaryReader br)
@@ -2824,7 +2862,7 @@ namespace IKVM.Internal
 							for(int i = low; i <= high; i++)
 							{
 								entries[i - low].value = i;
-								entries[i - low].target_offset = br.ReadInt32();
+								entries[i - low].target = br.ReadInt32();
 							}
 							this.switch_entries = entries;
 							break;
@@ -2846,7 +2884,7 @@ namespace IKVM.Internal
 							for(int i = 0; i < count; i++)
 							{
 								entries[i].value = br.ReadInt32();
-								entries[i].target_offset = br.ReadInt32();
+								entries[i].target = br.ReadInt32();
 							}
 							this.switch_entries = entries;
 							break;
@@ -2899,6 +2937,14 @@ namespace IKVM.Internal
 					}
 				}
 
+				internal int TargetIndex
+				{
+					get
+					{
+						return arg1;
+					}
+				}
+
 				internal int Arg2
 				{
 					get
@@ -2915,7 +2961,7 @@ namespace IKVM.Internal
 					}
 				}
 
-				internal int DefaultOffset
+				internal int DefaultTarget
 				{
 					get
 					{
@@ -2936,9 +2982,9 @@ namespace IKVM.Internal
 					return switch_entries[i].value;
 				}
 
-				internal int GetSwitchTargetOffset(int i)
+				internal int GetSwitchTargetIndex(int i)
 				{
-					return switch_entries[i].target_offset;
+					return switch_entries[i].target;
 				}
 			}
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2008 Jeroen Frijters
+  Copyright (C) 2002-2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1562,16 +1562,13 @@ class MethodAnalyzer
 
 		try
 		{
-			int end_pc = method.Instructions[method.Instructions.Length - 1].PC;
 			// ensure that exception blocks and handlers start and end at instruction boundaries
 			for(int i = 0; i < method.ExceptionTable.Length; i++)
 			{
-				int start = method.PcIndexMap[method.ExceptionTable[i].start_pc];
-				int end = method.PcIndexMap[method.ExceptionTable[i].end_pc];
-				int handler = method.PcIndexMap[method.ExceptionTable[i].handler_pc];
-				if((start >= end && end != -1) || start == -1 ||
-					(end == -1 && method.ExceptionTable[i].end_pc != end_pc) ||
-					handler <= 0)
+				int start = method.ExceptionTable[i].startIndex;
+				int end = method.ExceptionTable[i].endIndex;
+				int handler = method.ExceptionTable[i].handlerIndex;
+				if(start >= end || start == -1 || end == -1 || handler <= 0)
 				{
 					throw new IndexOutOfRangeException();
 				}
@@ -1642,7 +1639,7 @@ class MethodAnalyzer
 						// mark the exception handlers reachable from this instruction
 						for(int j = 0; j < method.ExceptionTable.Length; j++)
 						{
-							if(method.ExceptionTable[j].start_pc <= instructions[i].PC && method.ExceptionTable[j].end_pc > instructions[i].PC)
+							if(method.ExceptionTable[j].startIndex <= i && i < method.ExceptionTable[j].endIndex)
 							{
 								// NOTE this used to be CopyLocalsAndSubroutines, but it doesn't (always) make
 								// sense to copy the subroutine state
@@ -1663,7 +1660,7 @@ class MethodAnalyzer
 									// Throwable as the type and recording a loader constraint
 									ex.PushType(GetConstantPoolClassType(catch_type));
 								}
-								int idx = method.PcIndexMap[method.ExceptionTable[j].handler_pc];
+								int idx = method.ExceptionTable[j].handlerIndex;
 								state[idx] += ex;
 							}
 						}
@@ -2136,15 +2133,15 @@ class MethodAnalyzer
 							{
 								// mark the type, so that we can ascertain that it is a "new object"
 								TypeWrapper type;
-								if(!newTypes.TryGetValue(instr.PC, out type))
+								if(!newTypes.TryGetValue(i, out type))
 								{
 									type = GetConstantPoolClassType(instr.Arg1);
 									if(type.IsArray)
 									{
 										throw new VerifyError("Illegal use of array type");
 									}
-									type = VerifierTypeWrapper.MakeNew(type, instr.PC);
-									newTypes[instr.PC] = type;
+									type = VerifierTypeWrapper.MakeNew(type, i);
+									newTypes[i] = type;
 								}
 								s.PushType(type);
 								break;
@@ -2575,9 +2572,9 @@ class MethodAnalyzer
 								case NormalizedByteCode.__lookupswitch:
 									for(int j = 0; j < instr.SwitchEntryCount; j++)
 									{
-										state[method.PcIndexMap[instr.PC + instr.GetSwitchTargetOffset(j)]] += s;
+										state[instr.GetSwitchTargetIndex(j)] += s;
 									}
-									state[method.PcIndexMap[instr.PC + instr.DefaultOffset]] += s;
+									state[instr.DefaultTarget] += s;
 									break;
 								case NormalizedByteCode.__ifeq:
 								case NormalizedByteCode.__ifne:
@@ -2596,10 +2593,10 @@ class MethodAnalyzer
 								case NormalizedByteCode.__ifnull:
 								case NormalizedByteCode.__ifnonnull:
 									state[i + 1] += s;
-									state[method.PcIndexMap[instr.PC + instr.Arg1]] += s;
+									state[instr.TargetIndex] += s;
 									break;
 								case NormalizedByteCode.__goto:
-									state[method.PcIndexMap[instr.PC + instr.Arg1]] += s;
+									state[instr.TargetIndex] += s;
 									break;
 								case NormalizedByteCode.__jsr:
 								{
@@ -2607,7 +2604,7 @@ class MethodAnalyzer
 									{
 										state[i + 1] += s;
 									}
-									int index = method.PcIndexMap[instr.PC + instr.Arg1];
+									int index = instr.TargetIndex;
 									s.SetSubroutineId(index);
 									TypeWrapper retAddressType;
 									if(!returnAddressTypes.TryGetValue(index, out retAddressType))
@@ -2692,7 +2689,7 @@ class MethodAnalyzer
 				{
 					if (instructions[i].NormalizedOpCode == NormalizedByteCode.__getstatic
 						&& instructions[i + 1].NormalizedOpCode == NormalizedByteCode.__ifne
-						&& instructions[i + 1].Arg1 > 0
+						&& instructions[i + 1].TargetIndex > i
 						&& !instructions[i + 1].IsBranchTarget)
 					{
 						ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instructions[i].Arg1);
@@ -2701,7 +2698,7 @@ class MethodAnalyzer
 							// We've found an assertion. We patch the instruction to branch around it so that
 							// the assertion code will be unreachable (and hence optimized away).
 							// Note that the goto will be optimized away later by the code generator (which removes unnecessary branches).
-							instructions[i].PatchOpCode(NormalizedByteCode.__goto, instructions[i + 1].Arg1 + 3);
+							instructions[i].PatchOpCode(NormalizedByteCode.__goto, instructions[i + 1].TargetIndex);
 						}
 					}
 				}
@@ -2870,9 +2867,9 @@ class MethodAnalyzer
 					// mark the exception handlers reachable from this instruction
 					for(int j = 0; j < method.ExceptionTable.Length; j++)
 					{
-						if(method.ExceptionTable[j].start_pc <= instructions[i].PC && method.ExceptionTable[j].end_pc > instructions[i].PC)
+						if(method.ExceptionTable[j].startIndex <= i && i < method.ExceptionTable[j].endIndex)
 						{
-							instructions[method.PcIndexMap[method.ExceptionTable[j].handler_pc]].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+							instructions[method.ExceptionTable[j].handlerIndex].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 						}
 					}
 					// mark the successor instructions
@@ -2884,11 +2881,11 @@ class MethodAnalyzer
 							bool hasbackbranch = false;
 							for(int j = 0; j < instructions[i].SwitchEntryCount; j++)
 							{
-								hasbackbranch |= instructions[i].GetSwitchTargetOffset(j) < 0;
-								instructions[method.PcIndexMap[instructions[i].PC + instructions[i].GetSwitchTargetOffset(j)]].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+								hasbackbranch |= instructions[i].GetSwitchTargetIndex(j) < i;
+								instructions[instructions[i].GetSwitchTargetIndex(j)].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 							}
-							hasbackbranch |= instructions[i].DefaultOffset < 0;
-							instructions[method.PcIndexMap[instructions[i].PC + instructions[i].DefaultOffset]].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+							hasbackbranch |= instructions[i].DefaultTarget < i;
+							instructions[instructions[i].DefaultTarget].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 							if(hasbackbranch)
 							{
 								// backward branches cannot have uninitialized objects on
@@ -2898,13 +2895,13 @@ class MethodAnalyzer
 							break;
 						}
 						case NormalizedByteCode.__goto:
-							if(instructions[i].Arg1 < 0)
+							if(instructions[i].TargetIndex < i)
 							{
 								// backward branches cannot have uninitialized objects on
 								// the stack or in local variables
 								state[i].CheckUninitializedObjRefs();
 							}
-							instructions[method.PcIndexMap[instructions[i].PC + instructions[i].Arg1]].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+							instructions[instructions[i].TargetIndex].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 							break;
 						case NormalizedByteCode.__ifeq:
 						case NormalizedByteCode.__ifne:
@@ -2922,18 +2919,18 @@ class MethodAnalyzer
 						case NormalizedByteCode.__if_acmpne:
 						case NormalizedByteCode.__ifnull:
 						case NormalizedByteCode.__ifnonnull:
-							if(instructions[i].Arg1 < 0)
+							if(instructions[i].TargetIndex < i)
 							{
 								// backward branches cannot have uninitialized objects on
 								// the stack or in local variables
 								state[i].CheckUninitializedObjRefs();
 							}
-							instructions[method.PcIndexMap[instructions[i].PC + instructions[i].Arg1]].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+							instructions[instructions[i].TargetIndex].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 							instructions[i + 1].flags |= InstructionFlags.Reachable;
 							break;
 						case NormalizedByteCode.__jsr:
 							state[i].CheckUninitializedObjRefs();
-							instructions[method.PcIndexMap[instructions[i].PC + instructions[i].Arg1]].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+							instructions[instructions[i].TargetIndex].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 							// Note that we don't mark the next instruction as reachable,
 							// because that depends on the corresponding ret actually being
 							// reachable. We handle this in the loop below.

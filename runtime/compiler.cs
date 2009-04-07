@@ -37,7 +37,6 @@ using IKVM.Attributes;
 using IKVM.Internal;
 
 using ExceptionTableEntry = IKVM.Internal.ClassFile.Method.ExceptionTableEntry;
-using LocalVariableTableEntry = IKVM.Internal.ClassFile.Method.LocalVariableTableEntry;
 using Instruction = IKVM.Internal.ClassFile.Method.Instruction;
 
 static class ByteCodeHelperMethods
@@ -234,13 +233,13 @@ class Compiler
 	{
 		public int Compare(ExceptionTableEntry e1, ExceptionTableEntry e2)
 		{
-			if(e1.start_pc < e2.start_pc)
+			if(e1.startIndex < e2.startIndex)
 			{
 				return -1;
 			}
-			if(e1.start_pc == e2.start_pc)
+			if(e1.startIndex == e2.startIndex)
 			{
-				if(e1.end_pc == e2.end_pc)
+				if(e1.endIndex == e2.endIndex)
 				{
 					if(e1.ordinal > e2.ordinal)
 					{
@@ -248,7 +247,7 @@ class Compiler
 					}
 					return 1;
 				}
-				if(e1.end_pc > e2.end_pc)
+				if(e1.endIndex > e2.endIndex)
 				{
 					return -1;
 				}
@@ -352,11 +351,11 @@ class Compiler
 		for(int i = 0; i < ar.Count; i++)
 		{
 			ExceptionTableEntry ei = ar[i];
-			if(ei.start_pc == ei.handler_pc && ei.catch_type == 0)
+			if(ei.startIndex == ei.handlerIndex && ei.catch_type == 0)
 			{
-				int index = FindPcIndex(ei.start_pc);
+				int index = ei.startIndex;
 				if(index + 2 < m.Instructions.Length
-					&& FindPcIndex(ei.end_pc) == index + 2
+					&& ei.endIndex == index + 2
 					&& m.Instructions[index].NormalizedOpCode == NormalizedByteCode.__aload
 					&& m.Instructions[index + 1].NormalizedOpCode == NormalizedByteCode.__monitorexit
 					&& m.Instructions[index + 2].NormalizedOpCode == NormalizedByteCode.__athrow)
@@ -366,7 +365,7 @@ class Compiler
 					i--;
 				}
 				else if(index + 4 < m.Instructions.Length
-					&& FindPcIndex(ei.end_pc) == index + 3
+					&& ei.endIndex == index + 3
 					&& m.Instructions[index].NormalizedOpCode == NormalizedByteCode.__astore
 					&& m.Instructions[index + 1].NormalizedOpCode == NormalizedByteCode.__aload
 					&& m.Instructions[index + 2].NormalizedOpCode == NormalizedByteCode.__monitorexit
@@ -388,41 +387,41 @@ class Compiler
 				for(int j = 0; j < ar.Count; j++)
 				{
 					ExceptionTableEntry ej = ar[j];
-					if(ei.start_pc <= ej.start_pc && ej.start_pc < ei.end_pc)
+					if(ei.startIndex <= ej.startIndex && ej.startIndex < ei.endIndex)
 					{
 						// 0006/test.j
-						if(ej.end_pc > ei.end_pc)
+						if(ej.endIndex > ei.endIndex)
 						{
 							ExceptionTableEntry emi = new ExceptionTableEntry();
-							emi.start_pc = ej.start_pc;
-							emi.end_pc = ei.end_pc;
+							emi.startIndex = ej.startIndex;
+							emi.endIndex = ei.endIndex;
 							emi.catch_type = ei.catch_type;
-							emi.handler_pc = ei.handler_pc;
+							emi.handlerIndex = ei.handlerIndex;
 							ExceptionTableEntry emj = new ExceptionTableEntry();
-							emj.start_pc = ej.start_pc;
-							emj.end_pc = ei.end_pc;
+							emj.startIndex = ej.startIndex;
+							emj.endIndex = ei.endIndex;
 							emj.catch_type = ej.catch_type;
-							emj.handler_pc = ej.handler_pc;
-							ei.end_pc = emi.start_pc;
-							ej.start_pc = emj.end_pc;
+							emj.handlerIndex = ej.handlerIndex;
+							ei.endIndex = emi.startIndex;
+							ej.startIndex = emj.endIndex;
 							ar.Insert(j, emj);
 							ar.Insert(i + 1, emi);
 							goto restart;
 						}
 						// 0007/test.j
-						else if(j > i && ej.end_pc < ei.end_pc)
+						else if(j > i && ej.endIndex < ei.endIndex)
 						{
 							ExceptionTableEntry emi = new ExceptionTableEntry();
-							emi.start_pc = ej.start_pc;
-							emi.end_pc = ej.end_pc;
+							emi.startIndex = ej.startIndex;
+							emi.endIndex = ej.endIndex;
 							emi.catch_type = ei.catch_type;
-							emi.handler_pc = ei.handler_pc;
+							emi.handlerIndex = ei.handlerIndex;
 							ExceptionTableEntry eei = new ExceptionTableEntry();
-							eei.start_pc = ej.end_pc;
-							eei.end_pc = ei.end_pc;
+							eei.startIndex = ej.endIndex;
+							eei.endIndex = ei.endIndex;
 							eei.catch_type = ei.catch_type;
-							eei.handler_pc = ei.handler_pc;
-							ei.end_pc = emi.start_pc;
+							eei.handlerIndex = ei.handlerIndex;
+							ei.endIndex = emi.startIndex;
 							ar.Insert(i + 1, eei);
 							ar.Insert(i + 1, emi);
 							goto restart;
@@ -454,19 +453,19 @@ class Compiler
 			for(int i = 0; i < ar.Count; i++)
 			{
 				ExceptionTableEntry ei = ar[i];
-				for(int j = FindPcIndex(ei.start_pc), e = FindPcIndex(ei.end_pc); j < e; j++)
+				for(int j = ei.startIndex, e = ei.endIndex; j < e; j++)
 				{
 					if(m.Instructions[j].NormalizedOpCode == NormalizedByteCode.__jsr)
 					{
-						int targetPC = m.Instructions[j].NormalizedArg1 + m.Instructions[j].PC;
-						if(targetPC < ei.start_pc || targetPC >= ei.end_pc)
+						int targetIndex = m.Instructions[j].TargetIndex;
+						if(targetIndex < ei.startIndex || targetIndex >= ei.endIndex)
 						{
 							ExceptionTableEntry en = new ExceptionTableEntry();
 							en.catch_type = ei.catch_type;
-							en.handler_pc = ei.handler_pc;
-							en.start_pc = (ushort)m.Instructions[j + 1].PC;
-							en.end_pc = ei.end_pc;
-							ei.end_pc = (ushort)m.Instructions[j].PC;
+							en.handlerIndex = ei.handlerIndex;
+							en.startIndex = j + 1;
+							en.endIndex = ei.endIndex;
+							ei.endIndex = j;
 							ar.Insert(i + 1, en);
 							goto restart_jsr;
 						}
@@ -477,8 +476,8 @@ class Compiler
 		for(int i = 0; i < ar.Count; i++)
 		{
 			ExceptionTableEntry ei = ar[i];
-			int start = FindPcIndex(ei.start_pc);
-			int end = FindPcIndex(ei.end_pc);
+			int start = ei.startIndex;
+			int end = ei.endIndex;
 			for(int j = 0; j < m.Instructions.Length; j++)
 			{
 				if(j < start || j >= end)
@@ -490,15 +489,15 @@ class Compiler
 							// start at -1 to have an opportunity to handle the default offset
 							for(int k = -1; k < m.Instructions[j].SwitchEntryCount; k++)
 							{
-								int targetPC = m.Instructions[j].PC + (k == -1 ? m.Instructions[j].DefaultOffset : m.Instructions[j].GetSwitchTargetOffset(k));
-								if(ei.start_pc < targetPC && targetPC < ei.end_pc)
+								int targetIndex = (k == -1 ? m.Instructions[j].DefaultTarget : m.Instructions[j].GetSwitchTargetIndex(k));
+								if(ei.startIndex < targetIndex && targetIndex < ei.endIndex)
 								{
 									ExceptionTableEntry en = new ExceptionTableEntry();
 									en.catch_type = ei.catch_type;
-									en.handler_pc = ei.handler_pc;
-									en.start_pc = (ushort)targetPC;
-									en.end_pc = ei.end_pc;
-									ei.end_pc = (ushort)targetPC;
+									en.handlerIndex = ei.handlerIndex;
+									en.startIndex = targetIndex;
+									en.endIndex = ei.endIndex;
+									ei.endIndex = targetIndex;
 									ar.Insert(i + 1, en);
 									goto restart_jsr;
 								}
@@ -523,15 +522,15 @@ class Compiler
 						case NormalizedByteCode.__goto:
 						case NormalizedByteCode.__jsr:
 						{
-							int targetPC = m.Instructions[j].PC + m.Instructions[j].Arg1;
-							if(ei.start_pc < targetPC && targetPC < ei.end_pc)
+							int targetIndex = m.Instructions[j].Arg1;
+							if(ei.startIndex < targetIndex && targetIndex < ei.endIndex)
 							{
 								ExceptionTableEntry en = new ExceptionTableEntry();
 								en.catch_type = ei.catch_type;
-								en.handler_pc = ei.handler_pc;
-								en.start_pc = (ushort)targetPC;
-								en.end_pc = ei.end_pc;
-								ei.end_pc = (ushort)targetPC;
+								en.handlerIndex = ei.handlerIndex;
+								en.startIndex = targetIndex;
+								en.endIndex = ei.endIndex;
+								ei.endIndex = targetIndex;
 								ar.Insert(i + 1, en);
 								goto restart_jsr;
 							}
@@ -548,14 +547,14 @@ class Compiler
 			for(int j = 0; j < ar.Count; j++)
 			{
 				ExceptionTableEntry ej = ar[j];
-				if(ei.start_pc < ej.handler_pc && ej.handler_pc < ei.end_pc)
+				if(ei.startIndex < ej.handlerIndex && ej.handlerIndex < ei.endIndex)
 				{
 					ExceptionTableEntry en = new ExceptionTableEntry();
 					en.catch_type = ei.catch_type;
-					en.handler_pc = ei.handler_pc;
-					en.start_pc = ej.handler_pc;
-					en.end_pc = ei.end_pc;
-					ei.end_pc = ej.handler_pc;
+					en.handlerIndex = ei.handlerIndex;
+					en.startIndex = ej.handlerIndex;
+					en.endIndex = ei.endIndex;
+					ei.endIndex = ej.handlerIndex;
 					ar.Insert(i + 1, en);
 					goto restart_jsr;
 				}
@@ -565,7 +564,7 @@ class Compiler
 		for(int i = 0; i < ar.Count; i++)
 		{
 			ExceptionTableEntry ei = ar[i];
-			if(ei.start_pc == ei.end_pc)
+			if(ei.startIndex == ei.endIndex)
 			{
 				ar.RemoveAt(i);
 				i--;
@@ -582,8 +581,8 @@ class Compiler
 					TypeWrapper exceptionType = classFile.GetConstantPoolClassType(ei.catch_type);
 					if(!exceptionType.IsUnloadable && !java_lang_ThreadDeath.IsAssignableTo(exceptionType))
 					{
-						int start = FindPcIndex(ei.start_pc);
-						int end = FindPcIndex(ei.end_pc);
+						int start = ei.startIndex;
+						int end = ei.endIndex;
 						for(int j = start; j < end; j++)
 						{
 							if(ByteCodeMetaData.CanThrowException(m.Instructions[j].NormalizedOpCode))
@@ -618,27 +617,27 @@ class Compiler
 			for(int j = i + 1; j < exceptions.Length; j++)
 			{
 				// check for partially overlapping try blocks (which is legal for the JVM, but not the CLR)
-				if(exceptions[i].start_pc < exceptions[j].start_pc && 
-					exceptions[j].start_pc < exceptions[i].end_pc &&
-					exceptions[i].end_pc < exceptions[j].end_pc)
+				if(exceptions[i].startIndex < exceptions[j].startIndex && 
+					exceptions[j].startIndex < exceptions[i].endIndex &&
+					exceptions[i].endIndex < exceptions[j].endIndex)
 				{
 					throw new InvalidOperationException("Partially overlapping try blocks is broken");
 				}
 				// check that we didn't destroy the ordering, when sorting
-				if(exceptions[i].start_pc <= exceptions[j].start_pc &&
-					exceptions[i].end_pc >= exceptions[j].end_pc &&
+				if(exceptions[i].startIndex <= exceptions[j].startIndex &&
+					exceptions[i].endIndex >= exceptions[j].endIndex &&
 					exceptions[i].ordinal < exceptions[j].ordinal)
 				{
 					throw new InvalidOperationException("Non recursive try blocks is broken");
 				}
 			}
 			// make sure __jsr doesn't jump out of try block
-			for(int j = FindPcIndex(exceptions[i].start_pc), e = FindPcIndex(exceptions[i].end_pc); j < e; j++)
+			for(int j = exceptions[i].startIndex, e = exceptions[i].endIndex; j < e; j++)
 			{
 				if(m.Instructions[j].NormalizedOpCode == NormalizedByteCode.__jsr)
 				{
-					int targetPC = m.Instructions[j].NormalizedArg1 + m.Instructions[j].PC;
-					if(targetPC < exceptions[i].start_pc || targetPC >= exceptions[i].end_pc)
+					int targetIndex = m.Instructions[j].TargetIndex;
+					if(targetIndex < exceptions[i].startIndex || targetIndex >= exceptions[i].endIndex)
 					{
 						throw new InvalidOperationException("Try block splitting around __jsr is broken");
 					}
@@ -675,20 +674,20 @@ class Compiler
 		internal CodeEmitterLabel Stub;
 		internal CodeEmitterLabel TargetLabel;
 		internal bool ContentOnStack;
-		internal readonly int TargetPC;
+		internal readonly int TargetIndex;
 		internal DupHelper dh;
 
-		internal BranchCookie(Compiler compiler, int stackHeight, int targetPC)
+		internal BranchCookie(Compiler compiler, int stackHeight, int targetIndex)
 		{
 			this.Stub = compiler.ilGenerator.DefineLabel();
-			this.TargetPC = targetPC;
+			this.TargetIndex = targetIndex;
 			this.dh = new DupHelper(compiler, stackHeight);
 		}
 
-		internal BranchCookie(CodeEmitterLabel label, int targetPC)
+		internal BranchCookie(CodeEmitterLabel label, int targetIndex)
 		{
 			this.Stub = label;
-			this.TargetPC = targetPC;
+			this.TargetIndex = targetIndex;
 		}
 	}
 
@@ -963,30 +962,30 @@ class Compiler
 	{
 		private Compiler compiler;
 		private CodeEmitter ilgen;
-		private int begin;
-		private int end;
+		private int beginIndex;
+		private int endIndex;
 		private int exceptionIndex;
 		private List<object> exits;
 		private bool nested;
 		private object[] labels;
 
-		internal Block(Compiler compiler, int beginPC, int endPC, int exceptionIndex, List<object> exits, bool nested)
+		internal Block(Compiler compiler, int beginIndex, int endIndex, int exceptionIndex, List<object> exits, bool nested)
 		{
 			this.compiler = compiler;
 			this.ilgen = compiler.ilGenerator;
-			this.begin = beginPC;
-			this.end = endPC;
+			this.beginIndex = beginIndex;
+			this.endIndex = endIndex;
 			this.exceptionIndex = exceptionIndex;
 			this.exits = exits;
 			this.nested = nested;
 			labels = new object[compiler.m.Instructions.Length];
 		}
 
-		internal int End
+		internal int EndIndex
 		{
 			get
 			{
-				return end;
+				return endIndex;
 			}
 		}
 
@@ -1009,10 +1008,9 @@ class Compiler
 			exits.Add(bc);
 		}
 
-		internal CodeEmitterLabel GetLabel(int targetPC)
+		internal CodeEmitterLabel GetLabel(int targetIndex)
 		{
-			int targetIndex = compiler.FindPcIndex(targetPC);
-			if(IsInRange(targetPC))
+			if(IsInRange(targetIndex))
 			{
 				object l = labels[targetIndex];
 				if(l == null)
@@ -1031,7 +1029,7 @@ class Compiler
 					// that saves the stack and uses leave to leave the exception block (to another stub that recovers
 					// the stack)
 					int stackHeight = compiler.ma.GetStackHeight(targetIndex);
-					BranchCookie bc = new BranchCookie(compiler, stackHeight, targetPC);
+					BranchCookie bc = new BranchCookie(compiler, stackHeight, targetIndex);
 					bc.ContentOnStack = true;
 					for(int i = 0; i < stackHeight; i++)
 					{
@@ -1065,9 +1063,9 @@ class Compiler
 			}
 		}
 
-		internal bool IsInRange(int pc)
+		internal bool IsInRange(int index)
 		{
-			return begin <= pc && pc < end;
+			return beginIndex <= index && index < endIndex;
 		}
 
 		internal void Leave()
@@ -1097,7 +1095,7 @@ class Compiler
 						{
 							bc.dh.Store(n);
 						}
-						if(bc.TargetPC == -1)
+						if(bc.TargetIndex == -1)
 						{
 							ilgen.Emit(OpCodes.Br, bc.TargetLabel);
 						}
@@ -1133,12 +1131,12 @@ class Compiler
 					else
 					{
 						BranchCookie bc = exit as BranchCookie;
-						if(bc != null && bc.TargetPC != -1)
+						if(bc != null && bc.TargetIndex != -1)
 						{
 							Debug.Assert(!bc.ContentOnStack);
 							// if the target is within the new block, we handle it, otherwise we
 							// defer the cookie to our caller
-							if(newBlock.IsInRange(bc.TargetPC))
+							if(newBlock.IsInRange(bc.TargetIndex))
 							{
 								bc.ContentOnStack = true;
 								ilgen.MarkLabel(bc.Stub);
@@ -1147,7 +1145,7 @@ class Compiler
 								{
 									bc.dh.Load(n);
 								}
-								ilgen.Emit(OpCodes.Br, newBlock.GetLabel(bc.TargetPC));
+								ilgen.Emit(OpCodes.Br, newBlock.GetLabel(bc.TargetIndex));
 							}
 							else
 							{
@@ -1175,12 +1173,12 @@ class Compiler
 
 	private bool IsGuardedBlock(Stack<Block> blockStack, int instructionIndex, int instructionCount)
 	{
-		int start_pc = m.Instructions[instructionIndex].PC;
-		int end_pc = m.Instructions[instructionIndex + instructionCount].PC;
+		int start = instructionIndex;
+		int end = instructionIndex + instructionCount;
 		for(int i = 0; i < exceptions.Length; i++)
 		{
 			ExceptionTableEntry e = exceptions[i];
-			if(e.end_pc > start_pc && e.start_pc < end_pc)
+			if(e.endIndex > start && e.startIndex < end)
 			{
 				foreach(Block block in blockStack)
 				{
@@ -1207,7 +1205,7 @@ class Compiler
 			Instruction instr = code[i];
 
 			// if we've left the current exception block, do the exit processing
-			while(block.End == instr.PC)
+			while(block.EndIndex == i)
 			{
 				block.Leave();
 
@@ -1218,11 +1216,11 @@ class Compiler
 
 				exceptionIndex = block.ExceptionIndex + 1;
 				// skip over exception handlers that are no longer relevant
-				for(; exceptionIndex < exceptions.Length && exceptions[exceptionIndex].end_pc <= instr.PC; exceptionIndex++)
+				for(; exceptionIndex < exceptions.Length && exceptions[exceptionIndex].endIndex <= i; exceptionIndex++)
 				{
 				}
 
-				int handlerIndex = FindPcIndex(exc.handler_pc);
+				int handlerIndex = exc.handlerIndex;
 
 				if(exc.catch_type == 0
 					&& handlerIndex + 2 < m.Instructions.Length
@@ -1282,7 +1280,7 @@ class Compiler
 					{
 						ilGenerator.BeginCatchBlock(typeof(Exception));
 					}
-					BranchCookie bc = new BranchCookie(this, 1, exc.handler_pc);
+					BranchCookie bc = new BranchCookie(this, 1, exc.handlerIndex);
 					prevBlock.AddExitHack(bc);
 					Instruction handlerInstr = code[handlerIndex];
 					bool unusedException = mapSafe && (handlerInstr.NormalizedOpCode == NormalizedByteCode.__pop ||
@@ -1396,7 +1394,7 @@ class Compiler
 			// transfer the stack into it
 			// Note that an exception block that *starts* at an unreachable instruction,
 			// is completely unreachable, because it is impossible to branch into an exception block.
-			for(; exceptionIndex < exceptions.Length && exceptions[exceptionIndex].start_pc == instr.PC; exceptionIndex++)
+			for(; exceptionIndex < exceptions.Length && exceptions[exceptionIndex].startIndex == i; exceptionIndex++)
 			{
 				int stackHeight = ma.GetStackHeight(i);
 				if(stackHeight != 0)
@@ -1419,7 +1417,7 @@ class Compiler
 					ilGenerator.BeginExceptionBlock();
 				}
 				blockStack.Push(block);
-				block = new Block(this, exceptions[exceptionIndex].start_pc, exceptions[exceptionIndex].end_pc, exceptionIndex, new List<object>(), true);
+				block = new Block(this, exceptions[exceptionIndex].startIndex, exceptions[exceptionIndex].endIndex, exceptionIndex, new List<object>(), true);
 				block.MarkLabel(i);
 			}
 
@@ -1428,7 +1426,7 @@ class Compiler
 			{
 				for(int j = 0; j < table.Length; j++)
 				{
-					if(table[j].start_pc == instr.PC && table[j].line_number != 0)
+					if(table[j].start_pc == m.Instructions[i].PC && table[j].line_number != 0)
 					{
 						if(symboldocument != null)
 						{
@@ -1484,7 +1482,7 @@ class Compiler
 					case NormalizedByteCode.__if_acmpeq:
 					case NormalizedByteCode.__if_acmpne:
 					case NormalizedByteCode.__goto:
-						if(instr.Arg1 <= 0)
+						if(instr.TargetIndex <= i)
 						{
 							ilGenerator.Emit(OpCodes.Ldarg_0);
 							ilGenerator.Emit(OpCodes.Call, keepAliveMethod);
@@ -2438,55 +2436,55 @@ class Compiler
 					ilGenerator.LazyEmit_dcmpg();
 					break;
 				case NormalizedByteCode.__if_icmpeq:
-					ilGenerator.Emit(OpCodes.Beq, block.GetLabel(instr.PC + instr.Arg1));
+					ilGenerator.Emit(OpCodes.Beq, block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__if_icmpne:
-					ilGenerator.Emit(OpCodes.Bne_Un, block.GetLabel(instr.PC + instr.Arg1));
+					ilGenerator.Emit(OpCodes.Bne_Un, block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__if_icmple:
-					ilGenerator.Emit(OpCodes.Ble, block.GetLabel(instr.PC + instr.Arg1));
+					ilGenerator.Emit(OpCodes.Ble, block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__if_icmplt:
-					ilGenerator.Emit(OpCodes.Blt, block.GetLabel(instr.PC + instr.Arg1));
+					ilGenerator.Emit(OpCodes.Blt, block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__if_icmpge:
-					ilGenerator.Emit(OpCodes.Bge, block.GetLabel(instr.PC + instr.Arg1));
+					ilGenerator.Emit(OpCodes.Bge, block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__if_icmpgt:
-					ilGenerator.Emit(OpCodes.Bgt, block.GetLabel(instr.PC + instr.Arg1));
+					ilGenerator.Emit(OpCodes.Bgt, block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__ifle:
-					ilGenerator.LazyEmit_if_le_lt_ge_gt(CodeEmitter.Comparison.LessOrEqual, block.GetLabel(instr.PC + instr.Arg1));
+					ilGenerator.LazyEmit_if_le_lt_ge_gt(CodeEmitter.Comparison.LessOrEqual, block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__iflt:
-					ilGenerator.LazyEmit_if_le_lt_ge_gt(CodeEmitter.Comparison.LessThan, block.GetLabel(instr.PC + instr.Arg1));
+					ilGenerator.LazyEmit_if_le_lt_ge_gt(CodeEmitter.Comparison.LessThan, block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__ifge:
-					ilGenerator.LazyEmit_if_le_lt_ge_gt(CodeEmitter.Comparison.GreaterOrEqual, block.GetLabel(instr.PC + instr.Arg1));
+					ilGenerator.LazyEmit_if_le_lt_ge_gt(CodeEmitter.Comparison.GreaterOrEqual, block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__ifgt:
-					ilGenerator.LazyEmit_if_le_lt_ge_gt(CodeEmitter.Comparison.GreaterThan, block.GetLabel(instr.PC + instr.Arg1));
+					ilGenerator.LazyEmit_if_le_lt_ge_gt(CodeEmitter.Comparison.GreaterThan, block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__ifne:
-					ilGenerator.LazyEmit_ifne(block.GetLabel(instr.PC + instr.Arg1));
+					ilGenerator.LazyEmit_ifne(block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__ifeq:
-					ilGenerator.LazyEmit_ifeq(block.GetLabel(instr.PC + instr.Arg1));
+					ilGenerator.LazyEmit_ifeq(block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__ifnonnull:
-					ilGenerator.Emit(OpCodes.Brtrue, block.GetLabel(instr.PC + instr.Arg1));
+					ilGenerator.Emit(OpCodes.Brtrue, block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__ifnull:
-					ilGenerator.Emit(OpCodes.Brfalse, block.GetLabel(instr.PC + instr.Arg1));
+					ilGenerator.Emit(OpCodes.Brfalse, block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__if_acmpeq:
-					ilGenerator.Emit(OpCodes.Beq, block.GetLabel(instr.PC + instr.Arg1));
+					ilGenerator.Emit(OpCodes.Beq, block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__if_acmpne:
-					ilGenerator.Emit(OpCodes.Bne_Un, block.GetLabel(instr.PC + instr.Arg1));
+					ilGenerator.Emit(OpCodes.Bne_Un, block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__goto:
-					ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.Arg1));
+					ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__ineg:
 				case NormalizedByteCode.__lneg:
@@ -2887,7 +2885,7 @@ class Compiler
 					CodeEmitterLabel[] labels = new CodeEmitterLabel[instr.SwitchEntryCount];
 					for(int j = 0; j < labels.Length; j++)
 					{
-						labels[j] = block.GetLabel(instr.PC + instr.GetSwitchTargetOffset(j));
+						labels[j] = block.GetLabel(instr.GetSwitchTargetIndex(j));
 					}
 					if(instr.GetSwitchValue(0) != 0)
 					{
@@ -2895,7 +2893,7 @@ class Compiler
 						ilGenerator.Emit(OpCodes.Sub);
 					}
 					ilGenerator.Emit(OpCodes.Switch, labels);
-					ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.DefaultOffset));
+					ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.DefaultTarget));
 					break;
 				}
 				case NormalizedByteCode.__lookupswitch:
@@ -2906,11 +2904,11 @@ class Compiler
 						CodeEmitterLabel label = ilGenerator.DefineLabel();
 						ilGenerator.Emit(OpCodes.Bne_Un_S, label);
 						ilGenerator.Emit(OpCodes.Pop);
-						ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.GetSwitchTargetOffset(j)));
+						ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.GetSwitchTargetIndex(j)));
 						ilGenerator.MarkLabel(label);
 					}
 					ilGenerator.Emit(OpCodes.Pop);
-					ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.DefaultOffset));
+					ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.DefaultTarget));
 					break;
 				case NormalizedByteCode.__iinc:
 					LoadLocal(i);
@@ -2957,7 +2955,7 @@ class Compiler
 					break;
 				case NormalizedByteCode.__jsr:
 				{
-					int index = FindPcIndex(instr.PC + instr.Arg1);
+					int index = instr.TargetIndex;
 					int[] callsites = ma.GetCallSites(index);
 					for(int j = 0; j < callsites.Length; j++)
 					{
@@ -2967,7 +2965,7 @@ class Compiler
 							break;
 						}
 					}
-					ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.Arg1));
+					ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.TargetIndex));
 					break;
 				}
 				case NormalizedByteCode.__ret:
@@ -2982,12 +2980,12 @@ class Compiler
 						{
 							LoadLocal(i);
 							ilGenerator.LazyEmitLdc_I4(j);
-							ilGenerator.Emit(OpCodes.Beq, block.GetLabel(m.Instructions[callsites[j] + 1].PC));
+							ilGenerator.Emit(OpCodes.Beq, block.GetLabel(callsites[j] + 1));
 						}
 					}
 					if(m.Instructions[callsites[callsites.Length - 1]].IsReachable)
 					{
-						ilGenerator.Emit(OpCodes.Br, block.GetLabel(m.Instructions[callsites[callsites.Length - 1] + 1].PC));
+						ilGenerator.Emit(OpCodes.Br, block.GetLabel(callsites[callsites.Length - 1] + 1));
 					}
 					else
 					{
@@ -3073,10 +3071,10 @@ class Compiler
 					instructionIsForwardReachable = true;
 					Debug.Assert(m.Instructions[i + 1].IsReachable);
 					// don't fall through end of try block
-					if(m.Instructions[i + 1].PC == block.End)
+					if(block.EndIndex == i + 1)
 					{
 						// TODO instead of emitting a branch to the leave stub, it would be more efficient to put the leave stub here
-						ilGenerator.Emit(OpCodes.Br, block.GetLabel(m.Instructions[i + 1].PC));
+						ilGenerator.Emit(OpCodes.Br, block.GetLabel(i + 1));
 					}
 					break;
 			}
@@ -3486,20 +3484,6 @@ class Compiler
 		{
 			return type;
 		}
-	}
-
-	private int FindPcIndex(int target)
-	{
-		return m.PcIndexMap[target];
-	}
-
-	private int SafeFindPcIndex(int target)
-	{
-		if(target < 0 || target >= m.PcIndexMap.Length)
-		{
-			return -1;
-		}
-		return m.PcIndexMap[target];
 	}
 
 	private LocalVar LoadLocal(int instructionIndex)
