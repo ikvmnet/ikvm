@@ -110,7 +110,7 @@ namespace IKVM.Reflection.Emit.Impl
 				}
 			}
 
-			writer.WriteSymbolFile(Guid.NewGuid());
+			writer.WriteSymbolFile(moduleBuilder.ModuleVersionId);
 		}
 
 		public System.Diagnostics.SymbolStore.ISymbolDocumentWriter DefineDocument(string url, Guid language, Guid languageVendor, Guid documentType)

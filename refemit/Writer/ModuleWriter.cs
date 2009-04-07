@@ -40,7 +40,7 @@ namespace IKVM.Reflection.Emit.Writer
 		{
 			moduleBuilder.FixupMethodBodyTokens();
 
-			moduleBuilder.Tables.Module.Add(0, moduleBuilder.Strings.Add(moduleBuilder.moduleName), moduleBuilder.Guids.Add(Guid.NewGuid()), 0, 0);
+			moduleBuilder.Tables.Module.Add(0, moduleBuilder.Strings.Add(moduleBuilder.moduleName), moduleBuilder.Guids.Add(moduleBuilder.ModuleVersionId), 0, 0);
 
 			if (moduleBuilder.UserStrings.IsEmpty)
 			{
