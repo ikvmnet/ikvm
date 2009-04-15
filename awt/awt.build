@@ -23,6 +23,10 @@
                 <include name="System.Windows.Forms.dll" asis="true" />
                 <include name="System.Drawing.dll" asis="true" />
             </references>
+            <nowarn>
+                <!-- disable warnings about obsolete members (because the peer API has lots of those) -->
+                <warning number="612" />
+            </nowarn>
         </csc>
     </target>
 </project>
