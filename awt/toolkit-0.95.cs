@@ -532,9 +532,15 @@ namespace ikvm.awt
             return new NetDesktopPeer();
         }
 
+        public override java.awt.Dimension getBestCursorSize(int preferredWidth, int preferredHeight)
+        {
+            // TODO
+            return new java.awt.Dimension(preferredWidth, preferredHeight);
+        }
+
         public override java.awt.Cursor createCustomCursor(java.awt.Image cursor, java.awt.Point hotSpot, string name)
         {
-            throw new java.awt.AWTException("Not implemented");
+            return new NetCustomCursor(cursor, hotSpot, name);
         }
 
         /*===============================
@@ -563,6 +569,68 @@ namespace ikvm.awt
         }
 
     }
+
+	class NetCustomCursor : java.awt.Cursor
+	{
+		private Cursor cursor;
+		public Cursor Cursor
+		{
+			get { return cursor; }
+		}
+
+		internal NetCustomCursor(java.awt.Image cursorIm, java.awt.Point hotSpot, String name) // throws IndexOutOfBoundsException
+			: base(name)
+		{
+			java.awt.Toolkit toolkit = java.awt.Toolkit.getDefaultToolkit();
+
+			// Make sure image is fully loaded.
+			java.awt.Component c = new java.awt.Canvas(); // for its imageUpdate method
+			java.awt.MediaTracker tracker = new java.awt.MediaTracker(c);
+			tracker.addImage(cursorIm, 0);
+			try
+			{
+				tracker.waitForAll();
+			}
+			catch (java.lang.InterruptedException)
+			{
+			}
+			int width = cursorIm.getWidth(c);
+			int height = cursorIm.getHeight(c);
+
+			// Fix for bug 4212593 The Toolkit.createCustomCursor does not
+			//                     check absence of the image of cursor
+			// If the image is invalid, the cursor will be hidden (made completely
+			// transparent). In this case, getBestCursorSize() will adjust negative w and h,
+			// but we need to set the hotspot inside the image here.
+			if (tracker.isErrorAny() || width < 0 || height < 0)
+			{
+				hotSpot.x = hotSpot.y = 0;
+			}
+
+			// Scale image to nearest supported size.
+			java.awt.Dimension nativeSize = toolkit.getBestCursorSize(width, height);
+			if (nativeSize.width != width || nativeSize.height != height)
+			{
+				cursorIm = cursorIm.getScaledInstance(nativeSize.width,
+												  nativeSize.height,
+												  java.awt.Image.SCALE_DEFAULT);
+				width = nativeSize.width;
+				height = nativeSize.height;
+			}
+
+			// Verify that the hotspot is within cursor bounds.
+			if (hotSpot.x >= width || hotSpot.y >= height || hotSpot.x < 0 || hotSpot.y < 0)
+			{
+				throw new ArgumentException("invalid hotSpot");
+			}
+
+			NetProducerImage npi = new NetProducerImage(cursorIm.getSource());
+			cursorIm.getSource().startProduction(npi);
+			Bitmap bitmap = npi.getBitmap();
+			IntPtr hIcon = bitmap.GetHicon();
+			cursor = new Cursor(hIcon);
+		}
+	}
 
 	class NetLightweightComponentPeer : NetComponentPeer, java.awt.peer.LightweightPeer
 	{
@@ -597,6 +665,8 @@ namespace ikvm.awt
 		internal readonly java.awt.Component component;
 		internal readonly Control control;
         private bool isMouseClick;
+        private bool isDoubleClick;
+        private bool isPopupMenu;
 
 		public NetComponentPeer(java.awt.Component component, Control control)
 		{
@@ -641,24 +711,27 @@ namespace ikvm.awt
 			setEnabled(component.isEnabled());
 		}
 
-        internal virtual void initEvents()
-        {
-            // TODO we really only should hook these events when they are needed...
-            control.KeyDown += new KeyEventHandler(OnKeyDown);
-            control.KeyUp += new KeyEventHandler(OnKeyUp);
-            control.KeyPress += new KeyPressEventHandler(OnKeyPress);
-            control.MouseMove += new MouseEventHandler(OnMouseMove);
-            control.MouseDown += new MouseEventHandler(OnMouseDown);
-            control.Click += new EventHandler(OnClick);
-            control.MouseUp += new MouseEventHandler(OnMouseUp);
-            control.MouseEnter += new EventHandler(OnMouseEnter);
-            control.MouseLeave += new EventHandler(OnMouseLeave);
-            control.GotFocus += new EventHandler(OnGotFocus);
-            control.LostFocus += new EventHandler(OnLostFocus);
-            control.SizeChanged += new EventHandler(OnBoundsChanged);
-            control.Leave += new EventHandler(OnBoundsChanged);
-            control.Paint += new PaintEventHandler(OnPaint);
-        }
+		internal virtual void initEvents()
+		{
+			// TODO we really only should hook these events when they are needed...
+			control.KeyDown += new KeyEventHandler(OnKeyDown);
+			control.KeyUp += new KeyEventHandler(OnKeyUp);
+			control.KeyPress += new KeyPressEventHandler(OnKeyPress);
+			control.MouseMove += new MouseEventHandler(OnMouseMove);
+			control.MouseDown += new MouseEventHandler(OnMouseDown);
+			control.Click += new EventHandler(OnClick);
+			control.DoubleClick += new EventHandler(OnDoubleClick);
+			control.MouseUp += new MouseEventHandler(OnMouseUp);
+			control.MouseEnter += new EventHandler(OnMouseEnter);
+			control.MouseLeave += new EventHandler(OnMouseLeave);
+			control.GotFocus += new EventHandler(OnGotFocus);
+			control.LostFocus += new EventHandler(OnLostFocus);
+			control.SizeChanged += new EventHandler(OnBoundsChanged);
+			control.Leave += new EventHandler(OnBoundsChanged);
+			control.Paint += new PaintEventHandler(OnPaint);
+			control.ContextMenu = new ContextMenu();
+			control.ContextMenu.Popup += new EventHandler(OnPopupMenu);
+		}
 
         /// <summary>
         /// This method is called from the same thread that call Commponent.addNotify().
@@ -728,8 +801,14 @@ namespace ikvm.awt
 
 		private static int MapKeyCode(Keys key)
 		{
-			switch(key)
+			switch (key)
 			{
+				case Keys.Delete:
+					return java.awt.@event.KeyEvent.VK_DELETE;
+
+				case Keys.Enter:
+					return java.awt.@event.KeyEvent.VK_ENTER;
+
 				default:
 					return (int)key;
 			}
@@ -822,17 +901,19 @@ namespace ikvm.awt
 			}));
 		}
 
-        private void postMouseEvent(MouseEventArgs ev, int id)
+		private void postMouseEvent(MouseEventArgs ev, int id, int clicks)
         {
             long when = java.lang.System.currentTimeMillis();
             int modifiers = GetMouseEventModifiers(ev);
             int button = GetButton(ev);
-            int clickCount = ev.Clicks;
+			int clickCount = clicks;
             int x = ev.X + getInsetsLeft(); //The Inset correctur is needed for Window and extended classes
             int y = ev.Y + getInsetsTop();
+            bool isPopup = isPopupMenu;
 			java.awt.EventQueue.invokeLater(Delegates.toRunnable(delegate {
-				postEvent(new java.awt.@event.MouseEvent(component, id, when, modifiers, x, y, clickCount, false, button));
+				postEvent(new java.awt.@event.MouseEvent(component, id, when, modifiers, x, y, clickCount, isPopup, button));
 			}));
+            isPopupMenu = false;
         }
 
         private void postMouseEvent(EventArgs ev, int id)
@@ -843,20 +924,22 @@ namespace ikvm.awt
             int clickCount = 0;
             int x = Control.MousePosition.X - control.Location.X;
             int y = Control.MousePosition.Y - control.Location.Y;
+            bool isPopup = isPopupMenu;
 			java.awt.EventQueue.invokeLater(Delegates.toRunnable(delegate {
-	            postEvent(new java.awt.@event.MouseEvent(component, id, when, modifiers, x, y, clickCount, false, button));
+	            postEvent(new java.awt.@event.MouseEvent(component, id, when, modifiers, x, y, clickCount, isPopup, button));
 			}));
+            isPopupMenu = false;
         }
 
         protected virtual void OnMouseMove(object sender, MouseEventArgs ev)
 		{
 			if((ev.Button & (MouseButtons.Left | MouseButtons.Right)) != 0)
 			{
-                postMouseEvent(ev, java.awt.@event.MouseEvent.MOUSE_DRAGGED);
+				postMouseEvent(ev, java.awt.@event.MouseEvent.MOUSE_DRAGGED, ev.Clicks);
 			}
 			else
 			{
-                postMouseEvent(ev, java.awt.@event.MouseEvent.MOUSE_MOVED);
+                postMouseEvent(ev, java.awt.@event.MouseEvent.MOUSE_MOVED, ev.Clicks);
 			}
 		}
 
@@ -880,10 +963,12 @@ namespace ikvm.awt
 			}
 		}
 
-        private void OnMouseDown(object sender, MouseEventArgs ev)
+		private void OnMouseDown(object sender, MouseEventArgs ev)
 		{
-            isMouseClick = false;
-            postMouseEvent(ev, java.awt.@event.MouseEvent.MOUSE_PRESSED);
+			isMouseClick = false;
+			isDoubleClick = false;
+			isPopupMenu = false;
+			postMouseEvent(ev, java.awt.@event.MouseEvent.MOUSE_PRESSED, ev.Clicks);
 		}
 
         private void OnClick(object sender, EventArgs ev)
@@ -891,26 +976,36 @@ namespace ikvm.awt
             isMouseClick = true;
         }
 
-        private void OnMouseUp(object sender, MouseEventArgs ev)
+		private void OnDoubleClick(object sender, EventArgs ev)
+        {
+            isDoubleClick = true;
+        }
+
+		private void OnMouseUp(object sender, MouseEventArgs ev)
 		{
-            postMouseEvent(ev, java.awt.@event.MouseEvent.MOUSE_RELEASED);
-            if (isMouseClick)
+			postMouseEvent(ev, java.awt.@event.MouseEvent.MOUSE_RELEASED, ev.Clicks);
+			if (isMouseClick)
 			{
-                //We make our own mouse click event because the event order is different in .NET
-                //in .NET the click occured before MouseUp
-                postMouseEvent(ev, java.awt.@event.MouseEvent.MOUSE_CLICKED);
-            }
-            isMouseClick = false;
+				//We make our own mouse click event because the event order is different in .NET
+				//in .NET the click occured before MouseUp
+				int clicks = ev.Clicks;
+				if (isDoubleClick)
+				{
+					clicks = 2;
+				}
+				postMouseEvent(ev, java.awt.@event.MouseEvent.MOUSE_CLICKED, clicks);
+			}
+			isMouseClick = false;
 		}
 
 		private void OnMouseEnter(object sender, EventArgs ev)
 		{
-            postMouseEvent(ev, java.awt.@event.MouseEvent.MOUSE_ENTERED);
-        }
+			postMouseEvent(ev, java.awt.@event.MouseEvent.MOUSE_ENTERED);
+		}
 
 		private void OnMouseLeave(object sender, EventArgs ev)
 		{
-            postMouseEvent(ev, java.awt.@event.MouseEvent.MOUSE_EXITED);
+			postMouseEvent(ev, java.awt.@event.MouseEvent.MOUSE_EXITED);
 		}
 
 		private void OnGotFocus(object sender, EventArgs e)
@@ -963,9 +1058,15 @@ namespace ikvm.awt
                 //If it a result of a API change then component can be synchronized in another thread.
                 new SetVoid(componentSetBounds).BeginInvoke(null, null);
             }
-            //Will allready send in component.setBounds
-            //postEvent(new java.awt.@event.ComponentEvent(component, java.awt.@event.ComponentEvent.COMPONENT_RESIZED));
+			java.awt.EventQueue.invokeLater(Delegates.toRunnable(delegate {
+				postEvent(new java.awt.@event.ComponentEvent(component, java.awt.@event.ComponentEvent.COMPONENT_RESIZED));
+			}));
 		}
+
+        private void OnPopupMenu(object sender, EventArgs ev)
+        {
+            isPopupMenu = true;
+        }
 
 		protected void postEvent(java.awt.AWTEvent evt)
 		{
@@ -979,7 +1080,9 @@ namespace ikvm.awt
 
 		public java.awt.Image createImage(java.awt.image.ImageProducer prod)
 		{
-			throw new NotImplementedException();
+            NetProducerImage npi = new NetProducerImage(prod);
+            prod.startProduction(npi);
+            return new BufferedImage(npi.getBitmap());
 		}
 
 		public java.awt.Image createImage(int width, int height)
@@ -1175,6 +1278,12 @@ namespace ikvm.awt
 
 		private void setCursorImpl(java.awt.Cursor cursor)
 		{
+			if (cursor is NetCustomCursor)
+			{
+				NetCustomCursor ncc = (NetCustomCursor)cursor;
+				control.Cursor = ncc.Cursor;
+				return;
+			}
 			switch(cursor.getType())
 			{
 				case java.awt.Cursor.WAIT_CURSOR:
@@ -1889,6 +1998,7 @@ namespace ikvm.awt
 		{
 			setTitle(frame.getTitle());
 			setResizable(frame.isResizable());
+            setIconImage(frame.getIconImage());
         }
 
         internal override void init()
@@ -1926,7 +2036,11 @@ namespace ikvm.awt
 
 		public void setIconImage(java.awt.Image image)
 		{
-			Console.WriteLine("NOTE: setIconImage not implemented");
+			if (image is BufferedImage)
+			{
+				Bitmap bitmap = ((BufferedImage)image).getBitmap();
+				((Form)control).Icon = Icon.FromHandle(bitmap.GetHicon());
+			}
 		}
 
 		public void setMenuBar(java.awt.MenuBar mb)
@@ -1997,6 +2111,7 @@ namespace ikvm.awt
 		{
             form.MaximizeBox = false;
             form.MinimizeBox = false;
+            control.Text = target.getTitle();
 		}
 
 		private void setTitleImpl(string title)

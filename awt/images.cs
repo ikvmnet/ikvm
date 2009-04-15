@@ -88,24 +88,29 @@ namespace ikvm.awt
             mHintFlags = hintflags;
         }
 
-        public void setPixels(int x, int y, int w, int h, ColorModel model, byte[] pixels, int off, int scansize)
-        {
-            Console.WriteLine("NetProducerImage: setPixels");
-        }
+		public void setPixels(int x, int y, int w, int h, ColorModel model, byte[] pixels, int off, int scansize)
+		{
+			int[] pixeli = new int[pixels.Length];
+			for (int i = 0; i < pixels.Length; i++)
+			{
+				pixeli[i] = model.getRGB(pixels[i] & 0xff);
+			}
+			setPixels(x, y, w, h, model, pixeli, off, scansize);
+		}
 
         /// <summary>
         /// Create a bitmap from the pixel array. The bitmap will be used
         /// by drawImage.
         /// </summary>
-        void java.awt.image.ImageConsumer.setPixels(int x, int y, int w, int h, ColorModel model, int[] pixels, int off, int scansize)
-        {
+		public void setPixels(int x, int y, int w, int h, ColorModel model, int[] pixels, int off, int scansize)
+		{
 			lock (mBitmap)
 			{
 				BitmapData data = mBitmap.LockBits(new Rectangle(x, y, w, h), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
 				System.Runtime.InteropServices.Marshal.Copy(pixels, off, data.Scan0, w * h);
 				mBitmap.UnlockBits(data);
 			}
-        }
+		}
 
         public Bitmap getBitmap()
         {

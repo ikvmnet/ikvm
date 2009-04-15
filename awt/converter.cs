@@ -94,21 +94,35 @@ namespace ikvm.awt
         /// <param name="y">upper left y coordinate</param>
         /// <param name="w">width</param>
         /// <param name="h">height</param>
-        /// <param name="radius">radius of arc</param>
+        /// <param name="arcWidth">the horizontal diameter of the arc at the four corners</param>
+        /// <param name="arcHeight">the vertical diameter of the arc at the four corners</param>
         /// <returns></returns>
-        internal static GraphicsPath ConvertRoundRect(int x, int y, int w, int h, int radius)
+		internal static GraphicsPath ConvertRoundRect(int x, int y, int w, int h, int arcWidth, int arcHeight)
         {
             GraphicsPath gp = new GraphicsPath();
-
-            gp.AddLine(x + radius, y, x + w - (radius * 2), y);
-            gp.AddArc(x + w - (radius * 2), y, radius * 2, radius * 2, 270, 90);
-            gp.AddLine(x + w, y + radius, x + w, y + h - (radius * 2));
-            gp.AddArc(x + w - (radius * 2), y + h - (radius * 2), radius * 2, radius * 2, 0, 90);
-            gp.AddLine(x + w - (radius * 2), y + h, x + radius, y + h);
-            gp.AddArc(x, y + h - (radius * 2), radius * 2, radius * 2, 90, 90);
-            gp.AddLine(x, y + h - (radius * 2), x, y + radius);
-            gp.AddArc(x, y, radius * 2, radius * 2, 180, 90);
-
+            bool drawArc = arcWidth > 0 && arcHeight > 0;
+            int a = arcWidth / 2;
+            int b = arcHeight / 2;
+			gp.AddLine(x + a, y, x + w - a, y);
+            if (drawArc)
+            {
+                gp.AddArc(x + w - arcWidth, y, arcWidth, arcHeight, 270, 90); //upper right arc
+            }
+            gp.AddLine(x + w, y + b, x + w, y + h - b);
+            if (drawArc)
+            {
+                gp.AddArc(x + w - arcWidth, y + h - arcHeight, arcWidth, arcHeight, 0, 90); //lower right arc
+            }
+            gp.AddLine(x + w - a, y + h, x + a, y + h);
+            if (drawArc)
+            {
+                gp.AddArc(x, y + h - arcHeight, arcWidth, arcHeight, 90, 90);//lower left arc
+            }
+            gp.AddLine(x, y + h - b, x, y + b);
+            if (drawArc)
+            {
+                gp.AddArc(x, y, arcWidth, arcHeight, 180, 90); //upper left arc
+            }
             gp.CloseFigure();
 
             return gp;
@@ -170,6 +184,51 @@ namespace ikvm.awt
             return new SolidBrush(Color.FromArgb(color.getRGB()));
         }
 
+        internal static LineJoin ConvertLineJoin(int join)
+        {
+            switch (join)
+            {
+                case java.awt.BasicStroke.JOIN_MITER:
+                    return LineJoin.Miter;
+                case java.awt.BasicStroke.JOIN_ROUND:
+                    return LineJoin.Round;
+                case java.awt.BasicStroke.JOIN_BEVEL:
+                    return LineJoin.Bevel;
+                default:
+                    throw new ArgumentException("Invalid LineJoin argument.");
+            }
+        }
+
+        internal static LineCap ConvertLineCap(int cap)
+        {
+            switch (cap)
+            {
+                case java.awt.BasicStroke.CAP_BUTT:
+                    return LineCap.Flat;
+                case java.awt.BasicStroke.CAP_ROUND:
+                    return LineCap.Round;
+                case java.awt.BasicStroke.CAP_SQUARE:
+                    return LineCap.Square;
+                default:
+                    throw new ArgumentException("Invalid LineCap argument.");
+            }
+        }
+
+        internal static float[] ConvertDashArray(float[] dashArray, float lineWidth)
+        {
+            if (dashArray == null)
+            {
+                return null;
+            }
+            float[] dash = (float[])dashArray.Clone();
+            for (int i = 0; i < dash.Length; i++)
+            {
+                //dividing by line thickness because of the representation difference
+                dash[i] = dash[i] / lineWidth;
+            }
+            return dash;
+        }
+
         internal static Matrix ConvertTransform(java.awt.geom.AffineTransform tx)
         {
             return new Matrix(
@@ -183,30 +242,30 @@ namespace ikvm.awt
 
         internal static FontFamily CreateFontFamily(String name)
         {
-            switch (name)
-            {
-                case "Monospaced":
-                case "Courier":
-                case "courier":
-                    return FontFamily.GenericMonospace;
-                case "Serif":
-                    return FontFamily.GenericSerif;
-                case "SansSerif":
-                case "Dialog":
-                case "DialogInput":
-                case null:
-                case "Default":
-                    return FontFamily.GenericSansSerif;
-                default:
-                    try
-                    {
-                        return new FontFamily(name);
-                    }
-                    catch (ArgumentException)
-                    {
-                        return FontFamily.GenericSansSerif;
-                    }
-            }
+            String name2 = name == null ? null : name.ToLower();
+			switch (name2)
+			{
+				case "monospaced":
+				case "courier":
+					return FontFamily.GenericMonospace;
+				case "serif":
+					return FontFamily.GenericSerif;
+				case "sansserif":
+				case "dialog":
+				case "dialoginput":
+				case null:
+				case "default":
+					return FontFamily.GenericSansSerif;
+				default:
+					try
+					{
+						return new FontFamily(name);
+					}
+					catch (ArgumentException)
+					{
+						return FontFamily.GenericSansSerif;
+					}
+			}
         }
 
 		private static FontStyle ConvertFontStyle(int style)

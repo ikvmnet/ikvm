@@ -115,40 +115,54 @@ namespace ikvm.awt
             return Math.Max(0.0f, leading);
         }
 
-        internal java.awt.geom.Rectangle2D GetStringBounds(String aString)
+        internal java.awt.geom.Rectangle2D GetStringBounds(String aString, System.Drawing.Graphics g)
         {
-            using (Graphics g = NetToolkit.bogusForm.CreateGraphics())
+            // TODO (KR) Could replace with System.Windows.Forms.TextRenderer#MeasureText (to skip creating Graphics)
+            //
+            // From .NET Framework Class Library documentation for Graphics#MeasureString:
+            //
+            //    To obtain metrics suitable for adjacent strings in layout (for
+            //    example, when implementing formatted text), use the
+            //    MeasureCharacterRanges method or one of the MeasureString
+            //    methods that takes a StringFormat, and pass GenericTypographic.
+            //    Also, ensure the TextRenderingHint for the Graphics is
+            //    AntiAlias.
+            //
+            // TODO (KR) Consider implementing with one of the Graphics#MeasureString methods that takes a StringFormat.
+            // TODO (KR) Consider implementing with Graphics#MeasureCharacterRanges().
+            if (aString.Length == 0)
             {
-                // TODO (KR) Could replace with System.Windows.Forms.TextRenderer#MeasureText (to skip creating Graphics)
-                //
-                // From .NET Framework Class Library documentation for Graphics#MeasureString:
-                //
-                //    To obtain metrics suitable for adjacent strings in layout (for
-                //    example, when implementing formatted text), use the
-                //    MeasureCharacterRanges method or one of the MeasureString
-                //    methods that takes a StringFormat, and pass GenericTypographic.
-                //    Also, ensure the TextRenderingHint for the Graphics is
-                //    AntiAlias.
-                //
-                // TODO (KR) Consider implementing with one of the Graphics#MeasureString methods that takes a StringFormat.
-                // TODO (KR) Consider implementing with Graphics#MeasureCharacterRanges().
-				if (aString.Length == 0)
-				{
-					SizeF size = g.MeasureString(aString, GetNetFont(), Int32.MaxValue, StringFormat.GenericTypographic);
-					return new java.awt.geom.Rectangle2D.Float(0, 0, size.Width, size.Height);
-				}
-				else
-				{
-					StringFormat format = new StringFormat(StringFormatFlags.MeasureTrailingSpaces | StringFormatFlags.NoWrap);
-					format.Trimming = StringTrimming.None;
-					format.SetMeasurableCharacterRanges(new CharacterRange[] { new CharacterRange(0, aString.Length) });
-					Region[] regions = g.MeasureCharacterRanges(aString, GetNetFont(), new RectangleF(0, 0, int.MaxValue, int.MaxValue), format);
-					SizeF size = regions[0].GetBounds(g).Size;
-					regions[0].Dispose();
-					return new java.awt.geom.Rectangle2D.Float(0, 0, size.Width, size.Height);
-				}
+                SizeF size = g.MeasureString(aString, GetNetFont(), Int32.MaxValue, StringFormat.GenericTypographic);
+                return new java.awt.geom.Rectangle2D.Float(0, 0, size.Width, size.Height);
+            }
+            else
+            {
+                StringFormat format = new StringFormat(StringFormatFlags.MeasureTrailingSpaces | StringFormatFlags.NoWrap);
+                format.Trimming = StringTrimming.None;
+                format.SetMeasurableCharacterRanges(new CharacterRange[] { new CharacterRange(0, aString.Length) });
+                Region[] regions = g.MeasureCharacterRanges(aString, GetNetFont(), new RectangleF(0, 0, int.MaxValue, int.MaxValue), format);
+                SizeF size = regions[0].GetBounds(g).Size;
+                regions[0].Dispose();
+                return new java.awt.geom.Rectangle2D.Float(0, -getAscent(), size.Width, size.Height);
             }
         }
+
+        public override java.awt.geom.Rectangle2D getStringBounds(String aString, java.awt.Graphics gr)
+        {
+            if (gr is NetGraphics)
+            {
+                return GetStringBounds(aString, ((NetGraphics)gr).JGraphics);
+            }
+            return GetStringBounds(aString);
+        }
+
+		internal java.awt.geom.Rectangle2D GetStringBounds(String aString)
+		{
+			using (System.Drawing.Graphics g = NetToolkit.bogusForm.CreateGraphics())
+			{
+				return GetStringBounds(aString, g);
+			}
+		}
     }
 
     class NetFontPeer : gnu.java.awt.peer.ClasspathFontPeer, IDisposable

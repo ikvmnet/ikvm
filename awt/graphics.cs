@@ -84,6 +84,7 @@ namespace ikvm.awt
     internal abstract class NetGraphics : java.awt.Graphics2D
     {
         protected Graphics g;
+        internal Graphics JGraphics { get { return g; } }
         private java.awt.Color javaColor;
         private java.awt.Paint javaPaint;
         private Color color;
@@ -162,7 +163,7 @@ namespace ikvm.awt
 
         public override void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle)
         {
-            g.DrawArc(pen, x, y, width, height, startAngle, arcAngle);
+			g.DrawArc(pen, x, y, width, height, 360 - startAngle - arcAngle, arcAngle);
         }
 
         public override void drawBytes(byte[] data, int offset, int length, int x, int y)
@@ -340,9 +341,9 @@ namespace ikvm.awt
         /// Apparently there is no rounded rec function in .Net. Draw the
         /// rounded rectangle by using lines and arcs.
         /// </summary>
-        public override void drawRoundRect(int x, int y, int w, int h, int radius, int param6)
+		public override void drawRoundRect(int x, int y, int w, int h, int arcWidth, int arcHeight)
         {
-            using (GraphicsPath gp = J2C.ConvertRoundRect(x, y, w, h, radius))
+    	    using (GraphicsPath gp = J2C.ConvertRoundRect(x, y, w, h, arcWidth, arcHeight))
                 g.DrawPath(pen, gp);
         }
 
@@ -358,8 +359,8 @@ namespace ikvm.awt
             tl.draw(this, (float) x, (float) y);        
         }
 
-        public override void drawString(string str, int x, int y)
-        {
+		public override void drawString(string str, int x, int y)
+		{
 			drawString(str, (float)x, (float)y);
 		}
 
@@ -387,7 +388,7 @@ namespace ikvm.awt
 
         public override void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle)
         {
-            g.FillPie(brush, x, y, width, height, startAngle, arcAngle);
+			g.FillPie(brush, x, y, width, height, 360 - startAngle - arcAngle, arcAngle);
         }
 
         public override void fillOval(int x, int y, int w, int h)
@@ -416,12 +417,12 @@ namespace ikvm.awt
             g.FillRectangle(brush, x, y, width, height);
         }
 
-        public override void fillRoundRect(int x, int y, int w, int h, int radius, int param6)
-        {
-            GraphicsPath gp = J2C.ConvertRoundRect(x, y, w, h, radius);
-            g.FillPath(brush, gp);
-            gp.Dispose();
-        }
+		public override void fillRoundRect(int x, int y, int w, int h, int arcWidth, int arcHeight)
+		{
+			GraphicsPath gp = J2C.ConvertRoundRect(x, y, w, h, arcWidth, arcHeight);
+			g.FillPath(brush, gp);
+			gp.Dispose();
+		}
 
         public override java.awt.Shape getClip()
         {
@@ -616,11 +617,9 @@ namespace ikvm.awt
             throw new NotImplementedException();
         }
 
-        public override void drawString(string text, float x, float y)
-        {
-			float descent = netfont.FontFamily.GetCellDescent(netfont.Style);
-			float descentPixel = netfont.Size / netfont.FontFamily.GetEmHeight(netfont.Style) * descent;
-			g.DrawString(text, netfont, brush, new PointF(x, y - netfont.GetHeight(g) + descentPixel));
+		public override void drawString(string text, float x, float y)
+		{
+			g.DrawString(text, netfont, brush, x, y - font.getSize(), StringFormat.GenericTypographic);
 		}
 
         public override void drawString(java.text.AttributedCharacterIterator iterator, float x, float y)
@@ -741,14 +740,60 @@ namespace ikvm.awt
             throw new NotImplementedException("setPaint("+paint.GetType().FullName+")");
         }
 
-        public override void setStroke(java.awt.Stroke stroke)
+		public override void setStroke(java.awt.Stroke stroke)
+		{
+			if (this.stroke != null && this.stroke.Equals(stroke))
+			{
+				return;
+			}
+			this.stroke = stroke;
+			if (stroke is java.awt.BasicStroke)
+			{
+				java.awt.BasicStroke s = (java.awt.BasicStroke)stroke;
+
+				pen = new Pen(pen.Brush, s.getLineWidth());
+
+				setLineJoin(s);
+
+				setLineCap(s);
+
+				setLineDash(s);
+			}
+		}
+
+        private void setLineJoin(java.awt.BasicStroke s)
         {
-            if (defaultStroke.equals(stroke))
+            pen.MiterLimit = s.getMiterLimit();
+			try
+			{
+				pen.LineJoin = J2C.ConvertLineJoin(s.getLineJoin());
+			}
+			catch (ArgumentException aex)
+			{
+				Console.WriteLine(aex.StackTrace);
+			}
+        }
+
+        private void setLineCap(java.awt.BasicStroke s)
+        {
+            try
             {
-                stroke = null;
-                return;
+                LineCap plc = J2C.ConvertLineCap(s.getEndCap());
+                pen.SetLineCap(plc, plc, pen.DashCap);
             }
-            this.stroke = stroke;
+            catch (ArgumentException aex)
+            {
+                Console.WriteLine(aex.StackTrace);
+            }
+        }
+
+        private void setLineDash(java.awt.BasicStroke s)
+        {
+            float[] dash = J2C.ConvertDashArray(s.getDashArray(), s.getLineWidth());
+            if (dash != null)
+            {
+                pen.DashPattern = dash;
+            }
         }
 
         public override void setRenderingHint(java.awt.RenderingHints.Key hintKey, Object hintValue)
@@ -1121,11 +1166,10 @@ namespace ikvm.awt
         // Create a bitmap with the dimensions of the argument image. Then
         // create a graphics objects from the bitmap. All paint operations will
         // then paint the bitmap.
-        public override java.awt.Graphics2D createGraphics(BufferedImage bi)
-        {
-            Bitmap bitmap = new Bitmap(bi.getWidth(), bi.getHeight());
-            return new BitmapGraphics(bitmap);
-        }
+		public override java.awt.Graphics2D createGraphics(BufferedImage bi)
+		{
+			return new BitmapGraphics(bi.getBitmap());
+		}
 
         public override java.awt.Font[] getAllFonts()
         {
