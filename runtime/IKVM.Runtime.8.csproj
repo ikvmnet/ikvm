@@ -121,6 +121,7 @@
     <Compile Include="JavaException.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="JsrInliner.cs" />
     <Compile Include="MemberWrapper.cs">
       <SubType>Code</SubType>
     </Compile>

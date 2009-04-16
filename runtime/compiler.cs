@@ -288,6 +288,10 @@ class Compiler
 		Profiler.Enter("MethodAnalyzer");
 		try
 		{
+			if(m.HasJsr)
+			{
+				JsrInliner.InlineJsrs(classLoader, mw, classFile, m);
+			}
 			ma = new MethodAnalyzer(clazz, mw, classFile, m, classLoader);
 		}
 		finally

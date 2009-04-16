@@ -2458,6 +2458,10 @@ namespace IKVM.Internal
 				{
 					return code.instructions;
 				}
+				set
+				{
+					code.instructions = value;
+				}
 			}
 
 			internal ExceptionTableEntry[] ExceptionTable
@@ -2465,6 +2469,10 @@ namespace IKVM.Internal
 				get
 				{
 					return code.exception_table;
+				}
+				set
+				{
+					code.exception_table = value;
 				}
 			}
 
@@ -2484,8 +2492,17 @@ namespace IKVM.Internal
 				}
 			}
 
+			internal bool HasJsr
+			{
+				get
+				{
+					return code.hasJsr;
+				}
+			}
+
 			private struct Code
 			{
+				internal bool hasJsr;
 				internal string verifyError;
 				internal ushort max_stack;
 				internal ushort max_locals;
@@ -2512,7 +2529,9 @@ namespace IKVM.Internal
 						BigEndianBinaryReader rdr = br.Section(code_length);
 						while(!rdr.IsAtEnd)
 						{
-							instructions[instructionIndex++].Read((ushort)(rdr.Position - basePosition), rdr);
+							instructions[instructionIndex].Read((ushort)(rdr.Position - basePosition), rdr);
+							hasJsr |= instructions[instructionIndex].NormalizedOpCode == NormalizedByteCode.__jsr;
+							instructionIndex++;
 						}
 						// we add an additional nop instruction to make it easier for consumers of the code array
 						instructions[instructionIndex++].SetTermNop((ushort)(rdr.Position - basePosition));
@@ -2561,7 +2580,7 @@ namespace IKVM.Internal
 								break;
 							case NormalizedByteCode.__tableswitch:
 							case NormalizedByteCode.__lookupswitch:
-								this.instructions[i].SetSwitchTargets(pcIndexMap);
+								this.instructions[i].MapSwitchTargets(pcIndexMap);
 								break;
 						}
 					}
@@ -2780,6 +2799,11 @@ namespace IKVM.Internal
 					this.arg1 = arg1;
 				}
 
+				internal void SetPC(int pc)
+				{
+					this.pc = (ushort)pc;
+				}
+
 				internal void SetTargetIndex(int targetIndex)
 				{
 					this.arg1 = targetIndex;
@@ -2792,7 +2816,7 @@ namespace IKVM.Internal
 					this.normopcode = NormalizedByteCode.__nop;
 				}
 
-				internal void SetSwitchTargets(int[] pcIndexMap)
+				internal void MapSwitchTargets(int[] pcIndexMap)
 				{
 					arg1 = pcIndexMap[arg1 + pc];
 					for (int i = 0; i < switch_entries.Length; i++)
@@ -2943,6 +2967,10 @@ namespace IKVM.Internal
 					{
 						return arg1;
 					}
+					set
+					{
+						arg1 = value;
+					}
 				}
 
 				internal int Arg2
@@ -2967,6 +2995,10 @@ namespace IKVM.Internal
 					{
 						return arg1;
 					}
+					set
+					{
+						arg1 = value;
+					}
 				}
 
 				internal int SwitchEntryCount
@@ -2985,6 +3017,16 @@ namespace IKVM.Internal
 				internal int GetSwitchTargetIndex(int i)
 				{
 					return switch_entries[i].target;
+				}
+
+				internal void SetSwitchTargets(int[] targets)
+				{
+					SwitchEntry[] newEntries = (SwitchEntry[])switch_entries.Clone();
+					for (int i = 0; i < newEntries.Length; i++)
+					{
+						newEntries[i].target = targets[i];
+					}
+					switch_entries = newEntries;
 				}
 			}
 
