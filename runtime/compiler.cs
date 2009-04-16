@@ -606,6 +606,17 @@ class Compiler
 		//		{
 		//			Console.WriteLine("{0} to {1} handler {2}", e.start_pc, e.end_pc, e.handler_pc);
 		//		}
+		// remove unreachable exception handlers (because the code gen depends on that)
+		for (int i = 0; i < ar.Count; i++)
+		{
+			// if the first instruction is unreachable, the entire block is unreachable,
+			// because you can't jump into a block (we've just split the blocks to ensure that)
+			if (!m.Instructions[ar[i].startIndex].IsReachable)
+			{
+				ar.RemoveAt(i);
+				i--;
+			}
+		}
 
 		exceptions = ar.ToArray();
 		for(int i = 0; i < exceptions.Length; i++)
