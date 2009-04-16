@@ -3,7 +3,7 @@
     <property name="pathsep" value=":" />
     <property overwrite="false" name="signoption" value="" />
     <property name="Classpath.dir" value="${project::get-base-directory()}/../../classpath-0.95" />
-    <property name="OpenJDK.dir" value="${project::get-base-directory()}/../../openjdk6-b12" />
+    <property name="OpenJDK.dir" value="${project::get-base-directory()}/../../openjdk6-b16" />
     <if test="${platform::is-win32()}">
         <property name="pathsep" value=";" />
     </if>
@@ -27,8 +27,8 @@
                 <include name="jdk/src/share/classes/**.class"/>
                 <include name="jdk/src/solaris/classes/**.class"/>
                 <include name="jdk/src/windows/classes/**.class"/>
-                <include name="control/build/linux-amd64/gensrc/**.class"/>
-                <include name="control/build/linux-amd64/impsrc/**.class"/>
+                <include name="build/linux-amd64/gensrc/**.class"/>
+                <include name="build/linux-amd64/impsrc/**.class"/>
             </fileset>
         </delete>
         <delete>
