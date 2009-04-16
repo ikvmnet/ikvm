@@ -433,50 +433,8 @@ class Compiler
 					}
 				}
 			}
-		// __jsr inside a try block (to a PC outside the try block) causes the try
-		// block to be broken into two blocks surrounding the __jsr
-		// This is actually pretty common. Take, for example, the following code:
-		//	class hello
-		//	{
-		//		public static void main(String[] args)
-		//		{
-		//			try
-		//			{
-		//				for(;;)
-		//				{
-		//					if(args.length == 0) return;
-		//				}
-		//			}
-		//			finally
-		//			{
-		//				System.out.println("Hello, world!");
-		//			}
-		//		}
-		//	}
-		restart_jsr:
-			for(int i = 0; i < ar.Count; i++)
-			{
-				ExceptionTableEntry ei = ar[i];
-				for(int j = ei.startIndex, e = ei.endIndex; j < e; j++)
-				{
-					if(m.Instructions[j].NormalizedOpCode == NormalizedByteCode.__jsr)
-					{
-						int targetIndex = m.Instructions[j].TargetIndex;
-						if(targetIndex < ei.startIndex || targetIndex >= ei.endIndex)
-						{
-							ExceptionTableEntry en = new ExceptionTableEntry();
-							en.catch_type = ei.catch_type;
-							en.handlerIndex = ei.handlerIndex;
-							en.startIndex = j + 1;
-							en.endIndex = ei.endIndex;
-							ei.endIndex = j;
-							ar.Insert(i + 1, en);
-							goto restart_jsr;
-						}
-					}
-				}
-			}
 		// Split try blocks at branch targets (branches from outside the try block)
+	restart_split:
 		for(int i = 0; i < ar.Count; i++)
 		{
 			ExceptionTableEntry ei = ar[i];
@@ -503,7 +461,7 @@ class Compiler
 									en.endIndex = ei.endIndex;
 									ei.endIndex = targetIndex;
 									ar.Insert(i + 1, en);
-									goto restart_jsr;
+									goto restart_split;
 								}
 							}
 							break;
@@ -524,7 +482,6 @@ class Compiler
 						case NormalizedByteCode.__ifnull:
 						case NormalizedByteCode.__ifnonnull:
 						case NormalizedByteCode.__goto:
-						case NormalizedByteCode.__jsr:
 						{
 							int targetIndex = m.Instructions[j].Arg1;
 							if(ei.startIndex < targetIndex && targetIndex < ei.endIndex)
@@ -536,7 +493,7 @@ class Compiler
 								en.endIndex = ei.endIndex;
 								ei.endIndex = targetIndex;
 								ar.Insert(i + 1, en);
-								goto restart_jsr;
+								goto restart_split;
 							}
 							break;
 						}
@@ -560,7 +517,7 @@ class Compiler
 					en.endIndex = ei.endIndex;
 					ei.endIndex = ej.handlerIndex;
 					ar.Insert(i + 1, en);
-					goto restart_jsr;
+					goto restart_split;
 				}
 			}
 		}
@@ -601,17 +558,13 @@ class Compiler
 			}
 		next:;
 		}
-		//		Console.WriteLine("after processing:");
-		//		foreach(ExceptionTableEntry e in ar)
-		//		{
-		//			Console.WriteLine("{0} to {1} handler {2}", e.start_pc, e.end_pc, e.handler_pc);
-		//		}
+
 		// remove unreachable exception handlers (because the code gen depends on that)
-		for (int i = 0; i < ar.Count; i++)
+		for(int i = 0; i < ar.Count; i++)
 		{
 			// if the first instruction is unreachable, the entire block is unreachable,
 			// because you can't jump into a block (we've just split the blocks to ensure that)
-			if (!m.Instructions[ar[i].startIndex].IsReachable)
+			if(!m.Instructions[ar[i].startIndex].IsReachable)
 			{
 				ar.RemoveAt(i);
 				i--;
@@ -644,18 +597,6 @@ class Compiler
 					exceptions[i].ordinal < exceptions[j].ordinal)
 				{
 					throw new InvalidOperationException("Non recursive try blocks is broken");
-				}
-			}
-			// make sure __jsr doesn't jump out of try block
-			for(int j = exceptions[i].startIndex, e = exceptions[i].endIndex; j < e; j++)
-			{
-				if(m.Instructions[j].NormalizedOpCode == NormalizedByteCode.__jsr)
-				{
-					int targetIndex = m.Instructions[j].TargetIndex;
-					if(targetIndex < exceptions[i].startIndex || targetIndex >= exceptions[i].endIndex)
-					{
-						throw new InvalidOperationException("Try block splitting around __jsr is broken");
-					}
 				}
 			}
 		}
@@ -2126,12 +2067,7 @@ class Compiler
 				case NormalizedByteCode.__astore:
 				{
 					TypeWrapper type = ma.GetRawStackTypeWrapper(i, 0);
-					// NOTE we use "int" to track the return address of a jsr
-					if(VerifierTypeWrapper.IsRet(type))
-					{
-						StoreLocal(i);
-					}
-					else if(VerifierTypeWrapper.IsNew(type))
+					if(VerifierTypeWrapper.IsNew(type))
 					{
 						// new objects aren't really on the stack, so we can't copy them into the local
 						// (and the local doesn't exist anyway)
@@ -2968,49 +2904,6 @@ class Compiler
 				case NormalizedByteCode.__f2d:
 					ilGenerator.Emit(OpCodes.Conv_R8);
 					break;
-				case NormalizedByteCode.__jsr:
-				{
-					int index = instr.TargetIndex;
-					int[] callsites = ma.GetCallSites(index);
-					for(int j = 0; j < callsites.Length; j++)
-					{
-						if(callsites[j] == i)
-						{
-							ilGenerator.LazyEmitLdc_I4(j);
-							break;
-						}
-					}
-					ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.TargetIndex));
-					break;
-				}
-				case NormalizedByteCode.__ret:
-				{
-					// NOTE using a OpCodes.Switch here is not efficient, because 99 out of a 100 cases
-					// there are either one or two call sites.
-					int subid = ((VerifierTypeWrapper)ma.GetLocalTypeWrapper(i, instr.Arg1)).Index;
-					int[] callsites = ma.GetCallSites(subid);
-					for(int j = 0; j < callsites.Length - 1; j++)
-					{
-						if(m.Instructions[callsites[j]].IsReachable)
-						{
-							LoadLocal(i);
-							ilGenerator.LazyEmitLdc_I4(j);
-							ilGenerator.Emit(OpCodes.Beq, block.GetLabel(callsites[j] + 1));
-						}
-					}
-					if(m.Instructions[callsites[callsites.Length - 1]].IsReachable)
-					{
-						ilGenerator.Emit(OpCodes.Br, block.GetLabel(callsites[callsites.Length - 1] + 1));
-					}
-					else
-					{
-						// this code location is unreachable, but the verifier doesn't know that, so we emit a branch to keep it happy
-						// (it would be a little nicer to rewrite the above for loop to dynamically find the last reachable callsite,
-						// but since this only happens with unreachable code, it's not a big deal).
-						ilGenerator.Emit(OpCodes.Br_S, (sbyte)-2);
-					}
-					break;
-				}
 				case NormalizedByteCode.__nop:
 					ilGenerator.Emit(OpCodes.Nop);
 					break;
@@ -3069,7 +2962,6 @@ class Compiler
 				case NormalizedByteCode.__tableswitch:
 				case NormalizedByteCode.__lookupswitch:
 				case NormalizedByteCode.__goto:
-				case NormalizedByteCode.__jsr:
 				case NormalizedByteCode.__ret:
 				case NormalizedByteCode.__ireturn:
 				case NormalizedByteCode.__lreturn:

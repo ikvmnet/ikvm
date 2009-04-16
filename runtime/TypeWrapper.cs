@@ -2722,11 +2722,6 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				// NOTE as a convenience to the compiler, we replace return address types with typeof(int)
-				if(VerifierTypeWrapper.IsRet(this))
-				{
-					return typeof(int);
-				}
 				if(IsUnloadable || IsGhost)
 				{
 					return typeof(object);
