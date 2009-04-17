@@ -7580,3 +7580,36 @@ namespace IKVM.NativeCode.java.awt.@event
 		public static void initIDs() { }
 	}
 }
+
+namespace IKVM.NativeCode.java.awt.image
+{
+	static class ColorModel
+	{
+		public static void initIDs() { }
+	}
+
+	static class ComponentSampleModel
+	{
+		public static void initIDs() { }
+	}
+
+	static class Kernel
+	{
+		public static void initIDs() { }
+	}
+
+	static class Raster
+	{
+		public static void initIDs() { }
+	}
+
+	static class SinglePixelPackedSampleModel
+	{
+		public static void initIDs() { }
+	}
+
+	static class SampleModel
+	{
+		public static void initIDs() { }
+	}
+}

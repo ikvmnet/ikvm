@@ -206,6 +206,10 @@ namespace ikvm.awt
         {
             throw new NotImplementedException();
         }
+
+		public override void flush()
+		{
+		}
     }
 
     class NoImage : java.awt.Image

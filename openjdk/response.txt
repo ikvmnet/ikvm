@@ -568,7 +568,6 @@ assembly.class
     ../../classpath-0.95/gnu/java/awt/font/autofit/*.class
     ../../classpath-0.95/gnu/java/awt/font/opentype/*.class
     ../../classpath-0.95/gnu/java/awt/font/opentype/truetype/*.class
-    ../../classpath-0.95/gnu/java/awt/image/*.class
     ../../classpath-0.95/gnu/java/awt/java2d/*.class
     ../../classpath-0.95/gnu/java/awt/peer/*.class
     ../../classpath-0.95/gnu/java/awt/peer/headless/*.class
@@ -589,8 +588,6 @@ assembly.class
     ../../classpath-0.95/java/awt/font/*.class
     ../../classpath-0.95/java/awt/im/*.class
     ../../classpath-0.95/java/awt/im/spi/*.class
-    ../../classpath-0.95/java/awt/image/*.class
-    ../../classpath-0.95/java/awt/image/renderable/*.class
     ../../classpath-0.95/java/awt/peer/*.class
     ../../classpath-0.95/javax/swing/*.class
     ../../classpath-0.95/javax/swing/border/*.class
@@ -617,6 +614,7 @@ assembly.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/event/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/geom/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/image/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/java/awt/image/renderable/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/print/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/awt/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/awt/datatransfer/*.class
