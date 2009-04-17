@@ -674,7 +674,7 @@ namespace ikvm.awt
                 return;
             }
 
-            if (this.javaPaint == paint)
+            if (paint == null || this.javaPaint == paint)
             {
                 return;
             }
