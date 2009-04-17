@@ -1043,12 +1043,20 @@ namespace IKVM.Reflection.Emit
 
 	public sealed class MonoHackGenericType : Impl.TypeBase
 	{
+		private static readonly Dictionary<MonoHackGenericType, MonoHackGenericType> canonical = new Dictionary<MonoHackGenericType, MonoHackGenericType>();
 		private readonly Type type;
 		private readonly Type[] typeArguments;
 
 		public static Type Make(Type type, params Type[] typeArguments)
 		{
-			return new MonoHackGenericType(type, (Type[])typeArguments.Clone());
+			MonoHackGenericType newType = new MonoHackGenericType(type, (Type[])typeArguments.Clone());
+			MonoHackGenericType canonicalType;
+			if (!canonical.TryGetValue(newType, out canonicalType))
+			{
+				canonicalType = newType;
+				canonical.Add(canonicalType, canonicalType);
+			}
+			return canonicalType;
 		}
 
 		private MonoHackGenericType(Type type, Type[] typeArguments)
