@@ -11145,7 +11145,7 @@ namespace IKVM.Internal
 				// note that AttributeUsageAttribute.Inherited does not map to java.lang.annotation.Inherited
 				AttributeTargets validOn = GetAttributeUsage().ValidOn;
 				List<java.lang.annotation.ElementType> targets = new List<java.lang.annotation.ElementType>();
-				if ((validOn & (AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Enum | AttributeTargets.Delegate | AttributeTargets.Assembly)) != 0)
+				if ((validOn & (AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.Struct | AttributeTargets.Enum | AttributeTargets.Delegate | AttributeTargets.Assembly)) != 0)
 				{
 					targets.Add(java.lang.annotation.ElementType.TYPE);
 				}
