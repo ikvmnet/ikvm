@@ -35,6 +35,7 @@ namespace IKVM.Reflection.Emit.Impl
 		internal int[] offsets;
 		internal int[] lines;
 		internal int[] columns;
+		internal List<string> variables = new List<string>();
 
 		public string Name
 		{
@@ -85,7 +86,10 @@ namespace IKVM.Reflection.Emit.Impl
 
 		public void RemapToken(int oldToken, int newToken)
 		{
-			methods[oldToken].token = newToken;
+			if (methods.ContainsKey(oldToken))
+			{
+				methods[oldToken].token = newToken;
+			}
 		}
 
 		public void Close()
@@ -106,11 +110,15 @@ namespace IKVM.Reflection.Emit.Impl
 					{
 						smb.MarkSequencePoint(method.offsets[i], method.document.source, method.lines[i], method.columns[i], false);
 					}
+					for (int i = 0; i < method.variables.Count; i++)
+					{
+						writer.DefineLocalVariable(i, method.variables[i]);
+					}
 					writer.CloseMethod();
 				}
 			}
 
-			writer.WriteSymbolFile(Guid.NewGuid());
+			writer.WriteSymbolFile(moduleBuilder.ModuleVersionId);
 		}
 
 		public System.Diagnostics.SymbolStore.ISymbolDocumentWriter DefineDocument(string url, Guid language, Guid languageVendor, Guid documentType)
@@ -142,6 +150,7 @@ namespace IKVM.Reflection.Emit.Impl
 
 		public void DefineLocalVariable(string name, System.Reflection.FieldAttributes attributes, byte[] signature, System.Diagnostics.SymbolStore.SymAddressKind addrKind, int addr1, int addr2, int addr3, int startOffset, int endOffset)
 		{
+			currentMethod.variables.Add(name);
 		}
 
 		public void DefineSequencePoints(System.Diagnostics.SymbolStore.ISymbolDocumentWriter document, int[] offsets, int[] lines, int[] columns, int[] endLines, int[] endColumns)

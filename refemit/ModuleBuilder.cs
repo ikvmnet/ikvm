@@ -36,6 +36,7 @@ namespace IKVM.Reflection.Emit
 {
 	public sealed class ModuleBuilder : ITypeOwner
 	{
+		private readonly Guid mvid = Guid.NewGuid();
 		private readonly AssemblyBuilder asm;
 		internal readonly string moduleName;
 		internal readonly string fileName;
@@ -969,6 +970,14 @@ namespace IKVM.Reflection.Emit
 			get
 			{
 				return Path.GetFullPath(fileName);
+			}
+		}
+
+		public Guid ModuleVersionId
+		{
+			get
+			{
+				return mvid;
 			}
 		}
 	}

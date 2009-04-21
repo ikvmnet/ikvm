@@ -379,7 +379,7 @@ namespace IKVM.Reflection.Emit.Writer
 
 		private void WriteDebugDirectory(MetadataWriter mw)
 		{
-			if (moduleBuilder.symbolWriter != null)
+			if (DebugDirectoryLength != 0)
 			{
 				IMAGE_DEBUG_DIRECTORY idd = new IMAGE_DEBUG_DIRECTORY();
 				idd.Characteristics = 0;
