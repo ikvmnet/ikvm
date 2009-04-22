@@ -11189,6 +11189,53 @@ namespace IKVM.Internal
 					this.type = type;
 				}
 
+				private static object LookupEnumValue(Type enumType, string value)
+				{
+					FieldInfo field = enumType.GetField(value, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+					if(field != null)
+					{
+						return field.GetRawConstantValue();
+					}
+					// both __unspecified and missing values end up here
+					return Activator.CreateInstance(Enum.GetUnderlyingType(enumType));
+				}
+
+				// note that we only support the integer types that C# supports
+				// (the CLI also supports bool, char, IntPtr & UIntPtr)
+				private static object OrBoxedIntegrals(object v1, object v2)
+				{
+					Debug.Assert(v1.GetType() == v2.GetType());
+					if(v1 is ulong)
+					{
+						ulong l1 = (ulong)v1;
+						ulong l2 = (ulong)v2;
+						return l1 | l2;
+					}
+					else
+					{
+						long v = ((IConvertible)v1).ToInt64(null) | ((IConvertible)v2).ToInt64(null);
+						switch(Type.GetTypeCode(v1.GetType()))
+						{
+							case TypeCode.SByte:
+								return (sbyte)v;
+							case TypeCode.Byte:
+								return (byte)v;
+							case TypeCode.Int16:
+								return (short)v;
+							case TypeCode.UInt16:
+								return (ushort)v;
+							case TypeCode.Int32:
+								return (int)v;
+							case TypeCode.UInt32:
+								return (uint)v;
+							case TypeCode.Int64:
+								return (long)v;
+							default:
+								throw new InvalidOperationException();
+						}
+					}
+				}
+
 				private static object ConvertValue(ClassLoaderWrapper loader, Type targetType, object obj)
 				{
 					if(targetType.IsEnum)
@@ -11197,33 +11244,31 @@ namespace IKVM.Internal
 						if(((object[])obj)[0].Equals(AnnotationDefaultAttribute.TAG_ARRAY))
 						{
 							object[] arr = (object[])obj;
-							string s = "";
-							string sep = "";
+							object value = null;
 							for(int i = 1; i < arr.Length; i++)
 							{
 								// TODO check the obj descriptor matches the type we expect
-								string val = ((object[])arr[i])[2].ToString();
-								if(val != "__unspecified")
+								string s = ((object[])arr[i])[2].ToString();
+								object newval = LookupEnumValue(targetType, s);
+								if (value == null)
 								{
-									s += sep + val;
-									sep = ", ";
+									value = newval;
+								}
+								else
+								{
+									value = OrBoxedIntegrals(value, newval);
 								}
 							}
-							if(s == "")
-							{
-								return Activator.CreateInstance(targetType);
-							}
-							return Enum.Parse(targetType, s);
+							return value;
 						}
 						else
 						{
 							string s = ((object[])obj)[2].ToString();
 							if(s == "__unspecified")
 							{
-								// TODO instead of this, we should probably return null and handle that
-								return Activator.CreateInstance(targetType);
+								// TODO we should probably return null and handle that
 							}
-							return Enum.Parse(targetType, s);
+							return LookupEnumValue(targetType, s);
 						}
 					}
 					else if(targetType == typeof(Type))
@@ -11236,10 +11281,10 @@ namespace IKVM.Internal
 						// TODO check the obj descriptor matches the type we expect
 						object[] arr = (object[])obj;
 						Type elementType = targetType.GetElementType();
-						Array targetArray = Array.CreateInstance(elementType, arr.Length - 1);
+						object[] targetArray = new object[arr.Length - 1];
 						for(int i = 1; i < arr.Length; i++)
 						{
-							targetArray.SetValue(ConvertValue(loader, elementType, arr[i]), i - 1);
+							targetArray[i - 1] = ConvertValue(loader, elementType, arr[i]);
 						}
 						return targetArray;
 					}
@@ -11698,23 +11743,28 @@ namespace IKVM.Internal
 			if(type.IsEnum)
 			{
 				Type underlyingType = Enum.GetUnderlyingType(type);
+				Type javaUnderlyingType;
 				if(underlyingType == typeof(sbyte))
 				{
-					underlyingType = typeof(byte);
+					javaUnderlyingType = typeof(byte);
 				}
 				else if(underlyingType == typeof(ushort))
 				{
-					underlyingType = typeof(short);
+					javaUnderlyingType = typeof(short);
 				}
 				else if(underlyingType == typeof(uint))
 				{
-					underlyingType = typeof(int);
+					javaUnderlyingType = typeof(int);
 				}
 				else if(underlyingType == typeof(ulong))
 				{
-					underlyingType = typeof(long);
+					javaUnderlyingType = typeof(long);
 				}
-				TypeWrapper fieldType = ClassLoaderWrapper.GetWrapperFromType(underlyingType);
+				else
+				{
+					javaUnderlyingType = underlyingType;
+				}
+				TypeWrapper fieldType = ClassLoaderWrapper.GetWrapperFromType(javaUnderlyingType);
 				FieldInfo[] fields = type.GetFields(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Static);
 				List<FieldWrapper> fieldsList = new List<FieldWrapper>();
 				for(int i = 0; i < fields.Length; i++)
