@@ -103,17 +103,17 @@
         </exec>
         <if test="${platform::is-win32()}">
             <copy file="../bin/IKVM.Runtime.dll" tofile="IKVM.Runtime.dll" />
-            <exec program="peverify" commandline="-quiet IKVM.OpenJDK.Charsets.dll" />
-            <exec program="peverify" commandline="-quiet IKVM.OpenJDK.Corba.dll" />
-            <exec program="peverify" commandline="-quiet IKVM.OpenJDK.Core.dll" />
-            <exec program="peverify" commandline="-quiet IKVM.OpenJDK.Jdbc.dll" />
-            <exec program="peverify" commandline="-quiet IKVM.OpenJDK.Management.dll" />
-            <exec program="peverify" commandline="-quiet IKVM.OpenJDK.Misc.dll" />
-            <exec program="peverify" commandline="-quiet IKVM.OpenJDK.Security.dll" />
-            <exec program="peverify" commandline="-quiet IKVM.OpenJDK.SwingAWT.dll" />
-            <exec program="peverify" commandline="-quiet IKVM.OpenJDK.Text.dll" />
-            <exec program="peverify" commandline="-quiet IKVM.OpenJDK.Util.dll" />
-            <exec program="peverify" commandline="-quiet IKVM.OpenJDK.XML.dll" />
+            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Charsets.dll" />
+            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Corba.dll" />
+            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Core.dll" />
+            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Jdbc.dll" />
+            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Management.dll" />
+            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Misc.dll" />
+            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Security.dll" />
+            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.SwingAWT.dll" />
+            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Text.dll" />
+            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Util.dll" />
+            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.XML.dll" />
         </if>
         <copy todir="../bin">
             <fileset basedir=".">
