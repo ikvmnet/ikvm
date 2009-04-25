@@ -556,18 +556,16 @@ assembly.class
     Configuration.class
     icedtea/jce/gnu/java/security/action/*.class
     ikvm/awt/*.class
+    java/awt/*.class
     java/awt/image/*.class
     sun/awt/*.class
     sun/awt/image/*.class
+    sun/font/*.class
     sun/java2d/cmm/lcms/*.class
     SystemProperties$1.class
     SystemProperties.class
     ../../classpath-0.95/gnu/java/awt/*.class
     ../../classpath-0.95/gnu/java/awt/color/*.class
-    ../../classpath-0.95/gnu/java/awt/font/*.class
-    ../../classpath-0.95/gnu/java/awt/font/autofit/*.class
-    ../../classpath-0.95/gnu/java/awt/font/opentype/*.class
-    ../../classpath-0.95/gnu/java/awt/font/opentype/truetype/*.class
     ../../classpath-0.95/gnu/java/awt/java2d/*.class
     ../../classpath-0.95/gnu/java/awt/peer/*.class
     ../../classpath-0.95/gnu/java/awt/peer/headless/*.class
@@ -585,7 +583,6 @@ assembly.class
     ../../classpath-0.95/gnu/javax/swing/tree/*.class
     ../../classpath-0.95/java/applet/*.class
     ../../classpath-0.95/java/awt/*.class
-    ../../classpath-0.95/java/awt/font/*.class
     ../../classpath-0.95/java/awt/im/*.class
     ../../classpath-0.95/java/awt/im/spi/*.class
     ../../classpath-0.95/java/awt/peer/*.class
@@ -613,6 +610,7 @@ assembly.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/dnd/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/dnd/peer/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/event/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/java/awt/font/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/geom/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/image/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/image/renderable/*.class
@@ -625,6 +623,7 @@ assembly.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/awt/geom/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/awt/im/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/awt/image/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/sun/font/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/java2d/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/java2d/cmm/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/swing/*.class
