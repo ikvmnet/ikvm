@@ -618,6 +618,7 @@ assembly.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/print/*.class
     ../../openjdk6-b16/jdk/src/share/classes/javax/swing/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/awt/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/sun/awt/shell/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/awt/datatransfer/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/awt/dnd/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/awt/geom/*.class

@@ -7563,6 +7563,14 @@ namespace IKVM.NativeCode.com.sun.media.sound
 	}
 }
 
+namespace IKVM.NativeCode.java.awt
+{
+	static class FontMetrics
+	{
+		public static void initIDs() { }
+	}
+}
+
 namespace IKVM.NativeCode.java.awt.@event
 {
 	static class InputEvent

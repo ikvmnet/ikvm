@@ -23,36 +23,11 @@
  */
 package sun.font;
 
-import java.awt.Font;
-import java.awt.font.FontRenderContext;
-
 
 
 /**
  * 
  */
-public class Font2D{
-
-    /*
-     * All the important subclasses override this which is principally for
-     * the TrueType 'gasp' table.
-     */
-    public boolean useAAForPtSize(int ptsize) {
-        return true;
-    }
-
-    public boolean hasSupplementaryChars() {
-        return false;
-    }
-
-    public void removeFromCache(FontStrikeDesc desc){
-        // TODO Auto-generated method stub
-        
-    }
-
-    public FontStrike getStrike(Font font, FontRenderContext frc){
-        // TODO Auto-generated method stub
-        return null;
-    }
+public class CompositeFont extends Font2D{
 
 }

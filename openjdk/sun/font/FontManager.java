@@ -37,4 +37,19 @@ public class FontManager{
         return null;
     }
 
+    public static boolean isComplexText(char[] text, int start, int limit){
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    public static boolean maybeUsingAlternateCompositeFonts(){
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    public static boolean isNonSimpleChar(char ch){
+        // TODO Auto-generated method stub
+        return false;
+    }
+
 }

@@ -160,7 +160,6 @@
 ../../classpath-0.95/java/awt/FlowLayout.java
 ../../classpath-0.95/java/awt/FocusTraversalPolicy.java
 ../../classpath-0.95/java/awt/FontFormatException.java
-../../classpath-0.95/java/awt/FontMetrics.java
 ../../classpath-0.95/java/awt/Frame.java
 ../../classpath-0.95/java/awt/GradientPaint.java
 ../../classpath-0.95/java/awt/Graphics.java
@@ -254,7 +253,6 @@
 ../../classpath-0.95/java/awt/TextComponent.java
 ../../classpath-0.95/java/awt/TextField.java
 ../../classpath-0.95/java/awt/TexturePaint.java
-../../classpath-0.95/java/awt/Toolkit.java
 ../../classpath-0.95/java/awt/Transparency.java
 ../../classpath-0.95/java/awt/Window.java
 ../../classpath-0.95/javax/swing/AbstractAction.java
@@ -821,6 +819,7 @@ ikvm/awt/IkvmToolkit.java
 ikvm/internal/AnnotationAttributeBase.java
 ikvm/internal/FieldReflectorBase.java
 java/awt/Font.java
+java/awt/Toolkit.java
 java/awt/image/BufferedImage.java
 java/awt/image/ColorConvertOp.java
 java/awt/image/IndexColorModel.java
@@ -887,10 +886,12 @@ sun/awt/image/OffScreenImageSource.java
 sun/awt/image/ShortComponentRaster.java
 sun/awt/image/SunWritableRaster.java
 sun/awt/image/ToolkitImage.java
+sun/font/CompositeFont.java
 sun/font/Font2D.java
 sun/font/FontManager.java
-sun/font/StandardGlyphVector.java
 sun/font/GlyphLayout.java
+sun/font/StandardGlyphVector.java
+sun/font/StrikeCache.java
 sun/java2d/cmm/lcms/LCMS.java
 sun/jdbc/odbc/JdbcOdbcCallableStatement.java
 sun/jdbc/odbc/JdbcOdbcConnection.java
@@ -7353,6 +7354,7 @@ SystemProperties.java
 ../../openjdk6-b16/jdk/src/share/classes/java/awt/font/TextLine.java
 ../../openjdk6-b16/jdk/src/share/classes/java/awt/font/TextMeasurer.java
 ../../openjdk6-b16/jdk/src/share/classes/java/awt/font/TransformAttribute.java
+../../openjdk6-b16/jdk/src/share/classes/java/awt/FontMetrics.java
 ../../openjdk6-b16/jdk/src/share/classes/java/awt/geom/AffineTransform.java
 ../../openjdk6-b16/jdk/src/share/classes/java/awt/geom/Arc2D.java
 ../../openjdk6-b16/jdk/src/share/classes/java/awt/geom/ArcIterator.java
@@ -9349,11 +9351,16 @@ SystemProperties.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/font/EAttribute.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/font/ExtendedTextLabel.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/font/ExtendedTextSourceLabel.java
+../../openjdk6-b16/jdk/src/share/classes/sun/font/FontDesignMetrics.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/font/FontLineMetrics.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/font/FontResolver.java
+../../openjdk6-b16/jdk/src/share/classes/sun/font/FontStrike.java
+../../openjdk6-b16/jdk/src/share/classes/sun/font/FontStrikeDesc.java
+../../openjdk6-b16/jdk/src/share/classes/sun/font/FontStrikeDisposer.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/font/GraphicComponent.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/font/LayoutPathImpl.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/font/StandardTextSource.java
+../../openjdk6-b16/jdk/src/share/classes/sun/font/StrikeMetrics.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/font/TextLabel.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/font/TextLabelFactory.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/font/TextLineComponent.java
@@ -10765,11 +10772,13 @@ SystemProperties.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/swing/PrintingStatus.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/swing/StringUIClientPropertyKey.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/swing/SwingLazyValue.java
+../../openjdk6-b16/jdk/src/share/classes/sun/swing/SwingUtilities2.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/swing/text/CompoundPrintable.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/swing/text/CountingPrintable.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/swing/text/html/FrameEditorPaneTag.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/swing/UIAction.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/swing/UIClientPropertyKey.java
+../../openjdk6-b16/jdk/src/share/classes/sun/swing/WindowsPlacesBar.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/text/CodePointIterator.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/text/CollatorUtilities.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/text/CompactByteArray.java
