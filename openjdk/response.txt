@@ -38,7 +38,7 @@ assembly.class
     ../classpath/System.Core.jar
     ../../classpath-0.95/gnu/classpath/*.class
     ../../classpath-0.95/gnu/java/util/*.class
-    ../../classpath-0.95/java/awt/AWTPermission.class
+    ../../openjdk6-b16/jdk/src/share/classes/java/awt/AWTPermission.class
     ../../openjdk6-b16/build/linux-amd64/gensrc/java/lang/*.class
     ../../openjdk6-b16/build/linux-amd64/gensrc/java/nio/*.class
     ../../openjdk6-b16/build/linux-amd64/gensrc/java/nio/channels/*.class
@@ -561,7 +561,9 @@ assembly.class
     sun/awt/*.class
     sun/awt/image/*.class
     sun/font/*.class
+	sun/java2d/*.class
     sun/java2d/cmm/lcms/*.class
+	sun/java2d/pipe/*.class
     SystemProperties$1.class
     SystemProperties.class
     ../../classpath-0.95/gnu/java/awt/*.class
@@ -569,7 +571,6 @@ assembly.class
     ../../classpath-0.95/gnu/java/awt/java2d/*.class
     ../../classpath-0.95/gnu/java/awt/peer/*.class
     ../../classpath-0.95/gnu/java/awt/peer/headless/*.class
-    ../../classpath-0.95/gnu/java/awt/peer/swing/*.class
     ../../classpath-0.95/gnu/java/awt/print/*.class
     ../../classpath-0.95/gnu/java/math/*.class
     ../../classpath-0.95/gnu/javax/swing/plaf/gnu/*.class
@@ -582,28 +583,10 @@ assembly.class
     ../../classpath-0.95/gnu/javax/swing/text/html/parser/support/low/*.class
     ../../classpath-0.95/gnu/javax/swing/tree/*.class
     ../../classpath-0.95/java/applet/*.class
-    ../../classpath-0.95/java/awt/*.class
     ../../classpath-0.95/java/awt/im/*.class
     ../../classpath-0.95/java/awt/im/spi/*.class
-    ../../classpath-0.95/java/awt/peer/*.class
-    ../../classpath-0.95/javax/swing/*.class
-    ../../classpath-0.95/javax/swing/border/*.class
-    ../../classpath-0.95/javax/swing/colorchooser/*.class
-    ../../classpath-0.95/javax/swing/event/*.class
-    ../../classpath-0.95/javax/swing/filechooser/*.class
-    ../../classpath-0.95/javax/swing/plaf/*.class
-    ../../classpath-0.95/javax/swing/plaf/basic/*.class
-    ../../classpath-0.95/javax/swing/plaf/metal/*.class
-    ../../classpath-0.95/javax/swing/plaf/multi/*.class
-    ../../classpath-0.95/javax/swing/plaf/synth/*.class
-    ../../classpath-0.95/javax/swing/table/*.class
-    ../../classpath-0.95/javax/swing/text/*.class
-    ../../classpath-0.95/javax/swing/text/html/*.class
-    ../../classpath-0.95/javax/swing/text/html/parser/*.class
-    ../../classpath-0.95/javax/swing/text/rtf/*.class
-    ../../classpath-0.95/javax/swing/tree/*.class
-    ../../classpath-0.95/javax/swing/undo/*.class
     ../../openjdk6-b16/build/linux-amd64/gensrc/com/sun/accessibility/internal/resources/*.class
+	../../openjdk6-b16/jdk/src/share/classes/com/sun/java/swing/plaf/windows/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/color/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/datatransfer/*.class
@@ -617,17 +600,43 @@ assembly.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/peer/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/print/*.class
     ../../openjdk6-b16/jdk/src/share/classes/javax/swing/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/swing/border/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/swing/colorchooser/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/swing/event/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/swing/filechooser/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/swing/plaf/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/swing/plaf/basic/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/swing/plaf/metal/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/swing/plaf/multi/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/swing/plaf/synth/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/swing/table/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/swing/text/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/swing/text/html/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/swing/text/html/parser/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/swing/text/rtf/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/swing/tree/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/swing/undo/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/awt/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/sun/awt/shell/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/awt/datatransfer/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/awt/dnd/*.class
+	../../openjdk6-b16/jdk/src/share/classes/sun/awt/event/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/awt/geom/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/awt/im/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/awt/image/*.class
+	../../openjdk6-b16/jdk/src/share/classes/sun/awt/shell/*.class
+	../../openjdk6-b16/jdk/src/share/classes/sun/awt/util/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/font/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/java2d/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/java2d/cmm/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/sun/java2d/pipe/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/swing/*.class
+	../../openjdk6-b16/jdk/src/share/classes/sun/swing/plaf/synth/*.class
+	../../openjdk6-b16/jdk/src/share/classes/sun/swing/plaf/windows/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/sun/swing/table/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/sun/swing/text/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/sun/swing/text/html/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/sun/text/*.class
+	../../openjdk6-b16/jdk/src/solaris/classes/sun/awt/windows/*.class
     ../classpath/gnu/java/awt/peer/*.class
     ../classpath/gnu/java/awt/peer/gtk/*.class
 }

@@ -46,6 +46,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import sun.misc.SoftCache;
 import sun.awt.image.*;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 import sun.security.action.GetPropertyAction;
 import sun.security.action.GetBooleanAction;
 import java.lang.reflect.Field;
@@ -210,10 +211,10 @@ public abstract class SunToolkit extends Toolkit
         DragGestureEvent dge)
         throws InvalidDnDOperationException;
 
-//    public abstract TrayIconPeer createTrayIcon(TrayIcon target)
-//        throws HeadlessException, AWTException;
-//
-//    public abstract SystemTrayPeer createSystemTray(SystemTray target);
+    public abstract TrayIconPeer createTrayIcon(TrayIcon target)
+        throws HeadlessException, AWTException;
+
+    public abstract SystemTrayPeer createSystemTray(SystemTray target);
 
     public abstract boolean isTraySupported();
 
@@ -222,10 +223,10 @@ public abstract class SunToolkit extends Toolkit
     public abstract RobotPeer createRobot(Robot target, GraphicsDevice screen)
         throws AWTException;
 
-//    public KeyboardFocusManagerPeer createKeyboardFocusManagerPeer(KeyboardFocusManager manager) throws HeadlessException {
-//        KeyboardFocusManagerPeerImpl peer = new KeyboardFocusManagerPeerImpl(manager);
-//        return peer;
-//    }
+    public KeyboardFocusManagerPeer createKeyboardFocusManagerPeer(KeyboardFocusManager manager) throws HeadlessException {
+        KeyboardFocusManagerPeerImpl peer = new KeyboardFocusManagerPeerImpl(manager);
+        return peer;
+    }
 
     /**
      * The AWT lock is typically only used on Unix platforms to synchronize
@@ -1315,22 +1316,22 @@ public abstract class SunToolkit extends Toolkit
         return false;
     }
 
-//    private static Dialog.ModalExclusionType DEFAULT_MODAL_EXCLUSION_TYPE;
-//
-//    static {
-//        DEFAULT_MODAL_EXCLUSION_TYPE = (Dialog.ModalExclusionType)AccessController.doPrivileged(new PrivilegedAction() {
-//            public Object run() {
-//                Dialog.ModalExclusionType defaultType = Dialog.ModalExclusionType.NO_EXCLUDE;
-//                try {
-//                    java.lang.reflect.Field f = Dialog.class.getDeclaredField("DEFAULT_MODAL_EXCLUSION_TYPE");
-//                    f.setAccessible(true);
-//                    defaultType = (Dialog.ModalExclusionType)f.get(null);
-//                } catch (Exception e) {
-//                }
-//                return defaultType;
-//            }
-//        });
-//    }
+    private static Dialog.ModalExclusionType DEFAULT_MODAL_EXCLUSION_TYPE;
+
+    static {
+        DEFAULT_MODAL_EXCLUSION_TYPE = (Dialog.ModalExclusionType)AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+                Dialog.ModalExclusionType defaultType = Dialog.ModalExclusionType.NO_EXCLUDE;
+                try {
+                    java.lang.reflect.Field f = Dialog.class.getDeclaredField("DEFAULT_MODAL_EXCLUSION_TYPE");
+                    f.setAccessible(true);
+                    defaultType = (Dialog.ModalExclusionType)f.get(null);
+                } catch (Exception e) {
+                }
+                return defaultType;
+            }
+        });
+    }
 
     /**
      * Returns whether the XEmbed server feature is requested by
@@ -1353,11 +1354,11 @@ public abstract class SunToolkit extends Toolkit
      *
      * @since 1.5
      */
-//    public static boolean isModalExcludedSupported()
-//    {
-//        Toolkit tk = Toolkit.getDefaultToolkit();
-//        return tk.isModalExclusionTypeSupported(DEFAULT_MODAL_EXCLUSION_TYPE);
-//    }
+    public static boolean isModalExcludedSupported()
+    {
+        Toolkit tk = Toolkit.getDefaultToolkit();
+        return tk.isModalExclusionTypeSupported(DEFAULT_MODAL_EXCLUSION_TYPE);
+    }
     /*
      * Default implementation for isModalExcludedSupportedImpl(), returns false.
      *
@@ -1387,10 +1388,10 @@ public abstract class SunToolkit extends Toolkit
      * @see sun.awt.SunToolkit#isModalExcludedSupported
      * @see sun.awt.SunToolkit#isModalExcluded(java.awt.Window)
      */
-//    public static void setModalExcluded(Window window)
-//    {
-//        window.setModalExclusionType(DEFAULT_MODAL_EXCLUSION_TYPE);
-//    }
+    public static void setModalExcluded(Window window)
+    {
+        window.setModalExclusionType(DEFAULT_MODAL_EXCLUSION_TYPE);
+    }
 
     /*
      * Returns whether the specified window is blocked by modal dialogs.
@@ -1408,25 +1409,25 @@ public abstract class SunToolkit extends Toolkit
      *
      * @since 1.5
      */
-//    public static boolean isModalExcluded(Window window)
-//    {
-//        return window.getModalExclusionType().compareTo(DEFAULT_MODAL_EXCLUSION_TYPE) >= 0;
-//    }
+    public static boolean isModalExcluded(Window window)
+    {
+        return window.getModalExclusionType().compareTo(DEFAULT_MODAL_EXCLUSION_TYPE) >= 0;
+    }
 
     /**
      * Overridden in XToolkit and WToolkit
      */
-//    public boolean isModalityTypeSupported(Dialog.ModalityType modalityType) {
-//        return (modalityType == Dialog.ModalityType.MODELESS) ||
-//               (modalityType == Dialog.ModalityType.APPLICATION_MODAL);
-//    }
+    public boolean isModalityTypeSupported(Dialog.ModalityType modalityType) {
+        return (modalityType == Dialog.ModalityType.MODELESS) ||
+               (modalityType == Dialog.ModalityType.APPLICATION_MODAL);
+    }
 
     /**
      * Overridden in XToolkit and WToolkit
      */
-//    public boolean isModalExclusionTypeSupported(Dialog.ModalExclusionType exclusionType) {
-//        return (exclusionType == Dialog.ModalExclusionType.NO_EXCLUDE);
-//    }
+    public boolean isModalExclusionTypeSupported(Dialog.ModalExclusionType exclusionType) {
+        return (exclusionType == Dialog.ModalExclusionType.NO_EXCLUDE);
+    }
 
     ///////////////////////////////////////////////////////////////////////////
     //
@@ -1772,7 +1773,9 @@ public abstract class SunToolkit extends Toolkit
      * @see java.awt.SplashScreen
      * @since 1.6
      */
-//    public static native void closeSplashScreen();
+    public static void closeSplashScreen(){
+        throw new NotImplementedException();
+    }
 
     /* The following methods and variables are to support retrieving
      * desktop text anti-aliasing settings
