@@ -407,6 +407,17 @@ public class Font implements Serializable
     this(null, attrs);
   }
 
+  /**
+   * Creates a new <code>Font</code> from the specified <code>font</code>.
+   * This constructor is intended for use by subclasses.
+   * @param font from which to create this <code>Font</code>.
+   * @throws NullPointerException if <code>font</code> is null
+   * @since 1.6
+   */
+  protected Font(Font font) {
+      this(font.name, font.style, font.size );
+  }
+  
   /* This extra constructor is here to permit ClasspathToolkit and to
    build a font with a "logical name" as well as attrs.
    ClasspathToolkit.getFont(String,Map) uses reflection to call this
