@@ -52,4 +52,34 @@ public class FontManager{
         return false;
     }
 
+    public static boolean fontSupportsDefaultEncoding(Font f){
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    public static Font getCompositeFontUIResource(Font f){
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public static boolean registerFont(Font font){
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    public static void preferLocaleFonts(){
+        // TODO Auto-generated method stub
+        
+    }
+
+    public static void preferProportionalFonts(){
+        // TODO Auto-generated method stub
+        
+    }
+
+    public static boolean usePlatformFontMetrics(){
+        // TODO Auto-generated method stub
+        return false;
+    }
+
 }
