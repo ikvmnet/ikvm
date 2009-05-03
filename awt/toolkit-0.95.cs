@@ -568,6 +568,16 @@ namespace ikvm.awt
             }
         }
 
+
+        public override bool isModalExclusionTypeSupported(java.awt.Dialog.ModalExclusionType dmet)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override bool isModalityTypeSupported(java.awt.Dialog.ModalityType dmt)
+        {
+            throw new NotImplementedException();
+        }
     }
 
 	class NetCustomCursor : java.awt.Cursor
@@ -1468,7 +1478,17 @@ namespace ikvm.awt
 		public void layout()
 		{
 		}
-	}
+
+        public void applyShape(sun.java2d.pipe.Region r)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool requestFocus(java.awt.Component c, bool b1, bool b2, long l, sun.awt.CausedFocusEvent.Cause cfec)
+        {
+            throw new NotImplementedException();
+        }
+    }
 
 	class NetButtonPeer : NetComponentPeer, ButtonPeer
 	{
@@ -1989,7 +2009,32 @@ namespace ikvm.awt
 		{
 			return control.Focus();
 		}
-	}
+
+        public void setAlwaysOnTop(bool b)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void setModalBlocked(java.awt.Dialog d, bool b)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void updateFocusableWindowState()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void updateIconImages()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void updateMinimumSize()
+        {
+            throw new NotImplementedException();
+        }
+    }
 
 	class NetFramePeer : NetWindowPeer, FramePeer
 	{
@@ -2102,7 +2147,12 @@ namespace ikvm.awt
 			// TODO use control.Invoke
 			control.Bounds = new Rectangle(x, y, width, height);
 		}
-	}
+
+        public java.awt.Rectangle getBoundsPrivate()
+        {
+            throw new NotImplementedException();
+        }
+    }
 
 	class NetDialogPeer : NetWindowPeer, DialogPeer
 	{
@@ -2128,7 +2178,12 @@ namespace ikvm.awt
 		{
 			throw new NotImplementedException();
 		}
-	}
+
+        public void blockWindows(List l)
+        {
+            throw new NotImplementedException();
+        }
+    }
 
 	class NetListPeer : NetComponentPeer, ListPeer
 	{
@@ -2644,5 +2699,45 @@ namespace ikvm.awt
 		{
 			throw new NotImplementedException();
 		}
-	}
+
+        public void applyShape(sun.java2d.pipe.Region r)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool requestFocus(java.awt.Component c, bool b1, bool b2, long l, sun.awt.CausedFocusEvent.Cause cfec)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void setAlwaysOnTop(bool b)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void setModalBlocked(java.awt.Dialog d, bool b)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void updateFocusableWindowState()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void updateIconImages()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void updateMinimumSize()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void blockWindows(List l)
+        {
+            throw new NotImplementedException();
+        }
+    }
 }

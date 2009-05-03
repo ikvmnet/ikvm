@@ -1123,6 +1123,11 @@ namespace ikvm.awt
         {
             throw new NotImplementedException();
         }
+
+        public override VolatileImage createCompatibleVolatileImage(int i1, int i2, java.awt.ImageCapabilities ic, int i3)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     class NetGraphicsDevice : java.awt.GraphicsDevice
