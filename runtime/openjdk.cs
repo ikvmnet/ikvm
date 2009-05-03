@@ -5278,6 +5278,16 @@ namespace IKVM.NativeCode.java
 	}
 }
 
+namespace IKVM.NativeCode.sun.awt
+{
+	static class KeyboardFocusManagerPeerImpl
+	{
+		public static object getNativeFocusedWindow(){return null;}
+		public static object getNativeFocusOwner(){return null;}
+		public static void clearNativeGlobalFocusOwner(object activeWindow){ }
+	}
+}
+
 namespace IKVM.NativeCode.sun.java2d
 {
 	static class DefaultDisposerRecord
@@ -5292,6 +5302,21 @@ namespace IKVM.NativeCode.sun.java2d
 	{
 		public static void initIDs()
 		{
+		}
+	}
+}
+
+namespace IKVM.NativeCode.sun.java2d.pipe
+{
+	static class Region
+	{
+		public static void initIDs(){ }
+	}
+	
+	static class RenderBuffer
+	{
+		public static void copyFromArray(object srcArray, long srcPos, long dstAddr, long length){ 
+			throw new NotImplementedException(); 
 		}
 	}
 }
@@ -7565,7 +7590,166 @@ namespace IKVM.NativeCode.com.sun.media.sound
 
 namespace IKVM.NativeCode.java.awt
 {
+	static class AWTEvent
+	{
+		public static void initIDs() { }
+		public static void nativeSetSource(object thisObj, object peer){ }
+	}
+	
+	static class Button
+	{
+		public static void initIDs() { }
+	}
+	
+	static class Checkbox
+	{
+		public static void initIDs() { }
+	}
+	
+	static class CheckboxMenuItem
+	{
+		public static void initIDs() { }
+	}
+	
+	static class Color
+	{
+		public static void initIDs() { }
+	}
+	
+	static class Component
+	{
+		public static void initIDs() { }
+	}
+	
+	static class Container
+	{
+		public static void initIDs() { }
+	}
+	
+	static class Cursor
+	{
+		public static void initIDs() { }
+		public static void finalizeImpl(Int64 pData){ }
+	}
+	
+	static class Dialog
+	{
+		public static void initIDs() { }
+	}
+	
+	static class Dimension
+	{
+		public static void initIDs() { }
+	}
+	
+	static class Event
+	{
+		public static void initIDs() { }
+	}
+	
+	static class FileDialog
+	{
+		public static void initIDs() { }
+	}
+	
+	static class Frame
+	{
+		public static void initIDs() { }
+	}
+	
 	static class FontMetrics
+	{
+		public static void initIDs() { }
+	}
+	
+	static class Insets
+	{
+		public static void initIDs() { }
+	}
+	
+	static class KeyboardFocusManager
+	{
+		public static void initIDs() { }
+	}
+	
+	static class Label
+	{
+		public static void initIDs() { }
+	}
+	
+	static class Menu
+	{
+		public static void initIDs() { }
+	}
+	
+	static class MenuBar
+	{
+		public static void initIDs() { }
+	}
+	
+	static class MenuComponent
+	{
+		public static void initIDs() { }
+	}
+	
+	static class MenuItem
+	{
+		public static void initIDs() { }
+	}
+	
+	static class Rectangle
+	{
+		public static void initIDs() { }
+	}
+	
+	static class Scrollbar
+	{
+		public static void initIDs() { }
+	}
+	
+	static class ScrollPane
+	{
+		public static void initIDs() { }
+	}
+	
+	static class ScrollPaneAdjustable
+	{
+		public static void initIDs() { }
+	}
+	
+	static class SplashScreen
+	{
+	    public static void _update(long splashPtr, int[] data, int x, int y, int width, int height, int scanlineStride){}
+		public static bool _isVisible(long splashPtr){return false;}
+		public static object _getBounds(long splashPtr){return null;}
+		public static long _getInstance(){return 0;}
+		public static void _close(long splashPtr){}
+		public static String _getImageFileName(long splashPtr){return null;}
+		public static String _getImageJarName(long splashPtr){return null;}
+		public static bool _setImageData(long splashPtr, byte[] data){return false;}
+	}
+	
+	static class TextArea
+	{
+		public static void initIDs() { }
+	}
+	
+	static class TextField
+	{
+		public static void initIDs() { }
+	}
+	
+	static class Toolkit
+	{
+		public static void initIDs() { }
+	}
+	
+	static class TrayIcon
+	{
+		public static void initIDs() { }
+	}
+	
+	static class Window
 	{
 		public static void initIDs() { }
 	}
