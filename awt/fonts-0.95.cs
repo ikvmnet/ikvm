@@ -299,6 +299,7 @@ namespace ikvm.awt
         private readonly java.awt.Font font;
         private readonly FontRenderContext frc;
         private readonly char[] text;
+        private NetFontMetrics metrics;
 
 
         internal NetGlyphVector(Font netFont, java.awt.Font font, FontRenderContext frc, char[] text)
@@ -307,6 +308,15 @@ namespace ikvm.awt
             this.font = font;
             this.frc = frc;
             this.text = text;
+        }
+
+        private NetFontMetrics getMetrics()
+        {
+            if(metrics == null)
+            {
+                metrics = new NetFontMetrics(font);
+            }
+            return metrics;
         }
 
         public override bool equals(GlyphVector gv)
@@ -369,14 +379,14 @@ namespace ikvm.awt
             throw new NotImplementedException();
         }
 
-        public override java.awt.Shape getGlyphVisualBounds(int i)
+        public override java.awt.Shape getGlyphVisualBounds(int index)
         {
-            throw new NotImplementedException();
+            return getMetrics().GetStringBounds(new String(text, index, 1));
         }
 
         public override Rectangle2D getLogicalBounds()
         {
-            return new NetFontMetrics(font).GetStringBounds(new String(text));
+            return getMetrics().GetStringBounds(new String(text));
         }
 
         public override int getNumGlyphs()
