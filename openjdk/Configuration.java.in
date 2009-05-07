@@ -29,4 +29,6 @@ package gnu.classpath;
 public interface Configuration
 {
     String default_awt_peer_toolkit = "ikvm.awt.NetToolkit, @AWTASSEMBLY@";
+    
+    String default_graphics_enviroment = "ikvm.awt.NetGraphicsEnvironment, @AWTASSEMBLY@";
 }
