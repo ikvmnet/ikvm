@@ -394,6 +394,7 @@ public class VMSystemProperties
 	p.setProperty("sun.os.patch.level", "");
 	p.setProperty("java.vm.info", "compiled mode");
 	p.setProperty("sun.nio.MaxDirectMemorySize", "-1");
+	p.setProperty("java.awt.graphicsenv", "ikvm.awt.NetGraphicsEnvironment, IKVM.AWT.WinForms");
 	// TODO
 	// sun.cpu.isalist:=pentium_pro+mmx pentium_pro pentium+mmx pentium i486 i386 i86
 	// sun.desktop:=windows
@@ -401,7 +402,6 @@ public class VMSystemProperties
 	// sun.java.launcher:=SUN_STANDARD
 	// sun.jnu.encoding:=Cp1252
 	// sun.management.compiler:=HotSpot Client Compiler
-	// java.awt.graphicsenv:=sun.awt.Win32GraphicsEnvironment
 	// java.awt.printerjob:=sun.awt.windows.WPrinterJob
 	postInit(p);
     }

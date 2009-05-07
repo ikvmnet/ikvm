@@ -1101,7 +1101,7 @@ namespace ikvm.awt
 
         public override java.awt.geom.AffineTransform getDefaultTransform()
         {
-            throw new NotImplementedException();
+            return new java.awt.geom.AffineTransform();
         }
 
         public override java.awt.GraphicsDevice getDevice()
@@ -1166,7 +1166,7 @@ namespace ikvm.awt
         }
     }
 
-    class NetGraphicsEnvironment : java.awt.GraphicsEnvironment
+    public class NetGraphicsEnvironment : java.awt.GraphicsEnvironment
     {
         // Create a bitmap with the dimensions of the argument image. Then
         // create a graphics objects from the bitmap. All paint operations will
