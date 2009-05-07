@@ -23,7 +23,10 @@
  */
 package sun.font;
 
+import ikvm.awt.IkvmToolkit;
+
 import java.awt.Font;
+import java.awt.Toolkit;
 
 
 
@@ -33,8 +36,7 @@ import java.awt.Font;
 public class FontManager{
 
     public static Font2D getFont2D(Font font){
-        // TODO Auto-generated method stub
-        return null;
+        return new PhysicalFont(font);
     }
 
     public static boolean isComplexText(char[] text, int start, int limit){

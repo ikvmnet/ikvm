@@ -29,30 +29,28 @@ import java.awt.font.FontRenderContext;
 
 
 /**
- * 
+ * A Font2D implementation that based on .NET fonts. 
+ * It replace the equals naming Sun class.
  */
-public abstract class Font2D{
+class PhysicalFont extends Font2D{
     
-    /*
-     * All the important subclasses override this which is principally for
-     * the TrueType 'gasp' table.
+    private final Font font;
+    
+    private FontStrike strike;
+
+    PhysicalFont(Font font)
+    {
+        this.font = font;
+    }
+
+    /**
+     * {@inheritDoc}
      */
-    public boolean useAAForPtSize(int ptsize) {
-        return true;
-    }
-
-    public boolean hasSupplementaryChars() {
-        return false;
-    }
-
-    public void removeFromCache(FontStrikeDesc desc){
-        // TODO Auto-generated method stub
-        
-    }
-
+    @Override
     public FontStrike getStrike(Font font, FontRenderContext frc){
-        // TODO Auto-generated method stub
-        return null;
+        if(strike == null){
+            strike = new PhysicalStrike(font);
+        }
+        return strike;
     }
-
 }

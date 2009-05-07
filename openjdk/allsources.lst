@@ -226,6 +226,8 @@ sun/font/CompositeFont.java
 sun/font/Font2D.java
 sun/font/FontManager.java
 sun/font/GlyphLayout.java
+sun/font/PhysicalFont.java
+sun/font/PhysicalStrike.java
 sun/font/StandardGlyphVector.java
 sun/font/StrikeCache.java
 sun/java2d/cmm/lcms/LCMS.java
