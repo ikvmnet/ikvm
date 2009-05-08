@@ -209,6 +209,7 @@ java/util/zip/StreamManipulator.java
 java/util/zip/ZipEntry.java
 java/util/zip/ZipFile.java
 ServiceUI.java
+sun/awt/AbstractDummyToolkit.java
 sun/awt/AppContext.java
 sun/awt/EmbeddedFrame.java
 sun/awt/IkvmDataTransferer.java

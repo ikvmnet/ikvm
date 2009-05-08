@@ -1,7 +1,7 @@
 /*
   Copyright (C) 2002, 2004, 2005, 2006, 2007 Jeroen Frijters
   Copyright (C) 2006 Active Endpoints, Inc.
-  Copyright (C) 2006, 2007, 2008 Volker Berlin (i-net software)
+  Copyright (C) 2006, 2007, 2008, 2009 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -90,7 +90,7 @@ namespace ikvm.awt
 		}
 	}
 
-    public class NetToolkit : gnu.java.awt.ClasspathToolkit, ikvm.awt.IkvmToolkit
+    public class NetToolkit : sun.awt.SunToolkit, ikvm.awt.IkvmToolkit
     {
         internal static java.awt.EventQueue eventQueue = new java.awt.EventQueue();
         internal static volatile Form bogusForm;
@@ -205,52 +205,52 @@ namespace ikvm.awt
             systemColors[java.awt.SystemColor.INFO_TEXT] = SystemColors.InfoText.ToArgb();
         }
 
-        protected override java.awt.peer.ButtonPeer createButton(java.awt.Button target)
+        public override java.awt.peer.ButtonPeer createButton(java.awt.Button target)
         {
             return (NetButtonPeer)CreatePeer(typeof(Button), target, typeof(NetButtonPeer));
         }
 
-        protected override java.awt.peer.TextFieldPeer createTextField(java.awt.TextField target)
+        public override java.awt.peer.TextFieldPeer createTextField(java.awt.TextField target)
         {
             return (NetTextFieldPeer)CreatePeer(typeof(TextBox), target, typeof(NetTextFieldPeer));
         }
 
-        protected override java.awt.peer.LabelPeer createLabel(java.awt.Label target)
+        public override java.awt.peer.LabelPeer createLabel(java.awt.Label target)
         {
             return (NetLabelPeer)CreatePeer(typeof(Label), target, typeof(NetLabelPeer));
         }
 
-        protected override java.awt.peer.ListPeer createList(java.awt.List target)
+        public override java.awt.peer.ListPeer createList(java.awt.List target)
         {
             return (NetListPeer)CreatePeer(typeof(ListBox), target, typeof(NetListPeer));
         }
 
-        protected override java.awt.peer.CheckboxPeer createCheckbox(java.awt.Checkbox target)
+        public override java.awt.peer.CheckboxPeer createCheckbox(java.awt.Checkbox target)
         {
             return (NetCheckboxPeer)CreatePeer(typeof(CheckBox), target, typeof(NetCheckboxPeer));
         }
 
-        protected override java.awt.peer.ScrollbarPeer createScrollbar(java.awt.Scrollbar target)
+        public override java.awt.peer.ScrollbarPeer createScrollbar(java.awt.Scrollbar target)
         {
             throw new NotImplementedException();
         }
 
-        protected override java.awt.peer.ScrollPanePeer createScrollPane(java.awt.ScrollPane target)
+        public override java.awt.peer.ScrollPanePeer createScrollPane(java.awt.ScrollPane target)
         {
             throw new NotImplementedException();
         }
 
-        protected override java.awt.peer.TextAreaPeer createTextArea(java.awt.TextArea target)
+        public override java.awt.peer.TextAreaPeer createTextArea(java.awt.TextArea target)
         {
             return (NetTextAreaPeer)CreatePeer(typeof(TextBox), target, typeof(NetTextAreaPeer));
         }
 
-        protected override java.awt.peer.ChoicePeer createChoice(java.awt.Choice target)
+        public override java.awt.peer.ChoicePeer createChoice(java.awt.Choice target)
         {
             return (NetChoicePeer)CreatePeer(typeof(ComboBox), target, typeof(NetChoicePeer));
         }
 
-        protected override java.awt.peer.FramePeer createFrame(java.awt.Frame target)
+        public override java.awt.peer.FramePeer createFrame(java.awt.Frame target)
         {
             if (!target.isFontSet())
             {
@@ -260,58 +260,57 @@ namespace ikvm.awt
             return (NetFramePeer)CreatePeer(typeof(MyForm), target, typeof(NetFramePeer));
         }
 
-        protected override java.awt.peer.CanvasPeer createCanvas(java.awt.Canvas target)
+/*        public override java.awt.peer.CanvasPeer createCanvas(java.awt.Canvas target)
         {
             return (NewCanvasPeer)CreatePeer(typeof(MyControl), target, typeof(NewCanvasPeer));
         }
 
-        protected override java.awt.peer.PanelPeer createPanel(java.awt.Panel target)
+        public override java.awt.peer.PanelPeer createPanel(java.awt.Panel target)
         {
             return (NetPanelPeer)CreatePeer(typeof(ContainerControl), target, typeof(NetPanelPeer));
         }
-
-        protected override java.awt.peer.WindowPeer createWindow(java.awt.Window target)
+*/
+        public override java.awt.peer.WindowPeer createWindow(java.awt.Window target)
         {
             return (NetWindowPeer)CreatePeer(typeof(UndecoratedForm), target, typeof(NetWindowPeer));
         }
 
-        protected override java.awt.peer.DialogPeer createDialog(java.awt.Dialog target)
+        public override java.awt.peer.DialogPeer createDialog(java.awt.Dialog target)
         {
             return (NetDialogPeer)CreatePeer(typeof(MyForm), target, typeof(NetDialogPeer));
         }
 
-        protected override java.awt.peer.MenuBarPeer createMenuBar(java.awt.MenuBar target)
+        public override java.awt.peer.MenuBarPeer createMenuBar(java.awt.MenuBar target)
         {
             throw new NotImplementedException();
         }
 
-        protected override java.awt.peer.MenuPeer createMenu(java.awt.Menu target)
+        public override java.awt.peer.MenuPeer createMenu(java.awt.Menu target)
         {
             throw new NotImplementedException();
         }
 
-        protected override java.awt.peer.PopupMenuPeer createPopupMenu(java.awt.PopupMenu target)
+        public override java.awt.peer.PopupMenuPeer createPopupMenu(java.awt.PopupMenu target)
         {
             throw new NotImplementedException();
         }
 
-        protected override java.awt.peer.MenuItemPeer createMenuItem(java.awt.MenuItem target)
+        public override java.awt.peer.MenuItemPeer createMenuItem(java.awt.MenuItem target)
         {
             throw new NotImplementedException();
         }
 
-        protected override java.awt.peer.FileDialogPeer createFileDialog(java.awt.FileDialog target)
+        public override java.awt.peer.FileDialogPeer createFileDialog(java.awt.FileDialog target)
         {
             return new NetFileDialogPeer(target);
         }
 
-        protected override java.awt.peer.CheckboxMenuItemPeer createCheckboxMenuItem(java.awt.CheckboxMenuItem target)
+        public override java.awt.peer.CheckboxMenuItemPeer createCheckboxMenuItem(java.awt.CheckboxMenuItem target)
         {
             throw new NotImplementedException();
         }
 
-        [Obsolete]
-        protected override java.awt.peer.FontPeer getFontPeer(string name, int style)
+        public override java.awt.peer.FontPeer getFontPeer(string name, int style)
         {
             throw new NotImplementedException();
         }
@@ -498,7 +497,7 @@ namespace ikvm.awt
 		}
 #endif
 
-        public override java.awt.Font createFont(int format, java.io.InputStream stream)
+/*        public override java.awt.Font createFont(int format, java.io.InputStream stream)
         {
             throw new NotImplementedException();
         }
@@ -526,7 +525,7 @@ namespace ikvm.awt
         {
             throw new NotImplementedException();
         }
-
+*/
         protected override DesktopPeer createDesktopPeer(java.awt.Desktop target)
         {
             return new NetDesktopPeer();
@@ -568,6 +567,9 @@ namespace ikvm.awt
             }
         }
 
+        /*===============================
+         * Implementations of interface SunToolkit
+         */
 
         public override bool isModalExclusionTypeSupported(java.awt.Dialog.ModalExclusionType dmet)
         {
@@ -575,6 +577,70 @@ namespace ikvm.awt
         }
 
         public override bool isModalityTypeSupported(java.awt.Dialog.ModalityType dmt)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override java.awt.Window createInputMethodWindow(string __p1, sun.awt.im.InputContext __p2)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override RobotPeer createRobot(java.awt.Robot r, java.awt.GraphicsDevice screen)
+        {
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT || Environment.OSVersion.Platform == PlatformID.Win32Windows)
+            {
+                return new WindowsRobot(screen);
+            }
+            throw new java.awt.AWTException("Robot not supported for this OS");
+        }
+
+        public override SystemTrayPeer createSystemTray(java.awt.SystemTray st)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override TrayIconPeer createTrayIcon(java.awt.TrayIcon ti)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override java.awt.im.spi.InputMethodDescriptor getInputMethodAdapterDescriptor()
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override int getScreenHeight()
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override int getScreenWidth()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void grab(java.awt.Window w)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override bool isDesktopSupported()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override bool isTraySupported()
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override bool syncNativeQueue(long l)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void ungrab(java.awt.Window w)
         {
             throw new NotImplementedException();
         }

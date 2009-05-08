@@ -59,7 +59,7 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 
 
-public abstract class SunToolkit extends Toolkit
+public abstract class SunToolkit extends AbstractDummyToolkit
     implements WindowClosingSupport, WindowClosingListener,
     ComponentFactory, InputMethodSupport {
 
