@@ -1744,6 +1744,9 @@ namespace IKVM.NativeCode.java
 				catch (System.UnauthorizedAccessException)
 				{
 				}
+				catch (System.NotSupportedException)
+				{
+				}
 				return null;
 			}
 
