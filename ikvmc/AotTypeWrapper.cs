@@ -47,10 +47,132 @@ namespace IKVM.Internal
 		private TypeBuilder typeBuilderGhostInterface;
 		private Annotation annotation;
 		private MethodWrapper[] replacedMethods;
+		private WorkaroundBaseClass workaroundBaseClass;
 
 		internal AotTypeWrapper(ClassFile f, CompilerClassLoader loader)
 			: base(f, loader)
 		{
+		}
+
+		protected override Type GetBaseTypeForDefineType()
+		{
+			TypeWrapper baseTypeWrapper = BaseTypeWrapper;
+			if (this.IsPublic && this.IsAbstract && baseTypeWrapper.IsPublic && baseTypeWrapper.IsAbstract)
+			{
+				// FXBUG
+				// if the current class widens access on an abstract base class method,
+				// we need to inject an artificial base class to workaround a C# compiler bug
+				List<MethodWrapper> methods = null;
+				foreach (MethodWrapper mw in GetMethods())
+				{
+					if (!mw.IsStatic && mw.IsPublic)
+					{
+						MethodWrapper baseMethod = baseTypeWrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
+						if (baseMethod != null && baseMethod.IsAbstract && baseMethod.IsProtected)
+						{
+							if (methods == null)
+							{
+								methods = new List<MethodWrapper>();
+							}
+							methods.Add(baseMethod);
+						}
+					}
+				}
+				if (methods != null)
+				{
+					string name = "__" + Name + "__WorkaroundBaseClass";
+					while (!classLoader.GetTypeWrapperFactory().ReserveName(name))
+					{
+						name += "_";
+					}
+					TypeBuilder typeBuilder = classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(name, TypeAttributes.Public | TypeAttributes.Abstract, base.GetBaseTypeForDefineType());
+					AttributeHelper.HideFromJava(typeBuilder);
+					workaroundBaseClass = new WorkaroundBaseClass(typeBuilder, methods.ToArray());
+					List<MethodWrapper> constructors = new List<MethodWrapper>();
+					foreach (MethodWrapper mw in baseTypeWrapper.GetMethods())
+					{
+						if (ReferenceEquals(mw.Name, StringConstants.INIT) && mw.IsAccessibleFrom(baseTypeWrapper, this, this))
+						{
+							constructors.Add(new ConstructorForwarder(typeBuilder, mw));
+						}
+					}
+					replacedMethods = constructors.ToArray();
+					return typeBuilder;
+				}
+			}
+			return base.GetBaseTypeForDefineType();
+		}
+
+		internal override void Finish()
+		{
+			base.Finish();
+			lock (this)
+			{
+				if (workaroundBaseClass != null)
+				{
+					workaroundBaseClass.Finish();
+					workaroundBaseClass = null;
+				}
+			}
+		}
+
+		private sealed class WorkaroundBaseClass
+		{
+			private readonly TypeBuilder typeBuilder;
+			private readonly MethodWrapper[] methods;
+
+			internal WorkaroundBaseClass(TypeBuilder typeBuilder, MethodWrapper[] methods)
+			{
+				this.typeBuilder = typeBuilder;
+				this.methods = methods;
+			}
+
+			internal void Finish()
+			{
+				foreach (MethodWrapper mw in methods)
+				{
+					MethodBuilder mb = typeBuilder.DefineMethod(mw.Name, MethodAttributes.FamORAssem | MethodAttributes.Virtual, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
+					AttributeHelper.HideFromJava(mb);
+					CodeEmitter ilgen = CodeEmitter.Create(mb);
+					EmitHelper.Throw(ilgen, "java.lang.AbstractMethodError");
+				}
+				typeBuilder.CreateType();
+			}
+		}
+
+		private sealed class ConstructorForwarder : MethodWrapper
+		{
+			private readonly TypeBuilder typeBuilder;
+			private readonly MethodWrapper ctor;
+			private ConstructorBuilder constructorBuilder;
+
+			internal ConstructorForwarder(TypeBuilder typeBuilder, MethodWrapper ctor)
+				: base(ctor.DeclaringType, ctor.Name, ctor.Signature, null, null, null, ctor.Modifiers, MemberFlags.None)
+			{
+				this.typeBuilder = typeBuilder;
+				this.ctor = ctor;
+			}
+
+			protected override void DoLinkMethod()
+			{
+				ctor.Link();
+				Type[] parameters = ctor.GetParametersForDefineMethod();
+				constructorBuilder = typeBuilder.DefineConstructor(MethodAttributes.PrivateScope, CallingConventions.Standard, parameters);
+				AttributeHelper.HideFromJava(constructorBuilder);
+				CodeEmitter ilgen = CodeEmitter.Create(constructorBuilder);
+				ilgen.Emit(OpCodes.Ldarg_0);
+				for (int i = 1; i <= parameters.Length; i++)
+				{
+					ilgen.Emit(OpCodes.Ldarg_S, (byte)i);
+				}
+				ctor.EmitCall(ilgen);
+				ilgen.Emit(OpCodes.Ret);
+			}
+
+			internal override void EmitCall(CodeEmitter ilgen)
+			{
+				ilgen.Emit(OpCodes.Call, constructorBuilder);
+			}
 		}
 
 		internal override bool IsGhost
