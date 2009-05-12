@@ -40,32 +40,63 @@ namespace IKVM.Internal
 		}
 
 #if !FIRST_PASS
-		private static Dictionary<string, VfsEntry> entries;
+		private static VfsDirectory root;
 
 		private abstract class VfsEntry
 		{
+		}
+
+		private abstract class VfsFile : VfsEntry
+		{
 			internal abstract long Size { get; }
-			internal virtual bool IsDirectory { get { return false; } }
 			internal abstract System.IO.Stream Open();
 		}
 
-		private class VfsDummyEntry : VfsEntry
+		private class VfsDirectory : VfsEntry
 		{
-			private bool directory;
+			private readonly Dictionary<string, VfsEntry> entries = new Dictionary<string,VfsEntry>();
 
-			internal VfsDummyEntry(bool directory)
+			internal VfsDirectory AddDirectory(string name)
 			{
-				this.directory = directory;
+				VfsDirectory dir = new VfsDirectory();
+				Add(name, dir);
+				return dir;
 			}
 
+			internal void Add(string name, VfsEntry entry)
+			{
+				lock (entries)
+				{
+					entries.Add(name, entry);
+				}
+			}
+
+			internal VfsEntry GetEntry(string name)
+			{
+				VfsEntry entry;
+				lock (entries)
+				{
+					entries.TryGetValue(name, out entry);
+				}
+				return entry;
+			}
+
+			internal string[] List()
+			{
+				lock (entries)
+				{
+					string[] list = new string[entries.Keys.Count];
+					entries.Keys.CopyTo(list, 0);
+					return list;
+				}
+			}
+		}
+
+		private sealed class VfsDummyFile : VfsFile
+		{
 			internal override long Size
 			{
 				get { return 0; }
-			}
-
-			internal override bool IsDirectory
-			{
-				get { return directory; }
 			}
 
 			internal override System.IO.Stream Open()
@@ -74,7 +105,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		private class VfsZipEntry : VfsEntry
+		private sealed class VfsZipEntry : VfsFile
 		{
 			private java.util.zip.ZipFile zipFile;
 			private java.util.zip.ZipEntry entry;
@@ -90,18 +121,13 @@ namespace IKVM.Internal
 				get { return entry.getSize(); }
 			}
 
-			internal override bool IsDirectory
-			{
-				get { return entry.isDirectory(); }
-			}
-
 			internal override System.IO.Stream Open()
 			{
 				return new ZipEntryStream(zipFile, entry);
 			}
 		}
 
-		private class VfsCacertsEntry : VfsEntry
+		private sealed class VfsCacertsEntry : VfsFile
 		{
 			private byte[] buf;
 
@@ -145,7 +171,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		private class VfsVfsZipEntry : VfsEntry
+		private sealed class VfsVfsZipEntry : VfsFile
 		{
 			internal override long Size
 			{
@@ -165,9 +191,8 @@ namespace IKVM.Internal
 			}
 		}
 
-		private abstract class VfsExecutable : VfsEntry
+		private abstract class VfsExecutable : VfsFile
 		{
-			internal override bool IsDirectory { get { return false; } }
 			internal override long Size { get { return 0; } }
 
 			internal override System.IO.Stream Open()
@@ -178,7 +203,7 @@ namespace IKVM.Internal
 			internal abstract string GetPath();
 		}
 
-		private class VfsJavaExe : VfsExecutable
+		private sealed class VfsJavaExe : VfsExecutable
 		{
 			private string path;
 
@@ -194,42 +219,64 @@ namespace IKVM.Internal
 
 		private static void Initialize()
 		{
+			VfsDirectory root = new VfsDirectory();
+			root.AddDirectory("lib").AddDirectory("security").Add("cacerts", new VfsCacertsEntry());
+			VfsDirectory bin = new VfsDirectory();
+			root.Add("bin", bin);
+			AddDummyLibrary(bin, "zip");
+			AddDummyLibrary(bin, "awt");
+			AddDummyLibrary(bin, "rmi");
+			AddDummyLibrary(bin, "w2k_lsa_auth");
+			AddDummyLibrary(bin, "jaas_nt");
+			AddDummyLibrary(bin, "jaas_unix");
+			AddDummyLibrary(bin, "unpack");
+			AddDummyLibrary(bin, "net");
+			bin.Add("java", new VfsJavaExe());
+			bin.Add("javaw", new VfsJavaExe());
+			bin.Add("java.exe", new VfsJavaExe());
+			bin.Add("javaw.exe", new VfsJavaExe());
+
 			// this is a weird loop back, the vfs.zip resource is loaded from vfs,
 			// because that's the easiest way to construct a ZipFile from a Stream.
 			java.util.zip.ZipFile zf = new java.util.zip.ZipFile(RootPath + "vfs.zip");
 			java.util.Enumeration e = zf.entries();
-			Dictionary<string, VfsEntry> dict = new Dictionary<string, VfsEntry>();
 			char sep = java.io.File.separatorChar;
 			while (e.hasMoreElements())
 			{
-				java.util.zip.ZipEntry entry = (java.util.zip.ZipEntry)e.nextElement();
-				dict[RootPath + entry.getName().Replace('/', sep)] = new VfsZipEntry(zf, entry);
+				AddZipEntry(zf, root, (java.util.zip.ZipEntry)e.nextElement());
 			}
-			dict[RootPath.Substring(0, RootPath.Length - 1)] = new VfsDummyEntry(true);
-			dict[RootPath + "lib/security/cacerts".Replace('/', sep)] = new VfsCacertsEntry();
-			dict[RootPath + "bin"] = new VfsDummyEntry(true);
-			dict[RootPath + "bin" + sep + global::java.lang.System.mapLibraryName("zip")] = new VfsDummyEntry(false);
-			dict[RootPath + "bin" + sep + global::java.lang.System.mapLibraryName("awt")] = new VfsDummyEntry(false);
-			dict[RootPath + "bin" + sep + global::java.lang.System.mapLibraryName("rmi")] = new VfsDummyEntry(false);
-			dict[RootPath + "bin" + sep + global::java.lang.System.mapLibraryName("w2k_lsa_auth")] = new VfsDummyEntry(false);
-			dict[RootPath + "bin" + sep + global::java.lang.System.mapLibraryName("jaas_nt")] = new VfsDummyEntry(false);
-			dict[RootPath + "bin" + sep + global::java.lang.System.mapLibraryName("jaas_unix")] = new VfsDummyEntry(false);
-			dict[RootPath + "bin" + sep + global::java.lang.System.mapLibraryName("unpack")] = new VfsDummyEntry(false);
-			dict[RootPath + "bin" + sep + global::java.lang.System.mapLibraryName("net")] = new VfsDummyEntry(false);
-			dict[RootPath + "bin" + sep + "java"] = new VfsJavaExe();
-			dict[RootPath + "bin" + sep + "javaw"] = new VfsJavaExe();
-			dict[RootPath + "bin" + sep + "java.exe"] = new VfsJavaExe();
-			dict[RootPath + "bin" + sep + "javaw.exe"] = new VfsJavaExe();
-			if (Interlocked.CompareExchange(ref entries, dict, null) != null)
+
+			Interlocked.CompareExchange(ref VirtualFileSystem.root, root, null);
+		}
+
+		private static void AddDummyLibrary(VfsDirectory dir, string name)
+		{
+			dir.Add(java.lang.System.mapLibraryName(name), new VfsDummyFile());
+		}
+
+		private static void AddZipEntry(java.util.zip.ZipFile zf, VfsDirectory root, java.util.zip.ZipEntry entry)
+		{
+			if (entry.isDirectory())
 			{
-				// we lost the race, so we close our zip file
-				zf.close();
+				return;
 			}
+			string[] path = entry.getName().Split('/');
+			VfsDirectory dir = root;
+			for (int i = 0; i < path.Length - 1; i++)
+			{
+				VfsDirectory existing = dir.GetEntry(path[i]) as VfsDirectory;
+				if (existing == null)
+				{
+					existing = dir.AddDirectory(path[i]);
+				}
+				dir = existing;
+			}
+			dir.Add(path[path.Length - 1], new VfsZipEntry(zf, entry));
 		}
 
 		private static VfsEntry GetVfsEntry(string name)
 		{
-			if (entries == null)
+			if (root == null)
 			{
 				if (name == RootPath + "vfs.zip")
 				{
@@ -237,9 +284,21 @@ namespace IKVM.Internal
 				}
 				Initialize();
 			}
-			VfsEntry ve;
-			entries.TryGetValue(name, out ve);
-			return ve;
+			if (name.Length <= RootPath.Length)
+			{
+				return root;
+			}
+			string[] path = name.Substring(RootPath.Length).Split(java.io.File.separatorChar);
+			VfsDirectory dir = root;
+			for (int i = 0; i < path.Length - 1; i++)
+			{
+				if (dir == null)
+				{
+					return null;
+				}
+				dir = dir.GetEntry(path[i]) as VfsDirectory;
+			}
+			return dir.GetEntry(path[path.Length - 1]);
 		}
 
 		private sealed class ZipEntryStream : System.IO.Stream
@@ -382,7 +441,7 @@ namespace IKVM.Internal
 			{
 				throw new System.IO.IOException("vfs is read-only");
 			}
-			VfsEntry entry = GetVfsEntry(name);
+			VfsFile entry = GetVfsEntry(name) as VfsFile;
 			if (entry == null)
 			{
 				throw new System.IO.FileNotFoundException("File not found");
@@ -396,7 +455,7 @@ namespace IKVM.Internal
 #if FIRST_PASS
 			return 0;
 #else
-			VfsEntry entry = GetVfsEntry(path);
+			VfsFile entry = GetVfsEntry(path) as VfsFile;
 			return entry == null ? 0 : entry.Size;
 #endif
 		}
@@ -423,7 +482,7 @@ namespace IKVM.Internal
 			const int BA_EXISTS = 0x01;
 			const int BA_REGULAR = 0x02;
 			const int BA_DIRECTORY = 0x04;
-			return entry.IsDirectory ? BA_EXISTS | BA_DIRECTORY : BA_EXISTS | BA_REGULAR;
+			return entry is VfsDirectory ? BA_EXISTS | BA_DIRECTORY : BA_EXISTS | BA_REGULAR;
 #endif
 		}
 
@@ -438,6 +497,16 @@ namespace IKVM.Internal
 				return path;
 			}
 			return entry.GetPath();
+#endif
+		}
+
+		internal static string[] List(string path)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			VfsDirectory dir = GetVfsEntry(path) as VfsDirectory;
+			return dir == null ? null : dir.List();
 #endif
 		}
 	}

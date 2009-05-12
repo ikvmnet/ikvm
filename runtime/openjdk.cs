@@ -1310,7 +1310,12 @@ namespace IKVM.NativeCode.java
 			{
 				try
 				{
-					string[] l = System.IO.Directory.GetFileSystemEntries(GetPathFromFile(f));
+					string path = GetPathFromFile(f);
+					if (VirtualFileSystem.IsVirtualFS(path))
+					{
+						return VirtualFileSystem.List(path);
+					}
+					string[] l = System.IO.Directory.GetFileSystemEntries(path);
 					for (int i = 0; i < l.Length; i++)
 					{
 						int pos = l[i].LastIndexOf(System.IO.Path.DirectorySeparatorChar);
