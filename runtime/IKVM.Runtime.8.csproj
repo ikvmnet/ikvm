@@ -141,6 +141,7 @@
     <Compile Include="verifier.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="vfs.cs" />
     <Compile Include="vm.cs">
       <SubType>Code</SubType>
     </Compile>
