@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2008 Jeroen Frijters
+  Copyright (C) 2002-2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -46,6 +46,7 @@ namespace IKVM.Internal
 		private MethodBuilder ghostCastArrayMethod;
 		private TypeBuilder typeBuilderGhostInterface;
 		private Annotation annotation;
+		private MethodWrapper[] replacedMethods;
 
 		internal AotTypeWrapper(ClassFile f, CompilerClassLoader loader)
 			: base(f, loader)
@@ -1010,6 +1011,69 @@ namespace IKVM.Internal
 			{
 				return annotation;
 			}
+		}
+
+		private sealed class ReplacedMethodWrapper : MethodWrapper
+		{
+			private IKVM.Internal.MapXml.InstructionList code;
+
+			internal ReplacedMethodWrapper(TypeWrapper tw, string name, string sig, IKVM.Internal.MapXml.InstructionList code)
+				: base(tw, name, sig, null, null, null, Modifiers.Public, MemberFlags.None)
+			{
+				this.code = code;
+			}
+
+			internal ReplacedMethodWrapper(ClassFile.ConstantPoolItemMI cpi, IKVM.Internal.MapXml.InstructionList code)
+				: base(cpi.GetClassType(), cpi.Name, cpi.Signature, null, cpi.GetRetType(), cpi.GetArgTypes(), Modifiers.Public, MemberFlags.None)
+			{
+				this.code = code;
+			}
+
+			protected override void DoLinkMethod()
+			{
+			}
+
+			internal override void EmitCall(CodeEmitter ilgen)
+			{
+				code.Emit(DeclaringType.GetClassLoader(), ilgen);
+			}
+
+			internal override void EmitCallvirt(CodeEmitter ilgen)
+			{
+				code.Emit(DeclaringType.GetClassLoader(), ilgen);
+			}
+
+			internal override void EmitNewobj(CodeEmitter ilgen, MethodAnalyzer ma, int opcodeIndex)
+			{
+				code.Emit(DeclaringType.GetClassLoader(), ilgen);
+			}
+		}
+
+		internal override MethodWrapper[] GetReplacedMethodsFor(MethodWrapper mw)
+		{
+			IKVM.Internal.MapXml.ReplaceMethodCall[] replacedMethods = ((CompilerClassLoader)GetClassLoader()).GetReplacedMethodsFor(mw);
+			MethodWrapper[] baseReplacedMethodWrappers = base.GetReplacedMethodsFor(mw);
+			if (replacedMethods != null || baseReplacedMethodWrappers != null || this.replacedMethods != null)
+			{
+				List<MethodWrapper> list = new List<MethodWrapper>();
+				if (replacedMethods != null)
+				{
+					for (int i = 0; i < replacedMethods.Length; i++)
+					{
+						list.Add(new ReplacedMethodWrapper(GetClassLoader().LoadClassByDottedName(replacedMethods[i].Class), replacedMethods[i].Name, replacedMethods[i].Sig, replacedMethods[i].code));
+					}
+				}
+				if (baseReplacedMethodWrappers != null)
+				{
+					list.AddRange(baseReplacedMethodWrappers);
+				}
+				if (this.replacedMethods != null)
+				{
+					list.AddRange(this.replacedMethods);
+				}
+				return list.ToArray();
+			}
+			return null;
 		}
 	}
 }

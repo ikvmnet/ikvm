@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2008 Jeroen Frijters
+  Copyright (C) 2002-2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -8731,6 +8731,13 @@ namespace IKVM.Internal
 			return null;
 		}
 #endif
+
+#if STATIC_COMPILER
+		internal virtual MethodWrapper[] GetReplacedMethodsFor(MethodWrapper mw)
+		{
+			return null;
+		}
+#endif // STATIC_COMPILER
 	}
 #endif // !COMPACT_FRAMEWORK
 

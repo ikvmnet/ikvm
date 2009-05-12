@@ -167,7 +167,7 @@ class Compiler
 	private static TypeWrapper cli_System_Object;
 	private static TypeWrapper cli_System_Exception;
 	private readonly DynamicTypeWrapper.FinishContext context;
-	private TypeWrapper clazz;
+	private DynamicTypeWrapper clazz;
 	private MethodWrapper mw;
 	private ClassFile classFile;
 	private ClassFile.Method m;
@@ -182,7 +182,6 @@ class Compiler
 	private bool keepAlive;
 	private bool strictfp;
 #if STATIC_COMPILER
-	private IKVM.Internal.MapXml.ReplaceMethodCall[] replacedMethods;
 	private MethodWrapper[] replacedMethodWrappers;
 #endif
 
@@ -256,7 +255,7 @@ class Compiler
 		}
 	}
 
-	private Compiler(DynamicTypeWrapper.FinishContext context, TypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, CodeEmitter ilGenerator, ClassLoaderWrapper classLoader, ISymbolDocumentWriter symboldocument, Dictionary<MethodKey, MethodInfo> invokespecialstubcache)
+	private Compiler(DynamicTypeWrapper.FinishContext context, DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, CodeEmitter ilGenerator, ClassLoaderWrapper classLoader, ISymbolDocumentWriter symboldocument, Dictionary<MethodKey, MethodInfo> invokespecialstubcache)
 	{
 		this.context = context;
 		this.clazz = clazz;
@@ -278,11 +277,7 @@ class Compiler
 			keepAlive = finalize != null && finalize.DeclaringType != java_lang_Object && finalize.DeclaringType != cli_System_Object && finalize.DeclaringType != java_lang_Throwable && finalize.DeclaringType != cli_System_Exception;
 		}
 #if STATIC_COMPILER
-		replacedMethods = ((CompilerClassLoader)clazz.GetClassLoader()).GetReplacedMethodsFor(mw);
-		if(replacedMethods != null)
-		{
-			replacedMethodWrappers = new MethodWrapper[replacedMethods.Length];
-		}
+		replacedMethodWrappers = clazz.GetReplacedMethodsFor(mw);
 #endif
 
 		Profiler.Enter("MethodAnalyzer");
@@ -3295,50 +3290,20 @@ class Compiler
 		}
 	}
 
-#if STATIC_COMPILER
-	private class ReplacedMethodWrapper : MethodWrapper
-	{
-		private IKVM.Internal.MapXml.InstructionList code;
-
-		internal ReplacedMethodWrapper(ClassFile.ConstantPoolItemMI cpi, IKVM.Internal.MapXml.InstructionList code)
-			: base(cpi.GetClassType(), cpi.Name, cpi.Signature, null, cpi.GetRetType(), cpi.GetArgTypes(), Modifiers.Public, MemberFlags.None)
-		{
-			this.code = code;
-		}
-
-		internal override void EmitCall(CodeEmitter ilgen)
-		{
-			code.Emit(DeclaringType.GetClassLoader(), ilgen);
-		}
-
-		internal override void EmitCallvirt(CodeEmitter ilgen)
-		{
-			code.Emit(DeclaringType.GetClassLoader(), ilgen);
-		}
-
-		internal override void EmitNewobj(CodeEmitter ilgen, MethodAnalyzer ma, int opcodeIndex)
-		{
-			code.Emit(DeclaringType.GetClassLoader(), ilgen);
-		}
-	}
-#endif
-
 	private MethodWrapper GetMethodCallEmitter(ClassFile.ConstantPoolItemMI cpi, NormalizedByteCode invoke)
 	{
 #if STATIC_COMPILER
-		if(replacedMethods != null)
+		if(replacedMethodWrappers != null)
 		{
-			for(int i = 0; i < replacedMethods.Length; i++)
+			for(int i = 0; i < replacedMethodWrappers.Length; i++)
 			{
-				if(replacedMethods[i].Class == cpi.Class
-					&& replacedMethods[i].Name == cpi.Name
-					&& replacedMethods[i].Sig == cpi.Signature)
+				if(replacedMethodWrappers[i].DeclaringType == cpi.GetClassType()
+					&& replacedMethodWrappers[i].Name == cpi.Name
+					&& replacedMethodWrappers[i].Signature == cpi.Signature)
 				{
-					if(replacedMethodWrappers[i] == null)
-					{
-						replacedMethodWrappers[i] = new ReplacedMethodWrapper(cpi, replacedMethods[i].code);
-					}
-					return replacedMethodWrappers[i];
+					MethodWrapper rmw = replacedMethodWrappers[i];
+					rmw.Link();
+					return rmw;
 				}
 			}
 		}
