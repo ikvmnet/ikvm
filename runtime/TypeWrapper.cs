@@ -4370,12 +4370,12 @@ namespace IKVM.Internal
 						{
 							// LAMESPEC the CLI spec says interfaces cannot contain nested types (Part.II, 9.6), but that rule isn't enforced
 							// (and broken by J# as well), so we'll just ignore it too.
-							typeBuilder = outer.DefineNestedType(GetInnerClassName(outerClassWrapper.Name, f.Name), typeAttribs, wrapper.BaseTypeWrapper.TypeAsBaseType);
+							typeBuilder = outer.DefineNestedType(GetInnerClassName(outerClassWrapper.Name, f.Name), typeAttribs, wrapper.GetBaseTypeForDefineType());
 						}
 						else
 #endif // STATIC_COMPILER
 						{
-							typeBuilder = wrapper.classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(mangledTypeName, typeAttribs, wrapper.BaseTypeWrapper.TypeAsBaseType);
+							typeBuilder = wrapper.classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(mangledTypeName, typeAttribs, wrapper.GetBaseTypeForDefineType());
 						}
 					}
 #if STATIC_COMPILER
@@ -8732,6 +8732,11 @@ namespace IKVM.Internal
 		}
 #endif
 
+		protected virtual Type GetBaseTypeForDefineType()
+		{
+			return BaseTypeWrapper.TypeAsBaseType;
+		}
+
 #if STATIC_COMPILER
 		internal virtual MethodWrapper[] GetReplacedMethodsFor(MethodWrapper mw)
 		{
@@ -8977,7 +8982,13 @@ namespace IKVM.Internal
 						return CoreClasses.java.lang.Object.Wrapper;
 					}
 				}
-				return ClassLoaderWrapper.GetWrapperFromType(type.BaseType);
+				TypeWrapper tw = null;
+				while(tw == null)
+				{
+					type = type.BaseType;
+					tw = ClassLoaderWrapper.GetWrapperFromType(type);
+				}
+				return tw;
 			}
 		}
 
