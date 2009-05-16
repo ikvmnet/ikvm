@@ -1,7 +1,7 @@
 /*
   Copyright (C) 2002, 2004, 2005, 2006, 2007 Jeroen Frijters
   Copyright (C) 2006 Active Endpoints, Inc.
-  Copyright (C) 2006, 2007 Volker Berlin
+  Copyright (C) 2006, 2007, 2009 Volker Berlin
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -41,16 +41,14 @@ namespace ikvm.awt
 
     class NetFontMetrics : java.awt.FontMetrics
     {
-        private readonly NetFontPeer peer;
 
         public NetFontMetrics(java.awt.Font font) : base(font)
         {
-            peer = (NetFontPeer)font.getPeer();
         }
 
         private Font GetNetFont()
         {
-            return peer.netFont;
+            return font.getNetFont();
         }
 
         public override int getHeight()
@@ -165,7 +163,7 @@ namespace ikvm.awt
 		}
     }
 
-    class NetFontPeer : gnu.java.awt.peer.ClasspathFontPeer, IDisposable
+/*    class NetFontPeer : java.awt.peer.FontPeer, IDisposable
     {
         internal readonly Font netFont;
 
@@ -175,7 +173,7 @@ namespace ikvm.awt
             netFont = J2C.ConvertFont(name, getStyle(null), getSize(null));
         }
 
-        public override bool canDisplay(java.awt.Font font, char param2)
+        public override bool canDisplay(int codePoint)
         {
             //HACK There is no equivalent in C# http://msdn2.microsoft.com/en-us/library/sf4dhbw8(VS.80).aspx
             return true;
@@ -291,7 +289,7 @@ namespace ikvm.awt
         }
 
         #endregion
-    }
+    }*/
 
     class NetGlyphVector : GlyphVector
     {

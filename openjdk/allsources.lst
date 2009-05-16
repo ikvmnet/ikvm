@@ -4,7 +4,6 @@
 ../../classpath-0.95/gnu/java/awt/BitwiseXORComposite.java
 ../../classpath-0.95/gnu/java/awt/Buffers.java
 ../../classpath-0.95/gnu/java/awt/ClasspathGraphicsEnvironment.java
-../../classpath-0.95/gnu/java/awt/ClasspathToolkit.java
 ../../classpath-0.95/gnu/java/awt/color/CieXyzConverter.java
 ../../classpath-0.95/gnu/java/awt/color/ClutProfileConverter.java
 ../../classpath-0.95/gnu/java/awt/color/ColorLookUpTable.java
@@ -20,7 +19,6 @@
 ../../classpath-0.95/gnu/java/awt/color/ToneReproductionCurve.java
 ../../classpath-0.95/gnu/java/awt/ComponentDataBlitOp.java
 ../../classpath-0.95/gnu/java/awt/ComponentReshapeEvent.java
-../../classpath-0.95/gnu/java/awt/EmbeddedWindow.java
 ../../classpath-0.95/gnu/java/awt/EventModifier.java
 ../../classpath-0.95/gnu/java/awt/GradientPaintContext.java
 ../../classpath-0.95/gnu/java/awt/image/ImageDecoder.java
@@ -41,7 +39,6 @@
 ../../classpath-0.95/gnu/java/awt/java2d/ShapeCache.java
 ../../classpath-0.95/gnu/java/awt/java2d/TexturePaintContext.java
 ../../classpath-0.95/gnu/java/awt/LowPriorityEvent.java
-../../classpath-0.95/gnu/java/awt/peer/ClasspathFontPeer.java
 ../../classpath-0.95/gnu/java/awt/peer/EmbeddedWindowPeer.java
 ../../classpath-0.95/gnu/java/awt/peer/headless/HeadlessGraphicsEnvironment.java
 ../../classpath-0.95/gnu/java/awt/peer/NativeEventLoopRunningEvent.java

@@ -23,11 +23,24 @@
  */
 package sun.font;
 
+import cli.System.Drawing.Font;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+
 
 
 /**
  * 
  */
 public class CompositeFont extends Font2D{
+
+    @Override
+    public int getStyle(){
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public Font createNetFont(java.awt.Font font){
+        throw new NotImplementedException();
+    }
 
 }

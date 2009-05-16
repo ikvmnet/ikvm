@@ -23,61 +23,273 @@
  */
 package sun.font;
 
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Shape;
+import java.awt.Toolkit;
+import java.awt.font.FontRenderContext;
+import java.awt.font.GlyphJustificationInfo;
+import java.awt.font.GlyphMetrics;
 import java.awt.font.GlyphVector;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
+import java.text.CharacterIterator;
 
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
- * Standard implementation of GlyphVector used by Font, GlyphList, and
- * SunGraphics2D.
- *
+ * Standard implementation of GlyphVector used by Font, GlyphList, and SunGraphics2D.
+ * 
  */
-public abstract class StandardGlyphVector extends GlyphVector{
+public class StandardGlyphVector extends GlyphVector{
+
     private float[] positions; // only if not default advances
-    
+
+    private final Font font;
+
+    private final FontRenderContext frc;
+
+    private final String glyphs;
+
+    private transient FontMetrics metrics;
+
+
+    public StandardGlyphVector(Font font, String str, FontRenderContext frc){
+        if(str == null){
+            throw new NullPointerException("Glyphs are null");
+        }
+        this.font = font;
+        this.frc = frc;
+        this.glyphs = str;
+    }
+
+
+    public StandardGlyphVector(Font font, CharacterIterator ci, FontRenderContext frc){
+        this(font, getString(ci), frc);
+    }
+
+
+    public StandardGlyphVector(Font font, int[] glyphCodes, FontRenderContext frc){
+        throw new NotImplementedException();
+    }
+
+
+    public StandardGlyphVector(Font font, char[] chars, FontRenderContext frc){
+        this(font, chars, 0, chars.length, frc);
+    }
+
+
+    public StandardGlyphVector(Font font, char[] chars, int beginIndex, int length, FontRenderContext frc){
+        this(font, new String(chars, beginIndex, length), frc);
+    }
+
+
+    /**
+     * Create and get
+     * 
+     * @return
+     */
+    private FontMetrics getMetrics(){
+        if(metrics == null){
+            metrics = Toolkit.getDefaultToolkit().getFontMetrics(font);
+        }
+        return metrics;
+    }
+
+
     /**
      * As a concrete subclass of GlyphVector, this must implement clone.
      */
-    public Object clone() {
-        try {
+    @Override
+    public Object clone(){
+        try{
             StandardGlyphVector result = (StandardGlyphVector)super.clone();
 
             return result;
-        }
-        catch (CloneNotSupportedException e) {
+        }catch(CloneNotSupportedException e){
+            e.printStackTrace();
         }
 
         return this;
     }
 
-    //////////////////////
+
+    // ////////////////////
     // StandardGlyphVector new public methods
-    /////////////////////
+    // ///////////////////
 
     /**
-     * Set all the glyph positions, including the 'after last glyph' position.
-     * The srcPositions array must be of length (numGlyphs + 1) * 2.
+     * Set all the glyph positions, including the 'after last glyph' position. The srcPositions array must be of length
+     * (numGlyphs + 1) * 2.
      */
-    public void setGlyphPositions(float[] srcPositions) {
-
-        positions = (float[])srcPositions.clone();
-
+    public void setGlyphPositions(float[] srcPositions){
+        positions = srcPositions.clone();
     }
 
+
     /**
-     * This is a convenience overload that gets all the glyph positions, which
-     * is what you usually want to do if you're getting more than one.
-     * !!! should I bother taking result parameter?
+     * This is a convenience overload that gets all the glyph positions, which is what you usually want to do if you're
+     * getting more than one. !!! should I bother taking result parameter?
      */
-    public float[] getGlyphPositions(float[] result) {
+    public float[] getGlyphPositions(float[] result){
         return positions;
     }
+
 
     /**
      * For each glyph return posx, posy, advx, advy, visx, visy, visw, vish.
      */
-    public float[] getGlyphInfo() {
-        throw new Error("getGlyphInfo is not implemented.");
+    public float[] getGlyphInfo(){
+        throw new NotImplementedException();
+    }
+
+
+    @Override
+    public boolean equals(GlyphVector set){
+        throw new NotImplementedException();
+    }
+
+
+    @Override
+    public Font getFont(){
+        return font;
+    }
+
+
+    @Override
+    public FontRenderContext getFontRenderContext(){
+        return frc;
+    }
+
+
+    @Override
+    public int getGlyphCode(int glyphIndex){
+        throw new NotImplementedException();
+    }
+
+
+    @Override
+    public int[] getGlyphCodes(int beginGlyphIndex, int numEntries, int[] codeReturn){
+        throw new NotImplementedException();
+    }
+
+
+    @Override
+    public GlyphJustificationInfo getGlyphJustificationInfo(int glyphIndex){
+        throw new NotImplementedException();
+    }
+
+
+    @Override
+    public Shape getGlyphLogicalBounds(int glyphIndex){
+        throw new NotImplementedException();
+    }
+
+
+    @Override
+    public GlyphMetrics getGlyphMetrics(int glyphIndex){
+        throw new NotImplementedException();
+    }
+
+
+    @Override
+    public Shape getGlyphOutline(int glyphIndex){
+        throw new NotImplementedException();
+    }
+
+
+    @Override
+    public Point2D getGlyphPosition(int glyphIndex){
+        throw new NotImplementedException();
+    }
+
+
+    @Override
+    public float[] getGlyphPositions(int beginGlyphIndex, int numEntries, float[] positionReturn){
+        throw new NotImplementedException();
+    }
+
+
+    @Override
+    public AffineTransform getGlyphTransform(int glyphIndex){
+        throw new NotImplementedException();
+    }
+
+
+    @Override
+    public Shape getGlyphVisualBounds(int index){
+        return getMetrics().getStringBounds(glyphs.substring(index, index + 1), null);
+    }
+
+
+    @Override
+    public Rectangle2D getLogicalBounds(){
+        throw new NotImplementedException();
+    }
+
+
+    @Override
+    public int getNumGlyphs(){
+        return glyphs.length();
+    }
+
+
+    @Override
+    public Shape getOutline(){
+        throw new NotImplementedException();
+    }
+
+
+    @Override
+    public Shape getOutline(float x, float y){
+        throw new NotImplementedException();
+    }
+
+
+    @Override
+    public Rectangle2D getVisualBounds(){
+        throw new NotImplementedException();
+    }
+
+
+    @Override
+    public void performDefaultLayout(){
+        throw new NotImplementedException();
+    }
+
+
+    @Override
+    public void setGlyphPosition(int glyphIndex, Point2D newPos){
+        throw new NotImplementedException();
+    }
+
+
+    @Override
+    public void setGlyphTransform(int glyphIndex, AffineTransform newTX){
+        throw new NotImplementedException();
+    }
+
+
+    /**
+     * Convert a CharacterIterator to a string
+     * @param iterator the itereator
+     * @return the string
+     */
+    private static String getString(java.text.CharacterIterator iterator){
+        iterator.first();
+        StringBuilder sb = new StringBuilder();
+
+        while(true){
+            char c = iterator.current();
+            if(c == CharacterIterator.DONE){
+                break;
+            }
+            sb.append(c);
+            iterator.next();
+        }
+
+        return sb.toString();
     }
 
 }
-

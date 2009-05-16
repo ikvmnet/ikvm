@@ -26,22 +26,93 @@ package sun.font;
 import java.awt.Font;
 import java.awt.font.FontRenderContext;
 
-
+import cli.System.Drawing.FontFamily;
+import cli.System.Drawing.FontStyle;
 
 /**
- * A Font2D implementation that based on .NET fonts. 
- * It replace the equals naming Sun class.
+ * A Font2D implementation that based on .NET fonts. It replace the equals naming Sun class.
+ * A Font2D is define with the font name and the font style but it is independent of the size;
  */
 class PhysicalFont extends Font2D{
-    
-    private final Font font;
-    
+
+    private final FontFamily family;
+
+    private final FontStyle style;
+
+    private static final FontStyle REGULAR = FontStyle.wrap(FontStyle.Regular);
+
+    private static final FontStyle BOLD = FontStyle.wrap(FontStyle.Bold);
+
+    private static final FontStyle ITALIC = FontStyle.wrap(FontStyle.Italic);
+
+    private static final FontStyle BOLD_ITALIC = FontStyle.wrap(FontStyle.Bold + FontStyle.Italic);
+
+    private static final cli.System.Drawing.GraphicsUnit PIXEL = cli.System.Drawing.GraphicsUnit
+            .wrap(cli.System.Drawing.GraphicsUnit.Pixel);
+
     private FontStrike strike;
 
-    PhysicalFont(Font font)
-    {
-        this.font = font;
+
+    PhysicalFont(String name, int style){
+        this.family = createFontFamily(name);
+        this.style = createFontStyle(family, style);
     }
+
+
+    public cli.System.Drawing.Font createNetFont(Font font){
+        float size2D = font.getSize2D();
+        if(size2D <= 0){
+            size2D = 1;
+        }
+        return new cli.System.Drawing.Font(family, size2D, style, PIXEL);
+    }
+
+
+    private static FontFamily createFontFamily(String name){
+        if("monospaced".equalsIgnoreCase(name) || "courier".equalsIgnoreCase(name)){
+            return FontFamily.get_GenericMonospace();
+        }
+        if("serif".equalsIgnoreCase(name)){
+            return FontFamily.get_GenericSerif();
+        }
+        if(name == null || "sansserif".equalsIgnoreCase(name) || "dialog".equalsIgnoreCase(name)
+                || "dialoginput".equalsIgnoreCase(name) || "default".equalsIgnoreCase(name)){
+            return FontFamily.get_GenericSansSerif();
+        }
+        try{
+            return new FontFamily(name);
+        }catch(Exception ex) // cli.System.ArgumentException
+        {
+            return FontFamily.get_GenericSansSerif();
+        }
+    }
+
+
+    private static FontStyle createFontStyle(FontFamily family, int style){
+        int fs = FontStyle.Regular;
+        if((style & java.awt.Font.BOLD) != 0){
+            fs |= FontStyle.Bold;
+        }
+        if((style & java.awt.Font.ITALIC) != 0){
+            fs |= FontStyle.Italic;
+        }
+        FontStyle fontStyle = FontStyle.wrap(fs);
+        if(!family.IsStyleAvailable(fontStyle)){
+            // Some Fonts (for example Aharoni) does not support Regular style. This throw an exception else it is not
+            // documented.
+            if(family.IsStyleAvailable(REGULAR)){
+                fontStyle = REGULAR;
+            }else if(family.IsStyleAvailable(BOLD)){
+                fontStyle = BOLD;
+            }else if(family.IsStyleAvailable(ITALIC)){
+                fontStyle = ITALIC;
+            }else if(family.IsStyleAvailable(BOLD_ITALIC)){
+                fontStyle = BOLD_ITALIC;
+            }
+        }
+        return fontStyle;
+    }
+
 
     /**
      * {@inheritDoc}
@@ -49,8 +120,14 @@ class PhysicalFont extends Font2D{
     @Override
     public FontStrike getStrike(Font font, FontRenderContext frc){
         if(strike == null){
-            strike = new PhysicalStrike(font);
+            strike = new PhysicalStrike(font.getSize2D(), family, style);
         }
         return strike;
+    }
+
+
+    @Override
+    public int getStyle(){
+        return style.Value;
     }
 }

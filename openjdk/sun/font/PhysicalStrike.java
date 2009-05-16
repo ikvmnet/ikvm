@@ -23,14 +23,12 @@
  */
 package sun.font;
 
-import java.awt.Font;
 import java.awt.Rectangle;
-import java.awt.font.LineMetrics;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D.Float;
-import java.text.StringCharacterIterator;
 
-
+import cli.System.Drawing.FontFamily;
+import cli.System.Drawing.FontStyle;
 
 /**
  * A FontStrike implementation that based on .NET fonts. 
@@ -38,14 +36,21 @@ import java.text.StringCharacterIterator;
  */
 public class PhysicalStrike extends FontStrike{
 
-    private final Font font;
+    private final FontFamily family;
+    private final FontStyle style;
+    private final float size2D;
+    private final float factor;
     
     private StrikeMetrics strike;
     
-    public PhysicalStrike(Font font){
-        this.font = font;
+    
+    public PhysicalStrike(float size2D, FontFamily family, FontStyle style){
+        this.family = family;
+        this.style = style;
+        this.size2D = size2D;
+        factor = size2D / family.GetEmHeight(style);
     }
-
+    
     /**
      * {@inheritDoc}
      */
@@ -72,14 +77,16 @@ public class PhysicalStrike extends FontStrike{
     @Override
     StrikeMetrics getFontMetrics(){
         if(strike == null){
-            gnu.java.awt.peer.ClasspathFontPeer peer = (gnu.java.awt.peer.ClasspathFontPeer)font.getPeer();
-            LineMetrics metrics = peer.getLineMetrics(font, new StringCharacterIterator(""), 0, 0, null);
+            float ascent = family.GetCellAscent(style) * factor;
+            float descent = family.GetCellDescent(style) * factor;
+            float height = family.GetLineSpacing(style) * factor;
+            float leading = height - ascent - descent;
             strike = new StrikeMetrics(
-                    0, metrics.getAscent(), 
-                    0, metrics.getDescent(), 
+                    0, ascent, 
+                    0, descent, 
                     0.25f, 0, 
-                    0, metrics.getLeading(), 
-                    font.getSize2D() * 2, 0);
+                    0, leading, 
+                    size2D * 2, 0);
         }
         return strike;
     }

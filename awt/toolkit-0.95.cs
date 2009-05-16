@@ -1419,7 +1419,7 @@ namespace ikvm.awt
 
         private void setFontImpl(java.awt.Font font)
 		{
-            control.Font = ((NetFontPeer)font.getPeer()).netFont;
+            control.Font = font.getNetFont();
 		}
 
 		public void setFont(java.awt.Font font)

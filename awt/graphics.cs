@@ -1,7 +1,7 @@
 /*
   Copyright (C) 2002, 2004, 2005, 2006, 2007 Jeroen Frijters
   Copyright (C) 2006 Active Endpoints, Inc.
-  Copyright (C) 2006, 2007, 2008 Volker Berlin (i-net software)
+  Copyright (C) 2006, 2007, 2008, 2009 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -104,7 +104,7 @@ namespace ikvm.awt
                 font = new java.awt.Font("Dialog", java.awt.Font.PLAIN, 12);
             }
             this.font = font;
-            netfont = ((NetFontPeer)font.getPeer()).netFont;
+            netfont = font.getNetFont();
 			this.color = fgcolor;
             this.bgcolor = bgcolor;
             init(g);
@@ -531,7 +531,7 @@ namespace ikvm.awt
             // TODO why is Component calling us with a null reference and is this legal?
             if (f != null)
             {
-                netfont = ((NetFontPeer)f.getPeer()).netFont;
+                netfont = font.getNetFont();
                 font = f;
             }
             else
