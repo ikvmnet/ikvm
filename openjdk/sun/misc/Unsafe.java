@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2006, 2007 Jeroen Frijters
+  Copyright (C) 2006, 2007, 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -26,6 +26,8 @@ package sun.misc;
 
 import cli.System.IntPtr;
 import cli.System.Runtime.InteropServices.Marshal;
+import cli.System.Security.Permissions.SecurityAction;
+import cli.System.Security.Permissions.SecurityPermissionAttribute;
 import ikvm.lang.Internal;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -63,6 +65,7 @@ public final class Unsafe
         return fieldOffset(field);
     }
 
+    @Deprecated
     public int fieldOffset(Field original)
     {
         Field copy = ReflectHelper.copyFieldAndMakeAccessible(original);
@@ -719,10 +722,119 @@ public final class Unsafe
         }
     }
 
+    @Deprecated
+    public int getInt(Object o, int offset)
+    {
+        return getInt(o, (long)offset);
+    }
+
+    @Deprecated
+    public void putInt(Object o, int offset, int x)
+    {
+        putInt(o, (long)offset, x);
+    }
+
+    @Deprecated
+    public Object getObject(Object o, int offset)
+    {
+        return getObject(o, (long)offset);
+    }
+
+    @Deprecated
+    public void putObject(Object o, int offset, Object x)
+    {
+        putObject(o, (long)offset, x);
+    }
+
+    @Deprecated
+    public boolean getBoolean(Object o, int offset)
+    {
+        return getBoolean(o, (long)offset);
+    }
+
+    @Deprecated
+    public void putBoolean(Object o, int offset, boolean x)
+    {
+        putBoolean(o, (long)offset, x);
+    }
+
+    @Deprecated
+    public byte getByte(Object o, int offset)
+    {
+        return getByte(o, (long)offset);
+    }
+
+    @Deprecated
+    public void putByte(Object o, int offset, byte x)
+    {
+        putByte(o, (long)offset, x);
+    }
+
+    @Deprecated
+    public short getShort(Object o, int offset)
+    {
+        return getShort(o, (long)offset);
+    }
+
+    @Deprecated
+    public void putShort(Object o, int offset, short x)
+    {
+        putShort(o, (long)offset, x);
+    }
+
+    @Deprecated
+    public char getChar(Object o, int offset)
+    {
+        return getChar(o, (long)offset);
+    }
+
+    @Deprecated
+    public void putChar(Object o, int offset, char x)
+    {
+        putChar(o, (long)offset, x);
+    }
+
+    @Deprecated
+    public long getLong(Object o, int offset)
+    {
+        return getLong(o, (long)offset);
+    }
+
+    @Deprecated
+    public void putLong(Object o, int offset, long x)
+    {
+        putLong(o, (long)offset, x);
+    }
+
+    @Deprecated
+    public float getFloat(Object o, int offset)
+    {
+        return getFloat(o, (long)offset);
+    }
+
+    @Deprecated
+    public void putFloat(Object o, int offset, float x)
+    {
+        putFloat(o, (long)offset, x);
+    }
+
+    @Deprecated
+    public double getDouble(Object o, int offset)
+    {
+        return getDouble(o, (long)offset);
+    }
+
+    @Deprecated
+    public void putDouble(Object o, int offset, double x)
+    {
+        putDouble(o, (long)offset, x);
+    }
+
     public native void throwException(Throwable t);
 
     public native void ensureClassInitialized(Class clazz);
 
+    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, SerializationFormatter = true)
     public native Object allocateInstance(Class clazz) throws InstantiationException;
 
     public int addressSize()
@@ -735,10 +847,9 @@ public final class Unsafe
         return 4096;
     }
 
-    // The really unsafe methods start here. They are all @Internal to prevent
-    // external code from accessing them.
+    // The really unsafe methods start here. They are all have a LinkDemand for unmanaged code.
 
-    @Internal
+    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
     public long allocateMemory(long bytes)
     {
         try
@@ -752,67 +863,121 @@ public final class Unsafe
         }
     }
 
-    @Internal
+    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
     public void freeMemory(long address)
     {
         Marshal.FreeHGlobal(IntPtr.op_Explicit(address));
     }
 
-    @Internal
-    public static native void setMemory(long address, long bytes, byte value);
+    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    public void setMemory(long address, long bytes, byte value)
+    {
+        while (bytes-- > 0)
+        {
+            putByte(address++, value);
+        }
+    }
 
-    @Internal
-    public static native void copyMemory(long srcAddress, long destAddress, long bytes);
+    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    public void copyMemory(long srcAddress, long destAddress, long bytes)
+    {
+	while (bytes-- > 0)
+	{
+	    putByte(destAddress++, getByte(srcAddress++));
+	}
+    }
 
-    @Internal
-    public static native byte getByte(long address);
+    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    public byte getByte(long address)
+    {
+	return cli.System.Runtime.InteropServices.Marshal.ReadByte(IntPtr.op_Explicit(address));
+    }
 
-    @Internal
-    public static native void putByte(long address, byte x);
+    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    public void putByte(long address, byte x)
+    {
+	cli.System.Runtime.InteropServices.Marshal.WriteByte(IntPtr.op_Explicit(address), x);
+    }
 
-    @Internal
-    public static native short getShort(long address);
+    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    public short getShort(long address)
+    {
+	return cli.System.Runtime.InteropServices.Marshal.ReadInt16(IntPtr.op_Explicit(address));
+    }
 
-    @Internal
-    public static native void putShort(long address, short x);
+    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    public void putShort(long address, short x)
+    {
+	cli.System.Runtime.InteropServices.Marshal.WriteInt16(IntPtr.op_Explicit(address), x);
+    }
 
-    @Internal
-    public static native char getChar(long address);
+    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    public char getChar(long address)
+    {
+        return (char)cli.System.Runtime.InteropServices.Marshal.ReadInt16(IntPtr.op_Explicit(address));
+    }
 
-    @Internal
-    public static native void putChar(long address, char x);
+    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    public void putChar(long address, char x)
+    {
+        cli.System.Runtime.InteropServices.Marshal.WriteInt16(IntPtr.op_Explicit(address), (short)x);
+    }
 
-    @Internal
-    public static native int getInt(long address);
+    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    public int getInt(long address)
+    {
+	return cli.System.Runtime.InteropServices.Marshal.ReadInt32(IntPtr.op_Explicit(address));
+    }
 
-    @Internal
-    public static native void putInt(long address, int x);
+    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    public void putInt(long address, int x)
+    {
+	cli.System.Runtime.InteropServices.Marshal.WriteInt32(IntPtr.op_Explicit(address), x);
+    }
 
-    @Internal
-    public static native long getLong(long address);
+    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    public long getLong(long address)
+    {
+	return cli.System.Runtime.InteropServices.Marshal.ReadInt64(IntPtr.op_Explicit(address));
+    }
 
-    @Internal
-    public static native void putLong(long address, long x);
+    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    public void putLong(long address, long x)
+    {
+	cli.System.Runtime.InteropServices.Marshal.WriteInt64(IntPtr.op_Explicit(address), x);
+    }
 
-    @Internal
+    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    public long getAddress(long address)
+    {
+	return cli.System.Runtime.InteropServices.Marshal.ReadIntPtr(IntPtr.op_Explicit(address)).ToInt64();
+    }
+
+    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    public void putAddress(long address, long x)
+    {
+	cli.System.Runtime.InteropServices.Marshal.WriteIntPtr(IntPtr.op_Explicit(address), IntPtr.op_Explicit(x));
+    }
+
+    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
     public float getFloat(long address)
     {
         return Float.intBitsToFloat(getInt(address));
     }
 
-    @Internal
+    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
     public void putFloat(long address, float x)
     {
         putInt(address, Float.floatToIntBits(x));
     }
 
-    @Internal
+    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
     public double getDouble(long address)
     {
         return Double.longBitsToDouble(getLong(address));
     }
 
-    @Internal
+    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
     public void putDouble(long address, double x)
     {
         putLong(address, Double.doubleToLongBits(x));

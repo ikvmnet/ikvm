@@ -5013,7 +5013,6 @@ namespace IKVM.NativeCode.sun.misc
 		}
 	}
 
-	[System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.LinkDemand, UnmanagedCode = true)]
 	static class Unsafe
 	{
 		public static void throwException(object thisUnsafe, Exception x)
@@ -5043,72 +5042,6 @@ namespace IKVM.NativeCode.sun.misc
 				throw x.ToJava();
 			}
 			return FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType);
-		}
-
-		public static void setMemory(long address, long bytes, byte value)
-		{
-			while (bytes-- > 0)
-			{
-				putByte(address++, value);
-			}
-		}
-
-		public static void copyMemory(long srcAddress, long destAddress, long bytes)
-		{
-			while (bytes-- > 0)
-			{
-				putByte(destAddress++, getByte(srcAddress++));
-			}
-		}
-
-		public static byte getByte(long address)
-		{
-			return System.Runtime.InteropServices.Marshal.ReadByte((IntPtr)address);
-		}
-
-		public static void putByte(long address, byte x)
-		{
-			System.Runtime.InteropServices.Marshal.WriteByte((IntPtr)address, x);
-		}
-
-		public static short getShort(long address)
-		{
-			return System.Runtime.InteropServices.Marshal.ReadInt16((IntPtr)address);
-		}
-
-		public static void putShort(long address, short x)
-		{
-			System.Runtime.InteropServices.Marshal.WriteInt16((IntPtr)address, x);
-		}
-
-		public static char getChar(long address)
-		{
-			return (char)System.Runtime.InteropServices.Marshal.ReadInt16((IntPtr)address);
-		}
-
-		public static void putChar(long address, char x)
-		{
-			System.Runtime.InteropServices.Marshal.WriteInt16((IntPtr)address, x);
-		}
-
-		public static int getInt(long address)
-		{
-			return System.Runtime.InteropServices.Marshal.ReadInt32((IntPtr)address);
-		}
-
-		public static void putInt(long address, int x)
-		{
-			System.Runtime.InteropServices.Marshal.WriteInt32((IntPtr)address, x);
-		}
-
-		public static long getLong(long address)
-		{
-			return System.Runtime.InteropServices.Marshal.ReadInt64((IntPtr)address);
-		}
-
-		public static void putLong(long address, long x)
-		{
-			System.Runtime.InteropServices.Marshal.WriteInt64((IntPtr)address, x);
 		}
 	}
 
