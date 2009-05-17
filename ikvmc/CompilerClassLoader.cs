@@ -126,6 +126,55 @@ namespace IKVM.Internal
 			return assemblyBuilder.GetName();
 		}
 
+		private static PermissionSet Combine(PermissionSet p1, PermissionSet p2)
+		{
+			if (p1 == null)
+			{
+				return p2;
+			}
+			if (p2 == null)
+			{
+				return p1;
+			}
+			return p1.Union(p2);
+		}
+
+		private void GetAssemblyPermissions(out PermissionSet requiredPermissions, out PermissionSet optionalPermissions, out PermissionSet refusedPermissions)
+		{
+			requiredPermissions = null;
+			optionalPermissions = null;
+			refusedPermissions = null;
+			foreach (object[] def in assemblyAnnotations)
+			{
+				string annotationClass = (string)def[1];
+				annotationClass = annotationClass.Replace('/', '.').Substring(1, annotationClass.Length - 2);
+				if (annotationClass.EndsWith(DotNetTypeWrapper.AttributeAnnotationSuffix))
+				{
+					Type annot = Type.GetType(DotNetTypeWrapper.DemangleTypeName(annotationClass.Substring(0, annotationClass.Length - DotNetTypeWrapper.AttributeAnnotationSuffix.Length)));
+					if (annot != null && annot.IsSubclassOf(typeof(SecurityAttribute)))
+					{
+						SecurityAction action;
+						PermissionSet permSet;
+						if (Annotation.MakeDeclSecurity(annot, def, out action, out permSet))
+						{
+							switch (action)
+							{
+								case SecurityAction.RequestMinimum:
+									requiredPermissions = Combine(requiredPermissions, permSet);
+									break;
+								case SecurityAction.RequestOptional:
+									optionalPermissions = Combine(optionalPermissions, permSet);
+									break;
+								case SecurityAction.RequestRefuse:
+									refusedPermissions = Combine(refusedPermissions, permSet);
+									break;
+							}
+						}
+					}
+				}
+			}
+		}
+
 		internal ModuleBuilder CreateModuleBuilder()
 		{
 			AssemblyName name = new AssemblyName();
@@ -139,13 +188,17 @@ namespace IKVM.Internal
 				name.KeyPair = new StrongNameKeyPair(keycontainer);
 			}
 			name.Version = new Version(version);
+			PermissionSet requiredPermissions;
+			PermissionSet optionalPermissions;
+			PermissionSet refusedPermissions;
+			GetAssemblyPermissions(out requiredPermissions, out optionalPermissions, out refusedPermissions);
 			assemblyBuilder = 
 #if IKVM_REF_EMIT
 				AssemblyBuilder
 #else
 				AppDomain.CurrentDomain
 #endif
-				.DefineDynamicAssembly(name, AssemblyBuilderAccess.ReflectionOnly, assemblyDir);
+					.DefineDynamicAssembly(name, AssemblyBuilderAccess.ReflectionOnly, assemblyDir, requiredPermissions, optionalPermissions, refusedPermissions);
 			ModuleBuilder moduleBuilder;
 			moduleBuilder = assemblyBuilder.DefineDynamicModule(assemblyName, assemblyFile, this.EmitDebugInfo);
 			if(this.EmitStackTraceInfo)
