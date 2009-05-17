@@ -80,13 +80,14 @@ namespace IKVM.Internal
 				}
 				if (methods != null)
 				{
-					string name = "__" + Name + "__WorkaroundBaseClass";
+					string name = "__WorkaroundBaseClass__." + Name;
 					while (!classLoader.GetTypeWrapperFactory().ReserveName(name))
 					{
-						name += "_";
+						name = "_" + name;
 					}
 					TypeBuilder typeBuilder = classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(name, TypeAttributes.Public | TypeAttributes.Abstract, base.GetBaseTypeForDefineType());
 					AttributeHelper.HideFromJava(typeBuilder);
+					AttributeHelper.SetEditorBrowsableNever(typeBuilder);
 					workaroundBaseClass = new WorkaroundBaseClass(typeBuilder, methods.ToArray());
 					List<MethodWrapper> constructors = new List<MethodWrapper>();
 					foreach (MethodWrapper mw in baseTypeWrapper.GetMethods())
