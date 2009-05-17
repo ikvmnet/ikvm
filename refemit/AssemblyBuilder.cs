@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2008 Jeroen Frijters
+  Copyright (C) 2008, 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -29,6 +29,7 @@ using System.Diagnostics;
 using System.Security.Cryptography;
 using IKVM.Reflection.Emit.Writer;
 using IKVM.Reflection.Emit.Impl;
+using System.Security;
 
 namespace IKVM.Reflection.Emit
 {
@@ -36,6 +37,9 @@ namespace IKVM.Reflection.Emit
 	{
 		private readonly AssemblyName name;
 		private readonly string dir;
+		private readonly PermissionSet requiredPermissions;
+		private readonly PermissionSet optionalPermissions;
+		private readonly PermissionSet refusedPermissions;
 		private PEFileKinds fileKind = PEFileKinds.Dll;
 		private MethodBuilder entryPoint;
 		private bool setVersionInfo;
@@ -50,10 +54,13 @@ namespace IKVM.Reflection.Emit
 			internal ResourceAttributes Attributes;
 		}
 
-		private AssemblyBuilder(AssemblyName name, string dir)
+		private AssemblyBuilder(AssemblyName name, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
 		{
 			this.name = name;
 			this.dir = dir;
+			this.requiredPermissions = requiredPermissions;
+			this.optionalPermissions = optionalPermissions;
+			this.refusedPermissions = refusedPermissions;
 		}
 
 		public static AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access)
@@ -63,7 +70,12 @@ namespace IKVM.Reflection.Emit
 
 		public static AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, string dir)
 		{
-			return new AssemblyBuilder(name, dir);
+			return DefineDynamicAssembly(name, access, dir, null, null, null);
+		}
+
+		public static AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
+		{
+			return new AssemblyBuilder(name, dir, requiredPermissions, optionalPermissions, refusedPermissions);
 		}
 
 		public AssemblyName GetName()
@@ -160,7 +172,20 @@ namespace IKVM.Reflection.Emit
 			{
 				assemblyRecord.Culture = manifestModule.Strings.Add(name.CultureInfo.Name);
 			}
-			manifestModule.Tables.Assembly.AddRecord(assemblyRecord);
+			int token = 0x20000000 + manifestModule.Tables.Assembly.AddRecord(assemblyRecord);
+
+			if (requiredPermissions != null)
+			{
+				manifestModule.AddDeclaritiveSecurity(token, System.Security.Permissions.SecurityAction.RequestMinimum, requiredPermissions);
+			}
+			if (optionalPermissions != null)
+			{
+				manifestModule.AddDeclaritiveSecurity(token, System.Security.Permissions.SecurityAction.RequestOptional, optionalPermissions);
+			}
+			if (refusedPermissions != null)
+			{
+				manifestModule.AddDeclaritiveSecurity(token, System.Security.Permissions.SecurityAction.RequestRefuse, refusedPermissions);
+			}
 
 			ByteBuffer versionInfoData = null;
 			if (setVersionInfo)

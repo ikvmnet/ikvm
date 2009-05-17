@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2008 Jeroen Frijters
+  Copyright (C) 2008, 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -336,6 +336,16 @@ namespace IKVM.Reflection.Emit
 			rec.Type = this.GetConstructorToken(customBuilder.Constructor).Token;
 			rec.Value = customBuilder.WriteBlob(this);
 			this.Tables.CustomAttribute.AddRecord(rec);
+		}
+
+		internal void AddDeclaritiveSecurity(int token, System.Security.Permissions.SecurityAction securityAction, System.Security.PermissionSet permissionSet)
+		{
+			TableHeap.DeclSecurityTable.Record rec = new TableHeap.DeclSecurityTable.Record();
+			rec.Action = (short)securityAction;
+			rec.Parent = token;
+			// like Ref.Emit, we're using the .NET 1.x xml format
+			rec.PermissionSet = this.Blobs.Add(ByteBuffer.Wrap(System.Text.Encoding.Unicode.GetBytes(permissionSet.ToXml().ToString())));
+			this.Tables.DeclSecurity.AddRecord(rec);
 		}
 
 		public void DefineManifestResource(string name, Stream stream, ResourceAttributes attribute)

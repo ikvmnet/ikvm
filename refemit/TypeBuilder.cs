@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2008 Jeroen Frijters
+  Copyright (C) 2008, 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -382,7 +382,8 @@ namespace IKVM.Reflection.Emit
 
 		public void AddDeclarativeSecurity(System.Security.Permissions.SecurityAction securityAction, System.Security.PermissionSet permissionSet)
 		{
-			throw new NotImplementedException();
+			this.ModuleBuilder.AddDeclaritiveSecurity(token, securityAction, permissionSet);
+			this.attribs |= TypeAttributes.HasSecurity;
 		}
 
 		public GenericTypeParameterBuilder[] DefineGenericParameters(params string[] names)

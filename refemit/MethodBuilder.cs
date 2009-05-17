@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2008 Jeroen Frijters
+  Copyright (C) 2008, 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -283,12 +283,7 @@ namespace IKVM.Reflection.Emit
 
 		public void AddDeclarativeSecurity(System.Security.Permissions.SecurityAction securityAction, System.Security.PermissionSet permissionSet)
 		{
-			TableHeap.DeclSecurityTable.Record rec = new TableHeap.DeclSecurityTable.Record();
-			rec.Action = (short)securityAction;
-			rec.Parent = pseudoToken;
-			// like Ref.Emit, we're using the .NET 1.x xml format
-			rec.PermissionSet = this.ModuleBuilder.Blobs.Add(ByteBuffer.Wrap(System.Text.Encoding.Unicode.GetBytes(permissionSet.ToXml().ToString())));
-			this.ModuleBuilder.Tables.DeclSecurity.AddRecord(rec);
+			this.ModuleBuilder.AddDeclaritiveSecurity(pseudoToken, securityAction, permissionSet);
 			this.attributes |= MethodAttributes.HasSecurity;
 		}
 
