@@ -280,20 +280,20 @@ namespace IKVM.Internal
 			return attrib;
 		}
 
-		private static bool IsCodeAccessSecurityAttribute(ClassLoaderWrapper loader, IKVM.Internal.MapXml.Attribute attr, out SecurityAction action, out PermissionSet pset)
+		private static bool IsDeclarativeSecurityAttribute(ClassLoaderWrapper loader, IKVM.Internal.MapXml.Attribute attr, out SecurityAction action, out PermissionSet pset)
 		{
 			action = SecurityAction.Deny;
 			pset = null;
 			if(attr.Type != null)
 			{
 				Type t = StaticCompiler.GetType(attr.Type);
-				if(typeof(CodeAccessSecurityAttribute).IsAssignableFrom(t))
+				if(typeof(SecurityAttribute).IsAssignableFrom(t))
 				{
 					Type[] argTypes;
 					object[] args;
 					GetAttributeArgsAndTypes(loader, attr, out argTypes, out args);
 					ConstructorInfo ci = t.GetConstructor(argTypes);
-					CodeAccessSecurityAttribute attrib = ci.Invoke(args) as CodeAccessSecurityAttribute;
+					SecurityAttribute attrib = ci.Invoke(args) as SecurityAttribute;
 					SetPropertiesAndFields(loader, attrib, attr);
 					action = attrib.Action;
 					pset = new PermissionSet(PermissionState.None);
@@ -308,7 +308,7 @@ namespace IKVM.Internal
 		{
 			SecurityAction action;
 			PermissionSet pset;
-			if(IsCodeAccessSecurityAttribute(loader, attr, out action, out pset))
+			if(IsDeclarativeSecurityAttribute(loader, attr, out action, out pset))
 			{
 				tb.AddDeclarativeSecurity(action, pset);
 			}
@@ -332,7 +332,7 @@ namespace IKVM.Internal
 		{
 			SecurityAction action;
 			PermissionSet pset;
-			if(IsCodeAccessSecurityAttribute(loader, attr, out action, out pset))
+			if(IsDeclarativeSecurityAttribute(loader, attr, out action, out pset))
 			{
 				mb.AddDeclarativeSecurity(action, pset);
 			}
@@ -346,7 +346,7 @@ namespace IKVM.Internal
 		{
 			SecurityAction action;
 			PermissionSet pset;
-			if(IsCodeAccessSecurityAttribute(loader, attr, out action, out pset))
+			if(IsDeclarativeSecurityAttribute(loader, attr, out action, out pset))
 			{
 				cb.AddDeclarativeSecurity(action, pset);
 			}
@@ -405,9 +405,9 @@ namespace IKVM.Internal
 			if(attr.Type != null)
 			{
 				Type t = StaticCompiler.GetType(attr.Type);
-				if(typeof(CodeAccessSecurityAttribute).IsAssignableFrom(t))
+				if(typeof(SecurityAttribute).IsAssignableFrom(t))
 				{
-					throw new NotImplementedException("CodeAccessSecurityAttribute support not implemented");
+					throw new NotImplementedException("Declarative SecurityAttribute support not implemented");
 				}
 				ConstructorInfo ci = t.GetConstructor(argTypes);
 				if(ci == null)
@@ -1887,6 +1887,153 @@ namespace IKVM.Internal
 				Tracer.Warning(Tracer.Compiler, "Unable to load annotation class {0}", annotationClass);
 				return null;
 			}
+		}
+
+		private static object LookupEnumValue(Type enumType, string value)
+		{
+			FieldInfo field = enumType.GetField(value, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+			if(field != null)
+			{
+				return field.GetRawConstantValue();
+			}
+			// both __unspecified and missing values end up here
+			return Activator.CreateInstance(Enum.GetUnderlyingType(enumType));
+		}
+
+		// note that we only support the integer types that C# supports
+		// (the CLI also supports bool, char, IntPtr & UIntPtr)
+		private static object OrBoxedIntegrals(object v1, object v2)
+		{
+			Debug.Assert(v1.GetType() == v2.GetType());
+			if(v1 is ulong)
+			{
+				ulong l1 = (ulong)v1;
+				ulong l2 = (ulong)v2;
+				return l1 | l2;
+			}
+			else
+			{
+				long v = ((IConvertible)v1).ToInt64(null) | ((IConvertible)v2).ToInt64(null);
+				switch(Type.GetTypeCode(v1.GetType()))
+				{
+					case TypeCode.SByte:
+						return (sbyte)v;
+					case TypeCode.Byte:
+						return (byte)v;
+					case TypeCode.Int16:
+						return (short)v;
+					case TypeCode.UInt16:
+						return (ushort)v;
+					case TypeCode.Int32:
+						return (int)v;
+					case TypeCode.UInt32:
+						return (uint)v;
+					case TypeCode.Int64:
+						return (long)v;
+					default:
+						throw new InvalidOperationException();
+				}
+			}
+		}
+
+		protected static object ConvertValue(ClassLoaderWrapper loader, Type targetType, object obj)
+		{
+			if(targetType.IsEnum)
+			{
+				// TODO check the obj descriptor matches the type we expect
+				if(((object[])obj)[0].Equals(AnnotationDefaultAttribute.TAG_ARRAY))
+				{
+					object[] arr = (object[])obj;
+					object value = null;
+					for(int i = 1; i < arr.Length; i++)
+					{
+						// TODO check the obj descriptor matches the type we expect
+						string s = ((object[])arr[i])[2].ToString();
+						object newval = LookupEnumValue(targetType, s);
+						if (value == null)
+						{
+							value = newval;
+						}
+						else
+						{
+							value = OrBoxedIntegrals(value, newval);
+						}
+					}
+					return value;
+				}
+				else
+				{
+					string s = ((object[])obj)[2].ToString();
+					if(s == "__unspecified")
+					{
+						// TODO we should probably return null and handle that
+					}
+					return LookupEnumValue(targetType, s);
+				}
+			}
+			else if(targetType == typeof(Type))
+			{
+				// TODO check the obj descriptor matches the type we expect
+				return loader.FieldTypeWrapperFromSig(((string)((object[])obj)[1]).Replace('/', '.')).TypeAsTBD;
+			}
+			else if(targetType.IsArray)
+			{
+				// TODO check the obj descriptor matches the type we expect
+				object[] arr = (object[])obj;
+				Type elementType = targetType.GetElementType();
+				object[] targetArray = new object[arr.Length - 1];
+				for(int i = 1; i < arr.Length; i++)
+				{
+					targetArray[i - 1] = ConvertValue(loader, elementType, arr[i]);
+				}
+				return targetArray;
+			}
+			else
+			{
+				return obj;
+			}
+		}
+
+		internal static bool MakeDeclSecurity(Type type, object annotation, out SecurityAction action, out PermissionSet permSet)
+		{
+			ConstructorInfo ci = type.GetConstructor(new Type[] { typeof(SecurityAction) });
+			if (ci == null)
+			{
+				// TODO issue message?
+				action = 0;
+				permSet = null;
+				return false;
+			}
+			SecurityAttribute attr = null;
+			object[] arr = (object[])annotation;
+			for (int i = 2; i < arr.Length; i += 2)
+			{
+				string name = (string)arr[i];
+				if (name == "value")
+				{
+					attr = (SecurityAttribute)ci.Invoke(new object[] { ConvertValue(null, typeof(SecurityAction), arr[i + 1]) });
+				}
+			}
+			if (attr == null)
+			{
+				// TODO issue message?
+				action = 0;
+				permSet = null;
+				return false;
+			}
+			for (int i = 2; i < arr.Length; i += 2)
+			{
+				string name = (string)arr[i];
+				if (name != "value")
+				{
+					PropertyInfo pi = type.GetProperty(name);
+					pi.SetValue(attr, ConvertValue(null, pi.PropertyType, arr[i + 1]), null);
+				}
+			}
+			action = attr.Action;
+			permSet = new PermissionSet(PermissionState.None);
+			permSet.AddPermission(attr.CreatePermission());
+			return true;
 		}
 
 		internal static bool HasRetentionPolicyRuntime(object[] annotations)
@@ -11204,111 +11351,6 @@ namespace IKVM.Internal
 					this.type = type;
 				}
 
-				private static object LookupEnumValue(Type enumType, string value)
-				{
-					FieldInfo field = enumType.GetField(value, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-					if(field != null)
-					{
-						return field.GetRawConstantValue();
-					}
-					// both __unspecified and missing values end up here
-					return Activator.CreateInstance(Enum.GetUnderlyingType(enumType));
-				}
-
-				// note that we only support the integer types that C# supports
-				// (the CLI also supports bool, char, IntPtr & UIntPtr)
-				private static object OrBoxedIntegrals(object v1, object v2)
-				{
-					Debug.Assert(v1.GetType() == v2.GetType());
-					if(v1 is ulong)
-					{
-						ulong l1 = (ulong)v1;
-						ulong l2 = (ulong)v2;
-						return l1 | l2;
-					}
-					else
-					{
-						long v = ((IConvertible)v1).ToInt64(null) | ((IConvertible)v2).ToInt64(null);
-						switch(Type.GetTypeCode(v1.GetType()))
-						{
-							case TypeCode.SByte:
-								return (sbyte)v;
-							case TypeCode.Byte:
-								return (byte)v;
-							case TypeCode.Int16:
-								return (short)v;
-							case TypeCode.UInt16:
-								return (ushort)v;
-							case TypeCode.Int32:
-								return (int)v;
-							case TypeCode.UInt32:
-								return (uint)v;
-							case TypeCode.Int64:
-								return (long)v;
-							default:
-								throw new InvalidOperationException();
-						}
-					}
-				}
-
-				private static object ConvertValue(ClassLoaderWrapper loader, Type targetType, object obj)
-				{
-					if(targetType.IsEnum)
-					{
-						// TODO check the obj descriptor matches the type we expect
-						if(((object[])obj)[0].Equals(AnnotationDefaultAttribute.TAG_ARRAY))
-						{
-							object[] arr = (object[])obj;
-							object value = null;
-							for(int i = 1; i < arr.Length; i++)
-							{
-								// TODO check the obj descriptor matches the type we expect
-								string s = ((object[])arr[i])[2].ToString();
-								object newval = LookupEnumValue(targetType, s);
-								if (value == null)
-								{
-									value = newval;
-								}
-								else
-								{
-									value = OrBoxedIntegrals(value, newval);
-								}
-							}
-							return value;
-						}
-						else
-						{
-							string s = ((object[])obj)[2].ToString();
-							if(s == "__unspecified")
-							{
-								// TODO we should probably return null and handle that
-							}
-							return LookupEnumValue(targetType, s);
-						}
-					}
-					else if(targetType == typeof(Type))
-					{
-						// TODO check the obj descriptor matches the type we expect
-						return loader.FieldTypeWrapperFromSig(((string)((object[])obj)[1]).Replace('/', '.')).TypeAsTBD;
-					}
-					else if(targetType.IsArray)
-					{
-						// TODO check the obj descriptor matches the type we expect
-						object[] arr = (object[])obj;
-						Type elementType = targetType.GetElementType();
-						object[] targetArray = new object[arr.Length - 1];
-						for(int i = 1; i < arr.Length; i++)
-						{
-							targetArray[i - 1] = ConvertValue(loader, elementType, arr[i]);
-						}
-						return targetArray;
-					}
-					else
-					{
-						return obj;
-					}
-				}
-
 				private CustomAttributeBuilder MakeCustomAttributeBuilder(ClassLoaderWrapper loader, object annotation)
 				{
 					object[] arr = (object[])annotation;
@@ -11367,37 +11409,101 @@ namespace IKVM.Internal
 						Tracer.Error(Tracer.Runtime, "StructLayoutAttribute cannot be applied to {0}, because it does not directly extend cli.System.Object", tb.FullName);
 						return;
 					}
-					tb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
+					if(type.IsSubclassOf(typeof(SecurityAttribute)))
+					{
+						SecurityAction action;
+						PermissionSet permSet;
+						if(MakeDeclSecurity(type, annotation, out action, out permSet))
+						{
+							tb.AddDeclarativeSecurity(action, permSet);
+						}
+					}
+					else
+					{
+						tb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
+					}
 				}
 
 				internal override void Apply(ClassLoaderWrapper loader, ConstructorBuilder cb, object annotation)
 				{
-					cb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
+					if(type.IsSubclassOf(typeof(SecurityAttribute)))
+					{
+						SecurityAction action;
+						PermissionSet permSet;
+						if(MakeDeclSecurity(type, annotation, out action, out permSet))
+						{
+							cb.AddDeclarativeSecurity(action, permSet);
+						}
+					}
+					else
+					{
+						cb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
+					}
 				}
 
 				internal override void Apply(ClassLoaderWrapper loader, MethodBuilder mb, object annotation)
 				{
-					mb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
+					if(type.IsSubclassOf(typeof(SecurityAttribute)))
+					{
+						SecurityAction action;
+						PermissionSet permSet;
+						if(MakeDeclSecurity(type, annotation, out action, out permSet))
+						{
+							mb.AddDeclarativeSecurity(action, permSet);
+						}
+					}
+					else
+					{
+						mb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
+					}
 				}
 
 				internal override void Apply(ClassLoaderWrapper loader, FieldBuilder fb, object annotation)
 				{
-					fb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
+					if(type.IsSubclassOf(typeof(SecurityAttribute)))
+					{
+						// you can't add declarative security to a field
+					}
+					else
+					{
+						fb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
+					}
 				}
 
 				internal override void Apply(ClassLoaderWrapper loader, ParameterBuilder pb, object annotation)
 				{
-					pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
+					if(type.IsSubclassOf(typeof(SecurityAttribute)))
+					{
+						// you can't add declarative security to a parameter
+					}
+					else
+					{
+						pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
+					}
 				}
 
 				internal override void Apply(ClassLoaderWrapper loader, AssemblyBuilder ab, object annotation)
 				{
-					ab.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
+					if(type.IsSubclassOf(typeof(SecurityAttribute)))
+					{
+						// you can only add declarative security to an assembly when defining the assembly
+					}
+					else
+					{
+						ab.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
+					}
 				}
 
 				internal override void Apply(ClassLoaderWrapper loader, PropertyBuilder pb, object annotation)
 				{
-					pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
+					if(type.IsSubclassOf(typeof(SecurityAttribute)))
+					{
+						// you can't add declarative security to a property
+					}
+					else
+					{
+						pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
+					}
 				}
 			}
 
