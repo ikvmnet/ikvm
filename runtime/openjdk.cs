@@ -4880,6 +4880,11 @@ namespace IKVM.NativeCode.sun.awt
 		public static object getNativeFocusOwner(){return null;}
 		public static void clearNativeGlobalFocusOwner(object activeWindow){ }
 	}
+
+    static class SunToolkit
+    {
+        public static void closeSplashScreen() { }
+    }
 }
 
 namespace IKVM.NativeCode.sun.java2d

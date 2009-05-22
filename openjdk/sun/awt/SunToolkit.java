@@ -1773,9 +1773,7 @@ public abstract class SunToolkit extends Toolkit
      * @see java.awt.SplashScreen
      * @since 1.6
      */
-    public static void closeSplashScreen(){
-        throw new NotImplementedException();
-    }
+    public static native void closeSplashScreen();
 
     /* The following methods and variables are to support retrieving
      * desktop text anti-aliasing settings
