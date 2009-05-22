@@ -68,10 +68,36 @@ namespace ikvm.awt
 
 	class MyForm : Form
 	{
+        /// <summary>
+        /// Original MaximizedBounds
+        /// </summary>
+        private Rectangle maxBounds;
+        private bool maxBoundsSet;
+
 		public MyForm()
 		{
 			SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.ResizeRedraw, true);
 		}
+
+        public void setMaximizedBounds(java.awt.Rectangle rect){
+            if (rect == null)
+            {
+                // null means reset to the original system setting
+                if (maxBoundsSet)
+                {
+                    MaximizedBounds = maxBounds;
+                }
+            }
+            else
+            {
+                if (!maxBoundsSet)
+                {
+                    maxBounds = MaximizedBounds;
+                    maxBoundsSet = true;
+                }
+                MaximizedBounds = J2C.ConvertRect(rect);
+            }
+        }
 	}
 
 	class MyControl : Control
@@ -2104,7 +2130,7 @@ namespace ikvm.awt
 
 	class NetFramePeer : NetWindowPeer, FramePeer
 	{
-		public NetFramePeer(java.awt.Frame frame, Form form)
+		public NetFramePeer(java.awt.Frame frame, MyForm form)
 			: base(frame, form)
 		{
 			setTitle(frame.getTitle());
@@ -2203,9 +2229,9 @@ namespace ikvm.awt
 			throw new NotImplementedException();
 		}
 
-		public void setMaximizedBounds(java.awt.Rectangle r)
+        public void setMaximizedBounds(java.awt.Rectangle rect)
 		{
-			throw new NotImplementedException();
+            ((MyForm)control).setMaximizedBounds(rect);
 		}
 
 		public void setBoundsPrivate(int x, int y, int width, int height)

@@ -1,7 +1,7 @@
 /*
   Copyright (C) 2002, 2004, 2005, 2006, 2007 Jeroen Frijters
   Copyright (C) 2006 Active Endpoints, Inc.
-  Copyright (C) 2006, 2007, 2008 Volker Berlin (i-net software)
+  Copyright (C) 2006, 2007, 2008, 2009 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -85,6 +85,11 @@ namespace ikvm.awt
         internal static RectangleF ConvertRect(java.awt.geom.Rectangle2D rect)
         {
             return new RectangleF((float)rect.getX(), (float)rect.getY(), (float)rect.getWidth(), (float)rect.getHeight());
+        }
+
+        internal static Rectangle ConvertRect(java.awt.Rectangle rect)
+        {
+            return new Rectangle(rect.x, rect.y, rect.width, rect.height);
         }
 
         /// <summary>
