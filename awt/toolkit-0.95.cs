@@ -61,12 +61,22 @@ namespace ikvm.awt
 	{
 		public UndecoratedForm()
 		{
-			this.FormBorderStyle = FormBorderStyle.None;
+			setBorderStyle();
 			SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.ResizeRedraw, true);
 		}
+
+        protected virtual void setBorderStyle()
+        {
+            this.FormBorderStyle = FormBorderStyle.None;
+        }
+
+        internal void setFocusableWindow(bool value)
+        {
+            SetStyle(ControlStyles.Selectable, value);
+        }
 	}
 
-	class MyForm : Form
+    class MyForm : UndecoratedForm
 	{
         /// <summary>
         /// Original MaximizedBounds
@@ -76,10 +86,15 @@ namespace ikvm.awt
 
 		public MyForm()
 		{
-			SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.ResizeRedraw, true);
 		}
 
-        public void setMaximizedBounds(java.awt.Rectangle rect){
+        protected override void setBorderStyle()
+        {
+            //nothing, default behaviour
+        }
+
+        public void setMaximizedBounds(java.awt.Rectangle rect)
+        {
             if (rect == null)
             {
                 // null means reset to the original system setting
@@ -2023,7 +2038,7 @@ namespace ikvm.awt
 
 	class NetWindowPeer : NetContainerPeer, WindowPeer
 	{
-		public NetWindowPeer(java.awt.Window window, Form form)
+        public NetWindowPeer(java.awt.Window window, UndecoratedForm form)
 			: base(window, form)
 		{
             //form.Shown += new EventHandler(OnOpened); Will already post in java.awt.Window.show()
@@ -2114,7 +2129,7 @@ namespace ikvm.awt
 
         public void updateFocusableWindowState()
         {
-            throw new NotImplementedException();
+            ((UndecoratedForm)control).setFocusableWindow( ((java.awt.Window)component).isFocusableWindow());
         }
 
         public void updateIconImages()
@@ -2248,7 +2263,7 @@ namespace ikvm.awt
 
 	class NetDialogPeer : NetWindowPeer, DialogPeer
 	{
-        public NetDialogPeer(java.awt.Dialog target, Form form)
+        public NetDialogPeer(java.awt.Dialog target, MyForm form)
 			: base(target, form)
 		{
             form.MaximizeBox = false;
