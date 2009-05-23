@@ -1073,9 +1073,9 @@ namespace ikvm.awt
             throw new NotImplementedException();
         }
 
-        public override java.awt.image.VolatileImage createCompatibleVolatileImage(int param1, int param2)
+        public override java.awt.image.VolatileImage createCompatibleVolatileImage(int width, int height)
         {
-            throw new NotImplementedException();
+            return new NetVolatileImage(width, height);
         }
 
         public override java.awt.Rectangle getBounds()
