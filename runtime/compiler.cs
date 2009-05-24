@@ -283,7 +283,7 @@ class Compiler
 		Profiler.Enter("MethodAnalyzer");
 		try
 		{
-			if(m.HasJsr)
+			if(classFile.MajorVersion < 51 && m.HasJsr)
 			{
 				JsrInliner.InlineJsrs(classLoader, mw, classFile, m);
 			}
