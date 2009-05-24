@@ -713,7 +713,7 @@ namespace IKVM.Reflection.Emit
 			mw.Write((ushort)1);			// MajorVersion
 			mw.Write((ushort)1);			// MinorVersion
 			mw.Write(0);					// Reserved
-			byte[] version = StringToPaddedUTF8("v2.0.50727");
+			byte[] version = StringToPaddedUTF8(asm.ImageRuntimeVersion);
 			mw.Write(version.Length);		// Length
 			mw.Write(version);
 			mw.Write((ushort)0);			// Flags

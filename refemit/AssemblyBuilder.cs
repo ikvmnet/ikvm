@@ -43,6 +43,7 @@ namespace IKVM.Reflection.Emit
 		private PEFileKinds fileKind = PEFileKinds.Dll;
 		private MethodBuilder entryPoint;
 		private bool setVersionInfo;
+		private string imageRuntimeVersion = typeof(object).Assembly.ImageRuntimeVersion;
 		private List<ResourceFile> resourceFiles = new List<ResourceFile>();
 		private List<ModuleBuilder> modules = new List<ModuleBuilder>();
 		private List<CustomAttributeBuilder> customAttributes = new List<CustomAttributeBuilder>();
@@ -300,6 +301,11 @@ namespace IKVM.Reflection.Emit
 				}
 			}
 			return null;
+		}
+
+		public string ImageRuntimeVersion
+		{
+			get { return imageRuntimeVersion; }
 		}
 	}
 }
