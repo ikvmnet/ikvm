@@ -232,14 +232,14 @@ namespace IKVM.Reflection.Emit.Impl
 		public override bool Equals(object o)
 		{
 			Type other = o as Type;
-			return other != null && this.UnderlyingSystemType == other.UnderlyingSystemType;
+			return other != null && ReferenceEquals(this.UnderlyingSystemType, other.UnderlyingSystemType);
 		}
 
 		// MONOBUG we need to override GetHashCode because Mono's Type.GetHashCode is broken
 		public override int GetHashCode()
 		{
 			Type underlying = this.UnderlyingSystemType;
-			if (underlying == this)
+			if (ReferenceEquals(underlying, this))
 			{
 				return System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
 			}
