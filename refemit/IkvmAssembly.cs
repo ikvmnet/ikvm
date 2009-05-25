@@ -28,6 +28,15 @@ using IKVM.Reflection.Emit.Impl;
 
 namespace IKVM.Reflection.Emit
 {
+#if NET_4_0
+	public static class IkvmAssembly
+	{
+		public static Assembly GetAssembly(Type type)
+		{
+			return type.Assembly;
+		}
+	}
+#else
 	public abstract class IkvmAssembly
 	{
 		private static readonly Dictionary<Assembly, IkvmAssembly> assemblies = new Dictionary<Assembly, IkvmAssembly>();
@@ -46,6 +55,21 @@ namespace IKVM.Reflection.Emit
 			public override Type GetType(string typeName)
 			{
 				return asm.GetType(typeName);
+			}
+
+			public override string FullName
+			{
+				get { return asm.FullName; }
+			}
+
+			public override AssemblyName GetName()
+			{
+				return asm.GetName();
+			}
+
+			public override string ImageRuntimeVersion
+			{
+				get { return asm.ImageRuntimeVersion; }
 			}
 		}
 
@@ -66,5 +90,9 @@ namespace IKVM.Reflection.Emit
 		}
 
 		public abstract Type GetType(string typeName);
+		public abstract string FullName { get; }
+		public abstract AssemblyName GetName();
+		public abstract string ImageRuntimeVersion { get; }
 	}
+#endif
 }

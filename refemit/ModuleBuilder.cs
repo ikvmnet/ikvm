@@ -34,7 +34,35 @@ using System.Runtime.CompilerServices;
 
 namespace IKVM.Reflection.Emit
 {
-	public sealed class ModuleBuilder : ITypeOwner
+#if !NET_4_0
+	public abstract class IkvmModule
+	{
+		public abstract Type GetType(string className);
+		public abstract Type GetType(string className, bool throwOnError, bool ignoreCase);
+		public abstract string FullyQualifiedName { get; }
+		public abstract Guid ModuleVersionId { get; }
+		public abstract Type ResolveType(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments);
+		public abstract MethodBase ResolveMethod(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments);
+
+		public Type ResolveType(int metadataToken)
+		{
+			return ResolveType(metadataToken, null, null);
+		}
+
+		public MethodBase ResolveMethod(int metadataToken)
+		{
+			return ResolveMethod(metadataToken, null, null);
+		}
+	}
+#endif
+
+	public sealed class ModuleBuilder : 
+#if NET_4_0
+		Module,
+#else
+		IkvmModule,
+#endif
+		ITypeOwner
 	{
 		private readonly Guid mvid = Guid.NewGuid();
 		private readonly AssemblyBuilder asm;
@@ -364,17 +392,24 @@ namespace IKVM.Reflection.Emit
 			manifestResources.Position = savePosition;
 		}
 
-		public AssemblyBuilder Assembly
+#if NET_4_0
+		public override Assembly Assembly
 		{
 			get { return asm; }
 		}
+#else
+		public IkvmAssembly Assembly
+		{
+			get { return asm; }
+		}
+#endif
 
-		public Type GetType(string className)
+		public override Type GetType(string className)
 		{
 			return GetType(className, false, false);
 		}
 
-		public Type GetType(string className, bool throwOnError, bool ignoreCase)
+		public override Type GetType(string className, bool throwOnError, bool ignoreCase)
 		{
 			if (ignoreCase)
 			{
@@ -951,13 +986,26 @@ namespace IKVM.Reflection.Emit
 			get { return this; }
 		}
 
-		public Type ResolveType(int metadataToken)
+		public new Type ResolveType(int metadataToken)
 		{
 			return types[(metadataToken & 0xFFFFFF) - 1];
 		}
 
-		public MethodBase ResolveMethod(int metadataToken)
+		public override Type ResolveType(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
 		{
+			if (genericTypeArguments != null || genericMethodArguments != null)
+			{
+				throw new NotImplementedException();
+			}
+			return types[(metadataToken & 0xFFFFFF) - 1];
+		}
+
+		public override MethodBase ResolveMethod(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
+		{
+			if (genericTypeArguments != null || genericMethodArguments != null)
+			{
+				throw new NotImplementedException();
+			}
 			// HACK if we're given a SymbolToken, we need to convert back
 			if ((metadataToken & 0xFF000000) == 0x06000000)
 			{
@@ -975,7 +1023,7 @@ namespace IKVM.Reflection.Emit
 			return ((TypeBuilder)moduleType).LookupMethod(metadataToken);
 		}
 
-		public string FullyQualifiedName
+		public override string FullyQualifiedName
 		{
 			get
 			{
@@ -983,7 +1031,7 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 
-		public Guid ModuleVersionId
+		public override Guid ModuleVersionId
 		{
 			get
 			{

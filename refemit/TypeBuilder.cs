@@ -126,6 +126,18 @@ namespace IKVM.Reflection.Emit
 		{
 			get { return method; }
 		}
+
+#if NET_4_0
+		public override Assembly Assembly
+		{
+			get { return moduleBuilder.Assembly; }
+		}
+
+		public override Module Module
+		{
+			get { return moduleBuilder; }
+		}
+#endif
 	}
 
 	public sealed class TypeBuilder : Impl.TypeBase, ITypeOwner
@@ -675,6 +687,18 @@ namespace IKVM.Reflection.Emit
 			}
 			return null;
 		}
+
+#if NET_4_0
+		public override Assembly Assembly
+		{
+			get { return owner.ModuleBuilder.Assembly; }
+		}
+
+		public override Module Module
+		{
+			get { return owner.ModuleBuilder; }
+		}
+#endif
 	}
 
 	sealed class ArrayType : Impl.TypeBase
@@ -769,6 +793,18 @@ namespace IKVM.Reflection.Emit
 			}
 			return token;
 		}
+
+#if NET_4_0
+		public override Assembly Assembly
+		{
+			get { return type.Assembly; }
+		}
+
+		public override Module Module
+		{
+			get { return type.Module; }
+		}
+#endif
 	}
 
 	sealed class BakedType : Impl.TypeBase
@@ -908,6 +944,18 @@ namespace IKVM.Reflection.Emit
 		{
 			get { return typeBuilder.ModuleBuilder; }
 		}
+
+#if NET_4_0
+		public override Assembly Assembly
+		{
+			get { return typeBuilder.Assembly; }
+		}
+
+		public override Module Module
+		{
+			get { return typeBuilder.Module; }
+		}
+#endif
 	}
 
 	sealed class GenericType : Impl.TypeBase
@@ -1040,6 +1088,18 @@ namespace IKVM.Reflection.Emit
 		{
 			get { return typeBuilder.ModuleBuilder; }
 		}
+
+#if NET_4_0
+		public override Assembly Assembly
+		{
+			get { return typeBuilder.Assembly; }
+		}
+
+		public override Module Module
+		{
+			get { return typeBuilder.Module; }
+		}
+#endif
 	}
 
 	public sealed class MonoHackGenericType : Impl.TypeBase
@@ -1173,5 +1233,17 @@ namespace IKVM.Reflection.Emit
 		{
 			get { return null; }
 		}
+
+#if NET_4_0
+		public override Assembly Assembly
+		{
+			get { return null; }
+		}
+
+		public override Module Module
+		{
+			get { return null; }
+		}
+#endif
 	}
 }

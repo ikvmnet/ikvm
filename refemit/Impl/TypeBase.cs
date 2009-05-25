@@ -28,10 +28,17 @@ namespace IKVM.Reflection.Emit.Impl
 {
 	public abstract class TypeBase : Type
 	{
+#if NET_4_0
+		public abstract override Assembly Assembly
+		{
+			get;
+		}
+#else
 		public sealed override Assembly Assembly
 		{
 			get { throw new NotSupportedException(); }
 		}
+#endif
 
 		public abstract override string AssemblyQualifiedName
 		{
@@ -158,10 +165,17 @@ namespace IKVM.Reflection.Emit.Impl
 			return false;
 		}
 
+#if NET_4_0
+		public abstract override Module Module
+		{
+			get;
+		}
+#else
 		public sealed override Module Module
 		{
 			get { throw new NotSupportedException(); }
 		}
+#endif
 
 		public override Type UnderlyingSystemType
 		{

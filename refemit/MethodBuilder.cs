@@ -434,6 +434,13 @@ namespace IKVM.Reflection.Emit
 			get { return pseudoToken; }
 		}
 
+#if NET_4_0
+		public override Module Module
+		{
+			get { return typeBuilder.Module; }
+		}
+#endif
+
 		internal void Bake()
 		{
 			if (ilgen != null)

@@ -2442,7 +2442,7 @@ namespace IKVM.Internal
 					}
 					if (compiler.options.sharedclassloader[0] != compiler)
 					{
-						compiler.GetTypeWrapperFactory().ModuleBuilder.Assembly.SetCustomAttribute(mainAssembly);
+						((AssemblyBuilder)compiler.GetTypeWrapperFactory().ModuleBuilder.Assembly).SetCustomAttribute(mainAssembly);
 					}
 				}
 				int rc = compiler.Compile();

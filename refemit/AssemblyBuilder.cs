@@ -33,7 +33,12 @@ using System.Security;
 
 namespace IKVM.Reflection.Emit
 {
-	public sealed class AssemblyBuilder : IkvmAssembly
+	public sealed class AssemblyBuilder :
+#if NET_4_0
+		Assembly
+#else
+		IkvmAssembly
+#endif
 	{
 		private readonly AssemblyName name;
 		private readonly string dir;
@@ -71,15 +76,16 @@ namespace IKVM.Reflection.Emit
 
 		public static AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, string dir)
 		{
-			return DefineDynamicAssembly(name, access, dir, null, null, null);
+			return new AssemblyBuilder(name, dir, null, null, null);
 		}
 
+		[Obsolete]
 		public static AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
 		{
 			return new AssemblyBuilder(name, dir, requiredPermissions, optionalPermissions, refusedPermissions);
 		}
 
-		public AssemblyName GetName()
+		public override AssemblyName GetName()
 		{
 			AssemblyName n = new AssemblyName();
 			n.Name = name.Name;
@@ -96,7 +102,7 @@ namespace IKVM.Reflection.Emit
 			return n;
 		}
 
-		public string FullName
+		public override string FullName
 		{
 			get { return GetName().FullName; }
 		}
@@ -175,17 +181,23 @@ namespace IKVM.Reflection.Emit
 			}
 			int token = 0x20000000 + manifestModule.Tables.Assembly.AddRecord(assemblyRecord);
 
+#pragma warning disable 618
+			// this values are obsolete, but we already know that so we disable the warning
+			System.Security.Permissions.SecurityAction requestMinimum = System.Security.Permissions.SecurityAction.RequestMinimum;
+			System.Security.Permissions.SecurityAction requestOptional = System.Security.Permissions.SecurityAction.RequestOptional;
+			System.Security.Permissions.SecurityAction requestRefuse = System.Security.Permissions.SecurityAction.RequestRefuse;
+#pragma warning restore 618
 			if (requiredPermissions != null)
 			{
-				manifestModule.AddDeclaritiveSecurity(token, System.Security.Permissions.SecurityAction.RequestMinimum, requiredPermissions);
+				manifestModule.AddDeclaritiveSecurity(token, requestMinimum, requiredPermissions);
 			}
 			if (optionalPermissions != null)
 			{
-				manifestModule.AddDeclaritiveSecurity(token, System.Security.Permissions.SecurityAction.RequestOptional, optionalPermissions);
+				manifestModule.AddDeclaritiveSecurity(token, requestOptional, optionalPermissions);
 			}
 			if (refusedPermissions != null)
 			{
-				manifestModule.AddDeclaritiveSecurity(token, System.Security.Permissions.SecurityAction.RequestRefuse, refusedPermissions);
+				manifestModule.AddDeclaritiveSecurity(token, requestRefuse, refusedPermissions);
 			}
 
 			ByteBuffer versionInfoData = null;
@@ -303,7 +315,7 @@ namespace IKVM.Reflection.Emit
 			return null;
 		}
 
-		public string ImageRuntimeVersion
+		public override string ImageRuntimeVersion
 		{
 			get { return imageRuntimeVersion; }
 		}

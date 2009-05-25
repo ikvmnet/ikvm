@@ -35,14 +35,14 @@ namespace IKVM.Internal
 	{
 		internal static bool IsSameAssembly(Type type1, Type type2)
 		{
-#if IKVM_REF_EMIT
+#if IKVM_REF_EMIT && !NET_4_0
 			return IkvmAssembly.GetAssembly(type1) == IkvmAssembly.GetAssembly(type2);
 #else
 			return type1.Assembly.Equals(type2.Assembly);
 #endif
 		}
 
-#if IKVM_REF_EMIT
+#if IKVM_REF_EMIT && !NET_4_0
 		internal static bool IsFromAssembly(Type type, IkvmAssembly assembly)
 		{
 			return IkvmAssembly.GetAssembly(type) == assembly;
@@ -54,7 +54,7 @@ namespace IKVM.Internal
 		}
 #endif
 
-#if IKVM_REF_EMIT
+#if IKVM_REF_EMIT && !NET_4_0
 		internal static IkvmAssembly GetAssembly(Type type)
 		{
 			return IkvmAssembly.GetAssembly(type);

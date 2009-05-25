@@ -213,6 +213,12 @@ namespace IKVM.Reflection.Emit
 			return MethodBuilder.Copy(requiredCustomModifiers);
 		}
 
+#if NET_4_0
+		public override Module Module
+		{
+			get { return typeBuilder.Module; }
+		}
+#endif
 		internal void WriteFieldRecords(MetadataWriter mw)
 		{
 			mw.Write((short)attribs);

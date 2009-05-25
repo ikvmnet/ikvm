@@ -125,6 +125,13 @@ namespace IKVM.Reflection.Emit
 			get { return methodBuilder.MetadataToken; }
 		}
 
+#if NET_4_0
+		public override Module Module
+		{
+			get { return methodBuilder.Module; }
+		}
+#endif
+
 		internal ModuleBuilder ModuleBuilder
 		{
 			get { return methodBuilder.ModuleBuilder; }
