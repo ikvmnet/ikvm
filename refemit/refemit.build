@@ -5,6 +5,9 @@
         <if test="${property::exists('signed')}">
             <property name="defs" value="${defs};${signed}" />
         </if>
+        <if test="${version::get-major(framework::get-version(framework::get-target-framework() )) == 4}">
+            <property name="defs" value="${defs};NET_4_0" />
+        </if>
         <csc target="library" output="../bin/IKVM.Reflection.Emit.dll" define="${defs}">
             <sources>
                 <include name="../CommonAssemblyInfo.cs" />
