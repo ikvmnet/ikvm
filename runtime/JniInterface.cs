@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2008 Jeroen Frijters
+  Copyright (C) 2002-2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -159,6 +159,7 @@ namespace IKVM.Runtime
 		public unsafe struct Frame
 		{
 			private JNIEnv* pJNIEnv;
+			private JNIEnv.ManagedJNIEnv env;
 			private RuntimeMethodHandle prevMethod;
 			private object[] quickLocals;
 			private int quickLocalIndex;
@@ -167,14 +168,14 @@ namespace IKVM.Runtime
 			internal ClassLoaderWrapper Enter(ClassLoaderWrapper loader)
 			{
 				Enter(new RuntimeMethodHandle());
-				ClassLoaderWrapper prev = (ClassLoaderWrapper)pJNIEnv->classLoader.Target;
-				pJNIEnv->classLoader.Target = loader;
+				ClassLoaderWrapper prev = env.classLoader;
+				env.classLoader = loader;
 				return prev;
 			}
 
 			internal void Leave(ClassLoaderWrapper prev)
 			{
-				pJNIEnv->classLoader.Target = prev;
+				env.classLoader = prev;
 				Leave();
 			}
 
@@ -185,47 +186,48 @@ namespace IKVM.Runtime
 				{
 					pJNIEnv = JNIEnv.CreateJNIEnv();
 				}
-				prevMethod = pJNIEnv->currentMethod;
-				pJNIEnv->currentMethod = method;
-				object[][] localRefs = pJNIEnv->GetLocalRefs();
-				prevLocalRefSlot = pJNIEnv->localRefSlot;
-				pJNIEnv->localRefSlot++;
-				if(pJNIEnv->localRefSlot >= localRefs.Length)
+				env = pJNIEnv->GetManagedJNIEnv();
+				prevMethod = env.currentMethod;
+				env.currentMethod = method;
+				object[][] localRefs = env.localRefs;
+				prevLocalRefSlot = env.localRefSlot;
+				env.localRefSlot++;
+				if(env.localRefSlot >= localRefs.Length)
 				{
 					object[][] tmp = new object[localRefs.Length * 2][];
 					Array.Copy(localRefs, 0, tmp, 0, localRefs.Length);
-					pJNIEnv->localRefs.Target = localRefs = tmp;
+					env.localRefs = localRefs = tmp;
 				}
-				if(localRefs[pJNIEnv->localRefSlot] == null)
+				if(localRefs[env.localRefSlot] == null)
 				{
-					localRefs[pJNIEnv->localRefSlot] = new object[32];
+					localRefs[env.localRefSlot] = new object[32];
 				}
-				quickLocals = localRefs[pJNIEnv->localRefSlot];
-				quickLocalIndex = (pJNIEnv->localRefSlot << JNIEnv.LOCAL_REF_SHIFT);
+				quickLocals = localRefs[env.localRefSlot];
+				quickLocalIndex = (env.localRefSlot << JNIEnv.LOCAL_REF_SHIFT);
 				return (IntPtr)(void*)pJNIEnv;
 			}
 
 			public void Leave()
 			{
-				pJNIEnv->currentMethod = prevMethod;
-				Exception x = (Exception)pJNIEnv->UnwrapRef(pJNIEnv->pendingException);
-				pJNIEnv->pendingException = IntPtr.Zero;
-				object[][] localRefs = pJNIEnv->GetLocalRefs();
-				while(pJNIEnv->localRefSlot != prevLocalRefSlot)
+				env.currentMethod = prevMethod;
+				Exception x = env.pendingException;
+				env.pendingException = null;
+				object[][] localRefs = env.localRefs;
+				while(env.localRefSlot != prevLocalRefSlot)
 				{
-					if(localRefs[pJNIEnv->localRefSlot] != null)
+					if(localRefs[env.localRefSlot] != null)
 					{
-						if(localRefs[pJNIEnv->localRefSlot].Length == JNIEnv.LOCAL_REF_BUCKET_SIZE)
+						if(localRefs[env.localRefSlot].Length == JNIEnv.LOCAL_REF_BUCKET_SIZE)
 						{
 							// if the bucket is totally allocated, we're assuming a leaky method so we throw the bucket away
-							localRefs[pJNIEnv->localRefSlot] = null;
+							localRefs[env.localRefSlot] = null;
 						}
 						else
 						{
-							Array.Clear(localRefs[pJNIEnv->localRefSlot], 0, localRefs[pJNIEnv->localRefSlot].Length);
+							Array.Clear(localRefs[env.localRefSlot], 0, localRefs[env.localRefSlot].Length);
 						}
 					}
-					pJNIEnv->localRefSlot--;
+					env.localRefSlot--;
 				}
 				if(x != null)
 				{
@@ -351,8 +353,8 @@ namespace IKVM.Runtime
 					object[] tmp = new object[quickLocals.Length * 2];
 					Array.Copy(quickLocals, 0, tmp, 0, quickLocals.Length);
 					quickLocals = tmp;
-					object[][] localRefs = (object[][])pJNIEnv->localRefs.Target;
-					localRefs[pJNIEnv->localRefSlot] = quickLocals;
+					object[][] localRefs = env.localRefs;
+					localRefs[env.localRefSlot] = quickLocals;
 					quickLocals[i] = obj;
 					return (IntPtr)quickLocalIndex++;
 				}
@@ -1079,20 +1081,39 @@ namespace IKVM.Runtime
 		internal const int JNIWeakGlobalRefType = 3;
 		internal const sbyte JNI_TRUE = 1;
 		internal const sbyte JNI_FALSE = 0;
-		internal void* vtable;
-		internal GCHandle localRefs;
-		internal int localRefSlot;
-		internal IntPtr pendingException;
-		internal RuntimeMethodHandle currentMethod;
-		internal GCHandle classLoader;
-		internal GCHandle criticalArrayHandle1;
-		internal GCHandle criticalArrayHandle2;
+		private void* vtable;
+		private GCHandle managedJNIEnv;
+		private GCHandle criticalArrayHandle1;
+		private GCHandle criticalArrayHandle2;
 		private static LocalDataStoreSlot cleanupHelperDataSlot = System.Threading.Thread.AllocateDataSlot();
 
 		static JNIEnv()
 		{
 			// we set the field here so that IKVM.Runtime.dll doesn't have to load us if we're not otherwise needed
 			IKVM.NativeCode.java.lang.SecurityManager.jniAssembly = typeof(JNIEnv).Assembly;
+		}
+
+		internal ManagedJNIEnv GetManagedJNIEnv()
+		{
+			return (ManagedJNIEnv)managedJNIEnv.Target;
+		}
+
+		internal sealed class ManagedJNIEnv
+		{
+			internal ClassLoaderWrapper classLoader;
+			internal RuntimeMethodHandle currentMethod;
+			internal object[][] localRefs;
+			internal int localRefSlot;
+			internal Exception pendingException;
+
+			internal ManagedJNIEnv()
+			{
+				localRefs = new object[32][];
+				localRefs[0] = new object[JNIEnv.LOCAL_REF_BUCKET_SIZE];
+				// stuff something in the first entry to make sure we don't hand out a zero handle
+				// (a zero handle corresponds to a null reference)
+				localRefs[0][0] = "";
+			}
 		}
 
 		unsafe class JNIEnvCleanupHelper
@@ -1114,13 +1135,9 @@ namespace IKVM.Runtime
 				// I can live with that).
 				if(!Environment.HasShutdownStarted)
 				{
-					if(pJNIEnv->localRefs.IsAllocated)
+					if(pJNIEnv->managedJNIEnv.IsAllocated)
 					{
-						pJNIEnv->localRefs.Free();
-					}
-					if(pJNIEnv->classLoader.IsAllocated)
-					{
-						pJNIEnv->classLoader.Free();
+						pJNIEnv->managedJNIEnv.Free();
 					}
 					if(pJNIEnv->criticalArrayHandle1.IsAllocated)
 					{
@@ -1145,16 +1162,7 @@ namespace IKVM.Runtime
 				System.Threading.Thread.SetData(cleanupHelperDataSlot, new JNIEnvCleanupHelper(pJNIEnv));
 			}
 			pJNIEnv->vtable = VtableBuilder.vtable;
-			object[][] localRefs = new object[32][];
-			localRefs[0] = new object[JNIEnv.LOCAL_REF_BUCKET_SIZE];
-			// stuff something in the first entry to make sure we don't hand out a zero handle
-			// (a zero handle corresponds to a null reference)
-			localRefs[0][0] = "";
-			pJNIEnv->localRefs = GCHandle.Alloc(localRefs);
-			pJNIEnv->localRefSlot = 0;
-			pJNIEnv->pendingException = IntPtr.Zero;
-			pJNIEnv->currentMethod = new RuntimeMethodHandle();
-			pJNIEnv->classLoader = GCHandle.Alloc(null);
+			pJNIEnv->managedJNIEnv = GCHandle.Alloc(new ManagedJNIEnv());
 			pJNIEnv->criticalArrayHandle1 = GCHandle.Alloc(null, GCHandleType.Pinned);
 			pJNIEnv->criticalArrayHandle2 = GCHandle.Alloc(null, GCHandleType.Pinned);
 			return pJNIEnv;
@@ -1324,14 +1332,15 @@ namespace IKVM.Runtime
 
 		private static ClassLoaderWrapper FindNativeMethodClassLoader(JNIEnv* pEnv)
 		{
-			if(pEnv->currentMethod.Value != IntPtr.Zero)
+			ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
+			if(env.currentMethod.Value != IntPtr.Zero)
 			{
-				MethodBase mb = MethodBase.GetMethodFromHandle(pEnv->currentMethod);
+				MethodBase mb = MethodBase.GetMethodFromHandle(env.currentMethod);
 				return ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType).GetClassLoader();
 			}
-			if(pEnv->classLoader.Target != null)
+			if(env.classLoader != null)
 			{
-				return (ClassLoaderWrapper)pEnv->classLoader.Target;
+				return env.classLoader;
 			}
 			return ClassLoaderWrapper.GetBootstrapClassLoader();
 		}
@@ -1409,19 +1418,20 @@ namespace IKVM.Runtime
 
 		private static void SetPendingException(JNIEnv* pEnv, Exception x)
 		{
-			DeleteLocalRef(pEnv, pEnv->pendingException);
-			pEnv->pendingException = x == null ? IntPtr.Zero : pEnv->MakeLocalRef(ikvm.runtime.Util.mapException(x));
+			pEnv->GetManagedJNIEnv().pendingException = ikvm.runtime.Util.mapException(x);
 		}
 
 		internal static jint Throw(JNIEnv* pEnv, jthrowable throwable)
 		{
-			DeleteLocalRef(pEnv, pEnv->pendingException);
-			pEnv->pendingException = NewLocalRef(pEnv, throwable);
+			ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
+			Exception x = pEnv->UnwrapRef(throwable) as Exception;
+			env.pendingException = (Exception)x;
 			return JNI_OK;
 		}
 
 		internal static jint ThrowNew(JNIEnv* pEnv, jclass clazz, byte* msg)
 		{
+			ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
 			TypeWrapper wrapper = TypeWrapper.FromClass(pEnv->UnwrapRef(clazz));
 			MethodWrapper mw = wrapper.GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
 			if(mw != null)
@@ -1432,7 +1442,7 @@ namespace IKVM.Runtime
 				{
 					wrapper.Finish();
 					java.lang.reflect.Constructor cons = (java.lang.reflect.Constructor)mw.ToMethodOrConstructor(false);
-					exception = (Exception)cons.newInstance(new object[] { StringFromOEM(msg) }, (ikvm.@internal.CallerID)JVM.CreateCallerID(pEnv->currentMethod));
+					exception = (Exception)cons.newInstance(new object[] { StringFromOEM(msg) }, (ikvm.@internal.CallerID)JVM.CreateCallerID(env.currentMethod));
 					rc = JNI_OK;
 				}
 				catch(RetargetableJavaException x)
@@ -1457,12 +1467,14 @@ namespace IKVM.Runtime
 
 		internal static jthrowable ExceptionOccurred(JNIEnv* pEnv)
 		{
-			return NewLocalRef(pEnv, pEnv->pendingException);
+			ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
+			return pEnv->MakeLocalRef(env.pendingException);
 		}
 
 		internal static void ExceptionDescribe(JNIEnv* pEnv)
 		{
-			Exception x = (Exception)pEnv->UnwrapRef(pEnv->pendingException);
+			ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
+			Exception x = env.pendingException;
 			if(x != null)
 			{
 				SetPendingException(pEnv, null);
@@ -1479,8 +1491,8 @@ namespace IKVM.Runtime
 
 		internal static void ExceptionClear(JNIEnv* pEnv)
 		{
-			DeleteLocalRef(pEnv, pEnv->pendingException);
-			pEnv->pendingException = IntPtr.Zero;
+			ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
+			env.pendingException = null;
 		}
 
 		internal static void FatalError(JNIEnv* pEnv, byte* msg)
@@ -1492,17 +1504,18 @@ namespace IKVM.Runtime
 
 		internal static jint PushLocalFrame(JNIEnv* pEnv, jint capacity)
 		{
-			object[][] localRefs = pEnv->GetLocalRefs();
-			pEnv->localRefSlot += 2;
-			if(pEnv->localRefSlot >= localRefs.Length)
+			ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
+			object[][] localRefs = env.localRefs;
+			env.localRefSlot += 2;
+			if(env.localRefSlot >= localRefs.Length)
 			{
 				object[][] tmp = new object[localRefs.Length * 2][];
 				Array.Copy(localRefs, 0, tmp, 0, localRefs.Length);
-				pEnv->localRefs.Target = localRefs = tmp;
+				env.localRefs = localRefs = tmp;
 			}
 			// we use a null slot to mark the fact that we used PushLocalFrame
-			localRefs[pEnv->localRefSlot - 1] = null;
-			if(localRefs[pEnv->localRefSlot] == null)
+			localRefs[env.localRefSlot - 1] = null;
+			if(localRefs[env.localRefSlot] == null)
 			{
 				// we can't use capacity directly, because the array length must be a power of two
 				// and it can't be bigger than LOCAL_REF_BUCKET_SIZE
@@ -1512,21 +1525,22 @@ namespace IKVM.Runtime
 				{
 					r *= 2;
 				}
-				localRefs[pEnv->localRefSlot] = new object[r];
+				localRefs[env.localRefSlot] = new object[r];
 			}
 			return JNI_OK;
 		}
 
 		internal static jobject PopLocalFrame(JNIEnv* pEnv, jobject result)
 		{
+			ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
 			object res = pEnv->UnwrapRef(result);
-			object[][] localRefs = pEnv->GetLocalRefs();
-			while(localRefs[pEnv->localRefSlot] != null)
+			object[][] localRefs = env.localRefs;
+			while(localRefs[env.localRefSlot] != null)
 			{
-				localRefs[pEnv->localRefSlot] = null;
-				pEnv->localRefSlot--;
+				localRefs[env.localRefSlot] = null;
+				env.localRefSlot--;
 			}
-			pEnv->localRefSlot--;
+			env.localRefSlot--;
 			return pEnv->MakeLocalRef(res);
 		}
 
@@ -1569,17 +1583,13 @@ namespace IKVM.Runtime
 			}
 		}
 
-		internal object[][] GetLocalRefs()
-		{
-			return (object[][])localRefs.Target;
-		}
-
 		internal static void DeleteLocalRef(JNIEnv* pEnv, jobject obj)
 		{
+			ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
 			int i = obj.ToInt32();
 			if(i > 0)
 			{
-				object[][] localRefs = pEnv->GetLocalRefs();
+				object[][] localRefs = env.localRefs;
 				localRefs[i >> LOCAL_REF_SHIFT][i & LOCAL_REF_MASK] = null;
 				return;
 			}
@@ -1655,6 +1665,7 @@ namespace IKVM.Runtime
 
 		private static object InvokeHelper(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue *args, bool nonVirtual)
 		{
+			ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
 			string sig = GetMethodArgList(methodID);
 			object[] argarray = new object[sig.Length];
 			for(int i = 0; i < sig.Length; i++)
@@ -1693,9 +1704,9 @@ namespace IKVM.Runtime
 			try
 			{
 				MethodBase caller = null;
-				if(pEnv->currentMethod.Value != IntPtr.Zero)
+				if(env.currentMethod.Value != IntPtr.Zero)
 				{
-					caller = MethodBase.GetMethodFromHandle(pEnv->currentMethod);
+					caller = MethodBase.GetMethodFromHandle(env.currentMethod);
 				}
 				return MethodWrapper.FromCookie(methodID).InvokeJNI(pEnv->UnwrapRef(obj), argarray, nonVirtual, caller);
 			}
@@ -3352,7 +3363,8 @@ namespace IKVM.Runtime
 
 		internal static jboolean ExceptionCheck(JNIEnv* pEnv)
 		{
-			return pEnv->UnwrapRef(pEnv->pendingException) != null ? JNI_TRUE : JNI_FALSE;
+			ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
+			return env.pendingException != null ? JNI_TRUE : JNI_FALSE;
 		}
 
 		internal static jobject NewDirectByteBuffer(JNIEnv* pEnv, IntPtr address, jlong capacity)
@@ -3423,14 +3435,15 @@ namespace IKVM.Runtime
 			{
 				return IntPtr.Zero;
 			}
-			object[][] localRefs = GetLocalRefs();
-			object[] active = localRefs[localRefSlot];
+			ManagedJNIEnv env = GetManagedJNIEnv();
+			object[][] localRefs = env.localRefs;
+			object[] active = localRefs[env.localRefSlot];
 			for(int i = 0; i < active.Length; i++)
 			{
 				if(active[i] == null)
 				{
 					active[i] = obj;
-					return (IntPtr)((localRefSlot << LOCAL_REF_SHIFT) + i);
+					return (IntPtr)((env.localRefSlot << LOCAL_REF_SHIFT) + i);
 				}
 			}
 			if(active.Length < LOCAL_REF_BUCKET_SIZE)
@@ -3438,28 +3451,28 @@ namespace IKVM.Runtime
 				int i = active.Length;
 				object[] tmp = new object[i * 2];
 				Array.Copy(active, 0, tmp, 0, i);
-				active = localRefs[localRefSlot] = tmp;
+				active = localRefs[env.localRefSlot] = tmp;
 				active[i] = obj;
-				return (IntPtr)((localRefSlot << LOCAL_REF_SHIFT) + i);
+				return (IntPtr)((env.localRefSlot << LOCAL_REF_SHIFT) + i);
 			}
 			// if we get here, we're in a native method that most likely is leaking locals refs,
 			// so we're going to allocate a new bucket and increment localRefSlot, this means that
 			// any slots that become available in the previous bucket are not going to be reused,
 			// but since we're assuming that the method is leaking anyway, that isn't a problem
 			// (it's never a correctness issue, just a resource consumption issue)
-			localRefSlot++;
-			if(localRefSlot == localRefs.Length)
+			env.localRefSlot++;
+			if(env.localRefSlot == localRefs.Length)
 			{
-				object[][] tmp = new object[localRefSlot * 2][];
-				Array.Copy(localRefs, 0, tmp, 0, localRefSlot);
-				this.localRefs.Target = localRefs = tmp;
+				object[][] tmp = new object[env.localRefSlot * 2][];
+				Array.Copy(localRefs, 0, tmp, 0, env.localRefSlot);
+				env.localRefs = localRefs = tmp;
 			}
-			if(localRefs[localRefSlot] == null)
+			if(localRefs[env.localRefSlot] == null)
 			{
-				localRefs[localRefSlot] = new object[LOCAL_REF_BUCKET_SIZE];
+				localRefs[env.localRefSlot] = new object[LOCAL_REF_BUCKET_SIZE];
 			}
-			localRefs[localRefSlot][0] = obj;
-			return (IntPtr)(localRefSlot << LOCAL_REF_SHIFT);
+			localRefs[env.localRefSlot][0] = obj;
+			return (IntPtr)(env.localRefSlot << LOCAL_REF_SHIFT);
 		}
 
 		internal object UnwrapRef(IntPtr o)
@@ -3467,7 +3480,7 @@ namespace IKVM.Runtime
 			int i = o.ToInt32();
 			if(i > 0)
 			{
-				object[][] localRefs = GetLocalRefs();
+				object[][] localRefs = GetManagedJNIEnv().localRefs;
 				return localRefs[i >> LOCAL_REF_SHIFT][i & LOCAL_REF_MASK];
 			}
 			if(i < 0)
