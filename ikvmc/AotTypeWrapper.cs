@@ -132,7 +132,7 @@ namespace IKVM.Internal
 			{
 				foreach (MethodWrapper mw in methods)
 				{
-					MethodBuilder mb = typeBuilder.DefineMethod(mw.Name, MethodAttributes.FamORAssem | MethodAttributes.Virtual, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
+					MethodBuilder mb = typeBuilder.DefineMethod(mw.Name, MethodAttributes.FamORAssem | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.CheckAccessOnOverride, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
 					AttributeHelper.HideFromJava(mb);
 					CodeEmitter ilgen = CodeEmitter.Create(mb);
 					EmitHelper.Throw(ilgen, "java.lang.AbstractMethodError");
