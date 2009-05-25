@@ -41,19 +41,29 @@ namespace ikvm.awt
         private readonly Bitmap bitmap;
 
         internal BitmapGraphics(Bitmap bitmap)
-            : base(Graphics.FromImage(bitmap), null, Color.White, Color.Black)
+            : base(createGraphics(bitmap), null, Color.White, Color.Black)
         {
             this.bitmap = bitmap;
+        }
+
+        private static Graphics createGraphics(Bitmap bitmap)
+        {
+            // lock to prevent the exception
+            // System.InvalidOperationException: Object is currently in use elsewhere
+            lock (bitmap)
+            {
+                return Graphics.FromImage(bitmap);
+            }
         }
 
         public override java.awt.Graphics create()
         {
             BitmapGraphics newGraphics = (BitmapGraphics)MemberwiseClone();
-            newGraphics.init(Graphics.FromImage(bitmap));
+            newGraphics.init(createGraphics(bitmap));
             return newGraphics;
         }
 
-		public override void copyArea(int x, int y, int width, int height, int dx, int dy)
+        public override void copyArea(int x, int y, int width, int height, int dx, int dy)
 		{
 		}
     }

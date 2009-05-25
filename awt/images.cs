@@ -142,11 +142,15 @@ namespace ikvm.awt
 
     class NetVolatileImage : java.awt.image.VolatileImage
     {
-        internal Bitmap bitmap;
+        internal readonly Bitmap bitmap;
+        private readonly int width;
+        private readonly int height;
 
         internal NetVolatileImage(int width, int height)
         {
             bitmap = new Bitmap(width, height);
+            this.width = width;
+            this.height = height;
             using (Graphics g = Graphics.FromImage(bitmap))
             {
                 g.Clear(Color.White);
@@ -160,12 +164,12 @@ namespace ikvm.awt
 
         public override int getHeight(ImageObserver io)
         {
-            return bitmap.Height;
+            return height; // bitmap.Height --> need invoke or lock
         }
 
         public override int getWidth(ImageObserver io)
         {
-            return bitmap.Width;
+            return width; // bitmap.Width --> need invoke or lock
         }
 
         public override object getProperty(string str, ImageObserver io)
@@ -175,21 +179,21 @@ namespace ikvm.awt
 
         public override java.awt.Graphics2D createGraphics()
         {
-            Graphics g = Graphics.FromImage(bitmap);
+            //Graphics g = Graphics.FromImage(bitmap);
             // HACK for off-screen images we don't want ClearType or anti-aliasing
             // TODO I'm sure Java 2D has a way to control text rendering quality, we should honor that
-            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.SingleBitPerPixelGridFit;
+            //g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.SingleBitPerPixelGridFit;
             return new BitmapGraphics(bitmap);
         }
 
         public override int getHeight()
         {
-            return bitmap.Height;
+            return height; // bitmap.Height --> need invoke or lock
         }
 
         public override int getWidth()
         {
-            return bitmap.Width;
+            return width; // bitmap.Width --> need invoke or lock
         }
 
         public override BufferedImage getSnapshot()
