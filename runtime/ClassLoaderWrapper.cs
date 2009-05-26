@@ -52,7 +52,6 @@ namespace IKVM.Internal
 		private static readonly Dictionary<Type, TypeWrapper> typeToTypeWrapper = new Dictionary<Type, TypeWrapper>();
 #if STATIC_COMPILER
 		private static ClassLoaderWrapper bootstrapClassLoader;
-		private TypeWrapperFactory factory;
 		private TypeWrapper circularDependencyHack;
 #else
 		private static AssemblyClassLoader bootstrapClassLoader;
@@ -64,6 +63,7 @@ namespace IKVM.Internal
 		private static bool customClassLoaderRedirectsLoaded;
 		private static Dictionary<string, string> customClassLoaderRedirects;
 #endif
+		private TypeWrapperFactory factory;
 		private Dictionary<string, TypeWrapper> types = new Dictionary<string, TypeWrapper>();
 		private readonly Dictionary<string, Thread> defineClassInProgress = new Dictionary<string, Thread>();
 		private List<IntPtr> nativeLibraries;
@@ -348,14 +348,12 @@ namespace IKVM.Internal
 		{
 #if COMPACT_FRAMEWORK
 			throw new NoClassDefFoundError("Class loading is not supported on the Compact Framework");
-#elif STATIC_COMPILER
+#else
 			if(factory == null)
 			{
-				factory = new DynamicClassLoader(((CompilerClassLoader)this).CreateModuleBuilder());
+				factory = DynamicClassLoader.Get(this);
 			}
 			return factory;
-#else
-			return DynamicClassLoader.Instance;
 #endif
 		}
 

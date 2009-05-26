@@ -81,7 +81,7 @@ namespace IKVM.Internal
 		}
 
 #if !STATIC_COMPILER
-		internal static DynamicClassLoader Instance = new DynamicClassLoader(CreateModuleBuilder());
+		private static DynamicClassLoader Instance = new DynamicClassLoader(CreateModuleBuilder());
 
 		private static Assembly OnTypeResolve(object sender, ResolveEventArgs args)
 		{
@@ -346,7 +346,12 @@ namespace IKVM.Internal
 		}
 
 #if !STATIC_COMPILER
-		internal void SaveDebugImage()
+		internal static void SaveDebugImages()
+		{
+			Instance.SaveDebugImage();
+		}
+
+		private void SaveDebugImage()
 		{
 			JVM.FinishingForDebugSave = true;
 			FinishAll();
@@ -377,6 +382,15 @@ namespace IKVM.Internal
 			{
 				return moduleBuilder;
 			}
+		}
+
+		internal static DynamicClassLoader Get(ClassLoaderWrapper loader)
+		{
+#if STATIC_COMPILER
+			return new DynamicClassLoader(((CompilerClassLoader)loader).CreateModuleBuilder());
+#else
+			return Instance;
+#endif
 		}
 
 #if !STATIC_COMPILER
@@ -412,6 +426,24 @@ namespace IKVM.Internal
 			CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, debug });
 			assemblyBuilder.SetCustomAttribute(debugAttr);
 			return JVM.IsSaveDebugImage ? assemblyBuilder.DefineDynamicModule("ikvmdump.dll", "ikvmdump.dll", debug) : assemblyBuilder.DefineDynamicModule(name.Name, debug);
+		}
+
+		internal static bool IsDynamicAssembly(Assembly asm)
+		{
+#if NET_4_0
+			return asm.IsDynamic();
+#else
+			if (asm is System.Reflection.Emit.AssemblyBuilder)
+			{
+				return true;
+			}
+			if (asm.Equals(Instance.ModuleBuilder.Assembly))
+			{
+				// this can happen on Orcas, where an AssemblyBuilder has a corresponding Assembly
+				return true;
+			}
+			return false;
+#endif
 		}
 #endif // !STATIC_COMPILER
 	}

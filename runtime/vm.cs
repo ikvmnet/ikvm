@@ -43,7 +43,7 @@ namespace IKVM.Internal
 	
 		public static void SaveDebugImage()
 		{
-			DynamicClassLoader.Instance.SaveDebugImage();
+			DynamicClassLoader.SaveDebugImages();
 		}
 
 		public static bool EnableReflectionOnMethodsWithUnloadableTypeParameters

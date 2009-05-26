@@ -310,13 +310,8 @@ namespace IKVM.NativeCode.ikvm.runtime
 	{
 		public static object loadClassFromAssembly(Assembly asm, string className)
 		{
-			if(asm is System.Reflection.Emit.AssemblyBuilder)
+			if(DynamicClassLoader.IsDynamicAssembly(asm))
 			{
-				return null;
-			}
-			if(asm.Equals(DynamicClassLoader.Instance.ModuleBuilder.Assembly))
-			{
-				// this can happen on Orcas, where an AssemblyBuilder has a corresponding Assembly
 				return null;
 			}
 			TypeWrapper tw = ClassLoaderWrapper.GetAssemblyClassLoader(asm).DoLoad(className);
@@ -325,13 +320,8 @@ namespace IKVM.NativeCode.ikvm.runtime
 
 		public static bool findResourceInAssembly(Assembly asm, string resourceName)
 		{
-			if(asm is System.Reflection.Emit.AssemblyBuilder)
+			if(DynamicClassLoader.IsDynamicAssembly(asm))
 			{
-				return false;
-			}
-			if(asm.Equals(DynamicClassLoader.Instance.ModuleBuilder.Assembly))
-			{
-				// this can happen on Orcas, where an AssemblyBuilder has a corresponding Assembly
 				return false;
 			}
 			return asm.GetManifestResourceInfo(JVM.MangleResourceName(resourceName)) != null;
