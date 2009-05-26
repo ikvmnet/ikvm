@@ -561,9 +561,9 @@ assembly.class
     sun/awt/*.class
     sun/awt/image/*.class
     sun/font/*.class
-	sun/java2d/*.class
+    sun/java2d/*.class
     sun/java2d/cmm/lcms/*.class
-	sun/java2d/pipe/*.class
+    sun/java2d/pipe/*.class
     SystemProperties$1.class
     SystemProperties.class
     ../../classpath-0.95/gnu/java/awt/*.class
@@ -586,7 +586,7 @@ assembly.class
     ../../classpath-0.95/java/awt/im/*.class
     ../../classpath-0.95/java/awt/im/spi/*.class
     ../../openjdk6-b16/build/linux-amd64/gensrc/com/sun/accessibility/internal/resources/*.class
-	../../openjdk6-b16/jdk/src/share/classes/com/sun/java/swing/plaf/windows/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/com/sun/java/swing/plaf/windows/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/color/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/datatransfer/*.class
@@ -619,24 +619,24 @@ assembly.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/awt/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/awt/datatransfer/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/awt/dnd/*.class
-	../../openjdk6-b16/jdk/src/share/classes/sun/awt/event/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/sun/awt/event/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/awt/geom/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/awt/im/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/awt/image/*.class
-	../../openjdk6-b16/jdk/src/share/classes/sun/awt/shell/*.class
-	../../openjdk6-b16/jdk/src/share/classes/sun/awt/util/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/sun/awt/shell/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/sun/awt/util/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/font/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/java2d/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/java2d/cmm/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/java2d/pipe/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/swing/*.class
-	../../openjdk6-b16/jdk/src/share/classes/sun/swing/plaf/synth/*.class
-	../../openjdk6-b16/jdk/src/share/classes/sun/swing/plaf/windows/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/sun/swing/plaf/synth/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/sun/swing/plaf/windows/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/swing/table/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/swing/text/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/swing/text/html/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/text/*.class
-	../../openjdk6-b16/jdk/src/solaris/classes/sun/awt/windows/*.class
+    ../../openjdk6-b16/jdk/src/solaris/classes/sun/awt/windows/*.class
     ../classpath/gnu/java/awt/peer/*.class
     ../classpath/gnu/java/awt/peer/gtk/*.class
 }
@@ -785,7 +785,7 @@ assembly.class
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/rowset/*
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/sun/print/*
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/sun/rmi/*
-	-r:System.Drawing
+    -r:System.Drawing
     com/sun/imageio/plugins/jpeg/*.class
     icedtea/rt/com/sun/media/sound/*.class
     sun/net/dns/*.class
@@ -968,7 +968,7 @@ assembly.class
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/javax/sql/*
     -r:System.Data
     java/sql/*.class
-	sun/jdbc/odbc/*.class
+    sun/jdbc/odbc/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/sql/*.class
     ../../openjdk6-b16/jdk/src/share/classes/javax/sql/*.class
     ../../openjdk6-b16/jdk/src/share/classes/javax/sql/rowset/*.class
