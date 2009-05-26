@@ -1,7 +1,6 @@
 <?xml version="1.0"?>
 <project name="ikvmc" default="ikvmc">
     <target name="ikvmc">
-        <property overwrite="false" name="signed" value="" />
         <property name="defs" value="TRACE;STATIC_COMPILER;IKVM_REF_EMIT" />
         <if test="${property::exists('signed')}">
             <property name="defs" value="${defs};${signed}" />
