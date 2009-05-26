@@ -18,6 +18,7 @@ assembly.class
     java/security/*.class
     java/util/*.class
     java/util/concurrent/locks/*.class
+    gnu/java/util/*.class
     sun/misc/*.class
     sun/net/www/protocol/file/*.class
     sun/net/www/protocol/ikvmres/*.class
@@ -36,8 +37,6 @@ assembly.class
     ../classpath/java/util/concurrent/atomic/*.class
     ../classpath/sun/misc/*.class
     ../classpath/System.Core.jar
-    ../../classpath-0.95/gnu/classpath/*.class
-    ../../classpath-0.95/gnu/java/util/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/AWTPermission.class
     ../../openjdk6-b16/build/linux-amd64/gensrc/java/lang/*.class
     ../../openjdk6-b16/build/linux-amd64/gensrc/java/nio/*.class
@@ -558,6 +557,7 @@ assembly.class
     ikvm/awt/*.class
     java/awt/*.class
     java/awt/image/*.class
+    gnu/java/awt/*.class
     sun/awt/*.class
     sun/awt/image/*.class
     sun/font/*.class
@@ -566,22 +566,6 @@ assembly.class
     sun/java2d/pipe/*.class
     SystemProperties$1.class
     SystemProperties.class
-    ../../classpath-0.95/gnu/java/awt/*.class
-    ../../classpath-0.95/gnu/java/awt/color/*.class
-    ../../classpath-0.95/gnu/java/awt/java2d/*.class
-    ../../classpath-0.95/gnu/java/awt/peer/*.class
-    ../../classpath-0.95/gnu/java/awt/peer/headless/*.class
-    ../../classpath-0.95/gnu/java/awt/print/*.class
-    ../../classpath-0.95/gnu/java/math/*.class
-    ../../classpath-0.95/gnu/javax/swing/plaf/gnu/*.class
-    ../../classpath-0.95/gnu/javax/swing/plaf/metal/*.class
-    ../../classpath-0.95/gnu/javax/swing/text/html/*.class
-    ../../classpath-0.95/gnu/javax/swing/text/html/css/*.class
-    ../../classpath-0.95/gnu/javax/swing/text/html/parser/*.class
-    ../../classpath-0.95/gnu/javax/swing/text/html/parser/models/*.class
-    ../../classpath-0.95/gnu/javax/swing/text/html/parser/support/*.class
-    ../../classpath-0.95/gnu/javax/swing/text/html/parser/support/low/*.class
-    ../../classpath-0.95/gnu/javax/swing/tree/*.class
     ../../classpath-0.95/java/applet/*.class
     ../../classpath-0.95/java/awt/im/*.class
     ../../classpath-0.95/java/awt/im/spi/*.class
@@ -637,8 +621,6 @@ assembly.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/swing/text/html/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/text/*.class
     ../../openjdk6-b16/jdk/src/solaris/classes/sun/awt/windows/*.class
-    ../classpath/gnu/java/awt/peer/*.class
-    ../classpath/gnu/java/awt/peer/gtk/*.class
 }
 {
     -out:IKVM.OpenJDK.Charsets.dll
