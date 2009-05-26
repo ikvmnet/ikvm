@@ -402,7 +402,12 @@ namespace IKVM.Internal
 						Type.GetType("System.Security.SecurityRulesAttribute").GetConstructor(new Type[] { Type.GetType("System.Security.SecurityRuleSet") }),
 						new object[] { Type.GetType("System.Security.SecurityRuleSet").GetField("Level1").GetValue(null) }));
 			}
-			AssemblyBuilder assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, JVM.IsSaveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run, null, null, null, null, null, true, attribs);
+			AssemblyBuilder assemblyBuilder =
+#if NET_4_0
+				AppDomain.CurrentDomain.DefineDynamicAssembly(name, JVM.IsSaveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run, null, true, attribs);
+#else
+				AppDomain.CurrentDomain.DefineDynamicAssembly(name, JVM.IsSaveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run, null, null, null, null, null, true, attribs);
+#endif
 			bool debug = System.Diagnostics.Debugger.IsAttached;
 			CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, debug });
 			assemblyBuilder.SetCustomAttribute(debugAttr);

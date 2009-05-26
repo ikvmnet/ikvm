@@ -139,6 +139,7 @@ namespace IKVM.Internal
 			return p1.Union(p2);
 		}
 
+#if !NET_4_0
 		private void GetAssemblyPermissions(out PermissionSet requiredPermissions, out PermissionSet optionalPermissions, out PermissionSet refusedPermissions)
 		{
 			requiredPermissions = null;
@@ -174,6 +175,7 @@ namespace IKVM.Internal
 				}
 			}
 		}
+#endif
 
 		internal ModuleBuilder CreateModuleBuilder()
 		{
@@ -188,6 +190,15 @@ namespace IKVM.Internal
 				name.KeyPair = new StrongNameKeyPair(keycontainer);
 			}
 			name.Version = new Version(version);
+#if NET_4_0
+			assemblyBuilder = 
+#if IKVM_REF_EMIT
+				AssemblyBuilder
+#else
+				AppDomain.CurrentDomain
+#endif
+					.DefineDynamicAssembly(name, AssemblyBuilderAccess.ReflectionOnly, assemblyDir);
+#else
 			PermissionSet requiredPermissions;
 			PermissionSet optionalPermissions;
 			PermissionSet refusedPermissions;
@@ -199,6 +210,7 @@ namespace IKVM.Internal
 				AppDomain.CurrentDomain
 #endif
 					.DefineDynamicAssembly(name, AssemblyBuilderAccess.ReflectionOnly, assemblyDir, requiredPermissions, optionalPermissions, refusedPermissions);
+#endif
 			ModuleBuilder moduleBuilder;
 			moduleBuilder = assemblyBuilder.DefineDynamicModule(assemblyName, assemblyFile, this.EmitDebugInfo);
 			if(this.EmitStackTraceInfo)

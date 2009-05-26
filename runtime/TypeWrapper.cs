@@ -282,7 +282,7 @@ namespace IKVM.Internal
 
 		private static bool IsDeclarativeSecurityAttribute(ClassLoaderWrapper loader, IKVM.Internal.MapXml.Attribute attr, out SecurityAction action, out PermissionSet pset)
 		{
-			action = SecurityAction.Deny;
+			action = SecurityAction.Demand;
 			pset = null;
 			if(attr.Type != null)
 			{
@@ -3739,13 +3739,16 @@ namespace IKVM.Internal
 #if !COMPACT_FRAMEWORK
 	static class BakedTypeCleanupHack
 	{
+#if NET_4_0
+		internal static void Process(DynamicTypeWrapper wrapper) { }
+#else
 		private static readonly FieldInfo m_methodBuilder = typeof(ConstructorBuilder).GetField("m_methodBuilder", BindingFlags.Instance | BindingFlags.NonPublic);
 		private static readonly FieldInfo[] methodBuilderFields = GetFieldList(typeof(MethodBuilder), new string[]
 			{
 				"m_ilGenerator",
 				"m_ubBody",
 				"m_RVAFixups",
-				"mm_mdMethodFixups",
+				"m_mdMethodFixups",
 				"m_localSignature",
 				"m_localSymInfo",
 				"m_exceptions",
@@ -3764,10 +3767,12 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				return Environment.Version.Major == 2 && Environment.Version.Minor == 0 && Environment.Version.Build == 50727 && Environment.Version.Revision == 1433;
+				return Environment.Version.Major == 2 && Environment.Version.Minor == 0 && Environment.Version.Build == 50727 && Environment.Version.Revision == 4016;
 			}
 		}
 
+		[SecurityCritical]
+		[SecurityTreatAsSafe]
 		private static FieldInfo[] GetFieldList(Type type, string[] list)
 		{
 			if(JVM.SafeGetEnvironmentVariable("IKVM_DISABLE_TYPEBUILDER_HACK") != null || !IsSupportedVersion)
@@ -3791,6 +3796,8 @@ namespace IKVM.Internal
 			return fields;
 		}
 
+		[SecurityCritical]
+		[SecurityTreatAsSafe]
 		internal static void Process(DynamicTypeWrapper wrapper)
 		{
 			if(m_methodBuilder != null && methodBuilderFields != null && fieldBuilderFields != null)
@@ -3833,8 +3840,9 @@ namespace IKVM.Internal
 				}
 			}
 		}
+#endif // NET_4_0
 	}
-#endif
+#endif // !COMPACT_FRAMEWORK
 
 #if !COMPACT_FRAMEWORK
 #if STATIC_COMPILER
