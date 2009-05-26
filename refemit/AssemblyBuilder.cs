@@ -79,7 +79,9 @@ namespace IKVM.Reflection.Emit
 			return new AssemblyBuilder(name, dir, null, null, null);
 		}
 
+#if NET_4_0
 		[Obsolete]
+#endif
 		public static AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
 		{
 			return new AssemblyBuilder(name, dir, requiredPermissions, optionalPermissions, refusedPermissions);
