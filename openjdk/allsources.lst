@@ -1,7 +1,3 @@
-../../classpath-0.95/java/applet/Applet.java
-../../classpath-0.95/java/applet/AppletContext.java
-../../classpath-0.95/java/applet/AppletStub.java
-../../classpath-0.95/java/applet/AudioClip.java
 ../classpath/gnu/classpath/VMSystemProperties.java
 ../classpath/gnu/java/net/protocol/ikvmres/Handler.java
 ../classpath/ikvm/extensions/ExtensionMethods.java
@@ -6530,6 +6526,10 @@ SystemProperties.java
 ../../openjdk6-b16/jdk/src/share/classes/com/sun/security/sasl/gsskerb/GssKrb5Server.java
 ../../openjdk6-b16/jdk/src/share/classes/com/sun/security/sasl/util/AbstractSaslImpl.java
 ../../openjdk6-b16/jdk/src/share/classes/com/sun/security/sasl/util/PolicyUtils.java
+../../openjdk6-b16/jdk/src/share/classes/java/applet/Applet.java
+../../openjdk6-b16/jdk/src/share/classes/java/applet/AppletContext.java
+../../openjdk6-b16/jdk/src/share/classes/java/applet/AppletStub.java
+../../openjdk6-b16/jdk/src/share/classes/java/applet/AudioClip.java
 ../../openjdk6-b16/jdk/src/share/classes/java/awt/ActiveEvent.java
 ../../openjdk6-b16/jdk/src/share/classes/java/awt/Adjustable.java
 ../../openjdk6-b16/jdk/src/share/classes/java/awt/AlphaComposite.java
@@ -9311,6 +9311,7 @@ SystemProperties.java
 ../../openjdk6-b16/jdk/src/share/classes/org/jcp/xml/dsig/internal/dom/DOMXSLTTransform.java
 ../../openjdk6-b16/jdk/src/share/classes/org/jcp/xml/dsig/internal/dom/Utils.java
 ../../openjdk6-b16/jdk/src/share/classes/org/jcp/xml/dsig/internal/dom/XMLDSigRI.java
+../../openjdk6-b16/jdk/src/share/classes/sun/applet/AppletAudioClip.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/awt/AWTAutoShutdown.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/awt/AWTCharset.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/awt/AWTSecurityManager.java

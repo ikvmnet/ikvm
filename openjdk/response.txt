@@ -566,9 +566,9 @@ assembly.class
     sun/java2d/pipe/*.class
     SystemProperties$1.class
     SystemProperties.class
-    ../../classpath-0.95/java/applet/*.class
     ../../openjdk6-b16/build/linux-amd64/gensrc/com/sun/accessibility/internal/resources/*.class
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/java/swing/plaf/windows/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/java/applet/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/color/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/datatransfer/*.class
@@ -600,6 +600,7 @@ assembly.class
     ../../openjdk6-b16/jdk/src/share/classes/javax/swing/text/rtf/*.class
     ../../openjdk6-b16/jdk/src/share/classes/javax/swing/tree/*.class
     ../../openjdk6-b16/jdk/src/share/classes/javax/swing/undo/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/sun/applet/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/awt/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/awt/datatransfer/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/awt/dnd/*.class
