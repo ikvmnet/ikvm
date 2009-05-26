@@ -567,8 +567,6 @@ assembly.class
     SystemProperties$1.class
     SystemProperties.class
     ../../classpath-0.95/java/applet/*.class
-    ../../classpath-0.95/java/awt/im/*.class
-    ../../classpath-0.95/java/awt/im/spi/*.class
     ../../openjdk6-b16/build/linux-amd64/gensrc/com/sun/accessibility/internal/resources/*.class
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/java/swing/plaf/windows/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/*.class
@@ -579,6 +577,8 @@ assembly.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/event/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/font/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/geom/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/java/awt/im/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/java/awt/im/spi/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/image/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/image/renderable/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/peer/*.class

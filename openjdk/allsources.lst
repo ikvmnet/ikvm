@@ -2,13 +2,6 @@
 ../../classpath-0.95/java/applet/AppletContext.java
 ../../classpath-0.95/java/applet/AppletStub.java
 ../../classpath-0.95/java/applet/AudioClip.java
-../../classpath-0.95/java/awt/im/InputContext.java
-../../classpath-0.95/java/awt/im/InputMethodHighlight.java
-../../classpath-0.95/java/awt/im/InputMethodRequests.java
-../../classpath-0.95/java/awt/im/InputSubset.java
-../../classpath-0.95/java/awt/im/spi/InputMethod.java
-../../classpath-0.95/java/awt/im/spi/InputMethodContext.java
-../../classpath-0.95/java/awt/im/spi/InputMethodDescriptor.java
 ../classpath/gnu/classpath/VMSystemProperties.java
 ../classpath/gnu/java/net/protocol/ikvmres/Handler.java
 ../classpath/ikvm/extensions/ExtensionMethods.java
@@ -6794,6 +6787,13 @@ SystemProperties.java
 ../../openjdk6-b16/jdk/src/share/classes/java/awt/geom/RectIterator.java
 ../../openjdk6-b16/jdk/src/share/classes/java/awt/geom/RoundRectangle2D.java
 ../../openjdk6-b16/jdk/src/share/classes/java/awt/geom/RoundRectIterator.java
+../../openjdk6-b16/jdk/src/share/classes/java/awt/im/InputContext.java
+../../openjdk6-b16/jdk/src/share/classes/java/awt/im/InputMethodHighlight.java
+../../openjdk6-b16/jdk/src/share/classes/java/awt/im/InputMethodRequests.java
+../../openjdk6-b16/jdk/src/share/classes/java/awt/im/InputSubset.java
+../../openjdk6-b16/jdk/src/share/classes/java/awt/im/spi/InputMethod.java
+../../openjdk6-b16/jdk/src/share/classes/java/awt/im/spi/InputMethodContext.java
+../../openjdk6-b16/jdk/src/share/classes/java/awt/im/spi/InputMethodDescriptor.java
 ../../openjdk6-b16/jdk/src/share/classes/java/awt/image/AffineTransformOp.java
 ../../openjdk6-b16/jdk/src/share/classes/java/awt/image/AreaAveragingScaleFilter.java
 ../../openjdk6-b16/jdk/src/share/classes/java/awt/image/BandCombineOp.java
