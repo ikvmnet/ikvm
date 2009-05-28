@@ -281,8 +281,12 @@ public final class AssemblyClassLoader extends ClassLoader
         {
             if(assembly != null)
             {
+                if(false) throw new cli.System.NotSupportedException();
                 return new URL(assembly.get_CodeBase());
             }
+        }
+        catch(cli.System.NotSupportedException _)
+        {
         }
         catch(MalformedURLException _)
         {
