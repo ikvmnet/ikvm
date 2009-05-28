@@ -427,24 +427,6 @@ namespace IKVM.Internal
 			assemblyBuilder.SetCustomAttribute(debugAttr);
 			return JVM.IsSaveDebugImage ? assemblyBuilder.DefineDynamicModule("ikvmdump.dll", "ikvmdump.dll", debug) : assemblyBuilder.DefineDynamicModule(name.Name, debug);
 		}
-
-		internal static bool IsDynamicAssembly(Assembly asm)
-		{
-#if NET_4_0
-			return asm.IsDynamic();
-#else
-			if (asm is System.Reflection.Emit.AssemblyBuilder)
-			{
-				return true;
-			}
-			if (asm.Equals(Instance.ModuleBuilder.Assembly))
-			{
-				// this can happen on Orcas, where an AssemblyBuilder has a corresponding Assembly
-				return true;
-			}
-			return false;
-#endif
-		}
 #endif // !STATIC_COMPILER
 	}
 }

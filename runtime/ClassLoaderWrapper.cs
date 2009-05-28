@@ -1761,10 +1761,7 @@ namespace IKVM.Internal
 			{
 				if (delegates == null)
 				{
-#pragma warning disable 184
-					// during ikvmc build: warning CS0184: The given expression is never of the provided ('IKVM.Reflection.Emit.AssemblyBuilder') type
-					if (!(assemblyLoader.Assembly is AssemblyBuilder) && assemblyLoader.Assembly.GetManifestResourceInfo("ikvm.exports") != null)
-#pragma warning restore 184
+					if (!(ReflectUtil.IsDynamicAssembly(assemblyLoader.Assembly)) && assemblyLoader.Assembly.GetManifestResourceInfo("ikvm.exports") != null)
 					{
 						List<string> wildcardExports = new List<string>();
 						using (Stream stream = assemblyLoader.Assembly.GetManifestResourceStream("ikvm.exports"))
@@ -2042,6 +2039,10 @@ namespace IKVM.Internal
 #if !STATIC_COMPILER
 		internal Assembly FindResourceAssembliesImpl(string unmangledName, string name, bool firstOnly, ref List<Assembly> list)
 		{
+			if(ReflectUtil.IsDynamicAssembly(assemblyLoader.Assembly))
+			{
+				return null;
+			}
 			if(assemblyLoader.Assembly.GetManifestResourceInfo(name) != null)
 			{
 				if(firstOnly)
@@ -2096,6 +2097,7 @@ namespace IKVM.Internal
 			{
 				return new Assembly[] { first };
 			}
+			LazyInitExports();
 			for(int i = 0; i < delegates.Length; i++)
 			{
 				if(delegates[i] == null)

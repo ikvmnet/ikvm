@@ -310,7 +310,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 	{
 		public static object loadClassFromAssembly(Assembly asm, string className)
 		{
-			if(DynamicClassLoader.IsDynamicAssembly(asm))
+			if(ReflectUtil.IsDynamicAssembly(asm))
 			{
 				return null;
 			}
@@ -320,7 +320,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 
 		public static bool findResourceInAssembly(Assembly asm, string resourceName)
 		{
-			if(DynamicClassLoader.IsDynamicAssembly(asm))
+			if(ReflectUtil.IsDynamicAssembly(asm))
 			{
 				return false;
 			}

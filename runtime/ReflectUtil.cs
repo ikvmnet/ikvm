@@ -65,5 +65,17 @@ namespace IKVM.Internal
 			return type.Assembly;
 		}
 #endif
+
+		internal static bool IsDynamicAssembly(Assembly asm)
+		{
+#if NET_4_0
+			return asm.IsDynamic();
+#else
+			// HACK pre-.NET 4.0 there is no API for this
+			string manifest = asm.ManifestModule.Name;
+			return manifest == "<In Memory Module>" 		// .NET name
+				|| manifest == "Default Dynamic Module";	// Mono name
+#endif
+		}
 	}
 }
