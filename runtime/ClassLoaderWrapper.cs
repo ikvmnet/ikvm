@@ -124,14 +124,6 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal static int GetLoadedClassCount()
-		{
-			lock(typeToTypeWrapper)
-			{
-				return typeToTypeWrapper.Count;
-			}
-		}
-
 		internal ClassLoaderWrapper(CodeGenOptions codegenoptions, object javaClassLoader)
 		{
 			this.codegenoptions = codegenoptions;
