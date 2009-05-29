@@ -425,7 +425,9 @@ namespace IKVM.Internal
 			bool debug = System.Diagnostics.Debugger.IsAttached;
 			CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, debug });
 			assemblyBuilder.SetCustomAttribute(debugAttr);
-			return JVM.IsSaveDebugImage ? assemblyBuilder.DefineDynamicModule("ikvmdump.dll", "ikvmdump.dll", debug) : assemblyBuilder.DefineDynamicModule(name.Name, debug);
+			ModuleBuilder moduleBuilder = JVM.IsSaveDebugImage ? assemblyBuilder.DefineDynamicModule(name.Name, name.Name + ".dll", debug) : assemblyBuilder.DefineDynamicModule(name.Name, debug);
+			moduleBuilder.SetCustomAttribute(new CustomAttributeBuilder(typeof(IKVM.Attributes.JavaModuleAttribute).GetConstructor(Type.EmptyTypes), new object[0]));
+			return moduleBuilder;
 		}
 #endif // !STATIC_COMPILER
 	}

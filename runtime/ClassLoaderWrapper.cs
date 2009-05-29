@@ -132,16 +132,6 @@ namespace IKVM.Internal
 #endif
 		}
 
-		internal static bool IsDynamicType(Type type)
-		{
-			lock(typeToTypeWrapper)
-			{
-				TypeWrapper tw;
-				typeToTypeWrapper.TryGetValue(type, out tw);
-				return tw is DynamicTypeWrapper;
-			}
-		}
-
 		internal static bool IsRemappedType(Type type)
 		{
 			return remappedTypes.ContainsKey(type);

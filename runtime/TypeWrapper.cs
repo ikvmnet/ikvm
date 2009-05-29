@@ -10166,7 +10166,7 @@ namespace IKVM.Internal
 						{
 							s = ClassLoaderWrapper.GetWrapperFromType(t).Name;
 						}
-						else if(ClassLoaderWrapper.IsDynamicType(t) || AttributeHelper.IsJavaModule(t.Module))
+						else if(AttributeHelper.IsJavaModule(t.Module))
 						{
 							s = CompiledTypeWrapper.GetName(t);
 						}
