@@ -729,6 +729,18 @@ namespace IKVM.NativeCode.java
 						CodeEmitter ilgenPrimGetter = CodeEmitter.Create(dmPrimGetter);
 						CodeEmitter ilgenObjSetter = CodeEmitter.Create(dmObjSetter);
 						CodeEmitter ilgenPrimSetter = CodeEmitter.Create(dmPrimSetter);
+
+						// we want the getters to be verifiable (because writeObject can be used from partial trust),
+						// so we create a local to hold the properly typed object reference
+						LocalBuilder objGetterThis = ilgenObjGetter.DeclareLocal(tw.TypeAsBaseType);
+						LocalBuilder primGetterThis = ilgenPrimGetter.DeclareLocal(tw.TypeAsBaseType);
+						ilgenObjGetter.Emit(OpCodes.Ldarg_0);
+						ilgenObjGetter.Emit(OpCodes.Castclass, tw.TypeAsBaseType);
+						ilgenObjGetter.Emit(OpCodes.Stloc, objGetterThis);
+						ilgenPrimGetter.Emit(OpCodes.Ldarg_0);
+						ilgenPrimGetter.Emit(OpCodes.Castclass, tw.TypeAsBaseType);
+						ilgenPrimGetter.Emit(OpCodes.Stloc, primGetterThis);
+
 						foreach (jiObjectStreamField field in fields)
 						{
 							FieldWrapper fw = GetFieldWrapper(field);
@@ -744,7 +756,7 @@ namespace IKVM.NativeCode.java
 								// Getter
 								ilgenPrimGetter.Emit(OpCodes.Ldarg_1);
 								ilgenPrimGetter.Emit(OpCodes.Ldc_I4, field.getOffset());
-								ilgenPrimGetter.Emit(OpCodes.Ldarg_0);
+								ilgenPrimGetter.Emit(OpCodes.Ldloc, primGetterThis);
 								fw.EmitGet(ilgenPrimGetter);
 								if (fieldType == PrimitiveTypeWrapper.BYTE)
 								{
@@ -785,6 +797,7 @@ namespace IKVM.NativeCode.java
 
 								// Setter
 								ilgenPrimSetter.Emit(OpCodes.Ldarg_0);
+								ilgenPrimSetter.Emit(OpCodes.Castclass, tw.TypeAsBaseType);
 								ilgenPrimSetter.Emit(OpCodes.Ldarg_1);
 								ilgenPrimSetter.Emit(OpCodes.Ldc_I4, field.getOffset());
 								if (fieldType == PrimitiveTypeWrapper.BYTE)
@@ -830,7 +843,7 @@ namespace IKVM.NativeCode.java
 								// Getter
 								ilgenObjGetter.Emit(OpCodes.Ldarg_1);
 								ilgenObjGetter.Emit(OpCodes.Ldc_I4, field.getOffset());
-								ilgenObjGetter.Emit(OpCodes.Ldarg_0);
+								ilgenObjGetter.Emit(OpCodes.Ldloc, objGetterThis);
 								fw.EmitGet(ilgenObjGetter);
 								fw.FieldTypeWrapper.EmitConvSignatureTypeToStackType(ilgenObjGetter);
 								ilgenObjGetter.Emit(OpCodes.Stelem_Ref);
