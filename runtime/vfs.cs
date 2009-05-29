@@ -155,7 +155,7 @@ namespace IKVM.Internal
 					global::java.security.cert.CertificateFactory cf = global::java.security.cert.CertificateFactory.getInstance("X509");
 
 					X509Store store = new X509Store(StoreName.Root, StoreLocation.LocalMachine);
-					store.Open(OpenFlags.ReadOnly);
+					store.Open(OpenFlags.ReadOnly | OpenFlags.OpenExistingOnly);
 					foreach (X509Certificate2 cert in store.Certificates)
 					{
 						if (!cert.HasPrivateKey)
