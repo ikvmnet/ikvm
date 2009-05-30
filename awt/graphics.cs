@@ -101,6 +101,7 @@ namespace ikvm.awt
         private Color bgcolor;
         private java.awt.Font font;
         private java.awt.Stroke stroke;
+        private java.awt.geom.AffineTransform tx;
         private static java.awt.BasicStroke defaultStroke = new java.awt.BasicStroke();
         private Font netfont;
         private Brush brush;
@@ -995,13 +996,18 @@ namespace ikvm.awt
         public override void setTransform(java.awt.geom.AffineTransform tx)
         {
             g.Transform = J2C.ConvertTransform(tx);
+            this.tx = tx;
         }
 
         public override java.awt.geom.AffineTransform getTransform()
         {
+            if (tx != null)
+            {
+                return tx;
+            }
             using (Matrix matrix = g.Transform)
             {
-                return C2J.ConvertMatrix(matrix);
+                return tx = C2J.ConvertMatrix(matrix);
             }
         }
 
@@ -1044,8 +1050,37 @@ namespace ikvm.awt
 
         public override void drawGlyphVector(java.awt.font.GlyphVector gv, float x, float y)
         {
-            char[] text = ((NetGlyphVector)gv).getText();
-            drawString(new string(text), x, y);
+            java.awt.Font javaFont = gv.getFont();
+            if (javaFont == null)
+            {
+                javaFont = font;
+            }
+            int count = gv.getNumGlyphs();
+            char[] text = new char[count];
+            for (int i = 0; i < count; i++)
+            {
+                text[i] = (char)gv.getGlyphCode(i);
+            }
+            java.awt.font.FontRenderContext frc = gv.getFontRenderContext();
+            Matrix matrix = null;
+            try
+            {
+                if (frc != null && !frc.getTransform().equals(getTransform()))
+                {
+                    // save the old context and use the transformation from the renderContext
+                    matrix = g.Transform;
+                    g.Transform = J2C.ConvertTransform(frc.getTransform());
+                }
+                g.DrawString(new string(text), javaFont.getNetFont(), brush, x, y - javaFont.getSize(), StringFormat.GenericTypographic);
+            }
+            finally
+            {
+                // Restore the old context if needed
+                if (matrix != null)
+                {
+                    g.Transform = matrix;
+                }
+            }
         }
     }
 

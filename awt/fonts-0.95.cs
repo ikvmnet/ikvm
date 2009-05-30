@@ -291,142 +291,142 @@ namespace ikvm.awt
         #endregion
     }*/
 
-    class NetGlyphVector : GlyphVector
-    {
-        private readonly Font netFont;
-        private readonly java.awt.Font font;
-        private readonly FontRenderContext frc;
-        private readonly char[] text;
-        private NetFontMetrics metrics;
-
-
-        internal NetGlyphVector(Font netFont, java.awt.Font font, FontRenderContext frc, char[] text)
+    /*    class NetGlyphVector : GlyphVector
         {
-            this.netFont = netFont;
-            this.font = font;
-            this.frc = frc;
-            this.text = text;
-        }
+            private readonly Font netFont;
+            private readonly java.awt.Font font;
+            private readonly FontRenderContext frc;
+            private readonly char[] text;
+            private NetFontMetrics metrics;
 
-        private NetFontMetrics getMetrics()
-        {
-            if(metrics == null)
+
+            internal NetGlyphVector(Font netFont, java.awt.Font font, FontRenderContext frc, char[] text)
             {
-                metrics = new NetFontMetrics(font);
+                this.netFont = netFont;
+                this.font = font;
+                this.frc = frc;
+                this.text = text;
             }
-            return metrics;
-        }
 
-        public override bool equals(GlyphVector gv)
-        {
-            throw new NotImplementedException();
-        }
+            private NetFontMetrics getMetrics()
+            {
+                if(metrics == null)
+                {
+                    metrics = new NetFontMetrics(font);
+                }
+                return metrics;
+            }
 
-        public override java.awt.Font getFont()
-        {
-            return font;
-        }
+            public override bool equals(GlyphVector gv)
+            {
+                throw new NotImplementedException();
+            }
 
-        public override FontRenderContext getFontRenderContext()
-        {
-            return frc;
-        }
+            public override java.awt.Font getFont()
+            {
+                return font;
+            }
 
-        public override int getGlyphCode(int i)
-        {
-            throw new NotImplementedException();
-        }
+            public override FontRenderContext getFontRenderContext()
+            {
+                return frc;
+            }
 
-        public override int[] getGlyphCodes(int i1, int i2, int[] iarr)
-        {
-            throw new NotImplementedException();
-        }
+            public override int getGlyphCode(int i)
+            {
+                throw new NotImplementedException();
+            }
 
-        public override GlyphJustificationInfo getGlyphJustificationInfo(int i)
-        {
-            throw new NotImplementedException();
-        }
+            public override int[] getGlyphCodes(int i1, int i2, int[] iarr)
+            {
+                throw new NotImplementedException();
+            }
 
-        public override java.awt.Shape getGlyphLogicalBounds(int i)
-        {
-            throw new NotImplementedException();
-        }
+            public override GlyphJustificationInfo getGlyphJustificationInfo(int i)
+            {
+                throw new NotImplementedException();
+            }
 
-        public override GlyphMetrics getGlyphMetrics(int i)
-        {
-            throw new NotImplementedException();
-        }
+            public override java.awt.Shape getGlyphLogicalBounds(int i)
+            {
+                throw new NotImplementedException();
+            }
 
-        public override java.awt.Shape getGlyphOutline(int i)
-        {
-            throw new NotImplementedException();
-        }
+            public override GlyphMetrics getGlyphMetrics(int i)
+            {
+                throw new NotImplementedException();
+            }
 
-        public override Point2D getGlyphPosition(int i)
-        {
-            throw new NotImplementedException();
-        }
+            public override java.awt.Shape getGlyphOutline(int i)
+            {
+                throw new NotImplementedException();
+            }
 
-        public override float[] getGlyphPositions(int i1, int i2, float[] farr)
-        {
-            throw new NotImplementedException();
-        }
+            public override Point2D getGlyphPosition(int i)
+            {
+                throw new NotImplementedException();
+            }
 
-        public override AffineTransform getGlyphTransform(int i)
-        {
-            throw new NotImplementedException();
-        }
+            public override float[] getGlyphPositions(int i1, int i2, float[] farr)
+            {
+                throw new NotImplementedException();
+            }
 
-        public override java.awt.Shape getGlyphVisualBounds(int index)
-        {
-            return getMetrics().GetStringBounds(new String(text, index, 1));
-        }
+            public override AffineTransform getGlyphTransform(int i)
+            {
+                throw new NotImplementedException();
+            }
 
-        public override Rectangle2D getLogicalBounds()
-        {
-            return getMetrics().GetStringBounds(new String(text));
-        }
+            public override java.awt.Shape getGlyphVisualBounds(int index)
+            {
+                return getMetrics().GetStringBounds(new String(text, index, 1));
+            }
 
-        public override int getNumGlyphs()
-        {
-            return text.Length;
-        }
+            public override Rectangle2D getLogicalBounds()
+            {
+                return getMetrics().GetStringBounds(new String(text));
+            }
 
-        public override java.awt.Shape getOutline()
-        {
-            throw new NotImplementedException();
-        }
+            public override int getNumGlyphs()
+            {
+                return text.Length;
+            }
 
-        public override java.awt.Shape getOutline(float f1, float f2)
-        {
-            throw new NotImplementedException();
-        }
+            public override java.awt.Shape getOutline()
+            {
+                throw new NotImplementedException();
+            }
 
-        public override Rectangle2D getVisualBounds()
-        {
-            return new NetFontMetrics(font).GetStringBounds(new String(text));
-        }
+            public override java.awt.Shape getOutline(float f1, float f2)
+            {
+                throw new NotImplementedException();
+            }
 
-        public override void performDefaultLayout()
-        {
-            throw new NotImplementedException();
-        }
+            public override Rectangle2D getVisualBounds()
+            {
+                return new NetFontMetrics(font).GetStringBounds(new String(text));
+            }
 
-        public override void setGlyphPosition(int i, Point2D pd)
-        {
-            throw new NotImplementedException();
-        }
+            public override void performDefaultLayout()
+            {
+                throw new NotImplementedException();
+            }
 
-        public override void setGlyphTransform(int i, AffineTransform at)
-        {
-            throw new NotImplementedException();
-        }
+            public override void setGlyphPosition(int i, Point2D pd)
+            {
+                throw new NotImplementedException();
+            }
 
-        public char[] getText()
-        {
-            return text;
-        }
-}
+            public override void setGlyphTransform(int i, AffineTransform at)
+            {
+                throw new NotImplementedException();
+            }
+
+            public char[] getText()
+            {
+                return text;
+            }
+    }*/
 
     class NetLineMetrics : LineMetrics
     {

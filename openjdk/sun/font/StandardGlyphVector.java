@@ -146,8 +146,37 @@ public class StandardGlyphVector extends GlyphVector{
 
 
     @Override
-    public boolean equals(GlyphVector set){
-        throw new NotImplementedException();
+    public boolean equals(GlyphVector gv){
+        if(!(gv instanceof StandardGlyphVector)){
+            return false;
+        }
+        StandardGlyphVector sgv = (StandardGlyphVector)gv;
+        if(!glyphs.equals(sgv.glyphs)){
+            return false;
+        }
+        if(equals(font, sgv.font)){
+            return false;
+        }
+        if(equals(frc, sgv.frc)){
+            return false;
+        }
+        return true;
+    }
+    
+    /**
+     * Compare 2 objects via equals where both can be null
+     */
+    private static boolean equals(Object obj1, Object obj2){
+        if(obj1 != null){
+            if(!obj1.equals(obj2)){
+                return false;
+            }
+        }else{
+            if(obj2 != null){
+                return false;
+            }
+        }
+        return true;
     }
 
 
@@ -165,13 +194,19 @@ public class StandardGlyphVector extends GlyphVector{
 
     @Override
     public int getGlyphCode(int glyphIndex){
-        throw new NotImplementedException();
+        return glyphs.charAt(glyphIndex);
     }
 
 
     @Override
     public int[] getGlyphCodes(int beginGlyphIndex, int numEntries, int[] codeReturn){
-        throw new NotImplementedException();
+        if(codeReturn == null || codeReturn.length < numEntries){
+            codeReturn = new int[numEntries];
+        }
+        for(int i=0; i<numEntries; i++){
+            codeReturn[i] = glyphs.charAt(i + beginGlyphIndex);
+        }
+        return codeReturn;
     }
 
 
@@ -273,7 +308,7 @@ public class StandardGlyphVector extends GlyphVector{
 
     /**
      * Convert a CharacterIterator to a string
-     * @param iterator the itereator
+     * @param iterator the iterator
      * @return the string
      */
     private static String getString(java.text.CharacterIterator iterator){
