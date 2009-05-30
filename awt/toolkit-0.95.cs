@@ -1591,9 +1591,87 @@ namespace ikvm.awt
             throw new NotImplementedException();
         }
 
-        public bool requestFocus(java.awt.Component c, bool b1, bool b2, long l, sun.awt.CausedFocusEvent.Cause cfec)
+        //copied form KeyboardFocusManager
+        private const int SNFH_FAILURE = 0;
+        private const int SNFH_SUCCESS_HANDLED = 1;
+        private const int SNFH_SUCCESS_PROCEED = 2;
+
+        private java.lang.reflect.Method shouldNativelyFocusHeavyweight;
+        private java.lang.reflect.Method processSynchronousLightweightTransfer;
+        private java.lang.reflect.Method removeLastFocusRequest;
+
+        public bool requestFocus(java.awt.Component lightweightChild, bool temporary, bool focusedWindowChangeAllowed, long time, sun.awt.CausedFocusEvent.Cause cause)
         {
-            throw new NotImplementedException();
+            // this is a interpretation of the code in WComponentPeer.java and awt_component.cpp
+            try
+            {
+                if (processSynchronousLightweightTransfer == null)
+                {
+                    java.lang.Class keyboardFocusManagerCls = typeof(java.awt.KeyboardFocusManager);
+                    processSynchronousLightweightTransfer = keyboardFocusManagerCls.getDeclaredMethod(
+                        "processSynchronousLightweightTransfer",
+                        typeof(java.awt.Component),
+                        typeof(java.awt.Component),
+                        java.lang.Boolean.TYPE,
+                        java.lang.Boolean.TYPE,
+                        java.lang.Long.TYPE);
+                    processSynchronousLightweightTransfer.setAccessible(true);
+                }
+                processSynchronousLightweightTransfer.invoke(
+                null,
+                component,
+                lightweightChild,
+                temporary,
+                focusedWindowChangeAllowed,
+                time);
+            }
+            catch
+            {
+                return true;
+            }
+            if (shouldNativelyFocusHeavyweight == null)
+            {
+                java.lang.Class keyboardFocusManagerCls = typeof(java.awt.KeyboardFocusManager);
+                shouldNativelyFocusHeavyweight = keyboardFocusManagerCls.getDeclaredMethod(
+                    "shouldNativelyFocusHeavyweight",
+                    typeof(java.awt.Component),
+                    typeof(java.awt.Component),
+                    java.lang.Boolean.TYPE,
+                    java.lang.Boolean.TYPE,
+                    java.lang.Long.TYPE,
+                    typeof(sun.awt.CausedFocusEvent.Cause));
+                shouldNativelyFocusHeavyweight.setAccessible(true);
+            }
+            int retval = (int)shouldNativelyFocusHeavyweight.invoke(
+                null,
+                component,
+                lightweightChild,
+                temporary,
+                focusedWindowChangeAllowed,
+                time,
+                cause);
+            if (retval == SNFH_SUCCESS_HANDLED)
+            {
+                return true;
+            }
+            else if (retval == SNFH_SUCCESS_PROCEED)
+            {
+                if (control.Focused)
+                {
+                    return true;
+                }
+                if (removeLastFocusRequest == null)
+                {
+                    java.lang.Class keyboardFocusManagerCls = typeof(java.awt.KeyboardFocusManager);
+                    removeLastFocusRequest = keyboardFocusManagerCls.getDeclaredMethod(
+                        "removeLastFocusRequest",
+                        typeof(java.awt.Component));
+                    removeLastFocusRequest.setAccessible(true);
+                }
+                removeLastFocusRequest.invoke(null, component);
+            }
+            //SNFH_FAILURE
+            return false;
         }
     }
 
