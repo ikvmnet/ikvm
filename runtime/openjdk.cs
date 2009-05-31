@@ -271,8 +271,6 @@ namespace IKVM.Runtime
 
 static class DynamicMethodUtils
 {
-	private static bool? restrictedMemberAccess;
-
 	internal static DynamicMethod Create(string name, Type owner, bool nonPublic, Type returnType, Type[] paramTypes)
 	{
 		try
@@ -305,11 +303,15 @@ static class DynamicMethodUtils
 	{
 		get
 		{
-			if (!restrictedMemberAccess.HasValue)
+			try
 			{
-				restrictedMemberAccess = System.Security.SecurityManager.IsGranted(new System.Security.Permissions.ReflectionPermission(System.Security.Permissions.ReflectionPermissionFlag.RestrictedMemberAccess));
+				new System.Security.Permissions.ReflectionPermission(System.Security.Permissions.ReflectionPermissionFlag.RestrictedMemberAccess).Demand();
+				return true;
 			}
-			return restrictedMemberAccess.Value;
+			catch (System.Security.SecurityException)
+			{
+				return false;
+			}
 		}
 	}
 }
