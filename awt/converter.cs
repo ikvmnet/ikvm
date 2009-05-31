@@ -221,10 +221,16 @@ namespace ikvm.awt
 
         internal static float[] ConvertDashArray(float[] dashArray, float lineWidth)
         {
-            if (dashArray == null)
+            if (dashArray == null || dashArray.Length == 0)
             {
                 return null;
             }
+			if (dashArray.Length % 2 == 1)
+			{
+				int len = dashArray.Length;
+				Array.Resize(ref dashArray, len * 2);
+				Array.Copy(dashArray, 0, dashArray, len, len);
+			}
             float[] dash = (float[])dashArray.Clone();
             for (int i = 0; i < dash.Length; i++)
             {
