@@ -82,7 +82,7 @@ public class PhysicalStrike extends FontStrike{
             float height = family.GetLineSpacing(style) * factor;
             float leading = height - ascent - descent;
             strike = new StrikeMetrics(
-                    0, ascent, 
+                    0, -ascent, 
                     0, descent, 
                     0.25f, 0, 
                     0, leading, 
