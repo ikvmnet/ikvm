@@ -648,8 +648,11 @@ namespace ikvm.awt
 
         public override java.awt.im.spi.InputMethodDescriptor getInputMethodAdapterDescriptor()
         {
-			// we don't have to provide a native input method adapter
-			return null;
+            // Input Method needs .NET 3.0 or higher.
+            // package System.Windows.Input requiered
+            //return new NetInputMethodDescriptor();
+            // we don't have to provide a native input method adapter
+            return null;
         }
 
         protected override int getScreenHeight()
@@ -685,6 +688,49 @@ namespace ikvm.awt
         public override void ungrab(java.awt.Window w)
         {
             throw new NotImplementedException();
+        }
+    }
+
+    class NetInputMethodDescriptor : java.awt.im.spi.InputMethodDescriptor
+    {
+        public java.awt.im.spi.InputMethod createInputMethod()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Locale[] getAvailableLocales()
+        {
+            // TODO Feature with .NET 3.0 available
+            //IEnumerable languages = System.Windows.Input.InputLanguageManager.AvailableInputLanguages;
+            // as a hack we return the default locale
+            return new Locale[]{Locale.getDefault()};
+        }
+
+        public string getInputMethodDisplayName(Locale inputLocale, Locale displayLanguage)
+        {
+            // copied from WInputMethodDescriptor
+
+            // We ignore the input locale.
+            // When displaying for the default locale, rely on the localized AWT properties;
+            // for any other locale, fall back to English.
+            String name = "System Input Methods";
+            if (Locale.getDefault().equals(displayLanguage))
+            {
+                name = java.awt.Toolkit.getProperty("AWT.HostInputMethodDisplayName", name);
+            }
+            return name;
+        }
+
+        public java.awt.Image getInputMethodIcon(Locale l)
+        {
+            //WInputMethodDescriptor return also ever null
+            return null;
+        }
+
+        public bool hasDynamicLocaleList()
+        {
+            // Java return also true
+            return true;
         }
     }
 
