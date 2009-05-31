@@ -648,7 +648,8 @@ namespace ikvm.awt
 
         public override java.awt.im.spi.InputMethodDescriptor getInputMethodAdapterDescriptor()
         {
-            throw new NotImplementedException();
+			// we don't have to provide a native input method adapter
+			return null;
         }
 
         protected override int getScreenHeight()
