@@ -271,6 +271,8 @@ namespace IKVM.Runtime
 
 static class DynamicMethodUtils
 {
+	private static bool? restrictedMemberAccess;
+
 	internal static DynamicMethod Create(string name, Type owner, bool nonPublic, Type returnType, Type[] paramTypes)
 	{
 		try
@@ -287,9 +289,27 @@ static class DynamicMethodUtils
 		}
 		catch (System.Security.SecurityException)
 		{
+			if (nonPublic && !RestrictedMemberAccess)
+			{
+				// we don't have RestrictedMemberAccess, so we stick the dynamic method in our module and hope for the best
+				// (i.e. that we're trying to access something with assembly access in an assembly that lets us)
+				return new DynamicMethod(name, returnType, paramTypes, typeof(DynamicMethodUtils).Module);
+			}
 			// apparently we don't have full trust, so we try again with .NET 2.0 SP1 method
 			// and we only request restrictSkipVisibility if it is required
 			return new DynamicMethod(name, returnType, paramTypes, nonPublic);
+		}
+	}
+
+	private static bool RestrictedMemberAccess
+	{
+		get
+		{
+			if (!restrictedMemberAccess.HasValue)
+			{
+				restrictedMemberAccess = System.Security.SecurityManager.IsGranted(new System.Security.Permissions.ReflectionPermission(System.Security.Permissions.ReflectionPermissionFlag.RestrictedMemberAccess));
+			}
+			return restrictedMemberAccess.Value;
 		}
 	}
 }
