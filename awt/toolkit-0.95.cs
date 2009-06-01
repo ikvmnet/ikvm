@@ -832,6 +832,23 @@ namespace ikvm.awt
         private bool isDoubleClick;
         private bool isPopupMenu;
 
+        private static readonly java.lang.reflect.Field compX;
+        private static readonly java.lang.reflect.Field compY;
+        private static readonly java.lang.reflect.Field compWidth;
+        private static readonly java.lang.reflect.Field compHeight;
+        static NetComponentPeer()
+        {
+            java.lang.Class clazz = typeof(java.awt.Component);
+            compX = clazz.getDeclaredField("x");
+            compX.setAccessible(true);
+            compY = clazz.getDeclaredField("y");
+            compY.setAccessible(true);
+            compWidth = clazz.getDeclaredField("width");
+            compWidth.setAccessible(true);
+            compHeight = clazz.getDeclaredField("height");
+            compHeight.setAccessible(true);
+        }
+
 		public NetComponentPeer(java.awt.Component component, Control control)
 		{
             this.control = control;
@@ -1196,33 +1213,18 @@ namespace ikvm.awt
             int y = control.Top + offset.Y;
             int width = control.Width;
             int height = control.Height;
-            if (x != component.getX() ||
-                y != component.getY() ||
-                width != component.getWidth() ||
-                height != component.getHeight())
-            {
-                component.setBounds(x, y, width, height);
-            }
+            //we set it via Reflection because Sun do it also
+            //a call of setBounds produce another behaviuor
+            compX.setInt(this.component, x);
+            compY.setInt(this.component, y);
+            compWidth.setInt(this.component, width);
+            compHeight.setInt(this.component, height);
         }
 
         private void OnBoundsChanged(object sender, EventArgs e)
 		{
-            int x = control.Left;
-            int y = control.Top;
-            int width = control.Width;
-            int height = control.Height;
-            if (x != component.getX() ||
-                y != component.getY() ||
-                width != component.getWidth() ||
-                height != component.getHeight())
-            {
-                //If the component different then we need to update.
-                //We call this in a different thread
-                //because this event can be a result of a size change with the API
-                //If it a result of a API change then component can be synchronized in another thread.
-                new SetVoid(componentSetBounds).BeginInvoke(null, null);
-            }
 			java.awt.EventQueue.invokeLater(Delegates.toRunnable(delegate {
+                componentSetBounds();
 				postEvent(new java.awt.@event.ComponentEvent(component, java.awt.@event.ComponentEvent.COMPONENT_RESIZED));
 			}));
 		}
@@ -1415,7 +1417,7 @@ namespace ikvm.awt
 
 		public void reshape(int x, int y, int width, int height)
 		{
-			setBounds(x, y, width, height);
+            setBounds(x, y, width, height, java.awt.peer.ComponentPeer.__Fields.DEFAULT_OPERATION);
 		}
 
 		public void setBackground(java.awt.Color color)
@@ -1432,13 +1434,13 @@ namespace ikvm.awt
 		{
             Point offset = getParentOffset(); 
             control.SetBounds(x - offset.X, y - offset.Y, width, height);
-		}
+        }
 
-		public void setBounds(int x, int y, int width, int height)
+		public void setBounds(int x, int y, int width, int height, int operation)
 		{
 			control.Invoke(new SetXYWH(SetBoundsImpl), new object[] { x, y, width, height });
             componentSetBounds();
-		}
+        }
 
 		private void setCursorImpl(java.awt.Cursor cursor)
 		{
@@ -1611,12 +1613,6 @@ namespace ikvm.awt
 		{
 			Rectangle r = control.Bounds;
 			return new java.awt.Rectangle(r.X, r.Y, r.Width, r.Height);
-		}
-
-		public void setBounds(int x, int y, int width, int height, int z)
-		{
-            setBounds(x, y, width, height);
-            //TODO changing the Z-Order
 		}
 
 		public void reparent(java.awt.peer.ContainerPeer parent)
@@ -2171,7 +2167,6 @@ namespace ikvm.awt
             form.Closed += new EventHandler(OnClosed);
             form.Activated += new EventHandler(OnActivated);
             form.Deactivate += new EventHandler(OnDeactivate);
-
             //Calculate the Insets one time
             //This is many faster because there no thread change is needed.
             Rectangle client = control.ClientRectangle;
