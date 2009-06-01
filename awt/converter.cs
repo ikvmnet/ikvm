@@ -320,7 +320,39 @@ namespace ikvm.awt
             return new Font(family, size, fontStyle, GraphicsUnit.Pixel);
         }
 
-    }
+
+		internal static Region ConvertRegion(sun.java2d.pipe.Region shape)
+		{
+			if (shape.isRectangular())
+			{
+				int x = shape.getLoX();
+				int y = shape.getLoY();
+				int w = shape.getHiX() - x;
+				int h = shape.getHiY() - y;
+				if (w < 0 || h < 0)
+				{
+					return new Region();
+				}
+				else
+				{
+					return new Region(new Rectangle(x, y, w, h));
+				}
+			}
+			else
+			{
+				using (GraphicsPath path = new GraphicsPath())
+				{
+					sun.java2d.pipe.SpanIterator iter = shape.getSpanIterator();
+					int[] box = new int[4];
+					while (iter.nextSpan(box))
+					{
+						path.AddRectangle(new Rectangle(box[0], box[1], box[2] - box[0], box[3] - box[1]));
+					}
+					return new Region(path);
+				}
+			}
+		}
+	}
 
     /// <summary>
     /// This class has some static convertion function from C# to Java objects

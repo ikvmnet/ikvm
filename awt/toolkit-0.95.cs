@@ -1633,9 +1633,9 @@ namespace ikvm.awt
 		{
 		}
 
-        public void applyShape(sun.java2d.pipe.Region r)
+        public void applyShape(sun.java2d.pipe.Region shape)
         {
-            throw new NotImplementedException();
+			control.Region = J2C.ConvertRegion(shape);
         }
 
         //copied form KeyboardFocusManager
