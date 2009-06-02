@@ -57,6 +57,17 @@ namespace IKVM.Internal
 				JVM.EnableReflectionOnMethodsWithUnloadableTypeParameters = value;
 			}
 		}
+
+		public static bool ClassUnloading
+		{
+#if CLASSGC
+			get { return JVM.classUnloading; }
+			set { JVM.classUnloading = value; }
+#else
+			get { return false; }
+			set { }
+#endif
+		}
 	}
 }
 #endif // !STATIC_COMPILER && !COMPACT_FRAMEWORK
@@ -74,6 +85,9 @@ namespace IKVM.Internal
 		private static bool enableReflectionOnMethodsWithUnloadableTypeParameters;
 		private static bool finishingForDebugSave;
 		internal static bool IsSaveDebugImage;
+#if CLASSGC
+		internal static bool classUnloading = true;
+#endif
 #endif // STATIC_COMPILER
 		private static Assembly coreAssembly;
 

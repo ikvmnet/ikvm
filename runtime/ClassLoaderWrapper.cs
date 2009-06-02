@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2008 Jeroen Frijters
+  Copyright (C) 2002-2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -32,6 +32,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
+using System.Runtime.CompilerServices;
 using IKVM.Attributes;
 
 namespace IKVM.Internal
@@ -49,7 +50,7 @@ namespace IKVM.Internal
 	class ClassLoaderWrapper
 	{
 		private static readonly object wrapperLock = new object();
-		private static readonly Dictionary<Type, TypeWrapper> typeToTypeWrapper = new Dictionary<Type, TypeWrapper>();
+		private static readonly Dictionary<Type, TypeWrapper> globalTypeToTypeWrapper = new Dictionary<Type, TypeWrapper>();
 #if STATIC_COMPILER
 		private static ClassLoaderWrapper bootstrapClassLoader;
 		private TypeWrapper circularDependencyHack;
@@ -68,6 +69,10 @@ namespace IKVM.Internal
 		private readonly Dictionary<string, Thread> defineClassInProgress = new Dictionary<string, Thread>();
 		private List<IntPtr> nativeLibraries;
 		private CodeGenOptions codegenoptions;
+#if CLASSGC
+		private Dictionary<Type, TypeWrapper> typeToTypeWrapper;
+		private static ConditionalWeakTable<Assembly, ClassLoaderWrapper> dynamicAssemblies;
+#endif
 		private static Dictionary<Type, string> remappedTypes = new Dictionary<Type, string>();
 
 #if STATIC_COMPILER
@@ -83,15 +88,15 @@ namespace IKVM.Internal
 
 		static ClassLoaderWrapper()
 		{
-			typeToTypeWrapper[PrimitiveTypeWrapper.BOOLEAN.TypeAsTBD] = PrimitiveTypeWrapper.BOOLEAN;
-			typeToTypeWrapper[PrimitiveTypeWrapper.BYTE.TypeAsTBD] = PrimitiveTypeWrapper.BYTE;
-			typeToTypeWrapper[PrimitiveTypeWrapper.CHAR.TypeAsTBD] = PrimitiveTypeWrapper.CHAR;
-			typeToTypeWrapper[PrimitiveTypeWrapper.DOUBLE.TypeAsTBD] = PrimitiveTypeWrapper.DOUBLE;
-			typeToTypeWrapper[PrimitiveTypeWrapper.FLOAT.TypeAsTBD] = PrimitiveTypeWrapper.FLOAT;
-			typeToTypeWrapper[PrimitiveTypeWrapper.INT.TypeAsTBD] = PrimitiveTypeWrapper.INT;
-			typeToTypeWrapper[PrimitiveTypeWrapper.LONG.TypeAsTBD] = PrimitiveTypeWrapper.LONG;
-			typeToTypeWrapper[PrimitiveTypeWrapper.SHORT.TypeAsTBD] = PrimitiveTypeWrapper.SHORT;
-			typeToTypeWrapper[PrimitiveTypeWrapper.VOID.TypeAsTBD] = PrimitiveTypeWrapper.VOID;
+			globalTypeToTypeWrapper[PrimitiveTypeWrapper.BOOLEAN.TypeAsTBD] = PrimitiveTypeWrapper.BOOLEAN;
+			globalTypeToTypeWrapper[PrimitiveTypeWrapper.BYTE.TypeAsTBD] = PrimitiveTypeWrapper.BYTE;
+			globalTypeToTypeWrapper[PrimitiveTypeWrapper.CHAR.TypeAsTBD] = PrimitiveTypeWrapper.CHAR;
+			globalTypeToTypeWrapper[PrimitiveTypeWrapper.DOUBLE.TypeAsTBD] = PrimitiveTypeWrapper.DOUBLE;
+			globalTypeToTypeWrapper[PrimitiveTypeWrapper.FLOAT.TypeAsTBD] = PrimitiveTypeWrapper.FLOAT;
+			globalTypeToTypeWrapper[PrimitiveTypeWrapper.INT.TypeAsTBD] = PrimitiveTypeWrapper.INT;
+			globalTypeToTypeWrapper[PrimitiveTypeWrapper.LONG.TypeAsTBD] = PrimitiveTypeWrapper.LONG;
+			globalTypeToTypeWrapper[PrimitiveTypeWrapper.SHORT.TypeAsTBD] = PrimitiveTypeWrapper.SHORT;
+			globalTypeToTypeWrapper[PrimitiveTypeWrapper.VOID.TypeAsTBD] = PrimitiveTypeWrapper.VOID;
 			LoadRemappedTypes();
 		}
 
@@ -143,9 +148,9 @@ namespace IKVM.Internal
 			{
 				types.Add(tw.Name, tw);
 			}
-			lock(typeToTypeWrapper)
+			lock(globalTypeToTypeWrapper)
 			{
-				typeToTypeWrapper.Add(type, tw);
+				globalTypeToTypeWrapper.Add(type, tw);
 			}
 			remappedTypes.Add(type, tw.Name);
 		}
@@ -333,7 +338,24 @@ namespace IKVM.Internal
 #else
 			if(factory == null)
 			{
-				factory = DynamicClassLoader.Get(this);
+				lock(this)
+				{
+					if(factory == null)
+					{
+#if CLASSGC
+						if(dynamicAssemblies == null)
+						{
+							Interlocked.CompareExchange(ref dynamicAssemblies, new ConditionalWeakTable<Assembly, ClassLoaderWrapper>(), null);
+						}
+						typeToTypeWrapper = new Dictionary<Type, TypeWrapper>();
+						DynamicClassLoader instance = DynamicClassLoader.Get(this);
+						dynamicAssemblies.Add(instance.ModuleBuilder.Assembly.ManifestModule.Assembly, this);
+						this.factory = instance;
+#else
+						factory = DynamicClassLoader.Get(this);
+#endif
+					}
+				}
 			}
 			return factory;
 #endif
@@ -630,6 +652,21 @@ namespace IKVM.Internal
 					// the class loader is trying to trick us
 					return null;
 				}
+#if CLASSGC
+				// FXBUG because the AppDomain.TypeResolve event still doesn't work across assemblies
+				// (at least as of .NET 4.0 beta 1), we eagerly finish types loaded by another class loader
+				if(type.GetClassLoader() != this)
+				{
+					try
+					{
+						type.Finish();
+					}
+					catch(RetargetableJavaException x)
+					{
+						throw x.ToJava();
+					}
+				}
+#endif
 				return type;
 			}
 			catch(java.lang.ClassNotFoundException x)
@@ -847,6 +884,15 @@ namespace IKVM.Internal
 		}
 #endif
 
+#if CLASSGC
+		internal static ClassLoaderWrapper GetClassLoaderForDynamicJavaAssembly(Assembly asm)
+		{
+			ClassLoaderWrapper loader;
+			dynamicAssemblies.TryGetValue(asm, out loader);
+			return loader;
+		}
+#endif // CLASSGC
+
 		internal static TypeWrapper GetWrapperFromType(Type type)
 		{
 			//Tracer.Info(Tracer.Runtime, "GetWrapperFromType: {0}", type.AssemblyQualifiedName);
@@ -855,9 +901,9 @@ namespace IKVM.Internal
 			Debug.Assert(!type.IsPointer);
 			Debug.Assert(!type.IsByRef);
 			TypeWrapper wrapper;
-			lock(typeToTypeWrapper)
+			lock(globalTypeToTypeWrapper)
 			{
-				typeToTypeWrapper.TryGetValue(type, out wrapper);
+				globalTypeToTypeWrapper.TryGetValue(type, out wrapper);
 			}
 			if(wrapper != null)
 			{
@@ -882,14 +928,33 @@ namespace IKVM.Internal
 			}
 			else
 			{
+				Assembly asm = type.Assembly;
+#if CLASSGC
+				ClassLoaderWrapper loader;
+				if(dynamicAssemblies != null && dynamicAssemblies.TryGetValue(asm, out loader))
+				{
+					lock(loader.typeToTypeWrapper)
+					{
+						return loader.typeToTypeWrapper[type];
+					}
+				}
+#endif
 				// if the wrapper doesn't already exist, that must mean that the type
 				// is a .NET type (or a pre-compiled Java class), which means that it
 				// was "loaded" by an assembly classloader
-				wrapper = GetAssemblyClassLoader(type.Assembly).GetWrapperFromAssemblyType(type);
+				wrapper = GetAssemblyClassLoader(asm).GetWrapperFromAssemblyType(type);
 			}
-			lock(typeToTypeWrapper)
+#if CLASSGC
+			if(type.Assembly.IsDynamic())
 			{
-				typeToTypeWrapper[type] = wrapper;
+				// don't cache types in dynamic assemblies, because they might live in a RunAndCollect assembly
+				// TODO we also shouldn't cache generic type instances that have a GCable type parameter
+				return wrapper;
+			}
+#endif
+			lock(globalTypeToTypeWrapper)
+			{
+				globalTypeToTypeWrapper[type] = wrapper;
 			}
 			return wrapper;
 		}
@@ -1264,21 +1329,18 @@ namespace IKVM.Internal
 		}
 #endif
 
-		internal static void SetWrapperForType(Type type, TypeWrapper wrapper)
+		internal void SetWrapperForType(Type type, TypeWrapper wrapper)
 		{
 			TypeWrapper.AssertFinished(type);
-			lock(typeToTypeWrapper)
+			Dictionary<Type, TypeWrapper> dict;
+#if CLASSGC
+			dict = typeToTypeWrapper ?? globalTypeToTypeWrapper;
+#else
+			dict = globalTypeToTypeWrapper;
+#endif
+			lock (dict)
 			{
-				typeToTypeWrapper.Add(type, wrapper);
-			}
-		}
-
-		internal static void ResetWrapperForType(Type type, TypeWrapper wrapper)
-		{
-			TypeWrapper.AssertFinished(type);
-			lock(typeToTypeWrapper)
-			{
-				typeToTypeWrapper[type] = wrapper;
+				dict.Add(type, wrapper);
 			}
 		}
 

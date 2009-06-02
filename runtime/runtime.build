@@ -52,7 +52,7 @@
         </copy>
         <if test="${version::get-major(framework::get-version(framework::get-target-framework() )) == 4}">
             <echo message="[assembly: System.Security.SecurityRules(System.Security.SecurityRuleSet.Level1)]" file="AssemblyInfo.cs" append="true" />
-            <property name="defs" value="${defs};NET_4_0" />
+            <property name="defs" value="${defs};NET_4_0;CLASSGC" />
         </if>
         <if test="${first-pass}">
             <property name="defs" value="${defs};FIRST_PASS" />

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2008 Jeroen Frijters
+  Copyright (C) 2002-2006, 2008, 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -52,6 +52,7 @@ namespace IKVM.Internal
 		private static readonly string specialCharactersString = new String(specialCharacters);
 #if !STATIC_COMPILER
 		private static List<AssemblyBuilder> saveDebugAssemblies;
+		private static List<DynamicClassLoader> saveClassLoaders;
 #endif // !STATIC_COMPILER
 		private readonly Dictionary<string, TypeWrapper> dynamicTypes = new Dictionary<string, TypeWrapper>();
 		private ModuleBuilder moduleBuilder;
@@ -61,10 +62,17 @@ namespace IKVM.Internal
 #endif // STATIC_COMPILER
 		private Dictionary<string, TypeBuilder> unloadables;
 		private TypeBuilder unloadableContainer;
+#if !STATIC_COMPILER && !CLASSGC
+		private static DynamicClassLoader instance = new DynamicClassLoader(CreateModuleBuilder());
+#endif
 
 		static DynamicClassLoader()
 		{
 #if !STATIC_COMPILER
+			if(JVM.IsSaveDebugImage)
+			{
+				saveClassLoaders = new List<DynamicClassLoader>();
+			}
 			// TODO AppDomain.TypeResolve requires ControlAppDomain permission, but if we don't have that,
 			// we should handle that by disabling dynamic class loading
 			AppDomain.CurrentDomain.TypeResolve += new ResolveEventHandler(OnTypeResolve);
@@ -81,15 +89,19 @@ namespace IKVM.Internal
 		}
 
 #if !STATIC_COMPILER
-		private static DynamicClassLoader Instance = new DynamicClassLoader(CreateModuleBuilder());
-
 		private static Assembly OnTypeResolve(object sender, ResolveEventArgs args)
 		{
 			TypeWrapper type;
-			lock(Instance.dynamicTypes)
+#if CLASSGC
+			DynamicClassLoader instance;
+			ClassLoaderWrapper loader = ClassLoaderWrapper.GetClassLoaderForDynamicJavaAssembly(args.RequestingAssembly);
+			if(loader == null)
 			{
-				Instance.dynamicTypes.TryGetValue(args.Name, out type);
+				return null;
 			}
+			instance = (DynamicClassLoader)loader.GetTypeWrapperFactory();
+#endif
+			instance.dynamicTypes.TryGetValue(args.Name, out type);
 			if(type == null)
 			{
 				return null;
@@ -348,18 +360,19 @@ namespace IKVM.Internal
 #if !STATIC_COMPILER
 		internal static void SaveDebugImages()
 		{
-			Instance.SaveDebugImage();
-		}
-
-		private void SaveDebugImage()
-		{
 			JVM.FinishingForDebugSave = true;
-			FinishAll();
-			AssemblyBuilder asm = ((AssemblyBuilder)moduleBuilder.Assembly);
-			asm.Save("ikvmdump.dll");
-			if(saveDebugAssemblies != null)
+			if (saveClassLoaders != null)
 			{
-				foreach(AssemblyBuilder ab in saveDebugAssemblies)
+				foreach (DynamicClassLoader instance in saveClassLoaders)
+				{
+					instance.FinishAll();
+					AssemblyBuilder ab = (AssemblyBuilder)instance.ModuleBuilder.Assembly;
+					ab.Save(ab.GetName().Name + ".dll");
+				}
+			}
+			if (saveDebugAssemblies != null)
+			{
+				foreach (AssemblyBuilder ab in saveDebugAssemblies)
 				{
 					ab.Save(ab.GetName().Name + ".dll");
 				}
@@ -387,19 +400,26 @@ namespace IKVM.Internal
 		internal static DynamicClassLoader Get(ClassLoaderWrapper loader)
 		{
 #if STATIC_COMPILER
-			return new DynamicClassLoader(((CompilerClassLoader)loader).CreateModuleBuilder());
-#else
-			return Instance;
+			DynamicClassLoader instance = new DynamicClassLoader(((CompilerClassLoader)loader).CreateModuleBuilder());
+#elif CLASSGC
+			DynamicClassLoader instance = new DynamicClassLoader(CreateModuleBuilder());
+			if(saveClassLoaders != null)
+			{
+				saveClassLoaders.Add(instance);
+			}
 #endif
+			return instance;
 		}
 
 #if !STATIC_COMPILER
 		private static ModuleBuilder CreateModuleBuilder()
 		{
 			AssemblyName name = new AssemblyName();
-			if(JVM.IsSaveDebugImage)
+			if(saveClassLoaders != null)
 			{
-				name.Name = "ikvmdump";
+				// we ignore the race condition (we could end up with multiple assemblies with the same name),
+				// because it is pretty harmless (you'll miss one of the ikvmdump-xx.dll files)
+				name.Name = "ikvmdump-" + saveClassLoaders.Count;
 			}
 			else
 			{
@@ -416,11 +436,26 @@ namespace IKVM.Internal
 						Type.GetType("System.Security.SecurityRulesAttribute").GetConstructor(new Type[] { Type.GetType("System.Security.SecurityRuleSet") }),
 						new object[] { Type.GetType("System.Security.SecurityRuleSet").GetField("Level1").GetValue(null) }));
 			}
+			AssemblyBuilderAccess access;
+			if(JVM.IsSaveDebugImage)
+			{
+				access = AssemblyBuilderAccess.RunAndSave;
+			}
+#if CLASSGC
+			else if(JVM.classUnloading)
+			{
+				access = AssemblyBuilderAccess.RunAndCollect;
+			}
+#endif
+			else
+			{
+				access = AssemblyBuilderAccess.Run;
+			}
 			AssemblyBuilder assemblyBuilder =
 #if NET_4_0
-				AppDomain.CurrentDomain.DefineDynamicAssembly(name, JVM.IsSaveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run, null, true, attribs);
+				AppDomain.CurrentDomain.DefineDynamicAssembly(name, access, null, true, attribs);
 #else
-				AppDomain.CurrentDomain.DefineDynamicAssembly(name, JVM.IsSaveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run, null, null, null, null, null, true, attribs);
+				AppDomain.CurrentDomain.DefineDynamicAssembly(name, access, null, null, null, null, null, true, attribs);
 #endif
 			bool debug = System.Diagnostics.Debugger.IsAttached;
 			CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, debug });

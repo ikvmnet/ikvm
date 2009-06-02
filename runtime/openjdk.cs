@@ -5151,6 +5151,33 @@ namespace IKVM.NativeCode.sun.reflect
 
 	static class Reflection
 	{
+#if CLASSGC
+		private sealed class State { internal int Value; }
+		private static readonly ConditionalWeakTable<MethodBase, State> isHideFromJavaCache = new ConditionalWeakTable<MethodBase, State>();
+
+		internal static bool IsHideFromJava(MethodBase mb)
+		{
+			State state = isHideFromJavaCache.GetOrCreateValue(mb);
+			if (state.Value == 0)
+			{
+				state.Value = IsHideFromJavaImpl(mb);
+			}
+			return state.Value == 1;
+		}
+
+		private static int IsHideFromJavaImpl(MethodBase mb)
+		{
+			if (mb.Name.StartsWith("__<", StringComparison.Ordinal))
+			{
+				return 1;
+			}
+			if (mb.IsDefined(typeof(IKVM.Attributes.HideFromJavaAttribute), false) || mb.IsDefined(typeof(IKVM.Attributes.HideFromReflectionAttribute), false))
+			{
+				return 1;
+			}
+			return 2;
+		}
+#else
 		private static readonly Dictionary<RuntimeMethodHandle, bool> isHideFromJavaCache = new Dictionary<RuntimeMethodHandle, bool>();
 
 		internal static bool IsHideFromJava(MethodBase mb)
@@ -5189,6 +5216,7 @@ namespace IKVM.NativeCode.sun.reflect
 			}
 			return isHide;
 		}
+#endif
 
 		// NOTE this method is hooked up explicitly through map.xml to prevent inlining of the native stub
 		// and tail-call optimization in the native stub.

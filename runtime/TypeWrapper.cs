@@ -7849,7 +7849,7 @@ namespace IKVM.Internal
 				{
 					Profiler.Leave("TypeBuilder.CreateType");
 				}
-				ClassLoaderWrapper.SetWrapperForType(type, wrapper);
+				wrapper.GetClassLoader().SetWrapperForType(type, wrapper);
 #if STATIC_COMPILER
 				wrapper.FinishGhostStep2();
 #endif
@@ -8668,7 +8668,14 @@ namespace IKVM.Internal
 
 		protected virtual bool IsPInvokeMethod(ClassFile.Method m)
 		{
-			if(m.Annotations != null)
+#if CLASSGC
+			// TODO PInvoke is not supported in RunAndCollect assemblies,
+			if (JVM.classUnloading)
+			{
+				return false;
+			}
+#endif
+			if (m.Annotations != null)
 			{
 				foreach(object[] annot in m.Annotations)
 				{
@@ -10449,7 +10456,7 @@ namespace IKVM.Internal
 						name = basename + (++index);
 					}
 					enumType = factory.ModuleBuilder.DefineEnum(name, TypeAttributes.Public, typeof(int)).CreateType();
-					ClassLoaderWrapper.SetWrapperForType(enumType, decl);
+					ClassLoaderWrapper.GetBootstrapClassLoader().SetWrapperForType(enumType, decl);
 				}
 				this.fakeType = typeof(ikvm.@internal.EnumEnum<>).MakeGenericType(enumType);
 #endif
@@ -11462,6 +11469,15 @@ namespace IKVM.Internal
 					}
 					else
 					{
+#if CLASSGC
+						if(JVM.classUnloading && type == typeof(System.Runtime.InteropServices.DllImportAttribute))
+						{
+							// TODO PInvoke is not supported in RunAndCollect assemblies,
+							// so we ignore the attribute.
+							// We could forward the PInvoke to a non RunAndCollect assembly, but for now we don't bother.
+							return;
+						}
+#endif
 						mb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
 					}
 				}
@@ -12719,7 +12735,6 @@ namespace IKVM.Internal
 					finished = true;
 					ultimateElementTypeWrapper.Finish();
 					arrayType = MakeArrayType(ultimateElementTypeWrapper.TypeAsArrayType, this.ArrayRank);
-					ClassLoaderWrapper.ResetWrapperForType(arrayType, this);
 				}
 			}
 		}

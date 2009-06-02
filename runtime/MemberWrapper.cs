@@ -32,6 +32,7 @@ using System.Reflection.Emit;
 using System.Diagnostics;
 using IKVM.Attributes;
 using System.Threading;
+using System.Runtime.InteropServices;
 
 namespace IKVM.Internal
 {
@@ -55,12 +56,40 @@ namespace IKVM.Internal
 #if !STATIC_COMPILER && !FIRST_PASS
 		protected static readonly sun.reflect.ReflectionFactory reflectionFactory = (sun.reflect.ReflectionFactory)ClassLoaderWrapper.DoPrivileged(new sun.reflect.ReflectionFactory.GetReflectionFactoryAction());
 #endif
-		private System.Runtime.InteropServices.GCHandle handle;
+		private HandleWrapper handle;
 		private TypeWrapper declaringType;
 		private Modifiers modifiers;
 		private MemberFlags flags;
 		private string name;
 		private string sig;
+
+		private sealed class HandleWrapper
+		{
+			internal readonly IntPtr Value;
+
+			internal HandleWrapper(MemberWrapper obj)
+			{
+				Value = (IntPtr)GCHandle.Alloc(obj, GCHandleType.WeakTrackResurrection);
+			}
+
+#if CLASSGC
+			~HandleWrapper()
+			{
+				if (!Environment.HasShutdownStarted)
+				{
+					GCHandle h = (GCHandle)Value;
+					if (h.Target == null)
+					{
+						h.Free();
+					}
+					else
+					{
+						GC.ReRegisterForFinalize(this);
+					}
+				}
+			}
+#endif
+		}
 
 		protected MemberWrapper(TypeWrapper declaringType, string name, string sig, Modifiers modifiers, MemberFlags flags)
 		{
@@ -72,44 +101,24 @@ namespace IKVM.Internal
 			this.flags = flags;
 		}
 
-		// NOTE since we don't support unloading code, there is no need to have a finalizer
-#if CLASS_GC
-	~MemberWrapper()
-	{
-		// NOTE when the AppDomain is being unloaded, we shouldn't clean up the handle, because
-		// JNI code running in a finalize can use this handle later on (since finalization is
-		// unordered). Note that this isn't a leak since the AppDomain is going away anyway.
-		if(!Environment.HasShutdownStarted && handle.IsAllocated)
-		{
-			FreeHandle();
-		}
-	}
-
-	private void FreeHandle()
-	{
-		// this has a LinkDemand, so it has to be in a separate method
-		handle.Free();
-	}
-#endif
-
 		internal IntPtr Cookie
 		{
 			get
 			{
 				lock(this)
 				{
-					if(!handle.IsAllocated)
+					if(handle == null)
 					{
-						handle = System.Runtime.InteropServices.GCHandle.Alloc(this, System.Runtime.InteropServices.GCHandleType.Weak);
+						handle = new HandleWrapper(this);
 					}
 				}
-				return (IntPtr)handle;
+				return handle.Value;
 			}
 		}
 
 		internal static MemberWrapper FromCookieImpl(IntPtr cookie)
 		{
-			return (MemberWrapper)((System.Runtime.InteropServices.GCHandle)cookie).Target;
+			return (MemberWrapper)((GCHandle)cookie).Target;
 		}
 
 		internal TypeWrapper DeclaringType

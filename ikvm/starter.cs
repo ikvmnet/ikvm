@@ -151,6 +151,10 @@ public class Starter
 				{
 					System.Diagnostics.Debugger.Break();
 				}
+				else if(arg == "-Xnoclassgc")
+				{
+					IKVM.Internal.Starter.ClassUnloading = false;
+				}
 				else if(arg == "-jar")
 				{
 					jar = true;
@@ -306,6 +310,7 @@ public class Starter
 			Console.Error.WriteLine("                      Builds method trace into the specified output methods");
 			Console.Error.WriteLine("    -Xwait            Keep process hanging around after exit");
 			Console.Error.WriteLine("    -Xbreak           Trigger a user defined breakpoint at startup");
+			Console.Error.WriteLine("    -Xnoclassgc       Disable class garbage collection");
 			return 1;
 		}
 		try
