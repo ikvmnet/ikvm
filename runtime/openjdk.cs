@@ -5141,6 +5141,14 @@ namespace IKVM.NativeCode.sun.net.spi
 
 namespace IKVM.NativeCode.sun.reflect
 {
+#if !FIRST_PASS
+	public interface IReflectionException
+	{
+		jlIllegalArgumentException GetIllegalArgumentException(object obj);
+		jlIllegalArgumentException SetIllegalArgumentException(object obj);
+	}
+#endif
+
 	static class Reflection
 	{
 		private static readonly Dictionary<RuntimeMethodHandle, bool> isHideFromJavaCache = new Dictionary<RuntimeMethodHandle, bool>();
@@ -5855,97 +5863,159 @@ namespace IKVM.NativeCode.sun.reflect
 			}
 		}
 
-		private abstract class FieldAccessorImplBase : srFieldAccessor
+		private abstract class FieldAccessorImplBase : srFieldAccessor, IReflectionException
 		{
+			private readonly jlrField field;
 			protected readonly FieldWrapper fw;
 			protected readonly bool isFinal;
 			private bool runInit;
 
 			private FieldAccessorImplBase(jlrField field, bool overrideAccessCheck)
 			{
+				this.field = field;
 				fw = FieldWrapper.FromField(field);
 				isFinal = (!overrideAccessCheck || fw.IsStatic) && fw.IsFinal;
 				runInit = fw.DeclaringType.IsInterface;
 			}
 
+			private String GetQualifiedFieldName()
+			{
+				return field.getDeclaringClass().getName() + "." + field.getName();
+			}
+
+			public jlIllegalArgumentException GetIllegalArgumentException(object obj)
+			{
+				// LAME like JDK 6 we return the wrong exception message (talking about setting the field, instead of getting)
+				return SetIllegalArgumentException(obj);
+			}
+
+			public jlIllegalArgumentException SetIllegalArgumentException(object obj)
+			{
+				// LAME like JDK 6 we return the wrong exception message (when obj is the object, instead of the value)
+				return SetIllegalArgumentException(obj != null ? irUtil.getClassFromObject(obj).getName() : "", "");
+			}
+
+			private jlIllegalArgumentException SetIllegalArgumentException(string attemptedType, string attemptedValue)
+			{
+				return new jlIllegalArgumentException(GetSetMessage(attemptedType, attemptedValue));
+			}
+
+			protected jlIllegalAccessException FinalFieldIllegalAccessException(object obj)
+			{
+				return FinalFieldIllegalAccessException(obj != null ? irUtil.getClassFromObject(obj).getName() : "", "");
+			}
+
+			private jlIllegalAccessException FinalFieldIllegalAccessException(string attemptedType, string attemptedValue)
+			{
+				return new jlIllegalAccessException(GetSetMessage(attemptedType, attemptedValue));
+			}
+
+			private jlIllegalArgumentException GetIllegalArgumentException(string type)
+			{
+				return new jlIllegalArgumentException("Attempt to get " + field.getType().getName() + " field \"" + GetQualifiedFieldName() + "\" with illegal data type conversion to " + type);
+			}
+
+			// this message comes from sun.reflect.UnsafeFieldAccessorImpl
+			private string GetSetMessage(String attemptedType, String attemptedValue)
+			{
+				String err = "Can not set";
+				if (jlrModifier.isStatic(field.getModifiers()))
+					err += " static";
+				if (isFinal)
+					err += " final";
+				err += " " + field.getType().getName() + " field " + GetQualifiedFieldName() + " to ";
+				if (attemptedValue.Length > 0)
+				{
+					err += "(" + attemptedType + ")" + attemptedValue;
+				}
+				else
+				{
+					if (attemptedType.Length > 0)
+						err += attemptedType;
+					else
+						err += "null value";
+				}
+				return err;
+			}
+
 			public virtual bool getBoolean(object obj)
 			{
-				throw new jlIllegalArgumentException();
+				throw GetIllegalArgumentException("boolean");
 			}
 
 			public virtual byte getByte(object obj)
 			{
-				throw new jlIllegalArgumentException();
+				throw GetIllegalArgumentException("byte");
 			}
 
 			public virtual char getChar(object obj)
 			{
-				throw new jlIllegalArgumentException();
+				throw GetIllegalArgumentException("char");
 			}
 
 			public virtual short getShort(object obj)
 			{
-				throw new jlIllegalArgumentException();
+				throw GetIllegalArgumentException("short");
 			}
 
 			public virtual int getInt(object obj)
 			{
-				throw new jlIllegalArgumentException();
+				throw GetIllegalArgumentException("int");
 			}
 
 			public virtual long getLong(object obj)
 			{
-				throw new jlIllegalArgumentException();
+				throw GetIllegalArgumentException("long");
 			}
 
 			public virtual float getFloat(object obj)
 			{
-				throw new jlIllegalArgumentException();
+				throw GetIllegalArgumentException("float");
 			}
 
 			public virtual double getDouble(object obj)
 			{
-				throw new jlIllegalArgumentException();
+				throw GetIllegalArgumentException("double");
 			}
 
 			public virtual void setBoolean(object obj, bool z)
 			{
-				throw new jlIllegalArgumentException();
+				throw SetIllegalArgumentException("boolean", jlBoolean.toString(z));
 			}
 
 			public virtual void setByte(object obj, byte b)
 			{
-				throw new jlIllegalArgumentException();
+				throw SetIllegalArgumentException("byte", jlByte.toString(b));
 			}
 
 			public virtual void setChar(object obj, char c)
 			{
-				throw new jlIllegalArgumentException();
+				throw SetIllegalArgumentException("char", jlCharacter.toString(c));
 			}
 
 			public virtual void setShort(object obj, short s)
 			{
-				throw new jlIllegalArgumentException();
+				throw SetIllegalArgumentException("short", jlShort.toString(s));
 			}
 
 			public virtual void setInt(object obj, int i)
 			{
-				throw new jlIllegalArgumentException();
+				throw SetIllegalArgumentException("int", jlInteger.toString(i));
 			}
 
 			public virtual void setLong(object obj, long l)
 			{
-				throw new jlIllegalArgumentException();
+				throw SetIllegalArgumentException("long", jlLong.toString(l));
 			}
 
 			public virtual void setFloat(object obj, float f)
 			{
-				throw new jlIllegalArgumentException();
+				throw SetIllegalArgumentException("float", jlFloat.toString(f));
 			}
 
 			public virtual void setDouble(object obj, double d)
 			{
-				throw new jlIllegalArgumentException();
+				throw SetIllegalArgumentException("double", jlDouble.toString(d));
 			}
 
 			public abstract object get(object obj);
@@ -6003,7 +6073,7 @@ namespace IKVM.NativeCode.sun.reflect
 				{
 					if (!(val is jlByte))
 					{
-						throw new jlIllegalArgumentException();
+						throw SetIllegalArgumentException(val);
 					}
 					setByte(obj, ((jlByte)val).byteValue());
 				}
@@ -6025,7 +6095,7 @@ namespace IKVM.NativeCode.sun.reflect
 				{
 					if (!(val is jlBoolean))
 					{
-						throw new jlIllegalArgumentException();
+						throw SetIllegalArgumentException(val);
 					}
 					setBoolean(obj, ((jlBoolean)val).booleanValue());
 				}
@@ -6068,7 +6138,7 @@ namespace IKVM.NativeCode.sun.reflect
 					if (val is jlCharacter)
 						setChar(obj, ((jlCharacter)val).charValue());
 					else
-						throw new jlIllegalArgumentException();
+						throw SetIllegalArgumentException(val);
 				}
 			}
 
@@ -6110,7 +6180,7 @@ namespace IKVM.NativeCode.sun.reflect
 						|| val is jlShort)
 						setShort(obj, ((jlNumber)val).shortValue());
 					else
-						throw new jlIllegalArgumentException();
+						throw SetIllegalArgumentException(val);
 				}
 
 				public sealed override void setByte(object obj, byte b)
@@ -6155,7 +6225,7 @@ namespace IKVM.NativeCode.sun.reflect
 					else if (val is jlCharacter)
 						setInt(obj, ((jlCharacter)val).charValue());
 					else
-						throw new jlIllegalArgumentException();
+						throw SetIllegalArgumentException(val);
 				}
 
 				public sealed override void setByte(object obj, byte b)
@@ -6202,7 +6272,7 @@ namespace IKVM.NativeCode.sun.reflect
 					else if (val is jlCharacter)
 						setFloat(obj, ((jlCharacter)val).charValue());
 					else
-						throw new jlIllegalArgumentException();
+						throw SetIllegalArgumentException(val);
 				}
 
 				public sealed override void setByte(object obj, byte b)
@@ -6263,7 +6333,7 @@ namespace IKVM.NativeCode.sun.reflect
 					else if (val is jlCharacter)
 						setLong(obj, ((jlCharacter)val).charValue());
 					else
-						throw new jlIllegalArgumentException();
+						throw SetIllegalArgumentException(val);
 				}
 
 				public sealed override void setByte(object obj, byte b)
@@ -6311,7 +6381,7 @@ namespace IKVM.NativeCode.sun.reflect
 					else if (val is jlCharacter)
 						setDouble(obj, ((jlCharacter)val).charValue());
 					else
-						throw new jlIllegalArgumentException();
+						throw SetIllegalArgumentException(val);
 				}
 
 				public override void setByte(object obj, byte b)
@@ -6345,12 +6415,12 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 			}
 
-			private static Delegate GenerateFastGetter(Type delegateType, Type fieldType, FieldWrapper fw)
+			private Delegate GenerateFastGetter(Type delegateType, Type fieldType, FieldWrapper fw)
 			{
 				fw.FieldTypeWrapper.Finish();
 				fw.DeclaringType.Finish();
 				fw.ResolveField();
-				DynamicMethod dm = DynamicMethodUtils.Create("__<Getter>", fw.DeclaringType.TypeAsBaseType, !fw.IsPublic || !fw.DeclaringType.IsPublic, fieldType, new Type[] { typeof(object) });
+				DynamicMethod dm = DynamicMethodUtils.Create("__<Getter>", fw.DeclaringType.TypeAsBaseType, !fw.IsPublic || !fw.DeclaringType.IsPublic, fieldType, new Type[] { typeof(IReflectionException), typeof(object) });
 				CodeEmitter ilgen = CodeEmitter.Create(dm);
 				if (fw.IsStatic)
 				{
@@ -6360,60 +6430,69 @@ namespace IKVM.NativeCode.sun.reflect
 				else
 				{
 					ilgen.BeginExceptionBlock();
-					ilgen.Emit(OpCodes.Ldarg_0);
+					ilgen.Emit(OpCodes.Ldarg_1);
 					ilgen.Emit(OpCodes.Castclass, fw.DeclaringType.TypeAsBaseType);
 					fw.EmitGet(ilgen);
 					fw.FieldTypeWrapper.EmitConvSignatureTypeToStackType(ilgen);
 					LocalBuilder local = ilgen.DeclareLocal(fieldType);
 					ilgen.Emit(OpCodes.Stloc, local);
 					ilgen.BeginCatchBlock(typeof(InvalidCastException));
-					EmitHelper.Throw(ilgen, "java.lang.IllegalArgumentException");
+					ilgen.Emit(OpCodes.Ldarg_0);
+					ilgen.Emit(OpCodes.Ldarg_1);
+					ilgen.Emit(OpCodes.Callvirt, typeof(IReflectionException).GetMethod("GetIllegalArgumentException"));
+					ilgen.Emit(OpCodes.Throw);
 					ilgen.EndExceptionBlock();
 					ilgen.Emit(OpCodes.Ldloc, local);
 				}
 				ilgen.Emit(OpCodes.Ret);
-				return dm.CreateDelegate(delegateType);
+				return dm.CreateDelegate(delegateType, this);
 			}
 
-			private static Delegate GenerateFastSetter(Type delegateType, Type fieldType, FieldWrapper fw)
+			private Delegate GenerateFastSetter(Type delegateType, Type fieldType, FieldWrapper fw)
 			{
 				fw.FieldTypeWrapper.Finish();
 				fw.DeclaringType.Finish();
 				fw.ResolveField();
-				DynamicMethod dm = DynamicMethodUtils.Create("__<Setter>", fw.DeclaringType.TypeAsBaseType, !fw.IsPublic || !fw.DeclaringType.IsPublic, null, new Type[] { typeof(object), fieldType });
+				DynamicMethod dm = DynamicMethodUtils.Create("__<Setter>", fw.DeclaringType.TypeAsBaseType, !fw.IsPublic || !fw.DeclaringType.IsPublic, null, new Type[] { typeof(IReflectionException), typeof(object), fieldType });
 				CodeEmitter ilgen = CodeEmitter.Create(dm);
 				if (fw.IsStatic)
 				{
 					if (fieldType == typeof(object))
 					{
 						ilgen.BeginExceptionBlock();
-						ilgen.Emit(OpCodes.Ldarg_1);
+						ilgen.Emit(OpCodes.Ldarg_2);
 						fw.FieldTypeWrapper.EmitConvStackTypeToSignatureType(ilgen, null);
 						fw.EmitSet(ilgen);
 						ilgen.BeginCatchBlock(typeof(InvalidCastException));
-						EmitHelper.Throw(ilgen, "java.lang.IllegalArgumentException");
+						ilgen.Emit(OpCodes.Ldarg_0);
+						ilgen.Emit(OpCodes.Ldarg_1);
+						ilgen.Emit(OpCodes.Callvirt, typeof(IReflectionException).GetMethod("SetIllegalArgumentException"));
+						ilgen.Emit(OpCodes.Throw);
 						ilgen.EndExceptionBlock();
 					}
 					else
 					{
-						ilgen.Emit(OpCodes.Ldarg_1);
+						ilgen.Emit(OpCodes.Ldarg_2);
 						fw.EmitSet(ilgen);
 					}
 				}
 				else
 				{
 					ilgen.BeginExceptionBlock();
-					ilgen.Emit(OpCodes.Ldarg_0);
-					ilgen.Emit(OpCodes.Castclass, fw.DeclaringType.TypeAsBaseType);
 					ilgen.Emit(OpCodes.Ldarg_1);
+					ilgen.Emit(OpCodes.Castclass, fw.DeclaringType.TypeAsBaseType);
+					ilgen.Emit(OpCodes.Ldarg_2);
 					fw.FieldTypeWrapper.EmitConvStackTypeToSignatureType(ilgen, null);
 					fw.EmitSet(ilgen);
 					ilgen.BeginCatchBlock(typeof(InvalidCastException));
-					EmitHelper.Throw(ilgen, "java.lang.IllegalArgumentException");
+					ilgen.Emit(OpCodes.Ldarg_0);
+					ilgen.Emit(OpCodes.Ldarg_1);
+					ilgen.Emit(OpCodes.Callvirt, typeof(IReflectionException).GetMethod("SetIllegalArgumentException"));
+					ilgen.Emit(OpCodes.Throw);
 					ilgen.EndExceptionBlock();
 				}
 				ilgen.Emit(OpCodes.Ret);
-				return dm.CreateDelegate(delegateType);
+				return dm.CreateDelegate(delegateType, this);
 			}
 
 			private sealed class FastByteFieldAccessor : ByteField
@@ -6444,7 +6523,7 @@ namespace IKVM.NativeCode.sun.reflect
 					fw.DeclaringType.RunClassInit();
 					if (isFinal)
 					{
-						throw new jlIllegalAccessException();
+						throw FinalFieldIllegalAccessException(jlByte.valueOf(value));
 					}
 					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(byte), fw);
 					setter(obj, value);
@@ -6489,7 +6568,7 @@ namespace IKVM.NativeCode.sun.reflect
 					fw.DeclaringType.RunClassInit();
 					if (isFinal)
 					{
-						throw new jlIllegalAccessException();
+						throw FinalFieldIllegalAccessException(jlBoolean.valueOf(value));
 					}
 					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(bool), fw);
 					setter(obj, value);
@@ -6534,7 +6613,7 @@ namespace IKVM.NativeCode.sun.reflect
 					fw.DeclaringType.RunClassInit();
 					if (isFinal)
 					{
-						throw new jlIllegalAccessException();
+						throw FinalFieldIllegalAccessException(jlCharacter.valueOf(value));
 					}
 					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(char), fw);
 					setter(obj, value);
@@ -6579,7 +6658,7 @@ namespace IKVM.NativeCode.sun.reflect
 					fw.DeclaringType.RunClassInit();
 					if (isFinal)
 					{
-						throw new jlIllegalAccessException();
+						throw FinalFieldIllegalAccessException(jlShort.valueOf(value));
 					}
 					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(short), fw);
 					setter(obj, value);
@@ -6624,7 +6703,7 @@ namespace IKVM.NativeCode.sun.reflect
 					fw.DeclaringType.RunClassInit();
 					if (isFinal)
 					{
-						throw new jlIllegalAccessException();
+						throw FinalFieldIllegalAccessException(jlInteger.valueOf(value));
 					}
 					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(int), fw);
 					setter(obj, value);
@@ -6669,7 +6748,7 @@ namespace IKVM.NativeCode.sun.reflect
 					fw.DeclaringType.RunClassInit();
 					if (isFinal)
 					{
-						throw new jlIllegalAccessException();
+						throw FinalFieldIllegalAccessException(jlFloat.valueOf(value));
 					}
 					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(float), fw);
 					setter(obj, value);
@@ -6714,7 +6793,7 @@ namespace IKVM.NativeCode.sun.reflect
 					fw.DeclaringType.RunClassInit();
 					if (isFinal)
 					{
-						throw new jlIllegalAccessException();
+						throw FinalFieldIllegalAccessException(jlLong.valueOf(value));
 					}
 					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(long), fw);
 					setter(obj, value);
@@ -6759,7 +6838,7 @@ namespace IKVM.NativeCode.sun.reflect
 					fw.DeclaringType.RunClassInit();
 					if (isFinal)
 					{
-						throw new jlIllegalAccessException();
+						throw FinalFieldIllegalAccessException(jlDouble.valueOf(value));
 					}
 					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(double), fw);
 					setter(obj, value);
@@ -6804,7 +6883,7 @@ namespace IKVM.NativeCode.sun.reflect
 					fw.DeclaringType.RunClassInit();
 					if (isFinal)
 					{
-						throw new jlIllegalAccessException();
+						throw FinalFieldIllegalAccessException(value);
 					}
 					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(object), fw);
 					setter(obj, value);
