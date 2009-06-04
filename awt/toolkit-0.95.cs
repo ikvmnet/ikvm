@@ -39,6 +39,7 @@ using java.net;
 using java.util;
 using ikvm.awt.printing;
 using ikvm.runtime;
+using sun.awt;
 
 namespace ikvm.awt
 {
@@ -617,9 +618,10 @@ namespace ikvm.awt
             throw new NotImplementedException();
         }
 
-        public override bool isModalityTypeSupported(java.awt.Dialog.ModalityType dmt)
+        public override bool isModalityTypeSupported(java.awt.Dialog.ModalityType type)
         {
-            throw new NotImplementedException();
+            return type.ordinal() == java.awt.Dialog.ModalityType.MODELESS.ordinal() ||
+                type.ordinal() == java.awt.Dialog.ModalityType.APPLICATION_MODAL.ordinal();
         }
 
         public override java.awt.Window createInputMethodWindow(string __p1, sun.awt.im.InputContext __p2)
@@ -2406,9 +2408,16 @@ namespace ikvm.awt
 			throw new NotImplementedException();
 		}
 
-        public void blockWindows(List l)
+        public void blockWindows(List toBlock)
         {
-            throw new NotImplementedException();
+            // code copies from sun.awt.windows.WDialogPeer.java
+            for (Iterator it = toBlock.iterator(); it.hasNext();) {
+                java.awt.Window w = (java.awt.Window)it.next();
+                WindowPeer wp = (WindowPeer)ComponentAccessor.getPeer(w);
+                if (wp != null) {
+                    wp.setModalBlocked((java.awt.Dialog)component, true);
+                }
+            }
         }
     }
 
