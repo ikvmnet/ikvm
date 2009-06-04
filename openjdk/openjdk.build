@@ -7,7 +7,7 @@
         <property name="pathsep" value=";" />
     </if>
 
-    <target name="all" depends="classes vfs core">
+    <target name="all" depends="classes vfs resources core">
     </target>
 
     <target name="classes">
@@ -68,6 +68,15 @@
             <fileset basedir="${OpenJDK.dir}/jdk/src/windows">
                 <include name="lib/flavormap.properties" />
                 <include name="lib/content-types.properties" />
+            </fileset>
+            </zip>
+        </target>
+
+    <target name="resources">
+        <!-- resources that are not in ../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar -->
+        <zip zipfile="resources.zip">
+            <fileset basedir="${OpenJDK.dir}/jdk/src/share/classes">
+                <include name="com/sun/swing/internal/plaf/**/*" />
             </fileset>
         </zip>
     </target>
