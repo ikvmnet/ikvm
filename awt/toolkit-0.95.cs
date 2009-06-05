@@ -77,7 +77,6 @@ namespace ikvm.awt
 	delegate void SetStringInt(string s, int i);
 	delegate void SetRectangle(Rectangle r);
 	delegate void SetColor(java.awt.Color c);
-	delegate void SetFont(java.awt.Font f);
     delegate void SetCursor(java.awt.Cursor cursor);
 	delegate java.awt.Dimension GetDimension();
     delegate Rectangle ConvertRectangle(Rectangle r);
@@ -870,6 +869,7 @@ namespace ikvm.awt
 
 	abstract class NetComponentPeer : ComponentPeer
 	{
+		private static readonly java.awt.Font defaultFont = new java.awt.Font(java.awt.Font.DIALOG, java.awt.Font.PLAIN, 12);
 		internal readonly java.awt.Component target;
 		internal Control control;
         private bool isMouseClick;
@@ -879,6 +879,9 @@ namespace ikvm.awt
 		private int oldHeight = -1;
 		private bool sm_suppressFocusAndActivation;
 		private bool m_callbacksEnabled;
+		private java.awt.Font font;
+		private java.awt.Color foreground;
+		private java.awt.Color background;
         private static readonly java.lang.reflect.Field compX;
         private static readonly java.lang.reflect.Field compY;
         private static readonly java.lang.reflect.Field compWidth;
@@ -1438,7 +1441,27 @@ namespace ikvm.awt
 
 		public virtual java.awt.Graphics getGraphics()
 		{
-            return new ComponentGraphics(this);
+			if (!control.IsDisposed)
+			{
+				/* Fix for bug 4746122. Color and Font shouldn't be null */
+				java.awt.Color bgColor = background;
+				if (bgColor == null)
+				{
+					bgColor = java.awt.SystemColor.window;
+				}
+				java.awt.Color fgColor = foreground;
+				if (fgColor == null)
+				{
+					fgColor = java.awt.SystemColor.windowText;
+				}
+				java.awt.Font font = this.font;
+				if (font == null)
+				{
+					font = defaultFont;
+				}
+				return new ComponentGraphics(this.control, fgColor, bgColor, font);
+			}
+			return null;
 		}
 
 		public java.awt.Point getLocationOnScreen()
@@ -1574,12 +1597,11 @@ namespace ikvm.awt
 
 		public void setBackground(java.awt.Color color)
 		{
-			control.Invoke(new SetColor(SetBackColorImpl), new object[] { color });
-		}
-
-		private void SetBackColorImpl(java.awt.Color color)
-		{
-            control.BackColor = Color.FromArgb(color.getRGB());
+			lock (this)
+			{
+				this.background = color;
+				Invoke(delegate { control.BackColor = J2C.ConvertColor(color); });
+			}
 		}
 
         protected virtual void SetBoundsImpl(int x, int y, int width, int height)
@@ -1649,34 +1671,34 @@ namespace ikvm.awt
             control.Invoke(new SetCursor(setCursorImpl), new object[] { cursor });
         }
 
-		private void setEnabledImpl(bool enabled)
-		{
-			control.Enabled = enabled;
-		}
-
 		public void setEnabled(bool enabled)
 		{
-			control.Invoke(new SetBool(setEnabledImpl), new object[] { enabled });
-		}
-
-        private void setFontImpl(java.awt.Font font)
-		{
-            control.Font = font.getNetFont();
+			if (enabled)
+			{
+				enable();
+			}
+			else
+			{
+				disable();
+			}
 		}
 
 		public void setFont(java.awt.Font font)
 		{
-			control.Invoke(new SetFont(setFontImpl), new object[] { font });
+			lock (this)
+			{
+				this.font = font;
+				Invoke(delegate { control.Font = font.getNetFont(); });
+			}
 		}
 
 		public void setForeground(java.awt.Color color)
 		{
-			control.Invoke(new SetColor(SetForeColorImpl), new object[] { color });
-		}
-
-		private void SetForeColorImpl(java.awt.Color color)
-		{
-            control.ForeColor = Color.FromArgb(color.getRGB());
+			lock (this)
+			{
+				this.foreground = color;
+				Invoke(delegate { control.ForeColor = J2C.ConvertColor(color); });
+			}
 		}
 
 		public void setVisible(bool visible)

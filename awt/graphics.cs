@@ -72,10 +72,10 @@ namespace ikvm.awt
     {
         private readonly Control control;
 
-        internal ComponentGraphics(NetComponentPeer peer)
-            : base(peer.control.CreateGraphics(), peer.target.getFont(), peer.control.ForeColor, peer.control.BackColor)
+        internal ComponentGraphics(Control control, java.awt.Color fgColor, java.awt.Color bgColor, java.awt.Font font)
+            : base(control.CreateGraphics(), font, J2C.ConvertColor(fgColor), J2C.ConvertColor(bgColor))
         {
-            control = peer.control;
+            this.control = control;
         }
 
         public override java.awt.Graphics create()
@@ -539,16 +539,10 @@ namespace ikvm.awt
 
         public override void setFont(java.awt.Font f)
         {
-            // TODO why is Component calling us with a null reference and is this legal?
-            if (f != null)
+            if (f != null && f != font)
             {
                 netfont = font.getNetFont();
                 font = f;
-            }
-            else
-            {
-                Console.WriteLine("Font is null");
-                Console.WriteLine(new System.Diagnostics.StackTrace());
             }
         }
 
