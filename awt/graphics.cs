@@ -73,7 +73,7 @@ namespace ikvm.awt
         private readonly Control control;
 
         internal ComponentGraphics(NetComponentPeer peer)
-            : base(peer.control.CreateGraphics(), peer.component.getFont(), peer.control.ForeColor, peer.control.BackColor)
+            : base(peer.control.CreateGraphics(), peer.target.getFont(), peer.control.ForeColor, peer.control.BackColor)
         {
             control = peer.control;
         }

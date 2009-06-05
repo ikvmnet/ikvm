@@ -1,26 +1,51 @@
 /*
-  Copyright (C) 2002, 2004, 2005, 2006, 2007 Jeroen Frijters
-  Copyright (C) 2006 Active Endpoints, Inc.
-  Copyright (C) 2006, 2007, 2008, 2009 Volker Berlin (i-net software)
+ * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
 
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
+/*
+Copyright (C) 2002, 2004-2009 Jeroen Frijters
+Copyright (C) 2006 Active Endpoints, Inc.
+Copyright (C) 2006, 2007, 2008, 2009 Volker Berlin (i-net software)
 
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
 
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
 
-  Jeroen Frijters
-  jeroen@frijters.net 
+1. The origin of this software must not be misrepresented; you must not
+  claim that you wrote the original software. If you use this software
+  in a product, an acknowledgment in the product documentation would be
+  appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+  misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+
+Jeroen Frijters
+jeroen@frijters.net 
 
 */
 
@@ -136,23 +161,13 @@ namespace ikvm.awt
     {
         internal static java.awt.EventQueue eventQueue = new java.awt.EventQueue();
         internal static volatile Form bogusForm;
-        private static Delegate createControlInstance;
         private int resolution;
-
-        private delegate NetComponentPeer CreateControlInstanceDelegate(Type controlType, java.awt.Component target, Type peerType);
 
         private static void MessageLoop()
         {
-            createControlInstance = new CreateControlInstanceDelegate(CreateControlImpl);
             using (Form form = new Form())
             {
-                form.CreateControl();
-                // HACK I have no idea why this line is necessary...
-                IntPtr p = form.Handle;
-                if (p == IntPtr.Zero)
-                {
-                    // shut up compiler warning
-                }
+				CreateNative(form);
                 bogusForm = form;
                 // FXBUG to make sure we can be aborted (Thread.Abort) we need to periodically
                 // fire an event (because otherwise we'll be blocking in unmanaged code and
@@ -164,34 +179,16 @@ namespace ikvm.awt
             }
         }
 
-        internal static NetComponentPeer CreateControlImpl(Type controlType, java.awt.Component target, Type peerType)
-        {
-            Control control = (Control)Activator.CreateInstance(controlType);
-            control.CreateControl();
-            // HACK here we go again...
-            IntPtr p = control.Handle;
-            if (p == IntPtr.Zero)
-            {
-                // shut up compiler warning
-            }
-            NetComponentPeer peer = (NetComponentPeer)Activator.CreateInstance(peerType, new object[] { target, control });
-            peer.initEvents();
-            return peer;
-        }
-
-        internal static NetComponentPeer CreatePeer(Type controlType, java.awt.Component target, Type peerType)
-        {
-            java.awt.Container parent = target.getParent();
-            if (parent != null && parent.getPeer() == null)
-            {
-                //This should do in Java, but it is a Bug in GNU classpath
-                //because synchronized in Java this must be call with the caller thread
-                parent.addNotify();
-            }
-            NetComponentPeer peer = (NetComponentPeer)bogusForm.Invoke(createControlInstance, new object[] { controlType, target, peerType });
-            peer.init();
-            return peer;
-        }
+		internal static void CreateNative(Control control)
+		{
+			control.CreateControl();
+			// HACK I have no idea why this line is necessary...
+			IntPtr p = control.Handle;
+			if (p == IntPtr.Zero)
+			{
+				// shut up compiler warning
+			}
+		}
 
         public NetToolkit()
         {
@@ -249,28 +246,38 @@ namespace ikvm.awt
 
         public override java.awt.peer.ButtonPeer createButton(java.awt.Button target)
         {
-            return (NetButtonPeer)CreatePeer(typeof(Button), target, typeof(NetButtonPeer));
-        }
+			ButtonPeer peer = new NetButtonPeer(target);
+			targetCreatedPeer(target, peer);
+			return peer;
+		}
 
         public override java.awt.peer.TextFieldPeer createTextField(java.awt.TextField target)
         {
-            return (NetTextFieldPeer)CreatePeer(typeof(TextBox), target, typeof(NetTextFieldPeer));
-        }
+			TextFieldPeer peer = new NetTextFieldPeer(target);
+			targetCreatedPeer(target, peer);
+			return peer;
+		}
 
         public override java.awt.peer.LabelPeer createLabel(java.awt.Label target)
         {
-            return (NetLabelPeer)CreatePeer(typeof(Label), target, typeof(NetLabelPeer));
-        }
+			LabelPeer peer = new NetLabelPeer(target);
+			targetCreatedPeer(target, peer);
+			return peer;
+		}
 
         public override java.awt.peer.ListPeer createList(java.awt.List target)
         {
-            return (NetListPeer)CreatePeer(typeof(ListBox), target, typeof(NetListPeer));
-        }
+			ListPeer peer = new NetListPeer(target);
+			targetCreatedPeer(target, peer);
+			return peer;
+		}
 
         public override java.awt.peer.CheckboxPeer createCheckbox(java.awt.Checkbox target)
         {
-            return (NetCheckboxPeer)CreatePeer(typeof(CheckBox), target, typeof(NetCheckboxPeer));
-        }
+			CheckboxPeer peer = new NetCheckboxPeer(target);
+			targetCreatedPeer(target, peer);
+			return peer;
+		}
 
         public override java.awt.peer.ScrollbarPeer createScrollbar(java.awt.Scrollbar target)
         {
@@ -284,43 +291,38 @@ namespace ikvm.awt
 
         public override java.awt.peer.TextAreaPeer createTextArea(java.awt.TextArea target)
         {
-            return (NetTextAreaPeer)CreatePeer(typeof(TextBox), target, typeof(NetTextAreaPeer));
-        }
+			TextAreaPeer peer = new NetTextAreaPeer(target);
+			targetCreatedPeer(target, peer);
+			return peer;
+		}
 
         public override java.awt.peer.ChoicePeer createChoice(java.awt.Choice target)
         {
-            return (NetChoicePeer)CreatePeer(typeof(ComboBox), target, typeof(NetChoicePeer));
-        }
+			ChoicePeer peer = new NetChoicePeer(target);
+			targetCreatedPeer(target, peer);
+			return peer;
+		}
 
         public override java.awt.peer.FramePeer createFrame(java.awt.Frame target)
         {
-            if (!target.isFontSet())
-            {
-                java.awt.Font font = new java.awt.Font("Dialog", java.awt.Font.PLAIN, 12);
-                target.setFont(font);
-            }
-            return (NetFramePeer)CreatePeer(typeof(MyForm), target, typeof(NetFramePeer));
-        }
+			FramePeer peer = new NetFramePeer(target);
+			targetCreatedPeer(target, peer);
+			return peer;
+		}
 
-/*        public override java.awt.peer.CanvasPeer createCanvas(java.awt.Canvas target)
-        {
-            return (NewCanvasPeer)CreatePeer(typeof(MyControl), target, typeof(NewCanvasPeer));
-        }
-
-        public override java.awt.peer.PanelPeer createPanel(java.awt.Panel target)
-        {
-            return (NetPanelPeer)CreatePeer(typeof(ContainerControl), target, typeof(NetPanelPeer));
-        }
-*/
         public override java.awt.peer.WindowPeer createWindow(java.awt.Window target)
         {
-            return (NetWindowPeer)CreatePeer(typeof(UndecoratedForm), target, typeof(NetWindowPeer));
-        }
+			WindowPeer peer = new NetWindowPeer(target);
+			targetCreatedPeer(target, peer);
+			return peer;
+		}
 
         public override java.awt.peer.DialogPeer createDialog(java.awt.Dialog target)
         {
-            return (NetDialogPeer)CreatePeer(typeof(MyForm), target, typeof(NetDialogPeer));
-        }
+			DialogPeer peer = new NetDialogPeer(target);
+			targetCreatedPeer(target, peer);
+			return peer;
+		}
 
         public override java.awt.peer.MenuBarPeer createMenuBar(java.awt.MenuBar target)
         {
@@ -691,6 +693,11 @@ namespace ikvm.awt
         {
             throw new NotImplementedException();
         }
+
+		internal static new object targetToPeer(object target)
+		{
+			return SunToolkit.targetToPeer(target);
+		}
     }
 
     class NetInputMethodDescriptor : java.awt.im.spi.InputMethodDescriptor
@@ -801,15 +808,20 @@ namespace ikvm.awt
 	class NetLightweightComponentPeer : NetComponentPeer, java.awt.peer.LightweightPeer
 	{
 		public NetLightweightComponentPeer(java.awt.Component target)
-			: base(target, ((NetComponentPeer)target.getParent().getPeer()).control)
+			: base(target)
 		{
+		}
+
+		internal override void create(NetComponentPeer parent)
+		{
+			throw new NotImplementedException();
 		}
 	}
 
     class NetLightweightContainerPeer : NetContainerPeer, java.awt.peer.LightweightPeer
     {
         public NetLightweightContainerPeer(java.awt.Container target)
-            : base(target, GetContainerControl(target.getParent()))
+            : base(target)
         {
         }
 
@@ -826,72 +838,201 @@ namespace ikvm.awt
         }
     }
 
-	class NetComponentPeer : ComponentPeer
+	sealed class AwtToolkit
 	{
-		internal readonly java.awt.Component component;
-		internal readonly Control control;
+		private static readonly AwtToolkit theInstance = new AwtToolkit();
+
+		internal static AwtToolkit GetInstance() { return theInstance; }
+
+		internal void SyncCall(ThreadStart del)
+		{
+			// TODO if we're not on the right thread we should lock (see awt_Toolkit.cpp)
+			del();
+		}
+
+		internal delegate void CreateComponentDelegate(NetComponentPeer parent);
+
+		internal static void CreateComponent(CreateComponentDelegate factory, NetComponentPeer parent)
+		{
+			NetToolkit.bogusForm.Invoke((ThreadStart)delegate
+			{
+				try
+				{
+					factory(parent);
+				}
+				catch (Exception x)
+				{
+					Console.WriteLine(x);
+				}
+			});
+		}
+	}
+
+	abstract class NetComponentPeer : ComponentPeer
+	{
+		internal readonly java.awt.Component target;
+		internal Control control;
         private bool isMouseClick;
         private bool isDoubleClick;
         private bool isPopupMenu;
-
+		private int oldWidth = -1;
+		private int oldHeight = -1;
+		private bool sm_suppressFocusAndActivation;
+		private bool m_callbacksEnabled;
         private static readonly java.lang.reflect.Field compX;
         private static readonly java.lang.reflect.Field compY;
         private static readonly java.lang.reflect.Field compWidth;
         private static readonly java.lang.reflect.Field compHeight;
-        static NetComponentPeer()
+
+		static NetComponentPeer()
         {
-            java.lang.Class clazz = typeof(java.awt.Component);
-            compX = clazz.getDeclaredField("x");
-            compX.setAccessible(true);
-            compY = clazz.getDeclaredField("y");
-            compY.setAccessible(true);
-            compWidth = clazz.getDeclaredField("width");
-            compWidth.setAccessible(true);
-            compHeight = clazz.getDeclaredField("height");
-            compHeight.setAccessible(true);
+			java.lang.reflect.Field _compX = null;
+			java.lang.reflect.Field _compY = null;
+			java.lang.reflect.Field _compWidth = null;
+			java.lang.reflect.Field _compHeight = null;
+			java.security.AccessController.doPrivileged(Delegates.toPrivilegedAction(delegate
+			{
+				java.lang.Class clazz = typeof(java.awt.Component);
+				_compX = clazz.getDeclaredField("x");
+				_compX.setAccessible(true);
+				_compY = clazz.getDeclaredField("y");
+				_compY.setAccessible(true);
+				_compWidth = clazz.getDeclaredField("width");
+				_compWidth.setAccessible(true);
+				_compHeight = clazz.getDeclaredField("height");
+				_compHeight.setAccessible(true);
+				return null;
+			}));
+			compX = _compX;
+			compY = _compY;
+			compWidth = _compWidth;
+			compHeight = _compHeight;
         }
 
-		public NetComponentPeer(java.awt.Component component, Control control)
+		public NetComponentPeer(java.awt.Component target)
 		{
-            this.control = control;
-			this.component = component;
-			control.TabStop = false;
-			java.awt.Container parent = component.getParent();
-			if(parent != null && !(this is java.awt.peer.LightweightPeer))
+			this.target = target;
+			//this.paintArea = new RepaintArea();
+			java.awt.Container parent = SunToolkit.getNativeContainer(target);
+			NetComponentPeer parentPeer = (NetComponentPeer)NetToolkit.targetToPeer(parent);
+			create(parentPeer);
+			/*
+			// fix for 5088782: check if window object is created successfully
+			checkCreation();
+			this.winGraphicsConfig =
+				(Win32GraphicsConfig)getGraphicsConfiguration();
+			this.surfaceData =
+				winGraphicsConfig.createSurfaceData(this, numBackBuffers);
+			 */
+			initialize();
+			start();  // Initialize enable/disable state, turn on callbacks
+		}
+
+		void initialize()
+		{
+			if (target.isVisible())
 			{
-				if(control is Form)
-				{
-                    NetComponentPeer parentPeer = (NetComponentPeer)parent.getPeer();
-                    if (parentPeer != null)
-					{
-						((Form)control).Owner = (Form)parentPeer.control;
-					}
-				}
-				else
-				{
-					java.awt.Container p = parent;
-					while(p != null && p.getPeer() is java.awt.peer.LightweightPeer)
-					{
-						p = p.getParent();
-					}
-					if(p != null)
-					{
-						control.Parent = ((NetComponentPeer)p.getPeer()).control;
-					}
-				}
+				show();  // the wnd starts hidden
 			}
-            SetBoundsImpl(component.getX(), component.getY(), component.getWidth(), component.getHeight());
-            // we need the null check, because for a Window, at this time it doesn't have a foreground yet
-			if(component.getForeground() != null)
+			java.awt.Color fg = target.getForeground();
+			if (fg != null)
 			{
-                SetForeColorImpl(component.getForeground());
+				setForeground(fg);
 			}
-			// we need the null check, because for a Window, at this time it doesn't have a background yet
-			if(component.getBackground() != null)
+			// Set background color in C++, to avoid inheriting a parent's color.
+			java.awt.Font f = target.getFont();
+			if (f != null)
 			{
-                SetBackColorImpl(component.getBackground());
+				setFont(f);
 			}
-			setEnabled(component.isEnabled());
+			if (!target.isEnabled())
+			{
+				disable();
+			}
+			java.awt.Rectangle r = target.getBounds();
+			setBounds(r.x, r.y, r.width, r.height, ComponentPeer.__Fields.SET_BOUNDS);
+		}
+
+		void start()
+		{
+			lock (this)
+			{
+				AwtToolkit.GetInstance().SyncCall(_Start);
+			}
+		}
+
+		void _Start()
+		{
+			if (control.IsHandleCreated)
+			{
+				initEvents();
+				// JDK native code also disables the window here, but since that is already done in initialize(),
+				// I don't see the point
+				EnableCallbacks(true);
+				control.Invalidate();
+				control.Update();
+			}
+		}
+
+		void EnableCallbacks(bool enabled)
+		{
+			m_callbacksEnabled = enabled;
+		}
+
+		internal abstract void create(NetComponentPeer parent);
+
+		internal void Invoke(ThreadStart del)
+		{
+			control.Invoke(del);
+		}
+
+		void pShow()
+		{
+			lock (this)
+			{
+				AwtToolkit.GetInstance().SyncCall(_Show);
+			}
+		}
+
+		void _Show()
+		{
+			if (control.IsHandleCreated)
+			{
+				Invoke(delegate { control.Visible = true; });
+			}
+		}
+
+		void _Hide()
+		{
+			if (control.IsHandleCreated)
+			{
+				Invoke(delegate { control.Visible = false; });
+			}
+		}
+
+		void _Enable()
+		{
+			if (control.IsHandleCreated)
+			{
+				Enable(true);
+			}
+		}
+
+		void _Disable()
+		{
+			if (control.IsHandleCreated)
+			{
+				Enable(false);
+			}
+		}
+
+		void Enable(bool enable)
+		{
+			sm_suppressFocusAndActivation = true;
+			control.Enabled = enable;
+			sm_suppressFocusAndActivation = false;
+			//CriticalSection::Lock l(GetLock());
+			//VerifyState();
 		}
 
 		internal virtual void initEvents()
@@ -927,10 +1068,10 @@ namespace ikvm.awt
         {
             // TODO temporaly disabled, because a Bug in classpath (Bug 30122)
             // http://gcc.gnu.org/bugzilla/show_bug.cgi?id=30122
-            if(component.isFontSet())
+            if(target.isFontSet())
             {
                 //setFontImpl(component.getFont());
-                setFont(component.getFont());
+                setFont(target.getFont());
             }
         }
 
@@ -954,9 +1095,9 @@ namespace ikvm.awt
         /// <returns>The offset of the details area in the parent</returns>
         private Point getParentOffset()
         {
-            if (!(component is java.awt.Window))
+            if (!(target is java.awt.Window))
             {
-                java.awt.Container parent = component.getParent();
+                java.awt.Container parent = target.getParent();
                 if (parent != null)
                 {
                     ComponentPeer peer = parent.getPeer();
@@ -978,7 +1119,7 @@ namespace ikvm.awt
                 int x = getInsetsLeft();
                 int y = getInsetsTop();
 				java.awt.Rectangle rect = new java.awt.Rectangle(e.ClipRectangle.X + x, e.ClipRectangle.Y + y, e.ClipRectangle.Width, e.ClipRectangle.Height);
-				postEvent(new java.awt.@event.PaintEvent(component, java.awt.@event.PaintEvent.UPDATE, rect));
+				postEvent(new java.awt.@event.PaintEvent(target, java.awt.@event.PaintEvent.UPDATE, rect));
 			}
 		}
 
@@ -1055,7 +1196,7 @@ namespace ikvm.awt
 			char keyChar = ' ';
 			int keyLocation = java.awt.@event.KeyEvent.KEY_LOCATION_STANDARD;
 			java.awt.EventQueue.invokeLater(Delegates.toRunnable(delegate {
-				postEvent(new java.awt.@event.KeyEvent(component, java.awt.@event.KeyEvent.KEY_PRESSED, when, modifiers, keyCode, keyChar, keyLocation));
+				postEvent(new java.awt.@event.KeyEvent(target, java.awt.@event.KeyEvent.KEY_PRESSED, when, modifiers, keyCode, keyChar, keyLocation));
 			}));
 		}
 
@@ -1068,7 +1209,7 @@ namespace ikvm.awt
 			char keyChar = ' ';
 			int keyLocation = java.awt.@event.KeyEvent.KEY_LOCATION_STANDARD;
 			java.awt.EventQueue.invokeLater(Delegates.toRunnable(delegate {
-				postEvent(new java.awt.@event.KeyEvent(component, java.awt.@event.KeyEvent.KEY_RELEASED, when, modifiers, keyCode, keyChar, keyLocation));
+				postEvent(new java.awt.@event.KeyEvent(target, java.awt.@event.KeyEvent.KEY_RELEASED, when, modifiers, keyCode, keyChar, keyLocation));
 			}));
 		}
 
@@ -1080,7 +1221,7 @@ namespace ikvm.awt
 			char keyChar = e.KeyChar;
 			int keyLocation = java.awt.@event.KeyEvent.KEY_LOCATION_UNKNOWN;
 			java.awt.EventQueue.invokeLater(Delegates.toRunnable(delegate {
-				postEvent(new java.awt.@event.KeyEvent(component, java.awt.@event.KeyEvent.KEY_TYPED, when, modifiers, keyCode, keyChar, keyLocation));
+				postEvent(new java.awt.@event.KeyEvent(target, java.awt.@event.KeyEvent.KEY_TYPED, when, modifiers, keyCode, keyChar, keyLocation));
 			}));
 		}
 
@@ -1094,7 +1235,7 @@ namespace ikvm.awt
             int y = ev.Y + getInsetsTop();
             bool isPopup = isPopupMenu;
 			java.awt.EventQueue.invokeLater(Delegates.toRunnable(delegate {
-				postEvent(new java.awt.@event.MouseEvent(component, id, when, modifiers, x, y, clickCount, isPopup, button));
+				postEvent(new java.awt.@event.MouseEvent(target, id, when, modifiers, x, y, clickCount, isPopup, button));
 			}));
             isPopupMenu = false;
         }
@@ -1109,7 +1250,7 @@ namespace ikvm.awt
             int y = Control.MousePosition.Y - control.Location.Y;
             bool isPopup = isPopupMenu;
 			java.awt.EventQueue.invokeLater(Delegates.toRunnable(delegate {
-	            postEvent(new java.awt.@event.MouseEvent(component, id, when, modifiers, x, y, clickCount, isPopup, button));
+	            postEvent(new java.awt.@event.MouseEvent(target, id, when, modifiers, x, y, clickCount, isPopup, button));
 			}));
             isPopupMenu = false;
         }
@@ -1194,14 +1335,14 @@ namespace ikvm.awt
 		private void OnGotFocus(object sender, EventArgs e)
 		{
 			java.awt.EventQueue.invokeLater(Delegates.toRunnable(delegate {
-				postEvent(new java.awt.@event.FocusEvent(component, java.awt.@event.FocusEvent.FOCUS_GAINED));
+				postEvent(new java.awt.@event.FocusEvent(target, java.awt.@event.FocusEvent.FOCUS_GAINED));
 			}));
 		}
 
 		private void OnLostFocus(object sender, EventArgs e)
 		{
 			java.awt.EventQueue.invokeLater(Delegates.toRunnable(delegate {
-				postEvent(new java.awt.@event.FocusEvent(component, java.awt.@event.FocusEvent.FOCUS_LOST));
+				postEvent(new java.awt.@event.FocusEvent(target, java.awt.@event.FocusEvent.FOCUS_LOST));
 			}));
 		}
 
@@ -1217,17 +1358,17 @@ namespace ikvm.awt
             int height = control.Height;
             //we set it via Reflection because Sun do it also
             //a call of setBounds produce another behaviuor
-            compX.setInt(this.component, x);
-            compY.setInt(this.component, y);
-            compWidth.setInt(this.component, width);
-            compHeight.setInt(this.component, height);
+            compX.setInt(this.target, x);
+            compY.setInt(this.target, y);
+            compWidth.setInt(this.target, width);
+            compHeight.setInt(this.target, height);
         }
 
         private void OnBoundsChanged(object sender, EventArgs e)
 		{
 			java.awt.EventQueue.invokeLater(Delegates.toRunnable(delegate {
                 componentSetBounds();
-				postEvent(new java.awt.@event.ComponentEvent(component, java.awt.@event.ComponentEvent.COMPONENT_RESIZED));
+				postEvent(new java.awt.@event.ComponentEvent(target, java.awt.@event.ComponentEvent.COMPONENT_RESIZED));
 			}));
 		}
 
@@ -1260,7 +1401,10 @@ namespace ikvm.awt
 
 		public void disable()
 		{
-			setEnabled(false);
+			lock (this)
+			{
+				AwtToolkit.GetInstance().SyncCall(_Disable);
+			}
 		}
 
 		public void dispose()
@@ -1276,7 +1420,10 @@ namespace ikvm.awt
 
 		public void enable()
 		{
-			setEnabled(true);
+			lock (this)
+			{
+				AwtToolkit.GetInstance().SyncCall(_Enable);
+			}
 		}
 
 		public ColorModel getColorModel()
@@ -1322,7 +1469,7 @@ namespace ikvm.awt
 		{
             if (e is java.awt.@event.PaintEvent)
             {
-                java.awt.Graphics g = component.getGraphics();
+                java.awt.Graphics g = target.getGraphics();
                 try
                 {
                     java.awt.Rectangle r = ((java.awt.@event.PaintEvent)e).getUpdateRect();
@@ -1330,10 +1477,10 @@ namespace ikvm.awt
                     switch (e.getID())
                     {
                         case java.awt.@event.PaintEvent.UPDATE:
-                            component.update(g);
+                            target.update(g);
                             break;
                         case java.awt.@event.PaintEvent.PAINT:
-                            component.paint(g);
+                            target.paint(g);
                             break;
                         default:
                             Console.WriteLine("Unknown PaintEvent: {0}", e.getID());
@@ -1349,7 +1496,10 @@ namespace ikvm.awt
 
         public void hide()
 		{
-			setVisible(false);
+			lock (this)
+			{
+				AwtToolkit.GetInstance().SyncCall(_Hide);
+			}
 		}
 
 		public bool isFocusTraversable()
@@ -1359,7 +1509,7 @@ namespace ikvm.awt
 
 		public virtual java.awt.Dimension minimumSize()
 		{
-			return component.getSize();
+			return target.getSize();
 		}
 
 		public virtual java.awt.Dimension preferredSize()
@@ -1386,7 +1536,7 @@ namespace ikvm.awt
 		{
 			// TODO do something with the tm parameter
 			java.awt.Rectangle rect = new java.awt.Rectangle(x, y, width, height);
-			postEvent(new java.awt.@event.PaintEvent(component, java.awt.@event.PaintEvent.UPDATE, rect));
+			postEvent(new java.awt.@event.PaintEvent(target, java.awt.@event.PaintEvent.UPDATE, rect));
 		}
 
 		public void requestFocus()
@@ -1413,7 +1563,7 @@ namespace ikvm.awt
             {
                 return false;
             }
-            postEvent(new java.awt.@event.FocusEvent(request, java.awt.@event.FocusEvent.FOCUS_GAINED, temporary, component));
+            postEvent(new java.awt.@event.FocusEvent(request, java.awt.@event.FocusEvent.FOCUS_GAINED, temporary, target));
 			return true;
 		}
 
@@ -1529,22 +1679,24 @@ namespace ikvm.awt
             control.ForeColor = Color.FromArgb(color.getRGB());
 		}
 
-		private void setVisibleImpl(bool visible)
-		{
-			control.Visible = visible;
-            //will already Post from GNU Classpath
-			//postEvent(new java.awt.@event.ComponentEvent(component,
-			//	visible ? java.awt.@event.ComponentEvent.COMPONENT_SHOWN : java.awt.@event.ComponentEvent.COMPONENT_HIDDEN));
-		}
-
 		public void setVisible(bool visible)
 		{
-			control.Invoke(new SetBool(setVisibleImpl), new object[] { visible });
+			if (visible)
+			{
+				show();
+			}
+			else
+			{
+				hide();
+			}
 		}
 
 		public void show()
 		{
-			setVisible(true);
+			java.awt.Dimension s = ((java.awt.Component)target).getSize();
+			oldHeight = s.height;
+			oldWidth = s.width;
+			pShow();
 		}
 
 		public java.awt.GraphicsConfiguration getGraphicsConfiguration()
@@ -1559,11 +1711,15 @@ namespace ikvm.awt
 
 		public bool isObscured()
 		{
-			return false;
+			// should never be called because we return false from canDetermineObscurity()
+			return true;
 		}
 
 		public bool canDetermineObscurity()
 		{
+			// JDK returns true here and uses GetClipBox to determine if the window is partially obscured,
+			// this is an optimization for scrolling in javax.swing.JViewport, since there appears to be
+			// no managed equivalent of GetClipBox, we'll simply return false and forgo the optimization.
 			return false;
 		}
 
@@ -1641,9 +1797,9 @@ namespace ikvm.awt
         private const int SNFH_SUCCESS_HANDLED = 1;
         private const int SNFH_SUCCESS_PROCEED = 2;
 
-        private java.lang.reflect.Method shouldNativelyFocusHeavyweight;
-        private java.lang.reflect.Method processSynchronousLightweightTransfer;
-        private java.lang.reflect.Method removeLastFocusRequest;
+        private static java.lang.reflect.Method shouldNativelyFocusHeavyweight;
+		private static java.lang.reflect.Method processSynchronousLightweightTransfer;
+		private static java.lang.reflect.Method removeLastFocusRequest;
 
         public bool requestFocus(java.awt.Component lightweightChild, bool temporary, bool focusedWindowChangeAllowed, long time, sun.awt.CausedFocusEvent.Cause cause)
         {
@@ -1652,19 +1808,24 @@ namespace ikvm.awt
             {
                 if (processSynchronousLightweightTransfer == null)
                 {
-                    java.lang.Class keyboardFocusManagerCls = typeof(java.awt.KeyboardFocusManager);
-                    processSynchronousLightweightTransfer = keyboardFocusManagerCls.getDeclaredMethod(
-                        "processSynchronousLightweightTransfer",
-                        typeof(java.awt.Component),
-                        typeof(java.awt.Component),
-                        java.lang.Boolean.TYPE,
-                        java.lang.Boolean.TYPE,
-                        java.lang.Long.TYPE);
-                    processSynchronousLightweightTransfer.setAccessible(true);
+					java.security.AccessController.doPrivileged(Delegates.toPrivilegedAction(delegate
+					{
+						java.lang.Class keyboardFocusManagerCls = typeof(java.awt.KeyboardFocusManager);
+						java.lang.reflect.Method method = keyboardFocusManagerCls.getDeclaredMethod(
+							"processSynchronousLightweightTransfer",
+							typeof(java.awt.Component),
+							typeof(java.awt.Component),
+							java.lang.Boolean.TYPE,
+							java.lang.Boolean.TYPE,
+							java.lang.Long.TYPE);
+						method.setAccessible(true);
+						processSynchronousLightweightTransfer = method;
+						return null;
+					}));
                 }
                 processSynchronousLightweightTransfer.invoke(
                 null,
-                component,
+                target,
                 lightweightChild,
                 temporary,
                 focusedWindowChangeAllowed,
@@ -1676,25 +1837,30 @@ namespace ikvm.awt
             }
             if (shouldNativelyFocusHeavyweight == null)
             {
-                java.lang.Class keyboardFocusManagerCls = typeof(java.awt.KeyboardFocusManager);
-                shouldNativelyFocusHeavyweight = keyboardFocusManagerCls.getDeclaredMethod(
-                    "shouldNativelyFocusHeavyweight",
-                    typeof(java.awt.Component),
-                    typeof(java.awt.Component),
-                    java.lang.Boolean.TYPE,
-                    java.lang.Boolean.TYPE,
-                    java.lang.Long.TYPE,
-                    typeof(sun.awt.CausedFocusEvent.Cause));
-                shouldNativelyFocusHeavyweight.setAccessible(true);
+				java.security.AccessController.doPrivileged(Delegates.toPrivilegedAction(delegate
+				{
+					java.lang.Class keyboardFocusManagerCls = typeof(java.awt.KeyboardFocusManager);
+					java.lang.reflect.Method method = keyboardFocusManagerCls.getDeclaredMethod(
+						"shouldNativelyFocusHeavyweight",
+						typeof(java.awt.Component),
+						typeof(java.awt.Component),
+						java.lang.Boolean.TYPE,
+						java.lang.Boolean.TYPE,
+						java.lang.Long.TYPE,
+						typeof(sun.awt.CausedFocusEvent.Cause));
+					method.setAccessible(true);
+					shouldNativelyFocusHeavyweight = method;
+					return null;
+				}));
             }
-            int retval = (int)shouldNativelyFocusHeavyweight.invoke(
+            int retval = ((java.lang.Integer)shouldNativelyFocusHeavyweight.invoke(
                 null,
-                component,
+                target,
                 lightweightChild,
                 temporary,
                 focusedWindowChangeAllowed,
                 time,
-                cause);
+                cause)).intValue();
             if (retval == SNFH_SUCCESS_HANDLED)
             {
                 return true;
@@ -1707,13 +1873,18 @@ namespace ikvm.awt
                 }
                 if (removeLastFocusRequest == null)
                 {
-                    java.lang.Class keyboardFocusManagerCls = typeof(java.awt.KeyboardFocusManager);
-                    removeLastFocusRequest = keyboardFocusManagerCls.getDeclaredMethod(
-                        "removeLastFocusRequest",
-                        typeof(java.awt.Component));
-                    removeLastFocusRequest.setAccessible(true);
+					java.security.AccessController.doPrivileged(Delegates.toPrivilegedAction(delegate
+					{
+						java.lang.Class keyboardFocusManagerCls = typeof(java.awt.KeyboardFocusManager);
+						java.lang.reflect.Method method = keyboardFocusManagerCls.getDeclaredMethod(
+							"removeLastFocusRequest",
+							typeof(java.awt.Component));
+						method.setAccessible(true);
+						removeLastFocusRequest = method;
+						return null;
+					}));
                 }
-                removeLastFocusRequest.invoke(null, component);
+                removeLastFocusRequest.invoke(null, target);
             }
             //SNFH_FAILURE
             return false;
@@ -1722,14 +1893,14 @@ namespace ikvm.awt
 
 	class NetButtonPeer : NetComponentPeer, ButtonPeer
 	{
-		public NetButtonPeer(java.awt.Button awtbutton, Button button)
-			: base(awtbutton, button)
+		public NetButtonPeer(java.awt.Button awtbutton)
+			: base(awtbutton)
 		{
 			if(!awtbutton.isBackgroundSet())
 			{
 				awtbutton.setBackground(java.awt.SystemColor.control);
 			}
-			button.BackColor = Color.FromArgb(awtbutton.getBackground().getRGB());
+			control.BackColor = Color.FromArgb(awtbutton.getBackground().getRGB());
 			setLabel(awtbutton.getLabel());
 			control.Invoke(new SetVoid(Setup));
 		}
@@ -1745,7 +1916,7 @@ namespace ikvm.awt
 			string cmd = "";
 			long when = 0;
 			int modifiers = 0;
-			postEvent(new java.awt.@event.ActionEvent(component, java.awt.@event.ActionEvent.ACTION_PERFORMED, cmd, when, modifiers));
+			postEvent(new java.awt.@event.ActionEvent(target, java.awt.@event.ActionEvent.ACTION_PERFORMED, cmd, when, modifiers));
 		}
 
 		private void setLabelImpl(string label)
@@ -1766,20 +1937,25 @@ namespace ikvm.awt
 				return new java.awt.Dimension((int)Math.Round(12 + g.MeasureString(control.Text, control.Font).Width) * 8 / 7, 6 + control.Font.Height * 8 / 7);
 			}
 		}
+
+		internal override void create(NetComponentPeer parent)
+		{
+			throw new NotImplementedException();
+		}
 	}
 
 	class NetTextComponentPeer : NetComponentPeer, TextComponentPeer
 	{
-		public NetTextComponentPeer(java.awt.TextComponent textComponent, TextBox textBox)
-			: base(textComponent, textBox)
+		public NetTextComponentPeer(java.awt.TextComponent textComponent)
+			: base(textComponent)
 		{
-			if(!component.isBackgroundSet())
+			if(!target.isBackgroundSet())
 			{
-				component.setBackground(java.awt.SystemColor.window);
+				target.setBackground(java.awt.SystemColor.window);
 			}
-			setBackground(component.getBackground());
-			textBox.AutoSize = false;
-			textBox.Text = ((java.awt.TextComponent)component).getText();
+			setBackground(target.getBackground());
+			((TextBox)control).AutoSize = false;
+			((TextBox)control).Text = ((java.awt.TextComponent)target).getText();
 		}
 
 		protected override void OnKeyPress(object sender, KeyPressEventArgs e)
@@ -1792,7 +1968,7 @@ namespace ikvm.awt
 				string cmd = "";
 				long when = 0;
 				int modifiers = 0;
-				postEvent(new java.awt.@event.ActionEvent(component, java.awt.@event.ActionEvent.ACTION_PERFORMED, cmd, when, modifiers));
+				postEvent(new java.awt.@event.ActionEvent(target, java.awt.@event.ActionEvent.ACTION_PERFORMED, cmd, when, modifiers));
 			}
 		}
 
@@ -1868,12 +2044,17 @@ namespace ikvm.awt
 		{
 			throw new NotImplementedException();
 		}
+
+		internal override void create(NetComponentPeer parent)
+		{
+			throw new NotImplementedException();
+		}
 	}
 
 	class NetChoicePeer : NetComponentPeer, ChoicePeer
 	{
-		public NetChoicePeer(java.awt.Choice target, ComboBox combobox)
-			: base(target, combobox)
+		public NetChoicePeer(java.awt.Choice target)
+			: base(target)
 		{
 		}
 
@@ -1901,12 +2082,17 @@ namespace ikvm.awt
 		{
 			// TODO:  Add NetChoicePeer.remove implementation
 		}
+
+		internal override void create(NetComponentPeer parent)
+		{
+			throw new NotImplementedException();
+		}
 	}
 
 	class NetCheckboxPeer : NetComponentPeer, CheckboxPeer
 	{
-		public NetCheckboxPeer(java.awt.Checkbox target, CheckBox checkbox)
-			: base(target, checkbox)
+		public NetCheckboxPeer(java.awt.Checkbox target)
+			: base(target)
 		{
 		}
 
@@ -1924,14 +2110,19 @@ namespace ikvm.awt
 		{
 			// TODO:  Add NetCheckboxPeer.setLabel implementation
 		}
+
+		internal override void create(NetComponentPeer parent)
+		{
+			throw new NotImplementedException();
+		}
 	}
 
 	class NetLabelPeer : NetComponentPeer, LabelPeer
 	{
-		public NetLabelPeer(java.awt.Label jlabel, Label label)
-			: base(jlabel, label)
+		public NetLabelPeer(java.awt.Label jlabel)
+			: base(jlabel)
 		{
-			label.Text = jlabel.getText();
+			((Label)control).Text = jlabel.getText();
 			setAlignment(jlabel.getAlignment());
 		}
 
@@ -1977,12 +2168,17 @@ namespace ikvm.awt
 			// HACK get these fudge factors from somewhere
 			return new java.awt.Dimension(lab.PreferredWidth, 2 + lab.PreferredHeight);
 		}
+
+		internal override void create(NetComponentPeer parent)
+		{
+			throw new NotImplementedException();
+		}
 	}
 
 	class NetTextFieldPeer : NetTextComponentPeer, TextFieldPeer
 	{
-		public NetTextFieldPeer(java.awt.TextField textField, TextBox textBox)
-			: base(textField, textBox)
+		public NetTextFieldPeer(java.awt.TextField textField)
+			: base(textField)
 		{
 			setEchoCharacter(textField.getEchoChar());
 		}
@@ -2025,13 +2221,13 @@ namespace ikvm.awt
 
 	class NetTextAreaPeer : NetTextComponentPeer, TextAreaPeer
 	{
-		public NetTextAreaPeer(java.awt.TextArea textArea, TextBox textBox)
-			: base(textArea, textBox)
+		public NetTextAreaPeer(java.awt.TextArea textArea)
+			: base(textArea)
 		{
-			textBox.ReadOnly = !((java.awt.TextArea)component).isEditable();
-			textBox.WordWrap = false;
-			textBox.ScrollBars = ScrollBars.Both;
-			textBox.Multiline = true;
+			((TextBox)control).ReadOnly = !((java.awt.TextArea)target).isEditable();
+			((TextBox)control).WordWrap = false;
+			((TextBox)control).ScrollBars = ScrollBars.Both;
+			((TextBox)control).Multiline = true;
 		}
 
 		private void insertImpl(string text, int pos)
@@ -2081,8 +2277,8 @@ namespace ikvm.awt
 	{
 		protected java.awt.Insets _insets = new java.awt.Insets(0, 0, 0, 0);
 
-		public NetContainerPeer(java.awt.Container awtcontainer, ContainerControl container)
-			: base(awtcontainer, container)
+		public NetContainerPeer(java.awt.Container awtcontainer)
+			: base(awtcontainer)
 		{
 		}
 
@@ -2141,34 +2337,44 @@ namespace ikvm.awt
 		{
 			throw new NotImplementedException();
 		}
+
+		internal override void create(NetComponentPeer parent)
+		{
+			throw new NotImplementedException();
+		}
 	}
 
 	class NetPanelPeer : NetContainerPeer, PanelPeer
 	{
-		public NetPanelPeer(java.awt.Panel panel, ContainerControl container)
-			: base(panel, container)
+		public NetPanelPeer(java.awt.Panel panel)
+			: base(panel)
 		{
 		}
 	}
 
 	class NewCanvasPeer : NetComponentPeer, CanvasPeer
 	{
-		public NewCanvasPeer(java.awt.Canvas canvas, Control control)
-			: base(canvas, control)
+		public NewCanvasPeer(java.awt.Canvas canvas)
+			: base(canvas)
 		{
+		}
+
+		internal override void create(NetComponentPeer parent)
+		{
+			throw new NotImplementedException();
 		}
 	}
 
 	class NetWindowPeer : NetContainerPeer, WindowPeer
 	{
-        public NetWindowPeer(java.awt.Window window, UndecoratedForm form)
-			: base(window, form)
+        public NetWindowPeer(java.awt.Window window)
+			: base(window)
 		{
             //form.Shown += new EventHandler(OnOpened); Will already post in java.awt.Window.show()
-            form.Closing += new CancelEventHandler(OnClosing);
-            form.Closed += new EventHandler(OnClosed);
-            form.Activated += new EventHandler(OnActivated);
-            form.Deactivate += new EventHandler(OnDeactivate);
+            ((Form)control).Closing += new CancelEventHandler(OnClosing);
+			((Form)control).Closed += new EventHandler(OnClosed);
+			((Form)control).Activated += new EventHandler(OnActivated);
+			((Form)control).Deactivate += new EventHandler(OnDeactivate);
             //Calculate the Insets one time
             //This is many faster because there no thread change is needed.
             Rectangle client = control.ClientRectangle;
@@ -2180,28 +2386,28 @@ namespace ikvm.awt
 
         private void OnOpened(object sender, EventArgs e)
         {
-            postEvent(new java.awt.@event.WindowEvent((java.awt.Window)component, java.awt.@event.WindowEvent.WINDOW_OPENED));
+            postEvent(new java.awt.@event.WindowEvent((java.awt.Window)target, java.awt.@event.WindowEvent.WINDOW_OPENED));
         }
 
         private void OnClosing(object sender, CancelEventArgs e)
         {
             e.Cancel = true;
-            postEvent(new java.awt.@event.WindowEvent((java.awt.Window)component, java.awt.@event.WindowEvent.WINDOW_CLOSING));
+            postEvent(new java.awt.@event.WindowEvent((java.awt.Window)target, java.awt.@event.WindowEvent.WINDOW_CLOSING));
         }
 
         private void OnClosed(object sender, EventArgs e)
         {
-            postEvent(new java.awt.@event.WindowEvent((java.awt.Window)component, java.awt.@event.WindowEvent.WINDOW_CLOSED));
+            postEvent(new java.awt.@event.WindowEvent((java.awt.Window)target, java.awt.@event.WindowEvent.WINDOW_CLOSED));
         }
 
         private void OnActivated(object sender, EventArgs e)
         {
-            postEvent(new java.awt.@event.WindowEvent((java.awt.Window)component, java.awt.@event.WindowEvent.WINDOW_ACTIVATED));
+            postEvent(new java.awt.@event.WindowEvent((java.awt.Window)target, java.awt.@event.WindowEvent.WINDOW_ACTIVATED));
         }
 
         private void OnDeactivate(object sender, EventArgs e)
         {
-            postEvent(new java.awt.@event.WindowEvent((java.awt.Window)component, java.awt.@event.WindowEvent.WINDOW_DEACTIVATED));
+            postEvent(new java.awt.@event.WindowEvent((java.awt.Window)target, java.awt.@event.WindowEvent.WINDOW_DEACTIVATED));
         }
 
         public override java.awt.Graphics getGraphics()
@@ -2251,7 +2457,7 @@ namespace ikvm.awt
 
         public void updateFocusableWindowState()
         {
-            ((UndecoratedForm)control).setFocusableWindow( ((java.awt.Window)component).isFocusableWindow());
+            ((UndecoratedForm)control).setFocusableWindow( ((java.awt.Window)target).isFocusableWindow());
         }
 
         public void updateIconImages()
@@ -2263,12 +2469,28 @@ namespace ikvm.awt
         {
             throw new NotImplementedException();
         }
-    }
+
+		internal override void create(NetComponentPeer parent)
+		{
+			AwtToolkit.CreateComponent(Create, parent);
+		}
+
+		void Create(NetComponentPeer parent)
+		{
+			Form form = new UndecoratedForm();
+			if (parent != null)
+			{
+				form.Owner = parent.control.FindForm();
+			}
+			NetToolkit.CreateNative(form);
+			this.control = form;
+		}
+	}
 
 	class NetFramePeer : NetWindowPeer, FramePeer
 	{
-		public NetFramePeer(java.awt.Frame frame, MyForm form)
-			: base(frame, form)
+		public NetFramePeer(java.awt.Frame frame)
+			: base(frame)
 		{
 			setTitle(frame.getTitle());
 			setResizable(frame.isResizable());
@@ -2277,18 +2499,18 @@ namespace ikvm.awt
 
         internal override void init()
         {
-            if (!component.isFontSet())
+            if (!target.isFontSet())
             {
                 java.awt.Font font = new java.awt.Font("Dialog", java.awt.Font.PLAIN, 12);
-                component.setFont(font);
+                target.setFont(font);
             }
-            if (!component.isForegroundSet())
+            if (!target.isForegroundSet())
             {
-                component.setForeground(java.awt.SystemColor.windowText);
+                target.setForeground(java.awt.SystemColor.windowText);
             }
-            if (!component.isBackgroundSet())
+            if (!target.isBackgroundSet())
             {
-                component.setBackground(java.awt.SystemColor.window);
+                target.setBackground(java.awt.SystemColor.window);
             }
             base.init();
         }
@@ -2381,15 +2603,31 @@ namespace ikvm.awt
         {
             throw new NotImplementedException();
         }
+
+		internal override void create(NetComponentPeer parent)
+		{
+			AwtToolkit.CreateComponent(Create, parent);
+		}
+
+		void Create(NetComponentPeer parent)
+		{
+			Form form = new MyForm();
+			if (parent != null)
+			{
+				form.Owner = parent.control.FindForm();
+			}
+			NetToolkit.CreateNative(form);
+			this.control = form;
+		}
     }
 
 	class NetDialogPeer : NetWindowPeer, DialogPeer
 	{
-        public NetDialogPeer(java.awt.Dialog target, MyForm form)
-			: base(target, form)
+        public NetDialogPeer(java.awt.Dialog target)
+			: base(target)
 		{
-            form.MaximizeBox = false;
-            form.MinimizeBox = false;
+            ((Form)control).MaximizeBox = false;
+			((Form)control).MinimizeBox = false;
             control.Text = target.getTitle();
 		}
 
@@ -2415,7 +2653,7 @@ namespace ikvm.awt
                 java.awt.Window w = (java.awt.Window)it.next();
                 WindowPeer wp = (WindowPeer)ComponentAccessor.getPeer(w);
                 if (wp != null) {
-                    wp.setModalBlocked((java.awt.Dialog)component, true);
+                    wp.setModalBlocked((java.awt.Dialog)target, true);
                 }
             }
         }
@@ -2423,8 +2661,8 @@ namespace ikvm.awt
 
 	class NetListPeer : NetComponentPeer, ListPeer
 	{
-		internal NetListPeer(java.awt.List target, ListBox listbox)
-			: base(target, listbox)
+		internal NetListPeer(java.awt.List target)
+			: base(target)
 		{
 		}
 
@@ -2499,6 +2737,11 @@ namespace ikvm.awt
 		}
 
 		public java.awt.Dimension getMinimumSize(int s)
+		{
+			throw new NotImplementedException();
+		}
+
+		internal override void create(NetComponentPeer parent)
 		{
 			throw new NotImplementedException();
 		}
