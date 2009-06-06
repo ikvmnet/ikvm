@@ -1,5 +1,6 @@
 /*
-  Copyright (C) 2007, 2008 Jeroen Frijters
+  Copyright (C) 2007, 2008, 2009 Jeroen Frijters
+  Copyright (C) 2009 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -115,6 +116,7 @@ using jnInet6Address = java.net.Inet6Address;
 using jnNetworkInterface = java.net.NetworkInterface;
 using jnInterfaceAddress = java.net.InterfaceAddress;
 using ssaGetPropertyAction = sun.security.action.GetPropertyAction;
+using System.Runtime.InteropServices;
 #endif
 
 namespace IKVM.Runtime
@@ -4912,6 +4914,64 @@ namespace IKVM.NativeCode.sun.awt
     static class SunToolkit
     {
         public static void closeSplashScreen() { }
+    }
+}
+
+namespace IKVM.NativeCode.sun.awt.shell
+{
+    /// <summary>
+    /// This class should use only on Windows that we can access shell32.dll
+    /// </summary>
+    static class Win32ShellFolder2
+    {
+        private const uint SHGFI_TYPENAME = 0x400;
+        private struct SHFILEINFO
+        {
+            public IntPtr hIcon;
+            public IntPtr iIcon;
+            public uint dwAttributes;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+            public string szDisplayName;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 80)]
+            public string szTypeName;
+        };
+
+        [DllImport("shell32.dll")]
+        private static extern long FindExecutable(string lpFile, string lpDirectory, StringBuilder lpResult);
+
+        [DllImport("shell32.dll")]
+        private static extern IntPtr SHGetFileInfo(string pszPath, uint dwFileAttributes, ref SHFILEINFO psfi, uint cbSizeFileInfo, uint uFlags);
+
+        /// <summary>
+        /// Get the program to execute or open the file. If it is a exe then it is self
+        /// </summary>
+        /// <param name="path">path to the file</param>
+        /// <returns></returns>
+        public static string getExecutableType(string path)
+        {
+            StringBuilder objResultBuffer = new StringBuilder(1024);
+            long lngResult = FindExecutable(path, path, objResultBuffer);
+            if (lngResult >= 32)
+            {
+                return objResultBuffer.ToString();
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Get the type of a file or folder. On a file it depends on its extension.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public static string getFolderType(string path)
+        {
+            SHFILEINFO shinfo = new SHFILEINFO();
+            if (0 == SHGetFileInfo(path, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_TYPENAME).ToInt32())
+            {
+                return null;
+            }
+            return shinfo.szTypeName;
+        }
     }
 }
 
