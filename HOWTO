@@ -1,14 +1,13 @@
 IKVM Build Instructions
 -----------------------
 
-This IKVM source bundle requires GNU Classpath 0.95 and OpenJDK 6 b12 sources (and resources).
+This IKVM source bundle requires OpenJDK 6 b16 sources (and build artifacts).
 
 They can be downloaded from the SourceForge IKVM project, or from:
 
-http://www.frijters.net/classpath-0.95-stripped.zip
-http://www.frijters.net/openjdk6-b12-stripped.zip
+http://www.frijters.net/openjdk6-b16-stripped.zip
 
-These files should be unzipped in the same directory as where the ikvm directory
+This file hould be unzipped in the same directory as where the ikvm directory
 (that contains this unzipped source bundle) lives.
 
 Open a Visual Studio 2008 Command Prompt (i.e. one that has the Windows and .NET Framework SDK
