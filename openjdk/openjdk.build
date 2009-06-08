@@ -7,7 +7,7 @@
         <property name="pathsep" value=";" />
     </if>
 
-    <target name="all" depends="classes vfs resources core">
+    <target name="all" depends="classes rmi vfs resources core">
     </target>
 
     <target name="classes">
@@ -18,11 +18,7 @@
         </delete>
         <delete>
             <fileset basedir="${OpenJDK.dir}">
-                <include name="jdk/src/share/classes/**.class"/>
-                <include name="jdk/src/solaris/classes/**.class"/>
-                <include name="jdk/src/windows/classes/**.class"/>
-                <include name="build/linux-amd64/gensrc/**.class"/>
-                <include name="build/linux-amd64/impsrc/**.class"/>
+                <include name="**.class"/>
             </fileset>
         </delete>
         <delete>
@@ -50,6 +46,28 @@
             </filterchain>
         </copy>
         <exec program="javac" commandline="-J-Xmx1536M -g -nowarn -bootclasspath ../classpath/mscorlib.jar${pathsep}../classpath/System.jar${pathsep}../classpath/System.Core.jar${pathsep}../classpath/System.Data.jar${pathsep}../classpath/System.Drawing.jar${pathsep}../classpath/IKVM.Runtime.jar @allsources.lst" useruntimeengine="false" />
+    </target>
+
+    <target name="rmi">
+        <property name="VMARGS" value="-J-client -J-Xmx896m -J-Xms128m -J-XX:PermSize=32m -J-XX:MaxPermSize=160m" />
+        <property name="CLASSPATH" value="${OpenJDK.dir}/jdk/src/share/classes/${pathsep}${OpenJDK.dir}/build/linux-amd64/impsrc/${pathsep}." />
+        <property name="OUTPUT" value="${OpenJDK.dir}/build/linux-amd64/classes/" />
+        <property name="ARGS" value="${VMARGS} -bootclasspath ${CLASSPATH} -d ${OUTPUT}" />
+        <exec program="rmic" commandline="${ARGS} -v1.1 sun.rmi.registry.RegistryImpl" />
+        <exec program="rmic" commandline="${ARGS} -v1.1 sun.rmi.transport.DGCImpl" />
+        <exec program="rmic" commandline="${ARGS} -v1.2 sun.rmi.server.Activation$ActivationSystemImpl" />
+        <exec program="rmic" commandline="${ARGS} -v1.2 java.rmi.activation.ActivationGroup" />
+        <exec program="rmic" commandline="${ARGS} -v1.2 com.sun.jndi.rmi.registry.ReferenceWrapper" />
+        <exec program="rmic" commandline="${ARGS} -v1.2 javax.management.remote.rmi.RMIConnectionImpl" />
+        <exec program="rmic" commandline="${ARGS} -v1.2 -iiop javax.management.remote.rmi.RMIConnectionImpl" />
+        <exec program="rmic" commandline="${ARGS} -v1.2 -iiop -standardPackage javax.management.remote.rmi.RMIConnectionImpl" />
+        <exec program="rmic" commandline="${ARGS} -v1.2 javax.management.remote.rmi.RMIServerImpl" />
+        <exec program="rmic" commandline="${ARGS} -v1.2 -iiop javax.management.remote.rmi.RMIServerImpl" />
+        <exec program="rmic" commandline="${ARGS} -v1.2 -iiop -standardPackage javax.management.remote.rmi.RMIServerImpl" />
+        <exec program="rmic" commandline="${ARGS} -iiop javax.management.remote.rmi.RMIConnection" />
+        <exec program="rmic" commandline="${ARGS} -iiop -standardPackage javax.management.remote.rmi.RMIConnection" />
+        <exec program="rmic" commandline="${ARGS} -iiop javax.management.remote.rmi.RMIServer" />
+        <exec program="rmic" commandline="${ARGS} -iiop -standardPackage javax.management.remote.rmi.RMIServer" />
     </target>
 
     <target name="vfs">
