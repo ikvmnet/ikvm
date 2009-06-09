@@ -80,7 +80,6 @@ namespace ikvm.awt
     delegate void SetCursor(java.awt.Cursor cursor);
 	delegate java.awt.Dimension GetDimension();
     delegate Rectangle ConvertRectangle(Rectangle r);
-    delegate Point ConvertPoint(Point p);
 
 	class UndecoratedForm : Form
 	{
@@ -849,6 +848,14 @@ namespace ikvm.awt
 			del();
 		}
 
+		internal delegate T Func<T>();
+
+		internal T SyncCall<T>(Func<T> del)
+		{
+			// TODO if we're not on the right thread we should lock (see awt_Toolkit.cpp)
+			return del();
+		}
+
 		internal delegate void CreateComponentDelegate(NetComponentPeer parent);
 
 		internal static void CreateComponent(CreateComponentDelegate factory, NetComponentPeer parent)
@@ -879,6 +886,12 @@ namespace ikvm.awt
 		private int oldHeight = -1;
 		private bool sm_suppressFocusAndActivation;
 		private bool m_callbacksEnabled;
+		private int m_validationNestCount;
+		private int serialNum = 0;
+		private bool isLayouting = false;
+		private bool paintPending = false;
+		private RepaintArea paintArea;
+		protected NetGraphicsConfiguration winGraphicsConfig;
 		private java.awt.Font font;
 		private java.awt.Color foreground;
 		private java.awt.Color background;
@@ -915,15 +928,15 @@ namespace ikvm.awt
 		public NetComponentPeer(java.awt.Component target)
 		{
 			this.target = target;
-			//this.paintArea = new RepaintArea();
+			this.paintArea = new RepaintArea();
 			java.awt.Container parent = SunToolkit.getNativeContainer(target);
 			NetComponentPeer parentPeer = (NetComponentPeer)NetToolkit.targetToPeer(parent);
 			create(parentPeer);
-			/*
 			// fix for 5088782: check if window object is created successfully
-			checkCreation();
+			//checkCreation();
 			this.winGraphicsConfig =
-				(Win32GraphicsConfig)getGraphicsConfiguration();
+				(NetGraphicsConfiguration)getGraphicsConfiguration();
+			/*
 			this.surfaceData =
 				winGraphicsConfig.createSurfaceData(this, numBackBuffers);
 			 */
@@ -1053,30 +1066,16 @@ namespace ikvm.awt
 			control.MouseLeave += new EventHandler(OnMouseLeave);
 			control.GotFocus += new EventHandler(OnGotFocus);
 			control.LostFocus += new EventHandler(OnLostFocus);
-			control.SizeChanged += new EventHandler(OnBoundsChanged);
-			control.Leave += new EventHandler(OnBoundsChanged);
+			//control.Leave += new EventHandler(OnBoundsChanged);
 			control.Paint += new PaintEventHandler(OnPaint);
 			control.ContextMenu = new ContextMenu();
 			control.ContextMenu.Popup += new EventHandler(OnPopupMenu);
 		}
 
-        /// <summary>
-        /// This method is called from the same thread that call Commponent.addNotify().
-        /// The constructor is called from the global event thread with form.   Invoke()
-        /// Because addNotfy is synchronized with getTreeLock() and some classes are 
-        /// also synchronized with it self in the GNU classpath there can be dead locks.
-        /// You can use this method to modify the Component class thread safe.
-        /// </summary>
-        internal virtual void init()
-        {
-            // TODO temporaly disabled, because a Bug in classpath (Bug 30122)
-            // http://gcc.gnu.org/bugzilla/show_bug.cgi?id=30122
-            if(target.isFontSet())
-            {
-                //setFontImpl(component.getFont());
-                setFont(target.getFont());
-            }
-        }
+		protected void SendEvent(java.awt.AWTEvent evt)
+		{
+			postEvent(evt);
+		}
 
         protected virtual int getInsetsLeft()
         {
@@ -1117,12 +1116,38 @@ namespace ikvm.awt
 
         private void OnPaint(object sender, PaintEventArgs e)
 		{
-			if(!e.ClipRectangle.IsEmpty)
+			//CheckFontSmoothingSettings(GetHWnd());
+			/* Set draw state */
+			//SetDrawState(GetDrawState() | JAWT_LOCK_CLIP_CHANGED);
+			WmPaint(e.Graphics, e.ClipRectangle);
+		}
+
+		private void WmPaint(Graphics g, Rectangle r)
+		{
+			handlePaint(r.X, r.Y, r.Width, r.Height);
+		}
+
+		/* Invoke a paint() method call on the target, without clearing the
+		 * damaged area.  This is normally called by a native control after
+		 * it has painted itself.
+		 *
+		 * NOTE: This is called on the privileged toolkit thread. Do not
+		 *       call directly into user code using this thread!
+		 */
+		private void handlePaint(int x, int y, int w, int h)
+		{
+			postPaintIfNecessary(x, y, w, h);
+		}
+
+		private void postPaintIfNecessary(int x, int y, int w, int h)
+		{
+			if (!ComponentAccessor.getIgnoreRepaint(target))
 			{
-                int x = getInsetsLeft();
-                int y = getInsetsTop();
-				java.awt.Rectangle rect = new java.awt.Rectangle(e.ClipRectangle.X + x, e.ClipRectangle.Y + y, e.ClipRectangle.Width, e.ClipRectangle.Height);
-				postEvent(new java.awt.@event.PaintEvent(target, java.awt.@event.PaintEvent.UPDATE, rect));
+				java.awt.@event.PaintEvent evt = PaintEventDispatcher.getPaintEventDispatcher().createPaintEvent(target, x, y, w, h);
+				if (evt != null)
+				{
+					postEvent(evt);
+				}
 			}
 		}
 
@@ -1337,6 +1362,10 @@ namespace ikvm.awt
 
 		private void OnGotFocus(object sender, EventArgs e)
 		{
+			if (sm_suppressFocusAndActivation)
+			{
+				return;
+			}
 			java.awt.EventQueue.invokeLater(Delegates.toRunnable(delegate {
 				postEvent(new java.awt.@event.FocusEvent(target, java.awt.@event.FocusEvent.FOCUS_GAINED));
 			}));
@@ -1349,30 +1378,84 @@ namespace ikvm.awt
 			}));
 		}
 
-        /// <summary>
-        /// Set the size of the component to the size of the peer if different.
-        /// </summary>
-        private void componentSetBounds()
-        {
-            Point offset = getParentOffset();
-            int x = control.Left + offset.X;
-            int y = control.Top + offset.Y;
-            int width = control.Width;
-            int height = control.Height;
-            //we set it via Reflection because Sun do it also
-            //a call of setBounds produce another behaviuor
-            compX.setInt(this.target, x);
-            compY.setInt(this.target, y);
-            compWidth.setInt(this.target, width);
-            compHeight.setInt(this.target, height);
-        }
+		/*
+		 * Called from native code (on Toolkit thread) in order to
+		 * dynamically layout the Container during resizing
+		 */
+		internal void dynamicallyLayoutContainer() {
+			// If we got the WM_SIZING, this must be a Container, right?
+			// In fact, it must be the top-level Container.
+			//if (log.isLoggable(Level.FINE)) {
+			//    java.awt.Container parent = NetToolkit.getNativeContainer((java.awt.Component)target);
+			//    if (parent != null) {
+			//        log.log(Level.FINE, "Assertion (parent == null) failed");
+			//    }
+			//}
+			java.awt.Container cont = (java.awt.Container)target;
 
-        private void OnBoundsChanged(object sender, EventArgs e)
-		{
-			java.awt.EventQueue.invokeLater(Delegates.toRunnable(delegate {
-                componentSetBounds();
-				postEvent(new java.awt.@event.ComponentEvent(target, java.awt.@event.ComponentEvent.COMPONENT_RESIZED));
+			NetToolkit.executeOnEventHandlerThread(cont, Delegates.toRunnable(delegate {
+				// Discarding old paint events doesn't seem to be necessary.
+				cont.invalidate();
+				cont.validate();
+
+				//if (surfaceData instanceof OGLSurfaceData) {
+				//    // 6290245: When OGL is enabled, it is necessary to
+				//    // replace the SurfaceData for each dynamic layout
+				//    // request so that the OGL viewport stays in sync
+				//    // with the window bounds.
+				//    try {
+				//        replaceSurfaceData();
+				//    } catch (InvalidPipeException e) {
+				//        // REMIND: this is unlikely to occur for OGL, but
+				//        // what do we do if surface creation fails?
+				//    }
+				//}
+
+				// Forcing a paint here doesn't seem to be necessary.
+				// paintDamagedAreaImmediately();
 			}));
+		}
+
+		/*
+		 * Paints any portion of the component that needs updating
+		 * before the call returns (similar to the Win32 API UpdateWindow)
+		 */
+		internal void paintDamagedAreaImmediately()
+		{
+			// force Windows to send any pending WM_PAINT events so
+			// the damage area is updated on the Java side
+			updateWindow();
+			// make sure paint events are transferred to main event queue
+			// for coalescing
+			NetToolkit.flushPendingEvents();
+			// paint the damaged area
+			paintArea.paint(target, shouldClearRectBeforePaint());
+		}
+
+		private void updateWindow()
+		{
+			lock (this)
+			{
+				AwtToolkit.GetInstance().SyncCall(_UpdateWindow);
+			}
+		}
+
+		private void _UpdateWindow()
+		{
+			if (control.IsHandleCreated)
+			{
+				Invoke(delegate
+				{
+					control.Update();
+				});
+			}
+		}
+
+		/* override and return false on components that DO NOT require
+		   a clearRect() before painting (i.e. native components) */
+		public virtual bool shouldClearRectBeforePaint()
+		{
+			return true;
 		}
 
         private void OnPopupMenu(object sender, EventArgs ev)
@@ -1380,9 +1463,76 @@ namespace ikvm.awt
             isPopupMenu = true;
         }
 
-		protected void postEvent(java.awt.AWTEvent evt)
+		/*
+		 * Post an event. Queue it for execution by the callback thread.
+		 */
+		internal void postEvent(java.awt.AWTEvent evt)
 		{
-			NetToolkit.eventQueue.postEvent(evt);
+			NetToolkit.postEvent(NetToolkit.targetToAppContext(target), evt);
+		}
+
+		// Routines to support deferred window positioning.
+		public void beginLayout()
+		{
+			// Skip all painting till endLayout
+			isLayouting = true;
+		}
+
+		public void endLayout()
+		{
+			if (!paintArea.isEmpty() && !paintPending &&
+				!target.getIgnoreRepaint())
+			{
+				// if not waiting for native painting repaint damaged area
+				postEvent(new java.awt.@event.PaintEvent(target, java.awt.@event.PaintEvent.PAINT, new java.awt.Rectangle()));
+			}
+			isLayouting = false;
+		}
+
+		public void beginValidate()
+		{
+			AwtToolkit.GetInstance().SyncCall(_BeginValidate);
+		}
+
+		private void _BeginValidate()
+		{
+			//if (control.IsHandleCreated)
+			//{
+			//    Invoke(delegate
+			//    {
+			//        if (m_validationNestCount == 0)
+			//        {
+			//            m_hdwp = BeginDeferWindowPos();
+			//        }
+			//        m_validationNestCount++;
+			//    });
+			//}
+		}
+
+		public void endValidate()
+		{
+			AwtToolkit.GetInstance().SyncCall(_EndValidate);
+		}
+
+		private void _EndValidate()
+		{
+			//if (control.IsHandleCreated)
+			//{
+			//    m_validationNestCount--;
+			//    if (m_validationNestCount == 0) {
+			//        // if this call to EndValidate is not nested inside another
+			//        // Begin/EndValidate pair, end deferred window positioning
+			//        ::EndDeferWindowPos(m_hdwp);
+			//        m_hdwp = NULL;
+			//    }
+			//}
+		}
+
+		// Returns true if we are inside begin/endLayout and
+		// are waiting for native painting
+		public bool isPaintPending()
+		{
+			return paintPending && isLayouting;
 		}
 
 		public int checkImage(java.awt.Image img, int width, int height, java.awt.image.ImageObserver ob)
@@ -1464,23 +1614,30 @@ namespace ikvm.awt
 			return null;
 		}
 
+		private java.awt.Point _GetLocationOnScreen()
+		{
+			if (control.IsHandleCreated)
+			{
+				Point p = new Point();
+				Invoke(delegate { p = control.PointToScreen(p); });
+				return new java.awt.Point(p.X, p.Y);
+			}
+			return null;
+		}
+
 		public java.awt.Point getLocationOnScreen()
 		{
-			Point p = new Point(0, 0);
-            p = control.InvokeRequired ?
-                    (Point)control.Invoke(new ConvertPoint(control.PointToScreen), new object[] { p }) :
-                    control.PointToScreen(p);
-			return new java.awt.Point(p.X, p.Y);
+			return AwtToolkit.GetInstance().SyncCall<java.awt.Point>(_GetLocationOnScreen);
 		}
 
 		public java.awt.Dimension getMinimumSize()
 		{
-			return minimumSize();
+			return target.getSize();
 		}
 
 		public java.awt.Dimension getPreferredSize()
 		{
-			return preferredSize();
+			return getMinimumSize();
 		}
 
 		public java.awt.Toolkit getToolkit()
@@ -1488,33 +1645,57 @@ namespace ikvm.awt
 			return java.awt.Toolkit.getDefaultToolkit();
 		}
 
+		// returns true if the event has been handled and shouldn't be propagated
+		// though handleEvent method chain - e.g. WTextFieldPeer returns true
+		// on handling '\n' to prevent it from being passed to native code
+		public virtual bool handleJavaKeyEvent(java.awt.@event.KeyEvent e) { return false; }
+
+		private void nativeHandleEvent(java.awt.AWTEvent e)
+		{
+			AwtToolkit.GetInstance().SyncCall(delegate { _NativeHandleEvent(e); });
+		}
+
+		private void _NativeHandleEvent(java.awt.AWTEvent e)
+		{
+			if (control.IsHandleCreated)
+			{
+				// TODO arrghh!! code from void AwtComponent::_NativeHandleEvent(void *param) in awt_Component.cpp should be here
+			}
+		}
+
 		public void handleEvent(java.awt.AWTEvent e)
 		{
-            if (e is java.awt.@event.PaintEvent)
-            {
-                java.awt.Graphics g = target.getGraphics();
-                try
-                {
-                    java.awt.Rectangle r = ((java.awt.@event.PaintEvent)e).getUpdateRect();
-                    g.clipRect(r.x, r.y, r.width, r.height);
-                    switch (e.getID())
-                    {
-                        case java.awt.@event.PaintEvent.UPDATE:
-                            target.update(g);
-                            break;
-                        case java.awt.@event.PaintEvent.PAINT:
-                            target.paint(g);
-                            break;
-                        default:
-                            Console.WriteLine("Unknown PaintEvent: {0}", e.getID());
-                            break;
-                    }
-                }
-                finally
-                {
-                    g.dispose();
-                }
-            }
+			int id = e.getID();
+
+			if (((java.awt.Component)target).isEnabled() && (e is java.awt.@event.KeyEvent) && !((java.awt.@event.KeyEvent)e).isConsumed())
+			{
+				if (handleJavaKeyEvent((java.awt.@event.KeyEvent)e))
+				{
+					return;
+				}
+			}
+
+			switch (id)
+			{
+				case java.awt.@event.PaintEvent.PAINT:
+					// Got native painting
+					paintPending = false;
+					// Fallthrough to next statement
+					goto case java.awt.@event.PaintEvent.UPDATE;
+				case java.awt.@event.PaintEvent.UPDATE:
+					// Skip all painting while layouting and all UPDATEs
+					// while waiting for native paint
+					if (!isLayouting && !paintPending)
+					{
+						paintArea.paint(target, shouldClearRectBeforePaint());
+					}
+					return;
+				default:
+					break;
+			}
+
+			// Call the native code
+			nativeHandleEvent(e);
 		}
 
         public void hide()
@@ -1532,17 +1713,17 @@ namespace ikvm.awt
 
 		public virtual java.awt.Dimension minimumSize()
 		{
-			return target.getSize();
+			return getMinimumSize();
 		}
 
 		public virtual java.awt.Dimension preferredSize()
 		{
-			return minimumSize();
+			return getPreferredSize();
 		}
 
 		public void paint(java.awt.Graphics graphics)
 		{
-			//throw new NotImplementedException();
+			target.paint(graphics);
 		}
 
 		public bool prepareImage(java.awt.Image img, int width, int height, ImageObserver ob)
@@ -1557,9 +1738,6 @@ namespace ikvm.awt
 
 		public void repaint(long tm, int x, int y, int width, int height)
 		{
-			// TODO do something with the tm parameter
-			java.awt.Rectangle rect = new java.awt.Rectangle(x, y, width, height);
-			postEvent(new java.awt.@event.PaintEvent(target, java.awt.@event.PaintEvent.UPDATE, rect));
 		}
 
 		public void requestFocus()
@@ -1592,7 +1770,22 @@ namespace ikvm.awt
 
 		public void reshape(int x, int y, int width, int height)
 		{
-            setBounds(x, y, width, height, java.awt.peer.ComponentPeer.__Fields.DEFAULT_OPERATION);
+			lock (this)
+			{
+				AwtToolkit.GetInstance().SyncCall(delegate { _Reshape(x, y, width, height); });
+			}
+		}
+
+		private void _Reshape(int x, int y, int width, int height)
+		{
+			if (control.IsHandleCreated)
+			{
+				//if (IsEmbeddedFrame())
+				//{
+				//    ::OffsetRect(r, -r->left, -r->top);
+				//}
+				_ReshapeNoCheck(x, y, width, height);
+			}
 		}
 
 		public void setBackground(java.awt.Color color)
@@ -1604,17 +1797,56 @@ namespace ikvm.awt
 			}
 		}
 
-        protected virtual void SetBoundsImpl(int x, int y, int width, int height)
+		private void _ReshapeNoCheck(int x, int y, int width, int height)
 		{
-            Point offset = getParentOffset(); 
-            control.SetBounds(x - offset.X, y - offset.Y, width, height);
-        }
+			if (control.IsHandleCreated)
+			{
+				Invoke(delegate
+				{
+					// TODO this code should be made equivalent to void AwtComponent::Reshape(int x, int y, int w, int h) in awt_Component.cpp
+					control.SetBounds(x, y, width, height);
+				});
+			}
+		}
 
-		public void setBounds(int x, int y, int width, int height, int operation)
+		private void reshapeNoCheck(int x, int y, int width, int height)
 		{
-			control.Invoke(new SetXYWH(SetBoundsImpl), new object[] { x, y, width, height });
-            componentSetBounds();
-        }
+			AwtToolkit.GetInstance().SyncCall(delegate { _ReshapeNoCheck(x, y, width, height); });
+		}
+
+		public void setBounds(int x, int y, int width, int height, int op)
+		{
+			// Should set paintPending before reahape to prevent
+			// thread race between paint events
+			// Native components do redraw after resize
+			paintPending = (width != oldWidth) || (height != oldHeight);
+
+			if ((op & ComponentPeer.__Fields.NO_EMBEDDED_CHECK) != 0)
+			{
+				reshapeNoCheck(x, y, width, height);
+			}
+			else
+			{
+				reshape(x, y, width, height);
+			}
+			if ((width != oldWidth) || (height != oldHeight))
+			{
+				// Only recreate surfaceData if this setBounds is called
+				// for a resize; a simple move should not trigger a recreation
+				try
+				{
+					//replaceSurfaceData();
+				}
+				catch (sun.java2d.InvalidPipeException)
+				{
+					// REMIND : what do we do if our surface creation failed?
+				}
+				oldWidth = width;
+				oldHeight = height;
+			}
+
+			serialNum++;
+		}
 
 		private void setCursorImpl(java.awt.Cursor cursor)
 		{
@@ -1721,9 +1953,22 @@ namespace ikvm.awt
 			pShow();
 		}
 
+		/*
+		 * Return the GraphicsConfiguration associated with this peer, either
+		 * the locally stored winGraphicsConfig, or that of the target Component.
+		 */
 		public java.awt.GraphicsConfiguration getGraphicsConfiguration()
 		{
-			return new NetGraphicsConfiguration(Screen.FromControl(control));
+			if (winGraphicsConfig != null)
+			{
+				return winGraphicsConfig;
+			}
+			else
+			{
+				// we don't need a treelock here, since
+				// Component.getGraphicsConfiguration() gets it itself.
+				return target.getGraphicsConfiguration();
+			}
 		}
 
 		public void setEventMask (long mask)
@@ -1747,6 +1992,11 @@ namespace ikvm.awt
 
 		public void coalescePaintEvent(java.awt.@event.PaintEvent e)
 		{
+			java.awt.Rectangle r = e.getUpdateRect();
+			if (!(e is sun.awt.@event.IgnorePaintEvent))
+			{
+				paintArea.add(r, e.getID());
+			}
 		}
 
 		public void updateCursorImmediately()
@@ -1785,14 +2035,12 @@ namespace ikvm.awt
 
 		public bool isFocusable()
 		{
-			// TODO
-			return true;
+			return false;
 		}
 
 		public java.awt.Rectangle getBounds()
 		{
-			Rectangle r = control.Bounds;
-			return new java.awt.Rectangle(r.X, r.Y, r.Width, r.Height);
+			return target.getBounds();
 		}
 
 		public void reparent(java.awt.peer.ContainerPeer parent)
@@ -1805,6 +2053,7 @@ namespace ikvm.awt
 			return false;
 		}
 
+		// Do nothing for heavyweight implementation
 		public void layout()
 		{
 		}
@@ -2324,27 +2573,6 @@ namespace ikvm.awt
 			return _insets;
 		}
 
-		public void beginValidate()
-		{
-		}
-
-		public void endValidate()
-		{
-		}
-
-		public void beginLayout()
-		{
-		}
-
-		public void endLayout()
-		{
-		}
-
-		public bool isPaintPending()
-		{
-			throw new NotImplementedException();
-		}
-
 		public bool isRestackSupported()
 		{
 			return false;
@@ -2397,6 +2625,7 @@ namespace ikvm.awt
 			((Form)control).Closed += new EventHandler(OnClosed);
 			((Form)control).Activated += new EventHandler(OnActivated);
 			((Form)control).Deactivate += new EventHandler(OnDeactivate);
+			control.SizeChanged += new EventHandler(OnSizeChanged);
             //Calculate the Insets one time
             //This is many faster because there no thread change is needed.
             Rectangle client = control.ClientRectangle;
@@ -2405,6 +2634,28 @@ namespace ikvm.awt
             int y = r.Location.Y - control.Location.Y;
             _insets = new java.awt.Insets(y, x, control.Height - client.Height - y, control.Width - client.Width - x);
         }
+
+		/*
+		 * Although this function sends ComponentEvents, it needs to be defined
+		 * here because only top-level windows need to have move and resize
+		 * events fired from native code.  All contained windows have these events
+		 * fired from common Java code.
+		 */
+		private void SendComponentEvent(int eventId)
+		{
+			SendEvent(new java.awt.@event.ComponentEvent(target, eventId));
+		}
+
+		private void OnSizeChanged(object sender, EventArgs e)
+		{
+			// WmSizing
+			SendComponentEvent(java.awt.@event.ComponentEvent.COMPONENT_RESIZED);
+			dynamicallyLayoutContainer();
+
+			// WmSize
+			typeof(java.awt.Component).GetField("width", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(target, control.Width);
+			typeof(java.awt.Component).GetField("height", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(target, control.Height);
+		}
 
         private void OnOpened(object sender, EventArgs e)
         {
@@ -2441,7 +2692,7 @@ namespace ikvm.awt
             return g;
         }
 
-        protected override void SetBoundsImpl(int x, int y, int width, int height)
+        protected void SetBoundsImpl(int x, int y, int width, int height)
         {
             Form form = (Form)control;
             form.DesktopBounds = new Rectangle(x, y, width, height);
@@ -2517,24 +2768,6 @@ namespace ikvm.awt
 			setTitle(frame.getTitle());
 			setResizable(frame.isResizable());
             setIconImage(frame.getIconImage());
-        }
-
-        internal override void init()
-        {
-            if (!target.isFontSet())
-            {
-                java.awt.Font font = new java.awt.Font("Dialog", java.awt.Font.PLAIN, 12);
-                target.setFont(font);
-            }
-            if (!target.isForegroundSet())
-            {
-                target.setForeground(java.awt.SystemColor.windowText);
-            }
-            if (!target.isBackgroundSet())
-            {
-                target.setBackground(java.awt.SystemColor.window);
-            }
-            base.init();
         }
 
 		private class ValidateHelper : java.lang.Runnable
@@ -2883,19 +3116,11 @@ namespace ikvm.awt
 			throw new NotImplementedException();
 		}
 
-		public void beginLayout()
-		{
-		}
-
 		public void beginValidate()
 		{
 		}
 
 		public void cancelPendingPaint(int i1, int i2, int i3, int i4)
-		{
-		}
-
-		public void endLayout()
 		{
 		}
 
@@ -3240,5 +3465,15 @@ namespace ikvm.awt
         {
             throw new NotImplementedException();
         }
-    }
+
+		public void beginLayout()
+		{
+			throw new NotImplementedException();
+		}
+
+		public void endLayout()
+		{
+			throw new NotImplementedException();
+		}
+	}
 }

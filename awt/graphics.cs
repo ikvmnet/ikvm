@@ -659,7 +659,7 @@ namespace ikvm.awt
 
         public override java.awt.GraphicsConfiguration getDeviceConfiguration()
         {
-            throw new NotImplementedException();
+			return new NetGraphicsConfiguration(Screen.PrimaryScreen);
         }
 
         public override void setComposite(java.awt.Composite comp)
