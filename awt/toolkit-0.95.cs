@@ -98,6 +98,11 @@ namespace ikvm.awt
         {
             SetStyle(ControlStyles.Selectable, value);
         }
+
+		protected override void OnPaintBackground(PaintEventArgs e)
+		{
+			// JDK sets a NULL background brush, we emulate that by not doing any background painting
+		}
 	}
 
     class MyForm : UndecoratedForm
@@ -2626,6 +2631,7 @@ namespace ikvm.awt
 			((Form)control).Activated += new EventHandler(OnActivated);
 			((Form)control).Deactivate += new EventHandler(OnDeactivate);
 			control.SizeChanged += new EventHandler(OnSizeChanged);
+			control.Resize += new EventHandler(OnResize);
             //Calculate the Insets one time
             //This is many faster because there no thread change is needed.
             Rectangle client = control.ClientRectangle;
@@ -2634,6 +2640,13 @@ namespace ikvm.awt
             int y = r.Location.Y - control.Location.Y;
             _insets = new java.awt.Insets(y, x, control.Height - client.Height - y, control.Width - client.Width - x);
         }
+
+		private void OnResize(object sender, EventArgs e)
+		{
+			// WmSizing
+			SendComponentEvent(java.awt.@event.ComponentEvent.COMPONENT_RESIZED);
+			dynamicallyLayoutContainer();
+		}
 
 		/*
 		 * Although this function sends ComponentEvents, it needs to be defined
@@ -2648,10 +2661,6 @@ namespace ikvm.awt
 
 		private void OnSizeChanged(object sender, EventArgs e)
 		{
-			// WmSizing
-			SendComponentEvent(java.awt.@event.ComponentEvent.COMPONENT_RESIZED);
-			dynamicallyLayoutContainer();
-
 			// WmSize
 			typeof(java.awt.Component).GetField("width", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(target, control.Width);
 			typeof(java.awt.Component).GetField("height", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(target, control.Height);
@@ -2673,15 +2682,51 @@ namespace ikvm.awt
             postEvent(new java.awt.@event.WindowEvent((java.awt.Window)target, java.awt.@event.WindowEvent.WINDOW_CLOSED));
         }
 
+		private const int WA_ACTIVE = 1;
+		private const int WA_INACTIVE = 2;
+
         private void OnActivated(object sender, EventArgs e)
         {
-            postEvent(new java.awt.@event.WindowEvent((java.awt.Window)target, java.awt.@event.WindowEvent.WINDOW_ACTIVATED));
+			WmActivate(WA_ACTIVE, ((Form)control).WindowState == FormWindowState.Minimized, null);
         }
 
-        private void OnDeactivate(object sender, EventArgs e)
-        {
-            postEvent(new java.awt.@event.WindowEvent((java.awt.Window)target, java.awt.@event.WindowEvent.WINDOW_DEACTIVATED));
-        }
+		private void OnDeactivate(object sender, EventArgs e)
+		{
+			WmActivate(WA_INACTIVE, ((Form)control).WindowState == FormWindowState.Minimized, null);
+		}
+
+		private void WmActivate(int nState, bool fMinimized, Control opposite)
+		{
+			int type;
+
+			if (nState != WA_INACTIVE)
+			{
+				type = java.awt.@event.WindowEvent.WINDOW_GAINED_FOCUS;
+			}
+			else
+			{
+				type = java.awt.@event.WindowEvent.WINDOW_LOST_FOCUS;
+			}
+
+			SendWindowEvent(type, opposite);
+		}
+
+		private void SendWindowEvent(int id, Control opposite) { SendWindowEvent(id, opposite, 0, 0); }
+
+		private void SendWindowEvent(int id, Control opposite, int oldState, int newState)
+		{
+			java.awt.AWTEvent evt = new java.awt.@event.WindowEvent((java.awt.Window)target, id, null);
+
+			if (id == java.awt.@event.WindowEvent.WINDOW_GAINED_FOCUS
+				|| id == java.awt.@event.WindowEvent.WINDOW_LOST_FOCUS)
+			{
+				Type type = typeof(java.awt.Component).Assembly.GetType("java.awt.SequencedEvent");
+				ConstructorInfo cons = type.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, new Type[] { typeof(java.awt.AWTEvent) }, null);
+				evt = (java.awt.AWTEvent)cons.Invoke(new object[] { evt });
+			}
+
+			SendEvent(evt);
+		}
 
         public override java.awt.Graphics getGraphics()
         {
