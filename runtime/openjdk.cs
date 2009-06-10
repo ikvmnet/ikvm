@@ -31,6 +31,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading;
+using System.Runtime.InteropServices;
 using StackFrame = System.Diagnostics.StackFrame;
 using StackTrace = System.Diagnostics.StackTrace;
 using SystemArray = System.Array;
@@ -116,7 +117,6 @@ using jnInet6Address = java.net.Inet6Address;
 using jnNetworkInterface = java.net.NetworkInterface;
 using jnInterfaceAddress = java.net.InterfaceAddress;
 using ssaGetPropertyAction = sun.security.action.GetPropertyAction;
-using System.Runtime.InteropServices;
 #endif
 
 namespace IKVM.Runtime
