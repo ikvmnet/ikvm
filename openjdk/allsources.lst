@@ -1148,8 +1148,6 @@ SystemProperties.java
 ../../openjdk6-b12/control/build/linux-amd64/gensrc/java/nio/charset/CharsetEncoder.java
 ../../openjdk6-b12/control/build/linux-amd64/gensrc/java/nio/charset/IllegalCharsetNameException.java
 ../../openjdk6-b12/control/build/linux-amd64/gensrc/java/nio/charset/UnsupportedCharsetException.java
-../../openjdk6-b12/control/build/linux-amd64/gensrc/javax/management/remote/rmi/RMIConnectionImpl_Stub.java
-../../openjdk6-b12/control/build/linux-amd64/gensrc/javax/management/remote/rmi/RMIServerImpl_Stub.java
 ../../openjdk6-b12/control/build/linux-amd64/gensrc/sun/nio/ch/AlreadyBoundException.java
 ../../openjdk6-b12/control/build/linux-amd64/gensrc/sun/nio/cs/StandardCharsets.java
 ../../openjdk6-b12/control/build/linux-amd64/gensrc/sun/util/CoreResourceBundleControl.java

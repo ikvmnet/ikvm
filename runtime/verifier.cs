@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2008 Jeroen Frijters
+  Copyright (C) 2002-2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -149,6 +149,14 @@ class InstructionState
 				return count;
 			}
 		}
+
+		internal static void MarkShared(LocalStoreSites[] localStoreSites)
+		{
+			for(int i = 0; i < localStoreSites.Length; i++)
+			{
+				localStoreSites[i].shared = true;
+			}
+		}
 	}
 	private TypeWrapper[] stack;
 	private int stackSize;
@@ -232,11 +240,6 @@ class InstructionState
 		return n;
 	}
 
-	public static InstructionState operator+(InstructionState s1, InstructionState s2)
-	{
-		return Merge(s1, s2, null, null);
-	}
-
 	private void MergeSubroutineHelper(InstructionState s2)
 	{
 		if(subroutines == null || s2.subroutines == null)
@@ -284,29 +287,30 @@ class InstructionState
 		}
 	}
 
-	internal static InstructionState Merge(InstructionState s1, InstructionState s2, bool[] locals_modified, InstructionState s3)
+	internal static InstructionState MergeSubroutineReturn(InstructionState jsrSuccessor, InstructionState jsr, InstructionState ret, bool[] locals_modified)
+	{
+		InstructionState next = ret.Copy();
+		next.LocalsCopyOnWrite();
+		next.LocalStoreSitesCopyOnWrite();
+		for (int i = 0; i < locals_modified.Length; i++)
+		{
+			if (!locals_modified[i])
+			{
+				next.locals[i] = jsr.locals[i];
+				next.localStoreSites[i] = jsr.localStoreSites[i];
+			}
+		}
+		next.flags |= ShareFlags.Subroutines;
+		next.subroutines = jsr.subroutines;
+		next.callsites = jsr.callsites;
+		return jsrSuccessor + next;
+	}
+
+	public static InstructionState operator+(InstructionState s1, InstructionState s2)
 	{
 		if(s1 == null)
 		{
-			s2 = s2.Copy();
-			if(locals_modified != null)
-			{
-				for(int i = 0; i < s2.locals.Length; i++)
-				{
-					if(!locals_modified[i])
-					{
-						s2.LocalsCopyOnWrite();
-						s2.locals[i] = s3.locals[i];
-						s2.LocalStoreSitesCopyOnWrite();
-						s2.localStoreSites[i] = s3.localStoreSites[i].Copy();
-					}
-				}
-			}
-			if(s3 != null)
-			{
-				s2.MergeSubroutineHelper(s3);
-			}
-			return s2;
+			return s2.Copy();
 		}
 		if(s1.stackSize != s2.stackSize || s1.stackEnd != s2.stackEnd)
 		{
@@ -375,19 +379,9 @@ class InstructionState
 		for(int i = 0; i < s.locals.Length; i++)
 		{
 			TypeWrapper type = s.locals[i];
-			TypeWrapper type2;
+			TypeWrapper type2 = s2.locals[i];
 			LocalStoreSites storeSites = s.localStoreSites[i];
-			LocalStoreSites storeSites2;
-			if(locals_modified == null || locals_modified[i])
-			{
-				type2 = s2.locals[i];
-				storeSites2 = s2.localStoreSites[i];
-			}
-			else
-			{
-				type2 = s3.locals[i];
-				storeSites2 = s3.localStoreSites[i];
-			}
+			LocalStoreSites storeSites2 = s2.localStoreSites[i];
 			TypeWrapper baseType = InstructionState.FindCommonBaseType(type, type2);
 			if(type != baseType)
 			{
@@ -409,10 +403,6 @@ class InstructionState
 			s.changed = true;
 		}
 		s.MergeSubroutineHelper(s2);
-		if(s3 != null)
-		{
-			s.MergeSubroutineHelper(s3);
-		}
 		return s;
 	}
 
@@ -424,7 +414,7 @@ class InstructionState
 		}
 		if(h2.IsEmpty)
 		{
-			return h2.Copy();
+			return h1.Copy();
 		}
 		LocalStoreSites h = h1.Copy();
 		for(int i = 0; i < h2.Count; i++)
@@ -474,20 +464,14 @@ class InstructionState
 		subroutines.Add(new Subroutine(subroutineIndex, locals.Length));
 	}
 
-	internal bool[] ClearSubroutineId(int subroutineIndex)
+	internal bool[] GetLocalsModified(int subroutineIndex)
 	{
-		SubroutinesCopyOnWrite();
 		if(subroutines != null)
 		{
 			foreach(Subroutine s in subroutines)
 			{
 				if(s.SubroutineIndex == subroutineIndex)
 				{
-					// TODO i'm not 100% sure about this, but I think we need to clear
-					// the subroutines here (because when you return you can never "become" inside a subroutine)
-					// UPDATE the above is incorrect, we only need to remove the subroutine we're actually
-					// returning from
-					subroutines.Remove(s);
 					return s.LocalsModified;
 				}
 			}
@@ -1096,6 +1080,7 @@ class InstructionState
 		if((flags & ShareFlags.LocalStoreSites) != 0)
 		{
 			flags &= ~ShareFlags.LocalStoreSites;
+			LocalStoreSites.MarkShared(localStoreSites);
 			localStoreSites = (LocalStoreSites[])localStoreSites.Clone();
 		}
 	}
@@ -1525,6 +1510,7 @@ class MethodAnalyzer
 	private ClassFile.Method method;
 	private InstructionState[] state;
 	private List<int>[] callsites;
+	private List<int>[] returnsites;
 	private LocalVar[/*instructionIndex*/] localVars;
 	private LocalVar[/*instructionIndex*/][/*localIndex*/] invokespecialLocalVars;
 	private LocalVar[/*index*/] allLocalVars;
@@ -1553,6 +1539,7 @@ class MethodAnalyzer
 		this.method = method;
 		state = new InstructionState[method.Instructions.Length];
 		callsites = new List<int>[method.Instructions.Length];
+		returnsites = new List<int>[method.Instructions.Length];
 
 		Dictionary<int,string>[] localStoreReaders = new Dictionary<int,string>[method.Instructions.Length];
 
@@ -2603,10 +2590,6 @@ class MethodAnalyzer
 									break;
 								case NormalizedByteCode.__jsr:
 								{
-									if((instr.flags & InstructionFlags.JsrHasRet) != 0)
-									{
-										state[i + 1] += s;
-									}
 									int index = method.PcIndexMap[instr.PC + instr.Arg1];
 									s.SetSubroutineId(index);
 									TypeWrapper retAddressType;
@@ -2617,6 +2600,14 @@ class MethodAnalyzer
 									}
 									s.PushType(retAddressType);
 									state[index] += s;
+									List<int> returns = GetReturnSites(i);
+									if(returns != null)
+									{
+										foreach(int returnIndex in returns)
+										{
+											state[i + 1] = InstructionState.MergeSubroutineReturn(state[i + 1], s, state[returnIndex], state[returnIndex].GetLocalsModified(index));
+										}
+									}
 									AddCallSite(index, i);
 									break;
 								}
@@ -2627,11 +2618,11 @@ class MethodAnalyzer
 									// for each subroutine instruction (see Instruction.AddCallSite())
 									int subroutineIndex = s.GetLocalRet(instr.Arg1, ref localStoreReaders[i]);
 									int[] cs = GetCallSites(subroutineIndex);
-									bool[] locals_modified = s.ClearSubroutineId(subroutineIndex);
+									bool[] locals_modified = s.GetLocalsModified(subroutineIndex);
 									for(int j = 0; j < cs.Length; j++)
 									{
-										state[cs[j] + 1] = InstructionState.Merge(state[cs[j] + 1], s, locals_modified, state[cs[j]]);
-										instructions[cs[j]].flags |= InstructionFlags.JsrHasRet;
+										AddReturnSite(cs[j], i);
+										state[cs[j] + 1] = InstructionState.MergeSubroutineReturn(state[cs[j] + 1], state[cs[j]], s, locals_modified);
 									}
 									break;
 								}
@@ -3754,6 +3745,25 @@ class MethodAnalyzer
 		{
 		}
 		throw new VerifyError("Illegal constant pool index");
+	}
+
+	private void AddReturnSite(int callSiteIndex, int returnSiteIndex)
+	{
+		if(returnsites[callSiteIndex] == null)
+		{
+			returnsites[callSiteIndex] = new List<int>();
+		}
+		List<int> l = returnsites[callSiteIndex];
+		if(l.IndexOf(returnSiteIndex) == -1)
+		{
+			state[callSiteIndex].changed = true;
+			l.Add(returnSiteIndex);
+		}
+	}
+
+	private List<int> GetReturnSites(int callSiteIndex)
+	{
+		return returnsites[callSiteIndex];
 	}
 
 	private void AddCallSite(int subroutineIndex, int callSiteIndex)

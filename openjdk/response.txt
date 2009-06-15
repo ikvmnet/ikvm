@@ -733,7 +733,6 @@ assembly.class
     sun/management/*.class
     ../../openjdk6-b12/control/build/linux-amd64/classes/javax/management/remote/rmi/*.class
     ../../openjdk6-b12/control/build/linux-amd64/classes/org/omg/stub/javax/management/remote/rmi/*.class
-    ../../openjdk6-b12/control/build/linux-amd64/gensrc/javax/management/remote/rmi/*.class
     ../../openjdk6-b12/jdk/src/share/classes/com/sun/jmx/defaults/*.class
     ../../openjdk6-b12/jdk/src/share/classes/com/sun/jmx/interceptor/*.class
     ../../openjdk6-b12/jdk/src/share/classes/com/sun/jmx/mbeanserver/*.class
