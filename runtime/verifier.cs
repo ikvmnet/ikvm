@@ -161,28 +161,9 @@ class InstructionState
 
 	public static InstructionState operator+(InstructionState s1, InstructionState s2)
 	{
-		return Merge(s1, s2, null, null);
-	}
-
-	internal static InstructionState Merge(InstructionState s1, InstructionState s2, bool[] locals_modified, InstructionState s3)
-	{
 		if(s1 == null)
 		{
-			s2 = s2.Copy();
-			if(locals_modified != null)
-			{
-				for(int i = 0; i < s2.locals.Length; i++)
-				{
-					if(!locals_modified[i])
-					{
-						s2.LocalsCopyOnWrite();
-						s2.locals[i] = s3.locals[i];
-						s2.LocalStoreSitesCopyOnWrite();
-						s2.localStoreSites[i] = s3.localStoreSites[i].Copy();
-					}
-				}
-			}
-			return s2;
+			return s2.Copy();
 		}
 		if(s1.stackSize != s2.stackSize || s1.stackEnd != s2.stackEnd)
 		{
@@ -242,19 +223,9 @@ class InstructionState
 		for(int i = 0; i < s.locals.Length; i++)
 		{
 			TypeWrapper type = s.locals[i];
-			TypeWrapper type2;
+			TypeWrapper type2 = s2.locals[i];
 			LocalStoreSites storeSites = s.localStoreSites[i];
-			LocalStoreSites storeSites2;
-			if(locals_modified == null || locals_modified[i])
-			{
-				type2 = s2.locals[i];
-				storeSites2 = s2.localStoreSites[i];
-			}
-			else
-			{
-				type2 = s3.locals[i];
-				storeSites2 = s3.localStoreSites[i];
-			}
+			LocalStoreSites storeSites2 = s2.localStoreSites[i];
 			TypeWrapper baseType = InstructionState.FindCommonBaseType(type, type2);
 			if(type != baseType)
 			{
