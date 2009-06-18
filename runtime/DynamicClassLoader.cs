@@ -26,6 +26,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 #if IKVM_REF_EMIT
 using IKVM.Reflection.Emit;
 #else
@@ -457,6 +458,10 @@ namespace IKVM.Internal
 #else
 				AppDomain.CurrentDomain.DefineDynamicAssembly(name, access, null, null, null, null, null, true, attribs);
 #endif
+			assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(
+				typeof(RuntimeCompatibilityAttribute).GetConstructor(Type.EmptyTypes), new object[0],
+				new PropertyInfo[] { typeof(RuntimeCompatibilityAttribute).GetProperty("WrapNonExceptionThrows") }, new object[] { true },
+				new FieldInfo[0], new object[0]));
 			bool debug = System.Diagnostics.Debugger.IsAttached;
 			CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, debug });
 			assemblyBuilder.SetCustomAttribute(debugAttr);
