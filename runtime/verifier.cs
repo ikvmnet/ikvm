@@ -58,14 +58,6 @@ class InstructionState
 			return n;
 		}
 
-		internal bool IsEmpty
-		{
-			get
-			{
-				return data == null;
-			}
-		}
-
 		internal void Add(int store)
 		{
 			for(int i = 0; i < count; i++)
@@ -271,7 +263,7 @@ class InstructionState
 				s.changed = true;
 			}
 			storeSites = MergeStoreSites(storeSites, storeSites2);
-			if(!storeSites.IsEmpty && (s.localStoreSites[i].IsEmpty || storeSites.Count != s.localStoreSites[i].Count))
+			if(storeSites.Count != s.localStoreSites[i].Count)
 			{
 				s.LocalStoreSitesCopyOnWrite();
 				s.localStoreSites[i] = storeSites;
@@ -288,11 +280,11 @@ class InstructionState
 
 	private static LocalStoreSites MergeStoreSites(LocalStoreSites h1, LocalStoreSites h2)
 	{
-		if(h1.IsEmpty)
+		if(h1.Count == 0)
 		{
 			return h2.Copy();
 		}
-		if(h2.IsEmpty)
+		if(h2.Count == 0)
 		{
 			return h2.Copy();
 		}
@@ -546,12 +538,9 @@ class InstructionState
 			{
 				readers = new Dictionary<int,string>();
 			}
-			if(!localStoreSites[index].IsEmpty)
+			for(int i = 0; i < localStoreSites[index].Count; i++)
 			{
-				for(int i = 0; i < localStoreSites[index].Count; i++)
-				{
-					readers[localStoreSites[index][i]] = "";
-				}
+				readers[localStoreSites[index][i]] = "";
 			}
 			return locals[index];
 		}
