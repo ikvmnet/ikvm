@@ -222,6 +222,7 @@ namespace IKVM.Internal
 				CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, this.EmitDebugInfo });
 				assemblyBuilder.SetCustomAttribute(debugAttr);
 			}
+			AttributeHelper.SetRuntimeCompatibilityAttribute(assemblyBuilder);
 			if(Environment.Version.Major == 4 && Environment.Version.Minor == 0 && Environment.Version.Build == 20506)
 			{
 				// FXBUG workaround for MethodImpl bug in .NET 4.0 beta 1

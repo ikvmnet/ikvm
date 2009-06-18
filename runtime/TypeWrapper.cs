@@ -1849,6 +1849,15 @@ namespace IKVM.Internal
 			field.SetCustomAttribute(constantValueAttrib);
 		}
 #endif // STATIC_COMPILER && !COMPACT_FRAMEWORK
+
+		internal static void SetRuntimeCompatibilityAttribute(AssemblyBuilder assemblyBuilder)
+		{
+			Type runtimeCompatibilityAttribute = typeof(System.Runtime.CompilerServices.RuntimeCompatibilityAttribute);
+			assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(
+				runtimeCompatibilityAttribute.GetConstructor(Type.EmptyTypes), new object[0],
+				new PropertyInfo[] { runtimeCompatibilityAttribute.GetProperty("WrapNonExceptionThrows") }, new object[] { true },
+				new FieldInfo[0], new object[0]));
+		}
 	}
 
 #if !COMPACT_FRAMEWORK
