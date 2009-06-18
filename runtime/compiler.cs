@@ -819,6 +819,9 @@ class Compiler
 		}
 		catch(VerifyError x)
 		{
+#if STATIC_COMPILER
+			StaticCompiler.IssueMessage(Message.EmittedVerificationError, classFile.Name + "." + m.Name + m.Signature, x.Message);
+#endif
 			Tracer.Error(Tracer.Verifier, x.ToString());
 			clazz.HasVerifyError = true;
 			// because in Java the method is only verified if it is actually called,
@@ -828,6 +831,9 @@ class Compiler
 		}
 		catch(ClassFormatError x)
 		{
+#if STATIC_COMPILER
+			StaticCompiler.IssueMessage(Message.EmittedClassFormatError, classFile.Name + "." + m.Name + m.Signature, x.Message);
+#endif
 			Tracer.Error(Tracer.Verifier, x.ToString());
 			clazz.HasClassFormatError = true;
 			EmitHelper.Throw(ilGenerator, "java.lang.ClassFormatError", x.Message);

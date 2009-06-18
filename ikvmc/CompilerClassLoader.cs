@@ -3125,6 +3125,8 @@ namespace IKVM.Internal
 		EmittedAbstractMethodError = 116,
 		EmittedNoSuchMethodError = 117,
 		EmittedLinkageError = 118,
+		EmittedVerificationError = 119,
+		EmittedClassFormatError = 120,
 	}
 
 	class StaticCompiler
@@ -3272,6 +3274,14 @@ namespace IKVM.Internal
 					break;
 				case Message.EmittedLinkageError:
 					msg = "emitted java.lang.LinkageError in \"{0}\"" + Environment.NewLine +
+						"    (\"{1}\")";
+					break;
+				case Message.EmittedVerificationError:
+					msg = "emitted java.lang.VerificationError in \"{0}\"" + Environment.NewLine +
+						"    (\"{1}\")";
+					break;
+				case Message.EmittedClassFormatError:
+					msg = "emitted java.lang.ClassFormatError in \"{0}\"" + Environment.NewLine +
 						"    (\"{1}\")";
 					break;
 				default:
