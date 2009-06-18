@@ -286,7 +286,7 @@ class InstructionState
 		}
 		if(h2.Count == 0)
 		{
-			return h2.Copy();
+			return h1.Copy();
 		}
 		LocalStoreSites h = h1.Copy();
 		for(int i = 0; i < h2.Count; i++)
