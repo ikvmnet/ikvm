@@ -97,6 +97,14 @@ class InstructionState
 				return count;
 			}
 		}
+
+		internal static void MarkShared(LocalStoreSites[] localStoreSites)
+		{
+			for(int i = 0; i < localStoreSites.Length; i++)
+			{
+				localStoreSites[i].shared = true;
+			}
+		}
 	}
 	private TypeWrapper[] stack;
 	private int stackSize;
@@ -818,6 +826,7 @@ class InstructionState
 		if((flags & ShareFlags.LocalStoreSites) != 0)
 		{
 			flags &= ~ShareFlags.LocalStoreSites;
+			LocalStoreSites.MarkShared(localStoreSites);
 			localStoreSites = (LocalStoreSites[])localStoreSites.Clone();
 		}
 	}
