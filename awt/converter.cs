@@ -52,7 +52,7 @@ namespace ikvm.awt
 
         internal static Color ConvertColor(java.awt.Color color)
         {
-            return Color.FromArgb(color.getRGB());
+            return color == null ? Color.Empty : Color.FromArgb(color.getRGB());
         }
 
         internal static Image ConvertImage(java.awt.Image img)
@@ -368,6 +368,11 @@ namespace ikvm.awt
         internal static java.awt.Rectangle ConvertRectangle(RectangleF rec)
         {
             return new java.awt.Rectangle((int)rec.X, (int)rec.Y, (int)rec.Width, (int)rec.Height);
+        }
+
+        internal static java.awt.Color ConvertColor(Color color)
+        {
+            return color == Color.Empty ? null : new java.awt.Color(color.ToArgb(),true);
         }
 
     }

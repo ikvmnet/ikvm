@@ -140,7 +140,7 @@ namespace ikvm.awt
 
         public override void clearRect(int x, int y, int width, int height)
         {
-            using (Brush br = new SolidBrush(bgcolor))
+            using (Brush br = bgcolor != Color.Empty ? new SolidBrush(bgcolor) : brush)
             {
                 g.FillRectangle(br, x, y, width, height);
             }
@@ -516,11 +516,10 @@ namespace ikvm.awt
 
         public override void setColor(java.awt.Color color)
         {
-            if (color == null)
+            if (color == null || color == this.javaPaint)
             {
-                // TODO is this the correct default color?
-                color = java.awt.SystemColor.controlText;
-                //throw new java.lang.IllegalArgumentException("Color can't be null");
+                // Does not change the color, if it is null like in SunGraphics2D
+                return;
             }
             this.javaPaint = this.javaColor = color;
             this.color = Color.FromArgb(color.getRGB());
@@ -1020,12 +1019,12 @@ namespace ikvm.awt
 
         public override void setBackground(java.awt.Color color)
         {
-            bgcolor = Color.FromArgb(color.getRGB());
+            bgcolor = J2C.ConvertColor(color);
         }
 
         public override java.awt.Color getBackground()
         {
-            return new java.awt.Color(bgcolor.ToArgb());
+            return C2J.ConvertColor(bgcolor);
         }
 
         public override java.awt.Stroke getStroke()
