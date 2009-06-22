@@ -737,6 +737,20 @@ namespace IKVM.Reflection.Emit
 			return null;
 		}
 
+		internal Type GetEnumUnderlyingType()
+		{
+			Debug.Assert(this.IsEnum);
+			foreach (FieldInfo field in fields)
+			{
+				// the CLR assumes that an enum has only one instance field, so we can do the same
+				if (!field.IsStatic)
+				{
+					return field.FieldType;
+				}
+			}
+			throw new InvalidOperationException();
+		}
+
 #if NET_4_0
 		public override Assembly Assembly
 		{

@@ -215,7 +215,14 @@ namespace IKVM.Reflection.Emit
 				}
 				else if (type.IsEnum)
 				{
-					WriteElem(Enum.GetUnderlyingType(type), value);
+					if (type is TypeBuilder)
+					{
+						WriteElem(((TypeBuilder)type).GetEnumUnderlyingType(), value);
+					}
+					else
+					{
+						WriteElem(Enum.GetUnderlyingType(type), value);
+					}
 				}
 				else
 				{
