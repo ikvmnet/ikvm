@@ -66,19 +66,7 @@ namespace IKVM.Reflection.Emit
 		internal const byte ELEMENT_TYPE_CMOD_REQD = 0x1f;
 		internal const byte ELEMENT_TYPE_CMOD_OPT = 0x020;
 
-		private enum GenericParameterType
-		{
-			None,
-			Method,
-			Type
-		}
-
 		internal static void WriteType(ModuleBuilder moduleBuilder, ByteBuffer bb, Type type)
-		{
-			WriteType(moduleBuilder, bb, type, GenericParameterType.None);
-		}
-
-		private static void WriteType(ModuleBuilder moduleBuilder, ByteBuffer bb, Type type, GenericParameterType genericParameter)
 		{
 			while (type.HasElementType)
 			{
@@ -93,7 +81,7 @@ namespace IKVM.Reflection.Emit
 					{
 						int rank = type.GetArrayRank();
 						bb.Write(ELEMENT_TYPE_ARRAY);
-						WriteType(moduleBuilder, bb, type.GetElementType(), genericParameter);
+						WriteType(moduleBuilder, bb, type.GetElementType());
 						bb.WriteCompressedInt(rank);
 						// since a Type doesn't contain the lower/upper bounds
 						// (they act like a custom modifier, so they are part of the signature, but not of the Type),
@@ -183,24 +171,15 @@ namespace IKVM.Reflection.Emit
 			}
 			else if (type.IsGenericParameter)
 			{
-				GenericTypeParameterBuilder gtpb = type as GenericTypeParameterBuilder;
-				if (gtpb != null)
+				if (type.DeclaringMethod != null)
 				{
-					genericParameter = gtpb.IsMethodParameter ? GenericParameterType.Method : GenericParameterType.Type;
+					bb.Write(ELEMENT_TYPE_MVAR);
 				}
-				switch (genericParameter)
+				else
 				{
-					case GenericParameterType.Type:
-						bb.Write(ELEMENT_TYPE_VAR);
-						bb.WriteCompressedInt(type.GenericParameterPosition);
-						break;
-					case GenericParameterType.Method:
-						bb.Write(ELEMENT_TYPE_MVAR);
-						bb.WriteCompressedInt(type.GenericParameterPosition);
-						break;
-					default:
-						throw new InvalidOperationException();
+					bb.Write(ELEMENT_TYPE_VAR);
 				}
+				bb.WriteCompressedInt(type.GenericParameterPosition);
 			}
 			else if (type.IsGenericType && !type.IsGenericTypeDefinition)
 			{
@@ -298,15 +277,6 @@ namespace IKVM.Reflection.Emit
 			{
 				returnParameter = ((MethodInfo)method).ReturnParameter;
 			}
-			bool methodIsGeneric = false;
-			ParameterInfo methodOnTypeInstanceReturnParameter = returnParameter;
-			ParameterInfo[] methodOnTypeInstanceParameters = parameters;
-			if (methodOnTypeInstance.IsGenericMethodDefinition)
-			{
-				methodIsGeneric = true;
-				methodOnTypeInstanceReturnParameter = ((MethodInfo)methodOnTypeInstance).ReturnParameter;
-				methodOnTypeInstanceParameters = methodOnTypeInstance.GetParameters();
-			}
 			byte first = DEFAULT;
 			if (!method.IsStatic)
 			{
@@ -331,14 +301,14 @@ namespace IKVM.Reflection.Emit
 			{
 				WriteCustomModifiers(moduleBuilder, bb, ELEMENT_TYPE_CMOD_REQD, returnParameter.GetRequiredCustomModifiers());
 				WriteCustomModifiers(moduleBuilder, bb, ELEMENT_TYPE_CMOD_OPT, returnParameter.GetOptionalCustomModifiers());
-				WriteMethodParameterType(moduleBuilder, bb, returnParameter.ParameterType, methodOnTypeInstanceReturnParameter.ParameterType, methodIsGeneric);
+				WriteType(moduleBuilder, bb, returnParameter.ParameterType);
 			}
 			// Param
 			for (int i = 0; i < parameters.Length; i++)
 			{
 				WriteCustomModifiers(moduleBuilder, bb, ELEMENT_TYPE_CMOD_REQD, parameters[i].GetRequiredCustomModifiers());
 				WriteCustomModifiers(moduleBuilder, bb, ELEMENT_TYPE_CMOD_OPT, parameters[i].GetOptionalCustomModifiers());
-				WriteMethodParameterType(moduleBuilder, bb, parameters[i].ParameterType, methodOnTypeInstanceParameters[i].ParameterType, methodIsGeneric);
+				WriteType(moduleBuilder, bb, parameters[i].ParameterType);
 			}
 		}
 
@@ -349,22 +319,6 @@ namespace IKVM.Reflection.Emit
 				type = type.GetElementType();
 			}
 			return type.IsGenericParameter;
-		}
-
-		private static void WriteMethodParameterType(ModuleBuilder moduleBuilder, ByteBuffer bb, Type type1, Type type2, bool methodIsGeneric)
-		{
-			if (methodIsGeneric && IsGenericParameter(type2))
-			{
-				WriteType(moduleBuilder, bb, type1, GenericParameterType.Method);
-			}
-			else if (IsGenericParameter(type1))
-			{
-				WriteType(moduleBuilder, bb, type1, GenericParameterType.Type);
-			}
-			else
-			{
-				WriteType(moduleBuilder, bb, type1);
-			}
 		}
 
 		internal static void WriteGenericSignature(ModuleBuilder moduleBuilder, ByteBuffer bb, Type type, Type[] typeArguments)

@@ -35,17 +35,19 @@ namespace IKVM.Reflection.Emit
 	public class GenericTypeParameterBuilder : Impl.TypeBase
 	{
 		private readonly ModuleBuilder moduleBuilder;
+		private readonly Type type;
+		private readonly MethodInfo method;
 		private readonly int owner;
 		private readonly int position;
-		private readonly bool method;
 		private int token;
 
-		internal GenericTypeParameterBuilder(ModuleBuilder moduleBuilder, int owner, int position, bool method)
+		internal GenericTypeParameterBuilder(ModuleBuilder moduleBuilder, Type type, MethodInfo method, int owner, int position)
 		{
 			this.moduleBuilder = moduleBuilder;
+			this.type = type;
+			this.method = method;
 			this.owner = owner;
 			this.position = position;
-			this.method = method;
 		}
 
 		public void SetBaseTypeConstraint(Type baseTypeConstraint)
@@ -64,6 +66,16 @@ namespace IKVM.Reflection.Emit
 		public override int GenericParameterPosition
 		{
 			get { return position; }
+		}
+
+		public override MethodBase DeclaringMethod
+		{
+			get { return method; }
+		}
+
+		public override Type DeclaringType
+		{
+			get { return type; }
 		}
 
 		public override string AssemblyQualifiedName
@@ -120,11 +132,6 @@ namespace IKVM.Reflection.Emit
 		internal override ModuleBuilder ModuleBuilder
 		{
 			get { return moduleBuilder; }
-		}
-
-		internal bool IsMethodParameter
-		{
-			get { return method; }
 		}
 
 #if NET_4_0
@@ -409,7 +416,7 @@ namespace IKVM.Reflection.Emit
 				rec.Flags = 0;
 				rec.Owner = token;
 				rec.Name = this.ModuleBuilder.Strings.Add(names[i]);
-				gtpb[i] = new GenericTypeParameterBuilder(this.ModuleBuilder, this.ModuleBuilder.Tables.GenericParam.AddRecord(rec), i, false);
+				gtpb[i] = new GenericTypeParameterBuilder(this.ModuleBuilder, this, null, this.ModuleBuilder.Tables.GenericParam.AddRecord(rec), i);
 			}
 			return (GenericTypeParameterBuilder[])gtpb.Clone();
 		}
