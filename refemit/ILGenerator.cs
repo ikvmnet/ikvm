@@ -51,12 +51,14 @@ namespace IKVM.Reflection.Emit
 	{
 		private readonly Type localType;
 		private readonly int index;
+		private readonly bool pinned;
 		internal string name;
 
-		internal LocalBuilder(Type localType, int index)
+		internal LocalBuilder(Type localType, int index, bool pinned)
 		{
 			this.localType = localType;
 			this.index = index;
+			this.pinned = pinned;
 		}
 
 		public void SetLocalSymInfo(string name)
@@ -72,6 +74,11 @@ namespace IKVM.Reflection.Emit
 		public int LocalIndex
 		{
 			get { return index; }
+		}
+
+		public bool IsPinned
+		{
+			get { return pinned; }
 		}
 	}
 
@@ -290,7 +297,12 @@ namespace IKVM.Reflection.Emit
 
 		public LocalBuilder DeclareLocal(Type localType)
 		{
-			LocalBuilder local = new LocalBuilder(localType, locals.Count);
+			return DeclareLocal(localType, false);
+		}
+
+		public LocalBuilder DeclareLocal(Type localType, bool pinned)
+		{
+			LocalBuilder local = new LocalBuilder(localType, locals.Count, pinned);
 			locals.Add(local);
 			if (scope != null)
 			{
@@ -864,12 +876,17 @@ namespace IKVM.Reflection.Emit
 			if (locals.Count != 0)
 			{
 				const byte LOCAL_SIG = 0x07;
+				const byte ELEMENT_TYPE_PINNED = 0x45;
 
 				ByteBuffer localVarSig = new ByteBuffer(locals.Count + 2);
 				localVarSig.Write(LOCAL_SIG);
 				localVarSig.WriteCompressedInt(locals.Count);
 				foreach (LocalBuilder local in locals)
 				{
+					if (local.IsPinned)
+					{
+						localVarSig.Write(ELEMENT_TYPE_PINNED);
+					}
 					SignatureHelper.WriteType(moduleBuilder, localVarSig, local.LocalType);
 				}
 
