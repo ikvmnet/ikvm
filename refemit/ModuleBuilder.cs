@@ -919,6 +919,7 @@ namespace IKVM.Reflection.Emit
 			if (defaultValue == null)
 			{
 				rec.Type = SignatureHelper.ELEMENT_TYPE_CLASS;
+				val.Write((int)0);
 			}
 			else if (defaultValue is bool)
 			{
@@ -930,6 +931,11 @@ namespace IKVM.Reflection.Emit
 				rec.Type = SignatureHelper.ELEMENT_TYPE_CHAR;
 				val.Write((char)defaultValue);
 			}
+			else if (defaultValue is sbyte)
+			{
+				rec.Type = SignatureHelper.ELEMENT_TYPE_I1;
+				val.Write((sbyte)defaultValue);
+			}
 			else if (defaultValue is byte)
 			{
 				rec.Type = SignatureHelper.ELEMENT_TYPE_U1;
@@ -940,15 +946,30 @@ namespace IKVM.Reflection.Emit
 				rec.Type = SignatureHelper.ELEMENT_TYPE_I2;
 				val.Write((short)defaultValue);
 			}
+			else if (defaultValue is ushort)
+			{
+				rec.Type = SignatureHelper.ELEMENT_TYPE_U2;
+				val.Write((ushort)defaultValue);
+			}
 			else if (defaultValue is int)
 			{
 				rec.Type = SignatureHelper.ELEMENT_TYPE_I4;
 				val.Write((int)defaultValue);
 			}
+			else if (defaultValue is uint)
+			{
+				rec.Type = SignatureHelper.ELEMENT_TYPE_U4;
+				val.Write((uint)defaultValue);
+			}
 			else if (defaultValue is long)
 			{
 				rec.Type = SignatureHelper.ELEMENT_TYPE_I8;
 				val.Write((long)defaultValue);
+			}
+			else if (defaultValue is ulong)
+			{
+				rec.Type = SignatureHelper.ELEMENT_TYPE_U8;
+				val.Write((ulong)defaultValue);
 			}
 			else if (defaultValue is float)
 			{
@@ -967,6 +988,11 @@ namespace IKVM.Reflection.Emit
 				{
 					val.Write(c);
 				}
+			}
+			else if (defaultValue is DateTime)
+			{
+				rec.Type = SignatureHelper.ELEMENT_TYPE_I8;
+				val.Write(((DateTime)defaultValue).Ticks);
 			}
 			else
 			{
