@@ -355,5 +355,10 @@ namespace IKVM.Reflection.Emit
 			}
 			return types;
 		}
+
+		internal FieldInfo GetFieldOnTypeDefinition()
+		{
+			return field;
+		}
 	}
 }

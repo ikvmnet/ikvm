@@ -557,7 +557,21 @@ namespace IKVM.Reflection.Emit
 							}
 							else
 							{
-								token = ImportField(field.DeclaringType, field.Name, field.FieldType, field.GetOptionalCustomModifiers(), field.GetRequiredCustomModifiers());
+								Type declaringType = field.DeclaringType;
+								if (declaringType.IsGenericType && !declaringType.IsGenericTypeDefinition)
+								{
+									// map field back to the field definition on the type definition
+									FieldInstance instance = field as FieldInstance;
+									if (instance != null)
+									{
+										field = instance.GetFieldOnTypeDefinition();
+									}
+									else
+									{
+										field = field.Module.ResolveField(field.MetadataToken);
+									}
+								}
+								token = ImportField(declaringType, field.Name, field.FieldType, field.GetOptionalCustomModifiers(), field.GetRequiredCustomModifiers());
 							}
 						}
 						else
