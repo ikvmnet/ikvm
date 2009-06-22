@@ -280,18 +280,7 @@ namespace IKVM.Reflection.Emit
 
 		public FieldBuilder DefineInitializedData(string name, byte[] data, FieldAttributes attributes)
 		{
-			Type fieldType = GetType("$ArrayType$" + data.Length);
-			if (fieldType == null)
-			{
-				fieldType = DefineType("$ArrayType$" + data.Length, TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.ExplicitLayout, typeof(ValueType), PackingSize.Size1, data.Length);
-			}
-			FieldBuilder fb = moduleType.DefineField(name, fieldType, attributes | FieldAttributes.Static | FieldAttributes.HasFieldRVA);
-			TableHeap.FieldRVATable.Record rec = new TableHeap.FieldRVATable.Record();
-			rec.RVA = initializedData.Position;
-			rec.Field = fb.MetadataToken;
-			this.Tables.FieldRVA.AddRecord(rec);
-			initializedData.Write(data);
-			return fb;
+			return moduleType.DefineInitializedData(name, data, attributes);
 		}
 
 		public MethodBuilder DefineGlobalMethod(string name, MethodAttributes attributes, Type returnType, Type[] parameterTypes)

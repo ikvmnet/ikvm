@@ -607,6 +607,22 @@ namespace IKVM.Reflection.Emit
 			get { return token; }
 		}
 
+		public FieldBuilder DefineInitializedData(string name, byte[] data, FieldAttributes attributes)
+		{
+			Type fieldType = GetType("$ArrayType$" + data.Length);
+			if (fieldType == null)
+			{
+				fieldType = this.ModuleBuilder.DefineType("$ArrayType$" + data.Length, TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.ExplicitLayout, typeof(ValueType), PackingSize.Size1, data.Length);
+			}
+			FieldBuilder fb = DefineField(name, fieldType, attributes | FieldAttributes.Static | FieldAttributes.HasFieldRVA);
+			TableHeap.FieldRVATable.Record rec = new TableHeap.FieldRVATable.Record();
+			rec.RVA = this.ModuleBuilder.initializedData.Position;
+			rec.Field = fb.MetadataToken;
+			this.ModuleBuilder.Tables.FieldRVA.AddRecord(rec);
+			this.ModuleBuilder.initializedData.Write(data);
+			return fb;
+		}
+
 		public static FieldInfo GetField(Type type, FieldInfo field)
 		{
 			return new FieldInstance(type, field);
