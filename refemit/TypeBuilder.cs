@@ -632,7 +632,7 @@ namespace IKVM.Reflection.Emit
 
 		public FieldBuilder DefineInitializedData(string name, byte[] data, FieldAttributes attributes)
 		{
-			Type fieldType = GetType("$ArrayType$" + data.Length);
+			Type fieldType = this.ModuleBuilder.GetType("$ArrayType$" + data.Length);
 			if (fieldType == null)
 			{
 				fieldType = this.ModuleBuilder.DefineType("$ArrayType$" + data.Length, TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.ExplicitLayout, typeof(ValueType), PackingSize.Size1, data.Length);
