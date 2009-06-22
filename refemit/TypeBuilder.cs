@@ -35,15 +35,17 @@ namespace IKVM.Reflection.Emit
 	public class GenericTypeParameterBuilder : Impl.TypeBase
 	{
 		private readonly ModuleBuilder moduleBuilder;
+		private readonly string name;
 		private readonly Type type;
 		private readonly MethodInfo method;
 		private readonly int owner;
 		private readonly int position;
 		private int token;
 
-		internal GenericTypeParameterBuilder(ModuleBuilder moduleBuilder, Type type, MethodInfo method, int owner, int position)
+		internal GenericTypeParameterBuilder(ModuleBuilder moduleBuilder, string name, Type type, MethodInfo method, int owner, int position)
 		{
 			this.moduleBuilder = moduleBuilder;
+			this.name = name;
 			this.type = type;
 			this.method = method;
 			this.owner = owner;
@@ -88,9 +90,14 @@ namespace IKVM.Reflection.Emit
 			get { throw new NotImplementedException(); }
 		}
 
+		public override string Name
+		{
+			get { return name; }
+		}
+
 		public override string FullName
 		{
-			get { throw new NotImplementedException(); }
+			get { return null; }
 		}
 
 		protected override TypeAttributes GetAttributeFlagsImpl()
@@ -416,7 +423,7 @@ namespace IKVM.Reflection.Emit
 				rec.Flags = 0;
 				rec.Owner = token;
 				rec.Name = this.ModuleBuilder.Strings.Add(names[i]);
-				gtpb[i] = new GenericTypeParameterBuilder(this.ModuleBuilder, this, null, this.ModuleBuilder.Tables.GenericParam.AddRecord(rec), i);
+				gtpb[i] = new GenericTypeParameterBuilder(this.ModuleBuilder, names[i], this, null, this.ModuleBuilder.Tables.GenericParam.AddRecord(rec), i);
 			}
 			return (GenericTypeParameterBuilder[])gtpb.Clone();
 		}
