@@ -59,7 +59,9 @@ namespace IKVM.Reflection.Emit
 		internal const byte ELEMENT_TYPE_VAR = 0x13;
 		internal const byte ELEMENT_TYPE_ARRAY = 0x14;
 		internal const byte ELEMENT_TYPE_GENERICINST = 0x15;
+		internal const byte ELEMENT_TYPE_TYPEDBYREF = 0x16;
 		internal const byte ELEMENT_TYPE_I = 0x18;
+		internal const byte ELEMENT_TYPE_U = 0x19;
 		internal const byte ELEMENT_TYPE_OBJECT = 0x1c;
 		internal const byte ELEMENT_TYPE_SZARRAY = 0x1d;
 		internal const byte ELEMENT_TYPE_MVAR = 0x1e;
@@ -164,6 +166,14 @@ namespace IKVM.Reflection.Emit
 			else if (type == typeof(IntPtr))
 			{
 				bb.Write(ELEMENT_TYPE_I);
+			}
+			else if (type == typeof(UIntPtr))
+			{
+				bb.Write(ELEMENT_TYPE_U);
+			}
+			else if (type == typeof(TypedReference))
+			{
+				bb.Write(ELEMENT_TYPE_TYPEDBYREF);
 			}
 			else if (type == typeof(object))
 			{
