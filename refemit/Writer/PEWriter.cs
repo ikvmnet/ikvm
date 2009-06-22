@@ -174,7 +174,7 @@ namespace IKVM.Reflection.Emit.Writer
 		public DWORD AddressOfEntryPoint;
 		public DWORD BaseOfCode;
 		public DWORD BaseOfData;
-		public ULONGLONG ImageBase = 0x00400000;
+		public ULONGLONG ImageBase;
 		public DWORD SectionAlignment = 0x2000;
 		public DWORD FileAlignment = 0x200;
 		public WORD MajorOperatingSystemVersion = 4;

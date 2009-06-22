@@ -65,6 +65,7 @@ namespace IKVM.Reflection.Emit
 		ITypeOwner
 	{
 		private readonly Guid mvid = Guid.NewGuid();
+		private long imageBaseAddress = 0x00400000;
 		private readonly AssemblyBuilder asm;
 		internal readonly string moduleName;
 		internal readonly string fileName;
@@ -1052,6 +1053,13 @@ namespace IKVM.Reflection.Emit
 			{
 				return mvid;
 			}
+		}
+
+		// non-standard API
+		public long __ImageBase
+		{
+			get { return imageBaseAddress; }
+			set { imageBaseAddress = value; }
 		}
 	}
 }

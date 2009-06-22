@@ -210,6 +210,7 @@ namespace IKVM.Reflection.Emit.Writer
 				writer.Headers.OptionalHeader.SizeOfHeaders = text.PointerToRawData;
 				writer.Headers.OptionalHeader.BaseOfCode = code.BaseRVA;
 				writer.Headers.OptionalHeader.BaseOfData = sdata.VirtualAddress;
+				writer.Headers.OptionalHeader.ImageBase = (ulong)moduleBuilder.__ImageBase;
 
 				if (imageFileMachine == ImageFileMachine.IA64)
 				{
