@@ -276,7 +276,7 @@ namespace IKVM.Reflection.Emit
 
 		public override Type FieldType
 		{
-			get { return field.FieldType; }
+			get { return ReplaceGenericParameter(type, field.FieldType); }
 		}
 
 		public override object GetValue(object obj)
@@ -321,12 +321,39 @@ namespace IKVM.Reflection.Emit
 
 		public override Type[] GetOptionalCustomModifiers()
 		{
-			return field.GetOptionalCustomModifiers();
+			return ReplaceGenericParameters(type, field.GetOptionalCustomModifiers());
 		}
 
 		public override Type[] GetRequiredCustomModifiers()
 		{
-			return field.GetRequiredCustomModifiers();
+			return ReplaceGenericParameters(type, field.GetRequiredCustomModifiers());
+		}
+
+		internal static Type ReplaceGenericParameter(Type container, Type type)
+		{
+			if (type.IsGenericParameter)
+			{
+				type = container.GetGenericArguments()[type.GenericParameterPosition];
+			}
+			return type;
+		}
+
+		internal static Type[] ReplaceGenericParameters(Type container, Type[] types)
+		{
+			for (int i = 0; i < types.Length; i++)
+			{
+				if (types[i].IsGenericParameter)
+				{
+					Type[] newArray = new Type[types.Length];
+					Array.Copy(types, newArray, i);
+					for (; i < types.Length; i++)
+					{
+						newArray[i] = ReplaceGenericParameter(container, types[i]);
+					}
+					return newArray;
+				}
+			}
+			return types;
 		}
 	}
 }

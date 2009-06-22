@@ -646,6 +646,16 @@ namespace IKVM.Reflection.Emit
 			return fb;
 		}
 
+		public static MethodInfo GetMethod(Type type, MethodInfo method)
+		{
+			return new MethodInstance(type, method);
+		}
+
+		public static ConstructorInfo GetConstructor(Type type, ConstructorInfo constructor)
+		{
+			return new ConstructorInstance(type, constructor);
+		}
+
 		public static FieldInfo GetField(Type type, FieldInfo field)
 		{
 			return new FieldInstance(type, field);

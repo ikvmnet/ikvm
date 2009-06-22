@@ -137,4 +137,92 @@ namespace IKVM.Reflection.Emit
 			get { return methodBuilder.ModuleBuilder; }
 		}
 	}
+
+	sealed class ConstructorInstance : ConstructorInfo, IMethodInstance
+	{
+		private readonly Type type;
+		private readonly ConstructorInfo constructor;
+
+		internal ConstructorInstance(Type type, ConstructorInfo constructor)
+		{
+			this.type = type;
+			this.constructor = constructor;
+		}
+
+		public override bool Equals(object obj)
+		{
+			ConstructorInstance other = obj as ConstructorInstance;
+			return other != null && other.type == type && other.constructor == constructor;
+		}
+
+		public override int GetHashCode()
+		{
+			return type.GetHashCode() * 23 + constructor.GetHashCode();
+		}
+
+		public override object Invoke(BindingFlags invokeAttr, Binder binder, object[] parameters, System.Globalization.CultureInfo culture)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override MethodAttributes Attributes
+		{
+			get { return constructor.Attributes; }
+		}
+
+		public override MethodImplAttributes GetMethodImplementationFlags()
+		{
+			throw new NotImplementedException();
+		}
+
+		public override ParameterInfo[] GetParameters()
+		{
+			return MethodInstance.ReplaceGenericParameters(type, constructor.GetParameters());
+		}
+
+		public override object Invoke(object obj, BindingFlags invokeAttr, Binder binder, object[] parameters, System.Globalization.CultureInfo culture)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override RuntimeMethodHandle MethodHandle
+		{
+			get { throw new NotImplementedException(); }
+		}
+
+		public override Type DeclaringType
+		{
+			get { return type; }
+		}
+
+		public override object[] GetCustomAttributes(Type attributeType, bool inherit)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override object[] GetCustomAttributes(bool inherit)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override bool IsDefined(Type attributeType, bool inherit)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override string Name
+		{
+			get { return constructor.Name; }
+		}
+
+		public override Type ReflectedType
+		{
+			get { return type; }
+		}
+
+		MethodBase IMethodInstance.GetMethodOnTypeDefinition()
+		{
+			return constructor;
+		}
+	}
 }

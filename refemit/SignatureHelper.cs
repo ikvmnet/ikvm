@@ -261,8 +261,16 @@ namespace IKVM.Reflection.Emit
 			Type type = method.DeclaringType;
 			if (type != null && type.IsGenericType && !type.IsGenericTypeDefinition)
 			{
-				// this trick allows us to go from the method on the generic type instance, to the equivalent method on the generic type definition
-				method = method.Module.ResolveMethod(method.MetadataToken);
+				IMethodInstance methodInstance = method as IMethodInstance;
+				if (methodInstance != null)
+				{
+					method = methodInstance.GetMethodOnTypeDefinition();
+				}
+				else
+				{
+					// this trick allows us to go from the method on the generic type instance, to the equivalent method on the generic type definition
+					method = method.Module.ResolveMethod(method.MetadataToken);
+				}
 			}
 			return method;
 		}

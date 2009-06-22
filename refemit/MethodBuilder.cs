@@ -527,4 +527,155 @@ namespace IKVM.Reflection.Emit
 			return false;
 		}
 	}
+
+	interface IMethodInstance
+	{
+		MethodBase GetMethodOnTypeDefinition();
+	}
+
+	sealed class MethodInstance : MethodInfo, IMethodInstance
+	{
+		private readonly Type type;
+		private readonly MethodInfo method;
+
+		internal MethodInstance(Type type, MethodInfo method)
+		{
+			Debug.Assert(method.DeclaringType.IsGenericTypeDefinition);
+			this.type = type;
+			this.method = method;
+		}
+
+		public override bool Equals(object obj)
+		{
+			MethodInstance other = obj as MethodInstance;
+			return other != null && other.type == type && other.method == method;
+		}
+
+		public override int GetHashCode()
+		{
+			return type.GetHashCode() * 23 + method.GetHashCode();
+		}
+
+		public override MethodAttributes Attributes
+		{
+			get { return method.Attributes; }
+		}
+
+		public override MethodImplAttributes GetMethodImplementationFlags()
+		{
+			throw new NotImplementedException();
+		}
+
+		public override ParameterInfo[] GetParameters()
+		{
+			return ReplaceGenericParameters(type, method.GetParameters());
+		}
+
+		public override ParameterInfo ReturnParameter
+		{
+			get { return ReplaceGenericParameter(type, method.ReturnParameter); }
+		}
+
+		public override Type ReturnType
+		{
+			get { return FieldInstance.ReplaceGenericParameter(type, method.ReturnType); }
+		}
+
+		public override object Invoke(object obj, BindingFlags invokeAttr, Binder binder, object[] parameters, System.Globalization.CultureInfo culture)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override RuntimeMethodHandle MethodHandle
+		{
+			get { throw new NotImplementedException(); }
+		}
+
+		public override Type DeclaringType
+		{
+			get { return type; }
+		}
+
+		public override object[] GetCustomAttributes(Type attributeType, bool inherit)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override object[] GetCustomAttributes(bool inherit)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override bool IsDefined(Type attributeType, bool inherit)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override string Name
+		{
+			get { return method.Name; }
+		}
+
+		public override Type ReflectedType
+		{
+			get { return type; }
+		}
+
+		public override MethodInfo GetBaseDefinition()
+		{
+			throw new NotImplementedException();
+		}
+
+		public override ICustomAttributeProvider ReturnTypeCustomAttributes
+		{
+			get { throw new NotImplementedException(); }
+		}
+
+		MethodBase IMethodInstance.GetMethodOnTypeDefinition()
+		{
+			return method;
+		}
+
+		private sealed class GenericInstanceParameterInfo : ParameterInfo
+		{
+			private readonly Type container;
+			private readonly ParameterInfo parameterInfo;
+
+			internal GenericInstanceParameterInfo(Type container, ParameterInfo parameterInfo)
+			{
+				this.container = container;
+				this.parameterInfo = parameterInfo;
+			}
+
+			public override Type ParameterType
+			{
+				get { return FieldInstance.ReplaceGenericParameter(container, parameterInfo.ParameterType); }
+			}
+
+			public override Type[] GetOptionalCustomModifiers()
+			{
+				return FieldInstance.ReplaceGenericParameters(container, parameterInfo.GetOptionalCustomModifiers());
+			}
+
+			public override Type[] GetRequiredCustomModifiers()
+			{
+				return FieldInstance.ReplaceGenericParameters(container, parameterInfo.GetRequiredCustomModifiers());
+			}
+		}
+
+		private static ParameterInfo ReplaceGenericParameter(Type type, ParameterInfo parameterInfo)
+		{
+			return new GenericInstanceParameterInfo(type, parameterInfo);
+		}
+
+		internal static ParameterInfo[] ReplaceGenericParameters(Type type, ParameterInfo[] parameterInfo)
+		{
+			ParameterInfo[] newArray = new ParameterInfo[parameterInfo.Length];
+			for (int i = 0; i < newArray.Length; i++)
+			{
+				newArray[i] = ReplaceGenericParameter(type, parameterInfo[i]);
+			}
+			return newArray;
+		}
+	}
 }
