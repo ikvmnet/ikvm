@@ -155,7 +155,7 @@ namespace IKVM.Reflection.Emit.Impl
 			throw new NotSupportedException();
 		}
 
-		protected sealed override bool IsPointerImpl()
+		protected override bool IsPointerImpl()
 		{
 			return false;
 		}
@@ -240,6 +240,11 @@ namespace IKVM.Reflection.Emit.Impl
 			return new ByRefType(this);
 		}
 
+		public override Type MakePointerType()
+		{
+			return new PointerType(this);
+		}
+
 		internal virtual int GetTypeToken()
 		{
 			return MetadataToken;
@@ -322,6 +327,71 @@ namespace IKVM.Reflection.Emit.Impl
 		}
 
 		protected override bool IsByRefImpl()
+		{
+			return true;
+		}
+
+		internal override ModuleBuilder ModuleBuilder
+		{
+			get { return type.ModuleBuilder; }
+		}
+	}
+
+	sealed class PointerType : TypeBase
+	{
+		private readonly TypeBase type;
+
+		internal PointerType(TypeBase type)
+		{
+			this.type = type;
+		}
+
+		public override string AssemblyQualifiedName
+		{
+			get { throw new NotImplementedException(); }
+		}
+
+		public override Type BaseType
+		{
+			get { throw new NotImplementedException(); }
+		}
+
+		public override string FullName
+		{
+			get { throw new NotImplementedException(); }
+		}
+
+		public override Type GetElementType()
+		{
+			return type;
+		}
+
+		protected override TypeAttributes GetAttributeFlagsImpl()
+		{
+			throw new NotImplementedException();
+		}
+
+		protected override MethodInfo GetMethodImpl(string name, BindingFlags bindingAttr, Binder binder, CallingConventions callConvention, Type[] types, ParameterModifier[] modifiers)
+		{
+			throw new NotImplementedException();
+		}
+
+		protected override bool HasElementTypeImpl()
+		{
+			return true;
+		}
+
+		protected override bool IsArrayImpl()
+		{
+			return false;
+		}
+
+		protected override bool IsByRefImpl()
+		{
+			return false;
+		}
+
+		protected override bool IsPointerImpl()
 		{
 			return true;
 		}
