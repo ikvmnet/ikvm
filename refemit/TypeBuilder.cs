@@ -158,11 +158,11 @@ namespace IKVM.Reflection.Emit
 	{
 		private readonly ITypeOwner owner;
 		private readonly int token;
-		private readonly int extends;
+		private int extends;
+		private Type baseType;
 		private readonly int typeName;
 		private readonly int typeNameSpace;
 		private readonly string nameOrFullName;
-		private readonly Type baseType;
 		private readonly List<MethodBuilder> methods = new List<MethodBuilder>();
 		private readonly List<FieldBuilder> fields = new List<FieldBuilder>();
 		private List<PropertyBuilder> properties;
@@ -182,11 +182,7 @@ namespace IKVM.Reflection.Emit
 			this.owner = owner;
 			this.token = this.ModuleBuilder.Tables.TypeDef.AllocToken();
 			this.nameOrFullName = Escape(name);
-			this.baseType = baseType;
-			if (baseType != null)
-			{
-				extends = this.ModuleBuilder.GetTypeToken(baseType).Token;
-			}
+			SetParent(baseType);
 			this.attribs = attribs;
 			if (!this.IsNested)
 			{
@@ -320,6 +316,19 @@ namespace IKVM.Reflection.Emit
 				tb.AddInterfaceImplementation(iface);
 			}
 			return tb;
+		}
+
+		public void SetParent(Type parent)
+		{
+			baseType = parent;
+			if (parent == null)
+			{
+				extends = 0;
+			}
+			else
+			{
+				extends = this.ModuleBuilder.GetTypeToken(parent).Token;
+			}
 		}
 
 		public void AddInterfaceImplementation(Type interfaceType)
