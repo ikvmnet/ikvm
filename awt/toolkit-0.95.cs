@@ -212,6 +212,15 @@ namespace ikvm.awt
             }
         }
 
+        /// <summary>
+        /// Run on a win 32 system
+        /// </summary>
+        /// <returns></returns>
+        internal static bool isWin32()
+        {
+            return Environment.OSVersion.Platform == PlatformID.Win32NT || Environment.OSVersion.Platform == PlatformID.Win32Windows;
+        }
+
         protected override void loadSystemColors(int[] systemColors)
         {
             // initialize all colors to purple to make the ones we might have missed stand out
@@ -589,6 +598,24 @@ namespace ikvm.awt
             return new NetCustomCursor(cursor, hotSpot, name);
         }
 
+        protected override void initializeDesktopProperties()
+        {
+            //copied from WToolkit.java
+            desktopProperties.put("DnD.Autoscroll.initialDelay", java.lang.Integer.valueOf(50));
+            desktopProperties.put("DnD.Autoscroll.interval", java.lang.Integer.valueOf(50));
+
+            try
+            {
+                if (isWin32())
+                {
+                    desktopProperties.put("Shell.shellFolderManager", java.lang.Class.forName("sun.awt.shell.Win32ShellFolderManager2"));
+                }
+            }
+            catch (java.lang.ClassNotFoundException)
+            {
+            }
+        }
+
         /*===============================
          * Implementations of interface IkvmToolkit
          */
@@ -604,7 +631,7 @@ namespace ikvm.awt
         /// <returns></returns>
         public sun.print.PrintPeer getPrintPeer()
         {
-            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            if (isWin32())
             {
                 return new Win32PrintPeer();
             }
@@ -636,7 +663,7 @@ namespace ikvm.awt
 
         public override RobotPeer createRobot(java.awt.Robot r, java.awt.GraphicsDevice screen)
         {
-            if (Environment.OSVersion.Platform == PlatformID.Win32NT || Environment.OSVersion.Platform == PlatformID.Win32Windows)
+            if (isWin32())
             {
                 return new WindowsRobot(screen);
             }
@@ -2956,6 +2983,22 @@ namespace ikvm.awt
                     wp.setModalBlocked((java.awt.Dialog)target, true);
                 }
             }
+        }
+
+        internal override void create(NetComponentPeer parent)
+        {
+            AwtToolkit.CreateComponent(Create, parent);
+        }
+
+        void Create(NetComponentPeer parent)
+        {
+            Form form = new MyForm();
+            if (parent != null)
+            {
+                form.Owner = parent.control.FindForm();
+            }
+            NetToolkit.CreateNative(form);
+            this.control = form;
         }
     }
 
