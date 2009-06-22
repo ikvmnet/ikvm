@@ -439,7 +439,7 @@ namespace IKVM.Reflection.Emit
 
 		public override Type[] GetGenericArguments()
 		{
-			return (Type[])gtpb.Clone();
+			return gtpb == null ? Type.EmptyTypes : (Type[])gtpb.Clone();
 		}
 
 		public Type CreateType()
@@ -763,6 +763,11 @@ namespace IKVM.Reflection.Emit
 		public override Type BaseType
 		{
 			get { return typeof(System.Array); }
+		}
+
+		public override string Name
+		{
+			get { return type.Name + "[]"; }
 		}
 
 		public override string FullName
