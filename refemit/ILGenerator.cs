@@ -91,6 +91,7 @@ namespace IKVM.Reflection.Emit
 		private ushort maxStack;
 		private int stackHeight;
 		private Scope scope;
+		private bool exceptionBlockAssistance = true;
 
 		private struct LabelFixup
 		{
@@ -171,10 +172,19 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 
+		// non-standard API
+		public void __DisableExceptionBlockAssistance()
+		{
+			exceptionBlockAssistance = false;
+		}
+
 		public void BeginCatchBlock(Type exceptionType)
 		{
 			ExceptionBlock block = exceptionStack.Peek();
-			Emit(OpCodes.Leave, block.labelEnd);
+			if (exceptionBlockAssistance)
+			{
+				Emit(OpCodes.Leave, block.labelEnd);
+			}
 			stackHeight = 0;
 			UpdateStack(1);
 			if (block.tryLength == 0)
@@ -221,7 +231,10 @@ namespace IKVM.Reflection.Emit
 		public void BeginFinallyBlock()
 		{
 			ExceptionBlock block = exceptionStack.Peek();
-			Emit(OpCodes.Leave, block.labelEnd);
+			if (exceptionBlockAssistance)
+			{
+				Emit(OpCodes.Leave, block.labelEnd);
+			}
 			stackHeight = 0;
 			if (block.handlerOffset == 0)
 			{
@@ -230,9 +243,13 @@ namespace IKVM.Reflection.Emit
 			else
 			{
 				block.handlerLength = code.Position - block.handlerOffset;
-				MarkLabel(block.labelEnd);
-				Label labelEnd = DefineLabel();
-				Emit(OpCodes.Leave, labelEnd);
+				Label labelEnd = new Label();
+				if (exceptionBlockAssistance)
+				{
+					MarkLabel(block.labelEnd);
+					labelEnd = DefineLabel();
+					Emit(OpCodes.Leave, labelEnd);
+				}
 				exceptionStack.Pop();
 				ExceptionBlock newBlock = new ExceptionBlock(exceptions.Count);
 				newBlock.labelEnd = labelEnd;
@@ -248,16 +265,19 @@ namespace IKVM.Reflection.Emit
 		public void EndExceptionBlock()
 		{
 			ExceptionBlock block = exceptionStack.Pop();
-			if (block.exceptionType != null && block.exceptionType != FAULT)
+			if (exceptionBlockAssistance)
 			{
-				Emit(OpCodes.Leave, block.labelEnd);
-			}
-			else
-			{
-				Emit(OpCodes.Endfinally);
+				if (block.exceptionType != null && block.exceptionType != FAULT)
+				{
+					Emit(OpCodes.Leave, block.labelEnd);
+				}
+				else
+				{
+					Emit(OpCodes.Endfinally);
+				}
+				MarkLabel(block.labelEnd);
 			}
 			block.handlerLength = code.Position - block.handlerOffset;
-			MarkLabel(block.labelEnd);
 		}
 
 		public void BeginScope()
