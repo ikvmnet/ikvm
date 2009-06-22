@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2008 Jeroen Frijters
+  Copyright (C) 2002-2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -206,6 +206,9 @@ class IkvmcCompiler
 #if MULTI_TARGET
 		Console.Error.WriteLine("    -sharedclassloader         All targets below this level share a common");
 		Console.Error.WriteLine("                               class loader");
+#endif
+#if IKVM_REF_EMIT
+		Console.Error.WriteLine("    -baseaddress:<address>     Base address for the library to be built");
 #endif
 	}
 
@@ -651,6 +654,23 @@ class IkvmcCompiler
 					{
 						options.sharedclassloader = new List<CompilerClassLoader>();
 					}
+				}
+#endif
+#if IKVM_REF_EMIT
+				else if(s.StartsWith("-baseaddress:"))
+				{
+					string baseAddress = s.Substring(13);
+					ulong baseAddressParsed;
+					if (baseAddress.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+					{
+						baseAddressParsed = UInt64.Parse(baseAddress.Substring(2), System.Globalization.NumberStyles.AllowHexSpecifier);
+					}
+					else
+					{
+						// note that unlike CSC we don't support octal
+						baseAddressParsed = UInt64.Parse(baseAddress);
+					}
+					options.baseAddress = (long)(baseAddressParsed & 0xFFFFFFFFFFFF0000UL);
 				}
 #endif
 				else

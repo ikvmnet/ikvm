@@ -231,6 +231,10 @@ namespace IKVM.Internal
 						Type.GetType("System.Security.SecurityRulesAttribute").GetConstructor(new Type[] { Type.GetType("System.Security.SecurityRuleSet") }),
 						new object[] { Type.GetType("System.Security.SecurityRuleSet").GetField("Level1").GetValue(null) }));
 			}
+			if(options.baseAddress != 0)
+			{
+				moduleBuilder.__ImageBase = options.baseAddress;
+			}
 			return moduleBuilder;
 		}
 
@@ -3073,6 +3077,7 @@ namespace IKVM.Internal
 		internal string classLoader;
 		internal PortableExecutableKinds pekind = PortableExecutableKinds.ILOnly;
 		internal ImageFileMachine imageFileMachine = ImageFileMachine.I386;
+		internal long baseAddress;
 		internal List<CompilerClassLoader> sharedclassloader; // should *not* be deep copied in Copy(), because we want the list of all compilers that share a class loader
 
 		internal CompilerOptions Copy()
