@@ -241,7 +241,7 @@ namespace IKVM.Reflection.Emit
 			WriteType(moduleBuilder, bb, fieldType);
 		}
 
-		internal static void WriteMethodSig(ModuleBuilder moduleBuilder, ByteBuffer bb, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, Type[][] requiredCustomModifiers, Type[][] optionalCustomModifiers)
+		internal static void WriteMethodSig(ModuleBuilder moduleBuilder, ByteBuffer bb, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, Type[][] requiredCustomModifiers, Type[][] optionalCustomModifiers, int genericParamCount)
 		{
 			if ((callingConvention & ~CallingConventions.HasThis) != CallingConventions.Standard)
 			{
@@ -252,8 +252,16 @@ namespace IKVM.Reflection.Emit
 			{
 				first |= HASTHIS;
 			}
+			if (genericParamCount > 0)
+			{
+				first |= GENERIC;
+			}
 			parameterTypes = parameterTypes ?? Type.EmptyTypes;
 			bb.Write(first);
+			if (genericParamCount > 0)
+			{
+				bb.WriteCompressedInt(genericParamCount);
+			}
 			bb.WriteCompressedInt(parameterTypes.Length);
 			// RetType
 			WriteCustomModifiers(moduleBuilder, bb, ELEMENT_TYPE_CMOD_REQD, requiredCustomModifiers, parameterTypes.Length);
