@@ -38,36 +38,31 @@ namespace IKVM.Reflection.Emit
 		private readonly TypeBuilder typeBuilder;
 		private readonly string name;
 		private readonly int nameIndex;
-		private readonly int signature;
 		private readonly int pseudoToken;
-		private readonly Type returnType;
-		private readonly Type[] parameterTypes;
-		private readonly Type[][] requiredCustomModifiers;	// last element is for the return type
-		private readonly Type[][] optionalCustomModifiers;
+		private int signature;
+		private Type returnType;
+		private Type[] parameterTypes;
+		private Type[][] requiredCustomModifiers;	// last element is for the return type
+		private Type[][] optionalCustomModifiers;
 		private MethodAttributes attributes;
 		private MethodImplAttributes implFlags;
 		private ILGenerator ilgen;
 		private int rva;
+		private readonly CallingConventions callingConvention;
 		private List<ParameterBuilder> parameters;
 
-		internal MethodBuilder(TypeBuilder typeBuilder, string name, MethodAttributes attributes, CallingConventions callingConvention, Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers, Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers)
+		internal MethodBuilder(TypeBuilder typeBuilder, string name, MethodAttributes attributes, CallingConventions callingConvention)
 		{
 			this.typeBuilder = typeBuilder;
 			this.name = name;
 			this.pseudoToken = typeBuilder.ModuleBuilder.AllocPseudoToken();
 			this.nameIndex = typeBuilder.ModuleBuilder.Strings.Add(name);
 			this.attributes = attributes;
-			this.returnType = returnType ?? typeof(void);
-			this.parameterTypes = Copy(parameterTypes);
 			if ((attributes & MethodAttributes.Static) == 0)
 			{
 				callingConvention |= CallingConventions.HasThis;
 			}
-			ByteBuffer signature = new ByteBuffer(16);
-			SignatureHelper.WriteMethodSig(this.ModuleBuilder, signature, callingConvention, returnType, returnTypeRequiredCustomModifiers, returnTypeOptionalCustomModifiers, parameterTypes, parameterTypeRequiredCustomModifiers, parameterTypeOptionalCustomModifiers);
-			this.signature = this.ModuleBuilder.Blobs.Add(signature);
-			requiredCustomModifiers = PackCustomModifiers(returnTypeRequiredCustomModifiers, parameterTypeRequiredCustomModifiers, this.parameterTypes.Length);
-			optionalCustomModifiers = PackCustomModifiers(returnTypeOptionalCustomModifiers, parameterTypeOptionalCustomModifiers, this.parameterTypes.Length);
+			this.callingConvention = callingConvention;
 		}
 
 		internal static Type[] Copy(Type[] array)
@@ -304,6 +299,14 @@ namespace IKVM.Reflection.Emit
 			return pb;
 		}
 
+		public void SetSignature(Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers, Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers)
+		{
+			this.returnType = returnType ?? typeof(void);
+			this.parameterTypes = Copy(parameterTypes);
+			this.requiredCustomModifiers = PackCustomModifiers(returnTypeRequiredCustomModifiers, parameterTypeRequiredCustomModifiers, this.parameterTypes.Length);
+			this.optionalCustomModifiers = PackCustomModifiers(returnTypeOptionalCustomModifiers, parameterTypeOptionalCustomModifiers, this.parameterTypes.Length);
+		}
+
 		public override MethodInfo GetBaseDefinition()
 		{
 			throw new NotSupportedException();
@@ -443,6 +446,10 @@ namespace IKVM.Reflection.Emit
 
 		internal void Bake()
 		{
+			ByteBuffer signature = new ByteBuffer(16);
+			SignatureHelper.WriteMethodSig(this.ModuleBuilder, signature, callingConvention, returnType, parameterTypes, requiredCustomModifiers, optionalCustomModifiers);
+			this.signature = this.ModuleBuilder.Blobs.Add(signature);
+
 			if (ilgen != null)
 			{
 				if (this.ModuleBuilder.symbolWriter != null)

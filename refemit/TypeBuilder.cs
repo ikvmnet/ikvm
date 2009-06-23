@@ -237,9 +237,17 @@ namespace IKVM.Reflection.Emit
 			return new ConstructorBuilder(mb);
 		}
 
+		private MethodBuilder CreateMethodBuilder(string name, MethodAttributes attributes, CallingConventions callingConvention)
+		{
+			this.ModuleBuilder.Tables.MethodDef.AddRow();
+			MethodBuilder mb = new MethodBuilder(this, name, attributes, callingConvention);
+			methods.Add(mb);
+			return mb;
+		}
+
 		public MethodBuilder DefineMethod(string name, MethodAttributes attribs)
 		{
-			return DefineMethod(name, attribs, null, null);
+			return CreateMethodBuilder(name, attribs, CallingConventions.Standard);
 		}
 
 		public MethodBuilder DefineMethod(string name, MethodAttributes attribs, Type returnType, Type[] parameterTypes)
@@ -254,9 +262,8 @@ namespace IKVM.Reflection.Emit
 
 		public MethodBuilder DefineMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers, Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers)
 		{
-			this.ModuleBuilder.Tables.MethodDef.AddRow();
-			MethodBuilder mb = new MethodBuilder(this, name, attributes, callingConvention, returnType, returnTypeRequiredCustomModifiers, returnTypeOptionalCustomModifiers, parameterTypes, parameterTypeRequiredCustomModifiers, parameterTypeOptionalCustomModifiers);
-			methods.Add(mb);
+			MethodBuilder mb = CreateMethodBuilder(name, attributes, callingConvention);
+			mb.SetSignature(returnType, returnTypeRequiredCustomModifiers, returnTypeOptionalCustomModifiers, parameterTypes, parameterTypeRequiredCustomModifiers, parameterTypeOptionalCustomModifiers);
 			return mb;
 		}
 

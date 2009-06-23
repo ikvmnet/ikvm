@@ -213,6 +213,14 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 
+		private static void WriteCustomModifiers(ModuleBuilder moduleBuilder, ByteBuffer bb, byte mod, Type[][] modifiers, int modifiersIndex)
+		{
+			if (modifiers != null && modifiersIndex < modifiers.Length)
+			{
+				WriteCustomModifiers(moduleBuilder, bb, mod, modifiers[modifiersIndex]);
+			}
+		}
+
 		internal static void WriteCustomModifiers(ModuleBuilder moduleBuilder, ByteBuffer bb, byte mod, Type[] modifiers)
 		{
 			if (modifiers != null)
@@ -233,7 +241,7 @@ namespace IKVM.Reflection.Emit
 			WriteType(moduleBuilder, bb, fieldType);
 		}
 
-		internal static void WriteMethodSig(ModuleBuilder moduleBuilder, ByteBuffer bb, CallingConventions callingConvention, Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers, Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers)
+		internal static void WriteMethodSig(ModuleBuilder moduleBuilder, ByteBuffer bb, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, Type[][] requiredCustomModifiers, Type[][] optionalCustomModifiers)
 		{
 			if ((callingConvention & ~CallingConventions.HasThis) != CallingConventions.Standard)
 			{
@@ -248,20 +256,14 @@ namespace IKVM.Reflection.Emit
 			bb.Write(first);
 			bb.WriteCompressedInt(parameterTypes.Length);
 			// RetType
-			WriteCustomModifiers(moduleBuilder, bb, ELEMENT_TYPE_CMOD_REQD, returnTypeRequiredCustomModifiers);
-			WriteCustomModifiers(moduleBuilder, bb, ELEMENT_TYPE_CMOD_OPT, returnTypeOptionalCustomModifiers);
+			WriteCustomModifiers(moduleBuilder, bb, ELEMENT_TYPE_CMOD_REQD, requiredCustomModifiers, parameterTypes.Length);
+			WriteCustomModifiers(moduleBuilder, bb, ELEMENT_TYPE_CMOD_OPT, optionalCustomModifiers, parameterTypes.Length);
 			WriteType(moduleBuilder, bb, returnType ?? typeof(void));
 			// Param
 			for (int i = 0; i < parameterTypes.Length; i++)
 			{
-				if (parameterTypeRequiredCustomModifiers != null && parameterTypeRequiredCustomModifiers.Length > i)
-				{
-					WriteCustomModifiers(moduleBuilder, bb, ELEMENT_TYPE_CMOD_REQD, parameterTypeRequiredCustomModifiers[i]);
-				}
-				if (parameterTypeOptionalCustomModifiers != null && parameterTypeOptionalCustomModifiers.Length > i)
-				{
-					WriteCustomModifiers(moduleBuilder, bb, ELEMENT_TYPE_CMOD_OPT, parameterTypeOptionalCustomModifiers[i]);
-				}
+				WriteCustomModifiers(moduleBuilder, bb, ELEMENT_TYPE_CMOD_REQD, requiredCustomModifiers, i);
+				WriteCustomModifiers(moduleBuilder, bb, ELEMENT_TYPE_CMOD_OPT, optionalCustomModifiers, i);
 				WriteType(moduleBuilder, bb, parameterTypes[i]);
 			}
 		}
