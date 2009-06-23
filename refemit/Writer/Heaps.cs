@@ -1796,6 +1796,11 @@ namespace IKVM.Reflection.Emit.Writer
 				}
 				return x.Owner > y.Owner ? 1 : -1;
 			}
+
+			internal void PatchAttribute(int token, System.Reflection.GenericParameterAttributes genericParameterAttributes)
+			{
+				records[(token & 0xFFFFFF) - 1].Flags = (short)genericParameterAttributes;
+			}
 		}
 
 		internal sealed class MethodSpecTable : Table<MethodSpecTable.Record>

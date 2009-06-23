@@ -60,6 +60,20 @@ namespace IKVM.Reflection.Emit
 			moduleBuilder.Tables.GenericParamConstraint.AddRecord(rec);
 		}
 
+		public void SetInterfaceConstraints(params Type[] interfaceConstraints)
+		{
+			foreach (Type type in interfaceConstraints)
+			{
+				SetBaseTypeConstraint(type);
+			}
+		}
+
+		public void SetGenericParameterAttributes(GenericParameterAttributes genericParameterAttributes)
+		{
+			// for now we'll back patch the table
+			this.moduleBuilder.Tables.GenericParam.PatchAttribute(owner, genericParameterAttributes);
+		}
+
 		public override bool IsGenericParameter
 		{
 			get { return true; }
