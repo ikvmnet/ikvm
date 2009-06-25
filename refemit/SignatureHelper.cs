@@ -191,7 +191,7 @@ namespace IKVM.Reflection.Emit
 				}
 				bb.WriteCompressedInt(type.GenericParameterPosition);
 			}
-			else if (type.IsGenericType && !type.IsGenericTypeDefinition)
+			else if (type.IsGenericType)
 			{
 				WriteGenericSignature(moduleBuilder, bb, type.GetGenericTypeDefinition(), type.GetGenericArguments());
 			}
@@ -353,7 +353,15 @@ namespace IKVM.Reflection.Emit
 		{
 			Debug.Assert(type.IsGenericTypeDefinition);
 			bb.Write(ELEMENT_TYPE_GENERICINST);
-			WriteType(moduleBuilder, bb, type);
+			if (type.IsValueType)
+			{
+				bb.Write(ELEMENT_TYPE_VALUETYPE);
+			}
+			else
+			{
+				bb.Write(ELEMENT_TYPE_CLASS);
+			}
+			bb.WriteTypeDefOrRefEncoded(moduleBuilder.GetTypeToken(type).Token);
 			bb.WriteCompressedInt(typeArguments.Length);
 			foreach (Type t in typeArguments)
 			{
