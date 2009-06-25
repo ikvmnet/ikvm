@@ -944,7 +944,7 @@ namespace IKVM.Reflection.Emit.Writer
 						    records[i].Parent = (token & 0xFFFFFF) << 2 | 2;
 							break;
 						default:
-							throw new NotImplementedException();
+							throw new InvalidOperationException();
 					}
 				}
 				Array.Sort(records, 0, rowCount, this);
@@ -1008,23 +1008,57 @@ namespace IKVM.Reflection.Emit.Writer
 						case TableHeap.FieldTable.Index:
 							records[i].Parent = (token & 0xFFFFFF) << 5 | 1;
 							break;
+						case TableHeap.TypeRefTable.Index:
+							records[i].Parent = (token & 0xFFFFFF) << 5 | 2;
+							break;
 						case TableHeap.TypeDefTable.Index:
 							records[i].Parent = (token & 0xFFFFFF) << 5 | 3;
 							break;
 						case TableHeap.ParamTable.Index:
 							records[i].Parent = (token & 0xFFFFFF) << 5 | 4;
 							break;
+						case TableHeap.InterfaceImplTable.Index:
+							records[i].Parent = (token & 0xFFFFFF) << 5 | 5;
+							break;
+						case TableHeap.MemberRefTable.Index:
+							records[i].Parent = (token & 0xFFFFFF) << 5 | 6;
+							break;
 						case TableHeap.ModuleTable.Index:
 							records[i].Parent = (token & 0xFFFFFF) << 5 | 7;
 							break;
+						// Permission (8) table doesn't exist in the spec
 						case TableHeap.PropertyTable.Index:
 							records[i].Parent = (token & 0xFFFFFF) << 5 | 9;
+							break;
+						case TableHeap.EventTable.Index:
+							records[i].Parent = (token & 0xFFFFFF) << 5 | 10;
+							break;
+						case TableHeap.StandAloneSigTable.Index:
+							records[i].Parent = (token & 0xFFFFFF) << 5 | 11;
+							break;
+						case TableHeap.ModuleRefTable.Index:
+							records[i].Parent = (token & 0xFFFFFF) << 5 | 12;
+							break;
+						case TableHeap.TypeSpecTable.Index:
+							records[i].Parent = (token & 0xFFFFFF) << 5 | 13;
 							break;
 						case TableHeap.AssemblyTable.Index:
 							records[i].Parent = (token & 0xFFFFFF) << 5 | 14;
 							break;
+						case TableHeap.AssemblyRefTable.Index:
+							records[i].Parent = (token & 0xFFFFFF) << 5 | 15;
+							break;
+						case TableHeap.FileTable.Index:
+							records[i].Parent = (token & 0xFFFFFF) << 5 | 16;
+							break;
+						case TableHeap.ExportedTypeTable.Index:
+							records[i].Parent = (token & 0xFFFFFF) << 5 | 17;
+							break;
+						case TableHeap.ManifestResourceTable.Index:
+							records[i].Parent = (token & 0xFFFFFF) << 5 | 18;
+							break;
 						default:
-							throw new NotImplementedException();
+							throw new InvalidOperationException();
 					}
 				}
 				Array.Sort(records, 0, rowCount, this);
@@ -1078,7 +1112,7 @@ namespace IKVM.Reflection.Emit.Writer
 							records[i].Parent = (token & 0xFFFFFF) << 1 | 1;
 							break;
 						default:
-							throw new NotImplementedException();
+							throw new InvalidOperationException();
 					}
 				}
 				Array.Sort(records, 0, rowCount, this);
