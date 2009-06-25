@@ -81,7 +81,6 @@ namespace IKVM.Reflection.Emit
 		private readonly Dictionary<MemberInfo, int> importedMembers = new Dictionary<MemberInfo, int>();
 		private readonly Dictionary<AssemblyName, int> referencedAssemblies = new Dictionary<AssemblyName, int>(new AssemblyNameEqualityComparer());
 		private readonly Dictionary<Type, Type> canonicalizedTypes = new Dictionary<Type, Type>();
-		private readonly Dictionary<MethodInfo, MethodInfo> canonicalizedGenericMethods = new Dictionary<MethodInfo, MethodInfo>(new GenericMethodComparer());
 		private int nextPseudoToken = -1;
 		private readonly List<int> resolvedTokens = new List<int>();
 		internal readonly TableHeap Tables;
@@ -124,40 +123,6 @@ namespace IKVM.Reflection.Emit
 			public int GetHashCode(AssemblyName obj)
 			{
 				return obj.FullName.GetHashCode();
-			}
-		}
-
-		// this class makes multiple instances of a generic method compare as equal,
-		// however, it does not ensure that the underlying method definition is canonicalized
-		private sealed class GenericMethodComparer : IEqualityComparer<MethodInfo>
-		{
-			public bool Equals(MethodInfo x, MethodInfo y)
-			{
-				if (x.GetGenericMethodDefinition() == y.GetGenericMethodDefinition())
-				{
-					Type[] xArgs = x.GetGenericArguments();
-					Type[] yArgs = y.GetGenericArguments();
-					for (int i = 0; i < xArgs.Length; i++)
-					{
-						if (xArgs[i] != yArgs[i])
-						{
-							return false;
-						}
-					}
-					return true;
-				}
-				return false;
-			}
-
-			public int GetHashCode(MethodInfo obj)
-			{
-				int hash = obj.GetGenericMethodDefinition().GetHashCode();
-				foreach (Type arg in obj.GetGenericArguments())
-				{
-					hash *= 37;
-					hash ^= arg.GetHashCode();
-				}
-				return hash;
 			}
 		}
 
@@ -510,15 +475,14 @@ namespace IKVM.Reflection.Emit
 				{
 					if (method.IsGenericMethod && !method.IsGenericMethodDefinition)
 					{
-						// FXBUG generic MethodInfos don't have a working Equals/GetHashCode,
-						// so we have to canonicalize them manually
-						// (we don't have to recursively call ImportMember here (like above), because the first method we encounter will always become the canonical one)
-						if (importedMembers.TryGetValue(CanonicalizeGenericMethod(method), out token))
+						if (importedMembers.TryGetValue(method, out token))
 						{
 							importedMembers.Add(member, token);
 							return token;
 						}
 
+						// it actually turns out to be pretty hard to determine if two MethodInfos will result in the same signature blob,
+						// so we simply write the signature and see if it already exists in the MethodSpec table.
 						const byte GENERICINST = 0x0A;
 						ByteBuffer spec = new ByteBuffer(10);
 						spec.Write(GENERICINST);
@@ -531,7 +495,7 @@ namespace IKVM.Reflection.Emit
 						TableHeap.MethodSpecTable.Record rec = new TableHeap.MethodSpecTable.Record();
 						rec.Method = GetMethodToken(method.GetGenericMethodDefinition()).Token;
 						rec.Instantiation = this.Blobs.Add(spec);
-						token = 0x2B000000 | this.Tables.MethodSpec.AddRecord(rec);
+						token = 0x2B000000 | this.Tables.MethodSpec.FindOrAddRecord(rec);
 					}
 					else
 					{
@@ -868,17 +832,6 @@ namespace IKVM.Reflection.Emit
 			{
 				canon = type;
 				canonicalizedTypes.Add(canon, canon);
-			}
-			return canon;
-		}
-
-		private MethodInfo CanonicalizeGenericMethod(MethodInfo method)
-		{
-			MethodInfo canon;
-			if (!canonicalizedGenericMethods.TryGetValue(method, out canon))
-			{
-				canonicalizedGenericMethods.Add(method, method);
-				canon = method;
 			}
 			return canon;
 		}

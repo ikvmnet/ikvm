@@ -1853,6 +1853,19 @@ namespace IKVM.Reflection.Emit.Writer
 					}
 				}
 			}
+
+			internal int FindOrAddRecord(Record rec)
+			{
+				for (int i = 0; i < rowCount; i++)
+				{
+					if (records[i].Method == rec.Method &&
+						records[i].Instantiation == rec.Instantiation)
+					{
+						return i + 1;
+					}
+				}
+				return AddRecord(rec);
+			}
 		}
 
 		internal sealed class GenericParamConstraintTable : Table<GenericParamConstraintTable.Record>, IComparer<GenericParamConstraintTable.Record>
