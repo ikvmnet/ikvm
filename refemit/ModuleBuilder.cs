@@ -416,6 +416,9 @@ namespace IKVM.Reflection.Emit
 
 		public FieldToken GetFieldToken(FieldInfo field)
 		{
+			// NOTE for some reason, when TypeBuilder.GetFieldToken() is used on a field in a generic type definition,
+			// a memberref token is returned (confirmed on .NET) unlike for Get(Method|Constructor)Token which always
+			// simply returns the MethodDef token (if the method is from the same module).
 			FieldBuilder fb = field as FieldBuilder;
 			if (fb != null && fb.ModuleBuilder == this && !IsFromGenericTypeDefinition(fb))
 			{
@@ -430,7 +433,7 @@ namespace IKVM.Reflection.Emit
 		public MethodToken GetMethodToken(MethodInfo method)
 		{
 			MethodBuilder mb = method as MethodBuilder;
-			if (mb != null && mb.ModuleBuilder == this && !IsFromGenericTypeDefinition(mb))
+			if (mb != null && mb.ModuleBuilder == this)
 			{
 				return new MethodToken(mb.MetadataToken);
 			}
@@ -443,7 +446,7 @@ namespace IKVM.Reflection.Emit
 		public ConstructorToken GetConstructorToken(ConstructorInfo constructor)
 		{
 			ConstructorBuilder cb = constructor as ConstructorBuilder;
-			if (cb != null && cb.ModuleBuilder == this && !IsFromGenericTypeDefinition(cb))
+			if (cb != null && cb.ModuleBuilder == this)
 			{
 				return new ConstructorToken(cb.MetadataToken);
 			}
