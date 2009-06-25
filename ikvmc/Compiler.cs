@@ -65,7 +65,11 @@ class IkvmcCompiler
 					string line;
 					while((line = sr.ReadLine()) != null)
 					{
-						arglist.Add(line.Trim());
+						string arg = line.Trim();
+						if (arg != "")
+						{
+							arglist.Add(arg);
+						}
 					}
 				}
 			}
