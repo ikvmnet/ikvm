@@ -414,24 +414,29 @@ namespace IKVM.Reflection.Emit
 
 		public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
 		{
-			if (customBuilder.Constructor.DeclaringType == typeof(StructLayoutAttribute))
+			Type type = customBuilder.Constructor.DeclaringType;
+			if (type == typeof(StructLayoutAttribute))
 			{
 				SetStructLayoutPseudoCustomAttribute(customBuilder);
 			}
-			else if (customBuilder.Constructor.DeclaringType == typeof(SerializableAttribute))
+			else if (type == typeof(SerializableAttribute))
 			{
 				attribs |= TypeAttributes.Serializable;
 			}
-			else if (customBuilder.Constructor.DeclaringType == typeof(ComImportAttribute))
+			else if (type == typeof(ComImportAttribute))
 			{
 				attribs |= TypeAttributes.Import;
 			}
-			else if (customBuilder.Constructor.DeclaringType == typeof(SpecialNameAttribute))
+			else if (type == typeof(SpecialNameAttribute))
 			{
 				attribs |= TypeAttributes.SpecialName;
 			}
 			else
 			{
+				if (type == typeof(System.Security.SuppressUnmanagedCodeSecurityAttribute))
+				{
+					attribs |= TypeAttributes.HasSecurity;
+				}
 				this.ModuleBuilder.SetCustomAttribute(token, customBuilder);
 			}
 		}

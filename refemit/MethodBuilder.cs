@@ -255,24 +255,29 @@ namespace IKVM.Reflection.Emit
 
 		public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
 		{
-			if (customBuilder.Constructor.DeclaringType == typeof(DllImportAttribute))
+			Type type = customBuilder.Constructor.DeclaringType;
+			if (type == typeof(DllImportAttribute))
 			{
 				SetDllImportPseudoCustomAttribute(customBuilder);
 			}
-			else if (customBuilder.Constructor.DeclaringType == typeof(MethodImplAttribute))
+			else if (type == typeof(MethodImplAttribute))
 			{
 				SetMethodImplAttribute(customBuilder);
 			}
-			else if (customBuilder.Constructor.DeclaringType == typeof(PreserveSigAttribute))
+			else if (type == typeof(PreserveSigAttribute))
 			{
 				implFlags |= MethodImplAttributes.PreserveSig;
 			}
-			else if (customBuilder.Constructor.DeclaringType == typeof(SpecialNameAttribute))
+			else if (type == typeof(SpecialNameAttribute))
 			{
 				attributes |= MethodAttributes.SpecialName;
 			}
 			else
 			{
+				if (type == typeof(System.Security.SuppressUnmanagedCodeSecurityAttribute))
+				{
+					attributes |= MethodAttributes.HasSecurity;
+				}
 				this.ModuleBuilder.SetCustomAttribute(pseudoToken, customBuilder);
 			}
 		}
