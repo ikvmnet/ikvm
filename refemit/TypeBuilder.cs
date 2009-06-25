@@ -463,6 +463,11 @@ namespace IKVM.Reflection.Emit
 			return gtpb == null ? Type.EmptyTypes : (Type[])gtpb.Clone();
 		}
 
+		public override Type GetGenericTypeDefinition()
+		{
+			return this;
+		}
+
 		public Type CreateType()
 		{
 			foreach (MethodBuilder mb in methods)
@@ -1081,7 +1086,7 @@ namespace IKVM.Reflection.Emit
 
 		public override string Name
 		{
-			get { throw new NotImplementedException(); }
+			get { return typeBuilder.Name; }
 		}
 
 		public override Type[] GetGenericArguments()
