@@ -306,6 +306,18 @@ namespace IKVM.Reflection.Emit.Writer
 			}
 		}
 
+		internal void WriteEvent(int index)
+		{
+			if (moduleBuilder.bigEvent)
+			{
+				Write(index & 0xFFFFFF);
+			}
+			else
+			{
+				Write((short)index);
+			}
+		}
+
 		internal void WriteProperty(int index)
 		{
 			if (moduleBuilder.bigProperty)

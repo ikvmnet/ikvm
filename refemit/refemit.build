@@ -15,6 +15,7 @@
                 <include name="ConstructorBuilder.cs" />
                 <include name="CustomAttributeBuilder.cs" />
                 <include name="Enums.cs" />
+                <include name="EventBuilder.cs" />
                 <include name="FieldBuilder.cs" />
                 <include name="IkvmAssembly.cs" />
                 <include name="ILGenerator.cs" />

@@ -180,6 +180,7 @@ namespace IKVM.Reflection.Emit
 		private readonly List<MethodBuilder> methods = new List<MethodBuilder>();
 		private readonly List<FieldBuilder> fields = new List<FieldBuilder>();
 		private List<PropertyBuilder> properties;
+		private List<EventBuilder> events;
 		private TypeAttributes attribs;
 		private TypeFlags typeFlags;
 		private GenericTypeParameterBuilder[] gtpb;
@@ -311,6 +312,17 @@ namespace IKVM.Reflection.Emit
 			PropertyBuilder pb = new PropertyBuilder(this.ModuleBuilder, name, attributes, returnType, parameterTypes);
 			properties.Add(pb);
 			return pb;
+		}
+
+		public EventBuilder DefineEvent(string name, EventAttributes attributes, Type eventtype)
+		{
+			if (events == null)
+			{
+				events = new List<EventBuilder>();
+			}
+			EventBuilder eb = new EventBuilder(this.ModuleBuilder, name, attributes, eventtype);
+			events.Add(eb);
+			return eb;
 		}
 
 		public TypeBuilder DefineNestedType(string name)
@@ -490,6 +502,18 @@ namespace IKVM.Reflection.Emit
 					pb.Bake();
 				}
 				properties = null;
+			}
+			if (events != null)
+			{
+				TableHeap.EventMapTable.Record rec = new TableHeap.EventMapTable.Record();
+				rec.Parent = token;
+				rec.EventList = this.ModuleBuilder.Tables.Event.RowCount + 1;
+				this.ModuleBuilder.Tables.EventMap.AddRecord(rec);
+				foreach (EventBuilder eb in events)
+				{
+					eb.Bake();
+				}
+				events = null;
 			}
 			return new BakedType(this);
 		}

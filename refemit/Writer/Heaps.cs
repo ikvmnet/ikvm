@@ -88,6 +88,8 @@ namespace IKVM.Reflection.Emit.Writer
 		internal readonly ParamTable Param = new ParamTable();
 		internal readonly InterfaceImplTable InterfaceImpl = new InterfaceImplTable();
 		internal readonly StandAloneSigTable StandAloneSig = new StandAloneSigTable();
+		internal readonly EventMapTable EventMap = new EventMapTable();
+		internal readonly EventTable Event = new EventTable();
 		internal readonly PropertyMapTable PropertyMap = new PropertyMapTable();
 		internal readonly PropertyTable Property = new PropertyTable();
 		internal readonly MethodSemanticsTable MethodSemantics = new MethodSemanticsTable();
@@ -124,6 +126,8 @@ namespace IKVM.Reflection.Emit.Writer
 			tables[ParamTable.Index] = Param;
 			tables[InterfaceImplTable.Index] = InterfaceImpl;
 			tables[StandAloneSigTable.Index] = StandAloneSig;
+			tables[EventMapTable.Index] = EventMap;
+			tables[EventTable.Index] = Event;
 			tables[PropertyMapTable.Index] = PropertyMap;
 			tables[PropertyTable.Index] = Property;
 			tables[MethodSemanticsTable.Index] = MethodSemantics;
@@ -351,6 +355,19 @@ namespace IKVM.Reflection.Emit.Writer
 				internal RowSizeCalc WriteMethodDefOrRef()
 				{
 					if (md.bigMethodDefOrRef)
+					{
+						this.size += 4;
+					}
+					else
+					{
+						this.size += 2;
+					}
+					return this;
+				}
+
+				internal RowSizeCalc WriteEvent()
+				{
+					if (md.bigEvent)
 					{
 						this.size += 4;
 					}
@@ -1259,6 +1276,65 @@ namespace IKVM.Reflection.Emit.Writer
 			}
 		}
 
+		internal sealed class EventMapTable : Table<EventMapTable.Record>
+		{
+			internal const int Index = 0x12;
+
+			internal struct Record
+			{
+				internal int Parent;
+				internal int EventList;
+			}
+
+			internal override void Write(MetadataWriter mw)
+			{
+				for (int i = 0; i < rowCount; i++)
+				{
+					mw.WriteTypeDef(records[i].Parent);
+					mw.WriteEvent(records[i].EventList);
+				}
+			}
+
+			protected override int GetRowSize(RowSizeCalc rsc)
+			{
+				return rsc
+					.WriteTypeDef()
+					.WriteEvent()
+					.Value;
+			}
+		}
+
+		internal sealed class EventTable : Table<EventTable.Record>
+		{
+			internal const int Index = 0x14;
+
+			internal struct Record
+			{
+				internal short EventFlags;
+				internal int Name;
+				internal int EventType;
+			}
+
+			internal override void Write(MetadataWriter mw)
+			{
+				for (int i = 0; i < rowCount; i++)
+				{
+					mw.Write(records[i].EventFlags);
+					mw.WriteStringIndex(records[i].Name);
+					mw.WriteTypeDefOrRef(records[i].EventType);
+				}
+			}
+
+			protected override int GetRowSize(RowSizeCalc rsc)
+			{
+				return rsc
+					.AddFixed(2)
+					.WriteStringIndex()
+					.WriteTypeDefOrRef()
+					.Value;
+			}
+		}
+
 		internal sealed class PropertyMapTable : Table<PropertyMapTable.Record>
 		{
 			internal const int Index = 0x15;
@@ -1360,11 +1436,14 @@ namespace IKVM.Reflection.Emit.Writer
 					// do the HasSemantics encoding, so that we can sort the table
 					switch (token >> 24)
 					{
+						case TableHeap.EventTable.Index:
+							token = (token & 0xFFFFFF) << 1 | 0;
+							break;
 						case TableHeap.PropertyTable.Index:
 							token = (token & 0xFFFFFF) << 1 | 1;
 							break;
 						default:
-							throw new NotImplementedException();
+							throw new InvalidOperationException();
 					}
 					records[i].Association = token;
 				}

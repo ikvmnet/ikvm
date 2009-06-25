@@ -40,6 +40,7 @@
     <Compile Include="Enums.cs" />
     <Compile Include="ConstructorBuilder.cs" />
     <Compile Include="CustomAttributeBuilder.cs" />
+    <Compile Include="EventBuilder.cs" />
     <Compile Include="FieldBuilder.cs" />
     <Compile Include="IkvmAssembly.cs" />
     <Compile Include="ILGenerator.cs" />

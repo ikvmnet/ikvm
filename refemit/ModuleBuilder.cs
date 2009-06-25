@@ -95,6 +95,7 @@ namespace IKVM.Reflection.Emit
 		internal bool bigMethodDef;
 		internal bool bigParam;
 		internal bool bigTypeDef;
+		internal bool bigEvent;
 		internal bool bigProperty;
 		internal bool bigGenericParam;
 		internal bool bigModuleRef;
@@ -794,6 +795,7 @@ namespace IKVM.Reflection.Emit
 			this.bigMethodDef = Tables.MethodDef.IsBig;
 			this.bigParam = Tables.Param.IsBig;
 			this.bigTypeDef = Tables.TypeDef.IsBig;
+			this.bigEvent = Tables.Event.IsBig;
 			this.bigProperty = Tables.Property.IsBig;
 			this.bigGenericParam = Tables.GenericParam.IsBig;
 			this.bigModuleRef = Tables.ModuleRef.IsBig;
@@ -802,11 +804,11 @@ namespace IKVM.Reflection.Emit
 			this.bigMethodDefOrRef = IsBig(1, Tables.MethodDef, Tables.MemberRef);
 			this.bigTypeDefOrRef = IsBig(2, Tables.TypeDef, Tables.TypeRef, Tables.TypeSpec);
 			this.bigHasCustomAttribute = IsBig(5, Tables.MethodDef, Tables.Field, Tables.TypeRef, Tables.TypeDef, Tables.Param, Tables.InterfaceImpl, Tables.MemberRef,
-				Tables.Module, /*Tables.Permission,*/ Tables.Property, /*Tables.Event,*/ Tables.StandAloneSig, Tables.ModuleRef, Tables.TypeSpec, Tables.Assembly,
+				Tables.Module, /*Tables.Permission,*/ Tables.Property, Tables.Event, Tables.StandAloneSig, Tables.ModuleRef, Tables.TypeSpec, Tables.Assembly,
 				Tables.AssemblyRef, Tables.File, Tables.ExportedType, Tables.ManifestResource);
 			this.bigCustomAttributeType = IsBig(3, Tables.MethodDef, Tables.MemberRef);
 			this.bigHasConstant = IsBig(2, Tables.Field, Tables.Param, Tables.Property);
-			this.bigHasSemantics = IsBig(1, /*Tables.Event,*/ Tables.Property);
+			this.bigHasSemantics = IsBig(1, Tables.Event, Tables.Property);
 			this.bigImplementation = IsBig(2, Tables.File, Tables.AssemblyRef, Tables.ExportedType);
 			this.bigTypeOrMethodDef = IsBig(1, Tables.TypeDef, Tables.MethodDef);
 			this.bigHasDeclSecurity = IsBig(2, Tables.TypeDef, Tables.MethodDef, Tables.Assembly);
