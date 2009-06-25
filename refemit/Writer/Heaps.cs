@@ -1741,6 +1741,8 @@ namespace IKVM.Reflection.Emit.Writer
 				internal short Flags;
 				internal int Owner;
 				internal int Name;
+				// not part of the table, we use it to be able to fixup the GenericParamConstraint table
+				internal int unsortedIndex;
 			}
 
 			internal override void Write(MetadataWriter mw)
@@ -1784,6 +1786,7 @@ namespace IKVM.Reflection.Emit.Writer
 						default:
 							throw new InvalidOperationException();
 					}
+					records[i].unsortedIndex = i;
 				}
 				Array.Sort(records, 0, rowCount, this);
 			}
@@ -1800,6 +1803,16 @@ namespace IKVM.Reflection.Emit.Writer
 			internal void PatchAttribute(int token, System.Reflection.GenericParameterAttributes genericParameterAttributes)
 			{
 				records[(token & 0xFFFFFF) - 1].Flags = (short)genericParameterAttributes;
+			}
+
+			internal int[] GetIndexFixup()
+			{
+				int[] array = new int[rowCount];
+				for (int i = 0; i < rowCount; i++)
+				{
+					array[records[i].unsortedIndex] = i;
+				}
+				return array;
 			}
 		}
 
@@ -1871,6 +1884,11 @@ namespace IKVM.Reflection.Emit.Writer
 
 			internal void Fixup(ModuleBuilder moduleBuilder)
 			{
+				int[] fixups = moduleBuilder.Tables.GenericParam.GetIndexFixup();
+				for (int i = 0; i < rowCount; i++)
+				{
+					records[i].Owner = fixups[records[i].Owner - 1] + 1;
+				}
 				Array.Sort(records, 0, rowCount, this);
 			}
 
