@@ -28,7 +28,7 @@ using System.Runtime.CompilerServices;
 
 namespace IKVM.Reflection.Emit
 {
-	public class PropertyBuilder : PropertyInfo
+	public sealed class PropertyBuilder : PropertyInfo
 	{
 		private readonly ModuleBuilder moduleBuilder;
 		private readonly int name;
