@@ -429,11 +429,11 @@ namespace IKVM.NativeCode.java
 #else
 				if (JVM.IsUnix)
 				{
-					return Activator.CreateInstance(typeof(jlClass).Assembly.GetType("java.io.UnixFileSystem"), true);
+					return new global::java.io.UnixFileSystem();
 				}
 				else
 				{
-					return Activator.CreateInstance(typeof(jlClass).Assembly.GetType("java.io.Win32FileSystem"), true);
+					return new global::java.io.Win32FileSystem();
 				}
 #endif
 			}
