@@ -4925,6 +4925,7 @@ namespace IKVM.NativeCode.sun.awt.shell
     static class Win32ShellFolder2
     {
         private const uint SHGFI_TYPENAME = 0x400;
+        private const uint SHGFI_ATTRIBUTES = 0x800;
         private struct SHFILEINFO
         {
             public IntPtr hIcon;
@@ -4937,10 +4938,25 @@ namespace IKVM.NativeCode.sun.awt.shell
         };
 
         [DllImport("shell32.dll")]
-        private static extern long FindExecutable(string lpFile, string lpDirectory, StringBuilder lpResult);
+        private static extern int FindExecutable(string lpFile, string lpDirectory, StringBuilder lpResult);
 
         [DllImport("shell32.dll")]
         private static extern IntPtr SHGetFileInfo(string pszPath, uint dwFileAttributes, ref SHFILEINFO psfi, uint cbSizeFileInfo, uint uFlags);
+
+        [DllImport("user32.dll", EntryPoint = "LoadImage")]
+        private static extern IntPtr LoadImageID(IntPtr hInstance, int uID, uint type, int width, int height, int load);
+
+        [DllImport("user32.dll", EntryPoint = "LoadImage")]
+        private static extern IntPtr LoadImageName(IntPtr hInstance, string lpszName, uint type, int width, int height, int load);
+
+        [DllImport("kernel32.dll")]
+        static extern IntPtr LoadLibrary(string Library);
+
+        [DllImport("gdi32.dll", EntryPoint = "DeleteObject")]
+        public static extern bool DeleteObject(IntPtr hDc);
+
+        private const uint IMAGE_BITMAP = 0;
+        private const uint IMAGE_ICON = 1;
 
         /// <summary>
         /// Get the program to execute or open the file. If it is a exe then it is self
@@ -4950,8 +4966,8 @@ namespace IKVM.NativeCode.sun.awt.shell
         public static string getExecutableType(string path)
         {
             StringBuilder objResultBuffer = new StringBuilder(1024);
-            long lngResult = FindExecutable(path, path, objResultBuffer);
-            if (lngResult >= 32)
+            int result = FindExecutable(path, path, objResultBuffer);
+            if (result >= 32)
             {
                 return objResultBuffer.ToString();
             }
@@ -4971,6 +4987,179 @@ namespace IKVM.NativeCode.sun.awt.shell
                 return null;
             }
             return shinfo.szTypeName;
+        }
+
+        public static int getAttribute(string path)
+        {
+            SHFILEINFO shinfo = new SHFILEINFO();
+            if (0 == SHGetFileInfo(path, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_ATTRIBUTES).ToInt32())
+            {
+                return 0;
+            }
+            return (int)shinfo.dwAttributes;
+        }
+
+        public static string getLinkLocation(string path)
+        {
+            using (ShellLink link = new ShellLink())
+            {
+                link.Load(path);
+                return link.GetPath();
+            }
+        }
+
+        public static IntPtr getFileChooserBitmapHandle()
+        {
+            // Code copied from ShellFolder2.cpp Java_sun_awt_shell_Win32ShellFolder2_getFileChooserBitmapBits
+            IntPtr libShell32 = LoadLibrary("shell32.dll");
+            // Get a handle to an icon.
+            bool isVista = Environment.OSVersion.Version.Major >= 6;
+            IntPtr hBitmap = isVista ? 
+                LoadImageName(libShell32, "IDB_TB_SH_DEF_16", IMAGE_BITMAP, 0, 0, 0) :
+                LoadImageID(libShell32, 216, IMAGE_BITMAP, 0, 0, 0);
+            if (hBitmap.ToInt32() != 0)
+            {
+                return hBitmap;
+            }
+            IntPtr libComCtl32 = LoadLibrary("comctl32.dll");
+            return LoadImageID(libComCtl32, 124, IMAGE_BITMAP, 0, 0, 0);
+        }
+
+        public static IntPtr getIconResource(String libName, int iconID, int cxDesired, int cyDesired)
+        {
+            IntPtr hLibName = LoadLibrary(libName);
+            return LoadImageID(hLibName, iconID, IMAGE_ICON, cxDesired, cyDesired, 0);
+        }
+    }
+
+    class ShellLink : IDisposable
+    {
+        [ComImport]
+        [Guid("0000010B-0000-0000-C000-000000000046")]
+        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        internal interface IPersistFile
+        {
+            [PreserveSig]
+            void GetClassID(out Guid pClassID);
+            [PreserveSig]
+            void IsDirty();
+            [PreserveSig]
+            void Load([MarshalAs(UnmanagedType.LPWStr)] string pszFileName, uint dwMode);
+            [PreserveSig]
+            void Save([MarshalAs(UnmanagedType.LPWStr)] string pszFileName, [MarshalAs(UnmanagedType.Bool)] bool fRemember);
+            [PreserveSig]
+            void SaveCompleted([MarshalAs(UnmanagedType.LPWStr)] string pszFileName);
+            [PreserveSig]
+            void GetCurFile([MarshalAs(UnmanagedType.LPWStr)] out string ppszFileName);
+        }
+
+        [ComImport]
+        [Guid("000214F9-0000-0000-C000-000000000046")]
+        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        private interface IShellLinkW
+        {
+            void GetPath([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszFile, int cchMaxPath, IntPtr pfd, uint fFlags);
+            void GetIDList(out IntPtr ppidl);
+            void SetIDList(IntPtr pidl);
+            void GetDescription([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszFile, int cchMaxName);
+            void SetDescription([MarshalAs(UnmanagedType.LPWStr)] string pszName);
+            void GetWorkingDirectory([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszDir, int cchMaxPath);
+            void SetWorkingDirectory([MarshalAs(UnmanagedType.LPWStr)] string pszDir);
+            void GetArguments([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszArgs, int cchMaxPath);
+            void SetArguments([MarshalAs(UnmanagedType.LPWStr)] string pszArgs);
+            void GetHotkey(out short pwHotkey);
+            void SetHotkey(short pwHotkey);
+            void GetShowCmd(out uint piShowCmd);
+            void SetShowCmd(uint piShowCmd);
+            void GetIconLocation([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszIconPath, int cchIconPath, out int piIcon);
+            void SetIconLocation([MarshalAs(UnmanagedType.LPWStr)] string pszIconPath, int iIcon);
+            void SetRelativePath([MarshalAs(UnmanagedType.LPWStr)] string pszPathRel, uint dwReserved);
+            void Resolve(IntPtr hWnd, uint fFlags);
+            void SetPath([MarshalAs(UnmanagedType.LPWStr)] string pszFile);
+        }
+
+        [Guid("00021401-0000-0000-C000-000000000046")]
+        [ClassInterfaceAttribute(ClassInterfaceType.None)]
+        [ComImport]
+        private class CShellLink { }
+
+        [Flags]
+        public enum EShowWindowFlags : uint
+        {
+            SW_HIDE = 0,
+            SW_SHOWNORMAL = 1,
+            SW_NORMAL = 1,
+            SW_SHOWMINIMIZED = 2,
+            SW_SHOWMAXIMIZED = 3,
+            SW_MAXIMIZE = 3,
+            SW_SHOWNOACTIVATE = 4,
+            SW_SHOW = 5,
+            SW_MINIMIZE = 6,
+            SW_SHOWMINNOACTIVE = 7,
+            SW_SHOWNA = 8,
+            SW_RESTORE = 9,
+            SW_SHOWDEFAULT = 10,
+            SW_MAX = 10
+        }
+
+        private IShellLinkW linkW = (IShellLinkW)new CShellLink();
+
+        public void Dispose()
+        {
+            if (linkW != null)
+            {
+                Marshal.ReleaseComObject(linkW);
+                linkW = null;
+            }
+        }
+
+        public void SetPath(string path)
+        {
+            linkW.SetPath(path);
+        }
+
+        public void SetDescription(string description)
+        {
+            linkW.SetDescription(description);
+        }
+
+        public void SetWorkingDirectory(string dir)
+        {
+            linkW.SetWorkingDirectory(dir);
+        }
+
+        public void SetArguments(string args)
+        {
+            linkW.SetArguments(args);
+        }
+
+        public void SetShowCmd(EShowWindowFlags cmd)
+        {
+            linkW.SetShowCmd((uint)cmd);
+        }
+
+        public void Save(string linkFile)
+        {
+            ((IPersistFile)linkW).Save(linkFile, true);
+        }
+
+        public void Load(string linkFile)
+        {
+            ((IPersistFile)linkW).Load(linkFile, 0);
+        }
+
+        public string GetArguments()
+        {
+            StringBuilder sb = new StringBuilder(512);
+            linkW.GetArguments(sb, sb.Capacity);
+            return sb.ToString();
+        }
+
+        public string GetPath()
+        {
+            StringBuilder sb = new StringBuilder(512);
+            linkW.GetPath(sb, sb.Capacity, IntPtr.Zero, 0);
+            return sb.ToString();
         }
     }
 }
