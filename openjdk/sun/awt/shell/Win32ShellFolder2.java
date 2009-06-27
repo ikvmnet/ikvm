@@ -90,9 +90,9 @@ public class Win32ShellFolder2 extends ShellFolder{
 
     public static final int STARTMENU = cli.System.Environment.SpecialFolder.StartMenu;
 
-    public static final int DESKTOPDIRECTORY = 0x0010;
+    public static final int DESKTOPDIRECTORY = cli.System.Environment.SpecialFolder.DesktopDirectory;
 
-    public static final int DRIVES = 0x0011;
+    public static final int DRIVES = cli.System.Environment.SpecialFolder.MyComputer;
 
     public static final int NETWORK = 0x0012;
 
@@ -110,7 +110,7 @@ public class Win32ShellFolder2 extends ShellFolder{
 
     public static final int COMMON_DESKTOPDIRECTORY = 0x0019;
 
-    public static final int APPDATA = 0x001a;
+    public static final int APPDATA = cli.System.Environment.SpecialFolder.ApplicationData;
 
     public static final int PRINTHOOD = 0x001b;
 
@@ -120,11 +120,11 @@ public class Win32ShellFolder2 extends ShellFolder{
 
     public static final int COMMON_FAVORITES = 0x001f;
 
-    public static final int INTERNET_CACHE = 0x0020;
+    public static final int INTERNET_CACHE = cli.System.Environment.SpecialFolder.InternetCache;
 
     public static final int COOKIES = cli.System.Environment.SpecialFolder.Cookies;
 
-    public static final int HISTORY = 0x0022;
+    public static final int HISTORY = cli.System.Environment.SpecialFolder.History;
 
     // Win32 shell folder attributes
     public static final int ATTRIB_CANCOPY = 0x00000001;
@@ -187,7 +187,7 @@ public class Win32ShellFolder2 extends ShellFolder{
      */
     private boolean isPersonal;
 
-    static Image[] fileChooserIcons = new Image[47];
+    static Image[] fileChooserIcons;
     
     /**
      * @param folder
@@ -230,7 +230,12 @@ public class Win32ShellFolder2 extends ShellFolder{
 
     @Override
     public String getDisplayName(){
-        return getName();
+        // TODO Sun is using IShellFolder::GetDisplayNameOf instead of this hack
+        String name = getName();
+        if(name.endsWith(".lnk")){
+            name = name.substring(0, name.length() - 4);
+        }
+        return name;
     }
 
 
@@ -300,21 +305,41 @@ public class Win32ShellFolder2 extends ShellFolder{
 
     private static native int getAttribute(String path);
 
-    static Image getFileChooserIcon(int i) {
-        if (fileChooserIcons[i] != null) {
-            return fileChooserIcons[i];
+    static Image getFileChooserIcon(int idx){
+        if(fileChooserIcons == null){
+            fileChooserIcons = new Image[47];
+
+            try{
+                cli.System.IntPtr handle = getFileChooserBitmapHandle();
+                Bitmap bitmap = Bitmap.FromHbitmap(handle);
+                DeleteObject(handle);
+                for(int i = 0; i < fileChooserIcons.length; i++){
+                    cli.System.Drawing.Rectangle rect = new cli.System.Drawing.Rectangle(16 * i, 0, 16, 16);
+                    Bitmap icon = bitmap.Clone(rect, bitmap.get_PixelFormat());
+                    fileChooserIcons[i] = new BufferedImage(icon);
+                }
+            }catch(Throwable ex){
+                ex.printStackTrace();
+            }
         }
-        return new BufferedImage(Bitmap.FromHbitmap(getFileChooserBitmapHandle()));
+        return fileChooserIcons[idx];
     }
     
     private static native cli.System.IntPtr getFileChooserBitmapHandle();
+    
+    private static native boolean DeleteObject(cli.System.IntPtr hDc);
     
     /**
      * Gets an icon from the Windows system icon list as an <code>Image</code>
      */
     static Image getShell32Icon(int iconID) {
         cli.System.IntPtr hIcon = getIconResource("shell32.dll", iconID, 16, 16);
-        return new BufferedImage(Bitmap.FromHicon(hIcon));
+        if(hIcon.ToInt32() == 0){
+            return null;
+        }
+        Bitmap bitmap = Bitmap.FromHicon(hIcon);
+        DeleteObject(hIcon);
+        return new BufferedImage(bitmap);
     }
     
     private static native cli.System.IntPtr getIconResource(String libName, int iconID, int cxDesired, int cyDesired);
