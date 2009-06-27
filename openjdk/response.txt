@@ -561,6 +561,7 @@ assembly.class
     gnu/java/awt/*.class
     sun/awt/*.class
     sun/awt/image/*.class
+    sun/awt/shell/*.class
     sun/font/*.class
     sun/java2d/*.class
     sun/java2d/cmm/lcms/*.class

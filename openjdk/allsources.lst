@@ -113,6 +113,8 @@ sun/awt/image/OffScreenImageSource.java
 sun/awt/image/ShortComponentRaster.java
 sun/awt/image/SunWritableRaster.java
 sun/awt/image/ToolkitImage.java
+sun/awt/shell/Win32ShellFolder2.java
+sun/awt/shell/Win32ShellFolderManager2.java
 sun/font/CompositeFont.java
 sun/font/Font2D.java
 sun/font/FontManager.java
