@@ -357,4 +357,33 @@ public class Win32ShellFolder2 extends ShellFolder{
         return isPersonal || !isFileSystem() || (this == Win32ShellFolderManager2.getDesktop());
     }
 
+    /**
+     * @return An array of shell folders that are children of this shell folder
+     *         object. The array will be empty if the folder is empty.  Returns
+     *         <code>null</code> if this shell folder does not denote a directory.
+     */
+    @Override
+    public File[] listFiles(final boolean includeHiddenFiles) {
+        SecurityManager security = System.getSecurityManager();
+        if (security != null) {
+            security.checkRead(getPath());
+        }
+        if (!isDirectory()) {
+            return null;
+        }
+        // Links to directories are not directories and cannot be parents.
+        // This does not apply to folders in My Network Places (NetHood)
+        // because they are both links and real directories!
+        if (isLink() && !hasAttribute(ATTRIB_FOLDER)) {
+            return new File[0];
+        }
+        
+        File[] files = super.listFiles(includeHiddenFiles);
+        Win32ShellFolder2[] shellFiles = new Win32ShellFolder2[files.length];
+        for(int i = 0; i < files.length; i++){
+            File file = files[i];
+            shellFiles[i] = new Win32ShellFolder2( this, file.getPath());
+        }
+        return shellFiles;
+    }
 }
