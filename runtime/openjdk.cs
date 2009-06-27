@@ -4924,6 +4924,9 @@ namespace IKVM.NativeCode.sun.awt.shell
     /// </summary>
     static class Win32ShellFolder2
     {
+        private const uint SHGFI_LARGEICON = 0x0;
+        private const uint SHGFI_SMALLICON = 0x1;
+        private const uint SHGFI_ICON = 0x100;
         private const uint SHGFI_TYPENAME = 0x400;
         private const uint SHGFI_ATTRIBUTES = 0x800;
         private struct SHFILEINFO
@@ -4987,6 +4990,16 @@ namespace IKVM.NativeCode.sun.awt.shell
                 return null;
             }
             return shinfo.szTypeName;
+        }
+
+        public static IntPtr getIcon(string path, bool getLargeIcon)
+        {
+            SHFILEINFO shinfo = new SHFILEINFO();
+            if (0 == SHGetFileInfo(path, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_ICON | (getLargeIcon ? 0 : SHGFI_SMALLICON)).ToInt32())
+            {
+                return IntPtr.Zero;
+            }
+            return shinfo.hIcon;
         }
 
         public static int getAttribute(string path)

@@ -189,6 +189,10 @@ public class Win32ShellFolder2 extends ShellFolder{
 
     static Image[] fileChooserIcons;
     
+    private Image smallIcon = null;
+    
+    private Image largeIcon = null;
+    
     /**
      * @param folder
      *            value of the Enumeration cli.System.Environment.SpecialFolder
@@ -386,4 +390,31 @@ public class Win32ShellFolder2 extends ShellFolder{
         }
         return shellFiles;
     }
+    
+    /**
+     * @return The icon image used to display this shell folder
+     */
+    @Override
+    public Image getIcon(final boolean getLargeIcon) {
+        Image icon = getLargeIcon ? largeIcon : smallIcon;
+        if (icon == null) {
+            cli.System.IntPtr hIcon = getIcon( getPath(), getLargeIcon);
+            if(hIcon.ToInt32() == 0){
+                return null;
+            }
+            Bitmap bitmap = Bitmap.FromHicon(hIcon);
+            DeleteObject(hIcon);
+            icon = new BufferedImage(bitmap);
+            if (getLargeIcon) {
+                largeIcon = icon;
+            } else {
+                smallIcon = icon;
+            }
+        }
+        return icon;
+    }
+    
+    // Return the icon of a file system shell folder in the form of an HICON
+    private static native cli.System.IntPtr getIcon(String absolutePath, boolean getLargeIcon);
+
 }
