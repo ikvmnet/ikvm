@@ -126,8 +126,10 @@ public class FontManager{
     }
 
     public static boolean fontSupportsDefaultEncoding(Font f){
-        // TODO Auto-generated method stub
-        return false;
+        // In Java the font must be a instanceof CompositeFont
+        // because .NET fonts are all already Composite Fonts (I think) that we can return true
+        // and does not need to implements CompositeFont
+        return true;
     }
 
     public static Font getCompositeFontUIResource(Font f){
