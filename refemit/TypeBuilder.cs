@@ -792,7 +792,11 @@ namespace IKVM.Reflection.Emit
 			return null;
 		}
 
-		internal Type GetEnumUnderlyingType()
+#if NET_4_0
+		public override Type GetEnumUnderlyingType()
+#else
+		internal Type GetEnumlyingType()
+#endif
 		{
 			Debug.Assert(this.IsEnum);
 			foreach (FieldInfo field in fields)
@@ -803,7 +807,7 @@ namespace IKVM.Reflection.Emit
 					return field.FieldType;
 				}
 			}
-			throw new InvalidOperationException();
+			throw new ArgumentException();
 		}
 
 #if NET_4_0
