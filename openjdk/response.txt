@@ -233,34 +233,44 @@ assembly.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/sun/corba/*.class
 }
 {
-    -out:IKVM.OpenJDK.XML.dll
+    -out:IKVM.OpenJDK.XML.API.dll
+    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/datatype/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/namespace/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/parsers/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/stream/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/stream/events/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/stream/util/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/transform/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/transform/dom/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/transform/sax/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/transform/stax/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/transform/stream/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/validation/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/xpath/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/org/w3c/dom/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/org/w3c/dom/bootstrap/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/org/w3c/dom/css/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/org/w3c/dom/events/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/org/w3c/dom/html/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/org/w3c/dom/ls/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/org/w3c/dom/ranges/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/org/w3c/dom/stylesheets/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/org/w3c/dom/traversal/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/org/w3c/dom/views/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/org/w3c/dom/xpath/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/org/xml/sax/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/org/xml/sax/ext/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/org/xml/sax/helpers/*.class
+}
+{
+    -out:IKVM.OpenJDK.XML.Parse.dll
     -resource:com/sun/org/apache/xml/internal/serialize/HTMLEntities.res=../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xml/internal/serialize/HTMLEntities.res
-    -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/org/apache/*
-    -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/xml/*
-    -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/javax/xml/*
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/istack/internal/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/java_cup/internal/runtime/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/bcel/internal/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/bcel/internal/classfile/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/bcel/internal/generic/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/bcel/internal/util/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/regexp/internal/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/*.class
+    -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/org/apache/xalan/internal/res/*
+    -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/org/apache/xerces/*
+    -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/org/apache/xml/internal/serializer/*
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/extensions/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/lib/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/res/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/templates/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xslt/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/cmdline/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/cmdline/getopt/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/util/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/dom/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/runtime/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/runtime/output/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/trax/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/util/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/dom/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/dom/events/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/impl/*.class
@@ -317,6 +327,46 @@ assembly.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xpath/internal/operations/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xpath/internal/patterns/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xpath/internal/res/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/org/jvnet/staxex/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/stream/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/stream/buffer/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/stream/buffer/sax/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/stream/buffer/stax/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/stream/dtd/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/stream/dtd/nonvalidating/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/stream/events/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/stream/util/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/stream/writers/*.class
+}
+{
+    -out:IKVM.OpenJDK.XML.Transform.dll
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/java_cup/internal/runtime/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/bcel/internal/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/bcel/internal/classfile/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/bcel/internal/generic/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/bcel/internal/util/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/regexp/internal/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/lib/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/templates/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xslt/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/cmdline/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/cmdline/getopt/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/util/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/dom/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/runtime/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/runtime/output/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/trax/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/util/*.class
+}
+{
+    -out:IKVM.OpenJDK.XML.Bind.dll
+    -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/javax/xml/bind/*
+    -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/xml/internal/bind/*
+    -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/xml/internal/fastinfoset/*
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/istack/internal/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/bind/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/bind/annotation/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/bind/api/*.class
@@ -341,7 +391,6 @@ assembly.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/bind/v2/schemagen/episode/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/bind/v2/schemagen/xmlschema/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/bind/v2/util/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/dtdparser/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/fastinfoset/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/fastinfoset/algorithm/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/fastinfoset/alphabet/*.class
@@ -355,6 +404,34 @@ assembly.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/fastinfoset/tools/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/fastinfoset/util/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/fastinfoset/vocab/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/org/jvnet/fastinfoset/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/org/jvnet/fastinfoset/sax/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/org/jvnet/fastinfoset/sax/helpers/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/org/jvnet/fastinfoset/stax/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/txw2/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/txw2/annotation/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/txw2/output/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/xsom/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/xsom/impl/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/xsom/impl/parser/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/xsom/impl/parser/state/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/xsom/impl/scd/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/xsom/impl/util/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/xsom/parser/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/xsom/util/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/xsom/visitor/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/bind/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/bind/annotation/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/bind/annotation/adapters/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/bind/attachment/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/bind/helpers/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/bind/util/*.class
+}
+{
+    -out:IKVM.OpenJDK.XML.WebServices.dll
+    -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/xml/internal/messaging/*
+    -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/xml/internal/ws/*
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/dtdparser/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/messaging/saaj/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/messaging/saaj/client/p2p/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/messaging/saaj/packaging/mime/*.class
@@ -368,39 +445,6 @@ assembly.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/messaging/saaj/soap/ver1_2/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/messaging/saaj/util/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/messaging/saaj/util/transform/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/org/jvnet/fastinfoset/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/org/jvnet/fastinfoset/sax/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/org/jvnet/fastinfoset/sax/helpers/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/org/jvnet/fastinfoset/stax/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/org/jvnet/staxex/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/ast/builder/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/ast/om/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/ast/util/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/binary/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/binary/visitor/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/digested/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/dt/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/dt/builtin/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/nc/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/parse/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/parse/compact/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/parse/host/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/parse/xml/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/util/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/xml/sax/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/xml/util/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/stream/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/stream/buffer/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/stream/buffer/sax/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/stream/buffer/stax/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/stream/dtd/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/stream/dtd/nonvalidating/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/stream/events/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/stream/util/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/stream/writers/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/txw2/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/txw2/annotation/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/txw2/output/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/ws/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/ws/addressing/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/ws/addressing/model/*.class
@@ -464,35 +508,7 @@ assembly.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/ws/wsdl/writer/document/soap/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/ws/wsdl/writer/document/soap12/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/ws/wsdl/writer/document/xsd/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/xsom/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/xsom/impl/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/xsom/impl/parser/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/xsom/impl/parser/state/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/xsom/impl/scd/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/xsom/impl/util/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/xsom/parser/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/xsom/util/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/xsom/visitor/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/bind/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/bind/annotation/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/bind/annotation/adapters/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/bind/attachment/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/bind/helpers/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/bind/util/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/datatype/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/namespace/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/parsers/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/soap/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/stream/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/stream/events/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/stream/util/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/transform/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/transform/dom/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/transform/sax/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/transform/stax/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/transform/stream/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/validation/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/ws/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/ws/handler/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/ws/handler/soap/*.class
@@ -500,23 +516,31 @@ assembly.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/ws/soap/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/ws/spi/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/ws/wsaddressing/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/xpath/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/org/w3c/dom/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/org/w3c/dom/bootstrap/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/org/w3c/dom/css/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/org/w3c/dom/events/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/org/w3c/dom/html/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/org/w3c/dom/ls/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/org/w3c/dom/ranges/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/org/w3c/dom/stylesheets/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/org/w3c/dom/traversal/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/org/w3c/dom/views/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/org/w3c/dom/xpath/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/org/xml/sax/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/org/xml/sax/ext/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/org/xml/sax/helpers/*.class
+}
+{
+    -out:IKVM.OpenJDK.XML.RelaxNG.dll
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/ast/builder/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/ast/om/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/ast/util/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/binary/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/binary/visitor/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/digested/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/dt/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/dt/builtin/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/nc/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/parse/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/parse/compact/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/parse/host/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/parse/xml/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/util/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/xml/sax/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/xml/util/*.class
     ../../openjdk6-b16/jaxws/src/share/classes/org/relaxng/datatype/*.class
     ../../openjdk6-b16/jaxws/src/share/classes/org/relaxng/datatype/helpers/*.class
+}
+{
+    -out:IKVM.OpenJDK.XML.Crypto.dll
+    -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/org/apache/xml/internal/security/*
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/org/apache/xml/internal/security/*.class
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/org/apache/xml/internal/security/algorithms/*.class
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/org/apache/xml/internal/security/algorithms/implementations/*.class
@@ -546,6 +570,8 @@ assembly.class
     ../../openjdk6-b16/jdk/src/share/classes/javax/xml/crypto/dsig/dom/*.class
     ../../openjdk6-b16/jdk/src/share/classes/javax/xml/crypto/dsig/keyinfo/*.class
     ../../openjdk6-b16/jdk/src/share/classes/javax/xml/crypto/dsig/spec/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/org/jcp/xml/dsig/internal/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/org/jcp/xml/dsig/internal/dom/*.class
 }
 {
     -out:IKVM.OpenJDK.SwingAWT.dll
@@ -688,8 +714,6 @@ assembly.class
     ../../openjdk6-b16/jdk/src/share/classes/javax/security/cert/*.class
     ../../openjdk6-b16/jdk/src/share/classes/javax/security/sasl/*.class
     ../../openjdk6-b16/jdk/src/share/classes/org/ietf/jgss/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/org/jcp/xml/dsig/internal/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/org/jcp/xml/dsig/internal/dom/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/net/www/protocol/https/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/security/acl/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/security/ec/*.class

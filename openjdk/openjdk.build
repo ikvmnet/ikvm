@@ -134,7 +134,13 @@
             <exec program="peverify" commandline="-nologo IKVM.OpenJDK.SwingAWT.dll" />
             <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Text.dll" />
             <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Util.dll" />
-            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.XML.dll" />
+            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.XML.API.dll" />
+            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.XML.Bind.dll" />
+            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.XML.Crypto.dll" />
+            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.XML.Parse.dll" />
+            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.XML.RelaxNG.dll" />
+            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.XML.Transform.dll" />
+            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.XML.WebServices.dll" />
         </if>
         <copy todir="../bin">
             <fileset basedir=".">
