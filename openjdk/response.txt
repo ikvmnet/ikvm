@@ -623,7 +623,6 @@ assembly.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/swing/table/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/swing/text/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/swing/text/html/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/sun/text/*.class
     ../../openjdk6-b16/jdk/src/solaris/classes/sun/awt/windows/*.class
 }
 {
