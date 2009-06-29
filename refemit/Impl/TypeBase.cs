@@ -331,6 +331,18 @@ namespace IKVM.Reflection.Emit.Impl
 			return true;
 		}
 
+#if NET_4_0
+		public override Assembly Assembly
+		{
+			get { return type.Assembly; }
+		}
+
+		public override Module Module
+		{
+			get { return type.Module; }
+		}
+#endif
+
 		internal override ModuleBuilder ModuleBuilder
 		{
 			get { return type.ModuleBuilder; }
@@ -395,6 +407,18 @@ namespace IKVM.Reflection.Emit.Impl
 		{
 			return true;
 		}
+
+#if NET_4_0
+		public override Assembly Assembly
+		{
+			get { return type.Assembly; }
+		}
+
+		public override Module Module
+		{
+			get { return type.Module; }
+		}
+#endif
 
 		internal override ModuleBuilder ModuleBuilder
 		{
