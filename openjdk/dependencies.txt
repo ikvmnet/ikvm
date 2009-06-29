@@ -19,6 +19,11 @@ IKVM.OpenJDK.Corba
 
 IKVM.OpenJDK.XML.API
 
+IKVM.OpenJDK.XML.XPath
+->IKVM.OpenJDK.XML.API
+->IKVM.OpenJDK.XML.Parse
+->IKVM.OpenJDK.Text
+
 IKVM.OpenJDK.XML.Parse
 ->IKVM.OpenJDK.XML.API
 ->IKVM.OpenJDK.Text
@@ -29,6 +34,7 @@ IKVM.OpenJDK.XML.Transform
 ->IKVM.OpenJDK.XML.Parse
 ->IKVM.OpenJDK.XML.API
 ->IKVM.OpenJDK.Text
+->IKVM.OpenJDK.XML.XPath
 
 IKVM.OpenJDK.XML.Bind
 ->IKVM.OpenJDK.Misc
@@ -58,6 +64,7 @@ IKVM.OpenJDK.XML.Crypto
 ->IKVM.OpenJDK.Security
 ->IKVM.OpenJDK.Text
 ->IKVM.OpenJDK.XML.Parse
+->IKVM.OpenJDK.XML.XPath
 
 IKVM.OpenJDK.SwingAWT
 ->System.Drawing
