@@ -7,6 +7,12 @@
             </sources>
         </csc>
 
+        <csc target="exe" output="updbaseaddresses.exe" optimize="true">
+            <sources>
+                <include name="updbaseaddresses.cs" />
+            </sources>
+        </csc>
+
         <if test="${property::exists('signed')}">
             <property name="defs" value="${signed}" />
         </if>

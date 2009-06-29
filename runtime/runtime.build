@@ -20,7 +20,7 @@
                 </replacetokens>
             </filterchain>
         </copy>
-        <csc noconfig="true" target="library" output="IKVM.Runtime.JNI.dll" define="${defs}" optimize="true" unsafe="true" rebuild="true">
+        <csc noconfig="true" target="library" output="IKVM.Runtime.JNI.dll" define="${defs}" optimize="true" unsafe="true" baseaddress="0x55300000" rebuild="true">
             <sources>
                 <include name="../CommonAssemblyInfo.cs" />
                 <include name="JniAssemblyInfo.cs" />
@@ -60,7 +60,7 @@
         <if test="${not first-pass}">
             <call target="IKVM.Runtime.JNI" />
         </if>
-        <csc noconfig="true" target="library" output="IKVM.Runtime.dll" define="${defs}" optimize="true" unsafe="false" rebuild="true">
+        <csc noconfig="true" target="library" output="IKVM.Runtime.dll" define="${defs}" optimize="true" unsafe="false" baseaddress="0x55000000" rebuild="true">
             <sources>
                 <include name="../CommonAssemblyInfo.cs" />
                 <include name="AssemblyInfo.cs" />

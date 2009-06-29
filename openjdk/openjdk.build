@@ -147,6 +147,8 @@
                 <include name="IKVM.OpenJDK.*.dll" />
             </fileset>
         </copy>
+        <!-- update base addresses in response.txt for next build -->
+        <exec program="${project::get-base-directory()}/../tools/updbaseaddresses.exe" commandline="response.txt" useruntimeengine="true" />
     </target>
 
 </project>
