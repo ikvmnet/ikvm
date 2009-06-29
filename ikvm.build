@@ -40,8 +40,10 @@
                 <include name="bin-x86/ikvm-native.dll" />
                 <include name="bin-x86/JVM.DLL" />
                 <include name="tools/asmref.exe" />
+                <include name="tools/depcheck.exe" />
                 <include name="tools/pubkey.exe" />
                 <include name="tools/pubkey.txt" />
+                <include name="tools/updbaseaddresses.exe" />
                 <include name="native/Release-x64/ikvm-native.dll" />
                 <include name="native/Release-x64/*.obj" />
                 <include name="native/Release-x86/ikvm-native.dll" />

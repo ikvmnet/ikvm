@@ -142,6 +142,8 @@
             <exec program="peverify" commandline="-nologo IKVM.OpenJDK.XML.Transform.dll" />
             <exec program="peverify" commandline="-nologo IKVM.OpenJDK.XML.WebServices.dll" />
         </if>
+	<!-- make sure that we haven't accidentally introduced new dependencies -->
+        <exec program="${project::get-base-directory()}/../tools/depcheck.exe" commandline="response.txt dependencies.txt" useruntimeengine="true" />
         <copy todir="../bin">
             <fileset basedir=".">
                 <include name="IKVM.OpenJDK.*.dll" />

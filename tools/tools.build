@@ -13,6 +13,12 @@
             </sources>
         </csc>
 
+        <csc target="exe" output="depcheck.exe" optimize="true">
+            <sources>
+                <include name="depcheck.cs" />
+            </sources>
+        </csc>
+
         <if test="${property::exists('signed')}">
             <property name="defs" value="${signed}" />
         </if>
