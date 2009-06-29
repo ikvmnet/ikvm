@@ -795,7 +795,7 @@ namespace IKVM.Reflection.Emit
 #if NET_4_0
 		public override Type GetEnumUnderlyingType()
 #else
-		internal Type GetEnumlyingType()
+		internal Type GetEnumUnderlyingType()
 #endif
 		{
 			Debug.Assert(this.IsEnum);
