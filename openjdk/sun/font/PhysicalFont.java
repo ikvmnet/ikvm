@@ -25,9 +25,11 @@ package sun.font;
 
 import java.awt.Font;
 import java.awt.font.FontRenderContext;
+import java.util.Locale;
 
 import cli.System.Drawing.FontFamily;
 import cli.System.Drawing.FontStyle;
+import cli.System.Globalization.CultureInfo;
 
 /**
  * A Font2D implementation that based on .NET fonts. It replace the equals naming Sun class.
@@ -59,6 +61,10 @@ class PhysicalFont extends Font2D{
     }
 
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public cli.System.Drawing.Font createNetFont(Font font){
         float size2D = font.getSize2D();
         if(size2D <= 0){
@@ -80,8 +86,9 @@ class PhysicalFont extends Font2D{
             return FontFamily.get_GenericSansSerif();
         }
         try{
+            if(false) throw new cli.System.ArgumentException();
             return new FontFamily(name);
-        }catch(Exception ex) // cli.System.ArgumentException
+        }catch(cli.System.ArgumentException ex) // cli.System.ArgumentException
         {
             return FontFamily.get_GenericSansSerif();
         }
@@ -126,8 +133,53 @@ class PhysicalFont extends Font2D{
     }
 
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getStyle(){
         return style.Value;
+    }
+
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getPostscriptName(){
+        return family.get_Name();
+    }
+
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getFontName(Locale locale){
+        return family.GetName(getLanguage(locale));
+    }
+
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getFamilyName(Locale locale){
+        return family.GetName(getLanguage(locale));
+    }
+    
+    /**
+     * Convert the Java locale to a language ID
+     */
+    private int getLanguage(Locale locale){
+        int language = 0;
+        try{
+            language = CultureInfo.GetCultureInfo(locale.toString().replace("_", "-")).get_LCID();
+        }catch(Throwable th){
+            try{
+                language = CultureInfo.GetCultureInfo(locale.getLanguage()).get_LCID();
+            }catch(Throwable th2){}
+        }
+        return language;
     }
 }
