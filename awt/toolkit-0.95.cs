@@ -616,6 +616,16 @@ namespace ikvm.awt
             }
         }
 
+        protected override Object lazilyLoadDesktopProperty(String name)
+        {
+            if ("win.defaultGUI.font".Equals(name))
+            {
+                Font font = Control.DefaultFont;
+                return C2J.ConvertFont(font);
+            }
+            return null;
+        }
+
         /*===============================
          * Implementations of interface IkvmToolkit
          */

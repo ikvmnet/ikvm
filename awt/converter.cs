@@ -375,5 +375,15 @@ namespace ikvm.awt
             return color == Color.Empty ? null : new java.awt.Color(color.ToArgb(),true);
         }
 
+        internal static java.awt.Font ConvertFont(Font font)
+        {
+            java.awt.Font jFont = new java.awt.Font(font.Name, (int)font.Style, (int)font.Size);
+            if (jFont.getSize2D() != font.Size)
+            {
+                jFont = jFont.deriveFont(font.Size);
+            }
+            return jFont;
+        }
+
     }
 }
