@@ -29,7 +29,7 @@ IKVM.OpenJDK.XML.XPath
 IKVM.OpenJDK.XML.Parse
 ->IKVM.OpenJDK.XML.API
 ->IKVM.OpenJDK.Text
-->IKVM.OpenJDK.Misc
+->IKVM.OpenJDK.Beans
 
 IKVM.OpenJDK.XML.Transform
 ->IKVM.OpenJDK.Util
@@ -39,12 +39,13 @@ IKVM.OpenJDK.XML.Transform
 ->IKVM.OpenJDK.XML.XPath
 
 IKVM.OpenJDK.XML.Bind
-->IKVM.OpenJDK.Misc
 ->IKVM.OpenJDK.XML.API
 ->IKVM.OpenJDK.Util
 ->IKVM.OpenJDK.Text
 ->IKVM.OpenJDK.SwingAWT
 ->IKVM.OpenJDK.XML.RelaxNG
+->IKVM.OpenJDK.Beans
+->IKVM.OpenJDK.Media
 
 IKVM.OpenJDK.XML.WebServices
 ->IKVM.OpenJDK.XML.API
@@ -56,6 +57,8 @@ IKVM.OpenJDK.XML.WebServices
 ->IKVM.OpenJDK.XML.Bind
 ->IKVM.OpenJDK.Security
 ->IKVM.OpenJDK.Remoting
+->IKVM.OpenJDK.Beans
+->IKVM.OpenJDK.Media
 
 IKVM.OpenJDK.XML.RelaxNG
 ->IKVM.OpenJDK.XML.API
@@ -71,18 +74,18 @@ IKVM.OpenJDK.XML.Crypto
 
 IKVM.OpenJDK.SwingAWT
 ->System.Drawing
-->IKVM.OpenJDK.Misc
 ->IKVM.OpenJDK.Util
 ->IKVM.OpenJDK.Text
 ->IKVM.OpenJDK.XML.API
 ->IKVM.OpenJDK.Charsets
+->IKVM.OpenJDK.Beans
+->IKVM.OpenJDK.Media
 ->IKVM.OpenJDK.Remoting
 
 IKVM.OpenJDK.Charsets
 
 IKVM.OpenJDK.Util
 ->IKVM.OpenJDK.Security
-->IKVM.OpenJDK.Misc
 ->IKVM.OpenJDK.Text
 ->IKVM.OpenJDK.XML.API
 
@@ -97,12 +100,12 @@ IKVM.OpenJDK.Security
 ->IKVM.OpenJDK.Naming
 
 IKVM.OpenJDK.Management
-->IKVM.OpenJDK.Misc
 ->IKVM.OpenJDK.Security
 ->IKVM.OpenJDK.Corba
 ->IKVM.OpenJDK.Util
 ->IKVM.OpenJDK.Naming
 ->IKVM.OpenJDK.Remoting
+->IKVM.OpenJDK.Beans
 
 IKVM.OpenJDK.Misc
 ->System.Drawing
@@ -132,3 +135,15 @@ IKVM.OpenJDK.Remoting
 ->IKVM.OpenJDK.Security
 ->IKVM.OpenJDK.Text
 ->IKVM.OpenJDK.Util
+
+IKVM.OpenJDK.Beans
+->IKVM.OpenJDK.SwingAWT
+->IKVM.OpenJDK.XML.API
+->IKVM.OpenJDK.Util
+
+IKVM.OpenJDK.Media
+->System.Drawing
+->IKVM.OpenJDK.SwingAWT
+->IKVM.OpenJDK.XML.API
+->IKVM.OpenJDK.Util
+->IKVM.OpenJDK.Text

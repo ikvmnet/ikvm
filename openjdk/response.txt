@@ -604,7 +604,6 @@ assembly.class
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/javax/swing/*
     -recurse:resources.zip/com/sun/swing/internal/plaf/*
     -r:System.Drawing
-    icedtea/jce/gnu/java/security/action/*.class
     ikvm/awt/*.class
     java/awt/*.class
     java/awt/image/*.class
@@ -633,6 +632,7 @@ assembly.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/image/renderable/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/peer/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/print/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/accessibility/*.class
     ../../openjdk6-b16/jdk/src/share/classes/javax/swing/*.class
     ../../openjdk6-b16/jdk/src/share/classes/javax/swing/border/*.class
     ../../openjdk6-b16/jdk/src/share/classes/javax/swing/colorchooser/*.class
@@ -681,9 +681,11 @@ assembly.class
 {
     -out:IKVM.OpenJDK.Util.dll
     -baseaddress:0x5AB90000
+    -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/java/util/jar/pack/intrinsic.properties
     java/util/zip/*.class
     ../../openjdk6-b16/build/linux-amd64/gensrc/sun/util/logging/resources/*.class
     ../../openjdk6-b16/build/linux-amd64/gensrc/sun/util/resources/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/com/sun/java/util/jar/pack/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/util/jar/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/util/logging/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/util/prefs/*.class
@@ -696,7 +698,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Text.dll
-    -baseaddress:0x5AEC0000
+    -baseaddress:0x5AFB0000
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/sun/text/*
     java/text/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/text/*.class
@@ -707,7 +709,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Security.dll
-    -baseaddress:0x5B0A0000
+    -baseaddress:0x5B190000
     sun/security/jgss/wrapper/*.class
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/crypto/provider/*.class
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/net/ssl/*.class
@@ -771,7 +773,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Management.dll
-    -baseaddress:0x5B7F0000
+    -baseaddress:0x5B8E0000
     ConnectorBootstrap$DefaultValues.class
     ConnectorBootstrap.class
     icedtea/rt/com/sun/jmx/snmp/*.class
@@ -810,18 +812,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Misc.dll
-    -baseaddress:0x5BC10000
-    -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/javax.print.*
-    -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/javax.sound.*
-    -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/imageio/plugins/common/iio-plugin.properties
-    -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/java/util/jar/pack/intrinsic.properties
-    -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/sun/print/*
-    -r:System.Drawing
-    com/sun/imageio/plugins/jpeg/*.class
-    icedtea/rt/com/sun/media/sound/*.class
-    sun/print/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/activation/registries/*.class
-    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/activation/*.class
+    -baseaddress:0x5BD00000
     ../../openjdk6-b16/build/linux-amd64/impsrc/javax/activity/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/javax/annotation/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/javax/annotation/processing/*.class
@@ -834,17 +825,6 @@ assembly.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/javax/tools/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/javax/transaction/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/javax/transaction/xa/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/com/sun/beans/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/com/sun/beans/finder/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/com/sun/imageio/plugins/bmp/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/com/sun/imageio/plugins/common/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/com/sun/imageio/plugins/gif/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/com/sun/imageio/plugins/jpeg/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/com/sun/imageio/plugins/png/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/com/sun/imageio/plugins/wbmp/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/com/sun/imageio/spi/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/com/sun/imageio/stream/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/com/sun/java/util/jar/pack/*.class
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/net/httpserver/*.class
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/net/httpserver/spi/*.class
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/pept/*.class
@@ -853,29 +833,9 @@ assembly.class
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/pept/presentation/*.class
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/pept/protocol/*.class
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/pept/transport/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/java/beans/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/java/beans/beancontext/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/lang/instrument/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/javax/accessibility/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/javax/imageio/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/javax/imageio/event/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/javax/imageio/metadata/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/javax/imageio/plugins/bmp/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/javax/imageio/plugins/jpeg/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/javax/imageio/spi/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/javax/imageio/stream/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/javax/print/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/javax/print/attribute/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/javax/print/attribute/standard/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/javax/print/event/*.class
     ../../openjdk6-b16/jdk/src/share/classes/javax/script/*.class
     ../../openjdk6-b16/jdk/src/share/classes/javax/smartcardio/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/javax/sound/midi/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/javax/sound/midi/spi/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/javax/sound/sampled/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/javax/sound/sampled/spi/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/sun/beans/editors/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/sun/beans/infos/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/io/ByteToCharASCII.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/io/ByteToCharConverter.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/io/ByteToCharCp1250.class
@@ -933,18 +893,16 @@ assembly.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/io/Converters.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/io/MalformedInputException.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/io/UnknownCharacterException.class
-    ../../openjdk6-b16/jdk/src/share/classes/sun/java2d/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/misc/resources/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/net/httpserver/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/net/www/protocol/gopher/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/net/www/protocol/netdoc/*.class
-    ../../openjdk6-b16/jdk/src/share/classes/sun/print/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sunw/io/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sunw/util/*.class
 }
 {
     -out:IKVM.OpenJDK.Naming.dll
-    -baseaddress:0x5C060000
+    -baseaddress:0x5BDC0000
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/jndi/ldap/jndiprovider.properties
     sun/net/dns/*.class
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/jndi/dns/*.class
@@ -969,7 +927,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Jdbc.dll
-    -baseaddress:0x5C1B0000
+    -baseaddress:0x5BF10000
     -resource:META-INF/services/java.sql.Driver=resources/META-INF/services/java.sql.Driver
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/rowset/*
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/javax/sql/*
@@ -987,7 +945,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Remoting.dll
-    -baseaddress:0x5C300000
+    -baseaddress:0x5C060000
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/sun/rmi/*
     ../../openjdk6-b16/build/linux-amd64/classes/com/sun/jndi/rmi/registry/*.class
     ../../openjdk6-b16/build/linux-amd64/classes/java/rmi/activation/*.class
@@ -1010,4 +968,52 @@ assembly.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/rmi/transport/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/rmi/transport/proxy/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/rmi/transport/tcp/*.class
+}
+{
+    -out:IKVM.OpenJDK.Beans.dll
+    -baseaddress:0x5C180000
+    ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/activation/registries/*.class
+    ../../openjdk6-b16/build/linux-amd64/impsrc/javax/activation/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/com/sun/beans/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/com/sun/beans/finder/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/java/beans/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/java/beans/beancontext/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/sun/beans/editors/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/sun/beans/infos/*.class
+}
+{
+    -out:IKVM.OpenJDK.Media.dll
+    -baseaddress:0x5C240000
+    -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/javax.print.*
+    -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/javax.sound.*
+    -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/imageio/plugins/common/iio-plugin.properties
+    -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/sun/print/*
+    -r:System.Drawing
+    com/sun/imageio/plugins/jpeg/*.class
+    icedtea/rt/com/sun/media/sound/*.class
+    sun/print/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/com/sun/imageio/plugins/bmp/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/com/sun/imageio/plugins/common/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/com/sun/imageio/plugins/gif/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/com/sun/imageio/plugins/jpeg/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/com/sun/imageio/plugins/png/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/com/sun/imageio/plugins/wbmp/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/com/sun/imageio/spi/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/com/sun/imageio/stream/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/imageio/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/imageio/event/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/imageio/metadata/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/imageio/plugins/bmp/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/imageio/plugins/jpeg/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/imageio/spi/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/imageio/stream/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/print/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/print/attribute/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/print/attribute/standard/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/print/event/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/sound/midi/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/sound/midi/spi/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/sound/sampled/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/javax/sound/sampled/spi/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/sun/print/*.class
 }
