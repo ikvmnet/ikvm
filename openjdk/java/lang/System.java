@@ -66,7 +66,6 @@ final class Props
     static void initProperties(Properties props)
     {
         props.put("openjdk.version", "OpenJDK 6 b16");
-        props.put("gnu.classpath.version", "0.95");
         String vfsroot = getVirtualFileSystemRoot();
         props.put("java.home", vfsroot.substring(0, vfsroot.length() - 1));
         props.put("sun.boot.library.path", vfsroot + "bin");

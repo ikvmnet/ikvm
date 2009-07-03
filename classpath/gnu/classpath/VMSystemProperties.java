@@ -377,8 +377,6 @@ public class VMSystemProperties
             p.setProperty("user.dir", ".");
         }
         p.setProperty("awt.toolkit", Configuration.default_awt_peer_toolkit);
-        // we don't want Swing to use graphics 2D
-        p.setProperty("gnu.javax.swing.noGraphics2D", "true");
     }
 
     public static void initOpenJDK(Properties p)
@@ -403,53 +401,6 @@ public class VMSystemProperties
 	// sun.jnu.encoding:=Cp1252
 	// sun.management.compiler:=HotSpot Client Compiler
 	// java.awt.printerjob:=sun.awt.windows.WPrinterJob
-	postInit(p);
-    }
-
-    static void preInit(Properties p)
-    {
-	initCommonProperties(p);
-        String[] culture = ((cli.System.String)(Object)cli.System.Globalization.CultureInfo.get_CurrentCulture().get_Name()).Split(new char[] { '-' });        
-        p.setProperty("user.language", culture[0]);
-        p.setProperty("user.region", culture.length > 1 ? culture[1] : "");
-        p.setProperty("user.variant", culture.length > 2 ? culture[2] : "");
-        try
-        {
-            if(false) throw new cli.System.Security.SecurityException();
-            // HACK using the Assembly.Location property isn't correct
-            cli.System.Reflection.Assembly asm = cli.System.Reflection.Assembly.GetExecutingAssembly();
-            String loc = GetAssemblyLocation(asm);
-            if(loc.length() == 0)
-            {
-                // The assembly was most likely loaded with Assembly.Load(byte[]) and so it doesn't
-                // have a location.
-                // TODO we may need to set some other value here
-                p.setProperty("java.home", ".");
-            }
-            else
-            {
-                p.setProperty("java.home", new cli.System.IO.FileInfo(loc).get_DirectoryName());
-            }
-        }
-        catch(cli.System.MissingMethodException _1)
-        {
-            // We're running on the Compact Framework
-            // TODO we may need to set some other value here
-            p.setProperty("java.home", ".");
-        }
-        catch(cli.System.Security.SecurityException _)
-        {
-            // when we're running in partial trust, we may not be allowed file access
-            // TODO we may need to set some other value here
-            p.setProperty("java.home", ".");
-        }
-        // HACK since we cannot use URL here (it depends on the properties being set), we manually encode the spaces in the assembly name
-        p.setProperty("gnu.classpath.home.url", "ikvmres://" + ((cli.System.String)(Object)cli.System.Reflection.Assembly.GetExecutingAssembly().get_FullName()).Replace(" ", "%20") + "/lib");
-        p.setProperty("gnu.cpu.endian", cli.System.BitConverter.IsLittleEndian ? "little" : "big");
-    }
-
-    static void postInit(Properties p)
-    {
         try
         {
             // read properties from app.config
