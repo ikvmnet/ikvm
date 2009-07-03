@@ -609,8 +609,6 @@ assembly.class
     sun/java2d/*.class
     sun/java2d/cmm/lcms/*.class
     sun/java2d/pipe/*.class
-    SystemProperties$1.class
-    SystemProperties.class
     ../../openjdk6-b16/build/linux-amd64/gensrc/com/sun/accessibility/internal/resources/*.class
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/java/swing/plaf/windows/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/applet/*.class

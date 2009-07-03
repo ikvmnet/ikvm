@@ -173,7 +173,6 @@ sun/reflect/Reflection.java
 sun/reflect/ReflectionFactory.java
 sun/security/jgss/wrapper/NativeGSSFactory.java
 sun/security/jgss/wrapper/SunNativeProvider.java
-SystemProperties.java
 ../../openjdk6-b16/build/linux-amd64/gensrc/com/sun/accessibility/internal/resources/accessibility.java
 ../../openjdk6-b16/build/linux-amd64/gensrc/com/sun/accessibility/internal/resources/accessibility_de.java
 ../../openjdk6-b16/build/linux-amd64/gensrc/com/sun/accessibility/internal/resources/accessibility_en.java
