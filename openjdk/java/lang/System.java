@@ -69,7 +69,7 @@ final class Props
         String vfsroot = getVirtualFileSystemRoot();
         props.put("java.home", vfsroot.substring(0, vfsroot.length() - 1));
         props.put("sun.boot.library.path", vfsroot + "bin");
-        gnu.classpath.VMSystemProperties.initOpenJDK(props);
+        VMSystemProperties.initOpenJDK(props);
     }
     
     private static native String getVirtualFileSystemRoot();

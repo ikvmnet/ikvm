@@ -148,7 +148,7 @@ public final class Startup
 
     public static void setProperties(cli.System.Collections.Hashtable props)
     {
-        gnu.classpath.VMSystemProperties.props = props;
+        java.lang.VMSystemProperties.props = props;
     }
 
     public static void enterMainThread()

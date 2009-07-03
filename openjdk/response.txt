@@ -26,7 +26,6 @@ assembly.class
     sun/net/www/protocol/jar/*.class
     sun/nio/ch/*.class
     sun/reflect/*.class
-    ../classpath/gnu/classpath/*.class
     ../classpath/gnu/java/net/protocol/ikvmres/*.class
     ../classpath/ikvm/extensions/*.class
     ../classpath/ikvm/internal/*.class

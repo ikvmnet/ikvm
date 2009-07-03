@@ -98,7 +98,7 @@ namespace IKVM.NativeCode.gnu.java.net.protocol.ikvmres
 	}
 }
 
-namespace IKVM.NativeCode.gnu.classpath
+namespace IKVM.NativeCode.java.lang
 {
 	static class VMSystemProperties
 	{

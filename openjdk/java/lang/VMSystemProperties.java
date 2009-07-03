@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2004-2008 Jeroen Frijters
+  Copyright (C) 2004-2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,8 +21,9 @@
   jeroen@frijters.net
   
 */
-package gnu.classpath;
+package java.lang;
 
+import gnu.classpath.Configuration;
 import java.util.Properties;
 
 @ikvm.lang.Internal

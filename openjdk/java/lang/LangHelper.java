@@ -24,7 +24,6 @@
 
 package java.lang;
 
-import gnu.classpath.VMSystemProperties;
 import ikvm.runtime.AssemblyClassLoader;
 import java.io.IOException;
 import java.net.MalformedURLException;
