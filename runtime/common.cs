@@ -102,6 +102,11 @@ namespace IKVM.NativeCode.java.lang
 {
 	static class VMSystemProperties
 	{
+		public static string getVirtualFileSystemRoot()
+		{
+			return VirtualFileSystem.RootPath;
+		}
+
 		public static string getVersion()
 		{
 			try

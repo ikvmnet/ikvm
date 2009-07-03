@@ -3007,14 +3007,6 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		static class Props
-		{
-			public static string getVirtualFileSystemRoot()
-			{
-				return VirtualFileSystem.RootPath;
-			}
-		}
-
 		static class Runtime
 		{
 			public static int availableProcessors(object thisRuntime)

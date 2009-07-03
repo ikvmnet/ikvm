@@ -378,8 +378,12 @@ final class VMSystemProperties
         p.setProperty("awt.toolkit", PropertyConstants.awt_toolkit);
     }
 
-    public static void initOpenJDK(Properties p)
+    public static void initProperties(Properties p)
     {
+        p.setProperty("openjdk.version", "OpenJDK 6 b16");
+        String vfsroot = getVirtualFileSystemRoot();
+        p.setProperty("java.home", vfsroot.substring(0, vfsroot.length() - 1));
+        p.setProperty("sun.boot.library.path", vfsroot + "bin");
 	initCommonProperties(p);
         String[] culture = ((cli.System.String)(Object)cli.System.Globalization.CultureInfo.get_CurrentCulture().get_Name()).Split(new char[] { '-' });        
         p.setProperty("user.language", culture[0]);
@@ -420,7 +424,7 @@ final class VMSystemProperties
             // app.config is invalid, ignore
         }
         // set the properties that were specified with ikvm.runtime.Startup.setProperties()
-        cli.System.Collections.Hashtable props = ikvm.runtime.Startup.getProperties();
+        cli.System.Collections.Hashtable props = ikvm.runtime.Startup.props;
         if(props != null)
         {
             cli.System.Collections.IEnumerator entries = ((cli.System.Collections.IEnumerable)props).GetEnumerator();
@@ -431,4 +435,6 @@ final class VMSystemProperties
             }
         }
     }
+    
+    private static native String getVirtualFileSystemRoot();
 }

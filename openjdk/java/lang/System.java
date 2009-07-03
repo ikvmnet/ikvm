@@ -54,7 +54,7 @@ final class Props
     static
     {
         props = new Properties();
-        initProperties(props);
+        VMSystemProperties.initProperties(props);
         
         // after we've initialized the system properties, we need to fixate certain
         // results that depend on system properties, because we don't want Java code to
@@ -62,17 +62,6 @@ final class Props
         ClassLoader.initializeLibraryPaths(props);
         sun.misc.VM.initializeAllowArraySyntax();
     }
-    
-    static void initProperties(Properties props)
-    {
-        props.put("openjdk.version", "OpenJDK 6 b16");
-        String vfsroot = getVirtualFileSystemRoot();
-        props.put("java.home", vfsroot.substring(0, vfsroot.length() - 1));
-        props.put("sun.boot.library.path", vfsroot + "bin");
-        VMSystemProperties.initOpenJDK(props);
-    }
-    
-    private static native String getVirtualFileSystemRoot();
 }
 
 /**
@@ -690,7 +679,7 @@ public final class System {
         }
         if (props == null) {
             props = new Properties();
-            Props.initProperties(props);
+            VMSystemProperties.initProperties(props);
         }
         Props.props = props;
     }

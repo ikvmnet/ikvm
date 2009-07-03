@@ -41,7 +41,8 @@ import cli.System.Type;
 
 public final class Startup
 {
-    private static cli.System.Collections.Hashtable props;
+    @ikvm.lang.Internal
+    public static cli.System.Collections.Hashtable props;
 
     private Startup()
     {
@@ -153,14 +154,6 @@ public final class Startup
         Startup.props = props;
     }
     
-    @ikvm.lang.Internal
-    public static cli.System.Collections.Hashtable getProperties()
-    {
-        cli.System.Collections.Hashtable h = props;
-        props = null;
-        return h;
-    }
-
     public static void enterMainThread()
     {
         if(Thread.get_CurrentThread().get_Name() == null)
