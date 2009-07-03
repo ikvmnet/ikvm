@@ -173,12 +173,7 @@ public class Starter
 					{
 						Console.WriteLine("{0}: {1}", asm.GetName().Name, asm.GetName().Version);
 					}
-					string ver = java.lang.System.getProperty("gnu.classpath.version");
-					if(ver != null)
-					{
-						Console.WriteLine("GNU Classpath version: {0}", ver);
-					}
-					ver = java.lang.System.getProperty("openjdk.version");
+					string ver = java.lang.System.getProperty("openjdk.version");
 					if(ver != null)
 					{
 						Console.WriteLine("OpenJDK version: {0}", ver);
