@@ -17,6 +17,7 @@ IKVM.OpenJDK.Corba
 ->IKVM.OpenJDK.SwingAWT
 ->IKVM.OpenJDK.Text
 ->IKVM.OpenJDK.Naming
+->IKVM.OpenJDK.Remoting
 
 IKVM.OpenJDK.XML.API
 
@@ -54,6 +55,7 @@ IKVM.OpenJDK.XML.WebServices
 ->IKVM.OpenJDK.XML.Parse
 ->IKVM.OpenJDK.XML.Bind
 ->IKVM.OpenJDK.Security
+->IKVM.OpenJDK.Remoting
 
 IKVM.OpenJDK.XML.RelaxNG
 ->IKVM.OpenJDK.XML.API
@@ -74,6 +76,7 @@ IKVM.OpenJDK.SwingAWT
 ->IKVM.OpenJDK.Text
 ->IKVM.OpenJDK.XML.API
 ->IKVM.OpenJDK.Charsets
+->IKVM.OpenJDK.Remoting
 
 IKVM.OpenJDK.Charsets
 
@@ -99,6 +102,7 @@ IKVM.OpenJDK.Management
 ->IKVM.OpenJDK.Corba
 ->IKVM.OpenJDK.Util
 ->IKVM.OpenJDK.Naming
+->IKVM.OpenJDK.Remoting
 
 IKVM.OpenJDK.Misc
 ->System.Drawing
@@ -109,6 +113,7 @@ IKVM.OpenJDK.Misc
 ->IKVM.OpenJDK.Text
 ->IKVM.OpenJDK.Security
 ->IKVM.OpenJDK.Naming
+->IKVM.OpenJDK.Remoting
 
 IKVM.OpenJDK.Jdbc
 ->System.Data
@@ -121,3 +126,9 @@ IKVM.OpenJDK.Jdbc
 IKVM.OpenJDK.Naming
 ->IKVM.OpenJDK.Security
 ->IKVM.OpenJDK.SwingAWT
+
+IKVM.OpenJDK.Remoting
+->IKVM.OpenJDK.Naming
+->IKVM.OpenJDK.Security
+->IKVM.OpenJDK.Text
+->IKVM.OpenJDK.Util
