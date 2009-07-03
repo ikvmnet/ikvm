@@ -33,8 +33,6 @@ final class VMSystemProperties
     public static final String SPEC_VERSION = "1.6";
     public static final String SPEC_VENDOR = "Sun Microsystems Inc.";
 
-    private static native String getVersion();
-
     private static cli.System.Reflection.Assembly GetEntryAssembly()
         throws cli.System.MissingMethodException
     {
@@ -184,11 +182,11 @@ final class VMSystemProperties
         p.setProperty("java.vm.specification.version", "1.0");
         p.setProperty("java.vm.specification.vendor", "Sun Microsystems Inc.");
         p.setProperty("java.vm.specification.name", "Java Virtual Machine Specification");
-        p.setProperty("java.vm.version", getVersion());
+        p.setProperty("java.vm.version", PropertyConstants.java_vm_version);
         p.setProperty("java.vm.vendor", "Jeroen Frijters");
         p.setProperty("java.vm.name", "IKVM.NET");
         p.setProperty("java.runtime.name", "IKVM.NET");
-        p.setProperty("java.runtime.version", getVersion());
+        p.setProperty("java.runtime.version", PropertyConstants.java_runtime_version);
         p.setProperty("java.specification.version", SPEC_VERSION);
         p.setProperty("java.specification.vendor", SPEC_VENDOR);
         p.setProperty("java.specification.name", SPEC_TITLE);
@@ -380,7 +378,7 @@ final class VMSystemProperties
 
     public static void initProperties(Properties p)
     {
-        p.setProperty("openjdk.version", "OpenJDK 6 b16");
+        p.setProperty("openjdk.version", PropertyConstants.openjdk_version);
         String vfsroot = getVirtualFileSystemRoot();
         p.setProperty("java.home", vfsroot.substring(0, vfsroot.length() - 1));
         p.setProperty("sun.boot.library.path", vfsroot + "bin");

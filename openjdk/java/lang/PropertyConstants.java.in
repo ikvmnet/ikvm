@@ -27,4 +27,7 @@ interface PropertyConstants
 {
     String awt_toolkit = "ikvm.awt.NetToolkit, @AWTASSEMBLY@";
     String java_awt_graphicsenv = "ikvm.awt.NetGraphicsEnvironment, @AWTASSEMBLY@";
+    String java_vm_version = "@VERSION@";
+    String java_runtime_version = "@VERSION@";
+    String openjdk_version = "@OPENJDK_VERSION@";
 }

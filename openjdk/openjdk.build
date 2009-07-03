@@ -10,7 +10,12 @@
     <target name="all" depends="classes rmi vfs resources core">
     </target>
 
-    <target name="classes">
+    <target name="version">
+        <property name="VERSION" value="${assemblyname::get-version(assemblyname::get-assembly-name(path::combine(project::get-base-directory(), '../bin/IKVM.Runtime.dll')))}" />
+        <property name="OPENJDK_VERSION" value="OpenJDK 6 b16" />
+    </target>
+
+    <target name="classes" depends="version">
         <delete>
             <fileset basedir="../classpath">
                 <include name="**.class"/>
@@ -42,6 +47,8 @@
             <filterchain>
                 <replacetokens>
                     <token key="AWTASSEMBLY" value="${string::replace(assemblyname::get-full-name(assemblyname::get-assembly-name(path::combine(project::get-base-directory(), '../bin/IKVM.Runtime.dll'))), 'IKVM.Runtime', 'IKVM.AWT.WinForms')}" />
+                    <token key="VERSION" value="${VERSION}" />
+                    <token key="OPENJDK_VERSION" value="${OPENJDK_VERSION}" />
                 </replacetokens>
             </filterchain>
         </copy>
@@ -99,8 +106,7 @@
         </zip>
     </target>
 
-    <target name="core">
-        <property name="VERSION" value="${assemblyname::get-version(assemblyname::get-assembly-name(path::combine(project::get-base-directory(), '../bin/IKVM.Runtime.dll')))}" />
+    <target name="core" depends="version">
         <exec program="${project::get-base-directory()}/../bin/ikvmc.exe" useruntimeengine="true">
             <arg value="-version:${VERSION}" />
             <arg value="${signoption}" />

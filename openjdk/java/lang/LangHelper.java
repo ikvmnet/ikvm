@@ -47,7 +47,6 @@ public class LangHelper
         {
             addedSystemPackages = true;
             String[] pkgs = AssemblyClassLoader.GetPackages(getBootstrapAssembly());
-            String openJdkVersion = AccessController.doPrivileged(new GetPropertyAction("openjdk.version", "unknown"));
             for (int i = 0; i < pkgs.length; i++)
             {
                 pkgMap.put(pkgs[i],
@@ -56,7 +55,7 @@ public class LangHelper
                     VMSystemProperties.SPEC_VERSION,               // specVersion
                     VMSystemProperties.SPEC_VENDOR,                // specVendor
                     "IKVM.NET OpenJDK",                            // implTitle
-                    openJdkVersion,                                // implVersion
+                    PropertyConstants.openjdk_version,             // implVersion
                     "Sun Microsystems, Inc. & others",             // implVendor
                     null,                                          // sealBase
                     null));                                        // class loader

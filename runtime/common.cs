@@ -106,18 +106,6 @@ namespace IKVM.NativeCode.java.lang
 		{
 			return VirtualFileSystem.RootPath;
 		}
-
-		public static string getVersion()
-		{
-			try
-			{
-				return JVM.SafeGetAssemblyVersion(typeof(VMSystemProperties).Assembly).ToString();
-			}
-			catch(Exception)
-			{
-				return "(unknown)";
-			}
-		}
 	}
 }
 
