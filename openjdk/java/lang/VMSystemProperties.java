@@ -25,14 +25,13 @@ package java.lang;
 
 import java.util.Properties;
 
-@ikvm.lang.Internal
-public class VMSystemProperties
+final class VMSystemProperties
 {
+    private VMSystemProperties() { }
+
     public static final String SPEC_TITLE = "Java Platform API Specification";
     public static final String SPEC_VERSION = "1.6";
     public static final String SPEC_VENDOR = "Sun Microsystems Inc.";
-
-    public static cli.System.Collections.Hashtable props;
 
     private static native String getVersion();
 
@@ -420,7 +419,8 @@ public class VMSystemProperties
         {
             // app.config is invalid, ignore
         }
-        // set the properties that were specified with IKVM.Runtime.Startup.SetProperties()
+        // set the properties that were specified with ikvm.runtime.Startup.setProperties()
+        cli.System.Collections.Hashtable props = ikvm.runtime.Startup.getProperties();
         if(props != null)
         {
             cli.System.Collections.IEnumerator entries = ((cli.System.Collections.IEnumerable)props).GetEnumerator();
@@ -429,7 +429,6 @@ public class VMSystemProperties
                 cli.System.Collections.DictionaryEntry de = (cli.System.Collections.DictionaryEntry)entries.get_Current();
                 p.setProperty((String)de.get_Key(), (String)de.get_Value());
             }
-            props = null;
         }
     }
 }
