@@ -99,7 +99,6 @@ java/util/zip/ZipEntry.java
 java/util/zip/ZipFile.java
 gnu/java/awt/Buffers.java
 gnu/java/util/EmptyEnumeration.java
-ServiceUI.java
 sun/awt/AppContext.java
 sun/awt/EmbeddedFrame.java
 sun/awt/IkvmDataTransferer.java
@@ -8292,6 +8291,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 ../../openjdk6-b16/jdk/src/share/classes/javax/print/PrintException.java
 ../../openjdk6-b16/jdk/src/share/classes/javax/print/PrintService.java
 ../../openjdk6-b16/jdk/src/share/classes/javax/print/PrintServiceLookup.java
+../../openjdk6-b16/jdk/src/share/classes/javax/print/ServiceUI.java
 ../../openjdk6-b16/jdk/src/share/classes/javax/print/ServiceUIFactory.java
 ../../openjdk6-b16/jdk/src/share/classes/javax/print/SimpleDoc.java
 ../../openjdk6-b16/jdk/src/share/classes/javax/print/StreamPrintService.java
