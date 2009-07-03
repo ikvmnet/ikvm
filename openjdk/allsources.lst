@@ -9346,7 +9346,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/awt/GlobalCursorManager.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/awt/Graphics2Delegate.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/awt/HeadlessToolkit.java
-../../openjdk6-b16/jdk/src/share/classes/sun/awt/HKSCS.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/awt/HorizBagLayout.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/awt/im/CompositionArea.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/awt/im/CompositionAreaHandler.java
