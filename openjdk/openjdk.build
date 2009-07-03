@@ -136,6 +136,7 @@
             <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Jdbc.dll" />
             <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Management.dll" />
             <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Misc.dll" />
+            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Naming.dll" />
             <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Security.dll" />
             <exec program="peverify" commandline="-nologo IKVM.OpenJDK.SwingAWT.dll" />
             <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Text.dll" />
