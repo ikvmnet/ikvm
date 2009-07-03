@@ -23,7 +23,6 @@
 */
 package java.lang;
 
-import gnu.classpath.Configuration;
 import java.util.Properties;
 
 @ikvm.lang.Internal
@@ -377,7 +376,7 @@ public class VMSystemProperties
         {
             p.setProperty("user.dir", ".");
         }
-        p.setProperty("awt.toolkit", Configuration.default_awt_peer_toolkit);
+        p.setProperty("awt.toolkit", PropertyConstants.awt_toolkit);
     }
 
     public static void initOpenJDK(Properties p)
@@ -393,7 +392,7 @@ public class VMSystemProperties
 	p.setProperty("sun.os.patch.level", "");
 	p.setProperty("java.vm.info", "compiled mode");
 	p.setProperty("sun.nio.MaxDirectMemorySize", "-1");
-	p.setProperty("java.awt.graphicsenv", Configuration.default_graphics_enviroment );
+	p.setProperty("java.awt.graphicsenv", PropertyConstants.java_awt_graphicsenv);
 	// TODO
 	// sun.cpu.isalist:=pentium_pro+mmx pentium_pro pentium+mmx pentium i486 i386 i86
 	// sun.desktop:=windows

@@ -38,7 +38,7 @@
                 </replacetokens>
             </filterchain>
         </copy>
-        <copy file="Configuration.java.in" tofile="Configuration.java" outputencoding="ascii" overwrite="true">
+        <copy file="java/lang/PropertyConstants.java.in" tofile="java/lang/PropertyConstants.java" outputencoding="ascii" overwrite="true">
             <filterchain>
                 <replacetokens>
                     <token key="AWTASSEMBLY" value="${string::replace(assemblyname::get-full-name(assemblyname::get-assembly-name(path::combine(project::get-base-directory(), '../bin/IKVM.Runtime.dll'))), 'IKVM.Runtime', 'IKVM.AWT.WinForms')}" />

@@ -31,7 +31,6 @@
 ../classpath/java/util/concurrent/atomic/AtomicReferenceArray.java
 ../classpath/sun/misc/Ref.java
 AssemblyInfo.java
-Configuration.java
 ConnectorBootstrap.java
 com/sun/imageio/plugins/jpeg/JPEGImageReaderSpi.java
 com/sun/imageio/plugins/jpeg/JPEGImageReader.java
@@ -58,6 +57,7 @@ java/lang/Class.java
 java/lang/ClassLoader.java
 java/lang/LangHelper.java
 java/lang/ProcessImpl.java
+java/lang/PropertyConstants.java
 java/lang/Shutdown.java
 java/lang/StringHelper.java
 java/lang/System.java
