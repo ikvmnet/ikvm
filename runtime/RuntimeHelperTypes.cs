@@ -86,7 +86,7 @@ namespace IKVM.Internal
 			ConstructorBuilder cctor = tb.DefineTypeInitializer();
 			ILGenerator ilgen = cctor.GetILGenerator();
 			ilgen.Emit(OpCodes.Ldtoken, typeParam);
-			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.GetClassFromTypeHandle);
+			ilgen.Emit(OpCodes.Call, StaticCompiler.GetType("IKVM.Runtime.ByteCodeHelper").GetMethod("GetClassFromTypeHandle"));
 			ilgen.Emit(OpCodes.Castclass, classType);
 			ilgen.Emit(OpCodes.Stsfld, classLiteralField);
 			ilgen.Emit(OpCodes.Ret);
