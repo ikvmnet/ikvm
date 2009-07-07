@@ -41,7 +41,6 @@ using Instruction = IKVM.Internal.ClassFile.Method.Instruction;
 
 static class ByteCodeHelperMethods
 {
-	internal static readonly MethodInfo GetClassFromTypeHandle;
 	internal static readonly MethodInfo multianewarray;
 	internal static readonly MethodInfo multianewarray_ghost;
 	internal static readonly MethodInfo anewarray_ghost;
@@ -85,7 +84,6 @@ static class ByteCodeHelperMethods
 #else
 		Type typeofByteCodeHelper = typeof(IKVM.Runtime.ByteCodeHelper);
 #endif
-		GetClassFromTypeHandle = typeofByteCodeHelper.GetMethod("GetClassFromTypeHandle");
 		multianewarray = typeofByteCodeHelper.GetMethod("multianewarray");
 		multianewarray_ghost = typeofByteCodeHelper.GetMethod("multianewarray_ghost");
 		anewarray_ghost = typeofByteCodeHelper.GetMethod("anewarray_ghost");
