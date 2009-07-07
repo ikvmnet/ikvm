@@ -5770,9 +5770,7 @@ namespace IKVM.Internal
 
 					ilgen = CodeEmitter.Create(defaultConstructor);
 					ilgen.Emit(OpCodes.Ldarg_0);
-					ilgen.Emit(OpCodes.Ldtoken, annotationTypeBuilder);
-					ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.GetClassFromTypeHandle);
-					CoreClasses.java.lang.Class.Wrapper.EmitCheckcast(null, ilgen);
+					ilgen.LazyEmitLoadClass(o.wrapper);
 					annotationAttributeBaseType.GetMethodWrapper("<init>", "(Ljava.lang.Class;)V", false).EmitCall(ilgen);
 					ilgen.Emit(OpCodes.Ret);
 
