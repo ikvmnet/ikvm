@@ -34,7 +34,7 @@ import java.util.Locale;
  * 
  */
 public abstract class Font2D{
-    
+
     /* SunGraphics2D has font, tx, aa and fm. From this info
      * can get a Strike object from the cache, creating it if necessary.
      * This code is designed for multi-threaded access.
@@ -68,7 +68,7 @@ public abstract class Font2D{
 
     public void removeFromCache(FontStrikeDesc desc){
         // TODO Auto-generated method stub
-        
+
     }
 
     /**

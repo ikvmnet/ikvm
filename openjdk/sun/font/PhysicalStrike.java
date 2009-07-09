@@ -24,11 +24,13 @@
 package sun.font;
 
 import java.awt.Rectangle;
+import java.awt.font.FontRenderContext;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D.Float;
 
-import cli.System.Drawing.FontFamily;
-import cli.System.Drawing.FontStyle;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+
+import cli.System.Drawing.*;
 
 /**
  * A FontStrike implementation that based on .NET fonts. 
@@ -36,19 +38,31 @@ import cli.System.Drawing.FontStyle;
  */
 public class PhysicalStrike extends FontStrike{
 
+    private final Font font;
     private final FontFamily family;
     private final FontStyle style;
+    private final FontRenderContext frc;
     private final float size2D;
     private final float factor;
     
     private StrikeMetrics strike;
     
+    private static final Bitmap bitmap = new Bitmap(1, 1);
+    private static final Graphics g = Graphics.FromImage(bitmap);
+    private static final StringFormat format = new cli.System.Drawing.StringFormat(StringFormat.get_GenericTypographic());
+    static{
+        StringFormatFlags flags = format.get_FormatFlags();
+        flags = StringFormatFlags.wrap(flags.Value | StringFormatFlags.MeasureTrailingSpaces);
+        format.set_FormatFlags( flags );
+    }
     
-    public PhysicalStrike(float size2D, FontFamily family, FontStyle style){
+    public PhysicalStrike(Font font, FontFamily family, FontStyle style, FontRenderContext frc){
+        this.font = font;
         this.family = family;
         this.style = style;
-        this.size2D = size2D;
-        factor = size2D / family.GetEmHeight(style);
+        this.frc = frc;
+        this.size2D = font.get_Size();
+        this.factor = size2D / family.GetEmHeight(style);
     }
     
     /**
@@ -56,8 +70,7 @@ public class PhysicalStrike extends FontStrike{
      */
     @Override
     Float getCharMetrics(char ch){
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotImplementedException();
     }
 
 
@@ -66,8 +79,12 @@ public class PhysicalStrike extends FontStrike{
      */
     @Override
     float getCodePointAdvance(int cp){
-        // TODO Auto-generated method stub
-        return 0;
+        SizeF sizeF = g.MeasureString("i", font, Integer.MAX_VALUE, format);
+        if(frc.usesFractionalMetrics()){
+            return sizeF.get_Width();
+        } else {
+            return (int)(sizeF.get_Width() + 0.5F);
+        }
     }
 
 
@@ -97,8 +114,7 @@ public class PhysicalStrike extends FontStrike{
      */
     @Override
     float getGlyphAdvance(int glyphCode){
-        // TODO Auto-generated method stub
-        return 0;
+        throw new NotImplementedException();
     }
 
 
@@ -107,8 +123,7 @@ public class PhysicalStrike extends FontStrike{
      */
     @Override
     void getGlyphImageBounds(int glyphcode, Float pt, Rectangle result){
-        // TODO Auto-generated method stub
-
+        throw new NotImplementedException();
     }
 
 
@@ -117,8 +132,7 @@ public class PhysicalStrike extends FontStrike{
      */
     @Override
     long getGlyphImagePtr(int glyphcode){
-        // TODO Auto-generated method stub
-        return 0;
+        throw new NotImplementedException();
     }
 
 
@@ -127,8 +141,7 @@ public class PhysicalStrike extends FontStrike{
      */
     @Override
     void getGlyphImagePtrs(int[] glyphCodes, long[] images, int len){
-        // TODO Auto-generated method stub
-
+        throw new NotImplementedException();
     }
 
 
@@ -137,8 +150,7 @@ public class PhysicalStrike extends FontStrike{
      */
     @Override
     Float getGlyphMetrics(int glyphcode){
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotImplementedException();
     }
 
 
@@ -147,8 +159,7 @@ public class PhysicalStrike extends FontStrike{
      */
     @Override
     GeneralPath getGlyphOutline(int glyphCode, float x, float y){
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotImplementedException();
     }
 
 
@@ -157,8 +168,7 @@ public class PhysicalStrike extends FontStrike{
      */
     @Override
     java.awt.geom.Rectangle2D.Float getGlyphOutlineBounds(int glyphCode){
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotImplementedException();
     }
 
 
@@ -167,8 +177,7 @@ public class PhysicalStrike extends FontStrike{
      */
     @Override
     GeneralPath getGlyphVectorOutline(int[] glyphs, float x, float y){
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotImplementedException();
     }
 
 
@@ -177,8 +186,7 @@ public class PhysicalStrike extends FontStrike{
      */
     @Override
     public int getNumGlyphs(){
-        // TODO Auto-generated method stub
-        return 0;
+        throw new NotImplementedException();
     }
 
 }

@@ -52,9 +52,6 @@ class PhysicalFont extends Font2D{
     private static final cli.System.Drawing.GraphicsUnit PIXEL = cli.System.Drawing.GraphicsUnit
             .wrap(cli.System.Drawing.GraphicsUnit.Pixel);
 
-    private FontStrike strike;
-
-
     PhysicalFont(String name, int style){
         this.family = createFontFamily(name);
         this.style = createFontStyle(family, style);
@@ -126,10 +123,7 @@ class PhysicalFont extends Font2D{
      */
     @Override
     public FontStrike getStrike(Font font, FontRenderContext frc){
-        if(strike == null){
-            strike = new PhysicalStrike(font.getSize2D(), family, style);
-        }
-        return strike;
+        return new PhysicalStrike(font.getNetFont(), family, style, frc);
     }
 
 
