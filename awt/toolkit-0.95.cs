@@ -1987,7 +1987,7 @@ namespace ikvm.awt
 			}
 		}
 
-		public void show()
+		public virtual void show()
 		{
 			java.awt.Dimension s = ((java.awt.Component)target).getSize();
 			oldHeight = s.height;
@@ -2659,6 +2659,11 @@ namespace ikvm.awt
 
 	class NetWindowPeer : NetContainerPeer, WindowPeer
 	{
+        // we can't use NetDialogPeer as blocker may be an instance of NetPrintDialogPeer that
+        // extends NetWindowPeer, not NetDialogPeer
+        private NetWindowPeer modalBlocker;
+        private bool modalSavedEnabled;
+
         public NetWindowPeer(java.awt.Window window)
 			: base(window)
 		{
@@ -2805,9 +2810,35 @@ namespace ikvm.awt
             throw new NotImplementedException();
         }
 
-        public void setModalBlocked(java.awt.Dialog d, bool b)
+        public bool isModalBlocked()
         {
-            throw new NotImplementedException();
+            return modalBlocker != null;
+        }
+
+        public void setModalBlocked(java.awt.Dialog dialog, bool blocked)
+        {
+            lock (target.getTreeLock()) // State lock should always be after awtLock
+            {
+                // use NetWindowPeer instead of NetDialogPeer because of FileDialogs and PrintDialogs
+                NetWindowPeer blockerPeer = (NetWindowPeer)dialog.getPeer();
+                if (blocked)
+                {
+                    modalBlocker = blockerPeer;
+                    modalSavedEnabled = control.Enabled;
+                    disable();
+                }
+                else
+                {
+                    modalBlocker = null;
+                    if(modalSavedEnabled){
+                        enable();
+                    }
+                    else
+                    {
+                        disable();
+                    }
+                }
+            }
         }
 
         public void updateFocusableWindowState()
@@ -3165,13 +3196,11 @@ namespace ikvm.awt
 		}
 	}
 
-	class NetFileDialogPeer : java.awt.peer.FileDialogPeer
+    //also WFileDialogPeer extends from WWindowPeer
+	class NetFileDialogPeer : NetWindowPeer, java.awt.peer.FileDialogPeer
 	{
-		private readonly java.awt.FileDialog dialog;
-
-		internal NetFileDialogPeer(java.awt.FileDialog dialog)
+		internal NetFileDialogPeer(java.awt.FileDialog dialog) : base(dialog)
 		{
-			this.dialog = dialog;
 		}
 
 		public void setDirectory(string str)
@@ -3192,308 +3221,11 @@ namespace ikvm.awt
 
 		public void setTitle(string str)
 		{
-			throw new NotImplementedException();
 		}
 
-		public bool requestWindowFocus()
+		public override void show()
 		{
-			throw new NotImplementedException();
-		}
-
-		public void toBack()
-		{
-			throw new NotImplementedException();
-		}
-
-		public void toFront()
-		{
-		}
-
-		public void updateAlwaysOnTop()
-		{
-			throw new NotImplementedException();
-		}
-
-		public void beginValidate()
-		{
-		}
-
-		public void cancelPendingPaint(int i1, int i2, int i3, int i4)
-		{
-		}
-
-		public void endValidate()
-		{
-		}
-
-		public java.awt.Insets getInsets()
-		{
-			return new java.awt.Insets(0, 0, 0, 0);
-		}
-
-		public java.awt.Insets insets()
-		{
-			return getInsets();
-		}
-
-		public bool isPaintPending()
-		{
-			return false;
-		}
-
-		public bool isRestackSupported()
-		{
-			return false;
-		}
-
-		public void restack()
-		{
-		}
-
-		public bool canDetermineObscurity()
-		{
-			return false;
-		}
-
-		public int checkImage(java.awt.Image i1, int i2, int i3, ImageObserver io)
-		{
-			throw new NotImplementedException();
-		}
-
-		public void coalescePaintEvent(java.awt.@event.PaintEvent pe)
-		{
-			throw new NotImplementedException();
-		}
-
-		public void createBuffers(int i, java.awt.BufferCapabilities bc)
-		{
-			throw new NotImplementedException();
-		}
-
-		public java.awt.Image createImage(int i1, int i2)
-		{
-			throw new NotImplementedException();
-		}
-
-		public java.awt.Image createImage(ImageProducer ip)
-		{
-			throw new NotImplementedException();
-		}
-
-		public VolatileImage createVolatileImage(int i1, int i2)
-		{
-			throw new NotImplementedException();
-		}
-
-		public void destroyBuffers()
-		{
-			throw new NotImplementedException();
-		}
-
-		public void disable()
-		{
-			throw new NotImplementedException();
-		}
-
-		public void dispose()
-		{
-		}
-
-		public void enable()
-		{
-			throw new NotImplementedException();
-		}
-
-		public void flip(java.awt.BufferCapabilities.FlipContents bcfc)
-		{
-			throw new NotImplementedException();
-		}
-
-		public java.awt.Image getBackBuffer()
-		{
-			throw new NotImplementedException();
-		}
-
-		public java.awt.Rectangle getBounds()
-		{
-			throw new NotImplementedException();
-		}
-
-		public ColorModel getColorModel()
-		{
-			throw new NotImplementedException();
-		}
-
-		public java.awt.FontMetrics getFontMetrics(java.awt.Font f)
-		{
-			throw new NotImplementedException();
-		}
-
-		public java.awt.Graphics getGraphics()
-		{
-			throw new NotImplementedException();
-		}
-
-		public java.awt.GraphicsConfiguration getGraphicsConfiguration()
-		{
-			throw new NotImplementedException();
-		}
-
-		public java.awt.Point getLocationOnScreen()
-		{
-			throw new NotImplementedException();
-		}
-
-		public java.awt.Dimension getMinimumSize()
-		{
-			throw new NotImplementedException();
-		}
-
-		public java.awt.Dimension getPreferredSize()
-		{
-			throw new NotImplementedException();
-		}
-
-		public java.awt.Toolkit getToolkit()
-		{
-			throw new NotImplementedException();
-		}
-
-		public void handleEvent(java.awt.AWTEvent awte)
-		{
-			throw new NotImplementedException();
-		}
-
-		public bool handlesWheelScrolling()
-		{
-			throw new NotImplementedException();
-		}
-
-		public void hide()
-		{
-		}
-
-		public bool isFocusTraversable()
-		{
-			throw new NotImplementedException();
-		}
-
-		public bool isFocusable()
-		{
-			throw new NotImplementedException();
-		}
-
-		public bool isObscured()
-		{
-			throw new NotImplementedException();
-		}
-
-		public bool isReparentSupported()
-		{
-			throw new NotImplementedException();
-		}
-
-		public void layout()
-		{
-			throw new NotImplementedException();
-		}
-
-		public java.awt.Dimension minimumSize()
-		{
-			throw new NotImplementedException();
-		}
-
-		public void paint(java.awt.Graphics g)
-		{
-			throw new NotImplementedException();
-		}
-
-		public java.awt.Dimension preferredSize()
-		{
-			throw new NotImplementedException();
-		}
-
-		public bool prepareImage(java.awt.Image i1, int i2, int i3, ImageObserver io)
-		{
-			throw new NotImplementedException();
-		}
-
-		public void print(java.awt.Graphics g)
-		{
-			throw new NotImplementedException();
-		}
-
-		public void repaint(long l, int i1, int i2, int i3, int i4)
-		{
-			throw new NotImplementedException();
-		}
-
-		public void reparent(ContainerPeer cp)
-		{
-			throw new NotImplementedException();
-		}
-
-		public void requestFocus()
-		{
-			throw new NotImplementedException();
-		}
-
-		public bool requestFocus(java.awt.Component c, bool b1, bool b2, long l)
-		{
-			throw new NotImplementedException();
-		}
-
-		public void reshape(int i1, int i2, int i3, int i4)
-		{
-			throw new NotImplementedException();
-		}
-
-		public void setBackground(java.awt.Color c)
-		{
-			throw new NotImplementedException();
-		}
-
-		public void setBounds(int i1, int i2, int i3, int i4, int i5)
-		{
-			throw new NotImplementedException();
-		}
-
-		public void setBounds(int i1, int i2, int i3, int i4)
-		{
-			throw new NotImplementedException();
-		}
-
-		public void setCursor(java.awt.Cursor c)
-		{
-			throw new NotImplementedException();
-		}
-
-		public void setEnabled(bool b)
-		{
-			throw new NotImplementedException();
-		}
-
-		public void setEventMask(long l)
-		{
-		}
-
-		public void setFont(java.awt.Font f)
-		{
-			throw new NotImplementedException();
-		}
-
-		public void setForeground(java.awt.Color c)
-		{
-			throw new NotImplementedException();
-		}
-
-		public void setVisible(bool b)
-		{
-			throw new NotImplementedException();
-		}
-
-		public void show()
-		{
+            java.awt.FileDialog dialog = (java.awt.FileDialog)target;
 			if (dialog.getMode() != java.awt.FileDialog.LOAD)
 			{
 				throw new NotImplementedException();
@@ -3519,59 +3251,9 @@ namespace ikvm.awt
 			t.Start();
 		}
 
-		public void updateCursorImmediately()
-		{
-			throw new NotImplementedException();
-		}
-
-        public void applyShape(sun.java2d.pipe.Region r)
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool requestFocus(java.awt.Component c, bool b1, bool b2, long l, sun.awt.CausedFocusEvent.Cause cfec)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void setAlwaysOnTop(bool b)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void setModalBlocked(java.awt.Dialog d, bool b)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void updateFocusableWindowState()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void updateIconImages()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void updateMinimumSize()
-        {
-            throw new NotImplementedException();
-        }
-
         public void blockWindows(List l)
         {
             throw new NotImplementedException();
         }
-
-		public void beginLayout()
-		{
-			throw new NotImplementedException();
-		}
-
-		public void endLayout()
-		{
-			throw new NotImplementedException();
-		}
 	}
 }
