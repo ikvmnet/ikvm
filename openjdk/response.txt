@@ -664,6 +664,7 @@ assembly.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/java2d/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/java2d/cmm/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/java2d/pipe/*.class
+    ../../openjdk6-b16/jdk/src/share/classes/sun/java2d/pisces/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/swing/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/swing/plaf/synth/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/swing/plaf/windows/*.class

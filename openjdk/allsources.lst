@@ -9795,6 +9795,15 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/java2d/pipe/ShapeDrawPipe.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/java2d/pipe/SpanIterator.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/java2d/pipe/TextPipe.java
+../../openjdk6-b16/jdk/src/share/classes/sun/java2d/pisces/Dasher.java
+../../openjdk6-b16/jdk/src/share/classes/sun/java2d/pisces/LineSink.java
+../../openjdk6-b16/jdk/src/share/classes/sun/java2d/pisces/PiscesCache.java
+../../openjdk6-b16/jdk/src/share/classes/sun/java2d/pisces/PiscesMath.java
+../../openjdk6-b16/jdk/src/share/classes/sun/java2d/pisces/PiscesRenderingEngine.java
+../../openjdk6-b16/jdk/src/share/classes/sun/java2d/pisces/PiscesTileGenerator.java
+../../openjdk6-b16/jdk/src/share/classes/sun/java2d/pisces/Renderer.java
+../../openjdk6-b16/jdk/src/share/classes/sun/java2d/pisces/Stroker.java
+../../openjdk6-b16/jdk/src/share/classes/sun/java2d/pisces/Transform4.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/java2d/StateTrackable.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/java2d/StateTrackableDelegate.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/java2d/StateTracker.java
