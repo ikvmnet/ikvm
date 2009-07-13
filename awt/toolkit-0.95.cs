@@ -928,7 +928,7 @@ namespace ikvm.awt
 		private int oldHeight = -1;
 		private bool sm_suppressFocusAndActivation;
 		private bool m_callbacksEnabled;
-		private int m_validationNestCount;
+		//private int m_validationNestCount;
 		private int serialNum = 0;
 		private bool isLayouting = false;
 		private bool paintPending = false;
