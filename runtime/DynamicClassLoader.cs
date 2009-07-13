@@ -71,7 +71,9 @@ namespace IKVM.Internal
 #if !STATIC_COMPILER
 			if(JVM.IsSaveDebugImage)
 			{
-				saveClassLoaders = new List<DynamicClassLoader>();
+#if !CLASSGC
+				saveClassLoaders.Add(instance);
+#endif
 			}
 			// TODO AppDomain.TypeResolve requires ControlAppDomain permission, but if we don't have that,
 			// we should handle that by disabling dynamic class loading
@@ -415,8 +417,12 @@ namespace IKVM.Internal
 		private static ModuleBuilder CreateModuleBuilder()
 		{
 			AssemblyName name = new AssemblyName();
-			if(saveClassLoaders != null)
+			if(JVM.IsSaveDebugImage)
 			{
+				if(saveClassLoaders == null)
+				{
+					System.Threading.Interlocked.CompareExchange(ref saveClassLoaders, new List<DynamicClassLoader>(), null);
+				}
 				// we ignore the race condition (we could end up with multiple assemblies with the same name),
 				// because it is pretty harmless (you'll miss one of the ikvmdump-xx.dll files)
 				name.Name = "ikvmdump-" + saveClassLoaders.Count;
