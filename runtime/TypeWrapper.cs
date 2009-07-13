@@ -2210,6 +2210,53 @@ namespace IKVM.Internal
 			this.baseWrapper = baseWrapper;
 		}
 
+		internal void EmitClassLiteral(CodeEmitter ilgen)
+		{
+			Debug.Assert(!this.IsPrimitive);
+
+			Type type = GetClassLiteralType();
+
+			if (IsForbiddenTypeParameterType(type))
+			{
+				ilgen.Emit(OpCodes.Ldtoken, type);
+				Compiler.getClassFromTypeHandle.EmitCall(ilgen);
+			}
+			else
+			{
+				ilgen.Emit(OpCodes.Ldsfld, RuntimeHelperTypes.GetClassLiteralField(type));
+			}
+		}
+
+		private Type GetClassLiteralType()
+		{
+			Debug.Assert(!this.IsPrimitive);
+
+			TypeWrapper tw = this;
+			if (tw.IsGhostArray)
+			{
+				int rank = tw.ArrayRank;
+				while (tw.IsArray)
+				{
+					tw = tw.ElementTypeWrapper;
+				}
+				return ArrayTypeWrapper.MakeArrayType(tw.TypeAsTBD, rank);
+			}
+			else
+			{
+				return tw.IsRemapped ? tw.TypeAsBaseType : tw.TypeAsTBD;
+			}
+		}
+
+		private static bool IsForbiddenTypeParameterType(Type type)
+		{
+			// these are the types that may not be used as a type argument when instantiating a generic type
+			return type == typeof(void)
+				|| type == typeof(ArgIterator)
+				|| type == typeof(RuntimeArgumentHandle)
+				|| type == typeof(TypedReference)
+				|| type.IsByRef;
+		}
+
 #if !STATIC_COMPILER
 		internal void SetClassObject(object classObject)
 		{
@@ -7222,7 +7269,6 @@ namespace IKVM.Internal
 			private readonly ClassFile classFile;
 			private readonly DynamicTypeWrapper wrapper;
 			private readonly TypeBuilder typeBuilder;
-			private FieldInfo classObjectField;
 			private TypeBuilder typeCallerID;
 			private FieldInfo callerIDField;
 			private List<System.Threading.ThreadStart> postFinishProcs;
@@ -7232,18 +7278,6 @@ namespace IKVM.Internal
 				this.classFile = classFile;
 				this.wrapper = wrapper;
 				this.typeBuilder = typeBuilder;
-			}
-
-			internal FieldInfo ClassObjectField
-			{
-				get
-				{
-					if (classObjectField == null)
-					{
-						classObjectField = RuntimeHelperTypes.GetClassLiteralField(typeBuilder);
-					}
-					return classObjectField;
-				}
 			}
 
 			internal FieldInfo CallerIDField
@@ -7940,7 +7974,7 @@ namespace IKVM.Internal
 					LocalBuilder syncObject = null;
 					if (m.IsSynchronized && m.IsStatic)
 					{
-						ilGenerator.Emit(OpCodes.Ldsfld, context.ClassObjectField);
+						wrapper.EmitClassLiteral(ilGenerator);
 						ilGenerator.Emit(OpCodes.Dup);
 						syncObject = ilGenerator.DeclareLocal(typeof(object));
 						ilGenerator.Emit(OpCodes.Stloc, syncObject);
@@ -8008,7 +8042,7 @@ namespace IKVM.Internal
 					else
 					{
 						ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
-						ilGenerator.Emit(OpCodes.Ldsfld, context.ClassObjectField);
+						wrapper.EmitClassLiteral(ilGenerator);
 						ilGenerator.Emit(OpCodes.Call, makeLocalRef);
 					}
 					for (int j = 0; j < args.Length; j++)

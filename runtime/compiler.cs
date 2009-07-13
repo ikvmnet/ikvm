@@ -842,7 +842,7 @@ class Compiler
 		{
 			if(m.IsSynchronized && m.IsStatic)
 			{
-				ilGenerator.Emit(OpCodes.Ldsfld, context.ClassObjectField);
+				clazz.EmitClassLiteral(ilGenerator);
 				ilGenerator.Emit(OpCodes.Dup);
 				LocalBuilder monitor = ilGenerator.DeclareLocal(typeof(object));
 				ilGenerator.Emit(OpCodes.Stloc, monitor);

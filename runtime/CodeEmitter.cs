@@ -1354,30 +1354,7 @@ namespace IKVM.Internal
 
 			internal override void Emit(CodeEmitter ilgen)
 			{
-				TypeWrapper tw = Type;
-				if (tw.IsGhostArray)
-				{
-					int rank = tw.ArrayRank;
-					while (tw.IsArray)
-					{
-						tw = tw.ElementTypeWrapper;
-					}
-					ilgen.Emit(OpCodes.Ldsfld, RuntimeHelperTypes.GetClassLiteralField(ArrayTypeWrapper.MakeArrayType(tw.TypeAsTBD, rank)));
-				}
-				else
-				{
-					Type type = tw.IsRemapped ? tw.TypeAsBaseType : tw.TypeAsTBD;
-					if (type == typeof(void))
-					{
-						// the CLR doesn't allow System.Void to be used as a type parameter, so we have to special case it
-						ilgen.Emit(OpCodes.Ldtoken, type);
-						Compiler.getClassFromTypeHandle.EmitCall(ilgen);
-					}
-					else
-					{
-						ilgen.Emit(OpCodes.Ldsfld, RuntimeHelperTypes.GetClassLiteralField(type));
-					}
-				}
+				Type.EmitClassLiteral(ilgen);
 			}
 		}
 	}
