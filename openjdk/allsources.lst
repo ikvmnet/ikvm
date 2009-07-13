@@ -51,6 +51,7 @@ java/io/FileInputStream.java
 java/io/FileOutputStream.java
 java/io/FilePermission.java
 java/io/ObjectStreamClass.java
+java/io/ObjectStreamField.java
 java/io/RandomAccessFile.java
 java/lang/ApplicationShutdownHooks.java
 java/lang/Class.java
@@ -6999,7 +7000,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 ../../openjdk6-b16/jdk/src/share/classes/java/io/ObjectOutputStream.java
 ../../openjdk6-b16/jdk/src/share/classes/java/io/ObjectStreamConstants.java
 ../../openjdk6-b16/jdk/src/share/classes/java/io/ObjectStreamException.java
-../../openjdk6-b16/jdk/src/share/classes/java/io/ObjectStreamField.java
 ../../openjdk6-b16/jdk/src/share/classes/java/io/OptionalDataException.java
 ../../openjdk6-b16/jdk/src/share/classes/java/io/OutputStream.java
 ../../openjdk6-b16/jdk/src/share/classes/java/io/OutputStreamWriter.java
