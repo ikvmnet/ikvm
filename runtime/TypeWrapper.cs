@@ -3556,7 +3556,7 @@ namespace IKVM.Internal
 #endif
 	}
 
-	class UnloadableTypeWrapper : TypeWrapper
+	sealed class UnloadableTypeWrapper : TypeWrapper
 	{
 		internal UnloadableTypeWrapper(string name)
 			: base(TypeWrapper.UnloadableModifiersHack, name, null)
@@ -3682,7 +3682,7 @@ namespace IKVM.Internal
 		}
 	}
 
-	class PrimitiveTypeWrapper : TypeWrapper
+	sealed class PrimitiveTypeWrapper : TypeWrapper
 	{
 		internal static readonly PrimitiveTypeWrapper BYTE = new PrimitiveTypeWrapper(typeof(byte), "B");
 		internal static readonly PrimitiveTypeWrapper CHAR = new PrimitiveTypeWrapper(typeof(char), "C");
@@ -10352,7 +10352,7 @@ namespace IKVM.Internal
 			return true;
 		}
 
-		private class DelegateInnerClassTypeWrapper : TypeWrapper
+		private sealed class DelegateInnerClassTypeWrapper : TypeWrapper
 		{
 			private readonly Type fakeType;
 
@@ -10475,7 +10475,7 @@ namespace IKVM.Internal
 #endif // !STATIC_COMPILER && !FIRST_PASS
 		}
 
-		private class EnumEnumTypeWrapper : TypeWrapper
+		private sealed class EnumEnumTypeWrapper : TypeWrapper
 		{
 			private readonly Type fakeType;
 
