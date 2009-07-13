@@ -43,7 +43,7 @@ public class ObjectStreamField
     /** field name */
     private final String name;
     /** canonical JVM signature of field type */
-    private final String signature;
+    private String signature;
     /** field type (Object.class if unknown non-primitive type) */
     private final Class type;
     /** whether or not to (de)serialize field values as unshared */
@@ -82,14 +82,20 @@ public class ObjectStreamField
      * @since   1.4
      */
     public ObjectStreamField(String name, Class<?> type, boolean unshared) {
-        if (name == null) {
+        if (name == null || type == null) {
             throw new NullPointerException();
         }
         this.name = name;
         this.type = type;
         this.unshared = unshared;
-        signature = ObjectStreamClass.getClassSignature(type).intern();
         field = null;
+    }
+    
+    // [IKVM] added lazy signature computation, to avoid the reflection hit, unless we really need it
+    private void lazyInitSignature() {
+        if (signature == null) {
+            signature = ObjectStreamClass.getClassSignature(type).intern();
+        }
     }
 
     /**
@@ -180,6 +186,7 @@ public class ObjectStreamField
      */
     // REMIND: deprecate?
     public char getTypeCode() {
+        lazyInitSignature();
         return signature.charAt(0);
     }
 
@@ -190,6 +197,7 @@ public class ObjectStreamField
      */
     // REMIND: deprecate?
     public String getTypeString() {
+        lazyInitSignature();
         return isPrimitive() ? null : signature;
     }
 
@@ -222,6 +230,7 @@ public class ObjectStreamField
      */
     // REMIND: deprecate?
     public boolean isPrimitive() {
+        lazyInitSignature();
         char tcode = signature.charAt(0);
         return ((tcode != 'L') && (tcode != '['));
     }
@@ -256,6 +265,7 @@ public class ObjectStreamField
      * Return a string that describes this field.
      */
     public String toString() {
+        lazyInitSignature();
         return signature + ' ' + name;
     }
 
@@ -272,6 +282,7 @@ public class ObjectStreamField
      * that signature strings are returned for primitive fields as well).
      */
     String getSignature() {
+        lazyInitSignature();
         return signature;
     }
 }
