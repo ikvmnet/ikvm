@@ -158,7 +158,7 @@ public final class System {
 
     /* The security manager for the system.
      */
-    private static volatile SecurityManager security = null;
+    private static volatile SecurityManager security;
 
     /**
      * Reassigns the "standard" input stream.
@@ -233,7 +233,7 @@ public final class System {
         StdIO.err = err;
     }
 
-    private static volatile Console cons = null;
+    private static volatile Console cons;
     /**
      * Returns the unique {@link java.io.Console Console} object associated
      * with the current Java virtual machine, if any.
