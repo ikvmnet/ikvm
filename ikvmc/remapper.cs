@@ -269,10 +269,11 @@ namespace IKVM.Internal.MapXml
 	}
 
 	[XmlType("pop")]
-	public sealed class Pop : Simple
+	public sealed class Pop : Instruction
 	{
-		public Pop() : base(OpCodes.Pop)
+		internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
 		{
+			ilgen.LazyEmitPop();
 		}
 	}
 

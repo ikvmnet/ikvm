@@ -1156,19 +1156,29 @@ namespace IKVM.Internal
 			{
 			}
 
+			private void DoEmit(CodeEmitter ilgen)
+			{
+				IKVM.Internal.MapXml.CodeGenContext context = new IKVM.Internal.MapXml.CodeGenContext(this.DeclaringType.GetClassLoader());
+				// we don't want the line numbers from map.xml, so we have our own emit loop
+				for (int i = 0; i < code.invoke.Length; i++)
+				{
+					code.invoke[i].Generate(context, ilgen);
+				}
+			}
+
 			internal override void EmitCall(CodeEmitter ilgen)
 			{
-				code.Emit(DeclaringType.GetClassLoader(), ilgen);
+				DoEmit(ilgen);
 			}
 
 			internal override void EmitCallvirt(CodeEmitter ilgen)
 			{
-				code.Emit(DeclaringType.GetClassLoader(), ilgen);
+				DoEmit(ilgen);
 			}
 
 			internal override void EmitNewobj(CodeEmitter ilgen, MethodAnalyzer ma, int opcodeIndex)
 			{
-				code.Emit(DeclaringType.GetClassLoader(), ilgen);
+				DoEmit(ilgen);
 			}
 		}
 
