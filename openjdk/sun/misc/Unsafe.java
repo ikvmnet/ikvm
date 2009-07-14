@@ -47,8 +47,7 @@ public final class Unsafe
     @ikvm.internal.HasCallerID
     public static Unsafe getUnsafe()
     {
-        Class c = sun.reflect.Reflection.getCallerClass(2);
-        if(c.getClassLoader() != null)
+        if(ikvm.internal.CallerID.getCallerID().getCallerClassLoader() != null)
         {
             throw new SecurityException("Unsafe");
         }
