@@ -101,7 +101,8 @@ public abstract class CallerID
 		return ikvm.runtime.Util.getClassFromTypeHandle(typeHandle);
 	    }
 	    ClassLoader GetClassLoader() {
-		return getCallerClass().getClassLoader();
+	        // since this optimization is only available inside the core class library, we know that the class loader is null
+		return null;
 	    }
 	};
     }
