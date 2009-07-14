@@ -40,8 +40,8 @@ public final class ExceptionHelper
     private static final Key EXCEPTION_DATA_KEY = new Key();
     private static final ikvm.internal.WeakIdentityMap exceptions = new ikvm.internal.WeakIdentityMap();
     private static final boolean cleanStackTrace = SafeGetEnvironmentVariable("IKVM_DISABLE_STACKTRACE_CLEANING") == null;
-    private static final cli.System.Type System_Reflection_MethodBase = cli.System.Type.GetType("System.Reflection.MethodBase, mscorlib");
-    private static final cli.System.Type System_Exception = cli.System.Type.GetType("System.Exception, mscorlib");
+    private static final cli.System.Type System_Reflection_MethodBase = ikvm.runtime.Util.getInstanceTypeFromClass(cli.System.Reflection.MethodBase.class);
+    private static final cli.System.Type System_Exception = ikvm.runtime.Util.getInstanceTypeFromClass(cli.System.Exception.class);
     // we use Activator.CreateInstance to prevent the exception from being added to the exceptions map
     private static final Throwable NOT_REMAPPED = (Throwable)cli.System.Activator.CreateInstance(System_Exception);
     private static final java.util.Hashtable failedTypes = new java.util.Hashtable();
