@@ -153,7 +153,7 @@ class Compiler
 	private static MethodInfo unmapExceptionMethod;
 	private static MethodInfo fixateExceptionMethod;
 	private static MethodInfo suppressFillInStackTraceMethod;
-	private static MethodInfo getTypeFromHandleMethod;
+	internal static MethodInfo getTypeFromHandleMethod;
 	private static MethodInfo monitorEnterMethod;
 	private static MethodInfo monitorExitMethod;
 	private static MethodInfo keepAliveMethod;

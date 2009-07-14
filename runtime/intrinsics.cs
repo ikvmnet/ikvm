@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2008 Jeroen Frijters
+  Copyright (C) 2008, 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -99,6 +99,7 @@ namespace IKVM.Internal
 			intrinsics.Add(new IntrinsicKey("sun.reflect.Reflection", "getCallerClass", "(I)Ljava.lang.Class;"), Reflection_getCallerClass);
 			intrinsics.Add(new IntrinsicKey("java.lang.ClassLoader", "getCallerClassLoader", "()Ljava.lang.ClassLoader;"), ClassLoader_getCallerClassLoader);
 			intrinsics.Add(new IntrinsicKey("ikvm.internal.CallerID", "getCallerID", "()Likvm.internal.CallerID;"), CallerID_getCallerID);
+			intrinsics.Add(new IntrinsicKey("ikvm.runtime.Util", "getInstanceTypeFromClass", "(Ljava.lang.Class;)Lcli.System.Type;"), Util_getInstanceTypeFromClass);
 			return intrinsics;
 		}
 
@@ -378,6 +379,26 @@ namespace IKVM.Internal
 			else
 			{
 				JVM.CriticalFailure("CallerID.getCallerID() requires a HasCallerID annotation", null);
+			}
+			return false;
+		}
+
+		private static bool Util_getInstanceTypeFromClass(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		{
+			TypeWrapper tw = ilgen.PeekLazyClassLiteral();
+			if (tw != null)
+			{
+				ilgen.LazyEmitPop();
+				if (tw.IsRemapped && tw.IsFinal)
+				{
+					ilgen.Emit(OpCodes.Ldtoken, tw.TypeAsTBD);
+				}
+				else
+				{
+					ilgen.Emit(OpCodes.Ldtoken, tw.TypeAsBaseType);
+				}
+				ilgen.Emit(OpCodes.Call, Compiler.getTypeFromHandleMethod);
+				return true;
 			}
 			return false;
 		}
