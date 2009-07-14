@@ -863,6 +863,64 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal void LazyEmit_baload()
+		{
+			PushStack(new ByteArrayLoadExpr());
+		}
+
+		private bool Match<T1, T2>(out T1 t1, out T2 t2)
+			where T1 : Expr
+			where T2 : Expr
+		{
+			if (topOfStack < 2)
+			{
+				t1 = null;
+				t2 = null;
+				return false;
+			}
+			t1 = stackArray[topOfStack - 1] as T1;
+			t2 = stackArray[topOfStack - 2] as T2;
+			return t1 != null && t2 != null;
+		}
+
+		internal void LazyEmit_iand()
+		{
+			ConstIntExpr v1;
+			ByteArrayLoadExpr v2;
+			if (Match(out v1, out v2) && v1.i == 0xFF)
+			{
+				PopStack();
+				PopStack();
+				Emit(OpCodes.Ldelem_U1);
+			}
+			else
+			{
+				Emit(OpCodes.And);
+			}
+		}
+
+		internal void LazyEmit_land()
+		{
+			ConstLongExpr v1;
+			ConvertLong v2;
+			if (Match(out v1, out v2) && v1.l == 0xFF && v2.Expr is ByteArrayLoadExpr)
+			{
+				PopStack();
+				PopStack();
+				Emit(OpCodes.Ldelem_U1);
+				Emit(OpCodes.Conv_I8);
+			}
+			else
+			{
+				Emit(OpCodes.And);
+			}
+		}
+
+		internal void LazyEmit_i2l()
+		{
+			PushStack(new ConvertLong(PopStack()));
+		}
+
 		internal string PopLazyLdstr()
 		{
 			ConstStringExpr str = PeekStack() as ConstStringExpr;
@@ -913,27 +971,30 @@ namespace IKVM.Internal
 
 		abstract class Expr
 		{
-			internal bool HasSideEffect { get { return false; } }	// for now we only have side-effect free expressions
+			internal virtual bool HasSideEffect { get { return false; } }
 
 			internal virtual bool IsIncomplete { get { return false; } }
 
 			internal abstract void Emit(CodeEmitter ilgen);
 		}
 
-		abstract class ExprWithExprAndType : Expr
+		abstract class UnaryExpr : Expr
 		{
 			internal readonly Expr Expr;
-			internal readonly Type Type;
 
-			protected ExprWithExprAndType(Expr expr, Type type)
+			protected UnaryExpr(Expr expr)
 			{
 				this.Expr = expr;
-				this.Type = type;
 			}
 
-			internal override bool IsIncomplete
+			internal sealed override bool IsIncomplete
 			{
 				get { return Expr == null; }
+			}
+
+			internal override bool HasSideEffect
+			{
+				get { return Expr != null && Expr.HasSideEffect; }
 			}
 
 			internal override void Emit(CodeEmitter ilgen)
@@ -945,7 +1006,18 @@ namespace IKVM.Internal
 			}
 		}
 
-		class BoxExpr : ExprWithExprAndType
+		abstract class ExprWithExprAndType : UnaryExpr
+		{
+			internal readonly Type Type;
+
+			protected ExprWithExprAndType(Expr expr, Type type)
+				: base(expr)
+			{
+				this.Type = type;
+			}
+		}
+
+		sealed class BoxExpr : ExprWithExprAndType
 		{
 			internal BoxExpr(Expr expr, Type type)
 				: base(expr, type)
@@ -959,7 +1031,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		class UnboxExpr : ExprWithExprAndType
+		sealed class UnboxExpr : ExprWithExprAndType
 		{
 			internal UnboxExpr(Expr expr, Type type)
 				: base(expr, type)
@@ -973,7 +1045,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		class BoxUnboxExpr : ExprWithExprAndType
+		sealed class BoxUnboxExpr : ExprWithExprAndType
 		{
 			internal BoxUnboxExpr(Expr expr, Type type)
 				: base(expr, type)
@@ -992,7 +1064,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		class LdobjExpr : ExprWithExprAndType
+		sealed class LdobjExpr : ExprWithExprAndType
 		{
 			internal LdobjExpr(Expr expr, Type type)
 				: base(expr, type)
@@ -1006,7 +1078,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		class NullExpr : Expr
+		sealed class NullExpr : Expr
 		{
 			internal override void Emit(CodeEmitter ilgen)
 			{
@@ -1014,7 +1086,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		class ConstIntExpr : Expr
+		sealed class ConstIntExpr : Expr
 		{
 			internal readonly int i;
 
@@ -1327,7 +1399,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		class DCmplExpr : FCmplExpr
+		sealed class DCmplExpr : FCmplExpr
 		{
 			protected override Type FloatOrDouble()
 			{
@@ -1335,7 +1407,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		class DCmpgExpr : FCmpgExpr
+		sealed class DCmpgExpr : FCmpgExpr
 		{
 			protected override Type FloatOrDouble()
 			{
@@ -1343,7 +1415,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		class ClassLiteralExpr : Expr
+		sealed class ClassLiteralExpr : Expr
 		{
 			internal readonly TypeWrapper Type;
 
@@ -1355,6 +1427,38 @@ namespace IKVM.Internal
 			internal override void Emit(CodeEmitter ilgen)
 			{
 				Type.EmitClassLiteral(ilgen);
+			}
+		}
+
+		sealed class ByteArrayLoadExpr : Expr
+		{
+			internal override void Emit(CodeEmitter ilgen)
+			{
+				ilgen.Emit(OpCodes.Ldelem_I1);
+			}
+
+			internal override bool HasSideEffect
+			{
+				get { return true; }
+			}
+
+			internal override bool IsIncomplete
+			{
+				get { return true; }
+			}
+		}
+
+		sealed class ConvertLong : UnaryExpr
+		{
+			internal ConvertLong(Expr expr)
+				: base(expr)
+			{
+			}
+
+			internal override void Emit(CodeEmitter ilgen)
+			{
+				base.Emit(ilgen);
+				ilgen.Emit(OpCodes.Conv_I8);
 			}
 		}
 	}

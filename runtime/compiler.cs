@@ -2280,7 +2280,7 @@ class Compiler
 				}
 				case NormalizedByteCode.__baload:
 					// NOTE both the JVM and the CLR use signed bytes for boolean arrays (how convenient!)
-					ilGenerator.Emit(OpCodes.Ldelem_I1);
+					ilGenerator.LazyEmit_baload();
 					break;
 				case NormalizedByteCode.__bastore:
 					ilGenerator.Emit(OpCodes.Stelem_I1);
@@ -2481,8 +2481,10 @@ class Compiler
 					ilGenerator.Emit(OpCodes.Or);
 					break;
 				case NormalizedByteCode.__iand:
+					ilGenerator.LazyEmit_iand();
+					break;
 				case NormalizedByteCode.__land:
-					ilGenerator.Emit(OpCodes.And);
+					ilGenerator.LazyEmit_land();
 					break;
 				case NormalizedByteCode.__imul:
 				case NormalizedByteCode.__lmul:
@@ -2891,7 +2893,7 @@ class Compiler
 					ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.d2l);
 					break;
 				case NormalizedByteCode.__i2l:
-					ilGenerator.Emit(OpCodes.Conv_I8);
+					ilGenerator.LazyEmit_i2l();
 					break;
 				case NormalizedByteCode.__i2f:
 				case NormalizedByteCode.__l2f:
