@@ -1670,10 +1670,10 @@ namespace IKVM.Internal
 			{
 				if(this.IsFinal)
 				{
-					ilgen.Emit(OpCodes.Pop);
+					ilgen.LazyEmitPop();
 					if(!this.IsStatic)
 					{
-						ilgen.Emit(OpCodes.Pop);
+						ilgen.LazyEmitPop();
 					}
 				}
 				else
@@ -1742,10 +1742,10 @@ namespace IKVM.Internal
 			{
 				if(this.IsFinal)
 				{
-					ilgen.Emit(OpCodes.Pop);
+					ilgen.LazyEmitPop();
 					if(!this.IsStatic)
 					{
-						ilgen.Emit(OpCodes.Pop);
+						ilgen.LazyEmitPop();
 					}
 				}
 				else
@@ -1851,7 +1851,7 @@ namespace IKVM.Internal
 		{
 			// when constant static final fields are updated, the JIT normally doesn't see that (because the
 			// constant value is inlined), so we emulate that behavior by emitting a Pop
-			ilgen.Emit(OpCodes.Pop);
+			ilgen.LazyEmitPop();
 		}
 #endif
 		internal object GetConstantValue()
