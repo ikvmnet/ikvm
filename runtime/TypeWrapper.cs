@@ -7334,7 +7334,7 @@ namespace IKVM.Internal
 			private readonly DynamicTypeWrapper wrapper;
 			private readonly TypeBuilder typeBuilder;
 			private TypeBuilder typeCallerID;
-			private FieldInfo callerIDField;
+			private MethodInfo callerIDMethod;
 			private List<System.Threading.ThreadStart> postFinishProcs;
 
 			internal FinishContext(ClassFile classFile, DynamicTypeWrapper wrapper, TypeBuilder typeBuilder)
@@ -7344,17 +7344,29 @@ namespace IKVM.Internal
 				this.typeBuilder = typeBuilder;
 			}
 
-			internal FieldInfo CallerIDField
+			internal void EmitCallerID(CodeEmitter ilgen)
 			{
-				get
+				if (callerIDMethod == null)
 				{
-					if (callerIDField == null)
-					{
-						TypeWrapper tw = CoreClasses.ikvm.@internal.CallerID.Wrapper;
-						callerIDField = typeBuilder.DefineField("__<callerID>", tw.TypeAsSignatureType, FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.InitOnly | FieldAttributes.SpecialName);
-					}
-					return callerIDField;
+					CreateGetCallerID();
 				}
+				ilgen.Emit(OpCodes.Call, callerIDMethod);
+			}
+
+			private void CreateGetCallerID()
+			{
+				TypeWrapper tw = CoreClasses.ikvm.@internal.CallerID.Wrapper;
+				FieldBuilder callerIDField = typeBuilder.DefineField("__<callerID>", tw.TypeAsSignatureType, FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.SpecialName);
+				MethodBuilder mb = typeBuilder.DefineMethod("__<GetCallerID>", MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.SpecialName, tw.TypeAsSignatureType, Type.EmptyTypes);
+				callerIDMethod = mb;
+				CodeEmitter ilgen = CodeEmitter.Create(mb);
+				ilgen.Emit(OpCodes.Ldsfld, callerIDField);
+				CodeEmitterLabel done = ilgen.DefineLabel();
+				ilgen.Emit(OpCodes.Brtrue_S, done);
+				EmitCallerIDInitialization(ilgen, callerIDField);
+				ilgen.MarkLabel(done);
+				ilgen.Emit(OpCodes.Ldsfld, callerIDField);
+				ilgen.Emit(OpCodes.Ret);
 			}
 
 			internal void RegisterPostFinishProc(System.Threading.ThreadStart proc)
@@ -7635,7 +7647,7 @@ namespace IKVM.Internal
 					}
 				}
 
-				if (clinitIndex != -1 || (basehasclinit && !classFile.IsInterface) || classFile.HasInitializedFields || callerIDField != null)
+				if (clinitIndex != -1 || (basehasclinit && !classFile.IsInterface) || classFile.HasInitializedFields)
 				{
 					ConstructorBuilder cb;
 					if (clinitIndex != -1)
@@ -7648,27 +7660,15 @@ namespace IKVM.Internal
 						AttributeHelper.HideFromJava(cb);
 					}
 					CodeEmitter ilGenerator = CodeEmitter.Create(cb);
-					// HACK we start out by emitting the users code, because that may trigger the creation of caller id infrastructure
-					CodeEmitterLabel label1 = null;
-					if (clinitIndex != -1)
-					{
-						label1 = ilGenerator.DefineLabel();
-						CodeEmitterLabel label2 = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Br, label2);
-						ilGenerator.MarkLabel(label1);
-						CompileConstructorBody(this, ilGenerator, clinitIndex, invokespecialstubcache);
-						ilGenerator.MarkLabel(label2);
-					}
 					// before we call the base class initializer, we need to set the non-final static ConstantValue fields
 					EmitConstantValueInitialization(fields, ilGenerator);
-					EmitCallerIDInitialization(ilGenerator);
 					if (basehasclinit)
 					{
 						wrapper.BaseTypeWrapper.EmitRunClassConstructor(ilGenerator);
 					}
 					if (clinitIndex != -1)
 					{
-						ilGenerator.Emit(OpCodes.Br, label1);
+						CompileConstructorBody(this, ilGenerator, clinitIndex, invokespecialstubcache);
 					}
 					else
 					{
@@ -8509,9 +8509,8 @@ namespace IKVM.Internal
 				return false;
 			}
 
-			private void EmitCallerIDInitialization(CodeEmitter ilGenerator)
+			private void EmitCallerIDInitialization(CodeEmitter ilGenerator, FieldInfo callerIDField)
 			{
-				if (callerIDField != null)
 				{
 					TypeWrapper tw = CoreClasses.ikvm.@internal.CallerID.Wrapper;
 					// we need to prohibit this optimization at runtime, because proxy classes may be injected into the boot class loader,

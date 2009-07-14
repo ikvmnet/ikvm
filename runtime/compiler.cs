@@ -1634,7 +1634,7 @@ class Compiler
 					CastInterfaceArgs(method, cpi.GetArgTypes(), i, false);
 					if(method.HasCallerID)
 					{
-						ilGenerator.Emit(OpCodes.Ldsfld, context.CallerIDField);
+						context.EmitCallerID(ilGenerator);
 					}
 					method.EmitCall(ilGenerator);
 					method.ReturnType.EmitConvSignatureTypeToStackType(ilGenerator);
@@ -1890,7 +1890,7 @@ class Compiler
 					{
 						if(method.HasCallerID)
 						{
-							ilGenerator.Emit(OpCodes.Ldsfld, context.CallerIDField);
+							context.EmitCallerID(ilGenerator);
 						}
 
 						if(isinvokespecial)
@@ -3183,7 +3183,7 @@ class Compiler
 		ilGenerator.Emit(OpCodes.Ldstr, cpi.Signature);
 		ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 		ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
-		ilGenerator.Emit(OpCodes.Ldsfld, context.CallerIDField);
+		context.EmitCallerID(ilGenerator);
 		switch(bytecode)
 		{
 			case NormalizedByteCode.__dynamic_getfield:
@@ -3290,7 +3290,7 @@ class Compiler
 			ilGenerator.Emit(OpCodes.Ldstr, cpi.Name);
 			ilGenerator.Emit(OpCodes.Ldstr, cpi.Signature);
 			ilGenerator.Emit(OpCodes.Ldloc, argarray);
-			ilGenerator.Emit(OpCodes.Ldsfld, context.CallerIDField);
+			context.EmitCallerID(ilGenerator);
 			ilGenerator.Emit(OpCodes.Call, helperMethod);
 			EmitReturnTypeConversion(ilGenerator, retTypeWrapper);
 		}
