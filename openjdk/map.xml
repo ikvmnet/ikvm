@@ -1353,13 +1353,6 @@
                     <ret />
                 </body>
             </method>
-            <method name="newClass" sig="()Ljava.lang.Class;" modifiers="static">
-                <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
-                <body>
-                    <newobj class="java.lang.Class" name="&lt;init&gt;" sig="()V" />
-                    <ret />
-                </body>
-            </method>
         </class>
         <class name="java.lang.ClassLoader">
             <field name="wrapper" sig="Lcli.IKVM.Internal.ClassLoaderWrapper;" modifiers="">

@@ -84,10 +84,12 @@ namespace IKVM.Internal
 			Type classType = CoreClasses.java.lang.Class.Wrapper.TypeAsSignatureType;
 			classLiteralField = tb.DefineField("Value", classType, FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.InitOnly);
 			ConstructorBuilder cctor = tb.DefineTypeInitializer();
-			ILGenerator ilgen = cctor.GetILGenerator();
+			CodeEmitter ilgen = CodeEmitter.Create(cctor);
 			ilgen.Emit(OpCodes.Ldtoken, typeParam);
-			ilgen.Emit(OpCodes.Call, StaticCompiler.GetType("IKVM.Runtime.ByteCodeHelper").GetMethod("GetClassFromTypeHandle"));
-			ilgen.Emit(OpCodes.Castclass, classType);
+			ilgen.Emit(OpCodes.Call, typeof(Type).GetMethod("GetTypeFromHandle", new Type[] { typeof(RuntimeTypeHandle) }));
+			MethodWrapper mw = CoreClasses.java.lang.Class.Wrapper.GetMethodWrapper("<init>", "(Lcli.System.Type;)V", false);
+			mw.Link();
+			mw.EmitNewobj(ilgen);
 			ilgen.Emit(OpCodes.Stsfld, classLiteralField);
 			ilgen.Emit(OpCodes.Ret);
 			classLiteralType = tb.CreateType();

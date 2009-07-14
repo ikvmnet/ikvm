@@ -229,7 +229,7 @@ namespace IKVM.Internal
 					}
 					types[f.Name] = type;
 #if !STATIC_COMPILER && !FIRST_PASS
-					java.lang.Class clazz = java.lang.Class.newClass();
+					java.lang.Class clazz = new java.lang.Class(null);
 #if __MonoCS__
 					TypeWrapper.SetTypeWrapperHack(ref clazz.typeWrapper, type);
 #else

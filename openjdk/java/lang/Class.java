@@ -121,12 +121,26 @@ public final
     private static final int ENUM      = 0x00004000;
     private static final int SYNTHETIC = 0x00001000;
 
+    // for types that support fast class literals, this is used to store the Type that can later (on demand)
+    // be resolved to the corresponding TypeWrapper, but for other types this will be null.
+    final cli.System.Type type;
+
     /*
      * Constructor. Only the Java Virtual Machine creates Class
      * objects.
      */
-    private Class() {}
+    private Class()
+    {
+        // this constructor is not used, but exists for compatibility
+        // (otherwise it would look as if this class doesn't have a constructor, which might break some code)
+        throw new InternalError();
+    }
 
+    @cli.IKVM.Attributes.HideFromJavaAttribute.Annotation
+    Class(cli.System.Type type)
+    {
+        this.type = type;
+    }
 
     /**
      * Converts the object to a string. The string representation is the

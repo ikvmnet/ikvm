@@ -2216,7 +2216,8 @@ namespace IKVM.Internal
 
 			Type type = GetClassLiteralType();
 
-			if (IsForbiddenTypeParameterType(type))
+			// note that this has to be the same check as in LazyInitClass
+			if (!this.IsFastClassLiteralSafe || IsForbiddenTypeParameterType(type))
 			{
 				ilgen.Emit(OpCodes.Ldtoken, type);
 				Compiler.getClassFromTypeHandle.EmitCall(ilgen);
@@ -2257,6 +2258,11 @@ namespace IKVM.Internal
 				|| type.IsByRef;
 		}
 
+		internal virtual bool IsFastClassLiteralSafe
+		{
+			get { return false; }
+		}
+
 #if !STATIC_COMPILER
 		internal void SetClassObject(object classObject)
 		{
@@ -2276,6 +2282,28 @@ namespace IKVM.Internal
 			}
 		}
 
+		private static bool IsReflectionOnly(Type type)
+		{
+			Assembly asm = type.Assembly;
+			if (asm.ReflectionOnly)
+			{
+				return true;
+			}
+			if (!type.IsGenericType || type.IsGenericTypeDefinition)
+			{
+				return false;
+			}
+			// we have a generic type instantiation, it might have ReflectionOnly type arguments
+			foreach (Type arg in type.GetGenericArguments())
+			{
+				if (IsReflectionOnly(arg))
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
 		private void LazyInitClass()
 		{
 			lock (this)
@@ -2287,7 +2315,24 @@ namespace IKVM.Internal
 					Debug.Assert(!(this is DynamicTypeWrapper));
 #endif // !COMPACT_FRAMEWORK
 #if !FIRST_PASS
-					java.lang.Class clazz = java.lang.Class.newClass();
+					java.lang.Class clazz;
+					// note that this has to be the same check as in EmitClassLiteral
+					if (!this.IsFastClassLiteralSafe)
+					{
+						clazz = new java.lang.Class(null);
+					}
+					else
+					{
+						Type type = GetClassLiteralType();
+						if (IsForbiddenTypeParameterType(type) || IsReflectionOnly(type))
+						{
+							clazz = new java.lang.Class(null);
+						}
+						else
+						{
+							clazz = (java.lang.Class)typeof(ikvm.@internal.ClassLiteral<>).MakeGenericType(type).GetField("Value").GetValue(null);
+						}
+					}
 #if __MonoCS__
 					SetTypeWrapperHack(ref clazz.typeWrapper, this);
 #else
@@ -2313,8 +2358,27 @@ namespace IKVM.Internal
 #if FIRST_PASS
 			return null;
 #else
+			java.lang.Class clazz = (java.lang.Class)classObject;
 			// MONOBUG redundant cast to workaround mcs bug
-			return (TypeWrapper)(object)((java.lang.Class)classObject).typeWrapper;
+			TypeWrapper tw = (TypeWrapper)(object)clazz.typeWrapper;
+			if(tw == null)
+			{
+				Type type = clazz.type;
+				if (type == typeof(void) || type.IsPrimitive || ClassLoaderWrapper.IsRemappedType(type))
+				{
+					tw = DotNetTypeWrapper.GetWrapperFromDotNetType(type);
+				}
+				else
+				{
+					tw = ClassLoaderWrapper.GetWrapperFromType(type);
+				}
+#if __MonoCS__
+				SetTypeWrapperHack(ref clazz.typeWrapper, tw);
+#else
+				clazz.typeWrapper = tw;
+#endif
+			}
+			return tw;
 #endif
 		}
 #endif // !STATIC_COMPILER
@@ -10097,6 +10161,11 @@ namespace IKVM.Internal
 			return -1;
 		}
 #endif
+
+		internal override bool IsFastClassLiteralSafe
+		{
+			get { return true; }
+		}
 	}
 
 	sealed class DotNetTypeWrapper : TypeWrapper
@@ -10440,6 +10509,11 @@ namespace IKVM.Internal
 					return fakeType;
 				}
 			}
+
+			internal override bool IsFastClassLiteralSafe
+			{
+				get { return true; }
+			}
 		}
 
 		private class DynamicOnlyMethodWrapper : MethodWrapper, ICustomInvoke
@@ -10679,6 +10753,11 @@ namespace IKVM.Internal
 				{
 					return fakeType;
 				}
+			}
+
+			internal override bool IsFastClassLiteralSafe
+			{
+				get { return true; }
 			}
 		}
 
@@ -11578,6 +11657,11 @@ namespace IKVM.Internal
 				}
 			}
 #endif //!COMPACT_FRAMEWORK
+
+			internal override bool IsFastClassLiteralSafe
+			{
+				get { return true; }
+			}
 		}
 
 		internal static TypeWrapper GetWrapperFromDotNetType(Type type)
@@ -12663,6 +12747,11 @@ namespace IKVM.Internal
 			}
 			return attribs;
 		}
+
+		internal override bool IsFastClassLiteralSafe
+		{
+			get { return true; }
+		}
 	}
 
 	sealed class ArrayTypeWrapper : TypeWrapper
@@ -12676,6 +12765,7 @@ namespace IKVM.Internal
 		internal ArrayTypeWrapper(TypeWrapper ultimateElementTypeWrapper, string name)
 			: base(Modifiers.Final | Modifiers.Abstract | (ultimateElementTypeWrapper.Modifiers & Modifiers.Public), name, CoreClasses.java.lang.Object.Wrapper)
 		{
+			Debug.Assert(!ultimateElementTypeWrapper.IsArray);
 			this.ultimateElementTypeWrapper = ultimateElementTypeWrapper;
 			this.IsInternal = ultimateElementTypeWrapper.IsInternal;
 		}
@@ -12796,6 +12886,13 @@ namespace IKVM.Internal
 		internal override string[] GetEnclosingMethod()
 		{
 			return null;
+		}
+
+		internal override bool IsFastClassLiteralSafe
+		{
+			// here we have to deal with the somewhat strange fact that in Java you cannot represent primitive type class literals,
+			// but you can represent arrays of primitive types as a class literal
+			get { return ultimateElementTypeWrapper.IsFastClassLiteralSafe || ultimateElementTypeWrapper.IsPrimitive; }
 		}
 
 		internal static Type MakeArrayType(Type type, int dims)

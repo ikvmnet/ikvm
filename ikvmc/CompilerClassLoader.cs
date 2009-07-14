@@ -2047,6 +2047,11 @@ namespace IKVM.Internal
 			{
 				return null;
 			}
+
+			internal override bool IsFastClassLiteralSafe
+			{
+				get { return true; }
+			}
 		}
 
 		internal void EmitRemappedTypes()
