@@ -100,6 +100,10 @@ namespace IKVM.Internal
 			intrinsics.Add(new IntrinsicKey("java.lang.ClassLoader", "getCallerClassLoader", "()Ljava.lang.ClassLoader;"), ClassLoader_getCallerClassLoader);
 			intrinsics.Add(new IntrinsicKey("ikvm.internal.CallerID", "getCallerID", "()Likvm.internal.CallerID;"), CallerID_getCallerID);
 			intrinsics.Add(new IntrinsicKey("ikvm.runtime.Util", "getInstanceTypeFromClass", "(Ljava.lang.Class;)Lcli.System.Type;"), Util_getInstanceTypeFromClass);
+#if STATIC_COMPILER
+			// this only applies to the core class library, so makes no sense in dynamic mode
+			intrinsics.Add(new IntrinsicKey("java.lang.Class", "getPrimitiveClass", "(Ljava.lang.String;)Ljava.lang.Class;"), Class_getPrimitiveClass);
+#endif
 			return intrinsics;
 		}
 
@@ -402,5 +406,17 @@ namespace IKVM.Internal
 			}
 			return false;
 		}
+
+#if STATIC_COMPILER
+		private static bool Class_getPrimitiveClass(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		{
+			ilgen.LazyEmitPop();
+			ilgen.Emit(OpCodes.Ldnull);
+			MethodWrapper mw = CoreClasses.java.lang.Class.Wrapper.GetMethodWrapper("<init>", "(Lcli.System.Type;)V", false);
+			mw.Link();
+			mw.EmitNewobj(ilgen);
+			return true;
+		}
+#endif
 	}
 }

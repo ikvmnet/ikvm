@@ -2500,6 +2500,8 @@ namespace IKVM.NativeCode.java
 
 			public static object getPrimitiveClass(string name)
 			{
+				// note that this method isn't used anymore (because it is an intrinsic (during core class library compilation))
+				// it still remains for compat because it might be invoked through reflection by evil code
 				switch (name)
 				{
 					case "byte":

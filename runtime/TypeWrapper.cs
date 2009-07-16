@@ -2304,6 +2304,52 @@ namespace IKVM.Internal
 			return false;
 		}
 
+#if !FIRST_PASS
+		private java.lang.Class GetPrimitiveClass()
+		{
+			if (this == PrimitiveTypeWrapper.BYTE)
+			{
+				return java.lang.Byte.TYPE;
+			}
+			else if (this == PrimitiveTypeWrapper.CHAR)
+			{
+				return java.lang.Character.TYPE;
+			}
+			else if (this == PrimitiveTypeWrapper.DOUBLE)
+			{
+				return java.lang.Double.TYPE;
+			}
+			else if (this == PrimitiveTypeWrapper.FLOAT)
+			{
+				return java.lang.Float.TYPE;
+			}
+			else if (this == PrimitiveTypeWrapper.INT)
+			{
+				return java.lang.Integer.TYPE;
+			}
+			else if (this == PrimitiveTypeWrapper.LONG)
+			{
+				return java.lang.Long.TYPE;
+			}
+			else if (this == PrimitiveTypeWrapper.SHORT)
+			{
+				return java.lang.Short.TYPE;
+			}
+			else if (this == PrimitiveTypeWrapper.BOOLEAN)
+			{
+				return java.lang.Boolean.TYPE;
+			}
+			else if (this == PrimitiveTypeWrapper.VOID)
+			{
+				return java.lang.Void.TYPE;
+			}
+			else
+			{
+				throw new InvalidOperationException();
+			}
+		}
+#endif
+
 		private void LazyInitClass()
 		{
 			lock (this)
@@ -2319,7 +2365,14 @@ namespace IKVM.Internal
 					// note that this has to be the same check as in EmitClassLiteral
 					if (!this.IsFastClassLiteralSafe)
 					{
-						clazz = new java.lang.Class(null);
+						if (this.IsPrimitive)
+						{
+							clazz = GetPrimitiveClass();
+						}
+						else
+						{
+							clazz = new java.lang.Class(null);
+						}
 					}
 					else
 					{
@@ -2353,6 +2406,26 @@ namespace IKVM.Internal
 		}
 #endif
 
+#if !FIRST_PASS
+		private static void ResolvePrimitiveTypeWrapperClasses()
+		{
+			// note that we're evaluating all ClassObject properties for the side effect
+			// (to initialize and associate the ClassObject with the TypeWrapper)
+			if (PrimitiveTypeWrapper.BYTE.ClassObject == null
+				|| PrimitiveTypeWrapper.CHAR.ClassObject == null
+				|| PrimitiveTypeWrapper.DOUBLE.ClassObject == null
+				|| PrimitiveTypeWrapper.FLOAT.ClassObject == null
+				|| PrimitiveTypeWrapper.INT.ClassObject == null
+				|| PrimitiveTypeWrapper.LONG.ClassObject == null
+				|| PrimitiveTypeWrapper.SHORT.ClassObject == null
+				|| PrimitiveTypeWrapper.BOOLEAN.ClassObject == null
+				|| PrimitiveTypeWrapper.VOID.ClassObject == null)
+			{
+				throw new InvalidOperationException();
+			}
+		}
+#endif
+
 		internal static TypeWrapper FromClass(object classObject)
 		{
 #if FIRST_PASS
@@ -2364,6 +2437,11 @@ namespace IKVM.Internal
 			if(tw == null)
 			{
 				Type type = clazz.type;
+				if (type == null)
+				{
+					ResolvePrimitiveTypeWrapperClasses();
+					return FromClass(classObject);
+				}
 				if (type == typeof(void) || type.IsPrimitive || ClassLoaderWrapper.IsRemappedType(type))
 				{
 					tw = DotNetTypeWrapper.GetWrapperFromDotNetType(type);
