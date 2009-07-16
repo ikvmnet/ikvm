@@ -4290,6 +4290,14 @@ namespace IKVM.Internal
 			((JavaTypeImpl)impl).CreateStep2NoFail(hasclinit, mangledTypeName);
 		}
 
+		private bool IsSerializable
+		{
+			get
+			{
+				return this.IsSubTypeOf(ClassLoaderWrapper.LoadClassCritical("java.io.Serializable"));
+			}
+		}
+
 		private abstract class DynamicImpl
 		{
 			internal abstract Type Type { get; }
@@ -4354,7 +4362,18 @@ namespace IKVM.Internal
 					if(m.IsClassInitializer)
 					{
 #if STATIC_COMPILER
-						if(!IsSideEffectFreeStaticInitializer(m))
+						bool noop;
+						if(IsSideEffectFreeStaticInitializerOrNoop(m, out noop))
+						{
+							// because we cannot affect serialVersionUID computation (which is the only way the presence of a <clinit> can surface)
+							// we cannot do this optimization if the class is serializable but doesn't have a serialVersionUID
+							if(noop && (!wrapper.IsSerializable || classFile.HasSerialVersionUID))
+							{
+								methods[i] = new DummyMethodWrapper(wrapper);
+								continue;
+							}
+						}
+						else
 						{
 							hasclinit = true;
 						}
@@ -4851,12 +4870,14 @@ namespace IKVM.Internal
 				return new ClassFile.InnerClass();
 			}
 
-			private bool IsSideEffectFreeStaticInitializer(ClassFile.Method m)
+			private bool IsSideEffectFreeStaticInitializerOrNoop(ClassFile.Method m, out bool noop)
 			{
 				if(m.ExceptionTable.Length != 0)
 				{
+					noop = false;
 					return false;
 				}
+				noop = true;
 				for(int i = 0; i < m.Instructions.Length; i++)
 				{
 					NormalizedByteCode bc = m.Instructions[i].NormalizedOpCode;
@@ -4865,13 +4886,28 @@ namespace IKVM.Internal
 						ClassFile.ConstantPoolItemFieldref fld = classFile.SafeGetFieldref(m.Instructions[i].Arg1);
 						if(fld == null || fld.Class != classFile.Name)
 						{
+							noop = false;
 							return false;
 						}
 						// don't allow getstatic to load non-primitive fields, because that would
 						// cause the verifier to try to load the type
 						if(bc == NormalizedByteCode.__getstatic && "L[".IndexOf(fld.Signature[0]) != -1)
 						{
+							noop = false;
 							return false;
+						}
+						if(bc == NormalizedByteCode.__putstatic)
+						{
+							ClassFile.Field field = classFile.GetField(fld.Name, fld.Signature);
+							if(field == null)
+							{
+								noop = false;
+								return false;
+							}
+							if(!field.IsFinal || !field.IsStatic || !field.IsProperty || field.PropertySetter != null)
+							{
+								noop = false;
+							}
 						}
 					}
 					else if(bc == NormalizedByteCode.__areturn ||
@@ -4880,16 +4916,29 @@ namespace IKVM.Internal
 						bc == NormalizedByteCode.__freturn ||
 						bc == NormalizedByteCode.__dreturn)
 					{
+						noop = false;
 						return false;
 					}
 					else if(ByteCodeMetaData.CanThrowException(bc))
 					{
+						noop = false;
 						return false;
 					}
 					else if(bc == NormalizedByteCode.__ldc
 						&& classFile.SafeIsConstantPoolClass(m.Instructions[i].Arg1))
 					{
+						noop = false;
 						return false;
+					}
+					else if(bc == NormalizedByteCode.__aconst_null
+						|| bc == NormalizedByteCode.__return
+						|| bc == NormalizedByteCode.__nop)
+					{
+						// valid instructions in a potential noop <clinit>
+					}
+					else
+					{
+						noop = false;
 					}
 				}
 				// the method needs to be verifiable to be side effect free, since we already analysed it,
@@ -7462,7 +7511,7 @@ namespace IKVM.Internal
 					MethodBase mb = methods[i].GetMethod();
 					if (mb == null)
 					{
-						// method doesn't really exist (e.g. delegate constructor)
+						// method doesn't really exist (e.g. delegate constructor or <clinit> that is optimized away)
 						if (m.Name == StringConstants.INIT)
 						{
 							hasConstructor = true;

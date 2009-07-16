@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2008 Jeroen Frijters
+  Copyright (C) 2002-2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -994,6 +994,22 @@ namespace IKVM.Internal
 			}
 		}
 #endif
+	}
+
+	// placeholder for <clinit> method that exist in ClassFile but not in TypeWrapper
+	// (because it is optimized away)
+	sealed class DummyMethodWrapper : MethodWrapper
+	{
+		internal DummyMethodWrapper(TypeWrapper tw)
+			: base(tw, StringConstants.CLINIT, StringConstants.SIG_VOID, null, PrimitiveTypeWrapper.VOID, TypeWrapper.EmptyArray, Modifiers.Static, MemberFlags.None)
+		{
+		}
+
+		protected override void DoLinkMethod()
+		{
+			// we're pre-linked (because we pass the signature types to the base constructor)
+			throw new InvalidOperationException();
+		}
 	}
 
 	class SmartMethodWrapper : MethodWrapper

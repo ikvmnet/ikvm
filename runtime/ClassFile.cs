@@ -3044,5 +3044,26 @@ namespace IKVM.Internal
 				internal ushort index;
 			}
 		}
+
+		internal Field GetField(string name, string sig)
+		{
+			for (int i = 0; i < fields.Length; i++)
+			{
+				if (fields[i].Name == name && fields[i].Signature == sig)
+				{
+					return fields[i];
+				}
+			}
+			return null;
+		}
+
+		internal bool HasSerialVersionUID
+		{
+			get
+			{
+				Field field = GetField("serialVersionUID", "J");
+				return field != null && field.IsStatic && field.IsFinal;
+			}
+		}
 	}
 }
