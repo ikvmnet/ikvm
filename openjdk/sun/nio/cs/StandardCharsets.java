@@ -654,6 +654,7 @@ public class StandardCharsets
         }
 
         protected void init(Object[] ht) {
+            // [IKVM] we pre-populate some cache entries to avoid reflection when instantiating the common charsets
             ht[0] = new Object[] { "ibm862", null };
             ht[2] = new Object[] { "ibm866", null,
                          new Object[] { "utf-32", null,
@@ -661,7 +662,7 @@ public class StandardCharsets
             ht[3] = new Object[] { "windows-1251", null,
                          new Object[] { "windows-1250", null } };
             ht[4] = new Object[] { "windows-1253", null,
-                         new Object[] { "windows-1252", null,
+                         new Object[] { "windows-1252", new MS1252(),
                              new Object[] { "utf-32be", null } } };
             ht[5] = new Object[] { "windows-1254", null,
                          new Object[] { "utf-16", null } };
@@ -670,7 +671,7 @@ public class StandardCharsets
             ht[8] = new Object[] { "iso-8859-2", null,
                          new Object[] { "iso-8859-1", null } };
             ht[9] = new Object[] { "iso-8859-4", null,
-                         new Object[] { "utf-8", null } };
+                         new Object[] { "utf-8", new UTF_8() } };
             ht[10] = new Object[] { "iso-8859-5", null };
             ht[11] = new Object[] { "x-ibm874", null,
                          new Object[] { "iso-8859-7", null } };
