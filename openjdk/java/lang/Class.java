@@ -2241,7 +2241,7 @@ public final
      */
 
     // Caches for certain reflective results
-    private static boolean useCaches = true;
+    private static boolean useCaches;
     private volatile transient SoftReference declaredFields;
     private volatile transient SoftReference publicFields;
     private volatile transient SoftReference declaredMethods;
@@ -2842,8 +2842,13 @@ public final
      *
      * @see java.io.ObjectStreamClass
      */
-    private static final ObjectStreamField[] serialPersistentFields =
-        new ObjectStreamField[0];
+    
+    @ikvm.lang.Property(get="get_spf")
+    private static final ObjectStreamField[] serialPersistentFields = null;
+    
+    private static ObjectStreamField[] get_spf() {
+        return java.io.ObjectStreamClass.NO_FIELDS;
+    }
 
 
     /**
@@ -2917,9 +2922,10 @@ public final
     private static ReflectionFactory reflectionFactory;
 
     // To be able to query system properties as soon as they're available
-    private static boolean initted = false;
+    private static boolean initted;
     private static void checkInitted() {
         if (initted) return;
+        useCaches = true;
         AccessController.doPrivileged(new PrivilegedAction() {
                 public Object run() {
                     // Tests to ensure the system properties table is fully
@@ -3089,14 +3095,13 @@ public final
     }
 
 
-    private static Annotation[] EMPTY_ANNOTATIONS_ARRAY = new Annotation[0];
-
     /**
      * @since 1.5
      */
     public Annotation[] getAnnotations() {
         initAnnotationsIfNecessary();
-        return annotations.values().toArray(EMPTY_ANNOTATIONS_ARRAY);
+        Collection<Annotation> values = annotations.values();
+        return values.toArray(new Annotation[values.size()]);
     }
 
     /**
@@ -3104,7 +3109,8 @@ public final
      */
     public Annotation[] getDeclaredAnnotations()  {
         initAnnotationsIfNecessary();
-        return declaredAnnotations.values().toArray(EMPTY_ANNOTATIONS_ARRAY);
+        Collection<Annotation> values = declaredAnnotations.values();
+        return values.toArray(new Annotation[values.size()]);
     }
 
     // Annotations cache
