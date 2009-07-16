@@ -167,6 +167,7 @@ sun/nio/ch/SelectionKeyImpl.java
 sun/nio/ch/ServerSocketChannelImpl.java
 sun/nio/ch/SocketChannelImpl.java
 sun/nio/ch/Util.java
+sun/nio/cs/StandardCharsets.java
 sun/print/PrintPeer.java
 sun/reflect/MethodAccessor.java
 sun/reflect/Reflection.java
@@ -291,7 +292,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 ../../openjdk6-b16/build/linux-amd64/gensrc/java/nio/charset/IllegalCharsetNameException.java
 ../../openjdk6-b16/build/linux-amd64/gensrc/java/nio/charset/UnsupportedCharsetException.java
 ../../openjdk6-b16/build/linux-amd64/gensrc/sun/nio/ch/AlreadyBoundException.java
-../../openjdk6-b16/build/linux-amd64/gensrc/sun/nio/cs/StandardCharsets.java
 ../../openjdk6-b16/build/linux-amd64/gensrc/sun/util/CoreResourceBundleControl.java
 ../../openjdk6-b16/build/linux-amd64/gensrc/sun/util/LocaleDataMetaInfo.java
 ../../openjdk6-b16/build/linux-amd64/gensrc/sun/util/logging/resources/logging.java
