@@ -33,6 +33,8 @@ namespace IKVM.Internal
 {
 	static class ReflectUtil
 	{
+		private static readonly bool clr_v4 = Environment.Version.Major >= 4;
+
 		internal static bool IsSameAssembly(Type type1, Type type2)
 		{
 #if IKVM_REF_EMIT && !NET_4_0
@@ -71,10 +73,12 @@ namespace IKVM.Internal
 #if NET_4_0
 			return asm.IsDynamic();
 #else
-			// HACK pre-.NET 4.0 there is no API for this
-			string manifest = asm.ManifestModule.Name;
-			return manifest == "<In Memory Module>" 		// .NET name
-				|| manifest == "Default Dynamic Module";	// Mono name
+			if (clr_v4)
+			{
+				// on .NET 4.0 dynamic assemblies have a non-AssemblyBuilder derived peer, so we have to call IsDynamic
+				return (bool)typeof(Assembly).InvokeMember("IsDynamic", BindingFlags.Instance | BindingFlags.Public | BindingFlags.InvokeMethod, null, asm, null);
+			}
+			return asm is AssemblyBuilder;
 #endif
 		}
 	}
