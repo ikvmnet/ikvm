@@ -79,7 +79,7 @@ public class PhysicalStrike extends FontStrike{
      */
     @Override
     float getCodePointAdvance(int cp){
-        SizeF sizeF = g.MeasureString("i", font, Integer.MAX_VALUE, format);
+        SizeF sizeF = g.MeasureString(String.valueOf((char)cp), font, Integer.MAX_VALUE, format);
         if(frc.usesFractionalMetrics()){
             return sizeF.get_Width();
         } else {
