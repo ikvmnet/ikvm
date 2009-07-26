@@ -937,35 +937,6 @@ namespace ikvm.awt
 		private java.awt.Font font;
 		private java.awt.Color foreground;
 		private java.awt.Color background;
-        private static readonly java.lang.reflect.Field compX;
-        private static readonly java.lang.reflect.Field compY;
-        private static readonly java.lang.reflect.Field compWidth;
-        private static readonly java.lang.reflect.Field compHeight;
-
-		static NetComponentPeer()
-        {
-			java.lang.reflect.Field _compX = null;
-			java.lang.reflect.Field _compY = null;
-			java.lang.reflect.Field _compWidth = null;
-			java.lang.reflect.Field _compHeight = null;
-			java.security.AccessController.doPrivileged(Delegates.toPrivilegedAction(delegate
-			{
-				java.lang.Class clazz = typeof(java.awt.Component);
-				_compX = clazz.getDeclaredField("x");
-				_compX.setAccessible(true);
-				_compY = clazz.getDeclaredField("y");
-				_compY.setAccessible(true);
-				_compWidth = clazz.getDeclaredField("width");
-				_compWidth.setAccessible(true);
-				_compHeight = clazz.getDeclaredField("height");
-				_compHeight.setAccessible(true);
-				return null;
-			}));
-			compX = _compX;
-			compY = _compY;
-			compWidth = _compWidth;
-			compHeight = _compHeight;
-        }
 
 		public NetComponentPeer(java.awt.Component target)
 		{
