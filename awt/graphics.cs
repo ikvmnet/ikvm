@@ -540,7 +540,7 @@ namespace ikvm.awt
         {
             if (f != null && f != font)
             {
-                netfont = font.getNetFont();
+                netfont = f.getNetFont();
                 font = f;
             }
         }
