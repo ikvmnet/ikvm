@@ -377,11 +377,17 @@ namespace ikvm.awt
 
         internal static java.awt.Font ConvertFont(Font font)
         {
-            java.awt.Font jFont = new java.awt.Font(font.Name, (int)font.Style, (int)font.Size);
-            if (jFont.getSize2D() != font.Size)
+            float size = font.Size;
+            if (font.Unit != GraphicsUnit.Pixel)
             {
-                jFont = jFont.deriveFont(font.Size);
+                size = font.SizeInPoints * java.awt.Toolkit.getDefaultToolkit().getScreenResolution() / 72;
             }
+            java.awt.Font jFont = new java.awt.Font(font.Name, (int)font.Style, (int)size);
+            if (jFont.getSize2D() != size)
+            {
+                jFont = jFont.deriveFont(size);
+            }
+            //TODO performance we should set the .NET Font, we can do it with an aditional constructor.
             return jFont;
         }
 
