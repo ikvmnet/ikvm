@@ -1090,11 +1090,25 @@ namespace ikvm.awt
 			postEvent(evt);
 		}
 
+        /// <summary>
+        /// Get the left insets of the .NET Window.
+        /// In .NET the coordinate of a window start on the most left, top point with 0,0
+        /// In Java the most left, top point with 0,0 is in the detail area of the window.
+        /// In all not Windows Component this return ever 0.
+        /// </summary>
+        /// <returns></returns>
         protected virtual int getInsetsLeft()
         {
             return 0;
         }
 
+        /// <summary>
+        /// Get the top insets of the .NET Window.
+        /// In .NET the coordinate of a window start on the most left, top point with 0,0
+        /// In Java the most left, top point with 0,0 is in the detail area of the window.
+        /// In all not Windows Component this return ever 0.
+        /// </summary>
+        /// <returns></returns>
         protected virtual int getInsetsTop()
         {
             return 0;
@@ -1137,7 +1151,7 @@ namespace ikvm.awt
 
 		private void WmPaint(Graphics g, Rectangle r)
 		{
-			handlePaint(r.X, r.Y, r.Width, r.Height);
+            handlePaint(r.X + getInsetsLeft(), r.Y + getInsetsTop(), r.Width, r.Height);
 		}
 
 		/* Invoke a paint() method call on the target, without clearing the
@@ -1455,7 +1469,7 @@ namespace ikvm.awt
 
 		private void _UpdateWindow()
 		{
-			if (control.IsHandleCreated)
+            if (control.IsHandleCreated)
 			{
 				Invoke(delegate
 				{
@@ -2559,6 +2573,9 @@ namespace ikvm.awt
 
 	class NetContainerPeer : NetComponentPeer, ContainerPeer
 	{
+        /// <summary>
+        /// The native insets of the .NET Window
+        /// </summary>
 		protected java.awt.Insets _insets = new java.awt.Insets(0, 0, 0, 0);
 
 		public NetContainerPeer(java.awt.Container awtcontainer)
