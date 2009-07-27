@@ -84,6 +84,7 @@ namespace IKVM.Internal
 		internal const bool IsStaticCompiler = false;
 		private static bool enableReflectionOnMethodsWithUnloadableTypeParameters;
 		private static bool finishingForDebugSave;
+		private static int emitSymbols;
 		internal static bool IsSaveDebugImage;
 #if CLASSGC
 		internal static bool classUnloading = true;
@@ -165,6 +166,31 @@ namespace IKVM.Internal
 			set
 			{
 				finishingForDebugSave = value;
+			}
+		}
+
+		internal static bool EmitSymbols
+		{
+			get
+			{
+				if (emitSymbols == 0)
+				{
+					int state;
+					string debug = System.Configuration.ConfigurationManager.AppSettings["ikvm-emit-symbols"];
+					if (debug == null)
+					{
+						state = Debugger.IsAttached ? 1 : 2;
+					}
+					else
+					{
+						state = debug.Equals("True", StringComparison.OrdinalIgnoreCase) ? 1 : 2;
+					}
+					// make sure we only set the value once, because it isn't allowed to changed as that could cause
+					// the compiler to try emitting symbols into a ModuleBuilder that doesn't accept them (and would
+					// throw an InvalidOperationException)
+					Interlocked.CompareExchange(ref emitSymbols, state, 0);
+				}
+				return emitSymbols == 1;
 			}
 		}
 #endif // !STATIC_COMPILER

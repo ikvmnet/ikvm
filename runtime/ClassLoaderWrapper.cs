@@ -872,7 +872,7 @@ namespace IKVM.Internal
 				if(wrapper == null)
 				{
 					CodeGenOptions opt = CodeGenOptions.None;
-					if(System.Diagnostics.Debugger.IsAttached)
+					if(JVM.EmitSymbols)
 					{
 						opt |= CodeGenOptions.Debug;
 					}

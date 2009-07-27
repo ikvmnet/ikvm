@@ -464,7 +464,7 @@ namespace IKVM.Internal
 				AppDomain.CurrentDomain.DefineDynamicAssembly(name, access, null, null, null, null, null, true, attribs);
 #endif
 			AttributeHelper.SetRuntimeCompatibilityAttribute(assemblyBuilder);
-			bool debug = System.Diagnostics.Debugger.IsAttached;
+			bool debug = JVM.EmitSymbols;
 			CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, debug });
 			assemblyBuilder.SetCustomAttribute(debugAttr);
 			ModuleBuilder moduleBuilder = JVM.IsSaveDebugImage ? assemblyBuilder.DefineDynamicModule(name.Name, name.Name + ".dll", debug) : assemblyBuilder.DefineDynamicModule(name.Name, debug);
