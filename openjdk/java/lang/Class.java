@@ -121,6 +121,10 @@ public final
     private static final int ENUM      = 0x00004000;
     private static final int SYNTHETIC = 0x00001000;
 
+    // [IKVM] additional fields
+    java.security.ProtectionDomain pd;
+    Object[] signers;
+
     // for types that support fast class literals, this is used to store the Type that can later (on demand)
     // be resolved to the corresponding TypeWrapper, but for other types this will be null.
     final cli.System.Type type;
@@ -140,6 +144,14 @@ public final
     Class(cli.System.Type type)
     {
         this.type = type;
+    }
+
+    // [IKVM] this provides an implicit conversion operator from System.Type to java.lang.Class
+    @cli.System.Runtime.CompilerServices.SpecialNameAttribute.Annotation
+    @cli.IKVM.Attributes.HideFromJavaAttribute.Annotation
+    public static Class op_Implicit(cli.System.Type type)
+    {
+        return ikvm.runtime.Util.getFriendlyClassFromType(type);
     }
 
     /**

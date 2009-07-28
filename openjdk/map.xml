@@ -1343,16 +1343,6 @@
             <field name="typeWrapper" sig="Lcli.IKVM.Internal.TypeWrapper;" modifiers="">
                 <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
             </field>
-            <field name="pd" sig="Ljava.security.ProtectionDomain;" modifiers="" />
-            <field name="signers" sig="[Ljava.lang.Object;" modifiers="" />
-            <method name="op_Implicit" sig="(Lcli.System.Type;)Ljava.lang.Class;" modifiers="public static" attributes="SpecialName">
-                <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
-                <body>
-                    <ldarg_0 />
-                    <call class="ikvm.runtime.Util" name="getFriendlyClassFromType" sig="(Lcli.System.Type;)Ljava.lang.Class;" />
-                    <ret />
-                </body>
-            </method>
         </class>
         <class name="java.lang.ClassLoader">
             <field name="wrapper" sig="Lcli.IKVM.Internal.ClassLoaderWrapper;" modifiers="">
