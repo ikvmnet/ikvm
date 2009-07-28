@@ -72,6 +72,8 @@ namespace IKVM.Internal
 		{
 #if NET_4_0
 			return asm.IsDynamic();
+#elif IKVM_REF_EMIT
+			return false;
 #else
 			if (clr_v4)
 			{
