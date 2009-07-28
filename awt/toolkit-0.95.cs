@@ -162,7 +162,6 @@ namespace ikvm.awt
 
     public class NetToolkit : sun.awt.SunToolkit, ikvm.awt.IkvmToolkit
     {
-        internal static java.awt.EventQueue eventQueue = new java.awt.EventQueue();
         internal static volatile Form bogusForm;
         private int resolution;
 
@@ -525,11 +524,6 @@ namespace ikvm.awt
         public override java.awt.datatransfer.Clipboard getSystemClipboard()
         {
             throw new NotImplementedException();
-        }
-
-        protected override java.awt.EventQueue getSystemEventQueueImpl()
-        {
-            return eventQueue;
         }
 
         public override java.awt.dnd.peer.DragSourceContextPeer createDragSourceContextPeer(java.awt.dnd.DragGestureEvent dge)
