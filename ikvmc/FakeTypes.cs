@@ -72,13 +72,12 @@ namespace IKVM.Internal
 			tb.DefineGenericParameters("T")[0].SetBaseTypeConstraint(typeof(MulticastDelegate));
 			genericDelegateInterfaceType = tb.CreateType();
 
-			CreateEnumEnum(modb, loader);
-
 			TypeWrapper annotationTypeWrapper = loader.LoadClassByDottedName("java.lang.annotation.Annotation");
 			annotationTypeWrapper.Finish();
 			genericAttributeAnnotationType = CreateAnnotationType(modb, DotNetTypeWrapper.GenericAttributeAnnotationTypeName, annotationTypeWrapper);
 			genericAttributeAnnotationMultipleType = CreateAnnotationType(modb, DotNetTypeWrapper.GenericAttributeAnnotationMultipleTypeName, annotationTypeWrapper);
 			genericAttributeAnnotationReturnValueType = CreateAnnotationType(modb, DotNetTypeWrapper.GenericAttributeAnnotationReturnValueTypeName, annotationTypeWrapper);
+			CreateEnumEnum(modb, loader);
 		}
 
 		private static void CreateEnumEnum(ModuleBuilder modb, ClassLoaderWrapper loader)

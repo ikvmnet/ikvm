@@ -30,6 +30,10 @@ import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamException;
+import cli.System.Runtime.Serialization.IObjectReference;
+import cli.System.Runtime.Serialization.SerializationException;
+import cli.System.Runtime.Serialization.SerializationInfo;
+import cli.System.Runtime.Serialization.StreamingContext;
 
 /**
  * This is the common base class of all Java language enumeration types.
@@ -39,6 +43,7 @@ import java.io.ObjectStreamException;
  * @see     Class#getEnumConstants()
  * @since   1.5
  */
+@cli.System.SerializableAttribute.Annotation
 public abstract class Enum<E extends Enum<E>>
         implements Comparable<E>, Serializable {
     /**
@@ -230,5 +235,35 @@ public abstract class Enum<E extends Enum<E>>
 
     private void readObjectNoData() throws ObjectStreamException {
             throw new InvalidObjectException("can't deserialize enum");
+    }
+    
+    // [IKVM] .NET serialization support starts here
+    // Note that we don't have a security demand, because the info is harmless.
+    @cli.IKVM.Attributes.HideFromJavaAttribute.Annotation
+    public final void GetObjectData(SerializationInfo info, StreamingContext context)
+    {
+        info.AddValue("enumType", getDeclaringClass());
+        info.AddValue("name", name);
+        info.SetType(ikvm.runtime.Util.getInstanceTypeFromClass(EnumSerializationProxy.class));
+    }
+}
+
+@cli.System.SerializableAttribute.Annotation
+final class EnumSerializationProxy implements IObjectReference
+{
+    private Class enumType;
+    private String name;
+    
+    public Object GetRealObject(StreamingContext context)
+    {
+        try
+        {
+            return Enum.valueOf(enumType, name);
+        }
+        catch (IllegalArgumentException x)
+        {
+            ikvm.runtime.Util.throwException(new SerializationException("Enum value " + name + " not found in " + enumType, x));
+            return null;
+        }
     }
 }

@@ -1364,6 +1364,9 @@
                 </body>
             </method>
         </class>
+        <class name="java.lang.Enum">
+            <implements class="cli.System.Runtime.Serialization.ISerializable" />
+        </class>
         <class name="java.lang.Thread">
             <field name="parkLock" sig="Ljava.lang.Object;" modifiers="" />
             <field name="parkState" sig="I" modifiers="" />
