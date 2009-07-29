@@ -66,6 +66,66 @@ import sun.reflect.generics.scope.ClassScope;
 import sun.security.util.SecurityConstants;
 import java.lang.annotation.Annotation;
 import sun.reflect.annotation.AnnotationType;
+import cli.System.Runtime.Serialization.IObjectReference;
+import cli.System.Runtime.Serialization.SerializationException;
+import cli.System.Runtime.Serialization.SerializationInfo;
+import cli.System.Runtime.Serialization.StreamingContext;
+
+@cli.System.SerializableAttribute.Annotation
+final class ClassSerializationProxy implements IObjectReference
+{
+    private cli.System.Type type;
+    private String sig;
+
+    public Object GetRealObject(StreamingContext context)
+    {
+        if (sig != null)
+        {
+            if (sig.length() == 1)
+            {
+                switch (sig.charAt(0))
+                {
+                    case 'B':
+                        return Byte.TYPE;
+                    case 'C':
+                        return Character.TYPE;
+                    case 'D':
+                        return Double.TYPE;
+                    case 'F':
+                        return Float.TYPE;
+                    case 'I':
+                        return Integer.TYPE;
+                    case 'J':
+                        return Long.TYPE;
+                    case 'S':
+                        return Short.TYPE;
+                    case 'Z':
+                        return Boolean.TYPE;
+                    case 'V':
+                        return Void.TYPE;
+                }
+            }
+            String className;
+            if (sig.charAt(0) == 'L')
+            {
+                className = sig.substring(1, sig.length() - 1);
+            }
+            else
+            {
+                className = sig;
+            }
+            try
+            {
+                return Class.forName(className, false, Thread.currentThread().getContextClassLoader());
+            }
+            catch (ClassNotFoundException x)
+            {
+                ikvm.runtime.Util.throwException(new SerializationException(x.getMessage(), x));
+            }
+        }
+        return ikvm.runtime.Util.getClassFromTypeHandle(type.get_TypeHandle());
+    }
+}
 
 /**
  * Instances of the class {@code Class} represent classes and
@@ -112,6 +172,7 @@ import sun.reflect.annotation.AnnotationType;
  * @see     java.lang.ClassLoader#defineClass(byte[], int, int)
  * @since   JDK1.0
  */
+@cli.System.SerializableAttribute.Annotation
 public final
     class Class<T> implements java.io.Serializable,
                               java.lang.reflect.GenericDeclaration,
@@ -125,8 +186,11 @@ public final
     java.security.ProtectionDomain pd;
     Object[] signers;
 
-    // for types that support fast class literals, this is used to store the Type that can later (on demand)
-    // be resolved to the corresponding TypeWrapper, but for other types this will be null.
+    // For types that live in a static .NET assembly (i.e. ikvmc compiled or .NET types)
+    // this field contains the type (used for .NET serialization of Class objects).
+    // This field is also used by fast class literals to remember the type that can then
+    // lazily be resolved to the corresponding TypeWrapper.
+    // For dynamically loaded classes and primitives it is null.
     final cli.System.Type type;
 
     /*
@@ -145,6 +209,19 @@ public final
     {
         this.type = type;
     }
+    
+    // We use custom serialization, because we want to deserialize a via proxy that properly resolves the Class singletons.
+    // Note that we don't implement ISerializable in this source, but in map.xml to avoid it being visible to Java code.
+    // We don't have a security demand, because the information exposed is harmless.
+    @cli.IKVM.Attributes.HideFromJavaAttribute.Annotation
+    public void GetObjectData(SerializationInfo info, StreamingContext context)
+    {
+        info.AddValue("type", type);
+        info.AddValue("sig", type == null ? getSigName() : null);
+        info.SetType(ikvm.runtime.Util.getInstanceTypeFromClass(ClassSerializationProxy.class));
+    }
+
+    private native String getSigName();
 
     // [IKVM] this provides an implicit conversion operator from System.Type to java.lang.Class
     @cli.System.Runtime.CompilerServices.SpecialNameAttribute.Annotation

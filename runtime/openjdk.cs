@@ -2365,6 +2365,11 @@ namespace IKVM.NativeCode.java
 				return tw.Name;
 			}
 
+			public static string getSigName(object thisClass)
+			{
+				return TypeWrapper.FromClass(thisClass).SigName;
+			}
+
 			public static object getClassLoader0(object thisClass)
 			{
 				return TypeWrapper.FromClass(thisClass).GetClassLoader().GetJavaClassLoader();
