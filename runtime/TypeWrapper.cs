@@ -2379,7 +2379,7 @@ namespace IKVM.Internal
 						Type type = GetClassLiteralType();
 						if (IsForbiddenTypeParameterType(type) || IsReflectionOnly(type))
 						{
-							clazz = new java.lang.Class(null);
+							clazz = new java.lang.Class(type);
 						}
 						else
 						{
@@ -10940,6 +10940,11 @@ namespace IKVM.Internal
 					return new TypeWrapper[] { ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.annotation.Annotation") };
 				}
 			}
+
+			internal sealed override bool IsFastClassLiteralSafe
+			{
+				get { return true; }
+			}
 		}
 
 		private sealed class AttributeAnnotationTypeWrapper : AttributeAnnotationTypeWrapperBase
@@ -11793,11 +11798,6 @@ namespace IKVM.Internal
 				}
 			}
 #endif //!COMPACT_FRAMEWORK
-
-			internal override bool IsFastClassLiteralSafe
-			{
-				get { return true; }
-			}
 		}
 
 		internal static TypeWrapper GetWrapperFromDotNetType(Type type)
