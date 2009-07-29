@@ -56,6 +56,7 @@ java/io/RandomAccessFile.java
 java/lang/ApplicationShutdownHooks.java
 java/lang/Class.java
 java/lang/ClassLoader.java
+java/lang/Enum.java
 java/lang/LangHelper.java
 java/lang/ProcessImpl.java
 java/lang/PropertyConstants.java
@@ -7049,7 +7050,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 ../../openjdk6-b16/jdk/src/share/classes/java/lang/ConditionalSpecialCasing.java
 ../../openjdk6-b16/jdk/src/share/classes/java/lang/Deprecated.java
 ../../openjdk6-b16/jdk/src/share/classes/java/lang/Double.java
-../../openjdk6-b16/jdk/src/share/classes/java/lang/Enum.java
 ../../openjdk6-b16/jdk/src/share/classes/java/lang/EnumConstantNotPresentException.java
 ../../openjdk6-b16/jdk/src/share/classes/java/lang/Error.java
 ../../openjdk6-b16/jdk/src/share/classes/java/lang/Exception.java
