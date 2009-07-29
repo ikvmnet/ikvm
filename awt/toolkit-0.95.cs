@@ -703,9 +703,13 @@ namespace ikvm.awt
             throw new NotImplementedException();
         }
 
-        public override void grab(java.awt.Window w)
+        public override void grab(java.awt.Window window)
         {
-            throw new NotImplementedException();
+            NetWindowPeer peer = (NetWindowPeer)window.getPeer();
+            if (peer != null)
+            {
+                peer.Grab();
+            }
         }
 
         public override bool isDesktopSupported()
@@ -723,9 +727,13 @@ namespace ikvm.awt
             throw new NotImplementedException();
         }
 
-        public override void ungrab(java.awt.Window w)
+        public override void ungrab(java.awt.Window window)
         {
-            throw new NotImplementedException();
+            NetWindowPeer peer = (NetWindowPeer)window.getPeer();
+            if (peer != null)
+            {
+                peer.Ungrab(false);
+            }
         }
 
 		internal static new object targetToPeer(object target)
@@ -1336,7 +1344,7 @@ namespace ikvm.awt
 			}
 		}
 
-		private void OnMouseDown(object sender, MouseEventArgs ev)
+		protected virtual void OnMouseDown(object sender, MouseEventArgs ev)
 		{
 			isMouseClick = false;
 			isDoubleClick = false;
@@ -2646,6 +2654,8 @@ namespace ikvm.awt
         private NetWindowPeer modalBlocker;
         private bool modalSavedEnabled;
 
+        private static NetWindowPeer grabbedWindow;
+
         public NetWindowPeer(java.awt.Window window)
 			: base(window)
 		{
@@ -2729,7 +2739,11 @@ namespace ikvm.awt
 			}
 			else
 			{
-				type = java.awt.@event.WindowEvent.WINDOW_LOST_FOCUS;
+                if (grabbedWindow != null && !grabbedWindow.IsOneOfOwnersOf(this))
+                {
+                    grabbedWindow.Ungrab(true);
+                }
+                type = java.awt.@event.WindowEvent.WINDOW_LOST_FOCUS;
 			}
 
 			SendWindowEvent(type, opposite);
@@ -2853,6 +2867,60 @@ namespace ikvm.awt
 			NetToolkit.CreateNative(form);
 			this.control = form;
 		}
+
+        protected override void OnMouseDown(object sender, MouseEventArgs ev)
+        {
+            if (grabbedWindow != null && !grabbedWindow.IsOneOfOwnersOf(this))
+            {
+                grabbedWindow.Ungrab(true);
+            }
+            base.OnMouseDown(sender, ev);
+        }
+
+        internal void Grab()
+        {
+            //copy from file awt_Windows.cpp
+            if (grabbedWindow != null)
+            {
+                grabbedWindow.Ungrab(true);
+            }
+            grabbedWindow = this;
+            if (Form.ActiveForm == null)
+            {
+                Ungrab(true);
+            }
+            else if (control != Form.ActiveForm)
+            {
+                toFront();
+            }
+        }
+
+        internal void Ungrab(bool doPost)
+        {
+            //copy from file awt_Windows.cpp
+            if (grabbedWindow == this)
+            {
+                if (doPost)
+                {
+                    SendEvent(new sun.awt.UngrabEvent(this.target));
+                }
+                grabbedWindow = null;
+            }
+        }
+
+        private bool IsOneOfOwnersOf(NetWindowPeer window)
+        {
+            while (window != null)
+            {
+                if (window == this)
+                {
+                    return true;
+                }
+                java.awt.Container parent = window.target.getParent();
+                window = parent == null ? null : (NetWindowPeer)parent.getPeer();
+            }
+            return false;
+        }
 	}
 
 	class NetFramePeer : NetWindowPeer, FramePeer
