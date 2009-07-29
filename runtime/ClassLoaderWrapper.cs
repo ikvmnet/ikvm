@@ -2321,6 +2321,13 @@ namespace IKVM.Internal
 					{
 						return inner;
 					}
+					foreach(TypeWrapper inner2 in inner.InnerClasses)
+					{
+						if(inner2.TypeAsTBD == type)
+						{
+							return inner2;
+						}
+					}
 				}
 				return null;
 			}
