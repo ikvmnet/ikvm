@@ -4584,10 +4584,6 @@ namespace IKVM.Internal
 					{
 						typeAttribs |= TypeAttributes.BeforeFieldInit;
 					}
-					if(f.IsEnum)
-					{
-						typeAttribs |= TypeAttributes.Serializable;
-					}
 #if STATIC_COMPILER
 					bool cantNest = false;
 					bool setModifiers = false;
@@ -7880,6 +7876,7 @@ namespace IKVM.Internal
 							}
 						}
 					}
+					Serialization.AddAutomagicSerialization(wrapper);
 				}
 
 #if STATIC_COMPILER

@@ -132,6 +132,7 @@
     </Compile>
     <Compile Include="ReflectUtil.cs" />
     <Compile Include="RuntimeHelperTypes.cs" />
+    <Compile Include="Serialization.cs" />
     <Compile Include="tracer.cs">
       <SubType>Code</SubType>
     </Compile>
