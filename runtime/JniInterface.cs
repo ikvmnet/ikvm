@@ -1607,9 +1607,13 @@ namespace IKVM.Runtime
 
 		internal static jobject AllocObject(JNIEnv* pEnv, jclass clazz)
 		{
+			return AllocObjectImpl(pEnv, TypeWrapper.FromClass(pEnv->UnwrapRef(clazz)));
+		}
+
+		private static jobject AllocObjectImpl(JNIEnv* pEnv, TypeWrapper wrapper)
+		{
 			try
 			{
-				TypeWrapper wrapper = TypeWrapper.FromClass(pEnv->UnwrapRef(clazz));
 				if(wrapper.IsAbstract)
 				{
 					SetPendingException(pEnv, new java.lang.InstantiationException(wrapper.Name));
@@ -1713,7 +1717,13 @@ namespace IKVM.Runtime
 
 		internal static jobject NewObjectA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
 		{
-			jobject obj = AllocObject(pEnv, clazz);
+			TypeWrapper wrapper = TypeWrapper.FromClass(pEnv->UnwrapRef(clazz));
+			if(!wrapper.IsAbstract && wrapper.TypeAsBaseType.IsAbstract)
+			{
+				// static newinstance helper method
+				return pEnv->MakeLocalRef(InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false));
+			}
+			jobject obj = AllocObjectImpl(pEnv, wrapper);
 			if(obj != IntPtr.Zero)
 			{
 				InvokeHelper(pEnv, obj, methodID, args, false);
