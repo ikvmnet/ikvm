@@ -80,6 +80,8 @@ namespace ikvm.awt
     delegate void SetCursor(java.awt.Cursor cursor);
 	delegate java.awt.Dimension GetDimension();
     delegate Rectangle ConvertRectangle(Rectangle r);
+    delegate object GetObject();
+    internal delegate T Func<T>();
 
 	class UndecoratedForm : Form
 	{
@@ -316,21 +318,21 @@ namespace ikvm.awt
 
         public override java.awt.peer.FramePeer createFrame(java.awt.Frame target)
         {
-			FramePeer peer = new NetFramePeer(target);
-			targetCreatedPeer(target, peer);
-			return peer;
-		}
+            FramePeer peer = (NetFramePeer)bogusForm.Invoke( (GetObject)delegate { return new NetFramePeer(target); });
+            targetCreatedPeer(target, peer);
+            return peer;
+        }
 
         public override java.awt.peer.WindowPeer createWindow(java.awt.Window target)
         {
-			WindowPeer peer = new NetWindowPeer(target);
+            WindowPeer peer = (NetWindowPeer)bogusForm.Invoke((GetObject)delegate { return new NetWindowPeer(target); });
 			targetCreatedPeer(target, peer);
 			return peer;
 		}
 
         public override java.awt.peer.DialogPeer createDialog(java.awt.Dialog target)
         {
-			DialogPeer peer = new NetDialogPeer(target);
+            DialogPeer peer = (DialogPeer)bogusForm.Invoke((GetObject)delegate { return new NetDialogPeer(target); });
 			targetCreatedPeer(target, peer);
 			return peer;
 		}
@@ -882,24 +884,6 @@ namespace ikvm.awt
 
 	sealed class AwtToolkit
 	{
-		private static readonly AwtToolkit theInstance = new AwtToolkit();
-
-		internal static AwtToolkit GetInstance() { return theInstance; }
-
-		internal void SyncCall(ThreadStart del)
-		{
-			// TODO if we're not on the right thread we should lock (see awt_Toolkit.cpp)
-			del();
-		}
-
-		internal delegate T Func<T>();
-
-		internal T SyncCall<T>(Func<T> del)
-		{
-			// TODO if we're not on the right thread we should lock (see awt_Toolkit.cpp)
-			return del();
-		}
-
 		internal delegate void CreateComponentDelegate(NetComponentPeer parent);
 
 		internal static void CreateComponent(CreateComponentDelegate factory, NetComponentPeer parent)
@@ -935,7 +919,6 @@ namespace ikvm.awt
 		private bool isLayouting = false;
 		private bool paintPending = false;
 		private RepaintArea paintArea;
-		protected NetGraphicsConfiguration winGraphicsConfig;
 		private java.awt.Font font;
 		private java.awt.Color foreground;
 		private java.awt.Color background;
@@ -949,8 +932,7 @@ namespace ikvm.awt
 			create(parentPeer);
 			// fix for 5088782: check if window object is created successfully
 			//checkCreation();
-			this.winGraphicsConfig =
-				(NetGraphicsConfiguration)getGraphicsConfiguration();
+			//this.winGraphicsConfig = (NetGraphicsConfiguration)getGraphicsConfiguration();
 			/*
 			this.surfaceData =
 				winGraphicsConfig.createSurfaceData(this, numBackBuffers);
@@ -986,23 +968,15 @@ namespace ikvm.awt
 
 		void start()
 		{
-			lock (this)
-			{
-				AwtToolkit.GetInstance().SyncCall(_Start);
-			}
-		}
-
-		void _Start()
-		{
-			if (control.IsHandleCreated)
-			{
-				initEvents();
-				// JDK native code also disables the window here, but since that is already done in initialize(),
-				// I don't see the point
-				EnableCallbacks(true);
-				control.Invalidate();
-				control.Update();
-			}
+            BeginInvoke(delegate
+            {
+                initEvents();
+                // JDK native code also disables the window here, but since that is already done in initialize(),
+                // I don't see the point
+                EnableCallbacks(true);
+                control.Invalidate();
+                control.Update();
+            });
 		}
 
 		void EnableCallbacks(bool enabled)
@@ -1012,49 +986,33 @@ namespace ikvm.awt
 
 		internal abstract void create(NetComponentPeer parent);
 
-		internal void Invoke(ThreadStart del)
+		internal void BeginInvoke(ThreadStart del)
 		{
-			control.Invoke(del);
+            if (NetToolkit.bogusForm.InvokeRequired)
+            {
+                NetToolkit.bogusForm.BeginInvoke(del);
+            }
+            else
+            {
+                del();
+            }
 		}
+
+        internal T Invoke<T>(Func<T> del)
+        {
+            if (NetToolkit.bogusForm.InvokeRequired)
+            {
+                return (T)NetToolkit.bogusForm.Invoke(del);
+            }
+            else
+            {
+                return del();
+            }
+        }
 
 		void pShow()
 		{
-			lock (this)
-			{
-				AwtToolkit.GetInstance().SyncCall(_Show);
-			}
-		}
-
-		void _Show()
-		{
-			if (control.IsHandleCreated)
-			{
-				Invoke(delegate { control.Visible = true; });
-			}
-		}
-
-		void _Hide()
-		{
-			if (control.IsHandleCreated)
-			{
-				Invoke(delegate { control.Visible = false; });
-			}
-		}
-
-		void _Enable()
-		{
-			if (control.IsHandleCreated)
-			{
-				Enable(true);
-			}
-		}
-
-		void _Disable()
-		{
-			if (control.IsHandleCreated)
-			{
-				Enable(false);
-			}
+            BeginInvoke(delegate { control.Visible = true; });
 		}
 
 		void Enable(bool enable)
@@ -1062,8 +1020,6 @@ namespace ikvm.awt
 			sm_suppressFocusAndActivation = true;
 			control.Enabled = enable;
 			sm_suppressFocusAndActivation = false;
-			//CriticalSection::Lock l(GetLock());
-			//VerifyState();
 		}
 
 		internal virtual void initEvents()
@@ -1461,24 +1417,13 @@ namespace ikvm.awt
 			paintArea.paint(target, shouldClearRectBeforePaint());
 		}
 
-		private void updateWindow()
-		{
-			lock (this)
-			{
-				AwtToolkit.GetInstance().SyncCall(_UpdateWindow);
-			}
-		}
-
-		private void _UpdateWindow()
-		{
-            if (control.IsHandleCreated)
-			{
-				Invoke(delegate
-				{
-					control.Update();
-				});
-			}
-		}
+        private void updateWindow()
+        {
+            BeginInvoke(delegate
+            {
+                control.Update();
+            });
+        }
 
 		/* override and return false on components that DO NOT require
 		   a clearRect() before painting (i.e. native components) */
@@ -1520,13 +1465,6 @@ namespace ikvm.awt
 
 		public void beginValidate()
 		{
-			AwtToolkit.GetInstance().SyncCall(_BeginValidate);
-		}
-
-		private void _BeginValidate()
-		{
-			//if (control.IsHandleCreated)
-			//{
 			//    Invoke(delegate
 			//    {
 			//        if (m_validationNestCount == 0)
@@ -1535,18 +1473,12 @@ namespace ikvm.awt
 			//        }
 			//        m_validationNestCount++;
 			//    });
-			//}
 		}
 
 		public void endValidate()
 		{
-			AwtToolkit.GetInstance().SyncCall(_EndValidate);
-		}
-
-		private void _EndValidate()
-		{
-			//if (control.IsHandleCreated)
-			//{
+            //    Invoke(delegate
+            //    {
 			//    m_validationNestCount--;
 			//    if (m_validationNestCount == 0) {
 			//        // if this call to EndValidate is not nested inside another
@@ -1554,8 +1486,8 @@ namespace ikvm.awt
 			//        ::EndDeferWindowPos(m_hdwp);
 			//        m_hdwp = NULL;
 			//    }
-			//}
-		}
+            //    });
+        }
 
 		// Returns true if we are inside begin/endLayout and
 		// are waiting for native painting
@@ -1583,15 +1515,12 @@ namespace ikvm.awt
 
 		public void disable()
 		{
-			lock (this)
-			{
-				AwtToolkit.GetInstance().SyncCall(_Disable);
-			}
+            BeginInvoke(delegate { Enable( false ); });
 		}
 
 		public void dispose()
 		{
-			control.Invoke(new SetVoid(disposeImpl));
+            BeginInvoke(delegate { disposeImpl(); });
 		}
 
 		private void disposeImpl()
@@ -1602,10 +1531,7 @@ namespace ikvm.awt
 
 		public void enable()
 		{
-			lock (this)
-			{
-				AwtToolkit.GetInstance().SyncCall(_Enable);
-			}
+            BeginInvoke(delegate { Enable(true); });
 		}
 
 		public ColorModel getColorModel()
@@ -1643,21 +1569,15 @@ namespace ikvm.awt
 			return null;
 		}
 
-		private java.awt.Point _GetLocationOnScreen()
-		{
-			if (control.IsHandleCreated)
-			{
-				Point p = new Point();
-				Invoke(delegate { p = control.PointToScreen(p); });
-				return new java.awt.Point(p.X, p.Y);
-			}
-			return null;
-		}
-
-		public java.awt.Point getLocationOnScreen()
-		{
-			return AwtToolkit.GetInstance().SyncCall<java.awt.Point>(_GetLocationOnScreen);
-		}
+        public java.awt.Point getLocationOnScreen()
+        {
+            return Invoke<java.awt.Point>(delegate
+            {
+                Point p = new Point();
+                BeginInvoke(delegate { p = control.PointToScreen(p); });
+                return new java.awt.Point(p.X, p.Y);
+            });
+        }
 
 		public java.awt.Dimension getMinimumSize()
 		{
@@ -1681,15 +1601,7 @@ namespace ikvm.awt
 
 		private void nativeHandleEvent(java.awt.AWTEvent e)
 		{
-			AwtToolkit.GetInstance().SyncCall(delegate { _NativeHandleEvent(e); });
-		}
-
-		private void _NativeHandleEvent(java.awt.AWTEvent e)
-		{
-			if (control.IsHandleCreated)
-			{
 				// TODO arrghh!! code from void AwtComponent::_NativeHandleEvent(void *param) in awt_Component.cpp should be here
-			}
 		}
 
 		public void handleEvent(java.awt.AWTEvent e)
@@ -1729,10 +1641,7 @@ namespace ikvm.awt
 
         public void hide()
 		{
-			lock (this)
-			{
-				AwtToolkit.GetInstance().SyncCall(_Hide);
-			}
+            BeginInvoke(delegate { control.Visible = false; });
 		}
 
 		public bool isFocusTraversable()
@@ -1799,22 +1708,7 @@ namespace ikvm.awt
 
 		public void reshape(int x, int y, int width, int height)
 		{
-			lock (this)
-			{
-				AwtToolkit.GetInstance().SyncCall(delegate { _Reshape(x, y, width, height); });
-			}
-		}
-
-		private void _Reshape(int x, int y, int width, int height)
-		{
-			if (control.IsHandleCreated)
-			{
-				//if (IsEmbeddedFrame())
-				//{
-				//    ::OffsetRect(r, -r->left, -r->top);
-				//}
-				_ReshapeNoCheck(x, y, width, height);
-			}
+            BeginInvoke(delegate { control.SetBounds(x, y, width, height); });
 		}
 
 		public void setBackground(java.awt.Color color)
@@ -1822,25 +1716,13 @@ namespace ikvm.awt
 			lock (this)
 			{
 				this.background = color;
-				Invoke(delegate { control.BackColor = J2C.ConvertColor(color); });
-			}
-		}
-
-		private void _ReshapeNoCheck(int x, int y, int width, int height)
-		{
-			if (control.IsHandleCreated)
-			{
-				Invoke(delegate
-				{
-					// TODO this code should be made equivalent to void AwtComponent::Reshape(int x, int y, int w, int h) in awt_Component.cpp
-					control.SetBounds(x, y, width, height);
-				});
+				BeginInvoke(delegate { control.BackColor = J2C.ConvertColor(color); });
 			}
 		}
 
 		private void reshapeNoCheck(int x, int y, int width, int height)
 		{
-			AwtToolkit.GetInstance().SyncCall(delegate { _ReshapeNoCheck(x, y, width, height); });
+            BeginInvoke(delegate { control.SetBounds(x, y, width, height); });
 		}
 
 		public void setBounds(int x, int y, int width, int height, int op)
@@ -1949,7 +1831,7 @@ namespace ikvm.awt
 			lock (this)
 			{
 				this.font = font;
-				Invoke(delegate { control.Font = font.getNetFont(); });
+				BeginInvoke(delegate { control.Font = font.getNetFont(); });
 			}
 		}
 
@@ -1958,7 +1840,7 @@ namespace ikvm.awt
 			lock (this)
 			{
 				this.foreground = color;
-				Invoke(delegate { control.ForeColor = J2C.ConvertColor(color); });
+				BeginInvoke(delegate { control.ForeColor = J2C.ConvertColor(color); });
 			}
 		}
 
@@ -1986,19 +1868,12 @@ namespace ikvm.awt
 		 * Return the GraphicsConfiguration associated with this peer, either
 		 * the locally stored winGraphicsConfig, or that of the target Component.
 		 */
-		public java.awt.GraphicsConfiguration getGraphicsConfiguration()
-		{
-			if (winGraphicsConfig != null)
-			{
-				return winGraphicsConfig;
-			}
-			else
-			{
-				// we don't need a treelock here, since
-				// Component.getGraphicsConfiguration() gets it itself.
-				return target.getGraphicsConfiguration();
-			}
-		}
+        public java.awt.GraphicsConfiguration getGraphicsConfiguration()
+        {
+            // we don't need a treelock here, since
+            // Component.getGraphicsConfiguration() gets it itself.
+            return target.getGraphicsConfiguration();
+        }
 
 		public void setEventMask (long mask)
 		{
