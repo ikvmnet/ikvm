@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2004, 2005, 2006, 2007, 2008 Jeroen Frijters
+  Copyright (C) 2002-2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -365,17 +365,29 @@ public class NetExp
 		return t.IsArray && !c.isArray();
 	}
 
-	private static void AddToExportListIfNeeded(java.lang.Class c)
+	private static void AddToExportListIfNeeded(java.lang.reflect.Type type)
 	{
-		if(IsGenericType(c) || IsNonVectorArray(c) || (c.getModifiers() & Modifier.PUBLIC) == 0)
+		java.lang.Class c = type as java.lang.Class;
+		if (c != null)
 		{
-			AddToExportList(c);
+			if (IsGenericType(c) || IsNonVectorArray(c) || (c.getModifiers() & Modifier.PUBLIC) == 0)
+			{
+				AddToExportList(c);
+			}
+		}
+		// we only handle ParameterizedType, because that is the only one needed for rt.jar
+		// (because javax.swing.tree.DefaultTreeSelectionModel has a protected method with a parameter
+		// of type Vector<javax.swing.tree.PathPlaceHolder> where javax.swing.tree.PathPlaceHolder is a package private class)
+		java.lang.reflect.ParameterizedType pt = type as java.lang.reflect.ParameterizedType;
+		if (pt != null)
+		{
+			AddToExportListIfNeeded(pt.getActualTypeArguments());
 		}
 	}
 
-	private static void AddToExportListIfNeeded(java.lang.Class[] classes)
+	private static void AddToExportListIfNeeded(java.lang.reflect.Type[] classes)
 	{
-		foreach(java.lang.Class c in classes)
+		foreach(java.lang.reflect.Type c in classes)
 		{
 			AddToExportListIfNeeded(c);
 		}
@@ -386,9 +398,9 @@ public class NetExp
 		java.lang.Class superclass = c.getSuperclass();
 		if(superclass != null)
 		{
-			AddToExportListIfNeeded(c.getSuperclass());
+			AddToExportListIfNeeded(c.getGenericSuperclass());
 		}
-		foreach(java.lang.Class iface in c.getInterfaces())
+		foreach(java.lang.reflect.Type iface in c.getGenericInterfaces())
 		{
 			AddToExportListIfNeeded(iface);
 		}
@@ -410,7 +422,7 @@ public class NetExp
 			int mods = constructor.getModifiers();
 			if((mods & (Modifier.PUBLIC | Modifier.PROTECTED)) != 0)
 			{
-				AddToExportListIfNeeded(constructor.getParameterTypes());
+				AddToExportListIfNeeded(constructor.getGenericParameterTypes());
 			}
 		}
 		foreach(Method method in c.getDeclaredMethods())
@@ -418,8 +430,8 @@ public class NetExp
 			int mods = method.getModifiers();
 			if((mods & (Modifier.PUBLIC | Modifier.PROTECTED)) != 0)
 			{
-				AddToExportListIfNeeded(method.getParameterTypes());
-				AddToExportListIfNeeded(method.getReturnType());
+				AddToExportListIfNeeded(method.getGenericParameterTypes());
+				AddToExportListIfNeeded(method.getGenericReturnType());
 			}
 		}
 		foreach(Field field in c.getDeclaredFields())
@@ -427,7 +439,7 @@ public class NetExp
 			int mods = field.getModifiers();
 			if((mods & (Modifier.PUBLIC | Modifier.PROTECTED)) != 0)
 			{
-				AddToExportListIfNeeded(field.getType());
+				AddToExportListIfNeeded(field.getGenericType());
 			}
 		}
 	}
