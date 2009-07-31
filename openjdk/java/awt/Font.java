@@ -463,6 +463,7 @@ public class Font implements java.io.Serializable
         return font2D;
     }
 
+    @cli.IKVM.Attributes.HideFromJavaAttribute.Annotation
     public cli.System.Drawing.Font getNetFont(){
         if(netFont == null){
             netFont = getFont2D().createNetFont(this);
