@@ -2928,7 +2928,7 @@ namespace IKVM.Internal
 					Console.Error.WriteLine("Error: custom assembly class loader class not found");
 					return 1;
 				}
-				if(!wrapper.IsPublic && !wrapper.TypeAsBaseType.Assembly.Equals(assemblyBuilder))
+				if(!wrapper.IsPublic && !ReflectUtil.IsFromAssembly(wrapper.TypeAsBaseType, assemblyBuilder))
 				{
 					Console.Error.WriteLine("Error: custom assembly class loader class is not accessible");
 					return 1;
