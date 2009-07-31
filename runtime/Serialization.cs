@@ -88,6 +88,10 @@ namespace IKVM.Internal
 				{
 					return false;
 				}
+				if (wrapper.GetFieldWrapper("serialPersistentFields", "[Ljava.io.ObjectStreamField;") != null)
+				{
+					return false;
+				}
 				if (wrapper.GetMethodWrapper("GetObjectData", "(Lcli.System.Runtime.Serialization.SerializationInfo;Lcli.System.Runtime.Serialization.StreamingContext;)V", false) != null)
 				{
 					return false;
