@@ -9702,6 +9702,11 @@ namespace IKVM.Internal
 		internal override object[] GetMethodAnnotations(MethodWrapper mw)
 		{
 			MethodBase mb = mw.GetMethod();
+			if(mb == null)
+			{
+				// delegate constructor
+				return null;
+			}
 			if(mb.DeclaringType.Assembly.ReflectionOnly)
 			{
 				// TODO on Whidbey this must be implemented
@@ -9713,6 +9718,11 @@ namespace IKVM.Internal
 		internal override object[][] GetParameterAnnotations(MethodWrapper mw)
 		{
 			MethodBase mb = mw.GetMethod();
+			if(mb == null)
+			{
+				// delegate constructor
+				return null;
+			}
 			if(mb.DeclaringType.Assembly.ReflectionOnly)
 			{
 				// TODO on Whidbey this must be implemented
