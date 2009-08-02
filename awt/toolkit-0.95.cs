@@ -2845,18 +2845,13 @@ namespace ikvm.awt
 			}
 			else
 			{
-				((Form)control).FormBorderStyle = FormBorderStyle.Fixed3D;
+				((Form)control).FormBorderStyle = FormBorderStyle.FixedSingle;
 			}
-		}
-
-		private void setTitleImpl(string title)
-		{
-			control.Text = title;
 		}
 
 		public void setTitle(string title)
 		{
-			control.Invoke(new SetString(setTitleImpl), new object[] { title });
+            BeginInvoke(delegate { control.Text = title; });
 		}
 
 		public int getState()
@@ -2921,23 +2916,27 @@ namespace ikvm.awt
 		{
             ((Form)control).MaximizeBox = false;
 			((Form)control).MinimizeBox = false;
-            control.Text = target.getTitle();
-		}
-
-		private void setTitleImpl(string title)
-		{
-			control.Text = title;
-		}
+            ((Form)control).ShowInTaskbar = false;
+            setTitle(target.getTitle());
+            setResizable(target.isResizable());
+        }
 
 		public void setTitle(string title)
 		{
-			control.Invoke(new SetString(setTitleImpl), new object[] { title });
+            BeginInvoke(delegate { control.Text = title; });
 		}
 
 		public void setResizable(bool resizable)
 		{
-			throw new NotImplementedException();
-		}
+            if (resizable)
+            {
+                ((Form)control).FormBorderStyle = FormBorderStyle.SizableToolWindow;
+            }
+            else
+            {
+                ((Form)control).FormBorderStyle = FormBorderStyle.FixedToolWindow;
+            }
+        }
 
         public void blockWindows(List toBlock)
         {
