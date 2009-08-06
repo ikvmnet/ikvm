@@ -840,7 +840,7 @@ namespace IKVM.Reflection.Emit
 
 		public override string AssemblyQualifiedName
 		{
-			get { throw new NotImplementedException(); }
+			get { return type.FullName + ", " + type.ModuleBuilder.Assembly.FullName; }
 		}
 
 		public override Type BaseType
