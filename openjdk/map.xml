@@ -1133,18 +1133,18 @@
                     <ret />
                 </body>
             </constructor>
-            <method type="virtual" name="printStackTrace" sig="()V" modifiers="public">
+            <method name="printStackTrace" sig="()V" modifiers="public">
                 <redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)V" type="static" />
             </method>
-            <method type="virtual" name="printStackTrace" sig="(Ljava.io.PrintStream;)V" modifiers="public">
+            <method name="printStackTrace" sig="(Ljava.io.PrintStream;)V" modifiers="public">
                 <parameter name="s" />
                 <redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;Ljava.io.PrintStream;)V" type="static" />
             </method>
-            <method type="virtual" name="printStackTrace" sig="(Ljava.io.PrintWriter;)V" modifiers="public">
+            <method name="printStackTrace" sig="(Ljava.io.PrintWriter;)V" modifiers="public">
                 <parameter name="s" />
                 <redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;Ljava.io.PrintWriter;)V" type="static" />
             </method>
-            <method type="virtual" name="getMessage" sig="()Ljava.lang.String;" modifiers="public">
+            <method name="getMessage" sig="()Ljava.lang.String;" modifiers="public">
                 <body>
                     <ldarg_0 />
                     <ldfld class="java.lang.Throwable" name="detailMessage" sig="Ljava.lang.String;" />
@@ -1156,10 +1156,10 @@
                     <ret />
                 </alternateBody>
             </method>
-            <method type="virtual" name="getLocalizedMessage" sig="()Ljava.lang.String;" modifiers="public">
+            <method name="getLocalizedMessage" sig="()Ljava.lang.String;" modifiers="public">
                 <redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
             </method>
-            <method type="virtual" name="fillInStackTrace" sig="()Ljava.lang.Throwable;" modifiers="public">
+            <method name="fillInStackTrace" sig="()Ljava.lang.Throwable;" modifiers="public">
                 <body>
                     <ldarg_0 />
                     <call type="System.Threading.Monitor" name="Enter" sig="(Ljava.lang.Object;)V" />
@@ -1196,7 +1196,7 @@
                     <ret />
                 </alternateBody>
             </method>
-            <method type="virtual" name="initCause" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" modifiers="public">
+            <method name="initCause" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" modifiers="public">
                 <parameter name="cause" />
                 <body>
                     <ldarg_0 />
@@ -1230,7 +1230,7 @@
                     <ret />
                 </alternateBody>
             </method>
-            <method type="virtual" name="getCause" sig="()Ljava.lang.Throwable;" modifiers="public">
+            <method name="getCause" sig="()Ljava.lang.Throwable;" modifiers="public">
                 <body>
                     <ldarg_0 />
                     <ldarg_0 />
@@ -1244,7 +1244,7 @@
                     <ret />
                 </alternateBody>
             </method>
-            <method type="virtual" name="getStackTrace" sig="()[Ljava.lang.StackTraceElement;" modifiers="public">
+            <method name="getStackTrace" sig="()[Ljava.lang.StackTraceElement;" modifiers="public">
                 <body>
                     <ldarg_0 />
                     <call class="java.lang.Throwable" name="getOurStackTrace" sig="()[Ljava.lang.StackTraceElement;" />
@@ -1300,7 +1300,7 @@
                     <ret />
                 </alternateBody>
             </method>
-            <method type="virtual" name="setStackTrace" sig="([Ljava.lang.StackTraceElement;)V" modifiers="public">
+            <method name="setStackTrace" sig="([Ljava.lang.StackTraceElement;)V" modifiers="public">
                 <parameter name="stackTrace" />
                 <body>
                     <ldarg_0 />
@@ -1322,7 +1322,7 @@
                     <ret />
                 </alternateBody>
             </method>
-            <method type="virtual" name="toString" sig="()Ljava.lang.String;" modifiers="public">
+            <method name="toString" sig="()Ljava.lang.String;" modifiers="public">
                 <redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
             </method>
         </class>

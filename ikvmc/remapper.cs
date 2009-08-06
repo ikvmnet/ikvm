@@ -1367,8 +1367,6 @@ namespace IKVM.Internal.MapXml
 		public MapModifiers Modifiers;
 		[XmlAttribute("attributes")]
 		public MethodAttributes MethodAttributes;
-		[XmlAttribute("type")]
-		public string Type;
 		[XmlAttribute("nonullcheck")]
 		public bool NoNullCheck;
 		[XmlElement("parameter")]
