@@ -1766,6 +1766,14 @@ namespace IKVM.Internal
 					// annotate it with EditorBrowsableAttribute(EditorBrowsableState.Never) to make
 					// sure the inherited methods don't show up in Intellisense.
 					Dictionary<string, MethodBuilder> methods = new Dictionary<string, MethodBuilder>();
+					foreach(MethodWrapper mw in GetMethods())
+					{
+						MethodBuilder mb = mw.GetMethod() as MethodBuilder;
+						if(mb != null)
+						{
+							methods.Add(MakeMethodKey(mb), mb);
+						}
+					}
 					foreach(MethodInfo mi in typeBuilder.BaseType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy))
 					{
 						string key = MakeMethodKey(mi);
