@@ -1249,7 +1249,7 @@ namespace IKVM.Internal
 							AddDeclaredExceptions(mbCore, m.throws);
 						}
 
-						if((m.Modifiers & IKVM.Internal.MapXml.MapModifiers.Static) == 0)
+						if((m.Modifiers & IKVM.Internal.MapXml.MapModifiers.Static) == 0 && !IsHideFromJava(m))
 						{
 							// instance methods must have an instancehelper method
 							MethodAttributes attr = MapMethodAccessModifiers(m.Modifiers) | MethodAttributes.HideBySig | MethodAttributes.Static;
@@ -1294,6 +1294,21 @@ namespace IKVM.Internal
 						}
 						return mbCore;
 					}
+				}
+
+				private static bool IsHideFromJava(IKVM.Internal.MapXml.Method m)
+				{
+					if (m.Attributes != null)
+					{
+						foreach (MapXml.Attribute attr in m.Attributes)
+						{
+							if (attr.Type == "IKVM.Attributes.HideFromJavaAttribute")
+							{
+								return true;
+							}
+						}
+					}
+					return false;
 				}
 
 				internal override void Finish()
