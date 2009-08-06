@@ -1212,6 +1212,15 @@ namespace IKVM.Internal
 							else if((m.Modifiers & IKVM.Internal.MapXml.MapModifiers.Private) == 0 && (m.Modifiers & IKVM.Internal.MapXml.MapModifiers.Final) == 0)
 							{
 								attr |= MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.CheckAccessOnOverride;
+								if(!typeWrapper.shadowType.IsSealed)
+								{
+									MethodInfo autoOverride = typeWrapper.shadowType.GetMethod(m.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, paramTypes, null);
+									if(autoOverride != null && autoOverride.ReturnType == retType && !autoOverride.IsFinal)
+									{
+										// the method we're processing is overriding a method in its shadowType (which is the actual base type)
+										attr &= ~MethodAttributes.NewSlot;
+									}
+								}
 								if(typeWrapper.BaseTypeWrapper != null)
 								{
 									RemappedMethodWrapper baseMethod = typeWrapper.BaseTypeWrapper.GetMethodWrapper(m.Name, m.Sig, true) as RemappedMethodWrapper;
