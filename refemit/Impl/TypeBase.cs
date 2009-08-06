@@ -62,7 +62,7 @@ namespace IKVM.Reflection.Emit.Impl
 
 		protected abstract override TypeAttributes GetAttributeFlagsImpl();
 
-		protected sealed override ConstructorInfo GetConstructorImpl(BindingFlags bindingAttr, Binder binder, CallingConventions callConvention, Type[] types, ParameterModifier[] modifiers)
+		protected override ConstructorInfo GetConstructorImpl(BindingFlags bindingAttr, Binder binder, CallingConventions callConvention, Type[] types, ParameterModifier[] modifiers)
 		{
 			throw new NotSupportedException();
 		}

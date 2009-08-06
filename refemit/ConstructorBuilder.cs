@@ -35,6 +35,17 @@ namespace IKVM.Reflection.Emit
 			this.methodBuilder = mb;
 		}
 
+		public override bool Equals(object obj)
+		{
+			ConstructorBuilder other = obj as ConstructorBuilder;
+			return other != null && other.methodBuilder.Equals(methodBuilder);
+		}
+
+		public override int GetHashCode()
+		{
+			return methodBuilder.GetHashCode();
+		}
+
 		public ParameterBuilder DefineParameter(int position, ParameterAttributes attributes, string strParamName)
 		{
 			return methodBuilder.DefineParameter(position, attributes, strParamName);

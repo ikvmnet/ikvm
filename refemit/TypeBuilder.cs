@@ -563,6 +563,21 @@ namespace IKVM.Reflection.Emit
 			return attribs;
 		}
 
+		internal ConstructorInfo __GetConstructorImpl(BindingFlags bindingAttr, Binder binder, CallingConventions callConvention, Type[] types, ParameterModifier[] modifiers)
+		{
+			return GetConstructorImpl(bindingAttr, binder, callConvention, types, modifiers);
+		}
+
+		protected override ConstructorInfo GetConstructorImpl(BindingFlags bindingAttr, Binder binder, CallingConventions callConvention, Type[] types, ParameterModifier[] modifiers)
+		{
+			MethodInfo method = GetMethodImpl((bindingAttr & BindingFlags.Static) != 0 ? ".cctor" : ".ctor", bindingAttr | BindingFlags.DeclaredOnly, binder, callConvention, types, modifiers);
+			if (method != null)
+			{
+				return new ConstructorBuilder((MethodBuilder)method);
+			}
+			return null;
+		}
+
 		internal MethodInfo __GetMethodImpl(string name, BindingFlags bindingAttr, Binder binder, CallingConventions callConvention, Type[] types, ParameterModifier[] modifiers)
 		{
 			return GetMethodImpl(name, bindingAttr, binder, callConvention, types, modifiers);
@@ -966,6 +981,11 @@ namespace IKVM.Reflection.Emit
 		protected override TypeAttributes GetAttributeFlagsImpl()
 		{
 			return typeBuilder.Attributes;
+		}
+
+		protected override ConstructorInfo GetConstructorImpl(BindingFlags bindingAttr, Binder binder, CallingConventions callConvention, Type[] types, ParameterModifier[] modifiers)
+		{
+			return typeBuilder.__GetConstructorImpl(bindingAttr, binder, callConvention, types, modifiers);
 		}
 
 		protected override MethodInfo GetMethodImpl(string name, BindingFlags bindingAttr, Binder binder, CallingConventions callConvention, Type[] types, ParameterModifier[] modifiers)
