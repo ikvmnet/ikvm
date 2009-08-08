@@ -94,6 +94,7 @@ namespace ikvm.awt
         protected virtual void setBorderStyle()
         {
             this.FormBorderStyle = FormBorderStyle.None;
+            this.ShowInTaskbar = false;
         }
 
         internal void setFocusableWindow(bool value)
@@ -2541,13 +2542,6 @@ namespace ikvm.awt
 			((Form)control).Deactivate += new EventHandler(OnDeactivate);
 			control.SizeChanged += new EventHandler(OnSizeChanged);
 			control.Resize += new EventHandler(OnResize);
-            //Calculate the Insets one time
-            //This is many faster because there no thread change is needed.
-            Rectangle client = control.ClientRectangle;
-            Rectangle r = control.RectangleToScreen( client );
-            int x = r.Location.X - control.Location.X;
-            int y = r.Location.Y - control.Location.Y;
-            _insets = new java.awt.Insets(y, x, control.Height - client.Height - y, control.Width - client.Width - x);
         }
 
 		private void OnResize(object sender, EventArgs e)
@@ -2648,6 +2642,36 @@ namespace ikvm.awt
             g.translate(-insets.left, -insets.top);
             g.setClip(insets.left, insets.top, control.ClientRectangle.Width, control.ClientRectangle.Height);
             return g;
+        }
+
+        /// <summary>
+        /// Set the border style of the window and recalc the insets
+        /// </summary>
+        /// <param name="style">the new style</param>
+        protected void setFormBorderStyle(FormBorderStyle style)
+        {
+            BeginInvoke(delegate
+            {
+                ((Form)control).FormBorderStyle = style;
+                //Calculate the Insets one time
+                //This is many faster because there no thread change is needed.
+                Rectangle client = control.ClientRectangle;
+                if (client.Height == 0)
+                {
+                    // HACK for .NET bug if form has the minimum size then ClientRectangle is not recalulate
+                    // if the FormBorderStyle is changed
+                    Size size = control.Size;
+                    size.Height++;
+                    control.Size = size;
+                    size.Height--;
+                    control.Size = size;
+                    client = control.ClientRectangle;
+                }
+                Rectangle r = control.RectangleToScreen(client);
+                int x = r.Location.X - control.Location.X;
+                int y = r.Location.Y - control.Location.Y;
+                _insets = new java.awt.Insets(y, x, control.Height - client.Height - y, control.Width - client.Width - x);
+            });
         }
 
         protected void SetBoundsImpl(int x, int y, int width, int height)
@@ -2837,17 +2861,17 @@ namespace ikvm.awt
 			throw new NotImplementedException();
 		}
 
-		public void setResizable(bool resizable)
-		{
-			if (resizable)
-			{
-				((Form)control).FormBorderStyle = FormBorderStyle.Sizable;
-			}
-			else
-			{
-				((Form)control).FormBorderStyle = FormBorderStyle.FixedSingle;
-			}
-		}
+        public void setResizable(bool resizable)
+        {
+            if (resizable)
+            {
+                setFormBorderStyle(FormBorderStyle.Sizable);
+            }
+            else
+            {
+                setFormBorderStyle(FormBorderStyle.FixedSingle);
+            }
+        }
 
 		public void setTitle(string title)
 		{
@@ -2926,15 +2950,15 @@ namespace ikvm.awt
             BeginInvoke(delegate { control.Text = title; });
 		}
 
-		public void setResizable(bool resizable)
-		{
+        public void setResizable(bool resizable)
+        {
             if (resizable)
             {
-                ((Form)control).FormBorderStyle = FormBorderStyle.SizableToolWindow;
+                setFormBorderStyle(FormBorderStyle.Sizable);
             }
             else
             {
-                ((Form)control).FormBorderStyle = FormBorderStyle.FixedToolWindow;
+                setFormBorderStyle(FormBorderStyle.FixedDialog);
             }
         }
 
