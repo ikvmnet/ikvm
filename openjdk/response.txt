@@ -675,13 +675,13 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Charsets.dll
-    -baseaddress:0x59D20000
+    -baseaddress:0x59D50000
     ../../openjdk6-b16/jdk/src/share/classes/sun/io/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/nio/cs/ext/*.class
 }
 {
     -out:IKVM.OpenJDK.Util.dll
-    -baseaddress:0x5AB90000
+    -baseaddress:0x5ABC0000
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/java/util/jar/pack/intrinsic.properties
     java/util/zip/*.class
     ../../openjdk6-b16/build/linux-amd64/gensrc/sun/util/logging/resources/*.class
@@ -699,7 +699,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Text.dll
-    -baseaddress:0x5AFB0000
+    -baseaddress:0x5AFE0000
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/sun/text/*
     java/text/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/text/*.class
@@ -710,7 +710,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Security.dll
-    -baseaddress:0x5B190000
+    -baseaddress:0x5B1C0000
     sun/security/jgss/wrapper/*.class
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/crypto/provider/*.class
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/net/ssl/*.class
@@ -774,7 +774,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Management.dll
-    -baseaddress:0x5B8E0000
+    -baseaddress:0x5B940000
     ConnectorBootstrap$DefaultValues.class
     ConnectorBootstrap.class
     icedtea/rt/com/sun/jmx/snmp/*.class
@@ -813,7 +813,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Misc.dll
-    -baseaddress:0x5BD00000
+    -baseaddress:0x5BD60000
     ../../openjdk6-b16/build/linux-amd64/impsrc/javax/activity/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/javax/annotation/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/javax/annotation/processing/*.class
@@ -903,7 +903,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Naming.dll
-    -baseaddress:0x5BDC0000
+    -baseaddress:0x5BE20000
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/jndi/ldap/jndiprovider.properties
     sun/net/dns/*.class
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/jndi/dns/*.class
@@ -928,7 +928,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Jdbc.dll
-    -baseaddress:0x5BF10000
+    -baseaddress:0x5BFA0000
     -resource:META-INF/services/java.sql.Driver=resources/META-INF/services/java.sql.Driver
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/rowset/*
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/javax/sql/*
@@ -946,7 +946,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Remoting.dll
-    -baseaddress:0x5C060000
+    -baseaddress:0x5C0F0000
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/sun/rmi/*
     ../../openjdk6-b16/build/linux-amd64/classes/com/sun/jndi/rmi/registry/*.class
     ../../openjdk6-b16/build/linux-amd64/classes/java/rmi/activation/*.class
@@ -972,7 +972,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Beans.dll
-    -baseaddress:0x5C180000
+    -baseaddress:0x5C210000
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/activation/registries/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/javax/activation/*.class
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/beans/*.class
@@ -984,7 +984,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Media.dll
-    -baseaddress:0x5C240000
+    -baseaddress:0x5C2D0000
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/javax.print.*
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/javax.sound.*
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/imageio/plugins/common/iio-plugin.properties
