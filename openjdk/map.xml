@@ -903,6 +903,7 @@
         </class>
         <class name="java.lang.Throwable" shadows="System.Exception" modifiers="public">
             <implements class="java.io.Serializable" />
+            <attribute type="System.SerializableAttribute" sig="()V" />
             <field name="serialVersionUID" sig="J" modifiers="private static final" constant="-3042686055658047285" />
             <field name="serialPersistentFields" sig="[Ljava.io.ObjectStreamField;" modifiers="private static final" />
             <field name="suppressFillInStackTrace" sig="Z" modifiers="private static">
@@ -1325,6 +1326,43 @@
             <method name="toString" sig="()Ljava.lang.String;" modifiers="public">
                 <redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
             </method>
+            <method name="GetObjectData" sig="(Lcli.System.Runtime.Serialization.SerializationInfo;Lcli.System.Runtime.Serialization.StreamingContext;)V" modifiers="public">
+                <attribute type="System.Security.Permissions.SecurityPermissionAttribute" sig="(Lcli.System.Security.Permissions.SecurityAction;)V">
+                    <parameter>Demand</parameter>
+                    <property name="SerializationFormatter" sig="Z">true</property>
+                </attribute>
+                <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
+                <attribute type="System.ComponentModel.EditorBrowsableAttribute" sig="(Lcli.System.ComponentModel.EditorBrowsableState;)V">
+                    <parameter>Never</parameter>
+                </attribute>
+                <body>
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <ldarg_2 />
+                    <call type="System.Exception" name="GetObjectData" sig="(Lcli.System.Runtime.Serialization.SerializationInfo;Lcli.System.Runtime.Serialization.StreamingContext;)V" />
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <call class="ikvm.internal.Serialization" name="writeObject" sig="(Ljava.lang.Object;Lcli.System.Runtime.Serialization.SerializationInfo;)V" />
+                    <ret />
+                </body>
+            </method>
+            <constructor sig="(Lcli.System.Runtime.Serialization.SerializationInfo;Lcli.System.Runtime.Serialization.StreamingContext;)V" modifiers="protected">
+                <attribute type="System.Security.Permissions.SecurityPermissionAttribute" sig="(Lcli.System.Security.Permissions.SecurityAction;)V">
+                    <parameter>Demand</parameter>
+                    <property name="SerializationFormatter" sig="Z">true</property>
+                </attribute>
+                <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
+                <body>
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <ldarg_2 />
+                    <call type="System.Exception" name=".ctor" sig="(Lcli.System.Runtime.Serialization.SerializationInfo;Lcli.System.Runtime.Serialization.StreamingContext;)V" />
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <call class="ikvm.internal.Serialization" name="readObject" sig="(Ljava.lang.Object;Lcli.System.Runtime.Serialization.SerializationInfo;)V" />
+                    <ret />
+                </body>
+            </constructor>
         </class>
         <class name="java.lang.Comparable" shadows="System.IComparable" modifiers="public abstract interface">
             <attribute type="IKVM.Attributes.SignatureAttribute" sig="(Ljava.lang.String;)V">
