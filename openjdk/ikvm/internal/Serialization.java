@@ -23,7 +23,10 @@
 */
 package ikvm.internal;
 
+import cli.System.Runtime.Serialization.SerializationException;
 import cli.System.Runtime.Serialization.SerializationInfo;
+import cli.System.Security.Permissions.SecurityAction;
+import cli.System.Security.Permissions.SecurityPermissionAttribute;
 import java.io.InteropObjectInputStream;
 import java.io.InteropObjectOutputStream;
 import java.io.IOException;
@@ -34,29 +37,15 @@ public final class Serialization
 {
     private Serialization() { }
     
-    public static ObjectOutputStream newOutputAdapter(Object obj, SerializationInfo info, Class clazz)
+    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.Demand, SerializationFormatter = true)
+    public static void writeObject(Object obj, SerializationInfo info)
     {
-        try
-        {
-            return new InteropObjectOutputStream(obj, info, clazz);
-        }
-        catch (IOException x)
-        {
-            // this exception is impossible
-            throw (InternalError)new InternalError().initCause(x);
-        }
+        InteropObjectOutputStream.writeObject(obj, info);
     }
-
-    public static ObjectInputStream newInputAdapter(Object obj, SerializationInfo info, Class clazz)
+    
+    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.Demand, SerializationFormatter = true)
+    public static void readObject(Object obj, SerializationInfo info)
     {
-        try
-        {
-            return new InteropObjectInputStream(obj, info, clazz);
-        }
-        catch (IOException x)
-        {
-            // this exception is impossible
-            throw (InternalError)new InternalError().initCause(x);
-        }
+        InteropObjectInputStream.readObject(obj, info);
     }
 }

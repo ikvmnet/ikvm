@@ -657,6 +657,12 @@ namespace IKVM.NativeCode.java
 #endif
 			}
 
+			public static bool isDynamicTypeWrapper(object cl)
+			{
+				TypeWrapper wrapper = TypeWrapper.FromClass(cl);
+				return !wrapper.IsFastClassLiteralSafe;
+			}
+
 			public static bool hasStaticInitializer(object cl)
 			{
 				TypeWrapper wrapper = TypeWrapper.FromClass(cl);
