@@ -4945,6 +4945,70 @@ namespace IKVM.NativeCode.sun.awt.shell
             public string szTypeName;
         };
 
+        [DllImport("msvcrt.dll", SetLastError = false)]
+        static extern IntPtr memcpy(IntPtr dest, IntPtr src, int count);
+
+        [DllImport("gdi32.dll")]
+        static extern int GetDIBits(IntPtr hdc, IntPtr hbmp, uint uStartScan,
+           uint cScanLines, int[] lpvBits, ref BITMAPINFO lpbmi, uint uUsage);
+
+        [DllImport("gdi32.dll")]
+        public static extern int BitBlt(IntPtr hdcDst, int xDst, int yDst, int w, int h, IntPtr hdcSrc, int xSrc, int ySrc, int rop);
+        static int SRCCOPY = 0x00CC0020;
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetDC(IntPtr hwnd);
+
+        [DllImport("gdi32.dll")]
+        static extern int GetObject(IntPtr hgdiobj, int cbBuffer, ref BITMAPINFO lpvObject);
+
+        [DllImport("gdi32.dll")]
+        public static extern IntPtr CreateCompatibleDC(IntPtr hdc);
+
+        [DllImport("user32.dll")]
+        public static extern int ReleaseDC(IntPtr hwnd, IntPtr hdc);
+
+        [DllImport("gdi32.dll")]
+        static extern IntPtr CreateCompatibleBitmap(IntPtr hdc, int nWidth, int nHeight);
+
+        [DllImport("gdi32.dll")]
+        public static extern int DeleteDC(IntPtr hdc);
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct ICONINFO
+        {
+            public bool fIcon;         // Specifies whether this structure defines an icon or a cursor. A value of TRUE specifies 
+            // an icon; FALSE specifies a cursor. 
+            public Int32 xHotspot;     // Specifies the x-coordinate of a cursor's hot spot. If this structure defines an icon, the hot 
+            // spot is always in the center of the icon, and this member is ignored.
+            public Int32 yHotspot;     // Specifies the y-coordinate of the cursor's hot spot. If this structure defines an icon, the hot 
+            // spot is always in the center of the icon, and this member is ignored. 
+            public IntPtr hbmMask;     // (HBITMAP) Specifies the icon bitmask bitmap. If this structure defines a black and white icon, 
+            // this bitmask is formatted so that the upper half is the icon AND bitmask and the lower half is 
+            // the icon XOR bitmask. Under this condition, the height should be an even multiple of two. If 
+            // this structure defines a color icon, this mask only defines the AND bitmask of the icon. 
+            public IntPtr hbmColor;    // (HBITMAP) Handle to the icon color bitmap. This member can be optional if this 
+            // structure defines a black and white icon. The AND bitmask of hbmMask is applied with the SRCAND 
+            // flag to the destination; subsequently, the color bitmap is applied (using XOR) to the 
+            // destination by using the SRCINVERT flag. 
+        }
+
+        [DllImport("user32.dll")]
+        static extern bool GetIconInfo(IntPtr hIcon, out ICONINFO piconinfo);
+        
+        [StructLayout(LayoutKind.Sequential)]
+        public struct BITMAPINFO
+        {
+            public uint biSize;
+            public int biWidth, biHeight;
+            public short biPlanes, biBitCount;
+            public uint biCompression, biSizeImage;
+            public int biXPelsPerMeter, biYPelsPerMeter;
+            public uint biClrUsed, biClrImportant;
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 256)]
+            public uint[] cols;
+        }
+
         [DllImport("shell32.dll")]
         private static extern int FindExecutable(string lpFile, string lpDirectory, StringBuilder lpResult);
 
@@ -5007,6 +5071,53 @@ namespace IKVM.NativeCode.sun.awt.shell
             return shinfo.hIcon;
         }
 
+        public static int[] getIconBits(IntPtr hIcon, int iconSize)
+        {
+            ICONINFO iconInfo;
+            if (GetIconInfo(hIcon, out iconInfo))
+            {
+                IntPtr hWnd = new IntPtr(0);
+                IntPtr dc = GetDC(hWnd);
+                BITMAPINFO bmi = new BITMAPINFO();
+                bmi.biSize = 40;
+                bmi.biWidth = iconSize;
+                bmi.biHeight = -iconSize;
+                bmi.biPlanes = 1;
+                bmi.biBitCount = 32;
+                bmi.biCompression = 0;
+                int intArrSize = iconSize * iconSize;
+                int[] iconBits = new int[intArrSize];
+                GetDIBits(dc, iconInfo.hbmColor, 0, (uint)iconSize, iconBits, ref bmi, 0);
+                bool hasAlpha = false;
+                bool isXP = (Environment.OSVersion.Version.Major >= 6) || (Environment.OSVersion.Version.Major == 5 && Environment.OSVersion.Version.Minor>=1);
+                if (isXP) {
+                    for (int i = 0; i < iconBits.Length; i++)
+                    {
+                        if ((iconBits[i] & 0xFF000000) != 0)
+                        {
+                            hasAlpha = true;
+                            break;
+                        }
+                    }
+                }
+                if (!hasAlpha)
+                {
+                    int[] maskBits = new int[intArrSize];
+                    GetDIBits(dc, iconInfo.hbmMask, 0, (uint)iconSize, maskBits, ref bmi, 0);
+                    for (int i = 0; i < iconBits.Length; i++)
+                    {
+                        if (maskBits[i] == 0) {
+                            iconBits[i] = (int)((uint)iconBits[i] | 0xFF000000);
+                        }
+                    }
+                }
+                DeleteObject(iconInfo.hbmColor);
+                DeleteObject(iconInfo.hbmMask);
+                return iconBits;
+            }
+            return null;
+        }
+
         public static int getAttribute(string path)
         {
             SHFILEINFO shinfo = new SHFILEINFO();
@@ -5026,7 +5137,7 @@ namespace IKVM.NativeCode.sun.awt.shell
             }
         }
 
-        public static IntPtr getFileChooserBitmapHandle()
+        public static int[] getFileChooserBitmapHandle()
         {
             // Code copied from ShellFolder2.cpp Java_sun_awt_shell_Win32ShellFolder2_getFileChooserBitmapBits
             IntPtr libShell32 = LoadLibrary("shell32.dll");
@@ -5035,12 +5146,31 @@ namespace IKVM.NativeCode.sun.awt.shell
             IntPtr hBitmap = isVista ? 
                 LoadImageName(libShell32, "IDB_TB_SH_DEF_16", IMAGE_BITMAP, 0, 0, 0) :
                 LoadImageID(libShell32, 216, IMAGE_BITMAP, 0, 0, 0);
-            if (hBitmap.ToInt32() != 0)
+            if (hBitmap.ToInt32() == 0)
             {
-                return hBitmap;
+                IntPtr libComCtl32 = LoadLibrary("comctl32.dll");
+                hBitmap = LoadImageID(libComCtl32, 124, IMAGE_BITMAP, 0, 0, 0);
             }
-            IntPtr libComCtl32 = LoadLibrary("comctl32.dll");
-            return LoadImageID(libComCtl32, 124, IMAGE_BITMAP, 0, 0, 0);
+            if (hBitmap.ToInt32() == 0)
+            {
+                return new int[768*16];
+            }
+            BITMAPINFO bmi = new BITMAPINFO();
+            GetObject(hBitmap, Marshal.SizeOf(bmi), ref bmi);
+            int width = bmi.biWidth;
+            int height = bmi.biHeight;
+            bmi.biSize = 40;
+            bmi.biHeight = -bmi.biHeight;
+            bmi.biPlanes = 1;
+            bmi.biBitCount = 32;
+            bmi.biCompression = 0;
+            IntPtr hwnd = new IntPtr(0);
+            IntPtr dc = GetDC(hwnd);
+            int[] data = new int[width*height];
+            GetDIBits(dc, hBitmap, (uint)0, (uint)height, data, ref bmi, 0);
+            DeleteObject(hBitmap);
+            ReleaseDC(hwnd, dc);
+            return data;
         }
 
         public static IntPtr getIconResource(String libName, int iconID, int cxDesired, int cyDesired)
