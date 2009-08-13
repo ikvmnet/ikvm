@@ -185,6 +185,12 @@ namespace IKVM.Reflection.Emit
 			exceptionBlockAssistance = false;
 		}
 
+		// non-standard API
+		public int __GetILOffset()
+		{
+			return code.Position;
+		}
+
 		public void BeginCatchBlock(Type exceptionType)
 		{
 			ExceptionBlock block = exceptionStack.Peek();
