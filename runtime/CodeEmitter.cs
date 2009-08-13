@@ -70,7 +70,9 @@ namespace IKVM.Internal
 	class CodeEmitter
 	{
 		private ILGenerator ilgen_real;
+#if !IKVM_REF_EMIT
 		private int offset;
+#endif
 		private Stack<bool> exceptionStack = new Stack<bool>();
 		private bool inFinally;
 #if STATIC_COMPILER
@@ -205,20 +207,28 @@ namespace IKVM.Internal
 		internal int GetILOffset()
 		{
 			LazyGen();
+#if IKVM_REF_EMIT
+			return ilgen_real.__GetILOffset();
+#else
 			return offset;
+#endif
 		}
 
 		internal void BeginCatchBlock(Type exceptionType)
 		{
 			LazyGen();
+#if !IKVM_REF_EMIT
 			offset += 5;
+#endif
 			ilgen_real.BeginCatchBlock(exceptionType);
 		}
 
 		internal void BeginExceptFilterBlock()
 		{
 			LazyGen();
+#if !IKVM_REF_EMIT
 			offset += 5;
+#endif
 			ilgen_real.BeginExceptFilterBlock();
 		}
 
@@ -234,7 +244,9 @@ namespace IKVM.Internal
 		{
 			LazyGen();
 			inFinally = true;
+#if !IKVM_REF_EMIT
 			offset += 5;
+#endif
 			ilgen_real.BeginFaultBlock();
 		}
 
@@ -242,7 +254,9 @@ namespace IKVM.Internal
 		{
 			LazyGen();
 			inFinally = true;
+#if !IKVM_REF_EMIT
 			offset += 5;
+#endif
 			ilgen_real.BeginFinallyBlock();
 		}
 
@@ -269,62 +283,78 @@ namespace IKVM.Internal
 		internal void Emit(OpCode opcode)
 		{
 			LazyGen();
+#if !IKVM_REF_EMIT
 			offset += opcode.Size;
+#endif
 			ilgen_real.Emit(opcode);
 		}
 
 		internal void Emit(OpCode opcode, byte arg)
 		{
 			LazyGen();
+#if !IKVM_REF_EMIT
 			offset += opcode.Size + 1;
+#endif
 			ilgen_real.Emit(opcode, arg);
 		}
 
 		internal void Emit(OpCode opcode, ConstructorInfo con)
 		{
 			LazyGen();
+#if !IKVM_REF_EMIT
 			offset += opcode.Size + 4;
+#endif
 			ilgen_real.Emit(opcode, con);
 		}
 
 		internal void Emit(OpCode opcode, double arg)
 		{
 			LazyGen();
+#if !IKVM_REF_EMIT
 			offset += opcode.Size + 8;
+#endif
 			ilgen_real.Emit(opcode, arg);
 		}
 
 		internal void Emit(OpCode opcode, FieldInfo field)
 		{
 			LazyGen();
+#if !IKVM_REF_EMIT
 			offset += opcode.Size + 4;
+#endif
 			ilgen_real.Emit(opcode, field);
 		}
 
 		internal void Emit(OpCode opcode, short arg)
 		{
 			LazyGen();
+#if !IKVM_REF_EMIT
 			offset += opcode.Size + 2;
+#endif
 			ilgen_real.Emit(opcode, arg);
 		}
 
 		internal void Emit(OpCode opcode, int arg)
 		{
 			LazyGen();
+#if !IKVM_REF_EMIT
 			offset += opcode.Size + 4;
+#endif
 			ilgen_real.Emit(opcode, arg);
 		}
 
 		internal void Emit(OpCode opcode, long arg)
 		{
 			LazyGen();
+#if !IKVM_REF_EMIT
 			offset += opcode.Size + 8;
+#endif
 			ilgen_real.Emit(opcode, arg);
 		}
 
 		internal void Emit(OpCode opcode, CodeEmitterLabel label)
 		{
-			LazyGen();
+			int currOffset = GetILOffset();
 			if(label.Offset == -1)
 			{
 				if(opcode.Value == OpCodes.Br.Value)
@@ -333,7 +363,7 @@ namespace IKVM.Internal
 					return;
 				}
 			}
-			else if(offset - label.Offset < 126)
+			else if(currOffset - label.Offset < 126)
 			{
 				if(opcode.Value == OpCodes.Brtrue.Value)
 				{
@@ -372,25 +402,28 @@ namespace IKVM.Internal
 					opcode = OpCodes.Bgt_S;
 				}
 			}
-			offset += opcode.Size;
-			ilgen_real.Emit(opcode, label.Label);
+#if !IKVM_REF_EMIT
 			switch(opcode.OperandType)
 			{
 				case OperandType.InlineBrTarget:
-					offset += 4;
+					offset += opcode.Size + 4;
 					break;
 				case OperandType.ShortInlineBrTarget:
-					offset += 1;
+					offset += opcode.Size + 1;
 					break;
 				default:
 					throw new NotImplementedException();
 			}
+#endif
+			ilgen_real.Emit(opcode, label.Label);
 		}
 
 		internal void Emit(OpCode opcode, CodeEmitterLabel[] labels)
 		{
 			LazyGen();
+#if !IKVM_REF_EMIT
 			offset += 5 + labels.Length * 4;
+#endif
 			Label[] real = new Label[labels.Length];
 			for(int i = 0; i < labels.Length; i++)
 			{
@@ -402,7 +435,7 @@ namespace IKVM.Internal
 		internal void Emit(OpCode opcode, LocalBuilder local)
 		{
 			LazyGen();
-			ilgen_real.Emit(opcode, local);
+#if !IKVM_REF_EMIT
 			int index = local.LocalIndex;
 			if(index < 4 && opcode.Value != OpCodes.Ldloca.Value && opcode.Value != OpCodes.Ldloca_S.Value)
 			{
@@ -416,26 +449,34 @@ namespace IKVM.Internal
 			{
 				offset += 4;
 			}
+#endif
+			ilgen_real.Emit(opcode, local);
 		}
 
 		internal void Emit(OpCode opcode, MethodInfo meth)
 		{
 			LazyGen();
+#if !IKVM_REF_EMIT
 			offset += opcode.Size + 4;
+#endif
 			ilgen_real.Emit(opcode, meth);
 		}
 
 		internal void Emit(OpCode opcode, sbyte arg)
 		{
 			LazyGen();
+#if !IKVM_REF_EMIT
 			offset += opcode.Size + 1;
+#endif
 			ilgen_real.Emit(opcode, arg);
 		}
 
 		internal void Emit(OpCode opcode, SignatureHelper signature)
 		{
 			LazyGen();
+#if !IKVM_REF_EMIT
 			offset += opcode.Size;
+#endif
 			ilgen_real.Emit(opcode, signature);
 			throw new NotImplementedException();
 		}
@@ -443,28 +484,36 @@ namespace IKVM.Internal
 		internal void Emit(OpCode opcode, float arg)
 		{
 			LazyGen();
+#if !IKVM_REF_EMIT
 			offset += opcode.Size + 4;
+#endif
 			ilgen_real.Emit(opcode, arg);
 		}
 
 		internal void Emit(OpCode opcode, string arg)
 		{
 			LazyGen();
+#if !IKVM_REF_EMIT
 			offset += opcode.Size + 4;
+#endif
 			ilgen_real.Emit(opcode, arg);
 		}
 
 		internal void Emit(OpCode opcode, Type cls)
 		{
 			LazyGen();
+#if !IKVM_REF_EMIT
 			offset += opcode.Size + 4;
+#endif
 			ilgen_real.Emit(opcode, cls);
 		}
 
 		internal void EmitCall(OpCode opcode, MethodInfo methodInfo, Type[] optionalParameterTypes)
 		{
 			LazyGen();
+#if !IKVM_REF_EMIT
 			offset += opcode.Size;
+#endif
 			ilgen_real.EmitCall(opcode, methodInfo, optionalParameterTypes);
 			throw new NotImplementedException();
 		}
@@ -472,14 +521,18 @@ namespace IKVM.Internal
 		internal void EmitCalli(OpCode opcode, CallingConvention unmanagedCallConv, Type returnType, Type[] parameterTypes)
 		{
 			LazyGen();
+#if !IKVM_REF_EMIT
 			offset += 5;
+#endif
 			ilgen_real.EmitCalli(opcode, unmanagedCallConv, returnType, parameterTypes);
 		}
 
 		internal void EmitCalli(OpCode opcode, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, Type[] optionalParameterTypes)
 		{
 			LazyGen();
+#if !IKVM_REF_EMIT
 			offset += 5;
+#endif
 			ilgen_real.EmitCalli(opcode, callingConvention, returnType, parameterTypes, optionalParameterTypes);
 		}
 
@@ -500,13 +553,16 @@ namespace IKVM.Internal
 		internal void EmitWriteLine(string value)
 		{
 			LazyGen();
+#if !IKVM_REF_EMIT
 			offset += 10;
+#endif
 			ilgen_real.EmitWriteLine(value);
 		}
 
 		internal void EndExceptionBlock()
 		{
 			LazyGen();
+#if !IKVM_REF_EMIT
 			if(inFinally)
 			{
 				offset += 1;
@@ -515,6 +571,7 @@ namespace IKVM.Internal
 			{
 				offset += 5;
 			}
+#endif
 			inFinally = exceptionStack.Pop();
 			ilgen_real.EndExceptionBlock();
 		}
@@ -536,7 +593,7 @@ namespace IKVM.Internal
 			labels.Remove(loc);
 #endif
 			ilgen_real.MarkLabel(loc.Label);
-			loc.Offset = offset;
+			loc.Offset = GetILOffset();
 		}
 
 		internal void MarkSequencePoint(ISymbolDocumentWriter document, int startLine, int startColumn, int endLine, int endColumn)
@@ -548,7 +605,9 @@ namespace IKVM.Internal
 		internal void ThrowException(Type excType)
 		{
 			LazyGen();
+#if !IKVM_REF_EMIT
 			offset += 6;
+#endif
 			ilgen_real.ThrowException(excType);
 		}
 
@@ -561,12 +620,11 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 		internal void SetLineNumber(ushort line)
 		{
-			LazyGen();
 			if(linenums == null)
 			{
 				linenums = new IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter(32);
 			}
-			linenums.AddMapping(offset, line);
+			linenums.AddMapping(GetILOffset(), line);
 		}
 
 		internal void EmitLineNumberTable(MethodBase mb)
@@ -946,7 +1004,9 @@ namespace IKVM.Internal
 		{
 			if(lazyBranch != null)
 			{
+#if !IKVM_REF_EMIT
 				offset += OpCodes.Br.Size + 4;
+#endif
 				ilgen_real.Emit(OpCodes.Br, lazyBranch.Label);
 				lazyBranch = null;
 			}
