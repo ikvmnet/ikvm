@@ -4954,7 +4954,6 @@ namespace IKVM.NativeCode.sun.awt.shell
 
         [DllImport("gdi32.dll")]
         public static extern int BitBlt(IntPtr hdcDst, int xDst, int yDst, int w, int h, IntPtr hdcSrc, int xSrc, int ySrc, int rop);
-        static int SRCCOPY = 0x00CC0020;
 
         [DllImport("user32.dll")]
         public static extern IntPtr GetDC(IntPtr hwnd);
