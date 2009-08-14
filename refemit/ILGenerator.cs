@@ -98,7 +98,10 @@ namespace IKVM.Reflection.Emit
 		private ushort maxStack;
 		private int stackHeight;
 		private Scope scope;
-		private bool exceptionBlockAssistance = true;
+		private byte exceptionBlockAssistanceMode = EBAM_COMPAT;
+		private const byte EBAM_COMPAT = 0;
+		private const byte EBAM_DISABLE = 1;
+		private const byte EBAM_CLEVER = 2;
 
 		private struct LabelFixup
 		{
@@ -182,7 +185,13 @@ namespace IKVM.Reflection.Emit
 		// non-standard API
 		public void __DisableExceptionBlockAssistance()
 		{
-			exceptionBlockAssistance = false;
+			exceptionBlockAssistanceMode = EBAM_DISABLE;
+		}
+
+		// non-standard API
+		public void __CleverExceptionBlockAssistance()
+		{
+			exceptionBlockAssistanceMode = EBAM_CLEVER;
 		}
 
 		// non-standard API
@@ -194,7 +203,7 @@ namespace IKVM.Reflection.Emit
 		public void BeginCatchBlock(Type exceptionType)
 		{
 			ExceptionBlock block = exceptionStack.Peek();
-			if (exceptionBlockAssistance)
+			if (exceptionBlockAssistanceMode == EBAM_COMPAT || (exceptionBlockAssistanceMode == EBAM_CLEVER && stackHeight != -1))
 			{
 				Emit(OpCodes.Leave, block.labelEnd);
 			}
@@ -244,7 +253,7 @@ namespace IKVM.Reflection.Emit
 		public void BeginFinallyBlock()
 		{
 			ExceptionBlock block = exceptionStack.Peek();
-			if (exceptionBlockAssistance)
+			if (exceptionBlockAssistanceMode == EBAM_COMPAT || (exceptionBlockAssistanceMode == EBAM_CLEVER && stackHeight != -1))
 			{
 				Emit(OpCodes.Leave, block.labelEnd);
 			}
@@ -256,11 +265,12 @@ namespace IKVM.Reflection.Emit
 			else
 			{
 				block.handlerLength = code.Position - block.handlerOffset;
+				bool reachable = labelStackHeight[block.labelEnd.Index] != -1;
 				Label labelEnd = new Label();
-				if (exceptionBlockAssistance)
+				MarkLabel(block.labelEnd);
+				labelEnd = DefineLabel();
+				if (exceptionBlockAssistanceMode == EBAM_COMPAT || (exceptionBlockAssistanceMode == EBAM_CLEVER && reachable))
 				{
-					MarkLabel(block.labelEnd);
-					labelEnd = DefineLabel();
 					Emit(OpCodes.Leave, labelEnd);
 				}
 				exceptionStack.Pop();
@@ -278,7 +288,7 @@ namespace IKVM.Reflection.Emit
 		public void EndExceptionBlock()
 		{
 			ExceptionBlock block = exceptionStack.Pop();
-			if (exceptionBlockAssistance)
+			if (exceptionBlockAssistanceMode == EBAM_COMPAT || (exceptionBlockAssistanceMode == EBAM_CLEVER && stackHeight != -1))
 			{
 				if (block.exceptionType != null && block.exceptionType != FAULT)
 				{
