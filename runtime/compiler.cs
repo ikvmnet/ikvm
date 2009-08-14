@@ -854,7 +854,7 @@ class Compiler
 				ilGenerator.BeginFinallyBlock();
 				ilGenerator.Emit(OpCodes.Ldloc, monitor);
 				ilGenerator.Emit(OpCodes.Call, monitorExitMethod);
-				ilGenerator.EndExceptionBlock();
+				ilGenerator.EndExceptionBlockNoFallThrough();
 				b.LeaveStubs(new Block(c, 0, int.MaxValue, -1, null, false));
 			}
 			else
@@ -897,13 +897,6 @@ class Compiler
 						break;
 					}
 				}
-			}
-			if((m.IsSynchronized && m.IsStatic) || c.exceptions.Length > 0)
-			{
-				// HACK because of the bogus Leave instruction that Reflection.Emit generates, this location
-				// sometimes appears reachable (it isn't), so we emit a bogus branch to keep the verifier happy.
-				//ilGenerator.Emit(OpCodes.Br, - (ilGenerator.GetILOffset() + 5));
-				ilGenerator.Emit(OpCodes.Br_S, (sbyte)-2);
 			}
 			nonleaf = c.nonleaf;
 		}
@@ -1188,10 +1181,7 @@ class Compiler
 					ilGenerator.BeginFaultBlock();
 					LoadLocal(handlerIndex);
 					ilGenerator.Emit(OpCodes.Call, monitorExitMethod);
-					ilGenerator.EndExceptionBlock();
-					// HACK to keep the verifier happy we need this bogus jump
-					// (because of the bogus Leave that Ref.Emit ends the try block with)
-					ilGenerator.Emit(OpCodes.Br_S, (sbyte)-2);
+					ilGenerator.EndExceptionBlockNoFallThrough();
 				}
 				else if(exc.catch_type == 0
 					&& handlerIndex + 3 < m.Instructions.Length
@@ -1206,10 +1196,7 @@ class Compiler
 					ilGenerator.BeginFaultBlock();
 					LoadLocal(handlerIndex + 1);
 					ilGenerator.Emit(OpCodes.Call, monitorExitMethod);
-					ilGenerator.EndExceptionBlock();
-					// HACK to keep the verifier happy we need this bogus jump
-					// (because of the bogus Leave that Ref.Emit ends the try block with)
-					ilGenerator.Emit(OpCodes.Br_S, (sbyte)-2);
+					ilGenerator.EndExceptionBlockNoFallThrough();
 				}
 				else
 				{
@@ -1303,7 +1290,7 @@ class Compiler
 						ilGenerator.MarkLabel(rethrow);
 						ilGenerator.Emit(OpCodes.Rethrow);
 					}
-					ilGenerator.EndExceptionBlock();
+					ilGenerator.EndExceptionBlockNoFallThrough();
 				}
 				prevBlock.LeaveStubs(block);
 			}

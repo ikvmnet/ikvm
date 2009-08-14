@@ -105,6 +105,9 @@ namespace IKVM.Internal
 
 		private CodeEmitter(ILGenerator ilgen)
 		{
+#if IKVM_REF_EMIT
+			ilgen.__CleverExceptionBlockAssistance();
+#endif
 			this.ilgen_real = ilgen;
 		}
 
@@ -557,6 +560,16 @@ namespace IKVM.Internal
 			offset += 10;
 #endif
 			ilgen_real.EmitWriteLine(value);
+		}
+
+		internal void EndExceptionBlockNoFallThrough()
+		{
+			EndExceptionBlock();
+#if !IKVM_REF_EMIT
+			// HACK to keep the verifier happy we need this bogus jump
+			// (because of the bogus Leave that Ref.Emit ends the try block with)
+			Emit(OpCodes.Br_S, (sbyte)-2);
+#endif
 		}
 
 		internal void EndExceptionBlock()
