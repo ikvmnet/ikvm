@@ -87,7 +87,9 @@ namespace ikvm.awt
 
 		public override void copyArea(int x, int y, int width, int height, int dx, int dy)
 		{
-			throw new NotImplementedException();
+            Point src = this.control.PointToScreen(new Point(x + (int)this.g.Transform.OffsetX, y + (int)this.g.Transform.OffsetY));
+            Point dest = new Point(x + (int)this.g.Transform.OffsetX + dx, y + (int)this.g.Transform.OffsetY + dy);
+            this.g.CopyFromScreen(src, dest, new Size(width, height));
 		}
     }
 
