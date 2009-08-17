@@ -237,6 +237,12 @@ namespace ikvm.awt
                 //dividing by line thickness because of the representation difference
                 dash[i] = dash[i] / lineWidth;
             }
+            // To fix the problem where solid style in Java can be represented at { 1.0, 0.0 }.
+            // In .NET, however, array can only have positive value
+            if (dash.Length==2 && dash[dash.Length-1]==0)
+            {
+                Array.Resize(ref dash, 1);
+            }
             return dash;
         }
 
