@@ -85,9 +85,19 @@ namespace ikvm.awt
             return newGraphics;
         }
 
+        private Point getPointToScreenImpl(Point point)
+        {
+            return this.control.PointToScreen(point);
+        }
+
+        private Point getPointToScreen(Point point)
+        {
+            return (Point)this.control.Invoke(new Converter<Point,Point>(getPointToScreenImpl),point);
+        }
+
 		public override void copyArea(int x, int y, int width, int height, int dx, int dy)
 		{
-            Point src = this.control.PointToScreen(new Point(x + (int)this.g.Transform.OffsetX, y + (int)this.g.Transform.OffsetY));
+            Point src = getPointToScreen(new Point(x + (int)this.g.Transform.OffsetX, y + (int)this.g.Transform.OffsetY));
             Point dest = new Point(x + (int)this.g.Transform.OffsetX + dx, y + (int)this.g.Transform.OffsetY + dy);
             this.g.CopyFromScreen(src, dest, new Size(width, height));
 		}
