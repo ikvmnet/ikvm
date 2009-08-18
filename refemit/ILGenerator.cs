@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2008 Jeroen Frijters
+  Copyright (C) 2008, 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -182,6 +182,11 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 
+		private bool IsLabelReachable(Label label)
+		{
+			return labelStackHeight[label.Index] != -1;
+		}
+
 		// non-standard API
 		public void __DisableExceptionBlockAssistance()
 		{
@@ -265,9 +270,12 @@ namespace IKVM.Reflection.Emit
 			else
 			{
 				block.handlerLength = code.Position - block.handlerOffset;
-				bool reachable = labelStackHeight[block.labelEnd.Index] != -1;
+				bool reachable = IsLabelReachable(block.labelEnd);
 				Label labelEnd = new Label();
-				MarkLabel(block.labelEnd);
+				if (reachable)
+				{
+					MarkLabel(block.labelEnd);
+				}
 				labelEnd = DefineLabel();
 				if (exceptionBlockAssistanceMode == EBAM_COMPAT || (exceptionBlockAssistanceMode == EBAM_CLEVER && reachable))
 				{
@@ -298,7 +306,10 @@ namespace IKVM.Reflection.Emit
 				{
 					Emit(OpCodes.Endfinally);
 				}
-				MarkLabel(block.labelEnd);
+				if (IsLabelReachable(block.labelEnd))
+				{
+					MarkLabel(block.labelEnd);
+				}
 			}
 			block.handlerLength = code.Position - block.handlerOffset;
 		}
