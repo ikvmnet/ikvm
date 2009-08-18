@@ -595,6 +595,12 @@ namespace ikvm.awt
             return new NetCustomCursor(cursor, hotSpot, name);
         }
 
+        private object getRegistry(string subKey, string valueName)
+        {
+            Microsoft.Win32.RegistryKey key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(subKey, false);
+            return key==null ? null : key.GetValue(valueName);
+        }
+
         protected override void initializeDesktopProperties()
         {
             //copied from WToolkit.java
@@ -606,6 +612,14 @@ namespace ikvm.awt
                 if (isWin32())
                 {
                     desktopProperties.put("Shell.shellFolderManager", java.lang.Class.forName("sun.awt.shell.Win32ShellFolderManager2"));
+                    object themeActive = getRegistry("Software\\Microsoft\\Windows\\CurrentVersion\\ThemeManager", "ThemeActive");
+//                    string dllName = (string)getRegistry("Software\\Microsoft\\Windows\\CurrentVersion\\ThemeManager", "DllName");
+//                    string sizeName = (string)getRegistry("Software\\Microsoft\\Windows\\CurrentVersion\\ThemeManager", "SizeName");
+//                    string colorName = (string)getRegistry("Software\\Microsoft\\Windows\\CurrentVersion\\ThemeManager", "ColorName");
+                    desktopProperties.put("win.xpstyle.themeActive", java.lang.Boolean.valueOf("1".Equals(themeActive)));
+//                    desktopProperties.put("win.xpstyle.dllName", dllName);
+//                    desktopProperties.put("win.xpstyle.sizeName", sizeName);
+//                    desktopProperties.put("win.xpstyle.colorName", colorName);
                 }
             }
             catch (java.lang.ClassNotFoundException)
@@ -698,12 +712,12 @@ namespace ikvm.awt
 
         protected override int getScreenHeight()
         {
-            throw new NotImplementedException();
+            return Screen.PrimaryScreen.Bounds.Height;
         }
 
         protected override int getScreenWidth()
         {
-            throw new NotImplementedException();
+            return Screen.PrimaryScreen.Bounds.Width;
         }
 
         public override void grab(java.awt.Window window)
@@ -717,7 +731,7 @@ namespace ikvm.awt
 
         public override bool isDesktopSupported()
         {
-            throw new NotImplementedException();
+            return true;
         }
 
         public override bool isTraySupported()
@@ -1031,6 +1045,7 @@ namespace ikvm.awt
 			control.KeyPress += new KeyPressEventHandler(OnKeyPress);
 			control.MouseMove += new MouseEventHandler(OnMouseMove);
 			control.MouseDown += new MouseEventHandler(OnMouseDown);
+            control.MouseWheel += new MouseEventHandler(OnMouseWheel);
 			control.Click += new EventHandler(OnClick);
 			control.DoubleClick += new EventHandler(OnDoubleClick);
 			control.MouseUp += new MouseEventHandler(OnMouseUp);
@@ -1269,6 +1284,22 @@ namespace ikvm.awt
             isPopupMenu = false;
         }
 
+        private void postMouseWheelEvent(EventArgs ev, int id, int delta)
+        {
+            long when = java.lang.System.currentTimeMillis();
+            int modifiers = GetModifiers(Control.ModifierKeys);
+            int scrollAmount = -delta * SystemInformation.MouseWheelScrollLines / 120;
+            int button = 0;
+            int clickCount = 0;
+            int x = Control.MousePosition.X - control.Location.X;
+            int y = Control.MousePosition.Y - control.Location.Y;
+            bool isPopup = isPopupMenu;
+            java.awt.EventQueue.invokeLater(Delegates.toRunnable(delegate
+            {
+                postEvent(new java.awt.@event.MouseWheelEvent(target, id, when, modifiers, x, y, clickCount, isPopup, java.awt.@event.MouseWheelEvent.WHEEL_UNIT_SCROLL, scrollAmount, scrollAmount));
+            }));
+        }
+
         protected virtual void OnMouseMove(object sender, MouseEventArgs ev)
 		{
 			if((ev.Button & (MouseButtons.Left | MouseButtons.Right)) != 0)
@@ -1308,6 +1339,11 @@ namespace ikvm.awt
 			isPopupMenu = false;
 			postMouseEvent(ev, java.awt.@event.MouseEvent.MOUSE_PRESSED, ev.Clicks);
 		}
+
+        private void OnMouseWheel(object sender, MouseEventArgs ev)
+        {
+            postMouseWheelEvent(ev, java.awt.@event.MouseEvent.MOUSE_WHEEL, ev.Delta);
+        }
 
         private void OnClick(object sender, EventArgs ev)
         {
@@ -1815,7 +1851,27 @@ namespace ikvm.awt
             control.Invoke(new SetCursor(setCursorImpl), new object[] { cursor });
         }
 
-		public void setEnabled(bool enabled)
+        private bool getEnabledImpl()
+        {
+            return control.Enabled;
+        }
+
+        public bool getEnabled()
+        {
+            return (bool)control.Invoke(new Func<bool>(getEnabledImpl));
+        }
+
+        private bool getFocusImpl()
+        {
+            return control.Focused;
+        }
+
+        public bool getFocused()
+        {
+            return (bool)control.Invoke(new Func<bool>(getFocusImpl));
+        }
+
+        public void setEnabled(bool enabled)
 		{
 			if (enabled)
 			{
@@ -1938,7 +1994,7 @@ namespace ikvm.awt
 			throw new NotImplementedException();
 		}
 
-		public bool isFocusable()
+		public virtual bool isFocusable()
 		{
 			return false;
 		}
@@ -2003,9 +2059,9 @@ namespace ikvm.awt
                 null,
                 target,
                 lightweightChild,
-                temporary,
-                focusedWindowChangeAllowed,
-                time);
+                java.lang.Boolean.valueOf(temporary),
+                java.lang.Boolean.valueOf(focusedWindowChangeAllowed),
+                java.lang.Long.valueOf(time));
             }
             catch
             {
@@ -2033,9 +2089,9 @@ namespace ikvm.awt
                 null,
                 target,
                 lightweightChild,
-                temporary,
-                focusedWindowChangeAllowed,
-                time,
+                java.lang.Boolean.valueOf(temporary),
+                java.lang.Boolean.valueOf(focusedWindowChangeAllowed),
+                java.lang.Long.valueOf(time),
                 cause)).intValue();
             if (retval == SNFH_SUCCESS_HANDLED)
             {
@@ -2043,7 +2099,7 @@ namespace ikvm.awt
             }
             else if (retval == SNFH_SUCCESS_PROCEED)
             {
-                if (control.Focused)
+                if (getFocused())
                 {
                     return true;
                 }
@@ -2133,6 +2189,11 @@ namespace ikvm.awt
 			((TextBox)control).AutoSize = false;
 			((TextBox)control).Text = ((java.awt.TextComponent)target).getText();
 		}
+
+        public override bool isFocusable()
+        {
+            return true;
+        }
 
 		protected override void OnKeyPress(object sender, KeyPressEventArgs e)
 		{
@@ -2388,11 +2449,31 @@ namespace ikvm.awt
 			setEchoCharacter(echo_char);
 		}
 
+        private void setEchoCharacterImpl(char echo_char)
+        {
+            ((TextBox)control).PasswordChar = echo_char;
+        }
+
 		public void setEchoCharacter(char echo_char)
 		{
-			// TODO use control.Invoke
-			((TextBox)control).PasswordChar = echo_char;
+		    control.Invoke(new Action<char>(setEchoCharacterImpl), echo_char);
 		}
+
+        public override bool handleJavaKeyEvent(java.awt.@event.KeyEvent e)
+        {
+            switch (e.getID())
+            {
+                case java.awt.@event.KeyEvent.KEY_TYPED:
+                    if ((e.getKeyChar() == '\n') && !e.isAltDown() && !e.isControlDown())
+                    {
+                        postEvent(new java.awt.@event.ActionEvent(target, java.awt.@event.ActionEvent.ACTION_PERFORMED,
+                                                  getText(), e.getWhen(), e.getModifiers()));
+                        return true;
+                    }
+                    break;
+            }
+            return false;
+        }
 	}
 
 	class NetTextAreaPeer : NetTextComponentPeer, TextAreaPeer
