@@ -597,8 +597,10 @@ namespace ikvm.awt
 
         private object getRegistry(string subKey, string valueName)
         {
-            Microsoft.Win32.RegistryKey key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(subKey, false);
-            return key==null ? null : key.GetValue(valueName);
+			using (Microsoft.Win32.RegistryKey key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(subKey, false))
+			{
+				return key == null ? null : key.GetValue(valueName);
+			}
         }
 
         protected override void initializeDesktopProperties()
@@ -1289,7 +1291,6 @@ namespace ikvm.awt
             long when = java.lang.System.currentTimeMillis();
             int modifiers = GetModifiers(Control.ModifierKeys);
             int scrollAmount = -delta * SystemInformation.MouseWheelScrollLines / 120;
-            int button = 0;
             int clickCount = 0;
             int x = Control.MousePosition.X - control.Location.X;
             int y = Control.MousePosition.Y - control.Location.Y;
