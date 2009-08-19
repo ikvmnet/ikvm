@@ -371,7 +371,7 @@ namespace IKVM.Reflection.Emit
 		{
 			if (stackHeight == -1)
 			{
-				// we're about to emit unreachable code
+				// we're about to emit code that is either unreachable or reachable only via a backward branch
 				stackHeight = 0;
 			}
 			Debug.Assert(stackHeight >= 0 && stackHeight <= ushort.MaxValue);
@@ -758,9 +758,10 @@ namespace IKVM.Reflection.Emit
 			{
 				if (stackHeight == -1)
 				{
-					// we're at a location that can only be reached by a backward branch,
-					// so according to the "backward branch constraint" that must mean the stack is empty
-					stackHeight = 0;
+					// We're at a location that can only be reached by a backward branch,
+					// so according to the "backward branch constraint" that must mean the stack is empty,
+					// but note that this may be an unused label follow be another used label that does
+					// have a non-zero stack height, so we don't yet set stackHeight here.
 					labelStackHeight[loc.Index] = 0;
 				}
 				else
