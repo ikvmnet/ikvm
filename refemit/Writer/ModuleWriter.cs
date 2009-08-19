@@ -36,7 +36,7 @@ namespace IKVM.Reflection.Emit.Writer
 	{
 		private const int versionInfoResourceHeaderLength = 0x58;
 
-		internal static void WriteModule(string directory, StrongNameKeyPair keyPair, ModuleBuilder moduleBuilder, PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ByteBuffer versionInfoData, int entryPointToken)
+		internal static void WriteModule(StrongNameKeyPair keyPair, ModuleBuilder moduleBuilder, PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ByteBuffer versionInfoData, int entryPointToken)
 		{
 			moduleBuilder.FixupMethodBodyTokens();
 
@@ -48,12 +48,7 @@ namespace IKVM.Reflection.Emit.Writer
 				moduleBuilder.UserStrings.Add(" ");
 			}
 
-			string fileName = moduleBuilder.fileName;
-			if (directory != null)
-			{
-				fileName = Path.Combine(directory, fileName);
-			}
-			using (FileStream fs = new FileStream(fileName, FileMode.Create))
+			using (FileStream fs = new FileStream(moduleBuilder.FullyQualifiedName, FileMode.Create))
 			{
 				PEWriter writer = new PEWriter(fs);
 				switch (imageFileMachine)

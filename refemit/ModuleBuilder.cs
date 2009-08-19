@@ -1015,7 +1015,7 @@ namespace IKVM.Reflection.Emit
 		{
 			get
 			{
-				return Path.GetFullPath(fileName);
+				return Path.GetFullPath(Path.Combine(asm.dir, fileName));
 			}
 		}
 

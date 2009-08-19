@@ -41,7 +41,7 @@ namespace IKVM.Reflection.Emit
 #endif
 	{
 		private readonly AssemblyName name;
-		private readonly string dir;
+		internal readonly string dir;
 		private readonly PermissionSet requiredPermissions;
 		private readonly PermissionSet optionalPermissions;
 		private readonly PermissionSet refusedPermissions;
@@ -63,7 +63,7 @@ namespace IKVM.Reflection.Emit
 		private AssemblyBuilder(AssemblyName name, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
 		{
 			this.name = name;
-			this.dir = dir;
+			this.dir = dir ?? ".";
 			this.requiredPermissions = requiredPermissions;
 			this.optionalPermissions = optionalPermissions;
 			this.refusedPermissions = refusedPermissions;
@@ -241,12 +241,12 @@ namespace IKVM.Reflection.Emit
 					int fileToken;
 					if (entryPoint != null && entryPoint.ModuleBuilder == moduleBuilder)
 					{
-						ModuleWriter.WriteModule(dir, null, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, null, entryPoint.MetadataToken);
+						ModuleWriter.WriteModule(null, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, null, entryPoint.MetadataToken);
 						entryPointToken = fileToken = AddFile(manifestModule, moduleBuilder.fileName, 0 /*ContainsMetaData*/);
 					}
 					else
 					{
-						ModuleWriter.WriteModule(dir, null, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, null, 0);
+						ModuleWriter.WriteModule(null, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, null, 0);
 						fileToken = AddFile(manifestModule, moduleBuilder.fileName, 0 /*ContainsMetaData*/);
 					}
 					moduleBuilder.ExportTypes(fileToken, manifestModule);
@@ -259,7 +259,7 @@ namespace IKVM.Reflection.Emit
 			}
 
 			// finally, write the manifest module
-			ModuleWriter.WriteModule(dir, name.KeyPair, manifestModule, fileKind, portableExecutableKind, imageFileMachine, versionInfoData, entryPointToken);
+			ModuleWriter.WriteModule(name.KeyPair, manifestModule, fileKind, portableExecutableKind, imageFileMachine, versionInfoData, entryPointToken);
 		}
 
 		private int AddFile(ModuleBuilder manifestModule, string fileName, int flags)
