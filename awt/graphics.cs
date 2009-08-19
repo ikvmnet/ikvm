@@ -1262,19 +1262,13 @@ namespace ikvm.awt
 
         private String[] getAvailableFontFamilyNames(int language)
         {
-            using (Bitmap bitmap = new Bitmap(1, 1))
+			FontFamily[] families = FontFamily.Families;
+            String[] results = new String[families.Length];
+            for (int i = 0; i < results.Length; i++)
             {
-                using (Graphics g = Graphics.FromImage(bitmap))
-                {
-                    FontFamily[] families = FontFamily.GetFamilies(g);
-                    String[] results = new String[families.Length];
-                    for (int i = 0; i < results.Length; i++)
-                    {
-                        results[i] = families[i].GetName(language);
-                    }
-                    return results;
-                }
+                results[i] = families[i].GetName(language);
             }
+            return results;
         }
 
         public override java.awt.GraphicsDevice getDefaultScreenDevice()
