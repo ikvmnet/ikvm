@@ -12,7 +12,6 @@
                 <include name="SymbolWriter.cs" />
             </sources>
             <references>
-                <include name="${framework::get-assembly-directory(framework::get-target-framework())}/ISymWrapper.dll" />
                 <include name="../../bin/IKVM.Reflection.Emit.dll" />
             </references>
         </csc>

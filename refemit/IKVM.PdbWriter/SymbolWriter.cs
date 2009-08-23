@@ -55,30 +55,35 @@ namespace IKVM.Reflection.Emit.Impl
 	[ComImport]
 	interface IMetaDataEmit { }
 
+	[Guid("B01FAFEB-C450-3A4D-BEEC-B4CEEC01E006")]
+	[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+	[ComImport]
+	internal interface ISymUnmanagedDocumentWriter { }
+
 	[Guid("ed14aa72-78e2-4884-84e2-334293ae5214")]
 	[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
 	[ComImport]
 	[CoClass(typeof(CorSymWriterClass))]
 	interface ISymUnmanagedWriter
 	{
-		void PlaceHolder_DefineDocument();
+		ISymUnmanagedDocumentWriter DefineDocument(string url, ref Guid language, ref Guid languageVendor, ref Guid documentType);
 		void PlaceHolder_SetUserEntryPoint();
-		void PlaceHolder_OpenMethod();
-		void PlaceHolder_CloseMethod();
-		void PlaceHolder_OpenScope();
-		void PlaceHolder_CloseScope();
+		void OpenMethod(int method);
+		void CloseMethod();
+		int OpenScope(int startOffset);
+		void CloseScope(int endOffset);
 		void PlaceHolder_SetScopeRange();
-		void PlaceHolder_DefineLocalVariable();
+		void DefineLocalVariable(string name, int attributes, int cSig, [MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] byte[] signature, int addrKind, int addr1, int addr2, int startOffset, int endOffset);
 		void PlaceHolder_DefineParameter();
 		void PlaceHolder_DefineField();
 		void PlaceHolder_DefineGlobalVariable();
-		void PlaceHolder_Close();
+		void Close();
 		void PlaceHolder_SetSymAttribute();
 		void PlaceHolder_OpenNamespace();
 		void PlaceHolder_CloseNamespace();
 		void PlaceHolder_UsingNamespace();
 		void PlaceHolder_SetMethodSourceRange();
-		void PlaceHolder_Initialize();
+		void Initialize([MarshalAs(UnmanagedType.IUnknown)] object emitter, string filename, [MarshalAs(UnmanagedType.IUnknown)] object pIStream, bool fFullBuild);
 
 		void GetDebugInfo(
 			[In, Out] ref IMAGE_DEBUG_DIRECTORY pIDD,
@@ -86,7 +91,12 @@ namespace IKVM.Reflection.Emit.Impl
 			[Out] out uint pcData,
 			[Out, MarshalAs(UnmanagedType.LPArray)] byte[] data);
 
-		void PlaceHolder_DefineSequencePoints();
+		void DefineSequencePoints(ISymUnmanagedDocumentWriter document, int spCount,
+		  [MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)] int[] offsets,
+		  [MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)] int[] lines,
+		  [MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)] int[] columns,
+		  [MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)] int[] endLines,
+		  [MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)] int[] endColumns);
 
 		void RemapToken(
 			[In] int oldToken,
@@ -97,40 +107,75 @@ namespace IKVM.Reflection.Emit.Impl
 	[ComImport]
 	class CorSymWriterClass { }
 
-	public sealed class SymbolWriter : SymWriter, ISymbolWriterImpl
+	public sealed class SymbolWriter : ISymbolWriterImpl
 	{
-		private readonly IntPtr ppISymUnmanagedWriter = Marshal.AllocHGlobal(IntPtr.Size);
+		private readonly IMetaDataDispenser disp = new IMetaDataDispenser();
 		private readonly ISymUnmanagedWriter symUnmanagedWriter = new ISymUnmanagedWriter();
-		private readonly IntPtr pISymUnmanagedWriter;
 
 		public SymbolWriter(ModuleBuilder moduleBuilder)
 		{
 			string fileName = System.IO.Path.ChangeExtension(moduleBuilder.FullyQualifiedName, ".pdb");
-			pISymUnmanagedWriter = Marshal.GetComInterfaceForObject(symUnmanagedWriter, typeof(ISymUnmanagedWriter));
-			Marshal.WriteIntPtr(ppISymUnmanagedWriter, pISymUnmanagedWriter);
-			SetUnderlyingWriter(ppISymUnmanagedWriter);
-			IMetaDataDispenser disp = new IMetaDataDispenser();
 			object emitter;
 			Guid CLSID_CorMetaDataRuntime = new Guid("005023ca-72b1-11d3-9fc4-00c04f79a0a3");
 			Guid IID_IMetaDataEmit = typeof(IMetaDataEmit).GUID;
 			disp.DefineScope(ref CLSID_CorMetaDataRuntime, 0, ref IID_IMetaDataEmit, out emitter);
-			IntPtr emitterPtr = Marshal.GetComInterfaceForObject(emitter, typeof(IMetaDataEmit));
-			try
-			{
-				Initialize(emitterPtr, fileName, true);
-			}
-			finally
-			{
-				Marshal.Release(emitterPtr);
-			}
-			Marshal.ReleaseComObject(disp);
-			Marshal.ReleaseComObject(emitter);
+			symUnmanagedWriter.Initialize(emitter, fileName, null, true);
 		}
 
-		~SymbolWriter()
+		private sealed class Document : ISymbolDocumentWriter
 		{
-			Marshal.Release(pISymUnmanagedWriter);
-			Marshal.FreeHGlobal(ppISymUnmanagedWriter);
+			internal readonly ISymUnmanagedDocumentWriter impl;
+
+			internal Document(ISymUnmanagedDocumentWriter impl)
+			{
+				this.impl = impl;
+			}
+
+			public void SetCheckSum(Guid algorithmId, byte[] checkSum)
+			{
+				throw new NotImplementedException();
+			}
+
+			public void SetSource(byte[] source)
+			{
+				throw new NotImplementedException();
+			}
+		}
+
+		public ISymbolDocumentWriter DefineDocument(string url, Guid language, Guid languageVendor, Guid documentType)
+		{
+			return new Document(symUnmanagedWriter.DefineDocument(url, ref language, ref languageVendor, ref documentType));
+		}
+
+		public void OpenMethod(SymbolToken method)
+		{
+			symUnmanagedWriter.OpenMethod(method.GetToken());
+		}
+
+		public void CloseMethod()
+		{
+			symUnmanagedWriter.CloseMethod();
+		}
+
+		public void DefineSequencePoints(ISymbolDocumentWriter document, int[] offsets, int[] lines, int[] columns, int[] endLines, int[] endColumns)
+		{
+			int count = Math.Min(offsets.Length, Math.Min(lines.Length, Math.Min(columns.Length, Math.Min(endLines.Length, endColumns.Length))));
+			symUnmanagedWriter.DefineSequencePoints(((Document)document).impl, count, offsets, lines, columns, endLines, endColumns);
+		}
+
+		public int OpenScope(int startOffset)
+		{
+			return symUnmanagedWriter.OpenScope(startOffset);
+		}
+
+		public void CloseScope(int endOffset)
+		{
+			symUnmanagedWriter.CloseScope(endOffset);
+		}
+
+		public void DefineLocalVariable(string name, System.Reflection.FieldAttributes attributes, byte[] signature, SymAddressKind addrKind, int addr1, int addr2, int addr3, int startOffset, int endOffset)
+		{
+			symUnmanagedWriter.DefineLocalVariable(name, 0, signature.Length, signature, (int)addrKind, addr1, addr2, startOffset, endOffset);
 		}
 
 		public byte[] GetDebugInfo(ref IMAGE_DEBUG_DIRECTORY idd)
@@ -145,6 +190,71 @@ namespace IKVM.Reflection.Emit.Impl
 		public void RemapToken(int oldToken, int newToken)
 		{
 			symUnmanagedWriter.RemapToken(oldToken, newToken);
+		}
+
+		public void Close()
+		{
+			symUnmanagedWriter.Close();
+		}
+
+		public void CloseNamespace()
+		{
+			throw new NotImplementedException();
+		}
+
+		public void DefineField(SymbolToken parent, string name, System.Reflection.FieldAttributes attributes, byte[] signature, SymAddressKind addrKind, int addr1, int addr2, int addr3)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void DefineGlobalVariable(string name, System.Reflection.FieldAttributes attributes, byte[] signature, SymAddressKind addrKind, int addr1, int addr2, int addr3)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void DefineParameter(string name, System.Reflection.ParameterAttributes attributes, int sequence, SymAddressKind addrKind, int addr1, int addr2, int addr3)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void Initialize(IntPtr emitter, string filename, bool fFullBuild)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void OpenNamespace(string name)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void SetMethodSourceRange(ISymbolDocumentWriter startDoc, int startLine, int startColumn, ISymbolDocumentWriter endDoc, int endLine, int endColumn)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void SetScopeRange(int scopeID, int startOffset, int endOffset)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void SetSymAttribute(SymbolToken parent, string name, byte[] data)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void SetUnderlyingWriter(IntPtr underlyingWriter)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void SetUserEntryPoint(SymbolToken entryMethod)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void UsingNamespace(string fullName)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

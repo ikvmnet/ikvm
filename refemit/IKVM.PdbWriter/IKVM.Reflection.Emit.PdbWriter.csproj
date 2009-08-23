@@ -31,7 +31,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ISymWrapper" />
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
