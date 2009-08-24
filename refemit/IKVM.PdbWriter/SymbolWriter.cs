@@ -169,7 +169,6 @@ namespace IKVM.Reflection.Emit.Impl
 
 		private sealed class LocalVar
 		{
-			internal readonly string name;
 			internal readonly System.Reflection.FieldAttributes attributes;
 			internal readonly byte[] signature;
 			internal readonly SymAddressKind addrKind;
@@ -178,9 +177,8 @@ namespace IKVM.Reflection.Emit.Impl
 			internal readonly int startOffset;
 			internal readonly int endOffset;
 
-			internal LocalVar(string name, System.Reflection.FieldAttributes attributes, byte[] signature, SymAddressKind addrKind, int addr1, int addr2, int startOffset, int endOffset)
+			internal LocalVar(System.Reflection.FieldAttributes attributes, byte[] signature, SymAddressKind addrKind, int addr1, int addr2, int startOffset, int endOffset)
 			{
-				this.name = name;
 				this.attributes = attributes;
 				this.signature = signature;
 				this.addrKind = addrKind;
@@ -196,7 +194,7 @@ namespace IKVM.Reflection.Emit.Impl
 			internal readonly int startOffset;
 			internal int endOffset;
 			internal readonly List<Scope> scopes = new List<Scope>();
-			internal readonly List<LocalVar> locals = new List<LocalVar>();
+			internal readonly Dictionary<string, LocalVar> locals = new Dictionary<string, LocalVar>();
 
 			internal Scope(int startOffset)
 			{
@@ -206,9 +204,9 @@ namespace IKVM.Reflection.Emit.Impl
 			internal void Do(ISymUnmanagedWriter symUnmanagedWriter)
 			{
 				symUnmanagedWriter.OpenScope(startOffset);
-				foreach (LocalVar local in locals)
+				foreach (KeyValuePair<string, LocalVar> kv in locals)
 				{
-					symUnmanagedWriter.DefineLocalVariable(local.name, (int)local.attributes, local.signature.Length, local.signature, (int)local.addrKind, local.addr1, local.addr2, local.startOffset, local.endOffset);
+					symUnmanagedWriter.DefineLocalVariable(kv.Key, (int)kv.Value.attributes, kv.Value.signature.Length, kv.Value.signature, (int)kv.Value.addrKind, kv.Value.addr1, kv.Value.addr2, kv.Value.startOffset, kv.Value.endOffset);
 				}
 				foreach (Scope scope in scopes)
 				{
@@ -228,7 +226,7 @@ namespace IKVM.Reflection.Emit.Impl
 			internal int[] endLines;
 			internal int[] endColumns;
 			internal readonly List<Scope> scopes = new List<Scope>();
-			internal Scope currentScope;
+			internal readonly Stack<Scope> scopeStack = new Stack<Scope>();
 
 			internal Method(int token)
 			{
@@ -271,27 +269,26 @@ namespace IKVM.Reflection.Emit.Impl
 		public int OpenScope(int startOffset)
 		{
 			Scope scope = new Scope(startOffset);
-			if (currentMethod.currentScope == null)
+			if (currentMethod.scopeStack.Count == 0)
 			{
 				currentMethod.scopes.Add(scope);
 			}
 			else
 			{
-				currentMethod.currentScope.scopes.Add(scope);
+				currentMethod.scopeStack.Peek().scopes.Add(scope);
 			}
-			currentMethod.currentScope = scope;
+			currentMethod.scopeStack.Push(scope);
 			return 0;
 		}
 
 		public void CloseScope(int endOffset)
 		{
-			currentMethod.currentScope.endOffset = endOffset;
-			currentMethod.currentScope = null;
+			currentMethod.scopeStack.Pop().endOffset = endOffset;
 		}
 
 		public void DefineLocalVariable(string name, System.Reflection.FieldAttributes attributes, byte[] signature, SymAddressKind addrKind, int addr1, int addr2, int addr3, int startOffset, int endOffset)
 		{
-			currentMethod.currentScope.locals.Add(new LocalVar(name, attributes, signature, addrKind, addr1, addr2, startOffset, endOffset));
+			currentMethod.scopeStack.Peek().locals[name] = new LocalVar(attributes, signature, addrKind, addr1, addr2, startOffset, endOffset);
 		}
 
 		private void InitWriter()
