@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Diagnostics.SymbolStore;
 using IKVM.Reflection.Emit.Impl;
@@ -109,26 +110,32 @@ namespace IKVM.Reflection.Emit.Impl
 
 	public sealed class SymbolWriter : ISymbolWriterImpl
 	{
-		private readonly IMetaDataDispenser disp = new IMetaDataDispenser();
-		private readonly ISymUnmanagedWriter symUnmanagedWriter = new ISymUnmanagedWriter();
+		private readonly ModuleBuilder moduleBuilder;
+		private ISymUnmanagedWriter symUnmanagedWriter;
+		private readonly Dictionary<string, Document> documents = new Dictionary<string, Document>();
+		private readonly List<Method> methods = new List<Method>();
+		private readonly Dictionary<int, int> remap = new Dictionary<int, int>();
+		private Method currentMethod;
 
 		public SymbolWriter(ModuleBuilder moduleBuilder)
 		{
-			string fileName = System.IO.Path.ChangeExtension(moduleBuilder.FullyQualifiedName, ".pdb");
-			object emitter;
-			Guid CLSID_CorMetaDataRuntime = new Guid("005023ca-72b1-11d3-9fc4-00c04f79a0a3");
-			Guid IID_IMetaDataEmit = typeof(IMetaDataEmit).GUID;
-			disp.DefineScope(ref CLSID_CorMetaDataRuntime, 0, ref IID_IMetaDataEmit, out emitter);
-			symUnmanagedWriter.Initialize(emitter, fileName, null, true);
+			this.moduleBuilder = moduleBuilder;
 		}
 
 		private sealed class Document : ISymbolDocumentWriter
 		{
-			internal readonly ISymUnmanagedDocumentWriter impl;
+			internal readonly string url;
+			private Guid language;
+			private Guid languageVendor;
+			private Guid documentType;
+			private ISymUnmanagedDocumentWriter unmanagedDocument;
 
-			internal Document(ISymUnmanagedDocumentWriter impl)
+			internal Document(string url, Guid language, Guid languageVendor, Guid documentType)
 			{
-				this.impl = impl;
+				this.url = url;
+				this.language = language;
+				this.languageVendor = languageVendor;
+				this.documentType = documentType;
 			}
 
 			public void SetCheckSum(Guid algorithmId, byte[] checkSum)
@@ -140,46 +147,172 @@ namespace IKVM.Reflection.Emit.Impl
 			{
 				throw new NotImplementedException();
 			}
+
+			internal ISymUnmanagedDocumentWriter GetUnmanagedDocument(ISymUnmanagedWriter symUnmanagedWriter)
+			{
+				if (unmanagedDocument == null)
+				{
+					unmanagedDocument = symUnmanagedWriter.DefineDocument(url, ref language, ref languageVendor, ref documentType);
+				}
+				return unmanagedDocument;
+			}
+
+			internal void Release()
+			{
+				if (unmanagedDocument != null)
+				{
+					Marshal.ReleaseComObject(unmanagedDocument);
+					unmanagedDocument = null;
+				}
+			}
+		}
+
+		private sealed class LocalVar
+		{
+			internal readonly string name;
+			internal readonly System.Reflection.FieldAttributes attributes;
+			internal readonly byte[] signature;
+			internal readonly SymAddressKind addrKind;
+			internal readonly int addr1;
+			internal readonly int addr2;
+			internal readonly int startOffset;
+			internal readonly int endOffset;
+
+			internal LocalVar(string name, System.Reflection.FieldAttributes attributes, byte[] signature, SymAddressKind addrKind, int addr1, int addr2, int startOffset, int endOffset)
+			{
+				this.name = name;
+				this.attributes = attributes;
+				this.signature = signature;
+				this.addrKind = addrKind;
+				this.addr1 = addr1;
+				this.addr2 = addr2;
+				this.startOffset = startOffset;
+				this.endOffset = endOffset;
+			}
+		}
+
+		private sealed class Scope
+		{
+			internal readonly int startOffset;
+			internal int endOffset;
+			internal readonly List<Scope> scopes = new List<Scope>();
+			internal readonly List<LocalVar> locals = new List<LocalVar>();
+
+			internal Scope(int startOffset)
+			{
+				this.startOffset = startOffset;
+			}
+
+			internal void Do(ISymUnmanagedWriter symUnmanagedWriter)
+			{
+				symUnmanagedWriter.OpenScope(startOffset);
+				foreach (LocalVar local in locals)
+				{
+					symUnmanagedWriter.DefineLocalVariable(local.name, (int)local.attributes, local.signature.Length, local.signature, (int)local.addrKind, local.addr1, local.addr2, local.startOffset, local.endOffset);
+				}
+				foreach (Scope scope in scopes)
+				{
+					scope.Do(symUnmanagedWriter);
+				}
+				symUnmanagedWriter.CloseScope(endOffset);
+			}
+		}
+
+		private sealed class Method
+		{
+			internal readonly int token;
+			internal Document document;
+			internal int[] offsets;
+			internal int[] lines;
+			internal int[] columns;
+			internal int[] endLines;
+			internal int[] endColumns;
+			internal readonly List<Scope> scopes = new List<Scope>();
+			internal Scope currentScope;
+
+			internal Method(int token)
+			{
+				this.token = token;
+			}
 		}
 
 		public ISymbolDocumentWriter DefineDocument(string url, Guid language, Guid languageVendor, Guid documentType)
 		{
-			return new Document(symUnmanagedWriter.DefineDocument(url, ref language, ref languageVendor, ref documentType));
+			Document doc;
+			if (!documents.TryGetValue(url, out doc))
+			{
+				doc = new Document(url, language, languageVendor, documentType);
+				documents.Add(url, doc);
+			}
+			return doc;
 		}
 
 		public void OpenMethod(SymbolToken method)
 		{
-			symUnmanagedWriter.OpenMethod(method.GetToken());
+			currentMethod = new Method(method.GetToken());
 		}
 
 		public void CloseMethod()
 		{
-			symUnmanagedWriter.CloseMethod();
+			methods.Add(currentMethod);
+			currentMethod = null;
 		}
 
 		public void DefineSequencePoints(ISymbolDocumentWriter document, int[] offsets, int[] lines, int[] columns, int[] endLines, int[] endColumns)
 		{
-			int count = Math.Min(offsets.Length, Math.Min(lines.Length, Math.Min(columns.Length, Math.Min(endLines.Length, endColumns.Length))));
-			symUnmanagedWriter.DefineSequencePoints(((Document)document).impl, count, offsets, lines, columns, endLines, endColumns);
+			currentMethod.document = (Document)document;
+			currentMethod.offsets = offsets;
+			currentMethod.lines = lines;
+			currentMethod.columns = columns;
+			currentMethod.endLines = endLines;
+			currentMethod.endColumns = endColumns;
 		}
 
 		public int OpenScope(int startOffset)
 		{
-			return symUnmanagedWriter.OpenScope(startOffset);
+			Scope scope = new Scope(startOffset);
+			if (currentMethod.currentScope == null)
+			{
+				currentMethod.scopes.Add(scope);
+			}
+			else
+			{
+				currentMethod.currentScope.scopes.Add(scope);
+			}
+			currentMethod.currentScope = scope;
+			return 0;
 		}
 
 		public void CloseScope(int endOffset)
 		{
-			symUnmanagedWriter.CloseScope(endOffset);
+			currentMethod.currentScope.endOffset = endOffset;
+			currentMethod.currentScope = null;
 		}
 
 		public void DefineLocalVariable(string name, System.Reflection.FieldAttributes attributes, byte[] signature, SymAddressKind addrKind, int addr1, int addr2, int addr3, int startOffset, int endOffset)
 		{
-			symUnmanagedWriter.DefineLocalVariable(name, 0, signature.Length, signature, (int)addrKind, addr1, addr2, startOffset, endOffset);
+			currentMethod.currentScope.locals.Add(new LocalVar(name, attributes, signature, addrKind, addr1, addr2, startOffset, endOffset));
+		}
+
+		private void InitWriter()
+		{
+			if (symUnmanagedWriter == null)
+			{
+				IMetaDataDispenser disp = new IMetaDataDispenser();
+				symUnmanagedWriter = new ISymUnmanagedWriter();
+				string fileName = System.IO.Path.ChangeExtension(moduleBuilder.FullyQualifiedName, ".pdb");
+				object emitter;
+				Guid CLSID_CorMetaDataRuntime = new Guid("005023ca-72b1-11d3-9fc4-00c04f79a0a3");
+				Guid IID_IMetaDataEmit = typeof(IMetaDataEmit).GUID;
+				disp.DefineScope(ref CLSID_CorMetaDataRuntime, 0, ref IID_IMetaDataEmit, out emitter);
+				symUnmanagedWriter.Initialize(emitter, fileName, null, true);
+				Marshal.ReleaseComObject(disp);
+			}
 		}
 
 		public byte[] GetDebugInfo(ref IMAGE_DEBUG_DIRECTORY idd)
 		{
+			InitWriter();
 			uint cData;
 			symUnmanagedWriter.GetDebugInfo(ref idd, 0, out cData, null);
 			byte[] buf = new byte[cData];
@@ -189,12 +322,41 @@ namespace IKVM.Reflection.Emit.Impl
 
 		public void RemapToken(int oldToken, int newToken)
 		{
-			symUnmanagedWriter.RemapToken(oldToken, newToken);
+			remap.Add(oldToken, newToken);
 		}
 
 		public void Close()
 		{
+			InitWriter();
+
+			foreach (Method method in methods)
+			{
+				int remappedToken = method.token;
+				remap.TryGetValue(remappedToken, out remappedToken);
+				symUnmanagedWriter.OpenMethod(remappedToken);
+				if (method.document != null)
+				{
+					ISymUnmanagedDocumentWriter doc = method.document.GetUnmanagedDocument(symUnmanagedWriter);
+					symUnmanagedWriter.DefineSequencePoints(doc, method.offsets.Length, method.offsets, method.lines, method.columns, method.endLines, method.endColumns);
+				}
+				foreach (Scope scope in method.scopes)
+				{
+					scope.Do(symUnmanagedWriter);
+				}
+				symUnmanagedWriter.CloseMethod(); 
+			}
+
+			foreach (Document doc in documents.Values)
+			{
+				doc.Release();
+			}
+
 			symUnmanagedWriter.Close();
+			Marshal.ReleaseComObject(symUnmanagedWriter);
+			symUnmanagedWriter = null;
+			documents.Clear();
+			methods.Clear();
+			remap.Clear();
 		}
 
 		public void CloseNamespace()
