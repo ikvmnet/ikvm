@@ -37,6 +37,7 @@ using IKVM.Attributes;
 using IKVM.Internal;
 
 using ExceptionTableEntry = IKVM.Internal.ClassFile.Method.ExceptionTableEntry;
+using LocalVariableTableEntry = IKVM.Internal.ClassFile.Method.LocalVariableTableEntry;
 using Instruction = IKVM.Internal.ClassFile.Method.Instruction;
 
 static class ByteCodeHelperMethods
@@ -179,6 +180,8 @@ class Compiler
 	private bool debug;
 	private bool keepAlive;
 	private bool strictfp;
+	private int[] scopeBegin;
+	private int[] scopeClose;
 #if STATIC_COMPILER
 	private MethodWrapper[] replacedMethodWrappers;
 #endif
@@ -593,6 +596,57 @@ class Compiler
 				}
 			}
 		}
+
+		// if we're emitting debugging information, we need to use scopes for local variables
+		if(debug)
+		{
+			SetupLocalVariableScopes();
+		}
+	}
+
+	private void SetupLocalVariableScopes()
+	{
+		LocalVariableTableEntry[] lvt = m.LocalVariableTableAttribute;
+		if(lvt != null)
+		{
+			scopeBegin = new int[m.Instructions.Length];
+			scopeClose = new int[m.Instructions.Length];
+			for (int i = 0; i < lvt.Length; i++)
+			{
+				// TODO validate the contents of the LVT entry
+				int startIndex = SafeFindPcIndex(lvt[i].start_pc);
+				int endIndex = SafeFindPcIndex(lvt[i].start_pc + lvt[i].length);
+				if(startIndex != -1 && endIndex != -1)
+				{
+					if(startIndex > 0)
+					{
+						// NOTE javac (correctly) sets start_pc of the LVT entry to the instruction
+						// following the store that first initializes the local, so we have to
+						// detect that case and adjust our local scope (because we'll be creating
+						// the local when we encounter the first store).
+						LocalVar v = ma.GetLocalVar(startIndex - 1);
+						if(v != null && v.local == lvt[i].index)
+						{
+							startIndex--;
+						}
+					}
+					scopeBegin[startIndex]++;
+					scopeClose[endIndex]++;
+				}
+			}
+		}
+	}
+
+	private int SafeFindPcIndex(int pc)
+	{
+		for(int i = 0; i < m.Instructions.Length; i++)
+		{
+			if(m.Instructions[i].PC >= pc)
+			{
+				return i;
+			}
+		}
+		return -1;
 	}
 
 	private sealed class ReturnCookie
@@ -1151,6 +1205,18 @@ class Compiler
 		for(int i = 0; i < code.Length; i++)
 		{
 			Instruction instr = code[i];
+
+			if (scopeBegin != null)
+			{
+				for(int j = scopeClose[i]; j > 0; j--)
+				{
+					ilGenerator.EndScope();
+				}
+				for(int j = scopeBegin[i]; j > 0; j--)
+				{
+					ilGenerator.BeginScope();
+				}
+			}
 
 			// if we've left the current exception block, do the exit processing
 			while(block.EndIndex == i)
