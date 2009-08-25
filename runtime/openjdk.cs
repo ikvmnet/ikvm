@@ -3458,11 +3458,9 @@ namespace IKVM.NativeCode.java
 			{
 			}
 
-			internal static object ConvertIPAddress(System.Net.IPAddress address, string hostname)
+#if !FIRST_PASS
+			internal static jnInetAddress ConvertIPAddress(System.Net.IPAddress address, string hostname)
 			{
-#if FIRST_PASS
-				return null;
-#else
 				if (address.IsIPv6LinkLocal || address.IsIPv6SiteLocal)
 				{
 					return jnInet6Address.getByAddress(hostname, address.GetAddressBytes(), (int)address.ScopeId);
@@ -3471,8 +3469,8 @@ namespace IKVM.NativeCode.java
 				{
 					return jnInetAddress.getByAddress(hostname, address.GetAddressBytes());
 				}
-#endif
 			}
+#endif
 		}
 
 		static class InetAddressImplFactory
@@ -3635,7 +3633,7 @@ namespace IKVM.NativeCode.java
 					jnInetAddress[] addresses = new jnInetAddress[addr.Length];
 					for (int i = 0; i < addr.Length; i++)
 					{
-						addresses[i] = (jnInetAddress) InetAddress.ConvertIPAddress(addr[i], hostname);
+						addresses[i] = InetAddress.ConvertIPAddress(addr[i], hostname);
 					}
 					return addresses;
 				}
@@ -3732,7 +3730,7 @@ namespace IKVM.NativeCode.java
 					jnInetAddress[] addresses = new jnInetAddress[uipaic.Count];
 					for (int j = 0; j < addresses.Length; j++)
 					{
-                        addresses[j] = (jnInetAddress) InetAddress.ConvertIPAddress(uipaic[j].Address, null);
+                        addresses[j] = InetAddress.ConvertIPAddress(uipaic[j].Address, null);
 					}
 					ret[i] = new jnNetworkInterface(name, i, addresses);
 					// TODO should implement bindings
