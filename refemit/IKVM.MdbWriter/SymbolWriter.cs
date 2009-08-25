@@ -150,6 +150,10 @@ namespace IKVM.Reflection.Emit.Impl
 
 		public void DefineLocalVariable(string name, System.Reflection.FieldAttributes attributes, byte[] signature, System.Diagnostics.SymbolStore.SymAddressKind addrKind, int addr1, int addr2, int addr3, int startOffset, int endOffset)
 		{
+		}
+
+		public void DefineLocalVariable2(string name, System.Reflection.FieldAttributes attributes, int signature, System.Diagnostics.SymbolStore.SymAddressKind addrKind, int addr1, int addr2, int addr3, int startOffset, int endOffset)
+		{
 			currentMethod.variables.Add(name);
 		}
 

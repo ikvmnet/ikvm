@@ -44,6 +44,7 @@ namespace IKVM.Reflection.Emit.Impl
 	{
 		byte[] GetDebugInfo(ref IMAGE_DEBUG_DIRECTORY idd);
 		void RemapToken(int oldToken, int newToken);
+		void DefineLocalVariable2(string name, System.Reflection.FieldAttributes attributes, int signature, SymAddressKind addrKind, int addr1, int addr2, int addr3, int startOffset, int endOffset);
 	}
 
 	static class PdbSupport
@@ -64,7 +65,7 @@ namespace IKVM.Reflection.Emit.Impl
 
 		private static bool RunningOnMono { get { return Type.GetType("Mono.Runtime") != null; } }
 
-		internal static ISymbolWriter CreateSymbolWriterFor(ModuleBuilder moduleBuilder)
+		internal static ISymbolWriterImpl CreateSymbolWriterFor(ModuleBuilder moduleBuilder)
 		{
 			return (ISymbolWriterImpl)Activator.CreateInstance(symbolWriterType, moduleBuilder);
 		}

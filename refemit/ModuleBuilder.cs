@@ -69,7 +69,7 @@ namespace IKVM.Reflection.Emit
 		private readonly AssemblyBuilder asm;
 		internal readonly string moduleName;
 		internal readonly string fileName;
-		internal readonly ISymbolWriter symbolWriter;
+		internal readonly ISymbolWriterImpl symbolWriter;
 		private readonly TypeBuilder moduleType;
 		private readonly List<TypeBuilder> types = new List<TypeBuilder>();
 		private readonly Dictionary<Type, int> typeTokens = new Dictionary<Type, int>();

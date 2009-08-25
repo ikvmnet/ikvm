@@ -811,6 +811,8 @@ namespace IKVM.Reflection.Emit
 
 			ByteBuffer bb = moduleBuilder.methodBodies;
 
+			int localVarSigTok = 0;
+
 			int rva;
 			if (locals.Count == 0 && exceptions.Count == 0 && maxStack <= 8 && code.Length < 64)
 			{
@@ -818,7 +820,7 @@ namespace IKVM.Reflection.Emit
 			}
 			else
 			{
-				rva = WriteFatHeaderAndCode(bb);
+				rva = WriteFatHeaderAndCode(bb, ref localVarSigTok);
 			}
 
 			if (moduleBuilder.symbolWriter != null)
@@ -846,7 +848,7 @@ namespace IKVM.Reflection.Emit
 					moduleBuilder.symbolWriter.DefineSequencePoints(document, offsets, lines, columns, endLines, endColumns);
 				}
 
-				WriteScope(scope);
+				WriteScope(scope, localVarSigTok);
 			}
 			return rva;
 		}
@@ -894,13 +896,12 @@ namespace IKVM.Reflection.Emit
 			return rva;
 		}
 
-		private int WriteFatHeaderAndCode(ByteBuffer bb)
+		private int WriteFatHeaderAndCode(ByteBuffer bb, ref int localVarSigTok)
 		{
 			// fat headers require 4-byte alignment
 			bb.Align(4);
 			int rva = bb.Position;
 
-			int localVarSigTok = 0;
 			if (locals.Count != 0)
 			{
 				const byte LOCAL_SIG = 0x07;
@@ -1044,22 +1045,19 @@ namespace IKVM.Reflection.Emit
 			bb.Write(code);
 		}
 
-		private void WriteScope(Scope scope)
+		private void WriteScope(Scope scope, int localVarSigTok)
 		{
 			moduleBuilder.symbolWriter.OpenScope(scope.startOffset);
-			ByteBuffer localVarSig = new ByteBuffer(6);
 			foreach (LocalBuilder local in scope.locals)
 			{
 				if (local.name != null)
 				{
-					localVarSig.Clear();
-					SignatureHelper.WriteType(moduleBuilder, localVarSig, local.LocalType);
-					moduleBuilder.symbolWriter.DefineLocalVariable(local.name, 0, localVarSig.ToArray(), SymAddressKind.ILOffset, local.LocalIndex, 0, 0, scope.startOffset, scope.endOffset);
+					moduleBuilder.symbolWriter.DefineLocalVariable2(local.name, 0, localVarSigTok, SymAddressKind.ILOffset, local.LocalIndex, 0, 0, scope.startOffset, scope.endOffset);
 				}
 			}
 			foreach (Scope child in scope.children)
 			{
-				WriteScope(child);
+				WriteScope(child, localVarSigTok);
 			}
 			moduleBuilder.symbolWriter.CloseScope(scope.endOffset);
 		}

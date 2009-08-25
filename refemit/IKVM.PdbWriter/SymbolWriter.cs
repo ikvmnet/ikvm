@@ -61,11 +61,11 @@ namespace IKVM.Reflection.Emit.Impl
 	[ComImport]
 	internal interface ISymUnmanagedDocumentWriter { }
 
-	[Guid("ed14aa72-78e2-4884-84e2-334293ae5214")]
+	[Guid("0b97726e-9e6d-4f05-9a26-424022093caa")]
 	[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
 	[ComImport]
 	[CoClass(typeof(CorSymWriterClass))]
-	interface ISymUnmanagedWriter
+	interface ISymUnmanagedWriter2
 	{
 		ISymUnmanagedDocumentWriter DefineDocument(string url, ref Guid language, ref Guid languageVendor, ref Guid documentType);
 		void PlaceHolder_SetUserEntryPoint();
@@ -102,6 +102,15 @@ namespace IKVM.Reflection.Emit.Impl
 		void RemapToken(
 			[In] int oldToken,
 			[In] int newToken);
+
+		void PlaceHolder_Initialize2();
+		void PlaceHolder_DefineConstant();
+		void PlaceHolder_Abort();
+
+		void DefineLocalVariable2(string name, int attributes, int token, int addrKind, int addr1, int addr2, int addr3, int startOffset, int endOffset);
+
+		void PlaceHolder_DefineGlobalVariable2();
+		void PlaceHolder_DefineConstant2();
 	}
 
 	[Guid("108296c1-281e-11d3-bd22-0000f80849bd")]
@@ -111,7 +120,7 @@ namespace IKVM.Reflection.Emit.Impl
 	public sealed class SymbolWriter : ISymbolWriterImpl
 	{
 		private readonly ModuleBuilder moduleBuilder;
-		private ISymUnmanagedWriter symUnmanagedWriter;
+		private ISymUnmanagedWriter2 symUnmanagedWriter;
 		private readonly Dictionary<string, Document> documents = new Dictionary<string, Document>();
 		private readonly List<Method> methods = new List<Method>();
 		private readonly Dictionary<int, int> remap = new Dictionary<int, int>();
@@ -148,7 +157,7 @@ namespace IKVM.Reflection.Emit.Impl
 				throw new NotImplementedException();
 			}
 
-			internal ISymUnmanagedDocumentWriter GetUnmanagedDocument(ISymUnmanagedWriter symUnmanagedWriter)
+			internal ISymUnmanagedDocumentWriter GetUnmanagedDocument(ISymUnmanagedWriter2 symUnmanagedWriter)
 			{
 				if (unmanagedDocument == null)
 				{
@@ -170,20 +179,22 @@ namespace IKVM.Reflection.Emit.Impl
 		private sealed class LocalVar
 		{
 			internal readonly System.Reflection.FieldAttributes attributes;
-			internal readonly byte[] signature;
+			internal readonly int signature;
 			internal readonly SymAddressKind addrKind;
 			internal readonly int addr1;
 			internal readonly int addr2;
+			internal readonly int addr3;
 			internal readonly int startOffset;
 			internal readonly int endOffset;
 
-			internal LocalVar(System.Reflection.FieldAttributes attributes, byte[] signature, SymAddressKind addrKind, int addr1, int addr2, int startOffset, int endOffset)
+			internal LocalVar(System.Reflection.FieldAttributes attributes, int signature, SymAddressKind addrKind, int addr1, int addr2, int addr3, int startOffset, int endOffset)
 			{
 				this.attributes = attributes;
 				this.signature = signature;
 				this.addrKind = addrKind;
 				this.addr1 = addr1;
 				this.addr2 = addr2;
+				this.addr3 = addr3;
 				this.startOffset = startOffset;
 				this.endOffset = endOffset;
 			}
@@ -201,12 +212,12 @@ namespace IKVM.Reflection.Emit.Impl
 				this.startOffset = startOffset;
 			}
 
-			internal void Do(ISymUnmanagedWriter symUnmanagedWriter)
+			internal void Do(ISymUnmanagedWriter2 symUnmanagedWriter)
 			{
 				symUnmanagedWriter.OpenScope(startOffset);
 				foreach (KeyValuePair<string, LocalVar> kv in locals)
 				{
-					symUnmanagedWriter.DefineLocalVariable(kv.Key, (int)kv.Value.attributes, kv.Value.signature.Length, kv.Value.signature, (int)kv.Value.addrKind, kv.Value.addr1, kv.Value.addr2, kv.Value.startOffset, kv.Value.endOffset);
+					symUnmanagedWriter.DefineLocalVariable2(kv.Key, (int)kv.Value.attributes, kv.Value.signature, (int)kv.Value.addrKind, kv.Value.addr1, kv.Value.addr2, kv.Value.addr3, kv.Value.startOffset, kv.Value.endOffset);
 				}
 				foreach (Scope scope in scopes)
 				{
@@ -286,9 +297,9 @@ namespace IKVM.Reflection.Emit.Impl
 			currentMethod.scopeStack.Pop().endOffset = endOffset;
 		}
 
-		public void DefineLocalVariable(string name, System.Reflection.FieldAttributes attributes, byte[] signature, SymAddressKind addrKind, int addr1, int addr2, int addr3, int startOffset, int endOffset)
+		public void DefineLocalVariable2(string name, System.Reflection.FieldAttributes attributes, int signature, SymAddressKind addrKind, int addr1, int addr2, int addr3, int startOffset, int endOffset)
 		{
-			currentMethod.scopeStack.Peek().locals[name] = new LocalVar(attributes, signature, addrKind, addr1, addr2, startOffset, endOffset);
+			currentMethod.scopeStack.Peek().locals[name] = new LocalVar(attributes, signature, addrKind, addr1, addr2, addr3, startOffset, endOffset);
 		}
 
 		private void InitWriter()
@@ -296,7 +307,7 @@ namespace IKVM.Reflection.Emit.Impl
 			if (symUnmanagedWriter == null)
 			{
 				IMetaDataDispenser disp = new IMetaDataDispenser();
-				symUnmanagedWriter = new ISymUnmanagedWriter();
+				symUnmanagedWriter = new ISymUnmanagedWriter2();
 				string fileName = System.IO.Path.ChangeExtension(moduleBuilder.FullyQualifiedName, ".pdb");
 				object emitter;
 				Guid CLSID_CorMetaDataRuntime = new Guid("005023ca-72b1-11d3-9fc4-00c04f79a0a3");
@@ -354,6 +365,11 @@ namespace IKVM.Reflection.Emit.Impl
 			documents.Clear();
 			methods.Clear();
 			remap.Clear();
+		}
+
+		public void DefineLocalVariable(string name, System.Reflection.FieldAttributes attributes, byte[] signature, SymAddressKind addrKind, int addr1, int addr2, int addr3, int startOffset, int endOffset)
+		{
+			throw new NotImplementedException();
 		}
 
 		public void CloseNamespace()
