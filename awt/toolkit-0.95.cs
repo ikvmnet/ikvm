@@ -373,6 +373,11 @@ namespace ikvm.awt
             throw new NotImplementedException();
         }
 
+        public override java.awt.peer.KeyboardFocusManagerPeer createKeyboardFocusManagerPeer(java.awt.KeyboardFocusManager manager)
+        {
+            return new NetKeyboardFocusManagerPeer(manager);
+        }
+
         public override java.awt.Dimension getScreenSize()
         {
             return new java.awt.Dimension(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
@@ -1024,6 +1029,18 @@ namespace ikvm.awt
             else
             {
                 return del();
+            }
+        }
+
+        internal void Invoke(MethodInvoker del)
+        {
+            if (NetToolkit.bogusForm.InvokeRequired)
+            {
+                NetToolkit.bogusForm.Invoke(del);
+            }
+            else
+            {
+                del();
             }
         }
 
@@ -1718,13 +1735,8 @@ namespace ikvm.awt
 
 		public void requestFocus()
 		{
-			control.Invoke(new SetVoid(requestFocusImpl), null);
-		}
-
-		private void requestFocusImpl()
-		{
-			control.Focus();
-		}
+            control.Invoke((MethodInvoker) delegate { control.Focus(); });
+        }
 
         /// <summary>
         /// 
@@ -1736,7 +1748,7 @@ namespace ikvm.awt
         /// <returns></returns>
         public bool requestFocus(java.awt.Component request, bool temporary, bool allowWindowFocus, long time)
 		{
-            if (!control.Enabled || !control.Visible)
+            if (!getEnabled() || !getVisible())
             {
                 return false;
             }
@@ -1852,24 +1864,19 @@ namespace ikvm.awt
             control.Invoke(new SetCursor(setCursorImpl), new object[] { cursor });
         }
 
-        private bool getEnabledImpl()
-        {
-            return control.Enabled;
-        }
-
         public bool getEnabled()
         {
-            return (bool)control.Invoke(new Func<bool>(getEnabledImpl));
-        }
-
-        private bool getFocusImpl()
-        {
-            return control.Focused;
+            return Invoke((Func<bool>)delegate { return control.Enabled; });
         }
 
         public bool getFocused()
         {
-            return (bool)control.Invoke(new Func<bool>(getFocusImpl));
+            return Invoke((Func<bool>)delegate { return control.Focused; });
+        }
+
+        public bool getVisible()
+        {
+            return Invoke((Func<bool>)delegate { return control.Visible; });
         }
 
         public void setEnabled(bool enabled)
@@ -2122,7 +2129,12 @@ namespace ikvm.awt
             //SNFH_FAILURE
             return false;
         }
-    }
+
+		internal static NetComponentPeer FromControl(Control control)
+		{
+			return (NetComponentPeer)control.Tag;
+		}
+	}
 
 	class NetButtonPeer : NetComponentPeer, ButtonPeer
 	{
@@ -2841,6 +2853,7 @@ namespace ikvm.awt
 		void Create(NetComponentPeer parent)
 		{
 			Form form = new UndecoratedForm();
+			form.Tag = this;
 			if (parent != null)
 			{
 				form.Owner = parent.control.FindForm();
@@ -3006,6 +3019,7 @@ namespace ikvm.awt
 		void Create(NetComponentPeer parent)
 		{
 			Form form = new MyForm();
+			form.Tag = this;
 			if (parent != null)
 			{
 				form.Owner = parent.control.FindForm();
@@ -3064,12 +3078,110 @@ namespace ikvm.awt
         void Create(NetComponentPeer parent)
         {
             Form form = new MyForm();
-            if (parent != null)
+			form.Tag = this;
+			if (parent != null)
             {
                 form.Owner = parent.control.FindForm();
             }
             NetToolkit.CreateNative(form);
             this.control = form;
+        }
+    }
+
+    sealed class NetKeyboardFocusManagerPeer : KeyboardFocusManagerPeer
+    {
+        private readonly java.awt.KeyboardFocusManager manager;
+        private static java.lang.reflect.Method m_removeLastFocusRequest;
+
+        public NetKeyboardFocusManagerPeer(java.awt.KeyboardFocusManager manager)
+        {
+            this.manager = manager;
+        }
+
+        public void clearGlobalFocusOwner(java.awt.Window activeWindow)
+        {
+        }
+
+        public java.awt.Component getCurrentFocusOwner()
+        {
+            return getNativeFocusOwner();
+        }
+
+        public void setCurrentFocusOwner(java.awt.Component component)
+        {
+        }
+
+        public java.awt.Window getCurrentFocusedWindow()
+        {
+            return getNativeFocusedWindow();
+        }
+
+		private static java.awt.Component getNativeFocusOwner()
+		{
+			return (java.awt.Component)NetToolkit.bogusForm.Invoke((Func<java.awt.Component>)delegate
+			{
+				UndecoratedForm form = Form.ActiveForm as UndecoratedForm;
+				if (form != null)
+				{
+					Control control = form.ActiveControl;
+					while (control is ContainerControl)
+					{
+						control = ((ContainerControl)control).ActiveControl;
+					}
+					NetComponentPeer peer;
+					if (control == null)
+					{
+						peer = NetComponentPeer.FromControl(form);
+					}
+					else
+					{
+						while ((peer = NetComponentPeer.FromControl(form)) == null)
+						{
+							control = control.Parent;
+						}
+					}
+					return peer.target;
+				}
+				return null;
+			});
+		}
+
+		private static java.awt.Window getNativeFocusedWindow()
+        {
+            return (java.awt.Window)NetToolkit.bogusForm.Invoke((Func<java.awt.Window>)delegate
+            {
+				Form form = Form.ActiveForm;
+                if (form != null)
+                {
+					NetComponentPeer peer = NetComponentPeer.FromControl(form);
+					if (peer != null)
+					{
+						return (java.awt.Window)peer.target;
+					}
+                }
+                return null;
+            });
+        }
+
+		public static void removeLastFocusRequest(java.awt.Component heavyweight)
+        {
+            try
+            {
+                if (m_removeLastFocusRequest == null)
+                {
+                    m_removeLastFocusRequest = SunToolkit.getMethod(typeof(java.awt.KeyboardFocusManager), "removeLastFocusRequest",
+                                                                  new java.lang.Class[] { typeof(java.awt.Component) });
+                }
+                m_removeLastFocusRequest.invoke(null, new Object[] { heavyweight });
+            }
+            catch (java.lang.reflect.InvocationTargetException ite)
+            {
+                ite.printStackTrace();
+            }
+            catch (java.lang.IllegalAccessException ex)
+            {
+                ex.printStackTrace();
+            }
         }
     }
 
