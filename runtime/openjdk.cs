@@ -3468,7 +3468,11 @@ namespace IKVM.NativeCode.java
 					{
 						continue;
 					}
-					stack.Add((jlClass)ClassLoaderWrapper.GetWrapperFromType(type).ClassObject);
+					TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(type);
+					if (tw != null)
+					{
+						stack.Add((jlClass)tw.ClassObject);
+					}
 				}
 				return stack.ToArray();
 #endif
@@ -5632,7 +5636,12 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 				if (--realFramesToSkip == 0)
 				{
-					return ClassLoaderWrapper.GetWrapperFromType(type).ClassObject;
+					TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(type);
+					if (tw != null)
+					{
+						return tw.ClassObject;
+					}
+					return null;
 				}
 			}
 #endif
