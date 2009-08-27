@@ -353,10 +353,6 @@ namespace IKVM.NativeCode.ikvm.runtime
 			{
 				return DotNetTypeWrapper.GetWrapperFromDotNetType(t).ClassObject;
 			}
-			if(t.ContainsGenericParameters)
-			{
-				return null;
-			}
 			TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(t);
 			if(tw != null)
 			{
@@ -367,10 +363,6 @@ namespace IKVM.NativeCode.ikvm.runtime
 
 		public static object getFriendlyClassFromType(Type type)
 		{
-			if(type.ContainsGenericParameters)
-			{
-				return null;
-			}
 			int rank = 0;
 			while(type.IsArray)
 			{

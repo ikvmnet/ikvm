@@ -897,7 +897,6 @@ namespace IKVM.Internal
 		{
 			//Tracer.Info(Tracer.Runtime, "GetWrapperFromType: {0}", type.AssemblyQualifiedName);
 			TypeWrapper.AssertFinished(type);
-			Debug.Assert(!type.ContainsGenericParameters);
 			Debug.Assert(!type.IsPointer);
 			Debug.Assert(!type.IsByRef);
 			TypeWrapper wrapper;
@@ -1676,7 +1675,7 @@ namespace IKVM.Internal
 							// check the name to make sure that the canonical name was used
 							if (DotNetTypeWrapper.GetName(type) == name)
 							{
-								return new DotNetTypeWrapper(type, name);
+								return DotNetTypeWrapper.Create(type, name);
 							}
 						}
 					}
@@ -1764,7 +1763,7 @@ namespace IKVM.Internal
 					// since this type was not compiled from Java source, we don't need to
 					// look for our attributes, but we do need to filter unrepresentable
 					// stuff (and transform some other stuff)
-					return new DotNetTypeWrapper(type, name);
+					return DotNetTypeWrapper.Create(type, name);
 				}
 			}
 

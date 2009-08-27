@@ -2212,6 +2212,12 @@ namespace IKVM.NativeCode.java
 					{
 						throw x.ToJava();
 					}
+					catch (NotSupportedException x)
+					{
+						// This happens when you try to create an array from TypedReference, ArgIterator, ByRef,
+						// RuntimeArgumentHandle or an open generic type.
+						throw new jlIllegalArgumentException(x.Message);
+					}
 				}
 
 				public static object multiNewArray(object componentType, int[] dimensions)
@@ -2242,6 +2248,12 @@ namespace IKVM.NativeCode.java
 					catch (RetargetableJavaException x)
 					{
 						throw x.ToJava();
+					}
+					catch (NotSupportedException x)
+					{
+						// This happens when you try to create an array from TypedReference, ArgIterator, ByRef,
+						// RuntimeArgumentHandle or an open generic type.
+						throw new jlIllegalArgumentException(x.Message);
 					}
 				}
 #endif // FIRST_PASS

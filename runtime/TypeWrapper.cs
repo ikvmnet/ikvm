@@ -2255,6 +2255,7 @@ namespace IKVM.Internal
 				|| type == typeof(ArgIterator)
 				|| type == typeof(RuntimeArgumentHandle)
 				|| type == typeof(TypedReference)
+				|| type.ContainsGenericParameters
 				|| type.IsByRef;
 		}
 
@@ -10381,12 +10382,7 @@ namespace IKVM.Internal
 				return null;
 			}
 
-			if(type.ContainsGenericParameters)
-			{
-				// open generic types are not visible
-				return null;
-			}
-			if(type.IsGenericType)
+			if(type.IsGenericType && !type.ContainsGenericParameters)
 			{
 				System.Text.StringBuilder sb = new System.Text.StringBuilder();
 				sb.Append(MangleTypeName(type.GetGenericTypeDefinition().FullName));
@@ -10551,11 +10547,91 @@ namespace IKVM.Internal
 				return false;
 			}
 #endif
-			if(type.ContainsGenericParameters)
-			{
-				return false;
-			}
 			return true;
+		}
+
+		// We allow open generic types to be visible to Java code as very limited classes (or interfaces).
+		// They are always package private and have the abstract and final modifiers set, this makes them
+		// inaccessible and invalid from a Java point of view. The intent is to avoid any usage of these
+		// classes. They exist solely for the purpose of stack walking, because the .NET runtime will report
+		// open generic types when walking the stack (as a performance optimization). We cannot (reliably) map
+		// these classes to their instantiations, so we report the open generic type class instead.
+		// Note also that these classes can only be used as a "handle" to the type, they expose no members,
+		// don't implement any interfaces and the base class is always object.
+		private sealed class OpenGenericTypeWrapper : TypeWrapper
+		{
+			private readonly Type type;
+
+			private static Modifiers GetModifiers(Type type)
+			{
+				Modifiers modifiers = Modifiers.Abstract | Modifiers.Final;
+				if (type.IsInterface)
+				{
+					modifiers |= Modifiers.Interface;
+				}
+				return modifiers;
+			}
+
+			internal OpenGenericTypeWrapper(Type type, string name)
+				: base(GetModifiers(type), name, type.IsInterface ? null : CoreClasses.java.lang.Object.Wrapper)
+			{
+				this.type = type;
+			}
+
+			internal override TypeWrapper DeclaringTypeWrapper
+			{
+				get { return null; }
+			}
+
+			internal override TypeWrapper[] InnerClasses
+			{
+				get { return TypeWrapper.EmptyArray; }
+			}
+
+			internal override TypeWrapper[] Interfaces
+			{
+				get { return TypeWrapper.EmptyArray; }
+			}
+
+			internal override Type TypeAsTBD
+			{
+				get { return type; }
+			}
+
+			internal override string[] GetEnclosingMethod()
+			{
+				return null;
+			}
+
+			internal override string GetGenericFieldSignature(FieldWrapper fw)
+			{
+				return null;
+			}
+
+			internal override string GetGenericMethodSignature(MethodWrapper mw)
+			{
+				return null;
+			}
+
+			internal override string GetGenericSignature()
+			{
+				return null;
+			}
+
+			internal override void Finish()
+			{
+			}
+
+			internal override ClassLoaderWrapper GetClassLoader()
+			{
+				return ClassLoaderWrapper.GetAssemblyClassLoader(type.Assembly);
+			}
+
+			protected override void LazyPublishMembers()
+			{
+				SetFields(FieldWrapper.EmptyArray);
+				SetMethods(MethodWrapper.EmptyArray);
+			}
 		}
 
 		private sealed class DelegateInnerClassTypeWrapper : TypeWrapper
@@ -11846,7 +11922,19 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal DotNetTypeWrapper(Type type, string name)
+		internal static TypeWrapper Create(Type type, string name)
+		{
+			if (type.ContainsGenericParameters)
+			{
+				return new OpenGenericTypeWrapper(type, name);
+			}
+			else
+			{
+				return new DotNetTypeWrapper(type, name);
+			}
+		}
+
+		private DotNetTypeWrapper(Type type, string name)
 			: base(GetModifiers(type), name, GetBaseTypeWrapper(type))
 		{
 			Debug.Assert(!(type.IsByRef), type.FullName);
