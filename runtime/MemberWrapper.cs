@@ -26,7 +26,7 @@ using System.Collections.Generic;
 using System.Reflection;
 #if IKVM_REF_EMIT
 using IKVM.Reflection.Emit;
-#elif !COMPACT_FRAMEWORK
+#else
 using System.Reflection.Emit;
 #endif
 using System.Diagnostics;
@@ -330,7 +330,6 @@ namespace IKVM.Internal
 		private TypeWrapper returnTypeWrapper;
 		private TypeWrapper[] parameterTypeWrappers;
 
-#if !COMPACT_FRAMEWORK
 		internal virtual void EmitCall(CodeEmitter ilgen)
 		{
 			throw new InvalidOperationException();
@@ -355,7 +354,7 @@ namespace IKVM.Internal
 		{
 			throw new InvalidOperationException();
 		}
-#endif
+
 		internal virtual bool IsDynamicOnly
 		{
 			get
@@ -387,13 +386,11 @@ namespace IKVM.Internal
 				}
 			}
 
-#if !COMPACT_FRAMEWORK
 			protected override void CallvirtImpl(CodeEmitter ilgen)
 			{
 				ResolveGhostMethod();
 				ilgen.Emit(OpCodes.Call, ghostMethod);
 			}
-#endif
 		}
 
 		internal static MethodWrapper Create(TypeWrapper declaringType, string name, string sig, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
@@ -681,11 +678,7 @@ namespace IKVM.Internal
 			// NOTE if method is a MethodBuilder, GetCustomAttributes doesn't work (and if
 			// the method had any declared exceptions, the declaredExceptions field would have
 			// been set)
-#if COMPACT_FRAMEWORK
-			if(method != null)
-#else
 			if(method != null && !(method is MethodBuilder))
-#endif
 			{
 				ThrowsAttribute attr = AttributeHelper.GetThrows(method);
 				if(attr != null)
@@ -892,7 +885,6 @@ namespace IKVM.Internal
 #if !STATIC_COMPILER && !FIRST_PASS
 		internal void ResolveMethod()
 		{
-#if !COMPACT_FRAMEWORK
 			// if we've still got the builder object, we need to replace it with the real thing before we can call it
 			if(method is MethodBuilder)
 			{
@@ -902,7 +894,6 @@ namespace IKVM.Internal
 			{
 				method = method.Module.ResolveMethod(((ConstructorBuilder)method).GetToken().Token);
 			}
-#endif // !COMPACT_FRAMEWORK
 		}
 
 		[HideFromJava]
@@ -978,7 +969,6 @@ namespace IKVM.Internal
 		}
 #endif // !STATIC_COMPILER && !FIRST_PASS
 
-#if !COMPACT_FRAMEWORK
 		internal static OpCode SimpleOpCodeToOpCode(SimpleOpCode opc)
 		{
 			switch(opc)
@@ -993,7 +983,6 @@ namespace IKVM.Internal
 					throw new InvalidOperationException();
 			}
 		}
-#endif
 	}
 
 	// placeholder for <clinit> method that exist in ClassFile but not in TypeWrapper
@@ -1019,7 +1008,6 @@ namespace IKVM.Internal
 		{
 		}
 
-#if !COMPACT_FRAMEWORK
 		protected virtual void PreEmit(CodeEmitter ilgen)
 		{
 		}
@@ -1072,7 +1060,6 @@ namespace IKVM.Internal
 		{
 			throw new InvalidOperationException();
 		}
-#endif
 	}
 
 	enum SimpleOpCode : byte
@@ -1094,7 +1081,6 @@ namespace IKVM.Internal
 			this.callvirt = callvirt;
 		}
 
-#if !COMPACT_FRAMEWORK
 		internal override void EmitCall(CodeEmitter ilgen)
 		{
 			ilgen.Emit(SimpleOpCodeToOpCode(call), (MethodInfo)GetMethod());
@@ -1104,7 +1090,6 @@ namespace IKVM.Internal
 		{
 			ilgen.Emit(SimpleOpCodeToOpCode(callvirt), (MethodInfo)GetMethod());
 		}
-#endif
 	}
 
 	sealed class SmartCallMethodWrapper : SmartMethodWrapper
@@ -1119,7 +1104,6 @@ namespace IKVM.Internal
 			this.callvirt = callvirt;
 		}
 
-#if !COMPACT_FRAMEWORK
 		protected override void CallImpl(CodeEmitter ilgen)
 		{
 			ilgen.Emit(SimpleOpCodeToOpCode(call), (MethodInfo)GetMethod());
@@ -1129,7 +1113,6 @@ namespace IKVM.Internal
 		{
 			ilgen.Emit(SimpleOpCodeToOpCode(callvirt), (MethodInfo)GetMethod());
 		}
-#endif
 	}
 
 	sealed class SmartConstructorMethodWrapper : SmartMethodWrapper
@@ -1139,7 +1122,6 @@ namespace IKVM.Internal
 		{
 		}
 
-#if !COMPACT_FRAMEWORK
 		protected override void CallImpl(CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Call, (ConstructorInfo)GetMethod());
@@ -1149,7 +1131,6 @@ namespace IKVM.Internal
 		{
 			ilgen.Emit(OpCodes.Newobj, (ConstructorInfo)GetMethod());
 		}
-#endif
 	}
 
 	abstract class FieldWrapper : MemberWrapper
@@ -1304,7 +1285,6 @@ namespace IKVM.Internal
 			}
 		}
 
-#if !COMPACT_FRAMEWORK
 		internal void EmitGet(CodeEmitter ilgen)
 		{
 			AssertLinked();
@@ -1320,7 +1300,6 @@ namespace IKVM.Internal
 		}
 
 		protected abstract void EmitSetImpl(CodeEmitter ilgen);
-#endif
 
 		internal void Link()
 		{
@@ -1404,7 +1383,6 @@ namespace IKVM.Internal
 			Debug.Assert(!(fieldType == PrimitiveTypeWrapper.DOUBLE || fieldType == PrimitiveTypeWrapper.LONG) || !IsVolatile);
 		}
 
-#if !COMPACT_FRAMEWORK
 		protected override void EmitGetImpl(CodeEmitter ilgen)
 		{
 			if(!IsStatic && DeclaringType.IsNonPrimitiveValueType)
@@ -1434,7 +1412,6 @@ namespace IKVM.Internal
 			}
 			ilgen.Emit(IsStatic ? OpCodes.Stsfld : OpCodes.Stfld, fi);
 		}
-#endif
 	}
 
 	sealed class VolatileLongDoubleFieldWrapper : FieldWrapper
@@ -1446,7 +1423,6 @@ namespace IKVM.Internal
 			Debug.Assert(sig == "J" || sig == "D");
 		}
 
-#if !COMPACT_FRAMEWORK
 		protected override void EmitGetImpl(CodeEmitter ilgen)
 		{
 			FieldInfo fi = GetField();
@@ -1501,7 +1477,6 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.volatileWriteLong);
 			}
 		}
-#endif
 	}
 
 	sealed class GetterFieldWrapper : FieldWrapper
@@ -1534,7 +1509,6 @@ namespace IKVM.Internal
 			return prop;
 		}
 
-#if !COMPACT_FRAMEWORK
 		protected override void EmitGetImpl(CodeEmitter ilgen)
 		{
 			if(!IsStatic && DeclaringType.IsNonPrimitiveValueType)
@@ -1573,7 +1547,6 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Call, prop.GetSetMethod(true));
 			}
 		}
-#endif
 	}
 
 	// this class represents a .NET property defined in Java with the ikvm.lang.Property annotation
@@ -1796,7 +1769,6 @@ namespace IKVM.Internal
 			this.constant = constant;
 		}
 
-#if !COMPACT_FRAMEWORK
 		protected override void EmitGetImpl(CodeEmitter ilgen)
 		{
 			// Reading a field should trigger the cctor, but since we're inlining the value
@@ -1869,7 +1841,7 @@ namespace IKVM.Internal
 			// constant value is inlined), so we emulate that behavior by emitting a Pop
 			ilgen.LazyEmitPop();
 		}
-#endif
+
 		internal object GetConstantValue()
 		{
 			if(constant == null)
@@ -1894,7 +1866,6 @@ namespace IKVM.Internal
 		}
 	}
 
-#if !COMPACT_FRAMEWORK
 	// This type is used during AOT compilation only!
 	sealed class AotAccessStubFieldWrapper : FieldWrapper
 	{
@@ -1979,7 +1950,6 @@ namespace IKVM.Internal
 			ilgen.Emit(OpCodes.Call, setter);
 		}
 	}
-#endif
 
 	sealed class CompiledAccessStubFieldWrapper : FieldWrapper
 	{
@@ -2009,7 +1979,6 @@ namespace IKVM.Internal
 			this.setter = property.GetSetMethod(true);
 		}
 
-#if !COMPACT_FRAMEWORK
 		protected override void EmitGetImpl(CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Call, getter);
@@ -2019,6 +1988,5 @@ namespace IKVM.Internal
 		{
 			ilgen.Emit(OpCodes.Call, setter);
 		}
-#endif
 	}
 }

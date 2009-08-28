@@ -21,7 +21,6 @@
   jeroen@frijters.net
   
 */
-#if !COMPACT_FRAMEWORK
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -120,22 +119,3 @@ class Profiler
 		}
 	}
 }
-#else
-class Profiler
-{
-	[System.Diagnostics.Conditional("PROFILE")]
-	internal static void Enter(string name)
-	{
-	}
-
-	[System.Diagnostics.Conditional("PROFILE")]
-	internal static void Leave(string name)
-	{
-	}
-
-	[System.Diagnostics.Conditional("PROFILE")]
-	internal static void Count(string name)
-	{
-	}
-}
-#endif

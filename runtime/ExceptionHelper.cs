@@ -42,14 +42,7 @@ namespace IKVM.NativeCode.java.lang
 
 		public static string SafeGetEnvironmentVariable(string name)
 		{
-			try
-			{
-				return JVM.SafeGetEnvironmentVariable(name);
-			}
-			catch(MissingMethodException)
-			{
-				return null;
-			}
+			return JVM.SafeGetEnvironmentVariable(name);
 		}
 
 		public static bool IsNative(MethodBase m)
@@ -131,7 +124,6 @@ namespace IKVM.NativeCode.java.lang
 #endif
 		}
 
-#if !COMPACT_FRAMEWORK
 		public static int GetLineNumber(StackFrame frame)
 		{
 			int ilOffset = frame.GetILOffset();
@@ -163,7 +155,6 @@ namespace IKVM.NativeCode.java.lang
 			}
 			return null;
 		}
-#endif
 
 		public static Type getTypeFromObject(object o)
 		{

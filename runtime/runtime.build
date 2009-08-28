@@ -37,7 +37,6 @@
     </target>
 
     <target name="IKVM.Runtime">
-        <property overwrite="false" name="cfnet" value="false" />
         <property overwrite="false" name="first-pass" value="false" />
         <property name="defs" value="TRACE" />
         <if test="${property::exists('signed')}">

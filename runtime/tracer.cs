@@ -32,7 +32,6 @@ namespace IKVM.Internal
 {
 	public static class Tracer
 	{
-#if !COMPACT_FRAMEWORK
 		public readonly static TraceSwitch Compiler = new TraceSwitch("compiler", "Static Compiler");
 		public readonly static TraceSwitch FxBug = new TraceSwitch("fxbug", ".NET Framework bug related events");
 		public readonly static TraceSwitch ClassLoading = new TraceSwitch("classloading", "Class loading");
@@ -217,28 +216,5 @@ namespace IKVM.Internal
 				WriteLine(message, p);
 			}
 		}
-#else
-		public const int Compiler = 0;
-		public const int FxBug = 0;
-		public const int ClassLoading = 0;
-		public const int Verifier = 0;
-		public const int Runtime = 0;
-		public const int Jni = 0;
-
-		[Conditional("NEVER")]
-		public static void Info(int traceSwitch, string message, params object[] p)
-		{
-		}
-
-		[Conditional("NEVER")]
-		public static void Error(int traceSwitch, string message, params object[] p)
-		{
-		}
-
-		[Conditional("NEVER")]
-		public static void Warning(int traceSwitch, string message, params object[] p)
-		{
-		}
-#endif
 	}
 }

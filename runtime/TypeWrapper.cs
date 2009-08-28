@@ -26,7 +26,7 @@ using System.Collections.Generic;
 using System.Reflection;
 #if IKVM_REF_EMIT
 using IKVM.Reflection.Emit;
-#elif !COMPACT_FRAMEWORK
+#else
 using System.Reflection.Emit;
 #endif
 using System.Diagnostics;
@@ -48,7 +48,6 @@ namespace IKVM.Internal
 		}
 	}
 
-#if !COMPACT_FRAMEWORK
 	static class EmitHelper
 	{
 		private static MethodInfo objectToString = typeof(object).GetMethod("ToString", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
@@ -133,11 +132,9 @@ namespace IKVM.Internal
 			ilgen.Emit(OpCodes.Call, get_Value);
 		}
 	}
-#endif
 
 	static class AttributeHelper
 	{
-#if !COMPACT_FRAMEWORK
 		private static CustomAttributeBuilder hideFromJavaAttribute;
 #if STATIC_COMPILER
 		private static CustomAttributeBuilder ghostInterfaceAttribute;
@@ -157,7 +154,6 @@ namespace IKVM.Internal
 		private static Type typeofSourceFileAttribute = JVM.LoadType(typeof(SourceFileAttribute));
 		private static Type typeofLineNumberTableAttribute = JVM.LoadType(typeof(LineNumberTableAttribute));
 #endif // STATIC_COMPILER
-#endif // !COMPACT_FRAMEWORK
 		private static Type typeofRemappedClassAttribute = JVM.LoadType(typeof(RemappedClassAttribute));
 		private static Type typeofRemappedTypeAttribute = JVM.LoadType(typeof(RemappedTypeAttribute));
 		private static Type typeofModifiersAttribute = JVM.LoadType(typeof(ModifiersAttribute));
@@ -179,7 +175,7 @@ namespace IKVM.Internal
 		private static Type typeofNonNestedOuterClassAttribute = JVM.LoadType(typeof(NonNestedOuterClassAttribute));
 		private static Type typeofEnclosingMethodAttribute = JVM.LoadType(typeof(EnclosingMethodAttribute));
 
-#if STATIC_COMPILER && !COMPACT_FRAMEWORK
+#if STATIC_COMPILER
 		private static object ParseValue(ClassLoaderWrapper loader, TypeWrapper tw, string val)
 		{
 			if(tw == CoreClasses.java.lang.String.Wrapper)
@@ -488,7 +484,6 @@ namespace IKVM.Internal
 		}
 #endif
 
-#if !COMPACT_FRAMEWORK
 #if STATIC_COMPILER
 		internal static void SetEditorBrowsableNever(TypeBuilder tb)
 		{
@@ -636,7 +631,6 @@ namespace IKVM.Internal
 			CustomAttributeBuilder cab = new CustomAttributeBuilder(typeofHideFromReflectionAttribute.GetConstructor(Type.EmptyTypes), new object[0]);
 			pb.SetCustomAttribute(cab);
 		}
-#endif // !COMPACT_FRAMEWORK
 
 		internal static bool IsHideFromReflection(MethodInfo mi)
 		{
@@ -653,7 +647,6 @@ namespace IKVM.Internal
 			return IsDefined(pi, typeofHideFromReflectionAttribute);
 		}
 
-#if !COMPACT_FRAMEWORK
 		internal static void HideFromJava(TypeBuilder typeBuilder)
 		{
 			if(hideFromJavaAttribute == null)
@@ -700,7 +693,6 @@ namespace IKVM.Internal
 			pb.SetCustomAttribute(hideFromJavaAttribute);
 		}
 #endif // STATIC_COMPILER
-#endif // !COMPACT_FRAMEWORK
 
 		internal static bool IsHideFromJava(Type type)
 		{
@@ -724,7 +716,7 @@ namespace IKVM.Internal
 			return IsDefined(mi, typeofHideFromJavaAttribute);
 		}
 
-#if STATIC_COMPILER && !COMPACT_FRAMEWORK
+#if STATIC_COMPILER
 		internal static void SetImplementsAttribute(TypeBuilder typeBuilder, TypeWrapper[] ifaceWrappers)
 		{
 			if(ifaceWrappers != null && ifaceWrappers.Length != 0)
@@ -758,7 +750,6 @@ namespace IKVM.Internal
 			return IsDefined(type, typeofExceptionIsUnsafeForMappingAttribute);
 		}
 
-#if !COMPACT_FRAMEWORK
 		// this method compares t1 and t2 by name
 		// if the type name and assembly name (ignoring the version and strong name) match
 		// the type are considered the same
@@ -767,7 +758,6 @@ namespace IKVM.Internal
 			return t1.FullName == t2.FullName
 				&& t1.Assembly.GetName().Name == t2.Assembly.GetName().Name;
 		}
-#endif
 
 		internal static object GetConstantValue(FieldInfo field)
 		{
@@ -786,7 +776,6 @@ namespace IKVM.Internal
 			else
 #endif
 			{
-#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(field))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofConstantValueAttribute))
@@ -794,7 +783,6 @@ namespace IKVM.Internal
 						return cad.ConstructorArguments[0].Value;
 					}
 				}
-#endif
 				return null;
 			}
 		}
@@ -810,7 +798,6 @@ namespace IKVM.Internal
 			else
 #endif
 			{
-#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofModifiersAttribute))
@@ -823,7 +810,6 @@ namespace IKVM.Internal
 						return new ModifiersAttribute((Modifiers)args[0].Value);
 					}
 				}
-#endif
 				return null;
 			}
 		}
@@ -839,7 +825,6 @@ namespace IKVM.Internal
 			else
 #endif
 			{
-#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(property))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofModifiersAttribute))
@@ -852,7 +837,6 @@ namespace IKVM.Internal
 						return new ModifiersAttribute((Modifiers)args[0].Value);
 					}
 				}
-#endif
 				return null;
 			}
 		}
@@ -872,7 +856,6 @@ namespace IKVM.Internal
 			else
 #endif
 			{
-#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mb))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofModifiersAttribute))
@@ -885,7 +868,6 @@ namespace IKVM.Internal
 						return new ExModifiers((Modifiers)args[0].Value, false);
 					}
 				}
-#endif
 			}
 			Modifiers modifiers = 0;
 			if(mb.IsPublic)
@@ -955,7 +937,6 @@ namespace IKVM.Internal
 			else
 #endif
 			{
-#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(fi))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofModifiersAttribute))
@@ -968,7 +949,6 @@ namespace IKVM.Internal
 						return new ExModifiers((Modifiers)args[0].Value, false);
 					}
 				}
-#endif
 			}
 			Modifiers modifiers = 0;
 			if(fi.IsPublic)
@@ -1006,7 +986,7 @@ namespace IKVM.Internal
 			return new ExModifiers(modifiers, false);
 		}
 
-#if STATIC_COMPILER && !COMPACT_FRAMEWORK
+#if STATIC_COMPILER
 		internal static void SetModifiers(MethodBuilder mb, Modifiers modifiers, bool isInternal)
 		{
 			CustomAttributeBuilder customAttributeBuilder;
@@ -1217,7 +1197,7 @@ namespace IKVM.Internal
 			}
 			pb.SetCustomAttribute(paramArrayAttribute);
 		}
-#endif  // STATIC_COMPILER && !COMPACT_FRAMEWORK
+#endif  // STATIC_COMPILER
 
 		internal static NameSigAttribute GetNameSig(FieldInfo field)
 		{
@@ -1230,7 +1210,6 @@ namespace IKVM.Internal
 			else
 #endif
 			{
-#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(field))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofNameSigAttribute))
@@ -1239,7 +1218,6 @@ namespace IKVM.Internal
 						return new NameSigAttribute((string)args[0].Value, (string)args[1].Value);
 					}
 				}
-#endif
 				return null;
 			}
 		}
@@ -1255,7 +1233,6 @@ namespace IKVM.Internal
 			else
 #endif
 			{
-#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(method))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofNameSigAttribute))
@@ -1264,12 +1241,10 @@ namespace IKVM.Internal
 						return new NameSigAttribute((string)args[0].Value, (string)args[1].Value);
 					}
 				}
-#endif
 				return null;
 			}
 		}
 
-#if !COMPACT_FRAMEWORK
 		internal static T[] DecodeArray<T>(CustomAttributeTypedArgument arg)
 		{
 			IList<CustomAttributeTypedArgument> elems = (IList<CustomAttributeTypedArgument>)arg.Value;
@@ -1280,7 +1255,6 @@ namespace IKVM.Internal
 			}
 			return arr;
 		}
-#endif
 
 		internal static ImplementsAttribute GetImplements(Type type)
 		{
@@ -1293,7 +1267,6 @@ namespace IKVM.Internal
 			else
 #endif
 			{
-#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofImplementsAttribute))
@@ -1302,7 +1275,6 @@ namespace IKVM.Internal
 						return new ImplementsAttribute(DecodeArray<string>(args[0]));
 					}
 				}
-#endif
 				return null;
 			}
 		}
@@ -1318,7 +1290,6 @@ namespace IKVM.Internal
 			else
 #endif
 			{
-#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mb))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofThrowsAttribute))
@@ -1327,7 +1298,6 @@ namespace IKVM.Internal
 						return new ThrowsAttribute(DecodeArray<string>(args[0]));
 					}
 				}
-#endif
 				return null;
 			}
 		}
@@ -1349,7 +1319,6 @@ namespace IKVM.Internal
 #endif
 			{
 				List<string> list = new List<string>();
-#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(t))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofNonNestedInnerClassAttribute))
@@ -1358,7 +1327,6 @@ namespace IKVM.Internal
 						list.Add((string)args[0].Value);
 					}
 				}
-#endif
 				return list.ToArray();
 			}
 		}
@@ -1374,7 +1342,6 @@ namespace IKVM.Internal
 			else
 #endif
 			{
-#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(t))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofNonNestedOuterClassAttribute))
@@ -1383,7 +1350,6 @@ namespace IKVM.Internal
 						return (string)args[0].Value;
 					}
 				}
-#endif
 				return null;
 			}
 		}
@@ -1399,7 +1365,6 @@ namespace IKVM.Internal
 			else
 #endif
 			{
-#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mb))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofSignatureAttribute))
@@ -1408,7 +1373,6 @@ namespace IKVM.Internal
 						return new SignatureAttribute((string)args[0].Value);
 					}
 				}
-#endif
 				return null;
 			}
 		}
@@ -1424,7 +1388,6 @@ namespace IKVM.Internal
 			else
 #endif
 			{
-#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofSignatureAttribute))
@@ -1433,7 +1396,6 @@ namespace IKVM.Internal
 						return new SignatureAttribute((string)args[0].Value);
 					}
 				}
-#endif
 				return null;
 			}
 		}
@@ -1449,7 +1411,6 @@ namespace IKVM.Internal
 			else
 #endif
 			{
-#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(fi))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofSignatureAttribute))
@@ -1458,7 +1419,6 @@ namespace IKVM.Internal
 						return new SignatureAttribute((string)args[0].Value);
 					}
 				}
-#endif
 				return null;
 			}
 		}
@@ -1474,7 +1434,6 @@ namespace IKVM.Internal
 			else
 #endif
 			{
-#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofInnerClassAttribute))
@@ -1483,7 +1442,6 @@ namespace IKVM.Internal
 						return new InnerClassAttribute((string)args[0].Value, (Modifiers)args[1].Value);
 					}
 				}
-#endif
 				return null;
 			}
 		}
@@ -1502,7 +1460,6 @@ namespace IKVM.Internal
 #endif
 			{
 				List<RemappedInterfaceMethodAttribute> attrs = new List<RemappedInterfaceMethodAttribute>();
-#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofRemappedInterfaceMethodAttribute))
@@ -1511,7 +1468,6 @@ namespace IKVM.Internal
 						attrs.Add(new RemappedInterfaceMethodAttribute((string)args[0].Value, (string)args[1].Value));
 					}
 				}
-#endif
 				return attrs.ToArray();
 			}
 		}
@@ -1527,7 +1483,6 @@ namespace IKVM.Internal
 			else
 #endif
 			{
-#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofRemappedTypeAttribute))
@@ -1536,7 +1491,6 @@ namespace IKVM.Internal
 						return new RemappedTypeAttribute((Type)args[0].Value);
 					}
 				}
-#endif
 				return null;
 			}
 		}
@@ -1555,7 +1509,6 @@ namespace IKVM.Internal
 #endif
 			{
 				List<RemappedClassAttribute> attrs = new List<RemappedClassAttribute>();
-#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(coreAssembly))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofRemappedClassAttribute))
@@ -1564,7 +1517,6 @@ namespace IKVM.Internal
 						attrs.Add(new RemappedClassAttribute((string)args[0].Value, (Type)args[1].Value));
 					}
 				}
-#endif
 				return attrs.ToArray();
 			}
 		}
@@ -1584,7 +1536,6 @@ namespace IKVM.Internal
 			else
 #endif
 			{
-#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofAnnotationAttributeAttribute))
@@ -1592,7 +1543,6 @@ namespace IKVM.Internal
 						return (string)cad.ConstructorArguments[0].Value;
 					}
 				}
-#endif
 				return null;
 			}
 		}
@@ -1627,7 +1577,6 @@ namespace IKVM.Internal
 			else
 #endif
 			{
-#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mod))
 				{
 					// NOTE we don't support subtyping relations!
@@ -1636,7 +1585,6 @@ namespace IKVM.Internal
 						return true;
 					}
 				}
-#endif
 				return false;
 			}
 		}
@@ -1651,7 +1599,6 @@ namespace IKVM.Internal
 			else
 #endif
 			{
-#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(asm))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, attribute))
@@ -1659,7 +1606,6 @@ namespace IKVM.Internal
 						return true;
 					}
 				}
-#endif
 				return false;
 			}
 		}
@@ -1674,7 +1620,6 @@ namespace IKVM.Internal
 			else
 #endif
 			{
-#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
 					// NOTE we don't support subtyping relations!
@@ -1683,7 +1628,6 @@ namespace IKVM.Internal
 						return true;
 					}
 				}
-#endif
 				return false;
 			}
 		}
@@ -1698,7 +1642,6 @@ namespace IKVM.Internal
 			else
 #endif
 			{
-#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(pi))
 				{
 					// NOTE we don't support subtyping relations!
@@ -1707,7 +1650,6 @@ namespace IKVM.Internal
 						return true;
 					}
 				}
-#endif
 				return false;
 			}
 		}
@@ -1722,7 +1664,6 @@ namespace IKVM.Internal
 			else
 #endif
 			{
-#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(member))
 				{
 					// NOTE we don't support subtyping relations!
@@ -1731,7 +1672,6 @@ namespace IKVM.Internal
 						return true;
 					}
 				}
-#endif
 				return false;
 			}
 		}
@@ -1752,7 +1692,6 @@ namespace IKVM.Internal
 #endif
 			{
 				List<JavaModuleAttribute> attrs = new List<JavaModuleAttribute>();
-#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mod))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofJavaModuleAttribute))
@@ -1768,7 +1707,6 @@ namespace IKVM.Internal
 						}
 					}
 				}
-#endif
 				return attrs.ToArray();
 			}
 		}
@@ -1801,7 +1739,7 @@ namespace IKVM.Internal
 			return null;
 		}
 
-#if STATIC_COMPILER && !COMPACT_FRAMEWORK
+#if STATIC_COMPILER
 		internal static void SetRemappedClass(AssemblyBuilder assemblyBuilder, string name, Type shadowType)
 		{
 			ConstructorInfo remappedClassAttribute = typeofRemappedClassAttribute.GetConstructor(new Type[] { typeof(string), typeof(Type) });
@@ -1848,7 +1786,7 @@ namespace IKVM.Internal
 			}
 			field.SetCustomAttribute(constantValueAttrib);
 		}
-#endif // STATIC_COMPILER && !COMPACT_FRAMEWORK
+#endif // STATIC_COMPILER
 
 		internal static void SetRuntimeCompatibilityAttribute(AssemblyBuilder assemblyBuilder)
 		{
@@ -1860,7 +1798,6 @@ namespace IKVM.Internal
 		}
 	}
 
-#if !COMPACT_FRAMEWORK
 	abstract class Annotation
 	{
 		// NOTE this method returns null if the type could not be found
@@ -2171,7 +2108,6 @@ namespace IKVM.Internal
 		{
 		}
 	}
-#endif
 
 	[Flags]
 	enum TypeFlags : ushort
@@ -2357,10 +2293,8 @@ namespace IKVM.Internal
 			{
 				if (classObject == null)
 				{
-#if !COMPACT_FRAMEWORK
 					// DynamicTypeWrapper should haved already had SetClassObject explicitly
 					Debug.Assert(!(this is DynamicTypeWrapper));
-#endif // !COMPACT_FRAMEWORK
 #if !FIRST_PASS
 					java.lang.Class clazz;
 					// note that this has to be the same check as in EmitClassLiteral
@@ -3028,7 +2962,6 @@ namespace IKVM.Internal
 			get;
 		}
 
-#if !COMPACT_FRAMEWORK
 		internal virtual TypeBuilder TypeAsBuilder
 		{
 			get
@@ -3038,7 +2971,6 @@ namespace IKVM.Internal
 				return typeBuilder;
 			}
 		}
-#endif
 
 		internal Type TypeAsSignatureType
 		{
@@ -3300,7 +3232,6 @@ namespace IKVM.Internal
 
 		internal abstract void Finish();
 
-#if !COMPACT_FRAMEWORK
 		private void ImplementInterfaceMethodStubImpl(MethodWrapper ifmethod, TypeBuilder typeBuilder, DynamicTypeWrapper wrapper)
 		{
 			// we're mangling the name to prevent subclasses from accidentally overriding this method and to
@@ -3442,7 +3373,6 @@ namespace IKVM.Internal
 				interfaces[i].ImplementInterfaceMethodStubs(typeBuilder, wrapper, doneSet);
 			}
 		}
-#endif
 
 		[Conditional("DEBUG")]
 		internal static void AssertFinished(Type type)
@@ -3466,7 +3396,6 @@ namespace IKVM.Internal
 			}
 		}
 
-#if !COMPACT_FRAMEWORK
 		internal void EmitUnbox(CodeEmitter ilgen)
 		{
 			Debug.Assert(this.IsNonPrimitiveValueType);
@@ -3601,7 +3530,6 @@ namespace IKVM.Internal
 				ilgen.LazyEmit_instanceof(TypeAsTBD);
 			}
 		}
-#endif
 
 		// NOTE don't call this method, call MethodWrapper.Link instead
 		internal virtual MethodBase LinkMethod(MethodWrapper mw)
@@ -3615,11 +3543,9 @@ namespace IKVM.Internal
 			return fw.GetField();
 		}
 
-#if !COMPACT_FRAMEWORK
 		internal virtual void EmitRunClassConstructor(CodeEmitter ilgen)
 		{
 		}
-#endif
 
 		internal virtual string GetGenericSignature()
 		{
@@ -3692,7 +3618,6 @@ namespace IKVM.Internal
 		}
 #endif // !STATIC_COMPILER
 
-#if !COMPACT_FRAMEWORK
 		internal virtual Annotation Annotation
 		{
 			get
@@ -3708,7 +3633,6 @@ namespace IKVM.Internal
 				return null;
 			}
 		}
-#endif
 	}
 
 	sealed class UnloadableTypeWrapper : TypeWrapper
@@ -3800,7 +3724,6 @@ namespace IKVM.Internal
 			throw new InvalidOperationException("Finish called on UnloadableTypeWrapper: " + Name);
 		}
 
-#if !COMPACT_FRAMEWORK
 		internal override void EmitCheckcast(TypeWrapper context, CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Ldtoken, context.TypeAsTBD);
@@ -3814,7 +3737,6 @@ namespace IKVM.Internal
 			ilgen.Emit(OpCodes.Ldstr, Name);
 			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicInstanceOf);
 		}
-#endif
 	}
 
 	sealed class PrimitiveTypeWrapper : TypeWrapper
@@ -3907,7 +3829,6 @@ namespace IKVM.Internal
 		}
 	}
 
-#if !COMPACT_FRAMEWORK
 	static class BakedTypeCleanupHack
 	{
 #if NET_4_0
@@ -4013,9 +3934,7 @@ namespace IKVM.Internal
 		}
 #endif // NET_4_0
 	}
-#endif // !COMPACT_FRAMEWORK
 
-#if !COMPACT_FRAMEWORK
 #if STATIC_COMPILER
 	abstract class DynamicTypeWrapper : TypeWrapper
 #else
@@ -9111,7 +9030,6 @@ namespace IKVM.Internal
 		}
 #endif // STATIC_COMPILER
 	}
-#endif // !COMPACT_FRAMEWORK
 
 	class CompiledTypeWrapper : TypeWrapper
 	{
@@ -9837,7 +9755,6 @@ namespace IKVM.Internal
 #endif
 			}
 
-#if !COMPACT_FRAMEWORK
 			protected override void CallImpl(CodeEmitter ilgen)
 			{
 				MethodBase mb = GetMethod();
@@ -9880,7 +9797,6 @@ namespace IKVM.Internal
 					ilgen.Emit(OpCodes.Newobj, (ConstructorInfo)mb);
 				}
 			}
-#endif
 
 #if !STATIC_COMPILER && !FIRST_PASS
 			[HideFromJava]
@@ -9995,7 +9911,6 @@ namespace IKVM.Internal
 			}
 		}
 
-#if !COMPACT_FRAMEWORK
 		internal override void EmitRunClassConstructor(CodeEmitter ilgen)
 		{
 			// trigger LazyPublishMembers
@@ -10005,7 +9920,6 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Call, clinitMethod);
 			}
 		}
-#endif
 
 		internal override string GetGenericSignature()
 		{
@@ -10164,7 +10078,6 @@ namespace IKVM.Internal
 			return new object[0];
 		}
 
-#if !COMPACT_FRAMEWORK
 		private class CompiledAnnotation : Annotation
 		{
 			private Type type;
@@ -10270,7 +10183,6 @@ namespace IKVM.Internal
 			}
 			return -1;
 		}
-#endif
 
 		internal override bool IsFastClassLiteralSafe
 		{
@@ -11248,7 +11160,6 @@ namespace IKVM.Internal
 				}
 #endif
 
-#if !COMPACT_FRAMEWORK
 				private class ReturnValueAnnotation : Annotation
 				{
 					private AttributeAnnotationTypeWrapper type;
@@ -11324,7 +11235,6 @@ namespace IKVM.Internal
 						return new ReturnValueAnnotation(declaringType);
 					}
 				}
-#endif
 			}
 
 			private sealed class MultipleAnnotationTypeWrapper : AttributeAnnotationTypeWrapperBase
@@ -11381,7 +11291,6 @@ namespace IKVM.Internal
 				}
 #endif
 
-#if !COMPACT_FRAMEWORK
 				private class MultipleAnnotation : Annotation
 				{
 					private AttributeAnnotationTypeWrapper type;
@@ -11479,7 +11388,6 @@ namespace IKVM.Internal
 						return new MultipleAnnotation(declaringType);
 					}
 				}
-#endif
 			}
 
 			internal override TypeWrapper[] InnerClasses
@@ -11584,7 +11492,6 @@ namespace IKVM.Internal
 			}
 #endif
 
-#if !COMPACT_FRAMEWORK
 			private class AttributeAnnotation : Annotation
 			{
 				private Type type;
@@ -11766,7 +11673,6 @@ namespace IKVM.Internal
 					return new AttributeAnnotation(attributeType);
 				}
 			}
-#endif //!COMPACT_FRAMEWORK
 		}
 
 		internal static TypeWrapper GetWrapperFromDotNetType(Type type)
@@ -11867,7 +11773,6 @@ namespace IKVM.Internal
 				this.iface = iface;
 			}
 
-#if !COMPACT_FRAMEWORK
 			internal override void EmitNewobj(CodeEmitter ilgen, MethodAnalyzer ma, int opcodeIndex)
 			{
 				TypeWrapper targetType = ma == null ? null : ma.GetStackTypeWrapper(opcodeIndex, 0);
@@ -11895,7 +11800,6 @@ namespace IKVM.Internal
 					ilgen.Emit(OpCodes.Newobj, delegateConstructor);
 				}
 			}
-#endif
 		}
 
 		private class ByRefMethodWrapper : SmartMethodWrapper
@@ -11914,7 +11818,6 @@ namespace IKVM.Internal
 #endif
 			}
 
-#if !COMPACT_FRAMEWORK
 			protected override void CallImpl(CodeEmitter ilgen)
 			{
 				MethodBase mb = GetMethod();
@@ -11963,7 +11866,6 @@ namespace IKVM.Internal
 				}
 				base.PreEmit(ilgen);
 			}
-#endif
 		}
 
 		internal static bool IsVisible(Type type)
@@ -11978,14 +11880,12 @@ namespace IKVM.Internal
 			{
 			}
 
-#if !COMPACT_FRAMEWORK
 			internal override void EmitCall(CodeEmitter ilgen)
 			{
 				// We don't actually need to do anything here!
 				// The compiler will insert a boxing operation after calling us and that will
 				// result in our argument being boxed (since that's still sitting on the stack).
 			}
-#endif
 		}
 
 		internal class EnumValueFieldWrapper : FieldWrapper
@@ -11998,7 +11898,6 @@ namespace IKVM.Internal
 				underlyingType = Enum.GetUnderlyingType(tw.type);
 			}
 
-#if !COMPACT_FRAMEWORK
 			protected override void EmitGetImpl(CodeEmitter ilgen)
 			{
 				// NOTE if the reference on the stack is null, we *want* the NullReferenceException, so we don't use TypeWrapper.EmitUnbox
@@ -12016,7 +11915,6 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Stobj, underlyingType);
 				ilgen.ReleaseTempLocal(temp);
 			}
-#endif
 
 			// this method takes a boxed Enum and returns its value as a boxed primitive
 			// of the subset of Java primitives (i.e. byte, short, int, long)
@@ -12066,14 +11964,12 @@ namespace IKVM.Internal
 			{
 			}
 
-#if !COMPACT_FRAMEWORK
 			internal override void EmitNewobj(CodeEmitter ilgen, MethodAnalyzer ma, int opcodeIndex)
 			{
 				LocalBuilder local = ilgen.DeclareLocal(DeclaringType.TypeAsTBD);
 				ilgen.Emit(OpCodes.Ldloc, local);
 				ilgen.Emit(OpCodes.Box, DeclaringType.TypeAsTBD);
 			}
-#endif
 		}
 
 		private class FinalizeMethodWrapper : MethodWrapper
@@ -12378,7 +12274,6 @@ namespace IKVM.Internal
 				this.m = m;
 			}
 
-#if !COMPACT_FRAMEWORK
 			internal override void EmitCall(CodeEmitter ilgen)
 			{
 				// we direct EmitCall to EmitCallvirt, because we always want to end up at the instancehelper method
@@ -12390,7 +12285,6 @@ namespace IKVM.Internal
 			{
 				m.EmitCallvirt(ilgen);
 			}
-#endif
 		}
 
 		internal static bool IsUnsupportedAbstractMethod(MethodBase mb)
@@ -12740,7 +12634,6 @@ namespace IKVM.Internal
 			}
 		}
 
-#if !COMPACT_FRAMEWORK
 		internal override void EmitInstanceOf(TypeWrapper context, CodeEmitter ilgen)
 		{
 			if(IsRemapped)
@@ -12770,7 +12663,6 @@ namespace IKVM.Internal
 			}
 			EmitHelper.Castclass(ilgen, type);
 		}
-#endif
 
 		internal override void Finish()
 		{

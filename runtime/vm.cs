@@ -31,7 +31,7 @@ using System.Security;
 using System.Security.Permissions;
 using IKVM.Internal;
 
-#if !STATIC_COMPILER && !COMPACT_FRAMEWORK
+#if !STATIC_COMPILER
 namespace IKVM.Internal
 {
 	public static class Starter
@@ -70,7 +70,7 @@ namespace IKVM.Internal
 		}
 	}
 }
-#endif // !STATIC_COMPILER && !COMPACT_FRAMEWORK
+#endif // !STATIC_COMPILER
 
 namespace IKVM.Internal
 {

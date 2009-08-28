@@ -21,7 +21,6 @@
   jeroen@frijters.net
   
 */
-#if !COMPACT_FRAMEWORK
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -474,4 +473,3 @@ namespace IKVM.Internal
 #endif // !STATIC_COMPILER
 	}
 }
-#endif //COMPACT_FRAMEWORK

@@ -524,9 +524,7 @@ namespace ikvm.awt
 
         public override void beep()
         {
-#if !COMPACT_FRAMEWORK
             Console.Beep();
-#endif
         }
 
         public override java.awt.datatransfer.Clipboard getSystemClipboard()

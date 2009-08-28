@@ -33,75 +33,17 @@ final class VMSystemProperties
     public static final String SPEC_VERSION = "1.6";
     public static final String SPEC_VENDOR = "Sun Microsystems Inc.";
 
-    private static cli.System.Reflection.Assembly GetEntryAssembly()
-        throws cli.System.MissingMethodException
-    {
-        return cli.System.Reflection.Assembly.GetEntryAssembly();
-    }
-
-    private static String GetSystemDirectory()
-        throws cli.System.MissingMethodException,
-               cli.System.Security.SecurityException
-    {
-        return cli.System.Environment.get_SystemDirectory();
-    }
-
-    private static String GetUserName()
-        throws cli.System.MissingMethodException,
-               cli.System.Security.SecurityException
-    {
-        return cli.System.Environment.get_UserName();
-    }
-
-    private static String GetCurrentDirectory()
-        throws cli.System.MissingMethodException,
-               cli.System.Security.SecurityException
-    {
-        return cli.System.Environment.get_CurrentDirectory();
-    }
-
-    private static String GetNewLine()
-        throws cli.System.MissingMethodException
-    {
-        return cli.System.Environment.get_NewLine();
-    }
-
-    private static String GetEnvironmentVariableImpl(String name)
-        throws cli.System.MissingMethodException
-    {
-        return cli.System.Environment.GetEnvironmentVariable(name);
-    }
-
-    private static String GetEnvironmentVariable(String name)
-    {
-        try
-        {
-            return GetEnvironmentVariableImpl(name);
-        }
-        catch(cli.System.MissingMethodException _)
-        {
-            return null;
-        }
-    }
-
     private static String SafeGetEnvironmentVariable(String name)
     {
         try
         {
             if(false) throw new cli.System.Security.SecurityException();
-            return GetEnvironmentVariable(name);
+            return cli.System.Environment.GetEnvironmentVariable(name);
         }
         catch(cli.System.Security.SecurityException _)
         {
             return null;
         }
-    }
-
-    private static String GetAssemblyLocation(cli.System.Reflection.Assembly asm)
-        throws cli.System.MissingMethodException
-    {
-        // Assembly.get_Location() doesn't exist on the Compact Framework
-        return asm.get_Location();
     }
 
     private static String getLibraryPath()
@@ -118,10 +60,8 @@ final class VMSystemProperties
 	    }
             try
             {
-                libraryPath += cli.System.IO.Path.PathSeparator + GetSystemDirectory();
-            }
-            catch(cli.System.MissingMethodException _)
-            {
+                if(false) throw new cli.System.Security.SecurityException();
+                libraryPath += cli.System.IO.Path.PathSeparator + cli.System.Environment.get_SystemDirectory();
             }
             catch(cli.System.Security.SecurityException _)
             {
@@ -154,17 +94,14 @@ final class VMSystemProperties
         }
         try
         {
-            cli.System.Reflection.Assembly entryAsm = GetEntryAssembly();
+            cli.System.Reflection.Assembly entryAsm = cli.System.Reflection.Assembly.GetEntryAssembly();
             // If the CLR was started by a native app (e.g. via COM interop) there is no entry assembly
             if (entryAsm != null)
             {
 		// the application (or launcher) directory is prepended to the library path
 		// (similar to how the JDK prepends its directory to the path)
-                libraryPath = new cli.System.IO.FileInfo(GetAssemblyLocation(entryAsm)).get_DirectoryName() + cli.System.IO.Path.PathSeparator + libraryPath;
+                libraryPath = new cli.System.IO.FileInfo(entryAsm.get_Location()).get_DirectoryName() + cli.System.IO.Path.PathSeparator + libraryPath;
             }
-        }
-        catch(cli.System.MissingMethodException _)
-        {
         }
         catch(Throwable _)
         {
@@ -318,21 +255,11 @@ final class VMSystemProperties
         p.setProperty("file.separator", "" + cli.System.IO.Path.DirectorySeparatorChar);
         p.setProperty("file.encoding", cli.System.Text.Encoding.get_Default().get_WebName());
         p.setProperty("path.separator", "" + cli.System.IO.Path.PathSeparator);
+        p.setProperty("line.separator", cli.System.Environment.get_NewLine());
         try
         {
-            p.setProperty("line.separator", GetNewLine());
-        }
-        catch(cli.System.MissingMethodException _)
-        {
-            p.setProperty("line.separator", "\r\n");
-        }
-        try
-        {
-            p.setProperty("user.name", GetUserName());
-        }
-        catch(cli.System.MissingMethodException _1)
-        {
-            p.setProperty("user.name", "(unknown)");
+            if(false) throw new cli.System.Security.SecurityException();
+            p.setProperty("user.name", cli.System.Environment.get_UserName());
         }
         catch(cli.System.Security.SecurityException _)
         {
@@ -363,11 +290,8 @@ final class VMSystemProperties
         p.setProperty("user.home", home);
         try
         {
-            p.setProperty("user.dir", GetCurrentDirectory());
-        }
-        catch(cli.System.MissingMethodException _1)
-        {
-            p.setProperty("user.dir", ".");
+            if(false) throw new cli.System.Security.SecurityException();
+            p.setProperty("user.dir", cli.System.Environment.get_CurrentDirectory());
         }
         catch(cli.System.Security.SecurityException _)
         {

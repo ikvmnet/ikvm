@@ -21,8 +21,6 @@
   jeroen@frijters.net
   
 */
-#if !COMPACT_FRAMEWORK
-
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -3517,5 +3515,3 @@ class Compiler
 		return v;
 	}
 }
-
-#endif

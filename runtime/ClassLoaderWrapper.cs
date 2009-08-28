@@ -25,7 +25,7 @@ using System;
 using System.Reflection;
 #if IKVM_REF_EMIT
 using IKVM.Reflection.Emit;
-#elif !COMPACT_FRAMEWORK
+#else
 using System.Reflection.Emit;
 #endif
 using System.IO;
@@ -39,9 +39,7 @@ namespace IKVM.Internal
 {
 	abstract class TypeWrapperFactory
 	{
-#if !COMPACT_FRAMEWORK
 		internal abstract ModuleBuilder ModuleBuilder { get; }
-#endif
 		internal abstract TypeWrapper DefineClassImpl(Dictionary<string, TypeWrapper> types, ClassFile f, ClassLoaderWrapper classLoader, object protectionDomain);
 		internal abstract bool ReserveName(string name);
 		internal abstract Type DefineUnloadable(string name);
@@ -333,9 +331,6 @@ namespace IKVM.Internal
 
 		internal TypeWrapperFactory GetTypeWrapperFactory()
 		{
-#if COMPACT_FRAMEWORK
-			throw new NoClassDefFoundError("Class loading is not supported on the Compact Framework");
-#else
 			if(factory == null)
 			{
 				lock(this)
@@ -358,7 +353,6 @@ namespace IKVM.Internal
 				}
 			}
 			return factory;
-#endif
 		}
 
 		internal TypeWrapper LoadClassByDottedName(string name)
@@ -729,11 +723,7 @@ namespace IKVM.Internal
 		{
 			if(sig[1] == ')')
 			{
-#if COMPACT_FRAMEWORK
-				return new Type[0];
-#else
 				return Type.EmptyTypes;
-#endif
 			}
 			TypeWrapper[] wrappers = ArgTypeWrapperListFromSig(sig);
 			Type[] types = new Type[wrappers.Length];
@@ -1120,9 +1110,9 @@ namespace IKVM.Internal
 		// this method only supports .NET or pre-compiled Java assemblies
 		internal static AssemblyClassLoader GetAssemblyClassLoader(Assembly assembly)
 		{
-#if !COMPACT_FRAMEWORK && !IKVM_REF_EMIT
+#if !IKVM_REF_EMIT
 			Debug.Assert(!(assembly is AssemblyBuilder));
-#endif // !COMPACT_FRAMEWORK
+#endif // !IKVM_REF_EMIT
 
 			ConstructorInfo customClassLoaderCtor = null;
 			AssemblyClassLoader loader;
@@ -2009,7 +1999,7 @@ namespace IKVM.Internal
 			//Tracer.Info(Tracer.Runtime, "GetWrapperFromAssemblyType: {0}", type.FullName);
 			Debug.Assert(!type.Name.EndsWith("[]"), "!type.IsArray", type.FullName);
 			Debug.Assert(ClassLoaderWrapper.GetAssemblyClassLoader(type.Assembly) == this);
-#if !COMPACT_FRAMEWORK && !IKVM_REF_EMIT
+#if !IKVM_REF_EMIT
 			Debug.Assert(!(type.Assembly is AssemblyBuilder), "!(type.Assembly is AssemblyBuilder)", type.FullName);
 #endif
 			TypeWrapper wrapper = GetLoader(type.Assembly).CreateWrapperForAssemblyType(type);

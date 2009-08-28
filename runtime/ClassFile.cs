@@ -1260,7 +1260,7 @@ namespace IKVM.Internal
 			{
 				// HACK keep the compiler from warning about unused local
 				GC.KeepAlive(x);
-#if !STATIC_COMPILER && !COMPACT_FRAMEWORK && !FIRST_PASS
+#if !STATIC_COMPILER && !FIRST_PASS
 				if(Tracer.ClassLoading.TraceError)
 				{
 					java.lang.ClassLoader cl = (java.lang.ClassLoader)classLoader.GetJavaClassLoader();
@@ -1279,7 +1279,7 @@ namespace IKVM.Internal
 					Exception m = ikvm.runtime.Util.mapException(x.ToJava());
 					Tracer.Error(Tracer.ClassLoading, m.ToString() + Environment.NewLine + m.StackTrace);
 				}
-#endif // !STATIC_COMPILER
+#endif // !STATIC_COMPILER && !FIRST_PASS
 				return new UnloadableTypeWrapper(name);
 			}
 		}

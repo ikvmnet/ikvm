@@ -146,7 +146,7 @@ namespace IKVM.Runtime
 			return obj;
 		}
 
-#if !COMPACT_FRAMEWORK && !FIRST_PASS
+#if !FIRST_PASS
 		[DebuggerStepThroughAttribute]
 		public static object DynamicMultianewarray(RuntimeTypeHandle type, string clazz, int[] lengths)
 		{
@@ -431,7 +431,7 @@ namespace IKVM.Runtime
 		{
 			return false;
 		}
-#endif //!COMPACT_FRAMEWORK
+#endif //!FIRST_PASS
 
 		[DebuggerStepThroughAttribute]
 		public static int f2i(float f)
@@ -544,7 +544,6 @@ namespace IKVM.Runtime
 				object[] dst1 = dest as object[];
 				if(src1 != null && dst1 != null)
 				{
-#if !COMPACT_FRAMEWORK
 					// for small copies, don't bother comparing the types as this is relatively expensive
 					if(len > 50 && Type.GetTypeHandle(src).Value == Type.GetTypeHandle(dest).Value)
 					{
@@ -552,7 +551,6 @@ namespace IKVM.Runtime
 						return;
 					}
 					else
-#endif
 					{
 						for(; len > 0; len--)
 						{
@@ -563,13 +561,8 @@ namespace IKVM.Runtime
 						return;
 					}
 				}
-#if COMPACT_FRAMEWORK
-				else if(src.GetType() != dest.GetType() &&
-						(IsPrimitiveArrayType(src.GetType()) || IsPrimitiveArrayType(dest.GetType())))
-#else
 				else if(Type.GetTypeHandle(src).Value != Type.GetTypeHandle(dest).Value &&
 						(IsPrimitiveArrayType(src.GetType()) || IsPrimitiveArrayType(dest.GetType())))
-#endif
 				{
 					// we don't want to allow copying a primitive into an object array!
 					throw new java.lang.ArrayStoreException();
@@ -750,63 +743,31 @@ namespace IKVM.Runtime
 
 		public static bool SkipFinalizer()
 		{
-#if COMPACT_FRAMEWORK || FIRST_PASS
+#if FIRST_PASS
 			return false;
 #else
 			return Environment.HasShutdownStarted && !java.lang.Shutdown.runFinalizersOnExit;
 #endif
 		}
 
-#if COMPACT_FRAMEWORK
-		private static readonly object volatileLock = new object();
-#endif
-
 		public static long VolatileRead(ref long v)
 		{
-#if !COMPACT_FRAMEWORK
 			return Interlocked.Read(ref v);
-#else
-			lock(volatileLock)
-			{
-				return v;
-			}
-#endif
 		}
 
 		public static void VolatileWrite(ref long v, long newValue)
 		{
-#if !COMPACT_FRAMEWORK
 			Interlocked.Exchange(ref v, newValue);
-#else
-			lock(volatileLock)
-			{
-				v = newValue;
-			}
-#endif
 		}
 
 		public static double VolatileRead(ref double v)
 		{
-#if !COMPACT_FRAMEWORK
 			return Interlocked.CompareExchange(ref v, 0.0, 0.0);
-#else
-			lock(volatileLock)
-			{
-				return v;
-			}
-#endif
 		}
 
 		public static void VolatileWrite(ref double v, double newValue)
 		{
-#if !COMPACT_FRAMEWORK
 			Interlocked.Exchange(ref v, newValue);
-#else
-			lock(volatileLock)
-			{
-				v = newValue;
-			}
-#endif
 		}
 	}
 
