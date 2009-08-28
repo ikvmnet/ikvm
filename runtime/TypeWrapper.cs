@@ -13072,9 +13072,35 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				if(arrayType == null)
+				while (arrayType == null)
 				{
-					arrayType = MakeArrayType(ultimateElementTypeWrapper.TypeAsArrayType, this.ArrayRank);
+					bool prevFinished = finished;
+					Type type = MakeArrayType(ultimateElementTypeWrapper.TypeAsArrayType, this.ArrayRank);
+					if (prevFinished)
+					{
+						// We were already finished prior to the call to MakeArrayType, so we can safely
+						// set arrayType to the finished type.
+						// Note that this takes advantage of the fact that once we've been finished,
+						// we can never become unfinished.
+						arrayType = type;
+					}
+					else
+					{
+						lock (this)
+						{
+							// To prevent a race with Finish, we can only set arrayType in this case
+							// (inside the locked region) if we've not already finished. If we have
+							// finished, we need to rerun MakeArrayType on the now finished element type.
+							// Note that there is a benign race left, because it is possible that another
+							// thread finishes right after we've set arrayType and exited the locked
+							// region. This is not problem, because TypeAsTBD is only guaranteed to
+							// return a finished type *after* Finish has been called.
+							if (!finished)
+							{
+								arrayType = type;
+							}
+						}
+					}
 				}
 				return arrayType;
 			}
@@ -13082,13 +13108,17 @@ namespace IKVM.Internal
 
 		internal override void Finish()
 		{
-			lock(this)
+			if (!finished)
 			{
-				if(!finished)
+				ultimateElementTypeWrapper.Finish();
+				lock (this)
 				{
+					// Now that we've finished the element type, we must clear arrayType,
+					// because it may still refer to a TypeBuilder. Note that we have to
+					// do this atomically with setting "finished", to prevent a race
+					// with TypeAsTBD.
 					finished = true;
-					ultimateElementTypeWrapper.Finish();
-					arrayType = MakeArrayType(ultimateElementTypeWrapper.TypeAsArrayType, this.ArrayRank);
+					arrayType = null;
 				}
 			}
 		}
