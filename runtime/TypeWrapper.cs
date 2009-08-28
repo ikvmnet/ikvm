@@ -3621,13 +3621,25 @@ namespace IKVM.Internal
 		}
 #endif
 
-		internal abstract string GetGenericSignature();
+		internal virtual string GetGenericSignature()
+		{
+			return null;
+		}
 
-		internal abstract string GetGenericMethodSignature(MethodWrapper mw);
+		internal virtual string GetGenericMethodSignature(MethodWrapper mw)
+		{
+			return null;
+		}
 
-		internal abstract string GetGenericFieldSignature(FieldWrapper fw);
+		internal virtual string GetGenericFieldSignature(FieldWrapper fw)
+		{
+			return null;
+		}
 
-		internal abstract string[] GetEnclosingMethod();
+		internal virtual string[] GetEnclosingMethod()
+		{
+			return null;
+		}
 
 		internal virtual object[] GetDeclaredAnnotations()
 		{
@@ -3803,26 +3815,6 @@ namespace IKVM.Internal
 			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicInstanceOf);
 		}
 #endif
-
-		internal override string GetGenericSignature()
-		{
-			throw new InvalidOperationException("GetGenericSignature called on UnloadableTypeWrapper: " + Name);
-		}
-
-		internal override string GetGenericMethodSignature(MethodWrapper mw)
-		{
-			throw new InvalidOperationException("GetGenericMethodSignature called on UnloadableTypeWrapper: " + Name);
-		}
-
-		internal override string GetGenericFieldSignature(FieldWrapper fw)
-		{
-			throw new InvalidOperationException("GetGenericFieldSignature called on UnloadableTypeWrapper: " + Name);
-		}
-
-		internal override string[] GetEnclosingMethod()
-		{
-			throw new InvalidOperationException("GetEnclosingMethod called on UnloadableTypeWrapper: " + Name);
-		}
 	}
 
 	sealed class PrimitiveTypeWrapper : TypeWrapper
@@ -3912,26 +3904,6 @@ namespace IKVM.Internal
 		public override string ToString()
 		{
 			return "PrimitiveTypeWrapper[" + sigName + "]";
-		}
-
-		internal override string GetGenericSignature()
-		{
-			return null;
-		}
-
-		internal override string GetGenericMethodSignature(MethodWrapper mw)
-		{
-			return null;
-		}
-
-		internal override string GetGenericFieldSignature(FieldWrapper fw)
-		{
-			return null;
-		}
-
-		internal override string[] GetEnclosingMethod()
-		{
-			return null;
 		}
 	}
 
@@ -10598,26 +10570,6 @@ namespace IKVM.Internal
 				get { return type; }
 			}
 
-			internal override string[] GetEnclosingMethod()
-			{
-				return null;
-			}
-
-			internal override string GetGenericFieldSignature(FieldWrapper fw)
-			{
-				return null;
-			}
-
-			internal override string GetGenericMethodSignature(MethodWrapper mw)
-			{
-				return null;
-			}
-
-			internal override string GetGenericSignature()
-			{
-				return null;
-			}
-
 			internal override void Finish()
 			{
 			}
@@ -10677,26 +10629,6 @@ namespace IKVM.Internal
 			internal override ClassLoaderWrapper GetClassLoader()
 			{
 				return DeclaringTypeWrapper.GetClassLoader();
-			}
-
-			internal override string[] GetEnclosingMethod()
-			{
-				return null;
-			}
-
-			internal override string GetGenericFieldSignature(FieldWrapper fw)
-			{
-				return null;
-			}
-
-			internal override string GetGenericMethodSignature(MethodWrapper mw)
-			{
-				return null;
-			}
-
-			internal override string GetGenericSignature()
-			{
-				return null;
 			}
 
 			internal override TypeWrapper[] InnerClasses
@@ -10924,26 +10856,6 @@ namespace IKVM.Internal
 				return DeclaringTypeWrapper.GetClassLoader();
 			}
 
-			internal override string[] GetEnclosingMethod()
-			{
-				return null;
-			}
-
-			internal override string GetGenericFieldSignature(FieldWrapper fw)
-			{
-				return null;
-			}
-
-			internal override string GetGenericMethodSignature(MethodWrapper mw)
-			{
-				return null;
-			}
-
-			internal override string GetGenericSignature()
-			{
-				return null;
-			}
-
 			internal override TypeWrapper[] InnerClasses
 			{
 				get
@@ -10988,26 +10900,6 @@ namespace IKVM.Internal
 			internal sealed override ClassLoaderWrapper GetClassLoader()
 			{
 				return DeclaringTypeWrapper.GetClassLoader();
-			}
-
-			internal sealed override string[] GetEnclosingMethod()
-			{
-				return null;
-			}
-
-			internal sealed override string GetGenericFieldSignature(FieldWrapper fw)
-			{
-				return null;
-			}
-
-			internal sealed override string GetGenericMethodSignature(MethodWrapper mw)
-			{
-				return null;
-			}
-
-			internal sealed override string GetGenericSignature()
-			{
-				return null;
 			}
 
 			internal sealed override TypeWrapper[] Interfaces
@@ -12892,26 +12784,6 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal override string GetGenericSignature()
-		{
-			return null;
-		}
-
-		internal override string GetGenericMethodSignature(MethodWrapper mw)
-		{
-			return null;
-		}
-
-		internal override string GetGenericFieldSignature(FieldWrapper fw)
-		{
-			return null;
-		}
-
-		internal override string[] GetEnclosingMethod()
-		{
-			return null;
-		}
-
 		internal override object[] GetDeclaredAnnotations()
 		{
 			if(type.Assembly.ReflectionOnly)
@@ -13121,26 +12993,6 @@ namespace IKVM.Internal
 					arrayType = null;
 				}
 			}
-		}
-
-		internal override string GetGenericSignature()
-		{
-			return null;
-		}
-
-		internal override string GetGenericMethodSignature(MethodWrapper mw)
-		{
-			return null;
-		}
-
-		internal override string GetGenericFieldSignature(FieldWrapper fw)
-		{
-			return null;
-		}
-
-		internal override string[] GetEnclosingMethod()
-		{
-			return null;
 		}
 
 		internal override bool IsFastClassLiteralSafe

@@ -2060,26 +2060,6 @@ namespace IKVM.Internal
 				}
 			}
 
-			internal override string GetGenericSignature()
-			{
-				return null;
-			}
-
-			internal override string GetGenericMethodSignature(MethodWrapper mw)
-			{
-				return null;
-			}
-
-			internal override string GetGenericFieldSignature(FieldWrapper fw)
-			{
-				return null;
-			}
-
-			internal override string[] GetEnclosingMethod()
-			{
-				return null;
-			}
-
 			internal override bool IsFastClassLiteralSafe
 			{
 				get { return true; }
