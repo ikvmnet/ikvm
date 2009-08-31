@@ -3147,14 +3147,14 @@ namespace IKVM.Internal
 
 		internal abstract void Finish();
 
-		private void ImplementInterfaceMethodStubImpl(MethodWrapper ifmethod, TypeBuilder typeBuilder, DynamicTypeWrapper wrapper)
+		private static void ImplementInterfaceMethodStubImpl(MethodWrapper ifmethod, TypeBuilder typeBuilder, DynamicTypeWrapper wrapper)
 		{
 			// we're mangling the name to prevent subclasses from accidentally overriding this method and to
 			// prevent clashes with overloaded method stubs that are erased to the same signature (e.g. unloadable types and ghost arrays)
 			// HACK the signature and name are the wrong way around to work around a C++/CLI bug (apparantely it looks looks at the last n
 			// characters of the method name, or something bizarre like that)
 			// https://connect.microsoft.com/VisualStudio/feedback/ViewFeedback.aspx?FeedbackID=234167
-			string mangledName = this.Name + "/" + ifmethod.Signature + ifmethod.Name;
+			string mangledName = ifmethod.DeclaringType.Name + "/" + ifmethod.Signature + ifmethod.Name;
 			MethodWrapper mce = null;
 			TypeWrapper lookup = wrapper;
 			while(lookup != null)
@@ -3263,29 +3263,27 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal void ImplementInterfaceMethodStubs(TypeBuilder typeBuilder, DynamicTypeWrapper wrapper, Dictionary<TypeWrapper, TypeWrapper> doneSet)
+		internal static void ImplementInterfaceMethodStubs(TypeBuilder typeBuilder, DynamicTypeWrapper wrapper, Dictionary<TypeWrapper, TypeWrapper> doneSet, TypeWrapper interfaceTypeWrapper)
 		{
-			Debug.Assert(this.IsInterface);
+			Debug.Assert(interfaceTypeWrapper.IsInterface);
 
-			// make sure we don't do the same method twice and dynamic only interfaces
-			// don't really exist, so there is no point in generating stub methods for
-			// them (nor can we).
-			if(doneSet.ContainsKey(this))
+			// make sure we don't do the same method twice
+			if (doneSet.ContainsKey(interfaceTypeWrapper))
 			{
 				return;
 			}
-			doneSet.Add(this, this);
-			foreach(MethodWrapper method in GetMethods())
+			doneSet.Add(interfaceTypeWrapper, interfaceTypeWrapper);
+			foreach (MethodWrapper method in interfaceTypeWrapper.GetMethods())
 			{
 				if(!method.IsStatic && !method.IsDynamicOnly)
 				{
 					ImplementInterfaceMethodStubImpl(method, typeBuilder, wrapper);
 				}
 			}
-			TypeWrapper[] interfaces = Interfaces;
+			TypeWrapper[] interfaces = interfaceTypeWrapper.Interfaces;
 			for(int i = 0; i < interfaces.Length; i++)
 			{
-				interfaces[i].ImplementInterfaceMethodStubs(typeBuilder, wrapper, doneSet);
+				ImplementInterfaceMethodStubs(typeBuilder, wrapper, doneSet, interfaces[i]);
 			}
 		}
 

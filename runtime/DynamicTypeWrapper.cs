@@ -30,8 +30,6 @@ using IKVM.Reflection.Emit;
 using System.Reflection.Emit;
 #endif
 using System.Diagnostics;
-using System.Security;
-using System.Security.Permissions;
 using IKVM.Attributes;
 
 namespace IKVM.Internal
@@ -3825,7 +3823,7 @@ namespace IKVM.Internal
 					TypeWrapper[] interfaces = wrapper.Interfaces;
 					for (int i = 0; i < interfaces.Length; i++)
 					{
-						interfaces[i].ImplementInterfaceMethodStubs(typeBuilder, wrapper, doneSet);
+						ImplementInterfaceMethodStubs(typeBuilder, wrapper, doneSet, interfaces[i]);
 					}
 					// if any of our base classes has an incomplete interface implementation we need to look through all
 					// the base class interfaces to see if we've got an implementation now
@@ -3834,7 +3832,7 @@ namespace IKVM.Internal
 					{
 						for (int i = 0; i < baseTypeWrapper.Interfaces.Length; i++)
 						{
-							baseTypeWrapper.Interfaces[i].ImplementInterfaceMethodStubs(typeBuilder, wrapper, doneSet);
+							ImplementInterfaceMethodStubs(typeBuilder, wrapper, doneSet, baseTypeWrapper.Interfaces[i]);
 						}
 						baseTypeWrapper = baseTypeWrapper.BaseTypeWrapper;
 					}
