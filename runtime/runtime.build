@@ -77,6 +77,7 @@
                 <include name="compiler.cs" />
                 <include name="CoreClasses.cs" />
                 <include name="DynamicClassLoader.cs" />
+                <include name="DynamicTypeWrapper.cs" />
                 <include name="ExceptionHelper.cs" />
                 <include name="intrinsics.cs" />
                 <include name="JavaException.cs" />
