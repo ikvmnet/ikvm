@@ -1407,7 +1407,7 @@ namespace IKVM.Internal
 						else if(!m.NoNullCheck)
 						{
 							ilgen.Emit(OpCodes.Ldarg_0);
-							EmitHelper.NullCheck(ilgen);
+							ilgen.EmitNullCheck();
 						}
 						if(mbCore != null && 
 							(m.@override == null || m.redirect != null) &&
@@ -1967,7 +1967,7 @@ namespace IKVM.Internal
 					}
 				}
 				ilgen.Emit(OpCodes.Ldarg_0);
-				EmitHelper.Castclass(ilgen, shadowType);
+				ilgen.EmitCastclass(shadowType);
 				ilgen.Emit(OpCodes.Ret);
 
 				if(hasfail)

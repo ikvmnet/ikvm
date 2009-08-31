@@ -66,8 +66,12 @@ namespace IKVM.Internal
 		}
 	}
 
-	class CodeEmitter
+	sealed class CodeEmitter
 	{
+		private static readonly MethodInfo objectToString = typeof(object).GetMethod("ToString", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
+		private static readonly MethodInfo verboseCastFailure = JVM.SafeGetEnvironmentVariable("IKVM_VERBOSE_CAST") == null ? null : ByteCodeHelperMethods.VerboseCastFailure;
+		private static readonly MethodInfo getTypeHandle = typeof(Type).GetMethod("GetTypeHandle", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(object) }, null);
+		private static readonly MethodInfo get_Value = typeof(RuntimeTypeHandle).GetMethod("get_Value", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
 		private ILGenerator ilgen_real;
 #if !IKVM_REF_EMIT
 		private int offset;
@@ -647,6 +651,82 @@ namespace IKVM.Internal
 			}
 		}
 #endif // STATIC_COMPILER
+
+		internal void EmitThrow(string dottedClassName)
+		{
+			TypeWrapper exception = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(dottedClassName);
+			MethodWrapper mw = exception.GetMethodWrapper("<init>", "()V", false);
+			mw.Link();
+			mw.EmitNewobj(this);
+			Emit(OpCodes.Throw);
+		}
+
+		internal void EmitThrow(string dottedClassName, string message)
+		{
+			TypeWrapper exception = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(dottedClassName);
+			Emit(OpCodes.Ldstr, message);
+			MethodWrapper mw = exception.GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
+			mw.Link();
+			mw.EmitNewobj(this);
+			Emit(OpCodes.Throw);
+		}
+
+		internal void EmitNullCheck()
+		{
+			// I think this is the most efficient way to generate a NullReferenceException if the reference is null
+			Emit(OpCodes.Ldvirtftn, objectToString);
+			Emit(OpCodes.Pop);
+		}
+
+		internal void EmitCastclass(Type type)
+		{
+			if (verboseCastFailure != null)
+			{
+				LocalBuilder lb = DeclareLocal(typeof(object));
+				Emit(OpCodes.Stloc, lb);
+				Emit(OpCodes.Ldloc, lb);
+				Emit(OpCodes.Isinst, type);
+				Emit(OpCodes.Dup);
+				CodeEmitterLabel ok = DefineLabel();
+				Emit(OpCodes.Brtrue_S, ok);
+				Emit(OpCodes.Ldloc, lb);
+				Emit(OpCodes.Brfalse_S, ok);	// handle null
+				Emit(OpCodes.Ldtoken, type);
+				Emit(OpCodes.Ldloc, lb);
+				Emit(OpCodes.Call, verboseCastFailure);
+				MarkLabel(ok);
+			}
+			else
+			{
+				Emit(OpCodes.Castclass, type);
+			}
+		}
+
+		// This is basically the same as Castclass, except that it
+		// throws an IncompatibleClassChangeError on failure.
+		internal void EmitAssertType(Type type)
+		{
+			LocalBuilder lb = DeclareLocal(typeof(object));
+			Emit(OpCodes.Stloc, lb);
+			Emit(OpCodes.Ldloc, lb);
+			Emit(OpCodes.Isinst, type);
+			Emit(OpCodes.Dup);
+			CodeEmitterLabel ok = DefineLabel();
+			Emit(OpCodes.Brtrue_S, ok);
+			Emit(OpCodes.Ldloc, lb);
+			Emit(OpCodes.Brfalse_S, ok);	// handle null
+			EmitThrow("java.lang.IncompatibleClassChangeError");
+			MarkLabel(ok);
+		}
+
+		internal void EmitGetTypeHandleValue()
+		{
+			Emit(OpCodes.Call, getTypeHandle);
+			LocalBuilder local = DeclareLocal(typeof(RuntimeTypeHandle));
+			Emit(OpCodes.Stloc, local);
+			Emit(OpCodes.Ldloca, local);
+			Emit(OpCodes.Call, get_Value);
+		}
 
 		internal void LazyEmitPop()
 		{

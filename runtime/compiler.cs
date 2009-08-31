@@ -876,7 +876,7 @@ class Compiler
 			clazz.HasVerifyError = true;
 			// because in Java the method is only verified if it is actually called,
 			// we generate code here to throw the VerificationError
-			EmitHelper.Throw(ilGenerator, "java.lang.VerifyError", x.Message);
+			ilGenerator.EmitThrow("java.lang.VerifyError", x.Message);
 			return;
 		}
 		catch(ClassFormatError x)
@@ -886,7 +886,7 @@ class Compiler
 #endif
 			Tracer.Error(Tracer.Verifier, x.ToString());
 			clazz.HasClassFormatError = true;
-			EmitHelper.Throw(ilGenerator, "java.lang.ClassFormatError", x.Message);
+			ilGenerator.EmitThrow("java.lang.ClassFormatError", x.Message);
 			return;
 		}
 		Profiler.Enter("Compile");
@@ -2961,8 +2961,8 @@ class Compiler
 					break;
 				case NormalizedByteCode.__intrinsic_gettypehandlevalue:
 					ilGenerator.Emit(OpCodes.Dup);
-					EmitHelper.NullCheck(ilGenerator);
-					EmitHelper.GetTypeHandleValue(ilGenerator);
+					ilGenerator.EmitNullCheck();
+					ilGenerator.EmitGetTypeHandleValue();
 					break;
 				case NormalizedByteCode.__static_error:
 				{
@@ -3149,7 +3149,7 @@ class Compiler
 					TypeWrapper tw = ma.GetStackTypeWrapper(instructionIndex, args.Length - 1 - i);
 					if(tw.IsUnloadable || (args[i].IsInterfaceOrInterfaceArray && !tw.IsAssignableTo(args[i])))
 					{
-						EmitHelper.EmitAssertType(ilGenerator, args[i].TypeAsTBD);
+						ilGenerator.EmitAssertType(args[i].TypeAsTBD);
 						Profiler.Count("InterfaceDownCast");
 					}
 				}

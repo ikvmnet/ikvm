@@ -5859,7 +5859,7 @@ namespace IKVM.NativeCode.sun.reflect
 				{
 					// check target for null
 					ilgen.Emit(OpCodes.Ldarg_0);
-					EmitHelper.NullCheck(ilgen);
+					ilgen.EmitNullCheck();
 				}
 
 				// check args length
@@ -5874,7 +5874,7 @@ namespace IKVM.NativeCode.sun.reflect
 				ilgen.Emit(OpCodes.Ldlen);
 				ilgen.Emit(OpCodes.Ldc_I4, mw.GetParameters().Length);
 				ilgen.Emit(OpCodes.Beq_S, argsLengthOK);
-				EmitHelper.Throw(ilgen, "java.lang.IllegalArgumentException");
+				ilgen.EmitThrow("java.lang.IllegalArgumentException");
 				ilgen.MarkLabel(argsLengthOK);
 
 				int thisCount = mw.IsStatic ? 0 : 1;
@@ -5907,9 +5907,9 @@ namespace IKVM.NativeCode.sun.reflect
 					ilgen.Emit(OpCodes.Stloc, args[i]);
 				}
 				ilgen.BeginCatchBlock(typeof(InvalidCastException));
-				EmitHelper.Throw(ilgen, "java.lang.IllegalArgumentException");
+				ilgen.EmitThrow("java.lang.IllegalArgumentException");
 				ilgen.BeginCatchBlock(typeof(NullReferenceException));
-				EmitHelper.Throw(ilgen, "java.lang.IllegalArgumentException");
+				ilgen.EmitThrow("java.lang.IllegalArgumentException");
 				ilgen.EndExceptionBlock();
 
 				// this is the actual call
@@ -6188,7 +6188,7 @@ namespace IKVM.NativeCode.sun.reflect
 				ilgen.Emit(OpCodes.Ldlen);
 				ilgen.Emit(OpCodes.Ldc_I4, mw.GetParameters().Length);
 				ilgen.Emit(OpCodes.Beq_S, argsLengthOK);
-				EmitHelper.Throw(ilgen, "java.lang.IllegalArgumentException");
+				ilgen.EmitThrow("java.lang.IllegalArgumentException");
 				ilgen.MarkLabel(argsLengthOK);
 
 				LocalBuilder[] args = new LocalBuilder[mw.GetParameters().Length];
@@ -6209,9 +6209,9 @@ namespace IKVM.NativeCode.sun.reflect
 					ilgen.Emit(OpCodes.Stloc, args[i]);
 				}
 				ilgen.BeginCatchBlock(typeof(InvalidCastException));
-				EmitHelper.Throw(ilgen, "java.lang.IllegalArgumentException");
+				ilgen.EmitThrow("java.lang.IllegalArgumentException");
 				ilgen.BeginCatchBlock(typeof(NullReferenceException));
-				EmitHelper.Throw(ilgen, "java.lang.IllegalArgumentException");
+				ilgen.EmitThrow("java.lang.IllegalArgumentException");
 				ilgen.EndExceptionBlock();
 
 				// this is the actual call

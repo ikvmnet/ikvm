@@ -48,91 +48,6 @@ namespace IKVM.Internal
 		}
 	}
 
-	static class EmitHelper
-	{
-		private static MethodInfo objectToString = typeof(object).GetMethod("ToString", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
-		private static MethodInfo verboseCastFailure = JVM.SafeGetEnvironmentVariable("IKVM_VERBOSE_CAST") == null ? null : ByteCodeHelperMethods.VerboseCastFailure;
-		private static MethodInfo getTypeHandle = typeof(Type).GetMethod("GetTypeHandle", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(object) }, null);
-		private static MethodInfo get_Value = typeof(RuntimeTypeHandle).GetMethod("get_Value", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
-
-		internal static void Throw(CodeEmitter ilgen, string dottedClassName)
-		{
-			TypeWrapper exception = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(dottedClassName);
-			MethodWrapper mw = exception.GetMethodWrapper("<init>", "()V", false);
-			mw.Link();
-			mw.EmitNewobj(ilgen);
-			ilgen.Emit(OpCodes.Throw);
-		}
-
-		internal static void Throw(CodeEmitter ilgen, string dottedClassName, string message)
-		{
-			TypeWrapper exception = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(dottedClassName);
-			ilgen.Emit(OpCodes.Ldstr, message);
-			MethodWrapper mw = exception.GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
-			mw.Link();
-			mw.EmitNewobj(ilgen);
-			ilgen.Emit(OpCodes.Throw);
-		}
-
-		internal static void NullCheck(CodeEmitter ilgen)
-		{
-			// I think this is the most efficient way to generate a NullReferenceException if the
-			// reference is null
-			ilgen.Emit(OpCodes.Ldvirtftn, objectToString);
-			ilgen.Emit(OpCodes.Pop);
-		}
-
-		internal static void Castclass(CodeEmitter ilgen, Type type)
-		{
-			if(verboseCastFailure != null)
-			{
-				LocalBuilder lb = ilgen.DeclareLocal(typeof(object));
-				ilgen.Emit(OpCodes.Stloc, lb);
-				ilgen.Emit(OpCodes.Ldloc, lb);
-				ilgen.Emit(OpCodes.Isinst, type);
-				ilgen.Emit(OpCodes.Dup);
-				CodeEmitterLabel ok = ilgen.DefineLabel();
-				ilgen.Emit(OpCodes.Brtrue_S, ok);
-				ilgen.Emit(OpCodes.Ldloc, lb);
-				ilgen.Emit(OpCodes.Brfalse_S, ok);	// handle null
-				ilgen.Emit(OpCodes.Ldtoken, type);
-				ilgen.Emit(OpCodes.Ldloc, lb);
-				ilgen.Emit(OpCodes.Call, verboseCastFailure);
-				ilgen.MarkLabel(ok);
-			}
-			else
-			{
-				ilgen.Emit(OpCodes.Castclass, type);
-			}
-		}
-
-		// This is basically the same as Castclass, except that it
-		// throws an IncompatibleClassChangeError on failure.
-		internal static void EmitAssertType(CodeEmitter ilgen, Type type)
-		{
-			LocalBuilder lb = ilgen.DeclareLocal(typeof(object));
-			ilgen.Emit(OpCodes.Stloc, lb);
-			ilgen.Emit(OpCodes.Ldloc, lb);
-			ilgen.Emit(OpCodes.Isinst, type);
-			ilgen.Emit(OpCodes.Dup);
-			CodeEmitterLabel ok = ilgen.DefineLabel();
-			ilgen.Emit(OpCodes.Brtrue_S, ok);
-			ilgen.Emit(OpCodes.Ldloc, lb);
-			ilgen.Emit(OpCodes.Brfalse_S, ok);	// handle null
-			EmitHelper.Throw(ilgen, "java.lang.IncompatibleClassChangeError");
-			ilgen.MarkLabel(ok);
-		}
-
-		internal static void GetTypeHandleValue(CodeEmitter ilgen)
-		{
-			ilgen.Emit(OpCodes.Call, getTypeHandle);
-			LocalBuilder local = ilgen.DeclareLocal(typeof(RuntimeTypeHandle));
-			ilgen.Emit(OpCodes.Stloc, local);
-			ilgen.Emit(OpCodes.Ldloca, local);
-			ilgen.Emit(OpCodes.Call, get_Value);
-		}
-	}
-
 	static class AttributeHelper
 	{
 		private static CustomAttributeBuilder hideFromJavaAttribute;
@@ -3278,7 +3193,7 @@ namespace IKVM.Internal
 					{
 						MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, ifmethod.ReturnTypeForDefineMethod, ifmethod.GetParametersForDefineMethod());
 						AttributeHelper.HideFromJava(mb);
-						EmitHelper.Throw(CodeEmitter.Create(mb), "java.lang.LinkageError", wrapper.Name + "." + ifmethod.Name + ifmethod.Signature);
+						CodeEmitter.Create(mb).EmitThrow("java.lang.LinkageError", wrapper.Name + "." + ifmethod.Name + ifmethod.Signature);
 						typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod.GetMethod());
 						return;
 					}
@@ -3295,7 +3210,7 @@ namespace IKVM.Internal
 					// methods. Sigh! So I have to use private methods and mangle the name
 					MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, ifmethod.ReturnTypeForDefineMethod, ifmethod.GetParametersForDefineMethod());
 					AttributeHelper.HideFromJava(mb);
-					EmitHelper.Throw(CodeEmitter.Create(mb), "java.lang.IllegalAccessError", wrapper.Name + "." + ifmethod.Name + ifmethod.Signature);
+					CodeEmitter.Create(mb).EmitThrow("java.lang.IllegalAccessError", wrapper.Name + "." + ifmethod.Name + ifmethod.Signature);
 					typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod.GetMethod());
 					wrapper.HasIncompleteInterfaceImplementation = true;
 				}
@@ -3341,7 +3256,7 @@ namespace IKVM.Internal
 					// so we have to create a stub method that throws an AbstractMethodError
 					MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, ifmethod.ReturnTypeForDefineMethod, ifmethod.GetParametersForDefineMethod());
 					AttributeHelper.HideFromJava(mb);
-					EmitHelper.Throw(CodeEmitter.Create(mb), "java.lang.AbstractMethodError", wrapper.Name + "." + ifmethod.Name + ifmethod.Signature);
+					CodeEmitter.Create(mb).EmitThrow("java.lang.AbstractMethodError", wrapper.Name + "." + ifmethod.Name + ifmethod.Signature);
 					typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod.GetMethod());
 					wrapper.HasIncompleteInterfaceImplementation = true;
 				}
@@ -3453,7 +3368,7 @@ namespace IKVM.Internal
 					// for any interface reference
 				else if(IsInterfaceOrInterfaceArray && (sourceType == null || sourceType.IsUnloadable || !sourceType.IsAssignableTo(this)))
 				{
-					EmitHelper.EmitAssertType(ilgen, TypeAsTBD);
+					ilgen.EmitAssertType(TypeAsTBD);
 					Profiler.Count("InterfaceDownCast");
 				}
 				else if(IsNonPrimitiveValueType)
@@ -3497,7 +3412,7 @@ namespace IKVM.Internal
 			}
 			else
 			{
-				EmitHelper.Castclass(ilgen, TypeAsTBD);
+				ilgen.EmitCastclass(TypeAsTBD);
 			}
 		}
 
@@ -6421,7 +6336,7 @@ namespace IKVM.Internal
 							}
 							else if(!wrapper.IsAbstract)
 							{
-								EmitHelper.Throw(CodeEmitter.Create(mb), "java.lang.AbstractMethodError", wrapper.Name + "." + methods[index].Name + methods[index].Signature);
+								CodeEmitter.Create(mb).EmitThrow("java.lang.AbstractMethodError", wrapper.Name + "." + methods[index].Name + methods[index].Signature);
 							}
 							return mb;
 						}
@@ -7464,7 +7379,7 @@ namespace IKVM.Internal
 										typeBuilder.DefineMethodOverride(mb, mi);
 									}
 									AttributeHelper.HideFromJava(mb);
-									EmitHelper.Throw(CodeEmitter.Create(mb), "java.lang.AbstractMethodError", mw.DeclaringType.Name + "." + mw.Name + mw.Signature);
+									CodeEmitter.Create(mb).EmitThrow("java.lang.AbstractMethodError", mw.DeclaringType.Name + "." + mw.Name + mw.Signature);
 								}
 							}
 						}
@@ -7524,7 +7439,7 @@ namespace IKVM.Internal
 							{
 								CodeEmitter ilGenerator = CodeEmitter.Create((MethodBuilder)mb);
 								TraceHelper.EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
-								EmitHelper.Throw(ilGenerator, "java.lang.AbstractMethodError", classFile.Name + "." + m.Name + m.Signature);
+								ilGenerator.EmitThrow("java.lang.AbstractMethodError", classFile.Name + "." + m.Name + m.Signature);
 							}
 						}
 						else if (m.IsNative)
@@ -7609,7 +7524,7 @@ namespace IKVM.Internal
 									{
 										// since NoJniStubs can only be set when we're statically compiling, it is safe to use the "compiler" trace switch
 										Tracer.Warning(Tracer.Compiler, "Native method not implemented: {0}.{1}.{2}", classFile.Name, m.Name, m.Signature);
-										EmitHelper.Throw(ilGenerator, "java.lang.UnsatisfiedLinkError", "Native method not implemented (compiled with -nojni): " + classFile.Name + "." + m.Name + m.Signature);
+										ilGenerator.EmitThrow("java.lang.UnsatisfiedLinkError", "Native method not implemented (compiled with -nojni): " + classFile.Name + "." + m.Name + m.Signature);
 									}
 									else
 									{
@@ -8480,7 +8395,7 @@ namespace IKVM.Internal
 				}
 				MethodAttributes attr = MethodAttributes.NewSlot | MethodAttributes.Virtual | MethodAttributes.Private;
 				MethodBuilder m = typeBuilder.DefineMethod("__<unsupported>" + mb.DeclaringType.FullName + "/" + mb.Name, attr, ((MethodInfo)mb).ReturnType, parameterTypes);
-				EmitHelper.Throw(CodeEmitter.Create(m), "java.lang.AbstractMethodError", "Method " + mb.DeclaringType.FullName + "." + mb.Name + " is unsupported by IKVM.");
+				CodeEmitter.Create(m).EmitThrow("java.lang.AbstractMethodError", "Method " + mb.DeclaringType.FullName + "." + mb.Name + " is unsupported by IKVM.");
 				typeBuilder.DefineMethodOverride(m, (MethodInfo)mb);
 			}
 
@@ -12005,9 +11920,9 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Brtrue_S, label1);
 				CodeEmitterLabel label2 = ilgen.DefineLabel();
 				ilgen.Emit(OpCodes.Brfalse_S, label2);
-				EmitHelper.Throw(ilgen, "java.lang.CloneNotSupportedException");
+				ilgen.EmitThrow("java.lang.CloneNotSupportedException");
 				ilgen.MarkLabel(label2);
-				EmitHelper.Throw(ilgen, "java.lang.NullPointerException");
+				ilgen.EmitThrow("java.lang.NullPointerException");
 				ilgen.MarkLabel(label1);
 				ilgen.Emit(OpCodes.Call, typeof(object).GetMethod("MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic, null, Type.EmptyTypes, null));
 			}
@@ -12661,7 +12576,7 @@ namespace IKVM.Internal
 					return;
 				}
 			}
-			EmitHelper.Castclass(ilgen, type);
+			ilgen.EmitCastclass(type);
 		}
 
 		internal override void Finish()

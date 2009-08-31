@@ -1644,7 +1644,7 @@ namespace IKVM.Internal
 			CodeEmitterLabel label = ilgen.DefineLabel();
 			ilgen.Emit(OpCodes.Ldc_I4_0);
 			ilgen.Emit(OpCodes.Brtrue_S, label);
-			EmitHelper.Throw(ilgen, "java.lang.NoSuchMethodError");
+			ilgen.EmitThrow("java.lang.NoSuchMethodError");
 			ilgen.MarkLabel(label);
 			if (!isStatic)
 			{
@@ -1686,7 +1686,7 @@ namespace IKVM.Internal
 			CodeEmitterLabel label = ilgen.DefineLabel();
 			ilgen.Emit(OpCodes.Ldc_I4_0);
 			ilgen.Emit(OpCodes.Brtrue_S, label);
-			EmitHelper.Throw(ilgen, "java.lang.NoSuchMethodError");
+			ilgen.EmitThrow("java.lang.NoSuchMethodError");
 			ilgen.MarkLabel(label);
 			ilgen.Emit(OpCodes.Pop);
 			if (!isStatic)

@@ -124,7 +124,7 @@ namespace IKVM.Internal
 			if (code[opcodeIndex + 1].NormalizedOpCode == NormalizedByteCode.__pop)
 			{
 				ilgen.Emit(OpCodes.Dup);
-				EmitHelper.NullCheck(ilgen);
+				ilgen.EmitNullCheck();
 				return true;
 			}
 			// this optimizes obj1.getClass() ==/!= obj2.getClass()
@@ -139,8 +139,8 @@ namespace IKVM.Internal
 				{
 					// we can't patch the current opcode, so we have to emit the first call to GetTypeHandle here
 					ilgen.Emit(OpCodes.Dup);
-					EmitHelper.NullCheck(ilgen);
-					EmitHelper.GetTypeHandleValue(ilgen);
+					ilgen.EmitNullCheck();
+					ilgen.EmitGetTypeHandleValue();
 					code[opcodeIndex + 2].PatchOpCode(NormalizedByteCode.__intrinsic_gettypehandlevalue);
 					return true;
 				}

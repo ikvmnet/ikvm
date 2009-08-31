@@ -135,7 +135,7 @@ namespace IKVM.Internal
 					MethodBuilder mb = typeBuilder.DefineMethod(mw.Name, MethodAttributes.FamORAssem | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.CheckAccessOnOverride, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
 					AttributeHelper.HideFromJava(mb);
 					CodeEmitter ilgen = CodeEmitter.Create(mb);
-					EmitHelper.Throw(ilgen, "java.lang.AbstractMethodError");
+					ilgen.EmitThrow("java.lang.AbstractMethodError");
 				}
 				typeBuilder.CreateType();
 			}
@@ -831,8 +831,8 @@ namespace IKVM.Internal
 							ilgen.MarkLabel(label);
 						}
 						// we need to do a null check (null fails all the isinst checks)
-						EmitHelper.NullCheck(ilgen);
-						EmitHelper.Throw(ilgen, "java.lang.IncompatibleClassChangeError", Name);
+						ilgen.EmitNullCheck();
+						ilgen.EmitThrow("java.lang.IncompatibleClassChangeError", Name);
 						ilgen.MarkLabel(end);
 						ilgen.Emit(OpCodes.Ret);
 					}
