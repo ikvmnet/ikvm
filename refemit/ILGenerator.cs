@@ -434,7 +434,7 @@ namespace IKVM.Reflection.Emit
 			// if the label has already been marked, we can emit the branch offset directly
 			if (labels[label.Index] != -1)
 			{
-				if (labelStackHeight[label.Index] != flowStackHeight)
+				if (labelStackHeight[label.Index] != flowStackHeight && (labelStackHeight[label.Index] != 0 || flowStackHeight != -1))
 				{
 					// the "backward branch constraint" prohibits this, so we don't need to support it
 					throw new NotSupportedException();
