@@ -3823,7 +3823,7 @@ namespace IKVM.Internal
 					TypeWrapper[] interfaces = wrapper.Interfaces;
 					for (int i = 0; i < interfaces.Length; i++)
 					{
-						ImplementInterfaceMethodStubs(typeBuilder, wrapper, doneSet, interfaces[i]);
+						ImplementInterfaceMethodStubs(doneSet, interfaces[i]);
 					}
 					// if any of our base classes has an incomplete interface implementation we need to look through all
 					// the base class interfaces to see if we've got an implementation now
@@ -3832,7 +3832,7 @@ namespace IKVM.Internal
 					{
 						for (int i = 0; i < baseTypeWrapper.Interfaces.Length; i++)
 						{
-							ImplementInterfaceMethodStubs(typeBuilder, wrapper, doneSet, baseTypeWrapper.Interfaces[i]);
+							ImplementInterfaceMethodStubs(doneSet, baseTypeWrapper.Interfaces[i]);
 						}
 						baseTypeWrapper = baseTypeWrapper.BaseTypeWrapper;
 					}
@@ -4081,7 +4081,7 @@ namespace IKVM.Internal
 				return type;
 			}
 
-			private static void ImplementInterfaceMethodStubs(TypeBuilder typeBuilder, DynamicTypeWrapper wrapper, Dictionary<TypeWrapper, TypeWrapper> doneSet, TypeWrapper interfaceTypeWrapper)
+			private void ImplementInterfaceMethodStubs(Dictionary<TypeWrapper, TypeWrapper> doneSet, TypeWrapper interfaceTypeWrapper)
 			{
 				Debug.Assert(interfaceTypeWrapper.IsInterface);
 
@@ -4095,17 +4095,17 @@ namespace IKVM.Internal
 				{
 					if (!method.IsStatic && !method.IsDynamicOnly)
 					{
-						ImplementInterfaceMethodStubImpl(method, typeBuilder, wrapper);
+						ImplementInterfaceMethodStubImpl(method);
 					}
 				}
 				TypeWrapper[] interfaces = interfaceTypeWrapper.Interfaces;
 				for (int i = 0; i < interfaces.Length; i++)
 				{
-					ImplementInterfaceMethodStubs(typeBuilder, wrapper, doneSet, interfaces[i]);
+					ImplementInterfaceMethodStubs(doneSet, interfaces[i]);
 				}
 			}
 
-			private static void ImplementInterfaceMethodStubImpl(MethodWrapper ifmethod, TypeBuilder typeBuilder, DynamicTypeWrapper wrapper)
+			private void ImplementInterfaceMethodStubImpl(MethodWrapper ifmethod)
 			{
 				// we're mangling the name to prevent subclasses from accidentally overriding this method and to
 				// prevent clashes with overloaded method stubs that are erased to the same signature (e.g. unloadable types and ghost arrays)
