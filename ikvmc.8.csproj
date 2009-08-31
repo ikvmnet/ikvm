@@ -106,6 +106,7 @@
     <Compile Include="runtime\CoreClasses.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="runtime\DotNetTypeWrapper.cs" />
     <Compile Include="runtime\DynamicClassLoader.cs">
       <SubType>Code</SubType>
     </Compile>

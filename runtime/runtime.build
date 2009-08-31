@@ -76,6 +76,7 @@
                 <include name="common.cs" />
                 <include name="compiler.cs" />
                 <include name="CoreClasses.cs" />
+                <include name="DotNetTypeWrapper.cs" />
                 <include name="DynamicClassLoader.cs" />
                 <include name="DynamicTypeWrapper.cs" />
                 <include name="ExceptionHelper.cs" />

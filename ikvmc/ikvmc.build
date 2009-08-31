@@ -26,6 +26,7 @@
                 <include name="../runtime/CodeEmitter.cs" />
                 <include name="../runtime/compiler.cs" />
                 <include name="../runtime/CoreClasses.cs" />
+                <include name="../runtime/DotNetTypeWrapper.cs" />
                 <include name="../runtime/DynamicClassLoader.cs" />
                 <include name="../runtime/DynamicTypeWrapper.cs" />
                 <include name="../runtime/intrinsics.cs" />
