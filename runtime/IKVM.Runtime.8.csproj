@@ -114,6 +114,7 @@
     <Compile Include="DynamicClassLoader.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="DynamicTypeWrapper.cs" />
     <Compile Include="ExceptionHelper.cs">
       <SubType>Code</SubType>
     </Compile>
