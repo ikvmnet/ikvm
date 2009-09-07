@@ -17,6 +17,7 @@
                 <include name="CompilerClassLoader.cs" />
                 <include name="FakeTypes.cs" />
                 <include name="remapper.cs" />
+                <include name="../runtime/AssemblyClassLoader.cs" />
                 <include name="../runtime/atomic.cs" />
                 <include name="../runtime/attributes.cs" />
                 <include name="../runtime/BigEndianBinaryReader.cs" />

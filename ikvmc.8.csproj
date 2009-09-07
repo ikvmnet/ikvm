@@ -81,6 +81,7 @@
     <Compile Include="ikvmc\remapper.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="runtime\AssemblyClassLoader.cs" />
     <Compile Include="runtime\atomic.cs" />
     <Compile Include="runtime\attributes.cs">
       <SubType>Code</SubType>
