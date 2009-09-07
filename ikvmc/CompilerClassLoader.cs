@@ -2755,7 +2755,7 @@ namespace IKVM.Internal
 			AssemblyClassLoader[] referencedAssemblies = new AssemblyClassLoader[references.Count];
 			for(int i = 0; i < references.Count; i++)
 			{
-				referencedAssemblies[i] = ClassLoaderWrapper.GetAssemblyClassLoader(references[i]);
+				referencedAssemblies[i] = AssemblyClassLoader.FromAssembly(references[i]);
 			}
 			loader = new CompilerClassLoader(referencedAssemblies, options, options.path, options.keyfilename, options.keycontainer, options.version, options.targetIsModule, options.assembly, h);
 			loader.baseClasses = baseClasses;
@@ -2820,7 +2820,7 @@ namespace IKVM.Internal
 			if(!compilingCoreAssembly)
 			{
 				allReferencesAreStrongNamed &= IsSigned(JVM.CoreAssembly);
-				loader.AddReference(ClassLoaderWrapper.GetAssemblyClassLoader(JVM.CoreAssembly));
+				loader.AddReference(AssemblyClassLoader.FromAssembly(JVM.CoreAssembly));
 			}
 
 			if((options.keycontainer != null || options.keyfilename != null) && !allReferencesAreStrongNamed)

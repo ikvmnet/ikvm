@@ -74,7 +74,7 @@ namespace IKVM.NativeCode.gnu.java.net.protocol.ikvmres
 
 		public static object LoadClassFromAssembly(Assembly asm, string className)
 		{
-			TypeWrapper tw = ClassLoaderWrapper.GetAssemblyClassLoader(asm).LoadClassByDottedNameFast(className);
+			TypeWrapper tw = AssemblyClassLoader.FromAssembly(asm).LoadClassByDottedNameFast(className);
 			if(tw != null)
 			{
 				return tw.ClassObject;
@@ -125,7 +125,7 @@ namespace IKVM.NativeCode.ikvm.@internal
 
 		public static object GetAssemblyClassLoader(Assembly asm)
 		{
-			return ClassLoaderWrapper.GetAssemblyClassLoader(asm).GetJavaClassLoader();
+			return AssemblyClassLoader.FromAssembly(asm).GetJavaClassLoader();
 		}
 	}
 
@@ -202,7 +202,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 				}
 				else if(assembly != null)
 				{
-					AssemblyClassLoader_ acl = ClassLoaderWrapper.GetAssemblyClassLoader(assembly);
+					AssemblyClassLoader_ acl = global::IKVM.Internal.AssemblyClassLoader.FromAssembly(assembly);
 					tw = acl.GetLoadedClass(name);
 					if(tw == null)
 					{
@@ -234,7 +234,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 
 		public static Assembly[] FindResourceAssemblies(Assembly assembly, string name, bool firstOnly)
 		{
-			IKVM.Internal.AssemblyClassLoader wrapper = ClassLoaderWrapper.GetAssemblyClassLoader(assembly);
+			IKVM.Internal.AssemblyClassLoader wrapper = IKVM.Internal.AssemblyClassLoader.FromAssembly(assembly);
 			Assembly[] assemblies = wrapper.FindResourceAssemblies(name, firstOnly);
 			if(assemblies == null || assemblies.Length == 0)
 			{
@@ -258,7 +258,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 		// NOTE the array may contain duplicates!
 		public static string[] GetPackages(Assembly assembly)
 		{
-			IKVM.Internal.AssemblyClassLoader wrapper = ClassLoaderWrapper.GetAssemblyClassLoader(assembly);
+			IKVM.Internal.AssemblyClassLoader wrapper = IKVM.Internal.AssemblyClassLoader.FromAssembly(assembly);
 			string[] packages = new string[0];
 			foreach(Module m in wrapper.MainAssembly.GetModules(false))
 			{
@@ -307,7 +307,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 			{
 				return null;
 			}
-			TypeWrapper tw = ClassLoaderWrapper.GetAssemblyClassLoader(asm).DoLoad(className);
+			TypeWrapper tw = IKVM.Internal.AssemblyClassLoader.FromAssembly(asm).DoLoad(className);
 			return tw != null ? tw.ClassObject : null;
 		}
 

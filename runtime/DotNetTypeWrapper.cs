@@ -334,7 +334,7 @@ namespace IKVM.Internal
 
 			internal override ClassLoaderWrapper GetClassLoader()
 			{
-				return ClassLoaderWrapper.GetAssemblyClassLoader(type.Assembly);
+				return AssemblyClassLoader.FromAssembly(type.Assembly);
 			}
 
 			protected override void LazyPublishMembers()
@@ -1530,7 +1530,7 @@ namespace IKVM.Internal
 			}
 			if (tw == null)
 			{
-				tw = ClassLoaderWrapper.GetAssemblyClassLoader(type.Assembly).GetWrapperFromAssemblyType(type);
+				tw = AssemblyClassLoader.FromAssembly(type.Assembly).GetWrapperFromAssemblyType(type);
 				lock (types)
 				{
 					types[type] = tw;
@@ -1596,7 +1596,7 @@ namespace IKVM.Internal
 			{
 				return ClassLoaderWrapper.GetGenericClassLoader(this);
 			}
-			return ClassLoaderWrapper.GetAssemblyClassLoader(type.Assembly);
+			return AssemblyClassLoader.FromAssembly(type.Assembly);
 		}
 
 		private sealed class MulticastDelegateCtorMethodWrapper : MethodWrapper

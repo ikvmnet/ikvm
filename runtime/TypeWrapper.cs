@@ -3865,7 +3865,7 @@ namespace IKVM.Internal
 
 		internal override ClassLoaderWrapper GetClassLoader()
 		{
-			return ClassLoaderWrapper.GetAssemblyClassLoader(type.Assembly);
+			return AssemblyClassLoader.FromAssembly(type.Assembly);
 		}
 
 		private static ExModifiers GetModifiers(Type type)

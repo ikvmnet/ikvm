@@ -5398,7 +5398,7 @@ namespace IKVM.NativeCode.sun.misc
 		{
 			if (extcl == null || asm.IsDefined(typeof(IKVM.Attributes.CustomAssemblyClassLoaderAttribute), false))
 			{
-				return ClassLoaderWrapper.GetAssemblyClassLoader(asm).GetJavaClassLoader();
+				return AssemblyClassLoader.FromAssembly(asm).GetJavaClassLoader();
 			}
 			return null;
 		}
