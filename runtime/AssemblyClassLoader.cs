@@ -23,11 +23,6 @@
 */
 using System;
 using System.Reflection;
-#if IKVM_REF_EMIT
-using IKVM.Reflection.Emit;
-#else
-using System.Reflection.Emit;
-#endif
 using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -563,9 +558,7 @@ namespace IKVM.Internal
 			//Tracer.Info(Tracer.Runtime, "GetWrapperFromAssemblyType: {0}", type.FullName);
 			Debug.Assert(!type.Name.EndsWith("[]"), "!type.IsArray", type.FullName);
 			Debug.Assert(AssemblyClassLoader.FromAssembly(type.Assembly) == this);
-#if !IKVM_REF_EMIT
-			Debug.Assert(!(type.Assembly is AssemblyBuilder), "!(type.Assembly is AssemblyBuilder)", type.FullName);
-#endif
+
 			TypeWrapper wrapper = GetLoader(type.Assembly).CreateWrapperForAssemblyType(type);
 			if (wrapper != null)
 			{
@@ -854,10 +847,6 @@ namespace IKVM.Internal
 		// this method only supports .NET or pre-compiled Java assemblies
 		internal static AssemblyClassLoader FromAssembly(Assembly assembly)
 		{
-#if !IKVM_REF_EMIT
-			Debug.Assert(!(assembly is AssemblyBuilder));
-#endif // !IKVM_REF_EMIT
-
 			ConstructorInfo customClassLoaderCtor = null;
 			AssemblyClassLoader loader;
 			object javaClassLoader = null;
