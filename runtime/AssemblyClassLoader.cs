@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Runtime.CompilerServices;
+using FormatterServices = System.Runtime.Serialization.FormatterServices;
 using IKVM.Attributes;
 
 namespace IKVM.Internal
@@ -41,11 +42,11 @@ namespace IKVM.Internal
 		private bool isReflectionOnly;
 #if !STATIC_COMPILER
 		private Thread initializerThread;
+		private int initializerRecursion;
 		private volatile object protectionDomain;
-		private static bool customClassLoaderRedirectsLoaded;
 		private static Dictionary<string, string> customClassLoaderRedirects;
-#endif
 		private bool hasCustomClassLoader;
+#endif
 		private Dictionary<int, List<int>> exports;
 		private string[] exportedAssemblyNames;
 		private AssemblyLoader[] exportedAssemblies;
@@ -333,18 +334,20 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal AssemblyClassLoader(Assembly assembly, object javaClassLoader, bool hasCustomClassLoader)
-			: this(assembly, null, javaClassLoader, hasCustomClassLoader)
+		internal AssemblyClassLoader(Assembly assembly)
+			: this(assembly, null)
 		{
+#if !STATIC_COMPILER
+			initializerThread = Thread.CurrentThread;
+#endif
 		}
 
-		internal AssemblyClassLoader(Assembly assembly, string[] fixedReferences, object javaClassLoader, bool hasCustomClassLoader)
-			: base(CodeGenOptions.None, javaClassLoader)
+		internal AssemblyClassLoader(Assembly assembly, string[] fixedReferences)
+			: base(CodeGenOptions.None, null)
 		{
 			this.assemblyLoader = new AssemblyLoader(assembly);
 			this.references = fixedReferences;
 			this.isReflectionOnly = assembly.ReflectionOnly;
-			this.hasCustomClassLoader = hasCustomClassLoader;
 		}
 
 		private void DoInitializeExports()
@@ -582,19 +585,18 @@ namespace IKVM.Internal
 			{
 				return tw;
 			}
+#if !STATIC_COMPILER
 			if (hasCustomClassLoader)
 			{
 				return base.LoadClassImpl(name, throwClassNotFoundException);
 			}
-			else
+#endif
+			tw = LoadGenericClass(name);
+			if (tw != null)
 			{
-				tw = LoadGenericClass(name);
-				if (tw != null)
-				{
-					return tw;
-				}
-				return LoadReferenced(name);
+				return tw;
 			}
+			return LoadReferenced(name);
 		}
 
 		internal TypeWrapper LoadReferenced(string name)
@@ -738,35 +740,48 @@ namespace IKVM.Internal
 			}
 			return list.ToArray();
 		}
+#endif // !STATIC_COMPILER
 
-		internal void SetInitInProgress()
+		private void WaitInitDone()
 		{
-			initializerThread = Thread.CurrentThread;
-		}
-
-		internal void SetInitDone()
-		{
-			lock (this)
+#if !STATIC_COMPILER && !FIRST_PASS
+			if (initializerThread != null)
 			{
-				initializerThread = null;
-				Monitor.PulseAll(this);
-			}
-		}
-
-		internal void WaitInitDone()
-		{
-			lock (this)
-			{
-				if (initializerThread != Thread.CurrentThread)
+				if (initializerThread == Thread.CurrentThread)
 				{
-					while (initializerThread != null)
+					initializerRecursion++;
+					try
 					{
-						Monitor.Wait(this);
+						InitializeJavaClassLoader();
+					}
+					finally
+					{
+						// We only publish the class loader from the outer most invocation, otherwise
+						// an invocation of getClassLoader in the static initializer or constructor
+						// of the custom class loader would result in prematurely publishing it.
+						if (--initializerRecursion == 0)
+						{
+							lock (this)
+							{
+								initializerThread = null;
+								Monitor.PulseAll(this);
+							}
+						}
+					}
+				}
+				else
+				{
+					lock (this)
+					{
+						while (initializerThread != null)
+						{
+							Monitor.Wait(this);
+						}
 					}
 				}
 			}
+#endif
 		}
-#endif // !STATIC_COMPILER
 
 		internal virtual object GetProtectionDomain()
 		{
@@ -844,155 +859,153 @@ namespace IKVM.Internal
 			return GetLoaderForExportedAssembly(GetAssembly(wrapper)).InternalsVisibleTo(otherName);
 		}
 
-		// this method only supports .NET or pre-compiled Java assemblies
+		// this method should not be used with dynamic Java assemblies
 		internal static AssemblyClassLoader FromAssembly(Assembly assembly)
 		{
-			ConstructorInfo customClassLoaderCtor = null;
 			AssemblyClassLoader loader;
-			object javaClassLoader = null;
-			lock (wrapperLock)
+			lock (assemblyClassLoaders)
 			{
-				if (!assemblyClassLoaders.TryGetValue(assembly, out loader))
-				{
-					// If the assembly is a part of a multi-assembly shared class loader,
-					// it will export the __<MainAssembly> type from the main assembly in the group.
-					Type forwarder = assembly.GetType("__<MainAssembly>");
-					if (forwarder != null)
-					{
-						Assembly mainAssembly = forwarder.Assembly;
-						if (mainAssembly != assembly)
-						{
-							loader = FromAssembly(mainAssembly);
-							assemblyClassLoaders[assembly] = loader;
-							return loader;
-						}
-					}
-					if (assembly == JVM.CoreAssembly)
-					{
-						// This cast is necessary for ikvmc and a no-op for the runtime.
-						// Note that the cast cannot fail, because ikvmc will only return a non AssemblyClassLoader
-						// from GetBootstrapClassLoader() when compiling the core assembly and in that case JVM.CoreAssembly
-						// will be null.
-						return (AssemblyClassLoader)GetBootstrapClassLoader();
-					}
-#if !STATIC_COMPILER && !FIRST_PASS
-					if (!assembly.ReflectionOnly)
-					{
-						Type customClassLoaderClass = null;
-						LoadCustomClassLoaderRedirects();
-						if (customClassLoaderRedirects != null)
-						{
-							string assemblyName = assembly.FullName;
-							foreach (KeyValuePair<string, string> kv in customClassLoaderRedirects)
-							{
-								string asm = kv.Key;
-								// we only support matching on the assembly's simple name,
-								// because there appears to be no viable alternative.
-								// On .NET 2.0 there is AssemblyName.ReferenceMatchesDefinition()
-								// but it is broken (and .NET 2.0 specific).
-								if (assemblyName.StartsWith(asm + ","))
-								{
-									try
-									{
-										customClassLoaderClass = Type.GetType(kv.Value, true);
-									}
-									catch (Exception x)
-									{
-										Tracer.Error(Tracer.Runtime, "Unable to load custom class loader {0} specified in app.config for assembly {1}: {2}", kv.Value, assembly, x);
-									}
-									break;
-								}
-							}
-						}
-						if (customClassLoaderClass == null)
-						{
-							object[] attribs = assembly.GetCustomAttributes(typeof(CustomAssemblyClassLoaderAttribute), false);
-							if (attribs.Length == 1)
-							{
-								customClassLoaderClass = ((CustomAssemblyClassLoaderAttribute)attribs[0]).Type;
-							}
-						}
-						if (customClassLoaderClass != null)
-						{
-							try
-							{
-								if (!customClassLoaderClass.IsPublic && !customClassLoaderClass.Assembly.Equals(assembly))
-								{
-									throw new Exception("Type not accessible");
-								}
-								// NOTE we're creating an uninitialized instance of the custom class loader here, so that getClassLoader will return the proper object
-								// when it is called during the construction of the custom class loader later on. This still doesn't make it safe to use the custom
-								// class loader before it is constructed, but at least the object instance is valid and should anyone cache it, they will get the
-								// right object to use later on.
-								// Note also that we're not running the constructor here, because we don't want to run user code while holding a global lock.
-								javaClassLoader = (java.lang.ClassLoader)CreateUnitializedCustomClassLoader(customClassLoaderClass);
-								customClassLoaderCtor = customClassLoaderClass.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { typeof(Assembly) }, null);
-								if (customClassLoaderCtor == null)
-								{
-									javaClassLoader = null;
-									throw new Exception("No constructor");
-								}
-								if (!customClassLoaderCtor.IsPublic && !customClassLoaderClass.Assembly.Equals(assembly))
-								{
-									javaClassLoader = null;
-									throw new Exception("Constructor not accessible");
-								}
-								Tracer.Info(Tracer.Runtime, "Created custom assembly class loader {0} for assembly {1}", customClassLoaderClass.FullName, assembly);
-							}
-							catch (Exception x)
-							{
-								Tracer.Error(Tracer.Runtime, "Unable to create custom assembly class loader {0} for {1}: {2}", customClassLoaderClass.FullName, assembly, x);
-							}
-						}
-					}
-					if (javaClassLoader == null)
-					{
-						javaClassLoader = DoPrivileged(new CreateAssemblyClassLoader(assembly));
-					}
-#endif
-					loader = new AssemblyClassLoader(assembly, javaClassLoader, customClassLoaderCtor != null);
-					assemblyClassLoaders[assembly] = loader;
-#if !STATIC_COMPILER
-					if (customClassLoaderCtor != null)
-					{
-						loader.SetInitInProgress();
-					}
-					if (javaClassLoader != null)
-					{
-						SetWrapperForClassLoader(javaClassLoader, loader);
-					}
-#endif
-				}
+				assemblyClassLoaders.TryGetValue(assembly, out loader);
 			}
-#if !STATIC_COMPILER && !FIRST_PASS
-			if (customClassLoaderCtor != null)
+			if (loader == null)
 			{
-				try
+				loader = Create(assembly);
+				lock (assemblyClassLoaders)
 				{
-					DoPrivileged(new CustomClassLoaderCtorCaller(customClassLoaderCtor, javaClassLoader, assembly));
-				}
-				finally
-				{
-					loader.SetInitDone();
+					AssemblyClassLoader existing;
+					if (assemblyClassLoaders.TryGetValue(assembly, out existing))
+					{
+						// another thread won the race to create the class loader
+						loader = existing;
+					}
+					else
+					{
+						assemblyClassLoaders.Add(assembly, loader);
+					}
 				}
 			}
 			loader.WaitInitDone();
-#endif
 			return loader;
 		}
 
-#if !STATIC_COMPILER && !FIRST_PASS
-		private static object CreateUnitializedCustomClassLoader(Type customClassLoaderClass)
+		private static AssemblyClassLoader Create(Assembly assembly)
 		{
-			return System.Runtime.Serialization.FormatterServices.GetUninitializedObject(customClassLoaderClass);
+			// If the assembly is a part of a multi-assembly shared class loader,
+			// it will export the __<MainAssembly> type from the main assembly in the group.
+			Type forwarder = assembly.GetType("__<MainAssembly>");
+			if (forwarder != null)
+			{
+				Assembly mainAssembly = forwarder.Assembly;
+				if (mainAssembly != assembly)
+				{
+					return FromAssembly(mainAssembly);
+				}
+			}
+			if (assembly == JVM.CoreAssembly)
+			{
+				// This cast is necessary for ikvmc and a no-op for the runtime.
+				// Note that the cast cannot fail, because ikvmc will only return a non AssemblyClassLoader
+				// from GetBootstrapClassLoader() when compiling the core assembly and in that case JVM.CoreAssembly
+				// will be null.
+				return (AssemblyClassLoader)GetBootstrapClassLoader();
+			}
+			return new AssemblyClassLoader(assembly);
+		}
+
+#if !STATIC_COMPILER && !FIRST_PASS
+		private void InitializeJavaClassLoader()
+		{
+			Assembly assembly = assemblyLoader.Assembly;
+			if (!assembly.ReflectionOnly)
+			{
+				Type customClassLoaderClass = null;
+				LoadCustomClassLoaderRedirects();
+				string assemblyName = assembly.FullName;
+				foreach (KeyValuePair<string, string> kv in customClassLoaderRedirects)
+				{
+					string asm = kv.Key;
+					// We only support matching on the assembly's simple name,
+					// because there appears to be no viable alternative.
+					// There is AssemblyName.ReferenceMatchesDefinition()
+					// but it is completely broken.
+					if (assemblyName.StartsWith(asm + ","))
+					{
+						try
+						{
+							customClassLoaderClass = Type.GetType(kv.Value, true);
+						}
+						catch (Exception x)
+						{
+							Tracer.Error(Tracer.Runtime, "Unable to load custom class loader {0} specified in app.config for assembly {1}: {2}", kv.Value, assembly, x);
+						}
+						break;
+					}
+				}
+				if (customClassLoaderClass == null)
+				{
+					object[] attribs = assembly.GetCustomAttributes(typeof(CustomAssemblyClassLoaderAttribute), false);
+					if (attribs.Length == 1)
+					{
+						customClassLoaderClass = ((CustomAssemblyClassLoaderAttribute)attribs[0]).Type;
+					}
+				}
+				if (customClassLoaderClass != null)
+				{
+					try
+					{
+						if (!customClassLoaderClass.IsPublic && !customClassLoaderClass.Assembly.Equals(assembly))
+						{
+							throw new Exception("Type not accessible");
+						}
+						ConstructorInfo customClassLoaderCtor = customClassLoaderClass.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { typeof(Assembly) }, null);
+						if (customClassLoaderCtor == null)
+						{
+							throw new Exception("No constructor");
+						}
+						if (!customClassLoaderCtor.IsPublic && !customClassLoaderClass.Assembly.Equals(assembly))
+						{
+							customClassLoaderCtor = null;
+							throw new Exception("Constructor not accessible");
+						}
+						hasCustomClassLoader = true;
+						// NOTE we're creating an uninitialized instance of the custom class loader here, so that getClassLoader will return the proper object
+						// when it is called during the construction of the custom class loader later on. This still doesn't make it safe to use the custom
+						// class loader before it is constructed, but at least the object instance is available and should anyone cache it, they will get the
+						// right object to use later on.
+						// Note that creating the unitialized instance will (unfortunately) trigger the static initializer. The static initializer can
+						// trigger a call to getClassLoader(), which means we can end up here recursively.
+						java.lang.ClassLoader newJavaClassLoader = (java.lang.ClassLoader)FormatterServices.GetUninitializedObject(customClassLoaderClass);
+						if (javaClassLoader == null) // check if we weren't invoked recursively and the nested invocation already did the work
+						{
+							javaClassLoader = newJavaClassLoader;
+							SetWrapperForClassLoader(javaClassLoader, this);
+							DoPrivileged(new CustomClassLoaderCtorCaller(customClassLoaderCtor, javaClassLoader, assembly));
+							Tracer.Info(Tracer.Runtime, "Created custom assembly class loader {0} for assembly {1}", customClassLoaderClass.FullName, assembly);
+						}
+						else
+						{
+							// we didn't initialize the object, so there is no need to finalize it
+							GC.SuppressFinalize(newJavaClassLoader);
+						}
+					}
+					catch (Exception x)
+					{
+						Tracer.Error(Tracer.Runtime, "Unable to create custom assembly class loader {0} for {1}: {2}", customClassLoaderClass.FullName, assembly, x);
+					}
+				}
+			}
+			if (javaClassLoader == null)
+			{
+				javaClassLoader = (java.lang.ClassLoader)DoPrivileged(new CreateAssemblyClassLoader(assembly));
+				SetWrapperForClassLoader(javaClassLoader, this);
+			}
 		}
 
 		private static void LoadCustomClassLoaderRedirects()
 		{
-			// this method assumes that we hold a global lock
-			if (!customClassLoaderRedirectsLoaded)
+			if (customClassLoaderRedirects == null)
 			{
-				customClassLoaderRedirectsLoaded = true;
+				Dictionary<string, string> dict = new Dictionary<string, string>();
 				try
 				{
 					foreach (string key in System.Configuration.ConfigurationManager.AppSettings.AllKeys)
@@ -1000,17 +1013,17 @@ namespace IKVM.Internal
 						const string prefix = "ikvm-classloader:";
 						if (key.StartsWith(prefix))
 						{
-							if (customClassLoaderRedirects == null)
-							{
-								customClassLoaderRedirects = new Dictionary<string, string>();
-							}
-							customClassLoaderRedirects[key.Substring(prefix.Length)] = System.Configuration.ConfigurationManager.AppSettings.Get(key);
+							dict[key.Substring(prefix.Length)] = System.Configuration.ConfigurationManager.AppSettings.Get(key);
 						}
 					}
 				}
 				catch (Exception x)
 				{
 					Tracer.Error(Tracer.Runtime, "Error while reading custom class loader redirects: {0}", x);
+				}
+				finally
+				{
+					Interlocked.CompareExchange(ref customClassLoaderRedirects, dict, null);
 				}
 			}
 		}
@@ -1030,7 +1043,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		sealed class CustomClassLoaderCtorCaller : java.security.PrivilegedAction
+		private sealed class CustomClassLoaderCtorCaller : java.security.PrivilegedAction
 		{
 			private ConstructorInfo ctor;
 			private object classLoader;
@@ -1052,13 +1065,13 @@ namespace IKVM.Internal
 #endif
 	}
 
-	class BootstrapClassLoader : AssemblyClassLoader
+	sealed class BootstrapClassLoader : AssemblyClassLoader
 	{
 		internal BootstrapClassLoader()
 			: base(JVM.CoreAssembly, new string[] {
 				typeof(object).Assembly.FullName,		// mscorlib
 				typeof(System.Uri).Assembly.FullName	// System
-			}, null, false)
+			})
 		{
 		}
 

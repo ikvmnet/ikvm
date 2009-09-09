@@ -47,7 +47,7 @@ namespace IKVM.Internal
 
 	class ClassLoaderWrapper
 	{
-		protected static readonly object wrapperLock = new object();
+		private static readonly object wrapperLock = new object();
 		private static readonly Dictionary<Type, TypeWrapper> globalTypeToTypeWrapper = new Dictionary<Type, TypeWrapper>();
 #if STATIC_COMPILER
 		private static ClassLoaderWrapper bootstrapClassLoader;
@@ -57,7 +57,7 @@ namespace IKVM.Internal
 #endif
 		private static List<GenericClassLoader> genericClassLoaders;
 #if !STATIC_COMPILER && !FIRST_PASS
-		private readonly java.lang.ClassLoader javaClassLoader;
+		protected java.lang.ClassLoader javaClassLoader;
 #endif
 		private TypeWrapperFactory factory;
 		private Dictionary<string, TypeWrapper> types = new Dictionary<string, TypeWrapper>();
