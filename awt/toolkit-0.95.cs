@@ -2680,6 +2680,7 @@ namespace ikvm.awt
 			((Form)control).Deactivate += new EventHandler(OnDeactivate);
 			control.SizeChanged += new EventHandler(OnSizeChanged);
 			control.Resize += new EventHandler(OnResize);
+            control.Move += new EventHandler(OnMove);
         }
 
 		private void OnResize(object sender, EventArgs e)
@@ -2688,6 +2689,14 @@ namespace ikvm.awt
 			SendComponentEvent(java.awt.@event.ComponentEvent.COMPONENT_RESIZED);
 			dynamicallyLayoutContainer();
 		}
+
+        private void OnMove(object sender, EventArgs e)
+        {
+            // WmMove
+            ComponentAccessor.setX(target, control.Left);
+            ComponentAccessor.setY(target, control.Top);
+            SendComponentEvent(java.awt.@event.ComponentEvent.COMPONENT_MOVED);
+        }
 
 		/*
 		 * Although this function sends ComponentEvents, it needs to be defined
