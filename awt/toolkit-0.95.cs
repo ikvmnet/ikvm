@@ -1795,10 +1795,32 @@ namespace ikvm.awt
 			return true;
 		}
 
-		public void reshape(int x, int y, int width, int height)
-		{
-            NetToolkit.BeginInvoke(delegate { control.SetBounds(x, y, width, height); });
-		}
+        public void reshape(int x, int y, int width, int height)
+        {
+            NetToolkit.BeginInvoke(delegate
+            {
+                control.SetBounds(x, y, width, height);
+                //If the .NET control does not accept the new bounds (minimum size, maximum size) 
+                //then we need to reflect the real bounds on the .NET site to the Java site
+                Rectangle bounds = control.Bounds;
+                if (bounds.X != x)
+                {
+                    ComponentAccessor.setX(target, bounds.X);
+                }
+                if (bounds.Y != y)
+                {
+                    ComponentAccessor.setY(target, bounds.Y);
+                }
+                if (bounds.Width != width)
+                {
+                    ComponentAccessor.setWidth(target, bounds.Width);
+                }
+                if (bounds.Height != height)
+                {
+                    ComponentAccessor.setHeight(target, bounds.Height);
+                }
+            });
+        }
 
 		public void setBackground(java.awt.Color color)
 		{
@@ -2685,7 +2707,7 @@ namespace ikvm.awt
 
 		private void OnResize(object sender, EventArgs e)
 		{
-			// WmSizing
+            // WmSizing
 			SendComponentEvent(java.awt.@event.ComponentEvent.COMPONENT_RESIZED);
 			dynamicallyLayoutContainer();
 		}
@@ -2714,7 +2736,7 @@ namespace ikvm.awt
 			// WmSize
 			typeof(java.awt.Component).GetField("width", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(target, control.Width);
 			typeof(java.awt.Component).GetField("height", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(target, control.Height);
-		}
+        }
 
         private void OnOpened(object sender, EventArgs e)
         {
