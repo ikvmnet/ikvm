@@ -43,4 +43,11 @@ public class CompositeFont extends Font2D{
         throw new NotImplementedException();
     }
 
+    public int getNumSlots() {
+        throw new NotImplementedException();
+    }
+    
+    public PhysicalFont getSlotFont(int slot) {
+        throw new NotImplementedException();
+    }
 }

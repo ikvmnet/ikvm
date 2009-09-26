@@ -293,8 +293,19 @@ public abstract class GraphicsConfiguration {
      * @see Component#createVolatileImage(int, int)
      * @since 1.5
      */
-    public abstract VolatileImage createCompatibleVolatileImage(int width, int height,
-        ImageCapabilities caps, int transparency) throws AWTException;
+    public VolatileImage createCompatibleVolatileImage(int width, int height,
+        ImageCapabilities caps, int transparency) throws AWTException
+    {
+        VolatileImage vi = 
+            new Container().createVolatileImage(width, height, caps);
+        if (caps != null && caps.isAccelerated() &&
+            !vi.getCapabilities().isAccelerated())
+        {
+            throw new AWTException("Supplied image capabilities could not " +
+                                   "be met by this graphics configuration.");
+        }
+        return vi;
+    }
 
     /**
      * Returns the {@link ColorModel} associated with this

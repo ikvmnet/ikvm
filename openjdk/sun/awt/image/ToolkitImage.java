@@ -24,7 +24,11 @@
 
 package sun.awt.image;
 
+import java.awt.image.BufferedImage;
+
 public abstract class ToolkitImage extends java.awt.Image
 {
     public abstract ImageRepresentation getImageRep();
+
+    public abstract BufferedImage getBufferedImage();
 }
