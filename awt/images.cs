@@ -143,11 +143,14 @@ namespace ikvm.awt
     class NetVolatileImage : java.awt.image.VolatileImage
     {
         internal readonly Bitmap bitmap;
+        internal readonly java.awt.Component component;
+        private java.awt.Font defaultFont;
         private readonly int width;
         private readonly int height;
 
-        internal NetVolatileImage(int width, int height)
+        internal NetVolatileImage(java.awt.Component component, int width, int height)
         {
+            this.component = component;
             bitmap = new Bitmap(width, height);
             this.width = width;
             this.height = height;
@@ -157,11 +160,55 @@ namespace ikvm.awt
             }
         }
 
+        internal NetVolatileImage(int width, int height) : this(null, width, height)
+        {
+        }
+
         public override bool contentsLost()
         {
             return false;
         }
 
+        private java.awt.Color getForeground()
+        {
+            if (component != null)
+            {
+                return component.getForeground();
+            }
+            else
+            {
+                return java.awt.Color.black;
+            }
+        }
+
+        private java.awt.Color getBackground()
+        {
+            if (component != null)
+            {
+                return component.getBackground();
+            }
+            else
+            {
+                return java.awt.Color.white;
+            }
+        }
+
+        private java.awt.Font getFont()
+        {
+            if (component != null)
+            {
+                return component.getFont();
+            }
+            else
+            {
+                if (defaultFont == null)
+                {
+                    defaultFont = new java.awt.Font("Dialog", java.awt.Font.PLAIN, 12);
+                }
+                return defaultFont;
+            }
+        }
+        
         public override int getHeight(ImageObserver io)
         {
             return height; // bitmap.Height --> need invoke or lock
@@ -183,7 +230,7 @@ namespace ikvm.awt
             // HACK for off-screen images we don't want ClearType or anti-aliasing
             // TODO I'm sure Java 2D has a way to control text rendering quality, we should honor that
             //g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.SingleBitPerPixelGridFit;
-            return new BitmapGraphics(bitmap);
+            return new BitmapGraphics(bitmap, getFont(), J2C.ConvertColor(getForeground()), J2C.ConvertColor(getBackground()));
         }
 
         public override int getHeight()

@@ -2035,7 +2035,7 @@ namespace ikvm.awt
 
 		public java.awt.image.VolatileImage createVolatileImage(int width, int height)
 		{
-			return new NetVolatileImage(width, height);
+			return new NetVolatileImage(target, width, height);
 		}
 
 		public bool handlesWheelScrolling()

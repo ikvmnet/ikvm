@@ -40,6 +40,12 @@ namespace ikvm.awt
     {
         private readonly Bitmap bitmap;
 
+        internal BitmapGraphics(Bitmap bitmap, java.awt.Font font, Color fgcolor, Color bgcolor)
+            : base(createGraphics(bitmap), font, fgcolor, bgcolor)
+        {
+            this.bitmap = bitmap;
+        }
+
         internal BitmapGraphics(Bitmap bitmap)
             : base(createGraphics(bitmap), null, Color.White, Color.Black)
         {
