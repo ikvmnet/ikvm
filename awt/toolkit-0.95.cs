@@ -741,6 +741,19 @@ namespace ikvm.awt
             return true;
         }
 
+        public override bool isFrameStateSupported(int state)
+        {
+            switch (state)
+            {
+                case java.awt.Frame.NORMAL:
+                case java.awt.Frame.ICONIFIED:
+                case java.awt.Frame.MAXIMIZED_BOTH:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+        
         protected override bool syncNativeQueue(long l)
         {
             throw new NotImplementedException();
@@ -1000,7 +1013,7 @@ namespace ikvm.awt
 			start();  // Initialize enable/disable state, turn on callbacks
 		}
 
-		void initialize()
+		protected virtual void initialize()
 		{
 			if (target.isVisible())
 			{
@@ -2705,6 +2718,12 @@ namespace ikvm.awt
             control.Move += new EventHandler(OnMove);
         }
 
+        protected override void initialize()
+        {
+            base.initialize();
+            updateIconImages();
+        }
+
 		private void OnResize(object sender, EventArgs e)
 		{
             // WmSizing
@@ -2912,7 +2931,24 @@ namespace ikvm.awt
 
         public void updateIconImages()
         {
-            throw new NotImplementedException();
+            java.util.List imageList = ((java.awt.Window) target).getIconImages();
+            Bitmap originalImage;
+            if (imageList == null || imageList.size() == 0)
+            {
+                originalImage = null;
+            }
+            else
+            {
+                java.awt.Image image = (java.awt.Image)imageList.get(0);
+                originalImage = ((java.awt.image.BufferedImage)image).getBitmap();
+            }
+            NetToolkit.BeginInvoke(delegate
+               {
+                   Size iconSize = SystemInformation.IconSize;
+                   Bitmap scaleBitmap = originalImage==null ? null : new Bitmap(originalImage, iconSize);
+                   ((Form)control).Icon = scaleBitmap==null ? null : Icon.FromHandle(scaleBitmap.GetHicon());
+               });
+
         }
 
         public void updateMinimumSize()
@@ -2997,9 +3033,6 @@ namespace ikvm.awt
 		public NetFramePeer(java.awt.Frame frame)
 			: base(frame)
 		{
-			setTitle(frame.getTitle());
-			setResizable(frame.isResizable());
-            setIconImage(frame.getIconImage());
         }
 
 		private class ValidateHelper : java.lang.Runnable
@@ -3017,14 +3050,18 @@ namespace ikvm.awt
 			}
 		}
 
-		public void setIconImage(java.awt.Image image)
-		{
-            if (image is java.awt.image.BufferedImage)
-			{
-				Bitmap bitmap = ((java.awt.image.BufferedImage)image).getBitmap();
-				((Form)control).Icon = Icon.FromHandle(bitmap.GetHicon());
-			}
-		}
+        protected override void initialize()
+        {
+            base.initialize();
+            java.awt.Frame target = (java.awt.Frame)this.target;
+
+            if (target.getTitle() != null)
+            {
+                setTitle(target.getTitle());
+            }
+            setResizable(target.isResizable());
+            setState(target.getExtendedState());
+        }
 
 		public void setMenuBar(java.awt.MenuBar mb)
 		{
@@ -3067,7 +3104,22 @@ namespace ikvm.awt
 
 		public void setState(int state)
 		{
-			throw new NotImplementedException();
+			NetToolkit.BeginInvoke(delegate
+               {
+                   MyForm form = (MyForm) control;
+			       switch(state)
+			       {
+                       case java.awt.Frame.NORMAL:
+                           form.WindowState = FormWindowState.Normal;
+                           break;
+                       case java.awt.Frame.MAXIMIZED_BOTH:
+			               form.WindowState = FormWindowState.Maximized;
+			               break;
+                       case java.awt.Frame.ICONIFIED:
+                           form.WindowState = FormWindowState.Minimized;
+                           break;
+                   }
+               });
 		}
 
         public void setMaximizedBounds(java.awt.Rectangle rect)
