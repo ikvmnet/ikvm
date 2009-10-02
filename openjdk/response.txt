@@ -994,6 +994,7 @@ assembly.class
     com/sun/imageio/plugins/jpeg/*.class
     icedtea/rt/com/sun/media/sound/*.class
     sun/print/*.class
+    sun/awt/windows/*.class
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/imageio/plugins/bmp/*.class
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/imageio/plugins/common/*.class
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/imageio/plugins/gif/*.class
@@ -1018,4 +1019,5 @@ assembly.class
     ../../openjdk6-b16/jdk/src/share/classes/javax/sound/sampled/*.class
     ../../openjdk6-b16/jdk/src/share/classes/javax/sound/sampled/spi/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/print/*.class
+    ../../openjdk6-b16/jdk/src/windows/classes/sun/print/*.class
 }

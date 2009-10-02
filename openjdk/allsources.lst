@@ -119,6 +119,7 @@ sun/awt/image/SunWritableRaster.java
 sun/awt/image/ToolkitImage.java
 sun/awt/shell/Win32ShellFolder2.java
 sun/awt/shell/Win32ShellFolderManager2.java
+sun/awt/windows/WPrinterJob.java
 sun/font/CompositeFont.java
 sun/font/Font2D.java
 sun/font/FontManager.java
@@ -173,6 +174,8 @@ sun/nio/ch/SocketChannelImpl.java
 sun/nio/ch/Util.java
 sun/nio/cs/StandardCharsets.java
 sun/print/PrintPeer.java
+sun/print/Win32PrintService.java
+sun/print/Win32PrintServiceLookup.java
 sun/reflect/MethodAccessor.java
 sun/reflect/Reflection.java
 sun/reflect/ReflectionFactory.java
@@ -11232,6 +11235,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 ../../openjdk6-b16/jdk/src/windows/classes/sun/nio/ch/PipeImpl.java
 ../../openjdk6-b16/jdk/src/windows/classes/sun/nio/ch/SinkChannelImpl.java
 ../../openjdk6-b16/jdk/src/windows/classes/sun/nio/ch/SourceChannelImpl.java
+../../openjdk6-b16/jdk/src/windows/classes/sun/print/Win32MediaTray.java
 ../../openjdk6-b16/jdk/src/windows/classes/sun/security/krb5/internal/tools/Kinit.java
 ../../openjdk6-b16/jdk/src/windows/classes/sun/security/krb5/internal/tools/KinitOptions.java
 ../../openjdk6-b16/jdk/src/windows/classes/sun/security/krb5/internal/tools/Klist.java
