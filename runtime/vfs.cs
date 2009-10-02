@@ -292,11 +292,11 @@ namespace IKVM.Internal
 			VfsDirectory dir = root;
 			for (int i = 0; i < path.Length - 1; i++)
 			{
+				dir = dir.GetEntry(path[i]) as VfsDirectory;
 				if (dir == null)
 				{
 					return null;
 				}
-				dir = dir.GetEntry(path[i]) as VfsDirectory;
 			}
 			return dir.GetEntry(path[path.Length - 1]);
 		}
