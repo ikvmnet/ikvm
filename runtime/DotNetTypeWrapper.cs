@@ -716,7 +716,41 @@ namespace IKVM.Internal
 				defCtor = null;
 				int oneArgCtorCount = 0;
 				ConstructorInfo oneArgCtor = null;
-				foreach (ConstructorInfo ci in type.GetConstructors(BindingFlags.Public | BindingFlags.Instance))
+				ConstructorInfo[] constructors = type.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
+				// HACK we have a special rule to make some additional custom attributes from mscorlib usable:
+				// Attributes that have two constructors, one an enum and another one taking a byte, short or int,
+				// we only expose the enum constructor.
+				if (constructors.Length == 2 && type.Assembly == typeof(object).Assembly)
+				{
+					ParameterInfo[] p0 = constructors[0].GetParameters();
+					ParameterInfo[] p1 = constructors[1].GetParameters();
+					if (p0.Length == 1 && p1.Length == 1)
+					{
+						Type t0 = p0[0].ParameterType;
+						Type t1 = p1[0].ParameterType;
+						bool swapped = false;
+						if (t1.IsEnum)
+						{
+							Type tmp = t0;
+							t0 = t1;
+							t1 = tmp;
+							swapped = true;
+						}
+						if (t0.IsEnum && (t1 == typeof(byte) || t1 == typeof(short) || t1 == typeof(int)))
+						{
+							if (swapped)
+							{
+								singleOneArgCtor = constructors[1];
+							}
+							else
+							{
+								singleOneArgCtor = constructors[0];
+							}
+							return;
+						}
+					}
+				}
+				foreach (ConstructorInfo ci in constructors)
 				{
 					ParameterInfo[] args = ci.GetParameters();
 					if (args.Length == 0)
@@ -725,12 +759,6 @@ namespace IKVM.Internal
 					}
 					else if (args.Length == 1)
 					{
-						// HACK special case for p/invoke StructLayout attribute
-						if (type == typeof(System.Runtime.InteropServices.StructLayoutAttribute) && args[0].ParameterType == typeof(short))
-						{
-							// we skip this constructor, so that the other one will be visible
-							continue;
-						}
 						if (IsSupportedType(args[0].ParameterType))
 						{
 							oneArgCtor = ci;
