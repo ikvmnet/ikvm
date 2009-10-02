@@ -187,6 +187,8 @@ namespace ikvm.awt
 
         public override void dispose()
         {
+            if (pen!=null) pen.Dispose();
+            if (brush!=null) brush.Dispose();
             g.Dispose();
         }
 
@@ -460,27 +462,31 @@ namespace ikvm.awt
 
         public override java.awt.Rectangle getClipBounds(java.awt.Rectangle r)
         {
-            Region clip = g.Clip;
-            if (!clip.IsInfinite(g))
+            using (Region clip = g.Clip)
             {
-                RectangleF rec = clip.GetBounds(g);
-                r.x = (int)rec.X;
-                r.y = (int)rec.Y;
-                r.width = (int)rec.Width;
-                r.height = (int)rec.Height;
+                if (!clip.IsInfinite(g))
+                {
+                    RectangleF rec = clip.GetBounds(g);
+                    r.x = (int) rec.X;
+                    r.y = (int) rec.Y;
+                    r.width = (int) rec.Width;
+                    r.height = (int) rec.Height;
+                }
+                return r;
             }
-            return r;
         }
 
         public override java.awt.Rectangle getClipBounds()
         {
-            Region clip = g.Clip;
-            if (clip.IsInfinite(g))
+            using (Region clip = g.Clip)
             {
-                return null;
+                if (clip.IsInfinite(g))
+                {
+                    return null;
+                }
+                RectangleF rec = clip.GetBounds(g);
+                return C2J.ConvertRectangle(rec);
             }
-            RectangleF rec = clip.GetBounds(g);
-            return C2J.ConvertRectangle(rec);
         }
 
         [Obsolete]
