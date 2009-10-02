@@ -30,4 +30,6 @@ public interface IkvmToolkit{
      */
     public java.awt.Graphics2D createGraphics(cli.System.Drawing.Bitmap bitmap);
     
+    public sun.print.PrintPeer getPrintPeer();
+    
 }

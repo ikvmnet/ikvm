@@ -31,4 +31,8 @@ package sun.print;
 public interface PrintPeer{
 
     public Object getPrinterStatus(String PrinterName, Class category);
+
+    public String getDefaultPrinterName();
+
+    public String[] getAllPrinterNames();
 }

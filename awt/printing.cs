@@ -25,6 +25,7 @@
 using System;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
+using System.Drawing.Printing;
 
 namespace ikvm.awt.printing
 {
@@ -36,6 +37,19 @@ namespace ikvm.awt.printing
         public virtual Object getPrinterStatus(String PrinterName, java.lang.Class category)
         {
             return null;
+        }
+
+        public String getDefaultPrinterName()
+        {
+            return new PrinterSettings().PrinterName;
+        }
+
+        public String[] getAllPrinterNames()
+        {
+            PrinterSettings.StringCollection printers = PrinterSettings.InstalledPrinters;
+            String[] result = new String[printers.Count];
+            printers.CopyTo(result, 0);
+            return result;
         }
     }
 
