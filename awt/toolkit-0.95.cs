@@ -2945,8 +2945,10 @@ namespace ikvm.awt
             NetToolkit.BeginInvoke(delegate
                {
                    Size iconSize = SystemInformation.IconSize;
-                   Bitmap scaleBitmap = originalImage==null ? null : new Bitmap(originalImage, iconSize);
-                   ((Form)control).Icon = scaleBitmap==null ? null : Icon.FromHandle(scaleBitmap.GetHicon());
+                   using (Bitmap scaleBitmap = originalImage == null ? null : new Bitmap(originalImage, iconSize))
+                   {
+                       ((Form) control).Icon = scaleBitmap == null ? null : Icon.FromHandle(scaleBitmap.GetHicon());
+                   }
                });
 
         }
