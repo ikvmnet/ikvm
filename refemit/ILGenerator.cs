@@ -453,7 +453,7 @@ namespace IKVM.Reflection.Emit
 			}
 			else
 			{
-				Debug.Assert(labelStackHeight[label.Index] == -1 || labelStackHeight[label.Index] == flowStackHeight);
+				Debug.Assert(labelStackHeight[label.Index] == -1 || labelStackHeight[label.Index] == flowStackHeight || (flowStackHeight == -1 && labelStackHeight[label.Index] == 0));
 				labelStackHeight[label.Index] = flowStackHeight;
 				LabelFixup fix = new LabelFixup();
 				fix.label = label.Index;
