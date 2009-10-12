@@ -6297,7 +6297,22 @@ namespace IKVM.NativeCode.sun.reflect
 
 			public object newInstance(object[] objarr)
 			{
-				return Activator.CreateInstance(type);
+#if FIRST_PASS
+				return null;
+#else
+				if (objarr != null && objarr.Length != 0)
+				{
+					throw new global::java.lang.IllegalArgumentException();
+				}
+				try
+				{
+					return Activator.CreateInstance(type);
+				}
+				catch (TargetInvocationException x)
+				{
+					throw new global::java.lang.reflect.InvocationTargetException(global::ikvm.runtime.Util.mapException(x.InnerException));
+				}
+#endif
 			}
 
 			internal static bool IsSuitable(MethodWrapper mw)
