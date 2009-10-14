@@ -4394,7 +4394,10 @@ namespace ikvm.awt
         private void setContentsNative(java.awt.datatransfer.Transferable contents)
         {
             IDataObject clipObj = NetDataTransferer.getInstanceImpl().getDataObject(contents, flavorMap);
-            Clipboard.SetDataObject(clipObj,true);
+            NetToolkit.BeginInvoke(delegate
+                                       {
+                                           Clipboard.SetDataObject(clipObj, true);
+                                       });
         }
 
         public override java.awt.datatransfer.Transferable getContents(object requestor)
