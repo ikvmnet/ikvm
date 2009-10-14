@@ -29,8 +29,7 @@ and types that IKVM.OpenJDK.ClassLibrary.dll uses, but generally with an empty m
 (look for #if FIRST_PASS in the IKVM.Runtime.dll sources). The second pass is built after
 IKVM.OpenJDK.ClassLibrary.dll has been built.
 
-The version numbers of the build are defined in ikvm/CommonAssemblyInfo.cs,
-ikvm/openjdk/openjdk.build and ikvm/jvm.JVM.il.
+The version numbers of the build is defined in ikvm/CommonAssemblyInfo.cs.
 
 If you want to do a strong named build, make sure you have a key container installed named
 "ikvm-key" and run the build with "nant clean" and "nant signed".
