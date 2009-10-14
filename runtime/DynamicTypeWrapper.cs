@@ -4722,7 +4722,7 @@ namespace IKVM.Internal
 						Type ifaceType = iface.TypeAsBaseType;
 						if (!iface.IsPublic && !ReflectUtil.IsSameAssembly(ifaceType, typeBuilder))
 						{
-							ifaceType = ifaceType.Assembly.GetType(DynamicClassLoader.GetProxyHelperName(ifaceType));
+							ifaceType = ReflectUtil.GetAssembly(ifaceType).GetType(DynamicClassLoader.GetProxyHelperName(ifaceType));
 						}
 						typeBuilder.AddInterfaceImplementation(ifaceType);
 #if STATIC_COMPILER
