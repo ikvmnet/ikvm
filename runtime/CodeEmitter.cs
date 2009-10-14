@@ -68,10 +68,10 @@ namespace IKVM.Internal
 
 	sealed class CodeEmitter
 	{
-		private static readonly MethodInfo objectToString = typeof(object).GetMethod("ToString", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
+		private static readonly MethodInfo objectToString = Types.Object.GetMethod("ToString", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
 		private static readonly MethodInfo verboseCastFailure = JVM.SafeGetEnvironmentVariable("IKVM_VERBOSE_CAST") == null ? null : ByteCodeHelperMethods.VerboseCastFailure;
-		private static readonly MethodInfo getTypeHandle = typeof(Type).GetMethod("GetTypeHandle", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(object) }, null);
-		private static readonly MethodInfo get_Value = typeof(RuntimeTypeHandle).GetMethod("get_Value", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
+		private static readonly MethodInfo getTypeHandle = Types.Type.GetMethod("GetTypeHandle", BindingFlags.Public | BindingFlags.Static, null, new Type[] { Types.Object }, null);
+		private static readonly MethodInfo get_Value = Types.RuntimeTypeHandle.GetMethod("get_Value", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
 		private ILGenerator ilgen_real;
 #if !IKVM_REF_EMIT
 		private int offset;
@@ -682,7 +682,7 @@ namespace IKVM.Internal
 		{
 			if (verboseCastFailure != null)
 			{
-				LocalBuilder lb = DeclareLocal(typeof(object));
+				LocalBuilder lb = DeclareLocal(Types.Object);
 				Emit(OpCodes.Stloc, lb);
 				Emit(OpCodes.Ldloc, lb);
 				Emit(OpCodes.Isinst, type);
@@ -706,7 +706,7 @@ namespace IKVM.Internal
 		// throws an IncompatibleClassChangeError on failure.
 		internal void EmitAssertType(Type type)
 		{
-			LocalBuilder lb = DeclareLocal(typeof(object));
+			LocalBuilder lb = DeclareLocal(Types.Object);
 			Emit(OpCodes.Stloc, lb);
 			Emit(OpCodes.Ldloc, lb);
 			Emit(OpCodes.Isinst, type);
@@ -722,7 +722,7 @@ namespace IKVM.Internal
 		internal void EmitGetTypeHandleValue()
 		{
 			Emit(OpCodes.Call, getTypeHandle);
-			LocalBuilder local = DeclareLocal(typeof(RuntimeTypeHandle));
+			LocalBuilder local = DeclareLocal(Types.RuntimeTypeHandle);
 			Emit(OpCodes.Stloc, local);
 			Emit(OpCodes.Ldloca, local);
 			Emit(OpCodes.Call, get_Value);
@@ -1442,8 +1442,8 @@ namespace IKVM.Internal
 
 			internal sealed override void Emit(CodeEmitter ilgen)
 			{
-				LocalBuilder value1 = ilgen.AllocTempLocal(typeof(long));
-				LocalBuilder value2 = ilgen.AllocTempLocal(typeof(long));
+				LocalBuilder value1 = ilgen.AllocTempLocal(Types.Int64);
+				LocalBuilder value2 = ilgen.AllocTempLocal(Types.Int64);
 				ilgen.Emit(OpCodes.Stloc, value2);
 				ilgen.Emit(OpCodes.Stloc, value1);
 				ilgen.Emit(OpCodes.Ldloc, value1);
@@ -1467,7 +1467,7 @@ namespace IKVM.Internal
 		{
 			protected virtual Type FloatOrDouble()
 			{
-				return typeof(float);
+				return Types.Single;
 			}
 
 			internal sealed override void Emit(CodeEmitter ilgen)
@@ -1511,7 +1511,7 @@ namespace IKVM.Internal
 		{
 			protected virtual Type FloatOrDouble()
 			{
-				return typeof(float);
+				return Types.Single;
 			}
 
 			internal sealed override void Emit(CodeEmitter ilgen)
@@ -1555,7 +1555,7 @@ namespace IKVM.Internal
 		{
 			protected override Type FloatOrDouble()
 			{
-				return typeof(double);
+				return Types.Double;
 			}
 		}
 
@@ -1563,7 +1563,7 @@ namespace IKVM.Internal
 		{
 			protected override Type FloatOrDouble()
 			{
-				return typeof(double);
+				return Types.Double;
 			}
 		}
 

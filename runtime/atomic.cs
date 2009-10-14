@@ -108,7 +108,7 @@ static class AtomicReferenceFieldUpdaterEmitter
 
 	private static void EmitCompareAndSet(string name, TypeBuilder tb, FieldInfo field)
 	{
-		MethodBuilder compareAndSet = tb.DefineMethod(name, MethodAttributes.Public | MethodAttributes.Virtual, typeof(bool), new Type[] { typeof(object), typeof(object), typeof(object) });
+		MethodBuilder compareAndSet = tb.DefineMethod(name, MethodAttributes.Public | MethodAttributes.Virtual, Types.Boolean, new Type[] { Types.Object, Types.Object, Types.Object });
 		ILGenerator ilgen = compareAndSet.GetILGenerator();
 		ilgen.Emit(OpCodes.Ldarg_1);
 		ilgen.Emit(OpCodes.Castclass, field.DeclaringType);
@@ -278,7 +278,7 @@ static class AtomicReferenceFieldUpdaterEmitter
 
 	private static void EmitGet(TypeBuilder tb, FieldInfo field)
 	{
-		MethodBuilder get = tb.DefineMethod("get", MethodAttributes.Public | MethodAttributes.Virtual, typeof(object), new Type[] { typeof(object) });
+		MethodBuilder get = tb.DefineMethod("get", MethodAttributes.Public | MethodAttributes.Virtual, Types.Object, new Type[] { Types.Object });
 		ILGenerator ilgen = get.GetILGenerator();
 		ilgen.Emit(OpCodes.Ldarg_1);
 		ilgen.Emit(OpCodes.Castclass, field.DeclaringType);
@@ -289,7 +289,7 @@ static class AtomicReferenceFieldUpdaterEmitter
 
 	private static void EmitSet(string name, TypeBuilder tb, FieldInfo field, bool lazy)
 	{
-		MethodBuilder set = tb.DefineMethod(name, MethodAttributes.Public | MethodAttributes.Virtual, typeof(void), new Type[] { typeof(object), typeof(object) });
+		MethodBuilder set = tb.DefineMethod(name, MethodAttributes.Public | MethodAttributes.Virtual, Types.Void, new Type[] { Types.Object, Types.Object });
 		ILGenerator ilgen = set.GetILGenerator();
 		ilgen.Emit(OpCodes.Ldarg_1);
 		ilgen.Emit(OpCodes.Castclass, field.DeclaringType);

@@ -698,16 +698,16 @@ namespace IKVM.Internal
 				{
 					type = type.GetElementType();
 				}
-				return type == typeof(string)
-					|| type == typeof(bool)
-					|| type == typeof(byte)
-					|| type == typeof(char)
-					|| type == typeof(short)
-					|| type == typeof(int)
-					|| type == typeof(float)
-					|| type == typeof(long)
-					|| type == typeof(double)
-					|| type == typeof(Type)
+				return type == Types.String
+					|| type == Types.Boolean
+					|| type == Types.Byte
+					|| type == Types.Char
+					|| type == Types.Int16
+					|| type == Types.Int32
+					|| type == Types.Single
+					|| type == Types.Int64
+					|| type == Types.Double
+					|| type == Types.Type
 					|| type.IsEnum;
 			}
 
@@ -720,7 +720,7 @@ namespace IKVM.Internal
 				// HACK we have a special rule to make some additional custom attributes from mscorlib usable:
 				// Attributes that have two constructors, one an enum and another one taking a byte, short or int,
 				// we only expose the enum constructor.
-				if (constructors.Length == 2 && type.Assembly == typeof(object).Assembly)
+				if (constructors.Length == 2 && type.Assembly == Types.Object.Assembly)
 				{
 					ParameterInfo[] p0 = constructors[0].GetParameters();
 					ParameterInfo[] p1 = constructors[1].GetParameters();
@@ -736,7 +736,7 @@ namespace IKVM.Internal
 							t1 = tmp;
 							swapped = true;
 						}
-						if (t0.IsEnum && (t1 == typeof(byte) || t1 == typeof(short) || t1 == typeof(int)))
+						if (t0.IsEnum && (t1 == Types.Byte || t1 == Types.Int16 || t1 == Types.Int32))
 						{
 							if (swapped)
 							{
@@ -785,43 +785,43 @@ namespace IKVM.Internal
 
 				private static TypeWrapper MapType(Type type, bool isArray)
 				{
-					if (type == typeof(string))
+					if (type == Types.String)
 					{
 						return CoreClasses.java.lang.String.Wrapper;
 					}
-					else if (type == typeof(bool))
+					else if (type == Types.Boolean)
 					{
 						return PrimitiveTypeWrapper.BOOLEAN;
 					}
-					else if (type == typeof(byte))
+					else if (type == Types.Byte)
 					{
 						return PrimitiveTypeWrapper.BYTE;
 					}
-					else if (type == typeof(char))
+					else if (type == Types.Char)
 					{
 						return PrimitiveTypeWrapper.CHAR;
 					}
-					else if (type == typeof(short))
+					else if (type == Types.Int16)
 					{
 						return PrimitiveTypeWrapper.SHORT;
 					}
-					else if (type == typeof(int))
+					else if (type == Types.Int32)
 					{
 						return PrimitiveTypeWrapper.INT;
 					}
-					else if (type == typeof(float))
+					else if (type == Types.Single)
 					{
 						return PrimitiveTypeWrapper.FLOAT;
 					}
-					else if (type == typeof(long))
+					else if (type == Types.Int64)
 					{
 						return PrimitiveTypeWrapper.LONG;
 					}
-					else if (type == typeof(double))
+					else if (type == Types.Double)
 					{
 						return PrimitiveTypeWrapper.DOUBLE;
 					}
-					else if (type == typeof(Type))
+					else if (type == Types.Type)
 					{
 						return CoreClasses.java.lang.Class.Wrapper;
 					}
@@ -831,7 +831,7 @@ namespace IKVM.Internal
 						{
 							if (tw is EnumEnumTypeWrapper)
 							{
-								if (!isArray && AttributeHelper.IsDefined(type, typeof(FlagsAttribute)))
+								if (!isArray && AttributeHelper.IsDefined(type, JVM.Import(typeof(FlagsAttribute))))
 								{
 									return tw.MakeArrayType(1);
 								}
@@ -1304,9 +1304,9 @@ namespace IKVM.Internal
 				bool inherited = true;
 				foreach (CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(attributeType))
 				{
-					if (cad.Constructor.DeclaringType == typeof(AttributeUsageAttribute))
+					if (cad.Constructor.DeclaringType == JVM.Import(typeof(AttributeUsageAttribute)))
 					{
-						if (cad.ConstructorArguments.Count == 1 && cad.ConstructorArguments[0].ArgumentType == typeof(AttributeTargets))
+						if (cad.ConstructorArguments.Count == 1 && cad.ConstructorArguments[0].ArgumentType == JVM.Import(typeof(AttributeTargets)))
 						{
 							validOn = (AttributeTargets)cad.ConstructorArguments[0].Value;
 						}
@@ -1426,14 +1426,14 @@ namespace IKVM.Internal
 
 				internal override void Apply(ClassLoaderWrapper loader, TypeBuilder tb, object annotation)
 				{
-					if (type == typeof(System.Runtime.InteropServices.StructLayoutAttribute) && tb.BaseType != typeof(object))
+					if (type == JVM.Import(typeof(System.Runtime.InteropServices.StructLayoutAttribute)) && tb.BaseType != Types.Object)
 					{
 						// we have to handle this explicitly, because if we apply an illegal StructLayoutAttribute,
 						// TypeBuilder.CreateType() will later on throw an exception.
 						Tracer.Error(Tracer.Runtime, "StructLayoutAttribute cannot be applied to {0}, because it does not directly extend cli.System.Object", tb.FullName);
 						return;
 					}
-					if (type.IsSubclassOf(typeof(SecurityAttribute)))
+					if (type.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
 					{
 						SecurityAction action;
 						PermissionSet permSet;
@@ -1450,7 +1450,7 @@ namespace IKVM.Internal
 
 				internal override void Apply(ClassLoaderWrapper loader, ConstructorBuilder cb, object annotation)
 				{
-					if (type.IsSubclassOf(typeof(SecurityAttribute)))
+					if (type.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
 					{
 						SecurityAction action;
 						PermissionSet permSet;
@@ -1467,7 +1467,7 @@ namespace IKVM.Internal
 
 				internal override void Apply(ClassLoaderWrapper loader, MethodBuilder mb, object annotation)
 				{
-					if (type.IsSubclassOf(typeof(SecurityAttribute)))
+					if (type.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
 					{
 						SecurityAction action;
 						PermissionSet permSet;
@@ -1493,7 +1493,7 @@ namespace IKVM.Internal
 
 				internal override void Apply(ClassLoaderWrapper loader, FieldBuilder fb, object annotation)
 				{
-					if (type.IsSubclassOf(typeof(SecurityAttribute)))
+					if (type.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
 					{
 						// you can't add declarative security to a field
 					}
@@ -1505,7 +1505,7 @@ namespace IKVM.Internal
 
 				internal override void Apply(ClassLoaderWrapper loader, ParameterBuilder pb, object annotation)
 				{
-					if (type.IsSubclassOf(typeof(SecurityAttribute)))
+					if (type.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
 					{
 						// you can't add declarative security to a parameter
 					}
@@ -1517,7 +1517,7 @@ namespace IKVM.Internal
 
 				internal override void Apply(ClassLoaderWrapper loader, AssemblyBuilder ab, object annotation)
 				{
-					if (type.IsSubclassOf(typeof(SecurityAttribute)))
+					if (type.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
 					{
 						// you can only add declarative security to an assembly when defining the assembly
 					}
@@ -1529,7 +1529,7 @@ namespace IKVM.Internal
 
 				internal override void Apply(ClassLoaderWrapper loader, PropertyBuilder pb, object annotation)
 				{
-					if (type.IsSubclassOf(typeof(SecurityAttribute)))
+					if (type.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
 					{
 						// you can't add declarative security to a property
 					}
@@ -1643,7 +1643,7 @@ namespace IKVM.Internal
 			internal DelegateMethodWrapper(TypeWrapper declaringType, DelegateInnerClassTypeWrapper iface)
 				: base(declaringType, "<init>", "(" + iface.SigName + ")V", null, PrimitiveTypeWrapper.VOID, new TypeWrapper[] { iface }, Modifiers.Public, MemberFlags.None)
 			{
-				this.delegateConstructor = declaringType.TypeAsTBD.GetConstructor(new Type[] { typeof(object), typeof(IntPtr) });
+				this.delegateConstructor = declaringType.TypeAsTBD.GetConstructor(new Type[] { Types.Object, Types.IntPtr });
 				this.iface = iface;
 			}
 
@@ -1652,11 +1652,11 @@ namespace IKVM.Internal
 				TypeWrapper targetType = ma == null ? null : ma.GetStackTypeWrapper(opcodeIndex, 0);
 				if (targetType == null || targetType.IsInterface)
 				{
-					MethodInfo createDelegate = typeof(Delegate).GetMethod("CreateDelegate", new Type[] { typeof(Type), typeof(object), typeof(string) });
-					LocalBuilder targetObj = ilgen.DeclareLocal(typeof(object));
+					MethodInfo createDelegate = Types.Delegate.GetMethod("CreateDelegate", new Type[] { Types.Type, Types.Object, Types.String });
+					LocalBuilder targetObj = ilgen.DeclareLocal(Types.Object);
 					ilgen.Emit(OpCodes.Stloc, targetObj);
 					ilgen.Emit(OpCodes.Ldtoken, delegateConstructor.DeclaringType);
-					ilgen.Emit(OpCodes.Call, typeof(Type).GetMethod("GetTypeFromHandle", new Type[] { typeof(RuntimeTypeHandle) }));
+					ilgen.Emit(OpCodes.Call, Types.Type.GetMethod("GetTypeFromHandle", new Type[] { Types.RuntimeTypeHandle }));
 					ilgen.Emit(OpCodes.Ldloc, targetObj);
 					ilgen.Emit(OpCodes.Ldstr, "Invoke");
 					ilgen.Emit(OpCodes.Call, createDelegate);
@@ -1800,27 +1800,27 @@ namespace IKVM.Internal
 			// this method can be used to convert an enum value or its underlying value to a Java primitive
 			internal static object GetEnumPrimitiveValue(Type underlyingType, object obj)
 			{
-				if (underlyingType == typeof(sbyte) || underlyingType == typeof(byte))
+				if (underlyingType == Types.SByte || underlyingType == Types.Byte)
 				{
 					return unchecked((byte)((IConvertible)obj).ToInt32(null));
 				}
-				else if (underlyingType == typeof(short) || underlyingType == typeof(ushort))
+				else if (underlyingType == Types.Int16 || underlyingType == Types.UInt16)
 				{
 					return unchecked((short)((IConvertible)obj).ToInt32(null));
 				}
-				else if (underlyingType == typeof(int))
+				else if (underlyingType == Types.Int32)
 				{
 					return ((IConvertible)obj).ToInt32(null);
 				}
-				else if (underlyingType == typeof(uint))
+				else if (underlyingType == Types.UInt32)
 				{
 					return unchecked((int)((IConvertible)obj).ToUInt32(null));
 				}
-				else if (underlyingType == typeof(long))
+				else if (underlyingType == Types.Int64)
 				{
 					return ((IConvertible)obj).ToInt64(null);
 				}
-				else if (underlyingType == typeof(ulong))
+				else if (underlyingType == Types.UInt64)
 				{
 					return unchecked((long)((IConvertible)obj).ToUInt64(null));
 				}
@@ -1883,7 +1883,7 @@ namespace IKVM.Internal
 				ilgen.MarkLabel(label2);
 				ilgen.EmitThrow("java.lang.NullPointerException");
 				ilgen.MarkLabel(label1);
-				ilgen.Emit(OpCodes.Call, typeof(object).GetMethod("MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic, null, Type.EmptyTypes, null));
+				ilgen.Emit(OpCodes.Call, Types.Object.GetMethod("MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic, null, Type.EmptyTypes, null));
 			}
 
 			internal override void EmitCallvirt(CodeEmitter ilgen)
@@ -1899,21 +1899,21 @@ namespace IKVM.Internal
 			{
 				Type underlyingType = Enum.GetUnderlyingType(type);
 				Type javaUnderlyingType;
-				if (underlyingType == typeof(sbyte))
+				if (underlyingType == Types.SByte)
 				{
-					javaUnderlyingType = typeof(byte);
+					javaUnderlyingType = Types.Byte;
 				}
-				else if (underlyingType == typeof(ushort))
+				else if (underlyingType == Types.UInt16)
 				{
-					javaUnderlyingType = typeof(short);
+					javaUnderlyingType = Types.Int16;
 				}
-				else if (underlyingType == typeof(uint))
+				else if (underlyingType == Types.UInt32)
 				{
-					javaUnderlyingType = typeof(int);
+					javaUnderlyingType = Types.Int32;
 				}
-				else if (underlyingType == typeof(ulong))
+				else if (underlyingType == Types.UInt64)
 				{
-					javaUnderlyingType = typeof(long);
+					javaUnderlyingType = Types.Int64;
 				}
 				else
 				{
@@ -1973,7 +1973,7 @@ namespace IKVM.Internal
 				}
 
 				// add a protected default constructor to MulticastDelegate to make it easier to define a delegate in Java
-				if (type == typeof(MulticastDelegate))
+				if (type == Types.MulticastDelegate)
 				{
 					methodsList.Add("<init>()V", new MulticastDelegateCtorMethodWrapper(this));
 				}
@@ -2303,7 +2303,7 @@ namespace IKVM.Internal
 
 		private static bool IsAttribute(Type type)
 		{
-			if (!type.IsAbstract && type.IsSubclassOf(typeof(Attribute)) && IsVisible(type))
+			if (!type.IsAbstract && type.IsSubclassOf(Types.Attribute) && IsVisible(type))
 			{
 				//
 				// Based on the number of constructors and their arguments, we distinguish several types
@@ -2332,7 +2332,7 @@ namespace IKVM.Internal
 			// non-public types in the arg list and they're not really useful anyway)
 			// NOTE we don't have to check in what assembly the type lives, because this is a DotNetTypeWrapper,
 			// we know that it is a different assembly.
-			if (!type.IsAbstract && type.IsSubclassOf(typeof(MulticastDelegate)) && IsVisible(type))
+			if (!type.IsAbstract && type.IsSubclassOf(Types.MulticastDelegate) && IsVisible(type))
 			{
 				MethodInfo invoke = type.GetMethod("Invoke");
 				if (invoke != null)

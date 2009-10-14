@@ -114,10 +114,10 @@ static class ByteCodeHelperMethods
 		VerboseCastFailure = typeofByteCodeHelper.GetMethod("VerboseCastFailure");
 		SkipFinalizer = typeofByteCodeHelper.GetMethod("SkipFinalizer");
 		DynamicInstanceOf = typeofByteCodeHelper.GetMethod("DynamicInstanceOf");
-		volatileReadDouble = typeofByteCodeHelper.GetMethod("VolatileRead", new Type[] { Type.GetType("System.Double&") });
-		volatileReadLong = typeofByteCodeHelper.GetMethod("VolatileRead", new Type[] { Type.GetType("System.Int64&") });
-		volatileWriteDouble = typeofByteCodeHelper.GetMethod("VolatileWrite", new Type[] { Type.GetType("System.Double&"), typeof(double) });
-		volatileWriteLong = typeofByteCodeHelper.GetMethod("VolatileWrite", new Type[] { Type.GetType("System.Int64&"), typeof(long) });
+		volatileReadDouble = typeofByteCodeHelper.GetMethod("VolatileRead", new Type[] { Types.Double.MakeByRefType() });
+		volatileReadLong = typeofByteCodeHelper.GetMethod("VolatileRead", new Type[] { Types.Int64.MakeByRefType() });
+		volatileWriteDouble = typeofByteCodeHelper.GetMethod("VolatileWrite", new Type[] { Types.Double.MakeByRefType(), Types.Double });
+		volatileWriteLong = typeofByteCodeHelper.GetMethod("VolatileWrite", new Type[] { Types.Int64.MakeByRefType(), Types.Int64 });
 	}
 }
 
@@ -186,14 +186,14 @@ class Compiler
 
 	static Compiler()
 	{
-		getTypeFromHandleMethod = typeof(Type).GetMethod("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(RuntimeTypeHandle) }, null);
-		monitorEnterMethod = typeof(System.Threading.Monitor).GetMethod("Enter", BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(object) }, null);
-		monitorExitMethod = typeof(System.Threading.Monitor).GetMethod("Exit", BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(object) }, null);
-		keepAliveMethod = typeof(System.GC).GetMethod("KeepAlive", BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(object) }, null);
+		getTypeFromHandleMethod = Types.Type.GetMethod("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, null, new Type[] { Types.RuntimeTypeHandle }, null);
+		monitorEnterMethod = JVM.Import(typeof(System.Threading.Monitor)).GetMethod("Enter", BindingFlags.Static | BindingFlags.Public, null, new Type[] { Types.Object }, null);
+		monitorExitMethod = JVM.Import(typeof(System.Threading.Monitor)).GetMethod("Exit", BindingFlags.Static | BindingFlags.Public, null, new Type[] { Types.Object }, null);
+		keepAliveMethod = JVM.Import(typeof(System.GC)).GetMethod("KeepAlive", BindingFlags.Static | BindingFlags.Public, null, new Type[] { Types.Object }, null);
 		java_lang_Object = CoreClasses.java.lang.Object.Wrapper;
 		java_lang_Throwable = CoreClasses.java.lang.Throwable.Wrapper;
-		cli_System_Object = DotNetTypeWrapper.GetWrapperFromDotNetType(typeof(System.Object));
-		cli_System_Exception = DotNetTypeWrapper.GetWrapperFromDotNetType(typeof(System.Exception));
+		cli_System_Object = DotNetTypeWrapper.GetWrapperFromDotNetType(Types.Object);
+		cli_System_Exception = DotNetTypeWrapper.GetWrapperFromDotNetType(Types.Exception);
 		java_lang_Class = CoreClasses.java.lang.Class.Wrapper;
 		java_lang_ThreadDeath = ClassLoaderWrapper.LoadClassCritical("java.lang.ThreadDeath");
 		// HACK we need to special case core compilation, because the __<map> methods are HideFromJava
@@ -217,11 +217,11 @@ class Compiler
 		}
 		else
 		{
-			mapExceptionMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<map>", new Type[] { typeof(Exception), typeof(Type), typeof(bool) });
-			mapExceptionFastMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<map>", new Type[] { typeof(Exception), typeof(bool) });
+			mapExceptionMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<map>", new Type[] { Types.Exception, Types.Type, Types.Boolean });
+			mapExceptionFastMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<map>", new Type[] { Types.Exception, Types.Boolean });
 			suppressFillInStackTraceMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<suppressFillInStackTrace>", Type.EmptyTypes);
-			unmapExceptionMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<unmap>", new Type[] { typeof(Exception) });
-			fixateExceptionMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<fixate>", new Type[] { typeof(Exception) });
+			unmapExceptionMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<unmap>", new Type[] { Types.Exception });
+			fixateExceptionMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<fixate>", new Type[] { Types.Exception });
 		}
 		getClassFromTypeHandle = ClassLoaderWrapper.LoadClassCritical("ikvm.runtime.Util").GetMethodWrapper("getClassFromTypeHandle", "(Lcli.System.RuntimeTypeHandle;)Ljava.lang.Class;", false);
 		getClassFromTypeHandle.Link();
@@ -896,7 +896,7 @@ class Compiler
 			{
 				clazz.EmitClassLiteral(ilGenerator);
 				ilGenerator.Emit(OpCodes.Dup);
-				LocalBuilder monitor = ilGenerator.DeclareLocal(typeof(object));
+				LocalBuilder monitor = ilGenerator.DeclareLocal(Types.Object);
 				ilGenerator.Emit(OpCodes.Stloc, monitor);
 				ilGenerator.Emit(OpCodes.Call, monitorEnterMethod);
 				ilGenerator.BeginExceptionBlock();
@@ -1284,7 +1284,7 @@ class Compiler
 					}
 					else
 					{
-						ilGenerator.BeginCatchBlock(typeof(Exception));
+						ilGenerator.BeginCatchBlock(Types.Exception);
 					}
 					BranchCookie bc = new BranchCookie(this, 1, exc.handlerIndex);
 					prevBlock.AddExitHack(bc);
@@ -1615,7 +1615,7 @@ class Compiler
 								// This bug causes problems for the sun.misc.FloatingDecimal code, so as a workaround we obfuscate the -0.0 constant.
 								// [1] https://connect.microsoft.com/VisualStudio/feedback/ViewFeedback.aspx?FeedbackID=276714
 								ilGenerator.Emit(OpCodes.Ldc_I8, Int64.MinValue);
-								ilGenerator.Emit(OpCodes.Call, typeof(BitConverter).GetMethod("Int64BitsToDouble"));
+								ilGenerator.Emit(OpCodes.Call, JVM.Import(typeof(BitConverter)).GetMethod("Int64BitsToDouble"));
 							}
 							else
 							{
@@ -1632,7 +1632,7 @@ class Compiler
 								// This bug causes problems for the sun.misc.FloatingDecimal code, so as a workaround we obfuscate the -0.0 constant.
 								// [1] https://connect.microsoft.com/VisualStudio/feedback/ViewFeedback.aspx?FeedbackID=276714
 								ilGenerator.Emit(OpCodes.Ldc_I8, Int64.MinValue);
-								ilGenerator.Emit(OpCodes.Call, typeof(BitConverter).GetMethod("Int64BitsToDouble"));
+								ilGenerator.Emit(OpCodes.Call, JVM.Import(typeof(BitConverter)).GetMethod("Int64BitsToDouble"));
 							}
 							else
 							{
@@ -2178,10 +2178,10 @@ class Compiler
 				}
 				case NormalizedByteCode.__multianewarray:
 				{
-					LocalBuilder localArray = ilGenerator.UnsafeAllocTempLocal(typeof(int[]));
-					LocalBuilder localInt = ilGenerator.UnsafeAllocTempLocal(typeof(int));
+					LocalBuilder localArray = ilGenerator.UnsafeAllocTempLocal(JVM.Import(typeof(int[])));
+					LocalBuilder localInt = ilGenerator.UnsafeAllocTempLocal(Types.Int32);
 					ilGenerator.LazyEmitLdc_I4(instr.Arg2);
-					ilGenerator.Emit(OpCodes.Newarr, typeof(int));
+					ilGenerator.Emit(OpCodes.Newarr, Types.Int32);
 					ilGenerator.Emit(OpCodes.Stloc, localArray);
 					for(int j = 1; j <= instr.Arg2; j++)
 					{
@@ -2393,7 +2393,7 @@ class Compiler
 						if(elem.IsNonPrimitiveValueType)
 						{
 							Type t = elem.TypeAsTBD;
-							LocalBuilder local = ilGenerator.UnsafeAllocTempLocal(typeof(object));
+							LocalBuilder local = ilGenerator.UnsafeAllocTempLocal(Types.Object);
 							ilGenerator.Emit(OpCodes.Stloc, local);
 							ilGenerator.Emit(OpCodes.Ldelema, t);
 							ilGenerator.Emit(OpCodes.Ldloc, local);
@@ -2413,8 +2413,8 @@ class Compiler
 				case NormalizedByteCode.__arraylength:
 					if(ma.GetRawStackTypeWrapper(i, 0).IsUnloadable)
 					{
-						ilGenerator.Emit(OpCodes.Castclass, typeof(Array));
-						ilGenerator.Emit(OpCodes.Callvirt, typeof(Array).GetMethod("get_Length"));
+						ilGenerator.Emit(OpCodes.Castclass, Types.Array);
+						ilGenerator.Emit(OpCodes.Callvirt, Types.Array.GetMethod("get_Length"));
 					}
 					else
 					{
@@ -2869,14 +2869,14 @@ class Compiler
 				case NormalizedByteCode.__athrow_no_unmap:
 					if(ma.GetRawStackTypeWrapper(i, 0).IsUnloadable)
 					{
-						ilGenerator.Emit(OpCodes.Castclass, typeof(Exception));
+						ilGenerator.Emit(OpCodes.Castclass, Types.Exception);
 					}
 					ilGenerator.Emit(OpCodes.Throw);
 					break;
 				case NormalizedByteCode.__athrow:
 					if(ma.GetRawStackTypeWrapper(i, 0).IsUnloadable)
 					{
-						ilGenerator.Emit(OpCodes.Castclass, typeof(Exception));
+						ilGenerator.Emit(OpCodes.Castclass, Types.Exception);
 					}
 					ilGenerator.Emit(OpCodes.Call, unmapExceptionMethod);
 					ilGenerator.Emit(OpCodes.Throw);
@@ -3173,7 +3173,7 @@ class Compiler
 					}
 					else
 					{
-						LocalBuilder ghost = ilGenerator.AllocTempLocal(typeof(object));
+						LocalBuilder ghost = ilGenerator.AllocTempLocal(Types.Object);
 						ilGenerator.Emit(OpCodes.Stloc, ghost);
 						LocalBuilder local = ilGenerator.AllocTempLocal(args[i].TypeAsSignatureType);
 						ilGenerator.Emit(OpCodes.Ldloca, local);
@@ -3319,10 +3319,10 @@ class Compiler
 		{
 			Profiler.Count("EmitDynamicInvokeEmitter");
 			TypeWrapper[] args = cpi.GetArgTypes();
-			LocalBuilder argarray = ilGenerator.DeclareLocal(typeof(object[]));
-			LocalBuilder val = ilGenerator.DeclareLocal(typeof(object));
+			LocalBuilder argarray = ilGenerator.DeclareLocal(JVM.Import(typeof(object[])));
+			LocalBuilder val = ilGenerator.DeclareLocal(Types.Object);
 			ilGenerator.Emit(OpCodes.Ldc_I4, args.Length);
-			ilGenerator.Emit(OpCodes.Newarr, typeof(object));
+			ilGenerator.Emit(OpCodes.Newarr, Types.Object);
 			ilGenerator.Emit(OpCodes.Stloc, argarray);
 			for(int i = args.Length - 1; i >= 0; i--)
 			{

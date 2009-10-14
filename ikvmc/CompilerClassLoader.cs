@@ -152,7 +152,7 @@ namespace IKVM.Internal
 				if (annotationClass.EndsWith(DotNetTypeWrapper.AttributeAnnotationSuffix))
 				{
 					Type annot = Type.GetType(DotNetTypeWrapper.DemangleTypeName(annotationClass.Substring(0, annotationClass.Length - DotNetTypeWrapper.AttributeAnnotationSuffix.Length)));
-					if (annot != null && annot.IsSubclassOf(typeof(SecurityAttribute)))
+					if (annot != null && annot.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
 					{
 						SecurityAction action;
 						PermissionSet permSet;
@@ -219,7 +219,7 @@ namespace IKVM.Internal
 			}
 			if(this.EmitDebugInfo || this.EmitStackTraceInfo)
 			{
-				CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, this.EmitDebugInfo });
+				CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(JVM.Import(typeof(DebuggableAttribute)).GetConstructor(new Type[] { Types.Boolean, Types.Boolean }), new object[] { true, this.EmitDebugInfo });
 				assemblyBuilder.SetCustomAttribute(debugAttr);
 			}
 			AttributeHelper.SetRuntimeCompatibilityAttribute(assemblyBuilder);
@@ -429,7 +429,7 @@ namespace IKVM.Internal
 				}
 				name = sb.ToString();
 			}
-			CustomAttributeBuilder cab = new CustomAttributeBuilder(typeof(InternalsVisibleToAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { name });
+			CustomAttributeBuilder cab = new CustomAttributeBuilder(JVM.Import(typeof(InternalsVisibleToAttribute)).GetConstructor(new Type[] { Types.String }), new object[] { name });
 			this.assemblyBuilder.SetCustomAttribute(cab);
 		}
 
@@ -438,25 +438,25 @@ namespace IKVM.Internal
 			Type[] args = Type.EmptyTypes;
 			if(noglobbing)
 			{
-				args = new Type[] { typeof(string[]) };
+				args = new Type[] { JVM.Import(typeof(string[])) };
 			}
-			MethodBuilder mainStub = this.GetTypeWrapperFactory().ModuleBuilder.DefineGlobalMethod("main", MethodAttributes.Public | MethodAttributes.Static, typeof(int), args);
+			MethodBuilder mainStub = this.GetTypeWrapperFactory().ModuleBuilder.DefineGlobalMethod("main", MethodAttributes.Public | MethodAttributes.Static, Types.Int32, args);
 			if(apartmentAttributeType != null)
 			{
 				mainStub.SetCustomAttribute(new CustomAttributeBuilder(apartmentAttributeType.GetConstructor(Type.EmptyTypes), new object[0]));
 			}
 			CodeEmitter ilgen = CodeEmitter.Create(mainStub);
-			LocalBuilder rc = ilgen.DeclareLocal(typeof(int));
+			LocalBuilder rc = ilgen.DeclareLocal(Types.Int32);
 			TypeWrapper startupType = LoadClassByDottedName("ikvm.runtime.Startup");
 			if(props.Count > 0)
 			{
-				ilgen.Emit(OpCodes.Newobj, typeof(System.Collections.Hashtable).GetConstructor(Type.EmptyTypes));
+				ilgen.Emit(OpCodes.Newobj, JVM.Import(typeof(System.Collections.Hashtable)).GetConstructor(Type.EmptyTypes));
 				foreach(KeyValuePair<string, string> kv in props)
 				{
 					ilgen.Emit(OpCodes.Dup);
 					ilgen.Emit(OpCodes.Ldstr, kv.Key);
 					ilgen.Emit(OpCodes.Ldstr, kv.Value);
-					ilgen.Emit(OpCodes.Callvirt, typeof(System.Collections.Hashtable).GetMethod("Add"));
+					ilgen.Emit(OpCodes.Callvirt, JVM.Import(typeof(System.Collections.Hashtable)).GetMethod("Add"));
 				}
 				startupType.GetMethodWrapper("setProperties", "(Lcli.System.Collections.Hashtable;)V", false).EmitCall(ilgen);
 			}
@@ -471,9 +471,9 @@ namespace IKVM.Internal
 				startupType.GetMethodWrapper("glob", "()[Ljava.lang.String;", false).EmitCall(ilgen);
 			}
 			ilgen.Emit(OpCodes.Call, m);
-			ilgen.BeginCatchBlock(typeof(Exception));
+			ilgen.BeginCatchBlock(Types.Exception);
 			LoadClassByDottedName("ikvm.runtime.Util").GetMethodWrapper("mapException", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false).EmitCall(ilgen);
-			LocalBuilder exceptionLocal = ilgen.DeclareLocal(typeof(Exception));
+			LocalBuilder exceptionLocal = ilgen.DeclareLocal(Types.Exception);
 			ilgen.Emit(OpCodes.Stloc, exceptionLocal);
 			TypeWrapper threadTypeWrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Thread");
 			LocalBuilder threadLocal = ilgen.DeclareLocal(threadTypeWrapper.TypeAsLocalOrStackType);
@@ -528,7 +528,7 @@ namespace IKVM.Internal
 					list[i++] = kv.Key;
 					list[i++] = kv.Value;
 				}
-				CustomAttributeBuilder cab = new CustomAttributeBuilder(JVM.LoadType(typeof(JavaModuleAttribute)).GetConstructor(new Type[] { typeof(string[]) }), new object[] { list });
+				CustomAttributeBuilder cab = new CustomAttributeBuilder(JVM.LoadType(typeof(JavaModuleAttribute)).GetConstructor(new Type[] { JVM.Import(typeof(string[])) }), new object[] { list });
 				mb.SetCustomAttribute(cab);
 			}
 			else
@@ -542,7 +542,7 @@ namespace IKVM.Internal
 			{
 				string[] list = new string[packages.Count];
 				packages.Keys.CopyTo(list, 0);
-				mb.SetCustomAttribute(new CustomAttributeBuilder(JVM.LoadType(typeof(PackageListAttribute)).GetConstructor(new Type[] { typeof(string[]) }), new object[] { list }));
+				mb.SetCustomAttribute(new CustomAttributeBuilder(JVM.LoadType(typeof(PackageListAttribute)).GetConstructor(new Type[] { JVM.Import(typeof(string[])) }), new object[] { list }));
 				// We can't add the resource when we're a module, because a multi-module assembly has a single resource namespace
 				// and since you cannot combine -target:module with -sharedclassloader we don't need an export map
 				// (the wildcard exports have already been added above, by making sure that we statically reference the assemblies).
@@ -774,7 +774,7 @@ namespace IKVM.Internal
 					attrs |= TypeAttributes.Abstract;
 				}
 				string name = c.Name.Replace('/', '.');
-				typeBuilder = classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(name, attrs, baseIsSealed ? typeof(object) : baseType);
+				typeBuilder = classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(name, attrs, baseIsSealed ? Types.Object : baseType);
 				if(c.Attributes != null)
 				{
 					foreach(IKVM.Internal.MapXml.Attribute custattr in c.Attributes)
@@ -1883,7 +1883,7 @@ namespace IKVM.Internal
 					return;
 				}
 				MethodAttributes attr = MethodAttributes.SpecialName | MethodAttributes.Public | MethodAttributes.Static;
-				MethodBuilder mb = typeBuilder.DefineMethod("__<instanceof>", attr, typeof(bool), new Type[] { typeof(object) });
+				MethodBuilder mb = typeBuilder.DefineMethod("__<instanceof>", attr, Types.Boolean, new Type[] { Types.Object });
 				AttributeHelper.HideFromJava(mb);
 				AttributeHelper.SetEditorBrowsableNever(mb);
 				CodeEmitter ilgen = CodeEmitter.Create(mb);
@@ -1900,10 +1900,10 @@ namespace IKVM.Internal
 					ilgen.Emit(OpCodes.Brtrue_S, retFalse);
 				}
 
-				if(shadowType == typeof(object))
+				if(shadowType == Types.Object)
 				{
 					ilgen.Emit(OpCodes.Ldarg_0);
-					ilgen.Emit(OpCodes.Isinst, typeof(Array));
+					ilgen.Emit(OpCodes.Isinst, Types.Array);
 					ilgen.Emit(OpCodes.Brtrue_S, retFalse);
 				}
 
@@ -1932,7 +1932,7 @@ namespace IKVM.Internal
 					return;
 				}
 				MethodAttributes attr = MethodAttributes.SpecialName | MethodAttributes.Public | MethodAttributes.Static;
-				MethodBuilder mb = typeBuilder.DefineMethod("__<checkcast>", attr, shadowType, new Type[] { typeof(object) });
+				MethodBuilder mb = typeBuilder.DefineMethod("__<checkcast>", attr, shadowType, new Type[] { Types.Object });
 				AttributeHelper.HideFromJava(mb);
 				AttributeHelper.SetEditorBrowsableNever(mb);
 				CodeEmitter ilgen = CodeEmitter.Create(mb);
@@ -1948,10 +1948,10 @@ namespace IKVM.Internal
 					hasfail = true;
 				}
 
-				if(shadowType == typeof(object))
+				if(shadowType == Types.Object)
 				{
 					ilgen.Emit(OpCodes.Ldarg_0);
-					ilgen.Emit(OpCodes.Isinst, typeof(Array));
+					ilgen.Emit(OpCodes.Isinst, Types.Array);
 					ilgen.Emit(OpCodes.Brtrue_S, fail);
 					hasfail = true;
 				}
@@ -1973,7 +1973,7 @@ namespace IKVM.Internal
 				if(hasfail)
 				{
 					ilgen.MarkLabel(fail);
-					ilgen.ThrowException(typeof(InvalidCastException));
+					ilgen.ThrowException(JVM.Import(typeof(InvalidCastException)));
 				}
 			}
 
@@ -2056,7 +2056,7 @@ namespace IKVM.Internal
 				get
 				{
 					// any remapped exceptions are automatically unsafe
-					return shadowType == typeof(Exception) || shadowType.IsSubclassOf(typeof(Exception));
+					return shadowType == Types.Exception || shadowType.IsSubclassOf(Types.Exception);
 				}
 			}
 
@@ -2186,8 +2186,8 @@ namespace IKVM.Internal
 				MethodWrapper mwSuppressFillInStackTrace = CoreClasses.java.lang.Throwable.Wrapper.GetMethodWrapper("__<suppressFillInStackTrace>", "()V", false);
 				mwSuppressFillInStackTrace.Link();
 				ilgen.Emit(OpCodes.Ldarg_0);
-				ilgen.Emit(OpCodes.Callvirt, typeof(Object).GetMethod("GetType"));
-				MethodInfo GetTypeFromHandle = typeof(Type).GetMethod("GetTypeFromHandle");
+				ilgen.Emit(OpCodes.Callvirt, Types.Object.GetMethod("GetType"));
+				MethodInfo GetTypeFromHandle = Types.Type.GetMethod("GetTypeFromHandle");
 				for(int i = 0; i < map.Length; i++)
 				{
 					ilgen.Emit(OpCodes.Dup);
@@ -2349,7 +2349,7 @@ namespace IKVM.Internal
 				}
 			}
 			// we manually add the array ghost interfaces
-			TypeWrapper array = ClassLoaderWrapper.GetWrapperFromType(typeof(Array));
+			TypeWrapper array = ClassLoaderWrapper.GetWrapperFromType(Types.Array);
 			AddGhost("java.io.Serializable", array);
 			AddGhost("java.lang.Cloneable", array);
 		}
@@ -2471,7 +2471,7 @@ namespace IKVM.Internal
 					{
 						TypeBuilder tb = compiler.options.sharedclassloader[0].GetTypeWrapperFactory().ModuleBuilder.DefineType("__<MainAssembly>", TypeAttributes.NotPublic | TypeAttributes.Abstract | TypeAttributes.SpecialName);
 						AttributeHelper.HideFromJava(tb);
-						mainAssembly = new CustomAttributeBuilder(typeof(TypeForwardedToAttribute).GetConstructor(new Type[] { typeof(Type) }), new object[] { tb.CreateType() });
+						mainAssembly = new CustomAttributeBuilder(JVM.Import(typeof(TypeForwardedToAttribute)).GetConstructor(new Type[] { Types.Type }), new object[] { tb.CreateType() });
 						mainAssemblyCabs.Add(compiler.options.sharedclassloader[0], mainAssembly);
 					}
 					if (compiler.options.sharedclassloader[0] != compiler)
@@ -2618,7 +2618,7 @@ namespace IKVM.Internal
 			}
 			if(!systemIsLoaded)
 			{
-				Assembly.ReflectionOnlyLoadFrom(typeof(System.ComponentModel.EditorBrowsableAttribute).Assembly.Location);
+				Assembly.ReflectionOnlyLoadFrom(JVM.Import(typeof(System.ComponentModel.EditorBrowsableAttribute)).Assembly.Location);
 			}
 			List<object> assemblyAnnotations = new List<object>();
 			Dictionary<string, string> baseClasses = new Dictionary<string, string>();
@@ -2962,11 +2962,11 @@ namespace IKVM.Internal
 				Type apartmentAttributeType = null;
 				if(options.apartment == ApartmentState.STA)
 				{
-					apartmentAttributeType = typeof(STAThreadAttribute);
+					apartmentAttributeType = JVM.Import(typeof(STAThreadAttribute));
 				}
 				else if(options.apartment == ApartmentState.MTA)
 				{
-					apartmentAttributeType = typeof(MTAThreadAttribute);
+					apartmentAttributeType = JVM.Import(typeof(MTAThreadAttribute));
 				}
 				SetMain(method, options.target, options.props, options.noglobbing, apartmentAttributeType);
 			}
@@ -2997,7 +2997,7 @@ namespace IKVM.Internal
 			}
 			if(options.fileversion != null)
 			{
-				CustomAttributeBuilder filever = new CustomAttributeBuilder(typeof(AssemblyFileVersionAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { options.fileversion });
+				CustomAttributeBuilder filever = new CustomAttributeBuilder(JVM.Import(typeof(System.Reflection.AssemblyFileVersionAttribute)).GetConstructor(new Type[] { Types.String }), new object[] { options.fileversion });
 				assemblyBuilder.SetCustomAttribute(filever);
 			}
 			foreach(object[] def in assemblyAnnotations)
@@ -3044,7 +3044,7 @@ namespace IKVM.Internal
 					Console.Error.WriteLine("Error: custom assembly class loader constructor is missing");
 					return 1;
 				}
-				ConstructorInfo ci = JVM.LoadType(typeof(CustomAssemblyClassLoaderAttribute)).GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { typeof(Type) }, null);
+				ConstructorInfo ci = JVM.LoadType(typeof(CustomAssemblyClassLoaderAttribute)).GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { Types.Type }, null);
 				assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(ci, new object[] { wrapper.TypeAsTBD }));
 			}
 			assemblyBuilder.DefineVersionInfoResource();
@@ -3181,7 +3181,7 @@ namespace IKVM.Internal
 				}
 			}
 			// try mscorlib as well
-			return typeof(object).Assembly.GetType(name, throwOnError);
+			return Types.Object.Assembly.GetType(name, throwOnError);
 		}
 
 		private static Dictionary<string, string> suppressWarnings = new Dictionary<string, string>();

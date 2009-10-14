@@ -39,6 +39,7 @@
                 <include name="../runtime/RuntimeHelperTypes.cs" />
                 <include name="../runtime/Serialization.cs" />
                 <include name="../runtime/tracer.cs" />
+                <include name="../runtime/Types.cs" />
                 <include name="../runtime/TypeWrapper.cs" />
                 <include name="../runtime/verifier.cs" />
                 <include name="../runtime/vm.cs" />

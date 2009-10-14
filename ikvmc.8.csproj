@@ -127,6 +127,7 @@
     <Compile Include="runtime\RuntimeHelperTypes.cs" />
     <Compile Include="runtime\Serialization.cs" />
     <Compile Include="runtime\tracer.cs" />
+    <Compile Include="runtime\Types.cs" />
     <Compile Include="runtime\TypeWrapper.cs">
       <SubType>Code</SubType>
     </Compile>

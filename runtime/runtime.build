@@ -92,6 +92,7 @@
                 <include name="RuntimeHelperTypes.cs" />
                 <include name="Serialization.cs" />
                 <include name="tracer.cs" />
+                <include name="Types.cs" />
                 <include name="TypeWrapper.cs" />
                 <include name="verifier.cs" />
                 <include name="vfs.cs" />

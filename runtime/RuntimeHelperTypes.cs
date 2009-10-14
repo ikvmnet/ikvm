@@ -39,7 +39,7 @@ namespace IKVM.Internal
 
 		internal static FieldInfo GetClassLiteralField(Type type)
 		{
-			Debug.Assert(type != typeof(void));
+			Debug.Assert(type != Types.Void);
 			if (classLiteralType == null)
 			{
 #if STATIC_COMPILER
@@ -86,7 +86,7 @@ namespace IKVM.Internal
 			ConstructorBuilder cctor = tb.DefineTypeInitializer();
 			CodeEmitter ilgen = CodeEmitter.Create(cctor);
 			ilgen.Emit(OpCodes.Ldtoken, typeParam);
-			ilgen.Emit(OpCodes.Call, typeof(Type).GetMethod("GetTypeFromHandle", new Type[] { typeof(RuntimeTypeHandle) }));
+			ilgen.Emit(OpCodes.Call, Types.Type.GetMethod("GetTypeFromHandle", new Type[] { Types.RuntimeTypeHandle }));
 			MethodWrapper mw = CoreClasses.java.lang.Class.Wrapper.GetMethodWrapper("<init>", "(Lcli.System.Type;)V", false);
 			mw.Link();
 			mw.EmitNewobj(ilgen);

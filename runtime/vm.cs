@@ -463,5 +463,10 @@ namespace IKVM.Internal
 #endif
 		}
 #endif
+
+		internal static Type Import(System.Type type)
+		{
+			return type;
+		}
 	}
 }

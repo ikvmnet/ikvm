@@ -1918,7 +1918,7 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Ret);
 				if(!basefield.IsFinal)
 				{
-					setter = typeBuilder.DefineMethod(GenerateUniqueMethodName("set_" + Name, typeof(void), new Type[] { propType }), attribs, null, new Type[] { propType });
+					setter = typeBuilder.DefineMethod(GenerateUniqueMethodName("set_" + Name, Types.Void, new Type[] { propType }), attribs, null, new Type[] { propType });
 					AttributeHelper.HideFromJava(setter);
 					pb.SetSetMethod(setter);
 					ilgen = CodeEmitter.Create(setter);

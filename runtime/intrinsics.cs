@@ -289,7 +289,7 @@ namespace IKVM.Internal
 			{
 				if (tw.GetClassLoader().GetTypeWrapperFactory().ReserveName(typename))
 				{
-					TypeBuilder tb = mod.DefineType(typename, TypeAttributes.Sealed | TypeAttributes.Class | TypeAttributes.ExplicitLayout | TypeAttributes.NotPublic, typeof(ValueType), PackingSize.Size1, length);
+					TypeBuilder tb = mod.DefineType(typename, TypeAttributes.Sealed | TypeAttributes.Class | TypeAttributes.ExplicitLayout | TypeAttributes.NotPublic, Types.ValueType, PackingSize.Size1, length);
 					AttributeHelper.HideFromJava(tb);
 					type = tb.CreateType();
 				}
@@ -301,11 +301,11 @@ namespace IKVM.Internal
 				// the type that we found doesn't match (must mean we've compiled a Java type with that name),
 				// so we fall back to the string approach
 				ilgen.Emit(OpCodes.Ldstr, str);
-				ilgen.Emit(OpCodes.Call, typeof(string).GetMethod("ToCharArray", Type.EmptyTypes));
+				ilgen.Emit(OpCodes.Call, Types.String.GetMethod("ToCharArray", Type.EmptyTypes));
 				return;
 			}
 			ilgen.Emit(OpCodes.Ldc_I4, str.Length);
-			ilgen.Emit(OpCodes.Newarr, typeof(char));
+			ilgen.Emit(OpCodes.Newarr, Types.Char);
 			ilgen.Emit(OpCodes.Dup);
 			byte[] data = new byte[length];
 			for (int j = 0; j < str.Length; j++)
@@ -324,7 +324,7 @@ namespace IKVM.Internal
 				JVM.CriticalFailure("Unsupported runtime: ModuleBuilder.DefineInitializedData() field type mispredicted", null);
 			}
 			ilgen.Emit(OpCodes.Ldtoken, fb);
-			ilgen.Emit(OpCodes.Call, typeof(System.Runtime.CompilerServices.RuntimeHelpers).GetMethod("InitializeArray", new Type[] { typeof(Array), typeof(RuntimeFieldHandle) }));
+			ilgen.Emit(OpCodes.Call, JVM.Import(typeof(System.Runtime.CompilerServices.RuntimeHelpers)).GetMethod("InitializeArray", new Type[] { Types.Array, JVM.Import(typeof(RuntimeFieldHandle)) }));
 		}
 
 		private static bool Reflection_getCallerClass(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)

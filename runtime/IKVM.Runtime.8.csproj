@@ -139,6 +139,7 @@
     <Compile Include="tracer.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Types.cs" />
     <Compile Include="TypeWrapper.cs">
       <SubType>Code</SubType>
     </Compile>

@@ -69,7 +69,7 @@ namespace IKVM.Internal
 		internal static void Create(ModuleBuilder modb, ClassLoaderWrapper loader)
 		{
 			TypeBuilder tb = modb.DefineType(DotNetTypeWrapper.GenericDelegateInterfaceTypeName, TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.Public);
-			tb.DefineGenericParameters("T")[0].SetBaseTypeConstraint(typeof(MulticastDelegate));
+			tb.DefineGenericParameters("T")[0].SetBaseTypeConstraint(Types.MulticastDelegate);
 			genericDelegateInterfaceType = tb.CreateType();
 
 			TypeWrapper annotationTypeWrapper = loader.LoadClassByDottedName("java.lang.annotation.Annotation");
@@ -86,8 +86,8 @@ namespace IKVM.Internal
 			enumTypeWrapper.Finish();
 			TypeBuilder tb = modb.DefineType(DotNetTypeWrapper.GenericEnumEnumTypeName, TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Public, enumTypeWrapper.TypeAsBaseType);
 			GenericTypeParameterBuilder gtpb = tb.DefineGenericParameters("T")[0];
-			gtpb.SetBaseTypeConstraint(typeof(Enum));
-			CodeEmitter ilgen = CodeEmitter.Create(tb.DefineConstructor(MethodAttributes.Private, CallingConventions.Standard, new Type[] { typeof(string), typeof(int) }));
+			gtpb.SetBaseTypeConstraint(Types.Enum);
+			CodeEmitter ilgen = CodeEmitter.Create(tb.DefineConstructor(MethodAttributes.Private, CallingConventions.Standard, new Type[] { Types.String, Types.Int32 }));
 			ilgen.Emit(OpCodes.Ldarg_0);
 			ilgen.Emit(OpCodes.Ldarg_1);
 			ilgen.Emit(OpCodes.Ldarg_2);
@@ -99,7 +99,7 @@ namespace IKVM.Internal
 		private static Type CreateAnnotationType(ModuleBuilder modb, string name, TypeWrapper annotationTypeWrapper)
 		{
 			TypeBuilder tb = modb.DefineType(name, TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.Public);
-			tb.DefineGenericParameters("T")[0].SetBaseTypeConstraint(typeof(Attribute));
+			tb.DefineGenericParameters("T")[0].SetBaseTypeConstraint(Types.Attribute);
 			return tb.CreateType();
 		}
 
