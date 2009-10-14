@@ -918,11 +918,17 @@ namespace ikvm.awt
                     Control control = peer.control;
                     if (control != null)
                     {
-                        IDataObject data = NetDataTransferer.getInstanceImpl().getDataObject(transferable);
+                        IDataObject data = NetDataTransferer.getInstanceImpl().getDataObject(transferable, 
+                            NetDataTransferer.adaptFlavorMap(getTrigger().getDragSource().getFlavorMap()));
                         NetToolkit.BeginInvoke(delegate
                                                    {
                                                        control.DoDragDrop(data, DragDropEffects.All);
-                                                       setDragDropInProgress(false);
+                                                       try
+                                                       {
+                                                           setDragDropInProgress(false);
+                                                       } catch
+                                                       {
+                                                       }
                                                    });
                     }
                 }
@@ -4387,27 +4393,7 @@ namespace ikvm.awt
 
         private void setContentsNative(java.awt.datatransfer.Transferable contents)
         {
-            Map formatMap = NetDataTransferer.getInstanceImpl().getFormatsForTransferable(contents, flavorMap);
-            DataObject clipObj = new DataObject();
-            for (Iterator iterator = formatMap.entrySet().iterator(); iterator.hasNext(); )
-            {
-                Map.Entry entry = (Map.Entry) iterator.next();
-                java.lang.Long lFormat = (java.lang.Long)entry.getKey();
-                java.awt.datatransfer.DataFlavor flavor = (java.awt.datatransfer.DataFlavor) entry.getValue();
-                long format = lFormat.longValue();
-                string nativeFormat = NetDataTransferer.getInstanceImpl().getNativeClipboardFormatName(format);
-                try
-                {
-                    if (flavor.isFlavorTextType())
-                        clipObj.SetData(nativeFormat, contents.getTransferData(flavor));
-                } catch (java.io.IOException e)
-                {
-                    if (!(flavor.isMimeTypeEqual(java.awt.datatransfer.DataFlavor.javaJVMLocalObjectMimeType) &&
-                          e is java.io.NotSerializableException)) {
-                        e.printStackTrace();
-                    }
-                }             
-            }
+            IDataObject clipObj = NetDataTransferer.getInstanceImpl().getDataObject(contents, flavorMap);
             Clipboard.SetDataObject(clipObj,true);
         }
 
@@ -4588,33 +4574,51 @@ namespace ikvm.awt
                 return dataFormat.Name;
         }
 
-        internal IDataObject getDataObject(java.awt.datatransfer.Transferable transferable)
+        internal IDataObject getDataObject(java.awt.datatransfer.Transferable transferable, java.awt.datatransfer.FlavorTable flavorMap)
         {
             DataObject obj = new DataObject();
-            java.awt.datatransfer.DataFlavor[] flavors = transferable.getTransferDataFlavors();
             SortedMap formatMap = getFormatsForTransferable(transferable, flavorMap);
-            for (Iterator iterator = formatMap.entrySet().iterator(); iterator.hasNext(); )
+            for (Iterator iterator = formatMap.entrySet().iterator(); iterator.hasNext();)
             {
-                Map.Entry entry = (Map.Entry)iterator.next();
-//                java.lang.Long lFormat = (java.lang.Long)entry.getKey();
-                java.awt.datatransfer.DataFlavor flavor = (java.awt.datatransfer.DataFlavor)entry.getValue();
-                if (java.awt.datatransfer.DataFlavor.javaFileListFlavor.equals(flavor))
+                Map.Entry entry = (Map.Entry) iterator.next();
+                java.awt.datatransfer.DataFlavor flavor = (java.awt.datatransfer.DataFlavor) entry.getValue();
+                try
                 {
-                    List list = (List)transferable.getTransferData(flavor);
-                    System.Collections.Specialized.StringCollection files =
-                        new System.Collections.Specialized.StringCollection();
-                    for(int i=0; i<list.size(); i++)
+                    if (java.awt.datatransfer.DataFlavor.javaFileListFlavor.equals(flavor))
                     {
-                        files.Add(((java.io.File)list.get(i)).getAbsolutePath());
+                        List list = (List) transferable.getTransferData(flavor);
+                        System.Collections.Specialized.StringCollection files =
+                            new System.Collections.Specialized.StringCollection();
+                        for (int i = 0; i < list.size(); i++)
+                        {
+                            files.Add(((java.io.File) list.get(i)).getAbsolutePath());
+                        }
+                        obj.SetFileDropList(files);
                     }
-                    obj.SetFileDropList(files);
-                } else if (java.awt.datatransfer.DataFlavor.stringFlavor.equals(flavor))
-                {
-                    obj.SetText((string)transferable.getTransferData(flavor));
+                    else if (java.awt.datatransfer.DataFlavor.stringFlavor.equals(flavor))
+                    {
+                        obj.SetText((string) transferable.getTransferData(flavor));
+                    }
+                    else if (java.awt.datatransfer.DataFlavor.imageFlavor.equals(flavor))
+                    {
+                        java.awt.Image image = transferable.getTransferData(flavor) as java.awt.Image;
+                        if (image != null)
+                        {
+                            Image netImage = J2C.ConvertImage(image);
+                            if (netImage != null)
+                            {
+                                obj.SetImage(netImage);
+                            }
+                        }
+                    }
                 }
-                else if (java.awt.datatransfer.DataFlavor.imageFlavor.equals(flavor))
+                catch (java.io.IOException e)
                 {
-                    obj.SetImage(null);
+                    if (!(flavor.isMimeTypeEqual(java.awt.datatransfer.DataFlavor.javaJVMLocalObjectMimeType) &&
+                          e is java.io.NotSerializableException))
+                    {
+                        e.printStackTrace();
+                    }
                 }
             }
             return obj;

@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.SortedMap;
 
 import sun.awt.datatransfer.DataTransferer;
+import cli.System.Runtime.InteropServices.DllImportAttribute;
 
 public abstract class IkvmDataTransferer extends DataTransferer {
 	public static final int CF_TEXT = 1;
@@ -53,10 +54,10 @@ public abstract class IkvmDataTransferer extends DataTransferer {
 	public static final int CF_HDROP = 15;
 	public static final int CF_LOCALE = 16;
 
-	public static final long CF_HTML = registerClipboardFormat("HTML Format");
-	public static final long CFSTR_INETURL = registerClipboardFormat("UniformResourceLocator");
-	public static final long CF_PNG = registerClipboardFormat("PNG");
-	public static final long CF_JFIF = registerClipboardFormat("JFIF");
+	public static final long CF_HTML = RegisterClipboardFormat("HTML Format");
+	public static final long CFSTR_INETURL = RegisterClipboardFormat("UniformResourceLocator");
+	public static final long CF_PNG = RegisterClipboardFormat("PNG");
+	public static final long CF_JFIF = RegisterClipboardFormat("JFIF");
 	
     private static final String[] predefinedClipboardNames = {
         "",
@@ -90,6 +91,9 @@ public abstract class IkvmDataTransferer extends DataTransferer {
     }
 
     private static final Long L_CF_LOCALE = (Long) predefinedClipboardNameMap.get(predefinedClipboardNames[CF_LOCALE]);
+    
+    @DllImportAttribute.Annotation("user32.dll")
+    private native static int RegisterClipboardFormat(String format);
 
     public SortedMap getFormatsForFlavors(DataFlavor[] flavors, FlavorTable map) {
         SortedMap retval = super.getFormatsForFlavors(flavors, map);
@@ -189,9 +193,11 @@ public abstract class IkvmDataTransferer extends DataTransferer {
     }
 
 	protected Long getFormatForNativeAsLong(String str) {
-		// TODO
-		return 1L;
-	}
+        Long format = (Long)predefinedClipboardNameMap.get(str);
+        if (format == null) {
+            format = Long.valueOf(RegisterClipboardFormat(str));
+        }
+        return format;	}
 	
 	protected abstract String getClipboardFormatName(long format);
 
@@ -208,8 +214,6 @@ public abstract class IkvmDataTransferer extends DataTransferer {
     public boolean isFileFormat(long format) {
         return format == CF_HDROP;
     }
-
-	private static native long registerClipboardFormat(String str);
 
 }
 

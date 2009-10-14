@@ -4945,17 +4945,6 @@ namespace IKVM.NativeCode.sun.awt
     {
         public static void closeSplashScreen() { }
     }
-    
-    static class IkvmDataTransferer
-    {
-        [DllImport("USER32.DLL", CharSet=CharSet.Auto, SetLastError=true)]
-        public static extern int RegisterClipboardFormat(string format);
-        
-        public static long registerClipboardFormat(string str)
-        {
-            return RegisterClipboardFormat(str);
-        }
-    }
 }
 
 namespace IKVM.NativeCode.sun.awt.shell
