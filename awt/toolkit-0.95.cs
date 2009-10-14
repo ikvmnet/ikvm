@@ -62,6 +62,8 @@ using java.util;
 using ikvm.awt.printing;
 using ikvm.runtime;
 using sun.awt;
+using System.Drawing.Imaging;
+using sun.awt.dnd;
 
 namespace ikvm.awt
 {
@@ -162,8 +164,11 @@ namespace ikvm.awt
 
     public class NetToolkit : sun.awt.SunToolkit, ikvm.awt.IkvmToolkit
     {
+        public static readonly String DATA_TRANSFERER_CLASS_NAME = typeof(NetDataTransferer).AssemblyQualifiedName;
+
         internal static volatile Form bogusForm;
         private int resolution;
+        private NetClipboard clipboard;
 
         private static void MessageLoop()
         {
@@ -197,6 +202,7 @@ namespace ikvm.awt
             lock (typeof(NetToolkit))
             {
                 System.Diagnostics.Debug.Assert(bogusForm == null);
+                setDataTransfererClassName(DATA_TRANSFERER_CLASS_NAME);
 
                 Thread thread = new Thread(new ThreadStart(MessageLoop));
                 thread.SetApartmentState(ApartmentState.STA);
@@ -526,12 +532,28 @@ namespace ikvm.awt
 
         public override java.awt.datatransfer.Clipboard getSystemClipboard()
         {
-            throw new NotImplementedException();
+            lock(this)
+            {
+                if (clipboard==null)
+                {
+                    clipboard = new NetClipboard();
+                }
+            }
+            return clipboard;
+        }
+
+        public override java.awt.dnd.DragGestureRecognizer createDragGestureRecognizer(java.lang.Class abstractRecognizerClass, java.awt.dnd.DragSource ds, java.awt.Component c, int srcActions, java.awt.dnd.DragGestureListener dgl)
+        {
+            java.lang.Class clazz = typeof(java.awt.dnd.MouseDragGestureRecognizer);
+            if (abstractRecognizerClass == clazz)
+                return new NetMouseDragGestureRecognizer(ds, c, srcActions, dgl);
+            else
+                return null;
         }
 
         public override java.awt.dnd.peer.DragSourceContextPeer createDragSourceContextPeer(java.awt.dnd.DragGestureEvent dge)
         {
-            throw new NotImplementedException();
+            return NetDragSourceContextPeer.createDragSourceContextPeer(dge);
         }
 
         public override Map mapInputMethodHighlight(java.awt.im.InputMethodHighlight highlight)
@@ -815,6 +837,293 @@ namespace ikvm.awt
         }
     }
 
+    internal class NetDragSourceContextPeer : sun.awt.dnd.SunDragSourceContextPeer
+    {
+        private static readonly NetDragSourceContextPeer theInstance = new NetDragSourceContextPeer(null);
+        private bool dragStart = false;
+
+        private NetDragSourceContextPeer(java.awt.dnd.DragGestureEvent dge) : base(dge)
+        {
+        }
+
+        public static NetDragSourceContextPeer createDragSourceContextPeer(java.awt.dnd.DragGestureEvent dge)
+        {
+            theInstance.setTrigger(dge);
+            return theInstance;
+        }
+
+        public override void startSecondaryEventLoop()
+        {
+            //NetToolkit.startSecondaryEventLoop();
+        }
+        
+        public override void quitSecondaryEventLoop()
+        {
+            //NetToolkit.quitSecondaryEventLoop();
+        }
+
+        internal static new java.awt.dnd.DragSourceContext getDragSourceContext()
+        {
+            return theInstance.getDragSourceContextCore();
+        }
+
+        internal static NetDragSourceContextPeer getInstance()
+        {
+            return theInstance;
+        }
+
+        internal java.awt.dnd.DragSourceContext getDragSourceContextCore()
+        {
+            return base.getDragSourceContext();
+        }
+
+        internal new void dragDropFinished(bool success, int operations, int x, int y)
+        {
+            if (dragStart)
+                base.dragDropFinished(success, operations, x, y);
+            dragStart = false;
+        }
+
+        protected override void startDrag(java.awt.datatransfer.Transferable trans, long[] formats, Map formatMap)
+        {
+            dragStart = true;
+            long nativeCtxtLocal = 0;
+
+            nativeCtxtLocal = createDragSource(getTrigger().getComponent(),
+                                               trans,
+                                               getTrigger().getTriggerEvent(),
+                                               getTrigger().getSourceAsDragGestureRecognizer().getSourceActions(),
+                                               formats,
+                                               formatMap);
+            NetDropTargetContextPeer.setCurrentJVMLocalSourceTransferable(trans);
+        }
+
+        private long createDragSource(java.awt.Component component,
+                                 java.awt.datatransfer.Transferable transferable,
+                                 java.awt.@event.InputEvent nativeTrigger,
+                                 int actions,
+                                 long[] formats,
+                                 Map formatMap)
+        {
+            java.awt.Component controlOwner = component;
+            while (controlOwner!=null && (controlOwner.getPeer() == null || controlOwner.getPeer() is sun.awt.NullComponentPeer))
+            {
+                controlOwner = controlOwner.getParent();
+            }
+            if (controlOwner != null)
+            {
+                NetComponentPeer peer = controlOwner.getPeer() as NetComponentPeer;
+                if (peer != null)
+                {
+                    Control control = peer.control;
+                    if (control != null)
+                    {
+                        IDataObject data = NetDataTransferer.getInstanceImpl().getDataObject(transferable);
+                        NetToolkit.BeginInvoke(delegate
+                                                   {
+                                                       control.DoDragDrop(data, DragDropEffects.All);
+                                                       setDragDropInProgress(false);
+                                                   });
+                    }
+                }
+            }
+            return 0;
+        }
+
+        protected override void setNativeCursor(long nativeCtxt, java.awt.Cursor c, int cType)
+        {
+            
+        }
+    }
+
+    internal class NetDropTargetContextPeer : sun.awt.dnd.SunDropTargetContextPeer
+    {
+        internal static NetDropTargetContextPeer getNetDropTargetContextPeer()
+        {
+            return new NetDropTargetContextPeer();
+        }
+
+        internal int handleEnterMessage(java.awt.Component component,
+                                      int x, int y,
+                                      int dropAction,
+                                      int actions,
+                                      long[] formats,
+                                      long nativeCtxt)
+        {
+            return postDropTargetEvent(component, x, y, dropAction, actions,
+                                       formats, nativeCtxt,
+                                       SunDropTargetEvent.MOUSE_ENTERED,
+                                       SunDropTargetContextPeer.DISPATCH_SYNC);
+        }
+
+        internal void handleExitMessage(java.awt.Component component,
+                                   long nativeCtxt)
+        {
+            postDropTargetEvent(component, 0, 0, java.awt.dnd.DnDConstants.ACTION_NONE,
+                                java.awt.dnd.DnDConstants.ACTION_NONE, null, nativeCtxt,
+                                SunDropTargetEvent.MOUSE_EXITED,
+                                SunDropTargetContextPeer.DISPATCH_SYNC);
+        }
+
+        internal int handleMotionMessage(java.awt.Component component,
+                                    int x, int y,
+                                    int dropAction,
+                                    int actions, long[] formats,
+                                    long nativeCtxt)
+        {
+            return postDropTargetEvent(component, x, y, dropAction, actions,
+                                       formats, nativeCtxt,
+                                       SunDropTargetEvent.MOUSE_DRAGGED,
+                                       SunDropTargetContextPeer.DISPATCH_SYNC);
+        }
+
+        internal void handleDropMessage(java.awt.Component component,
+                               int x, int y,
+                               int dropAction, int actions,
+                                long[] formats,
+                                long nativeCtxt)
+        {
+            postDropTargetEvent(component, x, y, dropAction, actions,
+                                formats, nativeCtxt,
+                                SunDropTargetEvent.MOUSE_DROPPED,
+                                !SunDropTargetContextPeer.DISPATCH_SYNC);
+        }
+
+        internal new int postDropTargetEvent(java.awt.Component component,
+                                      int x, int y,
+                                      int dropAction,
+                                      int actions,
+                                      long[] formats,
+                                      long nativeCtxt,
+                                      int eventID,
+                                      bool dispatchType)
+        {
+            return base.postDropTargetEvent(component, x, y,
+                                     dropAction, actions, formats, nativeCtxt, eventID, dispatchType);
+        }
+
+        protected override void doDropDone(bool success, int dropAction, bool isLocal)
+        {
+            // TODO: do something here... 
+            throw new NotImplementedException();
+        }
+
+        protected override object getNativeData(long l)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    internal class NetMouseDragGestureRecognizer : java.awt.dnd.MouseDragGestureRecognizer
+    {
+        protected static int motionThreshold;
+
+        protected static readonly int ButtonMask = java.awt.@event.InputEvent.BUTTON1_DOWN_MASK |
+                                                   java.awt.@event.InputEvent.BUTTON2_DOWN_MASK |
+                                                   java.awt.@event.InputEvent.BUTTON3_DOWN_MASK;
+
+        public NetMouseDragGestureRecognizer(java.awt.dnd.DragSource source, java.awt.Component component1, int actions,
+                                             java.awt.dnd.DragGestureListener listener) :
+                                                 base(source, component1, actions, listener)
+        {
+        }
+
+        protected int mapDragOperationFromModifiers(java.awt.@event.MouseEvent e)
+        {
+            int mods = e.getModifiersEx();
+            int btns = mods & ButtonMask;
+
+            // Prohibit multi-button drags.
+            if (!(btns == java.awt.@event.InputEvent.BUTTON1_DOWN_MASK ||
+                  btns == java.awt.@event.InputEvent.BUTTON2_DOWN_MASK ||
+                  btns == java.awt.@event.InputEvent.BUTTON3_DOWN_MASK))
+            {
+                return java.awt.dnd.DnDConstants.ACTION_NONE;
+            }
+
+            return
+                sun.awt.dnd.SunDragSourceContextPeer.convertModifiersToDropAction(mods,
+                                                                      getSourceActions());
+        }
+
+        public override void mouseClicked(java.awt.@event.MouseEvent e)
+        {
+            // do nothing
+        }
+
+        public override void mousePressed(java.awt.@event.MouseEvent e)
+        {
+            events.clear();
+
+            if (mapDragOperationFromModifiers(e) != java.awt.dnd.DnDConstants.ACTION_NONE)
+            {
+                try
+                {
+                    motionThreshold = java.awt.dnd.DragSource.getDragThreshold();
+                }
+                catch 
+                {
+                    motionThreshold = 5;
+                }
+                appendEvent(e);
+            }
+        }
+
+        public override void mouseReleased(java.awt.@event.MouseEvent e)
+        {
+            events.clear();
+        }
+
+        public override void mouseEntered(java.awt.@event.MouseEvent e)
+        {
+            events.clear();
+        }
+
+        public override void mouseExited(java.awt.@event.MouseEvent e)
+        {
+
+            if (!events.isEmpty())
+            { // gesture pending
+                int dragAction = mapDragOperationFromModifiers(e);
+
+                if (dragAction == java.awt.dnd.DnDConstants.ACTION_NONE)
+                {
+                    events.clear();
+                }
+            }
+        }
+
+        public override void mouseDragged(java.awt.@event.MouseEvent e)
+        {
+            if (!events.isEmpty())
+            { // gesture pending
+                int dop = mapDragOperationFromModifiers(e);
+
+                if (dop == java.awt.dnd.DnDConstants.ACTION_NONE)
+                {
+                    return;
+                }
+
+                java.awt.@event.MouseEvent trigger = (java.awt.@event.MouseEvent)events.get(0);
+
+
+                java.awt.Point origin = trigger.getPoint();
+                java.awt.Point current = e.getPoint();
+
+                int dx = java.lang.Math.abs(origin.x - current.x);
+                int dy = java.lang.Math.abs(origin.y - current.y);
+
+                if (dx > motionThreshold || dy > motionThreshold)
+                {
+                    fireDragGestureRecognized(dop, ((java.awt.@event.MouseEvent)getTriggerEvent()).getPoint());
+                }
+                else
+                    appendEvent(e);
+            }
+        }
+
+    }
+
     class NetInputMethodDescriptor : java.awt.im.spi.InputMethodDescriptor
     {
         public java.awt.im.spi.InputMethod createInputMethod()
@@ -994,6 +1303,7 @@ namespace ikvm.awt
 		private java.awt.Color foreground;
 		private java.awt.Color background;
 	    private volatile bool disposed;
+        private NetDropTargetContextPeer dropTargetPeer;
 
 		public NetComponentPeer(java.awt.Component target)
 		{
@@ -1090,6 +1400,12 @@ namespace ikvm.awt
 			control.Paint += new PaintEventHandler(OnPaint);
 			control.ContextMenu = new ContextMenu();
 			control.ContextMenu.Popup += new EventHandler(OnPopupMenu);
+		    control.AllowDrop = true;
+		    control.DragDrop += new DragEventHandler(OnDragDrop);
+            control.DragOver += new DragEventHandler(OnDragOver);
+            control.DragLeave += new EventHandler(OnDragLeave);
+		    control.DragEnter += new DragEventHandler(OnDragEnter);
+            control.QueryContinueDrag += new QueryContinueDragEventHandler(OnQueryContinueDrag);
 		}
 
         internal virtual void unhookEvents()
@@ -1109,7 +1425,11 @@ namespace ikvm.awt
             control.LostFocus -= new EventHandler(OnLostFocus);
             //control.Leave -= new EventHandler(OnBoundsChanged);
             control.Paint -= new PaintEventHandler(OnPaint);
-            if (control.ContextMenu!=null)
+            control.DragDrop -= new DragEventHandler(OnDragDrop);
+            control.DragOver -= new DragEventHandler(OnDragOver);
+            control.DragLeave -= new EventHandler(OnDragLeave);
+            control.DragEnter -= new DragEventHandler(OnDragEnter);
+            if (control.ContextMenu != null)
                 control.ContextMenu.Popup -= new EventHandler(OnPopupMenu);
         }
 
@@ -1282,6 +1602,142 @@ namespace ikvm.awt
 				postEvent(new java.awt.@event.KeyEvent(target, java.awt.@event.KeyEvent.KEY_PRESSED, when, modifiers, keyCode, keyChar, keyLocation));
 			}));
 		}
+
+        private void OnQueryContinueDrag(object sender, QueryContinueDragEventArgs e)
+        {
+        }
+
+        private void OnDragEnter(object sender, DragEventArgs e)
+        {
+            IDataObject obj = e.Data;
+            long[] formats = NetDataTransferer.getInstanceImpl().getClipboardFormatCodes(obj.GetFormats());
+            dropTargetPeer = NetDropTargetContextPeer.getNetDropTargetContextPeer();
+            int actions = dropTargetPeer.handleEnterMessage(target, e.X, e.Y, getDropAction(e.AllowedEffect, e.KeyState), getAction(e.AllowedEffect),
+                                              formats, 0);
+            e.Effect = getDragDropEffects(actions);
+        }
+
+        private void OnDragOver(object sender, DragEventArgs e)
+        {
+            IDataObject obj = e.Data;
+            long[] formats = NetDataTransferer.getInstanceImpl().getClipboardFormatCodes(obj.GetFormats());
+            dropTargetPeer = NetDropTargetContextPeer.getNetDropTargetContextPeer();
+            int actions = dropTargetPeer.handleMotionMessage(target, e.X, e.Y, getDropAction(e.AllowedEffect, e.KeyState), getAction(e.AllowedEffect),
+                                              formats, 0);
+            e.Effect = getDragDropEffects(actions);
+        }
+
+        private void OnDragLeave(object sender, EventArgs e)
+        {
+            if (dropTargetPeer!=null)
+                dropTargetPeer.handleExitMessage(target, 0);
+            dropTargetPeer = null;
+        }
+
+        private void OnDragDrop(object sender, DragEventArgs e)
+        {
+            IDataObject obj = e.Data;
+            long[] formats = NetDataTransferer.getInstanceImpl().getClipboardFormatCodes(obj.GetFormats());
+            int actions = getAction(e.Effect);
+            NetDragSourceContextPeer.getInstance().dragDropFinished(true, actions, e.X, e.Y);
+            if (dropTargetPeer != null)
+                dropTargetPeer.handleDropMessage(target, e.X, e.Y, getAction(e.Effect), getAction(e.AllowedEffect),
+                                                 formats, 0);
+            dropTargetPeer = null;
+        }
+
+        private static DragDropEffects getDragDropEffects(int actions)
+        {
+            switch(actions)
+            {
+                case java.awt.dnd.DnDConstants.ACTION_COPY:
+                    return DragDropEffects.Copy;
+                case java.awt.dnd.DnDConstants.ACTION_MOVE:
+                    return DragDropEffects.Move;
+                case java.awt.dnd.DnDConstants.ACTION_COPY_OR_MOVE:
+                    return DragDropEffects.Move | DragDropEffects.Copy;
+                case java.awt.dnd.DnDConstants.ACTION_LINK:
+                    return DragDropEffects.Link;
+                default:
+                    return DragDropEffects.None;
+            }
+        }
+
+        private static int getDropAction(DragDropEffects effects, int keyState)
+        {
+            int ret = java.awt.dnd.DnDConstants.ACTION_NONE;
+            const int MK_CONTROL = 0x8;
+            const int MK_SHIFT = 0x4;
+//            const int WM_MOUSEWHEEL = 0x20A;
+//            const int MK_LBUTTON = 0x1;
+//            const int MK_MBUTTON = 0x10;
+//            const int MK_RBUTTON = 0x2;
+//            const int MK_XBUTTON1 = 0x20;
+//            const int MK_XBUTTON2 = 0x40;
+            switch (keyState & (MK_CONTROL | MK_SHIFT))
+            {
+                case MK_CONTROL:
+                    if ((effects & DragDropEffects.Copy) == DragDropEffects.Copy)
+                        ret = java.awt.dnd.DnDConstants.ACTION_COPY;
+                    else
+                        ret = java.awt.dnd.DnDConstants.ACTION_NONE;
+                    break;
+
+                case MK_CONTROL | MK_SHIFT:
+                    if ((effects & DragDropEffects.Link) == DragDropEffects.Link)
+                        ret = java.awt.dnd.DnDConstants.ACTION_LINK;
+                    else
+                        ret = java.awt.dnd.DnDConstants.ACTION_NONE;
+                    break;
+
+                case MK_SHIFT:
+                    if ((effects & DragDropEffects.Move) == DragDropEffects.Move)
+                        ret = java.awt.dnd.DnDConstants.ACTION_MOVE;
+                    else
+                        ret = java.awt.dnd.DnDConstants.ACTION_NONE;
+                    break;
+
+                default:
+                    if ((effects & DragDropEffects.Move) == DragDropEffects.Move)
+                    {
+                        ret = java.awt.dnd.DnDConstants.ACTION_MOVE;
+                    }
+                    else if ((effects & DragDropEffects.Copy) == DragDropEffects.Copy)
+                    {
+                        ret = java.awt.dnd.DnDConstants.ACTION_COPY;
+                    }
+                    else if ((effects & DragDropEffects.Link) == DragDropEffects.Link)
+                    {
+                        ret = java.awt.dnd.DnDConstants.ACTION_LINK;
+                    }
+                    break;
+            }
+
+            return ret;
+        }
+        private static int getAction(DragDropEffects effects)
+        {
+            int actions = java.awt.dnd.DnDConstants.ACTION_NONE;
+            switch (effects)
+            {
+                case DragDropEffects.None:
+                    actions = java.awt.dnd.DnDConstants.ACTION_NONE;
+                    break;
+                case DragDropEffects.Copy:
+                    actions = java.awt.dnd.DnDConstants.ACTION_COPY;
+                    break;
+                case DragDropEffects.Move:
+                    actions = java.awt.dnd.DnDConstants.ACTION_MOVE;
+                    break;
+                case DragDropEffects.Move | DragDropEffects.Copy:
+                    actions = java.awt.dnd.DnDConstants.ACTION_COPY_OR_MOVE;
+                    break;
+                case DragDropEffects.Link:
+                    actions = java.awt.dnd.DnDConstants.ACTION_LINK;
+                    break;
+            }
+            return actions;
+        }
 
         private void OnKeyUp(object sender, KeyEventArgs e)
 		{
@@ -3889,4 +4345,322 @@ namespace ikvm.awt
             }
         }
     }
+    
+    public class NetClipboard : java.awt.datatransfer.Clipboard
+    {
+        private System.Collections.Generic.Dictionary<int, java.awt.datatransfer.DataFlavor> flavorById =
+            new System.Collections.Generic.Dictionary<int, java.awt.datatransfer.DataFlavor>();
+        private System.Collections.Generic.Dictionary<string, java.awt.datatransfer.DataFlavor> flavorByName =
+            new System.Collections.Generic.Dictionary<string, java.awt.datatransfer.DataFlavor>();
+        public static readonly java.awt.datatransfer.FlavorTable flavorMap =
+            (java.awt.datatransfer.FlavorTable)java.awt.datatransfer.SystemFlavorMap.getDefaultFlavorMap();
+
+        public NetClipboard() : base("System") { }
+
+        public override void setContents(java.awt.datatransfer.Transferable contents, java.awt.datatransfer.ClipboardOwner owner)
+        {
+            if (contents == null)
+            {
+                throw new java.lang.NullPointerException("contents");
+            }
+
+            java.awt.datatransfer.ClipboardOwner oldOwner = this.owner;
+            java.awt.datatransfer.Transferable oldContents = this.contents;
+            try
+            {
+                this.owner = owner;
+                this.contents = new sun.awt.datatransfer.TransferableProxy(contents, true);
+
+                setContentsNative(contents);
+            }
+            finally
+            {
+                if (oldOwner != null && oldOwner != owner)
+                {
+                    java.awt.EventQueue.invokeLater(Delegates.toRunnable(delegate() 
+                        {
+                            oldOwner.lostOwnership(this, oldContents);
+                        }));
+                }
+            }
+        }
+
+        private void setContentsNative(java.awt.datatransfer.Transferable contents)
+        {
+            Map formatMap = NetDataTransferer.getInstanceImpl().getFormatsForTransferable(contents, flavorMap);
+            DataObject clipObj = new DataObject();
+            for (Iterator iterator = formatMap.entrySet().iterator(); iterator.hasNext(); )
+            {
+                Map.Entry entry = (Map.Entry) iterator.next();
+                java.lang.Long lFormat = (java.lang.Long)entry.getKey();
+                java.awt.datatransfer.DataFlavor flavor = (java.awt.datatransfer.DataFlavor) entry.getValue();
+                long format = lFormat.longValue();
+                string nativeFormat = NetDataTransferer.getInstanceImpl().getNativeClipboardFormatName(format);
+                try
+                {
+                    if (flavor.isFlavorTextType())
+                        clipObj.SetData(nativeFormat, contents.getTransferData(flavor));
+                } catch (java.io.IOException e)
+                {
+                    if (!(flavor.isMimeTypeEqual(java.awt.datatransfer.DataFlavor.javaJVMLocalObjectMimeType) &&
+                          e is java.io.NotSerializableException)) {
+                        e.printStackTrace();
+                    }
+                }             
+            }
+            Clipboard.SetDataObject(clipObj,true);
+        }
+
+        public override java.awt.datatransfer.Transferable getContents(object requestor)
+        {
+            if (contents != null)
+            {
+                return contents;
+            }
+            return new NetClipboardTransferable(this);
+        }
+
+        private java.awt.datatransfer.DataFlavor GetFlavor(DataFormats.Format format)
+        {
+            string name = format.Name;
+            string mimeType;
+            switch (name)
+            {
+                case "Unicode String":
+                    mimeType = "text/string";
+                    break;
+                default:
+                    mimeType = null;
+                    break;
+            }
+            return new java.awt.datatransfer.DataFlavor(mimeType, name);
+        }
+
+        internal java.awt.datatransfer.DataFlavor GetFlavor(int id)
+        {
+            java.awt.datatransfer.DataFlavor flavor;
+            if (!flavorById.TryGetValue(id, out flavor))
+            {
+                DataFormats.Format format = DataFormats.GetFormat(id);
+                flavorById[id] = GetFlavor(format);
+            }
+            return flavor;
+        }
+
+        internal java.awt.datatransfer.DataFlavor GetFlavor(string name)
+        {
+            java.awt.datatransfer.DataFlavor flavor;
+            if (!flavorByName.TryGetValue(name, out flavor))
+            {
+                DataFormats.Format format = DataFormats.GetFormat(name);
+                flavorByName[name] = GetFlavor(format);
+            }
+            return flavor;
+        }
+
+    }
+
+    public class NetClipboardTransferable : java.awt.datatransfer.Transferable
+    {
+        private HashMap flavorToData = new HashMap();
+        private java.awt.datatransfer.DataFlavor[] flavors;
+        public NetClipboardTransferable(NetClipboard clipboard)
+        {
+            IDataObject data = Clipboard.GetDataObject();
+            java.awt.datatransfer.FlavorTable map = (java.awt.datatransfer.FlavorTable) java.awt.datatransfer.SystemFlavorMap.getDefaultFlavorMap();
+            if (data != null)
+            {
+                string[] formats = data.GetFormats();
+                if (formats != null && formats.Length > 0)
+                {
+                    long[] longFormats = NetDataTransferer.getInstanceImpl().getClipboardFormatCodes(formats);
+                    Map/*<DataFlavor,long>*/ flavorMap = NetDataTransferer.getInstanceImpl().getFlavorsForFormats(longFormats, map);
+                    flavors = (java.awt.datatransfer.DataFlavor[])(flavorMap.keySet().toArray(new java.awt.datatransfer.DataFlavor[0]));
+                    object[] dataArr = new object[formats.Length];
+                    for (int i = 0; i < formats.Length; i++)
+                    {
+                        string format = formats[i];
+                        dataArr[i] = data.GetData(format);
+                    }
+                    for(Iterator iter = flavorMap.entrySet().iterator(); iter.hasNext();)
+                    {
+                        Map.Entry entry = (Map.Entry) iter.next();
+                        long formatCode = ((java.lang.Long)entry.getValue()).longValue();
+                        int idx;
+                        for (idx = 0; idx < formats.Length; idx++)
+                        {
+                            if (longFormats[idx] == formatCode) break;
+                        }
+                        if (idx<formats.Length)
+                        {
+                            java.awt.datatransfer.DataFlavor flavor = (java.awt.datatransfer.DataFlavor) entry.getKey();
+                            flavorToData.put(flavor, dataArr[idx]);
+                        }
+                    }
+//                    Map flavorMap = NetDataTransferer.getInstanceImpl().getFlavorsForFormats(formats, map);
+//                    flavors = (java.awt.datatransfer.DataFlavor[])(flavorMap.keySet().toArray(new java.awt.datatransfer.DataFlavor[0]));
+//                    for(Iterator iter = flavorMap.entrySet().iterator(); iter.hasNext();)
+//                    {
+//                        Map.Entry entry = (Map.Entry) iter.next();
+//                        string format = (string) entry.getValue();
+//                        if (format == "UNICODE TEXT") format = "UnicodeText";
+//                        if (format == "TEXT") format = "Text";
+//                        java.awt.datatransfer.DataFlavor flavor = (java.awt.datatransfer.DataFlavor) entry.getKey();
+//                        object objData = ConvertData(data.GetData(format), flavor, format);
+//                        flavorToData.put(flavor, objData);
+//                    }
+                }
+            }
+        }
+
+        public java.awt.datatransfer.DataFlavor[] getTransferDataFlavors()
+        {
+            return flavors;
+        }
+
+        public object getTransferData(java.awt.datatransfer.DataFlavor df)
+        {
+            return flavorToData.get(df);
+        }
+
+        public bool isDataFlavorSupported(java.awt.datatransfer.DataFlavor df)
+        {
+            return flavorToData.containsKey(df);
+        }
+    }
+
+    public class NetDataTransferer : sun.awt.IkvmDataTransferer
+    {
+        public static readonly java.awt.datatransfer.FlavorTable flavorMap =
+            (java.awt.datatransfer.FlavorTable)java.awt.datatransfer.SystemFlavorMap.getDefaultFlavorMap();
+
+        class NetToolkitThreadBlockedHandler : sun.awt.datatransfer.ToolkitThreadBlockedHandler
+        {
+		    public void enter() 
+            {
+                if (!NetToolkit.bogusForm.InvokeRequired)
+                    Application.DoEvents();
+                //throw new NotImplementedException();
+		    }
+
+		    public void exit() 
+            {
+                //throw new NotImplementedException();
+		    }
+
+            public void @lock()
+            {
+                //throw new NotImplementedException();
+            }
+
+            public void unlock()
+            {
+                //throw new NotImplementedException();
+            }
+        }
+
+
+        private static readonly NetDataTransferer instance = new NetDataTransferer();
+        private static readonly NetToolkitThreadBlockedHandler handler = new NetToolkitThreadBlockedHandler();
+
+        public static NetDataTransferer getInstanceImpl()
+        {
+            return instance;
+        }
+
+        internal long[] getClipboardFormatCodes(string[] formats)
+        {
+            long[] longData = new long[formats.Length];
+            for(int i=0; i<formats.Length; i++)
+            {
+                DataFormats.Format dataFormat = DataFormats.GetFormat(formats[i]);
+                longData[i] = dataFormat==null?0:dataFormat.Id;
+            }
+            return longData;
+        }
+
+        internal string getNativeClipboardFormatName(long format)
+        {
+            DataFormats.Format dataFormat = DataFormats.GetFormat((int)format);
+            if (dataFormat == null)
+                return null;
+            else
+                return dataFormat.Name;
+        }
+
+        internal IDataObject getDataObject(java.awt.datatransfer.Transferable transferable)
+        {
+            DataObject obj = new DataObject();
+            java.awt.datatransfer.DataFlavor[] flavors = transferable.getTransferDataFlavors();
+            SortedMap formatMap = getFormatsForTransferable(transferable, flavorMap);
+            for (Iterator iterator = formatMap.entrySet().iterator(); iterator.hasNext(); )
+            {
+                Map.Entry entry = (Map.Entry)iterator.next();
+//                java.lang.Long lFormat = (java.lang.Long)entry.getKey();
+                java.awt.datatransfer.DataFlavor flavor = (java.awt.datatransfer.DataFlavor)entry.getValue();
+                if (java.awt.datatransfer.DataFlavor.javaFileListFlavor.equals(flavor))
+                {
+                    List list = (List)transferable.getTransferData(flavor);
+                    System.Collections.Specialized.StringCollection files =
+                        new System.Collections.Specialized.StringCollection();
+                    for(int i=0; i<list.size(); i++)
+                    {
+                        files.Add(((java.io.File)list.get(i)).getAbsolutePath());
+                    }
+                    obj.SetFileDropList(files);
+                } else if (java.awt.datatransfer.DataFlavor.stringFlavor.equals(flavor))
+                {
+                    obj.SetText((string)transferable.getTransferData(flavor));
+                }
+                else if (java.awt.datatransfer.DataFlavor.imageFlavor.equals(flavor))
+                {
+                    obj.SetImage(null);
+                }
+            }
+            return obj;
+        }
+
+        protected override string getClipboardFormatName(long format)
+        {
+            return getNativeClipboardFormatName(format);
+        }
+
+        protected override byte[] imageToStandardBytes(java.awt.Image image, string mimeType)
+        {
+            if (image is NoImage) return null;
+            Image netImage = J2C.ConvertImage(image);
+            ImageFormat format;
+            switch(mimeType)
+            {
+                case "image/jpg":
+                case "image/jpeg":
+                    format = ImageFormat.Jpeg;
+                    break;
+                case "image/png":
+                    format = ImageFormat.Png;
+                    break;
+                case "image/gif":
+                    format = ImageFormat.Gif;
+                    break;
+                case "image/x-win-metafile":
+                case "image/x-wmf":
+                case "image/wmf":
+                    format = ImageFormat.Wmf;
+                    break;
+                default:
+                    return null;
+            }
+            using(MemoryStream stream = new MemoryStream())
+            {
+                netImage.Save(stream, format);
+                return stream.GetBuffer();
+            }
+        }
+
+        public override sun.awt.datatransfer.ToolkitThreadBlockedHandler getToolkitThreadBlockedHandler()
+        {
+            return handler;
+        }
+    }
+
 }

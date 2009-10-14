@@ -1235,7 +1235,10 @@ public abstract class SunToolkit extends Toolkit
 
     public static String getDataTransfererClassName()
     {
-    return "sun.awt.IkvmDataTransferer";
+        if (dataTransfererClassName == null) {
+            Toolkit.getDefaultToolkit(); // transferer set during toolkit init
+        }
+        return dataTransfererClassName;
     }
 
     // Support for window closing event notifications
