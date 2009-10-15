@@ -4598,7 +4598,7 @@ namespace ikvm.awt
                         }
                         obj.SetFileDropList(files);
                     }
-                    else if (java.awt.datatransfer.DataFlavor.stringFlavor.equals(flavor))
+                    else if (flavor.isFlavorTextType())
                     {
                         obj.SetText((string) transferable.getTransferData(flavor));
                     }
