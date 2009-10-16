@@ -63,7 +63,6 @@ using ikvm.awt.printing;
 using ikvm.runtime;
 using sun.awt;
 using System.Drawing.Imaging;
-using sun.awt.dnd;
 
 namespace ikvm.awt
 {
@@ -958,8 +957,8 @@ namespace ikvm.awt
         {
             return postDropTargetEvent(component, x, y, dropAction, actions,
                                        formats, nativeCtxt,
-                                       SunDropTargetEvent.MOUSE_ENTERED,
-                                       SunDropTargetContextPeer.DISPATCH_SYNC);
+                                       sun.awt.dnd.SunDropTargetEvent.MOUSE_ENTERED,
+                                       sun.awt.dnd.SunDropTargetContextPeer.DISPATCH_SYNC);
         }
 
         internal void handleExitMessage(java.awt.Component component,
@@ -967,8 +966,8 @@ namespace ikvm.awt
         {
             postDropTargetEvent(component, 0, 0, java.awt.dnd.DnDConstants.ACTION_NONE,
                                 java.awt.dnd.DnDConstants.ACTION_NONE, null, nativeCtxt,
-                                SunDropTargetEvent.MOUSE_EXITED,
-                                SunDropTargetContextPeer.DISPATCH_SYNC);
+                                sun.awt.dnd.SunDropTargetEvent.MOUSE_EXITED,
+                                sun.awt.dnd.SunDropTargetContextPeer.DISPATCH_SYNC);
         }
 
         internal int handleMotionMessage(java.awt.Component component,
@@ -979,8 +978,8 @@ namespace ikvm.awt
         {
             return postDropTargetEvent(component, x, y, dropAction, actions,
                                        formats, nativeCtxt,
-                                       SunDropTargetEvent.MOUSE_DRAGGED,
-                                       SunDropTargetContextPeer.DISPATCH_SYNC);
+                                       sun.awt.dnd.SunDropTargetEvent.MOUSE_DRAGGED,
+                                       sun.awt.dnd.SunDropTargetContextPeer.DISPATCH_SYNC);
         }
 
         internal void handleDropMessage(java.awt.Component component,
@@ -991,8 +990,8 @@ namespace ikvm.awt
         {
             postDropTargetEvent(component, x, y, dropAction, actions,
                                 formats, nativeCtxt,
-                                SunDropTargetEvent.MOUSE_DROPPED,
-                                !SunDropTargetContextPeer.DISPATCH_SYNC);
+                                sun.awt.dnd.SunDropTargetEvent.MOUSE_DROPPED,
+                                !sun.awt.dnd.SunDropTargetContextPeer.DISPATCH_SYNC);
         }
 
         internal new int postDropTargetEvent(java.awt.Component component,
@@ -1087,7 +1086,6 @@ namespace ikvm.awt
 
         public override void mouseExited(java.awt.@event.MouseEvent e)
         {
-
             if (!events.isEmpty())
             { // gesture pending
                 int dragAction = mapDragOperationFromModifiers(e);
@@ -1602,7 +1600,7 @@ namespace ikvm.awt
 			int modifiers = GetModifiers(e.Modifiers);
 			int keyCode = MapKeyCode(e.KeyCode);
 			// TODO set keyChar
-			char keyChar = ' ';
+            char keyChar = ' ';
 			int keyLocation = java.awt.@event.KeyEvent.KEY_LOCATION_STANDARD;
 			java.awt.EventQueue.invokeLater(Delegates.toRunnable(delegate {
 				postEvent(new java.awt.@event.KeyEvent(target, java.awt.@event.KeyEvent.KEY_PRESSED, when, modifiers, keyCode, keyChar, keyLocation));
@@ -2091,7 +2089,7 @@ namespace ikvm.awt
             NetToolkit.Invoke(delegate { nativeDispose(); });
         }
 
-        protected void nativeDispose()
+        protected virtual void nativeDispose()
         {
             unhookEvents();
             control.Dispose();
@@ -3352,7 +3350,10 @@ namespace ikvm.awt
 
         public void setAlwaysOnTop(bool b)
         {
-            throw new NotImplementedException();
+            control.BeginInvoke((Action<bool>)delegate (bool topMost)
+                                    {
+                                        ((Form) control).TopMost = topMost;
+                                    }, b);
         }
 
         public bool isModalBlocked()
@@ -4580,16 +4581,20 @@ namespace ikvm.awt
         internal IDataObject getDataObject(java.awt.datatransfer.Transferable transferable, java.awt.datatransfer.FlavorTable flavorMap)
         {
             DataObject obj = new DataObject();
-            SortedMap formatMap = getFormatsForTransferable(transferable, flavorMap);
+            SortedMap/*<java.lang.Long,java.awt.datatransfer.DataFlavor>*/ formatMap = getFormatsForTransferable(transferable, flavorMap);
             for (Iterator iterator = formatMap.entrySet().iterator(); iterator.hasNext();)
             {
                 Map.Entry entry = (Map.Entry) iterator.next();
+                java.lang.Long lFormat = (java.lang.Long) entry.getKey();
+                long format = lFormat == null ? -1 : lFormat.longValue();
                 java.awt.datatransfer.DataFlavor flavor = (java.awt.datatransfer.DataFlavor) entry.getValue();
+                object contents = transferable.getTransferData(flavor);
+                if (contents==null) continue;
                 try
                 {
                     if (java.awt.datatransfer.DataFlavor.javaFileListFlavor.equals(flavor))
                     {
-                        List list = (List) transferable.getTransferData(flavor);
+                        List list = (List)contents;
                         System.Collections.Specialized.StringCollection files =
                             new System.Collections.Specialized.StringCollection();
                         for (int i = 0; i < list.size(); i++)
@@ -4600,11 +4605,12 @@ namespace ikvm.awt
                     }
                     else if (flavor.isFlavorTextType())
                     {
-                        obj.SetText((string) transferable.getTransferData(flavor));
+                        if (contents is string) 
+                            obj.SetText((string) transferable.getTransferData(flavor));
                     }
                     else if (java.awt.datatransfer.DataFlavor.imageFlavor.equals(flavor))
                     {
-                        java.awt.Image image = transferable.getTransferData(flavor) as java.awt.Image;
+                        java.awt.Image image = contents as java.awt.Image;
                         if (image != null)
                         {
                             Image netImage = J2C.ConvertImage(image);
@@ -4613,6 +4619,23 @@ namespace ikvm.awt
                                 obj.SetImage(netImage);
                             }
                         }
+                    }
+                    else if (flavor.isRepresentationClassCharBuffer())
+                    {
+                        if (!(isFlavorCharsetTextType(flavor) && isTextFormat(format)))
+                        {
+                            throw new IOException("cannot transfer non-text data as CharBuffer");
+                        }
+                        java.nio.CharBuffer buffer = (java.nio.CharBuffer)contents;
+                        int size = buffer.remaining();
+                        char[] chars = new char[size];
+                        buffer.get(chars, 0, size);
+                        obj.SetText(new string(chars));
+                    }
+                    else
+                    {
+                        // don't know what to do with it...
+                        obj.SetData(transferable.getTransferData(flavor));
                     }
                 }
                 catch (java.io.IOException e)
