@@ -378,23 +378,6 @@ namespace ikvm.awt
                 g.DrawPath(pen, gp);
         }
 
-        public override void drawString(java.text.AttributedCharacterIterator iterator, int x, int y)
-        {
-            if (iterator == null) {
-                throw new java.lang.NullPointerException("AttributedCharacterIterator is null");
-            }
-            if (iterator.getBeginIndex() == iterator.getEndIndex()) {
-                return; /* nothing to draw */
-            }
-            java.awt.font.TextLayout tl = new java.awt.font.TextLayout(iterator, getFontRenderContext());
-            tl.draw(this, (float) x, (float) y);        
-        }
-
-		public override void drawString(string str, int x, int y)
-		{
-			drawString(str, (float)x, (float)y);
-		}
-
         public override void fill3DRect(int x, int y, int width, int height, bool raised)
         {
             java.awt.Paint p = getPaint();
@@ -645,10 +628,20 @@ namespace ikvm.awt
             throw new NotImplementedException();
         }
 
-		public override void drawString(string text, float x, float y)
+        public override void drawString(string str, int x, int y)
+        {
+            drawString(str, (float)x, (float)y);
+        }
+
+        public override void drawString(string text, float x, float y)
 		{
 			g.DrawString(text, netfont, brush, x, y - font.getSize(), StringFormat.GenericTypographic);
 		}
+
+        public override void drawString(java.text.AttributedCharacterIterator iterator, int x, int y)
+        {
+            drawString(iterator, (float) x, (float) y);
+        }
 
         public override void drawString(java.text.AttributedCharacterIterator iterator, float x, float y)
         {
