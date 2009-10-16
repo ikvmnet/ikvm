@@ -468,5 +468,10 @@ namespace IKVM.Internal
 		{
 			return type;
 		}
+
+		internal static Type GetType(string typeName, bool throwOnError)
+		{
+			return Type.GetType(typeName, throwOnError);
+		}
 	}
 }

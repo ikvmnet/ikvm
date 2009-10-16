@@ -507,7 +507,7 @@ namespace IKVM.Internal
 							{
 								foreach(IKVM.Internal.MapXml.Attribute attr in method.Attributes)
 								{
-									if(Type.GetType(attr.Type) == typeof(System.Runtime.InteropServices.DllImportAttribute))
+									if(JVM.GetType(attr.Type, false) == JVM.Import(typeof(System.Runtime.InteropServices.DllImportAttribute)))
 									{
 										return true;
 									}

@@ -151,7 +151,7 @@ namespace IKVM.Internal
 				annotationClass = annotationClass.Replace('/', '.').Substring(1, annotationClass.Length - 2);
 				if (annotationClass.EndsWith(DotNetTypeWrapper.AttributeAnnotationSuffix))
 				{
-					Type annot = Type.GetType(DotNetTypeWrapper.DemangleTypeName(annotationClass.Substring(0, annotationClass.Length - DotNetTypeWrapper.AttributeAnnotationSuffix.Length)));
+					Type annot = JVM.GetType(DotNetTypeWrapper.DemangleTypeName(annotationClass.Substring(0, annotationClass.Length - DotNetTypeWrapper.AttributeAnnotationSuffix.Length)), false);
 					if (annot != null && annot.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
 					{
 						SecurityAction action;
@@ -1575,7 +1575,7 @@ namespace IKVM.Internal
 					if(m.redirect.Class == null || m.redirect.Class.IndexOf(',') >= 0)
 					{
 						// TODO better error handling
-						Type type = m.redirect.Class == null ? baseType : Type.GetType(m.redirect.Class, true);
+						Type type = m.redirect.Class == null ? baseType : JVM.GetType(m.redirect.Class, true);
 						Type[] redirParamTypes = classLoader.ArgTypeListFromSig(redirSig);
 						MethodInfo mi = type.GetMethod(m.redirect.Name, redirParamTypes);
 						if(mi == null)
@@ -2191,7 +2191,7 @@ namespace IKVM.Internal
 				for(int i = 0; i < map.Length; i++)
 				{
 					ilgen.Emit(OpCodes.Dup);
-					ilgen.Emit(OpCodes.Ldtoken, Type.GetType(map[i].src));
+					ilgen.Emit(OpCodes.Ldtoken, JVM.GetType(map[i].src, true));
 					ilgen.Emit(OpCodes.Call, GetTypeFromHandle);
 					ilgen.Emit(OpCodes.Ceq);
 					CodeEmitterLabel label = ilgen.DefineLabel();

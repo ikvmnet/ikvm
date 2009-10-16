@@ -129,7 +129,7 @@ static class AtomicReferenceFieldUpdaterEmitter
 		// MONOBUG this doesn't work in Mono (because we're closing a generic method over our own Type implementation)
 		/*
 		MethodInfo interlockedCompareExchange = null;
-		foreach (MethodInfo m in typeof(System.Threading.Interlocked).GetMethods())
+		foreach (MethodInfo m in JVM.Import(typeof(System.Threading.Interlocked)).GetMethods())
 		{
 			if (m.Name == "CompareExchange" && m.IsGenericMethodDefinition)
 			{
