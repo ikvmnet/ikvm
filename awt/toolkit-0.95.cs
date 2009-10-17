@@ -316,21 +316,21 @@ namespace ikvm.awt
 
         public override java.awt.peer.FramePeer createFrame(java.awt.Frame target)
         {
-            java.awt.peer.FramePeer peer = Invoke(delegate { return new NetFramePeer(target); });
+            java.awt.peer.FramePeer peer = Invoke((Func<java.awt.peer.FramePeer>)delegate { return new NetFramePeer(target); });
             targetCreatedPeer(target, peer);
             return peer;
         }
 
         public override java.awt.peer.WindowPeer createWindow(java.awt.Window target)
         {
-            java.awt.peer.WindowPeer peer = Invoke(delegate { return new NetWindowPeer(target); });
+            java.awt.peer.WindowPeer peer = Invoke((Func<java.awt.peer.WindowPeer>)delegate { return new NetWindowPeer(target); });
 			targetCreatedPeer(target, peer);
 			return peer;
 		}
 
         public override java.awt.peer.DialogPeer createDialog(java.awt.Dialog target)
         {
-            java.awt.peer.DialogPeer peer = Invoke(delegate { return new NetDialogPeer(target); });
+            java.awt.peer.DialogPeer peer = Invoke((Func<java.awt.peer.DialogPeer>)delegate { return new NetDialogPeer(target); });
 			targetCreatedPeer(target, peer);
 			return peer;
 		}
@@ -2164,7 +2164,7 @@ namespace ikvm.awt
 		protected virtual void disposeImpl()
 		{
             NetToolkit.targetDisposedPeer(target, this);
-            NetToolkit.Invoke(delegate { nativeDispose(); });
+            NetToolkit.Invoke((MethodInvoker)delegate { nativeDispose(); });
         }
 
         protected virtual void nativeDispose()
@@ -2216,10 +2216,10 @@ namespace ikvm.awt
 
         public java.awt.Point getLocationOnScreen()
         {
-            return NetToolkit.Invoke<java.awt.Point>(delegate
+            return NetToolkit.Invoke((Func<java.awt.Point>)delegate
             {
                 Point p = new Point();
-                NetToolkit.BeginInvoke(delegate { p = control.PointToScreen(p); });
+                p = control.PointToScreen(p);
                 return new java.awt.Point(p.X, p.Y);
             });
         }
@@ -2478,17 +2478,17 @@ namespace ikvm.awt
 
         public bool getEnabled()
         {
-            return NetToolkit.Invoke(delegate { return control.Enabled; });
+            return NetToolkit.Invoke((Func<bool>)delegate { return control.Enabled; });
         }
 
         public bool getFocused()
         {
-            return NetToolkit.Invoke(delegate { return control.Focused; });
+            return NetToolkit.Invoke((Func<bool>)delegate { return control.Focused; });
         }
 
         public bool getVisible()
         {
-            return NetToolkit.Invoke(delegate { return control.Visible; });
+            return NetToolkit.Invoke((Func<bool>)delegate { return control.Visible; });
         }
 
         public void setEnabled(bool enabled)
@@ -2840,7 +2840,7 @@ namespace ikvm.awt
 
 		public string getText()
 		{
-		    return (string) NetToolkit.Invoke(delegate { return control.Text; });
+		    return NetToolkit.Invoke((Func<string>)delegate { return control.Text; });
 		}
 
 		public void setText(string text)
