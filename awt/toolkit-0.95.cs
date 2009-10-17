@@ -3116,31 +3116,30 @@ namespace ikvm.awt
 			throw new NotImplementedException();
 		}
 
-        public java.awt.Dimension getMinimumSize()
+        public override java.awt.Dimension getMinimumSize()
         {
             return getMinimumSize(10, 60);
         }
-        
+
         public java.awt.Dimension minimumSize(int rows, int cols)
-		{
-			return getMinimumSize(rows, cols);
-		}
-		
+        {
+            return getMinimumSize(rows, cols);
+        }
+        
         public java.awt.Dimension getMinimumSize(int rows, int cols)
 		{
-            java.awt.FontMetrics fm = getFontMetrics(((java.awt.TextArea)target).getFont());
+            java.awt.FontMetrics fm = getFontMetrics(target.getFont());
             return new java.awt.Dimension(fm.charWidth('0') * cols + 20, fm.getHeight() * rows + 20);
         }
 
-		public java.awt.Dimension preferredSize(int rows, int cols)
-		{
-            return getMinimumSize(rows, cols);
+        public java.awt.Dimension preferredSize(int rows, int cols)
+        {
+            return getPreferredSize(rows, cols);
         }
 
-		public java.awt.Dimension getPreferredSize(int rows, int cols)
+        public java.awt.Dimension getPreferredSize(int rows, int cols)
 		{
-			Console.WriteLine("NOTE: NetTextAreaPeer.getPreferredSize not implemented");
-			return new java.awt.Dimension(10 * cols, 15 * rows);
+            return getMinimumSize(rows, cols);
 		}
 
 		public void replaceRange(string text, int start_pos, int end_pos)
@@ -3233,7 +3232,6 @@ namespace ikvm.awt
         // extends NetWindowPeer, not NetDialogPeer
         private NetWindowPeer modalBlocker;
         private bool modalSavedEnabled;
-        private bool alwaysOnTop;
 
         private static NetWindowPeer grabbedWindow;
 
@@ -4169,8 +4167,6 @@ namespace ikvm.awt
         private java.awt.Frame popupParent = new java.awt.Frame("PopupMessageWindow");
         private java.awt.PopupMenu popup;
         private bool disposed;
-        private bool isMouseClick;
-        private bool isDoubleClick;
         private bool isPopupMenu;
 
         internal NetTrayIconPeer(java.awt.TrayIcon target)
