@@ -66,20 +66,15 @@ using System.Drawing.Imaging;
 
 namespace ikvm.awt
 {
-	delegate void SetVoid();
-	delegate void SetBool(bool b);
-	delegate void SetInt(int i);
-	delegate void SetXYWH(int x, int y, int w, int h);
-	delegate void SetString(string s);
-	delegate string GetString();
-	delegate void SetStringInt(string s, int i);
-	delegate void SetRectangle(Rectangle r);
-	delegate void SetColor(java.awt.Color c);
-    delegate void SetCursor(java.awt.Cursor cursor);
-	delegate java.awt.Dimension GetDimension();
-    delegate Rectangle ConvertRectangle(Rectangle r);
-    delegate object GetObject();
-    internal delegate T Func<T>();
+    internal delegate TResult Func<TResult>();
+    internal delegate TResult Func<T,TResult>(T t);
+    internal delegate TResult Func<T1, T2, TResult>(T1 t1, T2 t2);
+    internal delegate TResult Func<T1, T2, T3, TResult>(T1 t1, T2 t2, T3 t3);
+    internal delegate TResult Func<T1, T2, T3, T4, TResult>(T1 t1, T2 t2, T3 t3, T4 t4);
+    internal delegate void Action<T>(T t);
+    internal delegate void Action<T1, T2>(T1 t1, T2 t2);
+    internal delegate void Action<T1, T2, T3>(T1 t1, T2 t2, T3 t3);
+    internal delegate void Action<T1, T2, T3, T4>(T1 t1, T2 t2, T3 t3, T4 t4);
 
 	class UndecoratedForm : Form
 	{
@@ -321,21 +316,21 @@ namespace ikvm.awt
 
         public override java.awt.peer.FramePeer createFrame(java.awt.Frame target)
         {
-            java.awt.peer.FramePeer peer = (NetFramePeer)bogusForm.Invoke((GetObject)delegate { return new NetFramePeer(target); });
+            java.awt.peer.FramePeer peer = Invoke(delegate { return new NetFramePeer(target); });
             targetCreatedPeer(target, peer);
             return peer;
         }
 
         public override java.awt.peer.WindowPeer createWindow(java.awt.Window target)
         {
-            java.awt.peer.WindowPeer peer = (NetWindowPeer)bogusForm.Invoke((GetObject)delegate { return new NetWindowPeer(target); });
+            java.awt.peer.WindowPeer peer = Invoke(delegate { return new NetWindowPeer(target); });
 			targetCreatedPeer(target, peer);
 			return peer;
 		}
 
         public override java.awt.peer.DialogPeer createDialog(java.awt.Dialog target)
         {
-            java.awt.peer.DialogPeer peer = (java.awt.peer.DialogPeer)bogusForm.Invoke((GetObject)delegate { return new NetDialogPeer(target); });
+            java.awt.peer.DialogPeer peer = Invoke(delegate { return new NetDialogPeer(target); });
 			targetCreatedPeer(target, peer);
 			return peer;
 		}
@@ -811,15 +806,98 @@ namespace ikvm.awt
             }
         }
 
-        internal static T Invoke<T>(Func<T> del)
+        internal static void BeginInvoke<T>(Action<T> del, T t)
         {
             if (bogusForm.InvokeRequired)
             {
-                return (T)bogusForm.Invoke(del);
+                bogusForm.BeginInvoke(del, t);
+            }
+            else
+            {
+                del(t);
+            }
+        }
+        internal static void Invoke<T>(Action<T> del, T t)
+        {
+            if (bogusForm.InvokeRequired)
+            {
+                bogusForm.Invoke(del, t);
+            }
+            else
+            {
+                del(t);
+            }
+        }
+
+        internal static void Invoke<T1, T2>(Action<T1, T2> del, T1 t1, T2 t2)
+        {
+            if (bogusForm.InvokeRequired)
+            {
+                bogusForm.Invoke(del, t1, t2);
+            }
+            else
+            {
+                del(t1,t2);
+            }
+        }
+
+        internal static TResult Invoke<TResult>(Func<TResult> del)
+        {
+            if (bogusForm.InvokeRequired)
+            {
+                return (TResult)bogusForm.Invoke(del);
             }
             else
             {
                 return del();
+            }
+        }
+
+        internal static TResult Invoke<T, TResult>(Func<T, TResult> del, T t)
+        {
+            if (bogusForm.InvokeRequired)
+            {
+                return (TResult)bogusForm.Invoke(del, t);
+            }
+            else
+            {
+                return del(t);
+            }
+        }
+
+        internal static TResult Invoke<T1, T2, TResult>(Func<T1, T2, TResult> del, T1 t1, T2 t2)
+        {
+            if (bogusForm.InvokeRequired)
+            {
+                return (TResult)bogusForm.Invoke(del, t1, t2);
+            }
+            else
+            {
+                return del(t1, t2);
+            }
+        }
+
+        internal static TResult Invoke<T1, T2, T3, TResult>(Func<T1, T2, T3, TResult> del, T1 t1, T2 t2, T3 t3)
+        {
+            if (bogusForm.InvokeRequired)
+            {
+                return (TResult)bogusForm.Invoke(del, t1, t2, t3);
+            }
+            else
+            {
+                return del(t1, t2, t3);
+            }
+        }
+
+        internal static TResult Invoke<T1, T2, T3, T4, TResult>(Func<T1, T2, T3, T4, TResult> del, T1 t1, T2 t2, T3 t3, T4 t4)
+        {
+            if (bogusForm.InvokeRequired)
+            {
+                return (TResult)bogusForm.Invoke(del, t1, t2, t3, t4);
+            }
+            else
+            {
+                return del(t1, t2, t3, t4);
             }
         }
 
@@ -2146,12 +2224,12 @@ namespace ikvm.awt
             });
         }
 
-		public java.awt.Dimension getMinimumSize()
+		public virtual java.awt.Dimension getMinimumSize()
 		{
 			return target.getSize();
 		}
 
-		public java.awt.Dimension getPreferredSize()
+        public virtual java.awt.Dimension getPreferredSize()
 		{
 			return getMinimumSize();
 		}
@@ -2395,22 +2473,22 @@ namespace ikvm.awt
 
         public void setCursor(java.awt.Cursor cursor)
         {
-            control.Invoke(new SetCursor(setCursorImpl), new object[] { cursor });
+            NetToolkit.Invoke(setCursorImpl, cursor);
         }
 
         public bool getEnabled()
         {
-            return NetToolkit.Invoke((Func<bool>)delegate { return control.Enabled; });
+            return NetToolkit.Invoke(delegate { return control.Enabled; });
         }
 
         public bool getFocused()
         {
-            return NetToolkit.Invoke((Func<bool>)delegate { return control.Focused; });
+            return NetToolkit.Invoke(delegate { return control.Focused; });
         }
 
         public bool getVisible()
         {
-            return NetToolkit.Invoke((Func<bool>)delegate { return control.Visible; });
+            return NetToolkit.Invoke(delegate { return control.Visible; });
         }
 
         public void setEnabled(bool enabled)
@@ -2686,12 +2764,7 @@ namespace ikvm.awt
 			}
 			control.BackColor = Color.FromArgb(awtbutton.getBackground().getRGB());
 			setLabel(awtbutton.getLabel());
-			control.Invoke(new SetVoid(Setup));
-		}
-
-		private void Setup()
-		{
-			((Button)control).Click += new EventHandler(OnClick);
+		    NetToolkit.Invoke(delegate { ((Button) control).Click += new EventHandler(OnClick); });
 		}
 
 		private void OnClick(object sender, EventArgs e)
@@ -2703,14 +2776,9 @@ namespace ikvm.awt
 			postEvent(new java.awt.@event.ActionEvent(target, java.awt.@event.ActionEvent.ACTION_PERFORMED, cmd, when, modifiers));
 		}
 
-		private void setLabelImpl(string label)
-		{
-			control.Text = label;
-		}
-
 		public void setLabel(string label)
 		{
-			control.Invoke(new SetString(setLabelImpl), new object[] { label });
+            NetToolkit.Invoke(delegate(string x) { control.Text = x; }, label);
 		}
 
 		public override java.awt.Dimension minimumSize()
@@ -2770,25 +2838,15 @@ namespace ikvm.awt
 			throw new NotImplementedException();
 		}
 
-		private string getTextImpl()
-		{
-			return control.Text;
-		}
-
 		public string getText()
 		{
-			return (string)control.Invoke(new GetString(getTextImpl));
-		}
-
-		private void setTextImpl(string text)
-		{
-			control.Text = text;
+		    return (string) NetToolkit.Invoke(delegate { return control.Text; });
 		}
 
 		public void setText(string text)
 		{
-			control.Invoke(new SetString(setTextImpl), new object[] { text });
-		}
+			NetToolkit.Invoke(delegate(string x) { control.Text = x; }, text);
+        }
 
 		public void select(int start_pos, int end_pos)
 		{
@@ -2811,7 +2869,7 @@ namespace ikvm.awt
 
 		public void setCaretPosition(int pos)
 		{
-			control.Invoke(new SetInt(setCaretPositionImpl), new object[] { pos });
+			NetToolkit.Invoke(setCaretPositionImpl, pos);
 		}
 
 		public long filterEvents(long filter)
@@ -2917,28 +2975,32 @@ namespace ikvm.awt
 
 		public void setAlignment(int align)
 		{
+		    ContentAlignment alignment;
 			switch(align)
 			{
 				case java.awt.Label.LEFT:
-					control.Invoke(new SetInt(setAlignImpl), new object[] { ContentAlignment.TopLeft });
+			        alignment = ContentAlignment.TopLeft;
 					break;
 				case java.awt.Label.CENTER:
-					control.Invoke(new SetInt(setAlignImpl), new object[] { ContentAlignment.TopCenter });
+                    alignment = ContentAlignment.TopCenter;
 					break;
 				case java.awt.Label.RIGHT:
-					control.Invoke(new SetInt(setAlignImpl), new object[] { ContentAlignment.TopRight });
+                    alignment = ContentAlignment.TopRight;
 					break;
+                default:
+			        return;
 			}
+		    NetToolkit.Invoke(setAlignImpl, alignment);
 		}
 
-		private void setAlignImpl(int align)
+		private void setAlignImpl(ContentAlignment alignment)
 		{
-			((Label)control).TextAlign = (ContentAlignment)align;
+            ((Label)control).TextAlign = (ContentAlignment)alignment;
 		}
 
 		public void setText(string s)
 		{
-			control.Invoke(new SetString(setTextImpl), new Object[] { s });
+            NetToolkit.Invoke(setTextImpl, s);
 		}
 
 		private void setTextImpl(string s)
@@ -2948,7 +3010,7 @@ namespace ikvm.awt
 
 		public override java.awt.Dimension preferredSize()
 		{
-			return (java.awt.Dimension)control.Invoke(new GetDimension(getPreferredSizeImpl), null);
+            return NetToolkit.Invoke<java.awt.Dimension>(getPreferredSizeImpl);
 		}
 
 		private java.awt.Dimension getPreferredSizeImpl()
@@ -3046,25 +3108,34 @@ namespace ikvm.awt
 
 		public void insert(string text, int pos)
 		{
-			control.Invoke(new SetStringInt(insertImpl), new Object[] { text, pos });
+			NetToolkit.Invoke(insertImpl, text, pos);
 		}
 
 		public void insertText(string text, int pos)
 		{
 			throw new NotImplementedException();
 		}
-		public java.awt.Dimension minimumSize(int rows, int cols)
+
+        public java.awt.Dimension getMinimumSize()
+        {
+            return getMinimumSize(10, 60);
+        }
+        
+        public java.awt.Dimension minimumSize(int rows, int cols)
 		{
 			return getMinimumSize(rows, cols);
 		}
-		public java.awt.Dimension getMinimumSize(int rows, int cols)
+		
+        public java.awt.Dimension getMinimumSize(int rows, int cols)
 		{
-			return new java.awt.Dimension(0, 0);
-		}
+            java.awt.FontMetrics fm = getFontMetrics(((java.awt.TextArea)target).getFont());
+            return new java.awt.Dimension(fm.charWidth('0') * cols + 20, fm.getHeight() * rows + 20);
+        }
+
 		public java.awt.Dimension preferredSize(int rows, int cols)
 		{
-			throw new NotImplementedException();
-		}
+            return getMinimumSize(rows, cols);
+        }
 
 		public java.awt.Dimension getPreferredSize(int rows, int cols)
 		{
@@ -3162,6 +3233,7 @@ namespace ikvm.awt
         // extends NetWindowPeer, not NetDialogPeer
         private NetWindowPeer modalBlocker;
         private bool modalSavedEnabled;
+        private bool alwaysOnTop;
 
         private static NetWindowPeer grabbedWindow;
 
@@ -3330,12 +3402,12 @@ namespace ikvm.awt
 
         public void toBack()
 		{
-            control.BeginInvoke(new SetVoid(((Form)control).SendToBack));
+            NetToolkit.BeginInvoke(((Form)control).SendToBack);
 		}
 
 		public void toFront()
 		{
-            control.BeginInvoke(new SetVoid(((Form)control).Activate));
+            NetToolkit.BeginInvoke(((Form)control).Activate);
 		}
 
 		public void updateAlwaysOnTop()
@@ -3345,15 +3417,18 @@ namespace ikvm.awt
 
 		public bool requestWindowFocus()
 		{
-			return control.Focus();
+			return NetToolkit.Invoke<bool>(control.Focus);
 		}
 
-        public void setAlwaysOnTop(bool b)
+        public void setAlwaysOnTop(bool alwaysOnTop)
         {
-            control.BeginInvoke((Action<bool>)delegate (bool topMost)
-                                    {
-                                        ((Form) control).TopMost = topMost;
-                                    }, b);
+            if ((alwaysOnTop && ((java.awt.Window)target).isVisible()) || !alwaysOnTop)
+            {
+                NetToolkit.BeginInvoke(delegate(bool topMost)
+                                           {
+                                               ((Form) control).TopMost = topMost;
+                                           }, alwaysOnTop);
+            }
         }
 
         public bool isModalBlocked()
@@ -4355,10 +4430,6 @@ namespace ikvm.awt
     
     public class NetClipboard : java.awt.datatransfer.Clipboard
     {
-        private System.Collections.Generic.Dictionary<int, java.awt.datatransfer.DataFlavor> flavorById =
-            new System.Collections.Generic.Dictionary<int, java.awt.datatransfer.DataFlavor>();
-        private System.Collections.Generic.Dictionary<string, java.awt.datatransfer.DataFlavor> flavorByName =
-            new System.Collections.Generic.Dictionary<string, java.awt.datatransfer.DataFlavor>();
         public static readonly java.awt.datatransfer.FlavorTable flavorMap =
             (java.awt.datatransfer.FlavorTable)java.awt.datatransfer.SystemFlavorMap.getDefaultFlavorMap();
 
@@ -4409,45 +4480,6 @@ namespace ikvm.awt
             }
             return new NetClipboardTransferable(this);
         }
-
-        private java.awt.datatransfer.DataFlavor GetFlavor(DataFormats.Format format)
-        {
-            string name = format.Name;
-            string mimeType;
-            switch (name)
-            {
-                case "Unicode String":
-                    mimeType = "text/string";
-                    break;
-                default:
-                    mimeType = null;
-                    break;
-            }
-            return new java.awt.datatransfer.DataFlavor(mimeType, name);
-        }
-
-        internal java.awt.datatransfer.DataFlavor GetFlavor(int id)
-        {
-            java.awt.datatransfer.DataFlavor flavor;
-            if (!flavorById.TryGetValue(id, out flavor))
-            {
-                DataFormats.Format format = DataFormats.GetFormat(id);
-                flavorById[id] = GetFlavor(format);
-            }
-            return flavor;
-        }
-
-        internal java.awt.datatransfer.DataFlavor GetFlavor(string name)
-        {
-            java.awt.datatransfer.DataFlavor flavor;
-            if (!flavorByName.TryGetValue(name, out flavor))
-            {
-                DataFormats.Format format = DataFormats.GetFormat(name);
-                flavorByName[name] = GetFlavor(format);
-            }
-            return flavor;
-        }
-
     }
 
     public class NetClipboardTransferable : java.awt.datatransfer.Transferable
@@ -4487,18 +4519,6 @@ namespace ikvm.awt
                             flavorToData.put(flavor, dataArr[idx]);
                         }
                     }
-//                    Map flavorMap = NetDataTransferer.getInstanceImpl().getFlavorsForFormats(formats, map);
-//                    flavors = (java.awt.datatransfer.DataFlavor[])(flavorMap.keySet().toArray(new java.awt.datatransfer.DataFlavor[0]));
-//                    for(Iterator iter = flavorMap.entrySet().iterator(); iter.hasNext();)
-//                    {
-//                        Map.Entry entry = (Map.Entry) iter.next();
-//                        string format = (string) entry.getValue();
-//                        if (format == "UNICODE TEXT") format = "UnicodeText";
-//                        if (format == "TEXT") format = "Text";
-//                        java.awt.datatransfer.DataFlavor flavor = (java.awt.datatransfer.DataFlavor) entry.getKey();
-//                        object objData = ConvertData(data.GetData(format), flavor, format);
-//                        flavorToData.put(flavor, objData);
-//                    }
                 }
             }
         }
