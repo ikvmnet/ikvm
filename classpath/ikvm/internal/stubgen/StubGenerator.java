@@ -33,6 +33,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -56,6 +57,7 @@ public final class StubGenerator implements PrivilegedAction<byte[]>
 
     public byte[] run()
     {
+        boolean includeNonPublicInterfaces = !"true".equalsIgnoreCase(System.getProperty("ikvm.stubgen.skipNonPublicInterfaces"));
 	boolean includeSerialVersionUIDs = "true".equalsIgnoreCase(System.getProperty("ikvm.stubgen.serialver"));
         Class outer = c.getDeclaringClass();
         String name = c.getName().replace('.', '/');
@@ -105,7 +107,10 @@ public final class StubGenerator implements PrivilegedAction<byte[]>
         Class[] interfaces = c.getInterfaces();
         for(int i = 0; i < interfaces.length; i++)
         {
-            f.AddInterface(interfaces[i].getName().replace('.', '/'));
+            if(includeNonPublicInterfaces || Modifier.isPublic(interfaces[i].getModifiers()))
+            {
+                f.AddInterface(interfaces[i].getName().replace('.', '/'));
+            }
         }
         Class[] innerClasses = c.getDeclaredClasses();
         for(int i = 0; i < innerClasses.length; i++)

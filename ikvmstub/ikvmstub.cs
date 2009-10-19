@@ -40,6 +40,7 @@ public class NetExp
 	{
 		IKVM.Internal.Tracer.EnableTraceConsoleListener();
 		IKVM.Internal.Tracer.EnableTraceForDebug();
+		java.lang.System.setProperty("ikvm.stubgen.skipNonPublicInterfaces", "true");
 		string assemblyNameOrPath = null;
 		bool continueOnError = false;
 		bool autoLoadSharedClassLoaderAssemblies = false;
