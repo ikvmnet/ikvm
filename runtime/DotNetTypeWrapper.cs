@@ -65,7 +65,7 @@ namespace IKVM.Internal
 			else if (type.IsNestedPublic)
 			{
 				modifiers |= Modifiers.Static;
-				if (IsVisible(type))
+				if (type.IsVisible)
 				{
 					modifiers |= Modifiers.Public;
 				}
@@ -1742,11 +1742,6 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal static bool IsVisible(Type type)
-		{
-			return type.IsPublic || (type.IsNestedPublic && IsVisible(type.DeclaringType));
-		}
-
 		private class EnumWrapMethodWrapper : MethodWrapper
 		{
 			internal EnumWrapMethodWrapper(DotNetTypeWrapper tw, TypeWrapper fieldType)
@@ -2050,7 +2045,7 @@ namespace IKVM.Internal
 					{
 						// we only handle public (or nested public) types, because we're potentially adding a
 						// method that should be callable by anyone through the interface
-						if (IsVisible(interfaces[i]))
+						if (interfaces[i].IsVisible)
 						{
 							InterfaceMapping map = type.GetInterfaceMap(interfaces[i]);
 							for (int j = 0; j < map.InterfaceMethods.Length; j++)
@@ -2303,7 +2298,7 @@ namespace IKVM.Internal
 
 		private static bool IsAttribute(Type type)
 		{
-			if (!type.IsAbstract && type.IsSubclassOf(Types.Attribute) && IsVisible(type))
+			if (!type.IsAbstract && type.IsSubclassOf(Types.Attribute) && type.IsVisible)
 			{
 				//
 				// Based on the number of constructors and their arguments, we distinguish several types
@@ -2332,7 +2327,7 @@ namespace IKVM.Internal
 			// non-public types in the arg list and they're not really useful anyway)
 			// NOTE we don't have to check in what assembly the type lives, because this is a DotNetTypeWrapper,
 			// we know that it is a different assembly.
-			if (!type.IsAbstract && type.IsSubclassOf(Types.MulticastDelegate) && IsVisible(type))
+			if (!type.IsAbstract && type.IsSubclassOf(Types.MulticastDelegate) && type.IsVisible)
 			{
 				MethodInfo invoke = type.GetMethod("Invoke");
 				if (invoke != null)
@@ -2377,7 +2372,7 @@ namespace IKVM.Internal
 						{
 							list.Add(GetClassLoader().RegisterInitiatingLoader(new AttributeAnnotationTypeWrapper(Name + AttributeAnnotationSuffix, type)));
 						}
-						if (type.IsEnum && IsVisible(type))
+						if (type.IsEnum && type.IsVisible)
 						{
 							list.Add(GetClassLoader().RegisterInitiatingLoader(new EnumEnumTypeWrapper(Name + EnumEnumSuffix, type)));
 						}
@@ -2392,7 +2387,7 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				return IsDelegate(type) || IsAttribute(type) || (type.IsEnum && IsVisible(type));
+				return IsDelegate(type) || IsAttribute(type) || (type.IsEnum && type.IsVisible);
 			}
 		}
 
