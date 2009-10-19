@@ -50,7 +50,7 @@ class IkvmcCompiler
 	private Dictionary<string, byte[]> resources = new Dictionary<string, byte[]>();
 	private string defaultAssemblyName;
 	private List<string> classesToExclude = new List<string>();
-	private List<string> references = new List<string>();
+	private List<Assembly> references = new List<Assembly>();
 	private static bool time;
 
 	private static List<string> GetArgs(string[] args)
@@ -242,7 +242,7 @@ class IkvmcCompiler
 				nestedLevel.resources = new Dictionary<string, byte[]>(resources);
 				nestedLevel.defaultAssemblyName = defaultAssemblyName;
 				nestedLevel.classesToExclude = new List<string>(classesToExclude);
-				nestedLevel.references = new List<string>(references);
+				nestedLevel.references = new List<Assembly>(references);
 				int rc = nestedLevel.ContinueParseCommandLine(arglist, targets, options.Copy());
 				if(rc != 0)
 				{
@@ -422,11 +422,22 @@ class IkvmcCompiler
 							Console.Error.WriteLine("Error: reference not found: {0}", r);
 							return 1;
 						}
-						files = new string[] { asm.Location };
+						references.Add(asm);
 					}
-					foreach(string f in files)
+					else
 					{
-						references.Add(f);
+						foreach(string file in files)
+						{
+							try
+							{
+								references.Add(Assembly.LoadFile(file));
+							}
+							catch(FileLoadException)
+							{
+								Console.Error.WriteLine("Error: reference not found: {0}", file);
+								return 1;
+							}
+						}
 					}
 				}
 				else if(s.StartsWith("-recurse:"))

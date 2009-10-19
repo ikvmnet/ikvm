@@ -746,7 +746,7 @@ namespace IKVM.Internal
 				this.classLoader = classLoader;
 				classDef = c;
 				bool baseIsSealed = false;
-				shadowType = Type.GetType(c.Shadows, true);
+				shadowType = JVM.GetType(c.Shadows, true);
 				classLoader.SetRemappedType(shadowType, this);
 				Type baseType = shadowType;
 				Type baseInterface = null;
@@ -2523,19 +2523,13 @@ namespace IKVM.Internal
 			AssemblyName runtimeAssemblyName = StaticCompiler.runtimeAssembly.GetName();
 			bool allReferencesAreStrongNamed = IsSigned(StaticCompiler.runtimeAssembly);
 			List<Assembly> references = new List<Assembly>();
-			foreach(string r in options.references)
+			foreach(Assembly reference in options.references)
 			{
 				try
 				{
-					Assembly reference = LoadReferencedAssembly(r);
 					if(IsCoreAssembly(reference))
 					{
 						JVM.CoreAssembly = reference;
-					}
-					if(reference == null)
-					{
-						Console.Error.WriteLine("Error: reference not found: {0}", r);
-						return 1;
 					}
 					references.Add(reference);
 					allReferencesAreStrongNamed &= IsSigned(reference);
@@ -2550,7 +2544,7 @@ namespace IKVM.Internal
 							{
 								if(asmref.FullName != runtimeAssemblyName.FullName)
 								{
-									Console.Error.WriteLine("Error: referenced assembly {0} was compiled with an incompatible IKVM.Runtime version ({1})", r, asmref.Version);
+									Console.Error.WriteLine("Error: referenced assembly {0} was compiled with an incompatible IKVM.Runtime version ({1})", reference.Location, asmref.Version);
 									Console.Error.WriteLine("   Current runtime: {0}", runtimeAssemblyName.FullName);
 									Console.Error.WriteLine("   Referenced assembly runtime: {0}", asmref.FullName);
 									return 1;
@@ -2560,7 +2554,7 @@ namespace IKVM.Internal
 							{
 								if(asmref.GetPublicKeyToken() != null && asmref.GetPublicKeyToken().Length != 0)
 								{
-									Console.Error.WriteLine("Error: referenced assembly {0} was compiled with an incompatible (signed) IKVM.Runtime version", r);
+									Console.Error.WriteLine("Error: referenced assembly {0} was compiled with an incompatible (signed) IKVM.Runtime version", reference.Location);
 									Console.Error.WriteLine("   Current runtime: {0}", runtimeAssemblyName.FullName);
 									Console.Error.WriteLine("   Referenced assembly runtime: {0}", asmref.FullName);
 									return 1;
@@ -2571,7 +2565,7 @@ namespace IKVM.Internal
 				}
 				catch(Exception x)
 				{
-					Console.Error.WriteLine("Error: invalid reference: {0} ({1})", r, x.Message);
+					Console.Error.WriteLine("Error: invalid reference: {0} ({1})", reference.Location, x.Message);
 					return 1;
 				}
 			}
@@ -3078,7 +3072,7 @@ namespace IKVM.Internal
 		internal PEFileKinds target;
 		internal bool guessFileKind;
 		internal Dictionary<string, byte[]> classes;
-		internal string[] references;
+		internal Assembly[] references;
 		internal Dictionary<string, byte[]> resources;
 		internal string[] classesToExclude;
 		internal string remapfile;
