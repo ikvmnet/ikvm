@@ -71,14 +71,14 @@ namespace IKVM.Internal
 		internal static bool IsDynamicAssembly(Assembly asm)
 		{
 #if NET_4_0
-			return asm.IsDynamic();
+			return asm.IsDynamic;
 #elif IKVM_REF_EMIT
 			return false;
 #else
 			if (clr_v4)
 			{
 				// on .NET 4.0 dynamic assemblies have a non-AssemblyBuilder derived peer, so we have to call IsDynamic
-				return (bool)typeof(Assembly).InvokeMember("IsDynamic", BindingFlags.Instance | BindingFlags.Public | BindingFlags.InvokeMethod, null, asm, null);
+				return (bool)typeof(Assembly).InvokeMember("get_IsDynamic", BindingFlags.Instance | BindingFlags.Public | BindingFlags.InvokeMethod, null, asm, null);
 			}
 			return asm is AssemblyBuilder;
 #endif

@@ -223,14 +223,6 @@ namespace IKVM.Internal
 				assemblyBuilder.SetCustomAttribute(debugAttr);
 			}
 			AttributeHelper.SetRuntimeCompatibilityAttribute(assemblyBuilder);
-			if(Environment.Version.Major == 4 && Environment.Version.Minor == 0 && Environment.Version.Build == 20506)
-			{
-				// FXBUG workaround for MethodImpl bug in .NET 4.0 beta 1
-				assemblyBuilder.SetCustomAttribute(
-					new CustomAttributeBuilder(
-						Type.GetType("System.Security.SecurityRulesAttribute").GetConstructor(new Type[] { Type.GetType("System.Security.SecurityRuleSet") }),
-						new object[] { Type.GetType("System.Security.SecurityRuleSet").GetField("Level1").GetValue(null) }));
-			}
 			if(options.baseAddress != 0)
 			{
 				moduleBuilder.__ImageBase = options.baseAddress;

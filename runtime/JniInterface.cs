@@ -3090,7 +3090,11 @@ namespace IKVM.Runtime
 		{
 			try
 			{
+				// on .NET 4.0 Monitor.Enter has been marked obsolete,
+				// but in this case the alternative adds no value
+#pragma warning disable 618
 				System.Threading.Monitor.Enter(pEnv->UnwrapRef(obj));
+#pragma warning restore 618
 				return JNI_OK;
 			}
 			catch(Exception x)

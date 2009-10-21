@@ -433,14 +433,6 @@ namespace IKVM.Internal
 			DateTime now = DateTime.Now;
 			name.Version = new Version(now.Year, (now.Month * 100) + now.Day, (now.Hour * 100) + now.Minute, (now.Second * 1000) + now.Millisecond);
 			List<CustomAttributeBuilder> attribs = new List<CustomAttributeBuilder>();
-			if(Environment.Version.Major == 4 && Environment.Version.Minor == 0 && Environment.Version.Build == 20506)
-			{
-				// FXBUG workaround for MethodImpl bug in .NET 4.0 beta 1
-				attribs.Add(
-					new CustomAttributeBuilder(
-						Type.GetType("System.Security.SecurityRulesAttribute").GetConstructor(new Type[] { Type.GetType("System.Security.SecurityRuleSet") }),
-						new object[] { Type.GetType("System.Security.SecurityRuleSet").GetField("Level1").GetValue(null) }));
-			}
 			AssemblyBuilderAccess access;
 			if(JVM.IsSaveDebugImage)
 			{
