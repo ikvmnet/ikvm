@@ -1082,7 +1082,7 @@ namespace IKVM.Internal
 				return GetGenericClassLoaderByName(name);
 			}
 #if STATIC_COMPILER
-			return AssemblyClassLoader.FromAssembly(Assembly.ReflectionOnlyLoad(name));
+			return AssemblyClassLoader.FromAssembly(StaticCompiler.Load(name));
 #else
 			return AssemblyClassLoader.FromAssembly(Assembly.Load(name));
 #endif

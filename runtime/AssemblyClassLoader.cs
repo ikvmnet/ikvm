@@ -465,6 +465,9 @@ namespace IKVM.Internal
 			}
 			try
 			{
+#if STATIC_COMPILER
+				return StaticCompiler.Load(name);
+#else
 				if (isReflectionOnly)
 				{
 					return Assembly.ReflectionOnlyLoad(name);
@@ -473,6 +476,7 @@ namespace IKVM.Internal
 				{
 					return Assembly.Load(name);
 				}
+#endif
 			}
 			catch
 			{

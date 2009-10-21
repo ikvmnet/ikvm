@@ -2875,7 +2875,7 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 							if (classFile.Methods[index].AnnotationDefault != null)
 							{
-								CustomAttributeBuilder cab = new CustomAttributeBuilder(StaticCompiler.GetType("IKVM.Attributes.AnnotationDefaultAttribute").GetConstructor(new Type[] { Types.Object }), new object[] { classFile.Methods[index].AnnotationDefault });
+								CustomAttributeBuilder cab = new CustomAttributeBuilder(StaticCompiler.GetRuntimeType("IKVM.Attributes.AnnotationDefaultAttribute").GetConstructor(new Type[] { Types.Object }), new object[] { classFile.Methods[index].AnnotationDefault });
 								mb.SetCustomAttribute(cab);
 							}
 #endif // STATIC_COMPILER
@@ -3651,7 +3651,7 @@ namespace IKVM.Internal
 									continue;
 								}
 #endif
-								// see if there exists a IKVM.NativeCode class for this type
+								// see if there exists an IKVM.NativeCode class for this type
 								Type nativeCodeType = null;
 #if STATIC_COMPILER
 								nativeCodeType = StaticCompiler.GetType("IKVM.NativeCode." + classFile.Name.Replace('$', '+'), false);
@@ -4385,7 +4385,7 @@ namespace IKVM.Internal
 			private static class JniBuilder
 			{
 #if STATIC_COMPILER
-				private static readonly Type localRefStructType = StaticCompiler.GetType("IKVM.Runtime.JNI+Frame");
+				private static readonly Type localRefStructType = StaticCompiler.GetRuntimeType("IKVM.Runtime.JNI+Frame");
 #elif FIRST_PASS
 				private static readonly Type localRefStructType = null;
 #else

@@ -2399,7 +2399,7 @@ namespace IKVM.Internal
 
 		private static bool IsCoreAssembly(Assembly asm)
 		{
-			return AttributeHelper.IsDefined(asm, StaticCompiler.GetType("IKVM.Attributes.RemappedClassAttribute"));
+			return AttributeHelper.IsDefined(asm, StaticCompiler.GetRuntimeType("IKVM.Attributes.RemappedClassAttribute"));
 		}
 
 		private bool CheckCompilingCoreAssembly()
@@ -2492,14 +2492,14 @@ namespace IKVM.Internal
 				if(options.runtimeAssembly == null)
 				{
 					// HACK based on our assembly name we create the default runtime assembly name
-					Assembly compilerAssembly = typeof(CompilerClassLoader).Assembly;
-					StaticCompiler.runtimeAssembly = Assembly.ReflectionOnlyLoad(compilerAssembly.FullName.Replace(compilerAssembly.GetName().Name, "IKVM.Runtime"));
-					StaticCompiler.runtimeJniAssembly = Assembly.ReflectionOnlyLoad(compilerAssembly.FullName.Replace(compilerAssembly.GetName().Name, "IKVM.Runtime.JNI"));
+					AssemblyName compilerAssembly = typeof(CompilerClassLoader).Assembly.GetName();
+					StaticCompiler.runtimeAssembly = StaticCompiler.Load(compilerAssembly.FullName.Replace(compilerAssembly.Name, "IKVM.Runtime"));
+					StaticCompiler.runtimeJniAssembly = StaticCompiler.Load(compilerAssembly.FullName.Replace(compilerAssembly.Name, "IKVM.Runtime.JNI"));
 				}
 				else
 				{
-					StaticCompiler.runtimeAssembly = Assembly.ReflectionOnlyLoadFrom(options.runtimeAssembly);
-					StaticCompiler.runtimeJniAssembly = Assembly.ReflectionOnlyLoadFrom(Path.Combine(StaticCompiler.runtimeAssembly.CodeBase, ".." + Path.DirectorySeparatorChar + "IKVM.Runtime.JNI.dll"));
+					StaticCompiler.runtimeAssembly = StaticCompiler.LoadFile(options.runtimeAssembly);
+					StaticCompiler.runtimeJniAssembly = StaticCompiler.LoadFile(Path.Combine(StaticCompiler.runtimeAssembly.CodeBase, ".." + Path.DirectorySeparatorChar + "IKVM.Runtime.JNI.dll"));
 				}
 			}
 			catch(FileNotFoundException)
@@ -2596,7 +2596,7 @@ namespace IKVM.Internal
 			bool systemIsLoaded = false;
 			foreach(Assembly asm in AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies())
 			{
-				if(asm.GetType("System.ComponentModel.EditorBrowsableAttribute", false, false) != null)
+				if(asm.GetType("System.ComponentModel.EditorBrowsableAttribute") != null)
 				{
 					systemIsLoaded = true;
 					break;
@@ -2776,7 +2776,7 @@ namespace IKVM.Internal
 					Assembly asm = null;
 					try
 					{
-						asm = Assembly.ReflectionOnlyLoad(name.FullName);
+						asm = StaticCompiler.Load(name.FullName);
 					}
 					catch(FileNotFoundException)
 					{
@@ -2829,7 +2829,7 @@ namespace IKVM.Internal
 
 		private static Assembly LoadReferencedAssembly(string r)
 		{
-			Assembly asm = Assembly.ReflectionOnlyLoadFrom(r);
+			Assembly asm = StaticCompiler.LoadFile(r);
 			if (asm.GetManifestResourceInfo("ikvm.exports") != null)
 			{
 				// If this is the main assembly in a multi assembly group, try to pre-load all the assemblies.
@@ -3138,16 +3138,47 @@ namespace IKVM.Internal
 		EmittedClassFormatError = 120,
 	}
 
-	class StaticCompiler
+	static class StaticCompiler
 	{
 		internal static Assembly runtimeAssembly;
 		internal static Assembly runtimeJniAssembly;
 
+		internal static Assembly Load(string assemblyString)
+		{
+			return Assembly.ReflectionOnlyLoad(assemblyString);
+		}
+
+		internal static Assembly LoadFile(string path)
+		{
+			return Assembly.ReflectionOnlyLoadFrom(path);
+		}
+
+		internal static Type GetRuntimeType(string name)
+		{
+			Type type = runtimeAssembly.GetType(name);
+			if (type != null)
+			{
+				return type;
+			}
+			if (runtimeJniAssembly != null)
+			{
+				return runtimeJniAssembly.GetType(name, true);
+			}
+			else
+			{
+				throw new TypeLoadException();
+			}
+		}
+
+		// TODO this method should be removed, because it is not multi target aware (it looks inside all loaded ReflectionOnly assemblies,
+		// instead of just the ones that are supposed to be visible to a particular target)
 		internal static Type GetType(string name)
 		{
 			return GetType(name, true);
 		}
 
+		// TODO this method should be removed, because it is not multi target aware (it looks inside all loaded ReflectionOnly assemblies,
+		// instead of just the ones that are supposed to be visible to a particular target)
 		internal static Type GetType(string name, bool throwOnError)
 		{
 			if(runtimeAssembly.GetType(name) != null)

@@ -74,8 +74,8 @@ namespace IKVM.Internal
 		}
 		private static readonly Dictionary<IntrinsicKey, Emitter> intrinsics = Register();
 #if STATIC_COMPILER
-		private static readonly Type typeofFloatConverter = StaticCompiler.GetType("IKVM.Runtime.FloatConverter");
-		private static readonly Type typeofDoubleConverter = StaticCompiler.GetType("IKVM.Runtime.DoubleConverter");
+		private static readonly Type typeofFloatConverter = StaticCompiler.GetRuntimeType("IKVM.Runtime.FloatConverter");
+		private static readonly Type typeofDoubleConverter = StaticCompiler.GetRuntimeType("IKVM.Runtime.DoubleConverter");
 #else
 		private static readonly Type typeofFloatConverter = typeof(IKVM.Runtime.FloatConverter);
 		private static readonly Type typeofDoubleConverter = typeof(IKVM.Runtime.DoubleConverter);
