@@ -891,7 +891,7 @@ namespace IKVM.Internal
 					ilgen.Emit(OpCodes.Ret);
 					ilgen.MarkLabel(skip);
 					ilgen.Emit(OpCodes.Ldarg_0);
-					ilgen.Emit(OpCodes.Call, Types.Object.GetMethod("GetType"));
+					ilgen.Emit(OpCodes.Call, Compiler.getTypeMethod);
 					ilgen.Emit(OpCodes.Stloc, localType);
 					ilgen.Emit(OpCodes.Ldarg_1);
 					ilgen.Emit(OpCodes.Stloc, localRank);
