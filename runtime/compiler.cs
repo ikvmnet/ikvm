@@ -145,43 +145,43 @@ struct MethodKey : IEquatable<MethodKey>
 	}
 }
 
-class Compiler
+sealed class Compiler
 {
-	private static MethodInfo mapExceptionMethod;
-	internal static MethodInfo mapExceptionFastMethod;
-	private static MethodInfo unmapExceptionMethod;
-	private static MethodInfo fixateExceptionMethod;
-	private static MethodInfo suppressFillInStackTraceMethod;
-	internal static MethodInfo getTypeFromHandleMethod;
-	private static MethodInfo monitorEnterMethod;
-	private static MethodInfo monitorExitMethod;
-	private static MethodInfo keepAliveMethod;
-	internal static MethodWrapper getClassFromTypeHandle;
-	private static TypeWrapper java_lang_Object;
-	private static TypeWrapper java_lang_Class;
-	private static TypeWrapper java_lang_Throwable;
-	private static TypeWrapper java_lang_ThreadDeath;
-	private static TypeWrapper cli_System_Object;
-	private static TypeWrapper cli_System_Exception;
+	private static readonly MethodInfo mapExceptionMethod;
+	internal static readonly MethodInfo mapExceptionFastMethod;
+	private static readonly MethodInfo unmapExceptionMethod;
+	private static readonly MethodInfo fixateExceptionMethod;
+	private static readonly MethodInfo suppressFillInStackTraceMethod;
+	internal static readonly MethodInfo getTypeFromHandleMethod;
+	private static readonly MethodInfo monitorEnterMethod;
+	private static readonly MethodInfo monitorExitMethod;
+	private static readonly MethodInfo keepAliveMethod;
+	internal static readonly MethodWrapper getClassFromTypeHandle;
+	private static readonly TypeWrapper java_lang_Object;
+	private static readonly TypeWrapper java_lang_Class;
+	private static readonly TypeWrapper java_lang_Throwable;
+	private static readonly TypeWrapper java_lang_ThreadDeath;
+	private static readonly TypeWrapper cli_System_Object;
+	private static readonly TypeWrapper cli_System_Exception;
 	private readonly DynamicTypeWrapper.FinishContext context;
-	private DynamicTypeWrapper clazz;
-	private MethodWrapper mw;
-	private ClassFile classFile;
-	private ClassFile.Method m;
-	private CodeEmitter ilGenerator;
-	private MethodAnalyzer ma;
-	private ExceptionTableEntry[] exceptions;
-	private ISymbolDocumentWriter symboldocument;
-	private LineNumberTableAttribute.LineNumberWriter lineNumbers;
+	private readonly DynamicTypeWrapper clazz;
+	private readonly MethodWrapper mw;
+	private readonly ClassFile classFile;
+	private readonly ClassFile.Method m;
+	private readonly CodeEmitter ilGenerator;
+	private readonly MethodAnalyzer ma;
+	private readonly ExceptionTableEntry[] exceptions;
+	private readonly ISymbolDocumentWriter symboldocument;
+	private readonly LineNumberTableAttribute.LineNumberWriter lineNumbers;
 	private bool nonleaf;
 	private Dictionary<MethodKey, MethodInfo> invokespecialstubcache;
-	private bool debug;
-	private bool keepAlive;
-	private bool strictfp;
+	private readonly bool debug;
+	private readonly bool keepAlive;
+	private readonly bool strictfp;
 	private int[] scopeBegin;
 	private int[] scopeClose;
 #if STATIC_COMPILER
-	private MethodWrapper[] replacedMethodWrappers;
+	private readonly MethodWrapper[] replacedMethodWrappers;
 #endif
 
 	static Compiler()
