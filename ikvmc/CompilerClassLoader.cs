@@ -589,7 +589,14 @@ namespace IKVM.Internal
 			{
 				AddExportMapEntry(exportedNamesPerAssembly, (CompilerClassLoader)tw.GetClassLoader(), tw.Name);
 			}
-			if (options.sharedclassloader != null)
+			if (options.sharedclassloader == null)
+			{
+				foreach (CompilerClassLoader ccl in peerReferences)
+				{
+					exportedNamesPerAssembly[ccl.assemblyBuilder.GetName()] = null;
+				}
+			}
+			else
 			{
 				foreach (CompilerClassLoader ccl in options.sharedclassloader)
 				{
