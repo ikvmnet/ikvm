@@ -411,7 +411,11 @@ class IkvmcCompiler
 						{
 #pragma warning disable 618
 							// Assembly.LoadWithPartialName is obsolete
-							asm = StaticCompiler.LoadFile(Assembly.LoadWithPartialName(r).Location);
+							Assembly found = Assembly.LoadWithPartialName(r);
+							if (found != null)
+							{
+								asm = StaticCompiler.LoadFile(found.Location);
+							}
 #pragma warning restore
 						}
 						catch (FileLoadException)
