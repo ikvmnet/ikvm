@@ -138,10 +138,8 @@ namespace IKVM.Internal
 				if (cpi.Class == "java.lang.Object" && cpi.Name == "getClass" && cpi.Signature == "()Ljava.lang.Class;")
 				{
 					// we can't patch the current opcode, so we have to emit the first call to GetTypeHandle here
-					ilgen.Emit(OpCodes.Dup);
-					ilgen.EmitNullCheck();
-					ilgen.EmitGetTypeHandleValue();
-					code[opcodeIndex + 2].PatchOpCode(NormalizedByteCode.__intrinsic_gettypehandlevalue);
+					ilgen.Emit(OpCodes.Callvirt, Compiler.getTypeMethod);
+					code[opcodeIndex + 2].PatchOpCode(NormalizedByteCode.__intrinsic_gettype);
 					return true;
 				}
 			}

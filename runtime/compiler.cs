@@ -153,6 +153,7 @@ sealed class Compiler
 	private static readonly MethodInfo fixateExceptionMethod;
 	private static readonly MethodInfo suppressFillInStackTraceMethod;
 	internal static readonly MethodInfo getTypeFromHandleMethod;
+	internal static readonly MethodInfo getTypeMethod;
 	private static readonly MethodInfo monitorEnterMethod;
 	private static readonly MethodInfo monitorExitMethod;
 	private static readonly MethodInfo keepAliveMethod;
@@ -187,6 +188,7 @@ sealed class Compiler
 	static Compiler()
 	{
 		getTypeFromHandleMethod = Types.Type.GetMethod("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, null, new Type[] { Types.RuntimeTypeHandle }, null);
+		getTypeMethod = Types.Object.GetMethod("GetType", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
 		monitorEnterMethod = JVM.Import(typeof(System.Threading.Monitor)).GetMethod("Enter", BindingFlags.Static | BindingFlags.Public, null, new Type[] { Types.Object }, null);
 		monitorExitMethod = JVM.Import(typeof(System.Threading.Monitor)).GetMethod("Exit", BindingFlags.Static | BindingFlags.Public, null, new Type[] { Types.Object }, null);
 		keepAliveMethod = JVM.Import(typeof(System.GC)).GetMethod("KeepAlive", BindingFlags.Static | BindingFlags.Public, null, new Type[] { Types.Object }, null);
@@ -2965,10 +2967,8 @@ sealed class Compiler
 				case NormalizedByteCode.__nop:
 					ilGenerator.Emit(OpCodes.Nop);
 					break;
-				case NormalizedByteCode.__intrinsic_gettypehandlevalue:
-					ilGenerator.Emit(OpCodes.Dup);
-					ilGenerator.EmitNullCheck();
-					ilGenerator.EmitGetTypeHandleValue();
+				case NormalizedByteCode.__intrinsic_gettype:
+					ilGenerator.Emit(OpCodes.Callvirt, getTypeMethod);
 					break;
 				case NormalizedByteCode.__static_error:
 				{
