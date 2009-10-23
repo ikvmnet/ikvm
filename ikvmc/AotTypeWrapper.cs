@@ -97,6 +97,7 @@ namespace IKVM.Internal
 							constructors.Add(new ConstructorForwarder(typeBuilder, mw));
 						}
 					}
+					Serialization.AddAutomagicSerializationToWorkaroundBaseClass(typeBuilder);
 					replacedMethods = constructors.ToArray();
 					return typeBuilder;
 				}

@@ -89,7 +89,8 @@ namespace IKVM.Internal
 					if (ctor != null && ctor.IsPublic)
 					{
 						MarkSerializable(wrapper);
-						AddConstructor(wrapper, ctor, null, true);
+						ctor.Link();
+						AddConstructor(wrapper.TypeAsBuilder, (ConstructorInfo)ctor.GetMethod(), null, true);
 						if (!wrapper.BaseTypeWrapper.IsSubTypeOf(serializable))
 						{
 							AddGetObjectData(wrapper);
@@ -102,12 +103,12 @@ namespace IKVM.Internal
 				}
 				else if (wrapper.BaseTypeWrapper.IsSubTypeOf(serializable))
 				{
-					ConstructorInfo baseCtor = wrapper.BaseTypeWrapper.TypeAsBaseType.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] {
+					ConstructorInfo baseCtor = wrapper.TypeAsBaseType.BaseType.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] {
 						JVM.Import(typeof(SerializationInfo)), JVM.Import(typeof(StreamingContext)) }, null);
 					if (baseCtor != null && (baseCtor.IsFamily || baseCtor.IsFamilyOrAssembly))
 					{
 						MarkSerializable(wrapper);
-						AddConstructor(wrapper, null, baseCtor, false);
+						AddConstructor(wrapper.TypeAsBuilder, null, baseCtor, false);
 						AddReadResolve(wrapper);
 					}
 				}
@@ -118,9 +119,25 @@ namespace IKVM.Internal
 					{
 						MarkSerializable(wrapper);
 						AddGetObjectData(wrapper);
-						AddConstructor(wrapper, baseCtor, null, true);
+						// because the base type can be a __WorkaroundBaseClass__, we need to resolve the constructor again, on the actual base type
+						ConstructorInfo constructor = wrapper.TypeAsBaseType.BaseType.GetConstructor(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
+						AddConstructor(wrapper.TypeAsBuilder, constructor, null, true);
 						AddReadResolve(wrapper);
 					}
+				}
+			}
+		}
+
+		internal static void AddAutomagicSerializationToWorkaroundBaseClass(TypeBuilder typeBuilderWorkaroundBaseClass)
+		{
+			if (typeBuilderWorkaroundBaseClass.BaseType.IsSerializable)
+			{
+				typeBuilderWorkaroundBaseClass.SetCustomAttribute(serializableAttribute);
+				ConstructorInfo baseCtor = typeBuilderWorkaroundBaseClass.BaseType.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] {
+					JVM.Import(typeof(SerializationInfo)), JVM.Import(typeof(StreamingContext)) }, null);
+				if (baseCtor != null && (baseCtor.IsFamily || baseCtor.IsFamilyOrAssembly))
+				{
+					AddConstructor(typeBuilderWorkaroundBaseClass, null, baseCtor, false);
 				}
 			}
 		}
@@ -150,9 +167,8 @@ namespace IKVM.Internal
 			ilgen.Emit(OpCodes.Ret);
 		}
 
-		private static void AddConstructor(TypeWrapper wrapper, MethodWrapper defaultConstructor, ConstructorInfo serializationConstructor, bool callReadObject)
+		private static void AddConstructor(TypeBuilder tb, ConstructorInfo defaultConstructor, ConstructorInfo serializationConstructor, bool callReadObject)
 		{
-			TypeBuilder tb = wrapper.TypeAsBuilder;
 			ConstructorBuilder ctor = tb.DefineConstructor(MethodAttributes.Family, CallingConventions.Standard, new Type[] { JVM.Import(typeof(SerializationInfo)), JVM.Import(typeof(StreamingContext)) });
 			AttributeHelper.HideFromJava(ctor);
 			ctor.AddDeclarativeSecurity(SecurityAction.Demand, psetSerializationFormatter);
@@ -160,8 +176,7 @@ namespace IKVM.Internal
 			ilgen.Emit(OpCodes.Ldarg_0);
 			if (defaultConstructor != null)
 			{
-				defaultConstructor.Link();
-				defaultConstructor.EmitCall(ilgen);
+				ilgen.Emit(OpCodes.Call, defaultConstructor);
 			}
 			else
 			{
