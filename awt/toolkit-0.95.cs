@@ -63,6 +63,7 @@ using ikvm.awt.printing;
 using ikvm.runtime;
 using sun.awt;
 using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
 
 namespace ikvm.awt
 {
@@ -1021,6 +1022,8 @@ namespace ikvm.awt
 
     internal class NetDropTargetContextPeer : sun.awt.dnd.SunDropTargetContextPeer
     {
+        private IDataObject data;
+
         internal static NetDropTargetContextPeer getNetDropTargetContextPeer()
         {
             return new NetDropTargetContextPeer();
@@ -1064,8 +1067,9 @@ namespace ikvm.awt
                                int x, int y,
                                int dropAction, int actions,
                                 long[] formats,
-                                long nativeCtxt)
+                                long nativeCtxt, IDataObject data)
         {
+            this.data = data;
             postDropTargetEvent(component, x, y, dropAction, actions,
                                 formats, nativeCtxt,
                                 sun.awt.dnd.SunDropTargetEvent.MOUSE_DROPPED,
@@ -1087,8 +1091,12 @@ namespace ikvm.awt
 
         protected override void doDropDone(bool success, int dropAction, bool isLocal)
         {
-            // TODO: do something here... 
-            throw new NotImplementedException();
+            // Don't do anything as .NET framework already handle the message pump
+        }
+
+        public override object getTransferData(java.awt.datatransfer.DataFlavor df)
+        {
+            return new NetClipboardTransferable(data).getTransferData(df);
         }
 
         protected override object getNativeData(long l)
@@ -1724,7 +1732,7 @@ namespace ikvm.awt
             NetDragSourceContextPeer.getInstance().dragDropFinished(true, actions, e.X, e.Y);
             if (dropTargetPeer != null)
                 dropTargetPeer.handleDropMessage(target, e.X, e.Y, getAction(e.Effect), getAction(e.AllowedEffect),
-                                                 formats, 0);
+                                                 formats, 0, e.Data);
             dropTargetPeer = null;
         }
 
@@ -4474,7 +4482,7 @@ namespace ikvm.awt
             {
                 return contents;
             }
-            return new NetClipboardTransferable(this);
+            return new NetClipboardTransferable(Clipboard.GetDataObject());
         }
     }
 
@@ -4482,9 +4490,8 @@ namespace ikvm.awt
     {
         private HashMap flavorToData = new HashMap();
         private java.awt.datatransfer.DataFlavor[] flavors;
-        public NetClipboardTransferable(NetClipboard clipboard)
+        public NetClipboardTransferable(IDataObject data)
         {
-            IDataObject data = Clipboard.GetDataObject();
             java.awt.datatransfer.FlavorTable map = (java.awt.datatransfer.FlavorTable) java.awt.datatransfer.SystemFlavorMap.getDefaultFlavorMap();
             if (data != null)
             {
