@@ -6486,17 +6486,6 @@ namespace IKVM.NativeCode.sun.reflect
 			public abstract object get(object obj);
 			public abstract void set(object obj, object value);
 			
-			private abstract class ObjectField : FieldAccessorImplBase
-			{
-				private readonly jlClass fieldType;
-
-				internal ObjectField(jlrField field, bool overrideAccessCheck)
-					: base(field, overrideAccessCheck)
-				{
-					fieldType = field.getType();
-				}
-			}
-
 			private class ByteField : FieldAccessorImplBase
 			{
 				internal ByteField(jlrField field, bool overrideAccessCheck)
@@ -7320,7 +7309,7 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 			}
 
-			private sealed class FastObjectFieldAccessor : ObjectField
+			private sealed class FastObjectFieldAccessor : FieldAccessorImplBase
 			{
 				private delegate void Setter(object obj, object value);
 				private delegate object Getter(object obj);
