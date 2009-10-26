@@ -931,7 +931,7 @@ namespace IKVM.Internal
 				wrapper = AssemblyClassLoader.FromAssembly(asm).GetWrapperFromAssemblyType(type);
 			}
 #if CLASSGC
-			if(type.Assembly.IsDynamic())
+			if(type.Assembly.IsDynamic)
 			{
 				// don't cache types in dynamic assemblies, because they might live in a RunAndCollect assembly
 				// TODO we also shouldn't cache generic type instances that have a GCable type parameter
