@@ -609,9 +609,15 @@ class Compiler
 		{
 			scopeBegin = new int[m.Instructions.Length];
 			scopeClose = new int[m.Instructions.Length];
+
+			// FXBUG make sure we always have an outer scope
+			// (otherwise LocalBuilder.SetLocalSymInfo() might throw an IndexOutOfRangeException)
+			// fix for bug 2881954.
+			scopeBegin[0]++;
+			scopeClose[m.Instructions.Length - 1]++;
+
 			for (int i = 0; i < lvt.Length; i++)
 			{
-				// TODO validate the contents of the LVT entry
 				int startIndex = SafeFindPcIndex(lvt[i].start_pc);
 				int endIndex = SafeFindPcIndex(lvt[i].start_pc + lvt[i].length);
 				if(startIndex != -1 && endIndex != -1)
