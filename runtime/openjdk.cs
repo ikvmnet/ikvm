@@ -6329,22 +6329,23 @@ namespace IKVM.NativeCode.sun.reflect
 
 		private abstract class FieldAccessorImplBase : srFieldAccessor, IReflectionException
 		{
-			private readonly jlrField field;
 			protected readonly FieldWrapper fw;
 			protected readonly bool isFinal;
-			private bool runInit;
 
 			private FieldAccessorImplBase(jlrField field, bool overrideAccessCheck)
 			{
-				this.field = field;
 				fw = FieldWrapper.FromField(field);
 				isFinal = (!overrideAccessCheck || fw.IsStatic) && fw.IsFinal;
-				runInit = fw.DeclaringType.IsInterface;
 			}
 
-			private String GetQualifiedFieldName()
+			private string GetQualifiedFieldName()
 			{
-				return field.getDeclaringClass().getName() + "." + field.getName();
+				return fw.DeclaringType.Name + "." + fw.Name;
+			}
+
+			private string GetFieldTypeName()
+			{
+				return ((jlClass)fw.FieldTypeWrapper.ClassObject).getName();
 			}
 
 			public jlIllegalArgumentException GetIllegalArgumentException(object obj)
@@ -6376,18 +6377,18 @@ namespace IKVM.NativeCode.sun.reflect
 
 			private jlIllegalArgumentException GetIllegalArgumentException(string type)
 			{
-				return new jlIllegalArgumentException("Attempt to get " + field.getType().getName() + " field \"" + GetQualifiedFieldName() + "\" with illegal data type conversion to " + type);
+				return new jlIllegalArgumentException("Attempt to get " + GetFieldTypeName() + " field \"" + GetQualifiedFieldName() + "\" with illegal data type conversion to " + type);
 			}
 
 			// this message comes from sun.reflect.UnsafeFieldAccessorImpl
 			private string GetSetMessage(String attemptedType, String attemptedValue)
 			{
 				String err = "Can not set";
-				if (jlrModifier.isStatic(field.getModifiers()))
+				if (fw.IsStatic)
 					err += " static";
 				if (isFinal)
 					err += " final";
-				err += " " + field.getType().getName() + " field " + GetQualifiedFieldName() + " to ";
+				err += " " + GetFieldTypeName() + " field " + GetQualifiedFieldName() + " to ";
 				if (attemptedValue.Length > 0)
 				{
 					err += "(" + attemptedType + ")" + attemptedValue;
