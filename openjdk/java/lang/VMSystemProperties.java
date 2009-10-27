@@ -318,6 +318,7 @@ final class VMSystemProperties
 	p.setProperty("java.vm.info", "compiled mode");
 	p.setProperty("sun.nio.MaxDirectMemorySize", "-1");
 	p.setProperty("java.awt.graphicsenv", PropertyConstants.java_awt_graphicsenv);
+    p.setProperty("java.awt.printerjob", "sun.awt.windows.WPrinterJob");
 	// TODO
 	// sun.cpu.isalist:=pentium_pro+mmx pentium_pro pentium+mmx pentium i486 i386 i86
 	// sun.desktop:=windows
@@ -325,7 +326,6 @@ final class VMSystemProperties
 	// sun.java.launcher:=SUN_STANDARD
 	// sun.jnu.encoding:=Cp1252
 	// sun.management.compiler:=HotSpot Client Compiler
-	// java.awt.printerjob:=sun.awt.windows.WPrinterJob
         try
         {
             // read properties from app.config
