@@ -1001,12 +1001,6 @@ namespace ikvm.awt
                         NetToolkit.BeginInvoke(delegate
                                                    {
                                                        control.DoDragDrop(data, DragDropEffects.All);
-                                                       try
-                                                       {
-                                                           setDragDropInProgress(false);
-                                                       } catch
-                                                       {
-                                                       }
                                                    });
                     }
                 }
