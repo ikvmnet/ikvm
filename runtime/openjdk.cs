@@ -2467,6 +2467,7 @@ namespace IKVM.NativeCode.java
 				try
 				{
 					TypeWrapper wrapper = TypeWrapper.FromClass(thisClass);
+					wrapper.Finish();
 					TypeWrapper decl = wrapper.DeclaringTypeWrapper;
 					if (decl == null)
 					{
