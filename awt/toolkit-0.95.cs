@@ -51,6 +51,7 @@ jeroen@frijters.net
 
 using System;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
@@ -62,8 +63,6 @@ using java.util;
 using ikvm.awt.printing;
 using ikvm.runtime;
 using sun.awt;
-using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
 
 namespace ikvm.awt
 {
@@ -4482,42 +4481,12 @@ namespace ikvm.awt
 
     public class NetClipboardTransferable : java.awt.datatransfer.Transferable
     {
-        private HashMap flavorToData = new HashMap();
-        private java.awt.datatransfer.DataFlavor[] flavors;
+        private readonly Map flavorToData = new HashMap();
+        private readonly java.awt.datatransfer.DataFlavor[] flavors;
         public NetClipboardTransferable(IDataObject data)
         {
-            java.awt.datatransfer.FlavorTable map = (java.awt.datatransfer.FlavorTable) java.awt.datatransfer.SystemFlavorMap.getDefaultFlavorMap();
-            if (data != null)
-            {
-                string[] formats = data.GetFormats();
-                if (formats != null && formats.Length > 0)
-                {
-                    long[] longFormats = NetDataTransferer.getInstanceImpl().getClipboardFormatCodes(formats);
-                    Map/*<DataFlavor,long>*/ flavorMap = NetDataTransferer.getInstanceImpl().getFlavorsForFormats(longFormats, map);
-                    flavors = (java.awt.datatransfer.DataFlavor[])(flavorMap.keySet().toArray(new java.awt.datatransfer.DataFlavor[0]));
-                    object[] dataArr = new object[formats.Length];
-                    for (int i = 0; i < formats.Length; i++)
-                    {
-                        string format = formats[i];
-                        dataArr[i] = data.GetData(format);
-                    }
-                    for(Iterator iter = flavorMap.entrySet().iterator(); iter.hasNext();)
-                    {
-                        Map.Entry entry = (Map.Entry) iter.next();
-                        long formatCode = ((java.lang.Long)entry.getValue()).longValue();
-                        int idx;
-                        for (idx = 0; idx < formats.Length; idx++)
-                        {
-                            if (longFormats[idx] == formatCode) break;
-                        }
-                        if (idx<formats.Length)
-                        {
-                            java.awt.datatransfer.DataFlavor flavor = (java.awt.datatransfer.DataFlavor) entry.getKey();
-                            flavorToData.put(flavor, dataArr[idx]);
-                        }
-                    }
-                }
-            }
+            flavorToData = NetDataTransferer.getInstanceImpl().translateFromClipboard(data);
+            flavors = (java.awt.datatransfer.DataFlavor[])flavorToData.keySet().toArray(new java.awt.datatransfer.DataFlavor[0]);
         }
 
         public java.awt.datatransfer.DataFlavor[] getTransferDataFlavors()
@@ -4593,6 +4562,56 @@ namespace ikvm.awt
                 return null;
             else
                 return dataFormat.Name;
+        }
+
+        internal Map translateFromClipboard(IDataObject data)
+        {
+            java.awt.datatransfer.FlavorTable defaultFlavorMap = (java.awt.datatransfer.FlavorTable)java.awt.datatransfer.SystemFlavorMap.getDefaultFlavorMap();
+            Map/*<DataFlavor,object>*/ map = new HashMap();
+            string[] formats = data.GetFormats();
+            if (formats != null && formats.Length > 0)
+            {
+                long[] longFormats = getClipboardFormatCodes(formats);
+                Map /*<DataFlavor,long>*/ flavorMap = getFlavorsForFormats(longFormats, defaultFlavorMap);
+                java.awt.datatransfer.DataFlavor[] flavors =
+                    (java.awt.datatransfer.DataFlavor[])
+                    (flavorMap.keySet().toArray(new java.awt.datatransfer.DataFlavor[0]));
+                for(int i=0; i<flavors.Length; i++)
+                {
+                    java.awt.datatransfer.DataFlavor df = flavors[i];
+                    long format = ((java.lang.Long) flavorMap.get(df)).longValue();
+                    string stringFormat = getNativeClipboardFormatName(format);
+                    if (stringFormat==null) continue; // clipboard format is not registered in Windows system
+                    object formatData = data.GetData(stringFormat);
+                    if (formatData == null) continue; // no data for that format
+                    object translatedData = null;
+                    if (df.isFlavorJavaFileListType())
+                    {
+                        // translate string[] into java.util.List<java.io.File>
+                        string[] nativeFileList = (string[])formatData;
+                        List fileList = new ArrayList(nativeFileList.Length);
+                        for (int j = 0; j < nativeFileList.Length; j++)
+                        {
+                            java.io.File file = new java.io.File(nativeFileList[i]);
+                            fileList.add(file);
+                        }
+                        translatedData = fileList;
+                    }
+                    else if (java.awt.datatransfer.DataFlavor.imageFlavor.equals(df) && formatData is Bitmap)
+                    {
+                        // translate System.Drawing.Bitmap into java.awt.Image
+                        translatedData = new java.awt.image.BufferedImage((Bitmap) formatData);
+                    }
+                    else if (formatData is string)
+                    {
+                        if (df.isFlavorTextType())
+                            translatedData = formatData;
+                    }
+                    if (translatedData!=null)
+                        map.put(df, translatedData);
+                }
+            }
+            return map;
         }
 
         internal IDataObject getDataObject(java.awt.datatransfer.Transferable transferable, java.awt.datatransfer.FlavorTable flavorMap)
