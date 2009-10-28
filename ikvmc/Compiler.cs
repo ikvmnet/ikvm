@@ -627,6 +627,21 @@ class IkvmcCompiler
 						options.privatePackages = temp;
 					}
 				}
+				else if(s.StartsWith("-publicpackage:"))
+				{
+					string prefix = s.Substring(15);
+					if(options.publicPackages == null)
+					{
+						options.publicPackages = new string[] { prefix };
+					}
+					else
+					{
+						string[] temp = new string[options.publicPackages.Length + 1];
+						Array.Copy(options.publicPackages, 0, temp, 0, options.publicPackages.Length);
+						temp[temp.Length - 1] = prefix;
+						options.publicPackages = temp;
+					}
+				}
 				else if(s.StartsWith("-nowarn:"))
 				{
 					foreach(string w in s.Substring(8).Split(','))

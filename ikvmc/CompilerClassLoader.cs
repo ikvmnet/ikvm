@@ -321,6 +321,22 @@ namespace IKVM.Internal
 							}
 						}
 					}
+					if(f.IsPublic && options.publicPackages != null)
+					{
+						bool found = false;
+						foreach(string package in options.publicPackages)
+						{
+							if(f.Name.StartsWith(package))
+							{
+								found = true;
+								break;
+							}
+						}
+						if(!found)
+						{
+							f.SetInternal();
+						}
+					}
 					if(!f.IsInterface
 						&& !f.IsAbstract
 						&& !f.IsPublic
@@ -3081,6 +3097,7 @@ namespace IKVM.Internal
 		internal bool compressedResources;
 		internal string runtimeAssembly;
 		internal string[] privatePackages;
+		internal string[] publicPackages;
 		internal string sourcepath;
 		internal Dictionary<string, string> externalResources;
 		internal string classLoader;
