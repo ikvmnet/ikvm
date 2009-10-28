@@ -6329,8 +6329,23 @@ namespace IKVM.NativeCode.sun.reflect
 
 		private abstract class FieldAccessorImplBase : srFieldAccessor, IReflectionException
 		{
+			protected static readonly ushort inflationThreshold = 15;
 			protected readonly FieldWrapper fw;
 			protected readonly bool isFinal;
+			protected ushort numInvocations;
+
+			static FieldAccessorImplBase()
+			{
+				string str = jlSystem.getProperty("ikvm.reflect.field.inflationThreshold");
+				int value;
+				if (str != null && int.TryParse(str, out value))
+				{
+					if (value >= ushort.MinValue && value <= ushort.MaxValue)
+					{
+						inflationThreshold = (ushort)value;
+					}
+				}
+			}
 
 			private FieldAccessorImplBase(jlrField field, bool overrideAccessCheck)
 			{
@@ -6485,8 +6500,130 @@ namespace IKVM.NativeCode.sun.reflect
 
 			public abstract object get(object obj);
 			public abstract void set(object obj, object value);
-			
-			private class ByteField : FieldAccessorImplBase
+
+			private abstract class FieldAccessor<T> : FieldAccessorImplBase
+			{
+				protected delegate void Setter(object obj, T value, FieldAccessor<T> acc);
+				protected delegate T Getter(object obj, FieldAccessor<T> acc);
+				private static readonly Setter initialSetter = lazySet;
+				private static readonly Getter initialGetter = lazyGet;
+				protected Setter setter = initialSetter;
+				protected Getter getter = initialGetter;
+
+				internal FieldAccessor(jlrField field, bool overrideAccessCheck)
+					: base(field, overrideAccessCheck)
+				{
+					if (!IsSlowPathCompatible(fw))
+					{
+						// prevent slow path
+						numInvocations = inflationThreshold;
+					}
+				}
+
+				protected bool IsSpecialType(TypeWrapper tw)
+				{
+					return tw.IsNonPrimitiveValueType
+						|| tw.IsGhost
+						|| tw.IsFakeNestedType;
+				}
+
+				protected bool IsSlowPathCompatible(FieldWrapper fw)
+				{
+					if (IsSpecialType(fw.DeclaringType) || IsSpecialType(fw.FieldTypeWrapper))
+					{
+						return false;
+					}
+					fw.Link();
+					return fw.GetField() != null;
+				}
+
+				private static T lazyGet(object obj, FieldAccessor<T> acc)
+				{
+					return acc.lazyGet(obj);
+				}
+
+				private static void lazySet(object obj, T value, FieldAccessor<T> acc)
+				{
+					acc.lazySet(obj, value);
+				}
+
+				private T lazyGet(object obj)
+				{
+					if (numInvocations < inflationThreshold)
+					{
+						if (fw.IsStatic)
+						{
+							obj = null;
+						}
+						else if (!fw.DeclaringType.IsInstance(obj))
+						{
+							throw GetIllegalArgumentException(obj);
+						}
+						if (numInvocations == 0)
+						{
+							fw.DeclaringType.RunClassInit();
+							fw.DeclaringType.Finish();
+							fw.ResolveField();
+						}
+						numInvocations++;
+						return (T)fw.GetField().GetValue(obj);
+					}
+					else
+					{
+						// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+						// and if we didn't use the slow path, we haven't yet initialized the class
+						fw.DeclaringType.RunClassInit();
+						getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(T), fw);
+						return getter(obj, this);
+					}
+				}
+
+				private void lazySet(object obj, T value)
+				{
+					if (isFinal)
+					{
+						// for some reason Java runs class initialization before checking if the field is final
+						fw.DeclaringType.RunClassInit();
+						throw FinalFieldIllegalAccessException(JavaBox(value));
+					}
+					if (numInvocations < inflationThreshold)
+					{
+						if (fw.IsStatic)
+						{
+							obj = null;
+						}
+						else if (!fw.DeclaringType.IsInstance(obj))
+						{
+							throw SetIllegalArgumentException(obj);
+						}
+						CheckValue(value);
+						if (numInvocations == 0)
+						{
+							fw.DeclaringType.RunClassInit();
+							fw.DeclaringType.Finish();
+							fw.ResolveField();
+						}
+						numInvocations++;
+						fw.GetField().SetValue(obj, value);
+					}
+					else
+					{
+						// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+						// and if we didn't use the slow path, we haven't yet initialized the class
+						fw.DeclaringType.RunClassInit();
+						setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(T), fw);
+						setter(obj, value, this);
+					}
+				}
+
+				protected virtual void CheckValue(T value)
+				{
+				}
+
+				protected abstract object JavaBox(T value);
+			}
+
+			private sealed class ByteField : FieldAccessor<byte>
 			{
 				internal ByteField(jlrField field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
@@ -6531,9 +6668,24 @@ namespace IKVM.NativeCode.sun.reflect
 					}
 					setByte(obj, ((jlByte)val).byteValue());
 				}
+
+				public sealed override byte getByte(object obj)
+				{
+					return getter(obj, this);
+				}
+
+				public sealed override void setByte(object obj, byte value)
+				{
+					setter(obj, value, this);
+				}
+
+				protected sealed override object JavaBox(byte value)
+				{
+					return jlByte.valueOf(value);
+				}
 			}
 
-			private class BooleanField : FieldAccessorImplBase
+			private sealed class BooleanField : FieldAccessor<bool>
 			{
 				internal BooleanField(jlrField field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
@@ -6553,9 +6705,24 @@ namespace IKVM.NativeCode.sun.reflect
 					}
 					setBoolean(obj, ((jlBoolean)val).booleanValue());
 				}
+
+				public sealed override bool getBoolean(object obj)
+				{
+					return getter(obj, this);
+				}
+
+				public sealed override void setBoolean(object obj, bool value)
+				{
+					setter(obj, value, this);
+				}
+
+				protected sealed override object JavaBox(bool value)
+				{
+					return jlBoolean.valueOf(value);
+				}
 			}
 
-			private class CharField : FieldAccessorImplBase
+			private sealed class CharField : FieldAccessor<char>
 			{
 				internal CharField(jlrField field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
@@ -6594,9 +6761,24 @@ namespace IKVM.NativeCode.sun.reflect
 					else
 						throw SetIllegalArgumentException(val);
 				}
+
+				public sealed override char getChar(object obj)
+				{
+					return getter(obj, this);
+				}
+
+				public sealed override void setChar(object obj, char value)
+				{
+					setter(obj, value, this);
+				}
+
+				protected sealed override object JavaBox(char value)
+				{
+					return jlCharacter.valueOf(value);
+				}
 			}
 
-			private class ShortField : FieldAccessorImplBase
+			private sealed class ShortField : FieldAccessor<short>
 			{
 				internal ShortField(jlrField field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
@@ -6641,9 +6823,24 @@ namespace IKVM.NativeCode.sun.reflect
 				{
 					setShort(obj, (sbyte)b);
 				}
+
+				public sealed override short getShort(object obj)
+				{
+					return getter(obj, this);
+				}
+
+				public sealed override void setShort(object obj, short value)
+				{
+					setter(obj, value, this);
+				}
+
+				protected sealed override object JavaBox(short value)
+				{
+					return jlShort.valueOf(value);
+				}
 			}
 
-			private class IntField : FieldAccessorImplBase
+			private sealed class IntField : FieldAccessor<int>
 			{
 				internal IntField(jlrField field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
@@ -6696,9 +6893,24 @@ namespace IKVM.NativeCode.sun.reflect
 				{
 					setInt(obj, s);
 				}
+
+				public sealed override int getInt(object obj)
+				{
+					return getter(obj, this);
+				}
+
+				public sealed override void setInt(object obj, int value)
+				{
+					setter(obj, value, this);
+				}
+
+				protected sealed override object JavaBox(int value)
+				{
+					return jlInteger.valueOf(value);
+				}
 			}
 
-			private class FloatField : FieldAccessorImplBase
+			private sealed class FloatField : FieldAccessor<float>
 			{
 				internal FloatField(jlrField field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
@@ -6753,9 +6965,24 @@ namespace IKVM.NativeCode.sun.reflect
 				{
 					setFloat(obj, l);
 				}
+
+				public sealed override float getFloat(object obj)
+				{
+					return getter(obj, this);
+				}
+
+				public sealed override void setFloat(object obj, float value)
+				{
+					setter(obj, value, this);
+				}
+
+				protected sealed override object JavaBox(float value)
+				{
+					return jlFloat.valueOf(value);
+				}
 			}
 
-			private class LongField : FieldAccessorImplBase
+			private sealed class LongField : FieldAccessor<long>
 			{
 				internal LongField(jlrField field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
@@ -6809,21 +7036,36 @@ namespace IKVM.NativeCode.sun.reflect
 				{
 					setLong(obj, i);
 				}
+
+				public sealed override long getLong(object obj)
+				{
+					return getter(obj, this);
+				}
+
+				public sealed override void setLong(object obj, long value)
+				{
+					setter(obj, value, this);
+				}
+
+				protected sealed override object JavaBox(long value)
+				{
+					return jlLong.valueOf(value);
+				}
 			}
 
-			private class DoubleField : FieldAccessorImplBase
+			private sealed class DoubleField : FieldAccessor<double>
 			{
 				internal DoubleField(jlrField field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
 				{
 				}
 
-				public override object get(object obj)
+				public sealed override object get(object obj)
 				{
 					return jlDouble.valueOf(getDouble(obj));
 				}
 
-				public override void set(object obj, object val)
+				public sealed override void set(object obj, object val)
 				{
 					if (val is jlDouble
 						|| val is jlFloat
@@ -6838,34 +7080,80 @@ namespace IKVM.NativeCode.sun.reflect
 						throw SetIllegalArgumentException(val);
 				}
 
-				public override void setByte(object obj, byte b)
+				public sealed override void setByte(object obj, byte b)
 				{
 					setDouble(obj, (sbyte)b);
 				}
 
-				public override void setChar(object obj, char c)
+				public sealed override void setChar(object obj, char c)
 				{
 					setDouble(obj, c);
 				}
 
-				public override void setShort(object obj, short s)
+				public sealed override void setShort(object obj, short s)
 				{
 					setDouble(obj, s);
 				}
 
-				public override void setInt(object obj, int i)
+				public sealed override void setInt(object obj, int i)
 				{
 					setDouble(obj, i);
 				}
 
-				public override void setLong(object obj, long l)
+				public sealed override void setLong(object obj, long l)
 				{
 					setDouble(obj, l);
 				}
 
-				public override void setFloat(object obj, float f)
+				public sealed override void setFloat(object obj, float f)
 				{
 					setDouble(obj, f);
+				}
+
+				public sealed override double getDouble(object obj)
+				{
+					return getter(obj, this);
+				}
+
+				public sealed override void setDouble(object obj, double value)
+				{
+					setter(obj, value, this);
+				}
+
+				protected sealed override object JavaBox(double value)
+				{
+					return jlDouble.valueOf(value);
+				}
+			}
+
+			private sealed class ObjectField : FieldAccessor<object>
+			{
+				internal ObjectField(jlrField field, bool overrideAccessCheck)
+					: base(field, overrideAccessCheck)
+				{
+				}
+
+				protected sealed override void CheckValue(object value)
+				{
+					if (value != null && !fw.FieldTypeWrapper.IsInstance(value))
+					{
+						throw SetIllegalArgumentException(value);
+					}
+				}
+
+				public sealed override object get(object obj)
+				{
+					return getter(obj, this);
+				}
+
+				public sealed override void set(object obj, object value)
+				{
+					setter(obj, value, this);
+				}
+
+				protected sealed override object JavaBox(object value)
+				{
+					return value;
 				}
 			}
 
@@ -6874,7 +7162,7 @@ namespace IKVM.NativeCode.sun.reflect
 				fw.FieldTypeWrapper.Finish();
 				fw.DeclaringType.Finish();
 				fw.ResolveField();
-				DynamicMethod dm = DynamicMethodUtils.Create("__<Getter>", fw.DeclaringType.TypeAsBaseType, !fw.IsPublic || !fw.DeclaringType.IsPublic, fieldType, new Type[] { typeof(IReflectionException), typeof(object) });
+				DynamicMethod dm = DynamicMethodUtils.Create("__<Getter>", fw.DeclaringType.TypeAsBaseType, !fw.IsPublic || !fw.DeclaringType.IsPublic, fieldType, new Type[] { typeof(IReflectionException), typeof(object), typeof(object) });
 				CodeEmitter ilgen = CodeEmitter.Create(dm);
 				if (fw.IsStatic)
 				{
@@ -6907,7 +7195,7 @@ namespace IKVM.NativeCode.sun.reflect
 				fw.FieldTypeWrapper.Finish();
 				fw.DeclaringType.Finish();
 				fw.ResolveField();
-				DynamicMethod dm = DynamicMethodUtils.Create("__<Setter>", fw.DeclaringType.TypeAsBaseType, !fw.IsPublic || !fw.DeclaringType.IsPublic, null, new Type[] { typeof(IReflectionException), typeof(object), fieldType });
+				DynamicMethod dm = DynamicMethodUtils.Create("__<Setter>", fw.DeclaringType.TypeAsBaseType, !fw.IsPublic || !fw.DeclaringType.IsPublic, null, new Type[] { typeof(IReflectionException), typeof(object), fieldType, typeof(object) });
 				CodeEmitter ilgen = CodeEmitter.Create(dm);
 				if (fw.IsStatic)
 				{
@@ -6949,411 +7237,6 @@ namespace IKVM.NativeCode.sun.reflect
 				return dm.CreateDelegate(delegateType, this);
 			}
 
-			private sealed class FastByteFieldAccessor : ByteField
-			{
-				private delegate void Setter(object obj, byte value);
-				private delegate byte Getter(object obj);
-				private Setter setter;
-				private Getter getter;
-
-				internal FastByteFieldAccessor(jlrField field, bool overrideAccessCheck)
-					: base(field, overrideAccessCheck)
-				{
-					setter = new Setter(lazySet);
-					getter = new Getter(lazyGet);
-				}
-
-				private byte lazyGet(object obj)
-				{
-					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
-					fw.DeclaringType.RunClassInit();
-					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(byte), fw);
-					return getter(obj);
-				}
-
-				private void lazySet(object obj, byte value)
-				{
-					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
-					fw.DeclaringType.RunClassInit();
-					if (isFinal)
-					{
-						throw FinalFieldIllegalAccessException(jlByte.valueOf(value));
-					}
-					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(byte), fw);
-					setter(obj, value);
-				}
-
-				public override byte getByte(object obj)
-				{
-					return getter(obj);
-				}
-
-				public override void setByte(object obj, byte value)
-				{
-					setter(obj, value);
-				}
-			}
-
-			private sealed class FastBooleanFieldAccessor : BooleanField
-			{
-				private delegate void Setter(object obj, bool value);
-				private delegate bool Getter(object obj);
-				private Setter setter;
-				private Getter getter;
-
-				internal FastBooleanFieldAccessor(jlrField field, bool overrideAccessCheck)
-					: base(field, overrideAccessCheck)
-				{
-					setter = new Setter(lazySet);
-					getter = new Getter(lazyGet);
-				}
-
-				private bool lazyGet(object obj)
-				{
-					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
-					fw.DeclaringType.RunClassInit();
-					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(bool), fw);
-					return getter(obj);
-				}
-
-				private void lazySet(object obj, bool value)
-				{
-					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
-					fw.DeclaringType.RunClassInit();
-					if (isFinal)
-					{
-						throw FinalFieldIllegalAccessException(jlBoolean.valueOf(value));
-					}
-					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(bool), fw);
-					setter(obj, value);
-				}
-
-				public override bool getBoolean(object obj)
-				{
-					return getter(obj);
-				}
-
-				public override void setBoolean(object obj, bool value)
-				{
-					setter(obj, value);
-				}
-			}
-
-			private sealed class FastCharFieldAccessor : CharField
-			{
-				private delegate void Setter(object obj, char value);
-				private delegate char Getter(object obj);
-				private Setter setter;
-				private Getter getter;
-
-				internal FastCharFieldAccessor(jlrField field, bool overrideAccessCheck)
-					: base(field, overrideAccessCheck)
-				{
-					setter = new Setter(lazySet);
-					getter = new Getter(lazyGet);
-				}
-
-				private char lazyGet(object obj)
-				{
-					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
-					fw.DeclaringType.RunClassInit();
-					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(char), fw);
-					return getter(obj);
-				}
-
-				private void lazySet(object obj, char value)
-				{
-					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
-					fw.DeclaringType.RunClassInit();
-					if (isFinal)
-					{
-						throw FinalFieldIllegalAccessException(jlCharacter.valueOf(value));
-					}
-					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(char), fw);
-					setter(obj, value);
-				}
-
-				public override char getChar(object obj)
-				{
-					return getter(obj);
-				}
-
-				public override void setChar(object obj, char value)
-				{
-					setter(obj, value);
-				}
-			}
-
-			private sealed class FastShortFieldAccessor : ShortField
-			{
-				private delegate void Setter(object obj, short value);
-				private delegate short Getter(object obj);
-				private Setter setter;
-				private Getter getter;
-
-				internal FastShortFieldAccessor(jlrField field, bool overrideAccessCheck)
-					: base(field, overrideAccessCheck)
-				{
-					setter = new Setter(lazySet);
-					getter = new Getter(lazyGet);
-				}
-
-				private short lazyGet(object obj)
-				{
-					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
-					fw.DeclaringType.RunClassInit();
-					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(short), fw);
-					return getter(obj);
-				}
-
-				private void lazySet(object obj, short value)
-				{
-					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
-					fw.DeclaringType.RunClassInit();
-					if (isFinal)
-					{
-						throw FinalFieldIllegalAccessException(jlShort.valueOf(value));
-					}
-					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(short), fw);
-					setter(obj, value);
-				}
-
-				public override short getShort(object obj)
-				{
-					return getter(obj);
-				}
-
-				public override void setShort(object obj, short value)
-				{
-					setter(obj, value);
-				}
-			}
-
-			private sealed class FastIntegerFieldAccessor : IntField
-			{
-				private delegate void Setter(object obj, int value);
-				private delegate int Getter(object obj);
-				private Setter setter;
-				private Getter getter;
-
-				internal FastIntegerFieldAccessor(jlrField field, bool overrideAccessCheck)
-					: base(field, overrideAccessCheck)
-				{
-					setter = new Setter(lazySet);
-					getter = new Getter(lazyGet);
-				}
-
-				private int lazyGet(object obj)
-				{
-					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
-					fw.DeclaringType.RunClassInit();
-					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(int), fw);
-					return getter(obj);
-				}
-
-				private void lazySet(object obj, int value)
-				{
-					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
-					fw.DeclaringType.RunClassInit();
-					if (isFinal)
-					{
-						throw FinalFieldIllegalAccessException(jlInteger.valueOf(value));
-					}
-					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(int), fw);
-					setter(obj, value);
-				}
-
-				public override int getInt(object obj)
-				{
-					return getter(obj);
-				}
-
-				public override void setInt(object obj, int value)
-				{
-					setter(obj, value);
-				}
-			}
-
-			private sealed class FastFloatFieldAccessor : FloatField
-			{
-				private delegate void Setter(object obj, float value);
-				private delegate float Getter(object obj);
-				private Setter setter;
-				private Getter getter;
-
-				internal FastFloatFieldAccessor(jlrField field, bool overrideAccessCheck)
-					: base(field, overrideAccessCheck)
-				{
-					setter = new Setter(lazySet);
-					getter = new Getter(lazyGet);
-				}
-
-				private float lazyGet(object obj)
-				{
-					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
-					fw.DeclaringType.RunClassInit();
-					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(float), fw);
-					return getter(obj);
-				}
-
-				private void lazySet(object obj, float value)
-				{
-					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
-					fw.DeclaringType.RunClassInit();
-					if (isFinal)
-					{
-						throw FinalFieldIllegalAccessException(jlFloat.valueOf(value));
-					}
-					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(float), fw);
-					setter(obj, value);
-				}
-
-				public override float getFloat(object obj)
-				{
-					return getter(obj);
-				}
-
-				public override void setFloat(object obj, float value)
-				{
-					setter(obj, value);
-				}
-			}
-
-			private sealed class FastLongFieldAccessor : LongField
-			{
-				private delegate void Setter(object obj, long value);
-				private delegate long Getter(object obj);
-				private Setter setter;
-				private Getter getter;
-
-				internal FastLongFieldAccessor(jlrField field, bool overrideAccessCheck)
-					: base(field, overrideAccessCheck)
-				{
-					setter = new Setter(lazySet);
-					getter = new Getter(lazyGet);
-				}
-
-				private long lazyGet(object obj)
-				{
-					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
-					fw.DeclaringType.RunClassInit();
-					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(long), fw);
-					return getter(obj);
-				}
-
-				private void lazySet(object obj, long value)
-				{
-					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
-					fw.DeclaringType.RunClassInit();
-					if (isFinal)
-					{
-						throw FinalFieldIllegalAccessException(jlLong.valueOf(value));
-					}
-					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(long), fw);
-					setter(obj, value);
-				}
-
-				public override long getLong(object obj)
-				{
-					return getter(obj);
-				}
-
-				public override void setLong(object obj, long value)
-				{
-					setter(obj, value);
-				}
-			}
-
-			private sealed class FastDoubleFieldAccessor : DoubleField
-			{
-				private delegate void Setter(object obj, double value);
-				private delegate double Getter(object obj);
-				private Setter setter;
-				private Getter getter;
-
-				internal FastDoubleFieldAccessor(jlrField field, bool overrideAccessCheck)
-					: base(field, overrideAccessCheck)
-				{
-					setter = new Setter(lazySet);
-					getter = new Getter(lazyGet);
-				}
-
-				private double lazyGet(object obj)
-				{
-					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
-					fw.DeclaringType.RunClassInit();
-					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(double), fw);
-					return getter(obj);
-				}
-
-				private void lazySet(object obj, double value)
-				{
-					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
-					fw.DeclaringType.RunClassInit();
-					if (isFinal)
-					{
-						throw FinalFieldIllegalAccessException(jlDouble.valueOf(value));
-					}
-					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(double), fw);
-					setter(obj, value);
-				}
-
-				public override double getDouble(object obj)
-				{
-					return getter(obj);
-				}
-
-				public override void setDouble(object obj, double value)
-				{
-					setter(obj, value);
-				}
-			}
-
-			private sealed class FastObjectFieldAccessor : FieldAccessorImplBase
-			{
-				private delegate void Setter(object obj, object value);
-				private delegate object Getter(object obj);
-				private Setter setter;
-				private Getter getter;
-
-				internal FastObjectFieldAccessor(jlrField field, bool overrideAccessCheck)
-					: base(field, overrideAccessCheck)
-				{
-					setter = new Setter(lazySet);
-					getter = new Getter(lazyGet);
-				}
-
-				private object lazyGet(object obj)
-				{
-					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
-					fw.DeclaringType.RunClassInit();
-					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(object), fw);
-					return getter(obj);
-				}
-
-				private void lazySet(object obj, object value)
-				{
-					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
-					fw.DeclaringType.RunClassInit();
-					if (isFinal)
-					{
-						throw FinalFieldIllegalAccessException(value);
-					}
-					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(object), fw);
-					setter(obj, value);
-				}
-
-				public override object get(object obj)
-				{
-					return getter(obj);
-				}
-
-				public override void set(object obj, object value)
-				{
-					setter(obj, value);
-				}
-			}
-
 			internal static FieldAccessorImplBase Create(jlrField field, bool overrideAccessCheck)
 			{
 				jlClass type = field.getType();
@@ -7361,41 +7244,41 @@ namespace IKVM.NativeCode.sun.reflect
 				{
 					if (type == jlByte.TYPE)
 					{
-						return new FastByteFieldAccessor(field, overrideAccessCheck);
+						return new ByteField(field, overrideAccessCheck);
 					}
 					if (type == jlBoolean.TYPE)
 					{
-						return new FastBooleanFieldAccessor(field, overrideAccessCheck);
+						return new BooleanField(field, overrideAccessCheck);
 					}
 					if (type == jlCharacter.TYPE)
 					{
-						return new FastCharFieldAccessor(field, overrideAccessCheck);
+						return new CharField(field, overrideAccessCheck);
 					}
 					if (type == jlShort.TYPE)
 					{
-						return new FastShortFieldAccessor(field, overrideAccessCheck);
+						return new ShortField(field, overrideAccessCheck);
 					}
 					if (type == jlInteger.TYPE)
 					{
-						return new FastIntegerFieldAccessor(field, overrideAccessCheck);
+						return new IntField(field, overrideAccessCheck);
 					}
 					if (type == jlFloat.TYPE)
 					{
-						return new FastFloatFieldAccessor(field, overrideAccessCheck);
+						return new FloatField(field, overrideAccessCheck);
 					}
 					if (type == jlLong.TYPE)
 					{
-						return new FastLongFieldAccessor(field, overrideAccessCheck);
+						return new LongField(field, overrideAccessCheck);
 					}
 					if (type == jlDouble.TYPE)
 					{
-						return new FastDoubleFieldAccessor(field, overrideAccessCheck);
+						return new DoubleField(field, overrideAccessCheck);
 					}
 					throw new InvalidOperationException("field type: " + type);
 				}
 				else
 				{
-					return new FastObjectFieldAccessor(field, overrideAccessCheck);
+					return new ObjectField(field, overrideAccessCheck);
 				}
 			}
 		}
