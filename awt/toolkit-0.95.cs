@@ -1087,8 +1087,17 @@ namespace ikvm.awt
             // Don't do anything as .NET framework already handle the message pump
         }
 
+        public override bool isDataFlavorSupported(java.awt.datatransfer.DataFlavor df)
+        {
+            if (isTransferableJVMLocal())
+                return base.isDataFlavorSupported(df);
+            return base.isDataFlavorSupported(df);
+        }
+
         public override object getTransferData(java.awt.datatransfer.DataFlavor df)
         {
+            if (isTransferableJVMLocal())
+                return base.getTransferData(df);
             return new NetClipboardTransferable(data).getTransferData(df);
         }
 
@@ -1722,10 +1731,10 @@ namespace ikvm.awt
             IDataObject obj = e.Data;
             long[] formats = NetDataTransferer.getInstanceImpl().getClipboardFormatCodes(obj.GetFormats());
             int actions = getAction(e.Effect);
-            NetDragSourceContextPeer.getInstance().dragDropFinished(true, actions, e.X, e.Y);
             if (dropTargetPeer != null)
                 dropTargetPeer.handleDropMessage(target, e.X, e.Y, getAction(e.Effect), getAction(e.AllowedEffect),
                                                  formats, 0, e.Data);
+            NetDragSourceContextPeer.getInstance().dragDropFinished(true, actions, e.X, e.Y);
             dropTargetPeer = null;
         }
 
