@@ -4524,8 +4524,11 @@ namespace ikvm.awt
 		    public void enter() 
             {
                 if (!NetToolkit.bogusForm.InvokeRequired)
+                {
                     Application.DoEvents();
-                //throw new NotImplementedException();
+                    Thread.Sleep(0);
+                }
+		        //throw new NotImplementedException();
 		    }
 
 		    public void exit() 
