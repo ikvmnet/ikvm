@@ -260,7 +260,7 @@ public class StandardGlyphVector extends GlyphVector{
 
     @Override
     public Rectangle2D getLogicalBounds(){
-        throw new NotImplementedException();
+        return getMetrics().getStringBounds(glyphs, null);
     }
 
 
