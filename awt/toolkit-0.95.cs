@@ -4528,22 +4528,21 @@ namespace ikvm.awt
                     Application.DoEvents();
                     Thread.Sleep(0);
                 }
-		        //throw new NotImplementedException();
 		    }
 
 		    public void exit() 
             {
-                //throw new NotImplementedException();
+                // empty
 		    }
 
             public void @lock()
             {
-                //throw new NotImplementedException();
+                // empty
             }
 
             public void unlock()
             {
-                //throw new NotImplementedException();
+                // empty
             }
         }
 
@@ -4618,6 +4617,12 @@ namespace ikvm.awt
                     {
                         if (df.isFlavorTextType())
                             translatedData = formatData;
+                        else if (((java.lang.Class)typeof(java.io.Reader)).equals(df.getRepresentationClass()))
+                            translatedData = new java.io.StringReader((string) formatData);
+                        else if (((java.lang.Class)typeof(java.io.InputStream)).equals(df.getRepresentationClass()))
+                            translatedData = new java.io.StringBufferInputStream((string)formatData);
+                        else
+                            throw new java.awt.datatransfer.UnsupportedFlavorException(df);
                     }
                     if (translatedData!=null)
                         map.put(df, translatedData);
