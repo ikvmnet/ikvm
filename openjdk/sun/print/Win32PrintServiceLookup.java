@@ -92,7 +92,7 @@ public class Win32PrintServiceLookup extends PrintServiceLookup {
                 newServices[p] = defService;
             } else {
                 if (printServices == null) {
-                    newServices[p] = new Win32PrintService(printers[p]);
+                    newServices[p] = new Win32PrintService(printers[p], peer);
                 } else {
                     int j;
                     for (j = 0; j < printServices.length; j++) {
@@ -104,7 +104,7 @@ public class Win32PrintServiceLookup extends PrintServiceLookup {
                         }
                     }
                     if (j == printServices.length) {
-                        newServices[p] = new Win32PrintService(printers[p]);
+                        newServices[p] = new Win32PrintService(printers[p], peer);
                     }
                 }
             }
@@ -257,7 +257,7 @@ public class Win32PrintServiceLookup extends PrintServiceLookup {
         }
 
         if (defaultPrintService == null) {
-            defaultPrintService = new Win32PrintService(defaultPrinter);
+            defaultPrintService = new Win32PrintService(defaultPrinter, peer);
         }
         return defaultPrintService;
      }

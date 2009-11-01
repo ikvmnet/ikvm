@@ -23,122 +23,105 @@
  */
 package sun.awt.windows;
 
+import ikvm.awt.IkvmToolkit;
+
+import java.awt.Graphics;
 import java.awt.HeadlessException;
+import java.awt.Toolkit;
+import java.awt.image.BufferedImage;
 import java.awt.print.PageFormat;
 import java.awt.print.Pageable;
+import java.awt.print.Paper;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
+
+import javax.print.PrintService;
+import javax.print.attribute.PrintRequestAttributeSet;
+
+import cli.System.Drawing.Printing.*;
+
+import sun.print.PeekGraphics;
+import sun.print.PrintPeer;
+import sun.print.RasterPrinterJob;
+import sun.print.Win32PrintService;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 
 
 /**
  * @author Volker Berlin
  */
-public class WPrinterJob extends PrinterJob{
+public class WPrinterJob extends RasterPrinterJob{
 
     @Override
-    public void cancel(){
-        // TODO Auto-generated method stub
-
+    protected void abortDoc(){
+        throw new NotImplementedException();
     }
-
 
     @Override
-    public PageFormat defaultPage(PageFormat page){
-        // TODO Auto-generated method stub
-        return null;
+    protected void endDoc() throws PrinterException{
+        throw new NotImplementedException();
     }
-
 
     @Override
-    public int getCopies(){
-        // TODO Auto-generated method stub
-        return 0;
+    protected void endPage(PageFormat format, Printable painter, int index) throws PrinterException{
+        throw new NotImplementedException();
     }
-
 
     @Override
-    public String getJobName(){
-        // TODO Auto-generated method stub
-        return null;
+    protected double getPhysicalPageHeight(Paper p){
+        throw new NotImplementedException();
     }
-
 
     @Override
-    public String getUserName(){
-        // TODO Auto-generated method stub
-        return null;
+    protected double getPhysicalPageWidth(Paper p){
+        throw new NotImplementedException();
     }
-
 
     @Override
-    public boolean isCancelled(){
-        // TODO Auto-generated method stub
-        return false;
+    protected double getPhysicalPrintableHeight(Paper p){
+        throw new NotImplementedException();
     }
-
 
     @Override
-    public PageFormat pageDialog(PageFormat page) throws HeadlessException{
-        // TODO Auto-generated method stub
-        return null;
+    protected double getPhysicalPrintableWidth(Paper p){
+        throw new NotImplementedException();
     }
-
 
     @Override
-    public void print() throws PrinterException{
-        // TODO Auto-generated method stub
-
+    protected double getPhysicalPrintableX(Paper p){
+        throw new NotImplementedException();
     }
-
 
     @Override
-    public boolean printDialog() throws HeadlessException{
-        // TODO Auto-generated method stub
-        return false;
+    protected double getPhysicalPrintableY(Paper p){
+        throw new NotImplementedException();
     }
-
 
     @Override
-    public void setCopies(int copies){
-        // TODO Auto-generated method stub
-
+    protected double getXRes(){
+        throw new NotImplementedException();
     }
-
 
     @Override
-    public void setJobName(String jobName){
-        // TODO Auto-generated method stub
-
+    protected double getYRes(){
+        throw new NotImplementedException();
     }
-
 
     @Override
-    public void setPageable(Pageable document) throws NullPointerException{
-        // TODO Auto-generated method stub
-
+    protected void printBand(byte[] data, int x, int y, int width, int height) throws PrinterException{
+        throw new NotImplementedException();
     }
-
 
     @Override
-    public void setPrintable(Printable painter){
-        // TODO Auto-generated method stub
-
+    protected void startDoc() throws PrinterException{
+        throw new NotImplementedException();
     }
-
 
     @Override
-    public void setPrintable(Printable painter, PageFormat format){
-        // TODO Auto-generated method stub
-
+    protected void startPage(PageFormat format, Printable painter, int index, boolean paperChanged)
+            throws PrinterException{
+        throw new NotImplementedException();
     }
-
-
-    @Override
-    public PageFormat validatePage(PageFormat page){
-        // TODO Auto-generated method stub
-        return null;
-    }
-
 }
