@@ -23,6 +23,8 @@
  */
 package sun.print;
 
+import java.awt.Graphics2D;
+
 
 
 /**
@@ -35,4 +37,6 @@ public interface PrintPeer{
     public String getDefaultPrinterName();
 
     public String[] getAllPrinterNames();
+    
+    public Graphics2D createGraphics(cli.System.Drawing.Graphics g);
 }

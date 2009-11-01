@@ -71,6 +71,7 @@ namespace ikvm.awt
 
         public override void copyArea(int x, int y, int width, int height, int dx, int dy)
 		{
+            throw new NotImplementedException();
 		}
     }
 
@@ -107,6 +108,31 @@ namespace ikvm.awt
             Point dest = new Point(x + (int)this.g.Transform.OffsetX + dx, y + (int)this.g.Transform.OffsetY + dy);
             this.g.CopyFromScreen(src, dest, new Size(width, height));
 		}
+    }
+
+    internal class PrintGraphics : NetGraphics
+    {
+
+        internal PrintGraphics(Graphics g)
+            : base(g, null, Color.White, Color.Black)
+        {
+        }
+
+        public override java.awt.Graphics create()
+        {
+            PrintGraphics newGraphics = (PrintGraphics)MemberwiseClone();
+            IntPtr hdc = g.GetHdc();
+            Graphics newG = Graphics.FromHdc(hdc);
+            g.ReleaseHdc(hdc);
+            newGraphics.init(newG);
+            return newGraphics;
+        }
+
+        public override void copyArea(int x, int y, int width, int height, int dx, int dy)
+        {
+            throw new NotImplementedException();
+        }
+
     }
 
     internal abstract class NetGraphics : java.awt.Graphics2D

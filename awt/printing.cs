@@ -51,6 +51,11 @@ namespace ikvm.awt.printing
             printers.CopyTo(result, 0);
             return result;
         }
+
+        public java.awt.Graphics2D createGraphics(System.Drawing.Graphics g)
+        {
+            return new PrintGraphics(g);
+        }
     }
 
     /// <summary>
