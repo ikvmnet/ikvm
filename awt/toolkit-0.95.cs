@@ -957,7 +957,11 @@ namespace ikvm.awt
         internal new void dragDropFinished(bool success, int operations, int x, int y)
         {
             if (dragStart)
-                base.dragDropFinished(success, operations, x, y);
+            {
+			    java.awt.EventQueue.invokeLater(Delegates.toRunnable(delegate {
+                        base.dragDropFinished(success, operations, x, y);
+			    }));
+            }
             dragStart = false;
         }
 
@@ -4521,28 +4525,78 @@ namespace ikvm.awt
 
         class NetToolkitThreadBlockedHandler : sun.awt.datatransfer.ToolkitThreadBlockedHandler
         {
+            private bool locked;
+            private Thread owner;
+            
+            protected bool isOwned()
+            {
+                return (locked && Thread.CurrentThread == owner);
+            }
+
 		    public void enter() 
             {
+                if (!isOwned())
+                {
+                    throw new java.lang.IllegalMonitorStateException();
+                }
+                unlock();
                 if (!NetToolkit.bogusForm.InvokeRequired)
                 {
                     Application.DoEvents();
                     Thread.Sleep(0);
                 }
+		        @lock();
 		    }
 
 		    public void exit() 
             {
-                // empty
-		    }
+                if (!isOwned())
+                {
+                    throw new java.lang.IllegalMonitorStateException();
+                }
+            }
 
-            public void @lock()
-            {
-                // empty
+            public void @lock() {
+                lock(this)
+                {
+                    if (locked && Thread.CurrentThread == owner)
+                    {
+                        throw new java.lang.IllegalMonitorStateException();
+                    }
+                    do
+                    {
+                        if (!locked)
+                        {
+                            locked = true;
+                            owner = Thread.CurrentThread;
+                        }
+                        else
+                        {
+                            try
+                            {
+                                Monitor.Wait(this);
+                            }
+                            catch (ThreadInterruptedException)
+                            {
+                                // try again
+                            }
+                        }
+                    } while (owner != Thread.CurrentThread);
+                }
             }
 
             public void unlock()
             {
-                // empty
+                lock (this)
+                {
+                    if (Thread.CurrentThread != owner)
+                    {
+                        throw new java.lang.IllegalMonitorStateException();
+                    }
+                    owner = null;
+                    locked = false;
+                    Monitor.Pulse(this);
+                }
             }
         }
 
