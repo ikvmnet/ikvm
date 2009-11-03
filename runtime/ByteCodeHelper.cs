@@ -769,6 +769,22 @@ namespace IKVM.Runtime
 		{
 			Interlocked.Exchange(ref v, newValue);
 		}
+
+		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+		public static void InitializeModule(Module module)
+		{
+			Assembly asm = Assembly.GetCallingAssembly();
+			if (module.Assembly != asm)
+			{
+				throw new ArgumentOutOfRangeException();
+			}
+			object classLoader = AssemblyClassLoader.FromAssembly(asm).GetJavaClassLoader();
+			Action<Module> init = (Action<Module>)Delegate.CreateDelegate(typeof(Action<Module>), classLoader, "InitializeModule", false, false);
+			if (init != null)
+			{
+				init(module);
+			}
+		}
 	}
 
 	[StructLayout(LayoutKind.Explicit)]

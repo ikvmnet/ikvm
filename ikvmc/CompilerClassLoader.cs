@@ -3054,6 +3054,19 @@ namespace IKVM.Internal
 				}
 				ConstructorInfo ci = JVM.LoadType(typeof(CustomAssemblyClassLoaderAttribute)).GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { Types.Type }, null);
 				assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(ci, new object[] { wrapper.TypeAsTBD }));
+				// TODO it would be better to do this for all assemblies in a shared class loader group (because options.classloader is relevant only for the main assembly),
+				// but since it is probably common to specify the custom assembly class loader at the group level, it hopefully won't make much difference in practice.
+				MethodWrapper mwModuleInit = wrapper.GetMethodWrapper("InitializeModule", "(Lcli.System.Reflection.Module;)V", false);
+				if(mwModuleInit != null && !mwModuleInit.IsStatic)
+				{
+					MethodBuilder moduleInitializer = GetTypeWrapperFactory().ModuleBuilder.DefineGlobalMethod(".cctor", MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, null, Type.EmptyTypes);
+					ILGenerator ilgen = moduleInitializer.GetILGenerator();
+					ilgen.Emit(OpCodes.Ldtoken, moduleInitializer);
+					ilgen.Emit(OpCodes.Call, typeof(MethodBase).GetMethod("GetMethodFromHandle", new Type[] { typeof(RuntimeMethodHandle) }));
+					ilgen.Emit(OpCodes.Callvirt, typeof(MemberInfo).GetMethod("get_Module"));
+					ilgen.Emit(OpCodes.Call, StaticCompiler.GetRuntimeType("IKVM.Runtime.ByteCodeHelper").GetMethod("InitializeModule"));
+					ilgen.Emit(OpCodes.Ret);
+				}
 			}
 			assemblyBuilder.DefineVersionInfoResource();
 			return 0;
