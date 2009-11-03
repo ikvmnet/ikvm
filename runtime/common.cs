@@ -297,6 +297,13 @@ namespace IKVM.NativeCode.ikvm.runtime
 			return ((GenericClassLoader)ClassLoaderWrapper.GetClassLoaderWrapper(classLoader)).GetName();
 #endif
 		}
+
+		public static object getAssemblyClassLoader(Assembly asm)
+		{
+			// note that we don't do a security check here, because if you have the Assembly object,
+			// you can already get at all the types in it.
+			return AssemblyClassLoader_.FromAssembly(asm).GetJavaClassLoader();
+		}
 	}
 
 	static class AppDomainAssemblyClassLoader

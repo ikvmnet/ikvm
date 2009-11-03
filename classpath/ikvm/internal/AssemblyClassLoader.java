@@ -293,4 +293,7 @@ public final class AssemblyClassLoader extends ClassLoader
         }
         return null;
     }
+    
+    // return the ClassLoader for the assembly. Note that this doesn't have to be an AssemblyClassLoader.
+    public static native ClassLoader getAssemblyClassLoader(Assembly asm);
 }
