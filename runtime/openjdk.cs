@@ -750,7 +750,14 @@ namespace IKVM.NativeCode.java
 					}
 					else
 					{
-						tw.Finish();
+						try
+						{
+							tw.Finish();
+						}
+						catch (RetargetableJavaException x)
+						{
+							throw x.ToJava();
+						}
 						DynamicMethod dmObjGetter = DynamicMethodUtils.Create("__<ObjFieldGetter>", tw.TypeAsBaseType, true, null, new Type[] { typeof(object), typeof(object[]) });
 						DynamicMethod dmPrimGetter = DynamicMethodUtils.Create("__<PrimFieldGetter>", tw.TypeAsBaseType, true, null, new Type[] { typeof(object), typeof(byte[]) });
 						DynamicMethod dmObjSetter = DynamicMethodUtils.Create("__<ObjFieldSetter>", tw.TypeAsBaseType, true, null, new Type[] { typeof(object), typeof(object[]) });
@@ -780,7 +787,14 @@ namespace IKVM.NativeCode.java
 							}
 							fw.ResolveField();
 							TypeWrapper fieldType = fw.FieldTypeWrapper;
-							fieldType.Finish();
+							try
+							{
+								fieldType.Finish();
+							}
+							catch (RetargetableJavaException x)
+							{
+								throw x.ToJava();
+							}
 							if (fieldType.IsPrimitive)
 							{
 								// Getter
@@ -2300,7 +2314,14 @@ namespace IKVM.NativeCode.java
 				}
 				if (initialize && !tw.IsArray)
 				{
-					tw.Finish();
+					try
+					{
+						tw.Finish();
+					}
+					catch (RetargetableJavaException x)
+					{
+						throw x.ToJava();
+					}
 					tw.RunClassInit();
 				}
 				return tw.ClassObject;
@@ -2589,7 +2610,14 @@ namespace IKVM.NativeCode.java
 				return null;
 #else
 				TypeWrapper wrapper = TypeWrapper.FromClass(thisClass);
-				wrapper.Finish();
+				try
+				{
+					wrapper.Finish();
+				}
+				catch (RetargetableJavaException x)
+				{
+					throw x.ToJava();
+				}
 				return AnnotationsToMap(wrapper.GetDeclaredAnnotations());
 #endif
 			}
@@ -5480,7 +5508,14 @@ namespace IKVM.NativeCode.sun.misc
 			TypeWrapper tw = TypeWrapper.FromClass(clazz);
 			if (!tw.IsArray)
 			{
-				tw.Finish();
+				try
+				{
+					tw.Finish();
+				}
+				catch (RetargetableJavaException x)
+				{
+					throw x.ToJava();
+				}
 				tw.RunClassInit();
 			}
 		}
