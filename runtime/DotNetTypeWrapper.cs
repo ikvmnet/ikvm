@@ -2270,29 +2270,11 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				lock (this)
+				if (interfaces == null)
 				{
-					if (interfaces == null)
-					{
-						Type[] interfaceTypes = type.GetInterfaces();
-						interfaces = new TypeWrapper[interfaceTypes.Length];
-						for (int i = 0; i < interfaceTypes.Length; i++)
-						{
-							if (interfaceTypes[i].DeclaringType != null &&
-								AttributeHelper.IsHideFromJava(interfaceTypes[i]) &&
-								interfaceTypes[i].Name == "__Interface")
-							{
-								// we have to return the declaring type for ghost interfaces
-								interfaces[i] = ClassLoaderWrapper.GetWrapperFromType(interfaceTypes[i].DeclaringType);
-							}
-							else
-							{
-								interfaces[i] = ClassLoaderWrapper.GetWrapperFromType(interfaceTypes[i]);
-							}
-						}
-					}
-					return interfaces;
+					interfaces = GetImplementedInterfacesAsTypeWrappers(type);
 				}
+				return interfaces;
 			}
 		}
 

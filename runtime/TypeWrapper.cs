@@ -3406,6 +3406,26 @@ namespace IKVM.Internal
 				return null;
 			}
 		}
+
+		protected static TypeWrapper[] GetImplementedInterfacesAsTypeWrappers(Type type)
+		{
+			Type[] interfaceTypes = type.GetInterfaces();
+			TypeWrapper[] interfaces = new TypeWrapper[interfaceTypes.Length];
+			for (int i = 0; i < interfaceTypes.Length; i++)
+			{
+				Type decl = interfaceTypes[i].DeclaringType;
+				if (decl != null && AttributeHelper.IsGhostInterface(decl))
+				{
+					// we have to return the declaring type for ghost interfaces
+					interfaces[i] = ClassLoaderWrapper.GetWrapperFromType(decl);
+				}
+				else
+				{
+					interfaces[i] = ClassLoaderWrapper.GetWrapperFromType(interfaceTypes[i]);
+				}
+			}
+			return interfaces;
+		}
 	}
 
 	sealed class UnloadableTypeWrapper : TypeWrapper
@@ -3931,28 +3951,52 @@ namespace IKVM.Internal
 			{
 				if(interfaces == null)
 				{
-					// NOTE instead of getting the interfaces list from Type, we use a custom
-					// attribute to list the implemented interfaces, because Java reflection only
-					// reports the interfaces *directly* implemented by the type, not the inherited
-					// interfaces. This is significant for serialVersionUID calculation (for example).
-					ImplementsAttribute attr = AttributeHelper.GetImplements(type);
-					if(attr != null)
-					{
-						string[] interfaceNames = attr.Interfaces;
-						TypeWrapper[] interfaceWrappers = new TypeWrapper[interfaceNames.Length];
-						for(int i = 0; i < interfaceWrappers.Length; i++)
-						{
-							interfaceWrappers[i] = GetClassLoader().LoadClassByDottedName(interfaceNames[i]);
-						}
-						this.interfaces = interfaceWrappers;
-					}
-					else
-					{
-						interfaces = TypeWrapper.EmptyArray;
-					}
+					interfaces = GetInterfaces();
 				}
 				return interfaces;
 			}
+		}
+
+		private TypeWrapper[] GetInterfaces()
+		{
+			// NOTE instead of getting the interfaces list from Type, we use a custom
+			// attribute to list the implemented interfaces, because Java reflection only
+			// reports the interfaces *directly* implemented by the type, not the inherited
+			// interfaces. This is significant for serialVersionUID calculation (for example).
+			ImplementsAttribute attr = AttributeHelper.GetImplements(type);
+			if (attr == null)
+			{
+				return TypeWrapper.EmptyArray;
+			}
+			string[] interfaceNames = attr.Interfaces;
+			TypeWrapper[] interfaceWrappers = new TypeWrapper[interfaceNames.Length];
+			if (this.IsRemapped)
+			{
+				for (int i = 0; i < interfaceWrappers.Length; i++)
+				{
+					interfaceWrappers[i] = ClassLoaderWrapper.LoadClassCritical(interfaceNames[i]);
+				}
+			}
+			else
+			{
+				TypeWrapper[] typeWrappers = GetImplementedInterfacesAsTypeWrappers(type);
+				for (int i = 0; i < interfaceWrappers.Length; i++)
+				{
+					for (int j = 0; j < typeWrappers.Length; j++)
+					{
+						if (typeWrappers[j].Name == interfaceNames[i])
+						{
+							interfaceWrappers[i] = typeWrappers[j];
+							break;
+						}
+					}
+					if (interfaceWrappers[i] == null)
+					{
+						JVM.CriticalFailure("Unable to resolve interface " + interfaceNames[i] + " on type " + this, null);
+					}
+				}
+			}
+			return interfaceWrappers;
 		}
 
 		internal override TypeWrapper[] InnerClasses
