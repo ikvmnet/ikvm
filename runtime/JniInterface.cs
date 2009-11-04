@@ -1341,7 +1341,7 @@ namespace IKVM.Runtime
 			{
 				return env.classLoader;
 			}
-			return ClassLoaderWrapper.GetBootstrapClassLoader();
+			return ClassLoaderWrapper.GetClassLoaderWrapper(java.lang.ClassLoader.getSystemClassLoader());
 		}
 
 		internal static jclass FindClass(JNIEnv* pEnv, byte* pszName)
