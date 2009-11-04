@@ -417,19 +417,19 @@ namespace IKVM.Runtime
 		[DebuggerStepThroughAttribute]
 		public static object DynamicCast(object obj, RuntimeTypeHandle type, string clazz)
 		{
-			if(obj != null)
-			{
-#if !FIRST_PASS
-				throw new java.lang.ClassCastException();
-#endif
-			}
-			return obj;
+			return null;
 		}
 
 		[DebuggerStepThroughAttribute]
 		public static bool DynamicInstanceOf(object obj, RuntimeTypeHandle type, string clazz)
 		{
 			return false;
+		}
+
+		[DebuggerStepThroughAttribute]
+		public static Type DynamicGetTypeAsExceptionType(RuntimeTypeHandle type, string clazz)
+		{
+			return null;
 		}
 #endif //!FIRST_PASS
 
