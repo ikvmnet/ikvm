@@ -50,7 +50,6 @@ class IkvmcCompiler
 	private Dictionary<string, byte[]> resources = new Dictionary<string, byte[]>();
 	private string defaultAssemblyName;
 	private List<string> classesToExclude = new List<string>();
-	private List<Assembly> references = new List<Assembly>();
 	private static bool time;
 
 	private static List<string> GetArgs(string[] args)
@@ -97,6 +96,10 @@ class IkvmcCompiler
 		IkvmcCompiler comp = new IkvmcCompiler();
 		List<CompilerOptions> targets = new List<CompilerOptions>();
 		int rc = comp.ParseCommandLine(argList.GetEnumerator(), targets);
+		if (rc == 0)
+		{
+			rc = ResolveReferences(targets);
+		}
 		if (rc == 0)
 		{
 			try
@@ -214,6 +217,7 @@ class IkvmcCompiler
 #if IKVM_REF_EMIT
 		Console.Error.WriteLine("    -baseaddress:<address>     Base address for the library to be built");
 #endif
+		Console.Error.WriteLine("    -nopeercrossreference      Do not automatically cross reference all peers");
 	}
 
 	int ParseCommandLine(IEnumerator<string> arglist, List<CompilerOptions> targets)
@@ -242,7 +246,6 @@ class IkvmcCompiler
 				nestedLevel.resources = new Dictionary<string, byte[]>(resources);
 				nestedLevel.defaultAssemblyName = defaultAssemblyName;
 				nestedLevel.classesToExclude = new List<string>(classesToExclude);
-				nestedLevel.references = new List<Assembly>(references);
 				int rc = nestedLevel.ContinueParseCommandLine(arglist, targets, options.Copy());
 				if(rc != 0)
 				{
@@ -392,57 +395,7 @@ class IkvmcCompiler
 						Console.Error.WriteLine("Error: missing file specification for '{0}' option", s);
 						return 1;
 					}
-					string[] files = new string[0];
-					try
-					{
-						string path = Path.GetDirectoryName(r);
-						files = Directory.GetFiles(path == "" ? "." : path, Path.GetFileName(r));
-					}
-					catch (ArgumentException)
-					{
-					}
-					catch (IOException)
-					{
-					}
-					if(files.Length == 0)
-					{
-						Assembly asm = null;
-						try
-						{
-#pragma warning disable 618
-							// Assembly.LoadWithPartialName is obsolete
-							Assembly found = Assembly.LoadWithPartialName(r);
-							if (found != null)
-							{
-								asm = StaticCompiler.LoadFile(found.Location);
-							}
-#pragma warning restore
-						}
-						catch (FileLoadException)
-						{
-						}
-						if(asm == null)
-						{
-							Console.Error.WriteLine("Error: reference not found: {0}", r);
-							return 1;
-						}
-						references.Add(asm);
-					}
-					else
-					{
-						foreach(string file in files)
-						{
-							try
-							{
-								references.Add(StaticCompiler.LoadFile(file));
-							}
-							catch(FileLoadException)
-							{
-								Console.Error.WriteLine("Error: reference not found: {0}", file);
-								return 1;
-							}
-						}
-					}
+					ArrayAppend(ref options.unresolvedReferences, r);
 				}
 				else if(s.StartsWith("-recurse:"))
 				{
@@ -615,32 +568,12 @@ class IkvmcCompiler
 				else if(s.StartsWith("-privatepackage:"))
 				{
 					string prefix = s.Substring(16);
-					if(options.privatePackages == null)
-					{
-						options.privatePackages = new string[] { prefix };
-					}
-					else
-					{
-						string[] temp = new string[options.privatePackages.Length + 1];
-						Array.Copy(options.privatePackages, 0, temp, 0, options.privatePackages.Length);
-						temp[temp.Length - 1] = prefix;
-						options.privatePackages = temp;
-					}
+					ArrayAppend(ref options.privatePackages, prefix);
 				}
 				else if(s.StartsWith("-publicpackage:"))
 				{
 					string prefix = s.Substring(15);
-					if(options.publicPackages == null)
-					{
-						options.publicPackages = new string[] { prefix };
-					}
-					else
-					{
-						string[] temp = new string[options.publicPackages.Length + 1];
-						Array.Copy(options.publicPackages, 0, temp, 0, options.publicPackages.Length);
-						temp[temp.Length - 1] = prefix;
-						options.publicPackages = temp;
-					}
+					ArrayAppend(ref options.publicPackages, prefix);
 				}
 				else if(s.StartsWith("-nowarn:"))
 				{
@@ -707,6 +640,10 @@ class IkvmcCompiler
 					options.baseAddress = (long)(baseAddressParsed & 0xFFFFFFFFFFFF0000UL);
 				}
 #endif
+				else if(s == "-nopeercrossreference")
+				{
+					options.crossReferenceAllPeers = false;
+				}
 				else
 				{
 					Console.Error.WriteLine("Warning: unrecognized option: {0}", s);
@@ -791,11 +728,120 @@ class IkvmcCompiler
 			options.mainClass = manifestMainClass;
 		}
 		options.classes = classes;
-		options.references = references.ToArray();
 		options.resources = resources;
 		options.classesToExclude = classesToExclude.ToArray();
 		targets.Add(options);
 		return 0;
+	}
+
+	private static int ResolveReferences(List<CompilerOptions> targets)
+	{
+		Dictionary<string, Assembly> cache = new Dictionary<string, Assembly>();
+		foreach (CompilerOptions target in targets)
+		{
+			if (target.unresolvedReferences != null)
+			{
+				foreach (string reference in target.unresolvedReferences)
+				{
+					foreach (CompilerOptions peer in targets)
+					{
+						if (peer.assembly.Equals(reference, StringComparison.InvariantCultureIgnoreCase))
+						{
+							ArrayAppend(ref target.peerReferences, peer.assembly);
+							goto next_reference;
+						}
+					}
+					int rc = ResolveReferences(cache, ref target.references, reference);
+					if (rc != 0)
+					{
+						return rc;
+					}
+				next_reference: ;
+				}
+			}
+		}
+		return 0;
+	}
+
+	private static int ResolveReferences(Dictionary<string, Assembly> cache, ref Assembly[] references, string r)
+	{
+		string[] files = new string[0];
+		try
+		{
+			string path = Path.GetDirectoryName(r);
+			files = Directory.GetFiles(path == "" ? "." : path, Path.GetFileName(r));
+		}
+		catch (ArgumentException)
+		{
+		}
+		catch (IOException)
+		{
+		}
+		if (files.Length == 0)
+		{
+			Assembly asm = null;
+			cache.TryGetValue(r, out asm);
+			try
+			{
+				if (asm == null)
+				{
+#pragma warning disable 618
+					// Assembly.LoadWithPartialName is obsolete
+					Assembly found = Assembly.LoadWithPartialName(r);
+#pragma warning restore
+					if (found != null)
+					{
+						asm = StaticCompiler.LoadFile(found.Location);
+						cache.Add(r, asm);
+					}
+				}
+			}
+			catch (FileLoadException)
+			{
+			}
+			if (asm == null)
+			{
+				Console.Error.WriteLine("Error: reference not found: {0}", r);
+				return 1;
+			}
+			ArrayAppend(ref references, asm);
+		}
+		else
+		{
+			foreach (string file in files)
+			{
+				try
+				{
+					Assembly asm;
+					if (!cache.TryGetValue(file, out asm))
+					{
+						asm = StaticCompiler.LoadFile(file);
+					}
+					ArrayAppend(ref references, asm);
+				}
+				catch (FileLoadException)
+				{
+					Console.Error.WriteLine("Error: reference not found: {0}", file);
+					return 1;
+				}
+			}
+		}
+		return 0;
+	}
+
+	private static void ArrayAppend<T>(ref T[] array, T element)
+	{
+		if (array == null)
+		{
+			array = new T[] { element };
+		}
+		else
+		{
+			T[] temp = new T[array.Length + 1];
+			Array.Copy(array, 0, temp, 0, array.Length);
+			temp[temp.Length - 1] = element;
+			array = temp;
+		}
 	}
 
 	private static byte[] ReadFromZip(ZipFile zf, ZipEntry ze)

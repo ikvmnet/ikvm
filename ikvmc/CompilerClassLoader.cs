@@ -252,16 +252,18 @@ namespace IKVM.Internal
 				{
 					foreach(CompilerClassLoader ccl in peerReferences)
 					{
-						// To keep the performance acceptable in cases where we're compiling many targets, we first check if the load can
-						// possibly succeed on this class loader, otherwise we'll end up doing a lot of futile recursive loading attempts.
-						if (ccl.classes.ContainsKey(name) || ccl.remapped.ContainsKey(name) || ccl.GetLoadedClass(name) != null)
+						TypeWrapper tw = ccl.PeerLoad(name);
+						if(tw != null)
 						{
-							TypeWrapper tw = ccl.LoadClassByDottedNameFast(name);
-							// HACK we don't want to load classes referenced by peers, hence the "is CompilerClassLoader" check
-							if (tw != null && tw.GetClassLoader() is CompilerClassLoader)
-							{
-								return tw;
-							}
+							return tw;
+						}
+					}
+					if(options.sharedclassloader != null && options.sharedclassloader[0] != this)
+					{
+						TypeWrapper tw = options.sharedclassloader[0].PeerLoad(name);
+						if(tw != null)
+						{
+							return tw;
 						}
 					}
 				}
@@ -275,7 +277,44 @@ namespace IKVM.Internal
 			{
 				return tw1;
 			}
+			// HACK the peer loading mess above may have indirectly loaded the classes without returning it,
+			// so we try once more here
+			tw1 = GetLoadedClass(name);
+			if(tw1 != null)
+			{
+				return tw1;
+			}
 			return LoadGenericClass(name);
+		}
+
+		private TypeWrapper PeerLoad(string name)
+		{
+			// To keep the performance acceptable in cases where we're compiling many targets, we first check if the load can
+			// possibly succeed on this class loader, otherwise we'll end up doing a lot of futile recursive loading attempts.
+			if(classes.ContainsKey(name) || remapped.ContainsKey(name) || GetLoadedClass(name) != null)
+			{
+				TypeWrapper tw = LoadClassByDottedNameFast(name);
+				// HACK we don't want to load classes referenced by peers, hence the "== this" check
+				if(tw != null && tw.GetClassLoader() == this)
+				{
+					return tw;
+				}
+			}
+			if(options.sharedclassloader != null && options.sharedclassloader[0] == this)
+			{
+				foreach(CompilerClassLoader ccl in options.sharedclassloader)
+				{
+					if(ccl != this)
+					{
+						TypeWrapper tw = ccl.PeerLoad(name);
+						if(tw != null)
+						{
+							return tw;
+						}
+					}
+				}
+			}
+			return null;
 		}
 
 		private TypeWrapper GetTypeWrapperCompilerHook(string name)
@@ -2461,7 +2500,8 @@ namespace IKVM.Internal
 			{
 				foreach (CompilerClassLoader compiler2 in compilers)
 				{
-					if (compiler1 != compiler2)
+					if (compiler1 != compiler2
+						&& (compiler1.options.crossReferenceAllPeers || (compiler1.options.peerReferences != null && Array.IndexOf(compiler1.options.peerReferences, compiler2.options.assembly) != -1)))
 					{
 						compiler1.AddReference(compiler2);
 					}
@@ -2537,7 +2577,7 @@ namespace IKVM.Internal
 			AssemblyName runtimeAssemblyName = StaticCompiler.runtimeAssembly.GetName();
 			bool allReferencesAreStrongNamed = IsSigned(StaticCompiler.runtimeAssembly);
 			List<Assembly> references = new List<Assembly>();
-			foreach(Assembly reference in options.references)
+			foreach(Assembly reference in options.references ?? new Assembly[0])
 			{
 				try
 				{
@@ -3099,7 +3139,10 @@ namespace IKVM.Internal
 		internal PEFileKinds target;
 		internal bool guessFileKind;
 		internal Dictionary<string, byte[]> classes;
+		internal string[] unresolvedReferences;	// only used during command line parsing
 		internal Assembly[] references;
+		internal string[] peerReferences;
+		internal bool crossReferenceAllPeers = true;
 		internal Dictionary<string, byte[]> resources;
 		internal string[] classesToExclude;
 		internal string remapfile;
