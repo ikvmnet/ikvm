@@ -9842,9 +9842,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/java2d/pipe/RegionClipSpanIterator.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/java2d/pipe/RegionIterator.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/java2d/pipe/RegionSpanIterator.java
-../../openjdk6-b16/jdk/src/share/classes/sun/java2d/pipe/RenderBuffer.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/java2d/pipe/RenderingEngine.java
-../../openjdk6-b16/jdk/src/share/classes/sun/java2d/pipe/RenderQueue.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/java2d/pipe/ShapeDrawPipe.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/java2d/pipe/SpanIterator.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/java2d/pipe/TextPipe.java
