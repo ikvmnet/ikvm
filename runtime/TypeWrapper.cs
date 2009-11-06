@@ -179,18 +179,6 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal static Attribute InstantiatePseudoCustomAttribute(ClassLoaderWrapper loader, IKVM.Internal.MapXml.Attribute attr)
-		{
-			Type t = StaticCompiler.GetType(attr.Type);
-			Type[] argTypes;
-			object[] args;
-			GetAttributeArgsAndTypes(loader, attr, out argTypes, out args);
-			ConstructorInfo ci = t.GetConstructor(argTypes);
-			Attribute attrib = ci.Invoke(args) as Attribute;
-			SetPropertiesAndFields(loader, attrib, attr);
-			return attrib;
-		}
-
 		private static bool IsDeclarativeSecurityAttribute(ClassLoaderWrapper loader, IKVM.Internal.MapXml.Attribute attr, out SecurityAction action, out PermissionSet pset)
 		{
 			action = SecurityAction.Demand;

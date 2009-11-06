@@ -227,15 +227,6 @@ namespace IKVM.Internal
 			ilgen_real.BeginCatchBlock(exceptionType);
 		}
 
-		internal void BeginExceptFilterBlock()
-		{
-			LazyGen();
-#if !IKVM_REF_EMIT
-			offset += 5;
-#endif
-			ilgen_real.BeginExceptFilterBlock();
-		}
-
 		internal Label BeginExceptionBlock()
 		{
 			LazyGen();
@@ -475,16 +466,6 @@ namespace IKVM.Internal
 			ilgen_real.Emit(opcode, arg);
 		}
 
-		internal void Emit(OpCode opcode, SignatureHelper signature)
-		{
-			LazyGen();
-#if !IKVM_REF_EMIT
-			offset += opcode.Size;
-#endif
-			ilgen_real.Emit(opcode, signature);
-			throw new NotImplementedException();
-		}
-
 		internal void Emit(OpCode opcode, float arg)
 		{
 			LazyGen();
@@ -512,16 +493,6 @@ namespace IKVM.Internal
 			ilgen_real.Emit(opcode, cls);
 		}
 
-		internal void EmitCall(OpCode opcode, MethodInfo methodInfo, Type[] optionalParameterTypes)
-		{
-			LazyGen();
-#if !IKVM_REF_EMIT
-			offset += opcode.Size;
-#endif
-			ilgen_real.EmitCall(opcode, methodInfo, optionalParameterTypes);
-			throw new NotImplementedException();
-		}
-
 		internal void EmitCalli(OpCode opcode, CallingConvention unmanagedCallConv, Type returnType, Type[] parameterTypes)
 		{
 			LazyGen();
@@ -529,29 +500,6 @@ namespace IKVM.Internal
 			offset += 5;
 #endif
 			ilgen_real.EmitCalli(opcode, unmanagedCallConv, returnType, parameterTypes);
-		}
-
-		internal void EmitCalli(OpCode opcode, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, Type[] optionalParameterTypes)
-		{
-			LazyGen();
-#if !IKVM_REF_EMIT
-			offset += 5;
-#endif
-			ilgen_real.EmitCalli(opcode, callingConvention, returnType, parameterTypes, optionalParameterTypes);
-		}
-
-		internal void EmitWriteLine(FieldInfo fld)
-		{
-			LazyGen();
-			ilgen_real.EmitWriteLine(fld);
-			throw new NotImplementedException();
-		}
-
-		internal void EmitWriteLine(LocalBuilder localBuilder)
-		{
-			LazyGen();
-			ilgen_real.EmitWriteLine(localBuilder);
-			throw new NotImplementedException();
 		}
 
 		internal void EmitWriteLine(string value)
@@ -623,12 +571,6 @@ namespace IKVM.Internal
 			offset += 6;
 #endif
 			ilgen_real.ThrowException(excType);
-		}
-
-		internal void UsingNamespace(string usingNamespace)
-		{
-			LazyGen();
-			ilgen_real.UsingNamespace(usingNamespace);
 		}
 
 #if STATIC_COMPILER
