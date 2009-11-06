@@ -212,7 +212,7 @@ namespace IKVM.Internal
 		{
 			LazyGen();
 #if IKVM_REF_EMIT
-			return ilgen_real.__GetILOffset();
+			return ilgen_real.ILOffset;
 #else
 			return offset;
 #endif

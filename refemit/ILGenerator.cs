@@ -199,10 +199,10 @@ namespace IKVM.Reflection.Emit
 			exceptionBlockAssistanceMode = EBAM_CLEVER;
 		}
 
-		// non-standard API
-		public int __GetILOffset()
+		// new in .NET 4.0
+		public int ILOffset
 		{
-			return code.Position;
+			get { return code.Position; }
 		}
 
 		public void BeginCatchBlock(Type exceptionType)
