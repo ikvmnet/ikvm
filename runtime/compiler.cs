@@ -79,7 +79,7 @@ static class ByteCodeHelperMethods
 	static ByteCodeHelperMethods()
 	{
 #if STATIC_COMPILER
-		Type typeofByteCodeHelper = StaticCompiler.GetType("IKVM.Runtime.ByteCodeHelper");
+		Type typeofByteCodeHelper = StaticCompiler.GetRuntimeType("IKVM.Runtime.ByteCodeHelper");
 #else
 		Type typeofByteCodeHelper = typeof(IKVM.Runtime.ByteCodeHelper);
 #endif
