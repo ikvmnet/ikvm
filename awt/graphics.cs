@@ -1170,14 +1170,23 @@ namespace ikvm.awt
             throw new NotImplementedException();
         }
 
-        public override java.awt.image.ColorModel getColorModel(int param)
+        public override java.awt.image.ColorModel getColorModel(int transparency)
         {
-            throw new NotImplementedException();
+            if (transparency == java.awt.Transparency.__Fields.TRANSLUCENT)
+            {
+                //we return the default ColorModel because this produce the fewest problems with convertions
+                return ColorModel.getRGBdefault();
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public override java.awt.image.ColorModel getColorModel()
         {
-            throw new NotImplementedException();
+            //we return the default ColorModel because this produce the fewest problems with convertions
+            return ColorModel.getRGBdefault();
         }
 
         public override java.awt.geom.AffineTransform getDefaultTransform()

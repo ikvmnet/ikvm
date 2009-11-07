@@ -394,7 +394,8 @@ namespace ikvm.awt
 
         public override java.awt.image.ColorModel getColorModel()
         {
-            throw new NotImplementedException();
+            //we return the default ColorModel because this produce the fewest problems with convertions
+            return java.awt.image.ColorModel.getRGBdefault();
         }
 
         [Obsolete]
@@ -2195,8 +2196,9 @@ namespace ikvm.awt
 
         public java.awt.image.ColorModel getColorModel()
 		{
-			throw new NotImplementedException();
-		}
+            //we return the default ColorModel because this produce the fewest problems with convertions
+            return java.awt.image.ColorModel.getRGBdefault();
+        }
 
 		public java.awt.FontMetrics getFontMetrics(java.awt.Font f)
 		{
