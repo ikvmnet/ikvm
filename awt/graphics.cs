@@ -71,7 +71,12 @@ namespace ikvm.awt
 
         public override void copyArea(int x, int y, int width, int height, int dx, int dy)
 		{
-            throw new NotImplementedException();
+            Bitmap copy = new Bitmap(width, height);
+            using (Graphics gCopy = Graphics.FromImage(copy))
+            {
+                gCopy.DrawImage(bitmap, new Rectangle(0, 0, width, height), x, y, width, height, GraphicsUnit.Pixel);
+            }
+            g.DrawImageUnscaled(copy, x + dx, y + dy);
 		}
     }
 
