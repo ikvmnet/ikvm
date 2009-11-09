@@ -4225,7 +4225,7 @@ namespace IKVM.Internal
 
 			private static class BakedTypeCleanupHack
 			{
-#if NET_4_0
+#if NET_4_0 || IKVM_REF_EMIT
 				internal static void Process(DynamicTypeWrapper wrapper) { }
 #else
 				private static readonly FieldInfo m_methodBuilder = typeof(ConstructorBuilder).GetField("m_methodBuilder", BindingFlags.Instance | BindingFlags.NonPublic);
