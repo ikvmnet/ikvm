@@ -480,22 +480,29 @@ namespace IKVM.Internal
 #endif
 			}
 
+#if !STATIC_COMPILER
 			internal object GetUnspecifiedValue()
 			{
 				return ((EnumFieldWrapper)GetFieldWrapper("__unspecified", this.SigName)).GetValue();
 			}
+#endif
 
 			private class EnumFieldWrapper : FieldWrapper
 			{
+#if !STATIC_COMPILER
 				private readonly int ordinal;
 				private object val;
+#endif
 
 				internal EnumFieldWrapper(TypeWrapper tw, string name, int ordinal)
 					: base(tw, tw, name, tw.SigName, Modifiers.Public | Modifiers.Static | Modifiers.Final | Modifiers.Enum, null, MemberFlags.None)
 				{
+#if !STATIC_COMPILER
 					this.ordinal = ordinal;
+#endif
 				}
 
+#if !STATIC_COMPILER
 				internal object GetValue()
 				{
 					if (val == null)
@@ -504,6 +511,7 @@ namespace IKVM.Internal
 					}
 					return val;
 				}
+#endif
 
 				protected override void EmitGetImpl(CodeEmitter ilgen)
 				{
@@ -1797,13 +1805,6 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Ldloc, temp);
 				ilgen.Emit(OpCodes.Stobj, underlyingType);
 				ilgen.ReleaseTempLocal(temp);
-			}
-
-			// this method takes a boxed Enum and returns its value as a boxed primitive
-			// of the subset of Java primitives (i.e. byte, short, int, long)
-			internal static object GetEnumPrimitiveValue(object obj)
-			{
-				return GetEnumPrimitiveValue(Enum.GetUnderlyingType(obj.GetType()), obj);
 			}
 
 			// this method can be used to convert an enum value or its underlying value to a Java primitive
