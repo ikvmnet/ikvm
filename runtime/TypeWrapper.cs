@@ -68,6 +68,7 @@ namespace IKVM.Internal
 		private static Type typeofModifiers = JVM.LoadType(typeof(Modifiers));
 		private static Type typeofSourceFileAttribute = JVM.LoadType(typeof(SourceFileAttribute));
 		private static Type typeofLineNumberTableAttribute = JVM.LoadType(typeof(LineNumberTableAttribute));
+		private static Type typeofSecurityAttribute = JVM.Import(typeof(SecurityAttribute));
 #endif // STATIC_COMPILER
 		private static Type typeofRemappedClassAttribute = JVM.LoadType(typeof(RemappedClassAttribute));
 		private static Type typeofRemappedTypeAttribute = JVM.LoadType(typeof(RemappedTypeAttribute));
@@ -158,6 +159,7 @@ namespace IKVM.Internal
 			}
 		}
 
+#if !IKVM_REF_EMIT
 		private static void SetPropertiesAndFields(ClassLoaderWrapper loader, Attribute attrib, IKVM.Internal.MapXml.Attribute attr)
 		{
 			Type t = attrib.GetType();
@@ -186,7 +188,7 @@ namespace IKVM.Internal
 			if(attr.Type != null)
 			{
 				Type t = StaticCompiler.GetType(attr.Type);
-				if(typeof(SecurityAttribute).IsAssignableFrom(t))
+				if(typeofSecurityAttribute.IsAssignableFrom(t))
 				{
 					Type[] argTypes;
 					object[] args;
@@ -202,9 +204,11 @@ namespace IKVM.Internal
 			}
 			return false;
 		}
+#endif
 
 		internal static void SetCustomAttribute(ClassLoaderWrapper loader, TypeBuilder tb, IKVM.Internal.MapXml.Attribute attr)
 		{
+#if !IKVM_REF_EMIT
 			SecurityAction action;
 			PermissionSet pset;
 			if(IsDeclarativeSecurityAttribute(loader, attr, out action, out pset))
@@ -212,8 +216,22 @@ namespace IKVM.Internal
 				tb.AddDeclarativeSecurity(action, pset);
 			}
 			else
+#endif
 			{
-				tb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
+				bool declarativeSecurity;
+				CustomAttributeBuilder cab = CreateCustomAttribute(loader, attr, out declarativeSecurity);
+				if (declarativeSecurity)
+				{
+#if IKVM_REF_EMIT
+					tb.__AddDeclarativeSecurity(cab);
+#else
+					throw new InvalidOperationException();
+#endif
+				}
+				else
+				{
+					tb.SetCustomAttribute(cab);
+				}
 			}
 		}
 
@@ -229,6 +247,7 @@ namespace IKVM.Internal
 
 		internal static void SetCustomAttribute(ClassLoaderWrapper loader, MethodBuilder mb, IKVM.Internal.MapXml.Attribute attr)
 		{
+#if !IKVM_REF_EMIT
 			SecurityAction action;
 			PermissionSet pset;
 			if(IsDeclarativeSecurityAttribute(loader, attr, out action, out pset))
@@ -236,13 +255,28 @@ namespace IKVM.Internal
 				mb.AddDeclarativeSecurity(action, pset);
 			}
 			else
+#endif
 			{
-				mb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
+				bool declarativeSecurity;
+				CustomAttributeBuilder cab = CreateCustomAttribute(loader, attr, out declarativeSecurity);
+				if (declarativeSecurity)
+				{
+#if IKVM_REF_EMIT
+					mb.__AddDeclarativeSecurity(cab);
+#else
+					throw new InvalidOperationException();
+#endif
+				}
+				else
+				{
+					mb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
+				}
 			}
 		}
 
 		internal static void SetCustomAttribute(ClassLoaderWrapper loader, ConstructorBuilder cb, IKVM.Internal.MapXml.Attribute attr)
 		{
+#if !IKVM_REF_EMIT
 			SecurityAction action;
 			PermissionSet pset;
 			if(IsDeclarativeSecurityAttribute(loader, attr, out action, out pset))
@@ -250,8 +284,22 @@ namespace IKVM.Internal
 				cb.AddDeclarativeSecurity(action, pset);
 			}
 			else
+#endif
 			{
-				cb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
+				bool declarativeSecurity;
+				CustomAttributeBuilder cab = CreateCustomAttribute(loader, attr, out declarativeSecurity);
+				if (declarativeSecurity)
+				{
+#if IKVM_REF_EMIT
+					cb.__AddDeclarativeSecurity(cab);
+#else
+					throw new InvalidOperationException();
+#endif
+				}
+				else
+				{
+					cb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
+				}
 			}
 		}
 
@@ -297,6 +345,12 @@ namespace IKVM.Internal
 
 		private static CustomAttributeBuilder CreateCustomAttribute(ClassLoaderWrapper loader, IKVM.Internal.MapXml.Attribute attr)
 		{
+			bool ignore;
+			return CreateCustomAttribute(loader, attr, out ignore);
+		}
+
+		private static CustomAttributeBuilder CreateCustomAttribute(ClassLoaderWrapper loader, IKVM.Internal.MapXml.Attribute attr, out bool isDeclarativeSecurity)
+		{
 			// TODO add error handling
 			Type[] argTypes;
 			object[] args;
@@ -304,10 +358,7 @@ namespace IKVM.Internal
 			if(attr.Type != null)
 			{
 				Type t = StaticCompiler.GetType(attr.Type);
-				if(typeof(SecurityAttribute).IsAssignableFrom(t))
-				{
-					throw new NotImplementedException("Declarative SecurityAttribute support not implemented");
-				}
+				isDeclarativeSecurity = t.IsSubclassOf(typeofSecurityAttribute);
 				ConstructorInfo ci = t.GetConstructor(argTypes);
 				if(ci == null)
 				{
@@ -356,6 +407,7 @@ namespace IKVM.Internal
 					throw new NotImplementedException("Setting property values on Java attributes is not implemented");
 				}
 				TypeWrapper t = loader.LoadClassByDottedName(attr.Class);
+				isDeclarativeSecurity = t.TypeAsBaseType.IsSubclassOf(typeofSecurityAttribute);
 				MethodWrapper mw = t.GetMethodWrapper("<init>", attr.Sig, false);
 				mw.Link();
 				ConstructorInfo ci = (ConstructorInfo)mw.GetMethod();
@@ -1843,11 +1895,13 @@ namespace IKVM.Internal
 			}
 		}
 
+#if !IKVM_REF_EMIT
 		internal static bool MakeDeclSecurity(Type type, object annotation, out SecurityAction action, out PermissionSet permSet)
 		{
 			ConstructorInfo ci = type.GetConstructor(new Type[] { typeof(SecurityAction) });
 			if (ci == null)
 			{
+				// TODO should we support HostProtectionAttribute? (which has a no-arg constructor)
 				// TODO issue message?
 				action = 0;
 				permSet = null;
@@ -1884,6 +1938,7 @@ namespace IKVM.Internal
 			permSet.AddPermission(attr.CreatePermission());
 			return true;
 		}
+#endif
 
 		internal static bool HasRetentionPolicyRuntime(object[] annotations)
 		{

@@ -1435,12 +1435,16 @@ namespace IKVM.Internal
 					}
 					if (type.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
 					{
+#if IKVM_REF_EMIT
+						tb.__AddDeclarativeSecurity(MakeCustomAttributeBuilder(loader, annotation));
+#else
 						SecurityAction action;
 						PermissionSet permSet;
 						if (MakeDeclSecurity(type, annotation, out action, out permSet))
 						{
 							tb.AddDeclarativeSecurity(action, permSet);
 						}
+#endif
 					}
 					else
 					{
@@ -1452,12 +1456,16 @@ namespace IKVM.Internal
 				{
 					if (type.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
 					{
+#if IKVM_REF_EMIT
+						cb.__AddDeclarativeSecurity(MakeCustomAttributeBuilder(loader, annotation));
+#else
 						SecurityAction action;
 						PermissionSet permSet;
 						if (MakeDeclSecurity(type, annotation, out action, out permSet))
 						{
 							cb.AddDeclarativeSecurity(action, permSet);
 						}
+#endif
 					}
 					else
 					{
@@ -1469,12 +1477,16 @@ namespace IKVM.Internal
 				{
 					if (type.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
 					{
+#if IKVM_REF_EMIT
+						mb.__AddDeclarativeSecurity(MakeCustomAttributeBuilder(loader, annotation));
+#else
 						SecurityAction action;
 						PermissionSet permSet;
 						if (MakeDeclSecurity(type, annotation, out action, out permSet))
 						{
 							mb.AddDeclarativeSecurity(action, permSet);
 						}
+#endif
 					}
 					else
 					{
@@ -1519,7 +1531,9 @@ namespace IKVM.Internal
 				{
 					if (type.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
 					{
-						// you can only add declarative security to an assembly when defining the assembly
+#if IKVM_REF_EMIT
+						ab.__AddDeclarativeSecurity(MakeCustomAttributeBuilder(loader, annotation));
+#endif
 					}
 					else
 					{
