@@ -100,17 +100,7 @@ namespace IKVM.Internal
 			}
 			else if(tw.TypeAsTBD.IsEnum)
 			{
-				if(tw.TypeAsTBD.Assembly.ReflectionOnly)
-				{
-					// TODO implement full parsing semantics
-					FieldInfo field = tw.TypeAsTBD.GetField(val);
-					if(field == null)
-					{
-						throw new NotImplementedException("Parsing enum value: " + val);
-					}
-					return field.GetRawConstantValue();
-				}
-				return Enum.Parse(tw.TypeAsTBD, val);
+				return ParseEnumValue(tw.TypeAsTBD, val);
 			}
 			else if(tw.TypeAsTBD == Types.Type)
 			{
@@ -157,6 +147,28 @@ namespace IKVM.Internal
 			{
 				throw new NotImplementedException();
 			}
+		}
+
+		private static object ParseEnumValue(Type type, string val)
+		{
+			object retval = null;
+			foreach (string str in val.Split(','))
+			{
+				FieldInfo field = type.GetField(str.Trim(), BindingFlags.Public | BindingFlags.Static);
+				if (field == null)
+				{
+					throw new InvalidOperationException("Enum value '" + str + "' not found in " + type.FullName);
+				}
+				if (retval == null)
+				{
+					retval = field.GetRawConstantValue();
+				}
+				else
+				{
+					retval = Annotation.OrBoxedIntegrals(retval, field.GetRawConstantValue());
+				}
+			}
+			return retval;
 		}
 
 #if !IKVM_REF_EMIT
@@ -1803,7 +1815,7 @@ namespace IKVM.Internal
 
 		// note that we only support the integer types that C# supports
 		// (the CLI also supports bool, char, IntPtr & UIntPtr)
-		private static object OrBoxedIntegrals(object v1, object v2)
+		internal static object OrBoxedIntegrals(object v1, object v2)
 		{
 			Debug.Assert(v1.GetType() == v2.GetType());
 			if(v1 is ulong)
