@@ -515,11 +515,13 @@ namespace IKVM.Internal
 
 				protected override void EmitGetImpl(CodeEmitter ilgen)
 				{
-					// TODO we should throw a NoSuchFieldError if at runtime we find out that the "field" doesn't exist
-					ilgen.LazyEmitLoadClass(this.DeclaringType);
+#if STATIC_COMPILER
+					Type typeofByteCodeHelper = StaticCompiler.GetRuntimeType("IKVM.Runtime.ByteCodeHelper");
+#else
+					Type typeofByteCodeHelper = typeof(IKVM.Runtime.ByteCodeHelper);
+#endif
 					ilgen.Emit(OpCodes.Ldstr, this.Name);
-					this.DeclaringType.BaseTypeWrapper.GetMethodWrapper("valueOf", "(Ljava.lang.Class;Ljava.lang.String;)Ljava.lang.Enum;", false).EmitCall(ilgen);
-					ilgen.Emit(OpCodes.Castclass, this.DeclaringType.TypeAsTBD);
+					ilgen.Emit(OpCodes.Call, typeofByteCodeHelper.GetMethod("GetDotNetEnumField").MakeGenericMethod(this.DeclaringType.TypeAsBaseType));
 				}
 
 				protected override void EmitSetImpl(CodeEmitter ilgen)
@@ -1786,7 +1788,7 @@ namespace IKVM.Internal
 			internal EnumValueFieldWrapper(DotNetTypeWrapper tw, TypeWrapper fieldType)
 				: base(tw, fieldType, "Value", fieldType.SigName, new ExModifiers(Modifiers.Public | Modifiers.Final, false), null)
 			{
-				underlyingType = Enum.GetUnderlyingType(tw.type);
+				underlyingType = EnumHelper.GetUnderlyingType(tw.type);
 			}
 
 			protected override void EmitGetImpl(CodeEmitter ilgen)
@@ -1805,39 +1807,6 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Ldloc, temp);
 				ilgen.Emit(OpCodes.Stobj, underlyingType);
 				ilgen.ReleaseTempLocal(temp);
-			}
-
-			// this method can be used to convert an enum value or its underlying value to a Java primitive
-			internal static object GetEnumPrimitiveValue(Type underlyingType, object obj)
-			{
-				if (underlyingType == Types.SByte || underlyingType == Types.Byte)
-				{
-					return unchecked((byte)((IConvertible)obj).ToInt32(null));
-				}
-				else if (underlyingType == Types.Int16 || underlyingType == Types.UInt16)
-				{
-					return unchecked((short)((IConvertible)obj).ToInt32(null));
-				}
-				else if (underlyingType == Types.Int32)
-				{
-					return ((IConvertible)obj).ToInt32(null);
-				}
-				else if (underlyingType == Types.UInt32)
-				{
-					return unchecked((int)((IConvertible)obj).ToUInt32(null));
-				}
-				else if (underlyingType == Types.Int64)
-				{
-					return ((IConvertible)obj).ToInt64(null);
-				}
-				else if (underlyingType == Types.UInt64)
-				{
-					return unchecked((long)((IConvertible)obj).ToUInt64(null));
-				}
-				else
-				{
-					throw new InvalidOperationException();
-				}
 			}
 		}
 
@@ -1907,7 +1876,7 @@ namespace IKVM.Internal
 			// special support for enums
 			if (type.IsEnum)
 			{
-				Type underlyingType = Enum.GetUnderlyingType(type);
+				Type underlyingType = EnumHelper.GetUnderlyingType(type);
 				Type javaUnderlyingType;
 				if (underlyingType == Types.SByte)
 				{
@@ -1945,7 +1914,7 @@ namespace IKVM.Internal
 						{
 							name = "_" + name;
 						}
-						object val = EnumValueFieldWrapper.GetEnumPrimitiveValue(underlyingType, fields[i].GetRawConstantValue());
+						object val = EnumHelper.GetPrimitiveValue(underlyingType, fields[i].GetRawConstantValue());
 						fieldsList.Add(new ConstantFieldWrapper(this, fieldType, name, fieldType.SigName, Modifiers.Public | Modifiers.Static | Modifiers.Final, fields[i], val, MemberFlags.None));
 					}
 				}

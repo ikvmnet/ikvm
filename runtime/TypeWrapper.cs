@@ -100,7 +100,7 @@ namespace IKVM.Internal
 			}
 			else if(tw.TypeAsTBD.IsEnum)
 			{
-				return ParseEnumValue(tw.TypeAsTBD, val);
+				return EnumHelper.Parse(tw.TypeAsTBD, val);
 			}
 			else if(tw.TypeAsTBD == Types.Type)
 			{
@@ -147,28 +147,6 @@ namespace IKVM.Internal
 			{
 				throw new NotImplementedException();
 			}
-		}
-
-		private static object ParseEnumValue(Type type, string val)
-		{
-			object retval = null;
-			foreach (string str in val.Split(','))
-			{
-				FieldInfo field = type.GetField(str.Trim(), BindingFlags.Public | BindingFlags.Static);
-				if (field == null)
-				{
-					throw new InvalidOperationException("Enum value '" + str + "' not found in " + type.FullName);
-				}
-				if (retval == null)
-				{
-					retval = field.GetRawConstantValue();
-				}
-				else
-				{
-					retval = Annotation.OrBoxedIntegrals(retval, field.GetRawConstantValue());
-				}
-			}
-			return retval;
 		}
 
 #if !IKVM_REF_EMIT
@@ -1765,6 +1743,107 @@ namespace IKVM.Internal
 		}
 	}
 
+	static class EnumHelper
+	{
+		internal static Type GetUnderlyingType(Type enumType)
+		{
+			return Enum.GetUnderlyingType(enumType);
+		}
+
+#if STATIC_COMPILER
+		internal static object Parse(Type type, string value)
+		{
+			object retval = null;
+			foreach (string str in value.Split(','))
+			{
+				FieldInfo field = type.GetField(str.Trim(), BindingFlags.Public | BindingFlags.Static);
+				if (field == null)
+				{
+					throw new InvalidOperationException("Enum value '" + str + "' not found in " + type.FullName);
+				}
+				if (retval == null)
+				{
+					retval = field.GetRawConstantValue();
+				}
+				else
+				{
+					retval = OrBoxedIntegrals(retval, field.GetRawConstantValue());
+				}
+			}
+			return retval;
+		}
+#endif
+
+		// note that we only support the integer types that C# supports
+		// (the CLI also supports bool, char, IntPtr & UIntPtr)
+		internal static object OrBoxedIntegrals(object v1, object v2)
+		{
+			Debug.Assert(v1.GetType() == v2.GetType());
+			if (v1 is ulong)
+			{
+				ulong l1 = (ulong)v1;
+				ulong l2 = (ulong)v2;
+				return l1 | l2;
+			}
+			else
+			{
+				long v = ((IConvertible)v1).ToInt64(null) | ((IConvertible)v2).ToInt64(null);
+				switch (Type.GetTypeCode(v1.GetType()))
+				{
+					case TypeCode.SByte:
+						return (sbyte)v;
+					case TypeCode.Byte:
+						return (byte)v;
+					case TypeCode.Int16:
+						return (short)v;
+					case TypeCode.UInt16:
+						return (ushort)v;
+					case TypeCode.Int32:
+						return (int)v;
+					case TypeCode.UInt32:
+						return (uint)v;
+					case TypeCode.Int64:
+						return (long)v;
+					default:
+						throw new InvalidOperationException();
+				}
+			}
+		}
+
+		// this method can be used to convert an enum value or its underlying value to a Java primitive
+		internal static object GetPrimitiveValue(Type underlyingType, object obj)
+		{
+			if (underlyingType == Types.SByte || underlyingType == Types.Byte)
+			{
+				return unchecked((byte)((IConvertible)obj).ToInt32(null));
+			}
+			else if (underlyingType == Types.Int16 || underlyingType == Types.UInt16)
+			{
+				return unchecked((short)((IConvertible)obj).ToInt32(null));
+			}
+			else if (underlyingType == Types.Int32)
+			{
+				return ((IConvertible)obj).ToInt32(null);
+			}
+			else if (underlyingType == Types.UInt32)
+			{
+				return unchecked((int)((IConvertible)obj).ToUInt32(null));
+			}
+			else if (underlyingType == Types.Int64)
+			{
+				return ((IConvertible)obj).ToInt64(null);
+			}
+			else if (underlyingType == Types.UInt64)
+			{
+				return unchecked((long)((IConvertible)obj).ToUInt64(null));
+			}
+			else
+			{
+				throw new InvalidOperationException();
+			}
+		}
+	}
+
 	abstract class Annotation
 	{
 		// NOTE this method returns null if the type could not be found
@@ -1810,43 +1889,7 @@ namespace IKVM.Internal
 				return field.GetRawConstantValue();
 			}
 			// both __unspecified and missing values end up here
-			return Activator.CreateInstance(Enum.GetUnderlyingType(enumType));
-		}
-
-		// note that we only support the integer types that C# supports
-		// (the CLI also supports bool, char, IntPtr & UIntPtr)
-		internal static object OrBoxedIntegrals(object v1, object v2)
-		{
-			Debug.Assert(v1.GetType() == v2.GetType());
-			if(v1 is ulong)
-			{
-				ulong l1 = (ulong)v1;
-				ulong l2 = (ulong)v2;
-				return l1 | l2;
-			}
-			else
-			{
-				long v = ((IConvertible)v1).ToInt64(null) | ((IConvertible)v2).ToInt64(null);
-				switch(Type.GetTypeCode(v1.GetType()))
-				{
-					case TypeCode.SByte:
-						return (sbyte)v;
-					case TypeCode.Byte:
-						return (byte)v;
-					case TypeCode.Int16:
-						return (short)v;
-					case TypeCode.UInt16:
-						return (ushort)v;
-					case TypeCode.Int32:
-						return (int)v;
-					case TypeCode.UInt32:
-						return (uint)v;
-					case TypeCode.Int64:
-						return (long)v;
-					default:
-						throw new InvalidOperationException();
-				}
-			}
+			return Activator.CreateInstance(EnumHelper.GetUnderlyingType(enumType));
 		}
 
 		protected static object ConvertValue(ClassLoaderWrapper loader, Type targetType, object obj)
@@ -1869,7 +1912,7 @@ namespace IKVM.Internal
 						}
 						else
 						{
-							value = OrBoxedIntegrals(value, newval);
+							value = EnumHelper.OrBoxedIntegrals(value, newval);
 						}
 					}
 					return value;

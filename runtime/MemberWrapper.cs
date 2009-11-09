@@ -1203,7 +1203,7 @@ namespace IKVM.Internal
 					val = field.GetRawConstantValue();
 					if(field.FieldType.IsEnum)
 					{
-						val = DotNetTypeWrapper.EnumValueFieldWrapper.GetEnumPrimitiveValue(Enum.GetUnderlyingType(field.FieldType), val);
+						val = EnumHelper.GetPrimitiveValue(EnumHelper.GetUnderlyingType(field.FieldType), val);
 					}
 				}
 				else

@@ -785,6 +785,25 @@ namespace IKVM.Runtime
 				init(module);
 			}
 		}
+
+		public static T GetDotNetEnumField<T>(string name)
+#if !FIRST_PASS
+			where T : java.lang.Enum
+#endif
+		{
+#if FIRST_PASS
+			return default(T);
+#else
+			try
+			{
+				return (T)java.lang.Enum.valueOf(ikvm.@internal.ClassLiteral<T>.Value, name);
+			}
+			catch (java.lang.IllegalArgumentException)
+			{
+				throw new java.lang.NoSuchFieldError(ikvm.@internal.ClassLiteral<T>.Value.getName() + "." + name);
+			}
+#endif
+		}
 	}
 
 	[StructLayout(LayoutKind.Explicit)]
