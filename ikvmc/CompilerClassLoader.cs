@@ -3099,8 +3099,8 @@ namespace IKVM.Internal
 					MethodBuilder moduleInitializer = GetTypeWrapperFactory().ModuleBuilder.DefineGlobalMethod(".cctor", MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, null, Type.EmptyTypes);
 					ILGenerator ilgen = moduleInitializer.GetILGenerator();
 					ilgen.Emit(OpCodes.Ldtoken, moduleInitializer);
-					ilgen.Emit(OpCodes.Call, typeof(MethodBase).GetMethod("GetMethodFromHandle", new Type[] { typeof(RuntimeMethodHandle) }));
-					ilgen.Emit(OpCodes.Callvirt, typeof(MemberInfo).GetMethod("get_Module"));
+					ilgen.Emit(OpCodes.Call, JVM.Import(typeof(MethodBase)).GetMethod("GetMethodFromHandle", new Type[] { JVM.Import(typeof(RuntimeMethodHandle)) }));
+					ilgen.Emit(OpCodes.Callvirt, JVM.Import(typeof(MemberInfo)).GetMethod("get_Module"));
 					ilgen.Emit(OpCodes.Call, StaticCompiler.GetRuntimeType("IKVM.Runtime.ByteCodeHelper").GetMethod("InitializeModule"));
 					ilgen.Emit(OpCodes.Ret);
 				}
