@@ -121,6 +121,37 @@ namespace IKVM.Reflection.Emit
 				return str.ToArray();
 			}
 
+			internal void WriteNamedArgForDeclSecurity(ByteBuffer bb)
+			{
+				// NumNamed
+				int named = 0;
+				if (cab.namedFields != null)
+				{
+					named += cab.namedFields.Length;
+				}
+				if (cab.namedProperties != null)
+				{
+					named += cab.namedProperties.Length;
+				}
+				WritePackedLen(named);
+				if (cab.namedFields != null)
+				{
+					for (int i = 0; i < cab.namedFields.Length; i++)
+					{
+						WriteNamedArg(0x53, cab.namedFields[i].FieldType, cab.namedFields[i].Name, cab.fieldValues[i]);
+					}
+				}
+				if (cab.namedProperties != null)
+				{
+					for (int i = 0; i < cab.namedProperties.Length; i++)
+					{
+						WriteNamedArg(0x54, cab.namedProperties[i].PropertyType, cab.namedProperties[i].Name, cab.propertyValues[i]);
+					}
+				}
+				str.Position = 0;
+				bb.Write(str);
+			}
+
 			private void WriteNamedArg(byte fieldOrProperty, Type type, string name, object value)
 			{
 				str.WriteByte(fieldOrProperty);
@@ -459,6 +490,11 @@ namespace IKVM.Reflection.Emit
 			return constructorArgs[pos];
 		}
 
+		internal int ConstructorArgumentCount
+		{
+			get { return constructorArgs == null ? 0 : constructorArgs.Length; }
+		}
+
 		internal object GetFieldValue(string name)
 		{
 			if (namedFields != null)
@@ -472,6 +508,12 @@ namespace IKVM.Reflection.Emit
 				}
 			}
 			return null;
+		}
+
+		internal void WriteNamedArgumentsForDeclSecurity(ModuleBuilder moduleBuilder, ByteBuffer bb)
+		{
+			BlobWriter bw = new BlobWriter(moduleBuilder, this);
+			bw.WriteNamedArgForDeclSecurity(bb);
 		}
 	}
 }

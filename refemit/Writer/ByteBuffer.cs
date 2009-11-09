@@ -160,6 +160,20 @@ namespace IKVM.Reflection.Emit.Writer
 			Write(BitConverter.DoubleToInt64Bits(value));
 		}
 
+		internal void Write(string str)
+		{
+			if (str == null)
+			{
+				Write((byte)0xFF);
+			}
+			else
+			{
+				byte[] buf = Encoding.UTF8.GetBytes(str);
+				WriteCompressedInt(buf.Length);
+				Write(buf);
+			}
+		}
+
 		internal void WriteCompressedInt(int value)
 		{
 			if (value <= 0x7F)

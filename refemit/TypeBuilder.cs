@@ -184,6 +184,7 @@ namespace IKVM.Reflection.Emit
 		private TypeAttributes attribs;
 		private TypeFlags typeFlags;
 		private GenericTypeParameterBuilder[] gtpb;
+		private List<CustomAttributeBuilder> declarativeSecurity;
 
 		[Flags]
 		private enum TypeFlags
@@ -453,6 +454,16 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 
+		public void __AddDeclarativeSecurity(CustomAttributeBuilder customBuilder)
+		{
+			attribs |= TypeAttributes.HasSecurity;
+			if (declarativeSecurity == null)
+			{
+				declarativeSecurity = new List<CustomAttributeBuilder>();
+			}
+			declarativeSecurity.Add(customBuilder);
+		}
+
 		public void AddDeclarativeSecurity(System.Security.Permissions.SecurityAction securityAction, System.Security.PermissionSet permissionSet)
 		{
 			this.ModuleBuilder.AddDeclaritiveSecurity(token, securityAction, permissionSet);
@@ -514,6 +525,10 @@ namespace IKVM.Reflection.Emit
 					eb.Bake();
 				}
 				events = null;
+			}
+			if (declarativeSecurity != null)
+			{
+				this.ModuleBuilder.AddDeclarativeSecurity(token, declarativeSecurity);
 			}
 			return new BakedType(this);
 		}

@@ -332,6 +332,56 @@ namespace IKVM.Reflection.Emit
 			this.Tables.DeclSecurity.AddRecord(rec);
 		}
 
+		internal void AddDeclarativeSecurity(int token, List<CustomAttributeBuilder> declarativeSecurity)
+		{
+			Dictionary<int, List<CustomAttributeBuilder>> ordered = new Dictionary<int, List<CustomAttributeBuilder>>();
+			foreach (CustomAttributeBuilder cab in declarativeSecurity)
+			{
+				int action;
+				// check for HostProtectionAttribute without SecurityAction
+				if (cab.ConstructorArgumentCount == 0)
+				{
+					action = (int)System.Security.Permissions.SecurityAction.LinkDemand;
+				}
+				else
+				{
+					action = (int)cab.GetConstructorArgument(0);
+				}
+				List<CustomAttributeBuilder> list;
+				if (!ordered.TryGetValue(action, out list))
+				{
+					list = new List<CustomAttributeBuilder>();
+					ordered.Add(action, list);
+				}
+				list.Add(cab);
+			}
+			foreach (KeyValuePair<int, List<CustomAttributeBuilder>> kv in ordered)
+			{
+				TableHeap.DeclSecurityTable.Record rec = new TableHeap.DeclSecurityTable.Record();
+				rec.Action = (short)kv.Key;
+				rec.Parent = token;
+				rec.PermissionSet = WriteDeclSecurityBlob(kv.Value);
+				this.Tables.DeclSecurity.AddRecord(rec);
+			}
+		}
+
+		private int WriteDeclSecurityBlob(List<CustomAttributeBuilder> list)
+		{
+			ByteBuffer namedArgs = new ByteBuffer(100);
+			ByteBuffer bb = new ByteBuffer(list.Count * 100);
+			bb.Write((byte)'.');
+			bb.WriteCompressedInt(list.Count);
+			foreach (CustomAttributeBuilder cab in list)
+			{
+				bb.Write(cab.Constructor.DeclaringType.AssemblyQualifiedName);
+				namedArgs.Clear();
+				cab.WriteNamedArgumentsForDeclSecurity(this, namedArgs);
+				bb.WriteCompressedInt(namedArgs.Length);
+				bb.Write(namedArgs);
+			}
+			return this.Blobs.Add(bb);
+		}
+
 		public void DefineManifestResource(string name, Stream stream, ResourceAttributes attribute)
 		{
 			TableHeap.ManifestResourceTable.Record rec = new TableHeap.ManifestResourceTable.Record();

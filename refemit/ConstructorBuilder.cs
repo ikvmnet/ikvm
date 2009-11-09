@@ -56,6 +56,11 @@ namespace IKVM.Reflection.Emit
 			methodBuilder.SetCustomAttribute(customBuilder);
 		}
 
+		public void __AddDeclarativeSecurity(CustomAttributeBuilder customBuilder)
+		{
+			methodBuilder.__AddDeclarativeSecurity(customBuilder);
+		}
+
 		public void AddDeclarativeSecurity(System.Security.Permissions.SecurityAction securityAction, System.Security.PermissionSet permissionSet)
 		{
 			methodBuilder.AddDeclarativeSecurity(securityAction, permissionSet);

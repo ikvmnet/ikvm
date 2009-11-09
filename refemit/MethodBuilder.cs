@@ -51,6 +51,7 @@ namespace IKVM.Reflection.Emit
 		private readonly CallingConventions callingConvention;
 		private List<ParameterBuilder> parameters;
 		private GenericTypeParameterBuilder[] gtpb;
+		private List<CustomAttributeBuilder> declarativeSecurity;
 
 		internal MethodBuilder(TypeBuilder typeBuilder, string name, MethodAttributes attributes, CallingConventions callingConvention)
 		{
@@ -282,6 +283,16 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 
+		public void __AddDeclarativeSecurity(CustomAttributeBuilder customBuilder)
+		{
+			attributes |= MethodAttributes.HasSecurity;
+			if (declarativeSecurity == null)
+			{
+				declarativeSecurity = new List<CustomAttributeBuilder>();
+			}
+			declarativeSecurity.Add(customBuilder);
+		}
+
 		public void AddDeclarativeSecurity(System.Security.Permissions.SecurityAction securityAction, System.Security.PermissionSet permissionSet)
 		{
 			this.ModuleBuilder.AddDeclaritiveSecurity(pseudoToken, securityAction, permissionSet);
@@ -507,6 +518,11 @@ namespace IKVM.Reflection.Emit
 			else
 			{
 				rva = -1;
+			}
+
+			if (declarativeSecurity != null)
+			{
+				this.ModuleBuilder.AddDeclarativeSecurity(pseudoToken, declarativeSecurity);
 			}
 		}
 

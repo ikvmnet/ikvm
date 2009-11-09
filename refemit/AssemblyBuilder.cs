@@ -52,6 +52,7 @@ namespace IKVM.Reflection.Emit
 		private List<ResourceFile> resourceFiles = new List<ResourceFile>();
 		private List<ModuleBuilder> modules = new List<ModuleBuilder>();
 		private List<CustomAttributeBuilder> customAttributes = new List<CustomAttributeBuilder>();
+		private List<CustomAttributeBuilder> declarativeSecurity = new List<CustomAttributeBuilder>();
 
 		private struct ResourceFile
 		{
@@ -126,6 +127,11 @@ namespace IKVM.Reflection.Emit
 			{
 				customAttributes.Add(customBuilder);
 			}
+		}
+
+		public void __AddDeclarativeSecurity(CustomAttributeBuilder customBuilder)
+		{
+			declarativeSecurity.Add(customBuilder);
 		}
 
 		public void SetEntryPoint(MethodBuilder mb)
@@ -220,6 +226,8 @@ namespace IKVM.Reflection.Emit
 			{
 				manifestModule.SetAssemblyCustomAttribute(cab);
 			}
+
+			manifestModule.AddDeclarativeSecurity(0x20000001, declarativeSecurity);
 
 			foreach (ResourceFile resfile in resourceFiles)
 			{
