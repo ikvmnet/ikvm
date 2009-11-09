@@ -3053,6 +3053,7 @@ namespace IKVM.Internal
 				Annotation annotation = Annotation.Load(this, def);
 				if(annotation != null)
 				{
+					// TODO we should support pseudo custom attributes that Ref.Emit doesn't support (e.g. AssemblyVersionAttribute)
 					annotation.Apply(this, assemblyBuilder, def);
 				}
 			}
