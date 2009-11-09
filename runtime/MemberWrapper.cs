@@ -1760,12 +1760,14 @@ namespace IKVM.Internal
 
 	sealed class ConstantFieldWrapper : FieldWrapper
 	{
+		// NOTE this field wrapper can resprent a .NET enum, but in that case "constant" contains the raw constant value (i.e. the boxed underlying primitive value, not a boxed enum)
 		private object constant;
 
 		internal ConstantFieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, FieldInfo field, object constant, MemberFlags flags)
 			: base(declaringType, fieldType, name, sig, modifiers, field, flags)
 		{
 			Debug.Assert(IsStatic);
+			Debug.Assert(constant == null || constant.GetType().IsPrimitive);
 			this.constant = constant;
 		}
 
@@ -1817,18 +1819,6 @@ namespace IKVM.Internal
 			{
 				ilgen.Emit(OpCodes.Ldc_I8, unchecked((long)(ulong)constant));
 			}
-			else if(constant is Enum)
-			{
-				object val = DotNetTypeWrapper.EnumValueFieldWrapper.GetEnumPrimitiveValue(constant);
-				if(val is long)
-				{
-					ilgen.Emit(OpCodes.Ldc_I8, (long)constant);
-				}
-				else
-				{
-					ilgen.Emit(OpCodes.Ldc_I4, ((IConvertible)constant).ToInt32(null));
-				}
-			}
 			else
 			{
 				throw new InvalidOperationException(constant.GetType().FullName);
@@ -1847,20 +1837,7 @@ namespace IKVM.Internal
 			if(constant == null)
 			{
 				FieldInfo field = GetField();
-#if !STATIC_COMPILER
-				if(field.FieldType.IsEnum && !field.DeclaringType.IsEnum)
-				{
-					if(field.DeclaringType.Assembly.ReflectionOnly)
-					{
-						return null;
-					}
-					constant = field.GetValue(null);
-				}
-				else
-#endif // !STATIC_COMPILER
-				{
-					constant = field.GetRawConstantValue();
-				}
+				constant = field.GetRawConstantValue();
 			}
 			return constant;
 		}
