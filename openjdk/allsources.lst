@@ -10079,6 +10079,14 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/management/ThreadInfoCompositeData.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/management/Util.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/management/VMOptionCompositeData.java
+../../openjdk6-b16/jdk/src/share/classes/sun/management/counter/AbstractCounter.java
+../../openjdk6-b16/jdk/src/share/classes/sun/management/counter/ByteArrayCounter.java
+../../openjdk6-b16/jdk/src/share/classes/sun/management/counter/Counter.java
+../../openjdk6-b16/jdk/src/share/classes/sun/management/counter/LongArrayCounter.java
+../../openjdk6-b16/jdk/src/share/classes/sun/management/counter/LongCounter.java
+../../openjdk6-b16/jdk/src/share/classes/sun/management/counter/StringCounter.java
+../../openjdk6-b16/jdk/src/share/classes/sun/management/counter/Units.java
+../../openjdk6-b16/jdk/src/share/classes/sun/management/counter/Variability.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/misc/ASCIICaseInsensitiveComparator.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/misc/BASE64Decoder.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/misc/BASE64Encoder.java
@@ -10991,6 +10999,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/security/timestamp/TimestampToken.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/security/timestamp/TSRequest.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/security/timestamp/TSResponse.java
+../../openjdk6-b16/jdk/src/share/classes/sun/security/tools/KeyStoreUtil.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/security/util/AuthResources.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/security/util/AuthResources_de.java
 ../../openjdk6-b16/jdk/src/share/classes/sun/security/util/AuthResources_es.java
