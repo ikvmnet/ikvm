@@ -43,7 +43,6 @@ IKVM.OpenJDK.XML.Bind
 ->IKVM.OpenJDK.Util
 ->IKVM.OpenJDK.Text
 ->IKVM.OpenJDK.SwingAWT
-->IKVM.OpenJDK.XML.RelaxNG
 ->IKVM.OpenJDK.Beans
 ->IKVM.OpenJDK.Media
 
@@ -59,10 +58,6 @@ IKVM.OpenJDK.XML.WebServices
 ->IKVM.OpenJDK.Remoting
 ->IKVM.OpenJDK.Beans
 ->IKVM.OpenJDK.Media
-
-IKVM.OpenJDK.XML.RelaxNG
-->IKVM.OpenJDK.XML.API
-->IKVM.OpenJDK.Text
 
 IKVM.OpenJDK.XML.Crypto
 ->IKVM.OpenJDK.Util

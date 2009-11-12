@@ -148,7 +148,6 @@
             <exec program="peverify" commandline="-nologo IKVM.OpenJDK.XML.Bind.dll" />
             <exec program="peverify" commandline="-nologo IKVM.OpenJDK.XML.Crypto.dll" />
             <exec program="peverify" commandline="-nologo IKVM.OpenJDK.XML.Parse.dll" />
-            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.XML.RelaxNG.dll" />
             <exec program="peverify" commandline="-nologo IKVM.OpenJDK.XML.Transform.dll" />
             <exec program="peverify" commandline="-nologo IKVM.OpenJDK.XML.WebServices.dll" />
             <exec program="peverify" commandline="-nologo IKVM.OpenJDK.XML.XPath.dll" />
