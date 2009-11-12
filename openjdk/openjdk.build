@@ -163,4 +163,12 @@
         <exec program="${project::get-base-directory()}/../tools/updbaseaddresses.exe" commandline="response.txt" useruntimeengine="true" />
     </target>
 
+    <target name="tools" depends="version">
+        <exec program="${project::get-base-directory()}/../bin/ikvmc.exe" useruntimeengine="true">
+            <arg value="-version:${VERSION}" />
+            <arg value="${signoption}" />
+            <arg value="@tools.rsp" />
+        </exec>
+    </target>
+
 </project>
