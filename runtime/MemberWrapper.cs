@@ -1162,7 +1162,7 @@ namespace IKVM.Internal
 
 		private void UpdateNonPublicTypeInSignatureFlag()
 		{
-			if ((IsPublic || IsProtected) && fieldType != null)
+			if ((IsPublic || IsProtected) && fieldType != null && !IsAccessStub)
 			{
 				if (!fieldType.IsPublic && !fieldType.IsUnloadable)
 				{
@@ -1843,91 +1843,6 @@ namespace IKVM.Internal
 		}
 	}
 
-	// This type is used during AOT compilation only!
-	sealed class AotAccessStubFieldWrapper : FieldWrapper
-	{
-		private FieldWrapper basefield;
-		private MethodBuilder getter;
-		private MethodBuilder setter;
-
-		internal AotAccessStubFieldWrapper(TypeWrapper wrapper, FieldWrapper basefield)
-			: base(wrapper, null, basefield.Name, basefield.Signature, basefield.Modifiers, null, MemberFlags.AccessStub | MemberFlags.HideFromReflection)
-		{
-			this.basefield = basefield;
-		}
-
-		private string GenerateUniqueMethodName(string basename, Type returnType, Type[] parameterTypes)
-		{
-			return ((DynamicTypeWrapper)this.DeclaringType).GenerateUniqueMethodName(basename, returnType, parameterTypes);
-		}
-
-		internal void DoLink(TypeBuilder typeBuilder)
-		{
-			basefield.Link();
-			if(basefield is ConstantFieldWrapper)
-			{
-				FieldAttributes attribs = basefield.IsPublic ? FieldAttributes.Public : FieldAttributes.FamORAssem;
-				attribs |= FieldAttributes.Static | FieldAttributes.Literal;
-				FieldBuilder fb = typeBuilder.DefineField(Name, basefield.FieldTypeWrapper.TypeAsSignatureType, attribs);
-				AttributeHelper.HideFromReflection(fb);
-				fb.SetConstant(((ConstantFieldWrapper)basefield).GetConstantValue());
-			}
-			else
-			{
-				Type propType = basefield.FieldTypeWrapper.TypeAsSignatureType;
-				PropertyBuilder pb = typeBuilder.DefineProperty(Name, PropertyAttributes.None, propType, Type.EmptyTypes);
-				AttributeHelper.HideFromReflection(pb);
-				MethodAttributes attribs = basefield.IsPublic ? MethodAttributes.Public : MethodAttributes.FamORAssem;
-				attribs |= MethodAttributes.HideBySig;
-				if(basefield.IsStatic)
-				{
-					attribs |= MethodAttributes.Static;
-				}
-				getter = typeBuilder.DefineMethod(GenerateUniqueMethodName("get_" + Name, propType, Type.EmptyTypes), attribs, propType, Type.EmptyTypes);
-				AttributeHelper.HideFromJava(getter);
-				pb.SetGetMethod(getter);
-				CodeEmitter ilgen = CodeEmitter.Create(getter);
-				if(!basefield.IsStatic)
-				{
-					ilgen.Emit(OpCodes.Ldarg_0);
-				}
-				basefield.EmitGet(ilgen);
-				ilgen.Emit(OpCodes.Ret);
-				if(!basefield.IsFinal)
-				{
-					setter = typeBuilder.DefineMethod(GenerateUniqueMethodName("set_" + Name, Types.Void, new Type[] { propType }), attribs, null, new Type[] { propType });
-					AttributeHelper.HideFromJava(setter);
-					pb.SetSetMethod(setter);
-					ilgen = CodeEmitter.Create(setter);
-					ilgen.Emit(OpCodes.Ldarg_0);
-					if(!basefield.IsStatic)
-					{
-						ilgen.Emit(OpCodes.Ldarg_1);
-					}
-					basefield.EmitSet(ilgen);
-					ilgen.Emit(OpCodes.Ret);
-				}
-			}
-		}
-
-		protected override void EmitGetImpl(CodeEmitter ilgen)
-		{
-			if(basefield is ConstantFieldWrapper)
-			{
-				basefield.EmitGet(ilgen);
-			}
-			else
-			{
-				ilgen.Emit(OpCodes.Call, getter);
-			}
-		}
-
-		protected override void EmitSetImpl(CodeEmitter ilgen)
-		{
-			ilgen.Emit(OpCodes.Call, setter);
-		}
-	}
-
 	sealed class CompiledAccessStubFieldWrapper : FieldWrapper
 	{
 		private MethodInfo getter;
@@ -1949,8 +1864,8 @@ namespace IKVM.Internal
 			return modifiers;
 		}
 
-		internal CompiledAccessStubFieldWrapper(TypeWrapper wrapper, PropertyInfo property)
-			: base(wrapper, ClassLoaderWrapper.GetWrapperFromType(property.PropertyType), property.Name, ClassLoaderWrapper.GetWrapperFromType(property.PropertyType).SigName, GetModifiers(property), null, MemberFlags.AccessStub | MemberFlags.HideFromReflection)
+		private CompiledAccessStubFieldWrapper(TypeWrapper wrapper, PropertyInfo property, TypeWrapper propertyType, string name, string signature, Modifiers modifiers, MemberFlags flags)
+			: base(wrapper, propertyType, name, signature, modifiers, null, flags)
 		{
 			this.getter = property.GetGetMethod(true);
 			this.setter = property.GetSetMethod(true);
@@ -1964,6 +1879,56 @@ namespace IKVM.Internal
 		protected override void EmitSetImpl(CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Call, setter);
+		}
+
+		internal static bool TryGet(TypeWrapper wrapper, PropertyInfo property, out FieldWrapper accessStub)
+		{
+			NameSigAttribute nameSig = AttributeHelper.GetNameSig(property);
+			bool hideFromReflection = AttributeHelper.IsHideFromReflection(property);
+
+			if (nameSig != null || hideFromReflection)
+			{
+				TypeWrapper type;
+				string name;
+				string sig;
+				if (nameSig == null)
+				{
+					type = ClassLoaderWrapper.GetWrapperFromType(property.PropertyType);
+					name = property.Name;
+					sig = type.SigName;
+				}
+				else
+				{
+					type = ClassFile.FieldTypeWrapperFromSig(wrapper.GetClassLoader(), nameSig.Sig);
+					name = nameSig.Name;
+					sig = nameSig.Sig;
+				}
+				Modifiers modifiers;
+				MemberFlags flags = MemberFlags.AccessStub;
+				if (hideFromReflection)
+				{
+					// it's a Type 1 access stub (to make inherited fields visible)
+					flags |= MemberFlags.HideFromReflection;
+					modifiers = GetModifiers(property);
+				}
+				else
+				{
+					// it's a Type 2 access stub (to make fields that have a non-public field type visible)
+					ModifiersAttribute attr = AttributeHelper.GetModifiersAttribute(property);
+					modifiers = attr.Modifiers;
+					if (attr.IsInternal)
+					{
+						flags |= MemberFlags.InternalAccess;
+					}
+				}
+				accessStub = new CompiledAccessStubFieldWrapper(wrapper, property, type, name, sig, modifiers, flags);
+				return true;
+			}
+			else
+			{
+				accessStub = null;
+				return false;
+			}
 		}
 	}
 }

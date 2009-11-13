@@ -547,12 +547,6 @@ namespace IKVM.Internal
 					}
 				}
 #if STATIC_COMPILER
-				if (wrapper.IsPublic)
-				{
-					List<FieldWrapper> fieldsArray = new List<FieldWrapper>(fields);
-					AddAccessStubFields(fieldsArray, wrapper);
-					fields = fieldsArray.ToArray();
-				}
 				((AotTypeWrapper)wrapper).AddMapXmlFields(ref fields);
 #endif
 				wrapper.SetFields(fields);
@@ -1129,29 +1123,6 @@ namespace IKVM.Internal
 				}
 			}
 
-			private void AddAccessStubFields(List<FieldWrapper> fields, TypeWrapper tw)
-			{
-				do
-				{
-					if (!tw.IsPublic)
-					{
-						foreach (FieldWrapper fw in tw.GetFields())
-						{
-							if ((fw.IsPublic || fw.IsProtected)
-								&& !ContainsMemberWrapper(fields, fw.Name, fw.Signature))
-							{
-								fields.Add(new AotAccessStubFieldWrapper(wrapper, fw));
-							}
-						}
-					}
-					foreach (TypeWrapper iface in tw.Interfaces)
-					{
-						AddAccessStubFields(fields, iface);
-					}
-					tw = tw.BaseTypeWrapper;
-				} while (tw != null && !tw.IsPublic);
-			}
-
 			private static bool CheckInnerOuterNames(string inner, string outer)
 			{
 				// do some sanity checks on the inner/outer class names
@@ -1252,11 +1223,6 @@ namespace IKVM.Internal
 
 			internal override FieldInfo LinkField(FieldWrapper fw)
 			{
-				if (fw.IsAccessStub)
-				{
-					((AotAccessStubFieldWrapper)fw).DoLink(typeBuilder);
-					return null;
-				}
 				if (fw is DynamicPropertyFieldWrapper)
 				{
 					((DynamicPropertyFieldWrapper)fw).DoLink(typeBuilder);
@@ -1313,6 +1279,7 @@ namespace IKVM.Internal
 				MethodAttributes methodAttribs = MethodAttributes.HideBySig;
 #if STATIC_COMPILER
 				bool setModifiers = fld.IsInternal || (fld.Modifiers & (Modifiers.Synthetic | Modifiers.Enum)) != 0;
+				bool hideFromJava = false;
 #endif
 				bool isWrappedFinal = false;
 				if (fld.IsPrivate)
@@ -1334,6 +1301,17 @@ namespace IKVM.Internal
 					attribs |= FieldAttributes.Assembly;
 					methodAttribs |= MethodAttributes.Assembly;
 				}
+
+#if STATIC_COMPILER
+				if (wrapper.IsPublic && (fw.IsPublic || fw.IsProtected) && !fw.FieldTypeWrapper.IsPublic)
+				{
+					// this field is going to get a type 2 access stub, so we hide the actual field
+					attribs &= ~FieldAttributes.FieldAccessMask;
+					attribs |= FieldAttributes.Assembly;
+					hideFromJava = true;
+				}
+#endif
+
 				if (fld.IsStatic)
 				{
 					attribs |= FieldAttributes.Static;
@@ -1390,6 +1368,10 @@ namespace IKVM.Internal
 					if (constantValue != null)
 					{
 						AttributeHelper.SetConstantValue(field, constantValue);
+					}
+					if (hideFromJava)
+					{
+						AttributeHelper.HideFromJava(field);
 					}
 #endif // STATIC_COMPILER
 					if (isWrappedFinal)
@@ -1511,30 +1493,12 @@ namespace IKVM.Internal
 				classFile.Link(wrapper);
 				for (int i = 0; i < fields.Length; i++)
 				{
-#if STATIC_COMPILER
-					if (fields[i] is AotAccessStubFieldWrapper)
-					{
-						// HACK we skip access stubs, because we want to do the methods first
-						// (to prevent the stub method from taking the name of a real method)
-						continue;
-					}
-#endif
 					fields[i].Link();
 				}
 				for (int i = 0; i < methods.Length; i++)
 				{
 					methods[i].Link();
 				}
-#if STATIC_COMPILER
-				// HACK second pass for the access stubs (see above)
-				for (int i = 0; i < fields.Length; i++)
-				{
-					if (fields[i] is AotAccessStubFieldWrapper)
-					{
-						fields[i].Link();
-					}
-				}
-#endif
 				// this is the correct lock, FinishCore doesn't call any user code and mutates global state,
 				// so it needs to be protected by a lock.
 				lock (this)
@@ -3911,6 +3875,13 @@ namespace IKVM.Internal
 
 				// See if there is any additional metadata
 				wrapper.EmitMapXmlMetadata(typeBuilder, classFile, fields, methods);
+
+				// if we have public fields that have non-public field types, we need access stubs
+				if (wrapper.IsPublic)
+				{
+					AddType1FieldAccessStubs(wrapper);
+					AddType2FieldAccessStubs();
+				}
 #endif // STATIC_COMPILER
 
 				for (int i = 0; i < classFile.Methods.Length; i++)
@@ -4082,6 +4053,118 @@ namespace IKVM.Internal
 				BakedTypeCleanupHack.Process(wrapper);
 				return type;
 			}
+
+#if STATIC_COMPILER
+			private void AddType1FieldAccessStubs(TypeWrapper tw)
+			{
+				do
+				{
+					if (!tw.IsPublic)
+					{
+						foreach (FieldWrapper fw in tw.GetFields())
+						{
+							if ((fw.IsPublic || fw.IsProtected)
+								&& wrapper.GetFieldWrapper(fw.Name, fw.Signature) == fw)
+							{
+								GenerateAccessStub(fw, true);
+							}
+						}
+					}
+					foreach (TypeWrapper iface in tw.Interfaces)
+					{
+						AddType1FieldAccessStubs(iface);
+					}
+					tw = tw.BaseTypeWrapper;
+				} while (tw != null && !tw.IsPublic);
+			}
+
+			private void AddType2FieldAccessStubs()
+			{
+				foreach (FieldWrapper fw in wrapper.GetFields())
+				{
+					if ((fw.IsPublic || fw.IsProtected) && !fw.FieldTypeWrapper.IsPublic)
+					{
+						GenerateAccessStub(fw, false);
+					}
+				}
+			}
+
+			private void GenerateAccessStub(FieldWrapper fw, bool type1)
+			{
+				if (fw is ConstantFieldWrapper)
+				{
+					// constants cannot have a type 2 access stub, because constant types are always public
+					Debug.Assert(type1);
+
+					FieldAttributes attribs = fw.IsPublic ? FieldAttributes.Public : FieldAttributes.FamORAssem;
+					attribs |= FieldAttributes.Static | FieldAttributes.Literal;
+					FieldBuilder fb = typeBuilder.DefineField(fw.Name, fw.FieldTypeWrapper.TypeAsSignatureType, attribs);
+					AttributeHelper.HideFromReflection(fb);
+					fb.SetConstant(((ConstantFieldWrapper)fw).GetConstantValue());
+				}
+				else
+				{
+					string name = fw.Name;
+					// If there is a potential for property name clashes (e.g. we have multiple fields with the same name in this class,
+					// or the current class hides a field in the base class) we will mangle the name as a precaution. We could use a more
+					// complicated scheme which would result in less mangling, but it is exceedingly unlikely to encounter a class with
+					// these field name clashes, because Java cannot handle them either.
+					foreach (FieldWrapper field in wrapper.GetFields())
+					{
+						if (field != fw && !field.IsPrivate && field.Name == name)
+						{
+							name = "<>" + fw.Name + fw.Signature;
+							break;
+						}
+					}
+					Type propType = fw.FieldTypeWrapper.GetPublicBaseTypeWrapper().TypeAsSignatureType;
+					PropertyBuilder pb = typeBuilder.DefineProperty(name, PropertyAttributes.None, propType, Type.EmptyTypes);
+					if (type1)
+					{
+						AttributeHelper.HideFromReflection(pb);
+					}
+					else
+					{
+						AttributeHelper.SetNameSig(pb, fw.Name, fw.Signature);
+						AttributeHelper.SetModifiers(pb, fw.Modifiers, fw.IsInternal);
+					}
+					MethodAttributes attribs = fw.IsPublic ? MethodAttributes.Public : MethodAttributes.FamORAssem;
+					attribs |= MethodAttributes.HideBySig;
+					if (fw.IsStatic)
+					{
+						attribs |= MethodAttributes.Static;
+					}
+					MethodBuilder getter = typeBuilder.DefineMethod(wrapper.GenerateUniqueMethodName("get_" + fw.Name, propType, Type.EmptyTypes), attribs, propType, Type.EmptyTypes);
+					AttributeHelper.HideFromJava(getter);
+					pb.SetGetMethod(getter);
+					CodeEmitter ilgen = CodeEmitter.Create(getter);
+					if (!fw.IsStatic)
+					{
+						ilgen.Emit(OpCodes.Ldarg_0);
+					}
+					fw.EmitGet(ilgen);
+					ilgen.Emit(OpCodes.Ret);
+					if (!fw.IsFinal)
+					{
+						MethodBuilder setter = typeBuilder.DefineMethod(wrapper.GenerateUniqueMethodName("set_" + fw.Name, Types.Void, new Type[] { propType }), attribs, null, new Type[] { propType });
+						AttributeHelper.HideFromJava(setter);
+						pb.SetSetMethod(setter);
+						ilgen = CodeEmitter.Create(setter);
+						ilgen.Emit(OpCodes.Ldarg_0);
+						if (!fw.IsStatic)
+						{
+							ilgen.Emit(OpCodes.Ldarg_1);
+						}
+						if (propType != fw.FieldTypeWrapper.TypeAsSignatureType)
+						{
+							ilgen.Emit(OpCodes.Castclass, fw.FieldTypeWrapper.TypeAsSignatureType);
+						}
+						fw.EmitSet(ilgen);
+						ilgen.Emit(OpCodes.Ret);
+					}
+				}
+			}
+#endif // STATIC_COMPILER
 
 			private void ImplementInterfaceMethodStubs(Dictionary<TypeWrapper, TypeWrapper> doneSet, TypeWrapper interfaceTypeWrapper)
 			{

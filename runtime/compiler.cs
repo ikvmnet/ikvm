@@ -319,7 +319,7 @@ sealed class Compiler
 					v.type != VerifierTypeWrapper.UninitializedThis &&
 					(v.type != tw || tw.TypeAsLocalOrStackType != tw.TypeAsSignatureType))
 				{
-					v.builder = ilGenerator.DeclareLocal(v.type.TypeAsLocalOrStackType);
+					v.builder = ilGenerator.DeclareLocal(GetLocalBuilderType(v.type));
 					if(debug && v.name != null)
 					{
 						v.builder.SetLocalSymInfo(v.name);
@@ -763,7 +763,7 @@ sealed class Compiler
 			else
 			{
 				types[i] = StackType.Other;
-				locals[i] = compiler.ilGenerator.AllocTempLocal(type.TypeAsLocalOrStackType);
+				locals[i] = compiler.ilGenerator.AllocTempLocal(compiler.GetLocalBuilderType(type));
 			}
 		}
 
@@ -1852,7 +1852,7 @@ sealed class Compiler
 								// this could be done a little more efficiently, but since in practice this
 								// code never runs (for code compiled from Java source) it doesn't
 								// really matter
-								LocalBuilder newobj = ilGenerator.DeclareLocal(thisType.TypeAsLocalOrStackType);
+								LocalBuilder newobj = ilGenerator.DeclareLocal(GetLocalBuilderType(thisType));
 								ilGenerator.Emit(OpCodes.Stloc, newobj);
 								LocalBuilder[] tempstack = new LocalBuilder[stackfix.Length];
 								for(int j = 0; j < stackfix.Length; j++)
@@ -1870,7 +1870,7 @@ sealed class Compiler
 										}
 										else if(!VerifierTypeWrapper.IsNew(stacktype))
 										{
-											LocalBuilder lb = ilGenerator.DeclareLocal(stacktype.TypeAsLocalOrStackType);
+											LocalBuilder lb = ilGenerator.DeclareLocal(GetLocalBuilderType(stacktype));
 											ilGenerator.Emit(OpCodes.Stloc, lb);
 											tempstack[j] = lb;
 										}
@@ -1903,7 +1903,7 @@ sealed class Compiler
 										if(locals[j].builder == null)
 										{
 											// for invokespecial the resulting type can never be null
-											locals[j].builder = ilGenerator.DeclareLocal(locals[j].type.TypeAsLocalOrStackType);
+											locals[j].builder = ilGenerator.DeclareLocal(GetLocalBuilderType(locals[j].type));
 										}
 										ilGenerator.Emit(OpCodes.Ldloc, newobj);
 										ilGenerator.Emit(OpCodes.Stloc, locals[j].builder);
@@ -1937,7 +1937,7 @@ sealed class Compiler
 									if(locals[j].builder == null)
 									{
 										// for invokespecial the resulting type can never be null
-										locals[j].builder = ilGenerator.DeclareLocal(locals[j].type.TypeAsLocalOrStackType);
+										locals[j].builder = ilGenerator.DeclareLocal(GetLocalBuilderType(locals[j].type));
 									}
 									ilGenerator.Emit(OpCodes.Ldarg_0);
 									ilGenerator.Emit(OpCodes.Stloc, locals[j].builder);
@@ -3104,7 +3104,7 @@ sealed class Compiler
 				else if(args[i].IsInterfaceOrInterfaceArray)
 				{
 					TypeWrapper tw = ma.GetStackTypeWrapper(instructionIndex, args.Length - 1 - i);
-					if(!tw.IsUnloadable && !tw.IsAssignableTo(args[i]))
+					if(tw.IsUnloadable || NeedsInterfaceDownCast(tw, args[i]))
 					{
 						needsCast = true;
 						firstCastArg = i;
@@ -3153,7 +3153,7 @@ sealed class Compiler
 				if(!args[i].IsUnloadable && !args[i].IsGhost)
 				{
 					TypeWrapper tw = ma.GetStackTypeWrapper(instructionIndex, args.Length - 1 - i);
-					if(tw.IsUnloadable || (args[i].IsInterfaceOrInterfaceArray && !tw.IsAssignableTo(args[i])))
+					if(tw.IsUnloadable || (args[i].IsInterfaceOrInterfaceArray && NeedsInterfaceDownCast(tw, args[i])))
 					{
 						ilGenerator.EmitAssertType(args[i].TypeAsTBD);
 						Profiler.Count("InterfaceDownCast");
@@ -3223,6 +3223,15 @@ sealed class Compiler
 			}
 			dh.Release();
 		}
+	}
+
+	private bool NeedsInterfaceDownCast(TypeWrapper tw, TypeWrapper arg)
+	{
+		if (!tw.IsAccessibleFrom(clazz))
+		{
+			tw = tw.GetPublicBaseTypeWrapper();
+		}
+		return !tw.IsAssignableTo(arg);
 	}
 
 	private void DynamicGetPutField(Instruction instr, int i)
@@ -3470,7 +3479,7 @@ sealed class Compiler
 		{
 			if(v.builder == null)
 			{
-				v.builder = ilGenerator.DeclareLocal(v.type.TypeAsLocalOrStackType);
+				v.builder = ilGenerator.DeclareLocal(GetLocalBuilderType(v.type));
 				if(debug && v.name != null)
 				{
 					v.builder.SetLocalSymInfo(v.name);
@@ -3510,7 +3519,7 @@ sealed class Compiler
 		{
 			if(v.builder == null)
 			{
-				v.builder = ilGenerator.DeclareLocal(v.type.TypeAsLocalOrStackType);
+				v.builder = ilGenerator.DeclareLocal(GetLocalBuilderType(v.type));
 				if(debug && v.name != null)
 				{
 					v.builder.SetLocalSymInfo(v.name);
@@ -3519,5 +3528,21 @@ sealed class Compiler
 			ilGenerator.Emit(OpCodes.Stloc, v.builder);
 		}
 		return v;
+	}
+
+	private Type GetLocalBuilderType(TypeWrapper tw)
+	{
+		if (tw.IsUnloadable)
+		{
+			return Types.Object;
+		}
+		else if (tw.IsAccessibleFrom(clazz))
+		{
+			return tw.TypeAsLocalOrStackType;
+		}
+		else
+		{
+			return tw.GetPublicBaseTypeWrapper().TypeAsLocalOrStackType;
+		}
 	}
 }

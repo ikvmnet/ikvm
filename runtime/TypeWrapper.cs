@@ -1022,6 +1022,12 @@ namespace IKVM.Internal
 			fb.SetCustomAttribute(customAttributeBuilder);
 		}
 
+		internal static void SetNameSig(PropertyBuilder pb, string name, string sig)
+		{
+			CustomAttributeBuilder customAttributeBuilder = new CustomAttributeBuilder(typeofNameSigAttribute.GetConstructor(new Type[] { Types.String, Types.String }), new object[] { name, sig });
+			pb.SetCustomAttribute(customAttributeBuilder);
+		}
+
 		internal static byte[] FreezeDryType(Type type)
 		{
 			System.IO.MemoryStream mem = new System.IO.MemoryStream();
@@ -1156,6 +1162,29 @@ namespace IKVM.Internal
 #endif
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(field))
+				{
+					if(MatchTypes(cad.Constructor.DeclaringType, typeofNameSigAttribute))
+					{
+						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+						return new NameSigAttribute((string)args[0].Value, (string)args[1].Value);
+					}
+				}
+				return null;
+			}
+		}
+
+		internal static NameSigAttribute GetNameSig(PropertyInfo property)
+		{
+#if !STATIC_COMPILER
+			if(!property.DeclaringType.Assembly.ReflectionOnly)
+			{
+				object[] attr = property.GetCustomAttributes(typeof(NameSigAttribute), false);
+				return attr.Length == 1 ? (NameSigAttribute)attr[0] : null;
+			}
+			else
+#endif
+			{
+				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(property))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofNameSigAttribute))
 					{
@@ -2931,7 +2960,23 @@ namespace IKVM.Internal
 
 		internal bool IsPackageAccessibleFrom(TypeWrapper wrapper)
 		{
-			return MatchingPackageNames(name, wrapper.name) && InternalsVisibleTo(wrapper);
+			if (MatchingPackageNames(name, wrapper.name))
+			{
+#if STATIC_COMPILER
+				CompilerClassLoader ccl = GetClassLoader() as CompilerClassLoader;
+				if (ccl != null)
+				{
+					// this is a hack for multi target -sharedclassloader compilation
+					// (during compilation we have multiple CompilerClassLoader instances to represent the single shared runtime class loader)
+					return ccl.IsEquivalentTo(wrapper.GetClassLoader());
+				}
+#endif
+				return GetClassLoader() == wrapper.GetClassLoader();
+			}
+			else
+			{
+				return false;
+			}
 		}
 
 		private static bool MatchingPackageNames(string name1, string name2)
@@ -3523,6 +3568,21 @@ namespace IKVM.Internal
 				}
 			}
 			return interfaces;
+		}
+
+		internal TypeWrapper GetPublicBaseTypeWrapper()
+		{
+			if (this.IsInterface)
+			{
+				return CoreClasses.java.lang.Object.Wrapper;
+			}
+			for (TypeWrapper tw = this; ; tw = tw.BaseTypeWrapper)
+			{
+				if (tw.IsPublic)
+				{
+					return tw;
+				}
+			}
 		}
 	}
 
@@ -4422,11 +4482,12 @@ namespace IKVM.Internal
 							PropertyInfo property = m as PropertyInfo;
 							if(property != null)
 							{
-								// Only AccessStub properties (marked by HideFromReflectionAttribute)
+								// Only AccessStub properties (marked by HideFromReflectionAttribute or NameSigAttribute)
 								// are considered here
-								if(AttributeHelper.IsHideFromReflection(property))
+								FieldWrapper accessStub;
+								if(CompiledAccessStubFieldWrapper.TryGet(this, property, out accessStub))
 								{
-									fields.Add(new CompiledAccessStubFieldWrapper(this, property));
+									fields.Add(accessStub);
 								}
 								else
 								{

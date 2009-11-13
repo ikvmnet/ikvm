@@ -432,6 +432,26 @@ namespace IKVM.Internal
 			return null;
 		}
 
+		// HACK when we're compiling multiple targets with -sharedclassloader, each target will have its own CompilerClassLoader,
+		// so we need to consider them equivalent (because they represent the same class loader).
+		internal bool IsEquivalentTo(ClassLoaderWrapper other)
+		{
+			if (this == other)
+			{
+				return true;
+			}
+			CompilerClassLoader ccl = other as CompilerClassLoader;
+			if (ccl != null && options.sharedclassloader != null && options.sharedclassloader.Contains(ccl))
+			{
+				if (!internalsVisibleTo.Contains(ccl))
+				{
+					AddInternalsVisibleToAttribute(ccl);
+				}
+				return true;
+			}
+			return false;
+		}
+
 		internal override bool InternalsVisibleToImpl(TypeWrapper wrapper, TypeWrapper friend)
 		{
 			Debug.Assert(wrapper.GetClassLoader() == this);
@@ -442,19 +462,18 @@ namespace IKVM.Internal
 				return true;
 			}
 			CompilerClassLoader ccl = other as CompilerClassLoader;
-			if (ccl != null
-				&& options.sharedclassloader != null
-				&& options.sharedclassloader.Contains(ccl))
+			if (ccl != null)
 			{
-				AddInternalsVisibleToAttribute(ccl.assemblyBuilder);
-				internalsVisibleTo.Add(other);
+				AddInternalsVisibleToAttribute(ccl);
 				return true;
 			}
 			return false;
 		}
 
-		private void AddInternalsVisibleToAttribute(AssemblyBuilder asm)
+		private void AddInternalsVisibleToAttribute(CompilerClassLoader ccl)
 		{
+			internalsVisibleTo.Add(ccl);
+			AssemblyBuilder asm = ccl.assemblyBuilder;
 			AssemblyName asmName = asm.GetName();
 			string name = asmName.Name;
 			byte[] pubkey = asmName.GetPublicKey();
