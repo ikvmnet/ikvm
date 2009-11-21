@@ -161,7 +161,7 @@ public final class Bidi
     if (val instanceof NumericShaper)
       shaper = (NumericShaper) val;
 
-    char[] text = new char[iter.getEndIndex() - iter.getBeginIndex()];
+    text = new char[iter.getEndIndex() - iter.getBeginIndex()];
     this.embeddings = new byte[this.text.length];
     this.embeddingOffset = 0;
     this.length = text.length;
