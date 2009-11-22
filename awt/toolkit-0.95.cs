@@ -1381,7 +1381,7 @@ namespace ikvm.awt
 
     abstract class NetComponentPeer : java.awt.peer.ComponentPeer
 	{
-		private static readonly java.awt.Font defaultFont = new java.awt.Font(java.awt.Font.DIALOG, java.awt.Font.PLAIN, 12);
+		protected static readonly java.awt.Font defaultFont = new java.awt.Font(java.awt.Font.DIALOG, java.awt.Font.PLAIN, 12);
 		internal readonly java.awt.Component target;
 		internal Control control;
         private bool isMouseClick;
@@ -3268,6 +3268,35 @@ namespace ikvm.awt
         {
             base.initialize();
             updateIconImages();
+            if (target.getBackground() == null)
+            {
+                target.setBackground(target is java.awt.Dialog ? java.awt.SystemColor.control : java.awt.SystemColor.window);
+            }
+            if (target.getForeground() == null)
+            {
+                target.setForeground(java.awt.SystemColor.windowText);
+            }
+            if (target.getFont() == null)
+            {
+                //target.setFont(defaultFont);
+                //HACK: Sun is calling setFont(Font) here and this is calling firePropertyChange("font", oldFont, newFont)
+                //but this produce a deadlock with getTreeLock() because the creating of the peer is already in this synchronized
+                java.security.AccessController.doPrivileged(Delegates.toPrivilegedAction(delegate
+                {
+                    java.lang.Class component = typeof(java.awt.Component);
+                    java.lang.reflect.Field field = component.getDeclaredField("font");
+                    field.setAccessible(true);
+                    field.set(target, defaultFont);
+                    java.lang.reflect.Method method = component.getDeclaredMethod(
+                        "firePropertyChange",
+                        typeof(java.lang.String),
+                        typeof(java.lang.Object),
+                        typeof(java.lang.Object));
+                    method.setAccessible(true);
+                    method.invoke(target, "font", null, defaultFont);
+                    return null;
+                }));
+            }
         }
 
 		private void OnResize(object sender, EventArgs e)
