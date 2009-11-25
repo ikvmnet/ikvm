@@ -63,6 +63,7 @@ using java.util;
 using ikvm.awt.printing;
 using ikvm.runtime;
 using sun.awt;
+using System.Runtime.InteropServices;
 
 namespace ikvm.awt
 {
@@ -679,6 +680,11 @@ namespace ikvm.awt
             {
                 return new LinuxPrintPeer();
             }
+        }
+
+        protected override java.awt.peer.MouseInfoPeer getMouseInfoPeer()
+        {
+            return new NetMouseInfoPeer();
         }
 
         /*===============================
@@ -4468,6 +4474,53 @@ namespace ikvm.awt
             }
         }
     }
+
+
+    internal class NetMouseInfoPeer : java.awt.peer.MouseInfoPeer
+    {
+        public int fillPointWithCoords(java.awt.Point p)
+        {
+            p.x = Cursor.Position.X;
+            p.y = Cursor.Position.Y;
+            //TODO multi screen device
+            return 0; //return the number of the screen device
+        }
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr WindowFromPoint(POINT Point);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct POINT
+        {
+            private int X;
+            private int Y;
+
+            internal POINT(Point pt)
+            {
+                this.X = pt.X;
+                this.Y = pt.Y;
+            }
+        }
+
+        public bool isWindowUnderMouse(java.awt.Window window)
+        {
+            if (NetToolkit.isWin32())
+            {
+                NetWindowPeer peer = (NetWindowPeer)window.getPeer();
+                if (peer != null)
+                {
+                    IntPtr hWnd = WindowFromPoint(new POINT(Cursor.Position));
+                    return peer.control.Handle.Equals(hWnd);
+                }
+                return false;
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+        }
+    }
+
     
     public class NetClipboard : java.awt.datatransfer.Clipboard
     {
