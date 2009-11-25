@@ -54,6 +54,8 @@ public class StandardGlyphVector extends GlyphVector{
 
     private transient FontMetrics metrics;
 
+    private Font2D font2D;
+    private FontStrike strike;
 
     public StandardGlyphVector(Font font, String str, FontRenderContext frc){
         if(str == null){
@@ -62,6 +64,8 @@ public class StandardGlyphVector extends GlyphVector{
         this.font = font;
         this.frc = frc;
         this.glyphs = str;
+        this.font2D = FontManager.getFont2D(font);
+        this.strike = font2D.getStrike(font, frc);
     }
 
 
@@ -133,6 +137,7 @@ public class StandardGlyphVector extends GlyphVector{
      * getting more than one. !!! should I bother taking result parameter?
      */
     public float[] getGlyphPositions(float[] result){
+        initPositions();
         return positions;
     }
 
@@ -141,7 +146,26 @@ public class StandardGlyphVector extends GlyphVector{
      * For each glyph return posx, posy, advx, advy, visx, visy, visw, vish.
      */
     public float[] getGlyphInfo(){
-        throw new NotImplementedException();
+        initPositions();
+        float[] result = new float[glyphs.length() * 8];
+        for (int i = 0, n = 0; i < glyphs.length(); ++i, n += 8) {
+            float x = positions[i*2];
+            float y = positions[i*2+1];
+            result[n] = x;
+            result[n+1] = y;
+
+            int glyphID = glyphs.charAt(i);
+            Point2D.Float adv = strike.getGlyphMetrics(glyphID);
+            result[n+2] = adv.x;
+            result[n+3] = adv.y;
+
+            Rectangle2D vb = getGlyphVisualBounds(i).getBounds2D();
+            result[n+4] = (float)(vb.getMinX());
+            result[n+5] = (float)(vb.getMinY());
+            result[n+6] = (float)(vb.getWidth());
+            result[n+7] = (float)(vb.getHeight());
+        }
+        return result;
     }
 
 
@@ -327,4 +351,55 @@ public class StandardGlyphVector extends GlyphVector{
         return sb.toString();
     }
 
+    private float getTracking(Font font) {
+        if (font.hasLayoutAttributes()) {
+            AttributeValues values = ((AttributeMap)font.getAttributes()).getValues();
+            return values.getTracking();
+        }
+        return 0;
+    }
+
+    /**
+     * Ensure that the positions array exists and holds position data.
+     * If the array is null, this allocates it and sets default positions.
+     */
+    private void initPositions() {
+        if (positions == null) {
+            positions = new float[glyphs.length() * 2 + 2];
+
+            Point2D.Float trackPt = null;
+            float track = getTracking(font);
+            if (track != 0) {
+                track *= font.getSize2D();
+                trackPt = new Point2D.Float(track, 0); // advance delta
+            }
+
+            Point2D.Float pt = new Point2D.Float(0, 0);
+            if (font.isTransformed()) {
+                AffineTransform at = font.getTransform();
+                at.transform(pt, pt);
+                positions[0] = pt.x;
+                positions[1] = pt.y;
+
+                if (trackPt != null) {
+                    at.deltaTransform(trackPt, trackPt);
+                }
+            }
+            for (int i = 0, n = 2; i < glyphs.length(); ++i, n += 2) {
+                addDefaultGlyphAdvance(glyphs.charAt(i), pt);
+                if (trackPt != null) {
+                    pt.x += trackPt.x;
+                    pt.y += trackPt.y;
+                }
+                positions[n] = pt.x;
+                positions[n+1] = pt.y;
+            }
+        }
+    }
+
+    void addDefaultGlyphAdvance(int glyphID, Point2D.Float result) {
+        Point2D.Float adv = strike.getGlyphMetrics(glyphID);
+        result.x += adv.x;
+        result.y += adv.y;
+    }
 }

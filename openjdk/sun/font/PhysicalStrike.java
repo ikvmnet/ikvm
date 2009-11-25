@@ -70,7 +70,12 @@ public class PhysicalStrike extends FontStrike{
      */
     @Override
     Float getCharMetrics(char ch){
-        throw new NotImplementedException();
+        SizeF sizeF = g.MeasureString(String.valueOf(ch), font, Integer.MAX_VALUE, format);
+        if(frc.usesFractionalMetrics()){
+            return new Float(sizeF.get_Width(), 0);
+        }else{
+            return new Float((int)(sizeF.get_Width() + 0.5F), 0);
+        }
     }
 
 
@@ -150,7 +155,7 @@ public class PhysicalStrike extends FontStrike{
      */
     @Override
     Float getGlyphMetrics(int glyphcode){
-        throw new NotImplementedException();
+        return getCharMetrics((char)glyphcode);
     }
 
 
