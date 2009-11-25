@@ -349,7 +349,7 @@ public class Starter
 			java.lang.Class clazz = java.lang.Class.forName(mainClass, true, java.lang.ClassLoader.getSystemClassLoader());
 			try
 			{
-				Method method = FindMainMethod(clazz);
+				Method method = IKVM.Internal.Starter.FindMainMethod(clazz);
 				if(method == null)
 				{
 					throw new java.lang.NoSuchMethodError("main");
@@ -424,35 +424,5 @@ public class Starter
 			return null;
 		}
 		return mainClass.Replace('/', '.');
-	}
-
-	private static Method FindMainMethod(java.lang.Class clazz)
-	{
-		// HACK without this hack, clazz.getDeclaredMethods would throw a NoClassDefFoundError if any
-		// of the methods in the class had an unloadable parameter type, but we don't want that.
-		IKVM.Internal.Starter.EnableReflectionOnMethodsWithUnloadableTypeParameters = true;
-		try
-		{
-			while(clazz != null)
-			{
-				foreach(Method m in clazz.getDeclaredMethods())
-				{
-					if(m.getName() == "main" && m.getReturnType() == java.lang.Void.TYPE)
-					{
-						java.lang.Class[] parameters = m.getParameterTypes();
-						if(parameters.Length == 1 && parameters[0] == java.lang.Class.forName("[Ljava.lang.String;"))
-						{
-							return m;
-						}
-					}
-				}
-				clazz = clazz.getSuperclass();
-			}
-			return null;
-		}
-		finally
-		{
-			IKVM.Internal.Starter.EnableReflectionOnMethodsWithUnloadableTypeParameters = false;
-		}
 	}
 }

@@ -46,17 +46,21 @@ namespace IKVM.Internal
 			DynamicClassLoader.SaveDebugImages();
 		}
 
-		public static bool EnableReflectionOnMethodsWithUnloadableTypeParameters
+#if !FIRST_PASS
+		public static java.lang.reflect.Method FindMainMethod(java.lang.Class clazz)
 		{
-			get
+			// This method exists because we don't use Class.getDeclaredMethods(),
+			// since that could cause us to run into NoClassDefFoundError if any of the
+			// method signatures references a missing class.
+			TypeWrapper tw = TypeWrapper.FromClass(clazz);
+			MethodWrapper mw = tw.GetMethodWrapper("main", "([Ljava.lang.String;)V", true);
+			if (mw != null && mw.IsStatic)
 			{
-				return JVM.EnableReflectionOnMethodsWithUnloadableTypeParameters;
+				return (java.lang.reflect.Method)mw.ToMethodOrConstructor(true);
 			}
-			set
-			{
-				JVM.EnableReflectionOnMethodsWithUnloadableTypeParameters = value;
-			}
+			return null;
 		}
+#endif
 
 		public static bool ClassUnloading
 		{
@@ -82,7 +86,6 @@ namespace IKVM.Internal
 		internal const bool IsSaveDebugImage = false;
 #else
 		internal const bool IsStaticCompiler = false;
-		private static bool enableReflectionOnMethodsWithUnloadableTypeParameters;
 		private static bool finishingForDebugSave;
 		private static int emitSymbols;
 		internal static bool IsSaveDebugImage;
@@ -145,18 +148,6 @@ namespace IKVM.Internal
 		}
 
 #if !STATIC_COMPILER
-		public static bool EnableReflectionOnMethodsWithUnloadableTypeParameters
-		{
-			get
-			{
-				return enableReflectionOnMethodsWithUnloadableTypeParameters;
-			}
-			set
-			{
-				enableReflectionOnMethodsWithUnloadableTypeParameters = value;
-			}
-		}
-
 		internal static bool FinishingForDebugSave
 		{
 			get
