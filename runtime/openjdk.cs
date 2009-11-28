@@ -4572,22 +4572,26 @@ namespace IKVM.NativeCode.java
 					}
 				}
 
-				public static int WindowsRegDeleteValue(int hKey, byte[] valueName)
-				{
-					try
-					{
-						MapKey(hKey).DeleteValue(BytesToString(valueName));
-						return 0;
-					}
-					catch (System.Security.SecurityException)
-					{
-						return 5;
-					}
-					catch (UnauthorizedAccessException)
-					{
-						return 5;
-					}
-				}
+                public static int WindowsRegDeleteValue(int hKey, byte[] valueName)
+                {
+                    try
+                    {
+                        MapKey(hKey).DeleteValue(BytesToString(valueName));
+                        return 0;
+                    }
+                    catch (System.ArgumentException)
+                    {
+                        return 2; //ERROR_FILE_NOT_FOUND
+                    }
+                    catch (System.Security.SecurityException)
+                    {
+                        return 5; //ERROR_ACCESS_DENIED
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                        return 5; //ERROR_ACCESS_DENIED
+                    }
+                }
 
 				public static int[] WindowsRegQueryInfoKey(int hKey)
 				{
