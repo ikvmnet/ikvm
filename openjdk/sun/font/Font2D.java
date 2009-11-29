@@ -28,6 +28,8 @@ import java.awt.font.FontRenderContext;
 import java.awt.geom.AffineTransform;
 import java.util.Locale;
 
+import sun.awt.SunHints;
+
 
 
 /**
@@ -56,11 +58,11 @@ public abstract class Font2D{
      * population of the strikes. However since users of these strikes are
      * transient, then the one that was overwritten would soon be freed.
      * If there is any problem then a small synchronized block would be
-     * required with its attendant consequences for MP scaleability.
+     * required with its attendant consequences for MP scalability.
      */
-    public FontStrike getStrike(Font font, AffineTransform devTx,
-            int aa, int fm) {
-        return getStrike(font, null);
+    public FontStrike getStrike(Font font, AffineTransform devTx, int aa, int fm){
+        return getStrike(font, new FontRenderContext(devTx, aa == SunHints.INTVAL_TEXT_ANTIALIAS_ON,
+                fm == SunHints.INTVAL_FRACTIONALMETRICS_ON));
     }
     
     public FontStrike getStrike(Font font, FontRenderContext frc) {
@@ -87,10 +89,35 @@ public abstract class Font2D{
      */
     public void getFontMetrics(Font font, AffineTransform identityTx, Object antiAliasingHint,
             Object fractionalMetricsHint, float[] metrics){
-        // TODO Auto-generated method stub
+        FontRenderContext frc = new FontRenderContext(identityTx, antiAliasingHint, fractionalMetricsHint);
+        StrikeMetrics strikeMetrics = getStrike(font, frc).getFontMetrics();
+        metrics[0] = strikeMetrics.getAscent();
+        metrics[1] = strikeMetrics.getDescent();
+        metrics[2] = strikeMetrics.getLeading();
+        metrics[3] = strikeMetrics.getMaxAdvance();    
         
+        getStyleMetrics(font.getSize2D(), metrics, 4);
     }
 
+    /**
+     * The length of the metrics array must be >= offset+4, and offset must be
+     * >= 0.  Typically offset is 4.  This method will
+     * store the following elements in that array before returning:
+     *    metrics[off+0]: strikethrough offset
+     *    metrics[off+1]: strikethrough thickness
+     *    metrics[off+2]: underline offset
+     *    metrics[off+3]: underline thickness
+     *
+     * Note that this implementation simply returns default values;
+     * subclasses can override this method to provide more accurate values.
+     */
+    public void getStyleMetrics(float pointSize, float[] metrics, int offset) {
+        metrics[offset] = -metrics[0] / 2.5f;
+        metrics[offset+1] = pointSize / 12;
+        metrics[offset+2] = metrics[offset+1] / 1.5f;
+        metrics[offset+3] = metrics[offset+1];
+    }
+    
     /**
      * The length of the metrics array must be >= 4.  This method will
      * store the following elements in that array before returning:
