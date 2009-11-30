@@ -124,7 +124,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Corba.dll
-    -baseaddress:0x56DB0000
+    -baseaddress:0x56990000
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/corba/*
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/jndi/cosnaming/jndiprovider.properties
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/corba/se/impl/activation/*.class
@@ -242,7 +242,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.XML.API.dll
-    -baseaddress:0x57470000
+    -baseaddress:0x57050000
     ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/datatype/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/javax/xml/namespace/*.class
@@ -274,7 +274,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.XML.XPath.dll
-    -baseaddress:0x57530000
+    -baseaddress:0x57110000
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/org/apache/xalan/internal/res/*
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/extensions/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/res/*.class
@@ -299,7 +299,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.XML.Parse.dll
-    -baseaddress:0x57860000
+    -baseaddress:0x57440000
     -resource:com/sun/org/apache/xml/internal/serialize/HTMLEntities.res=../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/xml/internal/serialize/HTMLEntities.res
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/org/apache/xerces/*
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/org/apache/xml/internal/serializer/*
@@ -358,7 +358,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.XML.Transform.dll
-    -baseaddress:0x57F20000
+    -baseaddress:0x57B00000
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/java_cup/internal/runtime/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/bcel/internal/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/org/apache/bcel/internal/classfile/*.class
@@ -382,7 +382,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.XML.Bind.dll
-    -baseaddress:0x58370000
+    -baseaddress:0x57F50000
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/javax/xml/bind/*
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/xml/internal/bind/*
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/xml/internal/fastinfoset/*
@@ -449,7 +449,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.XML.WebServices.dll
-    -baseaddress:0x58820000
+    -baseaddress:0x58400000
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/xml/internal/messaging/*
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/xml/internal/ws/*
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/dtdparser/*.class
@@ -540,7 +540,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.XML.RelaxNG.dll
-    -baseaddress:0x58C40000
+    -baseaddress:0x58820000
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/ast/builder/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/ast/om/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/ast/util/*.class
@@ -562,7 +562,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.XML.Crypto.dll
-    -baseaddress:0x58D30000
+    -baseaddress:0x58910000
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/org/apache/xml/internal/security/*
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/org/apache/xml/internal/security/*.class
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/org/apache/xml/internal/security/algorithms/*.class
@@ -598,7 +598,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.SwingAWT.dll
-    -baseaddress:0x58E80000
+    -baseaddress:0x58A60000
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/sun.java2d.*
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/java/swing/*
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/javax/swing/*
@@ -676,13 +676,13 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Charsets.dll
-    -baseaddress:0x59DE0000
+    -baseaddress:0x599C0000
     ../../openjdk6-b16/jdk/src/share/classes/sun/io/*.class
     ../../openjdk6-b16/jdk/src/share/classes/sun/nio/cs/ext/*.class
 }
 {
     -out:IKVM.OpenJDK.Util.dll
-    -baseaddress:0x5AC50000
+    -baseaddress:0x5A830000
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/java/util/jar/pack/intrinsic.properties
     java/util/zip/*.class
     ../../openjdk6-b16/build/linux-amd64/gensrc/sun/util/logging/resources/*.class
@@ -700,7 +700,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Text.dll
-    -baseaddress:0x5B070000
+    -baseaddress:0x5AC50000
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/sun/text/*
     java/text/*.class
     ../../openjdk6-b16/jdk/src/share/classes/java/text/*.class
@@ -711,7 +711,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Security.dll
-    -baseaddress:0x5B250000
+    -baseaddress:0x5AE30000
     sun/security/jgss/wrapper/*.class
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/crypto/provider/*.class
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/net/ssl/*.class
@@ -775,7 +775,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Management.dll
-    -baseaddress:0x5B9A0000
+    -baseaddress:0x5B580000
     ConnectorBootstrap$DefaultValues.class
     ConnectorBootstrap.class
     icedtea/rt/com/sun/jmx/snmp/*.class
@@ -814,7 +814,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Misc.dll
-    -baseaddress:0x5BD90000
+    -baseaddress:0x5B970000
     ../../openjdk6-b16/build/linux-amd64/impsrc/javax/activity/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/javax/annotation/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/javax/annotation/processing/*.class
@@ -904,7 +904,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Naming.dll
-    -baseaddress:0x5BE50000
+    -baseaddress:0x5BA30000
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/jndi/ldap/jndiprovider.properties
     sun/net/dns/*.class
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/jndi/dns/*.class
@@ -929,7 +929,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Jdbc.dll
-    -baseaddress:0x5BFA0000
+    -baseaddress:0x5BB80000
     -resource:META-INF/services/java.sql.Driver=resources/META-INF/services/java.sql.Driver
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/rowset/*
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/javax/sql/*
@@ -947,7 +947,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Remoting.dll
-    -baseaddress:0x5C0F0000
+    -baseaddress:0x5BCD0000
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/sun/rmi/*
     ../../openjdk6-b16/build/linux-amd64/classes/com/sun/jndi/rmi/registry/*.class
     ../../openjdk6-b16/build/linux-amd64/classes/java/rmi/activation/*.class
@@ -973,7 +973,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Beans.dll
-    -baseaddress:0x5C210000
+    -baseaddress:0x5BDF0000
     ../../openjdk6-b16/build/linux-amd64/impsrc/com/sun/activation/registries/*.class
     ../../openjdk6-b16/build/linux-amd64/impsrc/javax/activation/*.class
     ../../openjdk6-b16/jdk/src/share/classes/com/sun/beans/*.class
@@ -985,7 +985,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Media.dll
-    -baseaddress:0x5C2D0000
+    -baseaddress:0x5BEB0000
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/javax.print.*
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/javax.sound.*
     -recurse:../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/imageio/plugins/common/iio-plugin.properties
