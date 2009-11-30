@@ -628,14 +628,14 @@ namespace IKVM.Internal
 			}
 		}
 
-		private static void AddExportMapEntry(Dictionary<AssemblyName, List<string>> map, CompilerClassLoader ccl, string name)
+		private static void AddExportMapEntry(Dictionary<string, List<string>> map, CompilerClassLoader ccl, string name)
 		{
-			AssemblyName asm = ccl.assemblyBuilder.GetName();
+			string assemblyName = ccl.assemblyBuilder.FullName;
 			List<string> list;
-			if (!map.TryGetValue(asm, out list))
+			if (!map.TryGetValue(assemblyName, out list))
 			{
 				list = new List<string>();
-				map.Add(asm, list);
+				map.Add(assemblyName, list);
 			}
 			if (list != null) // if list is null, we already have a wildcard export for this assembly
 			{
@@ -643,17 +643,17 @@ namespace IKVM.Internal
 			}
 		}
 
-		private void AddWildcardExports(Dictionary<AssemblyName, List<string>> exportedNamesPerAssembly)
+		private void AddWildcardExports(Dictionary<string, List<string>> exportedNamesPerAssembly)
 		{
 			foreach (AssemblyClassLoader acl in referencedAssemblies)
 			{
-				exportedNamesPerAssembly[acl.MainAssembly.GetName()] = null;
+				exportedNamesPerAssembly[acl.MainAssembly.FullName] = null;
 			}
 		}
 
 		private void WriteExportMap()
 		{
-			Dictionary<AssemblyName, List<string>> exportedNamesPerAssembly = new Dictionary<AssemblyName, List<string>>();
+			Dictionary<string, List<string>> exportedNamesPerAssembly = new Dictionary<string, List<string>>();
 			AddWildcardExports(exportedNamesPerAssembly);
 			foreach (TypeWrapper tw in dynamicallyImportedTypes)
 			{
@@ -663,7 +663,7 @@ namespace IKVM.Internal
 			{
 				foreach (CompilerClassLoader ccl in peerReferences)
 				{
-					exportedNamesPerAssembly[ccl.assemblyBuilder.GetName()] = null;
+					exportedNamesPerAssembly[ccl.assemblyBuilder.FullName] = null;
 				}
 			}
 			else
@@ -693,9 +693,9 @@ namespace IKVM.Internal
 			MemoryStream ms = new MemoryStream();
 			BinaryWriter bw = new BinaryWriter(ms);
 			bw.Write(exportedNamesPerAssembly.Count);
-			foreach (KeyValuePair<AssemblyName, List<string>> kv in exportedNamesPerAssembly)
+			foreach (KeyValuePair<string, List<string>> kv in exportedNamesPerAssembly)
 			{
-				bw.Write(kv.Key.FullName);
+				bw.Write(kv.Key);
 				if (kv.Value == null)
 				{
 					// wildcard export
