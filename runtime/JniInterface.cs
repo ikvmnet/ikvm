@@ -509,7 +509,6 @@ namespace IKVM.Runtime
 
 	unsafe class VtableBuilder
 	{
-		// TODO on Whidbey we should use generics to cut down on the number of delegates needed
 		delegate int pf_int_IntPtr(JNIEnv* pEnv, IntPtr p);
 		delegate IntPtr pf_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p);
 		delegate void pf_void_IntPtr(JNIEnv* pEnv, IntPtr p);
@@ -1342,7 +1341,7 @@ namespace IKVM.Runtime
 			{
 				return env.classLoader;
 			}
-			return ClassLoaderWrapper.GetBootstrapClassLoader();
+			return ClassLoaderWrapper.GetClassLoaderWrapper(java.lang.ClassLoader.getSystemClassLoader());
 		}
 
 		internal static jclass FindClass(JNIEnv* pEnv, byte* pszName)
@@ -1779,27 +1778,78 @@ namespace IKVM.Runtime
 			}
 		}
 
+		private static void AppendInterfaces(List<TypeWrapper> list, IList<TypeWrapper> add)
+		{
+			foreach (TypeWrapper iface in add)
+			{
+				if (!list.Contains(iface))
+				{
+					list.Add(iface);
+				}
+			}
+		}
+
+		private static List<TypeWrapper> TransitiveInterfaces(TypeWrapper tw)
+		{
+			List<TypeWrapper> list = new List<TypeWrapper>();
+			if (tw.BaseTypeWrapper != null)
+			{
+				AppendInterfaces(list, TransitiveInterfaces(tw.BaseTypeWrapper));
+			}
+			foreach (TypeWrapper iface in tw.Interfaces)
+			{
+				AppendInterfaces(list, TransitiveInterfaces(iface));
+			}
+			AppendInterfaces(list, tw.Interfaces);
+			return list;
+		}
+
+		private static MethodWrapper GetInterfaceMethodImpl(TypeWrapper tw, string name, string sig)
+		{
+			foreach (TypeWrapper iface in TransitiveInterfaces(tw))
+			{
+				MethodWrapper mw = iface.GetMethodWrapper(name, sig, false);
+				if (mw != null && !mw.IsHideFromReflection)
+				{
+					return mw;
+				}
+			}
+			return null;
+		}
+
 		private static jmethodID FindMethodID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig, bool isstatic)
 		{
 			try
 			{
 				TypeWrapper wrapper = TypeWrapper.FromClass(pEnv->UnwrapRef(clazz));
 				wrapper.Finish();
+				// if name == NULL, the JDK returns the constructor
+				string methodname = (IntPtr)name == IntPtr.Zero ? "<init>" : StringFromUTF8(name);
 				string methodsig = StringFromUTF8(sig);
+				MethodWrapper mw = null;
 				// don't allow dotted names!
 				if(methodsig.IndexOf('.') < 0)
 				{
-					MethodWrapper mw = GetMethodImpl(wrapper, StringFromUTF8(name), methodsig.Replace('/', '.'));
-					if(mw != null)
+					methodsig = methodsig.Replace('/', '.');
+					if(methodname == "<init>" || methodname == "<clinit>")
 					{
-						if(mw.IsStatic == isstatic)
+						mw = wrapper.GetMethodWrapper(methodname, methodsig, false);
+					}
+					else
+					{
+						mw = GetMethodImpl(wrapper, methodname, methodsig);
+						if(mw == null)
 						{
-							mw.Link();
-							return mw.Cookie;
+							mw = GetInterfaceMethodImpl(wrapper, methodname, methodsig);
 						}
 					}
 				}
-				SetPendingException(pEnv, new java.lang.NoSuchMethodError(string.Format("{0}{1}", StringFromUTF8(name), StringFromUTF8(sig).Replace('/', '.'))));
+				if(mw != null && mw.IsStatic == isstatic)
+				{
+					mw.Link();
+					return mw.Cookie;
+				}
+				SetPendingException(pEnv, new java.lang.NoSuchMethodError(string.Format("{0}{1}", methodname, methodsig)));
 			}
 			catch(RetargetableJavaException x)
 			{
@@ -3090,7 +3140,11 @@ namespace IKVM.Runtime
 		{
 			try
 			{
+				// on .NET 4.0 Monitor.Enter has been marked obsolete,
+				// but in this case the alternative adds no value
+#pragma warning disable 618
 				System.Threading.Monitor.Enter(pEnv->UnwrapRef(obj));
+#pragma warning restore 618
 				return JNI_OK;
 			}
 			catch(Exception x)
