@@ -483,15 +483,27 @@ namespace IKVM.Attributes
 	[AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Method)]
 	public sealed class ThrowsAttribute : Attribute
 	{
-		private string[] classes;
+		internal string[] classes;
+		internal Type[] types;
 
-		// NOTE this is not CLS compliant, so maybe we should have a couple of overloads
+		// this constructor is used by ikvmc, the other constructors are for use in other .NET languages
 		public ThrowsAttribute(string[] classes)
 		{
 			this.classes = classes;
 		}
 
+		public ThrowsAttribute(Type type)
+			: this(new Type[] { type })
+		{
+		}
+
+		public ThrowsAttribute(params Type[] types)
+		{
+			this.types = types;
+		}
+
 		// dotted Java class names (e.g. java.lang.Throwable)
+		[Obsolete]
 		public string[] Classes
 		{
 			get

@@ -482,12 +482,7 @@ namespace IKVM.Internal
 				{
 					parameterTypes[i] = (java.lang.Class)argTypes[i].ClassObject;
 				}
-				string[] exceptions = GetExceptions();
-				java.lang.Class[] checkedExceptions = new java.lang.Class[exceptions.Length];
-				for (int i = 0; i < exceptions.Length; i++)
-				{
-					checkedExceptions[i] = (java.lang.Class)this.DeclaringType.GetClassLoader().LoadClassByDottedName(exceptions[i]).ClassObject;
-				}
+				java.lang.Class[] checkedExceptions = GetExceptions();
 				if (this.Name == StringConstants.INIT)
 				{
 					method = reflectionFactory.newConstructor(
@@ -541,6 +536,47 @@ namespace IKVM.Internal
 			return method;
 #endif
 		}
+
+#if !FIRST_PASS
+		private java.lang.Class[] GetExceptions()
+		{
+			string[] classes = declaredExceptions;
+			Type[] types = Type.EmptyTypes;
+			if (classes == null)
+			{
+				// NOTE if method is a MethodBuilder, GetCustomAttributes doesn't work (and if
+				// the method had any declared exceptions, the declaredExceptions field would have
+				// been set)
+				if (method != null && !(method is MethodBuilder))
+				{
+					ThrowsAttribute attr = AttributeHelper.GetThrows(method);
+					if (attr != null)
+					{
+						classes = attr.classes;
+						types = attr.types;
+					}
+				}
+			}
+			if (classes != null)
+			{
+				java.lang.Class[] array = new java.lang.Class[classes.Length];
+				for (int i = 0; i < classes.Length; i++)
+				{
+					array[i] = (java.lang.Class)this.DeclaringType.GetClassLoader().LoadClassByDottedName(classes[i]).ClassObject;
+				}
+				return array;
+			}
+			else
+			{
+				java.lang.Class[] array = new java.lang.Class[types.Length];
+				for (int i = 0; i < types.Length; i++)
+				{
+					array[i] = types[i];
+				}
+				return array;
+			}
+		}
+#endif // !FIRST_PASS
 
 		internal static MethodWrapper FromMethodOrConstructor(object methodOrConstructor)
 		{
@@ -666,27 +702,6 @@ namespace IKVM.Internal
 				temp[len - 1] = CoreClasses.ikvm.@internal.CallerID.Wrapper.TypeAsSignatureType;
 			}
 			return temp;
-		}
-
-		internal string[] GetExceptions()
-		{
-			// remapped types and dynamically compiled types have declaredExceptions set
-			if(declaredExceptions != null)
-			{
-				return (string[])declaredExceptions.Clone();
-			}
-			// NOTE if method is a MethodBuilder, GetCustomAttributes doesn't work (and if
-			// the method had any declared exceptions, the declaredExceptions field would have
-			// been set)
-			if(method != null && !(method is MethodBuilder))
-			{
-				ThrowsAttribute attr = AttributeHelper.GetThrows(method);
-				if(attr != null)
-				{
-					return attr.Classes;
-				}
-			}
-			return new string[0];
 		}
 
 		// we expose the underlying MethodBase object,

@@ -1253,28 +1253,39 @@ namespace IKVM.Internal
 			}
 		}
 
+#if !STATIC_COMPILER
 		internal static ThrowsAttribute GetThrows(MethodBase mb)
 		{
-#if !STATIC_COMPILER
 			if(!mb.DeclaringType.Assembly.ReflectionOnly)
 			{
 				object[] attribs = mb.GetCustomAttributes(typeof(ThrowsAttribute), false);
 				return attribs.Length == 1 ? (ThrowsAttribute)attribs[0] : null;
 			}
 			else
-#endif
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mb))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofThrowsAttribute))
 					{
 						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-						return new ThrowsAttribute(DecodeArray<string>(args[0]));
+						if (args[0].ArgumentType == typeof(string[]))
+						{
+							return new ThrowsAttribute(DecodeArray<string>(args[0]));
+						}
+						else if (args[0].ArgumentType == typeof(Type[]))
+						{
+							return new ThrowsAttribute(DecodeArray<Type>(args[0]));
+						}
+						else
+						{
+							return new ThrowsAttribute((Type)args[0].Value);
+						}
 					}
 				}
 				return null;
 			}
 		}
+#endif
 
 		internal static string[] GetNonNestedInnerClasses(Type t)
 		{
