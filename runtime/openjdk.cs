@@ -6387,9 +6387,9 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 			}
 
-			private FieldAccessorImplBase(jlrField field, bool overrideAccessCheck)
+			private FieldAccessorImplBase(FieldWrapper fw, bool overrideAccessCheck)
 			{
-				fw = FieldWrapper.FromField(field);
+				this.fw = fw;
 				isFinal = (!overrideAccessCheck || fw.IsStatic) && fw.IsFinal;
 			}
 
@@ -6550,8 +6550,8 @@ namespace IKVM.NativeCode.sun.reflect
 				protected Setter setter = initialSetter;
 				protected Getter getter = initialGetter;
 
-				internal FieldAccessor(jlrField field, bool overrideAccessCheck)
-					: base(field, overrideAccessCheck)
+				internal FieldAccessor(FieldWrapper fw, bool overrideAccessCheck)
+					: base(fw, overrideAccessCheck)
 				{
 					if (!IsSlowPathCompatible(fw))
 					{
@@ -6665,7 +6665,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 			private sealed class ByteField : FieldAccessor<byte>
 			{
-				internal ByteField(jlrField field, bool overrideAccessCheck)
+				internal ByteField(FieldWrapper field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
 				{
 				}
@@ -6727,7 +6727,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 			private sealed class BooleanField : FieldAccessor<bool>
 			{
-				internal BooleanField(jlrField field, bool overrideAccessCheck)
+				internal BooleanField(FieldWrapper field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
 				{
 				}
@@ -6764,7 +6764,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 			private sealed class CharField : FieldAccessor<char>
 			{
-				internal CharField(jlrField field, bool overrideAccessCheck)
+				internal CharField(FieldWrapper field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
 				{
 				}
@@ -6820,7 +6820,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 			private sealed class ShortField : FieldAccessor<short>
 			{
-				internal ShortField(jlrField field, bool overrideAccessCheck)
+				internal ShortField(FieldWrapper field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
 				{
 				}
@@ -6882,7 +6882,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 			private sealed class IntField : FieldAccessor<int>
 			{
-				internal IntField(jlrField field, bool overrideAccessCheck)
+				internal IntField(FieldWrapper field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
 				{
 				}
@@ -6952,7 +6952,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 			private sealed class FloatField : FieldAccessor<float>
 			{
-				internal FloatField(jlrField field, bool overrideAccessCheck)
+				internal FloatField(FieldWrapper field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
 				{
 				}
@@ -7024,7 +7024,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 			private sealed class LongField : FieldAccessor<long>
 			{
-				internal LongField(jlrField field, bool overrideAccessCheck)
+				internal LongField(FieldWrapper field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
 				{
 				}
@@ -7095,7 +7095,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 			private sealed class DoubleField : FieldAccessor<double>
 			{
-				internal DoubleField(jlrField field, bool overrideAccessCheck)
+				internal DoubleField(FieldWrapper field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
 				{
 				}
@@ -7168,7 +7168,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 			private sealed class ObjectField : FieldAccessor<object>
 			{
-				internal ObjectField(jlrField field, bool overrideAccessCheck)
+				internal ObjectField(FieldWrapper field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
 				{
 				}
@@ -7277,40 +7277,40 @@ namespace IKVM.NativeCode.sun.reflect
 				return dm.CreateDelegate(delegateType, this);
 			}
 
-			internal static FieldAccessorImplBase Create(jlrField field, bool overrideAccessCheck)
+			internal static FieldAccessorImplBase Create(FieldWrapper field, bool overrideAccessCheck)
 			{
-				jlClass type = field.getType();
-				if (type.isPrimitive())
+				TypeWrapper type = field.FieldTypeWrapper;
+				if (type.IsPrimitive)
 				{
-					if (type == jlByte.TYPE)
+					if (type == PrimitiveTypeWrapper.BYTE)
 					{
 						return new ByteField(field, overrideAccessCheck);
 					}
-					if (type == jlBoolean.TYPE)
+					if (type == PrimitiveTypeWrapper.BOOLEAN)
 					{
 						return new BooleanField(field, overrideAccessCheck);
 					}
-					if (type == jlCharacter.TYPE)
+					if (type == PrimitiveTypeWrapper.CHAR)
 					{
 						return new CharField(field, overrideAccessCheck);
 					}
-					if (type == jlShort.TYPE)
+					if (type == PrimitiveTypeWrapper.SHORT)
 					{
 						return new ShortField(field, overrideAccessCheck);
 					}
-					if (type == jlInteger.TYPE)
+					if (type == PrimitiveTypeWrapper.INT)
 					{
 						return new IntField(field, overrideAccessCheck);
 					}
-					if (type == jlFloat.TYPE)
+					if (type == PrimitiveTypeWrapper.FLOAT)
 					{
 						return new FloatField(field, overrideAccessCheck);
 					}
-					if (type == jlLong.TYPE)
+					if (type == PrimitiveTypeWrapper.LONG)
 					{
 						return new LongField(field, overrideAccessCheck);
 					}
-					if (type == jlDouble.TYPE)
+					if (type == PrimitiveTypeWrapper.DOUBLE)
 					{
 						return new DoubleField(field, overrideAccessCheck);
 					}
@@ -7329,9 +7329,16 @@ namespace IKVM.NativeCode.sun.reflect
 #if FIRST_PASS
 			return null;
 #else
-			return FieldAccessorImplBase.Create((jlrField)field, overrideAccessCheck);
+			return FieldAccessorImplBase.Create(FieldWrapper.FromField(field), overrideAccessCheck);
 #endif
 		}
+
+#if !FIRST_PASS
+		internal static global::sun.reflect.FieldAccessor NewFieldAccessorJNI(FieldWrapper field)
+		{
+			return FieldAccessorImplBase.Create(field, true);
+		}
+#endif
 
 		public static object newMethodAccessor(object thisFactory, object method)
 		{

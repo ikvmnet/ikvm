@@ -1382,7 +1382,7 @@ namespace IKVM.Internal
 #else
 			if (jniAccessor == null)
 			{
-				jniAccessor = reflectionFactory.newFieldAccessor((java.lang.reflect.Field)ToField(false), true);
+				jniAccessor = IKVM.NativeCode.sun.reflect.ReflectionFactory.NewFieldAccessorJNI(this);
 			}
 			return jniAccessor;
 #endif
