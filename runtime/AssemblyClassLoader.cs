@@ -369,7 +369,7 @@ namespace IKVM.Internal
 							exportedLoaders = new Dictionary<Assembly, AssemblyLoader>();
 							for (int i = 0; i < assemblyCount; i++)
 							{
-								exportedAssemblyNames[i] = rdr.ReadString();
+								exportedAssemblyNames[i] = String.Intern(rdr.ReadString());
 								int typeCount = rdr.ReadInt32();
 								if (typeCount == 0 && references == null)
 								{
