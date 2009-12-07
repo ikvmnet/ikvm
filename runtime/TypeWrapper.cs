@@ -3797,6 +3797,7 @@ namespace IKVM.Internal
 		private TypeWrapper[] interfaces;
 		private TypeWrapper[] innerclasses;
 		private MethodInfo clinitMethod;
+		private bool clinitMethodSet;
 		private Modifiers reflectiveModifiers;
 
 		internal static CompiledTypeWrapper newInstance(string name, Type type)
@@ -4108,8 +4109,11 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				// trigger LazyPublishMembers
-				GetMethods();
+				if(!clinitMethodSet)
+				{
+					clinitMethod = type.GetMethod("__<clinit>", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+					clinitMethodSet = true;
+				}
 				return clinitMethod != null;
 			}
 		}
@@ -4434,7 +4438,6 @@ namespace IKVM.Internal
 		protected override void LazyPublishMembers()
 		{
 			bool isDelegate = type.BaseType == Types.MulticastDelegate;
-			clinitMethod = type.GetMethod("__<clinit>", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
 			List<MethodWrapper> methods = new List<MethodWrapper>();
 			List<FieldWrapper> fields = new List<FieldWrapper>();
 			MemberInfo[] members = type.GetMembers(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
@@ -4698,9 +4701,7 @@ namespace IKVM.Internal
 
 		internal override void EmitRunClassConstructor(CodeEmitter ilgen)
 		{
-			// trigger LazyPublishMembers
-			GetMethods();
-			if(clinitMethod != null)
+			if(HasStaticInitializer)
 			{
 				ilgen.Emit(OpCodes.Call, clinitMethod);
 			}
