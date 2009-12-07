@@ -4447,95 +4447,97 @@ namespace IKVM.Internal
 		{
 			bool isDelegate = type.BaseType == Types.MulticastDelegate;
 			List<MethodWrapper> methods = new List<MethodWrapper>();
-			MemberInfo[] members = type.GetMembers(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
-			foreach(MemberInfo m in members)
+			const BindingFlags flags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
+			foreach(ConstructorInfo ctor in type.GetConstructors(flags))
 			{
-				if(!AttributeHelper.IsHideFromJava(m))
+				if(isDelegate && !ctor.IsStatic && !AttributeHelper.IsHideFromJava(ctor))
 				{
-					MethodBase method = m as MethodBase;
-					if(method != null)
-					{
-						if(method.IsSpecialName && 
-							(method.Name == "op_Implicit" || method.Name.StartsWith("__<")))
-						{
-							// skip
-						}
-						else if(isDelegate && method.IsConstructor && !method.IsStatic)
-						{
-							methods.Add(new DelegateConstructorMethodWrapper(this, method));
-						}
-						else
-						{
-							string name;
-							string sig;
-							TypeWrapper retType;
-							TypeWrapper[] paramTypes;
-							MethodInfo mi = method as MethodInfo;
-							bool hideFromReflection = mi != null ? AttributeHelper.IsHideFromReflection(mi) : false;
-							MemberFlags flags = hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None;
-							GetNameSigFromMethodBase(method, out name, out sig, out retType, out paramTypes, ref flags);
-							ExModifiers mods = AttributeHelper.GetModifiers(method, false);
-							if(mods.IsInternal)
-							{
-								flags |= MemberFlags.InternalAccess;
-							}
-							methods.Add(MethodWrapper.Create(this, name, sig, method, retType, paramTypes, mods.Modifiers, flags));
-						}
-					}
+					methods.Add(new DelegateConstructorMethodWrapper(this, ctor));
 				}
+				else
+				{
+					AddMethodOrConstructor(ctor, methods);
+				}
+			}
+			foreach(MethodInfo method in type.GetMethods(flags))
+			{
+				AddMethodOrConstructor(method, methods);
 			}
 			SetMethods(methods.ToArray());
 		}
 
+		private void AddMethodOrConstructor(MethodBase method, List<MethodWrapper> methods)
+		{
+			if(!AttributeHelper.IsHideFromJava(method))
+			{
+				if(method.IsSpecialName && 
+					(method.Name == "op_Implicit" || method.Name.StartsWith("__<")))
+				{
+					// skip
+				}
+				else
+				{
+					string name;
+					string sig;
+					TypeWrapper retType;
+					TypeWrapper[] paramTypes;
+					MethodInfo mi = method as MethodInfo;
+					bool hideFromReflection = mi != null ? AttributeHelper.IsHideFromReflection(mi) : false;
+					MemberFlags flags = hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None;
+					GetNameSigFromMethodBase(method, out name, out sig, out retType, out paramTypes, ref flags);
+					ExModifiers mods = AttributeHelper.GetModifiers(method, false);
+					if(mods.IsInternal)
+					{
+						flags |= MemberFlags.InternalAccess;
+					}
+					methods.Add(MethodWrapper.Create(this, name, sig, method, retType, paramTypes, mods.Modifiers, flags));
+				}
+			}
+		}
+
 		protected override void LazyPublishFields()
 		{
-			bool isDelegate = type.BaseType == Types.MulticastDelegate;
 			List<FieldWrapper> fields = new List<FieldWrapper>();
-			MemberInfo[] members = type.GetMembers(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
-			foreach(MemberInfo m in members)
+			const BindingFlags flags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
+			foreach(FieldInfo field in type.GetFields(flags))
 			{
-				if(!AttributeHelper.IsHideFromJava(m))
+				if(!AttributeHelper.IsHideFromJava(field))
 				{
-					FieldInfo field = m as FieldInfo;
-					if(field != null)
+					if(field.IsSpecialName && field.Name.StartsWith("__<"))
 					{
-						if(field.IsSpecialName && field.Name.StartsWith("__<"))
-						{
-							// skip
-						}
-						else
-						{
-							fields.Add(CreateFieldWrapper(field));
-						}
+						// skip
 					}
 					else
 					{
-						// NOTE explictly defined properties (in map.xml) are decorated with HideFromJava,
-						// so we don't need to worry about them here
-						PropertyInfo property = m as PropertyInfo;
-						if(property != null)
+						fields.Add(CreateFieldWrapper(field));
+					}
+				}
+			}
+			foreach(PropertyInfo property in type.GetProperties(flags))
+			{
+				// NOTE explictly defined properties (in map.xml) are decorated with HideFromJava,
+				// so we don't need to worry about them here
+				if(!AttributeHelper.IsHideFromJava(property))
+				{
+					// Only AccessStub properties (marked by HideFromReflectionAttribute or NameSigAttribute)
+					// are considered here
+					FieldWrapper accessStub;
+					if(CompiledAccessStubFieldWrapper.TryGet(this, property, out accessStub))
+					{
+						fields.Add(accessStub);
+					}
+					else
+					{
+						// If the property has a ModifiersAttribute, we know that it is an explicit property
+						// (defined in Java source by an @ikvm.lang.Property annotation)
+						ModifiersAttribute mods = AttributeHelper.GetModifiersAttribute(property);
+						if(mods != null)
 						{
-							// Only AccessStub properties (marked by HideFromReflectionAttribute or NameSigAttribute)
-							// are considered here
-							FieldWrapper accessStub;
-							if(CompiledAccessStubFieldWrapper.TryGet(this, property, out accessStub))
-							{
-								fields.Add(accessStub);
-							}
-							else
-							{
-								// If the property has a ModifiersAttribute, we know that it is an explicit property
-								// (defined in Java source by an @ikvm.lang.Property annotation)
-								ModifiersAttribute mods = AttributeHelper.GetModifiersAttribute(property);
-								if(mods != null)
-								{
-									fields.Add(new CompiledPropertyFieldWrapper(this, property, new ExModifiers(mods.Modifiers, mods.IsInternal)));
-								}
-								else
-								{
-									fields.Add(CreateFieldWrapper(property));
-								}
-							}
+							fields.Add(new CompiledPropertyFieldWrapper(this, property, new ExModifiers(mods.Modifiers, mods.IsInternal)));
+						}
+						else
+						{
+							fields.Add(CreateFieldWrapper(property));
 						}
 					}
 				}
