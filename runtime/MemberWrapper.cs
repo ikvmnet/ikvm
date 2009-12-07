@@ -1149,7 +1149,7 @@ namespace IKVM.Internal
 	{
 #if !STATIC_COMPILER && !FIRST_PASS
 		private static readonly FieldInfo slotField = typeof(java.lang.reflect.Field).GetField("slot", BindingFlags.Instance | BindingFlags.NonPublic);
-		private volatile object reflectionField;
+		private volatile java.lang.reflect.Field reflectionField;
 		private sun.reflect.FieldAccessor jniAccessor;
 #endif
 		internal static readonly FieldWrapper[] EmptyArray  = new FieldWrapper[0];
@@ -1250,7 +1250,7 @@ namespace IKVM.Internal
 #if FIRST_PASS
 			return null;
 #else
-			object field = reflectionField;
+			java.lang.reflect.Field field = reflectionField;
 			if (field == null)
 			{
 				field = new java.lang.reflect.Field(
@@ -1276,7 +1276,7 @@ namespace IKVM.Internal
 			}
 			if (copy)
 			{
-				field = ((java.lang.reflect.Field)field).copy();
+				field = field.copy();
 			}
 			return field;
 #endif // FIRST_PASS
