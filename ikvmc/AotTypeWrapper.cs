@@ -849,6 +849,7 @@ namespace IKVM.Internal
 					for(int i = 0; i < implementers.Length; i++)
 					{
 						mb = typeBuilder.DefineMethod("op_Implicit", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, TypeAsSignatureType, new Type[] { implementers[i].TypeAsSignatureType });
+						AttributeHelper.HideFromJava(mb);
 						ilgen = CodeEmitter.Create(mb);
 						local = ilgen.DeclareLocal(TypeAsSignatureType);
 						ilgen.Emit(OpCodes.Ldloca, local);

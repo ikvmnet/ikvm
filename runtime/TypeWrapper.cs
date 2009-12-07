@@ -4470,8 +4470,7 @@ namespace IKVM.Internal
 		{
 			if(!AttributeHelper.IsHideFromJava(method))
 			{
-				if(method.IsSpecialName && 
-					(method.Name == "op_Implicit" || method.Name.StartsWith("__<")))
+				if(method.IsSpecialName && method.Name.StartsWith("__<"))
 				{
 					// skip
 				}

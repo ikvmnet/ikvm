@@ -4869,6 +4869,7 @@ namespace IKVM.Internal
 							if (iface.IsGhost && wrapper.IsPublic)
 							{
 								MethodBuilder mb = typeBuilder.DefineMethod("op_Implicit", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, iface.TypeAsSignatureType, new Type[] { wrapper.TypeAsSignatureType });
+								AttributeHelper.HideFromJava(mb);
 								CodeEmitter ilgen = CodeEmitter.Create(mb);
 								LocalBuilder local = ilgen.DeclareLocal(iface.TypeAsSignatureType);
 								ilgen.Emit(OpCodes.Ldloca, local);
