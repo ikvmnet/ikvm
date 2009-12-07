@@ -5836,6 +5836,7 @@ namespace IKVM.NativeCode.sun.reflect
 			private static readonly MethodInfo longValue;
 			private static readonly MethodInfo doubleValue;
 			internal static readonly ConstructorInfo invocationTargetExceptionCtor;
+			internal static readonly ConstructorInfo illegalArgumentExceptionCtor;
 			private delegate object Invoker(object obj, object[] args, global::ikvm.@internal.CallerID callerID);
 			private Invoker invoker;
 
@@ -5860,6 +5861,7 @@ namespace IKVM.NativeCode.sun.reflect
 				doubleValue = typeof(jlDouble).GetMethod("doubleValue", Type.EmptyTypes);
 
 				invocationTargetExceptionCtor = typeof(jlrInvocationTargetException).GetConstructor(new Type[] { typeof(Exception) });
+				illegalArgumentExceptionCtor = typeof(jlIllegalArgumentException).GetConstructor(Type.EmptyTypes);
 			}
 
 			private sealed class RunClassInit
@@ -5914,7 +5916,8 @@ namespace IKVM.NativeCode.sun.reflect
 				ilgen.Emit(OpCodes.Ldlen);
 				ilgen.Emit(OpCodes.Ldc_I4, mw.GetParameters().Length);
 				ilgen.Emit(OpCodes.Beq_S, argsLengthOK);
-				ilgen.EmitThrow("java.lang.IllegalArgumentException");
+				ilgen.Emit(OpCodes.Newobj, illegalArgumentExceptionCtor);
+				ilgen.Emit(OpCodes.Throw);
 				ilgen.MarkLabel(argsLengthOK);
 
 				int thisCount = mw.IsStatic ? 0 : 1;
@@ -5947,9 +5950,11 @@ namespace IKVM.NativeCode.sun.reflect
 					ilgen.Emit(OpCodes.Stloc, args[i]);
 				}
 				ilgen.BeginCatchBlock(typeof(InvalidCastException));
-				ilgen.EmitThrow("java.lang.IllegalArgumentException");
+				ilgen.Emit(OpCodes.Newobj, illegalArgumentExceptionCtor);
+				ilgen.Emit(OpCodes.Throw);
 				ilgen.BeginCatchBlock(typeof(NullReferenceException));
-				ilgen.EmitThrow("java.lang.IllegalArgumentException");
+				ilgen.Emit(OpCodes.Newobj, illegalArgumentExceptionCtor);
+				ilgen.Emit(OpCodes.Throw);
 				ilgen.EndExceptionBlock();
 
 				// this is the actual call
@@ -6228,7 +6233,8 @@ namespace IKVM.NativeCode.sun.reflect
 				ilgen.Emit(OpCodes.Ldlen);
 				ilgen.Emit(OpCodes.Ldc_I4, mw.GetParameters().Length);
 				ilgen.Emit(OpCodes.Beq_S, argsLengthOK);
-				ilgen.EmitThrow("java.lang.IllegalArgumentException");
+				ilgen.Emit(OpCodes.Newobj, FastMethodAccessorImpl.illegalArgumentExceptionCtor);
+				ilgen.Emit(OpCodes.Throw);
 				ilgen.MarkLabel(argsLengthOK);
 
 				LocalBuilder[] args = new LocalBuilder[mw.GetParameters().Length];
@@ -6249,9 +6255,11 @@ namespace IKVM.NativeCode.sun.reflect
 					ilgen.Emit(OpCodes.Stloc, args[i]);
 				}
 				ilgen.BeginCatchBlock(typeof(InvalidCastException));
-				ilgen.EmitThrow("java.lang.IllegalArgumentException");
+				ilgen.Emit(OpCodes.Newobj, FastMethodAccessorImpl.illegalArgumentExceptionCtor);
+				ilgen.Emit(OpCodes.Throw);
 				ilgen.BeginCatchBlock(typeof(NullReferenceException));
-				ilgen.EmitThrow("java.lang.IllegalArgumentException");
+				ilgen.Emit(OpCodes.Newobj, FastMethodAccessorImpl.illegalArgumentExceptionCtor);
+				ilgen.Emit(OpCodes.Throw);
 				ilgen.EndExceptionBlock();
 
 				// this is the actual call
