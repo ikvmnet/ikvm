@@ -2833,14 +2833,7 @@ namespace IKVM.Internal
 
 		internal FieldWrapper GetFieldWrapper(string fieldName, string fieldSig)
 		{
-			lock(this)
-			{
-				if(fields == null)
-				{
-					LazyPublishMembers();
-				}
-			}
-			foreach(FieldWrapper fw in fields)
+			foreach(FieldWrapper fw in GetFields())
 			{
 				if(fw.Name == fieldName && fw.Signature == fieldSig)
 				{
@@ -2874,13 +2867,26 @@ namespace IKVM.Internal
 			}
 		}
 
+		protected virtual void LazyPublishMethods()
+		{
+			LazyPublishMembers();
+		}
+
+		protected virtual void LazyPublishFields()
+		{
+			LazyPublishMembers();
+		}
+
 		internal MethodWrapper[] GetMethods()
 		{
-			lock(this)
+			if(methods == null)
 			{
-				if(methods == null)
+				lock(this)
 				{
-					LazyPublishMembers();
+					if(methods == null)
+					{
+						LazyPublishMethods();
+					}
 				}
 			}
 			return methods;
@@ -2888,11 +2894,14 @@ namespace IKVM.Internal
 
 		internal FieldWrapper[] GetFields()
 		{
-			lock(this)
+			if(fields == null)
 			{
-				if(fields == null)
+				lock(this)
 				{
-					LazyPublishMembers();
+					if(fields == null)
+					{
+						LazyPublishFields();
+					}
 				}
 			}
 			return fields;
@@ -2900,13 +2909,8 @@ namespace IKVM.Internal
 
 		internal MethodWrapper GetMethodWrapper(string name, string sig, bool inherit)
 		{
-			lock(this)
-			{
-				if(methods == null)
-				{
-					LazyPublishMembers();
-				}
-			}
+			// We need to get the methods before calling String.IsInterned, because getting them might cause the strings to be interned
+			MethodWrapper[] methods = GetMethods();
 			// MemberWrapper interns the name and sig so we can use ref equality
 			// profiling has shown this to be more efficient
 			string _name = String.IsInterned(name);
@@ -3849,10 +3853,9 @@ namespace IKVM.Internal
 				}
 			}
 
-			protected override void LazyPublishMembers()
+			protected override void LazyPublishMethods()
 			{
 				List<MethodWrapper> methods = new List<MethodWrapper>();
-				List<FieldWrapper> fields = new List<FieldWrapper>();
 				MemberInfo[] members = type.GetMembers(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
 				foreach(MemberInfo m in members)
 				{
@@ -3864,14 +3867,6 @@ namespace IKVM.Internal
 							(!remappedType.IsSealed || method.IsStatic))
 						{
 							methods.Add(CreateRemappedMethodWrapper(method));
-						}
-						else
-						{
-							FieldInfo field = m as FieldInfo;
-							if(field != null)
-							{
-								fields.Add(CreateFieldWrapper(field));
-							}
 						}
 					}
 				}
@@ -3902,7 +3897,20 @@ namespace IKVM.Internal
 					}
 				}
 				SetMethods(methods.ToArray());
-				SetFields(fields.ToArray());
+			}
+
+			protected override void LazyPublishFields()
+			{
+				List<FieldWrapper> list = new List<FieldWrapper>();
+				FieldInfo[] fields = type.GetFields(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
+				foreach(FieldInfo field in fields)
+				{
+					if(!AttributeHelper.IsHideFromJava(field))
+					{
+						list.Add(CreateFieldWrapper(field));
+					}
+				}
+				SetFields(list.ToArray());
 			}
 
 			private MethodWrapper CreateRemappedMethodWrapper(MethodBase mb)
@@ -4435,11 +4443,10 @@ namespace IKVM.Internal
 			}
 		}
 
-		protected override void LazyPublishMembers()
+		protected override void LazyPublishMethods()
 		{
 			bool isDelegate = type.BaseType == Types.MulticastDelegate;
 			List<MethodWrapper> methods = new List<MethodWrapper>();
-			List<FieldWrapper> fields = new List<FieldWrapper>();
 			MemberInfo[] members = type.GetMembers(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
 			foreach(MemberInfo m in members)
 			{
@@ -4475,54 +4482,64 @@ namespace IKVM.Internal
 							methods.Add(MethodWrapper.Create(this, name, sig, method, retType, paramTypes, mods.Modifiers, flags));
 						}
 					}
-					else
+				}
+			}
+			SetMethods(methods.ToArray());
+		}
+
+		protected override void LazyPublishFields()
+		{
+			bool isDelegate = type.BaseType == Types.MulticastDelegate;
+			List<FieldWrapper> fields = new List<FieldWrapper>();
+			MemberInfo[] members = type.GetMembers(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
+			foreach(MemberInfo m in members)
+			{
+				if(!AttributeHelper.IsHideFromJava(m))
+				{
+					FieldInfo field = m as FieldInfo;
+					if(field != null)
 					{
-						FieldInfo field = m as FieldInfo;
-						if(field != null)
+						if(field.IsSpecialName && field.Name.StartsWith("__<"))
 						{
-							if(field.IsSpecialName && field.Name.StartsWith("__<"))
-							{
-								// skip
-							}
-							else
-							{
-								fields.Add(CreateFieldWrapper(field));
-							}
+							// skip
 						}
 						else
 						{
-							// NOTE explictly defined properties (in map.xml) are decorated with HideFromJava,
-							// so we don't need to worry about them here
-							PropertyInfo property = m as PropertyInfo;
-							if(property != null)
+							fields.Add(CreateFieldWrapper(field));
+						}
+					}
+					else
+					{
+						// NOTE explictly defined properties (in map.xml) are decorated with HideFromJava,
+						// so we don't need to worry about them here
+						PropertyInfo property = m as PropertyInfo;
+						if(property != null)
+						{
+							// Only AccessStub properties (marked by HideFromReflectionAttribute or NameSigAttribute)
+							// are considered here
+							FieldWrapper accessStub;
+							if(CompiledAccessStubFieldWrapper.TryGet(this, property, out accessStub))
 							{
-								// Only AccessStub properties (marked by HideFromReflectionAttribute or NameSigAttribute)
-								// are considered here
-								FieldWrapper accessStub;
-								if(CompiledAccessStubFieldWrapper.TryGet(this, property, out accessStub))
+								fields.Add(accessStub);
+							}
+							else
+							{
+								// If the property has a ModifiersAttribute, we know that it is an explicit property
+								// (defined in Java source by an @ikvm.lang.Property annotation)
+								ModifiersAttribute mods = AttributeHelper.GetModifiersAttribute(property);
+								if(mods != null)
 								{
-									fields.Add(accessStub);
+									fields.Add(new CompiledPropertyFieldWrapper(this, property, new ExModifiers(mods.Modifiers, mods.IsInternal)));
 								}
 								else
 								{
-									// If the property has a ModifiersAttribute, we know that it is an explicit property
-									// (defined in Java source by an @ikvm.lang.Property annotation)
-									ModifiersAttribute mods = AttributeHelper.GetModifiersAttribute(property);
-									if(mods != null)
-									{
-										fields.Add(new CompiledPropertyFieldWrapper(this, property, new ExModifiers(mods.Modifiers, mods.IsInternal)));
-									}
-									else
-									{
-										fields.Add(CreateFieldWrapper(property));
-									}
+									fields.Add(CreateFieldWrapper(property));
 								}
 							}
 						}
 					}
 				}
 			}
-			SetMethods(methods.ToArray());
 			SetFields(fields.ToArray());
 		}
 
