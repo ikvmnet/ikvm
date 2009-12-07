@@ -53,9 +53,6 @@ namespace IKVM.Internal
 
 	class MemberWrapper
 	{
-#if !STATIC_COMPILER && !FIRST_PASS
-		protected static readonly sun.reflect.ReflectionFactory reflectionFactory = (sun.reflect.ReflectionFactory)ClassLoaderWrapper.DoPrivileged(new sun.reflect.ReflectionFactory.GetReflectionFactoryAction());
-#endif
 		private HandleWrapper handle;
 		private TypeWrapper declaringType;
 		private Modifiers modifiers;
@@ -485,7 +482,7 @@ namespace IKVM.Internal
 				java.lang.Class[] checkedExceptions = GetExceptions();
 				if (this.Name == StringConstants.INIT)
 				{
-					method = reflectionFactory.newConstructor(
+					method = new java.lang.reflect.Constructor(
 						(java.lang.Class)this.DeclaringType.ClassObject,
 						parameterTypes,
 						checkedExceptions,
@@ -498,7 +495,7 @@ namespace IKVM.Internal
 				}
 				else
 				{
-					method = reflectionFactory.newMethod(
+					method = new java.lang.reflect.Method(
 						(java.lang.Class)this.DeclaringType.ClassObject,
 						this.Name,
 						parameterTypes,
@@ -529,9 +526,9 @@ namespace IKVM.Internal
 				java.lang.reflect.Constructor ctor = method as java.lang.reflect.Constructor;
 				if (ctor != null)
 				{
-					return reflectionFactory.copyConstructor(ctor);
+					return ctor.copy();
 				}
-				return reflectionFactory.copyMethod((java.lang.reflect.Method)method);
+				return ((java.lang.reflect.Method)method).copy();
 			}
 			return method;
 #endif
@@ -786,7 +783,7 @@ namespace IKVM.Internal
 					sun.reflect.ConstructorAccessor acc = cons.getConstructorAccessor();
 					if (acc == null)
 					{
-						acc = reflectionFactory.newConstructorAccessor(cons);
+						acc = (sun.reflect.ConstructorAccessor)IKVM.NativeCode.sun.reflect.ReflectionFactory.newConstructorAccessor0(null, cons);
 						cons.setConstructorAccessor(acc);
 					}
 					return acc.newInstance(args);
@@ -870,7 +867,7 @@ namespace IKVM.Internal
 				sun.reflect.MethodAccessor acc = method.getMethodAccessor();
 				if (acc == null)
 				{
-					acc = reflectionFactory.newMethodAccessor(method);
+					acc = (sun.reflect.MethodAccessor)IKVM.NativeCode.sun.reflect.ReflectionFactory.newMethodAccessor(null, method);
 					method.setMethodAccessor(acc);
 				}
 				object val = acc.invoke(obj, args, ikvm.@internal.CallerID.create(callerID));
@@ -1256,7 +1253,7 @@ namespace IKVM.Internal
 			object field = reflectionField;
 			if (field == null)
 			{
-				field = reflectionFactory.newField(
+				field = new java.lang.reflect.Field(
 					(java.lang.Class)this.DeclaringType.ClassObject,
 					this.Name,
 					(java.lang.Class)this.FieldTypeWrapper.ClassObject,
@@ -1279,7 +1276,7 @@ namespace IKVM.Internal
 			}
 			if (copy)
 			{
-				field = reflectionFactory.copyField((java.lang.reflect.Field)field);
+				field = ((java.lang.reflect.Field)field).copy();
 			}
 			return field;
 #endif // FIRST_PASS
