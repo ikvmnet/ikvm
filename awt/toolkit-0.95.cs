@@ -1003,14 +1003,24 @@ namespace ikvm.awt
                 NetComponentPeer peer = controlOwner.getPeer() as NetComponentPeer;
                 if (peer != null)
                 {
+                    peer.performedDragDropEffects = DragDropEffects.None;
                     Control control = peer.control;
                     if (control != null)
                     {
+                        java.awt.dnd.DragSource dragSource = getTrigger().getDragSource();
                         IDataObject data = NetDataTransferer.getInstanceImpl().getDataObject(transferable, 
-                            NetDataTransferer.adaptFlavorMap(getTrigger().getDragSource().getFlavorMap()));
+                            NetDataTransferer.adaptFlavorMap(dragSource.getFlavorMap()));
                         NetToolkit.BeginInvoke(delegate
                                                    {
-                                                       control.DoDragDrop(data, DragDropEffects.All);
+                                                       DragDropEffects effects = control.DoDragDrop(data, DragDropEffects.All);
+                                                       if (effects == DragDropEffects.None && peer.performedDragDropEffects!=DragDropEffects.None) 
+                                                       {
+                                                           effects = peer.performedDragDropEffects;
+                                                       }
+                                                       peer.performedDragDropEffects = DragDropEffects.None;
+                                                       dragDropFinished(effects != DragDropEffects.None,
+                                                                        NetComponentPeer.getAction(effects),
+                                                                        Control.MousePosition.X, Control.MousePosition.Y);
                                                    });
                     }
                 }
@@ -1407,6 +1417,7 @@ namespace ikvm.awt
 		private java.awt.Color background;
 	    private volatile bool disposed;
         private NetDropTargetContextPeer dropTargetPeer;
+        internal DragDropEffects performedDragDropEffects = DragDropEffects.None;
 
 		public NetComponentPeer(java.awt.Component target)
 		{
@@ -1746,6 +1757,7 @@ namespace ikvm.awt
                 dropTargetPeer.handleDropMessage(target, e.X, e.Y, getAction(e.Effect), getAction(e.AllowedEffect),
                                                  formats, 0, e.Data);
             NetDragSourceContextPeer.getInstance().dragDropFinished(true, actions, e.X, e.Y);
+            performedDragDropEffects = e.Effect;
             dropTargetPeer = null;
         }
 
@@ -1818,7 +1830,8 @@ namespace ikvm.awt
 
             return ret;
         }
-        private static int getAction(DragDropEffects effects)
+        
+        internal static int getAction(DragDropEffects effects)
         {
             int actions = java.awt.dnd.DnDConstants.ACTION_NONE;
             switch (effects)
