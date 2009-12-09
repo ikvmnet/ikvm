@@ -3227,6 +3227,10 @@ sealed class Compiler
 
 	private bool NeedsInterfaceDownCast(TypeWrapper tw, TypeWrapper arg)
 	{
+		if (tw == VerifierTypeWrapper.Null)
+		{
+			return false;
+		}
 		if (!tw.IsAccessibleFrom(clazz))
 		{
 			tw = tw.GetPublicBaseTypeWrapper();
