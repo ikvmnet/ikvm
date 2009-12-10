@@ -5311,6 +5311,7 @@ namespace IKVM.Internal
 			return null;
 		}
 
+#if !STATIC_COMPILER
 		internal override string[] GetEnclosingMethod()
 		{
 			return impl.GetEnclosingMethod();
@@ -5321,7 +5322,6 @@ namespace IKVM.Internal
 			return sourceFileName;
 		}
 
-#if !STATIC_COMPILER
 		private int GetMethodBaseToken(MethodBase mb)
 		{
 			ConstructorInfo ci = mb as ConstructorInfo;

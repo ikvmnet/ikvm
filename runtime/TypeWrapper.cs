@@ -1715,11 +1715,13 @@ namespace IKVM.Internal
 			}
 			else
 			{
+#if !STATIC_COMPILER
 				object[] attr = type.GetCustomAttributes(typeof(EnclosingMethodAttribute), false);
 				if (attr.Length == 1)
 				{
 					return (EnclosingMethodAttribute)attr[0];
 				}
+#endif
 			}
 			return null;
 		}
@@ -1754,7 +1756,7 @@ namespace IKVM.Internal
 			CustomAttributeBuilder constantValueAttrib;
 			try
 			{
-				constantValueAttrib = new CustomAttributeBuilder(typeofConstantValueAttribute.GetConstructor(new Type[] { constantValue.GetType() }), new object[] { constantValue });
+				constantValueAttrib = new CustomAttributeBuilder(typeofConstantValueAttribute.GetConstructor(new Type[] { JVM.Import(constantValue.GetType()) }), new object[] { constantValue });
 			}
 			catch (OverflowException)
 			{
@@ -1828,7 +1830,7 @@ namespace IKVM.Internal
 			else
 			{
 				long v = ((IConvertible)v1).ToInt64(null) | ((IConvertible)v2).ToInt64(null);
-				switch (Type.GetTypeCode(v1.GetType()))
+				switch (Type.GetTypeCode(JVM.Import(v1.GetType())))
 				{
 					case TypeCode.SByte:
 						return (sbyte)v;
@@ -3318,6 +3320,7 @@ namespace IKVM.Internal
 			}
 		}
 
+#if !STATIC_COMPILER
 		internal void RunClassInit()
 		{
 			Type t = IsRemapped ? TypeAsBaseType : TypeAsTBD;
@@ -3326,6 +3329,7 @@ namespace IKVM.Internal
 				System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(t.TypeHandle);
 			}
 		}
+#endif
 
 		internal void EmitUnbox(CodeEmitter ilgen)
 		{
@@ -3493,6 +3497,7 @@ namespace IKVM.Internal
 			return null;
 		}
 
+#if !STATIC_COMPILER
 		internal virtual string[] GetEnclosingMethod()
 		{
 			return null;
@@ -3528,7 +3533,6 @@ namespace IKVM.Internal
 			return -1;
 		}
 
-#if !STATIC_COMPILER
 		internal virtual object GetAnnotationDefault(MethodWrapper mw)
 		{
 			MethodBase mb = mw.GetMethod();
@@ -4773,6 +4777,7 @@ namespace IKVM.Internal
 			return null;
 		}
 
+#if !STATIC_COMPILER
 		internal override string[] GetEnclosingMethod()
 		{
 			EnclosingMethodAttribute enc = AttributeHelper.GetEnclosingMethodAttribute(type);
@@ -4875,6 +4880,7 @@ namespace IKVM.Internal
 			}
 			return new object[0];
 		}
+#endif
 
 		private class CompiledAnnotation : Annotation
 		{
@@ -4958,6 +4964,7 @@ namespace IKVM.Internal
 			}
 		}
 
+#if !STATIC_COMPILER
 		internal override string GetSourceFileName()
 		{
 			object[] attr = type.GetCustomAttributes(typeof(SourceFileAttribute), false);
@@ -4981,6 +4988,7 @@ namespace IKVM.Internal
 			}
 			return -1;
 		}
+#endif
 
 		internal override bool IsFastClassLiteralSafe
 		{

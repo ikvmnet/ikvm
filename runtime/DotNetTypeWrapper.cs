@@ -2511,6 +2511,7 @@ namespace IKVM.Internal
 			}
 		}
 
+#if !STATIC_COMPILER
 		internal override object[] GetDeclaredAnnotations()
 		{
 			if (type.Assembly.ReflectionOnly)
@@ -2571,6 +2572,7 @@ namespace IKVM.Internal
 			}
 			return attribs;
 		}
+#endif
 
 		internal override bool IsFastClassLiteralSafe
 		{
