@@ -51,6 +51,7 @@ class IkvmcCompiler
 	private string defaultAssemblyName;
 	private List<string> classesToExclude = new List<string>();
 	private static bool time;
+	private static string runtimeAssembly;
 
 	private static List<string> GetArgs(string[] args)
 	{
@@ -111,7 +112,7 @@ class IkvmcCompiler
 				}
 				else
 				{
-					rc = CompilerClassLoader.Compile(targets);
+					rc = CompilerClassLoader.Compile(runtimeAssembly, targets);
 				}
 			}
 			catch(Exception x)
@@ -604,7 +605,7 @@ class IkvmcCompiler
 				else if(s.StartsWith("-runtime:"))
 				{
 					// NOTE this is an undocumented option
-					options.runtimeAssembly = s.Substring(9);
+					runtimeAssembly = s.Substring(9);
 				}
 				else if(s == "-time")
 				{

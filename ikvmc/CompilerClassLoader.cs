@@ -2498,8 +2498,33 @@ namespace IKVM.Internal
 			return false;
 		}
 
-		internal static int Compile(List<CompilerOptions> optionsList)
+		internal static int Compile(string runtimeAssembly, List<CompilerOptions> optionsList)
 		{
+			try
+			{
+				if(runtimeAssembly == null)
+				{
+					// HACK based on our assembly name we create the default runtime assembly name
+					AssemblyName compilerAssembly = typeof(CompilerClassLoader).Assembly.GetName();
+					StaticCompiler.runtimeAssembly = StaticCompiler.Load(compilerAssembly.FullName.Replace(compilerAssembly.Name, "IKVM.Runtime"));
+					StaticCompiler.runtimeJniAssembly = StaticCompiler.Load(compilerAssembly.FullName.Replace(compilerAssembly.Name, "IKVM.Runtime.JNI"));
+				}
+				else
+				{
+					StaticCompiler.runtimeAssembly = StaticCompiler.LoadFile(runtimeAssembly);
+					StaticCompiler.runtimeJniAssembly = StaticCompiler.LoadFile(Path.Combine(StaticCompiler.runtimeAssembly.CodeBase, ".." + Path.DirectorySeparatorChar + "IKVM.Runtime.JNI.dll"));
+				}
+			}
+			catch(FileNotFoundException)
+			{
+				if(StaticCompiler.runtimeAssembly == null)
+				{
+					Console.Error.WriteLine("Error: unable to load runtime assembly");
+					return 1;
+				}
+				StaticCompiler.IssueMessage(Message.NoJniRuntime);
+			}
+			Tracer.Info(Tracer.Compiler, "Loaded runtime assembly: {0}", StaticCompiler.runtimeAssembly.FullName);
 			bool compilingCoreAssembly = false;
 			List<CompilerClassLoader> compilers = new List<CompilerClassLoader>();
 			foreach (CompilerOptions options in optionsList)
@@ -2569,31 +2594,6 @@ namespace IKVM.Internal
 		private static int CreateCompiler(CompilerOptions options, ref CompilerClassLoader loader, ref bool compilingCoreAssembly)
 		{
 			Tracer.Info(Tracer.Compiler, "JVM.Compile path: {0}, assembly: {1}", options.path, options.assembly);
-			try
-			{
-				if(options.runtimeAssembly == null)
-				{
-					// HACK based on our assembly name we create the default runtime assembly name
-					AssemblyName compilerAssembly = typeof(CompilerClassLoader).Assembly.GetName();
-					StaticCompiler.runtimeAssembly = StaticCompiler.Load(compilerAssembly.FullName.Replace(compilerAssembly.Name, "IKVM.Runtime"));
-					StaticCompiler.runtimeJniAssembly = StaticCompiler.Load(compilerAssembly.FullName.Replace(compilerAssembly.Name, "IKVM.Runtime.JNI"));
-				}
-				else
-				{
-					StaticCompiler.runtimeAssembly = StaticCompiler.LoadFile(options.runtimeAssembly);
-					StaticCompiler.runtimeJniAssembly = StaticCompiler.LoadFile(Path.Combine(StaticCompiler.runtimeAssembly.CodeBase, ".." + Path.DirectorySeparatorChar + "IKVM.Runtime.JNI.dll"));
-				}
-			}
-			catch(FileNotFoundException)
-			{
-				if(StaticCompiler.runtimeAssembly == null)
-				{
-					Console.Error.WriteLine("Error: unable to load runtime assembly");
-					return 1;
-				}
-				StaticCompiler.IssueMessage(Message.NoJniRuntime);
-			}
-			Tracer.Info(Tracer.Compiler, "Loaded runtime assembly: {0}", StaticCompiler.runtimeAssembly.FullName);
 			AssemblyName runtimeAssemblyName = StaticCompiler.runtimeAssembly.GetName();
 			bool allReferencesAreStrongNamed = IsSigned(StaticCompiler.runtimeAssembly);
 			List<Assembly> references = new List<Assembly>();
@@ -3172,7 +3172,6 @@ namespace IKVM.Internal
 		internal CodeGenOptions codegenoptions;
 		internal bool removeUnusedFields;
 		internal bool compressedResources;
-		internal string runtimeAssembly;
 		internal string[] privatePackages;
 		internal string[] publicPackages;
 		internal string sourcepath;
