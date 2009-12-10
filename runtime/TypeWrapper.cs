@@ -3799,7 +3799,6 @@ namespace IKVM.Internal
 	{
 		private readonly Type type;
 		private TypeWrapper[] interfaces;
-		private TypeWrapper[] innerclasses;
 		private MethodInfo clinitMethod;
 		private bool clinitMethodSet;
 		private Modifiers reflectiveModifiers;
@@ -4184,25 +4183,20 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				// TODO why are we caching this?
-				if(innerclasses == null)
+				Type[] nestedTypes = type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+				List<TypeWrapper> wrappers = new List<TypeWrapper>();
+				for(int i = 0; i < nestedTypes.Length; i++)
 				{
-					Type[] nestedTypes = type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
-					List<TypeWrapper> wrappers = new List<TypeWrapper>();
-					for(int i = 0; i < nestedTypes.Length; i++)
+					if(!AttributeHelper.IsHideFromJava(nestedTypes[i]) && !nestedTypes[i].Name.StartsWith("__<"))
 					{
-						if(!AttributeHelper.IsHideFromJava(nestedTypes[i]) && !nestedTypes[i].Name.StartsWith("__<"))
-						{
-							wrappers.Add(ClassLoaderWrapper.GetWrapperFromType(nestedTypes[i]));
-						}
+						wrappers.Add(ClassLoaderWrapper.GetWrapperFromType(nestedTypes[i]));
 					}
-					foreach(string s in AttributeHelper.GetNonNestedInnerClasses(type))
-					{
-						wrappers.Add(GetClassLoader().LoadClassByDottedName(s));
-					}
-					innerclasses = wrappers.ToArray();
 				}
-				return innerclasses;
+				foreach(string s in AttributeHelper.GetNonNestedInnerClasses(type))
+				{
+					wrappers.Add(GetClassLoader().LoadClassByDottedName(s));
+				}
+				return wrappers.ToArray();
 			}
 		}
 
