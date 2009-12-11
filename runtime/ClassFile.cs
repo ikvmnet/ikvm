@@ -642,7 +642,7 @@ namespace IKVM.Internal
 			return true;
 		}
 
-		private static bool IsValidFieldSig(string sig)
+		internal static bool IsValidFieldSig(string sig)
 		{
 			return IsValidFieldSigImpl(sig, 0, sig.Length);
 		}
@@ -681,7 +681,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		private static bool IsValidMethodSig(string sig)
+		internal static bool IsValidMethodSig(string sig)
 		{
 			if(sig.Length < 3 || sig[0] != '(')
 			{

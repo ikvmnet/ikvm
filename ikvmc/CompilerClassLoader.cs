@@ -2840,7 +2840,10 @@ namespace IKVM.Internal
 					XmlTextReader rdr = new XmlTextReader(fs);
 					IKVM.Internal.MapXml.Root.xmlReader = rdr;
 					IKVM.Internal.MapXml.Root.filename = new FileInfo(fs.Name).Name;
-					loader.map = (IKVM.Internal.MapXml.Root)ser.Deserialize(rdr);
+					if (!loader.ValidateAndSetMap((IKVM.Internal.MapXml.Root)ser.Deserialize(rdr)))
+					{
+						return 1;
+					}
 				}
 				if(loader.CheckCompilingCoreAssembly())
 				{
@@ -3143,6 +3146,93 @@ namespace IKVM.Internal
 		{
 			Console.Error.WriteLine("Unknown attribute {0} in XML mapping file, line {1}, column {2}", e.Attr.Name, e.LineNumber, e.LinePosition);
 			Environment.Exit(1);
+		}
+
+		private bool ValidateAndSetMap(IKVM.Internal.MapXml.Root map)
+		{
+			bool valid = true;
+			if (map.assembly != null)
+			{
+				if (map.assembly.Classes != null)
+				{
+					foreach (IKVM.Internal.MapXml.Class c in map.assembly.Classes)
+					{
+						if (c.Fields != null)
+						{
+							foreach (IKVM.Internal.MapXml.Field f in c.Fields)
+							{
+								ValidateNameSig("field", c.Name, f.Name, f.Sig, ref valid, true);
+							}
+						}
+						if (c.Methods != null)
+						{
+							foreach (IKVM.Internal.MapXml.Method m in c.Methods)
+							{
+								ValidateNameSig("method", c.Name, m.Name, m.Sig, ref valid, false);
+							}
+						}
+						if (c.Constructors != null)
+						{
+							foreach (IKVM.Internal.MapXml.Constructor ctor in c.Constructors)
+							{
+								ValidateNameSig("constructor", c.Name, "<init>", ctor.Sig, ref valid, false);
+							}
+						}
+						if (c.Properties != null)
+						{
+							foreach (IKVM.Internal.MapXml.Property prop in c.Properties)
+							{
+								ValidateNameSig("property", c.Name, prop.Name, prop.Sig, ref valid, false);
+								ValidatePropertyGetterSetter("getter", c.Name, prop.Name, prop.getter, ref valid);
+								ValidatePropertyGetterSetter("setter", c.Name, prop.Name, prop.setter, ref valid);
+							}
+						}
+					}
+				}
+			}
+			this.map = map;
+			return valid;
+		}
+
+		private static void ValidateNameSig(string member, string clazz, string name, string sig, ref bool valid, bool field)
+		{
+			if (!IsValidName(name))
+			{
+				valid = false;
+				Console.Error.WriteLine("Error: Invalid {0} name '{2}' in remap file in class {1}", member, clazz, name, sig);
+			}
+			if (!IsValidSig(sig, field))
+			{
+				valid = false;
+				Console.Error.WriteLine("Error: Invalid {0} signature '{3}' in remap file for {0} {1}.{2}", member, clazz, name, sig);
+			}
+		}
+
+		private static void ValidatePropertyGetterSetter(string getterOrSetter, string clazz, string property, IKVM.Internal.MapXml.Method method, ref bool valid)
+		{
+			if (method != null)
+			{
+				if (!IsValidName(method.Name))
+				{
+					valid = false;
+					Console.Error.WriteLine("Error: Invalid property {0} name '{3}' in remap file for property {1}.{2}", getterOrSetter, clazz, property, method.Name, method.Sig);
+				}
+				if (!ClassFile.IsValidMethodSig(method.Sig))
+				{
+					valid = false;
+					Console.Error.WriteLine("Error: Invalid property {0} signature '{4}' in remap file for property {1}.{2}", getterOrSetter, clazz, property, method.Name, method.Sig);
+				}
+			}
+		}
+
+		private static bool IsValidName(string name)
+		{
+			return name != null && name.Length != 0;
+		}
+
+		private static bool IsValidSig(string sig, bool field)
+		{
+			return field ? ClassFile.IsValidFieldSig(sig) : ClassFile.IsValidMethodSig(sig);
 		}
 	}
 
