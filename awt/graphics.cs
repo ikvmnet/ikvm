@@ -1308,11 +1308,18 @@ namespace ikvm.awt
         private String[] getAvailableFontFamilyNames(int language)
         {
 			FontFamily[] families = FontFamily.Families;
-            String[] results = new String[families.Length];
-            for (int i = 0; i < results.Length; i++)
+            String[] results = new String[families.Length + 5];
+            int i = 0;
+            for (; i < families.Length; i++)
             {
                 results[i] = families[i].GetName(language);
             }
+            results[i++] = "Dialog";
+            results[i++] = "DialogInput";
+            results[i++] = "Serif";
+            results[i++] = "SansSerif";
+            results[i++] = "Monospaced";
+            Array.Sort(results);
             return results;
         }
 
