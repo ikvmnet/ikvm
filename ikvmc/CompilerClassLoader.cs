@@ -3232,7 +3232,7 @@ namespace IKVM.Internal
 
 		private static bool IsValidSig(string sig, bool field)
 		{
-			return field ? ClassFile.IsValidFieldSig(sig) : ClassFile.IsValidMethodSig(sig);
+			return sig != null && (field ? ClassFile.IsValidFieldSig(sig) : ClassFile.IsValidMethodSig(sig));
 		}
 	}
 
