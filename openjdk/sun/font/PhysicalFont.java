@@ -25,6 +25,8 @@ package sun.font;
 
 import java.awt.Font;
 import java.awt.font.FontRenderContext;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.util.Locale;
 
 import cli.System.Drawing.FontFamily;
@@ -52,6 +54,24 @@ class PhysicalFont extends Font2D{
     private static final cli.System.Drawing.GraphicsUnit PIXEL = cli.System.Drawing.GraphicsUnit
             .wrap(cli.System.Drawing.GraphicsUnit.Pixel);
 
+    //for method getStyleMetrics
+    //for Reflection to the .NET 3.0 API in namespace System.Windows.Media of PresentationCore
+    //If we switch to .NET 3.0 then we can access it directly
+    private static boolean isMediaLoaded;
+    private static Class classMediaFontFamily;
+    private static Constructor ctorMediaFontFamily;
+    private static Method getFamilyTypefaces;
+    private static Method getItem;
+    private static Method getStrikethroughPosition;
+    private static Method getStrikethroughThickness;
+    private static Method getUnderlinePosition;
+    private static Method getUnderlineThickness;
+    private float strikethroughPosition;
+    private float strikethroughThickness;
+    private float underlinePosition;
+    private float underlineThickness;
+    
+    
     PhysicalFont(String name, int style){
         this.family = createFontFamily(name);
         this.style = createFontStyle(family, style);
@@ -175,5 +195,53 @@ class PhysicalFont extends Font2D{
             }catch(Throwable th2){}
         }
         return language;
+    }
+    
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void getStyleMetrics(float pointSize, float[] metrics, int offset) {
+        try{
+            try{
+                if(!isMediaLoaded){
+                    classMediaFontFamily = Class.forName("System.Windows.Media.FontFamily, PresentationCore, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35");
+                    ctorMediaFontFamily = classMediaFontFamily.getConstructor(String.class);
+                    getFamilyTypefaces = classMediaFontFamily.getMethod("get_FamilyTypefaces");
+                }
+                if(classMediaFontFamily != null){
+                    if(strikethroughPosition == 0.0){
+                        Object mediaFontFamily = ctorMediaFontFamily.newInstance(family.get_Name());
+                        Object familyTypefaces = getFamilyTypefaces.invoke(mediaFontFamily);
+                        if(getItem == null){
+                            getItem = familyTypefaces.getClass().getMethod("get_Item", Integer.TYPE);
+                        }
+                        Object familyTypeface = getItem.invoke(familyTypefaces, 0);
+                        if(getStrikethroughPosition == null){
+                            getStrikethroughPosition = familyTypeface.getClass().getMethod("get_StrikethroughPosition");
+                            getStrikethroughThickness = familyTypeface.getClass().getMethod(
+                                    "get_StrikethroughThickness");
+                            getUnderlinePosition = familyTypeface.getClass().getMethod("get_UnderlinePosition");
+                            getUnderlineThickness = familyTypeface.getClass().getMethod("get_UnderlineThickness");
+                        }
+                        strikethroughPosition = ((Number)getStrikethroughPosition.invoke(familyTypeface)).floatValue();
+                        strikethroughThickness = ((Number)getStrikethroughThickness.invoke(familyTypeface))
+                                .floatValue();
+                        underlinePosition = ((Number)getUnderlinePosition.invoke(familyTypeface)).floatValue();
+                        underlineThickness = ((Number)getUnderlineThickness.invoke(familyTypeface)).floatValue();
+                    }
+                }
+                metrics[offset++] = -strikethroughPosition * pointSize;  
+                metrics[offset++] = strikethroughThickness * pointSize;  
+                metrics[offset++] = -underlinePosition * pointSize;  
+                metrics[offset] = underlineThickness * pointSize;  
+            }catch(Throwable ex){
+                // ignore it, NET 3.0 is not available, use the default implementation
+                super.getStyleMetrics(pointSize, metrics, offset);
+            }
+        }finally{
+            isMediaLoaded = true;
+        }
     }
 }
