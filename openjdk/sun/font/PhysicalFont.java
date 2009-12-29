@@ -40,6 +40,8 @@ import cli.System.Globalization.CultureInfo;
 class PhysicalFont extends Font2D{
 
     private final FontFamily family;
+    
+    private String familyName; // family name for logical fonts
 
     private final FontStyle style;
 
@@ -90,25 +92,66 @@ class PhysicalFont extends Font2D{
         return new cli.System.Drawing.Font(family, size2D, style, PIXEL);
     }
 
-
-    private static FontFamily createFontFamily(String name){
-        if("monospaced".equalsIgnoreCase(name) || "courier".equalsIgnoreCase(name)){
+    /**
+     * Search for .NET FamilyName. For logical fonts it set the variable familyName
+     * @param name the name of the font.
+     * @return ever a FontFamily
+     */
+    private FontFamily createFontFamily(String name){
+        if(Font.MONOSPACED.equalsIgnoreCase(name)){
+        	familyName = Font.MONOSPACED;
             return FontFamily.get_GenericMonospace();
         }
-        if("serif".equalsIgnoreCase(name)){
+        if(Font.SERIF.equalsIgnoreCase(name)){
+        	familyName = Font.SERIF;
             return FontFamily.get_GenericSerif();
         }
-        if(name == null || "sansserif".equalsIgnoreCase(name) || "dialog".equalsIgnoreCase(name)
-                || "dialoginput".equalsIgnoreCase(name) || "default".equalsIgnoreCase(name)){
+        if(name == null || Font.SANS_SERIF.equalsIgnoreCase(name)){
+        	familyName = Font.SANS_SERIF;
+            return FontFamily.get_GenericSansSerif();
+        }
+        if(Font.DIALOG.equalsIgnoreCase(name)){
+        	familyName = Font.DIALOG;
+            return FontFamily.get_GenericSansSerif();
+        }
+        if(Font.DIALOG_INPUT.equalsIgnoreCase(name)){
+        	familyName = Font.DIALOG_INPUT;
             return FontFamily.get_GenericSansSerif();
         }
         try{
             if(false) throw new cli.System.ArgumentException();
             return new FontFamily(name);
-        }catch(cli.System.ArgumentException ex) // cli.System.ArgumentException
-        {
-            return FontFamily.get_GenericSansSerif();
+        }catch(cli.System.ArgumentException ex){ 
+        	// continue
         }
+        
+        //now we want map specific Name to a shorter Family Name like "Arial Bold" --> "Arial"
+        String shortName = name;
+        int spaceIdx = shortName.lastIndexOf(' ');
+        while(spaceIdx > 0){
+        	shortName = shortName.substring(0, spaceIdx).trim();
+            try{
+                if(false) throw new cli.System.ArgumentException();
+                return new FontFamily(shortName);
+            }catch(cli.System.ArgumentException ex){ 
+            	// continue
+            }
+        	spaceIdx = shortName.lastIndexOf(' ');
+        }
+        
+        //now we want map generic names to specific families like "courier" --> "Courier New"
+        FontFamily[] fontFanilies = FontFamily.get_Families();
+        name = name.toLowerCase();
+        for (int i = 0; i < fontFanilies.length; i++) {
+			FontFamily fontFamily = fontFanilies[i];
+			if(fontFamily.get_Name().toLowerCase().startsWith(name)){
+				return fontFamily;
+			}
+		}
+        
+        //we have not find a valid font, we use the default font
+        familyName = Font.DIALOG;
+        return FontFamily.get_GenericSansSerif();
     }
 
 
@@ -179,6 +222,9 @@ class PhysicalFont extends Font2D{
      */
     @Override
     public String getFamilyName(Locale locale){
+    	if(familyName != null){
+    		return familyName;
+    	}
         return family.GetName(getLanguage(locale));
     }
     
