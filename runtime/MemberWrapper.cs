@@ -1779,7 +1779,7 @@ namespace IKVM.Internal
 			: base(declaringType, fieldType, name, sig, modifiers, field, flags)
 		{
 			Debug.Assert(IsStatic);
-			Debug.Assert(constant == null || constant.GetType().IsPrimitive);
+            Debug.Assert(constant == null || constant.GetType().IsPrimitive || constant is string);
 			this.constant = constant;
 		}
 
