@@ -110,21 +110,32 @@ class JPEGImageReader extends ImageReader{
         if(image == null){
             ImageInputStream iis = (ImageInputStream)getInput();
             byte[] buffer;
-            if( iis.length() >0){
-                //If length known then it it is simple
-                buffer = new byte[(int)iis.length()];
-                iis.readFully(buffer);
-            }else{
-                // if the length not known then we need to read it in a loop
-                ByteArrayOutputStream baos = new ByteArrayOutputStream(8192);
-                buffer = new byte[8192];
-                int count;
-                while((count = iis.read(buffer)) > 0){
-                    baos.write(buffer, 0, count);
-                }
-                buffer = baos.toByteArray();
-            }
+            try {
+				if( iis.length() >0){
+				    //If length known then it it is simple
+				    buffer = new byte[(int)iis.length()];
+				    iis.readFully(buffer);
+				}else{
+				    // if the length not known then we need to read it in a loop
+				    ByteArrayOutputStream baos = new ByteArrayOutputStream(8192);
+				    buffer = new byte[8192];
+				    int count;
+				    while((count = iis.read(buffer)) > 0){
+				        baos.write(buffer, 0, count);
+				    }
+				    buffer = baos.toByteArray();
+				}
+			} catch (IOException ioex) {
+				processReadAborted();
+				throw ioex;
+			}
+            processImageStarted(0);
             image = (BufferedImage)Toolkit.getDefaultToolkit().createImage(buffer);
+            processPassStarted(image, 0, 0, 1, 0, 0, 1, 1, new int[0]);
+            processImageProgress(100.0F);
+            processImageUpdate(image, 0, 0, 0, 0, 1, 1, new int[0]);
+            processPassComplete(image);
+            processImageComplete();
         }
         return image;
     }
