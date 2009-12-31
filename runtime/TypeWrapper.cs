@@ -3858,20 +3858,15 @@ namespace IKVM.Internal
 
 			protected override void LazyPublishMethods()
 			{
-				List<MethodWrapper> methods = new List<MethodWrapper>();
-				MemberInfo[] members = type.GetMembers(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
-				foreach(MemberInfo m in members)
+				List<MethodWrapper> list = new List<MethodWrapper>();
+				const BindingFlags bindingFlags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
+				foreach(ConstructorInfo ctor in type.GetConstructors(bindingFlags))
 				{
-					if(!AttributeHelper.IsHideFromJava(m))
-					{
-						MethodBase method = m as MethodBase;
-						if(method != null &&
-							(remappedType.IsSealed || !m.Name.StartsWith("instancehelper_")) &&
-							(!remappedType.IsSealed || method.IsStatic))
-						{
-							methods.Add(CreateRemappedMethodWrapper(method));
-						}
-					}
+					AddMethod(list, ctor);
+				}
+				foreach(MethodInfo method in type.GetMethods(bindingFlags))
+				{
+					AddMethod(list, method);
 				}
 				// if we're a remapped interface, we need to get the methods from the real interface
 				if(remappedType.IsInterface)
@@ -3896,10 +3891,20 @@ namespace IKVM.Internal
 								mbHelper = method;
 							}
 						}
-						methods.Add(new CompiledRemappedMethodWrapper(this, m.Name, sig, method, retType, paramTypes, modifiers, false, mbHelper, null));
+						list.Add(new CompiledRemappedMethodWrapper(this, m.Name, sig, method, retType, paramTypes, modifiers, false, mbHelper, null));
 					}
 				}
-				SetMethods(methods.ToArray());
+				SetMethods(list.ToArray());
+			}
+
+			private void AddMethod(List<MethodWrapper> list, MethodBase method)
+			{
+				if(!AttributeHelper.IsHideFromJava(method)
+					&& (remappedType.IsSealed || !method.Name.StartsWith("instancehelper_"))
+					&& (!remappedType.IsSealed || method.IsStatic))
+				{
+					list.Add(CreateRemappedMethodWrapper(method));
+				}
 			}
 
 			protected override void LazyPublishFields()
