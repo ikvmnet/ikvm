@@ -1180,6 +1180,17 @@ namespace IKVM.Internal
 			Debug.Assert(wrapper.GetClassLoader() == this);
 			return this == friend.GetClassLoader();
 		}
+
+#if !STATIC_COMPILER
+		internal static ClassLoaderWrapper FromCallerID(object callerID)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			return GetClassLoaderWrapper(((ikvm.@internal.CallerID)callerID).getCallerClassLoader());
+#endif
+		}
+#endif
 	}
 
 	class GenericClassLoader : ClassLoaderWrapper

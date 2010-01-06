@@ -160,14 +160,14 @@ namespace IKVM.Runtime
 		{
 			private JNIEnv* pJNIEnv;
 			private JNIEnv.ManagedJNIEnv env;
-			private RuntimeMethodHandle prevMethod;
+			private ikvm.@internal.CallerID prevCallerID;
 			private object[] quickLocals;
 			private int quickLocalIndex;
 			private int prevLocalRefSlot;
 
 			internal ClassLoaderWrapper Enter(ClassLoaderWrapper loader)
 			{
-				Enter(new RuntimeMethodHandle());
+				Enter((ikvm.@internal.CallerID)null);
 				ClassLoaderWrapper prev = env.classLoader;
 				env.classLoader = loader;
 				return prev;
@@ -179,7 +179,7 @@ namespace IKVM.Runtime
 				Leave();
 			}
 
-			public IntPtr Enter(RuntimeMethodHandle method)
+			public IntPtr Enter(ikvm.@internal.CallerID callerID)
 			{
 				pJNIEnv = TlsHack.pJNIEnv;
 				if(pJNIEnv == null)
@@ -187,8 +187,8 @@ namespace IKVM.Runtime
 					pJNIEnv = JNIEnv.CreateJNIEnv();
 				}
 				env = pJNIEnv->GetManagedJNIEnv();
-				prevMethod = env.currentMethod;
-				env.currentMethod = method;
+				prevCallerID = env.callerID;
+				env.callerID = callerID;
 				object[][] localRefs = env.localRefs;
 				prevLocalRefSlot = env.localRefSlot;
 				env.localRefSlot++;
@@ -209,7 +209,7 @@ namespace IKVM.Runtime
 
 			public void Leave()
 			{
-				env.currentMethod = prevMethod;
+				env.callerID = prevCallerID;
 				Exception x = env.pendingException;
 				env.pendingException = null;
 				object[][] localRefs = env.localRefs;
@@ -235,10 +235,9 @@ namespace IKVM.Runtime
 				}
 			}
 
-			public static IntPtr GetFuncPtr(RuntimeMethodHandle method, string clazz, string name, string sig)
+			public static IntPtr GetFuncPtr(ikvm.@internal.CallerID callerID, string clazz, string name, string sig)
 			{
-				MethodBase mb = MethodBase.GetMethodFromHandle(method);
-				ClassLoaderWrapper loader =	ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType).GetClassLoader();
+				ClassLoaderWrapper loader = ClassLoaderWrapper.FromCallerID(callerID);
 				int sp = 0;
 				for(int i = 1; sig[i] != ')'; i++)
 				{
@@ -1100,7 +1099,7 @@ namespace IKVM.Runtime
 		internal sealed class ManagedJNIEnv
 		{
 			internal ClassLoaderWrapper classLoader;
-			internal RuntimeMethodHandle currentMethod;
+			internal ikvm.@internal.CallerID callerID;
 			internal object[][] localRefs;
 			internal int localRefSlot;
 			internal Exception pendingException;
@@ -1332,10 +1331,9 @@ namespace IKVM.Runtime
 		private static ClassLoaderWrapper FindNativeMethodClassLoader(JNIEnv* pEnv)
 		{
 			ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
-			if(env.currentMethod.Value != IntPtr.Zero)
+			if(env.callerID != null)
 			{
-				MethodBase mb = MethodBase.GetMethodFromHandle(env.currentMethod);
-				return ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType).GetClassLoader();
+				return ClassLoaderWrapper.FromCallerID(env.callerID);
 			}
 			if(env.classLoader != null)
 			{
@@ -1441,7 +1439,7 @@ namespace IKVM.Runtime
 				{
 					wrapper.Finish();
 					java.lang.reflect.Constructor cons = (java.lang.reflect.Constructor)mw.ToMethodOrConstructor(false);
-					exception = (Exception)cons.newInstance(new object[] { StringFromOEM(msg) }, (ikvm.@internal.CallerID)JVM.CreateCallerID(env.currentMethod));
+					exception = (Exception)cons.newInstance(new object[] { StringFromOEM(msg) }, env.callerID);
 					rc = JNI_OK;
 				}
 				catch(RetargetableJavaException x)
@@ -1706,12 +1704,7 @@ namespace IKVM.Runtime
 			}
 			try
 			{
-				MethodBase caller = null;
-				if(env.currentMethod.Value != IntPtr.Zero)
-				{
-					caller = MethodBase.GetMethodFromHandle(env.currentMethod);
-				}
-				return MethodWrapper.FromCookie(methodID).InvokeJNI(pEnv->UnwrapRef(obj), argarray, nonVirtual, caller);
+				return MethodWrapper.FromCookie(methodID).InvokeJNI(pEnv->UnwrapRef(obj), argarray, nonVirtual, env.callerID);
 			}
 			catch(java.lang.reflect.InvocationTargetException x)
 			{

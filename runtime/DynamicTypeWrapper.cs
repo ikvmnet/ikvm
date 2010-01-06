@@ -4462,7 +4462,7 @@ namespace IKVM.Internal
 						// are public and so we can get away with replacing all other types with object.
 						argTypes[i + instance] = (args[i].IsPrimitive || args[i].IsGhost || args[i].IsNonPrimitiveValueType) ? args[i].TypeAsSignatureType : typeof(object);
 					}
-					argTypes[argTypes.Length - 1] = typeof(RuntimeMethodHandle);
+					argTypes[argTypes.Length - 1] = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.CallerID").TypeAsSignatureType;
 					Type retType = (mw.ReturnType.IsPrimitive || mw.ReturnType.IsGhost || mw.ReturnType.IsNonPrimitiveValueType) ? mw.ReturnType.TypeAsSignatureType : typeof(object);
 					MethodBuilder mb = tb.DefineMethod("method", MethodAttributes.Public | MethodAttributes.Static, retType, argTypes);
 					AttributeHelper.HideFromJava(mb);
@@ -4472,7 +4472,7 @@ namespace IKVM.Internal
 					{
 						ilGenerator.Emit(OpCodes.Ldarg, (short)i);
 					}
-					ilGenerator.Emit(OpCodes.Ldtoken, (MethodInfo)mw.GetMethod());
+					context.EmitCallerID(ilGenerator);
 					ilGenerator.Emit(OpCodes.Call, mb);
 					if (!mw.ReturnType.IsPrimitive && !mw.ReturnType.IsGhost && !mw.ReturnType.IsNonPrimitiveValueType)
 					{
@@ -4528,7 +4528,7 @@ namespace IKVM.Internal
 					}
 					else
 					{
-						ilGenerator.Emit(OpCodes.Ldtoken, (MethodInfo)mw.GetMethod());
+						context.EmitCallerID(ilGenerator);
 					}
 					ilGenerator.Emit(OpCodes.Ldstr, classFile.Name.Replace('.', '/'));
 					ilGenerator.Emit(OpCodes.Ldstr, m.Name);
@@ -4543,7 +4543,7 @@ namespace IKVM.Internal
 					}
 					else
 					{
-						ilGenerator.Emit(OpCodes.Ldtoken, (MethodInfo)mw.GetMethod());
+						context.EmitCallerID(ilGenerator);
 					}
 					ilGenerator.Emit(OpCodes.Call, enterLocalRefStruct);
 					LocalBuilder jnienv = ilGenerator.DeclareLocal(Types.IntPtr);

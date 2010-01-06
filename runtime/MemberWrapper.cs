@@ -115,7 +115,7 @@ namespace IKVM.Internal
 
 		internal static MemberWrapper FromCookieImpl(IntPtr cookie)
 		{
-			return (MemberWrapper)((GCHandle)cookie).Target;
+			return (MemberWrapper)GCHandle.FromIntPtr(cookie).Target;
 		}
 
 		internal TypeWrapper DeclaringType
@@ -770,7 +770,7 @@ namespace IKVM.Internal
 
 #if !STATIC_COMPILER
 		[HideFromJava]
-		internal object InvokeJNI(object obj, object[] args, bool nonVirtual, MethodBase callerID)
+		internal object InvokeJNI(object obj, object[] args, bool nonVirtual, object callerID)
 		{
 #if FIRST_PASS
 			return null;
@@ -807,7 +807,7 @@ namespace IKVM.Internal
 					try
 					{
 						ResolveMethod();
-						InvokeArgsProcessor proc = new InvokeArgsProcessor(this, method, obj, UnboxArgs(args), ikvm.@internal.CallerID.create(callerID));
+						InvokeArgsProcessor proc = new InvokeArgsProcessor(this, method, obj, UnboxArgs(args), (ikvm.@internal.CallerID)callerID);
 						object o = method.Invoke(proc.GetObj(), proc.GetArgs());
 						TypeWrapper retType = this.ReturnType;
 						if (!retType.IsUnloadable && retType.IsGhost)
@@ -853,7 +853,7 @@ namespace IKVM.Internal
 							invokenonvirtualCache.Add(this, acc);
 						}
 					}
-					object val = acc.invoke(obj, args, ikvm.@internal.CallerID.create(callerID));
+					object val = acc.invoke(obj, args, (ikvm.@internal.CallerID)callerID);
 					if (this.ReturnType.IsPrimitive && this.ReturnType != PrimitiveTypeWrapper.VOID)
 					{
 						val = JVM.Unbox(val);
@@ -870,7 +870,7 @@ namespace IKVM.Internal
 					acc = (sun.reflect.MethodAccessor)IKVM.NativeCode.sun.reflect.ReflectionFactory.newMethodAccessor(null, method);
 					method.setMethodAccessor(acc);
 				}
-				object val = acc.invoke(obj, args, ikvm.@internal.CallerID.create(callerID));
+				object val = acc.invoke(obj, args, (ikvm.@internal.CallerID)callerID);
 				if (this.ReturnType.IsPrimitive && this.ReturnType != PrimitiveTypeWrapper.VOID)
 				{
 					val = JVM.Unbox(val);
