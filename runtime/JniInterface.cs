@@ -1254,56 +1254,22 @@ namespace IKVM.Runtime
 			return len;
 		}
 
-		// this method returns a simplified method argument descriptor.
-		// some examples:
-		// "()V" -> ""
-		// "(ILjava.lang.String;)I" -> "IL"
-		// "([Ljava.lang.String;)V" -> "L"
-		private static string GetMethodArgList(IntPtr cookie)
-		{
-			try
-			{
-				StringBuilder sb = new StringBuilder();
-				string s = MethodWrapper.FromCookie(cookie).Signature;
-				for(int i = 1;; i++)
-				{
-					switch(s[i])
-					{
-						case '[':
-							while(s[i] == '[') i++;
-							if(s[i] == 'L')
-							{
-								while(s[i] != ';') i++;
-							}
-							sb.Append('L');
-							break;
-						case 'L':
-							while(s[i] != ';') i++;
-							sb.Append('L');
-							break;
-						case ')':
-							return sb.ToString();
-						default:
-							sb.Append(s[i]);
-							break;
-					}
-				}
-			}
-			catch
-			{
-				Debug.Assert(false);
-				throw;
-			}
-		}
-
 		internal static jint GetMethodArgs(JNIEnv* pEnv, IntPtr method, byte* sig)
 		{
-			string s = GetMethodArgList(method);
-			for(int i = 0; i < s.Length; i++)
+			TypeWrapper[] argTypes = MethodWrapper.FromCookie(method).GetParameters();
+			for (int i = 0; i < argTypes.Length; i++)
 			{
-				sig[i] = (byte)s[i];
+				TypeWrapper tw = argTypes[i];
+				if (tw.IsPrimitive)
+				{
+					sig[i] = (byte)tw.SigName[0];
+				}
+				else
+				{
+					sig[i] = (byte)'L';
+				}
 			}
-			return s.Length;
+			return argTypes.Length;
 		}
 
 		internal static jint GetVersion(JNIEnv* pEnv)
@@ -1667,44 +1633,34 @@ namespace IKVM.Runtime
 		private static object InvokeHelper(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue *args, bool nonVirtual)
 		{
 			ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
-			string sig = GetMethodArgList(methodID);
-			object[] argarray = new object[sig.Length];
-			for(int i = 0; i < sig.Length; i++)
+			MethodWrapper mw = MethodWrapper.FromCookie(methodID);
+			TypeWrapper[] argTypes = mw.GetParameters();
+			object[] argarray = new object[argTypes.Length];
+			for (int i = 0; i < argarray.Length; i++)
 			{
-				switch(sig[i])
-				{
-					case 'Z':
-						argarray[i] = java.lang.Boolean.valueOf(args[i].z != JNI_FALSE);
-						break;
-					case 'B':
-						argarray[i] = java.lang.Byte.valueOf((byte)args[i].b);
-						break;
-					case 'C':
-						argarray[i] = java.lang.Character.valueOf((char)args[i].c);
-						break;
-					case 'S':
-						argarray[i] = java.lang.Short.valueOf(args[i].s);
-						break;
-					case 'I':
-						argarray[i] = java.lang.Integer.valueOf(args[i].i);
-						break;
-					case 'J':
-						argarray[i] = java.lang.Long.valueOf(args[i].j);
-						break;
-					case 'F':
-						argarray[i] = java.lang.Float.valueOf(args[i].f);
-						break;
-					case 'D':
-						argarray[i] = java.lang.Double.valueOf(args[i].d);
-						break;
-					case 'L':
-						argarray[i] = pEnv->UnwrapRef(args[i].l);
-						break;
-				}
+				TypeWrapper type = argTypes[i];
+				if (type == PrimitiveTypeWrapper.BOOLEAN)
+					argarray[i] = java.lang.Boolean.valueOf(args[i].z != JNI_FALSE);
+				else if (type == PrimitiveTypeWrapper.BYTE)
+					argarray[i] = java.lang.Byte.valueOf((byte)args[i].b);
+				else if (type == PrimitiveTypeWrapper.CHAR)
+					argarray[i] = java.lang.Character.valueOf((char)args[i].c);
+				else if (type == PrimitiveTypeWrapper.SHORT)
+					argarray[i] = java.lang.Short.valueOf(args[i].s);
+				else if (type == PrimitiveTypeWrapper.INT)
+					argarray[i] = java.lang.Integer.valueOf(args[i].i);
+				else if (type == PrimitiveTypeWrapper.LONG)
+					argarray[i] = java.lang.Long.valueOf(args[i].j);
+				else if (type == PrimitiveTypeWrapper.FLOAT)
+					argarray[i] = java.lang.Float.valueOf(args[i].f);
+				else if (type == PrimitiveTypeWrapper.DOUBLE)
+					argarray[i] = java.lang.Double.valueOf(args[i].d);
+				else
+					argarray[i] = pEnv->UnwrapRef(args[i].l);
 			}
 			try
 			{
-				return MethodWrapper.FromCookie(methodID).InvokeJNI(pEnv->UnwrapRef(obj), argarray, nonVirtual, env.callerID);
+				return mw.InvokeJNI(pEnv->UnwrapRef(obj), argarray, nonVirtual, env.callerID);
 			}
 			catch(java.lang.reflect.InvocationTargetException x)
 			{
