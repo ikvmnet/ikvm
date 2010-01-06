@@ -158,7 +158,6 @@ namespace IKVM.Runtime
 
 		public unsafe struct Frame
 		{
-			private JNIEnv* pJNIEnv;
 			private JNIEnv.ManagedJNIEnv env;
 			private ikvm.@internal.CallerID prevCallerID;
 			private object[] quickLocals;
@@ -181,12 +180,11 @@ namespace IKVM.Runtime
 
 			public IntPtr Enter(ikvm.@internal.CallerID callerID)
 			{
-				pJNIEnv = TlsHack.pJNIEnv;
-				if(pJNIEnv == null)
+				env = TlsHack.ManagedJNIEnv;
+				if(env == null)
 				{
-					pJNIEnv = JNIEnv.CreateJNIEnv();
+					env = JNIEnv.CreateJNIEnv()->GetManagedJNIEnv();
 				}
-				env = pJNIEnv->GetManagedJNIEnv();
 				prevCallerID = env.callerID;
 				env.callerID = callerID;
 				object[][] localRefs = env.localRefs;
@@ -204,7 +202,7 @@ namespace IKVM.Runtime
 				}
 				quickLocals = localRefs[env.localRefSlot];
 				quickLocalIndex = (env.localRefSlot << JNIEnv.LOCAL_REF_SHIFT);
-				return (IntPtr)(void*)pJNIEnv;
+				return (IntPtr)(void*)env.pJNIEnv;
 			}
 
 			public void Leave()
@@ -368,7 +366,7 @@ namespace IKVM.Runtime
 
 			public object UnwrapLocalRef(IntPtr p)
 			{
-				return pJNIEnv->UnwrapRef(p);
+				return env.pJNIEnv->UnwrapRef(p);
 			}
 		}
 	}
@@ -985,10 +983,10 @@ namespace IKVM.Runtime
 					return JNIEnv.JNI_EVERSION;
 				}
 			}
-			JNIEnv* p = TlsHack.pJNIEnv;
-			if(p != null)
+			JNIEnv.ManagedJNIEnv env = TlsHack.ManagedJNIEnv;
+			if(env != null)
 			{
-				*penv = p;
+				*penv = env.pJNIEnv;
 				return JNIEnv.JNI_OK;
 			}
 			// NOTE if we're here, it is *very* likely that the thread was created by native code and not by managed code,
@@ -1008,8 +1006,8 @@ namespace IKVM.Runtime
 						// someone beat us to it...
 					}
 				}
-				// NOTE we're calling UnwrapRef on a null reference, but that's OK because group is a global reference
-				object threadGroup = p->UnwrapRef(pAttachArgs->group);
+				// NOTE we're calling UnwrapRef on a null pointer, but that's OK because group is a global reference
+				object threadGroup = ((JNIEnv*)null)->UnwrapRef(pAttachArgs->group);
 				if(threadGroup != null)
 				{
 					IKVM.NativeCode.java.lang.Thread.AttachThreadFromJni(threadGroup);
@@ -1021,7 +1019,7 @@ namespace IKVM.Runtime
 
 		internal static jint DetachCurrentThread(JavaVM* pJVM)
 		{
-			if(TlsHack.pJNIEnv == null)
+			if(TlsHack.ManagedJNIEnv == null)
 			{
 				// the JDK allows detaching from an already detached thread
 				return JNIEnv.JNI_OK;
@@ -1036,10 +1034,10 @@ namespace IKVM.Runtime
 		{
 			if(JNI.IsSupportedJniVersion(version))
 			{
-				JNIEnv* p = TlsHack.pJNIEnv;
-				if(p != null)
+				JNIEnv.ManagedJNIEnv env = TlsHack.ManagedJNIEnv;
+				if(env != null)
 				{
-					*penv = p;
+					*penv = env.pJNIEnv;
 					return JNIEnv.JNI_OK;
 				}
 				*penv = null;
@@ -1083,7 +1081,6 @@ namespace IKVM.Runtime
 		private GCHandle managedJNIEnv;
 		private GCHandle criticalArrayHandle1;
 		private GCHandle criticalArrayHandle2;
-		private static LocalDataStoreSlot cleanupHelperDataSlot = System.Threading.Thread.AllocateDataSlot();
 
 		static JNIEnv()
 		{
@@ -1098,6 +1095,7 @@ namespace IKVM.Runtime
 
 		internal sealed class ManagedJNIEnv
 		{
+			internal readonly JNIEnv* pJNIEnv;
 			internal ClassLoaderWrapper classLoader;
 			internal ikvm.@internal.CallerID callerID;
 			internal object[][] localRefs;
@@ -1106,24 +1104,15 @@ namespace IKVM.Runtime
 
 			internal ManagedJNIEnv()
 			{
+				pJNIEnv = (JNIEnv*)JniMem.Alloc(sizeof(JNIEnv));
 				localRefs = new object[32][];
 				localRefs[0] = new object[JNIEnv.LOCAL_REF_BUCKET_SIZE];
 				// stuff something in the first entry to make sure we don't hand out a zero handle
 				// (a zero handle corresponds to a null reference)
 				localRefs[0][0] = "";
 			}
-		}
 
-		unsafe class JNIEnvCleanupHelper
-		{
-			private JNIEnv* pJNIEnv;
-
-			internal JNIEnvCleanupHelper(JNIEnv* pJNIEnv)
-			{
-				this.pJNIEnv = pJNIEnv;
-			}
-
-			~JNIEnvCleanupHelper()
+			~ManagedJNIEnv()
 			{
 				// NOTE don't clean up when we're being unloaded (we'll get cleaned up anyway and because
 				// of the unorderedness of the finalization process native code could still be run after
@@ -1152,15 +1141,11 @@ namespace IKVM.Runtime
 
 		internal static JNIEnv* CreateJNIEnv()
 		{
-			JNIEnv* pJNIEnv = TlsHack.pJNIEnv = (JNIEnv*)JniMem.Alloc(sizeof(JNIEnv));
-			// don't touch the LocalDataStore slot when we're being unloaded
-			// (it may have been finalized already)
-			if(!Environment.HasShutdownStarted)
-			{
-				System.Threading.Thread.SetData(cleanupHelperDataSlot, new JNIEnvCleanupHelper(pJNIEnv));
-			}
+			ManagedJNIEnv env = new ManagedJNIEnv();
+			TlsHack.ManagedJNIEnv = env;
+			JNIEnv* pJNIEnv = env.pJNIEnv;
 			pJNIEnv->vtable = VtableBuilder.vtable;
-			pJNIEnv->managedJNIEnv = GCHandle.Alloc(new ManagedJNIEnv());
+			pJNIEnv->managedJNIEnv = GCHandle.Alloc(env, GCHandleType.WeakTrackResurrection);
 			pJNIEnv->criticalArrayHandle1 = GCHandle.Alloc(null, GCHandleType.Pinned);
 			pJNIEnv->criticalArrayHandle2 = GCHandle.Alloc(null, GCHandleType.Pinned);
 			return pJNIEnv;
@@ -1168,14 +1153,7 @@ namespace IKVM.Runtime
 
 		internal static void FreeJNIEnv()
 		{
-			// don't touch the LocalDataStore slot when we're being unloaded
-			// (it may have been finalized already)
-			if(!Environment.HasShutdownStarted)
-			{
-				// the cleanup helper will eventually free the JNIEnv
-				System.Threading.Thread.SetData(cleanupHelperDataSlot, null);
-			}
-			TlsHack.pJNIEnv = null;
+			TlsHack.ManagedJNIEnv = null;
 		}
 
 		internal static string StringFromOEM(byte* psz)
@@ -3518,7 +3496,7 @@ namespace IKVM.Runtime
 		}
 	}
 
-	class JniMem
+	static class JniMem
 	{
 		internal static IntPtr Alloc(int cb)
 		{
@@ -3531,9 +3509,9 @@ namespace IKVM.Runtime
 		}
 	}
 
-	unsafe class TlsHack
+	static class TlsHack
 	{
 		[ThreadStatic]
-		internal static JNIEnv* pJNIEnv;
+		internal static JNIEnv.ManagedJNIEnv ManagedJNIEnv;
 	}
 }
