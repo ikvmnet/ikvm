@@ -160,8 +160,6 @@ namespace IKVM.Runtime
 		{
 			private JNIEnv.ManagedJNIEnv env;
 			private JNIEnv.ManagedJNIEnv.FrameState prevFrameState;
-			private object[] quickLocals;
-			private int quickLocalIndex;
 
 			internal ClassLoaderWrapper Enter(ClassLoaderWrapper loader)
 			{
@@ -185,8 +183,6 @@ namespace IKVM.Runtime
 					env = JNIEnv.CreateJNIEnv()->GetManagedJNIEnv();
 				}
 				prevFrameState = env.Enter(callerID);
-				quickLocals = env.localRefs[env.localRefSlot];
-				quickLocalIndex = (env.localRefSlot << JNIEnv.LOCAL_REF_SHIFT);
 				return (IntPtr)(void*)env.pJNIEnv;
 			}
 
@@ -301,33 +297,7 @@ namespace IKVM.Runtime
 
 			public IntPtr MakeLocalRef(object obj)
 			{
-				if(obj == null)
-				{
-					return IntPtr.Zero;
-				}
-				int i = quickLocalIndex & JNIEnv.LOCAL_REF_MASK;
-				if(i < quickLocals.Length)
-				{
-					quickLocals[i] = obj;
-					return (IntPtr)quickLocalIndex++;
-				}
-				else if(i < JNIEnv.LOCAL_REF_BUCKET_SIZE)
-				{
-					object[] tmp = new object[quickLocals.Length * 2];
-					Array.Copy(quickLocals, 0, tmp, 0, quickLocals.Length);
-					quickLocals = tmp;
-					object[][] localRefs = env.localRefs;
-					localRefs[env.localRefSlot] = quickLocals;
-					quickLocals[i] = obj;
-					return (IntPtr)quickLocalIndex++;
-				}
-				else
-				{
-					// this can't happen, because LOCAL_REF_BUCKET_SIZE is larger than the maximum number of object
-					// references that can be required by a native method call (256 arguments + a class reference)
-					JVM.CriticalFailure("JNI.Frame.MakeLocalRef cannot spill into next slot", null);
-					return IntPtr.Zero;
-				}
+				return env.MakeLocalRef(obj);
 			}
 
 			public object UnwrapLocalRef(IntPtr p)
@@ -1067,16 +1037,19 @@ namespace IKVM.Runtime
 			internal ikvm.@internal.CallerID callerID;
 			internal object[][] localRefs;
 			internal int localRefSlot;
+			private int localRefIndex;
+			private object[] active;
 			internal Exception pendingException;
 
 			internal ManagedJNIEnv()
 			{
 				pJNIEnv = (JNIEnv*)JniMem.Alloc(sizeof(JNIEnv));
 				localRefs = new object[32][];
-				localRefs[0] = new object[LOCAL_REF_INITIAL_BUCKET_SIZE];
+				active = localRefs[0] = new object[LOCAL_REF_INITIAL_BUCKET_SIZE];
 				// stuff something in the first entry to make sure we don't hand out a zero handle
 				// (a zero handle corresponds to a null reference)
-				localRefs[0][0] = "";
+				active[0] = "";
+				localRefIndex = 1;
 			}
 
 			~ManagedJNIEnv()
@@ -1109,34 +1082,44 @@ namespace IKVM.Runtime
 			{
 				internal readonly ikvm.@internal.CallerID callerID;
 				internal readonly int localRefSlot;
+				internal readonly int localRefIndex;
 
-				internal FrameState(ikvm.@internal.CallerID callerID, int localRefSlot)
+				internal FrameState(ikvm.@internal.CallerID callerID, int localRefSlot, int localRefIndex)
 				{
 					this.callerID = callerID;
 					this.localRefSlot = localRefSlot;
+					this.localRefIndex = localRefIndex;
 				}
 			}
 
 			internal FrameState Enter(ikvm.@internal.CallerID newCallerID)
 			{
-				FrameState prev = new FrameState(callerID, localRefSlot);
+				FrameState prev = new FrameState(callerID, localRefSlot, localRefIndex);
 				this.callerID = newCallerID;
 				localRefSlot++;
 				if (localRefSlot >= localRefs.Length)
 				{
 					object[][] tmp = new object[localRefs.Length * 2][];
 					Array.Copy(localRefs, 0, tmp, 0, localRefs.Length);
-					localRefs = localRefs = tmp;
+					localRefs = tmp;
 				}
-				if (localRefs[localRefSlot] == null)
+				localRefIndex = 0;
+				active = localRefs[localRefSlot];
+				if (active == null)
 				{
-					localRefs[localRefSlot] = new object[LOCAL_REF_INITIAL_BUCKET_SIZE];
+					active = localRefs[localRefSlot] = new object[LOCAL_REF_INITIAL_BUCKET_SIZE];
 				}
 				return prev;
 			}
 
 			internal Exception Leave(FrameState prev)
 			{
+				// an explicit for loop is faster than Array.Clear()
+				for (int i = 0; i < localRefIndex; i++)
+				{
+					active[i] = null;
+				}
+				localRefSlot--;
 				while (localRefSlot != prev.localRefSlot)
 				{
 					if (localRefs[localRefSlot] != null)
@@ -1153,6 +1136,8 @@ namespace IKVM.Runtime
 					}
 					localRefSlot--;
 				}
+				active = localRefs[localRefSlot];
+				this.localRefIndex = prev.localRefIndex;
 				this.callerID = prev.callerID;
 				Exception x = pendingException;
 				pendingException = null;
@@ -1165,23 +1150,45 @@ namespace IKVM.Runtime
 				{
 					return IntPtr.Zero;
 				}
-				object[] active = localRefs[localRefSlot];
+
+				int index;
+				if (localRefIndex == active.Length)
+				{
+					index = FindFreeIndex();
+				}
+				else
+				{
+					index = localRefIndex++;
+				}
+				active[index] = obj;
+				return (IntPtr)((localRefSlot << LOCAL_REF_SHIFT) + index);
+			}
+
+			private int FindFreeIndex()
+			{
 				for (int i = 0; i < active.Length; i++)
 				{
 					if (active[i] == null)
 					{
-						active[i] = obj;
-						return (IntPtr)((localRefSlot << LOCAL_REF_SHIFT) + i);
+						while (localRefIndex > i && active[localRefIndex - 1] == null)
+						{
+							localRefIndex--;
+						}
+						return i;
 					}
 				}
+				GrowActiveSlot();
+				return localRefIndex++;
+			}
+
+			private void GrowActiveSlot()
+			{
 				if (active.Length < LOCAL_REF_BUCKET_SIZE)
 				{
-					int i = active.Length;
-					object[] tmp = new object[i * 2];
-					Array.Copy(active, 0, tmp, 0, i);
+					object[] tmp = new object[active.Length * 2];
+					Array.Copy(active, tmp, active.Length);
 					active = localRefs[localRefSlot] = tmp;
-					active[i] = obj;
-					return (IntPtr)((localRefSlot << LOCAL_REF_SHIFT) + i);
+					return;
 				}
 				// if we get here, we're in a native method that most likely is leaking locals refs,
 				// so we're going to allocate a new bucket and increment localRefSlot, this means that
@@ -1189,18 +1196,18 @@ namespace IKVM.Runtime
 				// but since we're assuming that the method is leaking anyway, that isn't a problem
 				// (it's never a correctness issue, just a resource consumption issue)
 				localRefSlot++;
+				localRefIndex = 0;
 				if (localRefSlot == localRefs.Length)
 				{
 					object[][] tmp = new object[localRefSlot * 2][];
 					Array.Copy(localRefs, 0, tmp, 0, localRefSlot);
 					localRefs = tmp;
 				}
-				if (localRefs[localRefSlot] == null)
+				active = localRefs[localRefSlot];
+				if (active == null)
 				{
-					localRefs[localRefSlot] = new object[LOCAL_REF_BUCKET_SIZE];
+					active = localRefs[localRefSlot] = new object[LOCAL_REF_BUCKET_SIZE];
 				}
-				localRefs[localRefSlot][0] = obj;
-				return (IntPtr)(localRefSlot << LOCAL_REF_SHIFT);
 			}
 
 			internal object UnwrapLocalRef(int i)
@@ -1231,6 +1238,8 @@ namespace IKVM.Runtime
 					}
 					localRefs[localRefSlot] = new object[r];
 				}
+				localRefIndex = 0;
+				active = localRefs[localRefSlot];
 				return JNI_OK;
 			}
 
@@ -1242,6 +1251,8 @@ namespace IKVM.Runtime
 					localRefSlot--;
 				}
 				localRefSlot--;
+				localRefIndex = localRefs[localRefSlot].Length;
+				active = localRefs[localRefSlot];
 				return MakeLocalRef(res);
 			}
 
