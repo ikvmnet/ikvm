@@ -992,11 +992,6 @@ namespace IKVM.Runtime
 	[StructLayout(LayoutKind.Sequential)]
 	unsafe struct JNIEnv
 	{
-		// NOTE LOCAL_REF_BUCKET_SIZE must be at least 512 to allow all method arguments to fit
-		// in a single slot, because Frame.MakeLocalRef() doesn't support spilling into a new bucket
-		internal const int LOCAL_REF_SHIFT = 10;
-		internal const int LOCAL_REF_BUCKET_SIZE = (1 << LOCAL_REF_SHIFT);
-		internal const int LOCAL_REF_MASK = (LOCAL_REF_BUCKET_SIZE - 1);
 		internal const int JNI_OK = 0;
 		internal const int JNI_ERR = -1;
 		internal const int JNI_EDETACHED = -2;
@@ -1031,12 +1026,18 @@ namespace IKVM.Runtime
 
 		internal sealed class ManagedJNIEnv
 		{
+			// NOTE the initial bucket size must be a power of two < LOCAL_REF_MAX_BUCKET_SIZE,
+			// because each time we grow it, we double the size and it must eventually reach
+			// exactly LOCAL_REF_MAX_BUCKET_SIZE
 			private const int LOCAL_REF_INITIAL_BUCKET_SIZE = 32;
+			private const int LOCAL_REF_SHIFT = 10;
+			private const int LOCAL_REF_MAX_BUCKET_SIZE = (1 << LOCAL_REF_SHIFT);
+			private const int LOCAL_REF_MASK = (LOCAL_REF_MAX_BUCKET_SIZE - 1);
 			internal readonly JNIEnv* pJNIEnv;
 			internal ClassLoaderWrapper classLoader;
 			internal ikvm.@internal.CallerID callerID;
-			internal object[][] localRefs;
-			internal int localRefSlot;
+			private object[][] localRefs;
+			private int localRefSlot;
 			private int localRefIndex;
 			private object[] active;
 			internal Exception pendingException;
@@ -1124,7 +1125,7 @@ namespace IKVM.Runtime
 				{
 					if (localRefs[localRefSlot] != null)
 					{
-						if (localRefs[localRefSlot].Length == JNIEnv.LOCAL_REF_BUCKET_SIZE)
+						if (localRefs[localRefSlot].Length == LOCAL_REF_MAX_BUCKET_SIZE)
 						{
 							// if the bucket is totally allocated, we're assuming a leaky method so we throw the bucket away
 							localRefs[localRefSlot] = null;
@@ -1183,7 +1184,7 @@ namespace IKVM.Runtime
 
 			private void GrowActiveSlot()
 			{
-				if (active.Length < LOCAL_REF_BUCKET_SIZE)
+				if (active.Length < LOCAL_REF_MAX_BUCKET_SIZE)
 				{
 					object[] tmp = new object[active.Length * 2];
 					Array.Copy(active, tmp, active.Length);
@@ -1206,7 +1207,7 @@ namespace IKVM.Runtime
 				active = localRefs[localRefSlot];
 				if (active == null)
 				{
-					active = localRefs[localRefSlot] = new object[LOCAL_REF_BUCKET_SIZE];
+					active = localRefs[localRefSlot] = new object[LOCAL_REF_MAX_BUCKET_SIZE];
 				}
 			}
 
@@ -1229,9 +1230,9 @@ namespace IKVM.Runtime
 				if (localRefs[localRefSlot] == null)
 				{
 					// we can't use capacity directly, because the array length must be a power of two
-					// and it can't be bigger than LOCAL_REF_BUCKET_SIZE
+					// and it can't be bigger than LOCAL_REF_MAX_BUCKET_SIZE
 					int r = 1;
-					capacity = Math.Min(capacity, LOCAL_REF_BUCKET_SIZE);
+					capacity = Math.Min(capacity, LOCAL_REF_MAX_BUCKET_SIZE);
 					while (r < capacity)
 					{
 						r *= 2;
