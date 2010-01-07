@@ -300,9 +300,10 @@ namespace IKVM.Runtime
 				return env.MakeLocalRef(obj);
 			}
 
+			// NOTE this method has the wrong name, it should unwrap *any* jobject reference type (local and global)
 			public object UnwrapLocalRef(IntPtr p)
 			{
-				return env.pJNIEnv->UnwrapRef(p);
+				return JNIEnv.UnwrapRef(env, p);
 			}
 		}
 	}
@@ -433,11 +434,30 @@ namespace IKVM.Runtime
 		}
 	}
 
-	class GlobalRefs
+	static class GlobalRefs
 	{
 		internal static System.Collections.ArrayList globalRefs = new System.Collections.ArrayList();
 		internal static readonly object weakRefLock = new object();
 		internal static GCHandle[] weakRefs = new GCHandle[16];
+
+		internal static object Unwrap(int i)
+		{
+			i = -i;
+			if ((i & (1 << 30)) != 0)
+			{
+				lock (GlobalRefs.weakRefLock)
+				{
+					return GlobalRefs.weakRefs[i - (1 << 30)].Target;
+				}
+			}
+			else
+			{
+				lock (GlobalRefs.globalRefs)
+				{
+					return GlobalRefs.globalRefs[i - 1];
+				}
+			}
+		}
 	}
 
 	unsafe class VtableBuilder
@@ -942,8 +962,7 @@ namespace IKVM.Runtime
 						// someone beat us to it...
 					}
 				}
-				// NOTE we're calling UnwrapRef on a null pointer, but that's OK because group is a global reference
-				object threadGroup = ((JNIEnv*)null)->UnwrapRef(pAttachArgs->group);
+				object threadGroup = GlobalRefs.Unwrap(pAttachArgs->group.ToInt32());
 				if(threadGroup != null)
 				{
 					IKVM.NativeCode.java.lang.Thread.AttachThreadFromJni(threadGroup);
@@ -1498,15 +1517,15 @@ namespace IKVM.Runtime
 		internal static jint Throw(JNIEnv* pEnv, jthrowable throwable)
 		{
 			ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
-			Exception x = pEnv->UnwrapRef(throwable) as Exception;
-			env.pendingException = (Exception)x;
+			Exception x = UnwrapRef(env, throwable) as Exception;
+			env.pendingException = x;
 			return JNI_OK;
 		}
 
 		internal static jint ThrowNew(JNIEnv* pEnv, jclass clazz, byte* msg)
 		{
 			ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
-			TypeWrapper wrapper = TypeWrapper.FromClass(pEnv->UnwrapRef(clazz));
+			TypeWrapper wrapper = TypeWrapper.FromClass(UnwrapRef(env, clazz));
 			MethodWrapper mw = wrapper.GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
 			if(mw != null)
 			{
@@ -1583,7 +1602,8 @@ namespace IKVM.Runtime
 
 		internal static jobject PopLocalFrame(JNIEnv* pEnv, jobject result)
 		{
-			return pEnv->GetManagedJNIEnv().PopLocalFrame(pEnv->UnwrapRef(result));
+			ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
+			return env.PopLocalFrame(UnwrapRef(env, result));
 		}
 
 		internal static jobject NewGlobalRef(JNIEnv* pEnv, jobject obj)
@@ -1724,11 +1744,11 @@ namespace IKVM.Runtime
 				else if (type == PrimitiveTypeWrapper.DOUBLE)
 					argarray[i] = java.lang.Double.valueOf(args[i].d);
 				else
-					argarray[i] = pEnv->UnwrapRef(args[i].l);
+					argarray[i] = UnwrapRef(env, args[i].l);
 			}
 			try
 			{
-				return mw.InvokeJNI(pEnv->UnwrapRef(obj), argarray, nonVirtual, env.callerID);
+				return mw.InvokeJNI(UnwrapRef(env, obj), argarray, nonVirtual, env.callerID);
 			}
 			catch(java.lang.reflect.InvocationTargetException x)
 			{
@@ -3524,21 +3544,21 @@ namespace IKVM.Runtime
 			}
 			if(i < 0)
 			{
-				i = -i;
-				if((i & (1 << 30)) != 0)
-				{
-					lock(GlobalRefs.weakRefLock)
-					{
-						return GlobalRefs.weakRefs[i - (1 << 30)].Target;
-					}
-				}
-				else
-				{
-					lock(GlobalRefs.globalRefs)
-					{
-						return GlobalRefs.globalRefs[i - 1];
-					}
-				}
+				return GlobalRefs.Unwrap(i);
+			}
+			return null;
+		}
+
+		internal static object UnwrapRef(ManagedJNIEnv env, IntPtr o)
+		{
+			int i = o.ToInt32();
+			if(i > 0)
+			{
+				return env.UnwrapLocalRef(i);
+			}
+			if(i < 0)
+			{
+				return GlobalRefs.Unwrap(i);
 			}
 			return null;
 		}
