@@ -1134,13 +1134,12 @@ namespace IKVM.Runtime
 
 			internal Exception Leave(FrameState prev)
 			{
-				// an explicit for loop is faster than Array.Clear()
+				// on the current (.NET 2.0 SP2) x86 JIT an explicit for loop is faster than Array.Clear() up to about 100 elements
 				for (int i = 0; i < localRefIndex; i++)
 				{
 					active[i] = null;
 				}
-				localRefSlot--;
-				while (localRefSlot != prev.localRefSlot)
+				while (--localRefSlot != prev.localRefSlot)
 				{
 					if (localRefs[localRefSlot] != null)
 					{
@@ -1154,7 +1153,6 @@ namespace IKVM.Runtime
 							Array.Clear(localRefs[localRefSlot], 0, localRefs[localRefSlot].Length);
 						}
 					}
-					localRefSlot--;
 				}
 				active = localRefs[localRefSlot];
 				this.localRefIndex = prev.localRefIndex;
