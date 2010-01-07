@@ -1137,6 +1137,106 @@ namespace IKVM.Runtime
 					JniMem.Free((IntPtr)(void*)pJNIEnv);
 				}
 			}
+
+			internal jobject MakeLocalRef(object obj)
+			{
+				if (obj == null)
+				{
+					return IntPtr.Zero;
+				}
+				object[] active = localRefs[localRefSlot];
+				for (int i = 0; i < active.Length; i++)
+				{
+					if (active[i] == null)
+					{
+						active[i] = obj;
+						return (IntPtr)((localRefSlot << LOCAL_REF_SHIFT) + i);
+					}
+				}
+				if (active.Length < LOCAL_REF_BUCKET_SIZE)
+				{
+					int i = active.Length;
+					object[] tmp = new object[i * 2];
+					Array.Copy(active, 0, tmp, 0, i);
+					active = localRefs[localRefSlot] = tmp;
+					active[i] = obj;
+					return (IntPtr)((localRefSlot << LOCAL_REF_SHIFT) + i);
+				}
+				// if we get here, we're in a native method that most likely is leaking locals refs,
+				// so we're going to allocate a new bucket and increment localRefSlot, this means that
+				// any slots that become available in the previous bucket are not going to be reused,
+				// but since we're assuming that the method is leaking anyway, that isn't a problem
+				// (it's never a correctness issue, just a resource consumption issue)
+				localRefSlot++;
+				if (localRefSlot == localRefs.Length)
+				{
+					object[][] tmp = new object[localRefSlot * 2][];
+					Array.Copy(localRefs, 0, tmp, 0, localRefSlot);
+					localRefs = tmp;
+				}
+				if (localRefs[localRefSlot] == null)
+				{
+					localRefs[localRefSlot] = new object[LOCAL_REF_BUCKET_SIZE];
+				}
+				localRefs[localRefSlot][0] = obj;
+				return (IntPtr)(localRefSlot << LOCAL_REF_SHIFT);
+			}
+
+			internal object UnwrapLocalRef(int i)
+			{
+				return localRefs[i >> LOCAL_REF_SHIFT][i & LOCAL_REF_MASK];
+			}
+
+			internal int PushLocalFrame(jint capacity)
+			{
+				localRefSlot += 2;
+				if (localRefSlot >= localRefs.Length)
+				{
+					object[][] tmp = new object[localRefs.Length * 2][];
+					Array.Copy(localRefs, 0, tmp, 0, localRefs.Length);
+					localRefs = tmp;
+				}
+				// we use a null slot to mark the fact that we used PushLocalFrame
+				localRefs[localRefSlot - 1] = null;
+				if (localRefs[localRefSlot] == null)
+				{
+					// we can't use capacity directly, because the array length must be a power of two
+					// and it can't be bigger than LOCAL_REF_BUCKET_SIZE
+					int r = 1;
+					capacity = Math.Min(capacity, LOCAL_REF_BUCKET_SIZE);
+					while (r < capacity)
+					{
+						r *= 2;
+					}
+					localRefs[localRefSlot] = new object[r];
+				}
+				return JNI_OK;
+			}
+
+			internal jobject PopLocalFrame(object res)
+			{
+				while (localRefs[localRefSlot] != null)
+				{
+					localRefs[localRefSlot] = null;
+					localRefSlot--;
+				}
+				localRefSlot--;
+				return MakeLocalRef(res);
+			}
+
+			internal void DeleteLocalRef(jobject obj)
+			{
+				int i = obj.ToInt32();
+				if (i > 0)
+				{
+					localRefs[i >> LOCAL_REF_SHIFT][i & LOCAL_REF_MASK] = null;
+					return;
+				}
+				if (i < 0)
+				{
+					Debug.Assert(false, "bogus localref in DeleteLocalRef");
+				}
+			}
 		}
 
 		internal static JNIEnv* CreateJNIEnv()
@@ -1445,44 +1545,12 @@ namespace IKVM.Runtime
 
 		internal static jint PushLocalFrame(JNIEnv* pEnv, jint capacity)
 		{
-			ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
-			object[][] localRefs = env.localRefs;
-			env.localRefSlot += 2;
-			if(env.localRefSlot >= localRefs.Length)
-			{
-				object[][] tmp = new object[localRefs.Length * 2][];
-				Array.Copy(localRefs, 0, tmp, 0, localRefs.Length);
-				env.localRefs = localRefs = tmp;
-			}
-			// we use a null slot to mark the fact that we used PushLocalFrame
-			localRefs[env.localRefSlot - 1] = null;
-			if(localRefs[env.localRefSlot] == null)
-			{
-				// we can't use capacity directly, because the array length must be a power of two
-				// and it can't be bigger than LOCAL_REF_BUCKET_SIZE
-				int r = 1;
-				capacity = Math.Min(capacity, LOCAL_REF_BUCKET_SIZE);
-				while(r < capacity)
-				{
-					r *= 2;
-				}
-				localRefs[env.localRefSlot] = new object[r];
-			}
-			return JNI_OK;
+			return pEnv->GetManagedJNIEnv().PushLocalFrame(capacity);
 		}
 
 		internal static jobject PopLocalFrame(JNIEnv* pEnv, jobject result)
 		{
-			ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
-			object res = pEnv->UnwrapRef(result);
-			object[][] localRefs = env.localRefs;
-			while(localRefs[env.localRefSlot] != null)
-			{
-				localRefs[env.localRefSlot] = null;
-				env.localRefSlot--;
-			}
-			env.localRefSlot--;
-			return pEnv->MakeLocalRef(res);
+			return pEnv->GetManagedJNIEnv().PopLocalFrame(pEnv->UnwrapRef(result));
 		}
 
 		internal static jobject NewGlobalRef(JNIEnv* pEnv, jobject obj)
@@ -3422,48 +3490,7 @@ namespace IKVM.Runtime
 
 		internal IntPtr MakeLocalRef(object obj)
 		{
-			if(obj == null)
-			{
-				return IntPtr.Zero;
-			}
-			ManagedJNIEnv env = GetManagedJNIEnv();
-			object[][] localRefs = env.localRefs;
-			object[] active = localRefs[env.localRefSlot];
-			for(int i = 0; i < active.Length; i++)
-			{
-				if(active[i] == null)
-				{
-					active[i] = obj;
-					return (IntPtr)((env.localRefSlot << LOCAL_REF_SHIFT) + i);
-				}
-			}
-			if(active.Length < LOCAL_REF_BUCKET_SIZE)
-			{
-				int i = active.Length;
-				object[] tmp = new object[i * 2];
-				Array.Copy(active, 0, tmp, 0, i);
-				active = localRefs[env.localRefSlot] = tmp;
-				active[i] = obj;
-				return (IntPtr)((env.localRefSlot << LOCAL_REF_SHIFT) + i);
-			}
-			// if we get here, we're in a native method that most likely is leaking locals refs,
-			// so we're going to allocate a new bucket and increment localRefSlot, this means that
-			// any slots that become available in the previous bucket are not going to be reused,
-			// but since we're assuming that the method is leaking anyway, that isn't a problem
-			// (it's never a correctness issue, just a resource consumption issue)
-			env.localRefSlot++;
-			if(env.localRefSlot == localRefs.Length)
-			{
-				object[][] tmp = new object[env.localRefSlot * 2][];
-				Array.Copy(localRefs, 0, tmp, 0, env.localRefSlot);
-				env.localRefs = localRefs = tmp;
-			}
-			if(localRefs[env.localRefSlot] == null)
-			{
-				localRefs[env.localRefSlot] = new object[LOCAL_REF_BUCKET_SIZE];
-			}
-			localRefs[env.localRefSlot][0] = obj;
-			return (IntPtr)(env.localRefSlot << LOCAL_REF_SHIFT);
+			return GetManagedJNIEnv().MakeLocalRef(obj);
 		}
 
 		internal object UnwrapRef(IntPtr o)
@@ -3471,8 +3498,7 @@ namespace IKVM.Runtime
 			int i = o.ToInt32();
 			if(i > 0)
 			{
-				object[][] localRefs = GetManagedJNIEnv().localRefs;
-				return localRefs[i >> LOCAL_REF_SHIFT][i & LOCAL_REF_MASK];
+				return GetManagedJNIEnv().UnwrapLocalRef(i);
 			}
 			if(i < 0)
 			{
