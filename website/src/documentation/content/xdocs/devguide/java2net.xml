@@ -20,7 +20,7 @@
         <p><strong>Tip:</strong> If you're developing on Windows, the Microsoft .NET SDK Class Reference documentation identifies the assembly / dll 
         for a .NET class at the bottom of each class overview page.</p>
         </li>
-        <li>Use the <link href="site:ikvmstub">ikvmstub</link> application to generate a Java jar file for each dll you identified in step 2.
+        <li>Use the <link href="ext:ikvmstub">ikvmstub</link> application to generate a Java jar file for each dll you identified in step 2.
         <p>The ikvmstub tool analyzes the .NET classes in the designated dll
         and generates a jar file containing Java interfaces and stub classes. This information is needed by the Java source compiler, which
         knows nothing about .NET assemblies.</p>
@@ -29,7 +29,7 @@
         <li>Compile the resulting Java classes using ikvmc. Use the -reference option to reference the dll's containing the
           .NET classes you used; do <em>not</em> include the ikvmstub-generated jar files on the compiler classpath.</li> 
       </ol>
-      <p>For an example of this, see the <link href="site:tutorial">tutorial</link>.</p>
+      <p>For an example of this, see the <link href="ext:tutorial">tutorial</link>.</p>
       </section>
 
       <section>

@@ -21,18 +21,15 @@ See http://xml.apache.org/forrest/linking.html for more info
     <download label="Download" href="download.html" description="" />
     <uses label="Uses" href="uses.html" description=""/>
     <weblog label="News" href="http://weblog.ikvm.net" description=""/>
-    <faq label="FAQ" href="http://weblog.ikvm.net/story.aspx/faq" description=""/>
-    <license label="License" href="http://weblog.ikvm.net/story.aspx/license" description=""/>
+    <faq label="FAQ" href="https://sourceforge.net/apps/mediawiki/ikvm/index.php?title=FAQ" description=""/>
+    <license label="License" href="https://sourceforge.net/apps/mediawiki/ikvm/index.php?title=License" description=""/>
     <stories label="Case Studies" href="stories.html" description="" />
   </about>
   <userguide label="User's Guide" href="userguide/">
-    <intro label="Introduction" href="intro.html"/>
-    <install label="Installation" href="install.html" description="" />
-    <tutorial label="Tutorial" href="tutorial.html" description="" />
-    <tools label="Tools Reference" href="tools.html" description=""/>
-      <ikvm  href="ikvm.html"/>
-      <ikvmc  href="ikvmc.html"/>
-      <ikvmstub  href="ikvmstub.html"/>
+    <intro label="Introduction" href="https://sourceforge.net/apps/mediawiki/ikvm/index.php?title=User%27s_Guide"/>
+    <install label="Installation" href="https://sourceforge.net/apps/mediawiki/ikvm/index.php?title=Installation" description="" />
+    <tutorial label="Tutorial" href="https://sourceforge.net/apps/mediawiki/ikvm/index.php?title=Tutorial" description="" />
+    <tools label="Tools Reference" href="https://sourceforge.net/apps/mediawiki/ikvm/index.php?title=Tools" description=""/>
   </userguide>
   <devguide label="Developer's Guide" href="devguide/">
     <intro label="Introduction" href="intro.html" description="" />    
@@ -54,6 +51,10 @@ See http://xml.apache.org/forrest/linking.html for more info
   -->
 
   <external-refs>
+    <ikvm href="https://sourceforge.net/apps/mediawiki/ikvm/index.php?title=Ikvm" />
+    <ikvmc href="https://sourceforge.net/apps/mediawiki/ikvm/index.php?title=Ikvmc" />
+    <ikvmstub href="https://sourceforge.net/apps/mediawiki/ikvm/index.php?title=Ikvmstub" />
+    <tutorial href="https://sourceforge.net/apps/mediawiki/ikvm/index.php?title=Tutorial" />
     <sourceforgedl href="http://sourceforge.net/project/showfiles.php?group_id=69637" />
     <classpath href="http://www.gnu.org/software/classpath/classpath.html" />
     <icedtea href="http://icedtea.classpath.org/wiki/Main_Page" />

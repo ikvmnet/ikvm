@@ -9,7 +9,7 @@
   <body> 
     <section>
       <title>Drop-in JVM</title>
-      <p>The <link href="site:ikvm">ikvm application</link> included with the distribution is a .NET
+      <p>The <link href="ext:ikvm">ikvm application</link> included with the distribution is a .NET
       implementation of a Java Virtual Machine. In many cases, you can use it
       as a drop-in replacement for java. For example, instead of typing</p>
      <p xml:space="preserve"><code>    java -jar myapp.jar</code></p>
@@ -19,7 +19,7 @@
     </section>
     <section>
       <title>Use Java libraries in your .NET applications</title>
-      <p>IKVM.NET includes <link href="site:ikvmc">ikvmc</link>, a Java bytecode to .NET IL translator. 
+      <p>IKVM.NET includes <link href="ext:ikvmc">ikvmc</link>, a Java bytecode to .NET IL translator. 
       If you have a Java library that you would like to use in a .NET application,
       run <code>ikvmc -target:library  mylib.jar</code> to create mylib.dll.
       </p>
@@ -36,7 +36,7 @@
       you can use any Java compiler to compile Java source code to JVM bytecode, then use 
       <code>ikvmc -target:exe myapp.jar</code> 
       to produce a .NET executable. You can even use .NET API's in your
-      Java code using the included <link href="site:ikvmstub">ikvmstub</link> application. 
+      Java code using the included <link href="ext:ikvmstub">ikvmstub</link> application. 
       </p>
     </section>
     

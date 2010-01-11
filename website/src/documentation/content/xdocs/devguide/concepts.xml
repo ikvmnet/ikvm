@@ -19,7 +19,7 @@
       <section>
         <title>Class Loading in Dynamically Interpreted Java Applications</title>
         <p>When you run a Java application using ikvm, ikvm finds and loads Java .class files much like
-        other Java VM's. See the <link href="site:ikvm">ikvm notes</link> for details.</p>
+        other Java VM's. See the <link href="ext:ikvm">ikvm notes</link> for details.</p>
       </section>
 
       <section>

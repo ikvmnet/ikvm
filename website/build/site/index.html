@@ -90,11 +90,11 @@
 </li>
     
 <li>
-<a href="http://weblog.ikvm.net/story.aspx/faq" title="">FAQ</a>
+<a href="https://sourceforge.net/apps/mediawiki/ikvm/index.php?title=FAQ" title="">FAQ</a>
 </li>
     
 <li>
-<a href="http://weblog.ikvm.net/story.aspx/license" title="">License</a>
+<a href="https://sourceforge.net/apps/mediawiki/ikvm/index.php?title=License" title="">License</a>
 </li>
     
 <li>
@@ -108,23 +108,20 @@
 <ul>
     
 <li>
-<a href="userguide/intro.html">Introduction</a>
+<a href="https://sourceforge.net/apps/mediawiki/ikvm/index.php?title=User%27s_Guide">Introduction</a>
 </li>
     
 <li>
-<a href="userguide/install.html" title="">Installation</a>
+<a href="https://sourceforge.net/apps/mediawiki/ikvm/index.php?title=Installation" title="">Installation</a>
 </li>
     
 <li>
-<a href="userguide/tutorial.html" title="">Tutorial</a>
+<a href="https://sourceforge.net/apps/mediawiki/ikvm/index.php?title=Tutorial" title="">Tutorial</a>
 </li>
     
 <li>
-<a href="userguide/tools.html" title="">Tools Reference</a>
+<a href="https://sourceforge.net/apps/mediawiki/ikvm/index.php?title=Tools" title="">Tools Reference</a>
 </li>
-      
-      
-      
   
 </ul>
 </li>
@@ -215,12 +212,6 @@
 <a href="#Introduction">Introduction</a>
 </li>
 <li>
-<a href="#IKVM.NET+Components">IKVM.NET Components</a>
-</li>
-<li>
-<a href="#Project+Status">Project Status</a>
-</li>
-<li>
 <a href="#Related+Work">Related Work</a>
 </li>
 </ul> 
@@ -243,77 +234,7 @@
 <a href="uses.html">Read more</a> about what you can do with IKVM.NET.</p>
 </div>
     
-<a name="N10030"></a><a name="IKVM.NET+Components"></a>
-<h3>IKVM.NET Components</h3>
-<div style="margin-left: 0 ; border: 2px">
-<p>IKVM.NET 0.36 consists of several parts:</p>
-<ul>
-
-<li>
-
-<strong>IKVM.Runtime.dll</strong>: The VM runtime and all supporting code. It contains (among other things):
-<ul>
-
-<li>Byte Code JIT compiler/verifier: Just-in-time compiles Java Byte Code to CIL.</li>
-
-<li>Object model remapping infrastructure: Makes System.Object, System.String and System.Exception appear to 
-Java code as java.lang.Object, java.lang.String and java.lang.Throwable.</li>
-
-<li>Managed .NET re-implementations of the native methods in Classpath. </li>
-
-</ul>
-
-</li>
-
-<li>
-
-<strong>IKVM.OpenJDK.ClassLibrary.dll</strong>: compiled version of the Java class libraries derived from the <a href="http://openjdk.java.net/">OpenJDK</a> class library with some parts filled in with code from <a href="http://www.gnu.org/software/classpath/classpath.html">GNU Classpath</a> and <a href="http://icedtea.classpath.org/wiki/Main_Page">IcedTea</a>, 
-plus some additional IKVM.NET specific code.
-</li>
-
-<li>
-
-<strong>ikvm-native.dll</strong>: Unmanaged C library that implements a small part of the JNI interface and some platform specific code on non Windows platforms. On Windows this is an optional part, only required when an application uses its own native libraries. This is not needed for pure Java applications. On non-Windows platforms it is required, but it is included with the Mono distribution so it usually doesn't need to be installed seperately.
-</li>
-
-<li>
-
-<strong>ikvm.exe</strong>: Starter executable, comparable to java.exe ("dynamic mode").
-</li>
-
-<li>
-
-<strong>ikvmc.exe</strong>: Static compiler. Used to compile Java classes and jars into a .NET assembly ("static mode") .
-</li>
-
-<li>
-
-<strong>ikvmstub.exe</strong>: A tool that generates stub class files from a .NET assembly, so that Java code can be compiled against .NET code. IKVM.NET understands the stubs and replaces the references to the stubs by references to the actual .NET types. 
-</li>
-
-<li>
-
-<strong>IKVM.AWT.WinForms.dll</strong>: Very limited and broken implementation of a few AWT peers. This is a low priority issue for me.</li>
-
-</ul>
-</div>
-    
-<a name="N1007F"></a><a name="Project+Status"></a>
-<h3>Project Status</h3>
-<div style="margin-left: 0 ; border: 2px">
-<p>This project is currently in active development. Compliance with JDK 1.6 is largely implemented, but there are some
-      holes. In particular, </p>
-<ul>
-      
-<li>AWT and Swing are not presently functional. This is a low priority item for the project developers.</li>
-      
-<li>Security is another fairly large hole missing from the IKVM platform. This will be solved by relying on the sophisticated and powerful security model offered by the .NET platform.</li>
-      
-</ul>
-<p>Still, enough functionality is in place that several large Java projects run successfully. </p>
-</div>
-    
-<a name="N10095"></a><a name="Related+Work"></a>
+<a name="N10030"></a><a name="Related+Work"></a>
 <h3>Related Work</h3>
 <div style="margin-left: 0 ; border: 2px">
 <p>The following projects are related to IKVM.NET in some way:</p>
@@ -360,7 +281,7 @@ plus some additional IKVM.NET specific code.
 <br>
 	  
 	  Copyright &copy;
-          2008&nbsp;Jeroen Frijters  All rights reserved.<script type="text/javascript" language="JavaScript"><!--
+          2010&nbsp;Jeroen Frijters  All rights reserved.<script type="text/javascript" language="JavaScript"><!--
               document.write(" - "+"Last Published: " + document.lastModified);
             //  --></script></font></td>
 </tr>

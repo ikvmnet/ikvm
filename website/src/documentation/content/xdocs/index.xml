@@ -17,51 +17,6 @@
       <p><link href="uses.html">Read more</link> about what you can do with IKVM.NET.</p>
     </section>
     <section>
-    <title>IKVM.NET Components</title>
-    <p >IKVM.NET 0.36 consists of several parts:</p>
-<ul >
-<li>
-<strong>IKVM.Runtime.dll</strong>: The VM runtime and all supporting code. It contains (among other things):
-<ul>
-<li>Byte Code JIT compiler/verifier: Just-in-time compiles Java Byte Code to CIL.</li>
-<li>Object model remapping infrastructure: Makes System.Object, System.String and System.Exception appear to 
-Java code as java.lang.Object, java.lang.String and java.lang.Throwable.</li>
-<li>Managed .NET re-implementations of the native methods in Classpath. </li>
-</ul>
-</li>
-<li>
-<strong>IKVM.OpenJDK.ClassLibrary.dll</strong>: compiled version of the Java class libraries derived from the <link href="ext:openjdk">OpenJDK</link> class library with some parts filled in with code from <link href="ext:classpath">GNU Classpath</link> and <link href="ext:icedtea">IcedTea</link>, 
-plus some additional IKVM.NET specific code.
-</li>
-<li>
-<strong>ikvm-native.dll</strong>: Unmanaged C library that implements a small part of the JNI interface and some platform specific code on non Windows platforms. On Windows this is an optional part, only required when an application uses its own native libraries. This is not needed for pure Java applications. On non-Windows platforms it is required, but it is included with the Mono distribution so it usually doesn't need to be installed seperately.
-</li>
-<li>
-<strong>ikvm.exe</strong>: Starter executable, comparable to java.exe ("dynamic mode").
-</li>
-<li>
-<strong>ikvmc.exe</strong>: Static compiler. Used to compile Java classes and jars into a .NET assembly ("static mode") .
-</li>
-<li>
-<strong>ikvmstub.exe</strong>: A tool that generates stub class files from a .NET assembly, so that Java code can be compiled against .NET code. IKVM.NET understands the stubs and replaces the references to the stubs by references to the actual .NET types. 
-</li>
-<li>
-<strong>IKVM.AWT.WinForms.dll</strong>: Very limited and broken implementation of a few AWT peers. This is a low priority issue for me.</li>
-</ul>
-  </section>
-    <section>
-      <title>Project Status</title>
-      <p>This project is currently in active development. Compliance with JDK 1.6 is largely implemented, but there are some
-      holes. In particular, </p>
-      <ul>
-      <li>AWT and Swing are not presently functional. This is a low priority item for the project developers.</li>
-      <li>Security is another fairly large hole missing from the IKVM platform. This will be solved by relying on the sophisticated and powerful security model offered by the .NET platform.</li>
-      </ul>
-      <p>Still, enough functionality is in place that several large Java projects run successfully. </p>
-
-      
-    </section>
-    <section>
       <title>Related Work</title>
       <p>The following projects are related to IKVM.NET in some way:</p>
       <ul>

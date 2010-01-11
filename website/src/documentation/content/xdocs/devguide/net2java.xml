@@ -17,7 +17,7 @@
         a reference to IKVM.OpenJDK.ClassLibrary.dll to your Mono / .NET IDE project. </li>
         <li>To use other Java API's, you can take one of the following approaches:
             <ul>
-               <li>Convert the Java API to .NET CIL using <link href="site:ikvmc">ikvmc</link>.
+               <li>Convert the Java API to .NET CIL using <link href="ext:ikvmc">ikvmc</link>.
                        This produces a .NET dll that you can reference in your project. </li>
                 <li>Use the Java reflection API's to dynamically load and execute the Java bytecode using the
                         IKVM bytecode interpreter.
