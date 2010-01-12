@@ -81,7 +81,7 @@ namespace IKVM.Internal
 				if (methods != null)
 				{
 					string name = "__WorkaroundBaseClass__." + Name;
-					while (!classLoader.GetTypeWrapperFactory().ReserveName(name))
+					while (!classLoader.ReserveName(name))
 					{
 						name = "_" + name;
 					}

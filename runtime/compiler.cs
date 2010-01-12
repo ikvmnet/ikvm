@@ -243,6 +243,13 @@ class Compiler
 					{
 						return -1;
 					}
+					if(e1.ordinal == e2.ordinal)
+					{
+						// This really shouldn't happen, but it is good practice to have a correct Compare
+						// implementation and Mono's Array.Sort() (at one point at least) didn't partition
+						// correctly, causing an array element to be compared against itself.
+						return 0;
+					}
 					return 1;
 				}
 				if(e1.endIndex > e2.endIndex)

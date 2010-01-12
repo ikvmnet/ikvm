@@ -768,8 +768,13 @@ namespace IKVM.Internal
 					// This is primarily to support annotations that take enum parameters.
 					if (f.IsEnum && f.IsPublic)
 					{
-						// TODO make sure there isn't already a nested type with the __Enum name
-						enumBuilder = wrapper.TypeAsBuilder.DefineNestedType("__Enum", TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.NestedPublic | TypeAttributes.Serializable, typeof(Enum));
+						CompilerClassLoader ccl = (CompilerClassLoader)wrapper.GetClassLoader();
+						string name = "__Enum";
+						while (!ccl.ReserveName(f.Name + "$" + name))
+						{
+							name += "_";
+						}
+						enumBuilder = wrapper.TypeAsBuilder.DefineNestedType(name, TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.NestedPublic | TypeAttributes.Serializable, typeof(Enum));
 						AttributeHelper.HideFromJava(enumBuilder);
 						enumBuilder.DefineField("value__", typeof(int), FieldAttributes.Public | FieldAttributes.SpecialName | FieldAttributes.RTSpecialName);
 						for (int i = 0; i < f.Fields.Length; i++)
@@ -1740,6 +1745,14 @@ namespace IKVM.Internal
 
 					TypeWrapper annotationAttributeBaseType = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.AnnotationAttributeBase");
 
+					// make sure we don't clash with another class name
+					CompilerClassLoader ccl = (CompilerClassLoader)o.wrapper.GetClassLoader();
+					string name = o.classFile.Name;
+					while (!ccl.ReserveName(name + "Attribute"))
+					{
+						name += "_";
+					}
+
 					// TODO attribute should be .NET serializable
 					TypeAttributes typeAttributes = TypeAttributes.Class | TypeAttributes.Sealed;
 					if (o.outerClassWrapper != null)
@@ -1752,7 +1765,7 @@ namespace IKVM.Internal
 						{
 							typeAttributes |= TypeAttributes.NestedAssembly;
 						}
-						attributeTypeBuilder = o.outerClassWrapper.TypeAsBuilder.DefineNestedType(GetInnerClassName(o.outerClassWrapper.Name, o.classFile.Name) + "Attribute", typeAttributes, annotationAttributeBaseType.TypeAsBaseType);
+						attributeTypeBuilder = o.outerClassWrapper.TypeAsBuilder.DefineNestedType(GetInnerClassName(o.outerClassWrapper.Name, name) + "Attribute", typeAttributes, annotationAttributeBaseType.TypeAsBaseType);
 					}
 					else
 					{
@@ -1764,7 +1777,7 @@ namespace IKVM.Internal
 						{
 							typeAttributes |= TypeAttributes.NotPublic;
 						}
-						attributeTypeBuilder = o.wrapper.classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(o.classFile.Name + "Attribute", typeAttributes, annotationAttributeBaseType.TypeAsBaseType);
+						attributeTypeBuilder = o.wrapper.classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(name + "Attribute", typeAttributes, annotationAttributeBaseType.TypeAsBaseType);
 					}
 					if (o.wrapper.IsPublic)
 					{
@@ -3878,8 +3891,13 @@ namespace IKVM.Internal
 				TypeBuilder tbFields = null;
 				if (classFile.IsInterface && classFile.IsPublic && !wrapper.IsGhost && classFile.Fields.Length > 0)
 				{
-					// TODO handle name clash
-					tbFields = typeBuilder.DefineNestedType("__Fields", TypeAttributes.Class | TypeAttributes.NestedPublic | TypeAttributes.Sealed | TypeAttributes.Abstract);
+					CompilerClassLoader ccl = (CompilerClassLoader)wrapper.GetClassLoader();
+					string name = "__Fields";
+					while (!ccl.ReserveName(classFile.Name + "$" + name))
+					{
+						name += "_";
+					}
+					tbFields = typeBuilder.DefineNestedType(name, TypeAttributes.Class | TypeAttributes.NestedPublic | TypeAttributes.Sealed | TypeAttributes.Abstract);
 					AttributeHelper.HideFromJava(tbFields);
 					CodeEmitter ilgenClinit = null;
 					for (int i = 0; i < classFile.Fields.Length; i++)

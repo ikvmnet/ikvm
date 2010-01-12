@@ -95,6 +95,11 @@ namespace IKVM.Internal
 			Tracer.Info(Tracer.Compiler, "Instantiate CompilerClassLoader for {0}", assemblyName);
 		}
 
+		internal bool ReserveName(string javaName)
+		{
+			return !classes.ContainsKey(javaName) && GetTypeWrapperFactory().ReserveName(javaName);
+		}
+
 		internal void AddNameMapping(string javaName, string typeName)
 		{
 			nameMappings.Add(javaName, typeName);
