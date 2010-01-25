@@ -1,0 +1,512 @@
+﻿/*
+  Copyright (C) 2009 Jeroen Frijters
+
+  This software is provided 'as-is', without any express or implied
+  warranty.  In no event will the authors be held liable for any damages
+  arising from the use of this software.
+
+  Permission is granted to anyone to use this software for any purpose,
+  including commercial applications, and to alter it and redistribute it
+  freely, subject to the following restrictions:
+
+  1. The origin of this software must not be misrepresented; you must not
+     claim that you wrote the original software. If you use this software
+     in a product, an acknowledgment in the product documentation would be
+     appreciated but is not required.
+  2. Altered source versions must be plainly marked as such, and must not be
+     misrepresented as being the original software.
+  3. This notice may not be removed or altered from any source distribution.
+
+  Jeroen Frijters
+  jeroen@frijters.net
+  
+*/
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.IO;
+using IKVM.Reflection.Reader;
+using IKVM.Reflection.Emit;
+
+namespace IKVM.Reflection
+{
+	public sealed class CustomAttributeData
+	{
+		internal static readonly IList<CustomAttributeData> EmptyList = new List<CustomAttributeData>(0).AsReadOnly();
+		private readonly ConstructorInfo constructor;
+		private readonly IList<CustomAttributeTypedArgument> constructorArguments;
+		private readonly IList<CustomAttributeNamedArgument> namedArguments;
+
+		internal CustomAttributeData(ConstructorInfo constructor, object[] args, List<CustomAttributeNamedArgument> namedArguments)
+		{
+			this.constructor = constructor;
+			MethodSignature sig = constructor.MethodSignature;
+			List<CustomAttributeTypedArgument> list = new List<CustomAttributeTypedArgument>();
+			for (int i = 0; i < args.Length; i++)
+			{
+				list.Add(new CustomAttributeTypedArgument(sig.GetParameterType(i), args[i]));
+			}
+			constructorArguments = list.AsReadOnly();
+			if (namedArguments == null)
+			{
+				this.namedArguments = CustomAttributeNamedArgument.EmptyArray;
+			}
+			else
+			{
+				this.namedArguments = namedArguments.AsReadOnly();
+			}
+		}
+
+		internal CustomAttributeData(Assembly asm, ConstructorInfo constructor, ByteReader br)
+		{
+			this.constructor = constructor;
+			if (br.Length == 0)
+			{
+				// it's legal to have an empty blob
+				constructorArguments = CustomAttributeTypedArgument.EmptyArray;
+				namedArguments = CustomAttributeNamedArgument.EmptyArray;
+			}
+			else
+			{
+				if (br.ReadUInt16() != 1)
+				{
+					throw new BadImageFormatException();
+				}
+				constructorArguments = ReadConstructorArguments(asm, br, constructor);
+				namedArguments = ReadNamedArguments(asm, br, br.ReadUInt16(), constructor.DeclaringType);
+			}
+		}
+
+		public override string ToString()
+		{
+			StringBuilder sb = new StringBuilder();
+			sb.Append('[');
+			sb.Append(constructor.DeclaringType.FullName);
+			sb.Append('(');
+			string sep = "";
+			foreach (CustomAttributeTypedArgument arg in constructorArguments)
+			{
+				sb.Append(sep);
+				sep = ", ";
+				AppendValue(sb, arg);
+			}
+			foreach (CustomAttributeNamedArgument named in namedArguments)
+			{
+				sb.Append(sep);
+				sep = ", ";
+				sb.Append(named.MemberInfo.Name);
+				sb.Append(" = ");
+				AppendValue(sb, named.TypedValue);
+			}
+			sb.Append(')');
+			sb.Append(']');
+			return sb.ToString();
+		}
+
+		private static void AppendValue(StringBuilder sb, CustomAttributeTypedArgument arg)
+		{
+			if (arg.ArgumentType == arg.ArgumentType.Module.universe.System_String)
+			{
+				sb.Append('"').Append(arg.Value).Append('"');
+			}
+			else
+			{
+				if (arg.ArgumentType.IsEnum)
+				{
+					sb.Append('(');
+					sb.Append(arg.ArgumentType.FullName);
+					sb.Append(')');
+				}
+				sb.Append(arg.Value);
+			}
+		}
+
+		internal static void ReadDeclarativeSecurity(Assembly asm, List<CustomAttributeData> list, int action, ByteReader br)
+		{
+			Universe u = asm.universe;
+			if (br.PeekByte() == '.')
+			{
+				br.ReadByte();
+				int count = br.ReadCompressedInt();
+				for (int j = 0; j < count; j++)
+				{
+					Type type = ReadType(asm, br);
+					ConstructorInfo constructor;
+					if (type == u.System_Security_Permissions_HostProtectionAttribute && action == (int)System.Security.Permissions.SecurityAction.LinkDemand)
+					{
+						constructor = type.GetConstructor(Type.EmptyTypes);
+					}
+					else
+					{
+						constructor = type.GetConstructor(new Type[] { u.System_Security_Permissions_SecurityAction });
+					}
+					// LAMESPEC there is an additional length here (probably of the named argument list)
+					ByteReader slice = br.Slice(br.ReadCompressedInt());
+					// LAMESPEC the count of named arguments is a compressed integer (instead of UInt16 as NumNamed in custom attributes)
+					list.Add(new CustomAttributeData(constructor, action, ReadNamedArguments(asm, slice, slice.ReadCompressedInt(), type)));
+				}
+			}
+			else
+			{
+				// .NET 1.x format (xml)
+				char[] buf = new char[br.Length / 2];
+				for (int i = 0; i < buf.Length; i++)
+				{
+					buf[i] = br.ReadChar();
+				}
+				string xml = new String(buf);
+				ConstructorInfo constructor = u.System_Security_Permissions_PermissionSetAttribute.GetConstructor(new Type[] { u.System_Security_Permissions_SecurityAction });
+				List<CustomAttributeNamedArgument> args = new List<CustomAttributeNamedArgument>();
+				args.Add(new CustomAttributeNamedArgument(u.System_Security_Permissions_PermissionSetAttribute.GetProperty("XML"),
+					new CustomAttributeTypedArgument(u.System_String, xml)));
+				list.Add(new CustomAttributeData(constructor, action, args));
+			}
+		}
+
+		private CustomAttributeData(ConstructorInfo constructor, int securityAction, IList<CustomAttributeNamedArgument> namedArguments)
+		{
+			Universe u = constructor.Module.universe;
+			this.constructor = constructor;
+			List<CustomAttributeTypedArgument> list = new List<CustomAttributeTypedArgument>();
+			list.Add(new CustomAttributeTypedArgument(u.System_Security_Permissions_SecurityAction, securityAction));
+			this.constructorArguments =  list.AsReadOnly();
+			this.namedArguments = namedArguments;
+		}
+
+		private static Type ReadFieldOrPropType(Assembly asm, ByteReader br)
+		{
+			Universe u = asm.universe;
+			switch (br.ReadByte())
+			{
+				case Signature.ELEMENT_TYPE_BOOLEAN:
+					return u.System_Boolean;
+				case Signature.ELEMENT_TYPE_CHAR:
+					return u.System_Char;
+				case Signature.ELEMENT_TYPE_I1:
+					return u.System_SByte;
+				case Signature.ELEMENT_TYPE_U1:
+					return u.System_Byte;
+				case Signature.ELEMENT_TYPE_I2:
+					return u.System_Int16;
+				case Signature.ELEMENT_TYPE_U2:
+					return u.System_UInt16;
+				case Signature.ELEMENT_TYPE_I4:
+					return u.System_Int32;
+				case Signature.ELEMENT_TYPE_U4:
+					return u.System_UInt32;
+				case Signature.ELEMENT_TYPE_I8:
+					return u.System_Int64;
+				case Signature.ELEMENT_TYPE_U8:
+					return u.System_UInt64;
+				case Signature.ELEMENT_TYPE_R4:
+					return u.System_Single;
+				case Signature.ELEMENT_TYPE_R8:
+					return u.System_Double;
+				case Signature.ELEMENT_TYPE_STRING:
+					return u.System_String;
+				case Signature.ELEMENT_TYPE_SZARRAY:
+					return ReadFieldOrPropType(asm, br).MakeArrayType();
+				case 0x55:
+					return ReadType(asm, br);
+				case 0x50:
+					return u.System_Type;
+				case 0x51:
+					return u.System_Object;
+				default:
+					throw new InvalidOperationException();
+			}
+		}
+
+		private static CustomAttributeTypedArgument ReadFixedArg(Assembly asm, ByteReader br, Type type)
+		{
+			Universe u = asm.universe;
+			if (type == u.System_String)
+			{
+				return new CustomAttributeTypedArgument(type, br.ReadString());
+			}
+			else if (type == u.System_Type)
+			{
+				return new CustomAttributeTypedArgument(type, ReadType(asm, br));
+			}
+			else if (type == u.System_Object)
+			{
+				return ReadFixedArg(asm, br, ReadFieldOrPropType(asm, br));
+			}
+			else if (type.IsArray)
+			{
+				int length = br.ReadInt32();
+				if (length == -1)
+				{
+					return new CustomAttributeTypedArgument(type, null);
+				}
+				Type elementType = type.GetElementType();
+				CustomAttributeTypedArgument[] array = new CustomAttributeTypedArgument[length];
+				for (int i = 0; i < length; i++)
+				{
+					array[i] = ReadFixedArg(asm, br, elementType);
+				}
+				return new CustomAttributeTypedArgument(type, array);
+			}
+			else if (type.IsEnum)
+			{
+				return new CustomAttributeTypedArgument(type, ReadFixedArg(asm, br, type.GetEnumUnderlyingType()).Value);
+			}
+			else
+			{
+				switch (Type.GetTypeCode(type))
+				{
+					case TypeCode.Boolean:
+						return new CustomAttributeTypedArgument(type, br.ReadByte() != 0);
+					case TypeCode.Char:
+						return new CustomAttributeTypedArgument(type, br.ReadChar());
+					case TypeCode.Single:
+						return new CustomAttributeTypedArgument(type, br.ReadSingle());
+					case TypeCode.Double:
+						return new CustomAttributeTypedArgument(type, br.ReadDouble());
+					case TypeCode.SByte:
+						return new CustomAttributeTypedArgument(type, br.ReadSByte());
+					case TypeCode.Int16:
+						return new CustomAttributeTypedArgument(type, br.ReadInt16());
+					case TypeCode.Int32:
+						return new CustomAttributeTypedArgument(type, br.ReadInt32());
+					case TypeCode.Int64:
+						return new CustomAttributeTypedArgument(type, br.ReadInt64());
+					case TypeCode.Byte:
+						return new CustomAttributeTypedArgument(type, br.ReadByte());
+					case TypeCode.UInt16:
+						return new CustomAttributeTypedArgument(type, br.ReadUInt16());
+					case TypeCode.UInt32:
+						return new CustomAttributeTypedArgument(type, br.ReadUInt32());
+					case TypeCode.UInt64:
+						return new CustomAttributeTypedArgument(type, br.ReadUInt64());
+					default:
+						throw new InvalidOperationException();
+				}
+			}
+		}
+
+		private static Type ReadType(Assembly asm, ByteReader br)
+		{
+			string typeName = br.ReadString();
+			Type t = asm.GetType(typeName);
+			if (t != null)
+			{
+				return t;
+			}
+			else
+			{
+				return asm.universe.GetType(typeName, true);
+			}
+		}
+
+		private static IList<CustomAttributeTypedArgument> ReadConstructorArguments(Assembly asm, ByteReader br, ConstructorInfo constructor)
+		{
+			MethodSignature sig = constructor.MethodSignature;
+			int count = sig.GetParameterCount();
+			List<CustomAttributeTypedArgument> list = new List<CustomAttributeTypedArgument>(count);
+			for (int i = 0; i < count; i++)
+			{
+				list.Add(ReadFixedArg(asm, br, sig.GetParameterType(i)));
+			}
+			return list.AsReadOnly();
+		}
+
+		private static IList<CustomAttributeNamedArgument> ReadNamedArguments(Assembly asm, ByteReader br, int named, Type type)
+		{
+			List<CustomAttributeNamedArgument> list = new List<CustomAttributeNamedArgument>(named);
+			for (int i = 0; i < named; i++)
+			{
+				byte fieldOrProperty = br.ReadByte();
+				Type fieldOrPropertyType = ReadFieldOrPropType(asm, br);
+				string name = br.ReadString();
+				CustomAttributeTypedArgument value = ReadFixedArg(asm, br, fieldOrPropertyType);
+				MemberInfo member;
+				switch (fieldOrProperty)
+				{
+					case 0x53:
+						member = type.GetField(name, BindingFlags.Public | BindingFlags.Instance);
+						break;
+					case 0x54:
+						member = type.GetProperty(name, BindingFlags.Public | BindingFlags.Instance);
+						break;
+					default:
+						throw new BadImageFormatException();
+				}
+				list.Add(new CustomAttributeNamedArgument(member, value));
+			}
+			return list.AsReadOnly();
+		}
+
+		public ConstructorInfo Constructor
+		{
+			get { return constructor; }
+		}
+
+		public IList<CustomAttributeTypedArgument> ConstructorArguments
+		{
+			get { return constructorArguments; }
+		}
+
+		public IList<CustomAttributeNamedArgument> NamedArguments
+		{
+			get { return namedArguments; }
+		}
+
+		public CustomAttributeBuilder __ToBuilder()
+		{
+			object[] args = new object[constructorArguments.Count];
+			for (int i = 0; i < args.Length; i++)
+			{
+				args[i] = constructorArguments[i].Value;
+			}
+			List<PropertyInfo> namedProperties = new List<PropertyInfo>();
+			List<object> propertyValues = new List<object>();
+			List<FieldInfo> namedFields = new List<FieldInfo>();
+			List<object> fieldValues = new List<object>();
+			foreach (CustomAttributeNamedArgument named in namedArguments)
+			{
+				if (named.MemberInfo is PropertyInfo)
+				{
+					namedProperties.Add((PropertyInfo)named.MemberInfo);
+					propertyValues.Add(named.TypedValue.Value);
+				}
+				else
+				{
+					namedFields.Add((FieldInfo)named.MemberInfo);
+					fieldValues.Add(named.TypedValue.Value);
+				}
+			}
+			return new CustomAttributeBuilder(constructor, args, namedProperties.ToArray(), propertyValues.ToArray(), namedFields.ToArray(), fieldValues.ToArray());
+		}
+
+		public static IList<CustomAttributeData> GetCustomAttributes(MemberInfo member)
+		{
+			return member.GetCustomAttributesData();
+		}
+
+		public static IList<CustomAttributeData> GetCustomAttributes(Assembly assembly)
+		{
+			return assembly.GetCustomAttributesData();
+		}
+
+		public static IList<CustomAttributeData> GetCustomAttributes(Module module)
+		{
+			return module.GetCustomAttributesData();
+		}
+
+		public static IList<CustomAttributeData> GetCustomAttributes(ParameterInfo parameter)
+		{
+			return parameter.GetCustomAttributesData();
+		}
+
+		public static IList<CustomAttributeData> __GetCustomAttributes(ParameterInfo parameter, Type attributeType, bool inherit)
+		{
+			List<CustomAttributeData> list = new List<CustomAttributeData>();
+			foreach (CustomAttributeData cad in GetCustomAttributes(parameter))
+			{
+				if (cad.Constructor.DeclaringType.Equals(attributeType))
+				{
+					list.Add(cad);
+				}
+			}
+			return list.ToArray();
+		}
+
+		public static IList<CustomAttributeData> __GetCustomAttributes(MemberInfo member, Type attributeType, bool inherit)
+		{
+			List<CustomAttributeData> list = new List<CustomAttributeData>();
+			bool attribIsInheritable = false;
+			for (; ; )
+			{
+				foreach (CustomAttributeData cad in member.GetCustomAttributesData())
+				{
+					if (cad.Constructor.DeclaringType.Equals(attributeType))
+					{
+						list.Add(cad);
+					}
+				}
+				if (inherit)
+				{
+					if (!attribIsInheritable && !IsInheritableAttribute(attributeType))
+					{
+						return list;
+					}
+					attribIsInheritable = true;
+					Type type = member as Type;
+					if (type != null)
+					{
+						type = type.BaseType;
+						if (type == null)
+						{
+							return list;
+						}
+						member = type;
+						continue;
+					}
+					MethodInfo method = member as MethodInfo;
+					if (method != null)
+					{
+						MemberInfo prev = member;
+						method = method.GetBaseDefinition();
+						if (method == null || method == prev)
+						{
+							return list;
+						}
+						member = method;
+						continue;
+					}
+				}
+				return list;
+			}
+		}
+
+		public static IList<CustomAttributeData> __GetDeclarativeSecurity(Assembly assembly)
+		{
+			return assembly.ManifestModule.GetDeclarativeSecurity(0x20000001);
+		}
+
+		public static IList<CustomAttributeData> __GetDeclarativeSecurity(Type type)
+		{
+			if ((type.Attributes & TypeAttributes.HasSecurity) != 0)
+			{
+				return type.Module.GetDeclarativeSecurity(type.MetadataToken);
+			}
+			else
+			{
+				return EmptyList;
+			}
+		}
+
+		public static IList<CustomAttributeData> __GetDeclarativeSecurity(MethodBase method)
+		{
+			if ((method.Attributes & MethodAttributes.HasSecurity) != 0)
+			{
+				return method.Module.GetDeclarativeSecurity(method.MetadataToken);
+			}
+			else
+			{
+				return EmptyList;
+			}
+		}
+
+		private static bool IsInheritableAttribute(Type attribute)
+		{
+			Type attributeUsageAttribute = attribute.Module.universe.Import(typeof(AttributeUsageAttribute));
+			foreach (CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(attribute))
+			{
+				if (cad.Constructor.DeclaringType.Equals(attributeUsageAttribute))
+				{
+					foreach (CustomAttributeNamedArgument named in cad.NamedArguments)
+					{
+						if (named.MemberInfo.Name == "Inherited")
+						{
+							return (bool)named.TypedValue.Value;
+						}
+					}
+					break;
+				}
+			}
+			return true;
+		}
+	}
+}
