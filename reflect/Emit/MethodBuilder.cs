@@ -1,4 +1,4 @@
-﻿/*
+/*
   Copyright (C) 2008, 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
