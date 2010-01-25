@@ -29,10 +29,14 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
 #if IKVM_REF_EMIT
+using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+using Type = IKVM.Reflection.Type;
+using ResolveEventHandler = IKVM.Reflection.ResolveEventHandler;
+using ResolveEventArgs = IKVM.Reflection.ResolveEventArgs;
 #else
+using System.Reflection;
 using System.Reflection.Emit;
 #endif
 using System.Threading;
@@ -84,7 +88,11 @@ class IkvmcCompiler
 	static int Main(string[] args)
 	{
 		DateTime start = DateTime.Now;
+#if IKVM_REF_EMIT
+		StaticCompiler.Universe.AssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
+#else
 		AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
+#endif
 		System.Threading.Thread.CurrentThread.Name = "compiler";
 		Tracer.EnableTraceConsoleListener();
 		Tracer.EnableTraceForDebug();
@@ -137,18 +145,18 @@ class IkvmcCompiler
 
 	static string GetVersionAndCopyrightInfo()
 	{
-		Assembly asm = Assembly.GetEntryAssembly();
-		object[] desc = asm.GetCustomAttributes(typeof(AssemblyTitleAttribute), false);
+		System.Reflection.Assembly asm = System.Reflection.Assembly.GetEntryAssembly();
+		object[] desc = asm.GetCustomAttributes(typeof(System.Reflection.AssemblyTitleAttribute), false);
 		if (desc.Length == 1)
 		{
-			object[] copyright = asm.GetCustomAttributes(typeof(AssemblyCopyrightAttribute), false);
+			object[] copyright = asm.GetCustomAttributes(typeof(System.Reflection.AssemblyCopyrightAttribute), false);
 			if (copyright.Length == 1)
 			{
 				return string.Format("{0} version {1}{2}{3}{2}http://www.ikvm.net/",
-					((AssemblyTitleAttribute)desc[0]).Title,
+					((System.Reflection.AssemblyTitleAttribute)desc[0]).Title,
 					asm.GetName().Version,
 					Environment.NewLine,
-					((AssemblyCopyrightAttribute)copyright[0]).Copyright);
+					((System.Reflection.AssemblyCopyrightAttribute)copyright[0]).Copyright);
 			}
 		}
 		return "";
@@ -788,7 +796,7 @@ class IkvmcCompiler
 				{
 #pragma warning disable 618
 					// Assembly.LoadWithPartialName is obsolete
-					Assembly found = Assembly.LoadWithPartialName(r);
+					System.Reflection.Assembly found = System.Reflection.Assembly.LoadWithPartialName(r);
 #pragma warning restore
 					if (found != null)
 					{
@@ -1065,8 +1073,66 @@ class IkvmcCompiler
 		}
 	}
 
+	// this method checks if the assembly was loaded from a CLR probe location
+	// (in that case we can also resolve its dependencies via the CLR)
+	private static bool IsLoadedFromCurrentClrProbeLocation(Assembly asm)
+	{
+		try
+		{
+			return System.Reflection.Assembly.ReflectionOnlyLoad(asm.FullName).Location == asm.Location;
+		}
+		catch
+		{
+			return false;
+		}
+	}
+
 	private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
 	{
+#if IKVM_REF_EMIT
+		if (args.RequestingAssembly == null || IsLoadedFromCurrentClrProbeLocation(args.RequestingAssembly))
+		{
+			System.Reflection.Assembly asm = null;
+			try
+			{
+				asm = System.Reflection.Assembly.ReflectionOnlyLoad(args.Name);
+			}
+			catch
+			{
+			}
+			if (asm != null)
+			{
+				return StaticCompiler.LoadFile(asm.Location);
+			}
+		}
+		else
+		{
+			Assembly asm = null;
+			// apply unification and policy
+			try
+			{
+				string name = System.Reflection.Assembly.ReflectionOnlyLoad(args.Name).FullName;
+				if (name != args.Name)
+				{
+					asm = StaticCompiler.Load(name);
+				}
+			}
+			catch
+			{
+			}
+			if (asm != null)
+			{
+				return asm;
+			}
+		}
+		Console.Error.WriteLine("Error: unable to find assembly '{0}'", args.Name);
+		if (args.RequestingAssembly != null)
+		{
+			Console.Error.WriteLine("    (a dependency of '{0}')", args.RequestingAssembly.FullName);
+		}
+		Environment.Exit(1);
+		return null;
+#else
 		// make sure all the referenced assemblies are visible (they are loaded with LoadFrom, so
 		// they end up in the LoadFrom context [unless they happen to be available in one of the probe paths])
 		foreach(Assembly a in AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies())
@@ -1077,5 +1143,6 @@ class IkvmcCompiler
 			}
 		}
 		return Assembly.ReflectionOnlyLoad(args.Name);
+#endif
 	}
 }

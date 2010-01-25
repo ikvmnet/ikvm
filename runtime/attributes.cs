@@ -22,7 +22,12 @@
   
 */
 using System;
+#if IKVM_REF_EMIT
+using IKVM.Reflection;
+using Type = IKVM.Reflection.Type;
+#else
 using System.Reflection;
+#endif
 
 namespace IKVM.Attributes
 {

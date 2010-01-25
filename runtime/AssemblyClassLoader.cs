@@ -22,7 +22,6 @@
   
 */
 using System;
-using System.Reflection;
 using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -30,6 +29,12 @@ using System.Threading;
 using System.Runtime.CompilerServices;
 using FormatterServices = System.Runtime.Serialization.FormatterServices;
 using IKVM.Attributes;
+#if IKVM_REF_EMIT
+using IKVM.Reflection;
+using Type = IKVM.Reflection.Type;
+#else
+using System.Reflection;
+#endif
 
 namespace IKVM.Internal
 {
@@ -456,7 +461,7 @@ namespace IKVM.Internal
 			return null;
 		}
 
-		private Assembly LoadAssemblyOrClearName(ref string name)
+		private Assembly LoadAssemblyOrClearName(ref string name, bool exported)
 		{
 			if (name == null)
 			{
@@ -466,7 +471,14 @@ namespace IKVM.Internal
 			try
 			{
 #if STATIC_COMPILER
-				return StaticCompiler.Load(name);
+				if (exported)
+				{
+					return StaticCompiler.LoadFile(this.MainAssembly.Location + "/../" + new AssemblyName(name).Name + ".dll");
+				}
+				else
+				{
+					return StaticCompiler.Load(name);
+				}
 #else
 				if (isReflectionOnly)
 				{
@@ -505,7 +517,7 @@ namespace IKVM.Internal
 						AssemblyLoader loader = exportedAssemblies[index];
 						if (loader == null)
 						{
-							Assembly asm = LoadAssemblyOrClearName(ref exportedAssemblyNames[index]);
+							Assembly asm = LoadAssemblyOrClearName(ref exportedAssemblyNames[index], true);
 							if (asm == null)
 							{
 								continue;
@@ -610,7 +622,7 @@ namespace IKVM.Internal
 			{
 				if (delegates[i] == null)
 				{
-					Assembly asm = LoadAssemblyOrClearName(ref references[i]);
+					Assembly asm = LoadAssemblyOrClearName(ref references[i], false);
 					if (asm != null)
 					{
 						delegates[i] = AssemblyClassLoader.FromAssembly(asm);
@@ -659,7 +671,7 @@ namespace IKVM.Internal
 						AssemblyLoader loader = exportedAssemblies[index];
 						if (loader == null)
 						{
-							Assembly asm = LoadAssemblyOrClearName(ref exportedAssemblyNames[index]);
+							Assembly asm = LoadAssemblyOrClearName(ref exportedAssemblyNames[index], true);
 							if (asm == null)
 							{
 								continue;
@@ -698,7 +710,7 @@ namespace IKVM.Internal
 			{
 				if (delegates[i] == null)
 				{
-					Assembly asm = LoadAssemblyOrClearName(ref references[i]);
+					Assembly asm = LoadAssemblyOrClearName(ref references[i], false);
 					if (asm != null)
 					{
 						delegates[i] = AssemblyClassLoader.FromAssembly(asm);

@@ -22,6 +22,9 @@
   
 */
 using System;
+#if IKVM_REF_EMIT
+using Type = IKVM.Reflection.Type;
+#endif
 
 namespace IKVM.Internal
 {

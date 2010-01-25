@@ -22,10 +22,12 @@
   
 */
 using System;
-using System.Reflection;
 #if IKVM_REF_EMIT
+using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+using Type = IKVM.Reflection.Type;
 #else
+using System.Reflection;
 using System.Reflection.Emit;
 #endif
 
@@ -37,36 +39,18 @@ namespace IKVM.Internal
 
 		internal static bool IsSameAssembly(Type type1, Type type2)
 		{
-#if IKVM_REF_EMIT && !NET_4_0
-			return IkvmAssembly.GetAssembly(type1) == IkvmAssembly.GetAssembly(type2);
-#else
 			return type1.Assembly.Equals(type2.Assembly);
-#endif
 		}
 
-#if IKVM_REF_EMIT && !NET_4_0
-		internal static bool IsFromAssembly(Type type, IkvmAssembly assembly)
-		{
-			return IkvmAssembly.GetAssembly(type) == assembly;
-		}
-#else
 		internal static bool IsFromAssembly(Type type, Assembly assembly)
 		{
 			return type.Assembly.Equals(assembly);
 		}
-#endif
 
-#if IKVM_REF_EMIT && !NET_4_0
-		internal static IkvmAssembly GetAssembly(Type type)
-		{
-			return IkvmAssembly.GetAssembly(type);
-		}
-#else
 		internal static Assembly GetAssembly(Type type)
 		{
 			return type.Assembly;
 		}
-#endif
 
 		internal static bool IsDynamicAssembly(Assembly asm)
 		{

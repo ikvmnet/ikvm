@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 #if IKVM_REF_EMIT
 using IKVM.Reflection.Emit;
+using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection.Emit;
 #endif

@@ -23,7 +23,12 @@
 */
 using System;
 using System.Threading;
+#if IKVM_REF_EMIT
+using IKVM.Reflection;
+using Type = IKVM.Reflection.Type;
+#else
 using System.Reflection;
+#endif
 using System.IO;
 using System.Diagnostics;
 using System.Text;
@@ -95,7 +100,7 @@ namespace IKVM.Internal
 #endif // STATIC_COMPILER
 		private static Assembly coreAssembly;
 
-		internal static Version SafeGetAssemblyVersion(Assembly asm)
+		internal static Version SafeGetAssemblyVersion(System.Reflection.Assembly asm)
 		{
 			// Assembly.GetName().Version requires FileIOPermission,
 			// so we parse the FullName manually :-(
@@ -245,7 +250,7 @@ namespace IKVM.Internal
 			try
 			{
 				Tracer.Error(Tracer.Runtime, "CRITICAL FAILURE: {0}", message);
-				Type messageBox = null;
+				System.Type messageBox = null;
 #if !STATIC_COMPILER
 				// NOTE we use reflection to invoke MessageBox.Show, to make sure we run in environments where WinForms isn't available
 				Assembly winForms = IsUnix ? null : Assembly.Load("System.Windows.Forms, Version=1.0.5000.0, Culture=neutral, PublicKeyToken=b77a5c561934e089");
@@ -270,7 +275,7 @@ namespace IKVM.Internal
 					try
 					{
 						Version ver = SafeGetAssemblyVersion(typeof(JVM).Assembly);
-						messageBox.InvokeMember("Show", BindingFlags.InvokeMethod | BindingFlags.Static | BindingFlags.Public, null, null, new object[] { message, "IKVM.NET " + ver + " Critical Failure" });
+						messageBox.InvokeMember("Show", System.Reflection.BindingFlags.InvokeMethod | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public, null, null, new object[] { message, "IKVM.NET " + ver + " Critical Failure" });
 					}
 					catch
 					{
@@ -292,13 +297,20 @@ namespace IKVM.Internal
 			}
 		}
 
+#if IKVM_REF_EMIT
+		internal static Type LoadType(System.Type type)
+		{
+			return StaticCompiler.GetRuntimeType(type.FullName);
+		}
+#endif
+
 		// this method resolves types in IKVM.Runtime.dll
 		// (the version of IKVM.Runtime.dll that we're running
 		// with can be different from the one we're compiling against.)
 		internal static Type LoadType(Type type)
 		{
 #if STATIC_COMPILER
-			return StaticCompiler.GetType(type.FullName);
+			return StaticCompiler.GetRuntimeType(type.FullName);
 #else
 			return type;
 #endif
@@ -444,12 +456,20 @@ namespace IKVM.Internal
 
 		internal static Type Import(System.Type type)
 		{
+#if STATIC_COMPILER
+			return StaticCompiler.Universe.Import(type);
+#else
 			return type;
+#endif
 		}
 
 		internal static Type GetType(string typeName, bool throwOnError)
 		{
+#if STATIC_COMPILER
+			return StaticCompiler.Universe.GetType(typeName, throwOnError);
+#else
 			return Type.GetType(typeName, throwOnError);
+#endif
 		}
 	}
 }

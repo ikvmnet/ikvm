@@ -46,7 +46,7 @@
             </sources>
             <references>
                 <include name="../bin/ICSharpCode.SharpZipLib.dll" asis="true" />
-                <include name="../bin/IKVM.Reflection.Emit.dll" asis="true" />
+                <include name="../bin/IKVM.Reflection.dll" asis="true" />
                 <!-- HACK mcs requires an explicit reference to System.Configuration -->
                 <include name="${framework::get-assembly-directory(framework::get-target-framework())}/System.Configuration.dll" />
             </references>

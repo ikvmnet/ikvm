@@ -23,10 +23,12 @@
 */
 
 using System;
-using System.Reflection;
 #if IKVM_REF_EMIT
+using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+using Type = IKVM.Reflection.Type;
 #else
+using System.Reflection;
 using System.Reflection.Emit;
 #endif
 using System.Resources;
@@ -198,7 +200,7 @@ namespace IKVM.Internal
 #if NET_4_0 || IKVM_REF_EMIT
 			assemblyBuilder = 
 #if IKVM_REF_EMIT
-				AssemblyBuilder
+				StaticCompiler.Universe
 #else
 				AppDomain.CurrentDomain
 #endif
@@ -1920,6 +1922,15 @@ namespace IKVM.Internal
 
 			private static void CopyLinkDemands(MethodBuilder mb, MethodInfo mi)
 			{
+#if IKVM_REF_EMIT
+				foreach (CustomAttributeData cad in CustomAttributeData.__GetDeclarativeSecurity(mi))
+				{
+					if (cad.ConstructorArguments.Count == 0 || (int)cad.ConstructorArguments[0].Value == (int)SecurityAction.LinkDemand)
+					{
+						mb.__AddDeclarativeSecurity(cad.__ToBuilder());
+					}
+				}
+#else
 				foreach (object attr in mi.GetCustomAttributes(false))
 				{
 					CodeAccessSecurityAttribute cas = attr as CodeAccessSecurityAttribute;
@@ -1933,6 +1944,7 @@ namespace IKVM.Internal
 						}
 					}
 				}
+#endif
 			}
 
 			private static string MakeMethodKey(MethodInfo method)
@@ -2504,16 +2516,11 @@ namespace IKVM.Internal
 			{
 				if(runtimeAssembly == null)
 				{
-					// HACK based on our assembly name we create the default runtime assembly name
-					AssemblyName compilerAssembly = typeof(CompilerClassLoader).Assembly.GetName();
-					StaticCompiler.runtimeAssembly = StaticCompiler.Load(compilerAssembly.FullName.Replace(compilerAssembly.Name, "IKVM.Runtime"));
-					StaticCompiler.runtimeJniAssembly = StaticCompiler.Load(compilerAssembly.FullName.Replace(compilerAssembly.Name, "IKVM.Runtime.JNI"));
+					// we assume that the runtime is in the same directory as the compiler
+					runtimeAssembly = Path.Combine(typeof(CompilerClassLoader).Assembly.Location, ".." + Path.DirectorySeparatorChar + "IKVM.Runtime.dll");
 				}
-				else
-				{
-					StaticCompiler.runtimeAssembly = StaticCompiler.LoadFile(runtimeAssembly);
-					StaticCompiler.runtimeJniAssembly = StaticCompiler.LoadFile(Path.Combine(StaticCompiler.runtimeAssembly.CodeBase, ".." + Path.DirectorySeparatorChar + "IKVM.Runtime.JNI.dll"));
-				}
+				StaticCompiler.runtimeAssembly = StaticCompiler.LoadFile(runtimeAssembly);
+				StaticCompiler.runtimeJniAssembly = StaticCompiler.LoadFile(Path.Combine(StaticCompiler.runtimeAssembly.Location, ".." + Path.DirectorySeparatorChar + "IKVM.Runtime.JNI.dll"));
 			}
 			catch(FileNotFoundException)
 			{
@@ -2643,6 +2650,7 @@ namespace IKVM.Internal
 					return 1;
 				}
 			}
+#if !IKVM_REF_EMIT
 			bool err = false;
 			foreach(Assembly reference in references)
 			{
@@ -2674,20 +2682,7 @@ namespace IKVM.Internal
 			{
 				return 1;
 			}
-			// If the "System" assembly wasn't explicitly referenced, load it automatically
-			bool systemIsLoaded = false;
-			foreach(Assembly asm in AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies())
-			{
-				if(asm.GetType("System.ComponentModel.EditorBrowsableAttribute") != null)
-				{
-					systemIsLoaded = true;
-					break;
-				}
-			}
-			if(!systemIsLoaded)
-			{
-				Assembly.ReflectionOnlyLoadFrom(JVM.Import(typeof(System.ComponentModel.EditorBrowsableAttribute)).Assembly.Location);
-			}
+#endif
 			List<object> assemblyAnnotations = new List<object>();
 			Dictionary<string, string> baseClasses = new Dictionary<string, string>();
 			Tracer.Info(Tracer.Compiler, "Parsing class files");
@@ -2861,17 +2856,10 @@ namespace IKVM.Internal
 					Assembly asm = null;
 					try
 					{
-						asm = StaticCompiler.Load(name.FullName);
+						asm = LoadReferencedAssembly(StaticCompiler.runtimeAssembly.Location + "/../" + name.Name + ".dll");
 					}
 					catch(FileNotFoundException)
 					{
-						try
-						{
-							asm = LoadReferencedAssembly(StaticCompiler.runtimeAssembly.CodeBase + "/../" + name.Name + ".dll");
-						}
-						catch(FileNotFoundException)
-						{
-						}
 					}
 					if(asm != null && IsCoreAssembly(asm))
 					{
@@ -2915,6 +2903,7 @@ namespace IKVM.Internal
 		private static Assembly LoadReferencedAssembly(string r)
 		{
 			Assembly asm = StaticCompiler.LoadFile(r);
+#if !IKVM_REF_EMIT
 			if (asm.GetManifestResourceInfo("ikvm.exports") != null)
 			{
 				// If this is the main assembly in a multi assembly group, try to pre-load all the assemblies.
@@ -2944,6 +2933,7 @@ namespace IKVM.Internal
 					}
 				}
 			}
+#endif
 			return asm;
 		}
 
@@ -3329,17 +3319,18 @@ namespace IKVM.Internal
 
 	static class StaticCompiler
 	{
+		internal static readonly Universe Universe = new Universe();
 		internal static Assembly runtimeAssembly;
 		internal static Assembly runtimeJniAssembly;
 
 		internal static Assembly Load(string assemblyString)
 		{
-			return Assembly.ReflectionOnlyLoad(assemblyString);
+			return Universe.Load(assemblyString);
 		}
 
 		internal static Assembly LoadFile(string path)
 		{
-			return Assembly.ReflectionOnlyLoadFrom(path);
+			return Universe.LoadFile(path);
 		}
 
 		internal static Type GetRuntimeType(string name)
@@ -3378,7 +3369,7 @@ namespace IKVM.Internal
 			{
 				return runtimeJniAssembly.GetType(name);
 			}
-			foreach(Assembly asm in AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies())
+			foreach(Assembly asm in Universe.GetAssemblies())
 			{
 				Type t = asm.GetType(name, false);
 				if(t != null)

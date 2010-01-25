@@ -23,10 +23,12 @@
 */
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 #if IKVM_REF_EMIT
+using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+using Type = IKVM.Reflection.Type;
 #else
+using System.Reflection;
 using System.Reflection.Emit;
 #endif
 using System.Diagnostics;
@@ -319,7 +321,7 @@ namespace IKVM.Internal
 				}
 				if(tw.IsArray)
 				{
-					Array arr = Array.CreateInstance(tw.ElementTypeWrapper.TypeAsArrayType, attr.Params[i].Elements.Length);
+					Array arr = Array.CreateInstance(Type.__GetSystemType(Type.GetTypeCode(tw.ElementTypeWrapper.TypeAsArrayType)), attr.Params[i].Elements.Length);
 					for(int j = 0; j < arr.Length; j++)
 					{
 						arr.SetValue(ParseValue(loader, tw.ElementTypeWrapper, attr.Params[i].Elements[j].Value), j);
@@ -1789,7 +1791,11 @@ namespace IKVM.Internal
 	{
 		internal static Type GetUnderlyingType(Type enumType)
 		{
+#if IKVM_REF_EMIT
+			return enumType.GetEnumUnderlyingType();
+#else
 			return Enum.GetUnderlyingType(enumType);
+#endif
 		}
 
 #if STATIC_COMPILER
@@ -1931,7 +1937,7 @@ namespace IKVM.Internal
 				return field.GetRawConstantValue();
 			}
 			// both __unspecified and missing values end up here
-			return Activator.CreateInstance(EnumHelper.GetUnderlyingType(enumType));
+			return EnumHelper.GetPrimitiveValue(EnumHelper.GetUnderlyingType(enumType), 0);
 		}
 
 		protected static object ConvertValue(ClassLoaderWrapper loader, Type targetType, object obj)

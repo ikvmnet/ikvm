@@ -22,10 +22,12 @@
   
 */
 using System;
-using System.Reflection;
 #if IKVM_REF_EMIT
+using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+using Type = IKVM.Reflection.Type;
 #else
+using System.Reflection;
 using System.Reflection.Emit;
 #endif
 using System.Diagnostics;
@@ -58,12 +60,7 @@ namespace IKVM.Internal
 			{
 				classLiteralField = classLiteralType.GetField("Value", BindingFlags.Public | BindingFlags.Static);
 			}
-#if IKVM_REF_EMIT
-			// MONOBUG https://bugzilla.novell.com/show_bug.cgi?id=486307
-			return TypeBuilder.GetField(MonoHackGenericType.Make(classLiteralType, type), classLiteralField);
-#else
 			return TypeBuilder.GetField(classLiteralType.MakeGenericType(type), classLiteralField);
-#endif
 		}
 
 		private static bool IsTypeBuilder(Type type)
