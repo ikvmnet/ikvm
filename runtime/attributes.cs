@@ -306,7 +306,7 @@ namespace IKVM.Attributes
 		}
 	}
 
-	[AttributeUsage(AttributeTargets.Assembly)]
+	[AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
 	public sealed class RemappedClassAttribute : Attribute
 	{
 		private string name;
