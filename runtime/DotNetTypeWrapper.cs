@@ -2124,7 +2124,7 @@ namespace IKVM.Internal
 			private MethodWrapper m;
 
 			internal BaseFinalMethodWrapper(DotNetTypeWrapper tw, MethodWrapper m)
-				: base(tw, m.Name, m.Signature, m.GetMethod(), m.ReturnType, m.GetParameters(), m.Modifiers | Modifiers.Final, MemberFlags.None)
+				: base(tw, m.Name, m.Signature, m.GetMethod(), m.ReturnType, m.GetParameters(), (m.Modifiers & ~Modifiers.Abstract) | Modifiers.Final, MemberFlags.None)
 			{
 				this.m = m;
 			}
