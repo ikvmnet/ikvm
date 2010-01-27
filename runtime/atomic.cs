@@ -78,7 +78,7 @@ static class AtomicReferenceFieldUpdaterEmitter
 		{
 			// note that we don't need to lock here, because we're running as part of FinishCore, which is already protected by a lock
 			TypeWrapper arfuTypeWrapper = ClassLoaderWrapper.LoadClassCritical("java.util.concurrent.atomic.AtomicReferenceFieldUpdater");
-			TypeBuilder tb = wrapper.TypeAsBuilder.DefineNestedType("__ARFU_" + field.Name + field.Signature.Replace('.', '/'), TypeAttributes.NestedPrivate | TypeAttributes.Sealed, arfuTypeWrapper.TypeAsBaseType);
+			TypeBuilder tb = wrapper.TypeAsBuilder.DefineNestedType("__<ARFU>_" + field.Name + field.Signature.Replace('.', '/'), TypeAttributes.NestedPrivate | TypeAttributes.Sealed, arfuTypeWrapper.TypeAsBaseType);
 			EmitCompareAndSet("compareAndSet", tb, field.GetField());
 			EmitCompareAndSet("weakCompareAndSet", tb, field.GetField());
 			EmitGet(tb, field.GetField());
