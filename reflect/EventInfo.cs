@@ -74,5 +74,10 @@ namespace IKVM.Reflection
 		{
 			get { return GetAddMethod(true).IsPublic; }
 		}
+
+		internal virtual EventInfo BindTypeParameters(Type type)
+		{
+			return new GenericEventInfo(this.DeclaringType.BindTypeParameters(type), this);
+		}
 	}
 }

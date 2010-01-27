@@ -115,5 +115,10 @@ namespace IKVM.Reflection
 		}
 
 		internal abstract int ImportTo(Emit.ModuleBuilder module);
+
+		internal virtual FieldInfo BindTypeParameters(Type type)
+		{
+			return new GenericFieldInstance(this.DeclaringType.BindTypeParameters(type), this);
+		}
 	}
 }

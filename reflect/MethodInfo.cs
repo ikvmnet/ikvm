@@ -129,5 +129,10 @@ namespace IKVM.Reflection
 		{
 			return GetGenericMethodArgument(type.GenericParameterPosition);
 		}
+
+		internal override MethodBase BindTypeParameters(Type type)
+		{
+			return new GenericMethodInstance(this.DeclaringType.BindTypeParameters(type), this, null);
+		}
 	}
 }

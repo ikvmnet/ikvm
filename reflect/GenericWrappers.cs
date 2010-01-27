@@ -38,6 +38,7 @@ namespace IKVM.Reflection
 
 		internal GenericMethodInstance(Type declaringType, MethodInfo method, Type[] methodArgs)
 		{
+			System.Diagnostics.Debug.Assert(!(method is GenericMethodInstance));
 			this.declaringType = declaringType;
 			this.method = method;
 			this.methodArgs = methodArgs;
@@ -235,6 +236,12 @@ namespace IKVM.Reflection
 		{
 			get { return signature; }
 		}
+
+		internal override MethodBase BindTypeParameters(Type type)
+		{
+			System.Diagnostics.Debug.Assert(methodArgs == null);
+			return new GenericMethodInstance(declaringType.BindTypeParameters(type), method, null);
+		}
 	}
 
 	sealed class GenericFieldInstance : FieldInfo
@@ -307,6 +314,11 @@ namespace IKVM.Reflection
 		internal override int ImportTo(Emit.ModuleBuilder module)
 		{
 			return module.ImportMethodOrField(declaringType, field.Name, field.FieldSignature);
+		}
+
+		internal override FieldInfo BindTypeParameters(Type type)
+		{
+			return new GenericFieldInstance(declaringType.BindTypeParameters(type), field);
 		}
 	}
 
@@ -472,6 +484,11 @@ namespace IKVM.Reflection
 		{
 			return property.GetCustomAttributesData();
 		}
+
+		internal override PropertyInfo BindTypeParameters(Type type)
+		{
+			return new GenericPropertyInfo(typeInstance.BindTypeParameters(type), property);
+		}
 	}
 
 	sealed class GenericEventInfo : EventInfo
@@ -552,6 +569,11 @@ namespace IKVM.Reflection
 		internal override IList<CustomAttributeData> GetCustomAttributesData()
 		{
 			return eventInfo.GetCustomAttributesData();
+		}
+
+		internal override EventInfo BindTypeParameters(Type type)
+		{
+			return new GenericEventInfo(typeInstance.BindTypeParameters(type), eventInfo);
 		}
 	}
 }

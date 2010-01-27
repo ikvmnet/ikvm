@@ -133,7 +133,7 @@ namespace IKVM.Reflection.Reader
 			{
 				if (module.MethodImpl.records[i].Class == token)
 				{
-					MethodInfo body = (MethodInfo)module.ResolveMethod(module.MethodImpl.records[i].MethodBody);
+					MethodInfo body = (MethodInfo)module.ResolveMethod(module.MethodImpl.records[i].MethodBody, typeArgs, null);
 					int index = bodies.IndexOf(body);
 					if (index == -1)
 					{
@@ -141,7 +141,7 @@ namespace IKVM.Reflection.Reader
 						bodies.Add(body);
 						declarations.Add(new List<MethodInfo>());
 					}
-					MethodInfo declaration = (MethodInfo)module.ResolveMethod(module.MethodImpl.records[i].MethodDeclaration);
+					MethodInfo declaration = (MethodInfo)module.ResolveMethod(module.MethodImpl.records[i].MethodDeclaration, typeArgs, null);
 					declarations[index].Add(declaration);
 				}
 			}

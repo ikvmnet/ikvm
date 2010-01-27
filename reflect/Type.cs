@@ -1368,7 +1368,16 @@ namespace IKVM.Reflection
 
 		internal virtual Type BindTypeParameters(IGenericBinder binder)
 		{
-			return this;
+			if (IsGenericTypeDefinition)
+			{
+				Type[] args = GetGenericArguments();
+				Type.InplaceBindTypeParameters(binder, args);
+				return GenericTypeInstance.Make(this, args);
+			}
+			else
+			{
+				return this;
+			}
 		}
 
 		internal static void InplaceBindTypeParameters(IGenericBinder binder, Type[] types)
@@ -1902,7 +1911,7 @@ namespace IKVM.Reflection
 			FieldInfo[] fields = type.__GetDeclaredFields();
 			for (int i = 0; i < fields.Length; i++)
 			{
-				fields[i] = new GenericFieldInstance(this, fields[i]);
+				fields[i] = fields[i].BindTypeParameters(this);
 			}
 			return fields;
 		}
@@ -1922,15 +1931,7 @@ namespace IKVM.Reflection
 			MethodBase[] methods = type.__GetDeclaredMethods();
 			for (int i = 0; i < methods.Length; i++)
 			{
-				ConstructorInfo ci = methods[i] as ConstructorInfo;
-				if (ci != null)
-				{
-					methods[i] = new ConstructorInfoImpl(new GenericMethodInstance(this, ci.GetMethodInfo(), null));
-				}
-				else
-				{
-					methods[i] = new GenericMethodInstance(this, (MethodInfo)methods[i], null);
-				}
+				methods[i] = methods[i].BindTypeParameters(this);
 			}
 			return methods;
 		}
@@ -1945,7 +1946,7 @@ namespace IKVM.Reflection
 			EventInfo[] events = type.__GetDeclaredEvents();
 			for (int i = 0; i < events.Length; i++)
 			{
-				events[i] = new GenericEventInfo(type, events[i]);
+				events[i] = events[i].BindTypeParameters(this);
 			}
 			return events;
 		}
@@ -1955,7 +1956,7 @@ namespace IKVM.Reflection
 			PropertyInfo[] properties = type.__GetDeclaredProperties();
 			for (int i = 0; i < properties.Length; i++)
 			{
-				properties[i] = new GenericPropertyInfo(type, properties[i]);
+				properties[i] = properties[i].BindTypeParameters(this);
 			}
 			return properties;
 		}
@@ -1966,13 +1967,13 @@ namespace IKVM.Reflection
 			map.TargetType = this;
 			for (int i = 0; i < map.MethodBodies.Length; i++)
 			{
-				map.MethodBodies[i] = new GenericMethodInstance(this, map.MethodBodies[i], null);
+				map.MethodBodies[i] = (MethodInfo)map.MethodBodies[i].BindTypeParameters(this);
 				for (int j = 0; j < map.MethodDeclarations[i].Length; j++)
 				{
 					Type interfaceType = map.MethodDeclarations[i][j].DeclaringType;
 					if (interfaceType.IsGenericType)
 					{
-						map.MethodDeclarations[i][j] = new GenericMethodInstance(interfaceType.BindTypeParameters(this), map.MethodDeclarations[i][j], null);
+						map.MethodDeclarations[i][j] = (MethodInfo)map.MethodDeclarations[i][j].BindTypeParameters(this);
 					}
 				}
 			}

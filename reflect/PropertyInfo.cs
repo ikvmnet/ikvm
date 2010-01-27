@@ -155,5 +155,10 @@ namespace IKVM.Reflection
 		{
 			get { return !this.PropertySignature.HasThis; }
 		}
+
+		internal virtual PropertyInfo BindTypeParameters(Type type)
+		{
+			return new GenericPropertyInfo(this.DeclaringType.BindTypeParameters(type), this);
+		}
 	}
 }
