@@ -44,7 +44,7 @@ abstract class RetargetableJavaException : ApplicationException
 		return String.Format(s, args);
 	}
 
-#if !STATIC_COMPILER && !FIRST_PASS
+#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 	internal abstract Exception ToJava();
 #elif FIRST_PASS
 	internal virtual Exception ToJava()
@@ -65,7 +65,7 @@ class ClassLoadingException : RetargetableJavaException
 	{
 	}
 
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !STUB_GENERATOR
 	internal override Exception ToJava()
 	{
 		return InnerException;
@@ -83,7 +83,7 @@ class LinkageError : RetargetableJavaException
 	{
 	}
 
-#if !STATIC_COMPILER && !FIRST_PASS
+#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 	internal override Exception ToJava()
 	{
 		return new java.lang.LinkageError(Message);
@@ -105,7 +105,7 @@ class VerifyError : LinkageError
 	{
 	}
 
-#if !STATIC_COMPILER && !FIRST_PASS
+#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 	internal override Exception ToJava()
 	{
 		return new java.lang.VerifyError(Message);
@@ -119,7 +119,7 @@ class ClassNotFoundException : RetargetableJavaException
 	{
 	}
 
-#if !STATIC_COMPILER && !FIRST_PASS
+#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 	internal override Exception ToJava()
 	{
 		return new java.lang.ClassNotFoundException(Message);
@@ -133,7 +133,7 @@ class ClassCircularityError : LinkageError
 	{
 	}
 
-#if !STATIC_COMPILER && !FIRST_PASS
+#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 	internal override Exception ToJava()
 	{
 		return new java.lang.ClassCircularityError(Message);
@@ -147,7 +147,7 @@ class NoClassDefFoundError : LinkageError
 	{
 	}
 
-#if !STATIC_COMPILER && !FIRST_PASS
+#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 	internal override Exception ToJava()
 	{
 		return new java.lang.NoClassDefFoundError(Message);
@@ -161,7 +161,7 @@ class IncompatibleClassChangeError : LinkageError
 	{
 	}
 
-#if !STATIC_COMPILER && !FIRST_PASS
+#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 	internal override Exception ToJava()
 	{
 		return new java.lang.IncompatibleClassChangeError(Message);
@@ -175,7 +175,7 @@ class IllegalAccessError : IncompatibleClassChangeError
 	{
 	}
 
-#if !STATIC_COMPILER && !FIRST_PASS
+#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 	internal override Exception ToJava()
 	{
 		return new java.lang.IllegalAccessError(Message);
@@ -190,7 +190,7 @@ class ClassFormatError : LinkageError
 	{
 	}
 
-#if !STATIC_COMPILER && !FIRST_PASS
+#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 	internal override Exception ToJava()
 	{
 		return new java.lang.ClassFormatError(Message);
@@ -205,7 +205,7 @@ class UnsupportedClassVersionError : ClassFormatError
 	{
 	}
 
-#if !STATIC_COMPILER && !FIRST_PASS
+#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 	internal override Exception ToJava()
 	{
 		return new java.lang.UnsupportedClassVersionError(Message);

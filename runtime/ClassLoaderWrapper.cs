@@ -50,6 +50,7 @@ namespace IKVM.Internal
 		RemoveAsserts = 16,
 	}
 
+#if !STUB_GENERATOR
 	abstract class TypeWrapperFactory
 	{
 		internal abstract ModuleBuilder ModuleBuilder { get; }
@@ -57,6 +58,7 @@ namespace IKVM.Internal
 		internal abstract bool ReserveName(string name);
 		internal abstract Type DefineUnloadable(string name);
 	}
+#endif // !STUB_GENERATOR
 
 	class ClassLoaderWrapper
 	{
@@ -69,10 +71,12 @@ namespace IKVM.Internal
 		private static AssemblyClassLoader bootstrapClassLoader;
 #endif
 		private static List<GenericClassLoader> genericClassLoaders;
-#if !STATIC_COMPILER && !FIRST_PASS
+#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 		protected java.lang.ClassLoader javaClassLoader;
 #endif
+#if !STUB_GENERATOR
 		private TypeWrapperFactory factory;
+#endif // !STUB_GENERATOR
 		private Dictionary<string, TypeWrapper> types = new Dictionary<string, TypeWrapper>();
 		private readonly Dictionary<string, Thread> defineClassInProgress = new Dictionary<string, Thread>();
 		private List<IntPtr> nativeLibraries;
@@ -140,7 +144,7 @@ namespace IKVM.Internal
 		internal ClassLoaderWrapper(CodeGenOptions codegenoptions, object javaClassLoader)
 		{
 			this.codegenoptions = codegenoptions;
-#if !STATIC_COMPILER && !FIRST_PASS
+#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 			this.javaClassLoader = (java.lang.ClassLoader)javaClassLoader;
 #endif
 		}
@@ -284,6 +288,7 @@ namespace IKVM.Internal
 			// this hook exists so that AssemblyClassLoader can prevent DefineClass when the name is already present in the assembly
 		}
 
+#if !STUB_GENERATOR
 		internal TypeWrapper DefineClass(ClassFile f, object protectionDomain)
 		{
 			string dotnetAssembly = f.IKVMAssemblyAttribute;
@@ -364,6 +369,7 @@ namespace IKVM.Internal
 			}
 			return factory;
 		}
+#endif // !STUB_GENERATOR
 
 		internal TypeWrapper LoadClassByDottedName(string name)
 		{
@@ -641,7 +647,7 @@ namespace IKVM.Internal
 			{
 				return tw;
 			}
-#if !STATIC_COMPILER && !FIRST_PASS
+#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 			Profiler.Enter("ClassLoader.loadClass");
 			try
 			{
@@ -712,7 +718,7 @@ namespace IKVM.Internal
 
 		internal object GetJavaClassLoader()
 		{
-#if FIRST_PASS || STATIC_COMPILER
+#if FIRST_PASS || STATIC_COMPILER || STUB_GENERATOR
 			return null;
 #else
 			return javaClassLoader;
@@ -881,7 +887,7 @@ namespace IKVM.Internal
 			}
 		}
 
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !STUB_GENERATOR
 		internal static ClassLoaderWrapper GetClassLoaderWrapper(object javaClassLoader)
 		{
 			if(javaClassLoader == null)
@@ -1024,7 +1030,7 @@ namespace IKVM.Internal
 			return matchingLoader;
 		}
 
-#if !STATIC_COMPILER && !FIRST_PASS
+#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 		internal static object DoPrivileged(java.security.PrivilegedAction action)
 		{
 			return java.security.AccessController.doPrivileged(action, ikvm.@internal.CallerID.create(typeof(java.lang.ClassLoader).TypeHandle));
@@ -1047,7 +1053,7 @@ namespace IKVM.Internal
 					}
 				}
 				object javaClassLoader = null;
-#if !STATIC_COMPILER && !FIRST_PASS
+#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 				javaClassLoader = DoPrivileged(new AssemblyClassLoader.CreateAssemblyClassLoader(null));
 #endif
 				GenericClassLoader newLoader = new GenericClassLoader(key, javaClassLoader);
@@ -1057,7 +1063,7 @@ namespace IKVM.Internal
 			}
 		}
 
-#if !STATIC_COMPILER && __MonoCS__
+#if !STATIC_COMPILER && !STUB_GENERATOR && __MonoCS__
 		// MONOBUG this weird hack is to work around an mcs bug
 		private static void SetClassLoadWrapperHack<T>(ref T field, ClassLoaderWrapper wrapper)
 		{
@@ -1067,7 +1073,7 @@ namespace IKVM.Internal
 
 		protected static void SetWrapperForClassLoader(object javaClassLoader, ClassLoaderWrapper wrapper)
 		{
-#if !STATIC_COMPILER && !FIRST_PASS
+#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 #if __MonoCS__
 			SetClassLoadWrapperHack(ref ((java.lang.ClassLoader)javaClassLoader).wrapper, wrapper);
 #else
@@ -1125,7 +1131,7 @@ namespace IKVM.Internal
 			{
 				return GetGenericClassLoaderByName(name);
 			}
-#if STATIC_COMPILER
+#if STATIC_COMPILER || STUB_GENERATOR
 			return AssemblyClassLoader.FromAssembly(StaticCompiler.Load(name));
 #else
 			return AssemblyClassLoader.FromAssembly(Assembly.Load(name));
@@ -1208,7 +1214,7 @@ namespace IKVM.Internal
 			}
 		}
 
-#if !STATIC_COMPILER && !FIRST_PASS
+#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 		public override string ToString()
 		{
 			if(javaClassLoader == null)
@@ -1225,7 +1231,7 @@ namespace IKVM.Internal
 			return this == friend.GetClassLoader();
 		}
 
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !STUB_GENERATOR
 		internal static ClassLoaderWrapper FromCallerID(object callerID)
 		{
 #if FIRST_PASS

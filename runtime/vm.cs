@@ -36,7 +36,7 @@ using System.Security;
 using System.Security.Permissions;
 using IKVM.Internal;
 
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !STUB_GENERATOR
 namespace IKVM.Internal
 {
 	public static class Starter
@@ -79,7 +79,7 @@ namespace IKVM.Internal
 		}
 	}
 }
-#endif // !STATIC_COMPILER
+#endif // !STATIC_COMPILER && !STUB_GENERATOR
 
 namespace IKVM.Internal
 {
@@ -89,7 +89,7 @@ namespace IKVM.Internal
 		internal const bool IsStaticCompiler = true;
 		internal const bool FinishingForDebugSave = false;
 		internal const bool IsSaveDebugImage = false;
-#else
+#elif !STUB_GENERATOR
 		internal const bool IsStaticCompiler = false;
 		private static bool finishingForDebugSave;
 		private static int emitSymbols;
@@ -134,7 +134,7 @@ namespace IKVM.Internal
 		{
 			get
 			{
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !STUB_GENERATOR
 				if(coreAssembly == null)
 				{
 #if FIRST_PASS
@@ -152,7 +152,7 @@ namespace IKVM.Internal
 			}
 		}
 
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !STUB_GENERATOR
 		internal static bool FinishingForDebugSave
 		{
 			get
@@ -189,7 +189,7 @@ namespace IKVM.Internal
 				return emitSymbols == 1;
 			}
 		}
-#endif // !STATIC_COMPILER
+#endif // !STATIC_COMPILER && !STUB_GENERATOR
 
 		internal static bool IsUnix
 		{
@@ -251,7 +251,7 @@ namespace IKVM.Internal
 			{
 				Tracer.Error(Tracer.Runtime, "CRITICAL FAILURE: {0}", message);
 				System.Type messageBox = null;
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !STUB_GENERATOR
 				// NOTE we use reflection to invoke MessageBox.Show, to make sure we run in environments where WinForms isn't available
 				Assembly winForms = IsUnix ? null : Assembly.Load("System.Windows.Forms, Version=1.0.5000.0, Culture=neutral, PublicKeyToken=b77a5c561934e089");
 				if(winForms != null)
@@ -309,7 +309,7 @@ namespace IKVM.Internal
 		// with can be different from the one we're compiling against.)
 		internal static Type LoadType(Type type)
 		{
-#if STATIC_COMPILER
+#if STATIC_COMPILER || STUB_GENERATOR
 			return StaticCompiler.GetRuntimeType(type.FullName);
 #else
 			return type;
@@ -318,7 +318,7 @@ namespace IKVM.Internal
 
 		internal static object Box(object val)
 		{
-#if STATIC_COMPILER || FIRST_PASS
+#if STATIC_COMPILER || FIRST_PASS || STUB_GENERATOR
 			return null;
 #else
 			if(val is byte)
@@ -362,7 +362,7 @@ namespace IKVM.Internal
 
 		internal static object Unbox(object val)
 		{
-#if STATIC_COMPILER || FIRST_PASS
+#if STATIC_COMPILER || FIRST_PASS || STUB_GENERATOR
 			return null;
 #else
 			java.lang.Byte b = val as java.lang.Byte;
@@ -412,7 +412,7 @@ namespace IKVM.Internal
 #endif
 		}
 
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !STUB_GENERATOR
 		internal static object NewAnnotation(object classLoader, object definition)
 		{
 #if FIRST_PASS
@@ -423,7 +423,7 @@ namespace IKVM.Internal
 		}
 #endif
 
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !STUB_GENERATOR
 		internal static object NewAnnotationElementValue(object classLoader, object expectedClass, object definition)
 		{
 #if FIRST_PASS
@@ -442,7 +442,7 @@ namespace IKVM.Internal
 		}
 #endif
 
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !STUB_GENERATOR
 		// helper for JNI (which doesn't have access to core library internals)
 		internal static object NewDirectByteBuffer(long address, int capacity)
 		{
@@ -456,7 +456,7 @@ namespace IKVM.Internal
 
 		internal static Type Import(System.Type type)
 		{
-#if STATIC_COMPILER
+#if STATIC_COMPILER || STUB_GENERATOR
 			return StaticCompiler.Universe.Import(type);
 #else
 			return type;
@@ -465,7 +465,7 @@ namespace IKVM.Internal
 
 		internal static Type GetType(string typeName, bool throwOnError)
 		{
-#if STATIC_COMPILER
+#if STATIC_COMPILER || STUB_GENERATOR
 			return StaticCompiler.Universe.GetType(typeName, throwOnError);
 #else
 			return Type.GetType(typeName, throwOnError);
