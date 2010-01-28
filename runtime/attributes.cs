@@ -312,6 +312,12 @@ namespace IKVM.Attributes
 		private string name;
 		private Type remappedType;
 
+#if STUB_GENERATOR
+		public RemappedClassAttribute(string name, System.Type remappedType)
+		{
+		}
+#endif
+
 		public RemappedClassAttribute(string name, Type remappedType)
 		{
 			this.name = name;
@@ -339,6 +345,12 @@ namespace IKVM.Attributes
 	public sealed class RemappedTypeAttribute : Attribute
 	{
 		private Type type;
+
+#if STUB_GENERATOR
+		public RemappedTypeAttribute(System.Type type)
+		{
+		}
+#endif
 
 		public RemappedTypeAttribute(Type type)
 		{

@@ -88,12 +88,14 @@ namespace IKVM.Internal
 			try
 			{
 				Trace.AutoFlush = true;
+#if !STUB_GENERATOR
 				/* If the app config file gives some method trace - add it */
 				string trace = ConfigurationManager.AppSettings["Traced Methods"];
 				if(trace != null)
 				{
 					methodtraces.Add(trace);
 				}
+#endif
 			}
 			catch(ConfigurationException)
 			{
