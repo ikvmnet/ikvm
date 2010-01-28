@@ -39,6 +39,17 @@ using IKVM.Attributes;
 
 namespace IKVM.Internal
 {
+	[Flags]
+	enum CodeGenOptions
+	{
+		None = 0,
+		Debug = 1,
+		NoStackTraceInfo = 2,
+		StrictFinalFieldSemantics = 4,
+		NoJNI = 8,
+		RemoveAsserts = 16,
+	}
+
 	abstract class TypeWrapperFactory
 	{
 		internal abstract ModuleBuilder ModuleBuilder { get; }

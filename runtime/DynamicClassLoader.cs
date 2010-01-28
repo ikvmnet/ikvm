@@ -35,17 +35,6 @@ using System.Reflection.Emit;
 
 namespace IKVM.Internal
 {
-	[Flags]
-	enum CodeGenOptions
-	{
-		None = 0,
-		Debug = 1,
-		NoStackTraceInfo = 2,
-		StrictFinalFieldSemantics = 4,
-		NoJNI = 8,
-		RemoveAsserts = 16,
-	}
-
 	sealed class DynamicClassLoader : TypeWrapperFactory
 	{
 		// note that MangleNestedTypeName() assumes that there are less than 16 special characters
