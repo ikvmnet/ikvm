@@ -997,6 +997,11 @@ namespace IKVM.Internal
 					throw new InvalidOperationException();
 			}
 		}
+
+		internal virtual bool IsOptionalAttributeAnnotationValue
+		{
+			get { return false; }
+		}
 	}
 
 	// placeholder for <clinit> method that exist in ClassFile but not in TypeWrapper

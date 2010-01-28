@@ -656,7 +656,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		private abstract class AttributeAnnotationTypeWrapperBase : TypeWrapper
+		internal abstract class AttributeAnnotationTypeWrapperBase : TypeWrapper
 		{
 			internal AttributeAnnotationTypeWrapperBase(string name)
 				: base(Modifiers.Public | Modifiers.Interface | Modifiers.Abstract | Modifiers.Annotation, name, null)
@@ -684,6 +684,8 @@ namespace IKVM.Internal
 			{
 				get { return true; }
 			}
+
+			internal abstract AttributeTargets AttributeTargets { get; }
 		}
 
 		private sealed class AttributeAnnotationTypeWrapper : AttributeAnnotationTypeWrapperBase
@@ -868,12 +870,9 @@ namespace IKVM.Internal
 					this.optional = optional;
 				}
 
-				internal bool IsOptional
+				internal override bool IsOptionalAttributeAnnotationValue
 				{
-					get
-					{
-						return optional;
-					}
+					get { return optional; }
 				}
 			}
 
@@ -909,7 +908,7 @@ namespace IKVM.Internal
 #if !STATIC_COMPILER && !FIRST_PASS
 			internal override object GetAnnotationDefault(MethodWrapper mw)
 			{
-				if (((AttributeAnnotationMethodWrapper)mw).IsOptional)
+				if (mw.IsOptionalAttributeAnnotationValue)
 				{
 					if (mw.ReturnType == PrimitiveTypeWrapper.BOOLEAN)
 					{
@@ -1121,6 +1120,11 @@ namespace IKVM.Internal
 						return new ReturnValueAnnotation(declaringType);
 					}
 				}
+
+				internal override AttributeTargets AttributeTargets
+				{
+					get { return AttributeTargets.ReturnValue; }
+				}
 			}
 
 			private sealed class MultipleAnnotationTypeWrapper : AttributeAnnotationTypeWrapperBase
@@ -1273,6 +1277,11 @@ namespace IKVM.Internal
 					{
 						return new MultipleAnnotation(declaringType);
 					}
+				}
+
+				internal override AttributeTargets AttributeTargets
+				{
+					get { return declaringType.AttributeTargets; }
 				}
 			}
 
@@ -1572,6 +1581,11 @@ namespace IKVM.Internal
 				{
 					return new AttributeAnnotation(attributeType);
 				}
+			}
+
+			internal override AttributeTargets AttributeTargets
+			{
+				get { return GetAttributeUsage().ValidOn; }
 			}
 		}
 
