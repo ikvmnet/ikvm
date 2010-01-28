@@ -29,8 +29,20 @@
         <delete>
             <fileset basedir=".">
                 <include name="**.class"/>
+                <include name="mscorlib.jar" />
+                <include name="System.jar" />
+                <include name="System.Core.jar" />
+                <include name="System.Data.jar" />
+                <include name="System.Drawing.jar" />
+                <include name="IKVM.Runtime.jar" />
             </fileset>
         </delete>
+        <exec program="${project::get-base-directory()}/../bin/ikvmstub.exe" commandline="mscorlib" useruntimeengine="true" />
+        <exec program="${project::get-base-directory()}/../bin/ikvmstub.exe" commandline="System" useruntimeengine="true" />
+        <exec program="${project::get-base-directory()}/../bin/ikvmstub.exe" commandline="System.Core" useruntimeengine="true" />
+        <exec program="${project::get-base-directory()}/../bin/ikvmstub.exe" commandline="System.Data" useruntimeengine="true" />
+        <exec program="${project::get-base-directory()}/../bin/ikvmstub.exe" commandline="System.Drawing" useruntimeengine="true" />
+        <exec program="${project::get-base-directory()}/../bin/ikvmstub.exe" commandline="IKVM.Runtime" useruntimeengine="true" />
         <property name="IKVM.Runtime" value="IKVM.Runtime" />
         <if test="${signoption != ''}">
             <loadfile file="../tools/pubkey.txt" property="publickey" />
@@ -52,7 +64,7 @@
                 </replacetokens>
             </filterchain>
         </copy>
-        <exec program="javac" commandline="-J-Xmx1536M -g -nowarn -bootclasspath ../classpath/mscorlib.jar${pathsep}../classpath/System.jar${pathsep}../classpath/System.Core.jar${pathsep}../classpath/System.Data.jar${pathsep}../classpath/System.Drawing.jar${pathsep}../classpath/IKVM.Runtime.jar @allsources.lst" useruntimeengine="false" />
+        <exec program="javac" commandline="-J-Xmx1536M -g -nowarn -bootclasspath mscorlib.jar${pathsep}System.jar${pathsep}System.Core.jar${pathsep}System.Data.jar${pathsep}System.Drawing.jar${pathsep}IKVM.Runtime.jar @allsources.lst" useruntimeengine="false" />
     </target>
 
     <target name="rmi">
@@ -117,13 +129,9 @@
             <arg value="-target:library" />
             <arg value="-sharedclassloader" />
             <arg value="-r:mscorlib" />
+            <arg value="-r:System" />
+            <arg value="-r:System.Core" />
             <arg value="-r:IKVM.Runtime" />
-            <!-- Instead of using -r:System.Core we add System.Core.jar (in response.txt)
-                 (containing only System.Runtime.CompilerServices.ExtensionAttribute).
-                 This allows compilation to succeed (though with warnings) when System.Core.dll is not available.
-                 It also prevents accidentally taking additional dependencies on System.Core.dll.
-            -->
-            <arg value="-r:${framework::get-assembly-directory(framework::get-target-framework())}/System.dll" />
             <!-- we already know that the JNI assembly is not available, so suppress the warning -->
             <arg value="-nowarn:110" />
             <arg value="@response.txt" />

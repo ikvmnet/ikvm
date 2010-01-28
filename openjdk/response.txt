@@ -37,7 +37,6 @@ assembly.class
     ../classpath/java/lang/*.class
     ../classpath/java/util/concurrent/atomic/*.class
     ../classpath/sun/misc/*.class
-    ../classpath/System.Core.jar
     ../../openjdk6-b16/jdk/src/share/classes/java/awt/AWTPermission.class
     ../../openjdk6-b16/build/linux-amd64/gensrc/java/lang/*.class
     ../../openjdk6-b16/build/linux-amd64/gensrc/java/nio/*.class
