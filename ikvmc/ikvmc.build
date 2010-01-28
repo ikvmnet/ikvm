@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <project name="ikvmc" default="ikvmc">
     <target name="ikvmc">
-        <property name="defs" value="TRACE;STATIC_COMPILER;IKVM_REF_EMIT" />
+        <property name="defs" value="TRACE;STATIC_COMPILER" />
         <if test="${property::exists('signed')}">
             <property name="defs" value="${defs};${signed}" />
         </if>

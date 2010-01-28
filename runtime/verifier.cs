@@ -25,7 +25,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
-#if IKVM_REF_EMIT
+#if STATIC_COMPILER
 using IKVM.Reflection.Emit;
 using Type = IKVM.Reflection.Type;
 #else

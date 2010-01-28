@@ -22,7 +22,7 @@
   
 */
 using System;
-#if IKVM_REF_EMIT
+#if STATIC_COMPILER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using Type = IKVM.Reflection.Type;
@@ -50,7 +50,7 @@ namespace IKVM.Internal
 				classLiteralType = typeof(ikvm.@internal.ClassLiteral<>);
 #endif
 			}
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER
 			if (!IsTypeBuilder(type))
 			{
 				return classLiteralType.MakeGenericType(type).GetField("Value", BindingFlags.Public | BindingFlags.Static);

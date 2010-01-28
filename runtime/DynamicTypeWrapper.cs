@@ -23,7 +23,7 @@
 */
 using System;
 using System.Collections.Generic;
-#if IKVM_REF_EMIT
+#if STATIC_COMPILER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using Type = IKVM.Reflection.Type;
@@ -4322,7 +4322,7 @@ namespace IKVM.Internal
 
 			private static class BakedTypeCleanupHack
 			{
-#if NET_4_0 || IKVM_REF_EMIT
+#if NET_4_0 || STATIC_COMPILER
 				internal static void Process(DynamicTypeWrapper wrapper) { }
 #else
 				private static readonly FieldInfo m_methodBuilder = typeof(ConstructorBuilder).GetField("m_methodBuilder", BindingFlags.Instance | BindingFlags.NonPublic);

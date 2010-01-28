@@ -23,7 +23,7 @@
 */
 using System;
 using System.Collections.Generic;
-#if IKVM_REF_EMIT
+#if STATIC_COMPILER || STUB_GENERATOR
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using Type = IKVM.Reflection.Type;
@@ -159,79 +159,17 @@ namespace IKVM.Internal
 			}
 		}
 
-#if !IKVM_REF_EMIT
-		private static void SetPropertiesAndFields(ClassLoaderWrapper loader, Attribute attrib, IKVM.Internal.MapXml.Attribute attr)
-		{
-			Type t = attrib.GetType();
-			if(attr.Properties != null)
-			{
-				foreach(IKVM.Internal.MapXml.Param prop in attr.Properties)
-				{
-					PropertyInfo pi = t.GetProperty(prop.Name);
-					pi.SetValue(attrib, ParseValue(loader, ClassFile.FieldTypeWrapperFromSig(loader, prop.Sig), prop.Value), null);
-				}
-			}
-			if(attr.Fields != null)
-			{
-				foreach(IKVM.Internal.MapXml.Param field in attr.Fields)
-				{
-					FieldInfo fi = t.GetField(field.Name);
-					fi.SetValue(attrib, ParseValue(loader, ClassFile.FieldTypeWrapperFromSig(loader, field.Sig), field.Value));
-				}
-			}
-		}
-
-		private static bool IsDeclarativeSecurityAttribute(ClassLoaderWrapper loader, IKVM.Internal.MapXml.Attribute attr, out SecurityAction action, out PermissionSet pset)
-		{
-			action = SecurityAction.Demand;
-			pset = null;
-			if(attr.Type != null)
-			{
-				Type t = StaticCompiler.GetType(attr.Type);
-				if(typeofSecurityAttribute.IsAssignableFrom(t))
-				{
-					Type[] argTypes;
-					object[] args;
-					GetAttributeArgsAndTypes(loader, attr, out argTypes, out args);
-					ConstructorInfo ci = t.GetConstructor(argTypes);
-					SecurityAttribute attrib = ci.Invoke(args) as SecurityAttribute;
-					SetPropertiesAndFields(loader, attrib, attr);
-					action = attrib.Action;
-					pset = new PermissionSet(PermissionState.None);
-					pset.AddPermission(attrib.CreatePermission());
-					return true;
-				}
-			}
-			return false;
-		}
-#endif
-
 		internal static void SetCustomAttribute(ClassLoaderWrapper loader, TypeBuilder tb, IKVM.Internal.MapXml.Attribute attr)
 		{
-#if !IKVM_REF_EMIT
-			SecurityAction action;
-			PermissionSet pset;
-			if(IsDeclarativeSecurityAttribute(loader, attr, out action, out pset))
+			bool declarativeSecurity;
+			CustomAttributeBuilder cab = CreateCustomAttribute(loader, attr, out declarativeSecurity);
+			if (declarativeSecurity)
 			{
-				tb.AddDeclarativeSecurity(action, pset);
+				tb.__AddDeclarativeSecurity(cab);
 			}
 			else
-#endif
 			{
-				bool declarativeSecurity;
-				CustomAttributeBuilder cab = CreateCustomAttribute(loader, attr, out declarativeSecurity);
-				if (declarativeSecurity)
-				{
-#if IKVM_REF_EMIT
-					tb.__AddDeclarativeSecurity(cab);
-#else
-					throw new InvalidOperationException();
-#endif
-				}
-				else
-				{
-					tb.SetCustomAttribute(cab);
-				}
+				tb.SetCustomAttribute(cab);
 			}
 		}
 
@@ -247,59 +185,29 @@ namespace IKVM.Internal
 
 		internal static void SetCustomAttribute(ClassLoaderWrapper loader, MethodBuilder mb, IKVM.Internal.MapXml.Attribute attr)
 		{
-#if !IKVM_REF_EMIT
-			SecurityAction action;
-			PermissionSet pset;
-			if(IsDeclarativeSecurityAttribute(loader, attr, out action, out pset))
+			bool declarativeSecurity;
+			CustomAttributeBuilder cab = CreateCustomAttribute(loader, attr, out declarativeSecurity);
+			if (declarativeSecurity)
 			{
-				mb.AddDeclarativeSecurity(action, pset);
+				mb.__AddDeclarativeSecurity(cab);
 			}
 			else
-#endif
 			{
-				bool declarativeSecurity;
-				CustomAttributeBuilder cab = CreateCustomAttribute(loader, attr, out declarativeSecurity);
-				if (declarativeSecurity)
-				{
-#if IKVM_REF_EMIT
-					mb.__AddDeclarativeSecurity(cab);
-#else
-					throw new InvalidOperationException();
-#endif
-				}
-				else
-				{
-					mb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
-				}
+				mb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
 			}
 		}
 
 		internal static void SetCustomAttribute(ClassLoaderWrapper loader, ConstructorBuilder cb, IKVM.Internal.MapXml.Attribute attr)
 		{
-#if !IKVM_REF_EMIT
-			SecurityAction action;
-			PermissionSet pset;
-			if(IsDeclarativeSecurityAttribute(loader, attr, out action, out pset))
+			bool declarativeSecurity;
+			CustomAttributeBuilder cab = CreateCustomAttribute(loader, attr, out declarativeSecurity);
+			if (declarativeSecurity)
 			{
-				cb.AddDeclarativeSecurity(action, pset);
+				cb.__AddDeclarativeSecurity(cab);
 			}
 			else
-#endif
 			{
-				bool declarativeSecurity;
-				CustomAttributeBuilder cab = CreateCustomAttribute(loader, attr, out declarativeSecurity);
-				if (declarativeSecurity)
-				{
-#if IKVM_REF_EMIT
-					cb.__AddDeclarativeSecurity(cab);
-#else
-					throw new InvalidOperationException();
-#endif
-				}
-				else
-				{
-					cb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
-				}
+				cb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
 			}
 		}
 
@@ -437,9 +345,7 @@ namespace IKVM.Internal
 				return new CustomAttributeBuilder(ci, args, namedFields, fieldValues);
 			}
 		}
-#endif
 
-#if STATIC_COMPILER
 		internal static void SetEditorBrowsableNever(TypeBuilder tb)
 		{
 			if(editorBrowsableNever == null)
@@ -1755,7 +1661,7 @@ namespace IKVM.Internal
 	{
 		internal static Type GetUnderlyingType(Type enumType)
 		{
-#if IKVM_REF_EMIT
+#if STATIC_COMPILER || STUB_GENERATOR
 			return enumType.GetEnumUnderlyingType();
 #else
 			return Enum.GetUnderlyingType(enumType);
@@ -1962,7 +1868,7 @@ namespace IKVM.Internal
 			}
 		}
 
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER && !STUB_GENERATOR
 		internal static bool MakeDeclSecurity(Type type, object annotation, out SecurityAction action, out PermissionSet permSet)
 		{
 			ConstructorInfo ci = type.GetConstructor(new Type[] { typeof(SecurityAction) });
@@ -2005,7 +1911,7 @@ namespace IKVM.Internal
 			permSet.AddPermission(attr.CreatePermission());
 			return true;
 		}
-#endif
+#endif // !STATIC_COMPILER && !STUB_GENERATOR
 
 		internal static bool HasRetentionPolicyRuntime(object[] annotations)
 		{

@@ -23,7 +23,7 @@
 */
 using System;
 using System.Collections.Generic;
-#if IKVM_REF_EMIT
+#if STATIC_COMPILER || STUB_GENERATOR
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using Type = IKVM.Reflection.Type;
@@ -1458,8 +1458,9 @@ namespace IKVM.Internal
 					}
 					if (type.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
 					{
-#if IKVM_REF_EMIT
+#if STATIC_COMPILER
 						tb.__AddDeclarativeSecurity(MakeCustomAttributeBuilder(loader, annotation));
+#elif STUB_GENERATOR
 #else
 						SecurityAction action;
 						PermissionSet permSet;
@@ -1479,8 +1480,9 @@ namespace IKVM.Internal
 				{
 					if (type.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
 					{
-#if IKVM_REF_EMIT
+#if STATIC_COMPILER
 						cb.__AddDeclarativeSecurity(MakeCustomAttributeBuilder(loader, annotation));
+#elif STUB_GENERATOR
 #else
 						SecurityAction action;
 						PermissionSet permSet;
@@ -1500,8 +1502,9 @@ namespace IKVM.Internal
 				{
 					if (type.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
 					{
-#if IKVM_REF_EMIT
+#if STATIC_COMPILER
 						mb.__AddDeclarativeSecurity(MakeCustomAttributeBuilder(loader, annotation));
+#elif STUB_GENERATOR
 #else
 						SecurityAction action;
 						PermissionSet permSet;
@@ -1554,7 +1557,7 @@ namespace IKVM.Internal
 				{
 					if (type.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
 					{
-#if IKVM_REF_EMIT
+#if STATIC_COMPILER
 						ab.__AddDeclarativeSecurity(MakeCustomAttributeBuilder(loader, annotation));
 #endif
 					}

@@ -22,7 +22,7 @@
   
 */
 using System;
-#if IKVM_REF_EMIT
+#if STATIC_COMPILER || STUB_GENERATOR
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using Type = IKVM.Reflection.Type;
@@ -56,7 +56,7 @@ namespace IKVM.Internal
 		{
 #if NET_4_0
 			return asm.IsDynamic;
-#elif IKVM_REF_EMIT
+#elif STATIC_COMPILER || STUB_GENERATOR
 			return false;
 #else
 			if (clr_v4)

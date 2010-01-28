@@ -23,14 +23,9 @@
 */
 
 using System;
-#if IKVM_REF_EMIT
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using Type = IKVM.Reflection.Type;
-#else
-using System.Reflection;
-using System.Reflection.Emit;
-#endif
 using System.Resources;
 using System.IO;
 using System.Collections.Generic;
@@ -146,44 +141,6 @@ namespace IKVM.Internal
 			return p1.Union(p2);
 		}
 
-#if !NET_4_0 && !IKVM_REF_EMIT
-		private void GetAssemblyPermissions(out PermissionSet requiredPermissions, out PermissionSet optionalPermissions, out PermissionSet refusedPermissions)
-		{
-			requiredPermissions = null;
-			optionalPermissions = null;
-			refusedPermissions = null;
-			foreach (object[] def in assemblyAnnotations)
-			{
-				string annotationClass = (string)def[1];
-				annotationClass = annotationClass.Replace('/', '.').Substring(1, annotationClass.Length - 2);
-				if (annotationClass.EndsWith(DotNetTypeWrapper.AttributeAnnotationSuffix))
-				{
-					Type annot = JVM.GetType(DotNetTypeWrapper.DemangleTypeName(annotationClass.Substring(0, annotationClass.Length - DotNetTypeWrapper.AttributeAnnotationSuffix.Length)), false);
-					if (annot != null && annot.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
-					{
-						SecurityAction action;
-						PermissionSet permSet;
-						if (Annotation.MakeDeclSecurity(annot, def, out action, out permSet))
-						{
-							switch (action)
-							{
-								case SecurityAction.RequestMinimum:
-									requiredPermissions = Combine(requiredPermissions, permSet);
-									break;
-								case SecurityAction.RequestOptional:
-									optionalPermissions = Combine(optionalPermissions, permSet);
-									break;
-								case SecurityAction.RequestRefuse:
-									refusedPermissions = Combine(refusedPermissions, permSet);
-									break;
-							}
-						}
-					}
-				}
-			}
-		}
-#endif
-
 		internal ModuleBuilder CreateModuleBuilder()
 		{
 			AssemblyName name = new AssemblyName();
@@ -197,23 +154,9 @@ namespace IKVM.Internal
 				name.KeyPair = new StrongNameKeyPair(keycontainer);
 			}
 			name.Version = new Version(version);
-#if NET_4_0 || IKVM_REF_EMIT
 			assemblyBuilder = 
-#if IKVM_REF_EMIT
 				StaticCompiler.Universe
-#else
-				AppDomain.CurrentDomain
-#endif
 					.DefineDynamicAssembly(name, AssemblyBuilderAccess.ReflectionOnly, assemblyDir);
-#else
-			PermissionSet requiredPermissions;
-			PermissionSet optionalPermissions;
-			PermissionSet refusedPermissions;
-			GetAssemblyPermissions(out requiredPermissions, out optionalPermissions, out refusedPermissions);
-			assemblyBuilder = 
-				AppDomain.CurrentDomain
-					.DefineDynamicAssembly(name, AssemblyBuilderAccess.ReflectionOnly, assemblyDir, requiredPermissions, optionalPermissions, refusedPermissions);
-#endif
 			ModuleBuilder moduleBuilder;
 			moduleBuilder = assemblyBuilder.DefineDynamicModule(assemblyName, assemblyFile, this.EmitDebugInfo);
 			if(this.EmitStackTraceInfo)
@@ -1922,7 +1865,6 @@ namespace IKVM.Internal
 
 			private static void CopyLinkDemands(MethodBuilder mb, MethodInfo mi)
 			{
-#if IKVM_REF_EMIT
 				foreach (CustomAttributeData cad in CustomAttributeData.__GetDeclarativeSecurity(mi))
 				{
 					if (cad.ConstructorArguments.Count == 0 || (int)cad.ConstructorArguments[0].Value == (int)SecurityAction.LinkDemand)
@@ -1930,21 +1872,6 @@ namespace IKVM.Internal
 						mb.__AddDeclarativeSecurity(cad.__ToBuilder());
 					}
 				}
-#else
-				foreach (object attr in mi.GetCustomAttributes(false))
-				{
-					CodeAccessSecurityAttribute cas = attr as CodeAccessSecurityAttribute;
-					if (cas != null)
-					{
-						if (cas.Action == SecurityAction.LinkDemand)
-						{
-							PermissionSet pset = new PermissionSet(PermissionState.None);
-							pset.AddPermission(cas.CreatePermission());
-							mb.AddDeclarativeSecurity(SecurityAction.LinkDemand, pset);
-						}
-					}
-				}
-#endif
 			}
 
 			private static string MakeMethodKey(MethodInfo method)
@@ -2650,39 +2577,6 @@ namespace IKVM.Internal
 					return 1;
 				}
 			}
-#if !IKVM_REF_EMIT
-			bool err = false;
-			foreach(Assembly reference in references)
-			{
-				try
-				{
-					reference.GetTypes();
-				}
-				catch(ReflectionTypeLoadException x)
-				{
-					err = true;
-					foreach(Exception n in x.LoaderExceptions)
-					{
-						FileNotFoundException f = n as FileNotFoundException;
-						if(f != null)
-						{
-							Console.Error.WriteLine("Error: referenced assembly {0} has a missing dependency: {1}", reference.GetName().Name, f.FileName);
-							goto next;
-						}
-					}
-					Console.Error.WriteLine("Error: referenced assembly produced the following loader exceptions:");
-					foreach(Exception n in x.LoaderExceptions)
-					{
-						Console.WriteLine(n.Message);
-					}
-				}
-			next:;
-			}
-			if(err)
-			{
-				return 1;
-			}
-#endif
 			List<object> assemblyAnnotations = new List<object>();
 			Dictionary<string, string> baseClasses = new Dictionary<string, string>();
 			Tracer.Info(Tracer.Compiler, "Parsing class files");
@@ -2903,37 +2797,6 @@ namespace IKVM.Internal
 		private static Assembly LoadReferencedAssembly(string r)
 		{
 			Assembly asm = StaticCompiler.LoadFile(r);
-#if !IKVM_REF_EMIT
-			if (asm.GetManifestResourceInfo("ikvm.exports") != null)
-			{
-				// If this is the main assembly in a multi assembly group, try to pre-load all the assemblies.
-				// (This is required to make Assembly.ReflectionOnlyLoad() work later on (because it doesn't fire the ReflectionOnlyAssemblyResolve event).)
-				using (Stream stream = asm.GetManifestResourceStream("ikvm.exports"))
-				{
-					BinaryReader rdr = new BinaryReader(stream);
-					int assemblyCount = rdr.ReadInt32();
-					for (int i = 0; i < assemblyCount; i++)
-					{
-						AssemblyName name = new AssemblyName(rdr.ReadString());
-						int typeCount = rdr.ReadInt32();
-						if (typeCount > 0)
-						{
-							for (int j = 0; j < typeCount; j++)
-							{
-								rdr.ReadInt32();
-							}
-							try
-							{
-								Assembly.ReflectionOnlyLoadFrom(asm.CodeBase + "/../" + name.Name + ".dll");
-							}
-							catch
-							{
-							}
-						}
-					}
-				}
-			}
-#endif
 			return asm;
 		}
 

@@ -24,14 +24,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-#if IKVM_REF_EMIT
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using Type = IKVM.Reflection.Type;
-#else
-using System.Reflection;
-using System.Reflection.Emit;
-#endif
 
 namespace IKVM.Internal
 {

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <project name="ikvmstub" default="ikvmstub">
     <target name="ikvmstub">
-        <property name="defs" value="STUB_GENERATOR;IKVM_REF_EMIT;TRACE" />
+        <property name="defs" value="STUB_GENERATOR;TRACE" />
         <if test="${property::exists('signed')}">
             <property name="defs" value="${defs};${signed}" />
         </if>

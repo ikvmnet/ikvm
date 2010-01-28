@@ -29,7 +29,7 @@ using System.Threading;
 using System.Runtime.CompilerServices;
 using FormatterServices = System.Runtime.Serialization.FormatterServices;
 using IKVM.Attributes;
-#if IKVM_REF_EMIT
+#if STATIC_COMPILER || STUB_GENERATOR
 using IKVM.Reflection;
 using Type = IKVM.Reflection.Type;
 #else

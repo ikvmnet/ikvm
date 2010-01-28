@@ -23,7 +23,7 @@
 */
 using System;
 using System.Collections.Generic;
-#if IKVM_REF_EMIT
+#if STATIC_COMPILER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using Type = IKVM.Reflection.Type;
@@ -73,7 +73,7 @@ namespace IKVM.Internal
 		private static readonly MethodInfo objectToString = Types.Object.GetMethod("ToString", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
 		private static readonly MethodInfo verboseCastFailure = JVM.SafeGetEnvironmentVariable("IKVM_VERBOSE_CAST") == null ? null : ByteCodeHelperMethods.VerboseCastFailure;
 		private ILGenerator ilgen_real;
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER
 		private int offset;
 #endif
 		private Stack<bool> exceptionStack = new Stack<bool>();
@@ -108,7 +108,7 @@ namespace IKVM.Internal
 
 		private CodeEmitter(ILGenerator ilgen)
 		{
-#if IKVM_REF_EMIT
+#if STATIC_COMPILER
 			ilgen.__CleverExceptionBlockAssistance();
 #endif
 			this.ilgen_real = ilgen;
@@ -213,7 +213,7 @@ namespace IKVM.Internal
 		internal int GetILOffset()
 		{
 			LazyGen();
-#if IKVM_REF_EMIT
+#if STATIC_COMPILER
 			return ilgen_real.ILOffset;
 #else
 			return offset;
@@ -223,7 +223,7 @@ namespace IKVM.Internal
 		internal void BeginCatchBlock(Type exceptionType)
 		{
 			LazyGen();
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER
 			offset += 5;
 #endif
 			ilgen_real.BeginCatchBlock(exceptionType);
@@ -241,7 +241,7 @@ namespace IKVM.Internal
 		{
 			LazyGen();
 			inFinally = true;
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER
 			offset += 5;
 #endif
 			ilgen_real.BeginFaultBlock();
@@ -251,7 +251,7 @@ namespace IKVM.Internal
 		{
 			LazyGen();
 			inFinally = true;
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER
 			offset += 5;
 #endif
 			ilgen_real.BeginFinallyBlock();
@@ -280,7 +280,7 @@ namespace IKVM.Internal
 		internal void Emit(OpCode opcode)
 		{
 			LazyGen();
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER
 			offset += opcode.Size;
 #endif
 			ilgen_real.Emit(opcode);
@@ -289,7 +289,7 @@ namespace IKVM.Internal
 		internal void Emit(OpCode opcode, byte arg)
 		{
 			LazyGen();
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER
 			offset += opcode.Size + 1;
 #endif
 			ilgen_real.Emit(opcode, arg);
@@ -298,7 +298,7 @@ namespace IKVM.Internal
 		internal void Emit(OpCode opcode, ConstructorInfo con)
 		{
 			LazyGen();
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER
 			offset += opcode.Size + 4;
 #endif
 			ilgen_real.Emit(opcode, con);
@@ -307,7 +307,7 @@ namespace IKVM.Internal
 		internal void Emit(OpCode opcode, double arg)
 		{
 			LazyGen();
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER
 			offset += opcode.Size + 8;
 #endif
 			ilgen_real.Emit(opcode, arg);
@@ -316,7 +316,7 @@ namespace IKVM.Internal
 		internal void Emit(OpCode opcode, FieldInfo field)
 		{
 			LazyGen();
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER
 			offset += opcode.Size + 4;
 #endif
 			ilgen_real.Emit(opcode, field);
@@ -325,7 +325,7 @@ namespace IKVM.Internal
 		internal void Emit(OpCode opcode, short arg)
 		{
 			LazyGen();
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER
 			offset += opcode.Size + 2;
 #endif
 			ilgen_real.Emit(opcode, arg);
@@ -334,7 +334,7 @@ namespace IKVM.Internal
 		internal void Emit(OpCode opcode, int arg)
 		{
 			LazyGen();
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER
 			offset += opcode.Size + 4;
 #endif
 			ilgen_real.Emit(opcode, arg);
@@ -343,7 +343,7 @@ namespace IKVM.Internal
 		internal void Emit(OpCode opcode, long arg)
 		{
 			LazyGen();
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER
 			offset += opcode.Size + 8;
 #endif
 			ilgen_real.Emit(opcode, arg);
@@ -399,7 +399,7 @@ namespace IKVM.Internal
 					opcode = OpCodes.Bgt_S;
 				}
 			}
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER
 			switch(opcode.OperandType)
 			{
 				case OperandType.InlineBrTarget:
@@ -418,7 +418,7 @@ namespace IKVM.Internal
 		internal void Emit(OpCode opcode, CodeEmitterLabel[] labels)
 		{
 			LazyGen();
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER
 			offset += 5 + labels.Length * 4;
 #endif
 			Label[] real = new Label[labels.Length];
@@ -432,7 +432,7 @@ namespace IKVM.Internal
 		internal void Emit(OpCode opcode, LocalBuilder local)
 		{
 			LazyGen();
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER
 			int index = local.LocalIndex;
 			if(index < 4 && opcode.Value != OpCodes.Ldloca.Value && opcode.Value != OpCodes.Ldloca_S.Value)
 			{
@@ -453,7 +453,7 @@ namespace IKVM.Internal
 		internal void Emit(OpCode opcode, MethodInfo meth)
 		{
 			LazyGen();
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER
 			offset += opcode.Size + 4;
 #endif
 			ilgen_real.Emit(opcode, meth);
@@ -462,7 +462,7 @@ namespace IKVM.Internal
 		internal void Emit(OpCode opcode, sbyte arg)
 		{
 			LazyGen();
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER
 			offset += opcode.Size + 1;
 #endif
 			ilgen_real.Emit(opcode, arg);
@@ -471,7 +471,7 @@ namespace IKVM.Internal
 		internal void Emit(OpCode opcode, float arg)
 		{
 			LazyGen();
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER
 			offset += opcode.Size + 4;
 #endif
 			ilgen_real.Emit(opcode, arg);
@@ -480,7 +480,7 @@ namespace IKVM.Internal
 		internal void Emit(OpCode opcode, string arg)
 		{
 			LazyGen();
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER
 			offset += opcode.Size + 4;
 #endif
 			ilgen_real.Emit(opcode, arg);
@@ -489,7 +489,7 @@ namespace IKVM.Internal
 		internal void Emit(OpCode opcode, Type cls)
 		{
 			LazyGen();
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER
 			offset += opcode.Size + 4;
 #endif
 			ilgen_real.Emit(opcode, cls);
@@ -498,7 +498,7 @@ namespace IKVM.Internal
 		internal void EmitCalli(OpCode opcode, CallingConvention unmanagedCallConv, Type returnType, Type[] parameterTypes)
 		{
 			LazyGen();
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER
 			offset += 5;
 #endif
 			ilgen_real.EmitCalli(opcode, unmanagedCallConv, returnType, parameterTypes);
@@ -507,7 +507,7 @@ namespace IKVM.Internal
 		internal void EmitWriteLine(string value)
 		{
 			LazyGen();
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER
 			offset += 10;
 #endif
 			ilgen_real.EmitWriteLine(value);
@@ -516,7 +516,7 @@ namespace IKVM.Internal
 		internal void EndExceptionBlockNoFallThrough()
 		{
 			EndExceptionBlock();
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER
 			// HACK to keep the verifier happy we need this bogus jump
 			// (because of the bogus Leave that Ref.Emit ends the try block with)
 			Emit(OpCodes.Br_S, (sbyte)-2);
@@ -526,7 +526,7 @@ namespace IKVM.Internal
 		internal void EndExceptionBlock()
 		{
 			LazyGen();
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER
 			if(inFinally)
 			{
 				offset += 1;
@@ -569,7 +569,7 @@ namespace IKVM.Internal
 		internal void ThrowException(Type excType)
 		{
 			LazyGen();
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER
 			offset += 6;
 #endif
 			ilgen_real.ThrowException(excType);
@@ -1029,7 +1029,7 @@ namespace IKVM.Internal
 		{
 			if(lazyBranch != null)
 			{
-#if !IKVM_REF_EMIT
+#if !STATIC_COMPILER
 				offset += OpCodes.Br.Size + 4;
 #endif
 				ilgen_real.Emit(OpCodes.Br, lazyBranch.Label);

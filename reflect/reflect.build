@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <project name="reflect" default="IKVM.Reflection">
     <target name="IKVM.Reflection">
-        <property name="defs" value="IKVM_REF_EMIT" />
+        <property name="defs" value="TRACE" />
         <if test="${framework::exists('mono-2.0')}">
             <property name="defs" value="${defs};MONO" />
         </if>

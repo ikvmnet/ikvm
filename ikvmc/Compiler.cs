@@ -21,24 +21,14 @@
   jeroen@frijters.net
   
 */
-#if IKVM_REF_EMIT
-// FXBUG multi target only work with our own Reflection.Emit implementation
-#define MULTI_TARGET
-#endif
-
 using System;
 using System.Collections.Generic;
 using System.IO;
-#if IKVM_REF_EMIT
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using Type = IKVM.Reflection.Type;
 using ResolveEventHandler = IKVM.Reflection.ResolveEventHandler;
 using ResolveEventArgs = IKVM.Reflection.ResolveEventArgs;
-#else
-using System.Reflection;
-using System.Reflection.Emit;
-#endif
 using System.Threading;
 using ICSharpCode.SharpZipLib.Zip;
 using IKVM.Internal;
@@ -46,9 +36,7 @@ using System.Text.RegularExpressions;
 
 class IkvmcCompiler
 {
-#if MULTI_TARGET
 	private bool nonleaf;
-#endif
 	private string manifestMainClass;
 	private Dictionary<string, byte[]> classes = new Dictionary<string, byte[]>();
 	private Dictionary<string, byte[]> resources = new Dictionary<string, byte[]>();
@@ -88,11 +76,7 @@ class IkvmcCompiler
 	static int Main(string[] args)
 	{
 		DateTime start = DateTime.Now;
-#if IKVM_REF_EMIT
 		StaticCompiler.Universe.AssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
-#else
-		AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
-#endif
 		System.Threading.Thread.CurrentThread.Name = "compiler";
 		Tracer.EnableTraceConsoleListener();
 		Tracer.EnableTraceForDebug();
@@ -219,13 +203,9 @@ class IkvmcCompiler
 		Console.Error.WriteLine("    -warnaserror:<warning[:key]>  Treat specified warnings as errors");
 		Console.Error.WriteLine("    -time                      Display timing statistics");
 		Console.Error.WriteLine("    -classloader:<class>       Set custom class loader class for assembly");
-#if MULTI_TARGET
 		Console.Error.WriteLine("    -sharedclassloader         All targets below this level share a common");
 		Console.Error.WriteLine("                               class loader");
-#endif
-#if IKVM_REF_EMIT
 		Console.Error.WriteLine("    -baseaddress:<address>     Base address for the library to be built");
-#endif
 		Console.Error.WriteLine("    -nopeercrossreference      Do not automatically cross reference all peers");
 	}
 
@@ -245,7 +225,6 @@ class IkvmcCompiler
 		while(arglist.MoveNext())
 		{
 			string s = arglist.Current;
-#if MULTI_TARGET
 			if(s == "{")
 			{
 				nonleaf = true;
@@ -270,9 +249,7 @@ class IkvmcCompiler
 				Console.Error.WriteLine("Error: you can only specify options before any child levels");
 				return 1;
 			}
-			else
-#endif
-			if(s[0] == '-')
+			else if(s[0] == '-')
 			{
 				if(s.StartsWith("-out:"))
 				{
@@ -623,7 +600,6 @@ class IkvmcCompiler
 				{
 					options.classLoader = s.Substring(13);
 				}
-#if MULTI_TARGET
 				else if(s == "-sharedclassloader")
 				{
 					if(options.sharedclassloader == null)
@@ -631,8 +607,6 @@ class IkvmcCompiler
 						options.sharedclassloader = new List<CompilerClassLoader>();
 					}
 				}
-#endif
-#if IKVM_REF_EMIT
 				else if(s.StartsWith("-baseaddress:"))
 				{
 					string baseAddress = s.Substring(13);
@@ -648,7 +622,6 @@ class IkvmcCompiler
 					}
 					options.baseAddress = (long)(baseAddressParsed & 0xFFFFFFFFFFFF0000UL);
 				}
-#endif
 				else if(s == "-nopeercrossreference")
 				{
 					options.crossReferenceAllPeers = false;
@@ -699,12 +672,10 @@ class IkvmcCompiler
 				return 1;
 			}
 		}
-#if MULTI_TARGET
 		if(nonleaf)
 		{
 			return 0;
 		}
-#endif
 		if(options.assembly == null)
 		{
 			string basename = options.path == null ? defaultAssemblyName : new FileInfo(options.path).Name;
@@ -1089,7 +1060,6 @@ class IkvmcCompiler
 
 	private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
 	{
-#if IKVM_REF_EMIT
 		if (args.RequestingAssembly == null || IsLoadedFromCurrentClrProbeLocation(args.RequestingAssembly))
 		{
 			System.Reflection.Assembly asm = null;
@@ -1132,17 +1102,5 @@ class IkvmcCompiler
 		}
 		Environment.Exit(1);
 		return null;
-#else
-		// make sure all the referenced assemblies are visible (they are loaded with LoadFrom, so
-		// they end up in the LoadFrom context [unless they happen to be available in one of the probe paths])
-		foreach(Assembly a in AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies())
-		{
-			if(args.Name.StartsWith(a.GetName().Name + ", "))
-			{
-				return a;
-			}
-		}
-		return Assembly.ReflectionOnlyLoad(args.Name);
-#endif
 	}
 }
