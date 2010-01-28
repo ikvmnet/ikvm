@@ -657,6 +657,10 @@ static class NetExp
 
 	private static void AddToExportListIfNeeded(TypeWrapper tw)
 	{
+		while (tw.IsArray)
+		{
+			tw = tw.ElementTypeWrapper;
+		}
 		if ((tw.TypeAsTBD != null && tw.TypeAsTBD.IsGenericType) || IsNonVectorArray(tw) || !tw.IsPublic)
 		{
 			AddToExportList(tw);
