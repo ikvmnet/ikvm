@@ -616,8 +616,8 @@ namespace IKVM.Internal
 				}
 			}
 			ClassLoaderWrapper loader = this.DeclaringType.GetClassLoader();
-			TypeWrapper ret = ClassFile.RetTypeWrapperFromSig(loader, Signature);
-			TypeWrapper[] parameters = ClassFile.ArgTypeWrapperListFromSig(loader, Signature);
+			TypeWrapper ret = loader.RetTypeWrapperFromSigNoThrow(Signature);
+			TypeWrapper[] parameters = loader.ArgTypeWrapperListFromSigNoThrow(Signature);
 			lock(this)
 			{
 				if(parameterTypeWrappers == null)
@@ -1324,7 +1324,7 @@ namespace IKVM.Internal
 					return;
 				}
 			}
-			TypeWrapper fld = ClassFile.FieldTypeWrapperFromSig(this.DeclaringType.GetClassLoader(), Signature);
+			TypeWrapper fld = this.DeclaringType.GetClassLoader().FieldTypeWrapperFromSigNoThrow(Signature);
 			lock(this)
 			{
 				if(fieldType == null)
@@ -1913,7 +1913,7 @@ namespace IKVM.Internal
 				}
 				else
 				{
-					type = ClassFile.FieldTypeWrapperFromSig(wrapper.GetClassLoader(), nameSig.Sig);
+					type = wrapper.GetClassLoader().FieldTypeWrapperFromSigNoThrow(nameSig.Sig);
 					name = nameSig.Name;
 					sig = nameSig.Sig;
 				}

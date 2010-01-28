@@ -1212,7 +1212,7 @@ namespace IKVM.Internal
 			{
 				if(typeWrapper == null)
 				{
-					typeWrapper = LoadClassHelper(thisType.GetClassLoader(), name);
+					typeWrapper = ClassLoaderWrapper.LoadClassNoThrow(thisType.GetClassLoader(), name);
 				}
 			}
 
@@ -1233,137 +1233,6 @@ namespace IKVM.Internal
 			{
 				return ConstantType.Class;
 			}
-		}
-
-		private static TypeWrapper LoadClassHelper(ClassLoaderWrapper classLoader, string name)
-		{
-			try
-			{
-				TypeWrapper wrapper = classLoader.LoadClassByDottedNameFast(name);
-				if(wrapper == null)
-				{
-					Tracer.Error(Tracer.ClassLoading, "Class not found: {0}", name);
-					wrapper = new UnloadableTypeWrapper(name);
-				}
-				return wrapper;
-			}
-			catch(RetargetableJavaException x)
-			{
-				// HACK keep the compiler from warning about unused local
-				GC.KeepAlive(x);
-#if !STATIC_COMPILER && !FIRST_PASS
-				if(Tracer.ClassLoading.TraceError)
-				{
-					java.lang.ClassLoader cl = (java.lang.ClassLoader)classLoader.GetJavaClassLoader();
-					if(cl != null)
-					{
-						System.Text.StringBuilder sb = new System.Text.StringBuilder();
-						string sep = "";
-						while(cl != null)
-						{
-							sb.Append(sep).Append(cl);
-							sep = " -> ";
-							cl = cl.getParent();
-						}
-						Tracer.Error(Tracer.ClassLoading, "ClassLoader chain: {0}", sb);
-					}
-					Exception m = ikvm.runtime.Util.mapException(x.ToJava());
-					Tracer.Error(Tracer.ClassLoading, m.ToString() + Environment.NewLine + m.StackTrace);
-				}
-#endif // !STATIC_COMPILER && !FIRST_PASS
-				return new UnloadableTypeWrapper(name);
-			}
-		}
-
-		private static TypeWrapper SigDecoderWrapper(ClassLoaderWrapper classLoader, ref int index, string sig)
-		{
-			switch(sig[index++])
-			{
-				case 'B':
-					return PrimitiveTypeWrapper.BYTE;
-				case 'C':
-					return PrimitiveTypeWrapper.CHAR;
-				case 'D':
-					return PrimitiveTypeWrapper.DOUBLE;
-				case 'F':
-					return PrimitiveTypeWrapper.FLOAT;
-				case 'I':
-					return PrimitiveTypeWrapper.INT;
-				case 'J':
-					return PrimitiveTypeWrapper.LONG;
-				case 'L':
-				{
-					int pos = index;
-					index = sig.IndexOf(';', index) + 1;
-					return LoadClassHelper(classLoader, sig.Substring(pos, index - pos - 1));
-				}
-				case 'S':
-					return PrimitiveTypeWrapper.SHORT;
-				case 'Z':
-					return PrimitiveTypeWrapper.BOOLEAN;
-				case 'V':
-					return PrimitiveTypeWrapper.VOID;
-				case '[':
-				{
-					// TODO this can be optimized
-					string array = "[";
-					while(sig[index] == '[')
-					{
-						index++;
-						array += "[";
-					}
-					switch(sig[index])
-					{
-						case 'L':
-						{
-							int pos = index;
-							index = sig.IndexOf(';', index) + 1;
-							return LoadClassHelper(classLoader, array + sig.Substring(pos, index - pos));
-						}
-						case 'B':
-						case 'C':
-						case 'D':
-						case 'F':
-						case 'I':
-						case 'J':
-						case 'S':
-						case 'Z':
-							return LoadClassHelper(classLoader, array + sig[index++]);
-						default:
-							// TODO this should never happen, because ClassFile should validate the descriptors
-							throw new InvalidOperationException(sig.Substring(index));
-					}
-				}
-				default:
-					// TODO this should never happen, because ClassFile should validate the descriptors
-					throw new InvalidOperationException(sig.Substring(index));
-			}
-		}
-
-		internal static TypeWrapper[] ArgTypeWrapperListFromSig(ClassLoaderWrapper classLoader, string sig)
-		{
-			if(sig[1] == ')')
-			{
-				return TypeWrapper.EmptyArray;
-			}
-			List<TypeWrapper> list = new List<TypeWrapper>();
-			for(int i = 1; sig[i] != ')';)
-			{
-				list.Add(SigDecoderWrapper(classLoader, ref i, sig));
-			}
-			return list.ToArray();
-		}
-
-		internal static TypeWrapper FieldTypeWrapperFromSig(ClassLoaderWrapper classLoader, string sig)
-		{
-			int index = 0;
-			return SigDecoderWrapper(classLoader, ref index, sig);
-		}
-
-		internal static TypeWrapper RetTypeWrapperFromSig(ClassLoaderWrapper classLoader, string sig)
-		{
-			int index = sig.IndexOf(')') + 1;
-			return SigDecoderWrapper(classLoader, ref index, sig);
 		}
 
 		private sealed class ConstantPoolItemDouble : ConstantPoolItem
@@ -1502,7 +1371,7 @@ namespace IKVM.Internal
 					}
 				}
 				ClassLoaderWrapper classLoader = thisType.GetClassLoader();
-				TypeWrapper fld = FieldTypeWrapperFromSig(classLoader, this.Signature);
+				TypeWrapper fld = classLoader.FieldTypeWrapperFromSigNoThrow(this.Signature);
 				lock(this)
 				{
 					if(fieldTypeWrapper == null)
@@ -1560,8 +1429,8 @@ namespace IKVM.Internal
 					}
 				}
 				ClassLoaderWrapper classLoader = thisType.GetClassLoader();
-				TypeWrapper[] args = ArgTypeWrapperListFromSig(classLoader, this.Signature);
-				TypeWrapper ret = RetTypeWrapperFromSig(classLoader, this.Signature);
+				TypeWrapper[] args = classLoader.ArgTypeWrapperListFromSigNoThrow(this.Signature);
+				TypeWrapper ret = classLoader.RetTypeWrapperFromSigNoThrow(this.Signature);
 				lock(this)
 				{
 					if(argTypeWrappers == null)

@@ -317,7 +317,7 @@ namespace IKVM.Internal
 		private static void GetAttributeArgsAndTypes(ClassLoaderWrapper loader, IKVM.Internal.MapXml.Attribute attr, out Type[] argTypes, out object[] args)
 		{
 			// TODO add error handling
-			TypeWrapper[] twargs = ClassFile.ArgTypeWrapperListFromSig(loader, attr.Sig);
+			TypeWrapper[] twargs = loader.ArgTypeWrapperListFromSigNoThrow(attr.Sig);
 			argTypes = new Type[twargs.Length];
 			args = new object[argTypes.Length];
 			for(int i = 0; i < twargs.Length; i++)
@@ -326,7 +326,7 @@ namespace IKVM.Internal
 				TypeWrapper tw = twargs[i];
 				if(tw == CoreClasses.java.lang.Object.Wrapper)
 				{
-					tw = ClassFile.FieldTypeWrapperFromSig(loader, attr.Params[i].Sig);
+					tw = loader.FieldTypeWrapperFromSigNoThrow(attr.Params[i].Sig);
 				}
 				if(tw.IsArray)
 				{
@@ -374,7 +374,7 @@ namespace IKVM.Internal
 					for(int i = 0; i < namedProperties.Length; i++)
 					{
 						namedProperties[i] = t.GetProperty(attr.Properties[i].Name);
-						propertyValues[i] = ParseValue(loader, ClassFile.FieldTypeWrapperFromSig(loader, attr.Properties[i].Sig), attr.Properties[i].Value);
+						propertyValues[i] = ParseValue(loader, loader.FieldTypeWrapperFromSigNoThrow(attr.Properties[i].Sig), attr.Properties[i].Value);
 					}
 				}
 				else
@@ -391,7 +391,7 @@ namespace IKVM.Internal
 					for(int i = 0; i < namedFields.Length; i++)
 					{
 						namedFields[i] = t.GetField(attr.Fields[i].Name);
-						fieldValues[i] = ParseValue(loader, ClassFile.FieldTypeWrapperFromSig(loader, attr.Fields[i].Sig), attr.Fields[i].Value);
+						fieldValues[i] = ParseValue(loader, loader.FieldTypeWrapperFromSigNoThrow(attr.Fields[i].Sig), attr.Fields[i].Value);
 					}
 				}
 				else
@@ -427,7 +427,7 @@ namespace IKVM.Internal
 						FieldWrapper fw = t.GetFieldWrapper(attr.Fields[i].Name, attr.Fields[i].Sig);
 						fw.Link();
 						namedFields[i] = fw.GetField();
-						fieldValues[i] = ParseValue(loader, ClassFile.FieldTypeWrapperFromSig(loader, attr.Fields[i].Sig), attr.Fields[i].Value);
+						fieldValues[i] = ParseValue(loader, loader.FieldTypeWrapperFromSigNoThrow(attr.Fields[i].Sig), attr.Fields[i].Value);
 					}
 				}
 				else

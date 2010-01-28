@@ -725,7 +725,7 @@ namespace IKVM.Internal
 			Debug.Assert(type != "Lnull");
 
 			int index = 0;
-			return SigDecoderWrapper(ref index, type);
+			return SigDecoderWrapper(ref index, type, false);
 		}
 
 		// NOTE this exposes potentially unfinished types
@@ -744,8 +744,13 @@ namespace IKVM.Internal
 			return types;
 		}
 
+		private TypeWrapper SigDecoderLoadClass(string name, bool nothrow)
+		{
+			return nothrow ? LoadClassNoThrow(this, name) : LoadClassByDottedName(name);
+		}
+
 		// NOTE: this will ignore anything following the sig marker (so that it can be used to decode method signatures)
-		private TypeWrapper SigDecoderWrapper(ref int index, string sig)
+		private TypeWrapper SigDecoderWrapper(ref int index, string sig, bool nothrow)
 		{
 			switch(sig[index++])
 			{
@@ -765,7 +770,7 @@ namespace IKVM.Internal
 				{
 					int pos = index;
 					index = sig.IndexOf(';', index) + 1;
-					return LoadClassByDottedName(sig.Substring(pos, index - pos - 1));
+					return SigDecoderLoadClass(sig.Substring(pos, index - pos - 1), nothrow);
 				}
 				case 'S':
 					return PrimitiveTypeWrapper.SHORT;
@@ -788,7 +793,7 @@ namespace IKVM.Internal
 						{
 							int pos = index;
 							index = sig.IndexOf(';', index) + 1;
-							return LoadClassByDottedName(array + sig.Substring(pos, index - pos));
+							return SigDecoderLoadClass(array + sig.Substring(pos, index - pos), nothrow);
 						}
 						case 'B':
 						case 'C':
@@ -798,7 +803,7 @@ namespace IKVM.Internal
 						case 'J':
 						case 'S':
 						case 'Z':
-							return LoadClassByDottedName(array + sig[index++]);
+							return SigDecoderLoadClass(array + sig[index++], nothrow);
 						default:
 							throw new InvalidOperationException(sig.Substring(index));
 					}
@@ -811,13 +816,25 @@ namespace IKVM.Internal
 		internal TypeWrapper FieldTypeWrapperFromSig(string sig)
 		{
 			int index = 0;
-			return SigDecoderWrapper(ref index, sig);
+			return SigDecoderWrapper(ref index, sig, false);
+		}
+
+		internal TypeWrapper FieldTypeWrapperFromSigNoThrow(string sig)
+		{
+			int index = 0;
+			return SigDecoderWrapper(ref index, sig, true);
 		}
 
 		internal TypeWrapper RetTypeWrapperFromSig(string sig)
 		{
 			int index = sig.IndexOf(')') + 1;
-			return SigDecoderWrapper(ref index, sig);
+			return SigDecoderWrapper(ref index, sig, false);
+		}
+
+		internal TypeWrapper RetTypeWrapperFromSigNoThrow(string sig)
+		{
+			int index = sig.IndexOf(')') + 1;
+			return SigDecoderWrapper(ref index, sig, true);
 		}
 
 		internal TypeWrapper[] ArgTypeWrapperListFromSig(string sig)
@@ -829,7 +846,21 @@ namespace IKVM.Internal
 			List<TypeWrapper> list = new List<TypeWrapper>();
 			for(int i = 1; sig[i] != ')';)
 			{
-				list.Add(SigDecoderWrapper(ref i, sig));
+				list.Add(SigDecoderWrapper(ref i, sig, false));
+			}
+			return list.ToArray();
+		}
+
+		internal TypeWrapper[] ArgTypeWrapperListFromSigNoThrow(string sig)
+		{
+			if (sig[1] == ')')
+			{
+				return TypeWrapper.EmptyArray;
+			}
+			List<TypeWrapper> list = new List<TypeWrapper>();
+			for (int i = 1; sig[i] != ')'; )
+			{
+				list.Add(SigDecoderWrapper(ref i, sig, true));
 			}
 			return list.ToArray();
 		}
@@ -1204,6 +1235,46 @@ namespace IKVM.Internal
 #endif
 		}
 #endif
+
+		internal static TypeWrapper LoadClassNoThrow(ClassLoaderWrapper classLoader, string name)
+		{
+			try
+			{
+				TypeWrapper wrapper = classLoader.LoadClassByDottedNameFast(name);
+				if (wrapper == null)
+				{
+					Tracer.Error(Tracer.ClassLoading, "Class not found: {0}", name);
+					wrapper = new UnloadableTypeWrapper(name);
+				}
+				return wrapper;
+			}
+			catch (RetargetableJavaException x)
+			{
+				// HACK keep the compiler from warning about unused local
+				GC.KeepAlive(x);
+#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+				if(Tracer.ClassLoading.TraceError)
+				{
+					java.lang.ClassLoader cl = (java.lang.ClassLoader)classLoader.GetJavaClassLoader();
+					if(cl != null)
+					{
+						System.Text.StringBuilder sb = new System.Text.StringBuilder();
+						string sep = "";
+						while(cl != null)
+						{
+							sb.Append(sep).Append(cl);
+							sep = " -> ";
+							cl = cl.getParent();
+						}
+						Tracer.Error(Tracer.ClassLoading, "ClassLoader chain: {0}", sb);
+					}
+					Exception m = ikvm.runtime.Util.mapException(x.ToJava());
+					Tracer.Error(Tracer.ClassLoading, m.ToString() + Environment.NewLine + m.StackTrace);
+				}
+#endif // !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+				return new UnloadableTypeWrapper(name);
+			}
+		}
 	}
 
 	class GenericClassLoader : ClassLoaderWrapper
