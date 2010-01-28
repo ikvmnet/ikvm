@@ -1,19 +1,35 @@
 <?xml version="1.0"?>
 <project name="ikvmstub" default="ikvmstub">
     <target name="ikvmstub">
-        <property name="defs" value="TRACE" />
+        <property name="defs" value="STUB_GENERATOR;IKVM_REF_EMIT;TRACE" />
         <if test="${property::exists('signed')}">
             <property name="defs" value="${defs};${signed}" />
         </if>
         <csc target="exe" output="../bin/ikvmstub.exe" define="${defs}">
             <sources>
                 <include name="../CommonAssemblyInfo.cs" />
-                <include name="*.cs" />
+                <include name="../runtime/AssemblyClassLoader.cs" />
+                <include name="../runtime/attributes.cs" />
+                <include name="../runtime/ClassLoaderWrapper.cs" />
+                <include name="../runtime/CoreClasses.cs" />
+                <include name="../runtime/DotNetTypeWrapper.cs" />
+                <include name="../runtime/JavaException.cs" />
+                <include name="../runtime/MemberWrapper.cs" />
+                <include name="../runtime/profiler.cs" />
+                <include name="../runtime/ReflectUtil.cs" />
+                <include name="../runtime/tracer.cs" />
+                <include name="../runtime/Types.cs" />
+                <include name="../runtime/TypeWrapper.cs" />
+                <include name="../runtime/vm.cs" />
+                <include name="AssemblyInfo.cs" />
+                <include name="ClassFileWriter.cs" />
+                <include name="FakeClassLibrary.cs" />
+                <include name="ikvmstub.cs" />
+                <include name="SerialVersionUID.cs" />
             </sources>
             <references>
-                <include name="../bin/IKVM.OpenJDK.Core.dll" asis="true" />
-                <include name="../bin/IKVM.OpenJDK.Util.dll" asis="true" />
-                <include name="../bin/IKVM.Runtime.dll" asis="true" />
+                <include name="../bin/ICSharpCode.SharpZipLib.dll" asis="true" />
+                <include name="../bin/IKVM.Reflection.dll" asis="true" />
             </references>
         </csc>
     </target>

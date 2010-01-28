@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2009 Jeroen Frijters
+  Copyright (C) 2002-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -22,25 +22,29 @@
   
 */
 using System;
-using System.Reflection;
 using System.IO;
 using System.Collections.Generic;
-using java.util.zip;
-using java.lang.reflect;
+using ICSharpCode.SharpZipLib.Zip;
+using IKVM.Attributes;
+using IKVM.Internal;
+using IKVM.Reflection;
+using Type = IKVM.Reflection.Type;
+using ResolveEventArgs = IKVM.Reflection.ResolveEventArgs;
+using ResolveEventHandler = IKVM.Reflection.ResolveEventHandler;
 
-public class NetExp
+static class NetExp
 {
 	private static int zipCount;
 	private static ZipOutputStream zipFile;
-	private static Dictionary<string, NetExp> done = new Dictionary<string, NetExp>();
-	private static Dictionary<string, java.lang.Class> todo = new Dictionary<string, java.lang.Class>();
+	private static Dictionary<string, string> done = new Dictionary<string, string>();
+	private static Dictionary<string, TypeWrapper> todo = new Dictionary<string, TypeWrapper>();
 	private static FileInfo file;
+	private static bool includeSerialVersionUID;
 
-	public static int Main(string[] args)
+	static int Main(string[] args)
 	{
 		IKVM.Internal.Tracer.EnableTraceConsoleListener();
 		IKVM.Internal.Tracer.EnableTraceForDebug();
-		java.lang.System.setProperty("ikvm.stubgen.skipNonPublicInterfaces", "true");
 		string assemblyNameOrPath = null;
 		bool continueOnError = false;
 		bool autoLoadSharedClassLoaderAssemblies = false;
@@ -50,7 +54,7 @@ public class NetExp
 			{
 				if(s == "-serialver")
 				{
-					java.lang.System.setProperty("ikvm.stubgen.serialver", "true");
+					includeSerialVersionUID = true;
 				}
 				else if(s == "-skiperror")
 				{
@@ -65,7 +69,7 @@ public class NetExp
 					string path = s.Substring(s.IndexOf(':') + 1);
 					try
 					{
-						Assembly.ReflectionOnlyLoadFrom(path);
+						StaticCompiler.Universe.LoadFile(path);
 					}
 					catch (Exception x)
 					{
@@ -88,7 +92,7 @@ public class NetExp
 		}
 		if(assemblyNameOrPath == null)
 		{
-			Console.Error.WriteLine(ikvm.runtime.Startup.getVersionAndCopyrightInfo());
+			Console.Error.WriteLine(GetVersionAndCopyrightInfo());
 			Console.Error.WriteLine();
 			Console.Error.WriteLine("usage: ikvmstub [-serialver] [-skiperror] <assemblyNameOrPath>");
 			return 1;
@@ -105,15 +109,19 @@ public class NetExp
 		}
 		if(file != null && file.Exists)
 		{
-			AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += new ResolveEventHandler(CurrentDomain_ReflectionOnlyAssemblyResolve);
-			assembly = Assembly.ReflectionOnlyLoadFrom(assemblyNameOrPath);
+			StaticCompiler.Universe.AssemblyResolve += new ResolveEventHandler(Universe_AssemblyResolve);
+			assembly = StaticCompiler.LoadFile(assemblyNameOrPath);
 		}
 		else
 		{
 #pragma warning disable 618
 			// Assembly.LoadWithPartialName is obsolete
-			assembly = Assembly.LoadWithPartialName(assemblyNameOrPath);
+			System.Reflection.Assembly asm = System.Reflection.Assembly.LoadWithPartialName(assemblyNameOrPath);
 #pragma warning restore
+			if (asm != null)
+			{
+				assembly = StaticCompiler.Universe.LoadFile(asm.Location);
+			}
 		}
 		int rc = 0;
 		if(assembly == null)
@@ -122,15 +130,16 @@ public class NetExp
 		}
 		else
 		{
-			if (assembly.ReflectionOnly && IsJavaModule(assembly.ManifestModule))
+			if (assembly.ReflectionOnly && AttributeHelper.IsJavaModule(assembly.ManifestModule))
 			{
 				Console.Error.WriteLine("Warning: Running ikvmstub on ikvmc compiled assemblies is not supported.");
 			}
 			try
 			{
-				using (zipFile = new ZipOutputStream(new java.io.FileOutputStream(assembly.GetName().Name + ".jar")))
+				JVM.CoreAssembly = StaticCompiler.Universe.Import(typeof(NetExp)).Assembly;
+				using (zipFile = new ZipOutputStream(new FileStream(assembly.GetName().Name + ".jar", FileMode.Create)))
 				{
-					zipFile.setComment(ikvm.runtime.Startup.getVersionAndCopyrightInfo());
+					zipFile.SetComment(GetVersionAndCopyrightInfo());
 					try
 					{
 						List<Assembly> assemblies = new List<Assembly>();
@@ -151,18 +160,13 @@ public class NetExp
 							}
 						}
 					}
-					catch (ReflectionTypeLoadException x)
+					catch (TypeLoadException x)
 					{
 						Console.WriteLine(x);
-						Console.WriteLine("LoaderExceptions:");
-						foreach (Exception n in x.LoaderExceptions)
-						{
-							Console.WriteLine(n);
-						}
 					}
 					catch (System.Exception x)
 					{
-						java.lang.Throwable.instancehelper_printStackTrace(ikvm.runtime.Util.mapException(x));
+						Console.WriteLine(x);
 						
 						if (!continueOnError)
 						{
@@ -189,16 +193,23 @@ public class NetExp
 		return rc;
 	}
 
-	private static bool IsJavaModule(Module module)
+	private static string GetVersionAndCopyrightInfo()
 	{
-		foreach (CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(module))
+		System.Reflection.Assembly asm = System.Reflection.Assembly.GetEntryAssembly();
+		object[] desc = asm.GetCustomAttributes(typeof(System.Reflection.AssemblyTitleAttribute), false);
+		if (desc.Length == 1)
 		{
-			if (cad.Constructor.DeclaringType.FullName == "IKVM.Attributes.JavaModuleAttribute")
+			object[] copyright = asm.GetCustomAttributes(typeof(System.Reflection.AssemblyCopyrightAttribute), false);
+			if (copyright.Length == 1)
 			{
-				return true;
+				return string.Format("{0} version {1}{2}{3}{2}http://www.ikvm.net/",
+					((System.Reflection.AssemblyTitleAttribute)desc[0]).Title,
+					asm.GetName().Version,
+					Environment.NewLine,
+					((System.Reflection.AssemblyCopyrightAttribute)copyright[0]).Copyright);
 			}
 		}
-		return false;
+		return "";
 	}
 
 	private static void LoadSharedClassLoaderAssemblies(Assembly assembly, List<Assembly> assemblies)
@@ -213,7 +224,7 @@ public class NetExp
 				int assemblyCount = rdr.ReadInt32();
 				for (int i = 0; i < assemblyCount; i++)
 				{
-					AssemblyName name = new AssemblyName(rdr.ReadString());
+					string name = rdr.ReadString();
 					int typeCount = rdr.ReadInt32();
 					if (typeCount > 0)
 					{
@@ -223,11 +234,11 @@ public class NetExp
 						}
 						try
 						{
-							assemblies.Add(Assembly.Load(name));
+							assemblies.Add(StaticCompiler.Load(name));
 						}
 						catch
 						{
-							Console.WriteLine("Warning: Unable to load shared class loader assembly: {0}", name.Name);
+							Console.WriteLine("Warning: Unable to load shared class loader assembly: {0}", name);
 						}
 					}
 				}
@@ -235,71 +246,366 @@ public class NetExp
 		}
 	}
 
-	private static Assembly CurrentDomain_ReflectionOnlyAssemblyResolve(object sender, ResolveEventArgs args)
+	private static Assembly Universe_AssemblyResolve(object sender, ResolveEventArgs args)
 	{
-		foreach(Assembly a in AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies())
-		{
-			if(args.Name.StartsWith(a.GetName().Name + ", "))
-			{
-				return a;
-			}
-		}
 		string path = args.Name;
 		int index = path.IndexOf(',');
-		if(index > 0)
+		if (index > 0)
 		{
 			path = path.Substring(0, index);
 		}
 		path = file.DirectoryName + Path.DirectorySeparatorChar + path + ".dll";
-		if(File.Exists(path))
+		if (File.Exists(path))
 		{
-			return Assembly.ReflectionOnlyLoadFrom(path);
+			return StaticCompiler.LoadFile(path);
 		}
-		return Assembly.ReflectionOnlyLoad(args.Name);
+		try
+		{
+			return StaticCompiler.LoadFile(System.Reflection.Assembly.Load(args.Name).Location);
+		}
+		catch
+		{
+		}
+		return null;
 	}
 
-	private static void WriteClass(java.lang.Class c)
+	private static void WriteClass(TypeWrapper tw)
 	{
-		string name = c.getName().Replace('.', '/');
-		java.io.InputStream inp = c.getResourceAsStream("/" + name + ".class");
-		if(inp == null)
+		string name = tw.Name.Replace('.', '/');
+		string super = null;
+		if (tw.IsInterface)
 		{
-			Console.Error.WriteLine("Class {0} not found", name);
-			return;
+			super = "java/lang/Object";
 		}
-		byte[] buf = new byte[inp.available()];
-		if(inp.read(buf) != buf.Length || inp.read() != -1)
+		else if (tw.BaseTypeWrapper != null)
 		{
-			throw new NotImplementedException();
+			super = tw.BaseTypeWrapper.Name.Replace('.', '/');
 		}
+		IKVM.StubGen.ClassFileWriter writer = new IKVM.StubGen.ClassFileWriter(tw.Modifiers, name, super, 0, 49);
+		foreach (TypeWrapper iface in tw.Interfaces)
+		{
+			if (iface.IsPublic)
+			{
+				writer.AddInterface(iface.Name.Replace('.', '/'));	
+			}
+		}
+		IKVM.StubGen.InnerClassesAttribute innerClassesAttribute = null;
+		if (tw.DeclaringTypeWrapper != null)
+		{
+			TypeWrapper outer = tw.DeclaringTypeWrapper;
+			string innername = name;
+			int idx = name.LastIndexOf('$');
+			if (idx >= 0)
+			{
+				innername = innername.Substring(idx + 1);
+			}
+			innerClassesAttribute = new IKVM.StubGen.InnerClassesAttribute(writer);
+			innerClassesAttribute.Add(name, outer.Name.Replace('.', '/'), innername, (ushort)tw.ReflectiveModifiers);
+		}
+		foreach (TypeWrapper inner in tw.InnerClasses)
+		{
+			if (inner.IsPublic)
+			{
+				if (innerClassesAttribute == null)
+				{
+					innerClassesAttribute = new IKVM.StubGen.InnerClassesAttribute(writer);
+				}
+				string namePart = inner.Name;
+				namePart = namePart.Substring(namePart.LastIndexOf('$') + 1);
+				innerClassesAttribute.Add(inner.Name.Replace('.', '/'), name, namePart, (ushort)inner.ReflectiveModifiers);
+			}
+		}
+		if (innerClassesAttribute != null)
+		{
+			writer.AddAttribute(innerClassesAttribute);
+		}
+		string genericTypeSignature = tw.GetGenericSignature();
+		if (genericTypeSignature != null)
+		{
+			writer.AddStringAttribute("Signature", genericTypeSignature);
+		}
+		writer.AddStringAttribute("IKVM.NET.Assembly", GetAssemblyName(tw));
+		if (tw.TypeAsBaseType.IsDefined(StaticCompiler.Universe.Import(typeof(ObsoleteAttribute)), false))
+		{
+			writer.AddAttribute(new IKVM.StubGen.DeprecatedAttribute(writer));
+		}
+		foreach (MethodWrapper mw in tw.GetMethods())
+		{
+			if (!mw.IsHideFromReflection && (mw.IsPublic || mw.IsProtected))
+			{
+				IKVM.StubGen.FieldOrMethod m;
+				if (mw.Name == "<init>")
+				{
+					m = writer.AddMethod(mw.Modifiers, mw.Name, mw.Signature.Replace('.', '/'));
+					IKVM.StubGen.CodeAttribute code = new IKVM.StubGen.CodeAttribute(writer);
+					code.MaxLocals = (ushort)(mw.GetParameters().Length * 2 + 1);
+					code.MaxStack = 3;
+					ushort index1 = writer.AddClass("java/lang/UnsatisfiedLinkError");
+					ushort index2 = writer.AddString("ikvmstub generated stubs can only be used on IKVM.NET");
+					ushort index3 = writer.AddMethodRef("java/lang/UnsatisfiedLinkError", "<init>", "(Ljava/lang/String;)V");
+					code.ByteCode = new byte[] {
+						187, (byte)(index1 >> 8), (byte)index1,	// new java/lang/UnsatisfiedLinkError
+						89,										// dup
+						19,	 (byte)(index2 >> 8), (byte)index2,	// ldc_w "..."
+						183, (byte)(index3 >> 8), (byte)index3, // invokespecial java/lang/UnsatisfiedLinkError/init()V
+						191										// athrow
+					};
+					m.AddAttribute(code);
+				}
+				else
+				{
+					m = writer.AddMethod(mw.Modifiers | Modifiers.Native, mw.Name, mw.Signature.Replace('.', '/'));
+					if (mw.IsOptionalAttributeAnnotationValue)
+					{
+						m.AddAttribute(new IKVM.StubGen.AnnotationDefaultClassFileAttribute(writer, GetAnnotationDefault(writer, mw.ReturnType)));
+					}
+				}
+				MethodBase mb = mw.GetMethod();
+				if (mb != null)
+				{
+					ThrowsAttribute throws = AttributeHelper.GetThrows(mb);
+					if (throws != null)
+					{
+						IKVM.StubGen.ExceptionsAttribute attrib = new IKVM.StubGen.ExceptionsAttribute(writer);
+						if (throws.classes != null)
+						{
+							foreach (string ex in throws.classes)
+							{
+								attrib.Add(ex.Replace('.', '/'));
+							}
+						}
+						if (throws.types != null)
+						{
+							foreach (Type ex in throws.types)
+							{
+								attrib.Add(ex.FullName.Replace('.', '/'));
+							}
+						}
+						m.AddAttribute(attrib);
+					}
+					if (mb.IsDefined(StaticCompiler.Universe.Import(typeof(ObsoleteAttribute)), false))
+					{
+						m.AddAttribute(new IKVM.StubGen.DeprecatedAttribute(writer));
+					}
+				}
+				string sig = tw.GetGenericMethodSignature(mw);
+				if (sig != null)
+				{
+					m.AddAttribute(writer.MakeStringAttribute("Signature", sig));
+				}
+			}
+		}
+		bool hasSerialVersionUID = false;
+		foreach (FieldWrapper fw in tw.GetFields())
+		{
+			if (!fw.IsHideFromReflection)
+			{
+				bool isSerialVersionUID = includeSerialVersionUID && fw.Name == "serialVersionUID" && fw.FieldTypeWrapper == PrimitiveTypeWrapper.LONG;
+				hasSerialVersionUID |= isSerialVersionUID;
+				if (fw.IsPublic || fw.IsProtected || isSerialVersionUID)
+				{
+					object constant = null;
+					if (fw.GetField() != null && fw.GetField().IsLiteral && (fw.FieldTypeWrapper.IsPrimitive || fw.FieldTypeWrapper == CoreClasses.java.lang.String.Wrapper))
+					{
+						constant = fw.GetField().GetRawConstantValue();
+						if (fw.GetField().FieldType.IsEnum)
+						{
+							constant = EnumHelper.GetPrimitiveValue(EnumHelper.GetUnderlyingType(fw.GetField().FieldType), constant);
+						}
+					}
+					IKVM.StubGen.FieldOrMethod f = writer.AddField(fw.Modifiers, fw.Name, fw.Signature.Replace('.', '/'), constant);
+					string sig = tw.GetGenericFieldSignature(fw);
+					if (sig != null)
+					{
+						f.AddAttribute(writer.MakeStringAttribute("Signature", sig));
+					}
+					if (fw.GetField() != null && fw.GetField().IsDefined(StaticCompiler.Universe.Import(typeof(ObsoleteAttribute)), false))
+					{
+						f.AddAttribute(new IKVM.StubGen.DeprecatedAttribute(writer));
+					}
+				}
+			}
+		}
+		if (includeSerialVersionUID && !hasSerialVersionUID && IsSerializable(tw))
+		{
+			// class is serializable but doesn't have an explicit serialVersionUID, so we add the field to record
+			// the serialVersionUID as we see it (mainly to make the Japi reports more realistic)
+			writer.AddField(Modifiers.Private | Modifiers.Static | Modifiers.Final, "serialVersionUID", "J", IKVM.StubGen.SerialVersionUID.Compute(tw));
+		}
+		AddMetaAnnotations(writer, tw);
 		zipCount++;
-		zipFile.putNextEntry(new ZipEntry(name + ".class"));
-		zipFile.write(buf, 0, buf.Length);
+		zipFile.PutNextEntry(new ZipEntry(name + ".class"));
+		writer.Write(zipFile);
+	}
+
+	private static string GetAssemblyName(TypeWrapper tw)
+	{
+		ClassLoaderWrapper loader = tw.GetClassLoader();
+		AssemblyClassLoader acl = loader as AssemblyClassLoader;
+		if (acl != null)
+		{
+			return acl.GetAssembly(tw).FullName;
+		}
+		else
+		{
+			return ((GenericClassLoader)loader).GetName();
+		}
+	}
+
+	private static bool IsSerializable(TypeWrapper tw)
+	{
+		if (tw.Name == "java.io.Serializable")
+		{
+			return true;
+		}
+		while (tw != null)
+		{
+			foreach (TypeWrapper iface in tw.Interfaces)
+			{
+				if (IsSerializable(iface))
+				{
+					return true;
+				}
+			}
+			tw = tw.BaseTypeWrapper;
+		}
+		return false;
+	}
+
+	private static void AddMetaAnnotations(IKVM.StubGen.ClassFileWriter writer, TypeWrapper tw)
+	{
+		DotNetTypeWrapper.AttributeAnnotationTypeWrapperBase attributeAnnotation = tw as DotNetTypeWrapper.AttributeAnnotationTypeWrapperBase;
+		if (attributeAnnotation != null)
+		{
+			// TODO write the annotation directly, instead of going thru the object[] encoding
+			IKVM.StubGen.RuntimeVisibleAnnotationsAttribute annot = new IKVM.StubGen.RuntimeVisibleAnnotationsAttribute(writer);
+			annot.Add(new object[] {
+					AnnotationDefaultAttribute.TAG_ANNOTATION,
+					"Ljava/lang/annotation/Retention;",
+					"value",
+					new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/RetentionPolicy;", "RUNTIME" }
+				});
+			AttributeTargets validOn = attributeAnnotation.AttributeTargets;
+			List<object[]> targets = new List<object[]>();
+			if ((validOn & (AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.Struct | AttributeTargets.Enum | AttributeTargets.Delegate | AttributeTargets.Assembly)) != 0)
+			{
+				targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "TYPE" });
+			}
+			if ((validOn & AttributeTargets.Constructor) != 0)
+			{
+				targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "CONSTRUCTOR" });
+			}
+			if ((validOn & AttributeTargets.Field) != 0)
+			{
+				targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "FIELD" });
+			}
+			if ((validOn & (AttributeTargets.Method | AttributeTargets.ReturnValue)) != 0)
+			{
+				targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "METHOD" });
+			}
+			if ((validOn & AttributeTargets.Parameter) != 0)
+			{
+				targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "PARAMETER" });
+			}
+			annot.Add(new object[] {
+					AnnotationDefaultAttribute.TAG_ANNOTATION,
+					"Ljava/lang/annotation/Target;",
+					"value",
+					new object[] { AnnotationDefaultAttribute.TAG_ARRAY, targets.ToArray() }
+				});
+			writer.AddAttribute(annot);
+		}
+	}
+
+	private static byte[] GetAnnotationDefault(IKVM.StubGen.ClassFileWriter classFile, TypeWrapper type)
+	{
+		MemoryStream mem = new MemoryStream();
+		IKVM.StubGen.BigEndianStream bes = new IKVM.StubGen.BigEndianStream(mem);
+		if (type == PrimitiveTypeWrapper.BOOLEAN)
+		{
+			bes.WriteByte((byte)'Z');
+			bes.WriteUInt16(0);
+		}
+        else if(type == PrimitiveTypeWrapper.BYTE)
+        {
+			bes.WriteByte((byte)'B');
+			bes.WriteUInt16(classFile.AddInt(0));
+        }
+        else if(type == PrimitiveTypeWrapper.CHAR)
+        {
+			bes.WriteByte((byte)'C');
+			bes.WriteUInt16(classFile.AddInt(0));
+        }
+        else if(type == PrimitiveTypeWrapper.SHORT)
+        {
+			bes.WriteByte((byte)'S');
+			bes.WriteUInt16(classFile.AddInt(0));
+        }
+        else if(type == PrimitiveTypeWrapper.INT)
+        {
+			bes.WriteByte((byte)'I');
+			bes.WriteUInt16(classFile.AddInt(0));
+        }
+        else if(type == PrimitiveTypeWrapper.FLOAT)
+        {
+			bes.WriteByte((byte)'F');
+			bes.WriteUInt16(classFile.AddFloat(0));
+        }
+        else if(type == PrimitiveTypeWrapper.LONG)
+        {
+			bes.WriteByte((byte)'J');
+			bes.WriteUInt16(classFile.AddLong(0));
+        }
+		else if (type == PrimitiveTypeWrapper.DOUBLE)
+        {
+			bes.WriteByte((byte)'D');
+			bes.WriteUInt16(classFile.AddDouble(0));
+        }
+		else if (type == CoreClasses.java.lang.String.Wrapper)
+		{
+			bes.WriteByte((byte)'s');
+			bes.WriteUInt16(classFile.AddUtf8(""));
+		}
+		else if ((type.Modifiers & Modifiers.Enum) != 0)
+		{
+			bes.WriteByte((byte)'e');
+			bes.WriteUInt16(classFile.AddUtf8("L" + type.Name.Replace('.', '/') + ";"));
+			bes.WriteUInt16(classFile.AddUtf8("__unspecified"));
+		}
+		else if (type == CoreClasses.java.lang.Class.Wrapper)
+		{
+			bes.WriteByte((byte)'c');
+			bes.WriteUInt16(classFile.AddUtf8("Likvm/internal/__unspecified;"));
+		}
+		else if (type.IsArray)
+		{
+			bes.WriteByte((byte)'[');
+			bes.WriteUInt16(0);
+		}
+		else
+		{
+			throw new InvalidOperationException();
+		}
+		return mem.ToArray();
 	}
 
 	private static int ProcessAssembly(Assembly assembly, bool continueOnError)
 	{
 		int rc = 0;
-		foreach(System.Type t in assembly.GetTypes())
+		foreach (Type t in assembly.GetTypes())
 		{
-			if(t.IsPublic)
+			if (t.IsPublic && !AttributeHelper.IsHideFromJava(t) && (!t.IsGenericType || !AttributeHelper.IsJavaModule(t.Module)))
 			{
-				java.lang.Class c;
-				// NOTE we use getClassFromTypeHandle instead of getFriendlyClassFromType, to make sure
-				// we don't get the remapped types when we're processing System.Object, System.String,
-				// System.Throwable and System.IComparable.
-				// NOTE we can't use getClassFromTypeHandle for ReflectionOnly assemblies
-				// (because Type.TypeHandle is not supported by ReflectionOnly types), but this
-				// isn't a problem because mscorlib is never loaded in the ReflectionOnly context.
-				if(assembly.ReflectionOnly)
+				TypeWrapper c;
+				if (ClassLoaderWrapper.IsRemappedType(t) || t.IsPrimitive || t == Types.Void)
 				{
-					c = ikvm.runtime.Util.getFriendlyClassFromType(t);
+					c = DotNetTypeWrapper.GetWrapperFromDotNetType(t);
 				}
 				else
 				{
-					c = ikvm.runtime.Util.getClassFromTypeHandle(t.TypeHandle);
+					c = ClassLoaderWrapper.GetWrapperFromType(t);
 				}
-				if(c != null)
+				if (c != null)
 				{
 					AddToExportList(c);
 				}
@@ -309,12 +615,12 @@ public class NetExp
 		do
 		{
 			keepGoing = false;
-			foreach(java.lang.Class c in new List<java.lang.Class>(todo.Values))
+			foreach (TypeWrapper c in new List<TypeWrapper>(todo.Values))
 			{
-				if(!done.ContainsKey(c.getName()))
+				if(!done.ContainsKey(c.Name))
 				{
 					keepGoing = true;
-					done.Add(c.getName(), null);
+					done.Add(c.Name, null);
 					
 					try
 					{
@@ -325,7 +631,7 @@ public class NetExp
 						if (continueOnError)
 						{
 							rc = 1;
-							java.lang.Throwable.instancehelper_printStackTrace(ikvm.runtime.Util.mapException(x));
+							Console.WriteLine(x);
 						}
 						else
 						{
@@ -339,109 +645,144 @@ public class NetExp
 		return rc;
 	}
 
-	private static void AddToExportList(java.lang.Class c)
+	private static void AddToExportList(TypeWrapper c)
 	{
-		while(c.isArray())
-		{
-			c = c.getComponentType();
-		}
-		todo[c.getName()] = c;
+		todo[c.Name] = c;
 	}
 
-	private static bool IsGenericType(java.lang.Class c)
+	private static bool IsNonVectorArray(TypeWrapper tw)
 	{
-		System.Type t = ikvm.runtime.Util.getInstanceTypeFromClass(c);
-		while(t == null && c.getDeclaringClass() != null)
-		{
-			// dynamic only inner class, so we look at the declaring class
-			c = c.getDeclaringClass();
-			t = ikvm.runtime.Util.getInstanceTypeFromClass(c);
-		}
-		return t.IsGenericType;
+		return !tw.IsArray && tw.TypeAsBaseType.IsArray;
 	}
 
-	private static bool IsNonVectorArray(java.lang.Class c)
+	private static void AddToExportListIfNeeded(TypeWrapper tw)
 	{
-		System.Type t = ikvm.runtime.Util.getInstanceTypeFromClass(c);
-		return t.IsArray && !c.isArray();
-	}
-
-	private static void AddToExportListIfNeeded(java.lang.reflect.Type type)
-	{
-		java.lang.Class c = type as java.lang.Class;
-		if (c != null)
+		if ((tw.TypeAsTBD != null && tw.TypeAsTBD.IsGenericType) || IsNonVectorArray(tw) || !tw.IsPublic)
 		{
-			if (IsGenericType(c) || IsNonVectorArray(c) || (c.getModifiers() & Modifier.PUBLIC) == 0)
-			{
-				AddToExportList(c);
-			}
-		}
-		// we only handle ParameterizedType, because that is the only one needed for rt.jar
-		// (because javax.swing.tree.DefaultTreeSelectionModel has a protected method with a parameter
-		// of type Vector<javax.swing.tree.PathPlaceHolder> where javax.swing.tree.PathPlaceHolder is a package private class)
-		java.lang.reflect.ParameterizedType pt = type as java.lang.reflect.ParameterizedType;
-		if (pt != null)
-		{
-			AddToExportListIfNeeded(pt.getActualTypeArguments());
+			AddToExportList(tw);
 		}
 	}
 
-	private static void AddToExportListIfNeeded(java.lang.reflect.Type[] classes)
+	private static void AddToExportListIfNeeded(TypeWrapper[] types)
 	{
-		foreach(java.lang.reflect.Type c in classes)
+		foreach (TypeWrapper tw in types)
 		{
-			AddToExportListIfNeeded(c);
+			AddToExportListIfNeeded(tw);
 		}
 	}
 
-	private static void ProcessClass(java.lang.Class c)
+	private static void ProcessClass(TypeWrapper tw)
 	{
-		java.lang.Class superclass = c.getSuperclass();
-		if(superclass != null)
+		TypeWrapper superclass = tw.BaseTypeWrapper;
+		if (superclass != null)
 		{
-			AddToExportListIfNeeded(c.getGenericSuperclass());
+			AddToExportListIfNeeded(superclass);
 		}
-		foreach(java.lang.reflect.Type iface in c.getGenericInterfaces())
-		{
-			AddToExportListIfNeeded(iface);
-		}
-		java.lang.Class outerClass = c.getDeclaringClass();
-		if(outerClass != null)
+		AddToExportListIfNeeded(tw.Interfaces);
+		TypeWrapper outerClass = tw.DeclaringTypeWrapper;
+		if (outerClass != null)
 		{
 			AddToExportList(outerClass);
 		}
-		foreach(java.lang.Class innerClass in c.getDeclaredClasses())
+		foreach (TypeWrapper innerClass in tw.InnerClasses)
 		{
-			int mods = innerClass.getModifiers();
-			if((mods & (Modifier.PUBLIC | Modifier.PROTECTED)) != 0)
+			if (innerClass.IsPublic)
 			{
 				AddToExportList(innerClass);
 			}
 		}
-		foreach(Constructor constructor in c.getDeclaredConstructors())
+		foreach (MethodWrapper mw in tw.GetMethods())
 		{
-			int mods = constructor.getModifiers();
-			if((mods & (Modifier.PUBLIC | Modifier.PROTECTED)) != 0)
+			if (mw.IsPublic || mw.IsProtected)
 			{
-				AddToExportListIfNeeded(constructor.getGenericParameterTypes());
+				AddToExportListIfNeeded(mw.ReturnType);
+				AddToExportListIfNeeded(mw.GetParameters());
 			}
 		}
-		foreach(Method method in c.getDeclaredMethods())
+		foreach (FieldWrapper fw in tw.GetFields())
 		{
-			int mods = method.getModifiers();
-			if((mods & (Modifier.PUBLIC | Modifier.PROTECTED)) != 0)
+			if (fw.IsPublic || fw.IsProtected)
 			{
-				AddToExportListIfNeeded(method.getGenericParameterTypes());
-				AddToExportListIfNeeded(method.getGenericReturnType());
+				AddToExportListIfNeeded(fw.FieldTypeWrapper);
 			}
 		}
-		foreach(Field field in c.getDeclaredFields())
+	}
+}
+
+static class Intrinsics
+{
+	internal static bool IsIntrinsic(MethodWrapper methodWrapper)
+	{
+		return false;
+	}
+}
+
+static class StaticCompiler
+{
+	internal static readonly Universe Universe = new Universe();
+	private static Assembly runtimeAssembly;
+
+	internal static Type GetRuntimeType(string typeName)
+	{
+		if (runtimeAssembly == null)
 		{
-			int mods = field.getModifiers();
-			if((mods & (Modifier.PUBLIC | Modifier.PROTECTED)) != 0)
-			{
-				AddToExportListIfNeeded(field.getGenericType());
-			}
+			runtimeAssembly = Universe.Import(typeof(NetExp)).Assembly;
 		}
+		return runtimeAssembly.GetType(typeName, true);
+	}
+
+	internal static Assembly LoadFile(string fileName)
+	{
+		if (AssemblyName.GetAssemblyName(fileName).Name == "mscorlib")
+		{
+			try
+			{
+				Universe.LoadMscorlib(fileName);
+			}
+			catch { }
+		}
+		return Universe.LoadFile(fileName);
+	}
+
+	internal static Assembly Load(string name)
+	{
+		return Universe.Load(name);
+	}
+}
+
+static class FakeTypes
+{
+	private static readonly Type genericType;
+
+	class Holder<T> { }
+
+	static FakeTypes()
+	{
+		genericType = StaticCompiler.Universe.Import(typeof(Holder<>));
+	}
+
+	internal static Type GetAttributeType(Type type)
+	{
+		return genericType.MakeGenericType(type);
+	}
+
+	internal static Type GetAttributeReturnValueType(Type type)
+	{
+		return genericType.MakeGenericType(type);
+	}
+
+	internal static Type GetAttributeMultipleType(Type type)
+	{
+		return genericType.MakeGenericType(type);
+	}
+
+	internal static Type GetDelegateType(Type type)
+	{
+		return genericType.MakeGenericType(type);
+	}
+
+	internal static Type GetEnumType(Type type)
+	{
+		return genericType.MakeGenericType(type);
 	}
 }
