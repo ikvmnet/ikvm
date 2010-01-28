@@ -38,6 +38,15 @@ using IKVM.Attributes;
 
 namespace IKVM.Internal
 {
+	static class StringConstants
+	{
+		internal static readonly string CLINIT = string.Intern("<clinit>");
+		internal static readonly string INIT = string.Intern("<init>");
+		internal static readonly string SIG_VOID = string.Intern("()V");
+		internal static readonly string FINALIZE = string.Intern("finalize");
+		internal static readonly string CLONE = string.Intern("clone");
+	}
+
 	struct ExModifiers
 	{
 		internal readonly Modifiers Modifiers;

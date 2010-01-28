@@ -49,15 +49,6 @@ namespace IKVM.Internal
 		LineNumberTable = 2,
 	}
 
-	static class StringConstants
-	{
-		internal static readonly string CLINIT = string.Intern("<clinit>");
-		internal static readonly string INIT = string.Intern("<init>");
-		internal static readonly string SIG_VOID = string.Intern("()V");
-		internal static readonly string FINALIZE = string.Intern("finalize");
-		internal static readonly string CLONE = string.Intern("clone");
-	}
-
 	sealed class ClassFile
 	{
 		private ConstantPoolItem[] constantpool;
