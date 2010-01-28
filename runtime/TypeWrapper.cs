@@ -96,7 +96,6 @@ namespace IKVM.Internal
 		private static Type typeofHideFromReflectionAttribute = JVM.LoadType(typeof(HideFromReflectionAttribute));
 		private static Type typeofHideFromJavaAttribute = JVM.LoadType(typeof(HideFromJavaAttribute));
 		private static Type typeofNoPackagePrefixAttribute = JVM.LoadType(typeof(NoPackagePrefixAttribute));
-		private static Type typeofConstantValueAttribute = JVM.LoadType(typeof(ConstantValueAttribute));
 		private static Type typeofAnnotationAttributeAttribute = JVM.LoadType(typeof(AnnotationAttributeAttribute));
 		private static Type typeofNonNestedInnerClassAttribute = JVM.LoadType(typeof(NonNestedInnerClassAttribute));
 		private static Type typeofNonNestedOuterClassAttribute = JVM.LoadType(typeof(NonNestedOuterClassAttribute));
@@ -718,34 +717,6 @@ namespace IKVM.Internal
 				&& t1.Assembly.GetName().Name == t2.Assembly.GetName().Name
 #endif
 				;
-		}
-
-		internal static object GetConstantValue(FieldInfo field)
-		{
-#if !STATIC_COMPILER && !STUB_GENERATOR
-			if(!field.DeclaringType.Assembly.ReflectionOnly)
-			{
-				// In Java, instance fields can also have a ConstantValue attribute so we emulate that
-				// with ConstantValueAttribute (for consumption by ikvmstub only)
-				object[] attrib = field.GetCustomAttributes(typeof(ConstantValueAttribute), false);
-				if(attrib.Length == 1)
-				{
-					return ((ConstantValueAttribute)attrib[0]).GetConstantValue();
-				}
-				return null;
-			}
-			else
-#endif
-			{
-				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(field))
-				{
-					if(MatchTypes(cad.Constructor.DeclaringType, typeofConstantValueAttribute))
-					{
-						return cad.ConstructorArguments[0].Value;
-					}
-				}
-				return null;
-			}
 		}
 
 		internal static ModifiersAttribute GetModifiersAttribute(Type type)
@@ -1767,29 +1738,6 @@ namespace IKVM.Internal
 		{
 			CustomAttributeBuilder cab = new CustomAttributeBuilder(typeofExceptionIsUnsafeForMappingAttribute.GetConstructor(Type.EmptyTypes), new object[0]);
 			typeBuilder.SetCustomAttribute(cab);
-		}
-
-		internal static void SetConstantValue(FieldBuilder field, object constantValue)
-		{
-			CustomAttributeBuilder constantValueAttrib;
-			try
-			{
-				constantValueAttrib = new CustomAttributeBuilder(typeofConstantValueAttribute.GetConstructor(new Type[] { JVM.Import(constantValue.GetType()) }), new object[] { constantValue });
-			}
-			catch (OverflowException)
-			{
-				// FXBUG for char values > 32K .NET (1.1 and 2.0) throws an exception (because it tries to convert to Int16)
-				if (constantValue is char)
-				{
-					// we use the int constant value instead, the stub generator can handle that
-					constantValueAttrib = new CustomAttributeBuilder(typeofConstantValueAttribute.GetConstructor(new Type[] { Types.Int32 }), new object[] { (int)(char)constantValue });
-				}
-				else
-				{
-					throw;
-				}
-			}
-			field.SetCustomAttribute(constantValueAttrib);
 		}
 #endif // STATIC_COMPILER
 

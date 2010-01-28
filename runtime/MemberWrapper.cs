@@ -1224,28 +1224,16 @@ namespace IKVM.Internal
 		internal object GetConstant()
 		{
 			AssertLinked();
-			// only pritimives and string can be literals in Java (because the other "primitives" (like uint),
+			// only primitives and string can be literals in Java (because the other "primitives" (like uint),
 			// are treated as NonPrimitiveValueTypes)
-			if(field != null && (fieldType.IsPrimitive || fieldType == CoreClasses.java.lang.String.Wrapper))
+			if(field != null && field.IsLiteral && (fieldType.IsPrimitive || fieldType == CoreClasses.java.lang.String.Wrapper))
 			{
-				object val = null;
-				if(field.IsLiteral)
+				object val = field.GetRawConstantValue();
+				if(field.FieldType.IsEnum)
 				{
-					val = field.GetRawConstantValue();
-					if(field.FieldType.IsEnum)
-					{
-						val = EnumHelper.GetPrimitiveValue(EnumHelper.GetUnderlyingType(field.FieldType), val);
-					}
+					val = EnumHelper.GetPrimitiveValue(EnumHelper.GetUnderlyingType(field.FieldType), val);
 				}
-				else
-				{
-					// NOTE instance fields can also be "constant" and we round trip this information to make the Japi results look
-					// nice (but otherwise this has no practical value), but note that this only works when the code is compiled
-					// with -strictfieldfieldsemantics (because the ConstantValueAttribute is on the field and when we're a GetterFieldWrapper
-					// we don't have access to the corresponding field).
-					val = AttributeHelper.GetConstantValue(field);
-				}
-				if(val != null && !(val is string))
+				if(fieldType.IsPrimitive)
 				{
 					return JVM.Box(val);
 				}

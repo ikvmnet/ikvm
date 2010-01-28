@@ -1370,12 +1370,6 @@ namespace IKVM.Internal
 						field.SetCustomAttribute(transientAttrib);
 					}
 #if STATIC_COMPILER
-					// Instance fields can also have a ConstantValue attribute (and are inlined by the compiler),
-					// and ikvmstub has to export them, so we have to add a custom attribute.
-					if (constantValue != null)
-					{
-						AttributeHelper.SetConstantValue(field, constantValue);
-					}
 					if (hideFromJava)
 					{
 						AttributeHelper.HideFromJava(field);
