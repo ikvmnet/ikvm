@@ -130,7 +130,7 @@ static class NetExp
 		}
 		else
 		{
-			if (assembly.ReflectionOnly && AttributeHelper.IsJavaModule(assembly.ManifestModule))
+			if (AttributeHelper.IsJavaModule(assembly.ManifestModule))
 			{
 				Console.Error.WriteLine("Warning: Running ikvmstub on ikvmc compiled assemblies is not supported.");
 			}
@@ -216,8 +216,6 @@ static class NetExp
 	{
 		if (assembly.GetManifestResourceInfo("ikvm.exports") != null)
 		{
-			// If this is the main assembly in a multi assembly group, try to pre-load all the assemblies.
-			// (This is required to make Assembly.ReflectionOnlyLoad() work later on (because it doesn't fire the ReflectionOnlyAssemblyResolve event).)
 			using (Stream stream = assembly.GetManifestResourceStream("ikvm.exports"))
 			{
 				BinaryReader rdr = new BinaryReader(stream);
