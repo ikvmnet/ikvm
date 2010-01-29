@@ -464,20 +464,6 @@ namespace IKVM.Internal
 #if STATIC_COMPILER || STUB_GENERATOR
 				this.fakeType = FakeTypes.GetEnumType(enumType);
 #elif !FIRST_PASS
-				if (enumType.Assembly.ReflectionOnly)
-				{
-					TypeWrapper decl = ClassLoaderWrapper.GetWrapperFromType(enumType);
-					TypeWrapperFactory factory = ClassLoaderWrapper.GetBootstrapClassLoader().GetTypeWrapperFactory();
-					string basename = "<ReflectionOnlyType>" + enumType.FullName;
-					name = basename;
-					int index = 0;
-					while (!factory.ReserveName(name))
-					{
-						name = basename + (++index);
-					}
-					enumType = factory.ModuleBuilder.DefineEnum(name, TypeAttributes.Public, typeof(int)).CreateType();
-					ClassLoaderWrapper.GetBootstrapClassLoader().SetWrapperForType(enumType, decl);
-				}
 				this.fakeType = typeof(ikvm.@internal.EnumEnum<>).MakeGenericType(enumType);
 #endif
 			}
@@ -2553,11 +2539,6 @@ namespace IKVM.Internal
 #if !STATIC_COMPILER && !STUB_GENERATOR
 		internal override object[] GetDeclaredAnnotations()
 		{
-			if (type.Assembly.ReflectionOnly)
-			{
-				// TODO on Whidbey this must be implemented
-				return null;
-			}
 			return type.GetCustomAttributes(false);
 		}
 
@@ -2566,11 +2547,6 @@ namespace IKVM.Internal
 			FieldInfo fi = fw.GetField();
 			if (fi == null)
 			{
-				return null;
-			}
-			if (fi.DeclaringType.Assembly.ReflectionOnly)
-			{
-				// TODO on Whidbey this must be implemented
 				return null;
 			}
 			return fi.GetCustomAttributes(false);
@@ -2583,11 +2559,6 @@ namespace IKVM.Internal
 			{
 				return null;
 			}
-			if (mb.DeclaringType.Assembly.ReflectionOnly)
-			{
-				// TODO on Whidbey this must be implemented
-				return null;
-			}
 			return mb.GetCustomAttributes(false);
 		}
 
@@ -2596,11 +2567,6 @@ namespace IKVM.Internal
 			MethodBase mb = mw.GetMethod();
 			if (mb == null)
 			{
-				return null;
-			}
-			if (mb.DeclaringType.Assembly.ReflectionOnly)
-			{
-				// TODO on Whidbey this must be implemented
 				return null;
 			}
 			ParameterInfo[] parameters = mb.GetParameters();

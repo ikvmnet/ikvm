@@ -84,10 +84,6 @@ namespace IKVM.NativeCode.gnu.java.net.protocol.ikvmres
 
 		public static Assembly LoadAssembly(string name)
 		{
-			if(name.EndsWith("[ReflectionOnly]"))
-			{
-				return Assembly.ReflectionOnlyLoad(name.Substring(0, name.Length - 16));
-			}
 			return Assembly.Load(name);
 		}
 
@@ -273,11 +269,6 @@ namespace IKVM.NativeCode.ikvm.runtime
 				}
 			}
 			return packages;
-		}
-
-		public static bool IsReflectionOnly(Assembly asm)
-		{
-			return asm.ReflectionOnly;
 		}
 
 		public static int GetGenericClassLoaderId(object classLoader)

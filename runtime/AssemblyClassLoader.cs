@@ -44,7 +44,6 @@ namespace IKVM.Internal
 		private AssemblyLoader assemblyLoader;
 		private string[] references;
 		private AssemblyClassLoader[] delegates;
-		private bool isReflectionOnly;
 #if !STATIC_COMPILER && !STUB_GENERATOR
 		private Thread initializerThread;
 		private int initializerRecursion;
@@ -352,7 +351,6 @@ namespace IKVM.Internal
 		{
 			this.assemblyLoader = new AssemblyLoader(assembly);
 			this.references = fixedReferences;
-			this.isReflectionOnly = assembly.ReflectionOnly;
 		}
 
 		private void DoInitializeExports()
@@ -480,14 +478,7 @@ namespace IKVM.Internal
 					return StaticCompiler.Load(name);
 				}
 #else
-				if (isReflectionOnly)
-				{
-					return Assembly.ReflectionOnlyLoad(name);
-				}
-				else
-				{
-					return Assembly.Load(name);
-				}
+				return Assembly.Load(name);
 #endif
 			}
 			catch
@@ -932,7 +923,6 @@ namespace IKVM.Internal
 		private void InitializeJavaClassLoader()
 		{
 			Assembly assembly = assemblyLoader.Assembly;
-			if (!assembly.ReflectionOnly)
 			{
 				Type customClassLoaderClass = null;
 				LoadCustomClassLoaderRedirects();

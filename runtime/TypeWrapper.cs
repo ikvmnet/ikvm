@@ -628,85 +628,70 @@ namespace IKVM.Internal
 		internal static ModifiersAttribute GetModifiersAttribute(Type type)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-			if(!type.Assembly.ReflectionOnly)
+			object[] attr = type.GetCustomAttributes(typeof(ModifiersAttribute), false);
+			return attr.Length == 1 ? (ModifiersAttribute)attr[0] : null;
+#else
+			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 			{
-				object[] attr = type.GetCustomAttributes(typeof(ModifiersAttribute), false);
-				return attr.Length == 1 ? (ModifiersAttribute)attr[0] : null;
-			}
-			else
-#endif
-			{
-				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
+				if(MatchTypes(cad.Constructor.DeclaringType, typeofModifiersAttribute))
 				{
-					if(MatchTypes(cad.Constructor.DeclaringType, typeofModifiersAttribute))
+					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+					if(args.Count == 2)
 					{
-						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-						if(args.Count == 2)
-						{
-							return new ModifiersAttribute((Modifiers)args[0].Value, (bool)args[1].Value);
-						}
-						return new ModifiersAttribute((Modifiers)args[0].Value);
+						return new ModifiersAttribute((Modifiers)args[0].Value, (bool)args[1].Value);
 					}
+					return new ModifiersAttribute((Modifiers)args[0].Value);
 				}
-				return null;
 			}
+			return null;
+#endif
 		}
 
 		internal static ModifiersAttribute GetModifiersAttribute(PropertyInfo property)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-			if (!property.DeclaringType.Assembly.ReflectionOnly)
+			object[] attr = property.GetCustomAttributes(typeof(ModifiersAttribute), false);
+			return attr.Length == 1 ? (ModifiersAttribute)attr[0] : null;
+#else
+			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(property))
 			{
-				object[] attr = property.GetCustomAttributes(typeof(ModifiersAttribute), false);
-				return attr.Length == 1 ? (ModifiersAttribute)attr[0] : null;
-			}
-			else
-#endif
-			{
-				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(property))
+				if(MatchTypes(cad.Constructor.DeclaringType, typeofModifiersAttribute))
 				{
-					if(MatchTypes(cad.Constructor.DeclaringType, typeofModifiersAttribute))
+					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+					if(args.Count == 2)
 					{
-						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-						if(args.Count == 2)
-						{
-							return new ModifiersAttribute((Modifiers)args[0].Value, (bool)args[1].Value);
-						}
-						return new ModifiersAttribute((Modifiers)args[0].Value);
+						return new ModifiersAttribute((Modifiers)args[0].Value, (bool)args[1].Value);
 					}
+					return new ModifiersAttribute((Modifiers)args[0].Value);
 				}
-				return null;
 			}
+			return null;
+#endif
 		}
 
 		internal static ExModifiers GetModifiers(MethodBase mb, bool assemblyIsPrivate)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-			if(!mb.DeclaringType.Assembly.ReflectionOnly)
+			object[] customAttribute = mb.GetCustomAttributes(typeof(ModifiersAttribute), false);
+			if(customAttribute.Length == 1)
 			{
-				object[] customAttribute = mb.GetCustomAttributes(typeof(ModifiersAttribute), false);
-				if(customAttribute.Length == 1)
-				{
-					ModifiersAttribute mod = (ModifiersAttribute)customAttribute[0];
-					return new ExModifiers(mod.Modifiers, mod.IsInternal);
-				}
+				ModifiersAttribute mod = (ModifiersAttribute)customAttribute[0];
+				return new ExModifiers(mod.Modifiers, mod.IsInternal);
 			}
-			else
-#endif
+#else
+			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mb))
 			{
-				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mb))
+				if(MatchTypes(cad.Constructor.DeclaringType, typeofModifiersAttribute))
 				{
-					if(MatchTypes(cad.Constructor.DeclaringType, typeofModifiersAttribute))
+					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+					if(args.Count == 2)
 					{
-						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-						if(args.Count == 2)
-						{
-							return new ExModifiers((Modifiers)args[0].Value, (bool)args[1].Value);
-						}
-						return new ExModifiers((Modifiers)args[0].Value, false);
+						return new ExModifiers((Modifiers)args[0].Value, (bool)args[1].Value);
 					}
+					return new ExModifiers((Modifiers)args[0].Value, false);
 				}
 			}
+#endif
 			Modifiers modifiers = 0;
 			if(mb.IsPublic)
 			{
@@ -763,31 +748,26 @@ namespace IKVM.Internal
 		internal static ExModifiers GetModifiers(FieldInfo fi, bool assemblyIsPrivate)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-			if(!fi.DeclaringType.Assembly.ReflectionOnly)
+			object[] customAttribute = fi.GetCustomAttributes(typeof(ModifiersAttribute), false);
+			if(customAttribute.Length == 1)
 			{
-				object[] customAttribute = fi.GetCustomAttributes(typeof(ModifiersAttribute), false);
-				if(customAttribute.Length == 1)
-				{
-					ModifiersAttribute mod = (ModifiersAttribute)customAttribute[0];
-					return new ExModifiers(mod.Modifiers, mod.IsInternal);
-				}
+				ModifiersAttribute mod = (ModifiersAttribute)customAttribute[0];
+				return new ExModifiers(mod.Modifiers, mod.IsInternal);
 			}
-			else
-#endif
+#else
+			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(fi))
 			{
-				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(fi))
+				if(MatchTypes(cad.Constructor.DeclaringType, typeofModifiersAttribute))
 				{
-					if(MatchTypes(cad.Constructor.DeclaringType, typeofModifiersAttribute))
+					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+					if(args.Count == 2)
 					{
-						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-						if(args.Count == 2)
-						{
-							return new ExModifiers((Modifiers)args[0].Value, (bool)args[1].Value);
-						}
-						return new ExModifiers((Modifiers)args[0].Value, false);
+						return new ExModifiers((Modifiers)args[0].Value, (bool)args[1].Value);
 					}
+					return new ExModifiers((Modifiers)args[0].Value, false);
 				}
 			}
+#endif
 			Modifiers modifiers = 0;
 			if(fi.IsPublic)
 			{
@@ -1046,70 +1026,55 @@ namespace IKVM.Internal
 		internal static NameSigAttribute GetNameSig(FieldInfo field)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-			if(!field.DeclaringType.Assembly.ReflectionOnly)
+			object[] attr = field.GetCustomAttributes(typeof(NameSigAttribute), false);
+			return attr.Length == 1 ? (NameSigAttribute)attr[0] : null;
+#else
+			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(field))
 			{
-				object[] attr = field.GetCustomAttributes(typeof(NameSigAttribute), false);
-				return attr.Length == 1 ? (NameSigAttribute)attr[0] : null;
-			}
-			else
-#endif
-			{
-				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(field))
+				if(MatchTypes(cad.Constructor.DeclaringType, typeofNameSigAttribute))
 				{
-					if(MatchTypes(cad.Constructor.DeclaringType, typeofNameSigAttribute))
-					{
-						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-						return new NameSigAttribute((string)args[0].Value, (string)args[1].Value);
-					}
+					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+					return new NameSigAttribute((string)args[0].Value, (string)args[1].Value);
 				}
-				return null;
 			}
+			return null;
+#endif
 		}
 
 		internal static NameSigAttribute GetNameSig(PropertyInfo property)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-			if(!property.DeclaringType.Assembly.ReflectionOnly)
+			object[] attr = property.GetCustomAttributes(typeof(NameSigAttribute), false);
+			return attr.Length == 1 ? (NameSigAttribute)attr[0] : null;
+#else
+			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(property))
 			{
-				object[] attr = property.GetCustomAttributes(typeof(NameSigAttribute), false);
-				return attr.Length == 1 ? (NameSigAttribute)attr[0] : null;
-			}
-			else
-#endif
-			{
-				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(property))
+				if(MatchTypes(cad.Constructor.DeclaringType, typeofNameSigAttribute))
 				{
-					if(MatchTypes(cad.Constructor.DeclaringType, typeofNameSigAttribute))
-					{
-						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-						return new NameSigAttribute((string)args[0].Value, (string)args[1].Value);
-					}
+					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+					return new NameSigAttribute((string)args[0].Value, (string)args[1].Value);
 				}
-				return null;
 			}
+			return null;
+#endif
 		}
 
 		internal static NameSigAttribute GetNameSig(MethodBase method)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-			if(!method.DeclaringType.Assembly.ReflectionOnly)
+			object[] attr = method.GetCustomAttributes(typeof(NameSigAttribute), false);
+			return attr.Length == 1 ? (NameSigAttribute)attr[0] : null;
+#else
+			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(method))
 			{
-				object[] attr = method.GetCustomAttributes(typeof(NameSigAttribute), false);
-				return attr.Length == 1 ? (NameSigAttribute)attr[0] : null;
-			}
-			else
-#endif
-			{
-				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(method))
+				if(MatchTypes(cad.Constructor.DeclaringType, typeofNameSigAttribute))
 				{
-					if(MatchTypes(cad.Constructor.DeclaringType, typeofNameSigAttribute))
-					{
-						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-						return new NameSigAttribute((string)args[0].Value, (string)args[1].Value);
-					}
+					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+					return new NameSigAttribute((string)args[0].Value, (string)args[1].Value);
 				}
-				return null;
 			}
+			return null;
+#endif
 		}
 
 		internal static T[] DecodeArray<T>(CustomAttributeTypedArgument arg)
@@ -1126,305 +1091,243 @@ namespace IKVM.Internal
 		internal static ImplementsAttribute GetImplements(Type type)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-			if(!type.Assembly.ReflectionOnly)
+			object[] attribs = type.GetCustomAttributes(typeof(ImplementsAttribute), false);
+			return attribs.Length == 1 ? (ImplementsAttribute)attribs[0] : null;
+#else
+			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 			{
-				object[] attribs = type.GetCustomAttributes(typeof(ImplementsAttribute), false);
-				return attribs.Length == 1 ? (ImplementsAttribute)attribs[0] : null;
-			}
-			else
-#endif
-			{
-				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
+				if(MatchTypes(cad.Constructor.DeclaringType, typeofImplementsAttribute))
 				{
-					if(MatchTypes(cad.Constructor.DeclaringType, typeofImplementsAttribute))
-					{
-						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-						return new ImplementsAttribute(DecodeArray<string>(args[0]));
-					}
+					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+					return new ImplementsAttribute(DecodeArray<string>(args[0]));
 				}
-				return null;
 			}
+			return null;
+#endif
 		}
 
-#if !STATIC_COMPILER
 		internal static ThrowsAttribute GetThrows(MethodBase mb)
 		{
-#if !STUB_GENERATOR
-			if(!mb.DeclaringType.Assembly.ReflectionOnly)
+#if !STATIC_COMPILER && !STUB_GENERATOR
+			object[] attribs = mb.GetCustomAttributes(typeof(ThrowsAttribute), false);
+			return attribs.Length == 1 ? (ThrowsAttribute)attribs[0] : null;
+#else
+			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mb))
 			{
-				object[] attribs = mb.GetCustomAttributes(typeof(ThrowsAttribute), false);
-				return attribs.Length == 1 ? (ThrowsAttribute)attribs[0] : null;
-			}
-			else
-#endif
-			{
-				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mb))
+				if(MatchTypes(cad.Constructor.DeclaringType, typeofThrowsAttribute))
 				{
-					if(MatchTypes(cad.Constructor.DeclaringType, typeofThrowsAttribute))
+					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+					if (args[0].ArgumentType == Types.String.MakeArrayType())
 					{
-						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-						if (args[0].ArgumentType == Types.String.MakeArrayType())
-						{
-							return new ThrowsAttribute(DecodeArray<string>(args[0]));
-						}
-						else if (args[0].ArgumentType == Types.Type.MakeArrayType())
-						{
-							return new ThrowsAttribute(DecodeArray<Type>(args[0]));
-						}
-						else
-						{
-							return new ThrowsAttribute((Type)args[0].Value);
-						}
+						return new ThrowsAttribute(DecodeArray<string>(args[0]));
+					}
+					else if (args[0].ArgumentType == Types.Type.MakeArrayType())
+					{
+						return new ThrowsAttribute(DecodeArray<Type>(args[0]));
+					}
+					else
+					{
+						return new ThrowsAttribute((Type)args[0].Value);
 					}
 				}
-				return null;
 			}
-		}
+			return null;
 #endif
+		}
 
 		internal static string[] GetNonNestedInnerClasses(Type t)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-			if(!t.Assembly.ReflectionOnly)
+			object[] attribs = t.GetCustomAttributes(typeof(NonNestedInnerClassAttribute), false);
+			string[] classes = new string[attribs.Length];
+			for (int i = 0; i < attribs.Length; i++)
 			{
-				object[] attribs = t.GetCustomAttributes(typeof(NonNestedInnerClassAttribute), false);
-				string[] classes = new string[attribs.Length];
-				for (int i = 0; i < attribs.Length; i++)
-				{
-					classes[i] = ((NonNestedInnerClassAttribute)attribs[i]).InnerClassName;
-				}
-				return classes;
+				classes[i] = ((NonNestedInnerClassAttribute)attribs[i]).InnerClassName;
 			}
-			else
+			return classes;
+#else
+			List<string> list = new List<string>();
+			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(t))
+			{
+				if(MatchTypes(cad.Constructor.DeclaringType, typeofNonNestedInnerClassAttribute))
+				{
+					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+					list.Add((string)args[0].Value);
+				}
+			}
+			return list.ToArray();
 #endif
-			{
-				List<string> list = new List<string>();
-				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(t))
-				{
-					if(MatchTypes(cad.Constructor.DeclaringType, typeofNonNestedInnerClassAttribute))
-					{
-						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-						list.Add((string)args[0].Value);
-					}
-				}
-				return list.ToArray();
-			}
 		}
 
 		internal static string GetNonNestedOuterClasses(Type t)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-			if(!t.Assembly.ReflectionOnly)
+			object[] attribs = t.GetCustomAttributes(typeof(NonNestedOuterClassAttribute), false);
+			return attribs.Length == 1 ? ((NonNestedOuterClassAttribute)attribs[0]).OuterClassName : null;
+#else
+			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(t))
 			{
-				object[] attribs = t.GetCustomAttributes(typeof(NonNestedOuterClassAttribute), false);
-				return attribs.Length == 1 ? ((NonNestedOuterClassAttribute)attribs[0]).OuterClassName : null;
-			}
-			else
-#endif
-			{
-				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(t))
+				if(MatchTypes(cad.Constructor.DeclaringType, typeofNonNestedOuterClassAttribute))
 				{
-					if(MatchTypes(cad.Constructor.DeclaringType, typeofNonNestedOuterClassAttribute))
-					{
-						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-						return (string)args[0].Value;
-					}
+					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+					return (string)args[0].Value;
 				}
-				return null;
 			}
+			return null;
+#endif
 		}
 
 		internal static SignatureAttribute GetSignature(MethodBase mb)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-			if(!mb.DeclaringType.Assembly.ReflectionOnly)
+			object[] attribs = mb.GetCustomAttributes(typeof(SignatureAttribute), false);
+			return attribs.Length == 1 ? (SignatureAttribute)attribs[0] : null;
+#else
+			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mb))
 			{
-				object[] attribs = mb.GetCustomAttributes(typeof(SignatureAttribute), false);
-				return attribs.Length == 1 ? (SignatureAttribute)attribs[0] : null;
-			}
-			else
-#endif
-			{
-				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mb))
+				if(MatchTypes(cad.Constructor.DeclaringType, typeofSignatureAttribute))
 				{
-					if(MatchTypes(cad.Constructor.DeclaringType, typeofSignatureAttribute))
-					{
-						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-						return new SignatureAttribute((string)args[0].Value);
-					}
+					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+					return new SignatureAttribute((string)args[0].Value);
 				}
-				return null;
 			}
+			return null;
+#endif
 		}
 
 		internal static SignatureAttribute GetSignature(Type type)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-			if(!type.Assembly.ReflectionOnly)
+			object[] attribs = type.GetCustomAttributes(typeof(SignatureAttribute), false);
+			return attribs.Length == 1 ? (SignatureAttribute)attribs[0] : null;
+#else
+			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 			{
-				object[] attribs = type.GetCustomAttributes(typeof(SignatureAttribute), false);
-				return attribs.Length == 1 ? (SignatureAttribute)attribs[0] : null;
-			}
-			else
-#endif
-			{
-				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
+				if(MatchTypes(cad.Constructor.DeclaringType, typeofSignatureAttribute))
 				{
-					if(MatchTypes(cad.Constructor.DeclaringType, typeofSignatureAttribute))
-					{
-						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-						return new SignatureAttribute((string)args[0].Value);
-					}
+					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+					return new SignatureAttribute((string)args[0].Value);
 				}
-				return null;
 			}
+			return null;
+#endif
 		}
 
 		internal static SignatureAttribute GetSignature(FieldInfo fi)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-			if(!fi.DeclaringType.Assembly.ReflectionOnly)
+			object[] attribs = fi.GetCustomAttributes(typeof(SignatureAttribute), false);
+			return attribs.Length == 1 ? (SignatureAttribute)attribs[0] : null;
+#else
+			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(fi))
 			{
-				object[] attribs = fi.GetCustomAttributes(typeof(SignatureAttribute), false);
-				return attribs.Length == 1 ? (SignatureAttribute)attribs[0] : null;
-			}
-			else
-#endif
-			{
-				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(fi))
+				if(MatchTypes(cad.Constructor.DeclaringType, typeofSignatureAttribute))
 				{
-					if(MatchTypes(cad.Constructor.DeclaringType, typeofSignatureAttribute))
-					{
-						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-						return new SignatureAttribute((string)args[0].Value);
-					}
+					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+					return new SignatureAttribute((string)args[0].Value);
 				}
-				return null;
 			}
+			return null;
+#endif
 		}
 
 		internal static InnerClassAttribute GetInnerClass(Type type)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-			if(!type.Assembly.ReflectionOnly)
+			object[] attribs = type.GetCustomAttributes(typeof(InnerClassAttribute), false);
+			return attribs.Length == 1 ? (InnerClassAttribute)attribs[0] : null;
+#else
+			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 			{
-				object[] attribs = type.GetCustomAttributes(typeof(InnerClassAttribute), false);
-				return attribs.Length == 1 ? (InnerClassAttribute)attribs[0] : null;
-			}
-			else
-#endif
-			{
-				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
+				if(MatchTypes(cad.Constructor.DeclaringType, typeofInnerClassAttribute))
 				{
-					if(MatchTypes(cad.Constructor.DeclaringType, typeofInnerClassAttribute))
-					{
-						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-						return new InnerClassAttribute((string)args[0].Value, (Modifiers)args[1].Value);
-					}
+					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+					return new InnerClassAttribute((string)args[0].Value, (Modifiers)args[1].Value);
 				}
-				return null;
 			}
+			return null;
+#endif
 		}
 
 		internal static RemappedInterfaceMethodAttribute[] GetRemappedInterfaceMethods(Type type)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-			if(!type.Assembly.ReflectionOnly)
+			object[] attr = type.GetCustomAttributes(typeof(RemappedInterfaceMethodAttribute), false);
+			RemappedInterfaceMethodAttribute[] attr1 = new RemappedInterfaceMethodAttribute[attr.Length];
+			Array.Copy(attr, attr1, attr.Length);
+			return attr1;
+#else
+			List<RemappedInterfaceMethodAttribute> attrs = new List<RemappedInterfaceMethodAttribute>();
+			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 			{
-				object[] attr = type.GetCustomAttributes(typeof(RemappedInterfaceMethodAttribute), false);
-				RemappedInterfaceMethodAttribute[] attr1 = new RemappedInterfaceMethodAttribute[attr.Length];
-				Array.Copy(attr, attr1, attr.Length);
-				return attr1;
-			}
-			else
-#endif
-			{
-				List<RemappedInterfaceMethodAttribute> attrs = new List<RemappedInterfaceMethodAttribute>();
-				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
+				if(MatchTypes(cad.Constructor.DeclaringType, typeofRemappedInterfaceMethodAttribute))
 				{
-					if(MatchTypes(cad.Constructor.DeclaringType, typeofRemappedInterfaceMethodAttribute))
-					{
-						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-						attrs.Add(new RemappedInterfaceMethodAttribute((string)args[0].Value, (string)args[1].Value));
-					}
+					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+					attrs.Add(new RemappedInterfaceMethodAttribute((string)args[0].Value, (string)args[1].Value));
 				}
-				return attrs.ToArray();
 			}
+			return attrs.ToArray();
+#endif
 		}
 
 		internal static RemappedTypeAttribute GetRemappedType(Type type)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-			if(!type.Assembly.ReflectionOnly)
+			object[] attribs = type.GetCustomAttributes(typeof(RemappedTypeAttribute), false);
+			return attribs.Length == 1 ? (RemappedTypeAttribute)attribs[0] : null;
+#else
+			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 			{
-				object[] attribs = type.GetCustomAttributes(typeof(RemappedTypeAttribute), false);
-				return attribs.Length == 1 ? (RemappedTypeAttribute)attribs[0] : null;
-			}
-			else
-#endif
-			{
-				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
+				if(MatchTypes(cad.Constructor.DeclaringType, typeofRemappedTypeAttribute))
 				{
-					if(MatchTypes(cad.Constructor.DeclaringType, typeofRemappedTypeAttribute))
-					{
-						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-						return new RemappedTypeAttribute((Type)args[0].Value);
-					}
+					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+					return new RemappedTypeAttribute((Type)args[0].Value);
 				}
-				return null;
 			}
+			return null;
+#endif
 		}
 
 		internal static RemappedClassAttribute[] GetRemappedClasses(Assembly coreAssembly)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-			if(!coreAssembly.ReflectionOnly)
+			object[] attr = coreAssembly.GetCustomAttributes(typeof(RemappedClassAttribute), false);
+			RemappedClassAttribute[] attr1 = new RemappedClassAttribute[attr.Length];
+			Array.Copy(attr, attr1, attr.Length);
+			return attr1;
+#else
+			List<RemappedClassAttribute> attrs = new List<RemappedClassAttribute>();
+			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(coreAssembly))
 			{
-				object[] attr = coreAssembly.GetCustomAttributes(typeof(RemappedClassAttribute), false);
-				RemappedClassAttribute[] attr1 = new RemappedClassAttribute[attr.Length];
-				Array.Copy(attr, attr1, attr.Length);
-				return attr1;
-			}
-			else
-#endif
-			{
-				List<RemappedClassAttribute> attrs = new List<RemappedClassAttribute>();
-				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(coreAssembly))
+				if(MatchTypes(cad.Constructor.DeclaringType, typeofRemappedClassAttribute))
 				{
-					if(MatchTypes(cad.Constructor.DeclaringType, typeofRemappedClassAttribute))
-					{
-						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-						attrs.Add(new RemappedClassAttribute((string)args[0].Value, (Type)args[1].Value));
-					}
+					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+					attrs.Add(new RemappedClassAttribute((string)args[0].Value, (Type)args[1].Value));
 				}
-				return attrs.ToArray();
 			}
+			return attrs.ToArray();
+#endif
 		}
 
 		internal static string GetAnnotationAttributeType(Type type)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-			if(!type.Assembly.ReflectionOnly)
+			object[] attr = type.GetCustomAttributes(typeof(AnnotationAttributeAttribute), false);
+			if(attr.Length == 1)
 			{
-				object[] attr = type.GetCustomAttributes(typeof(AnnotationAttributeAttribute), false);
-				if(attr.Length == 1)
-				{
-					return ((AnnotationAttributeAttribute)attr[0]).AttributeType;
-				}
-				return null;
+				return ((AnnotationAttributeAttribute)attr[0]).AttributeType;
 			}
-			else
+			return null;
+#else
+			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
+			{
+				if(MatchTypes(cad.Constructor.DeclaringType, typeofAnnotationAttributeAttribute))
+				{
+					return (string)cad.ConstructorArguments[0].Value;
+				}
+			}
+			return null;
 #endif
-			{
-				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
-				{
-					if(MatchTypes(cad.Constructor.DeclaringType, typeofAnnotationAttributeAttribute))
-					{
-						return (string)cad.ConstructorArguments[0].Value;
-					}
-				}
-				return null;
-			}
 		}
 
 		internal static AssemblyName[] GetInternalsVisibleToAttributes(Assembly assembly)
@@ -1450,110 +1353,85 @@ namespace IKVM.Internal
 		internal static bool IsDefined(Module mod, Type attribute)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-			if(!mod.Assembly.ReflectionOnly)
+			return mod.IsDefined(attribute, false);
+#else
+			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mod))
 			{
-				return mod.IsDefined(attribute, false);
-			}
-			else
-#endif
-			{
-				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mod))
+				// NOTE we don't support subtyping relations!
+				if(MatchTypes(cad.Constructor.DeclaringType, attribute))
 				{
-					// NOTE we don't support subtyping relations!
-					if(MatchTypes(cad.Constructor.DeclaringType, attribute))
-					{
-						return true;
-					}
+					return true;
 				}
-				return false;
 			}
+			return false;
+#endif
 		}
 
 		internal static bool IsDefined(Assembly asm, Type attribute)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-			if(!asm.ReflectionOnly)
+			return asm.IsDefined(attribute, false);
+#else
+			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(asm))
 			{
-				return asm.IsDefined(attribute, false);
-			}
-			else
-#endif
-			{
-				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(asm))
+				if(MatchTypes(cad.Constructor.DeclaringType, attribute))
 				{
-					if(MatchTypes(cad.Constructor.DeclaringType, attribute))
-					{
-						return true;
-					}
+					return true;
 				}
-				return false;
 			}
+			return false;
+#endif
 		}
 
 		internal static bool IsDefined(Type type, Type attribute)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-			if(!type.Assembly.ReflectionOnly)
+			return type.IsDefined(attribute, false);
+#else
+			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 			{
-				return type.IsDefined(attribute, false);
-			}
-			else
-#endif
-			{
-				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
+				// NOTE we don't support subtyping relations!
+				if(MatchTypes(cad.Constructor.DeclaringType, attribute))
 				{
-					// NOTE we don't support subtyping relations!
-					if(MatchTypes(cad.Constructor.DeclaringType, attribute))
-					{
-						return true;
-					}
+					return true;
 				}
-				return false;
 			}
+			return false;
+#endif
 		}
 
 		internal static bool IsDefined(ParameterInfo pi, Type attribute)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-			if(!pi.Member.DeclaringType.Assembly.ReflectionOnly)
+			return pi.IsDefined(attribute, false);
+#else
+			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(pi))
 			{
-				return pi.IsDefined(attribute, false);
-			}
-			else
-#endif
-			{
-				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(pi))
+				// NOTE we don't support subtyping relations!
+				if(MatchTypes(cad.Constructor.DeclaringType, attribute))
 				{
-					// NOTE we don't support subtyping relations!
-					if(MatchTypes(cad.Constructor.DeclaringType, attribute))
-					{
-						return true;
-					}
+					return true;
 				}
-				return false;
 			}
+			return false;
+#endif
 		}
 
 		internal static bool IsDefined(MemberInfo member, Type attribute)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-			if(!member.DeclaringType.Assembly.ReflectionOnly)
+			return member.IsDefined(attribute, false);
+#else
+			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(member))
 			{
-				return member.IsDefined(attribute, false);
-			}
-			else
-#endif
-			{
-				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(member))
+				// NOTE we don't support subtyping relations!
+				if(MatchTypes(cad.Constructor.DeclaringType, attribute))
 				{
-					// NOTE we don't support subtyping relations!
-					if(MatchTypes(cad.Constructor.DeclaringType, attribute))
-					{
-						return true;
-					}
+					return true;
 				}
-				return false;
 			}
+			return false;
+#endif
 		}
 
 		internal static bool IsJavaModule(Module mod)
@@ -1564,31 +1442,26 @@ namespace IKVM.Internal
 		internal static object[] GetJavaModuleAttributes(Module mod)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-			if(!mod.Assembly.ReflectionOnly)
+			return mod.GetCustomAttributes(typeofJavaModuleAttribute, false);
+#else
+			List<JavaModuleAttribute> attrs = new List<JavaModuleAttribute>();
+			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mod))
 			{
-				return mod.GetCustomAttributes(typeofJavaModuleAttribute, false);
-			}
-			else
-#endif
-			{
-				List<JavaModuleAttribute> attrs = new List<JavaModuleAttribute>();
-				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mod))
+				if(MatchTypes(cad.Constructor.DeclaringType, typeofJavaModuleAttribute))
 				{
-					if(MatchTypes(cad.Constructor.DeclaringType, typeofJavaModuleAttribute))
+					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+					if(args.Count == 0)
 					{
-						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-						if(args.Count == 0)
-						{
-							attrs.Add(new JavaModuleAttribute());
-						}
-						else
-						{
-							attrs.Add(new JavaModuleAttribute(DecodeArray<string>(args[0])));
-						}
+						attrs.Add(new JavaModuleAttribute());
+					}
+					else
+					{
+						attrs.Add(new JavaModuleAttribute(DecodeArray<string>(args[0])));
 					}
 				}
-				return attrs.ToArray();
 			}
+			return attrs.ToArray();
+#endif
 		}
 
 		internal static bool IsNoPackagePrefix(Type type)
@@ -1598,27 +1471,23 @@ namespace IKVM.Internal
 
 		internal static EnclosingMethodAttribute GetEnclosingMethodAttribute(Type type)
 		{
-			if (type.Assembly.ReflectionOnly)
-			{
-				foreach (CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
-				{
-					if (MatchTypes(cad.Constructor.DeclaringType, typeofEnclosingMethodAttribute))
-					{
-						return new EnclosingMethodAttribute((string)cad.ConstructorArguments[0].Value, (string)cad.ConstructorArguments[1].Value, (string)cad.ConstructorArguments[2].Value);
-					}
-				}
-			}
-			else
-			{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-				object[] attr = type.GetCustomAttributes(typeof(EnclosingMethodAttribute), false);
-				if (attr.Length == 1)
-				{
-					return (EnclosingMethodAttribute)attr[0];
-				}
-#endif
+			object[] attr = type.GetCustomAttributes(typeof(EnclosingMethodAttribute), false);
+			if (attr.Length == 1)
+			{
+				return (EnclosingMethodAttribute)attr[0];
 			}
 			return null;
+#else
+			foreach (CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
+			{
+				if (MatchTypes(cad.Constructor.DeclaringType, typeofEnclosingMethodAttribute))
+				{
+					return new EnclosingMethodAttribute((string)cad.ConstructorArguments[0].Value, (string)cad.ConstructorArguments[1].Value, (string)cad.ConstructorArguments[2].Value);
+				}
+			}
+			return null;
+#endif
 		}
 
 #if STATIC_COMPILER
@@ -2223,7 +2092,7 @@ namespace IKVM.Internal
 					else
 					{
 						Type type = GetClassLiteralType();
-						if (IsForbiddenTypeParameterType(type) || ReflectUtil.IsReflectionOnly(type))
+						if (IsForbiddenTypeParameterType(type))
 						{
 							clazz = new java.lang.Class(type);
 						}
@@ -3398,11 +3267,6 @@ namespace IKVM.Internal
 			MethodBase mb = mw.GetMethod();
 			if(mb != null)
 			{
-				if(mb.DeclaringType.Assembly.ReflectionOnly)
-				{
-					// TODO
-					return null;
-				}
 				object[] attr = mb.GetCustomAttributes(typeof(AnnotationDefaultAttribute), false);
 				if(attr.Length == 1)
 				{
@@ -4672,11 +4536,6 @@ namespace IKVM.Internal
 
 		internal override object[] GetDeclaredAnnotations()
 		{
-			if(type.Assembly.ReflectionOnly)
-			{
-				// TODO on Whidbey this must be implemented
-				return null;
-			}
 			return type.GetCustomAttributes(false);
 		}
 
@@ -4688,11 +4547,6 @@ namespace IKVM.Internal
 				// delegate constructor
 				return null;
 			}
-			if(mb.DeclaringType.Assembly.ReflectionOnly)
-			{
-				// TODO on Whidbey this must be implemented
-				return null;
-			}
 			return mb.GetCustomAttributes(false);
 		}
 
@@ -4702,11 +4556,6 @@ namespace IKVM.Internal
 			if(mb == null)
 			{
 				// delegate constructor
-				return null;
-			}
-			if(mb.DeclaringType.Assembly.ReflectionOnly)
-			{
-				// TODO on Whidbey this must be implemented
 				return null;
 			}
 			ParameterInfo[] parameters = mb.GetParameters();
@@ -4733,31 +4582,16 @@ namespace IKVM.Internal
 			FieldInfo field = fw.GetField();
 			if(field != null)
 			{
-				if (field.DeclaringType.Assembly.ReflectionOnly)
-				{
-					// TODO on Whidbey this must be implemented
-					return null;
-				}
 				return field.GetCustomAttributes(false);
 			}
 			GetterFieldWrapper getter = fw as GetterFieldWrapper;
 			if(getter != null)
 			{
-				if (getter.GetGetter().DeclaringType.Assembly.ReflectionOnly)
-				{
-					// TODO on Whidbey this must be implemented
-					return null;
-				}
 				return getter.GetGetter().GetCustomAttributes(false);
 			}
 			CompiledPropertyFieldWrapper prop = fw as CompiledPropertyFieldWrapper;
 			if(prop != null)
 			{
-				if (prop.GetProperty().DeclaringType.Assembly.ReflectionOnly)
-				{
-					// TODO on Whidbey this must be implemented
-					return null;
-				}
 				return prop.GetProperty().GetCustomAttributes(false);
 			}
 			return new object[0];

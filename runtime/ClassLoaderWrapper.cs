@@ -975,6 +975,13 @@ namespace IKVM.Internal
 					}
 				}
 #endif
+#if !STATIC_COMPILER && !STUB_GENERATOR
+				if(ReflectUtil.IsReflectionOnly(type))
+				{
+					// historically we've always returned null for types that don't have a corresponding TypeWrapper (or java.lang.Class)
+					return null;
+				}
+#endif
 				// if the wrapper doesn't already exist, that must mean that the type
 				// is a .NET type (or a pre-compiled Java class), which means that it
 				// was "loaded" by an assembly classloader

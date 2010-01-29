@@ -88,10 +88,6 @@ public final class AssemblyClassLoader extends ClassLoader
     public static URL makeIkvmresURL(Assembly asm, String name)
     {
         String assemblyName = asm.get_FullName();
-        if(IsReflectionOnly(asm))
-        {
-            assemblyName += "[ReflectionOnly]";
-        }
         try
         {
             return new URL("ikvmres", assemblyName, -1, "/" + name);
@@ -151,7 +147,6 @@ public final class AssemblyClassLoader extends ClassLoader
         return null;
     }
 
-    private static native boolean IsReflectionOnly(Assembly asm);
     private static native Assembly[] FindResourceAssemblies(Assembly assembly, String name, boolean firstOnly);
     private static native int GetGenericClassLoaderId(ClassLoader classLoader);
     private static native String GetGenericClassLoaderName(Object classLoader);
