@@ -86,11 +86,9 @@ namespace IKVM.Internal
 	static class JVM
 	{
 #if STATIC_COMPILER
-		internal const bool IsStaticCompiler = true;
 		internal const bool FinishingForDebugSave = false;
 		internal const bool IsSaveDebugImage = false;
 #elif !STUB_GENERATOR
-		internal const bool IsStaticCompiler = false;
 		private static bool finishingForDebugSave;
 		private static int emitSymbols;
 		internal static bool IsSaveDebugImage;
