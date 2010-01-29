@@ -2152,28 +2152,6 @@ namespace IKVM.Internal
 			}
 		}
 
-		private static bool IsReflectionOnly(Type type)
-		{
-			Assembly asm = type.Assembly;
-			if (asm.ReflectionOnly)
-			{
-				return true;
-			}
-			if (!type.IsGenericType || type.IsGenericTypeDefinition)
-			{
-				return false;
-			}
-			// we have a generic type instantiation, it might have ReflectionOnly type arguments
-			foreach (Type arg in type.GetGenericArguments())
-			{
-				if (IsReflectionOnly(arg))
-				{
-					return true;
-				}
-			}
-			return false;
-		}
-
 #if !FIRST_PASS
 		private java.lang.Class GetPrimitiveClass()
 		{
@@ -2245,7 +2223,7 @@ namespace IKVM.Internal
 					else
 					{
 						Type type = GetClassLiteralType();
-						if (IsForbiddenTypeParameterType(type) || IsReflectionOnly(type))
+						if (IsForbiddenTypeParameterType(type) || ReflectUtil.IsReflectionOnly(type))
 						{
 							clazz = new java.lang.Class(type);
 						}

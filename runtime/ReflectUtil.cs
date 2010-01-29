@@ -35,7 +35,10 @@ namespace IKVM.Internal
 {
 	static class ReflectUtil
 	{
+#if !NET_4_0 && !STATIC_COMPILER && !STUB_GENERATOR
 		private static readonly bool clr_v4 = Environment.Version.Major >= 4;
+		private static Predicate<Assembly> get_IsDynamic;
+#endif
 
 		internal static bool IsSameAssembly(Type type1, Type type2)
 		{
@@ -62,9 +65,51 @@ namespace IKVM.Internal
 			if (clr_v4)
 			{
 				// on .NET 4.0 dynamic assemblies have a non-AssemblyBuilder derived peer, so we have to call IsDynamic
-				return (bool)typeof(Assembly).InvokeMember("get_IsDynamic", BindingFlags.Instance | BindingFlags.Public | BindingFlags.InvokeMethod, null, asm, null);
+				if (get_IsDynamic == null)
+				{
+					get_IsDynamic = (Predicate<Assembly>)Delegate.CreateDelegate(typeof(Predicate<Assembly>), typeof(Assembly).GetMethod("get_IsDynamic"));
+				}
+				return get_IsDynamic(asm);
 			}
 			return asm is AssemblyBuilder;
+#endif
+		}
+
+		internal static bool IsReflectionOnly(Type type)
+		{
+			while (type.HasElementType)
+			{
+				type = type.GetElementType();
+			}
+			Assembly asm = type.Assembly;
+			if (asm != null && asm.ReflectionOnly)
+			{
+				return true;
+			}
+			if (!type.IsGenericType || type.IsGenericTypeDefinition)
+			{
+				return false;
+			}
+			// we have a generic type instantiation, it might have ReflectionOnly type arguments
+			foreach (Type arg in type.GetGenericArguments())
+			{
+				if (IsReflectionOnly(arg))
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
+		internal static bool IsVector(Type type)
+		{
+#if STATIC_COMPILER || STUB_GENERATOR
+			return type.__IsVector;
+#else
+			// there's no API to distinguish an array of rank 1 from a vector,
+			// so we check if the type name ends in [], which indicates it's a vector
+			// (non-vectors will have [*] or [,]).
+			return type.IsArray && type.Name.EndsWith("[]");
 #endif
 		}
 	}

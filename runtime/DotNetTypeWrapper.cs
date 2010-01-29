@@ -132,7 +132,7 @@ namespace IKVM.Internal
 					//   class Base<T> { } 
 					//   class Derived : Base<Derived> { }
 					//
-					while (ClassLoaderWrapper.IsVector(t))
+					while (ReflectUtil.IsVector(t))
 					{
 						t = t.GetElementType();
 						sb.Append('A');

@@ -950,12 +950,12 @@ namespace IKVM.Internal
 			{
 				wrapper = LoadClassCritical(remapped);
 			}
-			else if(IsVector(type))
+			else if(ReflectUtil.IsVector(type))
 			{
 				// it might be an array of a dynamically compiled Java type
 				int rank = 1;
 				Type elem = type.GetElementType();
-				while(IsVector(elem))
+				while(ReflectUtil.IsVector(elem))
 				{
 					rank++;
 					elem = elem.GetElementType();
@@ -993,14 +993,6 @@ namespace IKVM.Internal
 				globalTypeToTypeWrapper[type] = wrapper;
 			}
 			return wrapper;
-		}
-
-		internal static bool IsVector(Type type)
-		{
-			// NOTE it looks like there's no API to distinguish an array of rank 1 from a vector,
-			// so we check if the type name ends in [], which indicates it's a vector
-			// (non-vectors will have [*] or [,]).
-			return type.IsArray && type.Name.EndsWith("[]");
 		}
 
 		internal virtual Type GetGenericTypeDefinition(string name)
