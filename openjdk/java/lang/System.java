@@ -33,6 +33,9 @@ import java.security.PrivilegedAction;
 import java.security.AllPermission;
 import java.nio.channels.Channel;
 import java.nio.channels.spi.SelectorProvider;
+
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
 import sun.net.InetAddressCachePolicy;
 import sun.reflect.Reflection;
 import sun.security.util.SecurityConstants;
@@ -61,6 +64,11 @@ final class Props
         // be able to change the behavior by setting these system properties.
         ClassLoader.initializeLibraryPaths(props);
         sun.misc.VM.initializeAllowArraySyntax();
+        try{
+            sun.misc.Signal.handle(new sun.misc.Signal("BREAK"), SignalHandler.SIG_DFL);
+        }catch(IllegalArgumentException ex){
+            // ignore it;
+        }
     }
 }
 
