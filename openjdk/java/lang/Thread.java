@@ -1851,6 +1851,38 @@ class Thread implements Runnable {
         return result.booleanValue();
     }
 
+    @cli.IKVM.Attributes.HideFromJavaAttribute.Annotation
+    public static void dumpAllStacks()
+    {
+        Thread currentThread = currentThread();
+        Map<Thread, StackTraceElement[]> traces = getAllStackTraces();
+        traces.remove(currentThread);
+        System.out.println("Full thread dump");
+        java.util.Iterator<Map.Entry<Thread, StackTraceElement[]>> enties = traces.entrySet().iterator();
+        while (enties.hasNext())
+        {
+            Map.Entry<Thread, StackTraceElement[]> entry = enties.next();
+            java.lang.Thread thread = entry.getKey();
+            java.lang.StackTraceElement[] trace = entry.getValue();
+            StringBuilder text = new StringBuilder();
+            text.append("\n");
+            text.append(thread.getName());
+            if (thread.isDaemon())
+            {
+                text.append(" daemon");
+            }
+            text.append(" prio=");
+            text.append(thread.getPriority());
+            text.append(" ");
+            text.append(currentThread.nativeThread.get_ThreadState().ToString());
+            System.out.println(text);
+            for (int i = 0; i < trace.length; i++)
+            {
+                System.out.println("\tat " + trace[i]);
+            }
+        }
+    }
+    
     private static StackTraceElement[][] dumpThreads(Thread[] threads) {
         StackTraceElement[][] stacks = new StackTraceElement[threads.length][];
         for (int i = 0; i < threads.length; i++) {
