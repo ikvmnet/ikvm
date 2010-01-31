@@ -24,6 +24,7 @@
 
 package ikvm.runtime;
 
+import sun.misc.SignalHandler;
 import ikvm.lang.CIL;
 import cli.System.Collections.ArrayList;
 import cli.System.Collections.ICollection;
@@ -167,7 +168,13 @@ public final class Startup
             {
             }
         }
-	java.lang.Thread.currentThread();
+        java.lang.Thread.currentThread();
+        
+        try{
+            sun.misc.Signal.handle(new sun.misc.Signal("BREAK"), SignalHandler.SIG_DFL);
+        }catch(IllegalArgumentException ex){
+            // ignore it;
+        }
     }
 
     public static void exitMainThread()
