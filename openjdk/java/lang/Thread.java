@@ -1851,7 +1851,7 @@ class Thread implements Runnable {
         return result.booleanValue();
     }
 
-    @cli.IKVM.Attributes.HideFromJavaAttribute.Annotation
+    @ikvm.lang.Internal
     public static void dumpAllStacks()
     {
         Thread currentThread = currentThread();
