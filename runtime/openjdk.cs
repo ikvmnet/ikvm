@@ -5457,7 +5457,23 @@ namespace IKVM.NativeCode.sun.misc
         [DllImport("kernel32.dll")]
         private static extern bool SetConsoleCtrlHandler(ConsoleCtrlDelegate e, bool add);
 
-        private static ConsoleCtrlDelegate defaultConsoleCtrlDelegate;
+        private class CriticalCtrlHandler : System.Runtime.ConstrainedExecution.CriticalFinalizerObject
+        {
+            private ConsoleCtrlDelegate consoleCtrlDelegate;
+
+            internal CriticalCtrlHandler()
+            {
+                consoleCtrlDelegate = new ConsoleCtrlDelegate(ConsoleCtrlCheck);
+                SetConsoleCtrlHandler(consoleCtrlDelegate, true);
+            }
+
+            ~CriticalCtrlHandler()
+            {
+                SetConsoleCtrlHandler(consoleCtrlDelegate, false);
+            }
+        }
+
+        private static CriticalCtrlHandler defaultConsoleCtrlDelegate;
 
         private static bool ConsoleCtrlCheck(CtrlTypes ctrlType)
         {
@@ -5508,8 +5524,7 @@ namespace IKVM.NativeCode.sun.misc
                 case 0: // Default Signal Handler
                     if (defaultConsoleCtrlDelegate == null && Environment.OSVersion.Platform == PlatformID.Win32NT)
                     {
-                        defaultConsoleCtrlDelegate = new ConsoleCtrlDelegate(ConsoleCtrlCheck);
-                        SetConsoleCtrlHandler(defaultConsoleCtrlDelegate, true);
+                        defaultConsoleCtrlDelegate = new CriticalCtrlHandler();
                     }
                     break;
                 case 1: // Ignore Signal
