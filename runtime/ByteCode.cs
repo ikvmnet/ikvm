@@ -528,6 +528,20 @@ struct ByteCodeMetaData
 		}
 	}
 
+	internal static bool IsBranch(NormalizedByteCode bc)
+	{
+		switch (data[(int)bc].reg)
+		{
+			case ByteCodeMode.Branch_2:
+			case ByteCodeMode.Branch_4:
+			case ByteCodeMode.Lookupswitch:
+			case ByteCodeMode.Tableswitch:
+				return true;
+			default:
+				return false;
+		}
+	}
+
 	static ByteCodeMetaData()
 	{
 		new ByteCodeMetaData(ByteCode.__nop, ByteCodeMode.Simple, ByteCodeModeWide.Unused, true);
