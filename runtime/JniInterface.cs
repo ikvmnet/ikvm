@@ -156,7 +156,7 @@ namespace IKVM.Runtime
 			return JNIEnv.JNI_OK;
 		}
 
-		public unsafe struct Frame
+		public struct Frame
 		{
 			private JNIEnv.ManagedJNIEnv env;
 			private JNIEnv.ManagedJNIEnv.FrameState prevFrameState;
