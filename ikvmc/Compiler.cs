@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2009 Jeroen Frijters
+  Copyright (C) 2002-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -517,11 +517,17 @@ class IkvmcCompiler
 				}
 				else if(s.StartsWith("-keyfile:"))
 				{
-					options.keyfilename = s.Substring(9);
+					if (!SetStrongNameKeyPair(ref options.key, s.Substring(9), true))
+					{
+						return 1;
+					}
 				}
 				else if(s.StartsWith("-key:"))
 				{
-					options.keycontainer = s.Substring(5);
+					if (!SetStrongNameKeyPair(ref options.key, s.Substring(5), false))
+					{
+						return 1;
+					}
 				}
 				else if(s == "-debug")
 				{
@@ -712,6 +718,28 @@ class IkvmcCompiler
 		options.classesToExclude = classesToExclude.ToArray();
 		targets.Add(options);
 		return 0;
+	}
+
+	private static bool SetStrongNameKeyPair(ref StrongNameKeyPair strongNameKeyPair, string fileNameOrKeyContainer, bool file)
+	{
+		try
+		{
+			if (file)
+			{
+				strongNameKeyPair = new StrongNameKeyPair(File.ReadAllBytes(fileNameOrKeyContainer));
+			}
+			else
+			{
+				strongNameKeyPair = new StrongNameKeyPair(fileNameOrKeyContainer);
+			}
+			// FXBUG we explicitly try to access the public key force a check (the StrongNameKeyPair constructor doesn't validate the key)
+			return strongNameKeyPair.PublicKey != null;
+		}
+		catch (Exception x)
+		{
+			Console.Error.WriteLine("Error: Invalid key {0} specified.\n\t(\"{1}\")", file ? "file" : "container", x.Message);
+			return false;
+		}
 	}
 
 	private static int ResolveReferences(List<CompilerOptions> targets)
