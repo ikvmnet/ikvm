@@ -1050,7 +1050,9 @@ class IkvmcCompiler
 	{
 		try
 		{
-			return System.Reflection.Assembly.ReflectionOnlyLoad(asm.FullName).Location == asm.Location;
+			// we have to use StringComparison.OrdinalIgnoreCase, because it the CLR sometimes appends ".dll"
+			// and other times ".DLL" (when the assembly is loaded from DEVPATH)
+			return System.Reflection.Assembly.ReflectionOnlyLoad(asm.FullName).Location.Equals(asm.Location, StringComparison.OrdinalIgnoreCase);
 		}
 		catch
 		{
