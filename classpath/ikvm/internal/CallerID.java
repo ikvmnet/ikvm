@@ -50,7 +50,7 @@ public abstract class CallerID
 	ClassLoader cl = classLoader;
 	if (cl == null)
 	{
-	    cl = GetClassLoader();
+	    cl = classLoader = GetClassLoader();
 	    if (cl == null)
 	    {
 		cl = classLoader = ClassLoader.DUMMY;
