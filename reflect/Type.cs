@@ -384,7 +384,7 @@ namespace IKVM.Reflection
 		{
 			foreach (MemberInfo member in members)
 			{
-				if (filter(member, filterCriteria))
+				if (filter == null || filter(member, filterCriteria))
 				{
 					list.Add(member);
 				}
