@@ -601,7 +601,7 @@ namespace IKVM.Reflection.Emit
 
 		public override Type[] GetGenericArguments()
 		{
-			return gtpb == null ? Type.EmptyTypes : (Type[])gtpb.Clone();
+			return Util.Copy(gtpb);
 		}
 
 		internal override Type GetGenericTypeArgument(int index)
