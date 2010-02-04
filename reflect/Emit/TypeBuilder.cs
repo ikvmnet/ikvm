@@ -921,7 +921,7 @@ namespace IKVM.Reflection.Emit
 
 		private void CheckBaked()
 		{
-			if ((typeFlags & TypeFlags.Baked) == 0)
+			if ((typeFlags & TypeFlags.Baked) == 0 && !((AssemblyBuilder)this.Assembly).mcs)
 			{
 				throw new NotSupportedException();
 			}

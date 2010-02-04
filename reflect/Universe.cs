@@ -670,7 +670,7 @@ namespace IKVM.Reflection
 
 		public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, string dir)
 		{
-			return new AssemblyBuilder(this, name, dir, null, null, null);
+			return new AssemblyBuilder(this, name, dir, access, null, null, null);
 		}
 
 #if NET_4_0
@@ -678,7 +678,7 @@ namespace IKVM.Reflection
 #endif
 		public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
 		{
-			return new AssemblyBuilder(this, name, dir, requiredPermissions, optionalPermissions, refusedPermissions);
+			return new AssemblyBuilder(this, name, dir, access, requiredPermissions, optionalPermissions, refusedPermissions);
 		}
 	}
 }

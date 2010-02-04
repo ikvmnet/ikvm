@@ -37,6 +37,7 @@ namespace IKVM.Reflection.Emit
 	{
 		private readonly AssemblyName name;
 		internal readonly string dir;
+		internal readonly bool mcs;
 		private readonly PermissionSet requiredPermissions;
 		private readonly PermissionSet optionalPermissions;
 		private readonly PermissionSet refusedPermissions;
@@ -59,7 +60,7 @@ namespace IKVM.Reflection.Emit
 			internal ResourceAttributes Attributes;
 		}
 
-		internal AssemblyBuilder(Universe universe, AssemblyName name, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
+		internal AssemblyBuilder(Universe universe, AssemblyName name, string dir, AssemblyBuilderAccess access, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
 			: base(universe)
 		{
 			this.name = name;
@@ -68,6 +69,8 @@ namespace IKVM.Reflection.Emit
 			this.optionalPermissions = optionalPermissions;
 			this.refusedPermissions = refusedPermissions;
 			this.imageRuntimeVersion = universe.System_Object.Assembly.ImageRuntimeVersion;
+			// support for mcs specific flag
+			mcs = (access & (AssemblyBuilderAccess)0x800) != 0;
 		}
 
 		public override AssemblyName GetName()
