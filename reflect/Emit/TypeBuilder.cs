@@ -949,19 +949,19 @@ namespace IKVM.Reflection.Emit
 		public override FieldInfo[] __GetDeclaredFields()
 		{
 			CheckBaked();
-			throw new NotImplementedException();
+			return Util.ToArray(fields, FieldInfo.EmptyArray);
 		}
 
 		public override EventInfo[] __GetDeclaredEvents()
 		{
 			CheckBaked();
-			throw new NotImplementedException();
+			return Util.ToArray(events, EventInfo.EmptyArray);
 		}
 
 		public override PropertyInfo[] __GetDeclaredProperties()
 		{
 			CheckBaked();
-			throw new NotImplementedException();
+			return Util.ToArray(properties, PropertyInfo.EmptyArray);
 		}
 
 		internal override bool IsModulePseudoType

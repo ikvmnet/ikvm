@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Collections.Generic;
 
 namespace IKVM.Reflection
 {
@@ -50,6 +51,20 @@ namespace IKVM.Reflection
 				newArray[i] = Copy(types[i]);
 			}
 			return newArray;
+		}
+
+		internal static T[] ToArray<T, V>(List<V> list, T[] empty) where V : T
+		{
+			if (list == null || list.Count == 0)
+			{
+				return empty;
+			}
+			T[] array = new T[list.Count];
+			for (int i = 0; i < array.Length; i++)
+			{
+				array[i] = list[i];
+			}
+			return array;
 		}
 
 		// note that an empty array matches a null reference
