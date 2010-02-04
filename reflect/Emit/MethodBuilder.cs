@@ -377,8 +377,6 @@ namespace IKVM.Reflection.Emit
 
 		internal override Type GetGenericMethodArgument(int index)
 		{
-			Console.WriteLine(new StackTrace());
-			Environment.Exit(0);
 			return gtpb[index];
 		}
 
