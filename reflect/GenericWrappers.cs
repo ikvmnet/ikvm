@@ -171,9 +171,13 @@ namespace IKVM.Reflection
 				{
 					return this;
 				}
+				else if (declaringType.IsGenericType && !declaringType.IsGenericTypeDefinition)
+				{
+					return new GenericMethodInstance(declaringType, method, null);
+				}
 				else
 				{
-					return method.GetGenericMethodDefinition();
+					return method;
 				}
 			}
 			throw new InvalidOperationException();
@@ -228,7 +232,7 @@ namespace IKVM.Reflection
 			{
 				Writer.ByteBuffer spec = new Writer.ByteBuffer(10);
 				Signature.WriteMethodSpec(module, spec, methodArgs);
-				return module.ImportMethodSpec(method, spec);
+				return module.ImportMethodSpec(this, spec);
 			}
 		}
 
