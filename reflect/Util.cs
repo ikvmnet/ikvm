@@ -33,7 +33,9 @@ namespace IKVM.Reflection
 			{
 				return Type.EmptyTypes;
 			}
-			return (Type[])array.Clone();
+			Type[] copy = new Type[array.Length];
+			Array.Copy(array, copy, array.Length);
+			return copy;
 		}
 
 		internal static Type[][] Copy(Type[][] types)
