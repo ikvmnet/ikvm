@@ -375,6 +375,18 @@ namespace IKVM.Reflection.Emit
 			return Util.Copy(gtpb);
 		}
 
+		internal override Type GetGenericMethodArgument(int index)
+		{
+			Console.WriteLine(new StackTrace());
+			Environment.Exit(0);
+			return gtpb[index];
+		}
+
+		internal override int GetGenericMethodArgumentCount()
+		{
+			return gtpb == null ? 0 : gtpb.Length;
+		}
+
 		public override Type ReturnType
 		{
 			get { return returnType; }
