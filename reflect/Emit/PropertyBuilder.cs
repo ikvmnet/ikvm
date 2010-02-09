@@ -146,9 +146,12 @@ namespace IKVM.Reflection.Emit
 			List<MethodInfo> list = new List<MethodInfo>();
 			AddAccessor(list, nonPublic, getter);
 			AddAccessor(list, nonPublic, setter);
-			foreach (MethodInfo method in otherMethods)
+			if (otherMethods != null)
 			{
-				AddAccessor(list, nonPublic, method);
+				foreach (MethodInfo method in otherMethods)
+				{
+					AddAccessor(list, nonPublic, method);
+				}
 			}
 			return list.ToArray();
 		}
