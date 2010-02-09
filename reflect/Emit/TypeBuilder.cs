@@ -39,6 +39,7 @@ namespace IKVM.Reflection.Emit
 		private readonly int paramToken;
 		private readonly int position;
 		private int typeToken;
+		private Type baseType;
 
 		internal GenericTypeParameterBuilder(string name, TypeBuilder type, MethodBuilder method, int position)
 		{
@@ -66,7 +67,7 @@ namespace IKVM.Reflection.Emit
 
 		public override Type BaseType
 		{
-			get { throw new NotImplementedException(); }
+			get { return baseType; }
 		}
 
 		public override Type[] __GetDeclaredInterfaces()
@@ -144,19 +145,25 @@ namespace IKVM.Reflection.Emit
 			get { throw new NotImplementedException(); }
 		}
 
-		public void SetBaseTypeConstraint(Type baseTypeConstraint)
+		private void AddConstraint(Type type)
 		{
 			GenericParamConstraintTable.Record rec = new GenericParamConstraintTable.Record();
 			rec.Owner = paramToken;
-			rec.Constraint = this.ModuleBuilder.GetTypeToken(baseTypeConstraint).Token;
+			rec.Constraint = this.ModuleBuilder.GetTypeToken(type).Token;
 			this.ModuleBuilder.GenericParamConstraint.AddRecord(rec);
+		}
+
+		public void SetBaseTypeConstraint(Type baseTypeConstraint)
+		{
+			this.baseType = baseTypeConstraint;
+			AddConstraint(baseTypeConstraint);
 		}
 
 		public void SetInterfaceConstraints(params Type[] interfaceConstraints)
 		{
 			foreach (Type type in interfaceConstraints)
 			{
-				SetBaseTypeConstraint(type);
+				AddConstraint(type);
 			}
 		}
 
