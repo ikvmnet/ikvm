@@ -1638,6 +1638,7 @@ namespace IKVM.Reflection.Metadata
 						MethodInfo method = (MethodInfo)module.ResolveMethod((MethodDefTable.Index << 24) + records[i].Method);
 						if (nonPublic || method.IsPublic)
 						{
+							i++;
 							return method;
 						}
 					}
