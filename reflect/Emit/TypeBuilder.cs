@@ -697,6 +697,22 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 
+		public override string Namespace
+		{
+			get
+			{
+				// for some reason, TypeBuilder doesn't return null (and mcs depends on this)
+				return base.Namespace ?? "";
+			}
+		}
+
+		internal string GetBakedNamespace()
+		{
+			// if you refer to the TypeBuilder via its baked Type, Namespace will return null
+			// for the empty namespace (instead of "" like TypeBuilder.Namespace above does)
+			return base.Namespace;
+		}
+
 		public override TypeAttributes Attributes
 		{
 			get { return attribs; }
@@ -992,6 +1008,11 @@ namespace IKVM.Reflection.Emit
 		public override string Name
 		{
 			get { return typeBuilder.Name; }
+		}
+
+		public override string Namespace
+		{
+			get { return typeBuilder.GetBakedNamespace(); }
 		}
 
 		public override string FullName
