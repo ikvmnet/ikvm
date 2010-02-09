@@ -2081,21 +2081,22 @@ namespace IKVM.Reflection
 
 		internal override Type BindTypeParameters(IGenericBinder binder)
 		{
-			Type[] xargs = null;
 			for (int i = 0; i < args.Length; i++)
 			{
 				Type xarg = args[i].BindTypeParameters(binder);
 				if (!ReferenceEquals(xarg, args[i]))
 				{
-					if (xargs == null)
+					Type[] xargs = new Type[args.Length];
+					Array.Copy(args, xargs, i);
+					xargs[i++] = xarg;
+					for (; i < args.Length; i++)
 					{
-						xargs = new Type[args.Length];
-						Array.Copy(args, xargs, i);
+						xargs[i] = args[i].BindTypeParameters(binder);
 					}
-					xargs[i] = xarg;
+					return Make(type, xargs);
 				}
 			}
-			return xargs == null ? this : Make(type, xargs);
+			return this;
 		}
 
 		internal override IList<CustomAttributeData> GetCustomAttributesData()
