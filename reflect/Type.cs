@@ -222,7 +222,7 @@ namespace IKVM.Reflection
 		public override int GetHashCode()
 		{
 			Type type = this.UnderlyingSystemType;
-			return type == this ? base.GetHashCode() : type.GetHashCode();
+			return ReferenceEquals(type, this) ? base.GetHashCode() : type.GetHashCode();
 		}
 
 		public virtual Type[] GetGenericArguments()
