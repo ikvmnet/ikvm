@@ -210,6 +210,7 @@ namespace IKVM.Reflection.Emit
 		private TypeFlags typeFlags;
 		private GenericTypeParameterBuilder[] gtpb;
 		private List<CustomAttributeBuilder> declarativeSecurity;
+		private List<Type> interfaces;
 
 		[Flags]
 		private enum TypeFlags
@@ -444,6 +445,11 @@ namespace IKVM.Reflection.Emit
 
 		public void AddInterfaceImplementation(Type interfaceType)
 		{
+			if (interfaces == null)
+			{
+				interfaces = new List<Type>();
+			}
+			interfaces.Add(interfaceType);
 			InterfaceImplTable.Record rec = new InterfaceImplTable.Record();
 			rec.Class = token;
 			rec.Interface = this.ModuleBuilder.GetTypeToken(interfaceType).Token;
@@ -716,6 +722,12 @@ namespace IKVM.Reflection.Emit
 		public override TypeAttributes Attributes
 		{
 			get { return attribs; }
+		}
+
+		public override Type[] __GetDeclaredInterfaces()
+		{
+			CheckBaked();
+			return Util.ToArray(interfaces, Type.EmptyTypes);
 		}
 
 		public override MethodBase[] __GetDeclaredMethods()
