@@ -1849,7 +1849,11 @@ namespace IKVM.Reflection
 
 		public override string AssemblyQualifiedName
 		{
-			get { return FullName + ", " + type.Assembly.FullName; }
+			get
+			{
+				string fn = FullName;
+				return fn == null ? null : fn + ", " + type.Assembly.FullName;
+			}
 		}
 
 		public override Type BaseType
@@ -1999,6 +2003,10 @@ namespace IKVM.Reflection
 		{
 			get
 			{
+				if (this.ContainsGenericParameters)
+				{
+					return null;
+				}
 				StringBuilder sb = new StringBuilder(base.FullName);
 				sb.Append('[');
 				foreach (Type type in args)
