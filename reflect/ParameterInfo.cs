@@ -29,6 +29,27 @@ namespace IKVM.Reflection
 	{
 		internal static readonly ParameterInfo[] EmptyArray = new ParameterInfo[0];
 
+		public sealed override bool Equals(object obj)
+		{
+			ParameterInfo other = obj as ParameterInfo;
+			return other != null && other.Member == this.Member && other.Position == this.Position;
+		}
+
+		public sealed override int GetHashCode()
+		{
+			return this.Member.GetHashCode() * 1777 + this.Position;
+		}
+
+		public static bool operator ==(ParameterInfo p1, ParameterInfo p2)
+		{
+			return ReferenceEquals(p1, p2) || (!ReferenceEquals(p1, null) && p1.Equals(p2));
+		}
+
+		public static bool operator !=(ParameterInfo p1, ParameterInfo p2)
+		{
+			return !(p1 == p2);
+		}
+
 		public abstract string Name { get; }
 		public abstract Type ParameterType { get; }
 		public abstract ParameterAttributes Attributes { get; }
