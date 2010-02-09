@@ -38,7 +38,7 @@ namespace IKVM.Reflection.Emit
 		private readonly MethodBuilder method;
 		private readonly int paramToken;
 		private readonly int position;
-		private int token;
+		private int typeToken;
 
 		internal GenericTypeParameterBuilder(string name, TypeBuilder type, MethodBuilder method, int position)
 		{
@@ -178,13 +178,13 @@ namespace IKVM.Reflection.Emit
 
 		internal override int GetModuleBuilderToken()
 		{
-			if (token == 0)
+			if (typeToken == 0)
 			{
 				ByteBuffer spec = new ByteBuffer(5);
 				Signature.WriteTypeSpec(this.ModuleBuilder, spec, this);
-				token = 0x1B000000 | this.ModuleBuilder.TypeSpec.AddRecord(this.ModuleBuilder.Blobs.Add(spec));
+				typeToken = 0x1B000000 | this.ModuleBuilder.TypeSpec.AddRecord(this.ModuleBuilder.Blobs.Add(spec));
 			}
-			return token;
+			return typeToken;
 		}
 
 		internal override Type BindTypeParameters(IGenericBinder binder)
