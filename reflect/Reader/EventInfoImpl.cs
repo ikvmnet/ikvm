@@ -41,6 +41,17 @@ namespace IKVM.Reflection.Reader
 			this.index = index;
 		}
 
+		public override bool Equals(object obj)
+		{
+			EventInfoImpl other = obj as EventInfoImpl;
+			return other != null && other.declaringType == declaringType && other.index == index;
+		}
+
+		public override int GetHashCode()
+		{
+			return declaringType.GetHashCode() * 123 + index;
+		}
+
 		public override EventAttributes Attributes
 		{
 			get { return (EventAttributes)module.Event.records[index].EventFlags; }

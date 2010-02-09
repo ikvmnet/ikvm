@@ -42,6 +42,17 @@ namespace IKVM.Reflection.Reader
 			this.index = index;
 		}
 
+		public override bool Equals(object obj)
+		{
+			PropertyInfoImpl other = obj as PropertyInfoImpl;
+			return other != null && other.DeclaringType == declaringType && other.index == index;
+		}
+
+		public override int GetHashCode()
+		{
+			return declaringType.GetHashCode() * 77 + index;
+		}
+
 		internal override PropertySignature PropertySignature
 		{
 			get
