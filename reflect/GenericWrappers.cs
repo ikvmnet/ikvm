@@ -406,6 +406,17 @@ namespace IKVM.Reflection
 			this.property = property;
 		}
 
+		public override bool Equals(object obj)
+		{
+			GenericPropertyInfo other = obj as GenericPropertyInfo;
+			return other != null && other.typeInstance == typeInstance && other.property == property;
+		}
+
+		public override int GetHashCode()
+		{
+			return typeInstance.GetHashCode() * 537 + property.GetHashCode();
+		}
+
 		public override PropertyAttributes Attributes
 		{
 			get { return property.Attributes; }
@@ -505,6 +516,17 @@ namespace IKVM.Reflection
 		{
 			this.typeInstance = typeInstance;
 			this.eventInfo = eventInfo;
+		}
+
+		public override bool Equals(object obj)
+		{
+			GenericEventInfo other = obj as GenericEventInfo;
+			return other != null && other.typeInstance == typeInstance && other.eventInfo == eventInfo;
+		}
+
+		public override int GetHashCode()
+		{
+			return typeInstance.GetHashCode() * 777 + eventInfo.GetHashCode();
 		}
 
 		public override EventAttributes Attributes
