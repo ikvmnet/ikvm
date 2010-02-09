@@ -66,13 +66,16 @@ namespace IKVM.Reflection
 
 		public override ParameterInfo ReturnParameter
 		{
-			get { return new GenericParameterInfoImpl(this, this, method.ReturnParameter); }
+			get { return new GenericParameterInfoImpl(this, method.ReturnParameter); }
 		}
 
 		public override ParameterInfo[] GetParameters()
 		{
 			ParameterInfo[] parameters = method.GetParameters();
-			WrapGenericParameterInfos(this, this, parameters);
+			for (int i = 0; i < parameters.Length; i++)
+			{
+				parameters[i] = new GenericParameterInfoImpl(this, parameters[i]);
+			}
 			return parameters;
 		}
 
@@ -328,14 +331,12 @@ namespace IKVM.Reflection
 
 	sealed class GenericParameterInfoImpl : ParameterInfo
 	{
-		private readonly MemberInfo member;
-		private readonly IGenericBinder binder;
+		private readonly GenericMethodInstance method;
 		private readonly ParameterInfo parameterInfo;
 
-		internal GenericParameterInfoImpl(MemberInfo member, IGenericBinder binder, ParameterInfo parameterInfo)
+		internal GenericParameterInfoImpl(GenericMethodInstance method, ParameterInfo parameterInfo)
 		{
-			this.member = member;
-			this.binder = binder;
+			this.method = method;
 			this.parameterInfo = parameterInfo;
 		}
 
@@ -346,7 +347,7 @@ namespace IKVM.Reflection
 
 		public override Type ParameterType
 		{
-			get { return parameterInfo.ParameterType.BindTypeParameters(binder); }
+			get { return parameterInfo.ParameterType.BindTypeParameters(method); }
 		}
 
 		public override ParameterAttributes Attributes
@@ -367,20 +368,20 @@ namespace IKVM.Reflection
 		public override Type[] GetOptionalCustomModifiers()
 		{
 			Type[] modifiers = parameterInfo.GetOptionalCustomModifiers();
-			Type.InplaceBindTypeParameters(binder, modifiers);
+			Type.InplaceBindTypeParameters(method, modifiers);
 			return modifiers;
 		}
 
 		public override Type[] GetRequiredCustomModifiers()
 		{
 			Type[] modifiers = parameterInfo.GetRequiredCustomModifiers();
-			Type.InplaceBindTypeParameters(binder, modifiers);
+			Type.InplaceBindTypeParameters(method, modifiers);
 			return modifiers;
 		}
 
 		public override MemberInfo Member
 		{
-			get { return member; }
+			get { return method; }
 		}
 
 		public override int MetadataToken
@@ -390,7 +391,7 @@ namespace IKVM.Reflection
 
 		internal override Module Module
 		{
-			get { return member.Module; }
+			get { return method.Module; }
 		}
 	}
 

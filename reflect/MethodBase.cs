@@ -134,14 +134,6 @@ namespace IKVM.Reflection
 		// it also has the effect of removing the ConstructorInfo wrapper and returning the underlying MethodInfo.
 		internal abstract MethodInfo GetMethodOnTypeDefinition();
 
-		internal static void WrapGenericParameterInfos(MemberInfo member, IGenericBinder binder, ParameterInfo[] parameterInfo)
-		{
-			for (int i = 0; i < parameterInfo.Length; i++)
-			{
-				parameterInfo[i] = new GenericParameterInfoImpl(member, binder, parameterInfo[i]);
-			}
-		}
-
 		internal abstract int ImportTo(Emit.ModuleBuilder module);
 
 		internal abstract MethodBase BindTypeParameters(Type type);
