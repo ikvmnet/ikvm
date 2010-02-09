@@ -266,6 +266,7 @@ namespace IKVM.Reflection.Emit
 			Type type = customBuilder.Constructor.DeclaringType;
 			if (type == u.System_Runtime_InteropServices_DllImportAttribute)
 			{
+				attributes |= MethodAttributes.PinvokeImpl;
 				SetDllImportPseudoCustomAttribute(customBuilder.DecodeBlob(this.Module.Assembly));
 			}
 			else if (type == u.System_Runtime_CompilerServices_MethodImplAttribute)
