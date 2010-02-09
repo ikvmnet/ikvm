@@ -33,22 +33,25 @@ namespace IKVM.Reflection.Emit
 {
 	public sealed class GenericTypeParameterBuilder : Type
 	{
-		private readonly ModuleBuilder moduleBuilder;
 		private readonly string name;
-		private readonly Type type;
-		private readonly MethodInfo method;
-		private readonly int owner;
+		private readonly TypeBuilder type;
+		private readonly MethodBuilder method;
+		private readonly int paramToken;
 		private readonly int position;
 		private int token;
 
-		internal GenericTypeParameterBuilder(ModuleBuilder moduleBuilder, string name, Type type, MethodInfo method, int owner, int position)
+		internal GenericTypeParameterBuilder(string name, TypeBuilder type, MethodBuilder method, int position)
 		{
-			this.moduleBuilder = moduleBuilder;
 			this.name = name;
 			this.type = type;
 			this.method = method;
-			this.owner = owner;
 			this.position = position;
+			GenericParamTable.Record rec = new GenericParamTable.Record();
+			rec.Number = (short)position;
+			rec.Flags = 0;
+			rec.Owner = type != null ? type.MetadataToken : method.MetadataToken;
+			rec.Name = this.ModuleBuilder.Strings.Add(name);
+			this.paramToken = this.ModuleBuilder.GenericParam.AddRecord(rec);
 		}
 
 		public override string AssemblyQualifiedName
@@ -101,9 +104,14 @@ namespace IKVM.Reflection.Emit
 			return this.Name;
 		}
 
+		private ModuleBuilder ModuleBuilder
+		{
+			get { return type != null ? type.ModuleBuilder : method.ModuleBuilder; }
+		}
+
 		public override Module Module
 		{
-			get { return moduleBuilder; }
+			get { return ModuleBuilder; }
 		}
 
 		public override bool IsGenericParameter
@@ -139,9 +147,9 @@ namespace IKVM.Reflection.Emit
 		public void SetBaseTypeConstraint(Type baseTypeConstraint)
 		{
 			GenericParamConstraintTable.Record rec = new GenericParamConstraintTable.Record();
-			rec.Owner = owner;
-			rec.Constraint = moduleBuilder.GetTypeToken(baseTypeConstraint).Token;
-			moduleBuilder.GenericParamConstraint.AddRecord(rec);
+			rec.Owner = paramToken;
+			rec.Constraint = this.ModuleBuilder.GetTypeToken(baseTypeConstraint).Token;
+			this.ModuleBuilder.GenericParamConstraint.AddRecord(rec);
 		}
 
 		public void SetInterfaceConstraints(params Type[] interfaceConstraints)
@@ -155,17 +163,17 @@ namespace IKVM.Reflection.Emit
 		public void SetGenericParameterAttributes(GenericParameterAttributes genericParameterAttributes)
 		{
 			// for now we'll back patch the table
-			this.moduleBuilder.GenericParam.PatchAttribute(owner, genericParameterAttributes);
+			this.ModuleBuilder.GenericParam.PatchAttribute(paramToken, genericParameterAttributes);
 		}
 
 		public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
 		{
-			this.moduleBuilder.SetCustomAttribute(GetModuleBuilderToken(), customBuilder);
+			this.ModuleBuilder.SetCustomAttribute(GetModuleBuilderToken(), customBuilder);
 		}
 
 		public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
 		{
-			this.moduleBuilder.SetCustomAttribute(GetModuleBuilderToken(), new CustomAttributeBuilder(con, binaryAttribute));
+			this.ModuleBuilder.SetCustomAttribute(GetModuleBuilderToken(), new CustomAttributeBuilder(con, binaryAttribute));
 		}
 
 		internal override int GetModuleBuilderToken()
@@ -173,8 +181,8 @@ namespace IKVM.Reflection.Emit
 			if (token == 0)
 			{
 				ByteBuffer spec = new ByteBuffer(5);
-				Signature.WriteTypeSpec(moduleBuilder, spec, this);
-				token = 0x1B000000 | moduleBuilder.TypeSpec.AddRecord(moduleBuilder.Blobs.Add(spec));
+				Signature.WriteTypeSpec(this.ModuleBuilder, spec, this);
+				token = 0x1B000000 | this.ModuleBuilder.TypeSpec.AddRecord(this.ModuleBuilder.Blobs.Add(spec));
 			}
 			return token;
 		}
@@ -595,12 +603,7 @@ namespace IKVM.Reflection.Emit
 			gtpb = new GenericTypeParameterBuilder[names.Length];
 			for (int i = 0; i < names.Length; i++)
 			{
-				GenericParamTable.Record rec = new GenericParamTable.Record();
-				rec.Number = (short)i;
-				rec.Flags = 0;
-				rec.Owner = token;
-				rec.Name = this.ModuleBuilder.Strings.Add(names[i]);
-				gtpb[i] = new GenericTypeParameterBuilder(this.ModuleBuilder, names[i], this, null, this.ModuleBuilder.GenericParam.AddRecord(rec), i);
+				gtpb[i] = new GenericTypeParameterBuilder(names[i], this, null, i);
 			}
 			return (GenericTypeParameterBuilder[])gtpb.Clone();
 		}

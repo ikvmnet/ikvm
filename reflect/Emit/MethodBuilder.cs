@@ -347,12 +347,7 @@ namespace IKVM.Reflection.Emit
 			gtpb = new GenericTypeParameterBuilder[names.Length];
 			for (int i = 0; i < names.Length; i++)
 			{
-				GenericParamTable.Record rec = new GenericParamTable.Record();
-				rec.Number = (short)i;
-				rec.Flags = 0;
-				rec.Owner = pseudoToken;
-				rec.Name = this.ModuleBuilder.Strings.Add(names[i]);
-				gtpb[i] = new GenericTypeParameterBuilder(this.ModuleBuilder, names[i], null, this, this.ModuleBuilder.GenericParam.AddRecord(rec), i);
+				gtpb[i] = new GenericTypeParameterBuilder(names[i], null, this, i);
 			}
 			return (GenericTypeParameterBuilder[])gtpb.Clone();
 		}
