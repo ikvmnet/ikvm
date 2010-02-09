@@ -142,7 +142,18 @@ namespace IKVM.Reflection.Emit
 
 		public override GenericParameterAttributes GenericParameterAttributes
 		{
-			get { throw new NotImplementedException(); }
+			get
+			{
+				if (type != null)
+				{
+					type.CheckBaked();
+				}
+				else
+				{
+					method.CheckBaked();
+				}
+				return this.ModuleBuilder.GenericParam.GetAttributes(paramToken);
+			}
 		}
 
 		private void AddConstraint(Type type)
@@ -957,7 +968,7 @@ namespace IKVM.Reflection.Emit
 			return (typeFlags & TypeFlags.Baked) != 0;
 		}
 
-		private void CheckBaked()
+		internal void CheckBaked()
 		{
 			if ((typeFlags & TypeFlags.Baked) == 0 && !((AssemblyBuilder)this.Assembly).mcs)
 			{

@@ -682,5 +682,10 @@ namespace IKVM.Reflection.Emit
 				return other.ImportMethodOrField(typeBuilder, name, this.MethodSignature);
 			}
 		}
+
+		internal void CheckBaked()
+		{
+			typeBuilder.CheckBaked();
+		}
 	}
 }

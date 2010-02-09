@@ -2291,6 +2291,11 @@ namespace IKVM.Reflection.Metadata
 			return x.Owner > y.Owner ? 1 : -1;
 		}
 
+		internal GenericParameterAttributes GetAttributes(int token)
+		{
+			return (GenericParameterAttributes)records[(token & 0xFFFFFF) - 1].Flags;
+		}
+
 		internal void PatchAttribute(int token, GenericParameterAttributes genericParameterAttributes)
 		{
 			records[(token & 0xFFFFFF) - 1].Flags = (short)genericParameterAttributes;
