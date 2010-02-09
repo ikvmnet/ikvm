@@ -211,7 +211,7 @@ namespace IKVM.Reflection
 
 		public bool Equals(Type type)
 		{
-			return type != null && type.UnderlyingSystemType == this.UnderlyingSystemType;
+			return !ReferenceEquals(type, null) && ReferenceEquals(type.UnderlyingSystemType, this.UnderlyingSystemType);
 		}
 
 		public override bool Equals(object obj)
