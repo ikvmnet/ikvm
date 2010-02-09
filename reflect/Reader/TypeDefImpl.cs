@@ -257,6 +257,15 @@ namespace IKVM.Reflection.Reader
 			get { return module.GenericParam.FindFirstByOwner(this.MetadataToken) != -1; }
 		}
 
+		public override Type GetGenericTypeDefinition()
+		{
+			if (IsGenericTypeDefinition)
+			{
+				return this;
+			}
+			throw new InvalidOperationException();
+		}
+
 		public override string ToString()
 		{
 			StringBuilder sb = new StringBuilder(this.FullName);
