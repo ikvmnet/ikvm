@@ -1107,22 +1107,33 @@ class IkvmcCompiler
 		}
 		else
 		{
-			Assembly asm = null;
 			// apply unification and policy
 			try
 			{
 				string name = System.Reflection.Assembly.ReflectionOnlyLoad(args.Name).FullName;
 				if (name != args.Name)
 				{
-					asm = StaticCompiler.Load(name);
+					return StaticCompiler.Load(name);
 				}
 			}
 			catch
 			{
 			}
-			if (asm != null)
+			// HACK support loading additional assemblies from a multi assembly group from the same location as the main assembly
+			Type main = args.RequestingAssembly.GetType("__<MainAssembly>");
+			if (main != null)
 			{
-				return asm;
+				try
+				{
+					string path = Path.Combine(Path.GetDirectoryName(main.Assembly.Location), new AssemblyName(args.Name).Name + ".dll");
+					if (AssemblyName.GetAssemblyName(path).FullName == args.Name)
+					{
+						return StaticCompiler.LoadFile(path);
+					}
+				}
+				catch
+				{
+				}
 			}
 		}
 		Console.Error.WriteLine("Error: unable to find assembly '{0}'", args.Name);
