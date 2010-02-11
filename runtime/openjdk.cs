@@ -5473,7 +5473,7 @@ namespace IKVM.NativeCode.sun.misc
             }
         }
 
-        private static CriticalCtrlHandler defaultConsoleCtrlDelegate;
+        private static object defaultConsoleCtrlDelegate;
 
         private static bool ConsoleCtrlCheck(CtrlTypes ctrlType)
         {
@@ -5537,6 +5537,12 @@ namespace IKVM.NativeCode.sun.misc
             return -1;
         }
 
+		// this is a separate method to be able to catch the SecurityException (for the LinkDemand)
+		private static void RegisterCriticalCtrlHandler()
+		{
+			defaultConsoleCtrlDelegate = new CriticalCtrlHandler();
+		}
+
         // Register a signal handler
         public static long handle0(int sig, long nativeH)
         {
@@ -5547,7 +5553,13 @@ namespace IKVM.NativeCode.sun.misc
                 case 0: // Default Signal Handler
                     if (defaultConsoleCtrlDelegate == null && Environment.OSVersion.Platform == PlatformID.Win32NT)
                     {
-                        defaultConsoleCtrlDelegate = new CriticalCtrlHandler();
+						try
+						{
+							RegisterCriticalCtrlHandler();
+						}
+						catch (System.Security.SecurityException)
+						{
+						}
                     }
                     break;
                 case 1: // Ignore Signal
