@@ -77,13 +77,11 @@ static class AtomicReferenceFieldUpdaterEmitter
 		if (!exists)
 		{
 			// note that we don't need to lock here, because we're running as part of FinishCore, which is already protected by a lock
-			TypeWrapper arfuTypeWrapper = ClassLoaderWrapper.LoadClassCritical("java.util.concurrent.atomic.AtomicReferenceFieldUpdater");
+			TypeWrapper arfuTypeWrapper = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.IntrinsicAtomicReferenceFieldUpdater");
 			TypeBuilder tb = wrapper.TypeAsBuilder.DefineNestedType("__<ARFU>_" + field.Name + field.Signature.Replace('.', '/'), TypeAttributes.NestedPrivate | TypeAttributes.Sealed, arfuTypeWrapper.TypeAsBaseType);
 			EmitCompareAndSet("compareAndSet", tb, field.GetField());
-			EmitCompareAndSet("weakCompareAndSet", tb, field.GetField());
 			EmitGet(tb, field.GetField());
-			EmitSet("set", tb, field.GetField(), false);
-			EmitSet("lazySet", tb, field.GetField(), true);
+			EmitSet("set", tb, field.GetField());
 
 			cb = tb.DefineConstructor(MethodAttributes.Assembly, CallingConventions.Standard, Type.EmptyTypes);
 			lock (map)
@@ -150,7 +148,7 @@ static class AtomicReferenceFieldUpdaterEmitter
 		ilgen.Emit(OpCodes.Ret);
 	}
 
-	private static void EmitSet(string name, TypeBuilder tb, FieldInfo field, bool lazy)
+	private static void EmitSet(string name, TypeBuilder tb, FieldInfo field)
 	{
 		MethodBuilder set = tb.DefineMethod(name, MethodAttributes.Public | MethodAttributes.Virtual, Types.Void, new Type[] { Types.Object, Types.Object });
 		ILGenerator ilgen = set.GetILGenerator();
@@ -158,10 +156,7 @@ static class AtomicReferenceFieldUpdaterEmitter
 		ilgen.Emit(OpCodes.Castclass, field.DeclaringType);
 		ilgen.Emit(OpCodes.Ldarg_2);
 		ilgen.Emit(OpCodes.Castclass, field.FieldType);
-		if (!lazy)
-		{
-			ilgen.Emit(OpCodes.Volatile);
-		}
+		ilgen.Emit(OpCodes.Volatile);
 		ilgen.Emit(OpCodes.Stfld, field);
 		ilgen.Emit(OpCodes.Ret);
 	}

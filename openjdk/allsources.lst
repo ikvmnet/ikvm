@@ -39,6 +39,7 @@ com/sun/imageio/plugins/jpeg/JPEGImageWriter.java
 ikvm/awt/IkvmToolkit.java
 ikvm/internal/AnnotationAttributeBase.java
 ikvm/internal/FieldReflectorBase.java
+ikvm/internal/IntrinsicAtomicReferenceFieldUpdater.java
 ikvm/internal/Serialization.java
 java/awt/Font.java
 java/awt/GraphicsConfiguration.java
