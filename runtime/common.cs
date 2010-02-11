@@ -338,9 +338,17 @@ namespace IKVM.NativeCode.ikvm.runtime
 			{
 				return DotNetTypeWrapper.GetWrapperFromDotNetType(t);
 			}
-			else
+			for(; ; )
 			{
-				return ClassLoaderWrapper.GetWrapperFromType(t);
+				TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(t);
+				// if GetWrapperFromType returns null (or if tw.IsAbstract), that
+				// must mean that the Type of the object is an implementation helper class
+				// (e.g. an AtomicReferenceFieldUpdater or ThreadLocal instrinsic subclass)
+				if(tw != null && (!tw.IsAbstract || tw.IsArray))
+				{
+					return tw;
+				}
+				t = t.BaseType;
 			}
 		}
 
