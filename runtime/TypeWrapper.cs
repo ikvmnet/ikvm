@@ -557,7 +557,8 @@ namespace IKVM.Internal
 
 		internal static bool IsHideFromJava(Type type)
 		{
-			return IsDefined(type, typeofHideFromJavaAttribute);
+			return IsDefined(type, typeofHideFromJavaAttribute)
+				|| (type.IsNested && type.Name.StartsWith("__<", StringComparison.Ordinal));
 		}
 
 		internal static bool IsHideFromJava(MemberInfo mi)
@@ -3922,7 +3923,7 @@ namespace IKVM.Internal
 				List<TypeWrapper> wrappers = new List<TypeWrapper>();
 				for(int i = 0; i < nestedTypes.Length; i++)
 				{
-					if(!AttributeHelper.IsHideFromJava(nestedTypes[i]) && !nestedTypes[i].Name.StartsWith("__<"))
+					if(!AttributeHelper.IsHideFromJava(nestedTypes[i]))
 					{
 						wrappers.Add(ClassLoaderWrapper.GetWrapperFromType(nestedTypes[i]));
 					}
