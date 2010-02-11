@@ -3315,7 +3315,7 @@ namespace IKVM.Internal
 
 		internal TypeWrapper GetPublicBaseTypeWrapper()
 		{
-			if (this.IsInterface)
+			if (this.IsUnloadable || this.IsInterface)
 			{
 				return CoreClasses.java.lang.Object.Wrapper;
 			}
