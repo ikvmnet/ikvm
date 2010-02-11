@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2008, 2009 Jeroen Frijters
+  Copyright (C) 2008-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -106,6 +106,7 @@ namespace IKVM.Internal
 			// this only applies to the core class library, so makes no sense in dynamic mode
 			intrinsics.Add(new IntrinsicKey("java.lang.Class", "getPrimitiveClass", "(Ljava.lang.String;)Ljava.lang.Class;"), Class_getPrimitiveClass);
 #endif
+			intrinsics.Add(new IntrinsicKey("java.lang.ThreadLocal", "<init>", "()V"), ThreadLocal_new);
 			return intrinsics;
 		}
 
@@ -418,5 +419,54 @@ namespace IKVM.Internal
 			return true;
 		}
 #endif
+
+		private static bool ThreadLocal_new(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		{
+			// it is only valid to replace a ThreadLocal instantiation by our ThreadStatic based version, if we can prove that the instantiation only happens once
+			// (which is the case when we're in <clinit> and there aren't any branches that lead to the current position)
+			if (caller.Name != StringConstants.CLINIT)
+			{
+				return false;
+			}
+			for (int i = 0; i <= opcodeIndex; i++)
+			{
+				if (code[i].IsBranchTarget)
+				{
+					return false;
+				}
+			}
+			ilgen.Emit(OpCodes.Newobj, DefineThreadLocalType(context, opcodeIndex, caller));
+			return true;
+		}
+
+		private static ConstructorBuilder DefineThreadLocalType(DynamicTypeWrapper.FinishContext context, int opcodeIndex, MethodWrapper caller)
+		{
+			TypeWrapper threadLocal = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.IntrinsicThreadLocal");
+			TypeBuilder tb = caller.DeclaringType.TypeAsBuilder.DefineNestedType("__<tls>_" + opcodeIndex, TypeAttributes.NestedPrivate | TypeAttributes.Sealed, threadLocal.TypeAsBaseType);
+			FieldBuilder fb = tb.DefineField("field", Types.Object, FieldAttributes.Private | FieldAttributes.Static);
+			fb.SetCustomAttribute(new CustomAttributeBuilder(JVM.Import(typeof(ThreadStaticAttribute)).GetConstructor(Type.EmptyTypes), new object[0]));
+			MethodBuilder mbGet = tb.DefineMethod("get", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final, Types.Object, Type.EmptyTypes);
+			ILGenerator ilgen = mbGet.GetILGenerator();
+			ilgen.Emit(OpCodes.Ldsfld, fb);
+			ilgen.Emit(OpCodes.Ret);
+			MethodBuilder mbSet = tb.DefineMethod("set", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final, null, new Type[] { Types.Object });
+			ilgen = mbSet.GetILGenerator();
+			ilgen.Emit(OpCodes.Ldarg_1);
+			ilgen.Emit(OpCodes.Stsfld, fb);
+			ilgen.Emit(OpCodes.Ret);
+			ConstructorBuilder cb = tb.DefineConstructor(MethodAttributes.Assembly, CallingConventions.Standard, Type.EmptyTypes);
+			CodeEmitter ctorilgen = CodeEmitter.Create(cb);
+			ctorilgen.Emit(OpCodes.Ldarg_0);
+			MethodWrapper basector = threadLocal.GetMethodWrapper("<init>", "()V", false);
+			basector.Link();
+			basector.EmitCall(ctorilgen);
+			ctorilgen.Emit(OpCodes.Ret);
+			context.RegisterPostFinishProc(delegate
+			{
+				threadLocal.Finish();
+				tb.CreateType();
+			});
+			return cb;
+		}
 	}
 }
