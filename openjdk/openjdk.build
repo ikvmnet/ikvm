@@ -15,7 +15,17 @@
         <property name="OPENJDK_VERSION" value="OpenJDK 6 b16" />
     </target>
 
-    <target name="classes" depends="version">
+    <target name="allsources.gen.lst">
+        <copy file="allsources.lst" tofile="allsources.gen.lst" outputencoding="ascii" overwrite="true">
+            <filterchain>
+                <replacetokens>
+                    <token key="OPENJDK" value="${OpenJDK.dir}" />
+                </replacetokens>
+            </filterchain>
+        </copy>
+    </target>
+
+    <target name="classes" depends="version allsources.gen.lst">
         <delete>
             <fileset basedir="../classpath">
                 <include name="**.class"/>
@@ -64,7 +74,7 @@
                 </replacetokens>
             </filterchain>
         </copy>
-        <exec program="javac" commandline="-J-Xmx1536M -g -nowarn -bootclasspath mscorlib.jar${pathsep}System.jar${pathsep}System.Core.jar${pathsep}System.Data.jar${pathsep}System.Drawing.jar${pathsep}IKVM.Runtime.jar @allsources.lst" useruntimeengine="false" />
+        <exec program="javac" commandline="-J-Xmx1536M -g -nowarn -bootclasspath mscorlib.jar${pathsep}System.jar${pathsep}System.Core.jar${pathsep}System.Data.jar${pathsep}System.Drawing.jar${pathsep}IKVM.Runtime.jar @allsources.gen.lst" useruntimeengine="false" />
     </target>
 
     <target name="rmi">
@@ -110,7 +120,7 @@
         </target>
 
     <target name="resources">
-        <!-- resources that are not in ../../openjdk6-b16/build/linux-amd64/j2re-image/lib/resources.jar -->
+        <!-- resources that are not in @OPENJDK@/build/linux-amd64/j2re-image/lib/resources.jar -->
         <zip zipfile="resources.zip">
             <fileset basedir="${OpenJDK.dir}/jdk/src/share/classes">
                 <include name="com/sun/swing/internal/plaf/**/*" />
@@ -118,7 +128,17 @@
         </zip>
     </target>
 
-    <target name="core" depends="version">
+    <target name="response.gen.txt">
+        <copy file="response.txt" tofile="response.gen.txt" outputencoding="ascii" overwrite="true">
+            <filterchain>
+                <replacetokens>
+                    <token key="OPENJDK" value="${OpenJDK.dir}" />
+                </replacetokens>
+            </filterchain>
+        </copy>
+    </target>
+
+    <target name="core" depends="version response.gen.txt">
         <exec program="${project::get-base-directory()}/../bin/ikvmc.exe" useruntimeengine="true">
             <arg value="-version:${VERSION}" />
             <arg value="${signoption}" />
@@ -134,7 +154,7 @@
             <arg value="-r:IKVM.Runtime" />
             <!-- we already know that the JNI assembly is not available, so suppress the warning -->
             <arg value="-nowarn:110" />
-            <arg value="@response.txt" />
+            <arg value="@response.gen.txt" />
         </exec>
         <if test="${platform::is-win32()}">
             <copy file="../bin/IKVM.Runtime.dll" tofile="IKVM.Runtime.dll" />
