@@ -3328,6 +3328,21 @@ namespace IKVM.Internal
 				}
 			}
 		}
+
+#if !STUB_GENERATOR
+		// return the constructor used for automagic .NET serialization
+		internal virtual ConstructorInfo GetSerializationConstructor()
+		{
+			Debug.Assert(!(this is DynamicTypeWrapper));
+			return this.TypeAsBaseType.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] {
+						JVM.Import(typeof(System.Runtime.Serialization.SerializationInfo)), JVM.Import(typeof(System.Runtime.Serialization.StreamingContext)) }, null);
+		}
+
+		internal virtual ConstructorInfo GetBaseSerializationConstructor()
+		{
+			return baseWrapper.GetSerializationConstructor();
+		}
+#endif
 	}
 
 	sealed class UnloadableTypeWrapper : TypeWrapper

@@ -85,7 +85,7 @@ namespace IKVM.Internal
 					TypeBuilder typeBuilder = classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(name, TypeAttributes.Public | TypeAttributes.Abstract, base.GetBaseTypeForDefineType());
 					AttributeHelper.HideFromJava(typeBuilder);
 					AttributeHelper.SetEditorBrowsableNever(typeBuilder);
-					workaroundBaseClass = new WorkaroundBaseClass(typeBuilder, methods.ToArray());
+					workaroundBaseClass = new WorkaroundBaseClass(this, typeBuilder, methods.ToArray());
 					List<MethodWrapper> constructors = new List<MethodWrapper>();
 					foreach (MethodWrapper mw in baseTypeWrapper.GetMethods())
 					{
@@ -94,7 +94,6 @@ namespace IKVM.Internal
 							constructors.Add(new ConstructorForwarder(typeBuilder, mw));
 						}
 					}
-					Serialization.AddAutomagicSerializationToWorkaroundBaseClass(typeBuilder);
 					replacedMethods = constructors.ToArray();
 					return typeBuilder;
 				}
@@ -105,37 +104,48 @@ namespace IKVM.Internal
 		internal override void Finish()
 		{
 			base.Finish();
-			lock (this)
+			if (workaroundBaseClass != null)
 			{
-				if (workaroundBaseClass != null)
-				{
-					workaroundBaseClass.Finish();
-					workaroundBaseClass = null;
-				}
+				workaroundBaseClass.Finish();
 			}
 		}
 
 		private sealed class WorkaroundBaseClass
 		{
+			private readonly AotTypeWrapper wrapper;
 			private readonly TypeBuilder typeBuilder;
 			private readonly MethodWrapper[] methods;
+			private ConstructorInfo baseSerializationCtor;
 
-			internal WorkaroundBaseClass(TypeBuilder typeBuilder, MethodWrapper[] methods)
+			internal WorkaroundBaseClass(AotTypeWrapper wrapper, TypeBuilder typeBuilder, MethodWrapper[] methods)
 			{
+				this.wrapper = wrapper;
 				this.typeBuilder = typeBuilder;
 				this.methods = methods;
 			}
 
+			internal ConstructorInfo GetSerializationConstructor()
+			{
+				if (baseSerializationCtor == null)
+				{
+					baseSerializationCtor = Serialization.AddAutomagicSerializationToWorkaroundBaseClass(typeBuilder, wrapper.BaseTypeWrapper.GetSerializationConstructor());
+				}
+				return baseSerializationCtor;
+			}
+
 			internal void Finish()
 			{
-				foreach (MethodWrapper mw in methods)
+				if (!typeBuilder.IsCreated())
 				{
-					MethodBuilder mb = typeBuilder.DefineMethod(mw.Name, MethodAttributes.FamORAssem | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.CheckAccessOnOverride, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
-					AttributeHelper.HideFromJava(mb);
-					CodeEmitter ilgen = CodeEmitter.Create(mb);
-					ilgen.EmitThrow("java.lang.AbstractMethodError");
+					foreach (MethodWrapper mw in methods)
+					{
+						MethodBuilder mb = typeBuilder.DefineMethod(mw.Name, MethodAttributes.FamORAssem | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.CheckAccessOnOverride, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
+						AttributeHelper.HideFromJava(mb);
+						CodeEmitter ilgen = CodeEmitter.Create(mb);
+						ilgen.EmitThrow("java.lang.AbstractMethodError");
+					}
+					typeBuilder.CreateType();
 				}
-				typeBuilder.CreateType();
 			}
 		}
 
@@ -1211,6 +1221,35 @@ namespace IKVM.Internal
 		internal override bool IsFastClassLiteralSafe
 		{
 			get { return true; }
+		}
+
+		internal MethodWrapper ReplaceMethodWrapper(MethodWrapper mw)
+		{
+			if (replacedMethods != null)
+			{
+				foreach (MethodWrapper r in replacedMethods)
+				{
+					if (mw.DeclaringType == r.DeclaringType
+						&& mw.Name == r.Name
+						&& mw.Signature == r.Signature)
+					{
+						return r;
+					}
+				}
+			}
+			return mw;
+		}
+
+		internal override ConstructorInfo GetBaseSerializationConstructor()
+		{
+			if (workaroundBaseClass != null)
+			{
+				return workaroundBaseClass.GetSerializationConstructor();
+			}
+			else
+			{
+				return base.GetBaseSerializationConstructor();
+			}
 		}
 	}
 }
