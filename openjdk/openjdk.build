@@ -191,11 +191,21 @@
         <exec program="${project::get-base-directory()}/../tools/updbaseaddresses.exe" commandline="response.txt" useruntimeengine="true" />
     </target>
 
-    <target name="tools" depends="version">
+    <target name="tools.gen.rsp">
+        <copy file="tools.rsp" tofile="tools.gen.rsp" outputencoding="ascii" overwrite="true">
+            <filterchain>
+                <replacetokens>
+                    <token key="OPENJDK" value="${OpenJDK.dir}" />
+                </replacetokens>
+            </filterchain>
+        </copy>
+    </target>
+
+    <target name="tools" depends="version tools.gen.rsp">
         <exec program="${project::get-base-directory()}/../bin/ikvmc.exe" useruntimeengine="true">
             <arg value="-version:${VERSION}" />
             <arg value="${signoption}" />
-            <arg value="@tools.rsp" />
+            <arg value="@tools.gen.rsp" />
         </exec>
     </target>
 
