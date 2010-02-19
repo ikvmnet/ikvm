@@ -53,6 +53,7 @@ namespace IKVM.Internal
 #if !STATIC_COMPILER
 		private byte[][] lineNumberTables;
 #endif
+		private ConstructorInfo automagicSerializationCtor;
 
 		private static TypeWrapper LoadTypeWrapper(ClassLoaderWrapper classLoader, string name)
 		{
@@ -3882,7 +3883,7 @@ namespace IKVM.Internal
 							}
 						}
 					}
-					Serialization.AddAutomagicSerialization(wrapper);
+					wrapper.automagicSerializationCtor = Serialization.AddAutomagicSerialization(wrapper);
 				}
 
 #if STATIC_COMPILER
@@ -5394,5 +5395,10 @@ namespace IKVM.Internal
 			return null;
 		}
 #endif // STATIC_COMPILER
+
+		internal override ConstructorInfo GetSerializationConstructor()
+		{
+			return automagicSerializationCtor;
+		}
 	}
 }
