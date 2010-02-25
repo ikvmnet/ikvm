@@ -332,6 +332,10 @@ namespace IKVM.Reflection
 					default:
 						throw new BadImageFormatException();
 				}
+				if (member == null)
+				{
+					throw new BadImageFormatException();
+				}
 				list.Add(new CustomAttributeNamedArgument(member, value));
 			}
 			return list.AsReadOnly();
