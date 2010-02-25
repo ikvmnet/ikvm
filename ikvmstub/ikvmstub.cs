@@ -592,7 +592,10 @@ static class NetExp
 		int rc = 0;
 		foreach (Type t in assembly.GetTypes())
 		{
-			if (t.IsPublic && !AttributeHelper.IsHideFromJava(t) && (!t.IsGenericType || !AttributeHelper.IsJavaModule(t.Module)))
+			if (t.IsPublic
+				&& !t.IsGenericTypeDefinition
+				&& !AttributeHelper.IsHideFromJava(t)
+				&& (!t.IsGenericType || !AttributeHelper.IsJavaModule(t.Module)))
 			{
 				TypeWrapper c;
 				if (ClassLoaderWrapper.IsRemappedType(t) || t.IsPrimitive || t == Types.Void)
