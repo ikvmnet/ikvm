@@ -152,7 +152,9 @@ namespace IKVM.Reflection.Reader
 			byte Reserved7 = br.ReadByte();
 			ulong Valid = br.ReadUInt64();
 			ulong Sorted = br.ReadUInt64();
-			if ((Valid & Sorted) != (Valid & 0x0016003301FA00L))
+			// we require that the GenericParam table is sorted
+			const ulong mask = (1UL << GenericParamTable.Index);
+			if ((Valid & Sorted & mask) != (Valid & mask))
 			{
 				throw new NotImplementedException();
 			}
