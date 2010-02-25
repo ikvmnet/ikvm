@@ -151,7 +151,7 @@ namespace IKVM.Reflection
 			return GetAccessors(false);
 		}
 
-		internal bool IsStatic
+		internal virtual bool IsStatic
 		{
 			get { return !this.PropertySignature.HasThis; }
 		}
