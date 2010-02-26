@@ -220,6 +220,9 @@ public abstract class ClassLoader {
         if (security != null) {
             security.checkCreateClassLoader();
         }
+        if (parent != null) {
+            parent.check();
+        }
         packages = new HashMap();
         domains = new HashSet();
         classes = new Vector();
