@@ -202,5 +202,49 @@ namespace IKVM.Reflection.Emit
 			rec.Association = propertyToken;
 			typeBuilder.ModuleBuilder.MethodSemantics.AddRecord(rec);
 		}
+
+		internal override bool IsPublic
+		{
+			get
+			{
+				if ((addOnMethod != null && addOnMethod.IsPublic) || (removeOnMethod != null && removeOnMethod.IsPublic) || (fireMethod != null && fireMethod.IsPublic))
+				{
+					return true;
+				}
+				if (otherMethods != null)
+				{
+					foreach (MethodBuilder method in otherMethods)
+					{
+						if (method.IsPublic)
+						{
+							return true;
+						}
+					}
+				}
+				return false;
+			}
+		}
+
+		internal override bool IsStatic
+		{
+			get
+			{
+				if ((addOnMethod != null && addOnMethod.IsStatic) || (removeOnMethod != null && removeOnMethod.IsStatic) || (fireMethod != null && fireMethod.IsStatic))
+				{
+					return true;
+				}
+				if (otherMethods != null)
+				{
+					foreach (MethodBuilder method in otherMethods)
+					{
+						if (method.IsStatic)
+						{
+							return true;
+						}
+					}
+				}
+				return false;
+			}
+		}
 	}
 }

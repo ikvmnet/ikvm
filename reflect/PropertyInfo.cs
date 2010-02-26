@@ -42,6 +42,7 @@ namespace IKVM.Reflection
 		public abstract MethodInfo[] GetAccessors(bool nonPublic);
 		public abstract object GetRawConstantValue();
 		internal abstract bool IsPublic { get; }
+		internal abstract bool IsStatic { get; }
 		internal abstract PropertySignature PropertySignature { get; }
 
 		private sealed class ParameterInfoImpl : ParameterInfo
@@ -149,11 +150,6 @@ namespace IKVM.Reflection
 		public MethodInfo[] GetAccessors()
 		{
 			return GetAccessors(false);
-		}
-
-		internal virtual bool IsStatic
-		{
-			get { return !this.PropertySignature.HasThis; }
 		}
 
 		internal virtual PropertyInfo BindTypeParameters(Type type)

@@ -230,7 +230,46 @@ namespace IKVM.Reflection.Emit
 
 		internal override bool IsPublic
 		{
-			get { return GetGetMethod() != null || GetSetMethod() != null; }
+			get
+			{
+				if ((getter != null && getter.IsPublic) || (setter != null && setter.IsPublic))
+				{
+					return true;
+				}
+				if (otherMethods != null)
+				{
+					foreach (MethodBuilder method in otherMethods)
+					{
+						if (method.IsPublic)
+						{
+							return true;
+						}
+					}
+				}
+				return false;
+			}
+		}
+
+		internal override bool IsStatic
+		{
+			get
+			{
+				if ((getter != null && getter.IsStatic) || (setter != null && setter.IsStatic))
+				{
+					return true;
+				}
+				if (otherMethods != null)
+				{
+					foreach (MethodBuilder method in otherMethods)
+					{
+						if (method.IsStatic)
+						{
+							return true;
+						}
+					}
+				}
+				return false;
+			}
 		}
 	}
 }

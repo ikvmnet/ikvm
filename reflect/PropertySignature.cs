@@ -78,7 +78,6 @@ namespace IKVM.Reflection
 
 		internal bool HasThis
 		{
-			get { return (callingConvention & CallingConventions.HasThis) != 0; }
 			set
 			{
 				if (value)

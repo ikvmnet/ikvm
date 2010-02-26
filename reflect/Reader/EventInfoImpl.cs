@@ -33,6 +33,9 @@ namespace IKVM.Reflection.Reader
 		private readonly ModuleReader module;
 		private readonly Type declaringType;
 		private readonly int index;
+		private bool isPublic;
+		private bool isStatic;
+		private bool flagsCached;
 
 		internal EventInfoImpl(ModuleReader module, Type declaringType, int index)
 		{
@@ -100,6 +103,36 @@ namespace IKVM.Reflection.Reader
 		public override int MetadataToken
 		{
 			get { return (EventTable.Index << 24) + index + 1; }
+		}
+
+		internal override bool IsPublic
+		{
+			get
+			{
+				if (!flagsCached)
+				{
+					ComputeFlags();
+				}
+				return isPublic;
+			}
+		}
+
+		internal override bool IsStatic
+		{
+			get
+			{
+				if (!flagsCached)
+				{
+					ComputeFlags();
+				}
+				return isStatic;
+			}
+		}
+
+		private void ComputeFlags()
+		{
+			module.MethodSemantics.ComputeFlags(module, this.MetadataToken, out isPublic, out isStatic);
+			flagsCached = true;
 		}
 	}
 }

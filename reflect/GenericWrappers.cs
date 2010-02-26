@@ -471,6 +471,11 @@ namespace IKVM.Reflection
 			get { return property.IsPublic; }
 		}
 
+		internal override bool IsStatic
+		{
+			get { return property.IsStatic; }
+		}
+
 		internal override PropertySignature PropertySignature
 		{
 			get { return property.PropertySignature.ExpandTypeParameters(typeInstance); }
@@ -601,6 +606,16 @@ namespace IKVM.Reflection
 		internal override EventInfo BindTypeParameters(Type type)
 		{
 			return new GenericEventInfo(typeInstance.BindTypeParameters(type), eventInfo);
+		}
+
+		internal override bool IsPublic
+		{
+			get { return eventInfo.IsPublic; }
+		}
+
+		internal override bool IsStatic
+		{
+			get { return eventInfo.IsStatic; }
 		}
 	}
 }

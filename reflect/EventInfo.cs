@@ -39,6 +39,8 @@ namespace IKVM.Reflection
 		public abstract MethodInfo GetRemoveMethod(bool nonPublic);
 		public abstract MethodInfo[] GetOtherMethods(bool nonPublic);
 		public abstract Type EventHandlerType { get; }
+		internal abstract bool IsPublic { get; }
+		internal abstract bool IsStatic { get; }
 
 		public bool IsSpecialName
 		{
@@ -63,16 +65,6 @@ namespace IKVM.Reflection
 		public MethodInfo[] GetOtherMethods()
 		{
 			return GetOtherMethods(false);
-		}
-
-		internal bool IsStatic
-		{
-			get { return GetAddMethod(true).IsStatic; }
-		}
-
-		internal bool IsPublic
-		{
-			get { return GetAddMethod(true).IsPublic; }
 		}
 
 		internal virtual EventInfo BindTypeParameters(Type type)

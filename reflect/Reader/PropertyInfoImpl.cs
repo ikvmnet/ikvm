@@ -33,8 +33,10 @@ namespace IKVM.Reflection.Reader
 		private readonly ModuleReader module;
 		private readonly Type declaringType;
 		private readonly int index;
-		private bool? isStatic;
 		private PropertySignature sig;
+		private bool isPublic;
+		private bool isStatic;
+		private bool flagsCached;
 
 		internal PropertyInfoImpl(ModuleReader module, Type declaringType, int index)
 		{
@@ -125,7 +127,11 @@ namespace IKVM.Reflection.Reader
 		{
 			get
 			{
-				return module.MethodSemantics.GetMethod(module, this.MetadataToken, false, MethodSemanticsTable.Getter | MethodSemanticsTable.Setter) != null;
+				if (!flagsCached)
+				{
+					ComputeFlags();
+				}
+				return isPublic;
 			}
 		}
 
@@ -133,23 +139,18 @@ namespace IKVM.Reflection.Reader
 		{
 			get
 			{
-				if (!isStatic.HasValue)
+				if (!flagsCached)
 				{
-					// MONOBUG assemblies compiled with mcs (and possibly everything generated with Mono's Ref.Emit)
-					// don't have the HasThis flag set in the property signature, so we have to look at the getter/setter
-					// methods
-					if (this.PropertySignature.HasThis)
-					{
-						isStatic = false;
-					}
-					else
-					{
-						MethodInfo mi = module.MethodSemantics.GetMethod(module, this.MetadataToken, true, MethodSemanticsTable.Getter | MethodSemanticsTable.Setter);
-						isStatic = mi == null || mi.IsStatic;
-					}
+					ComputeFlags();
 				}
-				return isStatic.Value;
+				return isStatic;
 			}
+		}
+
+		private void ComputeFlags()
+		{
+			module.MethodSemantics.ComputeFlags(module, this.MetadataToken, out isPublic, out isStatic);
+			flagsCached = true;
 		}
 	}
 }

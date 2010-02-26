@@ -1646,6 +1646,24 @@ namespace IKVM.Reflection.Metadata
 			}
 			return null;
 		}
+
+		internal void ComputeFlags(Module module, int token, out bool isPublic, out bool isStatic)
+		{
+			isPublic = false;
+			isStatic = false;
+			MethodInfo method;
+			for (int i = 0; (method = GetNextMethod(module, token, true, -1, ref i)) != null; )
+			{
+				if (method.IsPublic)
+				{
+					isPublic = true;
+				}
+				if (method.IsStatic)
+				{
+					isStatic = true;
+				}
+			}
+		}
 	}
 
 	sealed class MethodImplTable : Table<MethodImplTable.Record>, IComparer<MethodImplTable.Record>
