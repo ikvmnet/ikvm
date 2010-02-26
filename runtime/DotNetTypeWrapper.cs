@@ -696,7 +696,7 @@ namespace IKVM.Internal
 			private static bool IsSupportedType(Type type)
 			{
 				// Java annotations only support one-dimensional arrays
-				if (type.IsArray)
+				if (ReflectUtil.IsVector(type))
 				{
 					type = type.GetElementType();
 				}
@@ -842,7 +842,7 @@ namespace IKVM.Internal
 						}
 						throw new InvalidOperationException();
 					}
-					else if (!isArray && type.IsArray)
+					else if (!isArray && ReflectUtil.IsVector(type))
 					{
 						return MapType(type.GetElementType(), true).MakeArrayType(1);
 					}

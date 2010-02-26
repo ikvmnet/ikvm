@@ -370,7 +370,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 		public static object getFriendlyClassFromType(Type type)
 		{
 			int rank = 0;
-			while(type.IsArray)
+			while(ReflectUtil.IsVector(type))
 			{
 				type = type.GetElementType();
 				rank++;
