@@ -337,14 +337,6 @@ namespace IKVM.Reflection
 				}
 			}
 
-			private static void SkipWhiteSpace(string typeName, ref int pos)
-			{
-				while (pos < typeName.Length && Char.IsWhiteSpace(typeName[pos]))
-				{
-					pos++;
-				}
-			}
-
 			private void SkipWhiteSpace()
 			{
 				while (pos < typeName.Length && Char.IsWhiteSpace(typeName[pos]))
