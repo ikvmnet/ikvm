@@ -1040,7 +1040,9 @@ class IkvmcCompiler
 				string pathFilter = Path.GetDirectoryName(file) + Path.DirectorySeparatorChar;
 				string fileFilter = "^" + Regex.Escape(Path.GetFileName(file)).Replace("\\*", ".*").Replace("\\?", ".") + "$";
 				ProcessZipFile(path, delegate(ZipEntry ze) {
-					return (Path.GetDirectoryName(ze.Name) + Path.DirectorySeparatorChar).StartsWith(pathFilter)
+					// MONOBUG Path.GetDirectoryName() doesn't normalize / to \ on Windows
+					string name = ze.Name.Replace('/', Path.DirectorySeparatorChar);
+					return (Path.GetDirectoryName(name) + Path.DirectorySeparatorChar).StartsWith(pathFilter)
 						&& Regex.IsMatch(Path.GetFileName(ze.Name), fileFilter);
 				});
 				return;
