@@ -4934,7 +4934,7 @@ namespace IKVM.NativeCode.java
 						return "Asia/Beirut";
 					default:
 						// this means fall back to GMT offset
-						return null;
+						return getSystemGMTOffsetID();
 				}
 			}
 
