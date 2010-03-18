@@ -4679,11 +4679,29 @@ namespace IKVM.NativeCode.java
 
 		static class TimeZone
 		{
+			private static string GetCurrentTimeZoneID()
+			{
+#if NET_4_0
+				return TimeZoneInfo.Local.Id;
+#else
+				// we don't want a static dependency on System.Core (to be able to run on .NET 2.0)
+				Type typeofTimeZoneInfo = Type.GetType("System.TimeZoneInfo, System.Core, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089");
+				if (typeofTimeZoneInfo != null)
+				{
+					return (string)typeofTimeZoneInfo.GetProperty("Id").GetValue(typeofTimeZoneInfo.GetProperty("Local").GetValue(null, null), null);
+				}
+				else
+				{
+					// HACK this is very lame and probably won't work on localized windows versions
+					return SystemTimeZone.CurrentTimeZone.StandardName;
+				}
+#endif
+			}
+
 			public static string getSystemTimeZoneID(string javaHome, string country)
 			{
-				// HACK this is very lame and probably won't work on localized windows versions
 				// (the switch was generated from the contents of $JAVA_HOME/lib/tzmappings)
-				switch (SystemTimeZone.CurrentTimeZone.StandardName)
+				switch (GetCurrentTimeZoneID())
 				{
 					case "Romance":
 					case "Romance Standard Time":
