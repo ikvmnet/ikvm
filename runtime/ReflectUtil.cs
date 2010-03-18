@@ -57,10 +57,10 @@ namespace IKVM.Internal
 
 		internal static bool IsDynamicAssembly(Assembly asm)
 		{
-#if NET_4_0
-			return asm.IsDynamic;
-#elif STATIC_COMPILER || STUB_GENERATOR
+#if STATIC_COMPILER || STUB_GENERATOR
 			return false;
+#elif NET_4_0
+			return asm.IsDynamic;
 #else
 			if (clr_v4)
 			{
