@@ -1495,7 +1495,7 @@ namespace IKVM.NativeCode.java
 				try
 				{
 					int drives = 0;
-					foreach (string drive in System.IO.Directory.GetLogicalDrives())
+					foreach (string drive in Environment.GetLogicalDrives())
 					{
 						char c = Char.ToUpper(drive[0]);
 						drives |= 1 << (c - 'A');
@@ -1506,6 +1506,9 @@ namespace IKVM.NativeCode.java
 				{
 				}
 				catch (System.UnauthorizedAccessException)
+				{
+				}
+				catch (System.Security.SecurityException)
 				{
 				}
 				return 0;
@@ -3532,10 +3535,13 @@ namespace IKVM.NativeCode.java
 				{
 					return System.Net.Dns.GetHostName();
 				}
-				catch (System.Net.Sockets.SocketException x)
+				catch (System.Net.Sockets.SocketException)
 				{
-					throw new jnUnknownHostException(x.Message);
 				}
+				catch (System.Security.SecurityException)
+				{
+				}
+				return "localhost";
 #endif
 			}
 
