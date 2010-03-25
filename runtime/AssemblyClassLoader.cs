@@ -980,7 +980,7 @@ namespace IKVM.Internal
 						// right object to use later on.
 						// Note that creating the unitialized instance will (unfortunately) trigger the static initializer. The static initializer can
 						// trigger a call to getClassLoader(), which means we can end up here recursively.
-						java.lang.ClassLoader newJavaClassLoader = (java.lang.ClassLoader)FormatterServices.GetUninitializedObject(customClassLoaderClass);
+						java.lang.ClassLoader newJavaClassLoader = (java.lang.ClassLoader)GetUninitializedObject(customClassLoaderClass);
 						if (javaClassLoader == null) // check if we weren't invoked recursively and the nested invocation already did the work
 						{
 							javaClassLoader = newJavaClassLoader;
@@ -1005,6 +1005,12 @@ namespace IKVM.Internal
 				javaClassLoader = (java.lang.ClassLoader)DoPrivileged(new CreateAssemblyClassLoader(assembly));
 				SetWrapperForClassLoader(javaClassLoader, this);
 			}
+		}
+
+		// separate method to avoid LinkDemand killing the caller
+		private static object GetUninitializedObject(Type type)
+		{
+			return FormatterServices.GetUninitializedObject(type);
 		}
 
 		private static void LoadCustomClassLoaderRedirects()
