@@ -304,10 +304,10 @@ namespace IKVM.Reflection
 		{
 			get
 			{
+				Type decl = this.DeclaringType;
 				string ns = this.Namespace;
 				if (ns == null)
 				{
-					Type decl = this.DeclaringType;
 					if (decl == null)
 					{
 						return this.Name;
@@ -319,7 +319,14 @@ namespace IKVM.Reflection
 				}
 				else
 				{
-					return ns + "." + this.Name;
+					if (decl == null)
+					{
+						return ns + "." + this.Name;
+					}
+					else
+					{
+						return decl.FullName + "+" + ns + "." + this.Name;
+					}
 				}
 			}
 		}
