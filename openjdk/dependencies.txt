@@ -45,6 +45,7 @@ IKVM.OpenJDK.XML.Bind
 ->IKVM.OpenJDK.SwingAWT
 ->IKVM.OpenJDK.Beans
 ->IKVM.OpenJDK.Media
+->IKVM.OpenJDK.XML.Parse
 
 IKVM.OpenJDK.XML.WebServices
 ->IKVM.OpenJDK.XML.API
@@ -58,6 +59,7 @@ IKVM.OpenJDK.XML.WebServices
 ->IKVM.OpenJDK.Remoting
 ->IKVM.OpenJDK.Beans
 ->IKVM.OpenJDK.Media
+->IKVM.OpenJDK.Management
 
 IKVM.OpenJDK.XML.Crypto
 ->IKVM.OpenJDK.Util

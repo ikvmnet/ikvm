@@ -35,8 +35,8 @@
     @OPENJDK@/build/linux-amd64/impsrc/com/sun/xml/internal/xsom/parser/*.class
     @OPENJDK@/build/linux-amd64/impsrc/com/sun/xml/internal/xsom/util/*.class
     @OPENJDK@/build/linux-amd64/impsrc/com/sun/xml/internal/xsom/visitor/*.class
-    @OPENJDK@/jaxws/src/share/classes/org/relaxng/datatype/*.class
-    @OPENJDK@/jaxws/src/share/classes/org/relaxng/datatype/helpers/*.class
+    @OPENJDK@/build/linux-amd64/impsrc/org/relaxng/datatype/*.class
+    @OPENJDK@/build/linux-amd64/impsrc/org/relaxng/datatype/helpers/*.class
     @OPENJDK@/jdk/src/share/classes/com/sun/jdi/*.class
     @OPENJDK@/jdk/src/share/classes/com/sun/jdi/connect/*.class
     @OPENJDK@/jdk/src/share/classes/com/sun/jdi/connect/spi/*.class
