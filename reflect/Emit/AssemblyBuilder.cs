@@ -178,10 +178,10 @@ namespace IKVM.Reflection.Emit
 			assemblyRecord.Name = manifestModule.Strings.Add(name.Name);
 			if (name.Version != null)
 			{
-				assemblyRecord.MajorVersion = (short)name.Version.Major;
-				assemblyRecord.MinorVersion = (short)name.Version.Minor;
-				assemblyRecord.BuildNumber = (short)name.Version.Build;
-				assemblyRecord.RevisionNumber = (short)name.Version.Revision;
+				assemblyRecord.MajorVersion = (ushort)name.Version.Major;
+				assemblyRecord.MinorVersion = (ushort)name.Version.Minor;
+				assemblyRecord.BuildNumber = (ushort)name.Version.Build;
+				assemblyRecord.RevisionNumber = (ushort)name.Version.Revision;
 			}
 			if (name.KeyPair != null)
 			{

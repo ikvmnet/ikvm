@@ -1075,6 +1075,9 @@ namespace IKVM.Reflection.Metadata
 					case ManifestResourceTable.Index:
 						records[i].Parent = (token & 0xFFFFFF) << 5 | 18;
 						break;
+					case GenericParamTable.Index:
+						records[i].Parent = (token & 0xFFFFFF) << 5 | 19;
+						break;
 					default:
 						throw new InvalidOperationException();
 				}
@@ -1918,10 +1921,10 @@ namespace IKVM.Reflection.Metadata
 		internal struct Record
 		{
 			internal int HashAlgId;
-			internal short MajorVersion;
-			internal short MinorVersion;
-			internal short BuildNumber;
-			internal short RevisionNumber;
+			internal ushort MajorVersion;
+			internal ushort MinorVersion;
+			internal ushort BuildNumber;
+			internal ushort RevisionNumber;
 			internal int Flags;
 			internal int PublicKey;
 			internal int Name;
@@ -1933,10 +1936,10 @@ namespace IKVM.Reflection.Metadata
 			for (int i = 0; i < records.Length; i++)
 			{
 				records[i].HashAlgId = mr.ReadInt32();
-				records[i].MajorVersion = mr.ReadInt16();
-				records[i].MinorVersion = mr.ReadInt16();
-				records[i].BuildNumber = mr.ReadInt16();
-				records[i].RevisionNumber = mr.ReadInt16();
+				records[i].MajorVersion = mr.ReadUInt16();
+				records[i].MinorVersion = mr.ReadUInt16();
+				records[i].BuildNumber = mr.ReadUInt16();
+				records[i].RevisionNumber = mr.ReadUInt16();
 				records[i].Flags = mr.ReadInt32();
 				records[i].PublicKey = mr.ReadBlobIndex();
 				records[i].Name = mr.ReadStringIndex();

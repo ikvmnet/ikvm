@@ -44,6 +44,11 @@ namespace IKVM.Reflection.Reader
 			return br.ReadInt16();
 		}
 
+		internal ushort ReadUInt16()
+		{
+			return br.ReadUInt16();
+		}
+
 		internal int ReadInt32()
 		{
 			return br.ReadInt32();
@@ -214,6 +219,8 @@ namespace IKVM.Reflection.Reader
 					return (ExportedTypeTable.Index << 24) + (codedIndex >> 5);
 				case 18:
 					return (ManifestResourceTable.Index << 24) + (codedIndex >> 5);
+				case 19:
+					return (GenericParamTable.Index << 24) + (codedIndex >> 5);
 				default:
 					throw new BadImageFormatException();
 			}
