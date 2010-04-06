@@ -1950,7 +1950,7 @@ namespace IKVM.NativeCode.java
 						throw new jlNullPointerException();
 					}
 					Type type = arrayObj.GetType();
-					if (type.IsArray && ClassLoaderWrapper.GetWrapperFromType(type.GetElementType()).IsPrimitive)
+					if (ReflectUtil.IsVector(type) && ClassLoaderWrapper.GetWrapperFromType(type.GetElementType()).IsPrimitive)
 					{
 						jlBoolean booleanValue = value as jlBoolean;
 						if (booleanValue != null)

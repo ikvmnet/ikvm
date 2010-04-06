@@ -128,7 +128,7 @@ namespace IKVM.Runtime
 		{
 			Type type = Type.GetTypeFromHandle(typeHandle);
 			int rank = 0;
-			while(type.IsArray)
+			while(ReflectUtil.IsVector(type))
 			{
 				rank++;
 				type = type.GetElementType();

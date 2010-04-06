@@ -83,5 +83,13 @@ namespace IKVM.Internal
 			return asm is AssemblyBuilder;
 #endif
 		}
+
+		internal static bool IsVector(Type type)
+		{
+			// there's no API to distinguish an array of rank 1 from a vector,
+			// so we check if the type name ends in [], which indicates it's a vector
+			// (non-vectors will have [*] or [,]).
+			return type.IsArray && type.Name.EndsWith("[]");
+		}
 	}
 }
