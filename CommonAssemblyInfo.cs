@@ -26,10 +26,10 @@ using System.Reflection;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Jeroen Frijters")]
 [assembly: AssemblyProduct("IKVM.NET")]
-[assembly: AssemblyCopyright("Copyright (C) 2002-2009 Jeroen Frijters")]
+[assembly: AssemblyCopyright("Copyright (C) 2002-2010 Jeroen Frijters")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
-[assembly: AssemblyVersion("0.42.0.5")]
+[assembly: AssemblyVersion("0.42.0.6")]
 
 #if SIGNCODE
 	#pragma warning disable 1699
