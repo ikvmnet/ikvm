@@ -281,7 +281,7 @@ public class NetExp
 		int rc = 0;
 		foreach(System.Type t in assembly.GetTypes())
 		{
-			if(t.IsPublic)
+			if(t.IsPublic && !t.IsGenericTypeDefinition)
 			{
 				java.lang.Class c;
 				// NOTE we use getClassFromTypeHandle instead of getFriendlyClassFromType, to make sure
