@@ -3513,10 +3513,13 @@ namespace IKVM.NativeCode.java
 				{
 					return System.Net.Dns.GetHostName();
 				}
-				catch (System.Net.Sockets.SocketException x)
+				catch (System.Net.Sockets.SocketException)
 				{
-					throw new jnUnknownHostException(x.Message);
 				}
+				catch (System.Security.SecurityException)
+				{
+				}
+				return "localhost";
 #endif
 			}
 

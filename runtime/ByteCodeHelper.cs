@@ -545,7 +545,7 @@ namespace IKVM.Runtime
 				if(src1 != null && dst1 != null)
 				{
 					// for small copies, don't bother comparing the types as this is relatively expensive
-					if(len > 50 && Type.GetTypeHandle(src).Value == Type.GetTypeHandle(dest).Value)
+					if(len > 50 && src.GetType() == dest.GetType())
 					{
 						arraycopy_fast(src1, srcStart, dst1, destStart, len);
 						return;
@@ -561,7 +561,7 @@ namespace IKVM.Runtime
 						return;
 					}
 				}
-				else if(Type.GetTypeHandle(src).Value != Type.GetTypeHandle(dest).Value &&
+				else if(src.GetType() != dest.GetType() &&
 						(IsPrimitiveArrayType(src.GetType()) || IsPrimitiveArrayType(dest.GetType())))
 				{
 					// we don't want to allow copying a primitive into an object array!
