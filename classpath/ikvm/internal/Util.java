@@ -7,39 +7,36 @@ public final class Util
 {
     private Util() {}
 
-    public static final boolean WINDOWS = runningOnWindows();
-    public static final boolean MACOSX = runningOnMacOSX();
+    public static final boolean WINDOWS;
+    public static final boolean MACOSX;
 
-    private static boolean runningOnWindows()
+    static
     {
-        cli.System.OperatingSystem os = cli.System.Environment.get_OSVersion();
-        int platform = os.get_Platform().Value;
-        return platform == cli.System.PlatformID.Win32NT
-            || platform == cli.System.PlatformID.Win32Windows
-	    || platform == cli.System.PlatformID.Win32S
-	    || platform == cli.System.PlatformID.WinCE;
+        switch (cli.System.Environment.get_OSVersion().get_Platform().Value)
+        {
+            case cli.System.PlatformID.Win32NT:
+            case cli.System.PlatformID.Win32Windows:
+            case cli.System.PlatformID.Win32S:
+            case cli.System.PlatformID.WinCE:
+                WINDOWS = true;
+                MACOSX = false;
+                break;
+            case cli.System.PlatformID.MacOSX:
+                WINDOWS = false;
+                MACOSX = true;
+                break;
+            case cli.System.PlatformID.Unix:
+                WINDOWS = false;
+                // as of version 2.6, Mono still returns Unix when running on MacOSX
+                MACOSX = "Darwin".equals(MonoUtils.unameProperty("sysname"));
+                break;
+            default:
+                WINDOWS = false;
+                MACOSX = false;
+                break;
+        }
     }
 
-    private static boolean runningOnMacOSX()
-    {
-        cli.System.OperatingSystem os = cli.System.Environment.get_OSVersion();
-        int platform = os.get_Platform().Value;
-        if (platform == 6 /* Silverlight MacOSX PlatformID constant */)
-        {
-	    return true;
-        }
-        if (platform == cli.System.PlatformID.Unix)
-        {
-	    // we're on some sort of Unix, that probably means we're on Mono,
-	    // so we use its uname method to determine if we're on Darwin
-	    if ("Darwin".equals(MonoUtils.unameProperty("sysname")))
-	    {
-		return true;
-	    }
-        }
-        return false;
-    }
-    
     public static boolean rangeCheck(int arrayLength, int offset, int length)
     {
         return offset >= 0
