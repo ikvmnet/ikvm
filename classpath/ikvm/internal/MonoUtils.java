@@ -30,31 +30,12 @@ import cli.System.Reflection.FieldInfo;
 import cli.System.Reflection.MethodInfo;
 import cli.System.Type;
 
-@ikvm.lang.Internal
-public final class MonoUtils
+final class MonoUtils
 {
-    private static final Type syscallType = Util.WINDOWS ? null : Type.GetType("Mono.Unix.Native.Syscall, Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756");
-    private static final Type utsnameType = Util.WINDOWS ? null : Type.GetType("Mono.Unix.Native.Utsname, Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756");
-
-    private MonoUtils() { }
-
-    public static boolean fsync(cli.System.IO.FileStream fs)
+    static String unameProperty(String field)
     {
-        if (syscallType != null)
-        {
-            BindingFlags flags = BindingFlags.wrap(BindingFlags.Public | BindingFlags.Static);
-            MethodInfo fsync = syscallType.GetMethod("fsync", flags, null, new Type[] { Type.GetType("System.Int32") }, null);
-            if (fsync != null)
-            {
-                Object[] args = new Object[] { ikvm.lang.CIL.box_int(fs.get_Handle().ToInt32()) };
-                return ikvm.lang.CIL.unbox_int(fsync.Invoke(null, args)) == 0;
-            }
-        }
-        return true;
-    }
-
-    public static String unameProperty(String field)
-    {
+        Type syscallType = Type.GetType("Mono.Unix.Native.Syscall, Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756");
+        Type utsnameType = Type.GetType("Mono.Unix.Native.Utsname, Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756");
 	if (syscallType != null && utsnameType != null)
 	{
 	    Object[] arg = new Object[] { Activator.CreateInstance(utsnameType) };

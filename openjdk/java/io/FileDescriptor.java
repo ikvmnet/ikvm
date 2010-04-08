@@ -223,13 +223,15 @@ public final class FileDescriptor {
         if (stream instanceof FileStream)
         {
             FileStream fs = (FileStream)stream;
-            boolean ok = ikvm.internal.Util.WINDOWS ? flushWin32(fs) : ikvm.internal.MonoUtils.fsync(fs);
+            boolean ok = ikvm.internal.Util.WINDOWS ? flushWin32(fs) : flushPosix(fs);
             if (!ok)
             {
                 throw new SyncFailedException("sync failed");
             }
         }
     }
+
+    private static native boolean flushPosix(FileStream fs);
 
     private static boolean flushWin32(FileStream fs)
     {

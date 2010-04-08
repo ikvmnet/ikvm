@@ -407,6 +407,8 @@ namespace IKVM.NativeCode.java
 
 		static class FileDescriptor
 		{
+			private static Converter<int, int> fsync;
+
 			public static System.IO.Stream open(String name, System.IO.FileMode fileMode, System.IO.FileAccess fileAccess)
 			{
 				if (VirtualFileSystem.IsVirtualFS(name))
@@ -417,6 +419,48 @@ namespace IKVM.NativeCode.java
 				{
 					return new System.IO.FileStream(name, fileMode, fileAccess, System.IO.FileShare.ReadWrite, 1, false);
 				}
+			}
+
+			public static bool flushPosix(System.IO.FileStream fs)
+			{
+				if (fsync == null)
+				{
+					ResolveFSync();
+				}
+				bool success = false;
+				Microsoft.Win32.SafeHandles.SafeFileHandle handle = fs.SafeFileHandle;
+				RuntimeHelpers.PrepareConstrainedRegions();
+				try
+				{
+					handle.DangerousAddRef(ref success);
+					return fsync(handle.DangerousGetHandle().ToInt32()) == 0;
+				}
+				finally
+				{
+					if (success)
+					{
+						handle.DangerousRelease();
+					}
+				}
+			}
+
+			private static void ResolveFSync()
+			{
+				// we don't want a build time dependency on this Mono assembly, so we use reflection
+				Type type = Type.GetType("Mono.Unix.Native.Syscall, Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756");
+				if (type != null)
+				{
+					fsync = (Converter<int, int>)Delegate.CreateDelegate(typeof(Converter<int, int>), type, "fsync", false, false);
+				}
+				if (fsync == null)
+				{
+					fsync = DummyFSync;
+				}
+			}
+
+			private static int DummyFSync(int fd)
+			{
+				return 0;
 			}
 		}
 
