@@ -662,21 +662,6 @@ namespace IKVM.Internal
 					// the class loader is trying to trick us
 					return null;
 				}
-#if CLASSGC
-				// FXBUG because the AppDomain.TypeResolve event still doesn't work across assemblies
-				// (at least as of .NET 4.0 beta 1), we eagerly finish types loaded by another class loader
-				if(type.GetClassLoader() != this)
-				{
-					try
-					{
-						type.Finish();
-					}
-					catch(RetargetableJavaException x)
-					{
-						throw x.ToJava();
-					}
-				}
-#endif
 				return type;
 			}
 			catch(java.lang.ClassNotFoundException x)
