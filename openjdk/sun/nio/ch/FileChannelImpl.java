@@ -1402,32 +1402,6 @@ public class FileChannelImpl
         return p.ToInt64();
     }
 
-    private static boolean flushWin32(FileStream fs)
-    {
-        int rc = FlushFileBuffers(fs.get_SafeFileHandle());
-        cli.System.GC.KeepAlive(fs);
-        return rc != 0;
-    }
-
-    private static boolean flushPosix(FileStream fs)
-    {
-        Type t = Type.GetType("Mono.Posix.Syscall, Mono.Posix");
-        if(t != null)
-        {
-            BindingFlags flags = BindingFlags.wrap(BindingFlags.Public | BindingFlags.Static);
-            MethodInfo mono_1_1_Flush = t.GetMethod("fsync", flags, null, new Type[] { Type.GetType("System.Int32") }, new ParameterModifier[0]);
-            if(mono_1_1_Flush != null)
-            {
-                Object[] args = new Object[] { ikvm.lang.CIL.box_int(fs.get_Handle().ToInt32()) };
-                return ikvm.lang.CIL.unbox_int(mono_1_1_Flush.Invoke(null, args)) == 0;
-            }
-        }
-        return true;
-    }
-
-    @DllImportAttribute.Annotation("kernel32")
-    private static native int FlushFileBuffers(SafeFileHandle handle);
-
     @DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
     private static native SafeFileHandle CreateFileMapping(SafeFileHandle hFile, IntPtr lpAttributes, int flProtect, int dwMaximumSizeHigh, int dwMaximumSizeLow, String lpName);
 
@@ -1463,12 +1437,7 @@ public class FileChannelImpl
     // Forces output to device
     private static int force0(FileDescriptor fd, boolean metaData) throws IOException
     {
-        FileStream fs = (FileStream)fd.getStream();
-        boolean rc = win32 ? flushWin32(fs) : flushPosix(fs);
-        if (!rc)
-        {
-            throw new IOException("Force failed");
-        }
+        fd.sync();
         return 0;
     }
 
