@@ -75,6 +75,7 @@ class Bits {                            // package-private
                         bb._get(bi + 0));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static char getCharL(long a) {
         return makeChar(_get(a + 1),
                         _get(a + 0));
@@ -85,6 +86,7 @@ class Bits {                            // package-private
                         bb._get(bi + 1));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static char getCharB(long a) {
         return makeChar(_get(a + 0),
                         _get(a + 1));
@@ -94,6 +96,7 @@ class Bits {                            // package-private
         return (bigEndian ? getCharB(bb, bi) : getCharL(bb, bi));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static char getChar(long a, boolean bigEndian) {
         return (bigEndian ? getCharB(a) : getCharL(a));
     }
@@ -106,6 +109,7 @@ class Bits {                            // package-private
         bb._put(bi + 1, char1(x));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static void putCharL(long a, char x) {
         _put(a + 0, char0(x));
         _put(a + 1, char1(x));
@@ -116,6 +120,7 @@ class Bits {                            // package-private
         bb._put(bi + 1, char0(x));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static void putCharB(long a, char x) {
         _put(a + 0, char1(x));
         _put(a + 1, char0(x));
@@ -128,6 +133,7 @@ class Bits {                            // package-private
             putCharL(bb, bi, x);
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static void putChar(long a, char x, boolean bigEndian) {
         if (bigEndian)
             putCharB(a, x);
@@ -147,6 +153,7 @@ class Bits {                            // package-private
                          bb._get(bi + 0));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static short getShortL(long a) {
         return makeShort(_get(a + 1),
                          _get(a));
@@ -157,6 +164,7 @@ class Bits {                            // package-private
                          bb._get(bi + 1));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static short getShortB(long a) {
         return makeShort(_get(a),
                          _get(a + 1));
@@ -166,6 +174,7 @@ class Bits {                            // package-private
         return (bigEndian ? getShortB(bb, bi) : getShortL(bb, bi));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static short getShort(long a, boolean bigEndian) {
         return (bigEndian ? getShortB(a) : getShortL(a));
     }
@@ -178,6 +187,7 @@ class Bits {                            // package-private
         bb._put(bi + 1, short1(x));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static void putShortL(long a, short x) {
         _put(a, short0(x));
         _put(a + 1, short1(x));
@@ -188,6 +198,7 @@ class Bits {                            // package-private
         bb._put(bi + 1, short0(x));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static void putShortB(long a, short x) {
         _put(a, short1(x));
         _put(a + 1, short0(x));
@@ -200,6 +211,7 @@ class Bits {                            // package-private
             putShortL(bb, bi, x);
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static void putShort(long a, short x, boolean bigEndian) {
         if (bigEndian)
             putShortB(a, x);
@@ -224,6 +236,7 @@ class Bits {                            // package-private
                        bb._get(bi + 0));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static int getIntL(long a) {
         return makeInt(_get(a + 3),
                        _get(a + 2),
@@ -238,6 +251,7 @@ class Bits {                            // package-private
                        bb._get(bi + 3));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static int getIntB(long a) {
         return makeInt(_get(a + 0),
                        _get(a + 1),
@@ -249,6 +263,7 @@ class Bits {                            // package-private
         return (bigEndian ? getIntB(bb, bi) : getIntL(bb, bi));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static int getInt(long a, boolean bigEndian) {
         return (bigEndian ? getIntB(a) : getIntL(a));
     }
@@ -265,6 +280,7 @@ class Bits {                            // package-private
         bb._put(bi + 0, int0(x));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static void putIntL(long a, int x) {
         _put(a + 3, int3(x));
         _put(a + 2, int2(x));
@@ -279,6 +295,7 @@ class Bits {                            // package-private
         bb._put(bi + 3, int0(x));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static void putIntB(long a, int x) {
         _put(a + 0, int3(x));
         _put(a + 1, int2(x));
@@ -293,6 +310,7 @@ class Bits {                            // package-private
             putIntL(bb, bi, x);
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static void putInt(long a, int x, boolean bigEndian) {
         if (bigEndian)
             putIntB(a, x);
@@ -327,6 +345,7 @@ class Bits {                            // package-private
                         bb._get(bi + 0));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static long getLongL(long a) {
         return makeLong(_get(a + 7),
                         _get(a + 6),
@@ -349,6 +368,7 @@ class Bits {                            // package-private
                         bb._get(bi + 7));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static long getLongB(long a) {
         return makeLong(_get(a + 0),
                         _get(a + 1),
@@ -364,6 +384,7 @@ class Bits {                            // package-private
         return (bigEndian ? getLongB(bb, bi) : getLongL(bb, bi));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static long getLong(long a, boolean bigEndian) {
         return (bigEndian ? getLongB(a) : getLongL(a));
     }
@@ -388,6 +409,7 @@ class Bits {                            // package-private
         bb._put(bi + 0, long0(x));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static void putLongL(long a, long x) {
         _put(a + 7, long7(x));
         _put(a + 6, long6(x));
@@ -410,6 +432,7 @@ class Bits {                            // package-private
         bb._put(bi + 7, long0(x));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static void putLongB(long a, long x) {
         _put(a + 0, long7(x));
         _put(a + 1, long6(x));
@@ -428,6 +451,7 @@ class Bits {                            // package-private
             putLongL(bb, bi, x);
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static void putLong(long a, long x, boolean bigEndian) {
         if (bigEndian)
             putLongB(a, x);
@@ -442,6 +466,7 @@ class Bits {                            // package-private
         return Float.intBitsToFloat(getIntL(bb, bi));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static float getFloatL(long a) {
         return Float.intBitsToFloat(getIntL(a));
     }
@@ -450,6 +475,7 @@ class Bits {                            // package-private
         return Float.intBitsToFloat(getIntB(bb, bi));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static float getFloatB(long a) {
         return Float.intBitsToFloat(getIntB(a));
     }
@@ -458,6 +484,7 @@ class Bits {                            // package-private
         return (bigEndian ? getFloatB(bb, bi) : getFloatL(bb, bi));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static float getFloat(long a, boolean bigEndian) {
         return (bigEndian ? getFloatB(a) : getFloatL(a));
     }
@@ -466,6 +493,7 @@ class Bits {                            // package-private
         putIntL(bb, bi, Float.floatToRawIntBits(x));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static void putFloatL(long a, float x) {
         putIntL(a, Float.floatToRawIntBits(x));
     }
@@ -474,6 +502,7 @@ class Bits {                            // package-private
         putIntB(bb, bi, Float.floatToRawIntBits(x));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static void putFloatB(long a, float x) {
         putIntB(a, Float.floatToRawIntBits(x));
     }
@@ -485,6 +514,7 @@ class Bits {                            // package-private
             putFloatL(bb, bi, x);
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static void putFloat(long a, float x, boolean bigEndian) {
         if (bigEndian)
             putFloatB(a, x);
@@ -499,6 +529,7 @@ class Bits {                            // package-private
         return Double.longBitsToDouble(getLongL(bb, bi));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static double getDoubleL(long a) {
         return Double.longBitsToDouble(getLongL(a));
     }
@@ -507,6 +538,7 @@ class Bits {                            // package-private
         return Double.longBitsToDouble(getLongB(bb, bi));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static double getDoubleB(long a) {
         return Double.longBitsToDouble(getLongB(a));
     }
@@ -515,6 +547,7 @@ class Bits {                            // package-private
         return (bigEndian ? getDoubleB(bb, bi) : getDoubleL(bb, bi));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static double getDouble(long a, boolean bigEndian) {
         return (bigEndian ? getDoubleB(a) : getDoubleL(a));
     }
@@ -523,6 +556,7 @@ class Bits {                            // package-private
         putLongL(bb, bi, Double.doubleToRawLongBits(x));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static void putDoubleL(long a, double x) {
         putLongL(a, Double.doubleToRawLongBits(x));
     }
@@ -531,6 +565,7 @@ class Bits {                            // package-private
         putLongB(bb, bi, Double.doubleToRawLongBits(x));
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static void putDoubleB(long a, double x) {
         putLongB(a, Double.doubleToRawLongBits(x));
     }
@@ -542,6 +577,7 @@ class Bits {                            // package-private
             putDoubleL(bb, bi, x);
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static void putDouble(long a, double x, boolean bigEndian) {
         if (bigEndian)
             putDoubleB(a, x);
@@ -554,10 +590,12 @@ class Bits {                            // package-private
 
     private static final Unsafe unsafe = Unsafe.getUnsafe();
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static byte _get(long a) {
         return unsafe.getByte(a);
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static void _put(long a, byte b) {
         unsafe.putByte(a, b);
     }
@@ -670,35 +708,45 @@ class Bits {                            // package-private
     // result in memory corruption should be done prior to invocation.
     // All positions and lengths are specified in bytes.
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static native void copyFromByteArray(Object src, long srcPos, long dstAddr,
                                          long length);
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static native void copyToByteArray(long srcAddr, Object dst, long dstPos,
                                        long length);
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static void copyFromCharArray(Object src, long srcPos, long dstAddr,
                                   long length)
     {
         copyFromShortArray(src, srcPos, dstAddr, length);
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static void copyToCharArray(long srcAddr, Object dst, long dstPos,
                                 long length)
     {
         copyToShortArray(srcAddr, dst, dstPos, length);
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static native void copyFromShortArray(Object src, long srcPos, long dstAddr,
                                           long length);
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static native void copyToShortArray(long srcAddr, Object dst, long dstPos,
                                         long length);
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static native void copyFromIntArray(Object src, long srcPos, long dstAddr,
                                         long length);
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static native void copyToIntArray(long srcAddr, Object dst, long dstPos,
                                         long length);
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static native void copyFromLongArray(Object src, long srcPos, long dstAddr,
                                          long length);
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static native void copyToLongArray(long srcAddr, Object dst, long dstPos,
                                        long length);
 

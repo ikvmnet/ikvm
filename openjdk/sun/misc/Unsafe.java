@@ -834,6 +834,7 @@ public final class Unsafe
     public native void ensureClassInitialized(Class clazz);
 
     @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, SerializationFormatter = true)
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     public native Object allocateInstance(Class clazz) throws InstantiationException;
 
     public int addressSize()
@@ -849,6 +850,7 @@ public final class Unsafe
     // The really unsafe methods start here. They are all have a LinkDemand for unmanaged code.
 
     @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     public long allocateMemory(long bytes)
     {
         try
@@ -863,12 +865,14 @@ public final class Unsafe
     }
 
     @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     public void freeMemory(long address)
     {
         Marshal.FreeHGlobal(IntPtr.op_Explicit(address));
     }
 
     @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     public void setMemory(long address, long bytes, byte value)
     {
         while (bytes-- > 0)
@@ -878,6 +882,7 @@ public final class Unsafe
     }
 
     @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     public void copyMemory(long srcAddress, long destAddress, long bytes)
     {
 	while (bytes-- > 0)
@@ -887,96 +892,112 @@ public final class Unsafe
     }
 
     @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     public byte getByte(long address)
     {
 	return cli.System.Runtime.InteropServices.Marshal.ReadByte(IntPtr.op_Explicit(address));
     }
 
     @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     public void putByte(long address, byte x)
     {
 	cli.System.Runtime.InteropServices.Marshal.WriteByte(IntPtr.op_Explicit(address), x);
     }
 
     @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     public short getShort(long address)
     {
 	return cli.System.Runtime.InteropServices.Marshal.ReadInt16(IntPtr.op_Explicit(address));
     }
 
     @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     public void putShort(long address, short x)
     {
 	cli.System.Runtime.InteropServices.Marshal.WriteInt16(IntPtr.op_Explicit(address), x);
     }
 
     @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     public char getChar(long address)
     {
         return (char)cli.System.Runtime.InteropServices.Marshal.ReadInt16(IntPtr.op_Explicit(address));
     }
 
     @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     public void putChar(long address, char x)
     {
         cli.System.Runtime.InteropServices.Marshal.WriteInt16(IntPtr.op_Explicit(address), (short)x);
     }
 
     @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     public int getInt(long address)
     {
 	return cli.System.Runtime.InteropServices.Marshal.ReadInt32(IntPtr.op_Explicit(address));
     }
 
     @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     public void putInt(long address, int x)
     {
 	cli.System.Runtime.InteropServices.Marshal.WriteInt32(IntPtr.op_Explicit(address), x);
     }
 
     @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     public long getLong(long address)
     {
 	return cli.System.Runtime.InteropServices.Marshal.ReadInt64(IntPtr.op_Explicit(address));
     }
 
     @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     public void putLong(long address, long x)
     {
 	cli.System.Runtime.InteropServices.Marshal.WriteInt64(IntPtr.op_Explicit(address), x);
     }
 
     @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     public long getAddress(long address)
     {
 	return cli.System.Runtime.InteropServices.Marshal.ReadIntPtr(IntPtr.op_Explicit(address)).ToInt64();
     }
 
     @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     public void putAddress(long address, long x)
     {
 	cli.System.Runtime.InteropServices.Marshal.WriteIntPtr(IntPtr.op_Explicit(address), IntPtr.op_Explicit(x));
     }
 
     @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     public float getFloat(long address)
     {
         return Float.intBitsToFloat(getInt(address));
     }
 
     @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     public void putFloat(long address, float x)
     {
         putInt(address, Float.floatToIntBits(x));
     }
 
     @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     public double getDouble(long address)
     {
         return Double.longBitsToDouble(getLong(address));
     }
 
     @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     public void putDouble(long address, double x)
     {
         putLong(address, Double.doubleToLongBits(x));

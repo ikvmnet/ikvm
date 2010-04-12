@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!--
-  Copyright (C) 2002-2009 Jeroen Frijters
+  Copyright (C) 2002-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -2080,6 +2080,473 @@
                     <newobj class="java.nio.DirectByteBuffer" name="&lt;init&gt;" sig="(JI)V" />
                     <ret />
                 </body>
+            </method>
+            <constructor sig="(I)V">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </constructor>
+            <method name="_get" sig="(I)B">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="_put" sig="(IB)V">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="get" sig="()B">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="get" sig="(I)B">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="get" sig="([BII)Ljava.nio.ByteBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="getChar" sig="(J)C">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="putChar" sig="(JC)Ljava.nio.ByteBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="getShort" sig="(J)S">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="putShort" sig="(JS)Ljava.nio.ByteBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="getInt" sig="(J)I">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="putInt" sig="(JI)Ljava.nio.ByteBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="getLong" sig="(J)J">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="putLong" sig="(JJ)Ljava.nio.ByteBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="getFloat" sig="(J)F">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="putFloat" sig="(JF)Ljava.nio.ByteBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="getDouble" sig="(J)D">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="putDouble" sig="(JD)Ljava.nio.ByteBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(Ljava.nio.ByteBuffer;)Ljava.nio.ByteBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(B)Ljava.nio.ByteBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(IB)Ljava.nio.ByteBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="([BII)Ljava.nio.ByteBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="compact" sig="()Ljava.nio.ByteBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+        </class>
+        <class name="java.nio.DirectByteBuffer$Deallocator">
+            <method name="run" sig="()V">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+        </class>
+        <class name="java.nio.DirectByteBufferR">
+            <method name="_get" sig="(I)B">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+        </class>
+        <class name="java.nio.DirectCharBufferS">
+            <method name="get" sig="()C">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="get" sig="(I)C">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="get" sig="([CII)Ljava.nio.CharBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(Ljava.nio.CharBuffer;)Ljava.nio.CharBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(C)Ljava.nio.CharBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(IC)Ljava.nio.CharBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="([CII)Ljava.nio.CharBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="compact" sig="()Ljava.nio.CharBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+        </class>
+        <class name="java.nio.DirectCharBufferU">
+            <method name="get" sig="()C">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="get" sig="(I)C">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="get" sig="([CII)Ljava.nio.CharBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(Ljava.nio.CharBuffer;)Ljava.nio.CharBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(C)Ljava.nio.CharBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(IC)Ljava.nio.CharBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="([CII)Ljava.nio.CharBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="compact" sig="()Ljava.nio.CharBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+        </class>
+        <class name="java.nio.DirectDoubleBufferS">
+            <method name="get" sig="()D">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="get" sig="(I)D">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="get" sig="([DII)Ljava.nio.DoubleBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(Ljava.nio.DoubleBuffer;)Ljava.nio.DoubleBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(D)Ljava.nio.DoubleBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(ID)Ljava.nio.DoubleBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="([DII)Ljava.nio.DoubleBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="compact" sig="()Ljava.nio.DoubleBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+        </class>
+        <class name="java.nio.DirectDoubleBufferU">
+            <method name="get" sig="()D">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="get" sig="(I)D">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="get" sig="([DII)Ljava.nio.DoubleBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(Ljava.nio.DoubleBuffer;)Ljava.nio.DoubleBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(D)Ljava.nio.DoubleBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(ID)Ljava.nio.DoubleBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="([DII)Ljava.nio.DoubleBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="compact" sig="()Ljava.nio.DoubleBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+        </class>
+        <class name="java.nio.DirectFloatBufferS">
+            <method name="get" sig="()F">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="get" sig="(I)F">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="get" sig="([FII)Ljava.nio.FloatBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(Ljava.nio.FloatBuffer;)Ljava.nio.FloatBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(F)Ljava.nio.FloatBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(IF)Ljava.nio.FloatBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="([FII)Ljava.nio.FloatBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="compact" sig="()Ljava.nio.FloatBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+        </class>
+        <class name="java.nio.DirectFloatBufferU">
+            <method name="get" sig="()F">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="get" sig="(I)F">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="get" sig="([FII)Ljava.nio.FloatBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(Ljava.nio.FloatBuffer;)Ljava.nio.FloatBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(F)Ljava.nio.FloatBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(IF)Ljava.nio.FloatBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="([FII)Ljava.nio.FloatBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="compact" sig="()Ljava.nio.FloatBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+        </class>
+        <class name="java.nio.DirectIntBufferS">
+            <method name="get" sig="()I">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="get" sig="(I)I">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="get" sig="([III)Ljava.nio.IntBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(Ljava.nio.IntBuffer;)Ljava.nio.IntBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(I)Ljava.nio.IntBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(II)Ljava.nio.IntBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="([III)Ljava.nio.IntBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="compact" sig="()Ljava.nio.IntBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+        </class>
+        <class name="java.nio.DirectIntBufferU">
+            <method name="get" sig="()I">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="get" sig="(I)I">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="get" sig="([III)Ljava.nio.IntBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(Ljava.nio.IntBuffer;)Ljava.nio.IntBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(I)Ljava.nio.IntBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(II)Ljava.nio.IntBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="([III)Ljava.nio.IntBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="compact" sig="()Ljava.nio.IntBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+        </class>
+        <class name="java.nio.DirectLongBufferS">
+            <method name="get" sig="()J">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="get" sig="(I)J">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="get" sig="([JII)Ljava.nio.LongBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(Ljava.nio.LongBuffer;)Ljava.nio.LongBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(J)Ljava.nio.LongBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(IJ)Ljava.nio.LongBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="([JII)Ljava.nio.LongBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="compact" sig="()Ljava.nio.LongBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+        </class>
+        <class name="java.nio.DirectLongBufferU">
+            <method name="get" sig="()J">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="get" sig="(I)J">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="get" sig="([JII)Ljava.nio.LongBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(Ljava.nio.LongBuffer;)Ljava.nio.LongBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(J)Ljava.nio.LongBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(IJ)Ljava.nio.LongBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="([JII)Ljava.nio.LongBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="compact" sig="()Ljava.nio.LongBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+        </class>
+        <class name="java.nio.DirectShortBufferS">
+            <method name="get" sig="()S">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="get" sig="(I)S">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="get" sig="([SII)Ljava.nio.ShortBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(Ljava.nio.ShortBuffer;)Ljava.nio.ShortBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(S)Ljava.nio.ShortBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(IS)Ljava.nio.ShortBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="([SII)Ljava.nio.ShortBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="compact" sig="()Ljava.nio.ShortBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+        </class>
+        <class name="java.nio.DirectShortBufferU">
+            <method name="get" sig="()S">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="get" sig="(I)S">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="get" sig="([SII)Ljava.nio.ShortBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(Ljava.nio.ShortBuffer;)Ljava.nio.ShortBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(S)Ljava.nio.ShortBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="(IS)Ljava.nio.ShortBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="put" sig="([SII)Ljava.nio.ShortBuffer;">
+                <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+                <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="compact" sig="()Ljava.nio.ShortBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
             </method>
         </class>
         <class name="sun.reflect.Reflection">

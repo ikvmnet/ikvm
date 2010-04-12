@@ -62,6 +62,7 @@ namespace IKVM.Internal
 		private string name;
 		private string sig;
 
+		[System.Security.SecurityCritical]
 		private sealed class HandleWrapper
 		{
 			internal readonly IntPtr Value;
@@ -102,6 +103,7 @@ namespace IKVM.Internal
 
 		internal IntPtr Cookie
 		{
+			[System.Security.SecurityCritical]
 			get
 			{
 				lock(this)
@@ -115,6 +117,7 @@ namespace IKVM.Internal
 			}
 		}
 
+		[System.Security.SecurityCritical]
 		internal static MemberWrapper FromCookieImpl(IntPtr cookie)
 		{
 			return (MemberWrapper)GCHandle.FromIntPtr(cookie).Target;
@@ -597,6 +600,7 @@ namespace IKVM.Internal
 		}
 #endif // !STATIC_COMPILER && !STUB_GENERATOR
 
+		[System.Security.SecurityCritical]
 		internal static MethodWrapper FromCookie(IntPtr cookie)
 		{
 			return (MethodWrapper)FromCookieImpl(cookie);
@@ -1290,6 +1294,7 @@ namespace IKVM.Internal
 		}
 #endif // !STATIC_COMPILER && !STUB_GENERATOR
 
+		[System.Security.SecurityCritical]
 		internal static FieldWrapper FromCookie(IntPtr cookie)
 		{
 			return (FieldWrapper)FromCookieImpl(cookie);

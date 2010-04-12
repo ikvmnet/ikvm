@@ -3965,6 +3965,7 @@ namespace IKVM.NativeCode.java
 	namespace nio
 	{
 		[System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.LinkDemand, UnmanagedCode = true)]
+		[System.Security.SecurityCritical]
 		static class Bits
 		{
 			public static void copyFromByteArray(object src, long srcPos, long dstAddr, long length)
@@ -5296,6 +5297,7 @@ namespace IKVM.NativeCode.sun.awt.shell
         }
     }
 
+    [System.Security.SecurityCritical]
     class ShellLink : IDisposable
     {
         [ComImport]
@@ -5525,6 +5527,7 @@ namespace IKVM.NativeCode.sun.misc
         [DllImport("kernel32.dll")]
         private static extern bool SetConsoleCtrlHandler(ConsoleCtrlDelegate e, bool add);
 
+        [System.Security.SecurityCritical]
         private class CriticalCtrlHandler : System.Runtime.ConstrainedExecution.CriticalFinalizerObject
         {
             private ConsoleCtrlDelegate consoleCtrlDelegate;
@@ -5728,6 +5731,7 @@ namespace IKVM.NativeCode.sun.misc
 			}
 		}
 
+		[System.Security.SecurityCritical]
 		public static object allocateInstance(object thisUnsafe, object clazz)
 		{
 			TypeWrapper wrapper = TypeWrapper.FromClass(clazz);

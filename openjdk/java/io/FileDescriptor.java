@@ -64,6 +64,7 @@ public final class FileDescriptor {
     @ikvm.lang.Property(get = "get_fd")
     private int fd;
     
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     private long get_handle()
     {
         if (ikvm.internal.Util.WINDOWS)
@@ -89,6 +90,7 @@ public final class FileDescriptor {
         return -1;
     }
     
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     private int get_fd()
     {
         if (!ikvm.internal.Util.WINDOWS)
