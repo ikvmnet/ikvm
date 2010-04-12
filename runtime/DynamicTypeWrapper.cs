@@ -504,7 +504,7 @@ namespace IKVM.Internal
 						baseMethodsArray = new List<MethodWrapper>(baseMethods);
 						AddMirandaMethods(methodsArray, baseMethodsArray, wrapper);
 					}
-#if STATIC_COMPILER
+#if STATIC_COMPILER || NET_4_0
 					if (!wrapper.IsInterface && wrapper.IsPublic)
 					{
 						TypeWrapper baseTypeWrapper = wrapper.BaseTypeWrapper;
@@ -1026,7 +1026,9 @@ namespace IKVM.Internal
 					return false;
 				}
 			}
+#endif // STATIC_COMPILER
 
+#if STATIC_COMPILER || NET_4_0
 			private static bool ContainsMemberWrapper(List<FieldWrapper> members, string name, string sig)
 			{
 				foreach (MemberWrapper mw in members)
@@ -1050,7 +1052,7 @@ namespace IKVM.Internal
 				}
 				return false;
 			}
-#endif // STATIC_COMPILER
+#endif // STATIC_COMPILER || NET_4_0
 
 			private MethodWrapper GetMethodWrapperDuringCtor(TypeWrapper lookup, List<MethodWrapper> methods, string name, string sig)
 			{
@@ -1115,7 +1117,7 @@ namespace IKVM.Internal
 				}
 			}
 
-#if STATIC_COMPILER
+#if STATIC_COMPILER || NET_4_0
 			private void AddAccessStubMethods(List<MethodWrapper> methods, List<MethodWrapper> baseMethods, TypeWrapper tw)
 			{
 				foreach (MethodWrapper mw in tw.GetMethods())
@@ -1130,7 +1132,9 @@ namespace IKVM.Internal
 					}
 				}
 			}
+#endif // STATIC_COMPILER || NET_4_0
 
+#if STATIC_COMPILER
 			private static bool CheckInnerOuterNames(string inner, string outer)
 			{
 				// do some sanity checks on the inner/outer class names
