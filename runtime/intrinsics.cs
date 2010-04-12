@@ -428,6 +428,13 @@ namespace IKVM.Internal
 			{
 				return false;
 			}
+#if CLASSGC
+			if (JVM.classUnloading)
+			{
+				// RunAndCollect assemblies do not support ThreadStaticAttribute
+				return false;
+			}
+#endif
 			for (int i = 0; i <= opcodeIndex; i++)
 			{
 				if (code[i].IsBranchTarget)
