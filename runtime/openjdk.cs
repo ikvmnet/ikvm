@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2007, 2008, 2009 Jeroen Frijters
+  Copyright (C) 2007, 2008, 2010 Jeroen Frijters
   Copyright (C) 2009 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
@@ -273,10 +273,23 @@ namespace IKVM.Runtime
 
 static class DynamicMethodUtils
 {
+#if NET_4_0
+	private static Module dynamicModule;
+#endif
+
 	internal static DynamicMethod Create(string name, Type owner, bool nonPublic, Type returnType, Type[] paramTypes)
 	{
 		try
 		{
+#if NET_4_0
+			if (dynamicModule == null)
+			{
+				// we have to create a module that is security critical to hold the dynamic method, if we want to be able to emit unverifiable code
+				AssemblyBuilder ab = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName("<DynamicMethodHolder>"), AssemblyBuilderAccess.RunAndCollect);
+				Interlocked.CompareExchange(ref dynamicModule, ab.DefineDynamicModule("<DynamicMethodHolder>"), null);
+			}
+			return new DynamicMethod(name, MethodAttributes.Public | MethodAttributes.Static, CallingConventions.Standard, returnType, paramTypes, dynamicModule, true);
+#else
 			if (owner.IsInterface)
 			{
 				// FXBUG interfaces aren't allowed as owners of dynamic methods
@@ -286,6 +299,7 @@ static class DynamicMethodUtils
 			{
 				return new DynamicMethod(name, returnType, paramTypes, owner);
 			}
+#endif
 		}
 		catch (System.Security.SecurityException)
 		{
