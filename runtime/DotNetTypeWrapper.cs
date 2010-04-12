@@ -1502,15 +1502,6 @@ namespace IKVM.Internal
 					}
 					else
 					{
-#if CLASSGC
-						if(JVM.classUnloading && type == typeof(System.Runtime.InteropServices.DllImportAttribute))
-						{
-							// TODO PInvoke is not supported in RunAndCollect assemblies,
-							// so we ignore the attribute.
-							// We could forward the PInvoke to a non RunAndCollect assembly, but for now we don't bother.
-							return;
-						}
-#endif
 						mb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
 					}
 				}

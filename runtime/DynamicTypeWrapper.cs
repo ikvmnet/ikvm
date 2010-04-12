@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2009 Jeroen Frijters
+  Copyright (C) 2002-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -112,7 +112,20 @@ namespace IKVM.Internal
 				{
 					VerifyDelegate(f);
 				}
+#if CLASSGC
+				if (JVM.classUnloading && BaseTypeWrapper.TypeAsBaseType == typeof(ContextBoundObject))
+				{
+					throw new VerifyError("Extending ContextBoundObject is not supported in dynamic mode with class GC enabled.");
+				}
+#endif
 			}
+
+#if CLASSGC
+			if (JVM.classUnloading)
+			{
+				VerifyRunAndCollect(f);
+			}
+#endif
 
 			ClassFile.ConstantPoolItemClass[] interfaces = f.Interfaces;
 			this.interfaces = new TypeWrapper[interfaces.Length];
@@ -144,6 +157,45 @@ namespace IKVM.Internal
 
 			impl = new JavaTypeImpl(f, this);
 		}
+
+#if CLASSGC
+		private static void VerifyRunAndCollect(ClassFile f)
+		{
+			{
+				foreach (object[] ann in f.Annotations)
+				{
+					if (ann[1].Equals("Lcli/System/Runtime/InteropServices/ComImportAttribute$Annotation;"))
+					{
+						throw new VerifyError("ComImportAttribute is not supported in dynamic mode with class GC enabled.");
+					}
+				}
+			}
+			foreach (ClassFile.Field field in f.Fields)
+			{
+				foreach (object[] ann in field.Annotations)
+				{
+					if (ann[1].Equals("Lcli/System/ThreadStaticAttribute$Annotation;"))
+					{
+						throw new VerifyError("ThreadStaticAttribute is not supported in dynamic mode with class GC enabled.");
+					}
+					if (ann[1].Equals("Lcli/System/ContextStaticAttribute$Annotation;"))
+					{
+						throw new VerifyError("ContextStaticAttribute is not supported in dynamic mode with class GC enabled.");
+					}
+				}
+			}
+			foreach (ClassFile.Method method in f.Methods)
+			{
+				foreach (object[] ann in method.Annotations)
+				{
+					if (ann[1].Equals("Lcli/System/Runtime/InteropServices/DllImportAttribute$Annotation;"))
+					{
+						throw new VerifyError("DllImportAttribute is not supported in dynamic mode with class GC enabled.");
+					}
+				}
+			}
+		}
+#endif
 
 		private void VerifyDelegate(ClassFile f)
 		{
