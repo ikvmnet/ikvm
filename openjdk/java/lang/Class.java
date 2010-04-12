@@ -77,6 +77,7 @@ final class ClassSerializationProxy implements IObjectReference
     private cli.System.Type type;
     private String sig;
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     public Object GetRealObject(StreamingContext context)
     {
         if (sig != null)
@@ -214,6 +215,7 @@ public final
     // Note that we don't implement ISerializable in this source, but in map.xml to avoid it being visible to Java code.
     // We don't have a security demand, because the information exposed is harmless.
     @cli.IKVM.Attributes.HideFromJavaAttribute.Annotation
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     public void GetObjectData(SerializationInfo info, StreamingContext context)
     {
         info.AddValue("type", type);

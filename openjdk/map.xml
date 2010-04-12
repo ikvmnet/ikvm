@@ -1331,6 +1331,7 @@
                     <parameter>Demand</parameter>
                     <property name="SerializationFormatter" sig="Z">true</property>
                 </attribute>
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
                 <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
                 <attribute type="System.ComponentModel.EditorBrowsableAttribute" sig="(Lcli.System.ComponentModel.EditorBrowsableState;)V">
                     <parameter>Never</parameter>

@@ -240,6 +240,7 @@ public abstract class Enum<E extends Enum<E>>
     // [IKVM] .NET serialization support starts here
     // Note that we don't have a security demand, because the info is harmless.
     @cli.IKVM.Attributes.HideFromJavaAttribute.Annotation
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     public final void GetObjectData(SerializationInfo info, StreamingContext context)
     {
         info.AddValue("enumType", getDeclaringClass());
@@ -254,6 +255,7 @@ final class EnumSerializationProxy implements IObjectReference
     private Class enumType;
     private String name;
     
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     public Object GetRealObject(StreamingContext context)
     {
         try

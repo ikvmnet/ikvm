@@ -58,12 +58,14 @@ public final class ExceptionHelper
         @cli.System.SerializableAttribute.Annotation
         private static final class Helper implements IObjectReference
         {
+            @cli.System.Security.SecurityCriticalAttribute.Annotation
             public Object GetRealObject(StreamingContext context)
             {
                 return EXCEPTION_DATA_KEY;
             }
         }
 
+        @cli.System.Security.SecurityCriticalAttribute.Annotation
         public void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             info.SetType(ikvm.runtime.Util.getInstanceTypeFromClass(Helper.class));

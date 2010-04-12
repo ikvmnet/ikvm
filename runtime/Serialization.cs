@@ -40,6 +40,7 @@ namespace IKVM.Internal
 	public static class Serialization
 	{
 		private static readonly CustomAttributeBuilder serializableAttribute = new CustomAttributeBuilder(JVM.Import(typeof(SerializableAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
+		private static readonly CustomAttributeBuilder securityCriticalAttribute = new CustomAttributeBuilder(JVM.Import(typeof(SecurityCriticalAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
 		private static readonly TypeWrapper iserializable = ClassLoaderWrapper.GetWrapperFromType(JVM.Import(typeof(ISerializable)));
 		private static readonly TypeWrapper iobjectreference = ClassLoaderWrapper.GetWrapperFromType(JVM.Import(typeof(IObjectReference)));
 		private static readonly TypeWrapper serializable = ClassLoaderWrapper.LoadClassCritical("java.io.Serializable");
@@ -159,6 +160,7 @@ namespace IKVM.Internal
 			tb.AddInterfaceImplementation(JVM.Import(typeof(ISerializable)));
 			MethodBuilder getObjectData = tb.DefineMethod("GetObjectData", MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.NewSlot, null,
 				new Type[] { JVM.Import(typeof(SerializationInfo)), JVM.Import(typeof(StreamingContext)) });
+			getObjectData.SetCustomAttribute(securityCriticalAttribute);
 			AttributeHelper.HideFromJava(getObjectData);
 			getObjectData.AddDeclarativeSecurity(SecurityAction.Demand, psetSerializationFormatter);
 			tb.DefineMethodOverride(getObjectData, JVM.Import(typeof(ISerializable)).GetMethod("GetObjectData"));
@@ -211,6 +213,7 @@ namespace IKVM.Internal
 				tb.AddInterfaceImplementation(JVM.Import(typeof(IObjectReference)));
 				MethodBuilder getRealObject = tb.DefineMethod("IObjectReference.GetRealObject", MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final,
 					Types.Object, new Type[] { JVM.Import(typeof(StreamingContext)) });
+				getRealObject.SetCustomAttribute(securityCriticalAttribute);
 				AttributeHelper.HideFromJava(getRealObject);
 				tb.DefineMethodOverride(getRealObject, JVM.Import(typeof(IObjectReference)).GetMethod("GetRealObject"));
 				CodeEmitter ilgen = CodeEmitter.Create(getRealObject);
@@ -227,6 +230,7 @@ namespace IKVM.Internal
 			tb.AddInterfaceImplementation(JVM.Import(typeof(IObjectReference)));
 			MethodBuilder getRealObject = tb.DefineMethod("IObjectReference.GetRealObject", MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final,
 				Types.Object, new Type[] { JVM.Import(typeof(StreamingContext)) });
+			getRealObject.SetCustomAttribute(securityCriticalAttribute);
 			AttributeHelper.HideFromJava(getRealObject);
 			tb.DefineMethodOverride(getRealObject, JVM.Import(typeof(IObjectReference)).GetMethod("GetRealObject"));
 			CodeEmitter ilgen = CodeEmitter.Create(getRealObject);

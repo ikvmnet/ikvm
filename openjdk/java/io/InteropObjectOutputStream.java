@@ -45,6 +45,7 @@ public final class InteropObjectOutputStream extends ObjectOutputStream
     {
         private Object obj;
 
+        @cli.System.Security.SecurityCriticalAttribute.Annotation
         public Object GetRealObject(StreamingContext context)
         {
             return obj;
