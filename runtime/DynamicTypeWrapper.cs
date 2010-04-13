@@ -161,6 +161,7 @@ namespace IKVM.Internal
 #if CLASSGC
 		private static void VerifyRunAndCollect(ClassFile f)
 		{
+			if (f.Annotations != null)
 			{
 				foreach (object[] ann in f.Annotations)
 				{
@@ -172,25 +173,31 @@ namespace IKVM.Internal
 			}
 			foreach (ClassFile.Field field in f.Fields)
 			{
-				foreach (object[] ann in field.Annotations)
+				if (field.Annotations != null)
 				{
-					if (ann[1].Equals("Lcli/System/ThreadStaticAttribute$Annotation;"))
+					foreach (object[] ann in field.Annotations)
 					{
-						throw new VerifyError("ThreadStaticAttribute is not supported in dynamic mode with class GC enabled.");
-					}
-					if (ann[1].Equals("Lcli/System/ContextStaticAttribute$Annotation;"))
-					{
-						throw new VerifyError("ContextStaticAttribute is not supported in dynamic mode with class GC enabled.");
+						if (ann[1].Equals("Lcli/System/ThreadStaticAttribute$Annotation;"))
+						{
+							throw new VerifyError("ThreadStaticAttribute is not supported in dynamic mode with class GC enabled.");
+						}
+						if (ann[1].Equals("Lcli/System/ContextStaticAttribute$Annotation;"))
+						{
+							throw new VerifyError("ContextStaticAttribute is not supported in dynamic mode with class GC enabled.");
+						}
 					}
 				}
 			}
 			foreach (ClassFile.Method method in f.Methods)
 			{
-				foreach (object[] ann in method.Annotations)
+				if (method.Annotations != null)
 				{
-					if (ann[1].Equals("Lcli/System/Runtime/InteropServices/DllImportAttribute$Annotation;"))
+					foreach (object[] ann in method.Annotations)
 					{
-						throw new VerifyError("DllImportAttribute is not supported in dynamic mode with class GC enabled.");
+						if (ann[1].Equals("Lcli/System/Runtime/InteropServices/DllImportAttribute$Annotation;"))
+						{
+							throw new VerifyError("DllImportAttribute is not supported in dynamic mode with class GC enabled.");
+						}
 					}
 				}
 			}
