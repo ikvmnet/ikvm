@@ -214,7 +214,7 @@ class IkvmcCompiler
 		CompilerOptions options = new CompilerOptions();
 		options.target = PEFileKinds.ConsoleApplication;
 		options.guessFileKind = true;
-		options.version = "0.0.0.0";
+		options.version = new Version(0, 0, 0, 0);
 		options.apartment = ApartmentState.STA;
 		options.props = new Dictionary<string, string>();
 		return ContinueParseCommandLine(arglist, targets, options);
@@ -485,30 +485,11 @@ class IkvmcCompiler
 				}
 				else if(s.StartsWith("-version:"))
 				{
-					options.version = s.Substring(9);
-					if(options.version.EndsWith(".*"))
+					string str = s.Substring(9);
+					if(!TryParseVersion(s.Substring(9), out options.version))
 					{
-						options.version = options.version.Substring(0, options.version.Length - 1);
-						int count = options.version.Split('.').Length;
-						// NOTE this is the published algorithm for generating automatic build and revision numbers
-						// (see AssemblyVersionAttribute constructor docs), but it turns out that the revision
-						// number is off an hour (on my system)...
-						DateTime now = DateTime.Now;
-						int seconds = (int)(now.TimeOfDay.TotalSeconds / 2);
-						int days = (int)(now - new DateTime(2000, 1, 1)).TotalDays;
-						if(count == 3)
-						{
-							options.version += days + "." + seconds;
-						}
-						else if(count == 4)
-						{
-							options.version += seconds;
-						}
-						else
-						{
-							Console.Error.WriteLine("Error: Invalid version specified: {0}*", options.version);
-							return 1;
-						}
+						Console.Error.WriteLine("Error: Invalid version specified: {0}", str);
+						return 1;
 					}
 				}
 				else if(s.StartsWith("-fileversion:"))
@@ -718,6 +699,44 @@ class IkvmcCompiler
 		options.classesToExclude = classesToExclude.ToArray();
 		targets.Add(options);
 		return 0;
+	}
+
+	private static bool TryParseVersion(string str, out Version version)
+	{
+		if (str.EndsWith(".*"))
+		{
+			str = str.Substring(0, str.Length - 1);
+			int count = str.Split('.').Length;
+			// NOTE this is the published algorithm for generating automatic build and revision numbers
+			// (see AssemblyVersionAttribute constructor docs), but it turns out that the revision
+			// number is off an hour (on my system)...
+			DateTime now = DateTime.Now;
+			int seconds = (int)(now.TimeOfDay.TotalSeconds / 2);
+			int days = (int)(now - new DateTime(2000, 1, 1)).TotalDays;
+			if (count == 3)
+			{
+				str += days + "." + seconds;
+			}
+			else if (count == 4)
+			{
+				str += seconds;
+			}
+			else
+			{
+				version = null;
+				return false;
+			}
+		}
+		try
+		{
+			version = new Version(str);
+			return version.Major <= 65535 && version.Minor <= 65535 && version.Build <= 65535 && version.Revision <= 65535;
+		}
+		catch (ArgumentException) { }
+		catch (FormatException) { }
+		catch (OverflowException) { }
+		version = null;
+		return false;
 	}
 
 	private static bool SetStrongNameKeyPair(ref StrongNameKeyPair strongNameKeyPair, string fileNameOrKeyContainer, bool file)

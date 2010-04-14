@@ -49,7 +49,6 @@ namespace IKVM.Internal
 		private string assemblyName;
 		private string assemblyFile;
 		private string assemblyDir;
-		private string version;
 		private bool targetIsModule;
 		private AssemblyBuilder assemblyBuilder;
 		private IKVM.Internal.MapXml.Attribute[] assemblyAttributes;
@@ -73,7 +72,7 @@ namespace IKVM.Internal
 		private List<ClassLoaderWrapper> internalsVisibleTo = new List<ClassLoaderWrapper>();
 		private List<TypeWrapper> dynamicallyImportedTypes = new List<TypeWrapper>();
 
-		internal CompilerClassLoader(AssemblyClassLoader[] referencedAssemblies, CompilerOptions options, string path, string version, bool targetIsModule, string assemblyName, Dictionary<string, byte[]> classes)
+		internal CompilerClassLoader(AssemblyClassLoader[] referencedAssemblies, CompilerOptions options, string path, bool targetIsModule, string assemblyName, Dictionary<string, byte[]> classes)
 			: base(options.codegenoptions, null)
 		{
 			this.referencedAssemblies = referencedAssemblies;
@@ -84,7 +83,6 @@ namespace IKVM.Internal
 			this.assemblyFile = assemblyPath.Name;
 			this.assemblyDir = assemblyPath.DirectoryName;
 			this.targetIsModule = targetIsModule;
-			this.version = version;
 			Tracer.Info(Tracer.Compiler, "Instantiate CompilerClassLoader for {0}", assemblyName);
 		}
 
@@ -142,7 +140,7 @@ namespace IKVM.Internal
 			AssemblyName name = new AssemblyName();
 			name.Name = assemblyName;
 			name.KeyPair = options.key;
-			name.Version = new Version(version);
+			name.Version = options.version;
 			assemblyBuilder = 
 				StaticCompiler.Universe
 					.DefineDynamicAssembly(name, AssemblyBuilderAccess.ReflectionOnly, assemblyDir);
@@ -2703,7 +2701,7 @@ namespace IKVM.Internal
 			{
 				referencedAssemblies[i] = AssemblyClassLoader.FromAssembly(references[i]);
 			}
-			loader = new CompilerClassLoader(referencedAssemblies, options, options.path, options.version, options.targetIsModule, options.assembly, h);
+			loader = new CompilerClassLoader(referencedAssemblies, options, options.path, options.targetIsModule, options.assembly, h);
 			loader.baseClasses = baseClasses;
 			loader.assemblyAnnotations = assemblyAnnotations;
 			loader.classesToCompile = new List<string>(h.Keys);
@@ -3082,7 +3080,7 @@ namespace IKVM.Internal
 	{
 		internal string path;
 		internal StrongNameKeyPair key;
-		internal string version;
+		internal Version version;
 		internal string fileversion;
 		internal bool targetIsModule;
 		internal string assembly;
