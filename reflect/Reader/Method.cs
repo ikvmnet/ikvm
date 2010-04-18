@@ -55,6 +55,11 @@ namespace IKVM.Reflection.Reader
 
 		internal MethodBody GetMethodBody(IGenericContext context)
 		{
+			if ((GetMethodImplementationFlags() & MethodImplAttributes.CodeTypeMask) != MethodImplAttributes.IL)
+			{
+				// method is not IL
+				return null;
+			}
 			int rva = module.MethodDef.records[index].RVA;
 			return rva == 0 ? null : new MethodBody(module, rva, context);
 		}
