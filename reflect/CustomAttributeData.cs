@@ -292,6 +292,11 @@ namespace IKVM.Reflection
 			{
 				return null;
 			}
+			if (typeName.Length > 0 && typeName[typeName.Length - 1] == 0)
+			{
+				// there are broken compilers that emit an extra NUL character after the type name
+				typeName = typeName.Substring(0, typeName.Length - 1);
+			}
 			return asm.universe.GetType(asm, typeName, true);
 		}
 
