@@ -93,6 +93,11 @@ namespace IKVM.Reflection.Reader
 					while (size > 0)
 					{
 						int read = module.stream.Read(data, offset, size);
+						if (read == 0)
+						{
+							// C++ assemblies can have fields that have an RVA that lies outside of the file
+							break;
+						}
 						offset += read;
 						size -= read;
 					}
