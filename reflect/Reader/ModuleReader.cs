@@ -359,6 +359,18 @@ namespace IKVM.Reflection.Reader
 									}
 									typeRefs[index] = GetType(GetTypeName(TypeRef.records[index].TypeNameSpace, TypeRef.records[index].TypeName));
 									break;
+								case ModuleRefTable.Index:
+									{
+										Module module = ResolveModuleRef(ModuleRef.records[(scope & 0xFFFFFF) - 1]);
+										string typeName = GetTypeName(TypeRef.records[index].TypeNameSpace, TypeRef.records[index].TypeName);
+										Type type = assembly.GetType(typeName);
+										if (type == null)
+										{
+											throw new TypeLoadException(String.Format("Type '{0}' not found in module '{1}'", typeName, module.Name));
+										}
+										typeRefs[index] = type;
+										break;
+									}
 								default:
 									throw new NotImplementedException("ResolutionScope = " + scope.ToString("X"));
 							}
@@ -387,6 +399,17 @@ namespace IKVM.Reflection.Reader
 				default:
 					throw new NotImplementedException(String.Format("0x{0:X}", metadataToken));
 			}
+		}
+
+		private Module ResolveModuleRef(int moduleNameIndex)
+		{
+			string moduleName = GetString(moduleNameIndex);
+			Module module = assembly.GetModule(moduleName);
+			if (module == null)
+			{
+				throw new FileNotFoundException(moduleName);
+			}
+			return module;
 		}
 
 		private sealed class TrackingGenericContext : IGenericContext
