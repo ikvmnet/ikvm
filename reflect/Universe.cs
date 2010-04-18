@@ -632,30 +632,26 @@ namespace IKVM.Reflection
 
 		public Type GetType(string assemblyQualifiedTypeName)
 		{
-			return GetType(assemblyQualifiedTypeName, false);
+			// to be more compatible with Type.GetType(), we could call Assembly.GetCallingAssembly(),
+			// import that assembly and pass it as the context, but implicitly importing is considered evil
+			return GetType(null, assemblyQualifiedTypeName, false);
 		}
 
 		public Type GetType(string assemblyQualifiedTypeName, bool throwOnError)
+		{
+			// to be more compatible with Type.GetType(), we could call Assembly.GetCallingAssembly(),
+			// import that assembly and pass it as the context, but implicitly importing is considered evil
+			return GetType(null, assemblyQualifiedTypeName, throwOnError);
+		}
+
+		public Type GetType(Assembly context, string assemblyQualifiedTypeName, bool throwOnError)
 		{
 			TypeNameParser parser = TypeNameParser.Parse(assemblyQualifiedTypeName, throwOnError);
 			if (parser.Error)
 			{
 				return null;
 			}
-			Assembly asm;
-			if (parser.AssemblyName != null)
-			{
-				asm = Load(parser.AssemblyName, null, false);
-				if (asm == null)
-				{
-					return null;
-				}
-			}
-			else
-			{
-				asm = System_Object.Assembly;
-			}
-			return parser.Expand(asm.GetTypeImpl(parser.FirstNamePart), asm, throwOnError, assemblyQualifiedTypeName);
+			return parser.GetType(this, context, throwOnError, assemblyQualifiedTypeName);
 		}
 
 		public Assembly[] GetAssemblies()

@@ -90,14 +90,14 @@ namespace IKVM.Reflection
 			if (throwOnError)
 			{
 				Parser parser = new Parser(typeName);
-				return new TypeNameParser(ref parser);
+				return new TypeNameParser(ref parser, true);
 			}
 			else
 			{
 				try
 				{
 					Parser parser = new Parser(typeName);
-					return new TypeNameParser(ref parser);
+					return new TypeNameParser(ref parser, true);
 				}
 				catch (ArgumentException)
 				{
@@ -106,7 +106,7 @@ namespace IKVM.Reflection
 			}
 		}
 
-		private TypeNameParser(ref Parser parser)
+		private TypeNameParser(ref Parser parser, bool withAssemblyName)
 		{
 			bool genericParameter = parser.pos != 0;
 			name = parser.NextNamePart();
@@ -117,7 +117,10 @@ namespace IKVM.Reflection
 			modifiers = null;
 			parser.ParseModifiers(ref modifiers);
 			assemblyName = null;
-			parser.ParseAssemblyName(genericParameter, ref assemblyName);
+			if (withAssemblyName)
+			{
+				parser.ParseAssemblyName(genericParameter, ref assemblyName);
+			}
 		}
 
 		internal bool Error
@@ -214,22 +217,28 @@ namespace IKVM.Reflection
 				if (TryConsume('['))
 				{
 					SkipWhiteSpace();
-					if (TryConsume('['))
+					if (TryConsume(']') || TryConsume('*') || TryConsume(','))
 					{
-						do
-						{
-							Add(ref genericParameters, new TypeNameParser(ref this));
-							Consume(']');
-							SkipWhiteSpace();
-						}
-						while (TryConsume('['));
-						Consume(']');
-						SkipWhiteSpace();
-					}
-					else
-					{
+						// it's not a generic parameter list, but an array instead
 						pos = saved;
+						return;
 					}
+					do
+					{
+						SkipWhiteSpace();
+						if (TryConsume('['))
+						{
+							Add(ref genericParameters, new TypeNameParser(ref this, true));
+							Consume(']');
+						}
+						else
+						{
+							Add(ref genericParameters, new TypeNameParser(ref this, false));
+						}
+					}
+					while (TryConsume(','));
+					Consume(']');
+					SkipWhiteSpace();
 				}
 			}
 
@@ -357,20 +366,34 @@ namespace IKVM.Reflection
 			}
 		}
 
-		private Type GetType(Assembly assembly, bool throwOnError, string originalName)
+		internal Type GetType(Universe universe, Assembly context, bool throwOnError, string originalName)
 		{
+			Type type;
 			if (assemblyName != null)
 			{
-				assembly = assembly.universe.Load(assemblyName, null, throwOnError);
-				if (assembly == null)
+				Assembly asm = universe.Load(assemblyName, null, throwOnError);
+				if (asm == null)
 				{
 					return null;
 				}
+				type = asm.GetTypeImpl(name);
 			}
-			return Expand(assembly.GetTypeImpl(name), assembly, throwOnError, originalName);
+			else if (context == null)
+			{
+				type = universe.System_Object.Assembly.GetTypeImpl(name);
+			}
+			else
+			{
+				type = context.GetTypeImpl(name);
+				if (type == null && context != universe.System_Object.Assembly)
+				{
+					type = universe.System_Object.Assembly.GetTypeImpl(name);
+				}
+			}
+			return Expand(type, context, throwOnError, originalName);
 		}
 
-		internal Type Expand(Type type, Assembly assembly, bool throwOnError, string originalName)
+		internal Type Expand(Type type, Assembly context, bool throwOnError, string originalName)
 		{
 			if (type == null)
 			{
@@ -387,6 +410,10 @@ namespace IKVM.Reflection
 					type = type.GetNestedType(nest, BindingFlags.Public | BindingFlags.NonPublic);
 					if (type == null)
 					{
+						if (throwOnError)
+						{
+							throw new TypeLoadException(originalName);
+						}
 						return null;
 					}
 				}
@@ -396,7 +423,7 @@ namespace IKVM.Reflection
 				Type[] typeArgs = new Type[genericParameters.Length];
 				for (int i = 0; i < typeArgs.Length; i++)
 				{
-					typeArgs[i] = genericParameters[i].GetType(assembly, throwOnError, originalName);
+					typeArgs[i] = genericParameters[i].GetType(type.Assembly.universe, context, throwOnError, originalName);
 					if (typeArgs[i] == null)
 					{
 						return null;

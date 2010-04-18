@@ -288,15 +288,11 @@ namespace IKVM.Reflection
 		private static Type ReadType(Assembly asm, ByteReader br)
 		{
 			string typeName = br.ReadString();
-			Type t = asm.GetType(typeName);
-			if (t != null)
+			if (typeName == null)
 			{
-				return t;
+				return null;
 			}
-			else
-			{
-				return asm.universe.GetType(typeName, true);
-			}
+			return asm.universe.GetType(asm, typeName, true);
 		}
 
 		private static IList<CustomAttributeTypedArgument> ReadConstructorArguments(Assembly asm, ByteReader br, ConstructorInfo constructor)
