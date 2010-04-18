@@ -91,13 +91,31 @@ namespace IKVM.Reflection
 					throw new BadImageFormatException();
 			}
 			Type type = ReadTypeDefOrRefEncoded(module, br, context);
+			if (!type.IsGenericTypeDefinition)
+			{
+				throw new BadImageFormatException();
+			}
 			int genArgCount = br.ReadCompressedInt();
 			Type[] args = new Type[genArgCount];
+			Type[][] reqmod = null;
+			Type[][] optmod = null;
 			for (int i = 0; i < genArgCount; i++)
 			{
+				// LAMESPEC the Type production (23.2.12) doesn't include CustomMod* for genericinst, but C++ uses it, the verifier allows it and ildasm also supports it
+				CustomModifiers mods = ReadCustomModifiers(module, br, context);
+				if (mods.required != null || mods.optional != null)
+				{
+					if (reqmod == null)
+					{
+						reqmod = new Type[genArgCount][];
+						optmod = new Type[genArgCount][];
+					}
+					reqmod[i] = mods.required;
+					optmod[i] = mods.optional;
+				}
 				args[i] = ReadType(module, br, context);
 			}
-			return type.MakeGenericType(args);
+			return GenericTypeInstance.Make(type, args, reqmod, optmod);
 		}
 
 		internal static Type ReadTypeSpec(ModuleReader module, ByteReader br, IGenericContext context)
@@ -442,7 +460,7 @@ namespace IKVM.Reflection
 			}
 			else if (type.IsGenericType)
 			{
-				WriteGenericSignature(module, bb, type.GetGenericTypeDefinition(), type.GetGenericArguments());
+				WriteGenericSignature(module, bb, type);
 			}
 			else
 			{
@@ -458,9 +476,12 @@ namespace IKVM.Reflection
 			}
 		}
 
-		private static void WriteGenericSignature(ModuleBuilder module, ByteBuffer bb, Type type, Type[] typeArguments)
+		private static void WriteGenericSignature(ModuleBuilder module, ByteBuffer bb, Type type)
 		{
-			Debug.Assert(type.IsGenericTypeDefinition);
+			Type[] typeArguments = type.GetGenericArguments();
+			Type[][] requiredCustomModifiers = type.__GetGenericArgumentsRequiredCustomModifiers();
+			Type[][] optionalCustomModifiers = type.__GetGenericArgumentsOptionalCustomModifiers();
+			type = type.GetGenericTypeDefinition();
 			bb.Write(ELEMENT_TYPE_GENERICINST);
 			if (type.IsValueType)
 			{
@@ -472,9 +493,11 @@ namespace IKVM.Reflection
 			}
 			bb.WriteTypeDefOrRefEncoded(module.GetTypeToken(type).Token);
 			bb.WriteCompressedInt(typeArguments.Length);
-			foreach (Type t in typeArguments)
+			for (int i = 0; i < typeArguments.Length; i++)
 			{
-				WriteType(module, bb, t);
+				WriteCustomModifiers(module, bb, ELEMENT_TYPE_CMOD_REQD, requiredCustomModifiers[i]);
+				WriteCustomModifiers(module, bb, ELEMENT_TYPE_CMOD_OPT, optionalCustomModifiers[i]);
+				WriteType(module, bb, typeArguments[i]);
 			}
 		}
 

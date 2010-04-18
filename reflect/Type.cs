@@ -230,6 +230,16 @@ namespace IKVM.Reflection
 			return Type.EmptyTypes;
 		}
 
+		public virtual Type[][] __GetGenericArgumentsRequiredCustomModifiers()
+		{
+			return Empty<Type[]>.Array;
+		}
+
+		public virtual Type[][] __GetGenericArgumentsOptionalCustomModifiers()
+		{
+			return Empty<Type[]>.Array;
+		}
+
 		public virtual Type GetGenericTypeDefinition()
 		{
 			throw new InvalidOperationException();
@@ -1112,11 +1122,16 @@ namespace IKVM.Reflection
 
 		public Type MakeGenericType(params Type[] typeArguments)
 		{
+			return __MakeGenericType(typeArguments, null, null);
+		}
+
+		public Type __MakeGenericType(Type[] typeArguments, Type[][] requiredCustomModifiers, Type[][] optionalCustomModifiers)
+		{
 			if (!this.IsGenericTypeDefinition)
 			{
 				throw new InvalidOperationException();
 			}
-			return GenericTypeInstance.Make(this, (Type[])typeArguments.Clone());
+			return GenericTypeInstance.Make(this, Util.Copy(typeArguments), Util.Copy(requiredCustomModifiers), Util.Copy(optionalCustomModifiers));
 		}
 
 		public static System.Type __GetSystemType(TypeCode typeCode)
@@ -1379,7 +1394,7 @@ namespace IKVM.Reflection
 			{
 				Type[] args = GetGenericArguments();
 				Type.InplaceBindTypeParameters(binder, args);
-				return GenericTypeInstance.Make(this, args);
+				return GenericTypeInstance.Make(this, args, null, null);
 			}
 			else
 			{
@@ -1829,24 +1844,30 @@ namespace IKVM.Reflection
 	{
 		private readonly Type type;
 		private readonly Type[] args;
+		private readonly Type[][] requiredCustomModifiers;
+		private readonly Type[][] optionalCustomModifiers;
 		private Type baseType;
 		private int token;
 
-		internal static Type Make(Type type, Type[] typeArguments)
+		internal static Type Make(Type type, Type[] typeArguments, Type[][] requiredCustomModifiers, Type[][] optionalCustomModifiers)
 		{
-			return type.Module.CanonicalizeType(new GenericTypeInstance(type, typeArguments));
+			return type.Module.CanonicalizeType(new GenericTypeInstance(type, typeArguments, requiredCustomModifiers, optionalCustomModifiers));
 		}
 
-		private GenericTypeInstance(Type type, Type[] args)
+		private GenericTypeInstance(Type type, Type[] args, Type[][] requiredCustomModifiers, Type[][] optionalCustomModifiers)
 		{
 			this.type = type;
 			this.args = args;
+			this.requiredCustomModifiers = requiredCustomModifiers;
+			this.optionalCustomModifiers = optionalCustomModifiers;
 		}
 
 		public override bool Equals(object o)
 		{
 			GenericTypeInstance gt = o as GenericTypeInstance;
-			return gt != null && gt.type.Equals(type) && Util.ArrayEquals(gt.args, args);
+			return gt != null && gt.type.Equals(type) && Util.ArrayEquals(gt.args, args)
+				&& Util.ArrayEquals(gt.requiredCustomModifiers, requiredCustomModifiers)
+				&& Util.ArrayEquals(gt.optionalCustomModifiers, optionalCustomModifiers);
 		}
 
 		public override int GetHashCode()
@@ -2057,7 +2078,17 @@ namespace IKVM.Reflection
 
 		public override Type[] GetGenericArguments()
 		{
-			return (Type[])args.Clone();
+			return Util.Copy(args);
+		}
+
+		public override Type[][] __GetGenericArgumentsRequiredCustomModifiers()
+		{
+			return Util.Copy(requiredCustomModifiers ?? new Type[args.Length][]);
+		}
+
+		public override Type[][] __GetGenericArgumentsOptionalCustomModifiers()
+		{
+			return Util.Copy(optionalCustomModifiers ?? new Type[args.Length][]);
 		}
 
 		internal override Type GetGenericTypeArgument(int index)
@@ -2108,7 +2139,7 @@ namespace IKVM.Reflection
 					{
 						xargs[i] = args[i].BindTypeParameters(binder);
 					}
-					return Make(type, xargs);
+					return Make(type, xargs, null, null);
 				}
 			}
 			return this;
