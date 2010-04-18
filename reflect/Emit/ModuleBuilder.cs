@@ -599,10 +599,10 @@ namespace IKVM.Reflection.Emit
 			{
 				AssemblyRefTable.Record rec = new AssemblyRefTable.Record();
 				Version ver = asm.Version;
-				rec.MajorVersion = (short)ver.Major;
-				rec.MinorVersion = (short)ver.Minor;
-				rec.BuildNumber = (short)ver.Build;
-				rec.RevisionNumber = (short)ver.Revision;
+				rec.MajorVersion = (ushort)ver.Major;
+				rec.MinorVersion = (ushort)ver.Minor;
+				rec.BuildNumber = (ushort)ver.Build;
+				rec.RevisionNumber = (ushort)ver.Revision;
 				rec.Flags = 0;
 				byte[] publicKeyOrToken = null;
 				if (usePublicKeyAssemblyReference)

@@ -1980,10 +1980,10 @@ namespace IKVM.Reflection.Metadata
 
 		internal struct Record
 		{
-			internal short MajorVersion;
-			internal short MinorVersion;
-			internal short BuildNumber;
-			internal short RevisionNumber;
+			internal ushort MajorVersion;
+			internal ushort MinorVersion;
+			internal ushort BuildNumber;
+			internal ushort RevisionNumber;
 			internal int Flags;
 			internal int PublicKeyOrToken;
 			internal int Name;
@@ -1995,10 +1995,10 @@ namespace IKVM.Reflection.Metadata
 		{
 			for (int i = 0; i < records.Length; i++)
 			{
-				records[i].MajorVersion = mr.ReadInt16();
-				records[i].MinorVersion = mr.ReadInt16();
-				records[i].BuildNumber = mr.ReadInt16();
-				records[i].RevisionNumber = mr.ReadInt16();
+				records[i].MajorVersion = mr.ReadUInt16();
+				records[i].MinorVersion = mr.ReadUInt16();
+				records[i].BuildNumber = mr.ReadUInt16();
+				records[i].RevisionNumber = mr.ReadUInt16();
 				records[i].Flags = mr.ReadInt32();
 				records[i].PublicKeyOrToken = mr.ReadBlobIndex();
 				records[i].Name = mr.ReadStringIndex();
