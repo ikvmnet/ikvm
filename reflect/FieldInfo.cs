@@ -27,8 +27,6 @@ namespace IKVM.Reflection
 {
 	public abstract class FieldInfo : MemberInfo
 	{
-		internal static readonly FieldInfo[] EmptyArray = new FieldInfo[0];
-
 		public sealed override MemberTypes MemberType
 		{
 			get { return MemberTypes.Field; }

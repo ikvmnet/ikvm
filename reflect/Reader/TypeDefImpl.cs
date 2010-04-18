@@ -81,7 +81,7 @@ namespace IKVM.Reflection.Reader
 					return events;
 				}
 			}
-			return EventInfo.EmptyArray;
+			return Empty<EventInfo>.Array;
 		}
 
 		public override FieldInfo[] __GetDeclaredFields()
@@ -189,7 +189,7 @@ namespace IKVM.Reflection.Reader
 					return properties;
 				}
 			}
-			return PropertyInfo.EmptyArray;
+			return Empty<PropertyInfo>.Array;
 		}
 
 		public override string Name

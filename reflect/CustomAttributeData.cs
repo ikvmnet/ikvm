@@ -49,7 +49,7 @@ namespace IKVM.Reflection
 			constructorArguments = list.AsReadOnly();
 			if (namedArguments == null)
 			{
-				this.namedArguments = CustomAttributeNamedArgument.EmptyArray;
+				this.namedArguments = Empty<CustomAttributeNamedArgument>.Array;
 			}
 			else
 			{
@@ -63,8 +63,8 @@ namespace IKVM.Reflection
 			if (br.Length == 0)
 			{
 				// it's legal to have an empty blob
-				constructorArguments = CustomAttributeTypedArgument.EmptyArray;
-				namedArguments = CustomAttributeNamedArgument.EmptyArray;
+				constructorArguments = Empty<CustomAttributeTypedArgument>.Array;
+				namedArguments = Empty<CustomAttributeNamedArgument>.Array;
 			}
 			else
 			{

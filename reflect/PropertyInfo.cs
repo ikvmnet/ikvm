@@ -27,8 +27,6 @@ namespace IKVM.Reflection
 {
 	public abstract class PropertyInfo : MemberInfo
 	{
-		internal static readonly PropertyInfo[] EmptyArray = new PropertyInfo[0];
-
 		public sealed override MemberTypes MemberType
 		{
 			get { return MemberTypes.Property; }

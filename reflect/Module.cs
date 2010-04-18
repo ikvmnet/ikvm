@@ -143,12 +143,12 @@ namespace IKVM.Reflection
 
 		public FieldInfo[] GetFields()
 		{
-			return IsResource() ? FieldInfo.EmptyArray : GetModuleType().GetFields();
+			return IsResource() ? Empty<FieldInfo>.Array : GetModuleType().GetFields();
 		}
 
 		public FieldInfo[] GetFields(BindingFlags bindingFlags)
 		{
-			return IsResource() ? FieldInfo.EmptyArray : GetModuleType().GetFields(bindingFlags);
+			return IsResource() ? Empty<FieldInfo>.Array : GetModuleType().GetFields(bindingFlags);
 		}
 
 		public MethodInfo GetMethod(string name)
@@ -168,12 +168,12 @@ namespace IKVM.Reflection
 
 		public MethodInfo[] GetMethods()
 		{
-			return IsResource() ? new MethodInfo[0] : GetModuleType().GetMethods();
+			return IsResource() ? Empty<MethodInfo>.Array : GetModuleType().GetMethods();
 		}
 
 		public MethodInfo[] GetMethods(BindingFlags bindingFlags)
 		{
-			return IsResource() ? new MethodInfo[0] : GetModuleType().GetMethods(bindingFlags);
+			return IsResource() ? Empty<MethodInfo>.Array : GetModuleType().GetMethods(bindingFlags);
 		}
 
 		public ConstructorInfo __ModuleInitializer

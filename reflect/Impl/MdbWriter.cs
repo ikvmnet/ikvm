@@ -83,7 +83,7 @@ namespace IKVM.Reflection.Impl
 
 		public byte[] GetDebugInfo(ref IMAGE_DEBUG_DIRECTORY idd)
 		{
-			return new byte[0];
+			return Empty<byte>.Array;
 		}
 
 		public void RemapToken(int oldToken, int newToken)

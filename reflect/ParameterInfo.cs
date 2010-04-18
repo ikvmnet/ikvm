@@ -27,8 +27,6 @@ namespace IKVM.Reflection
 {
 	public abstract class ParameterInfo
 	{
-		internal static readonly ParameterInfo[] EmptyArray = new ParameterInfo[0];
-
 		public sealed override bool Equals(object obj)
 		{
 			ParameterInfo other = obj as ParameterInfo;

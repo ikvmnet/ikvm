@@ -26,8 +26,6 @@ namespace IKVM.Reflection
 {
 	public abstract class EventInfo : MemberInfo
 	{
-		internal static readonly EventInfo[] EmptyArray = new EventInfo[0];
-
 		public sealed override MemberTypes MemberType
 		{
 			get { return MemberTypes.Event; }

@@ -29,7 +29,6 @@ namespace IKVM.Reflection
 {
 	public struct CustomAttributeNamedArgument
 	{
-		internal static readonly CustomAttributeNamedArgument[] EmptyArray = new CustomAttributeNamedArgument[0];
 		private readonly MemberInfo member;
 		private readonly CustomAttributeTypedArgument value;
 

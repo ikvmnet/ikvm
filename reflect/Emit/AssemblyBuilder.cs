@@ -85,7 +85,7 @@ namespace IKVM.Reflection.Emit
 			}
 			else
 			{
-				n.SetPublicKey(new byte[0]);
+				n.SetPublicKey(Empty<byte>.Array);
 			}
 			return n;
 		}
@@ -394,7 +394,7 @@ namespace IKVM.Reflection.Emit
 
 		public override AssemblyName[] GetReferencedAssemblies()
 		{
-			return new AssemblyName[0];
+			return Empty<AssemblyName>.Array;
 		}
 
 		public override Module[] GetLoadedModules(bool getResourceModules)

@@ -26,6 +26,11 @@ using System.Collections.Generic;
 
 namespace IKVM.Reflection
 {
+	static class Empty<T>
+	{
+		internal static readonly T[] Array = new T[0];
+	}
+
 	static class Util
 	{
 		internal static Type[] Copy(Type[] array)

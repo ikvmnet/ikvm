@@ -27,8 +27,6 @@ namespace IKVM.Reflection
 {
 	public abstract class MethodBase : MemberInfo
 	{
-		internal static readonly MethodBase[] EmptyArray = new MethodBase[0];
-
 		internal abstract MethodSignature MethodSignature { get; }
 		internal abstract int ParameterCount { get; }
 		public abstract ParameterInfo[] GetParameters();

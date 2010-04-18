@@ -43,7 +43,7 @@ namespace IKVM.Reflection
 
 	public abstract class Type : MemberInfo, IGenericContext, IGenericBinder
 	{
-		public static readonly Type[] EmptyTypes = new Type[0];
+		public static readonly Type[] EmptyTypes = Empty<Type>.Array;
 
 		public static Binder DefaultBinder
 		{
@@ -88,7 +88,7 @@ namespace IKVM.Reflection
 
 		public virtual MethodBase[] __GetDeclaredMethods()
 		{
-			return MethodBase.EmptyArray;
+			return Empty<MethodBase>.Array;
 		}
 
 		public virtual __MethodImplMap __GetMethodImplMap()
@@ -98,17 +98,17 @@ namespace IKVM.Reflection
 
 		public virtual FieldInfo[] __GetDeclaredFields()
 		{
-			return FieldInfo.EmptyArray;
+			return Empty<FieldInfo>.Array;
 		}
 
 		public virtual EventInfo[] __GetDeclaredEvents()
 		{
-			return EventInfo.EmptyArray;
+			return Empty<EventInfo>.Array;
 		}
 
 		public virtual PropertyInfo[] __GetDeclaredProperties()
 		{
-			return PropertyInfo.EmptyArray;
+			return Empty<PropertyInfo>.Array;
 		}
 
 		public virtual Type[] __GetRequiredCustomModifiers()
@@ -351,7 +351,7 @@ namespace IKVM.Reflection
 					return GetMember((string)cad.ConstructorArguments[0].Value);
 				}
 			}
-			return new MemberInfo[0];
+			return Empty<MemberInfo>.Array;
 		}
 
 		public MemberInfo[] GetMember(string name)

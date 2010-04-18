@@ -70,7 +70,7 @@ namespace IKVM.Reflection.Reader
 			}
 			else
 			{
-				name.SetPublicKey(new byte[0]);
+				name.SetPublicKey(Empty<byte>.Array);
 			}
 			if (rec.Culture != 0)
 			{
