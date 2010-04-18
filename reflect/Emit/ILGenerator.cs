@@ -644,7 +644,11 @@ namespace IKVM.Reflection.Emit
 
 		private void UpdateStack(OpCode opc, bool hasthis, Type returnType, int parameterCount)
 		{
-			if (opc.FlowControl == FlowControl.Call)
+			if (opc == OpCodes.Jmp)
+			{
+				stackHeight = -1;
+			}
+			else if (opc.FlowControl == FlowControl.Call)
 			{
 				int stackdiff = 0;
 				if ((hasthis && opc != OpCodes.Newobj) || opc == OpCodes.Calli)
