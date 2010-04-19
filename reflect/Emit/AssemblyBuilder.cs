@@ -180,8 +180,8 @@ namespace IKVM.Reflection.Emit
 			{
 				assemblyRecord.MajorVersion = (ushort)name.Version.Major;
 				assemblyRecord.MinorVersion = (ushort)name.Version.Minor;
-				assemblyRecord.BuildNumber = (ushort)name.Version.Build;
-				assemblyRecord.RevisionNumber = (ushort)name.Version.Revision;
+				assemblyRecord.BuildNumber = (ushort)(name.Version.Build == -1 ? 0 : name.Version.Build);
+				assemblyRecord.RevisionNumber = (ushort)(name.Version.Revision == -1 ? 0 : name.Version.Revision);
 			}
 			if (name.KeyPair != null)
 			{
