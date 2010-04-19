@@ -234,12 +234,12 @@ namespace IKVM.Reflection.Reader
 			List<CustomAttributeData> list = module.GetCustomAttributes(this.MetadataToken);
 			if ((this.Attributes & MethodAttributes.PinvokeImpl) != 0)
 			{
-				list.Add(CreateDllImportPseudoCustomAttribute());
+				CreateDllImportPseudoCustomAttribute(list);
 			}
 			return list;
 		}
 
-		private CustomAttributeData CreateDllImportPseudoCustomAttribute()
+		private void CreateDllImportPseudoCustomAttribute(List<CustomAttributeData> attribs)
 		{
 			int token = this.MetadataToken;
 			// TODO use binary search?
@@ -326,10 +326,10 @@ namespace IKVM.Reflection.Reader
 					{
 						list.Add(MakeNamedArgument(type, "ThrowOnUnmappableChar", flags, CharMapErrorOn));
 					}
-					return new CustomAttributeData(constructor, new object[] { dllName }, list);
+					attribs.Add(new CustomAttributeData(constructor, new object[] { dllName }, list));
+					return;
 				}
 			}
-			throw new BadImageFormatException();
 		}
 
 		private static CustomAttributeNamedArgument MakeNamedArgument(Type type, string field, string value)
