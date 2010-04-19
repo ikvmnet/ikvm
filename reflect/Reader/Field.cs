@@ -79,7 +79,7 @@ namespace IKVM.Reflection.Reader
 			return module.Constant.GetRawConstantValue(module, this.MetadataToken);
 		}
 
-		public override void __GetDataFromRVA(byte[] data)
+		public override void __GetDataFromRVA(byte[] data, int offset, int length)
 		{
 			int rid = index + 1;
 			// TODO binary search?
@@ -87,19 +87,17 @@ namespace IKVM.Reflection.Reader
 			{
 				if (module.FieldRVA.records[i].Field == rid)
 				{
-					int size = this.FieldType.StructLayoutAttribute.Size;
 					module.SeekRVA(module.FieldRVA.records[i].RVA);
-					int offset = 0;
-					while (size > 0)
+					while (length > 0)
 					{
-						int read = module.stream.Read(data, offset, size);
+						int read = module.stream.Read(data, offset, length);
 						if (read == 0)
 						{
 							// C++ assemblies can have fields that have an RVA that lies outside of the file
 							break;
 						}
 						offset += read;
-						size -= read;
+						length -= read;
 					}
 					return;
 				}

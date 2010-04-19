@@ -73,7 +73,7 @@ namespace IKVM.Reflection.Emit
 			typeBuilder.ModuleBuilder.initializedData.Write(data);
 		}
 
-		public override void __GetDataFromRVA(byte[] data)
+		public override void __GetDataFromRVA(byte[] data, int offset, int length)
 		{
 			throw new NotImplementedException();
 		}

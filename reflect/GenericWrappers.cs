@@ -303,9 +303,9 @@ namespace IKVM.Reflection
 			return field.GetRawConstantValue();
 		}
 
-		public override void __GetDataFromRVA(byte[] data)
+		public override void __GetDataFromRVA(byte[] data, int offset, int length)
 		{
-			field.__GetDataFromRVA(data);
+			field.__GetDataFromRVA(data, offset, length);
 		}
 
 		internal override IList<CustomAttributeData> GetCustomAttributesData()
