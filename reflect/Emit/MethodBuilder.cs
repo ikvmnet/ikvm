@@ -220,7 +220,7 @@ namespace IKVM.Reflection.Emit
 			rec.MappingFlags = flags;
 			rec.MemberForwarded = pseudoToken;
 			rec.ImportName = name;
-			rec.ImportScope = dllName == null ? 0 : this.ModuleBuilder.ModuleRef.Add(this.ModuleBuilder.Strings.Add(dllName));
+			rec.ImportScope = this.ModuleBuilder.ModuleRef.Add(dllName == null ? 0 : this.ModuleBuilder.Strings.Add(dllName));
 			this.ModuleBuilder.ImplMap.AddRecord(rec);
 		}
 
