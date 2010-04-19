@@ -183,9 +183,10 @@ namespace IKVM.Reflection.Emit
 				assemblyRecord.BuildNumber = (ushort)(name.Version.Build == -1 ? 0 : name.Version.Build);
 				assemblyRecord.RevisionNumber = (ushort)(name.Version.Revision == -1 ? 0 : name.Version.Revision);
 			}
-			if (name.KeyPair != null)
+			byte[] publicKey = GetPublicKey(name);
+			if (publicKey != null)
 			{
-				assemblyRecord.PublicKey = manifestModule.Blobs.Add(ByteBuffer.Wrap(name.KeyPair.PublicKey));
+				assemblyRecord.PublicKey = manifestModule.Blobs.Add(ByteBuffer.Wrap(publicKey));
 				assemblyRecord.Flags |= 0x0001;	// PublicKey
 			}
 			if (name.CultureInfo != null)
@@ -253,12 +254,12 @@ namespace IKVM.Reflection.Emit
 					int fileToken;
 					if (entryPoint != null && entryPoint.Module == moduleBuilder)
 					{
-						ModuleWriter.WriteModule(null, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, null, moduleBuilder.unmanagedResources, entryPoint.MetadataToken);
+						ModuleWriter.WriteModule(null, null, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, null, moduleBuilder.unmanagedResources, entryPoint.MetadataToken);
 						entryPointToken = fileToken = AddFile(manifestModule, moduleBuilder.fileName, 0 /*ContainsMetaData*/);
 					}
 					else
 					{
-						ModuleWriter.WriteModule(null, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, null, moduleBuilder.unmanagedResources, 0);
+						ModuleWriter.WriteModule(null, null, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, null, moduleBuilder.unmanagedResources, 0);
 						fileToken = AddFile(manifestModule, moduleBuilder.fileName, 0 /*ContainsMetaData*/);
 					}
 					moduleBuilder.ExportTypes(fileToken, manifestModule);
@@ -271,7 +272,22 @@ namespace IKVM.Reflection.Emit
 			}
 
 			// finally, write the manifest module
-			ModuleWriter.WriteModule(name.KeyPair, manifestModule, fileKind, portableExecutableKind, imageFileMachine, versionInfoData, unmanagedResources ?? manifestModule.unmanagedResources, entryPointToken);
+			ModuleWriter.WriteModule(name.KeyPair, publicKey, manifestModule, fileKind, portableExecutableKind, imageFileMachine, versionInfoData, unmanagedResources ?? manifestModule.unmanagedResources, entryPointToken);
+		}
+
+		private static byte[] GetPublicKey(AssemblyName name)
+		{
+			StrongNameKeyPair keyPair = name.KeyPair;
+			if (keyPair != null)
+			{
+				return keyPair.PublicKey;
+			}
+			byte[] key = name.GetPublicKey();
+			if (key == null || key.Length == 0)
+			{
+				return null;
+			}
+			return key;
 		}
 
 		private int AddFile(ModuleBuilder manifestModule, string fileName, int flags)

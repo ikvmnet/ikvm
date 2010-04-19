@@ -34,7 +34,7 @@ namespace IKVM.Reflection.Writer
 {
 	static class ModuleWriter
 	{
-		internal static void WriteModule(StrongNameKeyPair keyPair, ModuleBuilder moduleBuilder, PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ByteBuffer versionInfoData, byte[] unmanagedResources, int entryPointToken)
+		internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, ModuleBuilder moduleBuilder, PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ByteBuffer versionInfoData, byte[] unmanagedResources, int entryPointToken)
 		{
 			moduleBuilder.FixupMethodBodyTokens();
 
@@ -108,7 +108,7 @@ namespace IKVM.Reflection.Writer
 				{
 					cliHeader.Flags |= CliHeader.COMIMAGE_FLAGS_32BITREQUIRED;
 				}
-				if (keyPair != null)
+				if (publicKey != null)
 				{
 					cliHeader.Flags |= CliHeader.COMIMAGE_FLAGS_STRONGNAMESIGNED;
 				}
