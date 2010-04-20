@@ -599,8 +599,7 @@ namespace IKVM.Reflection
 			}
 			if (resolvers.Count == 0)
 			{
-				// TODO if !throwOnError we shouldn't throw here
-				asm = LoadFile(System.Reflection.Assembly.Load(refname).Location);
+				asm = DefaultResolver(refname, throwOnError);
 			}
 			else
 			{
@@ -628,6 +627,40 @@ namespace IKVM.Reflection
 				throw new FileNotFoundException(refname);
 			}
 			return null;
+		}
+
+		private Assembly DefaultResolver(string refname, bool throwOnError)
+		{
+			string fileName;
+			if (throwOnError)
+			{
+				try
+				{
+					fileName = System.Reflection.Assembly.ReflectionOnlyLoad(refname).Location;
+				}
+				catch (System.BadImageFormatException x)
+				{
+					throw new BadImageFormatException(x.Message, x);
+				}
+			}
+			else
+			{
+				try
+				{
+					fileName = System.Reflection.Assembly.ReflectionOnlyLoad(refname).Location;
+				}
+				catch (System.BadImageFormatException x)
+				{
+					throw new BadImageFormatException(x.Message, x);
+				}
+				catch (FileNotFoundException)
+				{
+					// we intentionally only swallow the FileNotFoundException, if the file exists but isn't a valid assembly,
+					// we should throw an exception
+					return null;
+				}
+			}
+			return LoadFile(fileName);
 		}
 
 		public Type GetType(string assemblyQualifiedTypeName)
