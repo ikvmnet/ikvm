@@ -38,6 +38,15 @@
                 <include name="bin-x64/JVM.DLL" />
                 <include name="bin-x86/ikvm-native.dll" />
                 <include name="bin-x86/JVM.DLL" />
+                <include name="classpath/**.class" />
+                <include name="openjdk/*.dll" />
+                <include name="openjdk/*.jar" />
+                <include name="openjdk/allsources.gen.lst" />
+                <include name="openjdk/AssemblyInfo.java" />
+                <include name="openjdk/response.gen.txt" />
+                <include name="openjdk/tools.gen.rsp" />
+                <include name="openjdk/vfs.zip" />
+                <include name="openjdk/**.class" />
                 <include name="tools/asmref.exe" />
                 <include name="tools/depcheck.exe" />
                 <include name="tools/pubkey.exe" />
