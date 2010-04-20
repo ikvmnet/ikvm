@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Jeroen Frijters
+  Copyright (C) 2009-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -661,12 +661,12 @@ namespace IKVM.Reflection
 
 		public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access)
 		{
-			return DefineDynamicAssembly(name, access, null);
+			return DefineDynamicAssemblyImpl(name, access, null, null, null, null);
 		}
 
 		public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, string dir)
 		{
-			return new AssemblyBuilder(this, name, dir, access, null, null, null);
+			return DefineDynamicAssemblyImpl(name, access, dir, null, null, null);
 		}
 
 #if NET_4_0
@@ -674,7 +674,15 @@ namespace IKVM.Reflection
 #endif
 		public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
 		{
-			return new AssemblyBuilder(this, name, dir, access, requiredPermissions, optionalPermissions, refusedPermissions);
+			return DefineDynamicAssemblyImpl(name, access, dir, requiredPermissions, optionalPermissions, refusedPermissions);
 		}
+
+		private AssemblyBuilder DefineDynamicAssemblyImpl(AssemblyName name, AssemblyBuilderAccess access, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
+		{
+			AssemblyBuilder asm = new AssemblyBuilder(this, name, dir, access, requiredPermissions, optionalPermissions, refusedPermissions);
+			assembliesByName.Add(GetAssemblyIdentityName(asm.GetName()), asm);
+			assemblies.Add(asm);
+			return asm;
+ 		}
 	}
 }
