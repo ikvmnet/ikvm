@@ -786,5 +786,28 @@ namespace IKVM.Reflection
 			}
 			return expanded;
 		}
+
+		protected static Type[][][] BindTypeParameters(IGenericBinder binder, Type[][][] types)
+		{
+			if (types == null)
+			{
+				return null;
+			}
+			Type[][][] expanded = new Type[types.Length][][];
+			for (int i = 0; i < types.Length; i++)
+			{
+				expanded[i] = BindTypeParameters(binder, types[i]);
+			}
+			return expanded;
+		}
+
+		protected static Type[] BindTypeParameters(IGenericBinder binder, Type[][][] types, int index, int optOrReq)
+		{
+			if (types == null || types[index] == null)
+			{
+				return null;
+			}
+			return BindTypeParameters(binder, types[index][optOrReq]);
+		}
 	}
 }

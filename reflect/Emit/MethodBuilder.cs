@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2008, 2009 Jeroen Frijters
+  Copyright (C) 2008-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -42,8 +42,7 @@ namespace IKVM.Reflection.Emit
 		private int signature;
 		private Type returnType;
 		private Type[] parameterTypes;
-		private Type[][] optionalCustomModifiers;	// last element is for the return type
-		private Type[][] requiredCustomModifiers;
+		private Type[][][] modifiers;	// see PackedCustomModifiers
 		private MethodAttributes attributes;
 		private MethodImplAttributes implFlags;
 		private ILGenerator ilgen;
@@ -69,31 +68,6 @@ namespace IKVM.Reflection.Emit
 				callingConvention |= CallingConventions.HasThis;
 			}
 			this.callingConvention = callingConvention;
-		}
-
-		private static Type[][] PackCustomModifiers(Type[] returnTypeCustomModifiers, Type[][] parameterTypeCustomModifiers, int parameterCount)
-		{
-			if (returnTypeCustomModifiers == null && parameterTypeCustomModifiers == null)
-			{
-				return null;
-			}
-			Type[][] newArray = new Type[parameterCount + 1][];
-			newArray[parameterCount] = Util.Copy(returnTypeCustomModifiers);
-			if (parameterTypeCustomModifiers != null)
-			{
-				for (int i = 0; i < parameterCount; i++)
-				{
-					newArray[i] = Util.Copy(parameterTypeCustomModifiers[i]);
-				}
-			}
-			else
-			{
-				for (int i = 0; i < parameterCount; i++)
-				{
-					newArray[i] = Type.EmptyTypes;
-				}
-			}
-			return newArray;
 		}
 
 		public ILGenerator GetILGenerator()
@@ -338,8 +312,8 @@ namespace IKVM.Reflection.Emit
 		{
 			this.returnType = returnType ?? this.Module.universe.System_Void;
 			this.parameterTypes = Util.Copy(parameterTypes);
-			this.requiredCustomModifiers = PackCustomModifiers(returnTypeRequiredCustomModifiers, parameterTypeRequiredCustomModifiers, this.parameterTypes.Length);
-			this.optionalCustomModifiers = PackCustomModifiers(returnTypeOptionalCustomModifiers, parameterTypeOptionalCustomModifiers, this.parameterTypes.Length);
+			this.modifiers = PackedCustomModifiers.CreateFromExternal(returnTypeOptionalCustomModifiers, returnTypeRequiredCustomModifiers,
+				parameterTypeOptionalCustomModifiers, parameterTypeRequiredCustomModifiers, this.parameterTypes.Length);
 		}
 
 		public GenericTypeParameterBuilder[] DefineGenericParameters(params string[] names)
@@ -471,24 +445,23 @@ namespace IKVM.Reflection.Emit
 				}
 			}
 
-			public override Type[] GetOptionalCustomModifiers()
+			private Type[] GetCustomModifiers(int optOrReq)
 			{
-				if (method.optionalCustomModifiers == null)
+				if (method.modifiers == null || method.modifiers[parameter + 1] == null)
 				{
 					return Type.EmptyTypes;
 				}
-				int index = parameter == -1 ? method.optionalCustomModifiers.Length - 1 : parameter;
-				return Util.Copy(method.optionalCustomModifiers[index]);
+				return Util.Copy(method.modifiers[parameter + 1][optOrReq]);
+			}
+
+			public override Type[] GetOptionalCustomModifiers()
+			{
+				return GetCustomModifiers(0);
 			}
 
 			public override Type[] GetRequiredCustomModifiers()
 			{
-				if (method.requiredCustomModifiers == null)
-				{
-					return Type.EmptyTypes;
-				}
-				int index = parameter == -1 ? method.requiredCustomModifiers.Length - 1 : parameter;
-				return Util.Copy(method.requiredCustomModifiers[index]);
+				return GetCustomModifiers(1);
 			}
 
 			public override MemberInfo Member
@@ -665,7 +638,7 @@ namespace IKVM.Reflection.Emit
 			{
 				if (methodSignature == null)
 				{
-					methodSignature = MethodSignature.MakeFromBuilder(returnType, parameterTypes, optionalCustomModifiers, requiredCustomModifiers, callingConvention, gtpb == null ? 0 : gtpb.Length);
+					methodSignature = MethodSignature.MakeFromBuilder(returnType, parameterTypes, modifiers, callingConvention, gtpb == null ? 0 : gtpb.Length);
 				}
 				return methodSignature;
 			}

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Jeroen Frijters
+  Copyright (C) 2009-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -32,26 +32,17 @@ namespace IKVM.Reflection
 {
 	sealed class MethodSignature : Signature
 	{
-		// as an optimization, we could pack the custom modifiers (like in MethodBuilder)
 		private readonly Type returnType;
-		private readonly Type[] returnTypeOptionalCustomModifiers;
-		private readonly Type[] returnTypeRequiredCustomModifiers;
 		private readonly Type[] parameterTypes;
-		private readonly Type[][] parameterOptionalCustomModifiers;
-		private readonly Type[][] parameterRequiredCustomModifiers;
+		private readonly Type[][][] modifiers;	// see PackedCustomModifiers
 		private readonly CallingConventions callingConvention;
 		private readonly int genericParamCount;
 
-		private MethodSignature(Type returnType, Type[] returnTypeOptionalCustomModifiers, Type[] returnTypeRequiredCustomModifiers,
-			Type[] parameterTypes, Type[][] parameterOptionalCustomModifiers, Type[][] parameterRequiredCustomModifiers,
-			CallingConventions callingConvention, int genericParamCount)
+		private MethodSignature(Type returnType, Type[] parameterTypes, Type[][][] modifiers, CallingConventions callingConvention, int genericParamCount)
 		{
 			this.returnType = returnType;
-			this.returnTypeOptionalCustomModifiers = returnTypeOptionalCustomModifiers;
-			this.returnTypeRequiredCustomModifiers = returnTypeRequiredCustomModifiers;
 			this.parameterTypes = parameterTypes;
-			this.parameterOptionalCustomModifiers = parameterOptionalCustomModifiers;
-			this.parameterRequiredCustomModifiers = parameterRequiredCustomModifiers;
+			this.modifiers = modifiers;
 			this.callingConvention = callingConvention;
 			this.genericParamCount = genericParamCount;
 		}
@@ -63,22 +54,16 @@ namespace IKVM.Reflection
 				&& other.callingConvention == callingConvention
 				&& other.genericParamCount == genericParamCount
 				&& other.returnType.Equals(returnType)
-				&& Util.ArrayEquals(other.returnTypeOptionalCustomModifiers, returnTypeOptionalCustomModifiers)
-				&& Util.ArrayEquals(other.returnTypeRequiredCustomModifiers, returnTypeRequiredCustomModifiers)
 				&& Util.ArrayEquals(other.parameterTypes, parameterTypes)
-				&& Util.ArrayEquals(other.parameterOptionalCustomModifiers, parameterOptionalCustomModifiers)
-				&& Util.ArrayEquals(other.parameterRequiredCustomModifiers, parameterRequiredCustomModifiers);
+				&& Util.ArrayEquals(other.modifiers, modifiers);
 		}
 
 		public override int GetHashCode()
 		{
 			return genericParamCount ^ 77 * (int)callingConvention
 				^ 3 * returnType.GetHashCode()
-				^ Util.GetHashCode(returnTypeOptionalCustomModifiers) * 33
-				^ Util.GetHashCode(returnTypeRequiredCustomModifiers) * 55
 				^ Util.GetHashCode(parameterTypes) * 5
-				^ Util.GetHashCode(parameterOptionalCustomModifiers)
-				^ Util.GetHashCode(parameterRequiredCustomModifiers);
+				^ Util.GetHashCode(modifiers) * 55;
 		}
 
 		private sealed class UnboundGenericMethodContext : IGenericContext
@@ -106,11 +91,7 @@ namespace IKVM.Reflection
 			CallingConventions callingConvention;
 			int genericParamCount;
 			Type returnType;
-			Type[] returnTypeOptionalCustomModifiers;
-			Type[] returnTypeRequiredCustomModifiers;
 			Type[] parameterTypes;
-			Type[][] parameterOptionalCustomModifiers;
-			Type[][] parameterRequiredCustomModifiers;
 			byte flags = br.ReadByte();
 			switch (flags & 7)
 			{
@@ -138,39 +119,31 @@ namespace IKVM.Reflection
 				context = new UnboundGenericMethodContext(context);
 			}
 			int paramCount = br.ReadCompressedInt();
-			ReadCustomModifiers(module, br, context, out returnTypeRequiredCustomModifiers, out returnTypeOptionalCustomModifiers);
+			Type[][][] modifiers = null;
+			Type[] optionalCustomModifiers;
+			Type[] requiredCustomModifiers;
+			ReadCustomModifiers(module, br, context, out requiredCustomModifiers, out optionalCustomModifiers);
 			returnType = ReadRetType(module, br, context);
 			parameterTypes = new Type[paramCount];
-			parameterOptionalCustomModifiers = null;
-			parameterRequiredCustomModifiers = null;
+			PackedCustomModifiers.SetModifiers(ref modifiers, 0, 0, optionalCustomModifiers, paramCount + 1);
+			PackedCustomModifiers.SetModifiers(ref modifiers, 0, 1, requiredCustomModifiers, paramCount + 1);
 			for (int i = 0; i < parameterTypes.Length; i++)
 			{
 				if ((callingConvention & CallingConventions.VarArgs) != 0 && br.PeekByte() == SENTINEL)
 				{
 					Array.Resize(ref parameterTypes, i);
-					if (parameterOptionalCustomModifiers != null)
+					if (modifiers != null)
 					{
-						Array.Resize(ref parameterOptionalCustomModifiers, i);
-					}
-					if (parameterRequiredCustomModifiers != null)
-					{
-						Array.Resize(ref parameterRequiredCustomModifiers, i);
+						Array.Resize(ref modifiers, i + 1);
 					}
 					break;
 				}
-				if (IsCustomModifier(br.PeekByte()))
-				{
-					if (parameterOptionalCustomModifiers == null)
-					{
-						parameterOptionalCustomModifiers = new Type[parameterTypes.Length][];
-						parameterRequiredCustomModifiers = new Type[parameterTypes.Length][];
-					}
-					ReadCustomModifiers(module, br, context, out parameterRequiredCustomModifiers[i], out parameterOptionalCustomModifiers[i]);
-				}
+				ReadCustomModifiers(module, br, context, out requiredCustomModifiers, out optionalCustomModifiers);
+				PackedCustomModifiers.SetModifiers(ref modifiers, i + 1, 0, optionalCustomModifiers, paramCount + 1);
+				PackedCustomModifiers.SetModifiers(ref modifiers, i + 1, 1, requiredCustomModifiers, paramCount + 1);
 				parameterTypes[i] = ReadParam(module, br, context);
 			}
-			return new MethodSignature(returnType, returnTypeOptionalCustomModifiers, returnTypeRequiredCustomModifiers,
-				parameterTypes, parameterOptionalCustomModifiers, parameterRequiredCustomModifiers, callingConvention, genericParamCount);
+			return new MethodSignature(returnType, parameterTypes, modifiers, callingConvention, genericParamCount);
 		}
 
 		internal static __StandAloneMethodSig ReadStandAloneMethodSig(ModuleReader module, ByteReader br, IGenericContext context)
@@ -256,12 +229,12 @@ namespace IKVM.Reflection
 
 		internal Type[] GetReturnTypeOptionalCustomModifiers(IGenericBinder binder)
 		{
-			return BindTypeParameters(binder, returnTypeOptionalCustomModifiers);
+			return BindTypeParameters(binder, modifiers, 0, 0);
 		}
 
 		internal Type[] GetReturnTypeRequiredCustomModifiers(IGenericBinder binder)
 		{
-			return BindTypeParameters(binder, returnTypeRequiredCustomModifiers);
+			return BindTypeParameters(binder, modifiers, 0, 1);
 		}
 
 		internal Type GetParameterType(IGenericBinder binder, int index)
@@ -271,20 +244,12 @@ namespace IKVM.Reflection
 
 		internal Type[] GetParameterOptionalCustomModifiers(IGenericBinder binder, int index)
 		{
-			if (parameterOptionalCustomModifiers == null)
-			{
-				return null;
-			}
-			return BindTypeParameters(binder, parameterOptionalCustomModifiers[index]);
+			return BindTypeParameters(binder, modifiers, index + 1, 0);
 		}
 
 		internal Type[] GetParameterRequiredCustomModifiers(IGenericBinder binder, int index)
 		{
-			if (parameterRequiredCustomModifiers == null)
-			{
-				return null;
-			}
-			return BindTypeParameters(binder, parameterRequiredCustomModifiers[index]);
+			return BindTypeParameters(binder, modifiers, index + 1, 1);
 		}
 
 		internal CallingConventions CallingConvention
@@ -322,16 +287,19 @@ namespace IKVM.Reflection
 		{
 			Binder binder = new Binder(type, methodArgs);
 			return new MethodSignature(returnType.BindTypeParameters(binder),
-				BindTypeParameters(binder, returnTypeOptionalCustomModifiers),
-				BindTypeParameters(binder, returnTypeRequiredCustomModifiers),
 				BindTypeParameters(binder, parameterTypes),
-				BindTypeParameters(binder, parameterOptionalCustomModifiers),
-				BindTypeParameters(binder, parameterRequiredCustomModifiers),
+				BindTypeParameters(binder, modifiers),
 				callingConvention, genericParamCount);
 		}
 
 		private sealed class Unbinder : IGenericBinder
 		{
+			internal static readonly Unbinder Instance = new Unbinder();
+
+			private Unbinder()
+			{
+			}
+
 			public Type BindTypeParameter(Type type)
 			{
 				return type;
@@ -343,47 +311,15 @@ namespace IKVM.Reflection
 			}
 		}
 
-		internal static MethodSignature MakeFromBuilder(Type returnType, Type[] parameterTypes,
-			Type[][] optionalCustomModifiers, Type[][] requiredCustomModifiers, CallingConventions callingConvention, int genericParamCount)
+		internal static MethodSignature MakeFromBuilder(Type returnType, Type[] parameterTypes, Type[][][] modifiers, CallingConventions callingConvention, int genericParamCount)
 		{
-			Type[] returnTypeOptionalCustomModifiers = UnpackReturnTypeModifiers(optionalCustomModifiers);
-			Type[] returnTypeRequiredCustomModifiers = UnpackReturnTypeModifiers(requiredCustomModifiers);
-			Type[][] parameterOptionalCustomModifiers = UnpackParameterModifiers(optionalCustomModifiers);
-			Type[][] parameterRequiredCustomModifiers = UnpackParameterModifiers(requiredCustomModifiers);
-
 			if (genericParamCount > 0)
 			{
-				Unbinder unbinder = new Unbinder();
-				returnType = returnType.BindTypeParameters(unbinder);
-				Type.InplaceBindTypeParameters(unbinder, returnTypeOptionalCustomModifiers);
-				Type.InplaceBindTypeParameters(unbinder, returnTypeRequiredCustomModifiers);
-				parameterTypes = BindTypeParameters(unbinder, parameterTypes);
-				parameterOptionalCustomModifiers = BindTypeParameters(unbinder, parameterOptionalCustomModifiers);
-				parameterRequiredCustomModifiers = BindTypeParameters(unbinder, parameterRequiredCustomModifiers);
+				returnType = returnType.BindTypeParameters(Unbinder.Instance);
+				parameterTypes = BindTypeParameters(Unbinder.Instance, parameterTypes);
+				modifiers = BindTypeParameters(Unbinder.Instance, modifiers);
 			}
-
-			return new MethodSignature(returnType, returnTypeOptionalCustomModifiers, returnTypeRequiredCustomModifiers,
-					parameterTypes, parameterOptionalCustomModifiers, parameterRequiredCustomModifiers, callingConvention, genericParamCount);
-		}
-
-		private static Type[] UnpackReturnTypeModifiers(Type[][] types)
-		{
-			if (types == null)
-			{
-				return Type.EmptyTypes;
-			}
-			return types[types.Length - 1];
-		}
-
-		private static Type[][] UnpackParameterModifiers(Type[][] types)
-		{
-			if (types == null)
-			{
-				return null;
-			}
-			Type[][] unpacked = new Type[types.Length - 1][];
-			Array.Copy(types, unpacked, unpacked.Length);
-			return unpacked;
+			return new MethodSignature(returnType, parameterTypes, modifiers, callingConvention, genericParamCount);
 		}
 
 		internal bool MatchParameterTypes(Type[] types)
@@ -463,22 +399,94 @@ namespace IKVM.Reflection
 			}
 			bb.WriteCompressedInt(parameterCount);
 			// RetType
-			WriteCustomModifiers(module, bb, ELEMENT_TYPE_CMOD_OPT, returnTypeOptionalCustomModifiers);
-			WriteCustomModifiers(module, bb, ELEMENT_TYPE_CMOD_REQD, returnTypeRequiredCustomModifiers);
-			WriteType(module, bb, returnType ?? module.universe.System_Void);
+			if (modifiers != null && modifiers[0] != null)
+			{
+				WriteCustomModifiers(module, bb, ELEMENT_TYPE_CMOD_OPT, modifiers[0][0]);
+				WriteCustomModifiers(module, bb, ELEMENT_TYPE_CMOD_REQD, modifiers[0][1]);
+			}
+			WriteType(module, bb, returnType);
 			// Param
 			for (int i = 0; i < parameterTypes.Length; i++)
 			{
-				if (parameterOptionalCustomModifiers != null)
+				if (modifiers != null && modifiers[i + 1] != null)
 				{
-					WriteCustomModifiers(module, bb, ELEMENT_TYPE_CMOD_OPT, parameterOptionalCustomModifiers[i]);
-				}
-				if (parameterRequiredCustomModifiers != null)
-				{
-					WriteCustomModifiers(module, bb, ELEMENT_TYPE_CMOD_REQD, parameterRequiredCustomModifiers[i]);
+					WriteCustomModifiers(module, bb, ELEMENT_TYPE_CMOD_OPT, modifiers[i + 1][0]);
+					WriteCustomModifiers(module, bb, ELEMENT_TYPE_CMOD_REQD, modifiers[i + 1][1]);
 				}
 				WriteType(module, bb, parameterTypes[i]);
 			}
+		}
+	}
+
+	static class PackedCustomModifiers
+	{
+		// modifiers are packed in a very specific way (and required to be so, otherwise equality checks will fail)
+		// For modifiers[x][y][z]:
+		//  x = parameter index, 0 = return type, 1 = first parameters, ...
+		//  y = 0 = optional custom modifiers, 1 = required custom modifiers
+		//  z = the custom modifiers
+		// At any level the reference can be null (and *must* be null, if there are no modifiers below that level).
+		// Empty arrays are not allowed at any level.
+
+		// this can be used to "add" elements to the modifiers array (and the elements are assumed to already be in normalized form)
+		internal static void SetModifiers(ref Type[][][] modifiers, int index, int optOrReq, Type[] add, int count)
+		{
+			if (add != null)
+			{
+				if (modifiers == null)
+				{
+					modifiers = new Type[count][][];
+				}
+				if (modifiers[index] == null)
+				{
+					modifiers[index] = new Type[2][];
+				}
+				modifiers[index][optOrReq] = add;
+			}
+		}
+
+		// this method make a copy of the incoming arrays (where necessary) and returns a normalized modifiers array
+		internal static Type[][][] CreateFromExternal(Type[] returnOptional, Type[] returnRequired, Type[][] parameterOptional, Type[][] parameterRequired, int parameterCount)
+		{
+			Type[][][] modifiers = null;
+			SetModifiers(ref modifiers, 0, 0, NormalizeAndCopy(returnOptional), parameterCount + 1);
+			SetModifiers(ref modifiers, 0, 1, NormalizeAndCopy(returnRequired), parameterCount + 1);
+			for (int i = 0; i < parameterCount; i++)
+			{
+				SetModifiers(ref modifiers, i + 1, 0, NormalizeAndCopy(parameterOptional, i), parameterCount + 1);
+				SetModifiers(ref modifiers, i + 1, 1, NormalizeAndCopy(parameterRequired, i), parameterCount + 1);
+			}
+			return modifiers;
+		}
+
+		private static Type[] NormalizeAndCopy(Type[] array)
+		{
+			if (array == null || array.Length == 0)
+			{
+				return null;
+			}
+			Type[] copy = null;
+			for (int i = 0; i < array.Length; i++)
+			{
+				if (array[i] != null)
+				{
+					if (copy == null)
+					{
+						copy = new Type[array.Length];
+					}
+					copy[i] = array[i];
+				}
+			}
+			return copy;
+		}
+
+		private static Type[] NormalizeAndCopy(Type[][] array, int index)
+		{
+			if (array == null || array.Length == 0)
+			{
+				return null;
+			}
+			return NormalizeAndCopy(array[index]);
 		}
 	}
 }

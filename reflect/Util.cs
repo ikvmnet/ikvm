@@ -129,6 +129,34 @@ namespace IKVM.Reflection
 			return false;
 		}
 
+		internal static bool ArrayEquals(Type[][][] t1, Type[][][] t2)
+		{
+			if (t1 == t2)
+			{
+				return true;
+			}
+			if (t1 == null)
+			{
+				return t2.Length == 0;
+			}
+			else if (t2 == null)
+			{
+				return t1.Length == 0;
+			}
+			if (t1.Length == t2.Length)
+			{
+				for (int i = 0; i < t1.Length; i++)
+				{
+					if (!ArrayEquals(t1[i], t2[i]))
+					{
+						return false;
+					}
+				}
+				return true;
+			}
+			return false;
+		}
+
 		internal static bool TypeEquals(Type t1, Type t2)
 		{
 			if (t1 == t2)
@@ -166,6 +194,19 @@ namespace IKVM.Reflection
 			if (types != null)
 			{
 				foreach (Type[] array in types)
+				{
+					h ^= GetHashCode(array);
+				}
+			}
+			return h;
+		}
+
+		internal static int GetHashCode(Type[][][] types)
+		{
+			int h = 0;
+			if (types != null)
+			{
+				foreach (Type[][] array in types)
 				{
 					h ^= GetHashCode(array);
 				}
