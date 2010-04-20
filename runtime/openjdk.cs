@@ -5538,23 +5538,28 @@ namespace IKVM.NativeCode.sun.misc
             CTRL_SHUTDOWN_EVENT
         }
 
-        [DllImport("kernel32.dll")]
-        private static extern bool SetConsoleCtrlHandler(ConsoleCtrlDelegate e, bool add);
-
         [System.Security.SecurityCritical]
         private class CriticalCtrlHandler : System.Runtime.ConstrainedExecution.CriticalFinalizerObject
         {
             private ConsoleCtrlDelegate consoleCtrlDelegate;
+            private bool ok;
+
+            [DllImport("kernel32.dll")]
+            private static extern bool SetConsoleCtrlHandler(ConsoleCtrlDelegate e, bool add);
 
             internal CriticalCtrlHandler()
             {
                 consoleCtrlDelegate = new ConsoleCtrlDelegate(ConsoleCtrlCheck);
-                SetConsoleCtrlHandler(consoleCtrlDelegate, true);
+                ok = SetConsoleCtrlHandler(consoleCtrlDelegate, true);
             }
 
+            [System.Security.SecuritySafeCritical]
             ~CriticalCtrlHandler()
             {
-                SetConsoleCtrlHandler(consoleCtrlDelegate, false);
+                if (ok)
+                {
+                    SetConsoleCtrlHandler(consoleCtrlDelegate, false);
+                }
             }
         }
 
