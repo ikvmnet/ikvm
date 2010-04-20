@@ -207,7 +207,7 @@ namespace IKVM.Reflection
 						parameterOptionalCustomModifiers = new Type[parameterTypes.Length][];
 						parameterRequiredCustomModifiers = new Type[parameterTypes.Length][];
 					}
-					ReadCustomModifiers(module, br, context, out parameterOptionalCustomModifiers[i], out parameterRequiredCustomModifiers[i]);
+					ReadCustomModifiers(module, br, context, out parameterRequiredCustomModifiers[i], out parameterOptionalCustomModifiers[i]);
 				}
 				parameterTypes[i] = ReadParam(module, br, context);
 			}
