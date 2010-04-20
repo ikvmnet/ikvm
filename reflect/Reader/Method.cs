@@ -95,23 +95,23 @@ namespace IKVM.Reflection.Reader
 					int seq = module.Param.records[parameter].Sequence - 1;
 					if (seq == -1)
 					{
-						returnParameter = new ParameterInfoImpl(this, seq, parameter, methodSignature.GetReturnType(this), methodSignature.GetReturnTypeRequiredCustomModifiers(this), methodSignature.GetReturnTypeOptionalCustomModifiers(this));
+						returnParameter = new ParameterInfoImpl(this, seq, parameter);
 					}
 					else
 					{
-						parameters[seq] = new ParameterInfoImpl(this, seq, parameter, methodSignature.GetParameterType(this, seq), methodSignature.GetParameterRequiredCustomModifiers(this, seq), methodSignature.GetParameterOptionalCustomModifiers(this, seq));
+						parameters[seq] = new ParameterInfoImpl(this, seq, parameter);
 					}
 				}
 				for (int i = 0; i < parameters.Length; i++)
 				{
 					if (parameters[i] == null)
 					{
-						parameters[i] = new ParameterInfoImpl(this, i, -1, methodSignature.GetParameterType(this, i), methodSignature.GetParameterRequiredCustomModifiers(this, i), methodSignature.GetParameterOptionalCustomModifiers(this, i));
+						parameters[i] = new ParameterInfoImpl(this, i, -1);
 					}
 				}
 				if (returnParameter == null)
 				{
-					returnParameter = new ParameterInfoImpl(this, -1, -1, methodSignature.GetReturnType(this), methodSignature.GetReturnTypeRequiredCustomModifiers(this), methodSignature.GetReturnTypeOptionalCustomModifiers(this));
+					returnParameter = new ParameterInfoImpl(this, -1, -1);
 				}
 			}
 		}
@@ -358,21 +358,15 @@ namespace IKVM.Reflection.Reader
 
 	sealed class ParameterInfoImpl : ParameterInfo
 	{
-		private readonly MemberInfo member;
+		private readonly MethodDefImpl method;
 		private readonly int position;
 		private readonly int index;
-		private readonly Type type;
-		private readonly Type[] requiredCustomModifiers;
-		private readonly Type[] optionalCustomModifiers;
 
-		internal ParameterInfoImpl(MemberInfo member, int position, int index, Type type, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
+		internal ParameterInfoImpl(MethodDefImpl method, int position, int index)
 		{
-			this.member = member;
+			this.method = method;
 			this.position = position;
 			this.index = index;
-			this.type = type;
-			this.requiredCustomModifiers = requiredCustomModifiers;
-			this.optionalCustomModifiers = optionalCustomModifiers;
 		}
 
 		public override string Name
@@ -382,7 +376,7 @@ namespace IKVM.Reflection.Reader
 
 		public override Type ParameterType
 		{
-			get { return type; }
+			get { return position == -1 ? method.MethodSignature.GetReturnType(method) : method.MethodSignature.GetParameterType(method, position); }
 		}
 
 		public override ParameterAttributes Attributes
@@ -402,12 +396,12 @@ namespace IKVM.Reflection.Reader
 
 		public override Type[] GetRequiredCustomModifiers()
 		{
-			return Util.Copy(requiredCustomModifiers);
+			return Util.Copy(position == -1 ? method.MethodSignature.GetReturnTypeRequiredCustomModifiers(method) : method.MethodSignature.GetParameterRequiredCustomModifiers(method, position));
 		}
 
 		public override Type[] GetOptionalCustomModifiers()
 		{
-			return Util.Copy(optionalCustomModifiers);
+			return Util.Copy(position == -1 ? method.MethodSignature.GetReturnTypeOptionalCustomModifiers(method) : method.MethodSignature.GetParameterOptionalCustomModifiers(method, position));
 		}
 
 		public override MemberInfo Member
@@ -415,7 +409,7 @@ namespace IKVM.Reflection.Reader
 			get
 			{
 				// return the right ConstructorInfo wrapper
-				return member.Module.ResolveMethod(member.MetadataToken);
+				return method.Module.ResolveMethod(method.MetadataToken);
 			}
 		}
 
@@ -431,7 +425,7 @@ namespace IKVM.Reflection.Reader
 
 		internal override Module Module
 		{
-			get { return member.Module; }
+			get { return method.Module; }
 		}
 
 		internal override IList<CustomAttributeData> GetCustomAttributesData()
