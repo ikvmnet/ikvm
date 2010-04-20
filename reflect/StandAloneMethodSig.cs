@@ -68,12 +68,12 @@ namespace IKVM.Reflection
 
 		public Type[] ParameterTypes
 		{
-			get { return (Type[])parameterTypes.Clone(); }
+			get { return Util.Copy(parameterTypes); }
 		}
 
 		public Type[] OptionalParameterTypes
 		{
-			get { return (Type[])optionalParameterTypes.Clone(); }
+			get { return Util.Copy(optionalParameterTypes); }
 		}
 	}
 }

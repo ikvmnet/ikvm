@@ -170,7 +170,7 @@ namespace IKVM.Reflection.Reader
 		public override Type[] GetGenericArguments()
 		{
 			PopulateGenericArguments();
-			return (Type[])typeArgs.Clone();
+			return Util.Copy(typeArgs);
 		}
 
 		private void PopulateGenericArguments()
@@ -402,12 +402,12 @@ namespace IKVM.Reflection.Reader
 
 		public override Type[] GetRequiredCustomModifiers()
 		{
-			return requiredCustomModifiers == null ? Type.EmptyTypes : (Type[])requiredCustomModifiers.Clone();
+			return Util.Copy(requiredCustomModifiers);
 		}
 
 		public override Type[] GetOptionalCustomModifiers()
 		{
-			return optionalCustomModifiers == null ? Type.EmptyTypes : (Type[])optionalCustomModifiers.Clone();
+			return Util.Copy(optionalCustomModifiers);
 		}
 
 		public override MemberInfo Member

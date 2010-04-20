@@ -215,7 +215,7 @@ namespace IKVM.Reflection.Reader
 		public override Type[] GetGenericArguments()
 		{
 			PopulateGenericArguments();
-			return (Type[])typeArgs.Clone();
+			return Util.Copy(typeArgs);
 		}
 
 		private void PopulateGenericArguments()
