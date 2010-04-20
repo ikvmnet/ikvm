@@ -25,6 +25,28 @@
         </copy>
     </target>
 
+    <target name="System.Core">
+        <delete file="System.Core.dll" />
+        <if test="${version::get-major(framework::get-version(framework::get-target-framework() )) &lt; 4}">
+            <copy file="../bin/IKVM.Reflection.dll" todir="." overwrite="true" />
+            <csc target="exe" output="GenerateSystemCore.exe">
+                <sources>
+                    <include name="GenerateSystemCore.cs" />
+                </sources>
+                <references>
+                    <include name="IKVM.Reflection.dll" asis="true" />
+                </references>
+            </csc>
+            <exec program="GenerateSystemCore.exe" useruntimeengine="true" />
+            <delete>
+                <fileset basedir=".">
+                    <include name="IKVM.Reflection.dll"/>
+                    <include name="GenerateSystemCore.exe"/>
+                </fileset>
+            </delete>
+        </if>
+    </target>
+
     <target name="classes" depends="version allsources.gen.lst">
         <delete>
             <fileset basedir="../classpath">
