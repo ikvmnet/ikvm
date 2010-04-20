@@ -33,7 +33,6 @@ namespace IKVM.Reflection.Reader
 		private readonly ModuleReader module;
 		private readonly int index;
 		private readonly TypeDefImpl declaringType;
-		private readonly string name;
 		private MethodSignature lazyMethodSignature;
 		private ParameterInfo returnParameter;
 		private ParameterInfo[] parameters;
@@ -44,7 +43,6 @@ namespace IKVM.Reflection.Reader
 			this.module = module;
 			this.index = index;
 			this.declaringType = declaringType;
-			this.name = module.GetString(module.MethodDef.records[index].Name);
 		}
 
 		public override MethodBody GetMethodBody()
@@ -147,7 +145,7 @@ namespace IKVM.Reflection.Reader
 
 		public override string Name
 		{
-			get { return name; }
+			get { return module.GetString(module.MethodDef.records[index].Name); }
 		}
 
 		public override int MetadataToken
