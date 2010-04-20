@@ -34,7 +34,7 @@ namespace IKVM.Reflection.Reader
 		private readonly int index;
 		private readonly TypeDefImpl declaringType;
 		private readonly string name;
-		private readonly MethodSignature methodSignature;
+		private MethodSignature lazyMethodSignature;
 		private ParameterInfo returnParameter;
 		private ParameterInfo[] parameters;
 		private Type[] typeArgs;
@@ -45,7 +45,6 @@ namespace IKVM.Reflection.Reader
 			this.index = index;
 			this.declaringType = declaringType;
 			this.name = module.GetString(module.MethodDef.records[index].Name);
-			this.methodSignature = MethodSignature.ReadSig(module, module.GetBlob(module.MethodDef.records[index].Signature), this);
 		}
 
 		public override MethodBody GetMethodBody()
@@ -66,7 +65,7 @@ namespace IKVM.Reflection.Reader
 
 		public override CallingConventions CallingConvention
 		{
-			get { return methodSignature.CallingConvention; }
+			get { return this.MethodSignature.CallingConvention; }
 		}
 
 		public override MethodAttributes Attributes
@@ -89,6 +88,7 @@ namespace IKVM.Reflection.Reader
 		{
 			if (parameters == null)
 			{
+				MethodSignature methodSignature = this.MethodSignature;
 				parameters = new ParameterInfo[methodSignature.GetParameterCount()];
 				int parameter = module.MethodDef.records[index].ParamList - 1;
 				int end = module.MethodDef.records.Length > index + 1 ? module.MethodDef.records[index + 1].ParamList - 1 : module.Param.records.Length;
@@ -120,7 +120,7 @@ namespace IKVM.Reflection.Reader
 
 		internal override int ParameterCount
 		{
-			get { return methodSignature.GetParameterCount(); }
+			get { return this.MethodSignature.GetParameterCount(); }
 		}
 
 		public override ParameterInfo ReturnParameter
@@ -349,12 +349,12 @@ namespace IKVM.Reflection.Reader
 
 		internal override MethodSignature MethodSignature
 		{
-			get { return methodSignature; }
+			get { return lazyMethodSignature ?? (lazyMethodSignature = MethodSignature.ReadSig(module, module.GetBlob(module.MethodDef.records[index].Signature), this)); }
 		}
 
 		internal override int ImportTo(Emit.ModuleBuilder module)
 		{
-			return module.ImportMethodOrField(declaringType, this.Name, methodSignature);
+			return module.ImportMethodOrField(declaringType, this.Name, this.MethodSignature);
 		}
 	}
 
