@@ -34,14 +34,13 @@ namespace IKVM.Reflection.Reader
 		private readonly ModuleReader module;
 		private readonly TypeDefImpl declaringType;
 		private readonly int index;
-		private readonly FieldSignature fieldSig;
+		private FieldSignature lazyFieldSig;
 
 		internal FieldDefImpl(ModuleReader module, TypeDefImpl declaringType, int index)
 		{
 			this.module = module;
 			this.declaringType = declaringType;
 			this.index = index;
-			this.fieldSig = FieldSignature.ReadSig(module, module.GetBlob(module.Field.records[index].Signature), declaringType);
 		}
 
 		public override FieldAttributes Attributes
@@ -133,12 +132,12 @@ namespace IKVM.Reflection.Reader
 
 		internal override FieldSignature FieldSignature
 		{
-			get { return fieldSig; }
+			get { return lazyFieldSig ?? (lazyFieldSig = FieldSignature.ReadSig(module, module.GetBlob(module.Field.records[index].Signature), declaringType)); }
 		}
 
 		internal override int ImportTo(Emit.ModuleBuilder module)
 		{
-			return module.ImportMethodOrField(declaringType, this.Name, fieldSig);
+			return module.ImportMethodOrField(declaringType, this.Name, this.FieldSignature);
 		}
 	}
 }
