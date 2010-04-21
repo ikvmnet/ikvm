@@ -371,7 +371,7 @@ namespace IKVM.Reflection
 			Type type;
 			if (assemblyName != null)
 			{
-				Assembly asm = universe.Load(assemblyName, null, throwOnError);
+				Assembly asm = universe.Load(assemblyName, context, throwOnError);
 				if (asm == null)
 				{
 					return null;

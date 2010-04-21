@@ -677,6 +677,8 @@ namespace IKVM.Reflection
 			return GetType(null, assemblyQualifiedTypeName, throwOnError);
 		}
 
+		// note that context is slightly different from the calling assembly (System.Type.GetType),
+		// because context is passed to the AssemblyResolve event as the RequestingAssembly
 		public Type GetType(Assembly context, string assemblyQualifiedTypeName, bool throwOnError)
 		{
 			TypeNameParser parser = TypeNameParser.Parse(assemblyQualifiedTypeName, throwOnError);
