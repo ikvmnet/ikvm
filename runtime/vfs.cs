@@ -240,11 +240,15 @@ namespace IKVM.Internal
 			// because that's the easiest way to construct a ZipFile from a Stream.
 			java.util.zip.ZipFile zf = new java.util.zip.ZipFile(RootPath + "vfs.zip");
 			java.util.Enumeration e = zf.entries();
-			char sep = java.io.File.separatorChar;
 			while (e.hasMoreElements())
 			{
 				AddZipEntry(zf, root, (java.util.zip.ZipEntry)e.nextElement());
 			}
+
+			// make "lib/security/local_policy.jar" point to "lib/security/US_export_policy.jar"
+			// to get the unrestricted crypto policy
+			VfsDirectory security = (VfsDirectory)((VfsDirectory)root.GetEntry("lib")).GetEntry("security");
+			security.Add("local_policy.jar", security.GetEntry("US_export_policy.jar"));
 
 			Interlocked.CompareExchange(ref VirtualFileSystem.root, root, null);
 		}

@@ -131,7 +131,11 @@
                 <include name="lib/logging.properties" />
                 <include name="lib/security/java.policy" />
                 <include name="lib/security/java.security" />
-                <include name="lib/security/local_policy.jar" />
+                <!--
+                we don't add lib/security/local_policy.jar, because it is the restricted version,
+                instead we'll add a link in vfs from local_policy.jar to US_export_policy.jar
+                (because US_export_policy.jar is unrestricted)
+                -->
                 <include name="lib/security/US_export_policy.jar" />
             </fileset>
             <fileset basedir="${OpenJDK.dir}/jdk/src/windows">
