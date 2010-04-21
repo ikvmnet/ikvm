@@ -346,14 +346,13 @@ final class VMSystemProperties
             // app.config is invalid, ignore
         }
         // set the properties that were specified with ikvm.runtime.Startup.setProperties()
-        cli.System.Collections.Hashtable props = ikvm.runtime.Startup.props;
+        cli.System.Collections.IDictionary props = ikvm.runtime.Startup.props;
         if(props != null)
         {
-            cli.System.Collections.IEnumerator entries = ((cli.System.Collections.IEnumerable)props).GetEnumerator();
+            cli.System.Collections.IDictionaryEnumerator entries = props.GetEnumerator();
             while(entries.MoveNext())
             {
-                cli.System.Collections.DictionaryEntry de = (cli.System.Collections.DictionaryEntry)entries.get_Current();
-                p.setProperty((String)de.get_Key(), (String)de.get_Value());
+                p.setProperty((String)entries.get_Key(), (String)entries.get_Value());
             }
         }
     }

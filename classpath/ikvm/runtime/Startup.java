@@ -43,7 +43,7 @@ import cli.System.Type;
 public final class Startup
 {
     @ikvm.lang.Internal
-    public static cli.System.Collections.Hashtable props;
+    public static cli.System.Collections.IDictionary props;
 
     private Startup()
     {
@@ -150,7 +150,7 @@ public final class Startup
         }
     }
 
-    public static void setProperties(cli.System.Collections.Hashtable props)
+    public static void setProperties(cli.System.Collections.IDictionary props)
     {
         Startup.props = props;
     }
