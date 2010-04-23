@@ -573,7 +573,7 @@ assembly.class
     -recurse:@OPENJDK@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/java/swing/*
     -recurse:@OPENJDK@/build/linux-amd64/j2re-image/lib/resources.jar/javax/swing/*
     -recurse:resources.zip/com/sun/swing/internal/plaf/*
-    -r:System.Drawing
+    -r:System.Drawing.dll
     ikvm/awt/*.class
     java/awt/*.class
     java/awt/image/*.class
@@ -905,7 +905,7 @@ assembly.class
     -resource:META-INF/services/java.sql.Driver=resources/META-INF/services/java.sql.Driver
     -recurse:@OPENJDK@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/rowset/*
     -recurse:@OPENJDK@/build/linux-amd64/j2re-image/lib/resources.jar/javax/sql/*
-    -r:System.Data
+    -r:System.Data.dll
     java/sql/*.class
     sun/jdbc/odbc/*.class
     @OPENJDK@/jdk/src/share/classes/com/sun/rowset/*.class
@@ -962,7 +962,7 @@ assembly.class
     -recurse:@OPENJDK@/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/javax.sound.*
     -recurse:@OPENJDK@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/imageio/plugins/common/iio-plugin.properties
     -recurse:@OPENJDK@/build/linux-amd64/j2re-image/lib/resources.jar/sun/print/*
-    -r:System.Drawing
+    -r:System.Drawing.dll
     com/sun/imageio/plugins/jpeg/*.class
     icedtea/rt/com/sun/media/sound/*.class
     sun/print/*.class
