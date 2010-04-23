@@ -47,7 +47,7 @@
         </if>
     </target>
 
-    <target name="classes" depends="version allsources.gen.lst">
+    <target name="classes" depends="version allsources.gen.lst System.Core">
         <delete>
             <fileset basedir="../classpath">
                 <include name="**.class"/>
@@ -74,7 +74,7 @@
         <exec program="${project::get-base-directory()}/../bin/ikvmstub.exe" commandline="System.Core" useruntimeengine="true" />
         <exec program="${project::get-base-directory()}/../bin/ikvmstub.exe" commandline="System.Data" useruntimeengine="true" />
         <exec program="${project::get-base-directory()}/../bin/ikvmstub.exe" commandline="System.Drawing" useruntimeengine="true" />
-        <exec program="${project::get-base-directory()}/../bin/ikvmstub.exe" commandline="IKVM.Runtime" useruntimeengine="true" />
+        <exec program="${project::get-base-directory()}/../bin/ikvmstub.exe" commandline="../bin/IKVM.Runtime.dll" useruntimeengine="true" />
         <property name="IKVM.Runtime" value="IKVM.Runtime" />
         <if test="${signoption != ''}">
             <loadfile file="../tools/pubkey.txt" property="publickey" />
@@ -165,6 +165,7 @@
     </target>
 
     <target name="core" depends="version response.gen.txt">
+        <copy file="../bin/IKVM.Runtime.dll" todir="." />
         <exec program="${project::get-base-directory()}/../bin/ikvmc.exe" useruntimeengine="true">
             <arg value="-version:${VERSION}" />
             <arg value="${signoption}" />
@@ -183,7 +184,6 @@
             <arg value="@response.gen.txt" />
         </exec>
         <if test="${platform::is-win32()}">
-            <copy file="../bin/IKVM.Runtime.dll" tofile="IKVM.Runtime.dll" />
             <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Beans.dll" />
             <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Charsets.dll" />
             <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Corba.dll" />

@@ -29,8 +29,6 @@ using IKVM.Attributes;
 using IKVM.Internal;
 using IKVM.Reflection;
 using Type = IKVM.Reflection.Type;
-using ResolveEventArgs = IKVM.Reflection.ResolveEventArgs;
-using ResolveEventHandler = IKVM.Reflection.ResolveEventHandler;
 
 static class NetExp
 {
@@ -48,6 +46,9 @@ static class NetExp
 		string assemblyNameOrPath = null;
 		bool continueOnError = false;
 		bool autoLoadSharedClassLoaderAssemblies = false;
+		List<string> references = new List<string>();
+		List<string> libpaths = new List<string>();
+		bool nostdlib = false;
 		foreach(string s in args)
 		{
 			if(s.StartsWith("-") || assemblyNameOrPath != null)
@@ -66,17 +67,15 @@ static class NetExp
 				}
 				else if(s.StartsWith("-r:") || s.StartsWith("-reference:"))
 				{
-					string path = s.Substring(s.IndexOf(':') + 1);
-					try
-					{
-						StaticCompiler.Universe.LoadFile(path);
-					}
-					catch (Exception x)
-					{
-						Console.Error.WriteLine("Error: unable to load reference {0}", path);
-						Console.Error.WriteLine("    ({0})", x.Message);
-						return 1;
-					}
+					references.Add(s.Substring(s.IndexOf(':') + 1));
+				}
+				else if(s == "-nostdlib")
+				{
+					nostdlib = true;
+				}
+				else if(s.StartsWith("-lib:"))
+				{
+					libpaths.Add(s.Substring(5));
 				}
 				else
 				{
@@ -94,8 +93,20 @@ static class NetExp
 		{
 			Console.Error.WriteLine(GetVersionAndCopyrightInfo());
 			Console.Error.WriteLine();
-			Console.Error.WriteLine("usage: ikvmstub [-serialver] [-skiperror] <assemblyNameOrPath>");
+			Console.Error.WriteLine("usage: ikvmstub [-serialver] [-skiperror] [-reference:<assembly>] [-lib:<dir>] <assemblyNameOrPath>");
 			return 1;
+		}
+		AssemblyResolver resolver = new AssemblyResolver();
+		resolver.Init(StaticCompiler.Universe, nostdlib, references, libpaths);
+		Dictionary<string, Assembly> cache = new Dictionary<string, Assembly>();
+		foreach (string reference in references)
+		{
+			Assembly[] dummy = null;
+			int rc1 = resolver.ResolveReference(cache, ref dummy, reference);
+			if (rc1 != 0)
+			{
+				return rc1;
+			}
 		}
 		Assembly assembly = null;
 		try
@@ -109,19 +120,11 @@ static class NetExp
 		}
 		if(file != null && file.Exists)
 		{
-			StaticCompiler.Universe.AssemblyResolve += new ResolveEventHandler(Universe_AssemblyResolve);
 			assembly = StaticCompiler.LoadFile(assemblyNameOrPath);
 		}
 		else
 		{
-#pragma warning disable 618
-			// Assembly.LoadWithPartialName is obsolete
-			System.Reflection.Assembly asm = System.Reflection.Assembly.LoadWithPartialName(assemblyNameOrPath);
-#pragma warning restore
-			if (asm != null)
-			{
-				assembly = StaticCompiler.Universe.LoadFile(asm.Location);
-			}
+			assembly = resolver.LoadWithPartialName(assemblyNameOrPath);
 		}
 		int rc = 0;
 		if(assembly == null)
@@ -242,29 +245,6 @@ static class NetExp
 				}
 			}
 		}
-	}
-
-	private static Assembly Universe_AssemblyResolve(object sender, ResolveEventArgs args)
-	{
-		string path = args.Name;
-		int index = path.IndexOf(',');
-		if (index > 0)
-		{
-			path = path.Substring(0, index);
-		}
-		path = file.DirectoryName + Path.DirectorySeparatorChar + path + ".dll";
-		if (File.Exists(path))
-		{
-			return StaticCompiler.LoadFile(path);
-		}
-		try
-		{
-			return StaticCompiler.LoadFile(System.Reflection.Assembly.Load(args.Name).Location);
-		}
-		catch
-		{
-		}
-		return null;
 	}
 
 	private static void WriteClass(TypeWrapper tw)

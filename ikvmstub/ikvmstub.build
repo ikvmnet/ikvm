@@ -8,6 +8,7 @@
         <csc target="exe" output="../bin/ikvmstub.exe" define="${defs}">
             <sources>
                 <include name="../CommonAssemblyInfo.cs" />
+                <include name="../ikvmc/AssemblyResolver.cs" />
                 <include name="../runtime/AssemblyClassLoader.cs" />
                 <include name="../runtime/attributes.cs" />
                 <include name="../runtime/ClassLoaderWrapper.cs" />

@@ -73,6 +73,7 @@
     <Compile Include="ikvmstub.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="..\ikvmc\AssemblyResolver.cs" />
     <Compile Include="..\runtime\AssemblyClassLoader.cs" />
     <Compile Include="..\runtime\attributes.cs">
       <SubType>Code</SubType>

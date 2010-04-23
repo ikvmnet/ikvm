@@ -71,6 +71,7 @@
     <Compile Include="ikvmc\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="ikvmc\AssemblyResolver.cs" />
     <Compile Include="ikvmc\Compiler.cs">
       <SubType>Code</SubType>
     </Compile>

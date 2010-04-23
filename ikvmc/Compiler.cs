@@ -44,6 +44,9 @@ class IkvmcCompiler
 	private List<string> classesToExclude = new List<string>();
 	private static bool time;
 	private static string runtimeAssembly;
+	private static bool nostdlib;
+	private static readonly List<string> libpaths = new List<string>();
+	private static readonly AssemblyResolver loader = new AssemblyResolver();
 
 	private static List<string> GetArgs(string[] args)
 	{
@@ -76,7 +79,6 @@ class IkvmcCompiler
 	static int Main(string[] args)
 	{
 		DateTime start = DateTime.Now;
-		StaticCompiler.Universe.AssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
 		System.Threading.Thread.CurrentThread.Name = "compiler";
 		Tracer.EnableTraceConsoleListener();
 		Tracer.EnableTraceForDebug();
@@ -88,7 +90,12 @@ class IkvmcCompiler
 		}
 		IkvmcCompiler comp = new IkvmcCompiler();
 		List<CompilerOptions> targets = new List<CompilerOptions>();
-		int rc = comp.ParseCommandLine(argList.GetEnumerator(), targets);
+		CompilerOptions toplevel = new CompilerOptions();
+		int rc = comp.ParseCommandLine(argList.GetEnumerator(), targets, toplevel);
+		if (rc == 0)
+		{
+			loader.Init(StaticCompiler.Universe, nostdlib, toplevel.unresolvedReferences, libpaths);
+		}
 		if (rc == 0)
 		{
 			rc = ResolveReferences(targets);
@@ -207,11 +214,12 @@ class IkvmcCompiler
 		Console.Error.WriteLine("                               class loader");
 		Console.Error.WriteLine("    -baseaddress:<address>     Base address for the library to be built");
 		Console.Error.WriteLine("    -nopeercrossreference      Do not automatically cross reference all peers");
+		Console.Error.WriteLine("    -nostdlib                  Do not reference standard libraries");
+		Console.Error.WriteLine("    -lib:<dir>                 Additional directories to search for references");
 	}
 
-	int ParseCommandLine(IEnumerator<string> arglist, List<CompilerOptions> targets)
+	int ParseCommandLine(IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
 	{
-		CompilerOptions options = new CompilerOptions();
 		options.target = PEFileKinds.ConsoleApplication;
 		options.guessFileKind = true;
 		options.version = new Version(0, 0, 0, 0);
@@ -613,6 +621,16 @@ class IkvmcCompiler
 				{
 					options.crossReferenceAllPeers = false;
 				}
+				else if(s=="-nostdlib")
+				{
+					// this is a global option
+					nostdlib = true;
+				}
+				else if(s.StartsWith("-lib:"))
+				{
+					// this is a global option
+					libpaths.Add(s.Substring(5));
+				}
 				else
 				{
 					Console.Error.WriteLine("Warning: unrecognized option: {0}", s);
@@ -778,78 +796,12 @@ class IkvmcCompiler
 							goto next_reference;
 						}
 					}
-					int rc = ResolveReferences(cache, ref target.references, reference);
+					int rc = loader.ResolveReference(cache, ref target.references, reference);
 					if (rc != 0)
 					{
 						return rc;
 					}
 				next_reference: ;
-				}
-			}
-		}
-		return 0;
-	}
-
-	private static int ResolveReferences(Dictionary<string, Assembly> cache, ref Assembly[] references, string r)
-	{
-		string[] files = new string[0];
-		try
-		{
-			string path = Path.GetDirectoryName(r);
-			files = Directory.GetFiles(path == "" ? "." : path, Path.GetFileName(r));
-		}
-		catch (ArgumentException)
-		{
-		}
-		catch (IOException)
-		{
-		}
-		if (files.Length == 0)
-		{
-			Assembly asm = null;
-			cache.TryGetValue(r, out asm);
-			try
-			{
-				if (asm == null)
-				{
-#pragma warning disable 618
-					// Assembly.LoadWithPartialName is obsolete
-					System.Reflection.Assembly found = System.Reflection.Assembly.LoadWithPartialName(r);
-#pragma warning restore
-					if (found != null)
-					{
-						asm = StaticCompiler.LoadFile(found.Location);
-						cache.Add(r, asm);
-					}
-				}
-			}
-			catch (FileLoadException)
-			{
-			}
-			if (asm == null)
-			{
-				Console.Error.WriteLine("Error: reference not found: {0}", r);
-				return 1;
-			}
-			ArrayAppend(ref references, asm);
-		}
-		else
-		{
-			foreach (string file in files)
-			{
-				try
-				{
-					Assembly asm;
-					if (!cache.TryGetValue(file, out asm))
-					{
-						asm = StaticCompiler.LoadFile(file);
-					}
-					ArrayAppend(ref references, asm);
-				}
-				catch (FileLoadException)
-				{
-					Console.Error.WriteLine("Error: reference not found: {0}", file);
-					return 1;
 				}
 			}
 		}
@@ -1091,78 +1043,5 @@ class IkvmcCompiler
 		{
 			Console.Error.WriteLine("Warning: could not find exclusion file '{0}'", filename);
 		}
-	}
-
-	// this method checks if the assembly was loaded from a CLR probe location
-	// (in that case we can also resolve its dependencies via the CLR)
-	private static bool IsLoadedFromCurrentClrProbeLocation(Assembly asm)
-	{
-		try
-		{
-			// we have to use StringComparison.OrdinalIgnoreCase, because it the CLR sometimes appends ".dll"
-			// and other times ".DLL" (when the assembly is loaded from DEVPATH)
-			return System.Reflection.Assembly.ReflectionOnlyLoad(asm.FullName).Location.Equals(asm.Location, StringComparison.OrdinalIgnoreCase);
-		}
-		catch
-		{
-			return false;
-		}
-	}
-
-	private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
-	{
-		if (args.RequestingAssembly == null || IsLoadedFromCurrentClrProbeLocation(args.RequestingAssembly))
-		{
-			System.Reflection.Assembly asm = null;
-			try
-			{
-				asm = System.Reflection.Assembly.ReflectionOnlyLoad(args.Name);
-			}
-			catch
-			{
-			}
-			if (asm != null)
-			{
-				return StaticCompiler.LoadFile(asm.Location);
-			}
-		}
-		else
-		{
-			// apply unification and policy
-			try
-			{
-				string name = System.Reflection.Assembly.ReflectionOnlyLoad(args.Name).FullName;
-				if (name != args.Name)
-				{
-					return StaticCompiler.Load(name);
-				}
-			}
-			catch
-			{
-			}
-			// HACK support loading additional assemblies from a multi assembly group from the same location as the main assembly
-			Type main = args.RequestingAssembly.GetType("__<MainAssembly>");
-			if (main != null)
-			{
-				try
-				{
-					string path = Path.Combine(Path.GetDirectoryName(main.Assembly.Location), new AssemblyName(args.Name).Name + ".dll");
-					if (AssemblyName.GetAssemblyName(path).FullName == args.Name)
-					{
-						return StaticCompiler.LoadFile(path);
-					}
-				}
-				catch
-				{
-				}
-			}
-		}
-		Console.Error.WriteLine("Error: unable to find assembly '{0}'", args.Name);
-		if (args.RequestingAssembly != null)
-		{
-			Console.Error.WriteLine("    (a dependency of '{0}')", args.RequestingAssembly.FullName);
-		}
-		Environment.Exit(1);
-		return null;
 	}
 }

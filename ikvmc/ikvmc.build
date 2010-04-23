@@ -13,6 +13,7 @@
                 <include name="../CommonAssemblyInfo.cs" />
                 <include name="AotTypeWrapper.cs" />
                 <include name="AssemblyInfo.cs" />
+                <include name="AssemblyResolver.cs" />
                 <include name="Compiler.cs" />
                 <include name="CompilerClassLoader.cs" />
                 <include name="FakeTypes.cs" />
