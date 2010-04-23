@@ -237,20 +237,23 @@ namespace IKVM.Internal
 
 		private int LoadMscorlib(IList<string> references)
 		{
-			Universe dummy = new Universe();
-			foreach (string r in references)
+			if (references != null)
 			{
-				try
+				Universe dummy = new Universe();
+				foreach (string r in references)
 				{
-					Assembly asm = dummy.LoadFile(r);
-					if (asm.GetType("System.Object") != null)
+					try
 					{
-						StaticCompiler.Universe.LoadMscorlib(r);
-						return 0;
+						Assembly asm = dummy.LoadFile(r);
+						if (asm.GetType("System.Object") != null)
+						{
+							StaticCompiler.Universe.LoadMscorlib(r);
+							return 0;
+						}
 					}
-				}
-				catch
-				{
+					catch
+					{
+					}
 				}
 			}
 			foreach (string mscorlib in FindAssemblyPath("mscorlib.dll"))
