@@ -1171,7 +1171,6 @@ namespace IKVM.Internal
 	abstract class FieldWrapper : MemberWrapper
 	{
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-		private static readonly FieldInfo slotField = typeof(java.lang.reflect.Field).GetField("slot", BindingFlags.Instance | BindingFlags.NonPublic);
 		private volatile java.lang.reflect.Field reflectionField;
 		private sun.reflect.FieldAccessor jniAccessor;
 #endif
@@ -1252,7 +1251,7 @@ namespace IKVM.Internal
 			return null;
 #else
 			java.lang.reflect.Field f = (java.lang.reflect.Field)field;
-			return TypeWrapper.FromClass(f.getDeclaringClass()).GetFields()[(int)slotField.GetValue(f)];
+			return TypeWrapper.FromClass(f.getDeclaringClass()).GetFields()[f._slot()];
 #endif
 		}
 

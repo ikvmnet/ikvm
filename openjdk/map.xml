@@ -1427,6 +1427,15 @@
                 </body>
             </method>
         </class>
+        <class name="java.lang.reflect.Field">
+            <method name="_slot" sig="()I">
+                <body>
+                    <ldarg_0 />
+                    <ldfld class="java.lang.reflect.Field" name="slot" sig="I" />
+                    <ret />
+                </body>
+            </method>
+        </class>
         <class name="java.lang.reflect.Method">
             <method name="_slot" sig="()I">
                 <body>
