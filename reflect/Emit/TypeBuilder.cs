@@ -970,7 +970,7 @@ namespace IKVM.Reflection.Emit
 
 		internal void CheckBaked()
 		{
-			if ((typeFlags & TypeFlags.Baked) == 0 && !((AssemblyBuilder)this.Assembly).mcs)
+			if ((typeFlags & TypeFlags.Baked) == 0)
 			{
 				throw new NotSupportedException();
 			}
