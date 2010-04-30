@@ -150,6 +150,7 @@ sun/jdbc/odbc/JdbcOdbcStatement.java
 sun/jdbc/odbc/JdbcOdbcUpdateableResultSet.java
 sun/jdbc/odbc/JdbcOdbcUtils.java
 sun/management/ManagementFactory.java
+sun/management/VMManagementImpl.java
 sun/misc/FileURLMapper.java
 sun/misc/Launcher.java
 sun/misc/MiscHelper.java
@@ -10206,8 +10207,10 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/jdk/src/share/classes/sun/management/MemoryUsageCompositeData.java
 @OPENJDK@/jdk/src/share/classes/sun/management/MonitorInfoCompositeData.java
 @OPENJDK@/jdk/src/share/classes/sun/management/StackTraceElementCompositeData.java
+@OPENJDK@/jdk/src/share/classes/sun/management/RuntimeImpl.java
 @OPENJDK@/jdk/src/share/classes/sun/management/ThreadInfoCompositeData.java
 @OPENJDK@/jdk/src/share/classes/sun/management/Util.java
+@OPENJDK@/jdk/src/share/classes/sun/management/VMManagement.java
 @OPENJDK@/jdk/src/share/classes/sun/management/VMOptionCompositeData.java
 @OPENJDK@/jdk/src/share/classes/sun/management/counter/AbstractCounter.java
 @OPENJDK@/jdk/src/share/classes/sun/management/counter/ByteArrayCounter.java

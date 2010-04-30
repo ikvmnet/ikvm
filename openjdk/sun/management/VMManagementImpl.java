@@ -27,7 +27,6 @@ package sun.management;
 
 import sun.misc.Perf;
 import sun.management.counter.*;
-import sun.management.counter.perf.*;
 import java.nio.ByteBuffer;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -46,7 +45,7 @@ import sun.security.action.GetPropertyAction;
  */
 class VMManagementImpl implements VMManagement {
 
-    private static String version;
+    private static String version = "1.2";
 
     private static boolean compTimeMonitoringSupport;
     private static boolean threadContentionMonitoringSupport;
@@ -55,16 +54,6 @@ class VMManagementImpl implements VMManagement {
     private static boolean bootClassPathSupport;
     private static boolean objectMonitorUsageSupport;
     private static boolean synchronizerUsageSupport;
-
-    static {
-        version = getVersion0();
-        if (version == null) {
-            throw new InternalError("Invalid Management Version");
-        }
-        initOptionalSupportFields();
-    }
-    private native static String getVersion0();
-    private native static void initOptionalSupportFields();
 
     // Optional supports
     public boolean isCompilationTimeMonitoringSupported() {
@@ -95,8 +84,13 @@ class VMManagementImpl implements VMManagement {
         return synchronizerUsageSupport;
     }
 
-    public native boolean isThreadContentionMonitoringEnabled();
-    public native boolean isThreadCpuTimeEnabled();
+    public boolean isThreadContentionMonitoringEnabled() {
+        return false;
+    }
+
+    public boolean isThreadCpuTimeEnabled() {
+        return false;
+    }
 
 
     // Class Loading Subsystem
@@ -104,13 +98,21 @@ class VMManagementImpl implements VMManagement {
         long count = getTotalClassCount() - getUnloadedClassCount();
         return (int) count;
     }
-    public native long getTotalClassCount();
-    public native long getUnloadedClassCount();
+    public long getTotalClassCount() {
+        throw new Error("Not implemented");
+    }
+    public long getUnloadedClassCount() {
+        throw new Error("Not implemented");
+    }
 
-    public native boolean getVerboseClass();
+    public boolean getVerboseClass() {
+        return false;
+    }
 
     // Memory Subsystem
-    public native boolean getVerboseGC();
+    public boolean getVerboseGC() {
+        return false;
+    }
 
     // Runtime Subsystem
     public String   getManagementVersion() {
@@ -128,7 +130,9 @@ class VMManagementImpl implements VMManagement {
 
         return pid + "@" + hostname;
     }
-    private native int getProcessId();
+    private int getProcessId() {
+        return cli.System.Diagnostics.Process.GetCurrentProcess().get_Id();
+    }
 
     public String   getVmName() {
         return System.getProperty("java.vm.name");
@@ -173,10 +177,16 @@ class VMManagementImpl implements VMManagement {
         }
         return vmArgs;
     }
-    public native String[] getVmArguments0();
+    public String[] getVmArguments0() {
+        return new String[0];
+    }
 
-    public native long getStartupTime();
-    public native int getAvailableProcessors();
+    public long getStartupTime() {
+        return (long)(cli.System.Diagnostics.Process.GetCurrentProcess().get_StartTime().ToUniversalTime().Subtract(new cli.System.DateTime(1970, 1, 1))).get_TotalMilliseconds();
+    }
+    public int getAvailableProcessors() {
+        return cli.System.Environment.get_ProcessorCount();
+    }
 
     // Compilation Subsystem
     public String   getCompilerName() {
@@ -188,13 +198,23 @@ class VMManagementImpl implements VMManagement {
             });
         return name;
     }
-    public native long getTotalCompileTime();
+    public long getTotalCompileTime() {
+        throw new Error("Not implemented");
+    }
 
     // Thread Subsystem
-    public native long getTotalThreadCount();
-    public native int  getLiveThreadCount();
-    public native int  getPeakThreadCount();
-    public native int  getDaemonThreadCount();
+    public long getTotalThreadCount() {
+        throw new Error("Not implemented");
+    }
+    public int  getLiveThreadCount() {
+        throw new Error("Not implemented");
+    }
+    public int  getPeakThreadCount() {
+        throw new Error("Not implemented");
+    }
+    public int  getDaemonThreadCount() {
+        throw new Error("Not implemented");
+    }
 
     // Operating System
     public String getOsName() {
@@ -208,53 +228,42 @@ class VMManagementImpl implements VMManagement {
     }
 
     // Hotspot-specific runtime support
-    public native long getSafepointCount();
-    public native long getTotalSafepointTime();
-    public native long getSafepointSyncTime();
-    public native long getTotalApplicationNonStoppedTime();
+    public long getSafepointCount() {
+        throw new Error("Not implemented");
+    }
+    public long getTotalSafepointTime() {
+        throw new Error("Not implemented");
+    }
+    public long getSafepointSyncTime() {
+        throw new Error("Not implemented");
+    }
+    public long getTotalApplicationNonStoppedTime() {
+        throw new Error("Not implemented");
+    }
 
-    public native long getLoadedClassSize();
-    public native long getUnloadedClassSize();
-    public native long getClassLoadingTime();
-    public native long getMethodDataSize();
-    public native long getInitializedClassCount();
-    public native long getClassInitializationTime();
-    public native long getClassVerificationTime();
-
-    // Performance Counter Support
-    private PerfInstrumentation perfInstr = null;
-    private boolean noPerfData = false;
-
-    private synchronized PerfInstrumentation getPerfInstrumentation() {
-        if (noPerfData || perfInstr != null) {
-             return perfInstr;
-        }
-
-        // construct PerfInstrumentation object
-        Perf perf =  AccessController.doPrivileged(new Perf.GetPerfAction());
-        try {
-            ByteBuffer bb = perf.attach(0, "r");
-            if (bb.capacity() == 0) {
-                noPerfData = true;
-                return null;
-            }
-            perfInstr = new PerfInstrumentation(bb);
-        } catch (IllegalArgumentException e) {
-            // If the shared memory doesn't exist e.g. if -XX:-UsePerfData
-            // was set
-            noPerfData = true;
-        } catch (IOException e) {
-            throw new InternalError(e.getMessage());
-        }
-        return perfInstr;
+    public long getLoadedClassSize() {
+        throw new Error("Not implemented");
+    }
+    public long getUnloadedClassSize() {
+        throw new Error("Not implemented");
+    }
+    public long getClassLoadingTime() {
+        throw new Error("Not implemented");
+    }
+    public long getMethodDataSize() {
+        throw new Error("Not implemented");
+    }
+    public long getInitializedClassCount() {
+        throw new Error("Not implemented");
+    }
+    public long getClassInitializationTime() {
+        throw new Error("Not implemented");
+    }
+    public long getClassVerificationTime() {
+        throw new Error("Not implemented");
     }
 
     public List<Counter> getInternalCounters(String pattern) {
-        PerfInstrumentation perf = getPerfInstrumentation();
-        if (perf != null) {
-            return perf.findByPattern(pattern);
-        } else {
-            return Collections.emptyList();
-        }
+        return Collections.emptyList();
     }
 }

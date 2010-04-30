@@ -63,6 +63,10 @@ import static java.lang.management.ManagementFactory.*;
  * instances of the management interface.
  */
 public class ManagementFactory {
+
+    private static VMManagement jvm = new VMManagementImpl();
+    private static RuntimeImpl runtimeMBean = null;
+
     private ManagementFactory() {};
 
     public static synchronized ClassLoadingMXBean getClassLoadingMXBean() {
@@ -78,7 +82,10 @@ public class ManagementFactory {
     }
 
     public static synchronized RuntimeMXBean getRuntimeMXBean() {
-	throw new Error("Not implemented");
+        if (runtimeMBean == null) {
+            runtimeMBean = new RuntimeImpl(jvm);
+        }
+        return runtimeMBean;
     }
 
     public static synchronized CompilationMXBean getCompilationMXBean() {
@@ -124,4 +131,33 @@ public class ManagementFactory {
     private static final int JMM_THREAD_STATE_FLAG_SUSPENDED = 0x00100000;
     private static final int JMM_THREAD_STATE_FLAG_NATIVE = 0x00400000;
 
+    private static Permission monitorPermission =
+        new ManagementPermission("monitor");
+    private static Permission controlPermission =
+        new ManagementPermission("control");
+
+    /**
+     * Check that the current context is trusted to perform monitoring
+     * or management.
+     * <p>
+     * If the check fails we throw a SecurityException, otherwise
+     * we return normally.
+     *
+     * @exception  SecurityException  if a security manager exists and if
+     *             the caller does not have ManagementPermission("control").
+     */
+    static void checkAccess(Permission p)
+         throws SecurityException {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(p);
+        }
+    }
+
+    static void checkMonitorAccess() throws SecurityException {
+        checkAccess(monitorPermission);
+    }
+    static void checkControlAccess() throws SecurityException {
+        checkAccess(controlPermission);
+    }
 }
