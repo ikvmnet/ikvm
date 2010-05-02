@@ -36,6 +36,7 @@ com/sun/imageio/plugins/jpeg/JPEGImageReaderSpi.java
 com/sun/imageio/plugins/jpeg/JPEGImageReader.java
 com/sun/imageio/plugins/jpeg/JPEGImageWriterSpi.java
 com/sun/imageio/plugins/jpeg/JPEGImageWriter.java
+com/sun/management/OperatingSystem.java
 ikvm/awt/IkvmToolkit.java
 ikvm/internal/AnnotationAttributeBase.java
 ikvm/internal/FieldReflectorBase.java
@@ -6547,6 +6548,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/jdk/src/share/classes/com/sun/jndi/url/ldaps/ldapsURLContextFactory.java
 @OPENJDK@/jdk/src/share/classes/com/sun/jndi/url/rmi/rmiURLContext.java
 @OPENJDK@/jdk/src/share/classes/com/sun/jndi/url/rmi/rmiURLContextFactory.java
+@OPENJDK@/jdk/src/share/classes/com/sun/management/OperatingSystemMXBean.java
 @OPENJDK@/jdk/src/share/classes/com/sun/management/VMOption.java
 @OPENJDK@/jdk/src/share/classes/com/sun/naming/internal/FactoryEnumeration.java
 @OPENJDK@/jdk/src/share/classes/com/sun/naming/internal/NamedWeakReference.java
@@ -10206,6 +10208,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/jdk/src/share/classes/sun/management/MemoryNotifInfoCompositeData.java
 @OPENJDK@/jdk/src/share/classes/sun/management/MemoryUsageCompositeData.java
 @OPENJDK@/jdk/src/share/classes/sun/management/MonitorInfoCompositeData.java
+@OPENJDK@/jdk/src/share/classes/sun/management/OperatingSystemImpl.java
 @OPENJDK@/jdk/src/share/classes/sun/management/StackTraceElementCompositeData.java
 @OPENJDK@/jdk/src/share/classes/sun/management/RuntimeImpl.java
 @OPENJDK@/jdk/src/share/classes/sun/management/ThreadInfoCompositeData.java
@@ -11584,6 +11587,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/jdk/src/solaris/classes/java/util/prefs/FileSystemPreferencesFactory.java
 @OPENJDK@/jdk/src/solaris/classes/sun/awt/windows/ThemeReader.java
 @OPENJDK@/jdk/src/solaris/classes/sun/net/www/protocol/http/NTLMAuthentication.java
+@OPENJDK@/jdk/src/windows/classes/com/sun/management/OSMBeanFactory.java
 @OPENJDK@/jdk/src/windows/classes/java/io/Win32FileSystem.java
 @OPENJDK@/jdk/src/windows/classes/java/lang/ProcessEnvironment.java
 @OPENJDK@/jdk/src/windows/classes/java/lang/Terminator.java

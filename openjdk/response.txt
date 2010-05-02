@@ -747,6 +747,7 @@ assembly.class
 {
     -out:IKVM.OpenJDK.Management.dll
     -baseaddress:0x5B3D0000
+    com/sun/management/*.class
     ConnectorBootstrap$DefaultValues.class
     ConnectorBootstrap.class
     icedtea/rt/com/sun/jmx/snmp/*.class
@@ -783,6 +784,7 @@ assembly.class
     @OPENJDK@/jdk/src/share/classes/javax/management/timer/*.class
     @OPENJDK@/jdk/src/share/classes/sun/management/*.class
     @OPENJDK@/jdk/src/share/classes/sun/management/counter/*.class
+    @OPENJDK@/jdk/src/windows/classes/com/sun/management/*.class
 }
 {
     -out:IKVM.OpenJDK.Misc.dll

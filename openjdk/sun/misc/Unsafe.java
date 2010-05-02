@@ -1002,4 +1002,9 @@ public final class Unsafe
     {
         putLong(address, Double.doubleToLongBits(x));
     }
+    
+    public int getLoadAverage(double[] loadavg, int nelems)
+    {
+        return -1;
+    }
 }

@@ -55,6 +55,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Iterator;
 import java.util.ListIterator;
+import com.sun.management.OSMBeanFactory;
 
 import static java.lang.management.ManagementFactory.*;
 
@@ -66,6 +67,7 @@ public class ManagementFactory {
 
     private static VMManagement jvm = new VMManagementImpl();
     private static RuntimeImpl runtimeMBean = null;
+    private static OperatingSystemImpl osMBean = null;
 
     private ManagementFactory() {};
 
@@ -93,7 +95,11 @@ public class ManagementFactory {
     }
 
     public static synchronized OperatingSystemMXBean getOperatingSystemMXBean() {
-	throw new Error("Not implemented");
+        if (osMBean == null) {
+            osMBean = (OperatingSystemImpl)
+                          OSMBeanFactory.getOperatingSystemMXBean(jvm);
+        }
+        return osMBean;
     }
 
     public static List<MemoryPoolMXBean> getMemoryPoolMXBeans() {
