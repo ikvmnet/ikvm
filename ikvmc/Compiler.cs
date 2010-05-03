@@ -216,6 +216,7 @@ class IkvmcCompiler
 		Console.Error.WriteLine("    -nopeercrossreference      Do not automatically cross reference all peers");
 		Console.Error.WriteLine("    -nostdlib                  Do not reference standard libraries");
 		Console.Error.WriteLine("    -lib:<dir>                 Additional directories to search for references");
+		Console.Error.WriteLine("    -noautoserialization       Disable automatic .NET serialization support");
 	}
 
 	int ParseCommandLine(IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
@@ -630,6 +631,10 @@ class IkvmcCompiler
 				{
 					// this is a global option
 					libpaths.Add(s.Substring(5));
+				}
+				else if(s == "-noautoserialization")
+				{
+					options.codegenoptions |= CodeGenOptions.NoAutomagicSerialization;
 				}
 				else
 				{

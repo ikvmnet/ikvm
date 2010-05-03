@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2009 Jeroen Frijters
+  Copyright (C) 2002-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -48,6 +48,7 @@ namespace IKVM.Internal
 		StrictFinalFieldSemantics = 4,
 		NoJNI = 8,
 		RemoveAsserts = 16,
+		NoAutomagicSerialization = 32,
 	}
 
 #if !STUB_GENERATOR
@@ -246,6 +247,14 @@ namespace IKVM.Internal
 			get
 			{
 				return (codegenoptions & CodeGenOptions.RemoveAsserts) != 0;
+			}
+		}
+
+		internal bool NoAutomagicSerialization
+		{
+			get
+			{
+				return (codegenoptions & CodeGenOptions.NoAutomagicSerialization) != 0;
 			}
 		}
 

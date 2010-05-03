@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2009 Jeroen Frijters
+  Copyright (C) 2009-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -81,7 +81,11 @@ namespace IKVM.Internal
 		internal static ConstructorInfo AddAutomagicSerialization(TypeWrapper wrapper)
 		{
 			ConstructorInfo serializationCtor = null;
-			if ((wrapper.Modifiers & IKVM.Attributes.Modifiers.Enum) != 0)
+			if (wrapper.GetClassLoader().NoAutomagicSerialization)
+			{
+				// do nothing
+			}
+			else if ((wrapper.Modifiers & IKVM.Attributes.Modifiers.Enum) != 0)
 			{
 				MarkSerializable(wrapper);
 			}
