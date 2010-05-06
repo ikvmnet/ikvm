@@ -68,7 +68,14 @@ namespace IKVM.Reflection.Emit
 			this.requiredPermissions = requiredPermissions;
 			this.optionalPermissions = optionalPermissions;
 			this.refusedPermissions = refusedPermissions;
-			this.imageRuntimeVersion = universe.System_Object.Assembly.ImageRuntimeVersion;
+			if (universe.HasMscorlib && universe.System_Object != null)
+			{
+				this.imageRuntimeVersion = universe.System_Object.Assembly.ImageRuntimeVersion;
+			}
+			else
+			{
+				this.imageRuntimeVersion = typeof(object).Assembly.ImageRuntimeVersion;
+			}
 		}
 
 		public override AssemblyName GetName()

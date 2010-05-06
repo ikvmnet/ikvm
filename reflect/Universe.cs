@@ -429,6 +429,11 @@ namespace IKVM.Reflection
 			get { return typeof_System_Security_Permissions_SecurityAction ?? (typeof_System_Security_Permissions_SecurityAction = Import(typeof(System.Security.Permissions.SecurityAction))); }
 		}
 
+		public bool HasMscorlib
+		{
+			get { return importedTypes.Count != 0 || assembliesByName.Count != 0; }
+		}
+
 		public event ResolveEventHandler AssemblyResolve
 		{
 			add { resolvers.Add(value); }
@@ -437,7 +442,7 @@ namespace IKVM.Reflection
 
 		public void LoadMscorlib(string path)
 		{
-			if (importedTypes.Count != 0 || assembliesByName.Count != 0)
+			if (HasMscorlib)
 			{
 				throw new InvalidOperationException();
 			}
@@ -714,9 +719,14 @@ namespace IKVM.Reflection
 
 		private AssemblyBuilder DefineDynamicAssemblyImpl(AssemblyName name, AssemblyBuilderAccess access, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
 		{
+			bool mscorlib = !HasMscorlib && name.Name == "mscorlib";
 			AssemblyBuilder asm = new AssemblyBuilder(this, name, dir, requiredPermissions, optionalPermissions, refusedPermissions);
 			assembliesByName.Add(GetAssemblyIdentityName(asm.GetName()), asm);
 			assemblies.Add(asm);
+			if (mscorlib)
+			{
+				assembliesByName[typeof(object).Assembly.FullName] = asm;
+			}
 			return asm;
  		}
 	}
