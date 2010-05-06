@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2008, 2009 Jeroen Frijters
+  Copyright (C) 2008-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -747,13 +747,11 @@ namespace IKVM.Reflection.Emit
 
 		public override Type[] __GetDeclaredInterfaces()
 		{
-			CheckBaked();
 			return Util.ToArray(interfaces, Type.EmptyTypes);
 		}
 
 		public override MethodBase[] __GetDeclaredMethods()
 		{
-			CheckBaked();
 			MethodBase[] methods = new MethodBase[this.methods.Count];
 			for (int i = 0; i < methods.Length; i++)
 			{
@@ -952,7 +950,7 @@ namespace IKVM.Reflection.Emit
 			return (typeFlags & TypeFlags.Baked) != 0;
 		}
 
-		internal void CheckBaked()
+		internal override void CheckBaked()
 		{
 			if ((typeFlags & TypeFlags.Baked) == 0)
 			{
@@ -962,7 +960,6 @@ namespace IKVM.Reflection.Emit
 
 		public override Type[] __GetDeclaredTypes()
 		{
-			CheckBaked();
 			if (this.HasNestedTypes)
 			{
 				List<Type> types = new List<Type>();
@@ -981,19 +978,16 @@ namespace IKVM.Reflection.Emit
 
 		public override FieldInfo[] __GetDeclaredFields()
 		{
-			CheckBaked();
 			return Util.ToArray(fields, Empty<FieldInfo>.Array);
 		}
 
 		public override EventInfo[] __GetDeclaredEvents()
 		{
-			CheckBaked();
 			return Util.ToArray(events, Empty<EventInfo>.Array);
 		}
 
 		public override PropertyInfo[] __GetDeclaredProperties()
 		{
-			CheckBaked();
 			return Util.ToArray(properties, Empty<PropertyInfo>.Array);
 		}
 

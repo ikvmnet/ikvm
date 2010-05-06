@@ -76,6 +76,10 @@ namespace IKVM.Reflection
 			return null;
 		}
 
+		internal virtual void CheckBaked()
+		{
+		}
+
 		public virtual Type[] __GetDeclaredTypes()
 		{
 			return Type.EmptyTypes;
@@ -301,6 +305,7 @@ namespace IKVM.Reflection
 			{
 				throw new ArgumentException();
 			}
+			CheckBaked();
 			foreach (FieldInfo field in __GetDeclaredFields())
 			{
 				if (!field.IsStatic)
@@ -473,6 +478,7 @@ namespace IKVM.Reflection
 			Type type = this;
 			while (type != null)
 			{
+				type.CheckBaked();
 				foreach (EventInfo evt in type.__GetDeclaredEvents())
 				{
 					if (BindingFlagsMatch(evt.IsPublic, bindingAttr, BindingFlags.Public, BindingFlags.NonPublic)
@@ -522,6 +528,7 @@ namespace IKVM.Reflection
 		public FieldInfo[] GetFields(BindingFlags bindingAttr)
 		{
 			List<FieldInfo> list = new List<FieldInfo>();
+			CheckBaked();
 			foreach (FieldInfo field in __GetDeclaredFields())
 			{
 				if (BindingFlagsMatch(field.IsPublic, bindingAttr, BindingFlags.Public, BindingFlags.NonPublic)
@@ -534,6 +541,7 @@ namespace IKVM.Reflection
 			{
 				for (Type type = this.BaseType; type != null; type = type.BaseType)
 				{
+					type.CheckBaked();
 					foreach (FieldInfo field in type.__GetDeclaredFields())
 					{
 						if ((field.Attributes & FieldAttributes.FieldAccessMask) > FieldAttributes.Private
@@ -559,6 +567,7 @@ namespace IKVM.Reflection
 
 		private static void AddInterfaces(List<Type> list, Type type)
 		{
+			type.CheckBaked();
 			foreach (Type iface in type.__GetDeclaredInterfaces())
 			{
 				if (!list.Contains(iface))
@@ -571,6 +580,7 @@ namespace IKVM.Reflection
 
 		public MethodInfo[] GetMethods(BindingFlags bindingAttr)
 		{
+			CheckBaked();
 			List<MethodInfo> list = new List<MethodInfo>();
 			foreach (MethodBase mb in __GetDeclaredMethods())
 			{
@@ -586,6 +596,7 @@ namespace IKVM.Reflection
 			{
 				for (Type type = this.BaseType; type != null; type = type.BaseType)
 				{
+					type.CheckBaked();
 					foreach (MethodBase mb in type.__GetDeclaredMethods())
 					{
 						MethodInfo mi = mb as MethodInfo;
@@ -682,6 +693,7 @@ namespace IKVM.Reflection
 
 		public ConstructorInfo[] GetConstructors(BindingFlags bindingAttr)
 		{
+			CheckBaked();
 			List<ConstructorInfo> list = new List<ConstructorInfo>();
 			foreach (MethodBase mb in __GetDeclaredMethods())
 			{
@@ -743,6 +755,7 @@ namespace IKVM.Reflection
 
 		public Type[] GetNestedTypes(BindingFlags bindingAttr)
 		{
+			CheckBaked();
 			List<Type> list = new List<Type>();
 			foreach (Type type in __GetDeclaredTypes())
 			{
@@ -765,6 +778,7 @@ namespace IKVM.Reflection
 			Type type = this;
 			while (type != null)
 			{
+				type.CheckBaked();
 				foreach (PropertyInfo property in type.__GetDeclaredProperties())
 				{
 					if (BindingFlagsMatch(property.IsPublic, bindingAttr, BindingFlags.Public, BindingFlags.NonPublic)
@@ -1315,6 +1329,7 @@ namespace IKVM.Reflection
 
 		public InterfaceMapping GetInterfaceMap(Type interfaceType)
 		{
+			CheckBaked();
 			InterfaceMapping map = new InterfaceMapping();
 			if (!IsDirectlyImplementedInterface(interfaceType))
 			{
