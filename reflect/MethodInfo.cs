@@ -134,5 +134,13 @@ namespace IKVM.Reflection
 		{
 			return new GenericMethodInstance(this.DeclaringType.BindTypeParameters(type), this, null);
 		}
+
+		// This method is used by ILGenerator and exists to allow ArrayMethod to override it,
+		// because ArrayMethod doesn't have a working MethodAttributes property, so it needs
+		// to base the result of this on the CallingConvention.
+		internal virtual bool HasThis
+		{
+			get { return !IsStatic; }
+		}
 	}
 }

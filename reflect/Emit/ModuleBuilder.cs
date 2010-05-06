@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2008, 2009 Jeroen Frijters
+  Copyright (C) 2008-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1020,7 +1020,7 @@ namespace IKVM.Reflection.Emit
 
 		public MethodInfo GetArrayMethod(Type arrayClass, string methodName, CallingConventions callingConvention, Type returnType, Type[] parameterTypes)
 		{
-			throw new NotImplementedException();
+			return new ArrayMethod(this, arrayClass, methodName, callingConvention, returnType, parameterTypes);
 		}
 
 		public MethodToken GetArrayMethodToken(Type arrayClass, string methodName, CallingConventions callingConvention, Type returnType, Type[] parameterTypes)
@@ -1055,6 +1055,105 @@ namespace IKVM.Reflection.Emit
 		public override int MDStreamVersion
 		{
 			get { return asm.mdStreamVersion; }
+		}
+	}
+
+	sealed class ArrayMethod : MethodInfo
+	{
+		private readonly ModuleBuilder moduleBuilder;
+		private readonly Type arrayClass;
+		private readonly string methodName;
+		private readonly CallingConventions callingConvention;
+		private readonly Type returnType;
+		private readonly Type[] parameterTypes;
+		private MethodSignature methodSignature;
+
+		internal ArrayMethod(ModuleBuilder moduleBuilder, Type arrayClass, string methodName, CallingConventions callingConvention, Type returnType, Type[] parameterTypes)
+		{
+			this.moduleBuilder = moduleBuilder;
+			this.arrayClass = arrayClass;
+			this.methodName = methodName;
+			this.callingConvention = callingConvention;
+			this.returnType = returnType ?? moduleBuilder.universe.System_Void;
+			this.parameterTypes = Util.Copy(parameterTypes);
+		}
+
+		public override MethodBody GetMethodBody()
+		{
+			throw new InvalidOperationException();
+		}
+
+		public override MethodImplAttributes GetMethodImplementationFlags()
+		{
+			throw new NotSupportedException();
+		}
+
+		public override ParameterInfo[] GetParameters()
+		{
+			throw new NotSupportedException();
+		}
+
+		internal override int ImportTo(ModuleBuilder module)
+		{
+			return module.ImportMethodOrField(arrayClass, methodName, MethodSignature);
+		}
+
+		public override MethodAttributes Attributes
+		{
+			get { throw new NotSupportedException(); }
+		}
+
+		public override CallingConventions CallingConvention
+		{
+			get { return callingConvention; }
+		}
+
+		public override Type DeclaringType
+		{
+			get { return arrayClass; }
+		}
+
+		internal override MethodSignature MethodSignature
+		{
+			get
+			{
+				if (methodSignature == null)
+				{
+					methodSignature = MethodSignature.MakeFromBuilder(returnType, parameterTypes, null, callingConvention, 0);
+				}
+				return methodSignature;
+			}
+		}
+
+		public override Module Module
+		{
+			// like .NET, we return the module that GetArrayMethod was called on, not the module associated with the array type
+			get { return moduleBuilder; }
+		}
+
+		public override string Name
+		{
+			get { return methodName; }
+		}
+
+		internal override int ParameterCount
+		{
+			get { return parameterTypes.Length; }
+		}
+
+		public override ParameterInfo ReturnParameter
+		{
+			get { throw new NotImplementedException(); }
+		}
+
+		public override Type ReturnType
+		{
+			get { return returnType; }
+		}
+
+		internal override bool HasThis
+		{
+			get { return (callingConvention & (CallingConventions.HasThis | CallingConventions.ExplicitThis)) == CallingConventions.HasThis; }
 		}
 	}
 }

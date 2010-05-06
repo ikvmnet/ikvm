@@ -671,7 +671,7 @@ namespace IKVM.Reflection.Emit
 		{
 			Emit(opc);
 			WriteToken(moduleBuilder.GetMethodTokenForIL(method));
-			UpdateStack(opc, !method.IsStatic, method.ReturnType, method.ParameterCount);
+			UpdateStack(opc, method.HasThis, method.ReturnType, method.ParameterCount);
 		}
 
 		public void Emit(OpCode opc, ConstructorInfo constructor)
@@ -726,7 +726,7 @@ namespace IKVM.Reflection.Emit
 			else
 			{
 				Emit(opc);
-				UpdateStack(opc, !method.IsStatic, method.ReturnType, method.ParameterCount + optionalParameterTypes.Length);
+				UpdateStack(opc, method.HasThis, method.ReturnType, method.ParameterCount + optionalParameterTypes.Length);
 				ByteBuffer sig = new ByteBuffer(16);
 				method.MethodSignature.WriteMethodRefSig(moduleBuilder, sig, optionalParameterTypes);
 				MemberRefTable.Record record = new MemberRefTable.Record();
