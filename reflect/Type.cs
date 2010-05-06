@@ -1585,6 +1585,11 @@ namespace IKVM.Reflection
 			return Wrap(type, req, opt);
 		}
 
+		internal override void CheckBaked()
+		{
+			elementType.CheckBaked();
+		}
+
 		private static Type[] BindArray(Type[] array, IGenericBinder binder)
 		{
 			if (array ==null || array.Length == 0)
@@ -1958,6 +1963,11 @@ namespace IKVM.Reflection
 		public override TypeAttributes Attributes
 		{
 			get { return type.Attributes; }
+		}
+
+		internal override void CheckBaked()
+		{
+			type.CheckBaked();
 		}
 
 		public override FieldInfo[] __GetDeclaredFields()
