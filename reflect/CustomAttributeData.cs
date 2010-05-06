@@ -325,10 +325,10 @@ namespace IKVM.Reflection
 				switch (fieldOrProperty)
 				{
 					case 0x53:
-						member = type.GetField(name, BindingFlags.Public | BindingFlags.Instance);
+						member = GetField(type, name);
 						break;
 					case 0x54:
-						member = type.GetProperty(name, BindingFlags.Public | BindingFlags.Instance);
+						member = GetProperty(type, name);
 						break;
 					default:
 						throw new BadImageFormatException();
@@ -340,6 +340,36 @@ namespace IKVM.Reflection
 				list.Add(new CustomAttributeNamedArgument(member, value));
 			}
 			return list.AsReadOnly();
+		}
+
+		private static FieldInfo GetField(Type type, string name)
+		{
+			for (; type != null; type = type.BaseType)
+			{
+				foreach (FieldInfo field in type.__GetDeclaredFields())
+				{
+					if (field.IsPublic && !field.IsStatic && field.Name == name)
+					{
+						return field;
+					}
+				}
+			}
+			return null;
+		}
+
+		private static PropertyInfo GetProperty(Type type, string name)
+		{
+			for (; type != null; type = type.BaseType)
+			{
+				foreach (PropertyInfo property in type.__GetDeclaredProperties())
+				{
+					if (property.IsPublic && !property.IsStatic && property.Name == name)
+					{
+						return property;
+					}
+				}
+			}
+			return null;
 		}
 
 		public ConstructorInfo Constructor
