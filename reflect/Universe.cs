@@ -714,7 +714,7 @@ namespace IKVM.Reflection
 
 		private AssemblyBuilder DefineDynamicAssemblyImpl(AssemblyName name, AssemblyBuilderAccess access, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
 		{
-			AssemblyBuilder asm = new AssemblyBuilder(this, name, dir, access, requiredPermissions, optionalPermissions, refusedPermissions);
+			AssemblyBuilder asm = new AssemblyBuilder(this, name, dir, requiredPermissions, optionalPermissions, refusedPermissions);
 			assembliesByName.Add(GetAssemblyIdentityName(asm.GetName()), asm);
 			assemblies.Add(asm);
 			return asm;

@@ -60,7 +60,7 @@ namespace IKVM.Reflection.Emit
 			internal ResourceAttributes Attributes;
 		}
 
-		internal AssemblyBuilder(Universe universe, AssemblyName name, string dir, AssemblyBuilderAccess access, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
+		internal AssemblyBuilder(Universe universe, AssemblyName name, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
 			: base(universe)
 		{
 			this.name = name;
