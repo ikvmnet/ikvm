@@ -2505,9 +2505,17 @@ namespace IKVM.Internal
 					return rc;
 				}
 			}
-			foreach (CompilerClassLoader compiler in compilers)
+			try
 			{
-				compiler.Save();
+				foreach (CompilerClassLoader compiler in compilers)
+				{
+					compiler.Save();
+				}
+			}
+			catch (IOException x)
+			{
+				Console.Error.WriteLine("Error: {0}", x.Message);
+				return 1;
 			}
 			return 0;
 		}
