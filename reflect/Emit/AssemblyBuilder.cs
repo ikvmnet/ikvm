@@ -47,10 +47,10 @@ namespace IKVM.Reflection.Emit
 		private string imageRuntimeVersion;
 		internal int mdStreamVersion = 0x20000;
 		private Module pseudoManifestModule;
-		private List<ResourceFile> resourceFiles = new List<ResourceFile>();
-		private List<ModuleBuilder> modules = new List<ModuleBuilder>();
-		private List<CustomAttributeBuilder> customAttributes = new List<CustomAttributeBuilder>();
-		private List<CustomAttributeBuilder> declarativeSecurity = new List<CustomAttributeBuilder>();
+		private readonly List<ResourceFile> resourceFiles = new List<ResourceFile>();
+		private readonly List<ModuleBuilder> modules = new List<ModuleBuilder>();
+		private readonly List<CustomAttributeBuilder> customAttributes = new List<CustomAttributeBuilder>();
+		private readonly List<CustomAttributeBuilder> declarativeSecurity = new List<CustomAttributeBuilder>();
 
 		private struct ResourceFile
 		{
