@@ -150,10 +150,25 @@ namespace IKVM.Reflection
 
 		public static AssemblyName GetAssemblyName(string path)
 		{
-			using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+			try
 			{
-				ModuleReader module = new ModuleReader(null, null, fs, path);
-				return module.Assembly.GetName();
+				using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+				{
+					ModuleReader module = new ModuleReader(null, null, fs, path);
+					if (module.Assembly == null)
+					{
+						throw new BadImageFormatException("Module does not contain a manifest");
+					}
+					return module.Assembly.GetName();
+				}
+			}
+			catch (IOException x)
+			{
+				throw new FileNotFoundException(x.Message, x);
+			}
+			catch (UnauthorizedAccessException x)
+			{
+				throw new FileNotFoundException(x.Message, x);
 			}
 		}
 	}

@@ -103,7 +103,11 @@ namespace IKVM.Reflection.Reader
 			this.stream = stream;
 			this.location = location;
 			Read();
-			this.assembly = assembly ?? new AssemblyReader(location, this);
+			if (assembly == null && AssemblyTable.records.Length != 0)
+			{
+				assembly = new AssemblyReader(location, this);
+			}
+			this.assembly = assembly;
 		}
 
 		private void Read()
