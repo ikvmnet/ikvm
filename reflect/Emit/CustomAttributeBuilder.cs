@@ -472,6 +472,11 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 
+		internal bool HasBlob
+		{
+			get { return blob != null; }
+		}
+
 		internal CustomAttributeBuilder DecodeBlob(Assembly asm)
 		{
 			if (blob == null)

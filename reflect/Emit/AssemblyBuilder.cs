@@ -217,7 +217,11 @@ namespace IKVM.Reflection.Emit
 				versionInfo.SetFileName(assemblyFileName);
 				foreach (CustomAttributeBuilder cab in customAttributes)
 				{
-					versionInfo.SetAttribute(cab);
+					// .NET doesn't support copying blob custom attributes into the version info
+					if (!cab.HasBlob)
+					{
+						versionInfo.SetAttribute(cab);
+					}
 				}
 				versionInfoData = new ByteBuffer(512);
 				versionInfo.Write(versionInfoData);
