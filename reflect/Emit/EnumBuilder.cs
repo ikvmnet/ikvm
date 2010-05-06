@@ -89,5 +89,10 @@ namespace IKVM.Reflection.Emit
 		{
 			typeBuilder.SetCustomAttribute(customBuilder);
 		}
+
+		public override Type GetEnumUnderlyingType()
+		{
+			return fieldBuilder.FieldType;
+		}
 	}
 }

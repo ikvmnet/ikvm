@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Jeroen Frijters
+  Copyright (C) 2009-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -301,8 +301,15 @@ namespace IKVM.Reflection
 			{
 				throw new ArgumentException();
 			}
-			// the CLR assumes that an enum has only one instance field, so we can do the same
-			return __GetDeclaredFields()[0].FieldType;
+			foreach (FieldInfo field in __GetDeclaredFields())
+			{
+				if (!field.IsStatic)
+				{
+					// the CLR assumes that an enum has only one instance field, so we can do the same
+					return field.FieldType;
+				}
+			}
+			throw new InvalidOperationException();
 		}
 
 		public override string ToString()

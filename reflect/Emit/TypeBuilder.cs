@@ -947,22 +947,6 @@ namespace IKVM.Reflection.Emit
 			return null;
 		}
 
-		public override Type GetEnumUnderlyingType()
-		{
-			if (this.IsEnum)
-			{
-				foreach (FieldInfo field in fields)
-				{
-					// the CLR assumes that an enum has only one instance field, so we can do the same
-					if (!field.IsStatic)
-					{
-						return field.FieldType;
-					}
-				}
-			}
-			throw new ArgumentException();
-		}
-
 		public bool IsCreated()
 		{
 			return (typeFlags & TypeFlags.Baked) != 0;
