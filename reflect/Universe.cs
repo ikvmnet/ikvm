@@ -462,7 +462,10 @@ namespace IKVM.Reflection
 			if (!importedTypes.TryGetValue(type, out imported))
 			{
 				imported = ImportImpl(type);
-				importedTypes.Add(type, imported);
+				if (imported != null)
+				{
+					importedTypes.Add(type, imported);
+				}
 			}
 			return imported;
 		}
