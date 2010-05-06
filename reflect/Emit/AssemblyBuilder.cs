@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2008, 2009 Jeroen Frijters
+  Copyright (C) 2008-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -51,6 +51,7 @@ namespace IKVM.Reflection.Emit
 		private readonly List<ModuleBuilder> modules = new List<ModuleBuilder>();
 		private readonly List<CustomAttributeBuilder> customAttributes = new List<CustomAttributeBuilder>();
 		private readonly List<CustomAttributeBuilder> declarativeSecurity = new List<CustomAttributeBuilder>();
+		private readonly List<Type> typeForwarders = new List<Type>();
 
 		private struct ResourceFile
 		{
@@ -127,6 +128,11 @@ namespace IKVM.Reflection.Emit
 		public void __AddDeclarativeSecurity(CustomAttributeBuilder customBuilder)
 		{
 			declarativeSecurity.Add(customBuilder);
+		}
+
+		public void __AddTypeForwarder(Type type)
+		{
+			typeForwarders.Add(type);
 		}
 
 		public void SetEntryPoint(MethodInfo entryMethod)
@@ -223,6 +229,11 @@ namespace IKVM.Reflection.Emit
 			}
 
 			manifestModule.AddDeclarativeSecurity(0x20000001, declarativeSecurity);
+
+			foreach (Type type in typeForwarders)
+			{
+				manifestModule.AddTypeForwarder(type);
+			}
 
 			foreach (ResourceFile resfile in resourceFiles)
 			{

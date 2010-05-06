@@ -253,7 +253,7 @@ namespace IKVM.Reflection.Emit
 			moduleType.CreateType();
 		}
 
-		private void AddTypeForwarder(Type type)
+		internal void AddTypeForwarder(Type type)
 		{
 			ExportType(type);
 			foreach (Type nested in type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic))
