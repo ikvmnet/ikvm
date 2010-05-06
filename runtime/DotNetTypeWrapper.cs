@@ -1524,6 +1524,12 @@ namespace IKVM.Internal
 					{
 						// you can't add declarative security to a parameter
 					}
+					else if (type == JVM.Import(typeof(System.Runtime.InteropServices.DefaultParameterValueAttribute)))
+					{
+						// TODO with the current custom attribute annotation restrictions it is impossible to use this CA,
+						// but if we make it possible, we should also implement it here
+						throw new NotImplementedException();
+					}
 					else
 					{
 						pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
@@ -1532,10 +1538,17 @@ namespace IKVM.Internal
 
 				internal override void Apply(ClassLoaderWrapper loader, AssemblyBuilder ab, object annotation)
 				{
+					// TODO we should support other pseudo custom attributes that Ref.Emit doesn't support (e.g. AssemblyVersionAttribute)
 					if (type.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
 					{
 #if STATIC_COMPILER
 						ab.__AddDeclarativeSecurity(MakeCustomAttributeBuilder(loader, annotation));
+#endif
+					}
+					else if (type == JVM.Import(typeof(System.Runtime.CompilerServices.TypeForwardedToAttribute)))
+					{
+#if STATIC_COMPILER
+						ab.__AddTypeForwarder((Type)ConvertValue(loader, Types.Type, ((object[])annotation)[3]));
 #endif
 					}
 					else

@@ -2481,22 +2481,22 @@ namespace IKVM.Internal
 			{
 				compiler.EmitRemappedTypes2ndPass();
 			}
-			Dictionary<CompilerClassLoader, CustomAttributeBuilder> mainAssemblyCabs = new Dictionary<CompilerClassLoader, CustomAttributeBuilder>();
+			Dictionary<CompilerClassLoader, Type> mainAssemblyTypes = new Dictionary<CompilerClassLoader, Type>();
 			foreach (CompilerClassLoader compiler in compilers)
 			{
 				if (compiler.options.sharedclassloader != null)
 				{
-					CustomAttributeBuilder mainAssembly;
-					if (!mainAssemblyCabs.TryGetValue(compiler.options.sharedclassloader[0], out mainAssembly))
+					Type mainAssemblyType;
+					if (!mainAssemblyTypes.TryGetValue(compiler.options.sharedclassloader[0], out mainAssemblyType))
 					{
 						TypeBuilder tb = compiler.options.sharedclassloader[0].GetTypeWrapperFactory().ModuleBuilder.DefineType("__<MainAssembly>", TypeAttributes.NotPublic | TypeAttributes.Abstract | TypeAttributes.SpecialName);
 						AttributeHelper.HideFromJava(tb);
-						mainAssembly = new CustomAttributeBuilder(JVM.Import(typeof(TypeForwardedToAttribute)).GetConstructor(new Type[] { Types.Type }), new object[] { tb.CreateType() });
-						mainAssemblyCabs.Add(compiler.options.sharedclassloader[0], mainAssembly);
+						mainAssemblyType = tb.CreateType();
+						mainAssemblyTypes.Add(compiler.options.sharedclassloader[0], mainAssemblyType);
 					}
 					if (compiler.options.sharedclassloader[0] != compiler)
 					{
-						((AssemblyBuilder)compiler.GetTypeWrapperFactory().ModuleBuilder.Assembly).SetCustomAttribute(mainAssembly);
+						((AssemblyBuilder)compiler.GetTypeWrapperFactory().ModuleBuilder.Assembly).__AddTypeForwarder(mainAssemblyType);
 					}
 				}
 				int rc = compiler.Compile();
@@ -2924,7 +2924,6 @@ namespace IKVM.Internal
 				Annotation annotation = Annotation.Load(this, def);
 				if(annotation != null)
 				{
-					// TODO we should support pseudo custom attributes that Ref.Emit doesn't support (e.g. AssemblyVersionAttribute)
 					annotation.Apply(this, assemblyBuilder, def);
 				}
 			}
