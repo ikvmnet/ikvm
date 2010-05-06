@@ -99,18 +99,17 @@ namespace IKVM.Reflection.Reader
 
 		public override Type[] GetTypes()
 		{
-			Type[] types = manifestModule.GetTypes();
-			if (externalModules.Length > 0)
+			if (externalModules.Length == 0)
 			{
-				List<Type> list = new List<Type>();
-				list.AddRange(types);
-				foreach (Module module in GetModules(false))
-				{
-					list.AddRange(module.GetTypes());
-				}
-				types = list.ToArray();
+				return manifestModule.GetTypes();
 			}
-			return types;
+
+			List<Type> list = new List<Type>();
+			foreach (Module module in GetModules(false))
+			{
+				list.AddRange(module.GetTypes());
+			}
+			return list.ToArray();
 		}
 
 		internal override Type GetTypeImpl(string typeName)
