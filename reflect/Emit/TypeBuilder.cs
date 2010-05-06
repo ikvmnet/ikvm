@@ -191,7 +191,7 @@ namespace IKVM.Reflection.Emit
 
 		public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
 		{
-			this.ModuleBuilder.SetCustomAttribute(GetModuleBuilderToken(), new CustomAttributeBuilder(con, binaryAttribute));
+			SetCustomAttribute(new CustomAttributeBuilder(con, binaryAttribute));
 		}
 
 		internal override int GetModuleBuilderToken()
@@ -566,7 +566,7 @@ namespace IKVM.Reflection.Emit
 
 		public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
 		{
-			this.ModuleBuilder.SetCustomAttribute(token, new CustomAttributeBuilder(con, binaryAttribute));
+			SetCustomAttribute(new CustomAttributeBuilder(con, binaryAttribute));
 		}
 
 		public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
