@@ -306,9 +306,11 @@ namespace IKVM.Reflection.Impl
 		{
 			if (symUnmanagedWriter == null)
 			{
+				string fileName = System.IO.Path.ChangeExtension(moduleBuilder.FullyQualifiedName, ".pdb");
+				// pro-actively delete the .pdb to get a meaningful IOException, instead of COMInteropException if the file can't be overwritten (or is corrupt, or who knows what)
+				System.IO.File.Delete(fileName);
 				IMetaDataDispenser disp = new IMetaDataDispenser();
 				symUnmanagedWriter = new ISymUnmanagedWriter2();
-				string fileName = System.IO.Path.ChangeExtension(moduleBuilder.FullyQualifiedName, ".pdb");
 				object emitter;
 				Guid CLSID_CorMetaDataRuntime = new Guid("005023ca-72b1-11d3-9fc4-00c04f79a0a3");
 				Guid IID_IMetaDataEmit = typeof(IMetaDataEmit).GUID;
