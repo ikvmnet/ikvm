@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Jeroen Frijters
+  Copyright (C) 2009-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -74,6 +74,28 @@ namespace IKVM.Reflection.Reader
 		private MemberInfo[] memberRefs;
 		private Dictionary<int, string> strings = new Dictionary<int, string>();
 		private Dictionary<string, Type> types = new Dictionary<string, Type>();
+		private Dictionary<string, LazyForwardedType> forwardedTypes = new Dictionary<string, LazyForwardedType>();
+
+		private sealed class LazyForwardedType
+		{
+			private readonly int assemblyRef;
+			private Type type;
+
+			internal LazyForwardedType(int assemblyRef)
+			{
+				this.assemblyRef = assemblyRef;
+			}
+
+			internal Type GetType(ModuleReader module, string typeName)
+			{
+				if (type == null)
+				{
+					Assembly asm = module.ResolveAssemblyRef(ref module.AssemblyRef.records[assemblyRef]);
+					type = asm.GetType(typeName, true);
+				}
+				return type;
+			}
+		}
 
 		internal ModuleReader(AssemblyReader assembly, Universe universe, Stream stream, string location)
 			: base(universe)
@@ -230,15 +252,14 @@ namespace IKVM.Reflection.Reader
 						types.Add(type.FullName, type);
 					}
 				}
-				// add forwarded types to our types dictionary (because Module.GetType(string) should return them)
+				// add forwarded types to forwardedTypes dictionary (because Module.GetType(string) should return them)
 				for (int i = 0; i < ExportedType.records.Length; i++)
 				{
 					int implementation = ExportedType.records[i].Implementation;
 					if (implementation >> 24 == AssemblyRefTable.Index)
 					{
 						string typeName = GetTypeName(ExportedType.records[i].TypeNamespace, ExportedType.records[i].TypeName);
-						Assembly asm = ResolveAssemblyRef(ref AssemblyRef.records[(implementation & 0xFFFFFF) - 1]);
-						types.Add(typeName, asm.GetType(typeName, true));
+						forwardedTypes.Add(typeName, new LazyForwardedType((implementation & 0xFFFFFF) - 1));
 					}
 				}
 			}
@@ -527,7 +548,14 @@ namespace IKVM.Reflection.Reader
 		{
 			PopulateTypeDef();
 			Type type;
-			types.TryGetValue(typeName, out type);
+			if (!types.TryGetValue(typeName, out type))
+			{
+				LazyForwardedType fw;
+				if (forwardedTypes.TryGetValue(typeName, out fw))
+				{
+					return fw.GetType(this, typeName);
+				}
+			}
 			return type;
 		}
 
