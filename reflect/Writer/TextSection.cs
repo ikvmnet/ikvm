@@ -37,12 +37,14 @@ namespace IKVM.Reflection.Writer
 		private readonly PEWriter peWriter;
 		private readonly CliHeader cliHeader;
 		private readonly ModuleBuilder moduleBuilder;
+		private readonly bool strongName;
 
-		internal TextSection(PEWriter peWriter, CliHeader cliHeader, ModuleBuilder moduleBuilder)
+		internal TextSection(PEWriter peWriter, CliHeader cliHeader, ModuleBuilder moduleBuilder, bool strongName)
 		{
 			this.peWriter = peWriter;
 			this.cliHeader = cliHeader;
 			this.moduleBuilder = moduleBuilder;
+			this.strongName = strongName;
 		}
 
 		internal uint PointerToRawData
@@ -127,7 +129,7 @@ namespace IKVM.Reflection.Writer
 		{
 			get
 			{
-				if ((cliHeader.Flags & CliHeader.COMIMAGE_FLAGS_STRONGNAMESIGNED) != 0)
+				if (strongName)
 				{
 					return 128;
 				}

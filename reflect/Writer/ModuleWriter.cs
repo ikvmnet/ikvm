@@ -108,7 +108,7 @@ namespace IKVM.Reflection.Writer
 				{
 					cliHeader.Flags |= CliHeader.COMIMAGE_FLAGS_32BITREQUIRED;
 				}
-				if (publicKey != null)
+				if (keyPair != null)
 				{
 					cliHeader.Flags |= CliHeader.COMIMAGE_FLAGS_STRONGNAMESIGNED;
 				}
@@ -124,7 +124,7 @@ namespace IKVM.Reflection.Writer
 				moduleBuilder.Blobs.Freeze();
 				MetadataWriter mw = new MetadataWriter(moduleBuilder, fs);
 				moduleBuilder.Tables.Freeze(mw);
-				TextSection code = new TextSection(writer, cliHeader, moduleBuilder);
+				TextSection code = new TextSection(writer, cliHeader, moduleBuilder, publicKey != null);
 				ResourceSection resources = new ResourceSection(versionInfoData, unmanagedResources);
 
 				// Import Directory
