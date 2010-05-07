@@ -47,6 +47,7 @@ namespace IKVM.Reflection.Emit
 		private readonly TypeBuilder moduleType;
 		private readonly List<TypeBuilder> types = new List<TypeBuilder>();
 		private readonly Dictionary<Type, int> typeTokens = new Dictionary<Type, int>();
+		private readonly Dictionary<Type, int> memberRefTypeTokens = new Dictionary<Type, int>();
 		private readonly Dictionary<string, TypeBuilder> fullNameToType = new Dictionary<string, TypeBuilder>();
 		internal readonly ByteBuffer methodBodies = new ByteBuffer(128 * 1024);
 		internal readonly List<int> tokenFixupOffsets = new List<int>();
@@ -430,8 +431,15 @@ namespace IKVM.Reflection.Emit
 		{
 			if (type.IsGenericTypeDefinition)
 			{
-				// this could be optimized, but since this is a very infrequent operation, we don't care
-				return GetTypeToken(type.MakeGenericType(type.GetGenericArguments())).Token;
+				int token;
+				if (!memberRefTypeTokens.TryGetValue(type, out token))
+				{
+					ByteBuffer spec = new ByteBuffer(5);
+					Signature.WriteTypeSpec(this, spec, type);
+					token = 0x1B000000 | this.TypeSpec.AddRecord(this.Blobs.Add(spec));
+					memberRefTypeTokens.Add(type, token);
+				}
+				return token;
 			}
 			else if (type.IsModulePseudoType)
 			{
