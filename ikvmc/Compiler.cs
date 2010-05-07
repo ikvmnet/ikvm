@@ -102,6 +102,10 @@ class IkvmcCompiler
 		}
 		if (rc == 0)
 		{
+			rc = ResolveStrongNameKeys(targets);
+		}
+		if (rc == 0)
+		{
 			try
 			{
 				if (targets.Count == 0)
@@ -132,6 +136,70 @@ class IkvmcCompiler
 			}
 		}
 		return rc;
+	}
+
+	private static int ResolveStrongNameKeys(List<CompilerOptions> targets)
+	{
+		foreach (CompilerOptions options in targets)
+		{
+			if (options.keyfile != null && options.keycontainer != null)
+			{
+				Console.Error.WriteLine("Error: you cannot specify both a key file and container");
+				return 1;
+			}
+			if (options.keyfile == null && options.keycontainer == null && options.delaysign)
+			{
+				Console.Error.WriteLine("Error: you cannot delay sign without a key file or container");
+				return 1;
+			}
+			if (options.keyfile != null)
+			{
+				if (options.delaysign)
+				{
+					byte[] buf;
+					try
+					{
+						buf = File.ReadAllBytes(options.keyfile);
+					}
+					catch (Exception x)
+					{
+						Console.Error.WriteLine("Error: unable to read key file: {0}", x.Message);
+						return 1;
+					}
+					try
+					{
+						// maybe it is a key pair, if so we need to extract just the public key
+						buf = new StrongNameKeyPair(buf).PublicKey;
+					}
+					catch { }
+					options.publicKey = buf;
+				}
+				else
+				{
+					if (!SetStrongNameKeyPair(ref options.keyPair, options.keyfile, true))
+					{
+						return 1;
+					}
+				}
+			}
+			else
+			{
+				StrongNameKeyPair keyPair = null;
+				if (!SetStrongNameKeyPair(ref keyPair, options.keycontainer, false))
+				{
+					return 1;
+				}
+				if (options.delaysign)
+				{
+					options.publicKey = keyPair.PublicKey;
+				}
+				else
+				{
+					options.keyPair = keyPair;
+				}
+			}
+		}
+		return 0;
 	}
 
 	static string GetVersionAndCopyrightInfo()
@@ -171,6 +239,7 @@ class IkvmcCompiler
 		Console.Error.WriteLine("                               Itanium, x64, or anycpu. The default is anycpu.");
 		Console.Error.WriteLine("    -keyfile:<keyfilename>     Use keyfile to sign the assembly");
 		Console.Error.WriteLine("    -key:<keycontainer>        Use keycontainer to sign the assembly");
+		Console.Error.WriteLine("    -delaysign                 Delay-sign the assembly");
 		Console.Error.WriteLine("    -version:<M.m.b.r>         Assembly version");
 		Console.Error.WriteLine("    -fileversion:<version>     File version");
 		Console.Error.WriteLine("    -main:<class>              Specify the class containing the main method");
@@ -507,17 +576,15 @@ class IkvmcCompiler
 				}
 				else if(s.StartsWith("-keyfile:"))
 				{
-					if (!SetStrongNameKeyPair(ref options.key, s.Substring(9), true))
-					{
-						return 1;
-					}
+					options.keyfile = s.Substring(9);
 				}
 				else if(s.StartsWith("-key:"))
 				{
-					if (!SetStrongNameKeyPair(ref options.key, s.Substring(5), false))
-					{
-						return 1;
-					}
+					options.keycontainer = s.Substring(5);
+				}
+				else if(s == "-delaysign")
+				{
+					options.delaysign = true;
 				}
 				else if(s == "-debug")
 				{

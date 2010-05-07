@@ -139,7 +139,14 @@ namespace IKVM.Internal
 		{
 			AssemblyName name = new AssemblyName();
 			name.Name = assemblyName;
-			name.KeyPair = options.key;
+			if (options.keyPair != null)
+			{
+				name.KeyPair = options.keyPair;
+			}
+			else if (options.publicKey != null)
+			{
+				name.SetPublicKey(options.publicKey);
+			}
 			name.Version = options.version;
 			assemblyBuilder = 
 				StaticCompiler.Universe
@@ -2771,7 +2778,7 @@ namespace IKVM.Internal
 				loader.AddReference(AssemblyClassLoader.FromAssembly(JVM.CoreAssembly));
 			}
 
-			if(options.key != null && !allReferencesAreStrongNamed)
+			if((options.keyPair != null || options.publicKey != null) && !allReferencesAreStrongNamed)
 			{
 				Console.Error.WriteLine("Error: all referenced assemblies must be strong named, to be able to sign the output assembly");
 				return 1;
@@ -3086,7 +3093,11 @@ namespace IKVM.Internal
 	class CompilerOptions
 	{
 		internal string path;
-		internal StrongNameKeyPair key;
+		internal string keyfile;
+		internal string keycontainer;
+		internal bool delaysign;
+		internal byte[] publicKey;
+		internal StrongNameKeyPair keyPair;
 		internal Version version;
 		internal string fileversion;
 		internal bool targetIsModule;
