@@ -202,7 +202,7 @@ namespace IKVM.Reflection.Emit
 				}
 				else if (type.IsEnum)
 				{
-					WriteFixedArg(type.GetEnumUnderlyingType(), value);
+					WriteFixedArg(type.GetEnumUnderlyingTypeImpl(), value);
 				}
 				else
 				{

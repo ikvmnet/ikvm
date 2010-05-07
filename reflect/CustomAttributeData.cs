@@ -249,7 +249,7 @@ namespace IKVM.Reflection
 			}
 			else if (type.IsEnum)
 			{
-				return new CustomAttributeTypedArgument(type, ReadFixedArg(asm, br, type.GetEnumUnderlyingType()).Value);
+				return new CustomAttributeTypedArgument(type, ReadFixedArg(asm, br, type.GetEnumUnderlyingTypeImpl()).Value);
 			}
 			else
 			{

@@ -306,6 +306,11 @@ namespace IKVM.Reflection
 				throw new ArgumentException();
 			}
 			CheckBaked();
+			return GetEnumUnderlyingTypeImpl();
+		}
+
+		internal Type GetEnumUnderlyingTypeImpl()
+		{
 			foreach (FieldInfo field in __GetDeclaredFields())
 			{
 				if (!field.IsStatic)
