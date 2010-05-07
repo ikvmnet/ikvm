@@ -1439,7 +1439,11 @@ namespace IKVM.Internal
 					{
 						// we have to handle this explicitly, because if we apply an illegal StructLayoutAttribute,
 						// TypeBuilder.CreateType() will later on throw an exception.
+#if STATIC_COMPILER
+						StaticCompiler.IssueMessage(Message.IgnoredCustomAttribute, type.FullName, "Type '" + tb.FullName + "' does not extend cli.System.Object");
+#else
 						Tracer.Error(Tracer.Runtime, "StructLayoutAttribute cannot be applied to {0}, because it does not directly extend cli.System.Object", tb.FullName);
+#endif
 						return;
 					}
 					if (type.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
