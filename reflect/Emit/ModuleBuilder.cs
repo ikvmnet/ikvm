@@ -285,19 +285,6 @@ namespace IKVM.Reflection.Emit
 			return 0x27000000 | this.ExportedType.FindOrAddRecord(rec);
 		}
 
-		internal void SetAssemblyCustomAttribute(CustomAttributeBuilder customBuilder)
-		{
-			if (customBuilder.Constructor.DeclaringType == universe.System_Runtime_CompilerServices_TypeForwardedToAttribute)
-			{
-				customBuilder = customBuilder.DecodeBlob(this.Assembly);
-				AddTypeForwarder((Type)customBuilder.GetConstructorArgument(0));
-			}
-			else
-			{
-				SetCustomAttribute(0x20000001, customBuilder);
-			}
-		}
-
 		public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
 		{
 			SetCustomAttribute(new CustomAttributeBuilder(con, binaryAttribute));

@@ -113,12 +113,6 @@ namespace IKVM.Reflection.Emit
 				MarshalSpec.SetMarshalAsAttribute(moduleBuilder, PseudoToken, customAttributeBuilder);
 				flags |= (short)ParameterAttributes.HasFieldMarshal;
 			}
-			else if (customAttributeBuilder.Constructor.DeclaringType == u.System_Runtime_InteropServices_DefaultParameterValueAttribute)
-			{
-				customAttributeBuilder = customAttributeBuilder.DecodeBlob(moduleBuilder.Assembly);
-				moduleBuilder.AddConstant(PseudoToken, customAttributeBuilder.GetConstructorArgument(0));
-				flags |= (short)ParameterAttributes.HasDefault;
-			}
 			else
 			{
 				moduleBuilder.SetCustomAttribute(PseudoToken, customAttributeBuilder);

@@ -291,7 +291,8 @@ namespace IKVM.Reflection.Emit
 
 			foreach (CustomAttributeBuilder cab in customAttributes)
 			{
-				manifestModule.SetAssemblyCustomAttribute(cab);
+				// we intentionally don't filter out the version info (pseudo) custom attributes (to be compatible with .NET)
+				manifestModule.SetCustomAttribute(0x20000001, cab);
 			}
 
 			manifestModule.AddDeclarativeSecurity(0x20000001, declarativeSecurity);

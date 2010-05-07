@@ -111,8 +111,6 @@ namespace IKVM.Reflection
 		private Type typeof_System_Runtime_InteropServices_OptionalAttribute;
 		private Type typeof_System_Runtime_InteropServices_PreserveSigAttribute;
 		private Type typeof_System_Runtime_InteropServices_ComImportAttribute;
-		private Type typeof_System_Runtime_InteropServices_DefaultParameterValueAttribute;
-		private Type typeof_System_Runtime_CompilerServices_TypeForwardedToAttribute;
 		private Type typeof_System_Runtime_CompilerServices_SpecialNameAttribute;
 		private Type typeof_System_Runtime_CompilerServices_MethodImplAttribute;
 		private Type typeof_System_Security_SuppressUnmanagedCodeSecurityAttribute;
@@ -347,16 +345,6 @@ namespace IKVM.Reflection
 		internal Type System_Runtime_InteropServices_ComImportAttribute
 		{
 			get { return typeof_System_Runtime_InteropServices_ComImportAttribute ?? (typeof_System_Runtime_InteropServices_ComImportAttribute = Import(typeof(System.Runtime.InteropServices.ComImportAttribute))); }
-		}
-
-		internal Type System_Runtime_InteropServices_DefaultParameterValueAttribute
-		{
-			get { return typeof_System_Runtime_InteropServices_DefaultParameterValueAttribute ?? (typeof_System_Runtime_InteropServices_DefaultParameterValueAttribute = Import(typeof(System.Runtime.InteropServices.DefaultParameterValueAttribute))); }
-		}
-
-		internal Type System_Runtime_CompilerServices_TypeForwardedToAttribute
-		{
-			get { return typeof_System_Runtime_CompilerServices_TypeForwardedToAttribute ?? (typeof_System_Runtime_CompilerServices_TypeForwardedToAttribute = Import(typeof(System.Runtime.CompilerServices.TypeForwardedToAttribute))); }
 		}
 
 		internal Type System_Runtime_CompilerServices_SpecialNameAttribute
