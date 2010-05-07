@@ -720,5 +720,17 @@ namespace IKVM.Reflection
 			}
 			return asm;
  		}
+
+		internal void RenameAssembly(Assembly assembly, AssemblyName oldName)
+		{
+			assembliesByName.Remove(GetAssemblyIdentityName(oldName));
+			string newName = GetAssemblyIdentityName(assembly.GetName());
+			Assembly asm;
+			assembliesByName.TryGetValue(newName, out asm);
+			if (asm != assembly)
+			{
+				assembliesByName.Add(newName, assembly);
+			}
+		}
 	}
 }

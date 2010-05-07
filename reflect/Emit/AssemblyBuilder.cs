@@ -75,20 +75,7 @@ namespace IKVM.Reflection.Emit
 			: base(universe)
 		{
 			this.name = name.Name;
-			Version version = name.Version;
-			if (version != null)
-			{
-				majorVersion = (ushort)version.Major;
-				minorVersion = (ushort)version.Minor;
-				if (version.Build != -1)
-				{
-					buildVersion = (ushort)version.Build;
-				}
-				if (version.Revision != -1)
-				{
-					revisionVersion = (ushort)version.Revision;
-				}
-			}
+			SetVersionHelper(name.Version);
 			if (name.CultureInfo != null && !string.IsNullOrEmpty(name.CultureInfo.Name))
 			{
 				this.culture = name.CultureInfo.Name;
@@ -120,6 +107,67 @@ namespace IKVM.Reflection.Emit
 			{
 				this.imageRuntimeVersion = typeof(object).Assembly.ImageRuntimeVersion;
 			}
+		}
+
+		private void SetVersionHelper(Version version)
+		{
+			if (version == null)
+			{
+				majorVersion = 0;
+				minorVersion = 0;
+				buildVersion = 0;
+				revisionVersion = 0;
+			}
+			else
+			{
+				majorVersion = (ushort)version.Major;
+				minorVersion = (ushort)version.Minor;
+				buildVersion = version.Build == -1 ? (ushort)0 : (ushort)version.Build;
+				revisionVersion = version.Revision == -1 ? (ushort)0 : (ushort)version.Revision;
+			}
+		}
+
+		public void __SetAssemblyVersion(Version version)
+		{
+			AssemblyName oldName = GetName();
+			SetVersionHelper(version);
+			universe.RenameAssembly(this, oldName);
+		}
+
+		public void __SetAssemblyCulture(string cultureName)
+		{
+			AssemblyName oldName = GetName();
+			this.culture = cultureName;
+			universe.RenameAssembly(this, oldName);
+		}
+
+		public void __SetAssemblyKeyPair(StrongNameKeyPair keyPair)
+		{
+			AssemblyName oldName = GetName();
+			this.keyPair = keyPair;
+			if (keyPair != null)
+			{
+				this.publicKey = keyPair.PublicKey;
+			}
+			universe.RenameAssembly(this, oldName);
+		}
+
+		// this is used in combination with delay signing
+		public void __SetAssemblyPublicKey(byte[] publicKey)
+		{
+			AssemblyName oldName = GetName();
+			this.publicKey = publicKey == null ? null : (byte[])publicKey.Clone();
+			universe.RenameAssembly(this, oldName);
+		}
+
+		public void __SetAssemblyAlgorithmId(AssemblyHashAlgorithm hashAlgorithm)
+		{
+			this.hashAlgorithm = hashAlgorithm;
+		}
+
+		public void __SetAssemblyFlags(AssemblyNameFlags flags)
+		{
+			this.flags = flags;
 		}
 
 		public override AssemblyName GetName()
