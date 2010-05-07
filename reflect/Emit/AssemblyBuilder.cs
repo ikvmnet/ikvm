@@ -23,8 +23,10 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Configuration.Assemblies;
 using System.IO;
 using System.Diagnostics;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Security;
 using IKVM.Reflection.Metadata;
@@ -35,7 +37,16 @@ namespace IKVM.Reflection.Emit
 {
 	public sealed class AssemblyBuilder : Assembly
 	{
-		private readonly AssemblyName name;
+		private readonly string name;
+		private ushort majorVersion;
+		private ushort minorVersion;
+		private ushort buildVersion;
+		private ushort revisionVersion;
+		private string culture;
+		private AssemblyNameFlags flags;
+		private AssemblyHashAlgorithm hashAlgorithm;
+		private StrongNameKeyPair keyPair;
+		private byte[] publicKey;
 		internal readonly string dir;
 		private readonly PermissionSet requiredPermissions;
 		private readonly PermissionSet optionalPermissions;
@@ -63,7 +74,40 @@ namespace IKVM.Reflection.Emit
 		internal AssemblyBuilder(Universe universe, AssemblyName name, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
 			: base(universe)
 		{
-			this.name = name;
+			this.name = name.Name;
+			Version version = name.Version;
+			if (version != null)
+			{
+				majorVersion = (ushort)version.Major;
+				minorVersion = (ushort)version.Minor;
+				if (version.Build != -1)
+				{
+					buildVersion = (ushort)version.Build;
+				}
+				if (version.Revision != -1)
+				{
+					revisionVersion = (ushort)version.Revision;
+				}
+			}
+			if (name.CultureInfo != null && !string.IsNullOrEmpty(name.CultureInfo.Name))
+			{
+				this.culture = name.CultureInfo.Name;
+			}
+			this.flags = name.Flags;
+			this.hashAlgorithm = name.HashAlgorithm;
+			this.keyPair = name.KeyPair;
+			if (this.keyPair != null)
+			{
+				this.publicKey = this.keyPair.PublicKey;
+			}
+			else
+			{
+				byte[] publicKey = name.GetPublicKey();
+				if (publicKey != null && publicKey.Length != 0)
+				{
+					this.publicKey = (byte[])publicKey.Clone();
+				}
+			}
 			this.dir = dir ?? ".";
 			this.requiredPermissions = requiredPermissions;
 			this.optionalPermissions = optionalPermissions;
@@ -81,10 +125,13 @@ namespace IKVM.Reflection.Emit
 		public override AssemblyName GetName()
 		{
 			AssemblyName n = new AssemblyName();
-			n.Name = name.Name;
-			n.Version = name.Version ?? new Version(0, 0, 0, 0);
-			n.CultureInfo = name.CultureInfo ?? System.Globalization.CultureInfo.InvariantCulture;
-			n.SetPublicKey(GetPublicKey(name) ?? Empty<byte>.Array);
+			n.Name = name;
+			n.Version = new Version(majorVersion, minorVersion, buildVersion, revisionVersion);
+			n.CultureInfo = culture != null ? CultureInfo.GetCultureInfo(culture) : CultureInfo.InvariantCulture;
+			n.HashAlgorithm = hashAlgorithm;
+			n.Flags = flags;
+			n.SetPublicKey(publicKey != null ? (byte[])publicKey.Clone() : Empty<byte>.Array);
+			n.KeyPair = keyPair;
 			return n;
 		}
 
@@ -176,25 +223,33 @@ namespace IKVM.Reflection.Emit
 				manifestModule = DefineDynamicModule("RefEmit_OnDiskManifestModule", assemblyFileName, false);
 			}
 
-			AssemblyTable.Record assemblyRecord = new AssemblyTable.Record();
-			assemblyRecord.HashAlgId = 0x8004;	// SHA1
-			assemblyRecord.Name = manifestModule.Strings.Add(name.Name);
-			if (name.Version != null)
+			if (hashAlgorithm == AssemblyHashAlgorithm.None)
 			{
-				assemblyRecord.MajorVersion = (ushort)name.Version.Major;
-				assemblyRecord.MinorVersion = (ushort)name.Version.Minor;
-				assemblyRecord.BuildNumber = (ushort)(name.Version.Build == -1 ? 0 : name.Version.Build);
-				assemblyRecord.RevisionNumber = (ushort)(name.Version.Revision == -1 ? 0 : name.Version.Revision);
+				hashAlgorithm = AssemblyHashAlgorithm.SHA1;
 			}
-			byte[] publicKey = GetPublicKey(name);
+			if (hashAlgorithm != AssemblyHashAlgorithm.SHA1)
+			{
+				throw new NotImplementedException();
+			}
+			AssemblyTable.Record assemblyRecord = new AssemblyTable.Record();
+			assemblyRecord.HashAlgId = (int)hashAlgorithm;
+			assemblyRecord.Name = manifestModule.Strings.Add(name);
+			assemblyRecord.MajorVersion = majorVersion;
+			assemblyRecord.MinorVersion = minorVersion;
+			assemblyRecord.BuildNumber = buildVersion;
+			assemblyRecord.RevisionNumber = revisionVersion;
 			if (publicKey != null)
 			{
 				assemblyRecord.PublicKey = manifestModule.Blobs.Add(ByteBuffer.Wrap(publicKey));
-				assemblyRecord.Flags |= 0x0001;	// PublicKey
+				assemblyRecord.Flags = (int)(flags | AssemblyNameFlags.PublicKey);
 			}
-			if (name.CultureInfo != null)
+			else
 			{
-				assemblyRecord.Culture = manifestModule.Strings.Add(name.CultureInfo.Name);
+				assemblyRecord.Flags = (int)(flags & ~AssemblyNameFlags.PublicKey);
+			}
+			if (culture != null)
+			{
+				assemblyRecord.Culture = manifestModule.Strings.Add(culture);
 			}
 			int token = 0x20000000 + manifestModule.AssemblyTable.AddRecord(assemblyRecord);
 
@@ -220,7 +275,7 @@ namespace IKVM.Reflection.Emit
 			ByteBuffer versionInfoData = null;
 			if (versionInfo != null)
 			{
-				versionInfo.SetName(name);
+				versionInfo.SetName(GetName());
 				versionInfo.SetFileName(assemblyFileName);
 				foreach (CustomAttributeBuilder cab in customAttributes)
 				{
@@ -284,22 +339,7 @@ namespace IKVM.Reflection.Emit
 			}
 
 			// finally, write the manifest module
-			ModuleWriter.WriteModule(name.KeyPair, publicKey, manifestModule, fileKind, portableExecutableKind, imageFileMachine, versionInfoData, unmanagedResources ?? manifestModule.unmanagedResources, entryPointToken);
-		}
-
-		private static byte[] GetPublicKey(AssemblyName name)
-		{
-			StrongNameKeyPair keyPair = name.KeyPair;
-			if (keyPair != null)
-			{
-				return keyPair.PublicKey;
-			}
-			byte[] key = name.GetPublicKey();
-			if (key == null || key.Length == 0)
-			{
-				return null;
-			}
-			return key;
+			ModuleWriter.WriteModule(keyPair, publicKey, manifestModule, fileKind, portableExecutableKind, imageFileMachine, versionInfoData, unmanagedResources ?? manifestModule.unmanagedResources, entryPointToken);
 		}
 
 		private int AddFile(ModuleBuilder manifestModule, string fileName, int flags)
