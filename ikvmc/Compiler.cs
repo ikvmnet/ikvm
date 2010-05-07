@@ -182,7 +182,7 @@ class IkvmcCompiler
 					}
 				}
 			}
-			else
+			else if (options.keycontainer != null)
 			{
 				StrongNameKeyPair keyPair = null;
 				if (!SetStrongNameKeyPair(ref keyPair, options.keycontainer, false))
