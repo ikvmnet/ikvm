@@ -481,7 +481,10 @@ namespace IKVM.Reflection
 			Type[] typeArguments = type.GetGenericArguments();
 			Type[][] requiredCustomModifiers = type.__GetGenericArgumentsRequiredCustomModifiers();
 			Type[][] optionalCustomModifiers = type.__GetGenericArgumentsOptionalCustomModifiers();
-			type = type.GetGenericTypeDefinition();
+			if (!type.IsGenericTypeDefinition)
+			{
+				type = type.GetGenericTypeDefinition();
+			}
 			bb.Write(ELEMENT_TYPE_GENERICINST);
 			if (type.IsValueType)
 			{

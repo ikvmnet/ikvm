@@ -1876,7 +1876,22 @@ namespace IKVM.Reflection
 
 		internal static Type Make(Type type, Type[] typeArguments, Type[][] requiredCustomModifiers, Type[][] optionalCustomModifiers)
 		{
-			return type.Module.CanonicalizeType(new GenericTypeInstance(type, typeArguments, requiredCustomModifiers, optionalCustomModifiers));
+			// we must not instantiate the identity instance, because typeof(Foo<>).MakeGenericType(typeof(Foo<>).GetGenericArguments()) == typeof(Foo<>)
+			for (int i = 0; i < typeArguments.Length; i++)
+			{
+				if (typeArguments[i] != type.GetGenericTypeArgument(i)
+					|| !IsEmpty(requiredCustomModifiers, i)
+					|| !IsEmpty(optionalCustomModifiers, i))
+				{
+					return type.Module.CanonicalizeType(new GenericTypeInstance(type, typeArguments, requiredCustomModifiers, optionalCustomModifiers));
+				}
+			}
+			return type;
+		}
+
+		private static bool IsEmpty(Type[][] mods, int i)
+		{
+			return mods == null || mods[i].Length == 0;
 		}
 
 		private GenericTypeInstance(Type type, Type[] args, Type[][] requiredCustomModifiers, Type[][] optionalCustomModifiers)
