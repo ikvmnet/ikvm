@@ -1891,7 +1891,9 @@ namespace IKVM.Reflection
 
 		private static bool IsEmpty(Type[][] mods, int i)
 		{
-			return mods == null || mods[i].Length == 0;
+			// we need to be extra careful, because mods doesn't not need to be in canonical format
+			// (Signature.ReadGenericInst() calls Make() directly, without copying the modifier arrays)
+			return mods == null || mods[i] == null || mods[i].Length == 0;
 		}
 
 		private GenericTypeInstance(Type type, Type[] args, Type[][] requiredCustomModifiers, Type[][] optionalCustomModifiers)
