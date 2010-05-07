@@ -1538,19 +1538,55 @@ namespace IKVM.Internal
 
 				internal override void Apply(ClassLoaderWrapper loader, AssemblyBuilder ab, object annotation)
 				{
-					// TODO we should support other pseudo custom attributes that Ref.Emit doesn't support (e.g. AssemblyVersionAttribute)
 					if (type.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
 					{
 #if STATIC_COMPILER
 						ab.__AddDeclarativeSecurity(MakeCustomAttributeBuilder(loader, annotation));
 #endif
 					}
+#if STATIC_COMPILER
 					else if (type == JVM.Import(typeof(System.Runtime.CompilerServices.TypeForwardedToAttribute)))
 					{
-#if STATIC_COMPILER
 						ab.__AddTypeForwarder((Type)ConvertValue(loader, Types.Type, ((object[])annotation)[3]));
-#endif
 					}
+					else if (type == JVM.Import(typeof(System.Reflection.AssemblyVersionAttribute)))
+					{
+						string str = (string)ConvertValue(loader, Types.String, ((object[])annotation)[3]);
+						Version version;
+						if (IkvmcCompiler.TryParseVersion(str, out version))
+						{
+							ab.__SetAssemblyVersion(version);
+						}
+						else
+						{
+							StaticCompiler.IssueMessage(Message.InvalidCustomAttribute, type.FullName, "The version '" + str + "' is invalid.");
+						}
+					}
+					else if (type == JVM.Import(typeof(System.Reflection.AssemblyCultureAttribute)))
+					{
+						string str = (string)ConvertValue(loader, Types.String, ((object[])annotation)[3]);
+						if (str != "")
+						{
+							ab.__SetAssemblyCulture(str);
+						}
+					}
+					else if (type == JVM.Import(typeof(System.Reflection.AssemblyDelaySignAttribute))
+						|| type == JVM.Import(typeof(System.Reflection.AssemblyKeyFileAttribute))
+						|| type == JVM.Import(typeof(System.Reflection.AssemblyKeyNameAttribute)))
+					{
+						StaticCompiler.IssueMessage(Message.IgnoredCustomAttribute, type.FullName, "Please use the corresponding compiler switch.");
+					}
+					else if (type == JVM.Import(typeof(System.Reflection.AssemblyAlgorithmIdAttribute)))
+					{
+						// this attribute is currently not exposed as an annotation and isn't very interesting
+						throw new NotImplementedException();
+					}
+					else if (type == JVM.Import(typeof(System.Reflection.AssemblyFlagsAttribute)))
+					{
+						// this attribute is currently not exposed as an annotation and isn't very interesting
+						throw new NotImplementedException();
+					}
+#endif
 					else
 					{
 						ab.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));

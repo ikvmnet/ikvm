@@ -3171,6 +3171,8 @@ namespace IKVM.Internal
 		EmittedLinkageError = 118,
 		EmittedVerificationError = 119,
 		EmittedClassFormatError = 120,
+		InvalidCustomAttribute = 121,
+		IgnoredCustomAttribute = 122,
 	}
 
 	static class StaticCompiler
@@ -3358,6 +3360,14 @@ namespace IKVM.Internal
 					break;
 				case Message.EmittedClassFormatError:
 					msg = "emitted java.lang.ClassFormatError in \"{0}\"" + Environment.NewLine +
+						"    (\"{1}\")";
+					break;
+				case Message.InvalidCustomAttribute:
+					msg = "error emitting \"{0}\" custom attribute" + Environment.NewLine +
+						"    (\"{1}\")";
+					break;
+				case Message.IgnoredCustomAttribute:
+					msg = "custom attribute \"{0}\" was ignored" + Environment.NewLine +
 						"    (\"{1}\")";
 					break;
 				default:

@@ -724,7 +724,7 @@ class IkvmcCompiler
 		return 0;
 	}
 
-	private static bool TryParseVersion(string str, out Version version)
+	internal static bool TryParseVersion(string str, out Version version)
 	{
 		if (str.EndsWith(".*"))
 		{
