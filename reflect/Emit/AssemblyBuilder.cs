@@ -82,6 +82,10 @@ namespace IKVM.Reflection.Emit
 			}
 			this.flags = name.Flags;
 			this.hashAlgorithm = name.HashAlgorithm;
+			if (this.hashAlgorithm == AssemblyHashAlgorithm.None)
+			{
+				this.hashAlgorithm = AssemblyHashAlgorithm.SHA1;
+			}
 			this.keyPair = name.KeyPair;
 			if (this.keyPair != null)
 			{
@@ -271,10 +275,6 @@ namespace IKVM.Reflection.Emit
 				manifestModule = DefineDynamicModule("RefEmit_OnDiskManifestModule", assemblyFileName, false);
 			}
 
-			if (hashAlgorithm == AssemblyHashAlgorithm.None)
-			{
-				hashAlgorithm = AssemblyHashAlgorithm.SHA1;
-			}
 			if (hashAlgorithm != AssemblyHashAlgorithm.SHA1)
 			{
 				throw new NotImplementedException();
