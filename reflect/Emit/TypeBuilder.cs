@@ -745,6 +745,11 @@ namespace IKVM.Reflection.Emit
 			get { return attribs; }
 		}
 
+		public void __SetAttributes(TypeAttributes attributes)
+		{
+			this.attribs = attributes;
+		}
+
 		public override Type[] __GetDeclaredInterfaces()
 		{
 			return Util.ToArray(interfaces, Type.EmptyTypes);

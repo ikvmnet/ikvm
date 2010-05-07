@@ -370,6 +370,11 @@ namespace IKVM.Reflection.Emit
 			get { return attributes; }
 		}
 
+		public void __SetAttributes(MethodAttributes attributes)
+		{
+			this.attributes = attributes;
+		}
+
 		public override MethodImplAttributes GetMethodImplementationFlags()
 		{
 			return implFlags;
