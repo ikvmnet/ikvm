@@ -1463,12 +1463,6 @@ namespace IKVM.Reflection
 				Universe u = this.Module.universe;
 				return this == u.System_NonSerializedAttribute
 					|| this == u.System_SerializableAttribute
-					|| this == u.System_Reflection_AssemblyFlagsAttribute
-					|| this == u.System_Reflection_AssemblyAlgorithmIdAttribute
-					|| this == u.System_Reflection_AssemblyVersionAttribute
-					|| this == u.System_Reflection_AssemblyKeyFileAttribute
-					|| this == u.System_Reflection_AssemblyKeyNameAttribute
-					|| this == u.System_Reflection_AssemblyCultureAttribute
 					|| this == u.System_Runtime_InteropServices_DllImportAttribute
 					|| this == u.System_Runtime_InteropServices_FieldOffsetAttribute
 					|| this == u.System_Runtime_InteropServices_InAttribute

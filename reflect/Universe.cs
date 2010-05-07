@@ -94,11 +94,6 @@ namespace IKVM.Reflection
 		private Type typeof_System_Decimal;
 		private Type typeof_System_NonSerializedAttribute;
 		private Type typeof_System_SerializableAttribute;
-		private Type typeof_System_Reflection_AssemblyFlagsAttribute;
-		private Type typeof_System_Reflection_AssemblyAlgorithmIdAttribute;
-		private Type typeof_System_Reflection_AssemblyVersionAttribute;
-		private Type typeof_System_Reflection_AssemblyKeyFileAttribute;
-		private Type typeof_System_Reflection_AssemblyKeyNameAttribute;
 		private Type typeof_System_Reflection_AssemblyCultureAttribute;
 		private Type typeof_System_Runtime_InteropServices_DllImportAttribute;
 		private Type typeof_System_Runtime_InteropServices_FieldOffsetAttribute;
@@ -260,31 +255,6 @@ namespace IKVM.Reflection
 		internal Type System_SerializableAttribute
 		{
 			get { return typeof_System_SerializableAttribute ?? (typeof_System_SerializableAttribute = Import(typeof(System.SerializableAttribute))); }
-		}
-
-		internal Type System_Reflection_AssemblyFlagsAttribute
-		{
-			get { return typeof_System_Reflection_AssemblyFlagsAttribute ?? (typeof_System_Reflection_AssemblyFlagsAttribute = Import(typeof(System.Reflection.AssemblyFlagsAttribute))); }
-		}
-
-		internal Type System_Reflection_AssemblyAlgorithmIdAttribute
-		{
-			get { return typeof_System_Reflection_AssemblyAlgorithmIdAttribute ?? (typeof_System_Reflection_AssemblyAlgorithmIdAttribute = Import(typeof(System.Reflection.AssemblyAlgorithmIdAttribute))); }
-		}
-
-		internal Type System_Reflection_AssemblyVersionAttribute
-		{
-			get { return typeof_System_Reflection_AssemblyVersionAttribute ?? (typeof_System_Reflection_AssemblyVersionAttribute = Import(typeof(System.Reflection.AssemblyVersionAttribute))); }
-		}
-
-		internal Type System_Reflection_AssemblyKeyFileAttribute
-		{
-			get { return typeof_System_Reflection_AssemblyKeyFileAttribute ?? (typeof_System_Reflection_AssemblyKeyFileAttribute = Import(typeof(System.Reflection.AssemblyKeyFileAttribute))); }
-		}
-
-		internal Type System_Reflection_AssemblyKeyNameAttribute
-		{
-			get { return typeof_System_Reflection_AssemblyKeyNameAttribute ?? (typeof_System_Reflection_AssemblyKeyNameAttribute = Import(typeof(System.Reflection.AssemblyKeyNameAttribute))); }
 		}
 
 		internal Type System_Reflection_AssemblyCultureAttribute
