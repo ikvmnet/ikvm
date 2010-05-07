@@ -631,6 +631,16 @@ namespace IKVM.Reflection.Emit
 			return Util.Copy(gtpb);
 		}
 
+		public override Type[][] __GetGenericArgumentsOptionalCustomModifiers()
+		{
+			return gtpb == null ? Empty<Type[]>.Array : Util.Copy(new Type[gtpb.Length][]);
+		}
+
+		public override Type[][] __GetGenericArgumentsRequiredCustomModifiers()
+		{
+			return gtpb == null ? Empty<Type[]>.Array : Util.Copy(new Type[gtpb.Length][]);
+		}
+
 		internal override Type GetGenericTypeArgument(int index)
 		{
 			return gtpb[index];
@@ -1100,6 +1110,16 @@ namespace IKVM.Reflection.Emit
 		internal override Type GetGenericTypeArgument(int index)
 		{
 			return typeBuilder.GetGenericTypeArgument(index);
+		}
+
+		public override Type[][] __GetGenericArgumentsOptionalCustomModifiers()
+		{
+			return typeBuilder.__GetGenericArgumentsOptionalCustomModifiers();
+		}
+
+		public override Type[][] __GetGenericArgumentsRequiredCustomModifiers()
+		{
+			return typeBuilder.__GetGenericArgumentsRequiredCustomModifiers();
 		}
 
 		public override bool IsGenericType

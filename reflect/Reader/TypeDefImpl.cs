@@ -247,6 +247,18 @@ namespace IKVM.Reflection.Reader
 			return typeArgs[index];
 		}
 
+		public override Type[][] __GetGenericArgumentsOptionalCustomModifiers()
+		{
+			PopulateGenericArguments();
+			return Util.Copy(new Type[typeArgs.Length][]);
+		}
+
+		public override Type[][] __GetGenericArgumentsRequiredCustomModifiers()
+		{
+			PopulateGenericArguments();
+			return Util.Copy(new Type[typeArgs.Length][]);
+		}
+
 		public override bool IsGenericType
 		{
 			get { return IsGenericTypeDefinition; }
