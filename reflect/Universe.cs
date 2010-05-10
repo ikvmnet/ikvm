@@ -67,6 +67,7 @@ namespace IKVM.Reflection
 		private readonly List<Assembly> assemblies = new List<Assembly>();
 		private readonly Dictionary<string, Assembly> assembliesByName = new Dictionary<string, Assembly>();
 		private readonly Dictionary<System.Type, Type> importedTypes = new Dictionary<System.Type, Type>();
+		private Assembly mscorlib;
 		private Type typeof_System_Object;
 		private Type typeof_System_ValueType;
 		private Type typeof_System_Enum;
@@ -122,274 +123,284 @@ namespace IKVM.Reflection
 		private Type typeof_System_Security_Permissions_SecurityAction;
 		private List<ResolveEventHandler> resolvers = new List<ResolveEventHandler>();
 
+		internal Assembly Mscorlib
+		{
+			get { return mscorlib ?? (mscorlib = Load(typeof(object).Assembly.FullName)); }
+		}
+
+		private Type ImportMscorlibType(System.Type type)
+		{
+			return Mscorlib.GetTypeImpl(type.FullName);
+		}
+
 		internal Type System_Object
 		{
-			get { return typeof_System_Object ?? (typeof_System_Object = Import(typeof(System.Object))); }
+			get { return typeof_System_Object ?? (typeof_System_Object = ImportMscorlibType(typeof(System.Object))); }
 		}
 
 		internal Type System_ValueType
 		{
-			get { return typeof_System_ValueType ?? (typeof_System_ValueType = Import(typeof(System.ValueType))); }
+			get { return typeof_System_ValueType ?? (typeof_System_ValueType = ImportMscorlibType(typeof(System.ValueType))); }
 		}
 
 		internal Type System_Enum
 		{
-			get { return typeof_System_Enum ?? (typeof_System_Enum = Import(typeof(System.Enum))); }
+			get { return typeof_System_Enum ?? (typeof_System_Enum = ImportMscorlibType(typeof(System.Enum))); }
 		}
 
 		internal Type System_Void
 		{
-			get { return typeof_System_Void ?? (typeof_System_Void = Import(typeof(void))); }
+			get { return typeof_System_Void ?? (typeof_System_Void = ImportMscorlibType(typeof(void))); }
 		}
 
 		internal Type System_Boolean
 		{
-			get { return typeof_System_Boolean ?? (typeof_System_Boolean = Import(typeof(System.Boolean))); }
+			get { return typeof_System_Boolean ?? (typeof_System_Boolean = ImportMscorlibType(typeof(System.Boolean))); }
 		}
 
 		internal Type System_Char
 		{
-			get { return typeof_System_Char ?? (typeof_System_Char = Import(typeof(System.Char))); }
+			get { return typeof_System_Char ?? (typeof_System_Char = ImportMscorlibType(typeof(System.Char))); }
 		}
 
 		internal Type System_SByte
 		{
-			get { return typeof_System_SByte ?? (typeof_System_SByte = Import(typeof(System.SByte))); }
+			get { return typeof_System_SByte ?? (typeof_System_SByte = ImportMscorlibType(typeof(System.SByte))); }
 		}
 
 		internal Type System_Byte
 		{
-			get { return typeof_System_Byte ?? (typeof_System_Byte = Import(typeof(System.Byte))); }
+			get { return typeof_System_Byte ?? (typeof_System_Byte = ImportMscorlibType(typeof(System.Byte))); }
 		}
 
 		internal Type System_Int16
 		{
-			get { return typeof_System_Int16 ?? (typeof_System_Int16 = Import(typeof(System.Int16))); }
+			get { return typeof_System_Int16 ?? (typeof_System_Int16 = ImportMscorlibType(typeof(System.Int16))); }
 		}
 
 		internal Type System_UInt16
 		{
-			get { return typeof_System_UInt16 ?? (typeof_System_UInt16 = Import(typeof(System.UInt16))); }
+			get { return typeof_System_UInt16 ?? (typeof_System_UInt16 = ImportMscorlibType(typeof(System.UInt16))); }
 		}
 
 		internal Type System_Int32
 		{
-			get { return typeof_System_Int32 ?? (typeof_System_Int32 = Import(typeof(System.Int32))); }
+			get { return typeof_System_Int32 ?? (typeof_System_Int32 = ImportMscorlibType(typeof(System.Int32))); }
 		}
 
 		internal Type System_UInt32
 		{
-			get { return typeof_System_UInt32 ?? (typeof_System_UInt32 = Import(typeof(System.UInt32))); }
+			get { return typeof_System_UInt32 ?? (typeof_System_UInt32 = ImportMscorlibType(typeof(System.UInt32))); }
 		}
 
 		internal Type System_Int64
 		{
-			get { return typeof_System_Int64 ?? (typeof_System_Int64 = Import(typeof(System.Int64))); }
+			get { return typeof_System_Int64 ?? (typeof_System_Int64 = ImportMscorlibType(typeof(System.Int64))); }
 		}
 
 		internal Type System_UInt64
 		{
-			get { return typeof_System_UInt64 ?? (typeof_System_UInt64 = Import(typeof(System.UInt64))); }
+			get { return typeof_System_UInt64 ?? (typeof_System_UInt64 = ImportMscorlibType(typeof(System.UInt64))); }
 		}
 
 		internal Type System_Single
 		{
-			get { return typeof_System_Single ?? (typeof_System_Single = Import(typeof(System.Single))); }
+			get { return typeof_System_Single ?? (typeof_System_Single = ImportMscorlibType(typeof(System.Single))); }
 		}
 
 		internal Type System_Double
 		{
-			get { return typeof_System_Double ?? (typeof_System_Double = Import(typeof(System.Double))); }
+			get { return typeof_System_Double ?? (typeof_System_Double = ImportMscorlibType(typeof(System.Double))); }
 		}
 
 		internal Type System_String
 		{
-			get { return typeof_System_String ?? (typeof_System_String = Import(typeof(System.String))); }
+			get { return typeof_System_String ?? (typeof_System_String = ImportMscorlibType(typeof(System.String))); }
 		}
 
 		internal Type System_IntPtr
 		{
-			get { return typeof_System_IntPtr ?? (typeof_System_IntPtr = Import(typeof(System.IntPtr))); }
+			get { return typeof_System_IntPtr ?? (typeof_System_IntPtr = ImportMscorlibType(typeof(System.IntPtr))); }
 		}
 
 		internal Type System_UIntPtr
 		{
-			get { return typeof_System_UIntPtr ?? (typeof_System_UIntPtr = Import(typeof(System.UIntPtr))); }
+			get { return typeof_System_UIntPtr ?? (typeof_System_UIntPtr = ImportMscorlibType(typeof(System.UIntPtr))); }
 		}
 
 		internal Type System_TypedReference
 		{
-			get { return typeof_System_TypedReference ?? (typeof_System_TypedReference = Import(typeof(System.TypedReference))); }
+			get { return typeof_System_TypedReference ?? (typeof_System_TypedReference = ImportMscorlibType(typeof(System.TypedReference))); }
 		}
 
 		internal Type System_Type
 		{
-			get { return typeof_System_Type ?? (typeof_System_Type = Import(typeof(System.Type))); }
+			get { return typeof_System_Type ?? (typeof_System_Type = ImportMscorlibType(typeof(System.Type))); }
 		}
 
 		internal Type System_Array
 		{
-			get { return typeof_System_Array ?? (typeof_System_Array = Import(typeof(System.Array))); }
+			get { return typeof_System_Array ?? (typeof_System_Array = ImportMscorlibType(typeof(System.Array))); }
 		}
 
 		internal Type System_DateTime
 		{
-			get { return typeof_System_DateTime ?? (typeof_System_DateTime = Import(typeof(System.DateTime))); }
+			get { return typeof_System_DateTime ?? (typeof_System_DateTime = ImportMscorlibType(typeof(System.DateTime))); }
 		}
 
 		internal Type System_DBNull
 		{
-			get { return typeof_System_DBNull ?? (typeof_System_DBNull = Import(typeof(System.DBNull))); }
+			get { return typeof_System_DBNull ?? (typeof_System_DBNull = ImportMscorlibType(typeof(System.DBNull))); }
 		}
 
 		internal Type System_Decimal
 		{
-			get { return typeof_System_Decimal ?? (typeof_System_Decimal = Import(typeof(System.Decimal))); }
+			get { return typeof_System_Decimal ?? (typeof_System_Decimal = ImportMscorlibType(typeof(System.Decimal))); }
 		}
 
 		internal Type System_NonSerializedAttribute
 		{
-			get { return typeof_System_NonSerializedAttribute ?? (typeof_System_NonSerializedAttribute = Import(typeof(System.NonSerializedAttribute))); }
+			get { return typeof_System_NonSerializedAttribute ?? (typeof_System_NonSerializedAttribute = ImportMscorlibType(typeof(System.NonSerializedAttribute))); }
 		}
 
 		internal Type System_SerializableAttribute
 		{
-			get { return typeof_System_SerializableAttribute ?? (typeof_System_SerializableAttribute = Import(typeof(System.SerializableAttribute))); }
+			get { return typeof_System_SerializableAttribute ?? (typeof_System_SerializableAttribute = ImportMscorlibType(typeof(System.SerializableAttribute))); }
 		}
 
 		internal Type System_Reflection_AssemblyCultureAttribute
 		{
-			get { return typeof_System_Reflection_AssemblyCultureAttribute ?? (typeof_System_Reflection_AssemblyCultureAttribute = Import(typeof(System.Reflection.AssemblyCultureAttribute))); }
+			get { return typeof_System_Reflection_AssemblyCultureAttribute ?? (typeof_System_Reflection_AssemblyCultureAttribute = ImportMscorlibType(typeof(System.Reflection.AssemblyCultureAttribute))); }
 		}
 
 		internal Type System_Runtime_InteropServices_DllImportAttribute
 		{
-			get { return typeof_System_Runtime_InteropServices_DllImportAttribute ?? (typeof_System_Runtime_InteropServices_DllImportAttribute = Import(typeof(System.Runtime.InteropServices.DllImportAttribute))); }
+			get { return typeof_System_Runtime_InteropServices_DllImportAttribute ?? (typeof_System_Runtime_InteropServices_DllImportAttribute = ImportMscorlibType(typeof(System.Runtime.InteropServices.DllImportAttribute))); }
 		}
 
 		internal Type System_Runtime_InteropServices_FieldOffsetAttribute
 		{
-			get { return typeof_System_Runtime_InteropServices_FieldOffsetAttribute ?? (typeof_System_Runtime_InteropServices_FieldOffsetAttribute = Import(typeof(System.Runtime.InteropServices.FieldOffsetAttribute))); }
+			get { return typeof_System_Runtime_InteropServices_FieldOffsetAttribute ?? (typeof_System_Runtime_InteropServices_FieldOffsetAttribute = ImportMscorlibType(typeof(System.Runtime.InteropServices.FieldOffsetAttribute))); }
 		}
 
 		internal Type System_Runtime_InteropServices_InAttribute
 		{
-			get { return typeof_System_Runtime_InteropServices_InAttribute ?? (typeof_System_Runtime_InteropServices_InAttribute = Import(typeof(System.Runtime.InteropServices.InAttribute))); }
+			get { return typeof_System_Runtime_InteropServices_InAttribute ?? (typeof_System_Runtime_InteropServices_InAttribute = ImportMscorlibType(typeof(System.Runtime.InteropServices.InAttribute))); }
 		}
 
 		internal Type System_Runtime_InteropServices_MarshalAsAttribute
 		{
-			get { return typeof_System_Runtime_InteropServices_MarshalAsAttribute ?? (typeof_System_Runtime_InteropServices_MarshalAsAttribute = Import(typeof(System.Runtime.InteropServices.MarshalAsAttribute))); }
+			get { return typeof_System_Runtime_InteropServices_MarshalAsAttribute ?? (typeof_System_Runtime_InteropServices_MarshalAsAttribute = ImportMscorlibType(typeof(System.Runtime.InteropServices.MarshalAsAttribute))); }
 		}
 
 		internal Type System_Runtime_InteropServices_UnmanagedType
 		{
-			get { return typeof_System_Runtime_InteropServices_UnmanagedType ?? (typeof_System_Runtime_InteropServices_UnmanagedType = Import(typeof(System.Runtime.InteropServices.UnmanagedType))); }
+			get { return typeof_System_Runtime_InteropServices_UnmanagedType ?? (typeof_System_Runtime_InteropServices_UnmanagedType = ImportMscorlibType(typeof(System.Runtime.InteropServices.UnmanagedType))); }
 		}
 
 		internal Type System_Runtime_InteropServices_VarEnum
 		{
-			get { return typeof_System_Runtime_InteropServices_VarEnum ?? (typeof_System_Runtime_InteropServices_VarEnum = Import(typeof(System.Runtime.InteropServices.VarEnum))); }
+			get { return typeof_System_Runtime_InteropServices_VarEnum ?? (typeof_System_Runtime_InteropServices_VarEnum = ImportMscorlibType(typeof(System.Runtime.InteropServices.VarEnum))); }
 		}
 
 		internal Type System_Runtime_InteropServices_OutAttribute
 		{
-			get { return typeof_System_Runtime_InteropServices_OutAttribute ?? (typeof_System_Runtime_InteropServices_OutAttribute = Import(typeof(System.Runtime.InteropServices.OutAttribute))); }
+			get { return typeof_System_Runtime_InteropServices_OutAttribute ?? (typeof_System_Runtime_InteropServices_OutAttribute = ImportMscorlibType(typeof(System.Runtime.InteropServices.OutAttribute))); }
 		}
 
 		internal Type System_Runtime_InteropServices_StructLayoutAttribute
 		{
-			get { return typeof_System_Runtime_InteropServices_StructLayoutAttribute ?? (typeof_System_Runtime_InteropServices_StructLayoutAttribute = Import(typeof(System.Runtime.InteropServices.StructLayoutAttribute))); }
+			get { return typeof_System_Runtime_InteropServices_StructLayoutAttribute ?? (typeof_System_Runtime_InteropServices_StructLayoutAttribute = ImportMscorlibType(typeof(System.Runtime.InteropServices.StructLayoutAttribute))); }
 		}
 
 		internal Type System_Runtime_InteropServices_OptionalAttribute
 		{
-			get { return typeof_System_Runtime_InteropServices_OptionalAttribute ?? (typeof_System_Runtime_InteropServices_OptionalAttribute = Import(typeof(System.Runtime.InteropServices.OptionalAttribute))); }
+			get { return typeof_System_Runtime_InteropServices_OptionalAttribute ?? (typeof_System_Runtime_InteropServices_OptionalAttribute = ImportMscorlibType(typeof(System.Runtime.InteropServices.OptionalAttribute))); }
 		}
 
 		internal Type System_Runtime_InteropServices_PreserveSigAttribute
 		{
-			get { return typeof_System_Runtime_InteropServices_PreserveSigAttribute ?? (typeof_System_Runtime_InteropServices_PreserveSigAttribute = Import(typeof(System.Runtime.InteropServices.PreserveSigAttribute))); }
+			get { return typeof_System_Runtime_InteropServices_PreserveSigAttribute ?? (typeof_System_Runtime_InteropServices_PreserveSigAttribute = ImportMscorlibType(typeof(System.Runtime.InteropServices.PreserveSigAttribute))); }
 		}
 
 		internal Type System_Runtime_InteropServices_ComImportAttribute
 		{
-			get { return typeof_System_Runtime_InteropServices_ComImportAttribute ?? (typeof_System_Runtime_InteropServices_ComImportAttribute = Import(typeof(System.Runtime.InteropServices.ComImportAttribute))); }
+			get { return typeof_System_Runtime_InteropServices_ComImportAttribute ?? (typeof_System_Runtime_InteropServices_ComImportAttribute = ImportMscorlibType(typeof(System.Runtime.InteropServices.ComImportAttribute))); }
 		}
 
 		internal Type System_Runtime_CompilerServices_SpecialNameAttribute
 		{
-			get { return typeof_System_Runtime_CompilerServices_SpecialNameAttribute ?? (typeof_System_Runtime_CompilerServices_SpecialNameAttribute = Import(typeof(System.Runtime.CompilerServices.SpecialNameAttribute))); }
+			get { return typeof_System_Runtime_CompilerServices_SpecialNameAttribute ?? (typeof_System_Runtime_CompilerServices_SpecialNameAttribute = ImportMscorlibType(typeof(System.Runtime.CompilerServices.SpecialNameAttribute))); }
 		}
 
 		internal Type System_Runtime_CompilerServices_MethodImplAttribute
 		{
-			get { return typeof_System_Runtime_CompilerServices_MethodImplAttribute ?? (typeof_System_Runtime_CompilerServices_MethodImplAttribute = Import(typeof(System.Runtime.CompilerServices.MethodImplAttribute))); }
+			get { return typeof_System_Runtime_CompilerServices_MethodImplAttribute ?? (typeof_System_Runtime_CompilerServices_MethodImplAttribute = ImportMscorlibType(typeof(System.Runtime.CompilerServices.MethodImplAttribute))); }
 		}
 
 		internal Type System_Security_SuppressUnmanagedCodeSecurityAttribute
 		{
-			get { return typeof_System_Security_SuppressUnmanagedCodeSecurityAttribute ?? (typeof_System_Security_SuppressUnmanagedCodeSecurityAttribute = Import(typeof(System.Security.SuppressUnmanagedCodeSecurityAttribute))); }
+			get { return typeof_System_Security_SuppressUnmanagedCodeSecurityAttribute ?? (typeof_System_Security_SuppressUnmanagedCodeSecurityAttribute = ImportMscorlibType(typeof(System.Security.SuppressUnmanagedCodeSecurityAttribute))); }
 		}
 
 		internal Type System_Reflection_AssemblyCopyrightAttribute
 		{
-			get { return typeof_System_Reflection_AssemblyCopyrightAttribute ?? (typeof_System_Reflection_AssemblyCopyrightAttribute = Import(typeof(System.Reflection.AssemblyCopyrightAttribute))); }
+			get { return typeof_System_Reflection_AssemblyCopyrightAttribute ?? (typeof_System_Reflection_AssemblyCopyrightAttribute = ImportMscorlibType(typeof(System.Reflection.AssemblyCopyrightAttribute))); }
 		}
 
 		internal Type System_Reflection_AssemblyTrademarkAttribute
 		{
-			get { return typeof_System_Reflection_AssemblyTrademarkAttribute ?? (typeof_System_Reflection_AssemblyTrademarkAttribute = Import(typeof(System.Reflection.AssemblyTrademarkAttribute))); }
+			get { return typeof_System_Reflection_AssemblyTrademarkAttribute ?? (typeof_System_Reflection_AssemblyTrademarkAttribute = ImportMscorlibType(typeof(System.Reflection.AssemblyTrademarkAttribute))); }
 		}
 
 		internal Type System_Reflection_AssemblyProductAttribute
 		{
-			get { return typeof_System_Reflection_AssemblyProductAttribute ?? (typeof_System_Reflection_AssemblyProductAttribute = Import(typeof(System.Reflection.AssemblyProductAttribute))); }
+			get { return typeof_System_Reflection_AssemblyProductAttribute ?? (typeof_System_Reflection_AssemblyProductAttribute = ImportMscorlibType(typeof(System.Reflection.AssemblyProductAttribute))); }
 		}
 
 		internal Type System_Reflection_AssemblyCompanyAttribute
 		{
-			get { return typeof_System_Reflection_AssemblyCompanyAttribute ?? (typeof_System_Reflection_AssemblyCompanyAttribute = Import(typeof(System.Reflection.AssemblyCompanyAttribute))); }
+			get { return typeof_System_Reflection_AssemblyCompanyAttribute ?? (typeof_System_Reflection_AssemblyCompanyAttribute = ImportMscorlibType(typeof(System.Reflection.AssemblyCompanyAttribute))); }
 		}
 
 		internal Type System_Reflection_AssemblyDescriptionAttribute
 		{
-			get { return typeof_System_Reflection_AssemblyDescriptionAttribute ?? (typeof_System_Reflection_AssemblyDescriptionAttribute = Import(typeof(System.Reflection.AssemblyDescriptionAttribute))); }
+			get { return typeof_System_Reflection_AssemblyDescriptionAttribute ?? (typeof_System_Reflection_AssemblyDescriptionAttribute = ImportMscorlibType(typeof(System.Reflection.AssemblyDescriptionAttribute))); }
 		}
 
 		internal Type System_Reflection_AssemblyTitleAttribute
 		{
-			get { return typeof_System_Reflection_AssemblyTitleAttribute ?? (typeof_System_Reflection_AssemblyTitleAttribute = Import(typeof(System.Reflection.AssemblyTitleAttribute))); }
+			get { return typeof_System_Reflection_AssemblyTitleAttribute ?? (typeof_System_Reflection_AssemblyTitleAttribute = ImportMscorlibType(typeof(System.Reflection.AssemblyTitleAttribute))); }
 		}
 
 		internal Type System_Reflection_AssemblyInformationalVersionAttribute
 		{
-			get { return typeof_System_Reflection_AssemblyInformationalVersionAttribute ?? (typeof_System_Reflection_AssemblyInformationalVersionAttribute = Import(typeof(System.Reflection.AssemblyInformationalVersionAttribute))); }
+			get { return typeof_System_Reflection_AssemblyInformationalVersionAttribute ?? (typeof_System_Reflection_AssemblyInformationalVersionAttribute = ImportMscorlibType(typeof(System.Reflection.AssemblyInformationalVersionAttribute))); }
 		}
 
 		internal Type System_Reflection_AssemblyFileVersionAttribute
 		{
-			get { return typeof_System_Reflection_AssemblyFileVersionAttribute ?? (typeof_System_Reflection_AssemblyFileVersionAttribute = Import(typeof(System.Reflection.AssemblyFileVersionAttribute))); }
+			get { return typeof_System_Reflection_AssemblyFileVersionAttribute ?? (typeof_System_Reflection_AssemblyFileVersionAttribute = ImportMscorlibType(typeof(System.Reflection.AssemblyFileVersionAttribute))); }
 		}
 
 		internal Type System_Security_Permissions_HostProtectionAttribute
 		{
-			get { return typeof_System_Security_Permissions_HostProtectionAttribute ?? (typeof_System_Security_Permissions_HostProtectionAttribute = Import(typeof(System.Security.Permissions.HostProtectionAttribute))); }
+			get { return typeof_System_Security_Permissions_HostProtectionAttribute ?? (typeof_System_Security_Permissions_HostProtectionAttribute = ImportMscorlibType(typeof(System.Security.Permissions.HostProtectionAttribute))); }
 		}
 
 		internal Type System_Security_Permissions_PermissionSetAttribute
 		{
-			get { return typeof_System_Security_Permissions_PermissionSetAttribute ?? (typeof_System_Security_Permissions_PermissionSetAttribute = Import(typeof(System.Security.Permissions.PermissionSetAttribute))); }
+			get { return typeof_System_Security_Permissions_PermissionSetAttribute ?? (typeof_System_Security_Permissions_PermissionSetAttribute = ImportMscorlibType(typeof(System.Security.Permissions.PermissionSetAttribute))); }
 		}
 
 		internal Type System_Security_Permissions_SecurityAction
 		{
-			get { return typeof_System_Security_Permissions_SecurityAction ?? (typeof_System_Security_Permissions_SecurityAction = Import(typeof(System.Security.Permissions.SecurityAction))); }
+			get { return typeof_System_Security_Permissions_SecurityAction ?? (typeof_System_Security_Permissions_SecurityAction = ImportMscorlibType(typeof(System.Security.Permissions.SecurityAction))); }
 		}
 
 		public bool HasMscorlib
 		{
-			get { return importedTypes.Count != 0 || assembliesByName.Count != 0; }
+			get { return mscorlib != null; }
 		}
 
 		public event ResolveEventHandler AssemblyResolve
@@ -404,14 +415,7 @@ namespace IKVM.Reflection
 			{
 				throw new InvalidOperationException();
 			}
-			Assembly asm = LoadFile(path);
-			if (asm.FullName != typeof(object).Assembly.FullName)
-			{
-				// make the current mscorlib full name an alias for the specified mscorlib,
-				// this ensures that all the runtime built in type are resolved against the
-				// specified mscorlib.
-				assembliesByName.Add(typeof(object).Assembly.FullName, asm);
-			}
+			mscorlib = LoadFile(path);
 		}
 
 		public Type Import(System.Type type)
@@ -517,14 +521,7 @@ namespace IKVM.Reflection
 
 		private Assembly Import(System.Reflection.Assembly asm)
 		{
-			Assembly imported;
-			if (!assembliesByName.TryGetValue(GetAssemblyIdentityName(asm), out imported))
-			{
-				imported = LoadFile(asm.Location);
-				// assert that the assembly was added to the cache under the right name
-				Debug.Assert(assembliesByName.ContainsKey(GetAssemblyIdentityName(asm)) && imported == assembliesByName[GetAssemblyIdentityName(asm)]);
-			}
-			return imported;
+			return Load(asm.FullName);
 		}
 
 		public Assembly LoadFile(string path)
@@ -680,13 +677,12 @@ namespace IKVM.Reflection
 
 		private AssemblyBuilder DefineDynamicAssemblyImpl(AssemblyName name, AssemblyBuilderAccess access, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
 		{
-			bool mscorlib = !HasMscorlib && name.Name == "mscorlib";
 			AssemblyBuilder asm = new AssemblyBuilder(this, name, dir, requiredPermissions, optionalPermissions, refusedPermissions);
 			assembliesByName.Add(GetAssemblyIdentityName(asm.GetName()), asm);
 			assemblies.Add(asm);
-			if (mscorlib)
+			if (mscorlib == null && name.Name == "mscorlib")
 			{
-				assembliesByName[typeof(object).Assembly.FullName] = asm;
+				mscorlib = asm;
 			}
 			return asm;
  		}

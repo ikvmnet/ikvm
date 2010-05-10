@@ -380,14 +380,14 @@ namespace IKVM.Reflection
 			}
 			else if (context == null)
 			{
-				type = universe.System_Object.Assembly.GetTypeImpl(name);
+				type = universe.Mscorlib.GetTypeImpl(name);
 			}
 			else
 			{
 				type = context.GetTypeImpl(name);
-				if (type == null && context != universe.System_Object.Assembly)
+				if (type == null && context != universe.Mscorlib)
 				{
-					type = universe.System_Object.Assembly.GetTypeImpl(name);
+					type = universe.Mscorlib.GetTypeImpl(name);
 				}
 			}
 			return Expand(type, context, throwOnError, originalName);

@@ -103,9 +103,9 @@ namespace IKVM.Reflection.Emit
 			this.requiredPermissions = requiredPermissions;
 			this.optionalPermissions = optionalPermissions;
 			this.refusedPermissions = refusedPermissions;
-			if (universe.HasMscorlib && universe.System_Object != null)
+			if (universe.HasMscorlib && universe.Mscorlib.ImageRuntimeVersion != null)
 			{
-				this.imageRuntimeVersion = universe.System_Object.Assembly.ImageRuntimeVersion;
+				this.imageRuntimeVersion = universe.Mscorlib.ImageRuntimeVersion;
 			}
 			else
 			{
