@@ -239,13 +239,11 @@ namespace IKVM.Internal
 		{
 			if (references != null)
 			{
-				Universe dummy = new Universe();
 				foreach (string r in references)
 				{
 					try
 					{
-						Assembly asm = dummy.LoadFile(r);
-						if (asm.GetType("System.Object") != null)
+						if (AssemblyName.GetAssemblyName(r).Name == "mscorlib")
 						{
 							StaticCompiler.Universe.LoadMscorlib(r);
 							return 0;
