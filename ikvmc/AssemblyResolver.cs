@@ -155,6 +155,13 @@ namespace IKVM.Internal
 			// (the map.xml file contains such type names)
 			bool partialName = !args.Name.Contains(",");
 			AssemblyName name = new AssemblyName(args.Name);
+			foreach (Assembly asm in universe.GetAssemblies())
+			{
+				if (Matches(asm.GetName(), name) || (partialName && asm.GetName().Name == name.Name))
+				{
+					return asm;
+				}
+			}
 			foreach (string file in FindAssemblyPath(name.Name + ".dll"))
 			{
 				Assembly asm = StaticCompiler.LoadFile(file);
