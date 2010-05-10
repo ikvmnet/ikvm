@@ -96,6 +96,12 @@ static class NetExp
 			Console.Error.WriteLine("usage: ikvmstub [-serialver] [-skiperror] [-reference:<assembly>] [-lib:<dir>] <assemblyNameOrPath>");
 			return 1;
 		}
+		if(File.Exists(assemblyNameOrPath))
+		{
+			// Add the target assembly to the references list, to allow it to be considered as "mscorlib".
+			// This allows "ikvmstub -nostdlib \...\mscorlib.dll" to work.
+			references.Add(assemblyNameOrPath);
+		}
 		AssemblyResolver resolver = new AssemblyResolver();
 		resolver.Init(StaticCompiler.Universe, nostdlib, references, libpaths);
 		Dictionary<string, Assembly> cache = new Dictionary<string, Assembly>();
