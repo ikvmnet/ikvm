@@ -1601,29 +1601,33 @@ namespace IKVM.Internal
 		// this method can be used to convert an enum value or its underlying value to a Java primitive
 		internal static object GetPrimitiveValue(Type underlyingType, object obj)
 		{
+			// Note that this method doesn't trust that obj is of the correct type,
+			// because it turns out there exist assemblies (e.g. gtk-sharp.dll) that
+			// have incorrectly typed enum constant values (e.g. int32 instead of uint32).
+			long value;
+			if (obj is ulong || (obj is Enum && underlyingType == Types.UInt64))
+			{
+				value = unchecked((long)((IConvertible)obj).ToUInt64(null));
+			}
+			else
+			{
+				value = ((IConvertible)obj).ToInt64(null);
+			}
 			if (underlyingType == Types.SByte || underlyingType == Types.Byte)
 			{
-				return unchecked((byte)((IConvertible)obj).ToInt32(null));
+				return unchecked((byte)value);
 			}
 			else if (underlyingType == Types.Int16 || underlyingType == Types.UInt16)
 			{
-				return unchecked((short)((IConvertible)obj).ToInt32(null));
+				return unchecked((short)value);
 			}
-			else if (underlyingType == Types.Int32)
+			else if (underlyingType == Types.Int32 || underlyingType == Types.UInt32)
 			{
-				return ((IConvertible)obj).ToInt32(null);
+				return unchecked((int)value);
 			}
-			else if (underlyingType == Types.UInt32)
+			else if (underlyingType == Types.Int64 || underlyingType == Types.UInt64)
 			{
-				return unchecked((int)((IConvertible)obj).ToUInt32(null));
-			}
-			else if (underlyingType == Types.Int64)
-			{
-				return ((IConvertible)obj).ToInt64(null);
-			}
-			else if (underlyingType == Types.UInt64)
-			{
-				return unchecked((long)((IConvertible)obj).ToUInt64(null));
+				return value;
 			}
 			else
 			{
