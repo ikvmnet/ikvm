@@ -359,6 +359,10 @@ namespace IKVM.NativeCode.ikvm.runtime
 			{
 				return DotNetTypeWrapper.GetWrapperFromDotNetType(t).ClassObject;
 			}
+			if(!IsVisibleAsClass(t))
+			{
+				return null;
+			}
 			TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(t);
 			if(tw != null)
 			{
@@ -380,6 +384,10 @@ namespace IKVM.NativeCode.ikvm.runtime
 			{
 				type = type.DeclaringType;
 			}
+			if(!IsVisibleAsClass(type))
+			{
+				return null;
+			}
 			TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromType(type);
 			if(wrapper == null)
 			{
@@ -390,6 +398,28 @@ namespace IKVM.NativeCode.ikvm.runtime
 				wrapper = wrapper.MakeArrayType(rank);
 			}
 			return wrapper.ClassObject;
+		}
+
+		private static bool IsVisibleAsClass(Type type)
+		{
+			while (type.HasElementType)
+			{
+				if (type.IsPointer || type.IsByRef)
+				{
+					return false;
+				}
+				type = type.GetElementType();
+			}
+			if (type.ContainsGenericParameters && !type.IsGenericTypeDefinition)
+			{
+				return false;
+			}
+			System.Reflection.Emit.TypeBuilder tb = type as System.Reflection.Emit.TypeBuilder;
+			if (tb != null && !tb.IsCreated())
+			{
+				return false;
+			}
+			return true;
 		}
 
 		public static Type getInstanceTypeFromClass(object clazz)
