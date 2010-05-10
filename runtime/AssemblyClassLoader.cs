@@ -572,7 +572,16 @@ namespace IKVM.Internal
 			TypeWrapper wrapper = GetLoader(type.Assembly).CreateWrapperForAssemblyType(type);
 			if (wrapper != null)
 			{
-				wrapper = RegisterInitiatingLoader(wrapper);
+				if (type.IsGenericType && !type.IsGenericTypeDefinition)
+				{
+					// in the case of "magic" implementation generic type instances we'll end up here as well,
+					// but then wrapper.GetClassLoader() will return this anyway
+					wrapper = wrapper.GetClassLoader().RegisterInitiatingLoader(wrapper);
+				}
+				else
+				{
+					wrapper = RegisterInitiatingLoader(wrapper);
+				}
 				if (wrapper.TypeAsTBD != type && (!wrapper.IsRemapped || wrapper.TypeAsBaseType != type))
 				{
 					// this really shouldn't happen, it means that we have two different types in our assembly that both
