@@ -48,6 +48,11 @@ namespace IKVM.Reflection
 			name = new System.Reflection.AssemblyName(assemblyName);
 		}
 
+		public override string ToString()
+		{
+			return name.ToString();
+		}
+
 		public string Name
 		{
 			get { return name.Name; }
