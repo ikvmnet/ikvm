@@ -598,7 +598,7 @@ namespace IKVM.Reflection.Emit
 				rec.MinorVersion = (ushort)ver.Minor;
 				rec.BuildNumber = (ushort)ver.Build;
 				rec.RevisionNumber = (ushort)ver.Revision;
-				rec.Flags = 0;
+				rec.Flags = (int)(asm.Flags & AssemblyNameFlags.Retargetable);
 				byte[] publicKeyOrToken = null;
 				if (usePublicKeyAssemblyReference)
 				{
