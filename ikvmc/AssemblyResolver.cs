@@ -95,7 +95,7 @@ namespace IKVM.Internal
 					{
 						foreach (string found in FindAssemblyPath(reference))
 						{
-							asm = StaticCompiler.LoadFile(found);
+							asm = universe.LoadFile(found);
 							cache.Add(reference, asm);
 							break;
 						}
@@ -120,7 +120,7 @@ namespace IKVM.Internal
 						Assembly asm;
 						if (!cache.TryGetValue(file, out asm))
 						{
-							asm = StaticCompiler.LoadFile(file);
+							asm = universe.LoadFile(file);
 						}
 						ArrayAppend(ref references, asm);
 					}
@@ -164,7 +164,7 @@ namespace IKVM.Internal
 			}
 			foreach (string file in FindAssemblyPath(name.Name + ".dll"))
 			{
-				Assembly asm = StaticCompiler.LoadFile(file);
+				Assembly asm = universe.LoadFile(file);
 				if (Matches(asm.GetName(), name) || partialName)
 				{
 					return asm;
@@ -175,7 +175,7 @@ namespace IKVM.Internal
 				string path = Path.Combine(Path.GetDirectoryName(args.RequestingAssembly.Location), name.Name + ".dll");
 				if (File.Exists(path) && Matches(AssemblyName.GetAssemblyName(path), name))
 				{
-					return StaticCompiler.LoadFile(path);
+					return universe.LoadFile(path);
 				}
 			}
 			Console.Error.WriteLine("Error: unable to find assembly '{0}'", args.Name);
@@ -252,7 +252,7 @@ namespace IKVM.Internal
 					{
 						if (AssemblyName.GetAssemblyName(r).Name == "mscorlib")
 						{
-							StaticCompiler.Universe.LoadMscorlib(r);
+							universe.LoadMscorlib(r);
 							return 0;
 						}
 					}
@@ -263,7 +263,7 @@ namespace IKVM.Internal
 			}
 			foreach (string mscorlib in FindAssemblyPath("mscorlib.dll"))
 			{
-				StaticCompiler.Universe.LoadMscorlib(mscorlib);
+				universe.LoadMscorlib(mscorlib);
 				return 0;
 			}
 			Console.Error.WriteLine("Error: unable to find mscorlib.dll");
