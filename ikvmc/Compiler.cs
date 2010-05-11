@@ -95,7 +95,7 @@ class IkvmcCompiler
 		if (rc == 0)
 		{
 			loader.HigherVersion += new AssemblyResolver.HigherVersionEvent(loader_HigherVersion);
-			loader.Init(StaticCompiler.Universe, nostdlib, toplevel.unresolvedReferences, libpaths);
+			rc = loader.Init(StaticCompiler.Universe, nostdlib, toplevel.unresolvedReferences, libpaths);
 		}
 		if (rc == 0)
 		{
