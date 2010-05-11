@@ -171,18 +171,11 @@ namespace IKVM.Internal
 
 		private Assembly universe_AssemblyResolve(object sender, IKVM.Reflection.ResolveEventArgs args)
 		{
-			// to support Universe.GetType("System.Object, mscorlib"), we have to support partial names
-			// (the map.xml file contains such type names)
-			bool partialName = !args.Name.Contains(",");
 			AssemblyName name = new AssemblyName(args.Name);
 			AssemblyName previousMatch = null;
 			int previousMatchLevel = 0;
 			foreach (Assembly asm in universe.GetAssemblies())
 			{
-				if (partialName && asm.GetName().Name == name.Name)
-				{
-					return asm;
-				}
 				if (Match(asm.GetName(), name, ref previousMatch, ref previousMatchLevel))
 				{
 					return asm;
@@ -190,7 +183,7 @@ namespace IKVM.Internal
 			}
 			foreach (string file in FindAssemblyPath(name.Name + ".dll"))
 			{
-				if (partialName || Match(AssemblyName.GetAssemblyName(file), name, ref previousMatch, ref previousMatchLevel))
+				if (Match(AssemblyName.GetAssemblyName(file), name, ref previousMatch, ref previousMatchLevel))
 				{
 					return LoadFile(file);
 				}
@@ -234,72 +227,47 @@ namespace IKVM.Internal
 			return null;
 		}
 
-		// TODO this method should be based on Fusion's CompareAssemblyIdentity (which we should have an equivalent of in Universe)
-		private static bool Match(AssemblyName assemblyDef, AssemblyName assemblyRef, ref AssemblyName bestMatch, ref int bestMatchLevel)
+		private bool Match(AssemblyName assemblyDef, AssemblyName assemblyRef, ref AssemblyName bestMatch, ref int bestMatchLevel)
 		{
 			// Match levels:
 			//   0 = no match
 			//   1 = lower version match (i.e. not a suitable match, but used in error reporting: something was found but the version was too low)
 			//   2 = higher version potential match (i.e. we can use this version, but if it is available the exact match will be preferred)
 			//
-			// If we find a perfect match, bestMatch is not changed but we return true to signal that the search can end right now. 
-			if (assemblyDef.Name != assemblyRef.Name)
+			// If we find a perfect match, bestMatch is not changed but we return true to signal that the search can end right now.
+			AssemblyComparisonResult result;
+			universe.CompareAssemblyIdentity(assemblyRef.FullName, false, assemblyDef.FullName, true, out result);
+			switch (result)
 			{
-				return false;
-			}
-			bool strongNamed = IsStrongNamed(assemblyDef);
-			if (strongNamed != IsStrongNamed(assemblyRef))
-			{
-				return false;
-			}
-			if (strongNamed)
-			{
-				if (!IsEqual(assemblyDef.GetPublicKeyToken(), assemblyRef.GetPublicKeyToken()))
-				{
-					return false;
-				}
-				if (assemblyDef.Version < assemblyRef.Version)
-				{
+				case AssemblyComparisonResult.EquivalentFullMatch:
+				case AssemblyComparisonResult.EquivalentPartialMatch:
+				case AssemblyComparisonResult.EquivalentFXUnified:
+				case AssemblyComparisonResult.EquivalentPartialFXUnified:
+				case AssemblyComparisonResult.EquivalentPartialWeakNamed:
+				case AssemblyComparisonResult.EquivalentWeakNamed:
+					return true;
+				case AssemblyComparisonResult.NonEquivalentPartialVersion:
+				case AssemblyComparisonResult.NonEquivalentVersion:
 					if (bestMatchLevel < 1)
 					{
 						bestMatchLevel = 1;
 						bestMatch = assemblyDef;
 					}
 					return false;
-				}
-				else if (assemblyDef.Version > assemblyRef.Version)
-				{
+				case AssemblyComparisonResult.EquivalentUnified:
+				case AssemblyComparisonResult.EquivalentPartialUnified:
 					if (bestMatchLevel < 2)
 					{
 						bestMatchLevel = 2;
 						bestMatch = assemblyDef;
 					}
 					return false;
-				}
-			}
-			return true;
-		}
-
-		private static bool IsStrongNamed(AssemblyName name)
-		{
-			byte[] key = name.GetPublicKeyToken();
-			return key != null && key.Length != 0;
-		}
-
-		private static bool IsEqual(byte[] b1, byte[] b2)
-		{
-			if (b1.Length != b2.Length)
-			{
-				return false;
-			}
-			for (int i = 0; i < b1.Length; i++)
-			{
-				if (b1[i] != b2[i])
-				{
+				case AssemblyComparisonResult.NonEquivalent:
+				case AssemblyComparisonResult.Unknown:
 					return false;
-				}
+				default:
+					throw new NotImplementedException();
 			}
-			return true;
 		}
 
 		private void AddLibraryPaths(string str, string msg)
