@@ -34,6 +34,9 @@ namespace IKVM.Internal
 		private readonly List<string> libpath = new List<string>();
 		private Universe universe;
 
+		internal delegate void HigherVersionEvent(AssemblyName assemblyDef, AssemblyName assemblyRef);
+		internal event HigherVersionEvent HigherVersion;
+
 		internal int Init(Universe universe, bool nostdlib, IList<string> references, IList<string> userLibPaths)
 		{
 			this.universe = universe;
@@ -155,40 +158,73 @@ namespace IKVM.Internal
 			// (the map.xml file contains such type names)
 			bool partialName = !args.Name.Contains(",");
 			AssemblyName name = new AssemblyName(args.Name);
+			AssemblyName previousMatch = null;
+			int previousMatchLevel = 0;
 			foreach (Assembly asm in universe.GetAssemblies())
 			{
-				if (Matches(asm.GetName(), name) || (partialName && asm.GetName().Name == name.Name))
+				if (partialName && asm.GetName().Name == name.Name)
+				{
+					return asm;
+				}
+				if (Match(asm.GetName(), name, ref previousMatch, ref previousMatchLevel))
 				{
 					return asm;
 				}
 			}
 			foreach (string file in FindAssemblyPath(name.Name + ".dll"))
 			{
-				Assembly asm = universe.LoadFile(file);
-				if (Matches(asm.GetName(), name) || partialName)
+				if (partialName || Match(AssemblyName.GetAssemblyName(file), name, ref previousMatch, ref previousMatchLevel))
 				{
-					return asm;
+					return universe.LoadFile(file);
 				}
 			}
 			if (args.RequestingAssembly != null)
 			{
 				string path = Path.Combine(Path.GetDirectoryName(args.RequestingAssembly.Location), name.Name + ".dll");
-				if (File.Exists(path) && Matches(AssemblyName.GetAssemblyName(path), name))
+				if (File.Exists(path) && Match(AssemblyName.GetAssemblyName(path), name, ref previousMatch, ref previousMatchLevel))
 				{
 					return universe.LoadFile(path);
 				}
 			}
-			Console.Error.WriteLine("Error: unable to find assembly '{0}'", args.Name);
-			if (args.RequestingAssembly != null)
+			if (previousMatch != null)
 			{
-				Console.Error.WriteLine("    (a dependency of '{0}')", args.RequestingAssembly.FullName);
+				if (previousMatchLevel == 2)
+				{
+					if (HigherVersion != null)
+					{
+						HigherVersion(previousMatch, name);
+					}
+					return universe.LoadFile(new Uri(previousMatch.CodeBase).LocalPath);
+				}
+				else if (args.RequestingAssembly != null)
+				{
+					Console.Error.WriteLine("Error: Assembly '{0}' uses '{1}' which has a higher version than referenced assembly '{2}'", args.RequestingAssembly.FullName, name.FullName, previousMatch.FullName);
+				}
+				else
+				{
+					Console.Error.WriteLine("Error: Assembly '{0}' was requested which is a higher version than referenced assembly '{1}'", name.FullName, previousMatch.FullName);
+				}
+			}
+			else
+			{
+				Console.Error.WriteLine("Error: unable to find assembly '{0}'", args.Name);
+				if (args.RequestingAssembly != null)
+				{
+					Console.Error.WriteLine("    (a dependency of '{0}')", args.RequestingAssembly.FullName);
+				}
 			}
 			Environment.Exit(1);
 			return null;
 		}
 
-		private static bool Matches(AssemblyName assemblyDef, AssemblyName assemblyRef)
+		private static bool Match(AssemblyName assemblyDef, AssemblyName assemblyRef, ref AssemblyName bestMatch, ref int bestMatchLevel)
 		{
+			// Match levels:
+			//   0 = no match
+			//   1 = lower version match (i.e. not a suitable match, but used in error reporting: something was found but the version was too low)
+			//   2 = higher version potential match (i.e. we can use this version, but if it is available the exact match will be preferred)
+			//
+			// If we find a perfect match, bestMatch is not changed but we return true to signal that the search can end right now. 
 			if (assemblyDef.Name != assemblyRef.Name)
 			{
 				return false;
@@ -200,7 +236,28 @@ namespace IKVM.Internal
 			}
 			if (strongNamed)
 			{
-				return IsEqual(assemblyDef.GetPublicKeyToken(), assemblyRef.GetPublicKeyToken()) && assemblyDef.Version >= assemblyRef.Version;
+				if (!IsEqual(assemblyDef.GetPublicKeyToken(), assemblyRef.GetPublicKeyToken()))
+				{
+					return false;
+				}
+				if (assemblyDef.Version < assemblyRef.Version)
+				{
+					if (bestMatchLevel < 1)
+					{
+						bestMatchLevel = 1;
+						bestMatch = assemblyDef;
+					}
+					return false;
+				}
+				else if (assemblyDef.Version > assemblyRef.Version)
+				{
+					if (bestMatchLevel < 2)
+					{
+						bestMatchLevel = 2;
+						bestMatch = assemblyDef;
+					}
+					return false;
+				}
 			}
 			return true;
 		}
