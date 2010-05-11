@@ -28,6 +28,7 @@
                 <include name="ExceptionHandlingClause.cs" />
                 <include name="FieldInfo.cs" />
                 <include name="FieldSignature.cs" />
+                <include name="Fusion.cs" />
                 <include name="GenericWrappers.cs" />
                 <include name="InterfaceMapping.cs" />
                 <include name="LocalVariableInfo.cs" />

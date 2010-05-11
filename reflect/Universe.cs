@@ -59,6 +59,22 @@ namespace IKVM.Reflection
 		}
 	}
 
+	public enum AssemblyComparisonResult
+	{
+		Unknown = 0,
+		EquivalentFullMatch = 1,
+		EquivalentWeakNamed = 2,
+		EquivalentFXUnified = 3,
+		EquivalentUnified = 4,
+		NonEquivalentVersion = 5,
+		NonEquivalent = 6,
+		EquivalentPartialMatch = 7,
+		EquivalentPartialWeakNamed = 8,
+		EquivalentPartialUnified = 9,
+		EquivalentPartialFXUnified = 10,
+		NonEquivalentPartialVersion = 11,
+	}
+
 	public delegate Assembly ResolveEventHandler(object sender, ResolveEventArgs args);
 
 	public sealed class Universe
@@ -668,6 +684,12 @@ namespace IKVM.Reflection
 		public Assembly[] GetAssemblies()
 		{
 			return assemblies.ToArray();
+		}
+
+		// this is equivalent to the Fusion CompareAssemblyIdentity API
+		public bool CompareAssemblyIdentity(string assemblyIdentity1, bool unified1, string assemblyIdentity2, bool unified2, out AssemblyComparisonResult result)
+		{
+			return Fusion.CompareAssemblyIdentity(assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result);
 		}
 
 		public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access)
