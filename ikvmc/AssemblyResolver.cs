@@ -33,6 +33,7 @@ namespace IKVM.Internal
 	{
 		private readonly List<string> libpath = new List<string>();
 		private Universe universe;
+		private Version mscorlibVersion;
 
 		internal delegate void HigherVersionEvent(AssemblyName assemblyDef, AssemblyName assemblyRef);
 		internal event HigherVersionEvent HigherVersion;
@@ -60,16 +61,32 @@ namespace IKVM.Internal
 			}
 			if (rc == 0)
 			{
+				mscorlibVersion = universe.Load("mscorlib").GetName().Version;
 				universe.AssemblyResolve += new IKVM.Reflection.ResolveEventHandler(universe_AssemblyResolve);
 			}
 			return rc;
+		}
+
+		internal Assembly LoadFile(string path)
+		{
+			Assembly asm = universe.LoadFile(path);
+			// to avoid problems (i.e. weird exceptions), we don't allow assemblies to load that reference a newer version of mscorlib
+			foreach (AssemblyName asmref in asm.GetReferencedAssemblies())
+			{
+				if (asmref.Name == "mscorlib" && asmref.Version > mscorlibVersion)
+				{
+					Console.Error.WriteLine("Error: unable to load assembly '{0}' as it depends on a higher version of mscorlib than the one currently loaded", path);
+					Environment.Exit(1);
+				}
+			}
+			return asm;
 		}
 
 		internal Assembly LoadWithPartialName(string name)
 		{
 			foreach (string path in FindAssemblyPath(name + ".dll"))
 			{
-				return universe.LoadFile(path);
+				return LoadFile(path);
 			}
 			return null;
 		}
@@ -98,7 +115,7 @@ namespace IKVM.Internal
 					{
 						foreach (string found in FindAssemblyPath(reference))
 						{
-							asm = universe.LoadFile(found);
+							asm = LoadFile(found);
 							cache.Add(reference, asm);
 							break;
 						}
@@ -123,7 +140,7 @@ namespace IKVM.Internal
 						Assembly asm;
 						if (!cache.TryGetValue(file, out asm))
 						{
-							asm = universe.LoadFile(file);
+							asm = LoadFile(file);
 						}
 						ArrayAppend(ref references, asm);
 					}
@@ -175,7 +192,7 @@ namespace IKVM.Internal
 			{
 				if (partialName || Match(AssemblyName.GetAssemblyName(file), name, ref previousMatch, ref previousMatchLevel))
 				{
-					return universe.LoadFile(file);
+					return LoadFile(file);
 				}
 			}
 			if (args.RequestingAssembly != null)
@@ -183,7 +200,7 @@ namespace IKVM.Internal
 				string path = Path.Combine(Path.GetDirectoryName(args.RequestingAssembly.Location), name.Name + ".dll");
 				if (File.Exists(path) && Match(AssemblyName.GetAssemblyName(path), name, ref previousMatch, ref previousMatchLevel))
 				{
-					return universe.LoadFile(path);
+					return LoadFile(path);
 				}
 			}
 			if (previousMatch != null)
@@ -194,7 +211,7 @@ namespace IKVM.Internal
 					{
 						HigherVersion(previousMatch, name);
 					}
-					return universe.LoadFile(new Uri(previousMatch.CodeBase).LocalPath);
+					return LoadFile(new Uri(previousMatch.CodeBase).LocalPath);
 				}
 				else if (args.RequestingAssembly != null)
 				{
@@ -217,6 +234,7 @@ namespace IKVM.Internal
 			return null;
 		}
 
+		// TODO this method should be based on Fusion's CompareAssemblyIdentity (which we should have an equivalent of in Universe)
 		private static bool Match(AssemblyName assemblyDef, AssemblyName assemblyRef, ref AssemblyName bestMatch, ref int bestMatchLevel)
 		{
 			// Match levels:
