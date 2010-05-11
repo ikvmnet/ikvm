@@ -894,6 +894,11 @@ namespace IKVM.Reflection.Reader
 				{
 					name.CultureInfo = new System.Globalization.CultureInfo(GetString(AssemblyRef.records[i].Culture));
 				}
+				else
+				{
+					name.CultureInfo = System.Globalization.CultureInfo.InvariantCulture;
+				}
+				name.Flags = (AssemblyNameFlags)AssemblyRef.records[i].Flags;
 				list.Add(name);
 			}
 			return list.ToArray();
