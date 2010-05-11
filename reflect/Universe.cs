@@ -125,7 +125,7 @@ namespace IKVM.Reflection
 
 		internal Assembly Mscorlib
 		{
-			get { return mscorlib ?? (mscorlib = Load(typeof(object).Assembly.FullName)); }
+			get { return mscorlib ?? (mscorlib = Load("mscorlib")); }
 		}
 
 		private Type ImportMscorlibType(System.Type type)
@@ -400,7 +400,7 @@ namespace IKVM.Reflection
 
 		public bool HasMscorlib
 		{
-			get { return mscorlib != null; }
+			get { return assembliesByName.ContainsKey("mscorlib"); }
 		}
 
 		public event ResolveEventHandler AssemblyResolve
@@ -486,6 +486,10 @@ namespace IKVM.Reflection
 
 		private static string GetAssemblyIdentityName(AssemblyName name)
 		{
+			if (name.Name == "mscorlib")
+			{
+				return "mscorlib";
+			}
 			byte[] publicKeyToken = name.GetPublicKeyToken();
 			if (publicKeyToken == null || publicKeyToken.Length == 0)
 			{
@@ -497,6 +501,10 @@ namespace IKVM.Reflection
 		private static string GetAssemblyIdentityName(System.Reflection.Assembly asm)
 		{
 			System.Reflection.AssemblyName name = asm.GetName();
+			if (name.Name == "mscorlib")
+			{
+				return "mscorlib";
+			}
 			byte[] publicKeyToken = name.GetPublicKeyToken();
 			if (publicKeyToken == null || publicKeyToken.Length == 0)
 			{
@@ -509,6 +517,11 @@ namespace IKVM.Reflection
 		{
 			// we should probably have our own parser
 			AssemblyName name = new AssemblyName(assemblyName);
+			if (name.Name == "mscorlib")
+			{
+				simpleName = name.Name;
+				return true;
+			}
 			byte[] key = name.GetPublicKeyToken();
 			if (key == null || key.Length == 0)
 			{
@@ -680,10 +693,6 @@ namespace IKVM.Reflection
 			AssemblyBuilder asm = new AssemblyBuilder(this, name, dir, requiredPermissions, optionalPermissions, refusedPermissions);
 			assembliesByName.Add(GetAssemblyIdentityName(asm.GetName()), asm);
 			assemblies.Add(asm);
-			if (mscorlib == null && name.Name == "mscorlib")
-			{
-				mscorlib = asm;
-			}
 			return asm;
  		}
 
