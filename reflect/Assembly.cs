@@ -143,6 +143,19 @@ namespace IKVM.Reflection
 			return type.Assembly;
 		}
 
+		public string CodeBase
+		{
+			get
+			{
+				string path = this.Location.Replace(System.IO.Path.DirectorySeparatorChar, '/');
+				if (!path.StartsWith("/"))
+				{
+					path = "/" + path;
+				}
+				return "file://" + path;
+			}
+		}
+
 		internal abstract IList<CustomAttributeData> GetCustomAttributesData();
 	}
 }

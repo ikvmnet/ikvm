@@ -152,6 +152,7 @@ namespace IKVM.Reflection
 		{
 			try
 			{
+				path = Path.GetFullPath(path);
 				using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
 				{
 					ModuleReader module = new ModuleReader(null, null, fs, path);

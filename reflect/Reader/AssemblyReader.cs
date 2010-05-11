@@ -94,6 +94,7 @@ namespace IKVM.Reflection.Reader
 				default:
 					throw new BadImageFormatException();
 			}
+			name.CodeBase = this.CodeBase;
 			return name;
 		}
 
