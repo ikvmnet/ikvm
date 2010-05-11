@@ -95,6 +95,7 @@ namespace IKVM.Reflection.Reader
 					throw new BadImageFormatException();
 			}
 			name.CodeBase = this.CodeBase;
+			name.Flags = (AssemblyNameFlags)rec.Flags;
 			return name;
 		}
 
