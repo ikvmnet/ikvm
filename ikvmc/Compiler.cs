@@ -94,6 +94,7 @@ class IkvmcCompiler
 		int rc = comp.ParseCommandLine(argList.GetEnumerator(), targets, toplevel);
 		if (rc == 0)
 		{
+			loader.HigherVersion += new AssemblyResolver.HigherVersionEvent(loader_HigherVersion);
 			loader.Init(StaticCompiler.Universe, nostdlib, toplevel.unresolvedReferences, libpaths);
 		}
 		if (rc == 0)
@@ -136,6 +137,11 @@ class IkvmcCompiler
 			}
 		}
 		return rc;
+	}
+
+	static void loader_HigherVersion(AssemblyName assemblyDef, AssemblyName assemblyRef)
+	{
+		StaticCompiler.IssueMessage(Message.AssumeAssemblyVersionMatch, assemblyDef.FullName, assemblyRef.FullName);
 	}
 
 	private static int ResolveStrongNameKeys(List<CompilerOptions> targets)

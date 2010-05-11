@@ -3184,6 +3184,7 @@ namespace IKVM.Internal
 		EmittedClassFormatError = 120,
 		InvalidCustomAttribute = 121,
 		IgnoredCustomAttribute = 122,
+		AssumeAssemblyVersionMatch = 123,
 	}
 
 	static class StaticCompiler
@@ -3380,6 +3381,9 @@ namespace IKVM.Internal
 				case Message.IgnoredCustomAttribute:
 					msg = "custom attribute \"{0}\" was ignored" + Environment.NewLine +
 						"    (\"{1}\")";
+					break;
+				case Message.AssumeAssemblyVersionMatch:
+					msg = "assuming assembly reference \"{0}\" matches \"{1}\", you may need to supply runtime policy";
 					break;
 				default:
 					throw new InvalidProgramException();
