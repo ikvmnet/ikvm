@@ -103,8 +103,11 @@ static class NetExp
 			references.Add(assemblyNameOrPath);
 		}
 		AssemblyResolver resolver = new AssemblyResolver();
-		resolver.Init(StaticCompiler.Universe, nostdlib, references, libpaths);
-		StaticCompiler.Universe.LoadFile(typeof(NetExp).Assembly.Location);
+		if (resolver.Init(StaticCompiler.Universe, nostdlib, references, libpaths) != 0)
+		{
+			return 1;
+		}
+		resolver.LoadFile(typeof(NetExp).Assembly.Location);
 		Dictionary<string, Assembly> cache = new Dictionary<string, Assembly>();
 		foreach (string reference in references)
 		{
