@@ -69,17 +69,46 @@ namespace IKVM.Internal
 
 		internal Assembly LoadFile(string path)
 		{
-			Assembly asm = universe.LoadFile(path);
-			// to avoid problems (i.e. weird exceptions), we don't allow assemblies to load that reference a newer version of mscorlib
-			foreach (AssemblyName asmref in asm.GetReferencedAssemblies())
+			string ex = null;
+			try
 			{
-				if (asmref.Name == "mscorlib" && asmref.Version > mscorlibVersion)
+				using (RawModule module = universe.OpenRawModule(path))
 				{
-					Console.Error.WriteLine("Error: unable to load assembly '{0}' as it depends on a higher version of mscorlib than the one currently loaded", path);
-					Environment.Exit(1);
+					if (mscorlibVersion != null)
+					{
+						// to avoid problems (i.e. weird exceptions), we don't allow assemblies to load that reference a newer version of mscorlib
+						foreach (AssemblyName asmref in module.GetReferencedAssemblies())
+						{
+							if (asmref.Name == "mscorlib" && asmref.Version > mscorlibVersion)
+							{
+								Console.Error.WriteLine("Error: unable to load assembly '{0}' as it depends on a higher version of mscorlib than the one currently loaded", path);
+								Environment.Exit(1);
+							}
+						}
+					}
+					Assembly asm = universe.LoadAssembly(module);
+					if (asm.Location != module.Location)
+					{
+						Console.Error.WriteLine("Warning: assembly '{0}' is ignored as previously loaded assembly '{1}' has the same identity '{2}'", path, asm.Location, asm.FullName);
+					}
+					return asm;
 				}
 			}
-			return asm;
+			catch (IOException x)
+			{
+				ex = x.Message;
+			}
+			catch (UnauthorizedAccessException x)
+			{
+				ex = x.Message;
+			}
+			catch (IKVM.Reflection.BadImageFormatException x)
+			{
+				ex = x.Message;
+			}
+			Console.Error.WriteLine("Error: unable to load assembly '{0}'" + Environment.NewLine + "    ({1})", path, ex);
+			Environment.Exit(1);
+			return null;
 		}
 
 		internal Assembly LoadWithPartialName(string name)
@@ -109,20 +138,14 @@ namespace IKVM.Internal
 			{
 				Assembly asm = null;
 				cache.TryGetValue(reference, out asm);
-				try
+				if (asm == null)
 				{
-					if (asm == null)
+					foreach (string found in FindAssemblyPath(reference))
 					{
-						foreach (string found in FindAssemblyPath(reference))
-						{
-							asm = LoadFile(found);
-							cache.Add(reference, asm);
-							break;
-						}
+						asm = LoadFile(found);
+						cache.Add(reference, asm);
+						break;
 					}
-				}
-				catch (FileLoadException)
-				{
 				}
 				if (asm == null)
 				{
@@ -135,20 +158,12 @@ namespace IKVM.Internal
 			{
 				foreach (string file in files)
 				{
-					try
+					Assembly asm;
+					if (!cache.TryGetValue(file, out asm))
 					{
-						Assembly asm;
-						if (!cache.TryGetValue(file, out asm))
-						{
-							asm = LoadFile(file);
-						}
-						ArrayAppend(ref references, asm);
+						asm = LoadFile(file);
 					}
-					catch (FileLoadException)
-					{
-						Console.Error.WriteLine("Error: reference not found: {0}", file);
-						return 1;
-					}
+					ArrayAppend(ref references, asm);
 				}
 			}
 			return 0;
