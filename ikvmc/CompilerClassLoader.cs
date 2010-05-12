@@ -3190,7 +3190,6 @@ namespace IKVM.Internal
 	static class StaticCompiler
 	{
 		internal static readonly Universe Universe = new Universe();
-		internal static readonly AssemblyResolver Resolver = new AssemblyResolver();
 		internal static Assembly runtimeAssembly;
 		internal static Assembly runtimeJniAssembly;
 
@@ -3201,7 +3200,7 @@ namespace IKVM.Internal
 
 		internal static Assembly LoadFile(string path)
 		{
-			return Resolver.LoadFile(path);
+			return Universe.LoadFile(path);
 		}
 
 		internal static Type GetRuntimeType(string name)

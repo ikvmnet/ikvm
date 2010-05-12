@@ -46,6 +46,7 @@ class IkvmcCompiler
 	private static string runtimeAssembly;
 	private static bool nostdlib;
 	private static readonly List<string> libpaths = new List<string>();
+	private static readonly AssemblyResolver resolver = new AssemblyResolver();
 
 	private static List<string> GetArgs(string[] args)
 	{
@@ -93,8 +94,8 @@ class IkvmcCompiler
 		int rc = comp.ParseCommandLine(argList.GetEnumerator(), targets, toplevel);
 		if (rc == 0)
 		{
-			StaticCompiler.Resolver.HigherVersion += new AssemblyResolver.HigherVersionEvent(loader_HigherVersion);
-			rc = StaticCompiler.Resolver.Init(StaticCompiler.Universe, nostdlib, toplevel.unresolvedReferences, libpaths);
+			resolver.HigherVersion += new AssemblyResolver.HigherVersionEvent(loader_HigherVersion);
+			resolver.Init(StaticCompiler.Universe, nostdlib, toplevel.unresolvedReferences, libpaths);
 		}
 		if (rc == 0)
 		{
@@ -873,7 +874,7 @@ class IkvmcCompiler
 							goto next_reference;
 						}
 					}
-					int rc = StaticCompiler.Resolver.ResolveReference(cache, ref target.references, reference);
+					int rc = resolver.ResolveReference(cache, ref target.references, reference);
 					if (rc != 0)
 					{
 						return rc;
