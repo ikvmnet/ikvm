@@ -953,5 +953,10 @@ namespace IKVM.Reflection.Reader
 		{
 			get { return peFile.OptionalHeader.Subsystem; }
 		}
+
+		internal override void Dispose()
+		{
+			stream.Close();
+		}
 	}
 }

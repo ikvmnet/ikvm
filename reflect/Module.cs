@@ -28,6 +28,49 @@ using IKVM.Reflection.Reader;
 
 namespace IKVM.Reflection
 {
+	public sealed class RawModule : IDisposable
+	{
+		private readonly ModuleReader module;
+		private bool imported;
+
+		internal RawModule(ModuleReader module)
+		{
+			this.module = module;
+		}
+
+		public bool IsManifestModule
+		{
+			get { return module.Assembly != null; }
+		}
+
+		public AssemblyName GetAssemblyName()
+		{
+			if (!IsManifestModule)
+			{
+				throw new BadImageFormatException("Module does not contain a manifest");
+			}
+			return module.Assembly.GetName();
+		}
+
+		public void Dispose()
+		{
+			if (!imported)
+			{
+				module.stream.Dispose();
+			}
+		}
+
+		internal Assembly ToAssembly()
+		{
+			if (imported)
+			{
+				throw new InvalidOperationException();
+			}
+			imported = true;
+			return module.Assembly;
+		}
+	}
+
 	public abstract class Module
 	{
 		internal readonly Universe universe;
@@ -360,6 +403,10 @@ namespace IKVM.Reflection
 				}
 			}
 			return list;
+		}
+
+		internal virtual void Dispose()
+		{
 		}
 	}
 

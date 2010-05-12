@@ -77,7 +77,7 @@ namespace IKVM.Reflection
 
 	public delegate Assembly ResolveEventHandler(object sender, ResolveEventArgs args);
 
-	public sealed class Universe
+	public sealed class Universe : IDisposable
 	{
 		internal readonly Dictionary<Type, Type> canonicalizedTypes = new Dictionary<Type, Type>();
 		private readonly List<Assembly> assemblies = new List<Assembly>();
@@ -504,18 +504,51 @@ namespace IKVM.Reflection
 			return Load(asm.FullName);
 		}
 
-		public Assembly LoadFile(string path)
+		public RawModule OpenRawModule(string path)
 		{
 			path = Path.GetFullPath(path);
-			string refname = AssemblyName.GetAssemblyName(path).FullName;
+			return OpenRawModule(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read), path);
+		}
+
+		public RawModule OpenRawModule(Stream stream, string location)
+		{
+			if (!stream.CanRead || !stream.CanSeek)
+			{
+				throw new NotSupportedException();
+			}
+			return new RawModule(new ModuleReader(null, this, stream, location));
+		}
+
+		public Assembly LoadAssembly(RawModule module)
+		{
+			string refname = module.GetAssemblyName().FullName;
 			Assembly asm = GetLoadedAssembly(refname);
 			if (asm == null)
 			{
-				asm = new ModuleReader(null, this, new MemoryStream(File.ReadAllBytes(path)), path).Assembly;
+				asm = module.ToAssembly();
 				assemblies.Add(asm);
 				assembliesByName.Add(refname, asm);
 			}
 			return asm;
+		}
+
+		public Assembly LoadFile(string path)
+		{
+			try
+			{
+				using (RawModule module = OpenRawModule(path))
+				{
+					return LoadAssembly(module);
+				}
+			}
+			catch (IOException x)
+			{
+				throw new FileNotFoundException(x.Message, x);
+			}
+			catch (UnauthorizedAccessException x)
+			{
+				throw new FileNotFoundException(x.Message, x);
+			}
 		}
 
 		private Assembly GetLoadedAssembly(string refname)
@@ -695,6 +728,17 @@ namespace IKVM.Reflection
 				assembliesByName.Remove(key);
 			}
 			assembliesByName.Add(assembly.FullName, assembly);
+		}
+
+		public void Dispose()
+		{
+			foreach (Assembly asm in assemblies)
+			{
+				foreach (Module mod in asm.GetLoadedModules())
+				{
+					mod.Dispose();
+				}
+			}
 		}
 	}
 }
