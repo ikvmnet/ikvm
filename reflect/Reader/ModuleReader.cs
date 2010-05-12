@@ -67,6 +67,7 @@ namespace IKVM.Reflection.Reader
 		private byte[] guidHeap;
 		private TypeDefImpl[] typeDefs;
 		private TypeDefImpl moduleType;
+		private Assembly[] assemblyRefs;
 		private Type[] typeRefs;
 		private Type[] typeSpecs;
 		private FieldInfo[] fields;
@@ -90,7 +91,7 @@ namespace IKVM.Reflection.Reader
 			{
 				if (type == null)
 				{
-					Assembly asm = module.ResolveAssemblyRef(ref module.AssemblyRef.records[assemblyRef]);
+					Assembly asm = module.ResolveAssemblyRef(assemblyRef);
 					type = asm.GetType(typeName, true);
 				}
 				return type;
@@ -361,7 +362,7 @@ namespace IKVM.Reflection.Reader
 							{
 								case AssemblyRefTable.Index:
 									{
-										Assembly assembly = ResolveAssemblyRef(ref AssemblyRef.records[(scope & 0xFFFFFF) - 1]);
+										Assembly assembly = ResolveAssemblyRef((scope & 0xFFFFFF) - 1);
 										string typeName = GetTypeName(TypeRef.records[index].TypeNameSpace, TypeRef.records[index].TypeName);
 										Type type = assembly.GetType(typeName);
 										if (type == null)
@@ -489,7 +490,20 @@ namespace IKVM.Reflection.Reader
 			}
 		}
 
-		private Assembly ResolveAssemblyRef(ref AssemblyRefTable.Record rec)
+		private Assembly ResolveAssemblyRef(int index)
+		{
+			if (assemblyRefs == null)
+			{
+				assemblyRefs = new Assembly[AssemblyRef.RowCount];
+			}
+			if (assemblyRefs[index] == null)
+			{
+				assemblyRefs[index] = ResolveAssemblyRefImpl(ref AssemblyRef.records[index]);
+			}
+			return assemblyRefs[index];
+		}
+
+		private Assembly ResolveAssemblyRefImpl(ref AssemblyRefTable.Record rec)
 		{
 			const int PublicKey = 0x0001;
 			string name = String.Format("{0}, Version={1}.{2}.{3}.{4}, Culture={5}, {6}={7}",
