@@ -38,18 +38,34 @@ namespace IKVM.Reflection
 			this.module = module;
 		}
 
+		public string Location
+		{
+			get { return module.FullyQualifiedName; }
+		}
+
 		public bool IsManifestModule
 		{
 			get { return module.Assembly != null; }
 		}
 
-		public AssemblyName GetAssemblyName()
+		private void CheckManifestModule()
 		{
 			if (!IsManifestModule)
 			{
 				throw new BadImageFormatException("Module does not contain a manifest");
 			}
+		}
+
+		public AssemblyName GetAssemblyName()
+		{
+			CheckManifestModule();
 			return module.Assembly.GetName();
+		}
+
+		public AssemblyName[] GetReferencedAssemblies()
+		{
+			CheckManifestModule();
+			return module.Assembly.GetReferencedAssemblies();
 		}
 
 		public void Dispose()
