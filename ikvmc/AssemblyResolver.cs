@@ -38,7 +38,7 @@ namespace IKVM.Internal
 		internal delegate void HigherVersionEvent(AssemblyName assemblyDef, AssemblyName assemblyRef);
 		internal event HigherVersionEvent HigherVersion;
 
-		internal int Init(Universe universe, bool nostdlib, IList<string> references, IList<string> userLibPaths)
+		internal void Init(Universe universe, bool nostdlib, IList<string> references, IList<string> userLibPaths)
 		{
 			this.universe = universe;
 			// like the C# compiler, the references are loaded from:
@@ -54,17 +54,15 @@ namespace IKVM.Internal
 				AddLibraryPaths(str, "-lib option");
 			}
 			AddLibraryPaths(Environment.GetEnvironmentVariable("LIB") ?? "", "LIB environment");
-			int rc = 0;
 			if (nostdlib)
 			{
-				rc = LoadMscorlib(references);
+				 mscorlibVersion = LoadMscorlib(references).GetName().Version;
 			}
-			if (rc == 0)
+			else
 			{
 				mscorlibVersion = universe.Load("mscorlib").GetName().Version;
-				universe.AssemblyResolve += new IKVM.Reflection.ResolveEventHandler(universe_AssemblyResolve);
 			}
-			return rc;
+			universe.AssemblyResolve += new IKVM.Reflection.ResolveEventHandler(universe_AssemblyResolve);
 		}
 
 		internal Assembly LoadFile(string path)
@@ -300,7 +298,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		private int LoadMscorlib(IList<string> references)
+		private Assembly LoadMscorlib(IList<string> references)
 		{
 			if (references != null)
 			{
@@ -310,8 +308,7 @@ namespace IKVM.Internal
 					{
 						if (AssemblyName.GetAssemblyName(r).Name == "mscorlib")
 						{
-							universe.LoadMscorlib(r);
-							return 0;
+							return LoadFile(r);
 						}
 					}
 					catch
@@ -321,11 +318,11 @@ namespace IKVM.Internal
 			}
 			foreach (string mscorlib in FindAssemblyPath("mscorlib.dll"))
 			{
-				universe.LoadMscorlib(mscorlib);
-				return 0;
+				return LoadFile(mscorlib);
 			}
 			Console.Error.WriteLine("Error: unable to find mscorlib.dll");
-			return 1;
+			Environment.Exit(1);
+			return null;
 		}
 
 		private IEnumerable<string> FindAssemblyPath(string file)
