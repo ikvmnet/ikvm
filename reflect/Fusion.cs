@@ -76,12 +76,12 @@ namespace IKVM.Reflection
 				result = AssemblyComparisonResult.NonEquivalent;
 				throw new ArgumentException();
 			}
-			if (name1.Name != name2.Name)
+			if (!name1.Name.Equals(name2.Name, StringComparison.InvariantCultureIgnoreCase))
 			{
 				result = AssemblyComparisonResult.NonEquivalent;
 				return false;
 			}
-			if (name1.Name == "mscorlib")
+			if (name1.Name.Equals("mscorlib", StringComparison.InvariantCultureIgnoreCase))
 			{
 				result = AssemblyComparisonResult.EquivalentFullMatch;
 				return true;
@@ -89,7 +89,7 @@ namespace IKVM.Reflection
 			if (partial && name1.Culture == null)
 			{
 			}
-			else if (name1.Culture != name2.Culture)
+			else if (!name1.Culture.Equals(name2.Culture, StringComparison.InvariantCultureIgnoreCase))
 			{
 				result = AssemblyComparisonResult.NonEquivalent;
 				return false;
