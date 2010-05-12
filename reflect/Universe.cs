@@ -413,7 +413,7 @@ namespace IKVM.Reflection
 			get { return typeof_System_Security_Permissions_SecurityAction ?? (typeof_System_Security_Permissions_SecurityAction = ImportMscorlibType(typeof(System.Security.Permissions.SecurityAction))); }
 		}
 
-		public bool HasMscorlib
+		internal bool HasMscorlib
 		{
 			get { return GetLoadedAssembly("mscorlib") != null; }
 		}
@@ -422,15 +422,6 @@ namespace IKVM.Reflection
 		{
 			add { resolvers.Add(value); }
 			remove { resolvers.Remove(value); }
-		}
-
-		public void LoadMscorlib(string path)
-		{
-			if (HasMscorlib)
-			{
-				throw new InvalidOperationException();
-			}
-			LoadFile(path);
 		}
 
 		public Type Import(System.Type type)
