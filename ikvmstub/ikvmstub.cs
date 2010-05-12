@@ -96,23 +96,19 @@ static class NetExp
 			Console.Error.WriteLine("usage: ikvmstub [-serialver] [-skiperror] [-reference:<assembly>] [-lib:<dir>] <assemblyNameOrPath>");
 			return 1;
 		}
-		if(File.Exists(assemblyNameOrPath))
+		if(File.Exists(assemblyNameOrPath) && nostdlib)
 		{
 			// Add the target assembly to the references list, to allow it to be considered as "mscorlib".
 			// This allows "ikvmstub -nostdlib \...\mscorlib.dll" to work.
 			references.Add(assemblyNameOrPath);
 		}
-		AssemblyResolver resolver = new AssemblyResolver();
-		if (resolver.Init(StaticCompiler.Universe, nostdlib, references, libpaths) != 0)
-		{
-			return 1;
-		}
-		resolver.LoadFile(typeof(NetExp).Assembly.Location);
+		StaticCompiler.Resolver.Init(StaticCompiler.Universe, nostdlib, references, libpaths);
+		StaticCompiler.LoadFile(typeof(NetExp).Assembly.Location);
 		Dictionary<string, Assembly> cache = new Dictionary<string, Assembly>();
 		foreach (string reference in references)
 		{
 			Assembly[] dummy = null;
-			int rc1 = resolver.ResolveReference(cache, ref dummy, reference);
+			int rc1 = StaticCompiler.Resolver.ResolveReference(cache, ref dummy, reference);
 			if (rc1 != 0)
 			{
 				return rc1;
@@ -134,7 +130,7 @@ static class NetExp
 		}
 		else
 		{
-			assembly = resolver.LoadWithPartialName(assemblyNameOrPath);
+			assembly = StaticCompiler.Resolver.LoadWithPartialName(assemblyNameOrPath);
 		}
 		int rc = 0;
 		if(assembly == null)
@@ -715,6 +711,7 @@ static class Intrinsics
 static class StaticCompiler
 {
 	internal static readonly Universe Universe = new Universe();
+	internal static readonly AssemblyResolver Resolver = new AssemblyResolver();
 	private static Assembly runtimeAssembly;
 
 	internal static Type GetRuntimeType(string typeName)
@@ -728,15 +725,7 @@ static class StaticCompiler
 
 	internal static Assembly LoadFile(string fileName)
 	{
-		if (AssemblyName.GetAssemblyName(fileName).Name == "mscorlib")
-		{
-			try
-			{
-				Universe.LoadMscorlib(fileName);
-			}
-			catch { }
-		}
-		return Universe.LoadFile(fileName);
+		return Resolver.LoadFile(fileName);
 	}
 
 	internal static Assembly Load(string name)
