@@ -83,7 +83,6 @@ namespace IKVM.Reflection
 		private readonly List<Assembly> assemblies = new List<Assembly>();
 		private readonly Dictionary<string, Assembly> assembliesByName = new Dictionary<string, Assembly>();
 		private readonly Dictionary<System.Type, Type> importedTypes = new Dictionary<System.Type, Type>();
-		private Assembly mscorlib;
 		private Type typeof_System_Object;
 		private Type typeof_System_ValueType;
 		private Type typeof_System_Enum;
@@ -141,7 +140,7 @@ namespace IKVM.Reflection
 
 		internal Assembly Mscorlib
 		{
-			get { return mscorlib ?? (mscorlib = Load("mscorlib")); }
+			get { return Load("mscorlib"); }
 		}
 
 		private Type ImportMscorlibType(System.Type type)
@@ -416,7 +415,7 @@ namespace IKVM.Reflection
 
 		public bool HasMscorlib
 		{
-			get { return assembliesByName.ContainsKey("mscorlib"); }
+			get { return GetLoadedAssembly("mscorlib") != null; }
 		}
 
 		public event ResolveEventHandler AssemblyResolve
@@ -431,7 +430,7 @@ namespace IKVM.Reflection
 			{
 				throw new InvalidOperationException();
 			}
-			mscorlib = LoadFile(path);
+			LoadFile(path);
 		}
 
 		public Type Import(System.Type type)
@@ -500,54 +499,6 @@ namespace IKVM.Reflection
 			}
 		}
 
-		private static string GetAssemblyIdentityName(AssemblyName name)
-		{
-			if (name.Name == "mscorlib")
-			{
-				return "mscorlib";
-			}
-			byte[] publicKeyToken = name.GetPublicKeyToken();
-			if (publicKeyToken == null || publicKeyToken.Length == 0)
-			{
-				return name.Name;
-			}
-			return name.FullName;
-		}
-
-		private static string GetAssemblyIdentityName(System.Reflection.Assembly asm)
-		{
-			System.Reflection.AssemblyName name = asm.GetName();
-			if (name.Name == "mscorlib")
-			{
-				return "mscorlib";
-			}
-			byte[] publicKeyToken = name.GetPublicKeyToken();
-			if (publicKeyToken == null || publicKeyToken.Length == 0)
-			{
-				return name.Name;
-			}
-			return name.FullName;
-		}
-
-		private static bool TryParseAssemblyIdentityName(string assemblyName, out string simpleName)
-		{
-			// we should probably have our own parser
-			AssemblyName name = new AssemblyName(assemblyName);
-			if (name.Name == "mscorlib")
-			{
-				simpleName = name.Name;
-				return true;
-			}
-			byte[] key = name.GetPublicKeyToken();
-			if (key == null || key.Length == 0)
-			{
-				simpleName = name.Name;
-				return true;
-			}
-			simpleName = null;
-			return false;
-		}
-
 		private Assembly Import(System.Reflection.Assembly asm)
 		{
 			return Load(asm.FullName);
@@ -556,17 +507,33 @@ namespace IKVM.Reflection
 		public Assembly LoadFile(string path)
 		{
 			path = Path.GetFullPath(path);
-			string refname = GetAssemblyIdentityName(AssemblyName.GetAssemblyName(path));
-			Assembly asm;
-			if (!assembliesByName.TryGetValue(refname, out asm))
+			string refname = AssemblyName.GetAssemblyName(path).FullName;
+			Assembly asm = GetLoadedAssembly(refname);
+			if (asm == null)
 			{
 				asm = new ModuleReader(null, this, new MemoryStream(File.ReadAllBytes(path)), path).Assembly;
 				assemblies.Add(asm);
 				assembliesByName.Add(refname, asm);
-				string defname = GetAssemblyIdentityName(asm.GetName());
-				if (defname != refname)
+			}
+			return asm;
+		}
+
+		private Assembly GetLoadedAssembly(string refname)
+		{
+			Assembly asm;
+			if (!assembliesByName.TryGetValue(refname, out asm))
+			{
+				for (int i = 0; i < assemblies.Count; i++)
 				{
-					assembliesByName.Add(defname, asm);
+					AssemblyComparisonResult result;
+					// We won't allow FX unification here, because our own (non-Fusion) implementation of CompareAssemblyIdentity doesn't support it and
+					// we don't want to create a fundamental functional difference based on that.
+					if (CompareAssemblyIdentity(refname, false, assemblies[i].FullName, false, out result) && result != AssemblyComparisonResult.EquivalentFXUnified)
+					{
+						asm = assemblies[i];
+						assembliesByName.Add(refname, asm);
+						break;
+					}
 				}
 			}
 			return asm;
@@ -579,13 +546,8 @@ namespace IKVM.Reflection
 
 		internal Assembly Load(string refname, Assembly requestingAssembly, bool throwOnError)
 		{
-			Assembly asm;
-			if (assembliesByName.TryGetValue(refname, out asm))
-			{
-				return asm;
-			}
-			string simpleName;
-			if (TryParseAssemblyIdentityName(refname, out simpleName) && assembliesByName.TryGetValue(simpleName, out asm))
+			Assembly asm = GetLoadedAssembly(refname);
+			if (asm != null)
 			{
 				return asm;
 			}
@@ -607,7 +569,7 @@ namespace IKVM.Reflection
 			}
 			if (asm != null)
 			{
-				string defname = GetAssemblyIdentityName(asm.GetName());
+				string defname = asm.FullName;
 				if (refname != defname)
 				{
 					assembliesByName.Add(refname, asm);
@@ -713,21 +675,26 @@ namespace IKVM.Reflection
 		private AssemblyBuilder DefineDynamicAssemblyImpl(AssemblyName name, AssemblyBuilderAccess access, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
 		{
 			AssemblyBuilder asm = new AssemblyBuilder(this, name, dir, requiredPermissions, optionalPermissions, refusedPermissions);
-			assembliesByName.Add(GetAssemblyIdentityName(asm.GetName()), asm);
+			assembliesByName.Add(asm.FullName, asm);
 			assemblies.Add(asm);
 			return asm;
  		}
 
 		internal void RenameAssembly(Assembly assembly, AssemblyName oldName)
 		{
-			assembliesByName.Remove(GetAssemblyIdentityName(oldName));
-			string newName = GetAssemblyIdentityName(assembly.GetName());
-			Assembly asm;
-			assembliesByName.TryGetValue(newName, out asm);
-			if (asm != assembly)
+			List<string> remove = new List<string>();
+			foreach (KeyValuePair<string, Assembly> kv in assembliesByName)
 			{
-				assembliesByName.Add(newName, assembly);
+				if (kv.Value == assembly)
+				{
+					remove.Add(kv.Key);
+				}
 			}
+			foreach (string key in remove)
+			{
+				assembliesByName.Remove(key);
+			}
+			assembliesByName.Add(assembly.FullName, assembly);
 		}
 	}
 }
