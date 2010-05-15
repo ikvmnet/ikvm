@@ -346,40 +346,33 @@ namespace IKVM.Internal
 			}
 		}
 
+		private static CustomAttributeBuilder GetEditorBrowsableNever()
+		{
+			if (editorBrowsableNever == null)
+			{
+				editorBrowsableNever = new CustomAttributeBuilder(JVM.Import(typeof(System.ComponentModel.EditorBrowsableAttribute)).GetConstructor(new Type[] { JVM.Import(typeof(System.ComponentModel.EditorBrowsableState)) }), new object[] { (int)System.ComponentModel.EditorBrowsableState.Never });
+			}
+			return editorBrowsableNever;
+		}
+
 		internal static void SetEditorBrowsableNever(TypeBuilder tb)
 		{
-			if(editorBrowsableNever == null)
-			{
-				editorBrowsableNever = new CustomAttributeBuilder(StaticCompiler.GetType("System.ComponentModel.EditorBrowsableAttribute").GetConstructor(new Type[] { StaticCompiler.GetType("System.ComponentModel.EditorBrowsableState") }), new object[] { (int)System.ComponentModel.EditorBrowsableState.Never });
-			}
-			tb.SetCustomAttribute(editorBrowsableNever);
+			tb.SetCustomAttribute(GetEditorBrowsableNever());
 		}
 
 		internal static void SetEditorBrowsableNever(MethodBuilder mb)
 		{
-			if(editorBrowsableNever == null)
-			{
-				editorBrowsableNever = new CustomAttributeBuilder(StaticCompiler.GetType("System.ComponentModel.EditorBrowsableAttribute").GetConstructor(new Type[] { StaticCompiler.GetType("System.ComponentModel.EditorBrowsableState") }), new object[] { (int)System.ComponentModel.EditorBrowsableState.Never });
-			}
-			mb.SetCustomAttribute(editorBrowsableNever);
+			mb.SetCustomAttribute(GetEditorBrowsableNever());
 		}
 
 		internal static void SetEditorBrowsableNever(ConstructorBuilder cb)
 		{
-			if(editorBrowsableNever == null)
-			{
-				editorBrowsableNever = new CustomAttributeBuilder(StaticCompiler.GetType("System.ComponentModel.EditorBrowsableAttribute").GetConstructor(new Type[] { StaticCompiler.GetType("System.ComponentModel.EditorBrowsableState") }), new object[] { (int)System.ComponentModel.EditorBrowsableState.Never });
-			}
-			cb.SetCustomAttribute(editorBrowsableNever);
+			cb.SetCustomAttribute(GetEditorBrowsableNever());
 		}
 
 		internal static void SetEditorBrowsableNever(PropertyBuilder pb)
 		{
-			if(editorBrowsableNever == null)
-			{
-				editorBrowsableNever = new CustomAttributeBuilder(StaticCompiler.GetType("System.ComponentModel.EditorBrowsableAttribute").GetConstructor(new Type[] { StaticCompiler.GetType("System.ComponentModel.EditorBrowsableState") }), new object[] { (int)System.ComponentModel.EditorBrowsableState.Never });
-			}
-			pb.SetCustomAttribute(editorBrowsableNever);
+			pb.SetCustomAttribute(GetEditorBrowsableNever());
 		}
 
 		internal static void SetDeprecatedAttribute(MethodBase mb)
