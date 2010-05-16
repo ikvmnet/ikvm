@@ -265,7 +265,7 @@ namespace IKVM.Internal
 			GetAttributeArgsAndTypes(loader, attr, out argTypes, out args);
 			if(attr.Type != null)
 			{
-				Type t = StaticCompiler.GetType(attr.Type);
+				Type t = StaticCompiler.GetType(loader, attr.Type);
 				isDeclarativeSecurity = t.IsSubclassOf(typeofSecurityAttribute);
 				ConstructorInfo ci = t.GetConstructor(argTypes);
 				if(ci == null)

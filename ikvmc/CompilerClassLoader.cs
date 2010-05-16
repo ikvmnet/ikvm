@@ -3088,6 +3088,19 @@ namespace IKVM.Internal
 		{
 			return sig != null && (field ? ClassFile.IsValidFieldSig(sig) : ClassFile.IsValidMethodSig(sig));
 		}
+
+		internal Type GetTypeFromReferencedAssembly(string name)
+		{
+			foreach (AssemblyClassLoader acl in referencedAssemblies)
+			{
+				Type type = acl.MainAssembly.GetType(name, false);
+				if (type != null)
+				{
+					return type;
+				}
+			}
+			return null;
+		}
 	}
 
 	class CompilerOptions
@@ -3220,35 +3233,20 @@ namespace IKVM.Internal
 			}
 		}
 
-		// TODO this method should be removed, because it is not multi target aware (it looks inside all loaded ReflectionOnly assemblies,
-		// instead of just the ones that are supposed to be visible to a particular target)
-		internal static Type GetType(string name)
+		internal static Type GetType(ClassLoaderWrapper loader, string name)
 		{
-			return GetType(name, true);
+			return GetType(loader, name, true);
 		}
 
-		// TODO this method should be removed, because it is not multi target aware (it looks inside all loaded ReflectionOnly assemblies,
-		// instead of just the ones that are supposed to be visible to a particular target)
-		internal static Type GetType(string name, bool throwOnError)
+		internal static Type GetType(ClassLoaderWrapper loader, string name, bool throwOnError)
 		{
-			if(runtimeAssembly.GetType(name) != null)
+			CompilerClassLoader ccl = (CompilerClassLoader)loader;
+			Type type = ccl.GetTypeFromReferencedAssembly(name);
+			if (type == null && throwOnError)
 			{
-				return runtimeAssembly.GetType(name);
+				throw new TypeLoadException(name);
 			}
-			if(runtimeJniAssembly != null && runtimeJniAssembly.GetType(name) != null)
-			{
-				return runtimeJniAssembly.GetType(name);
-			}
-			foreach(Assembly asm in Universe.GetAssemblies())
-			{
-				Type t = asm.GetType(name, false);
-				if(t != null)
-				{
-					return t;
-				}
-			}
-			// try mscorlib as well
-			return Types.Object.Assembly.GetType(name, throwOnError);
+			return type;
 		}
 
 		private static Dictionary<string, string> suppressWarnings = new Dictionary<string, string>();

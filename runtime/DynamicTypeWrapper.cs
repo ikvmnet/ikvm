@@ -3691,7 +3691,7 @@ namespace IKVM.Internal
 								// see if there exists an IKVM.NativeCode class for this type
 								Type nativeCodeType = null;
 #if STATIC_COMPILER
-								nativeCodeType = StaticCompiler.GetType("IKVM.NativeCode." + classFile.Name.Replace('$', '+'), false);
+								nativeCodeType = StaticCompiler.GetType(wrapper.GetClassLoader(), "IKVM.NativeCode." + classFile.Name.Replace('$', '+'), false);
 #endif
 								MethodInfo nativeMethod = null;
 								TypeWrapper[] args = methods[i].GetParameters();

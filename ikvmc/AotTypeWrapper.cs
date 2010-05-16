@@ -949,7 +949,7 @@ namespace IKVM.Internal
 					ilgen.Emit(OpCodes.Ldarg_0);
 					ilgen.Emit(OpCodes.Ldtoken, typeBuilder);
 					ilgen.Emit(OpCodes.Ldarg_1);
-					ilgen.Emit(OpCodes.Call, StaticCompiler.GetType("IKVM.Runtime.GhostTag").GetMethod("IsGhostArrayInstance", BindingFlags.NonPublic | BindingFlags.Static));
+					ilgen.Emit(OpCodes.Call, StaticCompiler.GetRuntimeType("IKVM.Runtime.GhostTag").GetMethod("IsGhostArrayInstance", BindingFlags.NonPublic | BindingFlags.Static));
 					ilgen.Emit(OpCodes.Ret);
 						
 					// Implement the "Cast" method
@@ -999,7 +999,7 @@ namespace IKVM.Internal
 					ilgen.Emit(OpCodes.Ldarg_0);
 					ilgen.Emit(OpCodes.Ldtoken, typeBuilder);
 					ilgen.Emit(OpCodes.Ldarg_1);
-					ilgen.Emit(OpCodes.Call, StaticCompiler.GetType("IKVM.Runtime.GhostTag").GetMethod("ThrowClassCastException", BindingFlags.NonPublic | BindingFlags.Static));
+					ilgen.Emit(OpCodes.Call, StaticCompiler.GetRuntimeType("IKVM.Runtime.GhostTag").GetMethod("ThrowClassCastException", BindingFlags.NonPublic | BindingFlags.Static));
 					ilgen.MarkLabel(end);
 					ilgen.Emit(OpCodes.Ret);
 
