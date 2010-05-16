@@ -440,9 +440,9 @@ namespace IKVM.Reflection
 
 		private Type ImportImpl(System.Type type)
 		{
-			if (type == typeof(IKVM.Reflection.Type))
+			if (type.Assembly == typeof(IKVM.Reflection.Type).Assembly)
 			{
-				throw new ArgumentException("Did you really want to import IKVM.Reflection.Type?");
+				throw new ArgumentException("Did you really want to import " + type.FullName + "?");
 			}
 			if (type.HasElementType)
 			{
