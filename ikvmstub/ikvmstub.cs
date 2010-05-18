@@ -102,8 +102,9 @@ static class NetExp
 			// This allows "ikvmstub -nostdlib \...\mscorlib.dll" to work.
 			references.Add(assemblyNameOrPath);
 		}
+		StaticCompiler.Resolver.Warning += new AssemblyResolver.WarningEvent(Resolver_Warning);
 		StaticCompiler.Resolver.Init(StaticCompiler.Universe, nostdlib, references, libpaths);
-		StaticCompiler.LoadFile(typeof(NetExp).Assembly.Location);
+		Assembly ikvmstubAssembly = StaticCompiler.LoadFile(typeof(NetExp).Assembly.Location);
 		Dictionary<string, Assembly> cache = new Dictionary<string, Assembly>();
 		foreach (string reference in references)
 		{
@@ -141,6 +142,13 @@ static class NetExp
 		{
 			if (AttributeHelper.IsJavaModule(assembly.ManifestModule))
 			{
+				if (assembly == ikvmstubAssembly)
+				{
+					// we'll crash if we allow this, because CompiledTypeWrapper cannot handle .NET types that use features that we don't expose in Java
+					// (e.g. the ReadPackedInteger(ref int position) method in LineNumberTableAttribute)
+					Console.Error.WriteLine("Error: you cannot run ikvmstub on itself");
+					return 1;
+				}
 				Console.Error.WriteLine("Warning: Running ikvmstub on ikvmc compiled assemblies is not supported.");
 			}
 			try
@@ -200,6 +208,14 @@ static class NetExp
 			}
 		}
 		return rc;
+	}
+
+	static void Resolver_Warning(AssemblyResolver.WarningId warning, string message, string[] parameters)
+	{
+		if (warning != AssemblyResolver.WarningId.HigherVersion)
+		{
+			Console.Error.WriteLine("Warning: " + message, parameters);
+		}
 	}
 
 	private static string GetVersionAndCopyrightInfo()
