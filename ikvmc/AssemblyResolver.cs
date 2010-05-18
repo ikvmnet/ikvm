@@ -106,7 +106,7 @@ namespace IKVM.Internal
 						}
 					}
 					Assembly asm = universe.LoadAssembly(module);
-					if (asm.Location != module.Location)
+					if (asm.Location != module.Location && CanonicalizePath(asm.Location) != CanonicalizePath(module.Location))
 					{
 						EmitWarning(WarningId.LocationIgnored, "assembly \"{0}\" is ignored as previously loaded assembly \"{1}\" has the same identity \"{2}\"", path, asm.Location, asm.FullName);
 					}
@@ -128,6 +128,48 @@ namespace IKVM.Internal
 			Console.Error.WriteLine("Error: unable to load assembly '{0}'" + Environment.NewLine + "    ({1})", path, ex);
 			Environment.Exit(1);
 			return null;
+		}
+
+		private static string CanonicalizePath(string path)
+		{
+			try
+			{
+				System.IO.FileInfo fi = new System.IO.FileInfo(path);
+				if (fi.DirectoryName == null)
+				{
+					return path.Length > 1 && path[1] == ':' ? path.ToUpper() : path;
+				}
+				string dir = CanonicalizePath(fi.DirectoryName);
+				string name = fi.Name;
+				try
+				{
+					string[] arr = System.IO.Directory.GetFileSystemEntries(dir, name);
+					if (arr.Length == 1)
+					{
+						name = arr[0];
+					}
+				}
+				catch (System.UnauthorizedAccessException)
+				{
+				}
+				catch (System.IO.IOException)
+				{
+				}
+				return System.IO.Path.Combine(dir, name);
+			}
+			catch (System.UnauthorizedAccessException)
+			{
+			}
+			catch (System.IO.IOException)
+			{
+			}
+			catch (System.Security.SecurityException)
+			{
+			}
+			catch (System.NotSupportedException)
+			{
+			}
+			return path;
 		}
 
 		internal Assembly LoadWithPartialName(string name)
