@@ -3198,6 +3198,11 @@ namespace IKVM.Internal
 		InvalidCustomAttribute = 121,
 		IgnoredCustomAttribute = 122,
 		AssumeAssemblyVersionMatch = 123,
+		InvalidDirectoryInLibOptionPath = 124,
+		InvalidDirectoryInLibEnvironmentPath = 125,
+		LegacySearchRule = 126,
+		AssemblyLocationIgnored = 127,
+		UnknownWarning = 999,
 	}
 
 	static class StaticCompiler
@@ -3382,6 +3387,21 @@ namespace IKVM.Internal
 					break;
 				case Message.AssumeAssemblyVersionMatch:
 					msg = "assuming assembly reference \"{0}\" matches \"{1}\", you may need to supply runtime policy";
+					break;
+				case Message.InvalidDirectoryInLibOptionPath:
+					msg = "directory \"{0}\" specified in -lib option is not valid";
+					break;
+				case Message.InvalidDirectoryInLibEnvironmentPath:
+					msg = "directory \"{0}\" specified in LIB environment is not valid";
+					break;
+				case Message.LegacySearchRule:
+					msg = "found assembly \"{0}\" using legacy search rule, please append '.dll' to the reference";
+					break;
+				case Message.AssemblyLocationIgnored:
+					msg = "assembly \"{0}\" is ignored as previously loaded assembly \"{1}\" has the same identity \"{2}\"";
+					break;
+				case Message.UnknownWarning:
+					msg = "{0}";
 					break;
 				default:
 					throw new InvalidProgramException();

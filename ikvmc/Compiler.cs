@@ -94,7 +94,7 @@ class IkvmcCompiler
 		int rc = comp.ParseCommandLine(argList.GetEnumerator(), targets, toplevel);
 		if (rc == 0)
 		{
-			resolver.HigherVersion += new AssemblyResolver.HigherVersionEvent(loader_HigherVersion);
+			resolver.Warning += new AssemblyResolver.WarningEvent(loader_Warning);
 			resolver.Init(StaticCompiler.Universe, nostdlib, toplevel.unresolvedReferences, libpaths);
 		}
 		if (rc == 0)
@@ -139,9 +139,29 @@ class IkvmcCompiler
 		return rc;
 	}
 
-	static void loader_HigherVersion(AssemblyName assemblyDef, AssemblyName assemblyRef)
+	static void loader_Warning(AssemblyResolver.WarningId warning, string message, string[] parameters)
 	{
-		StaticCompiler.IssueMessage(Message.AssumeAssemblyVersionMatch, assemblyDef.FullName, assemblyRef.FullName);
+		switch (warning)
+		{
+			case AssemblyResolver.WarningId.HigherVersion:
+				StaticCompiler.IssueMessage(Message.AssumeAssemblyVersionMatch, parameters);
+				break;
+			case AssemblyResolver.WarningId.InvalidLibDirectoryOption:
+				StaticCompiler.IssueMessage(Message.InvalidDirectoryInLibOptionPath, parameters);
+				break;
+			case AssemblyResolver.WarningId.InvalidLibDirectoryEnvironment:
+				StaticCompiler.IssueMessage(Message.InvalidDirectoryInLibEnvironmentPath, parameters);
+				break;
+			case AssemblyResolver.WarningId.LegacySearchRule:
+				StaticCompiler.IssueMessage(Message.LegacySearchRule, parameters);
+				break;
+			case AssemblyResolver.WarningId.LocationIgnored:
+				StaticCompiler.IssueMessage(Message.AssemblyLocationIgnored, parameters);
+				break;
+			default:
+				StaticCompiler.IssueMessage(Message.UnknownWarning, string.Format(message, parameters));
+				break;
+		}
 	}
 
 	private static int ResolveStrongNameKeys(List<CompilerOptions> targets)

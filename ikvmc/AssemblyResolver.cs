@@ -35,8 +35,29 @@ namespace IKVM.Internal
 		private Universe universe;
 		private Version mscorlibVersion;
 
-		internal delegate void HigherVersionEvent(AssemblyName assemblyDef, AssemblyName assemblyRef);
-		internal event HigherVersionEvent HigherVersion;
+		internal enum WarningId
+		{
+			HigherVersion = 1,
+			LocationIgnored = 2,
+			InvalidLibDirectoryOption = 3,
+			InvalidLibDirectoryEnvironment = 4,
+			LegacySearchRule = 5,
+		}
+
+		internal delegate void WarningEvent(WarningId warning, string message, string[] parameters);
+		internal event WarningEvent Warning;
+
+		private void EmitWarning(WarningId warning, string message, params string[] parameters)
+		{
+			if (Warning != null)
+			{
+				Warning(warning, message, parameters);
+			}
+			else
+			{
+				Console.Error.WriteLine("Warning: " + message, parameters);
+			}
+		}
 
 		internal void Init(Universe universe, bool nostdlib, IList<string> references, IList<string> userLibPaths)
 		{
@@ -51,9 +72,9 @@ namespace IKVM.Internal
 			}
 			foreach (string str in userLibPaths)
 			{
-				AddLibraryPaths(str, "-lib option");
+				AddLibraryPaths(str, true);
 			}
-			AddLibraryPaths(Environment.GetEnvironmentVariable("LIB") ?? "", "LIB environment");
+			AddLibraryPaths(Environment.GetEnvironmentVariable("LIB") ?? "", false);
 			if (nostdlib)
 			{
 				 mscorlibVersion = LoadMscorlib(references).GetName().Version;
@@ -87,7 +108,7 @@ namespace IKVM.Internal
 					Assembly asm = universe.LoadAssembly(module);
 					if (asm.Location != module.Location)
 					{
-						Console.Error.WriteLine("Warning: assembly '{0}' is ignored as previously loaded assembly '{1}' has the same identity '{2}'", path, asm.Location, asm.FullName);
+						EmitWarning(WarningId.LocationIgnored, "assembly \"{0}\" is ignored as previously loaded assembly \"{1}\" has the same identity \"{2}\"", path, asm.Location, asm.FullName);
 					}
 					return asm;
 				}
@@ -213,10 +234,7 @@ namespace IKVM.Internal
 			{
 				if (previousMatchLevel == 2)
 				{
-					if (HigherVersion != null)
-					{
-						HigherVersion(previousMatch, name);
-					}
+					EmitWarning(WarningId.HigherVersion, "assuming assembly reference \"{0}\" matches \"{1}\", you may need to supply runtime policy", previousMatch.FullName, name.FullName);
 					return LoadFile(new Uri(previousMatch.CodeBase).LocalPath);
 				}
 				else if (args.RequestingAssembly != null)
@@ -283,7 +301,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		private void AddLibraryPaths(string str, string msg)
+		private void AddLibraryPaths(string str, bool option)
 		{
 			foreach (string dir in str.Split(Path.PathSeparator))
 			{
@@ -293,7 +311,14 @@ namespace IKVM.Internal
 				}
 				else if (dir != "")
 				{
-					Console.Error.WriteLine("Warning: directory '{0}' specified in {1} is not valid", dir, msg);
+					if (option)
+					{
+						EmitWarning(WarningId.InvalidLibDirectoryOption, "directory \"{0}\" specified in -lib option is not valid", dir);
+					}
+					else
+					{
+						EmitWarning(WarningId.InvalidLibDirectoryEnvironment, "directory \"{0}\" specified in LIB environment is not valid", dir);
+					}
 				}
 			}
 		}
@@ -347,7 +372,7 @@ namespace IKVM.Internal
 					path = Path.Combine(dir, file + ".dll");
 					if (File.Exists(path))
 					{
-						Console.WriteLine("Warning: Found assembly '{0}' using legacy search rule. Please append '.dll' to the reference.", file);
+						EmitWarning(WarningId.LegacySearchRule, "found assembly \"{0}\" using legacy search rule, please append '.dll' to the reference", file);
 						yield return path;
 					}
 				}
