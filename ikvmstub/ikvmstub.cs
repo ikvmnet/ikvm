@@ -49,6 +49,7 @@ static class NetExp
 		List<string> references = new List<string>();
 		List<string> libpaths = new List<string>();
 		bool nostdlib = false;
+		bool bootstrap = false;
 		foreach(string s in args)
 		{
 			if(s.StartsWith("-") || assemblyNameOrPath != null)
@@ -77,6 +78,10 @@ static class NetExp
 				{
 					libpaths.Add(s.Substring(5));
 				}
+				else if(s == "-bootstrap")
+				{
+					bootstrap = true;
+				}
 				else
 				{
 					// unrecognized option, or multiple assemblies, print usage message and exit
@@ -104,7 +109,6 @@ static class NetExp
 		}
 		StaticCompiler.Resolver.Warning += new AssemblyResolver.WarningEvent(Resolver_Warning);
 		StaticCompiler.Resolver.Init(StaticCompiler.Universe, nostdlib, references, libpaths);
-		Assembly ikvmstubAssembly = StaticCompiler.LoadFile(typeof(NetExp).Assembly.Location);
 		Dictionary<string, Assembly> cache = new Dictionary<string, Assembly>();
 		foreach (string reference in references)
 		{
@@ -140,20 +144,23 @@ static class NetExp
 		}
 		else
 		{
+			if (bootstrap)
+			{
+				StaticCompiler.runtimeAssembly = StaticCompiler.LoadFile(typeof(NetExp).Assembly.Location);
+				ClassLoaderWrapper.SetBootstrapClassLoader(new BootstrapBootstrapClassLoader());
+			}
+			else
+			{
+				StaticCompiler.LoadFile(typeof(NetExp).Assembly.Location);
+				StaticCompiler.runtimeAssembly = StaticCompiler.LoadFile(Path.Combine(typeof(NetExp).Assembly.Location, "../IKVM.Runtime.dll"));
+				JVM.CoreAssembly = StaticCompiler.LoadFile(Path.Combine(typeof(NetExp).Assembly.Location, "../IKVM.OpenJDK.Core.dll"));
+			}
 			if (AttributeHelper.IsJavaModule(assembly.ManifestModule))
 			{
-				if (assembly == ikvmstubAssembly)
-				{
-					// we'll crash if we allow this, because CompiledTypeWrapper cannot handle .NET types that use features that we don't expose in Java
-					// (e.g. the ReadPackedInteger(ref int position) method in LineNumberTableAttribute)
-					Console.Error.WriteLine("Error: you cannot run ikvmstub on itself");
-					return 1;
-				}
 				Console.Error.WriteLine("Warning: Running ikvmstub on ikvmc compiled assemblies is not supported.");
 			}
 			try
 			{
-				JVM.CoreAssembly = StaticCompiler.Universe.Import(typeof(NetExp)).Assembly;
 				using (zipFile = new ZipOutputStream(new FileStream(assembly.GetName().Name + ".jar", FileMode.Create)))
 				{
 					zipFile.SetComment(GetVersionAndCopyrightInfo());
@@ -664,7 +671,11 @@ static class NetExp
 		{
 			tw = tw.ElementTypeWrapper;
 		}
-		if ((tw.TypeAsTBD != null && tw.TypeAsTBD.IsGenericType) || IsNonVectorArray(tw) || !tw.IsPublic)
+		if (tw is StubTypeWrapper)
+		{
+			// skip
+		}
+		else if ((tw.TypeAsTBD != null && tw.TypeAsTBD.IsGenericType) || IsNonVectorArray(tw) || !tw.IsPublic)
 		{
 			AddToExportList(tw);
 		}
@@ -728,14 +739,10 @@ static class StaticCompiler
 {
 	internal static readonly Universe Universe = new Universe();
 	internal static readonly AssemblyResolver Resolver = new AssemblyResolver();
-	private static Assembly runtimeAssembly;
+	internal static Assembly runtimeAssembly;
 
 	internal static Type GetRuntimeType(string typeName)
 	{
-		if (runtimeAssembly == null)
-		{
-			runtimeAssembly = Universe.Import(typeof(NetExp)).Assembly;
-		}
 		return runtimeAssembly.GetType(typeName, true);
 	}
 
@@ -784,5 +791,67 @@ static class FakeTypes
 	internal static Type GetEnumType(Type type)
 	{
 		return genericType.MakeGenericType(type);
+	}
+}
+
+sealed class BootstrapBootstrapClassLoader : ClassLoaderWrapper
+{
+	internal BootstrapBootstrapClassLoader()
+		: base(CodeGenOptions.None, null)
+	{
+		TypeWrapper javaLangObject = new StubTypeWrapper(Modifiers.Public, "java.lang.Object", null, true);
+		SetRemappedType(JVM.Import(typeof(object)), javaLangObject);
+		SetRemappedType(JVM.Import(typeof(string)), new StubTypeWrapper(Modifiers.Public | Modifiers.Final, "java.lang.String", javaLangObject, true));
+		SetRemappedType(JVM.Import(typeof(Exception)), new StubTypeWrapper(Modifiers.Public, "java.lang.Throwable", javaLangObject, true));
+		SetRemappedType(JVM.Import(typeof(IComparable)), new StubTypeWrapper(Modifiers.Public | Modifiers.Abstract | Modifiers.Interface, "java.lang.Comparable", null, true));
+
+		RegisterInitiatingLoader(new StubTypeWrapper(Modifiers.Public, "java.lang.Enum", javaLangObject, false));
+		RegisterInitiatingLoader(new StubTypeWrapper(Modifiers.Public | Modifiers.Abstract | Modifiers.Interface, "java.lang.annotation.Annotation", null, false));
+		RegisterInitiatingLoader(new StubTypeWrapper(Modifiers.Public | Modifiers.Final, "java.lang.Class", javaLangObject, false));
+	}
+}
+
+sealed class StubTypeWrapper : TypeWrapper
+{
+	private readonly bool remapped;
+
+	internal StubTypeWrapper(Modifiers modifiers, string name, TypeWrapper baseWrapper, bool remapped)
+		: base(modifiers, name, baseWrapper)
+	{
+		this.remapped = remapped;
+	}
+
+	internal override ClassLoaderWrapper GetClassLoader()
+	{
+		return ClassLoaderWrapper.GetBootstrapClassLoader();
+	}
+
+	internal override Type TypeAsTBD
+	{
+		get { throw new NotSupportedException(); }
+	}
+
+	internal override TypeWrapper[] Interfaces
+	{
+		get { return TypeWrapper.EmptyArray; }
+	}
+
+	internal override TypeWrapper[] InnerClasses
+	{
+		get { return TypeWrapper.EmptyArray; }
+	}
+
+	internal override TypeWrapper DeclaringTypeWrapper
+	{
+		get { return null; }
+	}
+
+	internal override void Finish()
+	{
+	}
+
+	internal override bool IsRemapped
+	{
+		get { return remapped; }
 	}
 }

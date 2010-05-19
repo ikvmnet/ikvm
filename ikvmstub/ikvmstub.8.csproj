@@ -69,7 +69,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="ClassFileWriter.cs" />
-    <Compile Include="FakeClassLibrary.cs" />
     <Compile Include="ikvmstub.cs">
       <SubType>Code</SubType>
     </Compile>

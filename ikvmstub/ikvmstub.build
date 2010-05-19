@@ -24,7 +24,6 @@
                 <include name="../runtime/vm.cs" />
                 <include name="AssemblyInfo.cs" />
                 <include name="ClassFileWriter.cs" />
-                <include name="FakeClassLibrary.cs" />
                 <include name="ikvmstub.cs" />
                 <include name="SerialVersionUID.cs" />
             </sources>
