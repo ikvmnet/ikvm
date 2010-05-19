@@ -144,13 +144,9 @@ namespace IKVM.Internal
 					else
 					{
 						string s;
-						if (ClassLoaderWrapper.IsRemappedType(t))
+						if (ClassLoaderWrapper.IsRemappedType(t) || AttributeHelper.IsJavaModule(t.Module))
 						{
 							s = ClassLoaderWrapper.GetWrapperFromType(t).Name;
-						}
-						else if (AttributeHelper.IsJavaModule(t.Module))
-						{
-							s = CompiledTypeWrapper.GetName(t);
 						}
 						else
 						{
