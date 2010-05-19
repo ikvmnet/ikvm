@@ -2461,12 +2461,25 @@ namespace IKVM.Internal
 			}
 		}
 
+		// this method detects if type derives from our java.lang.Object or java.lang.Throwable implementation types
+		private static bool IsRemappedImplDerived(Type type)
+		{
+			for (; type != null; type = type.BaseType)
+			{
+				if (!ClassLoaderWrapper.IsRemappedType(type) && ClassLoaderWrapper.GetWrapperFromType(type).IsRemapped)
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
 		private MethodWrapper CreateMethodWrapper(string name, string sig, TypeWrapper[] argTypeWrappers, TypeWrapper retTypeWrapper, MethodBase mb, bool privateInterfaceImplHack)
 		{
 			ExModifiers exmods = AttributeHelper.GetModifiers(mb, true);
 			Modifiers mods = exmods.Modifiers;
 			if (name == "Finalize" && sig == "()V" && !mb.IsStatic &&
-				TypeAsBaseType.IsSubclassOf(CoreClasses.java.lang.Object.Wrapper.TypeAsBaseType))
+				IsRemappedImplDerived(TypeAsBaseType))
 			{
 				// TODO if the .NET also has a "finalize" method, we need to hide that one (or rename it, or whatever)
 				MethodWrapper mw = new SimpleCallMethodWrapper(this, "finalize", "()V", (MethodInfo)mb, PrimitiveTypeWrapper.VOID, TypeWrapper.EmptyArray, mods, MemberFlags.None, SimpleOpCode.Call, SimpleOpCode.Callvirt);
