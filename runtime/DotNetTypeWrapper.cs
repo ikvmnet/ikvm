@@ -2469,7 +2469,7 @@ namespace IKVM.Internal
 				TypeAsBaseType.IsSubclassOf(CoreClasses.java.lang.Object.Wrapper.TypeAsBaseType))
 			{
 				// TODO if the .NET also has a "finalize" method, we need to hide that one (or rename it, or whatever)
-				MethodWrapper mw = new SimpleCallMethodWrapper(this, "finalize", "()V", (MethodInfo)mb, null, null, mods, MemberFlags.None, SimpleOpCode.Call, SimpleOpCode.Callvirt);
+				MethodWrapper mw = new SimpleCallMethodWrapper(this, "finalize", "()V", (MethodInfo)mb, PrimitiveTypeWrapper.VOID, TypeWrapper.EmptyArray, mods, MemberFlags.None, SimpleOpCode.Call, SimpleOpCode.Callvirt);
 				mw.SetDeclaredExceptions(new string[] { "java.lang.Throwable" });
 				return mw;
 			}
