@@ -1004,7 +1004,7 @@ namespace IKVM.Internal
 			foreach(Type arg in type.GetGenericArguments())
 			{
 				ClassLoaderWrapper loader = GetWrapperFromType(arg).GetClassLoader();
-				if(!list.Contains(loader))
+				if(!list.Contains(loader) && loader != bootstrapClassLoader)
 				{
 					list.Add(loader);
 				}
