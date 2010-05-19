@@ -694,19 +694,11 @@ namespace IKVM.Internal
 #endif
 		}
 
-		// NOTE this method can actually return null if the resulting array type name would be too long
-		// for .NET to handle.
 		private TypeWrapper CreateArrayType(string name, TypeWrapper elementTypeWrapper, int dims)
 		{
 			Debug.Assert(new String('[', dims) + elementTypeWrapper.SigName == name);
 			Debug.Assert(!elementTypeWrapper.IsUnloadable && !elementTypeWrapper.IsVerifierType && !elementTypeWrapper.IsArray);
 			Debug.Assert(dims >= 1);
-			Type elementType = elementTypeWrapper.TypeAsArrayType;
-			// .NET 1.1 has a limit of 1024 characters for type names
-			if(elementType.FullName.Length >= 1024 - dims * 2)
-			{
-				return null;
-			}
 			return RegisterInitiatingLoader(new ArrayTypeWrapper(elementTypeWrapper, name));
 		}
 
