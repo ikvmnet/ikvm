@@ -3737,6 +3737,7 @@ namespace IKVM.Internal
 
 		internal static string GetName(Type type)
 		{
+			Debug.Assert(!type.HasElementType);
 			Debug.Assert(!type.IsGenericType);
 			Debug.Assert(AttributeHelper.IsJavaModule(type.Module));
 
