@@ -644,7 +644,7 @@ namespace IKVM.Internal
 			return null;
 		}
 
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !STUB_GENERATOR
 		internal Assembly FindResourceAssembliesImpl(string unmangledName, string name, bool firstOnly, ref List<Assembly> list)
 		{
 			if (ReflectUtil.IsDynamicAssembly(assemblyLoader.Assembly))

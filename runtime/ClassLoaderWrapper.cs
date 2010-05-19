@@ -66,8 +66,10 @@ namespace IKVM.Internal
 		private static readonly object wrapperLock = new object();
 		private static readonly Dictionary<Type, TypeWrapper> globalTypeToTypeWrapper = new Dictionary<Type, TypeWrapper>();
 #if STATIC_COMPILER
-		private static ClassLoaderWrapper bootstrapClassLoader;
 		private TypeWrapper circularDependencyHack;
+#endif
+#if STATIC_COMPILER || STUB_GENERATOR
+		private static ClassLoaderWrapper bootstrapClassLoader;
 #else
 		private static AssemblyClassLoader bootstrapClassLoader;
 #endif
@@ -88,9 +90,9 @@ namespace IKVM.Internal
 #endif
 		private static Dictionary<Type, string> remappedTypes = new Dictionary<Type, string>();
 
-#if STATIC_COMPILER
+#if STATIC_COMPILER || STUB_GENERATOR
 		// HACK this is used by the ahead-of-time compiler to overrule the bootstrap classloader
-		// when we're compiling the core class libraries
+		// when we're compiling the core class libraries and by ikvmstub with the -bootstrap option
 		internal static void SetBootstrapClassLoader(ClassLoaderWrapper bootstrapClassLoader)
 		{
 			Debug.Assert(ClassLoaderWrapper.bootstrapClassLoader == null);
@@ -857,7 +859,7 @@ namespace IKVM.Internal
 			return list.ToArray();
 		}
 
-#if STATIC_COMPILER
+#if STATIC_COMPILER || STUB_GENERATOR
 		internal static ClassLoaderWrapper GetBootstrapClassLoader()
 #else
 		internal static AssemblyClassLoader GetBootstrapClassLoader()
