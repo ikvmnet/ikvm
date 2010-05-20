@@ -231,7 +231,7 @@ namespace IKVM.Reflection.Reader
 		{
 			List<CustomAttributeData> list = module.GetCustomAttributes(this.MetadataToken, attributeType);
 			if ((this.Attributes & MethodAttributes.PinvokeImpl) != 0
-				&& (attributeType == null || attributeType.IsAssignableFrom(this.Module.universe.System_Runtime_InteropServices_MarshalAsAttribute)))
+				&& (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_DllImportAttribute)))
 			{
 				CreateDllImportPseudoCustomAttribute(list);
 			}
