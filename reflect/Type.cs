@@ -1291,17 +1291,37 @@ namespace IKVM.Reflection
 			get { return Module.Assembly; }
 		}
 
+		// note that interface/delegate co- and contravariance is not considered
 		public bool IsAssignableFrom(Type type)
 		{
 			if (this.Equals(type))
 			{
 				return true;
 			}
-			if (this.IsInterface)
+			else if (type == null)
+			{
+				return false;
+			}
+			else if (this.IsArray && type.IsArray && this.GetArrayRank() == type.GetArrayRank())
+			{
+				return GetElementType().IsAssignableFrom(type.GetElementType());
+			}
+			else if (this.IsSealed)
+			{
+				return false;
+			}
+			else if (this.IsInterface)
 			{
 				return Array.IndexOf(type.GetInterfaces(), this) != -1;
 			}
-			throw new NotImplementedException();
+			else if (type.IsInterface || type.IsPointer)
+			{
+				return this == this.Module.universe.System_Object;
+			}
+			else
+			{
+				return type.IsSubclassOf(this);
+			}
 		}
 
 		public bool IsSubclassOf(Type type)
