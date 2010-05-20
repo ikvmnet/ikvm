@@ -600,9 +600,10 @@ namespace IKVM.Internal
 			object[] attr = member.GetCustomAttributes(typeof(ModifiersAttribute), false);
 			return attr.Length == 1 ? (ModifiersAttribute)attr[0] : null;
 #else
-			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(member, typeofModifiersAttribute, false))
+			IList<CustomAttributeData> attr = CustomAttributeData.__GetCustomAttributes(member, typeofModifiersAttribute, false);
+			if(attr.Count == 1)
 			{
-				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+				IList<CustomAttributeTypedArgument> args = attr[0].ConstructorArguments;
 				if(args.Count == 2)
 				{
 					return new ModifiersAttribute((Modifiers)args[0].Value, (bool)args[1].Value);
@@ -615,24 +616,11 @@ namespace IKVM.Internal
 
 		internal static ExModifiers GetModifiers(MethodBase mb, bool assemblyIsPrivate)
 		{
-#if !STATIC_COMPILER && !STUB_GENERATOR
-			object[] customAttribute = mb.GetCustomAttributes(typeof(ModifiersAttribute), false);
-			if(customAttribute.Length == 1)
+			ModifiersAttribute attr = GetModifiersAttribute(mb);
+			if(attr != null)
 			{
-				ModifiersAttribute mod = (ModifiersAttribute)customAttribute[0];
-				return new ExModifiers(mod.Modifiers, mod.IsInternal);
+				return new ExModifiers(attr.Modifiers, attr.IsInternal);
 			}
-#else
-			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(mb, typeofModifiersAttribute, false))
-			{
-				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-				if(args.Count == 2)
-				{
-					return new ExModifiers((Modifiers)args[0].Value, (bool)args[1].Value);
-				}
-				return new ExModifiers((Modifiers)args[0].Value, false);
-			}
-#endif
 			Modifiers modifiers = 0;
 			if(mb.IsPublic)
 			{
@@ -688,24 +676,11 @@ namespace IKVM.Internal
 
 		internal static ExModifiers GetModifiers(FieldInfo fi, bool assemblyIsPrivate)
 		{
-#if !STATIC_COMPILER && !STUB_GENERATOR
-			object[] customAttribute = fi.GetCustomAttributes(typeof(ModifiersAttribute), false);
-			if(customAttribute.Length == 1)
+			ModifiersAttribute attr = GetModifiersAttribute(fi);
+			if(attr != null)
 			{
-				ModifiersAttribute mod = (ModifiersAttribute)customAttribute[0];
-				return new ExModifiers(mod.Modifiers, mod.IsInternal);
+				return new ExModifiers(attr.Modifiers, attr.IsInternal);
 			}
-#else
-			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(fi, typeofModifiersAttribute, false))
-			{
-				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-				if(args.Count == 2)
-				{
-					return new ExModifiers((Modifiers)args[0].Value, (bool)args[1].Value);
-				}
-				return new ExModifiers((Modifiers)args[0].Value, false);
-			}
-#endif
 			Modifiers modifiers = 0;
 			if(fi.IsPublic)
 			{
