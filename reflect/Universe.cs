@@ -472,7 +472,14 @@ namespace IKVM.Reflection
 			}
 			else if (type.IsGenericParameter)
 			{
-				throw new NotSupportedException();
+				if (type.DeclaringMethod != null)
+				{
+					throw new NotImplementedException();
+				}
+				else
+				{
+					return Import(type.DeclaringType).GetGenericArguments()[type.GenericParameterPosition];
+				}
 			}
 			else if (type.IsGenericType && !type.IsGenericTypeDefinition)
 			{
