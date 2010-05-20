@@ -123,14 +123,7 @@ namespace IKVM.Reflection
 
 		public bool IsDefined(Type attributeType, bool inherit)
 		{
-			foreach (CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(this))
-			{
-				if (cad.Constructor.DeclaringType.Equals(attributeType))
-				{
-					return true;
-				}
-			}
-			return false;
+			return CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit).Count != 0;
 		}
 
 		public static string CreateQualifiedName(string assemblyName, string typeName)
