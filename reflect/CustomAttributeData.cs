@@ -446,15 +446,7 @@ namespace IKVM.Reflection
 
 		public static IList<CustomAttributeData> __GetCustomAttributes(ParameterInfo parameter, Type attributeType, bool inherit)
 		{
-			List<CustomAttributeData> list = new List<CustomAttributeData>();
-			foreach (CustomAttributeData cad in GetCustomAttributes(parameter))
-			{
-				if (cad.Constructor.DeclaringType.Equals(attributeType))
-				{
-					list.Add(cad);
-				}
-			}
-			return list.ToArray();
+			return parameter.GetCustomAttributesData(attributeType);
 		}
 
 		public static IList<CustomAttributeData> __GetCustomAttributes(MemberInfo member, Type attributeType, bool inherit)
