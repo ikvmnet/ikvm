@@ -451,41 +451,36 @@ namespace IKVM.Reflection
 
 		public static IList<CustomAttributeData> __GetCustomAttributes(MemberInfo member, Type attributeType, bool inherit)
 		{
+			if (!inherit || !IsInheritableAttribute(attributeType))
+			{
+				return member.GetCustomAttributesData(attributeType);
+			}
 			List<CustomAttributeData> list = new List<CustomAttributeData>();
-			bool attribIsInheritable = false;
 			for (; ; )
 			{
 				list.AddRange(member.GetCustomAttributesData(attributeType));
-				if (inherit)
+				Type type = member as Type;
+				if (type != null)
 				{
-					if (!attribIsInheritable && !IsInheritableAttribute(attributeType))
+					type = type.BaseType;
+					if (type == null)
 					{
 						return list;
 					}
-					attribIsInheritable = true;
-					Type type = member as Type;
-					if (type != null)
+					member = type;
+					continue;
+				}
+				MethodInfo method = member as MethodInfo;
+				if (method != null)
+				{
+					MemberInfo prev = member;
+					method = method.GetBaseDefinition();
+					if (method == null || method == prev)
 					{
-						type = type.BaseType;
-						if (type == null)
-						{
-							return list;
-						}
-						member = type;
-						continue;
+						return list;
 					}
-					MethodInfo method = member as MethodInfo;
-					if (method != null)
-					{
-						MemberInfo prev = member;
-						method = method.GetBaseDefinition();
-						if (method == null || method == prev)
-						{
-							return list;
-						}
-						member = method;
-						continue;
-					}
+					member = method;
+					continue;
 				}
 				return list;
 			}
