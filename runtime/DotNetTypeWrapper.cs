@@ -1442,7 +1442,7 @@ namespace IKVM.Internal
 #endif
 						return;
 					}
-					if (type.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
+					if (type.IsSubclassOf(Types.SecurityAttribute))
 					{
 #if STATIC_COMPILER
 						tb.__AddDeclarativeSecurity(MakeCustomAttributeBuilder(loader, annotation));
@@ -1464,7 +1464,7 @@ namespace IKVM.Internal
 
 				internal override void Apply(ClassLoaderWrapper loader, ConstructorBuilder cb, object annotation)
 				{
-					if (type.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
+					if (type.IsSubclassOf(Types.SecurityAttribute))
 					{
 #if STATIC_COMPILER
 						cb.__AddDeclarativeSecurity(MakeCustomAttributeBuilder(loader, annotation));
@@ -1486,7 +1486,7 @@ namespace IKVM.Internal
 
 				internal override void Apply(ClassLoaderWrapper loader, MethodBuilder mb, object annotation)
 				{
-					if (type.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
+					if (type.IsSubclassOf(Types.SecurityAttribute))
 					{
 #if STATIC_COMPILER
 						mb.__AddDeclarativeSecurity(MakeCustomAttributeBuilder(loader, annotation));
@@ -1508,7 +1508,7 @@ namespace IKVM.Internal
 
 				internal override void Apply(ClassLoaderWrapper loader, FieldBuilder fb, object annotation)
 				{
-					if (type.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
+					if (type.IsSubclassOf(Types.SecurityAttribute))
 					{
 						// you can't add declarative security to a field
 					}
@@ -1520,7 +1520,7 @@ namespace IKVM.Internal
 
 				internal override void Apply(ClassLoaderWrapper loader, ParameterBuilder pb, object annotation)
 				{
-					if (type.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
+					if (type.IsSubclassOf(Types.SecurityAttribute))
 					{
 						// you can't add declarative security to a parameter
 					}
@@ -1538,7 +1538,7 @@ namespace IKVM.Internal
 
 				internal override void Apply(ClassLoaderWrapper loader, AssemblyBuilder ab, object annotation)
 				{
-					if (type.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
+					if (type.IsSubclassOf(Types.SecurityAttribute))
 					{
 #if STATIC_COMPILER
 						ab.__AddDeclarativeSecurity(MakeCustomAttributeBuilder(loader, annotation));
@@ -1595,7 +1595,7 @@ namespace IKVM.Internal
 
 				internal override void Apply(ClassLoaderWrapper loader, PropertyBuilder pb, object annotation)
 				{
-					if (type.IsSubclassOf(JVM.Import(typeof(SecurityAttribute))))
+					if (type.IsSubclassOf(Types.SecurityAttribute))
 					{
 						// you can't add declarative security to a property
 					}

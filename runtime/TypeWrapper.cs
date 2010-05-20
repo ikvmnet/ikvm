@@ -79,7 +79,6 @@ namespace IKVM.Internal
 		private static Type typeofModifiers = JVM.LoadType(typeof(Modifiers));
 		private static Type typeofSourceFileAttribute = JVM.LoadType(typeof(SourceFileAttribute));
 		private static Type typeofLineNumberTableAttribute = JVM.LoadType(typeof(LineNumberTableAttribute));
-		private static Type typeofSecurityAttribute = JVM.Import(typeof(SecurityAttribute));
 #endif // STATIC_COMPILER
 		private static Type typeofRemappedClassAttribute = JVM.LoadType(typeof(RemappedClassAttribute));
 		private static Type typeofRemappedTypeAttribute = JVM.LoadType(typeof(RemappedTypeAttribute));
@@ -266,7 +265,7 @@ namespace IKVM.Internal
 			if(attr.Type != null)
 			{
 				Type t = StaticCompiler.GetType(loader, attr.Type);
-				isDeclarativeSecurity = t.IsSubclassOf(typeofSecurityAttribute);
+				isDeclarativeSecurity = t.IsSubclassOf(Types.SecurityAttribute);
 				ConstructorInfo ci = t.GetConstructor(argTypes);
 				if(ci == null)
 				{
@@ -315,7 +314,7 @@ namespace IKVM.Internal
 					throw new NotImplementedException("Setting property values on Java attributes is not implemented");
 				}
 				TypeWrapper t = loader.LoadClassByDottedName(attr.Class);
-				isDeclarativeSecurity = t.TypeAsBaseType.IsSubclassOf(typeofSecurityAttribute);
+				isDeclarativeSecurity = t.TypeAsBaseType.IsSubclassOf(Types.SecurityAttribute);
 				MethodWrapper mw = t.GetMethodWrapper("<init>", attr.Sig, false);
 				mw.Link();
 				ConstructorInfo ci = (ConstructorInfo)mw.GetMethod();
