@@ -155,12 +155,12 @@ namespace IKVM.NativeCode.ikvm.@internal
 				FieldInfo fi = fieldWrapper.GetField();
 				if(fi != null)
 				{
-					return AttributeHelper.IsDefined(fi, typeof(ObsoleteAttribute));
+					return fi.IsDefined(typeof(ObsoleteAttribute), false);
 				}
 				GetterFieldWrapper getter = fieldWrapper as GetterFieldWrapper;
 				if(getter != null)
 				{
-					return AttributeHelper.IsDefined(getter.GetProperty(), typeof(ObsoleteAttribute));
+					return getter.GetProperty().IsDefined(typeof(ObsoleteAttribute), false);
 				}
 				return false;
 			}
@@ -169,7 +169,7 @@ namespace IKVM.NativeCode.ikvm.@internal
 			{
 				MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(method);
 				MethodBase mb = mw.GetMethod();
-				return mb != null && AttributeHelper.IsDefined(mb, typeof(ObsoleteAttribute));
+				return mb != null && mb.IsDefined(typeof(ObsoleteAttribute), false);
 			}
 
 			public static bool isClassDeprecated(object clazz)
@@ -177,7 +177,7 @@ namespace IKVM.NativeCode.ikvm.@internal
 				Type type = TypeWrapper.FromClass(clazz).TypeAsTBD;
 				// we need to check type for null, because ReflectionOnly
 				// generated delegate inner interfaces don't really exist
-				return type != null && AttributeHelper.IsDefined(type, typeof(ObsoleteAttribute));
+				return type != null && type.IsDefined(typeof(ObsoleteAttribute), false);
 			}
 		}
 	}

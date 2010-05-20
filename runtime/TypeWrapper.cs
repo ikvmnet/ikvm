@@ -487,17 +487,17 @@ namespace IKVM.Internal
 
 		internal static bool IsHideFromReflection(MethodInfo mi)
 		{
-			return IsDefined(mi, typeofHideFromReflectionAttribute);
+			return mi.IsDefined(typeofHideFromReflectionAttribute, false);
 		}
 
 		internal static bool IsHideFromReflection(FieldInfo fi)
 		{
-			return IsDefined(fi, typeofHideFromReflectionAttribute);
+			return fi.IsDefined(typeofHideFromReflectionAttribute, false);
 		}
 
 		internal static bool IsHideFromReflection(PropertyInfo pi)
 		{
-			return IsDefined(pi, typeofHideFromReflectionAttribute);
+			return pi.IsDefined(typeofHideFromReflectionAttribute, false);
 		}
 
 		internal static void HideFromJava(TypeBuilder typeBuilder)
@@ -549,7 +549,7 @@ namespace IKVM.Internal
 
 		internal static bool IsHideFromJava(Type type)
 		{
-			return IsDefined(type, typeofHideFromJavaAttribute)
+			return type.IsDefined(typeofHideFromJavaAttribute, false)
 				|| (type.IsNested && type.Name.StartsWith("__<", StringComparison.Ordinal));
 		}
 
@@ -567,7 +567,7 @@ namespace IKVM.Internal
 			{
 				return true;
 			}
-			return IsDefined(mi, typeofHideFromJavaAttribute);
+			return mi.IsDefined(typeofHideFromJavaAttribute, false);
 		}
 
 #if STATIC_COMPILER
@@ -591,17 +591,17 @@ namespace IKVM.Internal
 
 		internal static bool IsGhostInterface(Type type)
 		{
-			return IsDefined(type, typeofGhostInterfaceAttribute);
+			return type.IsDefined(typeofGhostInterfaceAttribute, false);
 		}
 
 		internal static bool IsRemappedType(Type type)
 		{
-			return IsDefined(type, typeofRemappedTypeAttribute);
+			return type.IsDefined(typeofRemappedTypeAttribute, false);
 		}
 
 		internal static bool IsExceptionIsUnsafeForMapping(Type type)
 		{
-			return IsDefined(type, typeofExceptionIsUnsafeForMappingAttribute);
+			return type.IsDefined(typeofExceptionIsUnsafeForMappingAttribute, false);
 		}
 
 		// this method compares t1 and t2 by name
@@ -731,7 +731,7 @@ namespace IKVM.Internal
 				modifiers |= Modifiers.Native;
 			}
 			ParameterInfo[] parameters = mb.GetParameters();
-			if(parameters.Length > 0 && IsDefined(parameters[parameters.Length - 1], JVM.Import(typeof(ParamArrayAttribute))))
+			if(parameters.Length > 0 && parameters[parameters.Length - 1].IsDefined(JVM.Import(typeof(ParamArrayAttribute)), false))
 			{
 				modifiers |= Modifiers.VarArgs;
 			}
@@ -1343,93 +1343,9 @@ namespace IKVM.Internal
 			return list.ToArray();
 		}
 
-		internal static bool IsDefined(Module mod, Type attribute)
-		{
-#if !STATIC_COMPILER && !STUB_GENERATOR
-			return mod.IsDefined(attribute, false);
-#else
-			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mod))
-			{
-				// NOTE we don't support subtyping relations!
-				if(MatchTypes(cad.Constructor.DeclaringType, attribute))
-				{
-					return true;
-				}
-			}
-			return false;
-#endif
-		}
-
-		internal static bool IsDefined(Assembly asm, Type attribute)
-		{
-#if !STATIC_COMPILER && !STUB_GENERATOR
-			return asm.IsDefined(attribute, false);
-#else
-			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(asm))
-			{
-				if(MatchTypes(cad.Constructor.DeclaringType, attribute))
-				{
-					return true;
-				}
-			}
-			return false;
-#endif
-		}
-
-		internal static bool IsDefined(Type type, Type attribute)
-		{
-#if !STATIC_COMPILER && !STUB_GENERATOR
-			return type.IsDefined(attribute, false);
-#else
-			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
-			{
-				// NOTE we don't support subtyping relations!
-				if(MatchTypes(cad.Constructor.DeclaringType, attribute))
-				{
-					return true;
-				}
-			}
-			return false;
-#endif
-		}
-
-		internal static bool IsDefined(ParameterInfo pi, Type attribute)
-		{
-#if !STATIC_COMPILER && !STUB_GENERATOR
-			return pi.IsDefined(attribute, false);
-#else
-			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(pi))
-			{
-				// NOTE we don't support subtyping relations!
-				if(MatchTypes(cad.Constructor.DeclaringType, attribute))
-				{
-					return true;
-				}
-			}
-			return false;
-#endif
-		}
-
-		internal static bool IsDefined(MemberInfo member, Type attribute)
-		{
-#if !STATIC_COMPILER && !STUB_GENERATOR
-			return member.IsDefined(attribute, false);
-#else
-			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(member))
-			{
-				// NOTE we don't support subtyping relations!
-				if(MatchTypes(cad.Constructor.DeclaringType, attribute))
-				{
-					return true;
-				}
-			}
-			return false;
-#endif
-		}
-
 		internal static bool IsJavaModule(Module mod)
 		{
-			return IsDefined(mod, typeofJavaModuleAttribute);
+			return mod.IsDefined(typeofJavaModuleAttribute, false);
 		}
 
 		internal static object[] GetJavaModuleAttributes(Module mod)
@@ -1459,7 +1375,7 @@ namespace IKVM.Internal
 
 		internal static bool IsNoPackagePrefix(Type type)
 		{
-			return IsDefined(type, typeofNoPackagePrefixAttribute) || IsDefined(type.Assembly, typeofNoPackagePrefixAttribute);
+			return type.IsDefined(typeofNoPackagePrefixAttribute, false) || type.Assembly.IsDefined(typeofNoPackagePrefixAttribute, false);
 		}
 
 		internal static EnclosingMethodAttribute GetEnclosingMethodAttribute(Type type)

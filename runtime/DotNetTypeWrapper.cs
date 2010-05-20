@@ -829,7 +829,7 @@ namespace IKVM.Internal
 						{
 							if (tw is EnumEnumTypeWrapper)
 							{
-								if (!isArray && AttributeHelper.IsDefined(type, JVM.Import(typeof(FlagsAttribute))))
+								if (!isArray && type.IsDefined(JVM.Import(typeof(FlagsAttribute)), false))
 								{
 									return tw.MakeArrayType(1);
 								}

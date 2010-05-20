@@ -2413,7 +2413,7 @@ namespace IKVM.Internal
 
 		private static bool IsCoreAssembly(Assembly asm)
 		{
-			return AttributeHelper.IsDefined(asm, StaticCompiler.GetRuntimeType("IKVM.Attributes.RemappedClassAttribute"));
+			return asm.IsDefined(StaticCompiler.GetRuntimeType("IKVM.Attributes.RemappedClassAttribute"), false);
 		}
 
 		private bool CheckCompilingCoreAssembly()
