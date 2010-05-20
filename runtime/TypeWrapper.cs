@@ -604,37 +604,20 @@ namespace IKVM.Internal
 			return type.IsDefined(typeofExceptionIsUnsafeForMappingAttribute, false);
 		}
 
-		// this method compares t1 and t2 by name
-		// if the type name and assembly name (ignoring the version and strong name) match
-		// the type are considered the same
-		// Note that when we're the stub generator, we don't even care about the assembly names,
-		// because in that case we don't want a dependency on the runtime.
-		private static bool MatchTypes(Type t1, Type t2)
-		{
-			return t1.FullName == t2.FullName
-#if !STUB_GENERATOR
-				&& t1.Assembly.GetName().Name == t2.Assembly.GetName().Name
-#endif
-				;
-		}
-
 		internal static ModifiersAttribute GetModifiersAttribute(Type type)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
 			object[] attr = type.GetCustomAttributes(typeof(ModifiersAttribute), false);
 			return attr.Length == 1 ? (ModifiersAttribute)attr[0] : null;
 #else
-			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
+			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(type, typeofModifiersAttribute, false))
 			{
-				if(MatchTypes(cad.Constructor.DeclaringType, typeofModifiersAttribute))
+				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+				if(args.Count == 2)
 				{
-					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-					if(args.Count == 2)
-					{
-						return new ModifiersAttribute((Modifiers)args[0].Value, (bool)args[1].Value);
-					}
-					return new ModifiersAttribute((Modifiers)args[0].Value);
+					return new ModifiersAttribute((Modifiers)args[0].Value, (bool)args[1].Value);
 				}
+				return new ModifiersAttribute((Modifiers)args[0].Value);
 			}
 			return null;
 #endif
@@ -646,17 +629,14 @@ namespace IKVM.Internal
 			object[] attr = property.GetCustomAttributes(typeof(ModifiersAttribute), false);
 			return attr.Length == 1 ? (ModifiersAttribute)attr[0] : null;
 #else
-			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(property))
+			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(property, typeofModifiersAttribute, false))
 			{
-				if(MatchTypes(cad.Constructor.DeclaringType, typeofModifiersAttribute))
+				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+				if(args.Count == 2)
 				{
-					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-					if(args.Count == 2)
-					{
-						return new ModifiersAttribute((Modifiers)args[0].Value, (bool)args[1].Value);
-					}
-					return new ModifiersAttribute((Modifiers)args[0].Value);
+					return new ModifiersAttribute((Modifiers)args[0].Value, (bool)args[1].Value);
 				}
+				return new ModifiersAttribute((Modifiers)args[0].Value);
 			}
 			return null;
 #endif
@@ -672,17 +652,14 @@ namespace IKVM.Internal
 				return new ExModifiers(mod.Modifiers, mod.IsInternal);
 			}
 #else
-			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mb))
+			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(mb, typeofModifiersAttribute, false))
 			{
-				if(MatchTypes(cad.Constructor.DeclaringType, typeofModifiersAttribute))
+				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+				if(args.Count == 2)
 				{
-					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-					if(args.Count == 2)
-					{
-						return new ExModifiers((Modifiers)args[0].Value, (bool)args[1].Value);
-					}
-					return new ExModifiers((Modifiers)args[0].Value, false);
+					return new ExModifiers((Modifiers)args[0].Value, (bool)args[1].Value);
 				}
+				return new ExModifiers((Modifiers)args[0].Value, false);
 			}
 #endif
 			Modifiers modifiers = 0;
@@ -748,17 +725,14 @@ namespace IKVM.Internal
 				return new ExModifiers(mod.Modifiers, mod.IsInternal);
 			}
 #else
-			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(fi))
+			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(fi, typeofModifiersAttribute, false))
 			{
-				if(MatchTypes(cad.Constructor.DeclaringType, typeofModifiersAttribute))
+				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+				if(args.Count == 2)
 				{
-					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-					if(args.Count == 2)
-					{
-						return new ExModifiers((Modifiers)args[0].Value, (bool)args[1].Value);
-					}
-					return new ExModifiers((Modifiers)args[0].Value, false);
+					return new ExModifiers((Modifiers)args[0].Value, (bool)args[1].Value);
 				}
+				return new ExModifiers((Modifiers)args[0].Value, false);
 			}
 #endif
 			Modifiers modifiers = 0;
@@ -1022,13 +996,10 @@ namespace IKVM.Internal
 			object[] attr = field.GetCustomAttributes(typeof(NameSigAttribute), false);
 			return attr.Length == 1 ? (NameSigAttribute)attr[0] : null;
 #else
-			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(field))
+			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(field, typeofNameSigAttribute, false))
 			{
-				if(MatchTypes(cad.Constructor.DeclaringType, typeofNameSigAttribute))
-				{
-					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-					return new NameSigAttribute((string)args[0].Value, (string)args[1].Value);
-				}
+				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+				return new NameSigAttribute((string)args[0].Value, (string)args[1].Value);
 			}
 			return null;
 #endif
@@ -1040,13 +1011,10 @@ namespace IKVM.Internal
 			object[] attr = property.GetCustomAttributes(typeof(NameSigAttribute), false);
 			return attr.Length == 1 ? (NameSigAttribute)attr[0] : null;
 #else
-			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(property))
+			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(property, typeofNameSigAttribute, false))
 			{
-				if(MatchTypes(cad.Constructor.DeclaringType, typeofNameSigAttribute))
-				{
-					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-					return new NameSigAttribute((string)args[0].Value, (string)args[1].Value);
-				}
+				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+				return new NameSigAttribute((string)args[0].Value, (string)args[1].Value);
 			}
 			return null;
 #endif
@@ -1058,13 +1026,10 @@ namespace IKVM.Internal
 			object[] attr = method.GetCustomAttributes(typeof(NameSigAttribute), false);
 			return attr.Length == 1 ? (NameSigAttribute)attr[0] : null;
 #else
-			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(method))
+			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(method, typeofNameSigAttribute, false))
 			{
-				if(MatchTypes(cad.Constructor.DeclaringType, typeofNameSigAttribute))
-				{
-					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-					return new NameSigAttribute((string)args[0].Value, (string)args[1].Value);
-				}
+				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+				return new NameSigAttribute((string)args[0].Value, (string)args[1].Value);
 			}
 			return null;
 #endif
@@ -1087,13 +1052,10 @@ namespace IKVM.Internal
 			object[] attribs = type.GetCustomAttributes(typeof(ImplementsAttribute), false);
 			return attribs.Length == 1 ? (ImplementsAttribute)attribs[0] : null;
 #else
-			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
+			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(type, typeofImplementsAttribute, false))
 			{
-				if(MatchTypes(cad.Constructor.DeclaringType, typeofImplementsAttribute))
-				{
-					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-					return new ImplementsAttribute(DecodeArray<string>(args[0]));
-				}
+				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+				return new ImplementsAttribute(DecodeArray<string>(args[0]));
 			}
 			return null;
 #endif
@@ -1105,23 +1067,20 @@ namespace IKVM.Internal
 			object[] attribs = mb.GetCustomAttributes(typeof(ThrowsAttribute), false);
 			return attribs.Length == 1 ? (ThrowsAttribute)attribs[0] : null;
 #else
-			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mb))
+			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(mb, typeofThrowsAttribute, false))
 			{
-				if(MatchTypes(cad.Constructor.DeclaringType, typeofThrowsAttribute))
+				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+				if (args[0].ArgumentType == Types.String.MakeArrayType())
 				{
-					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-					if (args[0].ArgumentType == Types.String.MakeArrayType())
-					{
-						return new ThrowsAttribute(DecodeArray<string>(args[0]));
-					}
-					else if (args[0].ArgumentType == Types.Type.MakeArrayType())
-					{
-						return new ThrowsAttribute(DecodeArray<Type>(args[0]));
-					}
-					else
-					{
-						return new ThrowsAttribute((Type)args[0].Value);
-					}
+					return new ThrowsAttribute(DecodeArray<string>(args[0]));
+				}
+				else if (args[0].ArgumentType == Types.Type.MakeArrayType())
+				{
+					return new ThrowsAttribute(DecodeArray<Type>(args[0]));
+				}
+				else
+				{
+					return new ThrowsAttribute((Type)args[0].Value);
 				}
 			}
 			return null;
@@ -1140,13 +1099,10 @@ namespace IKVM.Internal
 			return classes;
 #else
 			List<string> list = new List<string>();
-			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(t))
+			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(t, typeofNonNestedInnerClassAttribute, false))
 			{
-				if(MatchTypes(cad.Constructor.DeclaringType, typeofNonNestedInnerClassAttribute))
-				{
-					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-					list.Add((string)args[0].Value);
-				}
+				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+				list.Add((string)args[0].Value);
 			}
 			return list.ToArray();
 #endif
@@ -1158,13 +1114,10 @@ namespace IKVM.Internal
 			object[] attribs = t.GetCustomAttributes(typeof(NonNestedOuterClassAttribute), false);
 			return attribs.Length == 1 ? ((NonNestedOuterClassAttribute)attribs[0]).OuterClassName : null;
 #else
-			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(t))
+			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(t, typeofNonNestedOuterClassAttribute, false))
 			{
-				if(MatchTypes(cad.Constructor.DeclaringType, typeofNonNestedOuterClassAttribute))
-				{
-					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-					return (string)args[0].Value;
-				}
+				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+				return (string)args[0].Value;
 			}
 			return null;
 #endif
@@ -1176,13 +1129,10 @@ namespace IKVM.Internal
 			object[] attribs = mb.GetCustomAttributes(typeof(SignatureAttribute), false);
 			return attribs.Length == 1 ? (SignatureAttribute)attribs[0] : null;
 #else
-			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mb))
+			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(mb, typeofSignatureAttribute, false))
 			{
-				if(MatchTypes(cad.Constructor.DeclaringType, typeofSignatureAttribute))
-				{
-					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-					return new SignatureAttribute((string)args[0].Value);
-				}
+				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+				return new SignatureAttribute((string)args[0].Value);
 			}
 			return null;
 #endif
@@ -1194,13 +1144,10 @@ namespace IKVM.Internal
 			object[] attribs = type.GetCustomAttributes(typeof(SignatureAttribute), false);
 			return attribs.Length == 1 ? (SignatureAttribute)attribs[0] : null;
 #else
-			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
+			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(type, typeofSignatureAttribute, false))
 			{
-				if(MatchTypes(cad.Constructor.DeclaringType, typeofSignatureAttribute))
-				{
-					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-					return new SignatureAttribute((string)args[0].Value);
-				}
+				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+				return new SignatureAttribute((string)args[0].Value);
 			}
 			return null;
 #endif
@@ -1212,13 +1159,10 @@ namespace IKVM.Internal
 			object[] attribs = fi.GetCustomAttributes(typeof(SignatureAttribute), false);
 			return attribs.Length == 1 ? (SignatureAttribute)attribs[0] : null;
 #else
-			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(fi))
+			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(fi, typeofSignatureAttribute, false))
 			{
-				if(MatchTypes(cad.Constructor.DeclaringType, typeofSignatureAttribute))
-				{
-					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-					return new SignatureAttribute((string)args[0].Value);
-				}
+				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+				return new SignatureAttribute((string)args[0].Value);
 			}
 			return null;
 #endif
@@ -1230,13 +1174,10 @@ namespace IKVM.Internal
 			object[] attribs = type.GetCustomAttributes(typeof(InnerClassAttribute), false);
 			return attribs.Length == 1 ? (InnerClassAttribute)attribs[0] : null;
 #else
-			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
+			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(type, typeofInnerClassAttribute, false))
 			{
-				if(MatchTypes(cad.Constructor.DeclaringType, typeofInnerClassAttribute))
-				{
-					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-					return new InnerClassAttribute((string)args[0].Value, (Modifiers)args[1].Value);
-				}
+				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+				return new InnerClassAttribute((string)args[0].Value, (Modifiers)args[1].Value);
 			}
 			return null;
 #endif
@@ -1251,13 +1192,10 @@ namespace IKVM.Internal
 			return attr1;
 #else
 			List<RemappedInterfaceMethodAttribute> attrs = new List<RemappedInterfaceMethodAttribute>();
-			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
+			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(type, typeofRemappedInterfaceMethodAttribute, false))
 			{
-				if(MatchTypes(cad.Constructor.DeclaringType, typeofRemappedInterfaceMethodAttribute))
-				{
-					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-					attrs.Add(new RemappedInterfaceMethodAttribute((string)args[0].Value, (string)args[1].Value));
-				}
+				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+				attrs.Add(new RemappedInterfaceMethodAttribute((string)args[0].Value, (string)args[1].Value));
 			}
 			return attrs.ToArray();
 #endif
@@ -1269,13 +1207,10 @@ namespace IKVM.Internal
 			object[] attribs = type.GetCustomAttributes(typeof(RemappedTypeAttribute), false);
 			return attribs.Length == 1 ? (RemappedTypeAttribute)attribs[0] : null;
 #else
-			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
+			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(type, typeofRemappedTypeAttribute, false))
 			{
-				if(MatchTypes(cad.Constructor.DeclaringType, typeofRemappedTypeAttribute))
-				{
-					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-					return new RemappedTypeAttribute((Type)args[0].Value);
-				}
+				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+				return new RemappedTypeAttribute((Type)args[0].Value);
 			}
 			return null;
 #endif
@@ -1290,13 +1225,10 @@ namespace IKVM.Internal
 			return attr1;
 #else
 			List<RemappedClassAttribute> attrs = new List<RemappedClassAttribute>();
-			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(coreAssembly))
+			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(coreAssembly, typeofRemappedClassAttribute, false))
 			{
-				if(MatchTypes(cad.Constructor.DeclaringType, typeofRemappedClassAttribute))
-				{
-					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-					attrs.Add(new RemappedClassAttribute((string)args[0].Value, (Type)args[1].Value));
-				}
+				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+				attrs.Add(new RemappedClassAttribute((string)args[0].Value, (Type)args[1].Value));
 			}
 			return attrs.ToArray();
 #endif
@@ -1312,12 +1244,9 @@ namespace IKVM.Internal
 			}
 			return null;
 #else
-			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
+			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(type, typeofAnnotationAttributeAttribute, false))
 			{
-				if(MatchTypes(cad.Constructor.DeclaringType, typeofAnnotationAttributeAttribute))
-				{
-					return (string)cad.ConstructorArguments[0].Value;
-				}
+				return (string)cad.ConstructorArguments[0].Value;
 			}
 			return null;
 #endif
@@ -1354,19 +1283,16 @@ namespace IKVM.Internal
 			return mod.GetCustomAttributes(typeofJavaModuleAttribute, false);
 #else
 			List<JavaModuleAttribute> attrs = new List<JavaModuleAttribute>();
-			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mod))
+			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(mod, typeofJavaModuleAttribute, false))
 			{
-				if(MatchTypes(cad.Constructor.DeclaringType, typeofJavaModuleAttribute))
+				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+				if(args.Count == 0)
 				{
-					IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-					if(args.Count == 0)
-					{
-						attrs.Add(new JavaModuleAttribute());
-					}
-					else
-					{
-						attrs.Add(new JavaModuleAttribute(DecodeArray<string>(args[0])));
-					}
+					attrs.Add(new JavaModuleAttribute());
+				}
+				else
+				{
+					attrs.Add(new JavaModuleAttribute(DecodeArray<string>(args[0])));
 				}
 			}
 			return attrs.ToArray();
@@ -1388,12 +1314,9 @@ namespace IKVM.Internal
 			}
 			return null;
 #else
-			foreach (CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
+			foreach (CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(type, typeofEnclosingMethodAttribute, false))
 			{
-				if (MatchTypes(cad.Constructor.DeclaringType, typeofEnclosingMethodAttribute))
-				{
-					return new EnclosingMethodAttribute((string)cad.ConstructorArguments[0].Value, (string)cad.ConstructorArguments[1].Value, (string)cad.ConstructorArguments[2].Value);
-				}
+				return new EnclosingMethodAttribute((string)cad.ConstructorArguments[0].Value, (string)cad.ConstructorArguments[1].Value, (string)cad.ConstructorArguments[2].Value);
 			}
 			return null;
 #endif
