@@ -57,6 +57,8 @@ namespace IKVM.Internal
 		internal static readonly Type Single = JVM.Import(typeof(System.Single));
 		internal static readonly Type Double = JVM.Import(typeof(System.Double));
 
+		internal static readonly Type IsVolatile = JVM.Import(typeof(System.Runtime.CompilerServices.IsVolatile));
+
 		// we want deterministics initialization
 		static Types() { }
 	}

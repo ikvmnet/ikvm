@@ -791,7 +791,7 @@ namespace IKVM.Internal
 			{
 				modifiers |= Modifiers.Static;
 			}
-			if(Array.IndexOf(fi.GetRequiredCustomModifiers(), typeof(System.Runtime.CompilerServices.IsVolatile)) != -1)
+			if(Array.IndexOf(fi.GetRequiredCustomModifiers(), Types.IsVolatile) != -1)
 			{
 				modifiers |= Modifiers.Volatile;
 			}
