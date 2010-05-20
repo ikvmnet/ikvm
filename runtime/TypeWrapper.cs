@@ -119,7 +119,7 @@ namespace IKVM.Internal
 				{
 					return valtw.TypeAsBaseType;
 				}
-				return JVM.GetType(val, true);
+				return StaticCompiler.Universe.GetType(val, true);
 			}
 			else if(tw == PrimitiveTypeWrapper.BOOLEAN)
 			{

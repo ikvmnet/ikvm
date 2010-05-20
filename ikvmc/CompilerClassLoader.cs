@@ -759,7 +759,7 @@ namespace IKVM.Internal
 				this.classLoader = classLoader;
 				classDef = c;
 				bool baseIsSealed = false;
-				shadowType = JVM.GetType(c.Shadows, true);
+				shadowType = StaticCompiler.Universe.GetType(c.Shadows, true);
 				classLoader.SetRemappedType(shadowType, this);
 				Type baseType = shadowType;
 				Type baseInterface = null;
@@ -1588,7 +1588,7 @@ namespace IKVM.Internal
 					if(m.redirect.Class == null || m.redirect.Class.IndexOf(',') >= 0)
 					{
 						// TODO better error handling
-						Type type = m.redirect.Class == null ? baseType : JVM.GetType(m.redirect.Class, true);
+						Type type = m.redirect.Class == null ? baseType : StaticCompiler.Universe.GetType(m.redirect.Class, true);
 						Type[] redirParamTypes = classLoader.ArgTypeListFromSig(redirSig);
 						MethodInfo mi = type.GetMethod(m.redirect.Name, redirParamTypes);
 						if(mi == null)
@@ -2197,7 +2197,7 @@ namespace IKVM.Internal
 				for(int i = 0; i < map.Length; i++)
 				{
 					ilgen.Emit(OpCodes.Dup);
-					ilgen.Emit(OpCodes.Ldtoken, JVM.GetType(map[i].src, true));
+					ilgen.Emit(OpCodes.Ldtoken, StaticCompiler.Universe.GetType(map[i].src, true));
 					ilgen.Emit(OpCodes.Call, Compiler.getTypeFromHandleMethod);
 					ilgen.Emit(OpCodes.Ceq);
 					CodeEmitterLabel label = ilgen.DefineLabel();

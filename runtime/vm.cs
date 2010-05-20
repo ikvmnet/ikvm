@@ -460,14 +460,5 @@ namespace IKVM.Internal
 			return type;
 #endif
 		}
-
-		internal static Type GetType(string typeName, bool throwOnError)
-		{
-#if STATIC_COMPILER || STUB_GENERATOR
-			return StaticCompiler.Universe.GetType(typeName, throwOnError);
-#else
-			return Type.GetType(typeName, throwOnError);
-#endif
-		}
 	}
 }

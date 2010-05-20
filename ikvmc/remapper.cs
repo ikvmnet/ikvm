@@ -1311,7 +1311,7 @@ namespace IKVM.Internal.MapXml
 			// HACK if the class name contains a comma, we assume it is a .NET type
 			if(Class.IndexOf(',') >= 0)
 			{
-				Type type = JVM.GetType(Class, true);
+				Type type = StaticCompiler.Universe.GetType(Class, true);
 				MethodInfo mi = type.GetMethod(Name, redirParamTypes);
 				if(mi == null)
 				{
