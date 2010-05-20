@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Jeroen Frijters
+  Copyright (C) 2009-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -432,6 +432,16 @@ namespace IKVM.Reflection
 		public static IList<CustomAttributeData> GetCustomAttributes(ParameterInfo parameter)
 		{
 			return parameter.GetCustomAttributesData(null);
+		}
+
+		public static IList<CustomAttributeData> __GetCustomAttributes(Assembly assembly, Type attributeType, bool inherit)
+		{
+			return assembly.GetCustomAttributesData(attributeType);
+		}
+
+		public static IList<CustomAttributeData> __GetCustomAttributes(Module module, Type attributeType, bool inherit)
+		{
+			return module.GetCustomAttributesData(attributeType);
 		}
 
 		public static IList<CustomAttributeData> __GetCustomAttributes(ParameterInfo parameter, Type attributeType, bool inherit)
