@@ -559,12 +559,15 @@ namespace IKVM.Reflection.Emit
 			throw new NotSupportedException();
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData()
+		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
 		{
 			List<CustomAttributeData> list = new List<CustomAttributeData>();
 			foreach (CustomAttributeBuilder cab in customAttributes)
 			{
-				list.Add(cab.ToData(this));
+				if (attributeType == null || attributeType.IsAssignableFrom(cab.Constructor.DeclaringType))
+				{
+					list.Add(cab.ToData(this));
+				}
 			}
 			return list;
 		}

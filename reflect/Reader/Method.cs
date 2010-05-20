@@ -227,10 +227,11 @@ namespace IKVM.Reflection.Reader
 			get { return module; }
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData()
+		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
 		{
-			List<CustomAttributeData> list = module.GetCustomAttributes(this.MetadataToken);
-			if ((this.Attributes & MethodAttributes.PinvokeImpl) != 0)
+			List<CustomAttributeData> list = module.GetCustomAttributes(this.MetadataToken, attributeType);
+			if ((this.Attributes & MethodAttributes.PinvokeImpl) != 0
+				&& (attributeType == null || attributeType.IsAssignableFrom(this.Module.universe.System_Runtime_InteropServices_MarshalAsAttribute)))
 			{
 				CreateDllImportPseudoCustomAttribute(list);
 			}
@@ -428,10 +429,11 @@ namespace IKVM.Reflection.Reader
 			get { return method.Module; }
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData()
+		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
 		{
-			IList<CustomAttributeData> list = base.GetCustomAttributesData();
-			if ((this.Attributes & ParameterAttributes.HasFieldMarshal) != 0)
+			IList<CustomAttributeData> list = base.GetCustomAttributesData(attributeType);
+			if ((this.Attributes & ParameterAttributes.HasFieldMarshal) != 0
+				&& (attributeType == null || attributeType.IsAssignableFrom(this.Module.universe.System_Runtime_InteropServices_MarshalAsAttribute)))
 			{
 				list.Add(MarshalSpec.GetMarshalAsAttribute(this.Module, this.MetadataToken));
 			}

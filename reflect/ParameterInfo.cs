@@ -89,9 +89,9 @@ namespace IKVM.Reflection
 			return CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit).Count != 0;
 		}
 
-		internal virtual IList<CustomAttributeData> GetCustomAttributesData()
+		internal virtual IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
 		{
-			return this.Module.GetCustomAttributes(this.MetadataToken);
+			return this.Module.GetCustomAttributes(this.MetadataToken, attributeType);
 		}
 	}
 }

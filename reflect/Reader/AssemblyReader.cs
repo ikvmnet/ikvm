@@ -260,9 +260,9 @@ namespace IKVM.Reflection.Reader
 			return manifestModule.GetReferencedAssemblies();
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData()
+		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
 		{
-			return manifestModule.GetCustomAttributes(0x20000001);
+			return manifestModule.GetCustomAttributes(0x20000001, attributeType);
 		}
 	}
 }

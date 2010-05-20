@@ -156,6 +156,6 @@ namespace IKVM.Reflection
 			}
 		}
 
-		internal abstract IList<CustomAttributeData> GetCustomAttributesData();
+		internal abstract IList<CustomAttributeData> GetCustomAttributesData(Type attributeType);
 	}
 }

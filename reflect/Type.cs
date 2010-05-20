@@ -1629,7 +1629,7 @@ namespace IKVM.Reflection
 			return result;
 		}
 
-		internal sealed override IList<CustomAttributeData> GetCustomAttributesData()
+		internal sealed override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
 		{
 			return CustomAttributeData.EmptyList;
 		}
@@ -2211,9 +2211,9 @@ namespace IKVM.Reflection
 			return this;
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData()
+		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
 		{
-			return type.GetCustomAttributesData();
+			return type.GetCustomAttributesData(attributeType);
 		}
 	}
 }

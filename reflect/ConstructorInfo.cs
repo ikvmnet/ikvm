@@ -119,9 +119,9 @@ namespace IKVM.Reflection
 				get { return ctor.Module; }
 			}
 
-			internal override IList<CustomAttributeData> GetCustomAttributesData()
+			internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
 			{
-				return forward.GetCustomAttributesData();
+				return forward.GetCustomAttributesData(attributeType);
 			}
 		}
 	}
@@ -201,9 +201,9 @@ namespace IKVM.Reflection
 			return method;
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData()
+		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
 		{
-			return method.GetCustomAttributesData();
+			return method.GetCustomAttributesData(attributeType);
 		}
 
 		internal override MethodInfo GetMethodOnTypeDefinition()

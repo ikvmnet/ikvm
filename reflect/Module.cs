@@ -385,12 +385,12 @@ namespace IKVM.Reflection
 
 		internal abstract ByteReader GetBlob(int blobIndex);
 
-		internal IList<CustomAttributeData> GetCustomAttributesData()
+		internal IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
 		{
-			return GetCustomAttributes(0x00000001);
+			return GetCustomAttributes(0x00000001, attributeType);
 		}
 
-		internal List<CustomAttributeData> GetCustomAttributes(int metadataToken)
+		internal List<CustomAttributeData> GetCustomAttributes(int metadataToken, Type attributeType)
 		{
 			List<CustomAttributeData> list = new List<CustomAttributeData>();
 			// TODO use binary search?
@@ -399,7 +399,10 @@ namespace IKVM.Reflection
 				if (CustomAttribute.records[i].Parent == metadataToken)
 				{
 					ConstructorInfo constructor = (ConstructorInfo)ResolveMethod(CustomAttribute.records[i].Type);
-					list.Add(new CustomAttributeData(this.Assembly, constructor, GetBlob(CustomAttribute.records[i].Value)));
+					if (attributeType == null || attributeType.IsAssignableFrom(constructor.DeclaringType))
+					{
+						list.Add(new CustomAttributeData(this.Assembly, constructor, GetBlob(CustomAttribute.records[i].Value)));
+					}
 				}
 			}
 			return list;

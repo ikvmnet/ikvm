@@ -215,9 +215,9 @@ namespace IKVM.Reflection
 			return method.GetGenericMethodArgumentCount();
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData()
+		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
 		{
-			return method.GetCustomAttributesData();
+			return method.GetCustomAttributesData(attributeType);
 		}
 
 		internal override MethodInfo GetMethodOnTypeDefinition()
@@ -308,9 +308,9 @@ namespace IKVM.Reflection
 			field.__GetDataFromRVA(data, offset, length);
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData()
+		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
 		{
-			return field.GetCustomAttributesData();
+			return field.GetCustomAttributesData(attributeType);
 		}
 
 		internal override FieldSignature FieldSignature
@@ -501,9 +501,9 @@ namespace IKVM.Reflection
 			get { return property.MetadataToken; }
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData()
+		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
 		{
-			return property.GetCustomAttributesData();
+			return property.GetCustomAttributesData(attributeType);
 		}
 
 		internal override PropertyInfo BindTypeParameters(Type type)
@@ -598,9 +598,9 @@ namespace IKVM.Reflection
 			get { return eventInfo.MetadataToken; }
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData()
+		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
 		{
-			return eventInfo.GetCustomAttributesData();
+			return eventInfo.GetCustomAttributesData(attributeType);
 		}
 
 		internal override EventInfo BindTypeParameters(Type type)

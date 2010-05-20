@@ -416,22 +416,22 @@ namespace IKVM.Reflection
 
 		public static IList<CustomAttributeData> GetCustomAttributes(MemberInfo member)
 		{
-			return member.GetCustomAttributesData();
+			return member.GetCustomAttributesData(null);
 		}
 
 		public static IList<CustomAttributeData> GetCustomAttributes(Assembly assembly)
 		{
-			return assembly.GetCustomAttributesData();
+			return assembly.GetCustomAttributesData(null);
 		}
 
 		public static IList<CustomAttributeData> GetCustomAttributes(Module module)
 		{
-			return module.GetCustomAttributesData();
+			return module.GetCustomAttributesData(null);
 		}
 
 		public static IList<CustomAttributeData> GetCustomAttributes(ParameterInfo parameter)
 		{
-			return parameter.GetCustomAttributesData();
+			return parameter.GetCustomAttributesData(null);
 		}
 
 		public static IList<CustomAttributeData> __GetCustomAttributes(ParameterInfo parameter, Type attributeType, bool inherit)
@@ -453,13 +453,7 @@ namespace IKVM.Reflection
 			bool attribIsInheritable = false;
 			for (; ; )
 			{
-				foreach (CustomAttributeData cad in member.GetCustomAttributesData())
-				{
-					if (cad.Constructor.DeclaringType.Equals(attributeType))
-					{
-						list.Add(cad);
-					}
-				}
+				list.AddRange(member.GetCustomAttributesData(attributeType));
 				if (inherit)
 				{
 					if (!attribIsInheritable && !IsInheritableAttribute(attributeType))

@@ -104,14 +104,16 @@ namespace IKVM.Reflection.Reader
 			throw new InvalidOperationException();
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData()
+		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
 		{
-			List<CustomAttributeData> list = module.GetCustomAttributes(this.MetadataToken);
-			if ((this.Attributes & FieldAttributes.HasFieldMarshal) != 0)
+			List<CustomAttributeData> list = module.GetCustomAttributes(this.MetadataToken, attributeType);
+			if ((this.Attributes & FieldAttributes.HasFieldMarshal) != 0
+				&& (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_MarshalAsAttribute)))
 			{
 				list.Add(MarshalSpec.GetMarshalAsAttribute(module, this.MetadataToken));
 			}
-			if (declaringType.IsExplicitLayout)
+			if (declaringType.IsExplicitLayout
+				&& (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_FieldOffsetAttribute)))
 			{
 				int rid = index + 1;
 				// TODO use binary search?
