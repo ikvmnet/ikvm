@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2009 Jeroen Frijters
+  Copyright (C) 2002-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -485,19 +485,9 @@ namespace IKVM.Internal
 			pb.SetCustomAttribute(cab);
 		}
 
-		internal static bool IsHideFromReflection(MethodInfo mi)
+		internal static bool IsHideFromReflection(MemberInfo mi)
 		{
 			return mi.IsDefined(typeofHideFromReflectionAttribute, false);
-		}
-
-		internal static bool IsHideFromReflection(FieldInfo fi)
-		{
-			return fi.IsDefined(typeofHideFromReflectionAttribute, false);
-		}
-
-		internal static bool IsHideFromReflection(PropertyInfo pi)
-		{
-			return pi.IsDefined(typeofHideFromReflectionAttribute, false);
 		}
 
 		internal static void HideFromJava(TypeBuilder typeBuilder)
@@ -604,32 +594,13 @@ namespace IKVM.Internal
 			return type.IsDefined(typeofExceptionIsUnsafeForMappingAttribute, false);
 		}
 
-		internal static ModifiersAttribute GetModifiersAttribute(Type type)
+		internal static ModifiersAttribute GetModifiersAttribute(MemberInfo member)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-			object[] attr = type.GetCustomAttributes(typeof(ModifiersAttribute), false);
+			object[] attr = member.GetCustomAttributes(typeof(ModifiersAttribute), false);
 			return attr.Length == 1 ? (ModifiersAttribute)attr[0] : null;
 #else
-			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(type, typeofModifiersAttribute, false))
-			{
-				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-				if(args.Count == 2)
-				{
-					return new ModifiersAttribute((Modifiers)args[0].Value, (bool)args[1].Value);
-				}
-				return new ModifiersAttribute((Modifiers)args[0].Value);
-			}
-			return null;
-#endif
-		}
-
-		internal static ModifiersAttribute GetModifiersAttribute(PropertyInfo property)
-		{
-#if !STATIC_COMPILER && !STUB_GENERATOR
-			object[] attr = property.GetCustomAttributes(typeof(ModifiersAttribute), false);
-			return attr.Length == 1 ? (ModifiersAttribute)attr[0] : null;
-#else
-			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(property, typeofModifiersAttribute, false))
+			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(member, typeofModifiersAttribute, false))
 			{
 				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
 				if(args.Count == 2)
@@ -990,43 +961,13 @@ namespace IKVM.Internal
 		}
 #endif  // STATIC_COMPILER
 
-		internal static NameSigAttribute GetNameSig(FieldInfo field)
+		internal static NameSigAttribute GetNameSig(MemberInfo member)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-			object[] attr = field.GetCustomAttributes(typeof(NameSigAttribute), false);
+			object[] attr = member.GetCustomAttributes(typeof(NameSigAttribute), false);
 			return attr.Length == 1 ? (NameSigAttribute)attr[0] : null;
 #else
-			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(field, typeofNameSigAttribute, false))
-			{
-				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-				return new NameSigAttribute((string)args[0].Value, (string)args[1].Value);
-			}
-			return null;
-#endif
-		}
-
-		internal static NameSigAttribute GetNameSig(PropertyInfo property)
-		{
-#if !STATIC_COMPILER && !STUB_GENERATOR
-			object[] attr = property.GetCustomAttributes(typeof(NameSigAttribute), false);
-			return attr.Length == 1 ? (NameSigAttribute)attr[0] : null;
-#else
-			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(property, typeofNameSigAttribute, false))
-			{
-				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-				return new NameSigAttribute((string)args[0].Value, (string)args[1].Value);
-			}
-			return null;
-#endif
-		}
-
-		internal static NameSigAttribute GetNameSig(MethodBase method)
-		{
-#if !STATIC_COMPILER && !STUB_GENERATOR
-			object[] attr = method.GetCustomAttributes(typeof(NameSigAttribute), false);
-			return attr.Length == 1 ? (NameSigAttribute)attr[0] : null;
-#else
-			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(method, typeofNameSigAttribute, false))
+			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(member, typeofNameSigAttribute, false))
 			{
 				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
 				return new NameSigAttribute((string)args[0].Value, (string)args[1].Value);
@@ -1123,43 +1064,13 @@ namespace IKVM.Internal
 #endif
 		}
 
-		internal static SignatureAttribute GetSignature(MethodBase mb)
+		internal static SignatureAttribute GetSignature(MemberInfo member)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
-			object[] attribs = mb.GetCustomAttributes(typeof(SignatureAttribute), false);
+			object[] attribs = member.GetCustomAttributes(typeof(SignatureAttribute), false);
 			return attribs.Length == 1 ? (SignatureAttribute)attribs[0] : null;
 #else
-			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(mb, typeofSignatureAttribute, false))
-			{
-				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-				return new SignatureAttribute((string)args[0].Value);
-			}
-			return null;
-#endif
-		}
-
-		internal static SignatureAttribute GetSignature(Type type)
-		{
-#if !STATIC_COMPILER && !STUB_GENERATOR
-			object[] attribs = type.GetCustomAttributes(typeof(SignatureAttribute), false);
-			return attribs.Length == 1 ? (SignatureAttribute)attribs[0] : null;
-#else
-			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(type, typeofSignatureAttribute, false))
-			{
-				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-				return new SignatureAttribute((string)args[0].Value);
-			}
-			return null;
-#endif
-		}
-
-		internal static SignatureAttribute GetSignature(FieldInfo fi)
-		{
-#if !STATIC_COMPILER && !STUB_GENERATOR
-			object[] attribs = fi.GetCustomAttributes(typeof(SignatureAttribute), false);
-			return attribs.Length == 1 ? (SignatureAttribute)attribs[0] : null;
-#else
-			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(fi, typeofSignatureAttribute, false))
+			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(member, typeofSignatureAttribute, false))
 			{
 				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
 				return new SignatureAttribute((string)args[0].Value);
