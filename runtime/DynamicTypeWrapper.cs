@@ -1425,7 +1425,7 @@ namespace IKVM.Internal
 					Type[] modreq = Type.EmptyTypes;
 					if (fld.IsVolatile)
 					{
-						modreq = new Type[] { JVM.Import(typeof(System.Runtime.CompilerServices.IsVolatile)) };
+						modreq = new Type[] { Types.IsVolatile };
 					}
 					field = typeBuilder.DefineField(fieldName, type, modreq, Type.EmptyTypes, attribs);
 					if (fld.IsTransient)
