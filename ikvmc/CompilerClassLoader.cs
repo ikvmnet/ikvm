@@ -456,15 +456,15 @@ namespace IKVM.Internal
 			TypeWrapper startupType = LoadClassByDottedName("ikvm.runtime.Startup");
 			if(props.Count > 0)
 			{
-				ilgen.Emit(OpCodes.Newobj, JVM.Import(typeof(System.Collections.Hashtable)).GetConstructor(Type.EmptyTypes));
+				ilgen.Emit(OpCodes.Newobj, JVM.Import(typeof(System.Collections.Generic.Dictionary<string, string>)).GetConstructor(Type.EmptyTypes));
 				foreach(KeyValuePair<string, string> kv in props)
 				{
 					ilgen.Emit(OpCodes.Dup);
 					ilgen.Emit(OpCodes.Ldstr, kv.Key);
 					ilgen.Emit(OpCodes.Ldstr, kv.Value);
-					ilgen.Emit(OpCodes.Callvirt, JVM.Import(typeof(System.Collections.Hashtable)).GetMethod("Add"));
+					ilgen.Emit(OpCodes.Callvirt, JVM.Import(typeof(System.Collections.Generic.Dictionary<string, string>)).GetMethod("Add"));
 				}
-				startupType.GetMethodWrapper("setProperties", "(Lcli.System.Collections.Hashtable;)V", false).EmitCall(ilgen);
+				startupType.GetMethodWrapper("setProperties", "(Lcli.System.Collections.IDictionary;)V", false).EmitCall(ilgen);
 			}
 			ilgen.BeginExceptionBlock();
 			startupType.GetMethodWrapper("enterMainThread", "()V", false).EmitCall(ilgen);
