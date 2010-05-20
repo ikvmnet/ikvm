@@ -523,18 +523,15 @@ namespace IKVM.Reflection
 		private static bool IsInheritableAttribute(Type attribute)
 		{
 			Type attributeUsageAttribute = attribute.Module.universe.Import(typeof(AttributeUsageAttribute));
-			foreach (CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(attribute))
+			IList<CustomAttributeData> attr = attribute.GetCustomAttributesData(attributeUsageAttribute);
+			if (attr.Count != 0)
 			{
-				if (cad.Constructor.DeclaringType.Equals(attributeUsageAttribute))
+				foreach (CustomAttributeNamedArgument named in attr[0].NamedArguments)
 				{
-					foreach (CustomAttributeNamedArgument named in cad.NamedArguments)
+					if (named.MemberInfo.Name == "Inherited")
 					{
-						if (named.MemberInfo.Name == "Inherited")
-						{
-							return (bool)named.TypedValue.Value;
-						}
+						return (bool)named.TypedValue.Value;
 					}
-					break;
 				}
 			}
 			return true;
