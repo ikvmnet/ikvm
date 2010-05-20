@@ -26,6 +26,12 @@ using System.Collections.Generic;
 
 namespace IKVM.Reflection
 {
+	public interface ICustomAttributeProvider
+	{
+		bool IsDefined(Type attributeType, bool inherit);
+		IList<CustomAttributeData> __GetCustomAttributes(Type attributeType, bool inherit);
+	}
+
 	static class Empty<T>
 	{
 		internal static readonly T[] Array = new T[0];

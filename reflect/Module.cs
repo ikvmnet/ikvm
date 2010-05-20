@@ -87,7 +87,7 @@ namespace IKVM.Reflection
 		}
 	}
 
-	public abstract class Module
+	public abstract class Module : ICustomAttributeProvider
 	{
 		internal readonly Universe universe;
 		internal readonly ModuleTable ModuleTable = new ModuleTable();
@@ -361,6 +361,11 @@ namespace IKVM.Reflection
 		public bool IsDefined(Type attributeType, bool inherit)
 		{
 			return CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit).Count != 0;
+		}
+
+		public IList<CustomAttributeData> __GetCustomAttributes(Type attributeType, bool inherit)
+		{
+			return CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit);
 		}
 
 		internal Type CanonicalizeType(Type type)

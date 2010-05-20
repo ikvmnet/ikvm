@@ -31,7 +31,7 @@ namespace IKVM.Reflection
 // disable warnings that complain about us having == and != operators without also overriding Equals/GetHashCode,
 // this is intentional because most subtypes use reference equality
 #pragma warning disable 660, 661
-	public abstract class MemberInfo
+	public abstract class MemberInfo : ICustomAttributeProvider
 	{
 		public abstract string Name { get; }
 		public abstract Type DeclaringType { get; }
@@ -50,6 +50,11 @@ namespace IKVM.Reflection
 		public bool IsDefined(Type attributeType, bool inherit)
 		{
 			return CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit).Count != 0;
+		}
+
+		public IList<CustomAttributeData> __GetCustomAttributes(Type attributeType, bool inherit)
+		{
+			return CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit);
 		}
 
 		public static bool operator ==(MemberInfo m1, MemberInfo m2)

@@ -26,7 +26,7 @@ using System.Collections.Generic;
 
 namespace IKVM.Reflection
 {
-	public abstract class Assembly
+	public abstract class Assembly : ICustomAttributeProvider
 	{
 		internal readonly Universe universe;
 
@@ -124,6 +124,11 @@ namespace IKVM.Reflection
 		public bool IsDefined(Type attributeType, bool inherit)
 		{
 			return CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit).Count != 0;
+		}
+
+		public IList<CustomAttributeData> __GetCustomAttributes(Type attributeType, bool inherit)
+		{
+			return CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit);
 		}
 
 		public static string CreateQualifiedName(string assemblyName, string typeName)

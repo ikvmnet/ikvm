@@ -25,7 +25,7 @@ using System.Collections.Generic;
 
 namespace IKVM.Reflection
 {
-	public abstract class ParameterInfo
+	public abstract class ParameterInfo : ICustomAttributeProvider
 	{
 		public sealed override bool Equals(object obj)
 		{
@@ -87,6 +87,11 @@ namespace IKVM.Reflection
 		public bool IsDefined(Type attributeType, bool inherit)
 		{
 			return CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit).Count != 0;
+		}
+
+		public IList<CustomAttributeData> __GetCustomAttributes(Type attributeType, bool inherit)
+		{
+			return CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit);
 		}
 
 		internal virtual IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
