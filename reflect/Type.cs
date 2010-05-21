@@ -1302,9 +1302,19 @@ namespace IKVM.Reflection
 			{
 				return false;
 			}
-			else if (this.IsArray && type.IsArray && this.GetArrayRank() == type.GetArrayRank())
+			else if (this.IsArray && type.IsArray)
 			{
-				return GetElementType().IsAssignableFrom(type.GetElementType());
+				if (this.GetArrayRank() != type.GetArrayRank())
+				{
+					return false;
+				}
+				else if (this.__IsVector && !type.__IsVector)
+				{
+					return false;
+				}
+				Type e1 = this.GetElementType();
+				Type e2 = type.GetElementType();
+				return e1.IsValueType == e2.IsValueType && e1.IsAssignableFrom(e2);
 			}
 			else if (this.IsSealed)
 			{
@@ -1314,9 +1324,13 @@ namespace IKVM.Reflection
 			{
 				return Array.IndexOf(type.GetInterfaces(), this) != -1;
 			}
-			else if (type.IsInterface || type.IsPointer)
+			else if (type.IsInterface)
 			{
 				return this == this.Module.universe.System_Object;
+			}
+			else if (type.IsPointer)
+			{
+				return this == this.Module.universe.System_Object || this == this.Module.universe.System_ValueType;
 			}
 			else
 			{
