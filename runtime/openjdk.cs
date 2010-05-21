@@ -2520,6 +2520,7 @@ namespace IKVM.NativeCode.java
 			public static object[] getEnclosingMethod0(object thisClass)
 			{
 				TypeWrapper tw = TypeWrapper.FromClass(thisClass);
+				tw.Finish();
 				string[] enc = tw.GetEnclosingMethod();
 				if (enc == null)
 				{
@@ -2626,12 +2627,9 @@ namespace IKVM.NativeCode.java
 
 			public static string getGenericSignature(object thisClass)
 			{
-				string sig = TypeWrapper.FromClass(thisClass).GetGenericSignature();
-				if (sig == null)
-				{
-					return null;
-				}
-				return sig.Replace('.', '/');
+				TypeWrapper tw = TypeWrapper.FromClass(thisClass);
+				tw.Finish();
+				return tw.GetGenericSignature();
 			}
 
 			internal static object AnnotationsToMap(object[] objAnn)
