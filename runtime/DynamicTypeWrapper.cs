@@ -3116,10 +3116,10 @@ namespace IKVM.Internal
 
 		private sealed class Metadata
 		{
-			private string[] genericMetaData;
+			private string[][] genericMetaData;
 			private object[][] annotations;
 
-			private Metadata(string[] genericMetaData, object[][] annotations)
+			private Metadata(string[][] genericMetaData, object[][] annotations)
 			{
 				this.genericMetaData = genericMetaData;
 				this.annotations = annotations;
@@ -3131,7 +3131,7 @@ namespace IKVM.Internal
 				{
 					return null;
 				}
-				string[] genericMetaData = null;
+				string[][] genericMetaData = null;
 				object[][] annotations = null;
 				for (int i = 0; i < classFile.Methods.Length; i++)
 				{
@@ -3139,9 +3139,13 @@ namespace IKVM.Internal
 					{
 						if (genericMetaData == null)
 						{
-							genericMetaData = new string[classFile.Methods.Length + classFile.Fields.Length + 4];
+							genericMetaData = new string[4][];
 						}
-						genericMetaData[i + 4] = classFile.Methods[i].GenericSignature;
+						if (genericMetaData[0] == null)
+						{
+							genericMetaData[0] = new string[classFile.Methods.Length];
+						}
+						genericMetaData[0][i] = classFile.Methods[i].GenericSignature;
 					}
 					if (classFile.Methods[i].Annotations != null)
 					{
@@ -3186,9 +3190,13 @@ namespace IKVM.Internal
 					{
 						if (genericMetaData == null)
 						{
-							genericMetaData = new string[classFile.Methods.Length + classFile.Fields.Length + 4];
+							genericMetaData = new string[4][];
 						}
-						genericMetaData[i + 4 + classFile.Methods.Length] = classFile.Fields[i].GenericSignature;
+						if (genericMetaData[1] == null)
+						{
+							genericMetaData[1] = new string[classFile.Fields.Length];
+						}
+						genericMetaData[1][i] = classFile.Fields[i].GenericSignature;
 					}
 					if (classFile.Fields[i].Annotations != null)
 					{
@@ -3207,19 +3215,17 @@ namespace IKVM.Internal
 				{
 					if (genericMetaData == null)
 					{
-						genericMetaData = new string[classFile.Methods.Length + classFile.Fields.Length + 4];
+						genericMetaData = new string[4][];
 					}
-					genericMetaData[0] = classFile.EnclosingMethod[0];
-					genericMetaData[1] = classFile.EnclosingMethod[1];
-					genericMetaData[2] = classFile.EnclosingMethod[2];
+					genericMetaData[2] = classFile.EnclosingMethod;
 				}
 				if (classFile.GenericSignature != null)
 				{
 					if (genericMetaData == null)
 					{
-						genericMetaData = new string[classFile.Methods.Length + classFile.Fields.Length + 4];
+						genericMetaData = new string[4][];
 					}
-					genericMetaData[3] = classFile.GenericSignature;
+					genericMetaData[3] = new string[] { classFile.GenericSignature };
 				}
 				if (classFile.Annotations != null)
 				{
@@ -3238,37 +3244,36 @@ namespace IKVM.Internal
 
 			internal static string GetGenericSignature(Metadata m)
 			{
-				if (m != null && m.genericMetaData != null)
+				if (m != null && m.genericMetaData != null && m.genericMetaData[3] != null)
 				{
-					return m.genericMetaData[3];
+					return m.genericMetaData[3][0];
 				}
 				return null;
 			}
 
 			internal static string[] GetEnclosingMethod(Metadata m)
 			{
-				if (m != null && m.genericMetaData != null && m.genericMetaData[0] != null)
+				if (m != null && m.genericMetaData != null)
 				{
-					return new string[] { m.genericMetaData[0], m.genericMetaData[1], m.genericMetaData[2] };
+					return m.genericMetaData[2];
 				}
 				return null;
 			}
 
 			internal static string GetGenericMethodSignature(Metadata m, int index)
 			{
-				if (m != null && m.genericMetaData != null)
+				if (m != null && m.genericMetaData != null && m.genericMetaData[0] != null)
 				{
-					return m.genericMetaData[index + 4];
+					return m.genericMetaData[0][index];
 				}
 				return null;
 			}
 
-			// note that the caller is responsible for computing the correct index (field index + method count)
 			internal static string GetGenericFieldSignature(Metadata m, int index)
 			{
-				if (m != null && m.genericMetaData != null)
+				if (m != null && m.genericMetaData != null && m.genericMetaData[1] != null)
 				{
-					return m.genericMetaData[index + 4];
+					return m.genericMetaData[1][index];
 				}
 				return null;
 			}
@@ -3430,7 +3435,6 @@ namespace IKVM.Internal
 				return Metadata.GetGenericMethodSignature(metadata, index);
 			}
 
-			// note that the caller is responsible for computing the correct index (field index + method count)
 			internal override string GetGenericFieldSignature(int index)
 			{
 				return Metadata.GetGenericFieldSignature(metadata, index);
@@ -5364,7 +5368,7 @@ namespace IKVM.Internal
 			{
 				if (fields[i] == fw)
 				{
-					return impl.GetGenericFieldSignature(i + GetMethods().Length);
+					return impl.GetGenericFieldSignature(i);
 				}
 			}
 			Debug.Fail("Unreachable code");
