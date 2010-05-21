@@ -321,7 +321,8 @@ namespace IKVM.Internal
 						&& !f.IsPublic
 						&& !f.IsFinal
 						&& !baseClasses.ContainsKey(f.Name)
-						&& !options.targetIsModule)
+						&& !options.targetIsModule
+						&& options.sharedclassloader == null)
 					{
 						f.SetEffectivelyFinal();
 					}
