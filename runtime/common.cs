@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
+  Copyright (C) 2002-2007, 2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -249,6 +249,11 @@ namespace IKVM.NativeCode.ikvm.runtime
 			TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
 			AssemblyClassLoader_ acl = wrapper.GetClassLoader() as AssemblyClassLoader_;
 			return acl != null ? acl.GetAssembly(wrapper) : null;
+		}
+
+		public static bool IsDynamic(object clazz)
+		{
+			return TypeWrapper.FromClass(clazz) is DynamicTypeWrapper;
 		}
 
 		// NOTE the array may contain duplicates!

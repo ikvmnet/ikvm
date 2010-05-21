@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2006, 2007 Jeroen Frijters
+  Copyright (C) 2006, 2007, 2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -57,7 +57,6 @@ public final class AssemblyClassLoader extends ClassLoader
     public URL getResource(String name)
     {
         // for consistency with class loading, we change the delegation order for .class files
-        // (this also helps make ikvmstub work reliably)
         if(name.endsWith(".class"))
         {
             URL url = getResource(this, assembly, name);
@@ -122,7 +121,7 @@ public final class AssemblyClassLoader extends ClassLoader
             catch(LinkageError _)
             {
             }
-            if(c != null)
+            if(c != null && !IsDynamic(c))
             {
 		assembly = GetAssemblyFromClass(c);
                 if(assembly != null)
@@ -151,6 +150,7 @@ public final class AssemblyClassLoader extends ClassLoader
     private static native int GetGenericClassLoaderId(ClassLoader classLoader);
     private static native String GetGenericClassLoaderName(Object classLoader);
     private static native Assembly GetAssemblyFromClass(Class clazz);
+    private static native boolean IsDynamic(Class clazz);
     // also used by VMClassLoader
     @Internal
     public static native String[] GetPackages(Assembly assembly);
