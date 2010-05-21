@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2009 Jeroen Frijters
+  Copyright (C) 2002-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -2466,7 +2466,17 @@ namespace IKVM.Internal
 						// if start_pc, end_pc or handler_pc is invalid (i.e. doesn't point to the start of an instruction),
 						// the index will be -1 and this will be handled by the verifier
 						exception_table[i].startIndex = pcIndexMap[start_pc];
-						exception_table[i].endIndex = pcIndexMap[end_pc];
+						if (end_pc == code_length)
+						{
+							// it is legal for end_pc to point to just after the last instruction,
+							// but since there isn't an entry in our pcIndexMap for that, we have
+							// a special case for this
+							exception_table[i].endIndex = instructionIndex - 1;
+						}
+						else
+						{
+							exception_table[i].endIndex = pcIndexMap[end_pc];
+						}
 						exception_table[i].handlerIndex = pcIndexMap[handler_pc];
 					}
 					ushort attributes_count = br.ReadUInt16();
