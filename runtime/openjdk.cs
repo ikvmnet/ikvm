@@ -6062,6 +6062,9 @@ namespace IKVM.NativeCode.sun.reflect
 			private static readonly MethodInfo doubleValue;
 			internal static readonly ConstructorInfo invocationTargetExceptionCtor;
 			internal static readonly ConstructorInfo illegalArgumentExceptionCtor;
+			internal static readonly MethodInfo get_TargetSite;
+			internal static readonly MethodInfo GetCurrentMethod;
+
 			private delegate object Invoker(object obj, object[] args, global::ikvm.@internal.CallerID callerID);
 			private Invoker invoker;
 
@@ -6087,6 +6090,8 @@ namespace IKVM.NativeCode.sun.reflect
 
 				invocationTargetExceptionCtor = typeof(jlrInvocationTargetException).GetConstructor(new Type[] { typeof(Exception) });
 				illegalArgumentExceptionCtor = typeof(jlIllegalArgumentException).GetConstructor(Type.EmptyTypes);
+				get_TargetSite = typeof(Exception).GetMethod("get_TargetSite");
+				GetCurrentMethod = typeof(MethodBase).GetMethod("GetCurrentMethod");
 			}
 
 			private sealed class RunClassInit
@@ -6211,9 +6216,16 @@ namespace IKVM.NativeCode.sun.reflect
 				BoxReturnValue(ilgen, mw.ReturnType);
 				ilgen.Emit(OpCodes.Stloc, ret);
 				ilgen.BeginCatchBlock(typeof(Exception));
+				ilgen.Emit(OpCodes.Dup);
+				ilgen.Emit(OpCodes.Callvirt, get_TargetSite);
+				ilgen.Emit(OpCodes.Call, GetCurrentMethod);
+				ilgen.Emit(OpCodes.Ceq);
+				CodeEmitterLabel label = ilgen.DefineLabel();
+				ilgen.Emit(OpCodes.Brtrue_S, label);
 				ilgen.Emit(OpCodes.Ldc_I4_1);
 				ilgen.Emit(OpCodes.Call, Compiler.mapExceptionFastMethod);
 				ilgen.Emit(OpCodes.Newobj, invocationTargetExceptionCtor);
+				ilgen.MarkLabel(label);
 				ilgen.Emit(OpCodes.Throw);
 				ilgen.EndExceptionBlock();
 
@@ -6496,9 +6508,16 @@ namespace IKVM.NativeCode.sun.reflect
 				mw.EmitNewobj(ilgen);
 				ilgen.Emit(OpCodes.Stloc, ret);
 				ilgen.BeginCatchBlock(typeof(Exception));
+				ilgen.Emit(OpCodes.Dup);
+				ilgen.Emit(OpCodes.Callvirt, FastMethodAccessorImpl.get_TargetSite);
+				ilgen.Emit(OpCodes.Call, FastMethodAccessorImpl.GetCurrentMethod);
+				ilgen.Emit(OpCodes.Ceq);
+				CodeEmitterLabel label = ilgen.DefineLabel();
+				ilgen.Emit(OpCodes.Brtrue_S, label);
 				ilgen.Emit(OpCodes.Ldc_I4_1);
 				ilgen.Emit(OpCodes.Call, Compiler.mapExceptionFastMethod);
 				ilgen.Emit(OpCodes.Newobj, FastMethodAccessorImpl.invocationTargetExceptionCtor);
+				ilgen.MarkLabel(label);
 				ilgen.Emit(OpCodes.Throw);
 				ilgen.EndExceptionBlock();
 
