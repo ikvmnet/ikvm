@@ -6216,12 +6216,23 @@ namespace IKVM.NativeCode.sun.reflect
 				BoxReturnValue(ilgen, mw.ReturnType);
 				ilgen.Emit(OpCodes.Stloc, ret);
 				ilgen.BeginCatchBlock(typeof(Exception));
-				ilgen.Emit(OpCodes.Dup);
-				ilgen.Emit(OpCodes.Callvirt, get_TargetSite);
-				ilgen.Emit(OpCodes.Call, GetCurrentMethod);
-				ilgen.Emit(OpCodes.Ceq);
 				CodeEmitterLabel label = ilgen.DefineLabel();
-				ilgen.Emit(OpCodes.Brtrue_S, label);
+				if (IntPtr.Size == 8 && nonvirtual)
+				{
+					// This is a workaround for the x64 JIT, which is completely broken as usual.
+					// When MethodBase.GetCurrentMethod() is used in a dynamic method that isn't verifiable,
+					// we get an access violation at JIT time. When we're doing a nonvirtual call,
+					// the method is not verifiable, so we disable this check (which, at worst, results
+					// in any exceptions thrown at the call site being incorrectly wrapped in an InvocationTargetException).
+				}
+				else
+				{
+					ilgen.Emit(OpCodes.Dup);
+					ilgen.Emit(OpCodes.Callvirt, get_TargetSite);
+					ilgen.Emit(OpCodes.Call, GetCurrentMethod);
+					ilgen.Emit(OpCodes.Ceq);
+					ilgen.Emit(OpCodes.Brtrue_S, label);
+				}
 				ilgen.Emit(OpCodes.Ldc_I4_1);
 				ilgen.Emit(OpCodes.Call, Compiler.mapExceptionFastMethod);
 				ilgen.Emit(OpCodes.Newobj, invocationTargetExceptionCtor);
