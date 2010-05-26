@@ -6281,6 +6281,7 @@ namespace IKVM.NativeCode.sun.reflect
 					ilgen.Emit(OpCodes.Isinst, typeof(jlByte));
 					CodeEmitterLabel next = ilgen.DefineLabel();
 					ilgen.Emit(OpCodes.Brfalse_S, next);
+					ilgen.Emit(OpCodes.Castclass, typeof(jlByte));
 					ilgen.Emit(OpCodes.Call, byteValue);
 					ilgen.Emit(OpCodes.Conv_I1);
 					Expand(ilgen, type);
@@ -6298,6 +6299,7 @@ namespace IKVM.NativeCode.sun.reflect
 						ilgen.Emit(OpCodes.Isinst, typeof(jlShort));
 						next = ilgen.DefineLabel();
 						ilgen.Emit(OpCodes.Brfalse_S, next);
+						ilgen.Emit(OpCodes.Castclass, typeof(jlShort));
 						ilgen.Emit(OpCodes.Call, shortValue);
 						Expand(ilgen, type);
 						ilgen.Emit(OpCodes.Br_S, done);
@@ -6306,6 +6308,7 @@ namespace IKVM.NativeCode.sun.reflect
 						ilgen.Emit(OpCodes.Isinst, typeof(jlCharacter));
 						next = ilgen.DefineLabel();
 						ilgen.Emit(OpCodes.Brfalse_S, next);
+						ilgen.Emit(OpCodes.Castclass, typeof(jlCharacter));
 						ilgen.Emit(OpCodes.Call, charValue);
 						Expand(ilgen, type);
 						ilgen.Emit(OpCodes.Br_S, done);
@@ -6321,6 +6324,7 @@ namespace IKVM.NativeCode.sun.reflect
 							ilgen.Emit(OpCodes.Isinst, typeof(jlInteger));
 							next = ilgen.DefineLabel();
 							ilgen.Emit(OpCodes.Brfalse_S, next);
+							ilgen.Emit(OpCodes.Castclass, typeof(jlInteger));
 							ilgen.Emit(OpCodes.Call, intValue);
 							Expand(ilgen, type);
 							ilgen.Emit(OpCodes.Br_S, done);
@@ -6336,6 +6340,7 @@ namespace IKVM.NativeCode.sun.reflect
 								ilgen.Emit(OpCodes.Isinst, typeof(jlLong));
 								next = ilgen.DefineLabel();
 								ilgen.Emit(OpCodes.Brfalse_S, next);
+								ilgen.Emit(OpCodes.Castclass, typeof(jlLong));
 								ilgen.Emit(OpCodes.Call, longValue);
 								Expand(ilgen, type);
 								ilgen.Emit(OpCodes.Br_S, done);
@@ -6351,6 +6356,7 @@ namespace IKVM.NativeCode.sun.reflect
 									ilgen.Emit(OpCodes.Isinst, typeof(jlFloat));
 									next = ilgen.DefineLabel();
 									ilgen.Emit(OpCodes.Brfalse_S, next);
+									ilgen.Emit(OpCodes.Castclass, typeof(jlFloat));
 									ilgen.Emit(OpCodes.Call, floatValue);
 									ilgen.Emit(OpCodes.Br_S, done);
 									ilgen.MarkLabel(next);
