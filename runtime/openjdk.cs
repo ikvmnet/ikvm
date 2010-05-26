@@ -6432,7 +6432,15 @@ namespace IKVM.NativeCode.sun.reflect
 			[IKVM.Attributes.HideFromJava]
 			public object invoke(object obj, object[] args, global::ikvm.@internal.CallerID callerID)
 			{
-				return invoker(obj, args, callerID);
+				try
+				{
+					return invoker(obj, args, callerID);
+				}
+				catch (MethodAccessException x)
+				{
+					// this can happen if we're calling a non-public method and the call stack doesn't have ReflectionPermission.MemberAccess
+					throw new jlIllegalAccessException().initCause(x);
+				}
 			}
 		}
 
@@ -6546,7 +6554,15 @@ namespace IKVM.NativeCode.sun.reflect
 			[IKVM.Attributes.HideFromJava]
 			public object newInstance(object[] args)
 			{
-				return invoker(args);
+				try
+				{
+					return invoker(args);
+				}
+				catch (MethodAccessException x)
+				{
+					// this can happen if we're calling a non-public method and the call stack doesn't have ReflectionPermission.MemberAccess
+					throw new jlIllegalAccessException().initCause(x);
+				}
 			}
 		}
 
@@ -6591,7 +6607,15 @@ namespace IKVM.NativeCode.sun.reflect
 			[IKVM.Attributes.HideFromJava]
 			public object newInstance(object[] args)
 			{
-				return invoker();
+				try
+				{
+					return invoker();
+				}
+				catch (MethodAccessException x)
+				{
+					// this can happen if we're calling a non-public method and the call stack doesn't have ReflectionPermission.MemberAccess
+					throw new jlIllegalAccessException().initCause(x);
+				}
 			}
 		}
 
