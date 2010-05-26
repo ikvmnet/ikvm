@@ -7004,12 +7004,26 @@ namespace IKVM.NativeCode.sun.reflect
 
 				public sealed override byte getByte(object obj)
 				{
-					return getter(obj, this);
+					try
+					{
+						return getter(obj, this);
+					}
+					catch (FieldAccessException x)
+					{
+						throw new jlIllegalAccessException().initCause(x);
+					}
 				}
 
 				public sealed override void setByte(object obj, byte value)
 				{
-					setter(obj, value, this);
+					try
+					{
+						setter(obj, value, this);
+					}
+					catch (FieldAccessException x)
+					{
+						throw new jlIllegalAccessException().initCause(x);
+					}
 				}
 
 				protected sealed override object JavaBox(byte value)
@@ -7041,12 +7055,26 @@ namespace IKVM.NativeCode.sun.reflect
 
 				public sealed override bool getBoolean(object obj)
 				{
-					return getter(obj, this);
+					try
+					{
+						return getter(obj, this);
+					}
+					catch (FieldAccessException x)
+					{
+						throw new jlIllegalAccessException().initCause(x);
+					}
 				}
 
 				public sealed override void setBoolean(object obj, bool value)
 				{
-					setter(obj, value, this);
+					try
+					{
+						setter(obj, value, this);
+					}
+					catch (FieldAccessException x)
+					{
+						throw new jlIllegalAccessException().initCause(x);
+					}
 				}
 
 				protected sealed override object JavaBox(bool value)
@@ -7097,12 +7125,26 @@ namespace IKVM.NativeCode.sun.reflect
 
 				public sealed override char getChar(object obj)
 				{
-					return getter(obj, this);
+					try
+					{
+						return getter(obj, this);
+					}
+					catch (FieldAccessException x)
+					{
+						throw new jlIllegalAccessException().initCause(x);
+					}
 				}
 
 				public sealed override void setChar(object obj, char value)
 				{
-					setter(obj, value, this);
+					try
+					{
+						setter(obj, value, this);
+					}
+					catch (FieldAccessException x)
+					{
+						throw new jlIllegalAccessException().initCause(x);
+					}
 				}
 
 				protected sealed override object JavaBox(char value)
@@ -7159,12 +7201,26 @@ namespace IKVM.NativeCode.sun.reflect
 
 				public sealed override short getShort(object obj)
 				{
-					return getter(obj, this);
+					try
+					{
+						return getter(obj, this);
+					}
+					catch (FieldAccessException x)
+					{
+						throw new jlIllegalAccessException().initCause(x);
+					}
 				}
 
 				public sealed override void setShort(object obj, short value)
 				{
-					setter(obj, value, this);
+					try
+					{
+						setter(obj, value, this);
+					}
+					catch (FieldAccessException x)
+					{
+						throw new jlIllegalAccessException().initCause(x);
+					}
 				}
 
 				protected sealed override object JavaBox(short value)
@@ -7229,12 +7285,26 @@ namespace IKVM.NativeCode.sun.reflect
 
 				public sealed override int getInt(object obj)
 				{
-					return getter(obj, this);
+					try
+					{
+						return getter(obj, this);
+					}
+					catch (FieldAccessException x)
+					{
+						throw new jlIllegalAccessException().initCause(x);
+					}
 				}
 
 				public sealed override void setInt(object obj, int value)
 				{
-					setter(obj, value, this);
+					try
+					{
+						setter(obj, value, this);
+					}
+					catch (FieldAccessException x)
+					{
+						throw new jlIllegalAccessException().initCause(x);
+					}
 				}
 
 				protected sealed override object JavaBox(int value)
@@ -7301,12 +7371,26 @@ namespace IKVM.NativeCode.sun.reflect
 
 				public sealed override float getFloat(object obj)
 				{
-					return getter(obj, this);
+					try
+					{
+						return getter(obj, this);
+					}
+					catch (FieldAccessException x)
+					{
+						throw new jlIllegalAccessException().initCause(x);
+					}
 				}
 
 				public sealed override void setFloat(object obj, float value)
 				{
-					setter(obj, value, this);
+					try
+					{
+						setter(obj, value, this);
+					}
+					catch (FieldAccessException x)
+					{
+						throw new jlIllegalAccessException().initCause(x);
+					}
 				}
 
 				protected sealed override object JavaBox(float value)
@@ -7372,12 +7456,26 @@ namespace IKVM.NativeCode.sun.reflect
 
 				public sealed override long getLong(object obj)
 				{
-					return getter(obj, this);
+					try
+					{
+						return getter(obj, this);
+					}
+					catch (FieldAccessException x)
+					{
+						throw new jlIllegalAccessException().initCause(x);
+					}
 				}
 
 				public sealed override void setLong(object obj, long value)
 				{
-					setter(obj, value, this);
+					try
+					{
+						setter(obj, value, this);
+					}
+					catch (FieldAccessException x)
+					{
+						throw new jlIllegalAccessException().initCause(x);
+					}
 				}
 
 				protected sealed override object JavaBox(long value)
@@ -7445,12 +7543,26 @@ namespace IKVM.NativeCode.sun.reflect
 
 				public sealed override double getDouble(object obj)
 				{
-					return getter(obj, this);
+					try
+					{
+						return getter(obj, this);
+					}
+					catch (FieldAccessException x)
+					{
+						throw new jlIllegalAccessException().initCause(x);
+					}
 				}
 
 				public sealed override void setDouble(object obj, double value)
 				{
-					setter(obj, value, this);
+					try
+					{
+						setter(obj, value, this);
+					}
+					catch (FieldAccessException x)
+					{
+						throw new jlIllegalAccessException().initCause(x);
+					}
 				}
 
 				protected sealed override object JavaBox(double value)
@@ -7476,12 +7588,26 @@ namespace IKVM.NativeCode.sun.reflect
 
 				public sealed override object get(object obj)
 				{
-					return getter(obj, this);
+					try
+					{
+						return getter(obj, this);
+					}
+					catch (FieldAccessException x)
+					{
+						throw new jlIllegalAccessException().initCause(x);
+					}
 				}
 
 				public sealed override void set(object obj, object value)
 				{
-					setter(obj, value, this);
+					try
+					{
+						setter(obj, value, this);
+					}
+					catch (FieldAccessException x)
+					{
+						throw new jlIllegalAccessException().initCause(x);
+					}
 				}
 
 				protected sealed override object JavaBox(object value)
