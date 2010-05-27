@@ -22,8 +22,11 @@
   
 */
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Diagnostics;
+using System.Runtime.Serialization;
+using System.Security;
 using IKVM.Attributes;
 using IKVM.Internal;
 using IDictionary = System.Collections.IDictionary;
@@ -33,7 +36,6 @@ using ObjectOutputStream = java.io.ObjectOutputStream;
 using StackTraceElement = java.lang.StackTraceElement;
 #if !FIRST_PASS
 using Throwable = java.lang.Throwable;
-using System.Collections.Generic;
 using ExceptionInfoHelper = java.lang.ExceptionHelper.ExceptionInfoHelper;
 #endif
 
@@ -41,13 +43,37 @@ namespace IKVM.NativeCode.java.lang
 {
 	static class ExceptionHelper
 	{
-		public static Exception MapExceptionImpl(Exception x)
+		private static readonly Dictionary<string, string> failedTypes = new Dictionary<string, string>();
+		private static readonly Key EXCEPTION_DATA_KEY = new Key();
+		private static readonly Exception NOT_REMAPPED = new Exception();
+#if !FIRST_PASS
+		private static readonly global::ikvm.@internal.WeakIdentityMap exceptions = new global::ikvm.@internal.WeakIdentityMap();
+
+		static ExceptionHelper()
 		{
-#if FIRST_PASS
-			return null;
-#else
-			return global::java.lang.Throwable.__mapImpl(x);
+			// make sure the exceptions map continues to work during AppDomain finalization
+			GC.SuppressFinalize(exceptions);
+		}
 #endif
+
+		[Serializable]
+		private sealed class Key : ISerializable
+		{
+			[Serializable]
+			private sealed class Helper : IObjectReference
+			{
+				[SecurityCritical]
+				public Object GetRealObject(StreamingContext context)
+				{
+					return EXCEPTION_DATA_KEY;
+				}
+			}
+
+			[SecurityCritical]
+			public void GetObjectData(SerializationInfo info, StreamingContext context)
+			{
+				info.SetType(typeof(Helper));
+			}
 		}
 
 		public static string SafeGetEnvironmentVariable(string name)
@@ -387,7 +413,7 @@ namespace IKVM.NativeCode.java.lang
 				{
 					lock (data)
 					{
-						eih = (ExceptionInfoHelper)data[global::java.lang.ExceptionHelper.EXCEPTION_DATA_KEY];
+						eih = (ExceptionInfoHelper)data[EXCEPTION_DATA_KEY];
 					}
 				}
 				if (eih == null)
@@ -426,7 +452,7 @@ namespace IKVM.NativeCode.java.lang
 			{
 				lock (data)
 				{
-					data[global::java.lang.ExceptionHelper.EXCEPTION_DATA_KEY] = eih;
+					data[EXCEPTION_DATA_KEY] = eih;
 				}
 			}
 #endif
@@ -444,7 +470,7 @@ namespace IKVM.NativeCode.java.lang
 				{
 					lock (data)
 					{
-						data[global::java.lang.ExceptionHelper.EXCEPTION_DATA_KEY] = eih;
+						data[EXCEPTION_DATA_KEY] = eih;
 					}
 				}
 			}
@@ -455,7 +481,7 @@ namespace IKVM.NativeCode.java.lang
 		internal static void FixateException(Exception x)
 		{
 #if !FIRST_PASS
-			global::java.lang.ExceptionHelper.exceptions.put(x, global::java.lang.ExceptionHelper.NOT_REMAPPED);
+			exceptions.put(x, NOT_REMAPPED);
 #endif
 		}
 
@@ -470,7 +496,7 @@ namespace IKVM.NativeCode.java.lang
 				Exception org = Interlocked.Exchange(ref ((Throwable)x).original, null);
 				if (org != null)
 				{
-					global::java.lang.ExceptionHelper.exceptions.put(org, x);
+					exceptions.put(org, x);
 					x = org;
 				}
 			}
@@ -484,8 +510,142 @@ namespace IKVM.NativeCode.java.lang
 #if FIRST_PASS
 			return null;
 #else
-			return global::java.lang.ExceptionHelper.MapException(x, null, remap);
+			return MapException(x, null, remap);
 #endif
 		}
+
+		private static Exception MapTypeInitializeException(TypeInitializationException t, Type handler)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			bool wrapped = false;
+			Exception r = MapExceptionFast(t.InnerException, true);
+			if (!(r is global::java.lang.Error))
+			{
+				r = new global::java.lang.ExceptionInInitializerError(r);
+				wrapped = true;
+			}
+			string type = t.TypeName;
+			if (failedTypes.ContainsKey(type))
+			{
+				r = new global::java.lang.NoClassDefFoundError(type).initCause(r);
+				wrapped = true;
+			}
+			if (handler != null && !handler.IsInstanceOfType(r))
+			{
+				return null;
+			}
+			failedTypes[type] = type;
+			if (wrapped)
+			{
+				// transplant the stack trace
+				((Throwable)r).setStackTrace(new ExceptionInfoHelper(t, true).get_StackTrace(t));
+			}
+			return r;
+#endif
+		}
+
+		private static bool isInstanceOfType(Exception t, Type type, bool remap)
+		{
+#if FIRST_PASS
+			return false;
+#else
+			if (!remap && type == typeof(Exception))
+			{
+				return !(t is Throwable);
+			}
+			return type.IsInstanceOfType(t);
+#endif
+		}
+
+		internal static Exception MapException(Exception x, Type handler, bool remap)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			Exception org = x;
+			bool nonJavaException = !(x is Throwable);
+			if (nonJavaException && remap)
+			{
+				if (x is TypeInitializationException)
+				{
+					return MapTypeInitializeException((TypeInitializationException)x, handler);
+				}
+				object obj = exceptions.get(x);
+				Exception remapped = (Exception)obj;
+				if (remapped == null)
+				{
+					remapped = Throwable.__mapImpl(x);
+					if (remapped == x)
+					{
+						exceptions.put(x, NOT_REMAPPED);
+					}
+					else
+					{
+						exceptions.put(x, remapped);
+						x = remapped;
+					}
+				}
+				else if (remapped != NOT_REMAPPED)
+				{
+					x = remapped;
+				}
+			}
+
+			if (handler == null || isInstanceOfType(x, handler, remap))
+			{
+				if (!(x is Throwable))
+				{
+					IDictionary data = x.Data;
+					if (data != null && !data.IsReadOnly)
+					{
+						lock (data)
+						{
+							if (!data.Contains(EXCEPTION_DATA_KEY))
+							{
+								data.Add(EXCEPTION_DATA_KEY, new ExceptionInfoHelper(x, true));
+							}
+						}
+					}
+				}
+				else
+				{
+					if (needStackTraceInfo((Throwable)x))
+					{
+						StackTrace tracePart1 = new StackTrace(org, true);
+						StackTrace tracePart2 = new StackTrace(true);
+						setStackTraceInfo((Throwable)x, tracePart1, tracePart2);
+					}
+				}
+
+				if (nonJavaException && !remap)
+				{
+					exceptions.put(x, NOT_REMAPPED);
+				}
+
+				if (x != org)
+				{
+					((Throwable)x).original = org;
+					exceptions.remove(org);
+				}
+				return x;
+			}
+			return null;
+#endif
+		}
+
+#if !FIRST_PASS
+	    private static bool needStackTraceInfo(Throwable t)
+		{
+			return t.tracePart1 == null && t.tracePart2 == null && t.stackTrace == null;
+		}
+
+		private static void setStackTraceInfo(Throwable t, StackTrace part1, StackTrace part2)
+		{
+			t.tracePart1 = part1;
+			t.tracePart2 = part2;
+		}
+#endif
 	}
 }

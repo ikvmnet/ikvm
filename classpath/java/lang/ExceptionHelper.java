@@ -28,49 +28,15 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.util.ArrayList;
-import cli.System.Runtime.Serialization.IObjectReference;
-import cli.System.Runtime.Serialization.ISerializable;
 import cli.System.Runtime.Serialization.OnSerializingAttribute;
 import cli.System.Runtime.Serialization.SerializationInfo;
 import cli.System.Runtime.Serialization.StreamingContext;
 
-@ikvm.lang.Internal
-public final class ExceptionHelper
+final class ExceptionHelper
 {
-    static final Key EXCEPTION_DATA_KEY = new Key();
-    static final ikvm.internal.WeakIdentityMap exceptions = new ikvm.internal.WeakIdentityMap();
     private static final boolean cleanStackTrace = SafeGetEnvironmentVariable("IKVM_DISABLE_STACKTRACE_CLEANING") == null;
     private static final cli.System.Type System_Reflection_MethodBase = ikvm.runtime.Util.getInstanceTypeFromClass(cli.System.Reflection.MethodBase.class);
     private static final cli.System.Type System_Exception = ikvm.runtime.Util.getInstanceTypeFromClass(cli.System.Exception.class);
-    // we use Activator.CreateInstance to prevent the exception from being added to the exceptions map
-    static final Throwable NOT_REMAPPED = (Throwable)cli.System.Activator.CreateInstance(System_Exception);
-    private static final java.util.Hashtable failedTypes = new java.util.Hashtable();
-
-    static
-    {
-        // make sure the exceptions map continues to work during AppDomain finalization
-        cli.System.GC.SuppressFinalize(exceptions);
-    }
-    
-    @cli.System.SerializableAttribute.Annotation
-    private static final class Key implements ISerializable
-    {
-        @cli.System.SerializableAttribute.Annotation
-        private static final class Helper implements IObjectReference
-        {
-            @cli.System.Security.SecurityCriticalAttribute.Annotation
-            public Object GetRealObject(StreamingContext context)
-            {
-                return EXCEPTION_DATA_KEY;
-            }
-        }
-
-        @cli.System.Security.SecurityCriticalAttribute.Annotation
-        public void GetObjectData(SerializationInfo info, StreamingContext context)
-        {
-            info.SetType(ikvm.runtime.Util.getInstanceTypeFromClass(Helper.class));
-        }
-    }
 
     @cli.System.SerializableAttribute.Annotation
     private static final class ExceptionInfoHelper
@@ -276,123 +242,7 @@ public final class ExceptionHelper
     static native String getClassNameFromType(cli.System.Type type);
     static native int GetLineNumber(cli.System.Diagnostics.StackFrame frame);
     static native String GetFileName(cli.System.Diagnostics.StackFrame frame);
-    static native Throwable MapExceptionImpl(Throwable t);
     static native cli.System.Type getTypeFromObject(Object o);
 
     private static native String SafeGetEnvironmentVariable(String name);
-    
-    // native methods implemented in map.xml
-    private static native void setOriginal(Throwable t, cli.System.Exception org);
-    private static native boolean needStackTraceInfo(Throwable t);
-    private static native void setStackTraceInfo(Throwable t, cli.System.Diagnostics.StackTrace part1, cli.System.Diagnostics.StackTrace part2);
-
-    static Throwable MapException(Throwable t, cli.System.Type handler, boolean remap)
-    {
-        Throwable org = t;
-        boolean nonJavaException = t instanceof cli.System.Exception;
-        if (nonJavaException && remap)
-        {
-            if (t instanceof cli.System.TypeInitializationException)
-            {
-                return MapTypeInitializeException((cli.System.TypeInitializationException)t, handler);
-            }
-            Object obj = exceptions.get(t);
-            Throwable remapped = (Throwable)obj;
-            if (remapped == null)
-            {
-                remapped = MapExceptionImpl(t);
-                if (remapped == t)
-                {
-                    exceptions.put(t, NOT_REMAPPED);
-                }
-                else
-                {
-                    exceptions.put(t, remapped);
-                    t = remapped;
-                }
-            }
-            else if (remapped != NOT_REMAPPED)
-            {
-                t = remapped;
-            }
-        }
-
-        if (handler == null || isInstanceOfType(t, handler, remap))
-        {
-            if (t instanceof cli.System.Exception)
-            {
-                cli.System.Exception x = (cli.System.Exception)t;
-                cli.System.Collections.IDictionary data = x.get_Data();
-                if (data != null && !data.get_IsReadOnly())
-                {
-                    synchronized (data)
-                    {
-                        if (!data.Contains(EXCEPTION_DATA_KEY))
-                        {
-                            data.Add(EXCEPTION_DATA_KEY, new ExceptionInfoHelper(t, true));
-                        }
-                    }
-                }
-            }
-            else
-            {
-                if (needStackTraceInfo(t))
-                {
-	            cli.System.Diagnostics.StackTrace tracePart1 = new cli.System.Diagnostics.StackTrace(org, true);
-                    cli.System.Diagnostics.StackTrace tracePart2 = new cli.System.Diagnostics.StackTrace(true);
-                    setStackTraceInfo(t, tracePart1, tracePart2);
-                }
-            }
-            
-            if (nonJavaException && !remap)
-            {
-                exceptions.put(t, NOT_REMAPPED);
-            }
-            
-            if (t != org)
-            {
-                setOriginal(t, (cli.System.Exception)org);
-	        exceptions.remove(org);
-            }
-            return t;
-        }
-        return null;
-    }
-
-    private static boolean isInstanceOfType(Throwable t, cli.System.Type type, boolean remap)
-    {
-        if(!remap && type == System_Exception)
-        {
-            return t instanceof cli.System.Exception;
-        }
-        return type.IsInstanceOfType(t);
-    }
-
-    static Throwable MapTypeInitializeException(cli.System.TypeInitializationException t, cli.System.Type handler)
-    {
-        boolean wrapped = false;
-        Throwable r = ikvm.runtime.Util.mapException(t.get_InnerException());
-        if(!(r instanceof Error))
-        {
-            r = new ExceptionInInitializerError(r);
-            wrapped = true;
-        }
-        String type = t.get_TypeName();
-        if(failedTypes.containsKey(type))
-        {
-            r = new NoClassDefFoundError(type).initCause(r);
-            wrapped = true;
-        }
-        if(handler != null && !handler.IsInstanceOfType(r))
-        {
-            return null;
-        }
-        failedTypes.put(type, type);
-        if(wrapped)
-        {
-            // transplant the stack trace
-            r.setStackTrace(new ExceptionInfoHelper(t, true).get_StackTrace(t));
-        }
-        return r;
-    }
 }

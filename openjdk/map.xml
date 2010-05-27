@@ -964,7 +964,7 @@
                     <ldarg_0 />
                     <ldarg_1 />
                     <ldarg_2 />
-                    <call class="java.lang.ExceptionHelper" name="MapException" sig="(Ljava.lang.Throwable;Lcli.System.Type;Z)Ljava.lang.Throwable;" />
+                    <call type="IKVM.NativeCode.java.lang.ExceptionHelper" name="MapException" sig="(Ljava.lang.Throwable;Lcli.System.Type;Z)Ljava.lang.Throwable;" />
                     <ret />
                 </body>
             </method>
@@ -2006,51 +2006,6 @@
                     <redirect class="ikvm.internal.Formatter" type="static" name="ToString" sig="(Ljava.lang.Double;Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;" />
                 </method>
             </implements>
-        </class>
-        <class name="java.lang.ExceptionHelper">
-            <method name="setOriginal" sig="(Ljava.lang.Throwable;Lcli.System.Exception;)V">
-                <body>
-                    <ldarg_0 />
-                    <castclass_impl class="java.lang.Throwable" />
-                    <ldarg_1 />
-                    <stfld class="java.lang.Throwable" name="original" sig="Ljava.lang.Throwable;" />
-                    <ret />
-                </body>
-            </method>
-            <method name="needStackTraceInfo" sig="(Ljava.lang.Throwable;)Z">
-                <body>
-                    <ldarg_0 />
-                    <castclass_impl class="java.lang.Throwable" />
-                    <ldfld class="java.lang.Throwable" name="tracePart1" sig="Lcli.System.Diagnostics.StackTrace;" />
-                    <brtrue name="no" />
-                    <ldarg_0 />
-                    <castclass_impl class="java.lang.Throwable" />
-                    <ldfld class="java.lang.Throwable" name="tracePart2" sig="Lcli.System.Diagnostics.StackTrace;" />
-                    <brtrue name="no" />
-                    <ldarg_0 />
-                    <castclass_impl class="java.lang.Throwable" />
-                    <ldfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
-                    <brtrue name="no" />
-                    <ldc_i4_1 />
-                    <ret />
-                    <label name="no" />
-                    <ldc_i4_0 />
-                    <ret />
-                </body>
-            </method>
-            <method name="setStackTraceInfo" sig="(Ljava.lang.Throwable;Lcli.System.Diagnostics.StackTrace;Lcli.System.Diagnostics.StackTrace;)V">
-                <body>
-                    <ldarg_0 />
-                    <castclass_impl class="java.lang.Throwable" />
-                    <ldarg_1 />
-                    <stfld class="java.lang.Throwable" name="tracePart1" sig="Lcli.System.Diagnostics.StackTrace;" />
-                    <ldarg_0 />
-                    <castclass_impl class="java.lang.Throwable" />
-                    <ldarg_2 />
-                    <stfld class="java.lang.Throwable" name="tracePart2" sig="Lcli.System.Diagnostics.StackTrace;" />
-                    <ret />
-                </body>
-            </method>
         </class>
         <class name="java.lang.Runtime">
             <method name="addShutdownHook" sig="(Ljava.lang.Thread;)V">
