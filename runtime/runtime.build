@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <project name="IKVM.Runtime" default="IKVM.Runtime">
-    <target name="first-pass">
+    <target name="first-pass" depends="DummyLibrary">
         <property name="first-pass" value="true" />
         <call target="IKVM.Runtime" />
     </target>
@@ -9,6 +9,19 @@
         <property name="signoption" value="-key:ikvm-key" />
         <property name="ilasm_signoption" value="/key:@ikvm-key" />
         <call target="IKVM.Runtime" />
+    </target>
+
+    <target name="DummyLibrary">
+        <property name="defs" value="DUMMY" />
+        <if test="${property::exists('signed')}">
+            <property name="defs" value="${defs};${signed}" />
+        </if>
+        <csc noconfig="true" target="library" output="IKVM.OpenJDK.Core.dll" define="${defs}" unsafe="false" rebuild="true">
+            <sources>
+                <include name="../CommonAssemblyInfo.cs" />
+                <include name="Dummy.OpenJDK.Core.cs" />
+            </sources>
+        </csc>
     </target>
 
     <target name="IKVM.Runtime.JNI">
@@ -101,6 +114,7 @@
                 <include if="${not first-pass}" name="../openjdk/vfs.zip" />
             </resources>
             <references>
+                <include if="${first-pass}" name="IKVM.OpenJDK.Core.dll" asis="true" />
                 <include if="${not first-pass}" name="../bin/IKVM.Runtime.JNI.dll" asis="true" />
                 <include if="${not first-pass}" name="../bin/IKVM.OpenJDK.Core.dll" asis="true" />
                 <include if="${not first-pass}" name="../bin/IKVM.OpenJDK.Util.dll" asis="true" />
