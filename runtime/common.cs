@@ -437,5 +437,24 @@ namespace IKVM.NativeCode.ikvm.runtime
 			}
 			return wrapper.TypeAsBaseType;
 		}
+
+		[HideFromJava]
+		public static Exception mapException(Exception x)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			return global::IKVM.NativeCode.java.lang.ExceptionHelper.MapExceptionFast(x, true);
+#endif
+		}
+
+		public static Exception unmapException(Exception x)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			return global::IKVM.NativeCode.java.lang.ExceptionHelper.UnmapException(x);
+#endif
+		}
 	}
 }

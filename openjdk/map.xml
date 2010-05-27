@@ -951,7 +951,7 @@
                 <body>
                     <ldarg_0 />
                     <ldarg_1 />
-                    <call class="java.lang.ExceptionHelper" name="MapExceptionFast" sig="(Ljava.lang.Throwable;Z)Ljava.lang.Throwable;" />
+                    <call type="IKVM.NativeCode.java.lang.ExceptionHelper" name="MapExceptionFast" sig="(Ljava.lang.Throwable;Z)Ljava.lang.Throwable;" />
                     <ret />
                 </body>
             </method>
@@ -975,7 +975,7 @@
                 </attribute>
                 <body>
                     <ldarg_0 />
-                    <call class="java.lang.ExceptionHelper" name="UnmapException" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" />
+                    <call type="IKVM.NativeCode.java.lang.ExceptionHelper" name="UnmapException" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" />
                     <ret />
                 </body>
             </method>
@@ -986,7 +986,7 @@
                 </attribute>
                 <body>
                     <ldarg_0 />
-                    <call class="java.lang.ExceptionHelper" name="FixateException" sig="(Lcli.System.Exception;)V" />
+                    <call class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" name="FixateException" sig="(Ljava.lang.Throwable;)V" />
                     <ldarg_0 />
                     <ret />
                 </body>
@@ -2008,18 +2008,6 @@
             </implements>
         </class>
         <class name="java.lang.ExceptionHelper">
-            <method name="getOriginalAndClear" sig="(Ljava.lang.Throwable;)Lcli.System.Exception;">
-                <body>
-                    <ldarg_0 />
-                    <castclass_impl class="java.lang.Throwable" />
-                    <ldfld class="java.lang.Throwable" name="original" sig="Ljava.lang.Throwable;" />
-                    <ldarg_0 />
-                    <castclass_impl class="java.lang.Throwable" />
-                    <ldnull />
-                    <stfld class="java.lang.Throwable" name="original" sig="Ljava.lang.Throwable;" />
-                    <ret />
-                </body>
-            </method>
             <method name="setOriginal" sig="(Ljava.lang.Throwable;Lcli.System.Exception;)V">
                 <body>
                     <ldarg_0 />

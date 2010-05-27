@@ -41,11 +41,10 @@ public final class Util
 
     public static native Type getInstanceTypeFromClass(Class classObject);
 
-    //[HideFromJava]
-    public static Throwable mapException(Throwable x)
-    {
-        return ExceptionHelper.MapExceptionFast(x, true);
-    }
+    @cli.IKVM.Attributes.HideFromJavaAttribute.Annotation
+    public static native Throwable mapException(Throwable x);
+    
+    public static native Throwable unmapException(Throwable x);
 
     public static void throwException(cli.System.Exception x)
     {

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2004-2007, 2010 Jeroen Frijters
+  Copyright (C) 2002-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -27,6 +27,7 @@ using System.Diagnostics;
 using IKVM.Attributes;
 using IKVM.Internal;
 using IDictionary = System.Collections.IDictionary;
+using Interlocked = System.Threading.Interlocked;
 using ObjectInputStream = java.io.ObjectInputStream;
 using ObjectOutputStream = java.io.ObjectOutputStream;
 using StackTraceElement = java.lang.StackTraceElement;
@@ -447,6 +448,43 @@ namespace IKVM.NativeCode.java.lang
 					}
 				}
 			}
+#endif
+		}
+
+		// this method is *only* for .NET exceptions (i.e. types not derived from java.lang.Throwable)
+		internal static void FixateException(Exception x)
+		{
+#if !FIRST_PASS
+			global::java.lang.ExceptionHelper.exceptions.put(x, global::java.lang.ExceptionHelper.NOT_REMAPPED);
+#endif
+		}
+
+		// also used by ikvm.extensions.ExtensionMethods.printStackTrace()
+		internal static Exception UnmapException(Exception x)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			if (x is Throwable)
+			{
+				Exception org = Interlocked.Exchange(ref ((Throwable)x).original, null);
+				if (org != null)
+				{
+					global::java.lang.ExceptionHelper.exceptions.put(org, x);
+					x = org;
+				}
+			}
+			return x;
+#endif
+		}
+
+		[HideFromJava]
+		internal static Exception MapExceptionFast(Exception x, bool remap)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			return global::java.lang.ExceptionHelper.MapException(x, null, remap);
 #endif
 		}
 	}

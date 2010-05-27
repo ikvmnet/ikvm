@@ -282,36 +282,9 @@ public final class ExceptionHelper
     private static native String SafeGetEnvironmentVariable(String name);
     
     // native methods implemented in map.xml
-    private static native cli.System.Exception getOriginalAndClear(Throwable t);
     private static native void setOriginal(Throwable t, cli.System.Exception org);
     private static native boolean needStackTraceInfo(Throwable t);
     private static native void setStackTraceInfo(Throwable t, cli.System.Diagnostics.StackTrace part1, cli.System.Diagnostics.StackTrace part2);
-
-    static void FixateException(cli.System.Exception x)
-    {
-        exceptions.put(x, NOT_REMAPPED);
-    }
-
-    // also used by ikvm.extensions.ExtensionMethods.printStackTrace()
-    public static Throwable UnmapException(Throwable t)
-    {
-        if(!(t instanceof cli.System.Exception))
-        {
-            cli.System.Exception org = getOriginalAndClear(t);
-            if(org != null)
-            {
-	        exceptions.put(org, t);
-                t = org;
-            }
-        }
-        return t;
-    }
-
-    // used by ikvm.runtime.Util
-    public static Throwable MapExceptionFast(Throwable t, boolean remap)
-    {
-        return MapException(t, null, remap);
-    }
 
     static Throwable MapException(Throwable t, cli.System.Type handler, boolean remap)
     {
@@ -398,7 +371,7 @@ public final class ExceptionHelper
     static Throwable MapTypeInitializeException(cli.System.TypeInitializationException t, cli.System.Type handler)
     {
         boolean wrapped = false;
-        Throwable r = MapExceptionFast(t.get_InnerException(), true);
+        Throwable r = ikvm.runtime.Util.mapException(t.get_InnerException());
         if(!(r instanceof Error))
         {
             r = new ExceptionInInitializerError(r);

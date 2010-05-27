@@ -36,7 +36,7 @@ public final class ExtensionMethods
     {
         t = ikvm.runtime.Util.mapException(t);
         t.printStackTrace();
-        java.lang.ExceptionHelper.UnmapException(t);
+        ikvm.runtime.Util.unmapException(t);
     }
 
     @ExtensionAttribute.Annotation
