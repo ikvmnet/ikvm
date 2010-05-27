@@ -486,13 +486,13 @@ namespace IKVM.Internal
 				java.lang.Class[] parameterTypes = new java.lang.Class[argTypes.Length];
 				for (int i = 0; i < argTypes.Length; i++)
 				{
-					parameterTypes[i] = (java.lang.Class)argTypes[i].ClassObject;
+					parameterTypes[i] = argTypes[i].ClassObject;
 				}
 				java.lang.Class[] checkedExceptions = GetExceptions();
 				if (this.Name == StringConstants.INIT)
 				{
 					method = new java.lang.reflect.Constructor(
-						(java.lang.Class)this.DeclaringType.ClassObject,
+						this.DeclaringType.ClassObject,
 						parameterTypes,
 						checkedExceptions,
 						(int)this.Modifiers | (this.IsInternal ? 0x40000000 : 0),
@@ -505,10 +505,10 @@ namespace IKVM.Internal
 				else
 				{
 					method = new java.lang.reflect.Method(
-						(java.lang.Class)this.DeclaringType.ClassObject,
+						this.DeclaringType.ClassObject,
 						this.Name,
 						parameterTypes,
-						(java.lang.Class)this.ReturnType.ClassObject,
+						this.ReturnType.ClassObject,
 						checkedExceptions,
 						(int)this.Modifiers | (this.IsInternal ? 0x40000000 : 0),
 						Array.IndexOf(this.DeclaringType.GetMethods(), this),
@@ -568,7 +568,7 @@ namespace IKVM.Internal
 				java.lang.Class[] array = new java.lang.Class[classes.Length];
 				for (int i = 0; i < classes.Length; i++)
 				{
-					array[i] = (java.lang.Class)this.DeclaringType.GetClassLoader().LoadClassByDottedName(classes[i]).ClassObject;
+					array[i] = this.DeclaringType.GetClassLoader().LoadClassByDottedName(classes[i]).ClassObject;
 				}
 				return array;
 			}
@@ -1264,9 +1264,9 @@ namespace IKVM.Internal
 			if (field == null)
 			{
 				field = new java.lang.reflect.Field(
-					(java.lang.Class)this.DeclaringType.ClassObject,
+					this.DeclaringType.ClassObject,
 					this.Name,
-					(java.lang.Class)this.FieldTypeWrapper.ClassObject,
+					this.FieldTypeWrapper.ClassObject,
 					(int)this.Modifiers | (this.IsInternal ? 0x40000000 : 0),
 					Array.IndexOf(this.DeclaringType.GetFields(), this),
 					this.DeclaringType.GetGenericFieldSignature(this),

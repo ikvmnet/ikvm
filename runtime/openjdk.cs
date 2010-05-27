@@ -2376,7 +2376,7 @@ namespace IKVM.NativeCode.java
 					}
 					tw.RunClassInit();
 				}
-				return (jlClass)tw.ClassObject;
+				return tw.ClassObject;
 #endif
 			}
 
@@ -2481,7 +2481,7 @@ namespace IKVM.NativeCode.java
 				jlClass[] interfaces = new jlClass[ifaces.Length];
 				for (int i = 0; i < ifaces.Length; i++)
 				{
-					interfaces[i] = (jlClass)ifaces[i].ClassObject;
+					interfaces[i] = ifaces[i].ClassObject;
 				}
 				return interfaces;
 #endif
@@ -2574,7 +2574,7 @@ namespace IKVM.NativeCode.java
 				{
 					wrapper = wrapper.ElementTypeWrapper;
 				}
-				ProtectionDomain pd = ((jlClass)wrapper.ClassObject).pd;
+				ProtectionDomain pd = wrapper.ClassObject.pd;
 				if (pd == null)
 				{
 					// The protection domain for statically compiled code is created lazily (not at java.lang.Class creation time),
@@ -2844,7 +2844,7 @@ namespace IKVM.NativeCode.java
 						{
 							throw new IllegalAccessError(string.Format("tried to access class {0} from class {1}", wrappers[i].Name, wrapper.Name));
 						}
-						innerclasses[i] = (jlClass)wrappers[i].ClassObject;
+						innerclasses[i] = wrappers[i].ClassObject;
 					}
 					return innerclasses;
 				}
@@ -3187,7 +3187,7 @@ namespace IKVM.NativeCode.java
 					{
 						continue;
 					}
-					stack.Add((jlClass)ClassLoaderWrapper.GetWrapperFromType(type).ClassObject);
+					stack.Add(ClassLoaderWrapper.GetWrapperFromType(type).ClassObject);
 				}
 				return stack.ToArray();
 #endif
@@ -4396,7 +4396,7 @@ namespace IKVM.NativeCode.java
 				TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(type);
 				if (tw != null)
 				{
-					return java.lang.Class.getProtectionDomain0((jlClass)tw.ClassObject);
+					return java.lang.Class.getProtectionDomain0(tw.ClassObject);
 				}
 				return null;
 			}
@@ -6692,7 +6692,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 			private string GetFieldTypeName()
 			{
-				return ((jlClass)fw.FieldTypeWrapper.ClassObject).getName();
+				return fw.FieldTypeWrapper.ClassObject.getName();
 			}
 
 			public jlIllegalArgumentException GetIllegalArgumentException(object obj)

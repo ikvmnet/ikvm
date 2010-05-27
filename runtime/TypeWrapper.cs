@@ -1651,7 +1651,7 @@ namespace IKVM.Internal
 		private FieldWrapper[] fields;
 		private readonly TypeWrapper baseWrapper;
 #if !STATIC_COMPILER && !STUB_GENERATOR
-		private object classObject;
+		private java.lang.Class classObject;
 #endif
 		internal static readonly TypeWrapper[] EmptyArray = new TypeWrapper[0];
 		internal const Modifiers UnloadableModifiersHack = Modifiers.Final | Modifiers.Interface | Modifiers.Private;
@@ -1725,12 +1725,12 @@ namespace IKVM.Internal
 		}
 
 #if !STATIC_COMPILER && !STUB_GENERATOR
-		internal void SetClassObject(object classObject)
+		internal void SetClassObject(java.lang.Class classObject)
 		{
 			this.classObject = classObject;
 		}
 
-		internal object ClassObject
+		internal java.lang.Class ClassObject
 		{
 			get
 			{
