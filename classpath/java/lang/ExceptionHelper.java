@@ -276,14 +276,12 @@ public final class ExceptionHelper
     static native String getClassNameFromType(cli.System.Type type);
     static native int GetLineNumber(cli.System.Diagnostics.StackFrame frame);
     static native String GetFileName(cli.System.Diagnostics.StackFrame frame);
-    static native void initThrowable(Object throwable, Object detailMessage, Object cause);
     static native Throwable MapExceptionImpl(Throwable t);
     static native cli.System.Type getTypeFromObject(Object o);
 
     private static native String SafeGetEnvironmentVariable(String name);
     
     // native methods implemented in map.xml
-    private static native Throwable getCauseForSerialization(Throwable t);
     private static native cli.System.Exception getOriginalAndClear(Throwable t);
     private static native void setOriginal(Throwable t, cli.System.Exception org);
     private static native boolean needStackTraceInfo(Throwable t);
@@ -592,31 +590,6 @@ public final class ExceptionHelper
             return t instanceof cli.System.Exception;
         }
         return type.IsInstanceOfType(t);
-    }
-
-    static void writeObject(Throwable t, ObjectOutputStream s) throws IOException
-    {
-        synchronized (t)
-        {
-	    ObjectOutputStream.PutField fields = s.putFields();
-	    fields.put("detailMessage", t.getMessage());
-	    Throwable cause = t.getCause();
-	    if (cause == null && !(t instanceof cli.System.Exception))
-	    {
-	        cause = getCauseForSerialization(t);
-	    }
-	    fields.put("cause", cause);
-	    fields.put("stackTrace", t.getStackTrace());
-	    s.writeFields();
-	}
-    }
-
-    static void readObject(Throwable t, ObjectInputStream s) throws IOException, ClassNotFoundException
-    {
-	ObjectInputStream.GetField fields = s.readFields();
-	initThrowable(t, fields.get("detailMessage", null), fields.get("cause", null));
-	StackTraceElement[] stackTrace = (StackTraceElement[])fields.get("stackTrace", null);
-	t.setStackTrace(stackTrace == null ? new StackTraceElement[0] : stackTrace);
     }
 
     static Throwable MapTypeInitializeException(cli.System.TypeInitializationException t, cli.System.Type handler)

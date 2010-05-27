@@ -997,7 +997,7 @@
                 <body>
                     <ldarg_0 />
                     <ldarg_1 />
-                    <call class="java.lang.ExceptionHelper" name="readObject" sig="(Ljava.lang.Throwable;Ljava.io.ObjectInputStream;)V" />
+                    <call type="IKVM.NativeCode.java.lang.ExceptionHelper" name="readObject" sig="(Ljava.lang.Throwable;Ljava.io.ObjectInputStream;)V" />
                     <ret />
                 </body>
             </method>
@@ -1006,7 +1006,7 @@
                 <body>
                     <ldarg_0 />
                     <ldarg_1 />
-                    <call class="java.lang.ExceptionHelper" name="writeObject" sig="(Ljava.lang.Throwable;Ljava.io.ObjectOutputStream;)V" />
+                    <call type="IKVM.NativeCode.java.lang.ExceptionHelper" name="writeObject" sig="(Ljava.lang.Throwable;Ljava.io.ObjectOutputStream;)V" />
                     <ret />
                 </body>
             </method>
@@ -2008,14 +2008,6 @@
             </implements>
         </class>
         <class name="java.lang.ExceptionHelper">
-            <method name="getCauseForSerialization" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;">
-                <body>
-                    <ldarg_0 />
-                    <castclass_impl class="java.lang.Throwable" />
-                    <ldfld class="java.lang.Throwable" name="cause" sig="Ljava.lang.Throwable;" />
-                    <ret />
-                </body>
-            </method>
             <method name="getOriginalAndClear" sig="(Ljava.lang.Throwable;)Lcli.System.Exception;">
                 <body>
                     <ldarg_0 />

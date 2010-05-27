@@ -26,6 +26,12 @@ using System.Reflection;
 using System.Diagnostics;
 using IKVM.Attributes;
 using IKVM.Internal;
+using ObjectInputStream = java.io.ObjectInputStream;
+using ObjectOutputStream = java.io.ObjectOutputStream;
+using StackTraceElement = java.lang.StackTraceElement;
+#if !FIRST_PASS
+using Throwable = java.lang.Throwable;
+#endif
 
 namespace IKVM.NativeCode.java.lang
 {
@@ -110,7 +116,7 @@ namespace IKVM.NativeCode.java.lang
 			return type.FullName;
 		}
 
-		public static void initThrowable(object throwable, object detailMessage, object cause)
+		private static void initThrowable(object throwable, object detailMessage, object cause)
 		{
 #if !FIRST_PASS
 			if(cause == throwable)
@@ -172,6 +178,35 @@ namespace IKVM.NativeCode.java.lang
 				new global::java.io.ObjectStreamField("cause", typeof(global::java.lang.Throwable)),
 				new global::java.io.ObjectStreamField("stackTrace", typeof(global::java.lang.StackTraceElement[]))
 			};
+#endif
+		}
+
+		internal static void writeObject(Exception x, ObjectOutputStream s)
+		{
+#if !FIRST_PASS
+			lock (x)
+			{
+				ObjectOutputStream.PutField fields = s.putFields();
+				fields.put("detailMessage", Throwable.instancehelper_getMessage(x));
+				Exception cause = Throwable.instancehelper_getCause(x);
+				if (cause == null && x is Throwable)
+				{
+					cause = ((Throwable)x).cause;
+				}
+				fields.put("cause", cause);
+				fields.put("stackTrace", Throwable.instancehelper_getStackTrace(x));
+				s.writeFields();
+			}
+#endif
+		}
+
+		internal static void readObject(Exception x, ObjectInputStream s)
+		{
+#if !FIRST_PASS
+			ObjectInputStream.GetField fields = s.readFields();
+			initThrowable(x, fields.get("detailMessage", null), fields.get("cause", null));
+			StackTraceElement[] stackTrace = (StackTraceElement[])fields.get("stackTrace", null);
+			Throwable.instancehelper_setStackTrace(x, stackTrace == null ? new StackTraceElement[0] : stackTrace);
 #endif
 		}
 	}

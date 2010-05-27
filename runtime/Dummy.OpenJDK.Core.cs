@@ -27,6 +27,8 @@ namespace java
 	namespace io
 	{
 		public class File { }
+		public class ObjectInputStream { }
+		public class ObjectOutputStream { }
 		public class ObjectStreamField { }
 	}
 
@@ -35,6 +37,7 @@ namespace java
 		public class Class { }
 		public class ClassLoader { }
 		public class SecurityManager { }
+		public class StackTraceElement { }
 
 		namespace reflect
 		{
