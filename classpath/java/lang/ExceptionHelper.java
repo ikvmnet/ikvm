@@ -38,7 +38,7 @@ import cli.System.Runtime.Serialization.StreamingContext;
 public final class ExceptionHelper
 {
     static final Key EXCEPTION_DATA_KEY = new Key();
-    private static final ikvm.internal.WeakIdentityMap exceptions = new ikvm.internal.WeakIdentityMap();
+    static final ikvm.internal.WeakIdentityMap exceptions = new ikvm.internal.WeakIdentityMap();
     private static final boolean cleanStackTrace = SafeGetEnvironmentVariable("IKVM_DISABLE_STACKTRACE_CLEANING") == null;
     private static final cli.System.Type System_Reflection_MethodBase = ikvm.runtime.Util.getInstanceTypeFromClass(cli.System.Reflection.MethodBase.class);
     private static final cli.System.Type System_Exception = ikvm.runtime.Util.getInstanceTypeFromClass(cli.System.Exception.class);
@@ -290,66 +290,6 @@ public final class ExceptionHelper
     static void FixateException(cli.System.Exception x)
     {
         exceptions.put(x, NOT_REMAPPED);
-    }
-
-    static StackTraceElement[] getStackTrace(cli.System.Exception x)
-    {
-        synchronized (x)
-        {
-            ExceptionInfoHelper eih = null;
-            cli.System.Collections.IDictionary data = x.get_Data();
-            if (data != null && !data.get_IsReadOnly())
-            {
-                synchronized (data)
-                {
-                    eih = (ExceptionInfoHelper)data.get_Item(EXCEPTION_DATA_KEY);
-                }
-            }
-	    if (eih == null)
-	    {
-	        return new StackTraceElement[0];
-	    }
-	    return eih.get_StackTrace(x);
-	}
-    }
-    
-    static StackTraceElement[] checkStackTrace(StackTraceElement[] original)
-    {
-        StackTraceElement[] copy = original.clone();
-        for (int i = 0; i < copy.length; i++)
-        {
-            copy[i].getClass(); // efficient null check
-        }
-        return copy;
-    }
-
-    static void setStackTrace(cli.System.Exception x, StackTraceElement[] stackTrace)
-    {
-        ExceptionInfoHelper eih = new ExceptionInfoHelper(checkStackTrace(stackTrace));
-        cli.System.Collections.IDictionary data = x.get_Data();
-        if (data != null && !data.get_IsReadOnly())
-        {
-            synchronized (data)
-            {
-                data.set_Item(EXCEPTION_DATA_KEY, eih);
-            }
-        }
-    }
-
-    static void fillInStackTrace(cli.System.Exception x)
-    {
-        synchronized (x)
-        {
-            ExceptionInfoHelper eih = new ExceptionInfoHelper(null, new cli.System.Diagnostics.StackTrace(true));
-            cli.System.Collections.IDictionary data = x.get_Data();
-            if (data != null && !data.get_IsReadOnly())
-            {
-                synchronized (data)
-                {
-                    data.set_Item(EXCEPTION_DATA_KEY, eih);
-                }
-            }
-        }
     }
 
     // also used by ikvm.extensions.ExtensionMethods.printStackTrace()

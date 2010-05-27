@@ -26,12 +26,14 @@ using System.Reflection;
 using System.Diagnostics;
 using IKVM.Attributes;
 using IKVM.Internal;
+using IDictionary = System.Collections.IDictionary;
 using ObjectInputStream = java.io.ObjectInputStream;
 using ObjectOutputStream = java.io.ObjectOutputStream;
 using StackTraceElement = java.lang.StackTraceElement;
 #if !FIRST_PASS
 using Throwable = java.lang.Throwable;
 using System.Collections.Generic;
+using ExceptionInfoHelper = java.lang.ExceptionHelper.ExceptionInfoHelper;
 #endif
 
 namespace IKVM.NativeCode.java.lang
@@ -367,6 +369,84 @@ namespace IKVM.NativeCode.java.lang
 #else
 			global::java.lang.ExceptionHelper.ExceptionInfoHelper eih = new global::java.lang.ExceptionHelper.ExceptionInfoHelper(part1, part2);
 			return eih.get_StackTrace(x);
+#endif
+		}
+
+		// this method is *only* for .NET exceptions (i.e. types not derived from java.lang.Throwable)
+		internal static StackTraceElement[] getStackTrace(Exception x)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			lock (x)
+			{
+				ExceptionInfoHelper eih = null;
+				IDictionary data = x.Data;
+				if (data != null && !data.IsReadOnly)
+				{
+					lock (data)
+					{
+						eih = (ExceptionInfoHelper)data[global::java.lang.ExceptionHelper.EXCEPTION_DATA_KEY];
+					}
+				}
+				if (eih == null)
+				{
+					return new StackTraceElement[0];
+				}
+				return eih.get_StackTrace(x);
+			}
+#endif
+		}
+
+		internal static StackTraceElement[] checkStackTrace(StackTraceElement[] original)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			StackTraceElement[] copy = (StackTraceElement[])original.Clone();
+			for (int i = 0; i < copy.Length; i++)
+			{
+				if (copy[i] == null)
+				{
+					throw new global::java.lang.NullPointerException();
+				}
+			}
+			return copy;
+#endif
+		}
+
+		// this method is *only* for .NET exceptions (i.e. types not derived from java.lang.Throwable)
+		internal static void setStackTrace(Exception x, StackTraceElement[] stackTrace)
+		{
+#if !FIRST_PASS
+			ExceptionInfoHelper eih = new ExceptionInfoHelper(checkStackTrace(stackTrace));
+			IDictionary data = x.Data;
+			if (data != null && !data.IsReadOnly)
+			{
+				lock (data)
+				{
+					data[global::java.lang.ExceptionHelper.EXCEPTION_DATA_KEY] = eih;
+				}
+			}
+#endif
+		}
+
+		// this method is *only* for .NET exceptions (i.e. types not derived from java.lang.Throwable)
+		internal static void fillInStackTrace(Exception x)
+		{
+#if !FIRST_PASS
+			lock (x)
+			{
+				ExceptionInfoHelper eih = new ExceptionInfoHelper(null, new StackTrace(true));
+				IDictionary data = x.Data;
+				if (data != null && !data.IsReadOnly)
+				{
+					lock (data)
+					{
+						data[global::java.lang.ExceptionHelper.EXCEPTION_DATA_KEY] = eih;
+					}
+				}
+			}
 #endif
 		}
 	}
