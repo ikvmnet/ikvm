@@ -299,5 +299,46 @@ namespace IKVM.NativeCode.java.lang
 			return list;
 		}
 #endif
+
+		internal static string FilterMessage(string message)
+		{
+			return message ?? "";
+		}
+
+		internal static string GetMessageFromCause(Exception cause)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			if (cause == null)
+			{
+				return "";
+			}
+			return global::java.lang.Object.instancehelper_toString(cause);
+#endif
+		}
+
+		internal static string getLocalizedMessage(Exception x)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			return Throwable.instancehelper_getMessage(x);
+#endif
+		}
+
+		internal static string toString(Exception x)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			string message = Throwable.instancehelper_getLocalizedMessage(x);
+			if (message == null)
+			{
+				return global::java.lang.Object.instancehelper_getClass(x).getName();
+			}
+			return global::java.lang.Object.instancehelper_getClass(x).getName() + ": " + message;
+#endif
+		}
 	}
 }

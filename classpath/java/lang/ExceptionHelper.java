@@ -359,29 +359,6 @@ public final class ExceptionHelper
         }
     }
 
-    static String FilterMessage(String message)
-    {
-	if(message == null)
-	{
-	    message = "";
-	}
-	return message;
-    }
-
-    static String GetMessageFromCause(Throwable cause)
-    {
-	if(cause == null)
-	{
-	    return "";
-	}
-	return cause.toString();
-    }
-
-    static String getLocalizedMessage(Throwable x)
-    {
-	return x.getMessage();
-    }
-
     static void fillInStackTrace(cli.System.Exception x)
     {
         synchronized (x)
@@ -396,16 +373,6 @@ public final class ExceptionHelper
                 }
             }
         }
-    }
-
-    static String toString(Throwable x)
-    {
-	String message = x.getLocalizedMessage();
-	if(message == null)
-	{
-	    return x.getClass().getName();
-	}
-	return x.getClass().getName() + ": " + message;
     }
 
     // also used by ikvm.extensions.ExtensionMethods.printStackTrace()

@@ -1039,7 +1039,7 @@
                 <body>
                     <ldarg_0 />
                     <ldarg_1 />
-                    <call class="java.lang.ExceptionHelper" name="FilterMessage" sig="(Ljava.lang.String;)Ljava.lang.String;" />
+                    <call class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" name="FilterMessage" sig="(Ljava.lang.String;)Ljava.lang.String;" />
                     <call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;)V" />
                     <ldarg_0 />
                     <ldarg_0 />
@@ -1069,7 +1069,7 @@
                 <body>
                     <ldarg_0 />
                     <ldarg_1 />
-                    <call class="java.lang.ExceptionHelper" name="FilterMessage" sig="(Ljava.lang.String;)Ljava.lang.String;" />
+                    <call class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" name="FilterMessage" sig="(Ljava.lang.String;)Ljava.lang.String;" />
                     <ldarg_2 />
                     <call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" />
                     <ldarg_0 />
@@ -1102,7 +1102,7 @@
                 <body>
                     <ldarg_0 />
                     <ldarg_1 />
-                    <call class="java.lang.ExceptionHelper" name="GetMessageFromCause" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" />
+                    <call class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" name="GetMessageFromCause" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" />
                     <ldarg_1 />
                     <call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" />
                     <ldarg_0 />
@@ -1158,7 +1158,7 @@
                 </alternateBody>
             </method>
             <method name="getLocalizedMessage" sig="()Ljava.lang.String;" modifiers="public">
-                <redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
+                <redirect class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
             </method>
             <method name="fillInStackTrace" sig="()Ljava.lang.Throwable;" modifiers="public">
                 <body>
@@ -1324,7 +1324,7 @@
                 </alternateBody>
             </method>
             <method name="toString" sig="()Ljava.lang.String;" modifiers="public">
-                <redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
+                <redirect class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
             </method>
             <method name="GetObjectData" sig="(Lcli.System.Runtime.Serialization.SerializationInfo;Lcli.System.Runtime.Serialization.StreamingContext;)V" modifiers="public">
                 <attribute type="System.Security.Permissions.SecurityPermissionAttribute" sig="(Lcli.System.Security.Permissions.SecurityAction;)V">
