@@ -3235,7 +3235,7 @@ namespace IKVM.Internal
 			}
 			else
 			{
-				throw new TypeLoadException();
+				throw new TypeLoadException(name);
 			}
 		}
 
