@@ -1874,7 +1874,7 @@ class Thread implements Runnable {
                             nativeThread.Resume();
                         }
                     }
-                    stacks[i] = ExceptionHelper.getStackTrace(stack, Integer.MAX_VALUE);
+                    stacks[i] = getStackTrace(stack);
                 }
                 catch (cli.System.Threading.ThreadStateException _) {
                     stacks[i] = new StackTraceElement[0];
@@ -1883,6 +1883,8 @@ class Thread implements Runnable {
         }
         return stacks;
     }
+    
+    private static native StackTraceElement[] getStackTrace(cli.System.Diagnostics.StackTrace stack);
 
     private static Thread[] getThreads() {
         return (Thread[])AccessController.doPrivileged(

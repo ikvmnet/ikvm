@@ -619,14 +619,4 @@ public final class ExceptionHelper
         }
         return r;
     }
-
-    // helper for use by java.lang.management.VMThreadInfo
-    public static StackTraceElement[] getStackTrace(cli.System.Diagnostics.StackTrace st, int maxDepth)
-    {
-        cli.System.Collections.ArrayList stackTrace = new cli.System.Collections.ArrayList();
-        ExceptionInfoHelper.Append(stackTrace, st, 0);
-        StackTraceElement[] ste = new StackTraceElement[Math.min(maxDepth, stackTrace.get_Count())];
-        stackTrace.CopyTo(0, (cli.System.Array)(Object)ste, 0, ste.length);
-        return ste;
-    }
 }

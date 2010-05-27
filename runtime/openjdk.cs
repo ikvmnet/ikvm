@@ -46,6 +46,7 @@ using jiObjectStreamField = java.io.ObjectStreamField;
 using jlClass = java.lang.Class;
 using jlClassLoader = java.lang.ClassLoader;
 using jlrConstructor = java.lang.reflect.Constructor;
+using jlStackTraceElement = java.lang.StackTraceElement;
 using jnByteBuffer = java.nio.ByteBuffer;
 using ProtectionDomain = java.security.ProtectionDomain;
 #if !FIRST_PASS
@@ -62,7 +63,6 @@ using jlNullPointerException = java.lang.NullPointerException;
 using jlRunnable = java.lang.Runnable;
 using jlRuntimeException = java.lang.RuntimeException;
 using jlSecurityManager = java.lang.SecurityManager;
-using jlStackTraceElement = java.lang.StackTraceElement;
 using jlSystem = java.lang.System;
 using jlThread = java.lang.Thread;
 using jlThreadDeath = java.lang.ThreadDeath;
@@ -3440,6 +3440,19 @@ namespace IKVM.NativeCode.java
 				{
 					new jlThread((jlThreadGroup)threadGroup);
 				}
+#endif
+			}
+
+			public static jlStackTraceElement[] getStackTrace(StackTrace stack)
+			{
+#if FIRST_PASS
+				return null;
+#else
+				global::System.Collections.ArrayList stackTrace = new global::System.Collections.ArrayList();
+				global::java.lang.ExceptionHelper.ExceptionInfoHelper.Append(stackTrace, stack, 0);
+				jlStackTraceElement[] ste = new jlStackTraceElement[stackTrace.Count];
+				stackTrace.CopyTo(0, ste, 0, ste.Length);
+				return ste;
 #endif
 			}
 		}
