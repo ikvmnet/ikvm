@@ -594,15 +594,6 @@ public final class ExceptionHelper
         return type.IsInstanceOfType(t);
     }
 
-    static ObjectStreamField[] getPersistentFields()
-    {
-	return new ObjectStreamField[] {
-	    new ObjectStreamField("detailMessage", String.class),
-	    new ObjectStreamField("cause", Throwable.class),
-	    new ObjectStreamField("stackTrace", StackTraceElement[].class)
-	};
-    }
-
     static void writeObject(Throwable t, ObjectOutputStream s) throws IOException
     {
         synchronized (t)

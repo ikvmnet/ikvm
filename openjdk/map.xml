@@ -918,7 +918,7 @@
             <field name="tracePart2" sig="Lcli.System.Diagnostics.StackTrace;" />
             <clinit>
                 <body>
-                    <call class="java.lang.ExceptionHelper" name="getPersistentFields" sig="()[Ljava.io.ObjectStreamField;" />
+                    <call type="IKVM.NativeCode.java.lang.ExceptionHelper" name="getPersistentFields" sig="()[Ljava.io.ObjectStreamField;" />
                     <stsfld class="java.lang.Throwable" name="serialPersistentFields" sig="[Ljava.io.ObjectStreamField;" />
                     <ldc_i4_0 />
                     <newarr sig="Ljava.lang.StackTraceElement;" />

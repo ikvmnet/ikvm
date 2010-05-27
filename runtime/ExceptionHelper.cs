@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2004, 2005, 2006, 2007 Jeroen Frijters
+  Copyright (C) 2002, 2004-2007, 2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -159,6 +159,20 @@ namespace IKVM.NativeCode.java.lang
 		public static Type getTypeFromObject(object o)
 		{
 			return o.GetType();
+		}
+
+		// called from map.xml
+		internal static global::java.io.ObjectStreamField[] getPersistentFields()
+		{
+#if FIRST_PASS
+			return null;
+#else
+			return new global::java.io.ObjectStreamField[] {
+				new global::java.io.ObjectStreamField("detailMessage", typeof(global::java.lang.String)),
+				new global::java.io.ObjectStreamField("cause", typeof(global::java.lang.Throwable)),
+				new global::java.io.ObjectStreamField("stackTrace", typeof(global::java.lang.StackTraceElement[]))
+			};
+#endif
 		}
 	}
 }
