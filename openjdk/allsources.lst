@@ -21,7 +21,6 @@
 ../classpath/ikvm/runtime/Delegates.java
 ../classpath/ikvm/runtime/Startup.java
 ../classpath/ikvm/runtime/Util.java
-../classpath/java/lang/ExceptionHelper.java
 ../classpath/java/util/concurrent/atomic/AtomicBoolean.java
 ../classpath/java/util/concurrent/atomic/AtomicInteger.java
 ../classpath/java/util/concurrent/atomic/AtomicIntegerArray.java

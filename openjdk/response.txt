@@ -34,7 +34,6 @@ assembly.class
     ../classpath/ikvm/io/*.class
     ../classpath/ikvm/lang/*.class
     ../classpath/ikvm/runtime/*.class
-    ../classpath/java/lang/*.class
     ../classpath/java/util/concurrent/atomic/*.class
     ../classpath/sun/misc/*.class
     @OPENJDK@/jdk/src/share/classes/java/awt/AWTPermission.class

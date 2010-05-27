@@ -3448,11 +3448,9 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return null;
 #else
-				global::System.Collections.ArrayList stackTrace = new global::System.Collections.ArrayList();
-				global::java.lang.ExceptionHelper.ExceptionInfoHelper.Append(stackTrace, stack, 0);
-				jlStackTraceElement[] ste = new jlStackTraceElement[stackTrace.Count];
-				stackTrace.CopyTo(0, ste, 0, ste.Length);
-				return ste;
+				List<jlStackTraceElement> stackTrace = new List<jlStackTraceElement>();
+				global::IKVM.NativeCode.java.lang.ExceptionHelper.ExceptionInfoHelper.Append(stackTrace, stack, 0);
+				return stackTrace.ToArray();
 #endif
 			}
 		}

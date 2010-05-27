@@ -31,12 +31,12 @@ using IKVM.Attributes;
 using IKVM.Internal;
 using IDictionary = System.Collections.IDictionary;
 using Interlocked = System.Threading.Interlocked;
+using MethodBase = System.Reflection.MethodBase;
 using ObjectInputStream = java.io.ObjectInputStream;
 using ObjectOutputStream = java.io.ObjectOutputStream;
 using StackTraceElement = java.lang.StackTraceElement;
 #if !FIRST_PASS
 using Throwable = java.lang.Throwable;
-using ExceptionInfoHelper = java.lang.ExceptionHelper.ExceptionInfoHelper;
 #endif
 
 namespace IKVM.NativeCode.java.lang
@@ -46,6 +46,9 @@ namespace IKVM.NativeCode.java.lang
 		private static readonly Dictionary<string, string> failedTypes = new Dictionary<string, string>();
 		private static readonly Key EXCEPTION_DATA_KEY = new Key();
 		private static readonly Exception NOT_REMAPPED = new Exception();
+		private static readonly bool cleanStackTrace = JVM.SafeGetEnvironmentVariable("IKVM_DISABLE_STACKTRACE_CLEANING") == null;
+		private static readonly Type System_Reflection_MethodBase = typeof(MethodBase);
+		private static readonly Type System_Exception = typeof(Exception);
 #if !FIRST_PASS
 		private static readonly global::ikvm.@internal.WeakIdentityMap exceptions = new global::ikvm.@internal.WeakIdentityMap();
 
@@ -53,6 +56,200 @@ namespace IKVM.NativeCode.java.lang
 		{
 			// make sure the exceptions map continues to work during AppDomain finalization
 			GC.SuppressFinalize(exceptions);
+		}
+
+		[Serializable]
+		internal sealed class ExceptionInfoHelper
+		{
+			[NonSerialized]
+			private StackTrace tracePart1;
+			[NonSerialized]
+			private StackTrace tracePart2;
+			private StackTraceElement[] stackTrace;
+
+			internal ExceptionInfoHelper(StackTraceElement[] stackTrace)
+			{
+				this.stackTrace = stackTrace;
+			}
+
+			internal ExceptionInfoHelper(StackTrace tracePart1, StackTrace tracePart2)
+			{
+				this.tracePart1 = tracePart1;
+				this.tracePart2 = tracePart2;
+			}
+
+			internal ExceptionInfoHelper(Exception x, bool captureAdditionalStackTrace)
+			{
+				tracePart1 = new StackTrace(x, true);
+				if (captureAdditionalStackTrace)
+				{
+					tracePart2 = new StackTrace(true);
+				}
+			}
+
+			[OnSerializing]
+			private void OnSerializing(StreamingContext context)
+			{
+				// make sure the stack trace is computed before serializing
+				get_StackTrace(null);
+			}
+
+			private static bool IsPrivateScope(MethodBase mb)
+			{
+				return (mb.Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.PrivateScope;
+			}
+
+			private static string getDeclaringTypeNameSafe(MethodBase mb)
+			{
+				Type type = mb.DeclaringType;
+				return type == null ? "" : type.FullName;
+			}
+
+			internal StackTraceElement[] get_StackTrace(Exception t)
+			{
+				lock (this)
+				{
+					if (stackTrace == null)
+					{
+						List<StackTraceElement> list = new List<StackTraceElement>();
+						if (tracePart1 != null)
+						{
+							int skip1 = 0;
+							if (cleanStackTrace && t is global::java.lang.NullPointerException && tracePart1.FrameCount > 0)
+							{
+								// HACK if a NullPointerException originated inside an instancehelper method,
+								// we assume that the reference the method was called on was really the one that was null,
+								// so we filter it.
+								if (tracePart1.GetFrame(0).GetMethod().Name.StartsWith("instancehelper_") &&
+									!GetMethodName(tracePart1.GetFrame(0).GetMethod()).StartsWith("instancehelper_"))
+								{
+									skip1 = 1;
+								}
+							}
+							Append(list, tracePart1, skip1);
+						}
+						if (tracePart2 != null)
+						{
+							int skip = 0;
+							if (cleanStackTrace)
+							{
+								while (tracePart2.FrameCount > skip &&
+								getDeclaringTypeNameSafe(tracePart2.GetFrame(skip).GetMethod()).StartsWith("java.lang.ExceptionHelper"))
+								{
+									skip++;
+								}
+								if (tracePart2.FrameCount > skip)
+								{
+									MethodBase mb = tracePart2.GetFrame(skip).GetMethod();
+									// here we have to check for both fillInStackTrace and .ctor, because on x64 the fillInStackTrace method
+									// disappears from the stack trace due to the tail call optimization.
+									if (getDeclaringTypeNameSafe(mb).Equals("java.lang.Throwable") &&
+										(mb.Name.EndsWith("fillInStackTrace") || mb.Name.Equals(".ctor")))
+									{
+										while (tracePart2.FrameCount > skip)
+										{
+											mb = tracePart2.GetFrame(skip).GetMethod();
+											if (!getDeclaringTypeNameSafe(mb).Equals("java.lang.Throwable")
+												|| !mb.Name.EndsWith("fillInStackTrace"))
+											{
+												break;
+											}
+											skip++;
+										}
+										Type exceptionType = getTypeFromObject(t);
+										while (tracePart2.FrameCount > skip)
+										{
+											mb = tracePart2.GetFrame(skip).GetMethod();
+											if (!mb.Name.Equals(".ctor")
+												|| !mb.DeclaringType.IsAssignableFrom(exceptionType))
+											{
+												break;
+											}
+											skip++;
+										}
+									}
+								}
+								// skip java.lang.Throwable.__<map>
+								while (tracePart2.FrameCount > skip && IsHideFromJava(tracePart2.GetFrame(skip).GetMethod()))
+								{
+									skip++;
+								}
+								if (tracePart1 != null &&
+												tracePart1.FrameCount > 0 &&
+								tracePart2.FrameCount > skip &&
+								tracePart1.GetFrame(tracePart1.FrameCount - 1).GetMethod() == tracePart2.GetFrame(skip).GetMethod())
+								{
+									skip++;
+								}
+							}
+							Append(list, tracePart2, skip);
+						}
+						if (cleanStackTrace && list.Count > 0)
+						{
+							StackTraceElement elem = list[list.Count - 1];
+							if (elem.getClassName().Equals("java.lang.reflect.Method"))
+							{
+								list.RemoveAt(list.Count - 1);
+							}
+						}
+						tracePart1 = null;
+						tracePart2 = null;
+						this.stackTrace = list.ToArray();
+					}
+				}
+				return (StackTraceElement[])stackTrace.Clone();
+			}
+
+			internal static void Append(List<StackTraceElement> stackTrace, StackTrace st, int skip)
+			{
+				for (int i = skip; i < st.FrameCount; i++)
+				{
+					StackFrame frame = st.GetFrame(i);
+					MethodBase m = frame.GetMethod();
+					// TODO I may need more safety checks like these
+					if (m == null || m.DeclaringType == null)
+					{
+						continue;
+					}
+					String methodName = GetMethodName(m);
+					String className = getClassNameFromType(m.DeclaringType);
+					if (cleanStackTrace &&
+						(System_Reflection_MethodBase.IsAssignableFrom(m.DeclaringType)
+						|| className.StartsWith("java.lang.ExceptionHelper")
+						|| className.Equals("cli.System.RuntimeMethodHandle")
+						|| (className.Equals("java.lang.Throwable") && m.Name.Equals("instancehelper_fillInStackTrace"))
+						|| methodName.StartsWith("__<")
+						|| IsHideFromJava(m)
+						|| IsPrivateScope(m))) // NOTE we assume that privatescope methods are always stubs that we should exclude
+					{
+						continue;
+					}
+					int lineNumber = frame.GetFileLineNumber();
+					if (lineNumber == 0)
+					{
+						lineNumber = GetLineNumber(frame);
+					}
+					String fileName = frame.GetFileName();
+					if (fileName != null)
+					{
+						try
+						{
+							fileName = new global::System.IO.FileInfo(fileName).Name;
+						}
+						catch
+						{
+							// Mono returns "<unknown>" for frame.GetFileName() and the FileInfo constructor
+							// doesn't like that
+							fileName = null;
+						}
+					}
+					if (fileName == null)
+					{
+						fileName = GetFileName(frame);
+					}
+					stackTrace.Add(new StackTraceElement(className, methodName, fileName, IsNative(m) ? -2 : lineNumber));
+				}
+			}
 		}
 #endif
 
@@ -74,11 +271,6 @@ namespace IKVM.NativeCode.java.lang
 			{
 				info.SetType(typeof(Helper));
 			}
-		}
-
-		public static string SafeGetEnvironmentVariable(string name)
-		{
-			return JVM.SafeGetEnvironmentVariable(name);
 		}
 
 		public static bool IsNative(MethodBase m)
@@ -394,7 +586,7 @@ namespace IKVM.NativeCode.java.lang
 #if FIRST_PASS
 			return null;
 #else
-			global::java.lang.ExceptionHelper.ExceptionInfoHelper eih = new global::java.lang.ExceptionHelper.ExceptionInfoHelper(part1, part2);
+			ExceptionInfoHelper eih = new ExceptionInfoHelper(part1, part2);
 			return eih.get_StackTrace(x);
 #endif
 		}
