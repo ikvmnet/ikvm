@@ -3756,6 +3756,13 @@ namespace IKVM.Internal
 										Tracer.Warning(Tracer.Compiler, "Native method not implemented: {0}.{1}.{2}", classFile.Name, m.Name, m.Signature);
 										ilGenerator.EmitThrow("java.lang.UnsatisfiedLinkError", "Native method not implemented (compiled with -nojni): " + classFile.Name + "." + m.Name + m.Signature);
 									}
+#if STATIC_COMPILER
+									else if (StaticCompiler.runtimeJniAssembly == null)
+									{
+										Console.Error.WriteLine("Error: Native method not implemented: {0}.{1}{2}", classFile.Name, m.Name, m.Signature);
+										Environment.Exit(1);
+									}
+#endif
 									else
 									{
 										if (JVM.IsSaveDebugImage)
