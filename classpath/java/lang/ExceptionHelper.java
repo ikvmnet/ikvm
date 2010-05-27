@@ -37,13 +37,13 @@ import cli.System.Runtime.Serialization.StreamingContext;
 @ikvm.lang.Internal
 public final class ExceptionHelper
 {
-    private static final Key EXCEPTION_DATA_KEY = new Key();
+    static final Key EXCEPTION_DATA_KEY = new Key();
     private static final ikvm.internal.WeakIdentityMap exceptions = new ikvm.internal.WeakIdentityMap();
     private static final boolean cleanStackTrace = SafeGetEnvironmentVariable("IKVM_DISABLE_STACKTRACE_CLEANING") == null;
     private static final cli.System.Type System_Reflection_MethodBase = ikvm.runtime.Util.getInstanceTypeFromClass(cli.System.Reflection.MethodBase.class);
     private static final cli.System.Type System_Exception = ikvm.runtime.Util.getInstanceTypeFromClass(cli.System.Exception.class);
     // we use Activator.CreateInstance to prevent the exception from being added to the exceptions map
-    private static final Throwable NOT_REMAPPED = (Throwable)cli.System.Activator.CreateInstance(System_Exception);
+    static final Throwable NOT_REMAPPED = (Throwable)cli.System.Activator.CreateInstance(System_Exception);
     private static final java.util.Hashtable failedTypes = new java.util.Hashtable();
 
     static
@@ -287,32 +287,9 @@ public final class ExceptionHelper
     private static native boolean needStackTraceInfo(Throwable t);
     private static native void setStackTraceInfo(Throwable t, cli.System.Diagnostics.StackTrace part1, cli.System.Diagnostics.StackTrace part2);
 
-    static void checkInitCause(Throwable _this, Throwable _this_cause, Throwable cause)
-    {
-        if (_this_cause != _this)
-        {
-            throw new IllegalStateException("Can't overwrite cause");
-        }
-        if (cause == _this)
-        {
-            throw new IllegalArgumentException("Self-causation not permitted");
-        }
-    }
-
     static void FixateException(cli.System.Exception x)
     {
         exceptions.put(x, NOT_REMAPPED);
-    }
-    
-    static Throwable getCause(Throwable _this, Throwable cause)
-    {
-        return cause == _this ? null : cause;
-    }
-    
-    static StackTraceElement[] computeStackTrace(Throwable t, cli.System.Diagnostics.StackTrace part1, cli.System.Diagnostics.StackTrace part2)
-    {
-        ExceptionInfoHelper eih = new ExceptionInfoHelper(part1, part2);
-        return eih.get_StackTrace(t);
     }
 
     static StackTraceElement[] getStackTrace(cli.System.Exception x)

@@ -1208,7 +1208,7 @@
                             <ldarg_0 />
                             <ldfld class="java.lang.Throwable" name="cause" sig="Ljava.lang.Throwable;" />
                             <ldarg_1 />
-                            <call class="java.lang.ExceptionHelper" name="checkInitCause" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;Ljava.lang.Throwable;)V" />
+                            <call class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" name="checkInitCause" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;Ljava.lang.Throwable;)V" />
                             <ldarg_0 />
                             <ldarg_1 />
                             <stfld class="java.lang.Throwable" name="cause" sig="Ljava.lang.Throwable;" />
@@ -1226,7 +1226,7 @@
                     <ldarg_0 />
                     <ldnull />
                     <ldnull />
-                    <call class="java.lang.ExceptionHelper" name="checkInitCause" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;Ljava.lang.Throwable;)V" />
+                    <call class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" name="checkInitCause" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;Ljava.lang.Throwable;)V" />
                     <ldarg_0 />
                     <ret />
                 </alternateBody>
@@ -1236,7 +1236,7 @@
                     <ldarg_0 />
                     <ldarg_0 />
                     <ldfld class="java.lang.Throwable" name="cause" sig="Ljava.lang.Throwable;" />
-                    <call class="java.lang.ExceptionHelper" name="getCause" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;)Ljava.lang.Throwable;" />
+                    <call class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" name="getCause" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;)Ljava.lang.Throwable;" />
                     <ret />
                 </body>
                 <alternateBody>
@@ -1276,7 +1276,7 @@
                             <ldfld class="java.lang.Throwable" name="tracePart1" sig="Lcli.System.Diagnostics.StackTrace;" />
                             <ldarg_0 />
                             <ldfld class="java.lang.Throwable" name="tracePart2" sig="Lcli.System.Diagnostics.StackTrace;" />
-                            <call class="java.lang.ExceptionHelper" name="computeStackTrace" sig="(Ljava.lang.Throwable;Lcli.System.Diagnostics.StackTrace;Lcli.System.Diagnostics.StackTrace;)[Ljava.lang.StackTraceElement;" />
+                            <call class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" name="computeStackTrace" sig="(Ljava.lang.Throwable;Lcli.System.Diagnostics.StackTrace;Lcli.System.Diagnostics.StackTrace;)[Ljava.lang.StackTraceElement;" />
                             <stfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
                             <ldarg_0 />
                             <ldnull />

@@ -340,5 +340,34 @@ namespace IKVM.NativeCode.java.lang
 			return global::java.lang.Object.instancehelper_getClass(x).getName() + ": " + message;
 #endif
 		}
+
+		internal static Exception getCause(Exception _this, Exception cause)
+		{
+			return cause == _this ? null : cause;
+		}
+
+		internal static void checkInitCause(Exception _this, Exception _this_cause, Exception cause)
+		{
+#if !FIRST_PASS
+			if (_this_cause != _this)
+			{
+				throw new global::java.lang.IllegalStateException("Can't overwrite cause");
+			}
+			if (cause == _this)
+			{
+				throw new global::java.lang.IllegalArgumentException("Self-causation not permitted");
+			}
+#endif
+		}
+
+		internal static StackTraceElement[] computeStackTrace(Exception x, StackTrace part1, StackTrace part2)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			global::java.lang.ExceptionHelper.ExceptionInfoHelper eih = new global::java.lang.ExceptionHelper.ExceptionInfoHelper(part1, part2);
+			return eih.get_StackTrace(x);
+#endif
+		}
 	}
 }
