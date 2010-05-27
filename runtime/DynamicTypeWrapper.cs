@@ -800,6 +800,9 @@ namespace IKVM.Internal
 						}
 					}
 #if STATIC_COMPILER
+					// When we're statically compiling, we associate the typeBuilder with the wrapper. This enables types in referenced assemblies to refer back to
+					// types that we're currently compiling (i.e. a cyclic dependency between the currently assembly we're compiling and a referenced assembly).
+					wrapper.GetClassLoader().SetWrapperForType(typeBuilder, wrapper);
 					if (outer != null && cantNest)
 					{
 						AttributeHelper.SetNonNestedOuterClass(typeBuilder, outerClassWrapper.Name);
@@ -4128,7 +4131,10 @@ namespace IKVM.Internal
 				{
 					Profiler.Leave("TypeBuilder.CreateType");
 				}
+#if !STATIC_COMPILER
+				// When we're statically compiling we don't need to set the wrapper here, because we've already done so for the typeBuilder earlier.
 				wrapper.GetClassLoader().SetWrapperForType(type, wrapper);
+#endif
 #if STATIC_COMPILER
 				wrapper.FinishGhostStep2();
 #endif
