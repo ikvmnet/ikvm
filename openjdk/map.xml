@@ -918,7 +918,7 @@
             <field name="tracePart2" sig="Lcli.System.Diagnostics.StackTrace;" />
             <clinit>
                 <body>
-                    <call type="IKVM.NativeCode.java.lang.ExceptionHelper" name="getPersistentFields" sig="()[Ljava.io.ObjectStreamField;" />
+                    <call type="IKVM.Internal.ExceptionHelper" name="getPersistentFields" sig="()[Ljava.io.ObjectStreamField;" />
                     <stsfld class="java.lang.Throwable" name="serialPersistentFields" sig="[Ljava.io.ObjectStreamField;" />
                     <ldc_i4_0 />
                     <newarr sig="Ljava.lang.StackTraceElement;" />
@@ -951,7 +951,7 @@
                 <body>
                     <ldarg_0 />
                     <ldarg_1 />
-                    <call type="IKVM.NativeCode.java.lang.ExceptionHelper" name="MapExceptionFast" sig="(Ljava.lang.Throwable;Z)Ljava.lang.Throwable;" />
+                    <call type="IKVM.Internal.ExceptionHelper" name="MapExceptionFast" sig="(Ljava.lang.Throwable;Z)Ljava.lang.Throwable;" />
                     <ret />
                 </body>
             </method>
@@ -964,7 +964,7 @@
                     <ldarg_0 />
                     <ldarg_1 />
                     <ldarg_2 />
-                    <call type="IKVM.NativeCode.java.lang.ExceptionHelper" name="MapException" sig="(Ljava.lang.Throwable;Lcli.System.Type;Z)Ljava.lang.Throwable;" />
+                    <call type="IKVM.Internal.ExceptionHelper" name="MapException" sig="(Ljava.lang.Throwable;Lcli.System.Type;Z)Ljava.lang.Throwable;" />
                     <ret />
                 </body>
             </method>
@@ -975,7 +975,7 @@
                 </attribute>
                 <body>
                     <ldarg_0 />
-                    <call type="IKVM.NativeCode.java.lang.ExceptionHelper" name="UnmapException" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" />
+                    <call type="IKVM.Internal.ExceptionHelper" name="UnmapException" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" />
                     <ret />
                 </body>
             </method>
@@ -986,7 +986,7 @@
                 </attribute>
                 <body>
                     <ldarg_0 />
-                    <call class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" name="FixateException" sig="(Ljava.lang.Throwable;)V" />
+                    <call type="IKVM.Internal.ExceptionHelper" name="FixateException" sig="(Ljava.lang.Throwable;)V" />
                     <ldarg_0 />
                     <ret />
                 </body>
@@ -997,7 +997,7 @@
                 <body>
                     <ldarg_0 />
                     <ldarg_1 />
-                    <call type="IKVM.NativeCode.java.lang.ExceptionHelper" name="readObject" sig="(Ljava.lang.Throwable;Ljava.io.ObjectInputStream;)V" />
+                    <call type="IKVM.Internal.ExceptionHelper" name="readObject" sig="(Ljava.lang.Throwable;Ljava.io.ObjectInputStream;)V" />
                     <ret />
                 </body>
             </method>
@@ -1006,7 +1006,7 @@
                 <body>
                     <ldarg_0 />
                     <ldarg_1 />
-                    <call type="IKVM.NativeCode.java.lang.ExceptionHelper" name="writeObject" sig="(Ljava.lang.Throwable;Ljava.io.ObjectOutputStream;)V" />
+                    <call type="IKVM.Internal.ExceptionHelper" name="writeObject" sig="(Ljava.lang.Throwable;Ljava.io.ObjectOutputStream;)V" />
                     <ret />
                 </body>
             </method>
@@ -1039,7 +1039,7 @@
                 <body>
                     <ldarg_0 />
                     <ldarg_1 />
-                    <call class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" name="FilterMessage" sig="(Ljava.lang.String;)Ljava.lang.String;" />
+                    <call type="IKVM.Internal.ExceptionHelper" name="FilterMessage" sig="(Ljava.lang.String;)Ljava.lang.String;" />
                     <call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;)V" />
                     <ldarg_0 />
                     <ldarg_0 />
@@ -1069,7 +1069,7 @@
                 <body>
                     <ldarg_0 />
                     <ldarg_1 />
-                    <call class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" name="FilterMessage" sig="(Ljava.lang.String;)Ljava.lang.String;" />
+                    <call type="IKVM.Internal.ExceptionHelper" name="FilterMessage" sig="(Ljava.lang.String;)Ljava.lang.String;" />
                     <ldarg_2 />
                     <call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" />
                     <ldarg_0 />
@@ -1102,7 +1102,7 @@
                 <body>
                     <ldarg_0 />
                     <ldarg_1 />
-                    <call class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" name="GetMessageFromCause" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" />
+                    <call type="IKVM.Internal.ExceptionHelper" name="GetMessageFromCause" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" />
                     <ldarg_1 />
                     <call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" />
                     <ldarg_0 />
@@ -1135,15 +1135,15 @@
                 </body>
             </constructor>
             <method name="printStackTrace" sig="()V" modifiers="public">
-                <redirect class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)V" type="static" />
+                <redirect class="cli.IKVM.Internal.ExceptionHelper" sig="(Ljava.lang.Throwable;)V" type="static" />
             </method>
             <method name="printStackTrace" sig="(Ljava.io.PrintStream;)V" modifiers="public">
                 <parameter name="s" />
-                <redirect class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;Ljava.io.PrintStream;)V" type="static" />
+                <redirect class="cli.IKVM.Internal.ExceptionHelper" sig="(Ljava.lang.Throwable;Ljava.io.PrintStream;)V" type="static" />
             </method>
             <method name="printStackTrace" sig="(Ljava.io.PrintWriter;)V" modifiers="public">
                 <parameter name="s" />
-                <redirect class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;Ljava.io.PrintWriter;)V" type="static" />
+                <redirect class="cli.IKVM.Internal.ExceptionHelper" sig="(Ljava.lang.Throwable;Ljava.io.PrintWriter;)V" type="static" />
             </method>
             <method name="getMessage" sig="()Ljava.lang.String;" modifiers="public">
                 <body>
@@ -1158,7 +1158,7 @@
                 </alternateBody>
             </method>
             <method name="getLocalizedMessage" sig="()Ljava.lang.String;" modifiers="public">
-                <redirect class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
+                <redirect class="cli.IKVM.Internal.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
             </method>
             <method name="fillInStackTrace" sig="()Ljava.lang.Throwable;" modifiers="public">
                 <body>
@@ -1192,7 +1192,7 @@
                 </body>
                 <alternateBody>
                     <ldarg_0 />
-                    <call class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" name="fillInStackTrace" sig="(Ljava.lang.Throwable;)V" />
+                    <call type="IKVM.Internal.ExceptionHelper" name="fillInStackTrace" sig="(Ljava.lang.Throwable;)V" />
                     <ldarg_0 />
                     <ret />
                 </alternateBody>
@@ -1208,7 +1208,7 @@
                             <ldarg_0 />
                             <ldfld class="java.lang.Throwable" name="cause" sig="Ljava.lang.Throwable;" />
                             <ldarg_1 />
-                            <call class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" name="checkInitCause" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;Ljava.lang.Throwable;)V" />
+                            <call type="IKVM.Internal.ExceptionHelper" name="checkInitCause" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;Ljava.lang.Throwable;)V" />
                             <ldarg_0 />
                             <ldarg_1 />
                             <stfld class="java.lang.Throwable" name="cause" sig="Ljava.lang.Throwable;" />
@@ -1226,7 +1226,7 @@
                     <ldarg_0 />
                     <ldnull />
                     <ldnull />
-                    <call class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" name="checkInitCause" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;Ljava.lang.Throwable;)V" />
+                    <call type="IKVM.Internal.ExceptionHelper" name="checkInitCause" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;Ljava.lang.Throwable;)V" />
                     <ldarg_0 />
                     <ret />
                 </alternateBody>
@@ -1236,7 +1236,7 @@
                     <ldarg_0 />
                     <ldarg_0 />
                     <ldfld class="java.lang.Throwable" name="cause" sig="Ljava.lang.Throwable;" />
-                    <call class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" name="getCause" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;)Ljava.lang.Throwable;" />
+                    <call type="IKVM.Internal.ExceptionHelper" name="getCause" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;)Ljava.lang.Throwable;" />
                     <ret />
                 </body>
                 <alternateBody>
@@ -1255,7 +1255,7 @@
                 </body>
                 <alternateBody>
                     <ldarg_0 />
-                    <call class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" name="getStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;" />
+                    <call type="IKVM.Internal.ExceptionHelper" name="getStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;" />
                     <ret />
                 </alternateBody>
             </method>
@@ -1276,7 +1276,7 @@
                             <ldfld class="java.lang.Throwable" name="tracePart1" sig="Lcli.System.Diagnostics.StackTrace;" />
                             <ldarg_0 />
                             <ldfld class="java.lang.Throwable" name="tracePart2" sig="Lcli.System.Diagnostics.StackTrace;" />
-                            <call class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" name="computeStackTrace" sig="(Ljava.lang.Throwable;Lcli.System.Diagnostics.StackTrace;Lcli.System.Diagnostics.StackTrace;)[Ljava.lang.StackTraceElement;" />
+                            <call type="IKVM.Internal.ExceptionHelper" name="computeStackTrace" sig="(Ljava.lang.Throwable;Lcli.System.Diagnostics.StackTrace;Lcli.System.Diagnostics.StackTrace;)[Ljava.lang.StackTraceElement;" />
                             <stfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
                             <ldarg_0 />
                             <ldnull />
@@ -1297,7 +1297,7 @@
                 </body>
                 <alternateBody>
                     <ldarg_0 />
-                    <call class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" name="getStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;" />
+                    <call type="IKVM.Internal.ExceptionHelper" name="getStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;" />
                     <ret />
                 </alternateBody>
             </method>
@@ -1306,7 +1306,7 @@
                 <body>
                     <ldarg_0 />
                     <ldarg_1 />
-                    <call class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" name="checkStackTrace" sig="([Ljava.lang.StackTraceElement;)[Ljava.lang.StackTraceElement;" />
+                    <call type="IKVM.Internal.ExceptionHelper" name="checkStackTrace" sig="([Ljava.lang.StackTraceElement;)[Ljava.lang.StackTraceElement;" />
                     <stfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
                     <ldarg_0 />
                     <ldnull />
@@ -1319,12 +1319,12 @@
                 <alternateBody>
                     <ldarg_0 />
                     <ldarg_1 />
-                    <call class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" name="setStackTrace" sig="(Ljava.lang.Throwable;[Ljava.lang.StackTraceElement;)V" />
+                    <call type="IKVM.Internal.ExceptionHelper" name="setStackTrace" sig="(Ljava.lang.Throwable;[Ljava.lang.StackTraceElement;)V" />
                     <ret />
                 </alternateBody>
             </method>
             <method name="toString" sig="()Ljava.lang.String;" modifiers="public">
-                <redirect class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
+                <redirect class="cli.IKVM.Internal.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
             </method>
             <method name="GetObjectData" sig="(Lcli.System.Runtime.Serialization.SerializationInfo;Lcli.System.Runtime.Serialization.StreamingContext;)V" modifiers="public">
                 <attribute type="System.Security.Permissions.SecurityPermissionAttribute" sig="(Lcli.System.Security.Permissions.SecurityAction;)V">

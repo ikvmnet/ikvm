@@ -34,12 +34,13 @@ using Interlocked = System.Threading.Interlocked;
 using MethodBase = System.Reflection.MethodBase;
 using ObjectInputStream = java.io.ObjectInputStream;
 using ObjectOutputStream = java.io.ObjectOutputStream;
+using ObjectStreamField = java.io.ObjectStreamField;
 using StackTraceElement = java.lang.StackTraceElement;
 #if !FIRST_PASS
 using Throwable = java.lang.Throwable;
 #endif
 
-namespace IKVM.NativeCode.java.lang
+namespace IKVM.Internal
 {
 	static class ExceptionHelper
 	{
@@ -50,7 +51,7 @@ namespace IKVM.NativeCode.java.lang
 		private static readonly Type System_Reflection_MethodBase = typeof(MethodBase);
 		private static readonly Type System_Exception = typeof(Exception);
 #if !FIRST_PASS
-		private static readonly global::ikvm.@internal.WeakIdentityMap exceptions = new global::ikvm.@internal.WeakIdentityMap();
+		private static readonly ikvm.@internal.WeakIdentityMap exceptions = new ikvm.@internal.WeakIdentityMap();
 
 		static ExceptionHelper()
 		{
@@ -115,7 +116,7 @@ namespace IKVM.NativeCode.java.lang
 						if (tracePart1 != null)
 						{
 							int skip1 = 0;
-							if (cleanStackTrace && t is global::java.lang.NullPointerException && tracePart1.FrameCount > 0)
+							if (cleanStackTrace && t is java.lang.NullPointerException && tracePart1.FrameCount > 0)
 							{
 								// HACK if a NullPointerException originated inside an instancehelper method,
 								// we assume that the reference the method was called on was really the one that was null,
@@ -156,7 +157,7 @@ namespace IKVM.NativeCode.java.lang
 											}
 											skip++;
 										}
-										Type exceptionType = getTypeFromObject(t);
+										Type exceptionType = t.GetType();
 										while (tracePart2.FrameCount > skip)
 										{
 											mb = tracePart2.GetFrame(skip).GetMethod();
@@ -234,7 +235,7 @@ namespace IKVM.NativeCode.java.lang
 					{
 						try
 						{
-							fileName = new global::System.IO.FileInfo(fileName).Name;
+							fileName = new System.IO.FileInfo(fileName).Name;
 						}
 						catch
 						{
@@ -273,7 +274,7 @@ namespace IKVM.NativeCode.java.lang
 			}
 		}
 
-		public static bool IsNative(MethodBase m)
+		private static bool IsNative(MethodBase m)
 		{
 			object[] methodFlagAttribs = m.GetCustomAttributes(typeof(ModifiersAttribute), false);
 			if(methodFlagAttribs.Length == 1)
@@ -284,7 +285,7 @@ namespace IKVM.NativeCode.java.lang
 			return false;
 		}
 
-		public static string GetMethodName(MethodBase mb)
+		private static string GetMethodName(MethodBase mb)
 		{
 			object[] attr = mb.GetCustomAttributes(typeof(NameSigAttribute), false);
 			if(attr.Length == 1)
@@ -315,12 +316,12 @@ namespace IKVM.NativeCode.java.lang
 			}
 		}
 
-		public static bool IsHideFromJava(MethodBase mb)
+		private static bool IsHideFromJava(MethodBase mb)
 		{
 			return NativeCode.sun.reflect.Reflection.IsHideFromJava(mb);
 		}
 
-		public static string getClassNameFromType(Type type)
+		private static string getClassNameFromType(Type type)
 		{
 			if(ClassLoaderWrapper.IsRemappedType(type))
 			{
@@ -343,16 +344,16 @@ namespace IKVM.NativeCode.java.lang
 #if !FIRST_PASS
 			if(cause == throwable)
 			{
-				typeof(global::java.lang.Throwable).GetConstructor(new Type[] { typeof(string) }).Invoke(throwable, new object[] { detailMessage });
+				typeof(Throwable).GetConstructor(new Type[] { typeof(string) }).Invoke(throwable, new object[] { detailMessage });
 			}
 			else
 			{
-				typeof(global::java.lang.Throwable).GetConstructor(new Type[] { typeof(string), typeof(Exception) }).Invoke(throwable, new object[] { detailMessage, cause });
+				typeof(Throwable).GetConstructor(new Type[] { typeof(string), typeof(Exception) }).Invoke(throwable, new object[] { detailMessage, cause });
 			}
 #endif
 		}
 
-		public static int GetLineNumber(StackFrame frame)
+		private static int GetLineNumber(StackFrame frame)
 		{
 			int ilOffset = frame.GetILOffset();
 			if(ilOffset != StackFrame.OFFSET_UNKNOWN)
@@ -370,7 +371,7 @@ namespace IKVM.NativeCode.java.lang
 			return -1;
 		}
 
-		public static string GetFileName(StackFrame frame)
+		private static string GetFileName(StackFrame frame)
 		{
 			MethodBase mb = frame.GetMethod();
 			if(mb != null)
@@ -384,21 +385,16 @@ namespace IKVM.NativeCode.java.lang
 			return null;
 		}
 
-		public static Type getTypeFromObject(object o)
-		{
-			return o.GetType();
-		}
-
 		// called from map.xml
-		internal static global::java.io.ObjectStreamField[] getPersistentFields()
+		internal static ObjectStreamField[] getPersistentFields()
 		{
 #if FIRST_PASS
 			return null;
 #else
-			return new global::java.io.ObjectStreamField[] {
-				new global::java.io.ObjectStreamField("detailMessage", typeof(global::java.lang.String)),
-				new global::java.io.ObjectStreamField("cause", typeof(global::java.lang.Throwable)),
-				new global::java.io.ObjectStreamField("stackTrace", typeof(global::java.lang.StackTraceElement[]))
+			return new ObjectStreamField[] {
+				new ObjectStreamField("detailMessage", typeof(global::java.lang.String)),
+				new ObjectStreamField("cause", typeof(global::java.lang.Throwable)),
+				new ObjectStreamField("stackTrace", typeof(global::java.lang.StackTraceElement[]))
 			};
 #endif
 		}
@@ -435,11 +431,11 @@ namespace IKVM.NativeCode.java.lang
 		internal static void printStackTrace(Exception x)
 		{
 #if !FIRST_PASS
-			Throwable.instancehelper_printStackTrace(x, global::java.lang.System.err);
+			Throwable.instancehelper_printStackTrace(x, java.lang.System.err);
 #endif
 		}
 
-		internal static void printStackTrace(Exception x, global::java.io.PrintStream printStream)
+		internal static void printStackTrace(Exception x, java.io.PrintStream printStream)
 		{
 #if !FIRST_PASS
 			lock (printStream)
@@ -452,7 +448,7 @@ namespace IKVM.NativeCode.java.lang
 #endif
 		}
 
-		internal static void printStackTrace(Exception x, global::java.io.PrintWriter printWriter)
+		internal static void printStackTrace(Exception x, java.io.PrintWriter printWriter)
 		{
 #if !FIRST_PASS
 			lock (printWriter)
@@ -535,7 +531,7 @@ namespace IKVM.NativeCode.java.lang
 			{
 				return "";
 			}
-			return global::java.lang.Object.instancehelper_toString(cause);
+			return java.lang.Object.instancehelper_toString(cause);
 #endif
 		}
 
@@ -556,9 +552,9 @@ namespace IKVM.NativeCode.java.lang
 			string message = Throwable.instancehelper_getLocalizedMessage(x);
 			if (message == null)
 			{
-				return global::java.lang.Object.instancehelper_getClass(x).getName();
+				return java.lang.Object.instancehelper_getClass(x).getName();
 			}
-			return global::java.lang.Object.instancehelper_getClass(x).getName() + ": " + message;
+			return java.lang.Object.instancehelper_getClass(x).getName() + ": " + message;
 #endif
 		}
 
@@ -572,11 +568,11 @@ namespace IKVM.NativeCode.java.lang
 #if !FIRST_PASS
 			if (_this_cause != _this)
 			{
-				throw new global::java.lang.IllegalStateException("Can't overwrite cause");
+				throw new java.lang.IllegalStateException("Can't overwrite cause");
 			}
 			if (cause == _this)
 			{
-				throw new global::java.lang.IllegalArgumentException("Self-causation not permitted");
+				throw new java.lang.IllegalArgumentException("Self-causation not permitted");
 			}
 #endif
 		}
@@ -627,7 +623,7 @@ namespace IKVM.NativeCode.java.lang
 			{
 				if (copy[i] == null)
 				{
-					throw new global::java.lang.NullPointerException();
+					throw new java.lang.NullPointerException();
 				}
 			}
 			return copy;
@@ -713,15 +709,15 @@ namespace IKVM.NativeCode.java.lang
 #else
 			bool wrapped = false;
 			Exception r = MapExceptionFast(t.InnerException, true);
-			if (!(r is global::java.lang.Error))
+			if (!(r is java.lang.Error))
 			{
-				r = new global::java.lang.ExceptionInInitializerError(r);
+				r = new java.lang.ExceptionInInitializerError(r);
 				wrapped = true;
 			}
 			string type = t.TypeName;
 			if (failedTypes.ContainsKey(type))
 			{
-				r = new global::java.lang.NoClassDefFoundError(type).initCause(r);
+				r = new java.lang.NoClassDefFoundError(type).initCause(r);
 				wrapped = true;
 			}
 			if (handler != null && !handler.IsInstanceOfType(r))

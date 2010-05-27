@@ -3449,7 +3449,7 @@ namespace IKVM.NativeCode.java
 				return null;
 #else
 				List<jlStackTraceElement> stackTrace = new List<jlStackTraceElement>();
-				global::IKVM.NativeCode.java.lang.ExceptionHelper.ExceptionInfoHelper.Append(stackTrace, stack, 0);
+				ExceptionHelper.ExceptionInfoHelper.Append(stackTrace, stack, 0);
 				return stackTrace.ToArray();
 #endif
 			}
