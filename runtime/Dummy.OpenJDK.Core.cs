@@ -24,11 +24,27 @@
 
 namespace java
 {
+	namespace io
+	{
+		public class File { }
+		public class ObjectStreamField { }
+	}
+
 	namespace lang
 	{
 		public class Class { }
 		public class ClassLoader { }
 		public class SecurityManager { }
+
+		namespace reflect
+		{
+			public class Constructor { }
+		}
+	}
+
+	namespace nio
+	{
+		public class ByteBuffer { }
 	}
 
 	namespace security

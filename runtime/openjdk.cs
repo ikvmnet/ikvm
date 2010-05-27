@@ -41,9 +41,14 @@ using SystemThreadingThread = System.Threading.Thread;
 using SystemThreadingThreadInterruptedException = System.Threading.ThreadInterruptedException;
 using SystemThreadingThreadPriority = System.Threading.ThreadPriority;
 using IKVM.Internal;
-#if !FIRST_PASS
+using jiFile = java.io.File;
+using jiObjectStreamField = java.io.ObjectStreamField;
 using jlClass = java.lang.Class;
 using jlClassLoader = java.lang.ClassLoader;
+using jlrConstructor = java.lang.reflect.Constructor;
+using jnByteBuffer = java.nio.ByteBuffer;
+using ProtectionDomain = java.security.ProtectionDomain;
+#if !FIRST_PASS
 using jlArrayIndexOutOfBoundsException = java.lang.ArrayIndexOutOfBoundsException;
 using jlClassNotFoundException = java.lang.ClassNotFoundException;
 using jlException = java.lang.Exception;
@@ -73,20 +78,17 @@ using jlLong = java.lang.Long;
 using jlDouble = java.lang.Double;
 using jlVoid = java.lang.Void;
 using jlNumber = java.lang.Number;
-using jlrConstructor = java.lang.reflect.Constructor;
 using jlrMethod = java.lang.reflect.Method;
 using jlrField = java.lang.reflect.Field;
 using jlrModifier = java.lang.reflect.Modifier;
 using jlrAccessibleObject = java.lang.reflect.AccessibleObject;
 using jlrInvocationTargetException = java.lang.reflect.InvocationTargetException;
-using ProtectionDomain = java.security.ProtectionDomain;
 using srMethodAccessor = sun.reflect.MethodAccessor;
 using srConstructorAccessor = sun.reflect.ConstructorAccessor;
 using srFieldAccessor = sun.reflect.FieldAccessor;
 using srLangReflectAccess = sun.reflect.LangReflectAccess;
 using srReflection = sun.reflect.Reflection;
 using srReflectionFactory = sun.reflect.ReflectionFactory;
-using jnByteBuffer = java.nio.ByteBuffer;
 using StubGenerator = ikvm.@internal.stubgen.StubGenerator;
 using Annotation = java.lang.annotation.Annotation;
 using smJavaIOAccess = sun.misc.JavaIOAccess;
@@ -95,8 +97,6 @@ using smSharedSecrets = sun.misc.SharedSecrets;
 using smVM = sun.misc.VM;
 using jiConsole = java.io.Console;
 using jiIOException = java.io.IOException;
-using jiFile = java.io.File;
-using jiObjectStreamField = java.io.ObjectStreamField;
 using jnCharset = java.nio.charset.Charset;
 using juProperties = java.util.Properties;
 using irUtil = ikvm.runtime.Util;
@@ -709,13 +709,13 @@ namespace IKVM.NativeCode.java
 			{
 			}
 
-			public static bool isDynamicTypeWrapper(object cl)
+			public static bool isDynamicTypeWrapper(jlClass cl)
 			{
 				TypeWrapper wrapper = TypeWrapper.FromClass(cl);
 				return !wrapper.IsFastClassLiteralSafe;
 			}
 
-			public static bool hasStaticInitializer(object cl)
+			public static bool hasStaticInitializer(jlClass cl)
 			{
 				TypeWrapper wrapper = TypeWrapper.FromClass(cl);
 				try
@@ -1108,16 +1108,16 @@ namespace IKVM.NativeCode.java
 				return canonicalize0(_this, pathWithCanonicalPrefix);
 			}
 
-			private static string GetPathFromFile(object file)
+			private static string GetPathFromFile(jiFile file)
 			{
 #if FIRST_PASS
 				return null;
 #else
-				return ((jiFile)file).getPath();
+				return file.getPath();
 #endif
 			}
 
-			public static int getBooleanAttributes(object _this, object f)
+			public static int getBooleanAttributes(object _this, jiFile f)
 			{
 				try
 				{
@@ -1164,7 +1164,7 @@ namespace IKVM.NativeCode.java
 				return 0;
 			}
 
-			public static bool checkAccess(object _this, object f, int access)
+			public static bool checkAccess(object _this, jiFile f, int access)
 			{
 				string path = GetPathFromFile(f);
 				if (VirtualFileSystem.IsVirtualFS(path))
@@ -1242,7 +1242,7 @@ namespace IKVM.NativeCode.java
 				return System.TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(new System.DateTime(1970, 1, 1).Ticks + datetime * 10000L));
 			}
 
-			public static long getLastModifiedTime(object _this, object f)
+			public static long getLastModifiedTime(object _this, jiFile f)
 			{
 				try
 				{
@@ -1263,7 +1263,7 @@ namespace IKVM.NativeCode.java
 				return 0;
 			}
 
-			public static long getLength(object _this, object f)
+			public static long getLength(object _this, jiFile f)
 			{
 				try
 				{
@@ -1292,7 +1292,7 @@ namespace IKVM.NativeCode.java
 				return 0;
 			}
 
-			public static bool setPermission(object _this, object f, int access, bool enable, bool owneronly)
+			public static bool setPermission(object _this, jiFile f, int access, bool enable, bool owneronly)
 			{
 				if ((access & ACCESS_WRITE) != 0)
 				{
@@ -1360,7 +1360,7 @@ namespace IKVM.NativeCode.java
 				return false;
 			}
 
-			public static bool delete0(object _this, object f)
+			public static bool delete0(object _this, jiFile f)
 			{
 				System.IO.FileSystemInfo fileInfo = null;
 				try
@@ -1405,7 +1405,7 @@ namespace IKVM.NativeCode.java
 				return false;
 			}
 
-			public static string[] list(object _this, object f)
+			public static string[] list(object _this, jiFile f)
 			{
 				try
 				{
@@ -1440,7 +1440,7 @@ namespace IKVM.NativeCode.java
 				return null;
 			}
 
-			public static bool createDirectory(object _this, object f)
+			public static bool createDirectory(object _this, jiFile f)
 			{
 				try
 				{
@@ -1472,7 +1472,7 @@ namespace IKVM.NativeCode.java
 				return false;
 			}
 
-			public static bool rename0(object _this, object f1, object f2)
+			public static bool rename0(object _this, jiFile f1, jiFile f2)
 			{
 				try
 				{
@@ -1497,7 +1497,7 @@ namespace IKVM.NativeCode.java
 				return false;
 			}
 
-			public static bool setLastModifiedTime(object _this, object f, long time)
+			public static bool setLastModifiedTime(object _this, jiFile f, long time)
 			{
 				try
 				{
@@ -1522,7 +1522,7 @@ namespace IKVM.NativeCode.java
 				return false;
 			}
 
-			public static bool setReadOnly(object _this, object f)
+			public static bool setReadOnly(object _this, jiFile f)
 			{
 				try
 				{
@@ -1572,7 +1572,7 @@ namespace IKVM.NativeCode.java
 				return 0;
 			}
 
-			public static long getSpace0(object _this, object f, int t)
+			public static long getSpace0(object _this, jiFile f, int t)
 			{
 				const int SPACE_TOTAL = 0;
 				const int SPACE_FREE = 1;
@@ -1605,12 +1605,12 @@ namespace IKVM.NativeCode.java
 
 		static class UnixFileSystem
 		{
-			public static int getBooleanAttributes0(object _this, object f)
+			public static int getBooleanAttributes0(object _this, jiFile f)
 			{
 				return Win32FileSystem.getBooleanAttributes(_this, f);
 			}
 
-			public static long getSpace(object _this, object f, int t)
+			public static long getSpace(object _this, jiFile f, int t)
 			{
 				// TODO
 				return 0;
@@ -1626,22 +1626,22 @@ namespace IKVM.NativeCode.java
 				return Win32FileSystem.canonicalize0(_this, path);
 			}
 
-			public static bool checkAccess(object _this, object f, int access)
+			public static bool checkAccess(object _this, jiFile f, int access)
 			{
 				return Win32FileSystem.checkAccess(_this, f, access);
 			}
 
-			public static long getLastModifiedTime(object _this, object f)
+			public static long getLastModifiedTime(object _this, jiFile f)
 			{
 				return Win32FileSystem.getLastModifiedTime(_this, f);
 			}
 
-			public static long getLength(object _this, object f)
+			public static long getLength(object _this, jiFile f)
 			{
 				return Win32FileSystem.getLength(_this, f);
 			}
 
-			public static bool setPermission(object _this, object f, int access, bool enable, bool owneronly)
+			public static bool setPermission(object _this, jiFile f, int access, bool enable, bool owneronly)
 			{
 				// TODO consider using Mono.Posix
 				return Win32FileSystem.setPermission(_this, f, access, enable, owneronly);
@@ -1652,32 +1652,32 @@ namespace IKVM.NativeCode.java
 				return Win32FileSystem.createFileExclusively(_this, path);
 			}
 
-			public static bool delete0(object _this, object f)
+			public static bool delete0(object _this, jiFile f)
 			{
 				return Win32FileSystem.delete0(_this, f);
 			}
 
-			public static string[] list(object _this, object f)
+			public static string[] list(object _this, jiFile f)
 			{
 				return Win32FileSystem.list(_this, f);
 			}
 
-			public static bool createDirectory(object _this, object f)
+			public static bool createDirectory(object _this, jiFile f)
 			{
 				return Win32FileSystem.createDirectory(_this, f);
 			}
 
-			public static bool rename0(object _this, object f1, object f2)
+			public static bool rename0(object _this, jiFile f1, jiFile f2)
 			{
 				return Win32FileSystem.rename0(_this, f1, f2);
 			}
 
-			public static bool setLastModifiedTime(object _this, object f, long time)
+			public static bool setLastModifiedTime(object _this, jiFile f, long time)
 			{
 				return Win32FileSystem.setLastModifiedTime(_this, f, time);
 			}
 
-			public static bool setReadOnly(object _this, object f)
+			public static bool setReadOnly(object _this, jiFile f)
 			{
 				return Win32FileSystem.setReadOnly(_this, f);
 			}
@@ -2328,7 +2328,7 @@ namespace IKVM.NativeCode.java
 
 		static class Class
 		{
-			public static object forName0(string name, bool initialize, object loader)
+			public static jlClass forName0(string name, bool initialize, jlClassLoader loader)
 			{
 #if FIRST_PASS
 				return null;
@@ -2376,16 +2376,16 @@ namespace IKVM.NativeCode.java
 					}
 					tw.RunClassInit();
 				}
-				return tw.ClassObject;
+				return (jlClass)tw.ClassObject;
 #endif
 			}
 
-			public static bool isInstance(object thisClass, object obj)
+			public static bool isInstance(jlClass thisClass, object obj)
 			{
 				return TypeWrapper.FromClass(thisClass).IsInstance(obj);
 			}
 
-			public static bool isAssignableFrom(object thisClass, object otherClass)
+			public static bool isAssignableFrom(jlClass thisClass, jlClass otherClass)
 			{
 #if !FIRST_PASS
 				if (otherClass == null)
@@ -2396,22 +2396,22 @@ namespace IKVM.NativeCode.java
 				return TypeWrapper.FromClass(otherClass).IsAssignableTo(TypeWrapper.FromClass(thisClass));
 			}
 
-			public static bool isInterface(object thisClass)
+			public static bool isInterface(jlClass thisClass)
 			{
 				return TypeWrapper.FromClass(thisClass).IsInterface;
 			}
 
-			public static bool isArray(object thisClass)
+			public static bool isArray(jlClass thisClass)
 			{
 				return TypeWrapper.FromClass(thisClass).IsArray;
 			}
 
-			public static bool isPrimitive(object thisClass)
+			public static bool isPrimitive(jlClass thisClass)
 			{
 				return TypeWrapper.FromClass(thisClass).IsPrimitive;
 			}
 
-			public static string getName0(object thisClass)
+			public static string getName0(jlClass thisClass)
 			{
 				TypeWrapper tw = TypeWrapper.FromClass(thisClass);
 				if (tw.IsPrimitive)
@@ -2456,23 +2456,23 @@ namespace IKVM.NativeCode.java
 				return tw.Name;
 			}
 
-			public static string getSigName(object thisClass)
+			public static string getSigName(jlClass thisClass)
 			{
 				return TypeWrapper.FromClass(thisClass).SigName;
 			}
 
-			public static object getClassLoader0(object thisClass)
+			public static object getClassLoader0(jlClass thisClass)
 			{
 				return TypeWrapper.FromClass(thisClass).GetClassLoader().GetJavaClassLoader();
 			}
 
-			public static object getSuperclass(object thisClass)
+			public static object getSuperclass(jlClass thisClass)
 			{
 				TypeWrapper super = TypeWrapper.FromClass(thisClass).BaseTypeWrapper;
 				return super != null ? super.ClassObject : null;
 			}
 
-			public static object getInterfaces(object thisClass)
+			public static object getInterfaces(jlClass thisClass)
 			{
 #if FIRST_PASS
 				return null;
@@ -2487,13 +2487,13 @@ namespace IKVM.NativeCode.java
 #endif
 			}
 
-			public static object getComponentType(object thisClass)
+			public static object getComponentType(jlClass thisClass)
 			{
 				TypeWrapper tw = TypeWrapper.FromClass(thisClass);
 				return tw.IsArray ? tw.ElementTypeWrapper.ClassObject : null;
 			}
 
-			public static int getModifiers(object thisClass)
+			public static int getModifiers(jlClass thisClass)
 			{
 				// the 0x7FFF mask comes from JVM_ACC_WRITTEN_FLAGS in hotspot\src\share\vm\utilities\accessFlags.hpp
 				// masking out ACC_SUPER comes from instanceKlass::compute_modifier_flags() in hotspot\src\share\vm\oops\instanceKlass.cpp
@@ -2501,23 +2501,23 @@ namespace IKVM.NativeCode.java
 				return (int)TypeWrapper.FromClass(thisClass).ReflectiveModifiers & mask;
 			}
 
-			public static object[] getSigners(object thisClass)
+			public static object[] getSigners(jlClass thisClass)
 			{
 #if FIRST_PASS
 				return null;
 #else
-				return ((jlClass)thisClass).signers;
+				return thisClass.signers;
 #endif
 			}
 
-			public static void setSigners(object thisClass, object[] signers)
+			public static void setSigners(jlClass thisClass, object[] signers)
 			{
 #if !FIRST_PASS
-				((jlClass)thisClass).signers = signers;
+				thisClass.signers = signers;
 #endif
 			}
 
-			public static object[] getEnclosingMethod0(object thisClass)
+			public static object[] getEnclosingMethod0(jlClass thisClass)
 			{
 				TypeWrapper tw = TypeWrapper.FromClass(thisClass);
 				tw.Finish();
@@ -2536,7 +2536,7 @@ namespace IKVM.NativeCode.java
 				}
 			}
 
-			public static object getDeclaringClass(object thisClass)
+			public static object getDeclaringClass(jlClass thisClass)
 			{
 				try
 				{
@@ -2564,7 +2564,7 @@ namespace IKVM.NativeCode.java
 				}
 			}
 
-			public static object getProtectionDomain0(object thisClass)
+			public static ProtectionDomain getProtectionDomain0(jlClass thisClass)
 			{
 #if FIRST_PASS
 				return null;
@@ -2574,7 +2574,7 @@ namespace IKVM.NativeCode.java
 				{
 					wrapper = wrapper.ElementTypeWrapper;
 				}
-				object pd = ((jlClass)wrapper.ClassObject).pd;
+				ProtectionDomain pd = ((jlClass)wrapper.ClassObject).pd;
 				if (pd == null)
 				{
 					// The protection domain for statically compiled code is created lazily (not at java.lang.Class creation time),
@@ -2582,17 +2582,17 @@ namespace IKVM.NativeCode.java
 					AssemblyClassLoader acl = wrapper.GetClassLoader() as AssemblyClassLoader;
 					if (acl != null)
 					{
-						pd = acl.GetProtectionDomain();
+						pd = (ProtectionDomain)acl.GetProtectionDomain();
 					}
 				}
 				return pd;
 #endif
 			}
 
-			public static void setProtectionDomain0(object thisClass, object pd)
+			public static void setProtectionDomain0(jlClass thisClass, ProtectionDomain pd)
 			{
 #if !FIRST_PASS
-				((jlClass)thisClass).pd = (ProtectionDomain)pd;
+				thisClass.pd = pd;
 #endif
 			}
 
@@ -2625,7 +2625,7 @@ namespace IKVM.NativeCode.java
 				}
 			}
 
-			public static string getGenericSignature(object thisClass)
+			public static string getGenericSignature(jlClass thisClass)
 			{
 				TypeWrapper tw = TypeWrapper.FromClass(thisClass);
 				tw.Finish();
@@ -2654,7 +2654,7 @@ namespace IKVM.NativeCode.java
 #endif
 			}
 
-			public static object getDeclaredAnnotationsImpl(object thisClass)
+			public static object getDeclaredAnnotationsImpl(jlClass thisClass)
 			{
 #if FIRST_PASS
 				return null;
@@ -2672,7 +2672,7 @@ namespace IKVM.NativeCode.java
 #endif
 			}
 
-			public static object getDeclaredFields0(object thisClass, bool publicOnly)
+			public static object getDeclaredFields0(jlClass thisClass, bool publicOnly)
 			{
 #if FIRST_PASS
 				return null;
@@ -2714,7 +2714,7 @@ namespace IKVM.NativeCode.java
 #endif
 			}
 
-			public static object getDeclaredMethods0(object thisClass, bool publicOnly)
+			public static object getDeclaredMethods0(jlClass thisClass, bool publicOnly)
 			{
 #if FIRST_PASS
 				return null;
@@ -2768,7 +2768,7 @@ namespace IKVM.NativeCode.java
 #endif
 			}
 
-			public static object getDeclaredConstructors0(object thisClass, bool publicOnly)
+			public static object getDeclaredConstructors0(jlClass thisClass, bool publicOnly)
 			{
 #if FIRST_PASS
 				return null;
@@ -2821,7 +2821,7 @@ namespace IKVM.NativeCode.java
 #endif
 			}
 
-			public static object getDeclaredClasses0(object thisClass)
+			public static object getDeclaredClasses0(jlClass thisClass)
 			{
 #if FIRST_PASS
 				return null;
@@ -2867,12 +2867,12 @@ namespace IKVM.NativeCode.java
 			private static jlClassNotFoundException classNotFoundException;
 #endif
 
-			public static object defineClass0(object thisClassLoader, string name, byte[] b, int off, int len, object pd)
+			public static object defineClass0(jlClassLoader thisClassLoader, string name, byte[] b, int off, int len, object pd)
 			{
 				return defineClass1(thisClassLoader, name, b, off, len, pd, null);
 			}
 
-			public static object defineClass1(object thisClassLoader, string name, byte[] b, int off, int len, object pd, string source)
+			public static object defineClass1(jlClassLoader thisClassLoader, string name, byte[] b, int off, int len, object pd, string source)
 			{
 				// it appears the source argument is only used for trace messages in HotSpot. We'll just ignore it for now.
 				Profiler.Enter("ClassLoader.defineClass");
@@ -2907,24 +2907,23 @@ namespace IKVM.NativeCode.java
 				}
 			}
 
-			public static object defineClass2(object thisClassLoader, string name, object b, int off, int len, object pd, string source)
+			public static object defineClass2(jlClassLoader thisClassLoader, string name, jnByteBuffer bb, int off, int len, ProtectionDomain pd, string source)
 			{
 #if FIRST_PASS
 				return null;
 #else
-				jnByteBuffer bb = (jnByteBuffer)b;
 				byte[] buf = new byte[bb.remaining()];
 				bb.get(buf);
 				return defineClass1(thisClassLoader, name, buf, 0, buf.Length, pd, source);
 #endif
 			}
 
-			public static void resolveClass0(object thisClassLoader, object clazz)
+			public static void resolveClass0(jlClassLoader thisClassLoader, object clazz)
 			{
 				// no-op
 			}
 
-			public static object findBootstrapClass(object thisClassLoader, string name)
+			public static object findBootstrapClass(jlClassLoader thisClassLoader, string name)
 			{
 #if FIRST_PASS
 				return null;
@@ -2955,7 +2954,7 @@ namespace IKVM.NativeCode.java
 #endif
 			}
 
-			public static object findLoadedClass0(object thisClassLoader, string name)
+			public static object findLoadedClass0(jlClassLoader thisClassLoader, string name)
 			{
 				ClassLoaderWrapper loader = ClassLoaderWrapper.GetClassLoaderWrapper(thisClassLoader);
 				TypeWrapper tw = loader.GetLoadedClass(name);
@@ -3161,7 +3160,7 @@ namespace IKVM.NativeCode.java
 			// to prevent having to load the JNI assembly when it isn't used.
 			internal static volatile Assembly jniAssembly;
 
-			public static object getClassContext(object thisSecurityManager)
+			public static jlClass[] getClassContext(object thisSecurityManager)
 			{
 #if FIRST_PASS
 				return null;
@@ -3472,7 +3471,7 @@ namespace IKVM.NativeCode.java
 		{
 			static class Proxy
 			{
-				public static object defineClass0(object classLoader, string name, byte[] b, int off, int len)
+				public static object defineClass0(jlClassLoader classLoader, string name, byte[] b, int off, int len)
 				{
 					return ClassLoader.defineClass1(classLoader, name, b, off, len, null, null);
 				}
@@ -4397,7 +4396,7 @@ namespace IKVM.NativeCode.java
 				TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(type);
 				if (tw != null)
 				{
-					return java.lang.Class.getProtectionDomain0(tw.ClassObject);
+					return java.lang.Class.getProtectionDomain0((jlClass)tw.ClassObject);
 				}
 				return null;
 			}
@@ -7802,13 +7801,12 @@ namespace IKVM.NativeCode.sun.reflect
 #endif
 		}
 
-		public static object newConstructorAccessorForSerialization(object classToInstantiate, object constructorToCall)
+		public static object newConstructorAccessorForSerialization(jlClass classToInstantiate, jlrConstructor constructorToCall)
 		{
 #if FIRST_PASS
 			return null;
 #else
-			jlrConstructor cons = (jlrConstructor)constructorToCall;
-			return new FastSerializationConstructorAccessorImpl(cons, (jlClass)classToInstantiate);
+			return new FastSerializationConstructorAccessorImpl(constructorToCall, classToInstantiate);
 #endif
 		}
 	}
