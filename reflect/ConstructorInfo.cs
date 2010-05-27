@@ -218,7 +218,7 @@ namespace IKVM.Reflection
 
 		internal override int ImportTo(Emit.ModuleBuilder module)
 		{
-			return module.ImportMember(method);
+			return method.ImportTo(module);
 		}
 	}
 }
