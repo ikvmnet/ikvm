@@ -1135,15 +1135,15 @@
                 </body>
             </constructor>
             <method name="printStackTrace" sig="()V" modifiers="public">
-                <redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)V" type="static" />
+                <redirect class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)V" type="static" />
             </method>
             <method name="printStackTrace" sig="(Ljava.io.PrintStream;)V" modifiers="public">
                 <parameter name="s" />
-                <redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;Ljava.io.PrintStream;)V" type="static" />
+                <redirect class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;Ljava.io.PrintStream;)V" type="static" />
             </method>
             <method name="printStackTrace" sig="(Ljava.io.PrintWriter;)V" modifiers="public">
                 <parameter name="s" />
-                <redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;Ljava.io.PrintWriter;)V" type="static" />
+                <redirect class="cli.IKVM.NativeCode.java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;Ljava.io.PrintWriter;)V" type="static" />
             </method>
             <method name="getMessage" sig="()Ljava.lang.String;" modifiers="public">
                 <body>

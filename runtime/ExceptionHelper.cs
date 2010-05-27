@@ -31,6 +31,7 @@ using ObjectOutputStream = java.io.ObjectOutputStream;
 using StackTraceElement = java.lang.StackTraceElement;
 #if !FIRST_PASS
 using Throwable = java.lang.Throwable;
+using System.Collections.Generic;
 #endif
 
 namespace IKVM.NativeCode.java.lang
@@ -209,5 +210,94 @@ namespace IKVM.NativeCode.java.lang
 			Throwable.instancehelper_setStackTrace(x, stackTrace == null ? new StackTraceElement[0] : stackTrace);
 #endif
 		}
+
+		internal static void printStackTrace(Exception x)
+		{
+#if !FIRST_PASS
+			Throwable.instancehelper_printStackTrace(x, global::java.lang.System.err);
+#endif
+		}
+
+		internal static void printStackTrace(Exception x, global::java.io.PrintStream printStream)
+		{
+#if !FIRST_PASS
+			lock (printStream)
+			{
+				foreach (string line in BuildStackTrace(x))
+				{
+					printStream.println(line);
+				}
+			}
+#endif
+		}
+
+		internal static void printStackTrace(Exception x, global::java.io.PrintWriter printWriter)
+		{
+#if !FIRST_PASS
+			lock (printWriter)
+			{
+				foreach (string line in BuildStackTrace(x))
+				{
+					printWriter.println(line);
+				}
+			}
+#endif
+		}
+
+#if !FIRST_PASS
+		private static List<String> BuildStackTrace(Exception x)
+		{
+			List<String> list = new List<String>();
+			list.Add(x.ToString());
+			StackTraceElement[] stack = Throwable.instancehelper_getStackTrace(x);
+			for (int i = 0; i < stack.Length; i++)
+			{
+				list.Add("\tat " + stack[i]);
+			}
+			Exception cause = Throwable.instancehelper_getCause(x);
+			while (cause != null)
+			{
+				list.Add("Caused by: " + cause);
+
+				// Cause stacktrace
+				StackTraceElement[] parentStack = stack;
+				stack = Throwable.instancehelper_getStackTrace(cause);
+				bool equal = false; // Is rest of stack equal to parent frame?
+				for (int i = 0; i < stack.Length && !equal; i++)
+				{
+					// Check if we already printed the rest of the stack
+					// since it was the tail of the parent stack
+					int remaining = stack.Length - i;
+					int element = i;
+					int parentElement = parentStack.Length - remaining;
+					equal = parentElement >= 0 && parentElement < parentStack.Length;
+					while (equal && element < stack.Length)
+					{
+						if (stack[element].equals(parentStack[parentElement]))
+						{
+							element++;
+							parentElement++;
+						}
+						else
+						{
+							equal = false;
+						}
+					}
+					// Print stacktrace element or indicate the rest is equal 
+					if (!equal)
+					{
+						list.Add("\tat " + stack[i]);
+					}
+					else
+					{
+						list.Add("\t... " + remaining + " more");
+						break; // from stack printing for loop
+					}
+				}
+				cause = Throwable.instancehelper_getCause(cause);
+			}
+			return list;
+		}
+#endif
 	}
 }

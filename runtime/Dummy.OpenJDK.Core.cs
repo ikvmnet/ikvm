@@ -30,6 +30,8 @@ namespace java
 		public class ObjectInputStream { }
 		public class ObjectOutputStream { }
 		public class ObjectStreamField { }
+		public class PrintStream { }
+		public class PrintWriter { }
 	}
 
 	namespace lang
