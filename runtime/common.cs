@@ -28,6 +28,7 @@ using IKVM.Attributes;
 using IKVM.Runtime;
 using IKVM.Internal;
 using AssemblyClassLoader_ = IKVM.Internal.AssemblyClassLoader;
+using jlClass = java.lang.Class;
 #if !FIRST_PASS
 using NegativeArraySizeException = java.lang.NegativeArraySizeException;
 using IllegalArgumentException = java.lang.IllegalArgumentException;
@@ -129,7 +130,7 @@ namespace IKVM.NativeCode.ikvm.@internal
 	{
 		static class StubGenerator
 		{
-			public static string getAssemblyName(object c)
+			public static string getAssemblyName(jlClass c)
 			{
 				TypeWrapper wrapper = TypeWrapper.FromClass(c);
 				ClassLoaderWrapper loader = wrapper.GetClassLoader();
@@ -172,7 +173,7 @@ namespace IKVM.NativeCode.ikvm.@internal
 				return mb != null && mb.IsDefined(typeof(ObsoleteAttribute), false);
 			}
 
-			public static bool isClassDeprecated(object clazz)
+			public static bool isClassDeprecated(jlClass clazz)
 			{
 				Type type = TypeWrapper.FromClass(clazz).TypeAsTBD;
 				// we need to check type for null, because ReflectionOnly
@@ -244,14 +245,14 @@ namespace IKVM.NativeCode.ikvm.runtime
 			return assemblies;
 		}
 
-		public static Assembly GetAssemblyFromClass(object clazz)
+		public static Assembly GetAssemblyFromClass(jlClass clazz)
 		{
 			TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
 			AssemblyClassLoader_ acl = wrapper.GetClassLoader() as AssemblyClassLoader_;
 			return acl != null ? acl.GetAssembly(wrapper) : null;
 		}
 
-		public static bool IsDynamic(object clazz)
+		public static bool IsDynamic(jlClass clazz)
 		{
 			return TypeWrapper.FromClass(clazz) is DynamicTypeWrapper;
 		}
@@ -326,7 +327,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 
 	static class Util
 	{
-		public static object getClassFromObject(object o)
+		public static jlClass getClassFromObject(object o)
 		{
 			return GetTypeWrapperFromObject(o).ClassObject;
 		}
@@ -357,7 +358,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 			}
 		}
 
-		public static object getClassFromTypeHandle(RuntimeTypeHandle handle)
+		public static jlClass getClassFromTypeHandle(RuntimeTypeHandle handle)
 		{
 			Type t = Type.GetTypeFromHandle(handle);
 			if(t.IsPrimitive || ClassLoaderWrapper.IsRemappedType(t) || t == typeof(void))
@@ -376,7 +377,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 			return null;
 		}
 
-		public static object getFriendlyClassFromType(Type type)
+		public static jlClass getFriendlyClassFromType(Type type)
 		{
 			int rank = 0;
 			while(ReflectUtil.IsVector(type))
@@ -427,7 +428,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 			return true;
 		}
 
-		public static Type getInstanceTypeFromClass(object clazz)
+		public static Type getInstanceTypeFromClass(jlClass clazz)
 		{
 			TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
 			if(wrapper.IsRemapped && wrapper.IsFinal)

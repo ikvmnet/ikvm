@@ -1781,12 +1781,12 @@ namespace IKVM.NativeCode.java
 			{
 			}
 
-			public static object newArray(object componentType, int length)
+			public static object newArray(jlClass componentType, int length)
 			{
 				return null;
 			}
 
-			public static object multiNewArray(object componentType, int[] dimensions)
+			public static object multiNewArray(jlClass componentType, int[] dimensions)
 			{
 				return null;
 			}
@@ -2249,7 +2249,7 @@ namespace IKVM.NativeCode.java
 					}
 				}
 
-				public static object newArray(object componentType, int length)
+				public static object newArray(jlClass componentType, int length)
 				{
 					if (componentType == null)
 					{
@@ -2286,7 +2286,7 @@ namespace IKVM.NativeCode.java
 					}
 				}
 
-				public static object multiNewArray(object componentType, int[] dimensions)
+				public static object multiNewArray(jlClass componentType, int[] dimensions)
 				{
 					if (componentType == null || dimensions == null)
 					{
@@ -2855,7 +2855,7 @@ namespace IKVM.NativeCode.java
 #endif
 			}
 
-			public static bool desiredAssertionStatus0(object clazz)
+			public static bool desiredAssertionStatus0(jlClass clazz)
 			{
 				return IKVM.Runtime.Assertions.IsEnabled(TypeWrapper.FromClass(clazz));
 			}
@@ -3195,7 +3195,7 @@ namespace IKVM.NativeCode.java
 
 			public static object currentClassLoader0(object thisSecurityManager)
 			{
-				object currentClass = currentLoadedClass0(thisSecurityManager);
+				jlClass currentClass = currentLoadedClass0(thisSecurityManager);
 				if (currentClass != null)
 				{
 					return TypeWrapper.FromClass(currentClass).GetClassLoader().GetJavaClassLoader();
@@ -3213,7 +3213,7 @@ namespace IKVM.NativeCode.java
 				throw new NotImplementedException();
 			}
 
-			public static object currentLoadedClass0(object thisSecurityManager)
+			public static jlClass currentLoadedClass0(object thisSecurityManager)
 			{
 				throw new NotImplementedException();
 			}
@@ -5730,7 +5730,7 @@ namespace IKVM.NativeCode.sun.misc
 			throw x;
 		}
 
-		public static void ensureClassInitialized(object thisUnsafe, object clazz)
+		public static void ensureClassInitialized(object thisUnsafe, jlClass clazz)
 		{
 			TypeWrapper tw = TypeWrapper.FromClass(clazz);
 			if (!tw.IsArray)
@@ -5748,7 +5748,7 @@ namespace IKVM.NativeCode.sun.misc
 		}
 
 		[System.Security.SecurityCritical]
-		public static object allocateInstance(object thisUnsafe, object clazz)
+		public static object allocateInstance(object thisUnsafe, jlClass clazz)
 		{
 			TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
 			try
@@ -5944,12 +5944,12 @@ namespace IKVM.NativeCode.sun.reflect
 #endif
 		}
 
-		public static int getClassAccessFlags(object clazz)
+		public static int getClassAccessFlags(jlClass clazz)
 		{
 			return (int)TypeWrapper.FromClass(clazz).Modifiers;
 		}
 
-		public static bool checkInternalAccess(object currentClass, object memberClass)
+		public static bool checkInternalAccess(jlClass currentClass, jlClass memberClass)
 		{
 			TypeWrapper current = TypeWrapper.FromClass(currentClass);
 			TypeWrapper member = TypeWrapper.FromClass(memberClass);

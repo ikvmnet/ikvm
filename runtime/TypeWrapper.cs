@@ -1863,12 +1863,11 @@ namespace IKVM.Internal
 		}
 #endif
 
-		internal static TypeWrapper FromClass(object classObject)
+		internal static TypeWrapper FromClass(java.lang.Class clazz)
 		{
 #if FIRST_PASS
 			return null;
 #else
-			java.lang.Class clazz = (java.lang.Class)classObject;
 			// MONOBUG redundant cast to workaround mcs bug
 			TypeWrapper tw = (TypeWrapper)(object)clazz.typeWrapper;
 			if(tw == null)
@@ -1877,7 +1876,7 @@ namespace IKVM.Internal
 				if (type == null)
 				{
 					ResolvePrimitiveTypeWrapperClasses();
-					return FromClass(classObject);
+					return FromClass(clazz);
 				}
 				if (type == typeof(void) || type.IsPrimitive || ClassLoaderWrapper.IsRemappedType(type))
 				{
