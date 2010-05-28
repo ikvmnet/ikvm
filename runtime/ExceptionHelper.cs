@@ -134,6 +134,7 @@ namespace IKVM.Internal
 									MethodBase mb = tracePart2.GetFrame(skip).GetMethod();
 									if (mb.DeclaringType == typeof(Throwable) && mb.Name.EndsWith("fillInStackTrace", StringComparison.Ordinal))
 									{
+										skip++;
 										while (tracePart2.FrameCount > skip)
 										{
 											mb = tracePart2.GetFrame(skip).GetMethod();
