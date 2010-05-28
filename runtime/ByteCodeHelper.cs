@@ -804,6 +804,19 @@ namespace IKVM.Runtime
 			}
 #endif
 		}
+
+		[Flags]
+		public enum MapFlags
+		{
+			None = 0,
+			NoRemapping = 1,
+		}
+
+		[HideFromJava]
+		public static T MapException<T>(Exception x, MapFlags mode) where T : Exception
+		{
+			return (T)ExceptionHelper.MapException(x, typeof(T), (mode & MapFlags.NoRemapping) == 0);
+		}
 	}
 
 	[StructLayout(LayoutKind.Explicit)]
