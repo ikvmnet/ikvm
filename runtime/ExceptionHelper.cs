@@ -99,12 +99,6 @@ namespace IKVM.Internal
 				return (mb.Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.PrivateScope;
 			}
 
-			private static string getDeclaringTypeNameSafe(MethodBase mb)
-			{
-				Type type = mb.DeclaringType;
-				return type == null ? "" : type.FullName;
-			}
-
 			internal StackTraceElement[] get_StackTrace(Exception t)
 			{
 				lock (this)
@@ -128,40 +122,31 @@ namespace IKVM.Internal
 							}
 							Append(list, tracePart1, skip1);
 						}
-						if (tracePart2 != null)
+						if (tracePart2 != null && tracePart2.FrameCount > 0)
 						{
 							int skip = 0;
 							if (cleanStackTrace)
 							{
-								while (tracePart2.FrameCount > skip &&
-								getDeclaringTypeNameSafe(tracePart2.GetFrame(skip).GetMethod()).StartsWith("java.lang.ExceptionHelper"))
-								{
-									skip++;
-								}
-								if (tracePart2.FrameCount > skip)
+								// If fillInStackTrace was called (either directly or from the constructor),
+								// filter out fillInStackTrace and the following constructor frames.
+								if (tracePart1 == null)
 								{
 									MethodBase mb = tracePart2.GetFrame(skip).GetMethod();
-									// here we have to check for both fillInStackTrace and .ctor, because on x64 the fillInStackTrace method
-									// disappears from the stack trace due to the tail call optimization.
-									if (getDeclaringTypeNameSafe(mb).Equals("java.lang.Throwable") &&
-										(mb.Name.EndsWith("fillInStackTrace") || mb.Name.Equals(".ctor")))
+									if (mb.DeclaringType == typeof(Throwable) && mb.Name.EndsWith("fillInStackTrace", StringComparison.Ordinal))
 									{
 										while (tracePart2.FrameCount > skip)
 										{
 											mb = tracePart2.GetFrame(skip).GetMethod();
-											if (!getDeclaringTypeNameSafe(mb).Equals("java.lang.Throwable")
-												|| !mb.Name.EndsWith("fillInStackTrace"))
+											if (mb.DeclaringType != typeof(Throwable) || !mb.Name.EndsWith("fillInStackTrace", StringComparison.Ordinal))
 											{
 												break;
 											}
 											skip++;
 										}
-										Type exceptionType = t.GetType();
 										while (tracePart2.FrameCount > skip)
 										{
 											mb = tracePart2.GetFrame(skip).GetMethod();
-											if (!mb.Name.Equals(".ctor")
-												|| !mb.DeclaringType.IsAssignableFrom(exceptionType))
+											if (mb.Name != ".ctor" || !mb.DeclaringType.IsInstanceOfType(t))
 											{
 												break;
 											}
@@ -175,9 +160,9 @@ namespace IKVM.Internal
 									skip++;
 								}
 								if (tracePart1 != null &&
-												tracePart1.FrameCount > 0 &&
-								tracePart2.FrameCount > skip &&
-								tracePart1.GetFrame(tracePart1.FrameCount - 1).GetMethod() == tracePart2.GetFrame(skip).GetMethod())
+									tracePart1.FrameCount > 0 &&
+									tracePart2.FrameCount > skip &&
+									tracePart1.GetFrame(tracePart1.FrameCount - 1).GetMethod() == tracePart2.GetFrame(skip).GetMethod())
 								{
 									skip++;
 								}
@@ -187,7 +172,7 @@ namespace IKVM.Internal
 						if (cleanStackTrace && list.Count > 0)
 						{
 							StackTraceElement elem = list[list.Count - 1];
-							if (elem.getClassName().Equals("java.lang.reflect.Method"))
+							if (elem.getClassName() == "java.lang.reflect.Method")
 							{
 								list.RemoveAt(list.Count - 1);
 							}
@@ -689,6 +674,7 @@ namespace IKVM.Internal
 #endif
 		}
 
+		[HideFromJava]
 		private static Exception MapTypeInitializeException(TypeInitializationException t, Type handler)
 		{
 #if FIRST_PASS
@@ -734,6 +720,7 @@ namespace IKVM.Internal
 #endif
 		}
 
+		[HideFromJava]
 		internal static Exception MapException(Exception x, Type handler, bool remap)
 		{
 #if FIRST_PASS
