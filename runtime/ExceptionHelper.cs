@@ -48,7 +48,6 @@ namespace IKVM.Internal
 		private static readonly Key EXCEPTION_DATA_KEY = new Key();
 		private static readonly Exception NOT_REMAPPED = new Exception();
 		private static readonly bool cleanStackTrace = JVM.SafeGetEnvironmentVariable("IKVM_DISABLE_STACKTRACE_CLEANING") == null;
-		private static readonly Type System_Reflection_MethodBase = typeof(MethodBase);
 		private static readonly Type System_Exception = typeof(Exception);
 #if !FIRST_PASS
 		private static readonly ikvm.@internal.WeakIdentityMap exceptions = new ikvm.@internal.WeakIdentityMap();
@@ -207,19 +206,17 @@ namespace IKVM.Internal
 				{
 					StackFrame frame = st.GetFrame(i);
 					MethodBase m = frame.GetMethod();
-					// TODO I may need more safety checks like these
 					if (m == null || m.DeclaringType == null)
 					{
 						continue;
 					}
-					String methodName = GetMethodName(m);
-					String className = getClassNameFromType(m.DeclaringType);
+					Type type = m.DeclaringType;
 					if (cleanStackTrace &&
-						(System_Reflection_MethodBase.IsAssignableFrom(m.DeclaringType)
-						|| className.StartsWith("java.lang.ExceptionHelper")
-						|| className.Equals("cli.System.RuntimeMethodHandle")
-						|| (className.Equals("java.lang.Throwable") && m.Name.Equals("instancehelper_fillInStackTrace"))
-						|| methodName.StartsWith("__<")
+						(typeof(MethodBase).IsAssignableFrom(type)
+						|| type == typeof(RuntimeMethodHandle)
+						|| (type == typeof(Throwable) && m.Name == "instancehelper_fillInStackTrace")
+						|| (type == typeof(ikvm.runtime.Util) && m.Name == "mapException")
+						|| (m.Name == "ToJava" && typeof(RetargetableJavaException).IsAssignableFrom(type))
 						|| IsHideFromJava(m)
 						|| IsPrivateScope(m))) // NOTE we assume that privatescope methods are always stubs that we should exclude
 					{
@@ -230,7 +227,7 @@ namespace IKVM.Internal
 					{
 						lineNumber = GetLineNumber(frame);
 					}
-					String fileName = frame.GetFileName();
+					string fileName = frame.GetFileName();
 					if (fileName != null)
 					{
 						try
@@ -248,7 +245,7 @@ namespace IKVM.Internal
 					{
 						fileName = GetFileName(frame);
 					}
-					stackTrace.Add(new StackTraceElement(className, methodName, fileName, IsNative(m) ? -2 : lineNumber));
+					stackTrace.Add(new StackTraceElement(getClassNameFromType(type), GetMethodName(m), fileName, IsNative(m) ? -2 : lineNumber));
 				}
 			}
 		}
@@ -299,16 +296,6 @@ namespace IKVM.Internal
 			else if(mb.Name == ".cctor")
 			{
 				return "<clinit>";
-			}
-			else if(mb.Name == "ToJava" && typeof(RetargetableJavaException).IsAssignableFrom(mb.DeclaringType))
-			{
-				// hide this method from the stack trace
-				return "__<ToJava>";
-			}
-			else if(mb.Name == "mapException" && mb.DeclaringType.FullName == "ikvm.runtime.Util")
-			{
-				// hide this method from the stack trace
-				return "__<mapException>";
 			}
 			else
 			{
