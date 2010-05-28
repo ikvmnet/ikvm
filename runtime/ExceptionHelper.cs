@@ -154,17 +154,21 @@ namespace IKVM.Internal
 										}
 									}
 								}
-								// skip java.lang.Throwable.__<map>
-								while (tracePart2.FrameCount > skip && IsHideFromJava(tracePart2.GetFrame(skip).GetMethod()))
+								else
 								{
-									skip++;
-								}
-								if (tracePart1 != null &&
-									tracePart1.FrameCount > 0 &&
-									tracePart2.FrameCount > skip &&
-									tracePart1.GetFrame(tracePart1.FrameCount - 1).GetMethod() == tracePart2.GetFrame(skip).GetMethod())
-								{
-									skip++;
+									// Skip java.lang.Throwable.__<map> and other mapping methods, because we need to be able to remove the frame
+									// that called map (if it is the same as where the exception was caught).
+									while (tracePart2.FrameCount > skip && IsHideFromJava(tracePart2.GetFrame(skip).GetMethod()))
+									{
+										skip++;
+									}
+									if (tracePart1.FrameCount > 0 &&
+										tracePart2.FrameCount > skip &&
+										tracePart1.GetFrame(tracePart1.FrameCount - 1).GetMethod() == tracePart2.GetFrame(skip).GetMethod())
+									{
+										// skip the caller of the map method
+										skip++;
+									}
 								}
 							}
 							Append(list, tracePart2, skip);
@@ -200,7 +204,6 @@ namespace IKVM.Internal
 						(typeof(MethodBase).IsAssignableFrom(type)
 						|| type == typeof(RuntimeMethodHandle)
 						|| (type == typeof(Throwable) && m.Name == "instancehelper_fillInStackTrace")
-						|| (type == typeof(ikvm.runtime.Util) && m.Name == "mapException")
 						|| (m.Name == "ToJava" && typeof(RetargetableJavaException).IsAssignableFrom(type))
 						|| IsHideFromJava(m)
 						|| IsPrivateScope(m))) // NOTE we assume that privatescope methods are always stubs that we should exclude
@@ -290,7 +293,7 @@ namespace IKVM.Internal
 
 		private static bool IsHideFromJava(MethodBase mb)
 		{
-			return NativeCode.sun.reflect.Reflection.IsHideFromJava(mb);
+			return NativeCode.sun.reflect.Reflection.IsHideFromJava(mb) || (mb.DeclaringType == typeof(ikvm.runtime.Util) && mb.Name == "mapException");
 		}
 
 		private static string getClassNameFromType(Type type)
@@ -571,7 +574,7 @@ namespace IKVM.Internal
 				IDictionary data = x.Data;
 				if (data != null && !data.IsReadOnly)
 				{
-					lock (data)
+					lock (data.SyncRoot)
 					{
 						eih = (ExceptionInfoHelper)data[EXCEPTION_DATA_KEY];
 					}
@@ -610,7 +613,7 @@ namespace IKVM.Internal
 			IDictionary data = x.Data;
 			if (data != null && !data.IsReadOnly)
 			{
-				lock (data)
+				lock (data.SyncRoot)
 				{
 					data[EXCEPTION_DATA_KEY] = eih;
 				}
@@ -619,6 +622,7 @@ namespace IKVM.Internal
 		}
 
 		// this method is *only* for .NET exceptions (i.e. types not derived from java.lang.Throwable)
+		[HideFromJava]
 		internal static void fillInStackTrace(Exception x)
 		{
 #if !FIRST_PASS
@@ -628,7 +632,7 @@ namespace IKVM.Internal
 				IDictionary data = x.Data;
 				if (data != null && !data.IsReadOnly)
 				{
-					lock (data)
+					lock (data.SyncRoot)
 					{
 						data[EXCEPTION_DATA_KEY] = eih;
 					}
@@ -645,7 +649,6 @@ namespace IKVM.Internal
 #endif
 		}
 
-		// also used by ikvm.extensions.ExtensionMethods.printStackTrace()
 		internal static Exception UnmapException(Exception x)
 		{
 #if FIRST_PASS
@@ -762,7 +765,7 @@ namespace IKVM.Internal
 					IDictionary data = x.Data;
 					if (data != null && !data.IsReadOnly)
 					{
-						lock (data)
+						lock (data.SyncRoot)
 						{
 							if (!data.Contains(EXCEPTION_DATA_KEY))
 							{
