@@ -760,7 +760,21 @@ namespace IKVM.Internal
 
 			if (handler == null || isInstanceOfType(x, handler, remap))
 			{
-				if (!(x is Throwable))
+				Throwable t = x as Throwable;
+				if (t != null)
+				{
+					if (t.tracePart1 == null && t.tracePart2 == null && t.stackTrace == null)
+					{
+						t.tracePart1 = new StackTrace(org, true);
+						t.tracePart2 = new StackTrace(true);
+					}
+					if (t != org)
+					{
+						t.original = org;
+						exceptions.remove(org);
+					}
+				}
+				else
 				{
 					IDictionary data = x.Data;
 					if (data != null && !data.IsReadOnly)
@@ -774,43 +788,15 @@ namespace IKVM.Internal
 						}
 					}
 				}
-				else
-				{
-					if (needStackTraceInfo((Throwable)x))
-					{
-						StackTrace tracePart1 = new StackTrace(org, true);
-						StackTrace tracePart2 = new StackTrace(true);
-						setStackTraceInfo((Throwable)x, tracePart1, tracePart2);
-					}
-				}
 
 				if (nonJavaException && !remap)
 				{
 					exceptions.put(x, NOT_REMAPPED);
-				}
-
-				if (x != org)
-				{
-					((Throwable)x).original = org;
-					exceptions.remove(org);
 				}
 				return x;
 			}
 			return null;
 #endif
 		}
-
-#if !FIRST_PASS
-	    private static bool needStackTraceInfo(Throwable t)
-		{
-			return t.tracePart1 == null && t.tracePart2 == null && t.stackTrace == null;
-		}
-
-		private static void setStackTraceInfo(Throwable t, StackTrace part1, StackTrace part2)
-		{
-			t.tracePart1 = part1;
-			t.tracePart2 = part2;
-		}
-#endif
 	}
 }
