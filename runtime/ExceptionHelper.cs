@@ -293,7 +293,11 @@ namespace IKVM.Internal
 
 		private static bool IsHideFromJava(MethodBase mb)
 		{
+#if FIRST_PASS
+			return false;
+#else
 			return NativeCode.sun.reflect.Reflection.IsHideFromJava(mb) || (mb.DeclaringType == typeof(ikvm.runtime.Util) && mb.Name == "mapException");
+#endif
 		}
 
 		private static string getClassNameFromType(Type type)
