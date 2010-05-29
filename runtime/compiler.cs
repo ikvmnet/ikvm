@@ -1311,18 +1311,19 @@ sealed class Compiler
 					bool unusedException = (handlerInstr.NormalizedOpCode == NormalizedByteCode.__pop ||
 						(handlerInstr.NormalizedOpCode == NormalizedByteCode.__astore &&
 						ma.GetLocalVar(handlerIndex) == null));
+					int flags = unusedException ? 2 : 0;
 					if(mapSafe && unusedException)
 					{
 						// we don't need to do anything with the exception
 					}
 					else if(mapSafe)
 					{
-						ilGenerator.LazyEmitLdc_I4(1);
+						ilGenerator.LazyEmitLdc_I4(flags | 1);
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(excType));
 					}
 					else if(exceptionTypeWrapper == java_lang_Throwable)
 					{
-						ilGenerator.LazyEmitLdc_I4(0);
+						ilGenerator.LazyEmitLdc_I4(flags);
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(Types.Exception));
 					}
 					else
@@ -1338,7 +1339,7 @@ sealed class Compiler
 						}
 						else
 						{
-							ilGenerator.LazyEmitLdc_I4(remap ? 0 : 1);
+							ilGenerator.LazyEmitLdc_I4(flags | (remap ? 0 : 1));
 							ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(excType));
 						}
 						if(!unusedException)

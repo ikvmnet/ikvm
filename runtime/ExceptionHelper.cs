@@ -731,6 +731,12 @@ namespace IKVM.Internal
 		[HideFromJava]
 		internal static Exception MapException(Exception x, Type handler, bool remap)
 		{
+			return MapException(x, handler, remap, false);
+		}
+
+		[HideFromJava]
+		internal static Exception MapException(Exception x, Type handler, bool remap, bool unused)
+		{
 #if FIRST_PASS
 			return null;
 #else
@@ -768,7 +774,7 @@ namespace IKVM.Internal
 				Throwable t = x as Throwable;
 				if (t != null)
 				{
-					if (t.tracePart1 == null && t.tracePart2 == null && t.stackTrace == null)
+					if (!unused && t.tracePart1 == null && t.tracePart2 == null && t.stackTrace == null)
 					{
 						t.tracePart1 = new StackTrace(org, true);
 						t.tracePart2 = new StackTrace(true);
