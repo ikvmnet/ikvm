@@ -62,11 +62,11 @@ namespace IKVM.Internal
 		private string name;
 		private string sig;
 
-		[System.Security.SecurityCritical]
 		private sealed class HandleWrapper
 		{
 			internal readonly IntPtr Value;
 
+			[System.Security.SecurityCritical]
 			internal HandleWrapper(MemberWrapper obj)
 			{
 				Value = (IntPtr)GCHandle.Alloc(obj, GCHandleType.WeakTrackResurrection);
