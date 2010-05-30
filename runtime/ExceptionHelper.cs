@@ -48,7 +48,6 @@ namespace IKVM.Internal
 		private static readonly Key EXCEPTION_DATA_KEY = new Key();
 		private static readonly Exception NOT_REMAPPED = new Exception();
 		private static readonly bool cleanStackTrace = JVM.SafeGetEnvironmentVariable("IKVM_DISABLE_STACKTRACE_CLEANING") == null;
-		private static readonly Type System_Exception = typeof(Exception);
 #if !FIRST_PASS
 		private static readonly ikvm.@internal.WeakIdentityMap exceptions = new ikvm.@internal.WeakIdentityMap();
 
