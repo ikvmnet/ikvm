@@ -943,31 +943,6 @@
                     <exceptionMapping />
                 </body>
             </method>
-            <method name="__&lt;map&gt;" sig="(Ljava.lang.Throwable;Z)Ljava.lang.Throwable;" modifiers="public static">
-                <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
-                <attribute type="System.ComponentModel.EditorBrowsableAttribute" sig="(Lcli.System.ComponentModel.EditorBrowsableState;)V">
-                    <parameter>Never</parameter>
-                </attribute>
-                <body>
-                    <ldarg_0 />
-                    <ldarg_1 />
-                    <call type="IKVM.Internal.ExceptionHelper" name="MapExceptionFast" sig="(Ljava.lang.Throwable;Z)Ljava.lang.Throwable;" />
-                    <ret />
-                </body>
-            </method>
-            <method name="__&lt;map&gt;" sig="(Ljava.lang.Throwable;Lcli.System.Type;Z)Ljava.lang.Throwable;" modifiers="public static">
-                <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
-                <attribute type="System.ComponentModel.EditorBrowsableAttribute" sig="(Lcli.System.ComponentModel.EditorBrowsableState;)V">
-                    <parameter>Never</parameter>
-                </attribute>
-                <body>
-                    <ldarg_0 />
-                    <ldarg_1 />
-                    <ldarg_2 />
-                    <call type="IKVM.Internal.ExceptionHelper" name="MapException" sig="(Ljava.lang.Throwable;Lcli.System.Type;Z)Ljava.lang.Throwable;" />
-                    <ret />
-                </body>
-            </method>
             <method name="__&lt;unmap&gt;" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" modifiers="public static">
                 <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
                 <attribute type="System.ComponentModel.EditorBrowsableAttribute" sig="(Lcli.System.ComponentModel.EditorBrowsableState;)V">

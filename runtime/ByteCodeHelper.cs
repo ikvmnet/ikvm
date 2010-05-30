@@ -818,6 +818,12 @@ namespace IKVM.Runtime
 		{
 			return (T)ExceptionHelper.MapException(x, typeof(T), (mode & MapFlags.NoRemapping) == 0, (mode & MapFlags.Unused) != 0);
 		}
+
+		[HideFromJava]
+		public static Exception MapExceptionDynamic(Exception x, Type type, MapFlags mode)
+		{
+			return ExceptionHelper.MapException(x, type, (mode & MapFlags.NoRemapping) == 0, (mode & MapFlags.Unused) != 0);
+		}
 	}
 
 	[StructLayout(LayoutKind.Explicit)]

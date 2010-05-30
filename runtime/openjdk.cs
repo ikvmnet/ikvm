@@ -6243,8 +6243,8 @@ namespace IKVM.NativeCode.sun.reflect
 					ilgen.Emit(OpCodes.Ceq);
 					ilgen.Emit(OpCodes.Brtrue_S, label);
 				}
-				ilgen.Emit(OpCodes.Ldc_I4_1);
-				ilgen.Emit(OpCodes.Call, Compiler.mapExceptionFastMethod);
+				ilgen.Emit(OpCodes.Ldc_I4_0);
+				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(Types.Exception));
 				ilgen.Emit(OpCodes.Newobj, invocationTargetExceptionCtor);
 				ilgen.MarkLabel(label);
 				ilgen.Emit(OpCodes.Throw);
@@ -6549,8 +6549,8 @@ namespace IKVM.NativeCode.sun.reflect
 				ilgen.Emit(OpCodes.Ceq);
 				CodeEmitterLabel label = ilgen.DefineLabel();
 				ilgen.Emit(OpCodes.Brtrue_S, label);
-				ilgen.Emit(OpCodes.Ldc_I4_1);
-				ilgen.Emit(OpCodes.Call, Compiler.mapExceptionFastMethod);
+				ilgen.Emit(OpCodes.Ldc_I4_0);
+				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(Types.Exception));
 				ilgen.Emit(OpCodes.Newobj, FastMethodAccessorImpl.invocationTargetExceptionCtor);
 				ilgen.MarkLabel(label);
 				ilgen.Emit(OpCodes.Throw);

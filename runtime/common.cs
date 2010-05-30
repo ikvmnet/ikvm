@@ -441,7 +441,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 		[HideFromJava]
 		public static Exception mapException(Exception x)
 		{
-			return ExceptionHelper.MapExceptionFast(x, true);
+			return ExceptionHelper.MapException(x, typeof(Exception), true, false);
 		}
 
 		public static Exception unmapException(Exception x)

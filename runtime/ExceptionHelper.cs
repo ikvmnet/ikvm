@@ -672,23 +672,13 @@ namespace IKVM.Internal
 		}
 
 		[HideFromJava]
-		internal static Exception MapExceptionFast(Exception x, bool remap)
-		{
-#if FIRST_PASS
-			return null;
-#else
-			return MapException(x, null, remap);
-#endif
-		}
-
-		[HideFromJava]
 		private static Exception MapTypeInitializeException(TypeInitializationException t, Type handler)
 		{
 #if FIRST_PASS
 			return null;
 #else
 			bool wrapped = false;
-			Exception r = MapExceptionFast(t.InnerException, true);
+			Exception r = MapException(t.InnerException, typeof(Exception), true, false);
 			if (!(r is java.lang.Error))
 			{
 				r = new java.lang.ExceptionInInitializerError(r);
@@ -725,12 +715,6 @@ namespace IKVM.Internal
 			}
 			return type.IsInstanceOfType(t);
 #endif
-		}
-
-		[HideFromJava]
-		internal static Exception MapException(Exception x, Type handler, bool remap)
-		{
-			return MapException(x, handler, remap, false);
 		}
 
 		[HideFromJava]

@@ -78,6 +78,7 @@ static class ByteCodeHelperMethods
 	internal static readonly MethodInfo volatileWriteDouble;
 	internal static readonly MethodInfo volatileWriteLong;
 	internal static readonly MethodInfo mapException;
+	internal static readonly MethodInfo mapExceptionDynamic;
 
 	static ByteCodeHelperMethods()
 	{
@@ -122,6 +123,7 @@ static class ByteCodeHelperMethods
 		volatileWriteDouble = typeofByteCodeHelper.GetMethod("VolatileWrite", new Type[] { Types.Double.MakeByRefType(), Types.Double });
 		volatileWriteLong = typeofByteCodeHelper.GetMethod("VolatileWrite", new Type[] { Types.Int64.MakeByRefType(), Types.Int64 });
 		mapException = typeofByteCodeHelper.GetMethod("MapException");
+		mapExceptionDynamic = typeofByteCodeHelper.GetMethod("MapExceptionDynamic");
 	}
 }
 
@@ -151,8 +153,6 @@ struct MethodKey : IEquatable<MethodKey>
 
 sealed class Compiler
 {
-	private static readonly MethodInfo mapExceptionMethod;
-	internal static readonly MethodInfo mapExceptionFastMethod;
 	private static readonly MethodInfo unmapExceptionMethod;
 	private static readonly MethodInfo fixateExceptionMethod;
 	private static readonly MethodInfo suppressFillInStackTraceMethod;
@@ -205,12 +205,7 @@ sealed class Compiler
 		// HACK we need to special case core compilation, because the __<map> methods are HideFromJava
 		if(java_lang_Throwable.TypeAsBaseType is TypeBuilder)
 		{
-			MethodWrapper mw = java_lang_Throwable.GetMethodWrapper("__<map>", "(Ljava.lang.Throwable;Lcli.System.Type;Z)Ljava.lang.Throwable;", false);
-			mw.Link();
-			mapExceptionMethod = (MethodInfo)mw.GetMethod();
-			mw = java_lang_Throwable.GetMethodWrapper("__<map>", "(Ljava.lang.Throwable;Z)Ljava.lang.Throwable;", false);
-			mw.Link();
-			mapExceptionFastMethod = (MethodInfo)mw.GetMethod();
+			MethodWrapper mw;
 			mw = java_lang_Throwable.GetMethodWrapper("__<suppressFillInStackTrace>", "()V", false);
 			mw.Link();
 			suppressFillInStackTraceMethod = (MethodInfo)mw.GetMethod();
@@ -223,8 +218,6 @@ sealed class Compiler
 		}
 		else
 		{
-			mapExceptionMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<map>", new Type[] { Types.Exception, Types.Type, Types.Boolean });
-			mapExceptionFastMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<map>", new Type[] { Types.Exception, Types.Boolean });
 			suppressFillInStackTraceMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<suppressFillInStackTrace>", Type.EmptyTypes);
 			unmapExceptionMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<unmap>", new Type[] { Types.Exception });
 			fixateExceptionMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<fixate>", new Type[] { Types.Exception });
@@ -1335,7 +1328,8 @@ sealed class Compiler
 							ilGenerator.Emit(OpCodes.Ldstr, exceptionTypeWrapper.Name);
 							ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicGetTypeAsExceptionType);
 							ilGenerator.Emit(remap ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
-							ilGenerator.Emit(OpCodes.Call, mapExceptionMethod);
+							ilGenerator.LazyEmitLdc_I4(flags | (remap ? 0 : 1));
+							ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.mapExceptionDynamic);
 						}
 						else
 						{
