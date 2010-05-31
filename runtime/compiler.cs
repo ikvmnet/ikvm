@@ -78,7 +78,6 @@ static class ByteCodeHelperMethods
 	internal static readonly MethodInfo volatileWriteDouble;
 	internal static readonly MethodInfo volatileWriteLong;
 	internal static readonly MethodInfo mapException;
-	internal static readonly MethodInfo mapExceptionDynamic;
 
 	static ByteCodeHelperMethods()
 	{
@@ -123,7 +122,6 @@ static class ByteCodeHelperMethods
 		volatileWriteDouble = typeofByteCodeHelper.GetMethod("VolatileWrite", new Type[] { Types.Double.MakeByRefType(), Types.Double });
 		volatileWriteLong = typeofByteCodeHelper.GetMethod("VolatileWrite", new Type[] { Types.Int64.MakeByRefType(), Types.Int64 });
 		mapException = typeofByteCodeHelper.GetMethod("MapException");
-		mapExceptionDynamic = typeofByteCodeHelper.GetMethod("MapExceptionDynamic");
 	}
 }
 
@@ -1321,24 +1319,18 @@ sealed class Compiler
 					}
 					else
 					{
-						if(exceptionTypeWrapper.IsUnloadable)
-						{
-							Profiler.Count("EmitDynamicGetTypeAsExceptionType");
-							ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
-							ilGenerator.Emit(OpCodes.Ldstr, exceptionTypeWrapper.Name);
-							ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicGetTypeAsExceptionType);
-							ilGenerator.Emit(remap ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
-							ilGenerator.LazyEmitLdc_I4(flags | (remap ? 0 : 1));
-							ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.mapExceptionDynamic);
-						}
-						else
-						{
-							ilGenerator.LazyEmitLdc_I4(flags | (remap ? 0 : 1));
-							ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(excType));
-						}
+						ilGenerator.LazyEmitLdc_I4(flags | (remap ? 0 : 1));
+						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(excType));
 						if(!unusedException)
 						{
 							ilGenerator.Emit(OpCodes.Dup);
+						}
+						if(exceptionTypeWrapper.IsUnloadable)
+						{
+							Profiler.Count("EmitDynamicExceptionHandler");
+							ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
+							ilGenerator.Emit(OpCodes.Ldstr, exceptionTypeWrapper.Name);
+							ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicInstanceOf);
 						}
 						CodeEmitterLabel leave = ilGenerator.DefineLabel();
 						ilGenerator.Emit(OpCodes.Brtrue_S, leave);
