@@ -1171,11 +1171,6 @@ class MethodAnalyzer
 				firstNonArgLocalIndex++;
 			}
 		}
-		TypeWrapper[] argumentsByLocalIndex = new TypeWrapper[firstNonArgLocalIndex];
-		for(int i = 0; i < argumentsByLocalIndex.Length; i++)
-		{
-			argumentsByLocalIndex[i] = state[0].GetLocalTypeEx(i);
-		}
 		InstructionState s = state[0].Copy();
 		bool done = false;
 		ClassFile.Method.Instruction[] instructions = method.Instructions;
