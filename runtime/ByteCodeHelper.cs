@@ -816,7 +816,7 @@ namespace IKVM.Runtime
 		[HideFromJava]
 		public static T MapException<T>(Exception x, MapFlags mode) where T : Exception
 		{
-			return (T)ExceptionHelper.MapException(x, typeof(T), (mode & MapFlags.NoRemapping) == 0, (mode & MapFlags.Unused) != 0);
+			return ExceptionHelper.MapException<T>(x, (mode & MapFlags.NoRemapping) == 0, (mode & MapFlags.Unused) != 0);
 		}
 	}
 

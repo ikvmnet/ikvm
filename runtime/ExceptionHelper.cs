@@ -678,7 +678,7 @@ namespace IKVM.Internal
 			return null;
 #else
 			bool wrapped = false;
-			Exception r = MapException(t.InnerException, typeof(Exception), true, false);
+			Exception r = MapException<Exception>(t.InnerException, true, false);
 			if (!(r is java.lang.Error))
 			{
 				r = new java.lang.ExceptionInInitializerError(r);
@@ -704,21 +704,23 @@ namespace IKVM.Internal
 #endif
 		}
 
-		private static bool isInstanceOfType(Exception t, Type type, bool remap)
+		private static bool IsInstanceOfType<T>(Exception t, bool remap)
+			where T : Exception
 		{
 #if FIRST_PASS
 			return false;
 #else
-			if (!remap && type == typeof(Exception))
+			if (!remap && typeof(T) == typeof(Exception))
 			{
 				return !(t is Throwable);
 			}
-			return type.IsInstanceOfType(t);
+			return t is T;
 #endif
 		}
 
 		[HideFromJava]
-		internal static Exception MapException(Exception x, Type handler, bool remap, bool unused)
+		internal static T MapException<T>(Exception x, bool remap, bool unused)
+			where T : Exception
 		{
 #if FIRST_PASS
 			return null;
@@ -729,7 +731,7 @@ namespace IKVM.Internal
 			{
 				if (x is TypeInitializationException)
 				{
-					return MapTypeInitializeException((TypeInitializationException)x, handler);
+					return (T)MapTypeInitializeException((TypeInitializationException)x, typeof(T));
 				}
 				object obj = exceptions.get(x);
 				Exception remapped = (Exception)obj;
@@ -752,7 +754,7 @@ namespace IKVM.Internal
 				}
 			}
 
-			if (handler == null || isInstanceOfType(x, handler, remap))
+			if (IsInstanceOfType<T>(x, remap))
 			{
 				Throwable t = x as Throwable;
 				if (t != null)
@@ -787,7 +789,7 @@ namespace IKVM.Internal
 				{
 					exceptions.put(x, NOT_REMAPPED);
 				}
-				return x;
+				return (T)x;
 			}
 			return null;
 #endif
