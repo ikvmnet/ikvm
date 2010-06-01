@@ -2752,11 +2752,14 @@ namespace IKVM.Internal
 								throw new ClassFormatError("Incorrect tableswitch");
 							}
 							SwitchEntry[] entries = new SwitchEntry[high - low + 1];
-							for(int i = low; i <= high; i++)
+							for(int i = low; i < high; i++)
 							{
 								entries[i - low].value = i;
 								entries[i - low].target = br.ReadInt32();
 							}
+							// do the last entry outside the loop, to avoid overflowing "i", if high == int.MaxValue
+							entries[high - low].value = high;
+							entries[high - low].target = br.ReadInt32();
 							this.switch_entries = entries;
 							break;
 						}
