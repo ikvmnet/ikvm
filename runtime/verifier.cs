@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2009 Jeroen Frijters
+  Copyright (C) 2002-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -2799,26 +2799,75 @@ class MethodAnalyzer
 			{
 				// exception blocks that only contain harmless instructions (i.e. instructions that will *never* throw an exception)
 				// are also filtered out (to improve the quality of the generated code)
-				// NOTE we don't remove exception handlers that could catch ThreadDeath, because that can be thrown
-				// asynchronously (and thus appear on any instruction). This is particularly important to ensure that
-				// we run finally blocks when a thread is killed.
-				if (ei.catch_type != 0)
+				TypeWrapper exceptionType = ei.catch_type == 0 ? CoreClasses.java.lang.Throwable.Wrapper : classFile.GetConstantPoolClassType(ei.catch_type);
+				if (exceptionType.IsUnloadable)
 				{
-					TypeWrapper exceptionType = classFile.GetConstantPoolClassType(ei.catch_type);
-					if (!exceptionType.IsUnloadable && !java_lang_ThreadDeath.IsAssignableTo(exceptionType))
+					// we can't remove handlers for unloadable types
+				}
+				else if (java_lang_ThreadDeath.IsAssignableTo(exceptionType))
+				{
+					// We only remove exception handlers that could catch ThreadDeath in limited cases, because it can be thrown
+					// asynchronously (and thus appear on any instruction). This is particularly important to ensure that
+					// we run finally blocks when a thread is killed.
+					// Note that even so, we aren't remotely async exception safe.
+					int start = ei.startIndex;
+					int end = ei.endIndex;
+					for (int j = start; j < end; j++)
 					{
-						int start = ei.startIndex;
-						int end = ei.endIndex;
-						for (int j = start; j < end; j++)
+						switch (instructions[j].NormalizedOpCode)
 						{
-							if (ByteCodeMetaData.CanThrowException(instructions[j].NormalizedOpCode))
-							{
+							case NormalizedByteCode.__aload:
+							case NormalizedByteCode.__iload:
+							case NormalizedByteCode.__lload:
+							case NormalizedByteCode.__fload:
+							case NormalizedByteCode.__dload:
+							case NormalizedByteCode.__astore:
+							case NormalizedByteCode.__istore:
+							case NormalizedByteCode.__lstore:
+							case NormalizedByteCode.__fstore:
+							case NormalizedByteCode.__dstore:
+								break;
+							case NormalizedByteCode.__dup:
+							case NormalizedByteCode.__dup_x1:
+							case NormalizedByteCode.__dup_x2:
+							case NormalizedByteCode.__dup2:
+							case NormalizedByteCode.__dup2_x1:
+							case NormalizedByteCode.__dup2_x2:
+							case NormalizedByteCode.__pop:
+							case NormalizedByteCode.__pop2:
+								break;
+							case NormalizedByteCode.__return:
+							case NormalizedByteCode.__areturn:
+							case NormalizedByteCode.__ireturn:
+							case NormalizedByteCode.__lreturn:
+							case NormalizedByteCode.__freturn:
+							case NormalizedByteCode.__dreturn:
+								break;
+							case NormalizedByteCode.__goto:
+								// if there is a branch that stays inside the block, we should keep the block
+								if (start <= instructions[j].TargetIndex && instructions[j].TargetIndex < end)
+									goto next;
+								break;
+							default:
 								goto next;
-							}
 						}
-						ar.RemoveAt(i);
-						i--;
 					}
+					ar.RemoveAt(i);
+					i--;
+				}
+				else
+				{
+					int start = ei.startIndex;
+					int end = ei.endIndex;
+					for (int j = start; j < end; j++)
+					{
+						if (ByteCodeMetaData.CanThrowException(instructions[j].NormalizedOpCode))
+						{
+							goto next;
+						}
+					}
+					ar.RemoveAt(i);
+					i--;
 				}
 			}
 		next: ;
