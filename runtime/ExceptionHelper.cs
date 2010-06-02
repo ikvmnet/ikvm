@@ -77,6 +77,7 @@ namespace IKVM.Internal
 				this.tracePart2 = tracePart2;
 			}
 
+			[HideFromJava]
 			internal ExceptionInfoHelper(Exception x, bool captureAdditionalStackTrace)
 			{
 				tracePart1 = new StackTrace(x, true);
