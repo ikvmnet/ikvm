@@ -1208,6 +1208,16 @@ class MethodAnalyzer
 				firstNonArgLocalIndex++;
 			}
 		}
+		ClassFile.Method.Instruction[] instructions = method.Instructions;
+		AnalyzeTypeFlow(wrapper, thisType, mw, localStoreReaders, newTypes);
+		OptimizationPass(wrapper, instructions, classLoader);
+		FinalCodePatchup(wrapper, mw, instructions);
+		ComputePartialReachability(instructions, 0, method.ExceptionTable);
+		AnalyzeLocalVariables(localStoreReaders, instructions, classLoader);
+	}
+
+	private void AnalyzeTypeFlow(TypeWrapper wrapper, TypeWrapper thisType, MethodWrapper mw, Dictionary<int, string>[] localStoreReaders, Dictionary<int, TypeWrapper> newTypes)
+	{
 		InstructionState s = state[0].Copy();
 		bool done = false;
 		ClassFile.Method.Instruction[] instructions = method.Instructions;
@@ -2202,7 +2212,10 @@ class MethodAnalyzer
 				}
 			}
 		}
+	}
 
+	private void OptimizationPass(TypeWrapper wrapper, ClassFile.Method.Instruction[] instructions, ClassLoaderWrapper classLoader)
+	{
 		// Optimization pass
 		if (classLoader.RemoveAsserts)
 		{
@@ -2241,10 +2254,6 @@ class MethodAnalyzer
 				}
 			}
 		}
-
-		FinalCodePatchup(wrapper, mw, instructions);
-		ComputePartialReachability(instructions, 0, method.ExceptionTable);
-		AnalyzeLocalVariables(localStoreReaders, instructions, classLoader);
 	}
 
 	private void FinalCodePatchup(TypeWrapper wrapper, MethodWrapper mw, ClassFile.Method.Instruction[] instructions)
