@@ -2220,6 +2220,8 @@ class MethodAnalyzer
 			}
 			if (assertionsDisabled != null)
 			{
+				// compute reachability (and branch targets) so that we can use IsBranchTarget
+				ComputePartialReachability(instructions, 0, method.ExceptionTable);
 				for (int i = 0; i < instructions.Length; i++)
 				{
 					if (instructions[i].NormalizedOpCode == NormalizedByteCode.__getstatic
