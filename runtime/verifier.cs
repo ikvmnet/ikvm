@@ -2240,18 +2240,20 @@ class MethodAnalyzer
 			}
 		}
 
-		// Now we do another pass to find "hard error" instructions and compute final reachability
-		done = false;
-		instructions[0].flags |= InstructionFlags.Reachable;
-		while(!done)
+		FinalCodePatchup(wrapper, mw, instructions);
+		ComputePartialReachability(instructions, 0, method.ExceptionTable);
+		AnalyzeLocalVariables(localStoreReaders, instructions, classLoader);
+	}
+
+	private void FinalCodePatchup(TypeWrapper wrapper, MethodWrapper mw, ClassFile.Method.Instruction[] instructions)
+	{
+		// Now we do another pass to find "hard error" instructions and verify backward branches
+		if(true)
 		{
-			done = true;
 			for(int i = 0; i < instructions.Length; i++)
 			{
-				if((instructions[i].flags & (InstructionFlags.Reachable | InstructionFlags.Processed)) == InstructionFlags.Reachable)
+				if(state[i] != null)
 				{
-					done = false;
-					instructions[i].flags |= InstructionFlags.Processed;
 					StackState stack = new StackState(state[i]);
 					switch(instructions[i].NormalizedOpCode)
 					{
@@ -2398,15 +2400,7 @@ class MethodAnalyzer
 						default:
 							break;
 					}
-					// mark the exception handlers reachable from this instruction
-					for(int j = 0; j < method.ExceptionTable.Length; j++)
-					{
-						if(method.ExceptionTable[j].startIndex <= i && i < method.ExceptionTable[j].endIndex)
-						{
-							instructions[method.ExceptionTable[j].handlerIndex].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
-						}
-					}
-					// mark the successor instructions
+					// verify backward branches
 					switch(instructions[i].NormalizedOpCode)
 					{
 						case NormalizedByteCode.__tableswitch:
@@ -2416,10 +2410,8 @@ class MethodAnalyzer
 							for(int j = 0; j < instructions[i].SwitchEntryCount; j++)
 							{
 								hasbackbranch |= instructions[i].GetSwitchTargetIndex(j) < i;
-								instructions[instructions[i].GetSwitchTargetIndex(j)].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 							}
 							hasbackbranch |= instructions[i].DefaultTarget < i;
-							instructions[instructions[i].DefaultTarget].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 							if(hasbackbranch)
 							{
 								// backward branches cannot have uninitialized objects on
@@ -2435,7 +2427,6 @@ class MethodAnalyzer
 								// the stack or in local variables
 								state[i].CheckUninitializedObjRefs();
 							}
-							instructions[instructions[i].TargetIndex].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 							break;
 						case NormalizedByteCode.__ifeq:
 						case NormalizedByteCode.__ifne:
@@ -2459,6 +2450,72 @@ class MethodAnalyzer
 								// the stack or in local variables
 								state[i].CheckUninitializedObjRefs();
 							}
+							break;
+					}
+				}
+			}
+		}
+	}
+
+	private void ComputePartialReachability(ClassFile.Method.Instruction[] instructions, int initialInstructionIndex, ClassFile.Method.ExceptionTableEntry[] exceptionTable)
+	{
+		for (int i = 0; i < instructions.Length; i++)
+		{
+			instructions[i].flags = 0;
+		}
+		// Now we do another pass to find "hard error" instructions and compute final reachability
+		bool done = false;
+		instructions[initialInstructionIndex].flags |= InstructionFlags.Reachable;
+		while (!done)
+		{
+			done = true;
+			for (int i = 0; i < instructions.Length; i++)
+			{
+				if ((instructions[i].flags & (InstructionFlags.Reachable | InstructionFlags.Processed)) == InstructionFlags.Reachable)
+				{
+					done = false;
+					instructions[i].flags |= InstructionFlags.Processed;
+					// mark the exception handlers reachable from this instruction
+					for (int j = 0; j < exceptionTable.Length; j++)
+					{
+						if (exceptionTable[j].startIndex <= i && i < exceptionTable[j].endIndex)
+						{
+							int idx = exceptionTable[j].handlerIndex;
+							instructions[idx].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+						}
+					}
+					// mark the successor instructions
+					switch (instructions[i].NormalizedOpCode)
+					{
+						case NormalizedByteCode.__tableswitch:
+						case NormalizedByteCode.__lookupswitch:
+							{
+								for (int j = 0; j < instructions[i].SwitchEntryCount; j++)
+								{
+									instructions[instructions[i].GetSwitchTargetIndex(j)].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+								}
+								instructions[instructions[i].DefaultTarget].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+								break;
+							}
+						case NormalizedByteCode.__goto:
+							instructions[instructions[i].TargetIndex].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+							break;
+						case NormalizedByteCode.__ifeq:
+						case NormalizedByteCode.__ifne:
+						case NormalizedByteCode.__iflt:
+						case NormalizedByteCode.__ifge:
+						case NormalizedByteCode.__ifgt:
+						case NormalizedByteCode.__ifle:
+						case NormalizedByteCode.__if_icmpeq:
+						case NormalizedByteCode.__if_icmpne:
+						case NormalizedByteCode.__if_icmplt:
+						case NormalizedByteCode.__if_icmpge:
+						case NormalizedByteCode.__if_icmpgt:
+						case NormalizedByteCode.__if_icmple:
+						case NormalizedByteCode.__if_acmpeq:
+						case NormalizedByteCode.__if_acmpne:
+						case NormalizedByteCode.__ifnull:
+						case NormalizedByteCode.__ifnonnull:
 							instructions[instructions[i].TargetIndex].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 							instructions[i + 1].flags |= InstructionFlags.Reachable;
 							break;
@@ -2478,7 +2535,10 @@ class MethodAnalyzer
 				}
 			}
 		}
+	}
 
+	private void AnalyzeLocalVariables(Dictionary<int, string>[] localStoreReaders, ClassFile.Method.Instruction[] instructions, ClassLoaderWrapper classLoader)
+	{
 		// now that we've done the code flow analysis, we can do a liveness analysis on the local variables
 		Dictionary<long, LocalVar> localByStoreSite = new Dictionary<long,LocalVar>();
 		List<LocalVar> locals = new List<LocalVar>();
