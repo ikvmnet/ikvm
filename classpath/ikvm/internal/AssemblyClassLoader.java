@@ -108,6 +108,11 @@ public final class AssemblyClassLoader extends ClassLoader
 		return makeIkvmresURL(asm[0], name);
 	    }
 	}
+	return getClassResource(classLoader, assembly, name);
+    }
+    
+    private static URL getClassResource(ClassLoader classLoader, Assembly assembly, String name)
+    {
         if(name.endsWith(".class") && name.indexOf('.') == name.length() - 6)
         {
             Class c = null;
@@ -158,17 +163,21 @@ public final class AssemblyClassLoader extends ClassLoader
     @Internal
     public static Enumeration getResources(ClassLoader classLoader, Assembly assembly, String name) throws IOException
     {
+        Vector v = new Vector();
         Assembly[] assemblies = FindResourceAssemblies(assembly, name, false);
         if(assemblies != null)
         {
-            Vector v = new Vector();
             for(int i = 0; i < assemblies.length; i++)
             {
                 v.addElement(makeIkvmresURL(assemblies[i], name));
             }
-            return v.elements();
         }
-        return EmptyEnumeration.getInstance();
+        URL url = getClassResource(classLoader, assembly, name);
+        if(url != null)
+        {
+            v.addElement(url);
+        }
+        return v.elements();
     }
 
     private synchronized void lazyDefinePackagesCheck()
