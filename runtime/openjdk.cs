@@ -2637,7 +2637,7 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return null;
 #else
-				global::java.util.HashMap map = new global::java.util.HashMap();
+				global::java.util.LinkedHashMap map = new global::java.util.LinkedHashMap();
 				if (objAnn != null)
 				{
 					foreach (object obj in objAnn)
