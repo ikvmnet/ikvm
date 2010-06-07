@@ -266,8 +266,7 @@ namespace IKVM.Internal
 					int end = MapExceptionStartEnd(entry.endIndex);
 					if (start != end)
 					{
-						ClassFile.Method.ExceptionTableEntry newEntry = new ClassFile.Method.ExceptionTableEntry(start, end, branchMap[entry.handlerIndex], entry.catch_type);
-						newEntry.ordinal = newExceptions.Count;
+						ClassFile.Method.ExceptionTableEntry newEntry = new ClassFile.Method.ExceptionTableEntry(start, end, branchMap[entry.handlerIndex], entry.catch_type, entry.ordinal);
 						newExceptions.Add(newEntry);
 					}
 				}

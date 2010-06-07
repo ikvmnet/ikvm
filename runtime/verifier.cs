@@ -1087,9 +1087,6 @@ sealed class ExceptionSorter : IComparer<ExceptionTableEntry>
 				}
 				if (e1.ordinal == e2.ordinal)
 				{
-					// This really shouldn't happen, but it is good practice to have a correct Compare
-					// implementation and Mono's Array.Sort() (at one point at least) didn't partition
-					// correctly, causing an array element to be compared against itself.
 					return 0;
 				}
 				return 1;
@@ -2726,10 +2723,10 @@ class MethodAnalyzer
 					// 0006/test.j
 					if (ej.endIndex > ei.endIndex)
 					{
-						ExceptionTableEntry emi = new ExceptionTableEntry(ej.startIndex, ei.endIndex, ei.handlerIndex, ei.catch_type);
-						ExceptionTableEntry emj = new ExceptionTableEntry(ej.startIndex, ei.endIndex, ej.handlerIndex, ej.catch_type);
-						ei = new ExceptionTableEntry(ei.startIndex, emi.startIndex, ei.handlerIndex, ei.catch_type);
-						ej = new ExceptionTableEntry(emj.endIndex, ej.endIndex, ej.handlerIndex, ej.catch_type);
+						ExceptionTableEntry emi = new ExceptionTableEntry(ej.startIndex, ei.endIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
+						ExceptionTableEntry emj = new ExceptionTableEntry(ej.startIndex, ei.endIndex, ej.handlerIndex, ej.catch_type, ej.ordinal);
+						ei = new ExceptionTableEntry(ei.startIndex, emi.startIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
+						ej = new ExceptionTableEntry(emj.endIndex, ej.endIndex, ej.handlerIndex, ej.catch_type, ej.ordinal);
 						ar[i] = ei;
 						ar[j] = ej;
 						ar.Insert(j, emj);
@@ -2739,9 +2736,9 @@ class MethodAnalyzer
 					// 0007/test.j
 					else if (j > i && ej.endIndex < ei.endIndex)
 					{
-						ExceptionTableEntry emi = new ExceptionTableEntry(ej.startIndex, ej.endIndex, ei.handlerIndex, ei.catch_type);
-						ExceptionTableEntry eei = new ExceptionTableEntry(ej.endIndex, ei.endIndex, ei.handlerIndex, ei.catch_type);
-						ei = new ExceptionTableEntry(ei.startIndex, emi.startIndex, ei.handlerIndex, ei.catch_type);
+						ExceptionTableEntry emi = new ExceptionTableEntry(ej.startIndex, ej.endIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
+						ExceptionTableEntry eei = new ExceptionTableEntry(ej.endIndex, ei.endIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
+						ei = new ExceptionTableEntry(ei.startIndex, emi.startIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
 						ar[i] = ei;
 						ar.Insert(i + 1, eei);
 						ar.Insert(i + 1, emi);
@@ -2771,8 +2768,8 @@ class MethodAnalyzer
 								int targetIndex = (k == -1 ? instructions[j].DefaultTarget : instructions[j].GetSwitchTargetIndex(k));
 								if (ei.startIndex < targetIndex && targetIndex < ei.endIndex)
 								{
-									ExceptionTableEntry en = new ExceptionTableEntry(targetIndex, ei.endIndex, ei.handlerIndex, ei.catch_type);
-									ei = new ExceptionTableEntry(ei.startIndex, targetIndex, ei.handlerIndex, ei.catch_type);
+									ExceptionTableEntry en = new ExceptionTableEntry(targetIndex, ei.endIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
+									ei = new ExceptionTableEntry(ei.startIndex, targetIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
 									ar[i] = ei;
 									ar.Insert(i + 1, en);
 									goto restart_split;
@@ -2800,8 +2797,8 @@ class MethodAnalyzer
 								int targetIndex = instructions[j].Arg1;
 								if (ei.startIndex < targetIndex && targetIndex < ei.endIndex)
 								{
-									ExceptionTableEntry en = new ExceptionTableEntry(targetIndex, ei.endIndex, ei.handlerIndex, ei.catch_type);
-									ei = new ExceptionTableEntry(ei.startIndex, targetIndex, ei.handlerIndex, ei.catch_type);
+									ExceptionTableEntry en = new ExceptionTableEntry(targetIndex, ei.endIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
+									ei = new ExceptionTableEntry(ei.startIndex, targetIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
 									ar[i] = ei;
 									ar.Insert(i + 1, en);
 									goto restart_split;
@@ -2821,8 +2818,8 @@ class MethodAnalyzer
 				ExceptionTableEntry ej = ar[j];
 				if (ei.startIndex < ej.handlerIndex && ej.handlerIndex < ei.endIndex)
 				{
-					ExceptionTableEntry en = new ExceptionTableEntry(ej.handlerIndex, ei.endIndex, ei.handlerIndex, ei.catch_type);
-					ei = new ExceptionTableEntry(ei.startIndex, ej.handlerIndex, ei.handlerIndex, ei.catch_type);
+					ExceptionTableEntry en = new ExceptionTableEntry(ej.handlerIndex, ei.endIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
+					ei = new ExceptionTableEntry(ei.startIndex, ej.handlerIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
 					ar[i] = ei;
 					ar.Insert(i + 1, en);
 					goto restart_split;
@@ -2929,10 +2926,6 @@ class MethodAnalyzer
 		}
 
 		ExceptionTableEntry[] exceptions = ar.ToArray();
-		for (int i = 0; i < exceptions.Length; i++)
-		{
-			exceptions[i].ordinal = i;
-		}
 		Array.Sort(exceptions, new ExceptionSorter());
 
 		// TODO remove these checks, if the above exception untangling is correct, this shouldn't ever

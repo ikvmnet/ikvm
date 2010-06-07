@@ -2476,8 +2476,7 @@ namespace IKVM.Internal
 							endIndex = pcIndexMap[end_pc];
 						}
 						int handlerIndex = pcIndexMap[handler_pc];
-						exception_table[i] = new ExceptionTableEntry(startIndex, endIndex, handlerIndex, catch_type);
-						exception_table[i].ordinal = i;
+						exception_table[i] = new ExceptionTableEntry(startIndex, endIndex, handlerIndex, catch_type, i);
 					}
 					ushort attributes_count = br.ReadUInt16();
 					for(int i = 0; i < attributes_count; i++)
@@ -2592,14 +2591,15 @@ namespace IKVM.Internal
 				internal readonly int endIndex;
 				internal readonly int handlerIndex;
 				internal readonly ushort catch_type;
-				internal int ordinal;
+				internal readonly int ordinal;
 
-				internal ExceptionTableEntry(int startIndex, int endIndex, int handlerIndex, ushort catch_type)
+				internal ExceptionTableEntry(int startIndex, int endIndex, int handlerIndex, ushort catch_type, int ordinal)
 				{
 					this.startIndex = startIndex;
 					this.endIndex = endIndex;
 					this.handlerIndex = handlerIndex;
 					this.catch_type = catch_type;
+					this.ordinal = ordinal;
 				}
 			}
 
