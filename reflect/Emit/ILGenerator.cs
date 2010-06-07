@@ -161,6 +161,14 @@ namespace IKVM.Reflection.Emit
 
 			int IComparer<ExceptionBlock>.Compare(ExceptionBlock x, ExceptionBlock y)
 			{
+				if (x.tryOffset >= y.handlerOffset && x.tryOffset + x.tryLength <= y.handlerOffset + y.handlerLength)
+				{
+					return -1;
+				}
+				if (y.tryOffset >= x.handlerOffset && y.tryOffset + y.tryLength <= x.handlerOffset + x.handlerLength)
+				{
+					return 1;
+				}
 				if (x.tryOffset == y.tryOffset && x.tryLength == y.tryLength)
 				{
 					return x.ordinal < y.ordinal ? -1 : 1;
