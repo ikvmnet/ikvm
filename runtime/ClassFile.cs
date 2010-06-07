@@ -2460,24 +2460,24 @@ namespace IKVM.Internal
 						{
 							throw new ClassFormatError("Illegal exception table: {0}.{1}{2}", classFile.Name, method.Name, method.Signature);
 						}
-						exception_table[i] = new ExceptionTableEntry();
-						exception_table[i].catch_type = catch_type;
-						exception_table[i].ordinal = i;
 						// if start_pc, end_pc or handler_pc is invalid (i.e. doesn't point to the start of an instruction),
 						// the index will be -1 and this will be handled by the verifier
-						exception_table[i].startIndex = pcIndexMap[start_pc];
+						int startIndex = pcIndexMap[start_pc];
+						int endIndex;
 						if (end_pc == code_length)
 						{
 							// it is legal for end_pc to point to just after the last instruction,
 							// but since there isn't an entry in our pcIndexMap for that, we have
 							// a special case for this
-							exception_table[i].endIndex = instructionIndex - 1;
+							endIndex = instructionIndex - 1;
 						}
 						else
 						{
-							exception_table[i].endIndex = pcIndexMap[end_pc];
+							endIndex = pcIndexMap[end_pc];
 						}
-						exception_table[i].handlerIndex = pcIndexMap[handler_pc];
+						int handlerIndex = pcIndexMap[handler_pc];
+						exception_table[i] = new ExceptionTableEntry(startIndex, endIndex, handlerIndex, catch_type);
+						exception_table[i].ordinal = i;
 					}
 					ushort attributes_count = br.ReadUInt16();
 					for(int i = 0; i < attributes_count; i++)
@@ -2588,11 +2588,19 @@ namespace IKVM.Internal
 
 			internal sealed class ExceptionTableEntry
 			{
-				internal int startIndex;
-				internal int endIndex;
-				internal int handlerIndex;
-				internal ushort catch_type;
+				internal readonly int startIndex;
+				internal readonly int endIndex;
+				internal readonly int handlerIndex;
+				internal readonly ushort catch_type;
 				internal int ordinal;
+
+				internal ExceptionTableEntry(int startIndex, int endIndex, int handlerIndex, ushort catch_type)
+				{
+					this.startIndex = startIndex;
+					this.endIndex = endIndex;
+					this.handlerIndex = handlerIndex;
+					this.catch_type = catch_type;
+				}
 			}
 
 			[Flags]

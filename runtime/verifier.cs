@@ -2670,10 +2670,6 @@ class MethodAnalyzer
 
 	internal static ExceptionTableEntry[] UntangleExceptionBlocks(ClassFile classFile, ClassFile.Method.Instruction[] instructions, InstructionFlags[] flags, ExceptionTableEntry[] exceptionTable)
 	{
-		// NOTE we're going to be messing with ExceptionTableEntrys that are owned by the Method, this is very bad practice,
-		// this code should probably be changed to use our own ETE class (which should also contain the ordinal, instead
-		// of the one in ClassFile.cs)
-
 		List<ExceptionTableEntry> ar = new List<ExceptionTableEntry>(exceptionTable);
 
 		// This optimization removes the recursive exception handlers that Java compiler place around
@@ -2730,18 +2726,12 @@ class MethodAnalyzer
 					// 0006/test.j
 					if (ej.endIndex > ei.endIndex)
 					{
-						ExceptionTableEntry emi = new ExceptionTableEntry();
-						emi.startIndex = ej.startIndex;
-						emi.endIndex = ei.endIndex;
-						emi.catch_type = ei.catch_type;
-						emi.handlerIndex = ei.handlerIndex;
-						ExceptionTableEntry emj = new ExceptionTableEntry();
-						emj.startIndex = ej.startIndex;
-						emj.endIndex = ei.endIndex;
-						emj.catch_type = ej.catch_type;
-						emj.handlerIndex = ej.handlerIndex;
-						ei.endIndex = emi.startIndex;
-						ej.startIndex = emj.endIndex;
+						ExceptionTableEntry emi = new ExceptionTableEntry(ej.startIndex, ei.endIndex, ei.handlerIndex, ei.catch_type);
+						ExceptionTableEntry emj = new ExceptionTableEntry(ej.startIndex, ei.endIndex, ej.handlerIndex, ej.catch_type);
+						ei = new ExceptionTableEntry(ei.startIndex, emi.startIndex, ei.handlerIndex, ei.catch_type);
+						ej = new ExceptionTableEntry(emj.endIndex, ej.endIndex, ej.handlerIndex, ej.catch_type);
+						ar[i] = ei;
+						ar[j] = ej;
 						ar.Insert(j, emj);
 						ar.Insert(i + 1, emi);
 						goto restart;
@@ -2749,17 +2739,10 @@ class MethodAnalyzer
 					// 0007/test.j
 					else if (j > i && ej.endIndex < ei.endIndex)
 					{
-						ExceptionTableEntry emi = new ExceptionTableEntry();
-						emi.startIndex = ej.startIndex;
-						emi.endIndex = ej.endIndex;
-						emi.catch_type = ei.catch_type;
-						emi.handlerIndex = ei.handlerIndex;
-						ExceptionTableEntry eei = new ExceptionTableEntry();
-						eei.startIndex = ej.endIndex;
-						eei.endIndex = ei.endIndex;
-						eei.catch_type = ei.catch_type;
-						eei.handlerIndex = ei.handlerIndex;
-						ei.endIndex = emi.startIndex;
+						ExceptionTableEntry emi = new ExceptionTableEntry(ej.startIndex, ej.endIndex, ei.handlerIndex, ei.catch_type);
+						ExceptionTableEntry eei = new ExceptionTableEntry(ej.endIndex, ei.endIndex, ei.handlerIndex, ei.catch_type);
+						ei = new ExceptionTableEntry(ei.startIndex, emi.startIndex, ei.handlerIndex, ei.catch_type);
+						ar[i] = ei;
 						ar.Insert(i + 1, eei);
 						ar.Insert(i + 1, emi);
 						goto restart;
@@ -2788,12 +2771,9 @@ class MethodAnalyzer
 								int targetIndex = (k == -1 ? instructions[j].DefaultTarget : instructions[j].GetSwitchTargetIndex(k));
 								if (ei.startIndex < targetIndex && targetIndex < ei.endIndex)
 								{
-									ExceptionTableEntry en = new ExceptionTableEntry();
-									en.catch_type = ei.catch_type;
-									en.handlerIndex = ei.handlerIndex;
-									en.startIndex = targetIndex;
-									en.endIndex = ei.endIndex;
-									ei.endIndex = targetIndex;
+									ExceptionTableEntry en = new ExceptionTableEntry(targetIndex, ei.endIndex, ei.handlerIndex, ei.catch_type);
+									ei = new ExceptionTableEntry(ei.startIndex, targetIndex, ei.handlerIndex, ei.catch_type);
+									ar[i] = ei;
 									ar.Insert(i + 1, en);
 									goto restart_split;
 								}
@@ -2820,12 +2800,9 @@ class MethodAnalyzer
 								int targetIndex = instructions[j].Arg1;
 								if (ei.startIndex < targetIndex && targetIndex < ei.endIndex)
 								{
-									ExceptionTableEntry en = new ExceptionTableEntry();
-									en.catch_type = ei.catch_type;
-									en.handlerIndex = ei.handlerIndex;
-									en.startIndex = targetIndex;
-									en.endIndex = ei.endIndex;
-									ei.endIndex = targetIndex;
+									ExceptionTableEntry en = new ExceptionTableEntry(targetIndex, ei.endIndex, ei.handlerIndex, ei.catch_type);
+									ei = new ExceptionTableEntry(ei.startIndex, targetIndex, ei.handlerIndex, ei.catch_type);
+									ar[i] = ei;
 									ar.Insert(i + 1, en);
 									goto restart_split;
 								}
@@ -2844,12 +2821,9 @@ class MethodAnalyzer
 				ExceptionTableEntry ej = ar[j];
 				if (ei.startIndex < ej.handlerIndex && ej.handlerIndex < ei.endIndex)
 				{
-					ExceptionTableEntry en = new ExceptionTableEntry();
-					en.catch_type = ei.catch_type;
-					en.handlerIndex = ei.handlerIndex;
-					en.startIndex = ej.handlerIndex;
-					en.endIndex = ei.endIndex;
-					ei.endIndex = ej.handlerIndex;
+					ExceptionTableEntry en = new ExceptionTableEntry(ej.handlerIndex, ei.endIndex, ei.handlerIndex, ei.catch_type);
+					ei = new ExceptionTableEntry(ei.startIndex, ej.handlerIndex, ei.handlerIndex, ei.catch_type);
+					ar[i] = ei;
 					ar.Insert(i + 1, en);
 					goto restart_split;
 				}
