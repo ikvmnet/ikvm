@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2009 Jeroen Frijters
+  Copyright (C) 2002-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -32,6 +32,7 @@ namespace IKVM.Internal
 	{
 		private ClassFile.Method.Instruction[] codeCopy;
 		private int codeLength;
+		private InstructionFlags[] flags;
 		private readonly ClassFile.Method m;
 		private readonly JsrMethodAnalyzer ma;
 
@@ -41,15 +42,17 @@ namespace IKVM.Internal
 			do
 			{
 				ClassFile.Method.Instruction[] codeCopy = (ClassFile.Method.Instruction[])m.Instructions.Clone();
-				JsrMethodAnalyzer ma = new JsrMethodAnalyzer(mw, classFile, m, classLoader);
-				inliner = new JsrInliner(codeCopy, m, ma);
+				InstructionFlags[] flags = new InstructionFlags[codeCopy.Length];
+				JsrMethodAnalyzer ma = new JsrMethodAnalyzer(mw, classFile, m, classLoader, flags);
+				inliner = new JsrInliner(codeCopy, flags, m, ma);
 			} while (inliner.InlineJsrs());
 		}
 
-		private JsrInliner(ClassFile.Method.Instruction[] codeCopy, ClassFile.Method m, JsrMethodAnalyzer ma)
+		private JsrInliner(ClassFile.Method.Instruction[] codeCopy, InstructionFlags[] flags, ClassFile.Method m, JsrMethodAnalyzer ma)
 		{
 			this.codeCopy = codeCopy;
 			codeLength = codeCopy.Length;
+			this.flags = flags;
 			this.m = m;
 			this.ma = ma;
 		}
@@ -59,6 +62,7 @@ namespace IKVM.Internal
 			if (codeLength == codeCopy.Length)
 			{
 				Array.Resize(ref codeCopy, codeLength * 2);
+				Array.Resize(ref flags, codeLength * 2);
 			}
 			codeCopy[codeLength++] = instr;
 		}
@@ -72,7 +76,7 @@ namespace IKVM.Internal
 			{
 				// note that we're also (needlessly) processing the subroutines here, but that shouldn't be a problem (just a minor waste of cpu)
 				// because the code is unreachable anyway
-				if (m.Instructions[i].IsReachable && m.Instructions[i].NormalizedOpCode == NormalizedByteCode.__jsr)
+				if ((flags[i] & InstructionFlags.Reachable) != 0 && m.Instructions[i].NormalizedOpCode == NormalizedByteCode.__jsr)
 				{
 					int subroutineId = m.Instructions[i].TargetIndex;
 					codeCopy[i].PatchOpCode(NormalizedByteCode.__goto, codeLength);
@@ -93,10 +97,6 @@ namespace IKVM.Internal
 			Array.Resize(ref codeCopy, codeLength);
 
 			m.Instructions = codeCopy;
-			for (int i = 0; i < m.Instructions.Length; i++)
-			{
-				m.Instructions[i].flags = 0;
-			}
 			return hasJsrs;
 		}
 
@@ -151,7 +151,7 @@ namespace IKVM.Internal
 				bool fallThru = false;
 				for (int instructionIndex = 0; instructionIndex < inliner.m.Instructions.Length; instructionIndex++)
 				{
-					if (inliner.m.Instructions[instructionIndex].IsReachable
+					if ((inliner.flags[instructionIndex] & InstructionFlags.Reachable) != 0
 						&& inliner.ma.IsSubroutineActive(instructionIndex, subroutineIndex))
 					{
 						fallThru = false;
@@ -341,7 +341,7 @@ namespace IKVM.Internal
 			private List<int>[] callsites;
 			private List<int>[] returnsites;
 
-			internal JsrMethodAnalyzer(MethodWrapper mw, ClassFile classFile, ClassFile.Method method, ClassLoaderWrapper classLoader)
+			internal JsrMethodAnalyzer(MethodWrapper mw, ClassFile classFile, ClassFile.Method method, ClassLoaderWrapper classLoader, InstructionFlags[] flags)
 			{
 				if (method.VerifyError != null)
 				{
@@ -1173,23 +1173,23 @@ namespace IKVM.Internal
 
 				// Now we do another pass to compute reachability
 				done = false;
-				instructions[0].flags |= InstructionFlags.Reachable;
+				flags[0] |= InstructionFlags.Reachable;
 				while (!done)
 				{
 					done = true;
 					bool didJsrOrRet = false;
 					for (int i = 0; i < instructions.Length; i++)
 					{
-						if ((instructions[i].flags & (InstructionFlags.Reachable | InstructionFlags.Processed)) == InstructionFlags.Reachable)
+						if ((flags[i] & (InstructionFlags.Reachable | InstructionFlags.Processed)) == InstructionFlags.Reachable)
 						{
 							done = false;
-							instructions[i].flags |= InstructionFlags.Processed;
+							flags[i] |= InstructionFlags.Processed;
 							// mark the exception handlers reachable from this instruction
 							for (int j = 0; j < method.ExceptionTable.Length; j++)
 							{
 								if (method.ExceptionTable[j].startIndex <= i && i < method.ExceptionTable[j].endIndex)
 								{
-									instructions[method.ExceptionTable[j].handlerIndex].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+									flags[method.ExceptionTable[j].handlerIndex] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 								}
 							}
 							// mark the successor instructions
@@ -1202,14 +1202,14 @@ namespace IKVM.Internal
 										for (int j = 0; j < instructions[i].SwitchEntryCount; j++)
 										{
 											hasbackbranch |= instructions[i].GetSwitchTargetIndex(j) < i;
-											instructions[instructions[i].GetSwitchTargetIndex(j)].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+											flags[instructions[i].GetSwitchTargetIndex(j)] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 										}
 										hasbackbranch |= instructions[i].DefaultTarget < i;
-										instructions[instructions[i].DefaultTarget].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+										flags[instructions[i].DefaultTarget] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 										break;
 									}
 								case NormalizedByteCode.__goto:
-									instructions[instructions[i].TargetIndex].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+									flags[instructions[i].TargetIndex] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 									break;
 								case NormalizedByteCode.__ifeq:
 								case NormalizedByteCode.__ifne:
@@ -1227,11 +1227,11 @@ namespace IKVM.Internal
 								case NormalizedByteCode.__if_acmpne:
 								case NormalizedByteCode.__ifnull:
 								case NormalizedByteCode.__ifnonnull:
-									instructions[instructions[i].TargetIndex].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
-									instructions[i + 1].flags |= InstructionFlags.Reachable;
+									flags[instructions[i].TargetIndex] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+									flags[i + 1] |= InstructionFlags.Reachable;
 									break;
 								case NormalizedByteCode.__jsr:
-									instructions[instructions[i].TargetIndex].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+									flags[instructions[i].TargetIndex] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 									// Note that we don't mark the next instruction as reachable,
 									// because that depends on the corresponding ret actually being
 									// reachable. We handle this in the loop below.
@@ -1253,7 +1253,7 @@ namespace IKVM.Internal
 								case NormalizedByteCode.__athrow:
 									break;
 								default:
-									instructions[i + 1].flags |= InstructionFlags.Reachable;
+									flags[i + 1] |= InstructionFlags.Reachable;
 									break;
 							}
 						}
@@ -1263,15 +1263,15 @@ namespace IKVM.Internal
 						for (int i = 0; i < instructions.Length; i++)
 						{
 							if (instructions[i].NormalizedOpCode == NormalizedByteCode.__ret
-								&& instructions[i].IsReachable)
+								&& (flags[i] & InstructionFlags.Reachable) != 0)
 							{
 								int subroutineIndex = state[i].GetLocalRet(instructions[i].Arg1);
 								int[] cs = GetCallSites(subroutineIndex);
 								for (int j = 0; j < cs.Length; j++)
 								{
-									if (instructions[cs[j]].IsReachable)
+									if ((flags[cs[j]] & InstructionFlags.Reachable) != 0)
 									{
-										instructions[cs[j] + 1].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+										flags[cs[j] + 1] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 									}
 								}
 							}
