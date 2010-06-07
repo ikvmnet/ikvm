@@ -2607,7 +2607,6 @@ namespace IKVM.Internal
 			{
 				private ushort pc;
 				private NormalizedByteCode normopcode;
-				internal InstructionFlags flags;
 				private int arg1;
 				private short arg2;
 				private SwitchEntry[] switch_entries;
@@ -2638,22 +2637,6 @@ namespace IKVM.Internal
 					get
 					{
 						return arg1;
-					}
-				}
-
-				internal bool IsReachable
-				{
-					get
-					{
-						return (flags & InstructionFlags.Reachable) != 0;
-					}
-				}
-
-				internal bool IsBranchTarget
-				{
-					get
-					{
-						return (flags & InstructionFlags.BranchTarget) != 0;
 					}
 				}
 

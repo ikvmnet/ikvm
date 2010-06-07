@@ -1212,7 +1212,6 @@ class MethodAnalyzer
 		AnalyzeTypeFlow(wrapper, thisType, mw, localStoreReaders, newTypes);
 		OptimizationPass(wrapper, instructions, classLoader);
 		FinalCodePatchup(wrapper, mw, instructions);
-		ComputePartialReachability(instructions, 0, method.ExceptionTable);
 		AnalyzeLocalVariables(localStoreReaders, instructions, classLoader);
 	}
 
@@ -2233,14 +2232,14 @@ class MethodAnalyzer
 			}
 			if (assertionsDisabled != null)
 			{
-				// compute reachability (and branch targets) so that we can use IsBranchTarget
-				ComputePartialReachability(instructions, 0, method.ExceptionTable);
+				// compute branch targets
+				InstructionFlags[] flags = ComputePartialReachability(instructions, 0, method.ExceptionTable);
 				for (int i = 0; i < instructions.Length; i++)
 				{
 					if (instructions[i].NormalizedOpCode == NormalizedByteCode.__getstatic
 						&& instructions[i + 1].NormalizedOpCode == NormalizedByteCode.__ifne
 						&& instructions[i + 1].TargetIndex > i
-						&& !instructions[i + 1].IsBranchTarget)
+						&& (flags[i + 1] & InstructionFlags.BranchTarget) == 0)
 					{
 						ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instructions[i].Arg1);
 						if (cpi.GetField() == assertionsDisabled)
@@ -2468,31 +2467,27 @@ class MethodAnalyzer
 		}
 	}
 
-	private void ComputePartialReachability(ClassFile.Method.Instruction[] instructions, int initialInstructionIndex, ClassFile.Method.ExceptionTableEntry[] exceptionTable)
+	internal InstructionFlags[] ComputePartialReachability(ClassFile.Method.Instruction[] instructions, int initialInstructionIndex, ClassFile.Method.ExceptionTableEntry[] exceptionTable)
 	{
-		for (int i = 0; i < instructions.Length; i++)
-		{
-			instructions[i].flags = 0;
-		}
-		// Now we do another pass to find "hard error" instructions and compute final reachability
+		InstructionFlags[] flags = new InstructionFlags[instructions.Length];
 		bool done = false;
-		instructions[initialInstructionIndex].flags |= InstructionFlags.Reachable;
+		flags[initialInstructionIndex] |= InstructionFlags.Reachable;
 		while (!done)
 		{
 			done = true;
 			for (int i = 0; i < instructions.Length; i++)
 			{
-				if ((instructions[i].flags & (InstructionFlags.Reachable | InstructionFlags.Processed)) == InstructionFlags.Reachable)
+				if ((flags[i] & (InstructionFlags.Reachable | InstructionFlags.Processed)) == InstructionFlags.Reachable)
 				{
 					done = false;
-					instructions[i].flags |= InstructionFlags.Processed;
+					flags[i] |= InstructionFlags.Processed;
 					// mark the exception handlers reachable from this instruction
 					for (int j = 0; j < exceptionTable.Length; j++)
 					{
 						if (exceptionTable[j].startIndex <= i && i < exceptionTable[j].endIndex)
 						{
 							int idx = exceptionTable[j].handlerIndex;
-							instructions[idx].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+							flags[idx] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 						}
 					}
 					// mark the successor instructions
@@ -2503,13 +2498,13 @@ class MethodAnalyzer
 							{
 								for (int j = 0; j < instructions[i].SwitchEntryCount; j++)
 								{
-									instructions[instructions[i].GetSwitchTargetIndex(j)].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+									flags[instructions[i].GetSwitchTargetIndex(j)] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 								}
-								instructions[instructions[i].DefaultTarget].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+								flags[instructions[i].DefaultTarget] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 								break;
 							}
 						case NormalizedByteCode.__goto:
-							instructions[instructions[i].TargetIndex].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+							flags[instructions[i].TargetIndex] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 							break;
 						case NormalizedByteCode.__ifeq:
 						case NormalizedByteCode.__ifne:
@@ -2527,8 +2522,8 @@ class MethodAnalyzer
 						case NormalizedByteCode.__if_acmpne:
 						case NormalizedByteCode.__ifnull:
 						case NormalizedByteCode.__ifnonnull:
-							instructions[instructions[i].TargetIndex].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
-							instructions[i + 1].flags |= InstructionFlags.Reachable;
+							flags[instructions[i].TargetIndex] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+							flags[i + 1] |= InstructionFlags.Reachable;
 							break;
 						case NormalizedByteCode.__ireturn:
 						case NormalizedByteCode.__lreturn:
@@ -2540,12 +2535,13 @@ class MethodAnalyzer
 						case NormalizedByteCode.__static_error:
 							break;
 						default:
-							instructions[i + 1].flags |= InstructionFlags.Reachable;
+							flags[i + 1] |= InstructionFlags.Reachable;
 							break;
 					}
 				}
 			}
 		}
+		return flags;
 	}
 
 	private void AnalyzeLocalVariables(Dictionary<int, string>[] localStoreReaders, ClassFile.Method.Instruction[] instructions, ClassLoaderWrapper classLoader)
@@ -2563,10 +2559,12 @@ class MethodAnalyzer
 		Dictionary<LocalVar, LocalVar> forwarders = new Dictionary<LocalVar,LocalVar>();
 		if(classLoader.EmitDebugInfo)
 		{
+			InstructionFlags[] flags = ComputePartialReachability(instructions, 0, method.ExceptionTable);
 			// if we're emitting debug info, we need to keep dead stores as well...
 			for(int i = 0; i < instructions.Length; i++)
 			{
-				if(instructions[i].IsReachable && IsStoreLocal(instructions[i].NormalizedOpCode))
+				if((flags[i] & InstructionFlags.Reachable) != 0
+					&& IsStoreLocal(instructions[i].NormalizedOpCode))
 				{
 					if(!localByStoreSite.ContainsKey(MakeKey(i, instructions[i].NormalizedArg1)))
 					{
@@ -2670,7 +2668,7 @@ class MethodAnalyzer
 		this.allLocalVars = locals.ToArray();
 	}
 
-	internal static ExceptionTableEntry[] UntangleExceptionBlocks(ClassFile classFile, ClassFile.Method.Instruction[] instructions, ExceptionTableEntry[] exceptionTable)
+	internal static ExceptionTableEntry[] UntangleExceptionBlocks(ClassFile classFile, ClassFile.Method.Instruction[] instructions, InstructionFlags[] flags, ExceptionTableEntry[] exceptionTable)
 	{
 		// NOTE we're going to be messing with ExceptionTableEntrys that are owned by the Method, this is very bad practice,
 		// this code should probably be changed to use our own ETE class (which should also contain the ordinal, instead
@@ -2949,7 +2947,7 @@ class MethodAnalyzer
 		{
 			// if the first instruction is unreachable, the entire block is unreachable,
 			// because you can't jump into a block (we've just split the blocks to ensure that)
-			if (!instructions[ar[i].startIndex].IsReachable)
+			if ((flags[ar[i].startIndex] & InstructionFlags.Reachable) == 0)
 			{
 				ar.RemoveAt(i);
 				i--;

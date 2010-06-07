@@ -39,6 +39,7 @@ using IKVM.Internal;
 using ExceptionTableEntry = IKVM.Internal.ClassFile.Method.ExceptionTableEntry;
 using LocalVariableTableEntry = IKVM.Internal.ClassFile.Method.LocalVariableTableEntry;
 using Instruction = IKVM.Internal.ClassFile.Method.Instruction;
+using InstructionFlags = IKVM.Internal.ClassFile.Method.InstructionFlags;
 
 static class ByteCodeHelperMethods
 {
@@ -172,6 +173,7 @@ sealed class Compiler
 	private readonly ClassFile.Method m;
 	private readonly CodeEmitter ilGenerator;
 	private readonly MethodAnalyzer ma;
+	private readonly ClassFile.Method.InstructionFlags[] flags;
 	private readonly ExceptionTableEntry[] exceptions;
 	private readonly ISymbolDocumentWriter symboldocument;
 	private readonly LineNumberTableAttribute.LineNumberWriter lineNumbers;
@@ -298,7 +300,8 @@ sealed class Compiler
 			}
 		}
 
-		exceptions = MethodAnalyzer.UntangleExceptionBlocks(classFile, m.Instructions, m.ExceptionTable);
+		flags = ma.ComputePartialReachability(m.Instructions, 0, m.ExceptionTable);
+		exceptions = MethodAnalyzer.UntangleExceptionBlocks(classFile, m.Instructions, flags, m.ExceptionTable);
 
 		// if we're emitting debugging information, we need to use scopes for local variables
 		if(debug)
@@ -630,7 +633,7 @@ sealed class Compiler
 			{
 				for(int i = 0; i < m.Instructions.Length; i++)
 				{
-					if(!m.Instructions[i].IsReachable)
+					if((c.flags[i] & InstructionFlags.Reachable) == 0)
 					{
 						// skip unreachable instructions
 					}
@@ -1003,24 +1006,24 @@ sealed class Compiler
 					bool unusedException = (handlerInstr.NormalizedOpCode == NormalizedByteCode.__pop ||
 						(handlerInstr.NormalizedOpCode == NormalizedByteCode.__astore &&
 						ma.GetLocalVar(handlerIndex) == null));
-					int flags = unusedException ? 2 : 0;
+					int mapFlags = unusedException ? 2 : 0;
 					if(mapSafe && unusedException)
 					{
 						// we don't need to do anything with the exception
 					}
 					else if(mapSafe)
 					{
-						ilGenerator.LazyEmitLdc_I4(flags | 1);
+						ilGenerator.LazyEmitLdc_I4(mapFlags | 1);
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(excType));
 					}
 					else if(exceptionTypeWrapper == java_lang_Throwable)
 					{
-						ilGenerator.LazyEmitLdc_I4(flags);
+						ilGenerator.LazyEmitLdc_I4(mapFlags);
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(Types.Exception));
 					}
 					else
 					{
-						ilGenerator.LazyEmitLdc_I4(flags | (remap ? 0 : 1));
+						ilGenerator.LazyEmitLdc_I4(mapFlags | (remap ? 0 : 1));
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(excType));
 						if(!unusedException)
 						{
@@ -1054,7 +1057,7 @@ sealed class Compiler
 				prevBlock.LeaveStubs(block);
 			}
 
-			if(!instr.IsReachable)
+			if((flags[i] & InstructionFlags.Reachable) == 0)
 			{
 				// skip any unreachable instructions
 				continue;
@@ -1063,7 +1066,7 @@ sealed class Compiler
 			// if there was a forward branch to this instruction, it is forward reachable
 			instructionIsForwardReachable |= block.HasLabel(i);
 
-			if(block.HasLabel(i) || instr.IsBranchTarget)
+			if(block.HasLabel(i) || (flags[i] & InstructionFlags.BranchTarget) != 0)
 			{
 				block.MarkLabel(i);
 			}
@@ -1371,7 +1374,7 @@ sealed class Compiler
 				{
 					ClassFile.ConstantPoolItemMI cpi = classFile.GetMethodref(instr.Arg1);
 					MethodWrapper method = GetMethodCallEmitter(cpi, instr.NormalizedOpCode);
-					if(method.IsIntrinsic && Intrinsics.Emit(context, ilGenerator, method, ma, i, mw, classFile, code))
+					if(method.IsIntrinsic && Intrinsics.Emit(context, ilGenerator, method, ma, i, mw, classFile, code, flags))
 					{
 						break;
 					}
@@ -1415,7 +1418,7 @@ sealed class Compiler
 
 					MethodWrapper method = GetMethodCallEmitter(cpi, instr.NormalizedOpCode);
 
-					if(method.IsIntrinsic && Intrinsics.Emit(context, ilGenerator, method, ma, i, mw, classFile, code))
+					if(method.IsIntrinsic && Intrinsics.Emit(context, ilGenerator, method, ma, i, mw, classFile, code, flags))
 					{
 						break;
 					}
@@ -1522,7 +1525,7 @@ sealed class Compiler
 									{
 										ilGenerator.Emit(OpCodes.Call, suppressFillInStackTraceMethod);
 									}
-									if(!code[i + 1].IsBranchTarget)
+									if((flags[i + 1] & InstructionFlags.BranchTarget) == 0)
 									{
 										code[i + 1].PatchOpCode(NormalizedByteCode.__athrow_no_unmap);
 									}
@@ -2721,7 +2724,7 @@ sealed class Compiler
 					break;
 				default:
 					instructionIsForwardReachable = true;
-					Debug.Assert(code[i + 1].IsReachable);
+					Debug.Assert((flags[i + 1] & InstructionFlags.Reachable) != 0);
 					// don't fall through end of try block
 					if(block.EndIndex == i + 1)
 					{
@@ -2744,7 +2747,7 @@ sealed class Compiler
 				MethodWrapper mw = cpi.GetMethodForInvokespecial();
 				return mw.Name != StringConstants.INIT || mw.DeclaringType != tw;
 			}
-			if (code[index].IsBranchTarget
+			if ((flags[index] & InstructionFlags.BranchTarget) != 0
 				|| ByteCodeMetaData.IsBranch(code[index].NormalizedOpCode)
 				|| ByteCodeMetaData.CanThrowException(code[index].NormalizedOpCode))
 			{

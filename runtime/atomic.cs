@@ -33,17 +33,19 @@ using System.Reflection;
 using System.Reflection.Emit;
 #endif
 using IKVM.Internal;
+using InstructionFlags = IKVM.Internal.ClassFile.Method.InstructionFlags;
 
 static class AtomicReferenceFieldUpdaterEmitter
 {
 	private static readonly Dictionary<FieldWrapper, ConstructorBuilder> map = new Dictionary<FieldWrapper, ConstructorBuilder>();
 
-	internal static bool Emit(DynamicTypeWrapper.FinishContext context, TypeWrapper wrapper, CodeEmitter ilgen, ClassFile classFile, int i, ClassFile.Method.Instruction[] code)
+	internal static bool Emit(DynamicTypeWrapper.FinishContext context, TypeWrapper wrapper, CodeEmitter ilgen, ClassFile classFile, int i, ClassFile.Method.Instruction[] code, InstructionFlags[] flags)
 	{
 		if (i >= 3
-			&& !code[i - 0].IsBranchTarget
-			&& !code[i - 1].IsBranchTarget
-			&& !code[i - 2].IsBranchTarget
+			&& (flags[i - 0] & InstructionFlags.BranchTarget) == 0
+			&& (flags[i - 1] & InstructionFlags.BranchTarget) == 0
+			&& (flags[i - 2] & InstructionFlags.BranchTarget) == 0
+			&& (flags[i - 3] & InstructionFlags.BranchTarget) == 0
 			&& code[i - 1].NormalizedOpCode == NormalizedByteCode.__ldc
 			&& code[i - 2].NormalizedOpCode == NormalizedByteCode.__ldc
 			&& code[i - 3].NormalizedOpCode == NormalizedByteCode.__ldc)

@@ -33,12 +33,14 @@ using System.Reflection;
 using System.Reflection.Emit;
 #endif
 using System.Diagnostics;
+using Instruction = IKVM.Internal.ClassFile.Method.Instruction;
+using InstructionFlags = IKVM.Internal.ClassFile.Method.InstructionFlags;
 
 namespace IKVM.Internal
 {
 	static class Intrinsics
 	{
-		private delegate bool Emitter(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code);
+		private delegate bool Emitter(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, Instruction[] code, InstructionFlags[] flags);
 		private struct IntrinsicKey : IEquatable<IntrinsicKey>
 		{
 			private readonly string className;
@@ -115,13 +117,13 @@ namespace IKVM.Internal
 			return intrinsics.ContainsKey(new IntrinsicKey(mw)) && mw.DeclaringType.GetClassLoader() == CoreClasses.java.lang.Object.Wrapper.GetClassLoader();
 		}
 
-		internal static bool Emit(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		internal static bool Emit(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, Instruction[] code, InstructionFlags[] flags)
 		{
 			// note that intrinsics can always refuse to emit code and the code generator will fall back to a normal method call
-			return intrinsics[new IntrinsicKey(method)](context, ilgen, method, ma, opcodeIndex, caller, classFile, code);
+			return intrinsics[new IntrinsicKey(method)](context, ilgen, method, ma, opcodeIndex, caller, classFile, code, flags);
 		}
 
-		private static bool Object_getClass(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool Object_getClass(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, Instruction[] code, InstructionFlags[] flags)
 		{
 			// this is the null-check idiom that javac uses (both in its own source and in the code it generates)
 			if (code[opcodeIndex + 1].NormalizedOpCode == NormalizedByteCode.__pop)
@@ -132,9 +134,12 @@ namespace IKVM.Internal
 			}
 			// this optimizes obj1.getClass() ==/!= obj2.getClass()
 			else if (opcodeIndex + 3 < code.Length
-				&& !code[opcodeIndex + 1].IsBranchTarget && code[opcodeIndex + 1].NormalizedOpCode == NormalizedByteCode.__aload
-				&& !code[opcodeIndex + 2].IsBranchTarget && code[opcodeIndex + 2].NormalizedOpCode == NormalizedByteCode.__invokevirtual
-				&& !code[opcodeIndex + 3].IsBranchTarget && (code[opcodeIndex + 3].NormalizedOpCode == NormalizedByteCode.__if_acmpeq || code[opcodeIndex + 3].NormalizedOpCode == NormalizedByteCode.__if_acmpne)
+				&& (flags[opcodeIndex + 1] & InstructionFlags.BranchTarget) == 0
+				&& (flags[opcodeIndex + 2] & InstructionFlags.BranchTarget) == 0
+				&& (flags[opcodeIndex + 3] & InstructionFlags.BranchTarget) == 0
+				&& code[opcodeIndex + 1].NormalizedOpCode == NormalizedByteCode.__aload
+				&& code[opcodeIndex + 2].NormalizedOpCode == NormalizedByteCode.__invokevirtual
+				&& (code[opcodeIndex + 3].NormalizedOpCode == NormalizedByteCode.__if_acmpeq || code[opcodeIndex + 3].NormalizedOpCode == NormalizedByteCode.__if_acmpne)
 				&& (IsSafeForGetClassOptimization(ma.GetStackTypeWrapper(opcodeIndex, 0)) || IsSafeForGetClassOptimization(ma.GetStackTypeWrapper(opcodeIndex + 2, 0))))
 			{
 				ClassFile.ConstantPoolItemMI cpi = classFile.GetMethodref(code[opcodeIndex + 2].Arg1);
@@ -149,7 +154,7 @@ namespace IKVM.Internal
 			return false;
 		}
 
-		private static bool Class_desiredAssertionStatus(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool Class_desiredAssertionStatus(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, Instruction[] code, InstructionFlags[] flags)
 		{
 			TypeWrapper classLiteral = ilgen.PeekLazyClassLiteral();
 			if (classLiteral != null && classLiteral.GetClassLoader().RemoveAsserts)
@@ -170,25 +175,25 @@ namespace IKVM.Internal
 			return tw != CoreClasses.java.lang.Object.Wrapper && !tw.IsArray;
 		}
 
-		private static bool Float_floatToRawIntBits(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool Float_floatToRawIntBits(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, Instruction[] code, InstructionFlags[] flags)
 		{
 			EmitConversion(ilgen, typeofFloatConverter, "ToInt");
 			return true;
 		}
 
-		private static bool Float_intBitsToFloat(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool Float_intBitsToFloat(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, Instruction[] code, InstructionFlags[] flags)
 		{
 			EmitConversion(ilgen, typeofFloatConverter, "ToFloat");
 			return true;
 		}
 
-		private static bool Double_doubleToRawLongBits(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool Double_doubleToRawLongBits(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, Instruction[] code, InstructionFlags[] flags)
 		{
 			EmitConversion(ilgen, typeofDoubleConverter, "ToLong");
 			return true;
 		}
 
-		private static bool Double_longBitsToDouble(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool Double_longBitsToDouble(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, Instruction[] code, InstructionFlags[] flags)
 		{
 			EmitConversion(ilgen, typeofDoubleConverter, "ToDouble");
 			return true;
@@ -201,7 +206,7 @@ namespace IKVM.Internal
 			ilgen.Emit(OpCodes.Call, converterType.GetMethod(method));
 		}
 
-		private static bool System_arraycopy(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool System_arraycopy(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, Instruction[] code, InstructionFlags[] flags)
 		{
 			// if the array arguments on the stack are of a known array type, we can redirect to an optimized version of arraycopy.
 			// Note that we also have to handle VMSystem.arraycopy, because on GNU Classpath StringBuffer directly calls
@@ -254,12 +259,12 @@ namespace IKVM.Internal
 			}
 		}
 
-		private static bool AtomicReferenceFieldUpdater_newUpdater(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool AtomicReferenceFieldUpdater_newUpdater(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, Instruction[] code, InstructionFlags[] flags)
 		{
-			return AtomicReferenceFieldUpdaterEmitter.Emit(context, caller.DeclaringType, ilgen, classFile, opcodeIndex, code);
+			return AtomicReferenceFieldUpdaterEmitter.Emit(context, caller.DeclaringType, ilgen, classFile, opcodeIndex, code, flags);
 		}
 
-		private static bool String_toCharArray(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool String_toCharArray(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, Instruction[] code, InstructionFlags[] flags)
 		{
 			string str = ilgen.PopLazyLdstr();
 			if (str != null)
@@ -328,11 +333,11 @@ namespace IKVM.Internal
 			ilgen.Emit(OpCodes.Call, JVM.Import(typeof(System.Runtime.CompilerServices.RuntimeHelpers)).GetMethod("InitializeArray", new Type[] { Types.Array, JVM.Import(typeof(RuntimeFieldHandle)) }));
 		}
 
-		private static bool Reflection_getCallerClass(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool Reflection_getCallerClass(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, Instruction[] code, InstructionFlags[] flags)
 		{
 			if (caller.HasCallerID
 				&& opcodeIndex > 0
-				&& !code[opcodeIndex - 1].IsBranchTarget
+				&& (flags[opcodeIndex - 1] & InstructionFlags.BranchTarget) == 0
 				&& code[opcodeIndex - 1].NormalizedOpCode == NormalizedByteCode.__iconst
 				&& code[opcodeIndex - 1].Arg1 == 2)
 			{
@@ -351,7 +356,7 @@ namespace IKVM.Internal
 			return false;
 		}
 
-		private static bool ClassLoader_getCallerClassLoader(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool ClassLoader_getCallerClassLoader(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, Instruction[] code, InstructionFlags[] flags)
 		{
 			if (caller.HasCallerID)
 			{
@@ -369,7 +374,7 @@ namespace IKVM.Internal
 			return false;
 		}
 
-		private static bool CallerID_getCallerID(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool CallerID_getCallerID(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, Instruction[] code, InstructionFlags[] flags)
 		{
 			if (caller.HasCallerID)
 			{
@@ -388,7 +393,7 @@ namespace IKVM.Internal
 			return false;
 		}
 
-		private static bool Util_getInstanceTypeFromClass(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool Util_getInstanceTypeFromClass(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, Instruction[] code, InstructionFlags[] flags)
 		{
 			TypeWrapper tw = ilgen.PeekLazyClassLiteral();
 			if (tw != null)
@@ -409,7 +414,7 @@ namespace IKVM.Internal
 		}
 
 #if STATIC_COMPILER
-		private static bool Class_getPrimitiveClass(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool Class_getPrimitiveClass(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, Instruction[] code, InstructionFlags[] flags)
 		{
 			ilgen.LazyEmitPop();
 			ilgen.Emit(OpCodes.Ldnull);
@@ -420,7 +425,7 @@ namespace IKVM.Internal
 		}
 #endif
 
-		private static bool ThreadLocal_new(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool ThreadLocal_new(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, Instruction[] code, InstructionFlags[] flags)
 		{
 			// it is only valid to replace a ThreadLocal instantiation by our ThreadStatic based version, if we can prove that the instantiation only happens once
 			// (which is the case when we're in <clinit> and there aren't any branches that lead to the current position)
@@ -437,7 +442,7 @@ namespace IKVM.Internal
 #endif
 			for (int i = 0; i <= opcodeIndex; i++)
 			{
-				if (code[i].IsBranchTarget)
+				if ((flags[i] & InstructionFlags.BranchTarget) != 0)
 				{
 					return false;
 				}
