@@ -2753,6 +2753,7 @@ namespace IKVM.Internal
 
 		internal abstract void Finish();
 
+#if !STATIC_COMPILER
 		[Conditional("DEBUG")]
 		internal static void AssertFinished(Type type)
 		{
@@ -2765,6 +2766,7 @@ namespace IKVM.Internal
 				Debug.Assert(!(type is TypeBuilder));
 			}
 		}
+#endif
 
 #if !STATIC_COMPILER && !STUB_GENERATOR
 		internal void RunClassInit()

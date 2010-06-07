@@ -921,7 +921,9 @@ namespace IKVM.Internal
 		internal static TypeWrapper GetWrapperFromType(Type type)
 		{
 			//Tracer.Info(Tracer.Runtime, "GetWrapperFromType: {0}", type.AssemblyQualifiedName);
+#if !STATIC_COMPILER
 			TypeWrapper.AssertFinished(type);
+#endif
 			Debug.Assert(!type.IsPointer);
 			Debug.Assert(!type.IsByRef);
 			TypeWrapper wrapper;
@@ -1143,7 +1145,9 @@ namespace IKVM.Internal
 
 		internal void SetWrapperForType(Type type, TypeWrapper wrapper)
 		{
+#if !STATIC_COMPILER
 			TypeWrapper.AssertFinished(type);
+#endif
 			Dictionary<Type, TypeWrapper> dict;
 #if CLASSGC
 			dict = typeToTypeWrapper ?? globalTypeToTypeWrapper;
