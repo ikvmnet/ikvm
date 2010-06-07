@@ -1127,7 +1127,7 @@ sealed class Compiler
 			{
 				for(int j = 0; j < table.Length; j++)
 				{
-					if(table[j].start_pc == m.Instructions[i].PC && table[j].line_number != 0)
+					if(table[j].start_pc == code[i].PC && table[j].line_number != 0)
 					{
 						if(symboldocument != null)
 						{
@@ -1728,11 +1728,11 @@ sealed class Compiler
 						if(exceptions.Length == 0 && i > 0)
 						{
 							int k = i - 1;
-							while(k > 0 && m.Instructions[k].NormalizedOpCode == NormalizedByteCode.__nop)
+							while(k > 0 && code[k].NormalizedOpCode == NormalizedByteCode.__nop)
 							{
 								k--;
 							}
-							switch(m.Instructions[k].NormalizedOpCode)
+							switch(code[k].NormalizedOpCode)
 							{
 								case NormalizedByteCode.__invokeinterface:
 								case NormalizedByteCode.__invokespecial:
@@ -2721,7 +2721,7 @@ sealed class Compiler
 					break;
 				default:
 					instructionIsForwardReachable = true;
-					Debug.Assert(m.Instructions[i + 1].IsReachable);
+					Debug.Assert(code[i + 1].IsReachable);
 					// don't fall through end of try block
 					if(block.EndIndex == i + 1)
 					{
