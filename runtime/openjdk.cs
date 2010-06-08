@@ -277,6 +277,7 @@ static class DynamicMethodUtils
 	private static Module dynamicModule;
 #endif
 
+	[System.Security.SecuritySafeCritical]
 	internal static DynamicMethod Create(string name, Type owner, bool nonPublic, Type returnType, Type[] paramTypes)
 	{
 		try
@@ -435,6 +436,7 @@ namespace IKVM.NativeCode.java
 				}
 			}
 
+			[System.Security.SecuritySafeCritical]
 			public static bool flushPosix(System.IO.FileStream fs)
 			{
 				if (fsync == null)
@@ -458,6 +460,7 @@ namespace IKVM.NativeCode.java
 				}
 			}
 
+			[System.Security.SecurityCritical]
 			private static void ResolveFSync()
 			{
 				// we don't want a build time dependency on this Mono assembly, so we use reflection
@@ -2981,6 +2984,7 @@ namespace IKVM.NativeCode.java
 #if !FIRST_PASS
 				// we don't want to inline this method, because that would needlessly cause IKVM.Runtime.JNI.dll to be loaded when loading a fake native library from VFS
 				[MethodImpl(MethodImplOptions.NoInlining)]
+				[global::System.Security.SecuritySafeCritical]
 				private static void doLoad(object thisNativeLibrary, string name)
 				{
 					global::java.lang.ClassLoader.NativeLibrary lib = (global::java.lang.ClassLoader.NativeLibrary)thisNativeLibrary;
@@ -2994,6 +2998,7 @@ namespace IKVM.NativeCode.java
 					throw new NotImplementedException();
 				}
 
+				[global::System.Security.SecuritySafeCritical]
 				public static void unload(object thisNativeLibrary)
 				{
 #if !FIRST_PASS
@@ -4274,6 +4279,7 @@ namespace IKVM.NativeCode.java
 				return false;
 			}
 
+			[System.Security.SecuritySafeCritical]
 			public static int load0(object thisMappedByteBuffer, long address, long length, int pageSize)
 			{
 				int bogus = bogusField;
@@ -4290,6 +4296,7 @@ namespace IKVM.NativeCode.java
 				return 0;
 			}
 
+			[System.Security.SecuritySafeCritical]
 			public static void force0(object thisMappedByteBuffer, long address, long length)
 			{
 				if (JVM.IsUnix)
@@ -5267,6 +5274,7 @@ namespace IKVM.NativeCode.sun.awt.shell
             return (int)shinfo.dwAttributes;
         }
 
+        [System.Security.SecuritySafeCritical]
         public static string getLinkLocation(string path)
         {
             using (ShellLink link = new ShellLink())
@@ -5392,6 +5400,7 @@ namespace IKVM.NativeCode.sun.awt.shell
 
         private IShellLinkW linkW = (IShellLinkW)new CShellLink();
 
+        [System.Security.SecuritySafeCritical]
         public void Dispose()
         {
             if (linkW != null)
@@ -5636,6 +5645,7 @@ namespace IKVM.NativeCode.sun.misc
         }
 
 		// this is a separate method to be able to catch the SecurityException (for the LinkDemand)
+		[System.Security.SecuritySafeCritical]
 		private static void RegisterCriticalCtrlHandler()
 		{
 			defaultConsoleCtrlDelegate = new CriticalCtrlHandler();
