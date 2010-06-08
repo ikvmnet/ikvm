@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2009 Jeroen Frijters
+  Copyright (C) 2002-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -173,8 +173,6 @@ sealed class Compiler
 	private readonly ClassFile.Method m;
 	private readonly CodeEmitter ilGenerator;
 	private readonly MethodAnalyzer ma;
-	private readonly ClassFile.Method.InstructionFlags[] flags;
-	private readonly ExceptionTableEntry[] exceptions;
 	private readonly ISymbolDocumentWriter symboldocument;
 	private readonly LineNumberTableAttribute.LineNumberWriter lineNumbers;
 	private bool nonleaf;
@@ -300,9 +298,6 @@ sealed class Compiler
 			}
 		}
 
-		flags = ma.ComputePartialReachability(0, m.ExceptionTable);
-		exceptions = MethodAnalyzer.UntangleExceptionBlocks(classFile, m.Instructions, flags, m.ExceptionTable);
-
 		// if we're emitting debugging information, we need to use scopes for local variables
 		if(debug)
 		{
@@ -414,6 +409,7 @@ sealed class Compiler
 			New,
 			This,
 			UnitializedThis,
+			FaultBlockException,
 			Other
 		}
 		private Compiler compiler;
@@ -466,6 +462,10 @@ sealed class Compiler
 				// uninitialized references cannot be stored in a local, but we can reload them
 				types[i] = StackType.UnitializedThis;
 			}
+			else if (VerifierTypeWrapper.IsFaultBlockException(type))
+			{
+				types[i] = StackType.FaultBlockException;
+			}
 			else
 			{
 				types[i] = StackType.Other;
@@ -481,7 +481,8 @@ sealed class Compiler
 					compiler.ilGenerator.Emit(OpCodes.Ldnull);
 					break;
 				case StackType.New:
-					// new objects aren't really there on the stack
+				case StackType.FaultBlockException:
+					// objects aren't really there on the stack
 					break;
 				case StackType.This:
 				case StackType.UnitializedThis:
@@ -505,7 +506,8 @@ sealed class Compiler
 					compiler.ilGenerator.LazyEmitPop();
 					break;
 				case StackType.New:
-					// new objects aren't really there on the stack
+				case StackType.FaultBlockException:
+					// objects aren't really there on the stack
 					break;
 				case StackType.Other:
 					compiler.ilGenerator.Emit(OpCodes.Stloc, locals[i]);
@@ -615,7 +617,7 @@ sealed class Compiler
 				ilGenerator.Emit(OpCodes.Call, monitorEnterMethod);
 				ilGenerator.BeginExceptionBlock();
 				Block b = new Block(c, 0, int.MaxValue, -1, new List<object>(), true);
-				c.Compile(b);
+				c.Compile(b, c.ma.ComputePartialReachability(0, true));
 				b.Leave();
 				ilGenerator.BeginFinallyBlock();
 				ilGenerator.Emit(OpCodes.Ldloc, monitor);
@@ -626,14 +628,15 @@ sealed class Compiler
 			else
 			{
 				Block b = new Block(c, 0, int.MaxValue, -1, null, false);
-				c.Compile(b);
+				c.Compile(b, c.ma.ComputePartialReachability(0, true));
 				b.Leave();
 			}
 			if(c.lineNumbers != null)
 			{
+				InstructionFlags[] flags = c.ma.ComputePartialReachability(0, false);
 				for(int i = 0; i < m.Instructions.Length; i++)
 				{
-					if((c.flags[i] & InstructionFlags.Reachable) == 0)
+					if((flags[i] & InstructionFlags.Reachable) == 0)
 					{
 						// skip unreachable instructions
 					}
@@ -885,31 +888,9 @@ sealed class Compiler
 		}
 	}
 
-	private bool IsGuardedBlock(Stack<Block> blockStack, int instructionIndex, int instructionCount)
+	private void Compile(Block block, InstructionFlags[] flags)
 	{
-		int start = instructionIndex;
-		int end = instructionIndex + instructionCount;
-		for(int i = 0; i < exceptions.Length; i++)
-		{
-			ExceptionTableEntry e = exceptions[i];
-			if(e.endIndex > start && e.startIndex < end)
-			{
-				foreach(Block block in blockStack)
-				{
-					if(block.ExceptionIndex == i)
-					{
-						goto next;
-					}
-				}
-				return true;
-			}
-		next:;
-		}
-		return false;
-	}
-
-	private void Compile(Block block)
-	{
+		ExceptionTableEntry[] exceptions = ma.GetExceptionTableFor(flags);
 		int exceptionIndex = 0;
 		Instruction[] code = m.Instructions;
 		Stack<Block> blockStack = new Stack<Block>();
@@ -948,32 +929,10 @@ sealed class Compiler
 
 				int handlerIndex = exc.handlerIndex;
 
-				if(exc.catch_type == 0
-					&& handlerIndex + 2 < m.Instructions.Length
-					&& m.Instructions[handlerIndex].NormalizedOpCode == NormalizedByteCode.__aload
-					&& m.Instructions[handlerIndex + 1].NormalizedOpCode == NormalizedByteCode.__monitorexit
-					&& m.Instructions[handlerIndex + 2].NormalizedOpCode == NormalizedByteCode.__athrow
-					&& !IsGuardedBlock(blockStack, handlerIndex, 3))
+				if(exc.catch_type == 0 && VerifierTypeWrapper.IsFaultBlockException(ma.GetRawStackTypeWrapper(handlerIndex, 0)))
 				{
-					// this is the Jikes & Eclipse Java Compiler synchronization block exit
 					ilGenerator.BeginFaultBlock();
-					LoadLocal(handlerIndex);
-					ilGenerator.Emit(OpCodes.Call, monitorExitMethod);
-					ilGenerator.EndExceptionBlockNoFallThrough();
-				}
-				else if(exc.catch_type == 0
-					&& handlerIndex + 3 < m.Instructions.Length
-					&& m.Instructions[handlerIndex].NormalizedOpCode == NormalizedByteCode.__astore
-					&& m.Instructions[handlerIndex + 1].NormalizedOpCode == NormalizedByteCode.__aload
-					&& m.Instructions[handlerIndex + 2].NormalizedOpCode == NormalizedByteCode.__monitorexit
-					&& m.Instructions[handlerIndex + 3].NormalizedOpCode == NormalizedByteCode.__aload
-					&& m.Instructions[handlerIndex + 4].NormalizedOpCode == NormalizedByteCode.__athrow
-					&& !IsGuardedBlock(blockStack, handlerIndex, 5))
-				{
-					// this is the javac synchronization block exit
-					ilGenerator.BeginFaultBlock();
-					LoadLocal(handlerIndex + 1);
-					ilGenerator.Emit(OpCodes.Call, monitorExitMethod);
+					Compile(new Block(this, 0, block.EndIndex, exceptionIndex, null, false), ma.ComputePartialReachability(handlerIndex, true));
 					ilGenerator.EndExceptionBlockNoFallThrough();
 				}
 				else
@@ -1802,6 +1761,10 @@ sealed class Compiler
 						// so we don't have to worry about that.
 						ilGenerator.Emit(OpCodes.Ldarg_0);
 					}
+					else if (VerifierTypeWrapper.IsFaultBlockException(type))
+					{
+						// not really there
+					}
 					else
 					{
 						LocalVar v = LoadLocal(i);
@@ -1826,6 +1789,10 @@ sealed class Compiler
 						// here (because CLR won't allow unitialized references in locals) and then when
 						// the unitialized ref is loaded we redirect to the this reference
 						ilGenerator.LazyEmitPop();
+					}
+					else if(VerifierTypeWrapper.IsFaultBlockException(type))
+					{
+						// not really there
 					}
 					else
 					{
@@ -1866,7 +1833,7 @@ sealed class Compiler
 						ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicNewCheckOnly);
 					}
-					else if(wrapper != clazz && RequiresExplicitClassInit(wrapper, i + 1))
+					else if(wrapper != clazz && RequiresExplicitClassInit(wrapper, i + 1, flags))
 					{
 						// trigger cctor (as the spec requires)
 						wrapper.EmitRunClassConstructor(ilGenerator);
@@ -2572,12 +2539,19 @@ sealed class Compiler
 					ilGenerator.Emit(OpCodes.Throw);
 					break;
 				case NormalizedByteCode.__athrow:
-					if(ma.GetRawStackTypeWrapper(i, 0).IsUnloadable)
+					if (VerifierTypeWrapper.IsFaultBlockException(ma.GetRawStackTypeWrapper(i, 0)))
 					{
-						ilGenerator.Emit(OpCodes.Castclass, Types.Exception);
+						ilGenerator.Emit(OpCodes.Endfinally);
 					}
-					ilGenerator.Emit(OpCodes.Call, unmapExceptionMethod);
-					ilGenerator.Emit(OpCodes.Throw);
+					else
+					{
+						if (ma.GetRawStackTypeWrapper(i, 0).IsUnloadable)
+						{
+							ilGenerator.Emit(OpCodes.Castclass, Types.Exception);
+						}
+						ilGenerator.Emit(OpCodes.Call, unmapExceptionMethod);
+						ilGenerator.Emit(OpCodes.Throw);
+					}
 					break;
 				case NormalizedByteCode.__tableswitch:
 				{
@@ -2736,7 +2710,7 @@ sealed class Compiler
 		}
 	}
 
-	private bool RequiresExplicitClassInit(TypeWrapper tw, int index)
+	private bool RequiresExplicitClassInit(TypeWrapper tw, int index, InstructionFlags[] flags)
 	{
 		ClassFile.Method.Instruction[] code = m.Instructions;
 		for (; index < code.Length; index++)

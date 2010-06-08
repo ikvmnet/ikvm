@@ -307,6 +307,16 @@ class InstructionState
 		{
 			return VerifierTypeWrapper.Invalid;
 		}
+		if(VerifierTypeWrapper.IsFaultBlockException(type1))
+		{
+			VerifierTypeWrapper.ClearFaultBlockException(type1);
+			return FindCommonBaseType(CoreClasses.java.lang.Throwable.Wrapper, type2);
+		}
+		if(VerifierTypeWrapper.IsFaultBlockException(type2))
+		{
+			VerifierTypeWrapper.ClearFaultBlockException(type2);
+			return FindCommonBaseType(type1, CoreClasses.java.lang.Throwable.Wrapper);
+		}
 		if(type1.IsPrimitive || type2.IsPrimitive)
 		{
 			return VerifierTypeWrapper.Invalid;
@@ -677,6 +687,11 @@ class InstructionState
 		}
 	}
 
+	internal TypeWrapper PopFaultBlockException()
+	{
+		return stack[--stackSize];
+	}
+
 	internal TypeWrapper PopAnyType()
 	{
 		if(stackSize == 0)
@@ -691,6 +706,11 @@ class InstructionState
 		if(VerifierTypeWrapper.IsThis(type))
 		{
 			type = ((VerifierTypeWrapper)type).UnderlyingType;
+		}
+		if(VerifierTypeWrapper.IsFaultBlockException(type))
+		{
+			VerifierTypeWrapper.ClearFaultBlockException(type);
+			type = CoreClasses.java.lang.Throwable.Wrapper;
 		}
 		return type;
 	}
@@ -878,6 +898,16 @@ class InstructionState
 			}
 		}
 	}
+
+	internal void ClearFaultBlockException()
+	{
+		if(VerifierTypeWrapper.IsFaultBlockException(stack[0]))
+		{
+			StackCopyOnWrite();
+			changed = true;
+			stack[0] = CoreClasses.java.lang.Throwable.Wrapper;
+		}
+	}
 }
 
 struct StackState
@@ -915,6 +945,11 @@ struct StackState
 		if(VerifierTypeWrapper.IsThis(type))
 		{
 			type = ((VerifierTypeWrapper)type).UnderlyingType;
+		}
+		if(VerifierTypeWrapper.IsFaultBlockException(type))
+		{
+			VerifierTypeWrapper.ClearFaultBlockException(type);
+			type = CoreClasses.java.lang.Throwable.Wrapper;
 		}
 		return type;
 	}
@@ -1118,6 +1153,7 @@ class MethodAnalyzer
 	private LocalVar[/*instructionIndex*/][/*localIndex*/] invokespecialLocalVars;
 	private LocalVar[/*index*/] allLocalVars;
 	private List<string> errorMessages;
+	private ExceptionTableEntry[] exceptions;
 
 	static MethodAnalyzer()
 	{
@@ -1147,6 +1183,7 @@ class MethodAnalyzer
 
 		// HACK because types have to have identity, the new types are cached here
 		Dictionary<int, TypeWrapper> newTypes = new Dictionary<int,TypeWrapper>();
+		Dictionary<int, TypeWrapper> faultTypes = new Dictionary<int, TypeWrapper>();
 
 		try
 		{
@@ -1205,15 +1242,21 @@ class MethodAnalyzer
 				firstNonArgLocalIndex++;
 			}
 		}
-		AnalyzeTypeFlow(wrapper, thisType, mw, localStoreReaders, newTypes);
+		AnalyzeTypeFlow(wrapper, thisType, mw, localStoreReaders, newTypes, faultTypes);
+		exceptions = UntangleExceptionBlocks(classFile, method.ExceptionTable);
 		OptimizationPass(wrapper, classLoader);
 		FinalCodePatchup(wrapper, mw);
+		if (AnalyzePotentialFaultBlocks())
+		{
+			AnalyzeTypeFlow(wrapper, thisType, mw, localStoreReaders, newTypes, faultTypes);
+		}
 		AnalyzeLocalVariables(localStoreReaders, classLoader);
+		ComputePartialReachability(0, true);
 	}
 
-	private void AnalyzeTypeFlow(TypeWrapper wrapper, TypeWrapper thisType, MethodWrapper mw, Dictionary<int, string>[] localStoreReaders, Dictionary<int, TypeWrapper> newTypes)
+	private void AnalyzeTypeFlow(TypeWrapper wrapper, TypeWrapper thisType, MethodWrapper mw, Dictionary<int, string>[] localStoreReaders, Dictionary<int, TypeWrapper> newTypes, Dictionary<int, TypeWrapper> faultTypes)
 	{
-		InstructionState s = state[0].Copy();
+		InstructionState s = new InstructionState(method.MaxLocals, method.MaxStack);
 		bool done = false;
 		ClassFile.Method.Instruction[] instructions = method.Instructions;
 		while(!done)
@@ -1233,11 +1276,18 @@ class MethodAnalyzer
 						{
 							if(method.ExceptionTable[j].startIndex <= i && i < method.ExceptionTable[j].endIndex)
 							{
+								int idx = method.ExceptionTable[j].handlerIndex;
 								InstructionState ex = state[i].CopyLocals();
 								int catch_type = method.ExceptionTable[j].catch_type;
 								if(catch_type == 0)
 								{
-									ex.PushType(CoreClasses.java.lang.Throwable.Wrapper);
+									TypeWrapper tw;
+									if (!faultTypes.TryGetValue(idx, out tw))
+									{
+										tw = VerifierTypeWrapper.MakeFaultBlockException(this, idx);
+										faultTypes.Add(idx, tw);
+									}
+									ex.PushType(tw);
 								}
 								else
 								{
@@ -1245,7 +1295,6 @@ class MethodAnalyzer
 									// Throwable as the type and recording a loader constraint
 									ex.PushType(GetConstantPoolClassType(catch_type));
 								}
-								int idx = method.ExceptionTable[j].handlerIndex;
 								state[idx] += ex;
 							}
 						}
@@ -1265,6 +1314,11 @@ class MethodAnalyzer
 							}
 							case NormalizedByteCode.__astore:
 							{
+								if(VerifierTypeWrapper.IsFaultBlockException(s.PeekType()))
+								{
+									s.SetLocalType(instr.NormalizedArg1, s.PopFaultBlockException(), i);
+									break;
+								}
 								// NOTE since the reference can be uninitialized, we cannot use PopObjectType
 								TypeWrapper type = s.PopType();
 								if(type.IsPrimitive)
@@ -2058,7 +2112,14 @@ class MethodAnalyzer
 								s.GetLocalInt(instr.Arg1, ref localStoreReaders[i]);
 								break;
 							case NormalizedByteCode.__athrow:
-								s.PopObjectType(CoreClasses.java.lang.Throwable.Wrapper);
+								if (VerifierTypeWrapper.IsFaultBlockException(s.PeekType()))
+								{
+									s.PopFaultBlockException();
+								}
+								else
+								{
+									s.PopObjectType(CoreClasses.java.lang.Throwable.Wrapper);
+								}
 								break;
 							case NormalizedByteCode.__tableswitch:
 							case NormalizedByteCode.__lookupswitch:
@@ -2229,7 +2290,7 @@ class MethodAnalyzer
 			if (assertionsDisabled != null)
 			{
 				// compute branch targets
-				InstructionFlags[] flags = ComputePartialReachability(0, method.ExceptionTable);
+				InstructionFlags[] flags = ComputePartialReachability(0, false);
 				ClassFile.Method.Instruction[] instructions = method.Instructions;
 				for (int i = 0; i < instructions.Length; i++)
 				{
@@ -2465,7 +2526,7 @@ class MethodAnalyzer
 		}
 	}
 
-	internal InstructionFlags[] ComputePartialReachability(int initialInstructionIndex, ClassFile.Method.ExceptionTableEntry[] exceptionTable)
+	internal InstructionFlags[] ComputePartialReachability(int initialInstructionIndex, bool skipFaultBlocks)
 	{
 		ClassFile.Method.Instruction[] instructions = method.Instructions;
 		InstructionFlags[] flags = new InstructionFlags[instructions.Length];
@@ -2481,12 +2542,15 @@ class MethodAnalyzer
 					done = false;
 					flags[i] |= InstructionFlags.Processed;
 					// mark the exception handlers reachable from this instruction
-					for (int j = 0; j < exceptionTable.Length; j++)
+					for (int j = 0; j < exceptions.Length; j++)
 					{
-						if (exceptionTable[j].startIndex <= i && i < exceptionTable[j].endIndex)
+						if (exceptions[j].startIndex <= i && i < exceptions[j].endIndex)
 						{
-							int idx = exceptionTable[j].handlerIndex;
-							flags[idx] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+							int idx = exceptions[j].handlerIndex;
+							if (!skipFaultBlocks || !VerifierTypeWrapper.IsFaultBlockException(state[idx].GetStackByIndex(0)))
+							{
+								flags[idx] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+							}
 						}
 					}
 					// mark the successor instructions
@@ -2531,6 +2595,7 @@ class MethodAnalyzer
 						case NormalizedByteCode.__areturn:
 						case NormalizedByteCode.__return:
 						case NormalizedByteCode.__athrow:
+						case NormalizedByteCode.__athrow_no_unmap:
 						case NormalizedByteCode.__static_error:
 							break;
 						default:
@@ -2559,7 +2624,7 @@ class MethodAnalyzer
 		Dictionary<LocalVar, LocalVar> forwarders = new Dictionary<LocalVar,LocalVar>();
 		if(classLoader.EmitDebugInfo)
 		{
-			InstructionFlags[] flags = ComputePartialReachability(0, method.ExceptionTable);
+			InstructionFlags[] flags = ComputePartialReachability(0, false);
 			// if we're emitting debug info, we need to keep dead stores as well...
 			for(int i = 0; i < instructions.Length; i++)
 			{
@@ -2668,8 +2733,9 @@ class MethodAnalyzer
 		this.allLocalVars = locals.ToArray();
 	}
 
-	internal static ExceptionTableEntry[] UntangleExceptionBlocks(ClassFile classFile, ClassFile.Method.Instruction[] instructions, InstructionFlags[] flags, ExceptionTableEntry[] exceptionTable)
+	private ExceptionTableEntry[] UntangleExceptionBlocks(ClassFile classFile, ExceptionTableEntry[] exceptionTable)
 	{
+		ClassFile.Method.Instruction[] instructions = method.Instructions;
 		List<ExceptionTableEntry> ar = new List<ExceptionTableEntry>(exceptionTable);
 
 		// This optimization removes the recursive exception handlers that Java compiler place around
@@ -2708,6 +2774,14 @@ class MethodAnalyzer
 					&& instructions[index].NormalizedArg1 == instructions[index + 3].NormalizedArg1)
 				{
 					// this is the async exception guard that javac produces
+					ar.RemoveAt(i);
+					i--;
+				}
+				else if (index + 1 < instructions.Length
+					&& ei.endIndex == index + 1
+					&& instructions[index].NormalizedOpCode == NormalizedByteCode.__astore)
+				{
+					// this is the finally guard that javac produces
 					ar.RemoveAt(i);
 					i--;
 				}
@@ -2916,18 +2990,6 @@ class MethodAnalyzer
 		next: ;
 		}
 
-		// remove unreachable exception handlers (because the code gen depends on that)
-		for (int i = 0; i < ar.Count; i++)
-		{
-			// if the first instruction is unreachable, the entire block is unreachable,
-			// because you can't jump into a block (we've just split the blocks to ensure that)
-			if ((flags[ar[i].startIndex] & InstructionFlags.Reachable) == 0)
-			{
-				ar.RemoveAt(i);
-				i--;
-			}
-		}
-
 		ExceptionTableEntry[] exceptions = ar.ToArray();
 		Array.Sort(exceptions, new ExceptionSorter());
 
@@ -2955,6 +3017,79 @@ class MethodAnalyzer
 		}
 
 		return exceptions;
+	}
+
+	private bool AnalyzePotentialFaultBlocks()
+	{
+		ClassFile.Method.Instruction[] code = method.Instructions;
+		bool changed = false;
+		bool done = false;
+		while (!done)
+		{
+			done = true;
+			Stack<ExceptionTableEntry> stack = new Stack<ExceptionTableEntry>();
+			ExceptionTableEntry current = new ExceptionTableEntry(0, code.Length, -1, ushort.MaxValue, -1);
+			stack.Push(current);
+			for (int i = 0; i < exceptions.Length; i++)
+			{
+				while (exceptions[i].startIndex >= current.endIndex)
+				{
+					current = stack.Pop();
+				}
+				Debug.Assert(exceptions[i].startIndex >= current.startIndex && exceptions[i].endIndex <= current.endIndex);
+				if (exceptions[i].catch_type == 0
+					&& state[exceptions[i].handlerIndex] != null
+					&& VerifierTypeWrapper.IsFaultBlockException(GetRawStackTypeWrapper(exceptions[i].handlerIndex, 0)))
+				{
+					InstructionFlags[] flags = ComputePartialReachability(exceptions[i].handlerIndex, true);
+					for (int j = 0; j < code.Length; j++)
+					{
+						if ((flags[j] & InstructionFlags.Reachable) != 0)
+						{
+							switch (code[j].NormalizedOpCode)
+							{
+								case NormalizedByteCode.__return:
+								case NormalizedByteCode.__areturn:
+								case NormalizedByteCode.__ireturn:
+								case NormalizedByteCode.__lreturn:
+								case NormalizedByteCode.__freturn:
+								case NormalizedByteCode.__dreturn:
+									goto not_fault_block;
+								case NormalizedByteCode.__athrow:
+									for (int k = i + 1; k < exceptions.Length; k++)
+									{
+										if (exceptions[k].startIndex <= j && j < exceptions[k].endIndex)
+										{
+											goto not_fault_block;
+										}
+									}
+									break;
+							}
+							if (j < current.startIndex || j >= current.endIndex)
+							{
+								goto not_fault_block;
+							}
+							else if (exceptions[i].startIndex <= j && j < exceptions[i].endIndex)
+							{
+								goto not_fault_block;
+							}
+							else
+							{
+								continue;
+							}
+						not_fault_block:
+							VerifierTypeWrapper.ClearFaultBlockException(GetRawStackTypeWrapper(exceptions[i].handlerIndex, 0));
+							done = false;
+							changed = true;
+							break;
+						}
+					}
+				}
+				stack.Push(current);
+				current = exceptions[i];
+			}
+		}
+		return changed;
 	}
 
 	private void SetHardError(ref ClassFile.Method.Instruction instruction, HardError hardError, string message, params object[] args)
@@ -3651,5 +3786,27 @@ class MethodAnalyzer
 	internal LocalVar[] GetAllLocalVars()
 	{
 		return allLocalVars;
+	}
+
+	internal void ClearFaultBlockException(int instructionIndex)
+	{
+		Debug.Assert(state[instructionIndex].GetStackHeight() == 1);
+		state[instructionIndex].ClearFaultBlockException();
+	}
+
+	internal ExceptionTableEntry[] GetExceptionTableFor(InstructionFlags[] flags)
+	{
+		List<ExceptionTableEntry> list = new List<ExceptionTableEntry>();
+		// return only reachable exception handlers (because the code gen depends on that)
+		for (int i = 0; i < exceptions.Length; i++)
+		{
+			// if the first instruction is unreachable, the entire block is unreachable,
+			// because you can't jump into a block (we've just split the blocks to ensure that)
+			if ((flags[exceptions[i].startIndex] & InstructionFlags.Reachable) != 0)
+			{
+				list.Add(exceptions[i]);
+			}
+		}
+		return list.ToArray();
 	}
 }

@@ -4620,14 +4620,22 @@ namespace IKVM.Internal
 	sealed class VerifierTypeWrapper : TypeWrapper
 	{
 		internal static readonly TypeWrapper Invalid = null;
-		internal static readonly TypeWrapper Null = new VerifierTypeWrapper("null", 0, null);
-		internal static readonly TypeWrapper UninitializedThis = new VerifierTypeWrapper("uninitialized-this", 0, null);
+		internal static readonly TypeWrapper Null = new VerifierTypeWrapper("null", 0, null, null);
+		internal static readonly TypeWrapper UninitializedThis = new VerifierTypeWrapper("uninitialized-this", 0, null, null);
 		internal static readonly TypeWrapper Unloadable = new UnloadableTypeWrapper("<verifier>");
-		internal static readonly TypeWrapper ExtendedFloat = new VerifierTypeWrapper("<extfloat>", 0, null);
-		internal static readonly TypeWrapper ExtendedDouble = new VerifierTypeWrapper("<extdouble>", 0, null);
+		internal static readonly TypeWrapper ExtendedFloat = new VerifierTypeWrapper("<extfloat>", 0, null, null);
+		internal static readonly TypeWrapper ExtendedDouble = new VerifierTypeWrapper("<extdouble>", 0, null, null);
 
 		private int index;
 		private TypeWrapper underlyingType;
+		private MethodAnalyzer methodAnalyzer;
+
+#if STUB_GENERATOR
+		internal class MethodAnalyzer
+		{
+			internal void ClearFaultBlockException(int dummy) { }
+		}
+#endif
 
 		public override string ToString()
 		{
@@ -4636,7 +4644,12 @@ namespace IKVM.Internal
 
 		internal static TypeWrapper MakeNew(TypeWrapper type, int bytecodeIndex)
 		{
-			return new VerifierTypeWrapper("new", bytecodeIndex, type);
+			return new VerifierTypeWrapper("new", bytecodeIndex, type, null);
+		}
+
+		internal static TypeWrapper MakeFaultBlockException(MethodAnalyzer ma, int handlerIndex)
+		{
+			return new VerifierTypeWrapper("<fault>", handlerIndex, null, ma);
 		}
 
 		// NOTE the "this" type is special, it can only exist in local[0] and on the stack
@@ -4646,12 +4659,17 @@ namespace IKVM.Internal
 		// stack (using ldarg_0).
 		internal static TypeWrapper MakeThis(TypeWrapper type)
 		{
-			return new VerifierTypeWrapper("this", 0, type);
+			return new VerifierTypeWrapper("this", 0, type, null);
 		}
 
 		internal static bool IsNew(TypeWrapper w)
 		{
 			return w != null && w.IsVerifierType && ReferenceEquals(w.Name, "new");
+		}
+
+		internal static bool IsFaultBlockException(TypeWrapper w)
+		{
+			return w != null && w.IsVerifierType && ReferenceEquals(w.Name, "<fault>");
 		}
 
 		internal static bool IsNullOrUnloadable(TypeWrapper w)
@@ -4662,6 +4680,12 @@ namespace IKVM.Internal
 		internal static bool IsThis(TypeWrapper w)
 		{
 			return w != null && w.IsVerifierType && ReferenceEquals(w.Name, "this");
+		}
+
+		internal static void ClearFaultBlockException(TypeWrapper w)
+		{
+			VerifierTypeWrapper vtw = (VerifierTypeWrapper)w;
+			vtw.methodAnalyzer.ClearFaultBlockException(vtw.Index);
 		}
 
 		internal int Index
@@ -4680,11 +4704,12 @@ namespace IKVM.Internal
 			}
 		}
 
-		private VerifierTypeWrapper(string name, int index, TypeWrapper underlyingType)
+		private VerifierTypeWrapper(string name, int index, TypeWrapper underlyingType, MethodAnalyzer methodAnalyzer)
 			: base(TypeWrapper.VerifierTypeModifiersHack, name, null)
 		{
 			this.index = index;
 			this.underlyingType = underlyingType;
+			this.methodAnalyzer = methodAnalyzer;
 		}
 
 		internal override ClassLoaderWrapper GetClassLoader()
