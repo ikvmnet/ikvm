@@ -901,6 +901,12 @@ namespace IKVM.Internal
 					{
 						opt |= CodeGenOptions.Debug;
 					}
+#if NET_4_0
+					if (!AppDomain.CurrentDomain.IsFullyTrusted)
+					{
+						opt |= CodeGenOptions.NoAutomagicSerialization;
+					}
+#endif
 					wrapper = new ClassLoaderWrapper(opt, javaClassLoader);
 					SetWrapperForClassLoader(javaClassLoader, wrapper);
 				}
