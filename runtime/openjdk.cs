@@ -7817,7 +7817,14 @@ namespace IKVM.NativeCode.sun.reflect
 #if FIRST_PASS
 			return null;
 #else
-			return new FastSerializationConstructorAccessorImpl(constructorToCall, classToInstantiate);
+			try
+			{
+				return new FastSerializationConstructorAccessorImpl(constructorToCall, classToInstantiate);
+			}
+			catch (System.Security.SecurityException x)
+			{
+				throw new global::java.lang.SecurityException(x.Message, irUtil.mapException(x));
+			}
 #endif
 		}
 	}
