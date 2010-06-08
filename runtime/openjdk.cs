@@ -5845,10 +5845,15 @@ namespace IKVM.NativeCode.sun.reflect
 	}
 #endif
 
+	// this must be public (due to .NET 4.0 security model)
+	public sealed class State
+	{
+		internal int Value;
+	}
+
 	static class Reflection
 	{
 #if CLASSGC
-		private sealed class State { internal int Value; }
 		private static readonly ConditionalWeakTable<MethodBase, State> isHideFromJavaCache = new ConditionalWeakTable<MethodBase, State>();
 
 		internal static bool IsHideFromJava(MethodBase mb)
