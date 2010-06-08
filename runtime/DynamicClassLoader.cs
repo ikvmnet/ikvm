@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2006, 2008, 2009 Jeroen Frijters
+  Copyright (C) 2002-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -430,7 +430,9 @@ namespace IKVM.Internal
 				access = AssemblyBuilderAccess.RunAndSave;
 			}
 #if CLASSGC
-			else if(JVM.classUnloading)
+			else if(JVM.classUnloading
+				// DefineDynamicAssembly(..., RunAndCollect, ...) does a demand for PermissionSet(Unrestricted), so we want to avoid that in partial trust scenarios
+				&& AppDomain.CurrentDomain.IsFullyTrusted)
 			{
 				access = AssemblyBuilderAccess.RunAndCollect;
 			}
