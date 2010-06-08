@@ -56,6 +56,7 @@ namespace IKVM.Internal
 		private static DynamicClassLoader instance = new DynamicClassLoader(CreateModuleBuilder());
 #endif
 
+		[System.Security.SecuritySafeCritical]
 		static DynamicClassLoader()
 		{
 #if !STATIC_COMPILER
@@ -389,6 +390,7 @@ namespace IKVM.Internal
 			}
 		}
 
+		[System.Security.SecuritySafeCritical]
 		internal static DynamicClassLoader Get(ClassLoaderWrapper loader)
 		{
 #if STATIC_COMPILER

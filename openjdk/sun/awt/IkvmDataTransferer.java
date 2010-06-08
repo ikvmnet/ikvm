@@ -92,8 +92,14 @@ public abstract class IkvmDataTransferer extends DataTransferer {
 
     private static final Long L_CF_LOCALE = (Long) predefinedClipboardNameMap.get(predefinedClipboardNames[CF_LOCALE]);
     
-    @DllImportAttribute.Annotation("user32.dll")
-    private native static int RegisterClipboardFormat(String format);
+    @DllImportAttribute.Annotation(value = "user32.dll", EntryPoint = "RegisterClipboardFormat")
+    private native static int _RegisterClipboardFormat(String format);
+
+    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
+    private static int RegisterClipboardFormat(String format)
+    {
+        return _RegisterClipboardFormat(format);
+    }
 
     public SortedMap getFormatsForFlavors(DataFlavor[] flavors, FlavorTable map) {
         SortedMap retval = super.getFormatsForFlavors(flavors, map);

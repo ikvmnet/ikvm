@@ -235,6 +235,7 @@ public final class FileDescriptor {
 
     private static native boolean flushPosix(FileStream fs);
 
+    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     private static boolean flushWin32(FileStream fs)
     {
         return FlushFileBuffers(fs.get_SafeFileHandle()) != 0;

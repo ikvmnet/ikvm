@@ -73,6 +73,7 @@ namespace IKVM.Internal
 			}
 
 #if CLASSGC
+			[System.Security.SecuritySafeCritical]
 			~HandleWrapper()
 			{
 				if (!Environment.HasShutdownStarted)

@@ -1017,6 +1017,8 @@ namespace IKVM.Internal
 		}
 
 		// separate method to avoid LinkDemand killing the caller
+		// and to bridge transparent -> critical boundary
+		[System.Security.SecuritySafeCritical]
 		private static object GetUninitializedObject(Type type)
 		{
 			return FormatterServices.GetUninitializedObject(type);

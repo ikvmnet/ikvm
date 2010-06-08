@@ -1209,6 +1209,7 @@ public class FileChannelImpl
     }
 
     // Grabs a file lock
+    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     static int lock0(FileDescriptor fd, boolean blocking, long pos, long size, boolean shared) throws IOException
     {
         FileStream fs = (FileStream)fd.getStream();
@@ -1277,6 +1278,7 @@ public class FileChannelImpl
     }
 
     // Releases a file lock
+    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     static void release0(FileDescriptor fd, long pos, long size) throws IOException
     {
         FileStream fs = (FileStream)fd.getStream();
@@ -1325,6 +1327,7 @@ public class FileChannelImpl
             return mapViewOfFilePosix(fs, prot, position, length);
     }
 
+    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     private static long mapViewOfFileWin32(FileStream fs, int prot, long position, long length) throws IOException
     {
         try
@@ -1385,6 +1388,7 @@ public class FileChannelImpl
         }
     }
 
+    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     private static long mapViewOfFilePosix(FileStream fs, int prot, long position, long length) throws IOException
     {
         byte writeable = prot != MAP_RO ? (byte)1 : (byte)0;
@@ -1424,6 +1428,7 @@ public class FileChannelImpl
     private static native IntPtr ikvm_mmap(SafeFileHandle handle, byte writeable, byte copy_on_write, long position, int size);
 
     // Removes an existing mapping
+    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     static int unmap0(long address, long length)
     {
         if (win32)
