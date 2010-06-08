@@ -300,7 +300,7 @@ sealed class Compiler
 			}
 		}
 
-		flags = ma.ComputePartialReachability(m.Instructions, 0, m.ExceptionTable);
+		flags = ma.ComputePartialReachability(0, m.ExceptionTable);
 		exceptions = MethodAnalyzer.UntangleExceptionBlocks(classFile, m.Instructions, flags, m.ExceptionTable);
 
 		// if we're emitting debugging information, we need to use scopes for local variables

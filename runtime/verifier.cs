@@ -1205,11 +1205,10 @@ class MethodAnalyzer
 				firstNonArgLocalIndex++;
 			}
 		}
-		ClassFile.Method.Instruction[] instructions = method.Instructions;
 		AnalyzeTypeFlow(wrapper, thisType, mw, localStoreReaders, newTypes);
-		OptimizationPass(wrapper, instructions, classLoader);
-		FinalCodePatchup(wrapper, mw, instructions);
-		AnalyzeLocalVariables(localStoreReaders, instructions, classLoader);
+		OptimizationPass(wrapper, classLoader);
+		FinalCodePatchup(wrapper, mw);
+		AnalyzeLocalVariables(localStoreReaders, classLoader);
 	}
 
 	private void AnalyzeTypeFlow(TypeWrapper wrapper, TypeWrapper thisType, MethodWrapper mw, Dictionary<int, string>[] localStoreReaders, Dictionary<int, TypeWrapper> newTypes)
@@ -2210,7 +2209,7 @@ class MethodAnalyzer
 		}
 	}
 
-	private void OptimizationPass(TypeWrapper wrapper, ClassFile.Method.Instruction[] instructions, ClassLoaderWrapper classLoader)
+	private void OptimizationPass(TypeWrapper wrapper, ClassLoaderWrapper classLoader)
 	{
 		// Optimization pass
 		if (classLoader.RemoveAsserts)
@@ -2230,7 +2229,8 @@ class MethodAnalyzer
 			if (assertionsDisabled != null)
 			{
 				// compute branch targets
-				InstructionFlags[] flags = ComputePartialReachability(instructions, 0, method.ExceptionTable);
+				InstructionFlags[] flags = ComputePartialReachability(0, method.ExceptionTable);
+				ClassFile.Method.Instruction[] instructions = method.Instructions;
 				for (int i = 0; i < instructions.Length; i++)
 				{
 					if (instructions[i].NormalizedOpCode == NormalizedByteCode.__getstatic
@@ -2252,11 +2252,12 @@ class MethodAnalyzer
 		}
 	}
 
-	private void FinalCodePatchup(TypeWrapper wrapper, MethodWrapper mw, ClassFile.Method.Instruction[] instructions)
+	private void FinalCodePatchup(TypeWrapper wrapper, MethodWrapper mw)
 	{
 		// Now we do another pass to find "hard error" instructions and verify backward branches
 		if(true)
 		{
+			ClassFile.Method.Instruction[] instructions = method.Instructions;
 			for(int i = 0; i < instructions.Length; i++)
 			{
 				if(state[i] != null)
@@ -2464,8 +2465,9 @@ class MethodAnalyzer
 		}
 	}
 
-	internal InstructionFlags[] ComputePartialReachability(ClassFile.Method.Instruction[] instructions, int initialInstructionIndex, ClassFile.Method.ExceptionTableEntry[] exceptionTable)
+	internal InstructionFlags[] ComputePartialReachability(int initialInstructionIndex, ClassFile.Method.ExceptionTableEntry[] exceptionTable)
 	{
+		ClassFile.Method.Instruction[] instructions = method.Instructions;
 		InstructionFlags[] flags = new InstructionFlags[instructions.Length];
 		bool done = false;
 		flags[initialInstructionIndex] |= InstructionFlags.Reachable;
@@ -2541,10 +2543,11 @@ class MethodAnalyzer
 		return flags;
 	}
 
-	private void AnalyzeLocalVariables(Dictionary<int, string>[] localStoreReaders, ClassFile.Method.Instruction[] instructions, ClassLoaderWrapper classLoader)
+	private void AnalyzeLocalVariables(Dictionary<int, string>[] localStoreReaders, ClassLoaderWrapper classLoader)
 	{
 		// now that we've done the code flow analysis, we can do a liveness analysis on the local variables
-		Dictionary<long, LocalVar> localByStoreSite = new Dictionary<long,LocalVar>();
+		ClassFile.Method.Instruction[] instructions = method.Instructions;
+		Dictionary<long, LocalVar> localByStoreSite = new Dictionary<long, LocalVar>();
 		List<LocalVar> locals = new List<LocalVar>();
 		for(int i = 0; i < localStoreReaders.Length; i++)
 		{
@@ -2556,7 +2559,7 @@ class MethodAnalyzer
 		Dictionary<LocalVar, LocalVar> forwarders = new Dictionary<LocalVar,LocalVar>();
 		if(classLoader.EmitDebugInfo)
 		{
-			InstructionFlags[] flags = ComputePartialReachability(instructions, 0, method.ExceptionTable);
+			InstructionFlags[] flags = ComputePartialReachability(0, method.ExceptionTable);
 			// if we're emitting debug info, we need to keep dead stores as well...
 			for(int i = 0; i < instructions.Length; i++)
 			{
