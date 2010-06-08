@@ -441,6 +441,12 @@ namespace IKVM.Internal
 			{
 				access = AssemblyBuilderAccess.Run;
 			}
+#if NET_4_0
+			if(!AppDomain.CurrentDomain.IsFullyTrusted)
+			{
+				attribs.Add(new CustomAttributeBuilder(typeof(System.Security.SecurityTransparentAttribute).GetConstructor(Type.EmptyTypes), new object[0]));
+			}
+#endif
 			AssemblyBuilder assemblyBuilder =
 #if NET_4_0
 				AppDomain.CurrentDomain.DefineDynamicAssembly(name, access, null, true, attribs);
