@@ -123,15 +123,11 @@
                 <include name="${framework::get-assembly-directory(framework::get-target-framework())}/System.Configuration.dll" />
             </references>
         </csc>
+        <copy file="IKVM.Runtime.dll" todir="../bin" />
         <if test="${not first-pass}">
             <if test="${platform::is-win32()}">
-                <exec program="peverify" commandline="-nologo IKVM.Runtime.dll">
-                    <environment>
-                        <variable name="DEVPATH" value="${path::get-full-path('../bin/')}" />
-                    </environment>
-                </exec>
+                <exec program="peverify" commandline="-nologo ../bin/IKVM.Runtime.dll" />
             </if>
         </if>
-        <copy file="IKVM.Runtime.dll" todir="../bin" />
     </target>
 </project>
