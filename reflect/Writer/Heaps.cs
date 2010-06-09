@@ -223,8 +223,13 @@ namespace IKVM.Reflection.Writer
 			int offset;
 			if (!strings.TryGetValue(str, out offset))
 			{
+				int length = str.Length * 2 + 1 + MetadataWriter.GetCompressedIntLength(str.Length * 2 + 1);
+				if (nextOffset + length > 0xFFFFFF)
+				{
+					throw new FileFormatLimitationExceededException("No logical space left to create more user strings.", FileFormatLimitationExceededException.META_E_STRINGSPACE_FULL);
+				}
 				offset = nextOffset;
-				nextOffset += str.Length * 2 + 1 + MetadataWriter.GetCompressedIntLength(str.Length * 2 + 1);
+				nextOffset += length;
 				list.Add(str);
 				strings.Add(str, offset);
 			}

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2008 Jeroen Frijters
+  Copyright (C) 2008-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -30,6 +30,28 @@ namespace IKVM.Reflection
 	{
 		bool IsDefined(Type attributeType, bool inherit);
 		IList<CustomAttributeData> __GetCustomAttributes(Type attributeType, bool inherit);
+	}
+
+	[Serializable]
+	public sealed class FileFormatLimitationExceededException : InvalidOperationException
+	{
+		public const int META_E_STRINGSPACE_FULL = unchecked((int)0x80131198);
+
+		public FileFormatLimitationExceededException(string message, int hresult)
+			: base(message)
+		{
+			this.HResult = hresult;
+		}
+
+		private FileFormatLimitationExceededException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
+			: base(info, context)
+		{
+		}
+
+		public int ErrorCode
+		{
+			get { return this.HResult; }
+		}
 	}
 
 	static class Empty<T>
