@@ -1569,7 +1569,7 @@ namespace IKVM.Runtime
 			Exception x = env.pendingException;
 			if(x != null)
 			{
-				SetPendingException(pEnv, null);
+				env.pendingException = null;
 				try
 				{
 					java.lang.Throwable.instancehelper_printStackTrace(x);
