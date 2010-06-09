@@ -1670,6 +1670,12 @@ namespace IKVM.Internal
 );
 					return finishedType;
 				}
+#if STATIC_COMPILER
+				catch (FileFormatLimitationExceededException)
+				{
+					throw;
+				}
+#endif
 				catch (Exception x)
 				{
 					JVM.CriticalFailure("Exception during finishing of: " + wrapper.Name, x);

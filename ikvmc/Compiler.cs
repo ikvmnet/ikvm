@@ -116,7 +116,15 @@ class IkvmcCompiler
 				}
 				else
 				{
-					rc = CompilerClassLoader.Compile(runtimeAssembly, targets);
+					try
+					{
+						rc = CompilerClassLoader.Compile(runtimeAssembly, targets);
+					}
+					catch(FileFormatLimitationExceededException x)
+					{
+						Console.Error.WriteLine("Error: {0}", x.Message);
+						rc = 1;
+					}
 				}
 			}
 			catch(Exception x)
