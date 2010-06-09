@@ -32,7 +32,6 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyTitle("IKVM.NET Runtime")]
 [assembly: AssemblyDescription("JVM for Mono and .NET")]
 
-[assembly: System.Security.SecurityCritical]
 [assembly: System.Security.AllowPartiallyTrustedCallers]
 
 #if SIGNCODE
