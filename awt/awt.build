@@ -1,8 +1,32 @@
 <?xml version="1.0"?>
 <project name="awt" default="awt">
-    <target name="awt">
+    <target name="AssemblyInfo.cs">
+        <loadfile file="../tools/pubkey.txt" property="publickey" />
+        <copy file="AssemblyInfo.cs.in" tofile="AssemblyInfo.cs" overwrite="true">
+            <filterchain>
+                <replacetokens>
+                    <token key="PUBLICKEY" value="${publickey}" />
+                </replacetokens>
+            </filterchain>
+        </copy>
+    </target>
+    <target name="first-pass" depends="AssemblyInfo.cs">
         <property overwrite="false" name="signed" value="" />
-        <csc target="library" output="../bin/IKVM.AWT.WinForms.dll" define="TRACE;${signed}">
+        <csc target="library" output="../bin/IKVM.AWT.WinForms.dll" define="FIRST_PASS;${signed}" rebuild="true">
+            <sources>
+                <include name="../CommonAssemblyInfo.cs" />
+                <include name="AssemblyInfo.cs" />
+                <include name="native.cs" />
+            </sources>
+            <references>
+                <include name="System.Windows.Forms.dll" asis="true" />
+                <include name="System.Drawing.dll" asis="true" />
+            </references>
+        </csc>
+    </target>
+    <target name="awt" depends="AssemblyInfo.cs">
+        <property overwrite="false" name="signed" value="" />
+        <csc target="library" output="../bin/IKVM.AWT.WinForms.dll" define="TRACE;${signed}" rebuild="true">
             <sources>
                 <include name="../CommonAssemblyInfo.cs" />
                 <include name="AssemblyInfo.cs" />
@@ -10,6 +34,7 @@
                 <include name="fonts-0.95.cs" />
                 <include name="graphics.cs" />
                 <include name="images.cs" />
+                <include name="native.cs" />
             	<include name="printing.cs" />
                 <include name="robot.cs" />
                 <include name="toolkit-0.95.cs" />

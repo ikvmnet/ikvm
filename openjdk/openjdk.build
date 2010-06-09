@@ -166,6 +166,7 @@
 
     <target name="core" depends="version response.gen.txt">
         <copy file="../bin/IKVM.Runtime.dll" todir="." />
+        <copy file="../bin/IKVM.AWT.WinForms.dll" todir="." />
         <exec program="${project::get-base-directory()}/../bin/ikvmc.exe" useruntimeengine="true">
             <arg value="-version:${VERSION}" />
             <arg value="${signoption}" />

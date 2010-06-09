@@ -71,6 +71,7 @@ IKVM.OpenJDK.XML.Crypto
 
 IKVM.OpenJDK.SwingAWT
 ->System.Drawing
+->IKVM.AWT.WinForms
 ->IKVM.OpenJDK.Util
 ->IKVM.OpenJDK.Text
 ->IKVM.OpenJDK.XML.API
