@@ -4619,6 +4619,11 @@ namespace IKVM.Internal
 	// this is a container for the special verifier TypeWrappers
 	sealed class VerifierTypeWrapper : TypeWrapper
 	{
+		// the TypeWrapper constructor interns the name, so we have to pre-intern here to make sure we have the same string object
+		// (if it has only been interned previously)
+		private static readonly string This = string.Intern("this");
+		private static readonly string New = string.Intern("new");
+		private static readonly string Fault = string.Intern("<fault>");
 		internal static readonly TypeWrapper Invalid = null;
 		internal static readonly TypeWrapper Null = new VerifierTypeWrapper("null", 0, null, null);
 		internal static readonly TypeWrapper UninitializedThis = new VerifierTypeWrapper("uninitialized-this", 0, null, null);
@@ -4644,12 +4649,12 @@ namespace IKVM.Internal
 
 		internal static TypeWrapper MakeNew(TypeWrapper type, int bytecodeIndex)
 		{
-			return new VerifierTypeWrapper("new", bytecodeIndex, type, null);
+			return new VerifierTypeWrapper(New, bytecodeIndex, type, null);
 		}
 
 		internal static TypeWrapper MakeFaultBlockException(MethodAnalyzer ma, int handlerIndex)
 		{
-			return new VerifierTypeWrapper("<fault>", handlerIndex, null, ma);
+			return new VerifierTypeWrapper(Fault, handlerIndex, null, ma);
 		}
 
 		// NOTE the "this" type is special, it can only exist in local[0] and on the stack
@@ -4659,17 +4664,17 @@ namespace IKVM.Internal
 		// stack (using ldarg_0).
 		internal static TypeWrapper MakeThis(TypeWrapper type)
 		{
-			return new VerifierTypeWrapper("this", 0, type, null);
+			return new VerifierTypeWrapper(This, 0, type, null);
 		}
 
 		internal static bool IsNew(TypeWrapper w)
 		{
-			return w != null && w.IsVerifierType && ReferenceEquals(w.Name, "new");
+			return w != null && w.IsVerifierType && ReferenceEquals(w.Name, New);
 		}
 
 		internal static bool IsFaultBlockException(TypeWrapper w)
 		{
-			return w != null && w.IsVerifierType && ReferenceEquals(w.Name, "<fault>");
+			return w != null && w.IsVerifierType && ReferenceEquals(w.Name, Fault);
 		}
 
 		internal static bool IsNullOrUnloadable(TypeWrapper w)
@@ -4679,7 +4684,7 @@ namespace IKVM.Internal
 
 		internal static bool IsThis(TypeWrapper w)
 		{
-			return w != null && w.IsVerifierType && ReferenceEquals(w.Name, "this");
+			return w != null && w.IsVerifierType && ReferenceEquals(w.Name, This);
 		}
 
 		internal static void ClearFaultBlockException(TypeWrapper w)
