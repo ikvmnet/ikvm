@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2009 Jeroen Frijters
+  Copyright (C) 2002-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -463,6 +463,10 @@ namespace IKVM.Internal
 					ilgen.Emit(OpCodes.Dup);
 					ilgen.Emit(OpCodes.Ldstr, kv.Key);
 					ilgen.Emit(OpCodes.Ldstr, kv.Value);
+					if(kv.Value.IndexOf('%') < kv.Value.LastIndexOf('%'))
+					{
+						ilgen.Emit(OpCodes.Call, JVM.Import(typeof(Environment)).GetMethod("ExpandEnvironmentVariables", new Type[] { Types.String }));
+					}
 					ilgen.Emit(OpCodes.Callvirt, JVM.Import(typeof(System.Collections.Generic.Dictionary<string, string>)).GetMethod("Add"));
 				}
 				startupType.GetMethodWrapper("setProperties", "(Lcli.System.Collections.IDictionary;)V", false).EmitCall(ilgen);
