@@ -236,4 +236,28 @@
         </exec>
     </target>
 
+    <target name="jdk-tools" depends="version">
+        <exec program="${project::get-base-directory()}/../bin/ikvmc.exe" useruntimeengine="true">
+            <arg value="-version:${VERSION}" />
+            <arg value="-out:../bin/javac.exe" />
+            <arg value="-main:com.sun.tools.javac.Main" />
+            <arg value="-Dsun.boot.class.path=%JAVA_HOME%/jre/lib/rt.jar" />
+            <arg value="-r:../bin/IKVM.OpenJDK.Tools.dll" />
+        </exec>
+        <exec program="${project::get-base-directory()}/../bin/ikvmc.exe" useruntimeengine="true">
+            <arg value="-version:${VERSION}" />
+            <arg value="-out:../bin/javah.exe" />
+            <arg value="-main:com.sun.tools.javah.Main" />
+            <arg value="-Dsun.boot.class.path=%JAVA_HOME%/jre/lib/rt.jar" />
+            <arg value="-r:../bin/IKVM.OpenJDK.Tools.dll" />
+        </exec>
+        <exec program="${project::get-base-directory()}/../bin/ikvmc.exe" useruntimeengine="true">
+            <arg value="-version:${VERSION}" />
+            <arg value="-out:../bin/javap.exe" />
+            <arg value="-main:sun.tools.javap.Main" />
+            <arg value="-Dsun.boot.class.path=%JAVA_HOME%/jre/lib/rt.jar" />
+            <arg value="-r:../bin/IKVM.OpenJDK.Tools.dll" />
+        </exec>
+    </target>
+
 </project>
