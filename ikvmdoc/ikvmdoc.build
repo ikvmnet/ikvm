@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<project name="ikvmdoc" default="ikvmdoc">
+    <target name="ikvmdoc">
+        <exec program="../bin/ikvmstub" commandline="../bin/IKVM.OpenJDK.Tools.dll" useruntimeengine="true" />
+        <exec program="javac" commandline="-cp .;IKVM.OpenJDK.Tools.jar IKVMDoc.java" useruntimeengine="false" />
+        <exec program="${project::get-base-directory()}/../bin/ikvmc.exe" useruntimeengine="true">
+            <arg value="*.class" />
+            <arg value="-out:../bin/ikvmdoc.exe" />
+            <arg value="-main:IKVMDoc" />
+            <arg value="-Dsun.boot.class.path=%JAVA_HOME%/jre/lib/rt.jar" />
+            <arg value="-r:../bin/IKVM.OpenJDK.Tools.dll" />
+        </exec>
+    </target>
+    <target name="clean">
+        <delete failonerror="false">
+            <fileset>
+                <include name="*.class" />
+                <include name="*.jar" />
+            </fileset>
+        </delete>
+    </target>
+</project>
