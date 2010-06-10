@@ -8,6 +8,7 @@
     -resource:com/sun/tools/jdi/resources/jdi.properties=@OPENJDK@/jdk/src/share/classes/com/sun/tools/jdi/resources/jdi.properties
     -resource:com/sun/tools/jdi/resources/jdi_ja.properties=@OPENJDK@/jdk/src/share/classes/com/sun/tools/jdi/resources/jdi_ja.properties
     -resource:com/sun/tools/jdi/resources/jdi_zh_CN.properties=@OPENJDK@/jdk/src/share/classes/com/sun/tools/jdi/resources/jdi_zh_CN.properties
+    -recurse:@OPENJDK@/langtools/src/share/classes/*.properties
     @OPENJDK@/build/linux-amd64/gensrc/com/sun/tools/jdi/*.class
     @OPENJDK@/build/linux-amd64/impsrc/com/sun/xml/internal/dtdparser/*.class
     @OPENJDK@/build/linux-amd64/impsrc/com/sun/xml/internal/rngom/ast/builder/*.class
@@ -45,4 +46,45 @@
     @OPENJDK@/jdk/src/share/classes/com/sun/tools/attach/*.class
     @OPENJDK@/jdk/src/share/classes/com/sun/tools/attach/spi/*.class
     @OPENJDK@/jdk/src/share/classes/com/sun/tools/jdi/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/javadoc/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/mirror/apt/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/mirror/declaration/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/mirror/type/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/mirror/util/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/source/tree/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/source/util/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/apt/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/apt/comp/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/apt/main/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/apt/mirror/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/apt/mirror/apt/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/apt/mirror/declaration/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/apt/mirror/type/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/apt/mirror/util/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/apt/util/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/doclets/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/doclets/standard/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/doclets/formats/html/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/doclets/formats/html/markup/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/doclets/internal/toolkit/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/doclets/internal/toolkit/builders/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/doclets/internal/toolkit/taglets/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/doclets/internal/toolkit/util/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/doclets/internal/toolkit/util/links/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/api/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/code/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/comp/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/jvm/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/main/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/model/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/parser/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/processing/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/sym/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/tree/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/util/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/zip/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/javadoc/*.class
+    @OPENJDK@/langtools/src/share/classes/com/sun/tools/javah/*.class
+    @OPENJDK@/langtools/src/share/classes/sun/tools/javap/*.class
 }
