@@ -117,7 +117,7 @@ namespace IKVM.NativeCode.sun.awt.shell
 		private static extern IntPtr SHGetFileInfo(string pszPath, uint dwFileAttributes, ref SHFILEINFO psfi, uint cbSizeFileInfo, uint uFlags);
 
 		[DllImport("user32.dll", EntryPoint = "LoadImage")]
-		private static extern IntPtr LoadImageID(IntPtr hInstance, int uID, uint type, int width, int height, int load);
+		private static extern IntPtr LoadImageID(IntPtr hInstance, IntPtr uID, uint type, int width, int height, int load);
 
 		[DllImport("user32.dll", EntryPoint = "LoadImage")]
 		private static extern IntPtr LoadImageName(IntPtr hInstance, string lpszName, uint type, int width, int height, int load);
@@ -155,7 +155,7 @@ namespace IKVM.NativeCode.sun.awt.shell
 		public static string getFolderType(string path)
 		{
 			SHFILEINFO shinfo = new SHFILEINFO();
-			if (0 == SHGetFileInfo(path, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_TYPENAME).ToInt32())
+			if (SHGetFileInfo(path, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_TYPENAME) == IntPtr.Zero)
 			{
 				return null;
 			}
@@ -165,7 +165,7 @@ namespace IKVM.NativeCode.sun.awt.shell
 		public static IntPtr getIcon(string path, bool getLargeIcon)
 		{
 			SHFILEINFO shinfo = new SHFILEINFO();
-			if (0 == SHGetFileInfo(path, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_ICON | (getLargeIcon ? 0 : SHGFI_SMALLICON)).ToInt32())
+			if (SHGetFileInfo(path, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_ICON | (getLargeIcon ? 0 : SHGFI_SMALLICON)) == IntPtr.Zero)
 			{
 				return IntPtr.Zero;
 			}
@@ -224,7 +224,7 @@ namespace IKVM.NativeCode.sun.awt.shell
 		public static int getAttribute(string path)
 		{
 			SHFILEINFO shinfo = new SHFILEINFO();
-			if (0 == SHGetFileInfo(path, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_ATTRIBUTES).ToInt32())
+			if (SHGetFileInfo(path, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_ATTRIBUTES) == IntPtr.Zero)
 			{
 				return 0;
 			}
@@ -249,13 +249,13 @@ namespace IKVM.NativeCode.sun.awt.shell
 			bool isVista = Environment.OSVersion.Version.Major >= 6;
 			IntPtr hBitmap = isVista ?
 				LoadImageName(libShell32, "IDB_TB_SH_DEF_16", IMAGE_BITMAP, 0, 0, 0) :
-				LoadImageID(libShell32, 216, IMAGE_BITMAP, 0, 0, 0);
-			if (hBitmap.ToInt32() == 0)
+				LoadImageID(libShell32, (IntPtr)216, IMAGE_BITMAP, 0, 0, 0);
+			if (hBitmap == IntPtr.Zero)
 			{
 				IntPtr libComCtl32 = LoadLibrary("comctl32.dll");
-				hBitmap = LoadImageID(libComCtl32, 124, IMAGE_BITMAP, 0, 0, 0);
+				hBitmap = LoadImageID(libComCtl32, (IntPtr)124, IMAGE_BITMAP, 0, 0, 0);
 			}
-			if (hBitmap.ToInt32() == 0)
+			if (hBitmap == IntPtr.Zero)
 			{
 				return new int[768 * 16];
 			}
@@ -280,7 +280,7 @@ namespace IKVM.NativeCode.sun.awt.shell
 		public static IntPtr getIconResource(String libName, int iconID, int cxDesired, int cyDesired)
 		{
 			IntPtr hLibName = LoadLibrary(libName);
-			return LoadImageID(hLibName, iconID, IMAGE_ICON, cxDesired, cyDesired, 0);
+			return LoadImageID(hLibName, (IntPtr)iconID, IMAGE_ICON, cxDesired, cyDesired, 0);
 		}
 	}
 
