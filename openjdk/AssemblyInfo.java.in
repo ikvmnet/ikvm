@@ -52,7 +52,6 @@
 
 @cli.System.Runtime.CompilerServices.InternalsVisibleToAttribute.Annotation("@RUNTIME@")
 
-@cli.System.Security.SecurityCriticalAttribute.Annotation
 @cli.System.Security.AllowPartiallyTrustedCallersAttribute.Annotation
 
 // magic type to collect Assembly attributes
