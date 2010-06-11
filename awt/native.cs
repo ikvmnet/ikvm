@@ -64,15 +64,9 @@ namespace IKVM.NativeCode.sun.awt.shell
 			public string szTypeName;
 		};
 
-		[DllImport("msvcrt.dll", SetLastError = false)]
-		static extern IntPtr memcpy(IntPtr dest, IntPtr src, int count);
-
 		[DllImport("gdi32.dll")]
 		static extern int GetDIBits(IntPtr hdc, IntPtr hbmp, uint uStartScan,
 		   uint cScanLines, int[] lpvBits, ref BITMAPINFO lpbmi, uint uUsage);
-
-		[DllImport("gdi32.dll")]
-		public static extern int BitBlt(IntPtr hdcDst, int xDst, int yDst, int w, int h, IntPtr hdcSrc, int xSrc, int ySrc, int rop);
 
 		[DllImport("user32.dll")]
 		public static extern IntPtr GetDC(IntPtr hwnd);
@@ -80,17 +74,8 @@ namespace IKVM.NativeCode.sun.awt.shell
 		[DllImport("gdi32.dll")]
 		static extern int GetObject(IntPtr hgdiobj, int cbBuffer, ref BITMAPINFO lpvObject);
 
-		[DllImport("gdi32.dll")]
-		public static extern IntPtr CreateCompatibleDC(IntPtr hdc);
-
 		[DllImport("user32.dll")]
 		public static extern int ReleaseDC(IntPtr hwnd, IntPtr hdc);
-
-		[DllImport("gdi32.dll")]
-		static extern IntPtr CreateCompatibleBitmap(IntPtr hdc, int nWidth, int nHeight);
-
-		[DllImport("gdi32.dll")]
-		public static extern int DeleteDC(IntPtr hdc);
 
 		[StructLayout(LayoutKind.Sequential)]
 		struct ICONINFO
