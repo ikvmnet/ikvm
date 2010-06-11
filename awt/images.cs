@@ -102,12 +102,24 @@ namespace ikvm.awt
         /// Create a bitmap from the pixel array. The bitmap will be used
         /// by drawImage.
         /// </summary>
+		[System.Security.SecuritySafeCritical]
 		public void setPixels(int x, int y, int w, int h, ColorModel model, int[] pixels, int off, int scansize)
 		{
+			if (x <= 0 || y <= 0 || w <= 0 || h <= 0 || off < 0)
+			{
+				// should we report an error?
+				return;
+			}
+			long length = w * h;
+			if (length > pixels.Length - off)
+			{
+				// should we report an error?
+				return;
+			}
 			lock (mBitmap)
 			{
 				BitmapData data = mBitmap.LockBits(new Rectangle(x, y, w, h), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
-				System.Runtime.InteropServices.Marshal.Copy(pixels, off, data.Scan0, w * h);
+				System.Runtime.InteropServices.Marshal.Copy(pixels, off, data.Scan0, data.Width * data.Height);
 				mBitmap.UnlockBits(data);
 			}
 		}
