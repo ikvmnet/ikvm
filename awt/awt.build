@@ -54,5 +54,8 @@
                 <warning number="612" />
             </nowarn>
         </csc>
+        <if test="${platform::is-win32()}">
+            <exec program="peverify" commandline="-nologo ../bin/IKVM.AWT.WinForms.dll" />
+        </if>
     </target>
 </project>
