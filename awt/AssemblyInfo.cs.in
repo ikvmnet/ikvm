@@ -32,6 +32,8 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyTitle("IKVM.NET AWT Support")]
 [assembly: AssemblyDescription("Winforms peers and 'native' code")]
 
+[assembly: System.Security.AllowPartiallyTrustedCallers]
+
 #if SIGNCODE
 [assembly: InternalsVisibleTo("IKVM.OpenJDK.SwingAWT, PublicKey=@PUBLICKEY@")]
 #else
