@@ -108,8 +108,10 @@ namespace ikvm.awt.printing
         }
 
         [DllImport("winspool.drv", CharSet = CharSet.Auto, SetLastError = true)]
-        private static extern bool GetPrinter(IntPtr hPrinter, int dwLevel,
-            IntPtr pPrinter, int cbBuf, out int pcbNeeded);
+        private static extern bool GetPrinter(SafePrinterHandle hPrinter, int dwLevel, IntPtr pPrinter, int cbBuf, out int pcbNeeded);
+
+        [DllImport("winspool.drv", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern bool OpenPrinter(string pPrinterName, out SafePrinterHandle hPrinter, IntPtr pDefault);
 
         private const int ERROR_INSUFFICIENT_BUFFER = 122;
 
@@ -164,12 +166,15 @@ namespace ikvm.awt.printing
         /// <param name="cJobs">returns the current count of print jobs</param>
         /// <param name="status">returns the current status of the printer</param>
         /// <returns>true if the return is valid</returns>
+        [System.Security.SecuritySafeCritical]
         private static bool GetPrinterInfo2(string printerName, out int cJobs, out int status)
         {
-            using (SafePrinterHandle printer = new SafePrinterHandle(printerName))
+            SafePrinterHandle printer = null;
+            try
             {
                 int needed = 0;
-                if (!GetPrinter(printer.DangerousGetHandle(), 2, IntPtr.Zero, 0, out needed))
+                if (OpenPrinter(printerName, out printer, IntPtr.Zero)
+                    && !GetPrinter(printer, 2, IntPtr.Zero, 0, out needed))
                 {
                     int lastWin32Error = Marshal.GetLastWin32Error();
                     if (lastWin32Error == ERROR_INSUFFICIENT_BUFFER)
@@ -177,21 +182,26 @@ namespace ikvm.awt.printing
                         IntPtr pPrinter = Marshal.AllocHGlobal((int)needed);
                         try
                         {
-
-                            if (GetPrinter(printer.DangerousGetHandle(), 2, pPrinter, needed, out needed))
+                            if (GetPrinter(printer, 2, pPrinter, needed, out needed))
                             {
                                 PRINTER_INFO_2 printerInfo2 = (PRINTER_INFO_2)Marshal.PtrToStructure(pPrinter, typeof(PRINTER_INFO_2));
                                 cJobs = printerInfo2.cJobs;
                                 status = printerInfo2.Status;
                                 return true;
                             }
-
                         }
                         finally
                         {
                             Marshal.FreeHGlobal(pPrinter);
                         }
                     }
+                }
+            }
+            finally
+            {
+                if (printer != null)
+                {
+                    printer.Close();
                 }
             }
             cJobs = 0;
@@ -201,42 +211,21 @@ namespace ikvm.awt.printing
 
     }
 
-    /// <summary>
-    /// SafeHandle to an open printer
-    /// </summary>
-    class SafePrinterHandle : SafeHandleZeroOrMinusOneIsInvalid
+    [System.Security.SecurityCritical]
+    sealed class SafePrinterHandle : SafeHandleZeroOrMinusOneIsInvalid
     {
-        [DllImport("winspool.drv", CharSet = CharSet.Auto, SetLastError = true)]
-        private static extern bool OpenPrinter(string pPrinterName, out IntPtr phPrinter, IntPtr pDefault);
-
-        [DllImport("winspool.drv", CharSet = CharSet.Auto, SetLastError = true)]
+        [DllImport("winspool.drv")]
         private static extern bool ClosePrinter(IntPtr hPrinter);
 
-        /// <summary>
-        /// Create a safe printer handle for given name
-        /// </summary>
-        /// <param name="printername"></param>
-        internal SafePrinterHandle(string printername)
+        private SafePrinterHandle()
             : base(true)
         {
-            OpenPrinter(printername, out this.handle, IntPtr.Zero);
         }
 
-
-        [return: MarshalAs(UnmanagedType.U1)]
+        [System.Security.SecurityCritical]
         protected override bool ReleaseHandle()
         {
-            // Only close printer if handle is not invalid
-            if (IsInvalid)
-                return true;
-
-            if (!ClosePrinter(this.handle))
-                return false;
-
-            // Make the handle invalid
-            this.SetHandle(IntPtr.Zero);
-            return true;
+            return ClosePrinter(handle);
         }
     }
-    
 }
