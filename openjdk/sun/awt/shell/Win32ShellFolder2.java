@@ -318,11 +318,10 @@ public class Win32ShellFolder2 extends ShellFolder{
             fileChooserIcons = new Image[47];
 
             try{
-                int[] data = getFileChooserBitmapHandle();
-                Bitmap bitmap = new Bitmap(data.length/16, 16, PixelFormat.wrap(PixelFormat.Format32bppArgb));
-                BitmapData bitmapData = bitmap.LockBits(new cli.System.Drawing.Rectangle(0,0,bitmap.get_Width(), bitmap.get_Height()), ImageLockMode.wrap(ImageLockMode.WriteOnly), PixelFormat.wrap(PixelFormat.Format32bppArgb));
-                Marshal.Copy(data, 0, bitmapData.get_Scan0(), data.length);
-                bitmap.UnlockBits(bitmapData);
+                Bitmap bitmap = getFileChooserBitmap();
+                if (bitmap == null) {
+                    return null;
+                }
                 
                 for(int i = 0; i < fileChooserIcons.length; i++){
                     cli.System.Drawing.Rectangle rect = new cli.System.Drawing.Rectangle(16 * i, 0, 16, 16);
@@ -336,24 +335,20 @@ public class Win32ShellFolder2 extends ShellFolder{
         return fileChooserIcons[idx];
     }
     
-    private static native int[] getFileChooserBitmapHandle();
-    
-    private static native boolean DeleteObject(cli.System.IntPtr hDc);
+    private static native Bitmap getFileChooserBitmap();
     
     /**
      * Gets an icon from the Windows system icon list as an <code>Image</code>
      */
     static Image getShell32Icon(int iconID) {
-        cli.System.IntPtr hIcon = getIconResource("shell32.dll", iconID, 16, 16);
-        if(hIcon.ToInt32() == 0){
+        Bitmap bitmap = getShell32IconResourceAsBitmap(iconID);
+        if (bitmap == null) {
             return null;
         }
-        Bitmap bitmap = Bitmap.FromHicon(hIcon);
-        DeleteObject(hIcon);
         return new BufferedImage(bitmap);
     }
     
-    private static native cli.System.IntPtr getIconResource(String libName, int iconID, int cxDesired, int cyDesired);
+    private static native Bitmap getShell32IconResourceAsBitmap(int iconID);
 
     /** Marks this folder as being the My Documents (Personal) folder */
     public void setIsPersonal(){
@@ -405,18 +400,10 @@ public class Win32ShellFolder2 extends ShellFolder{
     public Image getIcon(final boolean getLargeIcon) {
         Image icon = getLargeIcon ? largeIcon : smallIcon;
         if (icon == null) {
-        	int size = getLargeIcon ? 32 : 16;
-            cli.System.IntPtr hIcon = getIcon( getPath(), getLargeIcon);
-            if(hIcon.ToInt32() == 0){
+            Bitmap bitmap = getIconBitmap(getPath(), getLargeIcon);
+            if (bitmap == null) {
                 return null;
-            }
-            DeleteObject(hIcon);
-            int[] iconPixels = getIconBits(hIcon, size);
-            Bitmap bitmap = new Bitmap(size, size, PixelFormat.wrap(PixelFormat.Format32bppArgb));
-            BitmapData bitmapData = bitmap.LockBits(new cli.System.Drawing.Rectangle(0,0,size, size), ImageLockMode.wrap(ImageLockMode.WriteOnly), PixelFormat.wrap(PixelFormat.Format32bppArgb));
-            Marshal.Copy(iconPixels, 0, bitmapData.get_Scan0(), iconPixels.length);
-            bitmap.UnlockBits(bitmapData);
-            
+            }            
             icon = new BufferedImage(bitmap);
             if (getLargeIcon) {
                 largeIcon = icon;
@@ -427,9 +414,6 @@ public class Win32ShellFolder2 extends ShellFolder{
         return icon;
     }
     
-    // Return the icon of a file system shell folder in the form of an HICON
-    private static native cli.System.IntPtr getIcon(String absolutePath, boolean getLargeIcon);
-    
-    private static native int[] getIconBits(cli.System.IntPtr hIcon, int iconSize);
-
+    // Return the icon of a file system shell folder in the form of a Bitmap
+    private static native Bitmap getIconBitmap(String absolutePath, boolean getLargeIcon);
 }

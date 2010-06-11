@@ -25,6 +25,8 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Drawing;
+using System.Drawing.Imaging;
 
 namespace IKVM.NativeCode.sun.awt
 {
@@ -54,6 +56,23 @@ namespace IKVM.NativeCode.sun.awt.shell
 		private const uint SHGFI_TYPENAME = 0x400;
 		private const uint SHGFI_ATTRIBUTES = 0x800;
 
+		private const uint IMAGE_BITMAP = 0;
+		private const uint IMAGE_ICON = 1;
+
+		private static readonly IntPtr hmodShell32;
+		private static readonly IntPtr hmodComctl32;
+		private static readonly bool isXP;
+		private static readonly bool isVista;
+
+		[System.Security.SecuritySafeCritical]
+		static Win32ShellFolder2()
+		{
+			hmodShell32 = LoadLibrary("shell32.dll");
+			hmodComctl32 = LoadLibrary("comctl32.dll");
+			isXP = Environment.OSVersion.Version >= new Version(5, 1);
+			isVista = Environment.OSVersion.Version.Major >= 6;
+		}
+
 		[StructLayout(LayoutKind.Sequential)]
 		private struct SHFILEINFO
 		{
@@ -66,18 +85,55 @@ namespace IKVM.NativeCode.sun.awt.shell
 			internal string szTypeName;
 		};
 
+		[System.Security.SecurityCritical]
+		private sealed class SafeGdiObjectHandle : Microsoft.Win32.SafeHandles.SafeHandleZeroOrMinusOneIsInvalid
+		{
+			private SafeGdiObjectHandle()
+				: base(true)
+			{
+			}
+
+			[System.Security.SecurityCritical]
+			protected override bool ReleaseHandle()
+			{
+				return DeleteObject(handle);
+			}
+		}
+
+		[System.Security.SecurityCritical]
+		private sealed class SafeDeviceContextHandle : Microsoft.Win32.SafeHandles.SafeHandleZeroOrMinusOneIsInvalid
+		{
+			[DllImport("user32.dll")]
+			private static extern int ReleaseDC(IntPtr hwnd, IntPtr hdc);
+
+			[DllImport("user32.dll")]
+			private static extern SafeDeviceContextHandle GetDC(IntPtr hwnd);
+
+			internal static SafeDeviceContextHandle Get()
+			{
+				return GetDC(IntPtr.Zero);
+			}
+
+			private SafeDeviceContextHandle()
+				: base(true)
+			{
+			}
+
+			[System.Security.SecurityCritical]
+			protected override bool ReleaseHandle()
+			{
+				return ReleaseDC(IntPtr.Zero, handle) == 1;
+			}
+		}
+
 		[DllImport("gdi32.dll")]
-		static extern int GetDIBits(IntPtr hdc, IntPtr hbmp, uint uStartScan,
-		   uint cScanLines, int[] lpvBits, ref BITMAPINFO lpbmi, uint uUsage);
-
-		[DllImport("user32.dll")]
-		public static extern IntPtr GetDC(IntPtr hwnd);
+		private static extern int GetDIBits(SafeDeviceContextHandle hdc, IntPtr hbmp, uint uStartScan, uint cScanLines, int[] lpvBits, ref BITMAPINFO lpbmi, uint uUsage);
 
 		[DllImport("gdi32.dll")]
-		static extern int GetObject(IntPtr hgdiobj, int cbBuffer, ref BITMAPINFO lpvObject);
+		private static extern int GetDIBits(SafeDeviceContextHandle hdc, SafeGdiObjectHandle hbmp, uint uStartScan, uint cScanLines, int[] lpvBits, ref BITMAPINFO lpbmi, uint uUsage);
 
-		[DllImport("user32.dll")]
-		public static extern int ReleaseDC(IntPtr hwnd, IntPtr hdc);
+		[DllImport("gdi32.dll")]
+		private static extern int GetObject(SafeGdiObjectHandle hgdiobj, int cbBuffer, ref BITMAPINFO lpvObject);
 
 		[StructLayout(LayoutKind.Sequential)]
 		private struct ICONINFO
@@ -116,26 +172,24 @@ namespace IKVM.NativeCode.sun.awt.shell
 		[DllImport("shell32.dll")]
 		private static extern IntPtr SHGetFileInfo(string pszPath, uint dwFileAttributes, ref SHFILEINFO psfi, uint cbSizeFileInfo, uint uFlags);
 
-		[DllImport("user32.dll", EntryPoint = "LoadImage")]
-		private static extern IntPtr LoadImageID(IntPtr hInstance, IntPtr uID, uint type, int width, int height, int load);
+		[DllImport("user32.dll")]
+		private static extern SafeGdiObjectHandle LoadImage(IntPtr hInstance, IntPtr uID, uint type, int width, int height, int load);
 
-		[DllImport("user32.dll", EntryPoint = "LoadImage")]
-		private static extern IntPtr LoadImageName(IntPtr hInstance, string lpszName, uint type, int width, int height, int load);
+		[DllImport("user32.dll")]
+		private static extern SafeGdiObjectHandle LoadImage(IntPtr hInstance, string lpszName, uint type, int width, int height, int load);
 
 		[DllImport("kernel32.dll")]
-		static extern IntPtr LoadLibrary(string Library);
+		private static extern IntPtr LoadLibrary(string Library);
 
-		[DllImport("gdi32.dll", EntryPoint = "DeleteObject")]
-		public static extern bool DeleteObject(IntPtr hDc);
-
-		private const uint IMAGE_BITMAP = 0;
-		private const uint IMAGE_ICON = 1;
+		[DllImport("gdi32.dll")]
+		private static extern bool DeleteObject(IntPtr hDc);
 
 		/// <summary>
 		/// Get the program to execute or open the file. If it is a exe then it is self
 		/// </summary>
 		/// <param name="path">path to the file</param>
 		/// <returns></returns>
+		[System.Security.SecuritySafeCritical]
 		public static string getExecutableType(string path)
 		{
 			StringBuilder objResultBuffer = new StringBuilder(1024);
@@ -152,6 +206,7 @@ namespace IKVM.NativeCode.sun.awt.shell
 		/// </summary>
 		/// <param name="path"></param>
 		/// <returns></returns>
+		[System.Security.SecuritySafeCritical]
 		public static string getFolderType(string path)
 		{
 			SHFILEINFO shinfo = new SHFILEINFO();
@@ -162,65 +217,75 @@ namespace IKVM.NativeCode.sun.awt.shell
 			return shinfo.szTypeName;
 		}
 
-		public static IntPtr getIcon(string path, bool getLargeIcon)
+		[System.Security.SecuritySafeCritical]
+		public static Bitmap getIconBitmap(string path, bool getLargeIcon)
 		{
 			SHFILEINFO shinfo = new SHFILEINFO();
 			if (SHGetFileInfo(path, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_ICON | (getLargeIcon ? 0 : SHGFI_SMALLICON)) == IntPtr.Zero)
 			{
-				return IntPtr.Zero;
+				return null;
 			}
-			return shinfo.hIcon;
+			int size = getLargeIcon ? 32 : 16;
+			int[] iconPixels = getIconBits(shinfo.hIcon, size);
+			DeleteObject(shinfo.hIcon);
+			Bitmap bitmap = new Bitmap(size, size, PixelFormat.Format32bppArgb);
+			BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, size, size), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+			Marshal.Copy(iconPixels, 0, bitmapData.Scan0, iconPixels.Length);
+			bitmap.UnlockBits(bitmapData);
+			return bitmap;
 		}
 
-		public static int[] getIconBits(IntPtr hIcon, int iconSize)
+		[System.Security.SecurityCritical]
+		private static int[] getIconBits(IntPtr hIcon, int iconSize)
 		{
 			ICONINFO iconInfo;
 			if (GetIconInfo(hIcon, out iconInfo))
 			{
-				IntPtr hWnd = new IntPtr(0);
-				IntPtr dc = GetDC(hWnd);
-				BITMAPINFO bmi = new BITMAPINFO();
-				bmi.biSize = 40;
-				bmi.biWidth = iconSize;
-				bmi.biHeight = -iconSize;
-				bmi.biPlanes = 1;
-				bmi.biBitCount = 32;
-				bmi.biCompression = 0;
-				int intArrSize = iconSize * iconSize;
-				int[] iconBits = new int[intArrSize];
-				GetDIBits(dc, iconInfo.hbmColor, 0, (uint)iconSize, iconBits, ref bmi, 0);
-				bool hasAlpha = false;
-				bool isXP = (Environment.OSVersion.Version.Major >= 6) || (Environment.OSVersion.Version.Major == 5 && Environment.OSVersion.Version.Minor >= 1);
-				if (isXP)
+				using (SafeDeviceContextHandle dc = SafeDeviceContextHandle.Get())
 				{
-					for (int i = 0; i < iconBits.Length; i++)
+					BITMAPINFO bmi = new BITMAPINFO();
+					bmi.biSize = 40;
+					bmi.biWidth = iconSize;
+					bmi.biHeight = -iconSize;
+					bmi.biPlanes = 1;
+					bmi.biBitCount = 32;
+					bmi.biCompression = 0;
+					int intArrSize = iconSize * iconSize;
+					int[] iconBits = new int[intArrSize];
+					GetDIBits(dc, iconInfo.hbmColor, 0, (uint)iconSize, iconBits, ref bmi, 0);
+					bool hasAlpha = false;
+					if (isXP)
 					{
-						if ((iconBits[i] & 0xFF000000) != 0)
+						for (int i = 0; i < iconBits.Length; i++)
 						{
-							hasAlpha = true;
-							break;
+							if ((iconBits[i] & 0xFF000000) != 0)
+							{
+								hasAlpha = true;
+								break;
+							}
 						}
 					}
-				}
-				if (!hasAlpha)
-				{
-					int[] maskBits = new int[intArrSize];
-					GetDIBits(dc, iconInfo.hbmMask, 0, (uint)iconSize, maskBits, ref bmi, 0);
-					for (int i = 0; i < iconBits.Length; i++)
+					if (!hasAlpha)
 					{
-						if (maskBits[i] == 0)
+						int[] maskBits = new int[intArrSize];
+						GetDIBits(dc, iconInfo.hbmMask, 0, (uint)iconSize, maskBits, ref bmi, 0);
+						for (int i = 0; i < iconBits.Length; i++)
 						{
-							iconBits[i] = (int)((uint)iconBits[i] | 0xFF000000);
+							if (maskBits[i] == 0)
+							{
+								iconBits[i] = (int)((uint)iconBits[i] | 0xFF000000);
+							}
 						}
 					}
+					DeleteObject(iconInfo.hbmColor);
+					DeleteObject(iconInfo.hbmMask);
+					return iconBits;
 				}
-				DeleteObject(iconInfo.hbmColor);
-				DeleteObject(iconInfo.hbmMask);
-				return iconBits;
 			}
 			return null;
 		}
 
+		[System.Security.SecuritySafeCritical]
 		public static int getAttribute(string path)
 		{
 			SHFILEINFO shinfo = new SHFILEINFO();
@@ -241,46 +306,72 @@ namespace IKVM.NativeCode.sun.awt.shell
 			}
 		}
 
-		public static int[] getFileChooserBitmapHandle()
+		[System.Security.SecuritySafeCritical]
+		public static Bitmap getFileChooserBitmap()
 		{
-			// Code copied from ShellFolder2.cpp Java_sun_awt_shell_Win32ShellFolder2_getFileChooserBitmapBits
-			IntPtr libShell32 = LoadLibrary("shell32.dll");
-			// Get a handle to an icon.
-			bool isVista = Environment.OSVersion.Version.Major >= 6;
-			IntPtr hBitmap = isVista ?
-				LoadImageName(libShell32, "IDB_TB_SH_DEF_16", IMAGE_BITMAP, 0, 0, 0) :
-				LoadImageID(libShell32, (IntPtr)216, IMAGE_BITMAP, 0, 0, 0);
-			if (hBitmap == IntPtr.Zero)
+			if (hmodShell32 != IntPtr.Zero)
 			{
-				IntPtr libComCtl32 = LoadLibrary("comctl32.dll");
-				hBitmap = LoadImageID(libComCtl32, (IntPtr)124, IMAGE_BITMAP, 0, 0, 0);
+				// Code copied from ShellFolder2.cpp Java_sun_awt_shell_Win32ShellFolder2_getFileChooserBitmapBits
+				// Get a handle to an icon.
+				SafeGdiObjectHandle hBitmap = null;
+				try
+				{
+					hBitmap = isVista ?
+						 LoadImage(hmodShell32, "IDB_TB_SH_DEF_16", IMAGE_BITMAP, 0, 0, 0) :
+						 LoadImage(hmodShell32, (IntPtr)216, IMAGE_BITMAP, 0, 0, 0);
+					if (hBitmap == null && hmodComctl32 != IntPtr.Zero)
+					{
+						hBitmap = LoadImage(hmodComctl32, (IntPtr)124, IMAGE_BITMAP, 0, 0, 0);
+					}
+					if (hBitmap != null)
+					{
+						BITMAPINFO bmi = new BITMAPINFO();
+						GetObject(hBitmap, Marshal.SizeOf(bmi), ref bmi);
+						int width = bmi.biWidth;
+						int height = bmi.biHeight;
+						bmi.biSize = 40;
+						bmi.biHeight = -bmi.biHeight;
+						bmi.biPlanes = 1;
+						bmi.biBitCount = 32;
+						bmi.biCompression = 0;
+						using (SafeDeviceContextHandle dc = SafeDeviceContextHandle.Get())
+						{
+							int[] data = new int[width * height];
+							GetDIBits(dc, hBitmap, (uint)0, (uint)height, data, ref bmi, 0);
+							Bitmap bitmap = new Bitmap(data.Length / 16, 16, PixelFormat.Format32bppArgb);
+							BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+							Marshal.Copy(data, 0, bitmapData.Scan0, data.Length);
+							bitmap.UnlockBits(bitmapData);
+							return bitmap;
+						}
+					}
+				}
+				finally
+				{
+					if (hBitmap != null)
+					{
+						hBitmap.Close();
+					}
+				}
 			}
-			if (hBitmap == IntPtr.Zero)
-			{
-				return new int[768 * 16];
-			}
-			BITMAPINFO bmi = new BITMAPINFO();
-			GetObject(hBitmap, Marshal.SizeOf(bmi), ref bmi);
-			int width = bmi.biWidth;
-			int height = bmi.biHeight;
-			bmi.biSize = 40;
-			bmi.biHeight = -bmi.biHeight;
-			bmi.biPlanes = 1;
-			bmi.biBitCount = 32;
-			bmi.biCompression = 0;
-			IntPtr hwnd = new IntPtr(0);
-			IntPtr dc = GetDC(hwnd);
-			int[] data = new int[width * height];
-			GetDIBits(dc, hBitmap, (uint)0, (uint)height, data, ref bmi, 0);
-			DeleteObject(hBitmap);
-			ReleaseDC(hwnd, dc);
-			return data;
+			return null;
 		}
 
-		public static IntPtr getIconResource(String libName, int iconID, int cxDesired, int cyDesired)
+		[System.Security.SecuritySafeCritical]
+		public static Bitmap getShell32IconResourceAsBitmap(int iconID)
 		{
-			IntPtr hLibName = LoadLibrary(libName);
-			return LoadImageID(hLibName, (IntPtr)iconID, IMAGE_ICON, cxDesired, cyDesired, 0);
+			if (hmodShell32 == IntPtr.Zero)
+			{
+				return null;
+			}
+			using (SafeGdiObjectHandle hicon = LoadImage(hmodShell32, (IntPtr)iconID, IMAGE_ICON, 16, 16, 0))
+			{
+				if (hicon != null)
+				{
+					return Bitmap.FromHicon(hicon.DangerousGetHandle());
+				}
+			}
+			return null;
 		}
 	}
 
