@@ -115,6 +115,7 @@
     <Compile Include="images.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="native.cs" />
     <Compile Include="printing.cs" />
     <Compile Include="robot.cs">
       <SubType>Code</SubType>
