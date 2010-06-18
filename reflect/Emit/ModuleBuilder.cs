@@ -269,7 +269,7 @@ namespace IKVM.Reflection.Emit
 		{
 			ExportedTypeTable.Record rec = new ExportedTypeTable.Record();
 			rec.TypeDefId = type.MetadataToken;
-			rec.TypeName = this.Strings.Add(type.Name);
+			rec.TypeName = this.Strings.Add(TypeNameParser.Unescape(type.Name));
 			if (type.IsNested)
 			{
 				rec.Flags = 0;
@@ -280,7 +280,7 @@ namespace IKVM.Reflection.Emit
 			{
 				rec.Flags = 0x00200000;	// CorTypeAttr.tdForwarder
 				string ns = type.Namespace;
-				rec.TypeNamespace = ns == null ? 0 : this.Strings.Add(ns);
+				rec.TypeNamespace = ns == null ? 0 : this.Strings.Add(TypeNameParser.Unescape(ns));
 				rec.Implementation = ImportAssemblyRef(type.Assembly.GetName());
 			}
 			return 0x27000000 | this.ExportedType.FindOrAddRecord(rec);
@@ -767,9 +767,9 @@ namespace IKVM.Reflection.Emit
 					ExportedTypeTable.Record rec = new ExportedTypeTable.Record();
 					rec.Flags = (int)type.Attributes;
 					rec.TypeDefId = type.MetadataToken & 0xFFFFFF;
-					rec.TypeName = manifestModule.Strings.Add(type.Name);
+					rec.TypeName = manifestModule.Strings.Add(TypeNameParser.Unescape(type.Name));
 					string ns = type.Namespace;
-					rec.TypeNamespace = ns == null ? 0 : manifestModule.Strings.Add(ns);
+					rec.TypeNamespace = ns == null ? 0 : manifestModule.Strings.Add(TypeNameParser.Unescape(ns));
 					if (type.IsNested)
 					{
 						rec.Implementation = declaringTypes[type.DeclaringType];
