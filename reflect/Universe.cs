@@ -525,7 +525,6 @@ namespace IKVM.Reflection
 			{
 				asm = module.ToAssembly();
 				assemblies.Add(asm);
-				assembliesByName.Add(refname, asm);
 			}
 			return asm;
 		}
@@ -706,7 +705,6 @@ namespace IKVM.Reflection
 		private AssemblyBuilder DefineDynamicAssemblyImpl(AssemblyName name, AssemblyBuilderAccess access, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
 		{
 			AssemblyBuilder asm = new AssemblyBuilder(this, name, dir, requiredPermissions, optionalPermissions, refusedPermissions);
-			assembliesByName.Add(asm.FullName, asm);
 			assemblies.Add(asm);
 			return asm;
  		}
@@ -725,7 +723,6 @@ namespace IKVM.Reflection
 			{
 				assembliesByName.Remove(key);
 			}
-			assembliesByName.Add(assembly.FullName, assembly);
 		}
 
 		public void Dispose()
