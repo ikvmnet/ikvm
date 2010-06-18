@@ -55,7 +55,7 @@ namespace IKVM.Reflection.Emit
 		internal readonly ByteBuffer manifestResources = new ByteBuffer(512);
 		internal byte[] unmanagedResources;
 		private readonly Dictionary<MemberInfo, int> importedMembers = new Dictionary<MemberInfo, int>();
-		private readonly Dictionary<AssemblyName, int> referencedAssemblies = new Dictionary<AssemblyName, int>();
+		private readonly Dictionary<Assembly, int> referencedAssemblies = new Dictionary<Assembly, int>();
 		private int nextPseudoToken = -1;
 		private readonly List<int> resolvedTokens = new List<int>();
 		internal readonly TableHeap Tables = new TableHeap();
@@ -281,7 +281,7 @@ namespace IKVM.Reflection.Emit
 				rec.Flags = 0x00200000;	// CorTypeAttr.tdForwarder
 				string ns = type.Namespace;
 				rec.TypeNamespace = ns == null ? 0 : this.Strings.Add(TypeNameParser.Unescape(ns));
-				rec.Implementation = ImportAssemblyRef(type.Assembly.GetName());
+				rec.Implementation = ImportAssemblyRef(type.Assembly);
 			}
 			return 0x27000000 | this.ExportedType.FindOrAddRecord(rec);
 		}
@@ -575,7 +575,7 @@ namespace IKVM.Reflection.Emit
 					}
 					else
 					{
-						rec.ResolutionScope = ImportAssemblyRef(type.Assembly.GetName());
+						rec.ResolutionScope = ImportAssemblyRef(type.Assembly);
 						rec.TypeName = this.Strings.Add(TypeNameParser.Unescape(type.Name));
 						string ns = type.Namespace;
 						rec.TypeNameSpace = ns == null ? 0 : this.Strings.Add(TypeNameParser.Unescape(ns));
@@ -587,26 +587,27 @@ namespace IKVM.Reflection.Emit
 			return token;
 		}
 
-		private int ImportAssemblyRef(AssemblyName asm)
+		private int ImportAssemblyRef(Assembly asm)
 		{
 			int token;
 			if (!referencedAssemblies.TryGetValue(asm, out token))
 			{
+				AssemblyName name = asm.GetName();
 				AssemblyRefTable.Record rec = new AssemblyRefTable.Record();
-				Version ver = asm.Version;
+				Version ver = name.Version;
 				rec.MajorVersion = (ushort)ver.Major;
 				rec.MinorVersion = (ushort)ver.Minor;
 				rec.BuildNumber = (ushort)ver.Build;
 				rec.RevisionNumber = (ushort)ver.Revision;
-				rec.Flags = (int)(asm.Flags & AssemblyNameFlags.Retargetable);
+				rec.Flags = (int)(name.Flags & AssemblyNameFlags.Retargetable);
 				byte[] publicKeyOrToken = null;
 				if (usePublicKeyAssemblyReference)
 				{
-					publicKeyOrToken = asm.GetPublicKey();
+					publicKeyOrToken = name.GetPublicKey();
 				}
 				if (publicKeyOrToken == null || publicKeyOrToken.Length == 0)
 				{
-					publicKeyOrToken = asm.GetPublicKeyToken();
+					publicKeyOrToken = name.GetPublicKeyToken();
 				}
 				else
 				{
@@ -614,10 +615,10 @@ namespace IKVM.Reflection.Emit
 					rec.Flags |= PublicKey;
 				}
 				rec.PublicKeyOrToken = this.Blobs.Add(ByteBuffer.Wrap(publicKeyOrToken));
-				rec.Name = this.Strings.Add(asm.Name);
-				if (asm.CultureInfo != null)
+				rec.Name = this.Strings.Add(name.Name);
+				if (name.CultureInfo != null)
 				{
-					rec.Culture = this.Strings.Add(asm.CultureInfo.Name);
+					rec.Culture = this.Strings.Add(name.CultureInfo.Name);
 				}
 				else
 				{
