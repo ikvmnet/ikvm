@@ -592,7 +592,22 @@ namespace IKVM.Reflection.Emit
 			int token;
 			if (!referencedAssemblies.TryGetValue(asm, out token))
 			{
-				AssemblyName name = asm.GetName();
+				// We can't write the AssemblyRef record here yet, because the identity of the assembly can still change
+				// (if it's an AssemblyBuilder).
+				// We set the high bit of rid in the token to make sure we emit obviously broken metadata,
+				// if we forget to patch up the token somewhere.
+				token = 0x23800001 + referencedAssemblies.Count;
+				referencedAssemblies.Add(asm, token);
+			}
+			return token;
+		}
+
+		internal void FillAssemblyRefTable()
+		{
+			int[] realtokens = new int[referencedAssemblies.Count];
+			foreach (KeyValuePair<Assembly, int> kv in referencedAssemblies)
+			{
+				AssemblyName name = kv.Key.GetName();
 				AssemblyRefTable.Record rec = new AssemblyRefTable.Record();
 				Version ver = name.Version;
 				rec.MajorVersion = (ushort)ver.Major;
@@ -625,10 +640,26 @@ namespace IKVM.Reflection.Emit
 					rec.Culture = 0;
 				}
 				rec.HashValue = 0;
-				token = 0x23000000 | this.AssemblyRef.AddRecord(rec);
-				referencedAssemblies.Add(asm, token);
+				realtokens[(kv.Value & 0x7FFFFF) - 1] = 0x23000000 | this.AssemblyRef.FindOrAddRecord(rec);
 			}
-			return token;
+			// now fixup the resolution scopes in TypeRef
+			for (int i = 0; i < this.TypeRef.records.Length; i++)
+			{
+				int resolutionScope = this.TypeRef.records[i].ResolutionScope;
+				if ((resolutionScope >> 24) == AssemblyRefTable.Index)
+				{
+					this.TypeRef.records[i].ResolutionScope = realtokens[(resolutionScope & 0x7FFFFF) - 1];
+				}
+			}
+			// and implementation in ExportedType
+			for (int i = 0; i < this.ExportedType.records.Length; i++)
+			{
+				int implementation = this.ExportedType.records[i].Implementation;
+				if ((implementation >> 24) == AssemblyRefTable.Index)
+				{
+					this.ExportedType.records[i].Implementation = realtokens[(implementation & 0x7FFFFF) - 1];
+				}
+			}
 		}
 
 		internal void WriteSymbolTokenMap()

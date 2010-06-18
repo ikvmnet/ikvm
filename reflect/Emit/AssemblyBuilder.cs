@@ -365,6 +365,7 @@ namespace IKVM.Reflection.Emit
 
 			foreach (ModuleBuilder moduleBuilder in modules)
 			{
+				moduleBuilder.FillAssemblyRefTable();
 				if (moduleBuilder != manifestModule)
 				{
 					int fileToken;

@@ -1991,6 +1991,27 @@ namespace IKVM.Reflection.Metadata
 			internal int HashValue;
 		}
 
+		internal int FindOrAddRecord(Record rec)
+		{
+			for (int i = 0; i < rowCount; i++)
+			{
+				if (records[i].Name == rec.Name
+					&& records[i].MajorVersion == rec.MajorVersion
+					&& records[i].MinorVersion == rec.MinorVersion
+					&& records[i].BuildNumber == rec.BuildNumber
+					&& records[i].RevisionNumber == rec.RevisionNumber
+					&& records[i].Flags == rec.Flags
+					&& records[i].PublicKeyOrToken == rec.PublicKeyOrToken
+					&& records[i].Culture == rec.Culture
+					&& records[i].HashValue == rec.HashValue
+					)
+				{
+					return i + 1;
+				}
+			}
+			return AddRecord(rec);
+		}
+
 		internal override void Read(MetadataReader mr)
 		{
 			for (int i = 0; i < records.Length; i++)
