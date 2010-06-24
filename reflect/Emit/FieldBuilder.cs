@@ -167,7 +167,11 @@ namespace IKVM.Reflection.Emit
 
 		internal override int ImportTo(ModuleBuilder other)
 		{
-			if (other == typeBuilder.ModuleBuilder && !typeBuilder.IsGenericTypeDefinition)
+			if (typeBuilder.IsGenericTypeDefinition)
+			{
+				return other.ImportMember(TypeBuilder.GetField(typeBuilder, this));
+			}
+			else if (other == typeBuilder.ModuleBuilder)
 			{
 				return pseudoToken;
 			}
