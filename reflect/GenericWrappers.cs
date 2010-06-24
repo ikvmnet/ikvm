@@ -34,7 +34,7 @@ namespace IKVM.Reflection
 		private readonly Type declaringType;
 		private readonly MethodInfo method;
 		private readonly Type[] methodArgs;
-		private readonly MethodSignature signature;
+		private MethodSignature lazyMethodSignature;
 
 		internal GenericMethodInstance(Type declaringType, MethodInfo method, Type[] methodArgs)
 		{
@@ -42,7 +42,6 @@ namespace IKVM.Reflection
 			this.declaringType = declaringType;
 			this.method = method;
 			this.methodArgs = methodArgs;
-			this.signature = method.MethodSignature.Bind(declaringType, methodArgs);
 		}
 
 		public override bool Equals(object obj)
@@ -252,7 +251,7 @@ namespace IKVM.Reflection
 
 		internal override MethodSignature MethodSignature
 		{
-			get { return signature; }
+			get { return lazyMethodSignature ?? (lazyMethodSignature = method.MethodSignature.Bind(declaringType, methodArgs)); }
 		}
 
 		internal override MethodBase BindTypeParameters(Type type)
