@@ -569,7 +569,7 @@ namespace IKVM.Reflection
 				case 1:
 					return module.ResolveType((TypeRefTable.Index << 24) + (encoded >> 2), null, null);
 				case 2:
-					return module.ResolveType((TypeRefTable.Index << 24) + (encoded >> 2), context);
+					return module.ResolveType((TypeSpecTable.Index << 24) + (encoded >> 2), context);
 				default:
 					throw new BadImageFormatException();
 			}
