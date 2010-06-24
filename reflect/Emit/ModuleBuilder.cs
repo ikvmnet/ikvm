@@ -490,6 +490,10 @@ namespace IKVM.Reflection.Emit
 		// we need to use a MemberRef (even if the method is in the same module)
 		internal MethodToken GetMethodTokenForIL(MethodInfo method)
 		{
+			if (method.IsGenericMethodDefinition)
+			{
+				method = method.MakeGenericMethod(method.GetGenericArguments());
+			}
 			if (IsFromGenericTypeDefinition(method))
 			{
 				return new MethodToken(ImportMember(method));
