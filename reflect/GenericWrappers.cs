@@ -106,7 +106,7 @@ namespace IKVM.Reflection
 
 		public override Type DeclaringType
 		{
-			get { return declaringType; }
+			get { return declaringType.IsModulePseudoType ? null : declaringType; }
 		}
 
 		public override Module Module
