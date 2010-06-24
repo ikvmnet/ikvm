@@ -534,14 +534,6 @@ namespace IKVM.Reflection.Emit
 			return token;
 		}
 
-		internal int ImportMethodSpec(MethodInfo method, ByteBuffer instantiation)
-		{
-			MethodSpecTable.Record rec = new MethodSpecTable.Record();
-			rec.Method = GetMethodToken(method.GetGenericMethodDefinition()).Token;
-			rec.Instantiation = this.Blobs.Add(instantiation);
-			return 0x2B000000 | this.MethodSpec.AddRecord(rec);
-		}
-
 		internal int ImportMethodOrField(Type declaringType, string name, Signature sig)
 		{
 			MemberRefTable.Record rec = new MemberRefTable.Record();

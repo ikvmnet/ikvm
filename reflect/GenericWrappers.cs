@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Jeroen Frijters
+  Copyright (C) 2009, 2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -235,7 +235,18 @@ namespace IKVM.Reflection
 			{
 				Writer.ByteBuffer spec = new Writer.ByteBuffer(10);
 				Signature.WriteMethodSpec(module, spec, methodArgs);
-				return module.ImportMethodSpec(this, spec);
+				Metadata.MethodSpecTable.Record rec = new Metadata.MethodSpecTable.Record();
+				Emit.MethodBuilder mb = method as Emit.MethodBuilder;
+				if (mb != null && mb.ModuleBuilder == module && !declaringType.IsGenericType)
+				{
+					rec.Method = mb.MetadataToken;
+				}
+				else
+				{
+					rec.Method = module.ImportMember(GetGenericMethodDefinition());
+				}
+				rec.Instantiation = module.Blobs.Add(spec);
+				return 0x2B000000 | module.MethodSpec.AddRecord(rec);
 			}
 		}
 
