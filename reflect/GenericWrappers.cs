@@ -245,7 +245,7 @@ namespace IKVM.Reflection
 					rec.Method = module.ImportMember(GetGenericMethodDefinition());
 				}
 				rec.Instantiation = module.Blobs.Add(spec);
-				return 0x2B000000 | module.MethodSpec.AddRecord(rec);
+				return 0x2B000000 | module.MethodSpec.FindOrAddRecord(rec);
 			}
 		}
 

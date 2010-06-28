@@ -2403,6 +2403,19 @@ namespace IKVM.Reflection.Metadata
 				.Value;
 		}
 
+		internal int FindOrAddRecord(Record record)
+		{
+			for (int i = 0; i < rowCount; i++)
+			{
+				if (records[i].Method == record.Method
+					&& records[i].Instantiation == record.Instantiation)
+				{
+					return i + 1;
+				}
+			}
+			return AddRecord(record);
+		}
+
 		internal void Fixup(ModuleBuilder moduleBuilder)
 		{
 			for (int i = 0; i < rowCount; i++)
