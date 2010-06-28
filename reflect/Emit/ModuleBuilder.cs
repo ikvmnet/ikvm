@@ -709,11 +709,42 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 
+		private int GetHeaderLength()
+		{
+			return
+				4 + // Signature
+				2 + // MajorVersion
+				2 + // MinorVersion
+				4 + // Reserved
+				4 + // ImageRuntimeVersion Length
+				StringToPaddedUTF8Length(asm.ImageRuntimeVersion) +
+				2 + // Flags
+				2 + // Streams
+				4 + // #~ Offset
+				4 + // #~ Size
+				4 + // StringToPaddedUTF8Length("#~")
+				4 + // #Strings Offset
+				4 + // #Strings Size
+				12 + // StringToPaddedUTF8Length("#Strings")
+				4 + // #US Offset
+				4 + // #US Size
+				4 + // StringToPaddedUTF8Length("#US")
+				4 + // #GUID Offset
+				4 + // #GUID Size
+				8 + // StringToPaddedUTF8Length("#GUID")
+				(Blobs.IsEmpty ? 0 :
+				(
+				4 + // #Blob Offset
+				4 + // #Blob Size
+				8   // StringToPaddedUTF8Length("#Blob")
+				));
+		}
+
 		internal int MetadataLength
 		{
 			get
 			{
-				return (Blobs.IsEmpty ? 92 : 108 + Blobs.Length) + Tables.Length + Strings.Length + UserStrings.Length + Guids.Length;
+				return GetHeaderLength() + (Blobs.IsEmpty ? 0 : Blobs.Length) + Tables.Length + Strings.Length + UserStrings.Length + Guids.Length;
 			}
 		}
 
@@ -727,18 +758,17 @@ namespace IKVM.Reflection.Emit
 			mw.Write(version.Length);		// Length
 			mw.Write(version);
 			mw.Write((ushort)0);			// Flags
-			int offset;
 			// #Blob is the only optional heap
 			if (Blobs.IsEmpty)
 			{
 				mw.Write((ushort)4);		// Streams
-				offset = 92;
 			}
 			else
 			{
 				mw.Write((ushort)5);		// Streams
-				offset = 108;
 			}
+
+			int offset = GetHeaderLength();
 
 			// Streams
 			mw.Write(offset);				// Offset
@@ -776,6 +806,11 @@ namespace IKVM.Reflection.Emit
 			{
 				Blobs.Write(mw);
 			}
+		}
+
+		private static int StringToPaddedUTF8Length(string str)
+		{
+			return (System.Text.Encoding.UTF8.GetByteCount(str) + 4) & ~3;
 		}
 
 		private static byte[] StringToPaddedUTF8(string str)
