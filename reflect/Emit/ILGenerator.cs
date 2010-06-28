@@ -254,7 +254,7 @@ namespace IKVM.Reflection.Emit
 			ExceptionBlock block = exceptionStack.Peek();
 			if (exceptionBlockAssistanceMode == EBAM_COMPAT || (exceptionBlockAssistanceMode == EBAM_CLEVER && stackHeight != -1))
 			{
-				if (block.filterOffset != 0)
+				if (exceptionType == null)
 				{
 					Emit(OpCodes.Endfilter);
 				}
@@ -269,7 +269,7 @@ namespace IKVM.Reflection.Emit
 			{
 				block.tryLength = code.Position - block.tryOffset;
 			}
-			else if (block.filterOffset == 0)
+			else if (exceptionType != null)
 			{
 				block.handlerLength = code.Position - block.handlerOffset;
 				exceptionStack.Pop();
