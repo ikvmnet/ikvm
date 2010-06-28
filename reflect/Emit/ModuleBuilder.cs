@@ -55,6 +55,7 @@ namespace IKVM.Reflection.Emit
 		internal readonly ByteBuffer manifestResources = new ByteBuffer(512);
 		internal byte[] unmanagedResources;
 		private readonly Dictionary<MemberInfo, int> importedMembers = new Dictionary<MemberInfo, int>();
+		private readonly Dictionary<MemberRefKey, int> importedMemberRefs = new Dictionary<MemberRefKey, int>();
 		private readonly Dictionary<Assembly, int> referencedAssemblies = new Dictionary<Assembly, int>();
 		private int nextPseudoToken = -1;
 		private readonly List<int> resolvedTokens = new List<int>();
@@ -63,6 +64,38 @@ namespace IKVM.Reflection.Emit
 		internal readonly UserStringHeap UserStrings = new UserStringHeap();
 		internal readonly GuidHeap Guids = new GuidHeap();
 		internal readonly BlobHeap Blobs = new BlobHeap();
+
+		struct MemberRefKey : IEquatable<MemberRefKey>
+		{
+			private readonly Type type;
+			private readonly string name;
+			private readonly Signature signature;
+
+			internal MemberRefKey(Type type, string name, Signature signature)
+			{
+				this.type = type;
+				this.name = name;
+				this.signature = signature;
+			}
+
+			public bool Equals(MemberRefKey other)
+			{
+				return other.type.Equals(type)
+					&& other.name == name
+					&& other.signature.Equals(signature);
+			}
+
+			public override bool Equals(object obj)
+			{
+				MemberRefKey? other = obj as MemberRefKey?;
+				return other != null && Equals(other);
+			}
+
+			public override int GetHashCode()
+			{
+				return type.GetHashCode() + name.GetHashCode() + signature.GetHashCode();
+			}
+		}
 
 		internal ModuleBuilder(AssemblyBuilder asm, string moduleName, string fileName, bool emitSymbolInfo)
 			: base(asm.universe)
@@ -540,13 +573,19 @@ namespace IKVM.Reflection.Emit
 
 		internal int ImportMethodOrField(Type declaringType, string name, Signature sig)
 		{
-			MemberRefTable.Record rec = new MemberRefTable.Record();
-			rec.Class = GetTypeTokenForMemberRef(declaringType);
-			rec.Name = this.Strings.Add(name);
-			ByteBuffer bb = new ByteBuffer(16);
-			sig.WriteSig(this, bb);
-			rec.Signature = this.Blobs.Add(bb);
-			return 0x0A000000 | this.MemberRef.AddRecord(rec);
+			int token;
+			if (!importedMemberRefs.TryGetValue(new MemberRefKey(declaringType, name, sig), out token))
+			{
+				MemberRefTable.Record rec = new MemberRefTable.Record();
+				rec.Class = GetTypeTokenForMemberRef(declaringType);
+				rec.Name = this.Strings.Add(name);
+				ByteBuffer bb = new ByteBuffer(16);
+				sig.WriteSig(this, bb);
+				rec.Signature = this.Blobs.Add(bb);
+				token = 0x0A000000 | this.MemberRef.AddRecord(rec);
+				importedMemberRefs.Add(new MemberRefKey(declaringType, name, sig), token);
+			}
+			return token;
 		}
 
 		internal int ImportType(Type type)
