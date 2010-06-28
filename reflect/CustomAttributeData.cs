@@ -134,11 +134,11 @@ namespace IKVM.Reflection
 					ConstructorInfo constructor;
 					if (type == u.System_Security_Permissions_HostProtectionAttribute && action == (int)System.Security.Permissions.SecurityAction.LinkDemand)
 					{
-						constructor = type.GetConstructor(Type.EmptyTypes);
+						constructor = type.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, Type.EmptyTypes, null);
 					}
 					else
 					{
-						constructor = type.GetConstructor(new Type[] { u.System_Security_Permissions_SecurityAction });
+						constructor = type.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { u.System_Security_Permissions_SecurityAction }, null);
 					}
 					// LAMESPEC there is an additional length here (probably of the named argument list)
 					ByteReader slice = br.Slice(br.ReadCompressedInt());
