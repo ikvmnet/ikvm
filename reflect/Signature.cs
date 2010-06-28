@@ -511,7 +511,7 @@ namespace IKVM.Reflection
 				foreach (Type type in modifiers)
 				{
 					bb.Write(mod);
-					bb.WriteTypeDefOrRefEncoded(module.GetTypeToken(type).Token);
+					bb.WriteTypeDefOrRefEncoded(module.GetTypeTokenForMemberRef(type));
 				}
 			}
 		}

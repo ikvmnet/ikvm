@@ -1046,7 +1046,7 @@ namespace IKVM.Reflection.Emit
 						bb.Write(block.handlerLength);
 						if (block.exceptionType != null && block.exceptionType != FAULT)
 						{
-							bb.Write(moduleBuilder.GetTypeToken(block.exceptionType).Token);
+							bb.Write(moduleBuilder.GetTypeTokenForMemberRef(block.exceptionType));
 						}
 						else
 						{
@@ -1083,7 +1083,7 @@ namespace IKVM.Reflection.Emit
 						bb.Write((byte)block.handlerLength);
 						if (block.exceptionType != null && block.exceptionType != FAULT)
 						{
-							bb.Write(moduleBuilder.GetTypeToken(block.exceptionType).Token);
+							bb.Write(moduleBuilder.GetTypeTokenForMemberRef(block.exceptionType));
 						}
 						else
 						{

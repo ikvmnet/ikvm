@@ -160,7 +160,7 @@ namespace IKVM.Reflection.Emit
 		{
 			GenericParamConstraintTable.Record rec = new GenericParamConstraintTable.Record();
 			rec.Owner = paramToken;
-			rec.Constraint = this.ModuleBuilder.GetTypeToken(type).Token;
+			rec.Constraint = this.ModuleBuilder.GetTypeTokenForMemberRef(type);
 			this.ModuleBuilder.GenericParamConstraint.AddRecord(rec);
 		}
 

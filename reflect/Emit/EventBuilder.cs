@@ -46,7 +46,7 @@ namespace IKVM.Reflection.Emit
 			this.typeBuilder = typeBuilder;
 			this.name = name;
 			this.attributes = attributes;
-			this.eventtype = typeBuilder.ModuleBuilder.GetTypeToken(eventtype).Token;
+			this.eventtype = typeBuilder.ModuleBuilder.GetTypeTokenForMemberRef(eventtype);
 		}
 
 		public void SetAddOnMethod(MethodBuilder mdBuilder)
