@@ -67,7 +67,7 @@ namespace IKVM.Reflection
 							if (blob.Length != 0)
 							{
 								sizeConst = blob.ReadCompressedInt();
-								if (blob.ReadCompressedInt() == 0)
+								if (blob.Length != 0 && blob.ReadCompressedInt() == 0)
 								{
 									sizeParamIndex = null;
 								}
@@ -272,6 +272,10 @@ namespace IKVM.Reflection
 		private static Type ReadType(Module module, ByteReader br)
 		{
 			string str = ReadString(br);
+			if (str == "")
+			{
+				return null;
+			}
 			return module.Assembly.GetType(str) ?? module.universe.GetType(str, true);
 		}
 
