@@ -2032,17 +2032,34 @@ namespace IKVM.Reflection
 
 		internal static Type Make(Type type, Type[] typeArguments, Type[][] requiredCustomModifiers, Type[][] optionalCustomModifiers)
 		{
-			// we must not instantiate the identity instance, because typeof(Foo<>).MakeGenericType(typeof(Foo<>).GetGenericArguments()) == typeof(Foo<>)
-			for (int i = 0; i < typeArguments.Length; i++)
+			bool identity = true;
+			if (type is TypeBuilder || type is BakedType)
 			{
-				if (typeArguments[i] != type.GetGenericTypeArgument(i)
-					|| !IsEmpty(requiredCustomModifiers, i)
-					|| !IsEmpty(optionalCustomModifiers, i))
+				// a TypeBuiler identity must be instantiated
+				identity = false;
+			}
+			else
+			{
+				// we must not instantiate the identity instance, because typeof(Foo<>).MakeGenericType(typeof(Foo<>).GetGenericArguments()) == typeof(Foo<>)
+				for (int i = 0; i < typeArguments.Length; i++)
 				{
-					return type.Module.CanonicalizeType(new GenericTypeInstance(type, typeArguments, requiredCustomModifiers, optionalCustomModifiers));
+					if (typeArguments[i] != type.GetGenericTypeArgument(i)
+						|| !IsEmpty(requiredCustomModifiers, i)
+						|| !IsEmpty(optionalCustomModifiers, i))
+					{
+						identity = false;
+						break;
+					}
 				}
 			}
-			return type;
+			if (identity)
+			{
+				return type;
+			}
+			else
+			{
+				return type.Module.CanonicalizeType(new GenericTypeInstance(type, typeArguments, requiredCustomModifiers, optionalCustomModifiers));
+			}
 		}
 
 		private static bool IsEmpty(Type[][] mods, int i)
