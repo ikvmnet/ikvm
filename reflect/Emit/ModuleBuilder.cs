@@ -443,7 +443,7 @@ namespace IKVM.Reflection.Emit
 			}
 			else if (type.IsModulePseudoType)
 			{
-				return 0x1A000000 | this.ModuleRef.Add(this.Strings.Add(type.Module.ScopeName));
+				return 0x1A000000 | this.ModuleRef.FindOrAddRecord(this.Strings.Add(type.Module.ScopeName));
 			}
 			else
 			{
@@ -1068,12 +1068,12 @@ namespace IKVM.Reflection.Emit
 
 		public SignatureToken GetSignatureToken(SignatureHelper sigHelper)
 		{
-			return new SignatureToken(this.StandAloneSig.Add(this.Blobs.Add(sigHelper.GetSignature(this))) | (StandAloneSigTable.Index << 24));
+			return new SignatureToken(this.StandAloneSig.FindOrAddRecord(this.Blobs.Add(sigHelper.GetSignature(this))) | (StandAloneSigTable.Index << 24));
 		}
 
 		public SignatureToken GetSignatureToken(byte[] sigBytes, int sigLength)
 		{
-			return new SignatureToken(this.StandAloneSig.Add(this.Blobs.Add(ByteBuffer.Wrap(sigBytes, sigLength))) | (StandAloneSigTable.Index << 24));
+			return new SignatureToken(this.StandAloneSig.FindOrAddRecord(this.Blobs.Add(ByteBuffer.Wrap(sigBytes, sigLength))) | (StandAloneSigTable.Index << 24));
 		}
 
 		public MethodInfo GetArrayMethod(Type arrayClass, string methodName, CallingConventions callingConvention, Type returnType, Type[] parameterTypes)

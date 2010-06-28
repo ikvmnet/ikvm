@@ -722,7 +722,7 @@ namespace IKVM.Reflection.Emit
 		{
 			Emit(opcode);
 			UpdateStack(opcode, signature.HasThis, signature.ReturnType, signature.ParameterCount);
-			code.Write(0x11000000 | moduleBuilder.StandAloneSig.Add(moduleBuilder.Blobs.Add(signature.GetSignature(moduleBuilder))));
+			code.Write(0x11000000 | moduleBuilder.StandAloneSig.FindOrAddRecord(moduleBuilder.Blobs.Add(signature.GetSignature(moduleBuilder))));
 		}
 
 		public void EmitCall(OpCode opc, MethodInfo method, Type[] optionalParameterTypes)
@@ -764,7 +764,7 @@ namespace IKVM.Reflection.Emit
 			UpdateStack(opc, false, returnType, parameterTypes.Length);
 			ByteBuffer sig = new ByteBuffer(16);
 			Signature.WriteStandAloneMethodSig(moduleBuilder, sig, callingConvention, returnType, parameterTypes);
-			code.Write(0x11000000 | moduleBuilder.StandAloneSig.Add(moduleBuilder.Blobs.Add(sig)));
+			code.Write(0x11000000 | moduleBuilder.StandAloneSig.FindOrAddRecord(moduleBuilder.Blobs.Add(sig)));
 		}
 
 		public void EmitCalli(OpCode opc, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, Type[] optionalParameterTypes)
@@ -775,7 +775,7 @@ namespace IKVM.Reflection.Emit
 			UpdateStack(opc, (callingConvention & CallingConventions.HasThis | CallingConventions.ExplicitThis) == CallingConventions.HasThis, returnType, parameterTypes.Length + optionalParameterTypes.Length);
 			ByteBuffer sig = new ByteBuffer(16);
 			Signature.WriteStandAloneMethodSig(moduleBuilder, sig, callingConvention, returnType, parameterTypes, optionalParameterTypes);
-			code.Write(0x11000000 | moduleBuilder.StandAloneSig.Add(moduleBuilder.Blobs.Add(sig)));
+			code.Write(0x11000000 | moduleBuilder.StandAloneSig.FindOrAddRecord(moduleBuilder.Blobs.Add(sig)));
 		}
 
 		public void EmitWriteLine(string text)
@@ -966,7 +966,7 @@ namespace IKVM.Reflection.Emit
 			{
 				ByteBuffer localVarSig = new ByteBuffer(locals.Count + 2);
 				Signature.WriteLocalVarSig(moduleBuilder, localVarSig, locals);
-				localVarSigTok = 0x11000000 | moduleBuilder.StandAloneSig.Add(moduleBuilder.Blobs.Add(localVarSig));
+				localVarSigTok = 0x11000000 | moduleBuilder.StandAloneSig.FindOrAddRecord(moduleBuilder.Blobs.Add(localVarSig));
 			}
 
 			const byte CorILMethod_FatFormat = 0x03;

@@ -1364,7 +1364,7 @@ namespace IKVM.Reflection.Metadata
 			return rsc.WriteBlobIndex().Value;
 		}
 
-		internal int Add(int blob)
+		internal int FindOrAddRecord(int blob)
 		{
 			for (int i = 0; i < rowCount; i++)
 			{
@@ -1758,7 +1758,7 @@ namespace IKVM.Reflection.Metadata
 				.Value;
 		}
 
-		internal int Add(int str)
+		internal int FindOrAddRecord(int str)
 		{
 			for (int i = 0; i < rowCount; i++)
 			{
