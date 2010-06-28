@@ -1116,23 +1116,23 @@ namespace IKVM.Reflection.Emit
 		}
 	}
 
-	sealed class ArrayMethod : MethodInfo
+	class ArrayMethod : MethodInfo
 	{
-		private readonly ModuleBuilder moduleBuilder;
+		private readonly Module module;
 		private readonly Type arrayClass;
 		private readonly string methodName;
 		private readonly CallingConventions callingConvention;
 		private readonly Type returnType;
-		private readonly Type[] parameterTypes;
+		protected readonly Type[] parameterTypes;
 		private MethodSignature methodSignature;
 
-		internal ArrayMethod(ModuleBuilder moduleBuilder, Type arrayClass, string methodName, CallingConventions callingConvention, Type returnType, Type[] parameterTypes)
+		internal ArrayMethod(Module module, Type arrayClass, string methodName, CallingConventions callingConvention, Type returnType, Type[] parameterTypes)
 		{
-			this.moduleBuilder = moduleBuilder;
+			this.module = module;
 			this.arrayClass = arrayClass;
 			this.methodName = methodName;
 			this.callingConvention = callingConvention;
-			this.returnType = returnType ?? moduleBuilder.universe.System_Void;
+			this.returnType = returnType ?? module.universe.System_Void;
 			this.parameterTypes = Util.Copy(parameterTypes);
 		}
 
@@ -1186,7 +1186,7 @@ namespace IKVM.Reflection.Emit
 		public override Module Module
 		{
 			// like .NET, we return the module that GetArrayMethod was called on, not the module associated with the array type
-			get { return moduleBuilder; }
+			get { return module; }
 		}
 
 		public override string Name

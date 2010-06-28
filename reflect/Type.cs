@@ -1681,11 +1681,13 @@ namespace IKVM.Reflection
 
 		public override MethodBase[] __GetDeclaredMethods()
 		{
-			// TODO should return these three methods:
-			// Void Set(Int32, T)
-			// T& Address(Int32)
-			// T Get(Int32)
-			throw new NotImplementedException();
+			Type[] int32 = new Type[] { this.Module.universe.System_Int32 };
+			return new MethodBase[] {
+				new ConstructorInfoImpl(new BuiltinArrayMethod(this.Module, this, ".ctor", CallingConventions.Standard | CallingConventions.HasThis, this.Module.universe.System_Void, int32)),
+				new BuiltinArrayMethod(this.Module, this, "Set", CallingConventions.Standard | CallingConventions.HasThis, this.Module.universe.System_Void, new Type[] { this.Module.universe.System_Int32, elementType }),
+				new BuiltinArrayMethod(this.Module, this, "Address", CallingConventions.Standard | CallingConventions.HasThis, elementType.MakeByRefType(), int32),
+				new BuiltinArrayMethod(this.Module, this, "Get", CallingConventions.Standard | CallingConventions.HasThis, elementType, int32),
+			};
 		}
 
 		public override TypeAttributes Attributes
@@ -1751,11 +1753,25 @@ namespace IKVM.Reflection
 
 		public override MethodBase[] __GetDeclaredMethods()
 		{
-			// TODO should return these three methods:
-			// Void Set(Int32[, Int32]*, T)
-			// T& Address(Int32[, Int32]*)
-			// T Get(Int32[, Int32]*)
-			throw new NotImplementedException();
+			Type int32 = this.Module.universe.System_Int32;
+			Type[] setArgs = new Type[rank + 1];
+			Type[] getArgs = new Type[rank];
+			Type[] ctorArgs = new Type[rank * 2];
+			for (int i = 0; i < rank; i++)
+			{
+				setArgs[i] = int32;
+				getArgs[i] = int32;
+				ctorArgs[i * 2 + 0] = int32;
+				ctorArgs[i * 2 + 1] = int32;
+			}
+			setArgs[rank] = elementType;
+			return new MethodBase[] {
+				new ConstructorInfoImpl(new BuiltinArrayMethod(this.Module, this, ".ctor", CallingConventions.Standard | CallingConventions.HasThis, this.Module.universe.System_Void, getArgs)),
+				new ConstructorInfoImpl(new BuiltinArrayMethod(this.Module, this, ".ctor", CallingConventions.Standard | CallingConventions.HasThis, this.Module.universe.System_Void, ctorArgs)),
+				new BuiltinArrayMethod(this.Module, this, "Set", CallingConventions.Standard | CallingConventions.HasThis, this.Module.universe.System_Void, setArgs),
+				new BuiltinArrayMethod(this.Module, this, "Address", CallingConventions.Standard | CallingConventions.HasThis, elementType.MakeByRefType(), getArgs),
+				new BuiltinArrayMethod(this.Module, this, "Get", CallingConventions.Standard | CallingConventions.HasThis, elementType, getArgs),
+			};
 		}
 
 		public override TypeAttributes Attributes
@@ -1799,6 +1815,113 @@ namespace IKVM.Reflection
 		protected override Type Wrap(Type type, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
 		{
 			return Make(type, rank, requiredCustomModifiers, optionalCustomModifiers);
+		}
+	}
+
+	sealed class BuiltinArrayMethod : ArrayMethod
+	{
+		internal BuiltinArrayMethod(Module module, Type arrayClass, string methodName, CallingConventions callingConvention, Type returnType, Type[] parameterTypes)
+			: base(module, arrayClass, methodName, callingConvention, returnType, parameterTypes)
+		{
+		}
+
+		public override MethodAttributes Attributes
+		{
+			get { return this.Name == ".ctor" ? MethodAttributes.RTSpecialName | MethodAttributes.Public : MethodAttributes.Public; }
+		}
+
+		public override MethodImplAttributes GetMethodImplementationFlags()
+		{
+			return MethodImplAttributes.IL;
+		}
+
+		public override int MetadataToken
+		{
+			get { return 0x06000000; }
+		}
+
+		public override MethodBody GetMethodBody()
+		{
+			return null;
+		}
+
+		public override ParameterInfo[] GetParameters()
+		{
+			ParameterInfo[] parameterInfos = new ParameterInfo[parameterTypes.Length];
+			for (int i = 0; i < parameterInfos.Length; i++)
+			{
+				parameterInfos[i] = new ParameterInfoImpl(this, parameterTypes[i], i);
+			}
+			return parameterInfos;
+		}
+
+		public override ParameterInfo ReturnParameter
+		{
+			get { return new ParameterInfoImpl(this, this.ReturnType, -1); }
+		}
+
+		private sealed class ParameterInfoImpl : ParameterInfo
+		{
+			private readonly MethodInfo method;
+			private readonly Type type;
+			private readonly int pos;
+
+			internal ParameterInfoImpl(MethodInfo method, Type type, int pos)
+			{
+				this.method = method;
+				this.type = type;
+				this.pos = pos;
+			}
+
+			public override Type ParameterType
+			{
+				get { return type; }
+			}
+
+			public override string Name
+			{
+				get { return null; }
+			}
+
+			public override ParameterAttributes Attributes
+			{
+				get { return ParameterAttributes.None; }
+			}
+
+			public override int Position
+			{
+				get { return pos; }
+			}
+
+			public override object RawDefaultValue
+			{
+				get { return null; }
+			}
+
+			public override Type[] GetOptionalCustomModifiers()
+			{
+				return Empty<Type>.Array;
+			}
+
+			public override Type[] GetRequiredCustomModifiers()
+			{
+				return Empty<Type>.Array;
+			}
+
+			public override MemberInfo Member
+			{
+				get { return method.IsConstructor ? (MethodBase)new ConstructorInfoImpl(method) : method; }
+			}
+
+			public override int MetadataToken
+			{
+				get { return 0x8000000; }
+			}
+
+			internal override Module Module
+			{
+				get { return method.Module; }
+			}
 		}
 	}
 
