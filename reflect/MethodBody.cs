@@ -79,7 +79,7 @@ namespace IKVM.Reflection
 					}
 					else if ((hdr & CorILMethod_Sect_FatFormat) != 0)
 					{
-						int count = (((hdr >> 8) & 0xFFFFFF) - 4) / 24;
+						int count = ComputeExceptionCount((hdr >> 8) & 0xFFFFFF, 24);
 						for (int i = 0; i < count; i++)
 						{
 							int flags = br.ReadInt32();
@@ -93,7 +93,7 @@ namespace IKVM.Reflection
 					}
 					else
 					{
-						int count = (((hdr >> 8) & 0xFF) - 4) / 12;
+						int count = ComputeExceptionCount((hdr >> 8) & 0xFF, 12);
 						for (int i = 0; i < count; i++)
 						{
 							int flags = br.ReadUInt16();
@@ -118,6 +118,14 @@ namespace IKVM.Reflection
 			}
 			this.exceptionClauses = exceptionClauses.AsReadOnly();
 			this.locals = locals.AsReadOnly();
+		}
+
+		private static int ComputeExceptionCount(int size, int itemLength)
+		{
+			// LAMESPEC according to the spec, the count should be calculated as "(size - 4) / itemLength",
+			// FXBUG but to workaround a VB compiler bug that specifies the size incorrectly,
+			// we do a truncating division instead.
+			return size / itemLength;
 		}
 
 		public IList<ExceptionHandlingClause> ExceptionHandlingClauses
