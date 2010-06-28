@@ -54,7 +54,7 @@ namespace IKVM.Reflection
 					{
 						return ResourceLocation.ContainedInManifestFile | ResourceLocation.Embedded;
 					}
-					throw new NotImplementedException();
+					return 0;
 				}
 				else
 				{
@@ -72,11 +72,19 @@ namespace IKVM.Reflection
 		{
 			get
 			{
-				if (this.ResourceLocation != (ResourceLocation.ContainedInManifestFile | ResourceLocation.Embedded))
+				int implementation = module.ManifestResource.records[index].Implementation;
+				if ((implementation >> 24) == FileTable.Index)
 				{
-					throw new NotImplementedException();
+					if ((implementation & 0xFFFFFF) == 0)
+					{
+						return null;
+					}
+					else
+					{
+						return module.GetString(module.File.records[(implementation & 0xFFFFFF) - 1].Name);
+					}
 				}
-				return null;
+				throw new NotImplementedException();
 			}
 		}
 	}
