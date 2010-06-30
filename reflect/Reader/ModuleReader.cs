@@ -787,6 +787,7 @@ namespace IKVM.Reflection.Reader
 		{
 			if (sig.PeekByte() == Signature.FIELD)
 			{
+				Type org = type;
 				FieldSignature fieldSig = FieldSignature.ReadSig(this, sig, type);
 				do
 				{
@@ -797,9 +798,11 @@ namespace IKVM.Reflection.Reader
 					}
 					type = type.BaseType;
 				} while (type != null);
+				throw new MissingFieldException(org.ToString(), name);
 			}
 			else
 			{
+				Type org = type;
 				MethodSignature methodSig = MethodSignature.ReadSig(this, sig, type);
 				do
 				{
@@ -810,8 +813,8 @@ namespace IKVM.Reflection.Reader
 					}
 					type = type.BaseType;
 				} while (type != null);
+				throw new MissingMethodException(org.ToString(), name);
 			}
-			throw new BadImageFormatException();
 		}
 
 		internal new ByteReader ResolveSignature(int metadataToken)
