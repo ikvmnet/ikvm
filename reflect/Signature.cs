@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Jeroen Frijters
+  Copyright (C) 2009-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -120,31 +120,11 @@ namespace IKVM.Reflection
 
 		internal static Type ReadTypeSpec(ModuleReader module, ByteReader br, IGenericContext context)
 		{
-			CustomModifiers mods;
-			switch (br.ReadByte())
-			{
-				case ELEMENT_TYPE_GENERICINST:
-					return ReadGenericInst(module, br, context);
-				case ELEMENT_TYPE_PTR:
-					mods = ReadCustomModifiers(module, br, context);
-					return ReadTypeOrVoid(module, br, context).__MakePointerType(mods.required, mods.optional);
-				case ELEMENT_TYPE_FNPTR:
-					return ReadFunctionPointer(module, br, context);
-				case ELEMENT_TYPE_ARRAY:
-					// LAMESPEC the Type production (23.2.12) doesn't include CustomMod* for arrays, but the verifier allows it and ildasm also supports it
-					mods = ReadCustomModifiers(module, br, context);
-					return ReadType(module, br, context).__MakeArrayType(ReadArrayShape(br), mods.required, mods.optional);
-				case ELEMENT_TYPE_SZARRAY:
-					mods = ReadCustomModifiers(module, br, context);
-					return ReadType(module, br, context).__MakeArrayType(mods.required, mods.optional);
-				// LAMESPEC??? VAR and MVAR are not in the ECMA spec in the TypeSpec production
-				case ELEMENT_TYPE_VAR:
-					return context.GetGenericTypeArgument(br.ReadCompressedInt());
-				case ELEMENT_TYPE_MVAR:
-					return context.GetGenericMethodArgument(br.ReadCompressedInt());
-				default:
-					throw new BadImageFormatException();
-			}
+			// LAMESPEC a TypeSpec can contain custom modifiers (C++/CLI generates "newarr (TypeSpec with custom modifiers)")
+			SkipCustomModifiers(br);
+			// LAMESPEC anything can be adorned by (useless) custom modifiers
+			// also, VAR and MVAR are also used in TypeSpec (contrary to what the spec says)
+			return ReadType(module, br, context);
 		}
 
 		private static Type ReadFunctionPointer(ModuleReader module, ByteReader br, IGenericContext context)
@@ -284,6 +264,7 @@ namespace IKVM.Reflection
 						br.ReadByte();
 						pinned = true;
 					}
+					SkipCustomModifiers(br);
 					Type type = ReadTypeOrByRef(module, br, context);
 					list.Add(new LocalVariableInfo(i, type, pinned));
 				}
@@ -298,7 +279,8 @@ namespace IKVM.Reflection
 				// LAMESPEC it is allowed (by C++/CLI, ilasm and peverify) to have custom modifiers after the BYREF
 				// (which makes sense, as it is analogous to pointers)
 				CustomModifiers mods = ReadCustomModifiers(module, br, context);
-				return ReadType(module, br, context).__MakeByRefType(mods.required, mods.optional);
+				// C++/CLI generates void& local variables, so we need to use ReadTypeOrVoid here
+				return ReadTypeOrVoid(module, br, context).__MakeByRefType(mods.required, mods.optional);
 			}
 			else
 			{
