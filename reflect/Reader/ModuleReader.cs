@@ -756,14 +756,14 @@ namespace IKVM.Reflection.Reader
 					case MethodDefTable.Index:
 						return GetMethodAt(null, (owner & 0xFFFFFF) - 1);
 					case ModuleRefTable.Index:
-						memberRefs[index] = ResolveTypeMemberRef(ResolveModuleType(owner), name, ByteReader.FromBlob(blobHeap, sig));
+						memberRefs[index] = ResolveTypeMemberRef(ResolveModuleType(owner), name, ByteReader.FromBlob(blobHeap, sig), genericTypeArguments, genericMethodArguments);
 						break;
 					case TypeDefTable.Index:
 					case TypeRefTable.Index:
-						memberRefs[index] = ResolveTypeMemberRef(ResolveType(owner), name, ByteReader.FromBlob(blobHeap, sig));
+						memberRefs[index] = ResolveTypeMemberRef(ResolveType(owner), name, ByteReader.FromBlob(blobHeap, sig), genericTypeArguments, genericMethodArguments);
 						break;
 					case TypeSpecTable.Index:
-						return ResolveTypeMemberRef(ResolveType(owner, genericTypeArguments, genericMethodArguments), name, ByteReader.FromBlob(blobHeap, sig));
+						return ResolveTypeMemberRef(ResolveType(owner, genericTypeArguments, genericMethodArguments), name, ByteReader.FromBlob(blobHeap, sig), genericTypeArguments, genericMethodArguments);
 					default:
 						throw new BadImageFormatException();
 				}
@@ -783,12 +783,21 @@ namespace IKVM.Reflection.Reader
 			return module.GetModuleType();
 		}
 
-		private MemberInfo ResolveTypeMemberRef(Type type, string name, ByteReader sig)
+		private MemberInfo ResolveTypeMemberRef(Type type, string name, ByteReader sig, Type[] genericTypeArguments, Type[] genericMethodArguments)
 		{
+			IGenericContext context;
+			if ((genericTypeArguments == null && genericMethodArguments == null) || type.IsGenericType)
+			{
+				context = type;
+			}
+			else
+			{
+				context = new GenericContext(genericTypeArguments, genericMethodArguments);
+			}
 			if (sig.PeekByte() == Signature.FIELD)
 			{
 				Type org = type;
-				FieldSignature fieldSig = FieldSignature.ReadSig(this, sig, type);
+				FieldSignature fieldSig = FieldSignature.ReadSig(this, sig, context);
 				do
 				{
 					FieldInfo field = type.FindField(name, fieldSig);
@@ -803,7 +812,7 @@ namespace IKVM.Reflection.Reader
 			else
 			{
 				Type org = type;
-				MethodSignature methodSig = MethodSignature.ReadSig(this, sig, type);
+				MethodSignature methodSig = MethodSignature.ReadSig(this, sig, context);
 				do
 				{
 					MethodBase method = type.FindMethod(name, methodSig);
