@@ -86,7 +86,14 @@ namespace IKVM.Reflection.Reader
 			{
 				if (module.FieldRVA.records[i].Field == rid)
 				{
-					module.SeekRVA(module.FieldRVA.records[i].RVA);
+					int rva = module.FieldRVA.records[i].RVA;
+					if (rva == 0)
+					{
+						// C++ assemblies can have fields that have an RVA that is zero
+						Array.Clear(data, offset, length);
+						return;
+					}
+					module.SeekRVA(rva);
 					while (length > 0)
 					{
 						int read = module.stream.Read(data, offset, length);
