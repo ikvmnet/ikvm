@@ -379,7 +379,7 @@ namespace IKVM.Reflection.Reader
 										break;
 									}
 								case ModuleTable.Index:
-									if (scope != 1)
+									if (scope != 0 && scope != 1)
 									{
 										throw new NotImplementedException("self reference scope?");
 									}
