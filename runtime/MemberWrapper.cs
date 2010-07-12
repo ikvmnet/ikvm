@@ -154,13 +154,22 @@ namespace IKVM.Internal
 			{
 				return (IsPublic ||
 					caller == DeclaringType ||
-					(IsProtected && caller.IsSubTypeOf(DeclaringType) && (IsStatic || instance.IsSubTypeOf(caller))) ||
+					IsProtectedFieldAccessible(caller, instance) ||
 					(IsInternal && DeclaringType.InternalsVisibleTo(caller)) ||
 					(!IsPrivate && DeclaringType.IsPackageAccessibleFrom(caller)))
 					// The JVM supports accessing members that have non-public types in their signature from another package,
 					// but the CLI doesn't. It would be nice if we worked around that by emitting extra accessors, but for now
 					// we'll simply disallow such access across assemblies (unless the appropriate InternalsVisibleToAttribute exists).
 					&& ((flags & MemberFlags.NonPublicTypeInSignature) == 0 || InPracticeInternalsVisibleTo(caller));
+			}
+			return false;
+		}
+
+		private bool IsProtectedFieldAccessible(TypeWrapper caller, TypeWrapper instance)
+		{
+			if (IsProtected && caller.IsSubTypeOf(DeclaringType) && (IsStatic || instance.IsSubTypeOf(caller)))
+			{
+				return DeclaringType.IsPublic || DeclaringType.InternalsVisibleTo(caller);
 			}
 			return false;
 		}
