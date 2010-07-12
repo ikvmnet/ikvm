@@ -1434,6 +1434,7 @@ class MethodAnalyzer
 								s.PushDouble();
 								break;
 							case NormalizedByteCode.__dastore:
+							case NormalizedByteCode.__dastore_conv:
 								s.PopDouble();
 								s.PopInt();
 								s.PopObjectType(DoubleArrayType);
@@ -1444,6 +1445,7 @@ class MethodAnalyzer
 								s.PushFloat();
 								break;
 							case NormalizedByteCode.__fastore:
+							case NormalizedByteCode.__fastore_conv:
 								s.PopFloat();
 								s.PopInt();
 								s.PopObjectType(FloatArrayType);
@@ -1623,6 +1625,7 @@ class MethodAnalyzer
 								}
 								break;
 							}
+							case NormalizedByteCode.__clone_array:
 							case NormalizedByteCode.__invokevirtual:
 							case NormalizedByteCode.__invokespecial:
 							case NormalizedByteCode.__invokeinterface:
@@ -2051,6 +2054,7 @@ class MethodAnalyzer
 								s.PushFloat();
 								break;
 							case NormalizedByteCode.__fstore:
+							case NormalizedByteCode.__fstore_conv:
 								s.PopFloat();
 								s.SetLocalFloat(instr.NormalizedArg1, i);
 								break;
@@ -2059,6 +2063,7 @@ class MethodAnalyzer
 								s.PushDouble();
 								break;
 							case NormalizedByteCode.__dstore:
+							case NormalizedByteCode.__dstore_conv:
 								s.PopDouble();
 								s.SetLocalDouble(instr.NormalizedArg1, i);
 								break;
@@ -2191,6 +2196,8 @@ class MethodAnalyzer
 									throw new VerifyError("Falling off the end of the code");
 								}
 								break;
+							case NormalizedByteCode.__static_error:
+								break;
 							default:
 								throw new NotImplementedException(instr.NormalizedOpCode.ToString());
 						}
@@ -2240,6 +2247,7 @@ class MethodAnalyzer
 								case NormalizedByteCode.__areturn:
 								case NormalizedByteCode.__return:
 								case NormalizedByteCode.__athrow:
+								case NormalizedByteCode.__static_error:
 									break;
 								default:
 									state[i + 1] += s;
