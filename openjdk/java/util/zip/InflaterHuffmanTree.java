@@ -40,14 +40,14 @@ package java.util.zip;
 class InflaterHuffmanTree
 {
   private static final int MAX_BITLEN = 15;
-  
+
   private short[] tree;
 
   static InflaterHuffmanTree defLitLenTree, defDistTree;
 
   static
   {
-    try 
+    try
       {
         byte[] codeLengths = new byte[288];
         int i = 0;
@@ -60,13 +60,13 @@ class InflaterHuffmanTree
         while (i < 288)
           codeLengths[i++] = 8;
         defLitLenTree = new InflaterHuffmanTree(codeLengths);
-        
+
         codeLengths = new byte[32];
         i = 0;
         while (i < 32)
           codeLengths[i++] = 5;
         defDistTree = new InflaterHuffmanTree(codeLengths);
-      } 
+      }
     catch (DataFormatException ex)
       {
         throw new InternalError
@@ -83,7 +83,7 @@ class InflaterHuffmanTree
   {
     buildTree(codeLengths);
   }
-  
+
   private void buildTree(byte[] codeLengths) throws DataFormatException
   {
     int[] blCount = new int[MAX_BITLEN+1];
@@ -132,7 +132,7 @@ class InflaterHuffmanTree
             treePtr += 1 << (bits-9);
           }
       }
-    
+
     for (int i = 0; i < codeLengths.length; i++)
       {
         int bits = codeLengths[i];
@@ -155,7 +155,7 @@ class InflaterHuffmanTree
             int treeLen = 1 << (subTree & 15);
             subTree = -(subTree >> 4);
             do
-              { 
+              {
                 tree[subTree | (revcode >> 9)] = (short) ((i << 4) | bits);
                 revcode += 1 << bits;
               }
