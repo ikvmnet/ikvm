@@ -329,7 +329,11 @@ class IkvmcCompiler
 		Console.Error.WriteLine("    -privatepackage:<prefix>   Mark all classes with a package name starting");
 		Console.Error.WriteLine("                               with <prefix> as internal to the assembly");
 		Console.Error.WriteLine("    -nowarn:<warning[:key]>    Suppress specified warnings");
-		Console.Error.WriteLine("    -warnaserror:<warning[:key]>  Treat specified warnings as errors");
+		Console.Error.WriteLine("    -warnaserror:<warning[:key]>");
+		Console.Error.WriteLine("                               Treat specified warnings as errors");
+		Console.Error.WriteLine("    -writeSuppressWarningsFile:<file>");
+		Console.Error.WriteLine("                               Write response file with -nowarn:<warning[:key]>");
+		Console.Error.WriteLine("                               options to suppress all encountered warnings");
 		Console.Error.WriteLine("    -time                      Display timing statistics");
 		Console.Error.WriteLine("    -classloader:<class>       Set custom class loader class for assembly");
 		Console.Error.WriteLine("    -sharedclassloader         All targets below this level share a common");
@@ -755,6 +759,19 @@ class IkvmcCompiler
 				else if(s == "-noautoserialization")
 				{
 					options.codegenoptions |= CodeGenOptions.NoAutomagicSerialization;
+				}
+				else if(s.StartsWith("-writeSuppressWarningsFile:"))
+				{
+					options.writeSuppressWarningsFile = s.Substring(27);
+					try
+					{
+						File.Delete(options.writeSuppressWarningsFile);
+					}
+					catch(Exception x)
+					{
+						Console.Error.WriteLine("Error: invalid option: {0}{1}\t({2})", s, Environment.NewLine, x.Message);
+						return 1;
+					}
 				}
 				else
 				{

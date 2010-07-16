@@ -3148,6 +3148,7 @@ namespace IKVM.Internal
 		internal List<CompilerClassLoader> sharedclassloader; // should *not* be deep copied in Copy(), because we want the list of all compilers that share a class loader
 		internal Dictionary<string, string> suppressWarnings = new Dictionary<string, string>();
 		internal Dictionary<string, string> errorWarnings = new Dictionary<string, string>();
+		internal string writeSuppressWarningsFile;
 
 		internal CompilerOptions Copy()
 		{
@@ -3284,6 +3285,10 @@ namespace IKVM.Internal
 				return;
 			}
 			options.suppressWarnings.Add(key, key);
+			if(options.writeSuppressWarningsFile != null)
+			{
+				File.AppendAllText(options.writeSuppressWarningsFile, "-nowarn:" + key + Environment.NewLine);
+			}
 			string msg;
 			switch(msgId)
 			{
