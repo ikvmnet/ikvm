@@ -48,30 +48,48 @@ class IkvmcCompiler
 	private static readonly List<string> libpaths = new List<string>();
 	private static readonly AssemblyResolver resolver = new AssemblyResolver();
 
+	private static void AddArg(List<string> arglist, string s, int depth)
+	{
+		if (s.StartsWith("@"))
+		{
+			if (depth++ > 16)
+			{
+				Console.Error.WriteLine("Error: response file nesting depth exceeded");
+				Environment.Exit(1);
+			}
+			try
+			{
+				using (StreamReader sr = new StreamReader(s.Substring(1)))
+				{
+					string line;
+					while ((line = sr.ReadLine()) != null)
+					{
+						string arg = line.Trim();
+						if (arg != "")
+						{
+							AddArg(arglist, arg, depth);
+						}
+					}
+				}
+			}
+			catch (Exception x)
+			{
+				Console.Error.WriteLine("Error: unable to read response file: {0}{1}\t({2})", s.Substring(1), Environment.NewLine, x.Message);
+				Environment.Exit(1);
+			}
+		}
+		else
+		{
+			arglist.Add(s);
+		}
+	}
+
 	private static List<string> GetArgs(string[] args)
 	{
 		List<string> arglist = new List<string>();
 		foreach(string s in args)
 		{
-			if(s.StartsWith("@"))
-			{
-				using(StreamReader sr = new StreamReader(s.Substring(1)))
-				{
-					string line;
-					while((line = sr.ReadLine()) != null)
-					{
-						string arg = line.Trim();
-						if (arg != "")
-						{
-							arglist.Add(arg);
-						}
-					}
-				}
-			}
-			else
-			{
-				arglist.Add(s);
-			}
+			AddArg(arglist, s, 0);
 		}
 		return arglist;
 	}
