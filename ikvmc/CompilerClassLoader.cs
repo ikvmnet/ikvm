@@ -282,7 +282,7 @@ namespace IKVM.Internal
 					}
 					catch(ClassFormatError x)
 					{
-						StaticCompiler.IssueMessage(Message.ClassFormatError, name, x.Message);
+						StaticCompiler.IssueMessage(options, Message.ClassFormatError, name, x.Message);
 						return null;
 					}
 					if(options.removeUnusedFields)
@@ -336,27 +336,27 @@ namespace IKVM.Internal
 					}
 					catch (ClassFormatError x)
 					{
-						StaticCompiler.IssueMessage(Message.ClassFormatError, name, x.Message);
+						StaticCompiler.IssueMessage(options, Message.ClassFormatError, name, x.Message);
 						return null;
 					}
 					catch (IllegalAccessError x)
 					{
-						StaticCompiler.IssueMessage(Message.IllegalAccessError, name, x.Message);
+						StaticCompiler.IssueMessage(options, Message.IllegalAccessError, name, x.Message);
 						return null;
 					}
 					catch (VerifyError x)
 					{
-						StaticCompiler.IssueMessage(Message.VerificationError, name, x.Message);
+						StaticCompiler.IssueMessage(options, Message.VerificationError, name, x.Message);
 						return null;
 					}
 					catch (NoClassDefFoundError x)
 					{
-						StaticCompiler.IssueMessage(Message.NoClassDefFoundError, name, x.Message);
+						StaticCompiler.IssueMessage(options, Message.NoClassDefFoundError, name, x.Message);
 						return null;
 					}
 					catch (RetargetableJavaException x)
 					{
-						StaticCompiler.IssueMessage(Message.GenericUnableToCompileError, name, x.GetType().Name, x.Message);
+						StaticCompiler.IssueMessage(options, Message.GenericUnableToCompileError, name, x.GetType().Name, x.Message);
 						return null;
 					}
 				}
@@ -2836,7 +2836,7 @@ namespace IKVM.Internal
 					{
 						if(!(loader is GenericClassLoader || loader is CompilerClassLoader || (importedStubTypes.ContainsKey(s) && importedStubTypes[s] == wrapper)))
 						{
-							StaticCompiler.IssueMessage(Message.SkippingReferencedClass, s, ((AssemblyClassLoader)loader).GetAssembly(wrapper).FullName);
+							StaticCompiler.IssueMessage(options, Message.SkippingReferencedClass, s, ((AssemblyClassLoader)loader).GetAssembly(wrapper).FullName);
 						}
 						continue;
 					}
@@ -3146,6 +3146,8 @@ namespace IKVM.Internal
 		internal ImageFileMachine imageFileMachine = ImageFileMachine.I386;
 		internal long baseAddress;
 		internal List<CompilerClassLoader> sharedclassloader; // should *not* be deep copied in Copy(), because we want the list of all compilers that share a class loader
+		internal Dictionary<string, string> suppressWarnings = new Dictionary<string, string>();
+		internal Dictionary<string, string> errorWarnings = new Dictionary<string, string>();
 
 		internal CompilerOptions Copy()
 		{
@@ -3166,6 +3168,8 @@ namespace IKVM.Internal
 			{
 				copy.externalResources = new Dictionary<string, string>(externalResources);
 			}
+			copy.suppressWarnings = new Dictionary<string, string>(suppressWarnings);
+			copy.errorWarnings = new Dictionary<string, string>(errorWarnings);
 			return copy;
 		}
 	}
@@ -3215,6 +3219,7 @@ namespace IKVM.Internal
 		internal static readonly Universe Universe = new Universe();
 		internal static Assembly runtimeAssembly;
 		internal static Assembly runtimeJniAssembly;
+		internal static CompilerOptions toplevel;
 
 		internal static Assembly Load(string assemblyString)
 		{
@@ -3259,20 +3264,12 @@ namespace IKVM.Internal
 			return type;
 		}
 
-		private static Dictionary<string, string> suppressWarnings = new Dictionary<string, string>();
-		private static Dictionary<string, string> errorWarnings = new Dictionary<string, string>();
-
-		internal static void SuppressWarning(string key)
-		{
-			suppressWarnings[key] = key;
-		}
-
-		internal static void WarnAsError(string key)
-		{
-			errorWarnings[key] = key;
-		}
-
 		internal static void IssueMessage(Message msgId, params string[] values)
+		{
+			IssueMessage(toplevel, msgId, values);
+		}
+
+		internal static void IssueMessage(CompilerOptions options, Message msgId, params string[] values)
 		{
 			StringBuilder sb = new StringBuilder();
 			sb.Append((int)msgId);
@@ -3281,12 +3278,12 @@ namespace IKVM.Internal
 				sb.Append(':').Append(values[0]);
 			}
 			string key = sb.ToString();
-			if(suppressWarnings.ContainsKey(key)
-				|| suppressWarnings.ContainsKey(((int)msgId).ToString()))
+			if(options.suppressWarnings.ContainsKey(key)
+				|| options.suppressWarnings.ContainsKey(((int)msgId).ToString()))
 			{
 				return;
 			}
-			suppressWarnings.Add(key, key);
+			options.suppressWarnings.Add(key, key);
 			string msg;
 			switch(msgId)
 			{
@@ -3411,8 +3408,8 @@ namespace IKVM.Internal
 				default:
 					throw new InvalidProgramException();
 			}
-			if(errorWarnings.ContainsKey(key)
-				|| errorWarnings.ContainsKey(((int)msgId).ToString()))
+			if(options.errorWarnings.ContainsKey(key)
+				|| options.errorWarnings.ContainsKey(((int)msgId).ToString()))
 			{
 				Console.Error.Write("{0} IKVMC{1:D4}: ", "Error", (int)msgId);
 				Console.Error.WriteLine(msg, values);
@@ -3420,6 +3417,10 @@ namespace IKVM.Internal
 			}
 			Console.Error.Write("{0} IKVMC{1:D4}: ", msgId < Message.StartWarnings ? "Note" : "Warning", (int)msgId);
 			Console.Error.WriteLine(msg, values);
+			if(options != toplevel && options.path != null)
+			{
+				Console.Error.WriteLine("    (in {0})", options.path);
+			}
 		}
 
 		internal static void LinkageError(string msg, TypeWrapper actualType, TypeWrapper expectedType, params object[] values)

@@ -1379,7 +1379,7 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 			catch(ClassNotFoundException x)
 			{
-				StaticCompiler.IssueMessage(Message.ClassNotFound, x.Message);
+				loader.IssueMessage(Message.ClassNotFound, x.Message);
 				return null;
 			}
 #endif
@@ -3072,18 +3072,6 @@ namespace IKVM.Internal
 		internal UnloadableTypeWrapper(string name)
 			: base(TypeWrapper.UnloadableModifiersHack, name, null)
 		{
-#if STATIC_COMPILER
-			if(name != "<verifier>")
-			{
-				if(name.StartsWith("["))
-				{
-					int skip = 1;
-					while(name[skip++] == '[');
-					name = name.Substring(skip, name.Length - skip - 1);
-				}
-				StaticCompiler.IssueMessage(Message.ClassNotFound, name);
-			}
-#endif
 		}
 
 		internal override ClassLoaderWrapper GetClassLoader()

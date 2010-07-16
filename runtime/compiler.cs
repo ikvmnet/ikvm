@@ -586,7 +586,7 @@ sealed class Compiler
 		catch(VerifyError x)
 		{
 #if STATIC_COMPILER
-			StaticCompiler.IssueMessage(Message.EmittedVerificationError, classFile.Name + "." + m.Name + m.Signature, x.Message);
+			classLoader.IssueMessage(Message.EmittedVerificationError, classFile.Name + "." + m.Name + m.Signature, x.Message);
 #endif
 			Tracer.Error(Tracer.Verifier, x.ToString());
 			clazz.HasVerifyError = true;
@@ -598,7 +598,7 @@ sealed class Compiler
 		catch(ClassFormatError x)
 		{
 #if STATIC_COMPILER
-			StaticCompiler.IssueMessage(Message.EmittedClassFormatError, classFile.Name + "." + m.Name + m.Signature, x.Message);
+			classLoader.IssueMessage(Message.EmittedClassFormatError, classFile.Name + "." + m.Name + m.Signature, x.Message);
 #endif
 			Tracer.Error(Tracer.Verifier, x.ToString());
 			clazz.HasClassFormatError = true;

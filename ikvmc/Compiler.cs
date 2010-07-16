@@ -109,6 +109,7 @@ class IkvmcCompiler
 		IkvmcCompiler comp = new IkvmcCompiler();
 		List<CompilerOptions> targets = new List<CompilerOptions>();
 		CompilerOptions toplevel = new CompilerOptions();
+		StaticCompiler.toplevel = toplevel;
 		int rc = comp.ParseCommandLine(argList.GetEnumerator(), targets, toplevel);
 		if (rc == 0)
 		{
@@ -686,7 +687,7 @@ class IkvmcCompiler
 						{
 							ws = ws.Substring(1);
 						}
-						StaticCompiler.SuppressWarning(ws);
+						options.suppressWarnings[ws] = ws;
 					}
 				}
 				else if(s.StartsWith("-warnaserror:"))
@@ -699,7 +700,7 @@ class IkvmcCompiler
 						{
 							ws = ws.Substring(1);
 						}
-						StaticCompiler.WarnAsError(ws);
+						options.errorWarnings[ws] = ws;
 					}
 				}
 				else if(s.StartsWith("-runtime:"))
@@ -833,7 +834,7 @@ class IkvmcCompiler
 		}
 		if(options.mainClass == null && manifestMainClass != null && (options.guessFileKind || options.target != PEFileKinds.Dll))
 		{
-			StaticCompiler.IssueMessage(Message.MainMethodFromManifest, manifestMainClass);
+			StaticCompiler.IssueMessage(options, Message.MainMethodFromManifest, manifestMainClass);
 			options.mainClass = manifestMainClass;
 		}
 		options.classes = classes;

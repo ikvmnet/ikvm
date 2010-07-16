@@ -1246,7 +1246,18 @@ namespace IKVM.Internal
 				TypeWrapper wrapper = classLoader.LoadClassByDottedNameFast(name);
 				if (wrapper == null)
 				{
-					Tracer.Error(Tracer.ClassLoading, "Class not found: {0}", name);
+					string elementTypeName = name;
+					if (elementTypeName.StartsWith("["))
+					{
+						int skip = 1;
+						while (elementTypeName[skip++] == '[') ;
+						elementTypeName = elementTypeName.Substring(skip, elementTypeName.Length - skip - 1);
+					}
+#if STATIC_COMPILER
+					classLoader.IssueMessage(Message.ClassNotFound, elementTypeName);
+#else
+					Tracer.Error(Tracer.ClassLoading, "Class not found: {0}", elementTypeName);
+#endif
 					wrapper = new UnloadableTypeWrapper(name);
 				}
 				return wrapper;
@@ -1278,6 +1289,15 @@ namespace IKVM.Internal
 				return new UnloadableTypeWrapper(name);
 			}
 		}
+
+#if STATIC_COMPILER
+		internal virtual void IssueMessage(Message msgId, params string[] values)
+		{
+			// only code that is compiled (by the static compiler) can generate warnings
+			// (so that must mean an instance of CompilerClassLoader, which overrides this method.)
+			throw new InvalidOperationException();
+		}
+#endif
 	}
 
 	class GenericClassLoader : ClassLoaderWrapper

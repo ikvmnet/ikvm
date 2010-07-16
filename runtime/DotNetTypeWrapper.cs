@@ -1436,7 +1436,7 @@ namespace IKVM.Internal
 						// we have to handle this explicitly, because if we apply an illegal StructLayoutAttribute,
 						// TypeBuilder.CreateType() will later on throw an exception.
 #if STATIC_COMPILER
-						StaticCompiler.IssueMessage(Message.IgnoredCustomAttribute, type.FullName, "Type '" + tb.FullName + "' does not extend cli.System.Object");
+						loader.IssueMessage(Message.IgnoredCustomAttribute, type.FullName, "Type '" + tb.FullName + "' does not extend cli.System.Object");
 #else
 						Tracer.Error(Tracer.Runtime, "StructLayoutAttribute cannot be applied to {0}, because it does not directly extend cli.System.Object", tb.FullName);
 #endif
@@ -1559,7 +1559,7 @@ namespace IKVM.Internal
 						}
 						else
 						{
-							StaticCompiler.IssueMessage(Message.InvalidCustomAttribute, type.FullName, "The version '" + str + "' is invalid.");
+							loader.IssueMessage(Message.InvalidCustomAttribute, type.FullName, "The version '" + str + "' is invalid.");
 						}
 					}
 					else if (type == JVM.Import(typeof(System.Reflection.AssemblyCultureAttribute)))
@@ -1574,7 +1574,7 @@ namespace IKVM.Internal
 						|| type == JVM.Import(typeof(System.Reflection.AssemblyKeyFileAttribute))
 						|| type == JVM.Import(typeof(System.Reflection.AssemblyKeyNameAttribute)))
 					{
-						StaticCompiler.IssueMessage(Message.IgnoredCustomAttribute, type.FullName, "Please use the corresponding compiler switch.");
+						loader.IssueMessage(Message.IgnoredCustomAttribute, type.FullName, "Please use the corresponding compiler switch.");
 					}
 					else if (type == JVM.Import(typeof(System.Reflection.AssemblyAlgorithmIdAttribute)))
 					{
