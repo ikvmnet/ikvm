@@ -65,7 +65,7 @@ class IkvmcCompiler
 					while ((line = sr.ReadLine()) != null)
 					{
 						string arg = line.Trim();
-						if (arg != "")
+						if (arg != "" && !arg.StartsWith("#"))
 						{
 							AddArg(arglist, arg, depth);
 						}
