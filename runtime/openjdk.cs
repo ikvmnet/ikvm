@@ -6929,6 +6929,7 @@ namespace IKVM.NativeCode.sun.reflect
 					{
 						ilgen.BeginExceptionBlock();
 						ilgen.Emit(OpCodes.Ldarg_2);
+						fw.FieldTypeWrapper.EmitCheckcast(null, ilgen);
 						fw.FieldTypeWrapper.EmitConvStackTypeToSignatureType(ilgen, null);
 						fw.EmitSet(ilgen);
 						ilgen.BeginCatchBlock(typeof(InvalidCastException));
@@ -6950,6 +6951,10 @@ namespace IKVM.NativeCode.sun.reflect
 					ilgen.Emit(OpCodes.Ldarg_1);
 					ilgen.Emit(OpCodes.Castclass, fw.DeclaringType.TypeAsBaseType);
 					ilgen.Emit(OpCodes.Ldarg_2);
+					if (fieldType == typeof(object))
+					{
+						fw.FieldTypeWrapper.EmitCheckcast(null, ilgen);
+					}
 					fw.FieldTypeWrapper.EmitConvStackTypeToSignatureType(ilgen, null);
 					fw.EmitSet(ilgen);
 					ilgen.BeginCatchBlock(typeof(InvalidCastException));
