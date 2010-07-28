@@ -540,7 +540,7 @@ namespace IKVM.Internal
 		internal static bool IsHideFromJava(Type type)
 		{
 			return type.IsDefined(typeofHideFromJavaAttribute, false)
-				|| (type.IsNested && type.Name.StartsWith("__<", StringComparison.Ordinal));
+				|| (type.IsNested && (type.DeclaringType.IsDefined(typeofHideFromJavaAttribute, false) || type.Name.StartsWith("__<", StringComparison.Ordinal)));
 		}
 
 		internal static bool IsHideFromJava(MemberInfo mi)
