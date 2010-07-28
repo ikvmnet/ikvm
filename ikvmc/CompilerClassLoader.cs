@@ -3106,6 +3106,11 @@ namespace IKVM.Internal
 			}
 			return null;
 		}
+
+		internal override void IssueMessage(Message msgId, params string[] values)
+		{
+			StaticCompiler.IssueMessage(options, msgId, values);
+		}
 	}
 
 	class CompilerOptions
