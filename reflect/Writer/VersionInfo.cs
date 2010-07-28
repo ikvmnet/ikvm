@@ -118,19 +118,19 @@ namespace IKVM.Reflection.Writer
 				lcid = new CultureInfo(culture).LCID;
 			}
 
-			Version filever = new Version(fileVersion);
+			Version filever = ParseVersionRobust(fileVersion);
 			int fileVersionMajor = filever.Major;
 			int fileVersionMinor = filever.Minor;
 			int fileVersionBuild = filever.Build;
 			int fileVersionRevision = filever.Revision;
 
-			int productVersionMajor = 0;
-			int productVersionMinor = 0;
-			int productVersionBuild = 0;
-			int productVersionRevision = 0;
+			int productVersionMajor = fileVersionMajor;
+			int productVersionMinor = fileVersionMinor;
+			int productVersionBuild = fileVersionBuild;
+			int productVersionRevision = fileVersionRevision;
 			if (informationalVersion != null)
 			{
-				Version productver = new Version(informationalVersion);
+				Version productver = ParseVersionRobust(informationalVersion);
 				productVersionMajor = productver.Major;
 				productVersionMinor = productver.Minor;
 				productVersionBuild = productver.Build;
@@ -240,6 +240,41 @@ namespace IKVM.Reflection.Writer
 			bb.Position = pos;
 			bb.Write((short)(savedPos - pos));
 			bb.Position = savedPos;
+		}
+
+		private static Version ParseVersionRobust(string ver)
+		{
+			int index = 0;
+			ushort major = ParseVersionPart(ver, ref index);
+			ushort minor = ParseVersionPart(ver, ref index);
+			ushort build = ParseVersionPart(ver, ref index);
+			ushort revision = ParseVersionPart(ver, ref index);
+			return new Version(major, minor, build, revision);
+		}
+
+		private static ushort ParseVersionPart(string str, ref int pos)
+		{
+			ushort value = 0;
+			while (pos < str.Length)
+			{
+				char c = str[pos];
+				if (c == '.')
+				{
+					pos++;
+					break;
+				}
+				else if (c >= '0' && c <= '9')
+				{
+					value *= 10;
+					value += (ushort)(c - '0');
+					pos++;
+				}
+				else
+				{
+					break;
+				}
+			}
+			return value;
 		}
 	}
 }
