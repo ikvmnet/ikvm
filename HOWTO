@@ -1,14 +1,17 @@
 IKVM Build Instructions
 -----------------------
 
-This IKVM source bundle requires OpenJDK 6 b16 sources (and build artifacts).
+This IKVM source bundle requires OpenJDK 6 b18 sources (and build artifacts).
 
 They can be downloaded from the SourceForge IKVM project, or from:
 
-http://www.frijters.net/openjdk6-b16-stripped.zip
+http://www.frijters.net/openjdk6-b18-stripped.zip
 
 This file hould be unzipped in the same directory as where the ikvm directory
 (that contains this unzipped source bundle) lives.
+
+Download ICSharpCode.SharpZipLib.dll (from http://www.icsharpcode.net/opensource/sharpziplib/
+or from the ikvmbin-x.y.z.r.zip in the SourceForge IKVM project) and copy it to ikvm/bin.
 
 Open a Visual Studio 2008 Command Prompt (i.e. one that has the Windows and .NET Framework SDK
 environment variables set).
@@ -23,11 +26,11 @@ You now should have the built binaries in ikvm/bin.
 Additional Information
 ----------------------
 
-IKVM.Runtime.dll and IKVM.OpenJDK.ClassLibrary.dll mutually depend on eachother. This is
-accomplished by building IKVM.Runtime.dll in two passes. The first pass defines the methods
-and types that IKVM.OpenJDK.ClassLibrary.dll uses, but generally with an empty method body
-(look for #if FIRST_PASS in the IKVM.Runtime.dll sources). The second pass is built after
-IKVM.OpenJDK.ClassLibrary.dll has been built.
+IKVM.Runtime.dll and the various IKVM.OpenJDK.*.dll assemblies mutually depend on each other.
+This is accomplished by building IKVM.Runtime.dll in two passes. The first pass defines the
+methods and types that the IKVM.OpenJDK.*.dll assemblies use, but generally with an empty
+method body (look for #if FIRST_PASS in the IKVM.Runtime.dll sources). The second pass is
+built after the IKVM.OpenJDK.*.dll assemblies have been built.
 
 The version numbers of the build is defined in ikvm/CommonAssemblyInfo.cs.
 
