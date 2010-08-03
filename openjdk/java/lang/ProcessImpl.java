@@ -179,8 +179,12 @@ final class ProcessImpl extends Process {
     {
         try
         {
+            if (false) throw new cli.System.ComponentModel.Win32Exception();
             if (false) throw new cli.System.InvalidOperationException();
             proc.Kill();
+        }
+        catch (cli.System.ComponentModel.Win32Exception x)
+        {
         }
         catch (cli.System.InvalidOperationException x)
         {
