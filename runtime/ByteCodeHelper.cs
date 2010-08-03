@@ -183,7 +183,7 @@ namespace IKVM.Runtime
 			return ((Array)arrayref).GetValue(index);
 		}
 
-		private static FieldWrapper GetFieldWrapper(TypeWrapper thisType, RuntimeTypeHandle type, string clazz, string name, string sig, bool isStatic)
+		private static FieldWrapper GetFieldWrapper(object thisObj, RuntimeTypeHandle type, string clazz, string name, string sig, bool isStatic)
 		{
 			TypeWrapper caller = ClassLoaderWrapper.GetWrapperFromType(Type.GetTypeFromHandle(type));
 			TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
@@ -197,7 +197,12 @@ namespace IKVM.Runtime
 			{
 				throw new java.lang.IncompatibleClassChangeError(clazz + "." + name);
 			}
-			if(field.IsAccessibleFrom(wrapper, caller, thisType))
+			TypeWrapper objType = null;
+			if(thisObj != null)
+			{
+				objType = ClassLoaderWrapper.GetWrapperFromType(thisObj.GetType());
+			}
+			if(field.IsAccessibleFrom(wrapper, caller, objType))
 			{
 				return field;
 			}
@@ -208,7 +213,7 @@ namespace IKVM.Runtime
 		public static object DynamicGetfield(object obj, string name, string sig, RuntimeTypeHandle type, string clazz, ikvm.@internal.CallerID callerID)
 		{
 			Profiler.Count("DynamicGetfield");
-			FieldWrapper fw = GetFieldWrapper(ClassLoaderWrapper.GetWrapperFromType(obj.GetType()), type, clazz, name, sig, false);
+			FieldWrapper fw = GetFieldWrapper(obj, type, clazz, name, sig, false);
 			java.lang.reflect.Field field = (java.lang.reflect.Field)fw.ToField(false);
 			object val = field.get(obj, callerID);
 			if(fw.FieldTypeWrapper.IsPrimitive)
@@ -236,7 +241,7 @@ namespace IKVM.Runtime
 		public static void DynamicPutfield(object obj, object val, string name, string sig, RuntimeTypeHandle type, string clazz, ikvm.@internal.CallerID callerID)
 		{
 			Profiler.Count("DynamicPutfield");
-			FieldWrapper fw = GetFieldWrapper(ClassLoaderWrapper.GetWrapperFromType(obj.GetType()), type, clazz, name, sig, false);
+			FieldWrapper fw = GetFieldWrapper(obj, type, clazz, name, sig, false);
 			if(fw.IsFinal)
 			{
 				throw new java.lang.IllegalAccessError("Field " + fw.DeclaringType.Name + "." + fw.Name + " is final");
@@ -336,7 +341,7 @@ namespace IKVM.Runtime
 			return wrapper.IsInstance(obj);
 		}
 
-		private static MethodWrapper GetMethodWrapper(TypeWrapper thisType, RuntimeTypeHandle type, string clazz, string name, string sig, bool isStatic)
+		private static MethodWrapper GetMethodWrapper(object thisObj, RuntimeTypeHandle type, string clazz, string name, string sig, bool isStatic)
 		{
 			TypeWrapper caller = ClassLoaderWrapper.GetWrapperFromType(Type.GetTypeFromHandle(type));
 			TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
@@ -350,7 +355,12 @@ namespace IKVM.Runtime
 			{
 				throw new java.lang.IncompatibleClassChangeError(clazz + "." + name);
 			}
-			if(mw.IsAccessibleFrom(wrapper, caller, thisType))
+			TypeWrapper objType = null;
+			if(thisObj != null)
+			{
+				objType = ClassLoaderWrapper.GetWrapperFromType(thisObj.GetType());
+			}
+			if(mw.IsAccessibleFrom(wrapper, caller, objType))
 			{
 				return mw;
 			}
@@ -384,7 +394,7 @@ namespace IKVM.Runtime
 		public static object DynamicInvokevirtual(object obj, RuntimeTypeHandle type, string clazz, string name, string sig, object[] args, ikvm.@internal.CallerID callerID)
 		{
 			Profiler.Count("DynamicInvokevirtual");
-			MethodWrapper mw = GetMethodWrapper(ClassLoaderWrapper.GetWrapperFromType(obj.GetType()), type, clazz, name, sig, false);
+			MethodWrapper mw = GetMethodWrapper(obj, type, clazz, name, sig, false);
 			java.lang.reflect.Method m = (java.lang.reflect.Method)mw.ToMethodOrConstructor(false);
 			object val = m.invoke(obj, BoxArgs(mw, args), callerID);
 			if (mw.ReturnType.IsPrimitive && mw.ReturnType != PrimitiveTypeWrapper.VOID)
