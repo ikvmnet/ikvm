@@ -6473,6 +6473,12 @@ namespace IKVM.NativeCode.sun.reflect
 						{
 							obj = null;
 						}
+						else if (obj == null)
+						{
+#if !FIRST_PASS
+							throw new global::java.lang.NullPointerException();
+#endif
+						}
 						else if (!fw.DeclaringType.IsInstance(obj))
 						{
 							throw GetIllegalArgumentException(obj);
@@ -6509,6 +6515,12 @@ namespace IKVM.NativeCode.sun.reflect
 						if (fw.IsStatic)
 						{
 							obj = null;
+						}
+						else if (obj == null)
+						{
+#if !FIRST_PASS
+							throw new global::java.lang.NullPointerException();
+#endif
 						}
 						else if (!fw.DeclaringType.IsInstance(obj))
 						{
