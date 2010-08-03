@@ -1040,7 +1040,9 @@ namespace IKVM.NativeCode.java
 					System.IO.FileInfo fi = new System.IO.FileInfo(path);
 					if (fi.DirectoryName == null)
 					{
-						return path.Length > 1 && path[1] == ':' ? path.ToUpper() : path;
+						return path.Length > 1 && path[1] == ':'
+							? (Char.ToUpper(path[0]) + ":" + System.IO.Path.DirectorySeparatorChar)
+							: path;
 					}
 					string dir = CanonicalizePath(fi.DirectoryName);
 					string name = fi.Name;
