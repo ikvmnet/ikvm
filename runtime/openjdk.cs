@@ -3655,6 +3655,10 @@ namespace IKVM.NativeCode.java
 				{
 					return System.Net.Dns.GetHostEntry(new System.Net.IPAddress(addr)).HostName;
 				}
+				catch (System.ArgumentException x)
+				{
+					throw new jnUnknownHostException(x.Message);
+				}
 				catch (System.Net.Sockets.SocketException x)
 				{
 					throw new jnUnknownHostException(x.Message);
