@@ -1486,6 +1486,7 @@ class MethodAnalyzer
 								s.PopObjectType();
 								break;
 							case NormalizedByteCode.__getstatic:
+							case NormalizedByteCode.__dynamic_getstatic:
 								// special support for when we're being called from IsSideEffectFreeStaticInitializer
 								if(mw == null)
 								{
@@ -1528,6 +1529,7 @@ class MethodAnalyzer
 								}
 								break;
 							case NormalizedByteCode.__putstatic:
+							case NormalizedByteCode.__dynamic_putstatic:
 								// special support for when we're being called from IsSideEffectFreeStaticInitializer
 								if(mw == null)
 								{
@@ -1566,6 +1568,7 @@ class MethodAnalyzer
 								}
 								break;
 							case NormalizedByteCode.__getfield:
+							case NormalizedByteCode.__dynamic_getfield:
 							{
 								s.PopObjectType(GetFieldref(instr.Arg1).GetClassType());
 								ClassFile.ConstantPoolItemFieldref cpi = GetFieldref(instr.Arg1);
@@ -1580,6 +1583,7 @@ class MethodAnalyzer
 								break;
 							}
 							case NormalizedByteCode.__putfield:
+							case NormalizedByteCode.__dynamic_putfield:
 								s.PopType(GetFieldref(instr.Arg1).GetFieldType());
 								// putfield is allowed to access the unintialized this
 								if(s.PeekType() == VerifierTypeWrapper.UninitializedThis
@@ -1630,10 +1634,15 @@ class MethodAnalyzer
 							case NormalizedByteCode.__invokespecial:
 							case NormalizedByteCode.__invokeinterface:
 							case NormalizedByteCode.__invokestatic:
+							case NormalizedByteCode.__dynamic_invokevirtual:
+							case NormalizedByteCode.__dynamic_invokespecial:
+							case NormalizedByteCode.__dynamic_invokeinterface:
+							case NormalizedByteCode.__dynamic_invokestatic:
 							{
 								ClassFile.ConstantPoolItemMI cpi = GetMethodref(instr.Arg1);
 								s.MultiPopAnyType(cpi.GetArgTypes().Length);
-								if(instr.NormalizedOpCode != NormalizedByteCode.__invokestatic)
+								if(instr.NormalizedOpCode != NormalizedByteCode.__invokestatic
+									&& instr.NormalizedOpCode != NormalizedByteCode.__dynamic_invokestatic)
 								{
 									TypeWrapper type = s.PopType();
 									if(ReferenceEquals(cpi.Name, StringConstants.INIT))
