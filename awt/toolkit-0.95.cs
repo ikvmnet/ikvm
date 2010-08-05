@@ -26,7 +26,7 @@
 /*
 Copyright (C) 2002, 2004-2009 Jeroen Frijters
 Copyright (C) 2006 Active Endpoints, Inc.
-Copyright (C) 2006, 2007, 2008, 2009 Volker Berlin (i-net software)
+Copyright (C) 2006-2010 Volker Berlin (i-net software)
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -3549,7 +3549,11 @@ namespace ikvm.awt
 
         public void updateMinimumSize()
         {
-            throw new NotImplementedException();
+            java.awt.Dimension dim = target.getMaximumSize();
+            NetToolkit.BeginInvoke(delegate
+            {
+                ((Form)control).MinimumSize = new Size(dim.width, dim.height);
+            });
         }
 
 		internal override void create(NetComponentPeer parent)
