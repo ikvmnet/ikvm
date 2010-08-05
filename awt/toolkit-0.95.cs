@@ -3549,7 +3549,7 @@ namespace ikvm.awt
 
         public void updateMinimumSize()
         {
-            java.awt.Dimension dim = target.getMaximumSize();
+            java.awt.Dimension dim = target.getMinimumSize();
             NetToolkit.BeginInvoke(delegate
             {
                 ((Form)control).MinimumSize = new Size(dim.width, dim.height);
