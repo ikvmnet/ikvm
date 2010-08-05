@@ -71,6 +71,7 @@ namespace IKVM.Internal
 		private Dictionary<string, TypeWrapper> importedStubTypes = new Dictionary<string, TypeWrapper>();
 		private List<ClassLoaderWrapper> internalsVisibleTo = new List<ClassLoaderWrapper>();
 		private List<TypeWrapper> dynamicallyImportedTypes = new List<TypeWrapper>();
+		private List<string> jarList = new List<string>();
 
 		internal CompilerClassLoader(AssemblyClassLoader[] referencedAssemblies, CompilerOptions options, string path, bool targetIsModule, string assemblyName, Dictionary<string, byte[]> classes)
 			: base(options.codegenoptions, null)
@@ -529,24 +530,7 @@ namespace IKVM.Internal
 			}
 			mb.CreateGlobalFunctions();
 
-			// add a class.map resource, if needed.
-			if(nameMappings.Count > 0)
-			{
-				string[] list = new string[nameMappings.Count * 2];
-				int i = 0;
-				foreach(KeyValuePair<string, string> kv in nameMappings)
-				{
-					list[i++] = kv.Key;
-					list[i++] = kv.Value;
-				}
-				CustomAttributeBuilder cab = new CustomAttributeBuilder(JVM.LoadType(typeof(JavaModuleAttribute)).GetConstructor(new Type[] { JVM.Import(typeof(string[])) }), new object[] { list });
-				mb.SetCustomAttribute(cab);
-			}
-			else
-			{
-				CustomAttributeBuilder cab = new CustomAttributeBuilder(JVM.LoadType(typeof(JavaModuleAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
-				mb.SetCustomAttribute(cab);
-			}
+			AddJavaModuleAttribute(mb);
 
 			// add a package list and export map
 			if(options.sharedclassloader == null || options.sharedclassloader[0] == this)
@@ -574,6 +558,34 @@ namespace IKVM.Internal
 			{
 				Tracer.Info(Tracer.Compiler, "CompilerClassLoader saving {0} in {1}", assemblyFile, assemblyDir);
 				assemblyBuilder.Save(assemblyFile, options.pekind, options.imageFileMachine);
+			}
+		}
+
+		private void AddJavaModuleAttribute(ModuleBuilder mb)
+		{
+			Type typeofJavaModuleAttribute = JVM.LoadType(typeof(JavaModuleAttribute));
+			PropertyInfo[] propInfos = new PropertyInfo[] {
+				typeofJavaModuleAttribute.GetProperty("Jars")
+			};
+			object[] propValues = new object[] {
+				jarList.ToArray()
+			};
+			if (nameMappings.Count > 0)
+			{
+				string[] list = new string[nameMappings.Count * 2];
+				int i = 0;
+				foreach (KeyValuePair<string, string> kv in nameMappings)
+				{
+					list[i++] = kv.Key;
+					list[i++] = kv.Value;
+				}
+				CustomAttributeBuilder cab = new CustomAttributeBuilder(typeofJavaModuleAttribute.GetConstructor(new Type[] { JVM.Import(typeof(string[])) }), new object[] { list }, propInfos, propValues);
+				mb.SetCustomAttribute(cab);
+			}
+			else
+			{
+				CustomAttributeBuilder cab = new CustomAttributeBuilder(typeofJavaModuleAttribute.GetConstructor(Type.EmptyTypes), new object[0], propInfos, propValues);
+				mb.SetCustomAttribute(cab);
 			}
 		}
 
@@ -664,29 +676,77 @@ namespace IKVM.Internal
 			this.GetTypeWrapperFactory().ModuleBuilder.DefineManifestResource("ikvm.exports", ms, ResourceAttributes.Public);
 		}
 
-		internal void AddResources(Dictionary<string, byte[]> resources, bool compressedResources)
+		internal void AddResources(Dictionary<string, List<ResourceItem>> resources, bool compressedResources)
 		{
 			Tracer.Info(Tracer.Compiler, "CompilerClassLoader adding resources...");
+
+			// BUG we need to call GetTypeWrapperFactory() to make sure that the assemblyBuilder is created (when building an empty target)
 			ModuleBuilder moduleBuilder = this.GetTypeWrapperFactory().ModuleBuilder;
-			foreach(KeyValuePair<string, byte[]> kv in resources)
+			Dictionary<string, Dictionary<string, ResourceItem>> jars = new Dictionary<string, Dictionary<string, ResourceItem>>();
+
+			foreach (KeyValuePair<string, List<ResourceItem>> kv in resources)
 			{
-				byte[] buf = kv.Value;
-				string name = JVM.MangleResourceName(kv.Key);
-				MemoryStream mem = new MemoryStream();
-				if(compressedResources)
+				foreach (ResourceItem item in kv.Value)
 				{
-					mem.WriteByte(1);
-					using(System.IO.Compression.DeflateStream def = new System.IO.Compression.DeflateStream(mem, System.IO.Compression.CompressionMode.Compress, true))
+					int count = 0;
+					string jarName = item.jar;
+				retry:
+					Dictionary<string, ResourceItem> jar;
+					if (!jars.TryGetValue(jarName, out jar))
 					{
-						def.Write(buf, 0, buf.Length);
+						jar = new Dictionary<string, ResourceItem>();
+						jars.Add(jarName, jar);
+					}
+					if (jar.ContainsKey(kv.Key))
+					{
+						jarName = Path.GetFileNameWithoutExtension(item.jar) + "-" + (count++) + Path.GetExtension(item.jar);
+						goto retry;
+					}
+					jar.Add(kv.Key, item);
+				}
+			}
+
+			foreach (KeyValuePair<string, Dictionary<string, ResourceItem>> jar in jars)
+			{
+				MemoryStream mem = new MemoryStream();
+				using (ICSharpCode.SharpZipLib.Zip.ZipOutputStream zip = new ICSharpCode.SharpZipLib.Zip.ZipOutputStream(mem))
+				{
+					foreach (KeyValuePair<string, ResourceItem> kv in jar.Value)
+					{
+						ICSharpCode.SharpZipLib.Zip.ZipEntry zipEntry = new ICSharpCode.SharpZipLib.Zip.ZipEntry(kv.Key);
+						if (kv.Value.zipEntry == null)
+						{
+							zipEntry.CompressionMethod = ICSharpCode.SharpZipLib.Zip.CompressionMethod.Stored;
+						}
+						else
+						{
+							zipEntry.Comment = kv.Value.zipEntry.Comment;
+							zipEntry.CompressionMethod = kv.Value.zipEntry.CompressionMethod;
+							zipEntry.DosTime = kv.Value.zipEntry.DosTime;
+							zipEntry.ExternalFileAttributes = kv.Value.zipEntry.ExternalFileAttributes;
+							zipEntry.ExtraData = kv.Value.zipEntry.ExtraData;
+							zipEntry.Flags = kv.Value.zipEntry.Flags;
+						}
+						if (compressedResources || zipEntry.CompressionMethod != ICSharpCode.SharpZipLib.Zip.CompressionMethod.Stored)
+						{
+							zip.SetLevel(9);
+							zipEntry.CompressionMethod = ICSharpCode.SharpZipLib.Zip.CompressionMethod.Deflated;
+						}
+						zip.PutNextEntry(zipEntry);
+						if (kv.Value.data != null)
+						{
+							zip.Write(kv.Value.data, 0, kv.Value.data.Length);
+						}
+						zip.CloseEntry();
 					}
 				}
-				else
+				mem = new MemoryStream(mem.ToArray());
+				string name = jar.Key;
+				if (options.targetIsModule)
 				{
-					mem.WriteByte(0);
-					mem.Write(buf, 0, buf.Length);
+					name = Path.GetFileNameWithoutExtension(name) + "-" + moduleBuilder.ModuleVersionId.ToString("N") + Path.GetExtension(name);
 				}
-				mem.Position = 0;
+				jarList.Add(name);
 				moduleBuilder.DefineManifestResource(name, mem, ResourceAttributes.Public);
 			}
 		}
@@ -3113,6 +3173,13 @@ namespace IKVM.Internal
 		}
 	}
 
+	struct ResourceItem
+	{
+		internal ICSharpCode.SharpZipLib.Zip.ZipEntry zipEntry;
+		internal byte[] data;
+		internal string jar;
+	}
+
 	class CompilerOptions
 	{
 		internal string path;
@@ -3134,7 +3201,7 @@ namespace IKVM.Internal
 		internal Assembly[] references;
 		internal string[] peerReferences;
 		internal bool crossReferenceAllPeers = true;
-		internal Dictionary<string, byte[]> resources;
+		internal Dictionary<string, List<ResourceItem>> resources;
 		internal string[] classesToExclude;
 		internal string remapfile;
 		internal Dictionary<string, string> props;
@@ -3164,7 +3231,7 @@ namespace IKVM.Internal
 			}
 			if (resources != null)
 			{
-				copy.resources = new Dictionary<string, byte[]>(resources);
+				copy.resources = Copy(resources);
 			}
 			if (props != null)
 			{
@@ -3176,6 +3243,16 @@ namespace IKVM.Internal
 			}
 			copy.suppressWarnings = new Dictionary<string, string>(suppressWarnings);
 			copy.errorWarnings = new Dictionary<string, string>(errorWarnings);
+			return copy;
+		}
+
+		internal static Dictionary<string, List<ResourceItem>> Copy(Dictionary<string, List<ResourceItem>> resources)
+		{
+			Dictionary<string, List<ResourceItem>> copy = new Dictionary<string, List<ResourceItem>>();
+			foreach (KeyValuePair<string, List<ResourceItem>> kv in resources)
+			{
+				copy.Add(kv.Key, new List<ResourceItem>(kv.Value));
+			}
 			return copy;
 		}
 	}

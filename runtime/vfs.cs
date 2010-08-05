@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2007-2009 Jeroen Frijters
+  Copyright (C) 2007-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -54,7 +54,7 @@ namespace IKVM.Internal
 
 		private class VfsDirectory : VfsEntry
 		{
-			private readonly Dictionary<string, VfsEntry> entries = new Dictionary<string,VfsEntry>();
+			protected readonly Dictionary<string, VfsEntry> entries = new Dictionary<string,VfsEntry>();
 
 			internal VfsDirectory AddDirectory(string name)
 			{
@@ -71,7 +71,25 @@ namespace IKVM.Internal
 				}
 			}
 
-			internal VfsEntry GetEntry(string name)
+			internal virtual VfsEntry GetEntry(int index, string[] path)
+			{
+				VfsEntry entry = GetEntry(path[index++]);
+				if (index == path.Length)
+				{
+					return entry;
+				}
+				else
+				{
+					VfsDirectory dir = entry as VfsDirectory;
+					if (dir == null)
+					{
+						return null;
+					}
+					return dir.GetEntry(index, path);
+				}
+			}
+
+			internal virtual VfsEntry GetEntry(string name)
 			{
 				VfsEntry entry;
 				lock (entries)
@@ -81,7 +99,7 @@ namespace IKVM.Internal
 				return entry;
 			}
 
-			internal string[] List()
+			internal virtual string[] List()
 			{
 				lock (entries)
 				{
@@ -92,8 +110,383 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal static string GetAssemblyClassesPath(Assembly asm)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			return RootPath + "assembly" + global::java.io.File.separatorChar + VfsAssembliesDirectory.GetName(asm.GetName()) + global::java.io.File.separatorChar + "classes" + global::java.io.File.separatorChar;
+#endif
+		}
+
+		internal static string GetAssemblyResourcesPath(Assembly asm)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			return RootPath + "assembly" + global::java.io.File.separatorChar + VfsAssembliesDirectory.GetName(asm.GetName()) + global::java.io.File.separatorChar + "resources" + global::java.io.File.separatorChar;
+#endif
+		}
+
+		private sealed class VfsAssembliesDirectory : VfsDirectory
+		{
+			internal override VfsEntry GetEntry(string name)
+			{
+				VfsEntry entry = base.GetEntry(name);
+				if (entry == null)
+				{
+					string assemblyName = ParseName(name);
+					if (assemblyName != null)
+					{
+						Assembly asm = null;
+						try
+						{
+							asm = Assembly.Load(assemblyName);
+						}
+						catch
+						{
+						}
+						if (asm != null
+							&& !ReflectUtil.IsDynamicAssembly(asm)
+							&& name == GetName(asm.GetName()))
+						{
+							lock (entries)
+							{
+								if (!entries.TryGetValue(name, out entry))
+								{
+									VfsDirectory dir = new VfsDirectory();
+									dir.Add("resources", new VfsAssemblyResourcesDirectory(asm));
+									dir.Add("classes", new VfsAssemblyClassesDirectory(asm));
+									Add(name, dir);
+									entry = dir;
+								}
+							}
+						}
+					}
+				}
+				return entry;
+			}
+
+			internal static string GetName(AssemblyName name)
+			{
+				System.Text.StringBuilder sb = new System.Text.StringBuilder();
+				string simpleName = name.Name;
+				for (int i = 0; i < simpleName.Length; i++)
+				{
+					if (simpleName[i] == '_')
+					{
+					}
+					else
+					{
+						sb.Append(simpleName[i]);
+					}
+				}
+				byte[] publicKeyToken = name.GetPublicKeyToken();
+				if (publicKeyToken != null && publicKeyToken.Length != 0)
+				{
+					sb.Append("__").Append(name.Version).Append("__");
+					for (int i = 0; i < publicKeyToken.Length; i++)
+					{
+						sb.AppendFormat("{0:x2}", publicKeyToken[i]);
+					}
+				}
+				if (name.CultureInfo != null && !string.IsNullOrEmpty(name.CultureInfo.Name))
+				{
+					sb.Append("__").Append(name.CultureInfo.Name);
+				}
+				return sb.ToString();
+			}
+
+			private static string ParseName(string directoryName)
+			{
+				try
+				{
+					string simpleName = null;
+					string version = "0.0.0.0";
+					string publicKeyToken = "null";
+					string culture = "neutral";
+					System.Text.StringBuilder sb = new System.Text.StringBuilder();
+					int part = 0;
+					for (int i = 0; i <= directoryName.Length; i++)
+					{
+						if (i == directoryName.Length || directoryName[i] == '_')
+						{
+							if (i == directoryName.Length || directoryName[i + 1] == '_')
+							{
+								switch (part++)
+								{
+									case 0:
+										simpleName = sb.ToString();
+										break;
+									case 1:
+										version = sb.ToString();
+										break;
+									case 2:
+										publicKeyToken = sb.ToString();
+										break;
+									case 3:
+										culture = sb.ToString();
+										break;
+									case 4:
+										return null;
+								}
+								sb.Length = 0;
+								i++;
+							}
+							else
+							{
+								int start = i + 1;
+								int end = start;
+								while ('0' <= directoryName[end] && directoryName[end] <= '9')
+								{
+									end++;
+								}
+								int repeatCount;
+								if (directoryName[end] != '_' || !Int32.TryParse(directoryName.Substring(start, end - start), out repeatCount))
+								{
+									return null;
+								}
+								sb.Append('_', repeatCount);
+								i = end;
+							}
+						}
+						else
+						{
+							sb.Append(directoryName[i]);
+						}
+					}
+					sb.Length = 0;
+					sb.Append(simpleName).Append(", Version=").Append(version).Append(", Culture=").Append(culture).Append(", PublicKeyToken=").Append(publicKeyToken);
+					return sb.ToString();
+				}
+				catch
+				{
+					return null;
+				}
+			}
+		}
+
+		private sealed class VfsAssemblyResourcesDirectory : VfsDirectory
+		{
+			private readonly Assembly asm;
+
+			internal VfsAssemblyResourcesDirectory(Assembly asm)
+			{
+				this.asm = asm;
+			}
+
+			internal override VfsEntry GetEntry(string name)
+			{
+				VfsEntry entry = base.GetEntry(name);
+				if (entry == null)
+				{
+					ManifestResourceInfo resource = asm.GetManifestResourceInfo(name);
+					if (resource != null)
+					{
+						lock (entries)
+						{
+							if (!entries.TryGetValue(name, out entry))
+							{
+								entry = new VfsAssemblyResource(asm, name);
+								entries.Add(name, entry);
+							}
+						}
+					}
+				}
+				return entry;
+			}
+
+			internal override string[] List()
+			{
+				return asm.GetManifestResourceNames();
+			}
+		}
+
+		private sealed class VfsAssemblyResource : VfsFile
+		{
+			private readonly Assembly asm;
+			private readonly string name;
+
+			internal VfsAssemblyResource(Assembly asm, string name)
+			{
+				this.asm = asm;
+				this.name = name;
+			}
+
+			internal override System.IO.Stream Open()
+			{
+				return asm.GetManifestResourceStream(name);
+			}
+
+			internal override long Size
+			{
+				get
+				{
+					using (System.IO.Stream stream = Open())
+					{
+						return stream.Length;
+					}
+				}
+			}
+		}
+
+		private sealed class VfsAssemblyClassesDirectory : VfsDirectory
+		{
+			private readonly Assembly asm;
+			private readonly Dictionary<string, VfsEntry> classes = new Dictionary<string, VfsEntry>();
+
+			internal VfsAssemblyClassesDirectory(Assembly asm)
+			{
+				this.asm = asm;
+			}
+
+			internal override VfsEntry GetEntry(int index, string[] path)
+			{
+				if (path[path.Length - 1].EndsWith(".class", StringComparison.Ordinal))
+				{
+					System.Text.StringBuilder sb = new System.Text.StringBuilder();
+					for (int i = index; i < path.Length - 1; i++)
+					{
+						sb.Append(path[i]).Append('.');
+					}
+					sb.Append(path[path.Length - 1], 0, path[path.Length - 1].Length - 6);
+					string className = sb.ToString();
+					VfsEntry entry;
+					lock (classes)
+					{
+						if (classes.TryGetValue(className, out entry))
+						{
+							return entry;
+						}
+					}
+					AssemblyClassLoader acl = AssemblyClassLoader.FromAssembly(asm);
+					TypeWrapper tw = null;
+					try
+					{
+						tw = acl.LoadClassByDottedNameFast(className);
+					}
+					catch
+					{
+					}
+					if (tw != null && !tw.IsArray)
+					{
+						lock (classes)
+						{
+							if (!classes.TryGetValue(className, out entry))
+							{
+								entry = new VfsAssemblyClass(tw);
+								classes.Add(className, entry);
+							}
+						}
+						return entry;
+					}
+					return null;
+				}
+				else
+				{
+					Populate();
+					return base.GetEntry(index, path);
+				}
+			}
+
+			internal override string[] List()
+			{
+				Populate();
+				return base.List();
+			}
+
+			private void Populate()
+			{
+				bool populate;
+				lock (entries)
+				{
+					populate = entries.Count == 0;
+				}
+				if (populate)
+				{
+					Type[] types;
+					try
+					{
+						types = asm.GetTypes();
+					}
+					catch (ReflectionTypeLoadException x)
+					{
+						types = x.Types;
+					}
+					catch
+					{
+						types = Type.EmptyTypes;
+					}
+					foreach (Type type in types)
+					{
+						if (type != null)
+						{
+							TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(type);
+							if (tw != null)
+							{
+								string[] parts = tw.Name.Split('.');
+								lock (entries)
+								{
+									VfsDirectory dir = this;
+									for (int i = 0; i < parts.Length - 1; i++)
+									{
+										dir = dir.GetEntry(parts[i]) as VfsDirectory ?? dir.AddDirectory(parts[i]);
+									}
+									// we're adding a dummy file, to make the file appear in the directory listing, it will not actually
+									// be accessed, because the code above handles that
+									dir.Add(parts[parts.Length - 1] + ".class", VfsDummyFile.Instance);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		private sealed class VfsAssemblyClass : VfsFile
+		{
+			private readonly TypeWrapper tw;
+			private byte[] buf;
+
+			internal VfsAssemblyClass(TypeWrapper tw)
+			{
+				this.tw = tw;
+			}
+
+			private void Populate()
+			{
+#if !FIRST_PASS
+				if (buf == null)
+				{
+					buf = ikvm.@internal.stubgen.StubGenerator.generateStub(tw.ClassObject);
+				}
+#endif
+			}
+
+			internal override System.IO.Stream Open()
+			{
+				Populate();
+				return new System.IO.MemoryStream(buf);
+			}
+
+			internal override long Size
+			{
+				get
+				{
+					Populate();
+					return buf.Length;
+				}
+			}
+		}
+
 		private sealed class VfsDummyFile : VfsFile
 		{
+			internal static readonly VfsDummyFile Instance = new VfsDummyFile();
+
+			private VfsDummyFile()
+			{
+			}
+
 			internal override long Size
 			{
 				get { return 0; }
@@ -223,6 +616,7 @@ namespace IKVM.Internal
 			root.AddDirectory("lib").AddDirectory("security").Add("cacerts", new VfsCacertsEntry());
 			VfsDirectory bin = new VfsDirectory();
 			root.Add("bin", bin);
+			root.Add("assembly", new VfsAssembliesDirectory());
 			AddDummyLibrary(bin, "zip");
 			AddDummyLibrary(bin, "awt");
 			AddDummyLibrary(bin, "rmi");
@@ -255,7 +649,7 @@ namespace IKVM.Internal
 
 		private static void AddDummyLibrary(VfsDirectory dir, string name)
 		{
-			dir.Add(java.lang.System.mapLibraryName(name), new VfsDummyFile());
+			dir.Add(java.lang.System.mapLibraryName(name), VfsDummyFile.Instance);
 		}
 
 		private static void AddZipEntry(java.util.zip.ZipFile zf, VfsDirectory root, java.util.zip.ZipEntry entry)
@@ -293,16 +687,7 @@ namespace IKVM.Internal
 				return root;
 			}
 			string[] path = name.Substring(RootPath.Length).Split(java.io.File.separatorChar);
-			VfsDirectory dir = root;
-			for (int i = 0; i < path.Length - 1; i++)
-			{
-				dir = dir.GetEntry(path[i]) as VfsDirectory;
-				if (dir == null)
-				{
-					return null;
-				}
-			}
-			return dir.GetEntry(path[path.Length - 1]);
+			return root.GetEntry(0, path);
 		}
 
 		private sealed class ZipEntryStream : System.IO.Stream

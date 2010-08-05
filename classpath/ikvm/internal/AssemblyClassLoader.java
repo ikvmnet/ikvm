@@ -56,15 +56,6 @@ public final class AssemblyClassLoader extends ClassLoader
 
     public URL getResource(String name)
     {
-        // for consistency with class loading, we change the delegation order for .class files
-        if(name.endsWith(".class"))
-        {
-            URL url = getResource(this, assembly, name);
-            if(url != null)
-            {
-                return url;
-            }
-        }
         return getResource(this, assembly, name);
     }
 
@@ -84,101 +75,15 @@ public final class AssemblyClassLoader extends ClassLoader
     }
 
     @Internal
-    public static URL makeIkvmresURL(Assembly asm, String name)
-    {
-        String assemblyName = asm.get_FullName();
-        try
-        {
-            return new URL("ikvmres", assemblyName, -1, "/" + name);
-        }
-        catch(MalformedURLException x)
-        {
-            throw (InternalError)new InternalError().initCause(x);
-        }
-    }
-
-    @Internal
-    public static URL getResource(ClassLoader classLoader, Assembly assembly, String name)
-    {
-	if(assembly != null)
-	{
-	    Assembly[] asm = FindResourceAssemblies(assembly, name, true);
-	    if(asm != null && asm.length > 0)
-	    {
-		return makeIkvmresURL(asm[0], name);
-	    }
-	}
-	return getClassResource(classLoader, assembly, name);
-    }
+    public static native URL getResource(ClassLoader classLoader, Assembly assembly, String name);
     
-    private static URL getClassResource(ClassLoader classLoader, Assembly assembly, String name)
-    {
-        if(name.endsWith(".class") && name.indexOf('.') == name.length() - 6)
-        {
-            Class c = null;
-            try
-            {
-                c = LoadClass(classLoader, assembly, name.substring(0, name.length() - 6).replace('/', '.'));
-            }
-            catch(ClassNotFoundException _)
-            {
-            }
-            catch(LinkageError _)
-            {
-            }
-            if(c != null && !IsDynamic(c))
-            {
-		assembly = GetAssemblyFromClass(c);
-                if(assembly != null)
-                {
-                    return makeIkvmresURL(assembly, name);
-                }
-                else
-                {
-                    // HACK we use an index to identity the generic class loader in the url
-                    // TODO this obviously isn't persistable, we should use a list of assemblies instead.
-                    try
-                    {
-                        return new URL("ikvmres", "gen", GetGenericClassLoaderId(c.getClassLoader()), "/" + name);
-                    }
-                    catch(MalformedURLException x)
-                    {
-                        throw (InternalError)new InternalError().initCause(x);
-                    }                    
-                }
-            }
-        }
-        return null;
-    }
+    @Internal
+    public static native Enumeration getResources(ClassLoader classLoader, Assembly assembly, String name) throws IOException;
 
-    private static native Assembly[] FindResourceAssemblies(Assembly assembly, String name, boolean firstOnly);
-    private static native int GetGenericClassLoaderId(ClassLoader classLoader);
     private static native String GetGenericClassLoaderName(Object classLoader);
-    private static native Assembly GetAssemblyFromClass(Class clazz);
-    private static native boolean IsDynamic(Class clazz);
     // also used by VMClassLoader
     @Internal
     public static native String[] GetPackages(Assembly assembly);
-
-    @Internal
-    public static Enumeration getResources(ClassLoader classLoader, Assembly assembly, String name) throws IOException
-    {
-        Vector v = new Vector();
-        Assembly[] assemblies = FindResourceAssemblies(assembly, name, false);
-        if(assemblies != null)
-        {
-            for(int i = 0; i < assemblies.length; i++)
-            {
-                v.addElement(makeIkvmresURL(assemblies[i], name));
-            }
-        }
-        URL url = getClassResource(classLoader, assembly, name);
-        if(url != null)
-        {
-            v.addElement(url);
-        }
-        return v.elements();
-    }
 
     private synchronized void lazyDefinePackagesCheck()
     {

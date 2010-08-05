@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using IKVM.Attributes;
@@ -188,7 +189,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 {
 	static class AssemblyClassLoader
 	{
-		public static object LoadClass(object classLoader, Assembly assembly, string name)
+		public static global::java.lang.Class LoadClass(object classLoader, Assembly assembly, string name)
 		{
 			try
 			{
@@ -229,30 +230,93 @@ namespace IKVM.NativeCode.ikvm.runtime
 			}
 		}
 
-		public static Assembly[] FindResourceAssemblies(Assembly assembly, string name, bool firstOnly)
+		public static global::java.net.URL getResource(global::java.lang.ClassLoader classLoader, Assembly assembly, string name)
 		{
-			IKVM.Internal.AssemblyClassLoader wrapper = IKVM.Internal.AssemblyClassLoader.FromAssembly(assembly);
-			Assembly[] assemblies = wrapper.FindResourceAssemblies(name, firstOnly);
-			if(assemblies == null || assemblies.Length == 0)
+#if FIRST_PASS
+			return null;
+#else
+			if (assembly != null)
 			{
-				Tracer.Info(Tracer.ClassLoading, "Failed to find resource \"{0}\" in {1}", name, assembly.FullName);
-				return null;
+				IKVM.Internal.AssemblyClassLoader wrapper = IKVM.Internal.AssemblyClassLoader.FromAssembly(assembly);
+				foreach (global::java.net.URL url in wrapper.GetResources(name))
+				{
+					return url;
+				}
 			}
-			foreach(Assembly asm in assemblies)
-			{
-				Tracer.Info(Tracer.ClassLoading, "Found resource \"{0}\" in {1}", name, asm.FullName);
-			}
-			return assemblies;
+			return GetClassResource(classLoader, assembly, name);
+#endif
 		}
 
-		public static Assembly GetAssemblyFromClass(jlClass clazz)
+		public static global::java.util.Enumeration getResources(global::java.lang.ClassLoader classLoader, Assembly assembly, string name)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			global::java.util.Vector v = new global::java.util.Vector();
+			IKVM.Internal.AssemblyClassLoader wrapper = IKVM.Internal.AssemblyClassLoader.FromAssembly(assembly);
+			foreach (global::java.net.URL url in wrapper.GetResources(name))
+			{
+				v.addElement(url);
+			}
+			global::java.net.URL curl = GetClassResource(classLoader, assembly, name);
+			if (curl != null)
+			{
+				v.addElement(curl);
+			}
+			return v.elements();
+#endif
+		}
+
+#if !FIRST_PASS
+		private static global::java.net.URL GetClassResource(global::java.lang.ClassLoader classLoader, Assembly assembly, string name)
+		{
+			if (name.EndsWith(".class", StringComparison.Ordinal) && name.IndexOf('.') == name.Length - 6)
+			{
+				global::java.lang.Class c = null;
+				try
+				{
+					c = LoadClass(classLoader, assembly, name.Substring(0, name.Length - 6).Replace('/', '.'));
+				}
+				catch (global::java.lang.ClassNotFoundException)
+				{
+				}
+				catch (global::java.lang.LinkageError)
+				{
+				}
+				if (c != null && !IsDynamic(c))
+				{
+					assembly = GetAssemblyFromClass(c);
+					try
+					{
+						if (assembly != null)
+						{
+							return new global::java.io.File(VirtualFileSystem.GetAssemblyClassesPath(assembly) + name).toURI().toURL();
+						}
+						else
+						{
+							// HACK we use an index to identify the generic class loader in the url
+							// TODO this obviously isn't persistable, we should use a list of assemblies instead.
+							return new global::java.net.URL("ikvmres", "gen", GetGenericClassLoaderId(c.getClassLoader()), "/" + name);
+						}
+					}
+					catch (global::java.net.MalformedURLException x)
+					{
+						throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(x);
+					}
+				}
+			}
+			return null;
+		}
+#endif
+
+		private static Assembly GetAssemblyFromClass(jlClass clazz)
 		{
 			TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
 			AssemblyClassLoader_ acl = wrapper.GetClassLoader() as AssemblyClassLoader_;
 			return acl != null ? acl.GetAssembly(wrapper) : null;
 		}
 
-		public static bool IsDynamic(jlClass clazz)
+		private static bool IsDynamic(jlClass clazz)
 		{
 			return TypeWrapper.FromClass(clazz) is DynamicTypeWrapper;
 		}
@@ -315,13 +379,46 @@ namespace IKVM.NativeCode.ikvm.runtime
 			return tw != null ? tw.ClassObject : null;
 		}
 
-		public static bool findResourceInAssembly(Assembly asm, string resourceName)
+		private static IEnumerable<global::java.net.URL> FindResources(string name)
 		{
-			if(ReflectUtil.IsDynamicAssembly(asm))
+			List<IKVM.Internal.AssemblyClassLoader> done = new List<IKVM.Internal.AssemblyClassLoader>();
+			foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
 			{
-				return false;
+				if (!ReflectUtil.IsDynamicAssembly(asm))
+				{
+					IKVM.Internal.AssemblyClassLoader acl = IKVM.Internal.AssemblyClassLoader.FromAssembly(asm);
+					if (!done.Contains(acl))
+					{
+						done.Add(acl);
+						foreach (global::java.net.URL url in acl.FindResources(name))
+						{
+							yield return url;
+						}
+					}
+				}
 			}
-			return asm.GetManifestResourceInfo(JVM.MangleResourceName(resourceName)) != null;
+		}
+
+		public static global::java.net.URL findResource(object thisObj, string name)
+		{
+			foreach (global::java.net.URL url in FindResources(name))
+			{
+				return url;
+			}
+			return null;
+		}
+
+		public static void getResources(global::java.util.Vector v, string name)
+		{
+#if !FIRST_PASS
+			foreach (global::java.net.URL url in FindResources(name))
+			{
+				if (url != null && !v.contains(url))
+				{
+					v.add(url);
+				}
+			}
+#endif
 		}
 	}
 

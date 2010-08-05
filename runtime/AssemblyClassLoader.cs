@@ -64,6 +64,10 @@ namespace IKVM.Internal
 			private Dictionary<string, string> nameMap;
 			private bool hasDotNetModule;
 			private AssemblyName[] internalsVisibleTo;
+			private string[] jarList;
+#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+			private sun.misc.URLClassPath urlClassPath;
+#endif
 
 			internal AssemblyLoader(Assembly assembly)
 			{
@@ -103,6 +107,21 @@ namespace IKVM.Internal
 									// TODO if there is a name clash between modules, this will throw.
 									// Figure out how to handle that.
 									nameMap.Add(key, val);
+								}
+							}
+							string[] jars = jma.Jars;
+							if (jars != null)
+							{
+								if (jarList == null)
+								{
+									jarList = jars;
+								}
+								else
+								{
+									string[] newList = new string[jarList.Length + jars.Length];
+									Array.Copy(jarList, newList, jarList.Length);
+									Array.Copy(jars, 0, newList, jarList.Length, jars.Length);
+									jarList = newList;
 								}
 							}
 						}
@@ -336,6 +355,26 @@ namespace IKVM.Internal
 				}
 				return false;
 			}
+
+#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+			internal java.util.Enumeration FindResources(string name)
+			{
+				if (urlClassPath == null)
+				{
+					if (jarList == null)
+					{
+						return gnu.java.util.EmptyEnumeration.getInstance();
+					}
+					List<java.net.URL> urls = new List<java.net.URL>();
+					foreach (string jar in jarList)
+					{
+						urls.Add(MakeResourceURL(assembly, jar));
+					}
+					Interlocked.CompareExchange(ref urlClassPath, new sun.misc.URLClassPath(urls.ToArray()), null);
+				}
+				return urlClassPath.findResources(name, true);
+			}
+#endif
 		}
 
 		internal AssemblyClassLoader(Assembly assembly)
@@ -645,20 +684,42 @@ namespace IKVM.Internal
 		}
 
 #if !STATIC_COMPILER && !STUB_GENERATOR
-		internal Assembly FindResourceAssembliesImpl(string unmangledName, string name, bool firstOnly, ref List<Assembly> list)
+		private static java.net.URL MakeResourceURL(Assembly asm, string name)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			return new java.io.File(VirtualFileSystem.GetAssemblyResourcesPath(asm) + name).toURI().toURL();
+#endif
+		}
+
+		internal IEnumerable<java.net.URL> FindResources(string name)
+		{
+			return GetResourcesImpl(name, false);
+		}
+
+		internal IEnumerable<java.net.URL> GetResources(string name)
+		{
+			return GetResourcesImpl(name, true);
+		}
+
+		private IEnumerable<java.net.URL> GetResourcesImpl(string unmangledName, bool getFromDelegates)
 		{
 			if (ReflectUtil.IsDynamicAssembly(assemblyLoader.Assembly))
 			{
-				return null;
+				yield break;
 			}
+#if !FIRST_PASS
+			java.util.Enumeration urls = assemblyLoader.FindResources(unmangledName);
+			while (urls.hasMoreElements())
+			{
+				yield return (java.net.URL)urls.nextElement();
+			}
+#endif
+			string name = JVM.MangleResourceName(unmangledName);
 			if (assemblyLoader.Assembly.GetManifestResourceInfo(name) != null)
 			{
-				if (firstOnly)
-				{
-					return assemblyLoader.Assembly;
-				}
-				list = new List<Assembly>();
-				list.Add(assemblyLoader.Assembly);
+				yield return MakeResourceURL(assemblyLoader.Assembly, name);
 			}
 			LazyInitExports();
 			if (exports != null)
@@ -678,34 +739,24 @@ namespace IKVM.Internal
 							}
 							loader = exportedAssemblies[index] = GetLoaderForExportedAssembly(asm);
 						}
+#if !FIRST_PASS
+						urls = loader.FindResources(unmangledName);
+						while (urls.hasMoreElements())
+						{
+							yield return (java.net.URL)urls.nextElement();
+						}
+#endif
 						if (loader.Assembly.GetManifestResourceInfo(name) != null)
 						{
-							if (firstOnly)
-							{
-								return loader.Assembly;
-							}
-							if (list == null)
-							{
-								list = new List<Assembly>();
-							}
-							list.Add(loader.Assembly);
+							yield return MakeResourceURL(loader.Assembly, name);
 						}
 					}
 				}
 			}
-			return null;
-		}
-
-		internal Assembly[] FindResourceAssemblies(string unmangledName, bool firstOnly)
-		{
-			List<Assembly> list = null;
-			string name = JVM.MangleResourceName(unmangledName);
-			Assembly first = FindResourceAssembliesImpl(unmangledName, name, firstOnly, ref list);
-			if (first != null)
+			if (!getFromDelegates)
 			{
-				return new Assembly[] { first };
+				yield break;
 			}
-			LazyInitExports();
 			for (int i = 0; i < delegates.Length; i++)
 			{
 				if (delegates[i] == null)
@@ -718,43 +769,19 @@ namespace IKVM.Internal
 				}
 				if (delegates[i] != null)
 				{
-					first = delegates[i].FindResourceAssembliesImpl(unmangledName, name, firstOnly, ref list);
-					if (first != null)
+					foreach (java.net.URL url in delegates[i].FindResources(unmangledName))
 					{
-						return new Assembly[] { first };
+						yield return url;
 					}
 				}
 			}
 			if (!assemblyLoader.HasJavaModule)
 			{
-				if (firstOnly)
+				foreach (java.net.URL url in GetBootstrapClassLoader().FindResources(unmangledName))
 				{
-					return GetBootstrapClassLoader().FindResourceAssemblies(unmangledName, firstOnly);
-				}
-				else
-				{
-					Assembly[] assemblies = GetBootstrapClassLoader().FindResourceAssemblies(unmangledName, firstOnly);
-					if (assemblies != null)
-					{
-						foreach (Assembly asm in assemblies)
-						{
-							if (list == null)
-							{
-								list = new List<Assembly>();
-							}
-							if (!list.Contains(asm))
-							{
-								list.Add(asm);
-							}
-						}
-					}
+					yield return url;
 				}
 			}
-			if (list == null)
-			{
-				return null;
-			}
-			return list.ToArray();
 		}
 #endif // !STATIC_COMPILER
 

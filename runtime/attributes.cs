@@ -370,6 +370,7 @@ namespace IKVM.Attributes
 	public sealed class JavaModuleAttribute : Attribute
 	{
 		private string[] classMap;
+		private string[] jars;
 
 		public JavaModuleAttribute()
 		{
@@ -383,6 +384,12 @@ namespace IKVM.Attributes
 		public string[] GetClassMap()
 		{
 			return classMap;
+		}
+
+		public string[] Jars
+		{
+			get { return jars; }
+			set { jars = value; }
 		}
 	}
 

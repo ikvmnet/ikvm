@@ -39,7 +39,7 @@ class IkvmcCompiler
 	private bool nonleaf;
 	private string manifestMainClass;
 	private Dictionary<string, byte[]> classes = new Dictionary<string, byte[]>();
-	private Dictionary<string, byte[]> resources = new Dictionary<string, byte[]>();
+	private Dictionary<string, List<ResourceItem>> resources = new Dictionary<string, List<ResourceItem>>();
 	private string defaultAssemblyName;
 	private List<string> classesToExclude = new List<string>();
 	private static bool time;
@@ -366,7 +366,7 @@ class IkvmcCompiler
 				IkvmcCompiler nestedLevel = new IkvmcCompiler();
 				nestedLevel.manifestMainClass = manifestMainClass;
 				nestedLevel.classes = new Dictionary<string, byte[]>(classes);
-				nestedLevel.resources = new Dictionary<string, byte[]>(resources);
+				nestedLevel.resources = CompilerOptions.Copy(resources);
 				nestedLevel.defaultAssemblyName = defaultAssemblyName;
 				nestedLevel.classesToExclude = new List<string>(classesToExclude);
 				int rc = nestedLevel.ContinueParseCommandLine(arglist, targets, options.Copy());
@@ -581,7 +581,7 @@ class IkvmcCompiler
 								// a leading slash is not required, so strip it
 								name = name.Substring(1);
 							}
-							AddResource(name, b);
+							AddResource(null, name, b, null);
 						}
 					}
 					catch(Exception x)
@@ -977,7 +977,7 @@ class IkvmcCompiler
 		return buf;
 	}
 
-	private void AddClassFile(string filename, byte[] buf, bool addResourceFallback)
+	private void AddClassFile(ZipEntry zipEntry, string filename, byte[] buf, bool addResourceFallback, string jar)
 	{
 		try
 		{
@@ -998,7 +998,7 @@ class IkvmcCompiler
 				// not a class file, so we include it as a resource
 				// (IBM's db2os390/sqlj jars apparantly contain such files)
 				StaticCompiler.IssueMessage(Message.NotAClassFile, filename, x.Message);
-				AddResource(filename, buf);
+				AddResource(zipEntry, filename, buf, jar);
 			}
 			else
 			{
@@ -1009,22 +1009,23 @@ class IkvmcCompiler
 
 	private void ProcessZipFile(string file, Predicate<ZipEntry> filter)
 	{
+		string jar = Path.GetFileName(file);
 		ZipFile zf = new ZipFile(file);
 		try
 		{
 			foreach(ZipEntry ze in zf)
 			{
-				if(ze.IsDirectory)
+				if(filter != null && !filter(ze))
 				{
 					// skip
 				}
-				else if(filter != null && !filter(ze))
+				else if(ze.IsDirectory)
 				{
-					// skip
+					AddResource(ze, ze.Name, null, jar);
 				}
 				else if(ze.Name.ToLower().EndsWith(".class"))
 				{
-					AddClassFile(ze.Name, ReadFromZip(zf, ze), true);
+					AddClassFile(ze, ze.Name, ReadFromZip(zf, ze), true, jar);
 				}
 				else
 				{
@@ -1045,7 +1046,7 @@ class IkvmcCompiler
 							}
 						}
 					}
-					AddResource(ze.Name, ReadFromZip(zf, ze));
+					AddResource(ze, ze.Name, ReadFromZip(zf, ze), jar);
 				}
 			}
 		}
@@ -1055,16 +1056,19 @@ class IkvmcCompiler
 		}
 	}
 
-	private void AddResource(string name, byte[] buf)
+	private void AddResource(ZipEntry zipEntry, string name, byte[] buf, string jar)
 	{
-		if(resources.ContainsKey(name))
+		List<ResourceItem> list;
+		if (!resources.TryGetValue(name, out list))
 		{
-			StaticCompiler.IssueMessage(Message.DuplicateResourceName, name);
+			list = new List<ResourceItem>();
+			resources.Add(name, list);
 		}
-		else
-		{
-			resources.Add(name, buf);
-		}
+		ResourceItem item = new ResourceItem();
+		item.zipEntry = zipEntry;
+		item.data = buf;
+		item.jar = jar ?? "resources.jar";
+		list.Add(item);
 	}
 
 	private void ProcessFile(DirectoryInfo baseDir, string file)
@@ -1076,7 +1080,7 @@ class IkvmcCompiler
 				{
 					byte[] buf = new byte[fs.Length];
 					fs.Read(buf, 0, buf.Length);
-					AddClassFile(file, buf, false);
+					AddClassFile(null, file, buf, false, null);
 				}
 				break;
 			case ".jar":
@@ -1112,7 +1116,7 @@ class IkvmcCompiler
 								name = name.Substring(1);
 							}
 							name = name.Replace('\\', '/');
-							AddResource(name, b);
+							AddResource(null, name, b, null);
 						}
 					}
 					catch(UnauthorizedAccessException)

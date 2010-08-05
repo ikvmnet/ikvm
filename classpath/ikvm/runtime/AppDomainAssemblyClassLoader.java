@@ -53,20 +53,7 @@ public final class AppDomainAssemblyClassLoader extends ClassLoader
 
     private static native Class loadClassFromAssembly(Assembly asm, String className);
 
-    protected URL findResource(String name)
-    {
-	Assembly[] assemblies = AppDomain.get_CurrentDomain().GetAssemblies();
-	for (int i = 0; i < assemblies.length; i++)
-	{
-	    if (findResourceInAssembly(assemblies[i], name))
-	    {
-		return AssemblyClassLoader.makeIkvmresURL(assemblies[i], name);
-	    }
-	}
-	return null;
-    }
-
-    private static native boolean findResourceInAssembly(Assembly asm, String resourceName);
+    protected native URL findResource(String name);
 
     // we override getResources() instead of findResources() to be able to filter duplicates
     public Enumeration<URL> getResources(String name) throws IOException
@@ -76,18 +63,9 @@ public final class AppDomainAssemblyClassLoader extends ClassLoader
 	{
 	    v.add(e.nextElement());
 	}
-	Assembly[] assemblies = AppDomain.get_CurrentDomain().GetAssemblies();
-	for (int i = 0; i < assemblies.length; i++)
-	{
-	    if (findResourceInAssembly(assemblies[i], name))
-	    {
-		URL url = AssemblyClassLoader.makeIkvmresURL(assemblies[i], name);
-		if (!v.contains(url))
-		{
-		    v.add(url);
-		}
-	    }
-	}
+	getResources(v, name);
 	return v.elements();
     }
+    
+    private static native void getResources(Vector<URL> v, String name);
 }

@@ -47,6 +47,11 @@ namespace java
 		}
 	}
 
+	namespace net
+	{
+		public class URL { }
+	}
+
 	namespace nio
 	{
 		public class ByteBuffer { }
@@ -55,5 +60,11 @@ namespace java
 	namespace security
 	{
 		public class ProtectionDomain { }
+	}
+
+	namespace util
+	{
+		public class Enumeration { }
+		public class Vector { }
 	}
 }
