@@ -185,7 +185,8 @@ namespace IKVM.Reflection.Writer
 
 		internal uint ImportDirectoryRVA
 		{
-			get { return (DebugDirectoryRVA + DebugDirectoryLength + DebugDirectoryContentsLength + 3) & ~3U; }
+			// on AMD64 (and probably IA64) the import directory needs to be 16 byte aligned (on I386 4 byte alignment is sufficient)
+			get { return (DebugDirectoryRVA + DebugDirectoryLength + DebugDirectoryContentsLength + 15) & ~15U; }
 		}
 
 		internal uint ImportDirectoryLength
