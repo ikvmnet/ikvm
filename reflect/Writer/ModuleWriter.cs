@@ -124,7 +124,7 @@ namespace IKVM.Reflection.Writer
 				moduleBuilder.Blobs.Freeze();
 				MetadataWriter mw = new MetadataWriter(moduleBuilder, fs);
 				moduleBuilder.Tables.Freeze(mw);
-				TextSection code = new TextSection(writer, cliHeader, moduleBuilder, publicKey != null);
+				TextSection code = new TextSection(writer, cliHeader, moduleBuilder, ComputeStrongNameSignatureLength(publicKey));
 				ResourceSection resources = new ResourceSection(versionInfoData, unmanagedResources);
 
 				// Import Directory
@@ -293,6 +293,25 @@ namespace IKVM.Reflection.Writer
 			}
 		}
 
+		private static int ComputeStrongNameSignatureLength(byte[] publicKey)
+		{
+			if (publicKey == null)
+			{
+				return 0;
+			}
+			else if (publicKey.Length == 16)
+			{
+				// it must be the ECMA pseudo public key, we don't know the key size of the real key, but currently both Mono and Microsoft use a 1024 bit key size
+				return 128;
+			}
+			else
+			{
+				// for the supported strong naming algorithms, the signature size is the same as the key size
+				// (we have to subtract 32 for the header)
+				return publicKey.Length - 32;
+			}
+		}
+
 		private static void StrongName(FileStream fs, StrongNameKeyPair keyPair, uint headerLength, uint textSectionFileOffset, uint strongNameSignatureFileOffset, uint strongNameSignatureLength)
 		{
 			SHA1Managed hash = new SHA1Managed();
@@ -309,10 +328,12 @@ namespace IKVM.Reflection.Writer
 			using (RSA rsa = CryptoHack.CreateRSA(keyPair))
 			{
 				RSAPKCS1SignatureFormatter sign = new RSAPKCS1SignatureFormatter(rsa);
-				sign.SetHashAlgorithm("SHA1");
-				byte[] signature = sign.CreateSignature(hash.Hash);
+				byte[] signature = sign.CreateSignature(hash);
 				Array.Reverse(signature);
-				Debug.Assert(signature.Length == strongNameSignatureLength);
+				if (signature.Length != strongNameSignatureLength)
+				{
+					throw new InvalidOperationException("Signature length mismatch");
+				}
 				fs.Seek(strongNameSignatureFileOffset, SeekOrigin.Begin);
 				fs.Write(signature, 0, signature.Length);
 			}
