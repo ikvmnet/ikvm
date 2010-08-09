@@ -37,14 +37,14 @@ namespace IKVM.Reflection.Writer
 		private readonly PEWriter peWriter;
 		private readonly CliHeader cliHeader;
 		private readonly ModuleBuilder moduleBuilder;
-		private readonly bool strongName;
+		private readonly uint strongNameSignatureLength;
 
-		internal TextSection(PEWriter peWriter, CliHeader cliHeader, ModuleBuilder moduleBuilder, bool strongName)
+		internal TextSection(PEWriter peWriter, CliHeader cliHeader, ModuleBuilder moduleBuilder, int strongNameSignatureLength)
 		{
 			this.peWriter = peWriter;
 			this.cliHeader = cliHeader;
 			this.moduleBuilder = moduleBuilder;
-			this.strongName = strongName;
+			this.strongNameSignatureLength = (uint)strongNameSignatureLength;
 		}
 
 		internal uint PointerToRawData
@@ -129,14 +129,7 @@ namespace IKVM.Reflection.Writer
 		{
 			get
 			{
-				if (strongName)
-				{
-					return 128;
-				}
-				else
-				{
-					return 0;
-				}
+				return strongNameSignatureLength;
 			}
 		}
 
