@@ -2311,7 +2311,7 @@ class Thread implements Runnable {
         }
     }
 
-    // [IKVM] this the implementation of Object.wait(). It is hooked up in map.xml.
+    // [IKVM] this the implementation of Object.wait(long timeout, int nanos). It is hooked up in map.xml.
     static void objectWait(Object o, long timeout, int nanos) throws InterruptedException {
         if (o == null) {
             throw new NullPointerException();
@@ -2325,6 +2325,17 @@ class Thread implements Runnable {
         if (nanos >= 500000 || (nanos != 0 && timeout == 0)) {
             timeout++;
         }
+        objectWait(o, timeout);
+    }
+
+    // [IKVM] this the implementation of Object.wait(long timeout). It is hooked up in map.xml.
+    static void objectWait(Object o, long timeout) throws InterruptedException {
+        if (o == null) {
+            throw new NullPointerException();
+        }
+        if (timeout < 0) {
+            throw new IllegalArgumentException("timeout value is negative");
+        }
         Thread t = currentThread();
         t.enterInterruptableWait(timeout != 0);
         try {
@@ -2333,7 +2344,11 @@ class Thread implements Runnable {
                 cli.System.Threading.Monitor.Wait(o);
             }
             else {
-                cli.System.Threading.Monitor.Wait(o, new cli.System.TimeSpan(timeout * 10000));
+                // We wait a maximum of Integer.MAX_VALUE milliseconds, because that is the maximum that Monitor.Wait will wait.
+                // Note that the Object.wait() specification allows for spurious wakeups, so this isn't a problem. Trying to
+                // emulate a longer wait with multiple Monitor.Wait() calls is not allowed, because that would mean that
+                // we acquire and release the synchronization lock multiple times during the wait.
+                cli.System.Threading.Monitor.Wait(o, (int)Math.min(timeout, Integer.MAX_VALUE));
             }
         }
         catch (cli.System.Threading.ThreadInterruptedException _) {

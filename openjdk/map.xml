@@ -47,8 +47,7 @@
                     <ldarg_0 />
                     <ldc_i4_0 />
                     <conv_i8 />
-                    <ldc_i4_0 />
-                    <call class="java.lang.Thread" name="objectWait" sig="(Ljava.lang.Object;JI)V" />
+                    <call class="java.lang.Thread" name="objectWait" sig="(Ljava.lang.Object;J)V" />
                     <ret />
                 </body>
             </method>
@@ -58,8 +57,7 @@
                 <body>
                     <ldarg_0 />
                     <ldarg_1 />
-                    <ldc_i4_0 />
-                    <call class="java.lang.Thread" name="objectWait" sig="(Ljava.lang.Object;JI)V" />
+                    <call class="java.lang.Thread" name="objectWait" sig="(Ljava.lang.Object;J)V" />
                     <ret />
                 </body>
             </method>
