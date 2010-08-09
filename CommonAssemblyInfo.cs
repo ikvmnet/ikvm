@@ -29,7 +29,7 @@ using System.Reflection;
 [assembly: AssemblyCopyright("Copyright (C) 2002-2010 Jeroen Frijters")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
-[assembly: AssemblyVersion("0.44.0.3")]
+[assembly: AssemblyVersion("0.44.0.4")]
 
 #if SIGNCODE
 	#pragma warning disable 1699
