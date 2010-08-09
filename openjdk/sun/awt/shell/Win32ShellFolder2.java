@@ -1,5 +1,6 @@
 /*
   Copyright (C) 2009 Volker Berlin (i-net software)
+  Copyright (C) 2010 Karsten Heinrich (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -56,6 +57,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectStreamException;
 
+import cli.System.Environment.SpecialFolder;
 import cli.System.Drawing.Bitmap;
 import cli.System.Drawing.Imaging.BitmapData;
 import cli.System.Drawing.Imaging.ImageLockMode;
@@ -196,6 +198,8 @@ public class Win32ShellFolder2 extends ShellFolder{
     private Image smallIcon = null;
     
     private Image largeIcon = null;
+
+	private int folder = -1;
     
     /**
      * @param folder
@@ -203,6 +207,7 @@ public class Win32ShellFolder2 extends ShellFolder{
      */
     Win32ShellFolder2(int folder) throws IOException{
         super(null, getFileSystemPath(folder));
+		this.folder = folder;
     }
 
 
@@ -374,7 +379,7 @@ public class Win32ShellFolder2 extends ShellFolder{
         if (security != null) {
             security.checkRead(getPath());
         }
-        if (!isDirectory()) {
+        if (folder < 0 && !isDirectory()) {
             return null;
         }
         // Links to directories are not directories and cannot be parents.
@@ -383,8 +388,19 @@ public class Win32ShellFolder2 extends ShellFolder{
         if (isLink() && !hasAttribute(ATTRIB_FOLDER)) {
             return new File[0];
         }
-        
-        File[] files = super.listFiles(includeHiddenFiles);
+        File[] files;
+        if( folder == DRIVES ){
+        	// 'MyComputer' has no path in .NET, so we can't use a 
+        	// normal listFiles in that case.
+        	String[] drives = cli.System.IO.Directory.GetLogicalDrives();
+        	files = new File[ drives.length ];
+        	for( int i = 0; i < drives.length; i++ ){
+        		files[i] = new Win32ShellFolder2( this, drives[i] );
+        	}
+        	return files;
+        } else {
+        	files = super.listFiles(includeHiddenFiles);
+        }
         Win32ShellFolder2[] shellFiles = new Win32ShellFolder2[files.length];
         for(int i = 0; i < files.length; i++){
             File file = files[i];
