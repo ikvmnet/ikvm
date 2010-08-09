@@ -105,17 +105,26 @@ namespace ikvm.awt
 		[System.Security.SecuritySafeCritical]
 		public void setPixels(int x, int y, int w, int h, ColorModel model, int[] pixels, int off, int scansize)
 		{
-			if (x <= 0 || y <= 0 || w <= 0 || h <= 0 || off < 0)
-			{
-				// should we report an error?
-				return;
-			}
-			long length = w * h;
+            if( x < 0) {
+                w -= x;
+                x = 0;
+            }
+            if (y < 0) {
+                h -= y;
+                y = 0;
+            }
+            if (w <= 0 || h <= 0) {
+                // nothing to set
+                return;
+            }
+            if ( off < 0 ) {
+                throw new java.lang.ArrayIndexOutOfBoundsException( "Data offset out of bounds." );
+            }
+            long length = w * h;
 			if (length > pixels.Length - off)
 			{
-				// should we report an error?
-				return;
-			}
+                throw new java.lang.ArrayIndexOutOfBoundsException("Data offset out of bounds.");
+            }
 			lock (mBitmap)
 			{
 				BitmapData data = mBitmap.LockBits(new Rectangle(x, y, w, h), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
