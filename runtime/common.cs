@@ -253,10 +253,13 @@ namespace IKVM.NativeCode.ikvm.runtime
 			return null;
 #else
 			global::java.util.Vector v = new global::java.util.Vector();
-			IKVM.Internal.AssemblyClassLoader wrapper = IKVM.Internal.AssemblyClassLoader.FromAssembly(assembly);
-			foreach (global::java.net.URL url in wrapper.GetResources(name))
+			if (assembly != null)
 			{
-				v.addElement(url);
+				IKVM.Internal.AssemblyClassLoader wrapper = IKVM.Internal.AssemblyClassLoader.FromAssembly(assembly);
+				foreach (global::java.net.URL url in wrapper.GetResources(name))
+				{
+					v.addElement(url);
+				}
 			}
 			global::java.net.URL curl = GetClassResource(classLoader, assembly, name);
 			if (curl != null)
