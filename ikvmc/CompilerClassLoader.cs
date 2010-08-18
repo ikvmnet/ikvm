@@ -320,6 +320,7 @@ namespace IKVM.Internal
 					if(!f.IsInterface
 						&& !f.IsAbstract
 						&& !f.IsPublic
+						&& !f.IsInternal
 						&& !f.IsFinal
 						&& !baseClasses.ContainsKey(f.Name)
 						&& !options.targetIsModule
