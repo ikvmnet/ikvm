@@ -405,28 +405,32 @@ namespace IKVM.Internal
 				if (populate)
 				{
 					Dictionary<string, string> names = new Dictionary<string, string>();
-					Type[] types;
-					try
+					AssemblyClassLoader acl = AssemblyClassLoader.FromAssembly(this.asm);
+					foreach (Assembly asm in acl.GetAllAvailableAssemblies())
 					{
-						types = asm.GetTypes();
-					}
-					catch (ReflectionTypeLoadException x)
-					{
-						types = x.Types;
-					}
-					catch
-					{
-						types = Type.EmptyTypes;
-					}
-					bool mscorlib = asm == typeof(object).Assembly;
-					foreach (Type type in types)
-					{
-						if (type != null)
+						Type[] types;
+						try
 						{
-							TypeWrapper tw = mscorlib ? DotNetTypeWrapper.GetWrapperFromDotNetType(type) : ClassLoaderWrapper.GetWrapperFromType(type);
-							if (tw != null)
+							types = asm.GetTypes();
+						}
+						catch (ReflectionTypeLoadException x)
+						{
+							types = x.Types;
+						}
+						catch
+						{
+							types = Type.EmptyTypes;
+						}
+						bool mscorlib = asm == typeof(object).Assembly;
+						foreach (Type type in types)
+						{
+							if (type != null)
 							{
-								names[tw.Name] = tw.Name;
+								TypeWrapper tw = mscorlib ? DotNetTypeWrapper.GetWrapperFromDotNetType(type) : ClassLoaderWrapper.GetWrapperFromType(type);
+								if (tw != null)
+								{
+									names[tw.Name] = tw.Name;
+								}
 							}
 						}
 					}

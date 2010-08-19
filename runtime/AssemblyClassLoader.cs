@@ -544,25 +544,52 @@ namespace IKVM.Internal
 				{
 					foreach (int index in assemblies)
 					{
-						AssemblyLoader loader = exportedAssemblies[index];
-						if (loader == null)
+						AssemblyLoader loader = TryGetLoaderByIndex(index);
+						if (loader != null)
 						{
-							Assembly asm = LoadAssemblyOrClearName(ref exportedAssemblyNames[index], true);
-							if (asm == null)
+							tw = loader.DoLoad(name);
+							if (tw != null)
 							{
-								continue;
+								return RegisterInitiatingLoader(tw);
 							}
-							loader = exportedAssemblies[index] = GetLoaderForExportedAssembly(asm);
-						}
-						tw = loader.DoLoad(name);
-						if (tw != null)
-						{
-							return RegisterInitiatingLoader(tw);
 						}
 					}
 				}
 			}
 			return null;
+		}
+
+		private AssemblyLoader TryGetLoaderByIndex(int index)
+		{
+			AssemblyLoader loader = exportedAssemblies[index];
+			if (loader == null)
+			{
+				Assembly asm = LoadAssemblyOrClearName(ref exportedAssemblyNames[index], true);
+				if (asm != null)
+				{
+					loader = exportedAssemblies[index] = GetLoaderForExportedAssembly(asm);
+				}
+			}
+			return loader;
+		}
+
+		internal List<Assembly> GetAllAvailableAssemblies()
+		{
+			List<Assembly> list = new List<Assembly>();
+			list.Add(assemblyLoader.Assembly);
+			LazyInitExports();
+			if (exportedAssemblies != null)
+			{
+				for (int i = 0; i < exportedAssemblies.Length; i++)
+				{
+					AssemblyLoader loader = TryGetLoaderByIndex(i);
+					if (loader != null && FromAssembly(loader.Assembly) == this)
+					{
+						list.Add(loader.Assembly);
+					}
+				}
+			}
+			return list;
 		}
 
 		private AssemblyLoader GetLoader(Assembly assembly)
