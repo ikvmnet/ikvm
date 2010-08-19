@@ -104,6 +104,15 @@ namespace IKVM.NativeCode.java.lang
 		{
 			return VirtualFileSystem.RootPath;
 		}
+
+		public static string getBootClassPath()
+		{
+#if FIRST_PASS
+			return null;
+#else
+			return VirtualFileSystem.GetAssemblyClassesPath(JVM.CoreAssembly);
+#endif
+		}
 	}
 }
 

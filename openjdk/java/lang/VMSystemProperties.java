@@ -306,6 +306,7 @@ final class VMSystemProperties
         String vfsroot = getVirtualFileSystemRoot();
         p.setProperty("java.home", vfsroot.substring(0, vfsroot.length() - 1));
         p.setProperty("sun.boot.library.path", vfsroot + "bin");
+        p.setProperty("sun.boot.class.path", getBootClassPath());
 	initCommonProperties(p);
         String[] culture = ((cli.System.String)(Object)cli.System.Globalization.CultureInfo.get_CurrentCulture().get_Name()).Split(new char[] { '-' });        
         p.setProperty("user.language", culture[0]);
@@ -318,7 +319,7 @@ final class VMSystemProperties
 	p.setProperty("java.vm.info", "compiled mode");
 	p.setProperty("sun.nio.MaxDirectMemorySize", "-1");
 	p.setProperty("java.awt.graphicsenv", PropertyConstants.java_awt_graphicsenv);
-    p.setProperty("java.awt.printerjob", "sun.awt.windows.WPrinterJob");
+        p.setProperty("java.awt.printerjob", "sun.awt.windows.WPrinterJob");
 	// TODO
 	// sun.cpu.isalist:=pentium_pro+mmx pentium_pro pentium+mmx pentium i486 i386 i86
 	// sun.desktop:=windows
@@ -358,4 +359,5 @@ final class VMSystemProperties
     }
     
     private static native String getVirtualFileSystemRoot();
+    private static native String getBootClassPath();
 }

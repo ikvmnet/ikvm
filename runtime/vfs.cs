@@ -115,7 +115,8 @@ namespace IKVM.Internal
 #if FIRST_PASS
 			return null;
 #else
-			return RootPath + "assembly" + global::java.io.File.separatorChar + VfsAssembliesDirectory.GetName(asm.GetName()) + global::java.io.File.separatorChar + "classes" + global::java.io.File.separatorChar;
+			// we can't use java.io.File.separatorChar here, because we're invoked by the system property setup code
+			return RootPath + "assembly" + System.IO.Path.DirectorySeparatorChar + VfsAssembliesDirectory.GetName(asm.GetName()) + System.IO.Path.DirectorySeparatorChar + "classes" + System.IO.Path.DirectorySeparatorChar;
 #endif
 		}
 
@@ -124,7 +125,7 @@ namespace IKVM.Internal
 #if FIRST_PASS
 			return null;
 #else
-			return RootPath + "assembly" + global::java.io.File.separatorChar + VfsAssembliesDirectory.GetName(asm.GetName()) + global::java.io.File.separatorChar + "resources" + global::java.io.File.separatorChar;
+			return RootPath + "assembly" + System.IO.Path.DirectorySeparatorChar + VfsAssembliesDirectory.GetName(asm.GetName()) + System.IO.Path.DirectorySeparatorChar + "resources" + System.IO.Path.DirectorySeparatorChar;
 #endif
 		}
 
