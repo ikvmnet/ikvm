@@ -261,10 +261,14 @@ namespace IKVM.NativeCode.ikvm.runtime
 					v.addElement(url);
 				}
 			}
-			global::java.net.URL curl = GetClassResource(classLoader, assembly, name);
-			if (curl != null)
+			// we'll only generate a stub class if there isn't already a resource with this name
+			if (v.isEmpty())
 			{
-				v.addElement(curl);
+				global::java.net.URL curl = GetClassResource(classLoader, assembly, name);
+				if (curl != null)
+				{
+					v.addElement(curl);
+				}
 			}
 			return v.elements();
 #endif
