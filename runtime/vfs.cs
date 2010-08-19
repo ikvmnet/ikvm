@@ -404,6 +404,7 @@ namespace IKVM.Internal
 				}
 				if (populate)
 				{
+					Dictionary<string, string> names = new Dictionary<string, string>();
 					Type[] types;
 					try
 					{
@@ -424,18 +425,25 @@ namespace IKVM.Internal
 							TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(type);
 							if (tw != null)
 							{
-								string[] parts = tw.Name.Split('.');
-								lock (entries)
+								names[tw.Name] = tw.Name;
+							}
+						}
+					}
+					lock (entries)
+					{
+						if (entries.Count == 0)
+						{
+							foreach (string name in names.Keys)
+							{
+								string[] parts = name.Split('.');
+								VfsDirectory dir = this;
+								for (int i = 0; i < parts.Length - 1; i++)
 								{
-									VfsDirectory dir = this;
-									for (int i = 0; i < parts.Length - 1; i++)
-									{
-										dir = dir.GetEntry(parts[i]) as VfsDirectory ?? dir.AddDirectory(parts[i]);
-									}
-									// we're adding a dummy file, to make the file appear in the directory listing, it will not actually
-									// be accessed, because the code above handles that
-									dir.Add(parts[parts.Length - 1] + ".class", VfsDummyFile.Instance);
+									dir = dir.GetEntry(parts[i]) as VfsDirectory ?? dir.AddDirectory(parts[i]);
 								}
+								// we're adding a dummy file, to make the file appear in the directory listing, it will not actually
+								// be accessed, because the code above handles that
+								dir.Add(parts[parts.Length - 1] + ".class", VfsDummyFile.Instance);
 							}
 						}
 					}
