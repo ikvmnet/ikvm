@@ -418,11 +418,12 @@ namespace IKVM.Internal
 					{
 						types = Type.EmptyTypes;
 					}
+					bool mscorlib = asm == typeof(object).Assembly;
 					foreach (Type type in types)
 					{
 						if (type != null)
 						{
-							TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(type);
+							TypeWrapper tw = mscorlib ? DotNetTypeWrapper.GetWrapperFromDotNetType(type) : ClassLoaderWrapper.GetWrapperFromType(type);
 							if (tw != null)
 							{
 								names[tw.Name] = tw.Name;
