@@ -1,16 +1,20 @@
 <?xml version="1.0"?>
 <project name="ikvm" default="all">
+    <include buildfile="ikvm.include" />
     <target name="signed">
          <property name="signed" value="SIGNCODE" />
          <property name="signoption" value="-key:ikvm-key" />
          <property name="ilasm_signoption" value="/key:@ikvm-key" />
          <call target="all" />
     </target>
-    <target name="all">
+    <target name="all" depends="native managed" />
+    <target name="native">
+        <nant buildfile="native/native.build" />
+    </target>
+    <target name="managed">
         <nant buildfile="tools/tools.build" />
         <nant buildfile="runtime/runtime.build" target="first-pass" />
         <nant buildfile="awt/awt.build" target="first-pass" />
-        <nant buildfile="native/native.build" />
         <nant buildfile="reflect/reflect.build" />
         <nant buildfile="ikvmc/ikvmc.build" />
         <nant buildfile="ikvmstub/ikvmstub.build" />
@@ -19,9 +23,7 @@
         <nant buildfile="openjdk/openjdk.build" target="tools" />
         <nant buildfile="ikvm/ikvm.build" />
         <nant buildfile="awt/awt.build" />
-        <if test="${platform::is-win32()}">
-            <nant buildfile="jvm/jvm.build" />
-        </if>
+        <nant buildfile="jvm/jvm.build" />
     </target>
     <target name="clean">
         <delete failonerror="false">

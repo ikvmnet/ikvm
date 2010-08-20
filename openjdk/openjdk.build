@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <project name="ClassLibrary" default="all">
+    <include buildfile="../ikvm.include" />
     <property name="pathsep" value=":" />
     <property overwrite="false" name="signoption" value="" />
     <property name="OpenJDK.dir" value="${project::get-base-directory()}/../../openjdk6-b18" />
@@ -184,28 +185,28 @@
             <arg value="-nowarn:110" />
             <arg value="@response.gen.txt" />
         </exec>
-        <if test="${platform::is-win32()}">
-            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Beans.dll" />
-            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Charsets.dll" />
-            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Corba.dll" />
-            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Core.dll" />
-            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Jdbc.dll" />
-            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Management.dll" />
-            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Media.dll" />
-            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Misc.dll" />
-            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Naming.dll" />
-            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Remoting.dll" />
-            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Security.dll" />
-            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.SwingAWT.dll" />
-            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Text.dll" />
-            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.Util.dll" />
-            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.XML.API.dll" />
-            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.XML.Bind.dll" />
-            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.XML.Crypto.dll" />
-            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.XML.Parse.dll" />
-            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.XML.Transform.dll" />
-            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.XML.WebServices.dll" />
-            <exec program="peverify" commandline="-nologo IKVM.OpenJDK.XML.XPath.dll" />
+        <if test="${property::exists('peverify')}">
+            <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Beans.dll" />
+            <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Charsets.dll" />
+            <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Corba.dll" />
+            <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Core.dll" />
+            <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Jdbc.dll" />
+            <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Management.dll" />
+            <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Media.dll" />
+            <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Misc.dll" />
+            <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Naming.dll" />
+            <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Remoting.dll" />
+            <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Security.dll" />
+            <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.SwingAWT.dll" />
+            <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Text.dll" />
+            <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Util.dll" />
+            <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.XML.API.dll" />
+            <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.XML.Bind.dll" />
+            <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.XML.Crypto.dll" />
+            <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.XML.Parse.dll" />
+            <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.XML.Transform.dll" />
+            <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.XML.WebServices.dll" />
+            <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.XML.XPath.dll" />
         </if>
 	<!-- make sure that we haven't accidentally introduced new dependencies -->
         <exec program="${project::get-base-directory()}/../tools/depcheck.exe" commandline="response.txt dependencies.txt" useruntimeengine="true" />

@@ -1,11 +1,12 @@
 <?xml version="1.0"?>
 <project name="JVM" default="JVM">
-    <target name="JVM">
+    <include buildfile="../ikvm.include" />
+    <target name="JVM" if="${property::exists('ilasm') and (not string::starts-with(framework::get-target-framework(), 'mono'))}">
         <property name="VERSION" value="${assemblyname::get-version(assemblyname::get-assembly-name(path::combine(project::get-base-directory(), '../bin/IKVM.Runtime.dll')))}" />
         <property overwrite="false" name="ilasm_signoption" value="" />
         <exec program="../tools/asmref.exe" useruntimeengine="true" commandline="mscorlib ../bin/IKVM.Runtime.JNI.dll" output="jvm_h.il" />
         <echo message=".assembly JVM { .ver ${string::replace(property::get-value('VERSION'), '.', ':')} }" file="jvm_h.il" append="true" />
-        <exec program="ilasm" commandline="           /dll ${ilasm_signoption} /out:../bin-x86/JVM.DLL jvm_h.il jvm32.il JVM.il" />
-        <exec program="ilasm" commandline="/pe64 /x64 /dll ${ilasm_signoption} /out:../bin-x64/JVM.DLL jvm_h.il jvm64.il JVM.il" />
+        <exec program="${ilasm}" commandline="           /dll ${ilasm_signoption} /out:../bin-x86/JVM.DLL jvm_h.il jvm32.il JVM.il" />
+        <exec program="${ilasm}" commandline="/pe64 /x64 /dll ${ilasm_signoption} /out:../bin-x64/JVM.DLL jvm_h.il jvm64.il JVM.il" />
     </target>
 </project>
