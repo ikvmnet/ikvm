@@ -422,15 +422,30 @@ namespace IKVM.Internal
 						{
 							types = Type.EmptyTypes;
 						}
-						bool mscorlib = asm == typeof(object).Assembly;
 						foreach (Type type in types)
 						{
 							if (type != null)
 							{
-								TypeWrapper tw = mscorlib ? DotNetTypeWrapper.GetWrapperFromDotNetType(type) : ClassLoaderWrapper.GetWrapperFromType(type);
-								if (tw != null)
+								string name = null;
+								try
 								{
-									names[tw.Name] = tw.Name;
+									bool isJavaType;
+									name = acl.GetTypeNameAndType(type, out isJavaType);
+#if !FIRST_PASS
+									// annotation custom attributes are pseudo proxies and are not loadable by name (and should not exist in the file systems,
+									// because proxies are, ostensibly, created on the fly)
+									if (isJavaType && type.BaseType == typeof(global::ikvm.@internal.AnnotationAttributeBase) && name.Contains(".$Proxy"))
+									{
+										name = null;
+									}
+#endif
+								}
+								catch
+								{
+								}
+								if (name != null)
+								{
+									names[name] = name;
 								}
 							}
 						}
