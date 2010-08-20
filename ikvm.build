@@ -7,11 +7,11 @@
          <property name="ilasm_signoption" value="/key:@ikvm-key" />
          <call target="all" />
     </target>
-    <target name="all" depends="native managed" />
+    <target name="all" depends="clean native managed" />
     <target name="native">
         <nant buildfile="native/native.build" />
     </target>
-    <target name="managed">
+    <target name="managed" depends="CommonAssemblyInfo">
         <nant buildfile="tools/tools.build" />
         <nant buildfile="runtime/runtime.build" target="first-pass" />
         <nant buildfile="awt/awt.build" target="first-pass" />
@@ -24,6 +24,15 @@
         <nant buildfile="ikvm/ikvm.build" />
         <nant buildfile="awt/awt.build" />
         <nant buildfile="jvm/jvm.build" />
+    </target>
+    <target name="CommonAssemblyInfo">
+        <copy file="CommonAssemblyInfo.cs.in" tofile="CommonAssemblyInfo.cs" overwrite="true">
+            <filterchain>
+                <replacetokens>
+                    <token key="BUILD" value="${timespan::get-days(datetime::now() - datetime::parse('2000-01-01'))}" />
+                </replacetokens>
+            </filterchain>
+        </copy>
     </target>
     <target name="clean">
         <delete failonerror="false">
