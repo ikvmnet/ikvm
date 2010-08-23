@@ -1695,6 +1695,21 @@ namespace IKVM.NativeCode.java
 
 	namespace lang
 	{
+		namespace @ref
+		{
+			static class Reference
+			{
+				public static bool noclassgc()
+				{
+#if CLASSGC
+					return !JVM.classUnloading;
+#else
+					return true;
+#endif
+				}
+			}
+		}
+
 		namespace reflect
 		{
 			static class Array

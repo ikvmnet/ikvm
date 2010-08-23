@@ -32,6 +32,8 @@ public abstract class Reference<T>
     volatile T strongRef;
     volatile ReferenceQueue<? super T> queue;
     volatile Reference next;
+    
+    private static native boolean noclassgc();
 
     Reference(T referent)
     {
@@ -43,7 +45,7 @@ public abstract class Reference<T>
         this.queue = queue == null ? ReferenceQueue.NULL : queue;
         if (referent != null)
         {
-            if (referent instanceof Class)
+            if (referent instanceof Class && noclassgc())
             {
                 // We don't do Class gc, so no point in using a weak reference for classes.
                 strongRef = referent;
