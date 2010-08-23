@@ -45,9 +45,7 @@
                 <include name="bin/ikvm.exe" />
                 <include name="bin/ikvmc.exe" />
                 <include name="bin/ikvmstub.exe" />
-                <include name="bin-x64/ikvm-native.dll" />
                 <include name="bin-x64/JVM.DLL" />
-                <include name="bin-x86/ikvm-native.dll" />
                 <include name="bin-x86/JVM.DLL" />
                 <include name="classpath/**.class" />
                 <include name="openjdk/*.dll" />
@@ -70,6 +68,8 @@
         <delete failonerror="false">
             <fileset>
                 <include name="bin/libikvm-native.so" />
+                <include name="bin-x64/ikvm-native.dll" />
+                <include name="bin-x86/ikvm-native.dll" />
                 <include name="native/Release-x64/ikvm-native.dll" />
                 <include name="native/Release-x64/*.obj" />
                 <include name="native/Release-x86/ikvm-native.dll" />
