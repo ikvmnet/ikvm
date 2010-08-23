@@ -1,26 +1,35 @@
-IKVM Build Instructions
------------------------
+IKVM.NET Build Instructions
+---------------------------
 
-This IKVM source bundle requires OpenJDK 6 b18 sources (and build artifacts).
+This IKVM.NET source bundle requires OpenJDK 6 b18 sources (and build artifacts).
 
 They can be downloaded from the SourceForge IKVM project, or from:
 
 http://www.frijters.net/openjdk6-b18-stripped.zip
 
-This file hould be unzipped in the same directory as where the ikvm directory
+This file should be unzipped in the same directory as where the ikvm directory
 (that contains this unzipped source bundle) lives.
 
 Download ICSharpCode.SharpZipLib.dll (from http://www.icsharpcode.net/opensource/sharpziplib/
 or from the ikvmbin-x.y.z.r.zip in the SourceForge IKVM project) and copy it to ikvm/bin.
 
-Open a Visual Studio 2008 Command Prompt (i.e. one that has the Windows and .NET Framework SDK
-environment variables set).
+Add the bin directory of NAnt 0.85 and JDK 1.6 to the PATH.
 
-Add NAnt 0.85 to the PATH.
+From the ikvm directory run "nant".
 
-From the ikvm directory run "nant clean" and "nant".
+You now should have the built binaries in ikvm/bin. Note that this only builds the managed
+binaries, to build the native binary see Native Build.
 
-You now should have the built binaries in ikvm/bin.
+
+Native Build
+------------
+
+Windows:
+Make sure you have Visual C++ 2008 installed. Open a Visual Studio 2008 Command Prompt.
+From the ikvm directory run "nant native".
+
+Linux:
+Make sure you have gcc installed. From the ikvm directory run "nant native".
 
 
 Additional Information
@@ -35,4 +44,4 @@ built after the IKVM.OpenJDK.*.dll assemblies have been built.
 The version numbers of the build is defined in ikvm/CommonAssemblyInfo.cs.
 
 If you want to do a strong named build, make sure you have a key container installed named
-"ikvm-key" and run the build with "nant clean" and "nant signed".
+"ikvm-key" and run the build with "nant signed".
