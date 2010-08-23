@@ -3588,7 +3588,7 @@ namespace IKVM.Internal
 								else
 								{
 									MethodWrapper fmw = wrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
-									while (fmw != mw && (fmw.IsStatic || fmw.IsPrivate || !fmw.DeclaringType.IsPackageAccessibleFrom(mw.DeclaringType)))
+									while (fmw != mw && (fmw.IsStatic || fmw.IsPrivate || !(mw.DeclaringType.IsPackageAccessibleFrom(fmw.DeclaringType) || (mw.IsInternal && mw.DeclaringType.InternalsVisibleTo(fmw.DeclaringType)))))
 									{
 										needRename = true;
 										fmw = fmw.DeclaringType.BaseTypeWrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
