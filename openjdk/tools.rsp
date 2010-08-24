@@ -38,6 +38,12 @@
     @OPENJDK@/build/linux-amd64/impsrc/com/sun/xml/internal/xsom/visitor/*.class
     @OPENJDK@/build/linux-amd64/impsrc/org/relaxng/datatype/*.class
     @OPENJDK@/build/linux-amd64/impsrc/org/relaxng/datatype/helpers/*.class
+    @OPENJDK@/build/linux-amd64/langtools/build/gensrc/com/sun/tools/apt/resources/*.class
+    @OPENJDK@/build/linux-amd64/langtools/build/gensrc/com/sun/tools/doclets/formats/html/resources/*.class
+    @OPENJDK@/build/linux-amd64/langtools/build/gensrc/com/sun/tools/doclets/internal/toolkit/resources/*.class
+    @OPENJDK@/build/linux-amd64/langtools/build/gensrc/com/sun/tools/javac/resources/*.class
+    @OPENJDK@/build/linux-amd64/langtools/build/gensrc/com/sun/tools/javadoc/resources/*.class
+    @OPENJDK@/build/linux-amd64/langtools/build/gensrc/com/sun/tools/javah/resources/*.class
     @OPENJDK@/jdk/src/share/classes/com/sun/jdi/*.class
     @OPENJDK@/jdk/src/share/classes/com/sun/jdi/connect/*.class
     @OPENJDK@/jdk/src/share/classes/com/sun/jdi/connect/spi/*.class
