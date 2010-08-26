@@ -1264,39 +1264,11 @@ sealed class Compiler
 					switch(classFile.GetConstantPoolConstantType(constant))
 					{
 						case ClassFile.ConstantType.Double:
-						{
-							double v = classFile.GetConstantPoolConstantDouble(constant);
-							if(v == 0.0 && BitConverter.DoubleToInt64Bits(v) < 0)
-							{
-								// FXBUG the x64 CLR JIT has a bug [1] that causes "cond ? -0:0 : 0.0" to be optimized to 0.0
-								// This bug causes problems for the sun.misc.FloatingDecimal code, so as a workaround we obfuscate the -0.0 constant.
-								// [1] https://connect.microsoft.com/VisualStudio/feedback/ViewFeedback.aspx?FeedbackID=276714
-								ilGenerator.Emit(OpCodes.Ldc_I8, Int64.MinValue);
-								ilGenerator.Emit(OpCodes.Call, JVM.Import(typeof(BitConverter)).GetMethod("Int64BitsToDouble"));
-							}
-							else
-							{
-								ilGenerator.Emit(OpCodes.Ldc_R8, v);
-							}
+							ilGenerator.Emit(OpCodes.Ldc_R8, classFile.GetConstantPoolConstantDouble(constant));
 							break;
-						}
 						case ClassFile.ConstantType.Float:
-						{
-							float v = classFile.GetConstantPoolConstantFloat(constant);
-							if(v == 0.0 && BitConverter.DoubleToInt64Bits(v) < 0)
-							{
-								// FXBUG the x64 CLR JIT has a bug [1] that causes "cond ? -0:0 : 0.0" to be optimized to 0.0
-								// This bug causes problems for the sun.misc.FloatingDecimal code, so as a workaround we obfuscate the -0.0 constant.
-								// [1] https://connect.microsoft.com/VisualStudio/feedback/ViewFeedback.aspx?FeedbackID=276714
-								ilGenerator.Emit(OpCodes.Ldc_I8, Int64.MinValue);
-								ilGenerator.Emit(OpCodes.Call, JVM.Import(typeof(BitConverter)).GetMethod("Int64BitsToDouble"));
-							}
-							else
-							{
-								ilGenerator.Emit(OpCodes.Ldc_R4, v);
-							}
+							ilGenerator.Emit(OpCodes.Ldc_R4, classFile.GetConstantPoolConstantFloat(constant));
 							break;
-						}
 						case ClassFile.ConstantType.Integer:
 							ilGenerator.LazyEmitLdc_I4(classFile.GetConstantPoolConstantInteger(constant));
 							break;
