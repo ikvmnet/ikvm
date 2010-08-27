@@ -123,7 +123,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
         {
             if (false) throw new cli.System.Net.Sockets.SocketException();
             if (false) throw new cli.System.ObjectDisposedException("");
-            netSocket.Bind(new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(laddr), lport));
+            netSocket.Bind(new IPEndPoint(SocketUtil.getAddressFromInetAddress(laddr), lport));
             localPort = ((IPEndPoint)netSocket.get_LocalEndPoint()).get_Port();
         }
         catch (cli.System.Net.Sockets.SocketException x)
@@ -153,14 +153,14 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
             {
                 throw new SocketException("Invalid port");
             }
-            if (netSocket.SendTo(p.getData(), p.getOffset(), len, SocketFlags.wrap(SocketFlags.None), new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(p.getAddress()), port)) != len)
+            if (netSocket.SendTo(p.getData(), p.getOffset(), len, SocketFlags.wrap(SocketFlags.None), new IPEndPoint(SocketUtil.getAddressFromInetAddress(p.getAddress()), port)) != len)
             {
                 throw new SocketException("Not all data was sent");
             }
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
         catch (cli.System.ObjectDisposedException x1)
         {
@@ -288,7 +288,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
                     length = p.bufLength;
                     break;
                 }
-                throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+                throw SocketUtil.convertSocketExceptionToIOException(x);
             }
             catch (cli.System.ObjectDisposedException x1)
             {
@@ -296,7 +296,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
             }
         }
         IPEndPoint endpoint = (IPEndPoint)remoteEP[0];
-        p.address = PlainSocketImpl.getInetAddressFromIPEndPoint(endpoint);
+        p.address = SocketUtil.getInetAddressFromIPEndPoint(endpoint);
         p.port = endpoint.get_Port();
         p.length = length;
     }
@@ -400,7 +400,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
             if (false) throw new cli.System.Net.Sockets.SocketException();
             if (false) throw new cli.System.ArgumentException();
             if (false) throw new cli.System.ObjectDisposedException("");
-            IPAddress mcastAddr = PlainSocketImpl.getAddressFromInetAddress(inetaddr);
+            IPAddress mcastAddr = SocketUtil.getAddressFromInetAddress(inetaddr);
             if (netIf == null)
             {
                 netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.AddMembership), new MulticastOption(mcastAddr));
@@ -410,7 +410,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
                 Enumeration e = netIf.getInetAddresses();
                 if (e.hasMoreElements())
                 {
-                    IPAddress bindAddr = PlainSocketImpl.getAddressFromInetAddress((InetAddress)e.nextElement());
+                    IPAddress bindAddr = SocketUtil.getAddressFromInetAddress((InetAddress)e.nextElement());
                     MulticastOption mcastOption = new MulticastOption(mcastAddr, bindAddr);
                     netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.AddMembership), mcastOption);
                 }
@@ -418,7 +418,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
         catch (cli.System.ArgumentException x1)
         {
@@ -452,7 +452,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
             if (false) throw new cli.System.Net.Sockets.SocketException();
             if (false) throw new cli.System.ArgumentException();
             if (false) throw new cli.System.ObjectDisposedException("");
-            IPAddress mcastAddr = PlainSocketImpl.getAddressFromInetAddress(inetaddr);
+            IPAddress mcastAddr = SocketUtil.getAddressFromInetAddress(inetaddr);
             if (netIf == null)
             {
                 netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.DropMembership), new MulticastOption(mcastAddr));
@@ -462,7 +462,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
                 Enumeration e = netIf.getInetAddresses();
                 if (e.hasMoreElements())
                 {
-                    IPAddress bindAddr = PlainSocketImpl.getAddressFromInetAddress((InetAddress)e.nextElement());
+                    IPAddress bindAddr = SocketUtil.getAddressFromInetAddress((InetAddress)e.nextElement());
                     MulticastOption mcastOption = new MulticastOption(mcastAddr, bindAddr);
                     netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.DropMembership), mcastOption);
                 }
@@ -470,7 +470,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
         catch (cli.System.ArgumentException x1)
         {
@@ -643,7 +643,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
                 case SocketOptions.IP_MULTICAST_IF:
                     {
                         InetAddress addr = (InetAddress)val;
-                        netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastInterface), (int)PlainSocketImpl.getAddressFromInetAddress(addr).get_Address());
+                        netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastInterface), (int)SocketUtil.getAddressFromInetAddress(addr).get_Address());
                         break;
                     }
                 case SocketOptions.IP_MULTICAST_IF2:
@@ -655,7 +655,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
                             InetAddress addr = (InetAddress)e.nextElement();
                             if (addr.getAddress().length == 4)
                             {
-                                netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastInterface), (int)PlainSocketImpl.getAddressFromInetAddress(addr).get_Address());
+                                netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastInterface), (int)SocketUtil.getAddressFromInetAddress(addr).get_Address());
                                 return;
                             }
                         }
@@ -665,10 +665,10 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
                     netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastLoopback), ((Boolean)val).booleanValue() ? 1 : 0);
                     break;
                 case SocketOptions.SO_REUSEADDR:
-                    PlainSocketImpl.setCommonSocketOption(netSocket, opt, ((Boolean)val).booleanValue(), null);
+                    SocketUtil.setCommonSocketOption(netSocket, opt, ((Boolean)val).booleanValue(), null);
                     break;
                 default:
-                    PlainSocketImpl.setCommonSocketOption(netSocket, opt, false, val);
+                    SocketUtil.setCommonSocketOption(netSocket, opt, false, val);
                     break;
             }
         }
@@ -723,7 +723,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
                     // TODO handle IPv6 here
                     return CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.TypeOfService)));
                 case SocketOptions.SO_BINDADDR:
-                    return PlainSocketImpl.getInetAddressFromIPEndPoint((IPEndPoint)netSocket.get_LocalEndPoint());
+                    return SocketUtil.getInetAddressFromIPEndPoint((IPEndPoint)netSocket.get_LocalEndPoint());
                 default:
                     throw new SocketException("Invalid socket option: " + opt);
             }
@@ -744,7 +744,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
         {
             if (false) throw new cli.System.Net.Sockets.SocketException();
             if (false) throw new cli.System.ObjectDisposedException("");
-            IPEndPoint ep = new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(address), port);
+            IPEndPoint ep = new IPEndPoint(SocketUtil.getAddressFromInetAddress(address), port);
             // NOTE we use async connect to work around the issue that the .NET Socket class disallows sync Connect after the socket has received WSAECONNRESET
             netSocket.EndConnect(netSocket.BeginConnect(ep, null, null));
             netSocket.IOControl(SIO_UDP_CONNRESET, new byte[] { 1 }, null);

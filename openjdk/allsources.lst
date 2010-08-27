@@ -82,6 +82,7 @@ java/net/PlainDatagramSocketImpl.java
 java/net/PlainSocketImpl.java
 java/net/SocketInputStream.java
 java/net/SocketOutputStream.java
+java/net/SocketUtil.java
 java/nio/Bits.java
 java/security/AccessController.java
 java/sql/DriverManager.java

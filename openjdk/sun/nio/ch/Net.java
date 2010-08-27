@@ -48,19 +48,6 @@ class Net {                                             // package-private
 
     private Net() { }
 
-    // Winsock Error Codes
-    static final int WSAEINVAL = 10022;
-    static final int WSAEWOULDBLOCK = 10035;
-    static final int WSAEMSGSIZE = 10040;
-    static final int WSAEADDRINUSE = 10048;
-    static final int WSAENETUNREACH = 10051;
-    static final int WSAECONNRESET = 10054;
-    static final int WSAESHUTDOWN = 10058;
-    static final int WSAETIMEDOUT = 10060;
-    static final int WSAECONNREFUSED = 10061;
-    static final int WSAEHOSTUNREACH = 10065;
-    static final int WSAHOST_NOT_FOUND = 11001;
-
     static FileDescriptor serverSocket(boolean stream) throws IOException
     {
         return socket(stream);
@@ -84,7 +71,7 @@ class Net {                                             // package-private
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
     }
 
@@ -94,11 +81,11 @@ class Net {                                             // package-private
         {
             if (false) throw new cli.System.Net.Sockets.SocketException();
             if (false) throw new cli.System.ObjectDisposedException("");
-            fd.getSocket().Bind(new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(addr), port));
+            fd.getSocket().Bind(new IPEndPoint(SocketUtil.getAddressFromInetAddress(addr), port));
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
         catch (cli.System.ObjectDisposedException x1)
         {
@@ -116,13 +103,13 @@ class Net {                                             // package-private
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            if (x.get_ErrorCode() == WSAEINVAL)
+            if (x.get_ErrorCode() == SocketUtil.WSAEINVAL)
             {
                 // Work around for winsock issue. You can't set a socket to blocking if a connection request is pending,
                 // so we'll have to set the blocking again in SocketChannelImpl.checkConnect().
                 return;
             }
-            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
         catch (cli.System.ObjectDisposedException _)
         {
@@ -137,7 +124,7 @@ class Net {                                             // package-private
             if (false) throw new cli.System.Net.Sockets.SocketException();
             if (false) throw new cli.System.ObjectDisposedException("");
             IPEndPoint ep = (IPEndPoint)fd.getSocket().get_LocalEndPoint();
-            return new InetSocketAddress(PlainSocketImpl.getInetAddressFromIPEndPoint(ep), ep.get_Port());
+            return new InetSocketAddress(SocketUtil.getInetAddressFromIPEndPoint(ep), ep.get_Port());
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
@@ -231,7 +218,7 @@ class Net {                                             // package-private
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
         catch (cli.System.ObjectDisposedException x1)
         {
@@ -257,7 +244,7 @@ class Net {                                             // package-private
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
         catch (cli.System.ObjectDisposedException x1)
         {
@@ -280,17 +267,17 @@ class Net {                                             // package-private
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            if (x.get_ErrorCode() == PlainSocketImpl.WSAESHUTDOWN)
+            if (x.get_ErrorCode() == SocketUtil.WSAESHUTDOWN)
             {
                 // the socket was shutdown, so we have to return EOF
                 return IOStatus.EOF;
             }
-            else if (x.get_ErrorCode() == PlainSocketImpl.WSAEWOULDBLOCK)
+            else if (x.get_ErrorCode() == SocketUtil.WSAEWOULDBLOCK)
             {
                 // nothing to read and would block
                 return IOStatus.UNAVAILABLE;
             }
-            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
         catch (cli.System.ObjectDisposedException x1)
         {
@@ -372,11 +359,11 @@ class Net {                                             // package-private
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            if (x.get_ErrorCode() == PlainSocketImpl.WSAEWOULDBLOCK)
+            if (x.get_ErrorCode() == SocketUtil.WSAEWOULDBLOCK)
             {
                 return IOStatus.UNAVAILABLE;
             }
-            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
         catch (cli.System.ObjectDisposedException x1)
         {

@@ -106,7 +106,7 @@ class DatagramChannelImpl
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
     }
 
@@ -468,7 +468,7 @@ class DatagramChannelImpl
                     {
                         if (false) throw new cli.System.Net.Sockets.SocketException();
                         if (false) throw new cli.System.ObjectDisposedException("");
-                        fd.getSocket().Connect(PlainSocketImpl.getAddressFromInetAddress(isa.getAddress()), isa.getPort());
+                        fd.getSocket().Connect(SocketUtil.getAddressFromInetAddress(isa.getAddress()), isa.getPort());
                         fd.getSocket().IOControl(SIO_UDP_CONNRESET, new byte[] { 1 }, null);
                     }
                     catch (cli.System.Net.Sockets.SocketException x)
@@ -618,7 +618,7 @@ class DatagramChannelImpl
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
         catch (cli.System.ObjectDisposedException x1)
         {
@@ -637,7 +637,7 @@ class DatagramChannelImpl
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
         catch (cli.System.ObjectDisposedException x1)
         {
@@ -667,7 +667,7 @@ class DatagramChannelImpl
                 }
                 catch (cli.System.Net.Sockets.SocketException x)
                 {
-                    if (x.get_ErrorCode() == Net.WSAECONNRESET)
+                    if (x.get_ErrorCode() == SocketUtil.WSAECONNRESET)
                     {
                         // A previous send failed (i.e. the remote host responded with a ICMP that the port is closed) and
                         // the winsock stack helpfully lets us know this, but we only care about this when we're connected,
@@ -679,18 +679,18 @@ class DatagramChannelImpl
                         }
                         continue;
                     }
-                    if (x.get_ErrorCode() == Net.WSAEMSGSIZE)
+                    if (x.get_ErrorCode() == SocketUtil.WSAEMSGSIZE)
                     {
                         // The buffer size was too small for the packet, ReceiveFrom receives the part of the packet
                         // that fits in the buffer and then throws an exception, so we have to ignore the exception in this case.
                         length = buf.length;
                         break;
                     }
-                    if (x.get_ErrorCode() == Net.WSAEWOULDBLOCK)
+                    if (x.get_ErrorCode() == SocketUtil.WSAEWOULDBLOCK)
                     {
                         return IOStatus.UNAVAILABLE;
                     }
-                    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+                    throw SocketUtil.convertSocketExceptionToIOException(x);
                 }
                 catch (cli.System.ObjectDisposedException x1)
                 {
@@ -698,7 +698,7 @@ class DatagramChannelImpl
                 }
             }
             cli.System.Net.IPEndPoint ep = (cli.System.Net.IPEndPoint)remoteEP[0];
-            addr = new InetSocketAddress(PlainSocketImpl.getInetAddressFromIPEndPoint(ep), ep.get_Port());
+            addr = new InetSocketAddress(SocketUtil.getInetAddressFromIPEndPoint(ep), ep.get_Port());
         } while (remoteAddress != null && !addr.equals(remoteAddress));
         sender = addr;
         bb.put(buf, 0, length);
@@ -729,7 +729,7 @@ class DatagramChannelImpl
                 bb.get(buf);
                 bb.position(position);
             }
-            int sent = fd.getSocket().SendTo(buf, offset, length, cli.System.Net.Sockets.SocketFlags.wrap(cli.System.Net.Sockets.SocketFlags.None), new cli.System.Net.IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(addr.getAddress()), addr.getPort()));
+            int sent = fd.getSocket().SendTo(buf, offset, length, cli.System.Net.Sockets.SocketFlags.wrap(cli.System.Net.Sockets.SocketFlags.None), new cli.System.Net.IPEndPoint(SocketUtil.getAddressFromInetAddress(addr.getAddress()), addr.getPort()));
             if (bb.hasArray())
             {
                 bb.position(position + sent);
@@ -742,11 +742,11 @@ class DatagramChannelImpl
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            if (x.get_ErrorCode() == Net.WSAEWOULDBLOCK)
+            if (x.get_ErrorCode() == SocketUtil.WSAEWOULDBLOCK)
             {
                 return IOStatus.UNAVAILABLE;
             }
-            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
         catch (cli.System.ObjectDisposedException x1)
         {

@@ -319,7 +319,7 @@ class ServerSocketChannelImpl
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
         catch (cli.System.ObjectDisposedException _)
         {
@@ -344,7 +344,7 @@ class ServerSocketChannelImpl
                 cli.System.Net.Sockets.Socket accsock = netSocket.Accept();
                 newfd.setSocket(accsock);
                 cli.System.Net.IPEndPoint ep = (cli.System.Net.IPEndPoint)accsock.get_RemoteEndPoint();
-                isaa[0] = new InetSocketAddress(PlainSocketImpl.getInetAddressFromIPEndPoint(ep), ep.get_Port());
+                isaa[0] = new InetSocketAddress(SocketUtil.getInetAddressFromIPEndPoint(ep), ep.get_Port());
                 return 1;
             }
             else
@@ -354,7 +354,7 @@ class ServerSocketChannelImpl
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
         catch (cli.System.ObjectDisposedException _)
         {
@@ -372,7 +372,7 @@ class ServerSocketChannelImpl
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
         catch (cli.System.ObjectDisposedException x1)
         {

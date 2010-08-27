@@ -856,7 +856,7 @@ class SocketChannelImpl
         {
             if (false) throw new cli.System.Net.Sockets.SocketException();
             if (false) throw new cli.System.ObjectDisposedException("");
-            cli.System.Net.IPEndPoint ep = new cli.System.Net.IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(remote), remotePort);
+            cli.System.Net.IPEndPoint ep = new cli.System.Net.IPEndPoint(SocketUtil.getAddressFromInetAddress(remote), remotePort);
             if (isBlocking())
             {
                 fd.getSocket().Connect(ep);
@@ -918,7 +918,7 @@ class SocketChannelImpl
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
         catch (cli.System.ObjectDisposedException x1)
         {
@@ -936,7 +936,7 @@ class SocketChannelImpl
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
         catch (cli.System.ObjectDisposedException x1)
         {

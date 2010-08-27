@@ -57,134 +57,6 @@ import sun.net.ConnectionResetException;
 @ikvm.lang.Internal
 public class PlainSocketImpl extends SocketImpl
 {
-    // Winsock Error Codes
-    public static final int WSAEWOULDBLOCK = 10035;
-    private static final int WSAEADDRINUSE = 10048;
-    private static final int WSAENETUNREACH = 10051;
-    public static final int WSAESHUTDOWN = 10058;
-    private static final int WSAETIMEDOUT = 10060;
-    private static final int WSAECONNREFUSED = 10061;
-    private static final int WSAEHOSTUNREACH = 10065;
-    private static final int WSAHOST_NOT_FOUND = 11001;
-
-    public static IOException convertSocketExceptionToIOException(cli.System.Net.Sockets.SocketException x) throws IOException
-    {
-        switch (x.get_ErrorCode())
-        {
-            case WSAEADDRINUSE:
-                return new BindException(x.getMessage());
-            case WSAENETUNREACH:
-            case WSAEHOSTUNREACH:
-                return new NoRouteToHostException(x.getMessage());
-            case WSAETIMEDOUT:
-                return new SocketTimeoutException(x.getMessage());
-            case WSAECONNREFUSED:
-                return new PortUnreachableException(x.getMessage());
-            case WSAHOST_NOT_FOUND:
-                return new UnknownHostException(x.getMessage());
-            default:
-                return new SocketException(x.getMessage() + "\nError Code: " + x.get_ErrorCode());
-        }
-    }
-
-    public static IPAddress getAddressFromInetAddress(InetAddress addr)
-    {
-        byte[] b = addr.getAddress();
-        if (b.length == 16)
-        {
-            // FXBUG in .NET 1.1 you can only construct IPv6 addresses (not IPv4) with this constructor
-            // (according to the documentation this was fixed in .NET 2.0)
-            return new IPAddress(b);
-        }
-        else
-        {
-            return new IPAddress((((b[3] & 0xff) << 24) + ((b[2] & 0xff) << 16) + ((b[1] & 0xff) << 8) + (b[0] & 0xff)) & 0xffffffffL);
-        }
-    }
-
-    public static InetAddress getInetAddressFromIPEndPoint(IPEndPoint endpoint)
-    {
-        try
-        {
-            return InetAddress.getByAddress(endpoint.get_Address().GetAddressBytes());
-        }
-        catch (UnknownHostException x)
-        {
-            // this exception only happens if the address byte array is of invalid length, which cannot happen unless
-            // the .NET socket returns a bogus address
-            throw (InternalError)new InternalError().initCause(x);
-        }
-    }
-
-    static void setCommonSocketOption(cli.System.Net.Sockets.Socket netSocket, int cmd, boolean on, Object value) throws SocketException
-    {
-        try
-        {
-            if (false) throw new cli.System.Net.Sockets.SocketException();
-            if (false) throw new cli.System.ObjectDisposedException("");
-            switch (cmd)
-            {
-                case SocketOptions.SO_REUSEADDR:
-                    netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReuseAddress), on ? 1 : 0);
-                    break;
-                case SocketOptions.SO_SNDBUF:
-                    netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.SendBuffer), ((Integer)value).intValue());
-                    break;
-                case SocketOptions.SO_RCVBUF:
-                    netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReceiveBuffer), ((Integer)value).intValue());
-                    break;
-                case SocketOptions.IP_TOS:
-                    netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.TypeOfService), ((Integer)value).intValue());
-                    break;
-                case SocketOptions.SO_BINDADDR: // read-only
-                default:
-                    throw new SocketException("Invalid socket option: " + cmd);
-            }
-        }
-        catch (cli.System.Net.Sockets.SocketException x)
-        {
-            throw new SocketException(x.getMessage());
-        }
-        catch (cli.System.ObjectDisposedException x1)
-        {
-            throw new SocketException("Socket is closed");
-        }
-    }
-
-    static int getCommonSocketOption(cli.System.Net.Sockets.Socket netSocket, int opt, Object iaContainerObj) throws SocketException
-    {
-        try
-        {
-            if (false) throw new cli.System.Net.Sockets.SocketException();
-            if (false) throw new cli.System.ObjectDisposedException("");
-            switch (opt)
-            {
-                case SocketOptions.SO_REUSEADDR:
-                    return CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReuseAddress))) == 0 ? -1 : 1;
-                case SocketOptions.SO_SNDBUF:
-                    return CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.SendBuffer)));
-                case SocketOptions.SO_RCVBUF:
-                    return CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReceiveBuffer)));
-                case SocketOptions.IP_TOS:
-                    // TODO handle IPv6 here
-                    return CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.TypeOfService)));
-                case SocketOptions.SO_BINDADDR:
-                    ((InetAddressContainer)iaContainerObj).addr = getInetAddressFromIPEndPoint((IPEndPoint)netSocket.get_LocalEndPoint());
-                    return 0;
-                default:
-                    throw new SocketException("Invalid socket option: " + opt);
-            }
-        }
-        catch (cli.System.Net.Sockets.SocketException x)
-        {
-            throw new SocketException(x.getMessage());
-        }
-        catch (cli.System.ObjectDisposedException x1)
-        {
-            throw new SocketException("Socket is closed");
-        }
-    }
-
     private cli.System.Net.Sockets.Socket netSocket;
     /* instance variable for SO_TIMEOUT */
     int timeout;   // timeout in millisec
@@ -827,7 +699,7 @@ public class PlainSocketImpl extends SocketImpl
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            throw convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
         catch (cli.System.ObjectDisposedException x1)
         {
@@ -841,7 +713,7 @@ public class PlainSocketImpl extends SocketImpl
         {
             if (false) throw new cli.System.Net.Sockets.SocketException();
             if (false) throw new cli.System.ObjectDisposedException("");
-            IPEndPoint ep = new IPEndPoint(getAddressFromInetAddress(address), port);
+            IPEndPoint ep = new IPEndPoint(SocketUtil.getAddressFromInetAddress(address), port);
             if (timeout <= 0)
             {
                 netSocket.Connect(ep);
@@ -879,7 +751,7 @@ public class PlainSocketImpl extends SocketImpl
         {
             if (false) throw new cli.System.Net.Sockets.SocketException();
             if (false) throw new cli.System.ObjectDisposedException("");
-            netSocket.Bind(new IPEndPoint(getAddressFromInetAddress(address), localport));
+            netSocket.Bind(new IPEndPoint(SocketUtil.getAddressFromInetAddress(address), localport));
             this.address = address;
             if (localport == 0)
             {
@@ -910,7 +782,7 @@ public class PlainSocketImpl extends SocketImpl
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            throw convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
         catch (cli.System.ObjectDisposedException x1)
         {
@@ -933,13 +805,13 @@ public class PlainSocketImpl extends SocketImpl
             cli.System.Net.Sockets.Socket accept = netSocket.Accept();
             impl.netSocket = accept;
             IPEndPoint remoteEndPoint = ((IPEndPoint)accept.get_RemoteEndPoint());
-            impl.address = getInetAddressFromIPEndPoint(remoteEndPoint);
+            impl.address = SocketUtil.getInetAddressFromIPEndPoint(remoteEndPoint);
             impl.port = remoteEndPoint.get_Port();
             impl.localport = ((IPEndPoint)accept.get_LocalEndPoint()).get_Port();
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            throw convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
         catch (cli.System.ObjectDisposedException x1)
         {
@@ -958,7 +830,7 @@ public class PlainSocketImpl extends SocketImpl
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            throw convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
         catch (cli.System.ObjectDisposedException x1)
         {
@@ -979,7 +851,7 @@ public class PlainSocketImpl extends SocketImpl
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            throw convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
         catch (cli.System.ObjectDisposedException x1)
         {
@@ -997,7 +869,7 @@ public class PlainSocketImpl extends SocketImpl
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            throw convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
         catch (cli.System.ObjectDisposedException x1)
         {
@@ -1039,7 +911,7 @@ public class PlainSocketImpl extends SocketImpl
                     netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.OutOfBandInline), on ? 1 : 0);
                     break;
                 default:
-                    setCommonSocketOption(netSocket, cmd, on, value);
+                    SocketUtil.setCommonSocketOption(netSocket, cmd, on, value);
                     break;
             }
         }
@@ -1077,7 +949,7 @@ public class PlainSocketImpl extends SocketImpl
                 case SocketOptions.SO_OOBINLINE:
                     return CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.OutOfBandInline))) == 0 ? -1 : 1;
                 default:
-                    return getCommonSocketOption(netSocket, opt, iaContainerObj);
+                    return SocketUtil.getCommonSocketOption(netSocket, opt, iaContainerObj);
             }
         }
         catch (cli.System.Net.Sockets.SocketException x)
@@ -1101,7 +973,7 @@ public class PlainSocketImpl extends SocketImpl
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            throw convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
         catch (cli.System.ObjectDisposedException x1)
         {
@@ -1126,17 +998,17 @@ public class PlainSocketImpl extends SocketImpl
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            if (x.get_ErrorCode() == WSAESHUTDOWN)
+            if (x.get_ErrorCode() == SocketUtil.WSAESHUTDOWN)
             {
                 // the socket was shutdown, so we have to return EOF
                 return -1;
             }
-            else if (x.get_ErrorCode() == WSAEWOULDBLOCK)
+            else if (x.get_ErrorCode() == SocketUtil.WSAEWOULDBLOCK)
             {
                 // nothing to read and would block
                 return 0;
             }
-            throw convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
         catch (cli.System.ObjectDisposedException x1)
         {
@@ -1155,7 +1027,7 @@ public class PlainSocketImpl extends SocketImpl
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            throw convertSocketExceptionToIOException(x);
+            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
         catch (cli.System.ObjectDisposedException x1)
         {
