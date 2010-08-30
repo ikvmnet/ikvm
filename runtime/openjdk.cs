@@ -3761,9 +3761,20 @@ namespace IKVM.NativeCode.java
 				{
 					System.Net.IPAddress[] addr = System.Net.Dns.GetHostAddresses(hostname);
 					jnInetAddress[] addresses = new jnInetAddress[addr.Length];
+					int pos = 0;
 					for (int i = 0; i < addr.Length; i++)
 					{
-						addresses[i] = InetAddress.ConvertIPAddress(addr[i], hostname);
+						if (addr[i].AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6 == jnInetAddress.preferIPv6Address)
+						{
+							addresses[pos++] = InetAddress.ConvertIPAddress(addr[i], hostname);
+						}
+					}
+					for (int i = 0; i < addr.Length; i++)
+					{
+						if (addr[i].AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6 != jnInetAddress.preferIPv6Address)
+						{
+							addresses[pos++] = InetAddress.ConvertIPAddress(addr[i], hostname);
+						}
 					}
 					return addresses;
 				}
