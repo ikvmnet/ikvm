@@ -140,7 +140,6 @@ assembly.class
     @OPENJDK@/jdk/src/solaris/classes/sun/net/www/protocol/http/*.class
     @OPENJDK@/jdk/src/windows/classes/java/io/*.class
     @OPENJDK@/jdk/src/windows/classes/java/lang/*.class
-    @OPENJDK@/jdk/src/windows/classes/java/net/*.class
     @OPENJDK@/jdk/src/windows/classes/sun/nio/ch/*.class
     @OPENJDK@/jdk/src/windows/classes/sun/security/provider/NativePRNG.class
 }
