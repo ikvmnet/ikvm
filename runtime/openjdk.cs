@@ -4054,8 +4054,18 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return 0;
 #else
-				System.Net.NetworkInformation.IPv4InterfaceProperties props = GetDotNetNetworkInterfaceByIndex(ind).GetIPProperties().GetIPv4Properties();
-				return props == null ? -1 : props.Mtu;
+				System.Net.NetworkInformation.IPInterfaceProperties ipprops = GetDotNetNetworkInterfaceByIndex(ind).GetIPProperties();
+				System.Net.NetworkInformation.IPv4InterfaceProperties v4props = ipprops.GetIPv4Properties();
+				if (v4props != null)
+				{
+					return v4props.Mtu;
+				}
+				System.Net.NetworkInformation.IPv6InterfaceProperties v6props = ipprops.GetIPv6Properties();
+				if (v6props != null)
+				{
+					return v6props.Mtu;
+				}
+				return -1;
 #endif
 			}
 		}
