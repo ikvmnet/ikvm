@@ -3893,12 +3893,31 @@ namespace IKVM.NativeCode.java
 					netif._set1(name, ifaces[i].Description, GetIndex(ifaces[i]));
 					System.Net.NetworkInformation.UnicastIPAddressInformationCollection uipaic = ifaces[i].GetIPProperties().UnicastAddresses;
 					jnInetAddress[] addresses = new jnInetAddress[uipaic.Count];
+					jnInterfaceAddress[] bindings = new jnInterfaceAddress[uipaic.Count];
 					for (int j = 0; j < addresses.Length; j++)
 					{
 						System.Net.IPAddress addr = uipaic[j].Address;
 						if (addr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
 						{
 							addresses[j] = new jnInet4Address(null, addr.GetAddressBytes());
+							bindings[j] = new jnInterfaceAddress();
+							short mask = 32;
+							jnInet4Address broadcast = null;
+							if (uipaic[j].IPv4Mask != null && !uipaic[j].IPv4Mask.Equals(System.Net.IPAddress.Any))
+							{
+								broadcast = new jnInet4Address(null, -1);
+								mask = 0;
+								foreach (byte b in uipaic[j].IPv4Mask.GetAddressBytes())
+								{
+									mask += (short)global::java.lang.Integer.bitCount(b);
+								}
+							}
+							else if ((addresses[j].address & ~0xffffff) == 0x7f000000)
+							{
+								mask = 8;
+								broadcast = new jnInet4Address(null, 0xffffff);
+							}
+							bindings[j]._set(addresses[j], broadcast, mask);
 						}
 						else
 						{
@@ -3914,10 +3933,12 @@ namespace IKVM.NativeCode.java
 								ia6._set(scope, netif);
 							}
 							addresses[j] = ia6;
+							bindings[j] = new jnInterfaceAddress();
+							// TODO where do we get the IPv6 subnet prefix length?
+							short mask = 128;
+							bindings[j]._set(addresses[j], null, mask);
 						}
 					}
-					// TODO should implement bindings
-					jnInterfaceAddress[] bindings = new jnInterfaceAddress[0];
 					netif._set2(addresses, bindings, new jnNetworkInterface[0]);
 				}
 				NetworkInterfaceInfo nii = new NetworkInterfaceInfo();
