@@ -1418,12 +1418,58 @@
                 </body>
             </method>
         </class>
-        <class name="java.net.NetworkInterface">
-            <method name="_set" sig="(Ljava.lang.String;[Ljava.net.InterfaceAddress;[Ljava.net.NetworkInterface;)V" modifiers="">
+        <class name="java.net.Inet6Address">
+            <method name="_set" sig="(ILjava.net.NetworkInterface;)V" modifiers="">
                 <body>
                     <ldarg_0 />
                     <ldarg_1 />
+                    <stfld class="java.net.Inet6Address" name="scope_id" sig="I" />
+                    <ldarg_0 />
+                    <ldc_i4_1 />
+                    <stfld class="java.net.Inet6Address" name="scope_id_set" sig="Z" />
+                    <ldarg_0 />
+                    <ldarg_2 />
+                    <stfld class="java.net.Inet6Address" name="scope_ifname" sig="Ljava.net.NetworkInterface;" />
+                    <ret />
+                </body>
+            </method>
+        </class>
+        <class name="java.net.InterfaceAddress">
+            <method name="_set" sig="(Ljava.net.InetAddress;Ljava.net.Inet4Address;S)V" modifiers="">
+                <body>
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <stfld class="java.net.InterfaceAddress" name="address" sig="Ljava.net.InetAddress;" />
+                    <ldarg_0 />
+                    <ldarg_2 />
+                    <stfld class="java.net.InterfaceAddress" name="broadcast" sig="Ljava.net.Inet4Address;" />
+                    <ldarg_0 />
+                    <ldarg_3 />
+                    <stfld class="java.net.InterfaceAddress" name="maskLength" sig="S" />
+                    <ret />
+                </body>
+            </method>
+        </class>
+        <class name="java.net.NetworkInterface">
+            <method name="_set1" sig="(Ljava.lang.String;Ljava.lang.String;I)V" modifiers="">
+                <body>
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <stfld class="java.net.NetworkInterface" name="name" sig="Ljava.lang.String;" />
+                    <ldarg_0 />
+                    <ldarg_2 />
                     <stfld class="java.net.NetworkInterface" name="displayName" sig="Ljava.lang.String;" />
+                    <ldarg_0 />
+                    <ldarg_3 />
+                    <stfld class="java.net.NetworkInterface" name="index" sig="I" />
+                    <ret />
+                </body>
+            </method>
+            <method name="_set2" sig="([Ljava.net.InetAddress;[Ljava.net.InterfaceAddress;[Ljava.net.NetworkInterface;)V" modifiers="">
+                <body>
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <stfld class="java.net.NetworkInterface" name="addrs" sig="[Ljava.net.InetAddress;" />
                     <ldarg_0 />
                     <ldarg_2 />
                     <stfld class="java.net.NetworkInterface" name="bindings" sig="[Ljava.net.InterfaceAddress;" />

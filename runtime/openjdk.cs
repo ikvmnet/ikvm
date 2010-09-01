@@ -3888,15 +3888,37 @@ namespace IKVM.NativeCode.java
 							name = "net" + net++;
 							break;
 					}
+					jnNetworkInterface netif = new jnNetworkInterface();
+					ret[i] = netif;
+					netif._set1(name, ifaces[i].Description, GetIndex(ifaces[i]));
 					System.Net.NetworkInformation.UnicastIPAddressInformationCollection uipaic = ifaces[i].GetIPProperties().UnicastAddresses;
 					jnInetAddress[] addresses = new jnInetAddress[uipaic.Count];
 					for (int j = 0; j < addresses.Length; j++)
 					{
-                        addresses[j] = InetAddress.ConvertIPAddress(uipaic[j].Address, null);
+						System.Net.IPAddress addr = uipaic[j].Address;
+						if (addr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+						{
+							addresses[j] = new jnInet4Address(null, addr.GetAddressBytes());
+						}
+						else
+						{
+							int scope = 0;
+							if (addr.IsIPv6LinkLocal || addr.IsIPv6SiteLocal)
+							{
+								scope = (int)addr.ScopeId;
+							}
+							jnInet6Address ia6 = new jnInet6Address();
+							ia6.ipaddress = addr.GetAddressBytes();
+							if (scope != 0)
+							{
+								ia6._set(scope, netif);
+							}
+							addresses[j] = ia6;
+						}
 					}
-					ret[i] = new jnNetworkInterface(name, GetIndex(ifaces[i]), addresses);
 					// TODO should implement bindings
-					ret[i]._set(ifaces[i].Description, new jnInterfaceAddress[0], new jnNetworkInterface[0]);
+					jnInterfaceAddress[] bindings = new jnInterfaceAddress[0];
+					netif._set2(addresses, bindings, new jnNetworkInterface[0]);
 				}
 				NetworkInterfaceInfo nii = new NetworkInterfaceInfo();
 				nii.dotnetInterfaces = ifaces;
