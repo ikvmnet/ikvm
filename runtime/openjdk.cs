@@ -3818,6 +3818,26 @@ namespace IKVM.NativeCode.java
 				internal jnNetworkInterface[] javaInterfaces;
 			}
 
+			private static int Compare(System.Net.NetworkInformation.NetworkInterface ni1, System.Net.NetworkInformation.NetworkInterface ni2)
+			{
+				int index1 = GetIndex(ni1);
+				int index2 = GetIndex(ni2);
+				return index1.CompareTo(index2);
+			}
+
+			private static int GetIndex(System.Net.NetworkInformation.NetworkInterface ni)
+			{
+				System.Net.NetworkInformation.IPv4InterfaceProperties ipv4props = ni.GetIPProperties().GetIPv4Properties();
+				if (ipv4props != null)
+				{
+					return ipv4props.Index;
+				}
+				else
+				{
+					return ni.GetIPProperties().GetIPv6Properties().Index;
+				}
+			}
+
 			private static NetworkInterfaceInfo GetInterfaces()
 			{
 				// Since many of the methods in java.net.NetworkInterface end up calling this method and the underlying stuff this is
@@ -3827,6 +3847,7 @@ namespace IKVM.NativeCode.java
 					return cache;
 				}
 				System.Net.NetworkInformation.NetworkInterface[] ifaces = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces();
+				Array.Sort(ifaces, Compare);
 				jnNetworkInterface[] ret = new jnNetworkInterface[ifaces.Length];
 				int eth = 0;
 				int tr = 0;
@@ -3873,7 +3894,7 @@ namespace IKVM.NativeCode.java
 					{
                         addresses[j] = InetAddress.ConvertIPAddress(uipaic[j].Address, null);
 					}
-					ret[i] = new jnNetworkInterface(name, i, addresses);
+					ret[i] = new jnNetworkInterface(name, GetIndex(ifaces[i]), addresses);
 					// TODO should implement bindings
 					ret[i]._set(ifaces[i].Description, new jnInterfaceAddress[0], new jnNetworkInterface[0]);
 				}
@@ -3886,17 +3907,36 @@ namespace IKVM.NativeCode.java
 			}
 #endif
 
+			private static System.Net.NetworkInformation.NetworkInterface GetDotNetNetworkInterfaceByIndex(int index)
+			{
+#if FIRST_PASS
+				return null;
+#else
+				NetworkInterfaceInfo nii = GetInterfaces();
+				for (int i = 0; i < nii.javaInterfaces.Length; i++)
+				{
+					if (nii.javaInterfaces[i].getIndex() == index)
+					{
+						return nii.dotnetInterfaces[i];
+					}
+				}
+				throw new global::java.net.SocketException("interface index not found");
+#endif
+			}
+
 			public static object getByIndex(int index)
 			{
 #if FIRST_PASS
 				return null;
 #else
-				jnNetworkInterface[] ifaces = GetInterfaces().javaInterfaces;
-				if (index < 0 || index >= ifaces.Length)
+				foreach (jnNetworkInterface iface in GetInterfaces().javaInterfaces)
 				{
-					return null;
+					if (iface.getIndex() == index)
+					{
+						return iface;
+					}
 				}
-				return ifaces[index];
+				return null;
 #endif
 			}
 
@@ -3962,7 +4002,7 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return false;
 #else
-				return GetInterfaces().dotnetInterfaces[ind].OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up;
+				return GetDotNetNetworkInterfaceByIndex(ind).OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up;
 #endif
 			}
 
@@ -3971,7 +4011,7 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return false;
 #else
-				return GetInterfaces().dotnetInterfaces[ind].NetworkInterfaceType == System.Net.NetworkInformation.NetworkInterfaceType.Loopback;
+				return GetDotNetNetworkInterfaceByIndex(ind).NetworkInterfaceType == System.Net.NetworkInformation.NetworkInterfaceType.Loopback;
 #endif
 			}
 
@@ -3980,7 +4020,7 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return false;
 #else
-				return GetInterfaces().dotnetInterfaces[ind].SupportsMulticast;
+				return GetDotNetNetworkInterfaceByIndex(ind).SupportsMulticast;
 #endif
 			}
 
@@ -3989,7 +4029,7 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return false;
 #else
-				switch (GetInterfaces().dotnetInterfaces[ind].NetworkInterfaceType)
+				switch (GetDotNetNetworkInterfaceByIndex(ind).NetworkInterfaceType)
 				{
 					case System.Net.NetworkInformation.NetworkInterfaceType.Ppp:
 					case System.Net.NetworkInformation.NetworkInterfaceType.Slip:
@@ -4005,7 +4045,7 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return null;
 #else
-				return GetInterfaces().dotnetInterfaces[ind].GetPhysicalAddress().GetAddressBytes();
+				return GetDotNetNetworkInterfaceByIndex(ind).GetPhysicalAddress().GetAddressBytes();
 #endif
 			}
 
@@ -4014,7 +4054,7 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return 0;
 #else
-				System.Net.NetworkInformation.IPv4InterfaceProperties props = GetInterfaces().dotnetInterfaces[ind].GetIPProperties().GetIPv4Properties();
+				System.Net.NetworkInformation.IPv4InterfaceProperties props = GetDotNetNetworkInterfaceByIndex(ind).GetIPProperties().GetIPv4Properties();
 				return props == null ? -1 : props.Mtu;
 #endif
 			}
