@@ -304,10 +304,13 @@ namespace ikvm.awt
 			{
 				return false;
 			}
-			using (Brush brush = J2C.CreateBrush(bgcolor))
-			{
-				g.FillRectangle(brush, x, y, image.Width, image.Height);
-			}
+            if (bgcolor != null)
+            {
+                using (Brush brush = J2C.CreateBrush(bgcolor))
+                {
+                    g.FillRectangle(brush, x, y, image.Width, image.Height);
+                }
+            }
 			lock (image)
 			{
 				g.DrawImage(image, x, y);
@@ -621,7 +624,11 @@ namespace ikvm.awt
                 return drawImage(img, 0, 0, null, observer);
             }
 
-            throw new NotImplementedException("drawImage(Image,AffineTransform,ImageObserver) not implemented for non-null or non-identity AffineTransform!");
+            NetGraphics clone = (NetGraphics)create();
+            clone.transform(xform);
+            bool rendered = clone.drawImage(img, 0, 0, null, observer);
+            clone.dispose();
+            return rendered;
         }
 
         public override void drawImage(java.awt.image.BufferedImage image, BufferedImageOp op, int x, int y)
