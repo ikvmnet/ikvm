@@ -1,7 +1,7 @@
 /*
   Copyright (C) 2002, 2004, 2005, 2006, 2007 Jeroen Frijters
   Copyright (C) 2006 Active Endpoints, Inc.
-  Copyright (C) 2006, 2007, 2009 Volker Berlin
+  Copyright (C) 2006, 2007, 2009, 2010 Volker Berlin
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -26,6 +26,8 @@
 
 using System;
 using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Text;
 using System.Text;
 using java.awt.font;
 using java.awt.geom;
@@ -41,6 +43,16 @@ namespace ikvm.awt
 
     class NetFontMetrics : java.awt.FontMetrics
     {
+
+        private static readonly Bitmap defaultbitmap = new Bitmap(1, 1);
+        private static readonly Graphics defaultGraphics = Graphics.FromImage(defaultbitmap);
+
+        static NetFontMetrics() {
+            defaultGraphics.SmoothingMode = SmoothingMode.None;
+            defaultGraphics.PixelOffsetMode = PixelOffsetMode.None;
+            defaultGraphics.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit;
+
+        }
 
         public NetFontMetrics(java.awt.Font font) : base(font)
         {
@@ -88,9 +100,9 @@ namespace ikvm.awt
             return (int)Math.Round(GetDescentFloat());
         }
 
-        public override int stringWidth(string s)
+        public override int stringWidth(string s) 
         {
-            return (int)Math.Round(GetStringBounds(s).getWidth());
+            return (int)Math.Round(GetStringWidth(s, defaultGraphics));
         }
 
         public float GetAscentFloat()
@@ -113,36 +125,47 @@ namespace ikvm.awt
             return Math.Max(0.0f, leading);
         }
 
-        internal java.awt.geom.Rectangle2D GetStringBounds(String aString, System.Drawing.Graphics g)
-        {
-            // TODO (KR) Could replace with System.Windows.Forms.TextRenderer#MeasureText (to skip creating Graphics)
-            //
-            // From .NET Framework Class Library documentation for Graphics#MeasureString:
-            //
-            //    To obtain metrics suitable for adjacent strings in layout (for
-            //    example, when implementing formatted text), use the
-            //    MeasureCharacterRanges method or one of the MeasureString
-            //    methods that takes a StringFormat, and pass GenericTypographic.
-            //    Also, ensure the TextRenderingHint for the Graphics is
-            //    AntiAlias.
-            //
-            // TODO (KR) Consider implementing with one of the Graphics#MeasureString methods that takes a StringFormat.
-            // TODO (KR) Consider implementing with Graphics#MeasureCharacterRanges().
-            if (aString.Length == 0)
-            {
-                SizeF size = g.MeasureString(aString, GetNetFont(), Int32.MaxValue, StringFormat.GenericTypographic);
-                return new java.awt.geom.Rectangle2D.Float(0, 0, size.Width, size.Height);
-            }
-            else
-            {
-                StringFormat format = new StringFormat(StringFormatFlags.MeasureTrailingSpaces | StringFormatFlags.NoWrap);
+        internal float GetStringWidth(String aString, System.Drawing.Graphics g) {
+            if (aString.Length == 0) {
+                return 0;
+            } else {
+                // System.Windows.Forms.TextRenderer#MeasureText seems to large
+                // Graphics#MeasureString is many faster but work only correct with TextRenderingHint.AntiAlias
+                StringFormat format;
+                switch (g.TextRenderingHint){
+                    // Fractional metrics
+                    case TextRenderingHint.AntiAlias:
+                    case TextRenderingHint.SingleBitPerPixel:
+                        // this very mystic, if a StringFormat extends from GenericTypographic then the metric are different but like Java with fractional metrics
+                        format = new StringFormat(StringFormat.GenericTypographic);
+                        break;
+                    default:
+                        format = new StringFormat();
+                        break;
+                }
+                
+                format.FormatFlags = StringFormatFlags.MeasureTrailingSpaces | StringFormatFlags.NoWrap;
                 format.Trimming = StringTrimming.None;
                 format.SetMeasurableCharacterRanges(new CharacterRange[] { new CharacterRange(0, aString.Length) });
                 Region[] regions = g.MeasureCharacterRanges(aString, GetNetFont(), new RectangleF(0, 0, int.MaxValue, int.MaxValue), format);
                 SizeF size = regions[0].GetBounds(g).Size;
                 regions[0].Dispose();
-                return new java.awt.geom.Rectangle2D.Float(0, -getAscent(), size.Width, size.Height);
+                return size.Width;
             }
+        }
+
+        internal java.awt.geom.Rectangle2D GetStringBounds(String aString, System.Drawing.Graphics g)
+        {
+            Font netFont = GetNetFont();
+            FontFamily family = netFont.FontFamily;
+            FontStyle style = netFont.Style;
+            float factor = netFont.Size / family.GetEmHeight(style);
+            float height = family.GetLineSpacing(style) * factor;
+            float descent = family.GetCellDescent(style) * factor;
+            float ascent = family.GetCellAscent(style) * factor;
+            float leading = height - ascent - descent;
+
+            return new java.awt.geom.Rectangle2D.Float(0, -ascent - leading / 2, GetStringWidth(aString, g), height);
         }
 
         public override java.awt.geom.Rectangle2D getStringBounds(String aString, java.awt.Graphics gr)
@@ -151,7 +174,7 @@ namespace ikvm.awt
             {
                 return GetStringBounds(aString, ((NetGraphics)gr).JGraphics);
             }
-            return GetStringBounds(aString);
+            return GetStringBounds(aString, defaultGraphics);
         }
 
 		internal java.awt.geom.Rectangle2D GetStringBounds(String aString)

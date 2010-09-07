@@ -897,23 +897,64 @@ namespace ikvm.awt
             }
             if (hintKey == java.awt.RenderingHints.KEY_TEXT_ANTIALIASING)
             {
-                if (hintValue == java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_DEFAULT)
+                if (hintValue == java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_DEFAULT || hintValue == java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_OFF)
                 {
-                    g.TextRenderingHint = TextRenderingHint.SystemDefault;
-                    return;
-                }
-                if (hintValue == java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_OFF)
-                {
-                    g.TextRenderingHint = TextRenderingHint.SingleBitPerPixel;
+                    switch (g.TextRenderingHint) {
+                        case TextRenderingHint.SystemDefault:
+                        case TextRenderingHint.AntiAlias:
+                            g.TextRenderingHint = TextRenderingHint.SingleBitPerPixel;
+                            break;
+                        case TextRenderingHint.AntiAliasGridFit:
+                            g.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit;
+                            break;
+                    }
                     return;
                 }
                 if (hintValue == java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
                 {
-                    g.TextRenderingHint = TextRenderingHint.AntiAlias;
+                    switch (g.TextRenderingHint) {
+                        case TextRenderingHint.SystemDefault:
+                        case TextRenderingHint.SingleBitPerPixel:
+                            g.TextRenderingHint = TextRenderingHint.AntiAlias;
+                            break;
+                        case TextRenderingHint.SingleBitPerPixelGridFit:
+                            g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
+                            break;
+                    }
                     return;
                 }
                 return;
             }
+            if (hintKey == java.awt.RenderingHints.KEY_FRACTIONALMETRICS) 
+            {
+                if (hintValue == java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_DEFAULT || hintValue == java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_OFF) 
+                {
+                    // OFF means enable GridFit
+                    switch (g.TextRenderingHint) {
+                        case TextRenderingHint.SystemDefault:
+                        case TextRenderingHint.SingleBitPerPixel:
+                            g.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit;
+                            break;
+                        case TextRenderingHint.AntiAlias:
+                            g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
+                            break;
+                    }
+                }
+                if (hintValue == java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_ON) 
+                {
+                    // ON means remove GridFit
+                    switch (g.TextRenderingHint) {
+                        case TextRenderingHint.SingleBitPerPixelGridFit:
+                            g.TextRenderingHint = TextRenderingHint.SingleBitPerPixel;
+                            break;
+                        case TextRenderingHint.AntiAliasGridFit:
+                        case TextRenderingHint.ClearTypeGridFit:
+                            g.TextRenderingHint = TextRenderingHint.AntiAlias;
+                            break;
+                    }
+                }
+            }
+
         }
 
         public override object getRenderingHint(java.awt.RenderingHints.Key hintKey)
@@ -972,14 +1013,24 @@ namespace ikvm.awt
             {
                 case TextRenderingHint.SystemDefault:
                     hints.put(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING, java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_DEFAULT);
+                    hints.put(java.awt.RenderingHints.KEY_FRACTIONALMETRICS, java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_DEFAULT);
                     break;
                 case TextRenderingHint.SingleBitPerPixelGridFit:
+                    hints.put(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING, java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
+                    hints.put(java.awt.RenderingHints.KEY_FRACTIONALMETRICS, java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
+                    break;
                 case TextRenderingHint.SingleBitPerPixel:
                     hints.put(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING, java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
+                    hints.put(java.awt.RenderingHints.KEY_FRACTIONALMETRICS, java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_ON);
                     break;
                 case TextRenderingHint.AntiAlias:
-                case TextRenderingHint.AntiAliasGridFit:
                     hints.put(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING, java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                    hints.put(java.awt.RenderingHints.KEY_FRACTIONALMETRICS, java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+                    break;
+                case TextRenderingHint.AntiAliasGridFit:
+                case TextRenderingHint.ClearTypeGridFit:
+                    hints.put(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING, java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                    hints.put(java.awt.RenderingHints.KEY_FRACTIONALMETRICS, java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
                     break;
             }
             return hints;
