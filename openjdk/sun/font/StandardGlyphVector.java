@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Volker Berlin (i-net software)
+  Copyright (C) 2009, 2010 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -25,6 +25,9 @@ package sun.font;
 
 import java.awt.Font;
 import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.Toolkit;
 import java.awt.font.FontRenderContext;
@@ -34,7 +37,9 @@ import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
 import java.text.CharacterIterator;
+import java.util.WeakHashMap;
 
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -56,6 +61,8 @@ public class StandardGlyphVector extends GlyphVector{
 
     private Font2D font2D;
     private FontStrike strike;
+    
+    private static WeakHashMap<FontRenderContext, Graphics2D> graphicsMap = new WeakHashMap<FontRenderContext, Graphics2D>();
 
     public StandardGlyphVector(Font font, String str, FontRenderContext frc){
         if(str == null){
@@ -241,12 +248,6 @@ public class StandardGlyphVector extends GlyphVector{
 
 
     @Override
-    public Shape getGlyphLogicalBounds(int glyphIndex){
-        throw new NotImplementedException();
-    }
-
-
-    @Override
     public GlyphMetrics getGlyphMetrics(int glyphIndex){
         throw new NotImplementedException();
     }
@@ -275,16 +276,47 @@ public class StandardGlyphVector extends GlyphVector{
         throw new NotImplementedException();
     }
 
+    /**
+     * Get/Create a Graphics with the settings of the current FontMetrics
+     * 
+     * @return
+     */
+    private Graphics2D getGraphics() {
+        Graphics2D g = graphicsMap.get( frc );
+        if( g == null ) {
+            BufferedImage img = new BufferedImage( 1, 1, BufferedImage.TYPE_INT_ARGB );
+            g = (Graphics2D)img.getGraphics();
+            if( frc.usesFractionalMetrics() ) {
+                g.setRenderingHint( RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON );
+            }
+            graphicsMap.put( frc, g );
+        }
+        return g;
+    }
+    
 
     @Override
-    public Shape getGlyphVisualBounds(int index){
-        return getMetrics().getStringBounds(glyphs.substring(index, index + 1), null);
+    public Shape getGlyphLogicalBounds( int glyphIndex ) {
+        return getMetrics().getStringBounds( glyphs.substring( glyphIndex, glyphIndex + 1 ), getGraphics() );
+    }
+    
+
+    @Override
+    public Shape getGlyphVisualBounds( int glyphIndex ) {
+        // TODO Visual is a little smaller, see the JUnit test
+        return getGlyphLogicalBounds( glyphIndex );
+    }
+
+    @Override
+    public Rectangle2D getLogicalBounds(){
+        return getMetrics().getStringBounds(glyphs, getGraphics());
     }
 
 
     @Override
-    public Rectangle2D getLogicalBounds(){
-        return getMetrics().getStringBounds(glyphs, null);
+    public Rectangle2D getVisualBounds(){
+        // TODO Visual is a little smaller, see the JUnit test
+        return getLogicalBounds();
     }
 
 
@@ -302,12 +334,6 @@ public class StandardGlyphVector extends GlyphVector{
 
     @Override
     public Shape getOutline(float x, float y){
-        throw new NotImplementedException();
-    }
-
-
-    @Override
-    public Rectangle2D getVisualBounds(){
         throw new NotImplementedException();
     }
 
