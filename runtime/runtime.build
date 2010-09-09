@@ -71,6 +71,10 @@
             <property name="defs" value="${defs};FIRST_PASS" />
         </if>
         <if test="${not first-pass}">
+            <!-- on Mono the C# compiler doesn't give an error if the vfs.zip resource is missing, so we have to check it here -->
+            <if test="${not file::exists('../openjdk/vfs.zip')}">
+                <fail message="../openjdk/vfs.zip is missing. Make sure to build ikvm/openjdk first." />
+            </if>
             <call target="IKVM.Runtime.JNI" />
         </if>
         <csc noconfig="true" target="library" output="IKVM.Runtime.dll" define="${defs}" optimize="true" unsafe="false" rebuild="true">
