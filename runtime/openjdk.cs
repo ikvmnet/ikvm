@@ -3819,7 +3819,52 @@ namespace IKVM.NativeCode.java
 
 			public static bool isReachable0(object thisInet6AddressImpl, byte[] addr, int scope, int timeout, byte[] inf, int ttl, int if_scope)
 			{
-				throw new NotImplementedException();
+				if (addr.Length == 4)
+				{
+					return Inet4AddressImpl.isReachable0(null, addr, timeout, inf, ttl);
+				}
+				// like the JDK, we don't use Ping, but we try a TCP connection to the echo port
+				// (.NET 2.0 has a System.Net.NetworkInformation.Ping class, but that doesn't provide the option of binding to a specific interface)
+				try
+				{
+					using (System.Net.Sockets.Socket sock = new System.Net.Sockets.Socket(System.Net.Sockets.AddressFamily.InterNetworkV6, System.Net.Sockets.SocketType.Stream, System.Net.Sockets.ProtocolType.Tcp))
+					{
+						if (inf != null)
+						{
+							sock.Bind(new System.Net.IPEndPoint(new System.Net.IPAddress(inf, (uint)if_scope), 0));
+						}
+						if (ttl > 0)
+						{
+							sock.SetSocketOption(System.Net.Sockets.SocketOptionLevel.IPv6, System.Net.Sockets.SocketOptionName.HopLimit, ttl);
+						}
+						System.Net.IPEndPoint ep = new System.Net.IPEndPoint(new System.Net.IPAddress(addr, (uint)scope), 7);
+						IAsyncResult res = sock.BeginConnect(ep, null, null);
+						if (res.AsyncWaitHandle.WaitOne(timeout, false))
+						{
+							try
+							{
+								sock.EndConnect(res);
+								return true;
+							}
+							catch (System.Net.Sockets.SocketException x)
+							{
+								const int WSAECONNREFUSED = 10061;
+								if (x.ErrorCode == WSAECONNREFUSED)
+								{
+									// we got back an explicit "connection refused", that means the host was reachable.
+									return true;
+								}
+							}
+						}
+					}
+				}
+				catch (System.ArgumentException)
+				{
+				}
+				catch (System.Net.Sockets.SocketException)
+				{
+				}
+				return false;
 			}
 		}
 
