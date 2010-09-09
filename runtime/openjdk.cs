@@ -3984,7 +3984,17 @@ namespace IKVM.NativeCode.java
 							bindings[j] = new jnInterfaceAddress();
 							short mask = 32;
 							jnInet4Address broadcast = null;
-							if (uipaic[j].IPv4Mask != null && !uipaic[j].IPv4Mask.Equals(System.Net.IPAddress.Any))
+							System.Net.IPAddress v4mask;
+							try
+							{
+								v4mask = uipaic[j].IPv4Mask;
+							}
+							catch (NotImplementedException)
+							{
+								// Mono (as of 2.6.7) doesn't implement the IPv4Mask property
+								v4mask = null;
+							}
+							if (v4mask != null && !v4mask.Equals(System.Net.IPAddress.Any))
 							{
 								broadcast = new jnInet4Address(null, -1);
 								mask = 0;
