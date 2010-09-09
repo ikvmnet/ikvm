@@ -4987,7 +4987,23 @@ namespace IKVM.NativeCode.java
 				Type typeofTimeZoneInfo = Type.GetType("System.TimeZoneInfo, System.Core, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089");
 				if (typeofTimeZoneInfo != null)
 				{
-					return (string)typeofTimeZoneInfo.GetProperty("Id").GetValue(typeofTimeZoneInfo.GetProperty("Local").GetValue(null, null), null);
+					try
+					{
+						return (string)typeofTimeZoneInfo.GetProperty("Id").GetValue(typeofTimeZoneInfo.GetProperty("Local").GetValue(null, null), null);
+					}
+					catch (Exception x)
+					{
+						if (typeofTimeZoneInfo.Assembly.GetType("System.TimeZoneNotFoundException").IsInstanceOfType(x))
+						{
+							// MONOBUG Mono's TimeZoneInfo.Local property throws a TimeZoneNotFoundException on Windows
+							// (https://bugzilla.novell.com/show_bug.cgi?id=622524)
+							return SystemTimeZone.CurrentTimeZone.StandardName;
+						}
+						else
+						{
+							throw;
+						}
+					}
 				}
 				else
 				{
