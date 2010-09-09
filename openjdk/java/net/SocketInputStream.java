@@ -29,6 +29,8 @@ import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
+import static ikvm.internal.Winsock.*;
+import static java.net.net_util_md.*;
 
 import sun.net.ConnectionResetException;
 
@@ -39,12 +41,13 @@ import sun.net.ConnectionResetException;
  *
  * @author      Jonathan Payne
  * @author      Arthur van Hoff
+ * @author      Jeroen Frijters
  */
 class SocketInputStream extends FileInputStream
 {
 
     private boolean eof;
-    private PlainSocketImpl impl = null;
+    private AbstractPlainSocketImpl impl = null;
     private byte temp[];
     private Socket socket = null;
 
@@ -54,7 +57,7 @@ class SocketInputStream extends FileInputStream
      * that the fd will not be closed.
      * @param impl the implemented socket input stream
      */
-    SocketInputStream(PlainSocketImpl impl) throws IOException {
+    SocketInputStream(AbstractPlainSocketImpl impl) throws IOException {
         super(impl.getFileDescriptor());
         this.impl = impl;
         socket = impl.getSocket();
@@ -88,9 +91,69 @@ class SocketInputStream extends FileInputStream
      *          returned when the end of the stream is reached.
      * @exception IOException If an I/O error has occurred.
      */
-    private int socketRead0(FileDescriptor fd, byte b[], int off, int len, int timeout) throws IOException
+    private int socketRead0(FileDescriptor fdObj, byte bufP[], int off, int len, int timeout) throws IOException
     {
-        return impl.read(b, off, len, timeout);
+        // [IKVM] this method is a direct port of the native code in openjdk6-b18\jdk\src\windows\native\java\net\SocketInputStream.c
+        cli.System.Net.Sockets.Socket fd = null;
+        int nread;
+        
+        if (IS_NULL(fdObj)) {
+            throw new SocketException("socket closed");
+        }
+        fd = fdObj.getSocket();
+        if (fd == null) {
+            throw new SocketException("Socket closed");
+        }
+
+        if (timeout != 0) {
+            if (timeout <= 5000 || !isRcvTimeoutSupported) {
+                int ret = NET_Timeout (fd, timeout);
+                
+                if (ret <= 0) {
+                    if (ret == 0) {
+                        throw new SocketTimeoutException("Read timed out");
+                    } else {
+                        // [IKVM] the OpenJDK native code is broken and always throws this exception on any failure of NET_Timeout
+                        throw new SocketException("socket closed");
+                    }
+                }
+                
+                /*check if the socket has been closed while we were in timeout*/
+                if (fdObj.getSocket() == null) {
+                    throw new SocketException("Socket Closed");
+                }
+            }
+        }
+        
+        nread = recv(fd, bufP, len, 0);
+        if (nread > 0) {
+            // ok
+        } else {
+            if (nread < 0) {
+                /*
+                 * Recv failed.
+                 */
+                switch (WSAGetLastError()) {
+                    case WSAEINTR:
+                        throw new SocketException("socket closed");
+
+                    case WSAECONNRESET:
+                    case WSAESHUTDOWN:
+                        /*
+                         * Connection has been reset - Windows sometimes reports
+                         * the reset as a shutdown error.
+                         */
+                        throw new ConnectionResetException();
+
+                    case WSAETIMEDOUT :
+                        throw new SocketTimeoutException("Read timed out");
+
+                    default:
+                        throw NET_ThrowCurrent("recv failed");
+                }
+            }
+        }
+        return nread;
     }
 
     /**

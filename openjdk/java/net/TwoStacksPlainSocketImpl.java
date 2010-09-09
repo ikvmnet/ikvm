@@ -37,6 +37,7 @@ import java.io.FileDescriptor;
  * during socket creation.
  *
  * @author Chris Hegarty
+ * @author Jeroen Frijters
  */
 
 class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl
@@ -51,7 +52,7 @@ class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl
      * For ServerSockets, fd always refers to the v4 listener and
      * fd1 the v6 listener.
      */
-    private FileDescriptor fd1;
+    FileDescriptor fd1;
 
     /*
      * Needed for ipv6 on windows because we need to know
@@ -63,11 +64,7 @@ class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl
     /* to prevent starvation when listening on two sockets, this is
      * is used to hold the id of the last socket we accepted on.
      */
-    private int lastfd = -1;
-
-    static {
-        initProto();
-    }
+    cli.System.Net.Sockets.Socket lastfd = null;
 
     public TwoStacksPlainSocketImpl() {}
 
@@ -173,34 +170,87 @@ class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl
     }
 
     /* Native methods */
+    
+    void socketCreate(boolean stream) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        TwoStacksPlainSocketImpl_c.socketCreate(env, this, stream);
+        env.ThrowPendingException();
+    }
 
-    static native void initProto();
+    void socketConnect(InetAddress address, int port, int timeout) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        TwoStacksPlainSocketImpl_c.socketConnect(env, this, address, port, timeout);
+        env.ThrowPendingException();
+    }
+    
+    void socketBind(InetAddress address, int localport) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        TwoStacksPlainSocketImpl_c.socketBind(env, this, address, localport);
+        env.ThrowPendingException();
+    }
+    
+    void socketListen(int count) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        TwoStacksPlainSocketImpl_c.socketListen(env, this, count);
+        env.ThrowPendingException();
+    }
 
-    native void socketCreate(boolean isServer) throws IOException;
+    void socketAccept(SocketImpl socket) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        TwoStacksPlainSocketImpl_c.socketAccept(env, this, socket);
+        env.ThrowPendingException();
+    }
 
-    native void socketConnect(InetAddress address, int port, int timeout)
-        throws IOException;
+    int socketAvailable() throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        int ret = TwoStacksPlainSocketImpl_c.socketAvailable(env, this);
+        env.ThrowPendingException();
+        return ret;
+    }
 
-    native void socketBind(InetAddress address, int port)
-        throws IOException;
+    void socketClose0(boolean useDeferredClose) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        TwoStacksPlainSocketImpl_c.socketClose0(env, this, useDeferredClose);
+        env.ThrowPendingException();
+    }
 
-    native void socketListen(int count) throws IOException;
+    void socketShutdown(int howto) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        TwoStacksPlainSocketImpl_c.socketShutdown(env, this, howto);
+        env.ThrowPendingException();
+    }
 
-    native void socketAccept(SocketImpl s) throws IOException;
+    void socketSetOption(int cmd, boolean on, Object value) throws SocketException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        TwoStacksPlainSocketImpl_c.socketSetOption(env, this, cmd, on, value);
+        env.ThrowPendingException();
+    }
 
-    native int socketAvailable() throws IOException;
+    int socketGetOption(int opt, Object iaContainerObj) throws SocketException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        int ret = TwoStacksPlainSocketImpl_c.socketGetOption(env, this, opt, iaContainerObj);
+        env.ThrowPendingException();
+        return ret;
+    }
 
-    native void socketClose0(boolean useDeferredClose) throws IOException;
+    int socketGetOption1(int opt, Object iaContainerObj, FileDescriptor fd) throws SocketException {
+        throw new UnsatisfiedLinkError();
+    }
 
-    native void socketShutdown(int howto) throws IOException;
+    void socketSendUrgentData(int data) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        TwoStacksPlainSocketImpl_c.socketSendUrgentData(env, this, data);
+        env.ThrowPendingException();
+    }
+}
 
-    native void socketSetOption(int cmd, boolean on, Object value)
-        throws SocketException;
+// we don't support a dual-stack approach yet, so we simply make it an alias for the two-stacks approach
+class DualStackPlainSocketImpl extends TwoStacksPlainSocketImpl
+{
+    DualStackPlainSocketImpl() {
+    }
 
-    native int socketGetOption(int opt, Object iaContainerObj) throws SocketException;
-
-    native int socketGetOption1(int opt, Object iaContainerObj, FileDescriptor fd)
-        throws SocketException;
-
-    native void socketSendUrgentData(int data) throws IOException;
+    DualStackPlainSocketImpl(FileDescriptor fd) {
+        super(fd);
+    }
 }

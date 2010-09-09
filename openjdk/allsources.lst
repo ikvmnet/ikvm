@@ -41,7 +41,9 @@ ikvm/internal/AnnotationAttributeBase.java
 ikvm/internal/FieldReflectorBase.java
 ikvm/internal/IntrinsicAtomicReferenceFieldUpdater.java
 ikvm/internal/IntrinsicThreadLocal.java
+ikvm/internal/JNI.java
 ikvm/internal/Serialization.java
+ikvm/internal/Winsock.java
 java/awt/Font.java
 java/awt/GraphicsConfiguration.java
 java/awt/Image.java
@@ -77,12 +79,14 @@ java/lang/reflect/Constructor.java
 java/lang/reflect/Field.java
 java/lang/reflect/Method.java
 java/lang/reflect/ReflectHelper.java
-java/net/DefaultDatagramSocketImplFactory.java
-java/net/PlainDatagramSocketImpl.java
-java/net/PlainSocketImpl.java
+java/net/net_util_md.java
 java/net/SocketInputStream.java
 java/net/SocketOutputStream.java
 java/net/SocketUtil.java
+java/net/TwoStacksPlainDatagramSocketImpl.java
+java/net/TwoStacksPlainDatagramSocketImpl_c.java
+java/net/TwoStacksPlainSocketImpl.java
+java/net/TwoStacksPlainSocketImpl_c.java
 java/nio/Bits.java
 java/security/AccessController.java
 java/sql/DriverManager.java
@@ -7575,6 +7579,8 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/jdk/src/share/classes/java/math/package-info.java
 @OPENJDK@/jdk/src/share/classes/java/math/RoundingMode.java
 @OPENJDK@/jdk/src/share/classes/java/math/SignedMutableBigInteger.java
+@OPENJDK@/jdk/src/share/classes/java/net/AbstractPlainDatagramSocketImpl.java
+@OPENJDK@/jdk/src/share/classes/java/net/AbstractPlainSocketImpl.java
 @OPENJDK@/jdk/src/share/classes/java/net/Authenticator.java
 @OPENJDK@/jdk/src/share/classes/java/net/BindException.java
 @OPENJDK@/jdk/src/share/classes/java/net/CacheRequest.java
@@ -11591,6 +11597,8 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/jdk/src/windows/classes/java/io/Win32FileSystem.java
 @OPENJDK@/jdk/src/windows/classes/java/lang/ProcessEnvironment.java
 @OPENJDK@/jdk/src/windows/classes/java/lang/Terminator.java
+@OPENJDK@/jdk/src/windows/classes/java/net/DefaultDatagramSocketImplFactory.java
+@OPENJDK@/jdk/src/windows/classes/java/net/PlainSocketImpl.java
 @OPENJDK@/jdk/src/windows/classes/java/util/prefs/WindowsPreferences.java
 @OPENJDK@/jdk/src/windows/classes/java/util/prefs/WindowsPreferencesFactory.java
 @OPENJDK@/jdk/src/windows/classes/sun/nio/ch/NativeThread.java

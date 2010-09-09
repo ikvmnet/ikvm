@@ -37,12 +37,13 @@ import java.io.FileDescriptor;
  * during socket creation.
  *
  * @author Chris Hegarty
+ * @author Jeroen Frijters
  */
 
 class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
 {
     /* Used for IPv6 on Windows only */
-    private FileDescriptor fd1;
+    FileDescriptor fd1;
 
     /*
      * Needed for ipv6 on windows because we need to know
@@ -53,17 +54,13 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
      */
     private InetAddress anyLocalBoundAddr=null;
 
-    private int fduse=-1; /* saved between peek() and receive() calls */
+    cli.System.Net.Sockets.Socket fduse=null; /* saved between peek() and receive() calls */
 
     /* saved between successive calls to receive, if data is detected
      * on both sockets at same time. To ensure that one socket is not
      * starved, they rotate using this field
      */
-    private int lastfd=-1;
-
-    static {
-        init();
-    }
+    cli.System.Net.Sockets.Socket lastfd=null;
 
     protected synchronized void create() throws SocketException {
         fd1 = new FileDescriptor();
@@ -83,7 +80,7 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
         try {
             receive0(p);
         } finally {
-            fduse = -1;
+            fduse = null;
         }
     }
 
@@ -115,47 +112,121 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
 
     /* Native methods */
 
-    protected synchronized native void bind0(int lport, InetAddress laddr)
-        throws SocketException;
+    protected synchronized void bind0(int lport, InetAddress laddr) throws SocketException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        TwoStacksPlainDatagramSocketImpl_c.bind0(env, this, lport, laddr);
+        env.ThrowPendingException();
+    }
 
-    protected native void send(DatagramPacket p) throws IOException;
+    protected void send(DatagramPacket packet) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        TwoStacksPlainDatagramSocketImpl_c.send(env, this, packet);
+        env.ThrowPendingException();
+    }
 
-    protected synchronized native int peek(InetAddress i) throws IOException;
+    protected synchronized int peek(InetAddress addressObj) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        int ret = TwoStacksPlainDatagramSocketImpl_c.peek(env, this, addressObj);
+        env.ThrowPendingException();
+        return ret;
+    }
 
-    protected synchronized native int peekData(DatagramPacket p) throws IOException;
+    protected synchronized int peekData(DatagramPacket p) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        int ret = TwoStacksPlainDatagramSocketImpl_c.peekData(env, this, p);
+        env.ThrowPendingException();
+        return ret;
+    }
 
-    protected synchronized native void receive0(DatagramPacket p)
-        throws IOException;
+    protected synchronized void receive0(DatagramPacket packet) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        TwoStacksPlainDatagramSocketImpl_c.receive0(env, this, packet);
+        env.ThrowPendingException();
+    }
 
-    protected native void setTimeToLive(int ttl) throws IOException;
+    protected void setTimeToLive(int ttl) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        TwoStacksPlainDatagramSocketImpl_c.setTimeToLive(env, this, ttl);
+        env.ThrowPendingException();
+    }
 
-    protected native int getTimeToLive() throws IOException;
+    protected int getTimeToLive() throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        int ret = TwoStacksPlainDatagramSocketImpl_c.getTimeToLive(env, this);
+        env.ThrowPendingException();
+        return ret;
+    }
 
-    protected native void setTTL(byte ttl) throws IOException;
+    protected void setTTL(byte ttl) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        TwoStacksPlainDatagramSocketImpl_c.setTTL(env, this, ttl);
+        env.ThrowPendingException();
+    }
 
-    protected native byte getTTL() throws IOException;
+    protected byte getTTL() throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        byte ret = TwoStacksPlainDatagramSocketImpl_c.getTTL(env, this);
+        env.ThrowPendingException();
+        return ret;
+    }
 
-    protected native void join(InetAddress inetaddr, NetworkInterface netIf)
-        throws IOException;
+    protected void join(InetAddress inetaddr, NetworkInterface netIf) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        TwoStacksPlainDatagramSocketImpl_c.join(env, this, inetaddr, netIf);
+        env.ThrowPendingException();
+    }
 
-    protected native void leave(InetAddress inetaddr, NetworkInterface netIf)
-        throws IOException;
+    protected void leave(InetAddress inetaddr, NetworkInterface netIf) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        TwoStacksPlainDatagramSocketImpl_c.leave(env, this, inetaddr, netIf);
+        env.ThrowPendingException();
+    }
 
-    protected native void datagramSocketCreate() throws SocketException;
+    protected void datagramSocketCreate() throws SocketException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        TwoStacksPlainDatagramSocketImpl_c.datagramSocketCreate(env, this);
+        env.ThrowPendingException();
+    }
 
-    protected native void datagramSocketClose();
+    protected void datagramSocketClose() {
+        TwoStacksPlainDatagramSocketImpl_c.datagramSocketClose(this);
+    }
 
-    protected native void socketSetOption(int opt, Object val)
-        throws SocketException;
+    protected void socketSetOption(int opt, Object val) throws SocketException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        TwoStacksPlainDatagramSocketImpl_c.socketSetOption(env, this, opt, val);
+        env.ThrowPendingException();
+    }
 
-    protected native Object socketGetOption(int opt) throws SocketException;
+    protected Object socketGetOption(int opt) throws SocketException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        Object ret = TwoStacksPlainDatagramSocketImpl_c.socketGetOption(env, this, opt);
+        env.ThrowPendingException();
+        return ret;
+    }
 
-    protected native void connect0(InetAddress address, int port) throws SocketException;
+    protected void connect0(InetAddress address, int port) throws SocketException {
+        if (runningOnMono) {
+            // MONOBUG Mono doesn't allow Socket.Connect(IPAddress.Any, 0) to disconnect a datagram socket,
+            // so we throw a SocketException, this will cause DatagramSocket to emulate connectedness
+            throw new SocketException("connected datagram sockets not supported on Mono");
+        }
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        TwoStacksPlainDatagramSocketImpl_c.connect0(env, this, address, port);
+        env.ThrowPendingException();
+    }
 
-    protected native void disconnect0(int family);
+    protected void disconnect0(int family) {
+        TwoStacksPlainDatagramSocketImpl_c.disconnect0(this, family);
+    }
 
-    /**
-     * Perform class load-time initializations.
-     */
-    private native static void init();
+    private static final boolean runningOnMono = cli.System.Type.GetType("Mono.Runtime") != null;
+}
+
+// we don't support a dual-stack approach yet, so we simply make it an alias for the two-stacks approach
+class DualStackPlainDatagramSocketImpl extends TwoStacksPlainDatagramSocketImpl {
+    // we need this method, because DatagramSocket uses reflection to check for this methods existance
+    protected int peekData(DatagramPacket p) throws IOException {
+        return super.peekData(p);
+    }
 }
