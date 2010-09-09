@@ -3650,6 +3650,10 @@ namespace IKVM.NativeCode.java
 							addresses.Add(jnInetAddress.getByAddress(hostname, b));
 						}
 					}
+					if (addresses.Count == 0)
+					{
+						throw new jnUnknownHostException(hostname);
+					}
 					return addresses.ToArray();
 				}
 				catch (System.ArgumentException x)
@@ -3775,6 +3779,10 @@ namespace IKVM.NativeCode.java
 						{
 							addresses[pos++] = InetAddress.ConvertIPAddress(addr[i], hostname);
 						}
+					}
+					if (addresses.Length == 0)
+					{
+						throw new jnUnknownHostException(hostname);
 					}
 					return addresses;
 				}
