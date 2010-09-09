@@ -2199,7 +2199,16 @@ class Thread implements Runnable {
     }
 
     private void stop0(Throwable x) {
-        if (running) {
+        if (x == null) {
+            throw new NullPointerException();
+        }
+        synchronized (lock) {
+            if (!running) {
+                stillborn = x;
+                x = null;
+            }
+        }
+        if (x != null) {
             // NOTE we allow ThreadDeath (and its subclasses) to be thrown on every thread, but any
             // other exception is ignored, except if we're throwing it on the current Thread. This
             // is done to allow exception handlers to be type specific, otherwise every exception
@@ -2236,9 +2245,6 @@ class Thread implements Runnable {
                 catch (cli.System.Threading.ThreadStateException _) {
                 }
             }
-        }
-        else {
-            stillborn = x;
         }
     }
 
@@ -2282,12 +2288,15 @@ class Thread implements Runnable {
             }
         }
     }
-
-    private synchronized void setRunningAndCheckStillborn() throws Throwable {
-        running = true;
-        Throwable x = stillborn;
-        if (x != null) {
+    
+    private void setRunningAndCheckStillborn() throws Throwable {
+        Throwable x;
+        synchronized (lock) {
+            running = true;
+            x = stillborn;
             stillborn = null;
+        }
+        if (x != null) {
             throw x;
         }
     }
