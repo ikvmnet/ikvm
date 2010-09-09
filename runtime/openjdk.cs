@@ -3973,15 +3973,15 @@ namespace IKVM.NativeCode.java
 					ret[i] = netif;
 					netif._set1(name, ifaces[i].Description, GetIndex(ifaces[i]));
 					System.Net.NetworkInformation.UnicastIPAddressInformationCollection uipaic = ifaces[i].GetIPProperties().UnicastAddresses;
-					jnInetAddress[] addresses = new jnInetAddress[uipaic.Count];
-					jnInterfaceAddress[] bindings = new jnInterfaceAddress[uipaic.Count];
-					for (int j = 0; j < addresses.Length; j++)
+					List<jnInetAddress> addresses = new List<jnInetAddress>();
+					List<jnInterfaceAddress> bindings = new List<jnInterfaceAddress>();
+					for (int j = 0; j < uipaic.Count; j++)
 					{
 						System.Net.IPAddress addr = uipaic[j].Address;
 						if (addr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
 						{
-							addresses[j] = new jnInet4Address(null, addr.GetAddressBytes());
-							bindings[j] = new jnInterfaceAddress();
+							jnInet4Address address = new jnInet4Address(null, addr.GetAddressBytes());
+							jnInterfaceAddress binding = new jnInterfaceAddress();
 							short mask = 32;
 							jnInet4Address broadcast = null;
 							System.Net.IPAddress v4mask;
@@ -3998,19 +3998,21 @@ namespace IKVM.NativeCode.java
 							{
 								broadcast = new jnInet4Address(null, -1);
 								mask = 0;
-								foreach (byte b in uipaic[j].IPv4Mask.GetAddressBytes())
+								foreach (byte b in v4mask.GetAddressBytes())
 								{
 									mask += (short)global::java.lang.Integer.bitCount(b);
 								}
 							}
-							else if ((addresses[j].address & ~0xffffff) == 0x7f000000)
+							else if ((address.address & ~0xffffff) == 0x7f000000)
 							{
 								mask = 8;
 								broadcast = new jnInet4Address(null, 0xffffff);
 							}
-							bindings[j]._set(addresses[j], broadcast, mask);
+							binding._set(address, broadcast, mask);
+							addresses.Add(address);
+							bindings.Add(binding);
 						}
-						else
+						else if (InetAddressImplFactory.isIPv6Supported())
 						{
 							int scope = 0;
 							if (addr.IsIPv6LinkLocal || addr.IsIPv6SiteLocal)
@@ -4023,14 +4025,15 @@ namespace IKVM.NativeCode.java
 							{
 								ia6._set(scope, netif);
 							}
-							addresses[j] = ia6;
-							bindings[j] = new jnInterfaceAddress();
+							jnInterfaceAddress binding = new jnInterfaceAddress();
 							// TODO where do we get the IPv6 subnet prefix length?
 							short mask = 128;
-							bindings[j]._set(addresses[j], null, mask);
+							binding._set(ia6, null, mask);
+							addresses.Add(ia6);
+							bindings.Add(binding);
 						}
 					}
-					netif._set2(addresses, bindings, new jnNetworkInterface[0]);
+					netif._set2(addresses.ToArray(), bindings.ToArray(), new jnNetworkInterface[0]);
 				}
 				NetworkInterfaceInfo nii = new NetworkInterfaceInfo();
 				nii.dotnetInterfaces = ifaces;
