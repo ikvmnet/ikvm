@@ -3799,7 +3799,22 @@ namespace IKVM.NativeCode.java
 
 			public static string getHostByAddr(object thisInet6AddressImpl, byte[] addr)
 			{
-				throw new NotImplementedException();
+#if FIRST_PASS
+				return null;
+#else
+				try
+				{
+					return System.Net.Dns.GetHostEntry(new System.Net.IPAddress(addr)).HostName;
+				}
+				catch (System.ArgumentException x)
+				{
+					throw new jnUnknownHostException(x.Message);
+				}
+				catch (System.Net.Sockets.SocketException x)
+				{
+					throw new jnUnknownHostException(x.Message);
+				}
+#endif
 			}
 
 			public static bool isReachable0(object thisInet6AddressImpl, byte[] addr, int scope, int timeout, byte[] inf, int ttl, int if_scope)
