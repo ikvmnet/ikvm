@@ -3895,15 +3895,26 @@ namespace IKVM.NativeCode.java
 
 			private static int GetIndex(System.Net.NetworkInformation.NetworkInterface ni)
 			{
-				System.Net.NetworkInformation.IPv4InterfaceProperties ipv4props = ni.GetIPProperties().GetIPv4Properties();
+				System.Net.NetworkInformation.IPInterfaceProperties ipprops = ni.GetIPProperties();
+				System.Net.NetworkInformation.IPv4InterfaceProperties ipv4props = ipprops.GetIPv4Properties();
 				if (ipv4props != null)
 				{
 					return ipv4props.Index;
 				}
 				else
 				{
-					return ni.GetIPProperties().GetIPv6Properties().Index;
+					System.Net.NetworkInformation.IPv6InterfaceProperties ipv6props = ipprops.GetIPv6Properties();
+					if (ipv6props != null)
+					{
+						return ipv6props.Index;
+					}
+					return -1;
 				}
+			}
+
+			private static bool IsValid(System.Net.NetworkInformation.NetworkInterface ni)
+			{
+				return GetIndex(ni) != -1;
 			}
 
 			private static NetworkInterfaceInfo GetInterfaces()
@@ -3915,6 +3926,8 @@ namespace IKVM.NativeCode.java
 					return cache;
 				}
 				System.Net.NetworkInformation.NetworkInterface[] ifaces = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces();
+				// on Mono (on Windows) we need to filter out the network interfaces that don't have any IP properties
+				ifaces = Array.FindAll(ifaces, IsValid);
 				Array.Sort(ifaces, Compare);
 				jnNetworkInterface[] ret = new jnNetworkInterface[ifaces.Length];
 				int eth = 0;
