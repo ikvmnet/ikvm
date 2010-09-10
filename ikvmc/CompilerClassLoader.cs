@@ -3518,6 +3518,10 @@ namespace IKVM.Internal
 			args[0] = AssemblyQualifiedName(actualType);
 			args[1] = AssemblyQualifiedName(expectedType);
 			Console.Error.WriteLine("Link Error: " + msg, args);
+			if (actualType is UnloadableTypeWrapper && (expectedType is CompiledTypeWrapper || expectedType is DotNetTypeWrapper))
+			{
+				Console.Error.WriteLine("Please add a reference to {0}", expectedType.TypeAsBaseType.Assembly.Location);
+			}
 			Environment.Exit(1);
 		}
 
