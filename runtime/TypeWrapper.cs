@@ -557,6 +557,10 @@ namespace IKVM.Internal
 			{
 				return true;
 			}
+			if (mi.Name.StartsWith("__<", StringComparison.Ordinal))
+			{
+				return true;
+			}
 			return mi.IsDefined(typeofHideFromJavaAttribute, false);
 		}
 

@@ -1430,18 +1430,21 @@ namespace IKVM.Internal
 					{
 						modreq = new Type[] { Types.IsVolatile };
 					}
-					field = typeBuilder.DefineField(fieldName, type, modreq, Type.EmptyTypes, attribs);
+					string realFieldName = fieldName;
+#if STATIC_COMPILER
+					if (hideFromJava)
+					{
+						// instead of adding HideFromJava we rename the field to avoid confusing broken compilers
+						// see https://sourceforge.net/tracker/?func=detail&atid=525264&aid=3056721&group_id=69637
+						realFieldName = "__<>" + fieldName;
+					}
+#endif // STATIC_COMPILER
+					field = typeBuilder.DefineField(realFieldName, type, modreq, Type.EmptyTypes, attribs);
 					if (fld.IsTransient)
 					{
 						CustomAttributeBuilder transientAttrib = new CustomAttributeBuilder(JVM.Import(typeof(NonSerializedAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
 						field.SetCustomAttribute(transientAttrib);
 					}
-#if STATIC_COMPILER
-					if (hideFromJava)
-					{
-						AttributeHelper.HideFromJava(field);
-					}
-#endif // STATIC_COMPILER
 					if (isWrappedFinal)
 					{
 						methodAttribs |= MethodAttributes.SpecialName;
