@@ -1251,7 +1251,6 @@ class MethodAnalyzer
 			AnalyzeTypeFlow(wrapper, thisType, mw, localStoreReaders, newTypes, faultTypes);
 		}
 		AnalyzeLocalVariables(localStoreReaders, classLoader);
-		ComputePartialReachability(0, true);
 	}
 
 	private void AnalyzeTypeFlow(TypeWrapper wrapper, TypeWrapper thisType, MethodWrapper mw, Dictionary<int, string>[] localStoreReaders, Dictionary<int, TypeWrapper> newTypes, Dictionary<int, TypeWrapper> faultTypes)
