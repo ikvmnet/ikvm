@@ -1117,44 +1117,22 @@ sealed class Compiler
 				// fool it by calling a trivial method that loops forever which the CLR JIT will then inline
 				// and see that control flow doesn't continue and hence the lifetime of "this" will be
 				// shorter than the constructor.
-				switch(instr.NormalizedOpCode)
+				switch(ByteCodeMetaData.GetFlowControl(instr.NormalizedOpCode))
 				{
-					case NormalizedByteCode.__return:
-					case NormalizedByteCode.__areturn:
-					case NormalizedByteCode.__ireturn:
-					case NormalizedByteCode.__lreturn:
-					case NormalizedByteCode.__freturn:
-					case NormalizedByteCode.__dreturn:
+					case ByteCodeFlowControl.Return:
 						ilGenerator.Emit(OpCodes.Ldarg_0);
 						ilGenerator.Emit(OpCodes.Call, keepAliveMethod);
 						break;
-					case NormalizedByteCode.__if_icmpeq:
-					case NormalizedByteCode.__if_icmpne:
-					case NormalizedByteCode.__if_icmple:
-					case NormalizedByteCode.__if_icmplt:
-					case NormalizedByteCode.__if_icmpge:
-					case NormalizedByteCode.__if_icmpgt:
-					case NormalizedByteCode.__ifle:
-					case NormalizedByteCode.__iflt:
-					case NormalizedByteCode.__ifge:
-					case NormalizedByteCode.__ifgt:
-					case NormalizedByteCode.__ifne:
-					case NormalizedByteCode.__ifeq:
-					case NormalizedByteCode.__ifnonnull:
-					case NormalizedByteCode.__ifnull:
-					case NormalizedByteCode.__if_acmpeq:
-					case NormalizedByteCode.__if_acmpne:
-					case NormalizedByteCode.__goto:
+					case ByteCodeFlowControl.Branch:
+					case ByteCodeFlowControl.CondBranch:
 						if(instr.TargetIndex <= i)
 						{
 							ilGenerator.Emit(OpCodes.Ldarg_0);
 							ilGenerator.Emit(OpCodes.Call, keepAliveMethod);
 						}
 						break;
-					case NormalizedByteCode.__athrow:
-					case NormalizedByteCode.__athrow_no_unmap:
-					case NormalizedByteCode.__lookupswitch:
-					case NormalizedByteCode.__tableswitch:
+					case ByteCodeFlowControl.Throw:
+					case ByteCodeFlowControl.Switch:
 						if(ma.GetLocalTypeWrapper(i, 0) != VerifierTypeWrapper.UninitializedThis)
 						{
 							ilGenerator.Emit(OpCodes.Ldarg_0);
@@ -2645,24 +2623,16 @@ sealed class Compiler
 					throw new NotImplementedException(instr.NormalizedOpCode.ToString());
 			}
 			// mark next instruction as inuse
-			switch(instr.NormalizedOpCode)
+			switch(ByteCodeMetaData.GetFlowControl(instr.NormalizedOpCode))
 			{
-				case NormalizedByteCode.__tableswitch:
-				case NormalizedByteCode.__lookupswitch:
-				case NormalizedByteCode.__goto:
-				case NormalizedByteCode.__ret:
-				case NormalizedByteCode.__ireturn:
-				case NormalizedByteCode.__lreturn:
-				case NormalizedByteCode.__freturn:
-				case NormalizedByteCode.__dreturn:
-				case NormalizedByteCode.__areturn:
-				case NormalizedByteCode.__return:
-				case NormalizedByteCode.__athrow:
-				case NormalizedByteCode.__athrow_no_unmap:
-				case NormalizedByteCode.__static_error:
+				case ByteCodeFlowControl.Switch:
+				case ByteCodeFlowControl.Branch:
+				case ByteCodeFlowControl.Return:
+				case ByteCodeFlowControl.Throw:
 					instructionIsForwardReachable = false;
 					break;
-				default:
+				case ByteCodeFlowControl.CondBranch:
+				case ByteCodeFlowControl.Next:
 					instructionIsForwardReachable = true;
 					Debug.Assert((flags[i + 1] & InstructionFlags.Reachable) != 0);
 					// don't fall through end of try block
@@ -2672,6 +2642,8 @@ sealed class Compiler
 						ilGenerator.Emit(OpCodes.Br, block.GetLabel(i + 1));
 					}
 					break;
+				default:
+					throw new InvalidOperationException();
 			}
 		}
 	}

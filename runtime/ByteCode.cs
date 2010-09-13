@@ -432,6 +432,16 @@ enum ByteCodeFlags : byte
 	CannotThrow = 2
 }
 
+enum ByteCodeFlowControl : byte
+{
+	Next,
+	Branch,
+	CondBranch,
+	Return,
+	Throw,
+	Switch,
+}
+
 struct ByteCodeMetaData
 {
 	private static ByteCodeMetaData[] data = new ByteCodeMetaData[256];
@@ -505,6 +515,53 @@ struct ByteCodeMetaData
 	internal static ByteCodeModeWide GetWideMode(ByteCode bc)
 	{
 		return data[(int)bc].wide;
+	}
+
+	internal static ByteCodeFlowControl GetFlowControl(NormalizedByteCode bc)
+	{
+		switch (bc)
+		{
+			case NormalizedByteCode.__tableswitch:
+			case NormalizedByteCode.__lookupswitch:
+				return ByteCodeFlowControl.Switch;
+
+			case NormalizedByteCode.__goto:
+				return ByteCodeFlowControl.Branch;
+
+			case NormalizedByteCode.__ifeq:
+			case NormalizedByteCode.__ifne:
+			case NormalizedByteCode.__iflt:
+			case NormalizedByteCode.__ifge:
+			case NormalizedByteCode.__ifgt:
+			case NormalizedByteCode.__ifle:
+			case NormalizedByteCode.__if_icmpeq:
+			case NormalizedByteCode.__if_icmpne:
+			case NormalizedByteCode.__if_icmplt:
+			case NormalizedByteCode.__if_icmpge:
+			case NormalizedByteCode.__if_icmpgt:
+			case NormalizedByteCode.__if_icmple:
+			case NormalizedByteCode.__if_acmpeq:
+			case NormalizedByteCode.__if_acmpne:
+			case NormalizedByteCode.__ifnull:
+			case NormalizedByteCode.__ifnonnull:
+				return ByteCodeFlowControl.CondBranch;
+
+			case NormalizedByteCode.__ireturn:
+			case NormalizedByteCode.__lreturn:
+			case NormalizedByteCode.__freturn:
+			case NormalizedByteCode.__dreturn:
+			case NormalizedByteCode.__areturn:
+			case NormalizedByteCode.__return:
+				return ByteCodeFlowControl.Return;
+
+			case NormalizedByteCode.__athrow:
+			case NormalizedByteCode.__athrow_no_unmap:
+			case NormalizedByteCode.__static_error:
+				return ByteCodeFlowControl.Throw;
+
+			default:
+				return ByteCodeFlowControl.Next;
+		}
 	}
 
 	internal static bool CanThrowException(NormalizedByteCode bc)

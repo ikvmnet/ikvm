@@ -2215,51 +2215,30 @@ class MethodAnalyzer
 						}
 						try
 						{
-							// another big switch to handle the opcode targets
-							switch(instr.NormalizedOpCode)
+							switch(ByteCodeMetaData.GetFlowControl(instr.NormalizedOpCode))
 							{
-								case NormalizedByteCode.__tableswitch:
-								case NormalizedByteCode.__lookupswitch:
+								case ByteCodeFlowControl.Switch:
 									for(int j = 0; j < instr.SwitchEntryCount; j++)
 									{
 										state[instr.GetSwitchTargetIndex(j)] += s;
 									}
 									state[instr.DefaultTarget] += s;
 									break;
-								case NormalizedByteCode.__ifeq:
-								case NormalizedByteCode.__ifne:
-								case NormalizedByteCode.__iflt:
-								case NormalizedByteCode.__ifge:
-								case NormalizedByteCode.__ifgt:
-								case NormalizedByteCode.__ifle:
-								case NormalizedByteCode.__if_icmpeq:
-								case NormalizedByteCode.__if_icmpne:
-								case NormalizedByteCode.__if_icmplt:
-								case NormalizedByteCode.__if_icmpge:
-								case NormalizedByteCode.__if_icmpgt:
-								case NormalizedByteCode.__if_icmple:
-								case NormalizedByteCode.__if_acmpeq:
-								case NormalizedByteCode.__if_acmpne:
-								case NormalizedByteCode.__ifnull:
-								case NormalizedByteCode.__ifnonnull:
+								case ByteCodeFlowControl.CondBranch:
 									state[i + 1] += s;
 									state[instr.TargetIndex] += s;
 									break;
-								case NormalizedByteCode.__goto:
+								case ByteCodeFlowControl.Branch:
 									state[instr.TargetIndex] += s;
 									break;
-								case NormalizedByteCode.__ireturn:
-								case NormalizedByteCode.__lreturn:
-								case NormalizedByteCode.__freturn:
-								case NormalizedByteCode.__dreturn:
-								case NormalizedByteCode.__areturn:
-								case NormalizedByteCode.__return:
-								case NormalizedByteCode.__athrow:
-								case NormalizedByteCode.__static_error:
+								case ByteCodeFlowControl.Return:
+								case ByteCodeFlowControl.Throw:
+									break;
+								case ByteCodeFlowControl.Next:
+									state[i + 1] += s;
 									break;
 								default:
-									state[i + 1] += s;
-									break;
+									throw new InvalidOperationException();
 							}
 						}
 						catch(IndexOutOfRangeException)
@@ -2486,10 +2465,9 @@ class MethodAnalyzer
 							break;
 					}
 					// verify backward branches
-					switch(instructions[i].NormalizedOpCode)
+					switch(ByteCodeMetaData.GetFlowControl(instructions[i].NormalizedOpCode))
 					{
-						case NormalizedByteCode.__tableswitch:
-						case NormalizedByteCode.__lookupswitch:
+						case ByteCodeFlowControl.Switch:
 						{
 							bool hasbackbranch = false;
 							for(int j = 0; j < instructions[i].SwitchEntryCount; j++)
@@ -2505,30 +2483,8 @@ class MethodAnalyzer
 							}
 							break;
 						}
-						case NormalizedByteCode.__goto:
-							if(instructions[i].TargetIndex < i)
-							{
-								// backward branches cannot have uninitialized objects on
-								// the stack or in local variables
-								state[i].CheckUninitializedObjRefs();
-							}
-							break;
-						case NormalizedByteCode.__ifeq:
-						case NormalizedByteCode.__ifne:
-						case NormalizedByteCode.__iflt:
-						case NormalizedByteCode.__ifge:
-						case NormalizedByteCode.__ifgt:
-						case NormalizedByteCode.__ifle:
-						case NormalizedByteCode.__if_icmpeq:
-						case NormalizedByteCode.__if_icmpne:
-						case NormalizedByteCode.__if_icmplt:
-						case NormalizedByteCode.__if_icmpge:
-						case NormalizedByteCode.__if_icmpgt:
-						case NormalizedByteCode.__if_icmple:
-						case NormalizedByteCode.__if_acmpeq:
-						case NormalizedByteCode.__if_acmpne:
-						case NormalizedByteCode.__ifnull:
-						case NormalizedByteCode.__ifnonnull:
+						case ByteCodeFlowControl.Branch:
+						case ByteCodeFlowControl.CondBranch:
 							if(instructions[i].TargetIndex < i)
 							{
 								// backward branches cannot have uninitialized objects on
@@ -2570,10 +2526,9 @@ class MethodAnalyzer
 						}
 					}
 					// mark the successor instructions
-					switch (instructions[i].NormalizedOpCode)
+					switch (ByteCodeMetaData.GetFlowControl(instructions[i].NormalizedOpCode))
 					{
-						case NormalizedByteCode.__tableswitch:
-						case NormalizedByteCode.__lookupswitch:
+						case ByteCodeFlowControl.Switch:
 							{
 								for (int j = 0; j < instructions[i].SwitchEntryCount; j++)
 								{
@@ -2582,41 +2537,21 @@ class MethodAnalyzer
 								flags[instructions[i].DefaultTarget] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 								break;
 							}
-						case NormalizedByteCode.__goto:
+						case ByteCodeFlowControl.Branch:
 							flags[instructions[i].TargetIndex] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 							break;
-						case NormalizedByteCode.__ifeq:
-						case NormalizedByteCode.__ifne:
-						case NormalizedByteCode.__iflt:
-						case NormalizedByteCode.__ifge:
-						case NormalizedByteCode.__ifgt:
-						case NormalizedByteCode.__ifle:
-						case NormalizedByteCode.__if_icmpeq:
-						case NormalizedByteCode.__if_icmpne:
-						case NormalizedByteCode.__if_icmplt:
-						case NormalizedByteCode.__if_icmpge:
-						case NormalizedByteCode.__if_icmpgt:
-						case NormalizedByteCode.__if_icmple:
-						case NormalizedByteCode.__if_acmpeq:
-						case NormalizedByteCode.__if_acmpne:
-						case NormalizedByteCode.__ifnull:
-						case NormalizedByteCode.__ifnonnull:
+						case ByteCodeFlowControl.CondBranch:
 							flags[instructions[i].TargetIndex] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 							flags[i + 1] |= InstructionFlags.Reachable;
 							break;
-						case NormalizedByteCode.__ireturn:
-						case NormalizedByteCode.__lreturn:
-						case NormalizedByteCode.__freturn:
-						case NormalizedByteCode.__dreturn:
-						case NormalizedByteCode.__areturn:
-						case NormalizedByteCode.__return:
-						case NormalizedByteCode.__athrow:
-						case NormalizedByteCode.__athrow_no_unmap:
-						case NormalizedByteCode.__static_error:
+						case ByteCodeFlowControl.Return:
+						case ByteCodeFlowControl.Throw:
+							break;
+						case ByteCodeFlowControl.Next:
+							flags[i + 1] |= InstructionFlags.Reachable;
 							break;
 						default:
-							flags[i + 1] |= InstructionFlags.Reachable;
-							break;
+							throw new InvalidOperationException();
 					}
 				}
 			}
