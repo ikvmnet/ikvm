@@ -4659,6 +4659,11 @@ namespace IKVM.Internal
 			return new VerifierTypeWrapper(This, 0, type, null);
 		}
 
+		internal static bool IsNotPresentOnStack(TypeWrapper w)
+		{
+			return IsNew(w) || IsFaultBlockException(w);
+		}
+
 		internal static bool IsNew(TypeWrapper w)
 		{
 			return w != null && w.IsVerifierType && ReferenceEquals(w.Name, New);

@@ -1489,7 +1489,7 @@ sealed class Compiler
 											tempstack[j] = newobj;
 											ilGenerator.Emit(OpCodes.Pop);
 										}
-										else if(!VerifierTypeWrapper.IsNew(stacktype))
+										else if(!VerifierTypeWrapper.IsNotPresentOnStack(stacktype))
 										{
 											LocalBuilder lb = ilGenerator.DeclareLocal(GetLocalBuilderType(stacktype));
 											ilGenerator.Emit(OpCodes.Stloc, lb);
@@ -1719,9 +1719,9 @@ sealed class Compiler
 						// if the local is known to be null, we just emit a null
 						ilGenerator.Emit(OpCodes.Ldnull);
 					}
-					else if(VerifierTypeWrapper.IsNew(type))
+					else if(VerifierTypeWrapper.IsNotPresentOnStack(type))
 					{
-						// since new objects aren't represented on the stack, we don't need to do anything here
+						// since object isn't represented on the stack, we don't need to do anything here
 					}
 					else if(VerifierTypeWrapper.IsThis(type))
 					{
@@ -1734,10 +1734,6 @@ sealed class Compiler
 						// a different local (due to the way the local variable liveness analysis works),
 						// so we don't have to worry about that.
 						ilGenerator.Emit(OpCodes.Ldarg_0);
-					}
-					else if (VerifierTypeWrapper.IsFaultBlockException(type))
-					{
-						// not really there
 					}
 					else
 					{
@@ -1752,9 +1748,9 @@ sealed class Compiler
 				case NormalizedByteCode.__astore:
 				{
 					TypeWrapper type = ma.GetRawStackTypeWrapper(i, 0);
-					if(VerifierTypeWrapper.IsNew(type))
+					if(VerifierTypeWrapper.IsNotPresentOnStack(type))
 					{
-						// new objects aren't really on the stack, so we can't copy them into the local
+						// object isn't really on the stack, so we can't copy it into the local
 						// (and the local doesn't exist anyway)
 					}
 					else if(type == VerifierTypeWrapper.UninitializedThis)
@@ -1763,10 +1759,6 @@ sealed class Compiler
 						// here (because CLR won't allow unitialized references in locals) and then when
 						// the unitialized ref is loaded we redirect to the this reference
 						ilGenerator.LazyEmitPop();
-					}
-					else if(VerifierTypeWrapper.IsFaultBlockException(type))
-					{
-						// not really there
 					}
 					else
 					{
@@ -2285,8 +2277,8 @@ sealed class Compiler
 					break;
 				}
 				case NormalizedByteCode.__dup:
-					// if the TOS contains a "new" object, it isn't really there, so we don't dup it
-					if(!VerifierTypeWrapper.IsNew(ma.GetRawStackTypeWrapper(i, 0)))
+					// if the TOS contains a "new" object or a fault block exception, it isn't really there, so we don't dup it
+					if(!VerifierTypeWrapper.IsNotPresentOnStack(ma.GetRawStackTypeWrapper(i, 0)))
 					{
 						ilGenerator.Emit(OpCodes.Dup);
 					}
@@ -2481,11 +2473,11 @@ sealed class Compiler
 					}
 					else
 					{
-						if(!VerifierTypeWrapper.IsNew(type1))
+						if (!VerifierTypeWrapper.IsNotPresentOnStack(type1))
 						{
 							ilGenerator.LazyEmitPop();
 						}
-						if(!VerifierTypeWrapper.IsNew(ma.GetRawStackTypeWrapper(i, 1)))
+						if (!VerifierTypeWrapper.IsNotPresentOnStack(ma.GetRawStackTypeWrapper(i, 1)))
 						{
 							ilGenerator.LazyEmitPop();
 						}
@@ -2493,8 +2485,8 @@ sealed class Compiler
 					break;
 				}
 				case NormalizedByteCode.__pop:
-					// if the TOS is a new object, it isn't really there, so we don't need to pop it
-					if(!VerifierTypeWrapper.IsNew(ma.GetRawStackTypeWrapper(i, 0)))
+					// if the TOS is a new object or a fault block exception, it isn't really there, so we don't need to pop it
+					if(!VerifierTypeWrapper.IsNotPresentOnStack(ma.GetRawStackTypeWrapper(i, 0)))
 					{
 						ilGenerator.LazyEmitPop();
 					}
