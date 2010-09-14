@@ -363,9 +363,9 @@ namespace IKVM.Internal
 			throw new InvalidOperationException();
 		}
 
-		internal virtual bool EmitIntrinsic(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code, ClassFile.Method.InstructionFlags[] flags)
+		internal virtual bool EmitIntrinsic(EmitIntrinsicContext context)
 		{
-			return Intrinsics.Emit(context, ilgen, method, ma, opcodeIndex, caller, classFile, code, flags);
+			return Intrinsics.Emit(context);
 		}
 #endif // STUB_GENERATOR
 

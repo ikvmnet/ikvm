@@ -1719,21 +1719,21 @@ namespace IKVM.Internal
 			}
 
 #if !STUB_GENERATOR
-			internal override bool EmitIntrinsic(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code, ClassFile.Method.InstructionFlags[] flags)
+			internal override bool EmitIntrinsic(EmitIntrinsicContext context)
 			{
-				TypeWrapper targetType = ma.GetStackTypeWrapper(opcodeIndex, 0);
+				TypeWrapper targetType = context.GetStackTypeWrapper(0, 0);
 				if (targetType.IsUnloadable || targetType.IsInterface)
 				{
 					return false;
 				}
-				ilgen.Emit(OpCodes.Dup);
+				context.Emitter.Emit(OpCodes.Dup);
 				// we know that a DelegateInnerClassTypeWrapper has only one method
 				Debug.Assert(iface.GetMethods().Length == 1);
 				MethodWrapper mw = targetType.GetMethodWrapper("Invoke", iface.GetMethods()[0].Signature, true);
 				// TODO linking here is not safe
 				mw.Link();
-				ilgen.Emit(OpCodes.Ldvirtftn, (MethodInfo)mw.GetMethod());
-				ilgen.Emit(OpCodes.Newobj, delegateConstructor);
+				context.Emitter.Emit(OpCodes.Ldvirtftn, (MethodInfo)mw.GetMethod());
+				context.Emitter.Emit(OpCodes.Newobj, delegateConstructor);
 				return true;
 			}
 
