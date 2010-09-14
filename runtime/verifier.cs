@@ -29,7 +29,7 @@ using IKVM.Internal;
 using InstructionFlags = IKVM.Internal.ClassFile.Method.InstructionFlags;
 using ExceptionTableEntry = IKVM.Internal.ClassFile.Method.ExceptionTableEntry;
 
-class InstructionState
+sealed class InstructionState
 {
 	private struct LocalStoreSites
 	{
@@ -1048,22 +1048,22 @@ sealed class ExceptionSorter : IComparer<ExceptionTableEntry>
 	}
 }
 
-class MethodAnalyzer
+sealed class MethodAnalyzer
 {
-	private static TypeWrapper ByteArrayType;
-	private static TypeWrapper BooleanArrayType;
-	private static TypeWrapper ShortArrayType;
-	private static TypeWrapper CharArrayType;
-	private static TypeWrapper IntArrayType;
-	private static TypeWrapper FloatArrayType;
-	private static TypeWrapper DoubleArrayType;
-	private static TypeWrapper LongArrayType;
-	private static TypeWrapper java_lang_ThreadDeath;
-	private ClassFile classFile;
-	private ClassFile.Method method;
-	private InstructionState[] state;
+	private readonly static TypeWrapper ByteArrayType;
+	private readonly static TypeWrapper BooleanArrayType;
+	private readonly static TypeWrapper ShortArrayType;
+	private readonly static TypeWrapper CharArrayType;
+	private readonly static TypeWrapper IntArrayType;
+	private readonly static TypeWrapper FloatArrayType;
+	private readonly static TypeWrapper DoubleArrayType;
+	private readonly static TypeWrapper LongArrayType;
+	private readonly static TypeWrapper java_lang_ThreadDeath;
+	private readonly ClassFile classFile;
+	private readonly ClassFile.Method method;
+	private readonly InstructionState[] state;
 	private List<string> errorMessages;
-	private ExceptionTableEntry[] exceptions;
+	private readonly ExceptionTableEntry[] exceptions;
 
 	static MethodAnalyzer()
 	{
