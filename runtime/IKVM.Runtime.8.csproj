@@ -125,6 +125,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="JsrInliner.cs" />
+    <Compile Include="LocalVars.cs" />
     <Compile Include="MemberWrapper.cs">
       <SubType>Code</SubType>
     </Compile>

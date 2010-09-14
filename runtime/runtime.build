@@ -101,6 +101,7 @@
                 <include name="intrinsics.cs" />
                 <include name="JavaException.cs" />
                 <include name="JsrInliner.cs" />
+                <include name="LocalVars.cs" />
                 <include name="MemberWrapper.cs" />
                 <include name="openjdk.cs" />
                 <include name="PassiveWeakDictionary.cs" />

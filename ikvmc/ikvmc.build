@@ -34,6 +34,7 @@
                 <include name="../runtime/intrinsics.cs" />
                 <include name="../runtime/JavaException.cs" />
                 <include name="../runtime/JsrInliner.cs" />
+                <include name="../runtime/LocalVars.cs" />
                 <include name="../runtime/MemberWrapper.cs" />
                 <include name="../runtime/profiler.cs" />
                 <include name="../runtime/ReflectUtil.cs" />
