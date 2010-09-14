@@ -111,7 +111,6 @@ class InstructionState
 	private int stackSize;
 	private int stackEnd;
 	private TypeWrapper[] locals;
-	private LocalStoreSites[] localStoreSites;
 	private bool unitializedThis;
 	internal bool changed = true;
 	private enum ShareFlags : byte
@@ -119,19 +118,17 @@ class InstructionState
 		None = 0,
 		Stack = 1,
 		Locals = 2,
-		LocalStoreSites = 4,
-		All = Stack | Locals | LocalStoreSites
+		All = Stack | Locals
 	}
 	private ShareFlags flags;
 
-	private InstructionState(TypeWrapper[] stack, int stackSize, int stackEnd, TypeWrapper[] locals, LocalStoreSites[] localStoreSites, bool unitializedThis)
+	private InstructionState(TypeWrapper[] stack, int stackSize, int stackEnd, TypeWrapper[] locals, bool unitializedThis)
 	{
 		this.flags = ShareFlags.All;
 		this.stack = stack;
 		this.stackSize = stackSize;
 		this.stackEnd = stackEnd;
 		this.locals = locals;
-		this.localStoreSites = localStoreSites;
 		this.unitializedThis = unitializedThis;
 	}
 
@@ -141,12 +138,11 @@ class InstructionState
 		this.stack = new TypeWrapper[maxStack];
 		this.stackEnd = maxStack;
 		this.locals = new TypeWrapper[maxLocals];
-		this.localStoreSites = new LocalStoreSites[maxLocals];
 	}
 
 	internal InstructionState Copy()
 	{
-		return new InstructionState(stack, stackSize, stackEnd, locals, localStoreSites, unitializedThis);
+		return new InstructionState(stack, stackSize, stackEnd, locals, unitializedThis);
 	}
 
 	internal void CopyTo(InstructionState target)
@@ -156,14 +152,13 @@ class InstructionState
 		target.stackSize = stackSize;
 		target.stackEnd = stackEnd;
 		target.locals = locals;
-		target.localStoreSites = localStoreSites;
 		target.unitializedThis = unitializedThis;
 		target.changed = true;
 	}
 
 	internal InstructionState CopyLocals()
 	{
-		InstructionState copy = new InstructionState(new TypeWrapper[stack.Length], 0, stack.Length, locals, localStoreSites, unitializedThis);
+		InstructionState copy = new InstructionState(new TypeWrapper[stack.Length], 0, stack.Length, locals, unitializedThis);
 		copy.flags &= ~ShareFlags.Stack;
 		return copy;
 	}
@@ -233,20 +228,11 @@ class InstructionState
 		{
 			TypeWrapper type = s.locals[i];
 			TypeWrapper type2 = s2.locals[i];
-			LocalStoreSites storeSites = s.localStoreSites[i];
-			LocalStoreSites storeSites2 = s2.localStoreSites[i];
 			TypeWrapper baseType = InstructionState.FindCommonBaseType(type, type2);
 			if(type != baseType)
 			{
 				s.LocalsCopyOnWrite();
 				s.locals[i] = baseType;
-				s.changed = true;
-			}
-			storeSites = MergeStoreSites(storeSites, storeSites2);
-			if(storeSites.Count != s.localStoreSites[i].Count)
-			{
-				s.LocalStoreSitesCopyOnWrite();
-				s.localStoreSites[i] = storeSites;
 				s.changed = true;
 			}
 		}
@@ -457,16 +443,9 @@ class InstructionState
 		}
 	}
 
-	private void SetLocalStoreSite(int localIndex, int instructionIndex)
+	internal void GetLocalInt(int index)
 	{
-		LocalStoreSitesCopyOnWrite();
-		localStoreSites[localIndex] = LocalStoreSites.Alloc();
-		localStoreSites[localIndex].Add(instructionIndex);
-	}
-
-	internal void GetLocalInt(int index, ref Dictionary<int, string> readers)
-	{
-		if(GetLocalType(index, ref readers) != PrimitiveTypeWrapper.INT)
+		if(GetLocalType(index) != PrimitiveTypeWrapper.INT)
 		{
 			throw new VerifyError("Invalid local type");
 		}
@@ -475,12 +454,11 @@ class InstructionState
 	internal void SetLocalInt(int index, int instructionIndex)
 	{
 		SetLocal1(index, PrimitiveTypeWrapper.INT);
-		SetLocalStoreSite(index, instructionIndex);
 	}
 
-	internal void GetLocalLong(int index, ref Dictionary<int, string> readers)
+	internal void GetLocalLong(int index)
 	{
-		if(GetLocalType(index, ref readers) != PrimitiveTypeWrapper.LONG)
+		if(GetLocalType(index) != PrimitiveTypeWrapper.LONG)
 		{
 			throw new VerifyError("incorrect local type, not long");
 		}
@@ -489,12 +467,11 @@ class InstructionState
 	internal void SetLocalLong(int index, int instructionIndex)
 	{
 		SetLocal2(index, PrimitiveTypeWrapper.LONG);
-		SetLocalStoreSite(index, instructionIndex);
 	}
 
-	internal void GetLocalFloat(int index, ref Dictionary<int, string> readers)
+	internal void GetLocalFloat(int index)
 	{
-		if(GetLocalType(index, ref readers) != PrimitiveTypeWrapper.FLOAT)
+		if(GetLocalType(index) != PrimitiveTypeWrapper.FLOAT)
 		{
 			throw new VerifyError("incorrect local type, not float");
 		}
@@ -503,12 +480,11 @@ class InstructionState
 	internal void SetLocalFloat(int index, int instructionIndex)
 	{
 		SetLocal1(index, PrimitiveTypeWrapper.FLOAT);
-		SetLocalStoreSite(index, instructionIndex);
 	}
 
-	internal void GetLocalDouble(int index, ref Dictionary<int, string> readers)
+	internal void GetLocalDouble(int index)
 	{
-		if(GetLocalType(index, ref readers) != PrimitiveTypeWrapper.DOUBLE)
+		if(GetLocalType(index) != PrimitiveTypeWrapper.DOUBLE)
 		{
 			throw new VerifyError("incorrect local type, not double");
 		}
@@ -517,21 +493,12 @@ class InstructionState
 	internal void SetLocalDouble(int index, int instructionIndex)
 	{
 		SetLocal2(index, PrimitiveTypeWrapper.DOUBLE);
-		SetLocalStoreSite(index, instructionIndex);
 	}
 
-	internal TypeWrapper GetLocalType(int index, ref Dictionary<int, string> readers)
+	internal TypeWrapper GetLocalType(int index)
 	{
 		try
 		{
-			if(readers == null)
-			{
-				readers = new Dictionary<int,string>();
-			}
-			for(int i = 0; i < localStoreSites[index].Count; i++)
-			{
-				readers[localStoreSites[index][i]] = "";
-			}
 			return locals[index];
 		}
 		catch(IndexOutOfRangeException)
@@ -558,7 +525,6 @@ class InstructionState
 		{
 			SetLocal1(index, type);
 		}
-		SetLocalStoreSite(index, instructionIndex);
 	}
 
 	internal void PushType(TypeWrapper type)
@@ -809,7 +775,6 @@ class InstructionState
 		{
 			if(locals[i] == type)
 			{
-				SetLocalStoreSite(i, instructionIndex);
 				LocalsCopyOnWrite();
 				locals[i] = initType;
 			}
@@ -839,16 +804,6 @@ class InstructionState
 		{
 			flags &= ~ShareFlags.Locals;
 			locals = (TypeWrapper[])locals.Clone();
-		}
-	}
-
-	private void LocalStoreSitesCopyOnWrite()
-	{
-		if((flags & ShareFlags.LocalStoreSites) != 0)
-		{
-			flags &= ~ShareFlags.LocalStoreSites;
-			LocalStoreSites.MarkShared(localStoreSites);
-			localStoreSites = (LocalStoreSites[])localStoreSites.Clone();
 		}
 	}
 
@@ -1179,8 +1134,6 @@ class MethodAnalyzer
 		this.method = method;
 		state = new InstructionState[method.Instructions.Length];
 
-		Dictionary<int,string>[] localStoreReaders = new Dictionary<int,string>[method.Instructions.Length];
-
 		// HACK because types have to have identity, the new types are cached here
 		Dictionary<int, TypeWrapper> newTypes = new Dictionary<int,TypeWrapper>();
 		Dictionary<int, TypeWrapper> faultTypes = new Dictionary<int, TypeWrapper>();
@@ -1242,18 +1195,21 @@ class MethodAnalyzer
 				firstNonArgLocalIndex++;
 			}
 		}
-		AnalyzeTypeFlow(wrapper, thisType, mw, localStoreReaders, newTypes, faultTypes);
+		AnalyzeTypeFlow(wrapper, thisType, mw, newTypes, faultTypes);
 		exceptions = UntangleExceptionBlocks(classFile, method.ExceptionTable);
 		OptimizationPass(wrapper, classLoader);
 		FinalCodePatchup(wrapper, mw);
 		if (AnalyzePotentialFaultBlocks())
 		{
-			AnalyzeTypeFlow(wrapper, thisType, mw, localStoreReaders, newTypes, faultTypes);
+			AnalyzeTypeFlow(wrapper, thisType, mw, newTypes, faultTypes);
 		}
-		AnalyzeLocalVariables(localStoreReaders, classLoader);
+		if (mw != null)
+		{
+			AnalyzeLocalVariables(mw, classLoader);
+		}
 	}
 
-	private void AnalyzeTypeFlow(TypeWrapper wrapper, TypeWrapper thisType, MethodWrapper mw, Dictionary<int, string>[] localStoreReaders, Dictionary<int, TypeWrapper> newTypes, Dictionary<int, TypeWrapper> faultTypes)
+	private void AnalyzeTypeFlow(TypeWrapper wrapper, TypeWrapper thisType, MethodWrapper mw, Dictionary<int, TypeWrapper> newTypes, Dictionary<int, TypeWrapper> faultTypes)
 	{
 		InstructionState s = new InstructionState(method.MaxLocals, method.MaxStack);
 		bool done = false;
@@ -1303,7 +1259,7 @@ class MethodAnalyzer
 						{
 							case NormalizedByteCode.__aload:
 							{
-								TypeWrapper type = s.GetLocalType(instr.NormalizedArg1, ref localStoreReaders[i]);
+								TypeWrapper type = s.GetLocalType(instr.NormalizedArg1);
 								if(type == VerifierTypeWrapper.Invalid || type.IsPrimitive)
 								{
 									throw new VerifyError("Object reference expected");
@@ -1696,7 +1652,7 @@ class MethodAnalyzer
 								s.SetLocalInt(instr.NormalizedArg1, i);
 								break;
 							case NormalizedByteCode.__iload:
-								s.GetLocalInt(instr.NormalizedArg1, ref localStoreReaders[i]);
+								s.GetLocalInt(instr.NormalizedArg1);
 								s.PushInt();
 								break;
 							case NormalizedByteCode.__ineg:
@@ -2058,7 +2014,7 @@ class MethodAnalyzer
 								}
 								break;
 							case NormalizedByteCode.__fload:
-								s.GetLocalFloat(instr.NormalizedArg1, ref localStoreReaders[i]);
+								s.GetLocalFloat(instr.NormalizedArg1);
 								s.PushFloat();
 								break;
 							case NormalizedByteCode.__fstore:
@@ -2067,7 +2023,7 @@ class MethodAnalyzer
 								s.SetLocalFloat(instr.NormalizedArg1, i);
 								break;
 							case NormalizedByteCode.__dload:
-								s.GetLocalDouble(instr.NormalizedArg1, ref localStoreReaders[i]);
+								s.GetLocalDouble(instr.NormalizedArg1);
 								s.PushDouble();
 								break;
 							case NormalizedByteCode.__dstore:
@@ -2076,7 +2032,7 @@ class MethodAnalyzer
 								s.SetLocalDouble(instr.NormalizedArg1, i);
 								break;
 							case NormalizedByteCode.__lload:
-								s.GetLocalLong(instr.NormalizedArg1, ref localStoreReaders[i]);
+								s.GetLocalLong(instr.NormalizedArg1);
 								s.PushLong();
 								break;
 							case NormalizedByteCode.__lstore:
@@ -2122,7 +2078,7 @@ class MethodAnalyzer
 								s.PushInt();
 								break;
 							case NormalizedByteCode.__iinc:
-								s.GetLocalInt(instr.Arg1, ref localStoreReaders[i]);
+								s.GetLocalInt(instr.Arg1);
 								break;
 							case NormalizedByteCode.__athrow:
 								if (VerifierTypeWrapper.IsFaultBlockException(s.PeekType()))
@@ -2559,8 +2515,241 @@ class MethodAnalyzer
 		return flags;
 	}
 
-	private void AnalyzeLocalVariables(Dictionary<int, string>[] localStoreReaders, ClassLoaderWrapper classLoader)
+	struct FindLocalVarState
 	{
+		internal bool changed;
+		internal FindLocalVarStoreSite[] sites;
+
+		internal void Store(int instructionIndex, int localIndex)
+		{
+			if (sites[localIndex].Count == 1 && sites[localIndex][0] == instructionIndex)
+			{
+				return;
+			}
+			sites = (FindLocalVarStoreSite[])sites.Clone();
+			sites[localIndex] = new FindLocalVarStoreSite();
+			sites[localIndex].Add(instructionIndex);
+		}
+
+		internal void Merge(FindLocalVarState state)
+		{
+			if (sites == null)
+			{
+				sites = state.sites;
+				changed = true;
+			}
+			else
+			{
+				bool dirty = true;
+				for (int i = 0; i < sites.Length; i++)
+				{
+					for (int j = 0; j < state.sites[i].Count; j++)
+					{
+						if (!sites[i].Contains(state.sites[i][j]))
+						{
+							if (dirty)
+							{
+								dirty = false;
+								sites = (FindLocalVarStoreSite[])sites.Clone();
+							}
+							sites[i].Add(state.sites[i][j]);
+							changed = true;
+						}
+					}
+				}
+			}
+		}
+
+		internal FindLocalVarState Copy()
+		{
+			FindLocalVarState copy = new FindLocalVarState();
+			copy.sites = sites;
+			return copy;
+		}
+
+		public override string ToString()
+		{
+			System.Text.StringBuilder sb = new System.Text.StringBuilder();
+			if (sites != null)
+			{
+				foreach (FindLocalVarStoreSite site in sites)
+				{
+					sb.Append('[');
+					for (int i = 0; i < site.Count; i++)
+					{
+						sb.AppendFormat("{0}, ", site[i]);
+					}
+					sb.Append(']');
+				}
+			}
+			return sb.ToString();
+		}
+	}
+
+	struct FindLocalVarStoreSite
+	{
+		private int[] data;
+
+		internal bool Contains(int instructionIndex)
+		{
+			if (data != null)
+			{
+				for (int i = 0; i < data.Length; i++)
+				{
+					if (data[i] == instructionIndex)
+					{
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
+		internal void Add(int instructionIndex)
+		{
+			if (data == null)
+			{
+				data = new int[] { instructionIndex };
+			}
+			else
+			{
+				Array.Resize(ref data, data.Length + 1);
+				data[data.Length - 1] = instructionIndex;
+			}
+		}
+
+		internal int this[int index]
+		{
+			get { return data[index]; }
+		}
+
+		internal int Count
+		{
+			get { return data == null ? 0 : data.Length; }
+		}
+	}
+
+	private static Dictionary<int, string>[] FindLocalVariables(MethodAnalyzer ma, MethodWrapper mw, ClassFile.Method method)
+	{
+		ClassFile.Method.Instruction[] instructions = method.Instructions;
+		ExceptionTableEntry[] exceptions = method.ExceptionTable;
+		int maxLocals = method.MaxLocals;
+		Dictionary<int, string>[] localStoreReaders = new Dictionary<int, string>[instructions.Length];
+		FindLocalVarState[] state = new FindLocalVarState[instructions.Length];
+		bool done = false;
+		state[0].changed = true;
+		state[0].sites = new FindLocalVarStoreSite[maxLocals];
+		TypeWrapper[] parameters = mw.GetParameters();
+		int argpos = 0;
+		if (!mw.IsStatic)
+		{
+			state[0].sites[argpos++].Add(-1);
+		}
+		for (int i = 0; i < parameters.Length; i++)
+		{
+			state[0].sites[argpos++].Add(-1);
+			if (parameters[i].IsWidePrimitive)
+			{
+				argpos++;
+			}
+		}
+
+		while (!done)
+		{
+			done = true;
+			for (int i = 0; i < instructions.Length; i++)
+			{
+				if (state[i].changed)
+				{
+					done = false;
+					state[i].changed = false;
+
+					FindLocalVarState curr = state[i].Copy();
+
+					for (int j = 0; j < exceptions.Length; j++)
+					{
+						if (exceptions[j].startIndex <= i && i < exceptions[j].endIndex)
+						{
+							state[exceptions[j].handlerIndex].Merge(curr);
+						}
+					}
+
+					if (IsLoadLocal(instructions[i].NormalizedOpCode))
+					{
+						if (localStoreReaders[i] == null)
+						{
+							localStoreReaders[i] = new Dictionary<int, string>();
+						}
+						for (int j = 0; j < curr.sites[instructions[i].NormalizedArg1].Count; j++)
+						{
+							localStoreReaders[i][curr.sites[instructions[i].NormalizedArg1][j]] = "";
+						}
+					}
+
+					if (IsStoreLocal(instructions[i].NormalizedOpCode))
+					{
+						curr.Store(i, instructions[i].NormalizedArg1);
+					}
+
+					if (instructions[i].NormalizedOpCode == NormalizedByteCode.__invokespecial)
+					{
+						ClassFile.ConstantPoolItemMI cpi = ma.GetMethodref(instructions[i].Arg1);
+						if (ReferenceEquals(cpi.Name, StringConstants.INIT))
+						{
+							TypeWrapper type = ma.GetRawStackTypeWrapper(i, cpi.GetArgTypes().Length);
+							// after we've invoked the constructor, the uninitialized references
+							// are now initialized
+							if (type == VerifierTypeWrapper.UninitializedThis
+								|| VerifierTypeWrapper.IsNew(type))
+							{
+								for (int j = 0; j < maxLocals; j++)
+								{
+									if (ma.GetLocalTypeWrapper(i, j) == type)
+									{
+										curr.Store(i, j);
+									}
+								}
+							}
+						}
+					}
+
+					switch (ByteCodeMetaData.GetFlowControl(instructions[i].NormalizedOpCode))
+					{
+						case ByteCodeFlowControl.Switch:
+							{
+								for (int j = 0; j < instructions[i].SwitchEntryCount; j++)
+								{
+									state[instructions[i].GetSwitchTargetIndex(j)].Merge(curr);
+								}
+								state[instructions[i].DefaultTarget].Merge(curr);
+								break;
+							}
+						case ByteCodeFlowControl.Branch:
+							state[instructions[i].TargetIndex].Merge(curr);
+							break;
+						case ByteCodeFlowControl.CondBranch:
+							state[instructions[i].TargetIndex].Merge(curr);
+							state[i + 1].Merge(curr);
+							break;
+						case ByteCodeFlowControl.Return:
+						case ByteCodeFlowControl.Throw:
+							break;
+						case ByteCodeFlowControl.Next:
+							state[i + 1].Merge(curr);
+							break;
+						default:
+							throw new InvalidOperationException();
+					}
+				}
+			}
+		}
+		return localStoreReaders;
+	}
+
+	private void AnalyzeLocalVariables(MethodWrapper mw, ClassLoaderWrapper classLoader)
+	{
+		Dictionary<int, string>[] localStoreReaders = FindLocalVariables(this, mw, method);
+
 		// now that we've done the code flow analysis, we can do a liveness analysis on the local variables
 		ClassFile.Method.Instruction[] instructions = method.Instructions;
 		Dictionary<long, LocalVar> localByStoreSite = new Dictionary<long, LocalVar>();
