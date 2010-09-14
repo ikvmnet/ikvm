@@ -1185,7 +1185,7 @@ namespace IKVM.Internal
 				DoEmit(ilgen);
 			}
 
-			internal override void EmitNewobj(CodeEmitter ilgen, MethodAnalyzer ma, int opcodeIndex)
+			internal override void EmitNewobj(CodeEmitter ilgen)
 			{
 				DoEmit(ilgen);
 			}

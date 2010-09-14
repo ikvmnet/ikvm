@@ -975,7 +975,7 @@ namespace IKVM.Internal
 					ilgen.Emit(OpCodes.Call, (ConstructorInfo)GetMethod());
 				}
 
-				internal override void EmitNewobj(CodeEmitter ilgen, MethodAnalyzer ma, int opcodeIndex)
+				internal override void EmitNewobj(CodeEmitter ilgen)
 				{
 					if(mbHelper != null)
 					{

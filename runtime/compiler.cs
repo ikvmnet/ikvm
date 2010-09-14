@@ -1442,7 +1442,7 @@ sealed class Compiler
 									}
 								}
 							}
-							method.EmitNewobj(ilGenerator, ma, i);
+							method.EmitNewobj(ilGenerator);
 							if(!thisType.IsUnloadable && thisType.IsSubTypeOf(cli_System_Exception))
 							{
 								// we call Throwable.__<fixate>() to disable remapping the exception
@@ -2954,7 +2954,7 @@ sealed class Compiler
 			Emit(ByteCodeHelperMethods.DynamicInvokevirtual, ilgen, cpi.GetRetType());
 		}
 
-		internal override void EmitNewobj(CodeEmitter ilgen, MethodAnalyzer ma, int opcodeIndex)
+		internal override void EmitNewobj(CodeEmitter ilgen)
 		{
 			Emit(ByteCodeHelperMethods.DynamicInvokeSpecialNew, ilgen, cpi.GetClassType());
 		}

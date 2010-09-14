@@ -358,14 +358,14 @@ namespace IKVM.Internal
 			EmitCallvirt(ilgen);
 		}
 
-		internal void EmitNewobj(CodeEmitter ilgen)
-		{
-			EmitNewobj(ilgen, null, 0);
-		}
-
-		internal virtual void EmitNewobj(CodeEmitter ilgen, MethodAnalyzer ma, int opcodeIndex)
+		internal virtual void EmitNewobj(CodeEmitter ilgen)
 		{
 			throw new InvalidOperationException();
+		}
+
+		internal virtual bool EmitIntrinsic(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code, ClassFile.Method.InstructionFlags[] flags)
+		{
+			return Intrinsics.Emit(context, ilgen, method, ma, opcodeIndex, caller, classFile, code, flags);
 		}
 #endif // STUB_GENERATOR
 
@@ -1083,7 +1083,7 @@ namespace IKVM.Internal
 			throw new InvalidOperationException();
 		}
 
-		internal sealed override void EmitNewobj(CodeEmitter ilgen, MethodAnalyzer ma, int opcodeIndex)
+		internal sealed override void EmitNewobj(CodeEmitter ilgen)
 		{
 			AssertLinked();
 			PreEmit(ilgen);

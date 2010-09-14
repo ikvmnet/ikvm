@@ -1712,39 +1712,42 @@ namespace IKVM.Internal
 			private DelegateInnerClassTypeWrapper iface;
 
 			internal DelegateMethodWrapper(TypeWrapper declaringType, DelegateInnerClassTypeWrapper iface)
-				: base(declaringType, "<init>", "(" + iface.SigName + ")V", null, PrimitiveTypeWrapper.VOID, new TypeWrapper[] { iface }, Modifiers.Public, MemberFlags.None)
+				: base(declaringType, "<init>", "(" + iface.SigName + ")V", null, PrimitiveTypeWrapper.VOID, new TypeWrapper[] { iface }, Modifiers.Public, MemberFlags.Intrinsic)
 			{
 				this.delegateConstructor = declaringType.TypeAsTBD.GetConstructor(new Type[] { Types.Object, Types.IntPtr });
 				this.iface = iface;
 			}
 
 #if !STUB_GENERATOR
-			internal override void EmitNewobj(CodeEmitter ilgen, MethodAnalyzer ma, int opcodeIndex)
+			internal override bool EmitIntrinsic(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code, ClassFile.Method.InstructionFlags[] flags)
 			{
-				TypeWrapper targetType = ma == null ? null : ma.GetStackTypeWrapper(opcodeIndex, 0);
-				if (targetType == null || targetType.IsInterface)
+				TypeWrapper targetType = ma.GetStackTypeWrapper(opcodeIndex, 0);
+				if (targetType.IsUnloadable || targetType.IsInterface)
 				{
-					MethodInfo createDelegate = Types.Delegate.GetMethod("CreateDelegate", new Type[] { Types.Type, Types.Object, Types.String });
-					LocalBuilder targetObj = ilgen.DeclareLocal(Types.Object);
-					ilgen.Emit(OpCodes.Stloc, targetObj);
-					ilgen.Emit(OpCodes.Ldtoken, delegateConstructor.DeclaringType);
-					ilgen.Emit(OpCodes.Call, Types.Type.GetMethod("GetTypeFromHandle", new Type[] { Types.RuntimeTypeHandle }));
-					ilgen.Emit(OpCodes.Ldloc, targetObj);
-					ilgen.Emit(OpCodes.Ldstr, "Invoke");
-					ilgen.Emit(OpCodes.Call, createDelegate);
-					ilgen.Emit(OpCodes.Castclass, delegateConstructor.DeclaringType);
+					return false;
 				}
-				else
-				{
-					ilgen.Emit(OpCodes.Dup);
-					// we know that a DelegateInnerClassTypeWrapper has only one method
-					Debug.Assert(iface.GetMethods().Length == 1);
-					MethodWrapper mw = targetType.GetMethodWrapper("Invoke", iface.GetMethods()[0].Signature, true);
-					// TODO linking here is not safe
-					mw.Link();
-					ilgen.Emit(OpCodes.Ldvirtftn, (MethodInfo)mw.GetMethod());
-					ilgen.Emit(OpCodes.Newobj, delegateConstructor);
-				}
+				ilgen.Emit(OpCodes.Dup);
+				// we know that a DelegateInnerClassTypeWrapper has only one method
+				Debug.Assert(iface.GetMethods().Length == 1);
+				MethodWrapper mw = targetType.GetMethodWrapper("Invoke", iface.GetMethods()[0].Signature, true);
+				// TODO linking here is not safe
+				mw.Link();
+				ilgen.Emit(OpCodes.Ldvirtftn, (MethodInfo)mw.GetMethod());
+				ilgen.Emit(OpCodes.Newobj, delegateConstructor);
+				return true;
+			}
+
+			internal override void EmitNewobj(CodeEmitter ilgen)
+			{
+				MethodInfo createDelegate = Types.Delegate.GetMethod("CreateDelegate", new Type[] { Types.Type, Types.Object, Types.String });
+				LocalBuilder targetObj = ilgen.DeclareLocal(Types.Object);
+				ilgen.Emit(OpCodes.Stloc, targetObj);
+				ilgen.Emit(OpCodes.Ldtoken, delegateConstructor.DeclaringType);
+				ilgen.Emit(OpCodes.Call, Types.Type.GetMethod("GetTypeFromHandle", new Type[] { Types.RuntimeTypeHandle }));
+				ilgen.Emit(OpCodes.Ldloc, targetObj);
+				ilgen.Emit(OpCodes.Ldstr, "Invoke");
+				ilgen.Emit(OpCodes.Call, createDelegate);
+				ilgen.Emit(OpCodes.Castclass, delegateConstructor.DeclaringType);
 			}
 #endif // !STUB_GENERATOR
 		}
@@ -1873,7 +1876,7 @@ namespace IKVM.Internal
 			}
 
 #if !STUB_GENERATOR
-			internal override void EmitNewobj(CodeEmitter ilgen, MethodAnalyzer ma, int opcodeIndex)
+			internal override void EmitNewobj(CodeEmitter ilgen)
 			{
 				LocalBuilder local = ilgen.DeclareLocal(DeclaringType.TypeAsTBD);
 				ilgen.Emit(OpCodes.Ldloc, local);
