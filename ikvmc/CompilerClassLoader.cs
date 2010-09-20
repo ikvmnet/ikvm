@@ -3332,20 +3332,21 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal static Type GetType(ClassLoaderWrapper loader, string name)
+		internal static Type GetTypeForMapXml(ClassLoaderWrapper loader, string name)
 		{
-			return GetType(loader, name, true);
-		}
-
-		internal static Type GetType(ClassLoaderWrapper loader, string name, bool throwOnError)
-		{
-			CompilerClassLoader ccl = (CompilerClassLoader)loader;
-			Type type = ccl.GetTypeFromReferencedAssembly(name);
-			if (type == null && throwOnError)
+			Type type = GetType(loader, name);
+			if (type == null)
 			{
-				throw new TypeLoadException(name);
+				Console.Error.WriteLine("Error: type '{0}' referenced in xml remap file was not found", name);
+				Environment.Exit(1);
 			}
 			return type;
+		}
+
+		internal static Type GetType(ClassLoaderWrapper loader, string name)
+		{
+			CompilerClassLoader ccl = (CompilerClassLoader)loader;
+			return ccl.GetTypeFromReferencedAssembly(name);
 		}
 
 		internal static void IssueMessage(Message msgId, params string[] values)

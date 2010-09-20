@@ -264,7 +264,7 @@ namespace IKVM.Internal
 			GetAttributeArgsAndTypes(loader, attr, out argTypes, out args);
 			if(attr.Type != null)
 			{
-				Type t = StaticCompiler.GetType(loader, attr.Type);
+				Type t = StaticCompiler.GetTypeForMapXml(loader, attr.Type);
 				isDeclarativeSecurity = t.IsSubclassOf(Types.SecurityAttribute);
 				ConstructorInfo ci = t.GetConstructor(argTypes);
 				if(ci == null)

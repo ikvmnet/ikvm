@@ -123,7 +123,7 @@ namespace IKVM.Internal.MapXml
 			{
 				Debug.Assert(Class == null && type != null);
 				Type[] argTypes = context.ClassLoader.ArgTypeListFromSig(Sig);
-				ConstructorInfo ci = StaticCompiler.GetType(context.ClassLoader, type).GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, CallingConventions.Standard, argTypes, null);
+				ConstructorInfo ci = StaticCompiler.GetTypeForMapXml(context.ClassLoader, type).GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, CallingConventions.Standard, argTypes, null);
 				if(ci == null)
 				{
 					throw new InvalidOperationException("Missing .ctor: " + type + "..ctor" + Sig);
@@ -212,10 +212,10 @@ namespace IKVM.Internal.MapXml
 						argTypes = new Type[types.Length];
 						for(int i = 0; i < types.Length; i++)
 						{
-							argTypes[i] = StaticCompiler.GetType(context.ClassLoader, types[i]);
+							argTypes[i] = StaticCompiler.GetTypeForMapXml(context.ClassLoader, types[i]);
 						}
 					}
-					MethodInfo mi = StaticCompiler.GetType(context.ClassLoader, type).GetMethod(Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static, null, argTypes, null);
+					MethodInfo mi = StaticCompiler.GetTypeForMapXml(context.ClassLoader, type).GetMethod(Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static, null, argTypes, null);
 					if(mi == null)
 					{
 						throw new InvalidOperationException("Missing method: " + type + "." + Name + Sig);
@@ -295,7 +295,7 @@ namespace IKVM.Internal.MapXml
 				}
 				else
 				{
-					typeType = StaticCompiler.GetType(context.ClassLoader, type);
+					typeType = StaticCompiler.GetTypeForMapXml(context.ClassLoader, type);
 				}
 			}
 		}
@@ -394,7 +394,7 @@ namespace IKVM.Internal.MapXml
 			if(typeType == null)
 			{
 				Debug.Assert(type != null);
-				typeType = StaticCompiler.GetType(context.ClassLoader, type);
+				typeType = StaticCompiler.GetTypeForMapXml(context.ClassLoader, type);
 			}
 			ilgen.Emit(opcode, typeType);
 		}
@@ -571,7 +571,7 @@ namespace IKVM.Internal.MapXml
 					Debug.Assert(Class == null ^ type == null);
 					if(type != null)
 					{
-						typeType = StaticCompiler.GetType(context.ClassLoader, type);
+						typeType = StaticCompiler.GetTypeForMapXml(context.ClassLoader, type);
 					}
 					else
 					{
@@ -798,7 +798,7 @@ namespace IKVM.Internal.MapXml
 		{
 			if(Type != null)
 			{
-				ilgen.Emit(OpCodes.Ldsfld, StaticCompiler.GetType(context.ClassLoader, Type).GetField(Name, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic));
+				ilgen.Emit(OpCodes.Ldsfld, StaticCompiler.GetTypeForMapXml(context.ClassLoader, Type).GetField(Name, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic));
 			}
 			else
 			{
@@ -1041,7 +1041,7 @@ namespace IKVM.Internal.MapXml
 				Type type;
 				if(@catch.type != null)
 				{
-					type = StaticCompiler.GetType(context.ClassLoader, @catch.type);
+					type = StaticCompiler.GetTypeForMapXml(context.ClassLoader, @catch.type);
 				}
 				else
 				{
@@ -1123,7 +1123,7 @@ namespace IKVM.Internal.MapXml
 
 		internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
 		{
-			ilgen.Emit(OpCodes.Ldtoken, StaticCompiler.GetType(context.ClassLoader, type));
+			ilgen.Emit(OpCodes.Ldtoken, StaticCompiler.GetTypeForMapXml(context.ClassLoader, type));
 		}
 	}
 
