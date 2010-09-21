@@ -6042,6 +6042,7 @@ namespace IKVM.NativeCode.sun.reflect
 				ilgen.Emit(OpCodes.Stloc, ret);
 				ilgen.BeginCatchBlock(typeof(Exception));
 				CodeEmitterLabel label = ilgen.DefineLabel();
+				CodeEmitterLabel labelWrap = ilgen.DefineLabel();
 				if (IntPtr.Size == 8 && nonvirtual)
 				{
 					// This is a workaround for the x64 JIT, which is completely broken as usual.
@@ -6052,12 +6053,19 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 				else
 				{
+					// If the exception we caught is a jlrInvocationTargetException, we know it must be
+					// wrapped, because .NET won't throw that exception and we also cannot check the target site,
+					// because it may be the same as us if a method is recursively invoking itself.
+					ilgen.Emit(OpCodes.Dup);
+					ilgen.Emit(OpCodes.Isinst, typeof(jlrInvocationTargetException));
+					ilgen.Emit(OpCodes.Brtrue_S, labelWrap);
 					ilgen.Emit(OpCodes.Dup);
 					ilgen.Emit(OpCodes.Callvirt, get_TargetSite);
 					ilgen.Emit(OpCodes.Call, GetCurrentMethod);
 					ilgen.Emit(OpCodes.Ceq);
 					ilgen.Emit(OpCodes.Brtrue_S, label);
 				}
+				ilgen.MarkLabel(labelWrap);
 				ilgen.Emit(OpCodes.Ldc_I4_0);
 				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(Types.Exception));
 				ilgen.Emit(OpCodes.Newobj, invocationTargetExceptionCtor);
