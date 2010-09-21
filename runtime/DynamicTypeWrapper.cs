@@ -5108,7 +5108,23 @@ namespace IKVM.Internal
 						{
 							if (constant is int)
 							{
-								ilGenerator.Emit(OpCodes.Ldc_I4, (int)constant);
+								ilGenerator.LazyEmitLdc_I4((int)constant);
+							}
+							else if (constant is bool)
+							{
+								ilGenerator.LazyEmitLdc_I4((bool)constant ? 1 : 0);
+							}
+							else if (constant is byte)
+							{
+								ilGenerator.LazyEmitLdc_I4((byte)constant);
+							}
+							else if (constant is char)
+							{
+								ilGenerator.LazyEmitLdc_I4((char)constant);
+							}
+							else if (constant is short)
+							{
+								ilGenerator.LazyEmitLdc_I4((short)constant);
 							}
 							else if (constant is long)
 							{
