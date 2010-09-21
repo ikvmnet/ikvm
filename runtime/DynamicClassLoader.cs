@@ -222,7 +222,7 @@ namespace IKVM.Internal
 #if !STATIC_COMPILER && !FIRST_PASS
 					java.lang.Class clazz = new java.lang.Class(null);
 #if __MonoCS__
-					TypeWrapper.SetTypeWrapperHack(ref clazz.typeWrapper, type);
+					TypeWrapper.SetTypeWrapperHack(clazz, type);
 #else
 					clazz.typeWrapper = type;
 #endif

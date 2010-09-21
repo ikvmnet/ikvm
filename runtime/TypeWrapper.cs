@@ -1828,7 +1828,7 @@ namespace IKVM.Internal
 						}
 					}
 #if __MonoCS__
-					SetTypeWrapperHack(ref clazz.typeWrapper, this);
+					SetTypeWrapperHack(clazz, this);
 #else
 					clazz.typeWrapper = this;
 #endif
@@ -1841,9 +1841,11 @@ namespace IKVM.Internal
 
 #if __MonoCS__
 		// MONOBUG this method is to work around an mcs bug
-		internal static void SetTypeWrapperHack<T>(ref T field, TypeWrapper type)
+		internal static void SetTypeWrapperHack(object clazz, TypeWrapper type)
 		{
-			field = (T)(object)type;
+#if !FIRST_PASS
+			typeof(java.lang.Class).GetField("typeWrapper", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(clazz, type);
+#endif
 		}
 #endif
 
@@ -1891,7 +1893,7 @@ namespace IKVM.Internal
 					tw = ClassLoaderWrapper.GetWrapperFromType(type);
 				}
 #if __MonoCS__
-				SetTypeWrapperHack(ref clazz.typeWrapper, tw);
+				SetTypeWrapperHack(clazz, tw);
 #else
 				clazz.typeWrapper = tw;
 #endif
