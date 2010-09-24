@@ -27,6 +27,7 @@
 Copyright (C) 2002, 2004-2009 Jeroen Frijters
 Copyright (C) 2006 Active Endpoints, Inc.
 Copyright (C) 2006-2010 Volker Berlin (i-net software)
+Copyright (C) 2010 Karsten Heinrich (i-net software)
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -109,9 +110,15 @@ namespace ikvm.awt
         /// </summary>
         private Rectangle maxBounds;
         private bool maxBoundsSet;
+        public java.awt.Insets peerInsets;
 
-		public MyForm()
+        /// <summary>
+        /// Creates the native form
+        /// </summary>
+        /// <param name="peerInsets">the insets instance of the peer instance</param>
+		public MyForm( java.awt.Insets peerInsets )
 		{
+            this.peerInsets = peerInsets;
 		}
 
         protected override void setBorderStyle()
@@ -2375,11 +2382,20 @@ namespace ikvm.awt
 			return true;
 		}
 
-        public void reshape(int x, int y, int width, int height)
+        public virtual void reshape(int x, int y, int width, int height)
         {
             NetToolkit.BeginInvoke(delegate
             {
-                control.SetBounds(x, y, width, height);
+                Form window = control.FindForm();
+                if (window is MyForm)
+                {
+                    java.awt.Insets insets = ((MyForm)window).peerInsets;
+                    control.SetBounds(x - insets.left, y - insets.top, width, height);
+                }
+                else
+                {
+                    control.SetBounds(x, y, width, height);
+                }
                 //If the .NET control does not accept the new bounds (minimum size, maximum size) 
                 //then we need to reflect the real bounds on the .NET site to the Java site
                 Rectangle bounds = control.Bounds;
@@ -2675,7 +2691,12 @@ namespace ikvm.awt
 
         public void applyShape(sun.java2d.pipe.Region shape)
         {
-			control.Region = J2C.ConvertRegion(shape);
+            NetToolkit.BeginInvoke(ApplyShapeImpl, shape);
+        }
+
+        private void ApplyShapeImpl(sun.java2d.pipe.Region shape)
+        {
+            control.Region = J2C.ConvertRegion(shape);
         }
 
         //copied form KeyboardFocusManager
@@ -2807,10 +2828,10 @@ namespace ikvm.awt
 
 		public void setLabel(string label)
 		{
-            NetToolkit.Invoke(delegate(string x) { control.Text = x; }, label);
+            NetToolkit.BeginInvoke(delegate(string x) { control.Text = x; }, label);
 		}
 
-		public override java.awt.Dimension minimumSize()
+		public override java.awt.Dimension getMinimumSize()
 		{
 			using(Graphics g = control.CreateGraphics())
 			{
@@ -2819,10 +2840,27 @@ namespace ikvm.awt
 			}
 		}
 
-		internal override void create(NetComponentPeer parent)
-		{
-			throw new NotImplementedException();
-		}
+        public override bool shouldClearRectBeforePaint()
+        {
+            return false;
+        }
+
+        internal override void create(NetComponentPeer parent)
+        {
+            AwtToolkit.CreateComponent(Create, parent);
+        }
+
+        void Create(NetComponentPeer parent)
+        {
+            Button button = new Button();
+            button.Tag = this;
+            if (parent != null)
+            {
+                button.Parent = parent.control;
+            }
+            NetToolkit.CreateNative(button);
+            this.control = button;
+        }
 	}
 
     class NetTextComponentPeer : NetComponentPeer, java.awt.peer.TextComponentPeer
@@ -2998,7 +3036,8 @@ namespace ikvm.awt
 		public NetLabelPeer(java.awt.Label jlabel)
 			: base(jlabel)
 		{
-			((Label)control).Text = jlabel.getText();
+            NetToolkit.Invoke(setTextImpl, jlabel.getText());
+			// ((Label)control).Text = jlabel.getText();
 			setAlignment(jlabel.getAlignment());
 		}
 
@@ -3049,10 +3088,28 @@ namespace ikvm.awt
 			return new java.awt.Dimension(lab.PreferredWidth, 2 + lab.PreferredHeight);
 		}
 
-		internal override void create(NetComponentPeer parent)
-		{
-			throw new NotImplementedException();
-		}
+        public override bool shouldClearRectBeforePaint()
+        {
+            // is native control, don't clear 
+            return false;
+        }
+
+        internal override void create(NetComponentPeer parent)
+        {
+            AwtToolkit.CreateComponent(Create, parent);
+        }
+
+        void Create(NetComponentPeer parent)
+        {
+            Label label = new Label();
+            label.Tag = this;
+            if (parent != null)
+            {
+                label.Parent = parent.control;
+            }
+            NetToolkit.CreateNative(label);
+            this.control = label;
+        }
 	}
 
     class NetTextFieldPeer : NetTextComponentPeer, java.awt.peer.TextFieldPeer
@@ -3420,6 +3477,12 @@ namespace ikvm.awt
             return g;
         }
 
+        public override bool shouldClearRectBeforePaint()
+        {
+            // clearing the window before repainting causes the controls to "flicker" on screen
+            return false;
+        }
+
         /// <summary>
         /// Set the border style of the window and recalc the insets
         /// </summary>
@@ -3446,7 +3509,11 @@ namespace ikvm.awt
                 Rectangle r = control.RectangleToScreen(client);
                 int x = r.Location.X - control.Location.X;
                 int y = r.Location.Y - control.Location.Y;
-                _insets = new java.awt.Insets(y, x, control.Height - client.Height - y, control.Width - client.Width - x);
+                // only modify this instance, since it's accessed by the control-peers of this form
+                _insets.top = y;
+                _insets.left = x;
+                _insets.bottom = control.Height - client.Height - y;
+                _insets.right = control.Width - client.Width - x;
             });
         }
 
@@ -3454,6 +3521,33 @@ namespace ikvm.awt
         {
             Form form = (Form)control;
             form.DesktopBounds = new Rectangle(x, y, width, height);
+        }
+
+        public override void reshape(int x, int y, int width, int height)
+        {
+            NetToolkit.BeginInvoke(delegate
+            {
+                control.SetBounds(x, y, width, height);
+                //If the .NET control does not accept the new bounds (minimum size, maximum size) 
+                //then we need to reflect the real bounds on the .NET site to the Java site
+                Rectangle bounds = control.Bounds;
+                if (bounds.X != x)
+                {
+                    ComponentAccessor.setX(target, bounds.X);
+                }
+                if (bounds.Y != y)
+                {
+                    ComponentAccessor.setY(target, bounds.Y);
+                }
+                if (bounds.Width != width)
+                {
+                    ComponentAccessor.setWidth(target, bounds.Width);
+                }
+                if (bounds.Height != height)
+                {
+                    ComponentAccessor.setHeight(target, bounds.Height);
+                }
+            });
         }
 
         public void toBack()
@@ -3745,7 +3839,7 @@ namespace ikvm.awt
 
 		void Create(NetComponentPeer parent)
 		{
-			Form form = new MyForm();
+			Form form = new MyForm( _insets );
 			form.Tag = this;
 			if (parent != null)
 			{
@@ -3804,7 +3898,7 @@ namespace ikvm.awt
 
         void Create(NetComponentPeer parent)
         {
-            Form form = new MyForm();
+            Form form = new MyForm( _insets );
 			form.Tag = this;
 			if (parent != null)
             {
@@ -4601,7 +4695,6 @@ namespace ikvm.awt
         {
             return flavors;
         }
-
         public object getTransferData(java.awt.datatransfer.DataFlavor df)
         {
             return flavorToData.get(df);
@@ -4728,6 +4821,10 @@ namespace ikvm.awt
         {
             java.awt.datatransfer.FlavorTable defaultFlavorMap = (java.awt.datatransfer.FlavorTable)java.awt.datatransfer.SystemFlavorMap.getDefaultFlavorMap();
             Map/*<DataFlavor,object>*/ map = new HashMap();
+            if (data == null)
+            {
+                return map;
+            }
             string[] formats = data.GetFormats();
             if (formats != null && formats.Length > 0)
             {
