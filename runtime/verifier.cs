@@ -3027,7 +3027,20 @@ sealed class MethodAnalyzer
 				&& VerifierTypeWrapper.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(exceptions[i].handlerIndex, 0)))
 			{
 				int exit;
-				if (TryFindSingleTryBlockExit(code, flags, exceptions, i, out exit)
+				if (IsSynchronizedBlockHandler(code, exceptions[i].handlerIndex)
+					&& exceptions[i].endIndex - 2 >= exceptions[i].startIndex
+					&& TryFindSingleTryBlockExit(code, flags, exceptions, new ExceptionTableEntry(exceptions[i].startIndex, exceptions[i].endIndex - 2, exceptions[i].handlerIndex, 0, exceptions[i].ordinal), i, out exit)
+					&& exit == exceptions[i].endIndex - 2
+					&& (flags[exit + 1] & InstructionFlags.BranchTarget) == 0
+					&& MatchInstructions(code, exit, exceptions[i].handlerIndex + 1)
+					&& MatchInstructions(code, exit + 1, exceptions[i].handlerIndex + 2)
+					&& MatchExceptionCoverage(exceptions, i, exceptions[i].handlerIndex + 1, exceptions[i].handlerIndex + 3, exit, exit + 2)
+					&& exceptions[i].handlerIndex <= ushort.MaxValue)
+				{
+					code[exit].PatchOpCode(NormalizedByteCode.__goto_finally, exceptions[i].endIndex, (short)exceptions[i].handlerIndex);
+					exceptions.SetFinally(i);
+				}
+				else if (TryFindSingleTryBlockExit(code, flags, exceptions, exceptions[i], i, out exit)
 					// the stack must be empty
 					&& codeInfo.GetStackHeight(exit) == 0
 					// the exit code must not be reachable (except from within the try-block),
@@ -3040,7 +3053,7 @@ sealed class MethodAnalyzer
 					{
 						if (exit != exitHandlerEnd
 							&& codeInfo.GetStackHeight(exitHandlerEnd) == 0
-							&& MatchExceptionCoverage(exceptions, exceptions[i].handlerIndex, faultHandlerEnd, exit, exitHandlerEnd))
+							&& MatchExceptionCoverage(exceptions, -1, exceptions[i].handlerIndex, faultHandlerEnd, exit, exitHandlerEnd))
 						{
 							// We use Arg2 (which is a short) to store the handler in the __goto_finally pseudo-opcode,
 							// so we can only do that if handlerIndex fits in a short (note that we can use the sign bit too).
@@ -3056,11 +3069,20 @@ sealed class MethodAnalyzer
 		}
 	}
 
-	private static bool MatchExceptionCoverage(UntangledExceptionTable exceptions, int startFault, int endFault, int startExit, int endExit)
+	private static bool IsSynchronizedBlockHandler(ClassFile.Method.Instruction[] code, int index)
+	{
+		return code[index].NormalizedOpCode == NormalizedByteCode.__astore
+			&& code[index + 1].NormalizedOpCode == NormalizedByteCode.__aload
+			&& code[index + 2].NormalizedOpCode == NormalizedByteCode.__monitorexit
+			&& code[index + 3].NormalizedOpCode == NormalizedByteCode.__aload && code[index + 3].Arg1 == code[index].Arg1
+			&& code[index + 4].NormalizedOpCode == NormalizedByteCode.__athrow;
+	}
+
+	private static bool MatchExceptionCoverage(UntangledExceptionTable exceptions, int skipException, int startFault, int endFault, int startExit, int endExit)
 	{
 		for (int j = 0; j < exceptions.Length; j++)
 		{
-			if (ExceptionCovers(exceptions[j], startFault, endFault) != ExceptionCovers(exceptions[j], startExit, endExit))
+			if (j != skipException && ExceptionCovers(exceptions[j], startFault, endFault) != ExceptionCovers(exceptions[j], startExit, endExit))
 			{
 				return false;
 			}
@@ -3171,9 +3193,8 @@ sealed class MethodAnalyzer
 		return (flags[instructionIndex] & InstructionFlags.Reachable) != 0;
 	}
 
-	private static bool TryFindSingleTryBlockExit(ClassFile.Method.Instruction[] code, InstructionFlags[] flags, UntangledExceptionTable exceptions, int exceptionIndex, out int exit)
+	private static bool TryFindSingleTryBlockExit(ClassFile.Method.Instruction[] code, InstructionFlags[] flags, UntangledExceptionTable exceptions, ExceptionTableEntry exception, int exceptionIndex, out int exit)
 	{
-		ExceptionTableEntry exception = exceptions[exceptionIndex];
 		exit = -1;
 		bool fail = false;
 		bool nextIsReachable = false;
