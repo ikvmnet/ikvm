@@ -356,14 +356,9 @@ struct LocalVarInfo
 
 	private static Dictionary<int, string>[] FindLocalVariables(CodeInfo codeInfo, MethodWrapper mw, ClassFile classFile, ClassFile.Method method)
 	{
-		ClassFile.Method.Instruction[] instructions = method.Instructions;
-		ExceptionTableEntry[] exceptions = method.ExceptionTable;
-		int maxLocals = method.MaxLocals;
-		Dictionary<int, string>[] localStoreReaders = new Dictionary<int, string>[instructions.Length];
-		FindLocalVarState[] state = new FindLocalVarState[instructions.Length];
-		bool done = false;
+		FindLocalVarState[] state = new FindLocalVarState[method.Instructions.Length];
 		state[0].changed = true;
-		state[0].sites = new FindLocalVarStoreSite[maxLocals];
+		state[0].sites = new FindLocalVarStoreSite[method.MaxLocals];
 		TypeWrapper[] parameters = mw.GetParameters();
 		int argpos = 0;
 		if (!mw.IsStatic)
@@ -378,6 +373,16 @@ struct LocalVarInfo
 				argpos++;
 			}
 		}
+		return FindLocalVariablesImpl(codeInfo, classFile, method, state);
+	}
+
+	private static Dictionary<int, string>[] FindLocalVariablesImpl(CodeInfo codeInfo, ClassFile classFile, ClassFile.Method method, FindLocalVarState[] state)
+	{
+		ClassFile.Method.Instruction[] instructions = method.Instructions;
+		ExceptionTableEntry[] exceptions = method.ExceptionTable;
+		int maxLocals = method.MaxLocals;
+		Dictionary<int, string>[] localStoreReaders = new Dictionary<int, string>[instructions.Length];
+		bool done = false;
 
 		while (!done)
 		{
@@ -434,6 +439,33 @@ struct LocalVarInfo
 										curr.Store(i, j);
 									}
 								}
+							}
+						}
+					}
+					else if (instructions[i].NormalizedOpCode == NormalizedByteCode.__goto_finally)
+					{
+						int handler = instructions[i].HandlerIndex;
+
+						// Normally a store at the end of a try block doesn't affect the handler block,
+						// but in the case of a finally handler it does, so we need to make sure that
+						// we merge here in case the try block ended with a store.
+						state[handler].Merge(curr);
+
+						// Now we recursively analyse the handler and afterwards merge the endfault locations back to us
+						FindLocalVarState[] handlerState = new FindLocalVarState[instructions.Length];
+						handlerState[handler].changed = true;
+						handlerState[handler].sites = new FindLocalVarStoreSite[maxLocals];
+						FindLocalVariablesImpl(codeInfo, classFile, method, handlerState);
+
+						// Merge back to the target of our __goto_finally
+						for (int j = 0; j < handlerState.Length; j++)
+						{
+							if (instructions[j].NormalizedOpCode == NormalizedByteCode.__athrow
+								&& codeInfo.HasState(j)
+								&& VerifierTypeWrapper.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(j, 0))
+								&& ((VerifierTypeWrapper)codeInfo.GetRawStackTypeWrapper(j, 0)).Index == handler)
+							{
+								state[instructions[i].Arg1].Merge(handlerState[j]);
 							}
 						}
 					}

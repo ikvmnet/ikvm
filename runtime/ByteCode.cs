@@ -379,6 +379,7 @@ enum NormalizedByteCode : byte
 	__ifnull = 198,
 	__ifnonnull = 199,
 	// This is where the pseudo-bytecodes start
+	__goto_finally = 242,
 	__intrinsic_gettype = 243,
 	__athrow_no_unmap = 244,
 	__dynamic_getstatic = 245,
@@ -522,6 +523,7 @@ struct ByteCodeMetaData
 				return ByteCodeFlowControl.Switch;
 
 			case NormalizedByteCode.__goto:
+			case NormalizedByteCode.__goto_finally:
 				return ByteCodeFlowControl.Branch;
 
 			case NormalizedByteCode.__ifeq:

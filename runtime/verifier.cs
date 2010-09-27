@@ -1093,6 +1093,11 @@ struct UntangledExceptionTable
 	{
 		get { return exceptions.Length; }
 	}
+
+	internal void SetFinally(int index)
+	{
+		exceptions[index] = new ExceptionTableEntry(exceptions[index].startIndex, exceptions[index].endIndex, exceptions[index].handlerIndex, exceptions[index].catch_type, exceptions[index].ordinal, true);
+	}
 }
 
 struct CodeInfo
@@ -1259,6 +1264,7 @@ sealed class MethodAnalyzer
 		{
 			AnalyzeTypeFlow();
 		}
+		ConvertFinallyBlocks(codeInfo, method, exceptions);
 		return codeInfo;
 	}
 
@@ -2607,8 +2613,14 @@ sealed class MethodAnalyzer
 	internal static InstructionFlags[] ComputePartialReachability(CodeInfo codeInfo, ClassFile.Method.Instruction[] instructions, UntangledExceptionTable exceptions, int initialInstructionIndex, bool skipFaultBlocks)
 	{
 		InstructionFlags[] flags = new InstructionFlags[instructions.Length];
-		bool done = false;
 		flags[initialInstructionIndex] |= InstructionFlags.Reachable;
+		UpdatePartialReachability(flags, codeInfo, instructions, exceptions, skipFaultBlocks);
+		return flags;
+	}
+
+	private static void UpdatePartialReachability(InstructionFlags[] flags, CodeInfo codeInfo, ClassFile.Method.Instruction[] instructions, UntangledExceptionTable exceptions, bool skipFaultBlocks)
+	{
+		bool done = false;
 		while (!done)
 		{
 			done = true;
@@ -2630,38 +2642,41 @@ sealed class MethodAnalyzer
 							}
 						}
 					}
-					// mark the successor instructions
-					switch (ByteCodeMetaData.GetFlowControl(instructions[i].NormalizedOpCode))
-					{
-						case ByteCodeFlowControl.Switch:
-							{
-								for (int j = 0; j < instructions[i].SwitchEntryCount; j++)
-								{
-									flags[instructions[i].GetSwitchTargetIndex(j)] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
-								}
-								flags[instructions[i].DefaultTarget] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
-								break;
-							}
-						case ByteCodeFlowControl.Branch:
-							flags[instructions[i].TargetIndex] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
-							break;
-						case ByteCodeFlowControl.CondBranch:
-							flags[instructions[i].TargetIndex] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
-							flags[i + 1] |= InstructionFlags.Reachable;
-							break;
-						case ByteCodeFlowControl.Return:
-						case ByteCodeFlowControl.Throw:
-							break;
-						case ByteCodeFlowControl.Next:
-							flags[i + 1] |= InstructionFlags.Reachable;
-							break;
-						default:
-							throw new InvalidOperationException();
-					}
+					MarkSuccessors(instructions, flags, i);
 				}
 			}
 		}
-		return flags;
+	}
+
+	private static void MarkSuccessors(ClassFile.Method.Instruction[] code, InstructionFlags[] flags, int index)
+	{
+		switch (ByteCodeMetaData.GetFlowControl(code[index].NormalizedOpCode))
+		{
+			case ByteCodeFlowControl.Switch:
+				{
+					for (int i = 0; i < code[index].SwitchEntryCount; i++)
+					{
+						flags[code[index].GetSwitchTargetIndex(i)] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+					}
+					flags[code[index].DefaultTarget] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+					break;
+				}
+			case ByteCodeFlowControl.Branch:
+				flags[code[index].TargetIndex] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+				break;
+			case ByteCodeFlowControl.CondBranch:
+				flags[code[index].TargetIndex] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+				flags[index + 1] |= InstructionFlags.Reachable;
+				break;
+			case ByteCodeFlowControl.Return:
+			case ByteCodeFlowControl.Throw:
+				break;
+			case ByteCodeFlowControl.Next:
+				flags[index + 1] |= InstructionFlags.Reachable;
+				break;
+			default:
+				throw new InvalidOperationException();
+		}
 	}
 
 	internal static UntangledExceptionTable UntangleExceptionBlocks(ClassFile classFile, ClassFile.Method method)
@@ -2999,6 +3014,233 @@ sealed class MethodAnalyzer
 			}
 		}
 		return changed;
+	}
+
+	private static void ConvertFinallyBlocks(CodeInfo codeInfo, ClassFile.Method method, UntangledExceptionTable exceptions)
+	{
+		ClassFile.Method.Instruction[] code = method.Instructions;
+		InstructionFlags[] flags = ComputePartialReachability(codeInfo, code, exceptions, 0, false);
+		for (int i = 0; i < exceptions.Length; i++)
+		{
+			if (exceptions[i].catch_type == 0
+				&& codeInfo.HasState(exceptions[i].handlerIndex)
+				&& VerifierTypeWrapper.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(exceptions[i].handlerIndex, 0)))
+			{
+				int exit;
+				if (TryFindSingleTryBlockExit(code, flags, exceptions, i, out exit)
+					// the stack must be empty
+					&& codeInfo.GetStackHeight(exit) == 0
+					// the exit code must not be reachable (except from within the try-block),
+					// because we're going to patch it to jump around the exit code
+					&& !IsReachableFromOutsideTryBlock(codeInfo, code, exceptions, exceptions[i], exit))
+				{
+					int exitHandlerEnd;
+					int faultHandlerEnd;
+					if (MatchFinallyBlock(codeInfo, code, exceptions, exceptions[i].handlerIndex, exit, out exitHandlerEnd, out faultHandlerEnd))
+					{
+						if (exit != exitHandlerEnd
+							&& codeInfo.GetStackHeight(exitHandlerEnd) == 0
+							&& MatchExceptionCoverage(exceptions, exceptions[i].handlerIndex, faultHandlerEnd, exit, exitHandlerEnd))
+						{
+							// We use Arg2 (which is a short) to store the handler in the __goto_finally pseudo-opcode,
+							// so we can only do that if handlerIndex fits in a short (note that we can use the sign bit too).
+							if (exceptions[i].handlerIndex <= ushort.MaxValue)
+							{
+								code[exit].PatchOpCode(NormalizedByteCode.__goto_finally, exitHandlerEnd, (short)exceptions[i].handlerIndex);
+								exceptions.SetFinally(i);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	private static bool MatchExceptionCoverage(UntangledExceptionTable exceptions, int startFault, int endFault, int startExit, int endExit)
+	{
+		for (int j = 0; j < exceptions.Length; j++)
+		{
+			if (ExceptionCovers(exceptions[j], startFault, endFault) != ExceptionCovers(exceptions[j], startExit, endExit))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private static bool ExceptionCovers(ExceptionTableEntry exception, int start, int end)
+	{
+		return exception.startIndex < end && exception.endIndex > start;
+	}
+
+	private static bool MatchFinallyBlock(CodeInfo codeInfo, ClassFile.Method.Instruction[] code, UntangledExceptionTable exceptions, int faultHandler, int exitHandler, out int exitHandlerEnd, out int faultHandlerEnd)
+	{
+		exitHandlerEnd = -1;
+		faultHandlerEnd = -1;
+		if (code[faultHandler].NormalizedOpCode != NormalizedByteCode.__astore)
+		{
+			return false;
+		}
+		int startFault = faultHandler;
+		int faultLocal = code[faultHandler++].NormalizedArg1;
+		for (; ; )
+		{
+			if (code[faultHandler].NormalizedOpCode == NormalizedByteCode.__aload
+				&& code[faultHandler].NormalizedArg1 == faultLocal
+				&& code[faultHandler + 1].NormalizedOpCode == NormalizedByteCode.__athrow)
+			{
+				// make sure that instructions that we haven't covered aren't reachable
+				InstructionFlags[] flags = ComputePartialReachability(codeInfo, code, exceptions, startFault, false);
+				for (int i = 0; i < flags.Length; i++)
+				{
+					if ((i < startFault || i > faultHandler + 1) && (flags[i] & InstructionFlags.Reachable) != 0)
+					{
+						return false;
+					}
+				}
+				exitHandlerEnd = exitHandler;
+				faultHandlerEnd = faultHandler;
+				return true;
+			}
+			if (!MatchInstructions(code, faultHandler, exitHandler))
+			{
+				return false;
+			}
+			faultHandler++;
+			exitHandler++;
+		}
+	}
+
+	private static bool MatchInstructions(ClassFile.Method.Instruction[] code, int i, int j)
+	{
+		if (code[i].NormalizedOpCode != code[j].NormalizedOpCode)
+		{
+			return false;
+		}
+		switch (ByteCodeMetaData.GetFlowControl(code[i].NormalizedOpCode))
+		{
+			case ByteCodeFlowControl.Branch:
+			case ByteCodeFlowControl.CondBranch:
+				if (code[i].Arg1 - i != code[j].Arg1 - j)
+				{
+					return false;
+				}
+				break;
+			case ByteCodeFlowControl.Switch:
+				if (code[i].SwitchEntryCount != code[j].SwitchEntryCount)
+				{
+					return false;
+				}
+				for (int k = 0; k < code[i].SwitchEntryCount; k++)
+				{
+					if (code[i].GetSwitchTargetIndex(k) != code[j].GetSwitchTargetIndex(k))
+					{
+						return false;
+					}
+				}
+				if (code[i].DefaultTarget != code[j].DefaultTarget)
+				{
+					return false;
+				}
+				break;
+			default:
+				if (code[i].Arg1 != code[j].Arg1)
+				{
+					return false;
+				}
+				if (code[i].Arg2 != code[j].Arg2)
+				{
+					return false;
+				}
+				break;
+		}
+		return true;
+	}
+
+	private static bool IsReachableFromOutsideTryBlock(CodeInfo codeInfo, ClassFile.Method.Instruction[] code, UntangledExceptionTable exceptions, ExceptionTableEntry tryBlock, int instructionIndex)
+	{
+		InstructionFlags[] flags = new InstructionFlags[code.Length];
+		flags[0] |= InstructionFlags.Reachable;
+		// We mark the first instruction of the try-block as already processed, so that UpdatePartialReachability will skip the try-block.
+		// Note that we can do this, because it is not possible to jump into the middle of a try-block (after the exceptions have been untangled).
+		flags[tryBlock.startIndex] = InstructionFlags.Processed;
+		// We mark the successor instructions of the instruction we're examinining as reachable,
+		// to figure out if the code following the handler somehow branches back to it.
+		MarkSuccessors(code, flags, instructionIndex);
+		UpdatePartialReachability(flags, codeInfo, code, exceptions, false);
+		return (flags[instructionIndex] & InstructionFlags.Reachable) != 0;
+	}
+
+	private static bool TryFindSingleTryBlockExit(ClassFile.Method.Instruction[] code, InstructionFlags[] flags, UntangledExceptionTable exceptions, int exceptionIndex, out int exit)
+	{
+		ExceptionTableEntry exception = exceptions[exceptionIndex];
+		exit = -1;
+		bool fail = false;
+		bool nextIsReachable = false;
+		for (int i = exception.startIndex; !fail && i < exception.endIndex; i++)
+		{
+			if ((flags[i] & InstructionFlags.Reachable) != 0)
+			{
+				nextIsReachable = false;
+				for (int j = 0; j < exceptions.Length; j++)
+				{
+					if (j != exceptionIndex && exceptions[j].startIndex <= exception.startIndex && exception.endIndex <= exceptions[j].endIndex)
+					{
+						UpdateTryBlockExit(exception, exceptions[j].handlerIndex, ref exit, ref fail);
+					}
+				}
+				switch (ByteCodeMetaData.GetFlowControl(code[i].NormalizedOpCode))
+				{
+					case ByteCodeFlowControl.Switch:
+						{
+							for (int j = 0; j < code[i].SwitchEntryCount; j++)
+							{
+								UpdateTryBlockExit(exception, code[i].GetSwitchTargetIndex(j), ref exit, ref fail);
+							}
+							UpdateTryBlockExit(exception, code[i].DefaultTarget, ref exit, ref fail);
+							break;
+						}
+					case ByteCodeFlowControl.Branch:
+						UpdateTryBlockExit(exception, code[i].TargetIndex, ref exit, ref fail);
+						break;
+					case ByteCodeFlowControl.CondBranch:
+						UpdateTryBlockExit(exception, code[i].TargetIndex, ref exit, ref fail);
+						nextIsReachable = true;
+						break;
+					case ByteCodeFlowControl.Return:
+						fail = true;
+						break;
+					case ByteCodeFlowControl.Throw:
+						break;
+					case ByteCodeFlowControl.Next:
+						nextIsReachable = true;
+						break;
+					default:
+						throw new InvalidOperationException();
+				}
+			}
+		}
+		if (nextIsReachable)
+		{
+			UpdateTryBlockExit(exception, exception.endIndex, ref exit, ref fail);
+		}
+		return !fail && exit != -1;
+	}
+
+	private static void UpdateTryBlockExit(ExceptionTableEntry exception, int targetIndex, ref int exitIndex, ref bool fail)
+	{
+		if (exception.startIndex <= targetIndex && targetIndex < exception.endIndex)
+		{
+			// branch stays inside try block
+		}
+		else if (exitIndex == -1)
+		{
+			exitIndex = targetIndex;
+		}
+		else if (exitIndex != targetIndex)
+		{
+			fail = true;
+		}
 	}
 
 	private void SetHardError(ClassLoaderWrapper classLoader, ref ClassFile.Method.Instruction instruction, HardError hardError, string message, params object[] args)

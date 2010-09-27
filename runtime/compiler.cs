@@ -937,7 +937,14 @@ sealed class Compiler
 
 				if(exc.catch_type == 0 && VerifierTypeWrapper.IsFaultBlockException(ma.GetRawStackTypeWrapper(handlerIndex, 0)))
 				{
-					ilGenerator.BeginFaultBlock();
+					if(exc.isFinally)
+					{
+						ilGenerator.BeginFinallyBlock();
+					}
+					else
+					{
+						ilGenerator.BeginFaultBlock();
+					}
 					Compile(new Block(this, 0, block.EndIndex, exceptionIndex, null, false), ComputePartialReachability(handlerIndex, true));
 					ilGenerator.EndExceptionBlockNoFallThrough();
 				}
@@ -2098,6 +2105,7 @@ sealed class Compiler
 					ilGenerator.Emit(OpCodes.Bne_Un, block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__goto:
+				case NormalizedByteCode.__goto_finally:
 					ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__ineg:

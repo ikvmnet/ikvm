@@ -2592,14 +2592,21 @@ namespace IKVM.Internal
 				internal readonly int handlerIndex;
 				internal readonly ushort catch_type;
 				internal readonly int ordinal;
+				internal readonly bool isFinally;
 
 				internal ExceptionTableEntry(int startIndex, int endIndex, int handlerIndex, ushort catch_type, int ordinal)
+					: this(startIndex, endIndex, handlerIndex, catch_type, ordinal, false)
+				{
+				}
+
+				internal ExceptionTableEntry(int startIndex, int endIndex, int handlerIndex, ushort catch_type, int ordinal, bool isFinally)
 				{
 					this.startIndex = startIndex;
 					this.endIndex = endIndex;
 					this.handlerIndex = handlerIndex;
 					this.catch_type = catch_type;
 					this.ordinal = ordinal;
+					this.isFinally = isFinally;
 				}
 			}
 
@@ -2640,6 +2647,11 @@ namespace IKVM.Internal
 					}
 				}
 
+				internal int HandlerIndex
+				{
+					get { return (ushort)arg2; }
+				}
+
 				internal int HardErrorMessageId
 				{
 					get
@@ -2657,6 +2669,13 @@ namespace IKVM.Internal
 				{
 					this.normopcode = bc;
 					this.arg1 = arg1;
+				}
+
+				internal void PatchOpCode(NormalizedByteCode bc, int arg1, short arg2)
+				{
+					this.normopcode = bc;
+					this.arg1 = arg1;
+					this.arg2 = arg2;
 				}
 
 				internal void SetPC(int pc)
