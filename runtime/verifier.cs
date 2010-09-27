@@ -3692,4 +3692,75 @@ sealed class MethodAnalyzer
 		Debug.Assert(state[instructionIndex].GetStackHeight() == 1);
 		state[instructionIndex].ClearFaultBlockException();
 	}
+
+	private static void DumpMethod(CodeInfo codeInfo, ClassFile.Method method, UntangledExceptionTable exceptions)
+	{
+		ClassFile.Method.Instruction[] code = method.Instructions;
+		InstructionFlags[] flags = ComputePartialReachability(codeInfo, code, exceptions, 0, false);
+		for (int i = 0; i < code.Length; i++)
+		{
+			bool label = (flags[i] & InstructionFlags.BranchTarget) != 0;
+			if (!label)
+			{
+				for (int j = 0; j < exceptions.Length; j++)
+				{
+					if (exceptions[j].startIndex == i
+						|| exceptions[j].endIndex == i
+						|| exceptions[j].handlerIndex == i)
+					{
+						label = true;
+						break;
+					}
+				}
+			}
+			if (label)
+			{
+				Console.WriteLine("label{0}:", i);
+			}
+			if ((flags[i] & InstructionFlags.Reachable) != 0)
+			{
+				Console.Write("  {1}", i, code[i].NormalizedOpCode.ToString().Substring(2));
+				switch (ByteCodeMetaData.GetFlowControl(code[i].NormalizedOpCode))
+				{
+					case ByteCodeFlowControl.Branch:
+					case ByteCodeFlowControl.CondBranch:
+						Console.Write(" label{0}", code[i].Arg1);
+						break;
+				}
+				switch (code[i].NormalizedOpCode)
+				{
+					case NormalizedByteCode.__iload:
+					case NormalizedByteCode.__lload:
+					case NormalizedByteCode.__fload:
+					case NormalizedByteCode.__dload:
+					case NormalizedByteCode.__aload:
+					case NormalizedByteCode.__istore:
+					case NormalizedByteCode.__lstore:
+					case NormalizedByteCode.__fstore:
+					case NormalizedByteCode.__dstore:
+					case NormalizedByteCode.__astore:
+					case NormalizedByteCode.__iconst:
+						Console.Write(" {0}", code[i].Arg1);
+						break;
+					case NormalizedByteCode.__ldc:
+					case NormalizedByteCode.__getfield:
+					case NormalizedByteCode.__getstatic:
+					case NormalizedByteCode.__putfield:
+					case NormalizedByteCode.__putstatic:
+					case NormalizedByteCode.__invokeinterface:
+					case NormalizedByteCode.__invokespecial:
+					case NormalizedByteCode.__invokestatic:
+					case NormalizedByteCode.__invokevirtual:
+					case NormalizedByteCode.__new:
+						Console.Write(" #{0}", code[i].Arg1);
+						break;
+				}
+				Console.WriteLine();
+			}
+		}
+		for (int i = 0; i < exceptions.Length; i++)
+		{
+			Console.WriteLine(".catch #{0} from label{1} to label{2} using label{3}", exceptions[i].catch_type, exceptions[i].startIndex, exceptions[i].endIndex, exceptions[i].handlerIndex);
+		}
+	}
 }
