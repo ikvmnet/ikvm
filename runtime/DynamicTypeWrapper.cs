@@ -3803,26 +3803,26 @@ namespace IKVM.Internal
 								continue;
 							}
 #endif // STATIC_COMPILER
-							LineNumberTableAttribute.LineNumberWriter lineNumberTable = null;
 							bool nonleaf = false;
-							Compiler.Compile(this, wrapper, methods[i], classFile, m, ilGenerator, ref nonleaf, invokespecialstubcache, ref lineNumberTable);
+							Compiler.Compile(this, wrapper, methods[i], classFile, m, ilGenerator, ref nonleaf, invokespecialstubcache);
 							ilGenerator.CheckLabels();
 							if (nonleaf)
 							{
 								mbld.SetImplementationFlags(mbld.GetMethodImplementationFlags() | MethodImplAttributes.NoInlining);
 							}
-							if (lineNumberTable != null)
-							{
 #if STATIC_COMPILER
-								AttributeHelper.SetLineNumberTable(methods[i].GetMethod(), lineNumberTable);
+							ilGenerator.EmitLineNumberTable(methods[i].GetMethod());
 #else // STATIC_COMPILER
+							byte[] linenumbers = ilGenerator.GetLineNumberTable();
+							if (linenumbers != null)
+							{
 								if (wrapper.lineNumberTables == null)
 								{
 									wrapper.lineNumberTables = new byte[methods.Length][];
 								}
-								wrapper.lineNumberTables[i] = lineNumberTable.ToArray();
-#endif // STATIC_COMPILER
+								wrapper.lineNumberTables[i] = linenumbers;
 							}
+#endif // STATIC_COMPILER
 						}
 					}
 				}
@@ -5031,21 +5031,21 @@ namespace IKVM.Internal
 					return;
 				}
 #endif
-				LineNumberTableAttribute.LineNumberWriter lineNumberTable = null;
 				bool nonLeaf = false;
-				Compiler.Compile(context, wrapper, methods[methodIndex], classFile, m, ilGenerator, ref nonLeaf, invokespecialstubcache, ref lineNumberTable);
-				if (lineNumberTable != null)
-				{
+				Compiler.Compile(context, wrapper, methods[methodIndex], classFile, m, ilGenerator, ref nonLeaf, invokespecialstubcache);
 #if STATIC_COMPILER
-					AttributeHelper.SetLineNumberTable(methods[methodIndex].GetMethod(), lineNumberTable);
+				ilGenerator.EmitLineNumberTable(methods[methodIndex].GetMethod());
 #else // STATIC_COMPILER
+				byte[] linenumbers = ilGenerator.GetLineNumberTable();
+				if (linenumbers != null)
+				{
 					if (wrapper.lineNumberTables == null)
 					{
 						wrapper.lineNumberTables = new byte[methods.Length][];
 					}
-					wrapper.lineNumberTables[methodIndex] = lineNumberTable.ToArray();
-#endif // STATIC_COMPILER
+					wrapper.lineNumberTables[methodIndex] = linenumbers;
 				}
+#endif // STATIC_COMPILER
 			}
 
 			private static bool IsCompatibleArgList(TypeWrapper[] caller, TypeWrapper[] callee)

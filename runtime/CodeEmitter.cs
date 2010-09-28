@@ -78,13 +78,12 @@ namespace IKVM.Internal
 #endif
 		private Stack<bool> exceptionStack = new Stack<bool>();
 		private bool inFinally;
-#if STATIC_COMPILER
 		private IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter linenums;
-#endif // STATIC_COMPILER
 		private Expr[] stackArray = new Expr[8];
 		private int topOfStack;
 		private CodeEmitterLabel lazyBranch;
 		private LocalBuilder[] tempLocals = new LocalBuilder[32];
+		private ISymbolDocumentWriter symbols;
 #if LABELCHECK
 		private Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame> labels = new Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame>();
 #endif
@@ -150,6 +149,11 @@ namespace IKVM.Internal
 			return stackArray[topOfStack - 1];
 		}
 
+		internal void DefineSymbolDocument(ModuleBuilder module, string url, Guid language, Guid languageVendor, Guid documentType)
+		{
+			symbols = module.DefineDocument(url, language, languageVendor, documentType);
+		}
+
 		internal LocalBuilder UnsafeAllocTempLocal(Type type)
 		{
 			int free = -1;
@@ -210,7 +214,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal int GetILOffset()
+		private int GetILOffset()
 		{
 			LazyGen();
 #if STATIC_COMPILER
@@ -560,12 +564,6 @@ namespace IKVM.Internal
 			loc.Offset = GetILOffset();
 		}
 
-		internal void MarkSequencePoint(ISymbolDocumentWriter document, int startLine, int startColumn, int endLine, int endColumn)
-		{
-			LazyGen();
-			ilgen_real.MarkSequencePoint(document, startLine, startColumn, endLine, endColumn);
-		}
-
 		internal void ThrowException(Type excType)
 		{
 			LazyGen();
@@ -575,16 +573,33 @@ namespace IKVM.Internal
 			ilgen_real.ThrowException(excType);
 		}
 
-#if STATIC_COMPILER
 		internal void SetLineNumber(ushort line)
 		{
-			if(linenums == null)
+			if (symbols != null)
 			{
-				linenums = new IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter(32);
+				LazyGen();
+				ilgen_real.MarkSequencePoint(symbols, line, 0, line + 1, 0);
+				// we emit a nop to make sure we always have an instruction associated with the sequence point
+				Emit(OpCodes.Nop);
 			}
-			linenums.AddMapping(GetILOffset(), line);
+			// we only add a line number mapping if the stack is empty because the CLR JIT only generates native to IL mappings
+			// for locations where the stack is empty and we don't want to needlessly flush the stack
+			if (topOfStack == 0)
+			{
+				if (linenums == null)
+				{
+					linenums = new IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter(32);
+				}
+				linenums.AddMapping(GetILOffset(), line);
+			}
 		}
 
+		internal byte[] GetLineNumberTable()
+		{
+			return linenums == null ? null : linenums.ToArray();
+		}
+
+#if STATIC_COMPILER
 		internal void EmitLineNumberTable(MethodBase mb)
 		{
 			if(linenums != null)
