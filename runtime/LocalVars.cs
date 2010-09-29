@@ -404,7 +404,8 @@ struct LocalVarInfo
 						}
 					}
 
-					if (IsLoadLocal(instructions[i].NormalizedOpCode))
+					if (IsLoadLocal(instructions[i].NormalizedOpCode)
+						&& (instructions[i].NormalizedOpCode != NormalizedByteCode.__aload || !VerifierTypeWrapper.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(i + 1, 0))))
 					{
 						if (localStoreReaders[i] == null)
 						{
@@ -416,7 +417,8 @@ struct LocalVarInfo
 						}
 					}
 
-					if (IsStoreLocal(instructions[i].NormalizedOpCode))
+					if (IsStoreLocal(instructions[i].NormalizedOpCode)
+						&& (instructions[i].NormalizedOpCode != NormalizedByteCode.__astore || !VerifierTypeWrapper.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(i, 0))))
 					{
 						curr.Store(i, instructions[i].NormalizedArg1);
 					}
