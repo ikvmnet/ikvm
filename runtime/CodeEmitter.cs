@@ -68,6 +68,31 @@ namespace IKVM.Internal
 		}
 	}
 
+	sealed class CodeEmitterLocal
+	{
+		private readonly LocalBuilder local;
+
+		internal CodeEmitterLocal(LocalBuilder local)
+		{
+			this.local = local;
+		}
+
+		internal Type LocalType
+		{
+			get { return local.LocalType; }
+		}
+
+		internal void SetLocalSymInfo(string name)
+		{
+			local.SetLocalSymInfo(name);
+		}
+
+		internal LocalBuilder __LocalBuilder
+		{
+			get { return local; }
+		}
+	}
+
 	sealed class CodeEmitter
 	{
 		private static readonly MethodInfo objectToString = Types.Object.GetMethod("ToString", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
@@ -82,7 +107,7 @@ namespace IKVM.Internal
 		private Expr[] stackArray = new Expr[8];
 		private int topOfStack;
 		private CodeEmitterLabel lazyBranch;
-		private LocalBuilder[] tempLocals = new LocalBuilder[32];
+		private CodeEmitterLocal[] tempLocals = new CodeEmitterLocal[32];
 		private ISymbolDocumentWriter symbols;
 #if LABELCHECK
 		private Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame> labels = new Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame>();
@@ -154,12 +179,12 @@ namespace IKVM.Internal
 			symbols = module.DefineDocument(url, language, languageVendor, documentType);
 		}
 
-		internal LocalBuilder UnsafeAllocTempLocal(Type type)
+		internal CodeEmitterLocal UnsafeAllocTempLocal(Type type)
 		{
 			int free = -1;
 			for (int i = 0; i < tempLocals.Length; i++)
 			{
-				LocalBuilder lb = tempLocals[i];
+				CodeEmitterLocal lb = tempLocals[i];
 				if (lb == null)
 				{
 					if (free == -1)
@@ -172,7 +197,7 @@ namespace IKVM.Internal
 					return lb;
 				}
 			}
-			LocalBuilder lb1 = DeclareLocal(type);
+			CodeEmitterLocal lb1 = DeclareLocal(type);
 			if (free != -1)
 			{
 				tempLocals[free] = lb1;
@@ -180,11 +205,11 @@ namespace IKVM.Internal
 			return lb1;
 		}
 
-		internal LocalBuilder AllocTempLocal(Type type)
+		internal CodeEmitterLocal AllocTempLocal(Type type)
 		{
 			for (int i = 0; i < tempLocals.Length; i++)
 			{
-				LocalBuilder lb = tempLocals[i];
+				CodeEmitterLocal lb = tempLocals[i];
 				if (lb != null && lb.LocalType == type)
 				{
 					tempLocals[i] = null;
@@ -194,7 +219,7 @@ namespace IKVM.Internal
 			return DeclareLocal(type);
 		}
 
-		internal void ReleaseTempLocal(LocalBuilder lb)
+		internal void ReleaseTempLocal(CodeEmitterLocal lb)
 		{
 			for (int i = 0; i < tempLocals.Length; i++)
 			{
@@ -259,9 +284,9 @@ namespace IKVM.Internal
 			ilgen_real.BeginScope();
 		}
 
-		internal LocalBuilder DeclareLocal(Type localType)
+		internal CodeEmitterLocal DeclareLocal(Type localType)
 		{
-			return ilgen_real.DeclareLocal(localType);
+			return new CodeEmitterLocal(ilgen_real.DeclareLocal(localType));
 		}
 
 		internal CodeEmitterLabel DefineLabel()
@@ -425,11 +450,11 @@ namespace IKVM.Internal
 			ilgen_real.Emit(opcode, real);
 		}
 
-		internal void Emit(OpCode opcode, LocalBuilder local)
+		internal void Emit(OpCode opcode, CodeEmitterLocal local)
 		{
 			LazyGen();
 #if !STATIC_COMPILER
-			int index = local.LocalIndex;
+			int index = local.__LocalBuilder.LocalIndex;
 			if(index < 4 && opcode.Value != OpCodes.Ldloca.Value && opcode.Value != OpCodes.Ldloca_S.Value)
 			{
 				offset += 1;
@@ -443,7 +468,7 @@ namespace IKVM.Internal
 				offset += 4;
 			}
 #endif
-			ilgen_real.Emit(opcode, local);
+			ilgen_real.Emit(opcode, local.__LocalBuilder);
 		}
 
 		internal void Emit(OpCode opcode, MethodInfo meth)
@@ -631,7 +656,7 @@ namespace IKVM.Internal
 		{
 			if (verboseCastFailure != null)
 			{
-				LocalBuilder lb = DeclareLocal(Types.Object);
+				CodeEmitterLocal lb = DeclareLocal(Types.Object);
 				Emit(OpCodes.Stloc, lb);
 				Emit(OpCodes.Ldloc, lb);
 				Emit(OpCodes.Isinst, type);
@@ -655,7 +680,7 @@ namespace IKVM.Internal
 		// throws an IncompatibleClassChangeError on failure.
 		internal void EmitAssertType(Type type)
 		{
-			LocalBuilder lb = DeclareLocal(Types.Object);
+			CodeEmitterLocal lb = DeclareLocal(Types.Object);
 			Emit(OpCodes.Stloc, lb);
 			Emit(OpCodes.Ldloc, lb);
 			Emit(OpCodes.Isinst, type);
@@ -1150,7 +1175,7 @@ namespace IKVM.Internal
 				// unbox leaves a pointer to the value of the stack (instead of the value)
 				// so we have to copy the value into a local variable and load the address
 				// of the local onto the stack
-				LocalBuilder local = ilgen.DeclareLocal(Type);
+				CodeEmitterLocal local = ilgen.DeclareLocal(Type);
 				ilgen.Emit(OpCodes.Stloc, local);
 				ilgen.Emit(OpCodes.Ldloca, local);
 			}
@@ -1382,8 +1407,8 @@ namespace IKVM.Internal
 
 			internal sealed override void Emit(CodeEmitter ilgen)
 			{
-				LocalBuilder value1 = ilgen.AllocTempLocal(Types.Int64);
-				LocalBuilder value2 = ilgen.AllocTempLocal(Types.Int64);
+				CodeEmitterLocal value1 = ilgen.AllocTempLocal(Types.Int64);
+				CodeEmitterLocal value2 = ilgen.AllocTempLocal(Types.Int64);
 				ilgen.Emit(OpCodes.Stloc, value2);
 				ilgen.Emit(OpCodes.Stloc, value1);
 				ilgen.Emit(OpCodes.Ldloc, value1);
@@ -1412,8 +1437,8 @@ namespace IKVM.Internal
 
 			internal sealed override void Emit(CodeEmitter ilgen)
 			{
-				LocalBuilder value1 = ilgen.AllocTempLocal(FloatOrDouble());
-				LocalBuilder value2 = ilgen.AllocTempLocal(FloatOrDouble());
+				CodeEmitterLocal value1 = ilgen.AllocTempLocal(FloatOrDouble());
+				CodeEmitterLocal value2 = ilgen.AllocTempLocal(FloatOrDouble());
 				ilgen.Emit(OpCodes.Stloc, value2);
 				ilgen.Emit(OpCodes.Stloc, value1);
 				ilgen.Emit(OpCodes.Ldloc, value1);
@@ -1456,8 +1481,8 @@ namespace IKVM.Internal
 
 			internal sealed override void Emit(CodeEmitter ilgen)
 			{
-				LocalBuilder value1 = ilgen.AllocTempLocal(FloatOrDouble());
-				LocalBuilder value2 = ilgen.AllocTempLocal(FloatOrDouble());
+				CodeEmitterLocal value1 = ilgen.AllocTempLocal(FloatOrDouble());
+				CodeEmitterLocal value2 = ilgen.AllocTempLocal(FloatOrDouble());
 				ilgen.Emit(OpCodes.Stloc, value2);
 				ilgen.Emit(OpCodes.Stloc, value1);
 				ilgen.Emit(OpCodes.Ldloc, value1);

@@ -4589,7 +4589,7 @@ namespace IKVM.Internal
 
 				internal static void Generate(DynamicTypeWrapper.FinishContext context, CodeEmitter ilGenerator, DynamicTypeWrapper wrapper, MethodWrapper mw, TypeBuilder typeBuilder, ClassFile classFile, ClassFile.Method m, TypeWrapper[] args, bool thruProxy)
 				{
-					LocalBuilder syncObject = null;
+					CodeEmitterLocal syncObject = null;
 					if (m.IsSynchronized && m.IsStatic)
 					{
 						wrapper.EmitClassLiteral(ilGenerator);
@@ -4602,7 +4602,7 @@ namespace IKVM.Internal
 					string sig = m.Signature.Replace('.', '/');
 					// TODO use/unify JNI.METHOD_PTR_FIELD_PREFIX
 					FieldBuilder methodPtr = typeBuilder.DefineField("__<jniptr>" + m.Name + sig, Types.IntPtr, FieldAttributes.Static | FieldAttributes.PrivateScope);
-					LocalBuilder localRefStruct = ilGenerator.DeclareLocal(localRefStructType);
+					CodeEmitterLocal localRefStruct = ilGenerator.DeclareLocal(localRefStructType);
 					ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
 					ilGenerator.Emit(OpCodes.Initobj, localRefStructType);
 					ilGenerator.Emit(OpCodes.Ldsfld, methodPtr);
@@ -4632,7 +4632,7 @@ namespace IKVM.Internal
 						context.EmitCallerID(ilGenerator);
 					}
 					ilGenerator.Emit(OpCodes.Call, enterLocalRefStruct);
-					LocalBuilder jnienv = ilGenerator.DeclareLocal(Types.IntPtr);
+					CodeEmitterLocal jnienv = ilGenerator.DeclareLocal(Types.IntPtr);
 					ilGenerator.Emit(OpCodes.Stloc, jnienv);
 					ilGenerator.BeginExceptionBlock();
 					TypeWrapper retTypeWrapper = mw.ReturnType;
@@ -4705,7 +4705,7 @@ namespace IKVM.Internal
 						realRetType = Types.IntPtr;
 					}
 					ilGenerator.EmitCalli(OpCodes.Calli, System.Runtime.InteropServices.CallingConvention.StdCall, realRetType, modargs);
-					LocalBuilder retValue = null;
+					CodeEmitterLocal retValue = null;
 					if (retTypeWrapper != PrimitiveTypeWrapper.VOID)
 					{
 						if (!retTypeWrapper.IsUnloadable && !retTypeWrapper.IsPrimitive)
@@ -4717,8 +4717,8 @@ namespace IKVM.Internal
 							}
 							else if (retTypeWrapper.IsGhost)
 							{
-								LocalBuilder ghost = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsSignatureType);
-								LocalBuilder obj = ilGenerator.DeclareLocal(Types.Object);
+								CodeEmitterLocal ghost = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsSignatureType);
+								CodeEmitterLocal obj = ilGenerator.DeclareLocal(Types.Object);
 								ilGenerator.Emit(OpCodes.Stloc, obj);
 								ilGenerator.Emit(OpCodes.Ldloca, ghost);
 								ilGenerator.Emit(OpCodes.Ldloc, obj);
@@ -4957,7 +4957,7 @@ namespace IKVM.Internal
 								MethodBuilder mb = typeBuilder.DefineMethod("op_Implicit", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, iface.TypeAsSignatureType, new Type[] { wrapper.TypeAsSignatureType });
 								AttributeHelper.HideFromJava(mb);
 								CodeEmitter ilgen = CodeEmitter.Create(mb);
-								LocalBuilder local = ilgen.DeclareLocal(iface.TypeAsSignatureType);
+								CodeEmitterLocal local = ilgen.DeclareLocal(iface.TypeAsSignatureType);
 								ilgen.Emit(OpCodes.Ldloca, local);
 								ilgen.Emit(OpCodes.Ldarg_0);
 								ilgen.Emit(OpCodes.Stfld, iface.GhostRefField);

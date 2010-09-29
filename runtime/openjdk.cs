@@ -821,8 +821,8 @@ namespace IKVM.NativeCode.java
 
 						// we want the getters to be verifiable (because writeObject can be used from partial trust),
 						// so we create a local to hold the properly typed object reference
-						LocalBuilder objGetterThis = ilgenObjGetter.DeclareLocal(tw.TypeAsBaseType);
-						LocalBuilder primGetterThis = ilgenPrimGetter.DeclareLocal(tw.TypeAsBaseType);
+						CodeEmitterLocal objGetterThis = ilgenObjGetter.DeclareLocal(tw.TypeAsBaseType);
+						CodeEmitterLocal primGetterThis = ilgenPrimGetter.DeclareLocal(tw.TypeAsBaseType);
 						ilgenObjGetter.Emit(OpCodes.Ldarg_0);
 						ilgenObjGetter.Emit(OpCodes.Castclass, tw.TypeAsBaseType);
 						ilgenObjGetter.Emit(OpCodes.Stloc, objGetterThis);
@@ -5951,7 +5951,7 @@ namespace IKVM.NativeCode.sun.reflect
 				mw.ResolveMethod();
 				DynamicMethod dm = DynamicMethodUtils.Create("__<Invoker>", mw.DeclaringType.TypeAsBaseType, !mw.IsPublic || !mw.DeclaringType.IsPublic || nonvirtual, typeof(object), new Type[] { typeof(object), typeof(object[]), typeof(global::ikvm.@internal.CallerID) });
 				CodeEmitter ilgen = CodeEmitter.Create(dm);
-				LocalBuilder ret = ilgen.DeclareLocal(typeof(object));
+				CodeEmitterLocal ret = ilgen.DeclareLocal(typeof(object));
 				if (!mw.IsStatic)
 				{
 					// check target for null
@@ -5976,7 +5976,7 @@ namespace IKVM.NativeCode.sun.reflect
 				ilgen.MarkLabel(argsLengthOK);
 
 				int thisCount = mw.IsStatic ? 0 : 1;
-				LocalBuilder[] args = new LocalBuilder[mw.GetParameters().Length + thisCount];
+				CodeEmitterLocal[] args = new CodeEmitterLocal[mw.GetParameters().Length + thisCount];
 				if (!mw.IsStatic)
 				{
 					args[0] = ilgen.DeclareLocal(mw.DeclaringType.TypeAsSignatureType);
@@ -6314,7 +6314,7 @@ namespace IKVM.NativeCode.sun.reflect
 				mw.ResolveMethod();
 				DynamicMethod dm = DynamicMethodUtils.Create("__<Invoker>", mw.DeclaringType.TypeAsTBD, !mw.IsPublic || !mw.DeclaringType.IsPublic, typeof(object), new Type[] { typeof(object[]) });
 				CodeEmitter ilgen = CodeEmitter.Create(dm);
-				LocalBuilder ret = ilgen.DeclareLocal(typeof(object));
+				CodeEmitterLocal ret = ilgen.DeclareLocal(typeof(object));
 
 				// check args length
 				CodeEmitterLabel argsLengthOK = ilgen.DefineLabel();
@@ -6332,7 +6332,7 @@ namespace IKVM.NativeCode.sun.reflect
 				ilgen.Emit(OpCodes.Throw);
 				ilgen.MarkLabel(argsLengthOK);
 
-				LocalBuilder[] args = new LocalBuilder[mw.GetParameters().Length];
+				CodeEmitterLocal[] args = new CodeEmitterLocal[mw.GetParameters().Length];
 				for (int i = 0; i < args.Length; i++)
 				{
 					mw.GetParameters()[i].Finish();
@@ -7480,7 +7480,7 @@ namespace IKVM.NativeCode.sun.reflect
 					ilgen.Emit(OpCodes.Castclass, fw.DeclaringType.TypeAsBaseType);
 					fw.EmitGet(ilgen);
 					fw.FieldTypeWrapper.EmitConvSignatureTypeToStackType(ilgen);
-					LocalBuilder local = ilgen.DeclareLocal(fieldType);
+					CodeEmitterLocal local = ilgen.DeclareLocal(fieldType);
 					ilgen.Emit(OpCodes.Stloc, local);
 					ilgen.BeginCatchBlock(typeof(InvalidCastException));
 					ilgen.Emit(OpCodes.Ldarg_0);

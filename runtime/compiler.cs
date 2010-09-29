@@ -403,9 +403,9 @@ sealed class Compiler
 	private sealed class ReturnCookie
 	{
 		private CodeEmitterLabel stub;
-		private LocalBuilder local;
+		private CodeEmitterLocal local;
 
-		internal ReturnCookie(CodeEmitterLabel stub, LocalBuilder local)
+		internal ReturnCookie(CodeEmitterLabel stub, CodeEmitterLocal local)
 		{
 			this.stub = stub;
 			this.local = local;
@@ -458,18 +458,18 @@ sealed class Compiler
 		}
 		private Compiler compiler;
 		private StackType[] types;
-		private LocalBuilder[] locals;
+		private CodeEmitterLocal[] locals;
 
 		internal DupHelper(Compiler compiler, int count)
 		{
 			this.compiler = compiler;
 			types = new StackType[count];
-			locals = new LocalBuilder[count];
+			locals = new CodeEmitterLocal[count];
 		}
 
 		internal void Release()
 		{
-			foreach(LocalBuilder lb in locals)
+			foreach (CodeEmitterLocal lb in locals)
 			{
 				if(lb != null)
 				{
@@ -655,7 +655,7 @@ sealed class Compiler
 			{
 				clazz.EmitClassLiteral(ilGenerator);
 				ilGenerator.Emit(OpCodes.Dup);
-				LocalBuilder monitor = ilGenerator.DeclareLocal(Types.Object);
+				CodeEmitterLocal monitor = ilGenerator.DeclareLocal(Types.Object);
 				ilGenerator.Emit(OpCodes.Stloc, monitor);
 				ilGenerator.Emit(OpCodes.Call, monitorEnterMethod);
 				ilGenerator.BeginExceptionBlock();
@@ -1453,9 +1453,9 @@ sealed class Compiler
 								// this could be done a little more efficiently, but since in practice this
 								// code never runs (for code compiled from Java source) it doesn't
 								// really matter
-								LocalBuilder newobj = ilGenerator.DeclareLocal(GetLocalBuilderType(thisType));
+								CodeEmitterLocal newobj = ilGenerator.DeclareLocal(GetLocalBuilderType(thisType));
 								ilGenerator.Emit(OpCodes.Stloc, newobj);
-								LocalBuilder[] tempstack = new LocalBuilder[stackfix.Length];
+								CodeEmitterLocal[] tempstack = new CodeEmitterLocal[stackfix.Length];
 								for(int j = 0; j < stackfix.Length; j++)
 								{
 									if(!stackfix[j])
@@ -1471,7 +1471,7 @@ sealed class Compiler
 										}
 										else if(!VerifierTypeWrapper.IsNotPresentOnStack(stacktype))
 										{
-											LocalBuilder lb = ilGenerator.DeclareLocal(GetLocalBuilderType(stacktype));
+											CodeEmitterLocal lb = ilGenerator.DeclareLocal(GetLocalBuilderType(stacktype));
 											ilGenerator.Emit(OpCodes.Stloc, lb);
 											tempstack[j] = lb;
 										}
@@ -1618,7 +1618,7 @@ sealed class Compiler
 					if(block.IsNested)
 					{
 						// if we're inside an exception block, copy TOS to local, emit "leave" and push item onto our "todo" list
-						LocalBuilder local = null;
+						CodeEmitterLocal local = null;
 						if(instr.NormalizedOpCode != NormalizedByteCode.__return)
 						{
 							TypeWrapper retTypeWrapper = mw.ReturnType;
@@ -1675,7 +1675,7 @@ sealed class Compiler
 							retTypeWrapper.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetStackTypeWrapper(i, 0));
 							if(stackHeight != 1)
 							{
-								LocalBuilder local = ilGenerator.AllocTempLocal(retTypeWrapper.TypeAsSignatureType);
+								CodeEmitterLocal local = ilGenerator.AllocTempLocal(retTypeWrapper.TypeAsSignatureType);
 								ilGenerator.Emit(OpCodes.Stloc, local);
 								ilGenerator.Emit(OpCodes.Leave_S, (byte)0);
 								ilGenerator.Emit(OpCodes.Ldloc, local);
@@ -1788,8 +1788,8 @@ sealed class Compiler
 				}
 				case NormalizedByteCode.__multianewarray:
 				{
-					LocalBuilder localArray = ilGenerator.UnsafeAllocTempLocal(JVM.Import(typeof(int[])));
-					LocalBuilder localInt = ilGenerator.UnsafeAllocTempLocal(Types.Int32);
+					CodeEmitterLocal localArray = ilGenerator.UnsafeAllocTempLocal(JVM.Import(typeof(int[])));
+					CodeEmitterLocal localInt = ilGenerator.UnsafeAllocTempLocal(Types.Int32);
 					ilGenerator.LazyEmitLdc_I4(instr.Arg2);
 					ilGenerator.Emit(OpCodes.Newarr, Types.Int32);
 					ilGenerator.Emit(OpCodes.Stloc, localArray);
@@ -2002,7 +2002,7 @@ sealed class Compiler
 						if(elem.IsNonPrimitiveValueType)
 						{
 							Type t = elem.TypeAsTBD;
-							LocalBuilder local = ilGenerator.UnsafeAllocTempLocal(Types.Object);
+							CodeEmitterLocal local = ilGenerator.UnsafeAllocTempLocal(Types.Object);
 							ilGenerator.Emit(OpCodes.Stloc, local);
 							ilGenerator.Emit(OpCodes.Ldelema, t);
 							ilGenerator.Emit(OpCodes.Ldloc, local);
@@ -2803,9 +2803,9 @@ sealed class Compiler
 					}
 					else
 					{
-						LocalBuilder ghost = ilGenerator.AllocTempLocal(Types.Object);
+						CodeEmitterLocal ghost = ilGenerator.AllocTempLocal(Types.Object);
 						ilGenerator.Emit(OpCodes.Stloc, ghost);
-						LocalBuilder local = ilGenerator.AllocTempLocal(args[i].TypeAsSignatureType);
+						CodeEmitterLocal local = ilGenerator.AllocTempLocal(args[i].TypeAsSignatureType);
 						ilGenerator.Emit(OpCodes.Ldloca, local);
 						ilGenerator.Emit(OpCodes.Ldloc, ghost);
 						ilGenerator.Emit(OpCodes.Stfld, args[i].GhostRefField);
@@ -2962,8 +2962,8 @@ sealed class Compiler
 		{
 			Profiler.Count("EmitDynamicInvokeEmitter");
 			TypeWrapper[] args = cpi.GetArgTypes();
-			LocalBuilder argarray = ilGenerator.DeclareLocal(JVM.Import(typeof(object[])));
-			LocalBuilder val = ilGenerator.DeclareLocal(Types.Object);
+			CodeEmitterLocal argarray = ilGenerator.DeclareLocal(JVM.Import(typeof(object[])));
+			CodeEmitterLocal val = ilGenerator.DeclareLocal(Types.Object);
 			ilGenerator.Emit(OpCodes.Ldc_I4, args.Length);
 			ilGenerator.Emit(OpCodes.Newarr, Types.Object);
 			ilGenerator.Emit(OpCodes.Stloc, argarray);

@@ -149,7 +149,7 @@ namespace IKVM.Internal.MapXml
 					{
 						if(argTypeWrappers[i].IsGhost)
 						{
-							LocalBuilder[] temps = new LocalBuilder[argTypeWrappers.Length + (method.IsStatic ? 0 : 1)];
+							CodeEmitterLocal[] temps = new CodeEmitterLocal[argTypeWrappers.Length + (method.IsStatic ? 0 : 1)];
 							for(int j = temps.Length - 1; j >= 0; j--)
 							{
 								TypeWrapper tw;
@@ -563,7 +563,7 @@ namespace IKVM.Internal.MapXml
 
 		internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
 		{
-			LocalBuilder lb = (LocalBuilder)context[Name];
+			CodeEmitterLocal lb = (CodeEmitterLocal)context[Name];
 			if(lb == null)
 			{
 				if(typeWrapper == null && typeType == null)
@@ -593,7 +593,7 @@ namespace IKVM.Internal.MapXml
 
 		internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
 		{
-			ilgen.Emit(OpCodes.Ldloc, (LocalBuilder)context[Name]);
+			ilgen.Emit(OpCodes.Ldloc, (CodeEmitterLocal)context[Name]);
 		}
 	}
 

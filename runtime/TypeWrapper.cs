@@ -2815,7 +2815,7 @@ namespace IKVM.Internal
 			}
 			else if(IsGhost)
 			{
-				LocalBuilder local = ilgen.DeclareLocal(TypeAsSignatureType);
+				CodeEmitterLocal local = ilgen.DeclareLocal(TypeAsSignatureType);
 				ilgen.Emit(OpCodes.Stloc, local);
 				ilgen.Emit(OpCodes.Ldloca, local);
 				ilgen.Emit(OpCodes.Ldfld, GhostRefField);
@@ -2830,9 +2830,9 @@ namespace IKVM.Internal
 			{
 				if(IsGhost)
 				{
-					LocalBuilder local1 = ilgen.DeclareLocal(TypeAsLocalOrStackType);
+					CodeEmitterLocal local1 = ilgen.DeclareLocal(TypeAsLocalOrStackType);
 					ilgen.Emit(OpCodes.Stloc, local1);
-					LocalBuilder local2 = ilgen.DeclareLocal(TypeAsSignatureType);
+					CodeEmitterLocal local2 = ilgen.DeclareLocal(TypeAsSignatureType);
 					ilgen.Emit(OpCodes.Ldloca, local2);
 					ilgen.Emit(OpCodes.Ldloc, local1);
 					ilgen.Emit(OpCodes.Stfld, GhostRefField);

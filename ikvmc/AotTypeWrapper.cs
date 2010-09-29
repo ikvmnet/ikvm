@@ -850,7 +850,7 @@ namespace IKVM.Internal
 				{
 					MethodBuilder mb;
 					CodeEmitter ilgen;
-					LocalBuilder local;
+					CodeEmitterLocal local;
 					// add implicit conversions for all the ghost implementers
 					TypeWrapper[] implementers = classLoader.GetGhostImplementers(this);
 					for(int i = 0; i < implementers.Length; i++)
@@ -891,8 +891,8 @@ namespace IKVM.Internal
 					mb = ghostIsInstanceArrayMethod;
 					AttributeHelper.HideFromJava(mb);
 					ilgen = CodeEmitter.Create(mb);
-					LocalBuilder localType = ilgen.DeclareLocal(Types.Type);
-					LocalBuilder localRank = ilgen.DeclareLocal(Types.Int32);
+					CodeEmitterLocal localType = ilgen.DeclareLocal(Types.Type);
+					CodeEmitterLocal localRank = ilgen.DeclareLocal(Types.Int32);
 					ilgen.Emit(OpCodes.Ldarg_0);
 					CodeEmitterLabel skip = ilgen.DefineLabel();
 					ilgen.Emit(OpCodes.Brtrue_S, skip);

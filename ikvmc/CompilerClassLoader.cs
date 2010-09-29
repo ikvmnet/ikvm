@@ -455,7 +455,7 @@ namespace IKVM.Internal
 				mainStub.SetCustomAttribute(new CustomAttributeBuilder(apartmentAttributeType.GetConstructor(Type.EmptyTypes), new object[0]));
 			}
 			CodeEmitter ilgen = CodeEmitter.Create(mainStub);
-			LocalBuilder rc = ilgen.DeclareLocal(Types.Int32);
+			CodeEmitterLocal rc = ilgen.DeclareLocal(Types.Int32);
 			TypeWrapper startupType = LoadClassByDottedName("ikvm.runtime.Startup");
 			if(props.Count > 0)
 			{
@@ -486,10 +486,10 @@ namespace IKVM.Internal
 			ilgen.Emit(OpCodes.Call, m);
 			ilgen.BeginCatchBlock(Types.Exception);
 			LoadClassByDottedName("ikvm.runtime.Util").GetMethodWrapper("mapException", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false).EmitCall(ilgen);
-			LocalBuilder exceptionLocal = ilgen.DeclareLocal(Types.Exception);
+			CodeEmitterLocal exceptionLocal = ilgen.DeclareLocal(Types.Exception);
 			ilgen.Emit(OpCodes.Stloc, exceptionLocal);
 			TypeWrapper threadTypeWrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Thread");
-			LocalBuilder threadLocal = ilgen.DeclareLocal(threadTypeWrapper.TypeAsLocalOrStackType);
+			CodeEmitterLocal threadLocal = ilgen.DeclareLocal(threadTypeWrapper.TypeAsLocalOrStackType);
 			threadTypeWrapper.GetMethodWrapper("currentThread", "()Ljava.lang.Thread;", false).EmitCall(ilgen);
 			ilgen.Emit(OpCodes.Stloc, threadLocal);
 			ilgen.Emit(OpCodes.Ldloc, threadLocal);

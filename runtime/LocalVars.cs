@@ -40,7 +40,7 @@ sealed class LocalVar
 	internal bool isArg;
 	internal int local;
 	internal TypeWrapper type;
-	internal LocalBuilder builder;
+	internal CodeEmitterLocal builder;
 	// used to emit debugging info, only available if ClassLoaderWrapper.EmitDebugInfo is true
 	internal string name;
 	internal int start_pc;

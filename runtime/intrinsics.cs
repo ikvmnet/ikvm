@@ -271,7 +271,7 @@ namespace IKVM.Internal
 
 		private static void EmitConversion(CodeEmitter ilgen, Type converterType, string method)
 		{
-			LocalBuilder converter = ilgen.UnsafeAllocTempLocal(converterType);
+			CodeEmitterLocal converter = ilgen.UnsafeAllocTempLocal(converterType);
 			ilgen.Emit(OpCodes.Ldloca, converter);
 			ilgen.Emit(OpCodes.Call, converterType.GetMethod(method));
 		}
