@@ -206,14 +206,6 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal bool IsStackEmpty
-		{
-			get
-			{
-				return topOfStack == 0;
-			}
-		}
-
 		private int GetILOffset()
 		{
 			LazyGen();
