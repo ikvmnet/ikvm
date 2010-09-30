@@ -581,6 +581,30 @@ namespace IKVM.Internal
 					return false;
 				}
 			}
+			else if (code[index].opcode == OpCodes.Ldc_I4)
+			{
+				return true;
+			}
+			else if (code[index].opcode == OpCodes.Ldc_I8)
+			{
+				return true;
+			}
+			else if (code[index].opcode == OpCodes.Ldc_R4)
+			{
+				return true;
+			}
+			else if (code[index].opcode == OpCodes.Ldc_R8)
+			{
+				return true;
+			}
+			else if (code[index].opcode == OpCodes.Ldloc)
+			{
+				return true;
+			}
+			else if (code[index].opcode == OpCodes.Ldarg)
+			{
+				return true;
+			}
 			else
 			{
 				return false;
@@ -692,13 +716,135 @@ namespace IKVM.Internal
 				}
 				else if (code[i].opcode == OpCodes.Ldelem_I1
 					&& code[i + 1].opcode == OpCodes.Conv_I8
-					&& code[i + 2].opcode == OpCodes.Ldc_I4 && (int)code[i + 2].data == 255
-					&& code[i + 3].opcode == OpCodes.Conv_U8
-					&& code[i + 4].opcode == OpCodes.And)
+					&& code[i + 2].opcode == OpCodes.Ldc_I8 && (long)code[i + 2].data == 255
+					&& code[i + 3].opcode == OpCodes.And)
 				{
 					code[i] = new OpCodeWrapper(OpCodes.Ldelem_U1, null);
-					code.RemoveRange(i + 2, 3);
+					code.RemoveRange(i + 2, 2);
 				}
+				else if (code[i].opcode == OpCodes.Ldc_I4
+					&& code[i + 1].opcode == OpCodes.Ldc_I4
+					&& code[i + 2].opcode == OpCodes.And)
+				{
+					code[i] = new OpCodeWrapper(OpCodes.Ldc_I4, (int)code[i].data & (int)code[i + 1].data);
+					code.RemoveRange(i + 1, 2);
+				}
+			}
+		}
+
+		private void OptimizeEncodings()
+		{
+			for (int i = 0; i < code.Count; i++)
+			{
+				if (code[i].opcode == OpCodes.Ldc_I4)
+				{
+					code[i] = OptimizeLdcI4((int)code[i].data);
+				}
+				else if (code[i].opcode == OpCodes.Ldc_I8)
+				{
+					OptimizeLdcI8(i);
+				}
+			}
+		}
+
+		private OpCodeWrapper OptimizeLdcI4(int value)
+		{
+			switch (value)
+			{
+				case -1:
+					return new OpCodeWrapper(OpCodes.Ldc_I4_M1, null);
+				case 0:
+					return new OpCodeWrapper(OpCodes.Ldc_I4_0, null);
+				case 1:
+					return new OpCodeWrapper(OpCodes.Ldc_I4_1, null);
+				case 2:
+					return new OpCodeWrapper(OpCodes.Ldc_I4_2, null);
+				case 3:
+					return new OpCodeWrapper(OpCodes.Ldc_I4_3, null);
+				case 4:
+					return new OpCodeWrapper(OpCodes.Ldc_I4_4, null);
+				case 5:
+					return new OpCodeWrapper(OpCodes.Ldc_I4_5, null);
+				case 6:
+					return new OpCodeWrapper(OpCodes.Ldc_I4_6, null);
+				case 7:
+					return new OpCodeWrapper(OpCodes.Ldc_I4_7, null);
+				case 8:
+					return new OpCodeWrapper(OpCodes.Ldc_I4_8, null);
+				default:
+					if (value >= -128 && value <= 127)
+					{
+						return new OpCodeWrapper(OpCodes.Ldc_I4_S, (sbyte)value);
+					}
+					else
+					{
+						return new OpCodeWrapper(OpCodes.Ldc_I4, value);
+					}
+			}
+		}
+
+		private void OptimizeLdcI8(int index)
+		{
+			long value = (long)code[index].data;
+			OpCode opc = OpCodes.Nop;
+			switch (value)
+			{
+				case -1:
+					opc = OpCodes.Ldc_I4_M1;
+					break;
+				case 0:
+					opc = OpCodes.Ldc_I4_0;
+					break;
+				case 1:
+					opc = OpCodes.Ldc_I4_1;
+					break;
+				case 2:
+					opc = OpCodes.Ldc_I4_2;
+					break;
+				case 3:
+					opc = OpCodes.Ldc_I4_3;
+					break;
+				case 4:
+					opc = OpCodes.Ldc_I4_4;
+					break;
+				case 5:
+					opc = OpCodes.Ldc_I4_5;
+					break;
+				case 6:
+					opc = OpCodes.Ldc_I4_6;
+					break;
+				case 7:
+					opc = OpCodes.Ldc_I4_7;
+					break;
+				case 8:
+					opc = OpCodes.Ldc_I4_8;
+					break;
+				default:
+					if (value >= -2147483648L && value <= 4294967295L)
+					{
+						if (value >= -128 && value <= 127)
+						{
+							code[index] = new OpCodeWrapper(OpCodes.Ldc_I4_S, (sbyte)value);
+						}
+						else
+						{
+							code[index] = new OpCodeWrapper(OpCodes.Ldc_I4, (int)value);
+						}
+						if (value < 0)
+						{
+							code.Insert(index + 1, new OpCodeWrapper(OpCodes.Conv_I8, null));
+						}
+						else
+						{
+							code.Insert(index + 1, new OpCodeWrapper(OpCodes.Conv_U8, null));
+						}
+					}
+					break;
+			}
+			if (opc != OpCodes.Nop)
+			{
+				code[index] = new OpCodeWrapper(opc, null);
+				code.Insert(index + 1, new OpCodeWrapper(OpCodes.Conv_I8, null));
 			}
 		}
 
@@ -707,6 +853,7 @@ namespace IKVM.Internal
 			RemoveJumpNext();
 			AnnihilatePops();
 			OptimizePatterns();
+			OptimizeEncodings();
 			OptimizeBranchSizes();
 			int ilOffset = 0;
 			for (int i = 0; i < code.Count; i++)
@@ -1341,17 +1488,8 @@ namespace IKVM.Internal
 
 		internal void LazyEmitAnd_I4(int v2)
 		{
-			ConstIntExpr v1 = PeekStack() as ConstIntExpr;
-			if (v1 != null)
-			{
-				PopStack();
-				LazyEmitLdc_I4(v1.i & v2);
-			}
-			else
-			{
-				LazyEmitLdc_I4(v2);
-				Emit(OpCodes.And);
-			}
+			Emit(OpCodes.Ldc_I4, v2);
+			Emit(OpCodes.And);
 		}
 
 		internal void LazyEmit_baload()
@@ -1515,49 +1653,7 @@ namespace IKVM.Internal
 
 			internal override void Emit(CodeEmitter ilgen)
 			{
-				switch(i)
-				{
-					case -1:
-						ilgen.Emit(OpCodes.Ldc_I4_M1);
-						break;
-					case 0:
-						ilgen.Emit(OpCodes.Ldc_I4_0);
-						break;
-					case 1:
-						ilgen.Emit(OpCodes.Ldc_I4_1);
-						break;
-					case 2:
-						ilgen.Emit(OpCodes.Ldc_I4_2);
-						break;
-					case 3:
-						ilgen.Emit(OpCodes.Ldc_I4_3);
-						break;
-					case 4:
-						ilgen.Emit(OpCodes.Ldc_I4_4);
-						break;
-					case 5:
-						ilgen.Emit(OpCodes.Ldc_I4_5);
-						break;
-					case 6:
-						ilgen.Emit(OpCodes.Ldc_I4_6);
-						break;
-					case 7:
-						ilgen.Emit(OpCodes.Ldc_I4_7);
-						break;
-					case 8:
-						ilgen.Emit(OpCodes.Ldc_I4_8);
-						break;
-					default:
-						if(i >= -128 && i <= 127)
-						{
-							ilgen.Emit(OpCodes.Ldc_I4_S, (sbyte)i);
-						}
-						else
-						{
-							ilgen.Emit(OpCodes.Ldc_I4, i);
-						}
-						break;
-				}
+				ilgen.Emit(OpCodes.Ldc_I4, i);
 			}
 		}
 
@@ -1572,74 +1668,7 @@ namespace IKVM.Internal
 
 			internal override void Emit(CodeEmitter ilgen)
 			{
-				switch (l)
-				{
-					case -1:
-						ilgen.Emit(OpCodes.Ldc_I4_M1);
-						ilgen.Emit(OpCodes.Conv_I8);
-						break;
-					case 0:
-						ilgen.Emit(OpCodes.Ldc_I4_0);
-						ilgen.Emit(OpCodes.Conv_I8);
-						break;
-					case 1:
-						ilgen.Emit(OpCodes.Ldc_I4_1);
-						ilgen.Emit(OpCodes.Conv_I8);
-						break;
-					case 2:
-						ilgen.Emit(OpCodes.Ldc_I4_2);
-						ilgen.Emit(OpCodes.Conv_I8);
-						break;
-					case 3:
-						ilgen.Emit(OpCodes.Ldc_I4_3);
-						ilgen.Emit(OpCodes.Conv_I8);
-						break;
-					case 4:
-						ilgen.Emit(OpCodes.Ldc_I4_4);
-						ilgen.Emit(OpCodes.Conv_I8);
-						break;
-					case 5:
-						ilgen.Emit(OpCodes.Ldc_I4_5);
-						ilgen.Emit(OpCodes.Conv_I8);
-						break;
-					case 6:
-						ilgen.Emit(OpCodes.Ldc_I4_6);
-						ilgen.Emit(OpCodes.Conv_I8);
-						break;
-					case 7:
-						ilgen.Emit(OpCodes.Ldc_I4_7);
-						ilgen.Emit(OpCodes.Conv_I8);
-						break;
-					case 8:
-						ilgen.Emit(OpCodes.Ldc_I4_8);
-						ilgen.Emit(OpCodes.Conv_I8);
-						break;
-					default:
-						if (l >= -2147483648L && l <= 4294967295L)
-						{
-							if (l >= -128 && l <= 127)
-							{
-								ilgen.Emit(OpCodes.Ldc_I4_S, (sbyte)l);
-							}
-							else
-							{
-								ilgen.Emit(OpCodes.Ldc_I4, (int)l);
-							}
-							if (l < 0)
-							{
-								ilgen.Emit(OpCodes.Conv_I8);
-							}
-							else
-							{
-								ilgen.Emit(OpCodes.Conv_U8);
-							}
-						}
-						else
-						{
-							ilgen.Emit(OpCodes.Ldc_I8, l);
-						}
-						break;
-				}
+				ilgen.Emit(OpCodes.Ldc_I8, l);
 			}
 		}
 
