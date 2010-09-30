@@ -672,10 +672,41 @@ namespace IKVM.Internal
 			}
 		}
 
+		private void OptimizePatterns()
+		{
+			for (int i = 1; i < code.Count; i++)
+			{
+				if (code[i].opcode == OpCodes.Isinst
+					&& code[i + 1].opcode == OpCodes.Ldnull
+					&& code[i + 2].opcode == OpCodes.Cgt_Un
+					&& (code[i + 3].opcode == OpCodes.Brfalse || code[i + 3].opcode == OpCodes.Brtrue))
+				{
+					code.RemoveRange(i + 1, 2);
+				}
+				else if (code[i].opcode == OpCodes.Ldelem_I1
+					&& code[i + 1].opcode == OpCodes.Ldc_I4 && (int)code[i + 1].data == 255
+					&& code[i + 2].opcode == OpCodes.And)
+				{
+					code[i] = new OpCodeWrapper(OpCodes.Ldelem_U1, null);
+					code.RemoveRange(i + 1, 2);
+				}
+				else if (code[i].opcode == OpCodes.Ldelem_I1
+					&& code[i + 1].opcode == OpCodes.Conv_I8
+					&& code[i + 2].opcode == OpCodes.Ldc_I4 && (int)code[i + 2].data == 255
+					&& code[i + 3].opcode == OpCodes.Conv_U8
+					&& code[i + 4].opcode == OpCodes.And)
+				{
+					code[i] = new OpCodeWrapper(OpCodes.Ldelem_U1, null);
+					code.RemoveRange(i + 2, 3);
+				}
+			}
+		}
+
 		internal void DoEmit()
 		{
 			RemoveJumpNext();
 			AnnihilatePops();
+			OptimizePatterns();
 			OptimizeBranchSizes();
 			int ilOffset = 0;
 			for (int i = 0; i < code.Count; i++)
@@ -1214,7 +1245,9 @@ namespace IKVM.Internal
 
 		internal void LazyEmit_instanceof(Type type)
 		{
-			PushStack(new InstanceOfExpr(type));
+			Emit(OpCodes.Isinst, type);
+			Emit(OpCodes.Ldnull);
+			Emit(OpCodes.Cgt_Un);
 		}
 
 		internal void LazyEmit_ifeq(CodeEmitterLabel label)
@@ -1229,21 +1262,12 @@ namespace IKVM.Internal
 
 		private void LazyEmit_if_ne_eq(CodeEmitterLabel label, bool brtrue)
 		{
-			InstanceOfExpr instanceof = PeekStack() as InstanceOfExpr;
-			if (instanceof != null)
+			CmpExpr cmp = PeekStack() as CmpExpr;
+			if (cmp != null)
 			{
 				PopStack();
-				Emit(OpCodes.Isinst, instanceof.Type);
-			}
-			else
-			{
-				CmpExpr cmp = PeekStack() as CmpExpr;
-				if (cmp != null)
-				{
-					PopStack();
-					Emit(brtrue ? OpCodes.Bne_Un : OpCodes.Beq, label);
-					return;
-				}
+				Emit(brtrue ? OpCodes.Bne_Un : OpCodes.Beq, label);
+				return;
 			}
 			Emit(brtrue ? OpCodes.Brtrue : OpCodes.Brfalse, label);
 		}
@@ -1332,60 +1356,22 @@ namespace IKVM.Internal
 
 		internal void LazyEmit_baload()
 		{
-			PushStack(new ByteArrayLoadExpr());
-		}
-
-		private bool Match<T1, T2>(out T1 t1, out T2 t2)
-			where T1 : Expr
-			where T2 : Expr
-		{
-			if (topOfStack < 2)
-			{
-				t1 = null;
-				t2 = null;
-				return false;
-			}
-			t1 = stackArray[topOfStack - 1] as T1;
-			t2 = stackArray[topOfStack - 2] as T2;
-			return t1 != null && t2 != null;
+			Emit(OpCodes.Ldelem_I1);
 		}
 
 		internal void LazyEmit_iand()
 		{
-			ConstIntExpr v1;
-			ByteArrayLoadExpr v2;
-			if (Match(out v1, out v2) && v1.i == 0xFF)
-			{
-				PopStack();
-				PopStack();
-				Emit(OpCodes.Ldelem_U1);
-			}
-			else
-			{
-				Emit(OpCodes.And);
-			}
+			Emit(OpCodes.And);
 		}
 
 		internal void LazyEmit_land()
 		{
-			ConstLongExpr v1;
-			ConvertLong v2;
-			if (Match(out v1, out v2) && v1.l == 0xFF && v2.Expr is ByteArrayLoadExpr)
-			{
-				PopStack();
-				PopStack();
-				Emit(OpCodes.Ldelem_U1);
-				Emit(OpCodes.Conv_I8);
-			}
-			else
-			{
-				Emit(OpCodes.And);
-			}
+			Emit(OpCodes.And);
 		}
 
 		internal void LazyEmit_i2l()
 		{
-			PushStack(new ConvertLong(PopStack()));
+			Emit(OpCodes.Conv_I8);
 		}
 
 		private void LazyGen()
@@ -1657,31 +1643,6 @@ namespace IKVM.Internal
 			}
 		}
 
-		sealed class InstanceOfExpr : Expr
-		{
-			internal readonly Type Type;
-
-			internal InstanceOfExpr(Type type)
-			{
-				this.Type = type;
-			}
-
-			internal override bool IsIncomplete
-			{
-				get
-				{
-					return true;
-				}
-			}
-
-			internal override void Emit(CodeEmitter ilgen)
-			{
-				ilgen.Emit(OpCodes.Isinst, this.Type);
-				ilgen.Emit(OpCodes.Ldnull);
-				ilgen.Emit(OpCodes.Cgt_Un);
-			}
-		}
-
 		abstract class CmpExpr : Expr
 		{
 			internal CmpExpr()
@@ -1829,38 +1790,6 @@ namespace IKVM.Internal
 			protected override Type FloatOrDouble()
 			{
 				return Types.Double;
-			}
-		}
-
-		sealed class ByteArrayLoadExpr : Expr
-		{
-			internal override void Emit(CodeEmitter ilgen)
-			{
-				ilgen.Emit(OpCodes.Ldelem_I1);
-			}
-
-			internal override bool HasSideEffect
-			{
-				get { return true; }
-			}
-
-			internal override bool IsIncomplete
-			{
-				get { return true; }
-			}
-		}
-
-		sealed class ConvertLong : UnaryExpr
-		{
-			internal ConvertLong(Expr expr)
-				: base(expr)
-			{
-			}
-
-			internal override void Emit(CodeEmitter ilgen)
-			{
-				base.Emit(ilgen);
-				ilgen.Emit(OpCodes.Conv_I8);
 			}
 		}
 	}
