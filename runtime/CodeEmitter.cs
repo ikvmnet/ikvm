@@ -101,6 +101,11 @@ namespace IKVM.Internal
 
 		internal void Emit(ILGenerator ilgen, OpCode opcode)
 		{
+			if (local == null)
+			{
+				// it's a temporary local that is only allocated on-demand
+				local = ilgen.DeclareLocal(type);
+			}
 			ilgen.Emit(opcode, local);
 		}
 
@@ -729,6 +734,73 @@ namespace IKVM.Internal
 					code[i] = new OpCodeWrapper(OpCodes.Ldc_I4, (int)code[i].data & (int)code[i + 1].data);
 					code.RemoveRange(i + 1, 2);
 				}
+				else if (MatchCompare(i, OpCodes.Cgt, OpCodes.Clt_Un, Types.Double)		// dcmpl
+					|| MatchCompare(i, OpCodes.Cgt, OpCodes.Clt_Un, Types.Single))		// fcmpl
+				{
+					PatchCompare(i, OpCodes.Ble_Un, OpCodes.Blt_Un, OpCodes.Bge, OpCodes.Bgt);
+				}
+				else if (MatchCompare(i, OpCodes.Cgt_Un, OpCodes.Clt, Types.Double)		// dcmpg
+					|| MatchCompare(i, OpCodes.Cgt_Un, OpCodes.Clt, Types.Single))		// fcmpg
+				{
+					PatchCompare(i, OpCodes.Ble, OpCodes.Blt, OpCodes.Bge_Un, OpCodes.Bgt_Un);
+				}
+				else if (MatchCompare(i, OpCodes.Cgt, OpCodes.Clt, Types.Int64))		// lcmp
+				{
+					PatchCompare(i, OpCodes.Ble, OpCodes.Blt, OpCodes.Bge, OpCodes.Bgt);
+				}
+			}
+		}
+
+		private bool MatchCompare(int index, OpCode cmp1, OpCode cmp2, Type type)
+		{
+			return code[index].opcode == OpCodes.Stloc && ((CodeEmitterLocal)code[index].data).LocalType == type
+				&& code[index + 1].opcode == OpCodes.Stloc && ((CodeEmitterLocal)code[index + 1].data).LocalType == type
+				&& code[index + 2].opcode == OpCodes.Ldloc && code[index + 2].data == code[index + 1].data
+				&& code[index + 3].opcode == OpCodes.Ldloc && code[index + 3].data == code[index].data
+				&& code[index + 4].opcode == cmp1
+				&& code[index + 5].opcode == OpCodes.Ldloc && code[index + 5].data == code[index + 1].data
+				&& code[index + 6].opcode == OpCodes.Ldloc && code[index + 6].data == code[index].data
+				&& code[index + 7].opcode == cmp2
+				&& code[index + 8].opcode == OpCodes.Sub
+				&& (code[index + 9].opcode.FlowControl == FlowControl.Cond_Branch ||
+					(code[index + 9].opcode == OpCodes.Ldc_I4_0
+					&& code[index + 10].opcode.FlowControl == FlowControl.Cond_Branch));
+		}
+
+		private void PatchCompare(int index, OpCode ble, OpCode blt, OpCode bge, OpCode bgt)
+		{
+			if (code[index + 9].opcode == OpCodes.Brtrue)
+			{
+				code[index] = new OpCodeWrapper(OpCodes.Bne_Un, code[index + 9].data);
+				code.RemoveRange(index + 1, 9);
+			}
+			else if (code[index + 9].opcode == OpCodes.Brfalse)
+			{
+				code[index] = new OpCodeWrapper(OpCodes.Beq, code[index + 9].data);
+				code.RemoveRange(index + 1, 9);
+			}
+			else if (code[index + 9].opcode == OpCodes.Ldc_I4_0)
+			{
+				if (code[index + 10].opcode == OpCodes.Ble)
+				{
+					code[index] = new OpCodeWrapper(ble, code[index + 10].data);
+					code.RemoveRange(index + 1, 10);
+				}
+				else if (code[index + 10].opcode == OpCodes.Blt)
+				{
+					code[index] = new OpCodeWrapper(blt, code[index + 10].data);
+					code.RemoveRange(index + 1, 10);
+				}
+				else if (code[index + 10].opcode == OpCodes.Bge)
+				{
+					code[index] = new OpCodeWrapper(bge, code[index + 10].data);
+					code.RemoveRange(index + 1, 10);
+				}
+				else if (code[index + 10].opcode == OpCodes.Bgt)
+				{
+					code[index] = new OpCodeWrapper(bgt, code[index + 10].data);
+					code.RemoveRange(index + 1, 10);
+				}
 			}
 		}
 
@@ -916,7 +988,7 @@ namespace IKVM.Internal
 					return lb;
 				}
 			}
-			return DeclareLocal(type);
+			return new CodeEmitterLocal(type);
 		}
 
 		internal void ReleaseTempLocal(CodeEmitterLocal lb)
@@ -1399,24 +1471,12 @@ namespace IKVM.Internal
 
 		internal void LazyEmit_ifeq(CodeEmitterLabel label)
 		{
-			LazyEmit_if_ne_eq(label, false);
+			Emit(OpCodes.Brfalse, label);
 		}
 
 		internal void LazyEmit_ifne(CodeEmitterLabel label)
 		{
-			LazyEmit_if_ne_eq(label, true);
-		}
-
-		private void LazyEmit_if_ne_eq(CodeEmitterLabel label, bool brtrue)
-		{
-			CmpExpr cmp = PeekStack() as CmpExpr;
-			if (cmp != null)
-			{
-				PopStack();
-				Emit(brtrue ? OpCodes.Bne_Un : OpCodes.Beq, label);
-				return;
-			}
-			Emit(brtrue ? OpCodes.Brtrue : OpCodes.Brfalse, label);
+			Emit(OpCodes.Brtrue, label);
 		}
 
 		internal enum Comparison
@@ -1427,8 +1487,11 @@ namespace IKVM.Internal
 			GreaterThan
 		}
 
-		private void EmitBcc(Comparison comp, CodeEmitterLabel label)
+		internal void LazyEmit_if_le_lt_ge_gt(Comparison comp, CodeEmitterLabel label)
 		{
+			// don't change this Ldc_I4_0 to Ldc_I4(0) because the optimizer recognizes
+			// only this specific pattern
+			Emit(OpCodes.Ldc_I4_0);
 			switch (comp)
 			{
 				case Comparison.LessOrEqual:
@@ -1446,44 +1509,46 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal void LazyEmit_if_le_lt_ge_gt(Comparison comp, CodeEmitterLabel label)
+		private void EmitCmp(Type type, OpCode cmp1, OpCode cmp2)
 		{
-			CmpExpr cmp = PeekStack() as CmpExpr;
-			if (cmp != null)
-			{
-				PopStack();
-				cmp.EmitBcc(this, comp, label);
-			}
-			else
-			{
-				Emit(OpCodes.Ldc_I4_0);
-				EmitBcc(comp, label);
-			}
+			CodeEmitterLocal value1 = AllocTempLocal(type);
+			CodeEmitterLocal value2 = AllocTempLocal(type);
+			Emit(OpCodes.Stloc, value2);
+			Emit(OpCodes.Stloc, value1);
+			Emit(OpCodes.Ldloc, value1);
+			Emit(OpCodes.Ldloc, value2);
+			Emit(cmp1);
+			Emit(OpCodes.Ldloc, value1);
+			Emit(OpCodes.Ldloc, value2);
+			Emit(cmp2);
+			Emit(OpCodes.Sub);
+			ReleaseTempLocal(value2);
+			ReleaseTempLocal(value1);
 		}
 
 		internal void LazyEmit_lcmp()
 		{
-			PushStack(new LCmpExpr());
+			EmitCmp(Types.Int64, OpCodes.Cgt, OpCodes.Clt);
 		}
 
 		internal void LazyEmit_fcmpl()
 		{
-			PushStack(new FCmplExpr());
+			EmitCmp(Types.Single, OpCodes.Cgt, OpCodes.Clt_Un);
 		}
 
 		internal void LazyEmit_fcmpg()
 		{
-			PushStack(new FCmpgExpr());
+			EmitCmp(Types.Single, OpCodes.Cgt_Un, OpCodes.Clt);
 		}
 
 		internal void LazyEmit_dcmpl()
 		{
-			PushStack(new DCmplExpr());
+			EmitCmp(Types.Double, OpCodes.Cgt, OpCodes.Clt_Un);
 		}
 
 		internal void LazyEmit_dcmpg()
 		{
-			PushStack(new DCmpgExpr());
+			EmitCmp(Types.Double, OpCodes.Cgt_Un, OpCodes.Clt);
 		}
 
 		internal void LazyEmitAnd_I4(int v2)
@@ -1669,156 +1734,6 @@ namespace IKVM.Internal
 			internal override void Emit(CodeEmitter ilgen)
 			{
 				ilgen.Emit(OpCodes.Ldc_I8, l);
-			}
-		}
-
-		abstract class CmpExpr : Expr
-		{
-			internal CmpExpr()
-			{
-			}
-
-			internal override bool IsIncomplete
-			{
-				get
-				{
-					return true;
-				}
-			}
-
-			internal abstract void EmitBcc(CodeEmitter ilgen, Comparison comp, CodeEmitterLabel label);
-		}
-
-		sealed class LCmpExpr : CmpExpr
-		{
-			internal LCmpExpr()
-			{
-			}
-
-			internal sealed override void Emit(CodeEmitter ilgen)
-			{
-				CodeEmitterLocal value1 = ilgen.AllocTempLocal(Types.Int64);
-				CodeEmitterLocal value2 = ilgen.AllocTempLocal(Types.Int64);
-				ilgen.Emit(OpCodes.Stloc, value2);
-				ilgen.Emit(OpCodes.Stloc, value1);
-				ilgen.Emit(OpCodes.Ldloc, value1);
-				ilgen.Emit(OpCodes.Ldloc, value2);
-				ilgen.Emit(OpCodes.Cgt);
-				ilgen.Emit(OpCodes.Ldloc, value1);
-				ilgen.Emit(OpCodes.Ldloc, value2);
-				ilgen.Emit(OpCodes.Clt);
-				ilgen.Emit(OpCodes.Sub);
-				ilgen.ReleaseTempLocal(value2);
-				ilgen.ReleaseTempLocal(value1);
-			}
-
-			internal sealed override void EmitBcc(CodeEmitter ilgen, Comparison comp, CodeEmitterLabel label)
-			{
-				ilgen.EmitBcc(comp, label);
-			}
-		}
-
-		class FCmplExpr : CmpExpr
-		{
-			protected virtual Type FloatOrDouble()
-			{
-				return Types.Single;
-			}
-
-			internal sealed override void Emit(CodeEmitter ilgen)
-			{
-				CodeEmitterLocal value1 = ilgen.AllocTempLocal(FloatOrDouble());
-				CodeEmitterLocal value2 = ilgen.AllocTempLocal(FloatOrDouble());
-				ilgen.Emit(OpCodes.Stloc, value2);
-				ilgen.Emit(OpCodes.Stloc, value1);
-				ilgen.Emit(OpCodes.Ldloc, value1);
-				ilgen.Emit(OpCodes.Ldloc, value2);
-				ilgen.Emit(OpCodes.Cgt);
-				ilgen.Emit(OpCodes.Ldloc, value1);
-				ilgen.Emit(OpCodes.Ldloc, value2);
-				ilgen.Emit(OpCodes.Clt_Un);
-				ilgen.Emit(OpCodes.Sub);
-				ilgen.ReleaseTempLocal(value1);
-				ilgen.ReleaseTempLocal(value2);
-			}
-
-			internal sealed override void EmitBcc(CodeEmitter ilgen, Comparison comp, CodeEmitterLabel label)
-			{
-				switch (comp)
-				{
-					case Comparison.LessOrEqual:
-						ilgen.Emit(OpCodes.Ble_Un, label);
-						break;
-					case Comparison.LessThan:
-						ilgen.Emit(OpCodes.Blt_Un, label);
-						break;
-					case Comparison.GreaterOrEqual:
-						ilgen.Emit(OpCodes.Bge, label);
-						break;
-					case Comparison.GreaterThan:
-						ilgen.Emit(OpCodes.Bgt, label);
-						break;
-				}
-			}
-		}
-
-		class FCmpgExpr : CmpExpr
-		{
-			protected virtual Type FloatOrDouble()
-			{
-				return Types.Single;
-			}
-
-			internal sealed override void Emit(CodeEmitter ilgen)
-			{
-				CodeEmitterLocal value1 = ilgen.AllocTempLocal(FloatOrDouble());
-				CodeEmitterLocal value2 = ilgen.AllocTempLocal(FloatOrDouble());
-				ilgen.Emit(OpCodes.Stloc, value2);
-				ilgen.Emit(OpCodes.Stloc, value1);
-				ilgen.Emit(OpCodes.Ldloc, value1);
-				ilgen.Emit(OpCodes.Ldloc, value2);
-				ilgen.Emit(OpCodes.Cgt_Un);
-				ilgen.Emit(OpCodes.Ldloc, value1);
-				ilgen.Emit(OpCodes.Ldloc, value2);
-				ilgen.Emit(OpCodes.Clt);
-				ilgen.Emit(OpCodes.Sub);
-				ilgen.ReleaseTempLocal(value1);
-				ilgen.ReleaseTempLocal(value2);
-			}
-
-			internal sealed override void EmitBcc(CodeEmitter ilgen, Comparison comp, CodeEmitterLabel label)
-			{
-				switch (comp)
-				{
-					case Comparison.LessOrEqual:
-						ilgen.Emit(OpCodes.Ble, label);
-						break;
-					case Comparison.LessThan:
-						ilgen.Emit(OpCodes.Blt, label);
-						break;
-					case Comparison.GreaterOrEqual:
-						ilgen.Emit(OpCodes.Bge_Un, label);
-						break;
-					case Comparison.GreaterThan:
-						ilgen.Emit(OpCodes.Bgt_Un, label);
-						break;
-				}
-			}
-		}
-
-		sealed class DCmplExpr : FCmplExpr
-		{
-			protected override Type FloatOrDouble()
-			{
-				return Types.Double;
-			}
-		}
-
-		sealed class DCmpgExpr : FCmpgExpr
-		{
-			protected override Type FloatOrDouble()
-			{
-				return Types.Double;
 			}
 		}
 	}
