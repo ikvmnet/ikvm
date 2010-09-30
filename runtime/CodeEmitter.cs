@@ -1060,7 +1060,7 @@ namespace IKVM.Internal
 
 		internal void LazyEmitLoadClass(TypeWrapper type)
 		{
-			PushStack(new ClassLiteralExpr(type));
+			type.EmitClassLiteral(this);
 		}
 
 		internal void LazyEmitBox(Type type)
@@ -1125,7 +1125,7 @@ namespace IKVM.Internal
 
 		internal void LazyEmitLdnull()
 		{
-			PushStack(new NullExpr());
+			Emit(OpCodes.Ldnull);
 		}
 
 		internal void LazyEmitLdc_I4(int i)
@@ -1140,7 +1140,7 @@ namespace IKVM.Internal
 
 		internal void LazyEmitLdstr(string str)
 		{
-			PushStack(new ConstStringExpr(str));
+			Emit(OpCodes.Ldstr, str);
 		}
 
 		internal void LazyEmit_idiv()
@@ -1388,27 +1388,6 @@ namespace IKVM.Internal
 			PushStack(new ConvertLong(PopStack()));
 		}
 
-		internal string PopLazyLdstr()
-		{
-			ConstStringExpr str = PeekStack() as ConstStringExpr;
-			if(str != null)
-			{
-				PopStack();
-				return str.str;
-			}
-			return null;
-		}
-
-		internal TypeWrapper PeekLazyClassLiteral()
-		{
-			ClassLiteralExpr lit = PeekStack() as ClassLiteralExpr;
-			if (lit != null)
-			{
-				return lit.Type;
-			}
-			return null;
-		}
-
 		private void LazyGen()
 		{
 			int len = topOfStack;
@@ -1536,14 +1515,6 @@ namespace IKVM.Internal
 			{
 				base.Emit(ilgen);
 				ilgen.Emit(OpCodes.Ldobj, Type);
-			}
-		}
-
-		sealed class NullExpr : Expr
-		{
-			internal override void Emit(CodeEmitter ilgen)
-			{
-				ilgen.Emit(OpCodes.Ldnull);
 			}
 		}
 
@@ -1683,21 +1654,6 @@ namespace IKVM.Internal
 						}
 						break;
 				}
-			}
-		}
-
-		sealed class ConstStringExpr : Expr
-		{
-			internal readonly string str;
-
-			internal ConstStringExpr(string str)
-			{
-				this.str = str;
-			}
-
-			internal override void Emit(CodeEmitter ilgen)
-			{
-				ilgen.Emit(OpCodes.Ldstr, str);
 			}
 		}
 
@@ -1873,21 +1829,6 @@ namespace IKVM.Internal
 			protected override Type FloatOrDouble()
 			{
 				return Types.Double;
-			}
-		}
-
-		sealed class ClassLiteralExpr : Expr
-		{
-			internal readonly TypeWrapper Type;
-
-			internal ClassLiteralExpr(TypeWrapper type)
-			{
-				this.Type = type;
-			}
-
-			internal override void Emit(CodeEmitter ilgen)
-			{
-				Type.EmitClassLiteral(ilgen);
 			}
 		}
 
