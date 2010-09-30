@@ -157,9 +157,16 @@ namespace IKVM.Internal
 			internal readonly OpCode opcode;
 			internal readonly object data;
 
-			internal OpCodeWrapper(CodeType type, OpCode opcode, object data)
+			internal OpCodeWrapper(CodeType type, object data)
 			{
 				this.type = type;
+				this.opcode = OpCodes.Nop;
+				this.data = data;
+			}
+
+			internal OpCodeWrapper(OpCode opcode, object data)
+			{
+				this.type = CodeType.OpCode;
 				this.opcode = opcode;
 				this.data = data;
 			}
@@ -332,12 +339,12 @@ namespace IKVM.Internal
 
 		private void EmitPseudoOpCode(CodeType type, object data)
 		{
-			code.Add(new OpCodeWrapper(type, OpCodes.Nop, data));
+			code.Add(new OpCodeWrapper(type, data));
 		}
 
 		private void EmitOpCode(OpCode opcode, object arg)
 		{
-			code.Add(new OpCodeWrapper(CodeType.OpCode, opcode, arg));
+			code.Add(new OpCodeWrapper(opcode, arg));
 		}
 
 		private void RealEmitPseudoOpCode(int ilOffset, CodeType type, object data)
@@ -399,7 +406,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		private void RealEmitOpCode(int ilOffset, OpCode opcode, object arg)
+		private void RealEmitOpCode(OpCode opcode, object arg)
 		{
 			if (arg == null)
 			{
@@ -529,8 +536,54 @@ namespace IKVM.Internal
 					&& code[i - 1].opcode == OpCodes.Br
 					&& code[i - 1].data == code[i].data)
 				{
-					code[i - 1] = new OpCodeWrapper(CodeType.Nop, OpCodes.Nop, null);
+					code.RemoveAt(i - 1);
+					i--;
 				}
+			}
+		}
+
+		private void AnnihilatePops()
+		{
+			for (int i = 1; i < code.Count; i++)
+			{
+				if (code[i].opcode == OpCodes.Pop
+					&& IsSideEffectFreePush(i - 1))
+				{
+					code.RemoveRange(i - 1, 2);
+					i -= 2;
+				}
+			}
+		}
+
+		private bool IsSideEffectFreePush(int index)
+		{
+			if (code[index].opcode == OpCodes.Ldstr)
+			{
+				return true;
+			}
+			else if (code[index].opcode == OpCodes.Ldnull)
+			{
+				return true;
+			}
+			else if (code[index].opcode == OpCodes.Ldsfld)
+			{
+				// Here we are considering BeforeFieldInit to mean that we really don't care about
+				// when the type is initialized (which is what we mean in the rest of the IKVM code as well)
+				// but it is good to point it out here because strictly speaking we're violating the
+				// BeforeFieldInit contract here by considering dummy loads not to be field accesses.
+				FieldInfo field = code[index].data as FieldInfo;
+				if (field != null && (field.DeclaringType.Attributes & TypeAttributes.BeforeFieldInit) != 0)
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+			else
+			{
+				return false;
 			}
 		}
 
@@ -613,7 +666,7 @@ namespace IKVM.Internal
 						{
 							opcode = OpCodes.Leave_S;
 						}
-						code[i] = new OpCodeWrapper(code[i].type, opcode, code[i].data);
+						code[i] = new OpCodeWrapper(opcode, code[i].data);
 					}
 				}
 			}
@@ -622,13 +675,14 @@ namespace IKVM.Internal
 		internal void DoEmit()
 		{
 			RemoveJumpNext();
+			AnnihilatePops();
 			OptimizeBranchSizes();
 			int ilOffset = 0;
 			for (int i = 0; i < code.Count; i++)
 			{
 				if (code[i].type == CodeType.OpCode)
 				{
-					RealEmitOpCode(ilOffset, code[i].opcode, code[i].data);
+					RealEmitOpCode(code[i].opcode, code[i].data);
 				}
 				else
 				{
@@ -1001,15 +1055,7 @@ namespace IKVM.Internal
 
 		internal void LazyEmitPop()
 		{
-			Expr exp = PeekStack();
-			if (exp == null || exp.HasSideEffect || exp.IsIncomplete)
-			{
-				Emit(OpCodes.Pop);
-			}
-			else
-			{
-				PopStack();
-			}
+			Emit(OpCodes.Pop);
 		}
 
 		internal void LazyEmitLoadClass(TypeWrapper type)
