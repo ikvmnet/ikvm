@@ -61,12 +61,15 @@ namespace IKVM.Internal
 			{
 				return offset;
 			}
+			set
+			{
+				offset = value;
+			}
 		}
 
-		internal void Mark(ILGenerator ilgen, int offset)
+		internal void Mark(ILGenerator ilgen)
 		{
 			ilgen.MarkLabel(label);
-			this.offset = offset;
 		}
 	}
 
@@ -91,12 +94,10 @@ namespace IKVM.Internal
 			this.name = name;
 		}
 
-#if !STATIC_COMPILER
 		internal int __LocalIndex
 		{
-			get { return local.LocalIndex; }
+			get { return local == null ? 0xFFFF : local.LocalIndex; }
 		}
-#endif
 
 		internal void Emit(ILGenerator ilgen, OpCode opcode)
 		{
@@ -118,11 +119,8 @@ namespace IKVM.Internal
 		private static readonly MethodInfo objectToString = Types.Object.GetMethod("ToString", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
 		private static readonly MethodInfo verboseCastFailure = JVM.SafeGetEnvironmentVariable("IKVM_VERBOSE_CAST") == null ? null : ByteCodeHelperMethods.VerboseCastFailure;
 		private ILGenerator ilgen_real;
-#if !STATIC_COMPILER
-		private int offset;
 		private bool inFinally;
 		private Stack<bool> exceptionStack = new Stack<bool>();
-#endif
 		private IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter linenums;
 		private Expr[] stackArray = new Expr[8];
 		private int topOfStack;
@@ -150,9 +148,7 @@ namespace IKVM.Internal
 			BeginFaultBlock,
 			BeginFinallyBlock,
 			EndExceptionBlock,
-#if !STATIC_COMPILER
 			EndExceptionBlockFinally,
-#endif
 		}
 
 		struct OpCodeWrapper
@@ -166,6 +162,132 @@ namespace IKVM.Internal
 				this.type = type;
 				this.opcode = opcode;
 				this.data = data;
+			}
+
+			internal int Size
+			{
+				get
+				{
+					switch (type)
+					{
+						case CodeType.Nop:
+						case CodeType.BeginScope:
+						case CodeType.EndScope:
+						case CodeType.DeclareLocal:
+						case CodeType.LineNumber:
+						case CodeType.Label:
+						case CodeType.BeginExceptionBlock:
+							return 0;
+						case CodeType.SequencePoint:
+							return 1;
+						case CodeType.WriteLine:
+							return 10;
+						case CodeType.ThrowException:
+							return 6;
+						case CodeType.BeginCatchBlock:
+						case CodeType.BeginFaultBlock:
+						case CodeType.BeginFinallyBlock:
+						case CodeType.EndExceptionBlock:
+							return 5;
+						case CodeType.EndExceptionBlockFinally:
+							return 1;
+						case CodeType.OpCode:
+							if (data == null)
+							{
+								return opcode.Size;
+							}
+							else if (data is int)
+							{
+								return opcode.Size + 4;;
+							}
+							else if (data is long)
+							{
+								return opcode.Size + 8;
+							}
+							else if (data is MethodInfo)
+							{
+								return opcode.Size + 4;
+							}
+							else if (data is ConstructorInfo)
+							{
+								return opcode.Size + 4;
+							}
+							else if (data is FieldInfo)
+							{
+								return opcode.Size + 4;
+							}
+							else if (data is sbyte)
+							{
+								return opcode.Size + 1;
+							}
+							else if (data is byte)
+							{
+								return opcode.Size + 1;
+							}
+							else if (data is short)
+							{
+								return opcode.Size + 2;
+							}
+							else if (data is float)
+							{
+								return opcode.Size + 4;
+							}
+							else if (data is double)
+							{
+								return opcode.Size + 8;
+							}
+							else if (data is string)
+							{
+								return opcode.Size + 4;
+							}
+							else if (data is Type)
+							{
+								return opcode.Size + 4;
+							}
+							else if (data is CodeEmitterLocal)
+							{
+								int index = ((CodeEmitterLocal)data).__LocalIndex;
+								if(index < 4 && opcode.Value != OpCodes.Ldloca.Value && opcode.Value != OpCodes.Ldloca_S.Value)
+								{
+									return 1;
+								}
+								else if(index < 256)
+								{
+									return 2;
+								}
+								else
+								{
+									return 4;
+								}
+							}
+							else if (data is CodeEmitterLabel)
+							{
+								switch(opcode.OperandType)
+								{
+									case OperandType.InlineBrTarget:
+										return opcode.Size + 4;
+									case OperandType.ShortInlineBrTarget:
+										return opcode.Size + 1;
+									default:
+										throw new InvalidOperationException();
+								}
+							}
+							else if (data is CodeEmitterLabel[])
+							{
+								return 5 + ((CodeEmitterLabel[])data).Length * 4;
+							}
+							else if (data is CalliWrapper)
+							{
+								return 5;
+							}
+							else
+							{
+								throw new InvalidOperationException();
+							}
+						default:
+							throw new InvalidOperationException();
+					}
+				}
 			}
 		}
 
@@ -218,7 +340,7 @@ namespace IKVM.Internal
 			code.Add(new OpCodeWrapper(CodeType.OpCode, opcode, arg));
 		}
 
-		private void RealEmitPseudoOpCode(CodeType type, object data)
+		private void RealEmitPseudoOpCode(int ilOffset, CodeType type, object data)
 		{
 			switch (type)
 			{
@@ -243,54 +365,33 @@ namespace IKVM.Internal
 					{
 						linenums = new IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter(32);
 					}
-					linenums.AddMapping(GetILOffset(), (int)data);
+					linenums.AddMapping(ilOffset, (int)data);
 					break;
 				case CodeType.Label:
-					((CodeEmitterLabel)data).Mark(ilgen_real, GetILOffset());
+					((CodeEmitterLabel)data).Mark(ilgen_real);
 					break;
 				case CodeType.WriteLine:
-#if !STATIC_COMPILER
-					offset += 10;
-#endif
 					ilgen_real.EmitWriteLine((string)data);
 					break;
 				case CodeType.ThrowException:
-#if !STATIC_COMPILER
-					offset += 6;
-#endif
 					ilgen_real.ThrowException((Type)data);
 					break;
 				case CodeType.BeginExceptionBlock:
 					ilgen_real.BeginExceptionBlock();
 					break;
 				case CodeType.BeginCatchBlock:
-#if !STATIC_COMPILER
-					offset += 5;
-#endif
 					ilgen_real.BeginCatchBlock((Type)data);
 					break;
 				case CodeType.BeginFaultBlock:
-#if !STATIC_COMPILER
-					offset += 5;
-#endif
 					ilgen_real.BeginFaultBlock();
 					break;
 				case CodeType.BeginFinallyBlock:
-#if !STATIC_COMPILER
-					offset += 5;
-#endif
 					ilgen_real.BeginFinallyBlock();
 					break;
-#if !STATIC_COMPILER
 				case CodeType.EndExceptionBlockFinally:
-					offset += 1;
 					ilgen_real.EndExceptionBlock();
 					break;
-#endif
 				case CodeType.EndExceptionBlock:
-#if !STATIC_COMPILER
-					offset += 5;
-#endif
 					ilgen_real.EndExceptionBlock();
 					break;
 				default:
@@ -298,186 +399,73 @@ namespace IKVM.Internal
 			}
 		}
 
-		private void RealEmitOpCode(OpCode opcode, object arg)
+		private void RealEmitOpCode(int ilOffset, OpCode opcode, object arg)
 		{
 			if (arg == null)
 			{
-#if !STATIC_COMPILER
-				offset += opcode.Size;
-#endif
 				ilgen_real.Emit(opcode);
 			}
 			else if (arg is int)
 			{
-#if !STATIC_COMPILER
-				offset += opcode.Size + 4;
-#endif
 				ilgen_real.Emit(opcode, (int)arg);
 			}
 			else if (arg is long)
 			{
-#if !STATIC_COMPILER
-				offset += opcode.Size + 8;
-#endif
 				ilgen_real.Emit(opcode, (long)arg);
 			}
 			else if (arg is MethodInfo)
 			{
-#if !STATIC_COMPILER
-				offset += opcode.Size + 4;
-#endif
 				ilgen_real.Emit(opcode, (MethodInfo)arg);
 			}
 			else if (arg is ConstructorInfo)
 			{
-#if !STATIC_COMPILER
-				offset += opcode.Size + 4;
-#endif
 				ilgen_real.Emit(opcode, (ConstructorInfo)arg);
 			}
 			else if (arg is FieldInfo)
 			{
-#if !STATIC_COMPILER
-				offset += opcode.Size + 4;
-#endif
 				ilgen_real.Emit(opcode, (FieldInfo)arg);
 			}
 			else if (arg is sbyte)
 			{
-#if !STATIC_COMPILER
-				offset += opcode.Size + 1;
-#endif
 				ilgen_real.Emit(opcode, (sbyte)arg);
 			}
 			else if (arg is byte)
 			{
-#if !STATIC_COMPILER
-				offset += opcode.Size + 1;
-#endif
 				ilgen_real.Emit(opcode, (byte)arg);
 			}
 			else if (arg is short)
 			{
-#if !STATIC_COMPILER
-				offset += opcode.Size + 2;
-#endif
 				ilgen_real.Emit(opcode, (short)arg);
 			}
 			else if (arg is float)
 			{
-#if !STATIC_COMPILER
-				offset += opcode.Size + 4;
-#endif
 				ilgen_real.Emit(opcode, (float)arg);
 			}
 			else if (arg is double)
 			{
-#if !STATIC_COMPILER
-				offset += opcode.Size + 8;
-#endif
 				ilgen_real.Emit(opcode, (double)arg);
 			}
 			else if (arg is string)
 			{
-#if !STATIC_COMPILER
-				offset += opcode.Size + 4;
-#endif
 				ilgen_real.Emit(opcode, (string)arg);
 			}
 			else if (arg is Type)
 			{
-#if !STATIC_COMPILER
-				offset += opcode.Size + 4;
-#endif
 				ilgen_real.Emit(opcode, (Type)arg);
 			}
 			else if (arg is CodeEmitterLocal)
 			{
 				CodeEmitterLocal local = (CodeEmitterLocal)arg;
-#if !STATIC_COMPILER
-				int index = local.__LocalIndex;
-				if(index < 4 && opcode.Value != OpCodes.Ldloca.Value && opcode.Value != OpCodes.Ldloca_S.Value)
-				{
-					offset += 1;
-				}
-				else if(index < 256)
-				{
-					offset += 2;
-				}
-				else
-				{
-					offset += 4;
-				}
-#endif
 				local.Emit(ilgen_real, opcode);
 			}
 			else if (arg is CodeEmitterLabel)
 			{
 				CodeEmitterLabel label = (CodeEmitterLabel)arg;
-				int currOffset = GetILOffset();
-				if (label.Offset == -1)
-				{
-				}
-				else if (currOffset - label.Offset < 126)
-				{
-					if (opcode.Value == OpCodes.Brtrue.Value)
-					{
-						opcode = OpCodes.Brtrue_S;
-					}
-					else if (opcode.Value == OpCodes.Brfalse.Value)
-					{
-						opcode = OpCodes.Brfalse_S;
-					}
-					else if (opcode.Value == OpCodes.Br.Value)
-					{
-						opcode = OpCodes.Br_S;
-					}
-					else if (opcode.Value == OpCodes.Beq.Value)
-					{
-						opcode = OpCodes.Beq_S;
-					}
-					else if (opcode.Value == OpCodes.Bne_Un.Value)
-					{
-						opcode = OpCodes.Bne_Un_S;
-					}
-					else if (opcode.Value == OpCodes.Ble.Value)
-					{
-						opcode = OpCodes.Ble_S;
-					}
-					else if (opcode.Value == OpCodes.Blt.Value)
-					{
-						opcode = OpCodes.Blt_S;
-					}
-					else if (opcode.Value == OpCodes.Bge.Value)
-					{
-						opcode = OpCodes.Bge_S;
-					}
-					else if (opcode.Value == OpCodes.Bgt.Value)
-					{
-						opcode = OpCodes.Bgt_S;
-					}
-				}
-#if !STATIC_COMPILER
-				switch(opcode.OperandType)
-				{
-					case OperandType.InlineBrTarget:
-						offset += opcode.Size + 4;
-						break;
-					case OperandType.ShortInlineBrTarget:
-						offset += opcode.Size + 1;
-						break;
-					default:
-						throw new NotImplementedException();
-				}
-#endif
 				ilgen_real.Emit(opcode, label.Label);
 			}
 			else if (arg is CodeEmitterLabel[])
 			{
 				CodeEmitterLabel[] labels = (CodeEmitterLabel[])arg;
-#if !STATIC_COMPILER
-				offset += 5 + labels.Length * 4;
-#endif
 				Label[] real = new Label[labels.Length];
 				for (int i = 0; i < labels.Length; i++)
 				{
@@ -489,9 +477,6 @@ namespace IKVM.Internal
 			{
 				CalliWrapper args = (CalliWrapper)arg;
 				ilgen_real.EmitCalli(opcode, args.unmanagedCallConv, args.returnType, args.parameterTypes);
-#if !STATIC_COMPILER
-				offset += 5;
-#endif
 			}
 			else
 			{
@@ -549,19 +534,111 @@ namespace IKVM.Internal
 			}
 		}
 
+		private void OptimizeBranchSizes()
+		{
+			int offset = 0;
+			for (int i = 0; i < code.Count; i++)
+			{
+				if (code[i].type == CodeType.Label)
+				{
+					((CodeEmitterLabel)code[i].data).Offset = offset;
+				}
+				offset += code[i].Size;
+			}
+			offset = 0;
+			for (int i = 0; i < code.Count; i++)
+			{
+				int prevOffset = offset;
+				offset += code[i].Size;
+				CodeEmitterLabel label = code[i].data as CodeEmitterLabel;
+				if (label != null && code[i].opcode.OperandType == OperandType.InlineBrTarget)
+				{
+					int diff = label.Offset - (prevOffset + code[i].opcode.Size + 1);
+					if (-128 <= diff && diff <= 127)
+					{
+						OpCode opcode = code[i].opcode;
+						if (opcode == OpCodes.Brtrue)
+						{
+							opcode = OpCodes.Brtrue_S;
+						}
+						else if (opcode == OpCodes.Brfalse)
+						{
+							opcode = OpCodes.Brfalse_S;
+						}
+						else if (opcode == OpCodes.Br)
+						{
+							opcode = OpCodes.Br_S;
+						}
+						else if (opcode == OpCodes.Beq)
+						{
+							opcode = OpCodes.Beq_S;
+						}
+						else if (opcode == OpCodes.Bne_Un)
+						{
+							opcode = OpCodes.Bne_Un_S;
+						}
+						else if (opcode == OpCodes.Ble)
+						{
+							opcode = OpCodes.Ble_S;
+						}
+						else if (opcode == OpCodes.Ble_Un)
+						{
+							opcode = OpCodes.Ble_Un_S;
+						}
+						else if (opcode == OpCodes.Blt)
+						{
+							opcode = OpCodes.Blt_S;
+						}
+						else if (opcode == OpCodes.Blt_Un)
+						{
+							opcode = OpCodes.Blt_Un_S;
+						}
+						else if (opcode == OpCodes.Bge)
+						{
+							opcode = OpCodes.Bge_S;
+						}
+						else if (opcode == OpCodes.Bge_Un)
+						{
+							opcode = OpCodes.Bge_Un_S;
+						}
+						else if (opcode == OpCodes.Bgt)
+						{
+							opcode = OpCodes.Bgt_S;
+						}
+						else if (opcode == OpCodes.Bgt_Un)
+						{
+							opcode = OpCodes.Bgt_Un_S;
+						}
+						else if (opcode == OpCodes.Leave)
+						{
+							opcode = OpCodes.Leave_S;
+						}
+						code[i] = new OpCodeWrapper(code[i].type, opcode, code[i].data);
+					}
+				}
+			}
+		}
+
 		internal void DoEmit()
 		{
 			RemoveJumpNext();
+			OptimizeBranchSizes();
+			int ilOffset = 0;
 			for (int i = 0; i < code.Count; i++)
 			{
 				if (code[i].type == CodeType.OpCode)
 				{
-					RealEmitOpCode(code[i].opcode, code[i].data);
+					RealEmitOpCode(ilOffset, code[i].opcode, code[i].data);
 				}
 				else
 				{
-					RealEmitPseudoOpCode(code[i].type, code[i].data);
+					RealEmitPseudoOpCode(ilOffset, code[i].type, code[i].data);
 				}
+#if STATIC_COMPILER || NET_4_0
+				ilOffset = ilgen_real.ILOffset;
+#else
+				ilOffset += code[i].Size;
+#endif
 			}
 		}
 
@@ -622,16 +699,6 @@ namespace IKVM.Internal
 			}
 		}
 
-		private int GetILOffset()
-		{
-			LazyGen();
-#if STATIC_COMPILER
-			return ilgen_real.ILOffset;
-#else
-			return offset;
-#endif
-		}
-
 		internal void BeginCatchBlock(Type exceptionType)
 		{
 			LazyGen();
@@ -641,28 +708,22 @@ namespace IKVM.Internal
 		internal void BeginExceptionBlock()
 		{
 			LazyGen();
-#if !STATIC_COMPILER
 			exceptionStack.Push(inFinally);
 			inFinally = false;
-#endif
 			EmitPseudoOpCode(CodeType.BeginExceptionBlock, null);
 		}
 
 		internal void BeginFaultBlock()
 		{
 			LazyGen();
-#if !STATIC_COMPILER
 			inFinally = true;
-#endif
 			EmitPseudoOpCode(CodeType.BeginFaultBlock, null);
 		}
 
 		internal void BeginFinallyBlock()
 		{
 			LazyGen();
-#if !STATIC_COMPILER
 			inFinally = true;
-#endif
 			EmitPseudoOpCode(CodeType.BeginFinallyBlock, null);
 		}
 
@@ -809,9 +870,6 @@ namespace IKVM.Internal
 		internal void EndExceptionBlock()
 		{
 			LazyGen();
-#if STATIC_COMPILER
-			EmitPseudoOpCode(CodeType.EndExceptionBlock, null);
-#else
 			if(inFinally)
 			{
 				EmitPseudoOpCode(CodeType.EndExceptionBlockFinally, null);
@@ -821,7 +879,6 @@ namespace IKVM.Internal
 				EmitPseudoOpCode(CodeType.EndExceptionBlock, null);
 			}
 			inFinally = exceptionStack.Pop();
-#endif
 		}
 
 		internal void EndScope()
