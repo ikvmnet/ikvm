@@ -515,7 +515,7 @@ namespace IKVM.Reflection.Emit
 				}
 				if (opc.OperandType == OperandType.ShortInlineBrTarget)
 				{
-					code.Write((byte)(labels[label.Index] - (code.Position + 1)));
+					WriteByteBranchOffset(labels[label.Index] - (code.Position + 1));
 				}
 				else
 				{
@@ -539,6 +539,15 @@ namespace IKVM.Reflection.Emit
 					code.Write(4);
 				}
 			}
+		}
+
+		private void WriteByteBranchOffset(int offset)
+		{
+			if (offset < -128 || offset > 127)
+			{
+				throw new NotSupportedException("Branch offset of " + offset + " does not fit in one-byte branch target at position " + code.Position);
+			}
+			code.Write((byte)offset);
 		}
 
 		public void Emit(OpCode opc, Label[] labels)
@@ -942,7 +951,7 @@ namespace IKVM.Reflection.Emit
 					int branchOffset = labels[fixup.label] - (code.Position + size);
 					if (size == 1)
 					{
-						code.Write((byte)branchOffset);
+						WriteByteBranchOffset(branchOffset);
 					}
 					else
 					{
