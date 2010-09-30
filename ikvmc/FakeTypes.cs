@@ -90,6 +90,7 @@ namespace IKVM.Internal
 			ilgen.Emit(OpCodes.Ldarg_2);
 			enumTypeWrapper.GetMethodWrapper("<init>", "(Ljava.lang.String;I)V", false).EmitCall(ilgen);
 			ilgen.Emit(OpCodes.Ret);
+			ilgen.DoEmit();
 			genericEnumEnumType = tb.CreateType();
 		}
 

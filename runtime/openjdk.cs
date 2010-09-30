@@ -958,6 +958,10 @@ namespace IKVM.NativeCode.java
 						ilgenPrimGetter.Emit(OpCodes.Ret);
 						ilgenObjSetter.Emit(OpCodes.Ret);
 						ilgenPrimSetter.Emit(OpCodes.Ret);
+						ilgenObjGetter.DoEmit();
+						ilgenPrimGetter.DoEmit();
+						ilgenObjSetter.DoEmit();
+						ilgenPrimSetter.DoEmit();
 						objFieldGetter = (ObjFieldGetterSetter)dmObjGetter.CreateDelegate(typeof(ObjFieldGetterSetter));
 						primFieldGetter = (PrimFieldGetterSetter)dmPrimGetter.CreateDelegate(typeof(PrimFieldGetterSetter));
 						objFieldSetter = (ObjFieldGetterSetter)dmObjSetter.CreateDelegate(typeof(ObjFieldGetterSetter));
@@ -6075,6 +6079,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 				ilgen.Emit(OpCodes.Ldloc, ret);
 				ilgen.Emit(OpCodes.Ret);
+				ilgen.DoEmit();
 				invoker = (Invoker)dm.CreateDelegate(typeof(Invoker));
 				if ((mw.IsStatic || mw.DeclaringType.IsInterface) && mw.DeclaringType.HasStaticInitializer)
 				{
@@ -6381,6 +6386,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 				ilgen.Emit(OpCodes.Ldloc, ret);
 				ilgen.Emit(OpCodes.Ret);
+				ilgen.DoEmit();
 				invoker = (Invoker)dm.CreateDelegate(typeof(Invoker));
 			}
 
@@ -6434,6 +6440,7 @@ namespace IKVM.NativeCode.sun.reflect
 				ilgen.Emit(OpCodes.Dup);
 				constructor.EmitCall(ilgen);
 				ilgen.Emit(OpCodes.Ret);
+				ilgen.DoEmit();
 				invoker = (InvokeCtor)dm.CreateDelegate(typeof(InvokeCtor));
 			}
 
@@ -7491,6 +7498,7 @@ namespace IKVM.NativeCode.sun.reflect
 					ilgen.Emit(OpCodes.Ldloc, local);
 				}
 				ilgen.Emit(OpCodes.Ret);
+				ilgen.DoEmit();
 				return dm.CreateDelegate(delegateType, this);
 			}
 
@@ -7543,6 +7551,7 @@ namespace IKVM.NativeCode.sun.reflect
 					ilgen.EndExceptionBlock();
 				}
 				ilgen.Emit(OpCodes.Ret);
+				ilgen.DoEmit();
 				return dm.CreateDelegate(delegateType, this);
 			}
 

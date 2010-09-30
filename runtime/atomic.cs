@@ -96,6 +96,7 @@ static class AtomicReferenceFieldUpdaterEmitter
 			basector.Link();
 			basector.EmitCall(ctorilgen);
 			ctorilgen.Emit(OpCodes.Ret);
+			ctorilgen.DoEmit();
 			context.RegisterPostFinishProc(delegate
 			{
 				arfuTypeWrapper.Finish();

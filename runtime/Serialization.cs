@@ -176,6 +176,7 @@ namespace IKVM.Internal
 			mw.Link();
 			mw.EmitCall(ilgen);
 			ilgen.Emit(OpCodes.Ret);
+			ilgen.DoEmit();
 		}
 
 		private static ConstructorInfo AddConstructor(TypeBuilder tb, MethodWrapper defaultConstructor, ConstructorInfo serializationConstructor, bool callReadObject)
@@ -205,6 +206,7 @@ namespace IKVM.Internal
 				mw.EmitCall(ilgen);
 			}
 			ilgen.Emit(OpCodes.Ret);
+			ilgen.DoEmit();
 			return ctor;
 		}
 
@@ -225,6 +227,7 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Ldarg_0);
 				mw.EmitCall(ilgen);
 				ilgen.Emit(OpCodes.Ret);
+				ilgen.DoEmit();
 			}
 		}
 
@@ -240,6 +243,7 @@ namespace IKVM.Internal
 			CodeEmitter ilgen = CodeEmitter.Create(getRealObject);
 			ilgen.Emit(OpCodes.Ldarg_0);
 			ilgen.Emit(OpCodes.Ret);
+			ilgen.DoEmit();
 		}
 	}
 }

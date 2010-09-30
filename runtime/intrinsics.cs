@@ -541,6 +541,7 @@ namespace IKVM.Internal
 			basector.Link();
 			basector.EmitCall(ctorilgen);
 			ctorilgen.Emit(OpCodes.Ret);
+			ctorilgen.DoEmit();
 			context.RegisterPostFinishProc(delegate
 			{
 				threadLocal.Finish();

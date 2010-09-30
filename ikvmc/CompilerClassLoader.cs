@@ -504,6 +504,7 @@ namespace IKVM.Internal
 			ilgen.EndExceptionBlock();
 			ilgen.Emit(OpCodes.Ldloc, rc);
 			ilgen.Emit(OpCodes.Ret);
+			ilgen.DoEmit();
 			assemblyBuilder.SetEntryPoint(mainStub, target);
 		}
 
@@ -1066,6 +1067,7 @@ namespace IKVM.Internal
 							}
 							ilgen.Emit(OpCodes.Ret);
 						}
+						ilgen.DoEmit();
 						if(this.DeclaringType.GetClassLoader().EmitStackTraceInfo)
 						{
 							ilgen.EmitLineNumberTable(cbCore);
@@ -1103,6 +1105,7 @@ namespace IKVM.Internal
 							ilgen.Emit(OpCodes.Newobj, baseCon);
 							ilgen.Emit(OpCodes.Ret);
 						}
+						ilgen.DoEmit();
 						if(this.DeclaringType.GetClassLoader().EmitStackTraceInfo)
 						{
 							ilgen.EmitLineNumberTable(mbHelper);
@@ -1215,6 +1218,7 @@ namespace IKVM.Internal
 								ilgen = CodeEmitter.Create(typeWrapper.helperTypeBuilder.DefineConstructor(MethodAttributes.Private, CallingConventions.Standard, Type.EmptyTypes));
 								ilgen.Emit(OpCodes.Ldnull);
 								ilgen.Emit(OpCodes.Throw);
+								ilgen.DoEmit();
 								AttributeHelper.HideFromJava(typeWrapper.helperTypeBuilder);
 							}
 							helper = typeWrapper.helperTypeBuilder.DefineMethod(m.Name, MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static, typeWrapper.GetClassLoader().RetTypeWrapperFromSig(m.Sig).TypeAsSignatureType, argTypes);
@@ -1252,6 +1256,7 @@ namespace IKVM.Internal
 							}
 							ilgen.Emit(OpCodes.Callvirt, interfaceMethod);
 							ilgen.Emit(OpCodes.Ret);
+							ilgen.DoEmit();
 						}
 						mbHelper = helper;
 						return interfaceMethod;
@@ -1465,6 +1470,7 @@ namespace IKVM.Internal
 							this.ReturnType.EmitConvStackTypeToSignatureType(ilgen, null);
 							ilgen.Emit(OpCodes.Ret);
 						}
+						ilgen.DoEmit();
 						if(this.DeclaringType.GetClassLoader().EmitStackTraceInfo)
 						{
 							ilgen.EmitLineNumberTable(mbCore);
@@ -1590,6 +1596,7 @@ namespace IKVM.Internal
 							this.ReturnType.EmitConvStackTypeToSignatureType(ilgen, null);
 							ilgen.Emit(OpCodes.Ret);
 						}
+						ilgen.DoEmit();
 						if(this.DeclaringType.GetClassLoader().EmitStackTraceInfo)
 						{
 							ilgen.EmitLineNumberTable(mbHelper);
@@ -1634,6 +1641,7 @@ namespace IKVM.Internal
 							ilgen.Emit(OpCodes.Call, baseMethod);
 							ilgen.Emit(OpCodes.Ret);
 						}
+						ilgen.DoEmit();
 					}
 				}
 
@@ -1833,6 +1841,7 @@ namespace IKVM.Internal
 					CodeEmitter ilgen = CodeEmitter.Create(cb);
 					// TODO emit code to make sure super class is initialized
 					classDef.Clinit.body.Emit(classLoader, ilgen);
+					ilgen.DoEmit();
 				}
 
 				// FXBUG because the AppDomain.TypeResolve event doesn't work correctly for inner classes,
@@ -1892,6 +1901,7 @@ namespace IKVM.Internal
 								ilgen.Emit(OpCodes.Call, mi);
 							}
 							ilgen.Emit(OpCodes.Ret);
+							ilgen.DoEmit();
 							methods[key] = mb;
 						}
 					}
@@ -1995,6 +2005,8 @@ namespace IKVM.Internal
 				ilgen.MarkLabel(retFalse);
 				ilgen.Emit(OpCodes.Ldc_I4_0);
 				ilgen.Emit(OpCodes.Ret);
+
+				ilgen.DoEmit();
 			}
 
 			private void CreateShadowCheckCast(ICollection<TypeWrapper> remappedTypes)
@@ -2048,6 +2060,8 @@ namespace IKVM.Internal
 					ilgen.MarkLabel(fail);
 					ilgen.ThrowException(JVM.Import(typeof(InvalidCastException)));
 				}
+
+				ilgen.DoEmit();
 			}
 
 			internal override MethodBase LinkMethod(MethodWrapper mw)

@@ -89,6 +89,7 @@ namespace IKVM.Internal
 			mw.EmitNewobj(ilgen);
 			ilgen.Emit(OpCodes.Stsfld, classLiteralField);
 			ilgen.Emit(OpCodes.Ret);
+			ilgen.DoEmit();
 			classLiteralType = tb.CreateType();
 		}
 #endif

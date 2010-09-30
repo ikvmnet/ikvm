@@ -2686,6 +2686,7 @@ sealed class Compiler
 			}
 			method.EmitCall(ilgen);
 			ilgen.Emit(OpCodes.Ret);
+			ilgen.DoEmit();
 			invokespecialstubcache[key] = stub;
 			mi = stub;
 		}
