@@ -104,6 +104,11 @@ namespace IKVM.Internal
 			return ClassFile.GetMethodref(Code[OpcodeIndex + offset].Arg1);
 		}
 
+		internal TypeWrapper GetClassLiteral(int offset)
+		{
+			return ClassFile.GetConstantPoolClassType(Code[OpcodeIndex + offset].Arg1);
+		}
+
 		internal void PatchOpCode(int offset, NormalizedByteCode opc)
 		{
 			Code[OpcodeIndex + offset].PatchOpCode(opc);
@@ -226,17 +231,18 @@ namespace IKVM.Internal
 
 		private static bool Class_desiredAssertionStatus(EmitIntrinsicContext eic)
 		{
-			TypeWrapper classLiteral = eic.Emitter.PeekLazyClassLiteral();
-			if (classLiteral != null && classLiteral.GetClassLoader().RemoveAsserts)
+			if (eic.MatchRange(-1, 2)
+				&& eic.Match(-1, NormalizedByteCode.__ldc))
 			{
-				eic.Emitter.LazyEmitPop();
-				eic.Emitter.LazyEmitLdc_I4(0);
-				return true;
+				TypeWrapper classLiteral = eic.GetClassLiteral(-1);
+				if (!classLiteral.IsUnloadable && classLiteral.GetClassLoader().RemoveAsserts)
+				{
+					eic.Emitter.LazyEmitPop();
+					eic.Emitter.LazyEmitLdc_I4(0);
+					return true;
+				}
 			}
-			else
-			{
-				return false;
-			}
+			return false;
 		}
 
 		private static bool IsSafeForGetClassOptimization(TypeWrapper tw)
@@ -336,16 +342,17 @@ namespace IKVM.Internal
 
 		private static bool String_toCharArray(EmitIntrinsicContext eic)
 		{
-			string str = eic.Emitter.PopLazyLdstr();
-			if (str != null)
+			if (eic.MatchRange(-1, 2)
+				&& eic.Match(-1, NormalizedByteCode.__ldc))
 			{
+				string str = eic.ClassFile.GetConstantPoolConstantString(eic.Code[eic.OpcodeIndex - 1].Arg1);
 				// arbitrary length for "big" strings
 				if (str.Length > 128)
 				{
+					eic.Emitter.Emit(OpCodes.Pop);
 					EmitLoadCharArrayLiteral(eic.Emitter, str, eic.Caller.DeclaringType);
 					return true;
 				}
-				eic.Emitter.Emit(OpCodes.Ldstr, str);
 			}
 			return false;
 		}
@@ -463,20 +470,24 @@ namespace IKVM.Internal
 
 		private static bool Util_getInstanceTypeFromClass(EmitIntrinsicContext eic)
 		{
-			TypeWrapper tw = eic.Emitter.PeekLazyClassLiteral();
-			if (tw != null)
+			if (eic.MatchRange(-1, 2)
+				&& eic.Match(-1, NormalizedByteCode.__ldc))
 			{
-				eic.Emitter.LazyEmitPop();
-				if (tw.IsRemapped && tw.IsFinal)
+				TypeWrapper tw = eic.GetClassLiteral(-1);
+				if (!tw.IsUnloadable)
 				{
-					eic.Emitter.Emit(OpCodes.Ldtoken, tw.TypeAsTBD);
+					eic.Emitter.LazyEmitPop();
+					if (tw.IsRemapped && tw.IsFinal)
+					{
+						eic.Emitter.Emit(OpCodes.Ldtoken, tw.TypeAsTBD);
+					}
+					else
+					{
+						eic.Emitter.Emit(OpCodes.Ldtoken, tw.TypeAsBaseType);
+					}
+					eic.Emitter.Emit(OpCodes.Call, Compiler.getTypeFromHandleMethod);
+					return true;
 				}
-				else
-				{
-					eic.Emitter.Emit(OpCodes.Ldtoken, tw.TypeAsBaseType);
-				}
-				eic.Emitter.Emit(OpCodes.Call, Compiler.getTypeFromHandleMethod);
-				return true;
 			}
 			return false;
 		}
