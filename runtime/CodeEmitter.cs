@@ -159,7 +159,7 @@ namespace IKVM.Internal
 		{
 			internal readonly CodeType pseudo;
 			internal readonly OpCode opcode;
-			internal readonly object data;
+			private readonly object data;
 
 			internal OpCodeWrapper(CodeType pseudo, object data)
 			{
@@ -175,14 +175,29 @@ namespace IKVM.Internal
 				this.data = data;
 			}
 
+			internal bool HasLabel
+			{
+				get { return data is CodeEmitterLabel; }
+			}
+
 			internal CodeEmitterLabel Label
 			{
 				get { return (CodeEmitterLabel)data; }
 			}
 
+			internal bool MatchLabel(OpCodeWrapper other)
+			{
+				return data == other.data;
+			}
+
 			internal CodeEmitterLocal Local
 			{
 				get { return (CodeEmitterLocal)data; }
+			}
+
+			internal bool MatchLocal(OpCodeWrapper other)
+			{
+				return data == other.data;
 			}
 
 			internal int ValueInt32
@@ -198,6 +213,11 @@ namespace IKVM.Internal
 			internal Type Type
 			{
 				get { return (Type)data; }
+			}
+
+			internal FieldInfo FieldInfo
+			{
+				get { return (FieldInfo)data; }
 			}
 
 			internal int Size
@@ -324,6 +344,18 @@ namespace IKVM.Internal
 						default:
 							throw new InvalidOperationException();
 					}
+				}
+			}
+
+			internal void RealEmit(int ilOffset, CodeEmitter codeEmitter)
+			{
+				if (pseudo == CodeType.OpCode)
+				{
+					codeEmitter.RealEmitOpCode(opcode, data);
+				}
+				else
+				{
+					codeEmitter.RealEmitPseudoOpCode(ilOffset, pseudo, data);
 				}
 			}
 		}
@@ -528,9 +560,8 @@ namespace IKVM.Internal
 			for (int i = 1; i < code.Count; i++)
 			{
 				if (code[i].pseudo == CodeType.Label
-					&& code[i - 1].pseudo == CodeType.OpCode
 					&& code[i - 1].opcode == OpCodes.Br
-					&& code[i - 1].data == code[i].data)
+					&& code[i - 1].MatchLabel(code[i]))
 				{
 					code.RemoveAt(i - 1);
 					i--;
@@ -567,7 +598,7 @@ namespace IKVM.Internal
 				// when the type is initialized (which is what we mean in the rest of the IKVM code as well)
 				// but it is good to point it out here because strictly speaking we're violating the
 				// BeforeFieldInit contract here by considering dummy loads not to be field accesses.
-				FieldInfo field = code[index].data as FieldInfo;
+				FieldInfo field = code[index].FieldInfo;
 				if (field != null && (field.DeclaringType.Attributes & TypeAttributes.BeforeFieldInit) != 0)
 				{
 					return true;
@@ -614,7 +645,7 @@ namespace IKVM.Internal
 			{
 				if (code[i].pseudo == CodeType.Label)
 				{
-					((CodeEmitterLabel)code[i].data).Offset = offset;
+					code[i].Label.Offset = offset;
 				}
 				offset += code[i].Size;
 			}
@@ -623,9 +654,9 @@ namespace IKVM.Internal
 			{
 				int prevOffset = offset;
 				offset += code[i].Size;
-				CodeEmitterLabel label = code[i].data as CodeEmitterLabel;
-				if (label != null && code[i].opcode.OperandType == OperandType.InlineBrTarget)
+				if (code[i].HasLabel && code[i].opcode.OperandType == OperandType.InlineBrTarget)
 				{
+					CodeEmitterLabel label = code[i].Label;
 					int diff = label.Offset - (prevOffset + code[i].opcode.Size + 1);
 					if (-128 <= diff && diff <= 127)
 					{
@@ -686,7 +717,7 @@ namespace IKVM.Internal
 						{
 							opcode = OpCodes.Leave_S;
 						}
-						code[i] = new OpCodeWrapper(opcode, code[i].data);
+						code[i] = new OpCodeWrapper(opcode, label);
 					}
 				}
 			}
@@ -704,7 +735,7 @@ namespace IKVM.Internal
 					code.RemoveRange(i + 1, 2);
 				}
 				else if (code[i].opcode == OpCodes.Ldelem_I1
-					&& code[i + 1].opcode == OpCodes.Ldc_I4 && (int)code[i + 1].data == 255
+					&& code[i + 1].opcode == OpCodes.Ldc_I4 && code[i + 1].ValueInt32 == 255
 					&& code[i + 2].opcode == OpCodes.And)
 				{
 					code[i] = new OpCodeWrapper(OpCodes.Ldelem_U1, null);
@@ -712,7 +743,7 @@ namespace IKVM.Internal
 				}
 				else if (code[i].opcode == OpCodes.Ldelem_I1
 					&& code[i + 1].opcode == OpCodes.Conv_I8
-					&& code[i + 2].opcode == OpCodes.Ldc_I8 && (long)code[i + 2].data == 255
+					&& code[i + 2].opcode == OpCodes.Ldc_I8 && code[i + 2].ValueInt64 == 255
 					&& code[i + 3].opcode == OpCodes.And)
 				{
 					code[i] = new OpCodeWrapper(OpCodes.Ldelem_U1, null);
@@ -722,7 +753,7 @@ namespace IKVM.Internal
 					&& code[i + 1].opcode == OpCodes.Ldc_I4
 					&& code[i + 2].opcode == OpCodes.And)
 				{
-					code[i] = new OpCodeWrapper(OpCodes.Ldc_I4, (int)code[i].data & (int)code[i + 1].data);
+					code[i] = new OpCodeWrapper(OpCodes.Ldc_I4, code[i].ValueInt32 & code[i + 1].ValueInt32);
 					code.RemoveRange(i + 1, 2);
 				}
 				else if (MatchCompare(i, OpCodes.Cgt, OpCodes.Clt_Un, Types.Double)		// dcmpl
@@ -817,54 +848,54 @@ namespace IKVM.Internal
 
 		private bool MatchCompare(int index, OpCode cmp1, OpCode cmp2, Type type)
 		{
-			return code[index].opcode == OpCodes.Stloc && ((CodeEmitterLocal)code[index].data).LocalType == type
-				&& code[index + 1].opcode == OpCodes.Stloc && ((CodeEmitterLocal)code[index + 1].data).LocalType == type
-				&& code[index + 2].opcode == OpCodes.Ldloc && code[index + 2].data == code[index + 1].data
-				&& code[index + 3].opcode == OpCodes.Ldloc && code[index + 3].data == code[index].data
+			return code[index].opcode == OpCodes.Stloc && code[index].Local.LocalType == type
+				&& code[index + 1].opcode == OpCodes.Stloc && code[index + 1].Local.LocalType == type
+				&& code[index + 2].opcode == OpCodes.Ldloc && code[index + 2].MatchLocal(code[index + 1])
+				&& code[index + 3].opcode == OpCodes.Ldloc && code[index + 3].MatchLocal(code[index])
 				&& code[index + 4].opcode == cmp1
-				&& code[index + 5].opcode == OpCodes.Ldloc && code[index + 5].data == code[index + 1].data
-				&& code[index + 6].opcode == OpCodes.Ldloc && code[index + 6].data == code[index].data
+				&& code[index + 5].opcode == OpCodes.Ldloc && code[index + 5].MatchLocal(code[index + 1])
+				&& code[index + 6].opcode == OpCodes.Ldloc && code[index + 6].MatchLocal(code[index])
 				&& code[index + 7].opcode == cmp2
 				&& code[index + 8].opcode == OpCodes.Sub
 				&& code[index + 9].pseudo == CodeType.ReleaseTempLocal && code[index + 9].Local == code[index].Local
 				&& code[index + 10].pseudo == CodeType.ReleaseTempLocal && code[index + 10].Local == code[index + 1].Local
-				&& (code[index + 11].opcode.FlowControl == FlowControl.Cond_Branch ||
+				&& ((code[index + 11].opcode.FlowControl == FlowControl.Cond_Branch && code[index + 11].HasLabel) ||
 					(code[index + 11].opcode == OpCodes.Ldc_I4_0
-					&& code[index + 12].opcode.FlowControl == FlowControl.Cond_Branch));
+					&& (code[index + 12].opcode.FlowControl == FlowControl.Cond_Branch && code[index + 12].HasLabel)));
 		}
 
 		private void PatchCompare(int index, OpCode ble, OpCode blt, OpCode bge, OpCode bgt)
 		{
 			if (code[index + 11].opcode == OpCodes.Brtrue)
 			{
-				code[index] = new OpCodeWrapper(OpCodes.Bne_Un, code[index + 11].data);
+				code[index] = new OpCodeWrapper(OpCodes.Bne_Un, code[index + 11].Label);
 				code.RemoveRange(index + 1, 11);
 			}
 			else if (code[index + 11].opcode == OpCodes.Brfalse)
 			{
-				code[index] = new OpCodeWrapper(OpCodes.Beq, code[index + 11].data);
+				code[index] = new OpCodeWrapper(OpCodes.Beq, code[index + 11].Label);
 				code.RemoveRange(index + 1, 11);
 			}
 			else if (code[index + 11].opcode == OpCodes.Ldc_I4_0)
 			{
 				if (code[index + 12].opcode == OpCodes.Ble)
 				{
-					code[index] = new OpCodeWrapper(ble, code[index + 12].data);
+					code[index] = new OpCodeWrapper(ble, code[index + 12].Label);
 					code.RemoveRange(index + 1, 12);
 				}
 				else if (code[index + 12].opcode == OpCodes.Blt)
 				{
-					code[index] = new OpCodeWrapper(blt, code[index + 12].data);
+					code[index] = new OpCodeWrapper(blt, code[index + 12].Label);
 					code.RemoveRange(index + 1, 12);
 				}
 				else if (code[index + 12].opcode == OpCodes.Bge)
 				{
-					code[index] = new OpCodeWrapper(bge, code[index + 12].data);
+					code[index] = new OpCodeWrapper(bge, code[index + 12].Label);
 					code.RemoveRange(index + 1, 12);
 				}
 				else if (code[index + 12].opcode == OpCodes.Bgt)
 				{
-					code[index] = new OpCodeWrapper(bgt, code[index + 12].data);
+					code[index] = new OpCodeWrapper(bgt, code[index + 12].Label);
 					code.RemoveRange(index + 1, 12);
 				}
 			}
@@ -876,7 +907,7 @@ namespace IKVM.Internal
 			{
 				if (code[i].opcode == OpCodes.Ldc_I4)
 				{
-					code[i] = OptimizeLdcI4((int)code[i].data);
+					code[i] = OptimizeLdcI4(code[i].ValueInt32);
 				}
 				else if (code[i].opcode == OpCodes.Ldc_I8)
 				{
@@ -923,7 +954,7 @@ namespace IKVM.Internal
 
 		private void OptimizeLdcI8(int index)
 		{
-			long value = (long)code[index].data;
+			long value = code[index].ValueInt64;
 			OpCode opc = OpCodes.Nop;
 			switch (value)
 			{
@@ -996,14 +1027,7 @@ namespace IKVM.Internal
 			int ilOffset = 0;
 			for (int i = 0; i < code.Count; i++)
 			{
-				if (code[i].pseudo == CodeType.OpCode)
-				{
-					RealEmitOpCode(code[i].opcode, code[i].data);
-				}
-				else
-				{
-					RealEmitPseudoOpCode(ilOffset, code[i].pseudo, code[i].data);
-				}
+				code[i].RealEmit(ilOffset, this);
 #if STATIC_COMPILER || NET_4_0
 				ilOffset = ilgen_real.ILOffset;
 #else
