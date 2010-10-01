@@ -2790,14 +2790,14 @@ namespace IKVM.Internal
 		{
 			Debug.Assert(this.IsNonPrimitiveValueType);
 
-			ilgen.LazyEmitUnboxSpecial(this.TypeAsTBD);
+			ilgen.EmitUnboxSpecial(this.TypeAsTBD);
 		}
 
 		internal void EmitBox(CodeEmitter ilgen)
 		{
 			Debug.Assert(this.IsNonPrimitiveValueType);
 
-			ilgen.LazyEmitBox(this.TypeAsTBD);
+			ilgen.Emit(OpCodes.Box, this.TypeAsTBD);
 		}
 
 		internal void EmitConvSignatureTypeToStackType(CodeEmitter ilgen)
@@ -2917,7 +2917,7 @@ namespace IKVM.Internal
 			}
 			else
 			{
-				ilgen.LazyEmit_instanceof(TypeAsTBD);
+				ilgen.Emit_instanceof(TypeAsTBD);
 			}
 		}
 #endif // !STUB_GENERATOR

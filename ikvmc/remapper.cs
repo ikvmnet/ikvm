@@ -270,7 +270,7 @@ namespace IKVM.Internal.MapXml
 	{
 		internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
 		{
-			ilgen.LazyEmitPop();
+			ilgen.Emit(OpCodes.Pop);
 		}
 	}
 

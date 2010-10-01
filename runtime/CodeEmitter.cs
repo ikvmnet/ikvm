@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2004, 2005, 2006, 2008, 2009 Jeroen Frijters
+  Copyright (C) 2002-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1337,32 +1337,7 @@ namespace IKVM.Internal
 			MarkLabel(ok);
 		}
 
-		internal void LazyEmitPop()
-		{
-			Emit(OpCodes.Pop);
-		}
-
-		internal void LazyEmitLoadClass(TypeWrapper type)
-		{
-			type.EmitClassLiteral(this);
-		}
-
-		internal void LazyEmitBox(Type type)
-		{
-			Emit(OpCodes.Box, type);
-		}
-
-		internal void LazyEmitUnbox(Type type)
-		{
-			Emit(OpCodes.Unbox, type);
-		}
-
-		internal void LazyEmitLdobj(Type type)
-		{
-			Emit(OpCodes.Ldobj, type);
-		}
-
-		internal void LazyEmitUnboxSpecial(Type type)
+		internal void EmitUnboxSpecial(Type type)
 		{
 			// NOTE if the reference is null, we treat it as a default instance of the value type.
 			Emit(OpCodes.Dup);
@@ -1382,27 +1357,14 @@ namespace IKVM.Internal
 			MarkLabel(label2);
 		}
 
-		internal void LazyEmitLdnull()
-		{
-			Emit(OpCodes.Ldnull);
-		}
-
-		internal void LazyEmitLdc_I4(int i)
+		// the purpose of this method is to avoid calling a wrong overload of Emit()
+		// (e.g. when passing a byte or short)
+		internal void Emit_Ldc_I4(int i)
 		{
 			Emit(OpCodes.Ldc_I4, i);
 		}
 
-		internal void LazyEmitLdc_I8(long l)
-		{
-			Emit(OpCodes.Ldc_I8, l);
-		}
-
-		internal void LazyEmitLdstr(string str)
-		{
-			Emit(OpCodes.Ldstr, str);
-		}
-
-		internal void LazyEmit_idiv()
+		internal void Emit_idiv()
 		{
 			// we need to special case dividing by -1, because the CLR div instruction
 			// throws an OverflowException when dividing Int32.MinValue by -1, and
@@ -1420,7 +1382,7 @@ namespace IKVM.Internal
 			MarkLabel(label2);
 		}
 
-		internal void LazyEmit_ldiv()
+		internal void Emit_ldiv()
 		{
 			// we need to special case dividing by -1, because the CLR div instruction
 			// throws an OverflowException when dividing Int32.MinValue by -1, and
@@ -1439,21 +1401,11 @@ namespace IKVM.Internal
 			MarkLabel(label2);
 		}
 
-		internal void LazyEmit_instanceof(Type type)
+		internal void Emit_instanceof(Type type)
 		{
 			Emit(OpCodes.Isinst, type);
 			Emit(OpCodes.Ldnull);
 			Emit(OpCodes.Cgt_Un);
-		}
-
-		internal void LazyEmit_ifeq(CodeEmitterLabel label)
-		{
-			Emit(OpCodes.Brfalse, label);
-		}
-
-		internal void LazyEmit_ifne(CodeEmitterLabel label)
-		{
-			Emit(OpCodes.Brtrue, label);
 		}
 
 		internal enum Comparison
@@ -1464,7 +1416,7 @@ namespace IKVM.Internal
 			GreaterThan
 		}
 
-		internal void LazyEmit_if_le_lt_ge_gt(Comparison comp, CodeEmitterLabel label)
+		internal void Emit_if_le_lt_ge_gt(Comparison comp, CodeEmitterLabel label)
 		{
 			// don't change this Ldc_I4_0 to Ldc_I4(0) because the optimizer recognizes
 			// only this specific pattern
@@ -1503,55 +1455,35 @@ namespace IKVM.Internal
 			ReleaseTempLocal(value1);
 		}
 
-		internal void LazyEmit_lcmp()
+		internal void Emit_lcmp()
 		{
 			EmitCmp(Types.Int64, OpCodes.Cgt, OpCodes.Clt);
 		}
 
-		internal void LazyEmit_fcmpl()
+		internal void Emit_fcmpl()
 		{
 			EmitCmp(Types.Single, OpCodes.Cgt, OpCodes.Clt_Un);
 		}
 
-		internal void LazyEmit_fcmpg()
+		internal void Emit_fcmpg()
 		{
 			EmitCmp(Types.Single, OpCodes.Cgt_Un, OpCodes.Clt);
 		}
 
-		internal void LazyEmit_dcmpl()
+		internal void Emit_dcmpl()
 		{
 			EmitCmp(Types.Double, OpCodes.Cgt, OpCodes.Clt_Un);
 		}
 
-		internal void LazyEmit_dcmpg()
+		internal void Emit_dcmpg()
 		{
 			EmitCmp(Types.Double, OpCodes.Cgt_Un, OpCodes.Clt);
 		}
 
-		internal void LazyEmitAnd_I4(int v2)
+		internal void Emit_And_I4(int v)
 		{
-			Emit(OpCodes.Ldc_I4, v2);
+			Emit(OpCodes.Ldc_I4, v);
 			Emit(OpCodes.And);
-		}
-
-		internal void LazyEmit_baload()
-		{
-			Emit(OpCodes.Ldelem_I1);
-		}
-
-		internal void LazyEmit_iand()
-		{
-			Emit(OpCodes.And);
-		}
-
-		internal void LazyEmit_land()
-		{
-			Emit(OpCodes.And);
-		}
-
-		internal void LazyEmit_i2l()
-		{
-			Emit(OpCodes.Conv_I8);
 		}
 
 		internal void CheckLabels()

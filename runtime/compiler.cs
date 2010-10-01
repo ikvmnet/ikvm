@@ -547,7 +547,7 @@ sealed class Compiler
 				case StackType.Null:
 				case StackType.This:
 				case StackType.UnitializedThis:
-					compiler.ilGenerator.LazyEmitPop();
+					compiler.ilGenerator.Emit(OpCodes.Pop);
 					break;
 				case StackType.New:
 				case StackType.FaultBlockException:
@@ -986,17 +986,17 @@ sealed class Compiler
 					}
 					else if(mapSafe)
 					{
-						ilGenerator.LazyEmitLdc_I4(mapFlags | 1);
+						ilGenerator.Emit_Ldc_I4(mapFlags | 1);
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(excType));
 					}
 					else if(exceptionTypeWrapper == java_lang_Throwable)
 					{
-						ilGenerator.LazyEmitLdc_I4(mapFlags);
+						ilGenerator.Emit_Ldc_I4(mapFlags);
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(Types.Exception));
 					}
 					else
 					{
-						ilGenerator.LazyEmitLdc_I4(mapFlags | (remap ? 0 : 1));
+						ilGenerator.Emit_Ldc_I4(mapFlags | (remap ? 0 : 1));
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(excType));
 						if(!unusedException)
 						{
@@ -1214,16 +1214,16 @@ sealed class Compiler
 					DynamicGetPutField(instr, i);
 					break;
 				case NormalizedByteCode.__aconst_null:
-					ilGenerator.LazyEmitLdnull();
+					ilGenerator.Emit(OpCodes.Ldnull);
 					break;
 				case NormalizedByteCode.__iconst:
-					ilGenerator.LazyEmitLdc_I4(instr.NormalizedArg1);
+					ilGenerator.Emit_Ldc_I4(instr.NormalizedArg1);
 					break;
 				case NormalizedByteCode.__lconst_0:
-					ilGenerator.LazyEmitLdc_I8(0);
+					ilGenerator.Emit(OpCodes.Ldc_I8, 0L);
 					break;
 				case NormalizedByteCode.__lconst_1:
-					ilGenerator.LazyEmitLdc_I8(1);
+					ilGenerator.Emit(OpCodes.Ldc_I8, 1L);
 					break;
 				case NormalizedByteCode.__fconst_0:
 				case NormalizedByteCode.__dconst_0:
@@ -1250,13 +1250,13 @@ sealed class Compiler
 							ilGenerator.Emit(OpCodes.Ldc_R4, classFile.GetConstantPoolConstantFloat(constant));
 							break;
 						case ClassFile.ConstantType.Integer:
-							ilGenerator.LazyEmitLdc_I4(classFile.GetConstantPoolConstantInteger(constant));
+							ilGenerator.Emit(OpCodes.Ldc_I4, classFile.GetConstantPoolConstantInteger(constant));
 							break;
 						case ClassFile.ConstantType.Long:
-							ilGenerator.LazyEmitLdc_I8(classFile.GetConstantPoolConstantLong(constant));
+							ilGenerator.Emit(OpCodes.Ldc_I8, classFile.GetConstantPoolConstantLong(constant));
 							break;
 						case ClassFile.ConstantType.String:
-							ilGenerator.LazyEmitLdstr(classFile.GetConstantPoolConstantString(constant));
+							ilGenerator.Emit(OpCodes.Ldstr, classFile.GetConstantPoolConstantString(constant));
 							break;
 						case ClassFile.ConstantType.Class:
 						{
@@ -1271,7 +1271,7 @@ sealed class Compiler
 							}
 							else
 							{
-								ilGenerator.LazyEmitLoadClass(tw);
+								tw.EmitClassLiteral(ilGenerator);
 							}
 							break;
 						}
@@ -1738,7 +1738,7 @@ sealed class Compiler
 						// any unitialized reference is always the this reference, we don't store anything
 						// here (because CLR won't allow unitialized references in locals) and then when
 						// the unitialized ref is loaded we redirect to the this reference
-						ilGenerator.LazyEmitPop();
+						ilGenerator.Emit(OpCodes.Pop);
 					}
 					else
 					{
@@ -1790,14 +1790,14 @@ sealed class Compiler
 				{
 					CodeEmitterLocal localArray = ilGenerator.UnsafeAllocTempLocal(JVM.Import(typeof(int[])));
 					CodeEmitterLocal localInt = ilGenerator.UnsafeAllocTempLocal(Types.Int32);
-					ilGenerator.LazyEmitLdc_I4(instr.Arg2);
+					ilGenerator.Emit_Ldc_I4(instr.Arg2);
 					ilGenerator.Emit(OpCodes.Newarr, Types.Int32);
 					ilGenerator.Emit(OpCodes.Stloc, localArray);
 					for(int j = 1; j <= instr.Arg2; j++)
 					{
 						ilGenerator.Emit(OpCodes.Stloc, localInt);
 						ilGenerator.Emit(OpCodes.Ldloc, localArray);
-						ilGenerator.LazyEmitLdc_I4(instr.Arg2 - j);
+						ilGenerator.Emit_Ldc_I4(instr.Arg2 - j);
 						ilGenerator.Emit(OpCodes.Ldloc, localInt);
 						ilGenerator.Emit(OpCodes.Stelem_I4);
 					}
@@ -1941,7 +1941,7 @@ sealed class Compiler
 				}
 				case NormalizedByteCode.__baload:
 					// NOTE both the JVM and the CLR use signed bytes for boolean arrays (how convenient!)
-					ilGenerator.LazyEmit_baload();
+					ilGenerator.Emit(OpCodes.Ldelem_I1);
 					break;
 				case NormalizedByteCode.__bastore:
 					ilGenerator.Emit(OpCodes.Stelem_I1);
@@ -2031,19 +2031,19 @@ sealed class Compiler
 					}
 					break;
 				case NormalizedByteCode.__lcmp:
-					ilGenerator.LazyEmit_lcmp();
+					ilGenerator.Emit_lcmp();
 					break;
 				case NormalizedByteCode.__fcmpl:
-					ilGenerator.LazyEmit_fcmpl();
+					ilGenerator.Emit_fcmpl();
 					break;
 				case NormalizedByteCode.__fcmpg:
-					ilGenerator.LazyEmit_fcmpg();
+					ilGenerator.Emit_fcmpg();
 					break;
 				case NormalizedByteCode.__dcmpl:
-					ilGenerator.LazyEmit_dcmpl();
+					ilGenerator.Emit_dcmpl();
 					break;
 				case NormalizedByteCode.__dcmpg:
-					ilGenerator.LazyEmit_dcmpg();
+					ilGenerator.Emit_dcmpg();
 					break;
 				case NormalizedByteCode.__if_icmpeq:
 					ilGenerator.Emit(OpCodes.Beq, block.GetLabel(instr.TargetIndex));
@@ -2064,26 +2064,22 @@ sealed class Compiler
 					ilGenerator.Emit(OpCodes.Bgt, block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__ifle:
-					ilGenerator.LazyEmit_if_le_lt_ge_gt(CodeEmitter.Comparison.LessOrEqual, block.GetLabel(instr.TargetIndex));
+					ilGenerator.Emit_if_le_lt_ge_gt(CodeEmitter.Comparison.LessOrEqual, block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__iflt:
-					ilGenerator.LazyEmit_if_le_lt_ge_gt(CodeEmitter.Comparison.LessThan, block.GetLabel(instr.TargetIndex));
+					ilGenerator.Emit_if_le_lt_ge_gt(CodeEmitter.Comparison.LessThan, block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__ifge:
-					ilGenerator.LazyEmit_if_le_lt_ge_gt(CodeEmitter.Comparison.GreaterOrEqual, block.GetLabel(instr.TargetIndex));
+					ilGenerator.Emit_if_le_lt_ge_gt(CodeEmitter.Comparison.GreaterOrEqual, block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__ifgt:
-					ilGenerator.LazyEmit_if_le_lt_ge_gt(CodeEmitter.Comparison.GreaterThan, block.GetLabel(instr.TargetIndex));
+					ilGenerator.Emit_if_le_lt_ge_gt(CodeEmitter.Comparison.GreaterThan, block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__ifne:
-					ilGenerator.LazyEmit_ifne(block.GetLabel(instr.TargetIndex));
-					break;
-				case NormalizedByteCode.__ifeq:
-					ilGenerator.LazyEmit_ifeq(block.GetLabel(instr.TargetIndex));
-					break;
 				case NormalizedByteCode.__ifnonnull:
 					ilGenerator.Emit(OpCodes.Brtrue, block.GetLabel(instr.TargetIndex));
 					break;
+				case NormalizedByteCode.__ifeq:
 				case NormalizedByteCode.__ifnull:
 					ilGenerator.Emit(OpCodes.Brfalse, block.GetLabel(instr.TargetIndex));
 					break;
@@ -2142,10 +2138,8 @@ sealed class Compiler
 					ilGenerator.Emit(OpCodes.Or);
 					break;
 				case NormalizedByteCode.__iand:
-					ilGenerator.LazyEmit_iand();
-					break;
 				case NormalizedByteCode.__land:
-					ilGenerator.LazyEmit_land();
+					ilGenerator.Emit(OpCodes.And);
 					break;
 				case NormalizedByteCode.__imul:
 				case NormalizedByteCode.__lmul:
@@ -2163,10 +2157,10 @@ sealed class Compiler
 					}
 					break;
 				case NormalizedByteCode.__idiv:
-					ilGenerator.LazyEmit_idiv();
+					ilGenerator.Emit_idiv();
 					break;
 				case NormalizedByteCode.__ldiv:
-					ilGenerator.LazyEmit_ldiv();
+					ilGenerator.Emit_ldiv();
 					break;
 				case NormalizedByteCode.__fdiv:
 					ilGenerator.Emit(OpCodes.Div);
@@ -2220,27 +2214,27 @@ sealed class Compiler
 					}
 					break;
 				case NormalizedByteCode.__ishl:
-					ilGenerator.LazyEmitAnd_I4(31);
+					ilGenerator.Emit_And_I4(31);
 					ilGenerator.Emit(OpCodes.Shl);
 					break;
 				case NormalizedByteCode.__lshl:
-					ilGenerator.LazyEmitAnd_I4(63);
+					ilGenerator.Emit_And_I4(63);
 					ilGenerator.Emit(OpCodes.Shl);
 					break;
 				case NormalizedByteCode.__iushr:
-					ilGenerator.LazyEmitAnd_I4(31);
+					ilGenerator.Emit_And_I4(31);
 					ilGenerator.Emit(OpCodes.Shr_Un);
 					break;
 				case NormalizedByteCode.__lushr:
-					ilGenerator.LazyEmitAnd_I4(63);
+					ilGenerator.Emit_And_I4(63);
 					ilGenerator.Emit(OpCodes.Shr_Un);
 					break;
 				case NormalizedByteCode.__ishr:
-					ilGenerator.LazyEmitAnd_I4(31);
+					ilGenerator.Emit_And_I4(31);
 					ilGenerator.Emit(OpCodes.Shr);
 					break;
 				case NormalizedByteCode.__lshr:
-					ilGenerator.LazyEmitAnd_I4(63);
+					ilGenerator.Emit_And_I4(63);
 					ilGenerator.Emit(OpCodes.Shr);
 					break;
 				case NormalizedByteCode.__swap:
@@ -2448,17 +2442,17 @@ sealed class Compiler
 					TypeWrapper type1 = ma.GetRawStackTypeWrapper(i, 0);
 					if(type1.IsWidePrimitive)
 					{
-						ilGenerator.LazyEmitPop();
+						ilGenerator.Emit(OpCodes.Pop);
 					}
 					else
 					{
 						if (!VerifierTypeWrapper.IsNotPresentOnStack(type1))
 						{
-							ilGenerator.LazyEmitPop();
+							ilGenerator.Emit(OpCodes.Pop);
 						}
 						if (!VerifierTypeWrapper.IsNotPresentOnStack(ma.GetRawStackTypeWrapper(i, 1)))
 						{
-							ilGenerator.LazyEmitPop();
+							ilGenerator.Emit(OpCodes.Pop);
 						}
 					}
 					break;
@@ -2467,7 +2461,7 @@ sealed class Compiler
 					// if the TOS is a new object or a fault block exception, it isn't really there, so we don't need to pop it
 					if(!VerifierTypeWrapper.IsNotPresentOnStack(ma.GetRawStackTypeWrapper(i, 0)))
 					{
-						ilGenerator.LazyEmitPop();
+						ilGenerator.Emit(OpCodes.Pop);
 					}
 					break;
 				case NormalizedByteCode.__monitorenter:
@@ -2509,7 +2503,7 @@ sealed class Compiler
 					}
 					if(instr.GetSwitchValue(0) != 0)
 					{
-						ilGenerator.LazyEmitLdc_I4(instr.GetSwitchValue(0));
+						ilGenerator.Emit_Ldc_I4(instr.GetSwitchValue(0));
 						ilGenerator.Emit(OpCodes.Sub);
 					}
 					ilGenerator.Emit(OpCodes.Switch, labels);
@@ -2520,7 +2514,7 @@ sealed class Compiler
 					for(int j = 0; j < instr.SwitchEntryCount; j++)
 					{
 						ilGenerator.Emit(OpCodes.Dup);
-						ilGenerator.LazyEmitLdc_I4(instr.GetSwitchValue(j));
+						ilGenerator.Emit_Ldc_I4(instr.GetSwitchValue(j));
 						CodeEmitterLabel label = ilGenerator.DefineLabel();
 						ilGenerator.Emit(OpCodes.Bne_Un_S, label);
 						ilGenerator.Emit(OpCodes.Pop);
@@ -2532,7 +2526,7 @@ sealed class Compiler
 					break;
 				case NormalizedByteCode.__iinc:
 					LoadLocal(i);
-					ilGenerator.LazyEmitLdc_I4(instr.Arg2);
+					ilGenerator.Emit_Ldc_I4(instr.Arg2);
 					ilGenerator.Emit(OpCodes.Add);
 					StoreLocal(i);
 					break;
@@ -2561,7 +2555,7 @@ sealed class Compiler
 					ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.d2l);
 					break;
 				case NormalizedByteCode.__i2l:
-					ilGenerator.LazyEmit_i2l();
+					ilGenerator.Emit(OpCodes.Conv_I8);
 					break;
 				case NormalizedByteCode.__i2f:
 				case NormalizedByteCode.__l2f:
@@ -2831,7 +2825,7 @@ sealed class Compiler
 								// we only need to unbox if the method was actually declared on the value type
 								if(method.DeclaringType == args[i])
 								{
-									ilGenerator.LazyEmitUnbox(args[i].TypeAsTBD);
+									ilGenerator.Emit(OpCodes.Unbox, args[i].TypeAsTBD);
 								}
 							}
 							else
@@ -3125,7 +3119,7 @@ sealed class Compiler
 		if(v == null)
 		{
 			// dead store
-			ilGenerator.LazyEmitPop();
+			ilGenerator.Emit(OpCodes.Pop);
 		}
 		else if(v.isArg)
 		{
@@ -3142,7 +3136,7 @@ sealed class Compiler
 		}
 		else if(v.type == VerifierTypeWrapper.Null)
 		{
-			ilGenerator.LazyEmitPop();
+			ilGenerator.Emit(OpCodes.Pop);
 		}
 		else
 		{

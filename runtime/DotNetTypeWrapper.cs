@@ -1851,8 +1851,8 @@ namespace IKVM.Internal
 			protected override void EmitGetImpl(CodeEmitter ilgen)
 			{
 				// NOTE if the reference on the stack is null, we *want* the NullReferenceException, so we don't use TypeWrapper.EmitUnbox
-				ilgen.LazyEmitUnbox(underlyingType);
-				ilgen.LazyEmitLdobj(underlyingType);
+				ilgen.Emit(OpCodes.Unbox, underlyingType);
+				ilgen.Emit(OpCodes.Ldobj, underlyingType);
 			}
 
 			protected override void EmitSetImpl(CodeEmitter ilgen)
@@ -2561,7 +2561,7 @@ namespace IKVM.Internal
 					return;
 				}
 			}
-			ilgen.LazyEmit_instanceof(type);
+			ilgen.Emit_instanceof(type);
 		}
 
 		internal override void EmitCheckcast(TypeWrapper context, CodeEmitter ilgen)

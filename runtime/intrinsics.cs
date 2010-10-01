@@ -237,8 +237,8 @@ namespace IKVM.Internal
 				TypeWrapper classLiteral = eic.GetClassLiteral(-1);
 				if (!classLiteral.IsUnloadable && classLiteral.GetClassLoader().RemoveAsserts)
 				{
-					eic.Emitter.LazyEmitPop();
-					eic.Emitter.LazyEmitLdc_I4(0);
+					eic.Emitter.Emit(OpCodes.Pop);
+					eic.Emitter.Emit_Ldc_I4(0);
 					return true;
 				}
 			}
@@ -416,7 +416,7 @@ namespace IKVM.Internal
 				&& eic.MatchRange(-1, 2)
 				&& eic.Match(-1, NormalizedByteCode.__iconst, 2))
 			{
-				eic.Emitter.LazyEmitPop();
+				eic.Emitter.Emit(OpCodes.Pop);
 				int arg = eic.Caller.GetParametersForDefineMethod().Length - 1;
 				if (!eic.Caller.IsStatic)
 				{
@@ -476,7 +476,7 @@ namespace IKVM.Internal
 				TypeWrapper tw = eic.GetClassLiteral(-1);
 				if (!tw.IsUnloadable)
 				{
-					eic.Emitter.LazyEmitPop();
+					eic.Emitter.Emit(OpCodes.Pop);
 					if (tw.IsRemapped && tw.IsFinal)
 					{
 						eic.Emitter.Emit(OpCodes.Ldtoken, tw.TypeAsTBD);
@@ -495,7 +495,7 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 		private static bool Class_getPrimitiveClass(EmitIntrinsicContext eic)
 		{
-			eic.Emitter.LazyEmitPop();
+			eic.Emitter.Emit(OpCodes.Pop);
 			eic.Emitter.Emit(OpCodes.Ldnull);
 			MethodWrapper mw = CoreClasses.java.lang.Class.Wrapper.GetMethodWrapper("<init>", "(Lcli.System.Type;)V", false);
 			mw.Link();
