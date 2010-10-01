@@ -176,6 +176,21 @@ namespace IKVM.Internal
 				this.data = data;
 			}
 
+			internal CodeEmitterLabel Label
+			{
+				get { return (CodeEmitterLabel)data; }
+			}
+
+			internal int ValueInt32
+			{
+				get { return (int)data; }
+			}
+
+			internal long ValueInt64
+			{
+				get { return (long)data; }
+			}
+
 			internal int Size
 			{
 				get
@@ -747,6 +762,55 @@ namespace IKVM.Internal
 				else if (MatchCompare(i, OpCodes.Cgt, OpCodes.Clt, Types.Int64))		// lcmp
 				{
 					PatchCompare(i, OpCodes.Ble, OpCodes.Blt, OpCodes.Bge, OpCodes.Bgt);
+				}
+				else if (i < code.Count - 10
+					&& code[i].opcode == OpCodes.Ldc_I4
+					&& code[i + 1].opcode == OpCodes.Dup
+					&& code[i + 2].opcode == OpCodes.Ldc_I4_M1
+					&& code[i + 3].opcode == OpCodes.Bne_Un_S
+					&& code[i + 4].opcode == OpCodes.Pop
+					&& code[i + 5].opcode == OpCodes.Neg
+					&& code[i + 6].opcode == OpCodes.Br_S
+					&& code[i + 7].type == CodeType.Label && code[i + 7].Label == code[i + 3].Label
+					&& code[i + 8].opcode == OpCodes.Div
+					&& code[i + 9].type == CodeType.Label && code[i + 9].Label == code[i + 6].Label)
+				{
+					int divisor = code[i].ValueInt32;
+					if (divisor == -1)
+					{
+						code[i] = code[i + 5];
+						code.RemoveRange(i + 1, 9);
+					}
+					else
+					{
+						code[i + 1] = code[i + 8];
+						code.RemoveRange(i + 2, 8);
+					}
+				}
+				else if (i < code.Count - 11
+					&& code[i].opcode == OpCodes.Ldc_I8
+					&& code[i + 1].opcode == OpCodes.Dup
+					&& code[i + 2].opcode == OpCodes.Ldc_I4_M1
+					&& code[i + 3].opcode == OpCodes.Conv_I8
+					&& code[i + 4].opcode == OpCodes.Bne_Un_S
+					&& code[i + 5].opcode == OpCodes.Pop
+					&& code[i + 6].opcode == OpCodes.Neg
+					&& code[i + 7].opcode == OpCodes.Br_S
+					&& code[i + 8].type == CodeType.Label && code[i + 8].Label == code[i + 4].Label
+					&& code[i + 9].opcode == OpCodes.Div
+					&& code[i + 10].type == CodeType.Label && code[i + 10].Label == code[i + 7].Label)
+				{
+					long divisor = code[i].ValueInt64;
+					if (divisor == -1)
+					{
+						code[i] = code[i + 6];
+						code.RemoveRange(i + 1, 10);
+					}
+					else
+					{
+						code[i + 1] = code[i + 9];
+						code.RemoveRange(i + 2, 9);
+					}
 				}
 			}
 		}
@@ -1380,12 +1444,12 @@ namespace IKVM.Internal
 
 		internal void LazyEmitLdc_I4(int i)
 		{
-			PushStack(new ConstIntExpr(i));
+			Emit(OpCodes.Ldc_I4, i);
 		}
 
 		internal void LazyEmitLdc_I8(long l)
 		{
-			PushStack(new ConstLongExpr(l));
+			Emit(OpCodes.Ldc_I8, l);
 		}
 
 		internal void LazyEmitLdstr(string str)
@@ -1398,33 +1462,17 @@ namespace IKVM.Internal
 			// we need to special case dividing by -1, because the CLR div instruction
 			// throws an OverflowException when dividing Int32.MinValue by -1, and
 			// Java just silently overflows
-			ConstIntExpr v = PeekStack() as ConstIntExpr;
-			if(v != null)
-			{
-				if(v.i == -1)
-				{
-					PopStack();
-					Emit(OpCodes.Neg);
-				}
-				else
-				{
-					Emit(OpCodes.Div);
-				}
-			}
-			else
-			{
-				Emit(OpCodes.Dup);
-				Emit(OpCodes.Ldc_I4_M1);
-				CodeEmitterLabel label = DefineLabel();
-				Emit(OpCodes.Bne_Un_S, label);
-				Emit(OpCodes.Pop);
-				Emit(OpCodes.Neg);
-				CodeEmitterLabel label2 = DefineLabel();
-				Emit(OpCodes.Br_S, label2);
-				MarkLabel(label);
-				Emit(OpCodes.Div);
-				MarkLabel(label2);
-			}
+			Emit(OpCodes.Dup);
+			Emit(OpCodes.Ldc_I4_M1);
+			CodeEmitterLabel label = DefineLabel();
+			Emit(OpCodes.Bne_Un_S, label);
+			Emit(OpCodes.Pop);
+			Emit(OpCodes.Neg);
+			CodeEmitterLabel label2 = DefineLabel();
+			Emit(OpCodes.Br_S, label2);
+			MarkLabel(label);
+			Emit(OpCodes.Div);
+			MarkLabel(label2);
 		}
 
 		internal void LazyEmit_ldiv()
@@ -1432,34 +1480,18 @@ namespace IKVM.Internal
 			// we need to special case dividing by -1, because the CLR div instruction
 			// throws an OverflowException when dividing Int32.MinValue by -1, and
 			// Java just silently overflows
-			ConstLongExpr v = PeekStack() as ConstLongExpr;
-			if(v != null)
-			{
-				if(v.l == -1)
-				{
-					PopStack();
-					Emit(OpCodes.Neg);
-				}
-				else
-				{
-					Emit(OpCodes.Div);
-				}
-			}
-			else
-			{
-				Emit(OpCodes.Dup);
-				Emit(OpCodes.Ldc_I4_M1);
-				Emit(OpCodes.Conv_I8);
-				CodeEmitterLabel label = DefineLabel();
-				Emit(OpCodes.Bne_Un_S, label);
-				Emit(OpCodes.Pop);
-				Emit(OpCodes.Neg);
-				CodeEmitterLabel label2 = DefineLabel();
-				Emit(OpCodes.Br_S, label2);
-				MarkLabel(label);
-				Emit(OpCodes.Div);
-				MarkLabel(label2);
-			}
+			Emit(OpCodes.Dup);
+			Emit(OpCodes.Ldc_I4_M1);
+			Emit(OpCodes.Conv_I8);
+			CodeEmitterLabel label = DefineLabel();
+			Emit(OpCodes.Bne_Un_S, label);
+			Emit(OpCodes.Pop);
+			Emit(OpCodes.Neg);
+			CodeEmitterLabel label2 = DefineLabel();
+			Emit(OpCodes.Br_S, label2);
+			MarkLabel(label);
+			Emit(OpCodes.Div);
+			MarkLabel(label2);
 		}
 
 		internal void LazyEmit_instanceof(Type type)
@@ -1704,36 +1736,6 @@ namespace IKVM.Internal
 			{
 				base.Emit(ilgen);
 				ilgen.Emit(OpCodes.Ldobj, Type);
-			}
-		}
-
-		sealed class ConstIntExpr : Expr
-		{
-			internal readonly int i;
-
-			internal ConstIntExpr(int i)
-			{
-				this.i = i;
-			}
-
-			internal override void Emit(CodeEmitter ilgen)
-			{
-				ilgen.Emit(OpCodes.Ldc_I4, i);
-			}
-		}
-
-		sealed class ConstLongExpr : Expr
-		{
-			internal readonly long l;
-
-			internal ConstLongExpr(long l)
-			{
-				this.l = l;
-			}
-
-			internal override void Emit(CodeEmitter ilgen)
-			{
-				ilgen.Emit(OpCodes.Ldc_I8, l);
 			}
 		}
 	}
