@@ -1025,6 +1025,14 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
+	[XmlType("endfinally")]
+	public sealed class Endfinally : Simple
+	{
+		public Endfinally() : base(OpCodes.Endfinally)
+		{
+		}
+	}
+
 	[XmlType("exceptionBlock")]
 	public sealed class ExceptionBlock : Instruction
 	{
@@ -1228,6 +1236,7 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(Newarr))]
 		[XmlElement(typeof(Ldtoken))]
 		[XmlElement(typeof(Leave))]
+		[XmlElement(typeof(Endfinally))]
 		[XmlElement(typeof(RunClassInit))]
 		[XmlElement(typeof(EmitExceptionMapping))]
 		public Instruction[] invoke;
