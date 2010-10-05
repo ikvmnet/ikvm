@@ -511,7 +511,7 @@ namespace IKVM.Reflection.Emit
 				if (labelStackHeight[label.Index] != flowStackHeight && (labelStackHeight[label.Index] != 0 || flowStackHeight != -1))
 				{
 					// the "backward branch constraint" prohibits this, so we don't need to support it
-					throw new NotSupportedException();
+					throw new NotSupportedException("'Backward branch constraints' violated");
 				}
 				if (opc.OperandType == OperandType.ShortInlineBrTarget)
 				{
