@@ -484,6 +484,8 @@ namespace IKVM.Internal
 				startupType.GetMethodWrapper("glob", "()[Ljava.lang.String;", false).EmitCall(ilgen);
 			}
 			ilgen.Emit(OpCodes.Call, m);
+			CodeEmitterLabel label = ilgen.DefineLabel();
+			ilgen.Emit(OpCodes.Leave, label);
 			ilgen.BeginCatchBlock(Types.Exception);
 			LoadClassByDottedName("ikvm.runtime.Util").GetMethodWrapper("mapException", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false).EmitCall(ilgen);
 			CodeEmitterLocal exceptionLocal = ilgen.DeclareLocal(Types.Exception);
@@ -499,9 +501,12 @@ namespace IKVM.Internal
 			ClassLoaderWrapper.LoadClassCritical("java.lang.ThreadGroup").GetMethodWrapper("uncaughtException", "(Ljava.lang.Thread;Ljava.lang.Throwable;)V", false).EmitCallvirt(ilgen);
 			ilgen.Emit(OpCodes.Ldc_I4_1);
 			ilgen.Emit(OpCodes.Stloc, rc);
+			ilgen.Emit(OpCodes.Leave, label);
 			ilgen.BeginFinallyBlock();
 			startupType.GetMethodWrapper("exitMainThread", "()V", false).EmitCall(ilgen);
+			ilgen.Emit(OpCodes.Endfinally);
 			ilgen.EndExceptionBlock();
+			ilgen.MarkLabel(label);
 			ilgen.Emit(OpCodes.Ldloc, rc);
 			ilgen.Emit(OpCodes.Ret);
 			ilgen.DoEmit();

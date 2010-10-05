@@ -2923,7 +2923,9 @@ namespace IKVM.Internal
 									ilgen.BeginExceptionBlock();
 									ilgen.Emit(OpCodes.Ldarg_0);
 									ilgen.Emit(OpCodes.Callvirt, mb);
+									ilgen.Emit(OpCodes.Leave, skip);
 									ilgen.BeginCatchBlock(Types.Object);
+									ilgen.Emit(OpCodes.Leave, skip);
 									ilgen.EndExceptionBlock();
 								}
 								else
@@ -4772,21 +4774,27 @@ namespace IKVM.Internal
 						retValue = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsSignatureType);
 						ilGenerator.Emit(OpCodes.Stloc, retValue);
 					}
+					CodeEmitterLabel retLabel = ilGenerator.DefineLabel();
+					ilGenerator.Emit(OpCodes.Leave, retLabel);
 					ilGenerator.BeginCatchBlock(Types.Object);
-					ilGenerator.EmitWriteLine("*** exception in native code ***");
+					ilGenerator.Emit(OpCodes.Ldstr, "*** exception in native code ***");
+					ilGenerator.Emit(OpCodes.Call, writeLine);
 					ilGenerator.Emit(OpCodes.Call, writeLine);
 					ilGenerator.Emit(OpCodes.Rethrow);
 					ilGenerator.BeginFinallyBlock();
 					ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
 					ilGenerator.Emit(OpCodes.Call, leaveLocalRefStruct);
+					ilGenerator.Emit(OpCodes.Endfinally);
 					ilGenerator.EndExceptionBlock();
 					if (m.IsSynchronized && m.IsStatic)
 					{
 						ilGenerator.BeginFinallyBlock();
 						ilGenerator.Emit(OpCodes.Ldloc, syncObject);
 						ilGenerator.Emit(OpCodes.Call, monitorExit);
+						ilGenerator.Emit(OpCodes.Endfinally);
 						ilGenerator.EndExceptionBlock();
 					}
+					ilGenerator.MarkLabel(retLabel);
 					if (retTypeWrapper != PrimitiveTypeWrapper.VOID)
 					{
 						ilGenerator.Emit(OpCodes.Ldloc, retValue);

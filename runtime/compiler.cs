@@ -665,6 +665,7 @@ sealed class Compiler
 				ilGenerator.BeginFinallyBlock();
 				ilGenerator.Emit(OpCodes.Ldloc, monitor);
 				ilGenerator.Emit(OpCodes.Call, monitorExitMethod);
+				ilGenerator.Emit(OpCodes.Endfinally);
 				ilGenerator.EndExceptionBlockNoFallThrough();
 				b.LeaveStubs(new Block(c, 0, int.MaxValue, -1, null, false));
 			}

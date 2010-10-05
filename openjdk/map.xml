@@ -1154,12 +1154,15 @@
                             <ldc_i4_1 />
                             <newobj type="System.Diagnostics.StackTrace" name=".ctor" sig="(Z)V" />
                             <stfld class="java.lang.Throwable" name="tracePart2" sig="Lcli.System.Diagnostics.StackTrace;" />
+                            <leave name="end" />
                         </try>
                         <finally>
                             <ldarg_0 />
                             <call type="System.Threading.Monitor" name="Exit" sig="(Ljava.lang.Object;)V" />
+                            <endfinally />
                         </finally>
                     </exceptionBlock>
+                    <label name="end" />
                     <ldarg_0 />
                     <ret />
                 </body>
@@ -1185,12 +1188,15 @@
                             <ldarg_0 />
                             <ldarg_1 />
                             <stfld class="java.lang.Throwable" name="cause" sig="Ljava.lang.Throwable;" />
+                            <leave name="end" />
                         </try>
                         <finally>
                             <ldarg_0 />
                             <call type="System.Threading.Monitor" name="Exit" sig="(Ljava.lang.Object;)V" />
+                            <endfinally />
                         </finally>
                     </exceptionBlock>
+                    <label name="end" />
                     <ldarg_0 />
                     <ret />
                 </body>
@@ -1257,10 +1263,12 @@
                             <ldarg_0 />
                             <ldnull />
                             <stfld class="java.lang.Throwable" name="tracePart2" sig="Lcli.System.Diagnostics.StackTrace;" />
+                            <leave name="ok" />
                         </try>
                         <finally>
                             <ldarg_0 />
                             <call type="System.Threading.Monitor" name="Exit" sig="(Ljava.lang.Object;)V" />
+                            <endfinally />
                         </finally>
                     </exceptionBlock>
                     <label name="ok" />
@@ -2580,11 +2588,14 @@
                         <!-- TODO instead of catching the ThreadStateException, we should check the ThreadState
 			     before calling ResetAbort -->
                         <call type="System.Threading.Thread" name="ResetAbort" sig="()V" />
+                        <leave name="next" />
                     </try>
                     <catch type="System.Threading.ThreadStateException">
                         <!-- ignore the exception -->
+                        <leave name="next" />
                     </catch>
                 </exceptionBlock>
+                <label name="next" />
                 <ldloc name="x" />
             </code>
         </exception>
