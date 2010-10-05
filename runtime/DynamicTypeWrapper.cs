@@ -3676,7 +3676,6 @@ namespace IKVM.Internal
 						}
 						CodeEmitter ilGenerator = CodeEmitter.Create((ConstructorBuilder)mb);
 						CompileConstructorBody(this, ilGenerator, i, invokespecialstubcache);
-						ilGenerator.DoEmit();
 					}
 					else
 					{
@@ -3879,8 +3878,8 @@ namespace IKVM.Internal
 					else
 					{
 						ilGenerator.Emit(OpCodes.Ret);
+						ilGenerator.DoEmit();
 					}
-					ilGenerator.DoEmit();
 					ilGenerator.CheckLabels();
 				}
 
@@ -5086,6 +5085,7 @@ namespace IKVM.Internal
 #endif
 				bool nonLeaf = false;
 				Compiler.Compile(context, wrapper, methods[methodIndex], classFile, m, ilGenerator, ref nonLeaf, invokespecialstubcache);
+				ilGenerator.DoEmit();
 #if STATIC_COMPILER
 				ilGenerator.EmitLineNumberTable(methods[methodIndex].GetMethod());
 #else // STATIC_COMPILER
