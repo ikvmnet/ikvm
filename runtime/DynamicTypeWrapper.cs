@@ -5080,6 +5080,7 @@ namespace IKVM.Internal
 				// do we have a native implementation in map.xml?
 				if (wrapper.EmitMapXmlMethodBody(ilGenerator, classFile, m))
 				{
+					ilGenerator.DoEmit();
 					return;
 				}
 #endif
