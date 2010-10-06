@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Volker Berlin (i-net software)
+  Copyright (C) 2009, 2010 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -186,7 +186,7 @@ class PhysicalFont extends Font2D{
      */
     @Override
     public FontStrike getStrike(Font font, FontRenderContext frc){
-        return new PhysicalStrike(font.getNetFont(), family, style, frc);
+        return new PhysicalStrike(font, family, style, frc);
     }
 
 

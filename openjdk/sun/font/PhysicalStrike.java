@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Volker Berlin (i-net software)
+  Copyright (C) 2009, 2010 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -23,14 +23,16 @@
  */
 package sun.font;
 
-import java.awt.Rectangle;
+import java.awt.*;
 import java.awt.font.FontRenderContext;
 import java.awt.geom.GeneralPath;
+import java.awt.geom.Rectangle2D;
 import java.awt.geom.Point2D.Float;
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import cli.System.Drawing.FontFamily;
+import cli.System.Drawing.FontStyle;
 
-import cli.System.Drawing.*;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * A FontStrike implementation that based on .NET fonts. 
@@ -47,21 +49,14 @@ public class PhysicalStrike extends FontStrike{
     
     private StrikeMetrics strike;
     
-    private static final Bitmap bitmap = new Bitmap(1, 1);
-    private static final Graphics g = Graphics.FromImage(bitmap);
-    private static final StringFormat format = new cli.System.Drawing.StringFormat(StringFormat.get_GenericTypographic());
-    static{
-        StringFormatFlags flags = format.get_FormatFlags();
-        flags = StringFormatFlags.wrap(flags.Value | StringFormatFlags.MeasureTrailingSpaces);
-        format.set_FormatFlags( flags );
-    }
+    private FontMetrics metrics;
     
     public PhysicalStrike(Font font, FontFamily family, FontStyle style, FontRenderContext frc){
         this.font = font;
         this.family = family;
         this.style = style;
         this.frc = frc;
-        this.size2D = font.get_Size();
+        this.size2D = font.getNetFont().get_Size();
         this.factor = size2D / family.GetEmHeight(style);
     }
     
@@ -70,12 +65,7 @@ public class PhysicalStrike extends FontStrike{
      */
     @Override
     Float getCharMetrics(char ch){
-        SizeF sizeF = g.MeasureString(String.valueOf(ch), font, Integer.MAX_VALUE, format);
-        if(frc.usesFractionalMetrics()){
-            return new Float(sizeF.get_Width(), 0);
-        }else{
-            return new Float((int)(sizeF.get_Width() + 0.5F), 0);
-        }
+        return new Float(getCodePointAdvance(ch), 0);
     }
 
 
@@ -83,15 +73,14 @@ public class PhysicalStrike extends FontStrike{
      * {@inheritDoc}
      */
     @Override
-    float getCodePointAdvance(int cp){
-        SizeF sizeF = g.MeasureString(String.valueOf((char)cp), font, Integer.MAX_VALUE, format);
-        if(frc.usesFractionalMetrics()){
-            return sizeF.get_Width();
-        } else {
-            return (int)(sizeF.get_Width() + 0.5F);
+    float getCodePointAdvance( int cp ) {
+        Graphics2D g = StandardGlyphVector.createGraphics( frc );
+        if( metrics == null ) {
+            metrics = Toolkit.getDefaultToolkit().getFontMetrics( font );
         }
+        Rectangle2D.Float bounds = (Rectangle2D.Float)metrics.getStringBounds( String.valueOf( (char)cp ), g );
+        return bounds.width;
     }
-
 
     /**
      * {@inheritDoc}
@@ -119,7 +108,7 @@ public class PhysicalStrike extends FontStrike{
      */
     @Override
     float getGlyphAdvance(int glyphCode){
-        throw new NotImplementedException();
+        return getCodePointAdvance( glyphCode );
     }
 
 

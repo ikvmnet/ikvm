@@ -131,6 +131,7 @@ namespace ikvm.awt
             } else {
                 // System.Windows.Forms.TextRenderer#MeasureText seems to large
                 // Graphics#MeasureString is many faster but work only correct with TextRenderingHint.AntiAlias
+                bool rounding;
                 StringFormat format;
                 switch (g.TextRenderingHint){
                     // Fractional metrics
@@ -138,19 +139,22 @@ namespace ikvm.awt
                     case TextRenderingHint.SingleBitPerPixel:
                         // this very mystic, if a StringFormat extends from GenericTypographic then the metric are different but like Java with fractional metrics
                         format = new StringFormat(StringFormat.GenericTypographic);
+                        rounding = false;
                         break;
                     default:
                         format = new StringFormat();
+                        rounding = true;
                         break;
                 }
-                
-                format.FormatFlags = StringFormatFlags.MeasureTrailingSpaces | StringFormatFlags.NoWrap;
+
+                format.FormatFlags = StringFormatFlags.MeasureTrailingSpaces | StringFormatFlags.NoWrap | StringFormatFlags.FitBlackBox;
                 format.Trimming = StringTrimming.None;
                 format.SetMeasurableCharacterRanges(new CharacterRange[] { new CharacterRange(0, aString.Length) });
                 Region[] regions = g.MeasureCharacterRanges(aString, GetNetFont(), new RectangleF(0, 0, int.MaxValue, int.MaxValue), format);
                 SizeF size = regions[0].GetBounds(g).Size;
                 regions[0].Dispose();
-                return size.Width;
+                //with Arial 9.0 and only one character under Vista .NET does not round it, that we rounding manualy
+                return rounding ? (int)Math.Round(size.Width) : size.Width;
             }
         }
 

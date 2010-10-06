@@ -49,6 +49,8 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
  */
 public class StandardGlyphVector extends GlyphVector{
 
+    private static final BufferedImage IMAGE = new BufferedImage( 1, 1, BufferedImage.TYPE_INT_ARGB );
+
     private float[] positions; // only if not default advances
 
     private final Font font;
@@ -62,13 +64,17 @@ public class StandardGlyphVector extends GlyphVector{
     private Font2D font2D;
     private FontStrike strike;
     
-    private static WeakHashMap<FontRenderContext, Graphics2D> graphicsMap = new WeakHashMap<FontRenderContext, Graphics2D>();
-
+    private Graphics2D graphics;
+    
+    
     public StandardGlyphVector(Font font, String str, FontRenderContext frc){
         if(str == null){
             throw new NullPointerException("Glyphs are null");
         }
         this.font = font;
+        if( frc == null ){
+            frc = new FontRenderContext( null, false, false );
+        }
         this.frc = frc;
         this.glyphs = str;
         this.font2D = FontManager.getFont2D(font);
@@ -282,18 +288,23 @@ public class StandardGlyphVector extends GlyphVector{
      * @return
      */
     private Graphics2D getGraphics() {
-        Graphics2D g = graphicsMap.get( frc );
-        if( g == null ) {
-            BufferedImage img = new BufferedImage( 1, 1, BufferedImage.TYPE_INT_ARGB );
-            g = (Graphics2D)img.getGraphics();
-            if( frc.usesFractionalMetrics() ) {
-                g.setRenderingHint( RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON );
-            }
-            graphicsMap.put( frc, g );
+        if( graphics == null ){
+            graphics = createGraphics( frc );
         }
-        return g;
+        return graphics;
     }
-    
+
+    /**
+     * Create a Graphics with the settings for the given FontRenderContext
+     * 
+     * @return
+     */
+    static Graphics2D createGraphics( FontRenderContext frc ) {
+        Graphics2D g = (Graphics2D)IMAGE.getGraphics();
+        g.setRenderingHint( RenderingHints.KEY_FRACTIONALMETRICS, frc.usesFractionalMetrics() ? RenderingHints.VALUE_FRACTIONALMETRICS_ON : RenderingHints.VALUE_FRACTIONALMETRICS_OFF );
+        g.setRenderingHint( RenderingHints.KEY_TEXT_ANTIALIASING, frc.usesFractionalMetrics() ? RenderingHints.VALUE_TEXT_ANTIALIAS_ON : RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
+        return g;
+    }    
 
     @Override
     public Shape getGlyphLogicalBounds( int glyphIndex ) {
