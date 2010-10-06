@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Volker Berlin (i-net software)
+  Copyright (C) 2009, 2010 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -31,6 +31,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
+
+import javax.swing.plaf.FontUIResource;
 
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -158,6 +160,27 @@ public class FontManager{
 
     public static Font2D getNewComposite(Object object, int style, Font2D font2D){
         throw new NotImplementedException();
+    }
+
+    /* This is called by Swing passing in a fontconfig family name
+     * such as "sans". In return Swing gets a FontUIResource instance
+     * that has queried fontconfig to resolve the font(s) used for this.
+     * Fontconfig will if asked return a list of fonts to give the largest
+     * possible code point coverage.
+     * For now we use only the first font returned by fontconfig, and
+     * back it up with the most closely matching JDK logical font.
+     * Essentially this means pre-pending what we return now with fontconfig's
+     * preferred physical font. This could lead to some duplication in cases,
+     * if we already included that font later. We probably should remove such
+     * duplicates, but it is not a significant problem. It can be addressed
+     * later as part of creating a Composite which uses more of the
+     * same fonts as fontconfig. At that time we also should pay more
+     * attention to the special rendering instructions fontconfig returns,
+     * such as whether we should prefer embedded bitmaps over antialiasing.
+     * There's no way to express that via a Font at present.
+     */
+    public static FontUIResource getFontConfigFUIR( String fcFamily, int style, int size ) {
+        return new FontUIResource( fcFamily, style, size );
     }
 
 }
