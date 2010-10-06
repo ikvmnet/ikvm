@@ -1272,14 +1272,14 @@ namespace ikvm.awt
             throw new NotImplementedException();
         }
 
-        public override VolatileImage createCompatibleVolatileImage(int i1, int i2, int i3)
+        public override VolatileImage createCompatibleVolatileImage(int width, int height, int transparency)
         {
-            throw new NotImplementedException();
+            return new NetVolatileImage(width, height);
         }
 
-        public override VolatileImage createCompatibleVolatileImage(int i1, int i2, java.awt.ImageCapabilities ic, int i3)
+        public override VolatileImage createCompatibleVolatileImage(int width, int height, java.awt.ImageCapabilities caps, int transparency)
         {
-            throw new NotImplementedException();
+            return new NetVolatileImage(width, height);
         }
     }
 
