@@ -2496,7 +2496,7 @@ namespace IKVM.Internal
 			return key != null && key.Length != 0;
 		}
 
-		private static bool IsCoreAssembly(Assembly asm)
+		internal static bool IsCoreAssembly(Assembly asm)
 		{
 			return asm.IsDefined(StaticCompiler.GetRuntimeType("IKVM.Attributes.RemappedClassAttribute"), false);
 		}
@@ -2622,10 +2622,6 @@ namespace IKVM.Internal
 			{
 				try
 				{
-					if(IsCoreAssembly(reference))
-					{
-						JVM.CoreAssembly = reference;
-					}
 					references.Add(reference);
 					allReferencesAreStrongNamed &= IsSigned(reference);
 					Tracer.Info(Tracer.Compiler, "Loaded reference assembly: {0}", reference.FullName);
