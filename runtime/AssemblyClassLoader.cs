@@ -397,6 +397,30 @@ namespace IKVM.Internal
 		{
 			this.assemblyLoader = new AssemblyLoader(assembly);
 			this.references = fixedReferences;
+
+#if STATIC_COMPILER
+			if (assembly.GetManifestResourceInfo("ikvm.exports") != null)
+			{
+				using (Stream stream = assembly.GetManifestResourceStream("ikvm.exports"))
+				{
+					BinaryReader rdr = new BinaryReader(stream);
+					int assemblyCount = rdr.ReadInt32();
+					for (int i = 0; i < assemblyCount; i++)
+					{
+						string assemblyName = rdr.ReadString();
+						int typeCount = rdr.ReadInt32();
+						for (int j = 0; j < typeCount; j++)
+						{
+							rdr.ReadInt32();
+						}
+						if (typeCount != 0)
+						{
+							IkvmcCompiler.resolver.AddHintPath(assemblyName, Path.GetDirectoryName(assembly.Location));
+						}
+					}
+				}
+			}
+#endif
 		}
 
 		private void DoInitializeExports()
