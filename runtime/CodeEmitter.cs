@@ -145,7 +145,6 @@ namespace IKVM.Internal
 			SequencePoint,
 			LineNumber,
 			Label,
-			WriteLine,
 			ThrowException,
 			BeginExceptionBlock,
 			BeginCatchBlock,
@@ -237,8 +236,6 @@ namespace IKVM.Internal
 							return 0;
 						case CodeType.SequencePoint:
 							return 1;
-						case CodeType.WriteLine:
-							return 10;
 						case CodeType.ThrowException:
 							return 6;
 						case CodeType.BeginCatchBlock:
@@ -440,9 +437,6 @@ namespace IKVM.Internal
 					break;
 				case CodeType.Label:
 					((CodeEmitterLabel)data).Mark(ilgen_real);
-					break;
-				case CodeType.WriteLine:
-					ilgen_real.EmitWriteLine((string)data);
 					break;
 				case CodeType.ThrowException:
 					ilgen_real.ThrowException((Type)data);
@@ -1222,11 +1216,6 @@ namespace IKVM.Internal
 		internal void EmitCalli(OpCode opcode, CallingConvention unmanagedCallConv, Type returnType, Type[] parameterTypes)
 		{
 			EmitOpCode(opcode, new CalliWrapper(unmanagedCallConv, returnType, parameterTypes));
-		}
-
-		internal void EmitWriteLine(string value)
-		{
-			EmitPseudoOpCode(CodeType.WriteLine, value);
 		}
 
 		internal void EndExceptionBlockNoFallThrough()
