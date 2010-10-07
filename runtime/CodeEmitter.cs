@@ -39,37 +39,12 @@ namespace IKVM.Internal
 {
 	sealed class CodeEmitterLabel
 	{
-		private Label label;
-		private int offset = -1;
+		internal readonly Label Label;
+		internal int Temp;
 
 		internal CodeEmitterLabel(Label label)
 		{
-			this.label = label;
-		}
-
-		internal Label Label
-		{
-			get
-			{
-				return label;
-			}
-		}
-
-		internal int Offset
-		{
-			get
-			{
-				return offset;
-			}
-			set
-			{
-				offset = value;
-			}
-		}
-
-		internal void Mark(ILGenerator ilgen)
-		{
-			ilgen.MarkLabel(label);
+			this.Label = label;
 		}
 	}
 
@@ -131,7 +106,7 @@ namespace IKVM.Internal
 		private IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter linenums;
 		private CodeEmitterLocal[] tempLocals = new CodeEmitterLocal[32];
 		private ISymbolDocumentWriter symbols;
-		private List<OpCodeWrapper> code = new List<OpCodeWrapper>();
+		private List<OpCodeWrapper> code = new List<OpCodeWrapper>(10);
 #if LABELCHECK
 		private Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame> labels = new Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame>();
 #endif
@@ -191,6 +166,11 @@ namespace IKVM.Internal
 				return data == other.data;
 			}
 
+			internal CodeEmitterLabel[] Labels
+			{
+				get { return (CodeEmitterLabel[])data; }
+			}
+
 			internal CodeEmitterLocal Local
 			{
 				get { return (CodeEmitterLocal)data; }
@@ -199,6 +179,16 @@ namespace IKVM.Internal
 			internal bool MatchLocal(OpCodeWrapper other)
 			{
 				return data == other.data;
+			}
+
+			internal bool HasValueByte
+			{
+				get { return data is byte; }
+			}
+
+			internal byte ValueByte
+			{
+				get { return (byte)data; }
 			}
 
 			internal int ValueInt32
@@ -443,7 +433,7 @@ namespace IKVM.Internal
 					ilgen_real.Emit(OpCodes.Nop);
 					break;
 				case CodeType.Label:
-					((CodeEmitterLabel)data).Mark(ilgen_real);
+					ilgen_real.MarkLabel(((CodeEmitterLabel)data).Label);
 					break;
 				case CodeType.BeginExceptionBlock:
 					ilgen_real.BeginExceptionBlock();
@@ -569,6 +559,20 @@ namespace IKVM.Internal
 			}
 		}
 
+		private void AnnihilateStoreReleaseTempLocals()
+		{
+			for (int i = 1; i < code.Count; i++)
+			{
+				if (code[i].opcode == OpCodes.Stloc
+					&& code[i + 1].pseudo == CodeType.ReleaseTempLocal
+					&& code[i].Local == code[i + 1].Local)
+				{
+					code.RemoveRange(i, 1);
+					code[i] = new OpCodeWrapper(OpCodes.Pop, null);
+				}
+			}
+		}
+
 		private void AnnihilatePops()
 		{
 			for (int i = 1; i < code.Count; i++)
@@ -645,7 +649,7 @@ namespace IKVM.Internal
 			{
 				if (code[i].pseudo == CodeType.Label)
 				{
-					code[i].Label.Offset = offset;
+					code[i].Label.Temp = offset;
 				}
 				offset += code[i].Size;
 			}
@@ -657,7 +661,7 @@ namespace IKVM.Internal
 				if (code[i].HasLabel && code[i].opcode.OperandType == OperandType.InlineBrTarget)
 				{
 					CodeEmitterLabel label = code[i].Label;
-					int diff = label.Offset - (prevOffset + code[i].opcode.Size + 1);
+					int diff = label.Temp - (prevOffset + code[i].opcode.Size + 1);
 					if (-128 <= diff && diff <= 127)
 					{
 						OpCode opcode = code[i].opcode;
@@ -1017,13 +1021,280 @@ namespace IKVM.Internal
 			}
 		}
 
+		private void ChaseBranches()
+		{
+			Dictionary<CodeEmitterLabel, int> indexes = new Dictionary<CodeEmitterLabel, int>();
+			for (int i = 0; i < code.Count; i++)
+			{
+				if (code[i].pseudo == CodeType.Label)
+				{
+					int target = i + 1;
+					while (code[target].pseudo == CodeType.LineNumber || code[target].pseudo == CodeType.Label)
+					{
+						target++;
+					}
+					indexes[code[i].Label] = target;
+				}
+			}
+			for (int i = 0; i < code.Count; i++)
+			{
+				if (code[i].opcode == OpCodes.Leave
+					&& code[i].HasLabel)
+				{
+					int target = indexes[code[i].Label];
+					if ((code[target].opcode == OpCodes.Br || code[target].opcode == OpCodes.Leave)
+						&& code[target].HasLabel
+						&& target != i)
+					{
+						code[i] = new OpCodeWrapper(OpCodes.Leave, code[target].Label);
+						i--;
+					}
+				}
+			}
+		}
+
+		private void BubblePopsAndReleaseTempLocals()
+		{
+			for (int i = 0; i < code.Count - 1; i++)
+			{
+				switch (code[i].pseudo)
+				{
+					case CodeType.LineNumber:
+					case CodeType.ReleaseTempLocal:
+						if (code[i + 1].opcode == OpCodes.Pop)
+						{
+							OpCodeWrapper temp = code[i];
+							code[i] = code[i + 1];
+							code[i + 1] = temp;
+							i -= 2;
+						}
+						break;
+					case CodeType.BeginExceptionBlock:
+						if (code[i + 1].pseudo == CodeType.ReleaseTempLocal)
+						{
+							OpCodeWrapper temp = code[i];
+							code[i] = code[i + 1];
+							code[i + 1] = temp;
+							i -= 2;
+						}
+						break;
+				}
+			}
+		}
+
+		private void RemoveUnusedLabels()
+		{
+			for (int i = 0; i < code.Count; i++)
+			{
+				if (code[i].pseudo == CodeType.Label)
+				{
+					code[i].Label.Temp = 0;
+				}
+			}
+			for (int i = 0; i < code.Count; i++)
+			{
+				if (code[i].pseudo == CodeType.OpCode)
+				{
+					if (code[i].HasLabel)
+					{
+						code[i].Label.Temp++;
+					}
+					else if (code[i].opcode == OpCodes.Switch)
+					{
+						foreach (CodeEmitterLabel label in code[i].Labels)
+						{
+							label.Temp++;
+						}
+					}
+				}
+			}
+			for (int i = 0; i < code.Count; i++)
+			{
+				while (code[i].pseudo == CodeType.Label && code[i].Label.Temp == 0)
+				{
+					code.RemoveAt(i);
+				}
+			}
+		}
+
+		private void RemoveDeadCode()
+		{
+			for (int i = 0; i < code.Count; i++)
+			{
+				if (code[i].pseudo == CodeType.Label)
+				{
+					code[i].Label.Temp = 0;
+				}
+			}
+			const int ReachableFlag = 1;
+			const int ProcessedFlag = 2;
+			bool reachable = true;
+			bool done = false;
+			while (!done)
+			{
+				done = true;
+				for (int i = 0; i < code.Count; i++)
+				{
+					if (reachable)
+					{
+						if (code[i].pseudo == CodeType.Label)
+						{
+							if (code[i].Label.Temp == ProcessedFlag)
+							{
+								done = false;
+							}
+							code[i].Label.Temp |= ReachableFlag;
+						}
+						else if (code[i].pseudo == CodeType.OpCode)
+						{
+							if (code[i].HasLabel)
+							{
+								if (code[i].Label.Temp == ProcessedFlag)
+								{
+									done = false;
+								}
+								code[i].Label.Temp |= ReachableFlag;
+							}
+							else if (code[i].opcode == OpCodes.Switch)
+							{
+								foreach (CodeEmitterLabel label in code[i].Labels)
+								{
+									if (label.Temp == ProcessedFlag)
+									{
+										done = false;
+									}
+									label.Temp |= ReachableFlag;
+								}
+							}
+							switch (code[i].opcode.FlowControl)
+							{
+								case FlowControl.Cond_Branch:
+									if (!code[i].HasLabel && code[i].opcode != OpCodes.Switch)
+									{
+										throw new NotSupportedException();
+									}
+									break;
+								case FlowControl.Branch:
+									if (code[i].HasLabel)
+									{
+										reachable = false;
+									}
+									else if (code[i].HasValueByte && code[i].ValueByte == 0)
+									{
+										// it's a "leave_s 0", so the next instruction is reachable
+									}
+									else
+									{
+										throw new NotSupportedException();
+									}
+									break;
+								case FlowControl.Return:
+								case FlowControl.Throw:
+									reachable = false;
+									break;
+							}
+						}
+					}
+					else if (code[i].pseudo == CodeType.BeginCatchBlock)
+					{
+						reachable = true;
+					}
+					else if (code[i].pseudo == CodeType.BeginFaultBlock)
+					{
+						reachable = true;
+					}
+					else if (code[i].pseudo == CodeType.BeginFinallyBlock)
+					{
+						reachable = true;
+					}
+					else if (code[i].pseudo == CodeType.Label && (code[i].Label.Temp & ReachableFlag) != 0)
+					{
+						reachable = true;
+					}
+					if (code[i].pseudo == CodeType.Label)
+					{
+						code[i].Label.Temp |= ProcessedFlag;
+					}
+				}
+			}
+			reachable = true;
+			int firstUnreachable = -1;
+			for (int i = 0; i < code.Count; i++)
+			{
+				if (reachable)
+				{
+					if (code[i].pseudo == CodeType.OpCode)
+					{
+						switch (code[i].opcode.FlowControl)
+						{
+							case FlowControl.Branch:
+								if (code[i].HasValueByte && code[i].ValueByte == 0)
+								{
+									// it's a "leave_s 0", so the next instruction is reachable
+								}
+								else
+								{
+									goto case FlowControl.Return;
+								}
+								break;
+							case FlowControl.Return:
+							case FlowControl.Throw:
+								reachable = false;
+								firstUnreachable = i + 1;
+								break;
+						}
+					}
+				}
+				else
+				{
+					switch (code[i].pseudo)
+					{
+						case CodeType.OpCode:
+							break;
+						case CodeType.Label:
+							if ((code[i].Label.Temp & ReachableFlag) != 0)
+							{
+								goto case CodeType.BeginCatchBlock;
+							}
+							break;
+						case CodeType.BeginCatchBlock:
+						case CodeType.BeginFaultBlock:
+						case CodeType.BeginFinallyBlock:
+							code.RemoveRange(firstUnreachable, i - firstUnreachable);
+							i = firstUnreachable;
+							firstUnreachable = -1;
+							reachable = true;
+							break;
+						default:
+							code.RemoveRange(firstUnreachable, i - firstUnreachable);
+							i = firstUnreachable;
+							firstUnreachable++;
+							break;
+					}
+				}
+			}
+		}
+
 		internal void DoEmit()
 		{
-			RemoveJumpNext();
-			AnnihilatePops();
 			OptimizePatterns();
+
+#if STATIC_COMPILER
+			for (int i = 0; i < 2; i++)
+			{
+				RemoveJumpNext();
+				ChaseBranches();
+				RemoveUnusedLabels();
+				BubblePopsAndReleaseTempLocals();
+				AnnihilatePops();
+				AnnihilateStoreReleaseTempLocals();
+				RemoveDeadCode();
+			}
+
 			OptimizeEncodings();
 			OptimizeBranchSizes();
+#endif
+
 			int ilOffset = 0;
 			int lineNumber = -1;
 			for (int i = 0; i < code.Count; i++)
@@ -1034,6 +1305,22 @@ namespace IKVM.Internal
 #else
 				ilOffset += code[i].Size;
 #endif
+			}
+		}
+
+		private void DumpMethod()
+		{
+			Console.WriteLine("======================");
+			for (int i = 0; i < code.Count; i++)
+			{
+				if (code[i].pseudo == CodeType.OpCode)
+				{
+					Console.WriteLine(code[i].opcode.Name);
+				}
+				else
+				{
+					Console.WriteLine(code[i].pseudo);
+				}
 			}
 		}
 
