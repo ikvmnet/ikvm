@@ -145,7 +145,6 @@ namespace IKVM.Internal
 			SequencePoint,
 			LineNumber,
 			Label,
-			ThrowException,
 			BeginExceptionBlock,
 			BeginCatchBlock,
 			BeginFaultBlock,
@@ -236,8 +235,6 @@ namespace IKVM.Internal
 							return 0;
 						case CodeType.SequencePoint:
 							return 1;
-						case CodeType.ThrowException:
-							return 6;
 						case CodeType.BeginCatchBlock:
 						case CodeType.BeginFaultBlock:
 						case CodeType.BeginFinallyBlock:
@@ -437,9 +434,6 @@ namespace IKVM.Internal
 					break;
 				case CodeType.Label:
 					((CodeEmitterLabel)data).Mark(ilgen_real);
-					break;
-				case CodeType.ThrowException:
-					ilgen_real.ThrowException((Type)data);
 					break;
 				case CodeType.BeginExceptionBlock:
 					ilgen_real.BeginExceptionBlock();
@@ -1256,7 +1250,8 @@ namespace IKVM.Internal
 
 		internal void ThrowException(Type excType)
 		{
-			EmitPseudoOpCode(CodeType.ThrowException, excType);
+			Emit(OpCodes.Newobj, excType.GetConstructor(Type.EmptyTypes));
+			Emit(OpCodes.Throw);
 		}
 
 		internal void SetLineNumber(ushort line)
