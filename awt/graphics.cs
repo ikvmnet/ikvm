@@ -1,7 +1,7 @@
 /*
   Copyright (C) 2002, 2004, 2005, 2006, 2007 Jeroen Frijters
   Copyright (C) 2006 Active Endpoints, Inc.
-  Copyright (C) 2006, 2007, 2008, 2009 Volker Berlin (i-net software)
+  Copyright (C) 2006 - 2010 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -52,6 +52,10 @@ namespace ikvm.awt
             this.bitmap = bitmap;
         }
 
+        protected override SizeF GetSize() {
+            return bitmap.Size;
+        }
+
         private static Graphics createGraphics(Bitmap bitmap)
         {
             // lock to prevent the exception
@@ -88,6 +92,10 @@ namespace ikvm.awt
             : base(control.CreateGraphics(), font, J2C.ConvertColor(fgColor), J2C.ConvertColor(bgColor))
         {
             this.control = control;
+        }
+
+        protected override SizeF GetSize() {
+            return control.Size;
         }
 
         public override java.awt.Graphics create()
@@ -185,6 +193,14 @@ namespace ikvm.awt
             g = graphics;
             brush = new SolidBrush(color);
             pen = new Pen(color);
+        }
+
+        /// <summary>
+        /// Get the size of the graphics. This is used as a hind for some hacks.
+        /// </summary>
+        /// <returns></returns>
+        protected virtual SizeF GetSize() {
+            return g.ClipBounds.Size;
         }
 
         public override void clearRect(int x, int y, int width, int height)
@@ -792,6 +808,64 @@ namespace ikvm.awt
                 brush = new TextureBrush(
                     J2C.ConvertImage(texture.getImage()),
                     J2C.ConvertRect(texture.getAnchorRect()));
+                pen.Brush = brush;
+                return;
+            }
+
+            if (paint is java.awt.LinearGradientPaint) {
+                java.awt.LinearGradientPaint gradient = (java.awt.LinearGradientPaint)paint;
+                PointF start = J2C.ConvertPoint(gradient.getStartPoint());
+                PointF end = J2C.ConvertPoint(gradient.getEndPoint());
+
+                java.awt.Color[] javaColors = gradient.getColors();
+                ColorBlend colorBlend;
+                Color[] colors;
+                bool noCycle = gradient.getCycleMethod() == java.awt.MultipleGradientPaint.CycleMethod.NO_CYCLE;
+                if (noCycle) {
+                    //HACK because .NET does not support continue gradient like Java else Tile Gradient
+                    //that we receize the rectangle very large (factor z) and set 2 additional color values
+                    //an exact solution will calculate the size of the Graphics with the current transform
+                    float diffX = end.X - start.X;
+                    float diffY = end.Y - start.Y;
+                    SizeF size = GetSize();
+                    //HACK zoom factor, with a larger factor .NET will make the gradient wider.
+                    float z = Math.Min(10, Math.Max(size.Width / diffX, size.Height / diffY));
+                    start.X -= z * diffX;
+                    start.Y -= z * diffY;
+                    end.X += z * diffX;
+                    end.Y += z * diffY;
+
+                    colorBlend = new ColorBlend(javaColors.Length + 2);
+                    colors = colorBlend.Colors;
+                    float[] fractions = gradient.getFractions();
+                    float[] positions = colorBlend.Positions;
+                    for (int i = 0; i < javaColors.Length; i++) {
+                        colors[i + 1] = J2C.ConvertColor(javaColors[i]);
+                        positions[i + 1] = (z + fractions[i]) / (2 * z + 1);
+                    }
+                    colors[0] = colors[1];
+                    colors[colors.Length - 1] = colors[colors.Length - 1];
+                    positions[positions.Length - 1] = 1.0f;
+                } else {
+                    colorBlend = new ColorBlend(javaColors.Length);
+                    colors = colorBlend.Colors;
+                    colorBlend.Positions = gradient.getFractions();
+                    for (int i = 0; i < javaColors.Length; i++) {
+                        colors[i] = J2C.ConvertColor(javaColors[i]);
+                    }
+                }
+                LinearGradientBrush linear = new LinearGradientBrush(start, end, colors[0], colors[colors.Length - 1]);
+                linear.InterpolationColors = colorBlend;
+                switch (gradient.getCycleMethod().ordinal()) {
+                    case (int)java.awt.MultipleGradientPaint.CycleMethod.__Enum.NO_CYCLE:
+                    case (int)java.awt.MultipleGradientPaint.CycleMethod.__Enum.REFLECT:
+                        linear.WrapMode = WrapMode.TileFlipXY;
+                        break;
+                    case (int)java.awt.MultipleGradientPaint.CycleMethod.__Enum.REPEAT:
+                        linear.WrapMode = WrapMode.Tile;
+                        break;
+                }
+                brush = linear;
                 pen.Brush = brush;
                 return;
             }
