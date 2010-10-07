@@ -610,7 +610,10 @@ assembly.class
     sun/java2d/cmm/lcms/*.class
     sun/java2d/pipe/*.class
     @OPENJDK@/build/linux-amd64/gensrc/com/sun/accessibility/internal/resources/*.class
+    @OPENJDK@/build/linux-amd64/gensrc/com/sun/java/swing/plaf/nimbus/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/java/swing/*.class
     @OPENJDK@/jdk/src/share/classes/com/sun/java/swing/plaf/motif/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/java/swing/plaf/nimbus/*.class
     @OPENJDK@/jdk/src/share/classes/com/sun/java/swing/plaf/windows/*.class
     @OPENJDK@/jdk/src/share/classes/java/applet/*.class
     @OPENJDK@/jdk/src/share/classes/java/awt/*.class
@@ -661,6 +664,7 @@ assembly.class
     @OPENJDK@/jdk/src/share/classes/sun/java2d/pipe/*.class
     @OPENJDK@/jdk/src/share/classes/sun/java2d/pisces/*.class
     @OPENJDK@/jdk/src/share/classes/sun/swing/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/swing/plaf/*.class
     @OPENJDK@/jdk/src/share/classes/sun/swing/plaf/synth/*.class
     @OPENJDK@/jdk/src/share/classes/sun/swing/plaf/windows/*.class
     @OPENJDK@/jdk/src/share/classes/sun/swing/table/*.class
