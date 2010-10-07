@@ -124,8 +124,10 @@ namespace IKVM.Internal
 		private static readonly MethodInfo objectToString = Types.Object.GetMethod("ToString", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
 		private static readonly MethodInfo verboseCastFailure = JVM.SafeGetEnvironmentVariable("IKVM_VERBOSE_CAST") == null ? null : ByteCodeHelperMethods.VerboseCastFailure;
 		private ILGenerator ilgen_real;
+#if !STATIC_COMPILER
 		private bool inFinally;
 		private Stack<bool> exceptionStack = new Stack<bool>();
+#endif
 		private IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter linenums;
 		private CodeEmitterLocal[] tempLocals = new CodeEmitterLocal[32];
 		private ISymbolDocumentWriter symbols;
@@ -149,7 +151,9 @@ namespace IKVM.Internal
 			BeginFaultBlock,
 			BeginFinallyBlock,
 			EndExceptionBlock,
+#if !STATIC_COMPILER
 			EndExceptionBlockFinally,
+#endif
 		}
 
 		struct OpCodeWrapper
@@ -237,9 +241,13 @@ namespace IKVM.Internal
 						case CodeType.BeginFaultBlock:
 						case CodeType.BeginFinallyBlock:
 						case CodeType.EndExceptionBlock:
+#if STATIC_COMPILER
+							return 0;
+#else
 							return 5;
 						case CodeType.EndExceptionBlockFinally:
 							return 1;
+#endif
 						case CodeType.OpCode:
 							if (data == null)
 							{
@@ -399,7 +407,7 @@ namespace IKVM.Internal
 		private CodeEmitter(ILGenerator ilgen)
 		{
 #if STATIC_COMPILER
-			ilgen.__CleverExceptionBlockAssistance();
+			ilgen.__DisableExceptionBlockAssistance();
 #endif
 			this.ilgen_real = ilgen;
 		}
@@ -449,9 +457,11 @@ namespace IKVM.Internal
 				case CodeType.BeginFinallyBlock:
 					ilgen_real.BeginFinallyBlock();
 					break;
+#if !STATIC_COMPILER
 				case CodeType.EndExceptionBlockFinally:
 					ilgen_real.EndExceptionBlock();
 					break;
+#endif
 				case CodeType.EndExceptionBlock:
 					ilgen_real.EndExceptionBlock();
 					break;
@@ -1092,20 +1102,26 @@ namespace IKVM.Internal
 
 		internal void BeginExceptionBlock()
 		{
+#if !STATIC_COMPILER
 			exceptionStack.Push(inFinally);
 			inFinally = false;
+#endif
 			EmitPseudoOpCode(CodeType.BeginExceptionBlock, null);
 		}
 
 		internal void BeginFaultBlock()
 		{
+#if !STATIC_COMPILER
 			inFinally = true;
+#endif
 			EmitPseudoOpCode(CodeType.BeginFaultBlock, null);
 		}
 
 		internal void BeginFinallyBlock()
 		{
+#if !STATIC_COMPILER
 			inFinally = true;
+#endif
 			EmitPseudoOpCode(CodeType.BeginFinallyBlock, null);
 		}
 
@@ -1227,6 +1243,9 @@ namespace IKVM.Internal
 
 		internal void EndExceptionBlock()
 		{
+#if STATIC_COMPILER
+			EmitPseudoOpCode(CodeType.EndExceptionBlock, null);
+#else
 			if(inFinally)
 			{
 				EmitPseudoOpCode(CodeType.EndExceptionBlockFinally, null);
@@ -1236,6 +1255,7 @@ namespace IKVM.Internal
 				EmitPseudoOpCode(CodeType.EndExceptionBlock, null);
 			}
 			inFinally = exceptionStack.Pop();
+#endif
 		}
 
 		internal void EndScope()
