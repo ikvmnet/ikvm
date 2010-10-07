@@ -339,11 +339,24 @@ namespace IKVM.Internal
 				}
 			}
 
-			internal void RealEmit(int ilOffset, CodeEmitter codeEmitter)
+			internal void RealEmit(int ilOffset, CodeEmitter codeEmitter, ref int lineNumber)
 			{
 				if (pseudo == CodeType.OpCode)
 				{
+					if (lineNumber != -1)
+					{
+						if (codeEmitter.linenums == null)
+						{
+							codeEmitter.linenums = new IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter(32);
+						}
+						codeEmitter.linenums.AddMapping(ilOffset, lineNumber);
+						lineNumber = -1;
+					}
 					codeEmitter.RealEmitOpCode(opcode, data);
+				}
+				else if (pseudo == CodeType.LineNumber)
+				{
+					lineNumber = (int)data;
 				}
 				else
 				{
@@ -420,13 +433,6 @@ namespace IKVM.Internal
 					ilgen_real.MarkSequencePoint(symbols, (int)data, 0, (int)data + 1, 0);
 					// we emit a nop to make sure we always have an instruction associated with the sequence point
 					ilgen_real.Emit(OpCodes.Nop);
-					break;
-				case CodeType.LineNumber:
-					if (linenums == null)
-					{
-						linenums = new IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter(32);
-					}
-					linenums.AddMapping(ilOffset, (int)data);
 					break;
 				case CodeType.Label:
 					((CodeEmitterLabel)data).Mark(ilgen_real);
@@ -1009,9 +1015,10 @@ namespace IKVM.Internal
 			OptimizeEncodings();
 			OptimizeBranchSizes();
 			int ilOffset = 0;
+			int lineNumber = -1;
 			for (int i = 0; i < code.Count; i++)
 			{
-				code[i].RealEmit(ilOffset, this);
+				code[i].RealEmit(ilOffset, this, ref lineNumber);
 #if STATIC_COMPILER || NET_4_0
 				ilOffset = ilgen_real.ILOffset;
 #else
