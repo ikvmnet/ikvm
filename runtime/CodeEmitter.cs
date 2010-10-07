@@ -137,7 +137,6 @@ namespace IKVM.Internal
 		enum CodeType
 		{
 			OpCode,
-			Nop,
 			BeginScope,
 			EndScope,
 			DeclareLocal,
@@ -224,7 +223,6 @@ namespace IKVM.Internal
 				{
 					switch (pseudo)
 					{
-						case CodeType.Nop:
 						case CodeType.BeginScope:
 						case CodeType.EndScope:
 						case CodeType.DeclareLocal:
@@ -407,8 +405,6 @@ namespace IKVM.Internal
 		{
 			switch (type)
 			{
-				case CodeType.Nop:
-					break;
 				case CodeType.BeginScope:
 					ilgen_real.BeginScope();
 					break;
