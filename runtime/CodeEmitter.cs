@@ -113,6 +113,7 @@ namespace IKVM.Internal
 
 		enum CodeType
 		{
+			Unreachable,
 			OpCode,
 			BeginScope,
 			EndScope,
@@ -224,6 +225,7 @@ namespace IKVM.Internal
 				{
 					switch (pseudo)
 					{
+						case CodeType.Unreachable:
 						case CodeType.BeginScope:
 						case CodeType.EndScope:
 						case CodeType.DeclareLocal:
@@ -428,6 +430,8 @@ namespace IKVM.Internal
 		{
 			switch (type)
 			{
+				case CodeType.Unreachable:
+					break;
 				case CodeType.BeginScope:
 					ilgen_real.BeginScope();
 					break;
@@ -1461,11 +1465,11 @@ namespace IKVM.Internal
 						if (code[target - 1].pseudo == CodeType.Label)
 						{
 							code[source] = new OpCodeWrapper(OpCodes.Br, code[target - 1].Label);
-							for (int j = source + 1; j < i; j++)
+							for (int j = source + 1; j <= i; j++)
 							{
-								// This is to make sure that any line numbers here are removed by DCE.
-								// It may be better to fix DCE to remove unreachable line numbers.
-								code[j] = new OpCodeWrapper(OpCodes.Nop, null);
+								// We can't depend on DCE for code correctness (we have to maintain all MSIL invariants at all times),
+								// so we patch out the unused code.
+								code[j] = new OpCodeWrapper(CodeType.Unreachable, null);
 							}
 						}
 					}
@@ -1636,7 +1640,7 @@ namespace IKVM.Internal
 				DeduplicateBranchSourceTargetCode();
 				OptimizeStackTransfer();
 				MergeExceptionBlocks();
-				RemoveDeadCode();
+				//RemoveDeadCode();	// <-- broken
 			}
 			//DumpMethod();
 
