@@ -125,7 +125,7 @@ class SocketInputStream extends FileInputStream
             }
         }
         
-        nread = recv(fd, bufP, len, 0);
+        nread = recv(fd, bufP, off, len, 0);
         if (nread > 0) {
             // ok
         } else {

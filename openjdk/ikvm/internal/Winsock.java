@@ -663,6 +663,11 @@ public final class Winsock
 
     public static int recv(cli.System.Net.Sockets.Socket socket, byte[] buf, int len, int flags)
     {
+        return recv(socket, buf, 0, len, flags);
+    }
+
+    public static int recv(cli.System.Net.Sockets.Socket socket, byte[] buf, int off, int len, int flags)
+    {
         if (socket == null)
         {
             lastError = WSAENOTSOCK;
@@ -673,7 +678,7 @@ public final class Winsock
             if (false) throw new cli.System.ArgumentException();
             if (false) throw new cli.System.Net.Sockets.SocketException();
             if (false) throw new cli.System.ObjectDisposedException("");
-            return socket.Receive(buf, len, SocketFlags.wrap(flags));
+            return socket.Receive(buf, off, len, SocketFlags.wrap(flags));
         }
         catch (cli.System.ArgumentException _)
         {
