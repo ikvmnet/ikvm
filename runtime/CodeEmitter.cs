@@ -1352,6 +1352,10 @@ namespace IKVM.Internal
 					}
 				}
 			}
+			if (!reachable)
+			{
+				code.RemoveRange(firstUnreachable, code.Count - firstUnreachable);
+			}
 
 			// TODO can't we incorporate this in the above code?
 			// remove exception blocks with empty try blocks
@@ -1617,7 +1621,7 @@ namespace IKVM.Internal
 				DeduplicateBranchSourceTargetCode();
 				OptimizeStackTransfer();
 				MergeExceptionBlocks();
-				//RemoveDeadCode();	// <-- broken
+				RemoveDeadCode();
 			}
 			//DumpMethod();
 
