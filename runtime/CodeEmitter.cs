@@ -1640,12 +1640,29 @@ namespace IKVM.Internal
 
 		private void DumpMethod()
 		{
+			Dictionary<CodeEmitterLabel, int> labelIndexes = new Dictionary<CodeEmitterLabel, int>();
+			for (int i = 0; i < code.Count; i++)
+			{
+				if (code[i].pseudo == CodeType.Label)
+				{
+					labelIndexes.Add(code[i].Label, i);
+				}
+			}
 			Console.WriteLine("======================");
 			for (int i = 0; i < code.Count; i++)
 			{
 				if (code[i].pseudo == CodeType.OpCode)
 				{
-					Console.WriteLine("  " + code[i].opcode.Name);
+					Console.Write("  " + code[i].opcode.Name);
+					if (code[i].HasLabel)
+					{
+						Console.Write(" label" + labelIndexes[code[i].Label]);
+					}
+					Console.WriteLine();
+				}
+				else if (code[i].pseudo == CodeType.Label)
+				{
+					Console.WriteLine("label{0}:", i);
 				}
 				else
 				{
