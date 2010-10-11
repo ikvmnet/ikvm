@@ -513,11 +513,13 @@ namespace IKVM.Internal
 			assemblyBuilder.SetEntryPoint(mainStub, target);
 		}
 
-		internal void Save()
+		private void PrepareSave()
 		{
-			Tracer.Info(Tracer.Compiler, "CompilerClassLoader.Save...");
 			((DynamicClassLoader)this.GetTypeWrapperFactory()).FinishAll();
+		}
 
+		private void Save()
+		{
 			ModuleBuilder mb = GetTypeWrapperFactory().ModuleBuilder;
 			if(targetIsModule)
 			{
@@ -2599,6 +2601,11 @@ namespace IKVM.Internal
 			}
 			try
 			{
+				Tracer.Info(Tracer.Compiler, "CompilerClassLoader.Save...");
+				foreach (CompilerClassLoader compiler in compilers)
+				{
+					compiler.PrepareSave();
+				}
 				foreach (CompilerClassLoader compiler in compilers)
 				{
 					compiler.Save();
