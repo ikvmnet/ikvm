@@ -45,14 +45,21 @@ namespace ikvm.awt
     {
 
         private static readonly Bitmap defaultbitmap = new Bitmap(1, 1);
-        private static readonly Graphics defaultGraphics = Graphics.FromImage(defaultbitmap);
+        [ThreadStatic]
+        private static Graphics threadLocalDefaultGraphics;
 
-        static NetFontMetrics() {
-            defaultGraphics.SmoothingMode = SmoothingMode.None;
-            defaultGraphics.PixelOffsetMode = PixelOffsetMode.None;
-            defaultGraphics.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit;
-
-        }
+		private static Graphics GetDefaultGraphics()
+		{
+			Graphics g = threadLocalDefaultGraphics;
+			if (g == null)
+			{
+				g = threadLocalDefaultGraphics = Graphics.FromImage(defaultbitmap);
+				g.SmoothingMode = SmoothingMode.None;
+				g.PixelOffsetMode = PixelOffsetMode.None;
+				g.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit;
+			}
+			return g;
+		}
 
         public NetFontMetrics(java.awt.Font font) : base(font)
         {
@@ -102,7 +109,7 @@ namespace ikvm.awt
 
         public override int stringWidth(string s) 
         {
-            return (int)Math.Round(GetStringWidth(s, defaultGraphics));
+            return (int)Math.Round(GetStringWidth(s, GetDefaultGraphics()));
         }
 
         public float GetAscentFloat()
@@ -178,7 +185,7 @@ namespace ikvm.awt
             {
                 return GetStringBounds(aString, ((NetGraphics)gr).JGraphics);
             }
-            return GetStringBounds(aString, defaultGraphics);
+            return GetStringBounds(aString, GetDefaultGraphics());
         }
 
 		internal java.awt.geom.Rectangle2D GetStringBounds(String aString)
