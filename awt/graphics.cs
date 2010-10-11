@@ -1223,11 +1223,6 @@ namespace ikvm.awt
 
         public override void drawGlyphVector(java.awt.font.GlyphVector gv, float x, float y)
         {
-            java.awt.Font javaFont = gv.getFont();
-            if (javaFont == null)
-            {
-                javaFont = font;
-            }
             int count = gv.getNumGlyphs();
             char[] text = new char[count];
             for (int i = 0; i < count; i++)
@@ -1235,23 +1230,45 @@ namespace ikvm.awt
                 text[i] = (char)gv.getGlyphCode(i);
             }
             java.awt.font.FontRenderContext frc = gv.getFontRenderContext();
-            Matrix matrix = null;
+            Matrix currentMatrix = null;
+            Font currentFont = netfont;
+            TextRenderingHint currentHint = g.TextRenderingHint;
             try
             {
-                if (frc != null && !frc.getTransform().equals(getTransform()))
+                java.awt.Font javaFont = gv.getFont();
+                if (javaFont != null)
+                {
+                    netfont = javaFont.getNetFont();
+                }
+                if (frc.isAntiAliased()) {
+                    if( frc.usesFractionalMetrics() ){
+                        g.TextRenderingHint = TextRenderingHint.AntiAlias;
+                    } else {
+                        g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
+                    }
+                } else {
+                    if (frc.usesFractionalMetrics()) {
+                        g.TextRenderingHint = TextRenderingHint.SingleBitPerPixel;
+                    } else {
+                        g.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit;
+                    }
+                }
+                if (!frc.getTransform().equals(getTransform()))
                 {
                     // save the old context and use the transformation from the renderContext
-                    matrix = g.Transform;
+                    currentMatrix = g.Transform;
                     g.Transform = J2C.ConvertTransform(frc.getTransform());
                 }
-                g.DrawString(new string(text), javaFont.getNetFont(), brush, x, y - javaFont.getSize(), StringFormat.GenericTypographic);
+                drawString(new string(text), x, y);
             }
             finally
             {
                 // Restore the old context if needed
-                if (matrix != null)
+                g.TextRenderingHint = currentHint;
+                netfont = currentFont;
+                if (currentMatrix != null)
                 {
-                    g.Transform = matrix;
+                    g.Transform = currentMatrix;
                 }
             }
         }
