@@ -1111,34 +1111,11 @@ namespace IKVM.Internal
 
 		private void ChaseBranches()
 		{
-			Dictionary<CodeEmitterLabel, int> indexes = new Dictionary<CodeEmitterLabel, int>();
-			for (int i = 0; i < code.Count; i++)
-			{
-				if (code[i].pseudo == CodeType.Label)
-				{
-					int target = i + 1;
-					while (code[target].pseudo == CodeType.LineNumber || code[target].pseudo == CodeType.Label)
-					{
-						target++;
-					}
-					indexes[code[i].Label] = target;
-				}
-			}
-			for (int i = 0; i < code.Count; i++)
-			{
-				if (code[i].opcode == OpCodes.Leave
-					&& code[i].HasLabel)
-				{
-					int target = indexes[code[i].Label];
-					if ((code[target].opcode == OpCodes.Br || code[target].opcode == OpCodes.Leave)
-						&& code[target].HasLabel
-						&& target != i)
-					{
-						code[i] = new OpCodeWrapper(OpCodes.Leave, code[target].Label);
-						i--;
-					}
-				}
-			}
+			/*
+			 * Previous implementation was broken. We need to take try-blocks into account,
+			 * because it is possible to jump into a try block (not from an opcode point of view,
+			 * but from a pseudo opcode point of view).
+			 */
 		}
 
 		private void SortPseudoOpCodes()
