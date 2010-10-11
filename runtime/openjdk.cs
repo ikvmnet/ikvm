@@ -6008,6 +6008,8 @@ namespace IKVM.NativeCode.sun.reflect
 					tw.EmitConvStackTypeToSignatureType(ilgen, null);
 					ilgen.Emit(OpCodes.Stloc, args[i]);
 				}
+				CodeEmitterLabel label1 = ilgen.DefineLabel();
+				ilgen.Emit(OpCodes.Leave, label1);
 				ilgen.BeginCatchBlock(typeof(InvalidCastException));
 				ilgen.Emit(OpCodes.Newobj, illegalArgumentExceptionCtor);
 				ilgen.Emit(OpCodes.Throw);
@@ -6017,6 +6019,7 @@ namespace IKVM.NativeCode.sun.reflect
 				ilgen.EndExceptionBlock();
 
 				// this is the actual call
+				ilgen.MarkLabel(label1);
 				ilgen.BeginExceptionBlock();
 				for (int i = 0; i < args.Length; i++)
 				{
@@ -6044,6 +6047,8 @@ namespace IKVM.NativeCode.sun.reflect
 				mw.ReturnType.EmitConvSignatureTypeToStackType(ilgen);
 				BoxReturnValue(ilgen, mw.ReturnType);
 				ilgen.Emit(OpCodes.Stloc, ret);
+				CodeEmitterLabel label2 = ilgen.DefineLabel();
+				ilgen.Emit(OpCodes.Leave, label2);
 				ilgen.BeginCatchBlock(typeof(Exception));
 				CodeEmitterLabel label = ilgen.DefineLabel();
 				CodeEmitterLabel labelWrap = ilgen.DefineLabel();
@@ -6077,6 +6082,7 @@ namespace IKVM.NativeCode.sun.reflect
 				ilgen.Emit(OpCodes.Throw);
 				ilgen.EndExceptionBlock();
 
+				ilgen.MarkLabel(label2);
 				ilgen.Emit(OpCodes.Ldloc, ret);
 				ilgen.Emit(OpCodes.Ret);
 				ilgen.DoEmit();
@@ -6354,6 +6360,8 @@ namespace IKVM.NativeCode.sun.reflect
 					tw.EmitConvStackTypeToSignatureType(ilgen, null);
 					ilgen.Emit(OpCodes.Stloc, args[i]);
 				}
+				CodeEmitterLabel label1 = ilgen.DefineLabel();
+				ilgen.Emit(OpCodes.Leave, label1);
 				ilgen.BeginCatchBlock(typeof(InvalidCastException));
 				ilgen.Emit(OpCodes.Newobj, FastMethodAccessorImpl.illegalArgumentExceptionCtor);
 				ilgen.Emit(OpCodes.Throw);
@@ -6363,6 +6371,7 @@ namespace IKVM.NativeCode.sun.reflect
 				ilgen.EndExceptionBlock();
 
 				// this is the actual call
+				ilgen.MarkLabel(label1);
 				ilgen.BeginExceptionBlock();
 				for (int i = 0; i < args.Length; i++)
 				{
@@ -6370,6 +6379,8 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 				mw.EmitNewobj(ilgen);
 				ilgen.Emit(OpCodes.Stloc, ret);
+				CodeEmitterLabel label2 = ilgen.DefineLabel();
+				ilgen.Emit(OpCodes.Leave, label2);
 				ilgen.BeginCatchBlock(typeof(Exception));
 				ilgen.Emit(OpCodes.Dup);
 				ilgen.Emit(OpCodes.Callvirt, FastMethodAccessorImpl.get_TargetSite);
@@ -6384,6 +6395,7 @@ namespace IKVM.NativeCode.sun.reflect
 				ilgen.Emit(OpCodes.Throw);
 				ilgen.EndExceptionBlock();
 
+				ilgen.MarkLabel(label2);
 				ilgen.Emit(OpCodes.Ldloc, ret);
 				ilgen.Emit(OpCodes.Ret);
 				ilgen.DoEmit();
@@ -7489,12 +7501,15 @@ namespace IKVM.NativeCode.sun.reflect
 					fw.FieldTypeWrapper.EmitConvSignatureTypeToStackType(ilgen);
 					CodeEmitterLocal local = ilgen.DeclareLocal(fieldType);
 					ilgen.Emit(OpCodes.Stloc, local);
+					CodeEmitterLabel label = ilgen.DefineLabel();
+					ilgen.Emit(OpCodes.Leave, label);
 					ilgen.BeginCatchBlock(typeof(InvalidCastException));
 					ilgen.Emit(OpCodes.Ldarg_0);
 					ilgen.Emit(OpCodes.Ldarg_1);
 					ilgen.Emit(OpCodes.Callvirt, typeof(IReflectionException).GetMethod("GetIllegalArgumentException"));
 					ilgen.Emit(OpCodes.Throw);
 					ilgen.EndExceptionBlock();
+					ilgen.MarkLabel(label);
 					ilgen.Emit(OpCodes.Ldloc, local);
 				}
 				ilgen.Emit(OpCodes.Ret);
@@ -7518,12 +7533,15 @@ namespace IKVM.NativeCode.sun.reflect
 						fw.FieldTypeWrapper.EmitCheckcast(null, ilgen);
 						fw.FieldTypeWrapper.EmitConvStackTypeToSignatureType(ilgen, null);
 						fw.EmitSet(ilgen);
+						CodeEmitterLabel label = ilgen.DefineLabel();
+						ilgen.Emit(OpCodes.Leave, label);
 						ilgen.BeginCatchBlock(typeof(InvalidCastException));
 						ilgen.Emit(OpCodes.Ldarg_0);
 						ilgen.Emit(OpCodes.Ldarg_1);
 						ilgen.Emit(OpCodes.Callvirt, typeof(IReflectionException).GetMethod("SetIllegalArgumentException"));
 						ilgen.Emit(OpCodes.Throw);
 						ilgen.EndExceptionBlock();
+						ilgen.MarkLabel(label);
 					}
 					else
 					{
@@ -7543,12 +7561,15 @@ namespace IKVM.NativeCode.sun.reflect
 					}
 					fw.FieldTypeWrapper.EmitConvStackTypeToSignatureType(ilgen, null);
 					fw.EmitSet(ilgen);
+					CodeEmitterLabel label = ilgen.DefineLabel();
+					ilgen.Emit(OpCodes.Leave, label);
 					ilgen.BeginCatchBlock(typeof(InvalidCastException));
 					ilgen.Emit(OpCodes.Ldarg_0);
 					ilgen.Emit(OpCodes.Ldarg_1);
 					ilgen.Emit(OpCodes.Callvirt, typeof(IReflectionException).GetMethod("SetIllegalArgumentException"));
 					ilgen.Emit(OpCodes.Throw);
 					ilgen.EndExceptionBlock();
+					ilgen.MarkLabel(label);
 				}
 				ilgen.Emit(OpCodes.Ret);
 				ilgen.DoEmit();

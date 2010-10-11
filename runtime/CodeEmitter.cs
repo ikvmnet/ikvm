@@ -111,7 +111,7 @@ namespace IKVM.Internal
 		private Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame> labels = new Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame>();
 #endif
 
-		enum CodeType
+		enum CodeType : short
 		{
 			Unreachable,
 			OpCode,
@@ -127,27 +127,41 @@ namespace IKVM.Internal
 			BeginFaultBlock,
 			BeginFinallyBlock,
 			EndExceptionBlock,
-#if !STATIC_COMPILER
-			EndExceptionBlockFinally,
-#endif
+		}
+
+		enum CodeTypeFlags : short
+		{
+			None = 0,
+			EndFaultOrFinally = 1,
 		}
 
 		struct OpCodeWrapper
 		{
 			internal readonly CodeType pseudo;
+			private readonly CodeTypeFlags flags;
 			internal readonly OpCode opcode;
 			private readonly object data;
 
 			internal OpCodeWrapper(CodeType pseudo, object data)
 			{
 				this.pseudo = pseudo;
+				this.flags = CodeTypeFlags.None;
 				this.opcode = OpCodes.Nop;
 				this.data = data;
+			}
+
+			internal OpCodeWrapper(CodeType pseudo, CodeTypeFlags flags)
+			{
+				this.pseudo = pseudo;
+				this.flags = flags;
+				this.opcode = OpCodes.Nop;
+				this.data = null;
 			}
 
 			internal OpCodeWrapper(OpCode opcode, object data)
 			{
 				this.pseudo = CodeType.OpCode;
+				this.flags = CodeTypeFlags.None;
 				this.opcode = opcode;
 				this.data = data;
 			}
@@ -243,9 +257,11 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 							return 0;
 #else
-							return 5;
-						case CodeType.EndExceptionBlockFinally:
-							return 1;
+							if ((flags & CodeTypeFlags.EndFaultOrFinally) != 0)
+							{
+								return 1 + 2;
+							}
+							return 5 + 2;
 #endif
 						case CodeType.OpCode:
 							if (data == null)
@@ -463,13 +479,13 @@ namespace IKVM.Internal
 				case CodeType.BeginFinallyBlock:
 					ilgen_real.BeginFinallyBlock();
 					break;
-#if !STATIC_COMPILER
-				case CodeType.EndExceptionBlockFinally:
-					ilgen_real.EndExceptionBlock();
-					break;
-#endif
 				case CodeType.EndExceptionBlock:
 					ilgen_real.EndExceptionBlock();
+#if !STATIC_COMPILER
+					// HACK to keep the verifier happy we need this bogus jump
+					// (because of the bogus Leave that Ref.Emit ends the try block with)
+					ilgen_real.Emit(OpCodes.Br_S, (sbyte)-2);
+#endif
 					break;
 				default:
 					throw new InvalidOperationException();
@@ -1609,7 +1625,7 @@ namespace IKVM.Internal
 		{
 			OptimizePatterns();
 
-#if STATIC_COMPILER
+#if STATIC_COMPILER || true
 			for (int i = 0; i < 4; i++)
 			{
 				RemoveJumpNext();
@@ -1869,29 +1885,12 @@ namespace IKVM.Internal
 			EmitOpCode(opcode, new CalliWrapper(unmanagedCallConv, returnType, parameterTypes));
 		}
 
-		internal void EndExceptionBlockNoFallThrough()
-		{
-			EndExceptionBlock();
-#if !STATIC_COMPILER
-			// HACK to keep the verifier happy we need this bogus jump
-			// (because of the bogus Leave that Ref.Emit ends the try block with)
-			Emit(OpCodes.Br_S, (sbyte)-2);
-#endif
-		}
-
 		internal void EndExceptionBlock()
 		{
 #if STATIC_COMPILER
 			EmitPseudoOpCode(CodeType.EndExceptionBlock, null);
 #else
-			if(inFinally)
-			{
-				EmitPseudoOpCode(CodeType.EndExceptionBlockFinally, null);
-			}
-			else
-			{
-				EmitPseudoOpCode(CodeType.EndExceptionBlock, null);
-			}
+			EmitPseudoOpCode(CodeType.EndExceptionBlock, inFinally ? CodeTypeFlags.EndFaultOrFinally : CodeTypeFlags.None);
 			inFinally = exceptionStack.Pop();
 #endif
 		}
