@@ -21,6 +21,7 @@
   jeroen@frijters.net
   
 */
+//#define LABELCHECK
 using System;
 using System.Collections.Generic;
 #if STATIC_COMPILER
@@ -98,6 +99,7 @@ namespace IKVM.Internal
 	{
 		private static readonly MethodInfo objectToString = Types.Object.GetMethod("ToString", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
 		private static readonly MethodInfo verboseCastFailure = JVM.SafeGetEnvironmentVariable("IKVM_VERBOSE_CAST") == null ? null : ByteCodeHelperMethods.VerboseCastFailure;
+		private static readonly bool experimentalOptimizations = JVM.SafeGetEnvironmentVariable("IKVM_EXPERIMENTAL_OPTIMIZATIONS") != null;
 		private ILGenerator ilgen_real;
 #if !STATIC_COMPILER
 		private bool inFinally;
@@ -110,6 +112,14 @@ namespace IKVM.Internal
 #if LABELCHECK
 		private Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame> labels = new Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame>();
 #endif
+
+		static CodeEmitter()
+		{
+			if (experimentalOptimizations)
+			{
+				Console.Error.WriteLine("IKVM.NET experimental optimizations enabled.");
+			}
+		}
 
 		enum CodeType : short
 		{
@@ -1625,22 +1635,24 @@ namespace IKVM.Internal
 		{
 			OptimizePatterns();
 
-#if STATIC_COMPILER || true
-			for (int i = 0; i < 4; i++)
+			if (experimentalOptimizations)
 			{
-				RemoveJumpNext();
-				ChaseBranches();
-				RemoveUnusedLabels();
-				SortPseudoOpCodes();
-				AnnihilatePops();
-				AnnihilateStoreReleaseTempLocals();
-				DeduplicateBranchSourceTargetCode();
-				OptimizeStackTransfer();
-				MergeExceptionBlocks();
-				RemoveDeadCode();
+				for (int i = 0; i < 4; i++)
+				{
+					RemoveJumpNext();
+					ChaseBranches();
+					RemoveUnusedLabels();
+					SortPseudoOpCodes();
+					AnnihilatePops();
+					AnnihilateStoreReleaseTempLocals();
+					DeduplicateBranchSourceTargetCode();
+					OptimizeStackTransfer();
+					MergeExceptionBlocks();
+					RemoveDeadCode();
+				}
 			}
-			//DumpMethod();
 
+#if STATIC_COMPILER
 			OptimizeEncodings();
 			OptimizeBranchSizes();
 #endif
