@@ -947,7 +947,7 @@ sealed class Compiler
 					{
 						ilGenerator.BeginFaultBlock();
 					}
-					Compile(new Block(this, 0, block.EndIndex, exceptionIndex, null, false), ComputePartialReachability(handlerIndex, true));
+					Compile(new Block(this, 0, block.EndIndex, -1, null, false), ComputePartialReachability(handlerIndex, true));
 					ilGenerator.EndExceptionBlock();
 				}
 				else
