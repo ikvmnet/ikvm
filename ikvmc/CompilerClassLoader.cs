@@ -2814,15 +2814,39 @@ namespace IKVM.Internal
 				System.Xml.Serialization.XmlSerializer ser = new System.Xml.Serialization.XmlSerializer(typeof(IKVM.Internal.MapXml.Root));
 				ser.UnknownElement += new System.Xml.Serialization.XmlElementEventHandler(ser_UnknownElement);
 				ser.UnknownAttribute += new System.Xml.Serialization.XmlAttributeEventHandler(ser_UnknownAttribute);
-				using(FileStream fs = File.Open(options.remapfile, FileMode.Open))
+				FileStream fs;
+				try
+				{
+					fs = File.Open(options.remapfile, FileMode.Open);
+				}
+				catch(Exception x)
+				{
+					Console.Error.WriteLine("Error opening remap file \"{0}\": {1}", options.remapfile, x.Message);
+					return 1;
+				}
+				try
 				{
 					XmlTextReader rdr = new XmlTextReader(fs);
 					IKVM.Internal.MapXml.Root.xmlReader = rdr;
 					IKVM.Internal.MapXml.Root.filename = new FileInfo(fs.Name).Name;
-					if (!loader.ValidateAndSetMap((IKVM.Internal.MapXml.Root)ser.Deserialize(rdr)))
+					IKVM.Internal.MapXml.Root map;
+					try
+					{
+						map = (IKVM.Internal.MapXml.Root)ser.Deserialize(rdr);
+					}
+					catch(InvalidOperationException x)
+					{
+						Console.Error.WriteLine("Error parsing remap file \"{0}\": {1}", options.remapfile, x.Message);
+						return 1;
+					}
+					if(!loader.ValidateAndSetMap(map))
 					{
 						return 1;
 					}
+				}
+				finally
+				{
+					fs.Close();
 				}
 				if(loader.CheckCompilingCoreAssembly())
 				{
