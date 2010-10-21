@@ -711,10 +711,7 @@ namespace ikvm.awt
 
         public override void fill(java.awt.Shape shape)
         {
-            using (Region region = new Region(J2C.ConvertShape(shape)))
-            {
-                g.FillRegion(brush, region);
-            }
+            g.FillPath(brush, J2C.ConvertShape(shape));
         }
 
         public override bool hit(java.awt.Rectangle rect, java.awt.Shape s, bool onStroke)
@@ -936,16 +933,19 @@ namespace ikvm.awt
                 if (hintValue == java.awt.RenderingHints.VALUE_ANTIALIAS_DEFAULT)
                 {
                     g.SmoothingMode = SmoothingMode.Default;
+                    g.PixelOffsetMode = PixelOffsetMode.Default;
                     return;
                 }
                 if (hintValue == java.awt.RenderingHints.VALUE_ANTIALIAS_OFF)
                 {
                     g.SmoothingMode = SmoothingMode.None;
+                    g.PixelOffsetMode = PixelOffsetMode.Default;
                     return;
                 }
                 if (hintValue == java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
                 {
                     g.SmoothingMode = SmoothingMode.AntiAlias;
+                    g.PixelOffsetMode = PixelOffsetMode.HighQuality;
                     return;
                 }
                 return;
@@ -1223,12 +1223,6 @@ namespace ikvm.awt
 
         public override void drawGlyphVector(java.awt.font.GlyphVector gv, float x, float y)
         {
-            int count = gv.getNumGlyphs();
-            char[] text = new char[count];
-            for (int i = 0; i < count; i++)
-            {
-                text[i] = (char)gv.getGlyphCode(i);
-            }
             java.awt.font.FontRenderContext frc = gv.getFontRenderContext();
             Matrix currentMatrix = null;
             Font currentFont = netfont;
@@ -1259,7 +1253,7 @@ namespace ikvm.awt
                     currentMatrix = g.Transform;
                     g.Transform = J2C.ConvertTransform(frc.getTransform());
                 }
-                drawString(new string(text), x, y);
+                drawString(J2C.ConvertGlyphVector(gv), x, y);
             }
             finally
             {
