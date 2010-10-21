@@ -3389,6 +3389,17 @@ namespace IKVM.Internal
 			return type;
 		}
 
+		internal static TypeWrapper GetClassForMapXml(ClassLoaderWrapper loader, string name)
+		{
+			TypeWrapper tw = loader.LoadClassByDottedNameFast(name);
+			if (tw == null)
+			{
+				Console.Error.WriteLine("Error: class '{0}' referenced in xml remap file was not found", name);
+				Environment.Exit(1);
+			}
+			return tw;
+		}
+
 		internal static Type GetType(ClassLoaderWrapper loader, string name)
 		{
 			CompilerClassLoader ccl = (CompilerClassLoader)loader;

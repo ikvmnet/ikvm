@@ -757,7 +757,7 @@ namespace IKVM.Internal.MapXml
 
 		internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
 		{
-			FieldWrapper fw = ClassLoaderWrapper.LoadClassCritical(Class).GetFieldWrapper(Name, Sig);
+			FieldWrapper fw = StaticCompiler.GetClassForMapXml(context.ClassLoader, Class).GetFieldWrapper(Name, Sig);
 			fw.Link();
 			ilgen.Emit(OpCodes.Ldflda, fw.GetField());
 		}
@@ -775,7 +775,7 @@ namespace IKVM.Internal.MapXml
 
 		internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
 		{
-			FieldWrapper fw = ClassLoaderWrapper.LoadClassCritical(Class).GetFieldWrapper(Name, Sig);
+			FieldWrapper fw = StaticCompiler.GetClassForMapXml(context.ClassLoader, Class).GetFieldWrapper(Name, Sig);
 			fw.Link();
 			// we don't use fw.EmitGet because we don't want automatic unboxing and whatever
 			ilgen.Emit(OpCodes.Ldfld, fw.GetField());
@@ -802,7 +802,7 @@ namespace IKVM.Internal.MapXml
 			}
 			else
 			{
-				FieldWrapper fw = ClassLoaderWrapper.LoadClassCritical(Class).GetFieldWrapper(Name, Sig);
+				FieldWrapper fw = StaticCompiler.GetClassForMapXml(context.ClassLoader, Class).GetFieldWrapper(Name, Sig);
 				fw.Link();
 				// we don't use fw.EmitGet because we don't want automatic unboxing and whatever
 				ilgen.Emit(OpCodes.Ldsfld, fw.GetField());
@@ -822,7 +822,7 @@ namespace IKVM.Internal.MapXml
 
 		internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
 		{
-			FieldWrapper fw = ClassLoaderWrapper.LoadClassCritical(Class).GetFieldWrapper(Name, Sig);
+			FieldWrapper fw = StaticCompiler.GetClassForMapXml(context.ClassLoader, Class).GetFieldWrapper(Name, Sig);
 			fw.Link();
 			// we don't use fw.EmitSet because we don't want automatic unboxing and whatever
 			ilgen.Emit(OpCodes.Stfld, fw.GetField());
@@ -841,7 +841,7 @@ namespace IKVM.Internal.MapXml
 
 		internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
 		{
-			FieldWrapper fw = ClassLoaderWrapper.LoadClassCritical(Class).GetFieldWrapper(Name, Sig);
+			FieldWrapper fw = StaticCompiler.GetClassForMapXml(context.ClassLoader, Class).GetFieldWrapper(Name, Sig);
 			fw.Link();
 			// we don't use fw.EmitSet because we don't want automatic unboxing and whatever
 			ilgen.Emit(OpCodes.Stsfld, fw.GetField());
