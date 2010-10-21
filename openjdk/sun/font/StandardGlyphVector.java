@@ -23,6 +23,8 @@
  */
 package sun.font;
 
+import ikvm.awt.IkvmToolkit;
+
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
@@ -40,6 +42,8 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.text.CharacterIterator;
 import java.util.WeakHashMap;
+
+import cli.System.Drawing.Drawing2D.GraphicsPath;
 
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -107,6 +111,7 @@ public class StandardGlyphVector extends GlyphVector{
      * 
      * @return
      */
+    @SuppressWarnings( "deprecation" )
     private FontMetrics getMetrics(){
         if(metrics == null){
             metrics = Toolkit.getDefaultToolkit().getFontMetrics(font);
@@ -314,8 +319,7 @@ public class StandardGlyphVector extends GlyphVector{
 
     @Override
     public Shape getGlyphVisualBounds( int glyphIndex ) {
-        // TODO Visual is a little smaller, see the JUnit test
-        return getGlyphLogicalBounds( glyphIndex );
+        return ((IkvmToolkit)Toolkit.getDefaultToolkit()).outline( font, frc, glyphs.substring( glyphIndex, glyphIndex + 1 ), 0, 0 );
     }
 
     @Override
@@ -326,8 +330,7 @@ public class StandardGlyphVector extends GlyphVector{
 
     @Override
     public Rectangle2D getVisualBounds(){
-        // TODO Visual is a little smaller, see the JUnit test
-        return getLogicalBounds();
+        return getOutline().getBounds2D();
     }
 
 
@@ -339,13 +342,13 @@ public class StandardGlyphVector extends GlyphVector{
 
     @Override
     public Shape getOutline(){
-        throw new NotImplementedException();
+        return getOutline( 0, 0 );
     }
 
 
     @Override
     public Shape getOutline(float x, float y){
-        throw new NotImplementedException();
+        return ((IkvmToolkit)Toolkit.getDefaultToolkit()).outline( font, frc, glyphs, x, y );
     }
 
 

@@ -32,4 +32,5 @@ public interface IkvmToolkit{
     
     public sun.print.PrintPeer getPrintPeer();
     
+    public java.awt.Shape outline(java.awt.Font javaFont, java.awt.font.FontRenderContext frc, String text, float x, float y);
 }
