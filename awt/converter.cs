@@ -135,18 +135,9 @@ namespace ikvm.awt
 
         internal static GraphicsPath ConvertShape(java.awt.Shape shape)
         {
-            java.awt.geom.GeneralPath path = new java.awt.geom.GeneralPath(shape);
-            java.awt.geom.PathIterator iterator = path.getPathIterator(new java.awt.geom.AffineTransform());
+            java.awt.geom.PathIterator iterator = shape.getPathIterator(new java.awt.geom.AffineTransform());
             GraphicsPath gp = new GraphicsPath();
-            switch (iterator.getWindingRule())
-            {
-                case java.awt.geom.PathIterator.__Fields.WIND_EVEN_ODD:
-                    gp.FillMode = System.Drawing.Drawing2D.FillMode.Alternate;
-                    break;
-                case java.awt.geom.PathIterator.__Fields.WIND_NON_ZERO:
-                    gp.FillMode = System.Drawing.Drawing2D.FillMode.Winding;
-                    break;
-            }
+            gp.FillMode = (FillMode)iterator.getWindingRule();
             float[] coords = new float[6];
             float x = 0;
             float y = 0;
@@ -358,7 +349,30 @@ namespace ikvm.awt
 				}
 			}
 		}
-	}
+
+        internal static string ConvertGlyphVector(java.awt.font.GlyphVector gv) {
+            int count = gv.getNumGlyphs();
+            char[] text = new char[count];
+            for (int i = 0; i < count; i++) {
+                text[i] = (char)gv.getGlyphCode(i);
+            }
+            return new string(text);
+        }
+
+        internal static StringFormat CreateStringFormat(java.awt.font.FontRenderContext frc) {
+            StringFormat format;
+            if (frc.usesFractionalMetrics()) {
+                // this very mystic, if a StringFormat extends from GenericTypographic then the metric are different but like Java with fractional metrics
+                format = new StringFormat(StringFormat.GenericTypographic);
+            } else {
+                format = new StringFormat();
+            }
+
+            format.FormatFlags = StringFormatFlags.MeasureTrailingSpaces | StringFormatFlags.NoWrap | StringFormatFlags.FitBlackBox;
+            format.Trimming = StringTrimming.None;
+            return format;
+        }
+    }
 
     /// <summary>
     /// This class has some static convertion function from C# to Java objects
@@ -397,5 +411,40 @@ namespace ikvm.awt
             return jFont;
         }
 
+        internal static java.awt.Shape ConvertShape(GraphicsPath path) {
+            java.awt.geom.GeneralPath shape = new java.awt.geom.GeneralPath();
+            shape.setWindingRule((int)path.FillMode);
+            for (int i = 0; i < path.PointCount; i++) {
+                byte pathType = path.PathTypes[i];
+                int type = pathType & 0x07;
+                PointF point = path.PathPoints[i];
+                switch (type) {
+                    case 0:
+                        // Indicates that the point is the start of a figure. 
+                        shape.moveTo(point.X, point.Y);
+                        break;
+                    case 1:
+                        // Indicates that the point is one of the two endpoints of a line. 
+                        shape.lineTo(point.X, point.Y);
+                        break;
+                    case 3:
+                        // Indicates that the point is an endpoint or control point of a cubic Bézier spline. 
+                        PointF point2 = path.PathPoints[++i];
+                        PointF point3 = path.PathPoints[++i];
+                        shape.curveTo(point.X, point.Y, point2.X, point2.Y, point3.X, point3.Y);
+                        pathType = path.PathTypes[i];
+                        break;
+                    default:
+                        Console.WriteLine("Unknown GraphicsPath type: " + type);
+                        break;
+                }
+                if ((pathType & 0x80) > 0) {
+                    // Specifies that the point is the last point in a closed subpath (figure).
+                    shape.closePath();
+                }
+            }
+            shape.closePath();
+            return shape;
+        }
     }
 }
