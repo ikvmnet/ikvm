@@ -135,7 +135,7 @@ namespace ikvm.awt
 
         internal static GraphicsPath ConvertShape(java.awt.Shape shape)
         {
-            java.awt.geom.PathIterator iterator = shape.getPathIterator(new java.awt.geom.AffineTransform());
+            java.awt.geom.PathIterator iterator = shape.getPathIterator(null);
             GraphicsPath gp = new GraphicsPath();
             gp.FillMode = (FillMode)iterator.getWindingRule();
             float[] coords = new float[6];
@@ -443,7 +443,6 @@ namespace ikvm.awt
                     shape.closePath();
                 }
             }
-            shape.closePath();
             return shape;
         }
     }
