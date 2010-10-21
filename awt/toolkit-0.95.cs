@@ -65,6 +65,7 @@ using ikvm.awt.printing;
 using ikvm.runtime;
 using sun.awt;
 using System.Runtime.InteropServices;
+using System.Drawing.Drawing2D;
 
 namespace ikvm.awt
 {
@@ -658,6 +659,10 @@ namespace ikvm.awt
             return null;
         }
 
+        protected override java.awt.peer.MouseInfoPeer getMouseInfoPeer() {
+            return new NetMouseInfoPeer();
+        }
+
         /*===============================
          * Implementations of interface IkvmToolkit
          */
@@ -683,9 +688,25 @@ namespace ikvm.awt
             }
         }
 
-        protected override java.awt.peer.MouseInfoPeer getMouseInfoPeer()
-        {
-            return new NetMouseInfoPeer();
+        /// <summary>
+        /// Create a outline from the given text and font parameter
+        /// </summary>
+        /// <param name="javaFont">the font</param>
+        /// <param name="frc">font render context</param>
+        /// <param name="text">the text</param>
+        /// <param name="x">x - position</param>
+        /// <param name="y">y - position</param>
+        /// <returns></returns>
+        public java.awt.Shape outline(java.awt.Font javaFont, java.awt.font.FontRenderContext frc, string text, float x, float y) {
+            GraphicsPath path = new GraphicsPath(FillMode.Winding);
+            Font netFont = javaFont.getNetFont();
+            FontFamily family = netFont.FontFamily;
+            FontStyle style = netFont.Style;
+            float factor = netFont.Size / family.GetEmHeight(style);
+            float ascent = family.GetCellAscent(style) * factor;
+            y -= ascent;
+            path.AddString(text, family, (int)style, netFont.Size, new PointF(x, y), J2C.CreateStringFormat(frc));
+            return C2J.ConvertShape(path);
         }
 
         /*===============================
