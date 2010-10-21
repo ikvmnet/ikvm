@@ -748,6 +748,21 @@ namespace IKVM.Internal
 						}
 					}
 				}
+				if (type.Assembly == Types.Object.Assembly)
+				{
+					if (type.FullName == "System.Runtime.CompilerServices.MethodImplAttribute")
+					{
+						foreach (ConstructorInfo ci in constructors)
+						{
+							ParameterInfo[] p = ci.GetParameters();
+							if (p.Length == 1 && p[0].ParameterType.IsEnum)
+							{
+								singleOneArgCtor = ci;
+								return;
+							}
+						}
+					}
+				}
 				foreach (ConstructorInfo ci in constructors)
 				{
 					ParameterInfo[] args = ci.GetParameters();
