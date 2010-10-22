@@ -206,6 +206,10 @@ namespace IKVM.Internal.MapXml
 					{
 						argTypes = context.ClassLoader.ArgTypeListFromSig(Sig);
 					}
+					else if(Sig == "")
+					{
+						argTypes = Type.EmptyTypes;
+					}
 					else
 					{
 						string[] types = Sig.Split(';');
