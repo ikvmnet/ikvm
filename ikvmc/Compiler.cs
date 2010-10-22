@@ -46,7 +46,7 @@ class IkvmcCompiler
 	private static string runtimeAssembly;
 	private static bool nostdlib;
 	private static readonly List<string> libpaths = new List<string>();
-	private static readonly AssemblyResolver resolver = new AssemblyResolver();
+	internal static readonly AssemblyResolver resolver = new AssemblyResolver();
 
 	private static List<string> GetArgs(string[] args)
 	{
