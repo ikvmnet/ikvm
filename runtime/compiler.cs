@@ -932,7 +932,7 @@ sealed class Compiler
 				if(exc.catch_type == 0 && VerifierTypeWrapper.IsFaultBlockException(ma.GetRawStackTypeWrapper(handlerIndex, 0)))
 				{
 					ilGenerator.BeginFaultBlock();
-					Compile(new Block(this, 0, block.EndIndex, exceptionIndex, null, false), ma.ComputePartialReachability(handlerIndex, true));
+					Compile(new Block(this, 0, block.EndIndex, -1, null, false), ma.ComputePartialReachability(handlerIndex, true));
 					ilGenerator.EndExceptionBlockNoFallThrough();
 				}
 				else
