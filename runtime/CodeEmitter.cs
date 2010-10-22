@@ -138,6 +138,7 @@ namespace IKVM.Internal
 			BeginFaultBlock,
 			BeginFinallyBlock,
 			EndExceptionBlock,
+			MemoryBarrier,
 		}
 
 		enum CodeTypeFlags : short
@@ -274,6 +275,8 @@ namespace IKVM.Internal
 							}
 							return 5 + 2;
 #endif
+						case CodeType.MemoryBarrier:
+							return 5;
 						case CodeType.OpCode:
 							if (data == null)
 							{
@@ -497,6 +500,13 @@ namespace IKVM.Internal
 					// (because of the bogus Leave that Ref.Emit ends the try block with)
 					ilgen_real.Emit(OpCodes.Br_S, (sbyte)-2);
 #endif
+					break;
+				case CodeType.MemoryBarrier:
+					if (memoryBarrier == null)
+					{
+						memoryBarrier = JVM.Import(typeof(System.Threading.Thread)).GetMethod("MemoryBarrier", Type.EmptyTypes);
+					}
+					ilgen_real.Emit(OpCodes.Call, memoryBarrier);
 					break;
 				default:
 					throw new InvalidOperationException();
@@ -1632,9 +1642,42 @@ namespace IKVM.Internal
 				&& code[extra[extra[begin]]].pseudo == CodeType.EndExceptionBlock;
 		}
 
+		private void RemoveRedundantMemoryBarriers()
+		{
+			int lastMemoryBarrier = -1;
+			for (int i = 0; i < code.Count; i++)
+			{
+				switch (code[i].pseudo)
+				{
+					case CodeType.MemoryBarrier:
+						if (lastMemoryBarrier != -1)
+						{
+							code.RemoveAt(lastMemoryBarrier);
+							i--;
+						}
+						lastMemoryBarrier = i;
+						break;
+					case CodeType.OpCode:
+						if (code[i].opcode == OpCodes.Volatile)
+						{
+							if (code[i + 1].opcode != OpCodes.Stfld && code[i + 1].opcode != OpCodes.Stsfld)
+							{
+								lastMemoryBarrier = -1;
+							}
+						}
+						else if (code[i].opcode.FlowControl != FlowControl.Next)
+						{
+							lastMemoryBarrier = -1;
+						}
+						break;
+				}
+			}
+		}
+
 		internal void DoEmit()
 		{
 			OptimizePatterns();
+			RemoveRedundantMemoryBarriers();
 
 			if (experimentalOptimizations)
 			{
@@ -2180,11 +2223,7 @@ namespace IKVM.Internal
 
 		internal void EmitMemoryBarrier()
 		{
-			if (memoryBarrier == null)
-			{
-				memoryBarrier = JVM.Import(typeof(System.Threading.Thread)).GetMethod("MemoryBarrier", Type.EmptyTypes);
-			}
-			Emit(OpCodes.Call, memoryBarrier);
+			EmitPseudoOpCode(CodeType.MemoryBarrier, null);
 		}
 	}
 }
