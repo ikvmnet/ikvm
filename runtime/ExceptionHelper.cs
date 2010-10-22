@@ -445,7 +445,7 @@ namespace IKVM.Internal
 		private static List<String> BuildStackTrace(Exception x)
 		{
 			List<String> list = new List<String>();
-			list.Add(x.ToString());
+			list.Add(java.lang.Object.instancehelper_toString(x));
 			StackTraceElement[] stack = Throwable.instancehelper_getStackTrace(x);
 			for (int i = 0; i < stack.Length; i++)
 			{
