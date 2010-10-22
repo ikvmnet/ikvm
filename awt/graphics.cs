@@ -187,6 +187,7 @@ namespace ikvm.awt
                 graphics.Transform = g.Transform;
                 graphics.Clip = g.Clip;
                 graphics.SmoothingMode = g.SmoothingMode;
+                graphics.PixelOffsetMode = g.PixelOffsetMode;
                 graphics.TextRenderingHint = g.TextRenderingHint;
                 graphics.InterpolationMode = g.InterpolationMode;
             }
