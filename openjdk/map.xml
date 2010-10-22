@@ -1595,6 +1595,7 @@
                     <ldarg_1 />
                     <volatile />
                     <stfld class="java.lang.Thread" name="parkBlocker" sig="Ljava.lang.Object;" />
+                    <call type="System.Threading.Thread" name="MemoryBarrier" sig="" />
                     <ret />
                 </body>
             </method>
@@ -1612,6 +1613,7 @@
                     <ldarg_1 />
                     <volatile />
                     <stfld class="java.lang.Thread" name="parkLock" sig="Ljava.lang.Object;" />
+                    <call type="System.Threading.Thread" name="MemoryBarrier" sig="" />
                     <ret />
                 </body>
             </method>
@@ -1874,6 +1876,7 @@
                     <ldarg_2 />
                     <volatile />
                     <stind_ref />
+                    <call type="System.Threading.Thread" name="MemoryBarrier" sig="" />
                     <ret />
                 </body>
             </method>
@@ -1966,6 +1969,7 @@
                     <ldarg_2 />
                     <volatile />
                     <stind_i4 />
+                    <call type="System.Threading.Thread" name="MemoryBarrier" sig="" />
                     <ret />
                 </body>
             </method>
