@@ -11,6 +11,11 @@
         <if test="${version::get-major(framework::get-version(framework::get-target-framework() )) == 4}">
             <property name="defs" value="${defs};NET_4_0" />
         </if>
+        <!-- workaround for the fact that <include if="${framework::exists('mono-2.0')} ...> still insists on evaluating the name attribute -->
+        <property name="MonoSymbolWriter" value="dummy.dll" />
+        <if test="${framework::exists('mono-2.0')}">
+            <property name="MonoSymbolWriter" value="${path::combine(framework::get-assembly-directory('mono-2.0'), 'Mono.CompilerServices.SymbolWriter.dll')}" />
+        </if>
         <csc target="library" output="../bin/IKVM.Reflection.dll" optimize="true" define="${defs}">
             <sources>
                 <include name="../CommonAssemblyInfo.cs" />
@@ -101,7 +106,7 @@
                 <include name="Writer\VersionInfo.cs" />
             </sources>
             <references>
-                <include if="${framework::exists('mono-2.0')}" name="${path::combine(framework::get-assembly-directory('mono-2.0'), 'Mono.CompilerServices.SymbolWriter.dll')}" />
+                <include if="${framework::exists('mono-2.0')}" name="${MonoSymbolWriter}" />
             </references>
         </csc>
     </target>
