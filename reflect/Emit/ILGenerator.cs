@@ -161,6 +161,11 @@ namespace IKVM.Reflection.Emit
 
 			int IComparer<ExceptionBlock>.Compare(ExceptionBlock x, ExceptionBlock y)
 			{
+ 				// Mono's sort insists on doing unnecessary comparisons
+ 				if (x == y)
+ 				{
+ 					return 0;
+ 				}
 				if (x.tryOffset >= y.handlerOffset && x.tryOffset + x.tryLength <= y.handlerOffset + y.handlerLength)
 				{
 					return -1;
