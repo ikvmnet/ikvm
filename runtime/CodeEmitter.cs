@@ -72,6 +72,7 @@ namespace IKVM.Internal
 	{
 		private static readonly MethodInfo objectToString = Types.Object.GetMethod("ToString", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
 		private static readonly MethodInfo verboseCastFailure = JVM.SafeGetEnvironmentVariable("IKVM_VERBOSE_CAST") == null ? null : ByteCodeHelperMethods.VerboseCastFailure;
+		private static MethodInfo memoryBarrier;
 		private ILGenerator ilgen_real;
 #if !STATIC_COMPILER
 		private int offset;
@@ -1052,6 +1053,15 @@ namespace IKVM.Internal
 				IKVM.Internal.JVM.CriticalFailure("Label failure: " + name, null);
 			}
 #endif
+		}
+
+		internal void EmitMemoryBarrier()
+		{
+			if (memoryBarrier == null)
+			{
+				memoryBarrier = JVM.Import(typeof(System.Threading.Thread)).GetMethod("MemoryBarrier", Type.EmptyTypes);
+			}
+			Emit(OpCodes.Call, memoryBarrier);
 		}
 
 		abstract class Expr

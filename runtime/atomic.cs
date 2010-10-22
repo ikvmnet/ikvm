@@ -153,13 +153,14 @@ static class AtomicReferenceFieldUpdaterEmitter
 	private static void EmitSet(string name, TypeBuilder tb, FieldInfo field)
 	{
 		MethodBuilder set = tb.DefineMethod(name, MethodAttributes.Public | MethodAttributes.Virtual, Types.Void, new Type[] { Types.Object, Types.Object });
-		ILGenerator ilgen = set.GetILGenerator();
+		CodeEmitter ilgen = CodeEmitter.Create(set);
 		ilgen.Emit(OpCodes.Ldarg_1);
 		ilgen.Emit(OpCodes.Castclass, field.DeclaringType);
 		ilgen.Emit(OpCodes.Ldarg_2);
 		ilgen.Emit(OpCodes.Castclass, field.FieldType);
 		ilgen.Emit(OpCodes.Volatile);
 		ilgen.Emit(OpCodes.Stfld, field);
+		ilgen.EmitMemoryBarrier();
 		ilgen.Emit(OpCodes.Ret);
 	}
 }
