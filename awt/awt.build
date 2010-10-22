@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <project name="awt" default="awt">
+    <include buildfile="../ikvm.include" />
     <target name="AssemblyInfo.cs">
         <loadfile file="../tools/pubkey.txt" property="publickey" />
         <copy file="AssemblyInfo.cs.in" tofile="AssemblyInfo.cs" overwrite="true">
@@ -54,8 +55,8 @@
                 <warning number="612" />
             </nowarn>
         </csc>
-        <if test="${platform::is-win32()}">
-            <exec program="peverify" commandline="-nologo ../bin/IKVM.AWT.WinForms.dll" />
+        <if test="${property::exists('peverify')}">
+            <exec program="${peverify}" commandline="-nologo ../bin/IKVM.AWT.WinForms.dll" />
         </if>
     </target>
 </project>

@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<project name="ikvm-include">
+    <!-- find ilasm.exe -->
+    <if test="${(not property::exists('ilasm')) and file::exists(path::combine(framework::get-framework-directory(framework::get-target-framework()), 'ilasm.exe'))}">
+        <property name="ilasm" value="${path::combine(framework::get-framework-directory(framework::get-target-framework()), 'ilasm.exe')}" />
+    </if>
+
+    <!-- find peverify.exe -->
+    <if test="${(not property::exists('peverify')) and framework::sdk-exists(framework::get-target-framework()) and file::exists(path::combine(framework::get-sdk-directory(framework::get-target-framework()), 'peverify.exe'))}">
+        <property name="peverify" value="${path::combine(framework::get-sdk-directory(framework::get-target-framework()), 'peverify.exe')}" />
+    </if>
+    <!-- we can't use framework::sdk-exists('net-2.0') on Linux, because NAnt will barf on it... -->
+    <if test="${platform::is-win32()}">
+        <if test="${(not property::exists('peverify')) and framework::sdk-exists('net-2.0') and file::exists(path::combine(framework::get-sdk-directory('net-2.0'), 'peverify.exe'))}">
+            <property name="peverify" value="${path::combine(framework::get-sdk-directory('net-2.0'), 'peverify.exe')}" />
+        </if>
+    </if>
+</project>

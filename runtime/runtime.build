@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <project name="IKVM.Runtime" default="IKVM.Runtime">
+    <include buildfile="../ikvm.include" />
     <target name="first-pass" depends="DummyLibrary">
         <property name="first-pass" value="true" />
         <call target="IKVM.Runtime" />
@@ -125,8 +126,8 @@
         </csc>
         <copy file="IKVM.Runtime.dll" todir="../bin" />
         <if test="${not first-pass}">
-            <if test="${platform::is-win32()}">
-                <exec program="peverify" commandline="-nologo ../bin/IKVM.Runtime.dll" />
+            <if test="${property::exists('peverify')}">
+                <exec program="${peverify}" commandline="-nologo ../bin/IKVM.Runtime.dll" />
             </if>
         </if>
     </target>
