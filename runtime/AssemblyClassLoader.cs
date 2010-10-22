@@ -917,6 +917,13 @@ namespace IKVM.Internal
 					return FromAssembly(mainAssembly);
 				}
 			}
+#if STATIC_COMPILER
+			if (JVM.CoreAssembly == null && CompilerClassLoader.IsCoreAssembly(assembly))
+			{
+				JVM.CoreAssembly = assembly;
+				ClassLoaderWrapper.LoadRemappedTypes();
+			}
+#endif
 			if (assembly == JVM.CoreAssembly)
 			{
 				// This cast is necessary for ikvmc and a no-op for the runtime.
