@@ -43,7 +43,6 @@ namespace ikvm.awt
 
     class NetFontMetrics : java.awt.FontMetrics
     {
-
         private static readonly Bitmap defaultbitmap = new Bitmap(1, 1);
         [ThreadStatic]
         private static Graphics threadLocalDefaultGraphics;
@@ -187,14 +186,6 @@ namespace ikvm.awt
             }
             return GetStringBounds(aString, GetDefaultGraphics());
         }
-
-		internal java.awt.geom.Rectangle2D GetStringBounds(String aString)
-		{
-			using (System.Drawing.Graphics g = NetToolkit.bogusForm.CreateGraphics())
-			{
-				return GetStringBounds(aString, g);
-			}
-		}
     }
 
 /*    class NetFontPeer : java.awt.peer.FontPeer, IDisposable

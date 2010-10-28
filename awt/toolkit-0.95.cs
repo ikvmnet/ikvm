@@ -70,14 +70,7 @@ using System.Drawing.Drawing2D;
 namespace ikvm.awt
 {
     internal delegate TResult Func<TResult>();
-    internal delegate TResult Func<T,TResult>(T t);
-    internal delegate TResult Func<T1, T2, TResult>(T1 t1, T2 t2);
-    internal delegate TResult Func<T1, T2, T3, TResult>(T1 t1, T2 t2, T3 t3);
-    internal delegate TResult Func<T1, T2, T3, T4, TResult>(T1 t1, T2 t2, T3 t3, T4 t4);
     internal delegate void Action<T>(T t);
-    internal delegate void Action<T1, T2>(T1 t1, T2 t2);
-    internal delegate void Action<T1, T2, T3>(T1 t1, T2 t2, T3 t3);
-    internal delegate void Action<T1, T2, T3, T4>(T1 t1, T2 t2, T3 t3, T4 t4);
 
 	class UndecoratedForm : Form
 	{
@@ -149,27 +142,11 @@ namespace ikvm.awt
         }
 	}
 
-	class MyControl : Control
-	{
-		public MyControl()
-		{
-			SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.ResizeRedraw, true);
-		}
-	}
-
-	class MyContainerControl : ContainerControl
-	{
-		public MyContainerControl()
-		{
-			SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.ResizeRedraw, true);
-		}
-	}
-
-    public class NetToolkit : sun.awt.SunToolkit, ikvm.awt.IkvmToolkit
+    public sealed class NetToolkit : sun.awt.SunToolkit, ikvm.awt.IkvmToolkit
     {
         public static readonly String DATA_TRANSFERER_CLASS_NAME = typeof(NetDataTransferer).AssemblyQualifiedName;
 
-        internal static volatile Form bogusForm;
+        private static volatile Form bogusForm;
         private int resolution;
         private NetClipboard clipboard;
 
@@ -260,103 +237,131 @@ namespace ikvm.awt
 
         public override java.awt.peer.ButtonPeer createButton(java.awt.Button target)
         {
-            java.awt.peer.ButtonPeer peer = new NetButtonPeer(target);
+			java.awt.peer.ButtonPeer peer = Invoke<NetButtonPeer>(delegate { return new NetButtonPeer(target); });
 			targetCreatedPeer(target, peer);
 			return peer;
 		}
 
         public override java.awt.peer.TextFieldPeer createTextField(java.awt.TextField target)
         {
-            java.awt.peer.TextFieldPeer peer = new NetTextFieldPeer(target);
+			java.awt.peer.TextFieldPeer peer = Invoke<NetTextFieldPeer>(delegate { return new NetTextFieldPeer(target); });
 			targetCreatedPeer(target, peer);
 			return peer;
 		}
 
         public override java.awt.peer.LabelPeer createLabel(java.awt.Label target)
         {
-            java.awt.peer.LabelPeer peer = new NetLabelPeer(target);
+			java.awt.peer.LabelPeer peer = Invoke<NetLabelPeer>(delegate { return new NetLabelPeer(target); });
 			targetCreatedPeer(target, peer);
 			return peer;
 		}
 
         public override java.awt.peer.ListPeer createList(java.awt.List target)
         {
-            java.awt.peer.ListPeer peer = new NetListPeer(target);
+			java.awt.peer.ListPeer peer = Invoke<NetListPeer>(delegate { return new NetListPeer(target); });
 			targetCreatedPeer(target, peer);
 			return peer;
 		}
 
         public override java.awt.peer.CheckboxPeer createCheckbox(java.awt.Checkbox target)
         {
-            java.awt.peer.CheckboxPeer peer = new NetCheckboxPeer(target);
+			java.awt.peer.CheckboxPeer peer = Invoke<NetCheckboxPeer>(delegate { return new NetCheckboxPeer(target); });
 			targetCreatedPeer(target, peer);
 			return peer;
 		}
 
         public override java.awt.peer.ScrollbarPeer createScrollbar(java.awt.Scrollbar target)
         {
-            throw new NotImplementedException();
-        }
+			java.awt.peer.ScrollbarPeer peer = Invoke<NetScrollbarPeer>(delegate { return new NetScrollbarPeer(target); });
+			targetCreatedPeer(target, peer);
+			return peer;
+		}
 
         public override java.awt.peer.ScrollPanePeer createScrollPane(java.awt.ScrollPane target)
         {
-            throw new NotImplementedException();
-        }
+			java.awt.peer.ScrollPanePeer peer = Invoke<NetScrollPanePeer>(delegate { return new NetScrollPanePeer(target); });
+			targetCreatedPeer(target, peer);
+			return peer;
+		}
 
         public override java.awt.peer.TextAreaPeer createTextArea(java.awt.TextArea target)
         {
-            java.awt.peer.TextAreaPeer peer = new NetTextAreaPeer(target);
+			java.awt.peer.TextAreaPeer peer = Invoke<NetTextAreaPeer>(delegate { return new NetTextAreaPeer(target); });
 			targetCreatedPeer(target, peer);
 			return peer;
 		}
 
         public override java.awt.peer.ChoicePeer createChoice(java.awt.Choice target)
         {
-            java.awt.peer.ChoicePeer peer = new NetChoicePeer(target);
+			java.awt.peer.ChoicePeer peer = Invoke<NetChoicePeer>(delegate { return new NetChoicePeer(target); });
 			targetCreatedPeer(target, peer);
 			return peer;
 		}
 
         public override java.awt.peer.FramePeer createFrame(java.awt.Frame target)
         {
-            java.awt.peer.FramePeer peer = Invoke((Func<java.awt.peer.FramePeer>)delegate { return new NetFramePeer(target); });
+            java.awt.peer.FramePeer peer = Invoke<NetFramePeer>(delegate { return new NetFramePeer(target); });
             targetCreatedPeer(target, peer);
             return peer;
         }
 
         public override java.awt.peer.WindowPeer createWindow(java.awt.Window target)
         {
-            java.awt.peer.WindowPeer peer = Invoke((Func<java.awt.peer.WindowPeer>)delegate { return new NetWindowPeer(target); });
+            java.awt.peer.WindowPeer peer = Invoke<NetWindowPeer>(delegate { return new NetWindowPeer(target); });
 			targetCreatedPeer(target, peer);
 			return peer;
 		}
 
         public override java.awt.peer.DialogPeer createDialog(java.awt.Dialog target)
         {
-            java.awt.peer.DialogPeer peer = Invoke((Func<java.awt.peer.DialogPeer>)delegate { return new NetDialogPeer(target); });
+            java.awt.peer.DialogPeer peer = Invoke<NetDialogPeer>(delegate { return new NetDialogPeer(target); });
 			targetCreatedPeer(target, peer);
 			return peer;
 		}
 
         public override java.awt.peer.MenuBarPeer createMenuBar(java.awt.MenuBar target)
         {
-            throw new NotImplementedException();
+			// we need to force peer creation of the sub menus here, because we're
+			// transitioning to the UI thread to do the rest of the work and there
+			// we cannot acquire the AWT tree lock (because it is owned by the current thread)
+			for (int i = 0; i < target.getMenuCount(); i++)
+			{
+				target.getMenu(i).addNotify();
+			}
+			java.awt.Menu help = target.getHelpMenu();
+			if (help != null)
+			{
+				help.addNotify();
+			}
+			java.awt.peer.MenuBarPeer peer = Invoke<NetMenuBarPeer>(delegate { return new NetMenuBarPeer(target); });
+			targetCreatedPeer(target, peer);
+			return peer;
         }
 
         public override java.awt.peer.MenuPeer createMenu(java.awt.Menu target)
         {
-            throw new NotImplementedException();
+			for (int i = 0; i < target.getItemCount(); i++)
+			{
+				target.getItem(i).addNotify();
+			}
+			java.awt.peer.MenuPeer peer = Invoke<NetMenuPeer>(delegate { return new NetMenuPeer(target); });
+			targetCreatedPeer(target, peer);
+			return peer;
         }
 
         public override java.awt.peer.PopupMenuPeer createPopupMenu(java.awt.PopupMenu target)
         {
-            throw new NotImplementedException();
+			java.awt.peer.PopupMenuPeer peer = Invoke<NetPopupMenuPeer>(delegate { return new NetPopupMenuPeer(target); });
+			targetCreatedPeer(target, peer);
+			return peer;
         }
 
         public override java.awt.peer.MenuItemPeer createMenuItem(java.awt.MenuItem target)
         {
-            throw new NotImplementedException();
-        }
+			java.awt.peer.MenuItemPeer peer = Invoke<NetMenuItemPeer>(delegate { return new NetMenuItemPeer(target); });
+			targetCreatedPeer(target, peer);
+			return peer;
+		}
 
         public override java.awt.peer.FileDialogPeer createFileDialog(java.awt.FileDialog target)
         {
@@ -365,8 +370,8 @@ namespace ikvm.awt
 
         public override java.awt.peer.CheckboxMenuItemPeer createCheckboxMenuItem(java.awt.CheckboxMenuItem target)
         {
-            throw new NotImplementedException();
-        }
+			return new NetCheckboxMenuItemPeer(target);
+		}
 
         public override java.awt.peer.FontPeer getFontPeer(string name, int style)
         {
@@ -416,7 +421,6 @@ namespace ikvm.awt
 
         public override void sync()
         {
-            throw new NotImplementedException();
         }
 
         public override java.awt.Image getImage(string filename)
@@ -813,17 +817,17 @@ namespace ikvm.awt
             }
         }
 
-		protected internal new static object targetToPeer(object target)
+		internal new static object targetToPeer(object target)
 		{
 			return SunToolkit.targetToPeer(target);
 		}
 
-        protected internal new static void targetDisposedPeer(object target, object peer)
+        internal new static void targetDisposedPeer(object target, object peer)
         {
             SunToolkit.targetDisposedPeer(target, peer);
         }
 
-        internal static void BeginInvoke(ThreadStart del)
+		internal static void BeginInvoke(MethodInvoker del)
         {
             if (bogusForm.InvokeRequired)
             {
@@ -858,18 +862,6 @@ namespace ikvm.awt
             }
         }
 
-        internal static void Invoke<T1, T2>(Action<T1, T2> del, T1 t1, T2 t2)
-        {
-            if (bogusForm.InvokeRequired)
-            {
-                bogusForm.Invoke(del, t1, t2);
-            }
-            else
-            {
-                del(t1,t2);
-            }
-        }
-
         internal static TResult Invoke<TResult>(Func<TResult> del)
         {
             if (bogusForm.InvokeRequired)
@@ -879,54 +871,6 @@ namespace ikvm.awt
             else
             {
                 return del();
-            }
-        }
-
-        internal static TResult Invoke<T, TResult>(Func<T, TResult> del, T t)
-        {
-            if (bogusForm.InvokeRequired)
-            {
-                return (TResult)bogusForm.Invoke(del, t);
-            }
-            else
-            {
-                return del(t);
-            }
-        }
-
-        internal static TResult Invoke<T1, T2, TResult>(Func<T1, T2, TResult> del, T1 t1, T2 t2)
-        {
-            if (bogusForm.InvokeRequired)
-            {
-                return (TResult)bogusForm.Invoke(del, t1, t2);
-            }
-            else
-            {
-                return del(t1, t2);
-            }
-        }
-
-        internal static TResult Invoke<T1, T2, T3, TResult>(Func<T1, T2, T3, TResult> del, T1 t1, T2 t2, T3 t3)
-        {
-            if (bogusForm.InvokeRequired)
-            {
-                return (TResult)bogusForm.Invoke(del, t1, t2, t3);
-            }
-            else
-            {
-                return del(t1, t2, t3);
-            }
-        }
-
-        internal static TResult Invoke<T1, T2, T3, T4, TResult>(Func<T1, T2, T3, T4, TResult> del, T1 t1, T2 t2, T3 t3, T4 t4)
-        {
-            if (bogusForm.InvokeRequired)
-            {
-                return (TResult)bogusForm.Invoke(del, t1, t2, t3, t4);
-            }
-            else
-            {
-                return del(t1, t2, t3, t4);
             }
         }
 
@@ -942,6 +886,202 @@ namespace ikvm.awt
             }
         }
     }
+
+	sealed class NetMenuBarPeer : java.awt.peer.MenuBarPeer
+	{
+		internal readonly MainMenu menu = new MainMenu();
+
+		internal NetMenuBarPeer(java.awt.MenuBar target)
+		{
+			menu.Tag = target;
+			for (int i = 0; i < target.getMenuCount(); i++)
+			{
+				addMenu(target.getMenu(i));
+			}
+		}
+
+		public void addHelpMenu(java.awt.Menu m)
+		{
+			addMenu(m);
+		}
+
+		public void addMenu(java.awt.Menu m)
+		{
+			if (m.getPeer() == null)
+			{
+				m.addNotify();
+			}
+			NetToolkit.Invoke(delegate { menu.MenuItems.Add(((NetMenuPeer)m.getPeer()).menu); });
+		}
+
+		public void delMenu(int i)
+		{
+			NetToolkit.Invoke(delegate { menu.MenuItems.RemoveAt(i); });
+		}
+
+		public void dispose()
+		{
+			NetToolkit.Invoke(delegate { menu.Dispose(); });
+		}
+
+		public void setFont(java.awt.Font f)
+		{
+			throw new NotImplementedException();
+		}
+	}
+
+	sealed class NetMenuPeer : java.awt.peer.MenuPeer
+	{
+		internal readonly MenuItem menu = new MenuItem();
+
+		internal NetMenuPeer(java.awt.Menu target)
+		{
+			menu.Tag = target;
+			menu.Text = target.getLabel();
+			for (int i = 0; i < target.getItemCount(); i++)
+			{
+				addItem(target.getItem(i));
+			}
+		}
+
+		public void addItem(java.awt.MenuItem item)
+		{
+			if (item.getPeer() == null)
+			{
+				item.addNotify();
+			}
+			if (item.getPeer() is NetMenuItemPeer)
+			{
+				NetToolkit.Invoke(delegate { menu.MenuItems.Add(((NetMenuItemPeer)item.getPeer()).menuitem); });
+			}
+			else
+			{
+				NetToolkit.Invoke(delegate { menu.MenuItems.Add(((NetMenuPeer)item.getPeer()).menu); });
+			}
+		}
+
+		public void addSeparator()
+		{
+			NetToolkit.Invoke(delegate { menu.MenuItems.Add(new MenuItem("-")); });
+		}
+
+		public void delItem(int i)
+		{
+			NetToolkit.Invoke(delegate { menu.MenuItems.RemoveAt(i); });
+		}
+
+		public void dispose()
+		{
+			NetToolkit.Invoke(delegate { menu.Dispose(); });
+		}
+
+		public void setFont(java.awt.Font f)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void disable()
+		{
+			setEnabled(false);
+		}
+
+		public void enable()
+		{
+			setEnabled(true);
+		}
+
+		public void setEnabled(bool b)
+		{
+			NetToolkit.Invoke(delegate { menu.Enabled = b; });
+		}
+
+		public void setLabel(string str)
+		{
+			NetToolkit.Invoke(delegate { menu.Text = str; });
+		}
+	}
+
+	class NetMenuItemPeer : java.awt.peer.MenuItemPeer
+	{
+		protected readonly java.awt.MenuItem target;
+		internal readonly MenuItem menuitem = new MenuItem();
+
+		internal NetMenuItemPeer(java.awt.MenuItem target)
+		{
+			this.target = target;
+			setEnabled(target.isEnabled());
+			setLabel(target.getLabel());
+			menuitem.Click += OnClick;
+		}
+
+		protected virtual void OnClick(object sender, EventArgs e)
+		{
+			long when = java.lang.System.currentTimeMillis();
+			int modifiers = NetComponentPeer.GetModifiers(Control.ModifierKeys);
+			NetToolkit.executeOnEventHandlerThread(target, Delegates.toRunnable(delegate
+			{
+				NetToolkit.postEvent(NetToolkit.targetToAppContext(target), new java.awt.@event.ActionEvent(target, java.awt.@event.ActionEvent.ACTION_PERFORMED,
+						  target.getActionCommand(), when, modifiers));
+			}));
+		}
+
+		public void disable()
+		{
+			setEnabled(false);
+		}
+
+		public void enable()
+		{
+			setEnabled(true);
+		}
+
+		public void setEnabled(bool b)
+		{
+			NetToolkit.Invoke(delegate { menuitem.Enabled = b; });
+		}
+
+		public void setLabel(string str)
+		{
+			NetToolkit.Invoke(delegate { menuitem.Text = str; });
+		}
+
+		public void dispose()
+		{
+			NetToolkit.Invoke(delegate { menuitem.Dispose(); });
+		}
+
+		public void setFont(java.awt.Font f)
+		{
+		}
+	}
+
+	sealed class NetCheckboxMenuItemPeer : NetMenuItemPeer, java.awt.peer.CheckboxMenuItemPeer
+	{
+		internal NetCheckboxMenuItemPeer(java.awt.CheckboxMenuItem target)
+			: base(target)
+		{
+			setState(target.getState());
+		}
+
+		protected override void OnClick(object sender, EventArgs e)
+		{
+			java.awt.CheckboxMenuItem target = (java.awt.CheckboxMenuItem)this.target;
+			NetToolkit.executeOnEventHandlerThread(target, Delegates.toRunnable(delegate
+			{
+				bool state = !menuitem.Checked;
+				target.setState(state);
+				NetToolkit.postEvent(NetToolkit.targetToAppContext(target), new java.awt.@event.ItemEvent(target, java.awt.@event.ItemEvent.ITEM_STATE_CHANGED,
+										target.getLabel(), (state)
+										  ? java.awt.@event.ItemEvent.SELECTED
+										  : java.awt.@event.ItemEvent.DESELECTED));
+			}));
+		}
+
+		public void setState(bool b)
+		{
+			NetToolkit.Invoke(delegate { menuitem.Checked = b; });
+		}
+	}
 
     internal class NetDragSourceContextPeer : sun.awt.dnd.SunDragSourceContextPeer
     {
@@ -1026,7 +1166,7 @@ namespace ikvm.awt
                 if (peer != null)
                 {
                     peer.performedDragDropEffects = DragDropEffects.None;
-                    Control control = peer.control;
+                    Control control = peer.Control;
                     if (control != null)
                     {
                         java.awt.dnd.DragSource dragSource = getTrigger().getDragSource();
@@ -1364,64 +1504,204 @@ namespace ikvm.awt
 		}
 	}
 
-	class NetLightweightComponentPeer : NetComponentPeer, java.awt.peer.LightweightPeer
+	sealed class NetLightweightComponentPeer : NetComponentPeer<java.awt.Component, Control>, java.awt.peer.LightweightPeer
 	{
 		public NetLightweightComponentPeer(java.awt.Component target)
 			: base(target)
 		{
 		}
 
-		internal override void create(NetComponentPeer parent)
+		protected override Control CreateControl()
 		{
 			throw new NotImplementedException();
 		}
 	}
 
-    class NetLightweightContainerPeer : NetContainerPeer, java.awt.peer.LightweightPeer
+    sealed class NetLightweightContainerPeer : NetContainerPeer<java.awt.Container, ContainerControl>, java.awt.peer.LightweightPeer
     {
         public NetLightweightContainerPeer(java.awt.Container target)
             : base(target)
         {
         }
 
-        private static ContainerControl GetContainerControl(java.awt.Container aContainer)
-        {
-            ContainerControl control = null;
+		//private static ContainerControl GetContainerControl(java.awt.Container aContainer)
+		//{
+		//    ContainerControl control = null;
 
-            if (aContainer != null)
-            {
-                control = (ContainerControl)((NetContainerPeer)aContainer.getPeer()).control;
-            }
+		//    if (aContainer != null)
+		//    {
+		//        control = (ContainerControl)((NetContainerPeer)aContainer.getPeer()).control;
+		//    }
 
-            return control;
-        }
+		//    return control;
+		//}
     }
 
-	sealed class AwtToolkit
+	abstract class NetComponentPeer : java.awt.peer.ComponentPeer
 	{
-		internal delegate void CreateComponentDelegate(NetComponentPeer parent);
+		public abstract void applyShape(sun.java2d.pipe.Region r);
+		public abstract bool canDetermineObscurity();
+		public abstract int checkImage(java.awt.Image i1, int i2, int i3, java.awt.image.ImageObserver io);
+		public abstract void coalescePaintEvent(java.awt.@event.PaintEvent pe);
+		public abstract void createBuffers(int i, java.awt.BufferCapabilities bc);
+		public abstract java.awt.Image createImage(int i1, int i2);
+		public abstract java.awt.Image createImage(java.awt.image.ImageProducer ip);
+		public abstract java.awt.image.VolatileImage createVolatileImage(int i1, int i2);
+		public abstract void destroyBuffers();
+		public abstract void disable();
+		public abstract void dispose();
+		public abstract void enable();
+		public abstract void flip(java.awt.BufferCapabilities.FlipContents bcfc);
+		public abstract java.awt.Image getBackBuffer();
+		public abstract java.awt.Rectangle getBounds();
+		public abstract java.awt.image.ColorModel getColorModel();
+		public abstract java.awt.FontMetrics getFontMetrics(java.awt.Font f);
+		public abstract java.awt.Graphics getGraphics();
+		public abstract java.awt.GraphicsConfiguration getGraphicsConfiguration();
+		public abstract java.awt.Point getLocationOnScreen();
+		public abstract java.awt.Dimension getMinimumSize();
+		public abstract java.awt.Dimension getPreferredSize();
+		public abstract java.awt.Toolkit getToolkit();
+		public abstract void handleEvent(java.awt.AWTEvent awte);
+		public abstract bool handlesWheelScrolling();
+		public abstract void hide();
+		public abstract bool isFocusable();
+		public abstract bool isObscured();
+		public abstract bool isReparentSupported();
+		public abstract void layout();
+		public abstract java.awt.Dimension minimumSize();
+		public abstract void paint(java.awt.Graphics g);
+		public abstract java.awt.Dimension preferredSize();
+		public abstract bool prepareImage(java.awt.Image i1, int i2, int i3, java.awt.image.ImageObserver io);
+		public abstract void print(java.awt.Graphics g);
+		public abstract void repaint(long l, int i1, int i2, int i3, int i4);
+		public abstract void reparent(java.awt.peer.ContainerPeer cp);
+		public abstract bool requestFocus(java.awt.Component c, bool b1, bool b2, long l, CausedFocusEvent.Cause cfec);
+		public abstract void reshape(int i1, int i2, int i3, int i4);
+		public abstract void setBackground(java.awt.Color c);
+		public abstract void setBounds(int i1, int i2, int i3, int i4, int i5);
+		public abstract void setEnabled(bool b);
+		public abstract void setFont(java.awt.Font f);
+		public abstract void setForeground(java.awt.Color c);
+		public abstract void setVisible(bool b);
+		public abstract void show();
+		public abstract void updateCursorImmediately();
 
-		internal static void CreateComponent(CreateComponentDelegate factory, NetComponentPeer parent)
+		internal DragDropEffects performedDragDropEffects = DragDropEffects.None;
+
+		internal abstract Control Control { get; }
+		internal abstract java.awt.Component Target { get; }
+
+        internal abstract int getInsetsLeft();
+		internal abstract int getInsetsTop();
+
+		internal static int getAction(DragDropEffects effects)
 		{
-			NetToolkit.bogusForm.Invoke((ThreadStart)delegate
+			int actions = java.awt.dnd.DnDConstants.ACTION_NONE;
+			switch (effects)
 			{
-				try
-				{
-					factory(parent);
-				}
-				catch (Exception x)
-				{
-					Console.WriteLine(x);
-				}
-			});
+				case DragDropEffects.None:
+					actions = java.awt.dnd.DnDConstants.ACTION_NONE;
+					break;
+				case DragDropEffects.Copy:
+					actions = java.awt.dnd.DnDConstants.ACTION_COPY;
+					break;
+				case DragDropEffects.Move:
+					actions = java.awt.dnd.DnDConstants.ACTION_MOVE;
+					break;
+				case DragDropEffects.Move | DragDropEffects.Copy:
+					actions = java.awt.dnd.DnDConstants.ACTION_COPY_OR_MOVE;
+					break;
+				case DragDropEffects.Link:
+					actions = java.awt.dnd.DnDConstants.ACTION_LINK;
+					break;
+			}
+			return actions;
+		}
+
+		internal static int GetMouseEventModifiers(MouseEventArgs ev)
+		{
+			int modifiers = GetModifiers(Control.ModifierKeys);
+			//Which button was pressed or released, because it can only one that it is a switch
+			MouseButtons button = ev.Button;
+			switch (button)
+			{
+				case MouseButtons.Left:
+					modifiers |= java.awt.@event.InputEvent.BUTTON1_MASK;
+					break;
+				case MouseButtons.Middle:
+					modifiers |= java.awt.@event.InputEvent.BUTTON2_MASK;
+					break;
+				case MouseButtons.Right:
+					modifiers |= java.awt.@event.InputEvent.BUTTON3_MASK;
+					break;
+			}
+			return modifiers;
+		}
+
+		internal static int GetModifiers(Keys keys)
+		{
+			int modifiers = 0;
+			if ((keys & Keys.Shift) != 0)
+			{
+				modifiers |= java.awt.@event.InputEvent.SHIFT_DOWN_MASK;
+			}
+			if ((keys & Keys.Control) != 0)
+			{
+				modifiers |= java.awt.@event.InputEvent.CTRL_DOWN_MASK;
+			}
+			if ((keys & Keys.Alt) != 0)
+			{
+				modifiers |= java.awt.@event.InputEvent.ALT_DOWN_MASK;
+			}
+			if ((Control.MouseButtons & MouseButtons.Left) != 0)
+			{
+				modifiers |= java.awt.@event.InputEvent.BUTTON1_DOWN_MASK;
+			}
+			if ((Control.MouseButtons & MouseButtons.Middle) != 0)
+			{
+				modifiers |= java.awt.@event.InputEvent.BUTTON2_DOWN_MASK;
+			}
+			if ((Control.MouseButtons & MouseButtons.Right) != 0)
+			{
+				modifiers |= java.awt.@event.InputEvent.BUTTON3_DOWN_MASK;
+			}
+			return modifiers;
+		}
+
+		internal static int GetButton(MouseEventArgs e)
+		{
+			if ((e.Button & MouseButtons.Left) != 0)
+			{
+				return java.awt.@event.MouseEvent.BUTTON1;
+			}
+			else if ((e.Button & MouseButtons.Middle) != 0)
+			{
+				return java.awt.@event.MouseEvent.BUTTON2;
+			}
+			else if ((e.Button & MouseButtons.Right) != 0)
+			{
+				return java.awt.@event.MouseEvent.BUTTON3;
+			}
+			else
+			{
+				return java.awt.@event.MouseEvent.NOBUTTON;
+			}
+		}
+
+		internal static NetComponentPeer FromControl(Control control)
+		{
+			return (NetComponentPeer)control.Tag;
 		}
 	}
 
-    abstract class NetComponentPeer : java.awt.peer.ComponentPeer
+    abstract class NetComponentPeer<T, C> : NetComponentPeer
+		where T : java.awt.Component
+		where C : Control
 	{
 		protected static readonly java.awt.Font defaultFont = new java.awt.Font(java.awt.Font.DIALOG, java.awt.Font.PLAIN, 12);
-		internal readonly java.awt.Component target;
-		internal Control control;
+		internal readonly T target;
+		internal readonly C control;
         private bool isMouseClick;
         private bool isDoubleClick;
         private bool isPopupMenu;
@@ -1439,15 +1719,24 @@ namespace ikvm.awt
 		private java.awt.Color background;
 	    private volatile bool disposed;
         private NetDropTargetContextPeer dropTargetPeer;
-        internal DragDropEffects performedDragDropEffects = DragDropEffects.None;
 
-		public NetComponentPeer(java.awt.Component target)
+		internal override Control Control
+		{
+			get { return control; }
+		}
+
+		internal override java.awt.Component Target
+		{
+			get { return target; }
+		}
+
+		public NetComponentPeer(T target)
 		{
 			this.target = target;
 			this.paintArea = new RepaintArea();
 			java.awt.Container parent = SunToolkit.getNativeContainer(target);
 			NetComponentPeer parentPeer = (NetComponentPeer)NetToolkit.targetToPeer(parent);
-			create(parentPeer);
+			control = Create(parentPeer);
 			// fix for 5088782: check if window object is created successfully
 			//checkCreation();
 			//this.winGraphicsConfig = (NetGraphicsConfiguration)getGraphicsConfiguration();
@@ -1502,7 +1791,27 @@ namespace ikvm.awt
 			m_callbacksEnabled = enabled;
 		}
 
-		internal abstract void create(NetComponentPeer parent);
+		private C Create(NetComponentPeer parent)
+		{
+			C control = CreateControl();
+			control.Tag = this;
+			if (parent != null)
+			{
+				Form form = control as Form;
+				if (form != null)
+				{
+					form.Owner = parent.Control.FindForm();
+				}
+				else
+				{
+					control.Parent = parent.Control;
+				}
+			}
+			NetToolkit.CreateNative(control);
+			return control;
+		}
+
+		protected abstract C CreateControl();
 
 	    void pShow()
 		{
@@ -1581,7 +1890,7 @@ namespace ikvm.awt
         /// In all not Windows Component this return ever 0.
         /// </summary>
         /// <returns></returns>
-        protected virtual int getInsetsLeft()
+		internal override int getInsetsLeft()
         {
             return 0;
         }
@@ -1593,16 +1902,16 @@ namespace ikvm.awt
         /// In all not Windows Component this return ever 0.
         /// </summary>
         /// <returns></returns>
-        protected virtual int getInsetsTop()
+		internal override int getInsetsTop()
         {
             return 0;
         }
 
 
         /// <summary>
-        /// .NET calculate the offset relative to the detail area.
-        /// Java is using the top left point of a window.
-        /// That be must compensate the cordinate of a component
+        /// .NET calculates the offset relative to the detail area.
+        /// Java uses the top left point of a window.
+        /// That means we must compensate the coordinate of a component
         /// if the parent is a window, frame or dialog.
         /// </summary>
         /// <returns>The offset of the details area in the parent</returns>
@@ -1613,12 +1922,10 @@ namespace ikvm.awt
                 java.awt.Container parent = target.getParent();
                 if (parent != null)
                 {
-                    java.awt.peer.ComponentPeer peer = parent.getPeer();
-                    if (peer is NetComponentPeer)
+                    NetComponentPeer peer = parent.getPeer() as NetComponentPeer;
+                    if (peer != null)
                     {
-                        return new Point(
-                            ((NetComponentPeer)peer).getInsetsLeft(),
-                            ((NetComponentPeer)peer).getInsetsTop());
+						return new Point(peer.getInsetsLeft(), peer.getInsetsTop());
                     }
                 }
             }
@@ -1675,55 +1982,6 @@ namespace ikvm.awt
 				default:
 					return (int)key;
 			}
-		}
-
-        internal static int GetMouseEventModifiers(MouseEventArgs ev)
-        {
-            int modifiers = GetModifiers(Control.ModifierKeys);
-            //Which button was pressed or released, because it can only one that it is a switch
-            MouseButtons button = ev.Button;
-            switch(button){
-                case MouseButtons.Left:
-                    modifiers |= java.awt.@event.InputEvent.BUTTON1_MASK;
-                    break;
-                case MouseButtons.Middle:
-                    modifiers |= java.awt.@event.InputEvent.BUTTON2_MASK;
-                    break;
-                case MouseButtons.Right:
-                    modifiers |= java.awt.@event.InputEvent.BUTTON3_MASK;
-                    break;
-            }
-            return modifiers;
-        }
-
-        internal static int GetModifiers(Keys keys)
-		{
-			int modifiers = 0;
-            if ((keys & Keys.Shift) != 0)
-			{
-				modifiers |= java.awt.@event.InputEvent.SHIFT_DOWN_MASK;
-			}
-			if((keys & Keys.Control) != 0)
-			{
-				modifiers |= java.awt.@event.InputEvent.CTRL_DOWN_MASK;
-			}
-			if((keys & Keys.Alt) != 0)
-			{
-				modifiers |= java.awt.@event.InputEvent.ALT_DOWN_MASK;
-			}
-			if((Control.MouseButtons & MouseButtons.Left) != 0)
-			{
-                modifiers |= java.awt.@event.InputEvent.BUTTON1_DOWN_MASK;
-			}
-			if((Control.MouseButtons & MouseButtons.Middle) != 0)
-			{
-                modifiers |= java.awt.@event.InputEvent.BUTTON2_DOWN_MASK;
-			}
-			if((Control.MouseButtons & MouseButtons.Right) != 0)
-			{
-				modifiers |= java.awt.@event.InputEvent.BUTTON3_DOWN_MASK;
-			}
-			return modifiers;
 		}
 
         private void OnKeyDown(object sender, KeyEventArgs e)
@@ -1853,30 +2111,6 @@ namespace ikvm.awt
             return ret;
         }
         
-        internal static int getAction(DragDropEffects effects)
-        {
-            int actions = java.awt.dnd.DnDConstants.ACTION_NONE;
-            switch (effects)
-            {
-                case DragDropEffects.None:
-                    actions = java.awt.dnd.DnDConstants.ACTION_NONE;
-                    break;
-                case DragDropEffects.Copy:
-                    actions = java.awt.dnd.DnDConstants.ACTION_COPY;
-                    break;
-                case DragDropEffects.Move:
-                    actions = java.awt.dnd.DnDConstants.ACTION_MOVE;
-                    break;
-                case DragDropEffects.Move | DragDropEffects.Copy:
-                    actions = java.awt.dnd.DnDConstants.ACTION_COPY_OR_MOVE;
-                    break;
-                case DragDropEffects.Link:
-                    actions = java.awt.dnd.DnDConstants.ACTION_LINK;
-                    break;
-            }
-            return actions;
-        }
-
         private void OnKeyUp(object sender, KeyEventArgs e)
 		{
 			long when = java.lang.System.currentTimeMillis();
@@ -1956,26 +2190,6 @@ namespace ikvm.awt
 			else
 			{
                 postMouseEvent(ev, java.awt.@event.MouseEvent.MOUSE_MOVED, ev.Clicks);
-			}
-		}
-
-		internal static int GetButton(MouseEventArgs e)
-		{
-            if((e.Button & MouseButtons.Left) != 0)
-			{
-				return java.awt.@event.MouseEvent.BUTTON1;
-			}
-			else if((e.Button & MouseButtons.Middle) != 0)
-			{
-				return java.awt.@event.MouseEvent.BUTTON2;
-			}
-			else if((e.Button & MouseButtons.Right) != 0)
-			{
-				return java.awt.@event.MouseEvent.BUTTON3;
-			}
-			else
-			{
-				return java.awt.@event.MouseEvent.NOBUTTON;
 			}
 		}
 
@@ -2060,7 +2274,7 @@ namespace ikvm.awt
 			//        log.log(Level.FINE, "Assertion (parent == null) failed");
 			//    }
 			//}
-			java.awt.Container cont = (java.awt.Container)target;
+			java.awt.Container cont = (java.awt.Container)(object)target;
 
 			NetToolkit.executeOnEventHandlerThread(cont, Delegates.toRunnable(delegate {
 				// Discarding old paint events doesn't seem to be necessary.
@@ -2180,29 +2394,29 @@ namespace ikvm.awt
 			return paintPending && isLayouting;
 		}
 
-		public int checkImage(java.awt.Image img, int width, int height, java.awt.image.ImageObserver ob)
+		public override int checkImage(java.awt.Image img, int width, int height, java.awt.image.ImageObserver ob)
 		{
 			return getToolkit().checkImage(img, width, height, ob);
 		}
 
-		public java.awt.Image createImage(java.awt.image.ImageProducer prod)
+		public override java.awt.Image createImage(java.awt.image.ImageProducer prod)
 		{
             NetProducerImage npi = new NetProducerImage(prod);
             prod.startProduction(npi);
             return new java.awt.image.BufferedImage(npi.getBitmap());
 		}
 
-		public java.awt.Image createImage(int width, int height)
+		public override java.awt.Image createImage(int width, int height)
 		{
             return new java.awt.image.BufferedImage(width, height, java.awt.image.BufferedImage.TYPE_INT_ARGB);
 		}
 
-		public void disable()
+		public override void disable()
 		{
             NetToolkit.BeginInvoke(delegate { Enable( false ); });
 		}
 
-		public void dispose()
+		public override void dispose()
 		{
 		    bool callDisposed = true;
             lock(this)
@@ -2220,7 +2434,7 @@ namespace ikvm.awt
 		protected virtual void disposeImpl()
 		{
             NetToolkit.targetDisposedPeer(target, this);
-            NetToolkit.Invoke((MethodInvoker)delegate { nativeDispose(); });
+            NetToolkit.Invoke(nativeDispose);
         }
 
         protected virtual void nativeDispose()
@@ -2229,24 +2443,23 @@ namespace ikvm.awt
             control.Dispose();
         }
 
-
-		public void enable()
+		public override void enable()
 		{
             NetToolkit.BeginInvoke(delegate { Enable(true); });
 		}
 
-        public java.awt.image.ColorModel getColorModel()
+		public override java.awt.image.ColorModel getColorModel()
 		{
-            //we return the default ColorModel because this produce the fewest problems with convertions
+            //we return the default ColorModel because this causes the least problems with conversions
             return java.awt.image.ColorModel.getRGBdefault();
         }
 
-		public java.awt.FontMetrics getFontMetrics(java.awt.Font f)
+		public override java.awt.FontMetrics getFontMetrics(java.awt.Font f)
 		{
 			return new NetFontMetrics(f);
 		}
 
-		public virtual java.awt.Graphics getGraphics()
+		public override java.awt.Graphics getGraphics()
 		{
 			if (!control.IsDisposed)
 			{
@@ -2271,9 +2484,9 @@ namespace ikvm.awt
 			return null;
 		}
 
-        public java.awt.Point getLocationOnScreen()
+		public override java.awt.Point getLocationOnScreen()
         {
-            return NetToolkit.Invoke((Func<java.awt.Point>)delegate
+            return NetToolkit.Invoke<java.awt.Point>(delegate
             {
                 Point p = new Point();
                 p = control.PointToScreen(p);
@@ -2281,17 +2494,17 @@ namespace ikvm.awt
             });
         }
 
-		public virtual java.awt.Dimension getMinimumSize()
+		public override java.awt.Dimension getMinimumSize()
 		{
 			return target.getSize();
 		}
 
-        public virtual java.awt.Dimension getPreferredSize()
+		public override java.awt.Dimension getPreferredSize()
 		{
 			return getMinimumSize();
 		}
 
-		public java.awt.Toolkit getToolkit()
+		public override java.awt.Toolkit getToolkit()
 		{
 			return java.awt.Toolkit.getDefaultToolkit();
 		}
@@ -2306,7 +2519,7 @@ namespace ikvm.awt
 				// TODO arrghh!! code from void AwtComponent::_NativeHandleEvent(void *param) in awt_Component.cpp should be here
 		}
 
-		public void handleEvent(java.awt.AWTEvent e)
+		public override void handleEvent(java.awt.AWTEvent e)
 		{
 			int id = e.getID();
 
@@ -2341,7 +2554,7 @@ namespace ikvm.awt
 			nativeHandleEvent(e);
 		}
 
-        public void hide()
+		public override void hide()
 		{
             NetToolkit.BeginInvoke(delegate { control.Visible = false; });
 		}
@@ -2351,38 +2564,38 @@ namespace ikvm.awt
 			return true;
 		}
 
-		public virtual java.awt.Dimension minimumSize()
+		public override java.awt.Dimension minimumSize()
 		{
 			return getMinimumSize();
 		}
 
-		public virtual java.awt.Dimension preferredSize()
+		public override java.awt.Dimension preferredSize()
 		{
 			return getPreferredSize();
 		}
 
-		public void paint(java.awt.Graphics graphics)
+		public override void paint(java.awt.Graphics graphics)
 		{
 			target.paint(graphics);
 		}
 
-        public bool prepareImage(java.awt.Image img, int width, int height, java.awt.image.ImageObserver ob)
+		public override bool prepareImage(java.awt.Image img, int width, int height, java.awt.image.ImageObserver ob)
 		{
 			return getToolkit().prepareImage(img, width, height, ob);
 		}
 
-		public void print(java.awt.Graphics graphics)
+		public override void print(java.awt.Graphics graphics)
 		{
 			throw new NotImplementedException();
 		}
 
-		public void repaint(long tm, int x, int y, int width, int height)
+		public override void repaint(long tm, int x, int y, int width, int height)
 		{
 		}
 
 		public void requestFocus()
 		{
-            control.Invoke((MethodInvoker) delegate { control.Focus(); });
+			NetToolkit.Invoke<bool>(control.Focus);
         }
 
         /// <summary>
@@ -2393,7 +2606,7 @@ namespace ikvm.awt
         /// <param name="allowWindowFocus">indicates if it's allowed to change window focus</param>
         /// <param name="time">the timestamp</param>
         /// <returns></returns>
-        public bool requestFocus(java.awt.Component request, bool temporary, bool allowWindowFocus, long time)
+		public bool requestFocus(java.awt.Component request, bool temporary, bool allowWindowFocus, long time)
 		{
             if (!getEnabled() || !getVisible())
             {
@@ -2403,7 +2616,7 @@ namespace ikvm.awt
 			return true;
 		}
 
-        public virtual void reshape(int x, int y, int width, int height)
+		public override void reshape(int x, int y, int width, int height)
         {
             NetToolkit.BeginInvoke(delegate
             {
@@ -2439,7 +2652,7 @@ namespace ikvm.awt
             });
         }
 
-		public void setBackground(java.awt.Color color)
+		public override void setBackground(java.awt.Color color)
 		{
 			lock (this)
 			{
@@ -2453,7 +2666,7 @@ namespace ikvm.awt
             NetToolkit.BeginInvoke(delegate { control.SetBounds(x, y, width, height); });
 		}
 
-		public void setBounds(int x, int y, int width, int height, int op)
+		public override void setBounds(int x, int y, int width, int height, int op)
 		{
 			// Should set paintPending before reahape to prevent
 			// thread race between paint events
@@ -2544,20 +2757,20 @@ namespace ikvm.awt
 
         public bool getEnabled()
         {
-            return NetToolkit.Invoke((Func<bool>)delegate { return control.Enabled; });
+            return NetToolkit.Invoke<bool>(delegate { return control.Enabled; });
         }
 
         public bool getFocused()
         {
-            return NetToolkit.Invoke((Func<bool>)delegate { return control.Focused; });
+            return NetToolkit.Invoke<bool>(delegate { return control.Focused; });
         }
 
         public bool getVisible()
         {
-            return NetToolkit.Invoke((Func<bool>)delegate { return control.Visible; });
+            return NetToolkit.Invoke<bool>(delegate { return control.Visible; });
         }
 
-        public void setEnabled(bool enabled)
+		public override void setEnabled(bool enabled)
 		{
 			if (enabled)
 			{
@@ -2569,7 +2782,7 @@ namespace ikvm.awt
 			}
 		}
 
-		public void setFont(java.awt.Font font)
+		public override void setFont(java.awt.Font font)
 		{
 			lock (this)
 			{
@@ -2578,7 +2791,7 @@ namespace ikvm.awt
 			}
 		}
 
-		public void setForeground(java.awt.Color color)
+		public override void setForeground(java.awt.Color color)
 		{
 			lock (this)
 			{
@@ -2587,7 +2800,7 @@ namespace ikvm.awt
 			}
 		}
 
-		public void setVisible(bool visible)
+		public override void setVisible(bool visible)
 		{
 			if (visible)
 			{
@@ -2599,9 +2812,9 @@ namespace ikvm.awt
 			}
 		}
 
-		public virtual void show()
+		public override void show()
 		{
-			java.awt.Dimension s = ((java.awt.Component)target).getSize();
+			java.awt.Dimension s = target.getSize();
 			oldHeight = s.height;
 			oldWidth = s.width;
 			pShow();
@@ -2611,7 +2824,7 @@ namespace ikvm.awt
 		 * Return the GraphicsConfiguration associated with this peer, either
 		 * the locally stored winGraphicsConfig, or that of the target Component.
 		 */
-        public java.awt.GraphicsConfiguration getGraphicsConfiguration()
+		public override java.awt.GraphicsConfiguration getGraphicsConfiguration()
         {
             // we don't need a treelock here, since
             // Component.getGraphicsConfiguration() gets it itself.
@@ -2623,13 +2836,13 @@ namespace ikvm.awt
 			//Console.WriteLine("NOTE: NetComponentPeer.setEventMask not implemented");
 		}
 
-		public bool isObscured()
+		public override bool isObscured()
 		{
 			// should never be called because we return false from canDetermineObscurity()
 			return true;
 		}
 
-		public bool canDetermineObscurity()
+		public override bool canDetermineObscurity()
 		{
 			// JDK returns true here and uses GetClipBox to determine if the window is partially obscured,
 			// this is an optimization for scrolling in javax.swing.JViewport, since there appears to be
@@ -2637,7 +2850,7 @@ namespace ikvm.awt
 			return false;
 		}
 
-		public void coalescePaintEvent(java.awt.@event.PaintEvent e)
+		public override void coalescePaintEvent(java.awt.@event.PaintEvent e)
 		{
 			java.awt.Rectangle r = e.getUpdateRect();
 			if (!(e is sun.awt.@event.IgnorePaintEvent))
@@ -2646,41 +2859,41 @@ namespace ikvm.awt
 			}
 		}
 
-		public void updateCursorImmediately()
+		public override void updateCursorImmediately()
 		{
 		}
 
-		public java.awt.image.VolatileImage createVolatileImage(int width, int height)
+		public override java.awt.image.VolatileImage createVolatileImage(int width, int height)
 		{
 			return new NetVolatileImage(target, width, height);
 		}
 
-		public bool handlesWheelScrolling()
+		public override bool handlesWheelScrolling()
 		{
 			return true;
 		}
 
-		public void createBuffers(int x, java.awt.BufferCapabilities capabilities)
+		public override void createBuffers(int x, java.awt.BufferCapabilities capabilities)
 		{
 			throw new NotImplementedException();
 		}
 
-		public java.awt.Image getBackBuffer()
+		public override java.awt.Image getBackBuffer()
 		{
 			throw new NotImplementedException();
 		}
 
-		public void flip(java.awt.BufferCapabilities.FlipContents contents)
+		public override void flip(java.awt.BufferCapabilities.FlipContents contents)
 		{
 			throw new NotImplementedException();
 		}
 
-		public void destroyBuffers()
+		public override void destroyBuffers()
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual bool isFocusable()
+		public override bool isFocusable()
 		{
 			return false;
 		}
@@ -2689,28 +2902,28 @@ namespace ikvm.awt
 	    {
 	        return disposed;
 	    }
-        
-		public java.awt.Rectangle getBounds()
+
+		public override java.awt.Rectangle getBounds()
 		{
 			return target.getBounds();
 		}
 
-		public void reparent(java.awt.peer.ContainerPeer parent)
+		public override void reparent(java.awt.peer.ContainerPeer parent)
 		{
 			throw new NotImplementedException();
 		}
 
-		public bool isReparentSupported()
+		public override bool isReparentSupported()
 		{
 			return false;
 		}
 
 		// Do nothing for heavyweight implementation
-		public void layout()
+		public override void layout()
 		{
 		}
 
-        public void applyShape(sun.java2d.pipe.Region shape)
+        public override void applyShape(sun.java2d.pipe.Region shape)
         {
             NetToolkit.BeginInvoke(ApplyShapeImpl, shape);
         }
@@ -2729,7 +2942,7 @@ namespace ikvm.awt
 		private static java.lang.reflect.Method processSynchronousLightweightTransfer;
 		private static java.lang.reflect.Method removeLastFocusRequest;
 
-        public bool requestFocus(java.awt.Component lightweightChild, bool temporary, bool focusedWindowChangeAllowed, long time, sun.awt.CausedFocusEvent.Cause cause)
+		public override bool requestFocus(java.awt.Component lightweightChild, bool temporary, bool focusedWindowChangeAllowed, long time, sun.awt.CausedFocusEvent.Cause cause)
         {
             // this is a interpretation of the code in WComponentPeer.java and awt_component.cpp
             try
@@ -2817,25 +3030,110 @@ namespace ikvm.awt
             //SNFH_FAILURE
             return false;
         }
+	}
 
-		internal static NetComponentPeer FromControl(Control control)
+	sealed class NetScrollbarPeer : NetComponentPeer<java.awt.Scrollbar, ScrollBar>, java.awt.peer.ScrollbarPeer
+	{
+		internal NetScrollbarPeer(java.awt.Scrollbar target)
+			: base(target)
 		{
-			return (NetComponentPeer)control.Tag;
+		}
+
+		public void setLineIncrement(int i)
+		{
+		}
+
+		public void setPageIncrement(int i)
+		{
+		}
+
+		public void setValues(int i1, int i2, int i3, int i4)
+		{
+		}
+
+		protected override ScrollBar CreateControl()
+		{
+			switch (target.getOrientation())
+			{
+				case java.awt.Scrollbar.VERTICAL:
+					return new VScrollBar();
+				default:
+					return new HScrollBar();
+			}
 		}
 	}
 
-    class NetButtonPeer : NetComponentPeer, java.awt.peer.ButtonPeer
+	sealed class NetScrollPanePeer : NetComponentPeer<java.awt.ScrollPane, ScrollableControl>, java.awt.peer.ScrollPanePeer
+	{
+		internal NetScrollPanePeer(java.awt.ScrollPane pane)
+			: base(pane)
+		{
+		}
+
+		public void childResized(int i1, int i2)
+		{
+		}
+
+		public int getHScrollbarHeight()
+		{
+			return NetToolkit.Invoke<int>(delegate { return 0; });
+		}
+
+		public int getVScrollbarWidth()
+		{
+			return NetToolkit.Invoke<int>(delegate { return 0; });
+		}
+
+		public void setScrollPosition(int i1, int i2)
+		{
+		}
+
+		public void setUnitIncrement(java.awt.Adjustable a, int i)
+		{
+		}
+
+		public void setValue(java.awt.Adjustable a, int i)
+		{
+		}
+
+		public java.awt.Insets getInsets()
+		{
+			return NetToolkit.Invoke<java.awt.Insets>(delegate { return new java.awt.Insets(0, 0, 0, 0); });
+		}
+
+		public java.awt.Insets insets()
+		{
+			return getInsets();
+		}
+
+		public bool isRestackSupported()
+		{
+			return false;
+		}
+
+		public void restack()
+		{
+			throw new NotImplementedException();
+		}
+
+		protected override ScrollableControl CreateControl()
+		{
+			return new ScrollableControl();
+		}
+	}
+
+    sealed class NetButtonPeer : NetComponentPeer<java.awt.Button, Button>, java.awt.peer.ButtonPeer
 	{
 		public NetButtonPeer(java.awt.Button awtbutton)
 			: base(awtbutton)
 		{
-			if(!awtbutton.isBackgroundSet())
+			if (!awtbutton.isBackgroundSet())
 			{
 				awtbutton.setBackground(java.awt.SystemColor.control);
 			}
 			control.BackColor = Color.FromArgb(awtbutton.getBackground().getRGB());
-			setLabel(awtbutton.getLabel());
-		    NetToolkit.Invoke(delegate { ((Button) control).Click += new EventHandler(OnClick); });
+			control.Text = awtbutton.getLabel();
+			control.Click += new EventHandler(OnClick);
 		}
 
 		private void OnClick(object sender, EventArgs e)
@@ -2849,7 +3147,7 @@ namespace ikvm.awt
 
 		public void setLabel(string label)
 		{
-            NetToolkit.BeginInvoke(delegate(string x) { control.Text = x; }, label);
+			NetToolkit.Invoke(delegate { control.Text = label; });
 		}
 
 		public override java.awt.Dimension getMinimumSize()
@@ -2866,36 +3164,25 @@ namespace ikvm.awt
             return false;
         }
 
-        internal override void create(NetComponentPeer parent)
-        {
-            AwtToolkit.CreateComponent(Create, parent);
-        }
-
-        void Create(NetComponentPeer parent)
-        {
-            Button button = new Button();
-            button.Tag = this;
-            if (parent != null)
-            {
-                button.Parent = parent.control;
-            }
-            NetToolkit.CreateNative(button);
-            this.control = button;
-        }
+		protected override Button CreateControl()
+		{
+			return new Button();
+		}
 	}
 
-    class NetTextComponentPeer : NetComponentPeer, java.awt.peer.TextComponentPeer
+    abstract class NetTextComponentPeer<T> : NetComponentPeer<T, TextBox>, java.awt.peer.TextComponentPeer
+		where T : java.awt.TextComponent
 	{
 		public NetTextComponentPeer(java.awt.TextComponent textComponent)
-			: base(textComponent)
+			: base((T)textComponent)
 		{
 			if(!target.isBackgroundSet())
 			{
 				target.setBackground(java.awt.SystemColor.window);
 			}
 			setBackground(target.getBackground());
-			((TextBox)control).AutoSize = false;
-			((TextBox)control).Text = ((java.awt.TextComponent)target).getText();
+			control.AutoSize = false;
+			control.Text = target.getText();
 		}
 
         public override bool isFocusable()
@@ -2919,40 +3206,43 @@ namespace ikvm.awt
 
 		public int getSelectionEnd()
 		{
-			throw new NotImplementedException();
+			return NetToolkit.Invoke<int>(delegate { return control.SelectionStart + control.SelectionLength; });
 		}
+
 		public int getSelectionStart()
 		{
-			throw new NotImplementedException();
+			return NetToolkit.Invoke<int>(delegate { return control.SelectionStart; });
 		}
 
 		public string getText()
 		{
-		    return NetToolkit.Invoke((Func<string>)delegate { return control.Text; });
+		    return NetToolkit.Invoke<string>(delegate { return control.Text; });
 		}
 
 		public void setText(string text)
 		{
-			NetToolkit.Invoke(delegate(string x) { control.Text = x; }, text);
+			NetToolkit.Invoke(delegate { control.Text = text; });
         }
 
 		public void select(int start_pos, int end_pos)
 		{
 			throw new NotImplementedException();
 		}
+
 		public void setEditable(bool editable)
 		{
 			throw new NotImplementedException();
 		}
+
 		public int getCaretPosition()
 		{
-			throw new NotImplementedException();
+			return getSelectionStart();
 		}
 
 		private void setCaretPositionImpl(int pos)
 		{
-			((TextBox)control).SelectionStart = pos;
-			((TextBox)control).SelectionLength = 0;
+			control.SelectionStart = pos;
+			control.SelectionLength = 0;
 		}
 
 		public void setCaretPosition(int pos)
@@ -2980,13 +3270,13 @@ namespace ikvm.awt
 			throw new NotImplementedException();
 		}
 
-		internal override void create(NetComponentPeer parent)
+		protected sealed override TextBox CreateControl()
 		{
-			throw new NotImplementedException();
+			return new TextBox();
 		}
 	}
 
-    class NetChoicePeer : NetComponentPeer, java.awt.peer.ChoicePeer
+	sealed class NetChoicePeer : NetComponentPeer<java.awt.Choice, RadioButton>, java.awt.peer.ChoicePeer
 	{
 		public NetChoicePeer(java.awt.Choice target)
 			: base(target)
@@ -3018,13 +3308,13 @@ namespace ikvm.awt
 			// TODO:  Add NetChoicePeer.remove implementation
 		}
 
-		internal override void create(NetComponentPeer parent)
+		protected override RadioButton CreateControl()
 		{
-			throw new NotImplementedException();
+			return new RadioButton();
 		}
 	}
 
-    class NetCheckboxPeer : NetComponentPeer, java.awt.peer.CheckboxPeer
+    sealed class NetCheckboxPeer : NetComponentPeer<java.awt.Checkbox, CheckBox>, java.awt.peer.CheckboxPeer
 	{
 		public NetCheckboxPeer(java.awt.Checkbox target)
 			: base(target)
@@ -3046,19 +3336,18 @@ namespace ikvm.awt
 			// TODO:  Add NetCheckboxPeer.setLabel implementation
 		}
 
-		internal override void create(NetComponentPeer parent)
+		protected override CheckBox CreateControl()
 		{
-			throw new NotImplementedException();
+			return new CheckBox();
 		}
 	}
 
-    class NetLabelPeer : NetComponentPeer, java.awt.peer.LabelPeer
+    sealed class NetLabelPeer : NetComponentPeer<java.awt.Label, Label>, java.awt.peer.LabelPeer
 	{
 		public NetLabelPeer(java.awt.Label jlabel)
 			: base(jlabel)
 		{
-            NetToolkit.Invoke(setTextImpl, jlabel.getText());
-			// ((Label)control).Text = jlabel.getText();
+			control.Text = jlabel.getText();
 			setAlignment(jlabel.getAlignment());
 		}
 
@@ -3084,7 +3373,7 @@ namespace ikvm.awt
 
 		private void setAlignImpl(ContentAlignment alignment)
 		{
-            ((Label)control).TextAlign = (ContentAlignment)alignment;
+            control.TextAlign = (ContentAlignment)alignment;
 		}
 
 		public void setText(string s)
@@ -3104,9 +3393,8 @@ namespace ikvm.awt
 
 		private java.awt.Dimension getPreferredSizeImpl()
 		{
-			Label lab = (Label)control;
 			// HACK get these fudge factors from somewhere
-			return new java.awt.Dimension(lab.PreferredWidth, 2 + lab.PreferredHeight);
+			return new java.awt.Dimension(control.PreferredWidth, 2 + control.PreferredHeight);
 		}
 
         public override bool shouldClearRectBeforePaint()
@@ -3115,40 +3403,28 @@ namespace ikvm.awt
             return false;
         }
 
-        internal override void create(NetComponentPeer parent)
-        {
-            AwtToolkit.CreateComponent(Create, parent);
-        }
-
-        void Create(NetComponentPeer parent)
-        {
-            Label label = new Label();
-            label.Tag = this;
-            if (parent != null)
-            {
-                label.Parent = parent.control;
-            }
-            NetToolkit.CreateNative(label);
-            this.control = label;
-        }
+		protected override Label CreateControl()
+		{
+			return new Label();
+		}
 	}
 
-    class NetTextFieldPeer : NetTextComponentPeer, java.awt.peer.TextFieldPeer
+    sealed class NetTextFieldPeer : NetTextComponentPeer<java.awt.TextField>, java.awt.peer.TextFieldPeer
 	{
 		public NetTextFieldPeer(java.awt.TextField textField)
 			: base(textField)
 		{
-			setEchoCharacter(textField.getEchoChar());
+			setEchoCharacterImpl(textField.getEchoChar());
 		}
 
 		public java.awt.Dimension minimumSize(int len)
 		{
-			throw new NotImplementedException();
+			return getMinimumSize(len);
 		}
 
 		public java.awt.Dimension preferredSize(int len)
 		{
-			throw new NotImplementedException();
+			return getPreferredSize(len);
 		}
 
 		public java.awt.Dimension getMinimumSize(int len)
@@ -3172,7 +3448,7 @@ namespace ikvm.awt
 
         private void setEchoCharacterImpl(char echo_char)
         {
-            ((TextBox)control).PasswordChar = echo_char;
+            control.PasswordChar = echo_char;
         }
 
 		public void setEchoCharacter(char echo_char)
@@ -3197,30 +3473,25 @@ namespace ikvm.awt
         }
 	}
 
-    class NetTextAreaPeer : NetTextComponentPeer, java.awt.peer.TextAreaPeer
+    sealed class NetTextAreaPeer : NetTextComponentPeer<java.awt.TextArea>, java.awt.peer.TextAreaPeer
 	{
 		public NetTextAreaPeer(java.awt.TextArea textArea)
 			: base(textArea)
 		{
-			((TextBox)control).ReadOnly = !((java.awt.TextArea)target).isEditable();
-			((TextBox)control).WordWrap = false;
-			((TextBox)control).ScrollBars = ScrollBars.Both;
-			((TextBox)control).Multiline = true;
-		}
-
-		private void insertImpl(string text, int pos)
-		{
-			control.Text = control.Text.Insert(pos, text);
+			control.ReadOnly = !((java.awt.TextArea)target).isEditable();
+			control.WordWrap = false;
+			control.ScrollBars = ScrollBars.Both;
+			control.Multiline = true;
 		}
 
 		public void insert(string text, int pos)
 		{
-			NetToolkit.Invoke(insertImpl, text, pos);
+			NetToolkit.Invoke(delegate { control.Text = control.Text.Insert(pos, text); });
 		}
 
 		public void insertText(string text, int pos)
 		{
-			throw new NotImplementedException();
+			insert(text, pos);
 		}
 
         public override java.awt.Dimension getMinimumSize()
@@ -3259,7 +3530,9 @@ namespace ikvm.awt
 		}
 	}
 
-    class NetContainerPeer : NetComponentPeer, java.awt.peer.ContainerPeer
+    class NetContainerPeer<T, C> : NetComponentPeer<T, C>, java.awt.peer.ContainerPeer
+		where T : java.awt.Container
+		where C : Control
 	{
         /// <summary>
         /// The native insets of the .NET Window
@@ -3267,16 +3540,16 @@ namespace ikvm.awt
 		protected java.awt.Insets _insets = new java.awt.Insets(0, 0, 0, 0);
 
 		public NetContainerPeer(java.awt.Container awtcontainer)
-			: base(awtcontainer)
+			: base((T)awtcontainer)
 		{
 		}
 
-        protected override int getInsetsLeft()
+        internal override int getInsetsLeft()
         {
             return _insets.left; ;
         }
 
-        protected override int getInsetsTop()
+        internal override int getInsetsTop()
         {
             return _insets.top;
         }
@@ -3306,34 +3579,39 @@ namespace ikvm.awt
 			throw new NotImplementedException();
 		}
 
-		internal override void create(NetComponentPeer parent)
+		protected override C CreateControl()
 		{
 			throw new NotImplementedException();
 		}
 	}
 
-    class NetPanelPeer : NetContainerPeer, java.awt.peer.PanelPeer
+    sealed class NetPanelPeer : NetContainerPeer<java.awt.Panel, Control>, java.awt.peer.PanelPeer
 	{
 		public NetPanelPeer(java.awt.Panel panel)
 			: base(panel)
 		{
 		}
+
+		protected override Control CreateControl()
+		{
+			throw new NotImplementedException();
+		}
 	}
 
-    class NewCanvasPeer : NetComponentPeer, java.awt.peer.CanvasPeer
+    sealed class NewCanvasPeer : NetComponentPeer<java.awt.Canvas, Control>, java.awt.peer.CanvasPeer
 	{
 		public NewCanvasPeer(java.awt.Canvas canvas)
 			: base(canvas)
 		{
 		}
 
-		internal override void create(NetComponentPeer parent)
+		protected override Control CreateControl()
 		{
 			throw new NotImplementedException();
 		}
 	}
 
-    class NetWindowPeer : NetContainerPeer, java.awt.peer.WindowPeer
+    class NetWindowPeer : NetContainerPeer<java.awt.Window, Form>, java.awt.peer.WindowPeer
 	{
         // we can't use NetDialogPeer as blocker may be an instance of NetPrintDialogPeer that
         // extends NetWindowPeer, not NetDialogPeer
@@ -3346,10 +3624,10 @@ namespace ikvm.awt
 			: base(window)
 		{
             //form.Shown += new EventHandler(OnOpened); Will already post in java.awt.Window.show()
-            ((Form)control).Closing += new CancelEventHandler(OnClosing);
-			((Form)control).Closed += new EventHandler(OnClosed);
-			((Form)control).Activated += new EventHandler(OnActivated);
-			((Form)control).Deactivate += new EventHandler(OnDeactivate);
+			control.Closing += new CancelEventHandler(OnClosing);
+			control.Closed += new EventHandler(OnClosed);
+			control.Activated += new EventHandler(OnActivated);
+			control.Deactivate += new EventHandler(OnDeactivate);
 			control.SizeChanged += new EventHandler(OnSizeChanged);
 			control.Resize += new EventHandler(OnResize);
             control.Move += new EventHandler(OnMove);
@@ -3444,12 +3722,12 @@ namespace ikvm.awt
 
         private void OnActivated(object sender, EventArgs e)
         {
-			WmActivate(WA_ACTIVE, ((Form)control).WindowState == FormWindowState.Minimized, null);
+			WmActivate(WA_ACTIVE, control.WindowState == FormWindowState.Minimized, null);
         }
 
 		private void OnDeactivate(object sender, EventArgs e)
 		{
-			WmActivate(WA_INACTIVE, ((Form)control).WindowState == FormWindowState.Minimized, null);
+			WmActivate(WA_INACTIVE, control.WindowState == FormWindowState.Minimized, null);
 		}
 
 		private void WmActivate(int nState, bool fMinimized, Control opposite)
@@ -3512,7 +3790,7 @@ namespace ikvm.awt
         {
             NetToolkit.BeginInvoke(delegate
             {
-                ((Form)control).FormBorderStyle = style;
+				control.FormBorderStyle = style;
                 //Calculate the Insets one time
                 //This is many faster because there no thread change is needed.
                 Rectangle client = control.ClientRectangle;
@@ -3536,12 +3814,6 @@ namespace ikvm.awt
                 _insets.bottom = control.Height - client.Height - y;
                 _insets.right = control.Width - client.Width - x;
             });
-        }
-
-        protected void SetBoundsImpl(int x, int y, int width, int height)
-        {
-            Form form = (Form)control;
-            form.DesktopBounds = new Rectangle(x, y, width, height);
         }
 
         public override void reshape(int x, int y, int width, int height)
@@ -3573,12 +3845,12 @@ namespace ikvm.awt
 
         public void toBack()
 		{
-            NetToolkit.BeginInvoke(((Form)control).SendToBack);
+			NetToolkit.BeginInvoke(control.SendToBack);
 		}
 
 		public void toFront()
 		{
-            NetToolkit.BeginInvoke(((Form)control).Activate);
+			NetToolkit.BeginInvoke(control.Activate);
 		}
 
 		public void updateAlwaysOnTop()
@@ -3593,12 +3865,9 @@ namespace ikvm.awt
 
         public void setAlwaysOnTop(bool alwaysOnTop)
         {
-            if ((alwaysOnTop && ((java.awt.Window)target).isVisible()) || !alwaysOnTop)
+            if ((alwaysOnTop && target.isVisible()) || !alwaysOnTop)
             {
-                NetToolkit.BeginInvoke(delegate(bool topMost)
-                                           {
-                                               ((Form) control).TopMost = topMost;
-                                           }, alwaysOnTop);
+				NetToolkit.Invoke(delegate { control.TopMost = alwaysOnTop; });
             }
         }
 
@@ -3667,25 +3936,13 @@ namespace ikvm.awt
             java.awt.Dimension dim = target.getMinimumSize();
             NetToolkit.BeginInvoke(delegate
             {
-                ((Form)control).MinimumSize = new Size(dim.width, dim.height);
+				control.MinimumSize = new Size(dim.width, dim.height);
             });
         }
 
-		internal override void create(NetComponentPeer parent)
+		protected override Form CreateControl()
 		{
-			AwtToolkit.CreateComponent(Create, parent);
-		}
-
-		void Create(NetComponentPeer parent)
-		{
-			Form form = new UndecoratedForm();
-			form.Tag = this;
-			if (parent != null)
-			{
-				form.Owner = parent.control.FindForm();
-			}
-			NetToolkit.CreateNative(form);
-			this.control = form;
+			return new UndecoratedForm();
 		}
 
         protected override void OnMouseDown(object sender, MouseEventArgs ev)
@@ -3743,7 +4000,7 @@ namespace ikvm.awt
         }
 	}
 
-    class NetFramePeer : NetWindowPeer, java.awt.peer.FramePeer
+    sealed class NetFramePeer : NetWindowPeer, java.awt.peer.FramePeer
 	{
 		public NetFramePeer(java.awt.Frame frame)
 			: base(frame)
@@ -3780,7 +4037,15 @@ namespace ikvm.awt
 
 		public void setMenuBar(java.awt.MenuBar mb)
 		{
-			throw new NotImplementedException();
+			if (mb == null)
+			{
+				NetToolkit.Invoke(delegate { control.Menu = null; });
+			}
+			else
+			{
+				mb.addNotify();
+				NetToolkit.Invoke(delegate { control.Menu = ((NetMenuBarPeer)mb.getPeer()).menu; });
+			}
 		}
 
         public void setResizable(bool resizable)
@@ -3853,39 +4118,27 @@ namespace ikvm.awt
             throw new NotImplementedException();
         }
 
-		internal override void create(NetComponentPeer parent)
+		protected override Form CreateControl()
 		{
-			AwtToolkit.CreateComponent(Create, parent);
-		}
-
-		void Create(NetComponentPeer parent)
-		{
-			Form form = new MyForm( _insets );
-			form.Tag = this;
-			if (parent != null)
-			{
-				form.Owner = parent.control.FindForm();
-			}
-			NetToolkit.CreateNative(form);
-			this.control = form;
+			return new MyForm(_insets);
 		}
     }
 
-    class NetDialogPeer : NetWindowPeer, java.awt.peer.DialogPeer
+    sealed class NetDialogPeer : NetWindowPeer, java.awt.peer.DialogPeer
 	{
         public NetDialogPeer(java.awt.Dialog target)
 			: base(target)
 		{
-            ((Form)control).MaximizeBox = false;
-			((Form)control).MinimizeBox = false;
-            ((Form)control).ShowInTaskbar = false;
+			control.MaximizeBox = false;
+			control.MinimizeBox = false;
+			control.ShowInTaskbar = false;
             setTitle(target.getTitle());
             setResizable(target.isResizable());
         }
 
 		public void setTitle(string title)
 		{
-            NetToolkit.BeginInvoke(delegate { control.Text = title; });
+            NetToolkit.Invoke(delegate { control.Text = title; });
 		}
 
         public void setResizable(bool resizable)
@@ -3912,22 +4165,10 @@ namespace ikvm.awt
             }
         }
 
-        internal override void create(NetComponentPeer parent)
-        {
-            AwtToolkit.CreateComponent(Create, parent);
-        }
-
-        void Create(NetComponentPeer parent)
-        {
-            Form form = new MyForm( _insets );
-			form.Tag = this;
-			if (parent != null)
-            {
-                form.Owner = parent.control.FindForm();
-            }
-            NetToolkit.CreateNative(form);
-            this.control = form;
-        }
+		protected override Form CreateControl()
+		{
+			return new MyForm(_insets);
+		}
     }
 
     sealed class NetKeyboardFocusManagerPeer : java.awt.peer.KeyboardFocusManagerPeer
@@ -3960,7 +4201,7 @@ namespace ikvm.awt
 
 		private static java.awt.Component getNativeFocusOwner()
 		{
-			return (java.awt.Component)NetToolkit.bogusForm.Invoke((Func<java.awt.Component>)delegate
+			return NetToolkit.Invoke<java.awt.Component>(delegate
 			{
 				UndecoratedForm form = Form.ActiveForm as UndecoratedForm;
 				if (form != null)
@@ -3982,7 +4223,7 @@ namespace ikvm.awt
 							control = control.Parent;
 						}
 					}
-					return peer.target;
+					return peer.Target;
 				}
 				return null;
 			});
@@ -3990,7 +4231,7 @@ namespace ikvm.awt
 
 		private static java.awt.Window getNativeFocusedWindow()
         {
-            return (java.awt.Window)NetToolkit.bogusForm.Invoke((Func<java.awt.Window>)delegate
+			return NetToolkit.Invoke<java.awt.Window>(delegate
             {
 				Form form = Form.ActiveForm;
                 if (form != null)
@@ -3998,7 +4239,7 @@ namespace ikvm.awt
 					NetComponentPeer peer = NetComponentPeer.FromControl(form);
 					if (peer != null)
 					{
-						return (java.awt.Window)peer.target;
+						return (java.awt.Window)peer.Target;
 					}
                 }
                 return null;
@@ -4027,95 +4268,118 @@ namespace ikvm.awt
         }
     }
 
-    class NetListPeer : NetComponentPeer, java.awt.peer.ListPeer
+    sealed class NetListPeer : NetComponentPeer<java.awt.List, ListBox>, java.awt.peer.ListPeer
 	{
 		internal NetListPeer(java.awt.List target)
 			: base(target)
 		{
+			control.IntegralHeight = false;
+			setMultipleMode(target.isMultipleMode());
+			for (int i = 0; i < target.getItemCount(); i++)
+			{
+				add(target.getItem(i), i);
+				if (target.isSelected(i))
+				{
+					select(i);
+				}
+			}
+			makeVisible(target.getVisibleIndex());
 		}
 
-		public void add(String item, int index)
+		public void add(string item, int index)
 		{
-			throw new NotImplementedException();
+			NetToolkit.Invoke(delegate { control.Items.Insert(index, item); });
 		}
 
-		public void addItem(String item, int index)
+		public void addItem(string item, int index)
 		{
-			throw new NotImplementedException();
+			add(item, index);
 		}
 
 		public void clear()
 		{
-			throw new NotImplementedException();
+			NetToolkit.Invoke(delegate { control.Items.Clear(); });
 		}
 
 		public void delItems(int start_index, int end_index)
 		{
-			throw new NotImplementedException();
+			NetToolkit.Invoke(delegate
+			{
+				for (int i = start_index; i < end_index; i++)
+				{
+					control.Items.RemoveAt(start_index);
+				}
+			});
 		}
 
 		public void deselect(int index)
 		{
-			throw new NotImplementedException();
+			NetToolkit.Invoke(delegate { control.SelectedIndices.Remove(index); });
 		}
 
 		public int[] getSelectedIndexes()
 		{
-			throw new NotImplementedException();
+			return NetToolkit.Invoke<int[]>(delegate
+			{
+				ListBox.SelectedIndexCollection sic = control.SelectedIndices;
+				int[] indexes = new int[sic.Count];
+				sic.CopyTo(indexes, 0);
+				return indexes;
+			});
 		}
 
 		public void makeVisible(int index)
 		{
-			throw new NotImplementedException();
+			NetToolkit.Invoke(delegate { control.TopIndex = index; });
 		}
 
 		public java.awt.Dimension minimumSize(int s)
 		{
-			throw new NotImplementedException();
+			return getMinimumSize(s);
 		}
 
 		public java.awt.Dimension preferredSize(int s)
 		{
-			throw new NotImplementedException();
+			return getPreferredSize(s);
 		}
 
 		public void removeAll()
 		{
-			throw new NotImplementedException();
+			clear();
 		}
 
 		public void select(int index)
 		{
-			throw new NotImplementedException();
+			NetToolkit.Invoke(delegate { control.SelectedIndices.Add(index); });
 		}
 
 		public void setMultipleMode(bool multi)
 		{
-			throw new NotImplementedException();
+			NetToolkit.Invoke(delegate { control.SelectionMode = multi ? SelectionMode.MultiSimple : SelectionMode.One; });
 		}
 
 		public void setMultipleSelections(bool multi)
 		{
-			throw new NotImplementedException();
+			setMultipleMode(multi);
 		}
 
 		public java.awt.Dimension getPreferredSize(int s)
 		{
-			throw new NotImplementedException();
+			return getMinimumSize(s);
 		}
 
 		public java.awt.Dimension getMinimumSize(int s)
 		{
-			throw new NotImplementedException();
+			return new java.awt.Dimension(100, 100);
 		}
 
-		internal override void create(NetComponentPeer parent)
+		protected override ListBox CreateControl()
 		{
-			throw new NotImplementedException();
+			return new ListBox();
 		}
 	}
 
-    class NetDesktopPeer : java.awt.peer.DesktopPeer
+    sealed class NetDesktopPeer : java.awt.peer.DesktopPeer
 	{
 		private static void ShellExecute(string file, string verb)
 		{
@@ -4263,7 +4527,11 @@ namespace ikvm.awt
 
     class NetPopupMenuPeer : java.awt.peer.PopupMenuPeer
     {
-        public void show(java.awt.Event e)
+		internal NetPopupMenuPeer(java.awt.PopupMenu target)
+		{
+		}
+
+		public void show(java.awt.Event e)
         {
             throw new NotImplementedException();
         }
@@ -4408,7 +4676,7 @@ namespace ikvm.awt
                 popupParent.dispose();
             }
             NetToolkit.targetDisposedPeer(target, this);
-            NetToolkit.BeginInvoke(delegate { nativeDispose(); });
+            NetToolkit.BeginInvoke(nativeDispose);
         }
 
         private void hookEvents()
@@ -4646,7 +4914,6 @@ namespace ikvm.awt
             }
         }
     }
-
     
     public class NetClipboard : java.awt.datatransfer.Clipboard
     {
@@ -4729,9 +4996,6 @@ namespace ikvm.awt
 
     public class NetDataTransferer : sun.awt.IkvmDataTransferer
     {
-        public static readonly java.awt.datatransfer.FlavorTable flavorMap =
-            (java.awt.datatransfer.FlavorTable)java.awt.datatransfer.SystemFlavorMap.getDefaultFlavorMap();
-
         class NetToolkitThreadBlockedHandler : sun.awt.datatransfer.ToolkitThreadBlockedHandler
         {
             private bool locked;
@@ -4749,11 +5013,10 @@ namespace ikvm.awt
                     throw new java.lang.IllegalMonitorStateException();
                 }
                 unlock();
-                if (!NetToolkit.bogusForm.InvokeRequired)
-                {
-                    Application.DoEvents();
-                    Thread.Sleep(0);
-                }
+				if (Application.MessageLoop)
+				{
+					Application.DoEvents();
+				}
 		        @lock();
 		    }
 
