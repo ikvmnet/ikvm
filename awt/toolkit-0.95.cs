@@ -360,6 +360,10 @@ namespace ikvm.awt
 
         public override java.awt.peer.PopupMenuPeer createPopupMenu(java.awt.PopupMenu target)
         {
+			for (int i = 0; i < target.getItemCount(); i++)
+			{
+				target.getItem(i).addNotify();
+			}
 			java.awt.peer.PopupMenuPeer peer = Invoke<NetPopupMenuPeer>(delegate { return new NetPopupMenuPeer(target); });
 			targetCreatedPeer(target, peer);
 			return peer;
@@ -4553,39 +4557,36 @@ namespace ikvm.awt
         }
     }
 
-    class NetPopupMenuPeer : java.awt.peer.PopupMenuPeer
+    sealed class NetPopupMenuPeer : java.awt.peer.PopupMenuPeer
     {
+		private readonly java.awt.PopupMenu target;
+		private readonly ContextMenu menu = new ContextMenu();
+
 		internal NetPopupMenuPeer(java.awt.PopupMenu target)
 		{
+			this.target = target;
+			for (int i = 0; i < target.getItemCount(); i++)
+			{
+				addItem(target.getItem(i));
+			}
 		}
 
 		public void show(java.awt.Event e)
         {
-            throw new NotImplementedException();
+			show((java.awt.Component)e.target, new java.awt.Point(e.x, e.y));
         }
 
         public void show(java.awt.Component origin, java.awt.Point p)
         {
-            NetComponentPeer peer = (NetComponentPeer)NetToolkit.targetToPeer(origin);
-            java.awt.Event e = new java.awt.Event(origin, 0, java.awt.Event.MOUSE_DOWN, p.x, p.y, 0, 0);
-            if (peer == null)
-            {
-                java.awt.Component nativeOrigin = NetToolkit.getNativeContainer(origin);
-                e.target = nativeOrigin;
-            }
-            e.x = p.x;
-            e.y = p.y;
-            nativeShow(e);
-        }
-
-        private void nativeShow(java.awt.Event e)
-        {
-            
+			NetComponentPeer peer = (NetComponentPeer)origin.getPeer();
+			Point pt = new Point(p.x, p.y);
+			pt.Offset(- peer.getInsetsLeft(), - peer.getInsetsTop());
+			NetToolkit.Invoke(delegate { menu.Show(peer.Control, pt); });
         }
 
         public void dispose()
         {
-            throw new NotImplementedException();
+			NetToolkit.Invoke(delegate { menu.Dispose(); });
         }
 
         public void setFont(java.awt.Font f)
@@ -4595,38 +4596,54 @@ namespace ikvm.awt
 
         public void disable()
         {
-            throw new NotImplementedException();
+			setEnabled(false);
         }
 
         public void enable()
         {
-            throw new NotImplementedException();
-        }
+			setEnabled(true);
+		}
 
         public void setEnabled(bool b)
         {
-            throw new NotImplementedException();
-        }
+			NetToolkit.Invoke(delegate
+			{
+				for (int i = 0; i < target.getItemCount(); i++)
+				{
+					menu.MenuItems[i].Enabled = b && target.getItem(i).isEnabled();
+				}
+			});
+		}
 
         public void setLabel(string str)
         {
-            throw new NotImplementedException();
         }
 
-        public void addItem(java.awt.MenuItem mi)
+        public void addItem(java.awt.MenuItem item)
         {
-            throw new NotImplementedException();
-        }
+			if (item.getPeer() == null)
+			{
+				item.addNotify();
+			}
+			if (item.getPeer() is NetMenuItemPeer)
+			{
+				NetToolkit.Invoke(delegate { menu.MenuItems.Add(((NetMenuItemPeer)item.getPeer()).menuitem); });
+			}
+			else
+			{
+				NetToolkit.Invoke(delegate { menu.MenuItems.Add(((NetMenuPeer)item.getPeer()).menu); });
+			}
+		}
 
         public void addSeparator()
         {
-            throw new NotImplementedException();
+			NetToolkit.Invoke(delegate { menu.MenuItems.Add(new MenuItem("-")); });
         }
 
         public void delItem(int i)
         {
-            throw new NotImplementedException();
-        }
+			NetToolkit.Invoke(delegate { menu.MenuItems.RemoveAt(i); });
+		}
     }
 
     class NetTrayIconPeer : java.awt.peer.TrayIconPeer
