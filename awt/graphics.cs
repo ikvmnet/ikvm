@@ -1269,9 +1269,9 @@ namespace ikvm.awt
         }
     }
 
-    class NetGraphicsConfiguration : java.awt.GraphicsConfiguration
+    sealed class NetGraphicsConfiguration : java.awt.GraphicsConfiguration
     {
-        Screen screen;
+        internal readonly Screen screen;
 
         public NetGraphicsConfiguration(Screen screen)
         {

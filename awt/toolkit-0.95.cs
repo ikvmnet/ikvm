@@ -127,7 +127,7 @@ namespace ikvm.awt
                 // null means reset to the original system setting
                 if (maxBoundsSet)
                 {
-                    MaximizedBounds = maxBounds;
+                    SetMaximizedBoundsImpl(maxBounds);
                 }
             }
             else
@@ -137,9 +137,14 @@ namespace ikvm.awt
                     maxBounds = MaximizedBounds;
                     maxBoundsSet = true;
                 }
-                MaximizedBounds = J2C.ConvertRect(rect);
+                SetMaximizedBoundsImpl(J2C.ConvertRect(rect));
             }
         }
+
+		private void SetMaximizedBoundsImpl(Rectangle rect)
+		{
+			NetToolkit.Invoke(delegate { MaximizedBounds = rect; });
+		}
 	}
 
     public sealed class NetToolkit : sun.awt.SunToolkit, ikvm.awt.IkvmToolkit
@@ -770,6 +775,25 @@ namespace ikvm.awt
         {
             return Screen.PrimaryScreen.Bounds.Width;
         }
+
+		public override java.awt.Insets getScreenInsets(java.awt.GraphicsConfiguration gc)
+		{
+			NetGraphicsConfiguration ngc = gc as NetGraphicsConfiguration;
+			if (ngc != null)
+			{
+				Rectangle rectWorkingArea = ngc.screen.WorkingArea;
+				Rectangle rectBounds = ngc.screen.Bounds;
+				return new java.awt.Insets(
+					rectWorkingArea.Top - rectBounds.Top,
+					rectWorkingArea.Left - rectBounds.Left,
+					rectBounds.Bottom - rectWorkingArea.Bottom,
+					rectBounds.Right - rectWorkingArea.Right);
+			}
+			else
+			{
+				return base.getScreenInsets(gc);
+			}
+		}
 
         public override void grab(java.awt.Window window)
         {
@@ -3793,28 +3817,37 @@ namespace ikvm.awt
 				control.FormBorderStyle = style;
                 //Calculate the Insets one time
                 //This is many faster because there no thread change is needed.
-                Rectangle client = control.ClientRectangle;
-                if (client.Height == 0)
-                {
-                    // HACK for .NET bug if form has the minimum size then ClientRectangle is not recalulate
-                    // if the FormBorderStyle is changed
-                    Size size = control.Size;
-                    size.Height++;
-                    control.Size = size;
-                    size.Height--;
-                    control.Size = size;
-                    client = control.ClientRectangle;
-                }
-                Rectangle r = control.RectangleToScreen(client);
-                int x = r.Location.X - control.Location.X;
-                int y = r.Location.Y - control.Location.Y;
-                // only modify this instance, since it's accessed by the control-peers of this form
-                _insets.top = y;
-                _insets.left = x;
-                _insets.bottom = control.Height - client.Height - y;
-                _insets.right = control.Width - client.Width - x;
+				CalcInsetsImpl();
             });
         }
+
+		protected void CalcInsetsImpl()
+		{
+			Rectangle client = control.ClientRectangle;
+			if (client.Height == 0)
+			{
+				// HACK for .NET bug if form has the minimum size then ClientRectangle is not recalulate
+				// if the FormBorderStyle is changed
+				Size size = control.Size;
+				size.Height++;
+				control.Size = size;
+				size.Height--;
+				control.Size = size;
+				client = control.ClientRectangle;
+			}
+			Rectangle r = control.RectangleToScreen(client);
+			int x = r.Location.X - control.Location.X;
+			int y = r.Location.Y - control.Location.Y;
+			// only modify this instance, since it's shared by the control-peers of this form
+			_insets.top = y;
+			_insets.left = x;
+			_insets.bottom = control.Height - client.Height - y;
+			if (control.Menu != null)
+			{
+				_insets.bottom += SystemInformation.MenuHeight;
+			}
+			_insets.right = control.Width - client.Width - x;
+		}
 
         public override void reshape(int x, int y, int width, int height)
         {
@@ -4007,21 +4040,6 @@ namespace ikvm.awt
 		{
         }
 
-		private class ValidateHelper : java.lang.Runnable
-		{
-			private java.awt.Component comp;
-
-			internal ValidateHelper(java.awt.Component comp)
-			{
-				this.comp = comp;
-			}
-
-			public void run()
-			{
-				comp.validate();
-			}
-		}
-
         protected override void initialize()
         {
             base.initialize();
@@ -4039,12 +4057,20 @@ namespace ikvm.awt
 		{
 			if (mb == null)
 			{
-				NetToolkit.Invoke(delegate { control.Menu = null; });
+				NetToolkit.Invoke(delegate
+				{
+					control.Menu = null;
+					CalcInsetsImpl();
+				});
 			}
 			else
 			{
 				mb.addNotify();
-				NetToolkit.Invoke(delegate { control.Menu = ((NetMenuBarPeer)mb.getPeer()).menu; });
+				NetToolkit.Invoke(delegate
+				{
+					control.Menu = ((NetMenuBarPeer)mb.getPeer()).menu;
+					CalcInsetsImpl();
+				});
 			}
 		}
 
@@ -4109,8 +4135,7 @@ namespace ikvm.awt
 
 		public void setBoundsPrivate(int x, int y, int width, int height)
 		{
-			// TODO use control.Invoke
-			control.Bounds = new Rectangle(x, y, width, height);
+			NetToolkit.Invoke(delegate { control.Bounds = new Rectangle(x, y, width, height); });
 		}
 
         public java.awt.Rectangle getBoundsPrivate()
