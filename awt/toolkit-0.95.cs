@@ -77,7 +77,7 @@ namespace ikvm.awt
 		public UndecoratedForm()
 		{
 			setBorderStyle();
-			SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.ResizeRedraw, true);
+			SetStyle(ControlStyles.UserPaint | ControlStyles.ResizeRedraw, true);
 		}
 
         protected virtual void setBorderStyle()
@@ -93,7 +93,11 @@ namespace ikvm.awt
 
 		protected override void OnPaintBackground(PaintEventArgs e)
 		{
-			// JDK sets a NULL background brush, we emulate that by not doing any background painting
+			NetComponentPeer peer = NetComponentPeer.FromControl(this);
+			if (peer.eraseBackground)
+			{
+				base.OnPaintBackground(e);
+			}
 		}
 	}
 
@@ -1547,22 +1551,12 @@ namespace ikvm.awt
             : base(target)
         {
         }
-
-		//private static ContainerControl GetContainerControl(java.awt.Container aContainer)
-		//{
-		//    ContainerControl control = null;
-
-		//    if (aContainer != null)
-		//    {
-		//        control = (ContainerControl)((NetContainerPeer)aContainer.getPeer()).control;
-		//    }
-
-		//    return control;
-		//}
     }
 
 	abstract class NetComponentPeer : java.awt.peer.ComponentPeer
 	{
+		internal bool eraseBackground = true;
+
 		public abstract void applyShape(sun.java2d.pipe.Region r);
 		public abstract bool canDetermineObscurity();
 		public abstract int checkImage(java.awt.Image i1, int i2, int i3, java.awt.image.ImageObserver io);
@@ -1795,6 +1789,13 @@ namespace ikvm.awt
 			}
 			java.awt.Rectangle r = target.getBounds();
             setBounds(r.x, r.y, r.width, r.height, java.awt.peer.ComponentPeer.__Fields.SET_BOUNDS);
+
+			// this is from initialize() in WCanvasPeer.java
+			eraseBackground = !SunToolkit.getSunAwtNoerasebackground();
+			if (!PaintEventDispatcher.getPaintEventDispatcher().shouldDoNativeBackgroundErase(target))
+			{
+				eraseBackground = false;
+			}
 		}
 
 		void start()
@@ -3665,6 +3666,7 @@ namespace ikvm.awt
             {
                 target.setBackground(target is java.awt.Dialog ? java.awt.SystemColor.control : java.awt.SystemColor.window);
             }
+            control.BackColor = J2C.ConvertColor(target.getBackground());
             if (target.getForeground() == null)
             {
                 target.setForeground(java.awt.SystemColor.windowText);
@@ -3723,6 +3725,7 @@ namespace ikvm.awt
 			// WmSize
 			typeof(java.awt.Component).GetField("width", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(target, control.Width);
 			typeof(java.awt.Component).GetField("height", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(target, control.Height);
+			SendComponentEvent(java.awt.@event.ComponentEvent.COMPONENT_RESIZED);
         }
 
         private void OnOpened(object sender, EventArgs e)
