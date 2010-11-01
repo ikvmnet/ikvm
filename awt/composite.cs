@@ -40,8 +40,8 @@ namespace ikvm.awt {
 
         internal static CompositeHelper Create(java.awt.Composite comp, Graphics graphics){
             if (comp is java.awt.AlphaComposite) {
-                var alphaComp = (java.awt.AlphaComposite)comp;
-                var alpha = alphaComp.getAlpha();
+                java.awt.AlphaComposite alphaComp = (java.awt.AlphaComposite)comp;
+                float alpha = alphaComp.getAlpha();
                 switch (alphaComp.getRule()) {
                     case java.awt.AlphaComposite.CLEAR:
                         graphics.CompositingMode = CompositingMode.SourceCopy;
@@ -107,22 +107,22 @@ namespace ikvm.awt {
         /// <param name="alpha">a value in the range from 0.0 to 1.0</param>
         internal AlphaCompositeHelper(float alpha) {
             this.alpha = alpha; 
-            var matrix = new ColorMatrix();
+            ColorMatrix matrix = new ColorMatrix();
             matrix.Matrix33 = alpha;
             GetImageAttributes().SetColorMatrix(matrix);
         }
 
         internal override int GetArgb(java.awt.Color color) {
-            var argb = (uint)color.getRGB();
-            var newAlpha = (uint)((0xff000000 & argb) * alpha + 0x800000);
-            var newArgb = (0xff000000 & newAlpha) | (0xffffff & argb);
+            uint argb = (uint)color.getRGB();
+            uint newAlpha = (uint)((0xff000000 & argb) * alpha + 0x800000);
+            uint newArgb = (0xff000000 & newAlpha) | (0xffffff & argb);
             return (int)newArgb;
         }
 
         internal override int ToArgb(Color color) {
-            var argb = (uint)color.ToArgb();
-            var newAlpha = (uint)((0xff000000 & argb) / alpha + 0x800000);
-            var newArgb = (0xff000000 & newAlpha) | (0xffffff & argb);
+            uint argb = (uint)color.ToArgb();
+            uint newAlpha = (uint)((0xff000000 & argb) / alpha + 0x800000);
+            uint newArgb = (0xff000000 & newAlpha) | (0xffffff & argb);
             return (int)newArgb;
         }
     }
@@ -131,7 +131,7 @@ namespace ikvm.awt {
 
         internal ClearCompositeHelper()
         {
-            var matrix = new ColorMatrix();
+            ColorMatrix matrix = new ColorMatrix();
             matrix.Matrix00 = matrix.Matrix11 = matrix.Matrix22 = matrix.Matrix33 = 0.0F;
             GetImageAttributes().SetColorMatrix(matrix);
         }
