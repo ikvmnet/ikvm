@@ -105,6 +105,7 @@
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="composite.cs" />
     <Compile Include="converter.cs">
       <SubType>Code</SubType>
     </Compile>
