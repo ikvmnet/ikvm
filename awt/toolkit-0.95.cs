@@ -151,6 +151,29 @@ namespace ikvm.awt
 		}
 	}
 
+	sealed class EventQueueSynchronizationContext : SynchronizationContext
+	{
+		public override SynchronizationContext CreateCopy()
+		{
+			return new EventQueueSynchronizationContext();
+		}
+
+		public override void Post(SendOrPostCallback d, object state)
+		{
+			java.awt.EventQueue.invokeLater(Delegates.toRunnable(delegate { d(state); }));
+		}
+
+		public override void Send(SendOrPostCallback d, object state)
+		{
+			java.awt.EventQueue.invokeAndWait(Delegates.toRunnable(delegate { d(state); }));
+		}
+
+		internal static void Install()
+		{
+			SynchronizationContext.SetSynchronizationContext(new EventQueueSynchronizationContext());
+		}
+	}
+
     public sealed class NetToolkit : sun.awt.SunToolkit, ikvm.awt.IkvmToolkit
     {
         public static readonly String DATA_TRANSFERER_CLASS_NAME = typeof(NetDataTransferer).AssemblyQualifiedName;
@@ -158,6 +181,31 @@ namespace ikvm.awt
         private static volatile Form bogusForm;
         private int resolution;
         private NetClipboard clipboard;
+		private bool eventQueueSynchronizationContext;
+
+		protected override java.awt.EventQueue getSystemEventQueueImpl()
+		{
+			java.awt.EventQueue eq = base.getSystemEventQueueImpl();
+			if (!eventQueueSynchronizationContext)
+			{
+				InstallEventQueueSynchronizationContext(eq);
+			}
+			return eq;
+		}
+
+		private void InstallEventQueueSynchronizationContext(java.awt.EventQueue eq)
+		{
+			bool install;
+			lock (this)
+			{
+				install = !eventQueueSynchronizationContext;
+				eventQueueSynchronizationContext = true;
+			}
+			if (install)
+			{
+				eq.postEvent(new java.awt.@event.InvocationEvent(this, Delegates.toRunnable(EventQueueSynchronizationContext.Install), null, true));
+			}
+		}
 
         private static void MessageLoop()
         {
