@@ -666,7 +666,7 @@ public class BufferedImage extends java.awt.Image
     private static cli.System.Drawing.Bitmap copyToBitmap(int width, int height, int[] pixelData)
     {
         long size = (long)width * (long)height;
-        if (width <= 0 || height <= 0 || size < pixelData.length)
+        if (width <= 0 || height <= 0 || size > pixelData.length)
         {
             throw new IllegalArgumentException();
         }
@@ -674,7 +674,7 @@ public class BufferedImage extends java.awt.Image
         cli.System.Drawing.Rectangle rect = new cli.System.Drawing.Rectangle(0, 0, width, height);
         cli.System.Drawing.Imaging.BitmapData data = bitmap.LockBits(rect, ImageLockMode.wrap(ImageLockMode.WriteOnly), PixelFormat.wrap(PixelFormat.Format32bppArgb));
         cli.System.IntPtr pixelPtr = data.get_Scan0();
-        cli.System.Runtime.InteropServices.Marshal.Copy(pixelData, 0, pixelPtr, pixelData.length);
+        cli.System.Runtime.InteropServices.Marshal.Copy(pixelData, 0, pixelPtr, (int)size);
         bitmap.UnlockBits(data);
         return bitmap;
     }
