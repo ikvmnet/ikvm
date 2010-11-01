@@ -34,6 +34,7 @@
                 <include name="converter.cs" />
                 <include name="fonts-0.95.cs" />
                 <include name="graphics.cs" />
+                <include name="composite.cs" />
                 <include name="images.cs" />
                 <include name="native.cs" />
             	<include name="printing.cs" />

@@ -163,7 +163,8 @@ namespace ikvm.awt
         private Font netfont;
         private Brush brush;
         private Pen pen;
-        private java.awt.Composite composite = java.awt.AlphaComposite.SrcOver;
+        private CompositeHelper composite;
+        private java.awt.Composite javaComposite = java.awt.AlphaComposite.SrcOver;
 
         protected NetGraphics(Graphics g, java.awt.Font font, Color fgcolor, Color bgcolor)
         {
@@ -175,6 +176,7 @@ namespace ikvm.awt
             netfont = font.getNetFont();
 			this.color = fgcolor;
             this.bgcolor = bgcolor;
+            composite = CompositeHelper.Create(javaComposite, g);
             init(g);
         }
 
@@ -190,6 +192,7 @@ namespace ikvm.awt
                 graphics.PixelOffsetMode = g.PixelOffsetMode;
                 graphics.TextRenderingHint = g.TextRenderingHint;
                 graphics.InterpolationMode = g.InterpolationMode;
+                graphics.CompositingMode = g.CompositingMode;
             }
             g = graphics;
             brush = new SolidBrush(color);
@@ -268,14 +271,12 @@ namespace ikvm.awt
                 return false;
             }
             Rectangle destRect = new Rectangle(dx1, dy1, dx2 - dx1, dy2 - dy1);
-            Rectangle srcRect = new Rectangle(sx1, sy1, sx2 - sx1, sy2 - sy1);
-            using (Brush brush = J2C.CreateBrush(color))
-            {
+            using (Brush brush = new SolidBrush(composite.GetColor(color))) {
                 g.FillRectangle(brush, destRect);
             }
 			lock (image)
 			{
-				g.DrawImage(image, destRect, srcRect, GraphicsUnit.Pixel);
+                g.DrawImage(image, destRect, sx1, sy1, sx2 - sx1, sy2 - sy1, GraphicsUnit.Pixel, composite.GetImageAttributes());
 			}
             return true;
         }
@@ -288,10 +289,9 @@ namespace ikvm.awt
                 return false;
             }
             Rectangle destRect = new Rectangle(dx1, dy1, dx2 - dx1, dy2 - dy1);
-            Rectangle srcRect = new Rectangle(sx1, sy1, sx2 - sx1, sy2 - sy1);
 			lock (image)
 			{
-				g.DrawImage(image, destRect, srcRect, GraphicsUnit.Pixel);
+                g.DrawImage(image, destRect, sx1, sy1, sx2 - sx1, sy2 - sy1, GraphicsUnit.Pixel, composite.GetImageAttributes());
 			}
             return true;
         }
@@ -303,36 +303,22 @@ namespace ikvm.awt
 			{
 				return false;
 			}
-			using (Brush brush = J2C.CreateBrush(bgcolor))
-			{
-				g.FillRectangle(brush, x, y, width, height);
-			}
+            using (Brush brush = new SolidBrush(composite.GetColor(bgcolor))) {
+                g.FillRectangle(brush, x, y, width, height);
+            }
 			lock (image)
 			{
-				g.DrawImage(image, x, y, width, height);
+                g.DrawImage(image, new Rectangle( x, y, width, height), 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, composite.GetImageAttributes());
 			}
 			return true;
 		}
 
         public override bool drawImage(java.awt.Image img, int x, int y, java.awt.Color bgcolor, java.awt.image.ImageObserver observer)
         {
-			Image image = J2C.ConvertImage(img);
-			if (image == null)
-			{
-				return false;
-			}
-            if (bgcolor != null)
-            {
-                using (Brush brush = J2C.CreateBrush(bgcolor))
-                {
-                    g.FillRectangle(brush, x, y, image.Width, image.Height);
-                }
+            if (img == null) {
+                return false;
             }
-			lock (image)
-			{
-				g.DrawImage(image, x, y);
-			}
-			return true;
+            return drawImage(img, x, y, img.getWidth(observer), img.getHeight(observer), bgcolor, observer);
 		}
 
         public override bool drawImage(java.awt.Image img, int x, int y, int width, int height, java.awt.image.ImageObserver observer)
@@ -344,23 +330,17 @@ namespace ikvm.awt
 			}
 			lock (image)
 			{
-				g.DrawImage(image, x, y, width, height);
+                g.DrawImage(image, new Rectangle(x, y, width, height), 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, composite.GetImageAttributes());
 			}
 			return true;
 		}
 
         public override bool drawImage(java.awt.Image img, int x, int y, java.awt.image.ImageObserver observer)
         {
-			Image image = J2C.ConvertImage(img);
-			if (image == null)
-			{
-				return false;
-			}
-			lock (image)
-			{
-				g.DrawImage(image, x, y);
-			}
-			return true;
+            if (img == null) {
+                return false;
+            }
+            return drawImage(img, x, y, img.getWidth(observer), img.getHeight(observer), observer);
 		}
 
         public override void drawLine(int x1, int y1, int x2, int y2)
@@ -533,7 +513,7 @@ namespace ikvm.awt
         {
             if (javaColor == null)
             {
-                javaColor = new java.awt.Color(color.ToArgb());
+                javaColor = composite.GetColor(color);
             }
             return javaColor;
         }
@@ -580,7 +560,7 @@ namespace ikvm.awt
                 return;
             }
             this.javaPaint = this.javaColor = color;
-            this.color = Color.FromArgb(color.getRGB());
+            this.color = composite.GetColor(color);
             if (brush is SolidBrush)
             {
                 ((SolidBrush)brush).Color = this.color;
@@ -736,7 +716,11 @@ namespace ikvm.awt
             {
                 throw new java.lang.IllegalArgumentException("null Composite");
             }
-            this.composite = comp;
+            this.javaComposite = comp;
+            composite = CompositeHelper.Create(comp,g);
+            java.awt.Paint oldPaint = javaPaint;
+            javaPaint = null;
+            setPaint(oldPaint);
         }
 
         public override void setPaint(java.awt.Paint paint)
@@ -762,16 +746,16 @@ namespace ikvm.awt
                     linear = new LinearGradientBrush(
                         J2C.ConvertPoint(gradient.getPoint1()),
                         J2C.ConvertPoint(gradient.getPoint2()),
-                        J2C.ConvertColor(gradient.getColor1()),
-                        J2C.ConvertColor(gradient.getColor2()));
+                        composite.GetColor(gradient.getColor1()),
+                        composite.GetColor(gradient.getColor2()));
                 }
                 else
                 {
                     //HACK because .NET does not support continue gradient like Java else Tile Gradient
                     //that we receize the rectangle very large (factor z) and set 4 color values
                     // a exact solution will calculate the size of the Graphics with the current transform
-                    Color color1 = J2C.ConvertColor(gradient.getColor1());
-                    Color color2 = J2C.ConvertColor(gradient.getColor2());
+                    Color color1 = composite.GetColor(gradient.getColor1());
+                    Color color2 = composite.GetColor(gradient.getColor2());
                     float x1 = (float)gradient.getPoint1().getX();
                     float x2 = (float)gradient.getPoint2().getX();
                     float y1 = (float)gradient.getPoint1().getY();
@@ -805,7 +789,8 @@ namespace ikvm.awt
                 java.awt.TexturePaint texture = (java.awt.TexturePaint)paint;
                 brush = new TextureBrush(
                     J2C.ConvertImage(texture.getImage()),
-                    J2C.ConvertRect(texture.getAnchorRect()));
+                    J2C.ConvertRect(texture.getAnchorRect()),
+                    composite.GetImageAttributes());
                 pen.Brush = brush;
                 return;
             }
@@ -838,18 +823,18 @@ namespace ikvm.awt
                     float[] fractions = gradient.getFractions();
                     float[] positions = colorBlend.Positions;
                     for (int i = 0; i < javaColors.Length; i++) {
-                        colors[i + 1] = J2C.ConvertColor(javaColors[i]);
+                        colors[i + 1] = composite.GetColor(javaColors[i]);
                         positions[i + 1] = (z + fractions[i]) / (2 * z + 1);
                     }
                     colors[0] = colors[1];
-                    colors[colors.Length - 1] = colors[colors.Length - 1];
+                    colors[colors.Length - 1] = colors[colors.Length - 2];
                     positions[positions.Length - 1] = 1.0f;
                 } else {
                     colorBlend = new ColorBlend(javaColors.Length);
                     colors = colorBlend.Colors;
                     colorBlend.Positions = gradient.getFractions();
                     for (int i = 0; i < javaColors.Length; i++) {
-                        colors[i] = J2C.ConvertColor(javaColors[i]);
+                        colors[i] = composite.GetColor(javaColors[i]);
                     }
                 }
                 LinearGradientBrush linear = new LinearGradientBrush(start, end, colors[0], colors[colors.Length - 1]);
@@ -1188,24 +1173,24 @@ namespace ikvm.awt
         public override java.awt.Paint getPaint()
         {
             if( javaPaint == null ) {
-                javaPaint = new java.awt.Color(color.ToArgb());
+                javaPaint = composite.GetColor(color);
             }
             return javaPaint;
         }
 
         public override java.awt.Composite getComposite()
         {
-            return composite;
+            return javaComposite;
         }
 
         public override void setBackground(java.awt.Color color)
         {
-            bgcolor = J2C.ConvertColor(color);
+            bgcolor = composite.GetColor(color);
         }
 
         public override java.awt.Color getBackground()
         {
-            return C2J.ConvertColor(bgcolor);
+            return composite.GetColor(bgcolor);
         }
 
         public override java.awt.Stroke getStroke()

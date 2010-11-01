@@ -175,11 +175,6 @@ namespace ikvm.awt
             return gp;
         }
 
-        internal static Brush CreateBrush(java.awt.Color color)
-        {
-            return new SolidBrush(Color.FromArgb(color.getRGB()));
-        }
-
         internal static LineJoin ConvertLineJoin(int join)
         {
             switch (join)
