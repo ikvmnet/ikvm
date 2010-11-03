@@ -216,7 +216,13 @@ public abstract class ClassLoader {
      * @since  1.2
      */
     protected ClassLoader(ClassLoader parent) {
-        SecurityManager security = System.getSecurityManager();
+        this(parent, System.getSecurityManager());
+    }
+
+    // private constructor for use by ikvm.runtime.AssemblyClassLoader
+    // (to skip the security manager check)
+    @ikvm.lang.Internal
+    protected ClassLoader(ClassLoader parent, SecurityManager security) {
         if (security != null) {
             security.checkCreateClassLoader();
         }

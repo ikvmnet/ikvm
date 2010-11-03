@@ -43,7 +43,13 @@ public final class AssemblyClassLoader extends ClassLoader
 
     public AssemblyClassLoader(Assembly assembly)
     {
-        super(null);
+        this(assembly, System.getSecurityManager());
+    }
+
+    // this constructor is used by the runtime to avoid the security check (by passing in null as the security manager)    
+    AssemblyClassLoader(Assembly assembly, SecurityManager security)
+    {
+        super(null, security);
         this.assembly = assembly;
     }
 

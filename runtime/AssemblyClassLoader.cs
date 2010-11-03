@@ -1159,7 +1159,7 @@ namespace IKVM.Internal
 
 			public object run()
 			{
-				return new ikvm.runtime.AssemblyClassLoader(assembly);
+				return new ikvm.runtime.AssemblyClassLoader(assembly, null);
 			}
 		}
 
