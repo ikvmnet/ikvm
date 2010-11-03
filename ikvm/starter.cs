@@ -186,12 +186,22 @@ public class Starter
 				}
 				else if(arg.StartsWith("-D"))
 				{
-					string[] keyvalue = args[i].Substring(2).Split('=');
-					if(keyvalue.Length != 2)
+				    arg = arg.Substring(2);
+                    string[] keyvalue = arg.Split('=');
+				    string value;
+					if(keyvalue.Length == 2) // -Dabc=x
 					{
-						keyvalue = new string[] { keyvalue[0], "" };
+                        value = keyvalue[1];
+					} 
+                    else if (keyvalue.Length == 1) // -Dabc
+                    {
+                        value = "";
+                    } 
+                    else // -Dabc=x=y
+					{
+                        value = arg.Substring(keyvalue[0].Length + 1);
 					}
-					props[keyvalue[0]] = keyvalue[1];
+                    props[keyvalue[0]] = value;
 				}
 				else if(arg == "-ea" || arg == "-enableassertions")
 				{
