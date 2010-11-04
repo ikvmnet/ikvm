@@ -259,10 +259,18 @@ public class StandardGlyphVector extends GlyphVector{
 
 
     @Override
-    public GlyphMetrics getGlyphMetrics(int glyphIndex){
-        throw new NotImplementedException();
-    }
+    public GlyphMetrics getGlyphMetrics( int glyphIndex ) {
+        if( (glyphIndex < 0) || (glyphIndex >= glyphs.length()) ) {
+            throw new IndexOutOfBoundsException( "ix = " + glyphIndex );
+        }
+        Rectangle2D bounds = getGlyphVisualBounds( glyphIndex ).getBounds2D();
+        Point2D pos = getGlyphPosition( glyphIndex );
+        bounds.setRect( bounds.getX() - pos.getX(), bounds.getY()- pos.getY(), bounds.getWidth(), bounds.getHeight() );
 
+        Point2D.Float advance = strike.getGlyphMetrics( glyphs.charAt( glyphIndex ) );
+
+        return new GlyphMetrics( true, advance.x, advance.y, bounds, (byte)0 );
+    }
 
     @Override
     public Shape getGlyphOutline(int glyphIndex){
@@ -271,16 +279,30 @@ public class StandardGlyphVector extends GlyphVector{
 
 
     @Override
-    public Point2D getGlyphPosition(int glyphIndex){
-        throw new NotImplementedException();
+    public Point2D getGlyphPosition( int glyphIndex ) {
+        initPositions();
+        return new Point2D.Float( positions[glyphIndex * 2], positions[glyphIndex * 2 + 1] );
     }
-
 
     @Override
-    public float[] getGlyphPositions(int beginGlyphIndex, int numEntries, float[] positionReturn){
-        throw new NotImplementedException();
+    public float[] getGlyphPositions( int beginGlyphIndex, int numEntries, float[] positionReturn ) {
+        if( numEntries < 0 ) {
+            throw new IllegalArgumentException( "count = " + numEntries );
+        }
+        if( beginGlyphIndex < 0 ) {
+            throw new IndexOutOfBoundsException( "start = " + beginGlyphIndex );
+        }
+        if( beginGlyphIndex > this.glyphs.length() + 1 - numEntries ) {
+            throw new IndexOutOfBoundsException( "start + count = " + (beginGlyphIndex + numEntries) );
+        }
+        int count = numEntries * 2;
+        if( positionReturn == null ) {
+            positionReturn = new float[count];
+        }
+        initPositions();
+        System.arraycopy( positions, beginGlyphIndex * 2, positionReturn, 0, count );
+        return positionReturn;
     }
-
 
     @Override
     public AffineTransform getGlyphTransform(int glyphIndex){
@@ -313,13 +335,19 @@ public class StandardGlyphVector extends GlyphVector{
 
     @Override
     public Shape getGlyphLogicalBounds( int glyphIndex ) {
-        return getMetrics().getStringBounds( glyphs.substring( glyphIndex, glyphIndex + 1 ), getGraphics() );
+        //return getMetrics().getStringBounds( glyphs.substring( glyphIndex, glyphIndex + 1 ), getGraphics() );
+        initPositions();
+        StrikeMetrics metrics = strike.getFontMetrics();
+        float x = positions[glyphIndex * 2];
+        return new Rectangle2D.Float( x, -metrics.getAscent(), positions[(glyphIndex + 1) * 2] - x, metrics.getAscent()
+                        + metrics.getDescent() + metrics.getLeading() );
     }
     
 
     @Override
     public Shape getGlyphVisualBounds( int glyphIndex ) {
-        return ((IkvmToolkit)Toolkit.getDefaultToolkit()).outline( font, frc, glyphs.substring( glyphIndex, glyphIndex + 1 ), 0, 0 );
+        initPositions();
+        return ((IkvmToolkit)Toolkit.getDefaultToolkit()).outline( font, frc, glyphs.substring( glyphIndex, glyphIndex + 1 ), positions[glyphIndex * 2], 0 );
     }
 
     @Override
