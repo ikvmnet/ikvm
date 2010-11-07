@@ -65,7 +65,7 @@ be used to configure the chosen Forrest skin.
   <!-- Do we want to disable the xml source link? -->
   <disable-xml-link>true</disable-xml-link>
   <!-- Do we want to disable w3c compliance links? -->
-  <disable-compliance-links>false</disable-compliance-links>
+  <disable-compliance-links>true</disable-compliance-links>
   <!-- Whether to render mailto: links unrecognisable by spam harvesters -->
   <obfuscate-mail-links>true</obfuscate-mail-links>
 
