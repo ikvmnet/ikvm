@@ -33,6 +33,7 @@ import cli.System.Convert;
 import cli.System.DBNull;
 import cli.System.Data.*;
 import cli.System.Data.Common.*;
+import cli.System.Data.Odbc.OdbcType;
 
 /**
  * This JDBC Driver is a wrapper to the ODBC.NET Data Provider.
@@ -72,9 +73,8 @@ public class JdbcOdbcResultSetMetaData implements ResultSetMetaData{
         int precision = getPrecision(column);
         int type = CIL.unbox_int( getColumnMeta(column, "ProviderType") );
         switch(type){
-            case DbType.Decimal:
-            case DbType.Currency:
-            case DbType.VarNumeric:
+            case OdbcType.Decimal:
+            case OdbcType.Numeric:
                 return precision + (getScale(column) > 0 ? 2 : 1); // + sign and comma
         }
         return precision;
@@ -94,51 +94,52 @@ public class JdbcOdbcResultSetMetaData implements ResultSetMetaData{
     public int getColumnType(int column) throws SQLException{
         int type = CIL.unbox_int( getColumnMeta(column, "ProviderType") );
         switch(type){
-            case DbType.AnsiString:
+            case OdbcType.VarChar:
                 return Types.VARCHAR;
-            case DbType.AnsiStringFixedLength:
+            case OdbcType.Char:
                 return Types.CHAR;
-            case DbType.Binary:
+            case OdbcType.Binary:
+            case OdbcType.Timestamp:
                 return Types.BINARY;
-            case DbType.Boolean:
+            case OdbcType.Bit:
                 return Types.BOOLEAN;
-            case DbType.Byte:
-            case DbType.SByte:
+            case OdbcType.TinyInt:
                 return Types.TINYINT;
-            case DbType.Date:
+            case OdbcType.Date:
                 return Types.DATE;
-            case DbType.DateTime:
-            case DbType.DateTime2:
-            case DbType.DateTimeOffset:
+            case OdbcType.DateTime:
+            case OdbcType.SmallDateTime:
                 return Types.TIMESTAMP;
-            case DbType.Decimal:
-            case DbType.Currency:
+            case OdbcType.Decimal:
                 return Types.DECIMAL;
-            case DbType.Double:
+            case OdbcType.Double:
                 return Types.DOUBLE;
-            case DbType.Guid:
+            case OdbcType.UniqueIdentifier:
                 return Types.ROWID;
-            case DbType.Int16:
-            case DbType.UInt16:
+            case OdbcType.SmallInt:
                 return Types.SMALLINT;
-            case DbType.Int32:
-            case DbType.UInt32:
+            case OdbcType.Int:
                 return Types.INTEGER;
-            case DbType.Int64:
-            case DbType.UInt64:
+            case OdbcType.BigInt:
                 return Types.BIGINT;
-            case DbType.Single:
+            case OdbcType.Real:
                 return Types.FLOAT;
-            case DbType.String:
+            case OdbcType.NVarChar:
                 return Types.NVARCHAR;
-            case DbType.StringFixedLength:
+            case OdbcType.NChar:
                 return Types.NCHAR;
-            case DbType.Time:
+            case OdbcType.NText:
+                return Types.LONGNVARCHAR;
+            case OdbcType.Text:
+                return Types.LONGVARCHAR;
+            case OdbcType.Image:
+                return Types.LONGVARBINARY;
+            case OdbcType.Time:
                 return Types.TIME;
-            case DbType.VarNumeric:
+            case OdbcType.Numeric:
                 return Types.NUMERIC;
-            case DbType.Xml:
-                return Types.SQLXML;
+            case OdbcType.VarBinary:
+                return Types.VARBINARY;
         }
         return Types.OTHER;
     }
@@ -197,7 +198,7 @@ public class JdbcOdbcResultSetMetaData implements ResultSetMetaData{
 
 
     public boolean isCurrency(int column) throws SQLException{
-        return CIL.unbox_int( getColumnMeta(column, "ProviderType") ) == DbType.Currency;
+        return CIL.unbox_int( getColumnMeta(column, "ProviderType") ) == OdbcType.Decimal && getScale(column) == 4;
     }
 
 
@@ -226,15 +227,13 @@ public class JdbcOdbcResultSetMetaData implements ResultSetMetaData{
     public boolean isSigned(int column) throws SQLException{
         int type = CIL.unbox_int( getColumnMeta(column, "ProviderType") );
         switch(type){
-            case DbType.Currency:
-            case DbType.Decimal:
-            case DbType.Double:
-            case DbType.Int16:
-            case DbType.Int32:
-            case DbType.Int64:
-            case DbType.SByte:
-            case DbType.Single:
-            case DbType.VarNumeric:
+            case OdbcType.Numeric:
+            case OdbcType.Decimal:
+            case OdbcType.Double:
+            case OdbcType.SmallInt:
+            case OdbcType.Int:
+            case OdbcType.BigInt:
+            case OdbcType.Real:
                 return true;
         }
         return false;
