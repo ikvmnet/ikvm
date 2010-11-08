@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Volker Berlin (i-net software)
+  Copyright (C) 2009, 2010 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -35,6 +35,7 @@ import cli.System.TimeSpan;
 import cli.System.Data.DbType;
 import cli.System.Data.Common.DbException;
 import cli.System.Data.Odbc.*;
+import cli.System.Globalization.CultureInfo;
 
 /**
  * @author Volker Berlin
@@ -101,7 +102,7 @@ public class JdbcOdbcUtils{
             return Boolean.valueOf(CIL.unbox_boolean(obj));
         }
         if(obj instanceof cli.System.Decimal){
-            return new BigDecimal(((cli.System.Decimal)obj).toString());
+            return new BigDecimal(((cli.System.Decimal)obj).ToString(CultureInfo.get_InvariantCulture()));
         }
         if(obj instanceof cli.System.DateTime){
             return new Timestamp(getJavaMillis((cli.System.DateTime)obj));
@@ -173,7 +174,7 @@ public class JdbcOdbcUtils{
             return new cli.System.DateTime(ticks);
         }
         if(obj instanceof BigDecimal){
-            return cli.System.Decimal.Parse(obj.toString());
+            return cli.System.Decimal.Parse(obj.toString(), CultureInfo.get_InvariantCulture());
         }
         return obj;
     }
