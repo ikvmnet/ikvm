@@ -44,6 +44,7 @@ ikvm/internal/IntrinsicThreadLocal.java
 ikvm/internal/JNI.java
 ikvm/internal/Serialization.java
 ikvm/internal/Winsock.java
+java/awt/color/ICC_ColorSpace.java
 java/awt/Font.java
 java/awt/GraphicsConfiguration.java
 java/awt/Image.java
@@ -110,6 +111,17 @@ java/util/zip/StreamManipulator.java
 java/util/zip/ZipEntry.java
 java/util/zip/ZipFile.java
 gnu/java/awt/Buffers.java
+gnu/java/awt/color/CieXyzConverter.java
+gnu/java/awt/color/ClutProfileConverter.java
+gnu/java/awt/color/ColorLookUpTable.java
+gnu/java/awt/color/ColorSpaceConverter.java
+gnu/java/awt/color/GrayProfileConverter.java
+gnu/java/awt/color/GrayScaleConverter.java
+gnu/java/awt/color/ProfileHeader.java
+gnu/java/awt/color/RgbProfileConverter.java
+gnu/java/awt/color/SrgbConverter.java
+gnu/java/awt/color/TagEntry.java
+gnu/java/awt/color/ToneReproductionCurve.java
 gnu/java/util/EmptyEnumeration.java
 sun/awt/AppContext.java
 sun/awt/EmbeddedFrame.java
@@ -7152,7 +7164,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/jdk/src/share/classes/java/awt/Window.java
 @OPENJDK@/jdk/src/share/classes/java/awt/color/CMMException.java
 @OPENJDK@/jdk/src/share/classes/java/awt/color/ColorSpace.java
-@OPENJDK@/jdk/src/share/classes/java/awt/color/ICC_ColorSpace.java
 @OPENJDK@/jdk/src/share/classes/java/awt/color/ICC_Profile.java
 @OPENJDK@/jdk/src/share/classes/java/awt/color/ICC_ProfileGray.java
 @OPENJDK@/jdk/src/share/classes/java/awt/color/ICC_ProfileRGB.java
