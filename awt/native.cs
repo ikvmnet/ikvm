@@ -1,6 +1,7 @@
 /*
   Copyright (C) 2007, 2008, 2010 Jeroen Frijters
   Copyright (C) 2009 Volker Berlin (i-net software)
+  Copyright (C) 2010 Karsten Heinrich (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -27,6 +28,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Drawing;
 using System.Drawing.Imaging;
+using awt;
 
 namespace IKVM.NativeCode.sun.awt
 {
@@ -48,14 +50,8 @@ namespace IKVM.NativeCode.sun.awt.shell
 	/// <summary>
 	/// This class should use only on Windows that we can access shell32.dll
 	/// </summary>
-	static class Win32ShellFolder2
+	public static class Win32ShellFolder2
 	{
-		private const uint SHGFI_LARGEICON = 0x0;
-		private const uint SHGFI_SMALLICON = 0x1;
-		private const uint SHGFI_ICON = 0x100;
-		private const uint SHGFI_TYPENAME = 0x400;
-		private const uint SHGFI_ATTRIBUTES = 0x800;
-
 		private const uint IMAGE_BITMAP = 0;
 		private const uint IMAGE_ICON = 1;
 
@@ -72,18 +68,6 @@ namespace IKVM.NativeCode.sun.awt.shell
 			isXP = Environment.OSVersion.Version >= new Version(5, 1);
 			isVista = Environment.OSVersion.Version.Major >= 6;
 		}
-
-		[StructLayout(LayoutKind.Sequential)]
-		private struct SHFILEINFO
-		{
-			internal IntPtr hIcon;
-			internal IntPtr iIcon;
-			internal uint dwAttributes;
-			[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
-			internal string szDisplayName;
-			[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 80)]
-			internal string szTypeName;
-		};
 
 		[System.Security.SecurityCritical]
 		private sealed class SafeGdiObjectHandle : Microsoft.Win32.SafeHandles.SafeHandleZeroOrMinusOneIsInvalid
@@ -135,6 +119,9 @@ namespace IKVM.NativeCode.sun.awt.shell
 		[DllImport("gdi32.dll")]
 		private static extern int GetObject(SafeGdiObjectHandle hgdiobj, int cbBuffer, ref BITMAPINFO lpvObject);
 
+		[DllImport("shlwapi.dll")]
+        private static extern int StrRetToBuf(ref ShellApi.STRRET pstr, IntPtr pIDL, StringBuilder pszBuf, uint cchBuf);
+
 		[StructLayout(LayoutKind.Sequential)]
 		private struct ICONINFO
 		{
@@ -166,12 +153,6 @@ namespace IKVM.NativeCode.sun.awt.shell
 			internal uint[] cols;
 		}
 
-		[DllImport("shell32.dll")]
-		private static extern int FindExecutable(string lpFile, string lpDirectory, StringBuilder lpResult);
-
-		[DllImport("shell32.dll")]
-		private static extern IntPtr SHGetFileInfo(string pszPath, uint dwFileAttributes, ref SHFILEINFO psfi, uint cbSizeFileInfo, uint uFlags);
-
 		[DllImport("user32.dll")]
 		private static extern SafeGdiObjectHandle LoadImage(IntPtr hInstance, IntPtr uID, uint type, int width, int height, int load);
 
@@ -193,7 +174,7 @@ namespace IKVM.NativeCode.sun.awt.shell
 		public static string getExecutableType(string path)
 		{
 			StringBuilder objResultBuffer = new StringBuilder(1024);
-			int result = FindExecutable(path, path, objResultBuffer);
+			int result = ShellApi.FindExecutable(path, path, objResultBuffer);
 			if (result >= 32)
 			{
 				return objResultBuffer.ToString();
@@ -204,39 +185,21 @@ namespace IKVM.NativeCode.sun.awt.shell
 		/// <summary>
 		/// Get the type of a file or folder. On a file it depends on its extension.
 		/// </summary>
-		/// <param name="path"></param>
-		/// <returns></returns>
+		/// <param name="path">the path of the file or folder</param>
+		/// <returns>The type in readable form or null, if the path cannot be resolved</returns>
 		[System.Security.SecuritySafeCritical]
 		public static string getFolderType(string path)
 		{
-			SHFILEINFO shinfo = new SHFILEINFO();
-			if (SHGetFileInfo(path, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_TYPENAME) == IntPtr.Zero)
+            ShellApi.SHFILEINFO shinfo = new ShellApi.SHFILEINFO();
+			if (ShellApi.SHGetFileInfo(path, 0, out shinfo, (uint)Marshal.SizeOf(shinfo), ShellApi.SHGFI.SHGFI_TYPENAME) == IntPtr.Zero)
 			{
 				return null;
 			}
 			return shinfo.szTypeName;
 		}
 
-		[System.Security.SecuritySafeCritical]
-		public static Bitmap getIconBitmap(string path, bool getLargeIcon)
-		{
-			SHFILEINFO shinfo = new SHFILEINFO();
-			if (SHGetFileInfo(path, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_ICON | (getLargeIcon ? 0 : SHGFI_SMALLICON)) == IntPtr.Zero)
-			{
-				return null;
-			}
-			int size = getLargeIcon ? 32 : 16;
-			int[] iconPixels = getIconBits(shinfo.hIcon, size);
-			DeleteObject(shinfo.hIcon);
-			Bitmap bitmap = new Bitmap(size, size, PixelFormat.Format32bppArgb);
-			BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, size, size), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
-			Marshal.Copy(iconPixels, 0, bitmapData.Scan0, iconPixels.Length);
-			bitmap.UnlockBits(bitmapData);
-			return bitmap;
-		}
-
 		[System.Security.SecurityCritical]
-		private static int[] getIconBits(IntPtr hIcon, int iconSize)
+        public static Bitmap getIconBits(IntPtr hIcon, int iconSize)
 		{
 			ICONINFO iconInfo;
 			if (GetIconInfo(hIcon, out iconInfo))
@@ -279,25 +242,39 @@ namespace IKVM.NativeCode.sun.awt.shell
 					}
 					DeleteObject(iconInfo.hbmColor);
 					DeleteObject(iconInfo.hbmMask);
-					return iconBits;
+
+                    DeleteObject(hIcon);
+                    Bitmap bitmap = new Bitmap(iconSize, iconSize, PixelFormat.Format32bppArgb);
+                    BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, iconSize, iconSize), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+                    Marshal.Copy(iconBits, 0, bitmapData.Scan0, iconBits.Length);
+                    bitmap.UnlockBits(bitmapData);
+                    return bitmap;
 				}
 			}
 			return null;
 		}
 
+        /// <summary>
+        /// Retrieves information about an object in the file system, such as a file, folder, directory, or drive root.
+        /// </summary>
+        /// <param name="path">The path of the file system object</param>
+        /// <returns>The SHGFI flags with the attributes</returns>
 		[System.Security.SecuritySafeCritical]
 		public static int getAttribute(string path)
 		{
-			SHFILEINFO shinfo = new SHFILEINFO();
-			if (SHGetFileInfo(path, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_ATTRIBUTES) == IntPtr.Zero)
+            ShellApi.SHFILEINFO shinfo = new ShellApi.SHFILEINFO();
+            if (ShellApi.SHGetFileInfo(path, 0, out shinfo, (uint)Marshal.SizeOf(shinfo), ShellApi.SHGFI.SHGFI_ATTRIBUTES) == IntPtr.Zero)
 			{
 				return 0;
 			}
 			return (int)shinfo.dwAttributes;
 		}
 
+        /// <summary>Returns the link target as a pIDL relative to the desktop without resolving the link</summary>
+        /// <param name="path">The path of the .lnk file</param>
+        /// <returns>the link target as a pIDL relative to the desktop</returns>
 		[System.Security.SecuritySafeCritical]
-		public static string getLinkLocation(string path)
+		public static string getLinkLocation(string path )
 		{
 			using (ShellLink link = new ShellLink())
 			{
@@ -305,6 +282,24 @@ namespace IKVM.NativeCode.sun.awt.shell
 				return link.GetPath();
 			}
 		}
+        /// <summary>Returns the link target as a pIDL relative to the desktop</summary>
+        /// <param name="path">The path of the .lnk file</param>
+        /// <param name="resolve">If true, attempts to find the target of a Shell link, 
+        /// even if it has been moved or renamed. This may open a file chooser</param>
+        /// <returns>the link target as a pIDL relative to the desktop</returns>
+        [System.Security.SecuritySafeCritical]
+        public static IntPtr getLinkLocation(string path, Boolean resolve)
+        {
+            using (ShellLink link = new ShellLink())
+            {
+                link.Load(path);
+                if (resolve)
+                {
+                    link.Resolve();
+                }                
+                return link.GetIDList();
+            }
+        }
 
 		[System.Security.SecuritySafeCritical]
 		public static Bitmap getFileChooserBitmap()
@@ -325,25 +320,29 @@ namespace IKVM.NativeCode.sun.awt.shell
 					}
 					if (hBitmap != null)
 					{
-						BITMAPINFO bmi = new BITMAPINFO();
-						GetObject(hBitmap, Marshal.SizeOf(bmi), ref bmi);
-						int width = bmi.biWidth;
-						int height = bmi.biHeight;
-						bmi.biSize = 40;
-						bmi.biHeight = -bmi.biHeight;
-						bmi.biPlanes = 1;
-						bmi.biBitCount = 32;
-						bmi.biCompression = 0;
-						using (SafeDeviceContextHandle dc = SafeDeviceContextHandle.Get())
-						{
-							int[] data = new int[width * height];
-							GetDIBits(dc, hBitmap, (uint)0, (uint)height, data, ref bmi, 0);
-							Bitmap bitmap = new Bitmap(data.Length / 16, 16, PixelFormat.Format32bppArgb);
-							BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
-							Marshal.Copy(data, 0, bitmapData.Scan0, data.Length);
-							bitmap.UnlockBits(bitmapData);
-							return bitmap;
-						}
+                        BITMAPINFO bmi = new BITMAPINFO();
+                        GetObject(hBitmap, Marshal.SizeOf(bmi), ref bmi);
+                        int width = bmi.biWidth;
+                        int height = bmi.biHeight;
+                        bmi.biSize = 40;
+                        bmi.biHeight = -bmi.biHeight;
+                        bmi.biPlanes = 1;
+                        bmi.biBitCount = 32;
+                        bmi.biCompression = 0;
+                        if (width == 0 || height == 0)
+                        {
+                            return null;
+                        }
+                        using (SafeDeviceContextHandle dc = SafeDeviceContextHandle.Get())
+                        {
+                            int[] data = new int[width * height];
+                            GetDIBits(dc, hBitmap, (uint)0, (uint)height, data, ref bmi, 0);
+                            Bitmap bitmap = new Bitmap(data.Length / 16, 16, PixelFormat.Format32bppArgb);
+                            BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+                            Marshal.Copy(data, 0, bitmapData.Scan0, data.Length);
+                            bitmap.UnlockBits(bitmapData);
+                            return bitmap;
+                        }
 					}
 				}
 				finally
@@ -357,6 +356,11 @@ namespace IKVM.NativeCode.sun.awt.shell
 			return null;
 		}
 
+        /// <summary>
+        /// Retrieves an icon from the shell32.dell
+        /// </summary>
+        /// <param name="iconID">the index of the icon</param>
+        /// <returns>The icon or null, if there is no icon at the given index</returns>
 		[System.Security.SecuritySafeCritical]
 		public static Bitmap getShell32IconResourceAsBitmap(int iconID)
 		{
@@ -364,15 +368,439 @@ namespace IKVM.NativeCode.sun.awt.shell
 			{
 				return null;
 			}
-			using (SafeGdiObjectHandle hicon = LoadImage(hmodShell32, (IntPtr)iconID, IMAGE_ICON, 16, 16, 0))
+            using (SafeGdiObjectHandle hicon = LoadImage(hmodShell32, (IntPtr)iconID, IMAGE_ICON, 16, 16, 0))
 			{
 				if (hicon != null)
 				{
-					return Bitmap.FromHicon(hicon.DangerousGetHandle());
+                    return getIconBits(hicon.DangerousGetHandle(), 16);
 				}
 			}
 			return null;
 		}
+
+        /// <summary>
+        /// Returns the pIDL of the desktop itself
+        /// </summary>
+        public static IntPtr initDesktopPIDL()
+        {
+            IntPtr pidl = new IntPtr();
+
+            // get the root shell folder
+            ShellApi.SHGetSpecialFolderLocation(IntPtr.Zero, ShellApi.CSIDL.CSIDL_DESKTOP, ref pidl);
+
+            return pidl;
+        }
+
+        /// <summary>
+        /// Returns an IShellFolder for the desktop
+        /// </summary>
+        public static Object initDesktopFolder()
+        {
+            ShellApi.IShellFolder rootShell = null;
+
+            // get the root shell folder
+            ShellApi.SHGetDesktopFolder(ref rootShell);
+
+            return rootShell;
+        }
+
+        /// <summary>
+        /// Returns the desktop relative pIDL of a special folder
+        /// </summary>
+        /// <param name="desktopIShellFolder">The IShellFolder instance of the Desktop</param>
+        /// <param name="csidl">The CSIDL of the special folder</param>
+        /// <returns>the desktop relative pIDL of a special folder</returns>
+        public static IntPtr initSpecialPIDL(Object desktopIShellFolder, int csidl)
+        {
+            IntPtr result = new IntPtr();        
+            ShellApi.SHGetSpecialFolderLocation(IntPtr.Zero, (ShellApi.CSIDL)csidl, ref result);
+            return result;
+        }
+
+        /// <summary>
+        /// Creates an IShellFolder for a special folder
+        /// </summary>
+        /// <param name="desktopIShellFolder">The IShellFolder instance of the Desktop</param>
+        /// <param name="pidl">The desktop relative pIDL of the special folder</param>
+        /// <returns>The IShellFolder for a special folder</returns>
+        public static Object initSpecialFolder(Object desktopIShellFolder, IntPtr pidl)
+        {
+            try
+            {
+                // get desktop instance
+                ShellApi.IShellFolder desktop = (ShellApi.IShellFolder)desktopIShellFolder;
+                // call BindToObject of the desktop
+                ShellApi.IShellFolder specialFolder = null;
+                desktop.BindToObject(pidl, IntPtr.Zero, ref ShellApi.GUID_ISHELLFOLDER, out specialFolder);
+                return specialFolder;
+            }
+            catch (System.ArgumentException )
+            {
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Goes down one entry in the given pIDL
+        /// </summary>
+        /// <param name="pIDL">the pIDL to operate on</param>
+        /// <returns>the next entry in the pIDL</returns>
+        public static IntPtr getNextPIDLEntry(IntPtr pIDL)
+        {
+            if (pIDL == null)
+            {
+                return IntPtr.Zero;
+            }
+
+            int length = Marshal.ReadInt16(pIDL);
+            if (length == 0) // defined as terminator of a ITEMIDLIST
+            {
+                return IntPtr.Zero;
+            }
+            IntPtr newpIDL = new IntPtr(pIDL.ToInt64() + length);
+            if (Marshal.ReadInt16(newpIDL) == 0)
+            {
+                return IntPtr.Zero;
+            }
+            else
+            {
+                return newpIDL;
+            }
+        }
+        /// <summary>
+        /// Copies the first entry in the given pIDL into a new relative pIDL (with terminator)
+        /// </summary>
+        /// <param name="pIDL">The pIDL to copy from</param>
+        /// <returns>the relative pIDL of the first entry</returns>
+        public static IntPtr copyFirstPIDLEntry(IntPtr pIDL)
+        {
+            if (pIDL == null)
+            {
+                return IntPtr.Zero;
+            }
+            int length = Marshal.ReadInt16(pIDL) + 2; // +2 for the terminator
+            byte[] buffer = new byte[length];
+            IntPtr newpIDLptr = Marshal.AllocCoTaskMem(length); // create pointer to new pIDL
+            Marshal.Copy(pIDL, buffer, 0, length - 2); // copy content
+            Marshal.Copy(buffer, 0, newpIDLptr, length); // copy content
+            return newpIDLptr;
+        }
+
+        /// <summary>
+        /// Concatinates two pIDLs
+        /// </summary>
+        /// <param name="ppIDL">a pIDL, if IntPtr.Zero, IntPtr.Zero will be returned</param>
+        /// <param name="pIDL">a pIDL, if IntPtr.Zero, IntPtr.Zero will be returned</param>
+        /// <returns>the concatination of ppIDL and pIDL</returns>
+        public static IntPtr combinePIDLs(IntPtr ppIDL, IntPtr pIDL)
+        {
+            if (ppIDL == null || ppIDL == IntPtr.Zero)
+            {
+                return IntPtr.Zero;
+            }
+            if (pIDL == null || pIDL == IntPtr.Zero)
+            {
+                return IntPtr.Zero;
+            }
+            int lengthP = getPIDLlength(ppIDL);
+            int lengthR = getPIDLlength(pIDL);
+            byte[] newPIDL = new byte[lengthP + lengthR + 2];
+            Marshal.Copy(ppIDL, newPIDL, 0, lengthP);
+            Marshal.Copy(pIDL, newPIDL, lengthP, lengthR);
+            IntPtr newpIDLptr = Marshal.AllocCoTaskMem(lengthP + lengthR + 2); // create pointer to new pIDL
+            Marshal.Copy(newPIDL,0,newpIDLptr,newPIDL.Length); // set pointer to new pIDL and delete local structure
+            return newpIDLptr;
+        }
+
+        /// <summary>
+        /// Calculates the size of a ITEMIDLIST without the two bytes of the terminator
+        /// </summary>
+        /// <param name="pIDL">a pointer to the IDL to get the length of</param>
+        /// <returns>the length in bytes</returns>
+        public static int getPIDLlength(IntPtr pIDL)
+        {
+            if( pIDL == null || pIDL == IntPtr.Zero )
+            {
+                return 0;
+            }
+            int length = Marshal.ReadInt16(pIDL);
+            int offset = length;
+            while (length > 0)
+            {
+                length = Marshal.ReadInt16(new IntPtr( pIDL.ToInt64() + offset));
+                offset += length;
+            }
+            return offset;
+        }
+        /// <summary>
+        /// Releases the allocted memory of a pIDL
+        /// </summary>
+        /// <param name="pIDL">The pIDL to be released</param>
+        public static void releasePIDL(IntPtr pIDL)
+        {
+            if (pIDL == null || pIDL.Equals(IntPtr.Zero))
+            {
+                return;
+            }
+            Marshal.Release(pIDL);
+        }
+        /// <summary>
+        /// Releases an IShellFolder COM object
+        /// </summary>
+        /// <param name="pIShellFolder">The IShellFolder to be released, must not be null</param>
+        public static void releaseIShellFolder(Object pIShellFolder)
+        {
+            if (pIShellFolder == null)
+            {
+                return;
+            }
+            Marshal.ReleaseComObject(pIShellFolder);
+        }
+        public static int compareIDs(Object pParentIShellFolder, IntPtr pidl1, IntPtr pidl2)
+        {
+            if (pParentIShellFolder == null)
+            {
+                return 0;
+            }
+            ShellApi.IShellFolder folder = (ShellApi.IShellFolder)pParentIShellFolder;
+            return folder.CompareIDs(0, pidl1, pidl2);
+        }
+        public static int getAttributes0(Object pParentIShellFolder, IntPtr pIDL, int attrsMask)
+        {
+            if (pParentIShellFolder == null || pIDL == null || pIDL == IntPtr.Zero )
+            {
+                return 0;
+            }
+            ShellApi.IShellFolder folder = (ShellApi.IShellFolder)pParentIShellFolder;
+            ShellApi.SFGAOF[] atts = new ShellApi.SFGAOF[]{ (ShellApi.SFGAOF)attrsMask };
+            IntPtr[] pIDLs = new IntPtr[] { pIDL };
+            folder.GetAttributesOf(1, pIDLs, atts);
+            return (int)atts[0];
+        }
+
+        public static String getFileSystemPath(int csidl)
+        {
+            IntPtr pIDL = new IntPtr();
+            int hRes = ShellApi.SHGetSpecialFolderLocation(IntPtr.Zero, (ShellApi.CSIDL)csidl, ref pIDL);
+            if (hRes != 0)
+            {
+                //throw Marshal.ThrowExceptionForHR(hRes);
+                // TODO exception for hRes
+                return null;
+            }
+            StringBuilder builder = new StringBuilder( 1024 );
+            if (ShellApi.SHGetPathFromIDList(pIDL, builder))
+            {
+                return builder.ToString();
+            }
+            else
+            {
+                return null;
+            }
+        }
+        public static Object getEnumObjects(Object pIShellFolder, Boolean isDesktop, Boolean includeHiddenFiles)
+        {
+            if (pIShellFolder == null)
+            {
+                return null;
+            }
+            ShellApi.IShellFolder folder = (ShellApi.IShellFolder)pIShellFolder;
+            ShellApi.SHCONTF flags = ShellApi.SHCONTF.SHCONTF_FOLDERS | ShellApi.SHCONTF.SHCONTF_NONFOLDERS;
+            if( includeHiddenFiles )
+            {
+                flags |= ShellApi.SHCONTF.SHCONTF_INCLUDEHIDDEN;
+            }
+
+            ShellApi.IEnumIDList list = null;
+            folder.EnumObjects(IntPtr.Zero, flags, out list);
+            return list;
+        }
+
+        /// <summary>
+        /// Returns the next pIDL in an IEnumIDList
+        /// </summary>
+        /// <param name="pEnumObjects">The IEnumIDList to get the next element of</param>
+        /// <returns>a pIDL or IntPtr.Zero in case the end of the enum is reached</returns>
+        public static IntPtr getNextChild(Object pEnumObjects)
+        {
+            if (pEnumObjects == null)
+            {
+                return IntPtr.Zero;
+            }
+            ShellApi.IEnumIDList list = (ShellApi.IEnumIDList)pEnumObjects;
+            IntPtr pIDL = new IntPtr();
+            int pceltFetched; // can be ignored, if celt = 1
+            uint hRes = list.Next(1, out pIDL, out pceltFetched);
+            if ( hRes != 0 || pceltFetched == 0 )
+            {
+                return IntPtr.Zero;
+            }
+            else
+            {
+                return pIDL;
+            }
+        }
+
+        /// <summary>
+        /// Releases an IEnumIDList
+        /// </summary>
+        /// <param name="pEnumObjects">The IEnumIDList to be released</param>
+        public static void releaseEnumObjects(Object pEnumObjects)
+        {
+            if (pEnumObjects != null)
+            {
+                Marshal.ReleaseComObject(pEnumObjects);
+            }
+        }
+
+        /// <summary>
+        /// Binds an IShellFolder to the child of a given shell folder
+        /// </summary>
+        /// <param name="parentIShellFolder">the parent IShellFolder</param>
+        /// <param name="pIDL">the relative pIDL to the child</param>
+        /// <returns>The IShellFolder of the child or null, if there is no such child</returns>
+        public static Object bindToObject(Object parentIShellFolder, IntPtr pIDL)
+        {
+            if (parentIShellFolder == null || pIDL == null || pIDL == IntPtr.Zero )
+            {
+                return null;
+            }
+            ShellApi.IShellFolder folder = (ShellApi.IShellFolder)parentIShellFolder;
+            ShellApi.IShellFolder newFolder = null;
+            folder.BindToObject(pIDL, IntPtr.Zero, ref ShellApi.GUID_ISHELLFOLDER, out newFolder);
+            return newFolder;
+        }
+
+        /// <summary>
+        /// Parses the displayname of a child of a given folder
+        /// </summary>
+        /// <param name="pIShellFolder">The IShellFolder to get the chilf of</param>
+        /// <param name="name">The display name of the child</param>
+        /// <returns>the relative pIDL of the child or IntPrt.Zero in case there is no such child</returns>
+        public static IntPtr parseDisplayName0(Object pIShellFolder, String name)
+        {
+            if (pIShellFolder == null)
+            {
+                return IntPtr.Zero;
+            }
+            ShellApi.IShellFolder folder = (ShellApi.IShellFolder)pIShellFolder;
+            IntPtr pIDL = new IntPtr();
+            uint pchEaten;
+            uint pdwAttribute = 0;
+            folder.ParseDisplayName(IntPtr.Zero, IntPtr.Zero, name, out pchEaten, out pIDL, ref pdwAttribute);
+            return pIDL;
+        }
+        public static String getDisplayNameOf(Object parentIShellFolder, IntPtr relativePIDL, int attrs)
+        {
+            if (parentIShellFolder == null || relativePIDL == null || relativePIDL == IntPtr.Zero)
+            {
+                return null;
+            }
+            ShellApi.IShellFolder folder = (ShellApi.IShellFolder)parentIShellFolder;
+            ShellApi.STRRET result;
+            uint hRes = folder.GetDisplayNameOf(relativePIDL, (ShellApi.SHGDN)attrs, out result);
+            if ( hRes == 0 )
+            {
+                StringBuilder name = new StringBuilder( 1024 );
+                StrRetToBuf(ref result, relativePIDL, name, 1024);
+                string stringName = name.ToString();
+                return stringName;
+            }
+            return null;
+        }
+        public static String getFolderType(IntPtr pIDL)
+        {
+            ShellApi.SHFILEINFO fileInfo = new ShellApi.SHFILEINFO();
+            ShellApi.SHGetFileInfo(pIDL, 0, out fileInfo, (uint)Marshal.SizeOf(fileInfo), ShellApi.SHGFI.SHGFI_PIDL | ShellApi.SHGFI.SHGFI_TYPENAME);
+            return fileInfo.szTypeName;
+        }
+
+        public static Object getIShellIcon(Object pIShellFolder)
+        {
+            if (pIShellFolder is ShellApi.IShellIcon)
+            {
+                return pIShellFolder;
+            }
+            return null;
+        }
+        public static int getIconIndex(Object parentIShellFolder, IntPtr relativePIDL)
+        {
+            if (parentIShellFolder is ShellApi.IShellIcon)
+            {
+                ShellApi.IShellIcon shellIcon = (ShellApi.IShellIcon)parentIShellFolder;
+                int index = 0;
+                if( shellIcon.GetIconOf(relativePIDL, (uint)ShellApi.GIL.GIL_FORSHELL, out index) == 0 )
+                {
+                    return index;
+                }
+            }
+            return 0;
+        }
+        public static IntPtr getIcon(String absolutePath, Boolean getLargeIcon) 
+        {
+            ShellApi.SHFILEINFO shinfo = new ShellApi.SHFILEINFO();
+            if (ShellApi.SHGetFileInfo(absolutePath, 0, out shinfo, (uint)Marshal.SizeOf(shinfo), ShellApi.SHGFI.SHGFI_ICON | (getLargeIcon ? ShellApi.SHGFI.SHGFI_LARGEICON : ShellApi.SHGFI.SHGFI_SMALLICON)) == IntPtr.Zero)
+            {
+                return IntPtr.Zero;
+            }
+            return shinfo.hIcon;
+        }
+        public static IntPtr extractIcon(Object parentIShellFolder, IntPtr relativePIDL, Boolean getLargeIcon)
+        {
+            if (parentIShellFolder == null || relativePIDL == null || relativePIDL == IntPtr.Zero)
+            {
+                return IntPtr.Zero;
+            }
+            ShellApi.IShellFolder folder = (ShellApi.IShellFolder)parentIShellFolder;
+            Guid guid = new Guid("000214fa-0000-0000-c000-000000000046");
+            object ppv;
+            if (folder.GetUIObjectOf(IntPtr.Zero, 1, new IntPtr[] { relativePIDL }, ref guid, IntPtr.Zero, out ppv) == 0)
+            {
+                ShellApi.IExtractIcon extractor = (ShellApi.IExtractIcon)ppv;
+                int size = 1024;
+                StringBuilder path = new StringBuilder( size );
+                int piIndex;
+                uint pwFlags;
+                if (extractor.GetIconLocation((uint)ShellApi.GIL.GIL_FORSHELL, path, size, out piIndex, out pwFlags) == 0)
+                {
+                    IntPtr hIconL = new IntPtr();
+                    IntPtr hIconS = new IntPtr();
+                    if (extractor.Extract(path.ToString(), (uint)piIndex, out hIconL, out hIconS, (16 << 16) + 32) == 0)
+                    {
+                        if (getLargeIcon)
+                        {
+                            ShellApi.DestroyIcon(hIconS);
+                            return hIconL;
+                        }
+                        else
+                        {
+                            ShellApi.DestroyIcon(hIconL);
+                            return hIconS;
+                        }
+                    }
+                }
+            }
+            return IntPtr.Zero;
+        }
+        public static void disposeIcon(IntPtr hIcon)
+        {
+            ShellApi.DestroyIcon(hIcon);
+        }
+        public static Object doGetColumnInfo(Object iShellFolder2)
+        {
+            // TODO Dummy
+            return null;
+        }
+        public static Object doGetColumnValue(Object parentIShellFolder2, IntPtr childPIDL, int columnIdx)
+        {
+            // TODO Dummy
+            return null;
+        }
+        public static int compareIDsByColumn(Object pParentIShellFolder, IntPtr pidl1, IntPtr pidl2, int columnIdx)
+        {
+            // TODO Dummy
+            return 0;
+        }
 	}
 
 	[System.Security.SecurityCritical]
@@ -418,6 +846,7 @@ namespace IKVM.NativeCode.sun.awt.shell
 			void GetIconLocation([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszIconPath, int cchIconPath, out int piIcon);
 			void SetIconLocation([MarshalAs(UnmanagedType.LPWStr)] string pszIconPath, int iIcon);
 			void SetRelativePath([MarshalAs(UnmanagedType.LPWStr)] string pszPathRel, uint dwReserved);
+            /// <summary>Attempts to find the target of a Shell link, even if it has been moved or renamed.</summary>
 			void Resolve(IntPtr hWnd, uint fFlags);
 			void SetPath([MarshalAs(UnmanagedType.LPWStr)] string pszFile);
 		}
@@ -500,6 +929,17 @@ namespace IKVM.NativeCode.sun.awt.shell
 			return sb.ToString();
 		}
 
+        public void Resolve()
+        {
+            linkW.Resolve(IntPtr.Zero, 0);
+        }
+
+        public IntPtr GetIDList(){
+            IntPtr ppidl;
+            linkW.GetIDList( out ppidl );
+            return ppidl;
+        }
+
 		public string GetPath()
 		{
 			StringBuilder sb = new StringBuilder(512);
@@ -507,6 +947,8 @@ namespace IKVM.NativeCode.sun.awt.shell
 			return sb.ToString();
 		}
 	}
+
+
 }
 
 namespace IKVM.NativeCode.sun.java2d

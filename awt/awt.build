@@ -18,6 +18,7 @@
                 <include name="../CommonAssemblyInfo.cs" />
                 <include name="AssemblyInfo.cs" />
                 <include name="native.cs" />
+                <include name="ShellApi.cs" />
             </sources>
             <references>
                 <include name="System.Windows.Forms.dll" asis="true" />
@@ -40,6 +41,7 @@
             	<include name="printing.cs" />
                 <include name="robot.cs" />
                 <include name="toolkit-0.95.cs" />
+                <include name="ShellApi.cs" />
             </sources>
             <references>
                 <include name="../bin/IKVM.OpenJDK.Core.dll" asis="true" />

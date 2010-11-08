@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.security.AccessController;
 import java.util.*;
 
+import cli.System.IntPtr;
 import cli.System.Drawing.SystemIcons;
 import sun.security.action.LoadLibraryAction;
 
@@ -55,23 +56,23 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
 
     @Override
     public ShellFolder createShellFolder(File file) throws FileNotFoundException {
-        try{
-            return new Win32ShellFolder2(file);
-        }catch(IOException ex){
-            FileNotFoundException fnfex = new FileNotFoundException("File " + file.getAbsolutePath() + " not found");
-            fnfex.initCause(ex);
-            throw fnfex;
-        }
+    	return createShellFolder(getDesktop(), file);
     }
 
     static Win32ShellFolder2 createShellFolder(Win32ShellFolder2 parent, File file) throws FileNotFoundException {
-        try {
-            return new Win32ShellFolder2( parent, file.getCanonicalPath() );
-        } catch (IOException ex) {
-            FileNotFoundException fnfex = new FileNotFoundException("File " + file.getAbsolutePath() + " not found");
-            fnfex.initCause(ex);
-            throw fnfex;
-        }
+    	cli.System.IntPtr pIDL = null;
+    	try {
+    	    pIDL = parent.parseDisplayName(file.getCanonicalPath());
+    	} catch (IOException ex) {
+    	    pIDL = null;
+    	}
+    	if (pIDL == null || cli.System.IntPtr.Zero.Equals(pIDL) ) {
+    	    // Shouldn't happen but watch for it anyway
+    	    throw new FileNotFoundException("File " + file.getAbsolutePath() + " not found");
+    	}
+    	Win32ShellFolder2 folder = createShellFolderFromRelativePIDL( parent, pIDL);
+    	Win32ShellFolder2.releasePIDL(pIDL);
+    	return folder;
     }
 
     // Special folders
@@ -138,8 +139,9 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
                 String path = Win32ShellFolder2.getFileSystemPath(PERSONAL);
                 if (path != null) {
                     Win32ShellFolder2 desktop = getDesktop();
+                    personal = desktop.getChildByPath(path);
                     if (personal == null) {
-                        personal = createShellFolder(desktop, new File(path));
+                        personal = (Win32ShellFolder2) createShellFolder( desktop, new File(path));
                     }
                     if (personal != null) {
                         personal.setIsPersonal();
@@ -434,4 +436,19 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
             return compareFiles(f1, f2);
         }
     };
+    
+    static Win32ShellFolder2 createShellFolderFromRelativePIDL( Win32ShellFolder2 parent, cli.System.IntPtr pIDL) {
+        // Walk down this relative pIDL, creating new nodes for each of the entries
+        while (pIDL != null && !cli.System.IntPtr.Zero.Equals( pIDL ) ) {
+        	cli.System.IntPtr curPIDL = Win32ShellFolder2.copyFirstPIDLEntry(pIDL);
+            if (curPIDL != null && !cli.System.IntPtr.Zero.Equals( curPIDL )) {
+                parent = new Win32ShellFolder2(parent, curPIDL);
+                pIDL = Win32ShellFolder2.getNextPIDLEntry(pIDL);
+            } else {
+                // The list is empty if the parent is Desktop and pIDL is a shortcut to Desktop
+                break;
+            }
+        }
+        return parent;
+    }
 }
