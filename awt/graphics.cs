@@ -158,7 +158,6 @@ namespace ikvm.awt
         private Color bgcolor;
         private java.awt.Font font;
         private java.awt.Stroke stroke;
-        private java.awt.geom.AffineTransform tx;
         private static java.awt.BasicStroke defaultStroke = new java.awt.BasicStroke();
         private Font netfont;
         private Brush brush;
@@ -1155,18 +1154,13 @@ namespace ikvm.awt
         public override void setTransform(java.awt.geom.AffineTransform tx)
         {
             g.Transform = J2C.ConvertTransform(tx);
-            this.tx = tx;
         }
 
         public override java.awt.geom.AffineTransform getTransform()
         {
-            if (tx != null)
-            {
-                return tx;
-            }
             using (Matrix matrix = g.Transform)
             {
-                return tx = C2J.ConvertMatrix(matrix);
+                return C2J.ConvertMatrix(matrix);
             }
         }
 
