@@ -192,6 +192,9 @@ namespace ikvm.awt
                 graphics.TextRenderingHint = g.TextRenderingHint;
                 graphics.InterpolationMode = g.InterpolationMode;
                 graphics.CompositingMode = g.CompositingMode;
+            } else {
+                // default values that Java used
+                graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
             }
             g = graphics;
             brush = new SolidBrush(color);
@@ -939,12 +942,12 @@ namespace ikvm.awt
             {
                 if (hintValue == java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR)
                 {
-                    g.InterpolationMode = InterpolationMode.Bilinear;
+                    g.InterpolationMode = InterpolationMode.HighQualityBilinear;
                     return;
                 }
                 if (hintValue == java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC)
                 {
-                    g.InterpolationMode = InterpolationMode.Bicubic;
+                    g.InterpolationMode = InterpolationMode.HighQualityBicubic;
                     return;
                 }
                 if (hintValue == java.awt.RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR)
