@@ -176,6 +176,7 @@ namespace IKVM.Internal
 				{
 					if (simpleName[i] == '_')
 					{
+						sb.Append("_!");
 					}
 					else
 					{
@@ -212,7 +213,12 @@ namespace IKVM.Internal
 					{
 						if (i == directoryName.Length || directoryName[i] == '_')
 						{
-							if (i == directoryName.Length || directoryName[i + 1] == '_')
+							if (i < directoryName.Length - 1 && directoryName[i + 1] == '!')
+							{
+								sb.Append('_');
+								i++;
+							}
+							else if (i == directoryName.Length || directoryName[i + 1] == '_')
 							{
 								switch (part++)
 								{
