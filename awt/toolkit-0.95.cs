@@ -1716,14 +1716,18 @@ namespace ikvm.awt
 			{
 				modifiers |= java.awt.@event.InputEvent.SHIFT_DOWN_MASK;
 			}
-			if ((keys & Keys.Control) != 0)
-			{
-				modifiers |= java.awt.@event.InputEvent.CTRL_DOWN_MASK;
-			}
-			if ((keys & Keys.Alt) != 0)
-			{
-				modifiers |= java.awt.@event.InputEvent.ALT_DOWN_MASK;
-			}
+            switch (keys & (Keys.Control | Keys.Alt))
+            {
+                case Keys.Control:
+                    modifiers |= java.awt.@event.InputEvent.CTRL_DOWN_MASK;
+                    break;
+                case Keys.Alt:
+                    modifiers |= java.awt.@event.InputEvent.ALT_DOWN_MASK;
+                    break;
+                case Keys.Control | Keys.Alt:
+                    modifiers |= java.awt.@event.InputEvent.ALT_GRAPH_DOWN_MASK;
+                    break;
+            }
 			if ((Control.MouseButtons & MouseButtons.Left) != 0)
 			{
 				modifiers |= java.awt.@event.InputEvent.BUTTON1_DOWN_MASK;
