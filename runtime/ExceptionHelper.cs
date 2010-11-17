@@ -454,7 +454,7 @@ namespace IKVM.Internal
 			Exception cause = Throwable.instancehelper_getCause(x);
 			while (cause != null)
 			{
-				list.Add("Caused by: " + cause);
+				list.Add("Caused by: " + java.lang.Object.instancehelper_toString(cause));
 
 				// Cause stacktrace
 				StackTraceElement[] parentStack = stack;
