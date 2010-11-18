@@ -1255,7 +1255,15 @@ namespace IKVM.NativeCode.java
 			{
 				try
 				{
-					return DateTimeToJavaLongTime(System.IO.File.GetLastWriteTime(GetPathFromFile(f)));
+					DateTime dt = System.IO.File.GetLastWriteTime(GetPathFromFile(f));
+					if (dt.ToFileTime() == 0)
+					{
+						return 0;
+					}
+					else
+					{
+						return DateTimeToJavaLongTime(dt);
+					}
 				}
 				catch (System.UnauthorizedAccessException)
 				{
