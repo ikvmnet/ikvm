@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Jeroen Frijters
+  Copyright (C) 2009-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -27,6 +27,7 @@ import cli.System.Runtime.Serialization.SerializationException;
 import cli.System.Runtime.Serialization.SerializationInfo;
 import cli.System.Security.Permissions.SecurityAction;
 import cli.System.Security.Permissions.SecurityPermissionAttribute;
+import com.sun.xml.internal.ws.developer.ServerSideException;
 import java.io.InteropObjectInputStream;
 import java.io.InteropObjectOutputStream;
 import java.io.IOException;
@@ -47,5 +48,13 @@ public final class Serialization
     public static void readObject(Object obj, SerializationInfo info)
     {
         InteropObjectInputStream.readObject(obj, info);
+    }
+
+    public static Object writeReplace(cli.System.Exception x)
+    {
+        ServerSideException sse = new ServerSideException(x.getClass().getName(), x.get_Message());
+        sse.initCause(x.get_InnerException());
+        sse.setStackTrace(x.getStackTrace());
+        return sse;
     }
 }

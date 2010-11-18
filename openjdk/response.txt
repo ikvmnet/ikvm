@@ -66,6 +66,7 @@ assembly.class
     @OPENJDK@/build/linux-amd64/gensrc/java/nio/charset/*.class
     @OPENJDK@/build/linux-amd64/gensrc/sun/nio/ch/*.class
     @OPENJDK@/build/linux-amd64/gensrc/sun/util/*.class
+    @OPENJDK@/build/linux-amd64/impsrc/com/sun/xml/internal/ws/developer/ServerSideException.class
     @OPENJDK@/jdk/src/share/classes/java/beans/ChangeListenerMap.class
     @OPENJDK@/jdk/src/share/classes/java/beans/IndexedPropertyChangeEvent.class
     @OPENJDK@/jdk/src/share/classes/java/beans/PropertyChangeEvent.class

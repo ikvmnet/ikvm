@@ -2190,6 +2190,19 @@ namespace IKVM.Internal
 						baseTypeWrapper = baseTypeWrapper.BaseTypeWrapper;
 					}
 				}
+
+#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+				// support serializing .NET exceptions (by replacing them with a placeholder exception)
+				if (typeof(Exception).IsAssignableFrom(type)
+					&& !typeof(java.io.Serializable.__Interface).IsAssignableFrom(type)
+					&& !methodsList.ContainsKey("writeReplace()Ljava.lang.Object;"))
+				{
+					methodsList.Add("writeReplace()Ljava.lang.Object;", new SimpleCallMethodWrapper(this, "writeReplace", "()Ljava.lang.Object;",
+						typeof(ikvm.@internal.Serialization).GetMethod("writeReplace"), CoreClasses.java.lang.Object.Wrapper, TypeWrapper.EmptyArray,
+						Modifiers.Private, MemberFlags.None, SimpleOpCode.Call, SimpleOpCode.Call));
+				}
+#endif // !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+
 				MethodWrapper[] methodArray = new MethodWrapper[methodsList.Count];
 				methodsList.Values.CopyTo(methodArray, 0);
 				SetMethods(methodArray);
