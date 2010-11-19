@@ -225,6 +225,11 @@ namespace IKVM.Internal
 				get { return (byte)data; }
 			}
 
+			internal short ValueInt16
+			{
+				get { return (short)data; }
+			}
+
 			internal int ValueInt32
 			{
 				get { return (int)data; }
@@ -1674,9 +1679,89 @@ namespace IKVM.Internal
 			}
 		}
 
+		private static bool MatchLdarg(OpCodeWrapper opc, out short arg)
+		{
+			if (opc.opcode == OpCodes.Ldarg)
+			{
+				arg = opc.ValueInt16;
+				return true;
+			}
+			else if (opc.opcode == OpCodes.Ldarg_S)
+			{
+				arg = opc.ValueByte;
+				return true;
+			}
+			else if (opc.opcode == OpCodes.Ldarg_0)
+			{
+				arg = 0;
+				return true;
+			}
+			else if (opc.opcode == OpCodes.Ldarg_1)
+			{
+				arg = 1;
+				return true;
+			}
+			else if (opc.opcode == OpCodes.Ldarg_2)
+			{
+				arg = 2;
+				return true;
+			}
+			else if (opc.opcode == OpCodes.Ldarg_3)
+			{
+				arg = 3;
+				return true;
+			}
+			else
+			{
+				arg = -1;
+				return false;
+			}
+		}
+
+		private void CLRv4_x64_JIT_Workaround()
+		{
+			for (int i = 0; i < code.Count - 2; i++)
+			{
+				// This is a workaround for https://connect.microsoft.com/VisualStudio/feedback/details/566946/x64-jit-optimization-bug
+				// 
+				// Testing shows that the bug appears to be very specific and requires a comparison of a method argument with zero.
+				// For example, the problem goes away when the method argument is first assigned to a local variable and then
+				// the comparison (and subsequent use) is done against the local variable.
+				//
+				// This means we only have to detect these specific patterns:
+				//
+				//   ldc.i8 0x0        ldarg
+				//   ldarg             ldc.i8 0x0
+				//   bcc               bcc
+				//
+				// The workaround is to replace ldarg with ldarga/ldind.i8. Looking at the generated code by the x86 and x64 JITs
+				// this appears to be as efficient as the ldarg and it avoids the x64 bug.
+				if (code[i].opcode == OpCodes.Ldc_I8 && code[i].ValueInt64 == 0)
+				{
+					short arg;
+					int m;
+					if (i > 0 && MatchLdarg(code[i - 1], out arg) && code[i + 1].opcode.FlowControl == FlowControl.Cond_Branch)
+					{
+						m = i - 1;
+					}
+					else if (MatchLdarg(code[i + 1], out arg) && code[i + 2].opcode.FlowControl == FlowControl.Cond_Branch)
+					{
+						m = i + 1;
+					}
+					else
+					{
+						continue;
+					}
+					code[m] = new OpCodeWrapper(OpCodes.Ldarga, arg);
+					code.Insert(m + 1, new OpCodeWrapper(OpCodes.Ldind_I8, null));
+				}
+			}
+		}
+
 		internal void DoEmit()
 		{
 			OptimizePatterns();
+			CLRv4_x64_JIT_Workaround();
 			RemoveRedundantMemoryBarriers();
 
 			if (experimentalOptimizations)
