@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2008 Jeroen Frijters
+  Copyright (C) 2002-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -196,7 +196,8 @@ namespace IKVM.Internal.MapXml
 					}
 					else
 					{
-						throw new InvalidOperationException();
+						// ldftn or ldvirtftn
+						ilgen.Emit(opcode, (MethodInfo)method.GetMethod());
 					}
 				}
 				else
@@ -242,6 +243,22 @@ namespace IKVM.Internal.MapXml
 	public sealed class NewObj : Call
 	{
 		public NewObj() : base(OpCodes.Newobj)
+		{
+		}
+	}
+
+	[XmlType("ldftn")]
+	public sealed class Ldftn : Call
+	{
+		public Ldftn() : base(OpCodes.Ldftn)
+		{
+		}
+	}
+
+	[XmlType("ldvirtftn")]
+	public sealed class Ldvirtftn : Call
+	{
+		public Ldvirtftn() : base(OpCodes.Ldvirtftn)
 		{
 		}
 	}
@@ -993,6 +1010,15 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
+	[XmlType("and")]
+	public sealed class And : Simple
+	{
+		public And()
+			: base(OpCodes.And)
+		{
+		}
+	}
+
 	[XmlType("unaligned")]
 	public sealed class Unaligned : Instruction
 	{
@@ -1168,6 +1194,8 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(Ldstr))]
 		[XmlElement(typeof(Call))]
 		[XmlElement(typeof(Callvirt))]
+		[XmlElement(typeof(Ldftn))]
+		[XmlElement(typeof(Ldvirtftn))]
 		[XmlElement(typeof(Dup))]
 		[XmlElement(typeof(Pop))]
 		[XmlElement(typeof(IsInst))]
@@ -1231,6 +1259,7 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(Add))]
 		[XmlElement(typeof(Sub))]
 		[XmlElement(typeof(Mul))]
+		[XmlElement(typeof(And))]
 		[XmlElement(typeof(Unaligned))]
 		[XmlElement(typeof(Cpblk))]
 		[XmlElement(typeof(Ceq))]
