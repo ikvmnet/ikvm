@@ -1718,6 +1718,14 @@ namespace IKVM.Internal
 			}
 		}
 
+		private bool IsBranchEqNe(OpCode opcode)
+		{
+			return opcode == OpCodes.Beq
+				|| opcode == OpCodes.Beq_S
+				|| opcode == OpCodes.Bne_Un
+				|| opcode == OpCodes.Bne_Un_S;
+		}
+
 		private void CLRv4_x64_JIT_Workaround()
 		{
 			for (int i = 0; i < code.Count - 2; i++)
@@ -1732,7 +1740,7 @@ namespace IKVM.Internal
 				//
 				//   ldc.i8 0x0        ldarg
 				//   ldarg             ldc.i8 0x0
-				//   bcc               bcc
+				//   beq/bne           beq/bne
 				//
 				// The workaround is to replace ldarg with ldarga/ldind.i8. Looking at the generated code by the x86 and x64 JITs
 				// this appears to be as efficient as the ldarg and it avoids the x64 bug.
@@ -1740,11 +1748,11 @@ namespace IKVM.Internal
 				{
 					short arg;
 					int m;
-					if (i > 0 && MatchLdarg(code[i - 1], out arg) && code[i + 1].opcode.FlowControl == FlowControl.Cond_Branch)
+					if (i > 0 && MatchLdarg(code[i - 1], out arg) && IsBranchEqNe(code[i + 1].opcode))
 					{
 						m = i - 1;
 					}
-					else if (MatchLdarg(code[i + 1], out arg) && code[i + 2].opcode.FlowControl == FlowControl.Cond_Branch)
+					else if (MatchLdarg(code[i + 1], out arg) && IsBranchEqNe(code[i + 2].opcode))
 					{
 						m = i + 1;
 					}
