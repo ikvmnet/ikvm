@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Collections;
 import java.util.concurrent.locks.LockSupport;
-import sun.misc.SoftCache;
 import sun.nio.ch.Interruptible;
 import sun.security.util.SecurityConstants;
 
@@ -451,7 +450,7 @@ class Thread implements Runnable {
          * Do we have the required permissions?
          */
         if (security != null) {
-            if (isCCLOverridden(getClass())) {
+            if (isCCLOverridden(this)) {
                 security.checkPermission(SUBCLASS_IMPLEMENTATION_PERMISSION);
             }
         }
@@ -463,7 +462,7 @@ class Thread implements Runnable {
         this.daemon = parent.isDaemon();
         this.priority = parent.getPriority();
         this.name = name.toCharArray();
-        if (security == null || isCCLOverridden(parent.getClass()))
+        if (isCCLOverridden(parent))
             this.contextClassLoader = parent.getContextClassLoader();
         else
             this.contextClassLoader = parent.contextClassLoader;
@@ -1790,66 +1789,13 @@ class Thread implements Runnable {
     private static final RuntimePermission SUBCLASS_IMPLEMENTATION_PERMISSION =
                     new RuntimePermission("enableContextClassLoaderOverride");
 
-    /** cache of subclass security audit results */
-    private static final SoftCache subclassAudits = new SoftCache(10);
-
-
     /**
      * Verifies that this (possibly subclass) instance can be constructed
      * without violating security constraints: the subclass must not override
      * security-sensitive non-final methods, or else the
      * "enableContextClassLoaderOverride" RuntimePermission is checked.
      */
-    private static boolean isCCLOverridden(Class cl) {
-        if (cl == Thread.class)
-            return false;
-        Boolean result = null;
-        synchronized (subclassAudits) {
-            result = (Boolean) subclassAudits.get(cl);
-            if (result == null) {
-                /*
-                 * Note: only new Boolean instances (i.e., not Boolean.TRUE or
-                 * Boolean.FALSE) must be used as cache values, otherwise cache
-                 * entry will pin associated class.
-                 */
-                result = new Boolean(auditSubclass(cl));
-                subclassAudits.put(cl, result);
-            }
-        }
-        return result.booleanValue();
-    }
-
-    /**
-     * Performs reflective checks on given subclass to verify that it doesn't
-     * override security-sensitive non-final methods.  Returns true if the
-     * subclass overrides any of the methods, false otherwise.
-     */
-    private static boolean auditSubclass(final Class subcl) {
-        Boolean result = AccessController.doPrivileged(
-            new PrivilegedAction<Boolean>() {
-                public Boolean run() {
-                    for (Class cl = subcl;
-                         cl != Thread.class;
-                         cl = cl.getSuperclass())
-                    {
-                        try {
-                            cl.getDeclaredMethod("getContextClassLoader", new Class[0]);
-                            return Boolean.TRUE;
-                        } catch (NoSuchMethodException ex) {
-                        }
-                        try {
-                            Class[] params = {ClassLoader.class};
-                            cl.getDeclaredMethod("setContextClassLoader", params);
-                            return Boolean.TRUE;
-                        } catch (NoSuchMethodException ex) {
-                        }
-                    }
-                    return Boolean.FALSE;
-                }
-            }
-        );
-        return result.booleanValue();
-    }
+    private static native boolean isCCLOverridden(Thread thread); // [IKVM] implemented in map.xml
 
     private static StackTraceElement[][] dumpThreads(Thread[] threads) {
         StackTraceElement[][] stacks = new StackTraceElement[threads.length][];
