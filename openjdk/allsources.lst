@@ -90,6 +90,7 @@ java/net/TwoStacksPlainSocketImpl.java
 java/net/TwoStacksPlainSocketImpl_c.java
 java/nio/Bits.java
 java/security/AccessController.java
+java/security/ProtectionDomain.java
 java/sql/DriverManager.java
 java/text/Bidi.java
 java/util/ResourceBundle.java
@@ -7911,7 +7912,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/jdk/src/share/classes/java/security/PrivilegedAction.java
 @OPENJDK@/jdk/src/share/classes/java/security/PrivilegedActionException.java
 @OPENJDK@/jdk/src/share/classes/java/security/PrivilegedExceptionAction.java
-@OPENJDK@/jdk/src/share/classes/java/security/ProtectionDomain.java
 @OPENJDK@/jdk/src/share/classes/java/security/Provider.java
 @OPENJDK@/jdk/src/share/classes/java/security/ProviderException.java
 @OPENJDK@/jdk/src/share/classes/java/security/PublicKey.java
