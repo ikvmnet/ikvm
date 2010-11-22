@@ -56,6 +56,9 @@ public class ProtectionDomain {
     /* CodeSource */
     private CodeSource codesource ;
 
+    /* [IKVM] If this is a protection from an Assembly class loader, we lazily construct the codesource, classloader and permissions */
+    private cli.System.Reflection.Assembly assembly;
+
     /* ClassLoader the protection domain was consed from */
     private ClassLoader classloader;
 
@@ -72,7 +75,58 @@ public class ProtectionDomain {
        or dynamic (via a policy refresh) */
     private boolean staticPermissions;
 
-    private static final Debug debug = Debug.getInstance("domain");
+    /* [IKVM] constructor for use by the runtime (AssemblyClassLoader) */
+    ProtectionDomain(cli.System.Reflection.Assembly assembly) {
+        this.assembly = assembly;
+        this.hasAllPerm = true;
+        this.staticPermissions = true;
+        this.principals = new Principal[0];
+    }
+
+    /* [IKVM] */
+    private void lazyInitClassLoader() {
+        if (classloader == null && assembly != null) {
+            classloader = ikvm.runtime.AssemblyClassLoader.getAssemblyClassLoader(assembly);
+        }
+    }
+
+    /* [IKVM] */
+    private void lazyInitPermissions() {
+        if (permissions == null && hasAllPerm) {
+            Permissions p = new Permissions();
+            p.add(new AllPermission());
+            p.setReadOnly();
+            // we lock on principals since that is a private object
+            synchronized (principals) {
+                if (permissions == null) {
+                    permissions = p;
+                }
+            }
+        }
+    }
+
+    /* [IKVM] */
+    private void lazyInitCodeSource() {
+        if (codesource == null && assembly != null) {
+            java.net.URL url;
+            try {
+                if (false) throw new cli.System.NotSupportedException();
+                url = new java.net.URL(assembly.get_CodeBase());
+            } catch (java.net.MalformedURLException _) {
+                url = null;
+            } catch (cli.System.NotSupportedException _) {
+                // dynamic assemblies don't have a codebase
+                url = null;
+            }
+            CodeSource cs = new CodeSource(url, (java.security.cert.Certificate[])null);
+            // we lock on principals since that is a private object
+            synchronized (principals) {
+                if (codesource == null) {
+                    codesource = cs;
+                }
+            }
+        }
+    }
 
     /**
      * Creates a new ProtectionDomain with the given CodeSource and
@@ -154,6 +208,7 @@ public class ProtectionDomain {
      * @since 1.2
      */
     public final CodeSource getCodeSource() {
+        lazyInitCodeSource();
         return this.codesource;
     }
 
@@ -165,6 +220,7 @@ public class ProtectionDomain {
      * @since 1.4
      */
     public final ClassLoader getClassLoader() {
+        lazyInitClassLoader();
         return this.classloader;
     }
 
@@ -188,6 +244,7 @@ public class ProtectionDomain {
      * @see Policy#getPermissions(ProtectionDomain)
      */
     public final PermissionCollection getPermissions() {
+        lazyInitPermissions();
         return permissions;
     }
 
@@ -239,6 +296,8 @@ public class ProtectionDomain {
      * Convert a ProtectionDomain to a String.
      */
     public String toString() {
+        lazyInitCodeSource();
+        lazyInitClassLoader();
         String pals = "<no principals>";
         if (principals != null && principals.length > 0) {
             StringBuilder palBuf = new StringBuilder("(principals ");
@@ -289,6 +348,7 @@ public class ProtectionDomain {
         if (sm == null) {
             return true;
         } else {
+            Debug debug = Debug.getInstance("domain");
             if (debug != null) {
                 if (sm.getClass().getClassLoader() == null &&
                     Policy.getPolicyNoCheck().getClass().getClassLoader()
@@ -309,6 +369,7 @@ public class ProtectionDomain {
     }
 
     private PermissionCollection mergePermissions() {
+        lazyInitPermissions();
         if (staticPermissions)
             return permissions;
 

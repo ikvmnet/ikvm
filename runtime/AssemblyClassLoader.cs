@@ -47,7 +47,7 @@ namespace IKVM.Internal
 #if !STATIC_COMPILER && !STUB_GENERATOR
 		private Thread initializerThread;
 		private int initializerRecursion;
-		private volatile object protectionDomain;
+		private object protectionDomain;
 		private static Dictionary<string, string> customClassLoaderRedirects;
 		private bool hasCustomClassLoader;
 #endif
@@ -896,30 +896,7 @@ namespace IKVM.Internal
 #else
 			if (protectionDomain == null)
 			{
-				java.net.URL codebase;
-				try
-				{
-					codebase = new java.net.URL(assemblyLoader.Assembly.CodeBase);
-				}
-				catch (NotSupportedException)
-				{
-					// dynamic assemblies don't have a codebase
-					codebase = null;
-				}
-				catch (java.net.MalformedURLException)
-				{
-					codebase = null;
-				}
-				java.security.Permissions permissions = new java.security.Permissions();
-				permissions.add(new java.security.AllPermission());
-				object pd = new java.security.ProtectionDomain(new java.security.CodeSource(codebase, (java.security.cert.Certificate[])null), permissions, (java.lang.ClassLoader)GetJavaClassLoader(), null);
-				lock (this)
-				{
-					if (protectionDomain == null)
-					{
-						protectionDomain = pd;
-					}
-				}
+				Interlocked.CompareExchange(ref protectionDomain, new java.security.ProtectionDomain(assemblyLoader.Assembly), null);
 			}
 			return protectionDomain;
 #endif
