@@ -466,7 +466,7 @@ class Thread implements Runnable {
             this.contextClassLoader = parent.getContextClassLoader();
         else
             this.contextClassLoader = parent.contextClassLoader;
-        this.lazyInheritedAccessControlContext = AccessController.getLazyContext();
+        this.lazyInheritedAccessControlContext = AccessController.getLazyContext(parent.lazyInheritedAccessControlContext);
         this.target = target;
         setPriority(priority);
         if (parent.inheritableThreadLocals != null)

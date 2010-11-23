@@ -4580,27 +4580,33 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return null;
 #else
-				return GetStackAccessControlContextImpl(context, callerID, new StackTrace(1));
+				List<ProtectionDomain> array = new List<ProtectionDomain>();
+				bool is_privileged = GetProtectionDomains(array, (global::ikvm.@internal.CallerID)callerID, new StackTrace(1));
+				if (array.Count == 0)
+				{
+					if (is_privileged && context == null)
+					{
+						return null;
+					}
+					return CreateAccessControlContext(null, is_privileged, context);
+				}
+				return CreateAccessControlContext(array.ToArray(), is_privileged, context);
 #endif
 			}
 
 #if !FIRST_PASS
-			private static object GetStackAccessControlContextImpl(object context, object callerID, StackTrace stack)
+			private static bool GetProtectionDomains(List<ProtectionDomain> array, global::ikvm.@internal.CallerID callerID, StackTrace stack)
 			{
-				object previous_protection_domain = null;
-				object privileged_context = null;
-				bool is_privileged = false;
-				object protection_domain = null;
-				List<ProtectionDomain> array = new List<ProtectionDomain>();
-
+				ProtectionDomain previous_protection_domain = null;
 				for (int i = 0; i < stack.FrameCount; i++)
 				{
+					bool is_privileged = false;
+					ProtectionDomain protection_domain;
 					MethodBase method = stack.GetFrame(i).GetMethod();
 					if (method.DeclaringType == typeof(global::java.security.AccessController)
 						&& method.Name == "doPrivileged")
 					{
 						is_privileged = true;
-						privileged_context = context;
 						global::java.lang.Class caller = ((global::ikvm.@internal.CallerID)callerID).getCallerClass();
 						protection_domain = caller == null ? null : java.lang.Class.getProtectionDomain0(caller);
 					}
@@ -4612,26 +4618,15 @@ namespace IKVM.NativeCode.java
 					if (previous_protection_domain != protection_domain && protection_domain != null)
 					{
 						previous_protection_domain = protection_domain;
-						array.Add((ProtectionDomain)protection_domain);
+						array.Add(protection_domain);
 					}
 
 					if (is_privileged)
 					{
-						break;
+						return true;
 					}
 				}
-
-				if (array.Count == 0)
-				{
-					if (is_privileged && privileged_context == null)
-					{
-						return null;
-					}
-
-					return CreateAccessControlContext(null, is_privileged, privileged_context);
-				}
-
-				return CreateAccessControlContext(array.ToArray(), is_privileged, privileged_context);
+				return false;
 			}
 
 			private static object CreateAccessControlContext(ProtectionDomain[] context, bool is_privileged, object privileged_context)
@@ -4641,7 +4636,7 @@ namespace IKVM.NativeCode.java
 				return acc;
 			}
 
-			private static object GetProtectionDomainFromType(Type type)
+			private static ProtectionDomain GetProtectionDomainFromType(Type type)
 			{
 				if (type == null
 					|| type.Assembly == typeof(object).Assembly
@@ -4670,7 +4665,16 @@ namespace IKVM.NativeCode.java
 				{
 					return null;
 				}
-				return GetStackAccessControlContextImpl(lc.context, lc.callerID, lc.stackTrace);
+				List<ProtectionDomain> list = new List<ProtectionDomain>();
+				while (lc != null)
+				{
+					if (GetProtectionDomains(list, lc.callerID, lc.stackTrace))
+					{
+						return CreateAccessControlContext(list.ToArray(), true, lc.context);
+					}
+					lc = lc.parent;
+				}
+				return CreateAccessControlContext(list.ToArray(), false, null);
 #endif
 			}
 		}

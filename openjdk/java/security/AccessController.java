@@ -243,14 +243,16 @@ public final class AccessController {
 
     @ikvm.lang.Internal
     public static final class LazyContext {
+        LazyContext parent;
         CallerID callerID;
         AccessControlContext context;
         final cli.System.Diagnostics.StackTrace stackTrace = new cli.System.Diagnostics.StackTrace(1);
     }
 
     @ikvm.lang.Internal
-    public static LazyContext getLazyContext() {
+    public static LazyContext getLazyContext(LazyContext parent) {
         LazyContext lc = new LazyContext();
+        lc.parent = parent;
         if (privileged_stack_top != null) {
             lc.callerID = privileged_stack_top.callerID;
             lc.context = privileged_stack_top.context;
