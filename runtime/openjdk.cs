@@ -4596,7 +4596,7 @@ namespace IKVM.NativeCode.java
 				for (int i = 0; i < stack.FrameCount; i++)
 				{
 					MethodBase method = stack.GetFrame(i).GetMethod();
-					if (method.DeclaringType == typeof(AccessController)
+					if (method.DeclaringType == typeof(global::java.security.AccessController)
 						&& method.Name == "doPrivileged")
 					{
 						is_privileged = true;
