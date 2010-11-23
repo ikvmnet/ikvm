@@ -887,7 +887,7 @@ namespace IKVM.Internal
 #endif
 		}
 
-#if !STATIC_COMPILER || !FIRST_PASS || !STUB_GENERATOR
+#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 		internal override object GetJavaClassLoader()
 		{
 			if (javaClassLoader == null)
