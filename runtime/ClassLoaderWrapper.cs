@@ -121,19 +121,11 @@ namespace IKVM.Internal
 			Assembly coreAssembly = JVM.CoreAssembly;
 			if(coreAssembly != null)
 			{
-				try
-				{
-					Tracer.Info(Tracer.Runtime, "Core assembly: {0}", coreAssembly.Location);
-				}
-				catch(System.Security.SecurityException)
-				{
-				}
 				RemappedClassAttribute[] remapped = AttributeHelper.GetRemappedClasses(coreAssembly);
 				if(remapped.Length > 0)
 				{
 					foreach(RemappedClassAttribute r in remapped)
 					{
-						Tracer.Info(Tracer.Runtime, "Remapping type {0} to {1}", r.RemappedType, r.Name);
 						remappedTypes.Add(r.RemappedType, r.Name);
 					}
 				}
