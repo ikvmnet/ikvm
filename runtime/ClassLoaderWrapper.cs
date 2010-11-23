@@ -654,7 +654,7 @@ namespace IKVM.Internal
 			Profiler.Enter("ClassLoader.loadClass");
 			try
 			{
-				java.lang.Class c = javaClassLoader.loadClassInternal(name);
+				java.lang.Class c = ((java.lang.ClassLoader)GetJavaClassLoader()).loadClassInternal(name);
 				if(c == null)
 				{
 					return null;
@@ -696,7 +696,7 @@ namespace IKVM.Internal
 			return RegisterInitiatingLoader(new ArrayTypeWrapper(elementTypeWrapper, name));
 		}
 
-		internal object GetJavaClassLoader()
+		internal virtual object GetJavaClassLoader()
 		{
 #if FIRST_PASS || STATIC_COMPILER || STUB_GENERATOR
 			return null;
@@ -1198,6 +1198,7 @@ namespace IKVM.Internal
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 		public override string ToString()
 		{
+			object javaClassLoader = GetJavaClassLoader();
 			if(javaClassLoader == null)
 			{
 				return "null";

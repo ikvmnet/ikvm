@@ -387,9 +387,6 @@ namespace IKVM.Internal
 		internal AssemblyClassLoader(Assembly assembly)
 			: this(assembly, null)
 		{
-#if !STATIC_COMPILER && !STUB_GENERATOR
-			initializerThread = Thread.CurrentThread;
-#endif
 		}
 
 		internal AssemblyClassLoader(Assembly assembly, string[] fixedReferences)
@@ -848,9 +845,10 @@ namespace IKVM.Internal
 		}
 #endif // !STATIC_COMPILER
 
-		private void WaitInitDone()
+		private void WaitInitializeJavaClassLoader()
 		{
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+			Interlocked.CompareExchange(ref initializerThread, Thread.CurrentThread, null);
 			if (initializerThread != null)
 			{
 				if (initializerThread == Thread.CurrentThread)
@@ -888,6 +886,17 @@ namespace IKVM.Internal
 			}
 #endif
 		}
+
+#if !STATIC_COMPILER || !FIRST_PASS || !STUB_GENERATOR
+		internal override object GetJavaClassLoader()
+		{
+			if (javaClassLoader == null)
+			{
+				WaitInitializeJavaClassLoader();
+			}
+			return javaClassLoader;
+		}
+#endif
 
 		internal virtual object GetProtectionDomain()
 		{
@@ -967,7 +976,6 @@ namespace IKVM.Internal
 					}
 				}
 			}
-			loader.WaitInitDone();
 			return loader;
 		}
 
@@ -1195,6 +1203,11 @@ namespace IKVM.Internal
 				return null;
 			}
 			return base.GetWrapperFromAssemblyType(type);
+		}
+
+		internal override object GetJavaClassLoader()
+		{
+			return null;
 		}
 
 		internal override object GetProtectionDomain()
