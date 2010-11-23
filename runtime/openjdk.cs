@@ -4580,11 +4580,17 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return null;
 #else
+				return GetStackAccessControlContextImpl(context, callerID, new StackTrace(1));
+#endif
+			}
+
+#if !FIRST_PASS
+			private static object GetStackAccessControlContextImpl(object context, object callerID, StackTrace stack)
+			{
 				object previous_protection_domain = null;
 				object privileged_context = null;
 				bool is_privileged = false;
 				object protection_domain = null;
-				StackTrace stack = new StackTrace(1);
 				List<ProtectionDomain> array = new List<ProtectionDomain>();
 
 				for (int i = 0; i < stack.FrameCount; i++)
@@ -4626,10 +4632,8 @@ namespace IKVM.NativeCode.java
 				}
 
 				return CreateAccessControlContext(array.ToArray(), is_privileged, privileged_context);
-#endif
 			}
 
-#if !FIRST_PASS
 			private static object CreateAccessControlContext(ProtectionDomain[] context, bool is_privileged, object privileged_context)
 			{
 				jsAccessControlContext acc = new jsAccessControlContext(context, is_privileged);
@@ -4661,7 +4665,12 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return null;
 #else
-				return jlThread.currentThread().inheritedAccessControlContext;
+				global::java.security.AccessController.LazyContext lc = jlThread.currentThread().lazyInheritedAccessControlContext;
+				if (lc == null)
+				{
+					return null;
+				}
+				return GetStackAccessControlContextImpl(lc.context, lc.callerID, lc.stackTrace);
 #endif
 			}
 		}

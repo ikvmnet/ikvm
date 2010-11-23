@@ -241,6 +241,23 @@ public final class AccessController {
     @cli.System.ThreadStaticAttribute.Annotation
     private static PrivilegedElement privileged_stack_top;
 
+    @ikvm.lang.Internal
+    public static final class LazyContext {
+        CallerID callerID;
+        AccessControlContext context;
+        final cli.System.Diagnostics.StackTrace stackTrace = new cli.System.Diagnostics.StackTrace(1);
+    }
+
+    @ikvm.lang.Internal
+    public static LazyContext getLazyContext() {
+        LazyContext lc = new LazyContext();
+        if (privileged_stack_top != null) {
+            lc.callerID = privileged_stack_top.callerID;
+            lc.context = privileged_stack_top.context;
+        }
+        return lc;
+    }
+
     private static final class PrivilegedElement {
         CallerID callerID;
         AccessControlContext context;

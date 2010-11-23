@@ -180,7 +180,7 @@ class Thread implements Runnable {
     private ClassLoader contextClassLoader;
 
     /* The inherited AccessControlContext of this thread */
-    AccessControlContext inheritedAccessControlContext;
+    AccessController.LazyContext lazyInheritedAccessControlContext;
 
     /* For autonumbering anonymous threads. */
     private static int threadInitNumber;
@@ -466,7 +466,7 @@ class Thread implements Runnable {
             this.contextClassLoader = parent.getContextClassLoader();
         else
             this.contextClassLoader = parent.contextClassLoader;
-        this.inheritedAccessControlContext = AccessController.getContext();
+        this.lazyInheritedAccessControlContext = AccessController.getLazyContext();
         this.target = target;
         setPriority(priority);
         if (parent.inheritableThreadLocals != null)
@@ -885,7 +885,7 @@ class Thread implements Runnable {
         /* Speed the release of some of these resources */
         threadLocals = null;
         inheritableThreadLocals = null;
-        inheritedAccessControlContext = null;
+        lazyInheritedAccessControlContext = null;
         blocker = null;
         uncaughtExceptionHandler = null;
     }
