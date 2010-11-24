@@ -4599,9 +4599,8 @@ namespace IKVM.NativeCode.java
 					{
 						return null;
 					}
-					return CreateAccessControlContext(null, is_privileged, context);
 				}
-				return CreateAccessControlContext(array.ToArray(), is_privileged, context);
+				return CreateAccessControlContext(array, is_privileged, (jsAccessControlContext)context);
 #endif
 			}
 
@@ -4640,10 +4639,10 @@ namespace IKVM.NativeCode.java
 				return false;
 			}
 
-			private static object CreateAccessControlContext(ProtectionDomain[] context, bool is_privileged, object privileged_context)
+			private static object CreateAccessControlContext(List<ProtectionDomain> context, bool is_privileged, jsAccessControlContext privileged_context)
 			{
-				jsAccessControlContext acc = new jsAccessControlContext(context, is_privileged);
-				acc._privilegedContext((jsAccessControlContext)privileged_context);
+				jsAccessControlContext acc = new jsAccessControlContext(context == null || context.Count == 0 ? null : context.ToArray(), is_privileged);
+				acc._privilegedContext(privileged_context);
 				return acc;
 			}
 
@@ -4681,11 +4680,11 @@ namespace IKVM.NativeCode.java
 				{
 					if (GetProtectionDomains(list, lc.callerID, lc.stackTrace))
 					{
-						return CreateAccessControlContext(list.ToArray(), true, lc.context);
+						return CreateAccessControlContext(list, true, lc.context);
 					}
 					lc = lc.parent;
 				}
-				return CreateAccessControlContext(list.ToArray(), false, null);
+				return CreateAccessControlContext(list, false, null);
 #endif
 			}
 		}
