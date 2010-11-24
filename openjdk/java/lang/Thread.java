@@ -791,6 +791,7 @@ class Thread implements Runnable {
 
     private void start0() {
         cli.System.Threading.ThreadStart threadStart = new cli.System.Threading.ThreadStart(new cli.System.Threading.ThreadStart.Method() {
+            @cli.IKVM.Attributes.HideFromJavaAttribute.Annotation
             public void Invoke() {
                 threadProc();
             }
@@ -2248,6 +2249,7 @@ class Thread implements Runnable {
     }
 
     // [IKVM] this the entry point of thread started from Java
+    @cli.IKVM.Attributes.HideFromJavaAttribute.Annotation
     void threadProc() {
         current = this;
         try {

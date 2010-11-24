@@ -120,7 +120,7 @@ namespace IKVM.Internal
 									skip1 = 1;
 								}
 							}
-							Append(list, tracePart1, skip1);
+							Append(list, tracePart1, skip1, false);
 						}
 						if (tracePart2 != null && tracePart2.FrameCount > 0)
 						{
@@ -172,7 +172,7 @@ namespace IKVM.Internal
 									}
 								}
 							}
-							Append(list, tracePart2, skip);
+							Append(list, tracePart2, skip, true);
 						}
 						if (cleanStackTrace && list.Count > 0)
 						{
@@ -190,7 +190,7 @@ namespace IKVM.Internal
 				return (StackTraceElement[])stackTrace.Clone();
 			}
 
-			internal static void Append(List<StackTraceElement> stackTrace, StackTrace st, int skip)
+			internal static void Append(List<StackTraceElement> stackTrace, StackTrace st, int skip, bool isLast)
 			{
 				for (int i = skip; i < st.FrameCount; i++)
 				{
@@ -235,6 +235,13 @@ namespace IKVM.Internal
 						fileName = GetFileName(frame);
 					}
 					stackTrace.Add(new StackTraceElement(getClassNameFromType(type), GetMethodName(m), fileName, IsNative(m) ? -2 : lineNumber));
+				}
+				if (cleanStackTrace && isLast)
+				{
+					while (stackTrace.Count > 0 && stackTrace[stackTrace.Count - 1].getClassName().StartsWith("cli.System.Threading.", StringComparison.Ordinal))
+					{
+						stackTrace.RemoveAt(stackTrace.Count - 1);
+					}
 				}
 			}
 		}
