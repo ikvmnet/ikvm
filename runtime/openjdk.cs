@@ -1367,7 +1367,10 @@ namespace IKVM.NativeCode.java
 				}
 				catch (System.UnauthorizedAccessException x)
 				{
-					throw new jiIOException(x.Message);
+					if (!System.IO.File.Exists(path) && !System.IO.Directory.Exists(path))
+					{
+						throw new jiIOException(x.Message);
+					}
 				}
 				catch (System.NotSupportedException x)
 				{
