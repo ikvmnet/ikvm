@@ -1217,10 +1217,18 @@ namespace IKVM.NativeCode.java
 					ok = false;
 					try
 					{
-						System.IO.FileInfo fileInfo = new System.IO.FileInfo(path);
-						// Like the JDK we'll only look at the read-only attribute and not
-						// the security permissions associated with the file or directory.
-						ok = (fileInfo.Attributes & System.IO.FileAttributes.ReadOnly) == 0;
+						// HACK if path refers to a directory, we always return true
+						if (System.IO.Directory.Exists(path))
+						{
+							ok = true;
+						}
+						else
+						{
+							System.IO.FileInfo fileInfo = new System.IO.FileInfo(path);
+							// Like the JDK we'll only look at the read-only attribute and not
+							// the security permissions associated with the file or directory.
+							ok = (fileInfo.Attributes & System.IO.FileAttributes.ReadOnly) == 0;
+						}
 					}
 					catch (System.Security.SecurityException)
 					{
