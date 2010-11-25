@@ -1214,12 +1214,13 @@ namespace IKVM.Internal
 		}
 
 #if !STATIC_COMPILER && !STUB_GENERATOR
-		internal static ClassLoaderWrapper FromCallerID(object callerID)
+		// this method is used by IKVM.Runtime.JNI
+		internal static ClassLoaderWrapper FromCallerID(ikvm.@internal.CallerID callerID)
 		{
 #if FIRST_PASS
 			return null;
 #else
-			return GetClassLoaderWrapper(((ikvm.@internal.CallerID)callerID).getCallerClassLoader());
+			return GetClassLoaderWrapper(callerID.getCallerClassLoader());
 #endif
 		}
 #endif
