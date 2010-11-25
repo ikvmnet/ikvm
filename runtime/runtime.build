@@ -42,7 +42,7 @@
                 <include name="JniInterface.cs" />
             </sources>
             <references>
-                <include if="${not first-pass}" name="../bin/IKVM.OpenJDK.Core.dll" asis="true" />
+                <include name="../bin/IKVM.OpenJDK.Core.dll" asis="true" />
                 <include name="../bin/IKVM.Runtime.dll" asis="true" />
                 <include name="${framework::get-assembly-directory(framework::get-target-framework())}/System.dll" />
             </references>
