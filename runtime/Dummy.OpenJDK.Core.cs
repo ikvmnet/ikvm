@@ -22,6 +22,14 @@
   
 */
 
+namespace ikvm
+{
+	namespace @internal
+	{
+		public class CallerID { }
+	}
+}
+
 namespace java
 {
 	namespace io
@@ -59,6 +67,7 @@ namespace java
 
 	namespace security
 	{
+		public class AccessControlContext { }
 		public class ProtectionDomain { }
 	}
 
