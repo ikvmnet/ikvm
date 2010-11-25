@@ -4589,13 +4589,13 @@ namespace IKVM.NativeCode.java
 	{
 		static class AccessController
 		{
-			public static object getStackAccessControlContext(object context, object callerID)
+			public static object getStackAccessControlContext(global::java.security.AccessControlContext context, global::ikvm.@internal.CallerID callerID)
 			{
 #if FIRST_PASS
 				return null;
 #else
 				List<ProtectionDomain> array = new List<ProtectionDomain>();
-				bool is_privileged = GetProtectionDomains(array, (global::ikvm.@internal.CallerID)callerID, new StackTrace(1));
+				bool is_privileged = GetProtectionDomains(array, callerID, new StackTrace(1));
 				if (array.Count == 0)
 				{
 					if (is_privileged && context == null)
@@ -4603,7 +4603,7 @@ namespace IKVM.NativeCode.java
 						return null;
 					}
 				}
-				return CreateAccessControlContext(array, is_privileged, (jsAccessControlContext)context);
+				return CreateAccessControlContext(array, is_privileged, context);
 #endif
 			}
 
@@ -4620,7 +4620,7 @@ namespace IKVM.NativeCode.java
 						&& method.Name == "doPrivileged")
 					{
 						is_privileged = true;
-						global::java.lang.Class caller = ((global::ikvm.@internal.CallerID)callerID).getCallerClass();
+						global::java.lang.Class caller = callerID.getCallerClass();
 						protection_domain = caller == null ? null : java.lang.Class.getProtectionDomain0(caller);
 					}
 					else
