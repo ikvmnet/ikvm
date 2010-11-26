@@ -446,6 +446,10 @@ namespace IKVM.Reflection.Emit
 					{
 						return method.ModuleBuilder.Constant.GetRawConstantValue(method.ModuleBuilder, pb.PseudoToken);
 					}
+					if (pb != null && (pb.Attributes & (int)ParameterAttributes.Optional) != 0)
+					{
+						return Missing.Value;
+					}
 					return null;
 				}
 			}

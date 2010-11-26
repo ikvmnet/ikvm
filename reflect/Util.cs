@@ -23,6 +23,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace IKVM.Reflection
 {
@@ -51,6 +52,28 @@ namespace IKVM.Reflection
 		public int ErrorCode
 		{
 			get { return this.HResult; }
+		}
+	}
+
+	[Serializable]
+	public sealed class Missing : ISerializable
+	{
+		public static readonly Missing Value = new Missing();
+
+		private Missing() { }
+
+		void ISerializable.GetObjectData(SerializationInfo info, StreamingContext context)
+		{
+			info.SetType(typeof(SingletonSerializationHelper));
+		}
+
+		[Serializable]
+		private sealed class SingletonSerializationHelper : IObjectReference
+		{
+			public object GetRealObject(StreamingContext context)
+			{
+				return Value;
+			}
 		}
 	}
 

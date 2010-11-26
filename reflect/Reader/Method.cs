@@ -392,7 +392,18 @@ namespace IKVM.Reflection.Reader
 
 		public override object RawDefaultValue
 		{
-			get { return this.Module.Constant.GetRawConstantValue(this.Module, this.MetadataToken); }
+			get
+			{
+				if ((this.Attributes & ParameterAttributes.HasDefault) != 0)
+				{
+					return this.Module.Constant.GetRawConstantValue(this.Module, this.MetadataToken);
+				}
+				if ((this.Attributes & ParameterAttributes.Optional) != 0)
+				{
+					return Missing.Value;
+				}
+				return null;
+			}
 		}
 
 		public override Type[] GetRequiredCustomModifiers()
