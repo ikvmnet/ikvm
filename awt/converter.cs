@@ -1,7 +1,7 @@
 /*
   Copyright (C) 2002, 2004, 2005, 2006, 2007 Jeroen Frijters
   Copyright (C) 2006 Active Endpoints, Inc.
-  Copyright (C) 2006, 2007, 2008, 2009 Volker Berlin (i-net software)
+  Copyright (C) 2006 - 2010 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -186,50 +186,9 @@ namespace ikvm.awt
                 case java.awt.BasicStroke.JOIN_BEVEL:
                     return LineJoin.Bevel;
                 default:
-                    throw new ArgumentException("Invalid LineJoin argument.");
+                    Console.WriteLine("Unknown line join type:" + join);
+                    return LineJoin.Miter;
             }
-        }
-
-        internal static LineCap ConvertLineCap(int cap)
-        {
-            switch (cap)
-            {
-                case java.awt.BasicStroke.CAP_BUTT:
-                    return LineCap.Flat;
-                case java.awt.BasicStroke.CAP_ROUND:
-                    return LineCap.Round;
-                case java.awt.BasicStroke.CAP_SQUARE:
-                    return LineCap.Square;
-                default:
-                    throw new ArgumentException("Invalid LineCap argument.");
-            }
-        }
-
-        internal static float[] ConvertDashArray(float[] dashArray, float lineWidth)
-        {
-            if (dashArray == null || dashArray.Length == 0)
-            {
-                return null;
-            }
-			if (dashArray.Length % 2 == 1)
-			{
-				int len = dashArray.Length;
-				Array.Resize(ref dashArray, len * 2);
-				Array.Copy(dashArray, 0, dashArray, len, len);
-			}
-            float[] dash = (float[])dashArray.Clone();
-            for (int i = 0; i < dash.Length; i++)
-            {
-                //dividing by line thickness because of the representation difference
-                dash[i] = dash[i] / lineWidth;
-            }
-            // To fix the problem where solid style in Java can be represented at { 1.0, 0.0 }.
-            // In .NET, however, array can only have positive value
-            if (dash.Length==2 && dash[dash.Length-1]==0)
-            {
-                Array.Resize(ref dash, 1);
-            }
-            return dash;
         }
 
         internal static Matrix ConvertTransform(java.awt.geom.AffineTransform tx)
@@ -423,7 +382,7 @@ namespace ikvm.awt
                         shape.lineTo(point.X, point.Y);
                         break;
                     case 3:
-                        // Indicates that the point is an endpoint or control point of a cubic Bézier spline. 
+                        // Indicates that the point is an endpoint or control point of a cubic Bï¿½zier spline. 
                         PointF point2 = path.PathPoints[++i];
                         PointF point3 = path.PathPoints[++i];
                         shape.curveTo(point.X, point.Y, point2.X, point2.Y, point3.X, point3.Y);

@@ -192,13 +192,15 @@ namespace ikvm.awt
                 graphics.TextRenderingHint = g.TextRenderingHint;
                 graphics.InterpolationMode = g.InterpolationMode;
                 graphics.CompositingMode = g.CompositingMode;
+                pen = (Pen)pen.Clone();
+                brush = (Brush)brush.Clone();
             } else {
                 // default values that Java used
                 graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
+                pen = new Pen(color);
+                brush = new SolidBrush(color);
             }
             g = graphics;
-            brush = new SolidBrush(color);
-            pen = new Pen(color);
         }
 
         /// <summary>
@@ -865,51 +867,108 @@ namespace ikvm.awt
 				return;
 			}
 			this.stroke = stroke;
-			if (stroke is java.awt.BasicStroke)
-			{
-				java.awt.BasicStroke s = (java.awt.BasicStroke)stroke;
+            if (stroke is java.awt.BasicStroke)
+            {
+                java.awt.BasicStroke s = (java.awt.BasicStroke)stroke;
 
-				pen = new Pen(pen.Brush, s.getLineWidth());
+                pen = new Pen(pen.Brush, s.getLineWidth());
 
-				setLineJoin(s);
-
-				setLineCap(s);
-
-				setLineDash(s);
-			}
+                SetLineJoin(s);
+                SetLineDash(s);
+            }
+            else
+            {
+                Console.WriteLine("Unknown Stroke type: " + stroke.GetType().FullName);
+            }
 		}
 
-        private void setLineJoin(java.awt.BasicStroke s)
+        private void SetLineJoin(java.awt.BasicStroke s)
         {
             pen.MiterLimit = s.getMiterLimit();
-			try
-			{
-				pen.LineJoin = J2C.ConvertLineJoin(s.getLineJoin());
-			}
-			catch (ArgumentException aex)
-			{
-				Console.WriteLine(aex.StackTrace);
-			}
+			pen.LineJoin = J2C.ConvertLineJoin(s.getLineJoin());
         }
 
-        private void setLineCap(java.awt.BasicStroke s)
+        private void SetLineDash(java.awt.BasicStroke s)
         {
-            try
+            float[] dash = s.getDashArray();
+            if (dash == null)
             {
-                LineCap plc = J2C.ConvertLineCap(s.getEndCap());
-                pen.SetLineCap(plc, plc, pen.DashCap);
-            }
-            catch (ArgumentException aex)
-            {
-                Console.WriteLine(aex.StackTrace);
-            }
-        }
+                pen.DashStyle = DashStyle.Solid;
+            } else {
+                if (dash.Length % 2 == 1)
+                {
+                    int len = dash.Length;
+                    Array.Resize(ref dash, len * 2);
+                    Array.Copy(dash, 0, dash, len, len);
+                }
+                float lineWidth = s.getLineWidth();
+                if (lineWidth > 1) // for values < 0 there is no correctur needed
+                {
+                    for (int i = 0; i < dash.Length; i++)
+                    {
+                        //dividing by line thickness because of the representation difference
+                        dash[i] = dash[i] / lineWidth;
+                    }
+                }
+                // To fix the problem where solid style in Java can be represented at { 1.0, 0.0 }.
+                // In .NET, however, array can only have positive value
+                if (dash.Length == 2 && dash[dash.Length - 1] == 0)
+                {
+                    Array.Resize(ref dash, 1);
+                }
 
-        private void setLineDash(java.awt.BasicStroke s)
-        {
-            float[] dash = J2C.ConvertDashArray(s.getDashArray(), s.getLineWidth());
-            if (dash != null)
-            {
+                float dashPhase = s.getDashPhase();
+                // correct the dash cap
+                switch (s.getEndCap())
+                {
+                    case java.awt.BasicStroke.CAP_BUTT:
+                        pen.DashCap = DashCap.Flat;
+                        break;
+                    case java.awt.BasicStroke.CAP_ROUND:
+                        pen.DashCap = DashCap.Round;
+                        break;
+                    case java.awt.BasicStroke.CAP_SQUARE:
+                        pen.DashCap = DashCap.Flat;
+                        // there is no equals DashCap in .NET, we need to emulate it
+                        dashPhase += lineWidth / 2;
+                        for (int i = 0; i < dash.Length; i++)
+                        {
+                            if (i % 2 == 0)
+                            {
+                                dash[i] += 1;
+                            }
+                            else
+                            {
+                                dash[i] = Math.Max(0.00001F, dash[i] - 1);
+                            }
+                        }
+                        break;
+                    default:
+                        Console.WriteLine("Unknown dash cap type:" + s.getEndCap());
+                        break;
+                }
+
+                // calc the dash offset
+                if (lineWidth > 0)
+                {
+                    //dividing by line thickness because of the representation difference
+                    pen.DashOffset = dashPhase / lineWidth;
+                }
+                else
+                {
+                    // thickness == 0
+                    if (dashPhase > 0)
+                    {
+                        pen.Width = lineWidth = 0.001F; // hack to prevent a division with 0
+                        pen.DashOffset = dashPhase / lineWidth;
+                    }
+                    else
+                    {
+                        pen.DashOffset = 0;
+                    }
+                }
+
+                // set the final dash pattern 
                 pen.DashPattern = dash;
             }
         }
