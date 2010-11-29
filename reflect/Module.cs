@@ -380,6 +380,11 @@ namespace IKVM.Reflection
 			return CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit);
 		}
 
+		public virtual IList<CustomAttributeData> __GetPlaceholderAssemblyCustomAttributes(bool multiple, bool security)
+		{
+			return Empty<CustomAttributeData>.Array;
+		}
+
 		internal Type CanonicalizeType(Type type)
 		{
 			Type canon;

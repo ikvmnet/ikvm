@@ -985,6 +985,41 @@ namespace IKVM.Reflection.Reader
 			get { return peFile.OptionalHeader.Subsystem; }
 		}
 
+		public override IList<CustomAttributeData> __GetPlaceholderAssemblyCustomAttributes(bool multiple, bool security)
+		{
+			string typeName;
+			switch ((multiple ? 1 : 0) + (security ? 2 : 0))
+			{
+				case 0:
+					typeName = "System.Runtime.CompilerServices.AssemblyAttributesGoHere";
+					break;
+				case 1:
+					typeName = "System.Runtime.CompilerServices.AssemblyAttributesGoHereM";
+					break;
+				case 2:
+					typeName = "System.Runtime.CompilerServices.AssemblyAttributesGoHereS";
+					break;
+				case 3:
+				default:
+					typeName = "System.Runtime.CompilerServices.AssemblyAttributesGoHereSM";
+					break;
+			}
+			List<CustomAttributeData> list = new List<CustomAttributeData>();
+			for (int i = 0; i < CustomAttribute.records.Length; i++)
+			{
+				if ((CustomAttribute.records[i].Parent >> 24) == TypeRefTable.Index)
+				{
+					int index = (CustomAttribute.records[i].Parent & 0xFFFFFF) - 1;
+					if (typeName == GetTypeName(TypeRef.records[index].TypeNameSpace, TypeRef.records[index].TypeName))
+					{
+						ConstructorInfo constructor = (ConstructorInfo)ResolveMethod(CustomAttribute.records[i].Type);
+						list.Add(new CustomAttributeData(this.Assembly, constructor, GetBlob(CustomAttribute.records[i].Value)));
+					}
+				}
+			}
+			return list;
+		}
+
 		internal override void Dispose()
 		{
 			stream.Close();
