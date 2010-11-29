@@ -1495,6 +1495,25 @@ namespace IKVM.Reflection
 			return null;
 		}
 
+		internal bool IsAllowMultipleCustomAttribute
+		{
+			get
+			{
+				IList<CustomAttributeData> cad = GetCustomAttributesData(this.Module.universe.System_AttributeUsageAttribute);
+				if (cad.Count == 1)
+				{
+					foreach (CustomAttributeNamedArgument arg in cad[0].NamedArguments)
+					{
+						if (arg.MemberInfo.Name == "AllowMultiple")
+						{
+							return (bool)arg.TypedValue.Value;
+						}
+					}
+				}
+				return false;
+			}
+		}
+
 		internal bool IsPseudoCustomAttribute
 		{
 			get

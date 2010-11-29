@@ -110,6 +110,7 @@ namespace IKVM.Reflection
 		private Type typeof_System_Decimal;
 		private Type typeof_System_NonSerializedAttribute;
 		private Type typeof_System_SerializableAttribute;
+		private Type typeof_System_AttributeUsageAttribute;
 		private Type typeof_System_Reflection_AssemblyCultureAttribute;
 		private Type typeof_System_Runtime_InteropServices_DllImportAttribute;
 		private Type typeof_System_Runtime_InteropServices_FieldOffsetAttribute;
@@ -133,6 +134,7 @@ namespace IKVM.Reflection
 		private Type typeof_System_Reflection_AssemblyTitleAttribute;
 		private Type typeof_System_Reflection_AssemblyInformationalVersionAttribute;
 		private Type typeof_System_Reflection_AssemblyFileVersionAttribute;
+		private Type typeof_System_Security_Permissions_CodeAccessSecurityAttribute;
 		private Type typeof_System_Security_Permissions_HostProtectionAttribute;
 		private Type typeof_System_Security_Permissions_PermissionSetAttribute;
 		private Type typeof_System_Security_Permissions_SecurityAction;
@@ -283,6 +285,11 @@ namespace IKVM.Reflection
 			get { return typeof_System_SerializableAttribute ?? (typeof_System_SerializableAttribute = ImportMscorlibType(typeof(System.SerializableAttribute))); }
 		}
 
+		internal Type System_AttributeUsageAttribute
+		{
+			get { return typeof_System_AttributeUsageAttribute ?? (typeof_System_AttributeUsageAttribute = ImportMscorlibType(typeof(System.AttributeUsageAttribute))); }
+		}
+
 		internal Type System_Reflection_AssemblyCultureAttribute
 		{
 			get { return typeof_System_Reflection_AssemblyCultureAttribute ?? (typeof_System_Reflection_AssemblyCultureAttribute = ImportMscorlibType(typeof(System.Reflection.AssemblyCultureAttribute))); }
@@ -396,6 +403,11 @@ namespace IKVM.Reflection
 		internal Type System_Reflection_AssemblyFileVersionAttribute
 		{
 			get { return typeof_System_Reflection_AssemblyFileVersionAttribute ?? (typeof_System_Reflection_AssemblyFileVersionAttribute = ImportMscorlibType(typeof(System.Reflection.AssemblyFileVersionAttribute))); }
+		}
+
+		internal Type System_Security_Permissions_CodeAccessSecurityAttribute
+		{
+			get { return typeof_System_Security_Permissions_CodeAccessSecurityAttribute ?? (typeof_System_Security_Permissions_CodeAccessSecurityAttribute = ImportMscorlibType(typeof(System.Security.Permissions.CodeAccessSecurityAttribute))); }
 		}
 
 		internal Type System_Security_Permissions_HostProtectionAttribute

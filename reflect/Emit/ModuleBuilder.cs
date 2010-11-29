@@ -1160,8 +1160,53 @@ namespace IKVM.Reflection.Emit
 			get { return asm.mdStreamVersion; }
 		}
 
+		private int AddTypeRefByName(int resolutionScope, string ns, string name)
+		{
+			TypeRefTable.Record rec = new TypeRefTable.Record();
+			rec.ResolutionScope = resolutionScope;
+			rec.TypeName = this.Strings.Add(name);
+			rec.TypeNameSpace = ns == null ? 0 : this.Strings.Add(ns);
+			return 0x01000000 | this.TypeRef.AddRecord(rec);
+		}
+
 		public void __Save(PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
 		{
+			IList<CustomAttributeData> attributes = asm.GetCustomAttributesData(null);
+			if (attributes.Count > 0)
+			{
+				int mscorlib = ImportAssemblyRef(universe.Mscorlib);
+				int[] placeholderTokens = new int[4];
+				string[] placeholderTypeNames = new string[] { "AssemblyAttributesGoHere", "AssemblyAttributesGoHereM", "AssemblyAttributesGoHereS", "AssemblyAttributesGoHereSM" };
+				foreach (CustomAttributeData cad in attributes)
+				{
+					int index;
+					if (cad.Constructor.DeclaringType.BaseType == universe.System_Security_Permissions_CodeAccessSecurityAttribute)
+					{
+						if (cad.Constructor.DeclaringType.IsAllowMultipleCustomAttribute)
+						{
+							index = 3;
+						}
+						else
+						{
+							index = 2;
+						}
+					}
+					else if (cad.Constructor.DeclaringType.IsAllowMultipleCustomAttribute)
+					{
+						index = 1;
+					}
+					else
+					{
+						index = 0;
+					}
+					if (placeholderTokens[index] == 0)
+					{
+						// we manually add a TypeRef without looking it up in mscorlib, because Mono and Silverlight's mscorlib don't have these types
+						placeholderTokens[index] = AddTypeRefByName(mscorlib, "System.Runtime.CompilerServices", placeholderTypeNames[index]);
+					}
+					SetCustomAttribute(placeholderTokens[index], cad.__ToBuilder());
+				}
+			}
 			FillAssemblyRefTable();
 			ModuleWriter.WriteModule(null, null, this, PEFileKinds.Dll, portableExecutableKind, imageFileMachine, unmanagedResources, 0);
 		}
