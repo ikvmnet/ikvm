@@ -448,6 +448,12 @@ namespace IKVM.Reflection.Emit
 			versionInfo.trademark = trademark;
 		}
 
+		public void __DefineIconResource(byte[] iconFile)
+		{
+			unmanagedResources = new ResourceSection();
+			unmanagedResources.AddIcon(iconFile);
+		}
+
 		public void __DefineUnmanagedResource(byte[] resource)
 		{
 			// The standard .NET DefineUnmanagedResource(byte[]) is useless, because it embeds "resource" (as-is) as the .rsrc section,
