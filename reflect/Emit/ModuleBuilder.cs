@@ -859,19 +859,24 @@ namespace IKVM.Reflection.Emit
 			return buf;
 		}
 
-		internal void ExportTypes(int fileToken, ModuleBuilder manifestModule)
+		internal override void ExportTypes(int fileToken, ModuleBuilder manifestModule)
+		{
+			manifestModule.ExportTypes(types.ToArray(), fileToken);
+		}
+
+		internal void ExportTypes(Type[] types, int fileToken)
 		{
 			Dictionary<Type, int> declaringTypes = new Dictionary<Type, int>();
-			foreach (TypeBuilder type in types)
+			foreach (Type type in types)
 			{
-				if (type != moduleType && IsVisible(type))
+				if (!type.IsModulePseudoType && IsVisible(type))
 				{
 					ExportedTypeTable.Record rec = new ExportedTypeTable.Record();
 					rec.Flags = (int)type.Attributes;
 					rec.TypeDefId = type.MetadataToken & 0xFFFFFF;
-					rec.TypeName = manifestModule.Strings.Add(TypeNameParser.Unescape(type.Name));
+					rec.TypeName = this.Strings.Add(TypeNameParser.Unescape(type.Name));
 					string ns = type.Namespace;
-					rec.TypeNamespace = ns == null ? 0 : manifestModule.Strings.Add(TypeNameParser.Unescape(ns));
+					rec.TypeNamespace = ns == null ? 0 : this.Strings.Add(TypeNameParser.Unescape(ns));
 					if (type.IsNested)
 					{
 						rec.Implementation = declaringTypes[type.DeclaringType];
@@ -880,7 +885,7 @@ namespace IKVM.Reflection.Emit
 					{
 						rec.Implementation = fileToken;
 					}
-					int exportTypeToken = 0x27000000 | manifestModule.ExportedType.AddRecord(rec);
+					int exportTypeToken = 0x27000000 | this.ExportedType.AddRecord(rec);
 					declaringTypes.Add(type, exportTypeToken);
 				}
 			}

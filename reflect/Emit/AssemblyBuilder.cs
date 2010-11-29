@@ -60,6 +60,7 @@ namespace IKVM.Reflection.Emit
 		private Module pseudoManifestModule;
 		private readonly List<ResourceFile> resourceFiles = new List<ResourceFile>();
 		private readonly List<ModuleBuilder> modules = new List<ModuleBuilder>();
+		private readonly List<Module> addedModules = new List<Module>();
 		private readonly List<CustomAttributeBuilder> customAttributes = new List<CustomAttributeBuilder>();
 		private readonly List<CustomAttributeBuilder> declarativeSecurity = new List<CustomAttributeBuilder>();
 		private readonly List<Type> typeForwarders = new List<Type>();
@@ -387,6 +388,12 @@ namespace IKVM.Reflection.Emit
 				}
 			}
 
+			foreach (Module module in addedModules)
+			{
+				int fileToken = AddFile(manifestModule, module.FullyQualifiedName, 0 /*ContainsMetaData*/);
+				module.ExportTypes(fileToken, manifestModule);
+			}
+
 			if (entryPointToken == 0 && entryPoint != null)
 			{
 				entryPointToken = entryPoint.MetadataToken;
@@ -414,7 +421,7 @@ namespace IKVM.Reflection.Emit
 			}
 			FileTable.Record file = new FileTable.Record();
 			file.Flags = flags;
-			file.Name = manifestModule.Strings.Add(fileName);
+			file.Name = manifestModule.Strings.Add(Path.GetFileName(fileName));
 			file.HashValue = manifestModule.Blobs.Add(ByteBuffer.Wrap(hash.Hash));
 			return 0x26000000 + manifestModule.File.AddRecord(file);
 		}
@@ -477,6 +484,10 @@ namespace IKVM.Reflection.Emit
 			{
 				module.GetTypesImpl(list);
 			}
+			foreach (Module module in addedModules)
+			{
+				module.GetTypesImpl(list);
+			}
 			return list.ToArray();
 		}
 
@@ -485,6 +496,14 @@ namespace IKVM.Reflection.Emit
 			foreach (ModuleBuilder mb in modules)
 			{
 				Type type = mb.GetTypeImpl(typeName);
+				if (type != null)
+				{
+					return type;
+				}
+			}
+			foreach (Module module in modules)
+			{
+				Type type = module.GetTypeImpl(typeName);
 				if (type != null)
 				{
 					return type;
@@ -541,6 +560,13 @@ namespace IKVM.Reflection.Emit
 					list.Add(module);
 				}
 			}
+			foreach (Module module in addedModules)
+			{
+				if (getResourceModules || !module.IsResource())
+				{
+					list.Add(module);
+				}
+			}
 			return list.ToArray();
 		}
 
@@ -553,7 +579,21 @@ namespace IKVM.Reflection.Emit
 					return module;
 				}
 			}
+			foreach (Module module in addedModules)
+			{
+				if (module.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase))
+				{
+					return module;
+				}
+			}
 			return null;
+		}
+
+		public Module __AddModule(RawModule module)
+		{
+			Module mod = module.ToModule(this);
+			addedModules.Add(mod);
+			return mod;
 		}
 
 		public override ManifestResourceInfo GetManifestResourceInfo(string resourceName)

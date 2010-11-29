@@ -56,7 +56,7 @@ namespace IKVM.Reflection.Reader
 	{
 		internal readonly Stream stream;
 		private readonly string location;
-		private readonly AssemblyReader assembly;
+		private Assembly assembly;
 		private readonly PEReader peFile = new PEReader();
 		private readonly CliHeader cliHeader = new CliHeader();
 		private string imageRuntimeVersion;
@@ -142,6 +142,11 @@ namespace IKVM.Reflection.Reader
 						throw new BadImageFormatException("Unsupported stream: " + sh.Name);
 				}
 			}
+		}
+
+		internal void SetAssembly(Assembly assembly)
+		{
+			this.assembly = assembly;
 		}
 
 		private static StreamHeader[] ReadStreamHeaders(BinaryReader br, out string Version)
@@ -983,6 +988,12 @@ namespace IKVM.Reflection.Reader
 		internal override void Dispose()
 		{
 			stream.Close();
+		}
+
+		internal override void ExportTypes(int fileToken, IKVM.Reflection.Emit.ModuleBuilder manifestModule)
+		{
+			PopulateTypeDef();
+			manifestModule.ExportTypes(typeDefs, fileToken);
 		}
 	}
 }

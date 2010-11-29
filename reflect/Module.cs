@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Jeroen Frijters
+  Copyright (C) 2009-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -31,11 +31,13 @@ namespace IKVM.Reflection
 	public sealed class RawModule : IDisposable
 	{
 		private readonly ModuleReader module;
+		private readonly bool isManifestModule;
 		private bool imported;
 
 		internal RawModule(ModuleReader module)
 		{
 			this.module = module;
+			this.isManifestModule = module.Assembly != null;
 		}
 
 		public string Location
@@ -45,7 +47,7 @@ namespace IKVM.Reflection
 
 		public bool IsManifestModule
 		{
-			get { return module.Assembly != null; }
+			get { return isManifestModule; }
 		}
 
 		private void CheckManifestModule()
@@ -84,6 +86,17 @@ namespace IKVM.Reflection
 			}
 			imported = true;
 			return module.Assembly;
+		}
+
+		internal Module ToModule(Assembly assembly)
+		{
+			if (module.Assembly != null)
+			{
+				throw new InvalidOperationException();
+			}
+			imported = true;
+			module.SetAssembly(assembly);
+			return module;
 		}
 	}
 
@@ -423,6 +436,10 @@ namespace IKVM.Reflection
 		}
 
 		internal virtual void Dispose()
+		{
+		}
+
+		internal virtual void ExportTypes(int fileToken, IKVM.Reflection.Emit.ModuleBuilder manifestModule)
 		{
 		}
 	}
