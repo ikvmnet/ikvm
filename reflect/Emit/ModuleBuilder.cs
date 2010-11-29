@@ -1154,6 +1154,12 @@ namespace IKVM.Reflection.Emit
 		{
 			get { return asm.mdStreamVersion; }
 		}
+
+		public void __Save(PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
+		{
+			FillAssemblyRefTable();
+			ModuleWriter.WriteModule(null, null, this, PEFileKinds.Dll, portableExecutableKind, imageFileMachine, unmanagedResources, 0);
+		}
 	}
 
 	class ArrayMethod : MethodInfo

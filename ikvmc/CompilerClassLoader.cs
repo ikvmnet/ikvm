@@ -558,10 +558,8 @@ namespace IKVM.Internal
 
 			if(targetIsModule)
 			{
-				Tracer.Info(Tracer.Compiler, "CompilerClassLoader saving temp.$$$ in {0}", assemblyDir);
-				string manifestAssembly = "temp.$$$";
-				assemblyBuilder.Save(manifestAssembly, options.pekind, options.imageFileMachine);
-				File.Delete(assemblyDir + manifestAssembly);
+				Tracer.Info(Tracer.Compiler, "CompilerClassLoader saving {0} in {1}", assemblyFile, assemblyDir);
+				GetTypeWrapperFactory().ModuleBuilder.__Save(options.pekind, options.imageFileMachine);
 			}
 			else
 			{
