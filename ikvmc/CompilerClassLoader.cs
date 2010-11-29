@@ -3098,6 +3098,17 @@ namespace IKVM.Internal
 					ilgen.Emit(OpCodes.Ret);
 				}
 			}
+			if (options.iconfile != null)
+			{
+				try
+				{
+					assemblyBuilder.__DefineIconResource(File.ReadAllBytes(options.iconfile));
+				}
+				catch (Exception x)
+				{
+					Console.Error.WriteLine("Error: unable to read icon file.\r\n\t'{0}' -- {1}", options.iconfile, x.Message);
+				}
+			}
 			assemblyBuilder.DefineVersionInfoResource();
 			return 0;
 		}
@@ -3237,6 +3248,7 @@ namespace IKVM.Internal
 		internal StrongNameKeyPair keyPair;
 		internal Version version;
 		internal string fileversion;
+		internal string iconfile;
 		internal bool targetIsModule;
 		internal string assembly;
 		internal string mainClass;

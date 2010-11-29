@@ -295,6 +295,7 @@ class IkvmcCompiler
 		Console.Error.WriteLine("    -delaysign                 Delay-sign the assembly");
 		Console.Error.WriteLine("    -version:<M.m.b.r>         Assembly version");
 		Console.Error.WriteLine("    -fileversion:<version>     File version");
+		Console.Error.WriteLine("    -win32icon:<file>          Embed specified icon in output");
 		Console.Error.WriteLine("    -main:<class>              Specify the class containing the main method");
 		Console.Error.WriteLine("    -reference:<filespec>      Reference an assembly (short form -r:<filespec>)");
 		Console.Error.WriteLine("    -recurse:<filespec>        Recurse directory and include matching files");
@@ -630,6 +631,10 @@ class IkvmcCompiler
 				else if(s.StartsWith("-fileversion:"))
 				{
 					options.fileversion = s.Substring(13);
+				}
+				else if(s.StartsWith("-win32icon:"))
+				{
+					options.iconfile = s.Substring(11);
 				}
 				else if(s.StartsWith("-keyfile:"))
 				{
