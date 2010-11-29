@@ -66,8 +66,7 @@ namespace IKVM.Reflection
 
 		public AssemblyName[] GetReferencedAssemblies()
 		{
-			CheckManifestModule();
-			return module.Assembly.GetReferencedAssemblies();
+			return module.GetReferencedAssemblies();
 		}
 
 		public void Dispose()
