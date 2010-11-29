@@ -54,7 +54,7 @@ namespace IKVM.Reflection.Emit
 		private PEFileKinds fileKind = PEFileKinds.Dll;
 		private MethodInfo entryPoint;
 		private VersionInfo versionInfo;
-		private byte[] unmanagedResources;
+		private ResourceSection unmanagedResources;
 		private string imageRuntimeVersion;
 		internal int mdStreamVersion = 0x20000;
 		private Module pseudoManifestModule;
@@ -320,7 +320,6 @@ namespace IKVM.Reflection.Emit
 				manifestModule.AddDeclarativeSecurity(token, requestRefuse, refusedPermissions);
 			}
 
-			ByteBuffer versionInfoData = null;
 			if (versionInfo != null)
 			{
 				versionInfo.SetName(GetName());
@@ -333,8 +332,13 @@ namespace IKVM.Reflection.Emit
 						versionInfo.SetAttribute(cab);
 					}
 				}
-				versionInfoData = new ByteBuffer(512);
+				ByteBuffer versionInfoData = new ByteBuffer(512);
 				versionInfo.Write(versionInfoData);
+				if (unmanagedResources == null)
+				{
+					unmanagedResources = new ResourceSection();
+				}
+				unmanagedResources.AddVersionInfo(versionInfoData);
 			}
 
 			foreach (CustomAttributeBuilder cab in customAttributes)
@@ -371,12 +375,12 @@ namespace IKVM.Reflection.Emit
 					int fileToken;
 					if (entryPoint != null && entryPoint.Module == moduleBuilder)
 					{
-						ModuleWriter.WriteModule(null, null, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, null, moduleBuilder.unmanagedResources, entryPoint.MetadataToken);
+						ModuleWriter.WriteModule(null, null, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, moduleBuilder.unmanagedResources, entryPoint.MetadataToken);
 						entryPointToken = fileToken = AddFile(manifestModule, moduleBuilder.fileName, 0 /*ContainsMetaData*/);
 					}
 					else
 					{
-						ModuleWriter.WriteModule(null, null, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, null, moduleBuilder.unmanagedResources, 0);
+						ModuleWriter.WriteModule(null, null, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, moduleBuilder.unmanagedResources, 0);
 						fileToken = AddFile(manifestModule, moduleBuilder.fileName, 0 /*ContainsMetaData*/);
 					}
 					moduleBuilder.ExportTypes(fileToken, manifestModule);
@@ -389,7 +393,7 @@ namespace IKVM.Reflection.Emit
 			}
 
 			// finally, write the manifest module
-			ModuleWriter.WriteModule(keyPair, publicKey, manifestModule, fileKind, portableExecutableKind, imageFileMachine, versionInfoData, unmanagedResources ?? manifestModule.unmanagedResources, entryPointToken);
+			ModuleWriter.WriteModule(keyPair, publicKey, manifestModule, fileKind, portableExecutableKind, imageFileMachine, unmanagedResources ?? manifestModule.unmanagedResources, entryPointToken);
 		}
 
 		private int AddFile(ModuleBuilder manifestModule, string fileName, int flags)
@@ -449,14 +453,15 @@ namespace IKVM.Reflection.Emit
 			// The standard .NET DefineUnmanagedResource(byte[]) is useless, because it embeds "resource" (as-is) as the .rsrc section,
 			// but it doesn't set the PE file Resource Directory entry to point to it. That's why we have a renamed version, which behaves
 			// like DefineUnmanagedResource(string).
-			this.unmanagedResources = (byte[])resource.Clone();
+			unmanagedResources = new ResourceSection();
+			unmanagedResources.ExtractResources(resource);
 		}
 
 		public void DefineUnmanagedResource(string resourceFileName)
 		{
 			// This method reads the specified resource file (Win32 .res file) and converts it into the appropriate format and embeds it in the .rsrc section,
 			// also setting the Resource Directory entry.
-			this.unmanagedResources = File.ReadAllBytes(resourceFileName);
+			__DefineUnmanagedResource(File.ReadAllBytes(resourceFileName));
 		}
 
 		public override Type[] GetTypes()

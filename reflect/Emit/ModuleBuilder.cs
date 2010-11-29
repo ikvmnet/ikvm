@@ -53,7 +53,7 @@ namespace IKVM.Reflection.Emit
 		internal readonly List<int> tokenFixupOffsets = new List<int>();
 		internal readonly ByteBuffer initializedData = new ByteBuffer(512);
 		internal readonly ByteBuffer manifestResources = new ByteBuffer(512);
-		internal byte[] unmanagedResources;
+		internal ResourceSection unmanagedResources;
 		private readonly Dictionary<MemberInfo, int> importedMembers = new Dictionary<MemberInfo, int>();
 		private readonly Dictionary<MemberRefKey, int> importedMemberRefs = new Dictionary<MemberRefKey, int>();
 		private readonly Dictionary<Assembly, int> referencedAssemblies = new Dictionary<Assembly, int>();
@@ -1079,7 +1079,8 @@ namespace IKVM.Reflection.Emit
 		{
 			// This method reads the specified resource file (Win32 .res file) and converts it into the appropriate format and embeds it in the .rsrc section,
 			// also setting the Resource Directory entry.
-			this.unmanagedResources = System.IO.File.ReadAllBytes(resourceFileName);
+			unmanagedResources = new ResourceSection();
+			unmanagedResources.ExtractResources(System.IO.File.ReadAllBytes(resourceFileName));
 		}
 
 		public bool IsTransient()

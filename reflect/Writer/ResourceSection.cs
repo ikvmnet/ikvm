@@ -30,24 +30,16 @@ namespace IKVM.Reflection.Writer
 {
 	sealed class ResourceSection
 	{
-		private readonly ByteBuffer bb = new ByteBuffer(1024);
-		private readonly List<int> linkOffsets = new List<int>();
+		private ResourceDirectoryEntry root = new ResourceDirectoryEntry(new OrdinalOrName("root"));
+		private ByteBuffer bb;
+		private List<int> linkOffsets;
 
-		internal ResourceSection(ByteBuffer versionInfo, byte[] unmanagedResources)
+		internal void AddVersionInfo(ByteBuffer versionInfo)
 		{
-			ResourceDirectoryEntry root = new ResourceDirectoryEntry(new OrdinalOrName("root"));
-			if (versionInfo != null)
-			{
-				root[new OrdinalOrName(16)][new OrdinalOrName(1)][new OrdinalOrName(0)].Data = versionInfo;
-			}
-			else if (unmanagedResources != null)
-			{
-				ExtractResources(root, unmanagedResources);
-			}
-			root.Write(bb, linkOffsets);
+			root[new OrdinalOrName(16)][new OrdinalOrName(1)][new OrdinalOrName(0)].Data = versionInfo;
 		}
 
-		private static void ExtractResources(ResourceDirectoryEntry root, byte[] buf)
+		internal void ExtractResources(byte[] buf)
 		{
 			ByteReader br = new ByteReader(buf, 0, buf.Length);
 			while (br.Length >= 32)
@@ -59,6 +51,18 @@ namespace IKVM.Reflection.Writer
 					root[hdr.TYPE][hdr.NAME][new OrdinalOrName(hdr.LanguageId)].Data = ByteBuffer.Wrap(br.ReadBytes(hdr.DataSize));
 				}
 			}
+		}
+
+		internal void Finish()
+		{
+			if (bb != null)
+			{
+				throw new InvalidOperationException();
+			}
+			bb = new ByteBuffer(1024);
+			linkOffsets = new List<int>();
+			root.Write(bb, linkOffsets);
+			root = null;
 		}
 
 		internal int Length

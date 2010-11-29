@@ -34,7 +34,9 @@ namespace IKVM.Reflection.Writer
 {
 	static class ModuleWriter
 	{
-		internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, ModuleBuilder moduleBuilder, PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ByteBuffer versionInfoData, byte[] unmanagedResources, int entryPointToken)
+		internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, ModuleBuilder moduleBuilder,
+			PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine,
+			ResourceSection resources, int entryPointToken)
 		{
 			moduleBuilder.FixupMethodBodyTokens();
 
@@ -44,6 +46,11 @@ namespace IKVM.Reflection.Writer
 			{
 				// for compat with Ref.Emit, if there aren't any user strings, we add one
 				moduleBuilder.UserStrings.Add(" ");
+			}
+
+			if (resources != null)
+			{
+				resources.Finish();
 			}
 
 			using (FileStream fs = new FileStream(moduleBuilder.FullyQualifiedName, FileMode.Create))
@@ -125,7 +132,6 @@ namespace IKVM.Reflection.Writer
 				MetadataWriter mw = new MetadataWriter(moduleBuilder, fs);
 				moduleBuilder.Tables.Freeze(mw);
 				TextSection code = new TextSection(writer, cliHeader, moduleBuilder, ComputeStrongNameSignatureLength(publicKey));
-				ResourceSection resources = new ResourceSection(versionInfoData, unmanagedResources);
 
 				// Import Directory
 				writer.Headers.OptionalHeader.DataDirectory[1].VirtualAddress = code.ImportDirectoryRVA;
@@ -153,7 +159,7 @@ namespace IKVM.Reflection.Writer
 					writer.Headers.FileHeader.NumberOfSections++;
 				}
 
-				if (resources.Length != 0)
+				if (resources != null && resources.Length != 0)
 				{
 					writer.Headers.FileHeader.NumberOfSections++;
 				}
@@ -178,7 +184,7 @@ namespace IKVM.Reflection.Writer
 				rsrc.Name = ".rsrc";
 				rsrc.VirtualAddress = sdata.VirtualAddress + writer.ToSectionAlignment(sdata.VirtualSize);
 				rsrc.PointerToRawData = sdata.PointerToRawData + sdata.SizeOfRawData;
-				rsrc.VirtualSize = (uint)resources.Length;
+				rsrc.VirtualSize = resources == null ? 0 : (uint)resources.Length;
 				rsrc.SizeOfRawData = writer.ToFileAlignment(rsrc.VirtualSize);
 				rsrc.Characteristics = SectionHeader.IMAGE_SCN_MEM_READ | SectionHeader.IMAGE_SCN_CNT_INITIALIZED_DATA;
 
