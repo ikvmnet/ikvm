@@ -79,7 +79,13 @@ class PhysicalFont extends Font2D{
         this.style = createFontStyle(family, style);
     }
 
+    PhysicalFont(FontFamily family, int style){
+        this.family = family;
+        this.style = createFontStyle(family, style);
+    }
 
+
+    
     /**
      * {@inheritDoc}
      */

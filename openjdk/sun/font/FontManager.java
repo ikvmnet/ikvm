@@ -34,6 +34,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.swing.plaf.FontUIResource;
 
+import cli.System.Drawing.FontFamily;
+
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 
@@ -96,6 +98,19 @@ public class FontManager{
         font2D = new PhysicalFont(name,style);
         fontNameCache.put(mapName, font2D);
         return font2D;
+    }
+    
+    /**
+     * Create a new Font2D without caching. This is used from createFont
+     * 
+     * @param family
+     *            .NET FontFamily
+     * @param style
+     *            the style
+     * @return a Font2D
+     */
+    public static Font2D createFont2D( FontFamily family, int style ) {
+        return new PhysicalFont( family, style );
     }
     
     /** This method can be more efficient as it will only need to

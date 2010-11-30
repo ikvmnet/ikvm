@@ -47,6 +47,11 @@ import java.util.Map;
 import sun.font.StandardGlyphVector;
 import java.util.StringTokenizer;
 
+import cli.System.IntPtr;
+import cli.System.Drawing.GraphicsUnit;
+import cli.System.Drawing.Text.PrivateFontCollection;
+import cli.System.Runtime.InteropServices.Marshal;
+
 import sun.awt.SunToolkit;
 import sun.font.AttributeMap;
 import sun.font.AttributeValues;
@@ -791,15 +796,41 @@ public class Font implements java.io.Serializable
      * @see GraphicsEnvironment#registerFont(Font)
      * @since 1.3
      */
-    public static Font createFont(int fontFormat, InputStream fontStream)
-        throws java.awt.FontFormatException, java.io.IOException {
+    public static Font createFont( int fontFormat, InputStream fontStream ) throws java.awt.FontFormatException, java.io.IOException {
 
-        if (fontFormat != Font.TRUETYPE_FONT &&
-            fontFormat != Font.TYPE1_FONT) {
-            throw new IllegalArgumentException ("font format not recognized");
+        if( fontFormat != Font.TRUETYPE_FONT && fontFormat != Font.TYPE1_FONT ) {
+            throw new IllegalArgumentException( "font format not recognized" );
         }
-		throw new NotImplementedException();
-	}
+
+        // read the stream in a byte array
+        ByteArrayOutputStream baos = new ByteArrayOutputStream( fontStream.available() );
+        byte[] buffer = new byte[1024];
+        int count;
+        while( (count = fontStream.read( buffer, 0, buffer.length )) != -1 ) {
+            baos.write( buffer, 0, count );
+        }
+        byte[] fontData = baos.toByteArray();
+
+        // create a private Font Collection and add the font data
+        PrivateFontCollection pfc = new PrivateFontCollection();
+        IntPtr data = Marshal.AllocCoTaskMem( fontData.length );
+        try {
+            Marshal.Copy( fontData, 0, data, fontData.length );
+            pfc.AddMemoryFont( data, fontData.length ); // throw a cli.System.IO.FileNotFoundException if the data are corrupt
+        } catch( Throwable th ) {
+            IOException ioex = new IOException(th.getMessage());
+            ioex.initCause( th );
+            throw ioex;
+        } finally {
+            Marshal.FreeCoTaskMem( data );
+        }
+
+        // create the font object
+        Font2D font2D = FontManager.createFont2D( pfc.get_Families()[0], 0 );
+        Font font = new Font( font2D.getFontName( Locale.getDefault() ), PLAIN, 1 );
+        font.font2D = font2D;
+        return font;
+    }
 
     /**
      * Returns a new <code>Font</code> using the specified font type
@@ -835,11 +866,28 @@ public class Font implements java.io.Serializable
      * @see GraphicsEnvironment#registerFont(Font)
      * @since 1.5
      */
-    public static Font createFont(int fontFormat, File fontFile)
-        throws java.awt.FontFormatException, java.io.IOException {
-		throw new NotImplementedException();
-	}
-
+    public static Font createFont( int fontFormat, File fontFile ) throws java.awt.FontFormatException, java.io.IOException {
+        if( fontFormat != Font.TRUETYPE_FONT && fontFormat != Font.TYPE1_FONT ) {
+            throw new IllegalArgumentException( "font format not recognized" );
+        }
+        // create a private Font Collection and add the font data
+        PrivateFontCollection pfc = new PrivateFontCollection();
+        try {
+            pfc.AddFontFile( fontFile.getPath() );
+            if(false){
+                throw new cli.System.IO.FileNotFoundException();
+            }
+        } catch( cli.System.IO.FileNotFoundException fnfe ) {
+            FileNotFoundException ex = new FileNotFoundException(fnfe.getMessage());
+            ex.initCause( fnfe );
+            throw ex;
+        }
+        // create the font object
+        Font2D font2D = FontManager.createFont2D( pfc.get_Families()[0], 0 );
+        Font font = new Font( font2D.getFontName( Locale.getDefault() ), PLAIN, 1 );
+        font.font2D = font2D;
+        return font;
+    }
 
     /**
      * Returns a copy of the transform associated with this
