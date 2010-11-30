@@ -849,9 +849,6 @@ class Thread implements Runnable {
             nativeThread = null;
             threadStatus = 0x0002; // JVMTI_THREAD_STATE_TERMINATED
         }
-        // NOTE locking this here isn't ideal, because we might be invoked from
-        // the Cleanup object's finalizer and some user code might own the lock and hence
-        // block the finalizer thread.
         wakeupJoinedThreads();
         if (!daemon) {
             // TODO there is a race condition in the non-daemon counting
@@ -868,8 +865,35 @@ class Thread implements Runnable {
         }
     }
     
-    private synchronized void wakeupJoinedThreads() {
-        notifyAll();
+    private void wakeupJoinedThreads() {
+        // HACK locking this here isn't ideal, because we might be invoked from
+        // the Cleanup object's finalizer and some user code might own the lock and hence
+        // block the finalizer thread.
+        // A second scenario is that another thread is currently blocking inside stop()
+        // (the Thread.Abort() call will block while we are running the finally block)
+        // and that thread will own the lock on our thread object.
+        boolean locked = false;
+        try {
+            locked = cli.System.Threading.Monitor.TryEnter(this);
+            if (locked) {
+                notifyAll();
+            } else {
+                // HACK schedule an asynchronous notification
+                cli.System.Threading.ThreadPool.UnsafeQueueUserWorkItem(
+                    new cli.System.Threading.WaitCallback(
+                        new cli.System.Threading.WaitCallback.Method() {
+                            public void Invoke(Object thread) {
+                                synchronized (thread) {
+                                    thread.notifyAll();
+                                }
+                            }
+                        }), this);
+            }
+        }
+        finally {
+            if (locked)
+                cli.System.Threading.Monitor.Exit(this);
+        }
     }
 
     /**
@@ -2253,6 +2277,19 @@ class Thread implements Runnable {
     void threadProc() {
         current = this;
         try {
+            // the body of the try block is in another method to allow the (limited) try/finally optimizer
+            // to properly recognize the try/finally block, because we want to make sure that die()
+            // runs in a finally block to prevent it from being asynchronously aborted.
+            threadProc2();
+        }
+        finally {
+            die();
+        }
+    }
+    
+    @cli.IKVM.Attributes.HideFromJavaAttribute.Annotation
+    private void threadProc2() {
+        try {
             setRunningAndCheckStillborn();
             run();
         }
@@ -2262,9 +2299,6 @@ class Thread implements Runnable {
             }
             catch (Throwable _) {
             }
-        }
-        finally {
-            die();
         }
     }
 
