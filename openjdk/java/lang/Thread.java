@@ -864,7 +864,7 @@ class Thread implements Runnable {
             }
         }
     }
-    
+
     private void wakeupJoinedThreads() {
         // HACK locking this here isn't ideal, because we might be invoked from
         // the Cleanup object's finalizer and some user code might own the lock and hence
@@ -879,7 +879,7 @@ class Thread implements Runnable {
                 notifyAll();
             } else {
                 // HACK schedule an asynchronous notification
-                cli.System.Threading.ThreadPool.UnsafeQueueUserWorkItem(
+                cli.System.Threading.ThreadPool.QueueUserWorkItem(
                     new cli.System.Threading.WaitCallback(
                         new cli.System.Threading.WaitCallback.Method() {
                             public void Invoke(Object thread) {
