@@ -59,6 +59,7 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
     	return createShellFolder(getDesktop(), file);
     }
 
+    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     static Win32ShellFolder2 createShellFolder(Win32ShellFolder2 parent, File file) throws FileNotFoundException {
     	cli.System.IntPtr pIDL = null;
     	try {
@@ -437,6 +438,7 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
         }
     };
     
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static Win32ShellFolder2 createShellFolderFromRelativePIDL( Win32ShellFolder2 parent, cli.System.IntPtr pIDL) {
         // Walk down this relative pIDL, creating new nodes for each of the entries
         while (pIDL != null && !cli.System.IntPtr.Zero.Equals( pIDL ) ) {

@@ -183,6 +183,7 @@ final class Win32ShellFolder2 extends ShellFolder {
 
         boolean disposed;
  
+        @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
         public void dispose() {
             if (disposed)
                 return;
@@ -228,6 +229,7 @@ final class Win32ShellFolder2 extends ShellFolder {
      * Create a system special shell folder, such as the
      * desktop or Network Neighborhood.
      */
+    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     Win32ShellFolder2(int csidl) throws IOException {
         // Desktop is parent of DRIVES and NETWORK, not necessarily
         // other special shell folders.
@@ -253,6 +255,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         sun.java2d.Disposer.addRecord(this , disposer);
     }
 
+        @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
 	protected void bindToDesktop() {
 		cli.System.IntPtr pIDL = disposer.relativePIDL;
 		parent = getDesktop();
@@ -282,6 +285,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     /**
      * Create a system shell folder
      */
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     Win32ShellFolder2(Win32ShellFolder2 parent, cli.System.Object pIShellFolder, cli.System.IntPtr relativePIDL, String path) {
         super (parent, (path != null) ? path : "ShellFolder: ");
         this .disposer.pIShellFolder = pIShellFolder;
@@ -292,6 +296,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     /**
      * Creates a shell folder with a parent and relative PIDL
      */
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     Win32ShellFolder2(Win32ShellFolder2 parent, cli.System.IntPtr relativePIDL) {
         super (parent, getFileSystemPath(parent.getIShellFolder(), relativePIDL));
         this .disposer.relativePIDL = relativePIDL;
@@ -326,6 +331,7 @@ final class Win32ShellFolder2 extends ShellFolder {
      * @param pidl the pIDL of the requested folder relative to the desktopIShellFolder
      * @return the IShellFolder reference for the requested folder
      */
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static native cli.System.Object initSpecialFolder(cli.System.Object desktopIShellFolder, cli.System.IntPtr pidl);
 
     /** Marks this folder as being the My Documents (Personal) folder */
@@ -380,6 +386,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     // return a pointer to the next entry. Does not mutate the PIDL in
     // any way. Returns 0 if the null terminator is reached.
     // Needs to be accessible to Win32ShellFolderManager2
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static native cli.System.IntPtr getNextPIDLEntry(cli.System.IntPtr pIDL);
 
     // Given a (possibly multi-level) relative PIDL (with respect to
@@ -387,6 +394,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     // copy the first entry into a newly-allocated PIDL. Returns 0 if
     // the PIDL is at the end of the list.
     // Needs to be accessible to Win32ShellFolderManager2
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static native cli.System.IntPtr copyFirstPIDLEntry(cli.System.IntPtr pIDL);
 
     // Given a parent's absolute PIDL and our relative PIDL, build an absolute PIDL
@@ -397,18 +405,22 @@ final class Win32ShellFolder2 extends ShellFolder {
      * @param pIDL the pIDL relative to the ppIDL
      * @return a pIDL for the item referenced by the original pIDL but relative to the parent of ppIDL 
      */
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static native cli.System.IntPtr combinePIDLs(cli.System.IntPtr ppIDL, cli.System.IntPtr pIDL);
 
     // Release a PIDL object
     // Needs to be accessible to Win32ShellFolderManager2
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static native void releasePIDL(cli.System.IntPtr pIDL);
 
     // Release an IShellFolder object
-    private static native void releaseIShellFolder( cli.System.Object iShellFolder );
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
+    static native void releaseIShellFolder( cli.System.Object iShellFolder );
 
     /**
      * Accessor for IShellFolder
      */
+    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     public cli.System.Object getIShellFolder() {
         if (disposer.pIShellFolder == null ) {
             assert (isDirectory());
@@ -453,6 +465,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         return disposer.relativePIDL;
     }
 
+    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     private cli.System.IntPtr getAbsolutePIDL() {
         if (parent == null) {
             // This is the desktop
@@ -488,6 +501,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     /**
      * Check to see if two ShellFolder objects are the same
      */
+    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     public boolean equals(Object o) {
         if (o == null || !(o instanceof  Win32ShellFolder2)) {
             // Short-circuit circuitous delegation path
@@ -513,10 +527,12 @@ final class Win32ShellFolder2 extends ShellFolder {
         return false;
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static boolean pidlsEqual(cli.System.Object pIShellFolder, cli.System.IntPtr pidl1, cli.System.IntPtr pidl2) {
         return (compareIDs(pIShellFolder, pidl1, pidl2) == 0);
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static native int compareIDs(cli.System.Object pParentIShellFolder, cli.System.IntPtr pidl1, cli.System.IntPtr pidl2);
 
     /**
@@ -529,6 +545,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     /**
      * Return whether the given attribute flag is set for this object
      */
+    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     public boolean hasAttribute(int attribute) {
         // Caching at this point doesn't seem to be cost efficient
         return (getAttributes0(getParentIShellFolder(), getRelativePIDL(), attribute) & attribute) != 0;
@@ -541,9 +558,11 @@ final class Win32ShellFolder2 extends ShellFolder {
      * very careful not to touch network drives and file system roots
      * with a full attrsMask
      */
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static native int getAttributes0(cli.System.Object pParentIShellFolder, cli.System.IntPtr pIDL, int attrsMask);
 
     // Return the path to the underlying file system object
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static String getFileSystemPath(cli.System.Object parentIShellFolder, cli.System.IntPtr relativePIDL) {
         int linkedFolder = ATTRIB_LINK | ATTRIB_FOLDER;
         if (parentIShellFolder == Win32ShellFolderManager2.getNetwork().getIShellFolder()
@@ -633,6 +652,7 @@ final class Win32ShellFolder2 extends ShellFolder {
      * Releases the IEnumIDList interface
      * @param pEnumObjects an IEnumIDList instance 
      */
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static native void releaseEnumObjects(cli.System.Object pEnumObjects);
 
     /**
@@ -644,6 +664,7 @@ final class Win32ShellFolder2 extends ShellFolder {
      * @param pIDL a pIDL relative to the parent shell folder
      * @return a NEW instance of an IShellFolder for the path given by the pIDL, may be null if the path is invalid
      */
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static native cli.System.Object bindToObject(cli.System.Object parentIShellFolder, cli.System.IntPtr pIDL);
 
     /**
@@ -651,6 +672,7 @@ final class Win32ShellFolder2 extends ShellFolder {
      *         object. The array will be empty if the folder is empty.  Returns
      *         <code>null</code> if this shellfolder does not denote a directory.
      */
+    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     public File[] listFiles(boolean includeHiddenFiles) {
         if (!isDirectory()) {
             return null;
@@ -706,6 +728,7 @@ final class Win32ShellFolder2 extends ShellFolder {
      * of the current folder. 
      * @return The child shell folder, or null if not found.
      */
+    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     Win32ShellFolder2 getChildByPath(String filePath) {
     	cli.System.Object pIShellFolder = getIShellFolder();
     	cli.System.Object pEnumObjects = getEnumObjects(pIShellFolder, true);
@@ -760,6 +783,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         return getLinkLocation(true);
     }
 
+    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     private ShellFolder getLinkLocation(boolean resolve) {
         if (!isLink()) {
             return null;
@@ -801,11 +825,13 @@ final class Win32ShellFolder2 extends ShellFolder {
      * @param attrs formatting attributes for the display name, refer to SHGDN in MSDN
      * @return
      */
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static native String getDisplayNameOf( cli.System.Object parentIShellFolder, cli.System.IntPtr relativePIDL, int attrs);
 
     /**
      * @return The name used to display this shell folder
      */
+    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     public String getDisplayName() {
         if (displayName == null) {
             displayName = getDisplayNameOf(getParentIShellFolder(), getRelativePIDL(), SHGDN_NORMAL);
@@ -814,11 +840,13 @@ final class Win32ShellFolder2 extends ShellFolder {
     }
 
     // Return the folder type of a shell folder
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static native String getFolderType(cli.System.IntPtr pIDL);
 
     /**
      * @return The type of shell folder as a string
      */
+    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     public String getFolderType() {
         if (folderType == null) {
             folderType = getFolderType(getAbsolutePIDL());
@@ -852,22 +880,26 @@ final class Win32ShellFolder2 extends ShellFolder {
      * @param relativePIDL the relative pIDL to the requested item
      * @return the system image list index for the icon of the item or zero, if there is no entry
      */
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static native int getIconIndex(cli.System.Object parentIShellFolder, cli.System.IntPtr relativePIDL);
 
     // Return the icon of a file system shell folder in the form of an HICON
     private static native cli.System.IntPtr getIcon(String absolutePath, boolean getLargeIcon);
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static native cli.System.IntPtr extractIcon(cli.System.Object parentIShellFolder, cli.System.IntPtr relativePIDL, boolean getLargeIcon);
 
     /**
      * Returns the {@link Bitmap} for a HICON.
      */
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static native Bitmap getIconBits(cli.System.IntPtr hIcon, int size);
 
     /**
      * Disposes a icon handle
      * @param hIcon the handle to be disposed
      */
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static native void disposeIcon(cli.System.IntPtr hIcon);
 
     static int[] fileChooserBitmapBits = null;
@@ -903,6 +935,7 @@ final class Win32ShellFolder2 extends ShellFolder {
      * @param getLargeIcon true for a large icon, false for a small icon
      * @return the created image or null, if the handle is invalid
      */
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static Image makeIcon(cli.System.IntPtr hIcon, boolean getLargeIcon) {
         if (hIcon != null ) {
             // Get the bits.  This has the side effect of setting the imageHash value for this object.
@@ -918,6 +951,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     /**
      * @return The icon image used to display this shell folder
      */
+    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     public Image getIcon(boolean getLargeIcon) {
         Image icon = getLargeIcon ? largeIcon : smallIcon;
         if (icon == null) {

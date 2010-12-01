@@ -168,6 +168,7 @@ namespace ikvm.awt
 			java.awt.EventQueue.invokeAndWait(Delegates.toRunnable(delegate { d(state); }));
 		}
 
+		[System.Security.SecuritySafeCritical]
 		internal static void Install()
 		{
 			SynchronizationContext.SetSynchronizationContext(new EventQueueSynchronizationContext());

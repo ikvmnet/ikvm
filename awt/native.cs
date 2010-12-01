@@ -445,7 +445,8 @@ namespace IKVM.NativeCode.sun.awt.shell
         /// </summary>
         /// <param name="pIDL">the pIDL to operate on</param>
         /// <returns>the next entry in the pIDL</returns>
-        public static IntPtr getNextPIDLEntry(IntPtr pIDL)
+		[System.Security.SecurityCritical]
+		public static IntPtr getNextPIDLEntry(IntPtr pIDL)
         {
             if (pIDL == null)
             {
@@ -472,7 +473,8 @@ namespace IKVM.NativeCode.sun.awt.shell
         /// </summary>
         /// <param name="pIDL">The pIDL to copy from</param>
         /// <returns>the relative pIDL of the first entry</returns>
-        public static IntPtr copyFirstPIDLEntry(IntPtr pIDL)
+		[System.Security.SecurityCritical]
+		public static IntPtr copyFirstPIDLEntry(IntPtr pIDL)
         {
             if (pIDL == null)
             {
@@ -492,7 +494,8 @@ namespace IKVM.NativeCode.sun.awt.shell
         /// <param name="ppIDL">a pIDL, if IntPtr.Zero, IntPtr.Zero will be returned</param>
         /// <param name="pIDL">a pIDL, if IntPtr.Zero, IntPtr.Zero will be returned</param>
         /// <returns>the concatination of ppIDL and pIDL</returns>
-        public static IntPtr combinePIDLs(IntPtr ppIDL, IntPtr pIDL)
+		[System.Security.SecurityCritical]
+		public static IntPtr combinePIDLs(IntPtr ppIDL, IntPtr pIDL)
         {
             if (ppIDL == null || ppIDL == IntPtr.Zero)
             {
@@ -517,7 +520,8 @@ namespace IKVM.NativeCode.sun.awt.shell
         /// </summary>
         /// <param name="pIDL">a pointer to the IDL to get the length of</param>
         /// <returns>the length in bytes</returns>
-        public static int getPIDLlength(IntPtr pIDL)
+		[System.Security.SecurityCritical]
+		public static int getPIDLlength(IntPtr pIDL)
         {
             if( pIDL == null || pIDL == IntPtr.Zero )
             {
@@ -536,7 +540,8 @@ namespace IKVM.NativeCode.sun.awt.shell
         /// Releases the allocted memory of a pIDL
         /// </summary>
         /// <param name="pIDL">The pIDL to be released</param>
-        public static void releasePIDL(IntPtr pIDL)
+		[System.Security.SecurityCritical]
+		public static void releasePIDL(IntPtr pIDL)
         {
             if (pIDL == null || pIDL.Equals(IntPtr.Zero))
             {
@@ -544,11 +549,13 @@ namespace IKVM.NativeCode.sun.awt.shell
             }
             Marshal.Release(pIDL);
         }
-        /// <summary>
+
+		/// <summary>
         /// Releases an IShellFolder COM object
         /// </summary>
         /// <param name="pIShellFolder">The IShellFolder to be released, must not be null</param>
-        public static void releaseIShellFolder(Object pIShellFolder)
+		[System.Security.SecurityCritical]
+		public static void releaseIShellFolder(Object pIShellFolder)
         {
             if (pIShellFolder == null)
             {
@@ -556,7 +563,9 @@ namespace IKVM.NativeCode.sun.awt.shell
             }
             Marshal.ReleaseComObject(pIShellFolder);
         }
-        public static int compareIDs(Object pParentIShellFolder, IntPtr pidl1, IntPtr pidl2)
+
+		[System.Security.SecurityCritical]
+		public static int compareIDs(Object pParentIShellFolder, IntPtr pidl1, IntPtr pidl2)
         {
             if (pParentIShellFolder == null)
             {
@@ -565,7 +574,9 @@ namespace IKVM.NativeCode.sun.awt.shell
             ShellApi.IShellFolder folder = (ShellApi.IShellFolder)pParentIShellFolder;
             return folder.CompareIDs(0, pidl1, pidl2);
         }
-        public static int getAttributes0(Object pParentIShellFolder, IntPtr pIDL, int attrsMask)
+
+		[System.Security.SecurityCritical]
+		public static int getAttributes0(Object pParentIShellFolder, IntPtr pIDL, int attrsMask)
         {
             if (pParentIShellFolder == null || pIDL == null || pIDL == IntPtr.Zero )
             {
@@ -645,7 +656,8 @@ namespace IKVM.NativeCode.sun.awt.shell
         /// Releases an IEnumIDList
         /// </summary>
         /// <param name="pEnumObjects">The IEnumIDList to be released</param>
-        public static void releaseEnumObjects(Object pEnumObjects)
+		[System.Security.SecurityCritical]
+		public static void releaseEnumObjects(Object pEnumObjects)
         {
             if (pEnumObjects != null)
             {
@@ -659,7 +671,8 @@ namespace IKVM.NativeCode.sun.awt.shell
         /// <param name="parentIShellFolder">the parent IShellFolder</param>
         /// <param name="pIDL">the relative pIDL to the child</param>
         /// <returns>The IShellFolder of the child or null, if there is no such child</returns>
-        public static Object bindToObject(Object parentIShellFolder, IntPtr pIDL)
+		[System.Security.SecurityCritical]
+		public static Object bindToObject(Object parentIShellFolder, IntPtr pIDL)
         {
             if (parentIShellFolder == null || pIDL == null || pIDL == IntPtr.Zero )
             {
@@ -690,7 +703,9 @@ namespace IKVM.NativeCode.sun.awt.shell
             folder.ParseDisplayName(IntPtr.Zero, IntPtr.Zero, name, out pchEaten, out pIDL, ref pdwAttribute);
             return pIDL;
         }
-        public static String getDisplayNameOf(Object parentIShellFolder, IntPtr relativePIDL, int attrs)
+
+		[System.Security.SecurityCritical]
+		public static String getDisplayNameOf(Object parentIShellFolder, IntPtr relativePIDL, int attrs)
         {
             if (parentIShellFolder == null || relativePIDL == null || relativePIDL == IntPtr.Zero)
             {
@@ -708,7 +723,9 @@ namespace IKVM.NativeCode.sun.awt.shell
             }
             return null;
         }
-        public static String getFolderType(IntPtr pIDL)
+
+		[System.Security.SecurityCritical]
+		public static String getFolderType(IntPtr pIDL)
         {
             ShellApi.SHFILEINFO fileInfo = new ShellApi.SHFILEINFO();
             ShellApi.SHGetFileInfo(pIDL, 0, out fileInfo, (uint)Marshal.SizeOf(fileInfo), ShellApi.SHGFI.SHGFI_PIDL | ShellApi.SHGFI.SHGFI_TYPENAME);
@@ -723,7 +740,9 @@ namespace IKVM.NativeCode.sun.awt.shell
             }
             return null;
         }
-        public static int getIconIndex(Object parentIShellFolder, IntPtr relativePIDL)
+
+		[System.Security.SecurityCritical]
+		public static int getIconIndex(Object parentIShellFolder, IntPtr relativePIDL)
         {
             if (parentIShellFolder is ShellApi.IShellIcon)
             {
@@ -736,7 +755,8 @@ namespace IKVM.NativeCode.sun.awt.shell
             }
             return 0;
         }
-        public static IntPtr getIcon(String absolutePath, Boolean getLargeIcon) 
+
+		public static IntPtr getIcon(String absolutePath, Boolean getLargeIcon) 
         {
             ShellApi.SHFILEINFO shinfo = new ShellApi.SHFILEINFO();
             if (ShellApi.SHGetFileInfo(absolutePath, 0, out shinfo, (uint)Marshal.SizeOf(shinfo), ShellApi.SHGFI.SHGFI_ICON | (getLargeIcon ? ShellApi.SHGFI.SHGFI_LARGEICON : ShellApi.SHGFI.SHGFI_SMALLICON)) == IntPtr.Zero)
@@ -745,7 +765,9 @@ namespace IKVM.NativeCode.sun.awt.shell
             }
             return shinfo.hIcon;
         }
-        public static IntPtr extractIcon(Object parentIShellFolder, IntPtr relativePIDL, Boolean getLargeIcon)
+
+		[System.Security.SecurityCritical]
+		public static IntPtr extractIcon(Object parentIShellFolder, IntPtr relativePIDL, Boolean getLargeIcon)
         {
             if (parentIShellFolder == null || relativePIDL == null || relativePIDL == IntPtr.Zero)
             {
@@ -782,21 +804,26 @@ namespace IKVM.NativeCode.sun.awt.shell
             }
             return IntPtr.Zero;
         }
-        public static void disposeIcon(IntPtr hIcon)
+
+		[System.Security.SecurityCritical]
+		public static void disposeIcon(IntPtr hIcon)
         {
             ShellApi.DestroyIcon(hIcon);
         }
-        public static Object doGetColumnInfo(Object iShellFolder2)
+
+		public static Object doGetColumnInfo(Object iShellFolder2)
         {
             // TODO Dummy
             return null;
         }
-        public static Object doGetColumnValue(Object parentIShellFolder2, IntPtr childPIDL, int columnIdx)
+
+		public static Object doGetColumnValue(Object parentIShellFolder2, IntPtr childPIDL, int columnIdx)
         {
             // TODO Dummy
             return null;
         }
-        public static int compareIDsByColumn(Object pParentIShellFolder, IntPtr pidl1, IntPtr pidl2, int columnIdx)
+
+		public static int compareIDsByColumn(Object pParentIShellFolder, IntPtr pidl1, IntPtr pidl2, int columnIdx)
         {
             // TODO Dummy
             return 0;
