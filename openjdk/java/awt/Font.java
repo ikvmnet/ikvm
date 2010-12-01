@@ -50,7 +50,8 @@ import java.util.StringTokenizer;
 import cli.System.IntPtr;
 import cli.System.Drawing.GraphicsUnit;
 import cli.System.Drawing.Text.PrivateFontCollection;
-import cli.System.Runtime.InteropServices.Marshal;
+import cli.System.Runtime.InteropServices.GCHandle;
+import cli.System.Runtime.InteropServices.GCHandleType;
 
 import sun.awt.SunToolkit;
 import sun.font.AttributeMap;
@@ -812,17 +813,13 @@ public class Font implements java.io.Serializable
         byte[] fontData = baos.toByteArray();
 
         // create a private Font Collection and add the font data
-        PrivateFontCollection pfc = new PrivateFontCollection();
-        IntPtr data = Marshal.AllocCoTaskMem( fontData.length );
+        PrivateFontCollection pfc;
         try {
-            Marshal.Copy( fontData, 0, data, fontData.length );
-            pfc.AddMemoryFont( data, fontData.length ); // throw a cli.System.IO.FileNotFoundException if the data are corrupt
-        } catch( Throwable th ) {
-            IOException ioex = new IOException(th.getMessage());
-            ioex.initCause( th );
-            throw ioex;
-        } finally {
-            Marshal.FreeCoTaskMem( data );
+            pfc = createPrivateFontCollection(fontData);
+        } catch( cli.System.IO.FileNotFoundException x ) {
+            FontFormatException ffe = new FontFormatException(x.getMessage());
+            ffe.initCause(x);
+            throw ffe;
         }
 
         // create the font object
@@ -830,6 +827,20 @@ public class Font implements java.io.Serializable
         Font font = new Font( font2D.getFontName( Locale.getDefault() ), PLAIN, 1 );
         font.font2D = font2D;
         return font;
+    }
+
+    // create a private Font Collection and add the font data
+    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
+    private static PrivateFontCollection createPrivateFontCollection(byte[] fontData) throws cli.System.IO.FileNotFoundException {
+        GCHandle handle = GCHandle.Alloc(fontData, GCHandleType.wrap(GCHandleType.Pinned));
+        try {
+            PrivateFontCollection pfc = new PrivateFontCollection();
+            // AddMemoryFont throws a cli.System.IO.FileNotFoundException if the data are corrupt
+            pfc.AddMemoryFont( handle.AddrOfPinnedObject(), fontData.length );
+            return pfc;
+        } finally {
+            handle.Free();
+        }
     }
 
     /**
