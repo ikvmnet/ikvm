@@ -361,7 +361,12 @@ static class NetExp
 				}
 				else
 				{
-					m = writer.AddMethod(mw.Modifiers | Modifiers.Native, mw.Name, mw.Signature.Replace('.', '/'));
+					Modifiers mods = mw.Modifiers;
+					if ((mods & Modifiers.Abstract) == 0)
+					{
+						mods |= Modifiers.Native;
+					}
+					m = writer.AddMethod(mods, mw.Name, mw.Signature.Replace('.', '/'));
 					if (mw.IsOptionalAttributeAnnotationValue)
 					{
 						m.AddAttribute(new IKVM.StubGen.AnnotationDefaultClassFileAttribute(writer, GetAnnotationDefault(writer, mw.ReturnType)));
