@@ -4733,7 +4733,11 @@ namespace IKVM.NativeCode.java
 			static class WindowsPreferences
 			{
 				// HACK we currently support only 16 handles at a time
-				private static Microsoft.Win32.RegistryKey[] keys = new Microsoft.Win32.RegistryKey[16];
+				private static readonly Microsoft.Win32.RegistryKey[] keys = new Microsoft.Win32.RegistryKey[16];
+
+                // HACK we check if we can write in the system preferences 
+                // we want not user registry virtualization for compatibility
+                private static readonly bool windowsUac = Environment.OSVersion.Platform == PlatformID.Win32NT && UACVirtualization.Enabled;
 
 				private static Microsoft.Win32.RegistryKey MapKey(int hKey)
 				{
@@ -4788,12 +4792,26 @@ namespace IKVM.NativeCode.java
 
 				public static int[] WindowsRegOpenKey(int hKey, byte[] subKey, int securityMask)
 				{
-					bool writable = (securityMask & 0x30006) != 0;
+                    // writeable = DELETE == 0x10000 || KEY_SET_VALUE == 2 || KEY_CREATE_SUB_KEY == 4 || KEY_WRITE = 0x20006;
+                    // !writeable : KEY_ENUMERATE_SUB_KEYS == 8 || KEY_READ == 0x20019 || KEY_QUERY_VALUE == 1
+					bool writable = (securityMask & 0x10006) != 0;
 					Microsoft.Win32.RegistryKey resultKey = null;
 					int error = 0;
 					try
 					{
-						resultKey = MapKey(hKey).OpenSubKey(BytesToString(subKey), writable);
+                        Microsoft.Win32.RegistryKey parent = MapKey(hKey);
+                        if (writable && windowsUac && parent.Name.StartsWith("HKEY_LOCAL_MACHINE")) {
+                            resultKey = parent.OpenSubKey(BytesToString(subKey), false);
+                            if (resultKey != null) {
+                                // error only if key exists
+                                resultKey.Close();
+                                error = 5;
+                                resultKey = null;
+                            }
+                        } else
+                        {
+                            resultKey = parent.OpenSubKey(BytesToString(subKey), writable);
+                        }
 					}
 					catch (System.Security.SecurityException)
 					{
@@ -4833,11 +4851,11 @@ namespace IKVM.NativeCode.java
 							disposition = 1;
 						}
 					}
-					catch (System.Security.SecurityException)
+					catch (System.Security.SecurityException ex)
 					{
 						error = 5;
 					}
-					catch (UnauthorizedAccessException)
+					catch (UnauthorizedAccessException ex)
 					{
 						error = 5;
 					}
@@ -4848,7 +4866,7 @@ namespace IKVM.NativeCode.java
 				{
 					try
 					{
-						MapKey(hKey).DeleteSubKey(BytesToString(subKey));
+						MapKey(hKey).DeleteSubKey(BytesToString(subKey), false);
 						return 0;
 					}
 					catch (System.Security.SecurityException)
@@ -4987,7 +5005,29 @@ namespace IKVM.NativeCode.java
 					}
 				}
 			}
-		}
+
+            internal static class UACVirtualization {
+                private enum TOKEN_INFORMATION_CLASS {
+                    TokenVirtualizationEnabled = 24
+                }
+
+                [DllImport("advapi32.dll", SetLastError = true)]
+                private static extern bool GetTokenInformation(
+                    IntPtr TokenHandle,
+                    TOKEN_INFORMATION_CLASS TokenInformationClass,
+                    out uint TokenInformation,
+                    uint TokenInformationLength,
+                    out uint ReturnLength);
+
+                internal static bool Enabled {
+                    get {
+                        uint enabled, length;
+                        GetTokenInformation(System.Security.Principal.WindowsIdentity.GetCurrent().Token, TOKEN_INFORMATION_CLASS.TokenVirtualizationEnabled, out enabled, 4, out length);
+                        return enabled != 0;
+                    }
+                }
+            }
+        }
 
 		namespace jar
 		{
