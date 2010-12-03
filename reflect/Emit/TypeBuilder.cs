@@ -459,14 +459,6 @@ namespace IKVM.Reflection.Emit
 		public void SetParent(Type parent)
 		{
 			baseType = parent;
-			if (parent == null)
-			{
-				extends = 0;
-			}
-			else
-			{
-				extends = this.ModuleBuilder.GetTypeToken(parent).Token;
-			}
 		}
 
 		public void AddInterfaceImplementation(Type interfaceType)
@@ -476,10 +468,6 @@ namespace IKVM.Reflection.Emit
 				interfaces = new List<Type>();
 			}
 			interfaces.Add(interfaceType);
-			InterfaceImplTable.Record rec = new InterfaceImplTable.Record();
-			rec.Class = token;
-			rec.Interface = this.ModuleBuilder.GetTypeToken(interfaceType).Token;
-			this.ModuleBuilder.InterfaceImpl.AddRecord(rec);
 		}
 
 		public int Size
@@ -678,7 +666,6 @@ namespace IKVM.Reflection.Emit
 				{
 					pb.Bake();
 				}
-				properties = null;
 			}
 			if (events != null)
 			{
@@ -690,11 +677,24 @@ namespace IKVM.Reflection.Emit
 				{
 					eb.Bake();
 				}
-				events = null;
 			}
 			if (declarativeSecurity != null)
 			{
 				this.ModuleBuilder.AddDeclarativeSecurity(token, declarativeSecurity);
+			}
+			if (baseType != null)
+			{
+				extends = this.ModuleBuilder.GetTypeToken(baseType).Token;
+			}
+			if (interfaces != null)
+			{
+				foreach (Type interfaceType in interfaces)
+				{
+					InterfaceImplTable.Record rec = new InterfaceImplTable.Record();
+					rec.Class = token;
+					rec.Interface = this.ModuleBuilder.GetTypeToken(interfaceType).Token;
+					this.ModuleBuilder.InterfaceImpl.AddRecord(rec);
+				}
 			}
 			return new BakedType(this);
 		}
