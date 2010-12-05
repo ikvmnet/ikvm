@@ -847,7 +847,9 @@ namespace IKVM.Reflection.Emit
 			Type fieldType = this.ModuleBuilder.GetType("$ArrayType$" + data.Length);
 			if (fieldType == null)
 			{
-				fieldType = this.ModuleBuilder.DefineType("$ArrayType$" + data.Length, TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.ExplicitLayout, this.Module.universe.System_ValueType, PackingSize.Size1, data.Length);
+				TypeBuilder tb = this.ModuleBuilder.DefineType("$ArrayType$" + data.Length, TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.ExplicitLayout, this.Module.universe.System_ValueType, PackingSize.Size1, data.Length);
+				tb.CreateType();
+				fieldType = tb;
 			}
 			FieldBuilder fb = DefineField(name, fieldType, attributes | FieldAttributes.Static);
 			fb.__SetDataAndRVA(data);
