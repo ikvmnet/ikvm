@@ -123,6 +123,7 @@ namespace IKVM.Reflection
 		private Type typeof_System_Runtime_InteropServices_OptionalAttribute;
 		private Type typeof_System_Runtime_InteropServices_PreserveSigAttribute;
 		private Type typeof_System_Runtime_InteropServices_ComImportAttribute;
+		private Type typeof_System_Runtime_CompilerServices_DecimalConstantAttribute;
 		private Type typeof_System_Runtime_CompilerServices_SpecialNameAttribute;
 		private Type typeof_System_Runtime_CompilerServices_MethodImplAttribute;
 		private Type typeof_System_Security_SuppressUnmanagedCodeSecurityAttribute;
@@ -348,6 +349,11 @@ namespace IKVM.Reflection
 		internal Type System_Runtime_InteropServices_ComImportAttribute
 		{
 			get { return typeof_System_Runtime_InteropServices_ComImportAttribute ?? (typeof_System_Runtime_InteropServices_ComImportAttribute = ImportMscorlibType(typeof(System.Runtime.InteropServices.ComImportAttribute))); }
+		}
+
+		internal Type System_Runtime_CompilerServices_DecimalConstantAttribute
+		{
+			get { return typeof_System_Runtime_CompilerServices_DecimalConstantAttribute ?? (typeof_System_Runtime_CompilerServices_DecimalConstantAttribute = ImportMscorlibType(typeof(System.Runtime.CompilerServices.DecimalConstantAttribute))); }
 		}
 
 		internal Type System_Runtime_CompilerServices_SpecialNameAttribute

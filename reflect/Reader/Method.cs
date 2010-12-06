@@ -398,6 +398,37 @@ namespace IKVM.Reflection.Reader
 				{
 					return this.Module.Constant.GetRawConstantValue(this.Module, this.MetadataToken);
 				}
+				Universe universe = this.Module.universe;
+				if (this.ParameterType == universe.System_Decimal)
+				{
+					Type attr = universe.System_Runtime_CompilerServices_DecimalConstantAttribute;
+					if (attr != null)
+					{
+						foreach (CustomAttributeData cad in GetCustomAttributesData(attr))
+						{
+							IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+							if (args.Count == 5)
+							{
+								if (args[0].ArgumentType == universe.System_Byte
+									&& args[1].ArgumentType == universe.System_Byte
+									&& args[2].ArgumentType == universe.System_Int32
+									&& args[3].ArgumentType == universe.System_Int32
+									&& args[4].ArgumentType == universe.System_Int32)
+								{
+									return new Decimal((int)args[4].Value, (int)args[3].Value, (int)args[2].Value, (byte)args[1].Value != 0, (byte)args[0].Value);
+								}
+								else if (args[0].ArgumentType == universe.System_Byte
+									&& args[1].ArgumentType == universe.System_Byte
+									&& args[2].ArgumentType == universe.System_UInt32
+									&& args[3].ArgumentType == universe.System_UInt32
+									&& args[4].ArgumentType == universe.System_UInt32)
+								{
+									return new Decimal(unchecked((int)(uint)args[4].Value), unchecked((int)(uint)args[3].Value), unchecked((int)(uint)args[2].Value), (byte)args[1].Value != 0, (byte)args[0].Value);
+								}
+							}
+						}
+					}
+				}
 				if ((this.Attributes & ParameterAttributes.Optional) != 0)
 				{
 					return Missing.Value;
