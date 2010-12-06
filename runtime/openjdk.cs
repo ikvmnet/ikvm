@@ -4735,10 +4735,6 @@ namespace IKVM.NativeCode.java
 				// HACK we currently support only 16 handles at a time
 				private static readonly Microsoft.Win32.RegistryKey[] keys = new Microsoft.Win32.RegistryKey[16];
 
-                // HACK we check if we can write in the system preferences 
-                // we want not user registry virtualization for compatibility
-                private static readonly bool windowsUac = Environment.OSVersion.Platform == PlatformID.Win32NT && UACVirtualization.Enabled;
-
 				private static Microsoft.Win32.RegistryKey MapKey(int hKey)
 				{
 					switch (hKey)
@@ -4800,7 +4796,10 @@ namespace IKVM.NativeCode.java
 					try
 					{
                         Microsoft.Win32.RegistryKey parent = MapKey(hKey);
-                        if (writable && windowsUac && parent.Name.StartsWith("HKEY_LOCAL_MACHINE")) {
+						// HACK we check if we can write in the system preferences 
+						// we want not user registry virtualization for compatibility
+						if (writable && parent.Name.StartsWith("HKEY_LOCAL_MACHINE", StringComparison.Ordinal) && UACVirtualization.Enabled)
+						{
                             resultKey = parent.OpenSubKey(BytesToString(subKey), false);
                             if (resultKey != null) {
                                 // error only if key exists
@@ -4851,11 +4850,11 @@ namespace IKVM.NativeCode.java
 							disposition = 1;
 						}
 					}
-					catch (System.Security.SecurityException ex)
+					catch (System.Security.SecurityException)
 					{
 						error = 5;
 					}
-					catch (UnauthorizedAccessException ex)
+					catch (UnauthorizedAccessException)
 					{
 						error = 5;
 					}
@@ -5021,6 +5020,10 @@ namespace IKVM.NativeCode.java
 
                 internal static bool Enabled {
                     get {
+						OperatingSystem os = Environment.OSVersion;
+						if (os.Platform != PlatformID.Win32NT || os.Version.Major < 6) {
+							return false;
+						}
                         uint enabled, length;
                         GetTokenInformation(System.Security.Principal.WindowsIdentity.GetCurrent().Token, TOKEN_INFORMATION_CLASS.TokenVirtualizationEnabled, out enabled, 4, out length);
                         return enabled != 0;
