@@ -276,10 +276,6 @@ namespace IKVM.Reflection.Emit
 				manifestModule = DefineDynamicModule("RefEmit_OnDiskManifestModule", assemblyFileName, false);
 			}
 
-			if (hashAlgorithm != AssemblyHashAlgorithm.SHA1)
-			{
-				throw new NotImplementedException();
-			}
 			AssemblyTable.Record assemblyRecord = new AssemblyTable.Record();
 			assemblyRecord.HashAlgId = (int)hashAlgorithm;
 			assemblyRecord.Name = manifestModule.Strings.Add(name);

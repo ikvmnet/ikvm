@@ -80,20 +80,7 @@ namespace IKVM.Reflection.Reader
 			{
 				name.CultureInfo = System.Globalization.CultureInfo.InvariantCulture;
 			}
-			switch (rec.HashAlgId)
-			{
-				case 0:
-					name.HashAlgorithm = AssemblyHashAlgorithm.None;
-					break;
-				case 0x8003:
-					name.HashAlgorithm = AssemblyHashAlgorithm.MD5;
-					break;
-				case 0x8004:
-					name.HashAlgorithm = AssemblyHashAlgorithm.SHA1;
-					break;
-				default:
-					throw new BadImageFormatException();
-			}
+			name.HashAlgorithm = (AssemblyHashAlgorithm)rec.HashAlgId;
 			name.CodeBase = this.CodeBase;
 			name.Flags = (AssemblyNameFlags)rec.Flags;
 			return name;
