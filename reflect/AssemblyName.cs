@@ -32,10 +32,12 @@ namespace IKVM.Reflection
 	public sealed class AssemblyName : ICloneable
 	{
 		private readonly System.Reflection.AssemblyName name;
+		private string culture;
 
-		private AssemblyName(System.Reflection.AssemblyName name)
+		private AssemblyName(System.Reflection.AssemblyName name, string culture)
 		{
 			this.name = name;
+			this.culture = culture;
 		}
 
 		public AssemblyName()
@@ -50,7 +52,12 @@ namespace IKVM.Reflection
 
 		public override string ToString()
 		{
-			return name.ToString();
+			string str = name.ToString();
+			if (culture != null)
+			{
+				str = str.Replace("Culture=neutral", "Culture=" + culture);
+			}
+			return str;
 		}
 
 		public string Name
@@ -62,7 +69,20 @@ namespace IKVM.Reflection
 		public CultureInfo CultureInfo
 		{
 			get { return name.CultureInfo; }
-			set { name.CultureInfo = value; }
+			set
+			{
+				name.CultureInfo = value;
+				culture = null;
+			}
+		}
+
+		internal string Culture
+		{
+			set
+			{
+				culture = value;
+				name.CultureInfo = CultureInfo.InvariantCulture;
+			}
 		}
 
 		public Version Version
@@ -129,7 +149,15 @@ namespace IKVM.Reflection
 
 		public string FullName
 		{
-			get { return name.FullName; }
+			get
+			{
+				string str = name.FullName;
+				if (culture != null)
+				{
+					str = str.Replace("Culture=neutral", "Culture=" + culture);
+				}
+				return str;
+			}
 		}
 
 		public override bool Equals(object obj)
@@ -145,7 +173,7 @@ namespace IKVM.Reflection
 
 		public object Clone()
 		{
-			return new AssemblyName((System.Reflection.AssemblyName)name.Clone());
+			return new AssemblyName((System.Reflection.AssemblyName)name.Clone(), culture);
 		}
 
 		public static bool ReferenceMatchesDefinition(AssemblyName reference, AssemblyName definition)

@@ -180,7 +180,7 @@ namespace IKVM.Reflection.Emit
 			AssemblyName n = new AssemblyName();
 			n.Name = name;
 			n.Version = new Version(majorVersion, minorVersion, buildVersion, revisionVersion);
-			n.CultureInfo = culture != null ? CultureInfo.GetCultureInfo(culture) : CultureInfo.InvariantCulture;
+			n.Culture = culture;
 			n.HashAlgorithm = hashAlgorithm;
 			n.Flags = flags;
 			n.SetPublicKey(publicKey != null ? (byte[])publicKey.Clone() : Empty<byte>.Array);
