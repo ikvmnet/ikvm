@@ -36,10 +36,11 @@ namespace IKVM.Reflection.Emit
 		private readonly string name;
 		private readonly TypeBuilder type;
 		private readonly MethodBuilder method;
-		private readonly int paramToken;
+		private readonly int paramPseudoIndex;
 		private readonly int position;
 		private int typeToken;
 		private Type baseType;
+		private GenericParameterAttributes attr;
 
 		internal GenericTypeParameterBuilder(string name, TypeBuilder type, MethodBuilder method, int position)
 		{
@@ -52,7 +53,7 @@ namespace IKVM.Reflection.Emit
 			rec.Flags = 0;
 			rec.Owner = type != null ? type.MetadataToken : method.MetadataToken;
 			rec.Name = this.ModuleBuilder.Strings.Add(name);
-			this.paramToken = this.ModuleBuilder.GenericParam.AddRecord(rec);
+			this.paramPseudoIndex = this.ModuleBuilder.GenericParam.AddRecord(rec);
 		}
 
 		public override string AssemblyQualifiedName
@@ -152,14 +153,14 @@ namespace IKVM.Reflection.Emit
 				{
 					method.CheckBaked();
 				}
-				return this.ModuleBuilder.GenericParam.GetAttributes(paramToken);
+				return attr;
 			}
 		}
 
 		private void AddConstraint(Type type)
 		{
 			GenericParamConstraintTable.Record rec = new GenericParamConstraintTable.Record();
-			rec.Owner = paramToken;
+			rec.Owner = paramPseudoIndex;
 			rec.Constraint = this.ModuleBuilder.GetTypeTokenForMemberRef(type);
 			this.ModuleBuilder.GenericParamConstraint.AddRecord(rec);
 		}
@@ -180,13 +181,14 @@ namespace IKVM.Reflection.Emit
 
 		public void SetGenericParameterAttributes(GenericParameterAttributes genericParameterAttributes)
 		{
+			this.attr = genericParameterAttributes;
 			// for now we'll back patch the table
-			this.ModuleBuilder.GenericParam.PatchAttribute(paramToken, genericParameterAttributes);
+			this.ModuleBuilder.GenericParam.PatchAttribute(paramPseudoIndex, genericParameterAttributes);
 		}
 
 		public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
 		{
-			this.ModuleBuilder.SetCustomAttribute(GetModuleBuilderToken(), customBuilder);
+			this.ModuleBuilder.SetCustomAttribute((GenericParamTable.Index << 24) | paramPseudoIndex, customBuilder);
 		}
 
 		public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)

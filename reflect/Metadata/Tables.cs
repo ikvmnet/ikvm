@@ -1006,6 +1006,7 @@ namespace IKVM.Reflection.Metadata
 
 		internal void Fixup(ModuleBuilder moduleBuilder)
 		{
+			int[] genericParamFixup = moduleBuilder.GenericParam.GetIndexFixup();
 			for (int i = 0; i < rowCount; i++)
 			{
 				if (moduleBuilder.IsPseudoToken(records[i].Type))
@@ -1076,7 +1077,7 @@ namespace IKVM.Reflection.Metadata
 						records[i].Parent = (token & 0xFFFFFF) << 5 | 18;
 						break;
 					case GenericParamTable.Index:
-						records[i].Parent = (token & 0xFFFFFF) << 5 | 19;
+						records[i].Parent = (genericParamFixup[(token & 0xFFFFFF) - 1] + 1) << 5 | 19;
 						break;
 					default:
 						throw new InvalidOperationException();
