@@ -288,13 +288,29 @@ namespace IKVM.Reflection.Emit
 
 		public ParameterBuilder DefineParameter(int position, ParameterAttributes attributes, string strParamName)
 		{
+			// the parameter is named "position", but it is actually a sequence number (i.e. 0 = return parameter, 1 = first parameter)
+			int sequence = position--;
 			if (parameters == null)
 			{
 				parameters = new List<ParameterBuilder>();
 			}
 			this.ModuleBuilder.Param.AddVirtualRecord();
-			ParameterBuilder pb = new ParameterBuilder(this.ModuleBuilder, position, attributes, strParamName);
-			parameters.Add(pb);
+			ParameterBuilder pb = new ParameterBuilder(this.ModuleBuilder, sequence, attributes, strParamName);
+			if (parameters.Count == 0 || position > parameters[parameters.Count - 1].Position)
+			{
+				parameters.Add(pb);
+			}
+			else
+			{
+				for (int i = 0; i < parameters.Count; i++)
+				{
+					if (parameters[i].Position > position)
+					{
+						parameters.Insert(i, pb);
+						break;
+					}
+				}
+			}
 			return pb;
 		}
 
