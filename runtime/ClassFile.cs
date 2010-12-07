@@ -523,58 +523,71 @@ namespace IKVM.Internal
 
 		private static object ReadAnnotationElementValue(BigEndianBinaryReader rdr, ClassFile classFile)
 		{
-			byte tag = rdr.ReadByte();
-			switch(tag)
+			try
 			{
-				case (byte)'Z':
-					return classFile.GetConstantPoolConstantInteger(rdr.ReadUInt16()) != 0;
-				case (byte)'B':
-					return (byte)classFile.GetConstantPoolConstantInteger(rdr.ReadUInt16());
-				case (byte)'C':
-					return (char)classFile.GetConstantPoolConstantInteger(rdr.ReadUInt16());
-				case (byte)'S':
-					return (short)classFile.GetConstantPoolConstantInteger(rdr.ReadUInt16());
-				case (byte)'I':
-					return classFile.GetConstantPoolConstantInteger(rdr.ReadUInt16());
-				case (byte)'F':
-					return classFile.GetConstantPoolConstantFloat(rdr.ReadUInt16());
-				case (byte)'J':
-					return classFile.GetConstantPoolConstantLong(rdr.ReadUInt16());
-				case (byte)'D':
-					return classFile.GetConstantPoolConstantDouble(rdr.ReadUInt16());
-				case (byte)'s':
-					return classFile.GetConstantPoolUtf8String(rdr.ReadUInt16());
-				case (byte)'e':
+				byte tag = rdr.ReadByte();
+				switch (tag)
 				{
-					ushort type_name_index = rdr.ReadUInt16();
-					ushort const_name_index = rdr.ReadUInt16();
-					return new object[] {
+					case (byte)'Z':
+						return classFile.GetConstantPoolConstantInteger(rdr.ReadUInt16()) != 0;
+					case (byte)'B':
+						return (byte)classFile.GetConstantPoolConstantInteger(rdr.ReadUInt16());
+					case (byte)'C':
+						return (char)classFile.GetConstantPoolConstantInteger(rdr.ReadUInt16());
+					case (byte)'S':
+						return (short)classFile.GetConstantPoolConstantInteger(rdr.ReadUInt16());
+					case (byte)'I':
+						return classFile.GetConstantPoolConstantInteger(rdr.ReadUInt16());
+					case (byte)'F':
+						return classFile.GetConstantPoolConstantFloat(rdr.ReadUInt16());
+					case (byte)'J':
+						return classFile.GetConstantPoolConstantLong(rdr.ReadUInt16());
+					case (byte)'D':
+						return classFile.GetConstantPoolConstantDouble(rdr.ReadUInt16());
+					case (byte)'s':
+						return classFile.GetConstantPoolUtf8String(rdr.ReadUInt16());
+					case (byte)'e':
+						{
+							ushort type_name_index = rdr.ReadUInt16();
+							ushort const_name_index = rdr.ReadUInt16();
+							return new object[] {
 											AnnotationDefaultAttribute.TAG_ENUM,
 											classFile.GetConstantPoolUtf8String(type_name_index),
 											classFile.GetConstantPoolUtf8String(const_name_index)
 										};
-				}
-				case (byte)'c':
-					return new object[] {
+						}
+					case (byte)'c':
+						return new object[] {
 											AnnotationDefaultAttribute.TAG_CLASS,
 											classFile.GetConstantPoolUtf8String(rdr.ReadUInt16())
 										};
-				case (byte)'@':
-					return ReadAnnotation(rdr, classFile);
-				case (byte)'[':
-				{
-					ushort num_values = rdr.ReadUInt16();
-					object[] array = new object[num_values + 1];
-					array[0] = AnnotationDefaultAttribute.TAG_ARRAY;
-					for(int i = 0; i < num_values; i++)
-					{
-						array[i + 1] = ReadAnnotationElementValue(rdr, classFile);
-					}
-					return array;
+					case (byte)'@':
+						return ReadAnnotation(rdr, classFile);
+					case (byte)'[':
+						{
+							ushort num_values = rdr.ReadUInt16();
+							object[] array = new object[num_values + 1];
+							array[0] = AnnotationDefaultAttribute.TAG_ARRAY;
+							for (int i = 0; i < num_values; i++)
+							{
+								array[i + 1] = ReadAnnotationElementValue(rdr, classFile);
+							}
+							return array;
+						}
+					default:
+						throw new ClassFormatError("Invalid tag {0} in annotation element_value", tag);
 				}
-				default:
-					throw new ClassFormatError("Invalid tag {0} in annotation element_value", tag);
 			}
+			catch (NullReferenceException)
+			{
+			}
+			catch (InvalidCastException)
+			{
+			}
+			catch (IndexOutOfRangeException)
+			{
+			}
+			return new object[] { AnnotationDefaultAttribute.TAG_ERROR, "java.lang.IllegalArgumentException", "Wrong type at constant pool index" };
 		}
 
 		private void ValidateConstantPoolItemClass(string classFile, ushort index)

@@ -344,6 +344,20 @@ public abstract class AnnotationAttributeBase
     public static Object decodeElementValue(Object obj, Class type, ClassLoader loader)
         throws IllegalAccessException
     {
+        if (obj instanceof Object[] && CIL.unbox_byte(((Object[])obj)[0]) == '?')
+        {
+            Throwable t;
+            try
+            {
+                Object[] error = (Object[])obj;
+                t = (Throwable)Class.forName((String)error[1]).getConstructor(String.class).newInstance(error[2]);
+            }
+            catch (Exception x)
+            {
+                t = x;
+            }
+            sun.misc.Unsafe.getUnsafe().throwException(t);
+        }
         if (type == Byte.TYPE)
         {
             return new Byte(CIL.unbox_byte(obj));

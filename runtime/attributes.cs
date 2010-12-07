@@ -710,6 +710,7 @@ namespace IKVM.Attributes
 		public const byte TAG_CLASS = (byte)'c';
 		public const byte TAG_ANNOTATION = (byte)'@';
 		public const byte TAG_ARRAY = (byte)'[';
+		public const byte TAG_ERROR = (byte)'?';
 		private object defaultValue;
 
 		// element_value encoding:
@@ -725,6 +726,8 @@ namespace IKVM.Attributes
 		//   new object[] { (byte)'@', "<AnnotationType>", ("name", (element_value))* }
 		// array:
 		//   new object[] { (byte)'[', (element_value)* }
+		// error:
+		//   new object[] { (byte)'?', "<exceptionClass>", "<exceptionMessage>" }
 		public AnnotationDefaultAttribute(object defaultValue)
 		{
 			this.defaultValue = defaultValue;
