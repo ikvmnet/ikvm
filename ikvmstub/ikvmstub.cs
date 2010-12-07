@@ -536,7 +536,7 @@ static class NetExp
 		if (type == PrimitiveTypeWrapper.BOOLEAN)
 		{
 			bes.WriteByte((byte)'Z');
-			bes.WriteUInt16(0);
+			bes.WriteUInt16(classFile.AddInt(0));
 		}
         else if(type == PrimitiveTypeWrapper.BYTE)
         {
