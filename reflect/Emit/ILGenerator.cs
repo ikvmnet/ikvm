@@ -327,7 +327,6 @@ namespace IKVM.Reflection.Emit
 			{
 				Emit(OpCodes.Leave, block.labelEnd);
 			}
-			stackHeight = 0;
 			if (block.handlerOffset == 0)
 			{
 				block.tryLength = code.Position - block.tryOffset;
@@ -355,6 +354,7 @@ namespace IKVM.Reflection.Emit
 				exceptions.Add(block);
 				exceptionStack.Push(block);
 			}
+			stackHeight = 0;
 			return block;
 		}
 
