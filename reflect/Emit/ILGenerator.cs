@@ -371,10 +371,10 @@ namespace IKVM.Reflection.Emit
 				{
 					Emit(OpCodes.Endfinally);
 				}
-				if (IsLabelReachable(block.labelEnd))
-				{
-					MarkLabel(block.labelEnd);
-				}
+			}
+			if (IsLabelReachable(block.labelEnd))
+			{
+				MarkLabel(block.labelEnd);
 			}
 			block.handlerLength = code.Position - block.handlerOffset;
 		}
