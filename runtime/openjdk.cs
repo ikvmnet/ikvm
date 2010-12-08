@@ -3349,7 +3349,19 @@ namespace IKVM.NativeCode.java
 
 			public static double cbrt(double d)
 			{
-				return Math.Pow(d, 1.0 / 3.0);
+				if (d > 0.0)
+				{
+					return Math.Pow(d, 1.0 / 3.0);
+				}
+				else if (d < 0.0)
+				{
+					return - Math.Pow(Math.Abs(d), 1.0 / 3.0);
+				}
+				else
+				{
+					// this handles NaN and signed zero
+					return d;
+				}
 			}
 
 			public static double IEEEremainder(double f1, double f2)
@@ -3423,16 +3435,24 @@ namespace IKVM.NativeCode.java
 
 			public static double hypot(double a, double b)
 			{
-				return a * a + b * b;
+				return sqrt(a * a + b * b);
 			}
 
 			public static double expm1(double d)
 			{
+				if (d == 0.0)
+				{
+					return d;
+				}
 				return Math.Exp(d) - 1.0;
 			}
 
 			public static double log1p(double d)
 			{
+				if (d == 0.0)
+				{
+					return d;
+				}
 				return Math.Log(d + 1.0);
 			}
 		}
