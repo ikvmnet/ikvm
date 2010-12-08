@@ -334,15 +334,15 @@ namespace IKVM.Reflection.Emit
 			else
 			{
 				block.handlerLength = code.Position - block.handlerOffset;
-				bool reachable = IsLabelReachable(block.labelEnd);
-				Label labelEnd = new Label();
-				if (reachable)
+				Label labelEnd;
+				if (exceptionBlockAssistanceMode != EBAM_COMPAT)
+				{
+					labelEnd = block.labelEnd;
+				}
+				else
 				{
 					MarkLabel(block.labelEnd);
-				}
-				labelEnd = DefineLabel();
-				if (exceptionBlockAssistanceMode == EBAM_COMPAT || (exceptionBlockAssistanceMode == EBAM_CLEVER && reachable))
-				{
+					labelEnd = DefineLabel();
 					Emit(OpCodes.Leave, labelEnd);
 				}
 				exceptionStack.Pop();
