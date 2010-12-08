@@ -517,7 +517,7 @@ namespace IKVM.Reflection
 
 		private static bool IsInheritableAttribute(Type attribute)
 		{
-			Type attributeUsageAttribute = attribute.Module.universe.Import(typeof(AttributeUsageAttribute));
+			Type attributeUsageAttribute = attribute.Module.universe.System_AttributeUsageAttribute;
 			IList<CustomAttributeData> attr = attribute.GetCustomAttributesData(attributeUsageAttribute);
 			if (attr.Count != 0)
 			{
