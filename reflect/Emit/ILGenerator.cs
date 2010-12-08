@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2008, 2009 Jeroen Frijters
+  Copyright (C) 2008-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -372,10 +372,7 @@ namespace IKVM.Reflection.Emit
 					Emit(OpCodes.Endfinally);
 				}
 			}
-			if (IsLabelReachable(block.labelEnd))
-			{
-				MarkLabel(block.labelEnd);
-			}
+			MarkLabel(block.labelEnd);
 			block.handlerLength = code.Position - block.handlerOffset;
 		}
 
