@@ -642,40 +642,7 @@ namespace IKVM.Reflection.Emit
 			int[] realtokens = new int[referencedAssemblies.Count];
 			foreach (KeyValuePair<Assembly, int> kv in referencedAssemblies)
 			{
-				AssemblyName name = kv.Key.GetName();
-				AssemblyRefTable.Record rec = new AssemblyRefTable.Record();
-				Version ver = name.Version;
-				rec.MajorVersion = (ushort)ver.Major;
-				rec.MinorVersion = (ushort)ver.Minor;
-				rec.BuildNumber = (ushort)ver.Build;
-				rec.RevisionNumber = (ushort)ver.Revision;
-				rec.Flags = (int)(name.Flags & AssemblyNameFlags.Retargetable);
-				byte[] publicKeyOrToken = null;
-				if (usePublicKeyAssemblyReference)
-				{
-					publicKeyOrToken = name.GetPublicKey();
-				}
-				if (publicKeyOrToken == null || publicKeyOrToken.Length == 0)
-				{
-					publicKeyOrToken = name.GetPublicKeyToken();
-				}
-				else
-				{
-					const int PublicKey = 0x0001;
-					rec.Flags |= PublicKey;
-				}
-				rec.PublicKeyOrToken = this.Blobs.Add(ByteBuffer.Wrap(publicKeyOrToken));
-				rec.Name = this.Strings.Add(name.Name);
-				if (name.CultureInfo != null)
-				{
-					rec.Culture = this.Strings.Add(name.CultureInfo.Name);
-				}
-				else
-				{
-					rec.Culture = 0;
-				}
-				rec.HashValue = 0;
-				realtokens[(kv.Value & 0x7FFFFF) - 1] = 0x23000000 | this.AssemblyRef.FindOrAddRecord(rec);
+				realtokens[(kv.Value & 0x7FFFFF) - 1] = FindOrAddAssemblyRef(kv.Key.GetName());
 			}
 			// now fixup the resolution scopes in TypeRef
 			for (int i = 0; i < this.TypeRef.records.Length; i++)
@@ -695,6 +662,43 @@ namespace IKVM.Reflection.Emit
 					this.ExportedType.records[i].Implementation = realtokens[(implementation & 0x7FFFFF) - 1];
 				}
 			}
+		}
+
+		private int FindOrAddAssemblyRef(AssemblyName name)
+		{
+			AssemblyRefTable.Record rec = new AssemblyRefTable.Record();
+			Version ver = name.Version;
+			rec.MajorVersion = (ushort)ver.Major;
+			rec.MinorVersion = (ushort)ver.Minor;
+			rec.BuildNumber = (ushort)ver.Build;
+			rec.RevisionNumber = (ushort)ver.Revision;
+			rec.Flags = (int)(name.Flags & AssemblyNameFlags.Retargetable);
+			byte[] publicKeyOrToken = null;
+			if (usePublicKeyAssemblyReference)
+			{
+				publicKeyOrToken = name.GetPublicKey();
+			}
+			if (publicKeyOrToken == null || publicKeyOrToken.Length == 0)
+			{
+				publicKeyOrToken = name.GetPublicKeyToken();
+			}
+			else
+			{
+				const int PublicKey = 0x0001;
+				rec.Flags |= PublicKey;
+			}
+			rec.PublicKeyOrToken = this.Blobs.Add(ByteBuffer.Wrap(publicKeyOrToken));
+			rec.Name = this.Strings.Add(name.Name);
+			if (name.CultureInfo != null)
+			{
+				rec.Culture = this.Strings.Add(name.CultureInfo.Name);
+			}
+			else
+			{
+				rec.Culture = 0;
+			}
+			rec.HashValue = 0;
+			return 0x23000000 | this.AssemblyRef.FindOrAddRecord(rec);
 		}
 
 		internal void WriteSymbolTokenMap()
@@ -1209,6 +1213,11 @@ namespace IKVM.Reflection.Emit
 			}
 			FillAssemblyRefTable();
 			ModuleWriter.WriteModule(null, null, this, PEFileKinds.Dll, portableExecutableKind, imageFileMachine, unmanagedResources, 0);
+		}
+
+		public void __AddAssemblyReference(AssemblyName assemblyName)
+		{
+			FindOrAddAssemblyRef(assemblyName);
 		}
 	}
 
