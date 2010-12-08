@@ -119,7 +119,7 @@ namespace IKVM.Internal
 		{
 			// if we're compiling the core, coreAssembly will be null
 			Assembly coreAssembly = JVM.CoreAssembly;
-			if(coreAssembly != null)
+			if(coreAssembly != null && remappedTypes.Count ==0)
 			{
 				RemappedClassAttribute[] remapped = AttributeHelper.GetRemappedClasses(coreAssembly);
 				if(remapped.Length > 0)
