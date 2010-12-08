@@ -1111,6 +1111,9 @@ public final class System {
      * @since      1.2
      */
     public static String mapLibraryName(String libname) {
+        if (libname == null) {
+            throw new NullPointerException();
+        }
         if (ikvm.internal.Util.WINDOWS) {
             return libname + ".dll";
         } else if (ikvm.internal.Util.MACOSX) {
