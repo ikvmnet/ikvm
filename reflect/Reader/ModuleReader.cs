@@ -890,7 +890,7 @@ namespace IKVM.Reflection.Reader
 			throw new FileNotFoundException();
 		}
 
-		internal AssemblyName[] GetReferencedAssemblies()
+		public override AssemblyName[] __GetReferencedAssemblies()
 		{
 			List<AssemblyName> list = new List<AssemblyName>();
 			for (int i = 0; i < AssemblyRef.records.Length; i++)

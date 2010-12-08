@@ -57,6 +57,7 @@ namespace IKVM.Reflection.Emit
 		private readonly Dictionary<MemberInfo, int> importedMembers = new Dictionary<MemberInfo, int>();
 		private readonly Dictionary<MemberRefKey, int> importedMemberRefs = new Dictionary<MemberRefKey, int>();
 		private readonly Dictionary<Assembly, int> referencedAssemblies = new Dictionary<Assembly, int>();
+		private List<AssemblyName> referencedAssemblyNames;
 		private int nextPseudoToken = -1;
 		private readonly List<int> resolvedTokens = new List<int>();
 		internal readonly TableHeap Tables = new TableHeap();
@@ -1217,7 +1218,36 @@ namespace IKVM.Reflection.Emit
 
 		public void __AddAssemblyReference(AssemblyName assemblyName)
 		{
+			if (referencedAssemblyNames == null)
+			{
+				referencedAssemblyNames = new List<AssemblyName>();
+			}
 			FindOrAddAssemblyRef(assemblyName);
+			referencedAssemblyNames.Add((AssemblyName)assemblyName.Clone());
+		}
+
+		public override AssemblyName[] __GetReferencedAssemblies()
+		{
+			List<AssemblyName> list = new List<AssemblyName>();
+			if (referencedAssemblyNames != null)
+			{
+				foreach (AssemblyName name in referencedAssemblyNames)
+				{
+					if (!list.Contains(name))
+					{
+						list.Add(name);
+					}
+				}
+			}
+			foreach (Assembly asm in referencedAssemblies.Keys)
+			{
+				AssemblyName name = asm.GetName();
+				if (!list.Contains(name))
+				{
+					list.Add(name);
+				}
+			}
+			return list.ToArray();
 		}
 	}
 

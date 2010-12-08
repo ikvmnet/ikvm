@@ -66,7 +66,7 @@ namespace IKVM.Reflection
 
 		public AssemblyName[] GetReferencedAssemblies()
 		{
-			return module.GetReferencedAssemblies();
+			return module.__GetReferencedAssemblies();
 		}
 
 		public void Dispose()
@@ -384,6 +384,8 @@ namespace IKVM.Reflection
 		{
 			return Empty<CustomAttributeData>.Array;
 		}
+
+		public abstract AssemblyName[] __GetReferencedAssemblies();
 
 		internal Type CanonicalizeType(Type type)
 		{

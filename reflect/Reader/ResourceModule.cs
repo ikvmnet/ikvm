@@ -105,6 +105,11 @@ namespace IKVM.Reflection.Reader
 			throw new NotSupportedException();
 		}
 
+		public override AssemblyName[] __GetReferencedAssemblies()
+		{
+			throw new NotSupportedException();
+		}
+
 		internal override Type GetTypeImpl(string typeName)
 		{
 			return null;

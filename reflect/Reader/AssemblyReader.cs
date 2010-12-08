@@ -244,7 +244,7 @@ namespace IKVM.Reflection.Reader
 
 		public override AssemblyName[] GetReferencedAssemblies()
 		{
-			return manifestModule.GetReferencedAssemblies();
+			return manifestModule.__GetReferencedAssemblies();
 		}
 
 		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)

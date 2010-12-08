@@ -701,6 +701,11 @@ namespace IKVM.Reflection.Emit
 			get { return "RefEmit_InMemoryManifestModule"; }
 		}
 
+		public override AssemblyName[] __GetReferencedAssemblies()
+		{
+			throw new InvalidOperationException();
+		}
+
 		internal override Type GetModuleType()
 		{
 			throw new InvalidOperationException();
