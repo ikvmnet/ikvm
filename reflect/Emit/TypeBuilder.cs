@@ -658,6 +658,29 @@ namespace IKVM.Reflection.Emit
 			{
 				mb.Bake();
 			}
+			if (declarativeSecurity != null)
+			{
+				this.ModuleBuilder.AddDeclarativeSecurity(token, declarativeSecurity);
+			}
+			if (baseType != null)
+			{
+				extends = this.ModuleBuilder.GetTypeToken(baseType).Token;
+			}
+			if (interfaces != null)
+			{
+				foreach (Type interfaceType in interfaces)
+				{
+					InterfaceImplTable.Record rec = new InterfaceImplTable.Record();
+					rec.Class = token;
+					rec.Interface = this.ModuleBuilder.GetTypeToken(interfaceType).Token;
+					this.ModuleBuilder.InterfaceImpl.AddRecord(rec);
+				}
+			}
+			return new BakedType(this);
+		}
+
+		internal void PopulatePropertyAndEventTables()
+		{
 			if (properties != null)
 			{
 				PropertyMapTable.Record rec = new PropertyMapTable.Record();
@@ -680,25 +703,6 @@ namespace IKVM.Reflection.Emit
 					eb.Bake();
 				}
 			}
-			if (declarativeSecurity != null)
-			{
-				this.ModuleBuilder.AddDeclarativeSecurity(token, declarativeSecurity);
-			}
-			if (baseType != null)
-			{
-				extends = this.ModuleBuilder.GetTypeToken(baseType).Token;
-			}
-			if (interfaces != null)
-			{
-				foreach (Type interfaceType in interfaces)
-				{
-					InterfaceImplTable.Record rec = new InterfaceImplTable.Record();
-					rec.Class = token;
-					rec.Interface = this.ModuleBuilder.GetTypeToken(interfaceType).Token;
-					this.ModuleBuilder.InterfaceImpl.AddRecord(rec);
-				}
-			}
-			return new BakedType(this);
 		}
 
 		public override Type BaseType

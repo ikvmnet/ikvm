@@ -264,10 +264,12 @@ namespace IKVM.Reflection.Emit
 
 			foreach (ModuleBuilder moduleBuilder in modules)
 			{
-				if (string.Compare(moduleBuilder.fileName, assemblyFileName, StringComparison.OrdinalIgnoreCase) == 0)
+				moduleBuilder.PopulatePropertyAndEventTables();
+
+				if (manifestModule == null
+					&& string.Compare(moduleBuilder.fileName, assemblyFileName, StringComparison.OrdinalIgnoreCase) == 0)
 				{
 					manifestModule = moduleBuilder;
-					break;
 				}
 			}
 

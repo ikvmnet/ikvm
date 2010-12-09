@@ -113,6 +113,17 @@ namespace IKVM.Reflection.Emit
 			types.Add(moduleType);
 		}
 
+		internal void PopulatePropertyAndEventTables()
+		{
+			// LAMESPEC the PropertyMap and EventMap tables are not required to be sorted by the CLI spec,
+			// but .NET sorts them and Mono requires them to be sorted, so we have to populate the
+			// tables in the right order
+			foreach (TypeBuilder type in types)
+			{
+				type.PopulatePropertyAndEventTables();
+			}
+		}
+
 		internal void WriteTypeDefTable(MetadataWriter mw)
 		{
 			int fieldList = 1;
@@ -1176,6 +1187,7 @@ namespace IKVM.Reflection.Emit
 
 		public void __Save(PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
 		{
+			PopulatePropertyAndEventTables();
 			IList<CustomAttributeData> attributes = asm.GetCustomAttributesData(null);
 			if (attributes.Count > 0)
 			{
