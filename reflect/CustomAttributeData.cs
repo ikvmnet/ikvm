@@ -27,6 +27,7 @@ using System.Text;
 using System.IO;
 using IKVM.Reflection.Reader;
 using IKVM.Reflection.Emit;
+using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection
 {
@@ -378,6 +379,32 @@ namespace IKVM.Reflection
 				}
 			}
 			return null;
+		}
+
+		public string __TypeName
+		{
+			get
+			{
+				if (lazyConstructor == null)
+				{
+					ModuleReader mod = module as ModuleReader;
+					if (mod != null)
+					{
+						int methodToken = mod.CustomAttribute.records[index].Type;
+						if ((methodToken >> 24) == MemberRefTable.Index)
+						{
+							int methodIndex = (methodToken & 0xFFFFFF) - 1;
+							int typeToken = mod.MemberRef.records[methodIndex].Class;
+							if ((typeToken >> 24) == TypeRefTable.Index)
+							{
+								int typeIndex = (typeToken & 0xFFFFFF) - 1;
+								return mod.GetTypeName(mod.TypeRef.records[typeIndex].TypeNameSpace, mod.TypeRef.records[typeIndex].TypeName);
+							}
+						}
+					}
+				}
+				return Constructor.DeclaringType.FullName;
+			}
 		}
 
 		public ConstructorInfo Constructor
