@@ -115,6 +115,9 @@
                 <include name="verifier.cs" />
                 <include name="vfs.cs" />
                 <include name="vm.cs" />
+                <include name="fdlibm/e_pow.cs" />
+                <include name="fdlibm/fdlibm_h.cs" />
+                <include name="fdlibm/s_scalbn.cs" />
             </sources>
             <resources>
                 <include if="${not first-pass}" name="../openjdk/vfs.zip" />
