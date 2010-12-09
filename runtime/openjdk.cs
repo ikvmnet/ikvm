@@ -3349,19 +3349,7 @@ namespace IKVM.NativeCode.java
 
 			public static double cbrt(double d)
 			{
-				if (d > 0.0)
-				{
-					return Math.Pow(d, 1.0 / 3.0);
-				}
-				else if (d < 0.0)
-				{
-					return - Math.Pow(Math.Abs(d), 1.0 / 3.0);
-				}
-				else
-				{
-					// this handles NaN and signed zero
-					return d;
-				}
+				return fdlibm.cbrt(d);
 			}
 
 			public static double IEEEremainder(double f1, double f2)
