@@ -3402,11 +3402,7 @@ namespace IKVM.NativeCode.java
 
 			public static double pow(double x, double y)
 			{
-#if FIRST_PASS
-				return 0;
-#else
-				return global::ikvm.@internal.JMath.pow(x, y);
-#endif
+				return fdlibm.__ieee754_pow(x, y);
 			}
 
 			public static double sinh(double d)

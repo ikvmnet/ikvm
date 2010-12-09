@@ -120,6 +120,9 @@
     <Compile Include="ExceptionHelper.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="fdlibm\e_pow.cs" />
+    <Compile Include="fdlibm\fdlibm_h.cs" />
+    <Compile Include="fdlibm\s_scalbn.cs" />
     <Compile Include="intrinsics.cs" />
     <Compile Include="JavaException.cs">
       <SubType>Code</SubType>
