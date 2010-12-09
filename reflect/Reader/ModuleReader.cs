@@ -477,7 +477,7 @@ namespace IKVM.Reflection.Reader
 			}
 		}
 
-		internal string GetTypeName(int typeNamespace, int typeName)
+		private string GetTypeName(int typeNamespace, int typeName)
 		{
 			if (typeNamespace == 0)
 			{

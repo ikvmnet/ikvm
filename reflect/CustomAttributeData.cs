@@ -381,30 +381,31 @@ namespace IKVM.Reflection
 			return null;
 		}
 
-		public string __TypeName
+		public void __ReadTypeName(out string ns, out string name)
 		{
-			get
+			if (lazyConstructor == null)
 			{
-				if (lazyConstructor == null)
+				ModuleReader mod = module as ModuleReader;
+				if (mod != null)
 				{
-					ModuleReader mod = module as ModuleReader;
-					if (mod != null)
+					int methodToken = mod.CustomAttribute.records[index].Type;
+					if ((methodToken >> 24) == MemberRefTable.Index)
 					{
-						int methodToken = mod.CustomAttribute.records[index].Type;
-						if ((methodToken >> 24) == MemberRefTable.Index)
+						int methodIndex = (methodToken & 0xFFFFFF) - 1;
+						int typeToken = mod.MemberRef.records[methodIndex].Class;
+						if ((typeToken >> 24) == TypeRefTable.Index)
 						{
-							int methodIndex = (methodToken & 0xFFFFFF) - 1;
-							int typeToken = mod.MemberRef.records[methodIndex].Class;
-							if ((typeToken >> 24) == TypeRefTable.Index)
-							{
-								int typeIndex = (typeToken & 0xFFFFFF) - 1;
-								return mod.GetTypeName(mod.TypeRef.records[typeIndex].TypeNameSpace, mod.TypeRef.records[typeIndex].TypeName);
-							}
+							int typeIndex = (typeToken & 0xFFFFFF) - 1;
+							int typeNameSpace = mod.TypeRef.records[typeIndex].TypeNameSpace;
+							ns = typeNameSpace == 0 ? null : mod.GetString(typeNameSpace);
+							name = mod.GetString(mod.TypeRef.records[typeIndex].TypeName);
+							return;
 						}
 					}
 				}
-				return Constructor.DeclaringType.FullName;
 			}
+			ns = Constructor.DeclaringType.Namespace;
+			name = Constructor.DeclaringType.Name;
 		}
 
 		public ConstructorInfo Constructor
