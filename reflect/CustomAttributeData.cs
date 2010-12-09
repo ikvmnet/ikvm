@@ -33,38 +33,46 @@ namespace IKVM.Reflection
 	public sealed class CustomAttributeData
 	{
 		internal static readonly IList<CustomAttributeData> EmptyList = new List<CustomAttributeData>(0).AsReadOnly();
-		private readonly ConstructorInfo constructor;
-		private readonly IList<CustomAttributeTypedArgument> constructorArguments;
-		private readonly IList<CustomAttributeNamedArgument> namedArguments;
+		private Module module;
+		private int index;
+		private ConstructorInfo lazyConstructor;
+		private IList<CustomAttributeTypedArgument> lazyConstructorArguments;
+		private IList<CustomAttributeNamedArgument> lazyNamedArguments;
+
+		internal CustomAttributeData(Module module, int index)
+		{
+			this.module = module;
+			this.index = index;
+		}
 
 		internal CustomAttributeData(ConstructorInfo constructor, object[] args, List<CustomAttributeNamedArgument> namedArguments)
 		{
-			this.constructor = constructor;
+			this.lazyConstructor = constructor;
 			MethodSignature sig = constructor.MethodSignature;
 			List<CustomAttributeTypedArgument> list = new List<CustomAttributeTypedArgument>();
 			for (int i = 0; i < args.Length; i++)
 			{
 				list.Add(new CustomAttributeTypedArgument(sig.GetParameterType(i), args[i]));
 			}
-			constructorArguments = list.AsReadOnly();
+			lazyConstructorArguments = list.AsReadOnly();
 			if (namedArguments == null)
 			{
-				this.namedArguments = Empty<CustomAttributeNamedArgument>.Array;
+				this.lazyNamedArguments = Empty<CustomAttributeNamedArgument>.Array;
 			}
 			else
 			{
-				this.namedArguments = namedArguments.AsReadOnly();
+				this.lazyNamedArguments = namedArguments.AsReadOnly();
 			}
 		}
 
 		internal CustomAttributeData(Assembly asm, ConstructorInfo constructor, ByteReader br)
 		{
-			this.constructor = constructor;
+			this.lazyConstructor = constructor;
 			if (br.Length == 0)
 			{
 				// it's legal to have an empty blob
-				constructorArguments = Empty<CustomAttributeTypedArgument>.Array;
-				namedArguments = Empty<CustomAttributeNamedArgument>.Array;
+				lazyConstructorArguments = Empty<CustomAttributeTypedArgument>.Array;
+				lazyNamedArguments = Empty<CustomAttributeNamedArgument>.Array;
 			}
 			else
 			{
@@ -72,8 +80,8 @@ namespace IKVM.Reflection
 				{
 					throw new BadImageFormatException();
 				}
-				constructorArguments = ReadConstructorArguments(asm, br, constructor);
-				namedArguments = ReadNamedArguments(asm, br, br.ReadUInt16(), constructor.DeclaringType);
+				lazyConstructorArguments = ReadConstructorArguments(asm, br, constructor);
+				lazyNamedArguments = ReadNamedArguments(asm, br, br.ReadUInt16(), constructor.DeclaringType);
 			}
 		}
 
@@ -81,16 +89,16 @@ namespace IKVM.Reflection
 		{
 			StringBuilder sb = new StringBuilder();
 			sb.Append('[');
-			sb.Append(constructor.DeclaringType.FullName);
+			sb.Append(Constructor.DeclaringType.FullName);
 			sb.Append('(');
 			string sep = "";
-			foreach (CustomAttributeTypedArgument arg in constructorArguments)
+			foreach (CustomAttributeTypedArgument arg in ConstructorArguments)
 			{
 				sb.Append(sep);
 				sep = ", ";
 				AppendValue(sb, arg);
 			}
-			foreach (CustomAttributeNamedArgument named in namedArguments)
+			foreach (CustomAttributeNamedArgument named in NamedArguments)
 			{
 				sb.Append(sep);
 				sep = ", ";
@@ -166,11 +174,11 @@ namespace IKVM.Reflection
 		private CustomAttributeData(ConstructorInfo constructor, int securityAction, IList<CustomAttributeNamedArgument> namedArguments)
 		{
 			Universe u = constructor.Module.universe;
-			this.constructor = constructor;
+			this.lazyConstructor = constructor;
 			List<CustomAttributeTypedArgument> list = new List<CustomAttributeTypedArgument>();
 			list.Add(new CustomAttributeTypedArgument(u.System_Security_Permissions_SecurityAction, securityAction));
-			this.constructorArguments =  list.AsReadOnly();
-			this.namedArguments = namedArguments;
+			this.lazyConstructorArguments =  list.AsReadOnly();
+			this.lazyNamedArguments = namedArguments;
 		}
 
 		private static Type ReadFieldOrPropType(Assembly asm, ByteReader br)
@@ -374,31 +382,72 @@ namespace IKVM.Reflection
 
 		public ConstructorInfo Constructor
 		{
-			get { return constructor; }
+			get
+			{
+				if (lazyConstructor == null)
+				{
+					lazyConstructor = (ConstructorInfo)module.ResolveMethod(module.CustomAttribute.records[index].Type);
+				}
+				return lazyConstructor;
+			}
 		}
 
 		public IList<CustomAttributeTypedArgument> ConstructorArguments
 		{
-			get { return constructorArguments; }
+			get
+			{
+				if (lazyConstructorArguments == null)
+				{
+					LazyParseArguments();
+				}
+				return lazyConstructorArguments;
+			}
 		}
 
 		public IList<CustomAttributeNamedArgument> NamedArguments
 		{
-			get { return namedArguments; }
+			get
+			{
+				if (lazyNamedArguments == null)
+				{
+					LazyParseArguments();
+				}
+				return lazyNamedArguments;
+			}
+		}
+
+		private void LazyParseArguments()
+		{
+			ByteReader br = module.GetBlob(module.CustomAttribute.records[index].Value);
+			if (br.Length == 0)
+			{
+				// it's legal to have an empty blob
+				lazyConstructorArguments = Empty<CustomAttributeTypedArgument>.Array;
+				lazyNamedArguments = Empty<CustomAttributeNamedArgument>.Array;
+			}
+			else
+			{
+				if (br.ReadUInt16() != 1)
+				{
+					throw new BadImageFormatException();
+				}
+				lazyConstructorArguments = ReadConstructorArguments(module.Assembly, br, Constructor);
+				lazyNamedArguments = ReadNamedArguments(module.Assembly, br, br.ReadUInt16(), Constructor.DeclaringType);
+			}
 		}
 
 		public CustomAttributeBuilder __ToBuilder()
 		{
-			object[] args = new object[constructorArguments.Count];
+			object[] args = new object[ConstructorArguments.Count];
 			for (int i = 0; i < args.Length; i++)
 			{
-				args[i] = constructorArguments[i].Value;
+				args[i] = ConstructorArguments[i].Value;
 			}
 			List<PropertyInfo> namedProperties = new List<PropertyInfo>();
 			List<object> propertyValues = new List<object>();
 			List<FieldInfo> namedFields = new List<FieldInfo>();
 			List<object> fieldValues = new List<object>();
-			foreach (CustomAttributeNamedArgument named in namedArguments)
+			foreach (CustomAttributeNamedArgument named in NamedArguments)
 			{
 				if (named.MemberInfo is PropertyInfo)
 				{
@@ -411,7 +460,7 @@ namespace IKVM.Reflection
 					fieldValues.Add(named.TypedValue.Value);
 				}
 			}
-			return new CustomAttributeBuilder(constructor, args, namedProperties.ToArray(), propertyValues.ToArray(), namedFields.ToArray(), fieldValues.ToArray());
+			return new CustomAttributeBuilder(Constructor, args, namedProperties.ToArray(), propertyValues.ToArray(), namedFields.ToArray(), fieldValues.ToArray());
 		}
 
 		public static IList<CustomAttributeData> GetCustomAttributes(MemberInfo member)

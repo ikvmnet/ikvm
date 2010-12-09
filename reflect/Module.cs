@@ -415,10 +415,17 @@ namespace IKVM.Reflection
 			{
 				if (CustomAttribute.records[i].Parent == metadataToken)
 				{
-					ConstructorInfo constructor = (ConstructorInfo)ResolveMethod(CustomAttribute.records[i].Type);
-					if (attributeType == null || attributeType.IsAssignableFrom(constructor.DeclaringType))
+					if (attributeType == null)
 					{
-						list.Add(new CustomAttributeData(this.Assembly, constructor, GetBlob(CustomAttribute.records[i].Value)));
+						list.Add(new CustomAttributeData(this, i));
+					}
+					else
+					{
+						ConstructorInfo constructor = (ConstructorInfo)ResolveMethod(CustomAttribute.records[i].Type);
+						if (attributeType.IsAssignableFrom(constructor.DeclaringType))
+						{
+							list.Add(new CustomAttributeData(this.Assembly, constructor, GetBlob(CustomAttribute.records[i].Value)));
+						}
 					}
 				}
 			}
