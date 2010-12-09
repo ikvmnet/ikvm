@@ -499,7 +499,7 @@ namespace IKVM.Reflection.Emit
 					return type;
 				}
 			}
-			foreach (Module module in modules)
+			foreach (Module module in addedModules)
 			{
 				Type type = module.GetTypeImpl(typeName);
 				if (type != null)
