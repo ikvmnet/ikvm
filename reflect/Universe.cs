@@ -81,6 +81,7 @@ namespace IKVM.Reflection
 	{
 		internal readonly Dictionary<Type, Type> canonicalizedTypes = new Dictionary<Type, Type>();
 		private readonly List<Assembly> assemblies = new List<Assembly>();
+		private readonly List<AssemblyBuilder> dynamicAssemblies = new List<AssemblyBuilder>();
 		private readonly Dictionary<string, Assembly> assembliesByName = new Dictionary<string, Assembly>();
 		private readonly Dictionary<System.Type, Type> importedTypes = new Dictionary<System.Type, Type>();
 		private Type typeof_System_Object;
@@ -587,6 +588,21 @@ namespace IKVM.Reflection
 			return asm;
 		}
 
+		private Assembly GetDynamicAssembly(string refname)
+		{
+			foreach (AssemblyBuilder asm in dynamicAssemblies)
+			{
+				AssemblyComparisonResult result;
+				// We won't allow FX unification here, because our own (non-Fusion) implementation of CompareAssemblyIdentity doesn't support it and
+				// we don't want to create a fundamental functional difference based on that.
+				if (CompareAssemblyIdentity(refname, false, asm.FullName, false, out result) && result != AssemblyComparisonResult.EquivalentFXUnified)
+				{
+					return asm;
+				}
+			}
+			return null;
+		}
+
 		public Assembly Load(string refname)
 		{
 			return Load(refname, null, true);
@@ -614,6 +630,10 @@ namespace IKVM.Reflection
 						break;
 					}
 				}
+				if (asm == null)
+				{
+					asm = GetDynamicAssembly(refname);
+				}
 			}
 			if (asm != null)
 			{
@@ -633,6 +653,11 @@ namespace IKVM.Reflection
 
 		private Assembly DefaultResolver(string refname, bool throwOnError)
 		{
+			Assembly asm = GetDynamicAssembly(refname);
+			if (asm != null)
+			{
+				return asm;
+			}
 			string fileName;
 			if (throwOnError)
 			{
@@ -693,7 +718,13 @@ namespace IKVM.Reflection
 
 		public Assembly[] GetAssemblies()
 		{
-			return assemblies.ToArray();
+			Assembly[] array = new Assembly[assemblies.Count + dynamicAssemblies.Count];
+			assemblies.CopyTo(array);
+			for (int i = 0, j = assemblies.Count; j < array.Length; i++, j++)
+			{
+				array[j] = dynamicAssemblies[i];
+			}
+			return array;
 		}
 
 		// this is equivalent to the Fusion CompareAssemblyIdentity API
@@ -723,7 +754,7 @@ namespace IKVM.Reflection
 		private AssemblyBuilder DefineDynamicAssemblyImpl(AssemblyName name, AssemblyBuilderAccess access, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
 		{
 			AssemblyBuilder asm = new AssemblyBuilder(this, name, dir, requiredPermissions, optionalPermissions, refusedPermissions);
-			assemblies.Add(asm);
+			dynamicAssemblies.Add(asm);
 			return asm;
  		}
 
@@ -746,6 +777,13 @@ namespace IKVM.Reflection
 		public void Dispose()
 		{
 			foreach (Assembly asm in assemblies)
+			{
+				foreach (Module mod in asm.GetLoadedModules())
+				{
+					mod.Dispose();
+				}
+			}
+			foreach (AssemblyBuilder asm in dynamicAssemblies)
 			{
 				foreach (Module mod in asm.GetLoadedModules())
 				{
