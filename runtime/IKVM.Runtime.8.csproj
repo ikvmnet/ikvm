@@ -120,6 +120,7 @@
     <Compile Include="ExceptionHelper.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="fdlibm\e_hypot.cs" />
     <Compile Include="fdlibm\e_pow.cs" />
     <Compile Include="fdlibm\fdlibm_h.cs" />
     <Compile Include="fdlibm\s_cbrt.cs" />

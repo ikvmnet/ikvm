@@ -3419,7 +3419,7 @@ namespace IKVM.NativeCode.java
 
 			public static double hypot(double a, double b)
 			{
-				return sqrt(a * a + b * b);
+				return fdlibm.__ieee754_hypot(a, b);
 			}
 
 			public static double expm1(double d)
