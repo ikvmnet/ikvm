@@ -74,6 +74,9 @@ namespace ikvm.awt
 
 	class UndecoratedForm : Form
 	{
+	    private bool focusableWindow = true;
+	    private bool alwaysOnTop;
+
 		public UndecoratedForm()
 		{
 			setBorderStyle();
@@ -86,9 +89,42 @@ namespace ikvm.awt
             this.ShowInTaskbar = false;
         }
 
-        internal void setFocusableWindow(bool value)
+        internal void SetWindowState(bool focusableWindow, bool alwaysOnTop)
         {
-            SetStyle(ControlStyles.Selectable, value);
+            this.focusableWindow = focusableWindow;
+            this.alwaysOnTop = alwaysOnTop;
+        }
+
+        protected override bool ShowWithoutActivation {
+            // This work not like in Java. In Java it is not possible to click on a not focusable Window
+            // But now the windows is not stealing the focus on showing
+            get
+            {
+                return !focusableWindow;
+            }
+        }
+
+	    private const int WS_EX_TOPMOST = 0x00000008;
+        private const int WS_EX_NOACTIVATE = 0x08000000;
+	    private const int WS_DISABLED = 0x08000000;
+
+        protected override CreateParams CreateParams {
+            get {
+                CreateParams baseParams = base.CreateParams;
+                int exStyle = baseParams.ExStyle;
+
+                // This work not like in Java. In Java it is not possible to click on a not focusable Window
+                // But now the windows is not stealing the focus on showing
+                exStyle = focusableWindow ? exStyle & ~WS_EX_NOACTIVATE : exStyle | WS_EX_NOACTIVATE;
+                
+                // we need to set TOPMOST here because the property TopMost does not work with ShowWithoutActivation
+                baseParams.ExStyle = alwaysOnTop ? exStyle | WS_EX_TOPMOST : exStyle & ~WS_EX_TOPMOST;
+
+                // the Enabled on Forms has no effect. In Java a window beep if ot is disabled
+                // the same effect have we with this flag
+                baseParams.Style = Enabled ? baseParams.Style & ~WS_DISABLED : baseParams.Style | WS_DISABLED;
+                return baseParams;
+            }
         }
 
 		protected override void OnPaintBackground(PaintEventArgs e)
@@ -3946,11 +3982,6 @@ namespace ikvm.awt
 			NetToolkit.BeginInvoke(control.Activate);
 		}
 
-		public void updateAlwaysOnTop()
-		{
-			throw new NotImplementedException();
-		}
-
 		public bool requestWindowFocus()
 		{
 			return NetToolkit.Invoke<bool>(control.Focus);
@@ -3958,10 +3989,10 @@ namespace ikvm.awt
 
         public void setAlwaysOnTop(bool alwaysOnTop)
         {
-            if ((alwaysOnTop && target.isVisible()) || !alwaysOnTop)
-            {
-				NetToolkit.Invoke(delegate { control.TopMost = alwaysOnTop; });
-            }
+            // The .NET property TopMost does not work with a not focusable Window
+            // that we need to set the window flags directly. To reduce double code
+            // we call updateFocusableWindowState().
+            updateFocusableWindowState();
         }
 
         public bool isModalBlocked()
@@ -3997,7 +4028,7 @@ namespace ikvm.awt
 
         public void updateFocusableWindowState()
         {
-            ((UndecoratedForm)control).setFocusableWindow( ((java.awt.Window)target).isFocusableWindow());
+            ((UndecoratedForm)control).SetWindowState(((java.awt.Window)target).isFocusableWindow(), ((java.awt.Window)target).isAlwaysOnTop());
         }
 
         public void updateIconImages()
@@ -4035,7 +4066,9 @@ namespace ikvm.awt
 
 		protected override Form CreateControl()
 		{
-			return new UndecoratedForm();
+			UndecoratedForm form = new UndecoratedForm();
+            form.SetWindowState(target.isFocusableWindow(),target.isAlwaysOnTop());
+		    return form;
 		}
 
         protected override void OnMouseDown(object sender, MouseEventArgs ev)
