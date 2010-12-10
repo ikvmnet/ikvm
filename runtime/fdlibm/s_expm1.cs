@@ -119,14 +119,13 @@
  * compiler will convert from decimal to binary accurately enough
  * to produce the hexadecimal values shown.
  */
+using unsigned = System.UInt32;
 
-#include "fdlibm.h"
-
-#ifdef __STDC__
-static const double
-#else
-static double
-#endif
+static partial class fdlibm
+{
+	internal static double expm1(double x)
+	{
+		const double
 one             = 1.0,
 huge            = 1.0e+300,
 tiny            = 1.0e-300,
@@ -141,19 +140,12 @@ Q3  =  -7.93650757867487942473e-05, /* BF14CE19 9EAADBB7 */
 Q4  =   4.00821782732936239552e-06, /* 3ED0CFCA 86E65239 */
 Q5  =  -2.01099218183624371326e-07; /* BE8AFDB7 6E09C32D */
 
-#ifdef __STDC__
-        double expm1(double x)
-#else
-        double expm1(x)
-        double x;
-#endif
-{
         double y,hi,lo,c=0,t,e,hxs,hfx,r1;
         int k,xsb;
         unsigned hx;
 
-        hx  = __HI(x);  /* high word of x */
-        xsb = hx&0x80000000;            /* sign bit of x */
+        hx  = (unsigned)__HI(x);  /* high word of x */
+        xsb = (int)(hx&0x80000000);            /* sign bit of x */
         if(xsb==0) y=x; else y= -x;     /* y = |x| */
         hx &= 0x7fffffff;               /* high word of |x| */
 
@@ -161,7 +153,7 @@ Q5  =  -2.01099218183624371326e-07; /* BE8AFDB7 6E09C32D */
         if(hx >= 0x4043687A) {                  /* if |x|>=56*ln2 */
             if(hx >= 0x40862E42) {              /* if |x|>=709.78... */
                 if(hx>=0x7ff00000) {
-                    if(((hx&0xfffff)|__LO(x))!=0)
+                    if(((int)(hx&0xfffff)|__LO(x))!=0)
                          return x+x;     /* NaN */
                     else return (xsb==0)? x:-1.0;/* exp(+-inf)={inf,-1} */
                 }
@@ -181,7 +173,7 @@ Q5  =  -2.01099218183624371326e-07; /* BE8AFDB7 6E09C32D */
                 else
                     {hi = x + ln2_hi; lo = -ln2_lo;  k = -1;}
             } else {
-                k  = invln2*x+((xsb==0)?0.5:-0.5);
+                k  = (int)(invln2*x+((xsb==0)?0.5:-0.5));
                 t  = k;
                 hi = x - t*ln2_hi;      /* t*ln2_hi is exact here */
                 lo = t*ln2_lo;
@@ -212,20 +204,21 @@ Q5  =  -2.01099218183624371326e-07; /* BE8AFDB7 6E09C32D */
             }
             if (k <= -2 || k>56) {   /* suffice to return exp(x)-1 */
                 y = one-(e-x);
-                __HI(y) += (k<<20);     /* add k to y's exponent */
+                y = __HI(y, __HI(y) + (k<<20));     /* add k to y's exponent */
                 return y-one;
             }
             t = one;
             if(k<20) {
-                __HI(t) = 0x3ff00000 - (0x200000>>k);  /* t=1-2^-k */
+                t = __HI(t, 0x3ff00000 - (0x200000>>k));  /* t=1-2^-k */
                 y = t-(e-x);
-                __HI(y) += (k<<20);     /* add k to y's exponent */
+                y = __HI(y, __HI(y) + (k<<20));     /* add k to y's exponent */
            } else {
-                __HI(t)  = ((0x3ff-k)<<20);     /* 2^-k */
+                t = __HI(t, ((0x3ff-k)<<20));     /* 2^-k */
                 y = x-(e+t);
                 y += one;
-                __HI(y) += (k<<20);     /* add k to y's exponent */
+                y = __HI(y, __HI(y) + (k<<20));     /* add k to y's exponent */
             }
         }
         return y;
+}
 }

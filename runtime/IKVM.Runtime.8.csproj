@@ -123,6 +123,7 @@
     <Compile Include="fdlibm\e_pow.cs" />
     <Compile Include="fdlibm\fdlibm_h.cs" />
     <Compile Include="fdlibm\s_cbrt.cs" />
+    <Compile Include="fdlibm\s_expm1.cs" />
     <Compile Include="fdlibm\s_scalbn.cs" />
     <Compile Include="intrinsics.cs" />
     <Compile Include="JavaException.cs">

@@ -3424,11 +3424,7 @@ namespace IKVM.NativeCode.java
 
 			public static double expm1(double d)
 			{
-				if (d == 0.0)
-				{
-					return d;
-				}
-				return Math.Exp(d) - 1.0;
+				return fdlibm.expm1(d);
 			}
 
 			public static double log1p(double d)
