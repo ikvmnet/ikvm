@@ -3286,11 +3286,7 @@ namespace IKVM.NativeCode.java
 
 			public static double tan(double d)
 			{
-#if FIRST_PASS
-				return 0;
-#else
-				return global::ikvm.@internal.JMath.tan(d);
-#endif
+				return fdlibm.tan(d);
 			}
 
 			public static double asin(double d)
@@ -3372,11 +3368,7 @@ namespace IKVM.NativeCode.java
 
 			public static double floor(double d)
 			{
-#if FIRST_PASS
-				return 0;
-#else
-				return global::ikvm.@internal.JMath.floor(d);
-#endif
+				return fdlibm.floor(d);
 			}
 
 			public static double atan2(double y, double x)

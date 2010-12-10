@@ -66,8 +66,8 @@
  *              precison, one may have to do something like:
  *
  *              long double t,w,r_head, r_tail;
- *              t = (long double)y[2] + (long double)y[1];
- *              w = (long double)y[0];
+ *              t = (long double)y[2] + (long double)y_1_;
+ *              w = (long double)y_0_;
  *              r_head = t+w;
  *              r_tail = w - (r_head - t);
  *
@@ -141,19 +141,11 @@
  * to produce the hexadecimal values shown.
  */
 
-#include "fdlibm.h"
+static partial class fdlibm
+{
+static readonly int[] init_jk = {2,3,4,6}; /* initial value for jk */
 
-#ifdef __STDC__
-static const int init_jk[] = {2,3,4,6}; /* initial value for jk */
-#else
-static int init_jk[] = {2,3,4,6};
-#endif
-
-#ifdef __STDC__
-static const double PIo2[] = {
-#else
-static double PIo2[] = {
-#endif
+static readonly double[] PIo2 = {
   1.57079625129699707031e+00, /* 0x3FF921FB, 0x40000000 */
   7.54978941586159635335e-08, /* 0x3E74442D, 0x00000000 */
   5.39030252995776476554e-15, /* 0x3CF84698, 0x80000000 */
@@ -164,25 +156,20 @@ static double PIo2[] = {
   2.16741683877804819444e-51, /* 0x3569F31D, 0x00000000 */
 };
 
-#ifdef __STDC__
-static const double
-#else
-static double
-#endif
+    static int __kernel_rem_pio2(double[] x, ref double y_0_, ref double y_1_, ref double y_2_, int e0, int nx, int prec, int[] ipio2)
+	{
+		const double
 zero   = 0.0,
 one    = 1.0,
 two24   =  1.67772160000000000000e+07, /* 0x41700000, 0x00000000 */
 twon24  =  5.96046447753906250000e-08; /* 0x3E700000, 0x00000000 */
 
-#ifdef __STDC__
-        int __kernel_rem_pio2(double *x, double *y, int e0, int nx, int prec, const int *ipio2)
-#else
-        int __kernel_rem_pio2(x,y,e0,nx,prec,ipio2)
-        double x[], y[]; int e0,nx,prec; int ipio2[];
-#endif
-{
-        int jz,jx,jv,jp,jk,carry,n,iq[20],i,j,k,m,q0,ih;
-        double z,fw,f[20],fq[20],q[20];
+        int jz,jx,jv,jp,jk,carry,n,i,j,k,m,q0,ih;
+        int[] iq = new int[20];
+        double z,fw;
+		double[] f = new double[20];
+		double[] fq = new double[20];
+		double[] q = new double[20];
 
     /* initialize jk*/
         jk = init_jk[prec];
@@ -297,16 +284,16 @@ recompute:
             case 0:
                 fw = 0.0;
                 for (i=jz;i>=0;i--) fw += fq[i];
-                y[0] = (ih==0)? fw: -fw;
+                y_0_ = (ih==0)? fw: -fw;
                 break;
             case 1:
             case 2:
                 fw = 0.0;
                 for (i=jz;i>=0;i--) fw += fq[i];
-                y[0] = (ih==0)? fw: -fw;
+                y_0_ = (ih==0)? fw: -fw;
                 fw = fq[0]-fw;
                 for (i=1;i<=jz;i++) fw += fq[i];
-                y[1] = (ih==0)? fw: -fw;
+                y_1_ = (ih==0)? fw: -fw;
                 break;
             case 3:     /* painful */
                 for (i=jz;i>0;i--) {
@@ -321,10 +308,12 @@ recompute:
                 }
                 for (fw=0.0,i=jz;i>=2;i--) fw += fq[i];
                 if(ih==0) {
-                    y[0] =  fq[0]; y[1] =  fq[1]; y[2] =  fw;
+                    y_0_ =  fq[0]; y_1_ =  fq[1]; y_2_ =  fw;
                 } else {
-                    y[0] = -fq[0]; y[1] = -fq[1]; y[2] = -fw;
+                    y_0_ = -fq[0]; y_1_ = -fq[1]; y_2_ = -fw;
                 }
+				break;
         }
         return n&7;
+    }
 }

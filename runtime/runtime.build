@@ -117,11 +117,16 @@
                 <include name="vm.cs" />
                 <include name="fdlibm/e_hypot.cs" />
                 <include name="fdlibm/e_pow.cs" />
+                <include name="fdlibm/e_rem_pio2.cs" />
                 <include name="fdlibm/fdlibm_h.cs" />
+                <include name="fdlibm/k_rem_pio2.cs" />
+                <include name="fdlibm/k_tan.cs" />
                 <include name="fdlibm/s_cbrt.cs" />
                 <include name="fdlibm/s_expm1.cs" />
+                <include name="fdlibm/s_floor.cs" />
                 <include name="fdlibm/s_log1p.cs" />
                 <include name="fdlibm/s_scalbn.cs" />
+                <include name="fdlibm/s_tan.cs" />
             </sources>
             <resources>
                 <include if="${not first-pass}" name="../openjdk/vfs.zip" />

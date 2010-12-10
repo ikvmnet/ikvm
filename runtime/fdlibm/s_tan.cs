@@ -55,16 +55,12 @@
  *      TRIG(x) returns trig(x) nearly rounded
  */
 
-#include "fdlibm.h"
-
-#ifdef __STDC__
-        double tan(double x)
-#else
-        double tan(x)
-        double x;
-#endif
+static partial class fdlibm
 {
-        double y[2],z=0.0;
+	internal static
+        double tan(double x)
+{
+        double z=0.0;
         int n, ix;
 
     /* High word of x. */
@@ -79,8 +75,10 @@
 
     /* argument reduction needed */
         else {
-            n = __ieee754_rem_pio2(x,y);
-            return __kernel_tan(y[0],y[1],1-((n&1)<<1)); /*   1 -- n even
+			double y_0_ = 0.0, y_1_ = 0.0;
+			n = __ieee754_rem_pio2(x, ref y_0_, ref y_1_);
+            return __kernel_tan(y_0_,y_1_,1-((n&1)<<1)); /*   1 -- n even
                                                         -1 -- n odd */
         }
+    }
 }

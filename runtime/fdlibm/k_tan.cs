@@ -59,38 +59,41 @@
  *                     = 1 - 2*(tan(y) - (tan(y)^2)/(1+tan(y)))
  */
 
-#include "fdlibm.h"
-#ifdef __STDC__
-static const double
-#else
-static double
-#endif
+static partial class fdlibm
+{
+        static double __kernel_tan(double x, double y, int iy)
+		{
+			const double
 one   =  1.00000000000000000000e+00, /* 0x3FF00000, 0x00000000 */
 pio4  =  7.85398163397448278999e-01, /* 0x3FE921FB, 0x54442D18 */
 pio4lo=  3.06161699786838301793e-17, /* 0x3C81A626, 0x33145C07 */
-T[] =  {
+T_0_ =
   3.33333333333334091986e-01, /* 0x3FD55555, 0x55555563 */
+T_1_ =
   1.33333333333201242699e-01, /* 0x3FC11111, 0x1110FE7A */
+T_2_ =
   5.39682539762260521377e-02, /* 0x3FABA1BA, 0x1BB341FE */
+T_3_ =
   2.18694882948595424599e-02, /* 0x3F9664F4, 0x8406D637 */
+T_4_ =
   8.86323982359930005737e-03, /* 0x3F8226E3, 0xE96E8493 */
+T_5_ =
   3.59207910759131235356e-03, /* 0x3F6D6D22, 0xC9560328 */
+T_6_ =
   1.45620945432529025516e-03, /* 0x3F57DBC8, 0xFEE08315 */
+T_7_ =
   5.88041240820264096874e-04, /* 0x3F4344D8, 0xF2F26501 */
+T_8_ =
   2.46463134818469906812e-04, /* 0x3F3026F7, 0x1A8D1068 */
+T_9_ =
   7.81794442939557092300e-05, /* 0x3F147E88, 0xA03792A6 */
+T_10_ =
   7.14072491382608190305e-05, /* 0x3F12B80F, 0x32F0A7E9 */
+T_11_ =
  -1.85586374855275456654e-05, /* 0xBEF375CB, 0xDB605373 */
-  2.59073051863633712884e-05, /* 0x3EFB2A70, 0x74BF7AD4 */
-};
+T_12_ =
+  2.59073051863633712884e-05; /* 0x3EFB2A70, 0x74BF7AD4 */
 
-#ifdef __STDC__
-        double __kernel_tan(double x, double y, int iy)
-#else
-        double __kernel_tan(x, y, iy)
-        double x,y; int iy;
-#endif
-{
         double z,r,v,w,s;
         int ix,hx;
         hx = __HI(x);   /* high word of x */
@@ -106,10 +109,10 @@ T[] =  {
                 double a, t;
 
                 z = w = x + y;
-                __LO(z) = 0;
+                z = __LO(z, 0);
                 v = y - (z - x);
                 t = a = -one / w;
-                __LO(t) = 0;
+                t = __LO(t, 0);
                 s = one + t * z;
                 return t + a * (s + t * v);
                 }
@@ -128,11 +131,11 @@ T[] =  {
      *    x^5(T[1]+x^4*T[3]+...+x^20*T[11]) +
      *    x^5(x^2*(T[2]+x^4*T[4]+...+x^22*[T12]))
      */
-        r = T[1]+w*(T[3]+w*(T[5]+w*(T[7]+w*(T[9]+w*T[11]))));
-        v = z*(T[2]+w*(T[4]+w*(T[6]+w*(T[8]+w*(T[10]+w*T[12])))));
+        r = T_1_+w*(T_3_+w*(T_5_+w*(T_7_+w*(T_9_+w*T_11_))));
+        v = z*(T_2_+w*(T_4_+w*(T_6_+w*(T_8_+w*(T_10_+w*T_12_)))));
         s = z*x;
         r = y + z*(s*(r+v)+y);
-        r += T[0]*s;
+        r += T_0_*s;
         w = x+r;
         if(ix>=0x3FE59428) {
             v = (double)iy;
@@ -144,11 +147,12 @@ T[] =  {
      /*  compute -1.0/(x+r) accurately */
             double a,t;
             z  = w;
-            __LO(z) = 0;
+            z = __LO(z, 0);
             v  = r-(z - x);     /* z+v = r+x */
             t = a  = -1.0/w;    /* a = -1.0/w */
-            __LO(t) = 0;
+            t = __LO(t, 0);
             s  = 1.0+t*z;
             return t+a*(s+t*v);
         }
+}
 }

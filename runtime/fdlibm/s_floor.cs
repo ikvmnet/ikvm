@@ -33,22 +33,14 @@
  * Exception:
  *      Inexact flag raised if x not equal to floor(x).
  */
+using unsigned = System.UInt32;
 
-#include "fdlibm.h"
-
-#ifdef __STDC__
-static const double huge = 1.0e300;
-#else
-static double huge = 1.0e300;
-#endif
-
-#ifdef __STDC__
-        double floor(double x)
-#else
-        double floor(x)
-        double x;
-#endif
+static partial class fdlibm
 {
+    internal static double floor(double x)
+	{
+		const double huge = 1.0e300;
+
         int i0,i1,j0;
         unsigned i,j;
         i0 =  __HI(x);
@@ -59,14 +51,14 @@ static double huge = 1.0e300;
                 if(huge+x>0.0) {/* return 0*sign(x) if |x|<1 */
                     if(i0>=0) {i0=i1=0;}
                     else if(((i0&0x7fffffff)|i1)!=0)
-                        { i0=0xbff00000;i1=0;}
+                        { i0=unchecked((int)0xbff00000);i1=0;}
                 }
             } else {
-                i = (0x000fffff)>>j0;
-                if(((i0&i)|i1)==0) return x; /* x is integral */
+                i = (unsigned)((0x000fffff)>>j0);
+                if(((i0&(int)i)|i1)==0) return x; /* x is integral */
                 if(huge+x>0.0) {        /* raise inexact flag */
                     if(i0<0) i0 += (0x00100000)>>j0;
-                    i0 &= (~i); i1=0;
+                    i0 &= (~(int)i); i1=0;
                 }
             }
         } else if (j0>51) {
@@ -79,15 +71,16 @@ static double huge = 1.0e300;
                 if(i0<0) {
                     if(j0==20) i0+=1;
                     else {
-                        j = i1+(1<<(52-j0));
+                        j = (unsigned)(i1+(1<<(52-j0)));
                         if(j<i1) i0 +=1 ;       /* got a carry */
-                        i1=j;
+                        i1=(int)j;
                     }
                 }
-                i1 &= (~i);
+                i1 &= (~(int)i);
             }
         }
-        __HI(x) = i0;
-        __LO(x) = i1;
+        x = __HI(x, i0);
+        x = __LO(x, i1);
         return x;
+	}
 }
