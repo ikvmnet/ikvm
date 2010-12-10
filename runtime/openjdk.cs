@@ -3429,11 +3429,7 @@ namespace IKVM.NativeCode.java
 
 			public static double log1p(double d)
 			{
-				if (d == 0.0)
-				{
-					return d;
-				}
-				return Math.Log(d + 1.0);
+				return fdlibm.log1p(d);
 			}
 		}
 

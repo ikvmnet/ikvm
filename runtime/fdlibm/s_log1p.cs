@@ -90,13 +90,11 @@
  *       See HP-15C Advanced Functions Handbook, p.193.
  */
 
-#include "fdlibm.h"
-
-#ifdef __STDC__
-static const double
-#else
-static double
-#endif
+static partial class fdlibm
+{
+    internal static double log1p(double x)
+	{
+		const double
 ln2_hi  =  6.93147180369123816490e-01,  /* 3fe62e42 fee00000 */
 ln2_lo  =  1.90821492927058770002e-10,  /* 3dea39ef 35793c76 */
 two54   =  1.80143985094819840000e+16,  /* 43500000 00000000 */
@@ -108,15 +106,8 @@ Lp5 = 1.818357216161805012e-01,  /* 3FC74664 96CB03DE */
 Lp6 = 1.531383769920937332e-01,  /* 3FC39A09 D078C69F */
 Lp7 = 1.479819860511658591e-01;  /* 3FC2F112 DF3E5244 */
 
-static double zero = 0.0;
+const double zero = 0.0;
 
-#ifdef __STDC__
-        double log1p(double x)
-#else
-        double log1p(x)
-        double x;
-#endif
-{
         double hfsq,f=0,c=0,s,z,R,u;
         int k,hx,hu=0,ax;
 
@@ -130,7 +121,7 @@ static double zero = 0.0;
                  * Added redundant test against hx to work around VC++
                  * code generation problem.
                  */
-                if(x==-1.0 && (hx==0xbff00000)) /* log1p(-1)=-inf */
+                if(x==-1.0 && (hx==unchecked((int)0xbff00000))) /* log1p(-1)=-inf */
                   return -two54/zero;
                 else
                   return (x-x)/(x-x);           /* log1p(x<-1)=NaN */
@@ -142,7 +133,7 @@ static double zero = 0.0;
                 else
                     return x - x*x*0.5;
             }
-            if(hx>0||hx<=((int)0xbfd2bec3)) {
+            if(hx>0||hx<=(unchecked((int)0xbfd2bec3))) {
                 k=0;f=x;hu=1;}  /* -0.2929<x<0.41422 */
         }
         if (hx >= 0x7ff00000) return x+x;
@@ -161,10 +152,10 @@ static double zero = 0.0;
             }
             hu &= 0x000fffff;
             if(hu<0x6a09e) {
-                __HI(u) = hu|0x3ff00000;        /* normalize u */
+                u = __HI(u, hu|0x3ff00000);        /* normalize u */
             } else {
                 k += 1;
-                __HI(u) = hu|0x3fe00000;        /* normalize u/2 */
+                u = __HI(u, hu|0x3fe00000);        /* normalize u/2 */
                 hu = (0x00100000-hu)>>2;
             }
             f = u-1.0;
@@ -182,4 +173,5 @@ static double zero = 0.0;
         R = z*(Lp1+z*(Lp2+z*(Lp3+z*(Lp4+z*(Lp5+z*(Lp6+z*Lp7))))));
         if(k==0) return f-(hfsq-s*(hfsq+R)); else
                  return k*ln2_hi-((hfsq-(s*(hfsq+R)+(k*ln2_lo+c)))-f);
+}
 }
