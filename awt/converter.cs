@@ -313,19 +313,6 @@ namespace ikvm.awt
             return new string(text);
         }
 
-        internal static StringFormat CreateStringFormat(java.awt.font.FontRenderContext frc) {
-            StringFormat format;
-            if (frc.usesFractionalMetrics()) {
-                // this very mystic, if a StringFormat extends from GenericTypographic then the metric are different but like Java with fractional metrics
-                format = new StringFormat(StringFormat.GenericTypographic);
-            } else {
-                format = new StringFormat();
-            }
-
-            format.FormatFlags = StringFormatFlags.MeasureTrailingSpaces | StringFormatFlags.NoWrap | StringFormatFlags.FitBlackBox;
-            format.Trimming = StringTrimming.None;
-            return format;
-        }
     }
 
     /// <summary>
