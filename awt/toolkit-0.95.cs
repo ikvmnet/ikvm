@@ -807,7 +807,12 @@ namespace ikvm.awt
             float factor = netFont.Size / family.GetEmHeight(style);
             float ascent = family.GetCellAscent(style) * factor;
             y -= ascent;
-            path.AddString(text, family, (int)style, netFont.Size, new PointF(x, y), J2C.CreateStringFormat(frc));
+
+            StringFormat format = new StringFormat(StringFormat.GenericTypographic);
+            format.FormatFlags = StringFormatFlags.MeasureTrailingSpaces | StringFormatFlags.NoWrap | StringFormatFlags.FitBlackBox;
+            format.Trimming = StringTrimming.None;
+
+            path.AddString(text, family, (int)style, netFont.Size, new PointF(x, y), format);
             return C2J.ConvertShape(path);
         }
 
