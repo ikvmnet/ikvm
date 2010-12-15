@@ -131,37 +131,41 @@ namespace ikvm.awt
             return Math.Max(0.0f, leading);
         }
 
-        internal float GetStringWidth(String aString, System.Drawing.Graphics g) {
-            if (aString.Length == 0) {
+        internal float GetStringWidth(String aString, System.Drawing.Graphics g)
+        {
+            if (aString.Length == 0)
+            {
                 return 0;
-            } else {
-                // System.Windows.Forms.TextRenderer#MeasureText seems to large
-                // Graphics#MeasureString is many faster but work only correct with TextRenderingHint.AntiAlias
-                bool rounding;
-                StringFormat format;
-                switch (g.TextRenderingHint){
-                    // Fractional metrics
-                    case TextRenderingHint.AntiAlias:
-                    case TextRenderingHint.SingleBitPerPixel:
-                        // this very mystic, if a StringFormat extends from GenericTypographic then the metric are different but like Java with fractional metrics
-                        format = new StringFormat(StringFormat.GenericTypographic);
-                        rounding = false;
-                        break;
-                    default:
-                        format = new StringFormat();
-                        rounding = true;
-                        break;
-                }
-
-                format.FormatFlags = StringFormatFlags.MeasureTrailingSpaces | StringFormatFlags.NoWrap | StringFormatFlags.FitBlackBox;
-                format.Trimming = StringTrimming.None;
-                format.SetMeasurableCharacterRanges(new CharacterRange[] { new CharacterRange(0, aString.Length) });
-                Region[] regions = g.MeasureCharacterRanges(aString, GetNetFont(), new RectangleF(0, 0, int.MaxValue, int.MaxValue), format);
-                SizeF size = regions[0].GetBounds(g).Size;
-                regions[0].Dispose();
-                //with Arial 9.0 and only one character under Vista .NET does not round it, that we rounding manualy
-                return rounding ? (int)Math.Round(size.Width) : size.Width;
             }
+            // System.Windows.Forms.TextRenderer#MeasureText seems to large
+            // Graphics#MeasureString is many faster but work only correct with TextRenderingHint.AntiAlias
+            bool rounding;
+            StringFormat format;
+            switch (g.TextRenderingHint)
+            {
+                // Fractional metrics
+                case TextRenderingHint.AntiAlias:
+                case TextRenderingHint.SingleBitPerPixel:
+                    // this very mystic, if a StringFormat extends from GenericTypographic then the metric are different but like Java with fractional metrics
+                    format = new StringFormat(StringFormat.GenericTypographic);
+                    rounding = false;
+                    break;
+                default:
+                    format = new StringFormat();
+                    rounding = true;
+                    break;
+            }
+
+            format.FormatFlags = StringFormatFlags.MeasureTrailingSpaces | StringFormatFlags.NoWrap |
+                                 StringFormatFlags.FitBlackBox;
+            format.Trimming = StringTrimming.None;
+            format.SetMeasurableCharacterRanges(new CharacterRange[] {new CharacterRange(0, aString.Length)});
+            Region[] regions = g.MeasureCharacterRanges(aString, GetNetFont(),
+                                                        new RectangleF(0, 0, int.MaxValue, int.MaxValue), format);
+            SizeF size = regions[0].GetBounds(g).Size;
+            regions[0].Dispose();
+            //with Arial 9.0 and only one character under Vista .NET does not round it, that we rounding manualy
+            return rounding ? (int) Math.Round(size.Width) : size.Width;
         }
 
         internal java.awt.geom.Rectangle2D GetStringBounds(String aString, System.Drawing.Graphics g)
