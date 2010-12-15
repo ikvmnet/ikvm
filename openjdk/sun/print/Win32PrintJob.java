@@ -1,5 +1,6 @@
 /*
   Copyright (C) 2009 Volker Berlin (i-net software)
+  Copyright (C) 2010 Karsten Heinrich (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -24,6 +25,9 @@
 package sun.print;
 
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.HeadlessException;
 import java.awt.image.BufferedImage;
 import java.awt.print.PageFormat;
 import java.awt.print.Pageable;
@@ -75,6 +79,7 @@ import javax.print.event.PrintJobEvent;
 import javax.print.event.PrintJobListener;
 
 import sun.awt.windows.WPrinterJob;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import cli.System.Drawing.Printing.*;
 
@@ -100,7 +105,7 @@ public class Win32PrintJob implements CancelablePrintJob{
 
     private PrintJobAttributeSet jobAttrSet;
 
-    private PrinterJob job;
+    private PrinterJob job = new WPrinterJob();
     private Doc doc;
     private String mDestination;
 
@@ -437,17 +442,15 @@ public class Win32PrintJob implements CancelablePrintJob{
 
     public void pageableJob(Pageable pageable) throws PrintException {
         try {
-            System.err.println("pageableJob");
             PrintDocument printDocument = createPrintDocument();
     
             //TODO Attribute set in printDocument
+            printDocument.add_QueryPageSettings(new QueryPageSettingsEventHandler(new QueryPage( pageable ) ) );
             printDocument.add_PrintPage(new PrintPageEventHandler(new PrintPage(pageable)));
-            System.err.println("Print");
             printDocument.Print();
             if(printerException != null){
                 throw printerException;
             }
-            System.err.println("after Print");
             //TODO throw exception on Cancel
             notifyEvent(PrintJobEvent.DATA_TRANSFER_COMPLETE);
             return;
@@ -467,7 +470,8 @@ public class Win32PrintJob implements CancelablePrintJob{
 
         Attribute destination = reqAttrSet.get(Destination.class);
         if(destination instanceof Destination){
-            settings.set_PrintFileName(((Destination)destination).getURI().toString());
+        	File destFile = new File(((Destination)destination).getURI());
+            settings.set_PrintFileName(destFile.getAbsolutePath());
         }
 
         settings.set_Copies((short)copies);
@@ -664,10 +668,13 @@ public class Win32PrintJob implements CancelablePrintJob{
                 Printable printable = pageable.getPrintable(pageIndex);
                 PageFormat pageFormat = pageable.getPageFormat(pageIndex);
 
+                
                 BufferedImage pBand = new BufferedImage(1, 1, BufferedImage.TYPE_3BYTE_BGR);
-                PeekGraphics peekGraphics = new PeekGraphics(pBand.createGraphics(), job);
+                Graphics2D imageGraphics = pBand.createGraphics();
+                ((RasterPrinterJob)job).setGraphicsConfigInfo(imageGraphics.getTransform(), pageFormat.getWidth(), pageFormat.getHeight());
+				PeekGraphics peekGraphics = new PeekGraphics(imageGraphics, job );
 
-                /*
+                /* 
                  * Because Sun is calling first with a PeekGraphics that we do it else for compatibility
                  */
                 if(pageIndex == 0){
@@ -694,5 +701,42 @@ public class Win32PrintJob implements CancelablePrintJob{
         }
 
     }
+    
+    private class QueryPage implements QueryPageSettingsEventHandler.Method{
 
+    	private final Pageable pageable;
+        private int pageIndex;
+
+
+        QueryPage(Pageable pageable){
+            this.pageable = pageable;
+            //TODO firstPage
+            //TODO lastPage
+            //TODO PageRange
+            //TODO Num Copies
+            //TODO collatedCopies
+        }
+        
+		@Override
+		public void Invoke(Object source, QueryPageSettingsEventArgs e) {
+			// apply page settings to the current page
+			PageFormat format = pageable.getPageFormat(pageIndex);
+			PageSettings pageSettings = e.get_PageSettings();
+			pageSettings.set_Landscape(format.getOrientation() == PageFormat.LANDSCAPE);
+			
+			PaperSize ps = new PaperSize();
+			ps.set_Height( (int)Math.round( format.getHeight() ) );
+			ps.set_Width( (int)Math.round( format.getWidth() ) );
+			pageSettings.set_PaperSize( ps );
+			
+			Margins margins = new Margins();
+			margins.set_Left( (int) format.getImageableX() );
+			margins.set_Top( (int)format.getImageableY() );
+			margins.set_Right( (int) (format.getWidth() - format.getImageableX() - format.getImageableWidth() ) );
+			margins.set_Bottom( (int)(format.getHeight() - format.getImageableY() - format.getImageableHeight() ) );			
+			pageSettings.set_Margins( margins );
+			pageIndex++;
+		}
+    	
+    }
 }
