@@ -674,8 +674,27 @@ namespace ikvm.awt
 
         public override void drawString(string text, float x, float y)
 		{
-			g.DrawString(text, netfont, brush, x, y - font.getSize(), StringFormat.GenericTypographic);
-		}
+            if (text.Length == 0) {
+                return;
+            }
+            StringFormat format;
+            switch (g.TextRenderingHint)
+            {
+                // Fractional metrics
+                case TextRenderingHint.AntiAlias:
+                case TextRenderingHint.SingleBitPerPixel:
+                    // this very mystic, if a StringFormat extends from GenericTypographic then the metric are different but like Java with fractional metrics
+                    format = new StringFormat(StringFormat.GenericTypographic);
+                    break;
+                default:
+                    // Non Fractional metrics
+                    format = new StringFormat();
+                    break;
+            }
+            format.FormatFlags = StringFormatFlags.MeasureTrailingSpaces | StringFormatFlags.NoWrap | StringFormatFlags.FitBlackBox;
+            format.Trimming = StringTrimming.None;
+            g.DrawString(text, netfont, brush, x, y - font.getSize(), format);
+        }
 
         public override void drawString(java.text.AttributedCharacterIterator iterator, int x, int y)
         {
