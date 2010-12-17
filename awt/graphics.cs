@@ -215,7 +215,10 @@ namespace ikvm.awt
         {
             using (Brush br = bgcolor != Color.Empty ? new SolidBrush(bgcolor) : brush)
             {
+                CompositingMode tempMode = g.CompositingMode;
+                g.CompositingMode = CompositingMode.SourceCopy;
                 g.FillRectangle(br, x, y, width, height);
+                g.CompositingMode = tempMode;
             }
         }
 
@@ -1258,14 +1261,14 @@ namespace ikvm.awt
             return javaComposite;
         }
 
-        public override void setBackground(java.awt.Color color)
+        public override void setBackground(java.awt.Color backcolor)
         {
-            bgcolor = composite.GetColor(color);
+            bgcolor = backcolor == null ? Color.Empty : Color.FromArgb(backcolor.getRGB());
         }
 
         public override java.awt.Color getBackground()
         {
-            return composite.GetColor(bgcolor);
+            return bgcolor == Color.Empty ? null : new java.awt.Color(color.ToArgb(), true);
         }
 
         public override java.awt.Stroke getStroke()
