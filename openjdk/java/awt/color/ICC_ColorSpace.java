@@ -194,11 +194,6 @@ public class ICC_ColorSpace extends ColorSpace
     return converter.fromCIEXYZ(colorvalue);
   }
 
-  public boolean isCS_sRGB()
-  {
-    return converter instanceof SrgbConverter;
-  }
-
   /**
    * Returns the minimum normalized color component value for the specified
    * component.
