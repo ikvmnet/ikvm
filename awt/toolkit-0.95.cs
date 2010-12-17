@@ -336,6 +336,20 @@ namespace ikvm.awt
 			return peer;
 		}
 
+        public override java.awt.peer.CanvasPeer createCanvas(java.awt.Canvas target)
+        {
+            java.awt.peer.CanvasPeer peer = Invoke<NetCanvasPeer>(delegate { return new NetCanvasPeer(target); });
+            targetCreatedPeer(target, peer);
+            return peer;
+        }
+
+        public override java.awt.peer.PanelPeer createPanel(java.awt.Panel target)
+        {
+            java.awt.peer.PanelPeer peer = Invoke<NetPanelPeer>(delegate { return new NetPanelPeer(target); });
+            targetCreatedPeer(target, peer);
+            return peer;
+        }
+
         public override java.awt.peer.TextFieldPeer createTextField(java.awt.TextField target)
         {
 			java.awt.peer.TextFieldPeer peer = Invoke<NetTextFieldPeer>(delegate { return new NetTextFieldPeer(target); });
@@ -3708,29 +3722,29 @@ namespace ikvm.awt
 		}
 	}
 
-    sealed class NetPanelPeer : NetContainerPeer<java.awt.Panel, Control>, java.awt.peer.PanelPeer
+    sealed class NetPanelPeer : NetContainerPeer<java.awt.Panel, ContainerControl>, java.awt.peer.PanelPeer
 	{
 		public NetPanelPeer(java.awt.Panel panel)
 			: base(panel)
 		{
 		}
 
-		protected override Control CreateControl()
+        protected override ContainerControl CreateControl()
 		{
-			throw new NotImplementedException();
+            return new ContainerControl();
 		}
 	}
 
-    sealed class NewCanvasPeer : NetComponentPeer<java.awt.Canvas, Control>, java.awt.peer.CanvasPeer
+    sealed class NetCanvasPeer : NetComponentPeer<java.awt.Canvas, Control>, java.awt.peer.CanvasPeer
 	{
-		public NewCanvasPeer(java.awt.Canvas canvas)
+		public NetCanvasPeer(java.awt.Canvas canvas)
 			: base(canvas)
 		{
 		}
 
 		protected override Control CreateControl()
 		{
-			throw new NotImplementedException();
+            return new Control();
 		}
 	}
 
