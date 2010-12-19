@@ -2758,25 +2758,26 @@ namespace ikvm.awt
             NetToolkit.BeginInvoke(delegate
             {
                 Form window = control.FindForm();
+                java.awt.Insets insets;
                 if (window is MyForm)
                 {
-                    java.awt.Insets insets = ((MyForm)window).peerInsets;
-                    control.SetBounds(x - insets.left, y - insets.top, width, height);
+                    insets = ((MyForm)window).peerInsets;
                 }
                 else
                 {
-                    control.SetBounds(x, y, width, height);
+                    insets = new java.awt.Insets(0, 0, 0, 0);
                 }
+                control.SetBounds(x - insets.left, y - insets.top, width, height);
                 //If the .NET control does not accept the new bounds (minimum size, maximum size) 
                 //then we need to reflect the real bounds on the .NET site to the Java site
                 Rectangle bounds = control.Bounds;
-                if (bounds.X != x)
+                if (bounds.X + insets.left != x)
                 {
-                    ComponentAccessor.setX(target, bounds.X);
+                    ComponentAccessor.setX(target, bounds.X + insets.left);
                 }
-                if (bounds.Y != y)
+                if (bounds.Y + insets.top != y)
                 {
-                    ComponentAccessor.setY(target, bounds.Y);
+                    ComponentAccessor.setY(target, bounds.Y + insets.top);
                 }
                 if (bounds.Width != width)
                 {
