@@ -330,11 +330,11 @@ public final class FileDescriptor {
         }
         catch (cli.System.ArgumentException x4)
         {
-            throw new FileNotFoundException(x4.getMessage());
+            throw (FileNotFoundException)new FileNotFoundException(x4.getMessage()).initCause(x4);
         }
         catch (cli.System.NotSupportedException x5)
         {
-            throw new FileNotFoundException(x5.getMessage());
+            throw (FileNotFoundException)new FileNotFoundException(x5.getMessage()).initCause(x5);
         }
     }
 
