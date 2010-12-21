@@ -335,8 +335,24 @@ public class BufferedImage extends java.awt.Image
                          int imageType) {
         this.imageType = imageType;
         this.colorModel = createColorModel();
-        this.bitmap = new cli.System.Drawing.Bitmap(width, height);
+        this.bitmap = createBitmap(width, height);
         this.currentBuffer = BUFFER_BITMAP;
+    }
+
+    /**
+     * Create a Bitmap if not already one exists
+     * @param width     width of the created image
+     * @param height    height of the created image
+     * @return a Bitmap object, never null
+     */
+    private cli.System.Drawing.Bitmap createBitmap(int width, int height){
+        if(bitmap != null){
+            return bitmap;
+        }
+        if(width <= 0 || height <= 0){
+            throw new IllegalArgumentException("Width (" + width + ") and height (" + height + ") cannot be <= 0");
+        }
+        return new cli.System.Drawing.Bitmap(width, height, PixelFormat.wrap(PixelFormat.Format32bppArgb));
     }
 
     /**
@@ -646,10 +662,10 @@ public class BufferedImage extends java.awt.Image
         // First map the pixel from Java type to .NET type
         switch (getType()){
             case TYPE_INT_ARGB:
-                bitmap = copyToBitmap(width, height, ((DataBufferInt)raster.getDataBuffer()).getData());
+                copyToBitmap(width, height, ((DataBufferInt)raster.getDataBuffer()).getData());
                 break;
             default:{
-                bitmap = new cli.System.Drawing.Bitmap(width, height, PixelFormat.wrap( PixelFormat.Format32bppArgb ));
+                bitmap = createBitmap(width, height);
                 for( int y = 0; y<height; y++){
                     for(int x = 0; x<width; x++){
                         int rgb = colorModel.getRGB(raster.getDataElements(x, y, null));
@@ -663,20 +679,19 @@ public class BufferedImage extends java.awt.Image
     }
 
     @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
-    private static cli.System.Drawing.Bitmap copyToBitmap(int width, int height, int[] pixelData)
+    private void copyToBitmap(int width, int height, int[] pixelData)
     {
         long size = (long)width * (long)height;
-        if (width <= 0 || height <= 0 || size > pixelData.length)
+        if (size > pixelData.length)
         {
             throw new IllegalArgumentException();
         }
-        cli.System.Drawing.Bitmap bitmap = new cli.System.Drawing.Bitmap(width, height, PixelFormat.wrap(PixelFormat.Format32bppArgb));
+        bitmap = createBitmap(width, height);
         cli.System.Drawing.Rectangle rect = new cli.System.Drawing.Rectangle(0, 0, width, height);
         cli.System.Drawing.Imaging.BitmapData data = bitmap.LockBits(rect, ImageLockMode.wrap(ImageLockMode.WriteOnly), PixelFormat.wrap(PixelFormat.Format32bppArgb));
         cli.System.IntPtr pixelPtr = data.get_Scan0();
         cli.System.Runtime.InteropServices.Marshal.Copy(pixelData, 0, pixelPtr, (int)size);
         bitmap.UnlockBits(data);
-        return bitmap;
     }
 
     /**
