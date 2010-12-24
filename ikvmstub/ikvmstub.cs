@@ -50,6 +50,7 @@ static class NetExp
 		List<string> libpaths = new List<string>();
 		bool nostdlib = false;
 		bool bootstrap = false;
+		string outputFile = null;
 		foreach(string s in args)
 		{
 			if(s.StartsWith("-") || assemblyNameOrPath != null)
@@ -82,6 +83,10 @@ static class NetExp
 				{
 					bootstrap = true;
 				}
+				else if(s.StartsWith("-out:"))
+				{
+					outputFile = s.Substring(5);
+				}
 				else
 				{
 					// unrecognized option, or multiple assemblies, print usage message and exit
@@ -98,7 +103,16 @@ static class NetExp
 		{
 			Console.Error.WriteLine(GetVersionAndCopyrightInfo());
 			Console.Error.WriteLine();
-			Console.Error.WriteLine("usage: ikvmstub [-serialver] [-skiperror] [-reference:<assembly>] [-lib:<dir>] <assemblyNameOrPath>");
+			Console.Error.WriteLine("usage: ikvmstub [-options] <assemblyNameOrPath>");
+			Console.Error.WriteLine();
+			Console.Error.WriteLine("options:");
+			Console.Error.WriteLine("    -out:<outputfile>          Specify the output filename");
+			Console.Error.WriteLine("    -reference:<filespec>      Reference an assembly (short form -r:<filespec>)");
+			Console.Error.WriteLine("    -serialver                 Include serialVersionUID fields");
+			Console.Error.WriteLine("    -skiperror                 Continue when errors are encountered");
+			Console.Error.WriteLine("    -shared                    Process all assemblies in shared group");
+			Console.Error.WriteLine("    -nostdlib                  Do not reference standard libraries");
+			Console.Error.WriteLine("    -lib:<dir>                 Additional directories to search for references");
 			return 1;
 		}
 		if(File.Exists(assemblyNameOrPath) && nostdlib)
@@ -159,9 +173,13 @@ static class NetExp
 			{
 				Console.Error.WriteLine("Warning: Running ikvmstub on ikvmc compiled assemblies is not supported.");
 			}
+			if (outputFile == null)
+			{
+				outputFile = assembly.GetName().Name + ".jar";
+			}
 			try
 			{
-				using (zipFile = new ZipOutputStream(new FileStream(assembly.GetName().Name + ".jar", FileMode.Create)))
+				using (zipFile = new ZipOutputStream(new FileStream(outputFile, FileMode.Create)))
 				{
 					zipFile.SetComment(GetVersionAndCopyrightInfo());
 					try
