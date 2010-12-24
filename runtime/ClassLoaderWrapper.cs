@@ -583,11 +583,15 @@ namespace IKVM.Internal
 				{
 					return null;
 				}
-				TypeWrapper tw = null;
+				TypeWrapper tw;
 				switch(s[dims])
 				{
 					case 'L':
 						tw = LoadClassByDottedNameFast(s.Substring(dims + 1));
+						if(tw == null)
+						{
+							return null;
+						}
 						tw.Finish();
 						break;
 					case 'Z':
@@ -614,10 +618,8 @@ namespace IKVM.Internal
 					case 'D':
 						tw = PrimitiveTypeWrapper.DOUBLE;
 						break;
-				}
-				if(tw == null)
-				{
-					return null;
+					default:
+						return null;
 				}
 				if(dims > 0)
 				{
