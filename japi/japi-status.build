@@ -4,7 +4,7 @@
     <property name="REFERENCE_API_JARS" value="c:\jdk1.6-x86\jre\lib\rt.jar c:\jdk1.6-x86\jre\lib\jce.jar c:\jdk1.6-x86\jre\lib\jsse.jar" />
     <property name="REFERENCE_API_NAME" value="JDK-1.6" />
     <property name="JAPI_HOME" value="c:\japi\japitools" />
-    <property name="IKVM_VERSION" value="0.39" />
+    <property name="IKVM_VERSION" value="0.45" />
 
     <target name="default">
 	<call target="status" />
@@ -30,7 +30,7 @@
     </target>
 
     <target name="jar">
-	<exec program="../bin/ikvmstub.exe" useruntimeengine="true" commandline="-serialver -shared IKVM.OpenJDK.Core" />
+	<exec program="../bin/ikvmstub.exe" useruntimeengine="true" commandline="-serialver -shared -lib:../bin IKVM.OpenJDK.Core -r:../openjdk/System.Core.dll" />
     </target>
 
     <target name="japize">
