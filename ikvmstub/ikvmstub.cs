@@ -38,6 +38,7 @@ static class NetExp
 	private static Dictionary<string, TypeWrapper> todo = new Dictionary<string, TypeWrapper>();
 	private static FileInfo file;
 	private static bool includeSerialVersionUID;
+	private static List<string> namespaces = new List<string>();
 
 	static int Main(string[] args)
 	{
@@ -87,6 +88,10 @@ static class NetExp
 				{
 					outputFile = s.Substring(5);
 				}
+				else if(s.StartsWith("-namespace:"))
+				{
+					namespaces.Add(s.Substring(11) + ".");
+				}
 				else
 				{
 					// unrecognized option, or multiple assemblies, print usage message and exit
@@ -113,6 +118,7 @@ static class NetExp
 			Console.Error.WriteLine("    -shared                    Process all assemblies in shared group");
 			Console.Error.WriteLine("    -nostdlib                  Do not reference standard libraries");
 			Console.Error.WriteLine("    -lib:<dir>                 Additional directories to search for references");
+			Console.Error.WriteLine("    -namespace:<ns>            Only include types from specified namespace");
 			return 1;
 		}
 		if(File.Exists(assemblyNameOrPath) && nostdlib)
@@ -619,12 +625,30 @@ static class NetExp
 		return mem.ToArray();
 	}
 
+	private static bool ExportNamespace(Type type)
+	{
+		if (namespaces.Count == 0)
+		{
+			return true;
+		}
+		string name = type.FullName;
+		foreach (string ns in namespaces)
+		{
+			if (name.StartsWith(ns, StringComparison.Ordinal))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private static int ProcessAssembly(Assembly assembly, bool continueOnError)
 	{
 		int rc = 0;
 		foreach (Type t in assembly.GetTypes())
 		{
 			if (t.IsPublic
+				&& ExportNamespace(t)
 				&& !t.IsGenericTypeDefinition
 				&& !AttributeHelper.IsHideFromJava(t)
 				&& (!t.IsGenericType || !AttributeHelper.IsJavaModule(t.Module)))
