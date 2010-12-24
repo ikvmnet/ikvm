@@ -48,6 +48,7 @@
                 <include name="bin-x64/JVM.DLL" />
                 <include name="bin-x86/JVM.DLL" />
                 <include name="classpath/**.class" />
+                <include name="lib/ikvm-api.jar" />
                 <include name="openjdk/*.dll" />
                 <include name="openjdk/*.jar" />
                 <include name="openjdk/allsources.gen.lst" />

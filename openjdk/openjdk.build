@@ -217,6 +217,16 @@
         </copy>
         <!-- update base addresses in response.txt for next build -->
         <exec program="${project::get-base-directory()}/../tools/updbaseaddresses.exe" commandline="response.txt" useruntimeengine="true" />
+
+        <!-- generate stubs for the public Java APIs we expose -->
+        <mkdir dir="../lib" />
+        <exec program="${project::get-base-directory()}/../bin/ikvmstub.exe" useruntimeengine="true">
+            <arg value="-out:../lib/ikvm-api.jar" />
+            <arg value="../bin/IKVM.OpenJDK.Core.dll" />
+            <arg value="-namespace:ikvm.io" />
+            <arg value="-namespace:ikvm.lang" />
+            <arg value="-namespace:ikvm.runtime" />
+        </exec>
     </target>
 
     <target name="tools.gen.rsp">
