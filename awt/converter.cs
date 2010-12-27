@@ -55,7 +55,7 @@ namespace ikvm.awt
             return color == null ? Color.Empty : Color.FromArgb(color.getRGB());
         }
 
-        internal static Image ConvertImage(java.awt.Image img)
+        internal static Bitmap ConvertImage(java.awt.Image img)
         {
             if (img is BufferedImage)
             {
@@ -65,9 +65,9 @@ namespace ikvm.awt
             {
                 return ((NetVolatileImage)img).bitmap;
             }
-            if (img is NetProducerImage)
+            if (img is sun.awt.image.ToolkitImage)
             {
-                return ((NetProducerImage)img).getBitmap();
+                return ((sun.awt.image.ToolkitImage)img).getImageRep().getBitmap();
             }
             if (img is NoImage)
             {

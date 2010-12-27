@@ -1592,9 +1592,7 @@ namespace ikvm.awt
 				throw new ArgumentException("invalid hotSpot");
 			}
 
-			NetProducerImage npi = new NetProducerImage(cursorIm.getSource());
-			cursorIm.getSource().startProduction(npi);
-			Bitmap bitmap = npi.getBitmap();
+            Bitmap bitmap = J2C.ConvertImage(cursorIm);
 			IntPtr hIcon = bitmap.GetHicon();
 			cursor = new Cursor(hIcon);
 		}
@@ -2498,9 +2496,7 @@ namespace ikvm.awt
 
 		public override java.awt.Image createImage(java.awt.image.ImageProducer prod)
 		{
-            NetProducerImage npi = new NetProducerImage(prod);
-            prod.startProduction(npi);
-            return new java.awt.image.BufferedImage(npi.getBitmap());
+            return new sun.awt.image.ToolkitImage(prod);
 		}
 
 		public override java.awt.Image createImage(int width, int height)
