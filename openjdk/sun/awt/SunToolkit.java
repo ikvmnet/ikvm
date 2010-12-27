@@ -966,47 +966,47 @@ public abstract class SunToolkit extends Toolkit
 //    public Image createImage(byte[] data, int offset, int length) {
 //        return createImage(new ByteArrayImageSource(data, offset, length));
 //    }
-//
-//    public Image createImage(ImageProducer producer) {
-//        return new ToolkitImage(producer);
-//    }
-//
-//    public int checkImage(Image img, int w, int h, ImageObserver o) {
-//        if (!(img instanceof ToolkitImage)) {
-//            return ImageObserver.ALLBITS;
-//        }
-//
-//        ToolkitImage tkimg = (ToolkitImage)img;
-//        int repbits;
-//        if (w == 0 || h == 0) {
-//            repbits = ImageObserver.ALLBITS;
-//        } else {
-//            repbits = tkimg.getImageRep().check(o);
-//        }
-//        return tkimg.check(o) | repbits;
-//    }
-//
-//    public boolean prepareImage(Image img, int w, int h, ImageObserver o) {
-//        if (w == 0 || h == 0) {
-//            return true;
-//        }
-//
-//        // Must be a ToolkitImage
-//        if (!(img instanceof ToolkitImage)) {
-//            return true;
-//        }
-//
-//        ToolkitImage tkimg = (ToolkitImage)img;
-//        if (tkimg.hasError()) {
-//            if (o != null) {
-//                o.imageUpdate(img, ImageObserver.ERROR|ImageObserver.ABORT,
-//                              -1, -1, -1, -1);
-//            }
-//            return false;
-//        }
-//        ImageRepresentation ir = tkimg.getImageRep();
-//        return ir.prepare(o);
-//    }
+
+    public Image createImage(ImageProducer producer) {
+        return new ToolkitImage(producer);
+    }
+
+    public int checkImage(Image img, int w, int h, ImageObserver o) {
+        if (!(img instanceof ToolkitImage)) {
+            return ImageObserver.ALLBITS;
+        }
+
+        ToolkitImage tkimg = (ToolkitImage)img;
+        int repbits;
+        if (w == 0 || h == 0) {
+            repbits = ImageObserver.ALLBITS;
+        } else {
+            repbits = tkimg.getImageRep().check(o);
+        }
+        return tkimg.check(o) | repbits;
+    }
+
+    public boolean prepareImage(Image img, int w, int h, ImageObserver o) {
+        if (w == 0 || h == 0) {
+            return true;
+        }
+
+        // Must be a ToolkitImage
+        if (!(img instanceof ToolkitImage)) {
+            return true;
+        }
+
+        ToolkitImage tkimg = (ToolkitImage)img;
+        if (tkimg.hasError()) {
+            if (o != null) {
+                o.imageUpdate(img, ImageObserver.ERROR|ImageObserver.ABORT,
+                              -1, -1, -1, -1);
+            }
+            return false;
+        }
+        ImageRepresentation ir = tkimg.getImageRep();
+        return ir.prepare(o);
+    }
 
     /**
      * Scans {@code imageList} for best-looking image of specified dimensions.
