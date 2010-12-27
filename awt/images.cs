@@ -37,17 +37,19 @@ namespace ikvm.awt
     {
         private java.awt.image.ImageProducer source;
 
-        private int mHeight = 0;
+        private int mHeight = -1;
 
-        private int mWidth = 0;
+        private int mWidth = -1;
 
-        private int mHintFlags = 0;
+        private int mHintFlags;
 
-        private ColorModel mColorModel = null;
+        private ColorModel mColorModel;
 
         private Hashtable mProperties;
 
         private Bitmap mBitmap;
+
+        private int availinfo;
 
         internal NetProducerImage(java.awt.image.ImageProducer source)
         {
@@ -60,7 +62,7 @@ namespace ikvm.awt
 
         public override java.awt.Graphics getGraphics()
         {
-            return null;
+            return new BitmapGraphics(mBitmap);
         }
 
         public override int getHeight(ImageObserver param)
@@ -143,11 +145,27 @@ namespace ikvm.awt
             mWidth = width;
             mHeight = height;
 			mBitmap = new Bitmap(mWidth, mHeight);
+            availinfo |= ImageObserver.__Fields.WIDTH | ImageObserver.__Fields.HEIGHT;
 		}
 
         public void imageComplete(int status)
         {
-            // Console.WriteLine("NetProducerImage: imageComplete");
+            switch (status)
+            {
+                default:
+                case ImageConsumer.__Fields.IMAGEERROR:
+                    availinfo |= ImageObserver.__Fields.ERROR | ImageObserver.__Fields.ABORT;
+                    break;
+                case ImageConsumer.__Fields.IMAGEABORTED:
+                    availinfo |= ImageObserver.__Fields.ABORT;
+                    break;
+                case ImageConsumer.__Fields.STATICIMAGEDONE:
+                    availinfo |= ImageObserver.__Fields.ALLBITS;
+                    break;
+                case ImageConsumer.__Fields.SINGLEFRAMEDONE:
+                    availinfo |= ImageObserver.__Fields.FRAMEBITS;
+                    break;
+            }
         }
 
         public void setColorModel(ColorModel model)
@@ -158,6 +176,11 @@ namespace ikvm.awt
         public void setProperties(Hashtable props)
         {
             mProperties = props;
+        }
+
+        internal int getStatus()
+        {
+            return availinfo;
         }
     }
 

@@ -582,46 +582,6 @@ namespace ikvm.awt
             return getImage(url);
         }
 
-        const int ERROR = java.awt.image.ImageObserver.__Fields.ERROR;
-        const int ABORT = java.awt.image.ImageObserver.__Fields.ABORT;
-        const int WIDTH = java.awt.image.ImageObserver.__Fields.WIDTH;
-        const int HEIGHT = java.awt.image.ImageObserver.__Fields.HEIGHT;
-        const int FRAMEBITS = java.awt.image.ImageObserver.__Fields.FRAMEBITS;
-        const int ALLBITS = java.awt.image.ImageObserver.__Fields.ALLBITS;
-
-        public override bool prepareImage(java.awt.Image image, int width, int height, java.awt.image.ImageObserver observer)
-        {
-            // HACK for now we call checkImage to obtain the status and fire the observer
-            return (checkImage(image, width, height, observer) & (ALLBITS | ERROR | ABORT)) != 0;
-        }
-
-        public override int checkImage(java.awt.Image image, int width, int height, java.awt.image.ImageObserver observer)
-        {
-            if (image.getWidth(null) == -1)
-            {
-                if (observer != null)
-                {
-                    observer.imageUpdate(image, ERROR | ABORT, 0, 0, -1, -1);
-                }
-                return ERROR | ABORT;
-            }
-            if (observer != null)
-            {
-                observer.imageUpdate(image, WIDTH + HEIGHT + FRAMEBITS + ALLBITS, 0, 0, image.getWidth(null), image.getHeight(null));
-            }
-            return WIDTH + HEIGHT + FRAMEBITS + ALLBITS;
-        }
-
-        public override java.awt.Image createImage(java.awt.image.ImageProducer producer)
-        {
-            NetProducerImage img = new NetProducerImage(producer);
-            if (producer != null)
-            {
-                producer.startProduction(img);
-            }
-            return img;
-        }
-
         public override java.awt.Image createImage(byte[] imagedata, int imageoffset, int imagelength)
         {
             try
