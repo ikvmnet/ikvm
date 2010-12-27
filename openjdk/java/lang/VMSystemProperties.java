@@ -320,6 +320,8 @@ final class VMSystemProperties
 	p.setProperty("sun.nio.MaxDirectMemorySize", "-1");
 	p.setProperty("java.awt.graphicsenv", PropertyConstants.java_awt_graphicsenv);
         p.setProperty("java.awt.printerjob", "sun.awt.windows.WPrinterJob");
+        p.setProperty("java.content.handler.pkgs", "sun.net.www.content");
+        
 	// TODO
 	// sun.cpu.isalist:=pentium_pro+mmx pentium_pro pentium+mmx pentium i486 i386 i86
 	// sun.desktop:=windows
