@@ -24,8 +24,6 @@
 
 package ikvm.runtime;
 
-import sun.misc.SignalHandler;
-import ikvm.lang.CIL;
 import cli.System.Collections.ArrayList;
 import cli.System.Collections.ICollection;
 import cli.System.Environment;
@@ -39,6 +37,7 @@ import cli.System.Reflection.AssemblyCopyrightAttribute;
 import cli.System.Text.StringBuilder;
 import cli.System.Threading.Thread;
 import cli.System.Type;
+import sun.misc.SignalHandler;
 
 public final class Startup
 {
@@ -190,10 +189,10 @@ public final class Startup
     public static String getVersionAndCopyrightInfo()
     {
         Assembly asm = Assembly.GetEntryAssembly();
-        Object[] desc = asm.GetCustomAttributes(Type.GetType("System.Reflection.AssemblyTitleAttribute"), false);
+        Object[] desc = asm.GetCustomAttributes(Util.getInstanceTypeFromClass(AssemblyTitleAttribute.class), false);
         if(desc.length == 1)
         {
-            Object[] copyright = asm.GetCustomAttributes(Type.GetType("System.Reflection.AssemblyCopyrightAttribute"), false);
+            Object[] copyright = asm.GetCustomAttributes(Util.getInstanceTypeFromClass(AssemblyCopyrightAttribute.class), false);
             if(copyright.length == 1)
             {
                 return cli.System.String.Format("{0} version {1}{2}{3}{2}http://www.ikvm.net/",
