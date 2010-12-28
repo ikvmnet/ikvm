@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2009 Jeroen Frijters
+  Copyright (C) 2002-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1008,6 +1008,13 @@ namespace IKVM.Internal
 				return (AssemblyClassLoader)GetBootstrapClassLoader();
 			}
 			return new AssemblyClassLoader(assembly);
+		}
+
+		internal void AddDelegate(AssemblyClassLoader acl)
+		{
+			LazyInitExports();
+			Array.Resize(ref delegates, delegates.Length + 1);
+			delegates[delegates.Length - 1] = acl;
 		}
 
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR

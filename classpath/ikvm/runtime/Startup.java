@@ -206,4 +206,6 @@ public final class Startup
         }
         return "";
     }
+
+    public static native void addBootClassPathAssemby(Assembly assembly);
 }

@@ -344,6 +344,11 @@ namespace IKVM.NativeCode.ikvm.runtime
 			jlThread.currentThread().die();
 #endif
 		}
+
+		public static void addBootClassPathAssemby(Assembly asm)
+		{
+			ClassLoaderWrapper.GetBootstrapClassLoader().AddDelegate(global::IKVM.Internal.AssemblyClassLoader.FromAssembly(asm));
+		}
 	}
 }
 
