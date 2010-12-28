@@ -252,6 +252,10 @@ public class Starter
                     debugArg = arg;
                     debug = true;
                 }
+                else if (arg.StartsWith("-Xreference:"))
+                {
+                    Startup.addBootClassPathAssemby(Assembly.LoadFrom(arg.Substring(12)));
+                }
                 else if (arg.StartsWith("-Xms")
                     || arg.StartsWith("-Xmx")
                     || arg.StartsWith("-Xss")
