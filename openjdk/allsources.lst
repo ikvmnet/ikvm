@@ -73,7 +73,6 @@ java/lang/StringHelper.java
 java/lang/System.java
 java/lang/Thread.java
 java/lang/VMSystemProperties.java
-java/lang/VMThread.java
 java/lang/ref/Reference.java
 java/lang/ref/SoftReference.java
 java/lang/reflect/Constructor.java

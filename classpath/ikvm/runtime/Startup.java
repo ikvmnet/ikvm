@@ -183,8 +183,10 @@ public final class Startup
         // use the TLS as a hack to track when the thread dies (if the object stored in the TLS is finalized,
         // we know the thread is dead). So to make that work for the main thread, we use jniDetach which
         // explicitly cleans up our thread.
-        VMThread.jniDetach();
+        jniDetach();
     }
+    
+    private static native void jniDetach();
 
     public static String getVersionAndCopyrightInfo()
     {

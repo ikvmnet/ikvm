@@ -333,6 +333,20 @@ static class DynamicMethodUtils
 	}
 }
 
+namespace IKVM.NativeCode.ikvm.runtime
+{
+	static class Startup
+	{
+		// this method is called from ikvm.runtime.Startup.exitMainThread() and from JNI's DetachCurrentThread
+		public static void jniDetach()
+		{
+#if !FIRST_PASS
+			jlThread.currentThread().die();
+#endif
+		}
+	}
+}
+
 namespace IKVM.NativeCode.java
 {
 	namespace io
@@ -3484,17 +3498,6 @@ namespace IKVM.NativeCode.java
 				List<jlStackTraceElement> stackTrace = new List<jlStackTraceElement>();
 				ExceptionHelper.ExceptionInfoHelper.Append(stackTrace, stack, 0, true);
 				return stackTrace.ToArray();
-#endif
-			}
-		}
-
-		static class VMThread
-		{
-			// this method is called from ikvm.runtime.Startup.exitMainThread() and from JNI
-			public static void jniDetach()
-			{
-#if !FIRST_PASS
-				jlThread.currentThread().die();
 #endif
 			}
 		}
