@@ -710,7 +710,9 @@ static void socketAccept(JNIEnv env, TwoStacksPlainSocketImpl _this, SocketImpl 
     } else {
         /* AF_INET6 -> Inet6Address */
 
-        socketAddressObj = new Inet6Address(null, him.him6.sin6_addr, him.him6.sin6_scope_id);
+        // [IKVM] We need to convert scope_id 0 to -1 here, because for sin6_scope_id 0 means unspecified, whereas Java uses -1
+        int scopeId = him.him6.sin6_scope_id;
+        socketAddressObj = new Inet6Address(null, him.him6.sin6_addr, scopeId == 0 ? -1 : scopeId);
     }
     /* fields common to AF_INET and AF_INET6 */
 
