@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2007-2010 Jeroen Frijters
+  Copyright (C) 2007-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -116,7 +116,7 @@ namespace IKVM.Internal
 			return null;
 #else
 			// we can't use java.io.File.separatorChar here, because we're invoked by the system property setup code
-			return RootPath + "assembly" + System.IO.Path.DirectorySeparatorChar + VfsAssembliesDirectory.GetName(asm.GetName()) + System.IO.Path.DirectorySeparatorChar + "classes" + System.IO.Path.DirectorySeparatorChar;
+			return RootPath + "assembly" + System.IO.Path.DirectorySeparatorChar + VfsAssembliesDirectory.GetName(asm) + System.IO.Path.DirectorySeparatorChar + "classes" + System.IO.Path.DirectorySeparatorChar;
 #endif
 		}
 
@@ -125,7 +125,7 @@ namespace IKVM.Internal
 #if FIRST_PASS
 			return null;
 #else
-			return RootPath + "assembly" + System.IO.Path.DirectorySeparatorChar + VfsAssembliesDirectory.GetName(asm.GetName()) + System.IO.Path.DirectorySeparatorChar + "resources" + System.IO.Path.DirectorySeparatorChar;
+			return RootPath + "assembly" + System.IO.Path.DirectorySeparatorChar + VfsAssembliesDirectory.GetName(asm) + System.IO.Path.DirectorySeparatorChar + "resources" + System.IO.Path.DirectorySeparatorChar;
 #endif
 		}
 
@@ -136,6 +136,18 @@ namespace IKVM.Internal
 				VfsEntry entry = base.GetEntry(name);
 				if (entry == null)
 				{
+					Guid guid;
+					if (TryParseGuid(name, out guid))
+					{
+						foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
+						{
+							if (asm.ManifestModule.ModuleVersionId == guid
+								&& !ReflectUtil.IsDynamicAssembly(asm))
+							{
+								return GetOrAddEntry(name, asm);
+							}
+						}
+					}
 					string assemblyName = ParseName(name);
 					if (assemblyName != null)
 					{
@@ -149,27 +161,78 @@ namespace IKVM.Internal
 						}
 						if (asm != null
 							&& !ReflectUtil.IsDynamicAssembly(asm)
-							&& name == GetName(asm.GetName()))
+							&& name == GetName(asm))
 						{
-							lock (entries)
-							{
-								if (!entries.TryGetValue(name, out entry))
-								{
-									VfsDirectory dir = new VfsDirectory();
-									dir.Add("resources", new VfsAssemblyResourcesDirectory(asm));
-									dir.Add("classes", new VfsAssemblyClassesDirectory(asm));
-									Add(name, dir);
-									entry = dir;
-								}
-							}
+							return GetOrAddEntry(name, asm);
 						}
 					}
 				}
 				return entry;
 			}
 
-			internal static string GetName(AssemblyName name)
+			private VfsEntry GetOrAddEntry(string name, Assembly asm)
 			{
+				lock (entries)
+				{
+					VfsEntry entry;
+					if (!entries.TryGetValue(name, out entry))
+					{
+						VfsDirectory dir = new VfsDirectory();
+						dir.Add("resources", new VfsAssemblyResourcesDirectory(asm));
+						dir.Add("classes", new VfsAssemblyClassesDirectory(asm));
+						Add(name, dir);
+						entry = dir;
+					}
+					return entry;
+				}
+			}
+
+			// HACK we try to figure out if an assembly is loaded in the Load context
+			// http://blogs.msdn.com/b/suzcook/archive/2003/05/29/57143.aspx
+			private static bool IsLoadContext(Assembly asm)
+			{
+				if (asm.ReflectionOnly)
+				{
+					return false;
+				}
+
+				if (asm.GlobalAssemblyCache)
+				{
+					return true;
+				}
+
+				if (ReflectUtil.IsDynamicAssembly(asm) || asm.Location == "")
+				{
+					return false;
+				}
+
+				if (System.IO.Path.GetDirectoryName(asm.Location) == System.IO.Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory))
+				{
+					// this is an optimization for the common case were the assembly was loaded from the app directory
+					return true;
+				}
+
+				try
+				{
+					if (Assembly.Load(asm.FullName) == asm)
+					{
+						return true;
+					}
+				}
+				catch
+				{
+				}
+
+				return false;
+			}
+
+			internal static string GetName(Assembly asm)
+			{
+				if (!IsLoadContext(asm))
+				{
+					return asm.ManifestModule.ModuleVersionId.ToString("N");
+				}
+				AssemblyName name = asm.GetName();
 				System.Text.StringBuilder sb = new System.Text.StringBuilder();
 				string simpleName = name.Name;
 				for (int i = 0; i < simpleName.Length; i++)
@@ -197,6 +260,25 @@ namespace IKVM.Internal
 					sb.Append("__").Append(name.CultureInfo.Name);
 				}
 				return sb.ToString();
+			}
+
+			private static bool TryParseGuid(string name, out Guid guid)
+			{
+				if (name.Length != 32)
+				{
+					guid = Guid.Empty;
+					return false;
+				}
+				for (int i = 0; i < 32; i++)
+				{
+					if ("0123456789abcdefABCDEF".IndexOf(name[i]) == -1)
+					{
+						guid = Guid.Empty;
+						return false;
+					}
+				}
+				guid = new Guid(name);
+				return true;
 			}
 
 			private static string ParseName(string directoryName)
