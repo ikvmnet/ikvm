@@ -418,8 +418,8 @@ namespace IKVM.Reflection
 				name = null;
 				return false;
 			}
-			ns = Constructor.DeclaringType.Namespace;
-			name = Constructor.DeclaringType.Name;
+			ns = Constructor.DeclaringType.__Namespace;
+			name = Constructor.DeclaringType.__Name;
 			return true;
 		}
 
