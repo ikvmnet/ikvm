@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Jeroen Frijters
+  Copyright (C) 2009-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -42,7 +42,7 @@ namespace IKVM.Reflection.Reader
 			this.module = module;
 			this.index = index;
 			this.typeName = TypeNameParser.Escape(module.GetString(module.TypeDef.records[index].TypeName));
-			this.typeNamespace = TypeNameParser.Escape(module.GetString(module.TypeDef.records[index].TypeNamespace));
+			this.typeNamespace = module.GetString(module.TypeDef.records[index].TypeNamespace);
 		}
 
 		public override Type BaseType
