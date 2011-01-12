@@ -249,11 +249,10 @@ namespace IKVM.Reflection.Emit
 			Baked = 4,
 		}
 
-		internal TypeBuilder(ITypeOwner owner, string name, Type baseType, TypeAttributes attribs)
+		internal TypeBuilder(ITypeOwner owner, string name, TypeAttributes attribs)
 		{
 			this.owner = owner;
 			this.token = this.ModuleBuilder.TypeDef.AllocToken();
-			SetParent(baseType);
 			this.attribs = attribs;
 			if (!this.IsNested)
 			{

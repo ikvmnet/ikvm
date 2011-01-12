@@ -109,7 +109,7 @@ namespace IKVM.Reflection.Emit
 				symbolWriter = SymbolSupport.CreateSymbolWriterFor(this);
 			}
 			// <Module> must be the first record in the TypeDef table
-			moduleType = new TypeBuilder(this, "<Module>", null, 0);
+			moduleType = new TypeBuilder(this, "<Module>", 0);
 			types.Add(moduleType);
 		}
 
@@ -201,11 +201,12 @@ namespace IKVM.Reflection.Emit
 
 		public TypeBuilder DefineType(string name, TypeAttributes attr, Type parent, PackingSize packingSize, int typesize)
 		{
+			TypeBuilder typeBuilder = new TypeBuilder(this, name, attr);
 			if (parent == null && (attr & TypeAttributes.Interface) == 0)
 			{
 				parent = universe.System_Object;
 			}
-			TypeBuilder typeBuilder = new TypeBuilder(this, name, parent, attr);
+			typeBuilder.SetParent(parent);
 			PostDefineType(typeBuilder, packingSize, typesize);
 			return typeBuilder;
 		}
@@ -219,11 +220,12 @@ namespace IKVM.Reflection.Emit
 
 		internal TypeBuilder DefineNestedTypeHelper(TypeBuilder enclosingType, string name, TypeAttributes attr, Type parent, PackingSize packingSize, int typesize)
 		{
+			TypeBuilder typeBuilder = new TypeBuilder(enclosingType, name, attr);
 			if (parent == null && (attr & TypeAttributes.Interface) == 0)
 			{
 				parent = universe.System_Object;
 			}
-			TypeBuilder typeBuilder = new TypeBuilder(enclosingType, name, parent, attr);
+			typeBuilder.SetParent(parent);
 			PostDefineType(typeBuilder, packingSize, typesize);
 			if (enclosingType != null)
 			{
