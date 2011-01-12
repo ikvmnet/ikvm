@@ -249,22 +249,14 @@ namespace IKVM.Reflection.Emit
 			Baked = 4,
 		}
 
-		internal TypeBuilder(ITypeOwner owner, string name, TypeAttributes attribs)
+		internal TypeBuilder(ITypeOwner owner, string ns, string name, TypeAttributes attribs)
 		{
 			this.owner = owner;
 			this.token = this.ModuleBuilder.TypeDef.AllocToken();
-			this.attribs = attribs;
-			if (!this.IsNested)
-			{
-				int lastdot = name.LastIndexOf('.');
-				if (lastdot > 0)
-				{
-					this.ns = name.Substring(0, lastdot);
-					this.typeNameSpace = this.ModuleBuilder.Strings.Add(ns);
-					name = name.Substring(lastdot + 1);
-				}
-			}
+			this.ns = ns;
 			this.name = name;
+			this.attribs = attribs;
+			this.typeNameSpace = ns == null ? 0 : this.ModuleBuilder.Strings.Add(ns);
 			this.typeName = this.ModuleBuilder.Strings.Add(name);
 		}
 
@@ -443,20 +435,47 @@ namespace IKVM.Reflection.Emit
 
 		public TypeBuilder DefineNestedType(string name, TypeAttributes attr, Type parent)
 		{
-			this.typeFlags |= TypeFlags.HasNestedTypes;
-			return this.ModuleBuilder.DefineNestedTypeHelper(this, name, attr, parent, PackingSize.Unspecified, 0);
+			return DefineNestedType(name, attr, parent, 0);
 		}
 
 		public TypeBuilder DefineNestedType(string name, TypeAttributes attr, Type parent, int typeSize)
 		{
-			this.typeFlags |= TypeFlags.HasNestedTypes;
-			return this.ModuleBuilder.DefineNestedTypeHelper(this, name, attr, parent, PackingSize.Unspecified, typeSize);
+			return DefineNestedType(name, attr, parent, PackingSize.Unspecified, typeSize);
 		}
 
 		public TypeBuilder DefineNestedType(string name, TypeAttributes attr, Type parent, PackingSize packSize)
 		{
+			return DefineNestedType(name, attr, parent, packSize, 0);
+		}
+
+		private TypeBuilder DefineNestedType(string name, TypeAttributes attr, Type parent, PackingSize packSize, int typeSize)
+		{
+			string ns = null;
+			int lastdot = name.LastIndexOf('.');
+			if (lastdot > 0)
+			{
+				ns = name.Substring(0, lastdot);
+				name = name.Substring(lastdot + 1);
+			}
+			TypeBuilder typeBuilder = __DefineNestedType(ns, name, attr);
+			if (parent == null && (attr & TypeAttributes.Interface) == 0)
+			{
+				parent = this.ModuleBuilder.universe.System_Object;
+			}
+			typeBuilder.SetParent(parent);
+			this.ModuleBuilder.SetPackingSizeAndTypeSize(typeBuilder, PackingSize.Unspecified, typeSize);
+			return typeBuilder;
+		}
+
+		public TypeBuilder __DefineNestedType(string ns, string name, TypeAttributes attr)
+		{
 			this.typeFlags |= TypeFlags.HasNestedTypes;
-			return this.ModuleBuilder.DefineNestedTypeHelper(this, name, attr, parent, packSize, 0);
+			TypeBuilder typeBuilder = this.ModuleBuilder.DefineType(this, ns, name, attr);
+			NestedClassTable.Record rec = new NestedClassTable.Record();
+			rec.NestedClass = typeBuilder.MetadataToken;
+			rec.EnclosingClass = this.MetadataToken;
+			this.ModuleBuilder.NestedClass.AddRecord(rec);
+			return typeBuilder;
 		}
 
 		public void SetParent(Type parent)

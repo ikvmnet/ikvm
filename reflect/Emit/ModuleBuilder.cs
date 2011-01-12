@@ -109,7 +109,7 @@ namespace IKVM.Reflection.Emit
 				symbolWriter = SymbolSupport.CreateSymbolWriterFor(this);
 			}
 			// <Module> must be the first record in the TypeDef table
-			moduleType = new TypeBuilder(this, "<Module>", 0);
+			moduleType = new TypeBuilder(this, null, "<Module>", 0);
 			types.Add(moduleType);
 		}
 
@@ -201,46 +201,38 @@ namespace IKVM.Reflection.Emit
 
 		public TypeBuilder DefineType(string name, TypeAttributes attr, Type parent, PackingSize packingSize, int typesize)
 		{
-			TypeBuilder typeBuilder = new TypeBuilder(this, name, attr);
+			string ns = null;
+			int lastdot = name.LastIndexOf('.');
+			if (lastdot > 0)
+			{
+				ns = name.Substring(0, lastdot);
+				name = name.Substring(lastdot + 1);
+			}
+			TypeBuilder typeBuilder = __DefineType(ns, name, attr);
 			if (parent == null && (attr & TypeAttributes.Interface) == 0)
 			{
 				parent = universe.System_Object;
 			}
 			typeBuilder.SetParent(parent);
-			PostDefineType(typeBuilder, packingSize, typesize);
+			SetPackingSizeAndTypeSize(typeBuilder, packingSize, typesize);
 			return typeBuilder;
 		}
 
-		public EnumBuilder DefineEnum(string name, TypeAttributes visibility, Type underlyingType)
+		public TypeBuilder __DefineType(string ns, string name, TypeAttributes attr)
 		{
-			TypeBuilder tb = DefineType(name, (visibility & TypeAttributes.VisibilityMask) | TypeAttributes.Sealed, universe.System_Enum);
-			FieldBuilder fb = tb.DefineField("value__", underlyingType, FieldAttributes.Public | FieldAttributes.SpecialName | FieldAttributes.RTSpecialName);
-			return new EnumBuilder(tb, fb);
+			return DefineType(this, ns, name, attr);
 		}
 
-		internal TypeBuilder DefineNestedTypeHelper(TypeBuilder enclosingType, string name, TypeAttributes attr, Type parent, PackingSize packingSize, int typesize)
+		internal TypeBuilder DefineType(ITypeOwner owner, string ns, string name, TypeAttributes attr)
 		{
-			TypeBuilder typeBuilder = new TypeBuilder(enclosingType, name, attr);
-			if (parent == null && (attr & TypeAttributes.Interface) == 0)
-			{
-				parent = universe.System_Object;
-			}
-			typeBuilder.SetParent(parent);
-			PostDefineType(typeBuilder, packingSize, typesize);
-			if (enclosingType != null)
-			{
-				NestedClassTable.Record rec = new NestedClassTable.Record();
-				rec.NestedClass = typeBuilder.MetadataToken;
-				rec.EnclosingClass = enclosingType.MetadataToken;
-				this.NestedClass.AddRecord(rec);
-			}
-			return typeBuilder;
-		}
-
-		private void PostDefineType(TypeBuilder typeBuilder, PackingSize packingSize, int typesize)
-		{
+			TypeBuilder typeBuilder = new TypeBuilder(owner, ns, name, attr);
 			types.Add(typeBuilder);
 			fullNameToType.Add(typeBuilder.FullName, typeBuilder);
+			return typeBuilder;
+		}
+
+		internal void SetPackingSizeAndTypeSize(TypeBuilder typeBuilder, PackingSize packingSize, int typesize)
+		{
 			if (packingSize != PackingSize.Unspecified || typesize != 0)
 			{
 				ClassLayoutTable.Record rec = new ClassLayoutTable.Record();
@@ -249,6 +241,13 @@ namespace IKVM.Reflection.Emit
 				rec.Parent = typeBuilder.MetadataToken;
 				this.ClassLayout.AddRecord(rec);
 			}
+		}
+
+		public EnumBuilder DefineEnum(string name, TypeAttributes visibility, Type underlyingType)
+		{
+			TypeBuilder tb = DefineType(name, (visibility & TypeAttributes.VisibilityMask) | TypeAttributes.Sealed, universe.System_Enum);
+			FieldBuilder fb = tb.DefineField("value__", underlyingType, FieldAttributes.Public | FieldAttributes.SpecialName | FieldAttributes.RTSpecialName);
+			return new EnumBuilder(tb, fb);
 		}
 
 		public FieldBuilder __DefineField(string name, Type type, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers, FieldAttributes attributes)
