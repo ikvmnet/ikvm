@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009-2010 Jeroen Frijters
+  Copyright (C) 2009-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -183,6 +183,16 @@ namespace IKVM.Reflection
 		public override Type DeclaringType
 		{
 			get { return null; }
+		}
+
+		public virtual string __Name
+		{
+			get { throw new InvalidOperationException(); }
+		}
+
+		public virtual string __Namespace
+		{
+			get { throw new InvalidOperationException(); }
 		}
 
 		public override string Name

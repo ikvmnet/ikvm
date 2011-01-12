@@ -192,6 +192,16 @@ namespace IKVM.Reflection.Reader
 			return Empty<PropertyInfo>.Array;
 		}
 
+		public override string __Name
+		{
+			get { return TypeNameParser.Unescape(typeName); }
+		}
+
+		public override string __Namespace
+		{
+			get { return typeNamespace; }
+		}
+
 		public override string Name
 		{
 			get { return typeName; }

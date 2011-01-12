@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2008-2010 Jeroen Frijters
+  Copyright (C) 2008-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -229,7 +229,8 @@ namespace IKVM.Reflection.Emit
 		private Type baseType;
 		private readonly int typeName;
 		private readonly int typeNameSpace;
-		private readonly string nameOrFullName;
+		private readonly string ns;
+		private readonly string name;
 		private readonly List<MethodBuilder> methods = new List<MethodBuilder>();
 		private readonly List<FieldBuilder> fields = new List<FieldBuilder>();
 		private List<PropertyBuilder> properties;
@@ -252,7 +253,6 @@ namespace IKVM.Reflection.Emit
 		{
 			this.owner = owner;
 			this.token = this.ModuleBuilder.TypeDef.AllocToken();
-			this.nameOrFullName = TypeNameParser.Escape(name);
 			SetParent(baseType);
 			this.attribs = attribs;
 			if (!this.IsNested)
@@ -260,10 +260,12 @@ namespace IKVM.Reflection.Emit
 				int lastdot = name.LastIndexOf('.');
 				if (lastdot > 0)
 				{
-					this.typeNameSpace = this.ModuleBuilder.Strings.Add(name.Substring(0, lastdot));
+					this.ns = name.Substring(0, lastdot);
+					this.typeNameSpace = this.ModuleBuilder.Strings.Add(ns);
 					name = name.Substring(lastdot + 1);
 				}
 			}
+			this.name = name;
 			this.typeName = this.ModuleBuilder.Strings.Add(name);
 		}
 
@@ -716,13 +718,27 @@ namespace IKVM.Reflection.Emit
 			{
 				if (this.IsNested)
 				{
-					return this.DeclaringType.FullName + "+" + nameOrFullName;
+					return this.DeclaringType.FullName + "+" + TypeNameParser.Escape(name);
+				}
+				if (ns == null)
+				{
+					return TypeNameParser.Escape(name);
 				}
 				else
 				{
-					return nameOrFullName;
+					return TypeNameParser.Escape(ns) + "." + TypeNameParser.Escape(name);
 				}
 			}
+		}
+
+		public override string __Name
+		{
+			get { return name; }
+		}
+
+		public override string __Namespace
+		{
+			get { return ns; }
 		}
 
 		public override string Name
@@ -731,7 +747,7 @@ namespace IKVM.Reflection.Emit
 			{
 				if (this.IsNested)
 				{
-					return nameOrFullName;
+					return name;
 				}
 				else
 				{
