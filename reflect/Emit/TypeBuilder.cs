@@ -743,17 +743,8 @@ namespace IKVM.Reflection.Emit
 
 		public override string Name
 		{
-			get
-			{
-				if (this.IsNested)
-				{
-					return name;
-				}
-				else
-				{
-					return base.Name;
-				}
-			}
+			// FXBUG for a TypeBuilder the name is not escaped
+			get { return name; }
 		}
 
 		public override string Namespace
@@ -761,15 +752,9 @@ namespace IKVM.Reflection.Emit
 			get
 			{
 				// for some reason, TypeBuilder doesn't return null (and mcs depends on this)
-				return base.Namespace ?? "";
+				// note also that we don't return the declaring type namespace for nested types
+				return ns ?? "";
 			}
-		}
-
-		internal string GetBakedNamespace()
-		{
-			// if you refer to the TypeBuilder via its baked Type, Namespace will return null
-			// for the empty namespace (instead of "" like TypeBuilder.Namespace above does)
-			return base.Namespace;
 		}
 
 		public override TypeAttributes Attributes
@@ -1055,19 +1040,25 @@ namespace IKVM.Reflection.Emit
 			get { return typeBuilder.BaseType; }
 		}
 
-		public override string Name
+		public override string __Name
 		{
-			get { return typeBuilder.Name; }
+			get { return typeBuilder.__Name; }
 		}
 
-		public override string Namespace
+		public override string __Namespace
 		{
-			get { return typeBuilder.GetBakedNamespace(); }
+			get { return typeBuilder.__Namespace; }
+		}
+
+		public override string Name
+		{
+			// we need to escape here, because TypeBuilder.Name does not escape
+			get { return TypeNameParser.Escape(typeBuilder.__Name); }
 		}
 
 		public override string FullName
 		{
-			get { return typeBuilder.FullName; }
+			get { return GetFullName(); }
 		}
 
 		public override TypeAttributes Attributes

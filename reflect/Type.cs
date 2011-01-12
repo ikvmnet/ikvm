@@ -195,13 +195,9 @@ namespace IKVM.Reflection
 			get { throw new InvalidOperationException(); }
 		}
 
-		public override string Name
+		public abstract override string Name
 		{
-			get
-			{
-				string fullname = FullName;
-				return fullname.Substring(fullname.LastIndexOf('.') + 1);
-			}
+			get;
 		}
 
 		public virtual string Namespace
@@ -210,11 +206,9 @@ namespace IKVM.Reflection
 			{
 				if (IsNested)
 				{
-					return null;
+					return DeclaringType.Namespace;
 				}
-				string fullname = FullName;
-				int index = fullname.LastIndexOf('.');
-				return index < 0 ? null : fullname.Substring(0, index);
+				return __Namespace;
 			}
 		}
 
@@ -337,33 +331,35 @@ namespace IKVM.Reflection
 			return FullName;
 		}
 
-		public virtual string FullName
+		public abstract string FullName
 		{
-			get
+			get;
+		}
+
+		protected string GetFullName()
+		{
+			string ns = TypeNameParser.Escape(this.__Namespace);
+			Type decl = this.DeclaringType;
+			if (decl == null)
 			{
-				Type decl = this.DeclaringType;
-				string ns = this.Namespace;
 				if (ns == null)
 				{
-					if (decl == null)
-					{
-						return this.Name;
-					}
-					else
-					{
-						return decl.FullName + "+" + this.Name;
-					}
+					return this.Name;
 				}
 				else
 				{
-					if (decl == null)
-					{
-						return ns + "." + this.Name;
-					}
-					else
-					{
-						return decl.FullName + "+" + ns + "." + this.Name;
-					}
+					return ns + "." + this.Name;
+				}
+			}
+			else
+			{
+				if (ns == null)
+				{
+					return decl.FullName + "+" + this.Name;
+				}
+				else
+				{
+					return decl.FullName + "+" + ns + "." + this.Name;
 				}
 			}
 		}
@@ -1584,6 +1580,11 @@ namespace IKVM.Reflection
 			get { return elementType.Name + GetSuffix(); }
 		}
 
+		public sealed override string Namespace
+		{
+			get { return elementType.Namespace; }
+		}
+
 		public sealed override string FullName
 		{
 			get { return elementType.FullName + GetSuffix(); }
@@ -2290,7 +2291,7 @@ namespace IKVM.Reflection
 				{
 					return null;
 				}
-				StringBuilder sb = new StringBuilder(base.FullName);
+				StringBuilder sb = new StringBuilder(this.type.FullName);
 				sb.Append('[');
 				foreach (Type type in args)
 				{

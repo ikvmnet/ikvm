@@ -207,9 +207,9 @@ namespace IKVM.Reflection.Reader
 			get { return TypeNameParser.Escape(typeName); }
 		}
 
-		public override string Namespace
+		public override string FullName
 		{
-			get { return typeNamespace; }
+			get { return GetFullName(); }
 		}
 
 		public override Type UnderlyingSystemType
