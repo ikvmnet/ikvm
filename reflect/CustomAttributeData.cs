@@ -388,6 +388,10 @@ namespace IKVM.Reflection
 				ModuleReader mod = module as ModuleReader;
 				if (mod != null)
 				{
+					// Note that we only need to manually handle the MemberRef case here,
+					// because a MethodDef will result in a lazy MethodInfo object being returned
+					// when the constructor is resolved, so we can safely do that without
+					// triggering an assembly load.
 					int methodToken = mod.CustomAttribute.records[index].Type;
 					if ((methodToken >> 24) == MemberRefTable.Index)
 					{
