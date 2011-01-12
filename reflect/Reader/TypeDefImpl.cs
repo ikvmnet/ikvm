@@ -41,7 +41,7 @@ namespace IKVM.Reflection.Reader
 		{
 			this.module = module;
 			this.index = index;
-			this.typeName = TypeNameParser.Escape(module.GetString(module.TypeDef.records[index].TypeName));
+			this.typeName = module.GetString(module.TypeDef.records[index].TypeName);
 			this.typeNamespace = module.GetString(module.TypeDef.records[index].TypeNamespace);
 		}
 
@@ -194,7 +194,7 @@ namespace IKVM.Reflection.Reader
 
 		public override string __Name
 		{
-			get { return TypeNameParser.Unescape(typeName); }
+			get { return typeName; }
 		}
 
 		public override string __Namespace
@@ -204,7 +204,7 @@ namespace IKVM.Reflection.Reader
 
 		public override string Name
 		{
-			get { return typeName; }
+			get { return TypeNameParser.Escape(typeName); }
 		}
 
 		public override string Namespace

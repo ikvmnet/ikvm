@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2008-2010 Jeroen Frijters
+  Copyright (C) 2008-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -314,7 +314,7 @@ namespace IKVM.Reflection.Emit
 		{
 			ExportedTypeTable.Record rec = new ExportedTypeTable.Record();
 			rec.TypeDefId = type.MetadataToken;
-			rec.TypeName = this.Strings.Add(TypeNameParser.Unescape(type.Name));
+			rec.TypeName = this.Strings.Add(type.__Name);
 			if (type.IsNested)
 			{
 				rec.Flags = 0;
@@ -324,8 +324,8 @@ namespace IKVM.Reflection.Emit
 			else
 			{
 				rec.Flags = 0x00200000;	// CorTypeAttr.tdForwarder
-				string ns = type.Namespace;
-				rec.TypeNamespace = ns == null ? 0 : this.Strings.Add(TypeNameParser.Unescape(ns));
+				string ns = type.__Namespace;
+				rec.TypeNamespace = ns == null ? 0 : this.Strings.Add(ns);
 				rec.Implementation = ImportAssemblyRef(type.Assembly);
 			}
 			return 0x27000000 | this.ExportedType.FindOrAddRecord(rec);
@@ -617,16 +617,14 @@ namespace IKVM.Reflection.Emit
 					if (type.IsNested)
 					{
 						rec.ResolutionScope = GetTypeToken(type.DeclaringType).Token;
-						rec.TypeName = this.Strings.Add(TypeNameParser.Unescape(type.Name));
-						rec.TypeNameSpace = 0;
 					}
 					else
 					{
 						rec.ResolutionScope = ImportAssemblyRef(type.Assembly);
-						rec.TypeName = this.Strings.Add(TypeNameParser.Unescape(type.Name));
-						string ns = type.Namespace;
-						rec.TypeNameSpace = ns == null ? 0 : this.Strings.Add(TypeNameParser.Unescape(ns));
 					}
+					rec.TypeName = this.Strings.Add(type.__Name);
+					string ns = type.__Namespace;
+					rec.TypeNameSpace = ns == null ? 0 : this.Strings.Add(ns);
 					token = 0x01000000 | this.TypeRef.AddRecord(rec);
 				}
 				typeTokens.Add(type, token);
@@ -890,9 +888,9 @@ namespace IKVM.Reflection.Emit
 					ExportedTypeTable.Record rec = new ExportedTypeTable.Record();
 					rec.Flags = (int)type.Attributes;
 					rec.TypeDefId = type.MetadataToken & 0xFFFFFF;
-					rec.TypeName = this.Strings.Add(TypeNameParser.Unescape(type.Name));
-					string ns = type.Namespace;
-					rec.TypeNamespace = ns == null ? 0 : this.Strings.Add(TypeNameParser.Unescape(ns));
+					rec.TypeName = this.Strings.Add(type.__Name);
+					string ns = type.__Namespace;
+					rec.TypeNamespace = ns == null ? 0 : this.Strings.Add(ns);
 					if (type.IsNested)
 					{
 						rec.Implementation = declaringTypes[type.DeclaringType];
