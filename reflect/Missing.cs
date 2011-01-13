@@ -26,6 +26,75 @@ using System.Collections.Generic;
 
 namespace IKVM.Reflection
 {
+	[Serializable]
+	public sealed class MissingAssemblyException : InvalidOperationException
+	{
+		[NonSerialized]
+		private readonly MissingAssembly assembly;
+
+		internal MissingAssemblyException(MissingAssembly assembly)
+			: base("Assembly '" + assembly.FullName + "' is a missing assembly and does not support the requested operation.")
+		{
+			this.assembly = assembly;
+		}
+
+		private MissingAssemblyException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
+			: base(info, context)
+		{
+		}
+
+		public Assembly Assembly
+		{
+			get { return assembly; }
+		}
+	}
+
+	[Serializable]
+	public sealed class MissingModuleException : InvalidOperationException
+	{
+		[NonSerialized]
+		private readonly MissingModule module;
+
+		internal MissingModuleException(MissingModule module)
+			: base("Module from missing assembly '" + module.Assembly.FullName + "' does not support the requested operation.")
+		{
+			this.module = module;
+		}
+
+		private MissingModuleException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
+			: base(info, context)
+		{
+		}
+
+		public Module Module
+		{
+			get { return module; }
+		}
+	}
+
+	[Serializable]
+	public sealed class MissingMemberException : InvalidOperationException
+	{
+		[NonSerialized]
+		private readonly MemberInfo member;
+
+		internal MissingMemberException(MemberInfo member)
+			: base("Member '" + member + "' is a missing member and does not support the requested operation.")
+		{
+			this.member = member;
+		}
+
+		private MissingMemberException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
+			: base(info, context)
+		{
+		}
+
+		public MemberInfo MemberInfo
+		{
+			get { return member; }
+		}
+	}
+
 	sealed class MissingAssembly : Assembly
 	{
 		private readonly Dictionary<string, Type> types = new Dictionary<string, Type>();
@@ -53,7 +122,7 @@ namespace IKVM.Reflection
 
 		public override Type[] GetTypes()
 		{
-			throw new NotImplementedException();
+			throw new MissingAssemblyException(this);
 		}
 
 		public override string FullName
@@ -68,7 +137,7 @@ namespace IKVM.Reflection
 
 		public override string ImageRuntimeVersion
 		{
-			get { throw new NotImplementedException(); }
+			get { throw new MissingAssemblyException(this); }
 		}
 
 		public override Module ManifestModule
@@ -78,57 +147,57 @@ namespace IKVM.Reflection
 
 		public override MethodInfo EntryPoint
 		{
-			get { throw new NotImplementedException(); }
+			get { throw new MissingAssemblyException(this); }
 		}
 
 		public override string Location
 		{
-			get { throw new NotImplementedException(); }
+			get { throw new MissingAssemblyException(this); }
 		}
 
 		public override AssemblyName[] GetReferencedAssemblies()
 		{
-			throw new NotImplementedException();
+			throw new MissingAssemblyException(this);
 		}
 
 		public override Module[] GetModules(bool getResourceModules)
 		{
-			throw new NotImplementedException();
+			throw new MissingAssemblyException(this);
 		}
 
 		public override Module[] GetLoadedModules(bool getResourceModules)
 		{
-			throw new NotImplementedException();
+			throw new MissingAssemblyException(this);
 		}
 
 		public override Module GetModule(string name)
 		{
-			throw new NotImplementedException();
+			throw new MissingAssemblyException(this);
 		}
 
 		public override string[] GetManifestResourceNames()
 		{
-			throw new NotImplementedException();
+			throw new MissingAssemblyException(this);
 		}
 
 		public override ManifestResourceInfo GetManifestResourceInfo(string resourceName)
 		{
-			throw new NotImplementedException();
+			throw new MissingAssemblyException(this);
 		}
 
 		public override System.IO.Stream GetManifestResourceStream(string resourceName)
 		{
-			throw new NotImplementedException();
+			throw new MissingAssemblyException(this);
 		}
 
 		internal override Type GetTypeImpl(string typeName)
 		{
-			throw new NotImplementedException();
+			throw new MissingAssemblyException(this);
 		}
 
 		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
 		{
-			throw new NotImplementedException();
+			throw new MissingAssemblyException(this);
 		}
 	}
 
@@ -144,7 +213,7 @@ namespace IKVM.Reflection
 
 		public override int MDStreamVersion
 		{
-			get { throw new NotImplementedException(); }
+			get { throw new MissingModuleException(this); }
 		}
 
 		public override Assembly Assembly
@@ -154,77 +223,77 @@ namespace IKVM.Reflection
 
 		public override string FullyQualifiedName
 		{
-			get { throw new NotImplementedException(); }
+			get { throw new MissingModuleException(this); }
 		}
 
 		public override string Name
 		{
-			get { throw new NotImplementedException(); }
+			get { throw new MissingModuleException(this); }
 		}
 
 		public override Guid ModuleVersionId
 		{
-			get { throw new NotImplementedException(); }
+			get { throw new MissingModuleException(this); }
 		}
 
 		public override Type ResolveType(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
 		{
-			throw new NotImplementedException();
+			throw new MissingModuleException(this);
 		}
 
 		public override MethodBase ResolveMethod(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
 		{
-			throw new NotImplementedException();
+			throw new MissingModuleException(this);
 		}
 
 		public override FieldInfo ResolveField(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
 		{
-			throw new NotImplementedException();
+			throw new MissingModuleException(this);
 		}
 
 		public override MemberInfo ResolveMember(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
 		{
-			throw new NotImplementedException();
+			throw new MissingModuleException(this);
 		}
 
 		public override string ResolveString(int metadataToken)
 		{
-			throw new NotImplementedException();
+			throw new MissingModuleException(this);
 		}
 
 		public override Type[] __ResolveOptionalParameterTypes(int metadataToken)
 		{
-			throw new NotImplementedException();
+			throw new MissingModuleException(this);
 		}
 
 		public override string ScopeName
 		{
-			get { throw new NotImplementedException(); }
+			get { throw new MissingModuleException(this); }
 		}
 
 		internal override Type GetTypeImpl(string typeName)
 		{
-			throw new NotImplementedException();
+			throw new MissingModuleException(this);
 		}
 
 		internal override void GetTypesImpl(System.Collections.Generic.List<Type> list)
 		{
-			throw new NotImplementedException();
+			throw new MissingModuleException(this);
 		}
 
 		public override AssemblyName[] __GetReferencedAssemblies()
 		{
-			throw new NotImplementedException();
+			throw new MissingModuleException(this);
 		}
 
 		internal override Type GetModuleType()
 		{
-			throw new NotImplementedException();
+			throw new MissingModuleException(this);
 		}
 
 		internal override IKVM.Reflection.Reader.ByteReader GetBlob(int blobIndex)
 		{
-			throw new NotImplementedException();
+			throw new MissingModuleException(this);
 		}
 	}
 
@@ -292,12 +361,12 @@ namespace IKVM.Reflection
 
 		public override Type BaseType
 		{
-			get { throw new NotImplementedException(); }
+			get { throw new MissingMemberException(this); }
 		}
 
 		public override TypeAttributes Attributes
 		{
-			get { throw new NotImplementedException(); }
+			get { throw new MissingMemberException(this); }
 		}
 	}
 }
