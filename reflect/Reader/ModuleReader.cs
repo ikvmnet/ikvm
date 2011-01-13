@@ -362,10 +362,10 @@ namespace IKVM.Reflection.Reader
 								case AssemblyRefTable.Index:
 									{
 										Assembly assembly = ResolveAssemblyRef((scope & 0xFFFFFF) - 1);
-										string typeName = GetTypeName(TypeRef.records[index].TypeNameSpace, TypeRef.records[index].TypeName);
-										Type type = assembly.GetType(TypeNameParser.Escape(typeName));
+										Type type = assembly.ResolveType(GetString(TypeRef.records[index].TypeNameSpace), GetString(TypeRef.records[index].TypeName));
 										if (type == null)
 										{
+											string typeName = GetTypeName(TypeRef.records[index].TypeNameSpace, TypeRef.records[index].TypeName);
 											throw new TypeLoadException(String.Format("Type '{0}' not found in assembly '{1}'", typeName, assembly.FullName));
 										}
 										typeRefs[index] = type;
@@ -374,8 +374,7 @@ namespace IKVM.Reflection.Reader
 								case TypeRefTable.Index:
 									{
 										Type outer = ResolveType(scope, null);
-										string typeName = GetTypeName(TypeRef.records[index].TypeNameSpace, TypeRef.records[index].TypeName);
-										typeRefs[index] = outer.GetNestedTypeCorrectly(typeName);
+										typeRefs[index] = outer.ResolveNestedType(GetString(TypeRef.records[index].TypeNameSpace), GetString(TypeRef.records[index].TypeName));
 										break;
 									}
 								case ModuleTable.Index:

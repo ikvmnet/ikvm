@@ -765,6 +765,11 @@ namespace IKVM.Reflection
 			}
 		}
 
+		internal virtual Type ResolveNestedType(string ns, string name)
+		{
+			return GetNestedTypeCorrectly(ns == null ? name : ns + "." + name);
+		}
+
 		// unlike the public API, this takes the namespace and name into account
 		internal Type GetNestedTypeCorrectly(string name)
 		{
@@ -1148,6 +1153,11 @@ namespace IKVM.Reflection
 			// FXBUG we check the declaring type (like .NET) and this results
 			// in IsNested returning true for a generic type parameter
 			get { return this.DeclaringType != null; }
+		}
+
+		public bool __IsMissingType
+		{
+			get { return this is MissingType; }
 		}
 
 		public Type MakeArrayType()
