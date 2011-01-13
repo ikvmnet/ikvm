@@ -163,6 +163,11 @@ namespace IKVM.Reflection
 			}
 		}
 
+		public virtual bool __IsMissing
+		{
+			get { return false; }
+		}
+
 		internal abstract IList<CustomAttributeData> GetCustomAttributesData(Type attributeType);
 	}
 }

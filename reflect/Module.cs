@@ -387,6 +387,11 @@ namespace IKVM.Reflection
 
 		public abstract AssemblyName[] __GetReferencedAssemblies();
 
+		public virtual bool __IsMissing
+		{
+			get { return false; }
+		}
+
 		internal Type CanonicalizeType(Type type)
 		{
 			Type canon;

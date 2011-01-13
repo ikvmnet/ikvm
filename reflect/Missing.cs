@@ -191,6 +191,11 @@ namespace IKVM.Reflection
 			throw new MissingAssemblyException(this);
 		}
 
+		public override bool __IsMissing
+		{
+			get { return true; }
+		}
+
 		internal override Type GetTypeImpl(string typeName)
 		{
 			throw new MissingAssemblyException(this);
@@ -330,6 +335,11 @@ namespace IKVM.Reflection
 		public override void GetPEKind(out PortableExecutableKinds peKind, out ImageFileMachine machine)
 		{
 			throw new MissingModuleException(this);
+		}
+
+		public override bool __IsMissing
+		{
+			get { return true; }
 		}
 
 		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)

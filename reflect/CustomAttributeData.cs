@@ -584,6 +584,10 @@ namespace IKVM.Reflection
 
 		public static IList<CustomAttributeData> __GetDeclarativeSecurity(Assembly assembly)
 		{
+			if (assembly.__IsMissing)
+			{
+				throw new MissingAssemblyException((MissingAssembly)assembly);
+			}
 			return assembly.ManifestModule.GetDeclarativeSecurity(0x20000001);
 		}
 
