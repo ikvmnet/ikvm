@@ -1155,7 +1155,7 @@ namespace IKVM.Reflection
 			get { return this.DeclaringType != null; }
 		}
 
-		public bool __IsMissingType
+		public bool __IsMissing
 		{
 			get { return this is MissingType; }
 		}
