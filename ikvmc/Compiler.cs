@@ -780,7 +780,8 @@ class IkvmcCompiler
 				}
 				else
 				{
-					Console.Error.WriteLine("Warning: unrecognized option: {0}", s);
+					Console.Error.WriteLine("Error: unrecognized option: {0}", s);
+					return 1;
 				}
 			}
 			else
