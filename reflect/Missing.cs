@@ -23,6 +23,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace IKVM.Reflection
 {
@@ -367,6 +368,86 @@ namespace IKVM.Reflection
 		public override TypeAttributes Attributes
 		{
 			get { throw new MissingMemberException(this); }
+		}
+
+		public override Type[] __GetDeclaredTypes()
+		{
+			throw new MissingMemberException(this);
+		}
+
+		public override Type[] __GetDeclaredInterfaces()
+		{
+			throw new MissingMemberException(this);
+		}
+
+		public override MethodBase[] __GetDeclaredMethods()
+		{
+			throw new MissingMemberException(this);
+		}
+
+		public override __MethodImplMap __GetMethodImplMap()
+		{
+			throw new MissingMemberException(this);
+		}
+
+		public override FieldInfo[] __GetDeclaredFields()
+		{
+			throw new MissingMemberException(this);
+		}
+
+		public override EventInfo[] __GetDeclaredEvents()
+		{
+			throw new MissingMemberException(this);
+		}
+
+		public override PropertyInfo[] __GetDeclaredProperties()
+		{
+			throw new MissingMemberException(this);
+		}
+
+		public override Type[] __GetRequiredCustomModifiers()
+		{
+			throw new MissingMemberException(this);
+		}
+
+		public override Type[] __GetOptionalCustomModifiers()
+		{
+			throw new MissingMemberException(this);
+		}
+
+		public override Type[] GetGenericArguments()
+		{
+			throw new MissingMemberException(this);
+		}
+
+		public override Type[][] __GetGenericArgumentsRequiredCustomModifiers()
+		{
+			throw new MissingMemberException(this);
+		}
+
+		public override Type[][] __GetGenericArgumentsOptionalCustomModifiers()
+		{
+			throw new MissingMemberException(this);
+		}
+
+		public override StructLayoutAttribute StructLayoutAttribute
+		{
+			get { throw new MissingMemberException(this); }
+		}
+
+		public override bool IsGenericType
+		{
+			get { throw new MissingMemberException(this); }
+		}
+
+		public override bool IsGenericTypeDefinition
+		{
+			get { throw new MissingMemberException(this); }
+		}
+
+		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
+		{
+			throw new MissingMemberException(this);
 		}
 	}
 }
