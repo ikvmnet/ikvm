@@ -363,7 +363,7 @@ namespace IKVM.Reflection.Reader
 									{
 										Assembly assembly = ResolveAssemblyRef((scope & 0xFFFFFF) - 1);
 										string typeName = GetTypeName(TypeRef.records[index].TypeNameSpace, TypeRef.records[index].TypeName);
-										Type type = assembly.GetType(typeName);
+										Type type = assembly.GetType(TypeNameParser.Escape(typeName));
 										if (type == null)
 										{
 											throw new TypeLoadException(String.Format("Type '{0}' not found in assembly '{1}'", typeName, assembly.FullName));
@@ -382,13 +382,13 @@ namespace IKVM.Reflection.Reader
 									{
 										throw new NotImplementedException("self reference scope?");
 									}
-									typeRefs[index] = GetType(GetTypeName(TypeRef.records[index].TypeNameSpace, TypeRef.records[index].TypeName));
+									typeRefs[index] = GetType(TypeNameParser.Escape(GetTypeName(TypeRef.records[index].TypeNameSpace, TypeRef.records[index].TypeName)));
 									break;
 								case ModuleRefTable.Index:
 									{
 										Module module = ResolveModuleRef(ModuleRef.records[(scope & 0xFFFFFF) - 1]);
 										string typeName = GetTypeName(TypeRef.records[index].TypeNameSpace, TypeRef.records[index].TypeName);
-										Type type = module.GetType(typeName);
+										Type type = module.GetType(TypeNameParser.Escape(typeName));
 										if (type == null)
 										{
 											throw new TypeLoadException(String.Format("Type '{0}' not found in module '{1}'", typeName, module.Name));
