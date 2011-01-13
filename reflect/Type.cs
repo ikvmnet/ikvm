@@ -756,7 +756,8 @@ namespace IKVM.Reflection
 		{
 			foreach (Type type in GetNestedTypes(bindingAttr))
 			{
-				if (type.Name == name)
+				// FXBUG the namespace is ignored
+				if (type.__Name == name)
 				{
 					return type;
 				}
