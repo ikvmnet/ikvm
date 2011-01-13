@@ -45,6 +45,11 @@ namespace IKVM.Reflection
 	{
 		public static readonly Type[] EmptyTypes = Empty<Type>.Array;
 
+		// prevent subclassing by outsiders
+		internal Type()
+		{
+		}
+
 		public static Binder DefaultBinder
 		{
 			get { return null; }

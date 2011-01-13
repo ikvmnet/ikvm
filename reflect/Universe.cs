@@ -32,7 +32,7 @@ using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection
 {
-	public class ResolveEventArgs : EventArgs
+	public sealed class ResolveEventArgs : EventArgs
 	{
 		private readonly string name;
 		private readonly Assembly requestingAssembly;
