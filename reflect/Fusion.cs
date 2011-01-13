@@ -141,6 +141,11 @@ namespace IKVM.Reflection
 					return true;
 				}
 			}
+			else if (IsStrongNamed(name1))
+			{
+				result = AssemblyComparisonResult.NonEquivalent;
+				return false;
+			}
 			else
 			{
 				result = partial ? AssemblyComparisonResult.EquivalentPartialWeakNamed : AssemblyComparisonResult.EquivalentWeakNamed;
