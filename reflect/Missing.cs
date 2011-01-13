@@ -296,6 +296,46 @@ namespace IKVM.Reflection
 		{
 			throw new MissingModuleException(this);
 		}
+
+		public override void __GetDataDirectoryEntry(int index, out int rva, out int length)
+		{
+			throw new MissingModuleException(this);
+		}
+
+		public override IList<CustomAttributeData> __GetPlaceholderAssemblyCustomAttributes(bool multiple, bool security)
+		{
+			throw new MissingModuleException(this);
+		}
+
+		public override long __RelativeVirtualAddressToFileOffset(int rva)
+		{
+			throw new MissingModuleException(this);
+		}
+
+		public override __StandAloneMethodSig __ResolveStandAloneMethodSig(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
+		{
+			throw new MissingModuleException(this);
+		}
+
+		public override int __Subsystem
+		{
+			get { throw new MissingModuleException(this); }
+		}
+
+		internal override void ExportTypes(int fileToken, IKVM.Reflection.Emit.ModuleBuilder manifestModule)
+		{
+			throw new MissingModuleException(this);
+		}
+
+		public override void GetPEKind(out PortableExecutableKinds peKind, out ImageFileMachine machine)
+		{
+			throw new MissingModuleException(this);
+		}
+
+		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
+		{
+			throw new MissingModuleException(this);
+		}
 	}
 
 	sealed class MissingType : Type

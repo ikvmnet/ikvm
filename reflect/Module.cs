@@ -402,7 +402,7 @@ namespace IKVM.Reflection
 
 		internal abstract ByteReader GetBlob(int blobIndex);
 
-		internal IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
+		internal virtual IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
 		{
 			return GetCustomAttributes(0x00000001, attributeType);
 		}
