@@ -489,5 +489,10 @@ namespace IKVM.Reflection
 		{
 			throw new MissingMemberException(this);
 		}
+
+		internal override Type BindTypeParameters(IGenericBinder binder)
+		{
+			return this;
+		}
 	}
 }
