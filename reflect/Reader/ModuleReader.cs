@@ -388,7 +388,7 @@ namespace IKVM.Reflection.Reader
 									{
 										Module module = ResolveModuleRef(ModuleRef.records[(scope & 0xFFFFFF) - 1]);
 										string typeName = GetTypeName(TypeRef.records[index].TypeNameSpace, TypeRef.records[index].TypeName);
-										Type type = assembly.GetType(typeName);
+										Type type = module.GetType(typeName);
 										if (type == null)
 										{
 											throw new TypeLoadException(String.Format("Type '{0}' not found in module '{1}'", typeName, module.Name));
