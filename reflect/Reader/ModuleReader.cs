@@ -374,7 +374,8 @@ namespace IKVM.Reflection.Reader
 								case TypeRefTable.Index:
 									{
 										Type outer = ResolveType(scope, null);
-										typeRefs[index] = outer.GetNestedType(GetString(TypeRef.records[index].TypeName), BindingFlags.Public | BindingFlags.NonPublic);
+										string typeName = GetTypeName(TypeRef.records[index].TypeNameSpace, TypeRef.records[index].TypeName);
+										typeRefs[index] = outer.GetNestedTypeCorrectly(typeName);
 										break;
 									}
 								case ModuleTable.Index:

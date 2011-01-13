@@ -747,6 +747,38 @@ namespace IKVM.Reflection
 			return GetConstructor(bindingAttr, binder, types, modifiers);
 		}
 
+		private static bool MatchTypeNames(string ns, string name, string fullName)
+		{
+			if (ns == null)
+			{
+				return name == fullName;
+			}
+			else if (ns.Length + 1 + name.Length == fullName.Length)
+			{
+				return fullName[ns.Length] == '.'
+					&& String.CompareOrdinal(ns, 0, fullName, 0, ns.Length) == 0
+					&& String.CompareOrdinal(name, 0, fullName, ns.Length + 1, name.Length) == 0;
+			}
+			else
+			{
+				return false;
+			}
+		}
+
+		// unlike the public API, this takes the namespace and name into account
+		internal Type GetNestedTypeCorrectly(string name)
+		{
+			CheckBaked();
+			foreach (Type type in __GetDeclaredTypes())
+			{
+				if (MatchTypeNames(type.__Namespace, type.__Name, name))
+				{
+					return type;
+				}
+			}
+			return null;
+		}
+
 		public Type GetNestedType(string name)
 		{
 			return GetNestedType(name, BindingFlags.Public);
