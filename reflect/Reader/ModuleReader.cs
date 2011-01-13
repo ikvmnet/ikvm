@@ -263,7 +263,7 @@ namespace IKVM.Reflection.Reader
 					if (implementation >> 24 == AssemblyRefTable.Index)
 					{
 						string typeName = GetTypeName(ExportedType.records[i].TypeNamespace, ExportedType.records[i].TypeName);
-						forwardedTypes.Add(typeName, new LazyForwardedType((implementation & 0xFFFFFF) - 1));
+						forwardedTypes.Add(TypeNameParser.Escape(typeName), new LazyForwardedType((implementation & 0xFFFFFF) - 1));
 					}
 				}
 			}
