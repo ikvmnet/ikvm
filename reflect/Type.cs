@@ -1160,6 +1160,25 @@ namespace IKVM.Reflection
 			get { return this is MissingType; }
 		}
 
+		public virtual bool __ContainsMissingType
+		{
+			get
+			{
+				if (this.__IsMissing)
+				{
+					return true;
+				}
+				foreach (Type arg in this.GetGenericArguments())
+				{
+					if (arg.__ContainsMissingType)
+					{
+						return true;
+					}
+				}
+				return false;
+			}
+		}
+
 		public Type MakeArrayType()
 		{
 			return ArrayType.Make(this, null, null);
@@ -1677,6 +1696,19 @@ namespace IKVM.Reflection
 					type = type.GetElementType();
 				}
 				return type.ContainsGenericParameters;
+			}
+		}
+
+		public sealed override bool __ContainsMissingType
+		{
+			get
+			{
+				Type type = elementType;
+				while (type.HasElementType)
+				{
+					type = type.GetElementType();
+				}
+				return type.__ContainsMissingType;
 			}
 		}
 
@@ -2407,6 +2439,21 @@ namespace IKVM.Reflection
 				foreach (Type type in args)
 				{
 					if (type.ContainsGenericParameters)
+					{
+						return true;
+					}
+				}
+				return false;
+			}
+		}
+
+		public override bool __ContainsMissingType
+		{
+			get
+			{
+				foreach (Type type in args)
+				{
+					if (type.__ContainsMissingType)
 					{
 						return true;
 					}
