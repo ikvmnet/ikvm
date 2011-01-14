@@ -2117,7 +2117,7 @@ namespace IKVM.Reflection
 		internal static Type Make(Type type, Type[] typeArguments, Type[][] requiredCustomModifiers, Type[][] optionalCustomModifiers)
 		{
 			bool identity = true;
-			if (type is TypeBuilder || type is BakedType)
+			if (type is TypeBuilder || type is BakedType || type.__IsMissing)
 			{
 				// a TypeBuiler identity must be instantiated
 				identity = false;
