@@ -44,8 +44,7 @@ import java.text.CharacterIterator;
 import java.util.WeakHashMap;
 
 import cli.System.Drawing.Drawing2D.GraphicsPath;
-
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import ikvm.internal.NotYetImplementedError;
 
 /**
  * Standard implementation of GlyphVector used by Font, GlyphList, and SunGraphics2D.
@@ -92,7 +91,7 @@ public class StandardGlyphVector extends GlyphVector{
 
 
     public StandardGlyphVector(Font font, int[] glyphCodes, FontRenderContext frc){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
 
@@ -254,7 +253,7 @@ public class StandardGlyphVector extends GlyphVector{
 
     @Override
     public GlyphJustificationInfo getGlyphJustificationInfo(int glyphIndex){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
 
@@ -274,7 +273,7 @@ public class StandardGlyphVector extends GlyphVector{
 
     @Override
     public Shape getGlyphOutline(int glyphIndex){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
 
@@ -306,7 +305,7 @@ public class StandardGlyphVector extends GlyphVector{
 
     @Override
     public AffineTransform getGlyphTransform(int glyphIndex){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
     /**
@@ -382,19 +381,19 @@ public class StandardGlyphVector extends GlyphVector{
 
     @Override
     public void performDefaultLayout(){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
 
     @Override
     public void setGlyphPosition(int glyphIndex, Point2D newPos){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
 
     @Override
     public void setGlyphTransform(int glyphIndex, AffineTransform newTX){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
 

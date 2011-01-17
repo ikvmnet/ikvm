@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Volker Berlin (i-net software)
+  Copyright (C) 2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -20,33 +20,18 @@
   Jeroen Frijters
   jeroen@frijters.net
   
- */
-package sun.font;
+*/
+package ikvm.internal;
 
-import cli.System.Drawing.Font;
-import ikvm.internal.NotYetImplementedError;
-
-
-/**
- * 
- */
-public class CompositeFont extends Font2D{
-
-    @Override
-    public int getStyle(){
-        throw new NotYetImplementedError();
-    }
-
-    @Override
-    public Font createNetFont(java.awt.Font font){
-        throw new NotYetImplementedError();
-    }
-
-    public int getNumSlots() {
-        throw new NotYetImplementedError();
+public final class NotYetImplementedError extends Error
+{
+    public NotYetImplementedError()
+    {
+        this("This method has not yet been implemented in IKVM.NET.");
     }
     
-    public PhysicalFont getSlotFont(int slot) {
-        throw new NotYetImplementedError();
+    public NotYetImplementedError(String message)
+    {
+        super(message);
     }
 }

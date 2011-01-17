@@ -24,10 +24,7 @@
 package sun.java2d.pipe;
 
 import java.awt.geom.PathIterator;
-
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
-
+import ikvm.internal.NotYetImplementedError;
 
 /**
  * Replacement for compiling only 
@@ -35,7 +32,7 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 public class ShapeSpanIterator implements SpanIterator{
 
     public ShapeSpanIterator(boolean normalize){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
     public void setOutputArea(Region devBounds){

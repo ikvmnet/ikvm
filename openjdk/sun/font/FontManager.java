@@ -35,10 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.swing.plaf.FontUIResource;
 
 import cli.System.Drawing.FontFamily;
-
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
-
+import ikvm.internal.NotYetImplementedError;
 
 /**
  * 
@@ -150,7 +147,7 @@ public class FontManager{
     }
 
     public static Font getCompositeFontUIResource(Font f){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
     public static boolean registerFont(Font font){
@@ -174,7 +171,7 @@ public class FontManager{
     }
 
     public static Font2D getNewComposite(Object object, int style, Font2D font2D){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
     /* This is called by Swing passing in a fontconfig family name

@@ -42,6 +42,7 @@ ikvm/internal/FieldReflectorBase.java
 ikvm/internal/IntrinsicAtomicReferenceFieldUpdater.java
 ikvm/internal/IntrinsicThreadLocal.java
 ikvm/internal/JNI.java
+ikvm/internal/NotYetImplementedError.java
 ikvm/internal/Serialization.java
 ikvm/internal/Winsock.java
 java/awt/color/ICC_ColorSpace.java

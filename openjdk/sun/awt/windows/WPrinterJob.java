@@ -45,9 +45,8 @@ import sun.print.PeekGraphics;
 import sun.print.PrintPeer;
 import sun.print.RasterPrinterJob;
 import sun.print.Win32PrintService;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-
+import ikvm.internal.NotYetImplementedError;
 
 /**
  * @author Volker Berlin
@@ -56,72 +55,72 @@ public class WPrinterJob extends RasterPrinterJob{
 
     @Override
     protected void abortDoc(){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
     @Override
     protected void endDoc() throws PrinterException{
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
     @Override
     protected void endPage(PageFormat format, Printable painter, int index) throws PrinterException{
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
     @Override
     protected double getPhysicalPageHeight(Paper p){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
     @Override
     protected double getPhysicalPageWidth(Paper p){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
     @Override
     protected double getPhysicalPrintableHeight(Paper p){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
     @Override
     protected double getPhysicalPrintableWidth(Paper p){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
     @Override
     protected double getPhysicalPrintableX(Paper p){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
     @Override
     protected double getPhysicalPrintableY(Paper p){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
     @Override
     protected double getXRes(){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
     @Override
     protected double getYRes(){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
     @Override
     protected void printBand(byte[] data, int x, int y, int width, int height) throws PrinterException{
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
     @Override
     protected void startDoc() throws PrinterException{
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
     @Override
     protected void startPage(PageFormat format, Printable painter, int index, boolean paperChanged)
             throws PrinterException{
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 }

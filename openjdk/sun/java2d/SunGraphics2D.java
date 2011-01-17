@@ -37,9 +37,7 @@ import java.text.AttributedCharacterIterator;
 import java.util.Map;
 
 import sun.java2d.pipe.Region;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
-
+import ikvm.internal.NotYetImplementedError;
 
 /**
  * A replacement of the Sun implementation that redirect to the NetGraphics
@@ -806,7 +804,7 @@ public class SunGraphics2D extends Graphics2D{
      * rendering boundaries.
      */
     public Region getCompClip() {
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
     /**
@@ -822,7 +820,7 @@ public class SunGraphics2D extends Graphics2D{
      * to be constrained has a complex transform.
      */
     public void constrain(int i, int j, int k, int l){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
     
     /**
@@ -831,7 +829,7 @@ public class SunGraphics2D extends Graphics2D{
      * responsible for returning the appropriate object.
      */
     public Object getDestination() {
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
 }

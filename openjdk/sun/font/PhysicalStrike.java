@@ -31,8 +31,7 @@ import java.awt.geom.Point2D.Float;
 
 import cli.System.Drawing.FontFamily;
 import cli.System.Drawing.FontStyle;
-
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import ikvm.internal.NotYetImplementedError;
 
 /**
  * A FontStrike implementation that based on .NET fonts. 
@@ -117,7 +116,7 @@ public class PhysicalStrike extends FontStrike{
      */
     @Override
     void getGlyphImageBounds(int glyphcode, Float pt, Rectangle result){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
 
@@ -126,7 +125,7 @@ public class PhysicalStrike extends FontStrike{
      */
     @Override
     long getGlyphImagePtr(int glyphcode){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
 
@@ -135,7 +134,7 @@ public class PhysicalStrike extends FontStrike{
      */
     @Override
     void getGlyphImagePtrs(int[] glyphCodes, long[] images, int len){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
 
@@ -153,7 +152,7 @@ public class PhysicalStrike extends FontStrike{
      */
     @Override
     GeneralPath getGlyphOutline(int glyphCode, float x, float y){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
 
@@ -162,7 +161,7 @@ public class PhysicalStrike extends FontStrike{
      */
     @Override
     java.awt.geom.Rectangle2D.Float getGlyphOutlineBounds(int glyphCode){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
 
@@ -171,7 +170,7 @@ public class PhysicalStrike extends FontStrike{
      */
     @Override
     GeneralPath getGlyphVectorOutline(int[] glyphs, float x, float y){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
 
@@ -180,7 +179,7 @@ public class PhysicalStrike extends FontStrike{
      */
     @Override
     public int getNumGlyphs(){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
 }

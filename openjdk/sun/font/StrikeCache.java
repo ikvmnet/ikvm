@@ -36,7 +36,7 @@ import java.util.logging.Logger;
 
 import sun.java2d.Disposer;
 import sun.misc.Unsafe;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import ikvm.internal.NotYetImplementedError;
 
 /**
 
@@ -126,7 +126,7 @@ public final class StrikeCache {
      * arr[10] = address of a GlyphImageRef representing the invisible glyph
      */
     static void getGlyphCacheDescription(long[] infoArray){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
     static {
@@ -238,16 +238,16 @@ public final class StrikeCache {
     }
 
     static void freeIntPointer(int ptr){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
     static void freeLongPointer(long ptr){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
     private static void freeIntMemory(int[] glyphPtrs, long pContext){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
     private static void freeLongMemory(long[] glyphPtrs, long pContext){
-        throw new NotImplementedException();
+        throw new NotYetImplementedError();
     }
 
 
