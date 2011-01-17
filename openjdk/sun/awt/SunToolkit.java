@@ -46,7 +46,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import sun.misc.SoftCache;
 import sun.awt.image.*;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 import sun.security.action.GetPropertyAction;
 import sun.security.action.GetBooleanAction;
 import java.lang.reflect.Field;

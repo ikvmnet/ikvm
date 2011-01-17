@@ -37,8 +37,6 @@ import cli.System.Drawing.Imaging.BitmapData;
 import cli.System.Drawing.Imaging.ImageLockMode;
 import cli.System.Drawing.Imaging.PixelFormat;
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
 public class ImageRepresentation extends ImageWatched implements ImageConsumer
 {
     InputStreamImageSource src;

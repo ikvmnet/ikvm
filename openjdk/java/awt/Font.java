@@ -62,7 +62,6 @@ import sun.font.Font2D;
 import sun.font.FontManager;
 import sun.font.FontLineMetrics;
 import sun.font.CoreMetrics;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import static sun.font.EAttribute.*;
 
