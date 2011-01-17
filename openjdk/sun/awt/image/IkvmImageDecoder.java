@@ -27,12 +27,13 @@ import java.awt.image.*;
 import java.io.IOException;
 import java.io.InputStream;
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 import cli.System.Drawing.Bitmap;
 import cli.System.Drawing.Imaging.ImageLockMode;
 import cli.System.Drawing.Imaging.PixelFormat;
 import cli.System.IO.SeekOrigin;
 import cli.System.IO.Stream;
+import cli.System.NotSupportedException;
+import ikvm.runtime.Util;
 
 abstract class IkvmImageDecoder extends ImageDecoder {
 
@@ -47,7 +48,7 @@ abstract class IkvmImageDecoder extends ImageDecoder {
 
             @Override
             public void Flush(){
-                throw new NotImplementedException();
+                Util.throwException(new NotSupportedException());
             }
 
             @Override
@@ -65,17 +66,18 @@ abstract class IkvmImageDecoder extends ImageDecoder {
 
             @Override
             public long Seek(long arg0, SeekOrigin arg1){
-                throw new NotImplementedException();
+                Util.throwException(new NotSupportedException());
+                return 0;
             }
 
             @Override
             public void SetLength(long arg0){
-                throw new NotImplementedException();
+                Util.throwException(new NotSupportedException());
             }
 
             @Override
             public void Write(byte[] arg0, int arg1, int arg2){
-                throw new NotImplementedException();
+                Util.throwException(new NotSupportedException());
             }
 
             @Override
@@ -104,12 +106,13 @@ abstract class IkvmImageDecoder extends ImageDecoder {
 
             @Override
             public long get_Position(){
-                throw new NotImplementedException();
+                Util.throwException(new NotSupportedException());
+                return 0;
             }
 
             @Override
             public void set_Position(long arg0){
-                throw new NotImplementedException();
+                Util.throwException(new NotSupportedException());
             }
             
         };
