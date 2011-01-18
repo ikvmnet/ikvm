@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2008-2010 Jeroen Frijters
+  Copyright (C) 2008-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -253,12 +253,30 @@ namespace IKVM.Reflection.Emit
 			this.fileKind = fileKind;
 		}
 
+		public void __Save(Stream stream, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
+		{
+			if (!stream.CanRead || !stream.CanWrite || !stream.CanSeek || stream.Position != 0)
+			{
+				throw new ArgumentException("Stream must support read/write/seek and current position must be zero.", "stream");
+			}
+			if (modules.Count != 1)
+			{
+				throw new NotSupportedException("Saving to a stream is only supported for single module assemblies.");
+			}
+			SaveImpl(modules[0].fileName, stream, portableExecutableKind, imageFileMachine);
+		}
+
 		public void Save(string assemblyFileName)
 		{
 			Save(assemblyFileName, PortableExecutableKinds.ILOnly, ImageFileMachine.I386);
 		}
 
 		public void Save(string assemblyFileName, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
+		{
+			SaveImpl(assemblyFileName, null, portableExecutableKind, imageFileMachine);
+		}
+
+		private void SaveImpl(string assemblyFileName, Stream streamOrNull, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
 		{
 			ModuleBuilder manifestModule = null;
 
@@ -398,7 +416,7 @@ namespace IKVM.Reflection.Emit
 			}
 
 			// finally, write the manifest module
-			ModuleWriter.WriteModule(keyPair, publicKey, manifestModule, fileKind, portableExecutableKind, imageFileMachine, unmanagedResources ?? manifestModule.unmanagedResources, entryPointToken);
+			ModuleWriter.WriteModule(keyPair, publicKey, manifestModule, fileKind, portableExecutableKind, imageFileMachine, unmanagedResources ?? manifestModule.unmanagedResources, entryPointToken, streamOrNull);
 		}
 
 		private int AddFile(ModuleBuilder manifestModule, string fileName, int flags)
