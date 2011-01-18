@@ -64,6 +64,7 @@ namespace IKVM.Reflection.Emit
 		private readonly List<CustomAttributeBuilder> customAttributes = new List<CustomAttributeBuilder>();
 		private readonly List<CustomAttributeBuilder> declarativeSecurity = new List<CustomAttributeBuilder>();
 		private readonly List<Type> typeForwarders = new List<Type>();
+		private Dictionary<string, Type> missingTypes;
 
 		private struct ResourceFile
 		{
@@ -526,6 +527,35 @@ namespace IKVM.Reflection.Emit
 				}
 			}
 			return null;
+		}
+
+		internal override Type ResolveType(string ns, string name)
+		{
+			return base.ResolveType(ns, name) ?? GetMissingType(this.ManifestModule, null, ns, name);
+		}
+
+		internal Type GetMissingType(Module module, Type declaringType, string ns, string name)
+		{
+			if (missingTypes == null)
+			{
+				return null;
+			}
+			Type mt = new MissingType(module, declaringType, ns, name);
+			Type type;
+			if (!missingTypes.TryGetValue(mt.FullName, out type))
+			{
+				missingTypes.Add(mt.FullName, mt);
+				type = mt;
+			}
+			return type;
+		}
+
+		public void __EnableMissingTypeResolution()
+		{
+			if (missingTypes == null)
+			{
+				missingTypes = new Dictionary<string, Type>();
+			}
 		}
 
 		public override string ImageRuntimeVersion
