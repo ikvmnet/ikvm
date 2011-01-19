@@ -2457,7 +2457,7 @@ namespace IKVM.Reflection
 						return true;
 					}
 				}
-				return false;
+				return this.type.__IsMissing;
 			}
 		}
 
