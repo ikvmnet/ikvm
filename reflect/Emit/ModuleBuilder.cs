@@ -48,7 +48,6 @@ namespace IKVM.Reflection.Emit
 		private readonly List<TypeBuilder> types = new List<TypeBuilder>();
 		private readonly Dictionary<Type, int> typeTokens = new Dictionary<Type, int>();
 		private readonly Dictionary<Type, int> memberRefTypeTokens = new Dictionary<Type, int>();
-		private readonly Dictionary<string, TypeBuilder> fullNameToType = new Dictionary<string, TypeBuilder>();
 		internal readonly ByteBuffer methodBodies = new ByteBuffer(128 * 1024);
 		internal readonly List<int> tokenFixupOffsets = new List<int>();
 		internal readonly ByteBuffer initializedData = new ByteBuffer(512);
@@ -227,7 +226,6 @@ namespace IKVM.Reflection.Emit
 		{
 			TypeBuilder typeBuilder = new TypeBuilder(owner, ns, name, attr);
 			types.Add(typeBuilder);
-			fullNameToType.Add(typeBuilder.FullName, typeBuilder);
 			return typeBuilder;
 		}
 
@@ -433,11 +431,16 @@ namespace IKVM.Reflection.Emit
 			get { return asm; }
 		}
 
-		internal override Type GetTypeImpl(string typeName)
+		internal override Type FindType(TypeName name)
 		{
-			TypeBuilder type;
-			fullNameToType.TryGetValue(typeName, out type);
-			return type;
+			foreach (Type type in types)
+			{
+				if (type.__Namespace == name.Namespace && type.__Name == name.Name)
+				{
+					return type;
+				}
+			}
+			return null;
 		}
 
 		internal override void GetTypesImpl(List<Type> list)
