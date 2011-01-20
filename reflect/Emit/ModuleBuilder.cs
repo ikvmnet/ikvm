@@ -108,7 +108,7 @@ namespace IKVM.Reflection.Emit
 				symbolWriter = SymbolSupport.CreateSymbolWriterFor(this);
 			}
 			// <Module> must be the first record in the TypeDef table
-			moduleType = new TypeBuilder(this, null, "<Module>", 0);
+			moduleType = new TypeBuilder(this, null, "<Module>");
 			types.Add(moduleType);
 		}
 
@@ -207,7 +207,8 @@ namespace IKVM.Reflection.Emit
 				ns = name.Substring(0, lastdot);
 				name = name.Substring(lastdot + 1);
 			}
-			TypeBuilder typeBuilder = __DefineType(ns, name, attr);
+			TypeBuilder typeBuilder = __DefineType(ns, name);
+			typeBuilder.__SetAttributes(attr);
 			if (parent == null && (attr & TypeAttributes.Interface) == 0)
 			{
 				parent = universe.System_Object;
@@ -217,14 +218,14 @@ namespace IKVM.Reflection.Emit
 			return typeBuilder;
 		}
 
-		public TypeBuilder __DefineType(string ns, string name, TypeAttributes attr)
+		public TypeBuilder __DefineType(string ns, string name)
 		{
-			return DefineType(this, ns, name, attr);
+			return DefineType(this, ns, name);
 		}
 
-		internal TypeBuilder DefineType(ITypeOwner owner, string ns, string name, TypeAttributes attr)
+		internal TypeBuilder DefineType(ITypeOwner owner, string ns, string name)
 		{
-			TypeBuilder typeBuilder = new TypeBuilder(owner, ns, name, attr);
+			TypeBuilder typeBuilder = new TypeBuilder(owner, ns, name);
 			types.Add(typeBuilder);
 			return typeBuilder;
 		}
