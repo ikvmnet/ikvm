@@ -448,7 +448,7 @@ namespace IKVM.NativeCode.sun.awt.shell
 		[System.Security.SecurityCritical]
 		public static IntPtr getNextPIDLEntry(IntPtr pIDL)
         {
-            if (pIDL == null)
+            if (pIDL == IntPtr.Zero)
             {
                 return IntPtr.Zero;
             }
@@ -476,7 +476,7 @@ namespace IKVM.NativeCode.sun.awt.shell
 		[System.Security.SecurityCritical]
 		public static IntPtr copyFirstPIDLEntry(IntPtr pIDL)
         {
-            if (pIDL == null)
+            if (pIDL == IntPtr.Zero)
             {
                 return IntPtr.Zero;
             }
