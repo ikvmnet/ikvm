@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2010 Jeroen Frijters
+  Copyright (C) 2002-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -2031,12 +2031,11 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal bool IsFakeNestedType
+		internal virtual bool IsFakeNestedType
 		{
 			get
 			{
-				TypeWrapper outer = this.DeclaringTypeWrapper;
-				return outer != null && outer.IsFakeTypeContainer;
+				return false;
 			}
 		}
 

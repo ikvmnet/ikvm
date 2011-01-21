@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2009 Jeroen Frijters
+  Copyright (C) 2002-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -342,7 +342,20 @@ namespace IKVM.Internal
 			}
 		}
 
-		private sealed class DelegateInnerClassTypeWrapper : TypeWrapper
+		internal abstract class FakeTypeWrapper : TypeWrapper
+		{
+			protected FakeTypeWrapper(Modifiers modifiers, string name, TypeWrapper baseWrapper)
+				: base(modifiers, name, baseWrapper)
+			{
+			}
+
+			internal sealed override bool IsFakeNestedType
+			{
+				get { return true; }
+			}
+		}
+
+		private sealed class DelegateInnerClassTypeWrapper : FakeTypeWrapper
 		{
 			private readonly Type fakeType;
 
@@ -450,7 +463,7 @@ namespace IKVM.Internal
 #endif // !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 		}
 
-		private sealed class EnumEnumTypeWrapper : TypeWrapper
+		private sealed class EnumEnumTypeWrapper : FakeTypeWrapper
 		{
 			private readonly Type fakeType;
 
@@ -640,7 +653,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal abstract class AttributeAnnotationTypeWrapperBase : TypeWrapper
+		internal abstract class AttributeAnnotationTypeWrapperBase : FakeTypeWrapper
 		{
 			internal AttributeAnnotationTypeWrapperBase(string name)
 				: base(Modifiers.Public | Modifiers.Interface | Modifiers.Abstract | Modifiers.Annotation, name, null)
