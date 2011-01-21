@@ -153,7 +153,8 @@ namespace IKVM.Reflection
 		{
 			// We use FindType instead of ResolveType here, because on some versions of mscorlib some of
 			// the special types we use/support are missing and the type properties are defined to
-			// return null in that case.
+			// return null in that case. Note that this is also required to support compiling mscorlib
+			// (if we used ResolveType, it would use a MissingType for the base type of System.Object).
 			// Note that we don't have to unescape type.Name here, because none of the names contain special characters.
 			return Mscorlib.FindType(new TypeName(type.Namespace, type.Name));
 		}
