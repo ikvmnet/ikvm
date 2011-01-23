@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009, 2010 Volker Berlin (i-net software)
+  Copyright (C) 2009 - 2011 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -26,24 +26,18 @@ package sun.font;
 import ikvm.awt.IkvmToolkit;
 
 import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.Toolkit;
 import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphJustificationInfo;
 import java.awt.font.GlyphMetrics;
 import java.awt.font.GlyphVector;
+import java.awt.font.LineMetrics;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.awt.image.BufferedImage;
 import java.text.CharacterIterator;
-import java.util.WeakHashMap;
 
-import cli.System.Drawing.Drawing2D.GraphicsPath;
 import ikvm.internal.NotYetImplementedError;
 
 /**
@@ -51,8 +45,6 @@ import ikvm.internal.NotYetImplementedError;
  * 
  */
 public class StandardGlyphVector extends GlyphVector{
-
-    private static final BufferedImage IMAGE = new BufferedImage( 1, 1, BufferedImage.TYPE_INT_ARGB );
 
     private float[] positions; // only if not default advances
 
@@ -62,12 +54,8 @@ public class StandardGlyphVector extends GlyphVector{
 
     private final String glyphs;
 
-    private transient FontMetrics metrics;
-
     private Font2D font2D;
     private FontStrike strike;
-    
-    private Graphics2D graphics;
     
     
     public StandardGlyphVector(Font font, String str, FontRenderContext frc){
@@ -102,20 +90,6 @@ public class StandardGlyphVector extends GlyphVector{
 
     public StandardGlyphVector(Font font, char[] chars, int beginIndex, int length, FontRenderContext frc){
         this(font, new String(chars, beginIndex, length), frc);
-    }
-
-
-    /**
-     * Create and get
-     * 
-     * @return
-     */
-    @SuppressWarnings( "deprecation" )
-    private FontMetrics getMetrics(){
-        if(metrics == null){
-            metrics = Toolkit.getDefaultToolkit().getFontMetrics(font);
-        }
-        return metrics;
     }
 
 
@@ -308,29 +282,6 @@ public class StandardGlyphVector extends GlyphVector{
         throw new NotYetImplementedError();
     }
 
-    /**
-     * Get/Create a Graphics with the settings of the current FontMetrics
-     * 
-     * @return
-     */
-    private Graphics2D getGraphics() {
-        if( graphics == null ){
-            graphics = createGraphics( frc );
-        }
-        return graphics;
-    }
-
-    /**
-     * Create a Graphics with the settings for the given FontRenderContext
-     * 
-     * @return
-     */
-    static Graphics2D createGraphics( FontRenderContext frc ) {
-        Graphics2D g = (Graphics2D)IMAGE.getGraphics();
-        g.setRenderingHint( RenderingHints.KEY_FRACTIONALMETRICS, frc.usesFractionalMetrics() ? RenderingHints.VALUE_FRACTIONALMETRICS_ON : RenderingHints.VALUE_FRACTIONALMETRICS_OFF );
-        g.setRenderingHint( RenderingHints.KEY_TEXT_ANTIALIASING, frc.usesFractionalMetrics() ? RenderingHints.VALUE_TEXT_ANTIALIAS_ON : RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
-        return g;
-    }    
 
     @Override
     public Shape getGlyphLogicalBounds( int glyphIndex ) {
@@ -351,7 +302,21 @@ public class StandardGlyphVector extends GlyphVector{
 
     @Override
     public Rectangle2D getLogicalBounds(){
-        return getMetrics().getStringBounds(glyphs, getGraphics());
+        initPositions();
+
+        LineMetrics lm = font.getLineMetrics("", frc);
+
+        float minX, minY, maxX, maxY;
+        // horiz only for now...
+        minX = 0;
+        minY = -lm.getAscent();
+        maxX = 0;
+        maxY = lm.getDescent() + lm.getLeading();
+        if (glyphs.length() > 0) {
+            maxX = positions[positions.length - 2];
+        }
+
+        return new Rectangle2D.Float(minX, minY, maxX - minX, maxY - minY);
     }
 
 

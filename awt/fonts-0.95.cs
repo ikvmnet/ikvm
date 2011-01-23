@@ -1,7 +1,7 @@
 /*
   Copyright (C) 2002, 2004, 2005, 2006, 2007 Jeroen Frijters
   Copyright (C) 2006 Active Endpoints, Inc.
-  Copyright (C) 2006, 2007, 2009, 2010 Volker Berlin
+  Copyright (C) 2006, 2007, 2009 - 2011 Volker Berlin
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -41,7 +41,7 @@ using System.Windows.Media;
 namespace ikvm.awt
 {
 
-    class NetFontMetrics : java.awt.FontMetrics
+    /*class NetFontMetrics : java.awt.FontMetrics
     {
         private static readonly Bitmap defaultbitmap = new Bitmap(1, 1);
         [ThreadStatic]
@@ -190,7 +190,7 @@ namespace ikvm.awt
             }
             return GetStringBounds(aString, GetDefaultGraphics());
         }
-    }
+    }*/
 
 /*    class NetFontPeer : java.awt.peer.FontPeer, IDisposable
     {
@@ -457,7 +457,7 @@ namespace ikvm.awt
             }
     }*/
 
-    class NetLineMetrics : LineMetrics
+    /*class NetLineMetrics : LineMetrics
     {
         private java.awt.Font mFont;
         private String mString;
@@ -552,6 +552,6 @@ namespace ikvm.awt
             return mFont.getSize2D() / 18;
 #endif
         }
-    }
+    }*/
 
 }

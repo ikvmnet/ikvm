@@ -26,7 +26,7 @@
 /*
 Copyright (C) 2002, 2004-2009 Jeroen Frijters
 Copyright (C) 2006 Active Endpoints, Inc.
-Copyright (C) 2006-2010 Volker Berlin (i-net software)
+Copyright (C) 2006-2011 Volker Berlin (i-net software)
 Copyright (C) 2010 Karsten Heinrich (i-net software)
 
 This software is provided 'as-is', without any express or implied
@@ -528,7 +528,7 @@ namespace ikvm.awt
         [Obsolete]
         public override java.awt.FontMetrics getFontMetrics(java.awt.Font font)
         {
-            return new NetFontMetrics(font);
+            return sun.font.FontDesignMetrics.getMetrics(font);
         }
 
         public override void sync()
@@ -2549,7 +2549,7 @@ namespace ikvm.awt
 
 		public override java.awt.FontMetrics getFontMetrics(java.awt.Font f)
 		{
-			return new NetFontMetrics(f);
+            return sun.font.FontDesignMetrics.getMetrics(f);
 		}
 
 		public override java.awt.Graphics getGraphics()

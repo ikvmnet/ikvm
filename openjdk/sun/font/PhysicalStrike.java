@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009, 2010 Volker Berlin (i-net software)
+  Copyright (C) 2009 - 2011 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -23,14 +23,27 @@
  */
 package sun.font;
 
-import java.awt.*;
+import java.awt.Font;
+import java.awt.Rectangle;
 import java.awt.font.FontRenderContext;
 import java.awt.geom.GeneralPath;
-import java.awt.geom.Rectangle2D;
 import java.awt.geom.Point2D.Float;
 
+import cli.System.Drawing.Bitmap;
+import cli.System.Drawing.CharacterRange;
 import cli.System.Drawing.FontFamily;
 import cli.System.Drawing.FontStyle;
+import cli.System.Drawing.Graphics;
+import cli.System.Drawing.RectangleF;
+import cli.System.Drawing.Region;
+import cli.System.Drawing.SizeF;
+import cli.System.Drawing.StringFormat;
+import cli.System.Drawing.StringFormatFlags;
+import cli.System.Drawing.StringTrimming;
+import cli.System.Drawing.Drawing2D.PixelOffsetMode;
+import cli.System.Drawing.Drawing2D.SmoothingMode;
+import cli.System.Drawing.Text.TextRenderingHint;
+
 import ikvm.internal.NotYetImplementedError;
 
 /**
@@ -38,6 +51,8 @@ import ikvm.internal.NotYetImplementedError;
  * It replace the equals naming Sun class
  */
 public class PhysicalStrike extends FontStrike{
+
+    private static final Bitmap BITMAP = new Bitmap( 1, 1 );
 
     private final Font font;
     private final FontFamily family;
@@ -47,8 +62,6 @@ public class PhysicalStrike extends FontStrike{
     private final float factor;
     
     private StrikeMetrics strike;
-    
-    private FontMetrics metrics;
     
     public PhysicalStrike(Font font, FontFamily family, FontStyle style, FontRenderContext frc){
         this.font = font;
@@ -69,16 +82,36 @@ public class PhysicalStrike extends FontStrike{
 
 
     /**
+     * Create a Graphics with the settings for the given FontRenderContext
+     * 
+     * @return
+     */
+    private static Graphics createGraphics(FontRenderContext frc){
+        Graphics g = Graphics.FromImage(BITMAP);
+        boolean fm = frc.usesFractionalMetrics();
+        g.set_SmoothingMode(SmoothingMode.wrap(fm ? SmoothingMode.None : SmoothingMode.AntiAlias));
+        g.set_PixelOffsetMode(PixelOffsetMode.wrap(fm ? PixelOffsetMode.None : PixelOffsetMode.HighQuality));
+        g.set_TextRenderingHint(TextRenderingHint.wrap(fm ? TextRenderingHint.SingleBitPerPixelGridFit : TextRenderingHint.AntiAliasGridFit));
+        return g;
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
     float getCodePointAdvance( int cp ) {
-        Graphics2D g = StandardGlyphVector.createGraphics( frc );
-        if( metrics == null ) {
-            metrics = Toolkit.getDefaultToolkit().getFontMetrics( font );
-        }
-        Rectangle2D.Float bounds = (Rectangle2D.Float)metrics.getStringBounds( String.valueOf( (char)cp ), g );
-        return bounds.width;
+        StringFormat format = new StringFormat(StringFormat.get_GenericTypographic());
+
+        format.set_FormatFlags( StringFormatFlags.wrap( StringFormatFlags.MeasureTrailingSpaces | StringFormatFlags.NoWrap |
+                             StringFormatFlags.FitBlackBox ));
+        format.set_Trimming( StringTrimming.wrap( StringTrimming.None ) );
+        format.SetMeasurableCharacterRanges(new CharacterRange[] {new CharacterRange(0, 1)});
+        Graphics g = createGraphics( frc );
+        Region[] regions = g.MeasureCharacterRanges(String.valueOf((char)cp), font.getNetFont(),
+                                                    new RectangleF(0, 0, Integer.MAX_VALUE, Integer.MAX_VALUE), format);
+        SizeF size = regions[0].GetBounds(g).get_Size();
+        regions[0].Dispose();
+        return frc.usesFractionalMetrics() ? size.get_Width() :  Math.round(size.get_Width());
     }
 
     /**
