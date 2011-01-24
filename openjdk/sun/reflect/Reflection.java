@@ -1,12 +1,12 @@
 /*
- * Copyright 2001-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2001, 2006, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
+ * published by the Free Software Foundation.  Oracle designates this
  * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -18,9 +18,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 /*IKVM*/
@@ -49,17 +49,17 @@ public class Reflection {
         each access, we use copy-on-write */
     private static volatile Map<Class,String[]> fieldFilterMap;
     private static volatile Map<Class,String[]> methodFilterMap;
-    
+
     static {
         Map<Class,String[]> map = new HashMap<Class,String[]>();
-        map.put(Reflection.class, 
+        map.put(Reflection.class,
             new String[] {"fieldFilterMap", "methodFilterMap"});
         map.put(System.class, new String[] {"security"});
         fieldFilterMap = map;
-        
+
         methodFilterMap = new HashMap<Class,String[]>();
     }
-    
+
     /** Returns the class of the method <code>realFramesToSkip</code>
         frames up the stack (zero-based), ignoring frames associated
         with java.lang.reflect.Method.invoke() and its implementation.
@@ -196,7 +196,7 @@ public class Reflection {
 
         return true;
     }
-                                    
+
     private static boolean isSameClassPackage(Class c1, Class c2) {
         return isSameClassPackage(c1.getClassLoader(), c1.getName(),
                                   c2.getClassLoader(), c2.getName());
@@ -263,18 +263,18 @@ public class Reflection {
         }
         return false;
     }
-    
+
     // fieldNames must contain only interned Strings
     public static synchronized void registerFieldsToFilter(Class containingClass,
                                               String ... fieldNames) {
-        fieldFilterMap = 
+        fieldFilterMap =
             registerFilter(fieldFilterMap, containingClass, fieldNames);
     }
 
     // methodNames must contain only interned Strings
     public static synchronized void registerMethodsToFilter(Class containingClass,
                                               String ... methodNames) {
-        methodFilterMap = 
+        methodFilterMap =
             registerFilter(methodFilterMap, containingClass, methodNames);
     }
 
@@ -297,7 +297,7 @@ public class Reflection {
         }
         return (Field[])filter(fields, fieldFilterMap.get(containingClass));
     }
-    
+
     public static Method[] filterMethods(Class containingClass, Method[] methods) {
         if (methodFilterMap == null) {
             // Bootstrapping
@@ -323,7 +323,7 @@ public class Reflection {
                 ++numNewMembers;
             }
         }
-        Member[] newMembers = 
+        Member[] newMembers =
             (Member[])Array.newInstance(members[0].getClass(), numNewMembers);
         int destIdx = 0;
         for (Member member : members) {

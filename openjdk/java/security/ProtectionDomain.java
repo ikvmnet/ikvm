@@ -1,12 +1,12 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
+ * published by the Free Software Foundation.  Oracle designates this
  * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -18,16 +18,22 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 package java.security;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.Map;
+import java.util.WeakHashMap;
+import sun.misc.JavaSecurityProtectionDomainAccess;
+import static sun.misc.JavaSecurityProtectionDomainAccess.ProtectionDomainCache;
+import sun.misc.SharedSecrets;
 import sun.security.util.Debug;
 import sun.security.util.SecurityConstants;
 
@@ -74,6 +80,11 @@ public class ProtectionDomain {
     /* the PermissionCollection is static (pre 1.4 constructor)
        or dynamic (via a policy refresh) */
     private boolean staticPermissions;
+
+    /*
+     * An object used as a key when the ProtectionDomain is stored in a Map.
+     */
+    final Key key = new Key();
 
     /* [IKVM] constructor for use by the runtime (AssemblyClassLoader) */
     ProtectionDomain(cli.System.Reflection.Assembly assembly) {
@@ -295,7 +306,7 @@ public class ProtectionDomain {
     /**
      * Convert a ProtectionDomain to a String.
      */
-    public String toString() {
+    @Override public String toString() {
         lazyInitCodeSource();
         lazyInitClassLoader();
         String pals = "<no principals>";
@@ -456,5 +467,30 @@ public class ProtectionDomain {
         }
 
         return mergedPerms;
+    }
+
+    /**
+     * Used for storing ProtectionDomains as keys in a Map.
+     */
+    final class Key {}
+
+    static {
+        SharedSecrets.setJavaSecurityProtectionDomainAccess(
+            new JavaSecurityProtectionDomainAccess() {
+                public ProtectionDomainCache getProtectionDomainCache() {
+                    return new ProtectionDomainCache() {
+                        private final Map<Key, PermissionCollection> map =
+                            Collections.synchronizedMap
+                                (new WeakHashMap<Key, PermissionCollection>());
+                        public void put(ProtectionDomain pd,
+                            PermissionCollection pc) {
+                            map.put((pd == null ? null : pd.key), pc);
+                        }
+                        public PermissionCollection get(ProtectionDomain pd) {
+                            return pd == null ? map.get(null) : map.get(pd.key);
+                        }
+                    };
+                }
+            });
     }
 }

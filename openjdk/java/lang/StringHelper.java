@@ -1,12 +1,12 @@
 /*
- * Copyright 1994-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1994, 2006, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
+ * published by the Free Software Foundation.  Oracle designates this
  * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -18,9 +18,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 package java.lang;
@@ -99,7 +99,6 @@ import java.util.regex.PatternSyntaxException;
  *
  * @author  Lee Boynton
  * @author  Arthur van Hoff
- * @version 1.212, 05/05/07
  * @see     java.lang.Object#toString()
  * @see     java.lang.StringBuffer
  * @see     java.lang.StringBuilder
@@ -149,41 +148,31 @@ final class StringHelper
             throw new StringIndexOutOfBoundsException(offset + count);
         }
 
-        int expansion = 0;
-        int margin = 1;
-        char[] v = new char[count + margin];
-        int x = offset;
-        int j = 0;
-        for (int i = 0; i < count; i++) {
-            int c = codePoints[x++];
-            if (c < 0) {
-                throw new IllegalArgumentException();
-            }
-            if (margin <= 0 && (j+1) >= v.length) {
-                if (expansion == 0) {
-                    expansion = (((-margin + 1) * count) << 10) / i;
-                    expansion >>= 10;
-                    if (expansion <= 0) {
-                        expansion = 1;
-                    }
-                } else {
-                    expansion *= 2;
-                }
-                int newLen = Math.min(v.length+expansion, count*2);
-                margin = (newLen - v.length) - (count - i);
-                v = Arrays.copyOf(v, newLen);
-            }
+        // Pass 1: Compute precise size of char[]
+        int n = 0;
+        for (int i = offset; i < offset + count; i++) {
+            int c = codePoints[i];
+            if (c >= Character.MIN_CODE_POINT &&
+                c <  Character.MIN_SUPPLEMENTARY_CODE_POINT)
+                n += 1;
+            else if (Character.isSupplementaryCodePoint(c))
+                n += 2;
+            else throw new IllegalArgumentException(Integer.toString(c));
+        }
+
+        // Pass 2: Allocate and fill in char[]
+        char[] v = new char[n];
+        for (int i = offset, j = 0; i < offset + count; i++) {
+            int c = codePoints[i];
             if (c < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
                 v[j++] = (char) c;
-            } else if (c <= Character.MAX_CODE_POINT) {
+            } else {
                 Character.toSurrogates(c, v, j);
                 j += 2;
-                margin--;
-            } else {
-                throw new IllegalArgumentException();
             }
         }
-        return new String(v, 0, j);
+
+        return new String(v);
     }
 
     /**
