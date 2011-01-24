@@ -1,6 +1,7 @@
 /*
   Copyright (C) 2009 Jeroen Frijters
   Copyright (C) 2010 Volker Berlin (i-net software)
+  Copyright (C) 2011 Karsten Heinrich (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -29,16 +30,19 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.ImageConsumer;
 import java.awt.image.ImageObserver;
+import java.util.Arrays;
 import java.util.Hashtable;
 
 import com.sun.jdi.InvalidStackFrameException;
 
+import cli.System.Drawing.Bitmap;
 import cli.System.Drawing.Imaging.BitmapData;
 import cli.System.Drawing.Imaging.ImageLockMode;
 import cli.System.Drawing.Imaging.PixelFormat;
 
-public class ImageRepresentation extends ImageWatched implements ImageConsumer
-{
+public class ImageRepresentation extends ImageWatched implements ImageConsumer{
+	
+	private static final int DEFAULT_PIXEL_FORMAT = PixelFormat.Format32bppArgb;
     InputStreamImageSource src;
     ToolkitImage image;
 
@@ -49,6 +53,7 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
     
     private BufferedImage bimage;
     private cli.System.Drawing.Bitmap bitmap;
+    private int pixelFormat = DEFAULT_PIXEL_FORMAT;
 
     ImageRepresentation(ToolkitImage im){
         image = im;
@@ -93,7 +98,7 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
         }
         
         image.setDimensions(w, h);
-        bitmap = new cli.System.Drawing.Bitmap(w, h);
+//        bitmap = new cli.System.Drawing.Bitmap(w, h);
         
         newInfo(image, (ImageObserver.WIDTH | ImageObserver.HEIGHT),
                 0, 0, w, h);
@@ -107,6 +112,13 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
         height = h;
 
         availinfo |= ImageObserver.WIDTH | ImageObserver.HEIGHT;
+    }
+    
+    private Bitmap getBitmapRef(){
+    	if( bitmap == null ){
+    		bitmap = new Bitmap(width, height, PixelFormat.wrap(pixelFormat) );
+    	}
+    	return bitmap;
     }
 
     public int getWidth(){
@@ -129,8 +141,16 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
 
     @Override
     public void setColorModel(ColorModel model){
-        // TODO we use currently only the default color model ARGB
-        
+        int newPixelFormat = getPixelFormatForColorModel(model);
+        if( model.getPixelSize() <= 8 ){
+        	newPixelFormat = DEFAULT_PIXEL_FORMAT;
+        }
+        if( newPixelFormat != pixelFormat && bitmap != null ){
+        	// force reconstruct of the bitmap due to a color model change
+        	bitmap.Dispose();
+        	bitmap = null;
+        }
+        pixelFormat = newPixelFormat;
     }
 
     @Override
@@ -151,6 +171,7 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
     @Override
     @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     public void setPixels(int x, int y, int w, int h, ColorModel model, int[] pixels, int off, int scansize){
+    	// FIXME this method will fail for scan lines
         if( x < 0) {
             w -= x;
             x = 0;
@@ -171,11 +192,44 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
         {
             throw new java.lang.ArrayIndexOutOfBoundsException("Data offset out of bounds.");
         }
-        synchronized (bitmap)
+        synchronized (getBitmapRef())
         {
-            BitmapData data = bitmap.LockBits(new cli.System.Drawing.Rectangle(x, y, w, h), ImageLockMode.wrap(ImageLockMode.WriteOnly), PixelFormat.wrap(PixelFormat.Format32bppArgb));
-            cli.System.Runtime.InteropServices.Marshal.Copy(pixels, off, data.get_Scan0(), data.get_Width() * data.get_Height());
-            bitmap.UnlockBits(data);
+            int pixelFormat = getPixelFormatForColorModel( model );
+			int bpp = model.getPixelSize();
+			if( bpp == 32 ){ // 32 can be copies 1:1 using an int array
+				copyInt(x, y, w, h, pixels, off, pixelFormat);				
+            }else if( bpp <= 8 ){
+            	// transform all pixels using the color model (for indexed color models)
+            	int[] newData = new int[pixels.length];
+            	for( int i=0; i < newData.length; i++ ){
+            		newData[i] = model.getRGB(pixels[i]);
+            	}
+            	copyInt(x, y, w, h, pixels, off, DEFAULT_PIXEL_FORMAT);
+            }else {
+            	// byte per scanline, must be a multitude of 4
+            	// see http://stackoverflow.com/questions/2185944/why-must-stride-in-the-system-drawing-bitmap-constructor-be-a-multiple-of-4
+            	int bytesPerLine = (bpp * w) / 8;
+            	int scanLine = ((bytesPerLine + 3) / 4) * 4;
+				int offset = scanLine - bytesPerLine; 
+            	byte[] newData = new byte[h * scanLine];
+            	int position = 0;
+            	int pixel;
+            	for( int i=0; i<pixels.length; i++ ){
+            		 pixel = pixels[i];
+            		 switch( bpp ){
+            		 	case 16: newData[position] = (byte)(pixel & 0xFF);
+            		 			 newData[position + 1] = (byte)((pixel >> 8) & 0xFF); break;
+            		 	case 24: newData[position] = (byte)(pixel & 0xFF);
+            		 			 newData[position + 1] = (byte)((pixel >> 8) & 0xFF);
+   		 			 			 newData[position + 2] = (byte)((pixel >> 16) & 0xFF); break;
+            		 }
+            		 position += bpp / 8;
+            		 if( position % scanLine == bytesPerLine ){
+            			 position += offset;
+            		 }
+            	}
+				copyByte(x, y, w, h, newData, off, pixelFormat, bpp);				            	
+            }
         }
         
         availinfo |= ImageObserver.SOMEBITS;
@@ -185,6 +239,58 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
         if (((availinfo & ImageObserver.FRAMEBITS) == 0)) {
             newInfo(image, ImageObserver.SOMEBITS, x, y, w, h);
         }
+    }
+
+	private void copyInt(int x, int y, int w, int h, int[] pixels, int off, int pixelFormat ) {
+		BitmapData data = getBitmapRef().LockBits(new cli.System.Drawing.Rectangle(x, y, w, h), ImageLockMode.wrap(ImageLockMode.WriteOnly), PixelFormat.wrap(pixelFormat));
+		cli.System.Runtime.InteropServices.Marshal.Copy(pixels, off, data.get_Scan0(), data.get_Width() * data.get_Height());
+		getBitmapRef().UnlockBits(data);
+	}
+    
+	private void copyByte(int x, int y, int w, int h, byte[] pixels, int off, int pixelFormat, int bpp) {
+		BitmapData data = getBitmapRef().LockBits(new cli.System.Drawing.Rectangle(x, y, w, h), ImageLockMode.wrap(ImageLockMode.WriteOnly), PixelFormat.wrap(pixelFormat));
+		cli.System.Runtime.InteropServices.Marshal.Copy(pixels, off, data.get_Scan0(), pixels.length);
+		getBitmapRef().UnlockBits(data);
+	}
+    
+    
+    private int getPixelFormatForColorModel( ColorModel cm ){
+    	if( cm == null ){
+    		return DEFAULT_PIXEL_FORMAT; // TODO is PixelFormat.Canonical better here?
+    	}
+    	int bpp = cm.getPixelSize();
+    	int[] sizes = cm.getComponentSize();
+    	switch( bpp ){
+    		case 1: return PixelFormat.Undefined; // Indexed is invalid and there is no 1bpp
+    		case 4: return PixelFormat.Format4bppIndexed;
+    		case 8: return PixelFormat.Format8bppIndexed;
+    		case 16:
+    			if( sizes.length <= 1) {
+    				return PixelFormat.Format16bppGrayScale;
+    			}
+    			if( sizes.length == 3 ){
+    				if( sizes[0] == 5 && sizes[2] == 5 ){
+    					return sizes[1] == 5 ? PixelFormat.Format16bppRgb555 : PixelFormat.Format16bppRgb565;
+    				}
+    			}
+    			if( sizes.length == 4 && cm.hasAlpha() ){
+    				return PixelFormat.Format16bppArgb1555;
+    			}
+    			break;
+    		case 24:
+    			return PixelFormat.Format24bppRgb;
+    		case 32:
+    			if(!cm.hasAlpha()){
+    				return PixelFormat.Format32bppRgb;
+    			} else {
+    				return cm.isAlphaPremultiplied() ? PixelFormat.Format32bppPArgb : PixelFormat.Format32bppArgb;
+    			}
+    		case 48:
+    			return PixelFormat.Format48bppRgb;
+    		case 64:
+    			return cm.isAlphaPremultiplied() ? PixelFormat.Format64bppPArgb : PixelFormat.Format64bppArgb;    			
+    	}
+    	return PixelFormat.Undefined;
     }
 
     private boolean consuming = false;
@@ -221,8 +327,8 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
                 image.getSource().removeConsumer(this);
                 consuming = false;
 
-                if (bimage != null) {
-                    bimage = new BufferedImage(bitmap);
+                if (bimage == null) {
+                    bimage = new BufferedImage(getBitmapRef());
                 }
             }
             availinfo |= info;
