@@ -1,6 +1,6 @@
 /*
   Copyright (C) 2009 Volker Berlin (i-net software)
-  Copyright (C) 2010 Karsten Heinrich (i-net software)
+  Copyright (C) 2010, 2011 Karsten Heinrich (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -24,17 +24,17 @@
  */
 package sun.print;
 
+import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.GraphicsConfiguration;
-import java.awt.HeadlessException;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.print.PageFormat;
 import java.awt.print.Pageable;
+import java.awt.print.Paper;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -43,6 +43,8 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.TreeSet;
 
 import javax.print.CancelablePrintJob;
 import javax.print.Doc;
@@ -58,6 +60,7 @@ import javax.print.attribute.PrintJobAttribute;
 import javax.print.attribute.PrintJobAttributeSet;
 import javax.print.attribute.PrintRequestAttribute;
 import javax.print.attribute.PrintRequestAttributeSet;
+import javax.print.attribute.standard.Chromaticity;
 import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.Destination;
 import javax.print.attribute.standard.DocumentName;
@@ -65,9 +68,12 @@ import javax.print.attribute.standard.Fidelity;
 import javax.print.attribute.standard.JobName;
 import javax.print.attribute.standard.JobOriginatingUserName;
 import javax.print.attribute.standard.Media;
+import javax.print.attribute.standard.MediaPrintableArea;
 import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
+import javax.print.attribute.standard.MediaTray;
 import javax.print.attribute.standard.OrientationRequested;
+import javax.print.attribute.standard.PageRanges;
 import javax.print.attribute.standard.PrinterIsAcceptingJobs;
 import javax.print.attribute.standard.PrinterState;
 import javax.print.attribute.standard.PrinterStateReason;
@@ -79,6 +85,7 @@ import javax.print.event.PrintJobEvent;
 import javax.print.event.PrintJobListener;
 
 import sun.awt.windows.WPrinterJob;
+import sun.print.Win32PrintService.NetMediaTray;
 
 import cli.System.Drawing.Printing.*;
 
@@ -95,9 +102,8 @@ public class Win32PrintJob implements CancelablePrintJob{
 
     private final Win32PrintService service;
 
-    private boolean fidelity;
+    
     private boolean printing;
-
     private boolean printReturned;
 
     private PrintRequestAttributeSet reqAttrSet;
@@ -115,6 +121,8 @@ public class Win32PrintJob implements CancelablePrintJob{
     private InputStream instream;
 
     /* default values overridden by those extracted from the attributes */
+    private boolean fidelity;
+    private boolean printColor;
     private String jobName = "Java Printing";
     private int copies;
     private MediaSizeName mediaName;
@@ -123,6 +131,11 @@ public class Win32PrintJob implements CancelablePrintJob{
     
     private final PrintPeer peer;
     private PrinterException printerException;
+
+	private PageNumberConverter pageRanges;
+
+	private MediaTray mediaTray;
+
     
     Win32PrintJob(Win32PrintService service, PrintPeer peer){
         this.service = service;
@@ -440,11 +453,17 @@ public class Win32PrintJob implements CancelablePrintJob{
     }
 
     public void pageableJob(Pageable pageable) throws PrintException {
+    	// a general hint for this code here: The PrintJob implementation (WPrinterJob) in the Oracle
+    	// JRE implements SunPrinterJobService - which we don't here. Unfortunately this is used as a hint
+    	// to distinguish between the build-in printer service and custom printer services. So for the RasterPrinterJob
+    	// this implementation of the Win32PrintJob is a custom print job! That's why several methods of
+    	// RasterPrintJob(which only apply to the SunPrinterJobService otherwise) had to be moved here.
+    	// This includes the attribute resolving and the media patch for instance.
         try {
-            PrintDocument printDocument = createPrintDocument();
+            PrintDocument printDocument = createPrintDocument( );
+            pageable = patchMedia( pageable );
     
-            //TODO Attribute set in printDocument
-            printDocument.add_QueryPageSettings(new QueryPageSettingsEventHandler(new QueryPage( pageable ) ) );
+            printDocument.add_QueryPageSettings(new QueryPageSettingsEventHandler(new QueryPage( pageable, printColor, mediaTray ) ) );
             printDocument.add_PrintPage(new PrintPageEventHandler(new PrintPage(pageable)));
             printDocument.Print();
             if(printerException != null){
@@ -463,23 +482,201 @@ public class Win32PrintJob implements CancelablePrintJob{
     }
     
     
-    private PrintDocument createPrintDocument(){
+    private PrintDocument createPrintDocument() throws PrintException{
         PrintDocument printDocument = new PrintDocument();
         PrinterSettings settings = printDocument.get_PrinterSettings();
-
+        settings.set_PrinterName( service.getName() );
+        if( !settings.get_IsValid() ){
+        	throw new PrintException("Printer name ''" + service.getName() + "' is invalid.");
+        }
+        
+        if( jobName != null ){
+        	printDocument.set_DocumentName( jobName );
+        }
+        printDocument.get_DefaultPageSettings().set_Color(printColor);
+        
         Attribute destination = reqAttrSet.get(Destination.class);
         if(destination instanceof Destination){
         	File destFile = new File(((Destination)destination).getURI());
             settings.set_PrintFileName(destFile.getAbsolutePath());
         }
-
+        
         settings.set_Copies((short)copies);
+        boolean collated = false;
         if(copies > 1){
-            Attribute collate = reqAttrSet.get(SheetCollate.class);
-            settings.set_Collate(collate == SheetCollate.COLLATED);
+            Object collate = reqAttrSet.get(SheetCollate.class);
+            if( collate == null ){
+            	collate = service.getDefaultAttributeValue(SheetCollate.class);
+            }
+            collated = collate == SheetCollate.COLLATED;
+            settings.set_Collate( collated );
         }
-
+        Attribute pageRangeObj = reqAttrSet.get(PageRanges.class);
+        if( pageRangeObj != null ){
+        	int[][] ranges = ((PageRanges)pageRangeObj).getMembers();
+        	if( ranges.length > 1 ){
+    			settings.set_PrintRange( PrintRange.wrap( PrintRange.Selection ) );
+        	} else {
+        		if( ranges.length > 0 ){
+        			settings.set_FromPage(ranges[0][0]);
+        			settings.set_ToPage(ranges[0][1]);
+        			settings.set_PrintRange( PrintRange.wrap( PrintRange.SomePages ) );
+        		} // else allPages???
+        	}
+        } else {
+        	settings.set_PrintRange( PrintRange.wrap( PrintRange.AllPages ) );
+        }
+        pageRanges = new PageNumberConverter( (PageRanges)pageRangeObj, copies, collated );
         return printDocument;
+    }
+    
+    // copied from RasterPrintJob 
+    // Since we don't implement SunPrinterJobService the hack in RasterPrintService which applies
+    // the media format to the auto-generated OpenBook doesn't work here. So we have to modify
+    // the page format of the OpenBook here - equal to the code in RasterPrintJob
+    private Pageable patchMedia( Pageable pageable ){
+    	/* OpenBook is used internally only when app uses Printable.
+         * This is the case when we use the values from the attribute set.
+         */
+        Media media = (Media)reqAttrSet.get(Media.class);
+        OrientationRequested orientReq = (OrientationRequested)reqAttrSet.get(OrientationRequested.class);
+        MediaPrintableArea mpa = (MediaPrintableArea)reqAttrSet.get(MediaPrintableArea.class);
+
+        if ((orientReq != null || media != null || mpa != null) && pageable instanceof OpenBook) {
+
+            /* We could almost(!) use PrinterJob.getPageFormat() except
+             * here we need to start with the PageFormat from the OpenBook :
+             */
+            Printable printable = pageable.getPrintable(0);
+            PageFormat pf = (PageFormat)pageable.getPageFormat(0).clone();
+            Paper paper = pf.getPaper();
+
+            /* If there's a media but no media printable area, we can try
+             * to retrieve the default value for mpa and use that.
+             */
+            if (mpa == null && media != null && service.isAttributeCategorySupported(MediaPrintableArea.class)) {
+                Object mpaVals = service. getSupportedAttributeValues(MediaPrintableArea.class, null, reqAttrSet);
+                if (mpaVals instanceof MediaPrintableArea[] && ((MediaPrintableArea[])mpaVals).length > 0) {
+                    mpa = ((MediaPrintableArea[])mpaVals)[0];
+                }
+            }
+
+            if (isSupportedValue(orientReq, reqAttrSet) || (!fidelity && orientReq != null)) {
+                int orient;
+                if (orientReq.equals(OrientationRequested.REVERSE_LANDSCAPE)) {
+                    orient = PageFormat.REVERSE_LANDSCAPE;
+                } else if (orientReq.equals(OrientationRequested.LANDSCAPE)) {
+                    orient = PageFormat.LANDSCAPE;
+                } else {
+                    orient = PageFormat.PORTRAIT;
+                }
+                pf.setOrientation(orient);
+            }
+
+            if (isSupportedValue(media, reqAttrSet) || (!fidelity && media != null)) {
+                if (media instanceof MediaSizeName) {
+                    MediaSizeName msn = (MediaSizeName)media;
+                    MediaSize msz = MediaSize.getMediaSizeForName(msn);
+                    if (msz != null) {
+                        float paperWid =  msz.getX(MediaSize.INCH) * 72.0f;
+                        float paperHgt =  msz.getY(MediaSize.INCH) * 72.0f;
+                        paper.setSize(paperWid, paperHgt);
+                        if (mpa == null) {
+                            paper.setImageableArea(72.0, 72.0, paperWid-144.0, paperHgt-144.0);
+                        }
+                    }
+                }
+            }
+
+            if (isSupportedValue(mpa, reqAttrSet) || (!fidelity && mpa != null)) {
+                float [] printableArea = mpa.getPrintableArea(MediaPrintableArea.INCH);
+                for (int i=0; i < printableArea.length; i++) {
+                    printableArea[i] = printableArea[i]*72.0f;
+                }
+                paper.setImageableArea(printableArea[0], printableArea[1], printableArea[2], printableArea[3]);
+            }
+
+            pf.setPaper(paper);
+            pf = validatePage(pf);
+            return new OpenBook(pf, printable);
+        }
+        return pageable;
+    }
+    
+    // copied from RasterPrintJob to since we don't implement SunPrinterJobService
+    /**
+     * The passed in PageFormat is cloned and altered to be usable on
+     * the PrinterJob's current printer.
+     */
+    private PageFormat validatePage(PageFormat page) {
+        PageFormat newPage = (PageFormat)page.clone();
+        Paper newPaper = new Paper();
+        validatePaper(newPage.getPaper(), newPaper);
+        newPage.setPaper(newPaper);
+
+        return newPage;
+    }
+    
+    // copied from RasterPrintJob to since we don't implement SunPrinterJobService
+    /**
+     * updates a Paper object to reflect the current printer's selected
+     * paper size and imageable area for that paper size.
+     * Default implementation copies settings from the original, applies
+     * applies some validity checks, changes them only if they are
+     * clearly unreasonable, then sets them into the new Paper.
+     * Subclasses are expected to override this method to make more
+     * informed decisons.
+     */
+    protected void validatePaper(Paper origPaper, Paper newPaper) {
+        if (origPaper == null || newPaper == null) {
+            return;
+        } else {
+            double wid = origPaper.getWidth();
+            double hgt = origPaper.getHeight();
+            double ix = origPaper.getImageableX();
+            double iy = origPaper.getImageableY();
+            double iw = origPaper.getImageableWidth();
+            double ih = origPaper.getImageableHeight();
+
+            /* Assume any +ve values are legal. Overall paper dimensions
+             * take precedence. Make sure imageable area fits on the paper.
+             */
+            Paper defaultPaper = new Paper();
+            wid = ((wid > 0.0) ? wid : defaultPaper.getWidth());
+            hgt = ((hgt > 0.0) ? hgt : defaultPaper.getHeight());
+            ix = ((ix > 0.0) ? ix : defaultPaper.getImageableX());
+            iy = ((iy > 0.0) ? iy : defaultPaper.getImageableY());
+            iw = ((iw > 0.0) ? iw : defaultPaper.getImageableWidth());
+            ih = ((ih > 0.0) ? ih : defaultPaper.getImageableHeight());
+            /* full width/height is not likely to be imageable, but since we
+             * don't know the limits we have to allow it
+             */
+            if (iw > wid) {
+                iw = wid;
+            }
+            if (ih > hgt) {
+                ih = hgt;
+            }
+            if ((ix + iw) > wid) {
+                ix = wid - iw;
+            }
+            if ((iy + ih) > hgt) {
+                iy = hgt - ih;
+            }
+            newPaper.setSize(wid, hgt);
+            newPaper.setImageableArea(ix, iy, iw, ih);
+        }
+    }
+    
+    // copied from RasterPrintJob
+    /**
+     * Checks whether a certain attribute value is valid for the current print service
+     * @param attrval the attribute value 
+     * @param attrset Set of printing attributes for a supposed job (both job-level attributes and document-level attributes), or null.
+     * @return true if valid
+     */
+    protected boolean isSupportedValue(Attribute attrval, PrintRequestAttributeSet attrset) {
+    	return (attrval != null && service != null && service.isAttributeValueSupported(attrval, DocFlavor.SERVICE_FORMATTED.PAGEABLE, attrset));
     }
     
 
@@ -566,7 +763,17 @@ public class Win32PrintJob implements CancelablePrintJob{
         } else {
             fidelity = false;
         }
+        
+        Attribute chroma = reqAttrSet.get( Chromaticity.class );
+        // TODO check whether supported by the print service
+        printColor = chroma == Chromaticity.COLOR;
 
+        Attribute newTray = reqAttrSet.get( Media.class );
+        if( newTray instanceof MediaTray ){
+        	mediaTray = (MediaTray)newTray;
+        }
+        // TODO check whether supported by the print service
+        
         Class category;
         Attribute [] attrs = reqAttrSet.toArray();
         for (int i=0; i<attrs.length; i++) {
@@ -616,7 +823,7 @@ public class Win32PrintJob implements CancelablePrintJob{
                     // If requested MediaSizeName is not supported,
                     // get the corresponding media size - this will
                     // be used to create a new PageFormat.
-                    if (!service.isAttributeValueSupported(attr, null, null)) {
+                    if (!service.isAttributeValueSupported(attr, flavor, null)) {
                         mediaSize = MediaSize.getMediaSizeForName(mediaName);
                     }
                 }
@@ -641,6 +848,24 @@ public class Win32PrintJob implements CancelablePrintJob{
             }
         }
     }
+    
+    /**
+     * Converts the Java 1/72 inch to .NET 1/100 inch
+     * @param javaLength the java length in 1/72 inch
+     * @return the .NET length in 1/100 inch
+     */
+    private static int java2netLength( int javaLength ){
+    	return (int) Math.round( (double)(javaLength * 100) / 72d );
+    }
+    
+    /**
+     * Converts the Java 1/72 inch to .NET 1/100 inch
+     * @param javaLength the java length in 1/72 inch
+     * @return the .NET length in 1/100 inch
+     */
+    private static int java2netLength( double javaLength ){
+    	return (int) Math.round( (javaLength * 100) / 72d );
+    }
 
     
     private class PrintPage implements PrintPageEventHandler.Method{
@@ -651,11 +876,6 @@ public class Win32PrintJob implements CancelablePrintJob{
 
         PrintPage(Pageable pageable){
             this.pageable = pageable;
-            //TODO firstPage
-            //TODO lastPage
-            //TODO PageRange
-            //TODO Num Copies
-            //TODO collatedCopies
         }
 
 
@@ -663,21 +883,22 @@ public class Win32PrintJob implements CancelablePrintJob{
         public void Invoke(Object paramObject, PrintPageEventArgs ev){
 
             try{
-                System.err.println("Invoke:"+paramObject);
-                Printable printable = pageable.getPrintable(pageIndex);
-                PageFormat pageFormat = pageable.getPageFormat(pageIndex);
+            	int realPage = pageRanges.getPageForIndex(pageIndex);
+            	
+                Printable printable = pageable.getPrintable(realPage);
+                PageFormat pageFormat = pageable.getPageFormat(realPage);
 
                 
                 BufferedImage pBand = new BufferedImage(1, 1, BufferedImage.TYPE_3BYTE_BGR);
                 Graphics2D imageGraphics = pBand.createGraphics();
-                ((RasterPrinterJob)job).setGraphicsConfigInfo(imageGraphics.getTransform(), pageFormat.getWidth(), pageFormat.getHeight());
+                ((RasterPrinterJob)job).setGraphicsConfigInfo(imageGraphics.getTransform(), pageFormat.getImageableWidth(), pageFormat.getImageableHeight());
 				PeekGraphics peekGraphics = new PeekGraphics(imageGraphics, job );
 
                 /* 
                  * Because Sun is calling first with a PeekGraphics that we do it else for compatibility
                  */
-                if(pageIndex == 0){
-                    int pageResult = printable.print(peekGraphics, pageFormat, pageIndex);
+                if(realPage == 0){
+                    int pageResult = printable.print(peekGraphics, pageFormat, realPage);
                     if(pageResult != Printable.PAGE_EXISTS){
                         ev.set_HasMorePages(false);
                         ev.set_Cancel(true);
@@ -685,12 +906,40 @@ public class Win32PrintJob implements CancelablePrintJob{
                     }
                 }
                 Graphics printGraphics = peer.createGraphics(ev.get_Graphics());
-                printable.print(printGraphics, pageFormat, pageIndex++);
-
-                printable = pageable.getPrintable(pageIndex);
-                pageFormat = pageable.getPageFormat(pageIndex);
-                int pageResult = printable.print(peekGraphics, pageFormat, pageIndex);
-                ev.set_HasMorePages(pageResult == Printable.PAGE_EXISTS);
+                if( printGraphics instanceof Graphics2D ){
+                	Graphics2D g2d = ((Graphics2D)printGraphics);
+                	int tX = (int) pageFormat.getWidth(); 
+                	int tY = (int) pageFormat.getHeight();
+                	// apply Java to .NET scaling (1/72 inch to 1/100 inch)
+                	g2d.scale(100d/72d, 100d/72d);
+                	// NOTE on Landscape printing:
+                	// Setting landscape to true on the printer settings
+                	// of a page already rotates the page! The orig. java code rotates the page itself,
+                	// for .NET this is not required.
+                	if( orient == OrientationRequested.REVERSE_LANDSCAPE){
+                		g2d.translate( tX, tY );
+                		g2d.rotate( Math.PI );
+                	}
+                }
+                printable.print(printGraphics, pageFormat, realPage);
+                
+                realPage = pageRanges.getPageForIndex(++pageIndex);
+                if( realPage >= 0 ){
+	                printable = pageable.getPrintable(realPage);
+	                pageFormat = pageable.getPageFormat(realPage);
+	                int pageResult = printable.print(peekGraphics, pageFormat, realPage);
+	                if( pageResult == Printable.PAGE_EXISTS ){
+	                	ev.set_HasMorePages( true );
+	                } else {
+	                	if( pageRanges.checkJobComplete(pageIndex) ){
+	                		ev.set_HasMorePages( false );
+	                	} else {
+	                		ev.set_HasMorePages( true );
+	                	}
+	                }
+                } else {
+                	ev.set_HasMorePages( false );
+                }
             }catch(PrinterException ex){
                 printerException = ex;
                 ex.printStackTrace();
@@ -705,37 +954,174 @@ public class Win32PrintJob implements CancelablePrintJob{
 
     	private final Pageable pageable;
         private int pageIndex;
+		private final boolean printColor;
+		private final MediaTray tray;
 
 
-        QueryPage(Pageable pageable){
-            this.pageable = pageable;
-            //TODO firstPage
-            //TODO lastPage
-            //TODO PageRange
-            //TODO Num Copies
-            //TODO collatedCopies
+        QueryPage(Pageable pageable, boolean printColor, MediaTray tray  ){
+            this.printColor = printColor;
+			this.pageable = pageable;
+			this.tray = tray;
         }
         
 		@Override
 		public void Invoke(Object source, QueryPageSettingsEventArgs e) {
+			int realPage = pageRanges.getPageForIndex(pageIndex);
 			// apply page settings to the current page
-			PageFormat format = pageable.getPageFormat(pageIndex);
+			PageFormat format = pageable.getPageFormat(realPage);
 			PageSettings pageSettings = e.get_PageSettings();
-			pageSettings.set_Landscape(format.getOrientation() == PageFormat.LANDSCAPE);
+			pageSettings.set_Color( printColor );
+			PaperSource paperSource = service.getPaperSourceForTray( tray );
+			if( paperSource != null ){
+				pageSettings.set_PaperSource( paperSource );
+			}
 			
 			PaperSize ps = new PaperSize();
-			ps.set_Height( (int)Math.round( format.getHeight() ) );
-			ps.set_Width( (int)Math.round( format.getWidth() ) );
+			ps.set_Height( java2netLength( format.getHeight() ) );
+			ps.set_Width( java2netLength( format.getWidth() ) );
 			pageSettings.set_PaperSize( ps );
 			
 			Margins margins = new Margins();
-			margins.set_Left( (int) format.getImageableX() );
-			margins.set_Top( (int)format.getImageableY() );
-			margins.set_Right( (int) (format.getWidth() - format.getImageableX() - format.getImageableWidth() ) );
-			margins.set_Bottom( (int)(format.getHeight() - format.getImageableY() - format.getImageableHeight() ) );			
-			pageSettings.set_Margins( margins );
+			margins.set_Left( java2netLength( format.getImageableX() ) );
+			margins.set_Top( java2netLength( format.getImageableY() ) );
+			margins.set_Right( java2netLength(format.getWidth() - format.getImageableX() - format.getImageableWidth() ) );
+			margins.set_Bottom( java2netLength(format.getHeight() - format.getImageableY() - format.getImageableHeight() ) );			
+			pageSettings.set_Margins( margins );			
 			pageIndex++;
 		}
-    	
+    }
+
+    /**
+     * Determines which logical page to print for a certain physical page 
+     */
+    public static class PageNumberConverter{        
+        
+        private List<Range> ranges;
+        private int totalPages = -1;
+        private final int copies;
+        
+        public PageNumberConverter( PageRanges pages, int copies, boolean collated ) {
+            // NOTE: uncollated is handled by the printer driver! If we would handle that here, 
+            // we would get copies^2 copies! 
+            this.copies = collated ? copies : 1;
+            if( pages != null && pages.getMembers() != null && pages.getMembers().length > 0 ){
+                TreeSet<Range> rangesSort = new TreeSet<Range>();
+                OUTER:
+                for( int[] range : pages.getMembers() ){
+                    Range r = new Range( range[0], range[1] + 1 ); // +1 to inlucde the uppre end
+                    for( Range recent : rangesSort ){
+                        if( recent.canMerge(r) ){
+                            recent.merge(r);
+                            continue OUTER;
+                        }
+                    }
+                    rangesSort.add( r );
+                }
+                // finally merge
+                Range recent = null;
+                ranges = new ArrayList<Range>();
+                for( Range r : rangesSort ){
+                    if( recent != null && recent.canMerge( r ) ){
+                        recent.merge( r );
+                    } else {
+                        ranges.add( r );
+                        recent = r;
+                    }
+                }
+                // calculate total pages, required for collated copies
+                totalPages = 0;
+                for( Range r : rangesSort ){
+                    int diff = r.end - r.start;
+                    totalPages += diff;
+                }
+            }
+        }
+        
+        /**
+         * Must be called in case the printable returns no-more-pages. Will return whether the print job 
+         * will continue due to pending copies
+         * @param index the current page index
+         * @return if false, the print job will continue with copies, if true terminate the job
+         */
+        public boolean checkJobComplete( int index ){
+            if( ranges != null ){
+                return true;
+            }
+            if( totalPages < 0 ){
+                // this is the first time, this was called for 'all-pages' so it's the total number
+                totalPages = index;
+            }
+            return index > copies * totalPages;
+        }
+        
+        /**
+         * Returns which page to be printed for a certain page index
+         * @param index the inex to be printed
+         * @return the page number or -1, if there is no page for this index
+         */
+        public int getPageForIndex( int index ){
+            if( index < 0 || ( totalPages >=0 && index >= copies * totalPages ) ){
+                return -1;
+            }
+            if( ranges == null ){
+                return totalPages >=0 ? index % totalPages : index;
+            }
+            int counter = 0;
+            if( copies > 1 ){
+                counter += (index / totalPages) * totalPages;
+            }
+            for( Range r : ranges ){
+                int upper = counter + (r.end - r.start);
+                if( index < upper ){
+                    // so we're in the correct range
+                    return r.start + ( index - counter ) - 1;
+                } else {
+                    counter = upper;
+                }
+            }
+            return -1;
+        }
+        
+        /**
+         * A singular page range
+         */
+        private static class Range implements Comparable<Range> {
+
+            public int start;
+            public int end;
+            
+            public Range(int start, int end) {
+                this.start = start;
+                this.end = end;
+            }
+            
+            /**
+             * Checks whether the ranges intersect of have no gap in between
+             * @param otherRange the range to be checked
+             * @return true, if the ranges can be merged
+             */
+            public boolean canMerge( Range otherRange ){
+                if( otherRange.end >= start && otherRange.end <= end ){
+                    return true;
+                }
+                if( otherRange.start >= start && otherRange.start <= end ){
+                    return true;
+                }
+                return false;
+            }
+            
+            /**
+             * Merges the other range into this range. Ignores the gap between the ranges if there is any
+             * @param otherRange the range to be merged
+             */
+            public void merge( Range otherRange ){
+                start = Math.min(start, otherRange.start);
+                end = Math.max(end, otherRange.end);
+            }
+            
+            public int compareTo(Range o) {             
+                return start - o.start;
+            }
+        }
     }
 }

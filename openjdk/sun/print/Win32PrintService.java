@@ -1,6 +1,6 @@
 /*
   Copyright (C) 2009 Volker Berlin (i-net software)
-  Copyright (C) 2010 Karsten Heinrich (i-net software)
+  Copyright (C) 2010, 2011 Karsten Heinrich (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -55,6 +55,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.print.DocFlavor;
 import javax.print.DocPrintJob;
@@ -77,6 +78,7 @@ import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.MediaPrintableArea;
 import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
+import javax.print.attribute.standard.MediaTray;
 import javax.print.attribute.standard.OrientationRequested;
 import javax.print.attribute.standard.PageRanges;
 import javax.print.attribute.standard.PrintQuality;
@@ -91,21 +93,26 @@ import javax.print.attribute.standard.SheetCollate;
 import javax.print.attribute.standard.Sides;
 import javax.print.event.PrintServiceAttributeListener;
 
+import cli.System.NewsStyleUriParser;
 import cli.System.Type;
 import cli.System.Collections.IEnumerator;
 import cli.System.Drawing.RectangleF;
 import cli.System.Drawing.Printing.Duplex;
 import cli.System.Drawing.Printing.PaperKind;
 import cli.System.Drawing.Printing.PaperSize;
+import cli.System.Drawing.Printing.PaperSource;
 import cli.System.Drawing.Printing.PrintDocument;
 import cli.System.Drawing.Printing.PrinterSettings;
 import cli.System.Drawing.Printing.PrinterSettings.PaperSizeCollection;
+import cli.System.Drawing.Printing.PrinterSettings.PaperSourceCollection;
 import cli.System.Net.Mime.MediaTypeNames;
 
 /**
  * @author Volker Berlin
  */
-public class Win32PrintService implements PrintService{
+public class Win32PrintService implements PrintService {
+	// note: the Win32PrintService is implemented as foreign service (doesn't implement SunPrinterJobService)
+	// to avoid implementing the WPrinterJob
 
     private static final DocFlavor[] supportedFlavors = {
         DocFlavor.SERVICE_FORMATTED.PAGEABLE,
@@ -216,6 +223,8 @@ public class Win32PrintService implements PrintService{
     private final PrinterSettings settings;
     private PrinterName name;
 
+    private MediaTray[] mediaTrays;
+    
     transient private ServiceNotifier notifier = null;
 
     public Win32PrintService(String name, PrintPeer peer){
@@ -483,7 +492,7 @@ public class Win32PrintService implements PrintService{
         }
         if( category == Media.class ){
         	PaperSizeCollection sizes = settings.get_PaperSizes();
-        	List<MediaSizeName> medias = new ArrayList<MediaSizeName>();
+        	List<Media> medias = new ArrayList<Media>();
         	for( int i = 0; i < sizes.get_Count(); i++ ){
         		PaperSize media = sizes.get_Item(i);				
         		MediaSizeName mediaName = findMatchingMedia( sizes.get_Item(i) );
@@ -491,6 +500,11 @@ public class Win32PrintService implements PrintService{
     					&& !medias.contains( mediaName )){ // slow but better than creating a HashSet here
     				medias.add( mediaName);
         		}
+        	}
+        	// add media trays
+        	MediaTray[] trays = getMediaTrays();
+        	for( MediaTray tray : trays ){
+        		medias.add( tray );
         	}
         	return medias.size() > 0 ? medias.toArray( new Media[medias.size() ] ) : null;
         }
@@ -555,6 +569,27 @@ public class Win32PrintService implements PrintService{
         	}
         }
         return null;
+    }
+    
+    private MediaTray[] getMediaTrays(){
+    	if( mediaTrays  != null ){
+    		// the print service is a singleton per printer so we only do this once
+    		return mediaTrays;
+    	}
+    	PaperSourceCollection trays = settings.get_PaperSources();
+    	int count = trays.get_Count();
+    	List<MediaTray> trayList = new ArrayList<MediaTray>();
+    	for( int i=0; i < count; i++ ){
+    		PaperSource tray = trays.get_Item(i);
+    		MediaTray javaTray = getDefaultTray(tray);
+    		if( javaTray != null ){
+    			trayList.add( javaTray );
+    		} else {
+    			trayList.add( new NetMediaTray( tray ) );
+    		}
+    	}
+    	mediaTrays = trayList.toArray( new MediaTray[trayList.size()]);
+    	return mediaTrays;
     }
 
 
@@ -653,31 +688,91 @@ public class Win32PrintService implements PrintService{
     	return null;
     }
     
-//    /**
-//     * A simple MediaSizeName implementation. This is required since some programs only query the
-//     * attributes for MediaSizeName instances - which is not correct, since all {@link Media} implementations
-//     * are allowed here! Anyways, we have to deal with this an provide the additional formats of .NET as well.
-//     */
-//    private static class CustomMediaSizeName extends MediaSizeName {
-//
-//		private final String name;
-//
-//		/**
-//		 * Creates the instance for a media name
-//		 * @param name the name of the paper format
-//		 */
-//		protected CustomMediaSizeName( String name) {
-//			super(-1);
-//			this.name = name;
-//		}
-//    	
-//		/**
-//		 * Returns the paper format name
-//		 * @return the paper format name
-//		 */
-//		@Override
-//		public String toString() {
-//			return name;
-//		}
-//    }
+    /**
+     * Returns the Java-default {@link MediaTray} for a paper source. This is required since these default
+     * trays are public constants which can be used without checking for the actually present media trays 
+     * @param source the .NET paper source to get the predefined source for
+     * @return the media tray or null, in case there is no mapping for the paper source
+     */
+    private MediaTray getDefaultTray( PaperSource source ){
+    	// convert from .NET kind to java's pre defined MediaTrays
+    	switch( source.get_RawKind() ){
+    		case 1 : return MediaTray.TOP;
+    		case 2 : return MediaTray.BOTTOM;
+    		case 3 : return MediaTray.MIDDLE;
+    		case 4 : return MediaTray.MANUAL;
+    		case 5 : return MediaTray.ENVELOPE;
+    		case 6 : return Win32MediaTray.ENVELOPE_MANUAL;
+    		case 7 : return Win32MediaTray.AUTO;
+    		case 8 : return Win32MediaTray.TRACTOR;
+    		case 9 : return Win32MediaTray.SMALL_FORMAT;
+    		case 10 : return Win32MediaTray.LARGE_FORMAT;
+    		case 11 : return MediaTray.LARGE_CAPACITY;
+    		case 14 : return MediaTray.MAIN;
+    		case 15 : return Win32MediaTray.FORMSOURCE;
+    		// FIXME which PaperSourceKind is MediaTray.SIDE ???
+    	}
+    	return null;
+    }
+    
+    /**
+     * Returns the .NET {@link PaperSource} for a media tray. This will be done either by mapping or
+     * directly in case the tray is a {@link NetMediaTray}
+     * @param tray the tray to get the paper source for, must not be null
+     * @return the selected {@link PaperSource} or null, in case there is no matching {@link PaperSource}
+     */
+    public PaperSource getPaperSourceForTray( MediaTray tray ){
+    	if( tray instanceof NetMediaTray ){
+			return ((NetMediaTray)tray).getPaperSource( this );
+		}
+    	// try to find the appropriate paper source for the Java-Defined tray
+    	PaperSourceCollection trays = settings.get_PaperSources();
+    	int count = trays.get_Count();
+    	for( int i=0; i < count; i++ ){
+    		PaperSource paperSource = trays.get_Item(i);
+			if( getDefaultTray( paperSource ) == tray ){
+    			return paperSource;
+    		}
+    	}
+    	return null;
+    }
+    
+    public static class NetMediaTray extends MediaTray{
+    	
+		private static final long serialVersionUID = 1L;
+
+		/** Not really used but required by the EnumSyntax super class */
+    	private static AtomicInteger idCounter = new AtomicInteger(8);
+    	
+    	private int rawKind;
+    	private String name;
+    	private transient PaperSource netSource;
+
+		public NetMediaTray( PaperSource netSource ) {
+			super( idCounter.getAndIncrement() );
+			this.rawKind = netSource.get_RawKind();
+			this.name = netSource.get_SourceName();
+			this.netSource = netSource;
+		}
+    	
+		public PaperSource getPaperSource( Win32PrintService service ){
+			if( netSource == null ){
+				PaperSourceCollection sources = service.settings.get_PaperSources();
+				int count = sources.get_Count();
+				for( int i=0; i < count; i++ ){
+					PaperSource source = sources.get_Item(i);
+					if( source.get_RawKind() == rawKind ){
+						netSource = source;
+						break;
+					}
+				}
+			}
+			return netSource;
+		}
+		
+		@Override
+		public String toString() {
+			return netSource != null ? netSource.get_SourceName() : name;
+		}
+    }
 }
