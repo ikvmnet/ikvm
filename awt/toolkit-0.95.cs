@@ -336,6 +336,9 @@ namespace ikvm.awt
 			return peer;
 		}
 
+		// MONOBUG mcs refuses to override these two methods, so we disable them when building with mcs
+		// (since AWT isn't supported anyway)
+#if !__MonoCS__
         public override java.awt.peer.CanvasPeer createCanvas(java.awt.Canvas target)
         {
             java.awt.peer.CanvasPeer peer = Invoke<NetCanvasPeer>(delegate { return new NetCanvasPeer(target); });
@@ -349,6 +352,7 @@ namespace ikvm.awt
             targetCreatedPeer(target, peer);
             return peer;
         }
+#endif
 
         public override java.awt.peer.TextFieldPeer createTextField(java.awt.TextField target)
         {
@@ -1233,9 +1237,8 @@ namespace ikvm.awt
         protected override void startDrag(java.awt.datatransfer.Transferable trans, long[] formats, Map formatMap)
         {
             dragStart = true;
-            long nativeCtxtLocal = 0;
 
-            nativeCtxtLocal = createDragSource(getTrigger().getComponent(),
+            createDragSource(getTrigger().getComponent(),
                                                trans,
                                                getTrigger().getTriggerEvent(),
                                                getTrigger().getSourceAsDragGestureRecognizer().getSourceActions(),
@@ -1796,7 +1799,7 @@ namespace ikvm.awt
 		private int oldWidth = -1;
 		private int oldHeight = -1;
 		private bool sm_suppressFocusAndActivation;
-		private bool m_callbacksEnabled;
+		//private bool m_callbacksEnabled;
 		//private int m_validationNestCount;
 		private int serialNum = 0;
 		private bool isLayouting = false;
@@ -1883,7 +1886,7 @@ namespace ikvm.awt
 
 		void EnableCallbacks(bool enabled)
 		{
-			m_callbacksEnabled = enabled;
+			//m_callbacksEnabled = enabled;
 		}
 
 		private C Create(NetComponentPeer parent)
@@ -3270,7 +3273,11 @@ namespace ikvm.awt
 		public NetTextComponentPeer(java.awt.TextComponent textComponent)
 			: base((T)textComponent)
 		{
-			if(!target.isBackgroundSet())
+#if __MonoCS__
+			// MONOBUG mcs generates a ldflda on a readonly field, so we use a temp
+			T target = this.target;
+#endif
+			if (!target.isBackgroundSet())
 			{
 				target.setBackground(java.awt.SystemColor.window);
 			}
@@ -4267,12 +4274,12 @@ namespace ikvm.awt
 
     sealed class NetKeyboardFocusManagerPeer : java.awt.peer.KeyboardFocusManagerPeer
     {
-        private readonly java.awt.KeyboardFocusManager manager;
+        //private readonly java.awt.KeyboardFocusManager manager;
         private static java.lang.reflect.Method m_removeLastFocusRequest;
 
         public NetKeyboardFocusManagerPeer(java.awt.KeyboardFocusManager manager)
         {
-            this.manager = manager;
+            //this.manager = manager;
         }
 
         public void clearGlobalFocusOwner(java.awt.Window activeWindow)
@@ -4601,11 +4608,11 @@ namespace ikvm.awt
 
     class NetSystemTrayPeer : java.awt.peer.SystemTrayPeer
     {
-        private java.awt.SystemTray target;
+        //private java.awt.SystemTray target;
 
         internal NetSystemTrayPeer(java.awt.SystemTray target)
         {
-            this.target = target;
+            //this.target = target;
         }
 
         public java.awt.Dimension getTrayIconSize()
@@ -4993,8 +5000,8 @@ namespace ikvm.awt
         [StructLayout(LayoutKind.Sequential)]
         private struct POINT
         {
-            private int X;
-            private int Y;
+            public int X;
+            public int Y;
 
             internal POINT(Point pt)
             {
