@@ -497,11 +497,11 @@ namespace IKVM.NativeCode.sun.awt.shell
 		[System.Security.SecurityCritical]
 		public static IntPtr combinePIDLs(IntPtr ppIDL, IntPtr pIDL)
         {
-            if (ppIDL == null || ppIDL == IntPtr.Zero)
+            if (ppIDL == IntPtr.Zero)
             {
                 return IntPtr.Zero;
             }
-            if (pIDL == null || pIDL == IntPtr.Zero)
+            if (pIDL == IntPtr.Zero)
             {
                 return IntPtr.Zero;
             }
@@ -523,7 +523,7 @@ namespace IKVM.NativeCode.sun.awt.shell
 		[System.Security.SecurityCritical]
 		public static int getPIDLlength(IntPtr pIDL)
         {
-            if( pIDL == null || pIDL == IntPtr.Zero )
+            if( pIDL == IntPtr.Zero )
             {
                 return 0;
             }
@@ -543,7 +543,7 @@ namespace IKVM.NativeCode.sun.awt.shell
 		[System.Security.SecurityCritical]
 		public static void releasePIDL(IntPtr pIDL)
         {
-            if (pIDL == null || pIDL.Equals(IntPtr.Zero))
+            if (pIDL == IntPtr.Zero)
             {
                 return;
             }
@@ -578,7 +578,7 @@ namespace IKVM.NativeCode.sun.awt.shell
 		[System.Security.SecurityCritical]
 		public static int getAttributes0(Object pParentIShellFolder, IntPtr pIDL, int attrsMask)
         {
-            if (pParentIShellFolder == null || pIDL == null || pIDL == IntPtr.Zero )
+            if (pParentIShellFolder == null || pIDL == IntPtr.Zero )
             {
                 return 0;
             }
@@ -674,7 +674,7 @@ namespace IKVM.NativeCode.sun.awt.shell
 		[System.Security.SecurityCritical]
 		public static Object bindToObject(Object parentIShellFolder, IntPtr pIDL)
         {
-            if (parentIShellFolder == null || pIDL == null || pIDL == IntPtr.Zero )
+            if (parentIShellFolder == null || pIDL == IntPtr.Zero )
             {
                 return null;
             }
@@ -707,7 +707,7 @@ namespace IKVM.NativeCode.sun.awt.shell
 		[System.Security.SecurityCritical]
 		public static String getDisplayNameOf(Object parentIShellFolder, IntPtr relativePIDL, int attrs)
         {
-            if (parentIShellFolder == null || relativePIDL == null || relativePIDL == IntPtr.Zero)
+            if (parentIShellFolder == null || relativePIDL == IntPtr.Zero)
             {
                 return null;
             }
@@ -769,7 +769,7 @@ namespace IKVM.NativeCode.sun.awt.shell
 		[System.Security.SecurityCritical]
 		public static IntPtr extractIcon(Object parentIShellFolder, IntPtr relativePIDL, Boolean getLargeIcon)
         {
-            if (parentIShellFolder == null || relativePIDL == null || relativePIDL == IntPtr.Zero)
+            if (parentIShellFolder == null || relativePIDL == IntPtr.Zero)
             {
                 return IntPtr.Zero;
             }
