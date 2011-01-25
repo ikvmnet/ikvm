@@ -1,5 +1,6 @@
 /*
   Copyright (C) 2009 Volker Berlin (i-net software)
+  Copyright (C) 2011 Karsten Heinrich (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -583,8 +584,7 @@ public abstract class JdbcOdbcObject{
                 return null;
             }
             if(obj instanceof cli.System.DateTime){
-                cli.System.DateTime dt = (cli.System.DateTime)obj;
-                return new Timestamp(JdbcOdbcUtils.getJavaMillis(dt));
+            	return JdbcOdbcUtils.convertDateTimeToTimestamp((cli.System.DateTime)obj);
             }
             String str = obj.toString();
             return Timestamp.valueOf(str);

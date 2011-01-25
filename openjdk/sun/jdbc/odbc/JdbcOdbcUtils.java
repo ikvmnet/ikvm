@@ -1,5 +1,6 @@
 /*
   Copyright (C) 2009, 2010 Volker Berlin (i-net software)
+  Copyright (C) 2011 Karsten Heinrich (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -105,7 +106,7 @@ public class JdbcOdbcUtils{
             return new BigDecimal(((cli.System.Decimal)obj).ToString(CultureInfo.get_InvariantCulture()));
         }
         if(obj instanceof cli.System.DateTime){
-            return new Timestamp(getJavaMillis((cli.System.DateTime)obj));
+        	return convertDateTimeToTimestamp((cli.System.DateTime)obj);
         }
         if(obj instanceof cli.System.TimeSpan){
             cli.System.TimeSpan ts = (cli.System.TimeSpan)obj;
@@ -116,6 +117,18 @@ public class JdbcOdbcUtils{
         }
         return obj;
     }
+
+    /**
+     * Converts a .NET DateTime to a Timestamp in the current Timezone
+     * @param obj the dateTime
+     * @return the conveted time stamp
+     */
+	public static Timestamp convertDateTimeToTimestamp( cli.System.DateTime obj) {
+		long javaMillis = getJavaMillis(obj);
+		int seconds = (int)(javaMillis / 1000);
+		int nanos = (int)((javaMillis % 1000) * 1000000);
+		return new Timestamp( 70, 0, 1, 0, 0, seconds, nanos );
+	}
 
 
     /**
