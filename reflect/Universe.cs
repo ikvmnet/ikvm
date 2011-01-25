@@ -810,7 +810,9 @@ namespace IKVM.Reflection
 
 		public Assembly CreateMissingAssembly(string assemblyName)
 		{
-			return new MissingAssembly(this, assemblyName);
+			Assembly asm = new MissingAssembly(this, assemblyName);
+			assembliesByName.Add(asm.FullName, asm);
+			return asm;
 		}
 
 		public void EnableMissingTypeResolution()
