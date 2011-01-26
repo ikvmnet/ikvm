@@ -814,7 +814,7 @@ namespace IKVM.Reflection.Reader
 					}
 					type = type.BaseType;
 				} while (type != null);
-				throw new MissingMethodException(org.ToString(), name);
+				return universe.GetMissingMethodOrThrow(org, name, methodSig);
 			}
 		}
 
