@@ -9,7 +9,11 @@
         </if>
     </target>
     <target name="ikvm-native-unix">
-        <exec program="/bin/bash" commandline="-c 'gcc -o libikvm-native.so --shared -fPIC `pkg-config --cflags --libs gmodule-2.0` jni.c os.c'"/>
+        <property name="LDFLAGS" value="" />
+        <if test="${environment::variable-exists('LDFLAGS')}">
+            <property name="LDFLAGS" value="${environment::get-variable('LDFLAGS')}" />
+        </if>
+        <exec program="/bin/bash" commandline="-c 'gcc ${LDFLAGS} -o libikvm-native.so --shared -fPIC `pkg-config --cflags --libs gmodule-2.0` jni.c os.c'"/>
         <copy file="libikvm-native.so" todir="../bin"/>
     </target>
     <target name="ikvm-native-win32">
