@@ -1,4 +1,4 @@
-﻿/*
+/*
   Copyright (C) 2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -22,7 +22,6 @@
   
 */
 using System;
-using System.Text;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
