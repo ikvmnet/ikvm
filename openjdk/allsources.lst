@@ -131,6 +131,7 @@ sun/awt/SunToolkit.java
 sun/awt/image/ByteComponentRaster.java
 sun/awt/image/BytePackedRaster.java
 sun/awt/image/GifImageDecoder.java
+sun/awt/image/IkvmImageDecoder.java
 sun/awt/image/ImageRepresentation.java
 sun/awt/image/ImagingLib.java
 sun/awt/image/IntegerComponentRaster.java
