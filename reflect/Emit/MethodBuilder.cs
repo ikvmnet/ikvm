@@ -46,7 +46,7 @@ namespace IKVM.Reflection.Emit
 		private MethodAttributes attributes;
 		private MethodImplAttributes implFlags;
 		private ILGenerator ilgen;
-		private int rva;
+		private int rva = -1;
 		private readonly CallingConventions callingConvention;
 		private List<ParameterBuilder> parameters;
 		private GenericTypeParameterBuilder[] gtpb;
@@ -74,11 +74,32 @@ namespace IKVM.Reflection.Emit
 
 		public ILGenerator GetILGenerator(int streamSize)
 		{
+			if (rva != -1)
+			{
+				throw new InvalidOperationException();
+			}
 			if (ilgen == null)
 			{
 				ilgen = new ILGenerator(typeBuilder.ModuleBuilder, streamSize);
 			}
 			return ilgen;
+		}
+
+		public void __ReleaseILGenerator()
+		{
+			if (ilgen != null)
+			{
+				if (this.ModuleBuilder.symbolWriter != null)
+				{
+					this.ModuleBuilder.symbolWriter.OpenMethod(new SymbolToken(-pseudoToken | 0x06000000));
+				}
+				rva = ilgen.WriteBody(initLocals);
+				if (this.ModuleBuilder.symbolWriter != null)
+				{
+					this.ModuleBuilder.symbolWriter.CloseMethod();
+				}
+				ilgen = null;
+			}
 		}
 
 		public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
@@ -577,23 +598,7 @@ namespace IKVM.Reflection.Emit
 			this.nameIndex = this.ModuleBuilder.Strings.Add(name);
 			this.signature = this.ModuleBuilder.GetSignatureBlobIndex(this.MethodSignature);
 
-			if (ilgen != null)
-			{
-				if (this.ModuleBuilder.symbolWriter != null)
-				{
-					this.ModuleBuilder.symbolWriter.OpenMethod(new SymbolToken(-pseudoToken | 0x06000000));
-				}
-				rva = ilgen.WriteBody(initLocals);
-				if (this.ModuleBuilder.symbolWriter != null)
-				{
-					this.ModuleBuilder.symbolWriter.CloseMethod();
-				}
-				ilgen = null;
-			}
-			else
-			{
-				rva = -1;
-			}
+			__ReleaseILGenerator();
 
 			if (declarativeSecurity != null)
 			{
