@@ -140,7 +140,7 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer{
     }
 
     @Override
-    public void setColorModel(ColorModel model){
+    public synchronized void setColorModel(ColorModel model){
         int newPixelFormat = getPixelFormatForColorModel(model);
         if( model.getPixelSize() <= 8 ){
         	newPixelFormat = DEFAULT_PIXEL_FORMAT;
@@ -192,7 +192,7 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer{
         {
             throw new java.lang.ArrayIndexOutOfBoundsException("Data offset out of bounds.");
         }
-        synchronized (getBitmapRef())
+        synchronized (this)
         {
             int pixelFormat = getPixelFormatForColorModel( model );
 			int bpp = model.getPixelSize();
@@ -241,12 +241,14 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer{
         }
     }
 
+	@cli.System.Security.SecurityCriticalAttribute.Annotation
 	private void copyInt(int x, int y, int w, int h, int[] pixels, int off, int pixelFormat ) {
 		BitmapData data = getBitmapRef().LockBits(new cli.System.Drawing.Rectangle(x, y, w, h), ImageLockMode.wrap(ImageLockMode.WriteOnly), PixelFormat.wrap(pixelFormat));
 		cli.System.Runtime.InteropServices.Marshal.Copy(pixels, off, data.get_Scan0(), data.get_Width() * data.get_Height());
 		getBitmapRef().UnlockBits(data);
 	}
     
+	@cli.System.Security.SecurityCriticalAttribute.Annotation
 	private void copyByte(int x, int y, int w, int h, byte[] pixels, int off, int pixelFormat, int bpp) {
 		BitmapData data = getBitmapRef().LockBits(new cli.System.Drawing.Rectangle(x, y, w, h), ImageLockMode.wrap(ImageLockMode.WriteOnly), PixelFormat.wrap(pixelFormat));
 		cli.System.Runtime.InteropServices.Marshal.Copy(pixels, off, data.get_Scan0(), pixels.length);
