@@ -34,12 +34,8 @@ namespace ikvm.awt
 
     internal class WindowsRobot : RobotPeer
     {
-
-        //Screen screen;
-
         internal WindowsRobot(java.awt.GraphicsDevice device)
         {
-            //screen = ((NetGraphicsDevice)device).screen;
         }
 
 		public void dispose()
