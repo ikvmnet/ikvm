@@ -1411,7 +1411,6 @@ namespace IKVM.Internal
 					{
 						switch (code[i + k].pseudo)
 						{
-								// TODO this is wrong when we encounter a try block in the try block
 							case CodeType.BeginCatchBlock:
 							case CodeType.BeginFaultBlock:
 							case CodeType.BeginFinallyBlock:
