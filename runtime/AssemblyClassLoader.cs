@@ -83,6 +83,7 @@ namespace IKVM.Internal
 					}
 					catch (Exception x)
 					{
+						// TODO reconsider this
 						// HACK we handle exceptions here, because there is at least one obfuscator that produces
 						// invalid assemblies that cause Module.GetCustomAttributes() to throw an exception
 						JVM.CriticalFailure("Unexpected exception", x);
