@@ -54,6 +54,9 @@ namespace IKVM.Reflection.Impl
 
 		internal static ISymbolWriterImpl CreateSymbolWriterFor(ModuleBuilder moduleBuilder)
 		{
+#if NO_SYMBOL_WRITER
+			throw new NotSupportedException("IKVM.Reflection compiled with NO_SYMBOL_WRITER does not support writing debugging symbols.");
+#else
 			if (runningOnMono)
 			{
 #if MONO
@@ -66,6 +69,7 @@ namespace IKVM.Reflection.Impl
 			{
 				return new PdbWriter(moduleBuilder);
 			}
+#endif
 		}
 
 		internal static byte[] GetDebugInfo(ISymbolWriterImpl writer, ref IMAGE_DEBUG_DIRECTORY idd)
