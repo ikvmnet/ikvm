@@ -4381,7 +4381,7 @@ namespace IKVM.Internal
 					{
 						// Miranda methods already have a methodimpl (if needed) to implement the correct interface method
 					}
-					else if (!mce.IsPublic)
+					else if (!mce.IsPublic && !mce.IsInternal)
 					{
 						// NOTE according to the ECMA spec it isn't legal for a privatescope method to be virtual, but this works and
 						// it makes sense, so I hope the spec is wrong
@@ -4395,7 +4395,7 @@ namespace IKVM.Internal
 						typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod.GetMethod());
 						wrapper.HasIncompleteInterfaceImplementation = true;
 					}
-					else if (mce.GetMethod() == null || mce.RealName != ifmethod.RealName)
+					else if (mce.GetMethod() == null || mce.RealName != ifmethod.RealName || mce.IsInternal)
 					{
 						MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, ifmethod.ReturnTypeForDefineMethod, ifmethod.GetParametersForDefineMethod());
 						AttributeHelper.HideFromJava(mb);
