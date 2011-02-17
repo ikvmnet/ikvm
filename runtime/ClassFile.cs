@@ -2198,8 +2198,15 @@ namespace IKVM.Internal
 							{
 								if(annot[1].Equals("Likvm/lang/Internal;"))
 								{
-									this.access_flags &= ~Modifiers.AccessMask;
-									flags |= FLAG_MASK_INTERNAL;
+									if (classFile.IsInterface)
+									{
+										StaticCompiler.IssueMessage(Message.InterfaceMethodCantBeInternal, classFile.Name, this.Name, this.Signature);
+									}
+									else
+									{
+										this.access_flags &= ~Modifiers.AccessMask;
+										flags |= FLAG_MASK_INTERNAL;
+									}
 								}
 								if(annot[1].Equals("Likvm/internal/HasCallerID;"))
 								{

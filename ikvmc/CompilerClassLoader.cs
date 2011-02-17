@@ -3351,6 +3351,7 @@ namespace IKVM.Internal
 		InvalidDirectoryInLibEnvironmentPath = 125,
 		LegacySearchRule = 126,
 		AssemblyLocationIgnored = 127,
+		InterfaceMethodCantBeInternal = 128,
 		UnknownWarning = 999,
 	}
 
@@ -3557,6 +3558,10 @@ namespace IKVM.Internal
 					break;
 				case Message.AssemblyLocationIgnored:
 					msg = "assembly \"{0}\" is ignored as previously loaded assembly \"{1}\" has the same identity \"{2}\"";
+					break;
+				case Message.InterfaceMethodCantBeInternal:
+					msg = "ignoring @ikvm.lang.Internal annotation on interface method" + Environment.NewLine +
+						"    (\"{0}.{1}{2}\")";
 					break;
 				case Message.UnknownWarning:
 					msg = "{0}";
