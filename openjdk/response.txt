@@ -598,6 +598,7 @@ assembly.class
     -recurse:@OPENJDK@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/java/swing/*
     -recurse:@OPENJDK@/build/linux-amd64/j2re-image/lib/resources.jar/javax/swing/*
     -recurse:resources.zip/com/sun/swing/internal/plaf/*
+    -recurse:resources.zip/com/sun/java/swing/plaf/*
     -r:System.Drawing.dll
     -r:IKVM.AWT.WinForms.dll
     ikvm/awt/*.class

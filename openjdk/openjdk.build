@@ -151,6 +151,8 @@
         <zip zipfile="resources.zip">
             <fileset basedir="${OpenJDK.dir}/jdk/src/share/classes">
                 <include name="com/sun/swing/internal/plaf/**/*" />
+				<include name="com/sun/java/swing/plaf/**/*.properties" />
+				<include name="com/sun/java/swing/plaf/**/*.gif" />
             </fileset>
         </zip>
     </target>
