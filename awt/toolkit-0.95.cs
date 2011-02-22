@@ -27,7 +27,7 @@
 Copyright (C) 2002, 2004-2009 Jeroen Frijters
 Copyright (C) 2006 Active Endpoints, Inc.
 Copyright (C) 2006-2011 Volker Berlin (i-net software)
-Copyright (C) 2010 Karsten Heinrich (i-net software)
+Copyright (C) 2010-2011 Karsten Heinrich (i-net software)
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -2317,7 +2317,7 @@ namespace ikvm.awt
 		private void OnMouseUp(object sender, MouseEventArgs ev)
 		{
 			postMouseEvent(ev, java.awt.@event.MouseEvent.MOUSE_RELEASED, ev.Clicks);
-			if (isMouseClick)
+            if (isMouseClick || isDoubleClick) // there can only be an Click OR an DoubleClick event - both count as click here
 			{
 				//We make our own mouse click event because the event order is different in .NET
 				//in .NET the click occured before MouseUp
