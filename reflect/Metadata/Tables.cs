@@ -421,6 +421,42 @@ namespace IKVM.Reflection.Metadata
 		{
 			throw new InvalidOperationException();
 		}
+
+#if STABLE_SORT
+		private struct OrdinalWrapper
+		{
+			internal int ordinal;
+			internal T value;
+		}
+
+		protected void Sort(IComparer<T> comparer)
+		{
+			OrdinalWrapper[] items = new OrdinalWrapper[rowCount];
+			for (int i = 0; i < items.Length; i++)
+			{
+				items[i].ordinal = i;
+				items[i].value = records[i];
+			}
+			Array.Sort(items, delegate(OrdinalWrapper x, OrdinalWrapper y)
+			{
+				int res = comparer.Compare(x.value, y.value);
+				if (res == 0)
+				{
+					res = x.ordinal.CompareTo(y.ordinal);
+				}
+				return res;
+			});
+			for (int i = 0; i < items.Length; i++)
+			{
+				records[i] = items[i].value;
+			}
+		}
+#else
+		protected void Sort(IComparer<T> comparer)
+		{
+			Array.Sort(records, 0, rowCount, comparer);
+		}
+#endif
 	}
 
 	sealed class ModuleTable : Table<ModuleTable.Record>
@@ -792,14 +828,20 @@ namespace IKVM.Reflection.Metadata
 				}
 				records[i].Interface = token;
 			}
-			Array.Sort(records, 0, rowCount, this);
+			Sort(this);
 		}
 
 		int IComparer<Record>.Compare(Record x, Record y)
 		{
 			if (x.Class == y.Class)
 			{
+#if STABLE_SORT
+				return 0;
+#else
+				// LAMESPEC the CLI spec says that InterfaceImpl should be sorted by { Class, Interface }, but it appears to be
+				// only necessary to sort by Class.
 				return x.Interface == y.Interface ? 0 : (x.Interface > y.Interface ? 1 : -1);
+#endif
 			}
 			return x.Class > y.Class ? 1 : -1;
 		}
@@ -1122,7 +1164,7 @@ namespace IKVM.Reflection.Metadata
 						throw new InvalidOperationException();
 				}
 			}
-			Array.Sort(records, 0, rowCount, this);
+			Sort(this);
 		}
 
 		int IComparer<Record>.Compare(Record x, Record y)
@@ -1801,7 +1843,7 @@ namespace IKVM.Reflection.Metadata
 					records[i].MethodDeclaration = moduleBuilder.ResolvePseudoToken(records[i].MethodDeclaration);
 				}
 			}
-			Array.Sort(records, 0, rowCount, this);
+			Sort(this);
 		}
 
 		int IComparer<Record>.Compare(Record x, Record y)
