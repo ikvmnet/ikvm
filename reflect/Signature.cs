@@ -185,8 +185,9 @@ namespace IKVM.Reflection
 			switch (br.ReadByte())
 			{
 				case ELEMENT_TYPE_CLASS:
+					return ReadTypeDefOrRefEncoded(module, br, context).MarkNotValueType();
 				case ELEMENT_TYPE_VALUETYPE:
-					return ReadTypeDefOrRefEncoded(module, br, context);
+					return ReadTypeDefOrRefEncoded(module, br, context).MarkValueType();
 				case ELEMENT_TYPE_BOOLEAN:
 					return module.universe.System_Boolean;
 				case ELEMENT_TYPE_CHAR:
@@ -440,7 +441,7 @@ namespace IKVM.Reflection
 				}
 				bb.WriteCompressedInt(type.GenericParameterPosition);
 			}
-			else if (type.IsGenericType)
+			else if (!type.__IsMissing && type.IsGenericType)
 			{
 				WriteGenericSignature(module, bb, type);
 			}

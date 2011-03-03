@@ -231,18 +231,9 @@ namespace IKVM.Reflection.Emit
 		private List<PropertyBuilder> properties;
 		private List<EventBuilder> events;
 		private TypeAttributes attribs;
-		private TypeFlags typeFlags;
 		private GenericTypeParameterBuilder[] gtpb;
 		private List<CustomAttributeBuilder> declarativeSecurity;
 		private List<Type> interfaces;
-
-		[Flags]
-		private enum TypeFlags
-		{
-			IsGenericTypeDefinition = 1,
-			HasNestedTypes = 2,
-			Baked = 4,
-		}
 
 		internal TypeBuilder(ITypeOwner owner, string ns, string name)
 		{

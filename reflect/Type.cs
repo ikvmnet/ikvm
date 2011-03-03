@@ -45,6 +45,20 @@ namespace IKVM.Reflection
 	{
 		public static readonly Type[] EmptyTypes = Empty<Type>.Array;
 		protected readonly Type underlyingType;
+		protected TypeFlags typeFlags;
+
+		[Flags]
+		protected enum TypeFlags
+		{
+			// for use by TypeBuilder
+			IsGenericTypeDefinition = 1,
+			HasNestedTypes = 2,
+			Baked = 4,
+
+			// for general use
+			ValueType = 8,
+			NotValueType = 16,
+		}
 
 		// prevent subclassing by outsiders
 		internal Type()
@@ -1604,6 +1618,18 @@ namespace IKVM.Reflection
 					|| this == u.System_Runtime_CompilerServices_MethodImplAttribute
 					;
 			}
+		}
+
+		internal Type MarkNotValueType()
+		{
+			typeFlags |= TypeFlags.NotValueType;
+			return this;
+		}
+
+		internal Type MarkValueType()
+		{
+			typeFlags |= TypeFlags.ValueType;
+			return this;
 		}
 	}
 

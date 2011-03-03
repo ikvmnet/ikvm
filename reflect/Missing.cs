@@ -400,6 +400,22 @@ namespace IKVM.Reflection
 			get { return module; }
 		}
 
+		public override bool IsValueType
+		{
+			get
+			{
+				switch (typeFlags & (TypeFlags.ValueType | TypeFlags.NotValueType))
+				{
+					case TypeFlags.ValueType:
+						return true;
+					case TypeFlags.NotValueType:
+						return false;
+					default:
+						throw new MissingMemberException(this);
+				}
+			}
+		}
+
 		public override Type BaseType
 		{
 			get { throw new MissingMemberException(this); }
@@ -683,7 +699,12 @@ namespace IKVM.Reflection
 
 		internal override int ImportTo(IKVM.Reflection.Emit.ModuleBuilder module)
 		{
-			return Forwarder.ImportTo(module);
+			MethodInfo method = TryGetForwarder();
+			if (method != null)
+			{
+				return method.ImportTo(module);
+			}
+			return module.ImportMethodOrField(declaringType, this.Name, this.MethodSignature);
 		}
 
 		public override string Name
@@ -757,7 +778,7 @@ namespace IKVM.Reflection
 
 		internal override bool HasThis
 		{
-			get { return Forwarder.HasThis; }
+			get { return (signature.CallingConvention & (CallingConventions.HasThis | CallingConventions.ExplicitThis)) == CallingConventions.HasThis; }
 		}
 
 		public override bool IsGenericMethod

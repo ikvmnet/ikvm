@@ -475,7 +475,11 @@ namespace IKVM.Reflection.Emit
 
 		internal int GetTypeTokenForMemberRef(Type type)
 		{
-			if (type.IsGenericTypeDefinition)
+			if (type.__IsMissing)
+			{
+				return ImportType(type);
+			}
+			else if (type.IsGenericTypeDefinition)
 			{
 				int token;
 				if (!memberRefTypeTokens.TryGetValue(type, out token))
@@ -500,7 +504,7 @@ namespace IKVM.Reflection.Emit
 		private static bool IsFromGenericTypeDefinition(MemberInfo member)
 		{
 			Type decl = member.DeclaringType;
-			return decl != null && decl.IsGenericTypeDefinition;
+			return decl != null && !decl.__IsMissing && decl.IsGenericTypeDefinition;
 		}
 
 		public FieldToken GetFieldToken(FieldInfo field)
@@ -606,7 +610,7 @@ namespace IKVM.Reflection.Emit
 			int token;
 			if (!typeTokens.TryGetValue(type, out token))
 			{
-				if (type.HasElementType || (type.IsGenericType && !type.IsGenericTypeDefinition))
+				if (type.HasElementType || (!type.__IsMissing && type.IsGenericType && !type.IsGenericTypeDefinition))
 				{
 					ByteBuffer spec = new ByteBuffer(5);
 					Signature.WriteTypeSpec(this, spec, type);
