@@ -157,7 +157,7 @@ namespace IKVM.Reflection
 						named.Add(new CustomAttributeNamedArgument(typeofMarshalAs.GetField("MarshalCookie"), new CustomAttributeTypedArgument(module.universe.System_String, marshalCookie)));
 					}
 					ConstructorInfo constructor = typeofMarshalAs.GetConstructor(new Type[] { typeofUnmanagedType });
-					return new CustomAttributeData(constructor, new object[] { unmanagedType }, named);
+					return new CustomAttributeData(module, constructor, new object[] { unmanagedType }, named);
 				}
 			}
 			throw new BadImageFormatException();

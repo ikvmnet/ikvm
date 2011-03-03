@@ -325,7 +325,7 @@ namespace IKVM.Reflection.Reader
 					{
 						AddNamedArgument(list, type, "ThrowOnUnmappableChar", flags, CharMapErrorOn);
 					}
-					attribs.Add(new CustomAttributeData(constructor, new object[] { dllName }, list));
+					attribs.Add(new CustomAttributeData(module, constructor, new object[] { dllName }, list));
 					return;
 				}
 			}

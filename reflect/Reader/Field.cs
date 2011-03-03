@@ -129,7 +129,7 @@ namespace IKVM.Reflection.Reader
 					if (module.FieldLayout.records[i].Field == rid)
 					{
 						ConstructorInfo constructor = module.universe.System_Runtime_InteropServices_FieldOffsetAttribute.GetConstructor(new Type[] { module.universe.System_Int32 });
-						list.Add(new CustomAttributeData(constructor,
+						list.Add(new CustomAttributeData(module, constructor,
 							new object[] { module.FieldLayout.records[i].Offset },
 							null));
 						break;

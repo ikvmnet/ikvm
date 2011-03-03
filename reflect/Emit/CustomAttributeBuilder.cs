@@ -70,15 +70,20 @@ namespace IKVM.Reflection.Emit
 			this.fieldValues = fieldValues;
 		}
 
+		public static CustomAttributeBuilder __FromBlob(ConstructorInfo con, byte[] blob)
+		{
+			return new CustomAttributeBuilder(con, blob);
+		}
+
 		private sealed class BlobWriter
 		{
-			private readonly ModuleBuilder moduleBuilder;
+			private readonly Assembly assembly;
 			private readonly CustomAttributeBuilder cab;
 			private readonly ByteBuffer bb;
 
-			internal BlobWriter(ModuleBuilder moduleBuilder, CustomAttributeBuilder cab, ByteBuffer bb)
+			internal BlobWriter(Assembly assembly, CustomAttributeBuilder cab, ByteBuffer bb)
 			{
-				this.moduleBuilder = moduleBuilder;
+				this.assembly = assembly;
 				this.cab = cab;
 				this.bb = bb;
 			}
@@ -156,7 +161,7 @@ namespace IKVM.Reflection.Emit
 
 			private void WriteFixedArg(Type type, object value)
 			{
-				Universe u = moduleBuilder.universe;
+				Universe u = assembly.universe;
 				if (type == u.System_String)
 				{
 					WriteString((string)value);
@@ -270,7 +275,7 @@ namespace IKVM.Reflection.Emit
 				string name = null;
 				if (type != null)
 				{
-					if (type.Assembly == moduleBuilder.Assembly)
+					if (type.Assembly == assembly)
 					{
 						name = type.FullName;
 					}
@@ -383,7 +388,7 @@ namespace IKVM.Reflection.Emit
 			else
 			{
 				bb = new ByteBuffer(100);
-				BlobWriter bw = new BlobWriter(moduleBuilder, this, bb);
+				BlobWriter bw = new BlobWriter(moduleBuilder.Assembly, this, bb);
 				bw.WriteCustomAttributeBlob();
 			}
 			return moduleBuilder.Blobs.Add(bb);
@@ -442,7 +447,7 @@ namespace IKVM.Reflection.Emit
 
 		internal void WriteNamedArgumentsForDeclSecurity(ModuleBuilder moduleBuilder, ByteBuffer bb)
 		{
-			BlobWriter bw = new BlobWriter(moduleBuilder, this, bb);
+			BlobWriter bw = new BlobWriter(moduleBuilder.Assembly, this, bb);
 			bw.WriteNamedArguments(true);
 		}
 
@@ -469,7 +474,7 @@ namespace IKVM.Reflection.Emit
 						namedArgs.Add(new CustomAttributeNamedArgument(namedFields[i], new CustomAttributeTypedArgument(namedFields[i].FieldType, fieldValues[i])));
 					}
 				}
-				return new CustomAttributeData(con, constructorArgs, namedArgs);
+				return new CustomAttributeData(asm.ManifestModule, con, constructorArgs, namedArgs);
 			}
 		}
 
@@ -488,6 +493,14 @@ namespace IKVM.Reflection.Emit
 			{
 				return ToData(asm).__ToBuilder();
 			}
+		}
+
+		internal byte[] GetBlob(Assembly asm)
+		{
+			ByteBuffer bb = new ByteBuffer(100);
+			BlobWriter bw = new BlobWriter(asm, this, bb);
+			bw.WriteCustomAttributeBlob();
+			return bb.ToArray();
 		}
 	}
 }

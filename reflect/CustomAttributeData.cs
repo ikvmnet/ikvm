@@ -34,8 +34,8 @@ namespace IKVM.Reflection
 	public sealed class CustomAttributeData
 	{
 		internal static readonly IList<CustomAttributeData> EmptyList = new List<CustomAttributeData>(0).AsReadOnly();
-		private Module module;
-		private int index;
+		private readonly Module module;
+		private readonly int index;
 		private ConstructorInfo lazyConstructor;
 		private IList<CustomAttributeTypedArgument> lazyConstructorArguments;
 		private IList<CustomAttributeNamedArgument> lazyNamedArguments;
@@ -46,8 +46,11 @@ namespace IKVM.Reflection
 			this.index = index;
 		}
 
-		internal CustomAttributeData(ConstructorInfo constructor, object[] args, List<CustomAttributeNamedArgument> namedArguments)
+		// this is for pseudo-custom attributes
+		internal CustomAttributeData(Module module, ConstructorInfo constructor, object[] args, List<CustomAttributeNamedArgument> namedArguments)
 		{
+			this.module = module;
+			this.index = -1;
 			this.lazyConstructor = constructor;
 			MethodSignature sig = constructor.MethodSignature;
 			List<CustomAttributeTypedArgument> list = new List<CustomAttributeTypedArgument>();
@@ -68,6 +71,8 @@ namespace IKVM.Reflection
 
 		internal CustomAttributeData(Assembly asm, ConstructorInfo constructor, ByteReader br)
 		{
+			this.module = asm.ManifestModule;
+			this.index = -1;
 			this.lazyConstructor = constructor;
 			if (br.Length == 0)
 			{
@@ -152,7 +157,7 @@ namespace IKVM.Reflection
 					// LAMESPEC there is an additional length here (probably of the named argument list)
 					ByteReader slice = br.Slice(br.ReadCompressedInt());
 					// LAMESPEC the count of named arguments is a compressed integer (instead of UInt16 as NumNamed in custom attributes)
-					list.Add(new CustomAttributeData(constructor, action, ReadNamedArguments(asm, slice, slice.ReadCompressedInt(), type)));
+					list.Add(new CustomAttributeData(asm, constructor, action, ReadNamedArguments(asm, slice, slice.ReadCompressedInt(), type)));
 				}
 			}
 			else
@@ -168,12 +173,14 @@ namespace IKVM.Reflection
 				List<CustomAttributeNamedArgument> args = new List<CustomAttributeNamedArgument>();
 				args.Add(new CustomAttributeNamedArgument(u.System_Security_Permissions_PermissionSetAttribute.GetProperty("XML"),
 					new CustomAttributeTypedArgument(u.System_String, xml)));
-				list.Add(new CustomAttributeData(constructor, action, args));
+				list.Add(new CustomAttributeData(asm, constructor, action, args));
 			}
 		}
 
-		private CustomAttributeData(ConstructorInfo constructor, int securityAction, IList<CustomAttributeNamedArgument> namedArguments)
+		private CustomAttributeData(Assembly asm, ConstructorInfo constructor, int securityAction, IList<CustomAttributeNamedArgument> namedArguments)
 		{
+			this.module = asm.ManifestModule;
+			this.index = -1;
 			Universe u = constructor.Module.universe;
 			this.lazyConstructor = constructor;
 			List<CustomAttributeTypedArgument> list = new List<CustomAttributeTypedArgument>();
@@ -397,7 +404,14 @@ namespace IKVM.Reflection
 
 		public byte[] __GetBlob()
 		{
-			return ((ModuleReader)module).GetBlobCopy(module.CustomAttribute.records[index].Value);
+			if (index == -1)
+			{
+				return __ToBuilder().GetBlob(module.Assembly);
+			}
+			else
+			{
+				return ((ModuleReader)module).GetBlobCopy(module.CustomAttribute.records[index].Value);
+			}
 		}
 
 		public ConstructorInfo Constructor
