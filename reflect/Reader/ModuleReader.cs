@@ -804,7 +804,7 @@ namespace IKVM.Reflection.Reader
 					}
 					type = type.BaseType;
 				} while (type != null);
-				throw new MissingFieldException(org.ToString(), name);
+				return universe.GetMissingFieldOrThrow(org, name, fieldSig);
 			}
 			else
 			{

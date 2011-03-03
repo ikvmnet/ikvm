@@ -1567,7 +1567,7 @@ namespace IKVM.Reflection
 			return null;
 		}
 
-		internal FieldInfo FindField(string name, FieldSignature signature)
+		internal virtual FieldInfo FindField(string name, FieldSignature signature)
 		{
 			foreach (FieldInfo field in __GetDeclaredFields())
 			{

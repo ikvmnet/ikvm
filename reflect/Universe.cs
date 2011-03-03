@@ -886,5 +886,14 @@ namespace IKVM.Reflection
 			}
 			throw new MissingMethodException(declaringType.ToString(), name);
 		}
+
+		internal FieldInfo GetMissingFieldOrThrow(Type declaringType, string name, FieldSignature signature)
+		{
+			if (resolveMissingMembers)
+			{
+				return new MissingField(declaringType, name, signature);
+			}
+			throw new MissingFieldException(declaringType.ToString(), name);
+		}
 	}
 }

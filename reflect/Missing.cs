@@ -360,6 +360,11 @@ namespace IKVM.Reflection
 			return method;
 		}
 
+		internal override FieldInfo FindField(string name, FieldSignature signature)
+		{
+			return new MissingField(this, name, signature);
+		}
+
 		internal override Type FindNestedType(TypeName name)
 		{
 			return null;
@@ -799,6 +804,127 @@ namespace IKVM.Reflection
 		public override int MetadataToken
 		{
 			get { return Forwarder.MetadataToken; }
+		}
+	}
+
+	sealed class MissingField : FieldInfo
+	{
+		private readonly Type declaringType;
+		private readonly string name;
+		private readonly FieldSignature signature;
+		private FieldInfo forwarder;
+
+		internal MissingField(Type declaringType, string name, FieldSignature signature)
+		{
+			this.declaringType = declaringType;
+			this.name = name;
+			this.signature = signature;
+		}
+
+		private FieldInfo Forwarder
+		{
+			get
+			{
+				FieldInfo field = TryGetForwarder();
+				if (field == null)
+				{
+					throw new MissingMemberException(this);
+				}
+				return field;
+			}
+		}
+
+		private FieldInfo TryGetForwarder()
+		{
+			if (forwarder == null && !declaringType.__IsMissing)
+			{
+				forwarder = declaringType.FindField(name, signature);
+			}
+			return forwarder;
+		}
+
+		public override bool __IsMissing
+		{
+			get { return TryGetForwarder() == null; }
+		}
+
+		public override FieldAttributes Attributes
+		{
+			get { return Forwarder.Attributes; }
+		}
+
+		public override void __GetDataFromRVA(byte[] data, int offset, int length)
+		{
+			Forwarder.__GetDataFromRVA(data, offset, length);
+		}
+
+		public override object GetRawConstantValue()
+		{
+			return Forwarder.GetRawConstantValue();
+		}
+
+		internal override FieldSignature FieldSignature
+		{
+			get { return signature; }
+		}
+
+		internal override int ImportTo(IKVM.Reflection.Emit.ModuleBuilder module)
+		{
+			FieldInfo field = TryGetForwarder();
+			if (field != null)
+			{
+				return field.ImportTo(module);
+			}
+			return module.ImportMethodOrField(declaringType, this.Name, this.FieldSignature);
+		}
+
+		public override string Name
+		{
+			get { return name; }
+		}
+
+		public override Type DeclaringType
+		{
+			get { return declaringType.IsModulePseudoType ? null : declaringType; }
+		}
+
+		public override Module Module
+		{
+			get { return declaringType.Module; }
+		}
+
+		internal override FieldInfo BindTypeParameters(Type type)
+		{
+			return Forwarder.BindTypeParameters(type);
+		}
+
+		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
+		{
+			return Forwarder.GetCustomAttributesData(attributeType);
+		}
+
+		public override int MetadataToken
+		{
+			get { return Forwarder.MetadataToken; }
+		}
+
+		public override bool Equals(object obj)
+		{
+			MissingField other = obj as MissingField;
+			return other != null
+				&& other.declaringType == declaringType
+				&& other.name == name
+				&& other.signature.Equals(signature);
+		}
+
+		public override int GetHashCode()
+		{
+			return declaringType.GetHashCode() ^ name.GetHashCode() ^ signature.GetHashCode();
+		}
+
+		public override string ToString()
+		{
+			return this.FieldType.Name + " " + this.Name;
 		}
 	}
 }
