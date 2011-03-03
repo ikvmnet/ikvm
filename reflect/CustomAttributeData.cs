@@ -395,8 +395,7 @@ namespace IKVM.Reflection
 			return true;
 		}
 
-		// for use by mcs
-		internal byte[] __GetBlob()
+		public byte[] __GetBlob()
 		{
 			return ((ModuleReader)module).GetBlobCopy(module.CustomAttribute.records[index].Value);
 		}
