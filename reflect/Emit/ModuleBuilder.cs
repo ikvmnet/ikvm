@@ -398,6 +398,11 @@ namespace IKVM.Reflection.Emit
 			bb.WriteCompressedInt(list.Count);
 			foreach (CustomAttributeBuilder cab in list)
 			{
+				if (cab.Constructor.Module != this)
+				{
+					// to make ildasm show the type properly, we need to have a TypeRef to the type
+					ImportType(cab.Constructor.DeclaringType);
+				}
 				bb.Write(cab.Constructor.DeclaringType.AssemblyQualifiedName);
 				namedArgs.Clear();
 				cab.WriteNamedArgumentsForDeclSecurity(this, namedArgs);
