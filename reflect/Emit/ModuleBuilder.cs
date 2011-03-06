@@ -603,7 +603,7 @@ namespace IKVM.Reflection.Emit
 			int token;
 			if (!typeTokens.TryGetValue(type, out token))
 			{
-				if (type.HasElementType || (!type.__IsMissing && type.IsGenericType && !type.IsGenericTypeDefinition))
+				if (type.HasElementType || type.IsGenericTypeInstance)
 				{
 					ByteBuffer spec = new ByteBuffer(5);
 					Signature.WriteTypeSpec(this, spec, type);

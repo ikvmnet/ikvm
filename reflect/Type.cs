@@ -308,6 +308,11 @@ namespace IKVM.Reflection
 			get { return false; }
 		}
 
+		internal virtual bool IsGenericTypeInstance
+		{
+			get { return false; }
+		}
+
 		public virtual bool ContainsGenericParameters
 		{
 			get
@@ -2421,6 +2426,11 @@ namespace IKVM.Reflection
 		}
 
 		public override bool IsGenericType
+		{
+			get { return true; }
+		}
+
+		internal override bool IsGenericTypeInstance
 		{
 			get { return true; }
 		}

@@ -173,7 +173,7 @@ namespace IKVM.Reflection
 				{
 					return this;
 				}
-				else if (declaringType.IsGenericType && !declaringType.IsGenericTypeDefinition)
+				else if (declaringType.IsGenericTypeInstance)
 				{
 					return new GenericMethodInstance(declaringType, method, null);
 				}
