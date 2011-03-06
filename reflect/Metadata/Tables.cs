@@ -1302,7 +1302,7 @@ namespace IKVM.Reflection.Metadata
 				}
 				records[i].Parent = token;
 			}
-			Array.Sort(records, 0, rowCount, this);
+			Sort(this);
 		}
 
 		int IComparer<Record>.Compare(Record x, Record y)
@@ -1725,7 +1725,7 @@ namespace IKVM.Reflection.Metadata
 				}
 				records[i].Association = token;
 			}
-			Array.Sort(records, 0, rowCount, this);
+			Sort(this);
 		}
 
 		int IComparer<Record>.Compare(Record x, Record y)
@@ -2592,7 +2592,7 @@ namespace IKVM.Reflection.Metadata
 			{
 				records[i].Owner = fixups[records[i].Owner - 1] + 1;
 			}
-			Array.Sort(records, 0, rowCount, this);
+			Sort(this);
 		}
 
 		int IComparer<Record>.Compare(Record x, Record y)
