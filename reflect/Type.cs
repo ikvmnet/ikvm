@@ -1237,7 +1237,7 @@ namespace IKVM.Reflection
 
 		public Type __MakeGenericType(Type[] typeArguments, Type[][] requiredCustomModifiers, Type[][] optionalCustomModifiers)
 		{
-			if (!this.IsGenericTypeDefinition)
+			if (!this.__IsMissing && !this.IsGenericTypeDefinition)
 			{
 				throw new InvalidOperationException();
 			}
