@@ -1322,19 +1322,6 @@ namespace IKVM.Reflection.Metadata
 			internal int Parent;
 		}
 
-		internal void AddOrReplaceRecord(Record rec)
-		{
-			for (int i = 0; i < records.Length; i++)
-			{
-				if (records[i].Parent == rec.Parent)
-				{
-					records[i] = rec;
-					return;
-				}
-			}
-			AddRecord(rec);
-		}
-
 		internal override void Read(MetadataReader mr)
 		{
 			for (int i = 0; i < records.Length; i++)
@@ -1367,19 +1354,6 @@ namespace IKVM.Reflection.Metadata
 		int IComparer<Record>.Compare(Record x, Record y)
 		{
 			return x.Parent == y.Parent ? 0 : (x.Parent > y.Parent ? 1 : -1);
-		}
-
-		internal void GetLayout(int token, ref int pack, ref int size)
-		{
-			for (int i = 0; i < rowCount; i++)
-			{
-				if (records[i].Parent == token)
-				{
-					pack = records[i].PackingSize;
-					size = records[i].ClassSize;
-					break;
-				}
-			}
 		}
 	}
 
