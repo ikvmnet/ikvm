@@ -38,7 +38,7 @@ namespace IKVM.Reflection.Emit
 	public sealed class ModuleBuilder : Module, ITypeOwner
 	{
 		private static readonly bool usePublicKeyAssemblyReference = false;
-		private readonly Guid mvid = Guid.NewGuid();
+		private Guid mvid = Guid.NewGuid();
 		private long imageBaseAddress = 0x00400000;
 		private readonly AssemblyBuilder asm;
 		internal readonly string moduleName;
@@ -1082,6 +1082,11 @@ namespace IKVM.Reflection.Emit
 		public override Guid ModuleVersionId
 		{
 			get { return mvid; }
+		}
+
+		public void __SetModuleVersionId(Guid guid)
+		{
+			mvid = guid;
 		}
 
 		public override Type[] __ResolveOptionalParameterTypes(int metadataToken)
