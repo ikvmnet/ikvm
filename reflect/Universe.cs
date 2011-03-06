@@ -151,6 +151,10 @@ namespace IKVM.Reflection
 
 		private Type ImportMscorlibType(System.Type type)
 		{
+			if (Mscorlib.__IsMissing)
+			{
+				return Mscorlib.ResolveType(new TypeName(type.Namespace, type.Name));
+			}
 			// We use FindType instead of ResolveType here, because on some versions of mscorlib some of
 			// the special types we use/support are missing and the type properties are defined to
 			// return null in that case.
