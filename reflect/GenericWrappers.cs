@@ -259,6 +259,11 @@ namespace IKVM.Reflection
 			System.Diagnostics.Debug.Assert(methodArgs == null);
 			return new GenericMethodInstance(declaringType.BindTypeParameters(type), method, null);
 		}
+
+		internal override bool HasThis
+		{
+			get { return method.HasThis; }
+		}
 	}
 
 	sealed class GenericFieldInstance : FieldInfo
