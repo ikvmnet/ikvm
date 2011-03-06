@@ -313,7 +313,22 @@ namespace IKVM.Reflection
 				// there are broken compilers that emit an extra NUL character after the type name
 				typeName = typeName.Substring(0, typeName.Length - 1);
 			}
-			return asm.universe.GetType(asm, typeName, true);
+			// we have to use a custom type resolution scheme here, because we want to use ResolveType
+			// (to get a missing type, should that be enabled)
+			TypeNameParser parser = TypeNameParser.Parse(typeName, true);
+			TypeName n = TypeName.Split(parser.FirstNamePart);
+			Type type;
+			if (parser.AssemblyName != null)
+			{
+				type = asm.universe.Load(parser.AssemblyName, asm, true).ResolveType(n);
+			}
+			else
+			{
+				type = asm.FindType(n)
+					?? asm.universe.Mscorlib.FindType(n)
+					?? asm.ResolveType(n);
+			}
+			return parser.Expand(type, asm, true, typeName);
 		}
 
 		private static IList<CustomAttributeTypedArgument> ReadConstructorArguments(Assembly asm, ByteReader br, ConstructorInfo constructor)
