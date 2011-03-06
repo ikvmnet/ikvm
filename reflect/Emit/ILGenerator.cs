@@ -236,6 +236,13 @@ namespace IKVM.Reflection.Emit
 			exceptionBlockAssistanceMode = EBAM_CLEVER;
 		}
 
+		// non-standard API
+		public int __MaxStackSize
+		{
+			get { return maxStack; }
+			set { maxStack = (ushort)value; }
+		}
+
 		// new in .NET 4.0
 		public int ILOffset
 		{
