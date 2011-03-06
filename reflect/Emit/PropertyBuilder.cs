@@ -37,7 +37,7 @@ namespace IKVM.Reflection.Emit
 		private PropertySignature sig;
 		private MethodBuilder getter;
 		private MethodBuilder setter;
-		private List<MethodBuilder> otherMethods;
+		private readonly List<MethodBuilder> accessors = new List<MethodBuilder>();
 		private int lazyPseudoToken;
 		private bool patchCallingConvention;
 
@@ -66,23 +66,23 @@ namespace IKVM.Reflection.Emit
 		public void SetGetMethod(MethodBuilder mdBuilder)
 		{
 			PatchCallingConvention(mdBuilder);
+			accessors.Remove(getter);
 			getter = mdBuilder;
+			accessors.Add(mdBuilder);
 		}
 
 		public void SetSetMethod(MethodBuilder mdBuilder)
 		{
 			PatchCallingConvention(mdBuilder);
+			accessors.Remove(setter);
 			setter = mdBuilder;
+			accessors.Add(mdBuilder);
 		}
 
 		public void AddOtherMethod(MethodBuilder mdBuilder)
 		{
 			PatchCallingConvention(mdBuilder);
-			if (otherMethods == null)
-			{
-				otherMethods = new List<MethodBuilder>();
-			}
-			otherMethods.Add(mdBuilder);
+			accessors.Add(mdBuilder);
 		}
 
 		public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
@@ -146,9 +146,9 @@ namespace IKVM.Reflection.Emit
 			List<MethodInfo> list = new List<MethodInfo>();
 			AddAccessor(list, nonPublic, getter);
 			AddAccessor(list, nonPublic, setter);
-			if (otherMethods != null)
+			if (accessors != null)
 			{
-				foreach (MethodInfo method in otherMethods)
+				foreach (MethodInfo method in accessors)
 				{
 					AddAccessor(list, nonPublic, method);
 				}
@@ -202,20 +202,22 @@ namespace IKVM.Reflection.Emit
 				typeBuilder.ModuleBuilder.RegisterTokenFixup(lazyPseudoToken, token);
 			}
 
-			if (getter != null)
+			foreach (MethodBuilder method in accessors)
 			{
-				AddMethodSemantics(MethodSemanticsTable.Getter, getter.MetadataToken, token);
-			}
-			if (setter != null)
-			{
-				AddMethodSemantics(MethodSemanticsTable.Setter, setter.MetadataToken, token);
-			}
-			if (otherMethods != null)
-			{
-				foreach (MethodBuilder method in otherMethods)
+				short semantics;
+				if (method == getter)
 				{
-					AddMethodSemantics(MethodSemanticsTable.Other, method.MetadataToken, token);
+					semantics = MethodSemanticsTable.Getter;
 				}
+				else if (method == setter)
+				{
+					semantics = MethodSemanticsTable.Setter;
+				}
+				else
+				{
+					semantics = MethodSemanticsTable.Other;
+				}
+				AddMethodSemantics(semantics, method.MetadataToken, token);
 			}
 		}
 
@@ -232,18 +234,11 @@ namespace IKVM.Reflection.Emit
 		{
 			get
 			{
-				if ((getter != null && getter.IsPublic) || (setter != null && setter.IsPublic))
+				foreach (MethodBuilder method in accessors)
 				{
-					return true;
-				}
-				if (otherMethods != null)
-				{
-					foreach (MethodBuilder method in otherMethods)
+					if (method.IsPublic)
 					{
-						if (method.IsPublic)
-						{
-							return true;
-						}
+						return true;
 					}
 				}
 				return false;
@@ -254,18 +249,11 @@ namespace IKVM.Reflection.Emit
 		{
 			get
 			{
-				if ((getter != null && getter.IsStatic) || (setter != null && setter.IsStatic))
+				foreach (MethodBuilder method in accessors)
 				{
-					return true;
-				}
-				if (otherMethods != null)
-				{
-					foreach (MethodBuilder method in otherMethods)
+					if (method.IsStatic)
 					{
-						if (method.IsStatic)
-						{
-							return true;
-						}
+						return true;
 					}
 				}
 				return false;
