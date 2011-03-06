@@ -536,7 +536,7 @@ namespace IKVM.Reflection
 			}
 			else
 			{
-				return Import(type.Assembly).GetType(type.FullName);
+				return Import(type.Assembly).ResolveType(new TypeName(type.Namespace, type.Name));
 			}
 		}
 
