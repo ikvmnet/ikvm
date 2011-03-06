@@ -687,7 +687,7 @@ namespace IKVM.Reflection.Emit
 		private int FindOrAddAssemblyRef(AssemblyName name)
 		{
 			AssemblyRefTable.Record rec = new AssemblyRefTable.Record();
-			Version ver = name.Version;
+			Version ver = name.Version ?? new Version(0, 0, 0, 0);
 			rec.MajorVersion = (ushort)ver.Major;
 			rec.MinorVersion = (ushort)ver.Minor;
 			rec.BuildNumber = (ushort)ver.Build;
@@ -700,7 +700,7 @@ namespace IKVM.Reflection.Emit
 			}
 			if (publicKeyOrToken == null || publicKeyOrToken.Length == 0)
 			{
-				publicKeyOrToken = name.GetPublicKeyToken();
+				publicKeyOrToken = name.GetPublicKeyToken() ?? Empty<byte>.Array;
 			}
 			else
 			{
