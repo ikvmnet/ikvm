@@ -210,7 +210,7 @@ namespace IKVM.Reflection.Emit
 			TypeBuilder typeBuilder = __DefineType(ns, name);
 			typeBuilder.__SetAttributes(attr);
 			typeBuilder.SetParent(parent);
-			SetPackingSizeAndTypeSize(typeBuilder, packingSize, typesize);
+			typeBuilder.SetPackingSizeAndTypeSize(packingSize, typesize);
 			return typeBuilder;
 		}
 
@@ -224,18 +224,6 @@ namespace IKVM.Reflection.Emit
 			TypeBuilder typeBuilder = new TypeBuilder(owner, ns, name);
 			types.Add(typeBuilder);
 			return typeBuilder;
-		}
-
-		internal void SetPackingSizeAndTypeSize(TypeBuilder typeBuilder, PackingSize packingSize, int typesize)
-		{
-			if (packingSize != PackingSize.Unspecified || typesize != 0)
-			{
-				ClassLayoutTable.Record rec = new ClassLayoutTable.Record();
-				rec.PackingSize = (short)packingSize;
-				rec.ClassSize = typesize;
-				rec.Parent = typeBuilder.MetadataToken;
-				this.ClassLayout.AddRecord(rec);
-			}
 		}
 
 		public EnumBuilder DefineEnum(string name, TypeAttributes visibility, Type underlyingType)
