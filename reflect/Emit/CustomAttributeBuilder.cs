@@ -308,6 +308,58 @@ namespace IKVM.Reflection.Emit
 				{
 					WriteByte(0x51);
 				}
+				else if (type == u.System_Boolean)
+				{
+					WriteByte(0x02);
+				}
+				else if (type == u.System_Char)
+				{
+					WriteByte(0x03);
+				}
+				else if (type == u.System_SByte)
+				{
+					WriteByte(0x04);
+				}
+				else if (type == u.System_Byte)
+				{
+					WriteByte(0x05);
+				}
+				else if (type == u.System_Int16)
+				{
+					WriteByte(0x06);
+				}
+				else if (type == u.System_UInt16)
+				{
+					WriteByte(0x07);
+				}
+				else if (type == u.System_Int32)
+				{
+					WriteByte(0x08);
+				}
+				else if (type == u.System_UInt32)
+				{
+					WriteByte(0x09);
+				}
+				else if (type == u.System_Int64)
+				{
+					WriteByte(0x0A);
+				}
+				else if (type == u.System_UInt64)
+				{
+					WriteByte(0x0B);
+				}
+				else if (type == u.System_Single)
+				{
+					WriteByte(0x0C);
+				}
+				else if (type == u.System_Double)
+				{
+					WriteByte(0x0D);
+				}
+				else if (type == u.System_String)
+				{
+					WriteByte(0x0E);
+				}
 				else if (type.IsArray)
 				{
 					WriteByte(0x1D);
@@ -320,50 +372,7 @@ namespace IKVM.Reflection.Emit
 				}
 				else
 				{
-					switch (Type.GetTypeCode(type))
-					{
-						case TypeCode.Boolean:
-							WriteByte(0x02);
-							break;
-						case TypeCode.Char:
-							WriteByte(0x03);
-							break;
-						case TypeCode.SByte:
-							WriteByte(0x04);
-							break;
-						case TypeCode.Byte:
-							WriteByte(0x05);
-							break;
-						case TypeCode.Int16:
-							WriteByte(0x06);
-							break;
-						case TypeCode.UInt16:
-							WriteByte(0x07);
-							break;
-						case TypeCode.Int32:
-							WriteByte(0x08);
-							break;
-						case TypeCode.UInt32:
-							WriteByte(0x09);
-							break;
-						case TypeCode.Int64:
-							WriteByte(0x0A);
-							break;
-						case TypeCode.UInt64:
-							WriteByte(0x0B);
-							break;
-						case TypeCode.Single:
-							WriteByte(0x0C);
-							break;
-						case TypeCode.Double:
-							WriteByte(0x0D);
-							break;
-						case TypeCode.String:
-							WriteByte(0x0E);
-							break;
-						default:
-							throw new ArgumentException();
-					}
+					throw new ArgumentException();
 				}
 			}
 		}
