@@ -82,15 +82,18 @@ namespace IKVM.Reflection
 
 		private static Type ReadGenericInst(ModuleReader module, ByteReader br, IGenericContext context)
 		{
+			Type type;
 			switch (br.ReadByte())
 			{
 				case ELEMENT_TYPE_CLASS:
+					type = ReadTypeDefOrRefEncoded(module, br, context).MarkNotValueType();
+					break;
 				case ELEMENT_TYPE_VALUETYPE:
+					type = ReadTypeDefOrRefEncoded(module, br, context).MarkValueType();
 					break;
 				default:
 					throw new BadImageFormatException();
 			}
-			Type type = ReadTypeDefOrRefEncoded(module, br, context);
 			if (!type.__IsMissing && !type.IsGenericTypeDefinition)
 			{
 				throw new BadImageFormatException();
