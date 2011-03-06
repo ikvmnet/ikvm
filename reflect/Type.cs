@@ -1636,6 +1636,16 @@ namespace IKVM.Reflection
 			typeFlags |= TypeFlags.ValueType;
 			return this;
 		}
+
+		internal ConstructorInfo GetPseudoCustomAttributeConstructor(params Type[] parameterTypes)
+		{
+			Universe u = this.Module.universe;
+			MethodSignature methodSig = MethodSignature.MakeFromBuilder(u.System_Void, parameterTypes, null, CallingConventions.Standard | CallingConventions.HasThis, 0);
+			MethodBase mb =
+				FindMethod(".ctor", methodSig) ??
+				u.GetMissingMethodOrThrow(this, ".ctor", methodSig);
+			return (ConstructorInfo)mb;
+		}
 	}
 
 	abstract class ElementHolderType : Type

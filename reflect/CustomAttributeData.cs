@@ -46,7 +46,7 @@ namespace IKVM.Reflection
 			this.index = index;
 		}
 
-		// this is for pseudo-custom attributes
+		// this is for pseudo-custom attributes and CustomAttributeBuilder.ToData()
 		internal CustomAttributeData(Module module, ConstructorInfo constructor, object[] args, List<CustomAttributeNamedArgument> namedArguments)
 		{
 			this.module = module;
@@ -148,11 +148,11 @@ namespace IKVM.Reflection
 					ConstructorInfo constructor;
 					if (type == u.System_Security_Permissions_HostProtectionAttribute && action == (int)System.Security.Permissions.SecurityAction.LinkDemand)
 					{
-						constructor = type.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, Type.EmptyTypes, null);
+						constructor = type.GetPseudoCustomAttributeConstructor();
 					}
 					else
 					{
-						constructor = type.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { u.System_Security_Permissions_SecurityAction }, null);
+						constructor = type.GetPseudoCustomAttributeConstructor(u.System_Security_Permissions_SecurityAction);
 					}
 					// LAMESPEC there is an additional length here (probably of the named argument list)
 					ByteReader slice = br.Slice(br.ReadCompressedInt());
