@@ -546,6 +546,12 @@ namespace IKVM.Reflection
 				}
 				return Import(type.GetGenericTypeDefinition()).MakeGenericType(importedArgs);
 			}
+			else if (type.IsNested)
+			{
+				// note that we can't pass in the namespace here, because .NET's Type.Namespace implementation is broken for nested types
+				// (it returns the namespace of the declaring type)
+				return Import(type.DeclaringType).ResolveNestedType(new TypeName(null, type.Name));
+			}
 			else
 			{
 				return Import(type.Assembly).ResolveType(new TypeName(type.Namespace, type.Name));
