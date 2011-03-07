@@ -341,6 +341,7 @@ namespace IKVM.Reflection
 		private readonly Type declaringType;
 		private readonly string ns;
 		private readonly string name;
+		private Type[] typeArgs;
 
 		internal MissingType(Module module, Type declaringType, string ns, string name)
 		{
@@ -506,6 +507,19 @@ namespace IKVM.Reflection
 			get { throw new MissingMemberException(this); }
 		}
 
+		internal override Type GetGenericTypeArgument(int index)
+		{
+			if (typeArgs == null)
+			{
+				typeArgs = new Type[index + 1];
+			}
+			else if (typeArgs.Length <= index)
+			{
+				Array.Resize(ref typeArgs, index + 1);
+			}
+			return typeArgs[index] ?? (typeArgs[index] = new MissingTypeParameter(this, index));
+		}
+
 		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
 		{
 			throw new MissingMemberException(this);
@@ -517,12 +531,50 @@ namespace IKVM.Reflection
 		}
 	}
 
+	sealed class MissingTypeParameter : IKVM.Reflection.Reader.TypeParameterType
+	{
+		private readonly MemberInfo owner;
+		private readonly int index;
+
+		internal MissingTypeParameter(MemberInfo owner, int index)
+		{
+			this.owner = owner;
+			this.index = index;
+		}
+
+		public override Module Module
+		{
+			get { return owner.Module; }
+		}
+
+		public override string Name
+		{
+			get { return null; }
+		}
+
+		public override int GenericParameterPosition
+		{
+			get { return index; }
+		}
+
+		public override MethodBase DeclaringMethod
+		{
+			get { return owner as MethodBase; }
+		}
+
+		public override Type DeclaringType
+		{
+			get { return owner as Type; }
+		}
+	}
+
 	sealed class MissingMethod : MethodInfo
 	{
 		private readonly Type declaringType;
 		private readonly string name;
 		private readonly MethodSignature signature;
 		private MethodInfo forwarder;
+		private Type[] typeArgs;
 
 		internal MissingMethod(Type declaringType, string name, MethodSignature signature)
 		{
@@ -743,7 +795,12 @@ namespace IKVM.Reflection
 
 		internal override MethodBase BindTypeParameters(Type type)
 		{
-			return Forwarder.BindTypeParameters(type);
+			MethodInfo forwarder = TryGetForwarder();
+			if (forwarder != null)
+			{
+				return forwarder.BindTypeParameters(type);
+			}
+			return new GenericMethodInstance(type, this, null);
 		}
 
 		public override bool ContainsGenericParameters
@@ -763,7 +820,20 @@ namespace IKVM.Reflection
 
 		internal override Type GetGenericMethodArgument(int index)
 		{
-			return Forwarder.GetGenericMethodArgument(index);
+			MethodInfo method = TryGetForwarder();
+			if (method != null)
+			{
+				return method.GetGenericMethodArgument(index);
+			}
+			if (typeArgs == null)
+			{
+				typeArgs = new Type[index + 1];
+			}
+			else if (typeArgs.Length <= index)
+			{
+				Array.Resize(ref typeArgs, index + 1);
+			}
+			return typeArgs[index] ?? (typeArgs[index] = new MissingTypeParameter(this, index));
 		}
 
 		internal override int GetGenericMethodArgumentCount()
@@ -798,7 +868,12 @@ namespace IKVM.Reflection
 
 		public override MethodInfo MakeGenericMethod(params Type[] typeArguments)
 		{
-			return Forwarder.MakeGenericMethod(typeArguments);
+			MethodInfo method = TryGetForwarder();
+			if (method != null)
+			{
+				return method.MakeGenericMethod(typeArguments);
+			}
+			return new GenericMethodInstance(declaringType, this, typeArguments);
 		}
 
 		public override int MetadataToken
@@ -895,7 +970,12 @@ namespace IKVM.Reflection
 
 		internal override FieldInfo BindTypeParameters(Type type)
 		{
-			return Forwarder.BindTypeParameters(type);
+			FieldInfo forwarder = TryGetForwarder();
+			if (forwarder != null)
+			{
+				return forwarder.BindTypeParameters(type);
+			}
+			return new GenericFieldInstance(type, this);
 		}
 
 		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
