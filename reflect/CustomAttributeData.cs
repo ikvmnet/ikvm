@@ -34,19 +34,68 @@ namespace IKVM.Reflection
 	public sealed class CustomAttributeData
 	{
 		internal static readonly IList<CustomAttributeData> EmptyList = new List<CustomAttributeData>(0).AsReadOnly();
+
+		/*
+		 * There are several states a CustomAttributeData object can be in:
+		 * 
+		 * 1) Unresolved Custom Attribute
+		 *    - index >= 0
+		 *    - declSecurityBlob == null
+		 *    - lazyConstructor = null
+		 *    - lazyConstructorArguments = null
+		 *    - lazyNamedArguments = null
+		 * 
+		 * 2) Resolved Custom Attribute
+		 *    - index >= 0
+		 *    - declSecurityBlob == null
+		 *    - lazyConstructor != null
+		 *    - lazyConstructorArguments != null
+		 *    - lazyNamedArguments != null
+		 *    
+		 * 3) Pre-resolved Custom Attribute
+		 *    - index = -1
+		 *    - declSecurityBlob == null
+		 *    - lazyConstructor != null
+		 *    - lazyConstructorArguments != null
+		 *    - lazyNamedArguments != null
+		 *    
+		 * 4) Pseudo Custom Attribute, .NET 1.x declarative security or result of CustomAttributeBuilder.ToData()
+		 *    - index = -1
+		 *    - declSecurityBlob == null
+		 *    - lazyConstructor != null
+		 *    - lazyConstructorArguments != null
+		 *    - lazyNamedArguments != null
+		 *    
+		 * 5) Unresolved declarative security
+		 *    - index = -1
+		 *    - declSecurityBlob != null
+		 *    - lazyConstructor != null
+		 *    - lazyConstructorArguments != null
+		 *    - lazyNamedArguments == null
+		 * 
+		 * 6) Resolved declarative security
+		 *    - index = -1
+		 *    - declSecurityBlob == null
+		 *    - lazyConstructor != null
+		 *    - lazyConstructorArguments != null
+		 *    - lazyNamedArguments != null
+		 * 
+		 */
 		private readonly Module module;
 		private readonly int index;
+		private readonly byte[] declSecurityBlob;
 		private ConstructorInfo lazyConstructor;
 		private IList<CustomAttributeTypedArgument> lazyConstructorArguments;
 		private IList<CustomAttributeNamedArgument> lazyNamedArguments;
 
+		// 1) Unresolved Custom Attribute
 		internal CustomAttributeData(Module module, int index)
 		{
 			this.module = module;
 			this.index = index;
 		}
 
-		// this is for pseudo-custom attributes and CustomAttributeBuilder.ToData()
+		// 4) Pseudo Custom Attribute, .NET 1.x declarative security or result of CustomAttributeBuilder.ToData()
 		internal CustomAttributeData(Module module, ConstructorInfo constructor, object[] args, List<CustomAttributeNamedArgument> namedArguments)
 		{
 			this.module = module;
@@ -69,6 +118,7 @@ namespace IKVM.Reflection
 			}
 		}
 
+		// 3) Pre-resolved Custom Attribute
 		internal CustomAttributeData(Assembly asm, ConstructorInfo constructor, ByteReader br)
 		{
 			this.module = asm.ManifestModule;
@@ -145,19 +195,10 @@ namespace IKVM.Reflection
 				for (int j = 0; j < count; j++)
 				{
 					Type type = ReadType(asm, br);
-					ConstructorInfo constructor;
-					if (type == u.System_Security_Permissions_HostProtectionAttribute && action == (int)System.Security.Permissions.SecurityAction.LinkDemand)
-					{
-						constructor = type.GetPseudoCustomAttributeConstructor();
-					}
-					else
-					{
-						constructor = type.GetPseudoCustomAttributeConstructor(u.System_Security_Permissions_SecurityAction);
-					}
+					ConstructorInfo constructor = type.GetPseudoCustomAttributeConstructor(u.System_Security_Permissions_SecurityAction);
 					// LAMESPEC there is an additional length here (probably of the named argument list)
-					ByteReader slice = br.Slice(br.ReadCompressedInt());
-					// LAMESPEC the count of named arguments is a compressed integer (instead of UInt16 as NumNamed in custom attributes)
-					list.Add(new CustomAttributeData(asm, constructor, action, ReadNamedArguments(asm, slice, slice.ReadCompressedInt(), type)));
+					byte[] blob = br.ReadBytes(br.ReadCompressedInt());
+					list.Add(new CustomAttributeData(asm, constructor, action, blob));
 				}
 			}
 			else
@@ -173,11 +214,12 @@ namespace IKVM.Reflection
 				List<CustomAttributeNamedArgument> args = new List<CustomAttributeNamedArgument>();
 				args.Add(new CustomAttributeNamedArgument(u.System_Security_Permissions_PermissionSetAttribute.GetProperty("XML"),
 					new CustomAttributeTypedArgument(u.System_String, xml)));
-				list.Add(new CustomAttributeData(asm, constructor, action, args));
+				list.Add(new CustomAttributeData(asm.ManifestModule, constructor, new object[] { action }, args));
 			}
 		}
 
-		private CustomAttributeData(Assembly asm, ConstructorInfo constructor, int securityAction, IList<CustomAttributeNamedArgument> namedArguments)
+		// 5) Unresolved declarative security
+		internal CustomAttributeData(Assembly asm, ConstructorInfo constructor, int securityAction, byte[] blob)
 		{
 			this.module = asm.ManifestModule;
 			this.index = -1;
@@ -186,7 +228,7 @@ namespace IKVM.Reflection
 			List<CustomAttributeTypedArgument> list = new List<CustomAttributeTypedArgument>();
 			list.Add(new CustomAttributeTypedArgument(u.System_Security_Permissions_SecurityAction, securityAction));
 			this.lazyConstructorArguments =  list.AsReadOnly();
-			this.lazyNamedArguments = namedArguments;
+			this.declSecurityBlob = blob;
 		}
 
 		private static Type ReadFieldOrPropType(Assembly asm, ByteReader br)
@@ -419,7 +461,11 @@ namespace IKVM.Reflection
 
 		public byte[] __GetBlob()
 		{
-			if (index == -1)
+			if (declSecurityBlob != null)
+			{
+				return (byte[])declSecurityBlob.Clone();
+			}
+			else if (index == -1)
 			{
 				return __ToBuilder().GetBlob(module.Assembly);
 			}
@@ -459,7 +505,18 @@ namespace IKVM.Reflection
 			{
 				if (lazyNamedArguments == null)
 				{
-					LazyParseArguments();
+					if (index >= 0)
+					{
+						// 1) Unresolved Custom Attribute
+						LazyParseArguments();
+					}
+					else
+					{
+						// 5) Unresolved declarative security
+						ByteReader br = new ByteReader(declSecurityBlob, 0, declSecurityBlob.Length);
+						// LAMESPEC the count of named arguments is a compressed integer (instead of UInt16 as NumNamed in custom attributes)
+						lazyNamedArguments = ReadNamedArguments(module.Assembly, br, br.ReadCompressedInt(), Constructor.DeclaringType);
+					}
 				}
 				return lazyNamedArguments;
 			}
