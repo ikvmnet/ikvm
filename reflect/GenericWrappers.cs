@@ -185,6 +185,11 @@ namespace IKVM.Reflection
 			throw new InvalidOperationException();
 		}
 
+		public override MethodBase __GetMethodOnTypeDefinition()
+		{
+			return method;
+		}
+
 		public override Type[] GetGenericArguments()
 		{
 			if (methodArgs == null)
