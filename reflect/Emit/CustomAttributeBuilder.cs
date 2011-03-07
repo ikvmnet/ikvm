@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2008 Jeroen Frijters
+  Copyright (C) 2008-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -45,6 +45,13 @@ namespace IKVM.Reflection.Emit
 			this.blob = blob;
 		}
 
+		private CustomAttributeBuilder(ConstructorInfo con, int securityAction, byte[] blob)
+		{
+			this.con = con;
+			this.blob = blob;
+			this.constructorArgs = new object[] { securityAction };
+		}
+
 		public CustomAttributeBuilder(ConstructorInfo con, object[] constructorArgs)
 			: this(con, constructorArgs, null, null, null,null)
 		{
@@ -73,6 +80,11 @@ namespace IKVM.Reflection.Emit
 		public static CustomAttributeBuilder __FromBlob(ConstructorInfo con, byte[] blob)
 		{
 			return new CustomAttributeBuilder(con, blob);
+		}
+
+		public static CustomAttributeBuilder __FromBlob(ConstructorInfo con, int securityAction, byte[] blob)
+		{
+			return new CustomAttributeBuilder(con, securityAction, blob);
 		}
 
 		private sealed class BlobWriter
@@ -456,14 +468,25 @@ namespace IKVM.Reflection.Emit
 
 		internal void WriteNamedArgumentsForDeclSecurity(ModuleBuilder moduleBuilder, ByteBuffer bb)
 		{
-			BlobWriter bw = new BlobWriter(moduleBuilder.Assembly, this, bb);
-			bw.WriteNamedArguments(true);
+			if (blob != null)
+			{
+				bb.Write(blob);
+			}
+			else
+			{
+				BlobWriter bw = new BlobWriter(moduleBuilder.Assembly, this, bb);
+				bw.WriteNamedArguments(true);
+			}
 		}
 
 		internal CustomAttributeData ToData(Assembly asm)
 		{
 			if (blob != null)
 			{
+				if (constructorArgs != null)
+				{
+					return new CustomAttributeData(asm, con, (int)constructorArgs[0], blob);
+				}
 				return new CustomAttributeData(asm, con, new IKVM.Reflection.Reader.ByteReader(blob, 0, blob.Length));
 			}
 			else
