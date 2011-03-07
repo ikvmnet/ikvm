@@ -282,6 +282,54 @@ namespace IKVM.Reflection
 			{
 				return new CustomAttributeTypedArgument(type, br.ReadString());
 			}
+			else if (type == u.System_Boolean)
+			{
+				return new CustomAttributeTypedArgument(type, br.ReadByte() != 0);
+			}
+			else if (type == u.System_Char)
+			{
+				return new CustomAttributeTypedArgument(type, br.ReadChar());
+			}
+			else if (type == u.System_Single)
+			{
+				return new CustomAttributeTypedArgument(type, br.ReadSingle());
+			}
+			else if (type == u.System_Double)
+			{
+				return new CustomAttributeTypedArgument(type, br.ReadDouble());
+			}
+			else if (type == u.System_SByte)
+			{
+				return new CustomAttributeTypedArgument(type, br.ReadSByte());
+			}
+			else if (type == u.System_Int16)
+			{
+				return new CustomAttributeTypedArgument(type, br.ReadInt16());
+			}
+			else if (type == u.System_Int32)
+			{
+				return new CustomAttributeTypedArgument(type, br.ReadInt32());
+			}
+			else if (type == u.System_Int64)
+			{
+				return new CustomAttributeTypedArgument(type, br.ReadInt64());
+			}
+			else if (type == u.System_Byte)
+			{
+				return new CustomAttributeTypedArgument(type, br.ReadByte());
+			}
+			else if (type == u.System_UInt16)
+			{
+				return new CustomAttributeTypedArgument(type, br.ReadUInt16());
+			}
+			else if (type == u.System_UInt32)
+			{
+				return new CustomAttributeTypedArgument(type, br.ReadUInt32());
+			}
+			else if (type == u.System_UInt64)
+			{
+				return new CustomAttributeTypedArgument(type, br.ReadUInt64());
+			}
 			else if (type == u.System_Type)
 			{
 				return new CustomAttributeTypedArgument(type, ReadType(asm, br));
@@ -311,35 +359,7 @@ namespace IKVM.Reflection
 			}
 			else
 			{
-				switch (Type.GetTypeCode(type))
-				{
-					case TypeCode.Boolean:
-						return new CustomAttributeTypedArgument(type, br.ReadByte() != 0);
-					case TypeCode.Char:
-						return new CustomAttributeTypedArgument(type, br.ReadChar());
-					case TypeCode.Single:
-						return new CustomAttributeTypedArgument(type, br.ReadSingle());
-					case TypeCode.Double:
-						return new CustomAttributeTypedArgument(type, br.ReadDouble());
-					case TypeCode.SByte:
-						return new CustomAttributeTypedArgument(type, br.ReadSByte());
-					case TypeCode.Int16:
-						return new CustomAttributeTypedArgument(type, br.ReadInt16());
-					case TypeCode.Int32:
-						return new CustomAttributeTypedArgument(type, br.ReadInt32());
-					case TypeCode.Int64:
-						return new CustomAttributeTypedArgument(type, br.ReadInt64());
-					case TypeCode.Byte:
-						return new CustomAttributeTypedArgument(type, br.ReadByte());
-					case TypeCode.UInt16:
-						return new CustomAttributeTypedArgument(type, br.ReadUInt16());
-					case TypeCode.UInt32:
-						return new CustomAttributeTypedArgument(type, br.ReadUInt32());
-					case TypeCode.UInt64:
-						return new CustomAttributeTypedArgument(type, br.ReadUInt64());
-					default:
-						throw new InvalidOperationException();
-				}
+				throw new InvalidOperationException();
 			}
 		}
 

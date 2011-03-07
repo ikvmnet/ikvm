@@ -178,6 +178,54 @@ namespace IKVM.Reflection.Emit
 				{
 					WriteString((string)value);
 				}
+				else if (type == u.System_Boolean)
+				{
+					WriteByte((bool)value ? (byte)1 : (byte)0);
+				}
+				else if (type == u.System_Char)
+				{
+					WriteUInt16((char)value);
+				}
+				else if (type == u.System_SByte)
+				{
+					WriteByte((byte)(sbyte)value);
+				}
+				else if (type == u.System_Byte)
+				{
+					WriteByte((byte)value);
+				}
+				else if (type == u.System_Int16)
+				{
+					WriteUInt16((ushort)(short)value);
+				}
+				else if (type == u.System_UInt16)
+				{
+					WriteUInt16((ushort)value);
+				}
+				else if (type == u.System_Int32)
+				{
+					WriteInt32((int)value);
+				}
+				else if (type == u.System_UInt32)
+				{
+					WriteInt32((int)(uint)value);
+				}
+				else if (type == u.System_Int64)
+				{
+					WriteInt64((long)value);
+				}
+				else if (type == u.System_UInt64)
+				{
+					WriteInt64((long)(ulong)value);
+				}
+				else if (type == u.System_Single)
+				{
+					WriteSingle((float)value);
+				}
+				else if (type == u.System_Double)
+				{
+					WriteDouble((double)value);
+				}
 				else if (type == u.System_Type)
 				{
 					WriteTypeName((Type)value);
@@ -223,47 +271,7 @@ namespace IKVM.Reflection.Emit
 				}
 				else
 				{
-					switch (Type.GetTypeCode(type))
-					{
-						case TypeCode.Boolean:
-							WriteByte((bool)value ? (byte)1 : (byte)0);
-							break;
-						case TypeCode.Char:
-							WriteUInt16((char)value);
-							break;
-						case TypeCode.SByte:
-							WriteByte((byte)(sbyte)value);
-							break;
-						case TypeCode.Byte:
-							WriteByte((byte)value);
-							break;
-						case TypeCode.Int16:
-							WriteUInt16((ushort)(short)value);
-							break;
-						case TypeCode.UInt16:
-							WriteUInt16((ushort)value);
-							break;
-						case TypeCode.Int32:
-							WriteInt32((int)value);
-							break;
-						case TypeCode.UInt32:
-							WriteInt32((int)(uint)value);
-							break;
-						case TypeCode.Int64:
-							WriteInt64((long)value);
-							break;
-						case TypeCode.UInt64:
-							WriteInt64((long)(ulong)value);
-							break;
-						case TypeCode.Single:
-							WriteSingle((float)value);
-							break;
-						case TypeCode.Double:
-							WriteDouble((double)value);
-							break;
-						default:
-							throw new ArgumentException();
-					}
+					throw new ArgumentException();
 				}
 			}
 
