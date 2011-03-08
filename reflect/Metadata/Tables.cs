@@ -1960,7 +1960,7 @@ namespace IKVM.Reflection.Metadata
 
 		internal struct Record
 		{
-			internal int RVA;
+			internal int RVA;		// we set the high bit to signify that the RVA is in the CIL stream (instead of .sdata)
 			internal int Field;
 		}
 
@@ -1990,11 +1990,18 @@ namespace IKVM.Reflection.Metadata
 				.Value;
 		}
 
-		internal void Fixup(ModuleBuilder moduleBuilder, int sdataRVA)
+		internal void Fixup(ModuleBuilder moduleBuilder, int sdataRVA, int cilRVA)
 		{
 			for (int i = 0; i < rowCount; i++)
 			{
-				records[i].RVA += sdataRVA;
+				if (records[i].RVA < 0)
+				{
+					records[i].RVA = (records[i].RVA & 0x7fffffff) + cilRVA;
+				}
+				else
+				{
+					records[i].RVA += sdataRVA;
+				}
 				if (moduleBuilder.IsPseudoToken(records[i].Field))
 				{
 					records[i].Field = moduleBuilder.ResolvePseudoToken(records[i].Field);

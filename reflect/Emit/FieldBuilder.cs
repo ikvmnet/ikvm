@@ -65,13 +65,23 @@ namespace IKVM.Reflection.Emit
 
 		public void __SetDataAndRVA(byte[] data)
 		{
+			SetDataAndRvaImpl(data, typeBuilder.ModuleBuilder.initializedData, 0);
+		}
+
+		public void __SetReadOnlyDataAndRVA(byte[] data)
+		{
+			SetDataAndRvaImpl(data, typeBuilder.ModuleBuilder.methodBodies, unchecked((int)0x80000000));
+		}
+
+		private void SetDataAndRvaImpl(byte[] data, ByteBuffer bb, int readonlyMarker)
+		{
 			attribs |= FieldAttributes.HasFieldRVA;
 			FieldRVATable.Record rec = new FieldRVATable.Record();
-			typeBuilder.ModuleBuilder.initializedData.Align(8);
-			rec.RVA = typeBuilder.ModuleBuilder.initializedData.Position;
+			bb.Align(8);
+			rec.RVA = bb.Position + readonlyMarker;
 			rec.Field = pseudoToken;
 			typeBuilder.ModuleBuilder.FieldRVA.AddRecord(rec);
-			typeBuilder.ModuleBuilder.initializedData.Write(data);
+			bb.Write(data);
 		}
 
 		public override void __GetDataFromRVA(byte[] data, int offset, int length)
