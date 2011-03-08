@@ -917,5 +917,16 @@ namespace IKVM.Reflection
 			}
 			throw new MissingFieldException(declaringType.ToString(), name);
 		}
+
+		internal PropertyInfo GetMissingPropertyOrThrow(Type declaringType, string name, PropertySignature propertySignature)
+		{
+			// HACK we need to check __IsMissing here, because Type doesn't have a FindProperty API
+			// since properties are never resolved, except by custom attributes
+			if (resolveMissingMembers || declaringType.__IsMissing)
+			{
+				return new MissingProperty(declaringType, name, propertySignature);
+			}
+			throw new System.MissingMemberException(declaringType.ToString(), name);
+		}
 	}
 }

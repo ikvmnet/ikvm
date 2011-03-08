@@ -210,9 +210,9 @@ namespace IKVM.Reflection
 					buf[i] = br.ReadChar();
 				}
 				string xml = new String(buf);
-				ConstructorInfo constructor = u.System_Security_Permissions_PermissionSetAttribute.GetConstructor(new Type[] { u.System_Security_Permissions_SecurityAction });
+				ConstructorInfo constructor = u.System_Security_Permissions_PermissionSetAttribute.GetPseudoCustomAttributeConstructor(u.System_Security_Permissions_SecurityAction);
 				List<CustomAttributeNamedArgument> args = new List<CustomAttributeNamedArgument>();
-				args.Add(new CustomAttributeNamedArgument(u.System_Security_Permissions_PermissionSetAttribute.GetProperty("XML"),
+				args.Add(new CustomAttributeNamedArgument(GetProperty(u.System_Security_Permissions_PermissionSetAttribute, "XML", u.System_String),
 					new CustomAttributeTypedArgument(u.System_String, xml)));
 				list.Add(new CustomAttributeData(asm.ManifestModule, constructor, new object[] { action }, args));
 			}
@@ -271,7 +271,7 @@ namespace IKVM.Reflection
 				case 0x51:
 					return u.System_Object;
 				default:
-					throw new InvalidOperationException();
+					throw new BadImageFormatException();
 			}
 		}
 
@@ -418,26 +418,23 @@ namespace IKVM.Reflection
 				switch (fieldOrProperty)
 				{
 					case 0x53:
-						member = GetField(type, name);
+						member = GetField(type, name, fieldOrPropertyType);
 						break;
 					case 0x54:
-						member = GetProperty(type, name);
+						member = GetProperty(type, name, fieldOrPropertyType);
 						break;
 					default:
 						throw new BadImageFormatException();
-				}
-				if (member == null)
-				{
-					throw new BadImageFormatException();
 				}
 				list.Add(new CustomAttributeNamedArgument(member, value));
 			}
 			return list.AsReadOnly();
 		}
 
-		private static FieldInfo GetField(Type type, string name)
+		private static FieldInfo GetField(Type type, string name, Type fieldType)
 		{
-			for (; type != null; type = type.BaseType)
+			Type org = type;
+			for (; type != null && !type.__IsMissing; type = type.BaseType)
 			{
 				foreach (FieldInfo field in type.__GetDeclaredFields())
 				{
@@ -447,12 +444,15 @@ namespace IKVM.Reflection
 					}
 				}
 			}
-			return null;
+			FieldSignature sig = FieldSignature.Create(fieldType, null, null);
+			return org.FindField(name, sig)
+				?? org.Module.universe.GetMissingFieldOrThrow(org, name, sig);
 		}
 
-		private static PropertyInfo GetProperty(Type type, string name)
+		private static PropertyInfo GetProperty(Type type, string name, Type propertyType)
 		{
-			for (; type != null; type = type.BaseType)
+			Type org = type;
+			for (; type != null && !type.__IsMissing; type = type.BaseType)
 			{
 				foreach (PropertyInfo property in type.__GetDeclaredProperties())
 				{
@@ -462,7 +462,7 @@ namespace IKVM.Reflection
 					}
 				}
 			}
-			return null;
+			return org.Module.universe.GetMissingPropertyOrThrow(org, name, PropertySignature.Create(CallingConventions.Standard | CallingConventions.HasThis, propertyType, null, null, null, null, null));
 		}
 
 		[Obsolete("Use Constructor.DeclaringType instead.")]
