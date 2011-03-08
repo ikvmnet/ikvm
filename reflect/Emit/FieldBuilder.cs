@@ -67,6 +67,7 @@ namespace IKVM.Reflection.Emit
 		{
 			attribs |= FieldAttributes.HasFieldRVA;
 			FieldRVATable.Record rec = new FieldRVATable.Record();
+			typeBuilder.ModuleBuilder.initializedData.Align(8);
 			rec.RVA = typeBuilder.ModuleBuilder.initializedData.Position;
 			rec.Field = pseudoToken;
 			typeBuilder.ModuleBuilder.FieldRVA.AddRecord(rec);
