@@ -785,25 +785,22 @@ namespace IKVM.Reflection
 
 		public override Type[] GetGenericArguments()
 		{
-			return Forwarder.GetGenericArguments();
+			MethodInfo method = TryGetForwarder();
+			if (method != null)
+			{
+				return Forwarder.GetGenericArguments();
+			}
+			typeArgs = new Type[signature.GenericParameterCount];
+			for (int i = 0; i < typeArgs.Length; i++)
+			{
+				typeArgs[i] = new MissingTypeParameter(this, i);
+			}
+			return Util.Copy(typeArgs);
 		}
 
 		internal override Type GetGenericMethodArgument(int index)
 		{
-			MethodInfo method = TryGetForwarder();
-			if (method != null)
-			{
-				return method.GetGenericMethodArgument(index);
-			}
-			if (typeArgs == null)
-			{
-				typeArgs = new Type[index + 1];
-			}
-			else if (typeArgs.Length <= index)
-			{
-				Array.Resize(ref typeArgs, index + 1);
-			}
-			return typeArgs[index] ?? (typeArgs[index] = new MissingTypeParameter(this, index));
+			return GetGenericArguments()[index];
 		}
 
 		internal override int GetGenericMethodArgumentCount()
