@@ -386,11 +386,6 @@ namespace IKVM.Reflection.Emit
 			bb.WriteCompressedInt(list.Count);
 			foreach (CustomAttributeBuilder cab in list)
 			{
-				if (cab.Constructor.Module != this)
-				{
-					// to make ildasm show the type properly, we need to have a TypeRef to the type
-					ImportType(cab.Constructor.DeclaringType);
-				}
 				bb.Write(cab.Constructor.DeclaringType.AssemblyQualifiedName);
 				namedArgs.Clear();
 				cab.WriteNamedArgumentsForDeclSecurity(this, namedArgs);
@@ -1296,6 +1291,19 @@ namespace IKVM.Reflection.Emit
 				arr[i] = this.Strings.Find(this.ModuleRef.records[i]);
 			}
 			return arr;
+		}
+
+		public override Type[] __GetReferencedTypes()
+		{
+			List<Type> list = new List<Type>();
+			foreach (KeyValuePair<Type, int> kv in typeTokens)
+			{
+				if (kv.Value >> 24 == TypeRefTable.Index)
+				{
+					list.Add(kv.Key);
+				}
+			}
+			return list.ToArray();
 		}
 	}
 

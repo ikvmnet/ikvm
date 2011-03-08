@@ -955,6 +955,16 @@ namespace IKVM.Reflection.Reader
 			return arr;
 		}
 
+		public override Type[] __GetReferencedTypes()
+		{
+			Type[] arr = new Type[this.TypeRef.RowCount];
+			for (int i = 0; i < arr.Length; i++)
+			{
+				arr[i] = ResolveType((TypeRefTable.Index << 24) + i + 1);
+			}
+			return arr;
+		}
+
 		internal override Type GetModuleType()
 		{
 			PopulateTypeDef();

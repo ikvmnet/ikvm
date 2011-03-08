@@ -405,6 +405,8 @@ namespace IKVM.Reflection
 
 		public abstract string[] __GetReferencedModules();
 
+		public abstract Type[] __GetReferencedTypes();
+
 		public virtual bool __IsMissing
 		{
 			get { return false; }
@@ -525,6 +527,11 @@ namespace IKVM.Reflection
 		}
 
 		public sealed override string[] __GetReferencedModules()
+		{
+			throw NotSupportedException();
+		}
+
+		public override Type[] __GetReferencedTypes()
 		{
 			throw NotSupportedException();
 		}
