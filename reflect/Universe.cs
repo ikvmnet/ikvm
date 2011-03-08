@@ -552,6 +552,11 @@ namespace IKVM.Reflection
 				// (it returns the namespace of the declaring type)
 				return Import(type.DeclaringType).ResolveNestedType(new TypeName(null, type.Name));
 			}
+			else if (type.Assembly == typeof(object).Assembly)
+			{
+				// make sure mscorlib types always end up in our mscorlib
+				return Mscorlib.ResolveType(new TypeName(type.Namespace, type.Name));
+			}
 			else
 			{
 				return Import(type.Assembly).ResolveType(new TypeName(type.Namespace, type.Name));
