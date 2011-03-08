@@ -410,6 +410,13 @@ namespace IKVM.Reflection
 			get { return false; }
 		}
 
+		public long __ImageBase
+		{
+			get { return GetImageBaseImpl(); }
+		}
+
+		protected abstract long GetImageBaseImpl();
+
 		internal Type CanonicalizeType(Type type)
 		{
 			Type canon;

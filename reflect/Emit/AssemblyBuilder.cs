@@ -740,5 +740,10 @@ namespace IKVM.Reflection.Emit
 		{
 			throw new InvalidOperationException();
 		}
+
+		protected override long GetImageBaseImpl()
+		{
+			throw new InvalidOperationException();
+		}
 	}
 }

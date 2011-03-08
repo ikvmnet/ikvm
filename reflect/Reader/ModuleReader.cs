@@ -1050,5 +1050,10 @@ namespace IKVM.Reflection.Reader
 			PopulateTypeDef();
 			manifestModule.ExportTypes(typeDefs, fileToken);
 		}
+
+		protected override long GetImageBaseImpl()
+		{
+			return (long)peFile.OptionalHeader.ImageBase;
+		}
 	}
 }

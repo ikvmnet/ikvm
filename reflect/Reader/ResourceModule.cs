@@ -115,6 +115,11 @@ namespace IKVM.Reflection.Reader
 			throw new NotSupportedException();
 		}
 
+		protected override long GetImageBaseImpl()
+		{
+			throw new NotSupportedException();
+		}
+
 		internal override Type FindType(TypeName typeName)
 		{
 			return null;

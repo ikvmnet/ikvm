@@ -338,6 +338,11 @@ namespace IKVM.Reflection
 		{
 			throw new MissingModuleException(this);
 		}
+
+		protected override long GetImageBaseImpl()
+		{
+			throw new MissingModuleException(this);
+		}
 	}
 
 	sealed class MissingType : Type

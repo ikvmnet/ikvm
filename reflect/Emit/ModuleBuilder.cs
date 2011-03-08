@@ -1167,10 +1167,15 @@ namespace IKVM.Reflection.Emit
 		}
 
 		// non-standard API
-		public long __ImageBase
+		public new long __ImageBase
 		{
 			get { return imageBaseAddress; }
 			set { imageBaseAddress = value; }
+		}
+
+		protected override long GetImageBaseImpl()
+		{
+			return imageBaseAddress;
 		}
 
 		public override int MDStreamVersion

@@ -205,6 +205,11 @@ namespace IKVM.Reflection.Reader
 			{
 				throw new InvalidOperationException();
 			}
+
+			protected override long GetImageBaseImpl()
+			{
+				throw new InvalidOperationException();
+			}
 		}
 
 		internal static Type Make(int position)
