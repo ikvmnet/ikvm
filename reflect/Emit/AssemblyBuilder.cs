@@ -641,7 +641,7 @@ namespace IKVM.Reflection.Emit
 		}
 	}
 
-	sealed class ManifestModule : Module
+	sealed class ManifestModule : NonPEModule
 	{
 		private readonly AssemblyBuilder assembly;
 		private readonly Guid guid = Guid.NewGuid();
@@ -686,64 +686,14 @@ namespace IKVM.Reflection.Emit
 			get { return guid; }
 		}
 
-		public override Type ResolveType(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
-		{
-			throw new ArgumentException();
-		}
-
-		public override MethodBase ResolveMethod(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
-		{
-			throw new ArgumentException();
-		}
-
-		public override FieldInfo ResolveField(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
-		{
-			throw new ArgumentException();
-		}
-
-		public override MemberInfo ResolveMember(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
-		{
-			throw new ArgumentException();
-		}
-
-		public override string ResolveString(int metadataToken)
-		{
-			throw new ArgumentException();
-		}
-
-		public override Type[] __ResolveOptionalParameterTypes(int metadataToken)
-		{
-			throw new ArgumentException();
-		}
-
 		public override string ScopeName
 		{
 			get { return "RefEmit_InMemoryManifestModule"; }
 		}
 
-		public override AssemblyName[] __GetReferencedAssemblies()
+		protected override Exception NotSupportedException()
 		{
-			throw new InvalidOperationException();
-		}
-
-		public override string[] __GetReferencedModules()
-		{
-			throw new InvalidOperationException();
-		}
-
-		internal override Type GetModuleType()
-		{
-			throw new InvalidOperationException();
-		}
-
-		internal override IKVM.Reflection.Reader.ByteReader GetBlob(int blobIndex)
-		{
-			throw new InvalidOperationException();
-		}
-
-		protected override long GetImageBaseImpl()
-		{
-			throw new InvalidOperationException();
+			return new InvalidOperationException();
 		}
 	}
 }

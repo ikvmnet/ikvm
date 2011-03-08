@@ -26,7 +26,7 @@ using System.Collections.Generic;
 
 namespace IKVM.Reflection.Reader
 {
-	sealed class ResourceModule : Module
+	sealed class ResourceModule : NonPEModule
 	{
 		private readonly Assembly assembly;
 		private readonly string scopeName;
@@ -75,51 +75,6 @@ namespace IKVM.Reflection.Reader
 			get { throw new NotSupportedException(); }
 		}
 
-		public override Type ResolveType(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
-		{
-			throw new NotSupportedException();
-		}
-
-		public override MethodBase ResolveMethod(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
-		{
-			throw new NotSupportedException();
-		}
-
-		public override FieldInfo ResolveField(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
-		{
-			throw new NotSupportedException();
-		}
-
-		public override MemberInfo ResolveMember(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
-		{
-			throw new NotSupportedException();
-		}
-
-		public override string ResolveString(int metadataToken)
-		{
-			throw new NotSupportedException();
-		}
-
-		public override Type[] __ResolveOptionalParameterTypes(int metadataToken)
-		{
-			throw new NotSupportedException();
-		}
-
-		public override AssemblyName[] __GetReferencedAssemblies()
-		{
-			throw new NotSupportedException();
-		}
-
-		public override string[] __GetReferencedModules()
-		{
-			throw new NotSupportedException();
-		}
-
-		protected override long GetImageBaseImpl()
-		{
-			throw new NotSupportedException();
-		}
-
 		internal override Type FindType(TypeName typeName)
 		{
 			return null;
@@ -129,14 +84,9 @@ namespace IKVM.Reflection.Reader
 		{
 		}
 
-		internal override Type GetModuleType()
+		protected override Exception ArgumentOutOfRangeException()
 		{
-			throw new InvalidOperationException();
-		}
-
-		internal override ByteReader GetBlob(int blobIndex)
-		{
-			throw new InvalidOperationException();
+			return new NotSupportedException();
 		}
 	}
 }

@@ -194,7 +194,7 @@ namespace IKVM.Reflection
 		}
 	}
 
-	sealed class MissingModule : Module
+	sealed class MissingModule : NonPEModule
 	{
 		private readonly MissingAssembly assembly;
 
@@ -229,36 +229,6 @@ namespace IKVM.Reflection
 			get { throw new MissingModuleException(this); }
 		}
 
-		public override Type ResolveType(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
-		{
-			throw new MissingModuleException(this);
-		}
-
-		public override MethodBase ResolveMethod(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
-		{
-			throw new MissingModuleException(this);
-		}
-
-		public override FieldInfo ResolveField(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
-		{
-			throw new MissingModuleException(this);
-		}
-
-		public override MemberInfo ResolveMember(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
-		{
-			throw new MissingModuleException(this);
-		}
-
-		public override string ResolveString(int metadataToken)
-		{
-			throw new MissingModuleException(this);
-		}
-
-		public override Type[] __ResolveOptionalParameterTypes(int metadataToken)
-		{
-			throw new MissingModuleException(this);
-		}
-
 		public override string ScopeName
 		{
 			get { throw new MissingModuleException(this); }
@@ -270,26 +240,6 @@ namespace IKVM.Reflection
 		}
 
 		internal override void GetTypesImpl(System.Collections.Generic.List<Type> list)
-		{
-			throw new MissingModuleException(this);
-		}
-
-		public override AssemblyName[] __GetReferencedAssemblies()
-		{
-			throw new MissingModuleException(this);
-		}
-
-		public override string[] __GetReferencedModules()
-		{
-			throw new MissingModuleException(this);
-		}
-
-		internal override Type GetModuleType()
-		{
-			throw new MissingModuleException(this);
-		}
-
-		internal override IKVM.Reflection.Reader.ByteReader GetBlob(int blobIndex)
 		{
 			throw new MissingModuleException(this);
 		}
@@ -339,9 +289,19 @@ namespace IKVM.Reflection
 			throw new MissingModuleException(this);
 		}
 
-		protected override long GetImageBaseImpl()
+		protected override Exception InvalidOperationException()
 		{
-			throw new MissingModuleException(this);
+			return new MissingModuleException(this);
+		}
+
+		protected override Exception NotSupportedException()
+		{
+			return new MissingModuleException(this);
+		}
+
+		protected override Exception ArgumentOutOfRangeException()
+		{
+			return new MissingModuleException(this);
 		}
 	}
 

@@ -142,7 +142,7 @@ namespace IKVM.Reflection
 		internal readonly MethodSpecTable MethodSpec = new MethodSpecTable();
 		internal readonly GenericParamConstraintTable GenericParamConstraint = new GenericParamConstraintTable();
 
-		internal Module(Universe universe)
+		protected Module(Universe universe)
 		{
 			this.universe = universe;
 		}
@@ -484,6 +484,84 @@ namespace IKVM.Reflection
 
 		internal virtual void ExportTypes(int fileToken, IKVM.Reflection.Emit.ModuleBuilder manifestModule)
 		{
+		}
+	}
+
+	abstract class NonPEModule : Module
+	{
+		protected NonPEModule(Universe universe)
+			: base(universe)
+		{
+		}
+
+		protected virtual Exception InvalidOperationException()
+		{
+			return new InvalidOperationException();
+		}
+
+		protected virtual Exception NotSupportedException()
+		{
+			return new NotSupportedException();
+		}
+
+		protected virtual Exception ArgumentOutOfRangeException()
+		{
+			return new ArgumentOutOfRangeException();
+		}
+
+		internal sealed override Type GetModuleType()
+		{
+			throw InvalidOperationException();
+		}
+
+		internal sealed override ByteReader GetBlob(int blobIndex)
+		{
+			throw InvalidOperationException();
+		}
+
+		public sealed override AssemblyName[] __GetReferencedAssemblies()
+		{
+			throw NotSupportedException();
+		}
+
+		public sealed override string[] __GetReferencedModules()
+		{
+			throw NotSupportedException();
+		}
+
+		protected sealed override long GetImageBaseImpl()
+		{
+			throw NotSupportedException();
+		}
+
+		public sealed override Type ResolveType(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
+		{
+			throw ArgumentOutOfRangeException();
+		}
+
+		public sealed override MethodBase ResolveMethod(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
+		{
+			throw ArgumentOutOfRangeException();
+		}
+
+		public sealed override FieldInfo ResolveField(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
+		{
+			throw ArgumentOutOfRangeException();
+		}
+
+		public sealed override MemberInfo ResolveMember(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
+		{
+			throw ArgumentOutOfRangeException();
+		}
+
+		public sealed override string ResolveString(int metadataToken)
+		{
+			throw ArgumentOutOfRangeException();
+		}
+
+		public sealed override Type[] __ResolveOptionalParameterTypes(int metadataToken)
+		{
+			throw ArgumentOutOfRangeException();
 		}
 	}
 
