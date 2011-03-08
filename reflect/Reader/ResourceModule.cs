@@ -110,6 +110,11 @@ namespace IKVM.Reflection.Reader
 			throw new NotSupportedException();
 		}
 
+		public override string[] __GetReferencedModules()
+		{
+			throw new NotSupportedException();
+		}
+
 		internal override Type FindType(TypeName typeName)
 		{
 			return null;

@@ -403,6 +403,8 @@ namespace IKVM.Reflection
 
 		public abstract AssemblyName[] __GetReferencedAssemblies();
 
+		public abstract string[] __GetReferencedModules();
+
 		public virtual bool __IsMissing
 		{
 			get { return false; }

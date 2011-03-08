@@ -191,6 +191,11 @@ namespace IKVM.Reflection.Reader
 				throw new InvalidOperationException();
 			}
 
+			public override string[] __GetReferencedModules()
+			{
+				throw new InvalidOperationException();
+			}
+
 			internal override Type GetModuleType()
 			{
 				throw new InvalidOperationException();

@@ -945,6 +945,16 @@ namespace IKVM.Reflection.Reader
 			return list.ToArray();
 		}
 
+		public override string[] __GetReferencedModules()
+		{
+			string[] arr = new string[this.ModuleRef.RowCount];
+			for (int i = 0; i < arr.Length; i++)
+			{
+				arr[i] = GetString(this.ModuleRef.records[i]);
+			}
+			return arr;
+		}
+
 		internal override Type GetModuleType()
 		{
 			PopulateTypeDef();

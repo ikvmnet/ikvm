@@ -1276,6 +1276,21 @@ namespace IKVM.Reflection.Emit
 			}
 			return list.ToArray();
 		}
+
+		public void __AddModuleReference(string module)
+		{
+			this.ModuleRef.FindOrAddRecord(this.Strings.Add(module));
+		}
+
+		public override string[] __GetReferencedModules()
+		{
+			string[] arr = new string[this.ModuleRef.RowCount];
+			for (int i = 0; i < arr.Length; i++)
+			{
+				arr[i] = this.Strings.Find(this.ModuleRef.records[i]);
+			}
+			return arr;
+		}
 	}
 
 	class ArrayMethod : MethodInfo

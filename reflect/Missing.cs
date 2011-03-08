@@ -279,6 +279,11 @@ namespace IKVM.Reflection
 			throw new MissingModuleException(this);
 		}
 
+		public override string[] __GetReferencedModules()
+		{
+			throw new MissingModuleException(this);
+		}
+
 		internal override Type GetModuleType()
 		{
 			throw new MissingModuleException(this);
