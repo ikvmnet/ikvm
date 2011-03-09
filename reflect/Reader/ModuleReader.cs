@@ -383,22 +383,26 @@ namespace IKVM.Reflection.Reader
 										break;
 									}
 								case ModuleTable.Index:
-									if (scope != 0 && scope != 1)
-									{
-										throw new NotImplementedException("self reference scope?");
-									}
-									typeRefs[index] = FindType(GetTypeName(TypeRef.records[index].TypeNameSpace, TypeRef.records[index].TypeName));
-									break;
 								case ModuleRefTable.Index:
 									{
-										Module module = ResolveModuleRef(ModuleRef.records[(scope & 0xFFFFFF) - 1]);
-										TypeName typeName = GetTypeName(TypeRef.records[index].TypeNameSpace, TypeRef.records[index].TypeName);
-										Type type = module.FindType(typeName);
-										if (type == null)
+										Module module;
+										if (scope >> 24 == ModuleTable.Index)
 										{
-											throw new TypeLoadException(String.Format("Type '{0}' not found in module '{1}'", typeName, module.Name));
+											if (scope == 0 || scope == 1)
+											{
+												module = this;
+											}
+											else
+											{
+												throw new NotImplementedException("self reference scope?");
+											}
 										}
-										typeRefs[index] = type;
+										else
+										{
+											module = ResolveModuleRef(ModuleRef.records[(scope & 0xFFFFFF) - 1]);
+										}
+										TypeName typeName = GetTypeName(TypeRef.records[index].TypeNameSpace, TypeRef.records[index].TypeName);
+										typeRefs[index] = module.FindType(typeName) ?? module.universe.GetMissingTypeOrThrow(module, null, typeName);
 										break;
 									}
 								default:
