@@ -1300,7 +1300,7 @@ namespace IKVM.Reflection
 			{
 				return TypeCode.Empty;
 			}
-			if (type.IsEnum)
+			if (!type.__IsMissing && type.IsEnum)
 			{
 				type = type.GetEnumUnderlyingType();
 			}
@@ -1368,6 +1368,10 @@ namespace IKVM.Reflection
 			else if (type == u.System_String)
 			{
 				return TypeCode.String;
+			}
+			else if (type.__IsMissing)
+			{
+				throw new MissingMemberException(type);
 			}
 			else
 			{
