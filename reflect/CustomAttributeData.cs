@@ -429,9 +429,14 @@ namespace IKVM.Reflection
 					}
 				}
 			}
+			// if the field is missing, we stick the missing field on the first missing base type
+			if (type == null)
+			{
+				type = org;
+			}
 			FieldSignature sig = FieldSignature.Create(fieldType, null, null);
-			return org.FindField(name, sig)
-				?? org.Module.universe.GetMissingFieldOrThrow(org, name, sig);
+			return type.FindField(name, sig)
+				?? type.Module.universe.GetMissingFieldOrThrow(type, name, sig);
 		}
 
 		private static PropertyInfo GetProperty(Type type, string name, Type propertyType)
@@ -447,7 +452,12 @@ namespace IKVM.Reflection
 					}
 				}
 			}
-			return org.Module.universe.GetMissingPropertyOrThrow(org, name, PropertySignature.Create(CallingConventions.Standard | CallingConventions.HasThis, propertyType, null, null, null, null, null));
+			// if the property is missing, we stick the missing property on the first missing base type
+			if (type == null)
+			{
+				type = org;
+			}
+			return type.Module.universe.GetMissingPropertyOrThrow(type, name, PropertySignature.Create(CallingConventions.Standard | CallingConventions.HasThis, propertyType, null, null, null, null, null));
 		}
 
 		[Obsolete("Use Constructor.DeclaringType instead.")]
