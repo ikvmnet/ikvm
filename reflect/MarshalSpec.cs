@@ -113,29 +113,10 @@ namespace IKVM.Reflection
 						marshalType = ReadString(blob);
 						marshalCookie = ReadString(blob);
 
-						// we have to use a custom type lookup scheme here, because we want to use FindType to avoid a MissingAssemblyException
 						TypeNameParser parser = TypeNameParser.Parse(marshalType, false);
 						if (!parser.Error)
 						{
-							TypeName n = TypeName.Split(parser.FirstNamePart);
-							Type type = null;
-							if (parser.AssemblyName != null)
-							{
-								Assembly asm = module.Assembly.universe.Load(parser.AssemblyName, module.Assembly, false);
-								if (asm != null)
-								{
-									type = asm.FindType(n);
-								}
-							}
-							else
-							{
-								type = module.Assembly.FindType(n)
-									?? module.universe.Mscorlib.FindType(n);
-							}
-							if (type != null)
-							{
-								marshalTypeRef = parser.Expand(type, module.Assembly, false, marshalType);
-							}
+							marshalTypeRef = parser.GetType(module.universe, module.Assembly, false, marshalType, false);
 						}
 					}
 

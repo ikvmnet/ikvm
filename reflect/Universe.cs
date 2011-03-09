@@ -756,7 +756,7 @@ namespace IKVM.Reflection
 			{
 				return null;
 			}
-			return parser.GetType(this, context, throwOnError, assemblyQualifiedTypeName);
+			return parser.GetType(this, context, throwOnError, assemblyQualifiedTypeName, false);
 		}
 
 		public Assembly[] GetAssemblies()

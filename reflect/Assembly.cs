@@ -126,7 +126,7 @@ namespace IKVM.Reflection
 					return null;
 				}
 			}
-			return parser.Expand(GetTypeImpl(parser.FirstNamePart), this, throwOnError, typeName);
+			return parser.Expand(GetTypeImpl(parser.FirstNamePart), this, throwOnError, typeName, false);
 		}
 
 		public virtual Module LoadModule(string moduleName, byte[] rawModule)
