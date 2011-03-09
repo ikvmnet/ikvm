@@ -1280,7 +1280,7 @@ namespace IKVM.Reflection.Emit
 
 		public void __AddModuleReference(string module)
 		{
-			this.ModuleRef.FindOrAddRecord(this.Strings.Add(module));
+			this.ModuleRef.FindOrAddRecord(module == null ? 0 : this.Strings.Add(module));
 		}
 
 		public override string[] __GetReferencedModules()
