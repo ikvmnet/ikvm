@@ -2404,7 +2404,7 @@ namespace IKVM.Reflection
 		{
 			get
 			{
-				if (this.ContainsGenericParameters)
+				if (!this.__ContainsMissingType && this.ContainsGenericParameters)
 				{
 					return null;
 				}
