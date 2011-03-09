@@ -328,6 +328,11 @@ namespace IKVM.Reflection
 			field.__GetDataFromRVA(data, offset, length);
 		}
 
+		public override FieldInfo __GetFieldOnTypeDefinition()
+		{
+			return field;
+		}
+
 		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
 		{
 			return field.GetCustomAttributesData(attributeType);

@@ -117,6 +117,11 @@ namespace IKVM.Reflection
 			get { return (Attributes & FieldAttributes.PinvokeImpl) != 0; }
 		}
 
+		public virtual FieldInfo __GetFieldOnTypeDefinition()
+		{
+			return this;
+		}
+
 		internal abstract int ImportTo(Emit.ModuleBuilder module);
 
 		internal virtual FieldInfo BindTypeParameters(Type type)
