@@ -598,6 +598,16 @@ namespace IKVM.Reflection
 			return others;
 		}
 
+		public override MethodInfo[] __GetMethods()
+		{
+			MethodInfo[] others = eventInfo.__GetMethods();
+			for (int i = 0; i < others.Length; i++)
+			{
+				others[i] = Wrap(others[i]);
+			}
+			return others;
+		}
+
 		public override Type EventHandlerType
 		{
 			get { return eventInfo.EventHandlerType.BindTypeParameters(typeInstance); }
