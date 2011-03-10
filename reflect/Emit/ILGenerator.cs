@@ -130,6 +130,7 @@ namespace IKVM.Reflection.Emit
 		private readonly List<ExceptionBlock> exceptions = new List<ExceptionBlock>();
 		private readonly Stack<ExceptionBlock> exceptionStack = new Stack<ExceptionBlock>();
 		private ushort maxStack;
+		private bool fatHeader;
 		private int stackHeight;
 		private Scope scope;
 		private byte exceptionBlockAssistanceMode = EBAM_COMPAT;
@@ -240,7 +241,11 @@ namespace IKVM.Reflection.Emit
 		public int __MaxStackSize
 		{
 			get { return maxStack; }
-			set { maxStack = (ushort)value; }
+			set
+			{
+				maxStack = (ushort)value;
+				fatHeader = true;
+			}
 		}
 
 		// new in .NET 4.0
@@ -881,7 +886,7 @@ namespace IKVM.Reflection.Emit
 			int localVarSigTok = 0;
 
 			int rva;
-			if (locals.Count == 0 && exceptions.Count == 0 && maxStack <= 8 && code.Length < 64)
+			if (locals.Count == 0 && exceptions.Count == 0 && maxStack <= 8 && code.Length < 64 && !fatHeader)
 			{
 				rva = WriteTinyHeaderAndCode(bb);
 			}
