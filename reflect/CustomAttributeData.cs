@@ -175,7 +175,7 @@ namespace IKVM.Reflection
 			}
 			else
 			{
-				if (arg.ArgumentType.IsEnum)
+				if (arg.ArgumentType.__IsMissing || arg.ArgumentType.IsEnum)
 				{
 					sb.Append('(');
 					sb.Append(arg.ArgumentType.FullName);
