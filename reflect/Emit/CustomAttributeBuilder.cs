@@ -474,6 +474,21 @@ namespace IKVM.Reflection.Emit
 			return null;
 		}
 
+		internal object GetPropertyValue(string name)
+		{
+			if (namedProperties != null)
+			{
+				for (int i = 0; i < namedProperties.Length; i++)
+				{
+					if (namedProperties[i].Name == name)
+					{
+						return propertyValues[i];
+					}
+				}
+			}
+			return null;
+		}
+
 		internal void WriteNamedArgumentsForDeclSecurity(ModuleBuilder moduleBuilder, ByteBuffer bb)
 		{
 			if (blob != null)

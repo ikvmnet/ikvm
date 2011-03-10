@@ -380,6 +380,15 @@ namespace IKVM.Reflection.Emit
 
 		private int WriteDeclSecurityBlob(List<CustomAttributeBuilder> list)
 		{
+			if (this.MDStreamVersion < 0x20000
+				&& list.Count == 1
+				&& list[0].Constructor.DeclaringType == universe.System_Security_Permissions_PermissionSetAttribute
+				&& !list[0].HasBlob
+				&& list[0].GetPropertyValue("XML") is string)
+			{
+				// write .NET 1.1 format
+				return this.Blobs.Add(ByteBuffer.Wrap(System.Text.Encoding.Unicode.GetBytes((string)list[0].GetPropertyValue("XML"))));
+			}
 			ByteBuffer namedArgs = new ByteBuffer(100);
 			ByteBuffer bb = new ByteBuffer(list.Count * 100);
 			bb.Write((byte)'.');
