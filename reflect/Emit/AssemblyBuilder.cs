@@ -175,6 +175,11 @@ namespace IKVM.Reflection.Emit
 			this.flags = flags;
 		}
 
+		public override AssemblyNameFlags __AssemblyFlags
+		{
+			get { return flags; }
+		}
+
 		public override AssemblyName GetName()
 		{
 			AssemblyName n = new AssemblyName();

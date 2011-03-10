@@ -247,6 +247,11 @@ namespace IKVM.Reflection.Reader
 			return manifestModule.__GetReferencedAssemblies();
 		}
 
+		public override AssemblyNameFlags __AssemblyFlags
+		{
+			get { return (AssemblyNameFlags)manifestModule.AssemblyTable.records[0].Flags; }
+		}
+
 		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
 		{
 			return manifestModule.GetCustomAttributes(0x20000001, attributeType);

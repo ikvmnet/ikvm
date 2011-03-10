@@ -177,6 +177,11 @@ namespace IKVM.Reflection
 			get { return false; }
 		}
 
+		public virtual AssemblyNameFlags __AssemblyFlags
+		{
+			get { return GetName().Flags; }
+		}
+
 		internal abstract IList<CustomAttributeData> GetCustomAttributesData(Type attributeType);
 	}
 }
