@@ -661,10 +661,13 @@ namespace IKVM.Reflection.Emit
 			{
 				this.ModuleBuilder.AddDeclarativeSecurity(token, declarativeSecurity);
 			}
-			Type baseType = this.BaseType;
-			if (baseType != null)
+			if (!IsModulePseudoType)
 			{
-				extends = this.ModuleBuilder.GetTypeToken(baseType).Token;
+				Type baseType = this.BaseType;
+				if (baseType != null)
+				{
+					extends = this.ModuleBuilder.GetTypeToken(baseType).Token;
+				}
 			}
 			if (interfaces != null)
 			{
