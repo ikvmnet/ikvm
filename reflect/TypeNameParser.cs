@@ -479,7 +479,14 @@ namespace IKVM.Reflection
 				}
 				if (type == null && resolve)
 				{
-					type = context.ResolveType(name);
+					if (universe.Mscorlib.__IsMissing && !context.__IsMissing)
+					{
+						type = universe.Mscorlib.ResolveType(name);
+					}
+					else
+					{
+						type = context.ResolveType(name);
+					}
 				}
 			}
 			return Expand(type, context, throwOnError, originalName, resolve);
