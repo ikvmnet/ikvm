@@ -148,11 +148,13 @@ namespace IKVM.Reflection
 			sb.Append(Constructor.DeclaringType.FullName);
 			sb.Append('(');
 			string sep = "";
-			foreach (CustomAttributeTypedArgument arg in ConstructorArguments)
+			ParameterInfo[] parameters = Constructor.GetParameters();
+			IList<CustomAttributeTypedArgument> args = ConstructorArguments;
+			for (int i = 0; i < parameters.Length; i++)
 			{
 				sb.Append(sep);
 				sep = ", ";
-				AppendValue(sb, arg);
+				AppendValue(sb, parameters[i].ParameterType, args[i]);
 			}
 			foreach (CustomAttributeNamedArgument named in NamedArguments)
 			{
@@ -160,22 +162,49 @@ namespace IKVM.Reflection
 				sep = ", ";
 				sb.Append(named.MemberInfo.Name);
 				sb.Append(" = ");
-				AppendValue(sb, named.TypedValue);
+				FieldInfo fi = named.MemberInfo as FieldInfo;
+				Type type = fi != null ? fi.FieldType : ((PropertyInfo)named.MemberInfo).PropertyType;
+				AppendValue(sb, type, named.TypedValue);
 			}
 			sb.Append(')');
 			sb.Append(']');
 			return sb.ToString();
 		}
 
-		private static void AppendValue(StringBuilder sb, CustomAttributeTypedArgument arg)
+		private static void AppendValue(StringBuilder sb, Type type, CustomAttributeTypedArgument arg)
 		{
 			if (arg.ArgumentType == arg.ArgumentType.Module.universe.System_String)
 			{
 				sb.Append('"').Append(arg.Value).Append('"');
 			}
+			else if (arg.ArgumentType.IsArray)
+			{
+				Type elementType = arg.ArgumentType.GetElementType();
+				string elementTypeName;
+				if (elementType.IsPrimitive
+					|| elementType == type.Module.universe.System_Object
+					|| elementType == type.Module.universe.System_String
+					|| elementType == type.Module.universe.System_Type)
+				{
+					elementTypeName = elementType.Name;
+				}
+				else
+				{
+					elementTypeName = elementType.FullName;
+				}
+				sb.Append("new ").Append(elementTypeName).Append("[").Append(((Array)arg.Value).Length).Append("] { ");
+				string sep = "";
+				foreach (CustomAttributeTypedArgument elem in (CustomAttributeTypedArgument[])arg.Value)
+				{
+					sb.Append(sep);
+					sep = ", ";
+					AppendValue(sb, elementType, elem);
+				}
+				sb.Append(" }");
+			}
 			else
 			{
-				if (arg.ArgumentType.__IsMissing || arg.ArgumentType.IsEnum)
+				if (arg.ArgumentType != type)
 				{
 					sb.Append('(');
 					sb.Append(arg.ArgumentType.FullName);
