@@ -306,9 +306,14 @@ namespace IKVM.Reflection.Emit
 				string name = null;
 				if (type != null)
 				{
-					if (type.Assembly == assembly)
+					bool v1 = !assembly.ManifestModule.__IsMissing && assembly.ManifestModule.MDStreamVersion < 0x20000;
+					if (type.Assembly == assembly || (v1 && type.Assembly == type.Module.universe.Mscorlib))
 					{
 						name = type.FullName;
+					}
+					else if (v1)
+					{
+						name = type.FullName + "," + type.Assembly.FullName;
 					}
 					else
 					{
