@@ -1333,6 +1333,11 @@ namespace IKVM.Reflection.Emit
 			res.Implementation = implementation;
 			return 0x28000000 + this.ManifestResource.AddRecord(res);
 		}
+
+		public void __SetCustomAttributeFor(int token, CustomAttributeBuilder customBuilder)
+		{
+			SetCustomAttribute(token, customBuilder);
+		}
 	}
 
 	class ArrayMethod : MethodInfo

@@ -424,6 +424,11 @@ namespace IKVM.Reflection
 			get { throw new NotSupportedException(); }
 		}
 
+		public List<CustomAttributeData> __GetCustomAttributesFor(int token)
+		{
+			return GetCustomAttributes(token, null);
+		}
+
 		internal Type CanonicalizeType(Type type)
 		{
 			Type canon;
