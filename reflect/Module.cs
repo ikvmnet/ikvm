@@ -419,6 +419,11 @@ namespace IKVM.Reflection
 
 		protected abstract long GetImageBaseImpl();
 
+		public virtual long __StackReserve
+		{
+			get { throw new NotSupportedException(); }
+		}
+
 		public virtual byte[] __ModuleHash
 		{
 			get { throw new NotSupportedException(); }

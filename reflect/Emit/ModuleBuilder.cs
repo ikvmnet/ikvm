@@ -40,6 +40,7 @@ namespace IKVM.Reflection.Emit
 		private static readonly bool usePublicKeyAssemblyReference = false;
 		private Guid mvid = Guid.NewGuid();
 		private long imageBaseAddress = 0x00400000;
+		private long stackReserve = -1;
 		private readonly AssemblyBuilder asm;
 		internal readonly string moduleName;
 		internal readonly string fileName;
@@ -1180,6 +1181,21 @@ namespace IKVM.Reflection.Emit
 		protected override long GetImageBaseImpl()
 		{
 			return imageBaseAddress;
+		}
+
+		public override long __StackReserve
+		{
+			get { return stackReserve; }
+		}
+
+		public void __SetStackReserve(long stackReserve)
+		{
+			this.stackReserve = stackReserve;
+		}
+
+		internal ulong GetStackReserve(ulong defaultValue)
+		{
+			return stackReserve == -1 ? defaultValue : (ulong)stackReserve;
 		}
 
 		public override int MDStreamVersion
