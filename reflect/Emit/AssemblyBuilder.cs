@@ -440,11 +440,7 @@ namespace IKVM.Reflection.Emit
 					ModuleWriter.HashChunk(fs, cs, buf, (int)fs.Length);
 				}
 			}
-			FileTable.Record file = new FileTable.Record();
-			file.Flags = flags;
-			file.Name = manifestModule.Strings.Add(Path.GetFileName(fileName));
-			file.HashValue = manifestModule.Blobs.Add(ByteBuffer.Wrap(hash.Hash));
-			return 0x26000000 + manifestModule.File.AddRecord(file);
+			return manifestModule.__AddModule(flags, Path.GetFileName(fileName), hash.Hash);
 		}
 
 		public void AddResourceFile(string name, string fileName)

@@ -1314,6 +1314,25 @@ namespace IKVM.Reflection.Emit
 			}
 			return list.ToArray();
 		}
+
+		public int __AddModule(int flags, string name, byte[] hash)
+		{
+			FileTable.Record file = new FileTable.Record();
+			file.Flags = flags;
+			file.Name = this.Strings.Add(name);
+			file.HashValue = this.Blobs.Add(ByteBuffer.Wrap(hash));
+			return 0x26000000 + this.File.AddRecord(file);
+		}
+
+		public int __AddManifestResource(int offset, ResourceAttributes flags, string name, int implementation)
+		{
+			ManifestResourceTable.Record res = new ManifestResourceTable.Record();
+			res.Offset = offset;
+			res.Flags = (int)flags;
+			res.Name = this.Strings.Add(name);
+			res.Implementation = implementation;
+			return 0x28000000 + this.ManifestResource.AddRecord(res);
+		}
 	}
 
 	class ArrayMethod : MethodInfo
