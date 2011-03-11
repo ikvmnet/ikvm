@@ -588,10 +588,11 @@ namespace IKVM.Reflection
 
 		public CustomAttributeBuilder __ToBuilder()
 		{
+			ParameterInfo[] parameters = Constructor.GetParameters();
 			object[] args = new object[ConstructorArguments.Count];
 			for (int i = 0; i < args.Length; i++)
 			{
-				args[i] = RewrapArray(ConstructorArguments[i]);
+				args[i] = RewrapArray(parameters[i].ParameterType, ConstructorArguments[i]);
 			}
 			List<PropertyInfo> namedProperties = new List<PropertyInfo>();
 			List<object> propertyValues = new List<object>();
@@ -599,30 +600,36 @@ namespace IKVM.Reflection
 			List<object> fieldValues = new List<object>();
 			foreach (CustomAttributeNamedArgument named in NamedArguments)
 			{
-				if (named.MemberInfo is PropertyInfo)
+				PropertyInfo pi = named.MemberInfo as PropertyInfo;
+				if (pi != null)
 				{
-					namedProperties.Add((PropertyInfo)named.MemberInfo);
-					propertyValues.Add(RewrapArray(named.TypedValue));
+					namedProperties.Add(pi);
+					propertyValues.Add(RewrapArray(pi.PropertyType, named.TypedValue));
 				}
 				else
 				{
-					namedFields.Add((FieldInfo)named.MemberInfo);
-					fieldValues.Add(RewrapArray(named.TypedValue));
+					FieldInfo fi = (FieldInfo)named.MemberInfo;
+					namedFields.Add(fi);
+					fieldValues.Add(RewrapArray(fi.FieldType, named.TypedValue));
 				}
 			}
 			return new CustomAttributeBuilder(Constructor, args, namedProperties.ToArray(), propertyValues.ToArray(), namedFields.ToArray(), fieldValues.ToArray());
 		}
 
-		private static object RewrapArray(CustomAttributeTypedArgument arg)
+		private static object RewrapArray(Type type, CustomAttributeTypedArgument arg)
 		{
 			IList<CustomAttributeTypedArgument> list = arg.Value as IList<CustomAttributeTypedArgument>;
 			if (list != null)
 			{
+				Type elementType = arg.ArgumentType.GetElementType();
 				object[] arr = new object[list.Count];
 				for (int i = 0; i < arr.Length; i++)
 				{
-					// note that CLI spec only allows one dimensional arrays, so we don't need to rewrap the elements
-					arr[i] = list[i].Value;
+					arr[i] = RewrapArray(elementType, list[i]);
+				}
+				if (type == type.Module.universe.System_Object)
+				{
+					return CustomAttributeBuilder.__MakeTypedArgument(arg.ArgumentType, arr);
 				}
 				return arr;
 			}
