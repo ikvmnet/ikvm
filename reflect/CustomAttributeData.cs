@@ -95,19 +95,29 @@ namespace IKVM.Reflection
 			this.index = index;
 		}
 
-		// 4) Pseudo Custom Attribute, .NET 1.x declarative security or result of CustomAttributeBuilder.ToData()
+		// 4) Pseudo Custom Attribute, .NET 1.x declarative security
 		internal CustomAttributeData(Module module, ConstructorInfo constructor, object[] args, List<CustomAttributeNamedArgument> namedArguments)
+			: this(module, constructor, WrapConstructorArgs(args, constructor.MethodSignature), namedArguments)
 		{
-			this.module = module;
-			this.index = -1;
-			this.lazyConstructor = constructor;
-			MethodSignature sig = constructor.MethodSignature;
+		}
+
+		private static List<CustomAttributeTypedArgument> WrapConstructorArgs(object[] args, MethodSignature sig)
+		{
 			List<CustomAttributeTypedArgument> list = new List<CustomAttributeTypedArgument>();
 			for (int i = 0; i < args.Length; i++)
 			{
 				list.Add(new CustomAttributeTypedArgument(sig.GetParameterType(i), args[i]));
 			}
-			lazyConstructorArguments = list.AsReadOnly();
+			return list;
+		}
+
+		// 4) Pseudo Custom Attribute, .NET 1.x declarative security or result of CustomAttributeBuilder.ToData()
+		internal CustomAttributeData(Module module, ConstructorInfo constructor, List<CustomAttributeTypedArgument> constructorArgs, List<CustomAttributeNamedArgument> namedArguments)
+		{
+			this.module = module;
+			this.index = -1;
+			this.lazyConstructor = constructor;
+			lazyConstructorArguments = constructorArgs.AsReadOnly();
 			if (namedArguments == null)
 			{
 				this.lazyNamedArguments = Empty<CustomAttributeNamedArgument>.Array;

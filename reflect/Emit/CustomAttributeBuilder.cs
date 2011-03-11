@@ -530,18 +530,58 @@ namespace IKVM.Reflection.Emit
 				{
 					for (int i = 0; i < namedProperties.Length; i++)
 					{
-						namedArgs.Add(new CustomAttributeNamedArgument(namedProperties[i], new CustomAttributeTypedArgument(namedProperties[i].PropertyType, propertyValues[i])));
+						namedArgs.Add(new CustomAttributeNamedArgument(namedProperties[i], RewrapValue(namedProperties[i].PropertyType, propertyValues[i])));
 					}
 				}
 				if (namedFields != null)
 				{
 					for (int i = 0; i < namedFields.Length; i++)
 					{
-						namedArgs.Add(new CustomAttributeNamedArgument(namedFields[i], new CustomAttributeTypedArgument(namedFields[i].FieldType, fieldValues[i])));
+						namedArgs.Add(new CustomAttributeNamedArgument(namedFields[i], RewrapValue(namedFields[i].FieldType, fieldValues[i])));
 					}
 				}
-				return new CustomAttributeData(asm.ManifestModule, con, constructorArgs, namedArgs);
+				List<CustomAttributeTypedArgument> args = new List<CustomAttributeTypedArgument>(constructorArgs.Length);
+				ParameterInfo[] parameters = this.Constructor.GetParameters();
+				for (int i = 0; i < constructorArgs.Length; i++)
+				{
+					args.Add(RewrapValue(parameters[i].ParameterType, constructorArgs[i]));
+				}
+				return new CustomAttributeData(asm.ManifestModule, con, args, namedArgs);
 			}
+		}
+
+		private static CustomAttributeTypedArgument RewrapValue(Type type, object value)
+		{
+			if (value is Array)
+			{
+				Array array = (Array)value;
+				Type arrayType = type.Module.universe.Import(array.GetType());
+				return RewrapArray(arrayType, array);
+			}
+			else if (value is CustomAttributeTypedArgument)
+			{
+				CustomAttributeTypedArgument arg = (CustomAttributeTypedArgument)value;
+				if (arg.Value is Array)
+				{
+					return RewrapArray(arg.ArgumentType, (Array)arg.Value);
+				}
+				return arg;
+			}
+			else
+			{
+				return new CustomAttributeTypedArgument(type, value);
+			}
+		}
+
+		private static CustomAttributeTypedArgument RewrapArray(Type arrayType, Array array)
+		{
+			Type elementType = arrayType.GetElementType();
+			CustomAttributeTypedArgument[] newArray = new CustomAttributeTypedArgument[array.Length];
+			for (int i = 0; i < newArray.Length; i++)
+			{
+				newArray[i] = RewrapValue(elementType, array.GetValue(i));
+			}
+			return new CustomAttributeTypedArgument(arrayType, newArray);
 		}
 
 		internal bool HasBlob
