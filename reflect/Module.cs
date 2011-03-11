@@ -419,6 +419,11 @@ namespace IKVM.Reflection
 
 		protected abstract long GetImageBaseImpl();
 
+		public virtual byte[] __ModuleHash
+		{
+			get { throw new NotSupportedException(); }
+		}
+
 		internal Type CanonicalizeType(Type type)
 		{
 			Type canon;

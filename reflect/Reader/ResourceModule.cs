@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Jeroen Frijters
+  Copyright (C) 2009-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -23,20 +23,21 @@
 */
 using System;
 using System.Collections.Generic;
+using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection.Reader
 {
 	sealed class ResourceModule : NonPEModule
 	{
-		private readonly Assembly assembly;
-		private readonly string scopeName;
+		private readonly ModuleReader manifest;
+		private readonly int index;
 		private readonly string location;
 
-		internal ResourceModule(Assembly assembly, string scopeName, string location)
-			: base(assembly.universe)
+		internal ResourceModule(ModuleReader manifest, int index, string location)
+			: base(manifest.universe)
 		{
-			this.assembly = assembly;
-			this.scopeName = scopeName;
+			this.manifest = manifest;
+			this.index = index;
 			this.location = location;
 		}
 
@@ -52,7 +53,7 @@ namespace IKVM.Reflection.Reader
 
 		public override Assembly Assembly
 		{
-			get { return assembly; }
+			get { return manifest.Assembly; }
 		}
 
 		public override string FullyQualifiedName
@@ -67,12 +68,21 @@ namespace IKVM.Reflection.Reader
 
 		public override string ScopeName
 		{
-			get { return scopeName; }
+			get { return manifest.GetString(manifest.File.records[index].Name); }
 		}
 
 		public override Guid ModuleVersionId
 		{
 			get { throw new NotSupportedException(); }
+		}
+
+		public override byte[] __ModuleHash
+		{
+			get
+			{
+				int blob = manifest.File.records[index].HashValue;
+				return blob == 0 ? Empty<byte>.Array : manifest.GetBlobCopy(blob);
+			}
 		}
 
 		internal override Type FindType(TypeName typeName)

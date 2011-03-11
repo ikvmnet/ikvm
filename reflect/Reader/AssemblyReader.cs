@@ -200,7 +200,7 @@ namespace IKVM.Reflection.Reader
 		{
 			if ((manifestModule.File.records[index].Flags & ContainsNoMetaData) != 0)
 			{
-				return externalModules[index] = new ResourceModule(this, manifestModule.GetString(manifestModule.File.records[index].Name), location);
+				return externalModules[index] = new ResourceModule(manifestModule, index, location);
 			}
 			else
 			{
