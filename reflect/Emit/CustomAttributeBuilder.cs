@@ -87,6 +87,11 @@ namespace IKVM.Reflection.Emit
 			return new CustomAttributeBuilder(con, securityAction, blob);
 		}
 
+		public static CustomAttributeTypedArgument __MakeTypedArgument(Type type, object value)
+		{
+			return new CustomAttributeTypedArgument(type, value);
+		}
+
 		private sealed class BlobWriter
 		{
 			private readonly Assembly assembly;
@@ -240,6 +245,12 @@ namespace IKVM.Reflection.Emit
 					{
 						// value.GetType() would return a subclass of Type, but we don't want to deal with that
 						type = u.System_Type;
+					}
+					else if (value is CustomAttributeTypedArgument)
+					{
+						CustomAttributeTypedArgument cta = (CustomAttributeTypedArgument)value;
+						value = cta.Value;
+						type = cta.ArgumentType;
 					}
 					else
 					{
