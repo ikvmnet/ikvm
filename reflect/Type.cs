@@ -2410,9 +2410,11 @@ namespace IKVM.Reflection
 				}
 				StringBuilder sb = new StringBuilder(this.type.FullName);
 				sb.Append('[');
+				string sep = "";
 				foreach (Type type in args)
 				{
-					sb.Append('[').Append(type.AssemblyQualifiedName.Replace("]", "\\]")).Append(']');
+					sb.Append(sep).Append('[').Append(type.FullName).Append(", ").Append(type.Assembly.FullName.Replace("]", "\\]")).Append(']');
+					sep = ",";
 				}
 				sb.Append(']');
 				return sb.ToString();
