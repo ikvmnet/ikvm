@@ -949,6 +949,10 @@ namespace IKVM.Reflection.Reader
 				{
 					name.CultureInfo = System.Globalization.CultureInfo.InvariantCulture;
 				}
+				if (AssemblyRef.records[i].HashValue != 0)
+				{
+					name.hash = GetBlobCopy(AssemblyRef.records[i].HashValue);
+				}
 				name.Flags = (AssemblyNameFlags)AssemblyRef.records[i].Flags;
 				list.Add(name);
 			}

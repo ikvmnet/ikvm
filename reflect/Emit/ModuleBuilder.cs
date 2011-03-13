@@ -711,7 +711,14 @@ namespace IKVM.Reflection.Emit
 			{
 				rec.Culture = 0;
 			}
-			rec.HashValue = 0;
+			if (name.hash != null)
+			{
+				rec.HashValue = this.Blobs.Add(ByteBuffer.Wrap(name.hash));
+			}
+			else
+			{
+				rec.HashValue = 0;
+			}
 			return 0x23000000 | this.AssemblyRef.FindOrAddRecord(rec);
 		}
 

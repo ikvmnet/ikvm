@@ -2097,6 +2097,7 @@ namespace IKVM.Reflection.Metadata
 		{
 			for (int i = 0; i < rowCount; i++)
 			{
+				// note that we ignore HashValue here!
 				if (records[i].Name == rec.Name
 					&& records[i].MajorVersion == rec.MajorVersion
 					&& records[i].MinorVersion == rec.MinorVersion
@@ -2105,7 +2106,6 @@ namespace IKVM.Reflection.Metadata
 					&& records[i].Flags == rec.Flags
 					&& records[i].PublicKeyOrToken == rec.PublicKeyOrToken
 					&& records[i].Culture == rec.Culture
-					&& records[i].HashValue == rec.HashValue
 					)
 				{
 					return i + 1;
