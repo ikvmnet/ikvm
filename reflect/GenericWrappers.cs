@@ -328,6 +328,11 @@ namespace IKVM.Reflection
 			field.__GetDataFromRVA(data, offset, length);
 		}
 
+		public override int __FieldRVA
+		{
+			get { return field.__FieldRVA; }
+		}
+
 		public override FieldInfo __GetFieldOnTypeDefinition()
 		{
 			return field;

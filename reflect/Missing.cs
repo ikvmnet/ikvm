@@ -900,6 +900,11 @@ namespace IKVM.Reflection
 			Forwarder.__GetDataFromRVA(data, offset, length);
 		}
 
+		public override int __FieldRVA
+		{
+			get { return Forwarder.__FieldRVA; }
+		}
+
 		public override object GetRawConstantValue()
 		{
 			return Forwarder.GetRawConstantValue();

@@ -39,6 +39,7 @@ namespace IKVM.Reflection
 
 		public abstract FieldAttributes Attributes { get; }
 		public abstract void __GetDataFromRVA(byte[] data, int offset, int length);
+		public abstract int __FieldRVA { get; }
 		public abstract Object GetRawConstantValue();
 		internal abstract FieldSignature FieldSignature { get; }
 

@@ -80,35 +80,42 @@ namespace IKVM.Reflection.Reader
 
 		public override void __GetDataFromRVA(byte[] data, int offset, int length)
 		{
-			int rid = index + 1;
-			// TODO binary search?
-			for (int i = 0; i < module.FieldRVA.records.Length; i++)
+			int rva = this.__FieldRVA;
+			if (rva == 0)
 			{
-				if (module.FieldRVA.records[i].Field == rid)
-				{
-					int rva = module.FieldRVA.records[i].RVA;
-					if (rva == 0)
-					{
-						// C++ assemblies can have fields that have an RVA that is zero
-						Array.Clear(data, offset, length);
-						return;
-					}
-					module.SeekRVA(rva);
-					while (length > 0)
-					{
-						int read = module.stream.Read(data, offset, length);
-						if (read == 0)
-						{
-							// C++ assemblies can have fields that have an RVA that lies outside of the file
-							break;
-						}
-						offset += read;
-						length -= read;
-					}
-					return;
-				}
+				// C++ assemblies can have fields that have an RVA that is zero
+				Array.Clear(data, offset, length);
+				return;
 			}
-			throw new InvalidOperationException();
+			module.SeekRVA(rva);
+			while (length > 0)
+			{
+				int read = module.stream.Read(data, offset, length);
+				if (read == 0)
+				{
+					// C++ assemblies can have fields that have an RVA that lies outside of the file
+					break;
+				}
+				offset += read;
+				length -= read;
+			}
+		}
+
+		public override int __FieldRVA
+		{
+			get
+			{
+				int rid = index + 1;
+				// TODO binary search?
+				for (int i = 0; i < module.FieldRVA.records.Length; i++)
+				{
+					if (module.FieldRVA.records[i].Field == rid)
+					{
+						return module.FieldRVA.records[i].RVA;
+					}
+				}
+				throw new InvalidOperationException();
+			}
 		}
 
 		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)

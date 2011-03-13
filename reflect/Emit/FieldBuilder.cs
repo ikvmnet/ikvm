@@ -89,6 +89,11 @@ namespace IKVM.Reflection.Emit
 			throw new NotImplementedException();
 		}
 
+		public override int __FieldRVA
+		{
+			get { throw new NotImplementedException(); }
+		}
+
 		public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
 		{
 			SetCustomAttribute(new CustomAttributeBuilder(con, binaryAttribute));
