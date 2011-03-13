@@ -1800,7 +1800,7 @@ namespace IKVM.Reflection
 			return CustomAttributeData.EmptyList;
 		}
 
-		protected abstract string GetSuffix();
+		internal abstract string GetSuffix();
 
 		protected abstract Type Wrap(Type type, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers);
 	}
@@ -1878,7 +1878,7 @@ namespace IKVM.Reflection
 			return elementType.GetHashCode() * 5;
 		}
 
-		protected override string GetSuffix()
+		internal override string GetSuffix()
 		{
 			return "[]";
 		}
@@ -1958,7 +1958,7 @@ namespace IKVM.Reflection
 			return elementType.GetHashCode() * 9 + rank;
 		}
 
-		protected override string GetSuffix()
+		internal override string GetSuffix()
 		{
 			if (rank == 1)
 			{
@@ -2120,7 +2120,7 @@ namespace IKVM.Reflection
 			get { return true; }
 		}
 
-		protected override string GetSuffix()
+		internal override string GetSuffix()
 		{
 			return "&";
 		}
@@ -2168,7 +2168,7 @@ namespace IKVM.Reflection
 			get { return true; }
 		}
 
-		protected override string GetSuffix()
+		internal override string GetSuffix()
 		{
 			return "*";
 		}

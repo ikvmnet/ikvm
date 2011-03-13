@@ -25,6 +25,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text;
 using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Emit
@@ -306,23 +307,69 @@ namespace IKVM.Reflection.Emit
 				string name = null;
 				if (type != null)
 				{
-					bool v1 = !assembly.ManifestModule.__IsMissing && assembly.ManifestModule.MDStreamVersion < 0x20000;
-					if (type.Assembly == assembly || (v1 && type.Assembly == type.Module.universe.Mscorlib))
-					{
-						name = type.FullName;
-					}
-					else if (v1)
-					{
-						name = type.FullName + "," + type.Assembly.FullName;
-					}
-					else
-					{
-						name = type.AssemblyQualifiedName;
-					}
+					StringBuilder sb = new StringBuilder();
+					GetTypeName(sb, type, false);
+					name = sb.ToString();
 				}
 				WriteString(name);
 			}
 
+			private void GetTypeName(StringBuilder sb, Type type, bool isTypeParam)
+			{
+				bool v1 = !assembly.ManifestModule.__IsMissing && assembly.ManifestModule.MDStreamVersion < 0x20000;
+				bool includeAssemblyName = type.Assembly != assembly && (!v1 || type.Assembly != type.Module.universe.Mscorlib);
+				if (isTypeParam && includeAssemblyName)
+				{
+					sb.Append('[');
+				}
+				GetTypeNameImpl(sb, type);
+				if (includeAssemblyName)
+				{
+					if (v1)
+					{
+						sb.Append(',');
+					}
+					else
+					{
+						sb.Append(", ");
+					}
+					if (isTypeParam)
+					{
+						sb.Append(type.Assembly.FullName.Replace("]", "\\]")).Append(']');
+					}
+					else
+					{
+						sb.Append(type.Assembly.FullName);
+					}
+				}
+			}
+
+			private void GetTypeNameImpl(StringBuilder sb, Type type)
+			{
+				if (type.HasElementType)
+				{
+					GetTypeNameImpl(sb, type.GetElementType());
+					sb.Append(((ElementHolderType)type).GetSuffix());
+				}
+				else if (type.IsGenericTypeInstance)
+				{
+					sb.Append(type.GetGenericTypeDefinition().FullName);
+					sb.Append('[');
+					string sep = "";
+					foreach (Type typeParam in type.GetGenericArguments())
+					{
+						sb.Append(sep);
+						GetTypeName(sb, typeParam, true);
+						sep = ",";
+					}
+					sb.Append(']');
+				}
+				else
+				{
+					sb.Append(type.FullName);
+				}
+			}
+	
 			private void WriteString(string val)
 			{
 				bb.Write(val);
