@@ -298,6 +298,13 @@ namespace IKVM.Reflection
 			get { return null; }
 		}
 
+		public virtual bool __GetLayout(out int packingSize, out int typeSize)
+		{
+			packingSize = 0;
+			typeSize = 0;
+			return false;
+		}
+
 		public virtual bool IsGenericType
 		{
 			get { return false; }

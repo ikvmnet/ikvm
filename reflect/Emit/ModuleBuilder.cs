@@ -211,7 +211,10 @@ namespace IKVM.Reflection.Emit
 			TypeBuilder typeBuilder = __DefineType(ns, name);
 			typeBuilder.__SetAttributes(attr);
 			typeBuilder.SetParent(parent);
-			typeBuilder.SetPackingSizeAndTypeSize(packingSize, typesize);
+			if (packingSize != PackingSize.Unspecified || typesize != 0)
+			{
+				typeBuilder.__SetLayout((int)packingSize, typesize);
+			}
 			return typeBuilder;
 		}
 

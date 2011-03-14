@@ -236,6 +236,7 @@ namespace IKVM.Reflection.Emit
 		private List<Type> interfaces;
 		private int size;
 		private short pack;
+		private bool hasLayout;
 
 		internal TypeBuilder(ITypeOwner owner, string ns, string name)
 		{
@@ -447,8 +448,10 @@ namespace IKVM.Reflection.Emit
 			TypeBuilder typeBuilder = __DefineNestedType(ns, name);
 			typeBuilder.__SetAttributes(attr);
 			typeBuilder.SetParent(parent);
-			typeBuilder.pack = (short)packSize;
-			typeBuilder.size = typeSize;
+			if (packSize != PackingSize.Unspecified || typeSize != 0)
+			{
+				typeBuilder.__SetLayout((int)packSize, typeSize);
+			}
 			return typeBuilder;
 		}
 
@@ -487,43 +490,18 @@ namespace IKVM.Reflection.Emit
 			get { return (PackingSize)pack; }
 		}
 
-		public void __SetStructLayoutAttribute(StructLayoutAttribute attribute)
+		public override bool __GetLayout(out int packingSize, out int typeSize)
 		{
-			attribs &= ~TypeAttributes.LayoutMask;
-			switch (attribute.Value)
-			{
-				case LayoutKind.Auto:
-					attribs |= TypeAttributes.AutoLayout;
-					break;
-				case LayoutKind.Explicit:
-					attribs |= TypeAttributes.ExplicitLayout;
-					break;
-				case LayoutKind.Sequential:
-					attribs |= TypeAttributes.SequentialLayout;
-					break;
-			}
-			attribs &= ~TypeAttributes.StringFormatMask;
-			switch (attribute.CharSet)
-			{
-				case CharSet.None:
-				case CharSet.Ansi:
-					attribs |= TypeAttributes.AnsiClass;
-					break;
-				case CharSet.Auto:
-					attribs |= TypeAttributes.AutoClass;
-					break;
-				case CharSet.Unicode:
-					attribs |= TypeAttributes.UnicodeClass;
-					break;
-			}
-			pack = (short)attribute.Pack;
-			size = attribute.Size;
+			packingSize = this.pack;
+			typeSize = this.size;
+			return hasLayout;
 		}
 
-		internal void SetPackingSizeAndTypeSize(PackingSize packingSize, int typesize)
+		public void __SetLayout(int packingSize, int typesize)
 		{
 			this.pack = (short)packingSize;
 			this.size = typesize;
+			this.hasLayout = true;
 		}
 
 		private void SetStructLayoutPseudoCustomAttribute(CustomAttributeBuilder customBuilder)
@@ -542,7 +520,36 @@ namespace IKVM.Reflection.Emit
 			attr.Pack = (int?)customBuilder.GetFieldValue("Pack") ?? 0;
 			attr.Size = (int?)customBuilder.GetFieldValue("Size") ?? 0;
 			attr.CharSet = customBuilder.GetFieldValue<CharSet>("CharSet") ?? CharSet.None;
-			__SetStructLayoutAttribute(attr);
+			attribs &= ~TypeAttributes.LayoutMask;
+			switch (attr.Value)
+			{
+				case LayoutKind.Auto:
+					attribs |= TypeAttributes.AutoLayout;
+					break;
+				case LayoutKind.Explicit:
+					attribs |= TypeAttributes.ExplicitLayout;
+					break;
+				case LayoutKind.Sequential:
+					attribs |= TypeAttributes.SequentialLayout;
+					break;
+			}
+			attribs &= ~TypeAttributes.StringFormatMask;
+			switch (attr.CharSet)
+			{
+				case CharSet.None:
+				case CharSet.Ansi:
+					attribs |= TypeAttributes.AnsiClass;
+					break;
+				case CharSet.Auto:
+					attribs |= TypeAttributes.AutoClass;
+					break;
+				case CharSet.Unicode:
+					attribs |= TypeAttributes.UnicodeClass;
+					break;
+			}
+			pack = (short)attr.Pack;
+			size = attr.Size;
+			hasLayout = pack != 0 || size != 0;
 		}
 
 		public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
@@ -645,10 +652,10 @@ namespace IKVM.Reflection.Emit
 				throw new NotImplementedException();
 			}
 			typeFlags |= TypeFlags.Baked;
-			if (pack != 0 || size != 0)
+			if (hasLayout)
 			{
 				ClassLayoutTable.Record rec = new ClassLayoutTable.Record();
-				rec.PackingSize = (short)pack;
+				rec.PackingSize = pack;
 				rec.ClassSize = size;
 				rec.Parent = token;
 				this.ModuleBuilder.ClassLayout.AddRecord(rec);
