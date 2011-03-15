@@ -112,7 +112,7 @@ class InflaterHuffmanTree
             treeSize += (end - start) >> (16 - bits);
           }
       }
-    if (code != 65536 && max != 1)
+    if (code != 65536 && max > 1)
       throw new DataFormatException("incomplete dynamic bit lengths tree");
 
     /* Now create and fill the extra tables from longest to shortest
