@@ -145,6 +145,7 @@ namespace IKVM.Reflection
 		private Type typeof_System_Security_Permissions_PermissionSetAttribute;
 		private Type typeof_System_Security_Permissions_SecurityAction;
 		private List<ResolveEventHandler> resolvers = new List<ResolveEventHandler>();
+		private bool forceAssemblyResolve;
 
 		internal Assembly Mscorlib
 		{
@@ -653,10 +654,14 @@ namespace IKVM.Reflection
 
 		internal Assembly Load(string refname, Assembly requestingAssembly, bool throwOnError)
 		{
-			Assembly asm = GetLoadedAssembly(refname);
-			if (asm != null)
+			Assembly asm = null;
+			if (!forceAssemblyResolve)
 			{
-				return asm;
+				asm = GetLoadedAssembly(refname);
+				if (asm != null)
+				{
+					return asm;
+				}
 			}
 			if (resolvers.Count == 0)
 			{
@@ -681,7 +686,7 @@ namespace IKVM.Reflection
 			if (asm != null)
 			{
 				string defname = asm.FullName;
-				if (refname != defname)
+				if (refname != defname && !forceAssemblyResolve)
 				{
 					assembliesByName.Add(refname, asm);
 				}
@@ -838,13 +843,22 @@ namespace IKVM.Reflection
 		public Assembly CreateMissingAssembly(string assemblyName)
 		{
 			Assembly asm = new MissingAssembly(this, assemblyName);
-			assembliesByName.Add(asm.FullName, asm);
+			if (!forceAssemblyResolve)
+			{
+				assembliesByName.Add(asm.FullName, asm);
+			}
 			return asm;
 		}
 
 		public void EnableMissingMemberResolution()
 		{
 			resolveMissingMembers = true;
+		}
+
+		public bool ForceAssemblyResolve
+		{
+			get { return forceAssemblyResolve; }
+			set { forceAssemblyResolve = value; }
 		}
 
 		private struct ScopedTypeName : IEquatable<ScopedTypeName>
