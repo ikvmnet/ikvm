@@ -1657,6 +1657,27 @@ namespace IKVM.Reflection
 				u.GetMissingMethodOrThrow(this, ".ctor", methodSig);
 			return (ConstructorInfo)mb;
 		}
+
+		public MethodBase __CreateMissingMethod(string name, CallingConventions callingConvention, Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers, Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers)
+		{
+			MethodSignature sig = new MethodSignature(
+				returnType ?? this.Module.universe.System_Void,
+				Util.Copy(parameterTypes),
+				PackedCustomModifiers.CreateFromExternal(returnTypeOptionalCustomModifiers, returnTypeRequiredCustomModifiers, parameterTypeOptionalCustomModifiers, parameterTypeRequiredCustomModifiers, parameterTypes.Length),
+				callingConvention,
+				0);
+			MethodInfo method = new MissingMethod(this, name, sig);
+			if (name == ".ctor" || name == ".cctor")
+			{
+				return new ConstructorInfoImpl(method);
+			}
+			return method;
+		}
+
+		public FieldInfo __CreateMissingField(string name, Type fieldType, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
+		{
+			return new MissingField(this, name, FieldSignature.Create(fieldType, optionalCustomModifiers, requiredCustomModifiers));
+		}
 	}
 
 	abstract class ElementHolderType : Type

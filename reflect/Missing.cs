@@ -96,6 +96,36 @@ namespace IKVM.Reflection
 		}
 	}
 
+	public struct MissingGenericMethodBuilder
+	{
+		private readonly MissingMethod method;
+
+		public MissingGenericMethodBuilder(Type declaringType, CallingConventions callingConvention, string name, int genericParameterCount)
+		{
+			method = new MissingMethod(declaringType, name, new MethodSignature(null, null, null, callingConvention, genericParameterCount));
+		}
+
+		public Type[] GetGenericArguments()
+		{
+			return method.GetGenericArguments();
+		}
+
+		public void SetSignature(Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers, Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers)
+		{
+			method.signature = new MethodSignature(
+				returnType ?? method.Module.universe.System_Void,
+				Util.Copy(parameterTypes),
+				PackedCustomModifiers.CreateFromExternal(returnTypeOptionalCustomModifiers, returnTypeRequiredCustomModifiers, parameterTypeOptionalCustomModifiers, parameterTypeRequiredCustomModifiers, parameterTypes.Length),
+				method.signature.CallingConvention,
+				method.signature.GenericParameterCount);
+		}
+
+		public MethodInfo Finish()
+		{
+			return method;
+		}
+	}
+
 	sealed class MissingAssembly : Assembly
 	{
 		private readonly MissingModule module;
@@ -542,7 +572,7 @@ namespace IKVM.Reflection
 	{
 		private readonly Type declaringType;
 		private readonly string name;
-		private readonly MethodSignature signature;
+		internal MethodSignature signature;
 		private MethodInfo forwarder;
 		private Type[] typeArgs;
 
@@ -790,10 +820,13 @@ namespace IKVM.Reflection
 			{
 				return Forwarder.GetGenericArguments();
 			}
-			typeArgs = new Type[signature.GenericParameterCount];
-			for (int i = 0; i < typeArgs.Length; i++)
+			if (typeArgs == null)
 			{
-				typeArgs[i] = new MissingTypeParameter(this, i);
+				typeArgs = new Type[signature.GenericParameterCount];
+				for (int i = 0; i < typeArgs.Length; i++)
+				{
+					typeArgs[i] = new MissingTypeParameter(this, i);
+				}
 			}
 			return Util.Copy(typeArgs);
 		}
