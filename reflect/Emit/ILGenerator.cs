@@ -116,9 +116,39 @@ namespace IKVM.Reflection.Emit
 		}
 	}
 
+	sealed class MarkerType : Type
+	{
+		public override Type BaseType
+		{
+			get { throw new InvalidOperationException(); }
+		}
+
+		public override TypeAttributes Attributes
+		{
+			get { throw new InvalidOperationException(); }
+		}
+
+		public override string Name
+		{
+			get { throw new InvalidOperationException(); }
+		}
+
+		public override string FullName
+		{
+			get { throw new InvalidOperationException(); }
+		}
+
+		public override Module Module
+		{
+			get { throw new InvalidOperationException(); }
+		}
+	}
+
 	public sealed class ILGenerator
 	{
-		private static readonly Type FAULT = new BakedType(null); // the type we use here doesn't matter, as long as it can never be used as a real exception type
+		private static readonly Type FAULT = new MarkerType();
+		private static readonly Type FINALLY = new MarkerType();
+		private static readonly Type FILTER = new MarkerType();
 		private readonly ModuleBuilder moduleBuilder;
 		private readonly ByteBuffer code;
 		private readonly List<LocalBuilder> locals = new List<LocalBuilder>();
@@ -151,7 +181,7 @@ namespace IKVM.Reflection.Emit
 			internal int tryLength;
 			internal int handlerOffset;
 			internal int handlerLength;
-			internal Type exceptionType;	// null = finally block or handler with filter, FAULT = fault block
+			internal Type exceptionType;	// FINALLY = finally block, FILTER = handler with filter, FAULT = fault block
 			internal int filterOffset;
 
 			internal ExceptionBlock(int ordinal)
@@ -258,24 +288,42 @@ namespace IKVM.Reflection.Emit
 			}
 			stackHeight = 0;
 			UpdateStack(1);
-			if (block.tryLength == 0)
+			if (exceptionType == null)
 			{
-				block.tryLength = code.Position - block.tryOffset;
+				if (block.exceptionType != FILTER || block.handlerOffset != 0)
+				{
+					throw new ArgumentNullException("exceptionType");
+				}
+				block.handlerOffset = code.Position;
 			}
-			else if (exceptionType != null)
+			else
 			{
-				block.handlerLength = code.Position - block.handlerOffset;
-				exceptionStack.Pop();
-				ExceptionBlock newBlock = new ExceptionBlock(exceptions.Count);
-				newBlock.labelEnd = block.labelEnd;
-				newBlock.tryOffset = block.tryOffset;
-				newBlock.tryLength = block.tryLength;
-				block = newBlock;
-				exceptions.Add(block);
-				exceptionStack.Push(block);
+				if (block.tryLength == 0)
+				{
+					block.tryLength = code.Position - block.tryOffset;
+				}
+				else
+				{
+					block.handlerLength = code.Position - block.handlerOffset;
+					exceptionStack.Pop();
+					ExceptionBlock newBlock = new ExceptionBlock(exceptions.Count);
+					newBlock.labelEnd = block.labelEnd;
+					newBlock.tryOffset = block.tryOffset;
+					newBlock.tryLength = block.tryLength;
+					block = newBlock;
+					exceptions.Add(block);
+					exceptionStack.Push(block);
+				}
+				block.exceptionType = exceptionType;
+				if (exceptionType == FILTER)
+				{
+					block.filterOffset = code.Position;
+				}
+				else
+				{
+					block.handlerOffset = code.Position;
+				}
 			}
-			block.handlerOffset = code.Position;
-			block.exceptionType = exceptionType;
 		}
 
 		public Label BeginExceptionBlock()
@@ -291,25 +339,20 @@ namespace IKVM.Reflection.Emit
 
 		public void BeginExceptFilterBlock()
 		{
-			ExceptionBlock block = BeginFinallyFilterFaultBlock();
-			block.filterOffset = code.Position;
-			UpdateStack(1);
+			BeginCatchBlock(FILTER);
 		}
 
 		public void BeginFaultBlock()
 		{
-			ExceptionBlock block = BeginFinallyFilterFaultBlock();
-			block.handlerOffset = code.Position;
-			block.exceptionType = FAULT;
+			BeginFinallyFaultBlock(FAULT);
 		}
 
 		public void BeginFinallyBlock()
 		{
-			ExceptionBlock block = BeginFinallyFilterFaultBlock();
-			block.handlerOffset = code.Position;
+			BeginFinallyFaultBlock(FINALLY);
 		}
 
-		private ExceptionBlock BeginFinallyFilterFaultBlock()
+		private void BeginFinallyFaultBlock(Type type)
 		{
 			ExceptionBlock block = exceptionStack.Peek();
 			if (exceptionBlockAssistanceMode == EBAM_COMPAT || (exceptionBlockAssistanceMode == EBAM_CLEVER && stackHeight != -1))
@@ -343,8 +386,9 @@ namespace IKVM.Reflection.Emit
 				exceptions.Add(block);
 				exceptionStack.Push(block);
 			}
+			block.handlerOffset = code.Position;
+			block.exceptionType = type;
 			stackHeight = 0;
-			return block;
 		}
 
 		public void EndExceptionBlock()
@@ -352,7 +396,7 @@ namespace IKVM.Reflection.Emit
 			ExceptionBlock block = exceptionStack.Pop();
 			if (exceptionBlockAssistanceMode == EBAM_COMPAT || (exceptionBlockAssistanceMode == EBAM_CLEVER && stackHeight != -1))
 			{
-				if (block.filterOffset != 0 || (block.exceptionType != null && block.exceptionType != FAULT))
+				if (block.filterOffset != 0 || (block.exceptionType != FINALLY && block.exceptionType != FAULT))
 				{
 					Emit(OpCodes.Leave, block.labelEnd);
 				}
@@ -1028,23 +1072,23 @@ namespace IKVM.Reflection.Emit
 						{
 							bb.Write((int)COR_ILEXCEPTION_CLAUSE_FAULT);
 						}
-						else if (block.filterOffset != 0)
+						else if (block.exceptionType == FILTER)
 						{
 							bb.Write((int)COR_ILEXCEPTION_CLAUSE_FILTER);
 						}
-						else if (block.exceptionType != null)
+						else if (block.exceptionType == FINALLY)
 						{
-							bb.Write((int)COR_ILEXCEPTION_CLAUSE_EXCEPTION);
+							bb.Write((int)COR_ILEXCEPTION_CLAUSE_FINALLY);
 						}
 						else
 						{
-							bb.Write((int)COR_ILEXCEPTION_CLAUSE_FINALLY);
+							bb.Write((int)COR_ILEXCEPTION_CLAUSE_EXCEPTION);
 						}
 						bb.Write(block.tryOffset);
 						bb.Write(block.tryLength);
 						bb.Write(block.handlerOffset);
 						bb.Write(block.handlerLength);
-						if (block.exceptionType != null && block.exceptionType != FAULT)
+						if (block.exceptionType != FAULT && block.exceptionType != FILTER && block.exceptionType != FINALLY)
 						{
 							bb.Write(moduleBuilder.GetTypeTokenForMemberRef(block.exceptionType));
 						}
@@ -1065,23 +1109,23 @@ namespace IKVM.Reflection.Emit
 						{
 							bb.Write(COR_ILEXCEPTION_CLAUSE_FAULT);
 						}
-						else if (block.filterOffset != 0)
+						else if (block.exceptionType == FILTER)
 						{
 							bb.Write(COR_ILEXCEPTION_CLAUSE_FILTER);
 						}
-						else if (block.exceptionType != null)
+						else if (block.exceptionType == FINALLY)
 						{
-							bb.Write(COR_ILEXCEPTION_CLAUSE_EXCEPTION);
+							bb.Write(COR_ILEXCEPTION_CLAUSE_FINALLY);
 						}
 						else
 						{
-							bb.Write(COR_ILEXCEPTION_CLAUSE_FINALLY);
+							bb.Write(COR_ILEXCEPTION_CLAUSE_EXCEPTION);
 						}
 						bb.Write((short)block.tryOffset);
 						bb.Write((byte)block.tryLength);
 						bb.Write((short)block.handlerOffset);
 						bb.Write((byte)block.handlerLength);
-						if (block.exceptionType != null && block.exceptionType != FAULT)
+						if (block.exceptionType != FAULT && block.exceptionType != FILTER && block.exceptionType != FINALLY)
 						{
 							bb.Write(moduleBuilder.GetTypeTokenForMemberRef(block.exceptionType));
 						}

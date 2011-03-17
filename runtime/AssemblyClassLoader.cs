@@ -744,7 +744,7 @@ namespace IKVM.Internal
 
 		internal IEnumerable<java.net.URL> FindResources(string name)
 		{
-			return GetResourcesImpl(name, false);
+			return GetResourcesImpl(name, this is BootstrapClassLoader);
 		}
 
 		internal IEnumerable<java.net.URL> GetResources(string name)

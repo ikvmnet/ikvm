@@ -214,47 +214,47 @@ namespace IKVM.Reflection
 
 		public FieldInfo GetField(string name)
 		{
-			return IsResource() ? null : GetModuleType().GetField(name);
+			return GetField(name, BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly);
 		}
 
 		public FieldInfo GetField(string name, BindingFlags bindingFlags)
 		{
-			return IsResource() ? null : GetModuleType().GetField(name, bindingFlags);
+			return IsResource() ? null : GetModuleType().GetField(name, bindingFlags | BindingFlags.DeclaredOnly);
 		}
 
 		public FieldInfo[] GetFields()
 		{
-			return IsResource() ? Empty<FieldInfo>.Array : GetModuleType().GetFields();
+			return GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly);
 		}
 
 		public FieldInfo[] GetFields(BindingFlags bindingFlags)
 		{
-			return IsResource() ? Empty<FieldInfo>.Array : GetModuleType().GetFields(bindingFlags);
+			return IsResource() ? Empty<FieldInfo>.Array : GetModuleType().GetFields(bindingFlags | BindingFlags.DeclaredOnly);
 		}
 
 		public MethodInfo GetMethod(string name)
 		{
-			return IsResource() ? null : GetModuleType().GetMethod(name);
+			return IsResource() ? null : GetModuleType().GetMethod(name, BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly);
 		}
 
 		public MethodInfo GetMethod(string name, Type[] types)
 		{
-			return IsResource() ? null : GetModuleType().GetMethod(name, types);
+			return IsResource() ? null : GetModuleType().GetMethod(name, BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly, null, types, null);
 		}
 
 		public MethodInfo GetMethod(string name, BindingFlags bindingAttr, Binder binder, CallingConventions callConv, Type[] types, ParameterModifier[] modifiers)
 		{
-			return IsResource() ? null : GetModuleType().GetMethod(name, bindingAttr, binder, callConv, types, modifiers);
+			return IsResource() ? null : GetModuleType().GetMethod(name, bindingAttr | BindingFlags.DeclaredOnly, binder, callConv, types, modifiers);
 		}
 
 		public MethodInfo[] GetMethods()
 		{
-			return IsResource() ? Empty<MethodInfo>.Array : GetModuleType().GetMethods();
+			return GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly);
 		}
 
 		public MethodInfo[] GetMethods(BindingFlags bindingFlags)
 		{
-			return IsResource() ? Empty<MethodInfo>.Array : GetModuleType().GetMethods(bindingFlags);
+			return IsResource() ? Empty<MethodInfo>.Array : GetModuleType().GetMethods(bindingFlags | BindingFlags.DeclaredOnly);
 		}
 
 		public ConstructorInfo __ModuleInitializer

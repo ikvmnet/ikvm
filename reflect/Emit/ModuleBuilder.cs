@@ -409,6 +409,7 @@ namespace IKVM.Reflection.Emit
 
 		public void DefineManifestResource(string name, Stream stream, ResourceAttributes attribute)
 		{
+			manifestResources.Align(8);
 			ManifestResourceTable.Record rec = new ManifestResourceTable.Record();
 			rec.Offset = manifestResources.Position;
 			rec.Flags = (int)attribute;

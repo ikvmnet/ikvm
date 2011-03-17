@@ -343,7 +343,13 @@ namespace IKVM.Reflection.Reader
 				}
 				int index = metadataToken & 0xFFFFFF;
 				int len = ReadCompressedInt(userStringHeap, ref index) & ~1;
-				str = Encoding.Unicode.GetString(userStringHeap, index, len);
+				StringBuilder sb = new StringBuilder(len / 2);
+				for (int i = 0; i < len; i += 2)
+				{
+					char ch = (char)(userStringHeap[index + i] | userStringHeap[index + i + 1] << 8);
+					sb.Append(ch);
+				}
+				str = sb.ToString();
 				strings.Add(metadataToken, str);
 			}
 			return str;
