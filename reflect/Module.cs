@@ -202,6 +202,11 @@ namespace IKVM.Reflection
 			throw new NotSupportedException();
 		}
 
+		public virtual bool __GetSectionInfo(int rva, out string name, out int characteristics)
+		{
+			throw new NotSupportedException();
+		}
+
 		public virtual void GetPEKind(out PortableExecutableKinds peKind, out ImageFileMachine machine)
 		{
 			throw new NotSupportedException();

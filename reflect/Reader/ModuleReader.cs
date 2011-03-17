@@ -1031,6 +1031,11 @@ namespace IKVM.Reflection.Reader
 			return peFile.RvaToFileOffset((uint)rva);
 		}
 
+		public override bool __GetSectionInfo(int rva, out string name, out int characteristics)
+		{
+			return peFile.GetSectionInfo(rva, out name, out characteristics);
+		}
+
 		public override void GetPEKind(out PortableExecutableKinds peKind, out ImageFileMachine machine)
 		{
 			peKind = 0;
