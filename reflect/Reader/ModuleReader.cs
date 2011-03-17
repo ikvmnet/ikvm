@@ -823,31 +823,39 @@ namespace IKVM.Reflection.Reader
 			{
 				Type org = type;
 				FieldSignature fieldSig = FieldSignature.ReadSig(this, sig, type);
-				do
+				FieldInfo field = type.FindField(name, fieldSig);
+				if (field == null && universe.MissingMemberResolution)
 				{
-					FieldInfo field = type.FindField(name, fieldSig);
-					if (field != null)
-					{
-						return field;
-					}
-					type = type.BaseType;
-				} while (type != null);
-				return universe.GetMissingFieldOrThrow(org, name, fieldSig);
+					return universe.GetMissingFieldOrThrow(type, name, fieldSig);
+				}
+				while (field == null && (type = type.BaseType) != null)
+				{
+					field = type.FindField(name, fieldSig);
+				}
+				if (field != null)
+				{
+					return field;
+				}
+				throw new MissingFieldException(org.ToString(), name);
 			}
 			else
 			{
 				Type org = type;
 				MethodSignature methodSig = MethodSignature.ReadSig(this, sig, type);
-				do
+				MethodBase method = type.FindMethod(name, methodSig);
+				if (method == null && universe.MissingMemberResolution)
 				{
-					MethodBase method = type.FindMethod(name, methodSig);
-					if (method != null)
-					{
-						return method;
-					}
-					type = type.BaseType;
-				} while (type != null);
-				return universe.GetMissingMethodOrThrow(org, name, methodSig);
+					return universe.GetMissingMethodOrThrow(type, name, methodSig);
+				}
+				while (method == null && (type = type.BaseType) != null)
+				{
+					method = type.FindMethod(name, methodSig);
+				}
+				if (method != null)
+				{
+					return method;
+				}
+				throw new MissingMethodException(org.ToString(), name);
 			}
 		}
 

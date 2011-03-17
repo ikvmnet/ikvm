@@ -855,6 +855,11 @@ namespace IKVM.Reflection
 			resolveMissingMembers = true;
 		}
 
+		internal bool MissingMemberResolution
+		{
+			get { return resolveMissingMembers; }
+		}
+
 		public bool ForceAssemblyResolve
 		{
 			get { return forceAssemblyResolve; }
