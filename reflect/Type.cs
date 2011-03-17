@@ -354,6 +354,16 @@ namespace IKVM.Reflection
 			throw new NotSupportedException();
 		}
 
+		public virtual int[] __GetArraySizes()
+		{
+			throw new NotSupportedException();
+		}
+
+		public virtual int[] __GetArrayLowerBounds()
+		{
+			throw new NotSupportedException();
+		}
+
 		// .NET 4.0 API
 		public virtual Type GetEnumUnderlyingType()
 		{
@@ -1214,12 +1224,17 @@ namespace IKVM.Reflection
 
 		public Type MakeArrayType(int rank)
 		{
-			return MultiArrayType.Make(this, rank, null, null);
+			return MultiArrayType.Make(this, rank, Empty<int>.Array, new int[rank], null, null);
 		}
 
 		public Type __MakeArrayType(int rank, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
 		{
-			return MultiArrayType.Make(this, rank, Util.Copy(requiredCustomModifiers), Util.Copy(optionalCustomModifiers));
+			return MultiArrayType.Make(this, rank, Empty<int>.Array, new int[rank], Util.Copy(requiredCustomModifiers), Util.Copy(optionalCustomModifiers));
+		}
+
+		public Type __MakeArrayType(int rank, int[] sizes, int[] lobounds, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
+		{
+			return MultiArrayType.Make(this, rank, sizes ?? Empty<int>.Array, lobounds ?? Empty<int>.Array, Util.Copy(requiredCustomModifiers), Util.Copy(optionalCustomModifiers));
 		}
 
 		public Type MakeByRefType()
@@ -1925,16 +1940,20 @@ namespace IKVM.Reflection
 	sealed class MultiArrayType : ElementHolderType
 	{
 		private readonly int rank;
+		private readonly int[] sizes;
+		private readonly int[] lobounds;
 
-		internal static Type Make(Type type, int rank, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
+		internal static Type Make(Type type, int rank, int[] sizes, int[] lobounds, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
 		{
-			return type.Module.CanonicalizeType(new MultiArrayType(type, rank, requiredCustomModifiers, optionalCustomModifiers));
+			return type.Module.CanonicalizeType(new MultiArrayType(type, rank, sizes, lobounds, requiredCustomModifiers, optionalCustomModifiers));
 		}
 
-		private MultiArrayType(Type type, int rank, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
+		private MultiArrayType(Type type, int rank, int[] sizes, int[] lobounds, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
 			: base(type, requiredCustomModifiers, optionalCustomModifiers)
 		{
 			this.rank = rank;
+			this.sizes = sizes;
+			this.lobounds = lobounds;
 		}
 
 		public override Type BaseType
@@ -1980,10 +1999,39 @@ namespace IKVM.Reflection
 			return rank;
 		}
 
+		public override int[] __GetArraySizes()
+		{
+			return Util.Copy(sizes);
+		}
+
+		public override int[] __GetArrayLowerBounds()
+		{
+			return Util.Copy(lobounds);
+		}
+
 		public override bool Equals(object o)
 		{
 			MultiArrayType at = o as MultiArrayType;
-			return EqualsHelper(at) && at.rank == rank;
+			return EqualsHelper(at)
+				&& at.rank == rank
+				&& ArrayEquals(at.sizes, sizes)
+				&& ArrayEquals(at.lobounds, lobounds);
+		}
+
+		private static bool ArrayEquals(int[] i1, int[] i2)
+		{
+			if (i1.Length == i2.Length)
+			{
+				for (int i = 0; i < i1.Length; i++)
+				{
+					if (i1[i] != i2[i])
+					{
+						return false;
+					}
+				}
+				return true;
+			}
+			return false;
 		}
 
 		public override int GetHashCode()
@@ -2005,7 +2053,7 @@ namespace IKVM.Reflection
 
 		protected override Type Wrap(Type type, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
 		{
-			return Make(type, rank, requiredCustomModifiers, optionalCustomModifiers);
+			return Make(type, rank, sizes, lobounds, requiredCustomModifiers, optionalCustomModifiers);
 		}
 	}
 
