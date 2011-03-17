@@ -193,7 +193,7 @@ namespace IKVM.Reflection.Reader
 			}
 			// TODO add ModuleResolve event
 			string location = Path.Combine(Path.GetDirectoryName(this.location), manifestModule.GetString(manifestModule.File.records[index].Name));
-			return LoadModule(index, File.ReadAllBytes(location), location);
+			return LoadModule(index, null, location);
 		}
 
 		private Module LoadModule(int index, byte[] rawModule, string location)
@@ -204,6 +204,10 @@ namespace IKVM.Reflection.Reader
 			}
 			else
 			{
+				if (rawModule == null)
+				{
+					rawModule = File.ReadAllBytes(location);
+				}
 				return externalModules[index] = new ModuleReader(this, manifestModule.universe, new MemoryStream(rawModule), location);
 			}
 		}
