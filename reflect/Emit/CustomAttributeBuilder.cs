@@ -537,17 +537,16 @@ namespace IKVM.Reflection.Emit
 			return null;
 		}
 
-		internal object GetPropertyValue(string name)
+		internal string GetLegacyDeclSecurity()
 		{
-			if (namedProperties != null)
+			if (con.DeclaringType == con.Module.universe.System_Security_Permissions_PermissionSetAttribute
+				&& blob == null
+				&& (namedFields == null || namedFields.Length == 0)
+				&& namedProperties != null
+				&& namedProperties.Length == 1
+				&& namedProperties[0].Name == "XML")
 			{
-				for (int i = 0; i < namedProperties.Length; i++)
-				{
-					if (namedProperties[i].Name == name)
-					{
-						return propertyValues[i];
-					}
-				}
+				return propertyValues[0] as string;
 			}
 			return null;
 		}
