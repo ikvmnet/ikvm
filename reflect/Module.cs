@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009-2010 Jeroen Frijters
+  Copyright (C) 2009-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -407,6 +407,8 @@ namespace IKVM.Reflection
 
 		public abstract Type[] __GetReferencedTypes();
 
+		public abstract Type[] __GetExportedTypes();
+
 		public virtual bool __IsMissing
 		{
 			get { return false; }
@@ -547,6 +549,11 @@ namespace IKVM.Reflection
 		}
 
 		public override Type[] __GetReferencedTypes()
+		{
+			throw NotSupportedException();
+		}
+
+		public override Type[] __GetExportedTypes()
 		{
 			throw NotSupportedException();
 		}

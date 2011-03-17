@@ -342,6 +342,7 @@ namespace IKVM.Reflection
 		private readonly string ns;
 		private readonly string name;
 		private Type[] typeArgs;
+		private int token;
 
 		internal MissingType(Module module, Type declaringType, string ns, string name)
 		{
@@ -527,6 +528,17 @@ namespace IKVM.Reflection
 
 		internal override Type BindTypeParameters(IGenericBinder binder)
 		{
+			return this;
+		}
+
+		internal int GetMetadataTokenForMissing()
+		{
+			return token;
+		}
+
+		internal override Type SetMetadataTokenForMissing(int token)
+		{
+			this.token = token;
 			return this;
 		}
 	}

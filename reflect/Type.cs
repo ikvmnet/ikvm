@@ -1678,6 +1678,11 @@ namespace IKVM.Reflection
 		{
 			return new MissingField(this, name, FieldSignature.Create(fieldType, optionalCustomModifiers, requiredCustomModifiers));
 		}
+
+		internal virtual Type SetMetadataTokenForMissing(int token)
+		{
+			return this;
+		}
 	}
 
 	abstract class ElementHolderType : Type

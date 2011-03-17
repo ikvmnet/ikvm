@@ -979,6 +979,32 @@ namespace IKVM.Reflection.Reader
 			return arr;
 		}
 
+		public override Type[] __GetExportedTypes()
+		{
+			Type[] arr = new Type[this.ExportedType.RowCount];
+			for (int i = 0; i < arr.Length; i++)
+			{
+				arr[i] = ResolveExportedType(i);
+			}
+			return arr;
+		}
+
+		private Type ResolveExportedType(int index)
+		{
+			TypeName typeName = GetTypeName(ExportedType.records[index].TypeNamespace, ExportedType.records[index].TypeName);
+			int implementation = ExportedType.records[index].Implementation;
+			int token = ExportedType.records[index].TypeDefId;
+			switch (implementation >> 24)
+			{
+				case AssemblyRefTable.Index:
+					return ResolveAssemblyRef((implementation & 0xFFFFFF) - 1).ResolveType(typeName).SetMetadataTokenForMissing(token);
+				case ExportedTypeTable.Index:
+					return ResolveExportedType((implementation & 0xFFFFFF) - 1).ResolveNestedType(typeName).SetMetadataTokenForMissing(token);
+				default:
+					throw new NotImplementedException();
+			}
+		}
+
 		internal override Type GetModuleType()
 		{
 			PopulateTypeDef();

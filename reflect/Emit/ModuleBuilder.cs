@@ -290,18 +290,29 @@ namespace IKVM.Reflection.Emit
 		internal void AddTypeForwarder(Type type)
 		{
 			ExportType(type);
-			foreach (Type nested in type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic))
+			if (!type.__IsMissing)
 			{
-				// we export all nested types (i.e. even the private ones)
-				// (this behavior is the same as the C# compiler)
-				AddTypeForwarder(nested);
+				foreach (Type nested in type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic))
+				{
+					// we export all nested types (i.e. even the private ones)
+					// (this behavior is the same as the C# compiler)
+					AddTypeForwarder(nested);
+				}
 			}
 		}
 
 		private int ExportType(Type type)
 		{
 			ExportedTypeTable.Record rec = new ExportedTypeTable.Record();
-			rec.TypeDefId = type.MetadataToken;
+			MissingType missing = type as MissingType;
+			if (missing != null)
+			{
+				rec.TypeDefId = missing.GetMetadataTokenForMissing();
+			}
+			else
+			{
+				rec.TypeDefId = type.MetadataToken;
+			}
 			rec.TypeName = this.Strings.Add(type.__Name);
 			if (type.IsNested)
 			{
@@ -1336,6 +1347,11 @@ namespace IKVM.Reflection.Emit
 				}
 			}
 			return list.ToArray();
+		}
+
+		public override Type[] __GetExportedTypes()
+		{
+			throw new NotImplementedException();
 		}
 
 		public int __AddModule(int flags, string name, byte[] hash)
