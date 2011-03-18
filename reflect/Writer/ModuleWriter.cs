@@ -279,7 +279,7 @@ namespace IKVM.Reflection.Writer
 			writer.WriteSectionHeader(reloc);
 
 			stream.Seek(text.PointerToRawData, SeekOrigin.Begin);
-			code.Write(mw, (int)sdata.VirtualAddress);
+			code.Write(mw, sdata.VirtualAddress);
 
 			stream.Seek(sdata.PointerToRawData, SeekOrigin.Begin);
 			mw.Write(moduleBuilder.initializedData);

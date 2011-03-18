@@ -146,9 +146,19 @@ namespace IKVM.Reflection.Writer
 			get { return (uint)moduleBuilder.MetadataLength; }
 		}
 
+		private uint VTableFixupsRVA
+		{
+			get { return (MetadataRVA + MetadataLength + 7) & ~7U; }
+		}
+
+		private uint VTableFixupsLength
+		{
+			get { return (uint)moduleBuilder.vtablefixups.Count * 8; }
+		}
+
 		internal uint DebugDirectoryRVA
 		{
-			get { return MetadataRVA + MetadataLength; }
+			get { return VTableFixupsRVA + VTableFixupsLength; }
 		}
 
 		internal uint DebugDirectoryLength
@@ -250,7 +260,7 @@ namespace IKVM.Reflection.Writer
 			}
 		}
 
-		internal void Write(MetadataWriter mw, int sdataRVA)
+		internal void Write(MetadataWriter mw, uint sdataRVA)
 		{
 			// Now that we're ready to start writing, we need to do some fix ups
 			moduleBuilder.MethodDef.Fixup(this);
@@ -264,7 +274,7 @@ namespace IKVM.Reflection.Writer
 			moduleBuilder.GenericParam.Fixup(moduleBuilder);
 			moduleBuilder.CustomAttribute.Fixup(moduleBuilder);
 			moduleBuilder.FieldLayout.Fixup(moduleBuilder);
-			moduleBuilder.FieldRVA.Fixup(moduleBuilder, sdataRVA, (int)this.MethodBodiesRVA);
+			moduleBuilder.FieldRVA.Fixup(moduleBuilder, (int)sdataRVA, (int)this.MethodBodiesRVA);
 			moduleBuilder.ImplMap.Fixup(moduleBuilder);
 			moduleBuilder.MethodSpec.Fixup(moduleBuilder);
 			moduleBuilder.GenericParamConstraint.Fixup(moduleBuilder);
@@ -287,6 +297,11 @@ namespace IKVM.Reflection.Writer
 			{
 				cliHeader.StrongNameSignatureRVA = StrongNameSignatureRVA;
 				cliHeader.StrongNameSignatureSize = StrongNameSignatureLength;
+			}
+			if (VTableFixupsLength != 0)
+			{
+				cliHeader.VTableFixupsRVA = VTableFixupsRVA;
+				cliHeader.VTableFixupsSize = VTableFixupsLength;
 			}
 			cliHeader.Write(mw);
 
@@ -320,6 +335,16 @@ namespace IKVM.Reflection.Writer
 			// Metadata
 			AssertRVA(mw, MetadataRVA);
 			moduleBuilder.WriteMetadata(mw);
+
+			// alignment padding
+			for (int i = (int)(VTableFixupsRVA - (MetadataRVA + MetadataLength)); i > 0; i--)
+			{
+				mw.Write((byte)0);
+			}
+
+			// VTableFixups
+			AssertRVA(mw, VTableFixupsRVA);
+			WriteVTableFixups(mw, sdataRVA);
 
 			// Debug Directory
 			AssertRVA(mw, DebugDirectoryRVA);
@@ -373,6 +398,16 @@ namespace IKVM.Reflection.Writer
 		private void AssertRVA(MetadataWriter mw, uint rva)
 		{
 			Debug.Assert(mw.Position - PointerToRawData + BaseRVA == rva);
+		}
+
+		private void WriteVTableFixups(MetadataWriter mw, uint sdataRVA)
+		{
+			foreach (ModuleBuilder.VTableFixups fixups in moduleBuilder.vtablefixups)
+			{
+				mw.Write(fixups.initializedDataOffset + sdataRVA);
+				mw.Write(fixups.count);
+				mw.Write(fixups.type);
+			}
 		}
 
 		private void WriteDebugDirectory(MetadataWriter mw)

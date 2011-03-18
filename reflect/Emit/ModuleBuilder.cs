@@ -65,6 +65,19 @@ namespace IKVM.Reflection.Emit
 		internal readonly UserStringHeap UserStrings = new UserStringHeap();
 		internal readonly GuidHeap Guids = new GuidHeap();
 		internal readonly BlobHeap Blobs = new BlobHeap();
+		internal readonly List<VTableFixups> vtablefixups = new List<VTableFixups>();
+
+		internal struct VTableFixups
+		{
+			internal uint initializedDataOffset;
+			internal ushort count;
+			internal ushort type;
+
+			internal int SlotWidth
+			{
+				get { return (type & 0x02) == 0 ? 4 : 8; }
+			}
+		}
 
 		struct MemberRefKey : IEquatable<MemberRefKey>
 		{
@@ -782,6 +795,14 @@ namespace IKVM.Reflection.Emit
 				int pseudoToken = methodBodies.GetInt32AtCurrentPosition();
 				methodBodies.Write(ResolvePseudoToken(pseudoToken));
 			}
+			foreach (VTableFixups fixup in vtablefixups)
+			{
+				for (int i = 0; i < fixup.count; i++)
+				{
+					initializedData.Position = (int)fixup.initializedDataOffset + i * fixup.SlotWidth;
+					initializedData.Write(ResolvePseudoToken(initializedData.GetInt32AtCurrentPosition()));
+				}
+			}
 		}
 
 		private int GetHeaderLength()
@@ -1376,6 +1397,40 @@ namespace IKVM.Reflection.Emit
 		public void __SetCustomAttributeFor(int token, CustomAttributeBuilder customBuilder)
 		{
 			SetCustomAttribute(token, customBuilder);
+		}
+
+		public RelativeVirtualAddress __AddVTableFixups(MethodBuilder[] methods, int type)
+		{
+			initializedData.Align(8);
+			VTableFixups fixups;
+			fixups.initializedDataOffset = (uint)initializedData.Position;
+			fixups.count = (ushort)methods.Length;
+			fixups.type = (ushort)type;
+			foreach (MethodBuilder mb in methods)
+			{
+				initializedData.Write(mb.MetadataToken);
+				if (fixups.SlotWidth == 8)
+				{
+					initializedData.Write(0);
+				}
+			}
+			vtablefixups.Add(fixups);
+			return new RelativeVirtualAddress(fixups.initializedDataOffset);
+		}
+	}
+
+	public struct RelativeVirtualAddress
+	{
+		internal readonly uint initializedDataOffset;
+
+		internal RelativeVirtualAddress(uint initializedDataOffset)
+		{
+			this.initializedDataOffset = initializedDataOffset;
+		}
+
+		public static RelativeVirtualAddress operator +(RelativeVirtualAddress rva, int offset)
+		{
+			return new RelativeVirtualAddress(rva.initializedDataOffset + (uint)offset);
 		}
 	}
 
