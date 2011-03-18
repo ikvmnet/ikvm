@@ -207,6 +207,11 @@ namespace IKVM.Reflection
 			throw new NotSupportedException();
 		}
 
+		public virtual int __ReadDataFromRVA(int rva, byte[] data, int offset, int length)
+		{
+			throw new NotSupportedException();
+		}
+
 		public virtual void GetPEKind(out PortableExecutableKinds peKind, out ImageFileMachine machine)
 		{
 			throw new NotSupportedException();

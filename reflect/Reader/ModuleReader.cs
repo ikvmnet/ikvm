@@ -1044,6 +1044,25 @@ namespace IKVM.Reflection.Reader
 			return peFile.GetSectionInfo(rva, out name, out characteristics);
 		}
 
+		public override int __ReadDataFromRVA(int rva, byte[] data, int offset, int length)
+		{
+			SeekRVA(rva);
+			int totalBytesRead = 0;
+			while (length > 0)
+			{
+				int read = stream.Read(data, offset, length);
+				if (read == 0)
+				{
+					// C++ assemblies can have fields that have an RVA that lies outside of the file
+					break;
+				}
+				offset += read;
+				length -= read;
+				totalBytesRead += read;
+			}
+			return totalBytesRead;
+		}
+
 		public override void GetPEKind(out PortableExecutableKinds peKind, out ImageFileMachine machine)
 		{
 			peKind = 0;
