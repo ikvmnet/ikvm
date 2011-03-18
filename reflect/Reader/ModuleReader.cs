@@ -967,6 +967,21 @@ namespace IKVM.Reflection.Reader
 			return list.ToArray();
 		}
 
+		public override void __ResolveReferencedAssemblies(Assembly[] assemblies)
+		{
+			if (assemblyRefs == null)
+			{
+				assemblyRefs = new Assembly[AssemblyRef.RowCount];
+			}
+			for (int i = 0; i < assemblies.Length; i++)
+			{
+				if (assemblyRefs[i] == null)
+				{
+					assemblyRefs[i] = assemblies[i];
+				}
+			}
+		}
+
 		public override string[] __GetReferencedModules()
 		{
 			string[] arr = new string[this.ModuleRef.RowCount];

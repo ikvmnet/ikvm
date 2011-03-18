@@ -413,6 +413,11 @@ namespace IKVM.Reflection
 
 		public abstract AssemblyName[] __GetReferencedAssemblies();
 
+		public virtual void __ResolveReferencedAssemblies(Assembly[] assemblies)
+		{
+			throw new NotSupportedException();
+		}
+
 		public abstract string[] __GetReferencedModules();
 
 		public abstract Type[] __GetReferencedTypes();
