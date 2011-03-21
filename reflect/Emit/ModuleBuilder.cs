@@ -698,7 +698,7 @@ namespace IKVM.Reflection.Emit
 			for (int i = 0; i < this.ExportedType.records.Length; i++)
 			{
 				int implementation = this.ExportedType.records[i].Implementation;
-				if ((implementation >> 24) == AssemblyRefTable.Index)
+				if ((implementation & 0x7F800000) == 0x23800000)
 				{
 					this.ExportedType.records[i].Implementation = realtokens[(implementation & 0x7FFFFF) - 1];
 				}
