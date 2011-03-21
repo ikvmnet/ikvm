@@ -680,13 +680,16 @@ namespace IKVM.Reflection.Emit
 			int[] realtokens = new int[referencedAssemblies.Count];
 			foreach (KeyValuePair<Assembly, int> kv in referencedAssemblies)
 			{
-				realtokens[(kv.Value & 0x7FFFFF) - 1] = FindOrAddAssemblyRef(kv.Key.GetName());
+				if ((kv.Value & 0x7F800000) == 0x23800000)
+				{
+					realtokens[(kv.Value & 0x7FFFFF) - 1] = FindOrAddAssemblyRef(kv.Key.GetName(), false);
+				}
 			}
 			// now fixup the resolution scopes in TypeRef
 			for (int i = 0; i < this.TypeRef.records.Length; i++)
 			{
 				int resolutionScope = this.TypeRef.records[i].ResolutionScope;
-				if ((resolutionScope >> 24) == AssemblyRefTable.Index)
+				if ((resolutionScope & 0x7F800000) == 0x23800000)
 				{
 					this.TypeRef.records[i].ResolutionScope = realtokens[(resolutionScope & 0x7FFFFF) - 1];
 				}
@@ -702,7 +705,7 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 
-		private int FindOrAddAssemblyRef(AssemblyName name)
+		private int FindOrAddAssemblyRef(AssemblyName name, bool alwaysAdd)
 		{
 			AssemblyRefTable.Record rec = new AssemblyRefTable.Record();
 			Version ver = name.Version ?? new Version(0, 0, 0, 0);
@@ -743,7 +746,7 @@ namespace IKVM.Reflection.Emit
 			{
 				rec.HashValue = 0;
 			}
-			return 0x23000000 | this.AssemblyRef.FindOrAddRecord(rec);
+			return 0x23000000 | (alwaysAdd ? this.AssemblyRef.AddRecord(rec) : this.AssemblyRef.FindOrAddRecord(rec));
 		}
 
 		internal void WriteSymbolTokenMap()
@@ -1310,12 +1313,21 @@ namespace IKVM.Reflection.Emit
 
 		public void __AddAssemblyReference(AssemblyName assemblyName)
 		{
+			__AddAssemblyReference(assemblyName, null);
+		}
+
+		public void __AddAssemblyReference(AssemblyName assemblyName, Assembly assembly)
+		{
 			if (referencedAssemblyNames == null)
 			{
 				referencedAssemblyNames = new List<AssemblyName>();
 			}
-			FindOrAddAssemblyRef(assemblyName);
 			referencedAssemblyNames.Add((AssemblyName)assemblyName.Clone());
+			int token = FindOrAddAssemblyRef(assemblyName, true);
+			if (assembly != null)
+			{
+				referencedAssemblies.Add(assembly, token);
+			}
 		}
 
 		public override AssemblyName[] __GetReferencedAssemblies()
