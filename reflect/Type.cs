@@ -55,9 +55,12 @@ namespace IKVM.Reflection
 			HasNestedTypes = 2,
 			Baked = 4,
 
-			// for general use
+			// for use by MissingType
 			ValueType = 8,
 			NotValueType = 16,
+
+			// for use by TypeDef, TypeBuilder or MissingType
+			EnumOrValueType = 32,
 		}
 
 		// prevent subclassing by outsiders
@@ -68,7 +71,9 @@ namespace IKVM.Reflection
 
 		internal Type(Type underlyingType)
 		{
+			System.Diagnostics.Debug.Assert(underlyingType.underlyingType == underlyingType);
 			this.underlyingType = underlyingType;
+			this.typeFlags = underlyingType.typeFlags;
 		}
 
 		public static Binder DefaultBinder
@@ -181,8 +186,9 @@ namespace IKVM.Reflection
 			get
 			{
 				Type baseType = this.BaseType;
-				return baseType == this.Module.universe.System_Enum
-					|| (baseType == this.Module.universe.System_ValueType && this != this.Module.universe.System_Enum);
+				return baseType != null
+					&& (baseType.typeFlags & TypeFlags.EnumOrValueType) != 0
+					&& (typeFlags & TypeFlags.EnumOrValueType) == 0;
 			}
 		}
 
@@ -1053,7 +1059,13 @@ namespace IKVM.Reflection
 
 		public bool IsEnum
 		{
-			get { return this.BaseType == this.Module.universe.System_Enum; }
+			get
+			{
+				Type baseType = this.BaseType;
+				return baseType != null
+					&& (baseType.typeFlags & TypeFlags.EnumOrValueType) != 0
+					&& baseType.__Name[0] == 'E';
+			}
 		}
 
 		public bool IsSealed
@@ -1697,6 +1709,18 @@ namespace IKVM.Reflection
 		internal virtual Type SetMetadataTokenForMissing(int token)
 		{
 			return this;
+		}
+
+		protected void MarkEnumOrValueType(string typeNamespace, string typeName)
+		{
+			// we don't assume that mscorlib won't have nested types with these names,
+			// so we don't check that we're not a nested type
+			if (typeNamespace == "System"
+				&& (typeName == "Enum" || typeName == "ValueType")
+				&& this.Assembly.GetName().Name.Equals("mscorlib", StringComparison.OrdinalIgnoreCase))
+			{
+				typeFlags |= TypeFlags.EnumOrValueType;
+			}
 		}
 	}
 
