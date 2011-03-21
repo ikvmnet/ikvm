@@ -167,7 +167,7 @@ namespace IKVM.Reflection
 		private Type ResolvePrimitive(string name)
 		{
 			// Primitive here means that these types have a special metadata encoding, which means that
-			// there can be references to them without refering to them by name explicitly.
+			// there can be references to them without referring to them by name explicitly.
 			// When 'resolve missing type' mode is enabled, we want these types to be usable even when
 			// they don't exist in mscorlib or there is no mscorlib loaded.
 			return Mscorlib.ResolveType(new TypeName("System", name));
