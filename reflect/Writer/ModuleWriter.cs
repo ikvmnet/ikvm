@@ -78,6 +78,7 @@ namespace IKVM.Reflection.Writer
 			PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine,
 			ResourceSection resources, int entryPointToken, Stream stream)
 		{
+			moduleBuilder.ApplyUnmanagedExports(imageFileMachine);
 			moduleBuilder.FixupMethodBodyTokens();
 
 			moduleBuilder.ModuleTable.Add(0, moduleBuilder.Strings.Add(moduleBuilder.moduleName), moduleBuilder.Guids.Add(moduleBuilder.ModuleVersionId), 0, 0);

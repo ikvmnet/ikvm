@@ -784,6 +784,43 @@ namespace IKVM.Reflection.Emit
 			return resolvedTokens[index];
 		}
 
+		internal void ApplyUnmanagedExports(ImageFileMachine imageFileMachine)
+		{
+			if (unmanagedExports.Count != 0)
+			{
+				int type;
+				int size;
+				if (imageFileMachine == ImageFileMachine.I386)
+				{
+					type = 0x05;
+					size = 4;
+				}
+				else
+				{
+					type = 0x06;
+					size = 8;
+				}
+				List<MethodBuilder> methods = new List<MethodBuilder>();
+				for (int i = 0; i < unmanagedExports.Count; i++)
+				{
+					if (unmanagedExports[i].mb != null)
+					{
+						methods.Add(unmanagedExports[i].mb);
+					}
+				}
+				RelativeVirtualAddress rva = __AddVTableFixups(methods.ToArray(), type);
+				for (int i = 0; i < unmanagedExports.Count; i++)
+				{
+					if (unmanagedExports[i].mb != null)
+					{
+						UnmanagedExport exp = unmanagedExports[i];
+						exp.rva = new RelativeVirtualAddress(rva.initializedDataOffset + (uint)(methods.IndexOf(unmanagedExports[i].mb) * size));
+						unmanagedExports[i] = exp;
+					}
+				}
+			}
+		}
+
 		internal void FixupMethodBodyTokens()
 		{
 			int methodToken = 0x06000001;
@@ -1433,9 +1470,15 @@ namespace IKVM.Reflection.Emit
 
 		public void __AddUnmanagedExportStub(string name, int ordinal, RelativeVirtualAddress rva)
 		{
+			AddUnmanagedExport(name, ordinal, null, rva);
+		}
+
+		internal void AddUnmanagedExport(string name, int ordinal, MethodBuilder methodBuilder, RelativeVirtualAddress rva)
+		{
 			UnmanagedExport export;
 			export.name = name;
 			export.ordinal = ordinal;
+			export.mb = methodBuilder;
 			export.rva = rva;
 			unmanagedExports.Add(export);
 		}
@@ -1446,6 +1489,7 @@ namespace IKVM.Reflection.Emit
 		internal string name;
 		internal int ordinal;
 		internal RelativeVirtualAddress rva;
+		internal MethodBuilder mb;
 	}
 
 	public struct RelativeVirtualAddress
