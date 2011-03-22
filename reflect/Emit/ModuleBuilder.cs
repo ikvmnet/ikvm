@@ -808,14 +808,17 @@ namespace IKVM.Reflection.Emit
 						methods.Add(unmanagedExports[i].mb);
 					}
 				}
-				RelativeVirtualAddress rva = __AddVTableFixups(methods.ToArray(), type);
-				for (int i = 0; i < unmanagedExports.Count; i++)
+				if (methods.Count != 0)
 				{
-					if (unmanagedExports[i].mb != null)
+					RelativeVirtualAddress rva = __AddVTableFixups(methods.ToArray(), type);
+					for (int i = 0; i < unmanagedExports.Count; i++)
 					{
-						UnmanagedExport exp = unmanagedExports[i];
-						exp.rva = new RelativeVirtualAddress(rva.initializedDataOffset + (uint)(methods.IndexOf(unmanagedExports[i].mb) * size));
-						unmanagedExports[i] = exp;
+						if (unmanagedExports[i].mb != null)
+						{
+							UnmanagedExport exp = unmanagedExports[i];
+							exp.rva = new RelativeVirtualAddress(rva.initializedDataOffset + (uint)(methods.IndexOf(unmanagedExports[i].mb) * size));
+							unmanagedExports[i] = exp;
+						}
 					}
 				}
 			}
