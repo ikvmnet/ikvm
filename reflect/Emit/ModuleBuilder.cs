@@ -66,6 +66,7 @@ namespace IKVM.Reflection.Emit
 		internal readonly GuidHeap Guids = new GuidHeap();
 		internal readonly BlobHeap Blobs = new BlobHeap();
 		internal readonly List<VTableFixups> vtablefixups = new List<VTableFixups>();
+		internal readonly List<UnmanagedExport> unmanagedExports = new List<UnmanagedExport>();
 
 		internal struct VTableFixups
 		{
@@ -1429,6 +1430,22 @@ namespace IKVM.Reflection.Emit
 			vtablefixups.Add(fixups);
 			return new RelativeVirtualAddress(fixups.initializedDataOffset);
 		}
+
+		public void __AddUnmanagedExportStub(string name, int ordinal, RelativeVirtualAddress rva)
+		{
+			UnmanagedExport export;
+			export.name = name;
+			export.ordinal = ordinal;
+			export.rva = rva;
+			unmanagedExports.Add(export);
+		}
+	}
+
+	struct UnmanagedExport
+	{
+		internal string name;
+		internal int ordinal;
+		internal RelativeVirtualAddress rva;
 	}
 
 	public struct RelativeVirtualAddress

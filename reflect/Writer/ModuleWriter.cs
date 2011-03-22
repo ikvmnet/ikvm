@@ -172,6 +172,13 @@ namespace IKVM.Reflection.Writer
 			moduleBuilder.Tables.Freeze(mw);
 			TextSection code = new TextSection(writer, cliHeader, moduleBuilder, ComputeStrongNameSignatureLength(publicKey));
 
+			// Export Directory
+			if (code.ExportDirectoryLength != 0)
+			{
+				writer.Headers.OptionalHeader.DataDirectory[0].VirtualAddress = code.ExportDirectoryRVA;
+				writer.Headers.OptionalHeader.DataDirectory[0].Size = code.ExportDirectoryLength;
+			}
+
 			// Import Directory
 			writer.Headers.OptionalHeader.DataDirectory[1].VirtualAddress = code.ImportDirectoryRVA;
 			writer.Headers.OptionalHeader.DataDirectory[1].Size = code.ImportDirectoryLength;
@@ -237,7 +244,7 @@ namespace IKVM.Reflection.Writer
 			SectionHeader reloc = new SectionHeader();
 			reloc.Name = ".reloc";
 			reloc.VirtualAddress = rsrc.VirtualAddress + writer.ToSectionAlignment(rsrc.VirtualSize);
-			reloc.VirtualSize = 12;
+			reloc.VirtualSize = ((uint)moduleBuilder.unmanagedExports.Count + 1) * 12;
 			reloc.PointerToRawData = rsrc.PointerToRawData + rsrc.SizeOfRawData;
 			reloc.SizeOfRawData = writer.ToFileAlignment(reloc.VirtualSize);
 			reloc.Characteristics = SectionHeader.IMAGE_SCN_MEM_READ | SectionHeader.IMAGE_SCN_CNT_INITIALIZED_DATA | SectionHeader.IMAGE_SCN_MEM_DISCARDABLE;
@@ -292,37 +299,10 @@ namespace IKVM.Reflection.Writer
 
 			stream.Seek(reloc.PointerToRawData, SeekOrigin.Begin);
 			// .reloc section
-			uint relocAddress = code.StartupStubRVA;
-			switch (imageFileMachine)
-			{
-				case ImageFileMachine.I386:
-				case ImageFileMachine.AMD64:
-					relocAddress += 2;
-					break;
-				case ImageFileMachine.IA64:
-					relocAddress += 0x20;
-					break;
-			}
-			uint pageRVA = relocAddress & ~0xFFFU;
-			mw.Write(pageRVA);	// PageRVA
-			mw.Write(0x000C);	// Block Size
-			if (imageFileMachine == ImageFileMachine.I386)
-			{
-				mw.Write(0x3000 + relocAddress - pageRVA);				// Type / Offset
-			}
-			else if (imageFileMachine == ImageFileMachine.AMD64)
-			{
-				mw.Write(0xA000 + relocAddress - pageRVA);				// Type / Offset
-			}
-			else if (imageFileMachine == ImageFileMachine.IA64)
-			{
-				// on IA64 the StartupStubRVA is 16 byte aligned, so these two addresses won't cross a page boundary
-				mw.Write((short)(0xA000 + relocAddress - pageRVA));		// Type / Offset
-				mw.Write((short)(0xA000 + relocAddress - pageRVA + 8));	// Type / Offset
-			}
+			code.WriteRelocations(mw);
 
 			// file alignment
-			mw.Write(new byte[writer.Headers.OptionalHeader.FileAlignment - reloc.VirtualSize]);
+			mw.Write(new byte[writer.Headers.OptionalHeader.FileAlignment - (reloc.VirtualSize & (writer.Headers.OptionalHeader.FileAlignment - 1))]);
 
 			// do the strong naming
 			if (keyPair != null)
