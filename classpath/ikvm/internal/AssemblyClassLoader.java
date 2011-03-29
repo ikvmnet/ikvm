@@ -87,7 +87,7 @@ public final class AssemblyClassLoader extends ClassLoader
     public static native Enumeration getResources(ClassLoader classLoader, Assembly assembly, String name) throws IOException;
 
     private static native String GetGenericClassLoaderName(Object classLoader);
-    // also used by VMClassLoader
+    // also used by java.lang.LangHelper
     @Internal
     public static native String[] GetPackages(Assembly assembly);
 
