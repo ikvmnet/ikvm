@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2005, 2006, 2007 Jeroen Frijters
+  Copyright (C) 2005-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -219,15 +219,13 @@ public abstract class AnnotationAttributeBase
     }
 
     @ikvm.lang.Internal
-    public static void freeze(Object ann)
+    public Map getValues()
     {
-        if(ann instanceof AnnotationAttributeBase)
-        {
-            ((AnnotationAttributeBase)ann).freeze();
-        }
+        return values;
     }
 
-    private synchronized void freeze()
+    @ikvm.lang.Internal
+    public synchronized void freeze()
     {
         if(!frozen)
         {

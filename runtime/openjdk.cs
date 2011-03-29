@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2007, 2008, 2010 Jeroen Frijters
+  Copyright (C) 2007-2011 Jeroen Frijters
   Copyright (C) 2009 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
@@ -2707,14 +2707,31 @@ namespace IKVM.NativeCode.java
 						Annotation a = obj as Annotation;
 						if (a != null)
 						{
-							global::ikvm.@internal.AnnotationAttributeBase.freeze(a);
-							map.put(a.annotationType(), a);
+							map.put(a.annotationType(), FreezeOrWrapAttribute(a));
 						}
 					}
 				}
 				return map;
 #endif
 			}
+
+#if !FIRST_PASS
+			internal static Annotation FreezeOrWrapAttribute(Annotation ann)
+			{
+				global::ikvm.@internal.AnnotationAttributeBase attr = ann as global::ikvm.@internal.AnnotationAttributeBase;
+				if (attr != null)
+				{
+#if DONT_WRAP_ANNOTATION_ATTRIBUTES
+					attr.freeze();
+#else
+					// freeze to make sure the defaults are set
+					attr.freeze();
+					ann = global::sun.reflect.annotation.AnnotationParser.annotationForMap(attr.annotationType(), attr.getValues());
+#endif
+				}
+				return ann;
+			}
+#endif
 
 			public static object getDeclaredAnnotationsImpl(jlClass thisClass)
 			{
@@ -3566,8 +3583,7 @@ namespace IKVM.NativeCode.java
 							Annotation a = obj as Annotation;
 							if (a != null)
 							{
-								global::ikvm.@internal.AnnotationAttributeBase.freeze(a);
-								list.Add(a);
+								list.Add(Class.FreezeOrWrapAttribute(a));
 							}
 						}
 						ann[i] = list.ToArray();
