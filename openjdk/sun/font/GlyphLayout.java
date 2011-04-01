@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Volker Berlin (i-net software)
+  Copyright (C) 2009, 2011 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -32,13 +32,15 @@ import java.awt.font.FontRenderContext;
  * 
  */
 public class GlyphLayout{
+	
+	private static GlyphLayout glyphLayout = new GlyphLayout();
 
     /**
      * Return a new instance of GlyphLayout, using the provided layout engine factory.
      * If null, the system layout engine factory will be used.
      */
     public static GlyphLayout get(Object lef) {
-        return new GlyphLayout();
+        return glyphLayout; //current this class has no state
     }
 
     /**
@@ -67,7 +69,7 @@ public class GlyphLayout{
             throw new IllegalArgumentException();
         }
 
-        return (StandardGlyphVector)font.layoutGlyphVector(frc, text, offset, count, flags);
+		return new StandardGlyphVector(font, text, offset, count, frc);
     }
 
 
