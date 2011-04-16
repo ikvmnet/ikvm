@@ -770,6 +770,7 @@ namespace ikvm.awt
         internal Pen pen;
         private CompositeHelper composite;
         private java.awt.Composite javaComposite = java.awt.AlphaComposite.SrcOver;
+        private Object fractionalHint = java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_DEFAULT;
 
         protected NetGraphics(Graphics g, java.awt.Font font, Color fgcolor, Color bgcolor)
         {
@@ -1265,28 +1266,32 @@ namespace ikvm.awt
             drawString(str, (float)x, (float)y);
         }
 
-        public override void drawString(string text, float x, float y)
-		{
-            if (text.Length == 0) {
+        public override void drawString(String text, float x, float y)
+        {
+            if (text.Length == 0)
+            {
                 return;
             }
-            StringFormat format;
-            switch (g.TextRenderingHint)
-            {
-                // Fractional metrics
-                case TextRenderingHint.AntiAlias:
-                case TextRenderingHint.SingleBitPerPixel:
-                    // this very mystic, if a StringFormat extends from GenericTypographic then the metric are different but like Java with fractional metrics
-                    format = new StringFormat(StringFormat.GenericTypographic);
-                    break;
-                default:
-                    // Non Fractional metrics
-                    format = new StringFormat();
-                    break;
-            }
+            bool fractional = isFractionalMetrics();
+            StringFormat format = new StringFormat(StringFormat.GenericTypographic);
             format.FormatFlags = StringFormatFlags.MeasureTrailingSpaces | StringFormatFlags.NoWrap | StringFormatFlags.FitBlackBox;
             format.Trimming = StringTrimming.None;
-            g.DrawString(text, netfont, brush, x, y - font.getSize(), format);
+            if (fractional || !sun.font.StandardGlyphVector.isSimpleString(font, text))
+            {
+                g.DrawString(text, netfont, brush, x, y - font.getSize(), format);
+            }
+            else
+            {
+                // fixed metric for simple text, we position every character to simulate the Java behaviour
+                java.awt.font.FontRenderContext frc = new java.awt.font.FontRenderContext(null, isAntiAlias(), fractional);
+                sun.font.FontDesignMetrics metrics = sun.font.FontDesignMetrics.getMetrics(font, frc);
+                y -= font.getSize();
+                for (int i = 0; i < text.Length; i++)
+                {
+                    g.DrawString(text.Substring(i, 1), netfont, brush, x, y, format);
+                    x += metrics.charWidth(text[i]);
+                }
+            }
         }
 
         public override void drawString(java.text.AttributedCharacterIterator iterator, int x, int y)
@@ -1630,62 +1635,32 @@ namespace ikvm.awt
             }
             if (hintKey == java.awt.RenderingHints.KEY_TEXT_ANTIALIASING)
             {
-                if (hintValue == java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_DEFAULT || hintValue == java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_OFF)
+                if (hintValue == java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_DEFAULT)
                 {
-                    switch (g.TextRenderingHint) {
-                        case TextRenderingHint.SystemDefault:
-                        case TextRenderingHint.AntiAlias:
-                            g.TextRenderingHint = TextRenderingHint.SingleBitPerPixel;
-                            break;
-                        case TextRenderingHint.AntiAliasGridFit:
-                            g.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit;
-                            break;
-                    }
+                    g.TextRenderingHint = TextRenderingHint.SystemDefault;
+                    return;
+                }
+                if (hintValue == java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_OFF)
+                {
+                    g.TextRenderingHint = TextRenderingHint.SingleBitPerPixel;
                     return;
                 }
                 if (hintValue == java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
                 {
-                    switch (g.TextRenderingHint) {
-                        case TextRenderingHint.SystemDefault:
-                        case TextRenderingHint.SingleBitPerPixel:
-                            g.TextRenderingHint = TextRenderingHint.AntiAlias;
-                            break;
-                        case TextRenderingHint.SingleBitPerPixelGridFit:
-                            g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
-                            break;
-                    }
+                    g.TextRenderingHint = TextRenderingHint.AntiAlias;
                     return;
                 }
                 return;
             }
             if (hintKey == java.awt.RenderingHints.KEY_FRACTIONALMETRICS) 
             {
-                if (hintValue == java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_DEFAULT || hintValue == java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_OFF) 
+                if (hintValue == java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_DEFAULT || 
+                    hintValue == java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_OFF ||
+                    hintValue == java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_ON) 
                 {
-                    // OFF means enable GridFit
-                    switch (g.TextRenderingHint) {
-                        case TextRenderingHint.SystemDefault:
-                        case TextRenderingHint.SingleBitPerPixel:
-                            g.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit;
-                            break;
-                        case TextRenderingHint.AntiAlias:
-                            g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
-                            break;
-                    }
+                    fractionalHint = hintValue;
                 }
-                if (hintValue == java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_ON) 
-                {
-                    // ON means remove GridFit
-                    switch (g.TextRenderingHint) {
-                        case TextRenderingHint.SingleBitPerPixelGridFit:
-                            g.TextRenderingHint = TextRenderingHint.SingleBitPerPixel;
-                            break;
-                        case TextRenderingHint.AntiAliasGridFit:
-                        case TextRenderingHint.ClearTypeGridFit:
-                            g.TextRenderingHint = TextRenderingHint.AntiAlias;
-                            break;
-                    }
-                }
+                return;
             }
 
         }
@@ -1746,26 +1721,18 @@ namespace ikvm.awt
             {
                 case TextRenderingHint.SystemDefault:
                     hints.put(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING, java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_DEFAULT);
-                    hints.put(java.awt.RenderingHints.KEY_FRACTIONALMETRICS, java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_DEFAULT);
                     break;
                 case TextRenderingHint.SingleBitPerPixelGridFit:
-                    hints.put(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING, java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
-                    hints.put(java.awt.RenderingHints.KEY_FRACTIONALMETRICS, java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
-                    break;
                 case TextRenderingHint.SingleBitPerPixel:
                     hints.put(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING, java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
-                    hints.put(java.awt.RenderingHints.KEY_FRACTIONALMETRICS, java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_ON);
                     break;
                 case TextRenderingHint.AntiAlias:
-                    hints.put(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING, java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-                    hints.put(java.awt.RenderingHints.KEY_FRACTIONALMETRICS, java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_ON);
-                    break;
                 case TextRenderingHint.AntiAliasGridFit:
                 case TextRenderingHint.ClearTypeGridFit:
                     hints.put(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING, java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-                    hints.put(java.awt.RenderingHints.KEY_FRACTIONALMETRICS, java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
                     break;
             }
+            hints.put(java.awt.RenderingHints.KEY_FRACTIONALMETRICS, fractionalHint);
             return hints;
         }
 
@@ -1870,9 +1837,27 @@ namespace ikvm.awt
             return stroke; 
         }
 
+        private bool isAntiAlias()
+        {
+            switch (g.TextRenderingHint)
+            {
+                case TextRenderingHint.AntiAlias:
+                case TextRenderingHint.AntiAliasGridFit:
+                case TextRenderingHint.ClearTypeGridFit:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private bool isFractionalMetrics()
+        {
+            return fractionalHint == java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_ON; 
+        }
+
         public override java.awt.font.FontRenderContext getFontRenderContext()
         {
-            return new java.awt.font.FontRenderContext(getTransform(), false, false);
+            return new java.awt.font.FontRenderContext(getTransform(), isAntiAlias(), isFractionalMetrics());
         }
 
         public override void drawGlyphVector(java.awt.font.GlyphVector gv, float x, float y)

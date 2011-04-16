@@ -429,9 +429,26 @@ public class StandardGlyphVector extends GlyphVector{
         }
     }
 
-    void addDefaultGlyphAdvance(int glyphID, Point2D.Float result) {
+    private void addDefaultGlyphAdvance(int glyphID, Point2D.Float result) {
         Point2D.Float adv = strike.getGlyphMetrics(glyphID);
         result.x += adv.x;
         result.y += adv.y;
     }
+    
+    /**
+     * If the text is a simple text and we can use FontDesignMetrics without a stackoverflow.
+     * @see FontDesignMetrics#stringWidth(String)
+     * @return true, if a simple text. false it is a complex text.
+     */
+	public static boolean isSimpleString(Font font, String str) {
+		if (font.hasLayoutAttributes()) {
+			return false;
+		}
+		for (int i = 0; i < str.length(); ++i) {
+			if (FontManager.isNonSimpleChar(str.charAt(i))) {
+				return false;
+			}
+		}
+		return true;
+	}
 }
