@@ -7,6 +7,27 @@
 
 <body>
 
+<h2>IKVM on Tchatche.com</h2>
+
+<p><i>Yet another successful story using IKVM in a heavy-loaded production environment!</i></p>
+ 
+<p><i>Index Multimedia is the editor of <a href="http://www.tchatche.com/">Tchatche.com</a> website, a chat and social networking service handling not less than 7.5 million visits and 500 million page views each month.</i></p>
+
+<p><i>Tchatche.com front-end is a .NET website, running on IIS, while the underlying chat engine is a stand-alone Java application.</i></p>
+ 
+<p><i>Until recently, our web front-end was communicating with the chat engine through a Java client library, compiled with Microsoft's Visual J# Compiler.</i></p>
+
+<p><i>Keeping our Java code compatible with this obsolete compiler was a real pain, and using J# was also preventing us from moving our C# code to .NET 4 Framework.</i></p>
+
+<p><i>Reading all the good feedback about IKVM, we decided to take the leap!</i></p>
+
+<p><i>Our web front-end is now talking to the Java engine through DLLs generated from our client jar files with ikvmc tool.</i></p>
+
+<p><i>This allowed us to move our servers to .NET 4, and we now successfully manage 30,000 simultaneous connected users on our chat system.</i></p>
+
+<p><i>We did not notice any negative impact on CPU or memory usage when we switched to IKVM.</i> -- Frederic Borry, Project Manager at <a href="http://www.indexmultimedia.com/">Index Multimedia</a>.</p>
+
+
 <h2>IKVM at Modulus Capital</h2>
 
 <p><i>IKVM has been an invaluable tool for us.  We've used IKVM since 2007 to integrate essential Java libraries with our native .NET codebase.  Jeroen is one of the most talented and responsive developers I've ever come across.  It is mind boggling that he has managed to produce a production quality, royalty free, open source product like IKVM.</i> -- Brien Oberstein, Founder, Modulus Capital</p>
