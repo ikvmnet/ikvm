@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Jeroen Frijters
+  Copyright (C) 2009-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -25,6 +25,7 @@
 package ikvm.runtime;
 
 import cli.System.MulticastDelegate;
+import java.lang.reflect.InvocationHandler;
 import java.security.PrivilegedAction;
 
 public final class Delegates
@@ -37,6 +38,11 @@ public final class Delegates
     }
     
     public static PrivilegedAction toPrivilegedAction(PrivilegedActionDelegate delegate)
+    {
+        return delegate;
+    }
+
+    public static InvocationHandler toInvocationHandler(InvocationHandlerDelegate delegate)
     {
         return delegate;
     }
@@ -66,6 +72,20 @@ public final class Delegates
         public Object run()
         {
             return Invoke();
+        }
+    }
+
+    public static final class InvocationHandlerDelegate extends MulticastDelegate implements InvocationHandler
+    {
+        public InvocationHandlerDelegate(Method m) { }
+        public native Object Invoke(Object proxy, java.lang.reflect.Method method, Object[] args) throws Throwable;
+        public interface Method
+        {
+            Object Invoke(Object proxy, java.lang.reflect.Method method, Object[] args) throws Throwable;
+        }
+        public Object invoke(Object proxy, java.lang.reflect.Method method, Object[] args) throws Throwable
+        {
+            return Invoke(proxy, method, args);
         }
     }
 }
