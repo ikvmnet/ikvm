@@ -1421,9 +1421,14 @@ namespace IKVM.Internal.MapXml
 		public Attribute[] Attributes;
 		[XmlElement("replace-method-call")]
 		public ReplaceMethodCall[] ReplaceMethodCalls;
+		public InstructionList prologue;
 
 		internal void Emit(ClassLoaderWrapper loader, CodeEmitter ilgen)
 		{
+			if(prologue != null)
+			{
+				prologue.Emit(loader, ilgen);
+			}
 			if(redirect != null)
 			{
 				redirect.Emit(loader, ilgen);

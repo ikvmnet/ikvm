@@ -62,6 +62,7 @@ namespace IKVM.Internal
 		private Dictionary<string, IKVM.Internal.MapXml.Class> mapxml_Classes;
 		private Dictionary<MethodKey, IKVM.Internal.MapXml.InstructionList> mapxml_MethodBodies;
 		private Dictionary<MethodKey, IKVM.Internal.MapXml.ReplaceMethodCall[]> mapxml_ReplacedMethods;
+		private Dictionary<MethodKey, IKVM.Internal.MapXml.InstructionList> mapxml_MethodPrologues;
 		private Dictionary<string, string> baseClasses;
 		private IKVM.Internal.MapXml.Root map;
 		private List<object> assemblyAnnotations;
@@ -2331,6 +2332,7 @@ namespace IKVM.Internal
 				mapxml_Classes = new Dictionary<string, IKVM.Internal.MapXml.Class>();
 				mapxml_MethodBodies = new Dictionary<MethodKey, IKVM.Internal.MapXml.InstructionList>();
 				mapxml_ReplacedMethods = new Dictionary<MethodKey, IKVM.Internal.MapXml.ReplaceMethodCall[]>();
+				mapxml_MethodPrologues = new Dictionary<MethodKey, IKVM.Internal.MapXml.InstructionList>();
 				foreach(IKVM.Internal.MapXml.Class c in map.assembly.Classes)
 				{
 					// HACK if it is not a remapped type, we assume it is a container for native methods
@@ -2352,11 +2354,26 @@ namespace IKVM.Internal
 								{
 									mapxml_ReplacedMethods.Add(new MethodKey(className, method.Name, method.Sig), method.ReplaceMethodCalls);
 								}
+								if (method.prologue != null)
+								{
+									mapxml_MethodPrologues.Add(new MethodKey(className, method.Name, method.Sig), method.prologue);
+								}
 							}
 						}
 					}
 				}
 			}
+		}
+
+		internal IKVM.Internal.MapXml.InstructionList GetMethodPrologue(MethodKey method)
+		{
+			if(mapxml_MethodPrologues == null)
+			{
+				return null;
+			}
+			IKVM.Internal.MapXml.InstructionList prologue;
+			mapxml_MethodPrologues.TryGetValue(method, out prologue);
+			return prologue;
 		}
 
 		internal IKVM.Internal.MapXml.ReplaceMethodCall[] GetReplacedMethodsFor(MethodWrapper mw)

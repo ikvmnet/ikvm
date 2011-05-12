@@ -304,8 +304,13 @@ namespace IKVM.Internal
 			}
 		}
 
-		protected override bool EmitMapXmlMethodBody(CodeEmitter ilgen, ClassFile f, ClassFile.Method m)
+		protected override bool EmitMapXmlMethodPrologueAndOrBody(CodeEmitter ilgen, ClassFile f, ClassFile.Method m)
 		{
+			IKVM.Internal.MapXml.InstructionList prologue = classLoader.GetMethodPrologue(new MethodKey(f.Name, m.Name, m.Signature));
+			if(prologue != null)
+			{
+				prologue.Emit(classLoader, ilgen);
+			}
 			Dictionary<MethodKey, IKVM.Internal.MapXml.InstructionList> mapxml = classLoader.GetMapXmlMethodBodies();
 			if(mapxml != null)
 			{
