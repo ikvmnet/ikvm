@@ -498,6 +498,7 @@ public class Proxy implements java.io.Serializable {
                 proxyPkg = "";          // use the unnamed package
             }
 
+generate:   do
             {
                 /*
                  * Choose a name for the proxy class to generate.
@@ -511,6 +512,10 @@ public class Proxy implements java.io.Serializable {
                  * Verify that the class loader hasn't already
                  * defined a class with the chosen name.
                  */
+
+                proxyClass = getPrecompiledProxy(loader, proxyName, interfaces);
+                if (proxyClass != null)
+                    break generate;
 
                 /*
                  * Generate the specified proxy class.
@@ -531,6 +536,7 @@ public class Proxy implements java.io.Serializable {
                     throw new IllegalArgumentException(e.toString());
                 }
             }
+            while (false);
             // add to set of all generated proxy classes, for isProxyClass
             proxyClasses.put(proxyClass, null);
 
@@ -660,4 +666,6 @@ public class Proxy implements java.io.Serializable {
 
     private static native Class defineClass0(ClassLoader loader, String name,
                                              byte[] b, int off, int len);
+
+    private static native Class getPrecompiledProxy(ClassLoader loader, String proxyName, Class[] interfaces);
 }

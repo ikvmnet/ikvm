@@ -17,6 +17,7 @@
                 <include name="Compiler.cs" />
                 <include name="CompilerClassLoader.cs" />
                 <include name="FakeTypes.cs" />
+                <include name="Proxy.cs" />
                 <include name="remapper.cs" />
                 <include name="../runtime/AssemblyClassLoader.cs" />
                 <include name="../runtime/atomic.cs" />

@@ -483,6 +483,11 @@ namespace IKVM.Internal
 			this.declaredExceptions = (string[])exceptions.Clone();
 		}
 
+		internal string[] GetDeclaredExceptions()
+		{
+			return declaredExceptions;
+		}
+
 #if !STATIC_COMPILER && !STUB_GENERATOR
 		internal object ToMethodOrConstructor(bool copy)
 		{

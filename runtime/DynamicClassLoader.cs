@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2010 Jeroen Frijters
+  Copyright (C) 2002-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -49,6 +49,8 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 		private TypeBuilder proxyHelperContainer;
 		private List<TypeBuilder> proxyHelpers;
+		private TypeBuilder proxiesContainer;
+		private List<TypeBuilder> proxies;
 #endif // STATIC_COMPILER
 		private Dictionary<string, TypeBuilder> unloadables;
 		private TypeBuilder unloadableContainer;
@@ -250,7 +252,41 @@ namespace IKVM.Internal
 			}
 			proxyHelpers.Add(proxyHelperContainer.DefineNestedType(MangleNestedTypeName(type.FullName), TypeAttributes.NestedPublic | TypeAttributes.Interface | TypeAttributes.Abstract, null, new Type[] { type }));
 		}
+
+		internal TypeBuilder DefineProxy(TypeWrapper proxyClass, TypeWrapper[] interfaces)
+		{
+			if (proxiesContainer == null)
+			{
+				proxiesContainer = moduleBuilder.DefineType("__<Proxies>", TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Abstract);
+				AttributeHelper.HideFromJava(proxiesContainer);
+				AttributeHelper.SetEditorBrowsableNever(proxiesContainer);
+				proxies = new List<TypeBuilder>();
+			}
+			Type[] ifaces = new Type[interfaces.Length];
+			for (int i = 0; i < ifaces.Length; i++)
+			{
+				ifaces[i] = interfaces[i].TypeAsBaseType;
+			}
+			TypeBuilder tb = proxiesContainer.DefineNestedType(GetProxyNestedName(interfaces), TypeAttributes.NestedPublic | TypeAttributes.Class | TypeAttributes.Sealed, proxyClass.TypeAsBaseType, ifaces);
+			proxies.Add(tb);
+			return tb;
+		}
 #endif
+
+		private static string GetProxyNestedName(TypeWrapper[] interfaces)
+		{
+			System.Text.StringBuilder sb = new System.Text.StringBuilder();
+			foreach (TypeWrapper tw in interfaces)
+			{
+				sb.Append(tw.Name.Length).Append('|').Append(tw.Name);
+			}
+			return MangleNestedTypeName(sb.ToString());
+		}
+
+		internal static string GetProxyName(TypeWrapper[] interfaces)
+		{
+			return "__<Proxies>+" + GetProxyNestedName(interfaces);
+		}
 
 		internal static string GetProxyHelperName(Type type)
 		{
@@ -343,6 +379,14 @@ namespace IKVM.Internal
 			{
 				proxyHelperContainer.CreateType();
 				foreach(TypeBuilder tb in proxyHelpers)
+				{
+					tb.CreateType();
+				}
+			}
+			if(proxiesContainer != null)
+			{
+				proxiesContainer.CreateType();
+				foreach(TypeBuilder tb in proxies)
 				{
 					tb.CreateType();
 				}

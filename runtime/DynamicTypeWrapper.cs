@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2010 Jeroen Frijters
+  Copyright (C) 2002-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -5121,10 +5121,10 @@ namespace IKVM.Internal
 			private void EmitCallerIDInitialization(CodeEmitter ilGenerator, FieldInfo callerIDField)
 			{
 				{
-					TypeWrapper tw = CoreClasses.ikvm.@internal.CallerID.Wrapper;
 					// we need to prohibit this optimization at runtime, because proxy classes may be injected into the boot class loader,
 					// but they don't actually have access to core library internals
 #if STATIC_COMPILER
+					TypeWrapper tw = CoreClasses.ikvm.@internal.CallerID.Wrapper;
 					if (tw.GetClassLoader() == wrapper.GetClassLoader())
 					{
 						MethodWrapper create = tw.GetMethodWrapper("create", "(Lcli.System.RuntimeTypeHandle;)Likvm.internal.CallerID;", false);
@@ -5135,19 +5135,26 @@ namespace IKVM.Internal
 					else
 #endif
 					{
-						typeCallerID = typeBuilder.DefineNestedType("__<CallerID>", TypeAttributes.Sealed | TypeAttributes.NestedPrivate, tw.TypeAsBaseType);
-						ConstructorBuilder cb = typeCallerID.DefineConstructor(MethodAttributes.Assembly, CallingConventions.Standard, null);
-						CodeEmitter ctorIlgen = CodeEmitter.Create(cb);
-						ctorIlgen.Emit(OpCodes.Ldarg_0);
-						MethodWrapper mw = tw.GetMethodWrapper("<init>", "()V", false);
-						mw.Link();
-						mw.EmitCall(ctorIlgen);
-						ctorIlgen.Emit(OpCodes.Ret);
-						ctorIlgen.DoEmit();
-						ilGenerator.Emit(OpCodes.Newobj, cb);
+						typeCallerID = EmitCreateCallerID(typeBuilder, ilGenerator);
 					}
 					ilGenerator.Emit(OpCodes.Stsfld, callerIDField);
 				}
+			}
+
+			internal static TypeBuilder EmitCreateCallerID(TypeBuilder typeBuilder, CodeEmitter ilGenerator)
+			{
+				TypeWrapper tw = CoreClasses.ikvm.@internal.CallerID.Wrapper;
+				TypeBuilder typeCallerID = typeBuilder.DefineNestedType("__<CallerID>", TypeAttributes.Sealed | TypeAttributes.NestedPrivate, tw.TypeAsBaseType);
+				ConstructorBuilder cb = typeCallerID.DefineConstructor(MethodAttributes.Assembly, CallingConventions.Standard, null);
+				CodeEmitter ctorIlgen = CodeEmitter.Create(cb);
+				ctorIlgen.Emit(OpCodes.Ldarg_0);
+				MethodWrapper mw = tw.GetMethodWrapper("<init>", "()V", false);
+				mw.Link();
+				mw.EmitCall(ctorIlgen);
+				ctorIlgen.Emit(OpCodes.Ret);
+				ctorIlgen.DoEmit();
+				ilGenerator.Emit(OpCodes.Newobj, cb);
+				return typeCallerID;
 			}
 
 			private void EmitConstantValueInitialization(FieldWrapper[] fields, CodeEmitter ilGenerator)

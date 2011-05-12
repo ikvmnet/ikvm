@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2010 Jeroen Frijters
+  Copyright (C) 2002-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -777,6 +777,15 @@ class IkvmcCompiler
 						Console.Error.WriteLine("Error: invalid option: {0}{1}\t({2})", s, Environment.NewLine, x.Message);
 						return 1;
 					}
+				}
+				else if(s.StartsWith("-proxy:")) // currently undocumented!
+				{
+					string proxy = s.Substring(7);
+					if(options.proxies.Contains(proxy))
+					{
+						StaticCompiler.IssueMessage(Message.DuplicateProxy, proxy);
+					}
+					options.proxies.Add(proxy);
 				}
 				else
 				{

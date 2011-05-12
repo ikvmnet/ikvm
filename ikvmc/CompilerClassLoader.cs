@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2010 Jeroen Frijters
+  Copyright (C) 2002-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -2961,6 +2961,10 @@ namespace IKVM.Internal
 					allwrappers.Add(wrapper);
 				}
 			}
+			foreach(string proxy in options.proxies)
+			{
+				ProxyGenerator.Create(this, proxy);
+			}
 			if(options.mainClass != null)
 			{
 				TypeWrapper wrapper = null;
@@ -3278,6 +3282,7 @@ namespace IKVM.Internal
 		internal Dictionary<string, string> suppressWarnings = new Dictionary<string, string>();
 		internal Dictionary<string, string> errorWarnings = new Dictionary<string, string>();
 		internal string writeSuppressWarningsFile;
+		internal List<string> proxies = new List<string>();
 
 		internal CompilerOptions Copy()
 		{
@@ -3353,6 +3358,10 @@ namespace IKVM.Internal
 		AssemblyLocationIgnored = 127,
 		InterfaceMethodCantBeInternal = 128,
 		UnknownWarning = 999,
+		// This is where the errors start
+		StartErrors = 4000,
+		UnableToCreateProxy = 4001,
+		DuplicateProxy = 4002,
 	}
 
 	static class StaticCompiler
@@ -3563,24 +3572,31 @@ namespace IKVM.Internal
 					msg = "ignoring @ikvm.lang.Internal annotation on interface method" + Environment.NewLine +
 						"    (\"{0}.{1}{2}\")";
 					break;
+				case Message.UnableToCreateProxy:
+					msg = "unable to create proxy \"{0}\"" + Environment.NewLine +
+						"    (\"{1}\")";
+					break;
+				case Message.DuplicateProxy:
+					msg = "duplicate proxy \"{0}\"";
+					break;
 				case Message.UnknownWarning:
 					msg = "{0}";
 					break;
 				default:
 					throw new InvalidProgramException();
 			}
-			if(options.errorWarnings.ContainsKey(key)
-				|| options.errorWarnings.ContainsKey(((int)msgId).ToString()))
-			{
-				Console.Error.Write("{0} IKVMC{1:D4}: ", "Error", (int)msgId);
-				Console.Error.WriteLine(msg, values);
-				Environment.Exit(1);
-			}
-			Console.Error.Write("{0} IKVMC{1:D4}: ", msgId < Message.StartWarnings ? "Note" : "Warning", (int)msgId);
+			bool error = msgId >= Message.StartErrors
+				|| options.errorWarnings.ContainsKey(key)
+				|| options.errorWarnings.ContainsKey(((int)msgId).ToString());
+			Console.Error.Write("{0} IKVMC{1:D4}: ", error ? "Error" : msgId < Message.StartWarnings ? "Note" : "Warning", (int)msgId);
 			Console.Error.WriteLine(msg, values);
 			if(options != toplevel && options.path != null)
 			{
 				Console.Error.WriteLine("    (in {0})", options.path);
+			}
+			if(error)
+			{
+				Environment.Exit(1);
 			}
 		}
 

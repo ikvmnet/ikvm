@@ -3544,6 +3544,45 @@ namespace IKVM.NativeCode.java
 				{
 					return ClassLoader.defineClass1(classLoader, name, b, off, len, null, null);
 				}
+
+				public static jlClass getPrecompiledProxy(jlClassLoader classLoader, string proxyName, jlClass[] interfaces)
+				{
+					AssemblyClassLoader acl = ClassLoaderWrapper.GetClassLoaderWrapper(classLoader) as AssemblyClassLoader;
+					if (acl == null)
+					{
+						return null;
+					}
+					TypeWrapper[] wrappers = new TypeWrapper[interfaces.Length];
+					for (int i = 0; i < wrappers.Length; i++)
+					{
+						wrappers[i] = TypeWrapper.FromClass(interfaces[i]);
+					}
+					// TODO support multi assembly class loaders
+					Type type = acl.MainAssembly.GetType(DynamicClassLoader.GetProxyName(wrappers));
+					if (type == null)
+					{
+						return null;
+					}
+					TypeWrapper tw = CompiledTypeWrapper.newInstance(proxyName, type);
+					TypeWrapper tw2 = acl.RegisterInitiatingLoader(tw);
+					if (tw != tw2)
+					{
+						return null;
+					}
+					TypeWrapper[] wrappers2 = tw.Interfaces;
+					if (wrappers.Length != wrappers.Length)
+					{
+						return null;
+					}
+					for (int i = 0; i < wrappers.Length; i++)
+					{
+						if (wrappers[i] != wrappers2[i])
+						{
+							return null;
+						}
+					}
+					return tw.ClassObject;
+				}
 			}
 
 			static class Field
