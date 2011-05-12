@@ -79,6 +79,7 @@ java/lang/ref/SoftReference.java
 java/lang/reflect/Constructor.java
 java/lang/reflect/Field.java
 java/lang/reflect/Method.java
+java/lang/reflect/Proxy.java
 java/lang/reflect/ReflectHelper.java
 java/net/net_util_md.java
 java/net/SocketInputStream.java
@@ -8614,7 +8615,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/jdk/src/share/classes/java/lang/reflect/Modifier.java
 @OPENJDK@/jdk/src/share/classes/java/lang/reflect/package-info.java
 @OPENJDK@/jdk/src/share/classes/java/lang/reflect/ParameterizedType.java
-@OPENJDK@/jdk/src/share/classes/java/lang/reflect/Proxy.java
 @OPENJDK@/jdk/src/share/classes/java/lang/reflect/ReflectAccess.java
 @OPENJDK@/jdk/src/share/classes/java/lang/reflect/ReflectPermission.java
 @OPENJDK@/jdk/src/share/classes/java/lang/reflect/Type.java
