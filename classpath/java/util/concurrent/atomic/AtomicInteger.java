@@ -7,7 +7,7 @@
  */
 
 /*
-  Parts Copyright (C) 2006 Jeroen Frijters
+  Parts Copyright (C) 2006-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -150,12 +150,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @return the previous value
      */
     public final int getAndAdd(int delta) {
-        for (;;) {
-            int current = get();
-            int next = current + delta;
-            if (compareAndSet(current, next))
-                return current;
-        }
+        return addAndGet(delta) - delta;
     }
 
     /**
@@ -178,14 +173,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @param delta the value to add
      * @return the updated value
      */
-    public final int addAndGet(int delta) {
-        for (;;) {
-            int current = get();
-            int next = current + delta;
-            if (compareAndSet(current, next))
-                return next;
-        }
-    }
+    public final native int addAndGet(int delta);
 
     /**
      * Returns the String representation of the current value.

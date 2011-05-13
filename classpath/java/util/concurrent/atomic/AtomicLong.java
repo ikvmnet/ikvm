@@ -7,7 +7,7 @@
  */
 
 /*
-  Parts Copyright (C) 2006 Jeroen Frijters
+  Parts Copyright (C) 2006-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -56,7 +56,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      */
     static final boolean VM_SUPPORTS_LONG_CAS = false;
 
-    private long value;
+    private volatile long value;
 
     /**
      * Creates a new AtomicLong with the given initial value.
@@ -64,7 +64,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @param initialValue the initial value
      */
     public AtomicLong(long initialValue) {
-        set(initialValue);
+        value = initialValue;
     }
 
     /**
@@ -78,7 +78,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      *
      * @return the current value
      */
-    public final synchronized long get() {
+    public final long get() {
         return value;
     }
 
@@ -87,7 +87,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      *
      * @param newValue the new value
      */
-    public final synchronized void set(long newValue) {
+    public final void set(long newValue) {
         value = newValue;
     }
 
@@ -98,7 +98,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @since 1.6
      */
     public final void lazySet(long newValue) {
-        set(newValue);
+        value = newValue;
     }
 
     /**
@@ -107,11 +107,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @param newValue the new value
      * @return the previous value
      */
-    public final synchronized long getAndSet(long newValue) {
-        long v = value;
-        value = newValue;
-        return v;
-    }
+    public final native long getAndSet(long newValue);
 
     /**
      * Atomically sets the value to the given updated value
@@ -122,13 +118,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @return true if successful. False return indicates that
      * the actual value was not equal to the expected value.
      */
-    public final synchronized boolean compareAndSet(long expect, long update) {
-        if (value == expect) {
-            value = update;
-            return true;
-        }
-        return false;
-    }
+    public final native boolean compareAndSet(long expect, long update);
 
     /**
      * Atomically sets the value to the given updated value
@@ -149,8 +139,8 @@ public class AtomicLong extends Number implements java.io.Serializable {
      *
      * @return the previous value
      */
-    public final synchronized long getAndIncrement() {
-        return value++;
+    public final long getAndIncrement() {
+        return incrementAndGet() - 1;
     }
 
     /**
@@ -158,8 +148,8 @@ public class AtomicLong extends Number implements java.io.Serializable {
      *
      * @return the previous value
      */
-    public final synchronized long getAndDecrement() {
-        return value--;
+    public final long getAndDecrement() {
+        return decrementAndGet() + 1;
     }
 
     /**
@@ -168,10 +158,8 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @param delta the value to add
      * @return the previous value
      */
-    public final synchronized long getAndAdd(long delta) {
-        long v = value;
-        value += delta;
-        return v;
+    public final long getAndAdd(long delta) {
+        return addAndGet(delta) - delta;
     }
 
     /**
@@ -179,18 +167,14 @@ public class AtomicLong extends Number implements java.io.Serializable {
      *
      * @return the updated value
      */
-    public final synchronized long incrementAndGet() {
-        return ++value;
-    }
+    public final native long incrementAndGet();
 
     /**
      * Atomically decrements by one the current value.
      *
      * @return the updated value
      */
-    public final synchronized long decrementAndGet() {
-        return --value;
-    }
+    public final native long decrementAndGet();
 
     /**
      * Atomically adds the given value to the current value.
@@ -198,10 +182,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @param delta the value to add
      * @return the updated value
      */
-    public final synchronized long addAndGet(long delta) {
-        value += delta;
-        return value;
-    }
+    public final native long addAndGet(long delta);
 
     /**
      * Returns the String representation of the current value.

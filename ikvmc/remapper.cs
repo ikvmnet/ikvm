@@ -742,6 +742,15 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
+	[XmlType("stind_i8")]
+	public sealed class Stind_i8 : Simple
+	{
+		public Stind_i8()
+			: base(OpCodes.Stind_I8)
+		{
+		}
+	}
+
 	[XmlType("stind_ref")]
 	public sealed class Stind_ref : Simple
 	{
@@ -1232,6 +1241,7 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(Stind_i1))]
 		[XmlElement(typeof(Stind_i2))]
 		[XmlElement(typeof(Stind_i4))]
+		[XmlElement(typeof(Stind_i8))]
 		[XmlElement(typeof(Stind_ref))]
 		[XmlElement(typeof(Ret))]
 		[XmlElement(typeof(Throw))]

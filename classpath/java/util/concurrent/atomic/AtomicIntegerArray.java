@@ -7,7 +7,7 @@
  */
 
 /*
-  Parts Copyright (C) 2006 Jeroen Frijters
+  Parts Copyright (C) 2006-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -124,13 +124,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
      * @param newValue the new value
      * @return the previous value
      */
-    public final int getAndSet(int i, int newValue) {
-        while (true) {
-            int current = get(i);
-            if (compareAndSet(i, current, newValue))
-                return current;
-        }
-    }
+    public final native int getAndSet(int i, int newValue);
 
     /**
      * Atomically sets the element at position <tt>i</tt> to the given
@@ -165,12 +159,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
      * @return the previous value
      */
     public final int getAndIncrement(int i) {
-        while (true) {
-            int current = get(i);
-            int next = current + 1;
-            if (compareAndSet(i, current, next))
-                return current;
-        }
+        return incrementAndGet(i) - 1;
     }
 
     /**
@@ -180,12 +169,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
      * @return the previous value
      */
     public final int getAndDecrement(int i) {
-        while (true) {
-            int current = get(i);
-            int next = current - 1;
-            if (compareAndSet(i, current, next))
-                return current;
-        }
+        return decrementAndGet(i) + 1;
     }
 
     /**
@@ -196,12 +180,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
      * @return the previous value
      */
     public final int getAndAdd(int i, int delta) {
-        while (true) {
-            int current = get(i);
-            int next = current + delta;
-            if (compareAndSet(i, current, next))
-                return current;
-        }
+        return addAndGet(i, delta) - delta;
     }
 
     /**
@@ -210,14 +189,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
      * @param i the index
      * @return the updated value
      */
-    public final int incrementAndGet(int i) {
-        while (true) {
-            int current = get(i);
-            int next = current + 1;
-            if (compareAndSet(i, current, next))
-                return next;
-        }
-    }
+    public final native int incrementAndGet(int i);
 
     /**
      * Atomically decrements by one the element at index <tt>i</tt>.
@@ -225,14 +197,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
      * @param i the index
      * @return the updated value
      */
-    public final int decrementAndGet(int i) {
-        while (true) {
-            int current = get(i);
-            int next = current - 1;
-            if (compareAndSet(i, current, next))
-                return next;
-        }
-    }
+    public final native int decrementAndGet(int i);
 
     /**
      * Atomically adds the given value to the element at index <tt>i</tt>.
@@ -241,14 +206,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
      * @param delta the value to add
      * @return the updated value
      */
-    public final int addAndGet(int i, int delta) {
-        while (true) {
-            int current = get(i);
-            int next = current + delta;
-            if (compareAndSet(i, current, next))
-                return next;
-        }
-    }
+    public final native int addAndGet(int i, int delta);
 
     /**
      * Returns the String representation of the current values of array.

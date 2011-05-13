@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!--
-  Copyright (C) 2002-2010 Jeroen Frijters
+  Copyright (C) 2002-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1963,6 +1963,15 @@
                     <ret />
                 </body>
             </method>
+            <method name="addAndGet" sig="(I)I">
+                <body>
+                    <ldarg_0 />
+                    <ldflda class="java.util.concurrent.atomic.AtomicInteger" name="value" sig="I" />
+                    <ldarg_1 />
+                    <call type="System.Threading.Interlocked" name="Add" sig="System.Int32&amp;;System.Int32" />
+                    <ret />
+                </body>
+            </method>
         </class>
         <class name="java.util.concurrent.atomic.AtomicIntegerArray">
             <method name="get" sig="(I)I">
@@ -1989,6 +1998,17 @@
                     <ret />
                 </body>
             </method>
+            <method name="getAndSet" sig="(II)I">
+                <body>
+                    <ldarg_0 />
+                    <ldfld class="java.util.concurrent.atomic.AtomicIntegerArray" name="array" sig="[I" />
+                    <ldarg_1 />
+                    <ldelema sig="I" />
+                    <ldarg_2 />
+                    <call type="System.Threading.Interlocked" name="Exchange" sig="System.Int32&amp;;System.Int32" />
+                    <ret />
+                </body>
+            </method>
             <method name="compareAndSet" sig="(III)Z">
                 <body>
                     <ldarg_0 />
@@ -2003,11 +2023,164 @@
                     <ret />
                 </body>
             </method>
+            <method name="incrementAndGet" sig="(I)I">
+                <body>
+                    <ldarg_0 />
+                    <ldfld class="java.util.concurrent.atomic.AtomicIntegerArray" name="array" sig="[I" />
+                    <ldarg_1 />
+                    <ldelema sig="I" />
+                    <call type="System.Threading.Interlocked" name="Increment" sig="System.Int32&amp;" />
+                    <ret />
+                </body>
+            </method>
+            <method name="decrementAndGet" sig="(I)I">
+                <body>
+                    <ldarg_0 />
+                    <ldfld class="java.util.concurrent.atomic.AtomicIntegerArray" name="array" sig="[I" />
+                    <ldarg_1 />
+                    <ldelema sig="I" />
+                    <call type="System.Threading.Interlocked" name="Decrement" sig="System.Int32&amp;" />
+                    <ret />
+                </body>
+            </method>
+            <method name="addAndGet" sig="(II)I">
+                <body>
+                    <ldarg_0 />
+                    <ldfld class="java.util.concurrent.atomic.AtomicIntegerArray" name="array" sig="[I" />
+                    <ldarg_1 />
+                    <ldelema sig="I" />
+                    <ldarg_2 />
+                    <call type="System.Threading.Interlocked" name="Add" sig="System.Int32&amp;;System.Int32" />
+                    <ret />
+                </body>
+            </method>
         </class>
         <class name="java.util.concurrent.atomic.AtomicLong">
-            <method name="VMSupportsCS8" sig="()Z">
+            <method name="getAndSet" sig="(J)J">
                 <body>
-                    <ldc_i4_0 />
+                    <ldarg_0 />
+                    <ldflda class="java.util.concurrent.atomic.AtomicLong" name="value" sig="J" />
+                    <ldarg_1 />
+                    <call type="System.Threading.Interlocked" name="Exchange" sig="System.Int64&amp;;System.Int64" />
+                    <ret />
+                </body>
+            </method>
+            <method name="compareAndSet" sig="(JJ)Z">
+                <body>
+                    <ldarg_0 />
+                    <ldflda class="java.util.concurrent.atomic.AtomicLong" name="value" sig="J" />
+                    <ldarg_2 />
+                    <ldarg_1 />
+                    <call type="System.Threading.Interlocked" name="CompareExchange" sig="System.Int64&amp;;System.Int64;System.Int64" />
+                    <ldarg_1 />
+                    <ceq />
+                    <ret />
+                </body>
+            </method>
+            <method name="incrementAndGet" sig="()J">
+                <body>
+                    <ldarg_0 />
+                    <ldflda class="java.util.concurrent.atomic.AtomicLong" name="value" sig="J" />
+                    <call type="System.Threading.Interlocked" name="Increment" sig="System.Int64&amp;" />
+                    <ret />
+                </body>
+            </method>
+            <method name="decrementAndGet" sig="()J">
+                <body>
+                    <ldarg_0 />
+                    <ldflda class="java.util.concurrent.atomic.AtomicLong" name="value" sig="J" />
+                    <call type="System.Threading.Interlocked" name="Decrement" sig="System.Int64&amp;" />
+                    <ret />
+                </body>
+            </method>
+            <method name="addAndGet" sig="(J)J">
+                <body>
+                    <ldarg_0 />
+                    <ldflda class="java.util.concurrent.atomic.AtomicLong" name="value" sig="J" />
+                    <ldarg_1 />
+                    <call type="System.Threading.Interlocked" name="Add" sig="System.Int64&amp;;System.Int64" />
+                    <ret />
+                </body>
+            </method>
+        </class>
+        <class name="java.util.concurrent.atomic.AtomicLongArray">
+            <method name="get" sig="(I)J">
+                <body>
+                    <ldarg_0 />
+                    <ldfld class="java.util.concurrent.atomic.AtomicLongArray" name="array" sig="[J" />
+                    <ldarg_1 />
+                    <ldelema sig="J" />
+                    <volatile />
+                    <ldind_i8 />
+                    <ret />
+                </body>
+            </method>
+            <method name="set" sig="(IJ)V">
+                <body>
+                    <ldarg_0 />
+                    <ldfld class="java.util.concurrent.atomic.AtomicLongArray" name="array" sig="[J" />
+                    <ldarg_1 />
+                    <ldelema sig="J" />
+                    <ldarg_2 />
+                    <volatile />
+                    <stind_i8 />
+                    <call type="System.Threading.Thread" name="MemoryBarrier" sig="" />
+                    <ret />
+                </body>
+            </method>
+            <method name="getAndSet" sig="(IJ)J">
+                <body>
+                    <ldarg_0 />
+                    <ldfld class="java.util.concurrent.atomic.AtomicLongArray" name="array" sig="[J" />
+                    <ldarg_1 />
+                    <ldelema sig="J" />
+                    <ldarg_2 />
+                    <call type="System.Threading.Interlocked" name="Exchange" sig="System.Int64&amp;;System.Int64" />
+                    <ret />
+                </body>
+            </method>
+            <method name="compareAndSet" sig="(IJJ)Z">
+                <body>
+                    <ldarg_0 />
+                    <ldfld class="java.util.concurrent.atomic.AtomicLongArray" name="array" sig="[J" />
+                    <ldarg_1 />
+                    <ldelema sig="J" />
+                    <ldarg_3 />
+                    <ldarg_2 />
+                    <call type="System.Threading.Interlocked" name="CompareExchange" sig="System.Int64&amp;;System.Int64;System.Int64" />
+                    <ldarg_2 />
+                    <ceq />
+                    <ret />
+                </body>
+            </method>
+            <method name="incrementAndGet" sig="(I)J">
+                <body>
+                    <ldarg_0 />
+                    <ldfld class="java.util.concurrent.atomic.AtomicLongArray" name="array" sig="[J" />
+                    <ldarg_1 />
+                    <ldelema sig="J" />
+                    <call type="System.Threading.Interlocked" name="Increment" sig="System.Int64&amp;" />
+                    <ret />
+                </body>
+            </method>
+            <method name="decrementAndGet" sig="(I)J">
+                <body>
+                    <ldarg_0 />
+                    <ldfld class="java.util.concurrent.atomic.AtomicLongArray" name="array" sig="[J" />
+                    <ldarg_1 />
+                    <ldelema sig="J" />
+                    <call type="System.Threading.Interlocked" name="Decrement" sig="System.Int64&amp;" />
+                    <ret />
+                </body>
+            </method>
+            <method name="addAndGet" sig="(IJ)J">
+                <body>
+                    <ldarg_0 />
+                    <ldfld class="java.util.concurrent.atomic.AtomicLongArray" name="array" sig="[J" />
+                    <ldarg_1 />
+                    <ldelema sig="J" />
+                    <ldarg_2 />
+                    <call type="System.Threading.Interlocked" name="Add" sig="System.Int64&amp;;System.Int64" />
                     <ret />
                 </body>
             </method>
