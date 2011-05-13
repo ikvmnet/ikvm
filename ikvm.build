@@ -69,8 +69,8 @@
         <delete failonerror="false">
             <fileset>
                 <include name="bin/libikvm-native.so" />
-                <include name="bin-x64/ikvm-native.dll" />
-                <include name="bin-x86/ikvm-native.dll" />
+                <include name="bin/ikvm-native-win32-x64.dll" />
+                <include name="bin/ikvm-native-win32-x86.dll" />
                 <include name="native/Release-x64/ikvm-native.dll" />
                 <include name="native/Release-x64/*.obj" />
                 <include name="native/Release-x86/ikvm-native.dll" />

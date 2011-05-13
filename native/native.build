@@ -32,6 +32,6 @@
                 <include name="Release-${cpu-arch}/*.obj"/>
             </sources>
         </link>
-        <copy file="Release-${cpu-arch}/ikvm-native.dll" todir="../bin-${cpu-arch}" />
+        <copy file="Release-${cpu-arch}/ikvm-native.dll" tofile="../bin/ikvm-native-win32-${cpu-arch}.dll" />
     </target>
 </project>

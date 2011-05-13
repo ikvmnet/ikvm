@@ -243,13 +243,13 @@ namespace IKVM.Runtime
 				{
 					foreach(IntPtr p in loader.GetNativeLibraries())
 					{
-						IntPtr pfunc = JniHelper.ikvm_GetProcAddress(p, shortMethodName, sp + 2 * IntPtr.Size);
+						IntPtr pfunc = NativeLibrary.GetProcAddress(p, shortMethodName, sp + 2 * IntPtr.Size);
 						if(pfunc != IntPtr.Zero)
 						{
 							Tracer.Info(Tracer.Jni, "Native method {0}.{1}{2} found in library 0x{3:X} (short)", clazz, name, sig, p.ToInt64());
 							return pfunc;
 						}
-						pfunc = JniHelper.ikvm_GetProcAddress(p, longMethodName, sp + 2 * IntPtr.Size);
+						pfunc = NativeLibrary.GetProcAddress(p, longMethodName, sp + 2 * IntPtr.Size);
 						if(pfunc != IntPtr.Zero)
 						{
 							Tracer.Info(Tracer.Jni, "Native method {0}.{1}{2} found in library 0x{3:X} (long)", clazz, name, sig, p.ToInt64());
@@ -308,21 +308,228 @@ namespace IKVM.Runtime
 		}
 	}
 
+	abstract unsafe class NativeLibrary
+	{
+		private NativeLibrary() { }
+		private static readonly NativeLibrary impl;
+
+		static NativeLibrary()
+		{
+			try
+			{
+				if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+				{
+					if (IntPtr.Size == 4)
+					{
+						impl = new Win32_x86();
+					}
+					else
+					{
+						impl = new Win32_x64();
+					}
+					// call a method to trigger the native library load
+					// (if this fails, we fall back to the classic native library)
+					impl._MarshalDelegate(null);
+				}
+				else
+				{
+					impl = new Classic();
+				}
+			}
+			catch (DllNotFoundException)
+			{
+				impl = new Classic();
+			}
+			catch (BadImageFormatException)
+			{
+				impl = new Classic();
+			}
+		}
+
+		private sealed class Win32_x86 : NativeLibrary
+		{
+			private const string library = "ikvm-native-win32-x86";
+
+			[DllImport(library)]
+			private static extern IntPtr ikvm_LoadLibrary(string filename);
+			[DllImport(library)]
+			private static extern void ikvm_FreeLibrary(IntPtr handle);
+			[DllImport(library)]
+			private static extern IntPtr ikvm_GetProcAddress(IntPtr handle, string name, int argc);
+			[DllImport(library)]
+			private static extern int ikvm_CallOnLoad(IntPtr method, void* jvm, void* reserved);
+			[DllImport(library)]
+			private static extern void** ikvm_GetJNIEnvVTable();
+			[DllImport(library)]
+			private static extern void* ikvm_MarshalDelegate(Delegate d);
+
+			protected override IntPtr _LoadLibrary(string filename)
+			{
+				return ikvm_LoadLibrary(filename);
+			}
+
+			protected override void _FreeLibrary(IntPtr handle)
+			{
+				ikvm_FreeLibrary(handle);
+			}
+
+			protected override IntPtr _GetProcAddress(IntPtr handle, string name, int argc)
+			{
+				return ikvm_GetProcAddress(handle, name, argc);
+			}
+
+			protected override int _CallOnLoad(IntPtr method, void* jvm, void* reserved)
+			{
+				return ikvm_CallOnLoad(method, jvm, reserved);
+			}
+
+			protected override void** _GetJNIEnvVTable()
+			{
+				return ikvm_GetJNIEnvVTable();
+			}
+
+			protected override void* _MarshalDelegate(Delegate d)
+			{
+				return ikvm_MarshalDelegate(d);
+			}
+		}
+
+		private sealed class Win32_x64 : NativeLibrary
+		{
+			private const string library = "ikvm-native-win32-x64";
+
+			[DllImport(library)]
+			private static extern IntPtr ikvm_LoadLibrary(string filename);
+			[DllImport(library)]
+			private static extern void ikvm_FreeLibrary(IntPtr handle);
+			[DllImport(library)]
+			private static extern IntPtr ikvm_GetProcAddress(IntPtr handle, string name, int argc);
+			[DllImport(library)]
+			private static extern int ikvm_CallOnLoad(IntPtr method, void* jvm, void* reserved);
+			[DllImport(library)]
+			private static extern void** ikvm_GetJNIEnvVTable();
+			[DllImport(library)]
+			private static extern void* ikvm_MarshalDelegate(Delegate d);
+
+			protected override IntPtr _LoadLibrary(string filename)
+			{
+				return ikvm_LoadLibrary(filename);
+			}
+
+			protected override void _FreeLibrary(IntPtr handle)
+			{
+				ikvm_FreeLibrary(handle);
+			}
+
+			protected override IntPtr _GetProcAddress(IntPtr handle, string name, int argc)
+			{
+				return ikvm_GetProcAddress(handle, name, argc);
+			}
+
+			protected override int _CallOnLoad(IntPtr method, void* jvm, void* reserved)
+			{
+				return ikvm_CallOnLoad(method, jvm, reserved);
+			}
+
+			protected override void** _GetJNIEnvVTable()
+			{
+				return ikvm_GetJNIEnvVTable();
+			}
+
+			protected override void* _MarshalDelegate(Delegate d)
+			{
+				return ikvm_MarshalDelegate(d);
+			}
+		}
+
+		private sealed class Classic : NativeLibrary
+		{
+			private const string library = "ikvm-native";
+
+			[DllImport(library)]
+			private static extern IntPtr ikvm_LoadLibrary(string filename);
+			[DllImport(library)]
+			private static extern void ikvm_FreeLibrary(IntPtr handle);
+			[DllImport(library)]
+			private static extern IntPtr ikvm_GetProcAddress(IntPtr handle, string name, int argc);
+			[DllImport(library)]
+			private static extern int ikvm_CallOnLoad(IntPtr method, void* jvm, void* reserved);
+			[DllImport(library)]
+			private static extern void** ikvm_GetJNIEnvVTable();
+			[DllImport(library)]
+			private static extern void* ikvm_MarshalDelegate(Delegate d);
+
+			protected override IntPtr _LoadLibrary(string filename)
+			{
+				return ikvm_LoadLibrary(filename);
+			}
+
+			protected override void _FreeLibrary(IntPtr handle)
+			{
+				ikvm_FreeLibrary(handle);
+			}
+
+			protected override IntPtr _GetProcAddress(IntPtr handle, string name, int argc)
+			{
+				return ikvm_GetProcAddress(handle, name, argc);
+			}
+
+			protected override int _CallOnLoad(IntPtr method, void* jvm, void* reserved)
+			{
+				return ikvm_CallOnLoad(method, jvm, reserved);
+			}
+
+			protected override void** _GetJNIEnvVTable()
+			{
+				return ikvm_GetJNIEnvVTable();
+			}
+
+			protected override void* _MarshalDelegate(Delegate d)
+			{
+				return ikvm_MarshalDelegate(d);
+			}
+		}
+
+		protected abstract IntPtr _LoadLibrary(string filename);
+		protected abstract void _FreeLibrary(IntPtr handle);
+		protected abstract IntPtr _GetProcAddress(IntPtr handle, string name, int argc);
+		protected abstract int _CallOnLoad(IntPtr method, void* jvm, void* reserved);
+		protected abstract void** _GetJNIEnvVTable();
+		protected abstract void* _MarshalDelegate(Delegate d);
+
+		internal static IntPtr LoadLibrary(string filename)
+		{
+			return impl._LoadLibrary(filename);
+		}
+
+		internal static void FreeLibrary(IntPtr handle)
+		{
+			impl._FreeLibrary(handle);
+		}
+
+		internal static IntPtr GetProcAddress(IntPtr handle, string name, int argc)
+		{
+			return impl._GetProcAddress(handle, name, argc);
+		}
+
+		internal static int CallOnLoad(IntPtr method, void* jvm, void* reserved)
+		{
+			return impl._CallOnLoad(method, jvm, reserved);
+		}
+
+		internal static void** GetJNIEnvVTable()
+		{
+			return impl._GetJNIEnvVTable();
+		}
+
+		internal static void* MarshalDelegate(Delegate d)
+		{
+			return impl._MarshalDelegate(d);
+		}
+	}
+
 	sealed class JniHelper
 	{
-		[DllImport("ikvm-native")]
-		private static extern IntPtr ikvm_LoadLibrary(string filename);
-		[DllImport("ikvm-native")]
-		private static extern void ikvm_FreeLibrary(IntPtr handle);
-		[DllImport("ikvm-native")]
-		internal static extern IntPtr ikvm_GetProcAddress(IntPtr handle, string name, int argc);
-		[DllImport("ikvm-native")]
-		private unsafe static extern int ikvm_CallOnLoad(IntPtr method, void* jvm, void* reserved);
-		[DllImport("ikvm-native")]
-		internal unsafe static extern void** ikvm_GetJNIEnvVTable();
-		[DllImport("ikvm-native")]
-		internal unsafe static extern void* ikvm_MarshalDelegate(Delegate d);
-
 		private static List<IntPtr> nativeLibraries = new List<IntPtr>();
 		internal static readonly object JniLock = new object();
 
@@ -343,7 +550,7 @@ namespace IKVM.Runtime
 			Tracer.Info(Tracer.Jni, "loadLibrary: {0}, class loader: {1}", filename, loader);
 			lock(JniLock)
 			{
-				IntPtr p = ikvm_LoadLibrary(filename);
+				IntPtr p = NativeLibrary.LoadLibrary(filename);
 				if(p == IntPtr.Zero)
 				{
 					Tracer.Info(Tracer.Jni, "Library not found: {0}", filename);
@@ -357,7 +564,7 @@ namespace IKVM.Runtime
 						{
 							// the library was already loaded by the current class loader,
 							// no need to do anything
-							ikvm_FreeLibrary(p);
+							NativeLibrary.FreeLibrary(p);
 							Tracer.Warning(Tracer.Jni, "Library was already loaded: {0}", filename);
 							return p.ToInt64();
 						}
@@ -369,7 +576,7 @@ namespace IKVM.Runtime
 						throw new java.lang.UnsatisfiedLinkError(msg);
 					}
 					Tracer.Info(Tracer.Jni, "Library loaded: {0}, handle = 0x{1:X}", filename, p.ToInt64());
-					IntPtr onload = ikvm_GetProcAddress(p, "JNI_OnLoad", IntPtr.Size * 2);
+					IntPtr onload = NativeLibrary.GetProcAddress(p, "JNI_OnLoad", IntPtr.Size * 2);
 					if(onload != IntPtr.Zero)
 					{
 						Tracer.Info(Tracer.Jni, "Calling JNI_OnLoad on: {0}", filename);
@@ -379,7 +586,7 @@ namespace IKVM.Runtime
 						try
 						{
 							// TODO on Whidbey we should be able to use Marshal.GetDelegateForFunctionPointer to call OnLoad
-							version = ikvm_CallOnLoad(onload, JavaVM.pJavaVM, null);
+							version = NativeLibrary.CallOnLoad(onload, JavaVM.pJavaVM, null);
 							Tracer.Info(Tracer.Jni, "JNI_OnLoad returned: 0x{0:X8}", version);
 						}
 						finally
@@ -399,7 +606,7 @@ namespace IKVM.Runtime
 				}
 				catch
 				{
-					ikvm_FreeLibrary(p);
+					NativeLibrary.FreeLibrary(p);
 					throw;
 				}
 			}
@@ -411,7 +618,7 @@ namespace IKVM.Runtime
 			{
 				Tracer.Info(Tracer.Jni, "Unloading library: handle = 0x{0:X}, class loader = {1}", handle, loader);
 				IntPtr p = (IntPtr)handle;
-				IntPtr onunload = ikvm_GetProcAddress(p, "JNI_OnUnload", IntPtr.Size * 2);
+				IntPtr onunload = NativeLibrary.GetProcAddress(p, "JNI_OnUnload", IntPtr.Size * 2);
 				if (onunload != IntPtr.Zero)
 				{
 					Tracer.Info(Tracer.Jni, "Calling JNI_OnUnload on: handle = 0x{0:X}", handle);
@@ -420,7 +627,7 @@ namespace IKVM.Runtime
 					try
 					{
 						// TODO on Whidbey we should be able to use Marshal.GetDelegateForFunctionPointer to call OnLoad
-						ikvm_CallOnLoad(onunload, JavaVM.pJavaVM, null);
+						NativeLibrary.CallOnLoad(onunload, JavaVM.pJavaVM, null);
 					}
 					finally
 					{
@@ -429,7 +636,7 @@ namespace IKVM.Runtime
 				}
 				nativeLibraries.Remove(p);
 				loader.UnregisterNativeLibrary(p);
-				ikvm_FreeLibrary((IntPtr)handle);
+				NativeLibrary.FreeLibrary((IntPtr)handle);
 			}
 		}
 	}
@@ -549,14 +756,14 @@ namespace IKVM.Runtime
 		{
 			JNI.jvmCreated = true;
 			// JNIEnv
-			void** pmcpp = JniHelper.ikvm_GetJNIEnvVTable();
+			void** pmcpp = NativeLibrary.GetJNIEnvVTable();
 			void** p = (void**)JniMem.Alloc(IntPtr.Size * vtableDelegates.Length);
 			for(int i = 0; i < vtableDelegates.Length; i++)
 			{
 				if(vtableDelegates[i] != null)
 				{
 					// TODO on Whidbey we can use Marshal.GetFunctionPointerForDelegate
-					p[i] = JniHelper.ikvm_MarshalDelegate(vtableDelegates[i]);
+					p[i] = NativeLibrary.MarshalDelegate(vtableDelegates[i]);
 				}
 				else
 				{
@@ -909,7 +1116,7 @@ namespace IKVM.Runtime
 			pJavaVM->vtable = &pJavaVM->firstVtableEntry;
 			for(int i = 0; i < vtableDelegates.Length; i++)
 			{
-				pJavaVM->vtable[i] = JniHelper.ikvm_MarshalDelegate(vtableDelegates[i]);
+				pJavaVM->vtable[i] = NativeLibrary.MarshalDelegate(vtableDelegates[i]);
 			}
 		}
 
