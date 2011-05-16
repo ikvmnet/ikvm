@@ -7,6 +7,16 @@
 
 <body>
 
+<h2>IKVM at ULLINK</h2>
+
+<p><i>ULLINK is a Financial Software Provider For Connectivity and Trading solutions.</i></p>
+
+<p><i>Very early in the development process we made the choice to build the client part of our software in C# and the server side part in Java. This choice was made to take the best of both Sun/Oracle and Microsoft technologies. At this time the key point was the interop between Java and C#, as financial software provider we need a robust, scalable and fast communication layer between client and server. IKVM is a part of this communication layer to expose POJO to .NET without traditional heavy and slow marshaling solutions.</i></p>
+
+<p><i>IKVM is also used to share common libraries between Java and .NET, almost all our common libraries are developed in Java and then we use IKVM to generate .NET DLLs: "One code base, two worlds targeted".</i></p>
+
+<p><i>We've used IKVM since 2008 and I can say without any doubt that IKVM is a ready-to-use solution for a company like ours that needs a reliable and scalable solution. With few clients in 2008, we now target more than thirty clients across the world! Thanks to IKVM.</i> -- Laurent Barbisan, Software Architect at <a href="http://www.ullink.com/">ULLINK</a>.</p>
+
 <h2>IKVM on Tchatche.com</h2>
 
 <p><i>Yet another successful story using IKVM in a heavy-loaded production environment!</i></p>
