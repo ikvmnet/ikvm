@@ -300,6 +300,7 @@ static class AtomicReferenceFieldUpdaterEmitter
 			ilgen.Emit(OpCodes.Volatile);
 		}
 		ilgen.Emit(OpCodes.Stfld, field);
+		ilgen.Emit(OpCodes.Call, typeof(System.Threading.Thread).GetMethod("MemoryBarrier"));
 		ilgen.Emit(OpCodes.Ret);
 	}
 }

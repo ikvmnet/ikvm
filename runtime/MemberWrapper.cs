@@ -1408,6 +1408,10 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Volatile);
 			}
 			ilgen.Emit(IsStatic ? OpCodes.Stsfld : OpCodes.Stfld, fi);
+ 			if(IsVolatile)
+ 			{
+ 				ilgen.Emit(OpCodes.Call, typeof(System.Threading.Thread).GetMethod("MemoryBarrier"));
+ 			}
 		}
 #endif
 	}
