@@ -88,8 +88,6 @@
                 <include name="lib/security/java.security" />
                 <include name="lib/security/local_policy.jar" />
                 <include name="lib/security/US_export_policy.jar" />
-            </fileset>
-            <fileset basedir="${OpenJDK.dir}/jdk/src/windows">
                 <include name="lib/flavormap.properties" />
                 <include name="lib/content-types.properties" />
             </fileset>
