@@ -1646,6 +1646,11 @@ namespace IKVM.Internal
 		HasUnsupportedAbstractMethods = 32,
 	}
 
+	static class NamePrefix
+	{
+		internal const string Type2AccessStubBackingField = "__<>";
+	}
+
 	internal abstract class TypeWrapper
 	{
 		private readonly string name;		// java name (e.g. java.lang.Object)
@@ -3966,15 +3971,41 @@ namespace IKVM.Internal
 			}
 		}
 
+		private static int SortFieldByToken(FieldInfo field1, FieldInfo field2)
+		{
+			return field1.MetadataToken.CompareTo(field2.MetadataToken);
+		}
+
 		protected override void LazyPublishFields()
 		{
 			List<FieldWrapper> fields = new List<FieldWrapper>();
 			const BindingFlags flags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
-			foreach(FieldInfo field in type.GetFields(flags))
+			FieldInfo[] rawfields = type.GetFields(flags);
+			Array.Sort(rawfields, SortFieldByToken);
+			PropertyInfo[] properties = type.GetProperties(flags);
+			foreach(FieldInfo field in rawfields)
 			{
-				if(!AttributeHelper.IsHideFromJava(field))
+				if(AttributeHelper.IsHideFromJava(field))
 				{
-					if(field.IsSpecialName && field.Name.StartsWith("__<"))
+					if(field.Name.StartsWith(NamePrefix.Type2AccessStubBackingField, StringComparison.Ordinal))
+					{
+						string name = field.Name.Substring(4);
+						for(int i = 0; i < properties.Length; i++)
+						{
+							// note that this "fails" when we have multiple fields with the same name, but the failure mode
+							// is simply that the fields won't retain their order (which is allowed by the reflection spec).
+							if(properties[i] != null && name == properties[i].Name)
+							{
+								AddPropertyFieldWrapper(fields, properties[i]);
+								properties[i] = null;
+								break;
+							}
+						}
+					}
+				}
+				else
+				{
+					if(field.IsSpecialName && field.Name.StartsWith("__<", StringComparison.Ordinal))
 					{
 						// skip
 					}
@@ -3984,36 +4015,44 @@ namespace IKVM.Internal
 					}
 				}
 			}
-			foreach(PropertyInfo property in type.GetProperties(flags))
+			foreach(PropertyInfo property in properties)
 			{
-				// NOTE explictly defined properties (in map.xml) are decorated with HideFromJava,
-				// so we don't need to worry about them here
-				if(!AttributeHelper.IsHideFromJava(property))
+				if(property != null)
 				{
-					// Only AccessStub properties (marked by HideFromReflectionAttribute or NameSigAttribute)
-					// are considered here
-					FieldWrapper accessStub;
-					if(CompiledAccessStubFieldWrapper.TryGet(this, property, out accessStub))
-					{
-						fields.Add(accessStub);
-					}
-					else
-					{
-						// If the property has a ModifiersAttribute, we know that it is an explicit property
-						// (defined in Java source by an @ikvm.lang.Property annotation)
-						ModifiersAttribute mods = AttributeHelper.GetModifiersAttribute(property);
-						if(mods != null)
-						{
-							fields.Add(new CompiledPropertyFieldWrapper(this, property, new ExModifiers(mods.Modifiers, mods.IsInternal)));
-						}
-						else
-						{
-							fields.Add(CreateFieldWrapper(property));
-						}
-					}
+					AddPropertyFieldWrapper(fields, property);
 				}
 			}
 			SetFields(fields.ToArray());
+		}
+
+		private void AddPropertyFieldWrapper(List<FieldWrapper> fields, PropertyInfo property)
+		{
+			// NOTE explictly defined properties (in map.xml) are decorated with HideFromJava,
+			// so we don't need to worry about them here
+			if(!AttributeHelper.IsHideFromJava(property))
+			{
+				// Only AccessStub properties (marked by HideFromReflectionAttribute or NameSigAttribute)
+				// are considered here
+				FieldWrapper accessStub;
+				if(CompiledAccessStubFieldWrapper.TryGet(this, property, out accessStub))
+				{
+					fields.Add(accessStub);
+				}
+				else
+				{
+					// If the property has a ModifiersAttribute, we know that it is an explicit property
+					// (defined in Java source by an @ikvm.lang.Property annotation)
+					ModifiersAttribute mods = AttributeHelper.GetModifiersAttribute(property);
+					if(mods != null)
+					{
+						fields.Add(new CompiledPropertyFieldWrapper(this, property, new ExModifiers(mods.Modifiers, mods.IsInternal)));
+					}
+					else
+					{
+						fields.Add(CreateFieldWrapper(property));
+					}
+				}
+			}
 		}
 
 		private class CompiledRemappedMethodWrapper : SmartMethodWrapper
