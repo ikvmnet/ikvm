@@ -24,6 +24,7 @@
         <li><link href="ext:monodevelop">MonoDevelop: A Mono IDE with IKVM Support</link></li>
         <li><link href="ext:ant-ikvmc">Ant task for ikvmc</link></li>
         <li><link href="ext:jar2ikvmc">Tool to figure out jar dependencies and generate ikvmc script</link></li>
+        <li><link href="ext:scalanet">jdk2ikvm: A source-level conversion tool to migrate Scala programs from JDK to .NET</link></li>
       </ul>
     </section>
   </body>

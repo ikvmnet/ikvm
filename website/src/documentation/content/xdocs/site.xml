@@ -65,6 +65,7 @@ See http://xml.apache.org/forrest/linking.html for more info
     <mono href="http://www.go-mono.org" />
     <ant-ikvmc href="http://ant-ikvmc.sourceforge.net/" />
     <jar2ikvmc href="http://code.google.com/p/jar2ikvmc/" />
+    <scalanet href="http://lamp.epfl.ch/~magarcia/jdk2ikvm/" />
     <xml.apache.org href="http://xml.apache.org/">
       <forrest href="forrest/">
         <validation href="validation.html"/>
