@@ -1349,11 +1349,11 @@ namespace IKVM.Internal
 					// (fields can be overloaded on type)
 					fieldName += "/" + typeWrapper.Name;
 				}
+				string realFieldName = fieldName;
 				FieldAttributes attribs = 0;
 				MethodAttributes methodAttribs = MethodAttributes.HideBySig;
 #if STATIC_COMPILER
 				bool setModifiers = fld.IsInternal || (fld.Modifiers & (Modifiers.Synthetic | Modifiers.Enum)) != 0;
-				bool hideFromJava = false;
 #endif
 				bool isWrappedFinal = false;
 				if (fld.IsPrivate)
@@ -1382,7 +1382,9 @@ namespace IKVM.Internal
 					// this field is going to get a type 2 access stub, so we hide the actual field
 					attribs &= ~FieldAttributes.FieldAccessMask;
 					attribs |= FieldAttributes.Assembly;
-					hideFromJava = true;
+					// instead of adding HideFromJava we rename the field to avoid confusing broken compilers
+					// see https://sourceforge.net/tracker/?func=detail&atid=525264&aid=3056721&group_id=69637
+					realFieldName = "__<>" + fieldName;
 				}
 #endif
 
@@ -1430,15 +1432,6 @@ namespace IKVM.Internal
 					{
 						modreq = new Type[] { Types.IsVolatile };
 					}
-					string realFieldName = fieldName;
-#if STATIC_COMPILER
-					if (hideFromJava)
-					{
-						// instead of adding HideFromJava we rename the field to avoid confusing broken compilers
-						// see https://sourceforge.net/tracker/?func=detail&atid=525264&aid=3056721&group_id=69637
-						realFieldName = "__<>" + fieldName;
-					}
-#endif // STATIC_COMPILER
 					field = typeBuilder.DefineField(realFieldName, type, modreq, Type.EmptyTypes, attribs);
 					if (fld.IsTransient)
 					{
