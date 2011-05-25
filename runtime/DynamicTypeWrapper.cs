@@ -3721,7 +3721,7 @@ namespace IKVM.Internal
 								CodeEmitter ilGenerator = CodeEmitter.Create((MethodBuilder)mb);
 								TraceHelper.EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
 #if STATIC_COMPILER
-								// do we have a native implementation in map.xml?
+								// do we have an implementation in map.xml?
 								if (wrapper.EmitMapXmlMethodPrologueAndOrBody(ilGenerator, classFile, m))
 								{
 									ilGenerator.DoEmit();
@@ -3823,6 +3823,7 @@ namespace IKVM.Internal
 							CodeEmitter ilGenerator = CodeEmitter.Create(mbld);
 							TraceHelper.EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
 #if STATIC_COMPILER
+							// do we have an implementation in map.xml?
 							if (wrapper.EmitMapXmlMethodPrologueAndOrBody(ilGenerator, classFile, m))
 							{
 								ilGenerator.DoEmit();
@@ -5079,7 +5080,7 @@ namespace IKVM.Internal
 				ClassFile.Method m = classFile.Methods[methodIndex];
 				TraceHelper.EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
 #if STATIC_COMPILER
-				// do we have a native implementation in map.xml?
+				// do we have an implementation in map.xml?
 				if (wrapper.EmitMapXmlMethodPrologueAndOrBody(ilGenerator, classFile, m))
 				{
 					ilGenerator.DoEmit();
