@@ -668,7 +668,7 @@ namespace IKVM.Internal
 									AttributeHelper.SetModifiers(cb, (Modifiers)constructor.Modifiers, false);
 								}
 								CodeEmitter ilgen = CodeEmitter.Create(cb);
-								constructor.body.Emit(classLoader, ilgen);
+								constructor.Emit(classLoader, ilgen);
 								ilgen.DoEmit();
 								if(constructor.Attributes != null)
 								{
@@ -731,7 +731,7 @@ namespace IKVM.Internal
 									typeBuilder.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
 								}
 								CodeEmitter ilgen = CodeEmitter.Create(mb);
-								method.body.Emit(classLoader, ilgen);
+								method.Emit(classLoader, ilgen);
 								ilgen.DoEmit();
 								if(method.Attributes != null)
 								{
