@@ -554,6 +554,12 @@ public final class InteropObjectOutputStream extends ObjectOutputStream
                 pos += len;
             }
             blockStart = pos;
+            // reserve space for the number of bytes
+            // (we assume that one byte will suffice, but if it won't the endData code will copy the data to make room)
+            if (pos == buf.length)
+            {
+                grow(1);
+            }
             pos++;
         }
         
