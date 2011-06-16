@@ -167,7 +167,7 @@ namespace ikvm.awt
             // this is required to simulate Graphics.create(), which is not possible in .NET
             // we simply call Save on create() an restore this state, if any method is called
             // on the current graphics. This will work for almost any use case of create()
-            if (baseContext.Current != this)
+            if (baseContext != null && baseContext.Current != this)
             {
                 if (!baseContext.Current.disposed)
                 {
