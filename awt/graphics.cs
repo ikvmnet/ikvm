@@ -682,6 +682,9 @@ namespace ikvm.awt
         private InterpolationMode InterpolationMode;
         private CompositingMode CompositingMode;
 
+        private Object textRenderingHint;
+        private Object fractionalHint;
+
         private bool savedGraphics = false;
 
         public NetGraphicsState()
@@ -750,6 +753,7 @@ namespace ikvm.awt
             {
                 netG.pen = new Pen(netG.color);
                 netG.brush = new SolidBrush(netG.color);
+                netG.setRenderingHint(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING, java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_DEFAULT);
             }
         }
     }
@@ -770,6 +774,7 @@ namespace ikvm.awt
         internal Pen pen;
         private CompositeHelper composite;
         private java.awt.Composite javaComposite = java.awt.AlphaComposite.SrcOver;
+        private Object textAntialiasHint;
         private Object fractionalHint = java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_DEFAULT;
 
         protected NetGraphics(Graphics g, java.awt.Font font, Color fgcolor, Color bgcolor)
@@ -1635,19 +1640,17 @@ namespace ikvm.awt
             }
             if (hintKey == java.awt.RenderingHints.KEY_TEXT_ANTIALIASING)
             {
-                if (hintValue == java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_DEFAULT)
+                if (hintValue == java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_DEFAULT ||
+                    hintValue == java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_OFF)
                 {
-                    g.TextRenderingHint = TextRenderingHint.SystemDefault;
-                    return;
-                }
-                if (hintValue == java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_OFF)
-                {
-                    g.TextRenderingHint = TextRenderingHint.SingleBitPerPixel;
+                    g.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit;
+                    textAntialiasHint = hintKey;
                     return;
                 }
                 if (hintValue == java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
                 {
                     g.TextRenderingHint = TextRenderingHint.AntiAlias;
+                    textAntialiasHint = hintKey;
                     return;
                 }
                 return;
@@ -1717,21 +1720,7 @@ namespace ikvm.awt
                     break;
             }
 
-            switch (g.TextRenderingHint)
-            {
-                case TextRenderingHint.SystemDefault:
-                    hints.put(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING, java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_DEFAULT);
-                    break;
-                case TextRenderingHint.SingleBitPerPixelGridFit:
-                case TextRenderingHint.SingleBitPerPixel:
-                    hints.put(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING, java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
-                    break;
-                case TextRenderingHint.AntiAlias:
-                case TextRenderingHint.AntiAliasGridFit:
-                case TextRenderingHint.ClearTypeGridFit:
-                    hints.put(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING, java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-                    break;
-            }
+            hints.put(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING, textAntialiasHint);
             hints.put(java.awt.RenderingHints.KEY_FRACTIONALMETRICS, fractionalHint);
             return hints;
         }
