@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.security.AllPermission;
 import java.nio.channels.Channel;
 import java.nio.channels.spi.SelectorProvider;
 
-import sun.net.InetAddressCachePolicy;
 import sun.reflect.Reflection;
 import sun.security.util.SecurityConstants;
 
@@ -51,12 +50,14 @@ final class Props
     private Props() { }
 
     static Properties props;
+    static String lineSeparator;
     
     static
     {
         props = new Properties();
         VMSystemProperties.initProperties(props);
-        
+        lineSeparator = props.getProperty("line.separator");
+
         // after we've initialized the system properties, we need to fixate certain
         // results that depend on system properties, because we don't want Java code to
         // be able to change the behavior by setting these system properties.
@@ -350,7 +351,6 @@ public final class System {
         }
 
         security = s;
-        InetAddressCachePolicy.setIfNotSet(InetAddressCachePolicy.FOREVER);
     }
 
     /**
@@ -387,28 +387,47 @@ public final class System {
     }
 
     /**
-     * Returns the current value of the most precise available system
-     * timer, in nanoseconds.
+     * Returns the current value of the running Java Virtual Machine's
+     * high-resolution time source, in nanoseconds.
      *
      * <p>This method can only be used to measure elapsed time and is
      * not related to any other notion of system or wall-clock time.
      * The value returned represents nanoseconds since some fixed but
-     * arbitrary time (perhaps in the future, so values may be
-     * negative).  This method provides nanosecond precision, but not
-     * necessarily nanosecond accuracy. No guarantees are made about
-     * how frequently values change. Differences in successive calls
-     * that span greater than approximately 292 years (2<sup>63</sup>
-     * nanoseconds) will not accurately compute elapsed time due to
-     * numerical overflow.
+     * arbitrary <i>origin</i> time (perhaps in the future, so values
+     * may be negative).  The same origin is used by all invocations of
+     * this method in an instance of a Java virtual machine; other
+     * virtual machine instances are likely to use a different origin.
+     *
+     * <p>This method provides nanosecond precision, but not necessarily
+     * nanosecond resolution (that is, how frequently the value changes)
+     * - no guarantees are made except that the resolution is at least as
+     * good as that of {@link #currentTimeMillis()}.
+     *
+     * <p>Differences in successive calls that span greater than
+     * approximately 292 years (2<sup>63</sup> nanoseconds) will not
+     * correctly compute elapsed time due to numerical overflow.
+     *
+     * <p>The values returned by this method become meaningful only when
+     * the difference between two such values, obtained within the same
+     * instance of a Java virtual machine, is computed.
      *
      * <p> For example, to measure how long some code takes to execute:
-     * <pre>
-     *   long startTime = System.nanoTime();
-     *   // ... the code being measured ...
-     *   long estimatedTime = System.nanoTime() - startTime;
-     * </pre>
+     *  <pre> {@code
+     * long startTime = System.nanoTime();
+     * // ... the code being measured ...
+     * long estimatedTime = System.nanoTime() - startTime;}</pre>
      *
-     * @return The current value of the system timer, in nanoseconds.
+     * <p>To compare two nanoTime values
+     *  <pre> {@code
+     * long t0 = System.nanoTime();
+     * ...
+     * long t1 = System.nanoTime();}</pre>
+     *
+     * one should use {@code t1 - t0 < 0}, not {@code t1 < t0},
+     * because of the possibility of numerical overflow.
+     *
+     * @return the current value of the running Java Virtual Machine's
+     *         high-resolution time source, in nanoseconds
      * @since 1.5
      */
     public static long nanoTime() {
@@ -649,6 +668,18 @@ public final class System {
         }
 
         return Props.props;
+    }
+
+    /**
+     * Returns the system-dependent line separator string.  It always
+     * returns the same value - the initial value of the {@linkplain
+     * #getProperty(String) system property} {@code line.separator}.
+     *
+     * <p>On UNIX systems, it returns {@code "\n"}; on Microsoft
+     * Windows systems it returns {@code "\r\n"}.
+     */
+    public static String lineSeparator() {
+        return Props.lineSeparator;
     }
 
     /**
@@ -1124,7 +1155,7 @@ public final class System {
     }
 
     /* returns the class of the caller. */
-    static Class getCallerClass() {
+    static Class<?> getCallerClass() {
         // NOTE use of more generic Reflection.getCallerClass()
         return Reflection.getCallerClass(3);
     }
