@@ -5741,11 +5741,6 @@ namespace IKVM.NativeCode.sun.misc
 
 	static class VM
 	{
-		public static void getThreadStateValues(int[][] vmThreadStateValues, string[][] vmThreadStateNames)
-		{
-			// TODO
-		}
-
 		public static void initialize()
 		{
 		}

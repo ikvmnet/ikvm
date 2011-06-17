@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.misc;
 
+import static java.lang.Thread.State.*;
 import java.util.Properties;
 import java.util.HashMap;
 import java.util.Map;
@@ -150,50 +151,118 @@ public class VM {
         return true;
     }
 
+    // Returns the maximum amount of allocatable direct buffer memory.
+    // The directMemory variable is initialized during system initialization
+    // in the saveAndRemoveProperties method.
+    //
     public static long maxDirectMemory() {
         // we don't support -XX:MaxDirectMemorySize
         return Long.MAX_VALUE;
     }
 
+    // User-controllable flag that determines if direct buffers should be page
+    // aligned. The "-XX:+PageAlignDirectMemory" option can be used to force
+    // buffers, allocated by ByteBuffer.allocateDirect, to be page aligned.
+    private static boolean pageAlignDirectMemory;
+
+    // Returns {@code true} if the direct buffers should be page aligned. This
+    // variable is initialized by saveAndRemoveProperties.
+    public static boolean isDirectMemoryPageAligned() {
+        return pageAlignDirectMemory;
+    }
+
     // A user-settable boolean to determine whether ClassLoader.loadClass should
-    // accept array syntax.  This value may be changed during VM initialization 
-    // via the system property "sun.lang.ClassLoader.allowArraySyntax". 
+    // accept array syntax.  This value may be changed during VM initialization
+    // via the system property "sun.lang.ClassLoader.allowArraySyntax".
     //
     // The default for 1.5 is "true", array syntax is allowed.  In 1.6, the
     // default will be "false".  The presence of this system property to
     // control array syntax allows applications the ability to preview this new
     // behaviour.
-    // 
+    //
     private static boolean defaultAllowArraySyntax = false;
     private static boolean allowArraySyntax = defaultAllowArraySyntax;
 
-    // If this method is invoked during VM initialization, it initializes the
-    // allowArraySyntax boolean based on the value of the system property
+    // The allowArraySyntax boolean is initialized during system initialization
+    // in the saveAndRemoveProperties method.
+    //
+    // It is initialized based on the value of the system property
     // "sun.lang.ClassLoader.allowArraySyntax".  If the system property is not
     // provided, the default for 1.5 is "true".  In 1.6, the default will be
     // "false".  If the system property is provided, then the value of
-    // allowArraySyntax will be equal to "true" if Boolean.parseBoolean() 
+    // allowArraySyntax will be equal to "true" if Boolean.parseBoolean()
     // returns "true".   Otherwise, the field will be set to "false".
     //
-    // If this method is invoked after the VM is booted, it returns the
-    // allowArraySyntax boolean set during initialization.
-    //    
     public static boolean allowArraySyntax() {
         return allowArraySyntax;
     }
 
-    @ikvm.lang.Internal    
-    public static void initializeAllowArraySyntax()
-    {
-        String s
-            = (String) System.getProperty("sun.lang.ClassLoader.allowArraySyntax");
-        allowArraySyntax = (s == null 
-                            ? defaultAllowArraySyntax
-                            : Boolean.parseBoolean(s));
+    /**
+     * Returns the system property of the specified key saved at
+     * system initialization time.  This method should only be used
+     * for the system properties that are not changed during runtime.
+     * It accesses a private copy of the system properties so
+     * that user's locking of the system properties object will not
+     * cause the library to deadlock.
+     *
+     * Note that the saved system properties do not include
+     * the ones set by sun.misc.Version.init().
+     *
+     */
+    public static String getSavedProperty(String key) {
+        if (savedProps.isEmpty())
+            throw new IllegalStateException("Should be non-empty if initialized");
+
+        return savedProps.getProperty(key);
     }
-    
+
+    // TODO: the Property Management needs to be refactored and
+    // the appropriate prop keys need to be accessible to the
+    // calling classes to avoid duplication of keys.
+    private static final Properties savedProps = new Properties();
+
+    // Save a private copy of the system properties and remove
+    // the system properties that are not intended for public access.
+    //
+    // This method can only be invoked during system initialization.
+    public static void saveAndRemoveProperties(Properties props) {
+
+        savedProps.putAll(props);
+
+        // Set the maximum amount of direct memory.  This value is controlled
+        // by the vm option -XX:MaxDirectMemorySize=<size>.
+        // The maximum amount of allocatable direct buffer memory (in bytes)
+        // from the system property sun.nio.MaxDirectMemorySize set by the VM.
+        // The system property will be removed.
+        String s = (String)props.remove("sun.nio.MaxDirectMemorySize");
+        // [IKVM] we don't support the -XX:MaxDirectMemorySize=<size> option.
+
+        // Check if direct buffers should be page aligned
+        s = (String)props.remove("sun.nio.PageAlignDirectMemory");
+        if ("true".equals(s))
+            pageAlignDirectMemory = true;
+
+        // Set a boolean to determine whether ClassLoader.loadClass accepts
+        // array syntax.  This value is controlled by the system property
+        // "sun.lang.ClassLoader.allowArraySyntax".
+        s = props.getProperty("sun.lang.ClassLoader.allowArraySyntax");
+        allowArraySyntax = (s == null
+                               ? defaultAllowArraySyntax
+                               : Boolean.parseBoolean(s));
+
+        // Remove other private system properties
+        // used by java.lang.Integer.IntegerCache
+        props.remove("java.lang.Integer.IntegerCache.high");
+
+        // used by java.util.zip.ZipFile
+        props.remove("sun.zip.disableMemoryMapping");
+
+        // used by sun.launcher.LauncherHelper
+        props.remove("sun.java.launcher.diag");
+    }
+
     // Initialize any miscellenous operating system settings that need to be
-    // set for the class libraries. 
+    // set for the class libraries.
     //
     public static void initializeOSEnvironment() {
     }
@@ -224,12 +293,12 @@ public class VM {
 
     /*
      * Add <tt>n</tt> to the objects pending for finalization count.
-     * 
+     *
      * @param n an integer value to be added to the objects pending
      * for finalization count
      */
     public static void addFinalRefCount(int n) {
-        // The caller must hold lock to synchronize the update. 
+        // The caller must hold lock to synchronize the update.
 
         finalRefCount += n;
         if (finalRefCount > peakFinalRefCount) {
@@ -237,69 +306,37 @@ public class VM {
         }
     }
 
-
+    /**
+     * Returns Thread.State for the given threadStatus
+     */
     public static Thread.State toThreadState(int threadStatus) {
-        // Initialize the threadStateMap
-        initThreadStateMap();
-
-        Thread.State s = threadStateMap.get(threadStatus);
-        if (s == null) {
-            // default to RUNNABLE if the threadStatus value is unknown
-            s = Thread.State.RUNNABLE;
-        }
-        return s;
-    }
-
-    // a map of threadStatus values to the corresponding Thread.State
-    private static Map<Integer, Thread.State> threadStateMap = null;
-    private static Map<Integer, String> threadStateNames = null;
-
-    private synchronized static void initThreadStateMap() {
-        if (threadStateMap != null) {
-            return;
-        }
-
-        final Thread.State[] ts = Thread.State.values();
-
-        final int[][] vmThreadStateValues = new int[ts.length][];
-        final String[][] vmThreadStateNames = new String[ts.length][];
-        getThreadStateValues(vmThreadStateValues, vmThreadStateNames);
-
-        threadStateMap = new HashMap<Integer, Thread.State>();
-        threadStateNames = new HashMap<Integer, String>();
-        for (int i = 0; i < ts.length; i++) {
-            String state = ts[i].name();
-            int[] values = null;
-            String[] names = null;
-            for (int j = 0; j < ts.length; j++) {
-                if (vmThreadStateNames[j][0].startsWith(state)) {
-                    values = vmThreadStateValues[j];
-                    names = vmThreadStateNames[j];
-                }
-            }
-            if (values == null) {
-                throw new InternalError("No VM thread state mapped to " +
-                    state);
-            }
-            if (values.length != names.length) {
-                throw new InternalError("VM thread state values and names " +
-                    " mapped to " + state + ": length not matched" );
-            }
-            for (int k = 0; k < values.length; k++) {
-                threadStateMap.put(values[k], ts[i]);
-                threadStateNames.put(values[k], names[k]);
-            }
+        if ((threadStatus & JVMTI_THREAD_STATE_RUNNABLE) != 0) {
+            return RUNNABLE;
+        } else if ((threadStatus & JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER) != 0) {
+            return BLOCKED;
+        } else if ((threadStatus & JVMTI_THREAD_STATE_WAITING_INDEFINITELY) != 0) {
+            return WAITING;
+        } else if ((threadStatus & JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT) != 0) {
+            return TIMED_WAITING;
+        } else if ((threadStatus & JVMTI_THREAD_STATE_TERMINATED) != 0) {
+            return TERMINATED;
+        } else if ((threadStatus & JVMTI_THREAD_STATE_ALIVE) == 0) {
+            return NEW;
+        } else {
+            return RUNNABLE;
         }
     }
-    // Fill in vmThreadStateValues with int arrays, each of which contains
-    // the threadStatus values mapping to the Thread.State enum constant.
-    // Fill in vmThreadStateNames with String arrays, each of which contains
-    // the name of each threadStatus value of the format:
-    //    <Thread.State.name()>[.<Substate name>]
-    // e.g. WAITING.OBJECT_WAIT
-    //
-    private native static void getThreadStateValues(int[][] vmThreadStateValues,
-                                                    String[][] vmThreadStateNames);
+
+    /* The threadStatus field is set by the VM at state transition
+     * in the hotspot implementation. Its value is set according to
+     * the JVM TI specification GetThreadState function.
+     */
+    private final static int JVMTI_THREAD_STATE_ALIVE = 0x0001;
+    private final static int JVMTI_THREAD_STATE_TERMINATED = 0x0002;
+    private final static int JVMTI_THREAD_STATE_RUNNABLE = 0x0004;
+    private final static int JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER = 0x0400;
+    private final static int JVMTI_THREAD_STATE_WAITING_INDEFINITELY = 0x0010;
+    private final static int JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT = 0x0020;
 
     static {
         initialize();

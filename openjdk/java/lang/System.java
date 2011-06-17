@@ -62,7 +62,7 @@ final class Props
         // results that depend on system properties, because we don't want Java code to
         // be able to change the behavior by setting these system properties.
         ClassLoader.initializeLibraryPaths(props);
-        sun.misc.VM.initializeAllowArraySyntax();
+        sun.misc.VM.saveAndRemoveProperties(props);
     }
 }
 
