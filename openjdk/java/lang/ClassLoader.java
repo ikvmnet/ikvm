@@ -192,8 +192,11 @@ public abstract class ClassLoader {
     @ikvm.lang.Internal
     public static final ClassLoader DUMMY = new ClassLoader(false) { };
     
-    private ClassLoader(boolean ignored)
+    ClassLoader(boolean ignored)
     {
+        // [IKVM] This constructor is IKVM specific and only used to construct DUMMY.
+        // Note that this body is replaced in map.xml with an empty body as
+        // we don't want to execute any of the instance field initializers.
     }
 
     /**
