@@ -487,7 +487,7 @@ public final class AccessController {
      * Performs the specified <code>PrivilegedExceptionAction</code> with
      * privileges enabled and restricted by the specified
      * <code>AccessControlContext</code>.  The action is performed with the
-     * intersection of the the permissions possessed by the caller's
+     * intersection of the permissions possessed by the caller's
      * protection domain, and those possessed by the domains represented by the
      * specified <code>AccessControlContext</code>.
      * <p>
@@ -579,7 +579,9 @@ public final class AccessController {
      * specified permission should be allowed or denied, based on
      * the current AccessControlContext and security policy.
      * This method quietly returns if the access request
-     * is permitted, or throws a suitable AccessControlException otherwise.
+     * is permitted, or throws an AccessControlException otherwise. The
+     * getPermission method of the AccessControlException returns the
+     * <code>perm</code> Permission object instance.
      *
      * @param perm the requested permission.
      *

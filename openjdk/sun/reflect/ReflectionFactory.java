@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,8 @@ public class ReflectionFactory {
      * <code>AccessController.doPrivileged</code>.
      */
     public static final class GetReflectionFactoryAction
-        implements PrivilegedAction {
-        public Object run() {
+        implements PrivilegedAction<ReflectionFactory> {
+        public ReflectionFactory run() {
             return getReflectionFactory();
         }
     }
@@ -130,7 +130,7 @@ public class ReflectionFactory {
     private native ConstructorAccessor newConstructorAccessor0(Constructor c);
 
     public ConstructorAccessor newConstructorAccessor(Constructor c) {
-        Class declaringClass = c.getDeclaringClass();
+        Class<?> declaringClass = c.getDeclaringClass();
         if (Modifier.isAbstract(declaringClass.getModifiers())) {
             return new InstantiationExceptionConstructorAccessorImpl(null);
         }
@@ -149,9 +149,9 @@ public class ReflectionFactory {
 
     /** Creates a new java.lang.reflect.Field. Access checks as per
         java.lang.reflect.AccessibleObject are not overridden. */
-    public Field newField(Class declaringClass,
+    public Field newField(Class<?> declaringClass,
                           String name,
-                          Class type,
+                          Class<?> type,
                           int modifiers,
                           int slot,
                           String signature,
@@ -168,11 +168,11 @@ public class ReflectionFactory {
 
     /** Creates a new java.lang.reflect.Method. Access checks as per
         java.lang.reflect.AccessibleObject are not overridden. */
-    public Method newMethod(Class declaringClass,
+    public Method newMethod(Class<?> declaringClass,
                             String name,
-                            Class[] parameterTypes,
-                            Class returnType,
-                            Class[] checkedExceptions,
+                            Class<?>[] parameterTypes,
+                            Class<?> returnType,
+                            Class<?>[] checkedExceptions,
                             int modifiers,
                             int slot,
                             String signature,
@@ -195,9 +195,9 @@ public class ReflectionFactory {
 
     /** Creates a new java.lang.reflect.Constructor. Access checks as
         per java.lang.reflect.AccessibleObject are not overridden. */
-    public Constructor newConstructor(Class declaringClass,
-                                      Class[] parameterTypes,
-                                      Class[] checkedExceptions,
+    public Constructor newConstructor(Class<?> declaringClass,
+                                      Class<?>[] parameterTypes,
+                                      Class<?>[] checkedExceptions,
                                       int modifiers,
                                       int slot,
                                       String signature,
@@ -255,7 +255,7 @@ public class ReflectionFactory {
     /** Makes a copy of the passed constructor. The returned
         constructor is a "child" of the passed one; see the comments
         in Constructor.java for details. */
-    public Constructor copyConstructor(Constructor arg) {
+    public <T> Constructor<T> copyConstructor(Constructor<T> arg) {
         return langReflectAccess().copyConstructor(arg);
     }
 
@@ -268,7 +268,7 @@ public class ReflectionFactory {
     private static native ConstructorAccessor newConstructorAccessorForSerialization(Class classToInstantiate, Constructor constructorToCall);
 
     public Constructor newConstructorForSerialization
-        (Class classToInstantiate, Constructor constructorToCall)
+        (Class<?> classToInstantiate, Constructor constructorToCall)
     {
         // Fast path
         if (constructorToCall.getDeclaringClass() == classToInstantiate) {
