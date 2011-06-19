@@ -1833,6 +1833,14 @@
                         <call class="sun.misc.MiscHelper" name="getAppClassLoader" sig="(Ljava.lang.ClassLoader;)Ljava.lang.ClassLoader;" />
                     </code>
                 </replace-method-call>
+                <replace-method-call class="java.lang.Thread" name="setContextClassLoader" sig="(Ljava.lang.ClassLoader;)V">
+                    <code>
+                        <!--
+                        The JDK uses setContextClassLoader() here, but we don't want to overwrite the context class loader if it has already been set.
+                        -->
+                        <callvirt class="java.lang.Thread" name="initContextClassLoader" sig="(Ljava.lang.ClassLoader;)V" />
+                    </code>
+                </replace-method-call>
             </method>
         </class>
         <class name="sun.misc.SharedSecrets">

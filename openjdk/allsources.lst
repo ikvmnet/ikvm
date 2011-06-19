@@ -173,7 +173,6 @@ sun/jdbc/odbc/JdbcOdbcUtils.java
 sun/management/ManagementFactory.java
 sun/management/VMManagementImpl.java
 sun/misc/FileURLMapper.java
-sun/misc/Launcher.java
 sun/misc/MiscHelper.java
 sun/misc/OSEnvironment.java
 sun/misc/SharedSecrets.java
@@ -11351,6 +11350,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/jdk/src/share/classes/sun/misc/JavaSecurityAccess.java
 @OPENJDK6@/jdk/src/share/classes/sun/misc/JavaSecurityProtectionDomainAccess.java
 @OPENJDK6@/jdk/src/share/classes/sun/misc/JavaUtilJarAccess.java
+@OPENJDK6@/jdk/src/share/classes/sun/misc/Launcher.java
 @OPENJDK6@/jdk/src/share/classes/sun/misc/Lock.java
 @OPENJDK6@/jdk/src/share/classes/sun/misc/LRUCache.java
 @OPENJDK6@/jdk/src/share/classes/sun/misc/MessageUtils.java
