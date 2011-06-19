@@ -8638,7 +8638,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/StringIndexOutOfBoundsException.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/SuppressWarnings.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/ThreadDeath.java
-@OPENJDK6@/jdk/src/share/classes/java/lang/ThreadGroup.java
+@OPENJDK7@/jdk/src/share/classes/java/lang/ThreadGroup.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/ThreadLocal.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/Throwable.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/TypeNotPresentException.java

@@ -270,12 +270,6 @@ class Thread implements Runnable {
      */
     public final static int MAX_PRIORITY = 10;
 
-    /* If stop was called before start */
-    private boolean stopBeforeStart;
-
-    /* Remembered Throwable from stop before start */
-    private Throwable throwableFromStop;
-
     /**
      * Returns a reference to the currently executing thread object.
      *
@@ -855,10 +849,25 @@ class Thread implements Runnable {
          */
         if (threadStatus != 0)
             throw new IllegalThreadStateException();
+
+        /* Notify the group that this thread is about to be started
+         * so that it can be added to the group's list of threads
+         * and the group's unstarted count can be decremented. */
         group.add(this);
-        start0();
-        if (stopBeforeStart) {
-            stop0(throwableFromStop);
+
+        boolean started = false;
+        try {
+            start0();
+            started = true;
+        } finally {
+            try {
+                if (!started) {
+                    group.threadStartFailed(this);
+                }
+            } catch (Throwable ignore) {
+                /* do nothing. If start0 threw a Throwable then
+                  it will be passed up the call stack */
+            }
         }
     }
 
@@ -976,7 +985,7 @@ class Thread implements Runnable {
      */
     private void exit() {
         if (group != null) {
-            group.remove(this);
+            group.threadTerminated(this);
             group = null;
         }
         /* Aggressively null out all reference fields: see bug 4006245 */
@@ -1126,18 +1135,10 @@ class Thread implements Runnable {
         // not-NEW because we hold the lock.
         if (threadStatus != 0) {
             resume(); // Wake up thread if it was suspended; no-op otherwise
-            stop0(obj);
-        } else {
-
-            // Must do the null arg check that the VM would do with stop0
-            if (obj == null) {
-                throw new NullPointerException();
-            }
-
-            // Remember this stop attempt for if/when start is used
-            stopBeforeStart = true;
-            throwableFromStop = obj;
         }
+
+        // The VM can handle all thread states
+        stop0(obj);
     }
 
     /**
@@ -1754,9 +1755,8 @@ class Thread implements Runnable {
         contextClassLoader = cl;
     }
     
-    // [IKVM] called by sun.misc.Launcher to initialize the context class loader
-    @ikvm.lang.Internal
-    public void initContextClassLoader(ClassLoader cl) {
+    // [IKVM] called by sun.misc.Launcher (via map.xml patch) to initialize the context class loader
+    final void initContextClassLoader(ClassLoader cl) {
         // we only set contextClassLoader if it hasn't been set (by user code) previously
         if (contextClassLoader == ClassLoader.DUMMY) {
             contextClassLoader = cl;
@@ -1909,8 +1909,7 @@ class Thread implements Runnable {
         // Get a snapshot of the list of all threads
         Thread[] threads = getThreads();
         StackTraceElement[][] traces = dumpThreads(threads);
-        Map<Thread, StackTraceElement[]> m
-            = new HashMap<Thread, StackTraceElement[]>(threads.length);
+        Map<Thread, StackTraceElement[]> m = new HashMap<>(threads.length);
         for (int i = 0; i < threads.length; i++) {
             StackTraceElement[] stackTrace = traces[i];
             if (stackTrace != null) {
@@ -2281,9 +2280,6 @@ class Thread implements Runnable {
     }
 
     private void stop0(Throwable x) {
-        if (x == null) {
-            throw new NullPointerException();
-        }
         synchronized (lock) {
             if (!running) {
                 stillborn = x;
