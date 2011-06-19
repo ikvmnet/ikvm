@@ -75,6 +75,7 @@ assembly.class
     @OPENJDK6@/jdk/src/share/classes/java/beans/PropertyChangeSupport*.class
     @OPENJDK6@/jdk/src/share/classes/java/io/*.class
     @OPENJDK6@/jdk/src/share/classes/java/lang/*.class
+    @OPENJDK7@/jdk/src/share/classes/java/lang/*.class
     @OPENJDK6@/jdk/src/share/classes/java/lang/annotation/*.class
     @OPENJDK6@/jdk/src/share/classes/java/lang/ref/*.class
     @OPENJDK6@/jdk/src/share/classes/java/lang/reflect/*.class

@@ -86,7 +86,6 @@ public final class Shutdown {
         catch (cli.System.Security.SecurityException _) {
         }
         hooks[0] = sun.misc.SharedSecrets.getJavaIOAccess().consoleRestoreHook();
-        hooks[1] = ApplicationShutdownHooks.hook();
         hooks[2] = sun.misc.SharedSecrets.getJavaIODeleteOnExitAccess();
     }
 

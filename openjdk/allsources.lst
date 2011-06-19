@@ -62,7 +62,6 @@ java/io/InteropObjectOutputStream.java
 java/io/ObjectStreamClass.java
 java/io/ObjectStreamField.java
 java/io/RandomAccessFile.java
-java/lang/ApplicationShutdownHooks.java
 java/lang/Class.java
 java/lang/ClassLoader.java
 java/lang/Enum.java
@@ -8502,6 +8501,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/jdk/src/share/classes/java/io/WriteAbortedException.java
 @OPENJDK6@/jdk/src/share/classes/java/io/Writer.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/AbstractMethodError.java
+@OPENJDK7@/jdk/src/share/classes/java/lang/ApplicationShutdownHooks.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/AbstractStringBuilder.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/annotation/Annotation.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/annotation/AnnotationFormatError.java
