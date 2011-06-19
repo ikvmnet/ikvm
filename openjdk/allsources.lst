@@ -8624,6 +8624,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/Runtime.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/RuntimeException.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/RuntimePermission.java
+@OPENJDK7@/jdk/src/share/classes/java/lang/SafeVarargs.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/SecurityException.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/SecurityManager.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/Short.java
@@ -9082,7 +9083,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/jdk/src/share/classes/java/util/BitSet.java
 @OPENJDK6@/jdk/src/share/classes/java/util/Calendar.java
 @OPENJDK6@/jdk/src/share/classes/java/util/Collection.java
-@OPENJDK6@/jdk/src/share/classes/java/util/Collections.java
+@OPENJDK7@/jdk/src/share/classes/java/util/Collections.java
 @OPENJDK6@/jdk/src/share/classes/java/util/Comparator.java
 @OPENJDK6@/jdk/src/share/classes/java/util/concurrent/AbstractExecutorService.java
 @OPENJDK6@/jdk/src/share/classes/java/util/concurrent/ArrayBlockingQueue.java
@@ -11320,7 +11321,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/jdk/src/share/classes/sun/misc/CEStreamExhausted.java
 @OPENJDK6@/jdk/src/share/classes/sun/misc/CharacterDecoder.java
 @OPENJDK6@/jdk/src/share/classes/sun/misc/CharacterEncoder.java
-@OPENJDK6@/jdk/src/share/classes/sun/misc/ClassFileTransformer.java
+@OPENJDK7@/jdk/src/share/classes/sun/misc/ClassFileTransformer.java
 @OPENJDK6@/jdk/src/share/classes/sun/misc/ClassLoaderUtil.java
 @OPENJDK6@/jdk/src/share/classes/sun/misc/Cleaner.java
 @OPENJDK6@/jdk/src/share/classes/sun/misc/Compare.java
@@ -11350,7 +11351,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/jdk/src/share/classes/sun/misc/JavaSecurityAccess.java
 @OPENJDK6@/jdk/src/share/classes/sun/misc/JavaSecurityProtectionDomainAccess.java
 @OPENJDK6@/jdk/src/share/classes/sun/misc/JavaUtilJarAccess.java
-@OPENJDK6@/jdk/src/share/classes/sun/misc/Launcher.java
+@OPENJDK7@/jdk/src/share/classes/sun/misc/Launcher.java
 @OPENJDK6@/jdk/src/share/classes/sun/misc/Lock.java
 @OPENJDK6@/jdk/src/share/classes/sun/misc/LRUCache.java
 @OPENJDK6@/jdk/src/share/classes/sun/misc/MessageUtils.java

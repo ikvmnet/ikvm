@@ -2942,10 +2942,6 @@ namespace IKVM.NativeCode.java
 
 		static class ClassLoader
 		{
-#if !FIRST_PASS
-			private static jlClassNotFoundException classNotFoundException;
-#endif
-
 			public static object defineClass0(jlClassLoader thisClassLoader, string name, byte[] b, int off, int len, object pd)
 			{
 				return defineClass1(thisClassLoader, name, b, off, len, pd, null);
@@ -3016,20 +3012,7 @@ namespace IKVM.NativeCode.java
 				{
 					throw x.ToJava();
 				}
-				if (tw == null)
-				{
-					// HACK for efficiency, we don't allocate a new exception here
-					// (as this exception is thrown for *every* non-boot class that we load and
-					// the exception is thrown away by our caller anyway)
-					if (classNotFoundException == null)
-					{
-						jlClassNotFoundException ex = new jlClassNotFoundException(null, null);
-						ex.setStackTrace(new jlStackTraceElement[] { new jlStackTraceElement("java.lang.ClassLoader", "findBootstrapClass", null, -2) });
-						classNotFoundException = ex;
-					}
-					throw classNotFoundException;
-				}
-				return tw.ClassObject;
+				return tw != null ? tw.ClassObject : null;
 #endif
 			}
 
