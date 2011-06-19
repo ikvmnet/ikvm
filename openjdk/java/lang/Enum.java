@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,22 @@ import cli.System.Runtime.Serialization.StreamingContext;
 /**
  * This is the common base class of all Java language enumeration types.
  *
+ * More information about enums, including descriptions of the
+ * implicitly declared methods synthesized by the compiler, can be
+ * found in section 8.9 of
+ * <cite>The Java&trade; Language Specification</cite>.
+ *
+ * <p> Note that when using an enumeration type as the type of a set
+ * or as the type of the keys in a map, specialized and efficient
+ * {@linkplain java.util.EnumSet set} and {@linkplain
+ * java.util.EnumMap map} implementations are available.
+ *
+ * @param <E> The enum type subclass
  * @author  Josh Bloch
  * @author  Neal Gafter
  * @see     Class#getEnumConstants()
+ * @see     java.util.EnumSet
+ * @see     java.util.EnumMap
  * @since   1.5
  */
 @cli.System.SerializableAttribute.Annotation
@@ -197,6 +210,15 @@ public abstract class Enum<E extends Enum<E>>
      * to declare an enum constant in this type.  (Extraneous whitespace
      * characters are not permitted.)
      *
+     * <p>Note that for a particular enum type {@code T}, the
+     * implicitly declared {@code public static T valueOf(String)}
+     * method on that enum may be used instead of this method to map
+     * from a name to the corresponding enum constant.  All the
+     * constants of an enum type can be obtained by calling the
+     * implicit {@code public static T[] values()} method of that
+     * type.
+     *
+     * @param <T> The enum type whose constant is to be returned
      * @param enumType the {@code Class} object of the enum type from which
      *      to return a constant
      * @param name the name of the constant to return
@@ -217,7 +239,7 @@ public abstract class Enum<E extends Enum<E>>
         if (name == null)
             throw new NullPointerException("Name is null");
         throw new IllegalArgumentException(
-            "No enum const " + enumType +"." + name);
+            "No enum constant " + enumType.getCanonicalName() + "." + name);
     }
 
     /**
@@ -230,11 +252,11 @@ public abstract class Enum<E extends Enum<E>>
      */
     private void readObject(ObjectInputStream in) throws IOException,
         ClassNotFoundException {
-            throw new InvalidObjectException("can't deserialize enum");
+        throw new InvalidObjectException("can't deserialize enum");
     }
 
     private void readObjectNoData() throws ObjectStreamException {
-            throw new InvalidObjectException("can't deserialize enum");
+        throw new InvalidObjectException("can't deserialize enum");
     }
     
     // [IKVM] .NET serialization support starts here
