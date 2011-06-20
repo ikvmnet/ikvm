@@ -25,6 +25,7 @@ package sun.jdbc.odbc;
 
 import java.sql.*;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 /**
  * This JDBC Driver is a wrapper to the ODBC.NET Data Provider
@@ -45,7 +46,8 @@ public class JdbcOdbcDriver implements Driver{
     /**
      * {@inheritDoc}
      */
-    public boolean acceptsURL(String url){
+    @Override
+	public boolean acceptsURL(String url){
         return url.startsWith(URL_PREFIX);
     }
 
@@ -53,7 +55,8 @@ public class JdbcOdbcDriver implements Driver{
     /**
      * {@inheritDoc}
      */
-    public Connection connect(String url, Properties info) throws SQLException{
+    @Override
+	public Connection connect(String url, Properties info) throws SQLException{
         if(!acceptsURL(url)){
             return null;
         }
@@ -65,7 +68,8 @@ public class JdbcOdbcDriver implements Driver{
     /**
      * {@inheritDoc}
      */
-    public int getMajorVersion(){
+    @Override
+	public int getMajorVersion(){
         return 2;
     }
 
@@ -73,7 +77,8 @@ public class JdbcOdbcDriver implements Driver{
     /**
      * {@inheritDoc}
      */
-    public int getMinorVersion(){
+    @Override
+	public int getMinorVersion(){
         return 1;
     }
 
@@ -81,7 +86,8 @@ public class JdbcOdbcDriver implements Driver{
     /**
      * {@inheritDoc}
      */
-    public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException{
+    @Override
+	public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException{
         return new DriverPropertyInfo[0];
     }
 
@@ -89,8 +95,17 @@ public class JdbcOdbcDriver implements Driver{
     /**
      * {@inheritDoc}
      */
-    public boolean jdbcCompliant(){
+    @Override
+	public boolean jdbcCompliant(){
         return true;
     }
+
+
+    /**
+     * {@inheritDoc}
+     */
+	public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+		throw new SQLFeatureNotSupportedException();
+	}
 
 }
