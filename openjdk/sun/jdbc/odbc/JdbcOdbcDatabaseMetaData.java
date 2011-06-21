@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Volker Berlin (i-net software)
+  Copyright (C) 2009, 2011 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1190,4 +1190,22 @@ public class JdbcOdbcDatabaseMetaData implements DatabaseMetaData{
             throw JdbcOdbcUtils.createSQLException(th);
         }
     }
+
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public ResultSet getPseudoColumns(String catalog, String schemaPattern,
+			String tableNamePattern, String columnNamePattern)
+			throws SQLException {
+		throw new SQLFeatureNotSupportedException();
+	}
+
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public boolean generatedKeyAlwaysReturned() throws SQLException {
+		return false;
+	}
 }

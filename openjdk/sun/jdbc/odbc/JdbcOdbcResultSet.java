@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Volker Berlin (i-net software)
+  Copyright (C) 2009, 2011 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -778,5 +778,22 @@ public class JdbcOdbcResultSet extends JdbcOdbcObject implements ResultSet{
             throw JdbcOdbcUtils.createSQLException(ex);
         }
     }
+
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
+		throw new SQLFeatureNotSupportedException();
+	}
+
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public <T> T getObject(String columnLabel, Class<T> type)
+			throws SQLException {
+		throw new SQLFeatureNotSupportedException();
+	}
 
 }

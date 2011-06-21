@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Volker Berlin (i-net software)
+  Copyright (C) 2009, 2011 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -367,5 +367,20 @@ public class JdbcOdbcStatement implements Statement{
         }
         rs = currentRs;
     }
+
+
+    /**
+     * {@inheritDoc}
+     */
+	public void closeOnCompletion() throws SQLException {
+	}
+
+
+    /**
+     * {@inheritDoc}
+     */
+	public boolean isCloseOnCompletion() throws SQLException {
+		return false;
+	}
 
 }
