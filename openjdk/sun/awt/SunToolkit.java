@@ -1977,6 +1977,49 @@ public abstract class SunToolkit extends Toolkit
     public boolean isNativeGTKAvailable() {
         return false;
     }
+    
+    /**
+     * Descendants of the SunToolkit should override and put their own logic here.
+     */
+    public int getNumberOfButtons(){
+        return 3;
+    }
+
+    /**
+     * Checks that the given object implements/extends the given
+     * interface/class.
+     *
+     * Note that using the instanceof operator causes a class to be loaded.
+     * Using this method doesn't load a class and it can be used instead of
+     * the instanceof operator for performance reasons.
+     *
+     * @param obj Object to be checked
+     * @param type The name of the interface/class. Must be
+     * fully-qualified interface/class name.
+     * @return true, if this object implements/extends the given
+     *         interface/class, false, otherwise, or if obj or type is null
+     */
+    public static boolean isInstanceOf(Object obj, String type) {
+        if (obj == null) return false;
+        if (type == null) return false;
+
+        return isInstanceOf(obj.getClass(), type);
+    }
+
+    private static boolean isInstanceOf(Class cls, String type) {
+        if (cls == null) return false;
+
+        if (cls.getName().equals(type)) {
+            return true;
+        }
+
+        for (Class c : cls.getInterfaces()) {
+            if (c.getName().equals(type)) {
+                return true;
+            }
+        }
+        return isInstanceOf(cls.getSuperclass(), type);
+    }
 } // class SunToolkit
 
 
