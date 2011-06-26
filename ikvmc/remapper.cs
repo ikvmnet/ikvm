@@ -630,6 +630,18 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
+	[XmlType("ldarg_s")]
+	public sealed class LdArg_S : Instruction
+	{
+		[XmlAttribute("argNum")]
+		public byte ArgNum;
+
+		internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
+		{
+			ilgen.Emit(OpCodes.Ldarg_S, ArgNum);
+		}
+	}
+
 	[XmlType("ldarg_0")]
 	public sealed class LdArg_0 : Simple
 	{
@@ -1227,6 +1239,7 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(StLoc))]
 		[XmlElement(typeof(LdLoc))]
 		[XmlElement(typeof(LdArga))]
+		[XmlElement(typeof(LdArg_S))]
 		[XmlElement(typeof(LdArg_0))]
 		[XmlElement(typeof(LdArg_1))]
 		[XmlElement(typeof(LdArg_2))]
