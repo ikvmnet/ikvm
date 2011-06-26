@@ -207,7 +207,7 @@ final class ThrowableHelper {
      * </pre>
      */
     public static void printStackTrace(Throwable _this) {
-        printStackTrace(_this, System.err);
+        _this.printStackTrace(System.err);
     }
 
     /**
