@@ -10808,6 +10808,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/jdk/src/share/classes/sun/awt/dnd/SunDropTargetEvent.java
 @OPENJDK6@/jdk/src/share/classes/sun/awt/event/IgnorePaintEvent.java
 @OPENJDK6@/jdk/src/share/classes/sun/awt/EventListenerAggregate.java
+@OPENJDK7@/jdk/src/share/classes/sun/awt/EventQueueItem.java
 @OPENJDK6@/jdk/src/share/classes/sun/awt/FocusingTextField.java
 @OPENJDK6@/jdk/src/share/classes/sun/awt/geom/AreaOp.java
 @OPENJDK6@/jdk/src/share/classes/sun/awt/geom/ChainEnd.java
