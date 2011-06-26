@@ -400,19 +400,16 @@ namespace IKVM.Internal
 					fields.put("cause", x.InnerException);
 					// suppressed exceptions are not supported on CLR exceptions
 					fields.put("suppressedExceptions", null);
+					fields.put("stackTrace", getOurStackTrace(x));
 				}
 				else
 				{
 					fields.put("detailMessage", _thisJava.detailMessage);
 					fields.put("cause", _thisJava.cause);
 					fields.put("suppressedExceptions", _thisJava.suppressedExceptions);
+					getOurStackTrace(x);
+					fields.put("stackTrace", _thisJava.stackTrace ?? java.lang.ThrowableHelper.SentinelHolder.STACK_TRACE_SENTINEL);
 				}
-				StackTraceElement[] stackTrace = getOurStackTrace(x);
-				if (stackTrace == null)
-				{
-					stackTrace = java.lang.ThrowableHelper.SentinelHolder.STACK_TRACE_SENTINEL;
-				}
-				fields.put("stackTrace", stackTrace);
 				s.writeFields();
 			}
 #endif
@@ -475,14 +472,20 @@ namespace IKVM.Internal
 					}
 					else
 					{
-						// we don't need to verify non-nullness of the array elements, because setStackTrace will do that
+						foreach (StackTraceElement elem in stackTrace)
+						{
+							if (elem == null)
+							{
+								throw new java.lang.NullPointerException("null StackTraceElement in serial stream. ");
+							}
+						}
 					}
 				}
 				else
 				{
 					stackTrace = new StackTraceElement[0];
 				}
-				setStackTrace(x, stackTrace);
+				SetStackTraceImpl(x, stackTrace);
 			}
 #endif
 		}
@@ -680,10 +683,17 @@ namespace IKVM.Internal
 					throw new java.lang.NullPointerException();
 				}
 			}
+			SetStackTraceImpl(x, copy);
+#endif
+		}
+
+		private static void SetStackTraceImpl(Exception x, StackTraceElement[] stackTrace)
+		{
+#if !FIRST_PASS
 			Throwable _this = x as Throwable;
 			if (_this == null)
 			{
-				ExceptionInfoHelper eih = new ExceptionInfoHelper(copy);
+				ExceptionInfoHelper eih = new ExceptionInfoHelper(stackTrace);
 				IDictionary data = x.Data;
 				if (data != null && !data.IsReadOnly)
 				{
@@ -701,7 +711,7 @@ namespace IKVM.Internal
 					{
 						return;
 					}
-					_this.stackTrace = copy;
+					_this.stackTrace = stackTrace;
 				}
 			}
 #endif
