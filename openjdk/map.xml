@@ -907,20 +907,26 @@
             <field name="suppressFillInStackTrace" sig="Z" modifiers="private static">
                 <attribute type="System.ThreadStaticAttribute" sig="()V" />
             </field>
-            <field name="emptyStackTrace" sig="[Ljava.lang.StackTraceElement;" modifiers="private static final" />
+            <field name="UNASSIGNED_STACK" sig="[Ljava.lang.StackTraceElement;" modifiers="static final" />
+            <field name="SUPPRESSED_SENTINEL" sig="Ljava.util.List;" modifiers="static final" />
             <field name="detailMessage" sig="Ljava.lang.String;" />
             <field name="cause" sig="Ljava.lang.Throwable;" />
             <field name="original" sig="Ljava.lang.Throwable;" />
             <field name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
             <field name="tracePart1" sig="Lcli.System.Diagnostics.StackTrace;" />
             <field name="tracePart2" sig="Lcli.System.Diagnostics.StackTrace;" />
+            <field name="suppressedExceptions" sig="Ljava.util.List;" />
             <clinit>
                 <body>
                     <call type="IKVM.Internal.ExceptionHelper" name="getPersistentFields" sig="()[Ljava.io.ObjectStreamField;" />
                     <stsfld class="java.lang.Throwable" name="serialPersistentFields" sig="[Ljava.io.ObjectStreamField;" />
                     <ldc_i4_0 />
                     <newarr sig="Ljava.lang.StackTraceElement;" />
-                    <stsfld class="java.lang.Throwable" name="emptyStackTrace" sig="[Ljava.lang.StackTraceElement;" />
+                    <stsfld class="java.lang.Throwable" name="UNASSIGNED_STACK" sig="[Ljava.lang.StackTraceElement;" />
+                    <ldc_i4_0 />
+                    <newobj class="java.util.ArrayList" name="&lt;init&gt;" sig="(I)V" />
+                    <call class="java.util.Collections" name="unmodifiableList" sig="(Ljava.util.List;)Ljava.util.List;" />
+                    <stsfld class="java.lang.Throwable" name="SUPPRESSED_SENTINEL" sig="Ljava.util.List;" />
                     <ret />
                 </body>
             </clinit>
@@ -985,6 +991,14 @@
             </method>
             <constructor sig="()V" modifiers="public">
                 <body>
+                    <!-- Start field initialization -->
+                    <ldarg_0 />
+                    <ldsfld class="java.lang.Throwable" name="UNASSIGNED_STACK" sig="[Ljava.lang.StackTraceElement;" />
+                    <stfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
+                    <ldarg_0 />
+                    <ldsfld class="java.lang.Throwable" name="SUPPRESSED_SENTINEL" sig="Ljava.util.List;" />
+                    <stfld class="java.lang.Throwable" name="suppressedExceptions" sig="Ljava.util.List;" />
+                    <!-- End field initialization -->
                     <ldarg_0 />
                     <ldstr value="" />
                     <call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;)V" />
@@ -997,9 +1011,6 @@
                     <stsfld class="java.lang.Throwable" name="suppressFillInStackTrace" sig="Z" />
                     <brtrue name="skipFillInStackTrace" />
                     <ldarg_0 />
-                    <ldsfld class="java.lang.Throwable" name="emptyStackTrace" sig="[Ljava.lang.StackTraceElement;" />
-                    <stfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
-                    <ldarg_0 />
                     <callvirt class="java.lang.Throwable" name="fillInStackTrace" sig="()Ljava.lang.Throwable;" />
                     <pop />
                     <label name="skipFillInStackTrace" />
@@ -1010,6 +1021,14 @@
             <constructor sig="(Ljava.lang.String;)V" modifiers="public">
                 <parameter name="message" />
                 <body>
+                    <!-- Start field initialization -->
+                    <ldarg_0 />
+                    <ldsfld class="java.lang.Throwable" name="UNASSIGNED_STACK" sig="[Ljava.lang.StackTraceElement;" />
+                    <stfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
+                    <ldarg_0 />
+                    <ldsfld class="java.lang.Throwable" name="SUPPRESSED_SENTINEL" sig="Ljava.util.List;" />
+                    <stfld class="java.lang.Throwable" name="suppressedExceptions" sig="Ljava.util.List;" />
+                    <!-- End field initialization -->
                     <ldarg_0 />
                     <ldarg_1 />
                     <call type="IKVM.Internal.ExceptionHelper" name="FilterMessage" sig="(Ljava.lang.String;)Ljava.lang.String;" />
@@ -1022,9 +1041,6 @@
                     <ldc_i4_0 />
                     <stsfld class="java.lang.Throwable" name="suppressFillInStackTrace" sig="Z" />
                     <brtrue name="skipFillInStackTrace" />
-                    <ldarg_0 />
-                    <ldsfld class="java.lang.Throwable" name="emptyStackTrace" sig="[Ljava.lang.StackTraceElement;" />
-                    <stfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
                     <ldarg_0 />
                     <callvirt class="java.lang.Throwable" name="fillInStackTrace" sig="()Ljava.lang.Throwable;" />
                     <pop />
@@ -1040,6 +1056,14 @@
                 <parameter name="message" />
                 <parameter name="cause" />
                 <body>
+                    <!-- Start field initialization -->
+                    <ldarg_0 />
+                    <ldsfld class="java.lang.Throwable" name="UNASSIGNED_STACK" sig="[Ljava.lang.StackTraceElement;" />
+                    <stfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
+                    <ldarg_0 />
+                    <ldsfld class="java.lang.Throwable" name="SUPPRESSED_SENTINEL" sig="Ljava.util.List;" />
+                    <stfld class="java.lang.Throwable" name="suppressedExceptions" sig="Ljava.util.List;" />
+                    <!-- End field initialization -->
                     <ldarg_0 />
                     <ldarg_1 />
                     <call type="IKVM.Internal.ExceptionHelper" name="FilterMessage" sig="(Ljava.lang.String;)Ljava.lang.String;" />
@@ -1053,9 +1077,6 @@
                     <ldc_i4_0 />
                     <stsfld class="java.lang.Throwable" name="suppressFillInStackTrace" sig="Z" />
                     <brtrue name="skipFillInStackTrace" />
-                    <ldarg_0 />
-                    <ldsfld class="java.lang.Throwable" name="emptyStackTrace" sig="[Ljava.lang.StackTraceElement;" />
-                    <stfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
                     <ldarg_0 />
                     <callvirt class="java.lang.Throwable" name="fillInStackTrace" sig="()Ljava.lang.Throwable;" />
                     <pop />
@@ -1073,6 +1094,14 @@
             <constructor sig="(Ljava.lang.Throwable;)V" modifiers="public">
                 <parameter name="cause" />
                 <body>
+                    <!-- Start field initialization -->
+                    <ldarg_0 />
+                    <ldsfld class="java.lang.Throwable" name="UNASSIGNED_STACK" sig="[Ljava.lang.StackTraceElement;" />
+                    <stfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
+                    <ldarg_0 />
+                    <ldsfld class="java.lang.Throwable" name="SUPPRESSED_SENTINEL" sig="Ljava.util.List;" />
+                    <stfld class="java.lang.Throwable" name="suppressedExceptions" sig="Ljava.util.List;" />
+                    <!-- End field initialization -->
                     <ldarg_0 />
                     <ldarg_1 />
                     <call type="IKVM.Internal.ExceptionHelper" name="GetMessageFromCause" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" />
@@ -1086,9 +1115,6 @@
                     <ldc_i4_0 />
                     <stsfld class="java.lang.Throwable" name="suppressFillInStackTrace" sig="Z" />
                     <brtrue name="skipFillInStackTrace" />
-                    <ldarg_0 />
-                    <ldsfld class="java.lang.Throwable" name="emptyStackTrace" sig="[Ljava.lang.StackTraceElement;" />
-                    <stfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
                     <ldarg_0 />
                     <callvirt class="java.lang.Throwable" name="fillInStackTrace" sig="()Ljava.lang.Throwable;" />
                     <pop />
@@ -1107,16 +1133,68 @@
                     <ret />
                 </body>
             </constructor>
+            <constructor sig="(Ljava.lang.String;Ljava.lang.Throwable;ZZ)V" modifiers="protected">
+                <parameter name="message" />
+                <parameter name="cause" />
+                <parameter name="enableSuppression" />
+                <parameter name="writableStackTrace" />
+                <body>
+                    <!-- Start field initialization -->
+                    <ldarg_0 />
+                    <ldsfld class="java.lang.Throwable" name="UNASSIGNED_STACK" sig="[Ljava.lang.StackTraceElement;" />
+                    <stfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
+                    <ldarg_0 />
+                    <ldsfld class="java.lang.Throwable" name="SUPPRESSED_SENTINEL" sig="Ljava.util.List;" />
+                    <stfld class="java.lang.Throwable" name="suppressedExceptions" sig="Ljava.util.List;" />
+                    <!-- End field initialization -->
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <call type="IKVM.Internal.ExceptionHelper" name="FilterMessage" sig="(Ljava.lang.String;)Ljava.lang.String;" />
+                    <ldarg_2 />
+                    <call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" />
+                    <ldarg_s argNum="4" />
+                    <brfalse name="else" />
+                    <!-- Start fillInStackTrace call -->
+                    <ldsfld class="java.lang.Throwable" name="suppressFillInStackTrace" sig="Z" />
+                    <ldc_i4_0 />
+                    <stsfld class="java.lang.Throwable" name="suppressFillInStackTrace" sig="Z" />
+                    <brtrue name="skipFillInStackTrace" />
+                    <ldarg_0 />
+                    <callvirt class="java.lang.Throwable" name="fillInStackTrace" sig="()Ljava.lang.Throwable;" />
+                    <pop />
+                    <label name="skipFillInStackTrace" />
+                    <!-- End fillInStackTrace call -->
+                    <br name="endif" />
+                    <label name="else" />
+                    <ldarg_0 />
+                    <ldnull />
+                    <stfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
+                    <label name="endif" />
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <stfld class="java.lang.Throwable" name="detailMessage" sig="Ljava.lang.String;" />
+                    <ldarg_0 />
+                    <ldarg_2 />
+                    <stfld class="java.lang.Throwable" name="cause" sig="Ljava.lang.Throwable;" />
+                    <ldarg_3 />
+                    <brtrue name="end" />
+                    <ldarg_0 />
+                    <ldnull />
+                    <stfld class="java.lang.Throwable" name="suppressedExceptions" sig="Ljava.util.List;" />
+                    <label name="end" />
+                    <ret />
+                </body>
+            </constructor>
             <method name="printStackTrace" sig="()V" modifiers="public">
-                <redirect class="cli.IKVM.Internal.ExceptionHelper" sig="(Ljava.lang.Throwable;)V" type="static" />
+                <redirect class="java.lang.ThrowableHelper" sig="(Ljava.lang.Throwable;)V" type="static" />
             </method>
             <method name="printStackTrace" sig="(Ljava.io.PrintStream;)V" modifiers="public">
                 <parameter name="s" />
-                <redirect class="cli.IKVM.Internal.ExceptionHelper" sig="(Ljava.lang.Throwable;Ljava.io.PrintStream;)V" type="static" />
+                <redirect class="java.lang.ThrowableHelper" sig="(Ljava.lang.Throwable;Ljava.io.PrintStream;)V" type="static" />
             </method>
             <method name="printStackTrace" sig="(Ljava.io.PrintWriter;)V" modifiers="public">
                 <parameter name="s" />
-                <redirect class="cli.IKVM.Internal.ExceptionHelper" sig="(Ljava.lang.Throwable;Ljava.io.PrintWriter;)V" type="static" />
+                <redirect class="java.lang.ThrowableHelper" sig="(Ljava.lang.Throwable;Ljava.io.PrintWriter;)V" type="static" />
             </method>
             <method name="getMessage" sig="()Ljava.lang.String;" modifiers="public">
                 <body>
@@ -1140,12 +1218,12 @@
                     <exceptionBlock>
                         <try>
                             <!--
-	                    stackTrace = null;
+	                    stackTrace = UNASSIGNED_STACK;
                             tracePart1 = null;
                             tracePart2 = new cli.System.Diagnostics.StackTrace(true);
                             -->
                             <ldarg_0 />
-                            <ldnull />
+                            <ldsfld class="java.lang.Throwable" name="UNASSIGNED_STACK" sig="[Ljava.lang.StackTraceElement;" />
                             <stfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
                             <ldarg_0 />
                             <ldnull />
@@ -1213,9 +1291,7 @@
             <method name="getCause" sig="()Ljava.lang.Throwable;" modifiers="public">
                 <body>
                     <ldarg_0 />
-                    <ldarg_0 />
-                    <ldfld class="java.lang.Throwable" name="cause" sig="Ljava.lang.Throwable;" />
-                    <call type="IKVM.Internal.ExceptionHelper" name="getCause" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;)Ljava.lang.Throwable;" />
+                    <call type="IKVM.Internal.ExceptionHelper" name="getCause" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" />
                     <ret />
                 </body>
                 <alternateBody>
@@ -1227,82 +1303,18 @@
             <method name="getStackTrace" sig="()[Ljava.lang.StackTraceElement;" modifiers="public">
                 <body>
                     <ldarg_0 />
-                    <call class="java.lang.Throwable" name="getOurStackTrace" sig="()[Ljava.lang.StackTraceElement;" />
+                    <call type="IKVM.Internal.ExceptionHelper" name="getOurStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;" />
                     <callvirt type="System.Array" name="Clone" sig="()Ljava.lang.Object;" />
                     <castclass class="[Ljava.lang.StackTraceElement;" />
                     <ret />
                 </body>
-                <alternateBody>
-                    <ldarg_0 />
-                    <call type="IKVM.Internal.ExceptionHelper" name="getStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;" />
-                    <ret />
-                </alternateBody>
             </method>
             <method name="getOurStackTrace" sig="()[Ljava.lang.StackTraceElement;" modifiers="private">
-                <body>
-                    <ldarg_0 />
-                    <call type="System.Threading.Monitor" name="Enter" sig="(Ljava.lang.Object;)V" />
-                    <exceptionBlock>
-                        <try>
-                            <ldarg_0 />
-                            <ldfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
-                            <brfalse name="gen" />
-                            <leave name="ok" />
-                            <label name="gen" />
-                            <ldarg_0 />
-                            <ldarg_0 />
-                            <ldarg_0 />
-                            <ldfld class="java.lang.Throwable" name="tracePart1" sig="Lcli.System.Diagnostics.StackTrace;" />
-                            <ldarg_0 />
-                            <ldfld class="java.lang.Throwable" name="tracePart2" sig="Lcli.System.Diagnostics.StackTrace;" />
-                            <call type="IKVM.Internal.ExceptionHelper" name="computeStackTrace" sig="(Ljava.lang.Throwable;Lcli.System.Diagnostics.StackTrace;Lcli.System.Diagnostics.StackTrace;)[Ljava.lang.StackTraceElement;" />
-                            <stfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
-                            <ldarg_0 />
-                            <ldnull />
-                            <stfld class="java.lang.Throwable" name="tracePart1" sig="Lcli.System.Diagnostics.StackTrace;" />
-                            <ldarg_0 />
-                            <ldnull />
-                            <stfld class="java.lang.Throwable" name="tracePart2" sig="Lcli.System.Diagnostics.StackTrace;" />
-                            <leave name="ok" />
-                        </try>
-                        <finally>
-                            <ldarg_0 />
-                            <call type="System.Threading.Monitor" name="Exit" sig="(Ljava.lang.Object;)V" />
-                            <endfinally />
-                        </finally>
-                    </exceptionBlock>
-                    <label name="ok" />
-                    <ldarg_0 />
-                    <ldfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
-                    <ret />
-                </body>
-                <alternateBody>
-                    <ldarg_0 />
-                    <call type="IKVM.Internal.ExceptionHelper" name="getStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;" />
-                    <ret />
-                </alternateBody>
+                <redirect class="cli.IKVM.Internal.ExceptionHelper" name="getOurStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;" />
             </method>
             <method name="setStackTrace" sig="([Ljava.lang.StackTraceElement;)V" modifiers="public">
                 <parameter name="stackTrace" />
-                <body>
-                    <ldarg_0 />
-                    <ldarg_1 />
-                    <call type="IKVM.Internal.ExceptionHelper" name="checkStackTrace" sig="([Ljava.lang.StackTraceElement;)[Ljava.lang.StackTraceElement;" />
-                    <stfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
-                    <ldarg_0 />
-                    <ldnull />
-                    <stfld class="java.lang.Throwable" name="tracePart1" sig="Lcli.System.Diagnostics.StackTrace;" />
-                    <ldarg_0 />
-                    <ldnull />
-                    <stfld class="java.lang.Throwable" name="tracePart2" sig="Lcli.System.Diagnostics.StackTrace;" />
-                    <ret />
-                </body>
-                <alternateBody>
-                    <ldarg_0 />
-                    <ldarg_1 />
-                    <call type="IKVM.Internal.ExceptionHelper" name="setStackTrace" sig="(Ljava.lang.Throwable;[Ljava.lang.StackTraceElement;)V" />
-                    <ret />
-                </alternateBody>
+                <redirect class="cli.IKVM.Internal.ExceptionHelper" name="setStackTrace" sig="(Ljava.lang.Throwable;[Ljava.lang.StackTraceElement;)V" />
             </method>
             <method name="toString" sig="()Ljava.lang.String;" modifiers="public">
                 <redirect class="cli.IKVM.Internal.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
@@ -1345,6 +1357,27 @@
                     <ret />
                 </body>
             </constructor>
+            <method name="addSuppressed" sig="(Ljava.lang.Throwable;)V" modifiers="public final">
+                <redirect class="cli.IKVM.Internal.ExceptionHelper" name="addSuppressed" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;)V" />
+            </method>
+            <method name="getSuppressed" sig="()[Ljava.lang.Throwable;" modifiers="public final">
+                <redirect class="cli.IKVM.Internal.ExceptionHelper" name="getSuppressed" sig="(Ljava.lang.Throwable;)[Ljava.lang.Throwable;" />
+            </method>
+            <method name="getStackTraceDepth" sig="()I" modifiers="">
+                <redirect class="cli.IKVM.Internal.ExceptionHelper" name="getStackTraceDepth" sig="(Ljava.lang.Throwable;)I" />
+            </method>
+            <method name="getStackTraceElement" sig="(I)Ljava.lang.StackTraceElement;" modifiers="">
+                <redirect class="cli.IKVM.Internal.ExceptionHelper" name="getStackTraceElement" sig="(Ljava.lang.Throwable;I)Ljava.lang.StackTraceElement;" />
+            </method>
+        </class>
+        <class name="java.lang.ThrowableHelper">
+            <method name="getOurStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;">
+                <body>
+                    <ldarg_0 />
+                    <call type="IKVM.Internal.ExceptionHelper" name="getOurStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;" />
+                    <ret />
+                </body>
+            </method>
         </class>
         <class name="java.lang.Comparable" shadows="System.IComparable" modifiers="public abstract interface">
             <attribute type="IKVM.Attributes.SignatureAttribute" sig="(Ljava.lang.String;)V">

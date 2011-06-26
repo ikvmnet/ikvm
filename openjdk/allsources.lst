@@ -72,6 +72,7 @@ java/lang/Shutdown.java
 java/lang/StringHelper.java
 java/lang/System.java
 java/lang/Thread.java
+java/lang/ThrowableHelper.java
 java/lang/VMSystemProperties.java
 java/lang/ref/Reference.java
 java/lang/ref/SoftReference.java
@@ -8640,7 +8641,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/ThreadDeath.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/ThreadGroup.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/ThreadLocal.java
-@OPENJDK6@/jdk/src/share/classes/java/lang/Throwable.java
+@OPENJDK7@/jdk/src/share/classes/java/lang/Throwable.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/TypeNotPresentException.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/UnknownError.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/UnsatisfiedLinkError.java

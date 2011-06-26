@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2010 Jeroen Frijters
+  Copyright (C) 2002-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -381,7 +381,8 @@ namespace IKVM.Internal
 			return new ObjectStreamField[] {
 				new ObjectStreamField("detailMessage", typeof(global::java.lang.String)),
 				new ObjectStreamField("cause", typeof(global::java.lang.Throwable)),
-				new ObjectStreamField("stackTrace", typeof(global::java.lang.StackTraceElement[]))
+				new ObjectStreamField("stackTrace", typeof(global::java.lang.StackTraceElement[])),
+				new ObjectStreamField("suppressedExceptions", typeof(global::java.util.List))
 			};
 #endif
 		}
@@ -392,14 +393,26 @@ namespace IKVM.Internal
 			lock (x)
 			{
 				ObjectOutputStream.PutField fields = s.putFields();
-				fields.put("detailMessage", Throwable.instancehelper_getMessage(x));
-				Exception cause = Throwable.instancehelper_getCause(x);
-				if (cause == null && x is Throwable)
+				Throwable _thisJava = x as Throwable;
+				if (_thisJava == null)
 				{
-					cause = ((Throwable)x).cause;
+					fields.put("detailMessage", x.Message);
+					fields.put("cause", x.InnerException);
+					// suppressed exceptions are not supported on CLR exceptions
+					fields.put("suppressedExceptions", null);
 				}
-				fields.put("cause", cause);
-				fields.put("stackTrace", Throwable.instancehelper_getStackTrace(x));
+				else
+				{
+					fields.put("detailMessage", _thisJava.detailMessage);
+					fields.put("cause", _thisJava.cause);
+					fields.put("suppressedExceptions", _thisJava.suppressedExceptions);
+				}
+				StackTraceElement[] stackTrace = getOurStackTrace(x);
+				if (stackTrace == null)
+				{
+					stackTrace = java.lang.ThrowableHelper.SentinelHolder.STACK_TRACE_SENTINEL;
+				}
+				fields.put("stackTrace", stackTrace);
 				s.writeFields();
 			}
 #endif
@@ -408,101 +421,71 @@ namespace IKVM.Internal
 		internal static void readObject(Exception x, ObjectInputStream s)
 		{
 #if !FIRST_PASS
-			ObjectInputStream.GetField fields = s.readFields();
-			initThrowable(x, fields.get("detailMessage", null), fields.get("cause", null));
-			StackTraceElement[] stackTrace = (StackTraceElement[])fields.get("stackTrace", null);
-			Throwable.instancehelper_setStackTrace(x, stackTrace == null ? new StackTraceElement[0] : stackTrace);
-#endif
-		}
-
-		internal static void printStackTrace(Exception x)
-		{
-#if !FIRST_PASS
-			Throwable.instancehelper_printStackTrace(x, java.lang.System.err);
-#endif
-		}
-
-		internal static void printStackTrace(Exception x, java.io.PrintStream printStream)
-		{
-#if !FIRST_PASS
-			lock (printStream)
+			lock (x)
 			{
-				foreach (string line in BuildStackTrace(x))
+				ObjectInputStream.GetField fields = s.readFields();
+				initThrowable(x, fields.get("detailMessage", null), fields.get("cause", null));
+
+				Throwable _thisJava = x as Throwable;
+				if (_thisJava == null)
 				{
-					printStream.println(line);
+					// suppressed exceptions are not supported on CLR exceptions
 				}
-			}
-#endif
-		}
-
-		internal static void printStackTrace(Exception x, java.io.PrintWriter printWriter)
-		{
-#if !FIRST_PASS
-			lock (printWriter)
-			{
-				foreach (string line in BuildStackTrace(x))
+				else
 				{
-					printWriter.println(line);
-				}
-			}
-#endif
-		}
-
-#if !FIRST_PASS
-		private static List<String> BuildStackTrace(Exception x)
-		{
-			List<String> list = new List<String>();
-			list.Add(java.lang.Object.instancehelper_toString(x));
-			StackTraceElement[] stack = Throwable.instancehelper_getStackTrace(x);
-			for (int i = 0; i < stack.Length; i++)
-			{
-				list.Add("\tat " + stack[i]);
-			}
-			Exception cause = Throwable.instancehelper_getCause(x);
-			while (cause != null)
-			{
-				list.Add("Caused by: " + java.lang.Object.instancehelper_toString(cause));
-
-				// Cause stacktrace
-				StackTraceElement[] parentStack = stack;
-				stack = Throwable.instancehelper_getStackTrace(cause);
-				bool equal = false; // Is rest of stack equal to parent frame?
-				for (int i = 0; i < stack.Length && !equal; i++)
-				{
-					// Check if we already printed the rest of the stack
-					// since it was the tail of the parent stack
-					int remaining = stack.Length - i;
-					int element = i;
-					int parentElement = parentStack.Length - remaining;
-					equal = parentElement >= 0 && parentElement < parentStack.Length;
-					while (equal && element < stack.Length)
+					java.util.List suppressedExceptions = (java.util.List)fields.get("suppressedExceptions", null);
+					if (suppressedExceptions != null)
 					{
-						if (stack[element].equals(parentStack[parentElement]))
+						if (suppressedExceptions.size() == 0)
 						{
-							element++;
-							parentElement++;
+							_thisJava.suppressedExceptions = Throwable.SUPPRESSED_SENTINEL;
 						}
 						else
 						{
-							equal = false;
+							java.util.ArrayList copy = new java.util.ArrayList();
+							for (int i = 0; i < suppressedExceptions.size(); i++)
+							{
+								Exception entry = (Exception)suppressedExceptions.get(i);
+								if (entry == null)
+								{
+									throw new java.lang.NullPointerException("Cannot suppress a null exception.");
+								}
+								if (entry == _thisJava)
+								{
+									throw new java.lang.IllegalArgumentException("Self-suppression not permitted");
+								}
+								copy.add(entry);
+							}
+							_thisJava.suppressedExceptions = copy;
 						}
 					}
-					// Print stacktrace element or indicate the rest is equal 
-					if (!equal)
+				}
+
+				StackTraceElement[] stackTrace = (StackTraceElement[])fields.get("stackTrace", null);
+				if (stackTrace != null)
+				{
+					if (stackTrace.Length == 0)
 					{
-						list.Add("\tat " + stack[i]);
+						stackTrace = new StackTraceElement[0];
+					}
+					else if (stackTrace.Length == 1
+						&& java.lang.ThrowableHelper.SentinelHolder.STACK_TRACE_ELEMENT_SENTINEL.equals(stackTrace[0]))
+					{
+						stackTrace = null;
 					}
 					else
 					{
-						list.Add("\t... " + remaining + " more");
-						break; // from stack printing for loop
+						// we don't need to verify non-nullness of the array elements, because setStackTrace will do that
 					}
 				}
-				cause = Throwable.instancehelper_getCause(cause);
+				else
+				{
+					stackTrace = new StackTraceElement[0];
+				}
+				setStackTrace(x, stackTrace);
 			}
-			return list;
-		}
 #endif
+		}
 
 		internal static string FilterMessage(string message)
 		{
@@ -545,9 +528,17 @@ namespace IKVM.Internal
 #endif
 		}
 
-		internal static Exception getCause(Exception _this, Exception cause)
+		internal static Exception getCause(Exception _this)
 		{
-			return cause == _this ? null : cause;
+#if FIRST_PASS
+			return null;
+#else
+			lock (_this)
+			{
+				Exception cause = ((Throwable)_this).cause;
+				return cause == _this ? null : cause;
+			}
+#endif
 		}
 
 		internal static void checkInitCause(Exception _this, Exception _this_cause, Exception cause)
@@ -564,48 +555,124 @@ namespace IKVM.Internal
 #endif
 		}
 
-		internal static StackTraceElement[] computeStackTrace(Exception x, StackTrace part1, StackTrace part2)
+		internal static void addSuppressed(Exception _this, Exception x)
 		{
-#if FIRST_PASS
-			return null;
-#else
-			ExceptionInfoHelper eih = new ExceptionInfoHelper(part1, part2);
-			return eih.get_StackTrace(x);
-#endif
-		}
-
-		// this method is *only* for .NET exceptions (i.e. types not derived from java.lang.Throwable)
-		internal static StackTraceElement[] getStackTrace(Exception x)
-		{
-#if FIRST_PASS
-			return null;
-#else
-			lock (x)
+#if !FIRST_PASS
+			lock (_this)
 			{
-				ExceptionInfoHelper eih = null;
-				IDictionary data = x.Data;
-				if (data != null && !data.IsReadOnly)
+				if (_this == x)
 				{
-					lock (data.SyncRoot)
+					throw new java.lang.IllegalArgumentException("Self-suppression not permitted");
+				}
+				if (x == null)
+				{
+					throw new java.lang.NullPointerException("Cannot suppress a null exception.");
+				}
+				Throwable _thisJava = _this as Throwable;
+				if (_thisJava == null)
+				{
+					// we ignore suppressed exceptions for non-Java exceptions
+				}
+				else
+				{
+					if (_thisJava.suppressedExceptions == null)
 					{
-						eih = (ExceptionInfoHelper)data[EXCEPTION_DATA_KEY];
+						return;
 					}
+					if (_thisJava.suppressedExceptions == Throwable.SUPPRESSED_SENTINEL)
+					{
+						_thisJava.suppressedExceptions = new java.util.ArrayList();
+					}
+					_thisJava.suppressedExceptions.add(x);
 				}
-				if (eih == null)
-				{
-					return new StackTraceElement[0];
-				}
-				return eih.get_StackTrace(x);
 			}
 #endif
 		}
 
-		internal static StackTraceElement[] checkStackTrace(StackTraceElement[] original)
+		internal static Exception[] getSuppressed(Exception _this)
 		{
 #if FIRST_PASS
 			return null;
 #else
-			StackTraceElement[] copy = (StackTraceElement[])original.Clone();
+			lock (_this)
+			{
+				Throwable _thisJava = _this as Throwable;
+				if (_thisJava == null)
+				{
+					// we ignore suppressed exceptions for non-Java exceptions
+					return new Exception[0];
+				}
+				else
+				{
+					if (_thisJava.suppressedExceptions == Throwable.SUPPRESSED_SENTINEL
+						|| _thisJava.suppressedExceptions == null)
+					{
+						return new Exception[0];
+					}
+					return (Exception[])_thisJava.suppressedExceptions.toArray(new Exception[_thisJava.suppressedExceptions.size()]);
+				}
+			}
+#endif
+		}
+
+		internal static int getStackTraceDepth(Exception _this)
+		{
+			return getOurStackTrace(_this).Length;
+		}
+
+		internal static StackTraceElement getStackTraceElement(Exception _this, int index)
+		{
+			return getOurStackTrace(_this)[index];
+		}
+
+		internal static StackTraceElement[] getOurStackTrace(Exception x)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			Throwable _this = x as Throwable;
+			if (_this == null)
+			{
+				lock (x)
+				{
+					ExceptionInfoHelper eih = null;
+					IDictionary data = x.Data;
+					if (data != null && !data.IsReadOnly)
+					{
+						lock (data.SyncRoot)
+						{
+							eih = (ExceptionInfoHelper)data[EXCEPTION_DATA_KEY];
+						}
+					}
+					if (eih == null)
+					{
+						return Throwable.UNASSIGNED_STACK;
+					}
+					return eih.get_StackTrace(x);
+				}
+			}
+			else
+			{
+				lock (_this)
+				{
+					if (_this.stackTrace == Throwable.UNASSIGNED_STACK
+						|| (_this.stackTrace == null && (_this.tracePart1 != null || _this.tracePart2 != null)))
+					{
+						ExceptionInfoHelper eih = new ExceptionInfoHelper(_this.tracePart1, _this.tracePart2);
+						_this.stackTrace = eih.get_StackTrace(x);
+						_this.tracePart1 = null;
+						_this.tracePart2 = null;
+					}
+				}
+				return _this.stackTrace ?? Throwable.UNASSIGNED_STACK;
+			}
+#endif
+		}
+
+		internal static void setStackTrace(Exception x, StackTraceElement[] stackTrace)
+		{
+#if !FIRST_PASS
+			StackTraceElement[] copy = (StackTraceElement[])stackTrace.Clone();
 			for (int i = 0; i < copy.Length; i++)
 			{
 				if (copy[i] == null)
@@ -613,21 +680,28 @@ namespace IKVM.Internal
 					throw new java.lang.NullPointerException();
 				}
 			}
-			return copy;
-#endif
-		}
-
-		// this method is *only* for .NET exceptions (i.e. types not derived from java.lang.Throwable)
-		internal static void setStackTrace(Exception x, StackTraceElement[] stackTrace)
-		{
-#if !FIRST_PASS
-			ExceptionInfoHelper eih = new ExceptionInfoHelper(checkStackTrace(stackTrace));
-			IDictionary data = x.Data;
-			if (data != null && !data.IsReadOnly)
+			Throwable _this = x as Throwable;
+			if (_this == null)
 			{
-				lock (data.SyncRoot)
+				ExceptionInfoHelper eih = new ExceptionInfoHelper(copy);
+				IDictionary data = x.Data;
+				if (data != null && !data.IsReadOnly)
 				{
-					data[EXCEPTION_DATA_KEY] = eih;
+					lock (data.SyncRoot)
+					{
+						data[EXCEPTION_DATA_KEY] = eih;
+					}
+				}
+			}
+			else
+			{
+				lock (_this)
+				{
+					if (_this.stackTrace == null && _this.tracePart1 == null && _this.tracePart2 == null)
+					{
+						return;
+					}
+					_this.stackTrace = copy;
 				}
 			}
 #endif
@@ -767,7 +841,7 @@ namespace IKVM.Internal
 				Throwable t = x as Throwable;
 				if (t != null)
 				{
-					if (!unused && t.tracePart1 == null && t.tracePart2 == null && t.stackTrace == null)
+					if (!unused && t.tracePart1 == null && t.tracePart2 == null && t.stackTrace == Throwable.UNASSIGNED_STACK)
 					{
 						t.tracePart1 = new StackTrace(org, true);
 						t.tracePart2 = new StackTrace(true);

@@ -109,7 +109,7 @@
 
     <target name="rmi">
         <property name="VMARGS" value="-J-client -J-Xmx896m -J-Xms128m -J-XX:PermSize=32m -J-XX:MaxPermSize=160m" />
-        <property name="CLASSPATH" value="${OpenJDK6.dir}/jdk/src/share/classes/${pathsep}${OpenJDK6.dir}/build/linux-amd64/impsrc/${pathsep}." />
+        <property name="CLASSPATH" value="${OpenJDK6.dir}/jdk/src/share/classes/${pathsep}${OpenJDK7.dir}/jdk/src/share/classes/${pathsep}${OpenJDK6.dir}/build/linux-amd64/impsrc/${pathsep}." />
         <property name="OUTPUT" value="${OpenJDK6.dir}/build/linux-amd64/classes/" />
         <property name="ARGS" value="${VMARGS} -bootclasspath ${CLASSPATH} -d ${OUTPUT}" />
         <exec program="rmic" commandline="${ARGS} -v1.1 sun.rmi.registry.RegistryImpl" />
