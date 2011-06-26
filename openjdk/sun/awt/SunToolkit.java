@@ -1970,6 +1970,50 @@ public abstract class SunToolkit extends Toolkit
     }
 
     /**
+     * Returns the <code>Window</code> ancestor of the component <code>comp</code>.
+     * @return Window ancestor of the component or component by itself if it is Window;
+     *         null, if component is not a part of window hierarchy
+     */
+    public static Window getContainingWindow(Component comp) {
+        while (comp != null && !(comp instanceof Window)) {
+            comp = comp.getParent();
+        }
+        return (Window)comp;
+    }
+
+    /**
+     * Returns the value of the system property indicated by the specified key.
+     */
+    public static String getSystemProperty(final String key) {
+        return (String)AccessController.doPrivileged(new PrivilegedAction() {
+                public Object run() {
+                    return System.getProperty(key);
+                }
+            });
+    }
+
+    /**
+     * Returns the boolean value of the system property indicated by the specified key.
+     */
+    protected static Boolean getBooleanSystemProperty(String key) {
+        return Boolean.valueOf(AccessController.
+                   doPrivileged(new GetBooleanAction(key)));
+    }
+
+    private static Boolean sunAwtDisableMixing = null;
+
+    /**
+     * Returns the value of "sun.awt.disableMixing" property. Default
+     * value is {@code false}.
+     */
+    public synchronized static boolean getSunAwtDisableMixing() {
+        if (sunAwtDisableMixing == null) {
+            sunAwtDisableMixing = getBooleanSystemProperty("sun.awt.disableMixing");
+        }
+        return sunAwtDisableMixing.booleanValue();
+    }
+
+    /**
      * Returns true if the native GTK libraries are available.  The
      * default implementation returns false, but UNIXToolkit overrides this
      * method to provide a more specific answer.
@@ -1978,6 +2022,54 @@ public abstract class SunToolkit extends Toolkit
         return false;
     }
     
+
+    // Cosntant alpha
+    public boolean isWindowOpacitySupported() {
+        return false;
+    }
+
+    // Shaping
+    public boolean isWindowShapingSupported() {
+        return false;
+    }
+
+    // Per-pixel alpha
+    public boolean isWindowTranslucencySupported() {
+        return false;
+    }
+
+    public boolean isTranslucencyCapable(GraphicsConfiguration gc) {
+        return false;
+    }
+    
+
+    /**
+     * Returns whether or not a containing top level window for the passed
+     * component is
+     * {@link GraphicsDevice.WindowTranslucency#PERPIXEL_TRANSLUCENT PERPIXEL_TRANSLUCENT}.
+     *
+     * @param c a Component which toplevel's to check
+     * @return {@code true}  if the passed component is not null and has a
+     * containing toplevel window which is opaque (so per-pixel translucency
+     * is not enabled), {@code false} otherwise
+     * @see GraphicsDevice.WindowTranslucency#PERPIXEL_TRANSLUCENT
+     */
+    public static boolean isContainingTopLevelOpaque(Component c) {
+        Window w = getContainingWindow(c);
+        return w != null && w.isOpaque();
+    }
+
+    /**
+     * Returns whether the native system requires using the peer.updateWindow()
+     * method to update the contents of a non-opaque window, or if usual
+     * painting procedures are sufficient. The default return value covers
+     * the X11 systems. On MS Windows this method is overriden in WToolkit
+     * to return true.
+     */
+    public boolean needUpdateWindow() {
+        return false;
+    }
+
     /**
      * Descendants of the SunToolkit should override and put their own logic here.
      */
