@@ -426,4 +426,21 @@ public abstract class GraphicsConfiguration {
         }
         return defaultImageCaps;
     }
+
+    /**
+     * Returns whether this {@code GraphicsConfiguration} supports
+     * the {@link GraphicsDevice.WindowTranslucency#PERPIXEL_TRANSLUCENT
+     * PERPIXEL_TRANSLUCENT} kind of translucency.
+     *
+     * @return whether the given GraphicsConfiguration supports
+     *         the translucency effects.
+     *
+     * @see Window#setBackground(Color)
+     *
+     * @since 1.7
+     */
+    public boolean isTranslucencyCapable() {
+        // Overridden in subclasses
+        return false;
     }
+}
