@@ -134,6 +134,12 @@ public final class AppContext {
      */
     public static final Object EVENT_QUEUE_KEY = new StringBuffer("EventQueue");
 
+    /*
+     * The keys to store EventQueue push/pop lock and condition.
+     */
+    public final static Object EVENT_QUEUE_LOCK_KEY = new StringBuilder("EventQueue.Lock");
+    public final static Object EVENT_QUEUE_COND_KEY = new StringBuilder("EventQueue.Condition");
+
     /* A map of AppContexts, referenced by ThreadGroup.
      */
     private static final Map<ThreadGroup, AppContext> threadGroup2appContext =
