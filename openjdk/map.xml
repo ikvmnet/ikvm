@@ -1391,6 +1391,12 @@
                 <override name="CompareTo" />
             </method>
         </class>
+        <class name="java.lang.AutoCloseable" shadows="System.IDisposable" modifiers="public abstract interface">
+            <method name="close" sig="()V" modifiers="public abstract">
+                <throws class="java.lang.Exception" />
+                <override name="Dispose" />
+            </method>
+        </class>
         <!-- Here we are adding/replacing methods to existing classes -->
         <class name="java.lang.Class">
             <implements class="cli.System.Runtime.Serialization.ISerializable" />

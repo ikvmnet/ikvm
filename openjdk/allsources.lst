@@ -8435,7 +8435,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/jdk/src/share/classes/java/io/CharArrayReader.java
 @OPENJDK6@/jdk/src/share/classes/java/io/CharArrayWriter.java
 @OPENJDK6@/jdk/src/share/classes/java/io/CharConversionException.java
-@OPENJDK6@/jdk/src/share/classes/java/io/Closeable.java
+@OPENJDK7@/jdk/src/share/classes/java/io/Closeable.java
 @OPENJDK6@/jdk/src/share/classes/java/io/Console.java
 @OPENJDK6@/jdk/src/share/classes/java/io/DataInput.java
 @OPENJDK6@/jdk/src/share/classes/java/io/DataInputStream.java
@@ -8520,6 +8520,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/ArrayStoreException.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/AssertionError.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/AssertionStatusDirectives.java
+@OPENJDK7@/jdk/src/share/classes/java/lang/AutoCloseable.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/Boolean.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/Byte.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/Character.java

@@ -4988,20 +4988,6 @@ namespace IKVM.Internal
 										ilgen.DoEmit();
 									}
 								}
-								else if (iface.Name == "java.io.Closeable"
-									&& !wrapper.ImplementsInterface(ClassLoaderWrapper.GetWrapperFromType(JVM.Import(typeof(IDisposable)))))
-								{
-									typeBuilder.AddInterfaceImplementation(JVM.Import(typeof(IDisposable)));
-									MethodBuilder mb = typeBuilder.DefineMethod("__<>Dispose", MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final | MethodAttributes.SpecialName, Types.Void, Type.EmptyTypes);
-									typeBuilder.DefineMethodOverride(mb, JVM.Import(typeof(IDisposable)).GetMethod("Dispose"));
-									CodeEmitter ilgen = CodeEmitter.Create(mb);
-									ilgen.Emit(OpCodes.Ldarg_0);
-									MethodWrapper mw = iface.GetMethodWrapper("close", "()V", false);
-									mw.Link();
-									mw.EmitCallvirt(ilgen);
-									ilgen.Emit(OpCodes.Ret);
-									ilgen.DoEmit();
-								}
 							}
 							// if we implement a ghost interface, add an implicit conversion to the ghost reference value type
 							if (iface.IsGhost && wrapper.IsPublic)
