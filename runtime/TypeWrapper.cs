@@ -1085,7 +1085,7 @@ namespace IKVM.Internal
 			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(type, typeofRemappedInterfaceMethodAttribute, false))
 			{
 				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-				attrs.Add(new RemappedInterfaceMethodAttribute((string)args[0].Value, (string)args[1].Value));
+				attrs.Add(new RemappedInterfaceMethodAttribute((string)args[0].Value, (string)args[1].Value, DecodeArray<string>(args[2])));
 			}
 			return attrs.ToArray();
 #endif
@@ -1225,9 +1225,9 @@ namespace IKVM.Internal
 			typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(remappedTypeAttribute, new object[] { shadowType }));
 		}
 
-		internal static void SetRemappedInterfaceMethod(TypeBuilder typeBuilder, string name, string mappedTo)
+		internal static void SetRemappedInterfaceMethod(TypeBuilder typeBuilder, string name, string mappedTo, string[] throws)
 		{
-			CustomAttributeBuilder cab = new CustomAttributeBuilder(typeofRemappedInterfaceMethodAttribute.GetConstructor(new Type[] { Types.String, Types.String }), new object[] { name, mappedTo });
+			CustomAttributeBuilder cab = new CustomAttributeBuilder(typeofRemappedInterfaceMethodAttribute.GetConstructor(new Type[] { Types.String, Types.String, Types.String.MakeArrayType() }), new object[] { name, mappedTo, throws });
 			typeBuilder.SetCustomAttribute(cab);
 		}
 
@@ -3353,7 +3353,9 @@ namespace IKVM.Internal
 								mbHelper = method;
 							}
 						}
-						list.Add(new CompiledRemappedMethodWrapper(this, m.Name, sig, method, retType, paramTypes, modifiers, false, mbHelper, null));
+						MethodWrapper mw = new CompiledRemappedMethodWrapper(this, m.Name, sig, method, retType, paramTypes, modifiers, false, mbHelper, null);
+						mw.SetDeclaredExceptions(m.Throws);
+						list.Add(mw);
 					}
 				}
 				SetMethods(list.ToArray());

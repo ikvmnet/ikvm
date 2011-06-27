@@ -277,16 +277,18 @@ namespace IKVM.Attributes
 	{
 	}
 
-	[AttributeUsage(AttributeTargets.Method)]
+	[AttributeUsage(AttributeTargets.Interface)]
 	public sealed class RemappedInterfaceMethodAttribute : Attribute
 	{
 		private string name;
 		private string mappedTo;
+		private string[] throws;
 
-		public RemappedInterfaceMethodAttribute(string name, string mappedTo)
+		public RemappedInterfaceMethodAttribute(string name, string mappedTo, string[] throws)
 		{
 			this.name = name;
 			this.mappedTo = mappedTo;
+			this.throws = throws;
 		}
 
 		public string Name
@@ -302,6 +304,14 @@ namespace IKVM.Attributes
 			get
 			{
 				return mappedTo;
+			}
+		}
+
+		public string[] Throws
+		{
+			get
+			{
+				return throws;
 			}
 		}
 	}

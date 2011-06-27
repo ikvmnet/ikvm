@@ -400,7 +400,20 @@ static class NetExp
 				if (mb != null)
 				{
 					ThrowsAttribute throws = AttributeHelper.GetThrows(mb);
-					if (throws != null)
+					if (throws == null)
+					{
+						string[] throwsArray = mw.GetDeclaredExceptions();
+						if (throwsArray != null && throwsArray.Length > 0)
+						{
+							IKVM.StubGen.ExceptionsAttribute attrib = new IKVM.StubGen.ExceptionsAttribute(writer);
+							foreach (string ex in throwsArray)
+							{
+								attrib.Add(ex.Replace('.', '/'));
+							}
+							m.AddAttribute(attrib);
+						}
+					}
+					else
 					{
 						IKVM.StubGen.ExceptionsAttribute attrib = new IKVM.StubGen.ExceptionsAttribute(writer);
 						if (throws.classes != null)

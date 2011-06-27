@@ -1181,11 +1181,6 @@ namespace IKVM.Internal
 						{
 							throw new InvalidOperationException(typeWrapper.Name + "." + m.Name + m.Sig);
 						}
-						if(m.throws != null)
-						{
-							// TODO we need a place to stick the declared exceptions
-							throw new NotImplementedException();
-						}
 						// if any of the remapped types has a body for this interface method, we need a helper method
 						// to special invocation through this interface for that type
 						List<IKVM.Internal.MapXml.Class> specialCases = null;
@@ -1207,7 +1202,20 @@ namespace IKVM.Internal
 								}
 							}
 						}
-						AttributeHelper.SetRemappedInterfaceMethod(typeWrapper.typeBuilder, m.Name, m.@override.Name);
+						string[] throws;
+						if (m.throws == null)
+						{
+							throws = new string[0];
+						}
+						else
+						{
+							throws = new string[m.throws.Length];
+							for (int i = 0; i < throws.Length; i++)
+							{
+								throws[i] = m.throws[i].Class;
+							}
+						}
+						AttributeHelper.SetRemappedInterfaceMethod(typeWrapper.typeBuilder, m.Name, m.@override.Name, throws);
 						MethodBuilder helper = null;
 						if(specialCases != null)
 						{
