@@ -2642,6 +2642,10 @@ namespace IKVM.Internal
 				{
 					compiler.PrepareSave();
 				}
+				if (StaticCompiler.errorCount > 0)
+				{
+					return 1;
+				}
 				foreach (CompilerClassLoader compiler in compilers)
 				{
 					compiler.Save();
@@ -2652,7 +2656,7 @@ namespace IKVM.Internal
 				Console.Error.WriteLine("Error: {0}", x.Message);
 				return 1;
 			}
-			return 0;
+			return StaticCompiler.errorCount == 0 ? 0 : 1;
 		}
 
 		private static int CreateCompiler(CompilerOptions options, ref CompilerClassLoader loader, ref bool compilingCoreAssembly)
@@ -3409,6 +3413,7 @@ namespace IKVM.Internal
 		internal static Assembly runtimeAssembly;
 		internal static Assembly runtimeJniAssembly;
 		internal static CompilerOptions toplevel;
+		internal static int errorCount;
 
 		internal static Assembly Load(string assemblyString)
 		{
@@ -3640,7 +3645,11 @@ namespace IKVM.Internal
 			}
 			if(error)
 			{
-				Environment.Exit(1);
+				if (++errorCount == 100)
+				{
+					Console.Error.WriteLine("Maximum error count reached, exiting.");
+					Environment.Exit(1);
+				}
 			}
 		}
 
