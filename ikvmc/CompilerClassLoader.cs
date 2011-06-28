@@ -3318,7 +3318,8 @@ namespace IKVM.Internal
 		internal long baseAddress;
 		internal List<CompilerClassLoader> sharedclassloader; // should *not* be deep copied in Copy(), because we want the list of all compilers that share a class loader
 		internal Dictionary<string, string> suppressWarnings = new Dictionary<string, string>();
-		internal Dictionary<string, string> errorWarnings = new Dictionary<string, string>();
+		internal Dictionary<string, string> errorWarnings = new Dictionary<string, string>();	// treat specific warnings as errors
+		internal bool warnaserror; // treat all warnings as errors
 		internal string writeSuppressWarningsFile;
 		internal List<string> proxies = new List<string>();
 
@@ -3624,9 +3625,14 @@ namespace IKVM.Internal
 					throw new InvalidProgramException();
 			}
 			bool error = msgId >= Message.StartErrors
+				|| options.warnaserror
 				|| options.errorWarnings.ContainsKey(key)
 				|| options.errorWarnings.ContainsKey(((int)msgId).ToString());
 			Console.Error.Write("{0} IKVMC{1:D4}: ", error ? "Error" : msgId < Message.StartWarnings ? "Note" : "Warning", (int)msgId);
+			if (error && msgId < Message.StartErrors)
+			{
+				Console.Error.Write("Warning as Error: ");
+			}
 			Console.Error.WriteLine(msg, values);
 			if(options != toplevel && options.path != null)
 			{

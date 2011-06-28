@@ -330,8 +330,8 @@ class IkvmcCompiler
 		Console.Error.WriteLine("    -privatepackage:<prefix>   Mark all classes with a package name starting");
 		Console.Error.WriteLine("                               with <prefix> as internal to the assembly");
 		Console.Error.WriteLine("    -nowarn:<warning[:key]>    Suppress specified warnings");
-		Console.Error.WriteLine("    -warnaserror:<warning[:key]>");
-		Console.Error.WriteLine("                               Treat specified warnings as errors");
+		Console.Error.WriteLine("    -warnaserror[:<warning[:key]>]");
+		Console.Error.WriteLine("                               Treat (specified) warnings as errors");
 		Console.Error.WriteLine("    -writeSuppressWarningsFile:<file>");
 		Console.Error.WriteLine("                               Write response file with -nowarn:<warning[:key]>");
 		Console.Error.WriteLine("                               options to suppress all encountered warnings");
@@ -698,6 +698,10 @@ class IkvmcCompiler
 						}
 						options.suppressWarnings[ws] = ws;
 					}
+				}
+				else if(s == "-warnaserror")
+				{
+					options.warnaserror = true;
 				}
 				else if(s.StartsWith("-warnaserror:"))
 				{
