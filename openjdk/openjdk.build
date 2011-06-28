@@ -197,6 +197,7 @@
             <arg value="-r:IKVM.Runtime.dll" />
             <!-- we already know that the JNI assembly is not available, so suppress the warning -->
             <arg value="-nowarn:110" />
+            <arg value="-warnaserror" />
             <arg value="@response.gen.txt" />
         </exec>
         <if test="${property::exists('peverify')}">
@@ -258,6 +259,7 @@
         <exec program="${project::get-base-directory()}/../bin/ikvmc.exe" useruntimeengine="true">
             <arg value="-version:${VERSION}" />
             <arg value="${signoption}" />
+            <arg value="-warnaserror" />
             <arg value="@tools.gen.rsp" />
         </exec>
     </target>
