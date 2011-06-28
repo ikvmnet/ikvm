@@ -48,6 +48,7 @@ final class ProcessImpl extends Process {
     static Process start(String cmdarray[],
                          java.util.Map<String,String> environment,
                          String dir,
+                         ProcessBuilder.Redirect[] redirects,
                          boolean redirectErrorStream)
         throws IOException
     {
