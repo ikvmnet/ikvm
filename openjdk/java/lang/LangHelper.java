@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2007, 2008 Jeroen Frijters
+  Copyright (C) 2007-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -117,6 +117,15 @@ public class LangHelper
             }
             public void blockedOn(Thread t, Interruptible b) {
                 t.blockedOn(b);
+            }
+            public void registerShutdownHook(int slot, boolean registerShutdownInProgress, Runnable hook) {
+                Shutdown.add(slot, registerShutdownInProgress, hook);
+            }
+            public int getStackTraceDepth(Throwable t) {
+                return t.getStackTraceDepth();
+            }
+            public StackTraceElement getStackTraceElement(Throwable t, int i) {
+                return t.getStackTraceElement(i);
             }
         };
     }
