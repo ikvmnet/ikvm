@@ -8620,7 +8620,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/reflect/Modifier.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/reflect/package-info.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/reflect/ParameterizedType.java
-@OPENJDK6@/jdk/src/share/classes/java/lang/reflect/ReflectAccess.java
+@OPENJDK7@/jdk/src/share/classes/java/lang/reflect/ReflectAccess.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/reflect/ReflectPermission.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/reflect/Type.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/reflect/TypeVariable.java
@@ -11832,7 +11832,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/jdk/src/share/classes/sun/reflect/generics/visitor/TypeTreeVisitor.java
 @OPENJDK6@/jdk/src/share/classes/sun/reflect/generics/visitor/Visitor.java
 @OPENJDK6@/jdk/src/share/classes/sun/reflect/InstantiationExceptionConstructorAccessorImpl.java
-@OPENJDK6@/jdk/src/share/classes/sun/reflect/LangReflectAccess.java
+@OPENJDK7@/jdk/src/share/classes/sun/reflect/LangReflectAccess.java
 @OPENJDK6@/jdk/src/share/classes/sun/reflect/MagicAccessorImpl.java
 @OPENJDK6@/jdk/src/share/classes/sun/reflect/misc/ConstructorUtil.java
 @OPENJDK6@/jdk/src/share/classes/sun/reflect/misc/FieldUtil.java
