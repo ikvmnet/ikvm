@@ -857,7 +857,7 @@ assembly.class
     @OPENJDK6@/jdk/src/share/classes/com/sun/pept/presentation/*.class
     @OPENJDK6@/jdk/src/share/classes/com/sun/pept/protocol/*.class
     @OPENJDK6@/jdk/src/share/classes/com/sun/pept/transport/*.class
-    @OPENJDK6@/jdk/src/share/classes/java/lang/instrument/*.class
+    @OPENJDK7@/jdk/src/share/classes/java/lang/instrument/*.class
     @OPENJDK6@/jdk/src/share/classes/javax/script/*.class
     @OPENJDK6@/jdk/src/share/classes/javax/smartcardio/*.class
     @OPENJDK6@/jdk/src/share/classes/sun/io/ByteToCharASCII.class

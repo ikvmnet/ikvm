@@ -8556,11 +8556,11 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/InheritableThreadLocal.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/InstantiationError.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/InstantiationException.java
-@OPENJDK6@/jdk/src/share/classes/java/lang/instrument/ClassDefinition.java
-@OPENJDK6@/jdk/src/share/classes/java/lang/instrument/ClassFileTransformer.java
-@OPENJDK6@/jdk/src/share/classes/java/lang/instrument/IllegalClassFormatException.java
-@OPENJDK6@/jdk/src/share/classes/java/lang/instrument/Instrumentation.java
-@OPENJDK6@/jdk/src/share/classes/java/lang/instrument/UnmodifiableClassException.java
+@OPENJDK7@/jdk/src/share/classes/java/lang/instrument/ClassDefinition.java
+@OPENJDK7@/jdk/src/share/classes/java/lang/instrument/ClassFileTransformer.java
+@OPENJDK7@/jdk/src/share/classes/java/lang/instrument/IllegalClassFormatException.java
+@OPENJDK7@/jdk/src/share/classes/java/lang/instrument/Instrumentation.java
+@OPENJDK7@/jdk/src/share/classes/java/lang/instrument/UnmodifiableClassException.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/Integer.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/InternalError.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/InterruptedException.java
