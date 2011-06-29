@@ -8603,10 +8603,10 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/ProcessBuilder.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/Readable.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/ReflectiveOperationException.java
-@OPENJDK6@/jdk/src/share/classes/java/lang/ref/FinalReference.java
-@OPENJDK6@/jdk/src/share/classes/java/lang/ref/PhantomReference.java
-@OPENJDK6@/jdk/src/share/classes/java/lang/ref/ReferenceQueue.java
-@OPENJDK6@/jdk/src/share/classes/java/lang/ref/WeakReference.java
+@OPENJDK7@/jdk/src/share/classes/java/lang/ref/FinalReference.java
+@OPENJDK7@/jdk/src/share/classes/java/lang/ref/PhantomReference.java
+@OPENJDK7@/jdk/src/share/classes/java/lang/ref/ReferenceQueue.java
+@OPENJDK7@/jdk/src/share/classes/java/lang/ref/WeakReference.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/reflect/AccessibleObject.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/reflect/AnnotatedElement.java
 @OPENJDK6@/jdk/src/share/classes/java/lang/reflect/Array.java
