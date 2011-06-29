@@ -3517,6 +3517,106 @@ namespace IKVM.NativeCode.java
 				}
 				return path;
 			}
+
+			public static int parseCommandString(string cmdstr)
+			{
+				int pos = cmdstr.IndexOf(' ');
+				if (pos == -1)
+				{
+					return cmdstr.Length;
+				}
+				if (cmdstr[0] == '"')
+				{
+					int close = cmdstr.IndexOf('"', 1);
+					return close == -1 ? cmdstr.Length : close + 1;
+				}
+				if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+				{
+					return pos;
+				}
+				IList<string> path = null;
+				for (; ; )
+				{
+					string str = cmdstr.Substring(0, pos);
+					if (global::System.IO.Path.IsPathRooted(str))
+					{
+						if (Exists(str))
+						{
+							return pos;
+						}
+					}
+					else
+					{
+						if (path == null)
+						{
+							path = GetSearchPath();
+						}
+						foreach (string p in path)
+						{
+							if (Exists(global::System.IO.Path.Combine(p, str)))
+							{
+								return pos;
+							}
+						}
+					}
+					if (pos == cmdstr.Length)
+					{
+						return cmdstr.IndexOf(' ');
+					}
+					pos = cmdstr.IndexOf(' ', pos + 1);
+					if (pos == -1)
+					{
+						pos = cmdstr.Length;
+					}
+				}
+			}
+
+			private static List<string> GetSearchPath()
+			{
+				List<string> list = new List<string>();
+				list.Add(global::System.IO.Path.GetDirectoryName(global::System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName));
+				list.Add(Environment.CurrentDirectory);
+				list.Add(Environment.SystemDirectory);
+				string windir = global::System.IO.Path.GetDirectoryName(Environment.SystemDirectory);
+				list.Add(global::System.IO.Path.Combine(windir, "System"));
+				list.Add(windir);
+				string path = Environment.GetEnvironmentVariable("PATH");
+				if (path != null)
+				{
+					foreach (string p in path.Split(global::System.IO.Path.PathSeparator))
+					{
+						list.Add(p);
+					}
+				}
+				return list;
+			}
+
+			private static bool Exists(string file)
+			{
+				try
+				{
+					if (global::System.IO.File.Exists(file))
+					{
+						return true;
+					}
+					else if (global::System.IO.Directory.Exists(file))
+					{
+						return false;
+					}
+					else if (global::System.IO.File.Exists(file + ".exe"))
+					{
+						return true;
+					}
+					else
+					{
+						return false;
+					}
+				}
+				catch
+				{
+					return false;
+				}
+			}
 		}
 
 		namespace reflect
