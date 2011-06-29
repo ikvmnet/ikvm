@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.List;
 import java.util.WeakHashMap;
 import sun.misc.ProxyGenerator;
 
@@ -230,7 +231,8 @@ public class Proxy implements java.io.Serializable {
         { InvocationHandler.class };
 
     /** maps a class loader to the proxy class cache for that loader */
-    private static Map loaderToCache = new WeakHashMap();
+    private static Map<ClassLoader, Map<List<String>, Object>> loaderToCache
+        = new WeakHashMap<>();
 
     /** marks that a particular proxy class is currently being generated */
     private static Object pendingGenerationMarker = new Object();
@@ -240,8 +242,8 @@ public class Proxy implements java.io.Serializable {
     private static Object nextUniqueNumberLock = new Object();
 
     /** set of all generated proxy classes, for isProxyClass implementation */
-    private static Map proxyClasses =
-        Collections.synchronizedMap(new WeakHashMap());
+    private static Map<Class<?>, Void> proxyClasses =
+        Collections.synchronizedMap(new WeakHashMap<Class<?>, Void>());
 
     /**
      * the invocation handler for this proxy instance.
@@ -348,12 +350,13 @@ public class Proxy implements java.io.Serializable {
             throw new IllegalArgumentException("interface limit exceeded");
         }
 
-        Class proxyClass = null;
+        Class<?> proxyClass = null;
 
         /* collect interface names to use as key for proxy class cache */
         String[] interfaceNames = new String[interfaces.length];
 
-        Set interfaceSet = new HashSet();       // for detecting duplicates
+        // for detecting duplicates
+        Set<Class<?>> interfaceSet = new HashSet<>();
 
         for (int i = 0; i < interfaces.length; i++) {
             /*
@@ -361,7 +364,7 @@ public class Proxy implements java.io.Serializable {
              * interface to the same Class object.
              */
             String interfaceName = interfaces[i].getName();
-            Class interfaceClass = null;
+            Class<?> interfaceClass = null;
             try {
                 interfaceClass = Class.forName(interfaceName, false, loader);
             } catch (ClassNotFoundException e) {
@@ -401,16 +404,16 @@ public class Proxy implements java.io.Serializable {
          * representation of a class makes for an implicit weak
          * reference to the class.
          */
-        Object key = Arrays.asList(interfaceNames);
+        List<String> key = Arrays.asList(interfaceNames);
 
         /*
          * Find or create the proxy class cache for the class loader.
          */
-        Map cache;
+        Map<List<String>, Object> cache;
         synchronized (loaderToCache) {
-            cache = (Map) loaderToCache.get(loader);
+            cache = loaderToCache.get(loader);
             if (cache == null) {
-                cache = new HashMap();
+                cache = new HashMap<>();
                 loaderToCache.put(loader, cache);
             }
             /*
@@ -442,7 +445,7 @@ public class Proxy implements java.io.Serializable {
             do {
                 Object value = cache.get(key);
                 if (value instanceof Reference) {
-                    proxyClass = (Class) ((Reference) value).get();
+                    proxyClass = (Class<?>) ((Reference) value).get();
                 }
                 if (proxyClass != null) {
                     // proxy class already generated: return it
@@ -550,7 +553,7 @@ generate:   do
              */
             synchronized (cache) {
                 if (proxyClass != null) {
-                    cache.put(key, new WeakReference(proxyClass));
+                    cache.put(key, new WeakReference<Class<?>>(proxyClass));
                 } else {
                     cache.remove(key);
                 }
@@ -601,14 +604,14 @@ generate:   do
         /*
          * Look up or generate the designated proxy class.
          */
-        Class cl = getProxyClass(loader, interfaces);
+        Class<?> cl = getProxyClass(loader, interfaces);
 
         /*
          * Invoke its constructor with the designated invocation handler.
          */
         try {
             Constructor cons = cl.getConstructor(constructorParams);
-            return (Object) cons.newInstance(new Object[] { h });
+            return cons.newInstance(new Object[] { h });
         } catch (NoSuchMethodException e) {
             throw new InternalError(e.toString());
         } catch (IllegalAccessException e) {
@@ -667,5 +670,5 @@ generate:   do
     private static native Class defineClass0(ClassLoader loader, String name,
                                              byte[] b, int off, int len);
 
-    private static native Class getPrecompiledProxy(ClassLoader loader, String proxyName, Class[] interfaces);
+    private static native Class<?> getPrecompiledProxy(ClassLoader loader, String proxyName, Class[] interfaces);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,25 +64,13 @@ public final
 
     private Class<T>            clazz;
     private int                 slot;
-    private Class[]             parameterTypes;
-    private Class[]             exceptionTypes;
+    private Class<?>[]          parameterTypes;
+    private Class<?>[]          exceptionTypes;
     private int                 modifiers;
     // Generics and annotations support
     private transient String    signature;
     // generic info repository; lazily initialized
     private transient ConstructorRepository genericInfo;
-
-    // For non-public members or members in package-private classes,
-    // it is necessary to perform somewhat expensive security checks.
-    // If the security check succeeds for a given class, it will
-    // always succeed (it is not affected by the granting or revoking
-    // of permissions); we speed up the check in the common case by
-    // remembering the last Class for which the check succeeded.
-    private volatile Class securityCheckCache;
-
-    // Modifiers that can be applied to a constructor in source code
-    private static final int LANGUAGE_MODIFIERS =
-        Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE;
 
     // Generics infrastructure
     // Accessor for factory
@@ -115,8 +103,8 @@ public final
      * package via sun.reflect.LangReflectAccess.
      */
     Constructor(Class<T> declaringClass,
-                Class[] parameterTypes,
-                Class[] checkedExceptions,
+                Class<?>[] parameterTypes,
+                Class<?>[] checkedExceptions,
                 int modifiers,
                 int slot,
                 String signature,
@@ -144,7 +132,7 @@ public final
         // which implicitly requires that new java.lang.reflect
         // objects be fabricated for each reflective call on Class
         // objects.)
-        Constructor<T> res = new Constructor<T>(clazz,
+        Constructor<T> res = new Constructor<>(clazz,
                                                 parameterTypes,
                                                 exceptionTypes, modifiers, slot,
                                                 signature,
@@ -166,8 +154,7 @@ public final
 
     /**
      * Returns the name of this constructor, as a string.  This is
-     * always the same as the simple name of the constructor's declaring
-     * class.
+     * the binary name of the constructor's declaring class.
      */
     public String getName() {
         return getDeclaringClass().getName();
@@ -195,8 +182,8 @@ public final
      *     the type variables declared by this generic declaration
      * @throws GenericSignatureFormatError if the generic
      *     signature of this generic declaration does not conform to
-     *     the format specified in the Java Virtual Machine Specification,
-     *     3rd edition
+     *     the format specified in
+     *     <cite>The Java&trade; Virtual Machine Specification</cite>
      * @since 1.5
      */
     public TypeVariable<Constructor<T>>[] getTypeParameters() {
@@ -238,7 +225,8 @@ public final
      *     parameter types of the underlying method, in declaration order
      * @throws GenericSignatureFormatError
      *     if the generic method signature does not conform to the format
-     *     specified in the Java Virtual Machine Specification, 3rd edition
+     *     specified in
+     *     <cite>The Java&trade; Virtual Machine Specification</cite>
      * @throws TypeNotPresentException if any of the parameter
      *     types of the underlying method refers to a non-existent type
      *     declaration
@@ -275,10 +263,6 @@ public final
      * Returns an array of length 0 if the underlying method declares
      * no exceptions in its {@code throws} clause.
      *
-     * <p>If an exception type is a parameterized type, the {@code Type}
-     * object returned for it must accurately reflect the actual type
-     * parameters used in the source code.
-     *
      * <p>If an exception type is a type variable or a parameterized
      * type, it is created. Otherwise, it is resolved.
      *
@@ -286,7 +270,8 @@ public final
      *     thrown by the underlying method
      * @throws GenericSignatureFormatError
      *     if the generic method signature does not conform to the format
-     *     specified in the Java Virtual Machine Specification, 3rd edition
+     *     specified in
+     *     <cite>The Java&trade; Virtual Machine Specification</cite>
      * @throws TypeNotPresentException if the underlying method's
      *     {@code throws} clause refers to a non-existent type declaration
      * @throws MalformedParameterizedTypeException if
@@ -311,11 +296,11 @@ public final
      */
     public boolean equals(Object obj) {
         if (obj != null && obj instanceof Constructor) {
-            Constructor other = (Constructor)obj;
+            Constructor<?> other = (Constructor<?>)obj;
             if (getDeclaringClass() == other.getDeclaringClass()) {
                 /* Avoid unnecessary cloning */
-                Class[] params1 = parameterTypes;
-                Class[] params2 = other.parameterTypes;
+                Class<?>[] params1 = parameterTypes;
+                Class<?>[] params2 = other.parameterTypes;
                 if (params1.length == params2.length) {
                     for (int i = 0; i < params1.length; i++) {
                         if (params1[i] != params2[i])
@@ -355,20 +340,20 @@ public final
     public String toString() {
         try {
             StringBuffer sb = new StringBuffer();
-            int mod = getModifiers() & LANGUAGE_MODIFIERS;
+            int mod = getModifiers() & Modifier.constructorModifiers();
             if (mod != 0) {
                 sb.append(Modifier.toString(mod) + " ");
             }
             sb.append(Field.getTypeName(getDeclaringClass()));
             sb.append("(");
-            Class[] params = parameterTypes; // avoid clone
+            Class<?>[] params = parameterTypes; // avoid clone
             for (int j = 0; j < params.length; j++) {
                 sb.append(Field.getTypeName(params[j]));
                 if (j < (params.length - 1))
                     sb.append(",");
             }
             sb.append(")");
-            Class[] exceptions = exceptionTypes; // avoid clone
+            Class<?>[] exceptions = exceptionTypes; // avoid clone
             if (exceptions.length > 0) {
                 sb.append(" throws ");
                 for (int k = 0; k < exceptions.length; k++) {
@@ -392,6 +377,11 @@ public final
      * declaring class, followed by a parenthesized, comma-separated
      * list of the constructor's generic formal parameter types.
      *
+     * If this constructor was declared to take a variable number of
+     * arguments, instead of denoting the last parameter as
+     * "<tt><i>Type</i>[]</tt>", it is denoted as
+     * "<tt><i>Type</i>...</tt>".
+     *
      * A space is used to separate access modifiers from one another
      * and from the type parameters or return type.  If there are no
      * type parameters, the type parameter list is elided; if the type
@@ -414,7 +404,7 @@ public final
     public String toGenericString() {
         try {
             StringBuilder sb = new StringBuilder();
-            int mod = getModifiers() & LANGUAGE_MODIFIERS;
+            int mod = getModifiers() & Modifier.constructorModifiers();
             if (mod != 0) {
                 sb.append(Modifier.toString(mod) + " ");
             }
@@ -439,6 +429,8 @@ public final
                 String param = (params[j] instanceof Class<?>)?
                     Field.getTypeName((Class<?>)params[j]):
                     (params[j].toString());
+                if (isVarArgs() && (j == params.length - 1)) // replace T[] with T...
+                    param = param.replaceFirst("\\[\\]$", "...");
                 sb.append(param);
                 if (j < (params.length - 1))
                     sb.append(",");
@@ -449,7 +441,7 @@ public final
                 sb.append(" throws ");
                 for (int k = 0; k < exceptions.length; k++) {
                     sb.append((exceptions[k] instanceof Class)?
-                              ((Class)exceptions[k]).getName():
+                              ((Class<?>)exceptions[k]).getName():
                               exceptions[k].toString());
                     if (k < (exceptions.length - 1))
                         sb.append(",");
@@ -474,8 +466,8 @@ public final
      *
      * <p>If the constructor's declaring class is an inner class in a
      * non-static context, the first argument to the constructor needs
-     * to be the enclosing instance; see <i>The Java Language
-     * Specification</i>, section 15.9.3.
+     * to be the enclosing instance; see section 15.9.3 of
+     * <cite>The Java&trade; Language Specification</cite>.
      *
      * <p>If the required access and argument checks succeed and the
      * instantiation will proceed, the constructor's declaring class
@@ -493,7 +485,7 @@ public final
      * this object represents
      *
      * @exception IllegalAccessException    if this {@code Constructor} object
-     *              enforces Java language access control and the underlying
+     *              is enforcing Java language access control and the underlying
      *              constructor is inaccessible.
      * @exception IllegalArgumentException  if the number of actual
      *              and formal parameters differ; if an unwrapping
@@ -516,17 +508,18 @@ public final
     {
         if (!override) {
             if (!Reflection.quickCheckMemberAccess(clazz, modifiers)) {
-                Class caller = Reflection.getCallerClass(2);
-                if (securityCheckCache != caller) {
-                    Reflection.ensureMemberAccess(caller, clazz, null, modifiers);
-                    securityCheckCache = caller;
-                }
+                Class<?> caller = Reflection.getCallerClass(2);
+
+                checkAccess(caller, clazz, null, modifiers);
             }
         }
         if ((clazz.getModifiers() & Modifier.ENUM) != 0)
             throw new IllegalArgumentException("Cannot reflectively create enum objects");
-        if (constructorAccessor == null) acquireConstructorAccessor();
-        return (T) constructorAccessor.newInstance(initargs);
+        ConstructorAccessor ca = constructorAccessor;   // read volatile
+        if (ca == null) {
+            ca = acquireConstructorAccessor();
+        }
+        return (T) ca.newInstance(initargs);
     }
 
     /**
@@ -547,7 +540,8 @@ public final
      * constructor; returns {@code false} otherwise.
      *
      * @return true if and only if this constructor is a synthetic
-     * constructor as defined by the Java Language Specification.
+     * constructor as defined by
+     * <cite>The Java&trade; Language Specification</cite>.
      * @since 1.5
      */
     public boolean isSynthetic() {
@@ -559,18 +553,20 @@ public final
     // ConstructorAccessor for a given Constructor. However, avoiding
     // synchronization will probably make the implementation more
     // scalable.
-    private void acquireConstructorAccessor() {
+    private ConstructorAccessor acquireConstructorAccessor() {
         // First check to see if one has been created yet, and take it
         // if so.
         ConstructorAccessor tmp = null;
         if (root != null) tmp = root.getConstructorAccessor();
         if (tmp != null) {
             constructorAccessor = tmp;
-            return;
+        } else {
+            // Otherwise fabricate one and propagate it up to the root
+            tmp = reflectionFactory.newConstructorAccessor(this);
+            setConstructorAccessor(tmp);
         }
-        // Otherwise fabricate one and propagate it up to the root
-        tmp = reflectionFactory.newConstructorAccessor(this);
-        setConstructorAccessor(tmp);
+
+        return tmp;
     }
 
     // Returns ConstructorAccessor for this Constructor object, not
@@ -625,9 +621,9 @@ public final
         return declaredAnnotations().values().toArray(EMPTY_ANNOTATION_ARRAY);
     }
 
-    private transient Map<Class, Annotation> declaredAnnotations;
+    private transient Map<Class<? extends Annotation>, Annotation> declaredAnnotations;
 
-    private synchronized  Map<Class, Annotation> declaredAnnotations() {
+    private synchronized  Map<Class<? extends Annotation>, Annotation> declaredAnnotations() {
         if (declaredAnnotations == null) {
             declaredAnnotations = Method.getDeclaredAnnotationsImpl(this);
         }

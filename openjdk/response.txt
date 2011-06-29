@@ -80,6 +80,7 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/java/lang/annotation/*.class
     @OPENJDK7@/jdk/src/share/classes/java/lang/ref/*.class
     @OPENJDK6@/jdk/src/share/classes/java/lang/reflect/*.class
+    @OPENJDK7@/jdk/src/share/classes/java/lang/reflect/*.class
     @OPENJDK6@/jdk/src/share/classes/java/math/*.class
     @OPENJDK6@/jdk/src/share/classes/java/net/*.class
     @OPENJDK6@/jdk/src/share/classes/java/nio/*.class
