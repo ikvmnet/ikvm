@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,8 @@ class VMManagementImpl implements VMManagement {
     private static boolean bootClassPathSupport;
     private static boolean objectMonitorUsageSupport;
     private static boolean synchronizerUsageSupport;
+    private static boolean threadAllocatedMemorySupport;
+    private static boolean gcNotificationSupport;
 
     // Optional supports
     public boolean isCompilationTimeMonitoringSupported() {
@@ -84,6 +86,14 @@ class VMManagementImpl implements VMManagement {
         return synchronizerUsageSupport;
     }
 
+    public boolean isThreadAllocatedMemorySupported() {
+        return threadAllocatedMemorySupport;
+    }
+
+    public boolean isGcNotificationSupported() {
+        return gcNotificationSupport;
+    }
+
     public boolean isThreadContentionMonitoringEnabled() {
         return false;
     }
@@ -92,6 +102,9 @@ class VMManagementImpl implements VMManagement {
         return false;
     }
 
+    public boolean isThreadAllocatedMemoryEnabled() {
+        return false;
+    }
 
     // Class Loading Subsystem
     public int    getLoadedClassCount() {

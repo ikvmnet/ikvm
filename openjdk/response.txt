@@ -801,6 +801,7 @@ assembly.class
     ConnectorBootstrap.class
     icedtea/rt/com/sun/jmx/snmp/*.class
     icedtea/rt/com/sun/jmx/snmp/daemon/*.class
+    java/lang/management/*.class
     sun/management/*.class
     @OPENJDK6@/build/linux-amd64/classes/javax/management/remote/rmi/*.class
     @OPENJDK6@/build/linux-amd64/classes/org/omg/stub/javax/management/remote/rmi/*.class
@@ -822,7 +823,7 @@ assembly.class
     @OPENJDK6@/jdk/src/share/classes/com/sun/jmx/snmp/mpm/*.class
     @OPENJDK6@/jdk/src/share/classes/com/sun/jmx/snmp/tasks/*.class
     @OPENJDK6@/jdk/src/share/classes/com/sun/management/*.class
-    @OPENJDK6@/jdk/src/share/classes/java/lang/management/*.class
+    @OPENJDK7@/jdk/src/share/classes/java/lang/management/*.class
     @OPENJDK6@/jdk/src/share/classes/javax/management/*.class
     @OPENJDK6@/jdk/src/share/classes/javax/management/loading/*.class
     @OPENJDK6@/jdk/src/share/classes/javax/management/modelmbean/*.class
@@ -832,8 +833,8 @@ assembly.class
     @OPENJDK6@/jdk/src/share/classes/javax/management/remote/*.class
     @OPENJDK6@/jdk/src/share/classes/javax/management/remote/rmi/*.class
     @OPENJDK6@/jdk/src/share/classes/javax/management/timer/*.class
-    @OPENJDK6@/jdk/src/share/classes/sun/management/*.class
-    @OPENJDK6@/jdk/src/share/classes/sun/management/counter/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/management/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/management/counter/*.class
     @OPENJDK6@/jdk/src/windows/classes/com/sun/management/*.class
 }
 {
