@@ -12884,6 +12884,9 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/jdk/src/share/classes/sun/util/calendar/ZoneInfoFile.java
 @OPENJDK6@/jdk/src/share/classes/sun/util/EmptyListResourceBundle.java
 @OPENJDK6@/jdk/src/share/classes/sun/util/LocaleServiceProviderPool.java
+@OPENJDK7@/jdk/src/share/classes/sun/util/logging/LoggingProxy.java
+@OPENJDK7@/jdk/src/share/classes/sun/util/logging/LoggingSupport.java
+@OPENJDK7@/jdk/src/share/classes/sun/util/logging/PlatformLogger.java
 @OPENJDK6@/jdk/src/share/classes/sun/util/PreHashedMap.java
 @OPENJDK6@/jdk/src/share/classes/sun/util/ResourceBundleEnumeration.java
 @OPENJDK6@/jdk/src/share/classes/sun/util/resources/CurrencyNames_zh_HK.java
