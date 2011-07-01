@@ -742,7 +742,7 @@ assembly.class
     -out:IKVM.OpenJDK.Security.dll
     -baseaddress:0x5ADD0000
     sun/security/jgss/wrapper/*.class
-    @OPENJDK6@/jdk/src/share/classes/com/sun/crypto/provider/*.class
+    @OPENJDK7@/jdk/src/share/classes/com/sun/crypto/provider/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/net/ssl/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/net/ssl/internal/ssl/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/net/ssl/internal/www/protocol/https/*.class
@@ -760,9 +760,9 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/java/security/acl/*.class
     @OPENJDK7@/jdk/src/share/classes/java/security/interfaces/*.class
     @OPENJDK7@/jdk/src/share/classes/java/security/spec/*.class
-    @OPENJDK6@/jdk/src/share/classes/javax/crypto/*.class
-    @OPENJDK6@/jdk/src/share/classes/javax/crypto/interfaces/*.class
-    @OPENJDK6@/jdk/src/share/classes/javax/crypto/spec/*.class
+    @OPENJDK7@/jdk/src/share/classes/javax/crypto/*.class
+    @OPENJDK7@/jdk/src/share/classes/javax/crypto/interfaces/*.class
+    @OPENJDK7@/jdk/src/share/classes/javax/crypto/spec/*.class
     @OPENJDK7@/jdk/src/share/classes/javax/net/ssl/*.class
     @OPENJDK7@/jdk/src/share/classes/javax/security/auth/*.class
     @OPENJDK7@/jdk/src/share/classes/javax/security/auth/callback/*.class
