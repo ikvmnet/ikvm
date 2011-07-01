@@ -31,6 +31,7 @@
 ../classpath/sun/misc/Ref.java
 AssemblyInfo.java
 ConnectorBootstrap.java
+SecurityConstants.java
 com/sun/imageio/plugins/jpeg/JPEGImageReaderSpi.java
 com/sun/imageio/plugins/jpeg/JPEGImageReader.java
 com/sun/imageio/plugins/jpeg/JPEGImageWriterSpi.java
@@ -10803,6 +10804,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/jdk/src/share/classes/sun/awt/AWTAccessor.java
 @OPENJDK6@/jdk/src/share/classes/sun/awt/AWTAutoShutdown.java
 @OPENJDK6@/jdk/src/share/classes/sun/awt/AWTCharset.java
+@OPENJDK7@/jdk/src/share/classes/sun/awt/AWTPermissionFactory.java
 @OPENJDK6@/jdk/src/share/classes/sun/awt/AWTSecurityManager.java
 @OPENJDK6@/jdk/src/share/classes/sun/awt/CausedFocusEvent.java
 @OPENJDK6@/jdk/src/share/classes/sun/awt/ComponentAccessor.java
@@ -12328,7 +12330,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/jdk/src/share/classes/sun/security/util/Resources_zh_CN.java
 @OPENJDK6@/jdk/src/share/classes/sun/security/util/Resources_zh_TW.java
 @OPENJDK6@/jdk/src/share/classes/sun/security/util/ResourcesMgr.java
-@OPENJDK6@/jdk/src/share/classes/sun/security/util/SecurityConstants.java
 @OPENJDK6@/jdk/src/share/classes/sun/security/util/SignatureFileVerifier.java
 @OPENJDK6@/jdk/src/share/classes/sun/security/validator/EndEntityChecker.java
 @OPENJDK6@/jdk/src/share/classes/sun/security/validator/KeyStores.java

@@ -139,9 +139,10 @@ assembly.class
     @OPENJDK6@/jdk/src/share/classes/sun/security/provider/SunEntries$1.class
     @OPENJDK6@/jdk/src/share/classes/sun/security/provider/SunEntries.class
     @OPENJDK6@/jdk/src/share/classes/sun/security/util/Debug.class
+    @OPENJDK7@/jdk/src/share/classes/sun/security/util/PermissionFactory.class
     @OPENJDK6@/jdk/src/share/classes/sun/security/util/PropertyExpander$ExpandException.class
     @OPENJDK6@/jdk/src/share/classes/sun/security/util/PropertyExpander.class
-    @OPENJDK6@/jdk/src/share/classes/sun/security/util/SecurityConstants.class
+    SecurityConstants*.class
     @OPENJDK6@/jdk/src/share/classes/sun/util/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/util/logging/*.class
     @OPENJDK6@/jdk/src/solaris/classes/java/io/*.class
