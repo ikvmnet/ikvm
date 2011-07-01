@@ -210,6 +210,9 @@ public class VM {
      *
      */
     public static String getSavedProperty(String key) {
+        // [IKVM] force System properties initialization
+        System.lineSeparator();
+
         if (savedProps.isEmpty())
             throw new IllegalStateException("Should be non-empty if initialized");
 
