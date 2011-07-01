@@ -3793,7 +3793,7 @@ namespace IKVM.Internal
 									else if (StaticCompiler.runtimeJniAssembly == null)
 									{
 										Console.Error.WriteLine("Error: Native method not implemented: {0}.{1}{2}", classFile.Name, m.Name, m.Signature);
-										Environment.Exit(1);
+										StaticCompiler.errorCount++;
 									}
 #endif
 									else
