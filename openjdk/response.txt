@@ -746,17 +746,17 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/net/ssl/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/net/ssl/internal/ssl/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/net/ssl/internal/www/protocol/https/*.class
-    @OPENJDK6@/jdk/src/share/classes/com/sun/security/auth/*.class
-    @OPENJDK6@/jdk/src/share/classes/com/sun/security/auth/callback/*.class
-    @OPENJDK6@/jdk/src/share/classes/com/sun/security/auth/login/*.class
-    @OPENJDK6@/jdk/src/share/classes/com/sun/security/auth/module/*.class
-    @OPENJDK6@/jdk/src/share/classes/com/sun/security/cert/internal/x509/*.class
+    @OPENJDK7@/jdk/src/share/classes/com/sun/security/auth/*.class
+    @OPENJDK7@/jdk/src/share/classes/com/sun/security/auth/callback/*.class
+    @OPENJDK7@/jdk/src/share/classes/com/sun/security/auth/login/*.class
+    @OPENJDK7@/jdk/src/share/classes/com/sun/security/auth/module/*.class
+    @OPENJDK7@/jdk/src/share/classes/com/sun/security/cert/internal/x509/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/security/jgss/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/security/ntlm/*.class
-    @OPENJDK6@/jdk/src/share/classes/com/sun/security/sasl/*.class
-    @OPENJDK6@/jdk/src/share/classes/com/sun/security/sasl/digest/*.class
-    @OPENJDK6@/jdk/src/share/classes/com/sun/security/sasl/gsskerb/*.class
-    @OPENJDK6@/jdk/src/share/classes/com/sun/security/sasl/util/*.class
+    @OPENJDK7@/jdk/src/share/classes/com/sun/security/sasl/*.class
+    @OPENJDK7@/jdk/src/share/classes/com/sun/security/sasl/digest/*.class
+    @OPENJDK7@/jdk/src/share/classes/com/sun/security/sasl/gsskerb/*.class
+    @OPENJDK7@/jdk/src/share/classes/com/sun/security/sasl/util/*.class
     @OPENJDK7@/jdk/src/share/classes/java/security/acl/*.class
     @OPENJDK7@/jdk/src/share/classes/java/security/interfaces/*.class
     @OPENJDK7@/jdk/src/share/classes/java/security/spec/*.class
@@ -808,7 +808,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Management.dll
-    -baseaddress:0x5B580000
+    -baseaddress:0x5B5B0000
     com/sun/management/*.class
     ConnectorBootstrap$DefaultValues.class
     ConnectorBootstrap.class
@@ -852,7 +852,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Misc.dll
-    -baseaddress:0x5B970000
+    -baseaddress:0x5B9A0000
     @OPENJDK6@/build/linux-amd64/impsrc/javax/activity/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/javax/annotation/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/javax/annotation/processing/*.class
@@ -942,7 +942,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Naming.dll
-    -baseaddress:0x5BA30000
+    -baseaddress:0x5BA60000
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/jndi/ldap/jndiprovider.properties
     sun/net/dns/*.class
     @OPENJDK6@/jdk/src/share/classes/com/sun/jndi/dns/*.class
@@ -967,7 +967,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Jdbc.dll
-    -baseaddress:0x5BB80000
+    -baseaddress:0x5BBB0000
     -resource:META-INF/services/java.sql.Driver=resources/META-INF/services/java.sql.Driver
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/rowset/*
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/javax/sql/*
@@ -985,7 +985,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Remoting.dll
-    -baseaddress:0x5BCD0000
+    -baseaddress:0x5BD00000
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/sun/rmi/*
     @OPENJDK6@/build/linux-amd64/classes/com/sun/jndi/rmi/registry/*.class
     @OPENJDK6@/build/linux-amd64/classes/java/rmi/activation/*.class
@@ -1011,7 +1011,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Beans.dll
-    -baseaddress:0x5BDF0000
+    -baseaddress:0x5BE20000
     @OPENJDK6@/build/linux-amd64/impsrc/com/sun/activation/registries/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/javax/activation/*.class
     @OPENJDK6@/jdk/src/share/classes/com/sun/beans/*.class
@@ -1023,7 +1023,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Media.dll
-    -baseaddress:0x5BEB0000
+    -baseaddress:0x5BEE0000
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/javax.print.*
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/javax.sound.*
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/imageio/plugins/common/iio-plugin.properties
