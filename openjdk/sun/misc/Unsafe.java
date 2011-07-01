@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2006, 2007, 2009 Jeroen Frijters
+  Copyright (C) 2006-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -37,6 +37,7 @@ import java.util.ArrayList;
 public final class Unsafe
 {
     public static final int INVALID_FIELD_OFFSET = -1;
+    public static final int ARRAY_BYTE_BASE_OFFSET = 0;
     // NOTE sun.corba.Bridge actually access this field directly (via reflection),
     // so the name must match the JDK name.
     private static final Unsafe theUnsafe = new Unsafe();
@@ -889,6 +890,11 @@ public final class Unsafe
 	{
 	    putByte(destAddress++, getByte(srcAddress++));
 	}
+    }
+    
+    public void copyMemory(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes)
+    {
+        throw new ikvm.internal.NotYetImplementedError();
     }
 
     @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)

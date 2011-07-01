@@ -1901,15 +1901,6 @@
                     </code>
                 </replace-method-call>
             </method>
-            <method name="getJavaIODeleteOnExitAccess" sig="()Lsun.misc.JavaIODeleteOnExitAccess;">
-                <replace-method-call class="sun.misc.Unsafe" name="ensureClassInitialized" sig="(Ljava.lang.Class;)V">
-                    <code>
-                        <pop />
-                        <pop />
-                        <runclassinit class="java.io.File" />
-                    </code>
-                </replace-method-call>
-            </method>
         </class>
         <class name="java.util.concurrent.atomic.AtomicReference">
             <method name="compareAndSet" sig="(Ljava.lang.Object;Ljava.lang.Object;)Z">

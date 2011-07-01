@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package sun.misc;
 
 import java.util.jar.JarFile;
 import java.io.Console;
-import java.io.File;
 import java.security.ProtectionDomain;
 
 import java.security.AccessControlContext;
@@ -46,7 +45,6 @@ public class SharedSecrets {
     private static JavaUtilJarAccess javaUtilJarAccess;
     private static JavaLangAccess javaLangAccess = LangHelper.getJavaLangAccess();
     private static JavaIOAccess javaIOAccess;
-    private static JavaIODeleteOnExitAccess javaIODeleteOnExitAccess;
     private static JavaNetAccess javaNetAccess;
     private static JavaSecurityProtectionDomainAccess javaSecurityProtectionDomainAccess;
     private static JavaSecurityAccess javaSecurityAccess;
@@ -87,17 +85,6 @@ public class SharedSecrets {
         return javaIOAccess;
     }
 
-    public static void setJavaIODeleteOnExitAccess(JavaIODeleteOnExitAccess jida) {
-        javaIODeleteOnExitAccess = jida;
-    }
-
-    public static JavaIODeleteOnExitAccess getJavaIODeleteOnExitAccess() {
-        if (javaIODeleteOnExitAccess == null) {
-            unsafe.ensureClassInitialized(File.class);
-        }
-        return javaIODeleteOnExitAccess;
-    }
-
     public static void setJavaSecurityProtectionDomainAccess
         (JavaSecurityProtectionDomainAccess jspda) {
             javaSecurityProtectionDomainAccess = jspda;
@@ -105,10 +92,9 @@ public class SharedSecrets {
 
     public static JavaSecurityProtectionDomainAccess
         getJavaSecurityProtectionDomainAccess() {
-        if (javaSecurityProtectionDomainAccess == null)
-            unsafe.ensureClassInitialized(ProtectionDomain.class);
-
-        return javaSecurityProtectionDomainAccess;
+            if (javaSecurityProtectionDomainAccess == null)
+                unsafe.ensureClassInitialized(ProtectionDomain.class);
+            return javaSecurityProtectionDomainAccess;
     }
 
     public static void setJavaSecurityAccess(JavaSecurityAccess jsa) {

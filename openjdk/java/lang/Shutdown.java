@@ -36,8 +36,8 @@ import cli.System.EventHandler;
  * @author   Mark Reinhold
  * @since    1.3
  */
-@ikvm.lang.Internal
-public final class Shutdown {
+
+class Shutdown {
 
     /* Shutdown state */
     private static final int RUNNING = 0;
@@ -73,10 +73,6 @@ public final class Shutdown {
         }
     }
     
-    public static void init() {
-        // exists only to trigger class initializer
-    }
-    
     static {
         try {
             // AppDomain.ProcessExit has a LinkDemand, so we have to have a separate method
@@ -85,8 +81,6 @@ public final class Shutdown {
         }
         catch (cli.System.Security.SecurityException _) {
         }
-        hooks[0] = sun.misc.SharedSecrets.getJavaIOAccess().consoleRestoreHook();
-        hooks[2] = sun.misc.SharedSecrets.getJavaIODeleteOnExitAccess();
     }
 
     private static void registerShutdownHook()
