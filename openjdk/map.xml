@@ -1901,6 +1901,25 @@
                     </code>
                 </replace-method-call>
             </method>
+            <method name="getJavaSecurityProtectionDomainAccess" sig="()Lsun.misc.JavaSecurityProtectionDomainAccess;">
+                <replace-method-call class="sun.misc.Unsafe" name="ensureClassInitialized" sig="(Ljava.lang.Class;)V">
+                    <code>
+                        <pop />
+                        <pop />
+                        <runclassinit class="java.security.ProtectionDomain" />
+                    </code>
+                </replace-method-call>
+            </method>
+            <method name="getJavaSecurityAccess" sig="()Lsun.misc.JavaSecurityAccess;">
+                <replace-method-call class="sun.misc.Unsafe" name="ensureClassInitialized" sig="(Ljava.lang.Class;)V">
+                    <code>
+                        <pop />
+                        <pop />
+                        <!-- JDK bug: They are initializing AccessController here, but the setJavaSecurityAccess call is in ProtectionDomain -->
+                        <runclassinit class="java.security.ProtectionDomain" />
+                    </code>
+                </replace-method-call>
+            </method>
         </class>
         <class name="java.util.concurrent.atomic.AtomicReference">
             <method name="compareAndSet" sig="(Ljava.lang.Object;Ljava.lang.Object;)Z">

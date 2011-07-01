@@ -155,9 +155,9 @@
     @OPENJDK6@/jdk/src/share/classes/sun/rmi/rmic/*.class
     @OPENJDK6@/jdk/src/share/classes/sun/rmi/rmic/newrmic/*.class
     @OPENJDK6@/jdk/src/share/classes/sun/rmi/rmic/newrmic/jrmp/*.class
-    @OPENJDK6@/jdk/src/share/classes/sun/security/tools/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/security/tools/*.class
     @OPENJDK6@/jdk/src/share/classes/sun/tools/asm/*.class
-    @OPENJDK6@/jdk/src/share/classes/sun/tools/jar/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/tools/jar/*.class
     @OPENJDK6@/jdk/src/share/classes/sun/tools/java/*.class
     @OPENJDK6@/jdk/src/share/classes/sun/tools/javac/*.class
     @OPENJDK6@/jdk/src/share/classes/sun/tools/native2ascii/*.class

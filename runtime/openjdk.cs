@@ -8008,8 +8008,12 @@ namespace IKVM.NativeCode.sun.security.krb5
 
 	static class Config
 	{
-		public static string getWindowsDirectory()
+		public static string getWindowsDirectory(bool isSystem)
 		{
+			if (isSystem)
+			{
+				return Environment.SystemDirectory;
+			}
 			return Environment.GetEnvironmentVariable("SystemRoot");
 		}
 	}

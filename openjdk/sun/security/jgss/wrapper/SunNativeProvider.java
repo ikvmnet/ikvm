@@ -27,8 +27,14 @@ package sun.security.jgss.wrapper;
 // this is a compilation stub only
 public final class SunNativeProvider extends java.security.Provider
 {
+    public static final SunNativeProvider INSTANCE = new SunNativeProvider();
+
     public SunNativeProvider()
     {
         super(null, 0.0, null);
+    }
+    
+    static void debug(String message)
+    {
     }
 }
