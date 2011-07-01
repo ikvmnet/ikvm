@@ -764,14 +764,14 @@ assembly.class
     @OPENJDK6@/jdk/src/share/classes/javax/crypto/interfaces/*.class
     @OPENJDK6@/jdk/src/share/classes/javax/crypto/spec/*.class
     @OPENJDK7@/jdk/src/share/classes/javax/net/ssl/*.class
-    @OPENJDK6@/jdk/src/share/classes/javax/security/auth/*.class
-    @OPENJDK6@/jdk/src/share/classes/javax/security/auth/callback/*.class
+    @OPENJDK7@/jdk/src/share/classes/javax/security/auth/*.class
+    @OPENJDK7@/jdk/src/share/classes/javax/security/auth/callback/*.class
     @OPENJDK7@/jdk/src/share/classes/javax/security/auth/kerberos/*.class
-    @OPENJDK6@/jdk/src/share/classes/javax/security/auth/login/*.class
-    @OPENJDK6@/jdk/src/share/classes/javax/security/auth/spi/*.class
-    @OPENJDK6@/jdk/src/share/classes/javax/security/auth/x500/*.class
-    @OPENJDK6@/jdk/src/share/classes/javax/security/cert/*.class
-    @OPENJDK6@/jdk/src/share/classes/javax/security/sasl/*.class
+    @OPENJDK7@/jdk/src/share/classes/javax/security/auth/login/*.class
+    @OPENJDK7@/jdk/src/share/classes/javax/security/auth/spi/*.class
+    @OPENJDK7@/jdk/src/share/classes/javax/security/auth/x500/*.class
+    @OPENJDK7@/jdk/src/share/classes/javax/security/cert/*.class
+    @OPENJDK7@/jdk/src/share/classes/javax/security/sasl/*.class
     @OPENJDK6@/jdk/src/share/classes/org/ietf/jgss/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/net/www/protocol/http/ntlm/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/net/www/protocol/https/*.class
