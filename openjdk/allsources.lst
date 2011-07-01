@@ -8637,7 +8637,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/RuntimePermission.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/SafeVarargs.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/SecurityException.java
-@OPENJDK6@/jdk/src/share/classes/java/lang/SecurityManager.java
+@OPENJDK7@/jdk/src/share/classes/java/lang/SecurityManager.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/Short.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/StackOverflowError.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/StackTraceElement.java
