@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,17 +35,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Instances of the file descriptor class serve as an opaque handle
- * to the underlying machine-specific structure representing an open
- * file, an open socket, or another source or sink of bytes. The
- * main practical use for a file descriptor is to create a
- * <code>FileInputStream</code> or <code>FileOutputStream</code> to
- * contain it.
- * <p>
- * Applications should not create their own file descriptors.
+ * to the underlying machine-specific structure representing an
+ * open file, an open socket, or another source or sink of bytes.
+ * The main practical use for a file descriptor is to create a
+ * {@link FileInputStream} or {@link FileOutputStream} to contain it.
+ *
+ * <p>Applications should not create their own file descriptors.
  *
  * @author  Pavani Diwanji
- * @see     java.io.FileInputStream
- * @see     java.io.FileOutputStream
  * @since   JDK1.0
  */
 public final class FileDescriptor {
@@ -138,7 +135,7 @@ public final class FileDescriptor {
     /**
      * A handle to the standard input stream. Usually, this file
      * descriptor is not used directly, but rather via the input stream
-     * known as <code>System.in</code>.
+     * known as {@code System.in}.
      *
      * @see     java.lang.System#in
      */
@@ -147,7 +144,7 @@ public final class FileDescriptor {
     /**
      * A handle to the standard output stream. Usually, this file
      * descriptor is not used directly, but rather via the output stream
-     * known as <code>System.out</code>.
+     * known as {@code System.out}.
      * @see     java.lang.System#out
      */
     public static final FileDescriptor out = standardStream(1);
@@ -155,7 +152,7 @@ public final class FileDescriptor {
     /**
      * A handle to the standard error stream. Usually, this file
      * descriptor is not used directly, but rather via the output stream
-     * known as <code>System.err</code>.
+     * known as {@code System.err}.
      *
      * @see     java.lang.System#err
      */
@@ -164,9 +161,9 @@ public final class FileDescriptor {
     /**
      * Tests if this file descriptor object is valid.
      *
-     * @return  <code>true</code> if the file descriptor object represents a
+     * @return  {@code true} if the file descriptor object represents a
      *          valid, open file, socket, or other active I/O connection;
-     *          <code>false</code> otherwise.
+     *          {@code false} otherwise.
      */
     public boolean valid() {
         return stream != null;

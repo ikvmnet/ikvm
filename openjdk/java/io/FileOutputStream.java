@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,26 +46,31 @@ import sun.nio.ch.FileChannelImpl;
  * @see     java.io.File
  * @see     java.io.FileDescriptor
  * @see     java.io.FileInputStream
+ * @see     java.nio.file.Files#newOutputStream
  * @since   JDK1.0
  */
 public
 class FileOutputStream extends OutputStream
 {
     /**
-     * The system dependent file descriptor. The value is
-     * 1 more than actual file descriptor. This means that
-     * the default value 0 indicates that the file is not open.
+     * The system dependent file descriptor.
      */
-    private FileDescriptor fd;
+    private final FileDescriptor fd;
 
-    private FileChannel channel= null;
+    /**
+     * True if the file is opened for append.
+     */
+    private final boolean append;
 
-    private boolean append = false;
+    /**
+     * The associated channel, initalized lazily.
+     */
+    private FileChannel channel;
 
-    private Object closeLock = new Object();
+    private final Object closeLock = new Object();
     private volatile boolean closed = false;
-    private static ThreadLocal<Boolean> runningFinalize =
-                                        new ThreadLocal<Boolean>();
+    private static final ThreadLocal<Boolean> runningFinalize =
+        new ThreadLocal<>();
 
     private static boolean isRunningFinalize() {
         Boolean val;
@@ -75,7 +80,7 @@ class FileOutputStream extends OutputStream
     }
 
     /**
-     * Creates an output file stream to write to the file with the
+     * Creates a file output stream to write to the file with the
      * specified name. A new <code>FileDescriptor</code> object is
      * created to represent this file connection.
      * <p>
@@ -100,8 +105,8 @@ class FileOutputStream extends OutputStream
     }
 
     /**
-     * Creates an output file stream to write to the file with the specified
-     * <code>name</code>.  If the second argument is <code>true</code>, then
+     * Creates a file output stream to write to the file with the specified
+     * name.  If the second argument is <code>true</code>, then
      * bytes will be written to the end of the file rather than the beginning.
      * A new <code>FileDescriptor</code> object is created to represent this
      * file connection.
@@ -200,24 +205,29 @@ class FileOutputStream extends OutputStream
         if (name == null) {
             throw new NullPointerException();
         }
-        fd = new FileDescriptor();
-        fd.incrementAndGetUseCount();
+        this.fd = new FileDescriptor();
         this.append = append;
-        if (append) {
-            openAppend(name);
-        } else {
-            open(name);
-        }
+
+        fd.incrementAndGetUseCount();
+        open(name, append);
     }
 
     /**
-     * Creates an output file stream to write to the specified file
+     * Creates a file output stream to write to the specified file
      * descriptor, which represents an existing connection to an actual
      * file in the file system.
      * <p>
      * First, if there is a security manager, its <code>checkWrite</code>
      * method is called with the file descriptor <code>fdObj</code>
      * argument as its argument.
+     * <p>
+     * If <code>fdObj</code> is null then a <code>NullPointerException</code>
+     * is thrown.
+     * <p>
+     * This constructor does not throw an exception if <code>fdObj</code>
+     * is {@link java.io.FileDescriptor#valid() invalid}.
+     * However, if the methods are invoked on the resulting stream to attempt
+     * I/O on the stream, an <code>IOException</code> is thrown.
      *
      * @param      fdObj   the file descriptor to be opened for writing
      * @exception  SecurityException  if a security manager exists and its
@@ -233,7 +243,8 @@ class FileOutputStream extends OutputStream
         if (security != null) {
             security.checkWrite(fdObj);
         }
-        fd = fdObj;
+        this.fd = fdObj;
+        this.append = false;
 
         /*
          * FileDescriptor is being shared by streams.
@@ -244,21 +255,28 @@ class FileOutputStream extends OutputStream
     }
 
     /**
-     * Opens a file, with the specified name, for writing.
+     * Opens a file, with the specified name, for overwriting or appending.
      * @param name name of file to be opened
+     * @param append whether the file is to be opened in append mode
      */
-    private void open(String name) throws FileNotFoundException
-    {
-        fd.openWriteOnly(name);
+    private void open(String name, boolean append)
+        throws FileNotFoundException {
+        if (append) {
+            fd.openAppend(name);
+        } else {
+            fd.openWriteOnly(name);
+        }
     }
 
     /**
-     * Opens a file, with the specified name, for appending.
-     * @param name name of file to be opened
+     * Writes the specified byte to this file output stream.
+     *
+     * @param   b   the byte to be written.
+     * @param   append   {@code true} if the write operation first
+     *     advances the position to the end of file
      */
-    private void openAppend(String name) throws FileNotFoundException
-    {
-        fd.openAppend(name);
+    private void write(int b, boolean append) throws IOException {
+        fd.write(b);
     }
 
     /**
@@ -268,9 +286,8 @@ class FileOutputStream extends OutputStream
      * @param      b   the byte to be written.
      * @exception  IOException  if an I/O error occurs.
      */
-    public void write(int b) throws IOException
-    {
-        fd.write(b);
+    public void write(int b) throws IOException {
+        write(b, append);
     }
 
     /**
@@ -278,10 +295,12 @@ class FileOutputStream extends OutputStream
      * @param b the data to be written
      * @param off the start offset in the data
      * @param len the number of bytes that are written
+     * @param append {@code true} to first advance the position to the
+     *     end of file
      * @exception IOException If an I/O error has occurred.
      */
-    private void writeBytes(byte b[], int off, int len) throws IOException
-    {
+    private void writeBytes(byte b[], int off, int len, boolean append)
+        throws IOException {
         fd.writeBytes(b, off, len);
     }
 
@@ -293,7 +312,7 @@ class FileOutputStream extends OutputStream
      * @exception  IOException  if an I/O error occurs.
      */
     public void write(byte b[]) throws IOException {
-        writeBytes(b, 0, b.length);
+        writeBytes(b, 0, b.length, append);
     }
 
     /**
@@ -306,7 +325,7 @@ class FileOutputStream extends OutputStream
      * @exception  IOException  if an I/O error occurs.
      */
     public void write(byte b[], int off, int len) throws IOException {
-        writeBytes(b, off, len);
+        writeBytes(b, off, len, append);
     }
 
     /**
@@ -412,7 +431,7 @@ class FileOutputStream extends OutputStream
      */
     protected void finalize() throws IOException {
         if (fd != null) {
-            if (fd == fd.out || fd == fd.err) {
+            if (fd == FileDescriptor.out || fd == FileDescriptor.err) {
                 flush();
             } else {
 
