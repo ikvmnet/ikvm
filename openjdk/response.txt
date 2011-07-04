@@ -88,6 +88,7 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/java/nio/channels/*.class
     @OPENJDK6@/jdk/src/share/classes/java/nio/channels/spi/*.class
     @OPENJDK6@/jdk/src/share/classes/java/nio/charset/*.class
+    @OPENJDK7@/jdk/src/share/classes/java/nio/charset/*.class
     @OPENJDK6@/jdk/src/share/classes/java/nio/charset/spi/*.class
     @OPENJDK7@/jdk/src/share/classes/java/nio/file/*.class
     @OPENJDK7@/jdk/src/share/classes/java/nio/file/attribute/*.class

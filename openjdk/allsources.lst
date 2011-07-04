@@ -8785,6 +8785,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/jdk/src/share/classes/java/nio/charset/CodingErrorAction.java
 @OPENJDK6@/jdk/src/share/classes/java/nio/charset/MalformedInputException.java
 @OPENJDK6@/jdk/src/share/classes/java/nio/charset/spi/CharsetProvider.java
+@OPENJDK7@/jdk/src/share/classes/java/nio/charset/StandardCharsets.java
 @OPENJDK6@/jdk/src/share/classes/java/nio/charset/UnmappableCharacterException.java
 @OPENJDK7@/jdk/src/share/classes/java/nio/file/AccessDeniedException.java
 @OPENJDK7@/jdk/src/share/classes/java/nio/file/AccessMode.java
