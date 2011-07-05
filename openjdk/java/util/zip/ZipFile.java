@@ -318,7 +318,7 @@ public class ZipFile implements ZipConstants
     // If we didn't find it, maybe it's a directory.
     if (entry == null && !name.endsWith("/"))
       entry = entries.get(name + '/');
-    return entry != null ? new ZipEntry(entry, name) : null;
+    return entry != null ? (ZipEntry)entry.clone() : null;
   }
 
   /**

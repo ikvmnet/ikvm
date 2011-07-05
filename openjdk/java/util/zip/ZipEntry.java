@@ -92,12 +92,7 @@ public class ZipEntry implements ZipConstants, Cloneable
      */
     public ZipEntry(ZipEntry e)
     {
-        this(e, e.name);
-    }
-
-    ZipEntry(ZipEntry e, String name)
-    {
-        this.name = name;
+        name = e.name;
         time = e.time;
         crc = e.crc;
         size = e.size;
