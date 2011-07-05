@@ -179,11 +179,11 @@ public class ZipEntry implements ZipConstants, Cloneable
 
     /**
      * Sets the size of the uncompressed data.
-     * @exception IllegalArgumentException if size is not in 0..0xffffffffL
+     * @exception IllegalArgumentException if size is negative.
      */
     public void setSize(long size)
     {
-        if ((size & 0xffffffff00000000L) != 0)
+        if (size < 0)
             throw new IllegalArgumentException();
         this.size = size;
     }
@@ -285,12 +285,9 @@ public class ZipEntry implements ZipConstants, Cloneable
 
     /**
      * Sets the entry comment.
-     * @exception IllegalArgumentException if comment is longer than 0xffff.
      */
     public void setComment(String comment)
     {
-        if (comment != null && comment.length() > 0xffff / 3 && ZipOutputStream.getUTF8Length(comment) > 0xffff)
-            throw new IllegalArgumentException();
         this.comment = comment;
     }
 
