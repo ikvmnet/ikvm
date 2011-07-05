@@ -225,23 +225,8 @@ public class ZipFile implements ZipConstants
    */
   private void readEntries() throws IOException
   {
-    /* Search for the End Of Central Directory.  When a zip comment is 
-     * present the directory may start earlier.
-     * Note that a comment has a maximum length of 64K, so that is the
-     * maximum we search backwards.
-     */
     PartialInputStream inp = new PartialInputStream(4096);
-    long pos = raf.length() - ENDHDR;
-    long top = Math.max(0, pos - 65536);
-    do
-      {
-        if (pos < top)
-          throw new ZipException("error in opening zip file");
-        inp.seek(pos--);
-      }
-    while (inp.readLeInt() != ENDSIG);
-    
-    pos++;
+    long pos = inp.seekEndOfCentralDirectory();
     inp.skip(6);
     int count = inp.readLeUnsignedShort();
     long centralSize = inp.readLeUnsignedInt();    
@@ -456,7 +441,31 @@ public class ZipFile implements ZipConstants
     checkClosed();
     return entries.size();
   }
-  
+
+  /**
+   * Returns the zip file comment.
+   *
+   * @exception IllegalStateException when the ZipFile has already been closed
+   */
+  public synchronized String getComment()
+  {
+    checkClosed();
+    try
+      {
+        PartialInputStream inp = new PartialInputStream(4096);
+        long pos = inp.seekEndOfCentralDirectory();
+        inp.skip(16);
+        int commentLength = inp.readLeUnsignedShort();
+        if (commentLength == 0)
+          return null;
+        return inp.readString(commentLength, false);
+      }
+    catch (IOException _)
+      {
+        return null;
+      }
+  }
+
   private static class ZipEntryEnumeration implements Enumeration<ZipEntry>
   {
     private final Iterator<ZipEntry> elements;
@@ -501,6 +510,31 @@ public class ZipFile implements ZipConstants
       pos = buffer.length;
       end = raf.length();
       lazy = true;
+    }
+
+    // Seek to the "end of central directory record" and position
+    // the stream after the ENDSIG and return the file offset
+    // where the record starts.
+    long seekEndOfCentralDirectory() throws IOException
+    {
+      /* Search for the End Of Central Directory.  When a zip comment is 
+       * present the directory may start earlier.
+       * Note that a comment has a maximum length of 64K, so that is the
+       * maximum we search backwards.
+       */
+      long length = raf.length();
+      if (length == 0)
+        throw new ZipException("zip file is empty");
+      long pos = length - ENDHDR;
+      long top = Math.max(0, pos - 65536);
+      do
+        {
+          if (pos < top)
+            throw new ZipException("error in opening zip file");
+          seek(pos--);
+        }
+      while (readLeInt() != ENDSIG);
+      return pos + 1;
     }
 
     void lazyInitialSeek() throws IOException
