@@ -232,6 +232,26 @@ public class ZipFile implements ZipConstants
     long centralSize = inp.readLeUnsignedInt();    
     long centralOffset = inp.readLeUnsignedInt();
 
+    if (centralSize == ZIP64_MAGICVAL
+        || centralOffset == ZIP64_MAGICVAL
+        || count == ZIP64_MAGICCOUNT)
+      {
+        inp.seek(pos - ZIP64_LOCHDR);
+        if (inp.readLeInt() == ZIP64_LOCSIG)
+          {
+            inp.skip(4);
+            long zip64end = inp.readLeLong();
+            inp.seek(zip64end);
+            if (inp.readLeInt() == ZIP64_ENDSIG)
+              {
+                inp.skip(ZIP64_ENDSIZ - 4);
+                centralSize = inp.readLeLong();
+                centralOffset = inp.readLeLong();
+                pos = zip64end;
+              }
+          }
+      }
+
     if (centralSize > pos)
       throw new ZipException("invalid END header (bad central directory size)");
 
@@ -272,6 +292,7 @@ public class ZipFile implements ZipConstants
             byte[] extra = new byte[extraLen];
             inp.readFully(extra);
             entry.extra = extra;
+            readZip64ExtraField(entry, extra);
           }
         if (commentLen > 0)
           {
@@ -282,6 +303,58 @@ public class ZipFile implements ZipConstants
 
     if (inp.position() != pos)
       throw new ZipException("invalid CEN header (bad header size)");
+  }
+
+  private static void readZip64ExtraField(ZipEntry entry, byte[] extra)
+  {
+    if (entry.csize == ZIP64_MAGICVAL || entry.size == ZIP64_MAGICVAL
+        || entry.offset == ZIP64_MAGICVAL)
+      {
+        for (int pos = 0; pos < extra.length - 4; )
+          {
+            int headerID = decodeLeUnsignedShort(extra, pos);
+            int dataSize = decodeLeUnsignedShort(extra, pos + 2);
+            pos += 4;
+            if (headerID == ZIP64_EXTID)
+              {
+                if (entry.size == ZIP64_MAGICVAL)
+                  {
+                    entry.size = decodeLeLong(extra, pos);
+                    pos += 8;
+                  }
+                if (entry.csize == ZIP64_MAGICVAL)
+                  {
+                    entry.csize = decodeLeLong(extra, pos);
+                    pos += 8;
+                  }
+                if (entry.offset == ZIP64_MAGICVAL)
+                  {
+                    entry.offset = decodeLeLong(extra, pos);
+                    pos += 8;
+                  }
+                break;
+              }
+            pos += dataSize;
+          }
+      }
+  }
+
+  private static int decodeLeUnsignedShort(byte[] b, int off)
+  {
+    return (b[off] & 0xFF) | ((b[off + 1] & 0xFF) << 8);
+  }
+
+  private static long decodeLeLong(byte[] b, int off)
+  {
+    return 0
+        | ((b[off + 0] & 0xFFL) << 0)
+        | ((b[off + 1] & 0xFFL) << 8)
+        | ((b[off + 2] & 0xFFL) << 16)
+        | ((b[off + 3] & 0xFFL) << 24)
+        | ((b[off + 4] & 0xFFL) << 32)
+        | ((b[off + 5] & 0xFFL) << 40)
+        | ((b[off + 6] & 0xFFL) << 48)
+        | ((b[off + 7] & 0xFFL) << 56);
   }
 
   /**
@@ -730,6 +803,11 @@ public class ZipFile implements ZipConstants
     final long readLeUnsignedInt() throws IOException
     {
       return readLeInt() & 0xffffffffL;
+    }
+    
+    final long readLeLong() throws IOException
+    {
+      return readLeUnsignedInt() | (readLeUnsignedInt() << 32);
     }
 
     /**
