@@ -1,5 +1,5 @@
 /* ZipFile.java --
-   Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006, 2008
+   Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006, 2008, 2011
    Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
@@ -43,14 +43,10 @@ import gnu.java.util.EmptyEnumeration;
 
 import java.io.EOFException;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -185,7 +181,7 @@ public class ZipFile implements ZipConstants
    * @exception IOException if a i/o error occured.
    * @exception ZipException if the central directory is malformed 
    */
-  private void readEntries() throws ZipException, IOException
+  private void readEntries() throws IOException
   {
     /* Search for the End Of Central Directory.  When a zip comment is 
      * present the directory may start earlier.
@@ -205,7 +201,7 @@ public class ZipFile implements ZipConstants
     
     pos++;
     inp.skip(6);
-    int count = inp.readLeShort();
+    int count = inp.readLeUnsignedShort();
     int centralSize = inp.readLeInt();    
     int centralOffset = inp.readLeInt();
 
@@ -224,19 +220,19 @@ public class ZipFile implements ZipConstants
           throw new ZipException("invalid CEN header (bad signature)");
 
         inp.skip(4);
-        int flags = inp.readLeShort();
+        int flags = inp.readLeUnsignedShort();
         if ((flags & 1) != 0)
           throw new ZipException("invalid CEN header (encrypted entry)");
-        int method = inp.readLeShort();
+        int method = inp.readLeUnsignedShort();
         if (method != ZipEntry.STORED && method != ZipEntry.DEFLATED)
           throw new ZipException("invalid CEN header (bad compression method)");
         int dostime = inp.readLeInt();
         int crc = inp.readLeInt();
         int csize = inp.readLeInt();
         int size = inp.readLeInt();
-        int nameLen = inp.readLeShort();
-        int extraLen = inp.readLeShort();
-        int commentLen = inp.readLeShort();
+        int nameLen = inp.readLeUnsignedShort();
+        int extraLen = inp.readLeUnsignedShort();
+        int commentLen = inp.readLeUnsignedShort();
         inp.skip(8);
         int offset = inp.readLeInt();
         String name = inp.readString(nameLen);
@@ -364,8 +360,8 @@ public class ZipFile implements ZipConstants
 
             skip(22);
 
-            int nameLen = readLeShort();
-            int extraLen = readLeShort();
+            int nameLen = readLeUnsignedShort();
+            int extraLen = readLeUnsignedShort();
             skip(nameLen + extraLen);
 
             setLength(zipEntry.getCompressedSize());
@@ -616,7 +612,7 @@ public class ZipFile implements ZipConstants
         throw new EOFException();
     }
 
-    int readLeShort() throws IOException
+    int readLeUnsignedShort() throws IOException
     {
       int result;
       if(pos + 1 < buffer.length)
