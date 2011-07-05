@@ -226,35 +226,30 @@ public class ZipFile implements ZipConstants
         int method = inp.readLeUnsignedShort();
         if (method != ZipEntry.STORED && method != ZipEntry.DEFLATED)
           throw new ZipException("invalid CEN header (bad compression method)");
-        long dostime = inp.readLeUnsignedInt();
-        long crc = inp.readLeUnsignedInt();
-        long csize = inp.readLeUnsignedInt();
-        long size = inp.readLeUnsignedInt();
+        ZipEntry entry = new ZipEntry();
+        entry.method = method;
+        entry.time = inp.readLeUnsignedInt();
+        entry.crc = inp.readLeUnsignedInt();
+        entry.csize = inp.readLeUnsignedInt();
+        entry.size = inp.readLeUnsignedInt();
         int nameLen = inp.readLeUnsignedShort();
         int extraLen = inp.readLeUnsignedShort();
         int commentLen = inp.readLeUnsignedShort();
         inp.skip(8);
-        long offset = inp.readLeUnsignedInt();
-        String name = inp.readString(nameLen);
+        entry.offset = inp.readLeUnsignedInt();
+        entry.name = inp.readString(nameLen);
 
-        ZipEntry entry = new ZipEntry(name);
-        entry.setMethod(method);
-        entry.setCrc(crc);
-        entry.setSize(size);
-        entry.setCompressedSize(csize);
-        entry.time = dostime;
         if (extraLen > 0)
           {
             byte[] extra = new byte[extraLen];
             inp.readFully(extra);
-            entry.setExtra(extra);
+            entry.extra = extra;
           }
         if (commentLen > 0)
           {
-            entry.setComment(inp.readString(commentLen));
+            entry.comment = inp.readString(commentLen);
           }
-        entry.offset = offset;
-        entries.put(name, entry);
+        entries.put(entry.name, entry);
       }
 
     if (inp.position() != pos)

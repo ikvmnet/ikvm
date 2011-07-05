@@ -102,6 +102,10 @@ public class ZipEntry implements ZipConstants, Cloneable
         comment = e.comment;
     }
 
+    ZipEntry()
+    {
+    }
+
     /**
      * Creates a copy of this zip entry.
      */
