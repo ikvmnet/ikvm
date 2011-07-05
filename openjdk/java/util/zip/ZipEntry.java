@@ -56,6 +56,7 @@ public class ZipEntry implements ZipConstants, Cloneable
     long size = -1;
     long csize = -1;
     int method = -1;
+    int flag;
     byte[] extra;
     String comment;
 
@@ -98,6 +99,7 @@ public class ZipEntry implements ZipConstants, Cloneable
         size = e.size;
         csize = e.csize;
         method = e.method;
+        flag = e.flag;
         extra = e.extra;
         comment = e.comment;
     }

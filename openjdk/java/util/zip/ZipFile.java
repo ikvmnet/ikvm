@@ -47,9 +47,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import static java.util.zip.ZipConstants64.*;
 
 /**
  * This class represents a Zip archive.  You can ask for the contained
@@ -83,6 +86,9 @@ public class ZipFile implements ZipConstants
   // Name of this zip file.
   private final String name;
 
+  // Encoding to use for name and comment strings
+  private final Charset charset;
+
   // File from which zip entries are read.
   private final RandomAccessFile raf;
 
@@ -114,6 +120,17 @@ public class ZipFile implements ZipConstants
   }
 
   /**
+   * Opens a Zip file reading the given File.
+   * @exception IOException if a i/o error occured.
+   * @exception ZipException if the file doesn't contain a valid zip
+   * archive.  
+   */
+  public ZipFile(File file, Charset charset) throws IOException
+  {
+    this(file, OPEN_READ, charset);
+  }
+
+  /**
    * Opens a Zip file reading the given File in the given mode.
    *
    * If the OPEN_DELETE mode is specified, the zip file will be deleted at
@@ -129,14 +146,39 @@ public class ZipFile implements ZipConstants
    * @exception ZipException if the file doesn't contain a valid zip
    * archive.  
    */
-  public ZipFile(File file, int mode) throws ZipException, IOException
+  public ZipFile(File file, int mode) throws IOException
+  {
+    this(file, mode, StandardCharsets.UTF_8);
+  }
+
+  /**
+   * Opens a Zip file reading the given File in the given mode.
+   *
+   * If the OPEN_DELETE mode is specified, the zip file will be deleted at
+   * some time moment after it is opened. It will be deleted before the zip
+   * file is closed or the Virtual Machine exits.
+   * 
+   * The contents of the zip file will be accessible until it is closed.
+   *
+   * @since JDK1.7
+   * @param mode Must be one of OPEN_READ or OPEN_READ | OPEN_DELETE
+   * @param charset Character encoding to use for names and comments
+   *
+   * @exception IOException if a i/o error occured.
+   * @exception ZipException if the file doesn't contain a valid zip
+   * archive.  
+   */
+  public ZipFile(File file, int mode, Charset charset) throws IOException
   {
     if (mode != OPEN_READ && mode != (OPEN_READ | OPEN_DELETE))
       throw new IllegalArgumentException("Illegal mode: 0x" + Integer.toHexString(mode));
+    if (charset == null)
+      throw new NullPointerException("charset is null");
     if ((mode & OPEN_DELETE) != 0)
       file.deleteOnExit();
     this.raf = new RandomAccessFile(file, "r");
     this.name = file.getPath();
+    this.charset = charset;
 
     boolean valid = false;
 
@@ -227,6 +269,7 @@ public class ZipFile implements ZipConstants
         if (method != ZipEntry.STORED && method != ZipEntry.DEFLATED)
           throw new ZipException("invalid CEN header (bad compression method)");
         ZipEntry entry = new ZipEntry();
+        entry.flag = flags;
         entry.method = method;
         entry.time = inp.readLeUnsignedInt();
         entry.crc = inp.readLeUnsignedInt();
@@ -237,7 +280,7 @@ public class ZipFile implements ZipConstants
         int commentLen = inp.readLeUnsignedShort();
         inp.skip(8);
         entry.offset = inp.readLeUnsignedInt();
-        entry.name = inp.readString(nameLen);
+        entry.name = inp.readString(nameLen, (flags & EFS) != 0);
 
         if (extraLen > 0)
           {
@@ -247,7 +290,7 @@ public class ZipFile implements ZipConstants
           }
         if (commentLen > 0)
           {
-            entry.comment = inp.readString(commentLen);
+            entry.comment = inp.readString(commentLen, (flags & EFS) != 0);
           }
         entries.put(entry.name, entry);
       }
@@ -656,7 +699,7 @@ public class ZipFile implements ZipConstants
     }
 
     /**
-     * Decode chars from byte buffer using UTF8 encoding.  This
+     * Decode chars from byte buffer using charset encoding.  This
      * operation is performance-critical since a jar file contains a
      * large number of strings for the name of each file in the
      * archive.  This routine therefore avoids using the expensive
@@ -671,9 +714,12 @@ public class ZipFile implements ZipConstants
      *
      * @return a String that contains the decoded characters.
      */
-    private String decodeChars(byte[] buffer, int pos, int length)
+    private String decodeChars(byte[] buffer, int pos, int length, boolean utf8)
       throws IOException
     {
+      if (!utf8 && charset != StandardCharsets.UTF_8)
+        return new String(buffer, pos, length, charset);
+
       for (int i = pos; i < pos + length; i++)
         {
           if (buffer[i] <= 0)
@@ -682,7 +728,7 @@ public class ZipFile implements ZipConstants
       return new String(buffer, 0, pos, length);
     }
 
-    String readString(int length) throws IOException
+    String readString(int length, boolean utf8) throws IOException
     {
       if (length > end - (bufferOffset + pos))
         throw new EOFException();
@@ -692,14 +738,14 @@ public class ZipFile implements ZipConstants
         {
           if (buffer.length - pos >= length)
             {
-              result = decodeChars(buffer, pos, length);
+              result = decodeChars(buffer, pos, length, utf8);
               pos += length;
             }
           else
             {
               byte[] b = new byte[length];
               readFully(b);
-              result = decodeChars(b, 0, length);
+              result = decodeChars(b, 0, length, utf8);
             }
         }
       catch (UnsupportedEncodingException uee)

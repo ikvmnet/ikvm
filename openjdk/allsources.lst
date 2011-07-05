@@ -9403,6 +9403,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/jdk/src/share/classes/java/util/zip/InflaterInputStream.java
 @OPENJDK6@/jdk/src/share/classes/java/util/zip/InflaterOutputStream.java
 @OPENJDK6@/jdk/src/share/classes/java/util/zip/ZipConstants.java
+@OPENJDK7@/jdk/src/share/classes/java/util/zip/ZipConstants64.java
 @OPENJDK6@/jdk/src/share/classes/java/util/zip/ZipError.java
 @OPENJDK6@/jdk/src/share/classes/java/util/zip/ZipException.java
 @OPENJDK6@/jdk/src/share/classes/java/util/zip/ZipInputStream.java
