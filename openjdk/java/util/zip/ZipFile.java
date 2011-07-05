@@ -202,8 +202,8 @@ public class ZipFile implements ZipConstants
     pos++;
     inp.skip(6);
     int count = inp.readLeUnsignedShort();
-    int centralSize = inp.readLeInt();    
-    int centralOffset = inp.readLeInt();
+    long centralSize = inp.readLeUnsignedInt();    
+    long centralOffset = inp.readLeUnsignedInt();
 
     if (centralSize > pos)
       throw new ZipException("invalid END header (bad central directory size)");
@@ -226,22 +226,22 @@ public class ZipFile implements ZipConstants
         int method = inp.readLeUnsignedShort();
         if (method != ZipEntry.STORED && method != ZipEntry.DEFLATED)
           throw new ZipException("invalid CEN header (bad compression method)");
-        int dostime = inp.readLeInt();
-        int crc = inp.readLeInt();
-        int csize = inp.readLeInt();
-        int size = inp.readLeInt();
+        long dostime = inp.readLeUnsignedInt();
+        long crc = inp.readLeUnsignedInt();
+        long csize = inp.readLeUnsignedInt();
+        long size = inp.readLeUnsignedInt();
         int nameLen = inp.readLeUnsignedShort();
         int extraLen = inp.readLeUnsignedShort();
         int commentLen = inp.readLeUnsignedShort();
         inp.skip(8);
-        int offset = inp.readLeInt();
+        long offset = inp.readLeUnsignedInt();
         String name = inp.readString(nameLen);
 
         ZipEntry entry = new ZipEntry(name);
         entry.setMethod(method);
-        entry.setCrc(crc & 0xffffffffL);
-        entry.setSize(size & 0xffffffffL);
-        entry.setCompressedSize(csize & 0xffffffffL);
+        entry.setCrc(crc);
+        entry.setSize(size);
+        entry.setCompressedSize(csize);
         entry.time = dostime;
         if (extraLen > 0)
           {
@@ -653,6 +653,11 @@ public class ZipFile implements ZipConstants
                     | (b3 & 0xff) << 8) << 16);
         }
       return result;
+    }
+
+    final long readLeUnsignedInt() throws IOException
+    {
+      return readLeInt() & 0xffffffffL;
     }
 
     /**
