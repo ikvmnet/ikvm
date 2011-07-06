@@ -1,5 +1,6 @@
 /* Deflater.java - Compress a data stream
-   Copyright (C) 1999, 2000, 2001, 2004, 2005 Free Software Foundation, Inc.
+   Copyright (C) 1999, 2000, 2001, 2004, 2005, 2011
+   Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -127,7 +128,6 @@ public class Deflater
    */
 
   private static final int IS_SETDICT              = 0x01;
-  private static final int IS_FLUSHING             = 0x04;
   private static final int IS_FINISHING            = 0x08;
   
   private static final int INIT_STATE              = 0x00;
@@ -136,7 +136,7 @@ public class Deflater
   private static final int SETDICT_FINISHING_STATE = 0x09;
   private static final int BUSY_STATE              = 0x10;
   private static final int FLUSHING_STATE          = 0x14;
-  private static final int FINISHING_STATE         = 0x1c;
+  private static final int FINISHING_STATE         = 0x18;
   private static final int FINISHED_STATE          = 0x1e;
   private static final int CLOSED_STATE            = 0x7f;
 
@@ -281,23 +281,12 @@ public class Deflater
   }
 
   /** 
-   * Flushes the current input block.  Further calls to deflate() will
-   * produce enough output to inflate everything in the current input
-   * block.  This is not part of Sun's JDK so I have made it package
-   * private.  It is used by DeflaterOutputStream to implement
-   * flush().
-   */
-  void flush() {
-    state |= IS_FLUSHING;
-  }
-
-  /** 
    * Finishes the deflater with the current input block.  It is an error
    * to give more input after this method was called.  This method must
    * be called to force all bytes to be flushed.
    */
   public void finish() {
-    state |= IS_FLUSHING | IS_FINISHING;
+    state |= IS_FINISHING;
   }
 
   /** 
@@ -446,7 +435,7 @@ public class Deflater
             pending.writeShortMSB(chksum & 0xffff);
           }
 
-        state = BUSY_STATE | (state & (IS_FLUSHING | IS_FINISHING));
+        state = BUSY_STATE | (state & IS_FINISHING);
       }
 
     for (;;)
@@ -458,7 +447,7 @@ public class Deflater
         if (length == 0 || state == FINISHED_STATE)
           break;
 
-        if (!engine.deflate((state & IS_FLUSHING) != 0, 
+        if (!engine.deflate((state & IS_FINISHING) != 0, 
                             (state & IS_FINISHING) != 0))
           {
             if (state == BUSY_STATE)
