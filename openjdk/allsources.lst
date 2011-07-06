@@ -9291,6 +9291,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/jdk/src/share/classes/java/util/IllegalFormatFlagsException.java
 @OPENJDK6@/jdk/src/share/classes/java/util/IllegalFormatPrecisionException.java
 @OPENJDK6@/jdk/src/share/classes/java/util/IllegalFormatWidthException.java
+@OPENJDK7@/jdk/src/share/classes/java/util/IllformedLocaleException.java
 @OPENJDK6@/jdk/src/share/classes/java/util/InputMismatchException.java
 @OPENJDK6@/jdk/src/share/classes/java/util/InvalidPropertiesFormatException.java
 @OPENJDK6@/jdk/src/share/classes/java/util/Iterator.java
@@ -9312,8 +9313,8 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/jdk/src/share/classes/java/util/List.java
 @OPENJDK6@/jdk/src/share/classes/java/util/ListIterator.java
 @OPENJDK6@/jdk/src/share/classes/java/util/ListResourceBundle.java
-@OPENJDK6@/jdk/src/share/classes/java/util/Locale.java
-@OPENJDK6@/jdk/src/share/classes/java/util/LocaleISOData.java
+@OPENJDK7@/jdk/src/share/classes/java/util/Locale.java
+@OPENJDK7@/jdk/src/share/classes/java/util/LocaleISOData.java
 @OPENJDK6@/jdk/src/share/classes/java/util/logging/ConsoleHandler.java
 @OPENJDK6@/jdk/src/share/classes/java/util/logging/ErrorManager.java
 @OPENJDK6@/jdk/src/share/classes/java/util/logging/FileHandler.java
@@ -9374,7 +9375,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/jdk/src/share/classes/java/util/SortedMap.java
 @OPENJDK6@/jdk/src/share/classes/java/util/SortedSet.java
 @OPENJDK6@/jdk/src/share/classes/java/util/spi/CurrencyNameProvider.java
-@OPENJDK6@/jdk/src/share/classes/java/util/spi/LocaleNameProvider.java
+@OPENJDK7@/jdk/src/share/classes/java/util/spi/LocaleNameProvider.java
 @OPENJDK6@/jdk/src/share/classes/java/util/spi/LocaleServiceProvider.java
 @OPENJDK6@/jdk/src/share/classes/java/util/spi/TimeZoneNameProvider.java
 @OPENJDK6@/jdk/src/share/classes/java/util/Stack.java
@@ -13047,6 +13048,18 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/jdk/src/share/classes/sun/util/calendar/ZoneInfo.java
 @OPENJDK6@/jdk/src/share/classes/sun/util/calendar/ZoneInfoFile.java
 @OPENJDK6@/jdk/src/share/classes/sun/util/EmptyListResourceBundle.java
+@OPENJDK7@/jdk/src/share/classes/sun/util/locale/AsciiUtil.java
+@OPENJDK7@/jdk/src/share/classes/sun/util/locale/BaseLocale.java
+@OPENJDK7@/jdk/src/share/classes/sun/util/locale/Extension.java
+@OPENJDK7@/jdk/src/share/classes/sun/util/locale/InternalLocaleBuilder.java
+@OPENJDK7@/jdk/src/share/classes/sun/util/locale/LanguageTag.java
+@OPENJDK7@/jdk/src/share/classes/sun/util/locale/LocaleExtensions.java
+@OPENJDK7@/jdk/src/share/classes/sun/util/locale/LocaleObjectCache.java
+@OPENJDK7@/jdk/src/share/classes/sun/util/locale/LocaleSyntaxException.java
+@OPENJDK7@/jdk/src/share/classes/sun/util/locale/LocaleUtils.java
+@OPENJDK7@/jdk/src/share/classes/sun/util/locale/ParseStatus.java
+@OPENJDK7@/jdk/src/share/classes/sun/util/locale/StringTokenIterator.java
+@OPENJDK7@/jdk/src/share/classes/sun/util/locale/UnicodeLocaleExtension.java
 @OPENJDK6@/jdk/src/share/classes/sun/util/LocaleServiceProviderPool.java
 @OPENJDK7@/jdk/src/share/classes/sun/util/logging/LoggingProxy.java
 @OPENJDK7@/jdk/src/share/classes/sun/util/logging/LoggingSupport.java
