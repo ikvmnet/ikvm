@@ -1,40 +1,43 @@
 /*
- * Written by Doug Lea with assistance from members of JCP JSR-166
- * Expert Group and released to the public domain, as explained at
- * http://creativecommons.org/licenses/publicdomain
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * Modified for IKVM.NET by Jeroen Frijters
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 /*
-  Parts Copyright (C) 2006-2011 Jeroen Frijters
-
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
-
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
-
-  Jeroen Frijters
-  jeroen@frijters.net
-  
-*/
+ * This file is available under and governed by the GNU General Public
+ * License version 2 only, as published by the Free Software Foundation.
+ * However, the following notice accompanied the original version of this
+ * file:
+ *
+ * Written by Doug Lea with assistance from members of JCP JSR-166
+ * Expert Group and released to the public domain, as explained at
+ * http://creativecommons.org/publicdomain/zero/1.0/
+ */
 
 package java.util.concurrent.atomic;
 import java.util.*;
 
 /**
- * A <tt>long</tt> array in which elements may be updated atomically.
+ * A {@code long} array in which elements may be updated atomically.
  * See the {@link java.util.concurrent.atomic} package specification
  * for description of the properties of atomic variables.
  * @since 1.5
@@ -46,15 +49,13 @@ public class AtomicLongArray implements java.io.Serializable {
     private final long[] array;
 
     /**
-     * Creates a new AtomicLongArray of given length.
+     * Creates a new AtomicLongArray of the given length, with all
+     * elements initially zero.
      *
      * @param length the length of the array
      */
     public AtomicLongArray(int length) {
         array = new long[length];
-        // must perform at least one volatile write to conform to JMM
-        if (length > 0)
-            set(0, 0);
     }
 
     /**
@@ -65,17 +66,8 @@ public class AtomicLongArray implements java.io.Serializable {
      * @throws NullPointerException if array is null
      */
     public AtomicLongArray(long[] array) {
-        if (array == null)
-            throw new NullPointerException();
-        int length = array.length;
-        this.array = new long[length];
-        if (length > 0) {
-            int last = length-1;
-            for (int i = 0; i < last; ++i)
-                this.array[i] = array[i];
-            // Do the last write as volatile
-            set(last, array[last]);
-        }
+        // Visibility guaranteed by final field guarantees
+        this.array = array.clone();
     }
 
     /**
@@ -88,7 +80,7 @@ public class AtomicLongArray implements java.io.Serializable {
     }
 
     /**
-     * Gets the current value at position <tt>i</tt>.
+     * Gets the current value at position {@code i}.
      *
      * @param i the index
      * @return the current value
@@ -96,7 +88,7 @@ public class AtomicLongArray implements java.io.Serializable {
     public final native long get(int i);
 
     /**
-     * Sets the element at position <tt>i</tt> to the given value.
+     * Sets the element at position {@code i} to the given value.
      *
      * @param i the index
      * @param newValue the new value
@@ -104,7 +96,7 @@ public class AtomicLongArray implements java.io.Serializable {
     public final native void set(int i, long newValue);
 
     /**
-     * Eventually sets the element at position <tt>i</tt> to the given value.
+     * Eventually sets the element at position {@code i} to the given value.
      *
      * @param i the index
      * @param newValue the new value
@@ -116,7 +108,7 @@ public class AtomicLongArray implements java.io.Serializable {
 
 
     /**
-     * Atomically sets the element at position <tt>i</tt> to the given value
+     * Atomically sets the element at position {@code i} to the given value
      * and returns the old value.
      *
      * @param i the index
@@ -126,8 +118,8 @@ public class AtomicLongArray implements java.io.Serializable {
     public final native long getAndSet(int i, long newValue);
 
     /**
-     * Atomically sets the value to the given updated value
-     * if the current value <tt>==</tt> the expected value.
+     * Atomically sets the element at position {@code i} to the given
+     * updated value if the current value {@code ==} the expected value.
      *
      * @param i the index
      * @param expect the expected value
@@ -138,10 +130,12 @@ public class AtomicLongArray implements java.io.Serializable {
     public final native boolean compareAndSet(int i, long expect, long update);
 
     /**
-     * Atomically sets the value to the given updated value
-     * if the current value <tt>==</tt> the expected value.
-     * May fail spuriously and does not provide ordering guarantees,
-     * so is only rarely an appropriate alternative to <tt>compareAndSet</tt>.
+     * Atomically sets the element at position {@code i} to the given
+     * updated value if the current value {@code ==} the expected value.
+     *
+     * <p>May <a href="package-summary.html#Spurious">fail spuriously</a>
+     * and does not provide ordering guarantees, so is only rarely an
+     * appropriate alternative to {@code compareAndSet}.
      *
      * @param i the index
      * @param expect the expected value
@@ -153,7 +147,7 @@ public class AtomicLongArray implements java.io.Serializable {
     }
 
     /**
-     * Atomically increments by one the element at index <tt>i</tt>.
+     * Atomically increments by one the element at index {@code i}.
      *
      * @param i the index
      * @return the previous value
@@ -163,7 +157,7 @@ public class AtomicLongArray implements java.io.Serializable {
     }
 
     /**
-     * Atomically decrements by one the element at index <tt>i</tt>.
+     * Atomically decrements by one the element at index {@code i}.
      *
      * @param i the index
      * @return the previous value
@@ -173,7 +167,7 @@ public class AtomicLongArray implements java.io.Serializable {
     }
 
     /**
-     * Atomically adds the given value to the element at index <tt>i</tt>.
+     * Atomically adds the given value to the element at index {@code i}.
      *
      * @param i the index
      * @param delta the value to add
@@ -184,7 +178,7 @@ public class AtomicLongArray implements java.io.Serializable {
     }
 
     /**
-     * Atomically increments by one the element at index <tt>i</tt>.
+     * Atomically increments by one the element at index {@code i}.
      *
      * @param i the index
      * @return the updated value
@@ -192,7 +186,7 @@ public class AtomicLongArray implements java.io.Serializable {
     public final native long incrementAndGet(int i);
 
     /**
-     * Atomically decrements by one the element at index <tt>i</tt>.
+     * Atomically decrements by one the element at index {@code i}.
      *
      * @param i the index
      * @return the updated value
@@ -200,7 +194,7 @@ public class AtomicLongArray implements java.io.Serializable {
     public final native long decrementAndGet(int i);
 
     /**
-     * Atomically adds the given value to the element at index <tt>i</tt>.
+     * Atomically adds the given value to the element at index {@code i}.
      *
      * @param i the index
      * @param delta the value to add
@@ -213,9 +207,18 @@ public class AtomicLongArray implements java.io.Serializable {
      * @return the String representation of the current values of array.
      */
     public String toString() {
-        if (array.length > 0) // force volatile read
-            get(0);
-        return Arrays.toString(array);
+        int iMax = array.length - 1;
+        if (iMax == -1)
+            return "[]";
+
+        StringBuilder b = new StringBuilder();
+        b.append('[');
+        for (int i = 0; ; i++) {
+            b.append(get(i));
+            if (i == iMax)
+                return b.append(']').toString();
+            b.append(',').append(' ');
+        }
     }
 
 }

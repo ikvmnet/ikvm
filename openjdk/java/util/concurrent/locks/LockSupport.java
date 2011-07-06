@@ -30,7 +30,7 @@
  *
  * Written by Doug Lea with assistance from members of JCP JSR-166
  * Expert Group and released to the public domain, as explained at
- * http://creativecommons.org/licenses/publicdomain
+ * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
 package java.util.concurrent.locks;
@@ -249,8 +249,8 @@ public class LockSupport {
      * <li>Some other thread invokes {@link #unpark unpark} with the
      * current thread as the target; or
      *
-     * <li>Some other thread {@linkplain Thread#interrupt interrupts} the current
-     * thread; or
+     * <li>Some other thread {@linkplain Thread#interrupt interrupts}
+     * the current thread; or
      *
      * <li>The specified waiting time elapses; or
      *
@@ -324,7 +324,9 @@ public class LockSupport {
      * snapshot -- the thread may have since unblocked or blocked on a
      * different blocker object.
      *
+     * @param t the thread
      * @return the blocker
+     * @throws NullPointerException if argument is null
      * @since 1.6
      */
     public static native Object getBlocker(Thread t); // implemented in map.xml

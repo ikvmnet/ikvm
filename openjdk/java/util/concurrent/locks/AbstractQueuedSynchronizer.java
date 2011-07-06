@@ -30,7 +30,7 @@
  *
  * Written by Doug Lea with assistance from members of JCP JSR-166
  * Expert Group and released to the public domain, as explained at
- * http://creativecommons.org/licenses/publicdomain
+ * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
 package java.util.concurrent.locks;
@@ -146,20 +146,16 @@ import java.util.concurrent.atomic.*;
  *
  * (Shared mode is similar but may involve cascading signals.)
  *
- * <p><a name="barging">Because checks in acquire are invoked before enqueuing, a newly
- * acquiring thread may <em>barge</em> ahead of others that are
- * blocked and queued. However, you can, if desired, define
- * <tt>tryAcquire</tt> and/or <tt>tryAcquireShared</tt> to disable
- * barging by internally invoking one or more of the inspection
- * methods. In particular, a strict FIFO lock can define
- * <tt>tryAcquire</tt> to immediately return <tt>false</tt> if {@link
- * #getFirstQueuedThread} does not return the current thread.  A
- * normally preferable non-strict fair version can immediately return
- * <tt>false</tt> only if {@link #hasQueuedThreads} returns
- * <tt>true</tt> and <tt>getFirstQueuedThread</tt> is not the current
- * thread; or equivalently, that <tt>getFirstQueuedThread</tt> is both
- * non-null and not the current thread.  Further variations are
- * possible.
+ * <p><a name="barging">Because checks in acquire are invoked before
+ * enqueuing, a newly acquiring thread may <em>barge</em> ahead of
+ * others that are blocked and queued.  However, you can, if desired,
+ * define <tt>tryAcquire</tt> and/or <tt>tryAcquireShared</tt> to
+ * disable barging by internally invoking one or more of the inspection
+ * methods, thereby providing a <em>fair</em> FIFO acquisition order.
+ * In particular, most fair synchronizers can define <tt>tryAcquire</tt>
+ * to return <tt>false</tt> if {@link #hasQueuedPredecessors} (a method
+ * specifically designed to be used by fair synchronizers) returns
+ * <tt>true</tt>.  Other variations are possible.
  *
  * <p>Throughput and scalability are generally highest for the
  * default barging (also known as <em>greedy</em>,
@@ -268,7 +264,7 @@ import java.util.concurrent.atomic.*;
  *     boolean isSignalled() { return getState() != 0; }
  *
  *     protected int tryAcquireShared(int ignore) {
- *       return isSignalled()? 1 : -1;
+ *       return isSignalled() ? 1 : -1;
  *     }
  *
  *     protected boolean tryReleaseShared(int ignore) {
@@ -1214,7 +1210,8 @@ public abstract class AbstractQueuedSynchronizer
      *        can represent anything you like.
      * @throws InterruptedException if the current thread is interrupted
      */
-    public final void acquireInterruptibly(int arg) throws InterruptedException {
+    public final void acquireInterruptibly(int arg)
+            throws InterruptedException {
         if (Thread.interrupted())
             throw new InterruptedException();
         if (!tryAcquire(arg))
@@ -1238,7 +1235,8 @@ public abstract class AbstractQueuedSynchronizer
      * @return {@code true} if acquired; {@code false} if timed out
      * @throws InterruptedException if the current thread is interrupted
      */
-    public final boolean tryAcquireNanos(int arg, long nanosTimeout) throws InterruptedException {
+    public final boolean tryAcquireNanos(int arg, long nanosTimeout)
+            throws InterruptedException {
         if (Thread.interrupted())
             throw new InterruptedException();
         return tryAcquire(arg) ||
@@ -1294,7 +1292,8 @@ public abstract class AbstractQueuedSynchronizer
      * you like.
      * @throws InterruptedException if the current thread is interrupted
      */
-    public final void acquireSharedInterruptibly(int arg) throws InterruptedException {
+    public final void acquireSharedInterruptibly(int arg)
+            throws InterruptedException {
         if (Thread.interrupted())
             throw new InterruptedException();
         if (tryAcquireShared(arg) < 0)
@@ -1317,7 +1316,8 @@ public abstract class AbstractQueuedSynchronizer
      * @return {@code true} if acquired; {@code false} if timed out
      * @throws InterruptedException if the current thread is interrupted
      */
-    public final boolean tryAcquireSharedNanos(int arg, long nanosTimeout) throws InterruptedException {
+    public final boolean tryAcquireSharedNanos(int arg, long nanosTimeout)
+            throws InterruptedException {
         if (Thread.interrupted())
             throw new InterruptedException();
         return tryAcquireShared(arg) >= 0 ||
@@ -1505,7 +1505,7 @@ public abstract class AbstractQueuedSynchronizer
      *         is at the head of the queue or the queue is empty
      * @since 1.7
      */
-    final boolean hasQueuedPredecessors() {
+    public final boolean hasQueuedPredecessors() {
         // The correctness of this depends on head being initialized
         // before tail and on head.next being accurate if the current
         // thread is first in queue.
@@ -2063,7 +2063,8 @@ public abstract class AbstractQueuedSynchronizer
          * <li> If interrupted while blocked in step 4, throw InterruptedException.
          * </ol>
          */
-        public final long awaitNanos(long nanosTimeout) throws InterruptedException {
+        public final long awaitNanos(long nanosTimeout)
+                throws InterruptedException {
             if (Thread.interrupted())
                 throw new InterruptedException();
             Node node = addConditionWaiter();
@@ -2107,7 +2108,8 @@ public abstract class AbstractQueuedSynchronizer
          * <li> If timed out while blocked in step 4, return false, else true.
          * </ol>
          */
-        public final boolean awaitUntil(Date deadline) throws InterruptedException {
+        public final boolean awaitUntil(Date deadline)
+                throws InterruptedException {
             if (deadline == null)
                 throw new NullPointerException();
             long abstime = deadline.getTime();
@@ -2150,7 +2152,8 @@ public abstract class AbstractQueuedSynchronizer
          * <li> If timed out while blocked in step 4, return false, else true.
          * </ol>
          */
-        public final boolean await(long time, TimeUnit unit) throws InterruptedException {
+        public final boolean await(long time, TimeUnit unit)
+                throws InterruptedException {
             if (unit == null)
                 throw new NullPointerException();
             long nanosTimeout = unit.toNanos(time);
@@ -2282,13 +2285,13 @@ public abstract class AbstractQueuedSynchronizer
     /**
      * CAS waitStatus field of a node.
      */
-    private final static native boolean compareAndSetWaitStatus(Node node,
+    private static final native boolean compareAndSetWaitStatus(Node node,
                                                          int expect,
                                                          int update); // implemented in map.xml
     /**
      * CAS next field of a node.
      */
-    private final static boolean compareAndSetNext(Node node,
+    private static final boolean compareAndSetNext(Node node,
                                                    Node expect,
                                                    Node update) {
         return Node.nextUpdater.compareAndSet(node, expect, update);

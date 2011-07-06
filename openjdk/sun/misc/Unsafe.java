@@ -1013,4 +1013,9 @@ public final class Unsafe
     {
         return -1;
     }
+
+    public void unpark(Object thread)
+    {
+        java.util.concurrent.locks.LockSupport.unpark((Thread)thread);
+    }
 }
