@@ -70,6 +70,13 @@ public class Deflater
   public static final int NO_COMPRESSION = 0;
 
   /**
+   * Flush operation.
+   */
+  public static final int NO_FLUSH = 0;
+  public static final int SYNC_FLUSH = 2;
+  public static final int FULL_FLUSH = 3;
+
+  /**
    * The default strategy.
    */
   public static final int DEFAULT_STRATEGY = 0;
@@ -135,7 +142,6 @@ public class Deflater
   private static final int INIT_FINISHING_STATE    = 0x08;
   private static final int SETDICT_FINISHING_STATE = 0x09;
   private static final int BUSY_STATE              = 0x10;
-  private static final int FLUSHING_STATE          = 0x14;
   private static final int FINISHING_STATE         = 0x18;
   private static final int FINISHED_STATE          = 0x1e;
   private static final int CLOSED_STATE            = 0x7f;
@@ -148,6 +154,9 @@ public class Deflater
 
   /** The current state. */
   private int state;
+
+  /** The flush level the previous deflate call used. */
+  private int lastFlush;
 
   /** The total bytes of output written. */
   private long totalOut;
@@ -391,7 +400,7 @@ public class Deflater
    */
   public int deflate(byte[] output)
   {
-    return deflate(output, 0, output.length);
+    return deflate(output, 0, output.length, NO_FLUSH);
   }
 
   /**
@@ -407,6 +416,29 @@ public class Deflater
    */
   public int deflate(byte[] output, int offset, int length)
   {
+    return deflate(output, offset, length, NO_FLUSH);
+  }
+
+  /**
+   * Deflates the current input block to the given array.  It returns 
+   * the number of bytes compressed, or 0 if either 
+   * needsInput() or finished() returns true or length is zero.
+   * @param output the buffer where to write the compressed data.
+   * @param offset the offset into the output array.
+   * @param length the maximum number of bytes that may be written.
+   * @param flush the compression flush mode
+   * @exception IllegalStateException if end() was called.
+   * @exception IndexOutOfBoundsException if offset and/or length
+   * don't match the array length.  
+   */
+  public int deflate(byte[] output, int offset, int length, int flush)
+  {
+    if (output.length - offset < length || offset < 0 || length < 0)
+      throw new ArrayIndexOutOfBoundsException();
+
+    if (flush < NO_FLUSH || flush > FULL_FLUSH)
+      throw new IllegalArgumentException();
+
     int origLength = length;
 
     if (state == CLOSED_STATE)
@@ -438,6 +470,16 @@ public class Deflater
         state = BUSY_STATE | (state & IS_FINISHING);
       }
 
+    int oldFlush = lastFlush;
+    lastFlush = flush;
+
+    if (engine.needsInput() && flush <= oldFlush && (state & IS_FINISHING) == 0)
+      {
+        int count = pending.flush(output, offset, length);
+        totalOut += count;
+        return count;
+      }
+
     boolean done = state == FINISHED_STATE;
 
     for (;;)
@@ -449,7 +491,7 @@ public class Deflater
         if (length == 0 || done)
           return origLength - length;
 
-        if (!engine.deflate((state & IS_FINISHING) != 0, 
+        if (!engine.deflate((state & IS_FINISHING) != 0 || flush != NO_FLUSH,
                             (state & IS_FINISHING) != 0))
           {
             done = true;
@@ -465,7 +507,7 @@ public class Deflater
                   }
                 state = FINISHED_STATE;
               }
-            else if (state == FLUSHING_STATE)
+            else if (flush != NO_FLUSH)
               {
                 if (level != NO_COMPRESSION)
                   {
@@ -483,7 +525,8 @@ public class Deflater
                         neededbits -= 10;
                       }
                   }
-                state = BUSY_STATE;
+                if (flush == FULL_FLUSH)
+                  engine.clearHash();
               }
           }
       }

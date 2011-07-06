@@ -141,9 +141,14 @@ final class DeflaterEngine implements DeflaterConstants
   {
     huffman.reset();
     adler.reset();
+    clearHash();
+    totalIn = 0;
+  }
+  
+  final void clearHash()
+  {
     blockStart = strstart = 1;
     lookahead = 0;
-    totalIn = 0;
     prevAvailable = false;
     matchLen = MIN_MATCH - 1;
     for (int i = 0; i < HASH_SIZE; i++)
