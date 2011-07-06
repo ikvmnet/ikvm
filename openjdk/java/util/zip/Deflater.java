@@ -438,21 +438,33 @@ public class Deflater
         state = BUSY_STATE | (state & IS_FINISHING);
       }
 
+    boolean done = state == FINISHED_STATE;
+
     for (;;)
       {
         int count = pending.flush(output, offset, length);
         offset += count;
         totalOut += count;
         length -= count;
-        if (length == 0 || state == FINISHED_STATE)
-          break;
+        if (length == 0 || done)
+          return origLength - length;
 
         if (!engine.deflate((state & IS_FINISHING) != 0, 
                             (state & IS_FINISHING) != 0))
           {
-            if (state == BUSY_STATE)
-              /* We need more input now */
-              return origLength - length;
+            done = true;
+            if (state == FINISHING_STATE)
+              {
+                pending.alignToByte();
+                /* We have completed the stream */
+                if (!noHeader)
+                  {
+                    int adler = engine.getAdler();
+                    pending.writeShortMSB(adler >> 16);
+                    pending.writeShortMSB(adler & 0xffff);
+                  }
+                state = FINISHED_STATE;
+              }
             else if (state == FLUSHING_STATE)
               {
                 if (level != NO_COMPRESSION)
@@ -473,22 +485,8 @@ public class Deflater
                   }
                 state = BUSY_STATE;
               }
-            else if (state == FINISHING_STATE)
-              {
-                pending.alignToByte();
-                /* We have completed the stream */
-                if (!noHeader)
-                  {
-                    int adler = engine.getAdler();
-                    pending.writeShortMSB(adler >> 16);
-                    pending.writeShortMSB(adler & 0xffff);
-                  }
-                state = FINISHED_STATE;
-              }
           }
       }
-
-    return origLength - length;
   }
 
   /**
