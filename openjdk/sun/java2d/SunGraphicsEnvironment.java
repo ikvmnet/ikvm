@@ -27,6 +27,7 @@ import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
+import java.awt.peer.ComponentPeer;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 
@@ -74,4 +75,21 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment{
         displayChanger.remove(client);
     }
 
+    /*
+     * ----END DISPLAY CHANGE SUPPORT----
+     */
+
+    /**
+     * Returns true if FlipBufferStrategy with COPIED buffer contents
+     * is preferred for this peer's GraphicsConfiguration over
+     * BlitBufferStrategy, false otherwise.
+     *
+     * The reason FlipBS could be preferred is that in some configurations
+     * an accelerated copy to the screen is supported (like Direct3D 9)
+     *
+     * @return true if flip strategy should be used, false otherwise
+     */
+    public boolean isFlipStrategyPreferred(ComponentPeer peer) {
+        return false;
+    }
 }
