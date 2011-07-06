@@ -39,8 +39,7 @@ exception statement from your version. */
 
 package java.util.zip;
 
-import gnu.java.util.EmptyEnumeration;
-
+import java.io.Closeable;
 import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
@@ -65,7 +64,7 @@ import static java.util.zip.ZipConstants64.*;
  * @author Jochen Hoenicke
  * @author Artur Biesiadowski
  */
-public class ZipFile implements ZipConstants
+public class ZipFile implements ZipConstants, Closeable
 {
 
   /**
