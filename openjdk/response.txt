@@ -743,6 +743,7 @@ assembly.class
 {
     -out:IKVM.OpenJDK.Security.dll
     -baseaddress:0x5ADD0000
+    -remap:security.xml
     sun/security/jgss/wrapper/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/crypto/provider/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/net/ssl/*.class
