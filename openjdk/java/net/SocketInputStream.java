@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,6 +178,10 @@ class SocketInputStream extends FileInputStream
      * @exception IOException If an I/O error has occurred.
      */
     public int read(byte b[], int off, int length) throws IOException {
+        return read(b, off, length, impl.getTimeout());
+    }
+
+    int read(byte b[], int off, int length, int timeout) throws IOException {
         int n;
 
         // EOF already encountered
@@ -203,7 +207,7 @@ class SocketInputStream extends FileInputStream
         // acquire file descriptor and do the read
         FileDescriptor fd = impl.acquireFD();
         try {
-            n = socketRead0(fd, b, off, length, impl.getTimeout());
+            n = socketRead0(fd, b, off, length, timeout);
             if (n > 0) {
                 return n;
             }
@@ -221,7 +225,7 @@ class SocketInputStream extends FileInputStream
             impl.setConnectionResetPending();
             impl.acquireFD();
             try {
-                n = socketRead0(fd, b, off, length, impl.getTimeout());
+                n = socketRead0(fd, b, off, length, timeout);
                 if (n > 0) {
                     return n;
                 }
