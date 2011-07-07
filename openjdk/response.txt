@@ -82,7 +82,6 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/java/lang/ref/*.class
     @OPENJDK7@/jdk/src/share/classes/java/lang/reflect/*.class
     @OPENJDK7@/jdk/src/share/classes/java/math/*.class
-    @OPENJDK6@/jdk/src/share/classes/java/net/*.class
     @OPENJDK7@/jdk/src/share/classes/java/net/*.class
     @OPENJDK6@/jdk/src/share/classes/java/nio/*.class
     @OPENJDK6@/jdk/src/share/classes/java/nio/channels/*.class
@@ -115,7 +114,7 @@ assembly.class
     @OPENJDK6@/jdk/src/share/classes/sun/net/smtp/*.class
     @OPENJDK6@/jdk/src/share/classes/sun/net/spi/*.class
     @OPENJDK6@/jdk/src/share/classes/sun/net/spi/nameservice/*.class
-    @OPENJDK6@/jdk/src/share/classes/sun/net/util/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/net/util/*.class
     @OPENJDK6@/jdk/src/share/classes/sun/net/www/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/net/www/*.class
     @OPENJDK6@/jdk/src/share/classes/sun/net/www/content/text/*.class
@@ -161,7 +160,8 @@ assembly.class
     @OPENJDK7@/jdk/src/solaris/classes/sun/net/www/protocol/http/ntlm/*.class
     @OPENJDK6@/jdk/src/windows/classes/java/io/*.class
     @OPENJDK6@/jdk/src/windows/classes/java/lang/*.class
-    @OPENJDK6@/jdk/src/windows/classes/java/net/*.class
+    @OPENJDK7@/jdk/src/windows/classes/java/net/*.class
+    @OPENJDK7@/jdk/src/windows/classes/sun/net/*.class
     @OPENJDK6@/jdk/src/windows/classes/sun/nio/ch/*.class
     @OPENJDK7@/jdk/src/windows/classes/sun/security/provider/NativePRNG.class
 }

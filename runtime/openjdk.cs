@@ -4269,6 +4269,22 @@ namespace IKVM.NativeCode.java
 #endif
 			}
 
+			public static object getByIndex0(int index)
+			{
+#if FIRST_PASS
+				return null;
+#else
+				foreach (jnNetworkInterface iface in GetInterfaces().javaInterfaces)
+				{
+					if (iface.getIndex() == index)
+					{
+						return iface;
+					}
+				}
+				return null;
+#endif
+			}
+
 			public static object getByInetAddress0(object addr)
 			{
 #if FIRST_PASS
