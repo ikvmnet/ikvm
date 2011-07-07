@@ -1892,6 +1892,16 @@
                     </code>
                 </replace-method-call>
             </method>
+            <method name="getJavaNioAccess" sig="()Lsun.misc.JavaNioAccess;">
+                <replace-method-call class="sun.misc.Unsafe" name="ensureClassInitialized" sig="(Ljava.lang.Class;)V">
+                    <code>
+                        <pop />
+                        <pop />
+                        <!-- the Java source initializes java.nio.ByteOrder (which causes java.nio.Bits to initialize) -->
+                        <runclassinit class="java.nio.Bits" />
+                    </code>
+                </replace-method-call>
+            </method>
             <method name="getJavaIOAccess" sig="()Lsun.misc.JavaIOAccess;">
                 <replace-method-call class="sun.misc.Unsafe" name="ensureClassInitialized" sig="(Ljava.lang.Class;)V">
                     <code>

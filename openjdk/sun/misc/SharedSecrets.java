@@ -47,6 +47,7 @@ public class SharedSecrets {
     private static JavaLangAccess javaLangAccess = LangHelper.getJavaLangAccess();
     private static JavaIOAccess javaIOAccess;
     private static JavaNetAccess javaNetAccess;
+    private static JavaNioAccess javaNioAccess;
     private static JavaSecurityProtectionDomainAccess javaSecurityProtectionDomainAccess;
     private static JavaSecurityAccess javaSecurityAccess;
     private static JavaxSecurityAuthKerberosAccess javaxSecurityAuthKerberosAccess;
@@ -74,6 +75,20 @@ public class SharedSecrets {
 
     public static JavaNetAccess getJavaNetAccess() {
         return javaNetAccess;
+    }
+
+    public static void setJavaNioAccess(JavaNioAccess jna) {
+        javaNioAccess = jna;
+    }
+
+    public static JavaNioAccess getJavaNioAccess() {
+        if (javaNioAccess == null) {
+            // Ensure java.nio.ByteOrder is initialized; we know that
+            // this class initializes java.nio.Bits that provides the
+            // shared secret.
+            unsafe.ensureClassInitialized(java.nio.ByteOrder.class);
+        }
+        return javaNioAccess;
     }
 
     public static void setJavaIOAccess(JavaIOAccess jia) {

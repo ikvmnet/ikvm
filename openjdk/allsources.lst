@@ -11468,7 +11468,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/sun/management/MemoryUsageCompositeData.java
 @OPENJDK7@/jdk/src/share/classes/sun/management/MonitorInfoCompositeData.java
 @OPENJDK7@/jdk/src/share/classes/sun/management/OperatingSystemImpl.java
-
 @OPENJDK7@/jdk/src/share/classes/sun/management/RuntimeImpl.java
 @OPENJDK7@/jdk/src/share/classes/sun/management/StackTraceElementCompositeData.java
 @OPENJDK7@/jdk/src/share/classes/sun/management/ThreadInfoCompositeData.java
@@ -11509,6 +11508,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/sun/misc/JavaIOFileDescriptorAccess.java
 @OPENJDK7@/jdk/src/share/classes/sun/misc/JavaLangAccess.java
 @OPENJDK6@/jdk/src/share/classes/sun/misc/JavaNetAccess.java
+@OPENJDK7@/jdk/src/share/classes/sun/misc/JavaNioAccess.java
 @OPENJDK6@/jdk/src/share/classes/sun/misc/JavaSecurityAccess.java
 @OPENJDK6@/jdk/src/share/classes/sun/misc/JavaSecurityProtectionDomainAccess.java
 @OPENJDK6@/jdk/src/share/classes/sun/misc/JavaUtilJarAccess.java
