@@ -83,10 +83,8 @@ public class SharedSecrets {
 
     public static JavaNioAccess getJavaNioAccess() {
         if (javaNioAccess == null) {
-            // Ensure java.nio.ByteOrder is initialized; we know that
-            // this class initializes java.nio.Bits that provides the
-            // shared secret.
-            unsafe.ensureClassInitialized(java.nio.ByteOrder.class);
+            // [IKVM] OpenJDK initializes java.nio.ByteOrder here, but that doesn't work
+            java.nio.ByteOrder.nativeOrder();
         }
         return javaNioAccess;
     }
@@ -120,7 +118,8 @@ public class SharedSecrets {
 
     public static JavaSecurityAccess getJavaSecurityAccess() {
         if (javaSecurityAccess == null) {
-            unsafe.ensureClassInitialized(AccessController.class);
+            // [IKVM] OpenJDK initializes AccessController here, but that's a bug
+            unsafe.ensureClassInitialized(ProtectionDomain.class);
         }
         return javaSecurityAccess;
     }

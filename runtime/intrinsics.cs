@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2008-2010 Jeroen Frijters
+  Copyright (C) 2008-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -186,6 +186,7 @@ namespace IKVM.Internal
 			intrinsics.Add(new IntrinsicKey("java.lang.Class", "getPrimitiveClass", "(Ljava.lang.String;)Ljava.lang.Class;"), Class_getPrimitiveClass);
 #endif
 			intrinsics.Add(new IntrinsicKey("java.lang.ThreadLocal", "<init>", "()V"), ThreadLocal_new);
+			intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "ensureClassInitialized", "(Ljava.lang.Class;)V"), Unsafe_ensureClassInitialized);
 			return intrinsics;
 		}
 
@@ -559,6 +560,23 @@ namespace IKVM.Internal
 				tb.CreateType();
 			});
 			return cb;
+		}
+
+		private static bool Unsafe_ensureClassInitialized(EmitIntrinsicContext eic)
+		{
+			if (eic.MatchRange(-1, 2)
+				&& eic.Match(-1, NormalizedByteCode.__ldc))
+			{
+				TypeWrapper classLiteral = eic.GetClassLiteral(-1);
+				if (!classLiteral.IsUnloadable)
+				{
+					eic.Emitter.Emit(OpCodes.Pop);
+					eic.Emitter.EmitNullCheck();
+					classLiteral.EmitRunClassConstructor(eic.Emitter);
+					return true;
+				}
+			}
+			return false;
 		}
 	}
 }
