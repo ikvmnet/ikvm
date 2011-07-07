@@ -9857,8 +9857,8 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/jdk/src/share/classes/javax/naming/spi/StateFactory.java
 @OPENJDK6@/jdk/src/share/classes/javax/naming/StringRefAddr.java
 @OPENJDK6@/jdk/src/share/classes/javax/naming/TimeLimitExceededException.java
-@OPENJDK6@/jdk/src/share/classes/javax/net/ServerSocketFactory.java
-@OPENJDK6@/jdk/src/share/classes/javax/net/SocketFactory.java
+@OPENJDK7@/jdk/src/share/classes/javax/net/ServerSocketFactory.java
+@OPENJDK7@/jdk/src/share/classes/javax/net/SocketFactory.java
 @OPENJDK7@/jdk/src/share/classes/javax/net/ssl/CertPathTrustManagerParameters.java
 @OPENJDK7@/jdk/src/share/classes/javax/net/ssl/ExtendedSSLSession.java
 @OPENJDK7@/jdk/src/share/classes/javax/net/ssl/HandshakeCompletedEvent.java
