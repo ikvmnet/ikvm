@@ -181,6 +181,7 @@ sun/misc/Unsafe.java
 sun/misc/Version.java
 sun/misc/VM.java
 sun/net/dns/ResolverConfigurationImpl.java
+sun/net/sdp/SdpSupport.java
 sun/net/www/protocol/ikvmres/Handler.java
 sun/net/www/protocol/file/Handler.java
 sun/net/www/protocol/file/FileURLConnection.java
@@ -11603,9 +11604,11 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/sun/net/ProgressMeteringPolicy.java
 @OPENJDK7@/jdk/src/share/classes/sun/net/ProgressMonitor.java
 @OPENJDK7@/jdk/src/share/classes/sun/net/ProgressSource.java
+@OPENJDK7@/jdk/src/share/classes/sun/net/RegisteredDomain.java
 @OPENJDK6@/jdk/src/share/classes/sun/net/ResourceManager.java
 @OPENJDK6@/jdk/src/share/classes/sun/net/smtp/SmtpClient.java
 @OPENJDK6@/jdk/src/share/classes/sun/net/smtp/SmtpProtocolException.java
+@OPENJDK7@/jdk/src/share/classes/sun/net/SocksProxy.java
 @OPENJDK6@/jdk/src/share/classes/sun/net/spi/DefaultProxySelector.java
 @OPENJDK6@/jdk/src/share/classes/sun/net/spi/nameservice/dns/DNSNameService.java
 @OPENJDK6@/jdk/src/share/classes/sun/net/spi/nameservice/dns/DNSNameServiceDescriptor.java
@@ -13138,6 +13141,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/jdk/src/windows/classes/java/net/PlainSocketImpl.java
 @OPENJDK6@/jdk/src/windows/classes/java/util/prefs/WindowsPreferences.java
 @OPENJDK6@/jdk/src/windows/classes/java/util/prefs/WindowsPreferencesFactory.java
+@OPENJDK7@/jdk/src/windows/classes/sun/net/NetHooks.java
 @OPENJDK6@/jdk/src/windows/classes/sun/nio/ch/NativeThread.java
 @OPENJDK6@/jdk/src/windows/classes/sun/nio/ch/PipeImpl.java
 @OPENJDK6@/jdk/src/windows/classes/sun/nio/ch/SinkChannelImpl.java
