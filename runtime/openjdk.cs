@@ -5741,7 +5741,11 @@ namespace IKVM.NativeCode.sun.misc
 
 		public static object createLong(object thisPerf, string name, int variability, int units, long value)
 		{
-			throw new NotImplementedException();
+#if FIRST_PASS
+			return null;
+#else
+			return global::java.nio.ByteBuffer.allocate(8);
+#endif
 		}
 
 		public static object createByteArray(object thisPerf, string name, int variability, int units, byte[] value, int maxLength)
