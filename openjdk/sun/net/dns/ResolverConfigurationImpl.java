@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,8 +66,8 @@ public class ResolverConfigurationImpl
 
     // Parse string that consists of token delimited by space or commas
     // and return LinkedHashMap
-    private LinkedList stringToList(String str) {
-        LinkedList ll = new LinkedList();
+    private LinkedList<String> stringToList(String str) {
+        LinkedList<String> ll = new LinkedList<>();
 
         // comma and space are valid delimites
         StringTokenizer st = new StringTokenizer(str, ", ");
@@ -115,7 +115,7 @@ public class ResolverConfigurationImpl
         opts = new OptionsImpl();
     }
 
-    public List searchlist() {
+    public List<String> searchlist() {
         synchronized (lock) {
             loadConfig();
 
@@ -124,7 +124,7 @@ public class ResolverConfigurationImpl
         }
     }
 
-    public List nameservers() {
+    public List<String> nameservers() {
         synchronized (lock) {
             loadConfig();
 
@@ -154,7 +154,7 @@ public class ResolverConfigurationImpl
 
 
     // --- Native methods --
-    
+
     static void init0() {
     }
 

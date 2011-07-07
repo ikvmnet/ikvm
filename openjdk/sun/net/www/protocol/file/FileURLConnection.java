@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ public class FileURLConnection extends URLConnection {
     String filename;
     boolean isDirectory = false;
     boolean exists = false;
-    List files;
+    List<String> files;
 
     long length = -1;
     long lastModified = 0;
@@ -81,7 +81,10 @@ public class FileURLConnection extends URLConnection {
                 filename = file.toString();
                 isDirectory = file.isDirectory();
                 if (isDirectory) {
-                    files = (List) Arrays.asList(file.list());
+                    String[] fileList = file.list();
+                    if (fileList == null)
+                        throw new FileNotFoundException(filename + " exists, but is not accessible");
+                    files = Arrays.<String>asList(fileList);
                 } else {
 
                     is = new BufferedInputStream(new FileInputStream(filename));
@@ -89,8 +92,8 @@ public class FileURLConnection extends URLConnection {
                     // Check if URL should be metered
                     boolean meteredInput = ProgressMonitor.getDefault().shouldMeterInput(url, "GET");
                     if (meteredInput)   {
-                        ProgressSource pi = new ProgressSource(url, "GET", (int) file.length());
-                        is = new MeteredStream(is, pi, (int) file.length());
+                        ProgressSource pi = new ProgressSource(url, "GET", file.length());
+                        is = new MeteredStream(is, pi, file.length());
                     }
                 }
             } catch (IOException e) {
@@ -151,7 +154,14 @@ public class FileURLConnection extends URLConnection {
 
     public int getContentLength() {
         initializeHeaders();
+        if (length > Integer.MAX_VALUE)
+            return -1;
         return (int) length;
+    }
+
+    public long getContentLengthLong() {
+        initializeHeaders();
+        return length;
     }
 
     public String getHeaderFieldKey(int n) {
@@ -190,7 +200,7 @@ public class FileURLConnection extends URLConnection {
                 sort(files);
 
                 for (int i = 0 ; i < files.size() ; i++) {
-                    String fileName = (String)files.get(i);
+                    String fileName = files.get(i);
                     buf.append(fileName);
                     buf.append("\n");
                 }
