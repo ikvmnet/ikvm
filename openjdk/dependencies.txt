@@ -104,6 +104,7 @@ IKVM.OpenJDK.Management
 ->IKVM.OpenJDK.Naming
 ->IKVM.OpenJDK.Remoting
 ->IKVM.OpenJDK.Beans
+->IKVM.OpenJDK.Text
 
 IKVM.OpenJDK.Misc
 ->System.Drawing

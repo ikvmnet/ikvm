@@ -814,8 +814,6 @@ assembly.class
     -out:IKVM.OpenJDK.Management.dll
     -baseaddress:0x5B610000
     com/sun/management/*.class
-    ConnectorBootstrap$DefaultValues.class
-    ConnectorBootstrap.class
     icedtea/rt/com/sun/jmx/snmp/*.class
     icedtea/rt/com/sun/jmx/snmp/daemon/*.class
     java/lang/management/*.class
@@ -852,11 +850,13 @@ assembly.class
     @OPENJDK6@/jdk/src/share/classes/javax/management/timer/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/management/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/management/counter/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/management/counter/perf/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/management/jmxremote/*.class
     @OPENJDK6@/jdk/src/windows/classes/com/sun/management/*.class
 }
 {
     -out:IKVM.OpenJDK.Misc.dll
-    -baseaddress:0x5BA00000
+    -baseaddress:0x5BA30000
     @OPENJDK6@/build/linux-amd64/impsrc/javax/activity/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/javax/annotation/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/javax/annotation/processing/*.class
@@ -946,7 +946,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Naming.dll
-    -baseaddress:0x5BAC0000
+    -baseaddress:0x5BAF0000
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/jndi/ldap/jndiprovider.properties
     sun/net/dns/*.class
     @OPENJDK6@/jdk/src/share/classes/com/sun/jndi/dns/*.class
@@ -971,7 +971,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Jdbc.dll
-    -baseaddress:0x5BC10000
+    -baseaddress:0x5BC40000
     -resource:META-INF/services/java.sql.Driver=resources/META-INF/services/java.sql.Driver
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/rowset/*
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/javax/sql/*
@@ -989,7 +989,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Remoting.dll
-    -baseaddress:0x5BD60000
+    -baseaddress:0x5BD90000
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/sun/rmi/*
     @OPENJDK6@/build/linux-amd64/classes/com/sun/jndi/rmi/registry/*.class
     @OPENJDK6@/build/linux-amd64/classes/java/rmi/activation/*.class
@@ -1001,7 +1001,7 @@ assembly.class
     @OPENJDK6@/jdk/src/share/classes/java/rmi/dgc/*.class
     @OPENJDK6@/jdk/src/share/classes/java/rmi/registry/*.class
     @OPENJDK6@/jdk/src/share/classes/java/rmi/server/*.class
-    @OPENJDK6@/jdk/src/share/classes/javax/rmi/ssl/*.class
+    @OPENJDK7@/jdk/src/share/classes/javax/rmi/ssl/*.class
     @OPENJDK6@/jdk/src/share/classes/com/sun/jndi/rmi/registry/*.class
     @OPENJDK6@/jdk/src/share/classes/com/sun/jndi/url/rmi/*.class
     @OPENJDK6@/jdk/src/share/classes/com/sun/rmi/rmid/*.class
@@ -1015,7 +1015,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Beans.dll
-    -baseaddress:0x5BE80000
+    -baseaddress:0x5BEB0000
     @OPENJDK6@/build/linux-amd64/impsrc/com/sun/activation/registries/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/javax/activation/*.class
     @OPENJDK6@/jdk/src/share/classes/com/sun/beans/*.class
@@ -1027,7 +1027,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Media.dll
-    -baseaddress:0x5BF40000
+    -baseaddress:0x5BF70000
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/javax.print.*
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/javax.sound.*
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/imageio/plugins/common/iio-plugin.properties
