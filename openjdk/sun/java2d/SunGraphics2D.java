@@ -83,6 +83,8 @@ public class SunGraphics2D extends Graphics2D{
     public static final int CLIP_RECTANGULAR = 1; /* rectangular clip */
     public static final int CLIP_DEVICE      = 0; /* no clipping set */
 
+    private static SurfaceData surfaceData = new SurfaceData();
+    
     public int strokeState;
 
     public Stroke stroke;
@@ -824,6 +826,14 @@ public class SunGraphics2D extends Graphics2D{
     }
     
     /**
+     * Return the SurfaceData object assigned to manage the destination
+     * drawable surface of this Graphics2D.
+     */
+    public final SurfaceData getSurfaceData() {
+        return surfaceData;
+    }
+    
+    /**
      * Returns destination that this Graphics renders to.  This could be
      * either an Image or a Component; subclasses of SurfaceData are
      * responsible for returning the appropriate object.
@@ -831,5 +841,4 @@ public class SunGraphics2D extends Graphics2D{
     public Object getDestination() {
         throw new NotYetImplementedError();
     }
-
 }

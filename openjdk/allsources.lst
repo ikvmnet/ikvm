@@ -157,6 +157,7 @@ sun/java2d/pipe/ShapeSpanIterator.java
 sun/java2d/SunCompositeContext.java
 sun/java2d/SunGraphics2D.java
 sun/java2d/SunGraphicsEnvironment.java
+sun/java2d/SurfaceData.java
 sun/jdbc/odbc/JdbcOdbcCallableStatement.java
 sun/jdbc/odbc/JdbcOdbcConnection.java
 sun/jdbc/odbc/JdbcOdbcDatabaseMetaData.java
