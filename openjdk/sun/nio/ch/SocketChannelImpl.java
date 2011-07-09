@@ -25,6 +25,8 @@
 
 package sun.nio.ch;
 
+import ikvm.internal.NotYetImplementedError;
+
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.*;
@@ -421,6 +423,36 @@ class SocketChannelImpl
         }
     }
 
+    // package-private
+    int sendOutOfBandData(byte b) throws IOException {
+        synchronized (writeLock) {
+            ensureWriteOpen();
+            int n = 0;
+            try {
+                begin();
+                synchronized (stateLock) {
+                    if (!isOpen())
+                        return 0;
+                    writerThread = NativeThread.current();
+                }
+                for (;;) {
+                    n = sendOutOfBandData(fd, b);
+                    if ((n == IOStatus.INTERRUPTED) && isOpen())
+                        continue;
+                    return IOStatus.normalize(n);
+                }
+            } finally {
+                writerCleanup();
+                end((n > 0) || (n == IOStatus.UNAVAILABLE));
+                synchronized (stateLock) {
+                    if ((n <= 0) && (!isOutputOpen))
+                        throw new AsynchronousCloseException();
+                }
+                assert IOStatus.check(n);
+            }
+        }
+    }
+
     public boolean isBound() {
         synchronized (stateLock) {
             if (state == ST_CONNECTED)
@@ -448,7 +480,7 @@ class SocketChannelImpl
         }
     }
 
-    public void bind(SocketAddress local) throws IOException {
+    public SocketChannel bind(SocketAddress local) throws IOException {
         synchronized (readLock) {
             synchronized (writeLock) {
                 synchronized (stateLock) {
@@ -461,6 +493,7 @@ class SocketChannelImpl
                 }
             }
         }
+        return this;
     }
 
     public boolean isConnected() {
@@ -640,7 +673,7 @@ class SocketChannelImpl
     public final static int SHUT_WR = 1;
     public final static int SHUT_RDWR = 2;
 
-    public void shutdownInput() throws IOException {
+    public SocketChannel shutdownInput() throws IOException {
         synchronized (stateLock) {
             if (!isOpen())
                 throw new ClosedChannelException();
@@ -648,10 +681,11 @@ class SocketChannelImpl
             shutdown(fd, SHUT_RD);
             if (readerThread != 0)
                 NativeThread.signal(readerThread);
+            return this;
         }
     }
 
-    public void shutdownOutput() throws IOException {
+    public SocketChannel shutdownOutput() throws IOException {
         synchronized (stateLock) {
             if (!isOpen())
                 throw new ClosedChannelException();
@@ -659,6 +693,7 @@ class SocketChannelImpl
             shutdown(fd, SHUT_WR);
             if (writerThread != 0)
                 NativeThread.signal(writerThread);
+            return this;
         }
     }
 
@@ -908,6 +943,11 @@ class SocketChannelImpl
         }
     }
 
+    private static /*native*/ int sendOutOfBandData(FileDescriptor fd, byte data) throws IOException
+    {
+    	throw new NotYetImplementedError(); //TODO JDK7
+    }
+    
     private static void shutdown(FileDescriptor fd, int how) throws IOException
     {
         try
