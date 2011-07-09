@@ -56,6 +56,14 @@ class Net {                                             // package-private
         }
     };
 
+    /**
+     * Tells whether dual-IPv4/IPv6 sockets should be used.
+     */
+    static boolean isIPv6Available() {
+    	new NotYetImplementedError().printStackTrace(); //TODO JDK7
+        return true;
+    }
+    
     static FileDescriptor serverSocket(boolean stream) throws IOException
     {
         return socket(stream);

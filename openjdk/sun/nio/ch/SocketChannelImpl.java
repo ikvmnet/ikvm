@@ -33,6 +33,9 @@ import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.channels.spi.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 
 /**
@@ -116,6 +119,93 @@ class SocketChannelImpl
                 socket = SocketAdaptor.create(this);
             return socket;
         }
+    }
+
+    public SocketAddress getLocalAddress() throws IOException {
+        synchronized (stateLock) {
+            if (!isOpen())
+                throw new ClosedChannelException();
+            return localAddress;
+        }
+    }
+
+    public SocketAddress getRemoteAddress() throws IOException {
+        synchronized (stateLock) {
+            if (!isOpen())
+                throw new ClosedChannelException();
+            return remoteAddress;
+        }
+    }
+
+    public <T> SocketChannel setOption(SocketOption<T> name, T value)
+        throws IOException
+    {
+        if (name == null)
+            throw new NullPointerException();
+        if (!supportedOptions().contains(name))
+            throw new UnsupportedOperationException("'" + name + "' not supported");
+
+        synchronized (stateLock) {
+            if (!isOpen())
+                throw new ClosedChannelException();
+
+            // special handling for IP_TOS: no-op when IPv6
+            if (name == StandardSocketOptions.IP_TOS) {
+                if (!Net.isIPv6Available())
+                    Net.setSocketOption(fd, StandardProtocolFamily.INET, name, value);
+                return this;
+            }
+
+            // no options that require special handling
+            Net.setSocketOption(fd, Net.UNSPEC, name, value);
+            return this;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T getOption(SocketOption<T> name)
+        throws IOException
+    {
+        if (name == null)
+            throw new NullPointerException();
+        if (!supportedOptions().contains(name))
+            throw new UnsupportedOperationException("'" + name + "' not supported");
+
+        synchronized (stateLock) {
+            if (!isOpen())
+                throw new ClosedChannelException();
+
+            // special handling for IP_TOS: always return 0 when IPv6
+            if (name == StandardSocketOptions.IP_TOS) {
+                return (Net.isIPv6Available()) ? (T) Integer.valueOf(0) :
+                    (T) Net.getSocketOption(fd, StandardProtocolFamily.INET, name);
+            }
+
+            // no options that require special handling
+            return (T) Net.getSocketOption(fd, Net.UNSPEC, name);
+        }
+    }
+
+    private static class DefaultOptionsHolder {
+        static final Set<SocketOption<?>> defaultOptions = defaultOptions();
+
+        private static Set<SocketOption<?>> defaultOptions() {
+            HashSet<SocketOption<?>> set = new HashSet<SocketOption<?>>(8);
+            set.add(StandardSocketOptions.SO_SNDBUF);
+            set.add(StandardSocketOptions.SO_RCVBUF);
+            set.add(StandardSocketOptions.SO_KEEPALIVE);
+            set.add(StandardSocketOptions.SO_REUSEADDR);
+            set.add(StandardSocketOptions.SO_LINGER);
+            set.add(StandardSocketOptions.TCP_NODELAY);
+            // additional options required by socket adaptor
+            set.add(StandardSocketOptions.IP_TOS);
+            set.add(ExtendedSocketOption.SO_OOBINLINE);
+            return Collections.unmodifiableSet(set);
+        }
+    }
+
+    public final Set<SocketOption<?>> supportedOptions() {
+        return DefaultOptionsHolder.defaultOptions;
     }
 
     private boolean ensureReadOpen() throws ClosedChannelException {
