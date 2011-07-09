@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Volker Berlin (i-net software)
+  Copyright (C) 2009, 2011 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -32,7 +32,11 @@ import ikvm.internal.NotYetImplementedError;
  */
 public class CompositeFont extends Font2D{
 
-    @Override
+    public CompositeFont(PhysicalFont physicalFont, CompositeFont dialog2d) {
+    	throw new NotYetImplementedError();
+	}
+
+	@Override
     public int getStyle(){
         throw new NotYetImplementedError();
     }
