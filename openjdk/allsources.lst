@@ -473,6 +473,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/build/linux-amd64/gensrc/sun/management/resources/agent_zh_HK.java
 @OPENJDK6@/build/linux-amd64/gensrc/sun/management/resources/agent_zh_TW.java
 @OPENJDK6@/build/linux-amd64/gensrc/sun/nio/ch/AlreadyBoundException.java
+@OPENJDK7@/build/linux-amd64/gensrc/sun/nio/ch/SocketOptionRegistry.java
 @OPENJDK6@/build/linux-amd64/gensrc/sun/print/resources/serviceui.java
 @OPENJDK6@/build/linux-amd64/gensrc/sun/print/resources/serviceui_de.java
 @OPENJDK6@/build/linux-amd64/gensrc/sun/print/resources/serviceui_es.java
@@ -11699,10 +11700,12 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/jdk/src/share/classes/sun/nio/ch/ChannelInputStream.java
 @OPENJDK6@/jdk/src/share/classes/sun/nio/ch/DatagramSocketAdaptor.java
 @OPENJDK6@/jdk/src/share/classes/sun/nio/ch/DirectBuffer.java
+@OPENJDK7@/jdk/src/share/classes/sun/nio/ch/ExtendedSocketOption.java
 @OPENJDK6@/jdk/src/share/classes/sun/nio/ch/FileLockImpl.java
 @OPENJDK6@/jdk/src/share/classes/sun/nio/ch/Interruptible.java
 @OPENJDK6@/jdk/src/share/classes/sun/nio/ch/IOStatus.java
 @OPENJDK6@/jdk/src/share/classes/sun/nio/ch/OptionAdaptor.java
+@OPENJDK7@/jdk/src/share/classes/sun/nio/ch/OptionKey.java
 @OPENJDK6@/jdk/src/share/classes/sun/nio/ch/Reflect.java
 @OPENJDK6@/jdk/src/share/classes/sun/nio/ch/SelChImpl.java
 @OPENJDK6@/jdk/src/share/classes/sun/nio/ch/SelectorImpl.java

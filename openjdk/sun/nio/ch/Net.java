@@ -36,6 +36,7 @@ import cli.System.Net.Sockets.SocketType;
 import cli.System.Net.Sockets.ProtocolType;
 import cli.System.Net.Sockets.AddressFamily;
 import cli.System.Net.Sockets.SocketShutdown;
+import ikvm.internal.NotYetImplementedError;
 import ikvm.lang.CIL;
 import java.io.*;
 import java.lang.reflect.*;
@@ -47,6 +48,13 @@ import java.nio.channels.*;
 class Net {                                             // package-private
 
     private Net() { }
+
+    // unspecified protocol family
+    static final ProtocolFamily UNSPEC = new ProtocolFamily() {
+        public String name() {
+            return "UNSPEC";
+        }
+    };
 
     static FileDescriptor serverSocket(boolean stream) throws IOException
     {
@@ -491,4 +499,108 @@ class Net {                                             // package-private
     {
         translateException(x, false);
     }
+
+    static void setSocketOption(FileDescriptor fd, ProtocolFamily family,
+            SocketOption<?> name, Object value)
+         throws IOException
+    {
+        if (value == null)
+            throw new IllegalArgumentException("Invalid option value");
+
+        // only simple values supported by this method
+        Class<?> type = name.type();
+        if (type != Integer.class && type != Boolean.class)
+            throw new AssertionError("Should not reach here");
+
+        // special handling
+        if (name == StandardSocketOptions.SO_RCVBUF ||
+            name == StandardSocketOptions.SO_SNDBUF)
+        {
+            int i = ((Integer)value).intValue();
+            if (i < 0)
+                throw new IllegalArgumentException("Invalid send/receive buffer size");
+        }
+        if (name == StandardSocketOptions.SO_LINGER) {
+            int i = ((Integer)value).intValue();
+            if (i < 0)
+                value = Integer.valueOf(-1);
+            if (i > 65535)
+                value = Integer.valueOf(65535);
+        }
+        if (name == StandardSocketOptions.IP_TOS) {
+            int i = ((Integer)value).intValue();
+            if (i < 0 || i > 255)
+                throw new IllegalArgumentException("Invalid IP_TOS value");
+        }
+        if (name == StandardSocketOptions.IP_MULTICAST_TTL) {
+            int i = ((Integer)value).intValue();
+            if (i < 0 || i > 255)
+                throw new IllegalArgumentException("Invalid TTL/hop value");
+        }
+
+        // map option name to platform level/name
+        OptionKey key = SocketOptionRegistry.findOption(name, family);
+        if (key == null)
+            throw new AssertionError("Option not found");
+
+        int arg;
+        if (type == Integer.class) {
+            arg = ((Integer)value).intValue();
+        } else {
+            boolean b = ((Boolean)value).booleanValue();
+            arg = (b) ? 1 : 0;
+        }
+
+        boolean mayNeedConversion = (family == UNSPEC);
+        setIntOption0(fd, mayNeedConversion, key.level(), key.name(), arg);
+    }
+
+    static Object getSocketOption(FileDescriptor fd, ProtocolFamily family,
+            SocketOption<?> name)
+         throws IOException
+	{
+        Class<?> type = name.type();
+
+        // only simple values supported by this method
+        if (type != Integer.class && type != Boolean.class)
+            throw new AssertionError("Should not reach here");
+
+        // map option name to platform level/name
+        OptionKey key = SocketOptionRegistry.findOption(name, family);
+        if (key == null)
+            throw new AssertionError("Option not found");
+
+        boolean mayNeedConversion = (family == UNSPEC);
+        int value = getIntOption0(fd, mayNeedConversion, key.level(), key.name());
+
+        if (type == Integer.class) {
+            return Integer.valueOf(value);
+        } else {
+            return (value == 0) ? Boolean.FALSE : Boolean.TRUE;
+        }
+	}
+
+    
+    public final static int SHUT_RD = 0;
+    public final static int SHUT_WR = 1;
+    public final static int SHUT_RDWR = 2;
+
+    static /*native*/ void shutdown(FileDescriptor fd, int how) throws IOException
+    {
+    	throw new NotYetImplementedError(); //TODO JDK7
+    }
+
+    private static /*native*/ int getIntOption0(FileDescriptor fd, boolean mayNeedConversion,
+            int level, int opt)
+          throws IOException
+      {
+      	throw new NotYetImplementedError(); //TODO JDK7
+      }
+
+    private static /*native*/ void setIntOption0(FileDescriptor fd, boolean mayNeedConversion,
+             int level, int opt, int arg)
+    {
+    	throw new NotYetImplementedError(); //TODO JDK7
+    }
+
 }
