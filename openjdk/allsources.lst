@@ -8242,7 +8242,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/jdk/src/share/classes/java/awt/image/ComponentSampleModel.java
 @OPENJDK6@/jdk/src/share/classes/java/awt/image/ConvolveOp.java
 @OPENJDK6@/jdk/src/share/classes/java/awt/image/CropImageFilter.java
-@OPENJDK6@/jdk/src/share/classes/java/awt/image/DataBuffer.java
+@OPENJDK7@/jdk/src/share/classes/java/awt/image/DataBuffer.java
 @OPENJDK6@/jdk/src/share/classes/java/awt/image/DataBufferByte.java
 @OPENJDK6@/jdk/src/share/classes/java/awt/image/DataBufferDouble.java
 @OPENJDK6@/jdk/src/share/classes/java/awt/image/DataBufferFloat.java
