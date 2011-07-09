@@ -33,8 +33,10 @@ import java.nio.channels.*;
 import java.nio.channels.spi.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 
 
 /**
@@ -101,6 +103,63 @@ class ServerSocketChannelImpl
         }
     }
 
+	public SocketAddress getLocalAddress() throws IOException {
+        synchronized (stateLock) {
+            if (!isOpen())
+                throw new ClosedChannelException();
+            return localAddress;
+        }
+	}
+
+    public <T> ServerSocketChannel setOption(SocketOption<T> name, T value) throws IOException
+    {
+        if (name == null)
+            throw new NullPointerException();
+        if (!supportedOptions().contains(name))
+            throw new UnsupportedOperationException("'" + name + "' not supported");
+
+        synchronized (stateLock) {
+            if (!isOpen())
+                throw new ClosedChannelException();
+
+            // no options that require special handling
+            Net.setSocketOption(fd, Net.UNSPEC, name, value);
+            return this;
+        }
+    }
+    
+    @SuppressWarnings("unchecked")
+	public <T> T getOption(SocketOption<T> name) throws IOException
+    {
+        if (name == null)
+            throw new NullPointerException();
+        if (!supportedOptions().contains(name))
+            throw new UnsupportedOperationException("'" + name + "' not supported");
+
+        synchronized (stateLock) {
+            if (!isOpen())
+                throw new ClosedChannelException();
+
+            // no options that require special handling
+            return (T) Net.getSocketOption(fd, Net.UNSPEC, name);
+        }
+    }
+
+    private static class DefaultOptionsHolder {
+        static final Set<SocketOption<?>> defaultOptions = defaultOptions();
+
+        private static Set<SocketOption<?>> defaultOptions() {
+            HashSet<SocketOption<?>> set = new HashSet<SocketOption<?>>(2);
+            set.add(StandardSocketOptions.SO_RCVBUF);
+            set.add(StandardSocketOptions.SO_REUSEADDR);
+            return Collections.unmodifiableSet(set);
+        }
+    }
+
+    public final Set<SocketOption<?>> supportedOptions() {
+        return DefaultOptionsHolder.defaultOptions;
+    }
+
     public boolean isBound() {
         synchronized (stateLock) {
             return localAddress != null;
@@ -113,7 +172,7 @@ class ServerSocketChannelImpl
         }
     }
 
-    public void bind(SocketAddress local, int backlog) throws IOException {
+    public ServerSocketChannel bind(SocketAddress local, int backlog) throws IOException {
         synchronized (lock) {
             if (!isOpen())
                 throw new ClosedChannelException();
@@ -129,6 +188,7 @@ class ServerSocketChannelImpl
                 localAddress = Net.localAddress(fd);
             }
         }
+        return this;
     }
 
     public SocketChannel accept() throws IOException {
@@ -379,4 +439,5 @@ class ServerSocketChannelImpl
             throw new SocketException("Socket is closed");
         }
     }
+
 }
