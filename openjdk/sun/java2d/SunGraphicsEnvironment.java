@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Volker Berlin (i-net software)
+  Copyright (C) 2009, 2011 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -57,6 +57,17 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment{
 
         return usableBounds;
     }
+
+    /**
+     * Returns true when the display is local, false for remote displays.
+     *
+     * @return true when the display is local, false for remote displays
+     */
+    public abstract boolean isDisplayLocal();
+
+    /*
+     * ----DISPLAY CHANGE SUPPORT----
+     */
 
     protected SunDisplayChanger displayChanger = new SunDisplayChanger();
 
