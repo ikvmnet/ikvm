@@ -25,6 +25,8 @@
 
 package sun.nio.ch;
 
+import ikvm.internal.NotYetImplementedError;
+
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.*;
@@ -115,6 +117,13 @@ class DatagramChannelImpl
             ResourceManager.afterUdpClose();
             throw ioe;
         }
+    }
+
+    public DatagramChannelImpl(SelectorProvider sp, ProtocolFamily family)
+            throws IOException
+    {
+        super(sp);
+        throw new NotYetImplementedError(); //TODO JDK7
     }
 
     public DatagramChannelImpl(SelectorProvider sp, FileDescriptor fd)
@@ -425,7 +434,7 @@ class DatagramChannelImpl
         }
     }
 
-    public void bind(SocketAddress local) throws IOException {
+    public DatagramChannel bind(SocketAddress local) throws IOException {
         synchronized (readLock) {
             synchronized (writeLock) {
                 synchronized (stateLock) {
@@ -441,6 +450,7 @@ class DatagramChannelImpl
                 }
             }
         }
+        return this;
     }
 
     public boolean isConnected() {
