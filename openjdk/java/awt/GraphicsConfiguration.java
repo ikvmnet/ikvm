@@ -142,7 +142,13 @@ public abstract class GraphicsConfiguration {
      * @return a <code>BufferedImage</code> whose data layout and color
      * model is compatible with this <code>GraphicsConfiguration</code>.
      */
-    public abstract BufferedImage createCompatibleImage(int width, int height);
+    public BufferedImage createCompatibleImage(int width, int height) {
+        ColorModel model = getColorModel();
+        WritableRaster raster =
+            model.createCompatibleWritableRaster(width, height);
+        return new BufferedImage(model, raster,
+                                 model.isAlphaPremultiplied(), null);
+    }
 
     /**
      * Returns a <code>BufferedImage</code> that supports the specified
