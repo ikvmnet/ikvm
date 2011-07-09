@@ -2112,6 +2112,25 @@ public abstract class SunToolkit extends Toolkit
         }
         return isInstanceOf(cls.getSuperclass(), type);
     }
+    
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    // The following methods help set and identify whether a particular
+    // AWTEvent object was produced by the system or by user code. As of this
+    // writing the only consumer is the Java Plug-In, although this information
+    // could be useful to more clients and probably should be formalized in
+    // the public API.
+    //
+    ///////////////////////////////////////////////////////////////////////////
+
+    public static void setSystemGenerated(AWTEvent e) {
+        AWTAccessor.getAWTEventAccessor().setSystemGenerated(e);
+    }
+
+    public static boolean isSystemGenerated(AWTEvent e) {
+        return AWTAccessor.getAWTEventAccessor().isSystemGenerated(e);
+    }
+
 } // class SunToolkit
 
 
