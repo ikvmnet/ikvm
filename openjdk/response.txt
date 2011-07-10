@@ -104,7 +104,7 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/java/util/concurrent/locks/*.class
     @OPENJDK7@/jdk/src/share/classes/java/util/jar/Attributes*.class
     @OPENJDK7@/jdk/src/share/classes/java/util/jar/Manifest*.class
-    @OPENJDK6@/jdk/src/share/classes/java/util/regex/*.class
+    @OPENJDK7@/jdk/src/share/classes/java/util/regex/*.class
     @OPENJDK7@/jdk/src/share/classes/javax/net/*.class
     @OPENJDK6@/jdk/src/share/classes/sun/misc/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/misc/*.class

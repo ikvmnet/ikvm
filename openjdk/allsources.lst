@@ -9385,11 +9385,12 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/jdk/src/share/classes/java/util/Queue.java
 @OPENJDK6@/jdk/src/share/classes/java/util/Random.java
 @OPENJDK6@/jdk/src/share/classes/java/util/RandomAccess.java
-@OPENJDK6@/jdk/src/share/classes/java/util/regex/ASCII.java
-@OPENJDK6@/jdk/src/share/classes/java/util/regex/Matcher.java
-@OPENJDK6@/jdk/src/share/classes/java/util/regex/MatchResult.java
-@OPENJDK6@/jdk/src/share/classes/java/util/regex/Pattern.java
-@OPENJDK6@/jdk/src/share/classes/java/util/regex/PatternSyntaxException.java
+@OPENJDK7@/jdk/src/share/classes/java/util/regex/ASCII.java
+@OPENJDK7@/jdk/src/share/classes/java/util/regex/Matcher.java
+@OPENJDK7@/jdk/src/share/classes/java/util/regex/MatchResult.java
+@OPENJDK7@/jdk/src/share/classes/java/util/regex/Pattern.java
+@OPENJDK7@/jdk/src/share/classes/java/util/regex/PatternSyntaxException.java
+@OPENJDK7@/jdk/src/share/classes/java/util/regex/UnicodeProp.java
 @OPENJDK6@/jdk/src/share/classes/java/util/RegularEnumSet.java
 @OPENJDK6@/jdk/src/share/classes/java/util/Scanner.java
 @OPENJDK6@/jdk/src/share/classes/java/util/ServiceConfigurationError.java
