@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,13 @@ import cli.System.Net.Sockets.SocketShutdown;
 import ikvm.internal.NotYetImplementedError;
 import ikvm.lang.CIL;
 import java.io.*;
-import java.lang.reflect.*;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
+import java.util.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
 
 
 class Net {                                             // package-private
@@ -508,6 +511,84 @@ class Net {                                             // package-private
         translateException(x, false);
     }
 
+    /**
+     * Returns any IPv4 address of the given network interface, or
+     * null if the interface does not have any IPv4 addresses.
+     */
+    static Inet4Address anyInet4Address(final NetworkInterface interf) {
+        return AccessController.doPrivileged(new PrivilegedAction<Inet4Address>() {
+            public Inet4Address run() {
+                Enumeration<InetAddress> addrs = interf.getInetAddresses();
+                while (addrs.hasMoreElements()) {
+                    InetAddress addr = addrs.nextElement();
+                    if (addr instanceof Inet4Address) {
+                        return (Inet4Address)addr;
+                    }
+                }
+                return null;
+            }
+        });
+    }
+
+    /**
+     * Returns an IPv4 address as an int.
+     */
+    static int inet4AsInt(InetAddress ia) {
+        if (ia instanceof Inet4Address) {
+            byte[] addr = ia.getAddress();
+            int address  = addr[3] & 0xFF;
+            address |= ((addr[2] << 8) & 0xFF00);
+            address |= ((addr[1] << 16) & 0xFF0000);
+            address |= ((addr[0] << 24) & 0xFF000000);
+            return address;
+        }
+        throw new AssertionError("Should not reach here");
+    }
+
+    /**
+     * Returns an InetAddress from the given IPv4 address
+     * represented as an int.
+     */
+    static InetAddress inet4FromInt(int address) {
+        byte[] addr = new byte[4];
+        addr[0] = (byte) ((address >>> 24) & 0xFF);
+        addr[1] = (byte) ((address >>> 16) & 0xFF);
+        addr[2] = (byte) ((address >>> 8) & 0xFF);
+        addr[3] = (byte) (address & 0xFF);
+        try {
+            return InetAddress.getByAddress(addr);
+        } catch (UnknownHostException uhe) {
+            throw new AssertionError("Should not reach here");
+        }
+    }
+
+    /**
+     * Returns an IPv6 address as a byte array
+     */
+    static byte[] inet6AsByteArray(InetAddress ia) {
+        if (ia instanceof Inet6Address) {
+            return ia.getAddress();
+        }
+
+        // need to construct IPv4-mapped address
+        if (ia instanceof Inet4Address) {
+            byte[] ip4address = ia.getAddress();
+            byte[] address = new byte[16];
+            address[10] = (byte)0xff;
+            address[11] = (byte)0xff;
+            address[12] = ip4address[0];
+            address[13] = ip4address[1];
+            address[14] = ip4address[2];
+            address[15] = ip4address[3];
+            return address;
+        }
+
+        throw new AssertionError("Should not reach here");
+    }
+
+    // -- Socket options
+
+
     static void setSocketOption(FileDescriptor fd, ProtocolFamily family,
             SocketOption<?> name, Object value)
          throws IOException
@@ -611,4 +692,23 @@ class Net {                                             // package-private
     	throw new NotYetImplementedError(); //TODO JDK7
     }
 
+    static /*native*/ void setInterface4(FileDescriptor fd, int interf) throws IOException
+    {
+    	throw new NotYetImplementedError(); //TODO JDK7
+    }
+    
+    static /*native*/ int getInterface4(FileDescriptor fd) throws IOException
+    {
+    	throw new NotYetImplementedError(); //TODO JDK7
+    }
+    
+    static /*native*/ void setInterface6(FileDescriptor fd, int index) throws IOException
+    {
+    	throw new NotYetImplementedError(); //TODO JDK7
+    }
+    
+    static /*native*/ int getInterface6(FileDescriptor fd) throws IOException
+    {
+    	throw new NotYetImplementedError(); //TODO JDK7
+    }
 }

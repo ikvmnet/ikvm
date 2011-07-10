@@ -33,6 +33,9 @@ import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.channels.spi.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.lang.ref.SoftReference;
 import sun.net.ResourceManager;
 
@@ -54,6 +57,9 @@ class DatagramChannelImpl
 
     // Our file descriptor
     FileDescriptor fd = null;
+
+    // The protocol family of the socket
+    private final ProtocolFamily family;
 
     // IDs of native threads doing reads and writes, for signalling
     private volatile long readerThread = 0;
@@ -102,6 +108,8 @@ class DatagramChannelImpl
         super(sp);
         ResourceManager.beforeUdpCreate();
         try {
+            this.family = Net.isIPv6Available() ?
+                    StandardProtocolFamily.INET6 : StandardProtocolFamily.INET;
             this.fd = Net.socket(false);
             this.state = ST_UNCONNECTED;
             try
@@ -123,6 +131,20 @@ class DatagramChannelImpl
             throws IOException
     {
         super(sp);
+        if ((family != StandardProtocolFamily.INET) &&
+                (family != StandardProtocolFamily.INET6))
+        {
+            if (family == null)
+                throw new NullPointerException("'family' is null");
+            else
+                throw new UnsupportedOperationException("Protocol family not supported");
+        }
+        if (family == StandardProtocolFamily.INET6) {
+            if (!Net.isIPv6Available()) {
+                throw new UnsupportedOperationException("IPv6 not available");
+            }
+        }
+        this.family = family;
         throw new NotYetImplementedError(); //TODO JDK7
     }
 
@@ -130,6 +152,8 @@ class DatagramChannelImpl
         throws IOException
     {
         super(sp);
+        this.family = Net.isIPv6Available() ?
+                StandardProtocolFamily.INET6 : StandardProtocolFamily.INET;
         this.fd = fd;
         this.state = ST_UNCONNECTED;
     }
@@ -140,6 +164,151 @@ class DatagramChannelImpl
                 socket = DatagramSocketAdaptor.create(this);
             return socket;
         }
+    }
+
+    public SocketAddress getLocalAddress() throws IOException {
+        synchronized (stateLock) {
+            if (!isOpen())
+                throw new ClosedChannelException();
+            return localAddress;
+        }
+    }
+
+    public SocketAddress getRemoteAddress() throws IOException {
+        synchronized (stateLock) {
+            if (!isOpen())
+                throw new ClosedChannelException();
+            return remoteAddress;
+        }
+    }
+
+    public <T> DatagramChannel setOption(SocketOption<T> name, T value)
+        throws IOException
+    {
+        if (name == null)
+            throw new NullPointerException();
+        if (!supportedOptions().contains(name))
+            throw new UnsupportedOperationException("'" + name + "' not supported");
+
+        synchronized (stateLock) {
+            ensureOpen();
+
+            if (name == StandardSocketOptions.IP_TOS) {
+                // IPv4 only; no-op for IPv6
+                if (family == StandardProtocolFamily.INET) {
+                    Net.setSocketOption(fd, family, name, value);
+                }
+                return this;
+            }
+
+            if (name == StandardSocketOptions.IP_MULTICAST_TTL ||
+                name == StandardSocketOptions.IP_MULTICAST_LOOP)
+            {
+                // options are protocol dependent
+                Net.setSocketOption(fd, family, name, value);
+                return this;
+            }
+
+            if (name == StandardSocketOptions.IP_MULTICAST_IF) {
+                if (value == null)
+                    throw new IllegalArgumentException("Cannot set IP_MULTICAST_IF to 'null'");
+                NetworkInterface interf = (NetworkInterface)value;
+                if (family == StandardProtocolFamily.INET6) {
+                    int index = interf.getIndex();
+                    if (index == -1)
+                        throw new IOException("Network interface cannot be identified");
+                    Net.setInterface6(fd, index);
+                } else {
+                    // need IPv4 address to identify interface
+                    Inet4Address target = Net.anyInet4Address(interf);
+                    if (target == null)
+                        throw new IOException("Network interface not configured for IPv4");
+                    int targetAddress = Net.inet4AsInt(target);
+                    Net.setInterface4(fd, targetAddress);
+                }
+                return this;
+            }
+
+            // remaining options don't need any special handling
+            Net.setSocketOption(fd, Net.UNSPEC, name, value);
+            return this;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T getOption(SocketOption<T> name)
+        throws IOException
+    {
+        if (name == null)
+            throw new NullPointerException();
+        if (!supportedOptions().contains(name))
+            throw new UnsupportedOperationException("'" + name + "' not supported");
+
+        synchronized (stateLock) {
+            ensureOpen();
+
+            if (name == StandardSocketOptions.IP_TOS) {
+                // IPv4 only; always return 0 on IPv6
+                if (family == StandardProtocolFamily.INET) {
+                    return (T) Net.getSocketOption(fd, family, name);
+                } else {
+                    return (T) Integer.valueOf(0);
+                }
+            }
+
+            if (name == StandardSocketOptions.IP_MULTICAST_TTL ||
+                name == StandardSocketOptions.IP_MULTICAST_LOOP)
+            {
+                return (T) Net.getSocketOption(fd, family, name);
+            }
+
+            if (name == StandardSocketOptions.IP_MULTICAST_IF) {
+                if (family == StandardProtocolFamily.INET) {
+                    int address = Net.getInterface4(fd);
+                    if (address == 0)
+                        return null;    // default interface
+
+                    InetAddress ia = Net.inet4FromInt(address);
+                    NetworkInterface ni = NetworkInterface.getByInetAddress(ia);
+                    if (ni == null)
+                        throw new IOException("Unable to map address to interface");
+                    return (T) ni;
+                } else {
+                    int index = Net.getInterface6(fd);
+                    if (index == 0)
+                        return null;    // default interface
+
+                    NetworkInterface ni = NetworkInterface.getByIndex(index);
+                    if (ni == null)
+                        throw new IOException("Unable to map index to interface");
+                    return (T) ni;
+                }
+            }
+
+            // no special handling
+            return (T) Net.getSocketOption(fd, Net.UNSPEC, name);
+        }
+    }
+
+    private static class DefaultOptionsHolder {
+        static final Set<SocketOption<?>> defaultOptions = defaultOptions();
+
+        private static Set<SocketOption<?>> defaultOptions() {
+            HashSet<SocketOption<?>> set = new HashSet<SocketOption<?>>(8);
+            set.add(StandardSocketOptions.SO_SNDBUF);
+            set.add(StandardSocketOptions.SO_RCVBUF);
+            set.add(StandardSocketOptions.SO_REUSEADDR);
+            set.add(StandardSocketOptions.SO_BROADCAST);
+            set.add(StandardSocketOptions.IP_TOS);
+            set.add(StandardSocketOptions.IP_MULTICAST_IF);
+            set.add(StandardSocketOptions.IP_MULTICAST_TTL);
+            set.add(StandardSocketOptions.IP_MULTICAST_LOOP);
+            return Collections.unmodifiableSet(set);
+        }
+    }
+
+    public final Set<SocketOption<?>> supportedOptions() {
+        return DefaultOptionsHolder.defaultOptions;
     }
 
     private void ensureOpen() throws ClosedChannelException {
@@ -529,6 +698,35 @@ class DatagramChannelImpl
         return this;
     }
 
+    /**
+     * Joins channel's socket to the given group/interface and
+     * optional source address.
+     */
+    private MembershipKey innerJoin(InetAddress group,
+                                    NetworkInterface interf,
+                                    InetAddress source)
+        throws IOException
+    {
+        throw new NotYetImplementedError(); //TODO JDK7
+    }
+
+    public MembershipKey join(InetAddress group,
+                              NetworkInterface interf)
+        throws IOException
+    {
+        return innerJoin(group, interf, null);
+    }
+
+    public MembershipKey join(InetAddress group,
+                              NetworkInterface interf,
+                              InetAddress source)
+        throws IOException
+    {
+        if (source == null)
+            throw new NullPointerException("source address is null");
+        return innerJoin(group, interf, source);
+    }
+    
     protected void implCloseSelectableChannel() throws IOException {
         synchronized (stateLock) {
             closeImpl();

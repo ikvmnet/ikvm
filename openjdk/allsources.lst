@@ -8772,6 +8772,9 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/jdk/src/share/classes/java/nio/channels/FileLock.java
 @OPENJDK6@/jdk/src/share/classes/java/nio/channels/GatheringByteChannel.java
 @OPENJDK6@/jdk/src/share/classes/java/nio/channels/InterruptibleChannel.java
+@OPENJDK7@/jdk/src/share/classes/java/nio/channels/MembershipKey.java
+@OPENJDK7@/jdk/src/share/classes/java/nio/channels/MulticastChannel.java
+@OPENJDK7@/jdk/src/share/classes/java/nio/channels/NetworkChannel.java
 @OPENJDK6@/jdk/src/share/classes/java/nio/channels/Pipe.java
 @OPENJDK6@/jdk/src/share/classes/java/nio/channels/ReadableByteChannel.java
 @OPENJDK6@/jdk/src/share/classes/java/nio/channels/ScatteringByteChannel.java
