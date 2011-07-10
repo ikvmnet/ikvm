@@ -24,6 +24,7 @@
 
 package com.sun.management;
 
+import ikvm.internal.NotYetImplementedError;
 import cli.System.Activator;
 import cli.System.Diagnostics.Process;
 import cli.System.Reflection.Assembly;
@@ -81,6 +82,16 @@ class OperatingSystem extends OperatingSystemImpl implements OperatingSystemMXBe
     public long getFreeSwapSpaceSize()
     {
         return GetMemoryStatusEx().ullAvailPageFile;
+    }
+    
+    public /*native*/ double getSystemCpuLoad()
+    {
+    	throw new NotYetImplementedError(); //TODO JDK7
+    }
+    
+    public /*native*/ double getProcessCpuLoad()
+    {
+    	throw new NotYetImplementedError(); //TODO JDK7
     }
 
     private static long get(String propertyName)
