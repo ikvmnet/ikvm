@@ -68,7 +68,7 @@ assembly.class
     @OPENJDK6@/build/linux-amd64/gensrc/java/nio/charset/*.class
     @OPENJDK6@/build/linux-amd64/gensrc/sun/nio/ch/*.class
     @OPENJDK7@/build/linux-amd64/gensrc/sun/nio/ch/*.class
-    @OPENJDK6@/build/linux-amd64/gensrc/sun/util/*.class
+    @OPENJDK7@/build/linux-amd64/gensrc/sun/util/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/com/sun/xml/internal/ws/developer/ServerSideException.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/nio/file/*.class
     @OPENJDK6@/jdk/src/share/classes/java/beans/ChangeListenerMap.class
@@ -97,7 +97,6 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/java/security/*.class
     @OPENJDK7@/jdk/src/share/classes/java/security/cert/*.class
     @OPENJDK6@/jdk/src/share/classes/java/sql/Timestamp.class
-    @OPENJDK6@/jdk/src/share/classes/java/util/*.class
     @OPENJDK7@/jdk/src/share/classes/java/util/*.class
     @OPENJDK7@/jdk/src/share/classes/java/util/concurrent/*.class
     @OPENJDK7@/jdk/src/share/classes/java/util/concurrent/atomic/*.class
@@ -155,7 +154,7 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/sun/security/util/PropertyExpander$ExpandException.class
     @OPENJDK7@/jdk/src/share/classes/sun/security/util/PropertyExpander.class
     SecurityConstants*.class
-    @OPENJDK6@/jdk/src/share/classes/sun/util/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/util/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/util/locale/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/util/logging/*.class
     @OPENJDK7@/jdk/src/solaris/classes/java/io/*.class
@@ -720,23 +719,23 @@ assembly.class
     -baseaddress:0x5A890000
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/java/util/jar/pack/intrinsic.properties
     java/util/zip/*.class
-    @OPENJDK6@/build/linux-amd64/gensrc/sun/util/logging/resources/*.class
-    @OPENJDK6@/build/linux-amd64/gensrc/sun/util/resources/*.class
+    @OPENJDK7@/build/linux-amd64/gensrc/sun/util/logging/resources/*.class
+    @OPENJDK7@/build/linux-amd64/gensrc/sun/util/resources/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/java/util/jar/pack/*.class
     @OPENJDK7@/jdk/src/share/classes/java/util/jar/*.class
-    @OPENJDK6@/jdk/src/share/classes/java/util/logging/*.class
-    @OPENJDK6@/jdk/src/share/classes/java/util/prefs/*.class
-    @OPENJDK6@/jdk/src/share/classes/java/util/spi/*.class
+    @OPENJDK7@/jdk/src/share/classes/java/util/logging/*.class
+    @OPENJDK7@/jdk/src/share/classes/java/util/prefs/*.class
     @OPENJDK7@/jdk/src/share/classes/java/util/spi/*.class
     @OPENJDK7@/jdk/src/share/classes/java/util/zip/*.class
     @OPENJDK6@/jdk/src/share/classes/sun/util/calendar/*.class
-    @OPENJDK6@/jdk/src/share/classes/sun/util/resources/*.class
-    @OPENJDK6@/jdk/src/solaris/classes/java/util/prefs/*.class
-    @OPENJDK6@/jdk/src/windows/classes/java/util/prefs/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/util/calendar/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/util/resources/*.class
+    @OPENJDK7@/jdk/src/solaris/classes/java/util/prefs/*.class
+    @OPENJDK7@/jdk/src/windows/classes/java/util/prefs/*.class
 }
 {
     -out:IKVM.OpenJDK.Text.dll
-    -baseaddress:0x5ACE0000
+    -baseaddress:0x5AE00000
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/sun/text/*
     @OPENJDK7@/jdk/src/share/classes/java/text/*.class
     @OPENJDK7@/jdk/src/share/classes/java/text/spi/*.class
@@ -747,7 +746,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Security.dll
-    -baseaddress:0x5AEC0000
+    -baseaddress:0x5AFE0000
     -remap:security.xml
     sun/security/jgss/wrapper/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/crypto/provider/*.class
@@ -816,7 +815,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Management.dll
-    -baseaddress:0x5B6A0000
+    -baseaddress:0x5B7C0000
     com/sun/management/*.class
     icedtea/rt/com/sun/jmx/snmp/*.class
     icedtea/rt/com/sun/jmx/snmp/daemon/*.class
@@ -860,7 +859,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Misc.dll
-    -baseaddress:0x5BAC0000
+    -baseaddress:0x5BBE0000
     @OPENJDK6@/build/linux-amd64/impsrc/javax/activity/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/javax/annotation/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/javax/annotation/processing/*.class
@@ -950,7 +949,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Naming.dll
-    -baseaddress:0x5BB80000
+    -baseaddress:0x5BCA0000
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/jndi/ldap/jndiprovider.properties
     sun/net/dns/*.class
     @OPENJDK6@/jdk/src/share/classes/com/sun/jndi/dns/*.class
@@ -975,7 +974,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Jdbc.dll
-    -baseaddress:0x5BCD0000
+    -baseaddress:0x5BDF0000
     -resource:META-INF/services/java.sql.Driver=resources/META-INF/services/java.sql.Driver
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/rowset/*
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/javax/sql/*
@@ -993,7 +992,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Remoting.dll
-    -baseaddress:0x5BE20000
+    -baseaddress:0x5BF40000
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/sun/rmi/*
     @OPENJDK6@/build/linux-amd64/classes/com/sun/jndi/rmi/registry/*.class
     @OPENJDK6@/build/linux-amd64/classes/java/rmi/activation/*.class
@@ -1019,7 +1018,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Beans.dll
-    -baseaddress:0x5BF40000
+    -baseaddress:0x5C060000
     @OPENJDK6@/build/linux-amd64/impsrc/com/sun/activation/registries/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/javax/activation/*.class
     @OPENJDK6@/jdk/src/share/classes/com/sun/beans/*.class
@@ -1031,7 +1030,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Media.dll
-    -baseaddress:0x5C000000
+    -baseaddress:0x5C120000
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/javax.print.*
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/javax.sound.*
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/imageio/plugins/common/iio-plugin.properties
