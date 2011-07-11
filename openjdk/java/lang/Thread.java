@@ -133,6 +133,10 @@ import sun.security.util.SecurityConstants;
 public
 class Thread implements Runnable {
     // [IKVM]
+    private static native void prepareCCL();
+    static {
+        prepareCCL();
+    }
     final class Cleanup {
         private final Thread thread;
 
