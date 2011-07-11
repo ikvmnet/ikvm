@@ -3405,6 +3405,8 @@ namespace IKVM.Internal
 		StartErrors = 4000,
 		UnableToCreateProxy = 4001,
 		DuplicateProxy = 4002,
+		MapXmlUnableToResolveOpCode = 4003,
+		MapXmlError = 4004,
 	}
 
 	static class StaticCompiler
@@ -3622,6 +3624,12 @@ namespace IKVM.Internal
 					break;
 				case Message.DuplicateProxy:
 					msg = "duplicate proxy \"{0}\"";
+					break;
+				case Message.MapXmlUnableToResolveOpCode:
+					msg = "unable to resolve opcode in remap file: {0}";
+					break;
+				case Message.MapXmlError:
+					msg = "error in remap file: {0}";
 					break;
 				case Message.UnknownWarning:
 					msg = "{0}";
