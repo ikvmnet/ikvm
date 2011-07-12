@@ -11715,7 +11715,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/sun/net/www/protocol/https/HttpsURLConnectionImpl.java
 @OPENJDK7@/jdk/src/share/classes/sun/net/www/protocol/jar/Handler.java
 @OPENJDK7@/jdk/src/share/classes/sun/net/www/protocol/jar/JarURLConnection.java
-@OPENJDK6@/jdk/src/share/classes/sun/net/www/protocol/jar/URLJarFile.java
+@OPENJDK7@/jdk/src/share/classes/sun/net/www/protocol/jar/URLJarFile.java
 @OPENJDK7@/jdk/src/share/classes/sun/net/www/protocol/jar/URLJarFileCallBack.java
 @OPENJDK7@/jdk/src/share/classes/sun/net/www/protocol/mailto/Handler.java
 @OPENJDK7@/jdk/src/share/classes/sun/net/www/protocol/mailto/MailToURLConnection.java
