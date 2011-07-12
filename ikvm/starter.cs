@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -120,6 +120,7 @@ public class Starter
 		int vmargsIndex = -1;
         bool debug = false;
         String debugArg = null;
+		bool noglobbing = false;
 		for(int i = 0; i < args.Length; i++)
 		{
             String arg = args[i];
@@ -256,6 +257,10 @@ public class Starter
                 {
                     Startup.addBootClassPathAssemby(Assembly.LoadFrom(arg.Substring(12)));
                 }
+                else if (arg == "-Xnoglobbing")
+                {
+                    noglobbing = true;
+                }
                 else if (arg.StartsWith("-Xms")
                     || arg.StartsWith("-Xmx")
                     || arg.StartsWith("-Xss")
@@ -320,6 +325,7 @@ public class Starter
 			Console.Error.WriteLine("    -Xwait            Keep process hanging around after exit");
 			Console.Error.WriteLine("    -Xbreak           Trigger a user defined breakpoint at startup");
 			Console.Error.WriteLine("    -Xnoclassgc       Disable class garbage collection");
+			Console.Error.WriteLine("    -Xnoglobbing      Disable argument globbing");
 			return 1;
 		}
 		try
@@ -350,8 +356,17 @@ public class Starter
 			}
 			Startup.setProperties(props);
 			Startup.enterMainThread();
-			// HACK Starup.glob() uses Java code, so we need to do this after we've initialized
-			string[] vmargs = Startup.glob(vmargsIndex);
+			string[] vmargs;
+			if (noglobbing)
+			{
+				vmargs = new string[args.Length - (vmargsIndex - 1)];
+				System.Array.Copy(args, vmargsIndex - 1, vmargs, 0, vmargs.Length);
+			}
+			else
+			{
+				// Startup.glob() uses Java code, so we need to do this after we've initialized
+				vmargs = Startup.glob(vmargsIndex);
+			}
 			if (jar)
 			{
 				mainClass = GetMainClassFromJarManifest(mainClass);
