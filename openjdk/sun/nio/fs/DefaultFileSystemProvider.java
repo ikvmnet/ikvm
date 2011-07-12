@@ -30,6 +30,6 @@ public class DefaultFileSystemProvider
 {
     public static FileSystemProvider create()
     {
-        throw new ikvm.internal.NotYetImplementedError();
+        return new NetFileSystemProvider();
     }
 }

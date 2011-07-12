@@ -5880,6 +5880,62 @@ namespace IKVM.NativeCode.sun.net.spi
 	}
 }
 
+namespace IKVM.NativeCode.sun.nio.fs
+{
+	static class NetPath
+	{
+		public static string toRealPathImpl(string path)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			path = global::java.io.FileSystem.getFileSystem().canonicalize(path);
+			if (VirtualFileSystem.IsVirtualFS(path))
+			{
+				if (VirtualFileSystem.CheckAccess(path, IKVM.NativeCode.java.io.Win32FileSystem.ACCESS_READ))
+				{
+					return path;
+				}
+				throw new global::java.nio.file.NoSuchFileException(path);
+			}
+			try
+			{
+				System.IO.File.GetAttributes(path);
+				return path;
+			}
+			catch (System.IO.FileNotFoundException)
+			{
+				throw new global::java.nio.file.NoSuchFileException(path);
+			}
+			catch (System.IO.DirectoryNotFoundException)
+			{
+				throw new global::java.nio.file.NoSuchFileException(path);
+			}
+			catch (System.UnauthorizedAccessException)
+			{
+				throw new global::java.nio.file.AccessDeniedException(path);
+			}
+			catch (System.Security.SecurityException)
+			{
+				throw new global::java.nio.file.AccessDeniedException(path);
+			}
+			catch (System.ArgumentException x)
+			{
+				throw new global::java.nio.file.FileSystemException(path, null, x.Message);
+			}
+			catch (System.NotSupportedException x)
+			{
+				throw new global::java.nio.file.FileSystemException(path, null, x.Message);
+			}
+			catch (System.IO.IOException x)
+			{
+				throw new global::java.nio.file.FileSystemException(path, null, x.Message);
+			}
+#endif
+		}
+	}
+}
+
 namespace IKVM.NativeCode.sun.reflect
 {
 #if !FIRST_PASS

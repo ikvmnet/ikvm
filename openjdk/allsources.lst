@@ -200,6 +200,9 @@ sun/nio/ch/Util.java
 sun/nio/cs/StandardCharsets.java
 sun/nio/fs/DefaultFileSystemProvider.java
 sun/nio/fs/DefaultFileTypeDetector.java
+sun/nio/fs/NetFileSystem.java
+sun/nio/fs/NetFileSystemProvider.java
+sun/nio/fs/NetPath.java
 sun/print/PrintPeer.java
 sun/print/UnixPrintServiceLookup.java
 sun/print/Win32PrintJob.java
@@ -13130,7 +13133,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/sun/util/calendar/LocalGregorianCalendar.java
 @OPENJDK7@/jdk/src/share/classes/sun/util/calendar/TzIDOldMapping.java
 @OPENJDK7@/jdk/src/share/classes/sun/util/calendar/ZoneInfo.java
-@OPENJDK6@/jdk/src/share/classes/sun/util/calendar/ZoneInfoFile.java
+@OPENJDK7@/jdk/src/share/classes/sun/util/calendar/ZoneInfoFile.java
 @OPENJDK7@/jdk/src/share/classes/sun/util/locale/AsciiUtil.java
 @OPENJDK7@/jdk/src/share/classes/sun/util/locale/BaseLocale.java
 @OPENJDK7@/jdk/src/share/classes/sun/util/locale/Extension.java

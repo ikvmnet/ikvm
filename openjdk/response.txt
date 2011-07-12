@@ -727,7 +727,6 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/java/util/prefs/*.class
     @OPENJDK7@/jdk/src/share/classes/java/util/spi/*.class
     @OPENJDK7@/jdk/src/share/classes/java/util/zip/*.class
-    @OPENJDK6@/jdk/src/share/classes/sun/util/calendar/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/util/calendar/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/util/resources/*.class
     @OPENJDK7@/jdk/src/solaris/classes/java/util/prefs/*.class
