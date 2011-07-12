@@ -288,7 +288,7 @@ public class Starter
 			else
 			{
 				mainClass = arg;
-				vmargsIndex = i + 2;
+				vmargsIndex = i + 1;
 				break;
 			}
 		}
@@ -359,13 +359,13 @@ public class Starter
 			string[] vmargs;
 			if (noglobbing)
 			{
-				vmargs = new string[args.Length - (vmargsIndex - 1)];
-				System.Array.Copy(args, vmargsIndex - 1, vmargs, 0, vmargs.Length);
+				vmargs = new string[args.Length - vmargsIndex];
+				System.Array.Copy(args, vmargsIndex, vmargs, 0, vmargs.Length);
 			}
 			else
 			{
 				// Startup.glob() uses Java code, so we need to do this after we've initialized
-				vmargs = Startup.glob(vmargsIndex);
+				vmargs = Startup.glob(args, vmargsIndex);
 			}
 			if (jar)
 			{

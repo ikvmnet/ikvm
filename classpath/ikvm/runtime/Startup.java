@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2006 Jeroen Frijters
+  Copyright (C) 2006-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -74,16 +74,22 @@ public final class Startup
         }
     }
 
+    @Deprecated
     public static String[] glob()
     {
         return glob(1);
     }
 
+    @Deprecated
     public static String[] glob(int skip)
     {
-        if(Environment.get_OSVersion().ToString().indexOf("Unix") >= 0)
+        return glob(Environment.GetCommandLineArgs(), skip);
+    }
+
+    public static String[] glob(String[] args, int skip)
+    {
+        if (!ikvm.internal.Util.WINDOWS)
         {
-            String[] args = Environment.GetCommandLineArgs();
             String[] vmargs = new String[args.length - skip];
             System.arraycopy(args, skip, vmargs, 0, args.length - skip);
             return vmargs;
@@ -91,59 +97,17 @@ public final class Startup
         else
         {
             ArrayList list = new ArrayList();
-            String cmdline = Environment.get_CommandLine();
-            StringBuilder sb = new StringBuilder();
-            for(int i = 0; i < cmdline.length(); )
+            for (int i = skip; i < args.length; i++)
             {
-                boolean quoted = cmdline.charAt(i) == '"';
-                for(;;)
+                String arg = args[i];
+                if (arg.indexOf('*') != -1 || arg.indexOf('?') != -1)
                 {
-                    while(i < cmdline.length() && cmdline.charAt(i) != ' ' && cmdline.charAt(i) != '"')
-                    {
-                        sb.Append(cmdline.charAt(i++));
-                    }
-                    if(i < cmdline.length() && cmdline.charAt(i) == '"')
-                    {
-                        if(quoted && i > 1 && cmdline.charAt(i - 1) == '"')
-                        {
-                            sb.Append('"');
-                        }
-                        i++;
-                        while(i < cmdline.length() && cmdline.charAt(i) != '"')
-                        {
-                            sb.Append(cmdline.charAt(i++));
-                        }
-                        if(i < cmdline.length() && cmdline.charAt(i) == '"')
-                        {
-                            i++;
-                        }
-                        if(i < cmdline.length() && cmdline.charAt(i) != ' ')
-                        {
-                            continue;
-                        }
-                    }
-                    break;
-                }
-                while(i < cmdline.length() && cmdline.charAt(i) == ' ')
-                {
-                    i++;
-                }
-                if(skip > 0)
-                {
-                    skip--;
+                    list.AddRange((ICollection)(Object)glob(arg));
                 }
                 else
                 {
-                    if(quoted)
-                    {
-                        list.Add(sb.ToString());
-                    }
-                    else
-                    {
-                        list.AddRange((ICollection)(Object)glob(sb.ToString()));
-                    }
+                    list.Add(arg);
                 }
-                sb.set_Length(0);
             }
             return (String[])(Object)list.ToArray(Type.GetType("System.String"));
         }

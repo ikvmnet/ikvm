@@ -445,12 +445,7 @@ namespace IKVM.Internal
 
 		internal void SetMain(MethodInfo m, PEFileKinds target, Dictionary<string, string> props, bool noglobbing, Type apartmentAttributeType)
 		{
-			Type[] args = Type.EmptyTypes;
-			if(noglobbing)
-			{
-				args = new Type[] { JVM.Import(typeof(string[])) };
-			}
-			MethodBuilder mainStub = this.GetTypeWrapperFactory().ModuleBuilder.DefineGlobalMethod("main", MethodAttributes.Public | MethodAttributes.Static, Types.Int32, args);
+			MethodBuilder mainStub = this.GetTypeWrapperFactory().ModuleBuilder.DefineGlobalMethod("main", MethodAttributes.Public | MethodAttributes.Static, Types.Int32, new Type[] { Types.String.MakeArrayType() });
 			if(apartmentAttributeType != null)
 			{
 				mainStub.SetCustomAttribute(new CustomAttributeBuilder(apartmentAttributeType.GetConstructor(Type.EmptyTypes), new object[0]));
@@ -476,13 +471,11 @@ namespace IKVM.Internal
 			}
 			ilgen.BeginExceptionBlock();
 			startupType.GetMethodWrapper("enterMainThread", "()V", false).EmitCall(ilgen);
-			if(noglobbing)
+			ilgen.Emit(OpCodes.Ldarg_0);
+			if (!noglobbing)
 			{
-				ilgen.Emit(OpCodes.Ldarg_0);
-			}
-			else
-			{
-				startupType.GetMethodWrapper("glob", "()[Ljava.lang.String;", false).EmitCall(ilgen);
+				ilgen.Emit(OpCodes.Ldc_I4_0);
+				startupType.GetMethodWrapper("glob", "([Ljava.lang.String;I)[Ljava.lang.String;", false).EmitCall(ilgen);
 			}
 			ilgen.Emit(OpCodes.Call, m);
 			CodeEmitterLabel label = ilgen.DefineLabel();
