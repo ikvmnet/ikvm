@@ -274,6 +274,69 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
     boolean implDelete(Path file, boolean failIfNotExists) throws IOException
     {
-        throw new NotYetImplementedError();
+        String path = NetPath.from(file).path;
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null)
+        {
+            sm.checkDelete(path);
+        }
+        try
+        {
+            if (false) throw new cli.System.ArgumentException();
+            if (false) throw new cli.System.IO.FileNotFoundException();
+            if (false) throw new cli.System.IO.DirectoryNotFoundException();
+            if (false) throw new cli.System.IO.IOException();
+            if (false) throw new cli.System.Security.SecurityException();
+            if (false) throw new cli.System.UnauthorizedAccessException();
+            int attr = cli.System.IO.File.GetAttributes(path).Value;
+            if ((attr & cli.System.IO.FileAttributes.Directory) != 0)
+            {
+                cli.System.IO.Directory.Delete(path);
+                return true;
+            }
+            else
+            {
+                cli.System.IO.File.Delete(path);
+                return true;
+            }
+        }
+        catch (cli.System.ArgumentException x)
+        {
+            throw new FileSystemException(path, null, x.getMessage());
+        }
+        catch (cli.System.IO.FileNotFoundException _)
+        {
+            if (failIfNotExists)
+            {
+                throw new NoSuchFileException(path);
+            }
+            else
+            {
+                return false;
+            }
+        }
+        catch (cli.System.IO.DirectoryNotFoundException _)
+        {
+            if (failIfNotExists)
+            {
+                throw new NoSuchFileException(path);
+            }
+            else
+            {
+                return false;
+            }
+        }
+        catch (cli.System.IO.IOException x)
+        {
+            throw new FileSystemException(path, null, x.getMessage());
+        }
+        catch (cli.System.Security.SecurityException _)
+        {
+            throw new AccessDeniedException(path);
+        }
+        catch (cli.System.UnauthorizedAccessException _)
+        {
+            throw new AccessDeniedException(path);
+        }
     }
 }
