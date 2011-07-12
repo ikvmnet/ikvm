@@ -25,6 +25,13 @@
 package sun.nio.fs;
 
 import ikvm.internal.NotYetImplementedError;
+import cli.System.IO.FileMode;
+import cli.System.IO.FileShare;
+import cli.System.IO.FileStream;
+import cli.System.IO.FileOptions;
+import cli.System.Security.AccessControl.FileSystemRights;
+import com.sun.nio.file.ExtendedOpenOption;
+import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.channels.*;
@@ -33,6 +40,7 @@ import java.nio.file.attribute.*;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.Map;
 import java.util.Set;
+import sun.nio.ch.FileChannelImpl;
 
 final class NetFileSystemProvider extends AbstractFileSystemProvider
 {
@@ -58,9 +66,155 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
         throw new NotYetImplementedError();
     }
 
-    public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException
+    public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> opts, FileAttribute<?>... attrs) throws IOException
     {
-        throw new NotYetImplementedError();
+        NetPath npath = NetPath.from(path);
+        if (attrs.length != 0)
+        {
+            throw new NotYetImplementedError();
+        }
+        int mode = FileMode.Open;
+        int rights = 0;
+        int share = FileShare.ReadWrite | FileShare.Delete;
+        int options = FileOptions.None;
+        boolean read = false;
+        boolean write = false;
+        boolean append = false;
+        boolean sparse = false;
+        for (OpenOption opt : opts)
+        {
+            if (opt instanceof StandardOpenOption)
+            {
+                switch ((StandardOpenOption)opt)
+                {
+                    case APPEND:
+                        append = true;
+                        write = true;
+                        mode = FileMode.Append;
+                        rights |= FileSystemRights.AppendData;
+                        break;
+                    case CREATE:
+                        mode = FileMode.Create;
+                        break;
+                    case CREATE_NEW:
+                        mode = FileMode.CreateNew;
+                        break;
+                    case DELETE_ON_CLOSE:
+                        options |= FileOptions.DeleteOnClose;
+                        break;
+                    case DSYNC:
+                        options |= FileOptions.WriteThrough;
+                        break;
+                    case READ:
+                        read = true;
+                        rights |= FileSystemRights.Read;
+                        break;
+                    case SPARSE:
+                        sparse = true;
+                        break;
+                    case SYNC:
+                        options |= FileOptions.WriteThrough;
+                        break;
+                    case TRUNCATE_EXISTING:
+                        mode = FileMode.Truncate;
+                        break;
+                    case WRITE:
+                        write = true;
+                        rights |= FileSystemRights.Write;
+                        break;
+                    default:
+                        throw new UnsupportedOperationException();
+                }
+            }
+            else if (opt instanceof ExtendedOpenOption)
+            {
+                switch ((ExtendedOpenOption)opt)
+                {
+                    case NOSHARE_READ:
+                        share &= ~FileShare.Read;
+                        break;
+                    case NOSHARE_WRITE:
+                        share &= ~FileShare.Write;
+                        break;
+                    case NOSHARE_DELETE:
+                        share &= ~FileShare.Delete;
+                        break;
+                    default:
+                        throw new UnsupportedOperationException();
+                }
+            }
+            else if (opt == null)
+            {
+                throw new NullPointerException();
+            }
+            else
+            {
+                throw new UnsupportedOperationException();
+            }
+        }
+
+        if (!read && !write)
+        {
+            read = true;
+            rights |= FileSystemRights.Read;
+        }
+
+        if (read && append)
+        {
+            throw new IllegalArgumentException("READ + APPEND not allowed");
+        }
+        
+        if (append && mode == FileMode.Truncate)
+        {
+            throw new IllegalArgumentException("APPEND + TRUNCATE_EXISTING not allowed");
+        }
+        
+        if (mode == FileMode.CreateNew && sparse)
+        {
+            throw new UnsupportedOperationException();
+        }
+        
+        FileStream fs;
+        try
+        {
+            if (false) throw new cli.System.ArgumentException();
+            if (false) throw new cli.System.IO.FileNotFoundException();
+            if (false) throw new cli.System.IO.DirectoryNotFoundException();
+            if (false) throw new cli.System.PlatformNotSupportedException();
+            if (false) throw new cli.System.IO.IOException();
+            if (false) throw new cli.System.Security.SecurityException();
+            if (false) throw new cli.System.UnauthorizedAccessException();
+            fs = new FileStream(npath.path, FileMode.wrap(mode), FileSystemRights.wrap(rights), FileShare.wrap(share), 8, FileOptions.wrap(options));
+        }
+        catch (cli.System.ArgumentException x)
+        {
+            throw new FileSystemException(npath.path, null, x.getMessage());
+        }
+        catch (cli.System.IO.FileNotFoundException _)
+        {
+            throw new NoSuchFileException(npath.path);
+        }
+        catch (cli.System.IO.DirectoryNotFoundException _)
+        {
+            throw new NoSuchFileException(npath.path);
+        }
+        catch (cli.System.PlatformNotSupportedException x)
+        {
+            throw new UnsupportedOperationException(x.getMessage());
+        }
+        catch (cli.System.IO.IOException x)
+        {
+            throw new FileSystemException(npath.path, null, x.getMessage());
+        }
+        catch (cli.System.Security.SecurityException _)
+        {
+            throw new AccessDeniedException(npath.path);
+        }
+        catch (cli.System.UnauthorizedAccessException _)
+        {
+            throw new AccessDeniedException(npath.path);
+        }
+        return FileChannelImpl.open(FileDescriptor.fromStream(fs), read, write, null, append);
     }
 
     public DirectoryStream<Path> newDirectoryStream(Path dir, DirectoryStream.Filter<? super Path> filter) throws IOException

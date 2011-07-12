@@ -37,7 +37,7 @@ final class NetPath extends AbstractPath
 {
     private static final char[] invalid = cli.System.IO.Path.GetInvalidFileNameChars();
     private final NetFileSystem fs;
-    private final String path;
+    final String path;
 
     NetPath(NetFileSystem fs, String path)
     {
@@ -117,7 +117,11 @@ final class NetPath extends AbstractPath
                 path += '\\';
             }
         }
-        else if (path.length() > 0 && path.charAt(path.length() - 1) == cli.System.IO.Path.DirectorySeparatorChar)
+        else if (path.length() == 3 && path.charAt(1) == ':' && WINDOWS)
+        {
+            // don't remove trailing backslash
+        }
+        else if (path.length() > 1 && path.charAt(path.length() - 1) == cli.System.IO.Path.DirectorySeparatorChar)
         {
             path = path.substring(0, path.length() - 1);
         }
@@ -148,7 +152,12 @@ final class NetPath extends AbstractPath
 
     public Path getParent()
     {
-        throw new NotYetImplementedError();
+        String parent = cli.System.IO.Path.GetDirectoryName(path);
+        if (parent == null || parent.length() == 0)
+        {
+            return null;
+        }
+        return new NetPath(fs, parent);
     }
 
     public int getNameCount()
@@ -183,7 +192,16 @@ final class NetPath extends AbstractPath
 
     public Path resolve(Path other)
     {
-        throw new NotYetImplementedError();
+        NetPath nother = NetPath.from(other);
+        if (nother.isAbsolute())
+        {
+            return other;
+        }
+        if (nother.path.length() == 0)
+        {
+            return this;
+        }
+        return new NetPath(fs, cli.System.IO.Path.Combine(path, nother.path));
     }
 
     public Path relativize(Path other)
@@ -235,5 +253,14 @@ final class NetPath extends AbstractPath
     public String toString()
     {
         return path;
+    }
+
+    static NetPath from(Path path)
+    {
+        if (!(path instanceof NetPath))
+        {
+            throw new ProviderMismatchException();
+        }
+        return (NetPath)path;
     }
 }

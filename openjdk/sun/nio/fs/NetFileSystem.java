@@ -29,10 +29,14 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.nio.file.spi.FileSystemProvider;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 final class NetFileSystem extends FileSystem
 {
+    private static final Set<String> attributes = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList("basic")));
     private final NetFileSystemProvider provider;
     private final String separator = Character.toString(cli.System.IO.Path.DirectorySeparatorChar);
 
@@ -78,7 +82,7 @@ final class NetFileSystem extends FileSystem
 
     public Set<String> supportedFileAttributeViews()
     {
-        throw new NotYetImplementedError();
+        return attributes;
     }
 
     public Path getPath(String first, String... more)
