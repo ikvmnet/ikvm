@@ -129,17 +129,16 @@ assembly.class
     @OPENJDK6@/jdk/src/share/classes/sun/nio/cs/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/nio/cs/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/nio/fs/*.class
-    @OPENJDK6@/jdk/src/share/classes/sun/reflect/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/reflect/*.class
-    @OPENJDK6@/jdk/src/share/classes/sun/reflect/annotation/*.class
-    @OPENJDK6@/jdk/src/share/classes/sun/reflect/generics/factory/*.class
-    @OPENJDK6@/jdk/src/share/classes/sun/reflect/generics/parser/*.class
-    @OPENJDK6@/jdk/src/share/classes/sun/reflect/generics/reflectiveObjects/*.class
-    @OPENJDK6@/jdk/src/share/classes/sun/reflect/generics/repository/*.class
-    @OPENJDK6@/jdk/src/share/classes/sun/reflect/generics/scope/*.class
-    @OPENJDK6@/jdk/src/share/classes/sun/reflect/generics/tree/*.class
-    @OPENJDK6@/jdk/src/share/classes/sun/reflect/generics/visitor/*.class
-    @OPENJDK6@/jdk/src/share/classes/sun/reflect/misc/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/reflect/annotation/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/reflect/generics/factory/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/reflect/generics/parser/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/reflect/generics/reflectiveObjects/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/reflect/generics/repository/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/reflect/generics/scope/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/reflect/generics/tree/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/reflect/generics/visitor/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/reflect/misc/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/security/action/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/security/jca/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/security/provider/ByteArrayAccess.class
