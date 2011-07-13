@@ -105,7 +105,6 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/java/util/jar/Manifest*.class
     @OPENJDK7@/jdk/src/share/classes/java/util/regex/*.class
     @OPENJDK7@/jdk/src/share/classes/javax/net/*.class
-    @OPENJDK6@/jdk/src/share/classes/sun/misc/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/misc/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/net/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/net/ftp/*.class
@@ -937,7 +936,7 @@ assembly.class
     @OPENJDK6@/jdk/src/share/classes/sun/io/Converters.class
     @OPENJDK6@/jdk/src/share/classes/sun/io/MalformedInputException.class
     @OPENJDK6@/jdk/src/share/classes/sun/io/UnknownCharacterException.class
-    @OPENJDK6@/jdk/src/share/classes/sun/misc/resources/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/misc/resources/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/net/httpserver/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/net/www/protocol/gopher/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/net/www/protocol/netdoc/*.class
