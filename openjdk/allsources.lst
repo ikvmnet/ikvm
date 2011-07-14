@@ -625,8 +625,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK6@/build/linux-amd64/gensrc/sun/tools/jar/resources/jar_zh_TW.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/util/CoreResourceBundleControl.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/util/LocaleDataMetaInfo.java
-@OPENJDK7@/build/linux-amd64/gensrc/sun/util/CoreResourceBundleControl.java
-@OPENJDK7@/build/linux-amd64/gensrc/sun/util/LocaleDataMetaInfo.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/util/logging/resources/logging.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/util/logging/resources/logging_de.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/util/logging/resources/logging_es.java
