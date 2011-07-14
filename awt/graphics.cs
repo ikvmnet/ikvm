@@ -1644,13 +1644,13 @@ namespace ikvm.awt
                     hintValue == java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_OFF)
                 {
                     g.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit;
-                    textAntialiasHint = hintKey;
+                    textAntialiasHint = hintValue;
                     return;
                 }
                 if (hintValue == java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
                 {
                     g.TextRenderingHint = TextRenderingHint.AntiAlias;
-                    textAntialiasHint = hintKey;
+                    textAntialiasHint = hintValue;
                     return;
                 }
                 return;
