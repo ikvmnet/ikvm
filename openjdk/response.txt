@@ -65,9 +65,10 @@ assembly.class
     @OPENJDK7@/build/linux-amd64/gensrc/java/lang/*.class
     @OPENJDK6@/build/linux-amd64/gensrc/java/nio/*.class
     @OPENJDK6@/build/linux-amd64/gensrc/java/nio/channels/*.class
-    @OPENJDK6@/build/linux-amd64/gensrc/java/nio/charset/*.class
+    @OPENJDK7@/build/linux-amd64/gensrc/java/nio/charset/*.class
     @OPENJDK6@/build/linux-amd64/gensrc/sun/nio/ch/*.class
     @OPENJDK7@/build/linux-amd64/gensrc/sun/nio/ch/*.class
+    @OPENJDK7@/build/linux-amd64/gensrc/sun/nio/cs/*.class
     @OPENJDK7@/build/linux-amd64/gensrc/sun/util/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/com/sun/xml/internal/ws/developer/ServerSideException.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/nio/file/*.class
@@ -88,9 +89,8 @@ assembly.class
     @OPENJDK6@/jdk/src/share/classes/java/nio/channels/*.class
     @OPENJDK7@/jdk/src/share/classes/java/nio/channels/*.class
     @OPENJDK6@/jdk/src/share/classes/java/nio/channels/spi/*.class
-    @OPENJDK6@/jdk/src/share/classes/java/nio/charset/*.class
     @OPENJDK7@/jdk/src/share/classes/java/nio/charset/*.class
-    @OPENJDK6@/jdk/src/share/classes/java/nio/charset/spi/*.class
+    @OPENJDK7@/jdk/src/share/classes/java/nio/charset/spi/*.class
     @OPENJDK7@/jdk/src/share/classes/java/nio/file/*.class
     @OPENJDK7@/jdk/src/share/classes/java/nio/file/attribute/*.class
     @OPENJDK7@/jdk/src/share/classes/java/nio/file/spi/*.class
@@ -125,7 +125,6 @@ assembly.class
     @OPENJDK6@/jdk/src/share/classes/sun/nio/*.class
     @OPENJDK6@/jdk/src/share/classes/sun/nio/ch/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/nio/ch/*.class
-    @OPENJDK6@/jdk/src/share/classes/sun/nio/cs/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/nio/cs/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/nio/fs/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/reflect/*.class
@@ -165,7 +164,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Corba.dll
-    -baseaddress:0x56AE0000
+    -baseaddress:0x56AB0000
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/corba/*
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/jndi/cosnaming/jndiprovider.properties
     @OPENJDK6@/build/linux-amd64/impsrc/com/sun/corba/se/impl/activation/*.class
@@ -283,7 +282,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.XML.API.dll
-    -baseaddress:0x57140000
+    -baseaddress:0x57110000
     @OPENJDK6@/build/linux-amd64/impsrc/javax/xml/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/javax/xml/datatype/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/javax/xml/namespace/*.class
@@ -315,7 +314,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.XML.XPath.dll
-    -baseaddress:0x57200000
+    -baseaddress:0x571D0000
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/org/apache/xalan/internal/res/*
     @OPENJDK6@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/extensions/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/res/*.class
@@ -340,7 +339,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.XML.Parse.dll
-    -baseaddress:0x57530000
+    -baseaddress:0x57500000
     -resource:com/sun/org/apache/xml/internal/serialize/HTMLEntities.res=@OPENJDK6@/build/linux-amd64/impsrc/com/sun/org/apache/xml/internal/serialize/HTMLEntities.res
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/org/apache/xerces/*
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/org/apache/xml/internal/serializer/*
@@ -399,7 +398,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.XML.Transform.dll
-    -baseaddress:0x57BC0000
+    -baseaddress:0x57B90000
     @OPENJDK6@/build/linux-amd64/impsrc/com/sun/java_cup/internal/runtime/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/com/sun/org/apache/bcel/internal/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/com/sun/org/apache/bcel/internal/classfile/*.class
@@ -423,7 +422,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.XML.Bind.dll
-    -baseaddress:0x57FE0000
+    -baseaddress:0x57FB0000
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/javax/xml/bind/*
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/xml/internal/bind/*
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/xml/internal/fastinfoset/*
@@ -482,7 +481,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.XML.WebServices.dll
-    -baseaddress:0x58340000
+    -baseaddress:0x58310000
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/xml/internal/messaging/*
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/xml/internal/ws/*
     @OPENJDK6@/build/linux-amd64/impsrc/com/sun/xml/internal/messaging/saaj/*.class
@@ -575,7 +574,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.XML.Crypto.dll
-    -baseaddress:0x587C0000
+    -baseaddress:0x58790000
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/org/apache/xml/internal/security/*
     @OPENJDK6@/jdk/src/share/classes/com/sun/org/apache/xml/internal/security/*.class
     @OPENJDK6@/jdk/src/share/classes/com/sun/org/apache/xml/internal/security/algorithms/*.class
@@ -611,7 +610,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.SwingAWT.dll
-    -baseaddress:0x58910000
+    -baseaddress:0x588E0000
     -remap:swingawt.xml
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/sun.java2d.*
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/java/swing/*
@@ -707,13 +706,16 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Charsets.dll
-    -baseaddress:0x59A50000
-    @OPENJDK6@/jdk/src/share/classes/sun/io/*.class
-    @OPENJDK6@/jdk/src/share/classes/sun/nio/cs/ext/*.class
+    -baseaddress:0x59A20000
+    -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/charsets.jar/sun/nio/cs/ext/sjis0213.dat
+    -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/charsets.jar/META-INF/services/java.nio.charset.spi.CharsetProvider
+    @OPENJDK7@/build/linux-amd64/gensrc/sun/nio/cs/ext/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/nio/cs/ext/*.class
 }
 {
     -out:IKVM.OpenJDK.Util.dll
-    -baseaddress:0x5A890000
+    -baseaddress:0x5A0B0000
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/java/util/jar/pack/intrinsic.properties
     java/util/zip/*.class
     @OPENJDK7@/build/linux-amd64/gensrc/sun/util/logging/resources/*.class
@@ -731,7 +733,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Text.dll
-    -baseaddress:0x5AE00000
+    -baseaddress:0x5A620000
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/sun/text/*
     @OPENJDK7@/jdk/src/share/classes/java/text/*.class
     @OPENJDK7@/jdk/src/share/classes/java/text/spi/*.class
@@ -742,7 +744,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Security.dll
-    -baseaddress:0x5AFE0000
+    -baseaddress:0x5A800000
     -remap:security.xml
     sun/security/jgss/wrapper/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/crypto/provider/*.class
@@ -811,7 +813,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Management.dll
-    -baseaddress:0x5B7C0000
+    -baseaddress:0x5AFE0000
     com/sun/management/*.class
     icedtea/rt/com/sun/jmx/snmp/*.class
     icedtea/rt/com/sun/jmx/snmp/daemon/*.class
@@ -855,7 +857,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Misc.dll
-    -baseaddress:0x5BBE0000
+    -baseaddress:0x5B400000
     @OPENJDK6@/build/linux-amd64/impsrc/javax/activity/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/javax/annotation/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/javax/annotation/processing/*.class
@@ -879,63 +881,63 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/java/lang/instrument/*.class
     @OPENJDK6@/jdk/src/share/classes/javax/script/*.class
     @OPENJDK6@/jdk/src/share/classes/javax/smartcardio/*.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/ByteToCharASCII.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/ByteToCharConverter.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/ByteToCharCp1250.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/ByteToCharCp1251.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/ByteToCharCp1252.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/ByteToCharCp1253.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/ByteToCharCp1254.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/ByteToCharCp1257.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/ByteToCharISO8859_1.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/ByteToCharISO8859_13.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/ByteToCharISO8859_15.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/ByteToCharISO8859_2.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/ByteToCharISO8859_4.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/ByteToCharISO8859_5.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/ByteToCharISO8859_7.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/ByteToCharISO8859_9.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/ByteToCharKOI8_R.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/ByteToCharSingleByte.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/ByteToCharUnicode.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/ByteToCharUnicodeBig.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/ByteToCharUnicodeBigUnmarked.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/ByteToCharUnicodeLittle.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/ByteToCharUnicodeLittleUnmarked.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/ByteToCharUTF16.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/ByteToCharUTF8.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharacterEncoding$1.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharacterEncoding$2.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharacterEncoding.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharToByteASCII.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharToByteConverter.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharToByteCp1250.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharToByteCp1251.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharToByteCp1252.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharToByteCp1253.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharToByteCp1254.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharToByteCp1257.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharToByteISO8859_1.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharToByteISO8859_13.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharToByteISO8859_15.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharToByteISO8859_2.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharToByteISO8859_4.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharToByteISO8859_5.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharToByteISO8859_7.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharToByteISO8859_9.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharToByteKOI8_R.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharToByteSingleByte.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharToByteUnicode.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharToByteUnicodeBig.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharToByteUnicodeBigUnmarked.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharToByteUnicodeLittle.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharToByteUnicodeLittleUnmarked.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharToByteUTF16.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/CharToByteUTF8.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/ConversionBufferFullException.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/Converters.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/MalformedInputException.class
-    @OPENJDK6@/jdk/src/share/classes/sun/io/UnknownCharacterException.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/ByteToCharASCII.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/ByteToCharConverter.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/ByteToCharCp1250.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/ByteToCharCp1251.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/ByteToCharCp1252.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/ByteToCharCp1253.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/ByteToCharCp1254.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/ByteToCharCp1257.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/ByteToCharISO8859_1.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/ByteToCharISO8859_13.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/ByteToCharISO8859_15.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/ByteToCharISO8859_2.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/ByteToCharISO8859_4.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/ByteToCharISO8859_5.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/ByteToCharISO8859_7.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/ByteToCharISO8859_9.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/ByteToCharKOI8_R.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/ByteToCharSingleByte.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/ByteToCharUnicode.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/ByteToCharUnicodeBig.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/ByteToCharUnicodeBigUnmarked.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/ByteToCharUnicodeLittle.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/ByteToCharUnicodeLittleUnmarked.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/ByteToCharUTF16.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/ByteToCharUTF8.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharacterEncoding$1.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharacterEncoding$2.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharacterEncoding.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharToByteASCII.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharToByteConverter.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharToByteCp1250.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharToByteCp1251.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharToByteCp1252.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharToByteCp1253.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharToByteCp1254.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharToByteCp1257.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharToByteISO8859_1.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharToByteISO8859_13.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharToByteISO8859_15.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharToByteISO8859_2.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharToByteISO8859_4.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharToByteISO8859_5.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharToByteISO8859_7.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharToByteISO8859_9.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharToByteKOI8_R.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharToByteSingleByte.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharToByteUnicode.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharToByteUnicodeBig.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharToByteUnicodeBigUnmarked.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharToByteUnicodeLittle.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharToByteUnicodeLittleUnmarked.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharToByteUTF16.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/CharToByteUTF8.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/ConversionBufferFullException.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/Converters.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/MalformedInputException.class
+    @OPENJDK7@/jdk/src/share/classes/sun/io/UnknownCharacterException.class
     @OPENJDK7@/jdk/src/share/classes/sun/misc/resources/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/net/httpserver/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/net/www/protocol/gopher/*.class
@@ -945,7 +947,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Naming.dll
-    -baseaddress:0x5BCA0000
+    -baseaddress:0x5B4C0000
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/jndi/ldap/jndiprovider.properties
     sun/net/dns/*.class
     @OPENJDK6@/jdk/src/share/classes/com/sun/jndi/dns/*.class
@@ -970,7 +972,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Jdbc.dll
-    -baseaddress:0x5BDF0000
+    -baseaddress:0x5B610000
     -resource:META-INF/services/java.sql.Driver=resources/META-INF/services/java.sql.Driver
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/rowset/*
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/javax/sql/*
@@ -988,7 +990,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Remoting.dll
-    -baseaddress:0x5BF40000
+    -baseaddress:0x5B760000
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/sun/rmi/*
     @OPENJDK6@/build/linux-amd64/classes/com/sun/jndi/rmi/registry/*.class
     @OPENJDK6@/build/linux-amd64/classes/java/rmi/activation/*.class
@@ -1014,7 +1016,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Beans.dll
-    -baseaddress:0x5C060000
+    -baseaddress:0x5B880000
     @OPENJDK6@/build/linux-amd64/impsrc/com/sun/activation/registries/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/javax/activation/*.class
     @OPENJDK6@/jdk/src/share/classes/com/sun/beans/*.class
@@ -1026,7 +1028,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Media.dll
-    -baseaddress:0x5C120000
+    -baseaddress:0x5B940000
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/javax.print.*
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/javax.sound.*
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/imageio/plugins/common/iio-plugin.properties

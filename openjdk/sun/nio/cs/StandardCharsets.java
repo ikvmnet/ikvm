@@ -332,6 +332,7 @@ public class StandardCharsets
         "ccsid00858",
         "cp00858",
         "858",
+        "PC-Multilingual-850+euro",
     };
 
     static final String[] aliases_IBM862 = new String[] {
@@ -363,7 +364,7 @@ public class StandardCharsets
     {
 
         private static final int ROWS = 1024;
-        private static final int SIZE = 208;
+        private static final int SIZE = 209;
         private static final int SHIFT = 0;
         private static final int MASK = 0x3ff;
 
@@ -513,6 +514,7 @@ public class StandardCharsets
             ht[573] = new Object[] { "iso_8859-4:1988", "iso-8859-4" };
             ht[577] = new Object[] { "default", "us-ascii" };
             ht[582] = new Object[] { "utf32", "utf-32" };
+            ht[583] = new Object[] { "pc-multilingual-850+euro", "ibm00858" };
             ht[588] = new Object[] { "elot_928", "iso-8859-7" };
             ht[593] = new Object[] { "csisolatingreek", "iso-8859-7" };
             ht[598] = new Object[] { "csibm857", "ibm857" };
