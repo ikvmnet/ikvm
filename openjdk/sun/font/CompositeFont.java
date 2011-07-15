@@ -53,4 +53,8 @@ public class CompositeFont extends Font2D{
     public PhysicalFont getSlotFont(int slot) {
         throw new NotYetImplementedError();
     }
+
+	public boolean isStdComposite() {
+		throw new NotYetImplementedError();
+	}
 }
