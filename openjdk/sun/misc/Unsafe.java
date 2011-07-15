@@ -892,9 +892,32 @@ public final class Unsafe
 	}
     }
     
+    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     public void copyMemory(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes)
     {
-        throw new ikvm.internal.NotYetImplementedError();
+        if (srcBase == null)
+        {
+            if (destBase instanceof byte[])
+            {
+                cli.System.Runtime.InteropServices.Marshal.Copy(IntPtr.op_Explicit(srcOffset), (byte[])destBase, (int)destOffset, (int)bytes);
+            }
+            else
+            {
+                throw new ikvm.internal.NotYetImplementedError("destBase = " + destBase);
+            }
+        }
+        else
+        {
+            if (srcBase instanceof byte[])
+            {
+                cli.System.Runtime.InteropServices.Marshal.Copy((byte[])srcBase, (int)srcOffset, IntPtr.op_Explicit(destOffset), (int)bytes);
+            }
+            else
+            {
+                throw new ikvm.internal.NotYetImplementedError("srcBase = " + srcBase);
+            }
+        }
     }
 
     @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)

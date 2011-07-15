@@ -40,6 +40,7 @@ public final class SocketUtil
     public static final int WSAEINVAL = 10022;
     public static final int WSAEWOULDBLOCK = 10035;
     public static final int WSAEMSGSIZE = 10040;
+    public static final int WSAENOPROTOOPT = 10042;
     public static final int WSAEADDRINUSE = 10048;
     public static final int WSAENETUNREACH = 10051;
     public static final int WSAECONNRESET = 10054;

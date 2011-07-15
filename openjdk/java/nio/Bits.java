@@ -789,6 +789,7 @@ class Bits {                            // package-private
      * @param   length
      *          number of bytes to copy
      */
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static void copyToArray(long srcAddr, Object dst, long dstBaseOffset, long dstPos,
                             long length)
     {

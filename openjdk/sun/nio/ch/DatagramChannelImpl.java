@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,13 @@
 
 package sun.nio.ch;
 
-import ikvm.internal.NotYetImplementedError;
-
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.channels.spi.*;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.lang.ref.SoftReference;
+import java.util.*;
 import sun.net.ResourceManager;
 
 
@@ -55,8 +50,15 @@ class DatagramChannelImpl
     private static final int IOC_VENDOR = 0x18000000;
     private static final int SIO_UDP_CONNRESET = IOC_IN | IOC_VENDOR | 12;
 
+    // Used to make native read and write calls
+    private static NativeDispatcher nd = new SocketDispatcher();
+
     // Our file descriptor
-    FileDescriptor fd = null;
+    private final FileDescriptor fd;
+
+    // fd value needed for dev/poll. This value will remain valid
+    // even after the value in the file descriptor object has been set to -1
+    private final int fdVal;
 
     // The protocol family of the socket
     private final ProtocolFamily family;
@@ -67,8 +69,8 @@ class DatagramChannelImpl
 
     // Cached InetAddress and port for unconnected DatagramChannels
     // used by receive0
-    private InetAddress cachedSenderInetAddress = null;
-    private int cachedSenderPort = 0;
+    private InetAddress cachedSenderInetAddress;
+    private int cachedSenderPort;
 
     // Lock held by current reading or connecting thread
     private final Object readLock = new Object();
@@ -84,20 +86,20 @@ class DatagramChannelImpl
 
     // State (does not necessarily increase monotonically)
     private static final int ST_UNINITIALIZED = -1;
-    private static int ST_UNCONNECTED = 0;
-    private static int ST_CONNECTED = 1;
+    private static final int ST_UNCONNECTED = 0;
+    private static final int ST_CONNECTED = 1;
     private static final int ST_KILLED = 2;
     private int state = ST_UNINITIALIZED;
 
     // Binding
-    private SocketAddress localAddress = null;
-    SocketAddress remoteAddress = null;
-
-    // Options
-    private SocketOpts.IP options = null;
+    private SocketAddress localAddress;
+    private SocketAddress remoteAddress;
 
     // Our socket adaptor, if any
-    private DatagramSocket socket = null;
+    private DatagramSocket socket;
+
+    // Multicast support
+    private MembershipRegistry registry;
 
     // -- End of fields protected by stateLock
 
@@ -109,8 +111,9 @@ class DatagramChannelImpl
         ResourceManager.beforeUdpCreate();
         try {
             this.family = Net.isIPv6Available() ?
-                    StandardProtocolFamily.INET6 : StandardProtocolFamily.INET;
-            this.fd = Net.socket(false);
+                StandardProtocolFamily.INET6 : StandardProtocolFamily.INET;
+            this.fd = Net.socket(family, false);
+            this.fdVal = IOUtil.fdVal(fd);
             this.state = ST_UNCONNECTED;
             try
             {
@@ -128,11 +131,11 @@ class DatagramChannelImpl
     }
 
     public DatagramChannelImpl(SelectorProvider sp, ProtocolFamily family)
-            throws IOException
+        throws IOException
     {
         super(sp);
         if ((family != StandardProtocolFamily.INET) &&
-                (family != StandardProtocolFamily.INET6))
+            (family != StandardProtocolFamily.INET6))
         {
             if (family == null)
                 throw new NullPointerException("'family' is null");
@@ -145,7 +148,18 @@ class DatagramChannelImpl
             }
         }
         this.family = family;
-        throw new NotYetImplementedError(); //TODO JDK7
+        this.fd = Net.socket(family, false);
+        this.fdVal = IOUtil.fdVal(fd);
+        this.state = ST_UNCONNECTED;
+        try
+        {
+            if (false) throw new cli.System.Net.Sockets.SocketException();
+            fd.getSocket().IOControl(SIO_UDP_CONNRESET, new byte[] { 0 }, null);
+        }
+        catch (cli.System.Net.Sockets.SocketException x)
+        {
+            throw SocketUtil.convertSocketExceptionToIOException(x);
+        }
     }
 
     public DatagramChannelImpl(SelectorProvider sp, FileDescriptor fd)
@@ -153,9 +167,11 @@ class DatagramChannelImpl
     {
         super(sp);
         this.family = Net.isIPv6Available() ?
-                StandardProtocolFamily.INET6 : StandardProtocolFamily.INET;
+            StandardProtocolFamily.INET6 : StandardProtocolFamily.INET;
         this.fd = fd;
+        this.fdVal = IOUtil.fdVal(fd);
         this.state = ST_UNCONNECTED;
+        this.localAddress = Net.localAddress(fd);
     }
 
     public DatagramSocket socket() {
@@ -166,6 +182,7 @@ class DatagramChannelImpl
         }
     }
 
+    @Override
     public SocketAddress getLocalAddress() throws IOException {
         synchronized (stateLock) {
             if (!isOpen())
@@ -174,6 +191,7 @@ class DatagramChannelImpl
         }
     }
 
+    @Override
     public SocketAddress getRemoteAddress() throws IOException {
         synchronized (stateLock) {
             if (!isOpen())
@@ -182,6 +200,7 @@ class DatagramChannelImpl
         }
     }
 
+    @Override
     public <T> DatagramChannel setOption(SocketOption<T> name, T value)
         throws IOException
     {
@@ -235,6 +254,7 @@ class DatagramChannelImpl
         }
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public <T> T getOption(SocketOption<T> name)
         throws IOException
@@ -307,6 +327,7 @@ class DatagramChannelImpl
         }
     }
 
+    @Override
     public final Set<SocketOption<?>> supportedOptions() {
         return DefaultOptionsHolder.defaultOptions;
     }
@@ -325,9 +346,9 @@ class DatagramChannelImpl
             throw new NullPointerException();
         synchronized (readLock) {
             ensureOpen();
-            // If socket is not bound then behave as if nothing received
-            if (!isBound())             // ## NotYetBoundException ??
-                return null;
+            // Socket was not bound before attempting receive
+            if (localAddress() == null)
+                bind(null);
             int n = 0;
             ByteBuffer bb = null;
             try {
@@ -418,6 +439,12 @@ class DatagramChannelImpl
                 do {
                     n = sendImpl(src, isa);
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
+
+                synchronized (stateLock) {
+                    if (isOpen() && (localAddress == null)) {
+                        localAddress = Net.localAddress(fd);
+                    }
+                }
                 return IOStatus.normalize(n);
             } finally {
                 writerThread = 0;
@@ -443,34 +470,7 @@ class DatagramChannelImpl
                     return 0;
                 readerThread = NativeThread.current();
                 do {
-                    n = readImpl(buf);
-                } while ((n == IOStatus.INTERRUPTED) && isOpen());
-                return IOStatus.normalize(n);
-            } finally {
-                readerThread = 0;
-                end((n > 0) || (n == IOStatus.UNAVAILABLE));
-                assert IOStatus.check(n);
-            }
-        }
-    }
-
-    private long read0(ByteBuffer[] bufs) throws IOException {
-        if (bufs == null)
-            throw new NullPointerException();
-        synchronized (readLock) {
-            synchronized (stateLock) {
-                ensureOpen();
-                if (!isConnected())
-                    throw new NotYetConnectedException();
-            }
-            long n = 0;
-            try {
-                begin();
-                if (!isOpen())
-                    return 0;
-                readerThread = NativeThread.current();
-                do {
-                    n = readImpl(bufs);
+                    n = IOUtil.read(fd, buf, -1, nd, readLock);
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(n);
             } finally {
@@ -485,9 +485,29 @@ class DatagramChannelImpl
         throws IOException
     {
         if ((offset < 0) || (length < 0) || (offset > dsts.length - length))
-           throw new IndexOutOfBoundsException();
-        // ## Fix IOUtil.write so that we can avoid this array copy
-        return read0(Util.subsequence(dsts, offset, length));
+            throw new IndexOutOfBoundsException();
+        synchronized (readLock) {
+            synchronized (stateLock) {
+                ensureOpen();
+                if (!isConnected())
+                    throw new NotYetConnectedException();
+            }
+            long n = 0;
+            try {
+                begin();
+                if (!isOpen())
+                    return 0;
+                readerThread = NativeThread.current();
+                do {
+                    n = IOUtil.read(fd, dsts, offset, length, nd);
+                } while ((n == IOStatus.INTERRUPTED) && isOpen());
+                return IOStatus.normalize(n);
+            } finally {
+                readerThread = 0;
+                end((n > 0) || (n == IOStatus.UNAVAILABLE));
+                assert IOStatus.check(n);
+            }
+        }
     }
 
     public int write(ByteBuffer buf) throws IOException {
@@ -506,34 +526,7 @@ class DatagramChannelImpl
                     return 0;
                 writerThread = NativeThread.current();
                 do {
-                    n = writeImpl(buf);
-                } while ((n == IOStatus.INTERRUPTED) && isOpen());
-                return IOStatus.normalize(n);
-            } finally {
-                writerThread = 0;
-                end((n > 0) || (n == IOStatus.UNAVAILABLE));
-                assert IOStatus.check(n);
-            }
-        }
-    }
-
-    private long write0(ByteBuffer[] bufs) throws IOException {
-        if (bufs == null)
-            throw new NullPointerException();
-        synchronized (writeLock) {
-            synchronized (stateLock) {
-                ensureOpen();
-                if (!isConnected())
-                    throw new NotYetConnectedException();
-            }
-            long n = 0;
-            try {
-                begin();
-                if (!isOpen())
-                    return 0;
-                writerThread = NativeThread.current();
-                do {
-                    n = writeImpl(bufs);
+                    n = IOUtil.write(fd, buf, -1, nd, writeLock);
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(n);
             } finally {
@@ -549,50 +542,36 @@ class DatagramChannelImpl
     {
         if ((offset < 0) || (length < 0) || (offset > srcs.length - length))
             throw new IndexOutOfBoundsException();
-        // ## Fix IOUtil.write so that we can avoid this array copy
-        return write0(Util.subsequence(srcs, offset, length));
+        synchronized (writeLock) {
+            synchronized (stateLock) {
+                ensureOpen();
+                if (!isConnected())
+                    throw new NotYetConnectedException();
+            }
+            long n = 0;
+            try {
+                begin();
+                if (!isOpen())
+                    return 0;
+                writerThread = NativeThread.current();
+                do {
+                    n = IOUtil.write(fd, srcs, offset, length, nd);
+                } while ((n == IOStatus.INTERRUPTED) && isOpen());
+                return IOStatus.normalize(n);
+            } finally {
+                writerThread = 0;
+                end((n > 0) || (n == IOStatus.UNAVAILABLE));
+                assert IOStatus.check(n);
+            }
+        }
     }
 
     protected void implConfigureBlocking(boolean block) throws IOException {
         IOUtil.configureBlocking(fd, block);
     }
 
-    public SocketOpts options() {
-        synchronized (stateLock) {
-            if (options == null) {
-                SocketOptsImpl.Dispatcher d
-                    = new SocketOptsImpl.Dispatcher() {
-                            int getInt(int opt) throws IOException {
-                                return Net.getIntOption(fd, opt);
-                            }
-                            void setInt(int opt, int arg)
-                                throws IOException
-                            {
-                                Net.setIntOption(fd, opt, arg);
-                            }
-                        };
-                options = new SocketOptsImpl.IP(d);
-            }
-            return options;
-        }
-    }
-
-    public boolean isBound() {
-        return Net.localPortNumber(fd) != 0;
-    }
-
     public SocketAddress localAddress() {
         synchronized (stateLock) {
-            if (isConnected() && (localAddress == null)) {
-                // Socket was not bound before connecting,
-                // so ask what the address turned out to be
-                localAddress = Net.localAddress(fd);
-            }
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                InetSocketAddress isa = (InetSocketAddress)localAddress;
-                sm.checkConnect(isa.getAddress().getHostAddress(), -1);
-            }
             return localAddress;
         }
     }
@@ -603,18 +582,32 @@ class DatagramChannelImpl
         }
     }
 
+    @Override
     public DatagramChannel bind(SocketAddress local) throws IOException {
         synchronized (readLock) {
             synchronized (writeLock) {
                 synchronized (stateLock) {
                     ensureOpen();
-                    if (isBound())
+                    if (localAddress != null)
                         throw new AlreadyBoundException();
-                    InetSocketAddress isa = Net.checkAddress(local);
+                    InetSocketAddress isa;
+                    if (local == null) {
+                        isa = new InetSocketAddress(0);
+                    } else {
+                        isa = Net.checkAddress(local);
+
+                        // only Inet4Address allowed with IPv4 socket
+                        if (family == StandardProtocolFamily.INET) {
+                            InetAddress addr = isa.getAddress();
+                            if (!(addr instanceof Inet4Address))
+                                throw new UnsupportedAddressTypeException();
+                        }
+                    }
                     SecurityManager sm = System.getSecurityManager();
-                    if (sm != null)
+                    if (sm != null) {
                         sm.checkListen(isa.getPort());
-                    Net.bind(fd, isa.getAddress(), isa.getPort());
+                    }
+                    Net.bind(family, fd, isa.getAddress(), isa.getPort());
                     localAddress = Net.localAddress(fd);
                 }
             }
@@ -638,7 +631,6 @@ class DatagramChannelImpl
     }
 
     public DatagramChannel connect(SocketAddress sa) throws IOException {
-        int trafficClass = 0;
         int localPort = 0;
 
         synchronized(readLock) {
@@ -672,6 +664,9 @@ class DatagramChannelImpl
                     sender = isa;
                     cachedSenderInetAddress = isa.getAddress();
                     cachedSenderPort = isa.getPort();
+
+                    // set or refresh local address
+                    localAddress = Net.localAddress(fd);
                 }
             }
         }
@@ -692,6 +687,9 @@ class DatagramChannelImpl
                     disconnect0(fd);
                     remoteAddress = null;
                     state = ST_UNCONNECTED;
+
+                    // refresh local address
+                    localAddress = Net.localAddress(fd);
                 }
             }
         }
@@ -707,9 +705,94 @@ class DatagramChannelImpl
                                     InetAddress source)
         throws IOException
     {
-        throw new NotYetImplementedError(); //TODO JDK7
+        if (!group.isMulticastAddress())
+            throw new IllegalArgumentException("Group not a multicast address");
+
+        // check multicast address is compatible with this socket
+        if (group instanceof Inet4Address) {
+            if (family == StandardProtocolFamily.INET6 && !Net.canIPv6SocketJoinIPv4Group())
+                throw new IllegalArgumentException("IPv6 socket cannot join IPv4 multicast group");
+        } else if (group instanceof Inet6Address) {
+            if (family != StandardProtocolFamily.INET6)
+                throw new IllegalArgumentException("Only IPv6 sockets can join IPv6 multicast group");
+        } else {
+            throw new IllegalArgumentException("Address type not supported");
+        }
+
+        // check source address
+        if (source != null) {
+            if (source.isAnyLocalAddress())
+                throw new IllegalArgumentException("Source address is a wildcard address");
+            if (source.isMulticastAddress())
+                throw new IllegalArgumentException("Source address is multicast address");
+            if (source.getClass() != group.getClass())
+                throw new IllegalArgumentException("Source address is different type to group");
+        }
+
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null)
+            sm.checkMulticast(group);
+
+        synchronized (stateLock) {
+            if (!isOpen())
+                throw new ClosedChannelException();
+
+            // check the registry to see if we are already a member of the group
+            if (registry == null) {
+                registry = new MembershipRegistry();
+            } else {
+                // return existing membership key
+                MembershipKey key = registry.checkMembership(group, interf, source);
+                if (key != null)
+                    return key;
+            }
+
+            MembershipKeyImpl key;
+            if ((family == StandardProtocolFamily.INET6) &&
+                ((group instanceof Inet6Address) || Net.canJoin6WithIPv4Group()))
+            {
+                int index = interf.getIndex();
+                if (index == -1)
+                    throw new IOException("Network interface cannot be identified");
+
+                // need multicast and source address as byte arrays
+                byte[] groupAddress = Net.inet6AsByteArray(group);
+                byte[] sourceAddress = (source == null) ? null :
+                    Net.inet6AsByteArray(source);
+
+                // join the group
+                int n = Net.join6(fd, groupAddress, index, sourceAddress);
+                if (n == IOStatus.UNAVAILABLE)
+                    throw new UnsupportedOperationException();
+
+                key = new MembershipKeyImpl.Type6(this, group, interf, source,
+                                                  groupAddress, index, sourceAddress);
+
+            } else {
+                // need IPv4 address to identify interface
+                Inet4Address target = Net.anyInet4Address(interf);
+                if (target == null)
+                    throw new IOException("Network interface not configured for IPv4");
+
+                int groupAddress = Net.inet4AsInt(group);
+                int targetAddress = Net.inet4AsInt(target);
+                int sourceAddress = (source == null) ? 0 : Net.inet4AsInt(source);
+
+                // join the group
+                int n = Net.join4(fd, groupAddress, targetAddress, sourceAddress);
+                if (n == IOStatus.UNAVAILABLE)
+                    throw new UnsupportedOperationException();
+
+                key = new MembershipKeyImpl.Type4(this, group, interf, source,
+                                                  groupAddress, targetAddress, sourceAddress);
+            }
+
+            registry.add(key);
+            return key;
+        }
     }
 
+    @Override
     public MembershipKey join(InetAddress group,
                               NetworkInterface interf)
         throws IOException
@@ -717,6 +800,7 @@ class DatagramChannelImpl
         return innerJoin(group, interf, null);
     }
 
+    @Override
     public MembershipKey join(InetAddress group,
                               NetworkInterface interf,
                               InetAddress source)
@@ -726,11 +810,113 @@ class DatagramChannelImpl
             throw new NullPointerException("source address is null");
         return innerJoin(group, interf, source);
     }
-    
+
+    // package-private
+    void drop(MembershipKeyImpl key) {
+        assert key.channel() == this;
+
+        synchronized (stateLock) {
+            if (!key.isValid())
+                return;
+
+            try {
+                if (key instanceof MembershipKeyImpl.Type6) {
+                    MembershipKeyImpl.Type6 key6 =
+                        (MembershipKeyImpl.Type6)key;
+                    Net.drop6(fd, key6.groupAddress(), key6.index(), key6.source());
+                } else {
+                    MembershipKeyImpl.Type4 key4 = (MembershipKeyImpl.Type4)key;
+                    Net.drop4(fd, key4.groupAddress(), key4.interfaceAddress(),
+                        key4.source());
+                }
+            } catch (IOException ioe) {
+                // should not happen
+                throw new AssertionError(ioe);
+            }
+
+            key.invalidate();
+            registry.remove(key);
+        }
+    }
+
+    /**
+     * Block datagrams from given source if a memory to receive all
+     * datagrams.
+     */
+    void block(MembershipKeyImpl key, InetAddress source)
+        throws IOException
+    {
+        assert key.channel() == this;
+        assert key.sourceAddress() == null;
+
+        synchronized (stateLock) {
+            if (!key.isValid())
+                throw new IllegalStateException("key is no longer valid");
+            if (source.isAnyLocalAddress())
+                throw new IllegalArgumentException("Source address is a wildcard address");
+            if (source.isMulticastAddress())
+                throw new IllegalArgumentException("Source address is multicast address");
+            if (source.getClass() != key.group().getClass())
+                throw new IllegalArgumentException("Source address is different type to group");
+
+            int n;
+            if (key instanceof MembershipKeyImpl.Type6) {
+                 MembershipKeyImpl.Type6 key6 =
+                    (MembershipKeyImpl.Type6)key;
+                n = Net.block6(fd, key6.groupAddress(), key6.index(),
+                               Net.inet6AsByteArray(source));
+            } else {
+                MembershipKeyImpl.Type4 key4 =
+                    (MembershipKeyImpl.Type4)key;
+                n = Net.block4(fd, key4.groupAddress(), key4.interfaceAddress(),
+                               Net.inet4AsInt(source));
+            }
+            if (n == IOStatus.UNAVAILABLE) {
+                // ancient kernel
+                throw new UnsupportedOperationException();
+            }
+        }
+    }
+
+    /**
+     * Unblock given source.
+     */
+    void unblock(MembershipKeyImpl key, InetAddress source) {
+        assert key.channel() == this;
+        assert key.sourceAddress() == null;
+
+        synchronized (stateLock) {
+            if (!key.isValid())
+                throw new IllegalStateException("key is no longer valid");
+
+            try {
+                if (key instanceof MembershipKeyImpl.Type6) {
+                    MembershipKeyImpl.Type6 key6 =
+                        (MembershipKeyImpl.Type6)key;
+                    Net.unblock6(fd, key6.groupAddress(), key6.index(),
+                                 Net.inet6AsByteArray(source));
+                } else {
+                    MembershipKeyImpl.Type4 key4 =
+                        (MembershipKeyImpl.Type4)key;
+                    Net.unblock4(fd, key4.groupAddress(), key4.interfaceAddress(),
+                                 Net.inet4AsInt(source));
+                }
+            } catch (IOException ioe) {
+                // should not happen
+                throw new AssertionError(ioe);
+            }
+        }
+    }
+
     protected void implCloseSelectableChannel() throws IOException {
         synchronized (stateLock) {
-            closeImpl();
+            nd.preClose(fd);
             ResourceManager.afterUdpClose();
+
+            // if member of mulitcast group then invalidate all keys
+            if (registry != null)
+                registry.invalidateAll();
+
             long th;
             if ((th = readerThread) != 0)
                 NativeThread.signal(th);
@@ -750,7 +936,7 @@ class DatagramChannelImpl
                 return;
             }
             assert !isOpen() && !isRegistered();
-            closeImpl();
+            nd.close(fd);
             state = ST_KILLED;
         }
     }
@@ -818,29 +1004,11 @@ class DatagramChannelImpl
     }
 
     public int getFDVal() {
-        throw new Error();
+        return fdVal;
     }
 
 
     // -- Native methods --
-
-    private void closeImpl() throws IOException
-    {
-        try
-        {
-            if (false) throw new cli.System.Net.Sockets.SocketException();
-            if (false) throw new cli.System.ObjectDisposedException("");
-            fd.getSocket().Close();
-        }
-        catch (cli.System.Net.Sockets.SocketException x)
-        {
-            throw SocketUtil.convertSocketExceptionToIOException(x);
-        }
-        catch (cli.System.ObjectDisposedException x1)
-        {
-            throw new SocketException("Socket is closed");
-        }
-    }
 
     private static void disconnect0(FileDescriptor fd) throws IOException
     {
@@ -968,68 +1136,5 @@ class DatagramChannelImpl
         {
             throw new SocketException("Socket is closed");
         }
-    }
-
-    private int readImpl(ByteBuffer bb) throws IOException
-    {
-        return receive0(bb);
-    }
-
-    private long readImpl(ByteBuffer[] bb) throws IOException
-    {
-        // This is a rather lame implementation. On .NET 2.0 we could make this more
-        // efficient by using the IList<ArraySegment<byte>> overload of Socket.Send()
-        long size = 0;
-        for (int i = 0; i < bb.length; i++)
-        {
-            size += bb[i].remaining();
-        }
-        // UDP has a maximum packet size of 64KB
-        byte[] buf = new byte[(int)Math.min(65536, size)];
-        int n = receive0(ByteBuffer.wrap(buf));
-        if (n <= 0)
-        {
-            return n;
-        }
-        for (int i = 0, pos = 0; i < bb.length && pos < buf.length; i++)
-        {
-            int len = Math.min(bb[i].remaining(), buf.length - pos);
-            bb[i].put(buf, pos, len);
-            pos += len;
-        }
-        return n;
-    }
-
-    private int writeImpl(ByteBuffer bb) throws IOException
-    {
-        return sendImpl(bb, (InetSocketAddress)remoteAddress);
-    }
-
-    private long writeImpl(ByteBuffer[] bb) throws IOException
-    {
-        // This is a rather lame implementation. On .NET 2.0 we could make this more
-        // efficient by using the IList<ArraySegment<byte>> overload of Socket.Send()
-        long totalWritten = 0;
-        for (int i = 0; i < bb.length; i++)
-        {
-            try
-            {
-                int len = writeImpl(bb[i]);
-                if (len < 0)
-                {
-                    return totalWritten > 0 ? totalWritten : len;
-                }
-                totalWritten += len;
-            }
-            catch (IOException x)
-            {
-                if (totalWritten > 0)
-                {
-                    return totalWritten;
-                }
-                throw x;
-            }
-        }
-        return totalWritten;
     }
 }

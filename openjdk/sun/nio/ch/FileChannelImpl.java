@@ -66,9 +66,6 @@ public class FileChannelImpl
     // Memory allocation size for mapping buffers
     private static final long allocationGranularity = 64 * 1024;    // HACK we're using a hard coded value here that works on all mainstream platforms
 
-    // Cached field for MappedByteBuffer.isAMappedBuffer
-    private static Field isAMappedBufferField;
-
     // File descriptor
     private FileDescriptor fd;
 
@@ -602,10 +599,12 @@ public class FileChannelImpl
             }
             if (size == 0) {
                 addr = 0;
+                // a valid file descriptor is not required
+                FileDescriptor dummy = new FileDescriptor();
                 if ((!writable) || (imode == MAP_RO))
-                    return Util.newMappedByteBufferR(0, 0, null);
+                    return Util.newMappedByteBufferR(0, 0, dummy, null);
                 else
-                    return Util.newMappedByteBuffer(0, 0, null);
+                    return Util.newMappedByteBuffer(0, 0, dummy, null);
             }
 
             int pagePosition = (int)(position % allocationGranularity);
@@ -636,9 +635,9 @@ public class FileChannelImpl
             int isize = (int)size;
             Unmapper um = new Unmapper(addr, size + pagePosition);
             if ((!writable) || (imode == MAP_RO))
-                return Util.newMappedByteBufferR(isize, addr + pagePosition, um);
+                return Util.newMappedByteBufferR(isize, addr + pagePosition, fd, um);
             else
-                return Util.newMappedByteBuffer(isize, addr + pagePosition, um);
+                return Util.newMappedByteBuffer(isize, addr + pagePosition, fd, um);
         } finally {
             end(IOStatus.checkAll(addr));
         }
@@ -1471,10 +1470,4 @@ public class FileChannelImpl
     {
         return fd.length();
     }
-
-    static {
-        isAMappedBufferField = Reflect.lookupField("java.nio.MappedByteBuffer",
-                                          "isAMappedBuffer");
-    }
-
 }

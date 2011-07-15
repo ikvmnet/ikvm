@@ -127,6 +127,7 @@
                 <include name="fdlibm/s_log1p.cs" />
                 <include name="fdlibm/s_scalbn.cs" />
                 <include name="fdlibm/s_tan.cs" />
+                <include name="openjdk/sun.nio.ch.cs" />
             </sources>
             <resources>
                 <include if="${not first-pass}" name="../openjdk/vfs.zip" />

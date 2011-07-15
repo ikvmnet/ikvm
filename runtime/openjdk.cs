@@ -4678,31 +4678,30 @@ namespace IKVM.NativeCode.java
 		{
 			private static volatile int bogusField;
 
-			public static bool isLoaded0(object thisMappedByteBuffer, long address, long length)
+			public static bool isLoaded0(object thisMappedByteBuffer, long address, long length, int pageCount)
 			{
 				// on Windows, JDK simply returns false, so we can get away with that too.
 				return false;
 			}
 
 			[System.Security.SecuritySafeCritical]
-			public static int load0(object thisMappedByteBuffer, long address, long length, int pageSize)
+			public static void load0(object thisMappedByteBuffer, long address, long length)
 			{
 				int bogus = bogusField;
 				while (length > 0)
 				{
 					// touch a byte in every page
 					bogus += System.Runtime.InteropServices.Marshal.ReadByte((IntPtr)address);
-					length -= pageSize;
-					address += pageSize;
+					length -= 4096;
+					address += 4096;
 				}
 				// do a volatile store of the sum of the bytes to make sure the reads don't get optimized out
 				bogusField = bogus;
 				GC.KeepAlive(thisMappedByteBuffer);
-				return 0;
 			}
 
 			[System.Security.SecuritySafeCritical]
-			public static void force0(object thisMappedByteBuffer, long address, long length)
+			public static void force0(object thisMappedByteBuffer, object fd, long address, long length)
 			{
 				if (JVM.IsUnix)
 				{

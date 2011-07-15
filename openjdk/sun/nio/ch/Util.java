@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,10 @@ package sun.nio.ch;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.*;
 import java.io.IOException;
+import java.io.FileDescriptor;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.*;
-import java.nio.channels.spi.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.*;
@@ -65,10 +65,12 @@ class Util {
     }
 
     // Per-thread cached selector
-    private static ThreadLocal localSelector = new ThreadLocal();
+    private static ThreadLocal<SoftReference<SelectorWrapper>> localSelector
+        = new ThreadLocal<SoftReference<SelectorWrapper>>();
     // Hold a reference to the selWrapper object to prevent it from
     // being cleaned when the temporary selector wrapped is on lease.
-    private static ThreadLocal localSelectorWrapper = new ThreadLocal();
+    private static ThreadLocal<SelectorWrapper> localSelectorWrapper
+        = new ThreadLocal<SelectorWrapper>();
 
     // When finished, invoker must ensure that selector is empty
     // by cancelling any related keys and explicitly releasing
@@ -76,18 +78,18 @@ class Util {
     static Selector getTemporarySelector(SelectableChannel sc)
         throws IOException
     {
-        SoftReference ref = (SoftReference)localSelector.get();
+        SoftReference<SelectorWrapper> ref = localSelector.get();
         SelectorWrapper selWrapper = null;
         Selector sel = null;
         if (ref == null
-            || ((selWrapper = (SelectorWrapper) ref.get()) == null)
+            || ((selWrapper = ref.get()) == null)
             || ((sel = selWrapper.get()) == null)
             || (sel.provider() != sc.provider())) {
             sel = sc.provider().openSelector();
-            localSelector.set(new SoftReference(new SelectorWrapper(sel)));
-        } else {
-            localSelectorWrapper.set(selWrapper);
+            selWrapper = new SelectorWrapper(sel);
+            localSelector.set(new SoftReference<SelectorWrapper>(selWrapper));
         }
+        localSelectorWrapper.set(selWrapper);
         return sel;
     }
 
@@ -152,13 +154,14 @@ class Util {
     private static volatile Constructor directByteBufferConstructor = null;
 
     private static void initDBBConstructor() {
-        AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                public Void run() {
                     try {
-                        Class cl = Class.forName("java.nio.DirectByteBuffer");
+                        Class<?> cl = Class.forName("java.nio.DirectByteBuffer");
                         Constructor ctor = cl.getDeclaredConstructor(
                             new Class[] { int.class,
                                           long.class,
+                                          FileDescriptor.class,
                                           Runnable.class });
                         ctor.setAccessible(true);
                         directByteBufferConstructor = ctor;
@@ -176,6 +179,7 @@ class Util {
     }
 
     static MappedByteBuffer newMappedByteBuffer(int size, long addr,
+                                                FileDescriptor fd,
                                                 Runnable unmapper)
     {
         MappedByteBuffer dbb;
@@ -185,6 +189,7 @@ class Util {
             dbb = (MappedByteBuffer)directByteBufferConstructor.newInstance(
               new Object[] { new Integer(size),
                              new Long(addr),
+                             fd,
                              unmapper });
         } catch (InstantiationException e) {
             throw new InternalError();
@@ -199,13 +204,14 @@ class Util {
     private static volatile Constructor directByteBufferRConstructor = null;
 
     private static void initDBBRConstructor() {
-        AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                public Void run() {
                     try {
-                        Class cl = Class.forName("java.nio.DirectByteBufferR");
+                        Class<?> cl = Class.forName("java.nio.DirectByteBufferR");
                         Constructor ctor = cl.getDeclaredConstructor(
                             new Class[] { int.class,
                                           long.class,
+                                          FileDescriptor.class,
                                           Runnable.class });
                         ctor.setAccessible(true);
                         directByteBufferRConstructor = ctor;
@@ -223,6 +229,7 @@ class Util {
     }
 
     static MappedByteBuffer newMappedByteBufferR(int size, long addr,
+                                                 FileDescriptor fd,
                                                  Runnable unmapper)
     {
         MappedByteBuffer dbb;
@@ -232,6 +239,7 @@ class Util {
             dbb = (MappedByteBuffer)directByteBufferRConstructor.newInstance(
               new Object[] { new Integer(size),
                              new Long(addr),
+                             fd,
                              unmapper });
         } catch (InstantiationException e) {
             throw new InternalError();

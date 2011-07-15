@@ -49,7 +49,9 @@ public final class FileDescriptor {
 
     private volatile cli.System.IO.Stream stream;
     private volatile cli.System.Net.Sockets.Socket socket;
-    
+    private volatile boolean nonBlockingSocket;
+    private volatile cli.System.IAsyncResult asyncResult;
+
     /**
      * HACK
      *   JRuby uses reflection to get at the handle (on Windows) and fd (on non-Windows)
@@ -680,5 +682,49 @@ public final class FileDescriptor {
     public void setSocket(cli.System.Net.Sockets.Socket socket)
     {
         this.socket = socket;
+    }
+
+    @ikvm.lang.Internal
+    public void setSocketBlocking(boolean blocking) throws IOException
+    {
+        this.nonBlockingSocket = !blocking;
+        try
+        {
+            if (false) throw new cli.System.Net.Sockets.SocketException();
+            if (false) throw new cli.System.ObjectDisposedException("");
+            socket.set_Blocking(blocking);
+        }
+        catch (cli.System.Net.Sockets.SocketException x)
+        {
+            if (x.get_ErrorCode() == java.net.SocketUtil.WSAEINVAL)
+            {
+                // Work around for winsock issue. You can't set a socket to blocking if a connection request is pending,
+                // so we'll have to set the blocking again in SocketChannelImpl.checkConnect().
+                return;
+            }
+            throw java.net.SocketUtil.convertSocketExceptionToIOException(x);
+        }
+        catch (cli.System.ObjectDisposedException _)
+        {
+            throw new java.net.SocketException("Socket is closed");
+        }
+    }
+    
+    @ikvm.lang.Internal
+    public boolean isSocketBlocking()
+    {
+        return !nonBlockingSocket;
+    }
+
+    @ikvm.lang.Internal
+    public cli.System.IAsyncResult getAsyncResult()
+    {
+        return asyncResult;
+    }
+
+    @ikvm.lang.Internal
+    public void setAsyncResult(cli.System.IAsyncResult asyncResult)
+    {
+        this.asyncResult = asyncResult;
     }
 }

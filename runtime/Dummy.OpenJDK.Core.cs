@@ -35,6 +35,7 @@ namespace java
 	namespace io
 	{
 		public class File { }
+		public class FileDescriptor { }
 		public class ObjectInputStream { }
 		public class ObjectOutputStream { }
 		public class ObjectStreamField { }
@@ -58,6 +59,7 @@ namespace java
 	namespace net
 	{
 		public class URL { }
+		public class InetAddress { }
 	}
 
 	namespace nio

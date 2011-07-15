@@ -63,11 +63,9 @@ assembly.class
     ../classpath/sun/misc/*.class
     @OPENJDK6@/jdk/src/share/classes/java/awt/AWTPermission.class
     @OPENJDK7@/build/linux-amd64/gensrc/java/lang/*.class
-    @OPENJDK6@/build/linux-amd64/gensrc/java/nio/*.class
-    @OPENJDK6@/build/linux-amd64/gensrc/java/nio/channels/*.class
+    @OPENJDK7@/build/linux-amd64/gensrc/java/nio/*.class
+    @OPENJDK7@/build/linux-amd64/gensrc/java/nio/channels/*.class
     @OPENJDK7@/build/linux-amd64/gensrc/java/nio/charset/*.class
-    @OPENJDK6@/build/linux-amd64/gensrc/sun/nio/ch/*.class
-    @OPENJDK7@/build/linux-amd64/gensrc/sun/nio/ch/*.class
     @OPENJDK7@/build/linux-amd64/gensrc/sun/nio/cs/*.class
     @OPENJDK7@/build/linux-amd64/gensrc/sun/util/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/com/sun/xml/internal/ws/developer/ServerSideException.class
@@ -85,10 +83,9 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/java/lang/reflect/*.class
     @OPENJDK7@/jdk/src/share/classes/java/math/*.class
     @OPENJDK7@/jdk/src/share/classes/java/net/*.class
-    @OPENJDK6@/jdk/src/share/classes/java/nio/*.class
-    @OPENJDK6@/jdk/src/share/classes/java/nio/channels/*.class
+    @OPENJDK7@/jdk/src/share/classes/java/nio/*.class
     @OPENJDK7@/jdk/src/share/classes/java/nio/channels/*.class
-    @OPENJDK6@/jdk/src/share/classes/java/nio/channels/spi/*.class
+    @OPENJDK7@/jdk/src/share/classes/java/nio/channels/spi/*.class
     @OPENJDK7@/jdk/src/share/classes/java/nio/charset/*.class
     @OPENJDK7@/jdk/src/share/classes/java/nio/charset/spi/*.class
     @OPENJDK7@/jdk/src/share/classes/java/nio/file/*.class
@@ -122,8 +119,7 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/sun/net/www/protocol/http/spnego/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/net/www/protocol/jar/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/net/www/protocol/mailto/*.class
-    @OPENJDK6@/jdk/src/share/classes/sun/nio/*.class
-    @OPENJDK6@/jdk/src/share/classes/sun/nio/ch/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/nio/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/nio/ch/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/nio/cs/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/nio/fs/*.class
@@ -159,7 +155,7 @@ assembly.class
     @OPENJDK7@/jdk/src/windows/classes/java/lang/*.class
     @OPENJDK7@/jdk/src/windows/classes/java/net/*.class
     @OPENJDK7@/jdk/src/windows/classes/sun/net/*.class
-    @OPENJDK6@/jdk/src/windows/classes/sun/nio/ch/*.class
+    @OPENJDK7@/jdk/src/windows/classes/sun/nio/ch/*.class
     @OPENJDK7@/jdk/src/windows/classes/sun/security/provider/NativePRNG.class
 }
 {

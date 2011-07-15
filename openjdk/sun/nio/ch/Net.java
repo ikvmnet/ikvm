@@ -25,27 +25,12 @@
 
 package sun.nio.ch;
 
-import cli.System.Net.IPAddress;
-import cli.System.Net.IPEndPoint;
-import cli.System.Net.Sockets.LingerOption;
-import cli.System.Net.Sockets.SelectMode;
-import cli.System.Net.Sockets.SocketOptionName;
-import cli.System.Net.Sockets.SocketOptionLevel;
-import cli.System.Net.Sockets.SocketFlags;
-import cli.System.Net.Sockets.SocketType;
-import cli.System.Net.Sockets.ProtocolType;
-import cli.System.Net.Sockets.AddressFamily;
-import cli.System.Net.Sockets.SocketShutdown;
-import ikvm.internal.NotYetImplementedError;
-import ikvm.lang.CIL;
 import java.io.*;
 import java.net.*;
-import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.util.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-
 
 
 class Net {                                             // package-private
@@ -59,390 +44,40 @@ class Net {                                             // package-private
         }
     };
 
+    // -- Miscellaneous utilities --
+
+    private static volatile boolean checkedIPv6 = false;
+    private static volatile boolean isIPv6Available;
+
     /**
      * Tells whether dual-IPv4/IPv6 sockets should be used.
      */
     static boolean isIPv6Available() {
-        return false;
-    }
-    
-    static FileDescriptor serverSocket(boolean stream) throws IOException
-    {
-        return socket(stream);
-    }
-
-    static FileDescriptor socket(boolean stream) throws IOException
-    {
-        try
-        {
-            if (false) throw new cli.System.Net.Sockets.SocketException();
-            FileDescriptor fd = new FileDescriptor();
-            if (stream)
-            {
-                fd.setSocket(new cli.System.Net.Sockets.Socket(AddressFamily.wrap(AddressFamily.InterNetwork), SocketType.wrap(SocketType.Stream), ProtocolType.wrap(ProtocolType.Tcp)));
-            }
-            else
-            {
-                fd.setSocket(new cli.System.Net.Sockets.Socket(AddressFamily.wrap(AddressFamily.InterNetwork), SocketType.wrap(SocketType.Dgram), ProtocolType.wrap(ProtocolType.Udp)));
-            }
-            return fd;
+        if (!checkedIPv6) {
+            isIPv6Available = isIPv6Available0();
+            checkedIPv6 = true;
         }
-        catch (cli.System.Net.Sockets.SocketException x)
-        {
-            throw SocketUtil.convertSocketExceptionToIOException(x);
-        }
+        return isIPv6Available;
     }
 
-    static void bind(FileDescriptor fd, InetAddress addr, int port) throws IOException
-    {
-        try
-        {
-            if (false) throw new cli.System.Net.Sockets.SocketException();
-            if (false) throw new cli.System.ObjectDisposedException("");
-            fd.getSocket().Bind(new IPEndPoint(SocketUtil.getAddressFromInetAddress(addr), port));
-        }
-        catch (cli.System.Net.Sockets.SocketException x)
-        {
-            throw SocketUtil.convertSocketExceptionToIOException(x);
-        }
-        catch (cli.System.ObjectDisposedException x1)
-        {
-            throw new SocketException("Socket is closed");
-        }
+    /**
+     * Tells whether IPv6 sockets can join IPv4 multicast groups
+     */
+    static boolean canIPv6SocketJoinIPv4Group() {
+        return canIPv6SocketJoinIPv4Group0();
     }
 
-    static void configureBlocking(FileDescriptor fd, boolean blocking) throws IOException
-    {
-        try
-        {
-            if (false) throw new cli.System.Net.Sockets.SocketException();
-            if (false) throw new cli.System.ObjectDisposedException("");
-            fd.getSocket().set_Blocking(blocking);
-        }
-        catch (cli.System.Net.Sockets.SocketException x)
-        {
-            if (x.get_ErrorCode() == SocketUtil.WSAEINVAL)
-            {
-                // Work around for winsock issue. You can't set a socket to blocking if a connection request is pending,
-                // so we'll have to set the blocking again in SocketChannelImpl.checkConnect().
-                return;
-            }
-            throw SocketUtil.convertSocketExceptionToIOException(x);
-        }
-        catch (cli.System.ObjectDisposedException _)
-        {
-            throw new SocketException("Socket is closed");
-        }
+    /**
+     * Tells whether {@link #join6} can be used to join an IPv4
+     * multicast group (IPv4 group as IPv4-mapped IPv6 address)
+     */
+    static boolean canJoin6WithIPv4Group() {
+        return canJoin6WithIPv4Group0();
     }
-
-    static InetSocketAddress localAddress(FileDescriptor fd)
-    {
-        try
-        {
-            if (false) throw new cli.System.Net.Sockets.SocketException();
-            if (false) throw new cli.System.ObjectDisposedException("");
-            IPEndPoint ep = (IPEndPoint)fd.getSocket().get_LocalEndPoint();
-            return new InetSocketAddress(SocketUtil.getInetAddressFromIPEndPoint(ep), ep.get_Port());
-        }
-        catch (cli.System.Net.Sockets.SocketException x)
-        {
-            throw new Error(x);
-        }
-        catch (cli.System.ObjectDisposedException x)
-        {
-            throw new Error(x);
-        }
-    }
-
-    static int localPortNumber(FileDescriptor fd)
-    {
-        try
-        {
-            if (false) throw new cli.System.Net.Sockets.SocketException();
-            if (false) throw new cli.System.ObjectDisposedException("");
-            IPEndPoint ep = (IPEndPoint)fd.getSocket().get_LocalEndPoint();
-            return ep == null ? 0 : ep.get_Port();
-        }
-        catch (cli.System.Net.Sockets.SocketException x)
-        {
-            throw new Error(x);
-        }
-        catch (cli.System.ObjectDisposedException x)
-        {
-            throw new Error(x);
-        }
-    }
-
-    private static int mapSocketOptionLevel(int opt) throws IOException
-    {
-        switch (opt)
-        {
-            case SocketOptions.SO_BROADCAST:
-            case SocketOptions.SO_KEEPALIVE:
-            case SocketOptions.SO_LINGER:
-            case SocketOptions.SO_OOBINLINE:
-            case SocketOptions.SO_RCVBUF:
-            case SocketOptions.SO_SNDBUF:
-            case SocketOptions.SO_REUSEADDR:
-                return SocketOptionLevel.Socket;
-            case SocketOptions.IP_MULTICAST_LOOP:
-            case SocketOptions.IP_TOS:
-                return SocketOptionLevel.IP;
-            case SocketOptions.TCP_NODELAY:
-                return SocketOptionLevel.Tcp;
-            default:
-                throw new SocketException("unsupported socket option: " + opt);
-        }
-    }
-
-    private static int mapSocketOptionName(int opt) throws IOException
-    {
-        switch (opt)
-        {
-            case SocketOptions.SO_BROADCAST:
-                return SocketOptionName.Broadcast;
-            case SocketOptions.SO_KEEPALIVE:
-                return SocketOptionName.KeepAlive;
-            case SocketOptions.SO_LINGER:
-                return SocketOptionName.Linger;
-            case SocketOptions.SO_OOBINLINE:
-                return SocketOptionName.OutOfBandInline;
-            case SocketOptions.SO_RCVBUF:
-                return SocketOptionName.ReceiveBuffer;
-            case SocketOptions.SO_SNDBUF:
-                return SocketOptionName.SendBuffer;
-            case SocketOptions.SO_REUSEADDR:
-                return SocketOptionName.ReuseAddress;
-            case SocketOptions.IP_MULTICAST_LOOP:
-                return SocketOptionName.MulticastLoopback;
-            case SocketOptions.IP_TOS:
-                return SocketOptionName.TypeOfService;
-            case SocketOptions.TCP_NODELAY:
-                return SocketOptionName.NoDelay;
-            default:
-                throw new SocketException("unsupported socket option: " + opt);
-        }
-    }
-
-    static void setIntOption(FileDescriptor fd, int opt, int arg) throws IOException
-    {
-        try
-        {
-            if (false) throw new cli.System.Net.Sockets.SocketException();
-            if (false) throw new cli.System.ObjectDisposedException("");
-            int level = mapSocketOptionLevel(opt);
-            int name = mapSocketOptionName(opt);
-            fd.getSocket().SetSocketOption(SocketOptionLevel.wrap(level), SocketOptionName.wrap(name), arg);
-        }
-        catch (cli.System.Net.Sockets.SocketException x)
-        {
-            throw SocketUtil.convertSocketExceptionToIOException(x);
-        }
-        catch (cli.System.ObjectDisposedException x1)
-        {
-            throw new SocketException("Socket is closed");
-        }
-    }
-
-    static int getIntOption(FileDescriptor fd, int opt) throws IOException
-    {
-        try
-        {
-            if (false) throw new cli.System.Net.Sockets.SocketException();
-            if (false) throw new cli.System.ObjectDisposedException("");
-            int level = mapSocketOptionLevel(opt);
-            int name = mapSocketOptionName(opt);
-            Object obj = fd.getSocket().GetSocketOption(SocketOptionLevel.wrap(level), SocketOptionName.wrap(name));
-            if (obj instanceof LingerOption)
-            {
-                LingerOption lo = (LingerOption)obj;
-                return lo.get_Enabled() ? lo.get_LingerTime() : -1;
-            }
-            return CIL.unbox_int(obj);
-        }
-        catch (cli.System.Net.Sockets.SocketException x)
-        {
-            throw SocketUtil.convertSocketExceptionToIOException(x);
-        }
-        catch (cli.System.ObjectDisposedException x1)
-        {
-            throw new SocketException("Socket is closed");
-        }
-    }
-
-    private static int readImpl(FileDescriptor fd, byte[] buf, int offset, int length) throws IOException
-    {
-        if (length == 0)
-        {
-            return 0;
-        }
-        try
-        {
-            if (false) throw new cli.System.Net.Sockets.SocketException();
-            if (false) throw new cli.System.ObjectDisposedException("");
-            int read = fd.getSocket().Receive(buf, offset, length, SocketFlags.wrap(SocketFlags.None));
-            return read == 0 ? IOStatus.EOF : read;
-        }
-        catch (cli.System.Net.Sockets.SocketException x)
-        {
-            if (x.get_ErrorCode() == SocketUtil.WSAESHUTDOWN)
-            {
-                // the socket was shutdown, so we have to return EOF
-                return IOStatus.EOF;
-            }
-            else if (x.get_ErrorCode() == SocketUtil.WSAEWOULDBLOCK)
-            {
-                // nothing to read and would block
-                return IOStatus.UNAVAILABLE;
-            }
-            throw SocketUtil.convertSocketExceptionToIOException(x);
-        }
-        catch (cli.System.ObjectDisposedException x1)
-        {
-            throw new SocketException("Socket is closed");
-        }
-    }
-
-    static int read(FileDescriptor fd, ByteBuffer dst) throws IOException
-    {
-        if (dst.hasArray())
-        {
-            byte[] buf = dst.array();
-            int len = readImpl(fd, buf, dst.arrayOffset() + dst.position(), dst.remaining());
-            if (len > 0)
-            {
-                dst.position(dst.position() + len);
-            }
-            return len;
-        }
-        else
-        {
-            byte[] buf = new byte[dst.remaining()];
-            int len = readImpl(fd, buf, 0, buf.length);
-            if (len > 0)
-            {
-                dst.put(buf, 0, len);
-            }
-            return len;
-        }
-    }
-
-    static long read(FileDescriptor fd, ByteBuffer[] dsts) throws IOException
-    {
-        long totalRead = 0;
-        for (int i = 0; i < dsts.length; i++)
-        {
-            int size = dsts[i].remaining();
-            if (size > 0)
-            {
-                int read = read(fd, dsts[i]);
-                if (read < 0)
-                {
-                    break;
-                }
-                totalRead += read;
-                if (read < size || safeGetAvailable(fd) == 0)
-                {
-                    break;
-                }
-            }
-        }
-        return totalRead;
-    }
-
-    private static int safeGetAvailable(FileDescriptor fd)
-    {
-        try
-        {
-            if (false) throw new cli.System.Net.Sockets.SocketException();
-            if (false) throw new cli.System.ObjectDisposedException("");
-            return fd.getSocket().get_Available();
-        }
-        catch (cli.System.Net.Sockets.SocketException x)
-        {
-        }
-        catch (cli.System.ObjectDisposedException x1)
-        {
-        }
-        return 0;
-    }
-
-    private static int writeImpl(FileDescriptor fd, byte[] buf, int offset, int length) throws IOException
-    {
-        try
-        {
-            if (false) throw new cli.System.Net.Sockets.SocketException();
-            if (false) throw new cli.System.ObjectDisposedException("");
-            return fd.getSocket().Send(buf, offset, length, SocketFlags.wrap(SocketFlags.None));
-        }
-        catch (cli.System.Net.Sockets.SocketException x)
-        {
-            if (x.get_ErrorCode() == SocketUtil.WSAEWOULDBLOCK)
-            {
-                return IOStatus.UNAVAILABLE;
-            }
-            throw SocketUtil.convertSocketExceptionToIOException(x);
-        }
-        catch (cli.System.ObjectDisposedException x1)
-        {
-            throw new SocketException("Socket is closed");
-        }
-    }
-
-    static int write(FileDescriptor fd, ByteBuffer src) throws IOException
-    {
-        if (src.hasArray())
-        {
-            byte[] buf = src.array();
-            int len = writeImpl(fd, buf, src.arrayOffset() + src.position(), src.remaining());
-            if (len > 0)
-            {
-                src.position(src.position() + len);
-            }
-            return len;
-        }
-        else
-        {
-            int pos = src.position();
-            byte[] buf = new byte[src.remaining()];
-            src.get(buf);
-            int len = writeImpl(fd, buf, 0, buf.length);
-            if (len > 0)
-            {
-                src.position(pos + len);
-            }
-            return len;
-        }
-    }
-
-    static long write(FileDescriptor fd, ByteBuffer[] srcs) throws IOException
-    {
-        long totalWritten = 0;
-        for (int i = 0; i < srcs.length; i++)
-        {
-            int size = srcs[i].remaining();
-            if (size > 0)
-            {
-                int written = write(fd, srcs[i]);
-                if (written < 0)
-                {
-                    break;
-                }
-                totalWritten += written;
-                if (written < size)
-                {
-                    break;
-                }
-            }
-        }
-        return totalWritten;
-    }
-
-    // -- Miscellaneous utilities --
 
     static InetSocketAddress checkAddress(SocketAddress sa) {
         if (sa == null)
-            throw new IllegalArgumentException();
+            throw new NullPointerException();
         if (!(sa instanceof InetSocketAddress))
             throw new UnsupportedAddressTypeException(); // ## needs arg
         InetSocketAddress isa = (InetSocketAddress)sa;
@@ -468,6 +103,8 @@ class Net {                                             // package-private
         Exception nx = x;
         if (x instanceof ClosedChannelException)
             nx = new SocketException("Socket is closed");
+        else if (x instanceof NotYetConnectedException)
+            nx = new SocketException("Socket is not connected");
         else if (x instanceof AlreadyBoundException)
             nx = new SocketException("Already bound");
         else if (x instanceof NotYetBoundException)
@@ -587,10 +224,9 @@ class Net {                                             // package-private
 
     // -- Socket options
 
-
     static void setSocketOption(FileDescriptor fd, ProtocolFamily family,
-            SocketOption<?> name, Object value)
-         throws IOException
+                                SocketOption<?> name, Object value)
+        throws IOException
     {
         if (value == null)
             throw new IllegalArgumentException("Invalid option value");
@@ -644,9 +280,9 @@ class Net {                                             // package-private
     }
 
     static Object getSocketOption(FileDescriptor fd, ProtocolFamily family,
-            SocketOption<?> name)
-         throws IOException
-	{
+                                  SocketOption<?> name)
+        throws IOException
+    {
         Class<?> type = name.type();
 
         // only simple values supported by this method
@@ -666,48 +302,207 @@ class Net {                                             // package-private
         } else {
             return (value == 0) ? Boolean.FALSE : Boolean.TRUE;
         }
-	}
+    }
 
-    
+    // -- Socket operations --
+
+    private static native boolean isIPv6Available0();
+
+    private static native boolean canIPv6SocketJoinIPv4Group0();
+
+    private static native boolean canJoin6WithIPv4Group0();
+
+    static FileDescriptor socket(boolean stream) throws IOException {
+        return socket(UNSPEC, stream);
+    }
+
+    static FileDescriptor socket(ProtocolFamily family, boolean stream)
+        throws IOException {
+        boolean preferIPv6 = isIPv6Available() &&
+            (family != StandardProtocolFamily.INET);
+        return socket0(preferIPv6, stream, false);
+    }
+
+    static FileDescriptor serverSocket(boolean stream) {
+        return socket0(isIPv6Available(), stream, true);
+    }
+
+    // Due to oddities SO_REUSEADDR on windows reuse is ignored
+    private static native FileDescriptor socket0(boolean preferIPv6, boolean stream, boolean reuse);
+
+    static void bind(FileDescriptor fd, InetAddress addr, int port)
+        throws IOException
+    {
+        bind(UNSPEC, fd, addr, port);
+    }
+
+    static void bind(ProtocolFamily family, FileDescriptor fd,
+                     InetAddress addr, int port) throws IOException
+    {
+        boolean preferIPv6 = isIPv6Available() &&
+            (family != StandardProtocolFamily.INET);
+        bind0(preferIPv6, fd, addr, port);
+    }
+
+    private static native void bind0(boolean preferIPv6, FileDescriptor fd,
+                                     InetAddress addr, int port)
+        throws IOException;
+
+    static native void listen(FileDescriptor fd, int backlog) throws IOException;
+
+    static int connect(FileDescriptor fd, InetAddress remote, int remotePort)
+        throws IOException
+    {
+        return connect(UNSPEC, fd, remote, remotePort);
+    }
+
+    static int connect(ProtocolFamily family, FileDescriptor fd, InetAddress remote, int remotePort)
+        throws IOException
+    {
+        boolean preferIPv6 = isIPv6Available() &&
+            (family != StandardProtocolFamily.INET);
+        return connect0(preferIPv6, fd, remote, remotePort);
+    }
+
+    private static native int connect0(boolean preferIPv6,
+                                       FileDescriptor fd,
+                                       InetAddress remote,
+                                       int remotePort)
+        throws IOException;
+
+
     public final static int SHUT_RD = 0;
     public final static int SHUT_WR = 1;
     public final static int SHUT_RDWR = 2;
 
-    static /*native*/ void shutdown(FileDescriptor fd, int how) throws IOException
+    static native void shutdown(FileDescriptor fd, int how) throws IOException;
+
+    private static native int localPort(FileDescriptor fd)
+        throws IOException;
+
+    private static native InetAddress localInetAddress(FileDescriptor fd)
+        throws IOException;
+
+    static InetSocketAddress localAddress(FileDescriptor fd)
+        throws IOException
     {
-    	throw new NotYetImplementedError(); //TODO JDK7
+        return new InetSocketAddress(localInetAddress(fd), localPort(fd));
     }
 
-    private static /*native*/ int getIntOption0(FileDescriptor fd, boolean mayNeedConversion,
-            int level, int opt)
-          throws IOException
-      {
-      	throw new NotYetImplementedError(); //TODO JDK7
-      }
+    private static native int remotePort(FileDescriptor fd)
+        throws IOException;
 
-    private static /*native*/ void setIntOption0(FileDescriptor fd, boolean mayNeedConversion,
-             int level, int opt, int arg)
+    private static native InetAddress remoteInetAddress(FileDescriptor fd)
+        throws IOException;
+
+    static InetSocketAddress remoteAddress(FileDescriptor fd)
+        throws IOException
     {
-    	throw new NotYetImplementedError(); //TODO JDK7
+        return new InetSocketAddress(remoteInetAddress(fd), remotePort(fd));
     }
 
-    static /*native*/ void setInterface4(FileDescriptor fd, int interf) throws IOException
+    private static native int getIntOption0(FileDescriptor fd, boolean mayNeedConversion,
+                                            int level, int opt)
+        throws IOException;
+
+    private static native void setIntOption0(FileDescriptor fd, boolean mayNeedConversion,
+                                             int level, int opt, int arg)
+        throws IOException;
+
+    // -- Multicast support --
+
+
+    /**
+     * Join IPv4 multicast group
+     */
+    static int join4(FileDescriptor fd, int group, int interf, int source)
+        throws IOException
     {
-    	throw new NotYetImplementedError(); //TODO JDK7
+        return joinOrDrop4(true, fd, group, interf, source);
     }
-    
-    static /*native*/ int getInterface4(FileDescriptor fd) throws IOException
+
+    /**
+     * Drop membership of IPv4 multicast group
+     */
+    static void drop4(FileDescriptor fd, int group, int interf, int source)
+        throws IOException
     {
-    	throw new NotYetImplementedError(); //TODO JDK7
+        joinOrDrop4(false, fd, group, interf, source);
     }
-    
-    static /*native*/ void setInterface6(FileDescriptor fd, int index) throws IOException
+
+    private static native int joinOrDrop4(boolean join, FileDescriptor fd, int group, int interf, int source)
+        throws IOException;
+
+    /**
+     * Block IPv4 source
+     */
+    static int block4(FileDescriptor fd, int group, int interf, int source)
+        throws IOException
     {
-    	throw new NotYetImplementedError(); //TODO JDK7
+        return blockOrUnblock4(true, fd, group, interf, source);
     }
-    
-    static /*native*/ int getInterface6(FileDescriptor fd) throws IOException
+
+    /**
+     * Unblock IPv6 source
+     */
+    static void unblock4(FileDescriptor fd, int group, int interf, int source)
+        throws IOException
     {
-    	throw new NotYetImplementedError(); //TODO JDK7
+        blockOrUnblock4(false, fd, group, interf, source);
     }
+
+    private static native int blockOrUnblock4(boolean block, FileDescriptor fd, int group,
+                                              int interf, int source)
+        throws IOException;
+
+    /**
+     * Join IPv6 multicast group
+     */
+    static int join6(FileDescriptor fd, byte[] group, int index, byte[] source)
+        throws IOException
+    {
+        return joinOrDrop6(true, fd, group, index, source);
+    }
+
+    /**
+     * Drop membership of IPv6 multicast group
+     */
+    static void drop6(FileDescriptor fd, byte[] group, int index, byte[] source)
+        throws IOException
+    {
+        joinOrDrop6(false, fd, group, index, source);
+    }
+
+    private static native int joinOrDrop6(boolean join, FileDescriptor fd, byte[] group, int index, byte[] source)
+        throws IOException;
+
+    /**
+     * Block IPv6 source
+     */
+    static int block6(FileDescriptor fd, byte[] group, int index, byte[] source)
+        throws IOException
+    {
+        return blockOrUnblock6(true, fd, group, index, source);
+    }
+
+    /**
+     * Unblock IPv6 source
+     */
+    static void unblock6(FileDescriptor fd, byte[] group, int index, byte[] source)
+        throws IOException
+    {
+        blockOrUnblock6(false, fd, group, index, source);
+    }
+
+    static native int blockOrUnblock6(boolean block, FileDescriptor fd, byte[] group, int index, byte[] source)
+        throws IOException;
+
+    static native void setInterface4(FileDescriptor fd, int interf) throws IOException;
+
+    static native int getInterface4(FileDescriptor fd) throws IOException;
+
+    static native void setInterface6(FileDescriptor fd, int index) throws IOException;
+
+    static native int getInterface6(FileDescriptor fd) throws IOException;
+
 }

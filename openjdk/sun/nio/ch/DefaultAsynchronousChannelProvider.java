@@ -25,8 +25,6 @@
 
 package sun.nio.ch;
 
-import ikvm.internal.NotYetImplementedError;
-
 import java.nio.channels.spi.AsynchronousChannelProvider;
 
 /**
@@ -40,7 +38,6 @@ public class DefaultAsynchronousChannelProvider {
      * Returns the default AsynchronousChannelProvider.
      */
     public static AsynchronousChannelProvider create() {
-        //return new WindowsAsynchronousChannelProvider();
-    	throw new NotYetImplementedError();
+        throw new ikvm.internal.NotYetImplementedError();
     }
 }

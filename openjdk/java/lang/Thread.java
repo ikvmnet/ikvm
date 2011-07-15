@@ -1192,7 +1192,7 @@ class Thread implements Runnable {
             Interruptible b = blocker;
             if (b != null) {
                 interrupt0();           // Just to set the interrupt flag
-                b.interrupt();
+                b.interrupt(this);
                 return;
             }
         }
