@@ -5529,6 +5529,16 @@ namespace IKVM.NativeCode.java
 	}
 }
 
+namespace IKVM.NativeCode.sun.awt
+{
+	static class FontDescriptor
+	{
+		public static void initIDs()
+		{
+		}
+	}
+}
+
 namespace IKVM.NativeCode.sun.misc
 {
 	static class GC
