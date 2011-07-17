@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,9 @@ import java.util.Set;
 import java.util.HashSet;
 import java.beans.PropertyChangeSupport;
 import java.beans.PropertyChangeListener;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * The AppContext is a table referenced by ThreadGroup which stores
@@ -155,7 +158,7 @@ public final class AppContext {
     /* The main "system" AppContext, used by everything not otherwise
        contained in another AppContext.
      */
-    private static AppContext mainAppContext = null;
+    private static volatile AppContext mainAppContext = null;
 
     /*
      * The hash map associated with this AppContext.  A private delegate
@@ -180,12 +183,11 @@ public final class AppContext {
     public static final String DISPOSED_PROPERTY_NAME = "disposed";
     public static final String GUI_DISPOSED = "guidisposed";
 
-    private boolean isDisposed = false; // true if AppContext is disposed
+    private volatile boolean isDisposed = false; // true if AppContext is disposed
 
     public boolean isDisposed() {
         return isDisposed;
     }
-
 
     static {
         // On the main Thread, we get the ThreadGroup, make a corresponding
@@ -215,7 +217,7 @@ public final class AppContext {
      * number is 1.  If so, it returns the sole AppContext without
      * checking Thread.currentThread().
      */
-    private static int numAppContexts;
+    private static volatile int numAppContexts;
 
     /*
      * The context ClassLoader that was used to create this AppContext.
@@ -247,6 +249,13 @@ public final class AppContext {
                         return Thread.currentThread().getContextClassLoader();
                     }
                 });
+
+        // Initialize push/pop lock and its condition to be used by all the
+        // EventQueues within this AppContext
+        Lock eventQueuePushPopLock = new ReentrantLock();
+        put(EVENT_QUEUE_LOCK_KEY, eventQueuePushPopLock);
+        Condition eventQueuePushPopCond = eventQueuePushPopLock.newCondition();
+        put(EVENT_QUEUE_COND_KEY, eventQueuePushPopCond);
     }
 
     private static MostRecentThreadAppContext mostRecentThreadAppContext = null;
@@ -450,7 +459,7 @@ public final class AppContext {
         // Threads in the ThreadGroup to exit.
 
         long startTime = System.currentTimeMillis();
-        long endTime = startTime + (long)THREAD_INTERRUPT_TIMEOUT;
+        long endTime = startTime + THREAD_INTERRUPT_TIMEOUT;
         while ((this.threadGroup.activeCount() > 0) &&
                (System.currentTimeMillis() < endTime)) {
             try {
@@ -465,7 +474,7 @@ public final class AppContext {
         // Threads in the ThreadGroup to die.
 
         startTime = System.currentTimeMillis();
-        endTime = startTime + (long)THREAD_INTERRUPT_TIMEOUT;
+        endTime = startTime + THREAD_INTERRUPT_TIMEOUT;
         while ((this.threadGroup.activeCount() > 0) &&
                (System.currentTimeMillis() < endTime)) {
             try {
@@ -670,6 +679,7 @@ public final class AppContext {
      * Returns a string representation of this AppContext.
      * @since   1.2
      */
+    @Override
     public String toString() {
         return getClass().getName() + "[threadGroup=" + threadGroup.getName() + "]";
     }
