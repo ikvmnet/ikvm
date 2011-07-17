@@ -37,7 +37,7 @@ import sun.awt.SunHints;
  */
 public abstract class Font2D{
 
-    public Font2DHandle handle;
+    public Font2DHandle handle = new Font2DHandle(this);
 
     /* SunGraphics2D has font, tx, aa and fm. From this info
      * can get a Strike object from the cache, creating it if necessary.

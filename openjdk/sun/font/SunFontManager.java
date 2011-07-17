@@ -165,10 +165,29 @@ public class SunFontManager implements FontManager {
             return handle;
         }
         CompositeFont compFont = new CompositeFont(physicalFont, dialog2D);
-        Font2DHandle newHandle = new Font2DHandle(compFont);
+        Font2DHandle newHandle = compFont.handle;
         return newHandle;
 	}
     
+    /*
+     * return String representation of style prepended with "."
+     * This is useful for performance to avoid unnecessary string operations.
+     */
+    private static String dotStyleStr(int num) {
+        switch(num){
+          case Font.BOLD:
+            return ".bold";
+          case Font.ITALIC:
+            return ".italic";
+          case Font.ITALIC | Font.BOLD:
+            return ".bolditalic";
+          default:
+            return ".plain";
+        }
+    }
+    
+    private ConcurrentHashMap<String, Font2D> fontNameCache =
+            new ConcurrentHashMap<String, Font2D>();
     /*
      * The client supplies a name and a style.
      * The name could be a family name, or a full name.
@@ -177,7 +196,16 @@ public class SunFontManager implements FontManager {
      * may be able to emulate the required style.
      */
     public Font2D findFont2D(String name, int style, int fallback) {
-    	throw new NotYetImplementedError();
+        String lowerCaseName = name.toLowerCase(Locale.ENGLISH);
+        String mapName = lowerCaseName + dotStyleStr(style);
+        Font2D font2D = fontNameCache.get(mapName);
+
+        if(font2D != null){
+            return font2D;
+        }
+        font2D = new PhysicalFont(name,style);
+        fontNameCache.put(mapName, font2D);
+        return font2D;
     }
 
     /*
