@@ -49,10 +49,11 @@ import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.swing.plaf.FontUIResource;
-
+import sun.awt.AppContext;
 import sun.awt.FontConfiguration;
-
-import cli.System.Drawing.FontFamily;
+import sun.awt.SunToolkit;
+import sun.java2d.FontSupport;
+import sun.util.logging.PlatformLogger;
 
 /**
  * The base implementation of the {@link FontManager} interface. It implements
@@ -198,14 +199,69 @@ public class SunFontManager implements FontManager {
     public Font2D findFont2D(String name, int style, int fallback) {
         String lowerCaseName = name.toLowerCase(Locale.ENGLISH);
         String mapName = lowerCaseName + dotStyleStr(style);
-        Font2D font2D = fontNameCache.get(mapName);
+        Font2D font;
 
-        if(font2D != null){
-            return font2D;
+        /* If preferLocaleFonts() or preferProportionalFonts() has been
+         * called we may be using an alternate set of composite fonts in this
+         * app context. The presence of a pre-built name map indicates whether
+         * this is so, and gives access to the alternate composite for the
+         * name.
+         */
+        if (_usingPerAppContextComposites) {
+            ConcurrentHashMap<String, Font2D> altNameCache =
+                (ConcurrentHashMap<String, Font2D>)
+                AppContext.getAppContext().get(CompositeFont.class);
+            if (altNameCache != null) {
+                font = (Font2D)altNameCache.get(mapName);
+            } else {
+                font = null;
+            }
+        } else {
+            font = fontNameCache.get(mapName);
         }
-        font2D = new PhysicalFont(name,style);
-        fontNameCache.put(mapName, font2D);
-        return font2D;
+        if (font != null) {
+            return font;
+        }
+
+        if (FontUtilities.isLogging()) {
+            FontUtilities.getLogger().info("Search for font: " + name);
+        }
+
+        // The check below is just so that the bitmap fonts being set by
+        // AWT and Swing thru the desktop properties do not trigger the
+        // the load fonts case. The two bitmap fonts are now mapped to
+        // appropriate equivalents for serif and sansserif.
+        // Note that the cost of this comparison is only for the first
+        // call until the map is filled.
+        if (FontUtilities.isWindows) {
+            if (lowerCaseName.equals("ms sans serif")) {
+                name = "sansserif";
+            } else if (lowerCaseName.equals("ms serif")) {
+                name = "serif";
+            }
+        }
+
+        /* This isn't intended to support a client passing in the
+         * string default, but if a client passes in null for the name
+         * the java.awt.Font class internally substitutes this name.
+         * So we need to recognise it here to prevent a loadFonts
+         * on the unrecognised name. The only potential problem with
+         * this is it would hide any real font called "default"!
+         * But that seems like a potential problem we can ignore for now.
+         */
+        if (lowerCaseName.equals("default")) {
+        	lowerCaseName = name = "dialog";
+        }
+
+        font = new PhysicalFont(name,style);
+        
+        switch (lowerCaseName){
+        case "dialog":
+        	font = new CompositeFont(font); //dialog must a CompositeFont, else there are ClassCastExceptions
+        	break;
+        }
+        fontNameCache.put(mapName, font);
+        return font;
     }
 
     /*
@@ -381,7 +437,7 @@ public class SunFontManager implements FontManager {
      *            the style
      * @return a Font2D
      */
-    public static Font2D createFont2D( FontFamily family, int style ) {
+    public static Font2D createFont2D( cli.System.Drawing.FontFamily family, int style ) {
         return new PhysicalFont( family, style );
     }  
 }

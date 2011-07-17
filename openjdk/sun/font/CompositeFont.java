@@ -23,6 +23,10 @@
  */
 package sun.font;
 
+import java.awt.font.FontRenderContext;
+import java.awt.geom.AffineTransform;
+import java.util.Locale;
+
 import cli.System.Drawing.Font;
 import ikvm.internal.NotYetImplementedError;
 
@@ -31,23 +35,20 @@ import ikvm.internal.NotYetImplementedError;
  * 
  */
 public class CompositeFont extends Font2D{
+	
+	private final Font2D delegate;
+	
 
     public CompositeFont(PhysicalFont physicalFont, CompositeFont dialog2d) {
-    	throw new NotYetImplementedError();
+    	delegate = physicalFont;
 	}
 
-	@Override
-    public int getStyle(){
-        throw new NotYetImplementedError();
-    }
-
-    @Override
-    public Font createNetFont(java.awt.Font font){
-        throw new NotYetImplementedError();
-    }
+	public CompositeFont(Font2D font2d){
+		delegate = font2d;
+	}
 
     public int getNumSlots() {
-        throw new NotYetImplementedError();
+    	throw new NotYetImplementedError();
     }
     
     public PhysicalFont getSlotFont(int slot) {
@@ -56,5 +57,93 @@ public class CompositeFont extends Font2D{
 
 	public boolean isStdComposite() {
 		throw new NotYetImplementedError();
+	}
+	
+	@Override
+    public int getStyle(){
+		return delegate.getStyle();
+    }
+
+    @Override
+    public Font createNetFont(java.awt.Font font){
+        return delegate.createNetFont(font);
+    }
+
+	public FontStrike getStrike(java.awt.Font font, AffineTransform devTx,
+			int aa, int fm) {
+		return delegate.getStrike(font, devTx, aa, fm);
+	}
+
+	public FontStrike getStrike(java.awt.Font font, FontRenderContext frc) {
+		return delegate.getStrike(font, frc);
+	}
+
+	public void removeFromCache(FontStrikeDesc desc) {
+		delegate.removeFromCache(desc);
+	}
+
+	public void getFontMetrics(java.awt.Font font, AffineTransform identityTx,
+			Object antiAliasingHint, Object fractionalMetricsHint,
+			float[] metrics) {
+		delegate.getFontMetrics(font, identityTx, antiAliasingHint,
+				fractionalMetricsHint, metrics);
+	}
+
+	public void getStyleMetrics(float pointSize, float[] metrics, int offset) {
+		delegate.getStyleMetrics(pointSize, metrics, offset);
+	}
+
+	public void getFontMetrics(java.awt.Font font, FontRenderContext frc,
+			float[] metrics) {
+		delegate.getFontMetrics(font, frc, metrics);
+	}
+
+	public boolean useAAForPtSize(int ptsize) {
+		return delegate.useAAForPtSize(ptsize);
+	}
+
+	public boolean hasSupplementaryChars() {
+		return delegate.hasSupplementaryChars();
+	}
+
+	public String getPostscriptName() {
+		return delegate.getPostscriptName();
+	}
+
+	public String getFontName(Locale l) {
+		return delegate.getFontName(l);
+	}
+
+	public String getFamilyName(Locale l) {
+		return delegate.getFamilyName(l);
+	}
+
+	public int getNumGlyphs() {
+		return delegate.getNumGlyphs();
+	}
+
+	public int charToGlyph(int wchar) {
+		return delegate.charToGlyph(wchar);
+	}
+
+	public int getMissingGlyphCode() {
+		return delegate.getMissingGlyphCode();
+	}
+
+	public boolean canDisplay(char c) {
+		return delegate.canDisplay(c);
+	}
+
+	public boolean canDisplay(int cp) {
+		return delegate.canDisplay(cp);
+	}
+
+	public byte getBaselineFor(char c) {
+		return delegate.getBaselineFor(c);
+	}
+
+	public float getItalicAngle(java.awt.Font font, AffineTransform at,
+			Object aaHint, Object fmHint) {
+		return delegate.getItalicAngle(font, at, aaHint, fmHint);
 	}
 }
