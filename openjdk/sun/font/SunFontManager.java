@@ -23,14 +23,44 @@
  */
 package sun.font;
 
+import ikvm.internal.NotYetImplementedError;
+
+import java.awt.Font;
+import java.awt.FontFormatException;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.StringTokenizer;
+import java.util.TreeMap;
+import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.swing.plaf.FontUIResource;
 
+import sun.awt.FontConfiguration;
+
 import cli.System.Drawing.FontFamily;
 
-public class SunFontManager {
+/**
+ * The base implementation of the {@link FontManager} interface. It implements
+ * the platform independent, shared parts of OpenJDK's FontManager
+ * implementations. The platform specific parts are declared as abstract
+ * methods that have to be implemented by specific implementations.
+ */
+public class SunFontManager implements FontManager {
 
     private static class TTFilter implements FilenameFilter {
         public boolean accept(File dir,String name) {
@@ -102,6 +132,54 @@ public class SunFontManager {
         return t1Filter;
     }
 
+    @Override
+    public boolean usingPerAppContextComposites() {
+        return _usingPerAppContextComposites;
+    }
+
+    public Font2DHandle getNewComposite(String family, int style,
+            Font2DHandle handle) {
+
+        if (!(handle.font2D instanceof CompositeFont)) {
+            return handle;
+        }
+
+        CompositeFont oldComp = (CompositeFont)handle.font2D;
+        PhysicalFont oldFont = oldComp.getSlotFont(0);
+
+        if (family == null) {
+            family = oldFont.getFamilyName(null);
+        }
+        if (style == -1) {
+            style = oldComp.getStyle();
+        }
+
+        Font2D newFont = findFont2D(family, style, NO_FALLBACK);
+        if (!(newFont instanceof PhysicalFont)) {
+            newFont = oldFont;
+        }
+        PhysicalFont physicalFont = (PhysicalFont)newFont;
+        CompositeFont dialog2D =
+            (CompositeFont)findFont2D("dialog", style, NO_FALLBACK);
+        if (dialog2D == null) { /* shouldn't happen */
+            return handle;
+        }
+        CompositeFont compFont = new CompositeFont(physicalFont, dialog2D);
+        Font2DHandle newHandle = new Font2DHandle(compFont);
+        return newHandle;
+	}
+    
+    /*
+     * The client supplies a name and a style.
+     * The name could be a family name, or a full name.
+     * A font may exist with the specified style, or it may
+     * exist only in some other style. For non-native fonts the scaler
+     * may be able to emulate the required style.
+     */
+    public Font2D findFont2D(String name, int style, int fallback) {
+    	throw new NotYetImplementedError();
+    }
+
     /*
      * Workaround for apps which are dependent on a font metrics bug
      * in JDK 1.1. This is an unsupported win32 private setting.
@@ -110,6 +188,88 @@ public class SunFontManager {
 	public boolean usePlatformFontMetrics() {
 		return usePlatformFontMetrics;
 	}
+
+    public Font2D createFont2D(File fontFile, int fontFormat,
+                               boolean isCopy, CreatedFontTracker tracker)
+    throws FontFormatException {
+    	throw new NotYetImplementedError();
+    }
+    /*
+     * This is called when font is determined to be invalid/bad.
+     * It designed to be called (for example) by the font scaler
+     * when in processing a font file it is discovered to be incorrect.
+     * This is different than the case where fonts are discovered to
+     * be incorrect during initial verification, as such fonts are
+     * never registered.
+     * Handles to this font held are re-directed to a default font.
+     * This default may not be an ideal substitute buts it better than
+     * crashing This code assumes a PhysicalFont parameter as it doesn't
+     * make sense for a Composite to be "bad".
+     */
+    public synchronized void deRegisterBadFont(Font2D font2D) {
+        if (!(font2D instanceof PhysicalFont)) {
+            /* We should never reach here, but just in case */
+            return;
+        } else {
+            if (FontUtilities.isLogging()) {
+                FontUtilities.getLogger()
+                                     .severe("Deregister bad font: " + font2D);
+            }
+            throw new NotYetImplementedError();
+        }
+    }
+    
+    /* Supporting "alternate" composite fonts on 2D graphics objects
+     * is accessed by the application by calling methods on the local
+     * GraphicsEnvironment. The overall implementation is described
+     * in one place, here, since otherwise the implementation is spread
+     * around it may be difficult to track.
+     * The methods below call into SunGraphicsEnvironment which creates a
+     * new FontConfiguration instance. The FontConfiguration class,
+     * and its platform sub-classes are updated to take parameters requesting
+     * these behaviours. This is then used to create new composite font
+     * instances. Since this calls the initCompositeFont method in
+     * SunGraphicsEnvironment it performs the same initialization as is
+     * performed normally. There may be some duplication of effort, but
+     * that code is already written to be able to perform properly if called
+     * to duplicate work. The main difference is that if we detect we are
+     * running in an applet/browser/Java plugin environment these new fonts
+     * are not placed in the "default" maps but into an AppContext instance.
+     * The font lookup mechanism in java.awt.Font.getFont2D() is also updated
+     * so that look-up for composite fonts will in that case always
+     * do a lookup rather than returning a cached result.
+     * This is inefficient but necessary else singleton java.awt.Font
+     * instances would not retrieve the correct Font2D for the appcontext.
+     * sun.font.FontManager.findFont2D is also updated to that it uses
+     * a name map cache specific to that appcontext.
+     *
+     * Getting an AppContext is expensive, so there is a global variable
+     * that records whether these methods have ever been called and can
+     * avoid the expense for almost all applications. Once the correct
+     * CompositeFont is associated with the Font, everything should work
+     * through existing mechanisms.
+     * A special case is that GraphicsEnvironment.getAllFonts() must
+     * return an AppContext specific list.
+     *
+     * Calling the methods below is "heavyweight" but it is expected that
+     * these methods will be called very rarely.
+     *
+     * If _usingPerAppContextComposites is true, we are in "applet"
+     * (eg browser) enviroment and at least one context has selected
+     * an alternate composite font behaviour.
+     * If _usingAlternateComposites is true, we are not in an "applet"
+     * environment and the (single) application has selected
+     * an alternate composite font behaviour.
+     *
+     * - Printing: The implementation delegates logical fonts to an AWT
+     * mechanism which cannot use these alternate configurations.
+     * We can detect that alternate fonts are in use and back-off to 2D, but
+     * that uses outlines. Much of this can be fixed with additional work
+     * but that may have to wait. The results should be correct, just not
+     * optimal.
+     */
+    private boolean _usingPerAppContextComposites = false;
+    private boolean _usingAlternateComposites = false;
 
     /* This method doesn't check if alternates are selected in this app
      * context. Its used by the FontMetrics caching code which in such
@@ -131,7 +291,32 @@ public class SunFontManager {
 	public boolean usingAlternateFontforJALocales() {
 		return false;
 	}
+	
+    public synchronized void preferLocaleFonts() {
+        if (FontUtilities.isLogging()) {
+            FontUtilities.getLogger().info("Entered preferLocaleFonts().");
+        }
+        /* Test if re-ordering will have any effect */
+        if (!FontConfiguration.willReorderForStartupLocale()) {
+            return;
+        }
 
+    }
+    
+    public synchronized void preferProportionalFonts() {
+    	throw new NotYetImplementedError();
+    }
+
+    public boolean registerFont(Font font) {
+        /* This method should not be called with "null".
+         * It is the caller's responsibility to ensure that.
+         */
+        if (font == null) {
+            return false;
+        }
+        throw new NotYetImplementedError();
+    }
+    
     /* Called to register fall back fonts */
 	public void registerFontsInDir(String fallbackDirName) {
 	}
