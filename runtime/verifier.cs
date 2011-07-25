@@ -2358,20 +2358,6 @@ sealed class MethodAnalyzer
 		{
 			throw new VerifyError("Illegal call to internal method");
 		}
-		if (classFile.MajorVersion >= 51
-			&& cpi.Class == "java.lang.invoke.MethodHandle"
-			&& (cpi.Name == "invoke" || cpi.Name == "invokeExact"))
-		{
-			if (cpi.Name == "invoke")
-			{
-				method.Instructions[index].PatchOpCode(NormalizedByteCode.__methodhandle_invoke);
-			}
-			else
-			{
-				method.Instructions[index].PatchOpCode(NormalizedByteCode.__methodhandle_invokeexact);
-			}
-			return;
-		}
 		TypeWrapper[] args = cpi.GetArgTypes();
 		for (int j = args.Length - 1; j >= 0; j--)
 		{
@@ -3328,6 +3314,21 @@ sealed class MethodAnalyzer
 		if(invoke == NormalizedByteCode.__invokestatic)
 		{
 			thisType = null;
+		}
+		else if (invoke == NormalizedByteCode.__invokevirtual
+			&& classFile.MajorVersion >= 51
+			&& cpi.Class == "java.lang.invoke.MethodHandle"
+			&& (cpi.Name == "invoke" || cpi.Name == "invokeExact"))
+		{
+			if (cpi.Name == "invoke")
+			{
+				instr.PatchOpCode(NormalizedByteCode.__methodhandle_invoke);
+			}
+			else
+			{
+				instr.PatchOpCode(NormalizedByteCode.__methodhandle_invokeexact);
+			}
+			return;
 		}
 		else
 		{
