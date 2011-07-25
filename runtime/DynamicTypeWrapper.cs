@@ -3728,10 +3728,15 @@ namespace IKVM.Internal
 									continue;
 								}
 #endif
-								// see if there exists an IKVM.NativeCode class for this type
+								// see if there exists a "managed JNI" class for this type
 								Type nativeCodeType = null;
 #if STATIC_COMPILER
 								nativeCodeType = StaticCompiler.GetType(wrapper.GetClassLoader(), "IKVM.NativeCode." + classFile.Name.Replace('$', '+'));
+								if (nativeCodeType == null)
+								{
+									// simple JNI like class name mangling
+									nativeCodeType = StaticCompiler.GetType(wrapper.GetClassLoader(), "Java_" + classFile.Name.Replace('.', '_'));
+								}
 #endif
 								MethodInfo nativeMethod = null;
 								TypeWrapper[] args = methods[i].GetParameters();
