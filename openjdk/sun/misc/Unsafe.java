@@ -32,6 +32,7 @@ import ikvm.lang.Internal;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ReflectHelper;
+import java.security.ProtectionDomain;
 import java.util.ArrayList;
 
 public final class Unsafe
@@ -1040,5 +1041,15 @@ public final class Unsafe
     public void unpark(Object thread)
     {
         java.util.concurrent.locks.LockSupport.unpark((Thread)thread);
+    }
+
+    public Object staticFieldBase(Field f)
+    {
+        return null;
+    }
+
+    public Class defineClass(String name, byte[] buf, int offset, int length, ClassLoader cl, ProtectionDomain pd)
+    {
+        throw new ikvm.internal.NotYetImplementedError();
     }
 }

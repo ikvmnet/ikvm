@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2008 Jeroen Frijters
+  Copyright (C) 2008-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -99,6 +99,26 @@ namespace IKVM.Internal
 				}
 			}
 			return false;
+		}
+
+		internal static bool ContainsTypeBuilder(Type type)
+		{
+			while (type.HasElementType)
+			{
+				type = type.GetElementType();
+			}
+			if (!type.IsGenericType || type.IsGenericTypeDefinition)
+			{
+				return type is TypeBuilder;
+			}
+			foreach (Type arg in type.GetGenericArguments())
+			{
+				if (ContainsTypeBuilder(arg))
+				{
+					return true;
+				}
+			}
+			return type.GetGenericTypeDefinition() is TypeBuilder;
 		}
 
 		internal static bool IsVector(Type type)

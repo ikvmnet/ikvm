@@ -5539,6 +5539,17 @@ namespace IKVM.NativeCode.sun.awt
 	}
 }
 
+namespace IKVM.NativeCode.sun.invoke.anon
+{
+	static class AnonymousClassLoader
+	{
+		public static jlClass loadClassInternal(jlClass hostClass, byte[] classFile, object[] patchArray)
+		{
+			throw new NotImplementedException();
+		}
+	}
+}
+
 namespace IKVM.NativeCode.sun.misc
 {
 	static class GC

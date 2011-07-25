@@ -79,6 +79,7 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/java/io/*.class
     @OPENJDK7@/jdk/src/share/classes/java/lang/*.class
     @OPENJDK7@/jdk/src/share/classes/java/lang/annotation/*.class
+    @OPENJDK7@/jdk/src/share/classes/java/lang/invoke/*.class
     @OPENJDK7@/jdk/src/share/classes/java/lang/ref/*.class
     @OPENJDK7@/jdk/src/share/classes/java/lang/reflect/*.class
     @OPENJDK7@/jdk/src/share/classes/java/math/*.class
@@ -102,6 +103,10 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/java/util/jar/Manifest*.class
     @OPENJDK7@/jdk/src/share/classes/java/util/regex/*.class
     @OPENJDK7@/jdk/src/share/classes/javax/net/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/invoke/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/invoke/anon/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/invoke/empty/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/invoke/util/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/misc/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/net/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/net/ftp/*.class
@@ -160,7 +165,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Corba.dll
-    -baseaddress:0x56AB0000
+    -baseaddress:0x56BD0000
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/corba/*
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/jndi/cosnaming/jndiprovider.properties
     @OPENJDK6@/build/linux-amd64/impsrc/com/sun/corba/se/impl/activation/*.class
@@ -278,7 +283,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.XML.API.dll
-    -baseaddress:0x57110000
+    -baseaddress:0x57230000
     @OPENJDK6@/build/linux-amd64/impsrc/javax/xml/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/javax/xml/datatype/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/javax/xml/namespace/*.class
@@ -310,7 +315,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.XML.XPath.dll
-    -baseaddress:0x571D0000
+    -baseaddress:0x572F0000
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/org/apache/xalan/internal/res/*
     @OPENJDK6@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/extensions/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/res/*.class
@@ -335,7 +340,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.XML.Parse.dll
-    -baseaddress:0x57500000
+    -baseaddress:0x57620000
     -resource:com/sun/org/apache/xml/internal/serialize/HTMLEntities.res=@OPENJDK6@/build/linux-amd64/impsrc/com/sun/org/apache/xml/internal/serialize/HTMLEntities.res
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/org/apache/xerces/*
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/org/apache/xml/internal/serializer/*
@@ -394,7 +399,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.XML.Transform.dll
-    -baseaddress:0x57B90000
+    -baseaddress:0x57CB0000
     @OPENJDK6@/build/linux-amd64/impsrc/com/sun/java_cup/internal/runtime/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/com/sun/org/apache/bcel/internal/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/com/sun/org/apache/bcel/internal/classfile/*.class
@@ -418,7 +423,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.XML.Bind.dll
-    -baseaddress:0x57FB0000
+    -baseaddress:0x580D0000
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/javax/xml/bind/*
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/xml/internal/bind/*
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/xml/internal/fastinfoset/*
@@ -477,7 +482,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.XML.WebServices.dll
-    -baseaddress:0x58310000
+    -baseaddress:0x58430000
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/xml/internal/messaging/*
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/xml/internal/ws/*
     @OPENJDK6@/build/linux-amd64/impsrc/com/sun/xml/internal/messaging/saaj/*.class
@@ -570,7 +575,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.XML.Crypto.dll
-    -baseaddress:0x58790000
+    -baseaddress:0x588B0000
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/org/apache/xml/internal/security/*
     @OPENJDK6@/jdk/src/share/classes/com/sun/org/apache/xml/internal/security/*.class
     @OPENJDK6@/jdk/src/share/classes/com/sun/org/apache/xml/internal/security/algorithms/*.class
@@ -606,7 +611,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.SwingAWT.dll
-    -baseaddress:0x588E0000
+    -baseaddress:0x58A00000
     -remap:swingawt.xml
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/sun.java2d.*
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/java/swing/*
@@ -702,7 +707,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Charsets.dll
-    -baseaddress:0x59A20000
+    -baseaddress:0x59B40000
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/charsets.jar/sun/nio/cs/ext/sjis0213.dat
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/charsets.jar/META-INF/services/java.nio.charset.spi.CharsetProvider
     @OPENJDK7@/build/linux-amd64/gensrc/sun/nio/cs/ext/*.class
@@ -711,7 +716,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Util.dll
-    -baseaddress:0x5A0B0000
+    -baseaddress:0x5A1D0000
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/java/util/jar/pack/intrinsic.properties
     java/util/zip/*.class
     @OPENJDK7@/build/linux-amd64/gensrc/sun/util/logging/resources/*.class
@@ -729,7 +734,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Text.dll
-    -baseaddress:0x5A620000
+    -baseaddress:0x5A740000
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/sun/text/*
     @OPENJDK7@/jdk/src/share/classes/java/text/*.class
     @OPENJDK7@/jdk/src/share/classes/java/text/spi/*.class
@@ -740,7 +745,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Security.dll
-    -baseaddress:0x5A800000
+    -baseaddress:0x5A920000
     -remap:security.xml
     sun/security/jgss/wrapper/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/crypto/provider/*.class
@@ -809,7 +814,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Management.dll
-    -baseaddress:0x5AFE0000
+    -baseaddress:0x5B100000
     com/sun/management/*.class
     icedtea/rt/com/sun/jmx/snmp/*.class
     icedtea/rt/com/sun/jmx/snmp/daemon/*.class
@@ -853,7 +858,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Misc.dll
-    -baseaddress:0x5B400000
+    -baseaddress:0x5B520000
     @OPENJDK6@/build/linux-amd64/impsrc/javax/activity/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/javax/annotation/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/javax/annotation/processing/*.class
@@ -943,7 +948,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Naming.dll
-    -baseaddress:0x5B4C0000
+    -baseaddress:0x5B5E0000
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/jndi/ldap/jndiprovider.properties
     sun/net/dns/*.class
     @OPENJDK6@/jdk/src/share/classes/com/sun/jndi/dns/*.class
@@ -968,7 +973,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Jdbc.dll
-    -baseaddress:0x5B610000
+    -baseaddress:0x5B730000
     -resource:META-INF/services/java.sql.Driver=resources/META-INF/services/java.sql.Driver
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/rowset/*
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/javax/sql/*
@@ -986,7 +991,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Remoting.dll
-    -baseaddress:0x5B760000
+    -baseaddress:0x5B880000
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/sun/rmi/*
     @OPENJDK6@/build/linux-amd64/classes/com/sun/jndi/rmi/registry/*.class
     @OPENJDK6@/build/linux-amd64/classes/java/rmi/activation/*.class
@@ -1012,7 +1017,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Beans.dll
-    -baseaddress:0x5B880000
+    -baseaddress:0x5B9A0000
     @OPENJDK6@/build/linux-amd64/impsrc/com/sun/activation/registries/*.class
     @OPENJDK6@/build/linux-amd64/impsrc/javax/activation/*.class
     @OPENJDK6@/jdk/src/share/classes/com/sun/beans/*.class
@@ -1024,7 +1029,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Media.dll
-    -baseaddress:0x5B940000
+    -baseaddress:0x5BA60000
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/javax.print.*
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/javax.sound.*
     -recurse:@OPENJDK6@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/imageio/plugins/common/iio-plugin.properties

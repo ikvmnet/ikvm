@@ -79,6 +79,7 @@ static class ByteCodeHelperMethods
 	internal static readonly MethodInfo volatileWriteDouble;
 	internal static readonly MethodInfo volatileWriteLong;
 	internal static readonly MethodInfo mapException;
+	internal static readonly MethodInfo getDelegate;
 
 	static ByteCodeHelperMethods()
 	{
@@ -123,6 +124,7 @@ static class ByteCodeHelperMethods
 		volatileWriteDouble = typeofByteCodeHelper.GetMethod("VolatileWrite", new Type[] { Types.Double.MakeByRefType(), Types.Double });
 		volatileWriteLong = typeofByteCodeHelper.GetMethod("VolatileWrite", new Type[] { Types.Int64.MakeByRefType(), Types.Int64 });
 		mapException = typeofByteCodeHelper.GetMethod("MapException");
+		getDelegate = typeofByteCodeHelper.GetMethod("GetDelegate");
 	}
 }
 
@@ -1320,6 +1322,8 @@ sealed class Compiler
 				case NormalizedByteCode.__invokevirtual:
 				case NormalizedByteCode.__invokeinterface:
 				case NormalizedByteCode.__invokespecial:
+				case NormalizedByteCode.__methodhandle_invoke:
+				case NormalizedByteCode.__methodhandle_invokeexact:
 				{
 					bool isinvokespecial = instr.NormalizedOpCode == NormalizedByteCode.__invokespecial || instr.NormalizedOpCode == NormalizedByteCode.__dynamic_invokespecial;
 					nonleaf = true;
@@ -2925,6 +2929,95 @@ sealed class Compiler
 		}
 	}
 
+	private sealed class MethodHandleMethodWrapper : MethodWrapper
+	{
+		private DynamicTypeWrapper.FinishContext context;
+		private TypeWrapper wrapper;
+		private ClassFile.ConstantPoolItemMI cpi;
+
+		internal MethodHandleMethodWrapper(DynamicTypeWrapper.FinishContext context, TypeWrapper wrapper, ClassFile.ConstantPoolItemMI cpi)
+			: base(wrapper, cpi.Name, cpi.Signature, null, cpi.GetRetType(), cpi.GetArgTypes(), Modifiers.Public, MemberFlags.None)
+		{
+			this.context = context;
+			this.wrapper = wrapper;
+			this.cpi = cpi;
+		}
+
+		internal override void EmitCall(CodeEmitter ilgen)
+		{
+			throw new InvalidOperationException();
+		}
+
+		internal override void EmitCallvirt(CodeEmitter ilgen)
+		{
+			TypeWrapper[] args = cpi.GetArgTypes();
+			CodeEmitterLocal[] temps = new CodeEmitterLocal[args.Length];
+			for (int i = args.Length - 1; i >= 0; i--)
+			{
+				temps[i] = ilgen.DeclareLocal(args[i].TypeAsLocalOrStackType);
+				ilgen.Emit(OpCodes.Stloc, temps[i]);
+			}
+			Type delegateType = CreateDelegateType(args, cpi.GetRetType());
+			MethodInfo mi = ByteCodeHelperMethods.getDelegate.MakeGenericMethod(delegateType);
+			ilgen.Emit(OpCodes.Call, mi);
+			for (int i = 0; i < args.Length; i++)
+			{
+				ilgen.Emit(OpCodes.Ldloc, temps[i]);
+			}
+			if (ReflectUtil.ContainsTypeBuilder(delegateType))
+			{
+				ilgen.Emit(OpCodes.Callvirt, TypeBuilder.GetMethod(delegateType, delegateType.GetGenericTypeDefinition().GetMethod("Invoke")));
+			}
+			else
+			{
+				ilgen.Emit(OpCodes.Callvirt, delegateType.GetMethod("Invoke"));
+			}
+		}
+
+		internal override void EmitNewobj(CodeEmitter ilgen)
+		{
+			throw new InvalidOperationException();
+		}
+	}
+
+	internal static Type CreateDelegateType(TypeWrapper[] args, TypeWrapper ret)
+	{
+		string typeName;
+		Type[] typeArgs;
+		if (ret == PrimitiveTypeWrapper.VOID)
+		{
+			typeName = "IKVM.Runtime.MHV";
+			if (args.Length != 0)
+			{
+				typeName += "`" + args.Length;
+			}
+			typeArgs = new Type[args.Length];
+		}
+		else
+		{
+			typeName = "IKVM.Runtime.MH`" + (args.Length + 1);
+			typeArgs = new Type[args.Length + 1];
+			typeArgs[args.Length] = ret.TypeAsSignatureType;
+		}
+		for (int i = 0; i < args.Length; i++)
+		{
+			typeArgs[i] = args[i].TypeAsSignatureType;
+		}
+		Type type;
+#if STATIC_COMPILER
+		type = StaticCompiler.GetRuntimeType(typeName);
+#else
+		type = Type.GetType(typeName);
+#endif
+		if (type == null)
+		{
+			throw new NotImplementedException();
+		}
+		return typeArgs.Length == 0
+			? type
+			: type.MakeGenericType(typeArgs);
+	}
+
 	private class DynamicMethodWrapper : MethodWrapper
 	{
 		private DynamicTypeWrapper.FinishContext context;
@@ -3022,6 +3115,9 @@ sealed class Compiler
 			case NormalizedByteCode.__dynamic_invokevirtual:
 			case NormalizedByteCode.__dynamic_invokespecial:
 				return new DynamicMethodWrapper(context, clazz, cpi);
+			case NormalizedByteCode.__methodhandle_invoke:
+			case NormalizedByteCode.__methodhandle_invokeexact:
+				return new MethodHandleMethodWrapper(context, clazz, cpi);
 			default:
 				throw new InvalidOperationException();
 		}

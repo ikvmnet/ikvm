@@ -50,6 +50,17 @@ namespace java
 		public class SecurityManager { }
 		public class StackTraceElement { }
 
+		namespace invoke
+		{
+			public class MemberName { }
+			public class AdapterMethodHandle { }
+			public class BoundMethodHandle { }
+			public class DirectMethodHandle { }
+			public class MethodType { }
+			public class MethodHandle { }
+			public class CallSite { }
+		}
+
 		namespace reflect
 		{
 			public class Constructor { }

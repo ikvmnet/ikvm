@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2010 Jeroen Frijters
+  Copyright (C) 2002-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1650,6 +1650,8 @@ sealed class MethodAnalyzer
 							case NormalizedByteCode.__dynamic_invokespecial:
 							case NormalizedByteCode.__dynamic_invokeinterface:
 							case NormalizedByteCode.__dynamic_invokestatic:
+							case NormalizedByteCode.__methodhandle_invoke:
+							case NormalizedByteCode.__methodhandle_invokeexact:
 							{
 								ClassFile.ConstantPoolItemMI cpi = GetMethodref(instr.Arg1);
 								s.MultiPopAnyType(cpi.GetArgTypes().Length);
@@ -2355,6 +2357,20 @@ sealed class MethodAnalyzer
 		if (ReferenceEquals(cpi.Name, StringConstants.CLINIT))
 		{
 			throw new VerifyError("Illegal call to internal method");
+		}
+		if (classFile.MajorVersion >= 51
+			&& cpi.Class == "java.lang.invoke.MethodHandle"
+			&& (cpi.Name == "invoke" || cpi.Name == "invokeExact"))
+		{
+			if (cpi.Name == "invoke")
+			{
+				method.Instructions[index].PatchOpCode(NormalizedByteCode.__methodhandle_invoke);
+			}
+			else
+			{
+				method.Instructions[index].PatchOpCode(NormalizedByteCode.__methodhandle_invokeexact);
+			}
+			return;
 		}
 		TypeWrapper[] args = cpi.GetArgTypes();
 		for (int j = args.Length - 1; j >= 0; j--)
