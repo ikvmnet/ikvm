@@ -36,7 +36,7 @@ import ikvm.internal.NotYetImplementedError;
  */
 public class CompositeFont extends Font2D{
 	
-	private final Font2D delegate;
+	private final PhysicalFont delegate;
 	
 
     public CompositeFont(PhysicalFont physicalFont, CompositeFont dialog2d) {
@@ -44,7 +44,7 @@ public class CompositeFont extends Font2D{
 	}
 
 	public CompositeFont(Font2D font2d){
-		delegate = font2d;
+		delegate = (PhysicalFont)font2d;
 	}
 
     public int getNumSlots() {
@@ -52,6 +52,9 @@ public class CompositeFont extends Font2D{
     }
     
     public PhysicalFont getSlotFont(int slot) {
+    	if( slot == 0){
+    		return delegate;
+    	}
         throw new NotYetImplementedError();
     }
 
