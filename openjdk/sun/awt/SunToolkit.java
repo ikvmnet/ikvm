@@ -48,6 +48,8 @@ import sun.misc.SoftCache;
 import sun.awt.image.*;
 import sun.security.action.GetPropertyAction;
 import sun.security.action.GetBooleanAction;
+import sun.util.logging.PlatformLogger;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
@@ -222,11 +224,8 @@ public abstract class SunToolkit extends Toolkit
     public abstract RobotPeer createRobot(Robot target, GraphicsDevice screen)
         throws AWTException;
 
-    public KeyboardFocusManagerPeer createKeyboardFocusManagerPeer(KeyboardFocusManager manager) throws HeadlessException {
-        KeyboardFocusManagerPeerImpl peer = new KeyboardFocusManagerPeerImpl(manager);
-        return peer;
-    }
-
+    public abstract KeyboardFocusManagerPeer createKeyboardFocusManagerPeer(KeyboardFocusManager manager) throws HeadlessException;
+    
     /**
      * The AWT lock is typically only used on Unix platforms to synchronize
      * access to Xlib, OpenGL, etc.  However, these methods are implemented
@@ -1965,7 +1964,7 @@ public abstract class SunToolkit extends Toolkit
         }
     }
 
-    protected static void dumpPeers(final Logger aLog) {
+    protected static void dumpPeers(final PlatformLogger aLog) {
         AWTAutoShutdown.getInstance().dumpPeers(aLog);
     }
 

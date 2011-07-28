@@ -68,7 +68,7 @@ public class StandardGlyphVector extends GlyphVector{
         }
         this.frc = frc;
         this.glyphs = str;
-        this.font2D = FontManager.getFont2D(font);
+        this.font2D = FontUtilities.getFont2D(font);
         this.strike = font2D.getStrike(font, frc);
     }
 
@@ -445,7 +445,7 @@ public class StandardGlyphVector extends GlyphVector{
 			return false;
 		}
 		for (int i = 0; i < str.length(); ++i) {
-			if (FontManager.isNonSimpleChar(str.charAt(i))) {
+			if (FontUtilities.isNonSimpleChar(str.charAt(i))) {
 				return false;
 			}
 		}

@@ -211,7 +211,7 @@ namespace ikvm.awt
 		}
 	}
 
-    public sealed class NetToolkit : sun.awt.SunToolkit, ikvm.awt.IkvmToolkit
+	public sealed class NetToolkit : sun.awt.SunToolkit, ikvm.awt.IkvmToolkit, sun.awt.KeyboardFocusManagerPeerProvider
     {
         public static readonly String DATA_TRANSFERER_CLASS_NAME = typeof(NetDataTransferer).AssemblyQualifiedName;
 
@@ -598,7 +598,7 @@ namespace ikvm.awt
             }
         }
 
-        public override java.awt.PrintJob getPrintJob(java.awt.Frame frame, string jobtitle, Properties props)
+        public override java.awt.PrintJob getPrintJob(java.awt.Frame frame, string jobtitle, java.util.Properties props)
         {
             throw new NotImplementedException();
         }
@@ -713,7 +713,7 @@ namespace ikvm.awt
             {
                 if (isWin32())
                 {
-                    desktopProperties.put("Shell.shellFolderManager", java.lang.Class.forName("sun.awt.shell.Win32ShellFolderManager2"));
+                    desktopProperties.put("Shell.shellFolderManager", "sun.awt.shell.Win32ShellFolderManager2" );
                     object themeActive = getRegistry("Software\\Microsoft\\Windows\\CurrentVersion\\ThemeManager", "ThemeActive");
 //                    string dllName = (string)getRegistry("Software\\Microsoft\\Windows\\CurrentVersion\\ThemeManager", "DllName");
 //                    string sizeName = (string)getRegistry("Software\\Microsoft\\Windows\\CurrentVersion\\ThemeManager", "SizeName");
@@ -985,7 +985,7 @@ namespace ikvm.awt
                 del();
             }
         }
-    }
+	}
 
 	sealed class NetMenuBarPeer : java.awt.peer.MenuBarPeer
 	{
@@ -1673,6 +1673,9 @@ namespace ikvm.awt
 		public abstract void setVisible(bool b);
 		public abstract void show();
 		public abstract void updateCursorImmediately();
+		public abstract void flip(int x1, int y1, int x2, int y2, java.awt.BufferCapabilities.FlipContents flipAction);
+		public abstract void setZOrder(java.awt.peer.ComponentPeer above);
+        public abstract bool updateGraphicsData(java.awt.GraphicsConfiguration gc);
 
 		internal DragDropEffects performedDragDropEffects = DragDropEffects.None;
 
@@ -2057,7 +2060,7 @@ namespace ikvm.awt
 
 		private void postPaintIfNecessary(int x, int y, int w, int h)
 		{
-			if (!ComponentAccessor.getIgnoreRepaint(target))
+			if (!AWTAccessor.getComponentAccessor().getIgnoreRepaint(target))
 			{
 				java.awt.@event.PaintEvent evt = PaintEventDispatcher.getPaintEventDispatcher().createPaintEvent(target, x, y, w, h);
 				if (evt != null)
@@ -2730,21 +2733,13 @@ namespace ikvm.awt
                 //If the .NET control does not accept the new bounds (minimum size, maximum size) 
                 //then we need to reflect the real bounds on the .NET site to the Java site
                 Rectangle bounds = control.Bounds;
-                if (bounds.X + insets.left != x)
+                if (bounds.X + insets.left != x || bounds.Y + insets.top != y)
                 {
-                    ComponentAccessor.setX(target, bounds.X + insets.left);
+                    AWTAccessor.getComponentAccessor().setLocation(target, bounds.X + insets.left, bounds.Y + insets.top);
                 }
-                if (bounds.Y + insets.top != y)
+                if (bounds.Width != width || bounds.Height != height)
                 {
-                    ComponentAccessor.setY(target, bounds.Y + insets.top);
-                }
-                if (bounds.Width != width)
-                {
-                    ComponentAccessor.setWidth(target, bounds.Width);
-                }
-                if (bounds.Height != height)
-                {
-                    ComponentAccessor.setHeight(target, bounds.Height);
+                    AWTAccessor.getComponentAccessor().setSize(target, bounds.Width, bounds.Height);
                 }
             });
         }
@@ -3127,6 +3122,57 @@ namespace ikvm.awt
             //SNFH_FAILURE
             return false;
         }
+
+        /**
+         * Move the back buffer to the front buffer.
+         *
+         * @param x1 the area to be flipped, upper left X coordinate
+         * @param y1 the area to be flipped, upper left Y coordinate
+         * @param x2 the area to be flipped, lower right X coordinate
+         * @param y2 the area to be flipped, lower right Y coordinate
+         * @param flipAction the flip action to perform
+         *
+         * @see Component.FlipBufferStrategy#flip
+         */
+        public override void flip(int x1, int y1, int x2, int y2, java.awt.BufferCapabilities.FlipContents flipAction)
+        {
+            throw new ikvm.@internal.NotYetImplementedError();
+        }
+
+        /**
+         * Lowers this component at the bottom of the above HW peer. If the above parameter
+         * is null then the method places this component at the top of the Z-order.
+         */
+        public override void setZOrder(java.awt.peer.ComponentPeer above)
+        {
+            Control.ControlCollection controls = control.Controls;
+            if (!controls.Contains(control))
+            {
+                // Control was not added to any window. Occur if you call addNotify without
+                return;
+            }
+            if (above == null)
+            {
+                controls.SetChildIndex(control, 0);
+            }
+            else
+            {
+                NetComponentPeer<T, C> netPeer = (NetComponentPeer<T, C>)above;
+                controls.SetChildIndex(control, controls.GetChildIndex(netPeer.control));
+            }
+        }
+
+        /**
+         * Updates internal data structures related to the component's GC.
+         *
+         * @return if the peer needs to be recreated for the changes to take effect
+         * @since 1.7
+         */
+        public override bool updateGraphicsData(java.awt.GraphicsConfiguration gc)
+        {
+            throw new ikvm.@internal.NotYetImplementedError();
+        }
+
 	}
 
 	sealed class NetScrollbarPeer : NetComponentPeer<java.awt.Scrollbar, ScrollBar>, java.awt.peer.ScrollbarPeer
@@ -3710,7 +3756,19 @@ namespace ikvm.awt
 		{
             return new Control();
 		}
-	}
+
+        /**
+         * Requests a GC that best suits this Canvas. The returned GC may differ
+         * from the requested GC passed as the argument to this method. This method
+         * must return a non-null value (given the argument is non-null as well).
+         *
+         * @since 1.7
+         */
+        public java.awt.GraphicsConfiguration getAppropriateGraphicsConfiguration(java.awt.GraphicsConfiguration gc)
+        {
+            return gc;
+        }
+    }
 
     class NetWindowPeer : NetContainerPeer<java.awt.Window, Form>, java.awt.peer.WindowPeer
 	{
@@ -3740,7 +3798,7 @@ namespace ikvm.awt
             updateIconImages();
             if (target.getBackground() == null)
             {
-                target.setBackground(target is java.awt.Dialog ? java.awt.SystemColor.control : java.awt.SystemColor.window);
+                AWTAccessor.getComponentAccessor().setBackground(target, target is java.awt.Dialog ? java.awt.SystemColor.control : java.awt.SystemColor.window);
             }
             control.BackColor = J2C.ConvertColor(target.getBackground());
             if (target.getForeground() == null)
@@ -3780,8 +3838,7 @@ namespace ikvm.awt
         private void OnMove(object sender, EventArgs e)
         {
             // WmMove
-            ComponentAccessor.setX(target, control.Left);
-            ComponentAccessor.setY(target, control.Top);
+            AWTAccessor.getComponentAccessor().setLocation(target, control.Left, control.Top);
             SendComponentEvent(java.awt.@event.ComponentEvent.COMPONENT_MOVED);
         }
 
@@ -3936,21 +3993,13 @@ namespace ikvm.awt
                 //If the .NET control does not accept the new bounds (minimum size, maximum size) 
                 //then we need to reflect the real bounds on the .NET site to the Java site
                 Rectangle bounds = control.Bounds;
-                if (bounds.X != x)
+                if (bounds.X != x || bounds.Y != y)
                 {
-                    ComponentAccessor.setX(target, bounds.X);
+                    AWTAccessor.getComponentAccessor().setLocation(target, bounds.X, bounds.Y);
                 }
-                if (bounds.Y != y)
+                if (bounds.Width != width || bounds.Height != height)
                 {
-                    ComponentAccessor.setY(target, bounds.Y);
-                }
-                if (bounds.Width != width)
-                {
-                    ComponentAccessor.setWidth(target, bounds.Width);
-                }
-                if (bounds.Height != height)
-                {
-                    ComponentAccessor.setHeight(target, bounds.Height);
+                    AWTAccessor.getComponentAccessor().setSize(target, bounds.Width, bounds.Height);
                 }
             });
         }
@@ -4046,6 +4095,48 @@ namespace ikvm.awt
 				control.MinimumSize = new Size(dim.width, dim.height);
             });
         }
+
+        /**
+         * Sets the level of opacity for the window.
+         *
+         * @see Window#setOpacity(float)
+         */
+        public void setOpacity(float opacity)
+        {
+            throw new ikvm.@internal.NotYetImplementedError();
+        }
+
+        /**
+         * Enables the per-pixel alpha support for the window.
+         *
+         * @see Window#setBackground(Color)
+         */
+        public void setOpaque(bool isOpaque)
+        {
+            throw new ikvm.@internal.NotYetImplementedError();
+        }
+
+
+        /**
+         * Updates the native part of non-opaque window.
+         *
+         * @see Window#setBackground(Color)
+         */
+        public void updateWindow()
+        {
+            throw new ikvm.@internal.NotYetImplementedError();
+        }
+
+
+        /**
+         * Instructs the peer to update the position of the security warning.
+         */
+        public void repositionSecurityWarning()
+        {
+            throw new ikvm.@internal.NotYetImplementedError();
+        }
+
+
 
 		protected override Form CreateControl()
 		{
@@ -4259,7 +4350,7 @@ namespace ikvm.awt
             // code copies from sun.awt.windows.WDialogPeer.java
             for (Iterator it = toBlock.iterator(); it.hasNext();) {
                 java.awt.Window w = (java.awt.Window)it.next();
-                java.awt.peer.WindowPeer wp = (java.awt.peer.WindowPeer)ComponentAccessor.getPeer(w);
+                java.awt.peer.WindowPeer wp = (java.awt.peer.WindowPeer)AWTAccessor.getComponentAccessor().getPeer(w);
                 if (wp != null) {
                     wp.setModalBlocked((java.awt.Dialog)target, true);
                 }
@@ -5387,6 +5478,11 @@ namespace ikvm.awt
         public override sun.awt.datatransfer.ToolkitThreadBlockedHandler getToolkitThreadBlockedHandler()
         {
             return handler;
+        }
+
+        protected override java.io.ByteArrayOutputStream convertFileListToBytes(java.util.ArrayList fileList)
+        {
+            throw new ikvm.@internal.NotYetImplementedError();
         }
     }
 
