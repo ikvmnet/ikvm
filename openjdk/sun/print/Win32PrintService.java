@@ -347,34 +347,27 @@ public class Win32PrintService implements PrintService {
     	if (category == Copies.class) {
     		short copies = settings.get_Copies();
     		return new Copies( copies > 0 ? copies : 1 );
-    	}
-    	if (category == Chromaticity.class) {
+    	} else if (category == Chromaticity.class) {
     		// NOTE: this works for CutePDF, settings.get_SupportsColor() does not
     		return settings.get_DefaultPageSettings().get_Color() ? Chromaticity.COLOR : Chromaticity.MONOCHROME;
-    	}
-    	if (category == JobName.class) {
+    	} else if (category == JobName.class) {
     		return new JobName( "Java Printing", null ); // TODO this is Java-Default, use another one for IKVM?
-    	}
-    	if (category == OrientationRequested.class) {
+    	} else if (category == OrientationRequested.class) {
     		return settings.get_DefaultPageSettings().get_Landscape() ? OrientationRequested.LANDSCAPE : OrientationRequested.PORTRAIT; 
-    	}
-    	if (category == PageRanges.class) {
+    	} else if (category == PageRanges.class) {
     		return new PageRanges(1, Integer.MAX_VALUE );
-    	}
-    	if (category == Media.class) {
+    	} else if (category == Media.class) {
     		int rawKind = settings.get_DefaultPageSettings().get_PaperSize().get_RawKind();
     		if( rawKind > MEDIA_NAMES.length || rawKind < 1 || MEDIA_NAMES[ rawKind - 1 ] == null ){ // custom page format
     			return settings.get_DefaultPageSettings().get_PaperSize().get_PaperName();
     		} else {
     			return MEDIA_NAMES[ rawKind - 1 ];
     		}
-    	}
-    	if (category == MediaPrintableArea.class) {
+    	} else if (category == MediaPrintableArea.class) {
     		RectangleF area = settings.get_DefaultPageSettings().get_PrintableArea();
     		// get_PrintableArea is in 1/100 inch, see http://msdn.microsoft.com/de-de/library/system.drawing.printing.pagesettings.printablearea(v=VS.90).aspx
     		return new MediaPrintableArea(area.get_X()/100, area.get_Y()/100, area.get_Width()/100, area.get_Height()/100, MediaPrintableArea.INCH);
-    	}
-    	if (category == Destination.class) {
+    	} else if (category == Destination.class) {
     		String path = "out.prn";
     		try {
     			return new Destination( ( new File( path ) ).toURI() );
@@ -385,8 +378,7 @@ public class Win32PrintService implements PrintService {
     				return null;
     			}
     		}
-    	}
-    	if (category == Sides.class) {
+    	} else if (category == Sides.class) {
     		switch( settings.get_Duplex().Value ){
     			case cli.System.Drawing.Printing.Duplex.Default: // MSDN: 'The printer's default duplex setting.' - what ever that might be
     			case cli.System.Drawing.Printing.Duplex.Simplex:
@@ -396,32 +388,45 @@ public class Win32PrintService implements PrintService {
     			case cli.System.Drawing.Printing.Duplex.Vertical:
     				return Sides.TWO_SIDED_SHORT_EDGE;
     		}
-    	}
-    	if (category == PrinterResolution.class) {
-    		cli.System.Drawing.Printing.PrinterResolution res = settings.get_DefaultPageSettings().get_PrinterResolution();
-    		return new PrinterResolution( res.get_X(), res.get_Y(), PrinterResolution.DPI);
-    	}
-    	if (category == ColorSupported.class) {
+    	} else if (category == PrinterResolution.class) {
+    		cli.System.Drawing.Printing.PrinterResolution pRes = settings.get_DefaultPageSettings().get_PrinterResolution();
+    		int xRes = pRes.get_X();
+    		int yRes = pRes.get_Y();
+            if ((xRes <= 0) || (yRes <= 0)) {
+                int res = (yRes > xRes) ? yRes : xRes;
+                if (res > 0) {
+                 return new PrinterResolution(res, res, PrinterResolution.DPI);
+                }
+            }
+            else {
+               return new PrinterResolution(xRes, yRes, PrinterResolution.DPI);
+            }
+    	} else if (category == ColorSupported.class) {
     		if ( settings.get_SupportsColor() ) {
     			return ColorSupported.SUPPORTED;
     		} else {
     			return ColorSupported.NOT_SUPPORTED;
     		}
-    	}
-    	if( category == PrintQuality.class ){
-    		return PrintQuality.NORMAL; // TODO not correct, only available when using a PrintServer instance?
-    	}
-    	if (category == RequestingUserName.class) {
+    	} else if( category == PrintQuality.class ){
+			cli.System.Drawing.Printing.PrinterResolutionKind kind = settings.get_DefaultPageSettings().get_PrinterResolution().get_Kind();
+			switch (kind.Value) {
+			case cli.System.Drawing.Printing.PrinterResolutionKind.High:
+				return PrintQuality.HIGH;
+			case cli.System.Drawing.Printing.PrinterResolutionKind.Medium:
+			case cli.System.Drawing.Printing.PrinterResolutionKind.Low:
+				return PrintQuality.NORMAL;
+			case cli.System.Drawing.Printing.PrinterResolutionKind.Draft:
+				return PrintQuality.DRAFT;
+			}
+    	} else if (category == RequestingUserName.class) {
     		try{
     			return new RequestingUserName( System.getProperty("user.name", ""), null);
     		} catch( SecurityException e ){
     			return new RequestingUserName( "", null);
     		}
-    	}
-    	if (category == SheetCollate.class){
+    	} else if (category == SheetCollate.class){
     		return settings.get_Collate() ? SheetCollate.COLLATED : SheetCollate.UNCOLLATED;
-    	}
-    	if (category == Fidelity.class) {
+    	} else if (category == Fidelity.class) {
     		return Fidelity.FIDELITY_FALSE;
     	}
         return null;
