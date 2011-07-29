@@ -838,19 +838,4 @@ class Bits {                            // package-private
     static native void copyToLongArray(long srcAddr, Object dst, long dstPos,
                                        long length);
 
-
-
-    // [TEMP] while we're updating from OpenJDK 6 to 7 we need these OpenJDK 6 methods
-
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    static native void copyFromByteArray(Object src, long srcPos, long dstAddr,
-                                         long length);
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    static native void copyToByteArray(long srcAddr, Object dst, long dstPos,
-                                       long length);
-
-    static void reserveMemory(long size) {
-    }
-    static void unreserveMemory(long size) {
-    }
 }
