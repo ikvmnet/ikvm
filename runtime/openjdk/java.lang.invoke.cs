@@ -300,6 +300,8 @@ static class Java_java_lang_invoke_MethodHandleNatives
 				return 1;
 			case MethodHandleNatives.Constants.GC_CONV_OP_IMPLEMENTED_MASK:
 				return 0;
+			case MethodHandleNatives.Constants.GC_OP_ROT_ARGS_DOWN_LIMIT_BIAS:
+				return 0;
 			default:
 				throw new InvalidOperationException();
 		}
