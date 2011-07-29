@@ -61,7 +61,6 @@ assembly.class
     ../classpath/ikvm/runtime/*.class
     ../classpath/java/util/concurrent/atomic/*.class
     ../classpath/sun/misc/*.class
-    @OPENJDK7@/jdk/src/share/classes/java/awt/AWTPermission.class
     @OPENJDK7@/build/linux-amd64/gensrc/java/lang/*.class
     @OPENJDK7@/build/linux-amd64/gensrc/java/nio/*.class
     @OPENJDK7@/build/linux-amd64/gensrc/java/nio/channels/*.class
@@ -152,7 +151,7 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/sun/security/util/PermissionFactory.class
     @OPENJDK7@/jdk/src/share/classes/sun/security/util/PropertyExpander$ExpandException.class
     @OPENJDK7@/jdk/src/share/classes/sun/security/util/PropertyExpander.class
-    SecurityConstants*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/security/util/SecurityConstants*.class
     @OPENJDK7@/jdk/src/share/classes/sun/util/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/util/locale/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/util/logging/*.class
