@@ -3,7 +3,7 @@
     <include buildfile="../ikvm.include" />
     <property name="pathsep" value=":" />
     <property overwrite="false" name="signoption" value="" />
-    <property name="OpenJDK7.dir" value="${project::get-base-directory()}/../../openjdk7-b145" />
+    <property name="OpenJDK7.dir" value="${project::get-base-directory()}/../../openjdk7-b147" />
     <if test="${platform::is-win32()}">
         <property name="pathsep" value=";" />
     </if>
@@ -13,7 +13,7 @@
 
     <target name="version">
         <property name="VERSION" value="${assemblyname::get-version(assemblyname::get-assembly-name(path::combine(project::get-base-directory(), '../bin/IKVM.Runtime.dll')))}" />
-        <property name="OPENJDK_VERSION" value="OpenJDK 7 b145" />
+        <property name="OPENJDK_VERSION" value="OpenJDK 7 b147" />
     </target>
 
     <target name="allsources.gen.lst">
