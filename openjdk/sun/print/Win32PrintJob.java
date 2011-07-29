@@ -499,6 +499,7 @@ public class Win32PrintJob implements CancelablePrintJob{
         if(destination instanceof Destination){
         	File destFile = new File(((Destination)destination).getURI());
             settings.set_PrintFileName(destFile.getAbsolutePath());
+            settings.set_PrintToFile(true);
         }
         
         settings.set_Copies((short)copies);
