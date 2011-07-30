@@ -1072,6 +1072,33 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
+	[XmlType("or")]
+	public sealed class Or : Simple
+	{
+		public Or()
+			: base(OpCodes.Or)
+		{
+		}
+	}
+
+	[XmlType("xor")]
+	public sealed class Xor : Simple
+	{
+		public Xor()
+			: base(OpCodes.Xor)
+		{
+		}
+	}
+
+	[XmlType("not")]
+	public sealed class Not : Simple
+	{
+		public Not()
+			: base(OpCodes.Not)
+		{
+		}
+	}
+
 	[XmlType("unaligned")]
 	public sealed class Unaligned : Instruction
 	{
@@ -1434,6 +1461,9 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(Sub))]
 		[XmlElement(typeof(Mul))]
 		[XmlElement(typeof(And))]
+		[XmlElement(typeof(Or))]
+		[XmlElement(typeof(Xor))]
+		[XmlElement(typeof(Not))]
 		[XmlElement(typeof(Unaligned))]
 		[XmlElement(typeof(Cpblk))]
 		[XmlElement(typeof(Ceq))]
