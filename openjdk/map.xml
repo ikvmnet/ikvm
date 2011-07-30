@@ -1436,15 +1436,13 @@
         <class name="java.lang.Thread">
             <field name="parkLock" sig="Ljava.lang.Object;" modifiers="" />
             <field name="parkState" sig="I" modifiers="" />
-            <method name="prepareCCL" sig="()V">
+            <constructor sig="(Ljava.lang.Void;)V">
                 <body>
-                    <ldtoken class="java.lang.Thread" method="getContextClassLoader" sig="()Ljava.lang.ClassLoader;" />
-                    <call class="cli.System.Runtime.CompilerServices.RuntimeHelpers" name="PrepareMethod" sig="(Lcli.System.RuntimeMethodHandle;)V" />
-                    <ldtoken class="java.lang.Thread" method="setContextClassLoader" sig="(Ljava.lang.ClassLoader;)V" />
-                    <call class="cli.System.Runtime.CompilerServices.RuntimeHelpers" name="PrepareMethod" sig="(Lcli.System.RuntimeMethodHandle;)V" />
+                    <ldarg_0 />
+                    <call class="java.lang.Object" name="&lt;init&gt;" sig="()V" />
                     <ret />
                 </body>
-            </method>
+            </constructor>
             <method name="isCCLOverridden" sig="(Ljava.lang.Thread;)Z">
                 <body>
                     <ldftn class="java.lang.Thread" name="getContextClassLoader" sig="()Ljava.lang.ClassLoader;" />

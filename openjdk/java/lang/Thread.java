@@ -25,11 +25,16 @@
 
 package java.lang;
 
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.security.AccessController;
 import java.security.AccessControlContext;
 import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.LockSupport;
 import sun.nio.ch.Interruptible;
 import sun.security.util.SecurityConstants;
@@ -133,9 +138,15 @@ import sun.security.util.SecurityConstants;
 public
 class Thread implements Runnable {
     // [IKVM]
-    private static native void prepareCCL();
     static {
-        prepareCCL();
+        // force the set/getContextClassLoader methods to be JIT compiled, because isCCLOverridden(Thread) depends on it
+        // (we don't want to use RuntimeHelpers.PrepareMethod() because it requires full trust)
+        Thread dummy = new Thread((Void)null);
+        dummy.getContextClassLoader();
+        dummy.setContextClassLoader(ClassLoader.DUMMY);
+    }
+    private Thread(Void _) {
+        // body replaced in map.xml
     }
     final class Cleanup {
         private final Thread thread;
@@ -1752,6 +1763,10 @@ class Thread implements Runnable {
      * @since 1.2
      */
     public void setContextClassLoader(ClassLoader cl) {
+        if (cl == ClassLoader.DUMMY) {
+            // we're being called by Thread.<clinit> to force this method to be JIT compiled
+            return;
+        }
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("setContextClassLoader"));
@@ -1928,13 +1943,74 @@ class Thread implements Runnable {
     private static final RuntimePermission SUBCLASS_IMPLEMENTATION_PERMISSION =
                     new RuntimePermission("enableContextClassLoaderOverride");
 
+    /** cache of subclass security audit results */
+    /* Replace with ConcurrentReferenceHashMap when/if it appears in a future
+     * release */
+    private static class Caches {
+        /** cache of subclass security audit results */
+        static final ConcurrentMap<WeakClassKey,Boolean> subclassAudits =
+            new ConcurrentHashMap<>();
+
+        /** queue for WeakReferences to audited subclasses */
+        static final ReferenceQueue<Class<?>> subclassAuditsQueue =
+            new ReferenceQueue<>();
+    }
+
     /**
      * Verifies that this (possibly subclass) instance can be constructed
      * without violating security constraints: the subclass must not override
      * security-sensitive non-final methods, or else the
      * "enableContextClassLoaderOverride" RuntimePermission is checked.
      */
+    @cli.System.Runtime.CompilerServices.MethodImplAttribute.Annotation(value = cli.System.Runtime.CompilerServices.MethodImplOptions.__Enum.NoInlining)
     private static native boolean isCCLOverridden(Thread thread); // [IKVM] implemented in map.xml
+
+    private static boolean isCCLOverridden(Class cl) {
+        if (cl == Thread.class)
+            return false;
+
+        processQueue(Caches.subclassAuditsQueue, Caches.subclassAudits);
+        WeakClassKey key = new WeakClassKey(cl, Caches.subclassAuditsQueue);
+        Boolean result = Caches.subclassAudits.get(key);
+        if (result == null) {
+            result = Boolean.valueOf(auditSubclass(cl));
+            Caches.subclassAudits.putIfAbsent(key, result);
+        }
+
+        return result.booleanValue();
+    }
+
+    /**
+     * Performs reflective checks on given subclass to verify that it doesn't
+     * override security-sensitive non-final methods.  Returns true if the
+     * subclass overrides any of the methods, false otherwise.
+     */
+    private static boolean auditSubclass(final Class subcl) {
+        Boolean result = AccessController.doPrivileged(
+            new PrivilegedAction<Boolean>() {
+                public Boolean run() {
+                    for (Class cl = subcl;
+                         cl != Thread.class;
+                         cl = cl.getSuperclass())
+                    {
+                        try {
+                            cl.getDeclaredMethod("getContextClassLoader", new Class[0]);
+                            return Boolean.TRUE;
+                        } catch (NoSuchMethodException ex) {
+                        }
+                        try {
+                            Class[] params = {ClassLoader.class};
+                            cl.getDeclaredMethod("setContextClassLoader", params);
+                            return Boolean.TRUE;
+                        } catch (NoSuchMethodException ex) {
+                        }
+                    }
+                    return Boolean.FALSE;
+                }
+            }
+        );
+        return result.booleanValue();
+    }
 
     private static StackTraceElement[][] dumpThreads(Thread[] threads) {
         StackTraceElement[][] stacks = new StackTraceElement[threads.length][];
@@ -2268,6 +2344,68 @@ class Thread implements Runnable {
      */
     private void dispatchUncaughtException(Throwable e) {
         getUncaughtExceptionHandler().uncaughtException(this, e);
+    }
+
+    /**
+     * Removes from the specified map any keys that have been enqueued
+     * on the specified reference queue.
+     */
+    static void processQueue(ReferenceQueue<Class<?>> queue,
+                             ConcurrentMap<? extends
+                             WeakReference<Class<?>>, ?> map)
+    {
+        Reference<? extends Class<?>> ref;
+        while((ref = queue.poll()) != null) {
+            map.remove(ref);
+        }
+    }
+
+    /**
+     *  Weak key for Class objects.
+     **/
+    static class WeakClassKey extends WeakReference<Class<?>> {
+        /**
+         * saved value of the referent's identity hash code, to maintain
+         * a consistent hash code after the referent has been cleared
+         */
+        private final int hash;
+
+        /**
+         * Create a new WeakClassKey to the given object, registered
+         * with a queue.
+         */
+        WeakClassKey(Class<?> cl, ReferenceQueue<Class<?>> refQueue) {
+            super(cl, refQueue);
+            hash = System.identityHashCode(cl);
+        }
+
+        /**
+         * Returns the identity hash code of the original referent.
+         */
+        @Override
+        public int hashCode() {
+            return hash;
+        }
+
+        /**
+         * Returns true if the given object is this identical
+         * WeakClassKey instance, or, if this object's referent has not
+         * been cleared, if the given object is another WeakClassKey
+         * instance with the identical non-null referent as this one.
+         */
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == this)
+                return true;
+
+            if (obj instanceof WeakClassKey) {
+                Object referent = get();
+                return (referent != null) &&
+                       (referent == ((WeakClassKey) obj).get());
+            } else {
+                return false;
+            }
+        }
     }
 
     /* Some private helper methods */
