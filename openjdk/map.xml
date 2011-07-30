@@ -2737,6 +2737,11 @@
                 <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
             </method>
         </class>
+        <class name="java.nio.MappedByteBuffer">
+            <method name="load" sig="()Ljava.nio.MappedByteBuffer;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+        </class>
         <class name="sun.reflect.Reflection">
             <!-- we manually hook up this native method, to prevent inlining and tail-call optimizations -->
             <method name="getCallerClass" sig="(I)Ljava.lang.Class;">
@@ -2758,6 +2763,11 @@
         </class>
         <class name="java.lang.StackTraceElement">
             <attribute type="System.SerializableAttribute" sig="()V" />
+        </class>
+        <class name="java.lang.invoke.MethodHandleImpl$AllocateObject">
+            <method name="allocate" sig="()Ljava.lang.Object;">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
         </class>
     </assembly>
     <exceptionMappings>
