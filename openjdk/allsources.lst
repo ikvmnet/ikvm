@@ -196,6 +196,7 @@ sun/nio/ch/FileChannelImpl.java
 sun/nio/ch/FileKey.java
 sun/nio/ch/IOUtil.java
 sun/nio/ch/Net.java
+sun/nio/ch/PollArrayWrapper.java
 sun/nio/ch/SelectionKeyImpl.java
 sun/nio/ch/SocketDispatcher.java
 sun/nio/ch/SocketOptionRegistry.java
@@ -12210,8 +12211,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/sun/net/www/protocol/netdoc/Handler.java
 @OPENJDK7@/jdk/src/share/classes/sun/net/www/URLConnection.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/ByteBuffered.java
-@OPENJDK7@/jdk/src/share/classes/sun/nio/ch/AbstractPollArrayWrapper.java
-@OPENJDK7@/jdk/src/share/classes/sun/nio/ch/AllocatedNativeObject.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/ch/AsynchronousChannelGroupImpl.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/ch/AsynchronousFileChannelImpl.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/ch/AsynchronousSocketChannelImpl.java
@@ -12231,7 +12230,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/ch/MembershipKeyImpl.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/ch/MembershipRegistry.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/ch/NativeDispatcher.java
-@OPENJDK7@/jdk/src/share/classes/sun/nio/ch/NativeObject.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/ch/NativeThreadSet.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/ch/OptionKey.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/ch/PendingFuture.java
@@ -12341,12 +12339,9 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/fs/AbstractWatchKey.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/fs/AbstractWatchService.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/fs/BasicFileAttributesHolder.java
-@OPENJDK7@/jdk/src/share/classes/sun/nio/fs/Cancellable.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/fs/DynamicFileAttributeView.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/fs/FileOwnerAttributeViewImpl.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/fs/Globs.java
-@OPENJDK7@/jdk/src/share/classes/sun/nio/fs/NativeBuffer.java
-@OPENJDK7@/jdk/src/share/classes/sun/nio/fs/NativeBuffers.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/fs/PollingWatchService.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/fs/Reflect.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/fs/Util.java
@@ -13578,7 +13573,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/windows/classes/sun/net/NetHooks.java
 @OPENJDK7@/jdk/src/windows/classes/sun/nio/ch/NativeThread.java
 @OPENJDK7@/jdk/src/windows/classes/sun/nio/ch/PipeImpl.java
-@OPENJDK7@/jdk/src/windows/classes/sun/nio/ch/PollArrayWrapper.java
 @OPENJDK7@/jdk/src/windows/classes/sun/nio/ch/SctpChannelImpl.java
 @OPENJDK7@/jdk/src/windows/classes/sun/nio/ch/SctpMultiChannelImpl.java
 @OPENJDK7@/jdk/src/windows/classes/sun/nio/ch/SctpServerChannelImpl.java
