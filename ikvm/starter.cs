@@ -354,6 +354,9 @@ public class Starter
 			{
 				props["java.class.path"] = mainClass;
 			}
+			// like the JDK we don't quote the args (even if they contain spaces)
+			props["sun.java.command"] = String.Join(" ", args, vmargsIndex - 1, args.Length - (vmargsIndex - 1));
+			props["sun.java.launcher"] = "SUN_STANDARD";
 			Startup.setProperties(props);
 			Startup.enterMainThread();
 			string[] vmargs;
