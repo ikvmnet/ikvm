@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2004-2009 Jeroen Frijters
+  Copyright (C) 2004-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -30,8 +30,8 @@ final class VMSystemProperties
     private VMSystemProperties() { }
 
     public static final String SPEC_TITLE = "Java Platform API Specification";
-    public static final String SPEC_VERSION = "1.6";
-    public static final String SPEC_VENDOR = "Sun Microsystems Inc.";
+    public static final String SPEC_VERSION = "1.7";
+    public static final String SPEC_VENDOR = "Oracle Corporation";
 
     private static String SafeGetEnvironmentVariable(String name)
     {
@@ -51,17 +51,27 @@ final class VMSystemProperties
         String libraryPath;
         if(ikvm.internal.Util.WINDOWS)
         {
-	    // see /hotspot/src/os/win32/vm/os_win32.cpp for the comment that describes how we build the path
-	    libraryPath = ".";
+	    // see /hotspot/src/os/windows/vm/os_windows.cpp for the comment that describes how we build the path
 	    String windir = SafeGetEnvironmentVariable("SystemRoot");
 	    if(windir != null)
 	    {
-		libraryPath += cli.System.IO.Path.PathSeparator + windir + "\\Sun\\Java\\bin";
+		libraryPath = cli.System.IO.Path.PathSeparator + windir + "\\Sun\\Java\\bin";
+	    }
+	    else
+	    {
+	        libraryPath = null;
 	    }
             try
             {
                 if(false) throw new cli.System.Security.SecurityException();
-                libraryPath += cli.System.IO.Path.PathSeparator + cli.System.Environment.get_SystemDirectory();
+                if (libraryPath == null)
+                {
+                    libraryPath = cli.System.Environment.get_SystemDirectory();
+                }
+                else
+                {
+                    libraryPath += cli.System.IO.Path.PathSeparator + cli.System.Environment.get_SystemDirectory();
+                }
             }
             catch(cli.System.Security.SecurityException _)
             {
@@ -107,17 +117,21 @@ final class VMSystemProperties
         {
             // ignore
         }
+        if(ikvm.internal.Util.WINDOWS)
+        {
+            libraryPath += cli.System.IO.Path.PathSeparator + ".";
+        }
         return libraryPath;
     }
 
     private static void initCommonProperties(Properties p)
     {
-        p.setProperty("java.version", "1.6.0");
+        p.setProperty("java.version", "1.7.0");
         p.setProperty("java.vendor", "Jeroen Frijters");
         p.setProperty("java.vendor.url", "http://ikvm.net/");
         p.setProperty("java.vendor.url.bug", "http://www.ikvm.net/bugs");
-        p.setProperty("java.vm.specification.version", "1.0");
-        p.setProperty("java.vm.specification.vendor", "Sun Microsystems Inc.");
+        p.setProperty("java.vm.specification.version", "1.7");
+        p.setProperty("java.vm.specification.vendor", "Oracle Corporation");
         p.setProperty("java.vm.specification.name", "Java Virtual Machine Specification");
         p.setProperty("java.vm.version", PropertyConstants.java_vm_version);
         p.setProperty("java.vm.vendor", "Jeroen Frijters");
@@ -127,7 +141,7 @@ final class VMSystemProperties
         p.setProperty("java.specification.version", SPEC_VERSION);
         p.setProperty("java.specification.vendor", SPEC_VENDOR);
         p.setProperty("java.specification.name", SPEC_TITLE);
-        p.setProperty("java.class.version", "50.0");
+        p.setProperty("java.class.version", "51.0");
         p.setProperty("java.class.path", "");
         p.setProperty("java.library.path", getLibraryPath());
         try
@@ -305,28 +319,25 @@ final class VMSystemProperties
         p.setProperty("openjdk.version", PropertyConstants.openjdk_version);
         String vfsroot = getVirtualFileSystemRoot();
         p.setProperty("java.home", vfsroot.substring(0, vfsroot.length() - 1));
+        // the %home%\lib\endorsed directory does not exist, but neither does it on JDK 1.7
+        p.setProperty("java.endorsed.dirs", vfsroot + "lib" + cli.System.IO.Path.DirectorySeparatorChar + "endorsed");
         p.setProperty("sun.boot.library.path", vfsroot + "bin");
         p.setProperty("sun.boot.class.path", getBootClassPath());
 	initCommonProperties(p);
-        String[] culture = ((cli.System.String)(Object)cli.System.Globalization.CultureInfo.get_CurrentCulture().get_Name()).Split(new char[] { '-' });        
-        p.setProperty("user.language", culture[0]);
-        p.setProperty("user.country", culture.length > 1 ? culture[1] : "");
-        p.setProperty("user.variant", culture.length > 2 ? culture[2] : "");
+	setupI18N(p);
 	p.setProperty("sun.cpu.endian", cli.System.BitConverter.IsLittleEndian ? "little" : "big");
 	p.setProperty("file.encoding.pkg", "sun.io");
 	p.setProperty("user.timezone", "");
-	p.setProperty("sun.os.patch.level", "");
+	p.setProperty("sun.os.patch.level", cli.System.Environment.get_OSVersion().get_ServicePack());
 	p.setProperty("java.vm.info", "compiled mode");
 	p.setProperty("sun.nio.MaxDirectMemorySize", "-1");
 	p.setProperty("java.awt.graphicsenv", PropertyConstants.java_awt_graphicsenv);
         p.setProperty("java.awt.printerjob", "sun.awt.windows.WPrinterJob");
-        p.setProperty("java.content.handler.pkgs", "sun.net.www.content");
         
 	// TODO
 	// sun.cpu.isalist:=pentium_pro+mmx pentium_pro pentium+mmx pentium i486 i386 i86
 	// sun.desktop:=windows
 	// sun.io.unicode.encoding:=UnicodeLittle
-	// sun.java.launcher:=SUN_STANDARD
 	// sun.jnu.encoding:=Cp1252
 	// sun.management.compiler:=HotSpot Client Compiler
         try
@@ -359,7 +370,63 @@ final class VMSystemProperties
             }
         }
     }
-    
+
+    private static void setupI18N(Properties p)
+    {
+        String[] culture = ((cli.System.String)(Object)cli.System.Globalization.CultureInfo.get_CurrentCulture().get_Name()).Split(new char[] { '-' });
+        String language;
+        String script;
+        String region;
+        String variant;
+        if (culture.length == 2)
+        {
+            language = culture[0];
+            if (culture[1].length() == 4)
+            {
+                script = culture[1];
+                region = "";
+            }
+            else
+            {
+                script = "";
+                region = culture[1];
+            }
+        }
+        else if (culture.length == 3)
+        {
+            language = culture[0];
+            script = culture[1];
+            region = culture[2];
+        }
+        else
+        {
+            language = "en";
+            script = "";
+            region = "US";
+        }
+        // Norwegian
+        if (language.equals("nb"))
+        {
+            language = "no";
+            region = "NO";
+            variant = "";
+        }
+        else if (language.equals("nn"))
+        {
+            language = "no";
+            region = "NO";
+            variant = "NY";
+        }
+        else
+        {
+            variant = "";
+        }
+        p.setProperty("user.language", language);
+        p.setProperty("user.country", region);
+        p.setProperty("user.variant", variant);
+        p.setProperty("user.script", script);
+    }
+
     private static native String getVirtualFileSystemRoot();
     private static native String getBootClassPath();
 }
