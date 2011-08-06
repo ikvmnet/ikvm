@@ -97,7 +97,7 @@
                 </replacetokens>
             </filterchain>
         </copy>
-        <exec program="javac" commandline="-J-Xmx1536M -g -nowarn -cp dummy -bootclasspath mscorlib.jar${pathsep}System.jar${pathsep}System.Core.jar${pathsep}System.Data.jar${pathsep}System.Drawing.jar${pathsep}IKVM.Runtime.jar @allsources.gen.lst" useruntimeengine="false" />
+        <exec program="javac" commandline="-J-Xmx1536M -implicit:none -g -nowarn -cp dummy -bootclasspath mscorlib.jar${pathsep}System.jar${pathsep}System.Core.jar${pathsep}System.Data.jar${pathsep}System.Drawing.jar${pathsep}IKVM.Runtime.jar @allsources.gen.lst" useruntimeengine="false" />
     </target>
 
     <target name="rmi">
