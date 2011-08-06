@@ -132,5 +132,20 @@ namespace IKVM.Internal
 			return type.IsArray && type.Name.EndsWith("[]");
 #endif
 		}
+
+		internal static bool IsDynamicMethod(MethodInfo method)
+		{
+			// there's no way to distinguish a baked DynamicMethod from a RuntimeMethodInfo and
+			// on top of that Mono behaves completely different from .NET
+			try
+			{
+				// on Mono 2.10 the MetadataToken property returns zero instead of throwing InvalidOperationException
+				return method.MetadataToken == 0;
+			}
+			catch (InvalidOperationException)
+			{
+				return true;
+			}
+		}
 	}
 }

@@ -75,6 +75,8 @@ java/io/RandomAccessFile.java
 java/lang/Class.java
 java/lang/ClassLoader.java
 java/lang/Enum.java
+java/lang/invoke/AdapterMethodHandle.java
+java/lang/invoke/MethodHandleImpl.java
 java/lang/LangHelper.java
 java/lang/management/PlatformComponent.java
 java/lang/ProcessImpl.java
@@ -8991,7 +8993,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/Integer.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/InternalError.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/InterruptedException.java
-@OPENJDK7@/jdk/src/share/classes/java/lang/invoke/AdapterMethodHandle.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/invoke/BoundMethodHandle.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/invoke/CallSite.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/invoke/ConstantCallSite.java
@@ -9004,7 +9005,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/invoke/Invokers.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/invoke/MemberName.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/invoke/MethodHandle.java
-@OPENJDK7@/jdk/src/share/classes/java/lang/invoke/MethodHandleImpl.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/invoke/MethodHandleNatives.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/invoke/MethodHandleProxies.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/invoke/MethodHandles.java

@@ -829,7 +829,7 @@ namespace IKVM.Runtime
 			return ExceptionHelper.MapException<T>(x, (mode & MapFlags.NoRemapping) == 0, (mode & MapFlags.Unused) != 0);
 		}
 
-		public static T GetDelegate<T>(global::java.lang.invoke.MethodHandle h)
+		public static T GetDelegateForInvokeExact<T>(global::java.lang.invoke.MethodHandle h)
 			where T : class
 		{
 #if FIRST_PASS
@@ -843,6 +843,36 @@ namespace IKVM.Runtime
 			return del;
 #endif
 		}
+
+		public static T GetDelegateForInvoke<T>(global::java.lang.invoke.MethodHandle h, ref InvokeCache<T> cache)
+			where T : class
+		{
+#if FIRST_PASS
+			return null;
+#else
+			if (cache.type == h.type() && cache.del != null)
+			{
+				return cache.del;
+			}
+			T del = h.vmtarget as T;
+			if (del == null)
+			{
+				del = (T)h.asType(MethodHandleUtil.GetDelegateMethodType(typeof(T))).vmtarget;
+				if (Interlocked.CompareExchange(ref cache.type, h.type(), null) == null)
+				{
+					cache.del = del;
+				}
+			}
+			return del;
+#endif
+		}
+	}
+
+	public struct InvokeCache<T>
+		where T : class
+	{
+		internal global::java.lang.invoke.MethodType type;
+		internal T del;
 	}
 
 	[StructLayout(LayoutKind.Explicit)]

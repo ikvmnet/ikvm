@@ -23,6 +23,11 @@
  * questions.
  */
 
+/*
+ * Extensively modified for IKVM.NET by Jeroen Frijters
+ * Copyright (C) 2011 Jeroen Frijters
+ */
+
 package java.lang.invoke;
 
 import sun.invoke.util.VerifyType;
@@ -309,9 +314,9 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
         FieldAccessor(MemberName field, boolean isSetter) {
             super(fhandle(field.getDeclaringClass(), field.getFieldType(), isSetter, field.isStatic()));
-            this.offset = (long) field.getVMIndex();
+            this.offset = fieldOffset(field);
             this.name = field.getName();
-            this.base = staticBase(field);
+            this.base = null;
         }
         @Override
         String debugString() { return addTypeString(name, this); }
@@ -338,15 +343,14 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         void setFieldL(C obj, V x) { unsafe.putObject(obj, offset, x); }
         // cast (V) is OK here, since we wrap convertArguments around the MH.
 
-        static Object staticBase(final MemberName field) {
-            if (!field.isStatic())  return null;
-            return AccessController.doPrivileged(new PrivilegedAction<Object>() {
-                    public Object run() {
+        static Integer fieldOffset(final MemberName field) {
+            return AccessController.doPrivileged(new PrivilegedAction<Integer>() {
+                    public Integer run() {
                         try {
                             Class c = field.getDeclaringClass();
                             // FIXME:  Should not have to create 'f' to get this value.
                             java.lang.reflect.Field f = c.getDeclaredField(field.getName());
-                            return unsafe.staticFieldBase(f);
+                            return unsafe.fieldOffset(f);
                         } catch (NoSuchFieldException ee) {
                             throw uncaughtException(ee);
                         }
@@ -525,192 +529,10 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         return new BoundMethodHandle(target, receiver, argnum);
     }
 
-    static MethodHandle permuteArguments(MethodHandle target,
+    static native MethodHandle permuteArguments(MethodHandle target,
                                                 MethodType newType,
                                                 MethodType oldType,
-                                                int[] permutationOrNull) {
-        assert(oldType.parameterCount() == target.type().parameterCount());
-        int outargs = oldType.parameterCount(), inargs = newType.parameterCount();
-        if (permutationOrNull.length != outargs)
-            throw newIllegalArgumentException("wrong number of arguments in permutation");
-        // Make the individual outgoing argument types match up first.
-        Class<?>[] callTypeArgs = new Class<?>[outargs];
-        for (int i = 0; i < outargs; i++)
-            callTypeArgs[i] = newType.parameterType(permutationOrNull[i]);
-        MethodType callType = MethodType.methodType(oldType.returnType(), callTypeArgs);
-        target = convertArguments(target, callType, oldType, 0);
-        assert(target != null);
-        oldType = target.type();
-        List<Integer> goal = new ArrayList<Integer>();  // i*TOKEN
-        List<Integer> state = new ArrayList<Integer>(); // i*TOKEN
-        List<Integer> drops = new ArrayList<Integer>(); // not tokens
-        List<Integer> dups = new ArrayList<Integer>();  // not tokens
-        final int TOKEN = 10; // to mark items which are symbolic only
-        // state represents the argument values coming into target
-        for (int i = 0; i < outargs; i++) {
-            state.add(permutationOrNull[i] * TOKEN);
-        }
-        // goal represents the desired state
-        for (int i = 0; i < inargs; i++) {
-            if (state.contains(i * TOKEN)) {
-                goal.add(i * TOKEN);
-            } else {
-                // adapter must initially drop all unused arguments
-                drops.add(i);
-            }
-        }
-        // detect duplications
-        while (state.size() > goal.size()) {
-            for (int i2 = 0; i2 < state.size(); i2++) {
-                int arg1 = state.get(i2);
-                int i1 = state.indexOf(arg1);
-                if (i1 != i2) {
-                    // found duplicate occurrence at i2
-                    int arg2 = (inargs++) * TOKEN;
-                    state.set(i2, arg2);
-                    dups.add(goal.indexOf(arg1));
-                    goal.add(arg2);
-                }
-            }
-        }
-        assert(state.size() == goal.size());
-        int size = goal.size();
-        while (!state.equals(goal)) {
-            // Look for a maximal sequence of adjacent misplaced arguments,
-            // and try to rotate them into place.
-            int bestRotArg = -10 * TOKEN, bestRotLen = 0;
-            int thisRotArg = -10 * TOKEN, thisRotLen = 0;
-            for (int i = 0; i < size; i++) {
-                int arg = state.get(i);
-                // Does this argument match the current run?
-                if (arg == thisRotArg + TOKEN) {
-                    thisRotArg = arg;
-                    thisRotLen += 1;
-                    if (bestRotLen < thisRotLen) {
-                        bestRotLen = thisRotLen;
-                        bestRotArg = thisRotArg;
-                    }
-                } else {
-                    // The old sequence (if any) stops here.
-                    thisRotLen = 0;
-                    thisRotArg = -10 * TOKEN;
-                    // But maybe a new one starts here also.
-                    int wantArg = goal.get(i);
-                    final int MAX_ARG_ROTATION = AdapterMethodHandle.MAX_ARG_ROTATION;
-                    if (arg != wantArg &&
-                        arg >= wantArg - TOKEN * MAX_ARG_ROTATION &&
-                        arg <= wantArg + TOKEN * MAX_ARG_ROTATION) {
-                        thisRotArg = arg;
-                        thisRotLen = 1;
-                    }
-                }
-            }
-            if (bestRotLen >= 2) {
-                // Do a rotation if it can improve argument positioning
-                // by at least 2 arguments.  This is not always optimal,
-                // but it seems to catch common cases.
-                int dstEnd = state.indexOf(bestRotArg);
-                int srcEnd = goal.indexOf(bestRotArg);
-                int rotBy = dstEnd - srcEnd;
-                int dstBeg = dstEnd - (bestRotLen - 1);
-                int srcBeg = srcEnd - (bestRotLen - 1);
-                assert((dstEnd | dstBeg | srcEnd | srcBeg) >= 0); // no negs
-                // Make a span which covers both source and destination.
-                int rotBeg = Math.min(dstBeg, srcBeg);
-                int rotEnd = Math.max(dstEnd, srcEnd);
-                int score = 0;
-                for (int i = rotBeg; i <= rotEnd; i++) {
-                    if ((int)state.get(i) != (int)goal.get(i))
-                        score += 1;
-                }
-                List<Integer> rotSpan = state.subList(rotBeg, rotEnd+1);
-                Collections.rotate(rotSpan, -rotBy);  // reverse direction
-                for (int i = rotBeg; i <= rotEnd; i++) {
-                    if ((int)state.get(i) != (int)goal.get(i))
-                        score -= 1;
-                }
-                if (score >= 2) {
-                    // Improved at least two argument positions.  Do it.
-                    List<Class<?>> ptypes = Arrays.asList(oldType.parameterArray());
-                    Collections.rotate(ptypes.subList(rotBeg, rotEnd+1), -rotBy);
-                    MethodType rotType = MethodType.methodType(oldType.returnType(), ptypes);
-                    MethodHandle nextTarget
-                            = AdapterMethodHandle.makeRotateArguments(rotType, target,
-                                    rotBeg, rotSpan.size(), rotBy);
-                    if (nextTarget != null) {
-                        //System.out.println("Rot: "+rotSpan+" by "+rotBy);
-                        target = nextTarget;
-                        oldType = rotType;
-                        continue;
-                    }
-                }
-                // Else de-rotate, and drop through to the swap-fest.
-                Collections.rotate(rotSpan, rotBy);
-            }
-
-            // Now swap like the wind!
-            List<Class<?>> ptypes = Arrays.asList(oldType.parameterArray());
-            for (int i = 0; i < size; i++) {
-                // What argument do I want here?
-                int arg = goal.get(i);
-                if (arg != state.get(i)) {
-                    // Where is it now?
-                    int j = state.indexOf(arg);
-                    Collections.swap(ptypes, i, j);
-                    MethodType swapType = MethodType.methodType(oldType.returnType(), ptypes);
-                    target = AdapterMethodHandle.makeSwapArguments(swapType, target, i, j);
-                    if (target == null)  throw newIllegalArgumentException("cannot swap");
-                    assert(target.type() == swapType);
-                    oldType = swapType;
-                    Collections.swap(state, i, j);
-                }
-            }
-            // One pass of swapping must finish the job.
-            assert(state.equals(goal));
-        }
-        while (!dups.isEmpty()) {
-            // Grab a contiguous trailing sequence of dups.
-            int grab = dups.size() - 1;
-            int dupArgPos = dups.get(grab), dupArgCount = 1;
-            while (grab - 1 >= 0) {
-                int dup0 = dups.get(grab - 1);
-                if (dup0 != dupArgPos - 1)  break;
-                dupArgPos -= 1;
-                dupArgCount += 1;
-                grab -= 1;
-            }
-            //if (dupArgCount > 1)  System.out.println("Dup: "+dups.subList(grab, dups.size()));
-            dups.subList(grab, dups.size()).clear();
-            // In the new target type drop that many args from the tail:
-            List<Class<?>> ptypes = oldType.parameterList();
-            ptypes = ptypes.subList(0, ptypes.size() - dupArgCount);
-            MethodType dupType = MethodType.methodType(oldType.returnType(), ptypes);
-            target = AdapterMethodHandle.makeDupArguments(dupType, target, dupArgPos, dupArgCount);
-            if (target == null)
-                throw newIllegalArgumentException("cannot dup");
-            oldType = target.type();
-        }
-        while (!drops.isEmpty()) {
-            // Grab a contiguous initial sequence of drops.
-            int dropArgPos = drops.get(0), dropArgCount = 1;
-            while (dropArgCount < drops.size()) {
-                int drop1 = drops.get(dropArgCount);
-                if (drop1 != dropArgPos + dropArgCount)  break;
-                dropArgCount += 1;
-            }
-            //if (dropArgCount > 1)  System.out.println("Drop: "+drops.subList(0, dropArgCount));
-            drops.subList(0, dropArgCount).clear();
-            List<Class<?>> dropTypes = newType.parameterList()
-                    .subList(dropArgPos, dropArgPos + dropArgCount);
-            MethodType dropType = oldType.insertParameterTypes(dropArgPos, dropTypes);
-            target = AdapterMethodHandle.makeDropArguments(dropType, target, dropArgPos, dropArgCount);
-            if (target == null)  throw newIllegalArgumentException("cannot drop");
-            oldType = target.type();
-        }
-        target = convertArguments(target, newType, oldType, 0);
-        assert(target != null);
-        return target;
-    }
+                                                int[] permutationOrNull);
 
     /*non-public*/ static
     MethodHandle convertArguments(MethodHandle target, MethodType newType, int level) {

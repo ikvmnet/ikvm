@@ -75,6 +75,25 @@ namespace IKVM.Internal
 					static Throwable() {}
 					internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Throwable");
 				}
+
+				internal static class invoke
+				{
+					internal static class MethodHandle
+					{
+						// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
+						// (we don't want the classes to be loaded prematurely, because they might not be available then)
+						static MethodHandle() { }
+						internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.invoke.MethodHandle");
+					}
+
+					internal static class MethodType
+					{
+						// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
+						// (we don't want the classes to be loaded prematurely, because they might not be available then)
+						static MethodType() { }
+						internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.invoke.MethodType");
+					}
+				}
 			}
 		}
 	}

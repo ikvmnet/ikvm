@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2010 Jeroen Frijters
+  Copyright (C) 2002-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -79,7 +79,8 @@ static class ByteCodeHelperMethods
 	internal static readonly MethodInfo volatileWriteDouble;
 	internal static readonly MethodInfo volatileWriteLong;
 	internal static readonly MethodInfo mapException;
-	internal static readonly MethodInfo getDelegate;
+	internal static readonly MethodInfo GetDelegateForInvokeExact;
+	internal static readonly MethodInfo GetDelegateForInvoke;
 
 	static ByteCodeHelperMethods()
 	{
@@ -124,7 +125,8 @@ static class ByteCodeHelperMethods
 		volatileWriteDouble = typeofByteCodeHelper.GetMethod("VolatileWrite", new Type[] { Types.Double.MakeByRefType(), Types.Double });
 		volatileWriteLong = typeofByteCodeHelper.GetMethod("VolatileWrite", new Type[] { Types.Int64.MakeByRefType(), Types.Int64 });
 		mapException = typeofByteCodeHelper.GetMethod("MapException");
-		getDelegate = typeofByteCodeHelper.GetMethod("GetDelegate");
+		GetDelegateForInvokeExact = typeofByteCodeHelper.GetMethod("GetDelegateForInvokeExact");
+		GetDelegateForInvoke = typeofByteCodeHelper.GetMethod("GetDelegateForInvoke");
 	}
 }
 
@@ -149,6 +151,71 @@ struct MethodKey : IEquatable<MethodKey>
 	public override int GetHashCode()
 	{
 		return className.GetHashCode() ^ methodName.GetHashCode() ^ methodSig.GetHashCode();
+	}
+}
+
+static partial class MethodHandleUtil
+{
+	internal static MethodInfo GetDelegateInvokeMethod(Type delegateType)
+	{
+		if (ReflectUtil.ContainsTypeBuilder(delegateType))
+		{
+			return TypeBuilder.GetMethod(delegateType, delegateType.GetGenericTypeDefinition().GetMethod("Invoke"));
+		}
+		else
+		{
+			return delegateType.GetMethod("Invoke");
+		}
+	}
+
+	internal static Type CreateDelegateType(TypeWrapper tw, MethodWrapper mw)
+	{
+		TypeWrapper[] args = mw.GetParameters();
+		if (!mw.IsStatic)
+		{
+			Array.Resize(ref args, args.Length + 1);
+			Array.Copy(args, 0, args, 1, args.Length - 1);
+			args[0] = tw;
+		}
+		return CreateDelegateType(args, mw.ReturnType);
+	}
+
+	internal static Type CreateDelegateType(TypeWrapper[] args, TypeWrapper ret)
+	{
+		string typeName;
+		Type[] typeArgs;
+		if (ret == PrimitiveTypeWrapper.VOID)
+		{
+			typeName = "IKVM.Runtime.MHV";
+			if (args.Length != 0)
+			{
+				typeName += "`" + args.Length;
+			}
+			typeArgs = new Type[args.Length];
+		}
+		else
+		{
+			typeName = "IKVM.Runtime.MH`" + (args.Length + 1);
+			typeArgs = new Type[args.Length + 1];
+			typeArgs[args.Length] = ret.TypeAsSignatureType;
+		}
+		for (int i = 0; i < args.Length; i++)
+		{
+			typeArgs[i] = args[i].TypeAsSignatureType;
+		}
+		Type type;
+#if STATIC_COMPILER
+		type = StaticCompiler.GetRuntimeType(typeName);
+#else
+		type = Type.GetType(typeName);
+#endif
+		if (type == null)
+		{
+			throw new NotImplementedException(typeName);
+		}
+		return typeArgs.Length == 0
+			? type
+			: type.MakeGenericType(typeArgs);
 	}
 }
 
@@ -2934,13 +3001,15 @@ sealed class Compiler
 		private DynamicTypeWrapper.FinishContext context;
 		private TypeWrapper wrapper;
 		private ClassFile.ConstantPoolItemMI cpi;
+		private bool exact;
 
-		internal MethodHandleMethodWrapper(DynamicTypeWrapper.FinishContext context, TypeWrapper wrapper, ClassFile.ConstantPoolItemMI cpi)
+		internal MethodHandleMethodWrapper(DynamicTypeWrapper.FinishContext context, TypeWrapper wrapper, ClassFile.ConstantPoolItemMI cpi, bool exact)
 			: base(wrapper, cpi.Name, cpi.Signature, null, cpi.GetRetType(), cpi.GetArgTypes(), Modifiers.Public, MemberFlags.None)
 		{
 			this.context = context;
 			this.wrapper = wrapper;
 			this.cpi = cpi;
+			this.exact = exact;
 		}
 
 		internal override void EmitCall(CodeEmitter ilgen)
@@ -2954,68 +3023,39 @@ sealed class Compiler
 			CodeEmitterLocal[] temps = new CodeEmitterLocal[args.Length];
 			for (int i = args.Length - 1; i >= 0; i--)
 			{
-				temps[i] = ilgen.DeclareLocal(args[i].TypeAsLocalOrStackType);
+				temps[i] = ilgen.DeclareLocal(args[i].TypeAsSignatureType);
 				ilgen.Emit(OpCodes.Stloc, temps[i]);
 			}
-			Type delegateType = CreateDelegateType(args, cpi.GetRetType());
-			MethodInfo mi = ByteCodeHelperMethods.getDelegate.MakeGenericMethod(delegateType);
-			ilgen.Emit(OpCodes.Call, mi);
+			Type delegateType = MethodHandleUtil.CreateDelegateType(args, cpi.GetRetType());
+			if (exact)
+			{
+				MethodInfo mi = ByteCodeHelperMethods.GetDelegateForInvokeExact.MakeGenericMethod(delegateType);
+				ilgen.Emit(OpCodes.Call, mi);
+			}
+			else
+			{
+				MethodInfo mi = ByteCodeHelperMethods.GetDelegateForInvoke.MakeGenericMethod(delegateType);
+				Type typeofInvokeCache;
+#if STATIC_COMPILER
+				typeofInvokeCache = StaticCompiler.GetRuntimeType("IKVM.Runtime.InvokeCache`1");
+#else
+				typeofInvokeCache = typeof(IKVM.Runtime.InvokeCache<>);
+#endif
+				FieldBuilder fb = wrapper.TypeAsBuilder.DefineField("__<>invokeCache", typeofInvokeCache.MakeGenericType(delegateType), FieldAttributes.Static | FieldAttributes.PrivateScope);
+				ilgen.Emit(OpCodes.Ldsflda, fb);
+				ilgen.Emit(OpCodes.Call, mi);
+			}
 			for (int i = 0; i < args.Length; i++)
 			{
 				ilgen.Emit(OpCodes.Ldloc, temps[i]);
 			}
-			if (ReflectUtil.ContainsTypeBuilder(delegateType))
-			{
-				ilgen.Emit(OpCodes.Callvirt, TypeBuilder.GetMethod(delegateType, delegateType.GetGenericTypeDefinition().GetMethod("Invoke")));
-			}
-			else
-			{
-				ilgen.Emit(OpCodes.Callvirt, delegateType.GetMethod("Invoke"));
-			}
+			ilgen.Emit(OpCodes.Callvirt, MethodHandleUtil.GetDelegateInvokeMethod(delegateType));
 		}
 
 		internal override void EmitNewobj(CodeEmitter ilgen)
 		{
 			throw new InvalidOperationException();
 		}
-	}
-
-	internal static Type CreateDelegateType(TypeWrapper[] args, TypeWrapper ret)
-	{
-		string typeName;
-		Type[] typeArgs;
-		if (ret == PrimitiveTypeWrapper.VOID)
-		{
-			typeName = "IKVM.Runtime.MHV";
-			if (args.Length != 0)
-			{
-				typeName += "`" + args.Length;
-			}
-			typeArgs = new Type[args.Length];
-		}
-		else
-		{
-			typeName = "IKVM.Runtime.MH`" + (args.Length + 1);
-			typeArgs = new Type[args.Length + 1];
-			typeArgs[args.Length] = ret.TypeAsSignatureType;
-		}
-		for (int i = 0; i < args.Length; i++)
-		{
-			typeArgs[i] = args[i].TypeAsSignatureType;
-		}
-		Type type;
-#if STATIC_COMPILER
-		type = StaticCompiler.GetRuntimeType(typeName);
-#else
-		type = Type.GetType(typeName);
-#endif
-		if (type == null)
-		{
-			throw new NotImplementedException();
-		}
-		return typeArgs.Length == 0
-			? type
-			: type.MakeGenericType(typeArgs);
 	}
 
 	private class DynamicMethodWrapper : MethodWrapper
@@ -3116,8 +3156,9 @@ sealed class Compiler
 			case NormalizedByteCode.__dynamic_invokespecial:
 				return new DynamicMethodWrapper(context, clazz, cpi);
 			case NormalizedByteCode.__methodhandle_invoke:
+				return new MethodHandleMethodWrapper(context, clazz, cpi, false);
 			case NormalizedByteCode.__methodhandle_invokeexact:
-				return new MethodHandleMethodWrapper(context, clazz, cpi);
+				return new MethodHandleMethodWrapper(context, clazz, cpi, true);
 			default:
 				throw new InvalidOperationException();
 		}
