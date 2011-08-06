@@ -528,7 +528,7 @@ static partial class MethodHandleUtil
 				Dump((Delegate)field.GetValue(d.Target), nest + 2);
 			}
 			field = d.Target.GetType().GetField("target");
-			if (field != null)
+			if (field != null && field.GetValue(d.Target) != null)
 			{
 				Dump((Delegate)field.GetValue(d.Target), nest == 0 ? 1 : nest);
 			}
@@ -940,17 +940,19 @@ static class Java_java_lang_invoke_MethodHandleNatives
 		int index = m.getVMIndex();
 		if (index == Int32.MaxValue)
 		{
-			Type targetDelegateType = MethodHandleUtil.CreateDelegateType(self.type().dropParameterTypes(0, 1));
+			bool invokeExact = m.getName() == "invokeExact";
+			Type targetDelegateType = MethodHandleUtil.CreateDelegateType(invokeExact ? self.type().dropParameterTypes(0, 1) : self.type());
 			MethodHandleUtil.DynamicMethodBuilder dm = new MethodHandleUtil.DynamicMethodBuilder("DirectMethodHandle." + m.getName(), self.type(), typeof(IKVM.Runtime.InvokeCache<>).MakeGenericType(targetDelegateType));
 			dm.Ldarg(0);
-			if (m.getName() == "invoke")
+			if (invokeExact)
 			{
-				dm.LoadValueAddress();
-				dm.Call(ByteCodeHelperMethods.GetDelegateForInvoke.MakeGenericMethod(targetDelegateType));
+				dm.Call(ByteCodeHelperMethods.GetDelegateForInvokeExact.MakeGenericMethod(targetDelegateType));
 			}
 			else
 			{
-				dm.Call(ByteCodeHelperMethods.GetDelegateForInvokeExact.MakeGenericMethod(targetDelegateType));
+				dm.LoadValueAddress();
+				dm.Call(ByteCodeHelperMethods.GetDelegateForInvoke.MakeGenericMethod(targetDelegateType));
+				dm.Ldarg(0);
 			}
 			for (int i = 1, count = self.type().parameterCount(); i < count; i++)
 			{

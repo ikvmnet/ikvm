@@ -3019,21 +3019,36 @@ sealed class Compiler
 
 		internal override void EmitCallvirt(CodeEmitter ilgen)
 		{
-			TypeWrapper[] args = cpi.GetArgTypes();
-			CodeEmitterLocal[] temps = new CodeEmitterLocal[args.Length];
-			for (int i = args.Length - 1; i >= 0; i--)
-			{
-				temps[i] = ilgen.DeclareLocal(args[i].TypeAsSignatureType);
-				ilgen.Emit(OpCodes.Stloc, temps[i]);
-			}
-			Type delegateType = MethodHandleUtil.CreateDelegateType(args, cpi.GetRetType());
 			if (exact)
 			{
+				TypeWrapper[] args = cpi.GetArgTypes();
+				CodeEmitterLocal[] temps = new CodeEmitterLocal[args.Length];
+				for (int i = args.Length - 1; i >= 0; i--)
+				{
+					temps[i] = ilgen.DeclareLocal(args[i].TypeAsSignatureType);
+					ilgen.Emit(OpCodes.Stloc, temps[i]);
+				}
+				Type delegateType = MethodHandleUtil.CreateDelegateType(args, cpi.GetRetType());
 				MethodInfo mi = ByteCodeHelperMethods.GetDelegateForInvokeExact.MakeGenericMethod(delegateType);
 				ilgen.Emit(OpCodes.Call, mi);
+				for (int i = 0; i < args.Length; i++)
+				{
+					ilgen.Emit(OpCodes.Ldloc, temps[i]);
+				}
+				ilgen.Emit(OpCodes.Callvirt, MethodHandleUtil.GetDelegateInvokeMethod(delegateType));
 			}
 			else
 			{
+				TypeWrapper[] args = new TypeWrapper[cpi.GetArgTypes().Length + 1];
+				Array.Copy(cpi.GetArgTypes(), 0, args, 1, args.Length - 1);
+				args[0] = CoreClasses.java.lang.invoke.MethodHandle.Wrapper;
+				CodeEmitterLocal[] temps = new CodeEmitterLocal[args.Length];
+				for (int i = args.Length - 1; i >= 0; i--)
+				{
+					temps[i] = ilgen.DeclareLocal(args[i].TypeAsSignatureType);
+					ilgen.Emit(OpCodes.Stloc, temps[i]);
+				}
+				Type delegateType = MethodHandleUtil.CreateDelegateType(args, cpi.GetRetType());
 				MethodInfo mi = ByteCodeHelperMethods.GetDelegateForInvoke.MakeGenericMethod(delegateType);
 				Type typeofInvokeCache;
 #if STATIC_COMPILER
@@ -3042,14 +3057,15 @@ sealed class Compiler
 				typeofInvokeCache = typeof(IKVM.Runtime.InvokeCache<>);
 #endif
 				FieldBuilder fb = wrapper.TypeAsBuilder.DefineField("__<>invokeCache", typeofInvokeCache.MakeGenericType(delegateType), FieldAttributes.Static | FieldAttributes.PrivateScope);
+				ilgen.Emit(OpCodes.Ldloc, temps[0]);
 				ilgen.Emit(OpCodes.Ldsflda, fb);
 				ilgen.Emit(OpCodes.Call, mi);
+				for (int i = 0; i < args.Length; i++)
+				{
+					ilgen.Emit(OpCodes.Ldloc, temps[i]);
+				}
+				ilgen.Emit(OpCodes.Callvirt, MethodHandleUtil.GetDelegateInvokeMethod(delegateType));
 			}
-			for (int i = 0; i < args.Length; i++)
-			{
-				ilgen.Emit(OpCodes.Ldloc, temps[i]);
-			}
-			ilgen.Emit(OpCodes.Callvirt, MethodHandleUtil.GetDelegateInvokeMethod(delegateType));
 		}
 
 		internal override void EmitNewobj(CodeEmitter ilgen)

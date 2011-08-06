@@ -857,7 +857,8 @@ namespace IKVM.Runtime
 			T del = h.vmtarget as T;
 			if (del == null)
 			{
-				del = (T)h.asType(MethodHandleUtil.GetDelegateMethodType(typeof(T))).vmtarget;
+				del = (T)global::java.lang.invoke.MethodHandles.exactInvoker(h.type())
+					.asType(MethodHandleUtil.GetDelegateMethodType(typeof(T))).vmtarget;
 				if (Interlocked.CompareExchange(ref cache.type, h.type(), null) == null)
 				{
 					cache.del = del;
