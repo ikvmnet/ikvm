@@ -227,6 +227,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/build/linux-amd64/gensrc/com/sun/accessibility/internal/resources/accessibility_it.java
 @OPENJDK7@/build/linux-amd64/gensrc/com/sun/accessibility/internal/resources/accessibility_ja.java
 @OPENJDK7@/build/linux-amd64/gensrc/com/sun/accessibility/internal/resources/accessibility_ko.java
+@OPENJDK7@/build/linux-amd64/gensrc/com/sun/accessibility/internal/resources/accessibility_pt_BR.java
 @OPENJDK7@/build/linux-amd64/gensrc/com/sun/accessibility/internal/resources/accessibility_sv.java
 @OPENJDK7@/build/linux-amd64/gensrc/com/sun/accessibility/internal/resources/accessibility_zh_CN.java
 @OPENJDK7@/build/linux-amd64/gensrc/com/sun/accessibility/internal/resources/accessibility_zh_HK.java
@@ -7447,6 +7448,15 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/imageio/stream/StreamFinalizer.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/jarsigner/ContentSigner.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/jarsigner/ContentSignerParameters.java
+@OPENJDK7@/jdk/src/share/classes/com/sun/java/browser/dom/DOMAccessException.java
+@OPENJDK7@/jdk/src/share/classes/com/sun/java/browser/dom/DOMAccessor.java
+@OPENJDK7@/jdk/src/share/classes/com/sun/java/browser/dom/DOMAction.java
+@OPENJDK7@/jdk/src/share/classes/com/sun/java/browser/dom/DOMService.java
+@OPENJDK7@/jdk/src/share/classes/com/sun/java/browser/dom/DOMServiceProvider.java
+@OPENJDK7@/jdk/src/share/classes/com/sun/java/browser/dom/DOMUnsupportedException.java
+@OPENJDK7@/jdk/src/share/classes/com/sun/java/browser/net/ProxyInfo.java
+@OPENJDK7@/jdk/src/share/classes/com/sun/java/browser/net/ProxyService.java
+@OPENJDK7@/jdk/src/share/classes/com/sun/java/browser/net/ProxyServiceProvider.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/java/swing/Painter.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/java/swing/plaf/motif/MotifBorders.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/java/swing/plaf/motif/MotifButtonListener.java
@@ -8296,6 +8306,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/rowset/JoinRowSetImpl.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/rowset/providers/RIOptimisticProvider.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/rowset/providers/RIXMLProvider.java
+@OPENJDK7@/jdk/src/share/classes/com/sun/rowset/RowSetFactoryImpl.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/rowset/WebRowSetImpl.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/security/auth/callback/DialogCallbackHandler.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/security/auth/callback/TextCallbackHandler.java
@@ -9595,6 +9606,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/java/sql/NClob.java
 @OPENJDK7@/jdk/src/share/classes/java/sql/ParameterMetaData.java
 @OPENJDK7@/jdk/src/share/classes/java/sql/PreparedStatement.java
+@OPENJDK7@/jdk/src/share/classes/java/sql/PseudoColumnUsage.java
 @OPENJDK7@/jdk/src/share/classes/java/sql/Ref.java
 @OPENJDK7@/jdk/src/share/classes/java/sql/ResultSet.java
 @OPENJDK7@/jdk/src/share/classes/java/sql/ResultSetMetaData.java
@@ -10654,6 +10666,8 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/javax/sql/rowset/Joinable.java
 @OPENJDK7@/jdk/src/share/classes/javax/sql/rowset/JoinRowSet.java
 @OPENJDK7@/jdk/src/share/classes/javax/sql/rowset/Predicate.java
+@OPENJDK7@/jdk/src/share/classes/javax/sql/rowset/RowSetFactory.java
+@OPENJDK7@/jdk/src/share/classes/javax/sql/rowset/RowSetProvider.java
 @OPENJDK7@/jdk/src/share/classes/javax/sql/rowset/RowSetMetaDataImpl.java
 @OPENJDK7@/jdk/src/share/classes/javax/sql/rowset/RowSetWarning.java
 @OPENJDK7@/jdk/src/share/classes/javax/sql/rowset/serial/SerialArray.java
