@@ -664,6 +664,8 @@ assembly.class
     sun/java2d/cmm/lcms/*.class
     sun/java2d/pipe/*.class
     @OPENJDK7@/build/linux-amd64/gensrc/com/sun/accessibility/internal/resources/*.class
+    @OPENJDK7@/build/linux-amd64/gensrc/com/sun/java/swing/plaf/motif/resources/*.class
+    @OPENJDK7@/build/linux-amd64/gensrc/com/sun/java/swing/plaf/windows/resources/*.class
     @OPENJDK7@/build/linux-amd64/gensrc/com/sun/swing/internal/plaf/basic/resources/*.class
     @OPENJDK7@/build/linux-amd64/gensrc/com/sun/swing/internal/plaf/metal/resources/*.class
     @OPENJDK7@/build/linux-amd64/gensrc/com/sun/swing/internal/plaf/synth/resources/*.class
@@ -672,6 +674,7 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/awt/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/java/swing/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/java/swing/plaf/motif/*.class
+    @OPENJDK7@/jdk/src/share/classes/com/sun/java/swing/plaf/nimbus/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/java/swing/plaf/windows/*.class
     @OPENJDK7@/jdk/src/share/classes/java/applet/*.class
     @OPENJDK7@/jdk/src/share/classes/java/awt/*.class
@@ -835,6 +838,7 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/sun/security/provider/certpath/ldap/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/security/rsa/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/security/ssl/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/security/ssl/krb5/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/security/timestamp/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/security/tools/KeyStoreUtil.class
     @OPENJDK7@/jdk/src/share/classes/sun/security/util/*.class
