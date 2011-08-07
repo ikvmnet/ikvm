@@ -630,6 +630,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/tools/jar/resources/jar_it.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/tools/jar/resources/jar_ja.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/tools/jar/resources/jar_ko.java
+@OPENJDK7@/build/linux-amd64/gensrc/sun/tools/jar/resources/jar_pt_BR.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/tools/jar/resources/jar_sv.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/tools/jar/resources/jar_zh_CN.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/tools/jar/resources/jar_zh_HK.java
@@ -7235,6 +7236,8 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/build/linux-amd64/langtools/build/gensrc/com/sun/tools/javah/resources/l10n_ja.java
 @OPENJDK7@/build/linux-amd64/langtools/build/gensrc/com/sun/tools/javah/resources/l10n_zh_CN.java
 @OPENJDK7@/build/linux-amd64/langtools/build/gensrc/com/sun/tools/javah/resources/version.java
+@OPENJDK7@/build/linux-amd64/langtools/build/gensrc/com/sun/tools/javap/resources/javap.java
+@OPENJDK7@/build/linux-amd64/langtools/build/gensrc/com/sun/tools/javap/resources/version.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/awt/AWTUtilities.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/awt/SecurityWarning.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/beans/decoder/AccessorElementHandler.java
@@ -11457,6 +11460,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/sun/awt/GlobalCursorManager.java
 @OPENJDK7@/jdk/src/share/classes/sun/awt/Graphics2Delegate.java
 @OPENJDK7@/jdk/src/share/classes/sun/awt/HeadlessToolkit.java
+@OPENJDK7@/jdk/src/share/classes/sun/awt/HKSCS.java
 @OPENJDK7@/jdk/src/share/classes/sun/awt/HorizBagLayout.java
 @OPENJDK7@/jdk/src/share/classes/sun/awt/im/CompositionArea.java
 @OPENJDK7@/jdk/src/share/classes/sun/awt/im/CompositionAreaHandler.java
@@ -14045,6 +14049,9 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/langtools/src/share/classes/com/sun/tools/javac/jvm/Target.java
 @OPENJDK7@/langtools/src/share/classes/com/sun/tools/javac/jvm/UninitializedType.java
 @OPENJDK7@/langtools/src/share/classes/com/sun/tools/javac/Launcher.java
+@OPENJDK7@/langtools/src/share/classes/com/sun/tools/javac/nio/JavacPathFileManager.java
+@OPENJDK7@/langtools/src/share/classes/com/sun/tools/javac/nio/PathFileManager.java
+@OPENJDK7@/langtools/src/share/classes/com/sun/tools/javac/nio/PathFileObject.java
 @OPENJDK7@/langtools/src/share/classes/com/sun/tools/javac/Main.java
 @OPENJDK7@/langtools/src/share/classes/com/sun/tools/javac/main/CommandLine.java
 @OPENJDK7@/langtools/src/share/classes/com/sun/tools/javac/main/JavaCompiler.java

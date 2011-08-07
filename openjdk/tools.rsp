@@ -142,6 +142,7 @@
     @OPENJDK7@/build/linux-amd64/langtools/build/gensrc/com/sun/tools/javac/resources/*.class
     @OPENJDK7@/build/linux-amd64/langtools/build/gensrc/com/sun/tools/javadoc/resources/*.class
     @OPENJDK7@/build/linux-amd64/langtools/build/gensrc/com/sun/tools/javah/resources/*.class
+    @OPENJDK7@/build/linux-amd64/langtools/build/gensrc/com/sun/tools/javap/resources/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/jarsigner/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/jdi/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/jdi/connect/*.class
@@ -161,6 +162,7 @@
     @OPENJDK7@/jdk/src/share/classes/sun/tools/java/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/tools/javac/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/tools/native2ascii/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/tools/native2ascii/resources/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/tools/serialver/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/tools/tree/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/tools/util/*.class
@@ -196,6 +198,7 @@
     @OPENJDK7@/langtools/src/share/classes/com/sun/tools/javac/comp/*.class
     @OPENJDK7@/langtools/src/share/classes/com/sun/tools/javac/file/*.class
     @OPENJDK7@/langtools/src/share/classes/com/sun/tools/javac/jvm/*.class
+    @OPENJDK7@/langtools/src/share/classes/com/sun/tools/javac/nio/*.class
     @OPENJDK7@/langtools/src/share/classes/com/sun/tools/javac/main/*.class
     @OPENJDK7@/langtools/src/share/classes/com/sun/tools/javac/model/*.class
     @OPENJDK7@/langtools/src/share/classes/com/sun/tools/javac/parser/*.class
