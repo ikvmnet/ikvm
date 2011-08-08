@@ -34,18 +34,29 @@ using jlClass = java.lang.Class;
 
 static class Java_java_lang_invoke_MethodHandle
 {
-	public static object invokeExact(object obj, object[] args)
+	private static IKVM.Runtime.InvokeCache<IKVM.Runtime.MH<MethodHandle, object[], object>> cache;
+
+	public static object invokeExact(MethodHandle mh, object[] args)
 	{
-		// this can never be called, because the compiler special cases these methods
-		// TODO check reflection code paths
-		throw new InvalidOperationException();
+#if FIRST_PASS
+		return null;
+#else
+		return IKVM.Runtime.ByteCodeHelper.GetDelegateForInvokeExact<IKVM.Runtime.MH<object[], object>>(mh)(args);
+#endif
 	}
 
-	public static object invoke(object obj, object[] args)
+	public static object invoke(MethodHandle mh, object[] args)
 	{
-		// this can never be called, because the compiler special cases these methods
-		// TODO check reflection code paths
-		throw new InvalidOperationException();
+#if FIRST_PASS
+		return null;
+#else
+		if (mh.type().parameterCount() != args.Length)
+		{
+			throw new WrongMethodTypeException();
+		}
+		mh = mh.asSpreader(typeof(object[]), args.Length);
+		return IKVM.Runtime.ByteCodeHelper.GetDelegateForInvoke<IKVM.Runtime.MH<MethodHandle, object[], object>>(mh, ref cache)(mh, args);
+#endif
 	}
 }
 
