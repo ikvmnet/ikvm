@@ -50,6 +50,33 @@ static class Java_java_lang_invoke_MethodHandle
 #if FIRST_PASS
 		return null;
 #else
+		MethodType type = mh.type();
+		if (mh.isVarargsCollector())
+		{
+			java.lang.Class varargType = type.parameterType(type.parameterCount() - 1);
+			if (type.parameterCount() == args.Length)
+			{
+				if (!varargType.isInstance(args[args.Length - 1]))
+				{
+					Array arr = (Array)java.lang.reflect.Array.newInstance(varargType.getComponentType(), 1);
+					arr.SetValue(args[args.Length - 1], 0);
+					args[args.Length - 1] = arr;
+				}
+			}
+			else if (type.parameterCount() - 1 > args.Length)
+			{
+				throw new WrongMethodTypeException();
+			}
+			else
+			{
+				object[] newArgs = new object[type.parameterCount()];
+				Array.Copy(args, newArgs, newArgs.Length - 1);
+				Array varargs = (Array)java.lang.reflect.Array.newInstance(varargType.getComponentType(), args.Length - (newArgs.Length - 1));
+				Array.Copy(args, newArgs.Length - 1, varargs, 0, varargs.Length);
+				newArgs[newArgs.Length - 1] = varargs;
+				args = newArgs;
+			}
+		}
 		if (mh.type().parameterCount() != args.Length)
 		{
 			throw new WrongMethodTypeException();
