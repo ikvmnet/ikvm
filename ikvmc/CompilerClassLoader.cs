@@ -944,19 +944,6 @@ namespace IKVM.Internal
 				internal abstract MethodBase DoLink();
 
 				internal abstract void Finish();
-
-				internal static void AddDeclaredExceptions(MethodBase mb, IKVM.Internal.MapXml.Throws[] throws)
-				{
-					if(throws != null)
-					{
-						string[] exceptions = new string[throws.Length];
-						for(int i = 0; i < exceptions.Length; i++)
-						{
-							exceptions[i] = throws[i].Class;
-						}
-						AttributeHelper.SetThrowsAttribute(mb, exceptions);
-					}
-				}
 			}
 
 			sealed class RemappedConstructorWrapper : RemappedMethodBaseWrapper
@@ -2157,6 +2144,19 @@ namespace IKVM.Internal
 			internal override bool IsFastClassLiteralSafe
 			{
 				get { return true; }
+			}
+		}
+
+		internal static void AddDeclaredExceptions(MethodBase mb, IKVM.Internal.MapXml.Throws[] throws)
+		{
+			if (throws != null)
+			{
+				string[] exceptions = new string[throws.Length];
+				for (int i = 0; i < exceptions.Length; i++)
+				{
+					exceptions[i] = throws[i].Class;
+				}
+				AttributeHelper.SetThrowsAttribute(mb, exceptions);
 			}
 		}
 

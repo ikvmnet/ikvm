@@ -667,6 +667,7 @@ namespace IKVM.Internal
 								{
 									AttributeHelper.SetModifiers(cb, (Modifiers)constructor.Modifiers, false);
 								}
+								CompilerClassLoader.AddDeclaredExceptions(cb, constructor.throws);
 								CodeEmitter ilgen = CodeEmitter.Create(cb);
 								constructor.Emit(classLoader, ilgen);
 								ilgen.DoEmit();
@@ -730,6 +731,7 @@ namespace IKVM.Internal
 									mw.Link();
 									typeBuilder.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
 								}
+								CompilerClassLoader.AddDeclaredExceptions(mb, method.throws);
 								CodeEmitter ilgen = CodeEmitter.Create(mb);
 								method.Emit(classLoader, ilgen);
 								ilgen.DoEmit();
