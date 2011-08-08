@@ -218,13 +218,20 @@ static partial class MethodHandleUtil
 
 	internal static void EmitCallDelegateInvokeMethod(CodeEmitter ilgen, Type delegateType)
 	{
-		MethodInfo invokeMethod = GetDelegateInvokeMethod(delegateType);
-		ParameterInfo[] pi = invokeMethod.GetParameters();
-		if (pi.Length > 0 && IsPackedArgsContainer(pi[pi.Length - 1].ParameterType))
+		if (delegateType.IsGenericType)
 		{
-			WrapArgs(ilgen, pi[pi.Length - 1].ParameterType);
+			// MONOBUG we don't look at the invoke method directly here, because Mono doesn't support GetParameters() on a builder instantiation
+			Type[] typeArgs = delegateType.GetGenericArguments();
+			if (IsPackedArgsContainer(typeArgs[typeArgs.Length - 1]))
+			{
+				WrapArgs(ilgen, typeArgs[typeArgs.Length - 1]);
+			}
+			else if (typeArgs.Length > 2 && IsPackedArgsContainer(typeArgs[typeArgs.Length - 2]))
+			{
+				WrapArgs(ilgen, typeArgs[typeArgs.Length - 2]);
+			}
 		}
-		ilgen.Emit(OpCodes.Callvirt, invokeMethod);
+		ilgen.Emit(OpCodes.Callvirt, GetDelegateInvokeMethod(delegateType));
 	}
 
 	private static void WrapArgs(CodeEmitter ilgen, Type type)
