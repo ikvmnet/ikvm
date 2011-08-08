@@ -92,12 +92,38 @@ static partial class MethodHandleUtil
 
 	internal static MethodType GetDelegateMethodType(Type type)
 	{
+		java.lang.Class[] types;
 		MethodInfo mi = GetDelegateInvokeMethod(type);
 		ParameterInfo[] pi = mi.GetParameters();
-		java.lang.Class[] types = new java.lang.Class[pi.Length];
-		for (int i = 0; i < types.Length; i++)
+		if (IsPackedArgsContainer(pi[pi.Length - 1].ParameterType))
 		{
-			types[i] = ClassLoaderWrapper.GetWrapperFromType(pi[i].ParameterType).ClassObject;
+			System.Collections.Generic.List<java.lang.Class> list = new System.Collections.Generic.List<java.lang.Class>();
+			for (int i = 0; i < pi.Length - 1; i++)
+			{
+				list.Add(ClassLoaderWrapper.GetWrapperFromType(pi[i].ParameterType).ClassObject);
+			}
+			Type[] args = pi[pi.Length - 1].ParameterType.GetGenericArguments();
+			while (IsPackedArgsContainer(args[args.Length - 1]))
+			{
+				for (int i = 0; i < args.Length - 1; i++)
+				{
+					list.Add(ClassLoaderWrapper.GetWrapperFromType(args[i]).ClassObject);
+				}
+				args = args[args.Length - 1].GetGenericArguments();
+			}
+			for (int i = 0; i < args.Length; i++)
+			{
+				list.Add(ClassLoaderWrapper.GetWrapperFromType(args[i]).ClassObject);
+			}
+			types = list.ToArray();
+		}
+		else
+		{
+			types = new java.lang.Class[pi.Length];
+			for (int i = 0; i < types.Length; i++)
+			{
+				types[i] = ClassLoaderWrapper.GetWrapperFromType(pi[i].ParameterType).ClassObject;
+			}
 		}
 		return MethodType.methodType(ClassLoaderWrapper.GetWrapperFromType(mi.ReturnType).ClassObject, types);
 	}
@@ -112,6 +138,8 @@ static partial class MethodHandleUtil
 		private readonly Type container;
 		private readonly DynamicMethod dm;
 		private readonly CodeEmitter ilgen;
+		private readonly Type packedArgType;
+		private readonly int packedArgPos = Int32.MaxValue;
 
 		sealed class Container<T1, T2>
 		{
@@ -133,6 +161,13 @@ static partial class MethodHandleUtil
 			MethodInfo mi = GetDelegateInvokeMethod(delegateType);
 			dm = new DynamicMethod(name, mi.ReturnType, GetParameterTypes(mi), typeof(DynamicMethodBuilder), true);
 			ilgen = CodeEmitter.Create(dm);
+
+			if (type.parameterCount() > MaxArity)
+			{
+				ParameterInfo[] pi = GetDelegateInvokeMethod(delegateType).GetParameters();
+				packedArgPos = pi.Length - 1;
+				packedArgType = pi[packedArgPos].ParameterType;
+			}
 		}
 
 		internal DynamicMethodBuilder(string name, MethodType type, MethodHandle target)
@@ -145,6 +180,14 @@ static partial class MethodHandleUtil
 			dm = new DynamicMethod(name, mi.ReturnType, GetParameterTypes(target.vmtarget.GetType(), mi), typeof(DynamicMethodBuilder), true);
 			ilgen = CodeEmitter.Create(dm);
 			ilgen.Emit(OpCodes.Ldarg_0);
+
+			if (type.parameterCount() > MaxArity)
+			{
+				ParameterInfo[] pi = GetDelegateInvokeMethod(delegateType).GetParameters();
+				packedArgPos = pi.Length - 1;
+				packedArgType = pi[packedArgPos].ParameterType;
+				packedArgPos++;
+			}
 		}
 
 		internal DynamicMethodBuilder(string name, MethodType type, MethodHandle target, object value)
@@ -160,6 +203,14 @@ static partial class MethodHandleUtil
 			ilgen = CodeEmitter.Create(dm);
 			ilgen.Emit(OpCodes.Ldarg_0);
 			ilgen.Emit(OpCodes.Ldfld, container.GetField("target"));
+
+			if (type.parameterCount() > MaxArity)
+			{
+				ParameterInfo[] pi = GetDelegateInvokeMethod(delegateType).GetParameters();
+				packedArgPos = pi.Length - 1;
+				packedArgType = pi[packedArgPos].ParameterType;
+				packedArgPos++;
+			}
 		}
 
 		internal DynamicMethodBuilder(string name, MethodType type, Type valueType)
@@ -171,6 +222,14 @@ static partial class MethodHandleUtil
 			MethodInfo mi = GetDelegateInvokeMethod(delegateType);
 			dm = new DynamicMethod(name, mi.ReturnType, GetParameterTypes(container, mi), typeof(DynamicMethodBuilder), true);
 			ilgen = CodeEmitter.Create(dm);
+
+			if (type.parameterCount() > MaxArity)
+			{
+				ParameterInfo[] pi = GetDelegateInvokeMethod(delegateType).GetParameters();
+				packedArgPos = pi.Length - 1;
+				packedArgType = pi[packedArgPos].ParameterType;
+				packedArgPos++;
+			}
 		}
 
 		internal void Emit(OpCode opc)
@@ -198,6 +257,11 @@ static partial class MethodHandleUtil
 			mw.EmitCallvirt(ilgen);
 		}
 
+		internal void CallDelegate(Type delegateType)
+		{
+			EmitCallDelegateInvokeMethod(ilgen, delegateType);
+		}
+
 		internal void Emit(OpCode opc, int val)
 		{
 			ilgen.Emit(opc, val);
@@ -205,7 +269,25 @@ static partial class MethodHandleUtil
 
 		internal void Ldarg(int i)
 		{
-			ilgen.Emit(OpCodes.Ldarg, (short)(i + firstArg));
+			i += firstArg;
+			if (i >= packedArgPos)
+			{
+				ilgen.Emit(OpCodes.Ldarga, (short)packedArgPos);
+				int fieldPos = i - packedArgPos;
+				Type type = packedArgType;
+				while (fieldPos >= MaxArity || (fieldPos == MaxArity - 1 && IsPackedArgsContainer(type.GetField("t8").FieldType)))
+				{
+					FieldInfo field = type.GetField("t8");
+					type = field.FieldType;
+					ilgen.Emit(OpCodes.Ldflda, field);
+					fieldPos -= MaxArity - 1;
+				}
+				ilgen.Emit(OpCodes.Ldfld, type.GetField("t" + (1 + fieldPos)));
+			}
+			else
+			{
+				ilgen.Emit(OpCodes.Ldarg, (short)i);
+			}
 		}
 
 		internal void Convert(java.lang.Class srcType, java.lang.Class dstType, int level)
@@ -215,7 +297,7 @@ static partial class MethodHandleUtil
 
 		internal void CallTarget()
 		{
-			ilgen.Emit(OpCodes.Callvirt, GetDelegateInvokeMethod(target.GetType()));
+			EmitCallDelegateInvokeMethod(ilgen, target.GetType());
 		}
 
 		internal void LoadValueAddress()
@@ -232,7 +314,7 @@ static partial class MethodHandleUtil
 
 		internal void CallValue()
 		{
-			ilgen.Emit(OpCodes.Callvirt, GetDelegateInvokeMethod(value.GetType()));
+			EmitCallDelegateInvokeMethod(ilgen, value.GetType());
 		}
 
 		internal void Ret()
@@ -958,7 +1040,7 @@ static class Java_java_lang_invoke_MethodHandleNatives
 			{
 				dm.Ldarg(i);
 			}
-			dm.Callvirt(MethodHandleUtil.GetDelegateInvokeMethod(targetDelegateType));
+			dm.CallDelegate(targetDelegateType);
 			dm.Ret();
 			self.vmtarget = dm.CreateDelegate();
 			return;
@@ -974,6 +1056,7 @@ static class Java_java_lang_invoke_MethodHandleNatives
 			if (mi != null
 				&& !tw.IsRemapped
 				&& !tw.IsGhost
+				&& self.type().parameterCount() <= MethodHandleUtil.MaxArity
 				// FXBUG we should be able to use a normal (unbound) delegate for virtual methods
 				// (when doDispatch is set), but the x64 CLR crashes when doing a virtual method dispatch on
 				// a null reference

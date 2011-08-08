@@ -156,6 +156,87 @@ struct MethodKey : IEquatable<MethodKey>
 
 static partial class MethodHandleUtil
 {
+	internal const int MaxArity = 8;
+	private static readonly Type typeofMHA;
+	private static readonly Type[] typeofMHV;
+	private static readonly Type[] typeofMH;
+
+	static MethodHandleUtil()
+	{
+#if STATIC_COMPILER
+		typeofMHA = StaticCompiler.GetRuntimeType("IKVM.Runtime.MHA`8");
+		typeofMHV = new Type[] {
+			StaticCompiler.GetRuntimeType("IKVM.Runtime.MHV"),
+			StaticCompiler.GetRuntimeType("IKVM.Runtime.MHV`1"),
+			StaticCompiler.GetRuntimeType("IKVM.Runtime.MHV`2"),
+			StaticCompiler.GetRuntimeType("IKVM.Runtime.MHV`3"),
+			StaticCompiler.GetRuntimeType("IKVM.Runtime.MHV`4"),
+			StaticCompiler.GetRuntimeType("IKVM.Runtime.MHV`5"),
+			StaticCompiler.GetRuntimeType("IKVM.Runtime.MHV`6"),
+			StaticCompiler.GetRuntimeType("IKVM.Runtime.MHV`7"),
+			StaticCompiler.GetRuntimeType("IKVM.Runtime.MHV`8"),
+		};
+		typeofMH = new Type[] {
+			null,
+			StaticCompiler.GetRuntimeType("IKVM.Runtime.MH`1"),
+			StaticCompiler.GetRuntimeType("IKVM.Runtime.MH`2"),
+			StaticCompiler.GetRuntimeType("IKVM.Runtime.MH`3"),
+			StaticCompiler.GetRuntimeType("IKVM.Runtime.MH`4"),
+			StaticCompiler.GetRuntimeType("IKVM.Runtime.MH`5"),
+			StaticCompiler.GetRuntimeType("IKVM.Runtime.MH`6"),
+			StaticCompiler.GetRuntimeType("IKVM.Runtime.MH`7"),
+			StaticCompiler.GetRuntimeType("IKVM.Runtime.MH`8"),
+			StaticCompiler.GetRuntimeType("IKVM.Runtime.MH`9"),
+		};
+#else
+		typeofMHA = typeof(IKVM.Runtime.MHA<,,,,,,,>);
+		typeofMHV = new Type[] {
+			typeof(IKVM.Runtime.MHV),
+			typeof(IKVM.Runtime.MHV<>),
+			typeof(IKVM.Runtime.MHV<,>),
+			typeof(IKVM.Runtime.MHV<,,>),
+			typeof(IKVM.Runtime.MHV<,,,>),
+			typeof(IKVM.Runtime.MHV<,,,,>),
+			typeof(IKVM.Runtime.MHV<,,,,,>),
+			typeof(IKVM.Runtime.MHV<,,,,,,>),
+			typeof(IKVM.Runtime.MHV<,,,,,,,>),
+		};
+		typeofMH = new Type[] {
+			null,
+			typeof(IKVM.Runtime.MH<>),
+			typeof(IKVM.Runtime.MH<,>),
+			typeof(IKVM.Runtime.MH<,,>),
+			typeof(IKVM.Runtime.MH<,,,>),
+			typeof(IKVM.Runtime.MH<,,,,>),
+			typeof(IKVM.Runtime.MH<,,,,,>),
+			typeof(IKVM.Runtime.MH<,,,,,,>),
+			typeof(IKVM.Runtime.MH<,,,,,,,>),
+			typeof(IKVM.Runtime.MH<,,,,,,,,>),
+		};
+#endif
+	}
+
+	internal static void EmitCallDelegateInvokeMethod(CodeEmitter ilgen, Type delegateType)
+	{
+		MethodInfo invokeMethod = GetDelegateInvokeMethod(delegateType);
+		ParameterInfo[] pi = invokeMethod.GetParameters();
+		if (pi.Length > 0 && IsPackedArgsContainer(pi[pi.Length - 1].ParameterType))
+		{
+			WrapArgs(ilgen, pi[pi.Length - 1].ParameterType);
+		}
+		ilgen.Emit(OpCodes.Callvirt, invokeMethod);
+	}
+
+	private static void WrapArgs(CodeEmitter ilgen, Type type)
+	{
+		Type last = type.GetGenericArguments()[MaxArity - 1];
+		if (MethodHandleUtil.IsPackedArgsContainer(last))
+		{
+			WrapArgs(ilgen, last);
+		}
+		ilgen.Emit(OpCodes.Newobj, type.GetConstructors()[0]);
+	}
+
 	internal static MethodInfo GetDelegateInvokeMethod(Type delegateType)
 	{
 		if (ReflectUtil.ContainsTypeBuilder(delegateType))
@@ -182,40 +263,63 @@ static partial class MethodHandleUtil
 
 	internal static Type CreateDelegateType(TypeWrapper[] args, TypeWrapper ret)
 	{
-		string typeName;
-		Type[] typeArgs;
-		if (ret == PrimitiveTypeWrapper.VOID)
-		{
-			typeName = "IKVM.Runtime.MHV";
-			if (args.Length != 0)
-			{
-				typeName += "`" + args.Length;
-			}
-			typeArgs = new Type[args.Length];
-		}
-		else
-		{
-			typeName = "IKVM.Runtime.MH`" + (args.Length + 1);
-			typeArgs = new Type[args.Length + 1];
-			typeArgs[args.Length] = ret.TypeAsSignatureType;
-		}
+		Type[] typeArgs = new Type[args.Length];
 		for (int i = 0; i < args.Length; i++)
 		{
 			typeArgs[i] = args[i].TypeAsSignatureType;
 		}
-		Type type;
-#if STATIC_COMPILER
-		type = StaticCompiler.GetRuntimeType(typeName);
-#else
-		type = Type.GetType(typeName);
-#endif
-		if (type == null)
+		return CreateDelegateType(typeArgs, ret.TypeAsSignatureType);
+	}
+
+	private static Type CreateDelegateType(Type[] types, Type retType)
+	{
+		if (types.Length == 0 && retType == Types.Void)
 		{
-			throw new NotImplementedException(typeName);
+			return typeofMHV[0];
 		}
-		return typeArgs.Length == 0
-			? type
-			: type.MakeGenericType(typeArgs);
+		else if (types.Length > MaxArity)
+		{
+			int arity = types.Length;
+			int remainder = (arity - 8) % 7;
+			int count = (arity - 8) / 7;
+			if (remainder == 0)
+			{
+				remainder = 7;
+				count--;
+			}
+			Type last = typeofMHA.MakeGenericType(SubArray(types, types.Length - 8, 8));
+			for (int i = 0; i < count; i++)
+			{
+				Type[] temp = SubArray(types, types.Length - 8 - 7 * (i + 1), 8);
+				temp[7] = last;
+				last = typeofMHA.MakeGenericType(temp);
+			}
+			types = SubArray(types, 0, remainder + 1);
+			types[remainder] = last;
+		}
+		if (retType == Types.Void)
+		{
+			return typeofMHV[types.Length].MakeGenericType(types);
+		}
+		else
+		{
+			Array.Resize(ref types, types.Length + 1);
+			types[types.Length - 1] = retType;
+			return typeofMH[types.Length].MakeGenericType(types);
+		}
+	}
+
+	private static Type[] SubArray(Type[] inArray, int start, int length)
+	{
+		Type[] outArray = new Type[length];
+		Array.Copy(inArray, start, outArray, 0, length);
+		return outArray;
+	}
+
+	internal static bool IsPackedArgsContainer(Type type)
+	{
+		return type.IsGenericType
+			&& type.GetGenericTypeDefinition() == typeofMHA;
 	}
 }
 
@@ -3019,36 +3123,34 @@ sealed class Compiler
 
 		internal override void EmitCallvirt(CodeEmitter ilgen)
 		{
+			TypeWrapper[] args;
+			CodeEmitterLocal[] temps;
+			Type delegateType;
 			if (exact)
 			{
-				TypeWrapper[] args = cpi.GetArgTypes();
-				CodeEmitterLocal[] temps = new CodeEmitterLocal[args.Length];
+				args = cpi.GetArgTypes();
+				temps = new CodeEmitterLocal[args.Length];
 				for (int i = args.Length - 1; i >= 0; i--)
 				{
 					temps[i] = ilgen.DeclareLocal(args[i].TypeAsSignatureType);
 					ilgen.Emit(OpCodes.Stloc, temps[i]);
 				}
-				Type delegateType = MethodHandleUtil.CreateDelegateType(args, cpi.GetRetType());
+				delegateType = MethodHandleUtil.CreateDelegateType(args, cpi.GetRetType());
 				MethodInfo mi = ByteCodeHelperMethods.GetDelegateForInvokeExact.MakeGenericMethod(delegateType);
 				ilgen.Emit(OpCodes.Call, mi);
-				for (int i = 0; i < args.Length; i++)
-				{
-					ilgen.Emit(OpCodes.Ldloc, temps[i]);
-				}
-				ilgen.Emit(OpCodes.Callvirt, MethodHandleUtil.GetDelegateInvokeMethod(delegateType));
 			}
 			else
 			{
-				TypeWrapper[] args = new TypeWrapper[cpi.GetArgTypes().Length + 1];
+				args = new TypeWrapper[cpi.GetArgTypes().Length + 1];
 				Array.Copy(cpi.GetArgTypes(), 0, args, 1, args.Length - 1);
 				args[0] = CoreClasses.java.lang.invoke.MethodHandle.Wrapper;
-				CodeEmitterLocal[] temps = new CodeEmitterLocal[args.Length];
+				temps = new CodeEmitterLocal[args.Length];
 				for (int i = args.Length - 1; i >= 0; i--)
 				{
 					temps[i] = ilgen.DeclareLocal(args[i].TypeAsSignatureType);
 					ilgen.Emit(OpCodes.Stloc, temps[i]);
 				}
-				Type delegateType = MethodHandleUtil.CreateDelegateType(args, cpi.GetRetType());
+				delegateType = MethodHandleUtil.CreateDelegateType(args, cpi.GetRetType());
 				MethodInfo mi = ByteCodeHelperMethods.GetDelegateForInvoke.MakeGenericMethod(delegateType);
 				Type typeofInvokeCache;
 #if STATIC_COMPILER
@@ -3060,12 +3162,12 @@ sealed class Compiler
 				ilgen.Emit(OpCodes.Ldloc, temps[0]);
 				ilgen.Emit(OpCodes.Ldsflda, fb);
 				ilgen.Emit(OpCodes.Call, mi);
-				for (int i = 0; i < args.Length; i++)
-				{
-					ilgen.Emit(OpCodes.Ldloc, temps[i]);
-				}
-				ilgen.Emit(OpCodes.Callvirt, MethodHandleUtil.GetDelegateInvokeMethod(delegateType));
 			}
+			for (int i = 0; i < args.Length; i++)
+			{
+				ilgen.Emit(OpCodes.Ldloc, temps[i]);
+			}
+			MethodHandleUtil.EmitCallDelegateInvokeMethod(ilgen, delegateType);
 		}
 
 		internal override void EmitNewobj(CodeEmitter ilgen)
