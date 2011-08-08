@@ -754,7 +754,7 @@ assembly.class
     java/util/zip/*.class
     @OPENJDK7@/build/linux-amd64/gensrc/sun/util/logging/resources/*.class
     @OPENJDK7@/build/linux-amd64/gensrc/sun/util/resources/*.class
-    @OPENJDK7@/jdk/src/share/classes/com/sun/java/browser/net/*.java
+    @OPENJDK7@/jdk/src/share/classes/com/sun/java/browser/net/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/java/util/jar/pack/*.class
     @OPENJDK7@/jdk/src/share/classes/java/util/jar/*.class
     @OPENJDK7@/jdk/src/share/classes/java/util/logging/*.class
