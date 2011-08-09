@@ -284,6 +284,11 @@ static partial class MethodHandleUtil
 			ilgen.Emit(opc, val);
 		}
 
+		internal void LoadFirstArgAddress()
+		{
+			ilgen.Emit(OpCodes.Ldarga, (short)firstArg);
+		}
+
 		internal void Ldarg(int i)
 		{
 			i += firstArg;
@@ -1044,6 +1049,7 @@ static class Java_java_lang_invoke_MethodHandleNatives
 			if (mi != null
 				&& !tw.IsRemapped
 				&& !tw.IsGhost
+				&& !tw.IsNonPrimitiveValueType
 				&& self.type().parameterCount() <= MethodHandleUtil.MaxArity
 				// FXBUG we should be able to use a normal (unbound) delegate for virtual methods
 				// (when doDispatch is set), but the x64 CLR crashes when doing a virtual method dispatch on
@@ -1055,7 +1061,7 @@ static class Java_java_lang_invoke_MethodHandleNatives
 			}
 			else
 			{
-				if (tw.IsGhost || mw.Name == StringConstants.INIT)
+				if (mw.Name == StringConstants.INIT)
 				{
 					throw new NotImplementedException();
 				}
@@ -1063,7 +1069,14 @@ static class Java_java_lang_invoke_MethodHandleNatives
 				MethodHandleUtil.DynamicMethodBuilder dm = new MethodHandleUtil.DynamicMethodBuilder("DirectMethodHandle:" + mw.Name, self.type());
 				for (int i = 0, count = self.type().parameterCount(); i < count; i++)
 				{
-					dm.Ldarg(i);
+					if (i == 0 && !mw.IsStatic && (tw.IsGhost || tw.IsNonPrimitiveValueType))
+					{
+						dm.LoadFirstArgAddress();
+					}
+					else
+					{
+						dm.Ldarg(i);
+					}
 				}
 				if (doDispatch && !mw.IsStatic)
 				{
