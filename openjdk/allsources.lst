@@ -76,6 +76,8 @@ java/lang/Class.java
 java/lang/ClassLoader.java
 java/lang/Enum.java
 java/lang/invoke/AdapterMethodHandle.java
+java/lang/invoke/BoundMethodHandle.java
+java/lang/invoke/DirectMethodHandle.java
 java/lang/invoke/MethodHandleImpl.java
 java/lang/LangHelper.java
 java/lang/management/PlatformComponent.java
@@ -9033,10 +9035,8 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/Integer.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/InternalError.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/InterruptedException.java
-@OPENJDK7@/jdk/src/share/classes/java/lang/invoke/BoundMethodHandle.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/invoke/CallSite.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/invoke/ConstantCallSite.java
-@OPENJDK7@/jdk/src/share/classes/java/lang/invoke/DirectMethodHandle.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/invoke/FilterGeneric.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/invoke/FilterOneArgument.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/invoke/FromGeneric.java

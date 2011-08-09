@@ -29,6 +29,133 @@ using IKVM.Internal;
 using java.lang.invoke;
 using jlClass = java.lang.Class;
 
+static class Java_java_lang_invoke_BoundMethodHandle
+{
+	public static object createDelegate(MethodType newType, MethodHandle mh, int argnum, object argument)
+	{
+#if FIRST_PASS
+		return null;
+#else
+		Delegate del = (Delegate)mh.vmtarget;
+		if (argnum == 0
+			&& del.Target == null
+			// we don't have to check for instance methods on a Value Type, because DirectMethodHandle can't use a direct delegate for that anyway
+			&& (!del.Method.IsStatic || !del.Method.GetParameters()[0].ParameterType.IsValueType)
+			&& !ReflectUtil.IsDynamicMethod(del.Method))
+		{
+			return Delegate.CreateDelegate(MethodHandleUtil.CreateDelegateType(newType), argument, del.Method);
+		}
+		else
+		{
+			// slow path where we're generating a DynamicMethod
+			if (mh.type().parameterType(argnum).isPrimitive())
+			{
+				argument = JVM.Unbox(argument);
+			}
+			MethodHandleUtil.DynamicMethodBuilder dm = new MethodHandleUtil.DynamicMethodBuilder("BoundMethodHandle", newType, mh, argument);
+			for (int i = 0, count = mh.type().parameterCount(), pos = 0; i < count; i++)
+			{
+				if (i == argnum)
+				{
+					dm.LoadValue();
+				}
+				else
+				{
+					dm.Ldarg(pos++);
+				}
+			}
+			dm.CallTarget();
+			dm.Ret();
+			return dm.CreateDelegate();
+		}
+#endif
+	}
+}
+
+static class Java_java_lang_invoke_DirectMethodHandle
+{
+	// TODO what is lookupClass for?
+    public static object createDelegate(MethodType type, MemberName m, bool doDispatch, jlClass lookupClass)
+	{
+#if FIRST_PASS
+		return null;
+#else
+		int index = m.getVMIndex();
+		if (index == Int32.MaxValue)
+		{
+			bool invokeExact = m.getName() == "invokeExact";
+			Type targetDelegateType = MethodHandleUtil.CreateDelegateType(invokeExact ? type.dropParameterTypes(0, 1) : type);
+			MethodHandleUtil.DynamicMethodBuilder dm = new MethodHandleUtil.DynamicMethodBuilder("DirectMethodHandle." + m.getName(), type, typeof(IKVM.Runtime.InvokeCache<>).MakeGenericType(targetDelegateType));
+			dm.Ldarg(0);
+			if (invokeExact)
+			{
+				dm.Call(ByteCodeHelperMethods.GetDelegateForInvokeExact.MakeGenericMethod(targetDelegateType));
+			}
+			else
+			{
+				dm.LoadValueAddress();
+				dm.Call(ByteCodeHelperMethods.GetDelegateForInvoke.MakeGenericMethod(targetDelegateType));
+				dm.Ldarg(0);
+			}
+			for (int i = 1, count = type.parameterCount(); i < count; i++)
+			{
+				dm.Ldarg(i);
+			}
+			dm.CallDelegate(targetDelegateType);
+			dm.Ret();
+			return dm.CreateDelegate();
+		}
+		else
+		{
+			TypeWrapper tw = (TypeWrapper)typeof(MemberName).GetField("vmtarget", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(m);
+			tw.Finish();
+			MethodWrapper mw = tw.GetMethods()[index];
+			mw.ResolveMethod();
+			MethodInfo mi = mw.GetMethod() as MethodInfo;
+			if (mi != null
+				&& !tw.IsRemapped
+				&& !tw.IsGhost
+				&& !tw.IsNonPrimitiveValueType
+				&& type.parameterCount() <= MethodHandleUtil.MaxArity
+				// FXBUG we should be able to use a normal (unbound) delegate for virtual methods
+				// (when doDispatch is set), but the x64 CLR crashes when doing a virtual method dispatch on
+				// a null reference
+				&& (!mi.IsVirtual || (doDispatch && IntPtr.Size == 4))
+				&& (doDispatch || !mi.IsVirtual))
+			{
+				return Delegate.CreateDelegate(MethodHandleUtil.CreateDelegateType(tw, mw), mi);
+			}
+			else
+			{
+				// slow path where we emit a DynamicMethod
+				MethodHandleUtil.DynamicMethodBuilder dm = new MethodHandleUtil.DynamicMethodBuilder("DirectMethodHandle:" + mw.Name, type);
+				for (int i = 0, count = type.parameterCount(); i < count; i++)
+				{
+					if (i == 0 && !mw.IsStatic && (tw.IsGhost || tw.IsNonPrimitiveValueType))
+					{
+						dm.LoadFirstArgAddress();
+					}
+					else
+					{
+						dm.Ldarg(i);
+					}
+				}
+				if (doDispatch && !mw.IsStatic)
+				{
+					dm.Callvirt(mw);
+				}
+				else
+				{
+					dm.Call(mw);
+				}
+				dm.Ret();
+				return dm.CreateDelegate();
+			}
+		}
+#endif
+	}
+}
+
 static class Java_java_lang_invoke_MethodHandle
 {
 	private static IKVM.Runtime.InvokeCache<IKVM.Runtime.MH<MethodHandle, object[], object>> cache;
@@ -960,133 +1087,12 @@ static class Java_java_lang_invoke_MethodHandleNatives
 
 	public static void init(BoundMethodHandle self, object target, int argnum)
 	{
-#if !FIRST_PASS
-		MethodHandle mh = target as MethodHandle;
-		if (mh == null)
-		{
-			// TODO what does this mean?
-			throw new NotImplementedException();
-		}
-		Delegate del = (Delegate)mh.vmtarget;
-		object argument = typeof(BoundMethodHandle).GetField("argument", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(self);
-		if (argnum == 0
-			&& del.Target == null
-			// we don't have to check for instance methods on a Value Type, because DirectMethodHandle can't use a direct delegate for that anyway
-			&& (!del.Method.IsStatic || !del.Method.GetParameters()[0].ParameterType.IsValueType)
-			&& !ReflectUtil.IsDynamicMethod(del.Method))
-		{
-			self.vmtarget = Delegate.CreateDelegate(MethodHandleUtil.CreateDelegateType(self.type()), argument, del.Method);
-		}
-		else
-		{
-			// slow path where we're generating a DynamicMethod
-			if (mh.type().parameterType(argnum).isPrimitive())
-			{
-				argument = JVM.Unbox(argument);
-			}
-			MethodHandleUtil.DynamicMethodBuilder dm = new MethodHandleUtil.DynamicMethodBuilder("BoundMethodHandle", self.type(), mh, argument);
-			for (int i = 0, count = mh.type().parameterCount(), pos = 0; i < count; i++)
-			{
-				if (i == argnum)
-				{
-					dm.LoadValue();
-				}
-				else
-				{
-					dm.Ldarg(pos++);
-				}
-			}
-			dm.CallTarget();
-			dm.Ret();
-			self.vmtarget = dm.CreateDelegate();
-		}
-#endif
+		throw new InvalidOperationException();
 	}
 
 	public static void init(DirectMethodHandle self, object r, bool doDispatch, jlClass caller)
 	{
-#if !FIRST_PASS
-		typeof(DirectMethodHandle).GetField("vmindex", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(self, 0);
-		MemberName m = r as MemberName;
-		if (m == null)
-		{
-			// TODO what does this mean?
-			throw new NotImplementedException("m == null");
-		}
-		int index = m.getVMIndex();
-		if (index == Int32.MaxValue)
-		{
-			bool invokeExact = m.getName() == "invokeExact";
-			Type targetDelegateType = MethodHandleUtil.CreateDelegateType(invokeExact ? self.type().dropParameterTypes(0, 1) : self.type());
-			MethodHandleUtil.DynamicMethodBuilder dm = new MethodHandleUtil.DynamicMethodBuilder("DirectMethodHandle." + m.getName(), self.type(), typeof(IKVM.Runtime.InvokeCache<>).MakeGenericType(targetDelegateType));
-			dm.Ldarg(0);
-			if (invokeExact)
-			{
-				dm.Call(ByteCodeHelperMethods.GetDelegateForInvokeExact.MakeGenericMethod(targetDelegateType));
-			}
-			else
-			{
-				dm.LoadValueAddress();
-				dm.Call(ByteCodeHelperMethods.GetDelegateForInvoke.MakeGenericMethod(targetDelegateType));
-				dm.Ldarg(0);
-			}
-			for (int i = 1, count = self.type().parameterCount(); i < count; i++)
-			{
-				dm.Ldarg(i);
-			}
-			dm.CallDelegate(targetDelegateType);
-			dm.Ret();
-			self.vmtarget = dm.CreateDelegate();
-			return;
-		}
-		else
-		{
-			TypeWrapper tw = (TypeWrapper)typeof(MemberName).GetField("vmtarget", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(m);
-			tw.Finish();
-			MethodWrapper mw = tw.GetMethods()[index];
-			mw.ResolveMethod();
-			MethodInfo mi = mw.GetMethod() as MethodInfo;
-			if (mi != null
-				&& !tw.IsRemapped
-				&& !tw.IsGhost
-				&& !tw.IsNonPrimitiveValueType
-				&& self.type().parameterCount() <= MethodHandleUtil.MaxArity
-				// FXBUG we should be able to use a normal (unbound) delegate for virtual methods
-				// (when doDispatch is set), but the x64 CLR crashes when doing a virtual method dispatch on
-				// a null reference
-				&& (!mi.IsVirtual || (doDispatch && IntPtr.Size == 4))
-				&& (doDispatch || !mi.IsVirtual))
-			{
-				self.vmtarget = Delegate.CreateDelegate(MethodHandleUtil.CreateDelegateType(tw, mw), mi);
-			}
-			else
-			{
-				// slow path where we emit a DynamicMethod
-				MethodHandleUtil.DynamicMethodBuilder dm = new MethodHandleUtil.DynamicMethodBuilder("DirectMethodHandle:" + mw.Name, self.type());
-				for (int i = 0, count = self.type().parameterCount(); i < count; i++)
-				{
-					if (i == 0 && !mw.IsStatic && (tw.IsGhost || tw.IsNonPrimitiveValueType))
-					{
-						dm.LoadFirstArgAddress();
-					}
-					else
-					{
-						dm.Ldarg(i);
-					}
-				}
-				if (doDispatch && !mw.IsStatic)
-				{
-					dm.Callvirt(mw);
-				}
-				else
-				{
-					dm.Call(mw);
-				}
-				dm.Ret();
-				self.vmtarget = dm.CreateDelegate();
-			}
-		}
-#endif
+		throw new InvalidOperationException();
 	}
 
 	public static void init(MethodType self)

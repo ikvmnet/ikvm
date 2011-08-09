@@ -77,9 +77,10 @@ class BoundMethodHandle extends MethodHandle {
     }
 
     private void initTarget(MethodHandle mh, int argnum) {
-        //this.vmtarget = mh;  // maybe updated by JVM
-        MethodHandleNatives.init(this, mh, argnum);
+        vmtarget = createDelegate(type(), mh, argnum, argument);
     }
+
+    private static native Object createDelegate(MethodType newType, MethodHandle mh, int argnum, Object argument);
 
     /** For the AdapterMethodHandle subclass.
      */
