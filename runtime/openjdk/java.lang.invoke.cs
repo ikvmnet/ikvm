@@ -502,18 +502,7 @@ static partial class MethodHandleUtil
 					}
 					else if (src == PrimitiveTypeWrapper.LONG)
 					{
-						if (src == PrimitiveTypeWrapper.FLOAT)
-						{
-							ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.f2l);
-						}
-						else if (src == PrimitiveTypeWrapper.DOUBLE)
-						{
-							ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.d2l);
-						}
-						else
-						{
-							ilgen.Emit(OpCodes.Conv_I4);
-						}
+						ilgen.Emit(OpCodes.Conv_I4);
 					}
 					else if (src == PrimitiveTypeWrapper.FLOAT)
 					{
