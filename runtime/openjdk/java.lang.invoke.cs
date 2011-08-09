@@ -432,7 +432,7 @@ static partial class MethodHandleUtil
 				if (boxers[i].type == dstClass)
 				{
 					// untyped unboxing
-					ilgen.Emit(OpCodes.Ldc_I4_1);
+					ilgen.Emit(OpCodes.Ldc_I4, level > 1 ? 1 : 0);
 					ilgen.Emit(OpCodes.Call, boxers[i].unboxObject);
 					return;
 				}
@@ -443,7 +443,6 @@ static partial class MethodHandleUtil
 
 	private static void EmitConvert(CodeEmitter ilgen, java.lang.Class srcClass, java.lang.Class dstClass, int level)
 	{
-		// TODO what does level do?
 		if (srcClass != dstClass)
 		{
 			TypeWrapper src = TypeWrapper.FromClass(srcClass);
