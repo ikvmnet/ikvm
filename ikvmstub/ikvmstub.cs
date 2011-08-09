@@ -208,13 +208,9 @@ static class NetExp
 							}
 						}
 					}
-					catch (TypeLoadException x)
-					{
-						Console.WriteLine(x);
-					}
 					catch (System.Exception x)
 					{
-						Console.WriteLine(x);
+						Console.Error.WriteLine(x);
 						
 						if (!continueOnError)
 						{
