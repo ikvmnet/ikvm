@@ -177,7 +177,7 @@ static partial class MethodHandleUtil
 		private readonly DynamicMethod dm;
 		private readonly CodeEmitter ilgen;
 		private readonly Type packedArgType;
-		private readonly int packedArgPos = Int32.MaxValue;
+		private readonly int packedArgPos;
 
 		sealed class Container<T1, T2>
 		{
@@ -191,83 +191,65 @@ static partial class MethodHandleUtil
 			}
 		}
 
-		internal DynamicMethodBuilder(string name, MethodType type)
+		private DynamicMethodBuilder(string name, MethodType type, Type container, object target, object value)
 		{
 			this.type = type;
-			firstArg = 0;
-			delegateType = CreateDelegateType(type);
+			this.delegateType = CreateDelegateType(type);
+			this.target = target;
+			this.value = value;
+			this.container = container;
 			MethodInfo mi = GetDelegateInvokeMethod(delegateType);
-			dm = new DynamicMethod(name, mi.ReturnType, GetParameterTypes(mi), typeof(DynamicMethodBuilder), true);
-			ilgen = CodeEmitter.Create(dm);
+			Type[] paramTypes;
+			if (container != null)
+			{
+				this.firstArg = 1;
+				paramTypes = GetParameterTypes(container, mi);
+			}
+			else if (target != null)
+			{
+				this.firstArg = 1;
+				paramTypes = GetParameterTypes(target.GetType(), mi);
+			}
+			else
+			{
+				paramTypes = GetParameterTypes(mi);
+			}
+			this.dm = new DynamicMethod(name, mi.ReturnType, paramTypes, typeof(DynamicMethodBuilder), true);
+			this.ilgen = CodeEmitter.Create(dm);
 
 			if (type.parameterCount() > MaxArity)
 			{
-				ParameterInfo[] pi = GetDelegateInvokeMethod(delegateType).GetParameters();
-				packedArgPos = pi.Length - 1;
-				packedArgType = pi[packedArgPos].ParameterType;
+				ParameterInfo[] pi = mi.GetParameters();
+				this.packedArgType = pi[pi.Length - 1].ParameterType;
+				this.packedArgPos = pi.Length - 1 + firstArg;
 			}
+			else
+			{
+				this.packedArgPos = Int32.MaxValue;
+			}
+		}
+
+		internal DynamicMethodBuilder(string name, MethodType type)
+			: this(name, type, null, null, null)
+		{
 		}
 
 		internal DynamicMethodBuilder(string name, MethodType type, MethodHandle target)
+			: this(name, type, null, target.vmtarget, null)
 		{
-			this.type = type;
-			firstArg = 1;
-			delegateType = CreateDelegateType(type);
-			this.target = target.vmtarget;
-			MethodInfo mi = GetDelegateInvokeMethod(delegateType);
-			dm = new DynamicMethod(name, mi.ReturnType, GetParameterTypes(target.vmtarget.GetType(), mi), typeof(DynamicMethodBuilder), true);
-			ilgen = CodeEmitter.Create(dm);
 			ilgen.Emit(OpCodes.Ldarg_0);
-
-			if (type.parameterCount() > MaxArity)
-			{
-				ParameterInfo[] pi = GetDelegateInvokeMethod(delegateType).GetParameters();
-				packedArgPos = pi.Length - 1;
-				packedArgType = pi[packedArgPos].ParameterType;
-				packedArgPos++;
-			}
 		}
 
 		internal DynamicMethodBuilder(string name, MethodType type, MethodHandle target, object value)
+			: this(name, type, typeof(Container<,>).MakeGenericType(target.vmtarget.GetType(), value.GetType()), target.vmtarget, value)
 		{
-			this.type = type;
-			firstArg = 1;
-			delegateType = CreateDelegateType(type);
-			this.target = target.vmtarget;
-			this.value = value;
-			this.container = typeof(Container<,>).MakeGenericType(target.vmtarget.GetType(), value.GetType());
-			MethodInfo mi = GetDelegateInvokeMethod(delegateType);
-			dm = new DynamicMethod(name, mi.ReturnType, GetParameterTypes(container, mi), typeof(DynamicMethodBuilder), true);
-			ilgen = CodeEmitter.Create(dm);
 			ilgen.Emit(OpCodes.Ldarg_0);
 			ilgen.Emit(OpCodes.Ldfld, container.GetField("target"));
-
-			if (type.parameterCount() > MaxArity)
-			{
-				ParameterInfo[] pi = GetDelegateInvokeMethod(delegateType).GetParameters();
-				packedArgPos = pi.Length - 1;
-				packedArgType = pi[packedArgPos].ParameterType;
-				packedArgPos++;
-			}
 		}
 
 		internal DynamicMethodBuilder(string name, MethodType type, Type valueType)
+			: this(name, type, typeof(Container<,>).MakeGenericType(typeof(object), valueType), null, null)
 		{
-			this.type = type;
-			firstArg = 1;
-			delegateType = CreateDelegateType(type);
-			this.container = typeof(Container<,>).MakeGenericType(typeof(object), valueType);
-			MethodInfo mi = GetDelegateInvokeMethod(delegateType);
-			dm = new DynamicMethod(name, mi.ReturnType, GetParameterTypes(container, mi), typeof(DynamicMethodBuilder), true);
-			ilgen = CodeEmitter.Create(dm);
-
-			if (type.parameterCount() > MaxArity)
-			{
-				ParameterInfo[] pi = GetDelegateInvokeMethod(delegateType).GetParameters();
-				packedArgPos = pi.Length - 1;
-				packedArgType = pi[packedArgPos].ParameterType;
-				packedArgPos++;
-			}
 		}
 
 		internal void Emit(OpCode opc)
