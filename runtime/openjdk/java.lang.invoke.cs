@@ -27,9 +27,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 using IKVM.Internal;
 using java.lang.invoke;
-#if !FIRST_PASS
-using sun.invoke.util;
-#endif
 using jlClass = java.lang.Class;
 
 static class Java_java_lang_invoke_MethodHandle
@@ -404,40 +401,43 @@ static partial class MethodHandleUtil
 				typeof(sun.invoke.util.ValueConversions).GetMethod("unbox" + longName, BindingFlags.Static | BindingFlags.NonPublic));
 		}
 
-		internal static MethodInfo Boxer(jlClass type)
+		internal static void Box(CodeEmitter ilgen, jlClass srcClass, jlClass dstClass, int level)
 		{
 			for (int i = 0; i < boxers.Length; i++)
 			{
-				if (boxers[i].type == type)
+				if (boxers[i].type == srcClass)
 				{
-					return boxers[i].box;
+					ilgen.Emit(OpCodes.Call, boxers[i].box);
+					EmitConvert(ilgen, boxers[i].clazz, dstClass, level);
+					return;
 				}
 			}
-			throw new NotImplementedException(type.getName());
+			throw new InvalidOperationException();
 		}
 
-		internal static MethodInfo Unboxer(jlClass srcType)
+		internal static void Unbox(CodeEmitter ilgen, jlClass srcClass, jlClass dstClass, int level)
 		{
 			for (int i = 0; i < boxers.Length; i++)
 			{
-				if (boxers[i].clazz == srcType)
+				if (boxers[i].clazz == srcClass)
 				{
-					return boxers[i].unbox;
+					// typed unboxing
+					ilgen.Emit(OpCodes.Call, boxers[i].unbox);
+					EmitConvert(ilgen, boxers[i].type, dstClass, level);
+					return;
 				}
 			}
-			throw new NotImplementedException(srcType.getName());
-		}
-
-		internal static MethodInfo ObjectUnboxer(jlClass dstType)
-		{
 			for (int i = 0; i < boxers.Length; i++)
 			{
-				if (boxers[i].type == dstType)
+				if (boxers[i].type == dstClass)
 				{
-					return boxers[i].unboxObject;
+					// untyped unboxing
+					ilgen.Emit(OpCodes.Ldc_I4_1);
+					ilgen.Emit(OpCodes.Call, boxers[i].unboxObject);
+					return;
 				}
 			}
-			throw new NotImplementedException(dstType.getName());
+			throw new InvalidOperationException();
 		}
 	}
 
@@ -526,9 +526,7 @@ static partial class MethodHandleUtil
 				}
 				else
 				{
-					// boxing
-					ilgen.Emit(OpCodes.Call, BoxUtil.Boxer(srcClass));
-					EmitConvert(ilgen, Wrapper.asWrapperType(srcClass), dstClass, level);
+					BoxUtil.Box(ilgen, srcClass, dstClass, level);
 				}
 			}
 			else if (src.IsGhost)
@@ -539,32 +537,11 @@ static partial class MethodHandleUtil
 			else if (srcClass == ikvm.@internal.ClassLiteral<sun.invoke.empty.Empty>.Value)
 			{
 				ilgen.Emit(OpCodes.Pop);
-				if (dst != PrimitiveTypeWrapper.VOID)
-				{
-					ilgen.Emit(OpCodes.Ldloc, ilgen.DeclareLocal(dst.TypeAsSignatureType));
-				}
+				ilgen.Emit(OpCodes.Ldloc, ilgen.DeclareLocal(dst.TypeAsSignatureType));
 			}
 			else if (dst.IsPrimitive)
 			{
-				if (Wrapper.isWrapperType(srcClass))
-				{
-					if (src == CoreClasses.java.lang.Object.Wrapper)
-					{
-						// untyped unboxing
-						ilgen.Emit(OpCodes.Ldc_I4_1);
-						ilgen.Emit(OpCodes.Call, BoxUtil.ObjectUnboxer(dstClass));
-					}
-					else
-					{
-						// typed unboxing
-						ilgen.Emit(OpCodes.Call, BoxUtil.Unboxer(srcClass));
-						EmitConvert(ilgen, Wrapper.asPrimitiveType(srcClass), dstClass, level);
-					}
-				}
-				else
-				{
-					throw new NotImplementedException(src.Name + " -> " + dst.Name);
-				}
+				BoxUtil.Unbox(ilgen, srcClass, dstClass, level);
 			}
 			else if (dst.IsGhost)
 			{
