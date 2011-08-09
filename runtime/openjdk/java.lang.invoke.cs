@@ -249,11 +249,6 @@ static partial class MethodHandleUtil
 		{
 		}
 
-		internal void Emit(OpCode opc)
-		{
-			ilgen.Emit(opc);
-		}
-
 		internal void Call(MethodInfo method)
 		{
 			ilgen.Emit(OpCodes.Call, method);
@@ -277,11 +272,6 @@ static partial class MethodHandleUtil
 		internal void CallDelegate(Type delegateType)
 		{
 			EmitCallDelegateInvokeMethod(ilgen, delegateType);
-		}
-
-		internal void Emit(OpCode opc, int val)
-		{
-			ilgen.Emit(opc, val);
 		}
 
 		internal void LoadFirstArgAddress()
@@ -309,6 +299,53 @@ static partial class MethodHandleUtil
 			else
 			{
 				ilgen.Emit(OpCodes.Ldarg, (short)i);
+			}
+		}
+
+		internal void LoadArrayElement(int index, TypeWrapper tw)
+		{
+			ilgen.Emit(OpCodes.Ldc_I4, index);
+			if (tw.IsNonPrimitiveValueType)
+			{
+				ilgen.Emit(OpCodes.Ldelema, tw.TypeAsArrayType);
+				ilgen.Emit(OpCodes.Ldobj, tw.TypeAsArrayType);
+			}
+			else if (tw == PrimitiveTypeWrapper.BYTE
+				|| tw == PrimitiveTypeWrapper.BOOLEAN)
+			{
+				ilgen.Emit(OpCodes.Ldelem_I1);
+			}
+			else if (tw == PrimitiveTypeWrapper.SHORT)
+			{
+				ilgen.Emit(OpCodes.Ldelem_I2);
+			}
+			else if (tw == PrimitiveTypeWrapper.CHAR)
+			{
+				ilgen.Emit(OpCodes.Ldelem_U2);
+			}
+			else if (tw == PrimitiveTypeWrapper.INT)
+			{
+				ilgen.Emit(OpCodes.Ldelem_I4);
+			}
+			else if (tw == PrimitiveTypeWrapper.LONG)
+			{
+				ilgen.Emit(OpCodes.Ldelem_I8);
+			}
+			else if (tw == PrimitiveTypeWrapper.FLOAT)
+			{
+				ilgen.Emit(OpCodes.Ldelem_R4);
+			}
+			else if (tw == PrimitiveTypeWrapper.DOUBLE)
+			{
+				ilgen.Emit(OpCodes.Ldelem_R8);
+			}
+			else
+			{
+				ilgen.Emit(OpCodes.Ldelem_Ref);
+				if (tw.IsGhost)
+				{
+					tw.EmitConvStackTypeToSignatureType(ilgen, null);
+				}
 			}
 		}
 
@@ -542,8 +579,7 @@ static partial class MethodHandleUtil
 			}
 			else if (dst.IsGhost)
 			{
-				Type type = dst.TypeAsSignatureType;
-				ilgen.Emit(OpCodes.Call, type.GetMethod("Cast"));
+				dst.EmitConvStackTypeToSignatureType(ilgen, null);
 			}
 			else if (dst.IsNonPrimitiveValueType)
 			{
@@ -705,12 +741,7 @@ static class Java_java_lang_invoke_AdapterMethodHandle
 #if FIRST_PASS
 		return null;
 #else
-		// TODO do we need to validate this type or downcast?
-		spreadArgType = spreadArgType.getComponentType();
-		if (TypeWrapper.FromClass(spreadArgType).IsGhost)
-		{
-			spreadArgType = ikvm.@internal.ClassLiteral<java.lang.Object>.Value;
-		}
+		TypeWrapper twComponent = TypeWrapper.FromClass(spreadArgType).ElementTypeWrapper;
 		MethodHandleUtil.DynamicMethodBuilder dm = new MethodHandleUtil.DynamicMethodBuilder("AdapterMethodHandle.spreadArguments", newType, target);
 		for (int i = 0, count = newType.parameterCount(); i < count; i++)
 		{
@@ -719,37 +750,8 @@ static class Java_java_lang_invoke_AdapterMethodHandle
 				for (int j = 0; j < spreadArgCount; j++)
 				{
 					dm.Ldarg(i);
-					dm.Emit(OpCodes.Ldc_I4, j);
-					if (TypeWrapper.FromClass(spreadArgType).IsNonPrimitiveValueType)
-					{
-						throw new NotImplementedException();
-					}
-					else if (spreadArgType == java.lang.Integer.TYPE)
-					{
-						dm.Emit(OpCodes.Ldelem_I4);
-					}
-					else if (spreadArgType == java.lang.Byte.TYPE)
-					{
-						dm.Emit(OpCodes.Ldelem_I1);
-					}
-					else if (spreadArgType == java.lang.Character.TYPE)
-					{
-						dm.Emit(OpCodes.Ldelem_U2);
-					}
-					else if (spreadArgType == java.lang.Long.TYPE)
-					{
-						dm.Emit(OpCodes.Ldelem_I8);
-					}
-					else if (spreadArgType.isPrimitive())
-					{
-						throw new NotImplementedException(spreadArgType.getName());
-					}
-					else
-					{
-						dm.Emit(OpCodes.Ldelem_Ref);
-					}
-					// TODO what level?
-					dm.Convert(spreadArgType, target.type().parameterType(i + j), 0);
+					dm.LoadArrayElement(j, twComponent);
+					dm.Convert(twComponent.ClassObject, target.type().parameterType(i + j), 0);
 				}
 			}
 			else
@@ -829,7 +831,6 @@ static class Java_java_lang_invoke_MethodHandleImpl
 				throw new java.lang.IllegalArgumentException("permutation argument out of range");
 			}
 			dm.Ldarg(perm);
-			// TODO test bogus conversions (int -> String)
 			dm.Convert(oldType.parameterType(i), newType.parameterType(perm), 0);
 		}
 		dm.CallTarget();
@@ -970,7 +971,7 @@ static class Java_java_lang_invoke_MethodHandleNatives
 		object argument = typeof(BoundMethodHandle).GetField("argument", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(self);
 		if (argnum == 0
 			&& del.Target == null
-			// TODO do we need more type checking on "argument" here?
+			// we don't have to check for instance methods on a Value Type, because DirectMethodHandle can't use a direct delegate for that anyway
 			&& (!del.Method.IsStatic || !del.Method.GetParameters()[0].ParameterType.IsValueType)
 			&& !ReflectUtil.IsDynamicMethod(del.Method))
 		{
@@ -1043,7 +1044,6 @@ static class Java_java_lang_invoke_MethodHandleNatives
 			TypeWrapper tw = (TypeWrapper)typeof(MemberName).GetField("vmtarget", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(m);
 			tw.Finish();
 			MethodWrapper mw = tw.GetMethods()[index];
-			//Console.WriteLine("DirectMethodHandle: " + mw.DeclaringType + "::" + mw.Name + mw.Signature);
 			mw.ResolveMethod();
 			MethodInfo mi = mw.GetMethod() as MethodInfo;
 			if (mi != null
@@ -1061,10 +1061,6 @@ static class Java_java_lang_invoke_MethodHandleNatives
 			}
 			else
 			{
-				if (mw.Name == StringConstants.INIT)
-				{
-					throw new NotImplementedException();
-				}
 				// slow path where we emit a DynamicMethod
 				MethodHandleUtil.DynamicMethodBuilder dm = new MethodHandleUtil.DynamicMethodBuilder("DirectMethodHandle:" + mw.Name, self.type());
 				for (int i = 0, count = self.type().parameterCount(); i < count; i++)
@@ -1084,7 +1080,6 @@ static class Java_java_lang_invoke_MethodHandleNatives
 				}
 				else
 				{
-					// TODO do we need to support newobj here?
 					dm.Call(mw);
 				}
 				dm.Ret();
