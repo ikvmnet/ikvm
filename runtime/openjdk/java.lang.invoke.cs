@@ -448,6 +448,10 @@ static partial class MethodHandleUtil
 		{
 			TypeWrapper src = TypeWrapper.FromClass(srcClass);
 			TypeWrapper dst = TypeWrapper.FromClass(dstClass);
+			if (src.IsNonPrimitiveValueType)
+			{
+				src.EmitBox(ilgen);
+			}
 			if (dst == PrimitiveTypeWrapper.VOID)
 			{
 				ilgen.Emit(OpCodes.Pop);
@@ -536,6 +540,10 @@ static partial class MethodHandleUtil
 			{
 				Type type = dst.TypeAsSignatureType;
 				ilgen.Emit(OpCodes.Call, type.GetMethod("Cast"));
+			}
+			else if (dst.IsNonPrimitiveValueType)
+			{
+				dst.EmitUnbox(ilgen);
 			}
 			else
 			{
