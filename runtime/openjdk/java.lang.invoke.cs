@@ -441,45 +441,40 @@ static partial class MethodHandleUtil
 		}
 	}
 
-	private static bool IsGhost(java.lang.Class type)
-	{
-		return type == ikvm.@internal.ClassLiteral<java.lang.CharSequence>.Value
-			|| type == ikvm.@internal.ClassLiteral<java.lang.Cloneable>.Value
-			|| type == ikvm.@internal.ClassLiteral<java.io.Serializable>.Value;
-	}
-
-	private static void EmitConvert(CodeEmitter ilgen, java.lang.Class src, java.lang.Class dst, int level)
+	private static void EmitConvert(CodeEmitter ilgen, java.lang.Class srcClass, java.lang.Class dstClass, int level)
 	{
 		// TODO what does level do?
-		if (src != dst)
+		if (srcClass != dstClass)
 		{
-			if (dst == java.lang.Void.TYPE)
+			TypeWrapper src = TypeWrapper.FromClass(srcClass);
+			TypeWrapper dst = TypeWrapper.FromClass(dstClass);
+			if (dst == PrimitiveTypeWrapper.VOID)
 			{
 				ilgen.Emit(OpCodes.Pop);
 			}
-			else if (src.isPrimitive())
+			else if (src.IsPrimitive)
 			{
-				if (dst.isPrimitive())
+				if (dst.IsPrimitive)
 				{
-					if (src == java.lang.Byte.TYPE)
+					if (src == PrimitiveTypeWrapper.BYTE)
 					{
 						ilgen.Emit(OpCodes.Conv_I1);
 					}
-					if (dst == java.lang.Float.TYPE)
+					if (dst == PrimitiveTypeWrapper.FLOAT)
 					{
 						ilgen.Emit(OpCodes.Conv_R4);
 					}
-					else if (dst == java.lang.Double.TYPE)
+					else if (dst == PrimitiveTypeWrapper.DOUBLE)
 					{
 						ilgen.Emit(OpCodes.Conv_R8);
 					}
-					else if (dst == java.lang.Long.TYPE)
+					else if (dst == PrimitiveTypeWrapper.LONG)
 					{
-						if (src == java.lang.Float.TYPE)
+						if (src == PrimitiveTypeWrapper.FLOAT)
 						{
 							ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.f2l);
 						}
-						else if (src == java.lang.Double.TYPE)
+						else if (src == PrimitiveTypeWrapper.DOUBLE)
 						{
 							ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.d2l);
 						}
@@ -488,13 +483,13 @@ static partial class MethodHandleUtil
 							ilgen.Emit(OpCodes.Conv_I8);
 						}
 					}
-					else if (dst == java.lang.Boolean.TYPE)
+					else if (dst == PrimitiveTypeWrapper.BOOLEAN)
 					{
-						if (src == java.lang.Float.TYPE)
+						if (src == PrimitiveTypeWrapper.FLOAT)
 						{
 							ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.f2i);
 						}
-						else if (src == java.lang.Double.TYPE)
+						else if (src == PrimitiveTypeWrapper.DOUBLE)
 						{
 							ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.d2i);
 						}
@@ -505,13 +500,13 @@ static partial class MethodHandleUtil
 						ilgen.Emit(OpCodes.Ldc_I4_1);
 						ilgen.Emit(OpCodes.And);
 					}
-					else if (src == java.lang.Long.TYPE)
+					else if (src == PrimitiveTypeWrapper.LONG)
 					{
-						if (src == java.lang.Float.TYPE)
+						if (src == PrimitiveTypeWrapper.FLOAT)
 						{
 							ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.f2l);
 						}
-						else if (src == java.lang.Double.TYPE)
+						else if (src == PrimitiveTypeWrapper.DOUBLE)
 						{
 							ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.d2l);
 						}
@@ -520,11 +515,11 @@ static partial class MethodHandleUtil
 							ilgen.Emit(OpCodes.Conv_I4);
 						}
 					}
-					else if (src == java.lang.Float.TYPE)
+					else if (src == PrimitiveTypeWrapper.FLOAT)
 					{
 						ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.f2i);
 					}
-					else if (src == java.lang.Double.TYPE)
+					else if (src == PrimitiveTypeWrapper.DOUBLE)
 					{
 						ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.d2i);
 					}
@@ -532,53 +527,53 @@ static partial class MethodHandleUtil
 				else
 				{
 					// boxing
-					ilgen.Emit(OpCodes.Call, BoxUtil.Boxer(src));
-					EmitConvert(ilgen, Wrapper.asWrapperType(src), dst, level);
+					ilgen.Emit(OpCodes.Call, BoxUtil.Boxer(srcClass));
+					EmitConvert(ilgen, Wrapper.asWrapperType(srcClass), dstClass, level);
 				}
 			}
-			else if (IsGhost(src))
+			else if (src.IsGhost)
 			{
-				TypeWrapper.FromClass(src).EmitConvSignatureTypeToStackType(ilgen);
-				EmitConvert(ilgen, ikvm.@internal.ClassLiteral<java.lang.Object>.Value, dst, level);
+				src.EmitConvSignatureTypeToStackType(ilgen);
+				EmitConvert(ilgen, ikvm.@internal.ClassLiteral<java.lang.Object>.Value, dstClass, level);
 			}
-			else if (src == ikvm.@internal.ClassLiteral<sun.invoke.empty.Empty>.Value)
+			else if (srcClass == ikvm.@internal.ClassLiteral<sun.invoke.empty.Empty>.Value)
 			{
 				ilgen.Emit(OpCodes.Pop);
-				if (dst != java.lang.Void.TYPE)
+				if (dst != PrimitiveTypeWrapper.VOID)
 				{
-					ilgen.Emit(OpCodes.Ldloc, ilgen.DeclareLocal(TypeWrapper.FromClass(dst).TypeAsSignatureType));
+					ilgen.Emit(OpCodes.Ldloc, ilgen.DeclareLocal(dst.TypeAsSignatureType));
 				}
 			}
-			else if (dst.isPrimitive())
+			else if (dst.IsPrimitive)
 			{
-				if (Wrapper.isWrapperType(src))
+				if (Wrapper.isWrapperType(srcClass))
 				{
-					if (src == ikvm.@internal.ClassLiteral<java.lang.Object>.Value)
+					if (src == CoreClasses.java.lang.Object.Wrapper)
 					{
 						// untyped unboxing
 						ilgen.Emit(OpCodes.Ldc_I4_1);
-						ilgen.Emit(OpCodes.Call, BoxUtil.ObjectUnboxer(dst));
+						ilgen.Emit(OpCodes.Call, BoxUtil.ObjectUnboxer(dstClass));
 					}
 					else
 					{
 						// typed unboxing
-						ilgen.Emit(OpCodes.Call, BoxUtil.Unboxer(src));
-						EmitConvert(ilgen, Wrapper.asPrimitiveType(src), dst, level);
+						ilgen.Emit(OpCodes.Call, BoxUtil.Unboxer(srcClass));
+						EmitConvert(ilgen, Wrapper.asPrimitiveType(srcClass), dstClass, level);
 					}
 				}
 				else
 				{
-					throw new NotImplementedException(src.getName() + " -> " + dst.getName());
+					throw new NotImplementedException(src.Name + " -> " + dst.Name);
 				}
 			}
-			else if (IsGhost(dst))
+			else if (dst.IsGhost)
 			{
-				Type type = TypeWrapper.FromClass(dst).TypeAsSignatureType;
+				Type type = dst.TypeAsSignatureType;
 				ilgen.Emit(OpCodes.Call, type.GetMethod("Cast"));
 			}
 			else
 			{
-				TypeWrapper.FromClass(dst).EmitCheckcast(null, ilgen);
+				dst.EmitCheckcast(null, ilgen);
 			}
 		}
 	}
