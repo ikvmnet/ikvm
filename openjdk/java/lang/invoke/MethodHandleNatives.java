@@ -23,6 +23,11 @@
  * questions.
  */
 
+/*
+ * Extensively modified for IKVM.NET by Jeroen Frijters
+ * Copyright (C) 2011 Jeroen Frijters
+ */
+
 package java.lang.invoke;
 
 import java.lang.invoke.MethodHandles.Lookup;
@@ -49,63 +54,19 @@ class MethodHandleNatives {
     static native int getMembers(Class<?> defc, String matchName, String matchSig,
             int matchFlags, Class<?> caller, int skip, MemberName[] results);
 
-    /// MethodHandle support
-
-    /** Initialize the method handle to adapt the call. */
-    static native void init(AdapterMethodHandle self, MethodHandle target, int argnum);
-    /** Initialize the method handle to call the correct method, directly. */
-    static native void init(BoundMethodHandle self, Object target, int argnum);
-    /** Initialize the method handle to call as if by an invoke* instruction. */
-    static native void init(DirectMethodHandle self, Object ref, boolean doDispatch, Class<?> caller);
-
     /** Initialize a method type, once per form. */
-    static native void init(MethodType self);
-
-    /** Tell the JVM about a class's bootstrap method. */
-    static native void registerBootstrap(Class<?> caller, MethodHandle bootstrapMethod);
-
-    /** Ask the JVM about a class's bootstrap method. */
-    static native MethodHandle getBootstrap(Class<?> caller);
-
-    /** Tell the JVM that we need to change the target of an invokedynamic. */
-    static native void setCallSiteTarget(CallSite site, MethodHandle target);
-
-    /** Fetch the vmtarget field.
-     *  It will be sanitized as necessary to avoid exposing non-Java references.
-     *  This routine is for debugging and reflection.
-     */
-    static native Object getTarget(MethodHandle self, int format);
+    static void init(MethodType self) { }
 
     /** Fetch the name of the handled method, if available.
      *  This routine is for debugging and reflection.
      */
     static MemberName getMethodName(MethodHandle self) {
-        return (MemberName) getTarget(self, ETF_METHOD_NAME);
-    }
-
-    /** Fetch the reflective version of the handled method, if available.
-     */
-    static AccessibleObject getTargetMethod(MethodHandle self) {
-        return (AccessibleObject) getTarget(self, ETF_REFLECT_METHOD);
-    }
-
-    /** Fetch the target of this method handle.
-     *  If it directly targets a method, return a MemberName for the method.
-     *  If it is chained to another method handle, return that handle.
-     */
-    static Object getTargetInfo(MethodHandle self) {
-        return getTarget(self, ETF_HANDLE_OR_METHOD_NAME);
+        throw new ikvm.internal.NotYetImplementedError();
     }
 
     static Object[] makeTarget(Class<?> defc, String name, String sig, int mods, Class<?> refc) {
         return new Object[] { defc, name, sig, mods, refc };
     }
-
-    /** Fetch MH-related JVM parameter.
-     *  which=0 retrieves MethodHandlePushLimit
-     *  which=1 retrieves stack slot push size (in address units)
-     */
-    static native int getConstant(int which);
 
     /** Java copy of MethodHandlePushLimit in range 2..255. */
     static final int JVM_PUSH_LIMIT;
@@ -120,15 +81,13 @@ class MethodHandleNatives {
 
     static final int OP_ROT_ARGS_DOWN_LIMIT_BIAS;
 
-    private static native void registerNatives();
     static {
-        registerNatives();
         int k;
-        JVM_PUSH_LIMIT              = getConstant(Constants.GC_JVM_PUSH_LIMIT);
-        JVM_STACK_MOVE_UNIT         = getConstant(Constants.GC_JVM_STACK_MOVE_UNIT);
-        k                           = getConstant(Constants.GC_CONV_OP_IMPLEMENTED_MASK);
+        JVM_PUSH_LIMIT              = 3;
+        JVM_STACK_MOVE_UNIT         = 1;
+        k                           = 0;
         CONV_OP_IMPLEMENTED_MASK    = (k != 0) ? k : DEFAULT_CONV_OP_IMPLEMENTED_MASK;
-        k                           = getConstant(Constants.GC_OP_ROT_ARGS_DOWN_LIMIT_BIAS);
+        k                           = 0;
         OP_ROT_ARGS_DOWN_LIMIT_BIAS = (k != 0) ? (byte)k : -1;
         HAVE_RICOCHET_FRAMES        = (CONV_OP_IMPLEMENTED_MASK & (1<<OP_COLLECT_ARGS)) != 0;
         //sun.reflect.Reflection.registerMethodsToFilter(MethodHandleImpl.class, "init");
@@ -254,142 +213,6 @@ class MethodHandleNatives {
             REF_invokeSpecial           = 7,
             REF_newInvokeSpecial        = 8,
             REF_invokeInterface         = 9;
-    }
-
-    private static native int getNamedCon(int which, Object[] name);
-    static boolean verifyConstants() {
-        Object[] box = { null };
-        for (int i = 0; ; i++) {
-            box[0] = null;
-            int vmval = getNamedCon(i, box);
-            if (box[0] == null)  break;
-            String name = (String) box[0];
-            try {
-                Field con = Constants.class.getDeclaredField(name);
-                int jval = con.getInt(null);
-                if (jval == vmval)  continue;
-                String err = (name+": JVM has "+vmval+" while Java has "+jval);
-                if (name.equals("CONV_OP_LIMIT")) {
-                    System.err.println("warning: "+err);
-                    continue;
-                }
-                throw new InternalError(err);
-            } catch (Exception ex) {
-                if (ex instanceof NoSuchFieldException) {
-                    String err = (name+": JVM has "+vmval+" which Java does not define");
-                    // ignore exotic ops the JVM cares about; we just wont issue them
-                    if (name.startsWith("OP_") || name.startsWith("GC_")) {
-                        System.err.println("warning: "+err);
-                        continue;
-                    }
-                }
-                throw new InternalError(name+": access failed, got "+ex);
-            }
-        }
-        return true;
-    }
-    static {
-        assert(verifyConstants());
-    }
-
-    // Up-calls from the JVM.
-    // These must NOT be public.
-
-    /**
-     * The JVM is linking an invokedynamic instruction.  Create a reified call site for it.
-     */
-    static CallSite makeDynamicCallSite(MethodHandle bootstrapMethod,
-                                        String name, MethodType type,
-                                        Object info,
-                                        MemberName callerMethod, int callerBCI) {
-        return CallSite.makeSite(bootstrapMethod, name, type, info, callerMethod, callerBCI);
-    }
-
-    /**
-     * Called by the JVM to check the length of a spread array.
-     */
-    static void checkSpreadArgument(Object av, int n) {
-        MethodHandleStatics.checkSpreadArgument(av, n);
-    }
-
-    /**
-     * The JVM wants a pointer to a MethodType.  Oblige it by finding or creating one.
-     */
-    static MethodType findMethodHandleType(Class<?> rtype, Class<?>[] ptypes) {
-        return MethodType.makeImpl(rtype, ptypes, true);
-    }
-
-    /**
-     * The JVM wants to use a MethodType with inexact invoke.  Give the runtime fair warning.
-     */
-    static void notifyGenericMethodType(MethodType type) {
-        type.form().notifyGenericMethodType();
-    }
-
-    /**
-     * The JVM wants to raise an exception.  Here's the path.
-     */
-    static void raiseException(int code, Object actual, Object required) {
-        String message = null;
-        switch (code) {
-        case 190: // arraylength
-            try {
-                String reqLength = "";
-                if (required instanceof AdapterMethodHandle) {
-                    int conv = ((AdapterMethodHandle)required).getConversion();
-                    int spChange = AdapterMethodHandle.extractStackMove(conv);
-                    reqLength = " of length "+(spChange+1);
-                }
-                int actualLength = actual == null ? 0 : java.lang.reflect.Array.getLength(actual);
-                message = "required array"+reqLength+", but encountered wrong length "+actualLength;
-                break;
-            } catch (IllegalArgumentException ex) {
-            }
-            required = Object[].class;  // should have been an array
-            code = 192; // checkcast
-            break;
-        case 191: // athrow
-            // JVM is asking us to wrap an exception which happened during resolving
-            if (required == BootstrapMethodError.class) {
-                throw new BootstrapMethodError((Throwable) actual);
-            }
-            break;
-        }
-        // disregard the identity of the actual object, if it is not a class:
-        if (message == null) {
-            if (!(actual instanceof Class) && !(actual instanceof MethodType))
-                actual = actual.getClass();
-           if (actual != null)
-               message = "required "+required+" but encountered "+actual;
-           else
-               message = "required "+required;
-        }
-        switch (code) {
-        case 190: // arraylength
-            throw new ArrayIndexOutOfBoundsException(message);
-        case 50: //_aaload
-            throw new ClassCastException(message);
-        case 192: // checkcast
-            throw new ClassCastException(message);
-        default:
-            throw new InternalError("unexpected code "+code+": "+message);
-        }
-    }
-
-    /**
-     * The JVM is resolving a CONSTANT_MethodHandle CP entry.  And it wants our help.
-     * It will make an up-call to this method.  (Do not change the name or signature.)
-     */
-    static MethodHandle linkMethodHandleConstant(Class<?> callerClass, int refKind,
-                                                 Class<?> defc, String name, Object type) {
-        try {
-            Lookup lookup = IMPL_LOOKUP.in(callerClass);
-            return lookup.linkMethodHandleConstant(refKind, defc, name, type);
-        } catch (ReflectiveOperationException ex) {
-            Error err = new IncompatibleClassChangeError();
-            err.initCause(ex);
-            throw err;
-        }
     }
 
     /**

@@ -499,19 +499,6 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     static
     MethodHandle bindReceiver(MethodHandle target, Object receiver) {
         if (receiver == null)  return null;
-        if (target instanceof AdapterMethodHandle &&
-            ((AdapterMethodHandle)target).conversionOp() == MethodHandleNatives.Constants.OP_RETYPE_ONLY
-            ) {
-            Object info = MethodHandleNatives.getTargetInfo(target);
-            if (info instanceof DirectMethodHandle) {
-                DirectMethodHandle dmh = (DirectMethodHandle) info;
-                if (dmh.type().parameterType(0).isAssignableFrom(receiver.getClass())) {
-                    MethodHandle bmh = new BoundMethodHandle(dmh, receiver, 0);
-                    MethodType newType = target.type().dropParameterTypes(0, 1);
-                    return convertArguments(bmh, newType, bmh.type(), 0);
-                }
-            }
-        }
         if (target instanceof DirectMethodHandle)
             return new BoundMethodHandle((DirectMethodHandle)target, receiver, 0);
         return null;   // let caller try something else
@@ -1080,12 +1067,4 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         return THROW_EXCEPTION;
     }
     static <T extends Throwable> Empty throwException(T t) throws T { throw t; }
-
-    // Linkage support:
-    static void registerBootstrap(Class<?> callerClass, MethodHandle bootstrapMethod) {
-        MethodHandleNatives.registerBootstrap(callerClass, bootstrapMethod);
-    }
-    static MethodHandle getBootstrap(Class<?> callerClass) {
-        return MethodHandleNatives.getBootstrap(callerClass);
-    }
 }

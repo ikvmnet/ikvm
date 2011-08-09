@@ -36,7 +36,6 @@ import sun.invoke.util.ValueConversions;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collections;
-import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.*;
 import ikvm.internal.NotYetImplementedError;
 
@@ -53,8 +52,6 @@ class AdapterMethodHandle extends BoundMethodHandle {
         super(type, null, -1);
         this.vmtarget = vmtarget;
     }
-
-    int getConversion() { throw new NotYetImplementedError(); }
 
     /** Can a JVM-level adapter directly implement the proposed
      *  argument conversion, as if by fixed-arity MethodHandle.asType?
@@ -77,12 +74,6 @@ class AdapterMethodHandle extends BoundMethodHandle {
      *          or null if the adaptation cannot be made
      */
     static native MethodHandle makePairwiseConvert(MethodType newType, MethodHandle target, int level);
-
-    static int extractStackMove(int convOp) {
-        throw new NotYetImplementedError();
-    }
-
-    int conversionOp() { return -1; }
 
     /* Return one plus the position of the first non-trivial difference
      * between the given types.  This is not a symmetric operation;

@@ -23,6 +23,11 @@
  * questions.
  */
 
+/*
+ * Extensively modified for IKVM.NET by Jeroen Frijters
+ * Copyright (C) 2011 Jeroen Frijters
+ */
+
 package java.lang.invoke;
 
 import sun.invoke.util.VerifyType;
@@ -153,37 +158,5 @@ class BoundMethodHandle extends MethodHandle {
     final static RuntimeException badBoundArgumentException(Object argument, MethodHandle mh, int argnum) {
         String atype = (argument == null) ? "null" : argument.getClass().toString();
         return new ClassCastException("cannot bind "+atype+" argument to parameter #"+argnum+" of "+mh.type());
-    }
-
-    @Override
-    String debugString() {
-        return addTypeString(baseName(), this);
-    }
-
-    /** Component of toString() before the type string. */
-    protected String baseName() {
-        MethodHandle mh = this;
-        while (mh instanceof BoundMethodHandle) {
-            Object info = MethodHandleNatives.getTargetInfo(mh);
-            if (info instanceof MethodHandle) {
-                mh = (MethodHandle) info;
-            } else {
-                String name = null;
-                if (info instanceof MemberName)
-                    name = ((MemberName)info).getName();
-                if (name != null)
-                    return name;
-                else
-                    return noParens(super.toString()); // "invoke", probably
-            }
-            assert(mh != this);
-        }
-        return noParens(mh.toString());
-    }
-
-    private static String noParens(String str) {
-        int paren = str.indexOf('(');
-        if (paren >= 0) str = str.substring(0, paren);
-        return str;
     }
 }
