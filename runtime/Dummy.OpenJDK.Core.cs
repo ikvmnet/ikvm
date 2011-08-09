@@ -47,6 +47,7 @@ namespace java
 	{
 		public class Class { }
 		public class ClassLoader { }
+		public class IllegalArgumentException { }
 		public class SecurityManager { }
 		public class StackTraceElement { }
 
@@ -64,6 +65,7 @@ namespace java
 		namespace reflect
 		{
 			public class Constructor { }
+			public class Method { }
 		}
 	}
 
