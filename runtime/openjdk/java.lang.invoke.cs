@@ -257,7 +257,7 @@ static partial class MethodHandleUtil
 		java.lang.Class[] types;
 		MethodInfo mi = GetDelegateInvokeMethod(type);
 		ParameterInfo[] pi = mi.GetParameters();
-		if (IsPackedArgsContainer(pi[pi.Length - 1].ParameterType))
+		if (pi.Length > 0 && IsPackedArgsContainer(pi[pi.Length - 1].ParameterType))
 		{
 			System.Collections.Generic.List<java.lang.Class> list = new System.Collections.Generic.List<java.lang.Class>();
 			for (int i = 0; i < pi.Length - 1; i++)
