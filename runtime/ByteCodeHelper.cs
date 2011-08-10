@@ -871,6 +871,15 @@ namespace IKVM.Runtime
 			return del;
 #endif
 		}
+
+		public static java.lang.invoke.MethodType LoadMethodType<T>()
+		{
+#if FIRST_PASS
+			return null;
+#else
+			return MethodHandleUtil.GetDelegateMethodType(typeof(T));
+#endif
+		}
 	}
 
 	public struct InvokeCache<T>

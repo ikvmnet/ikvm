@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2010 Jeroen Frijters
+  Copyright (C) 2002-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -119,12 +119,17 @@ namespace IKVM.Internal
 					case Constant.Fieldref:
 					case Constant.InterfaceMethodref:
 					case Constant.Methodref:
+					case Constant.InvokeDynamic:
 					case Constant.NameAndType:
 					case Constant.Float:
 					case Constant.Integer:
 						br.Skip(4);
 						break;
+					case Constant.MethodHandle:
+						br.Skip(3);
+						break;
 					case Constant.String:
+					case Constant.MethodType:
 						br.Skip(2);
 						break;
 					case Constant.Utf8:
@@ -202,6 +207,11 @@ namespace IKVM.Internal
 							break;
 						case Constant.NameAndType:
 							constantpool[i] = new ConstantPoolItemNameAndType(br);
+							break;
+						case Constant.MethodType:
+							if (majorVersion < 51)
+								goto default;
+							constantpool[i] = new ConstantPoolItemMethodType(br);
 							break;
 						case Constant.String:
 							constantpool[i] = new ConstantPoolItemString(br);
@@ -963,6 +973,11 @@ namespace IKVM.Internal
 			return ((ConstantPoolItemString)constantpool[index]).Value;
 		}
 
+		internal ConstantPoolItemMethodType GetConstantPoolConstantMethodType(int index)
+		{
+			return (ConstantPoolItemMethodType)constantpool[index];
+		}
+
 		internal string Name
 		{
 			get
@@ -1117,7 +1132,9 @@ namespace IKVM.Internal
 			Float,
 			Double,
 			String,
-			Class
+			Class,
+			MethodHandle,
+			MethodType,
 		}
 
 		internal abstract class ConstantPoolItem
@@ -1639,6 +1656,66 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal sealed class ConstantPoolItemMethodType : ConstantPoolItem
+		{
+			private ushort signature_index;
+			private string descriptor;
+			private TypeWrapper[] argTypeWrappers;
+			private TypeWrapper retTypeWrapper;
+
+			internal ConstantPoolItemMethodType(BigEndianBinaryReader br)
+			{
+				signature_index = br.ReadUInt16();
+			}
+
+			internal override void Resolve(ClassFile classFile)
+			{
+				string descriptor = classFile.GetConstantPoolUtf8String(signature_index);
+				if (descriptor == null || !IsValidMethodSig(descriptor))
+				{
+					throw new ClassFormatError("Invalid MethodType signature");
+				}
+				this.descriptor = String.Intern(descriptor.Replace('/', '.'));
+			}
+
+			internal override void Link(TypeWrapper thisType)
+			{
+				lock (this)
+				{
+					if (argTypeWrappers != null)
+					{
+						return;
+					}
+				}
+				ClassLoaderWrapper classLoader = thisType.GetClassLoader();
+				TypeWrapper[] args = classLoader.ArgTypeWrapperListFromSigNoThrow(descriptor);
+				TypeWrapper ret = classLoader.RetTypeWrapperFromSigNoThrow(descriptor);
+				lock (this)
+				{
+					if (argTypeWrappers == null)
+					{
+						argTypeWrappers = args;
+						retTypeWrapper = ret;
+					}
+				}
+			}
+
+			internal TypeWrapper[] GetArgTypes()
+			{
+				return argTypeWrappers;
+			}
+
+			internal TypeWrapper GetRetType()
+			{
+				return retTypeWrapper;
+			}
+
+			internal override ConstantType GetConstantType()
+			{
+				return ConstantType.MethodType;
+			}
+		}
+
 		private sealed class ConstantPoolItemString : ConstantPoolItem
 		{
 			private ushort string_index;
@@ -1680,7 +1757,10 @@ namespace IKVM.Internal
 			Fieldref = 9,
 			Methodref = 10,
 			InterfaceMethodref = 11,
-			NameAndType = 12
+			NameAndType = 12,
+			MethodHandle = 15,
+			MethodType = 16,
+			InvokeDynamic = 18,
 		}
 
 		internal abstract class FieldOrMethod

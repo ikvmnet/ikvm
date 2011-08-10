@@ -1662,6 +1662,9 @@ sealed class MethodAnalyzer
 										}
 										s.PushType(CoreClasses.java.lang.Class.Wrapper);
 										break;
+									case ClassFile.ConstantType.MethodType:
+										s.PushType(CoreClasses.java.lang.invoke.MethodType.Wrapper);
+										break;
 									default:
 										// NOTE this is not a VerifyError, because it cannot happen (unless we have
 										// a bug in ClassFile.GetConstantPoolConstantType)
@@ -2544,14 +2547,33 @@ sealed class MethodAnalyzer
 							PatchFieldAccess(wrapper, mw, ref instructions[i], stack);
 							break;
 						case NormalizedByteCode.__ldc:
-							if(classFile.GetConstantPoolConstantType(instructions[i].Arg1) == ClassFile.ConstantType.Class)
+							switch(classFile.GetConstantPoolConstantType(instructions[i].Arg1))
 							{
-								TypeWrapper tw = classFile.GetConstantPoolClassType(instructions[i].Arg1);
-								if(tw.IsUnloadable)
-								{
 #if STATIC_COMPILER
-									SetHardError(wrapper.GetClassLoader(), ref instructions[i], HardError.NoClassDefFoundError, "{0}", tw.Name);
+								case ClassFile.ConstantType.Class:
+								{
+									TypeWrapper tw = classFile.GetConstantPoolClassType(instructions[i].Arg1);
+									if(tw.IsUnloadable)
+									{
+										SetHardError(wrapper.GetClassLoader(), ref instructions[i], HardError.NoClassDefFoundError, "{0}", tw.Name);
+									}
+									break;
+								}
 #endif
+								case ClassFile.ConstantType.MethodType:
+								{
+									ClassFile.ConstantPoolItemMethodType cpi = classFile.GetConstantPoolConstantMethodType(instructions[i].Arg1);
+									TypeWrapper[] args = cpi.GetArgTypes();
+									TypeWrapper tw = cpi.GetRetType();
+									for(int j = 0; !tw.IsUnloadable && j < args.Length; j++)
+									{
+										tw = args[j];
+									}
+									if(tw.IsUnloadable)
+									{
+										SetHardError(wrapper.GetClassLoader(), ref instructions[i], HardError.NoClassDefFoundError, "{0}", tw.Name);
+									}
+									break;
 								}
 							}
 							break;

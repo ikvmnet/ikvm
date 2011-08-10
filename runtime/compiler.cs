@@ -81,6 +81,7 @@ static class ByteCodeHelperMethods
 	internal static readonly MethodInfo mapException;
 	internal static readonly MethodInfo GetDelegateForInvokeExact;
 	internal static readonly MethodInfo GetDelegateForInvoke;
+	internal static readonly MethodInfo LoadMethodType;
 
 	static ByteCodeHelperMethods()
 	{
@@ -127,6 +128,7 @@ static class ByteCodeHelperMethods
 		mapException = typeofByteCodeHelper.GetMethod("MapException");
 		GetDelegateForInvokeExact = typeofByteCodeHelper.GetMethod("GetDelegateForInvokeExact");
 		GetDelegateForInvoke = typeofByteCodeHelper.GetMethod("GetDelegateForInvoke");
+		LoadMethodType = typeofByteCodeHelper.GetMethod("LoadMethodType");
 	}
 }
 
@@ -276,6 +278,34 @@ static partial class MethodHandleUtil
 			typeArgs[i] = args[i].TypeAsSignatureType;
 		}
 		return CreateDelegateType(typeArgs, ret.TypeAsSignatureType);
+	}
+
+	// for delegate types used for "ldc <MethodType>" we don't want ghost arrays to be erased
+	internal static Type CreateDelegateTypeForLoadConstant(TypeWrapper[] args, TypeWrapper ret)
+	{
+		Type[] typeArgs = new Type[args.Length];
+		for (int i = 0; i < args.Length; i++)
+		{
+			typeArgs[i] = TypeWrapperToTypeForLoadConstant(args[i]);
+		}
+		return CreateDelegateType(typeArgs, TypeWrapperToTypeForLoadConstant(ret));
+	}
+
+	private static Type TypeWrapperToTypeForLoadConstant(TypeWrapper tw)
+	{
+		if (tw.IsGhostArray)
+		{
+			int dims = tw.ArrayRank;
+			while (tw.IsArray)
+			{
+				tw = tw.ElementTypeWrapper;
+			}
+			return ArrayTypeWrapper.MakeArrayType(tw.TypeAsSignatureType, dims);
+		}
+		else
+		{
+			return tw.TypeAsSignatureType;
+		}
 	}
 
 	private static Type CreateDelegateType(Type[] types, Type retType)
@@ -1455,6 +1485,13 @@ sealed class Compiler
 							{
 								tw.EmitClassLiteral(ilGenerator);
 							}
+							break;
+						}
+						case ClassFile.ConstantType.MethodType:
+						{
+							ClassFile.ConstantPoolItemMethodType cpi = classFile.GetConstantPoolConstantMethodType(instr.Arg1);
+							Type delegateType = MethodHandleUtil.CreateDelegateTypeForLoadConstant(cpi.GetArgTypes(), cpi.GetRetType());
+							ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.LoadMethodType.MakeGenericMethod(delegateType));
 							break;
 						}
 						default:
