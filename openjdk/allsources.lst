@@ -2189,6 +2189,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/res/XSLTErrorResources_it.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/res/XSLTErrorResources_ja.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/res/XSLTErrorResources_ko.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/res/XSLTErrorResources_pt_BR.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/res/XSLTErrorResources_sv.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/res/XSLTErrorResources_zh_CN.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/res/XSLTErrorResources_zh_TW.java
@@ -2339,6 +2340,8 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/util/ErrorMessages_it.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/util/ErrorMessages_ja.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/util/ErrorMessages_ko.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/util/ErrorMessages_pt_BR.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/util/ErrorMessages_sv.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/util/ErrorMessages_sk.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/util/ErrorMessages_zh_CN.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/util/ErrorMessages_zh_TW.java
@@ -2625,6 +2628,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/impl/dv/xs/DoubleDV.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/impl/dv/xs/DurationDV.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/impl/dv/xs/EntityDV.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/impl/dv/xs/ExtendedSchemaDVFactoryImpl.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/impl/dv/xs/FloatDV.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/impl/dv/xs/FullDVFactory.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/impl/dv/xs/HexBinaryDV.java
@@ -2655,6 +2659,16 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/impl/io/UCSReader.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/impl/io/UTF8Reader.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/impl/msg/XMLMessageFormatter.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/impl/msg/XMLMessageFormatter_de.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/impl/msg/XMLMessageFormatter_es.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/impl/msg/XMLMessageFormatter_fr.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/impl/msg/XMLMessageFormatter_it.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/impl/msg/XMLMessageFormatter_ja.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/impl/msg/XMLMessageFormatter_ko.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/impl/msg/XMLMessageFormatter_pt_BR.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/impl/msg/XMLMessageFormatter_sv.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/impl/msg/XMLMessageFormatter_zh_CN.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/impl/msg/XMLMessageFormatter_zh_TW.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/impl/PropertyManager.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/impl/RevalidationHandler.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/impl/validation/EntityState.java
@@ -3058,6 +3072,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xml/internal/res/XMLErrorResources_it.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xml/internal/res/XMLErrorResources_ja.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xml/internal/res/XMLErrorResources_ko.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xml/internal/res/XMLErrorResources_pt_BR.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xml/internal/res/XMLErrorResources_sk.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xml/internal/res/XMLErrorResources_sv.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xml/internal/res/XMLErrorResources_tr.java
@@ -3414,6 +3429,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xpath/internal/res/XPATHErrorResources_it.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xpath/internal/res/XPATHErrorResources_ja.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xpath/internal/res/XPATHErrorResources_ko.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xpath/internal/res/XPATHErrorResources_pt_BR.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xpath/internal/res/XPATHErrorResources_sv.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xpath/internal/res/XPATHErrorResources_zh_CN.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xpath/internal/res/XPATHErrorResources_zh_TW.java
@@ -8123,6 +8139,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/org/apache/xml/internal/security/algorithms/implementations/IntegrityHmac.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/org/apache/xml/internal/security/algorithms/implementations/SignatureBaseRSA.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/org/apache/xml/internal/security/algorithms/implementations/SignatureDSA.java
+@OPENJDK7@/jdk/src/share/classes/com/sun/org/apache/xml/internal/security/algorithms/implementations/SignatureECDSA.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/org/apache/xml/internal/security/algorithms/JCEMapper.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/org/apache/xml/internal/security/algorithms/MessageDigestAlgorithm.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/org/apache/xml/internal/security/algorithms/SignatureAlgorithm.java
@@ -8224,6 +8241,8 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/org/apache/xml/internal/security/transforms/implementations/FuncHereContext.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/org/apache/xml/internal/security/transforms/implementations/TransformBase64Decode.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/org/apache/xml/internal/security/transforms/implementations/TransformC14N.java
+@OPENJDK7@/jdk/src/share/classes/com/sun/org/apache/xml/internal/security/transforms/implementations/TransformC14N11.java
+@OPENJDK7@/jdk/src/share/classes/com/sun/org/apache/xml/internal/security/transforms/implementations/TransformC14N11_WithComments.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/org/apache/xml/internal/security/transforms/implementations/TransformC14NExclusive.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/org/apache/xml/internal/security/transforms/implementations/TransformC14NExclusiveWithComments.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/org/apache/xml/internal/security/transforms/implementations/TransformC14NWithComments.java
