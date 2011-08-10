@@ -1064,12 +1064,6 @@ namespace IKVM.Internal
 						noop = false;
 						return false;
 					}
-					else if (bc == NormalizedByteCode.__ldc
-						&& classFile.SafeIsConstantPoolClass(m.Instructions[i].Arg1))
-					{
-						noop = false;
-						return false;
-					}
 					else if (bc == NormalizedByteCode.__aconst_null
 						|| bc == NormalizedByteCode.__return
 						|| bc == NormalizedByteCode.__nop)

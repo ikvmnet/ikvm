@@ -379,6 +379,7 @@ enum NormalizedByteCode : byte
 	__ifnull = 198,
 	__ifnonnull = 199,
 	// This is where the pseudo-bytecodes start
+	__ldc_nothrow = 239,
 	__methodhandle_invoke = 240,
 	__methodhandle_invokeexact = 241,
 	__goto_finally = 242,
@@ -581,6 +582,7 @@ struct ByteCodeMetaData
 			case NormalizedByteCode.__methodhandle_invokeexact:
 				return true;
 			case NormalizedByteCode.__iconst:
+			case NormalizedByteCode.__ldc_nothrow:
 				return false;
 			default:
 				return (data[(int)bc].flags & ByteCodeFlags.CannotThrow) == 0;
@@ -621,9 +623,9 @@ struct ByteCodeMetaData
 		new ByteCodeMetaData(ByteCode.__dconst_1, ByteCodeMode.Simple, ByteCodeModeWide.Unused, true);
 		new ByteCodeMetaData(ByteCode.__bipush, NormalizedByteCode.__iconst, ByteCodeMode.Immediate_1, ByteCodeModeWide.Unused, true);
 		new ByteCodeMetaData(ByteCode.__sipush, NormalizedByteCode.__iconst, ByteCodeMode.Immediate_2, ByteCodeModeWide.Unused, true);
-		new ByteCodeMetaData(ByteCode.__ldc, ByteCodeMode.Constant_1, ByteCodeModeWide.Unused, true);
-		new ByteCodeMetaData(ByteCode.__ldc_w, NormalizedByteCode.__ldc, ByteCodeMode.Constant_2, ByteCodeModeWide.Unused, true);
-		new ByteCodeMetaData(ByteCode.__ldc2_w, NormalizedByteCode.__ldc, ByteCodeMode.Constant_2, ByteCodeModeWide.Unused, true);
+		new ByteCodeMetaData(ByteCode.__ldc, ByteCodeMode.Constant_1, ByteCodeModeWide.Unused, false);
+		new ByteCodeMetaData(ByteCode.__ldc_w, NormalizedByteCode.__ldc, ByteCodeMode.Constant_2, ByteCodeModeWide.Unused, false);
+		new ByteCodeMetaData(ByteCode.__ldc2_w, NormalizedByteCode.__ldc, ByteCodeMode.Constant_2, ByteCodeModeWide.Unused, false);
 		new ByteCodeMetaData(ByteCode.__iload, ByteCodeMode.Local_1, ByteCodeModeWide.Local_2, true);
 		new ByteCodeMetaData(ByteCode.__lload, ByteCodeMode.Local_1, ByteCodeModeWide.Local_2, true);
 		new ByteCodeMetaData(ByteCode.__fload, ByteCodeMode.Local_1, ByteCodeModeWide.Local_2, true);

@@ -1419,6 +1419,7 @@ sealed class Compiler
 				case NormalizedByteCode.__fconst_2:
 					ilGenerator.Emit(OpCodes.Ldc_R4, 2.0f);
 					break;
+				case NormalizedByteCode.__ldc_nothrow:
 				case NormalizedByteCode.__ldc:
 				{
 					int constant = instr.Arg1;

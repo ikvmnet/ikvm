@@ -344,7 +344,7 @@ namespace IKVM.Internal
 		private static bool String_toCharArray(EmitIntrinsicContext eic)
 		{
 			if (eic.MatchRange(-1, 2)
-				&& eic.Match(-1, NormalizedByteCode.__ldc))
+				&& eic.Match(-1, NormalizedByteCode.__ldc_nothrow))
 			{
 				string str = eic.ClassFile.GetConstantPoolConstantString(eic.Code[eic.OpcodeIndex - 1].Arg1);
 				// arbitrary length for "big" strings

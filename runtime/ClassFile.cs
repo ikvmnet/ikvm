@@ -902,9 +902,7 @@ namespace IKVM.Internal
 			return ((ConstantPoolItemClass)constantpool[index]).Name;
 		}
 
-		// this won't throw an exception if index is invalid
-		// (used by IsSideEffectFreeStaticInitializer)
-		internal bool SafeIsConstantPoolClass(int index)
+		private bool SafeIsConstantPoolClass(int index)
 		{
 			if(index > 0 && index < constantpool.Length)
 			{

@@ -46,7 +46,7 @@ static class AtomicReferenceFieldUpdaterEmitter
 			&& (flags[i - 1] & InstructionFlags.BranchTarget) == 0
 			&& (flags[i - 2] & InstructionFlags.BranchTarget) == 0
 			&& (flags[i - 3] & InstructionFlags.BranchTarget) == 0
-			&& code[i - 1].NormalizedOpCode == NormalizedByteCode.__ldc
+			&& code[i - 1].NormalizedOpCode == NormalizedByteCode.__ldc_nothrow
 			&& code[i - 2].NormalizedOpCode == NormalizedByteCode.__ldc
 			&& code[i - 3].NormalizedOpCode == NormalizedByteCode.__ldc)
 		{
