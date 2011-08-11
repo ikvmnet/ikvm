@@ -8091,30 +8091,6 @@ namespace IKVM.NativeCode.sun.rmi.server
 	}
 }
 
-namespace IKVM.NativeCode.sun.security.krb5
-{
-	static class Credentials
-	{
-		public static object acquireDefaultNativeCreds()
-		{
-			// TODO
-			return null;
-		}
-	}
-
-	static class Config
-	{
-		public static string getWindowsDirectory(bool isSystem)
-		{
-			if (isSystem)
-			{
-				return Environment.SystemDirectory;
-			}
-			return Environment.GetEnvironmentVariable("SystemRoot");
-		}
-	}
-}
-
 namespace IKVM.NativeCode.sun.security.provider
 {
 	static class NativeSeedGenerator

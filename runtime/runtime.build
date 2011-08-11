@@ -129,6 +129,7 @@
                 <include name="fdlibm/s_tan.cs" />
                 <include name="openjdk/java.lang.invoke.cs" />
                 <include name="openjdk/sun.nio.ch.cs" />
+                <include name="openjdk/sun.security.krb5.cs" />
             </sources>
             <resources>
                 <include if="${not first-pass}" name="../openjdk/vfs.zip" />
