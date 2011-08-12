@@ -1,15 +1,27 @@
 <?xml version="1.0"?>
-<project name="IKVM.Runtime" default="IKVM.Runtime">
+<project name="IKVM.Runtime" default="full">
     <include buildfile="../ikvm.include" />
+
     <target name="first-pass" depends="DummyLibrary">
         <property name="first-pass" value="true" />
         <call target="IKVM.Runtime" />
+        <exec program="${project::get-base-directory()}/../bin/ikvmstub.exe" commandline="-bootstrap IKVM.Runtime.dll -r:IKVM.OpenJDK.Core.dll" useruntimeengine="true" />
     </target>
+
+    <target name="full" depends="first-pass">
+        <property name="first-pass" value="false" />
+        <call target="IKVM.Runtime.JNI" />
+        <call target="IKVM.Runtime" />
+        <if test="${property::exists('peverify')}">
+            <exec program="${peverify}" commandline="-nologo ../bin/IKVM.Runtime.dll" />
+        </if>
+    </target>
+
     <target name="signed">
         <property name="signed" value="SIGNCODE" />
         <property name="signoption" value="-key:ikvm-key" />
         <property name="ilasm_signoption" value="/key:@ikvm-key" />
-        <call target="IKVM.Runtime" />
+        <call target="full" />
     </target>
 
     <target name="DummyLibrary">
@@ -25,7 +37,18 @@
         </csc>
     </target>
 
-    <target name="IKVM.Runtime.JNI">
+    <target name="AssemblyInfo.cs">
+        <loadfile file="../tools/pubkey.txt" property="publickey" />
+        <copy file="AssemblyInfo.cs.in" tofile="AssemblyInfo.cs" overwrite="true">
+            <filterchain>
+                <replacetokens>
+                    <token key="PUBLICKEY" value="${publickey}" />
+                </replacetokens>
+            </filterchain>
+        </copy>
+    </target>
+
+    <target name="JniAssemblyInfo.cs">
         <loadfile file="../tools/pubkey.txt" property="publickey" />
         <copy file="JniAssemblyInfo.cs.in" tofile="JniAssemblyInfo.cs" overwrite="true">
             <filterchain>
@@ -34,6 +57,22 @@
                 </replacetokens>
             </filterchain>
         </copy>
+    </target>
+
+    <target name="defs">
+        <property name="defs" value="TRACE" />
+        <if test="${property::exists('signed')}">
+            <property name="defs" value="${defs};${signed}" />
+        </if>
+        <if test="${version::get-major(framework::get-version(framework::get-target-framework() )) == 4}">
+            <property name="defs" value="${defs};NET_4_0;CLASSGC" />
+        </if>
+        <if test="${first-pass}">
+            <property name="defs" value="${defs};FIRST_PASS" />
+        </if>
+    </target>
+
+    <target name="IKVM.Runtime.JNI" depends="JniAssemblyInfo.cs defs">
         <csc noconfig="true" target="library" output="IKVM.Runtime.JNI.dll" define="${defs}" optimize="true" unsafe="true" rebuild="true">
             <arg unless="${string::starts-with(framework::get-target-framework(), 'mono')}" value="/baseaddress:0x55300000" />
             <sources>
@@ -50,35 +89,19 @@
         <copy file="IKVM.Runtime.JNI.dll" todir="../bin" />        
     </target>
 
-    <target name="IKVM.Runtime">
-        <property overwrite="false" name="first-pass" value="false" />
-        <property name="defs" value="TRACE" />
-        <if test="${property::exists('signed')}">
-            <property name="defs" value="${defs};${signed}" />
-        </if>
-        <loadfile file="../tools/pubkey.txt" property="publickey" />
-        <copy file="AssemblyInfo.cs.in" tofile="AssemblyInfo.cs" overwrite="true">
-            <filterchain>
-                <replacetokens>
-                    <token key="PUBLICKEY" value="${publickey}" />
-                </replacetokens>
-            </filterchain>
-        </copy>
-        <if test="${version::get-major(framework::get-version(framework::get-target-framework() )) == 4}">
-            <property name="defs" value="${defs};NET_4_0;CLASSGC" />
-        </if>
-        <if test="${first-pass}">
-            <property name="defs" value="${defs};FIRST_PASS" />
-        </if>
+    <target name="IKVM.Runtime" depends="AssemblyInfo.cs defs">
         <if test="${not first-pass}">
             <!-- on Mono the C# compiler doesn't give an error if the vfs.zip resource is missing, so we have to check it here -->
             <if test="${not file::exists('../openjdk/vfs.zip')}">
                 <fail message="../openjdk/vfs.zip is missing. Make sure to build ikvm/openjdk first." />
             </if>
-            <call target="IKVM.Runtime.JNI" />
         </if>
         <csc noconfig="true" target="library" output="IKVM.Runtime.dll" define="${defs}" optimize="true" unsafe="false" rebuild="true">
             <arg unless="${string::starts-with(framework::get-target-framework(), 'mono')}" value="/baseaddress:0x55000000" />
+            <nowarn>
+                <warning number="169" if="${first-pass}" />
+                <warning number="649" if="${first-pass}" />
+            </nowarn>
             <sources>
                 <include name="../CommonAssemblyInfo.cs" />
                 <include name="AssemblyInfo.cs" />
@@ -145,10 +168,5 @@
             </references>
         </csc>
         <copy file="IKVM.Runtime.dll" todir="../bin" />
-        <if test="${not first-pass}">
-            <if test="${property::exists('peverify')}">
-                <exec program="${peverify}" commandline="-nologo ../bin/IKVM.Runtime.dll" />
-            </if>
-        </if>
     </target>
 </project>

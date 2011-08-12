@@ -12,11 +12,11 @@
     </target>
     <target name="managed" depends="clean-managed CommonAssemblyInfo">
         <nant buildfile="tools/tools.build" />
+        <nant buildfile="reflect/reflect.build" />
+        <nant buildfile="ikvmstub/ikvmstub.build" />
         <nant buildfile="runtime/runtime.build" target="first-pass" />
         <nant buildfile="awt/awt.build" target="first-pass" />
-        <nant buildfile="reflect/reflect.build" />
         <nant buildfile="ikvmc/ikvmc.build" />
-        <nant buildfile="ikvmstub/ikvmstub.build" />
         <nant buildfile="openjdk/openjdk.build" />
         <nant buildfile="runtime/runtime.build" />
         <nant buildfile="openjdk/openjdk.build" target="tools" />
@@ -57,6 +57,8 @@
                 <include name="openjdk/tools.gen.rsp" />
                 <include name="openjdk/vfs.zip" />
                 <include name="openjdk/**.class" />
+                <include name="runtime/*.dll" />
+                <include name="runtime/*.jar" />
                 <include name="tools/asmref.exe" />
                 <include name="tools/depcheck.exe" />
                 <include name="tools/pubkey.exe" />
