@@ -40,12 +40,14 @@ static class Java_sun_security_krb5_Config
 
 static class Java_sun_security_krb5_Credentials
 {
+#if !FIRST_PASS
 	private static java.util.Date ToJavaDate(long time)
 	{
 		// convert 100-nanosecond intervals to milliseconds offset milliseconds from Jan 1, 1601 to Jan 1, 1970
 		const long DIFF_IN_MILLIS = 11644473600000L;
 		return new java.util.Date((time / 10000) - DIFF_IN_MILLIS);
 	}
+#endif
 
 	public static object acquireDefaultNativeCreds()
 	{
