@@ -3527,12 +3527,42 @@ namespace IKVM.Internal
 			private TypeBuilder typeCallerID;
 			private MethodInfo callerIDMethod;
 			private List<System.Threading.ThreadStart> postFinishProcs;
+			private List<Item> items;
+
+			private struct Item
+			{
+				internal int key;
+				internal object value;
+			}
 
 			internal FinishContext(ClassFile classFile, DynamicTypeWrapper wrapper, TypeBuilder typeBuilder)
 			{
 				this.classFile = classFile;
 				this.wrapper = wrapper;
 				this.typeBuilder = typeBuilder;
+			}
+
+			internal T GetValue<T>(int key)
+				where T : class, new()
+			{
+				if (items == null)
+				{
+					items = new List<Item>();
+				}
+				for (int i = 0; i < items.Count; i++)
+				{
+					T value;
+					if (items[i].key == key && (value = items[i].value as T) != null)
+					{
+						return value;
+					}
+				}
+				Item item;
+				item.key = key;
+				T val = new T();
+				item.value = val;
+				items.Add(item);
+				return val;
 			}
 
 			internal void EmitCallerID(CodeEmitter ilgen)

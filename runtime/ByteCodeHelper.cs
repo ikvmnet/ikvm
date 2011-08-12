@@ -873,11 +873,32 @@ namespace IKVM.Runtime
 		}
 
 		public static java.lang.invoke.MethodType LoadMethodType<T>()
+			where T : class // Delegate
 		{
 #if FIRST_PASS
 			return null;
 #else
 			return MethodHandleUtil.GetDelegateMethodType(typeof(T));
+#endif
+		}
+
+#if !FIRST_PASS
+		sealed class ConstantMethodHandle : java.lang.invoke.MethodHandle
+		{
+			internal ConstantMethodHandle(Delegate del)
+				: base(MethodHandleUtil.GetDelegateMethodType(del.GetType()))
+			{
+				this.vmtarget = del;
+			}
+		}
+#endif
+
+		public static java.lang.invoke.MethodHandle MethodHandleFromDelegate(Delegate del)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			return new ConstantMethodHandle(del);
 #endif
 		}
 	}

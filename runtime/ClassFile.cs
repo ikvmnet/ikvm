@@ -37,7 +37,11 @@ namespace IKVM.Internal
 		NoSuchFieldError,
 		AbstractMethodError,
 		NoSuchMethodError,
-		LinkageError
+		LinkageError,
+		// "exceptions" that are wrapped in an IncompatibleClassChangeError
+		NoSuchFieldException,
+		NoSuchMethodException,
+		IllegalAccessException,
 		// if an error is added here, it must also be added to MethodAnalyzer.SetHardError()
 	}
 
@@ -207,6 +211,11 @@ namespace IKVM.Internal
 							break;
 						case Constant.NameAndType:
 							constantpool[i] = new ConstantPoolItemNameAndType(br);
+							break;
+						case Constant.MethodHandle:
+							if (majorVersion < 51)
+								goto default;
+							constantpool[i] = new ConstantPoolItemMethodHandle(br);
 							break;
 						case Constant.MethodType:
 							if (majorVersion < 51)
@@ -973,6 +982,11 @@ namespace IKVM.Internal
 			return ((ConstantPoolItemString)constantpool[index]).Value;
 		}
 
+		internal ConstantPoolItemMethodHandle GetConstantPoolConstantMethodHandle(int index)
+		{
+			return (ConstantPoolItemMethodHandle)constantpool[index];
+		}
+
 		internal ConstantPoolItemMethodType GetConstantPoolConstantMethodType(int index)
 		{
 			return (ConstantPoolItemMethodType)constantpool[index];
@@ -1123,6 +1137,19 @@ namespace IKVM.Internal
 			{
 				return innerClasses;
 			}
+		}
+
+		internal enum RefKind
+		{
+			getField = 1,
+			getStatic = 2,
+			putField = 3,
+			putStatic = 4,
+			invokeVirtual = 5,
+			invokeStatic = 6,
+			invokeSpecial = 7,
+			newInvokeSpecial = 8,
+			invokeInterface = 9
 		}
 
 		internal enum ConstantType
@@ -1350,6 +1377,8 @@ namespace IKVM.Internal
 			{
 				return clazz.GetClassType();
 			}
+
+			internal abstract MemberWrapper GetMember();
 		}
 
 		internal sealed class ConstantPoolItemFieldref : ConstantPoolItemFMI
@@ -1411,6 +1440,11 @@ namespace IKVM.Internal
 			}
 
 			internal FieldWrapper GetField()
+			{
+				return field;
+			}
+
+			internal override MemberWrapper GetMember()
 			{
 				return field;
 			}
@@ -1487,6 +1521,11 @@ namespace IKVM.Internal
 			internal MethodWrapper GetMethodForInvokespecial()
 			{
 				return invokespecialMethod != null ? invokespecialMethod : method;
+			}
+
+			internal override MemberWrapper GetMember()
+			{
+				return method;
 			}
 		}
 
@@ -1653,6 +1692,94 @@ namespace IKVM.Internal
 				{
 					throw new ClassFormatError("Illegal constant pool index");
 				}
+			}
+		}
+
+		internal sealed class ConstantPoolItemMethodHandle : ConstantPoolItem
+		{
+			private byte ref_kind;
+			private ushort method_index;
+			private ConstantPoolItemFMI cpi;
+
+			internal ConstantPoolItemMethodHandle(BigEndianBinaryReader br)
+			{
+				ref_kind = br.ReadByte();
+				method_index = br.ReadUInt16();
+			}
+
+			internal override void Resolve(ClassFile classFile)
+			{
+				switch ((RefKind)ref_kind)
+				{
+					case RefKind.getField:
+					case RefKind.getStatic:
+					case RefKind.putField:
+					case RefKind.putStatic:
+						cpi = classFile.GetConstantPoolItem(method_index) as ConstantPoolItemFieldref;
+						break;
+					case RefKind.invokeSpecial:
+					case RefKind.invokeVirtual:
+					case RefKind.invokeStatic:
+					case RefKind.newInvokeSpecial:
+						cpi = classFile.GetConstantPoolItem(method_index) as ConstantPoolItemMethodref;
+						break;
+					case RefKind.invokeInterface:
+						cpi = classFile.GetConstantPoolItem(method_index) as ConstantPoolItemInterfaceMethodref;
+						break;
+				}
+				if (cpi == null)
+				{
+					throw new ClassFormatError("Invalid constant pool item MethodHandle");
+				}
+				if (ReferenceEquals(cpi.Name, StringConstants.INIT) && Kind != RefKind.newInvokeSpecial)
+				{
+					throw new ClassFormatError("Bad method name");
+				}
+			}
+
+			internal string Class
+			{
+				get { return cpi.Class; }
+			}
+
+			internal string Name
+			{
+				get { return cpi.Name; }
+			}
+
+			internal string Signature
+			{
+				get { return cpi.Signature; }
+			}
+
+			internal ConstantPoolItemFMI MemberConstantPoolItem
+			{
+				get { return cpi; }
+			}
+
+			internal RefKind Kind
+			{
+				get { return (RefKind)ref_kind; }
+			}
+
+			internal MemberWrapper Member
+			{
+				get { return cpi.GetMember(); }
+			}
+
+			internal TypeWrapper GetClassType()
+			{
+				return cpi.GetClassType();
+			}
+
+			internal override void Link(TypeWrapper thisType)
+			{
+				cpi.Link(thisType);
+			}
+
+			internal override ConstantType GetConstantType()
+			{
+				return ConstantType.MethodHandle;
 			}
 		}
 
