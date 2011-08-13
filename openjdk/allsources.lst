@@ -80,6 +80,7 @@ java/lang/invoke/BoundMethodHandle.java
 java/lang/invoke/DirectMethodHandle.java
 java/lang/invoke/MethodHandleImpl.java
 java/lang/invoke/MethodHandleNatives.java
+java/lang/invoke/MethodHandles.java
 java/lang/LangHelper.java
 java/lang/management/PlatformComponent.java
 java/lang/ProcessImpl.java
@@ -9066,7 +9067,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/invoke/MemberName.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/invoke/MethodHandle.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/invoke/MethodHandleProxies.java
-@OPENJDK7@/jdk/src/share/classes/java/lang/invoke/MethodHandles.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/invoke/MethodHandleStatics.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/invoke/MethodType.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/invoke/MethodTypeForm.java
