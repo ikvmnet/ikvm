@@ -106,6 +106,8 @@ static class Java_sun_security_krb5_Credentials
 
 	static class Win32KerberosSupport
 	{
+        const int STATUS_SUCCESS = 0;
+
         sealed class LsaSafeHandle : Microsoft.Win32.SafeHandles.SafeHandleZeroOrMinusOneIsInvalid
         {
             internal LsaSafeHandle()
@@ -115,7 +117,7 @@ static class Java_sun_security_krb5_Credentials
 
             override protected bool ReleaseHandle()
             {
-                return CloseHandle(handle);
+                return LsaDeregisterLogonProcess(handle) == STATUS_SUCCESS;
             }
         }
 
@@ -190,8 +192,8 @@ static class Java_sun_security_krb5_Credentials
             public IntPtr EncodedTicket;
         }
 
-        [DllImport("kernel32.dll")]
-        static extern bool CloseHandle(IntPtr handle);
+        [DllImport("secur32.dll")]
+        static extern int LsaDeregisterLogonProcess(IntPtr handle);
 
         [DllImport("secur32.dll")]
         static extern int LsaConnectUntrusted(out LsaSafeHandle LsaHandle);
@@ -220,7 +222,6 @@ static class Java_sun_security_krb5_Credentials
 
         static void Check(int ntstatus)
         {
-            const int STATUS_SUCCESS = 0;
             if (ntstatus != STATUS_SUCCESS)
             {
                 throw new Win32Exception(LsaNtStatusToWinError(ntstatus));
