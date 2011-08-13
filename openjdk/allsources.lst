@@ -267,6 +267,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/build/linux-amd64/gensrc/com/sun/swing/internal/plaf/basic/resources/basic_it.java
 @OPENJDK7@/build/linux-amd64/gensrc/com/sun/swing/internal/plaf/basic/resources/basic_ja.java
 @OPENJDK7@/build/linux-amd64/gensrc/com/sun/swing/internal/plaf/basic/resources/basic_ko.java
+@OPENJDK7@/build/linux-amd64/gensrc/com/sun/swing/internal/plaf/basic/resources/basic_pt_BR.java
 @OPENJDK7@/build/linux-amd64/gensrc/com/sun/swing/internal/plaf/basic/resources/basic_sv.java
 @OPENJDK7@/build/linux-amd64/gensrc/com/sun/swing/internal/plaf/basic/resources/basic_zh_CN.java
 @OPENJDK7@/build/linux-amd64/gensrc/com/sun/swing/internal/plaf/basic/resources/basic_zh_HK.java
@@ -278,6 +279,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/build/linux-amd64/gensrc/com/sun/swing/internal/plaf/metal/resources/metal_it.java
 @OPENJDK7@/build/linux-amd64/gensrc/com/sun/swing/internal/plaf/metal/resources/metal_ja.java
 @OPENJDK7@/build/linux-amd64/gensrc/com/sun/swing/internal/plaf/metal/resources/metal_ko.java
+@OPENJDK7@/build/linux-amd64/gensrc/com/sun/swing/internal/plaf/metal/resources/metal_pt_BR.java
 @OPENJDK7@/build/linux-amd64/gensrc/com/sun/swing/internal/plaf/metal/resources/metal_sv.java
 @OPENJDK7@/build/linux-amd64/gensrc/com/sun/swing/internal/plaf/metal/resources/metal_zh_CN.java
 @OPENJDK7@/build/linux-amd64/gensrc/com/sun/swing/internal/plaf/metal/resources/metal_zh_HK.java
@@ -289,6 +291,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/build/linux-amd64/gensrc/com/sun/swing/internal/plaf/synth/resources/synth_it.java
 @OPENJDK7@/build/linux-amd64/gensrc/com/sun/swing/internal/plaf/synth/resources/synth_ja.java
 @OPENJDK7@/build/linux-amd64/gensrc/com/sun/swing/internal/plaf/synth/resources/synth_ko.java
+@OPENJDK7@/build/linux-amd64/gensrc/com/sun/swing/internal/plaf/synth/resources/synth_pt_BR.java
 @OPENJDK7@/build/linux-amd64/gensrc/com/sun/swing/internal/plaf/synth/resources/synth_sv.java
 @OPENJDK7@/build/linux-amd64/gensrc/com/sun/swing/internal/plaf/synth/resources/synth_zh_CN.java
 @OPENJDK7@/build/linux-amd64/gensrc/com/sun/swing/internal/plaf/synth/resources/synth_zh_HK.java
@@ -502,6 +505,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/awt/resources/awt_it.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/awt/resources/awt_ja.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/awt/resources/awt_ko.java
+@OPENJDK7@/build/linux-amd64/gensrc/sun/awt/resources/awt_pt_BR.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/awt/resources/awt_sv.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/awt/resources/awt_zh_CN.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/awt/resources/awt_zh_HK.java
@@ -648,6 +652,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/print/resources/serviceui_it.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/print/resources/serviceui_ja.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/print/resources/serviceui_ko.java
+@OPENJDK7@/build/linux-amd64/gensrc/sun/print/resources/serviceui_pt_BR.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/print/resources/serviceui_sv.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/print/resources/serviceui_zh_CN.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/print/resources/serviceui_zh_HK.java
@@ -2451,7 +2456,9 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/runtime/ErrorMessages_it.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/runtime/ErrorMessages_ja.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/runtime/ErrorMessages_ko.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/runtime/ErrorMessages_pt_BR.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/runtime/ErrorMessages_sk.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/runtime/ErrorMessages_sv.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/runtime/ErrorMessages_zh_CN.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/runtime/ErrorMessages_zh_TW.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/runtime/Hashtable.java
@@ -5406,6 +5413,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/xml/internal/ws/api/SOAPVersion.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/xml/internal/ws/api/streaming/XMLStreamReaderFactory.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/xml/internal/ws/api/streaming/XMLStreamWriterFactory.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/xml/internal/ws/api/WebServiceFeatureFactory.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/xml/internal/ws/api/WSBinding.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/xml/internal/ws/api/wsdl/parser/MetaDataResolver.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/xml/internal/ws/api/wsdl/parser/MetadataResolverFactory.java
@@ -9757,6 +9765,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/java/util/concurrent/FutureTask.java
 @OPENJDK7@/jdk/src/share/classes/java/util/concurrent/LinkedBlockingDeque.java
 @OPENJDK7@/jdk/src/share/classes/java/util/concurrent/LinkedBlockingQueue.java
+@OPENJDK7@/jdk/src/share/classes/java/util/concurrent/LinkedTransferQueue.java
 @OPENJDK7@/jdk/src/share/classes/java/util/concurrent/locks/AbstractOwnableSynchronizer.java
 @OPENJDK7@/jdk/src/share/classes/java/util/concurrent/locks/AbstractQueuedLongSynchronizer.java
 @OPENJDK7@/jdk/src/share/classes/java/util/concurrent/locks/Condition.java
