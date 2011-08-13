@@ -857,6 +857,8 @@ assembly.class
     icedtea/rt/com/sun/jmx/snmp/daemon/*.class
     java/lang/management/*.class
     sun/management/*.class
+    @OPENJDK7@/build/linux-amd64/classes/javax/management/remote/rmi/*.class
+    @OPENJDK7@/build/linux-amd64/classes/org/omg/stub/javax/management/remote/rmi/*.class
     @OPENJDK7@/build/linux-amd64/gensrc/sun/management/resources/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/jmx/defaults/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/jmx/interceptor/*.class
@@ -889,6 +891,10 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/sun/management/counter/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/management/counter/perf/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/management/jmxremote/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/management/snmp/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/management/snmp/jvminstr/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/management/snmp/jvmmib/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/management/snmp/util/*.class
     @OPENJDK7@/jdk/src/windows/classes/com/sun/management/*.class
 }
 {
@@ -1032,6 +1038,7 @@ assembly.class
     -out:IKVM.OpenJDK.Remoting.dll
     -baseaddress:0x5BC10000
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/sun/rmi/*
+    @OPENJDK7@/build/linux-amd64/classes/com/sun/jndi/rmi/registry/*.class
     @OPENJDK7@/jdk/src/share/classes/java/rmi/*.class
     @OPENJDK7@/jdk/src/share/classes/java/rmi/activation/*.class
     @OPENJDK7@/jdk/src/share/classes/java/rmi/dgc/*.class
