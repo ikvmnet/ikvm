@@ -798,6 +798,7 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/security/sasl/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/security/sasl/digest/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/security/sasl/gsskerb/*.class
+    @OPENJDK7@/jdk/src/share/classes/com/sun/security/sasl/ntlm/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/security/sasl/util/*.class
     @OPENJDK7@/jdk/src/share/classes/java/security/acl/*.class
     @OPENJDK7@/jdk/src/share/classes/java/security/interfaces/*.class
@@ -920,6 +921,7 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/pept/presentation/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/pept/protocol/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/pept/transport/*.class
+    @OPENJDK7@/jdk/src/share/classes/com/sun/servicetag/*.class
     @OPENJDK7@/jdk/src/share/classes/java/lang/instrument/*.class
     @OPENJDK7@/jdk/src/share/classes/javax/script/*.class
     @OPENJDK7@/jdk/src/share/classes/javax/smartcardio/*.class
