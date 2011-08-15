@@ -1738,6 +1738,28 @@ sealed class MethodAnalyzer
 								}
 								break;
 							}
+							case NormalizedByteCode.__invokedynamic:
+							{
+								ClassFile.ConstantPoolItemInvokeDynamic cpi = GetInvokeDynamic(instr.Arg1);
+								s.MultiPopAnyType(cpi.GetArgTypes().Length);
+								TypeWrapper retType = cpi.GetRetType();
+								if (retType != PrimitiveTypeWrapper.VOID)
+								{
+									if (retType == PrimitiveTypeWrapper.DOUBLE)
+									{
+										s.PushExtendedDouble();
+									}
+									else if (retType == PrimitiveTypeWrapper.FLOAT)
+									{
+										s.PushExtendedFloat();
+									}
+									else
+									{
+										s.PushType(retType);
+									}
+								}
+								break;
+							}
 							case NormalizedByteCode.__goto:
 								break;
 							case NormalizedByteCode.__istore:
@@ -2330,6 +2352,9 @@ sealed class MethodAnalyzer
 						case NormalizedByteCode.__invokevirtual:
 							VerifyInvokePassTwo(i);
 							break;
+						case NormalizedByteCode.__invokedynamic:
+							VerifyInvokeDynamic(i);
+							break;
 					}
 					// verify backward branches
 					switch (ByteCodeMetaData.GetFlowControl(instructions[i].NormalizedOpCode))
@@ -2478,6 +2503,17 @@ sealed class MethodAnalyzer
 					}
 				}
 			}
+		}
+	}
+
+	private void VerifyInvokeDynamic(int index)
+	{
+		StackState stack = new StackState(state[index]);
+		ClassFile.ConstantPoolItemInvokeDynamic cpi = GetInvokeDynamic(method.Instructions[index].Arg1);
+		TypeWrapper[] args = cpi.GetArgTypes();
+		for (int j = args.Length - 1; j >= 0; j--)
+		{
+			stack.PopType(args[j]);
 		}
 	}
 
@@ -3826,6 +3862,25 @@ sealed class MethodAnalyzer
 			}
 		}
 		return null;
+	}
+
+	private ClassFile.ConstantPoolItemInvokeDynamic GetInvokeDynamic(int index)
+	{
+		try
+		{
+			ClassFile.ConstantPoolItemInvokeDynamic item = classFile.GetInvokeDynamic(index);
+			if(item != null)
+			{
+				return item;
+			}
+		}
+		catch(InvalidCastException)
+		{
+		}
+		catch(IndexOutOfRangeException)
+		{
+		}
+		throw new VerifyError("Illegal constant pool index");
 	}
 
 	private ClassFile.ConstantPoolItemMI GetMethodref(int index)

@@ -76,6 +76,7 @@ namespace IKVM.Internal
 		private object[] annotations;
 		private string signature;
 		private string[] enclosingMethod;
+		private BootstrapMethod[] bootstrapMethods;
 
 		private static class SupportedVersions
 		{
@@ -221,6 +222,11 @@ namespace IKVM.Internal
 							if (majorVersion < 51)
 								goto default;
 							constantpool[i] = new ConstantPoolItemMethodType(br);
+							break;
+						case Constant.InvokeDynamic:
+							if (majorVersion < 51)
+								goto default;
+							constantpool[i] = new ConstantPoolItemInvokeDynamic(br);
 							break;
 						case Constant.String:
 							constantpool[i] = new ConstantPoolItemString(br);
@@ -470,6 +476,13 @@ namespace IKVM.Internal
 							}
 							break;
 #endif
+						case "BootstrapMethods":
+							if(majorVersion < 51)
+							{
+								goto default;
+							}
+							bootstrapMethods = ReadBootstrapMethods(br, this);
+							break;
 						case "IKVM.NET.Assembly":
 							if(br.ReadUInt32() != 2)
 							{
@@ -480,6 +493,19 @@ namespace IKVM.Internal
 						default:
 							br.Skip(br.ReadUInt32());
 							break;
+					}
+				}
+				// validate the invokedynamic entries to point into the bootstrapMethods array
+				for(int i = 1; i < constantpoolcount; i++)
+				{
+					ConstantPoolItemInvokeDynamic cpi;
+					if(constantpool[i] != null
+						&& (cpi = constantpool[i] as ConstantPoolItemInvokeDynamic) != null)
+					{
+						if(bootstrapMethods == null || cpi.BootstrapMethod >= bootstrapMethods.Length)
+						{
+							throw new ClassFormatError("Short length on BootstrapMethods in class file");
+						}
 					}
 				}
 				// now that we've constructed the high level objects, the utf8 table isn't needed anymore
@@ -507,6 +533,52 @@ namespace IKVM.Internal
 			//			fs.Close();
 			//			throw;
 			//		}
+		}
+
+		private static BootstrapMethod[] ReadBootstrapMethods(BigEndianBinaryReader br, ClassFile classFile)
+		{
+			BigEndianBinaryReader rdr = br.Section(br.ReadUInt32());
+			ushort count = rdr.ReadUInt16();
+			BootstrapMethod[] bsm = new BootstrapMethod[count];
+			for(int i = 0; i < bsm.Length; i++)
+			{
+				ushort bsm_index = rdr.ReadUInt16();
+				if(bsm_index >= classFile.constantpool.Length || !(classFile.constantpool[bsm_index] is ConstantPoolItemMethodHandle))
+				{
+					throw new ClassFormatError("bootstrap_method_index {0} has bad constant type in class file {1}", bsm_index, classFile.Name);
+				}
+				ushort argument_count = rdr.ReadUInt16();
+				ushort[] args = new ushort[argument_count];
+				for(int j = 0; j < args.Length; j++)
+				{
+					ushort argument_index = rdr.ReadUInt16();
+					if(!classFile.IsValidConstant(argument_index))
+					{
+						throw new ClassFormatError("argument_index {0} has bad constant type in class file {1}", argument_index, classFile.Name);
+					}
+					args[j] = argument_index;
+				}
+				bsm[i] = new BootstrapMethod(bsm_index, args);
+			}
+			if(!rdr.IsAtEnd)
+			{
+				throw new ClassFormatError("Bad length on BootstrapMethods in class file {0}", classFile.Name);
+			}
+			return bsm;
+		}
+
+		private bool IsValidConstant(ushort index)
+		{
+			if(index < constantpool.Length && constantpool[index] != null)
+			{
+				try
+				{
+					constantpool[index].GetConstantType();
+					return true;
+				}
+				catch (InvalidOperationException) { }
+			}
+			return false;
 		}
 
 		private static object[] ReadAnnotations(BigEndianBinaryReader br, ClassFile classFile)
@@ -911,6 +983,11 @@ namespace IKVM.Internal
 			return null;
 		}
 
+		internal ConstantPoolItemInvokeDynamic GetInvokeDynamic(int index)
+		{
+			return (ConstantPoolItemInvokeDynamic)constantpool[index];
+		}
+
 		private ConstantPoolItem GetConstantPoolItem(int index)
 		{
 			return constantpool[index];
@@ -1120,6 +1197,38 @@ namespace IKVM.Internal
 					}
 				}
 				return false;
+			}
+		}
+
+		internal BootstrapMethod GetBootstrapMethod(int index)
+		{
+			return bootstrapMethods[index];
+		}
+
+		internal struct BootstrapMethod
+		{
+			private ushort bsm_index;
+			private ushort[] args;
+
+			internal BootstrapMethod(ushort bsm_index, ushort[] args)
+			{
+				this.bsm_index = bsm_index;
+				this.args = args;
+			}
+
+			internal int BootstrapMethodIndex
+			{
+				get { return bsm_index; }
+			}
+
+			internal int ArgumentCount
+			{
+				get { return args.Length; }
+			}
+
+			internal int GetArgument(int index)
+			{
+				return args[index];
 			}
 		}
 
@@ -1840,6 +1949,76 @@ namespace IKVM.Internal
 			internal override ConstantType GetConstantType()
 			{
 				return ConstantType.MethodType;
+			}
+		}
+
+		internal sealed class ConstantPoolItemInvokeDynamic : ConstantPoolItem
+		{
+			private ushort bootstrap_specifier_index;
+			private ushort name_and_type_index;
+			private string name;
+			private string descriptor;
+			private TypeWrapper[] argTypeWrappers;
+			private TypeWrapper retTypeWrapper;
+
+			internal ConstantPoolItemInvokeDynamic(BigEndianBinaryReader br)
+			{
+				bootstrap_specifier_index = br.ReadUInt16();
+				name_and_type_index = br.ReadUInt16();
+			}
+
+			internal override void Resolve(ClassFile classFile)
+			{
+				ConstantPoolItemNameAndType name_and_type = (ConstantPoolItemNameAndType)classFile.GetConstantPoolItem(name_and_type_index);
+				// if the constant pool items referred to were strings, GetConstantPoolItem returns null
+				if (name_and_type == null)
+				{
+					throw new ClassFormatError("Bad index in constant pool");
+				}
+				name = String.Intern(classFile.GetConstantPoolUtf8String(name_and_type.name_index));
+				descriptor = String.Intern(classFile.GetConstantPoolUtf8String(name_and_type.descriptor_index).Replace('/', '.'));
+			}
+
+			internal override void Link(TypeWrapper thisType)
+			{
+				lock (this)
+				{
+					if (argTypeWrappers != null)
+					{
+						return;
+					}
+				}
+				ClassLoaderWrapper classLoader = thisType.GetClassLoader();
+				TypeWrapper[] args = classLoader.ArgTypeWrapperListFromSigNoThrow(descriptor);
+				TypeWrapper ret = classLoader.RetTypeWrapperFromSigNoThrow(descriptor);
+				lock (this)
+				{
+					if (argTypeWrappers == null)
+					{
+						argTypeWrappers = args;
+						retTypeWrapper = ret;
+					}
+				}
+			}
+
+			internal TypeWrapper[] GetArgTypes()
+			{
+				return argTypeWrappers;
+			}
+
+			internal TypeWrapper GetRetType()
+			{
+				return retTypeWrapper;
+			}
+
+			internal string Name
+			{
+				get { return name; }
+			}
+
+			internal ushort BootstrapMethod
+			{
+				get { return bootstrap_specifier_index; }
 			}
 		}
 

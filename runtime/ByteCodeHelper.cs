@@ -901,6 +901,79 @@ namespace IKVM.Runtime
 			return new ConstantMethodHandle(del);
 #endif
 		}
+
+		[HideFromJava]
+		public static void LinkIndyCallSite<T>(ref IndyCallSite<T> site, java.lang.invoke.CallSite cs, Exception x)
+			where T : class // Delegate
+		{
+#if !FIRST_PASS
+			IndyCallSite<T> ics;
+			if (x != null || cs == null || (ics = cs.ics as IndyCallSite<T>) == null)
+			{
+				x = MapException<Exception>(x ?? (cs == null
+					? (Exception)new java.lang.ClassCastException("bootstrap method failed to produce a CallSite")
+					: new java.lang.invoke.WrongMethodTypeException()), MapFlags.None);
+				ics = new IndyCallSite<T>((T)java.lang.invoke.MethodHandles
+					.dropArguments(new ConstantMethodHandle((MHV<Exception>)ThrowBootstrapException)
+						.bindTo(x), 0, LoadMethodType<T>().parameterArray())
+					.vmtarget, false);
+			}
+			IndyCallSite<T> curr = site;
+			if (curr.IsBootstrap)
+			{
+				Interlocked.CompareExchange(ref site, ics, curr);
+			}
+#endif
+		}
+
+#if !FIRST_PASS
+		[HideFromJava]
+		private static void ThrowBootstrapException(Exception x)
+		{
+			if (x is java.lang.BootstrapMethodError)
+			{
+				throw x;
+			}
+			throw new java.lang.BootstrapMethodError("call site initialization exception", x);
+		}
+#endif
+	}
+
+	public sealed class IndyCallSite<T>
+#if !FIRST_PASS
+		: java.lang.invoke.CallSite.IndyCallSite
+#endif
+		where T : class // Delegate
+	{
+		internal readonly bool IsBootstrap;
+		private volatile T target;
+
+		internal IndyCallSite()
+		{
+		}
+
+		internal IndyCallSite(T target, bool bootstrap)
+		{
+			this.IsBootstrap = bootstrap;
+			this.target = target;
+		}
+
+#if !FIRST_PASS
+		void java.lang.invoke.CallSite.IndyCallSite.setTarget(object target)
+		{
+			this.target = (T)target;
+		}
+#endif
+
+		public static IndyCallSite<T> CreateBootstrap(T bootstrap)
+		{
+			return new IndyCallSite<T>(bootstrap, true);
+		}
+
+		public T GetTarget()
+		{
+			return target;
+		}
 	}
 
 	public struct InvokeCache<T>

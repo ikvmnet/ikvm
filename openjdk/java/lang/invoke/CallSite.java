@@ -23,6 +23,11 @@
  * questions.
  */
 
+/*
+ * Extensively modified for IKVM.NET by Jeroen Frijters
+ * Copyright (C) 2011 Jeroen Frijters
+ */
+
 package java.lang.invoke;
 
 import sun.invoke.empty.Empty;
@@ -85,15 +90,15 @@ private static CallSite bootstrapDynamic(MethodHandles.Lookup caller, String nam
  */
 abstract
 public class CallSite {
-    static { MethodHandleImpl.initStatics(); }
 
-    // Fields used only by the JVM.  Do not use or change.
-    private MemberName vmmethod; // supplied by the JVM (ref. to calling method)
-    private int        vmindex;  // supplied by the JVM (BCI within calling method)
+    interface IndyCallSite {
+        void setTarget(Object target);
+    }
 
     // The actual payload of this call site:
     /*package-private*/
-    MethodHandle target;
+    volatile MethodHandle target;
+    final IndyCallSite ics;
 
     /**
      * Make a blank call site object with the given method type.
@@ -107,7 +112,7 @@ public class CallSite {
      */
     /*package-private*/
     CallSite(MethodType type) {
-        target = type.invokers().uninitializedCallSite();
+        this(type.invokers().uninitializedCallSite());
     }
 
     /**
@@ -117,8 +122,28 @@ public class CallSite {
      */
     /*package-private*/
     CallSite(MethodHandle target) {
-        target.type();  // null check
+        target.getClass();  // null check
+        ics = createIndyCallSite(target.vmtarget);
+        setTargetNormal(target);
+    }
+
+    private static native IndyCallSite createIndyCallSite(Object target);
+
+    final void setTargetNormal(MethodHandle target) {
         this.target = target;
+        ics.setTarget(target.vmtarget);
+    }
+
+    final void setTargetVolatile(MethodHandle target) {
+        synchronized(ics) {
+            setTargetNormal(target);
+        }
+    }
+
+    final MethodHandle getTargetVolatile() {
+        synchronized(ics) {
+            return target;
+        }
     }
 
     /**
@@ -137,7 +162,7 @@ public class CallSite {
         ConstantCallSite selfCCS = (ConstantCallSite) this;
         MethodHandle boundTarget = (MethodHandle) createTargetHook.invokeWithArguments(selfCCS);
         checkTargetChange(this.target, boundTarget);
-        this.target = boundTarget;
+        setTargetNormal(boundTarget);
     }
 
     /**
@@ -150,24 +175,6 @@ public class CallSite {
     public MethodType type() {
         // warning:  do not call getTarget here, because CCS.getTarget can throw IllegalStateException
         return target.type();
-    }
-
-    /** Called from JVM (or low-level Java code) after the BSM returns the newly created CallSite.
-     *  The parameters are JVM-specific.
-     */
-    void initializeFromJVM(String name,
-                           MethodType type,
-                           MemberName callerMethod,
-                           int        callerBCI) {
-        if (this.vmmethod != null) {
-            // FIXME
-            throw new BootstrapMethodError("call site has already been linked to an invokedynamic instruction");
-        }
-        if (!this.type().equals(type)) {
-            throw wrongTargetType(target, type);
-        }
-        this.vmindex  = callerBCI;
-        this.vmmethod = callerMethod;
     }
 
     /**
@@ -253,91 +260,5 @@ public class CallSite {
     /*package-private*/
     static Empty uninitializedCallSite() {
         throw new IllegalStateException("uninitialized call site");
-    }
-
-    // unsafe stuff:
-    private static final Unsafe unsafe = Unsafe.getUnsafe();
-    private static final long TARGET_OFFSET;
-
-    static {
-        try {
-            TARGET_OFFSET = unsafe.objectFieldOffset(CallSite.class.getDeclaredField("target"));
-        } catch (Exception ex) { throw new Error(ex); }
-    }
-
-    /*package-private*/
-    void setTargetNormal(MethodHandle newTarget) {
-        target = newTarget;
-    }
-    /*package-private*/
-    MethodHandle getTargetVolatile() {
-        return (MethodHandle) unsafe.getObjectVolatile(this, TARGET_OFFSET);
-    }
-    /*package-private*/
-    void setTargetVolatile(MethodHandle newTarget) {
-        unsafe.putObjectVolatile(this, TARGET_OFFSET, newTarget);
-    }
-
-    // this implements the upcall from the JVM, MethodHandleNatives.makeDynamicCallSite:
-    static CallSite makeSite(MethodHandle bootstrapMethod,
-                             // Callee information:
-                             String name, MethodType type,
-                             // Extra arguments for BSM, if any:
-                             Object info,
-                             // Caller information:
-                             MemberName callerMethod, int callerBCI) {
-        Class<?> callerClass = callerMethod.getDeclaringClass();
-        Object caller = IMPL_LOOKUP.in(callerClass);
-        CallSite site;
-        try {
-            Object binding;
-            info = maybeReBox(info);
-            if (info == null) {
-                binding = bootstrapMethod.invoke(caller, name, type);
-            } else if (!info.getClass().isArray()) {
-                binding = bootstrapMethod.invoke(caller, name, type, info);
-            } else {
-                Object[] argv = (Object[]) info;
-                maybeReBoxElements(argv);
-                if (3 + argv.length > 255)
-                    throw new BootstrapMethodError("too many bootstrap method arguments");
-                MethodType bsmType = bootstrapMethod.type();
-                if (bsmType.parameterCount() == 4 && bsmType.parameterType(3) == Object[].class)
-                    binding = bootstrapMethod.invoke(caller, name, type, argv);
-                else
-                    binding = MethodHandles.spreadInvoker(bsmType, 3)
-                        .invoke(bootstrapMethod, caller, name, type, argv);
-            }
-            //System.out.println("BSM for "+name+type+" => "+binding);
-            if (binding instanceof CallSite) {
-                site = (CallSite) binding;
-            }  else {
-                throw new ClassCastException("bootstrap method failed to produce a CallSite");
-            }
-            if (!site.getTarget().type().equals(type))
-                throw new WrongMethodTypeException("wrong type: "+site.getTarget());
-        } catch (Throwable ex) {
-            BootstrapMethodError bex;
-            if (ex instanceof BootstrapMethodError)
-                bex = (BootstrapMethodError) ex;
-            else
-                bex = new BootstrapMethodError("call site initialization exception", ex);
-            throw bex;
-        }
-        return site;
-    }
-
-    private static Object maybeReBox(Object x) {
-        if (x instanceof Integer) {
-            int xi = (int) x;
-            if (xi == (byte) xi)
-                x = xi;  // must rebox; see JLS 5.1.7
-        }
-        return x;
-    }
-    private static void maybeReBoxElements(Object[] xa) {
-        for (int i = 0; i < xa.length; i++) {
-            xa[i] = maybeReBox(xa[i]);
-        }
     }
 }

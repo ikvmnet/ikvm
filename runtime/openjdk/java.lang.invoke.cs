@@ -72,6 +72,14 @@ static class Java_java_lang_invoke_BoundMethodHandle
 	}
 }
 
+static class Java_java_lang_invoke_CallSite
+{
+	public static object createIndyCallSite(object target)
+	{
+		return Activator.CreateInstance(typeof(IKVM.Runtime.IndyCallSite<>).MakeGenericType(target.GetType()), true);
+	}
+}
+
 static class Java_java_lang_invoke_DirectMethodHandle
 {
 	// TODO what is lookupClass for?

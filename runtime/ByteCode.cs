@@ -211,7 +211,7 @@ enum ByteCode : byte
 	__invokespecial = 183,
 	__invokestatic = 184,
 	__invokeinterface = 185,
-	__xxxunusedxxx = 186,
+	__invokedynamic = 186,
 	__new = 187,
 	__newarray = 188,
 	__anewarray = 189,
@@ -366,6 +366,7 @@ enum NormalizedByteCode : byte
 	__invokespecial = 183,
 	__invokestatic = 184,
 	__invokeinterface = 185,
+	__invokedynamic = 186,
 	__new = 187,
 	__newarray = 188,
 	__anewarray = 189,
@@ -791,7 +792,7 @@ struct ByteCodeMetaData
 		new ByteCodeMetaData(ByteCode.__invokespecial, ByteCodeMode.Constant_2, ByteCodeModeWide.Unused, false);
 		new ByteCodeMetaData(ByteCode.__invokestatic, ByteCodeMode.Constant_2, ByteCodeModeWide.Unused, false);
 		new ByteCodeMetaData(ByteCode.__invokeinterface, ByteCodeMode.Constant_2_1_1, ByteCodeModeWide.Unused, false);
-		new ByteCodeMetaData(ByteCode.__xxxunusedxxx, NormalizedByteCode.__nop, ByteCodeMode.Unused, ByteCodeModeWide.Unused, true);
+		new ByteCodeMetaData(ByteCode.__invokedynamic, ByteCodeMode.Constant_2_1_1, ByteCodeModeWide.Unused, false);
 		new ByteCodeMetaData(ByteCode.__new, ByteCodeMode.Constant_2, ByteCodeModeWide.Unused, false);
 		new ByteCodeMetaData(ByteCode.__newarray, ByteCodeMode.Immediate_1, ByteCodeModeWide.Unused, false);
 		new ByteCodeMetaData(ByteCode.__anewarray, ByteCodeMode.Constant_2, ByteCodeModeWide.Unused, false);

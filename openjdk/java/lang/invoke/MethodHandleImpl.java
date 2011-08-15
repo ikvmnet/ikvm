@@ -372,9 +372,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     static
     MethodHandle bindReceiver(MethodHandle target, Object receiver) {
         if (receiver == null)  return null;
-        if (target instanceof DirectMethodHandle)
-            return new BoundMethodHandle((DirectMethodHandle)target, receiver, 0);
-        return null;   // let caller try something else
+        return new BoundMethodHandle(target, receiver, 0);
     }
 
     /** Bind a predetermined argument to the given arbitrary method handle.
