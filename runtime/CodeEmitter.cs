@@ -250,6 +250,11 @@ namespace IKVM.Internal
 				get { return (FieldInfo)data; }
 			}
 
+			internal MethodBase MethodBase
+			{
+				get { return (MethodBase)data; }
+			}
+
 			internal int Size
 			{
 				get
@@ -1807,7 +1812,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		private void DumpMethod()
+		internal void DumpMethod()
 		{
 			Dictionary<CodeEmitterLabel, int> labelIndexes = new Dictionary<CodeEmitterLabel, int>();
 			for (int i = 0; i < code.Count; i++)
@@ -1826,6 +1831,18 @@ namespace IKVM.Internal
 					if (code[i].HasLabel)
 					{
 						Console.Write(" label" + labelIndexes[code[i].Label]);
+					}
+					else if (code[i].opcode == OpCodes.Ldarg)
+					{
+						Console.Write(" " + code[i].ValueInt16);
+					}
+					else if (code[i].opcode == OpCodes.Isinst)
+					{
+						Console.Write(" " + code[i].Type);
+					}
+					else if (code[i].opcode == OpCodes.Call || code[i].opcode == OpCodes.Callvirt)
+					{
+						Console.Write(" " + code[i].MethodBase);
 					}
 					Console.WriteLine();
 				}
