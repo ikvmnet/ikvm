@@ -530,8 +530,12 @@ static partial class MethodHandleUtil
 		}
 	}
 
+#if DEBUG
+	[System.Security.SecuritySafeCritical]
+#endif
 	private static Delegate ValidateDelegate(Delegate d)
 	{
+#if DEBUG
 		try
 		{
 			System.Runtime.CompilerServices.RuntimeHelpers.PrepareDelegate(d);
@@ -540,6 +544,7 @@ static partial class MethodHandleUtil
 		{
 			JVM.CriticalFailure("Delegate failed to JIT", x);
 		}
+#endif
 		return d;
 	}
 

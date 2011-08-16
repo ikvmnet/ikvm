@@ -25,6 +25,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using System.Security;
 
 static class Java_sun_security_krb5_Config
 {
@@ -108,6 +109,7 @@ static class Java_sun_security_krb5_Credentials
 	{
         const int STATUS_SUCCESS = 0;
 
+        [SecurityCritical]
         sealed class LsaSafeHandle : Microsoft.Win32.SafeHandles.SafeHandleZeroOrMinusOneIsInvalid
         {
             internal LsaSafeHandle()
@@ -115,6 +117,7 @@ static class Java_sun_security_krb5_Credentials
             {
             }
 
+            [SecurityCritical]
             override protected bool ReleaseHandle()
             {
                 return LsaDeregisterLogonProcess(handle) == STATUS_SUCCESS;
@@ -228,6 +231,7 @@ static class Java_sun_security_krb5_Credentials
             }
         }
 
+		[SecuritySafeCritical]
 		internal static Ticket GetTicket()
 		{
             LsaSafeHandle lsaHandle = null;
@@ -306,6 +310,7 @@ static class Java_sun_security_krb5_Credentials
             }
 		}
 
+        [SecurityCritical]
         private static string[] ReadExternalName(IntPtr ptr)
         {
             int nameCount = (ushort)Marshal.ReadInt16(ptr, 2);
@@ -318,6 +323,7 @@ static class Java_sun_security_krb5_Credentials
             return names;
         }
 
+        [SecurityCritical]
         private static string ReadUnicodeString(ref IntPtr ptr)
         {
             UNICODE_STRING str = (UNICODE_STRING)Marshal.PtrToStructure(ptr, typeof(UNICODE_STRING));
@@ -325,6 +331,7 @@ static class Java_sun_security_krb5_Credentials
             return Marshal.PtrToStringUni(str.Buffer, str.Length / 2);
         }
 
+        [SecurityCritical]
         private static byte[] ReadBytes(IntPtr ptr, int length)
         {
             byte[] buf = new byte[length];
