@@ -1577,7 +1577,16 @@ namespace IKVM.Internal
 				// so it needs to be protected by a lock.
 				lock (this)
 				{
-					return FinishCore();
+					FinishedTypeImpl impl;
+					try
+					{
+						// call FinishCore in the finally to avoid Thread.Abort interrupting the thread
+					}
+					finally
+					{
+						impl = FinishCore();
+					}
+					return impl;
 				}
 			}
 

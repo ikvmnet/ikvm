@@ -149,6 +149,7 @@ namespace IKVM.Internal
 			return remappedTypes.ContainsKey(type);
 		}
 
+#if STATIC_COMPILER || STUB_GENERATOR
 		internal void SetRemappedType(Type type, TypeWrapper tw)
 		{
 			lock(types)
@@ -161,6 +162,7 @@ namespace IKVM.Internal
 			}
 			remappedTypes.Add(type, tw.Name);
 		}
+#endif
 
 		// return the TypeWrapper if it is already loaded, this exists for DynamicTypeWrapper.SetupGhosts
 		// and ClassLoader.findLoadedClass()
@@ -180,6 +182,19 @@ namespace IKVM.Internal
 			Debug.Assert(!tw.IsUnloadable);
 			Debug.Assert(!tw.IsPrimitive);
 
+			try
+			{
+				// critical code in the finally block to avoid Thread.Abort interrupting the thread
+			}
+			finally
+			{
+				tw = RegisterInitiatingLoaderCritical(tw);
+			}
+			return tw;
+		}
+
+		private TypeWrapper RegisterInitiatingLoaderCritical(TypeWrapper tw)
+		{
 			lock(types)
 			{
 				TypeWrapper existing;
@@ -317,6 +332,20 @@ namespace IKVM.Internal
 				return RegisterInitiatingLoader(tw);
 			}
 			CheckDefineClassAllowed(f.Name);
+			TypeWrapper def;
+			try
+			{
+				// critical code in the finally block to avoid Thread.Abort interrupting the thread
+			}
+			finally
+			{
+				def = DefineClassCritical(f, protectionDomain);
+			}
+			return def;
+		}
+
+		private TypeWrapper DefineClassCritical(ClassFile f, object protectionDomain)
+		{
 			lock(types)
 			{
 				if(types.ContainsKey(f.Name))
@@ -353,20 +382,27 @@ namespace IKVM.Internal
 			{
 				lock(this)
 				{
-					if(factory == null)
+					try
 					{
-#if CLASSGC
-						if(dynamicAssemblies == null)
+						// critical code in the finally block to avoid Thread.Abort interrupting the thread
+					}
+					finally
+					{
+						if(factory == null)
 						{
-							Interlocked.CompareExchange(ref dynamicAssemblies, new ConditionalWeakTable<Assembly, ClassLoaderWrapper>(), null);
-						}
-						typeToTypeWrapper = new Dictionary<Type, TypeWrapper>();
-						DynamicClassLoader instance = DynamicClassLoader.Get(this);
-						dynamicAssemblies.Add(instance.ModuleBuilder.Assembly.ManifestModule.Assembly, this);
-						this.factory = instance;
+#if CLASSGC
+							if(dynamicAssemblies == null)
+							{
+								Interlocked.CompareExchange(ref dynamicAssemblies, new ConditionalWeakTable<Assembly, ClassLoaderWrapper>(), null);
+							}
+							typeToTypeWrapper = new Dictionary<Type, TypeWrapper>();
+							DynamicClassLoader instance = DynamicClassLoader.Get(this);
+							dynamicAssemblies.Add(instance.ModuleBuilder.Assembly.ManifestModule.Assembly, this);
+							this.factory = instance;
 #else
-						factory = DynamicClassLoader.Get(this);
+							factory = DynamicClassLoader.Get(this);
 #endif
+						}
 					}
 				}
 			}
@@ -987,7 +1023,14 @@ namespace IKVM.Internal
 #endif
 			lock(globalTypeToTypeWrapper)
 			{
-				globalTypeToTypeWrapper[type] = wrapper;
+				try
+				{
+					// critical code in the finally block to avoid Thread.Abort interrupting the thread
+				}
+				finally
+				{
+					globalTypeToTypeWrapper[type] = wrapper;
+				}
 			}
 			return wrapper;
 		}
@@ -1148,7 +1191,14 @@ namespace IKVM.Internal
 #endif
 			lock (dict)
 			{
-				dict.Add(type, wrapper);
+				try
+				{
+					// critical code in the finally block to avoid Thread.Abort interrupting the thread
+				}
+				finally
+				{
+					dict.Add(type, wrapper);
+				}
 			}
 		}
 
@@ -1169,11 +1219,18 @@ namespace IKVM.Internal
 		{
 			lock(this)
 			{
-				if(nativeLibraries == null)
+				try
 				{
-					nativeLibraries = new List<IntPtr>();
+					// critical code in the finally block to avoid Thread.Abort interrupting the thread
 				}
-				nativeLibraries.Add(p);
+				finally
+				{
+					if(nativeLibraries == null)
+					{
+						nativeLibraries = new List<IntPtr>();
+					}
+					nativeLibraries.Add(p);
+				}
 			}
 		}
 
@@ -1181,7 +1238,14 @@ namespace IKVM.Internal
 		{
 			lock(this)
 			{
-				nativeLibraries.Remove(p);
+				try
+				{
+					// critical code in the finally block to avoid Thread.Abort interrupting the thread
+				}
+				finally
+				{
+					nativeLibraries.Remove(p);
+				}
 			}
 		}
 
@@ -1255,6 +1319,10 @@ namespace IKVM.Internal
 				// HACK keep the compiler from warning about unused local
 				GC.KeepAlive(x);
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+				if(x.ToJava() is java.lang.ThreadDeath)
+				{
+					throw x.ToJava();
+				}
 				if(Tracer.ClassLoading.TraceError)
 				{
 					java.lang.ClassLoader cl = (java.lang.ClassLoader)classLoader.GetJavaClassLoader();

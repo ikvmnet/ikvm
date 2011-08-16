@@ -643,25 +643,32 @@ namespace IKVM.Internal
 			TypeWrapper[] parameters = loader.ArgTypeWrapperListFromSigNoThrow(Signature);
 			lock(this)
 			{
-				if(parameterTypeWrappers == null)
+				try
 				{
-					Debug.Assert(returnTypeWrapper == null || returnTypeWrapper == PrimitiveTypeWrapper.VOID);
-					returnTypeWrapper = ret;
-					parameterTypeWrappers = parameters;
-					UpdateNonPublicTypeInSignatureFlag();
-					if(method == null)
+					// critical code in the finally block to avoid Thread.Abort interrupting the thread
+				}
+				finally
+				{
+					if(parameterTypeWrappers == null)
 					{
-						try
+						Debug.Assert(returnTypeWrapper == null || returnTypeWrapper == PrimitiveTypeWrapper.VOID);
+						returnTypeWrapper = ret;
+						parameterTypeWrappers = parameters;
+						UpdateNonPublicTypeInSignatureFlag();
+						if(method == null)
 						{
-							DoLinkMethod();
-						}
-						catch
-						{
-							// HACK if linking fails, we unlink to make sure
-							// that the next link attempt will fail again
-							returnTypeWrapper = null;
-							parameterTypeWrappers = null;
-							throw;
+							try
+							{
+								DoLinkMethod();
+							}
+							catch
+							{
+								// HACK if linking fails, we unlink to make sure
+								// that the next link attempt will fail again
+								returnTypeWrapper = null;
+								parameterTypeWrappers = null;
+								throw;
+							}
 						}
 					}
 				}
@@ -1353,20 +1360,27 @@ namespace IKVM.Internal
 			TypeWrapper fld = this.DeclaringType.GetClassLoader().FieldTypeWrapperFromSigNoThrow(Signature);
 			lock(this)
 			{
-				if(fieldType == null)
+				try
 				{
-					fieldType = fld;
-					UpdateNonPublicTypeInSignatureFlag();
-					try
+					// critical code in the finally block to avoid Thread.Abort interrupting the thread
+				}
+				finally
+				{
+					if(fieldType == null)
 					{
-						field = this.DeclaringType.LinkField(this);
-					}
-					catch
-					{
-						// HACK if linking fails, we unlink to make sure
-						// that the next link attempt will fail again
-						fieldType = null;
-						throw;
+						fieldType = fld;
+						UpdateNonPublicTypeInSignatureFlag();
+						try
+						{
+							field = this.DeclaringType.LinkField(this);
+						}
+						catch
+						{
+							// HACK if linking fails, we unlink to make sure
+							// that the next link attempt will fail again
+							fieldType = null;
+							throw;
+						}
 					}
 				}
 			}
