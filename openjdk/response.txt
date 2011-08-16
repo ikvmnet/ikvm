@@ -854,8 +854,6 @@ assembly.class
     -out:IKVM.OpenJDK.Management.dll
     -baseaddress:0x5B550000
     com/sun/management/*.class
-    icedtea/rt/com/sun/jmx/snmp/*.class
-    icedtea/rt/com/sun/jmx/snmp/daemon/*.class
     java/lang/management/*.class
     sun/management/*.class
     @OPENJDK7@/build/linux-amd64/classes/javax/management/remote/rmi/*.class
@@ -869,14 +867,6 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/jmx/remote/protocol/rmi/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/jmx/remote/security/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/jmx/remote/util/*.class
-    @OPENJDK7@/jdk/src/share/classes/com/sun/jmx/snmp/*.class
-    @OPENJDK7@/jdk/src/share/classes/com/sun/jmx/snmp/agent/*.class
-    @OPENJDK7@/jdk/src/share/classes/com/sun/jmx/snmp/daemon/*.class
-    @OPENJDK7@/jdk/src/share/classes/com/sun/jmx/snmp/defaults/*.class
-    @OPENJDK7@/jdk/src/share/classes/com/sun/jmx/snmp/internal/*.class
-    @OPENJDK7@/jdk/src/share/classes/com/sun/jmx/snmp/IPAcl/*.class
-    @OPENJDK7@/jdk/src/share/classes/com/sun/jmx/snmp/mpm/*.class
-    @OPENJDK7@/jdk/src/share/classes/com/sun/jmx/snmp/tasks/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/management/*.class
     @OPENJDK7@/jdk/src/share/classes/java/lang/management/*.class
     @OPENJDK7@/jdk/src/share/classes/javax/management/*.class
@@ -892,15 +882,11 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/sun/management/counter/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/management/counter/perf/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/management/jmxremote/*.class
-    @OPENJDK7@/jdk/src/share/classes/sun/management/snmp/*.class
-    @OPENJDK7@/jdk/src/share/classes/sun/management/snmp/jvminstr/*.class
-    @OPENJDK7@/jdk/src/share/classes/sun/management/snmp/jvmmib/*.class
-    @OPENJDK7@/jdk/src/share/classes/sun/management/snmp/util/*.class
     @OPENJDK7@/jdk/src/windows/classes/com/sun/management/*.class
 }
 {
     -out:IKVM.OpenJDK.Misc.dll
-    -baseaddress:0x5BA30000
+    -baseaddress:0x5B8B0000
     @OPENJDK7@/build/linux-amd64/impsrc/javax/activity/*.class
     @OPENJDK7@/build/linux-amd64/impsrc/javax/annotation/*.class
     @OPENJDK7@/build/linux-amd64/impsrc/javax/annotation/processing/*.class
@@ -994,7 +980,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Naming.dll
-    -baseaddress:0x5BB20000
+    -baseaddress:0x5B9A0000
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/jndi/ldap/jndiprovider.properties
     -resource:META-INF/services/sun.net.spi.nameservice.NameServiceDescriptor=@OPENJDK7@/jdk/src/share/classes/sun/net/spi/nameservice/dns/META-INF/services/sun.net.spi.nameservice.NameServiceDescriptor
     sun/net/dns/*.class
@@ -1020,7 +1006,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Jdbc.dll
-    -baseaddress:0x5BC70000
+    -baseaddress:0x5BAF0000
     -resource:META-INF/services/java.sql.Driver=resources/META-INF/services/java.sql.Driver
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/rowset/*
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/javax/sql/*
@@ -1038,7 +1024,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Remoting.dll
-    -baseaddress:0x5BDC0000
+    -baseaddress:0x5BC40000
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/sun/rmi/*
     @OPENJDK7@/build/linux-amd64/classes/com/sun/jndi/rmi/registry/*.class
     @OPENJDK7@/jdk/src/share/classes/java/rmi/*.class
@@ -1060,7 +1046,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Beans.dll
-    -baseaddress:0x5BEB0000
+    -baseaddress:0x5BD30000
     @OPENJDK7@/build/linux-amd64/impsrc/com/sun/activation/registries/*.class
     @OPENJDK7@/build/linux-amd64/impsrc/javax/activation/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/beans/*.class
@@ -1073,7 +1059,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Media.dll
-    -baseaddress:0x5BF70000
+    -baseaddress:0x5BDF0000
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/javax.print.*
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/javax.sound.*
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/imageio/plugins/common/iio-plugin.properties
