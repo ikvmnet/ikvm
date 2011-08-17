@@ -237,17 +237,39 @@ final class NetPath extends AbstractPath
 
     public int compareTo(Path other)
     {
-        throw new NotYetImplementedError();
+        String path2 = ((NetPath)other).path;
+        int len1 = path.length();
+        int len2 = path2.length();
+        int min = Math.min(len1, len2);
+        for (int i = 0; i < min; i++)
+        {
+            char c1 = path.charAt(i);
+            char c2 = path2.charAt(i);
+            if (c1 != c2 && Character.toUpperCase(c1) != Character.toUpperCase(c2))
+            {
+                return c1 - c2;
+            }
+        }
+        return len1 - len2;
     }
 
     public boolean equals(Object other)
     {
-        throw new NotYetImplementedError();
+        if (!(other instanceof NetPath))
+        {
+            return false;
+        }
+        return compareTo((NetPath)other) == 0;
     }
 
     public int hashCode()
     {
-        throw new NotYetImplementedError();
+        int hash = 0;
+        for (int i = 0; i < path.length(); i++)
+        {
+            hash = 97 * hash + Character.toUpperCase(path.charAt(i));
+        }
+        return hash;
     }
 
     public String toString()
