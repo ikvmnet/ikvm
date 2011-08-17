@@ -317,7 +317,15 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
     public boolean isSameFile(Path path, Path path2) throws IOException
     {
-        throw new NotYetImplementedError();
+        if (path.equals(path2))
+        {
+            return true;
+        }
+        if (!(path instanceof NetPath && path2 instanceof NetPath))
+        {
+            return false;
+        }
+        return path.toRealPath().equals(path2.toRealPath());
     }
 
     public boolean isHidden(Path path) throws IOException
