@@ -25,6 +25,7 @@
 package sun.nio.fs;
 
 import ikvm.internal.NotYetImplementedError;
+import cli.System.IO.File;
 import cli.System.IO.FileMode;
 import cli.System.IO.FileShare;
 import cli.System.IO.FileStream;
@@ -229,7 +230,51 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
     public void copy(Path source, Path target, CopyOption... options) throws IOException
     {
-        throw new NotYetImplementedError();
+        NetPath nsource = NetPath.from(source);
+        NetPath ntarget = NetPath.from(target);
+        boolean overwrite = false;
+        for (CopyOption opt : options)
+        {
+            if (opt == StandardCopyOption.REPLACE_EXISTING)
+            {
+                overwrite = true;
+            }
+            else
+            {
+                throw new UnsupportedOperationException("Unsupported copy option");
+            }
+        }
+        try
+        {
+            if (false) throw new cli.System.ArgumentException();
+            if (false) throw new cli.System.IO.FileNotFoundException();
+            if (false) throw new cli.System.IO.DirectoryNotFoundException();
+            if (false) throw new cli.System.PlatformNotSupportedException();
+            if (false) throw new cli.System.IO.IOException();
+            if (false) throw new cli.System.Security.SecurityException();
+            if (false) throw new cli.System.UnauthorizedAccessException();
+            File.Copy(nsource.path, ntarget.path, overwrite);
+        }
+        catch (cli.System.IO.FileNotFoundException x)
+        {
+            throw new NoSuchFileException(x.get_FileName());
+        }
+        catch (cli.System.IO.DirectoryNotFoundException x)
+        {
+            throw new NoSuchFileException(nsource.path, ntarget.path, x.getMessage());
+        }
+        catch (cli.System.PlatformNotSupportedException x)
+        {
+            throw new UnsupportedOperationException(x.getMessage());
+        }
+        catch (cli.System.IO.IOException | cli.System.ArgumentException x)
+        {
+            throw new FileSystemException(nsource.path, ntarget.path, x.getMessage());
+        }
+        catch (cli.System.Security.SecurityException | cli.System.UnauthorizedAccessException x)
+        {
+            throw new AccessDeniedException(nsource.path, ntarget.path, x.getMessage());
+        }
     }
 
     public void move(Path source, Path target, CopyOption... options) throws IOException
