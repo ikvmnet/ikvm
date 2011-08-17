@@ -249,7 +249,6 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
             if (false) throw new cli.System.ArgumentException();
             if (false) throw new cli.System.IO.FileNotFoundException();
             if (false) throw new cli.System.IO.DirectoryNotFoundException();
-            if (false) throw new cli.System.PlatformNotSupportedException();
             if (false) throw new cli.System.IO.IOException();
             if (false) throw new cli.System.Security.SecurityException();
             if (false) throw new cli.System.UnauthorizedAccessException();
@@ -263,10 +262,6 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
         {
             throw new NoSuchFileException(nsource.path, ntarget.path, x.getMessage());
         }
-        catch (cli.System.PlatformNotSupportedException x)
-        {
-            throw new UnsupportedOperationException(x.getMessage());
-        }
         catch (cli.System.IO.IOException | cli.System.ArgumentException x)
         {
             throw new FileSystemException(nsource.path, ntarget.path, x.getMessage());
@@ -279,7 +274,45 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
     public void move(Path source, Path target, CopyOption... options) throws IOException
     {
-        throw new NotYetImplementedError();
+        NetPath nsource = NetPath.from(source);
+        NetPath ntarget = NetPath.from(target);
+        for (CopyOption opt : options)
+        {
+            if (opt == StandardCopyOption.ATOMIC_MOVE)
+            {
+                throw new AtomicMoveNotSupportedException(nsource.path, ntarget.path, "Unsupported copy option");
+            }
+            else
+            {
+                throw new UnsupportedOperationException("Unsupported copy option");
+            }
+        }
+        try
+        {
+            if (false) throw new cli.System.ArgumentException();
+            if (false) throw new cli.System.IO.FileNotFoundException();
+            if (false) throw new cli.System.IO.DirectoryNotFoundException();
+            if (false) throw new cli.System.IO.IOException();
+            if (false) throw new cli.System.Security.SecurityException();
+            if (false) throw new cli.System.UnauthorizedAccessException();
+            File.Move(nsource.path, ntarget.path);
+        }
+        catch (cli.System.IO.FileNotFoundException x)
+        {
+            throw new NoSuchFileException(x.get_FileName());
+        }
+        catch (cli.System.IO.DirectoryNotFoundException x)
+        {
+            throw new NoSuchFileException(nsource.path, ntarget.path, x.getMessage());
+        }
+        catch (cli.System.IO.IOException | cli.System.ArgumentException x)
+        {
+            throw new FileSystemException(nsource.path, ntarget.path, x.getMessage());
+        }
+        catch (cli.System.Security.SecurityException | cli.System.UnauthorizedAccessException x)
+        {
+            throw new AccessDeniedException(nsource.path, ntarget.path, x.getMessage());
+        }
     }
 
     public boolean isSameFile(Path path, Path path2) throws IOException
