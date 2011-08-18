@@ -26,6 +26,10 @@
 package sun.nio.ch;
 
 import java.io.*;
+import java.net.SocketException;
+import java.net.SocketUtil;
+import java.nio.ByteBuffer;
+import cli.System.Net.Sockets.SocketFlags;
 
 /**
  * Allows different platforms to call different native methods
@@ -34,31 +38,64 @@ import java.io.*;
 
 class SocketDispatcher extends NativeDispatcher
 {
-
-    static {
-        Util.load();
+    int read(FileDescriptor fd, byte[] buf, int offset, int length) throws IOException {
+        if (length == 0)
+        {
+            return 0;
+        }
+        try
+        {
+            if (false) throw new cli.System.Net.Sockets.SocketException();
+            if (false) throw new cli.System.ObjectDisposedException("");
+            int read = fd.getSocket().Receive(buf, offset, length, SocketFlags.wrap(SocketFlags.None));
+            return read == 0 ? IOStatus.EOF : read;
+        }
+        catch (cli.System.Net.Sockets.SocketException x)
+        {
+            if (x.get_ErrorCode() == SocketUtil.WSAESHUTDOWN)
+            {
+                // the socket was shutdown, so we have to return EOF
+                return IOStatus.EOF;
+            }
+            else if (x.get_ErrorCode() == SocketUtil.WSAEWOULDBLOCK)
+            {
+                // nothing to read and would block
+                return IOStatus.UNAVAILABLE;
+            }
+            throw SocketUtil.convertSocketExceptionToIOException(x);
+        }
+        catch (cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
 
-    int read(FileDescriptor fd, long address, int len) throws IOException {
-        throw new ikvm.internal.NotYetImplementedError();
+    int write(FileDescriptor fd, byte[] buf, int offset, int length) throws IOException {
+        try
+        {
+            if (false) throw new cli.System.Net.Sockets.SocketException();
+            if (false) throw new cli.System.ObjectDisposedException("");
+            return fd.getSocket().Send(buf, offset, length, SocketFlags.wrap(SocketFlags.None));
+        }
+        catch (cli.System.Net.Sockets.SocketException x)
+        {
+            if (x.get_ErrorCode() == SocketUtil.WSAEWOULDBLOCK)
+            {
+                return IOStatus.UNAVAILABLE;
+            }
+            throw SocketUtil.convertSocketExceptionToIOException(x);
+        }
+        catch (cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
 
-    long readv(FileDescriptor fd, long address, int len) throws IOException {
-        throw new ikvm.internal.NotYetImplementedError();
-    }
+    native long read(FileDescriptor fd, ByteBuffer[] bufs, int offset, int length) throws IOException;
 
-    int write(FileDescriptor fd, long address, int len) throws IOException {
-        throw new ikvm.internal.NotYetImplementedError();
-    }
-
-    long writev(FileDescriptor fd, long address, int len) throws IOException {
-        throw new ikvm.internal.NotYetImplementedError();
-    }
+    native long write(FileDescriptor fd, ByteBuffer[] bufs, int offset, int length) throws IOException;
 
     void close(FileDescriptor fd) throws IOException {
-    }
-
-    void preClose(FileDescriptor fd) throws IOException {
         try
         {
             if (false) throw new cli.System.Net.Sockets.SocketException();

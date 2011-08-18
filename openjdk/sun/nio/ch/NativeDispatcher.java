@@ -26,6 +26,7 @@
 package sun.nio.ch;
 
 import java.io.*;
+import java.nio.ByteBuffer;
 
 /**
  * Allows different platforms to call different native methods
@@ -34,6 +35,13 @@ import java.io.*;
 
 abstract class NativeDispatcher
 {
+    abstract int read(FileDescriptor fd, byte[] buf, int offset, int length) throws IOException;
+
+    abstract int write(FileDescriptor fd, byte[] buf, int offset, int length) throws IOException;
+
+    abstract long read(FileDescriptor fd, ByteBuffer[] bufs, int offset, int length) throws IOException;
+
+    abstract long write(FileDescriptor fd, ByteBuffer[] bufs, int offset, int length) throws IOException;
 
     abstract void close(FileDescriptor fd) throws IOException;
 

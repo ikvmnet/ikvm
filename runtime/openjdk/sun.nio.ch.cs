@@ -30,9 +30,9 @@ using ByteBuffer = java.nio.ByteBuffer;
 
 namespace IKVM.NativeCode.sun.nio.ch
 {
-	static class IOUtil
+	static class SocketDispatcher
 	{
-		public static long read(FileDescriptor fd, ByteBuffer[] bufs, int offset, int length, object nd)
+		public static long read(object nd, FileDescriptor fd, ByteBuffer[] bufs, int offset, int length)
 		{
 #if FIRST_PASS
 			return 0;
@@ -87,7 +87,7 @@ namespace IKVM.NativeCode.sun.nio.ch
 #endif
 		}
 
-		public static long write(FileDescriptor fd, ByteBuffer[] bufs, int offset, int length, object nd)
+		public static long write(object nd, FileDescriptor fd, ByteBuffer[] bufs, int offset, int length)
 		{
 #if FIRST_PASS
 			return 0;

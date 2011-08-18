@@ -26,6 +26,7 @@
 package sun.nio.ch;
 
 import java.io.*;
+import java.nio.ByteBuffer;
 import cli.Microsoft.Win32.SafeHandles.SafeFileHandle;
 import cli.System.IntPtr;
 import cli.System.IO.FileStream;
@@ -49,6 +50,22 @@ class FileDispatcherImpl extends FileDispatcher
 
     FileDispatcherImpl() {
         this(false);
+    }
+
+    int read(FileDescriptor fd, byte[] buf, int offset, int length) throws IOException {
+        throw new NotYetImplementedError();
+    }
+
+    int write(FileDescriptor fd, byte[] buf, int offset, int length) throws IOException {
+        throw new NotYetImplementedError();
+    }
+
+    long read(FileDescriptor fd, ByteBuffer[] bufs, int offset, int length) throws IOException {
+        throw new NotYetImplementedError();
+    }
+
+    long write(FileDescriptor fd, ByteBuffer[] bufs, int offset, int length) throws IOException {
+        throw new NotYetImplementedError();
     }
 
     int force(FileDescriptor fd, boolean metaData) throws IOException {
