@@ -215,7 +215,7 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
         {
             throw new AccessDeniedException(npath.path);
         }
-        return FileChannelImpl.open(FileDescriptor.fromStream(fs), read, write, null, append);
+        return FileChannelImpl.open(FileDescriptor.fromStream(fs), read, write, append, null);
     }
 
     public DirectoryStream<Path> newDirectoryStream(Path dir, DirectoryStream.Filter<? super Path> filter) throws IOException

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,83 +28,73 @@ package sun.nio.ch;
 import cli.Microsoft.Win32.SafeHandles.SafeFileHandle;
 import cli.System.IntPtr;
 import cli.System.IO.FileStream;
-import cli.System.Reflection.MethodInfo;
-import cli.System.Reflection.ParameterModifier;
-import cli.System.Reflection.BindingFlags;
 import cli.System.Runtime.InteropServices.DllImportAttribute;
 import cli.System.Runtime.InteropServices.StructLayoutAttribute;
 import cli.System.Runtime.InteropServices.LayoutKind;
-import cli.System.Type;
 import java.io.FileDescriptor;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.RandomAccessFile;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.*;
-import java.nio.channels.spi.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Iterator;
-import java.util.concurrent.ConcurrentHashMap;
-import java.lang.ref.WeakReference;
-import java.lang.ref.ReferenceQueue;
-import java.lang.reflect.Field;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
 import sun.misc.Cleaner;
 import sun.security.action.GetPropertyAction;
-
 
 public class FileChannelImpl
     extends FileChannel
 {
     private static final boolean win32 = ikvm.internal.Util.WINDOWS;
-    private static final boolean winNT = cli.System.Environment.get_OSVersion().get_Platform().Value == cli.System.PlatformID.Win32NT;
 
     // Memory allocation size for mapping buffers
     private static final long allocationGranularity = 64 * 1024;    // HACK we're using a hard coded value here that works on all mainstream platforms
 
+    // Used to make native read and write calls
+    private final FileDispatcher nd;
+
     // File descriptor
-    private FileDescriptor fd;
+    private final FileDescriptor fd;
 
     // File access mode (immutable)
-    private boolean writable;
-    private boolean readable;
-    private boolean appending;
+    private final boolean writable;
+    private final boolean readable;
+    private final boolean append;
 
     // Required to prevent finalization of creating stream (immutable)
-    private Object parent;
+    private final Object parent;
+
+    // Thread-safe set of IDs of native threads, for signalling
+    private final NativeThreadSet threads = new NativeThreadSet(2);
 
     // Lock for operations involving position and size
-    private Object positionLock = new Object();
+    private final Object positionLock = new Object();
 
     private FileChannelImpl(FileDescriptor fd, boolean readable,
-                            boolean writable, Object parent, boolean append)
+                            boolean writable, boolean append, Object parent)
     {
         this.fd = fd;
         this.readable = readable;
         this.writable = writable;
+        this.append = append;
         this.parent = parent;
-        this.appending = append;
+        this.nd = new FileDispatcherImpl(append);
     }
 
-    // Invoked by getChannel() methods
-    // of java.io.File{Input,Output}Stream and RandomAccessFile
-    //
+    // Used by FileInputStream.getChannel() and RandomAccessFile.getChannel()
     public static FileChannel open(FileDescriptor fd,
                                    boolean readable, boolean writable,
                                    Object parent)
     {
-        return new FileChannelImpl(fd, readable, writable, parent, false);
+        return new FileChannelImpl(fd, readable, writable, false, parent);
     }
 
+    // Used by FileOutputStream.getChannel
     public static FileChannel open(FileDescriptor fd,
                                    boolean readable, boolean writable,
-                                   Object parent, boolean append)
+                                   boolean append, Object parent)
     {
-        return new FileChannelImpl(fd, readable, writable, parent, append);
+        return new FileChannelImpl(fd, readable, writable, append, parent);
     }
 
     private void ensureOpen() throws IOException {
@@ -116,16 +106,20 @@ public class FileChannelImpl
     // -- Standard channel operations --
 
     protected void implCloseChannel() throws IOException {
-
-        // Invalidate and release any locks that we still hold
+        // Release and invalidate any locks that we still hold
         if (fileLockTable != null) {
-            fileLockTable.removeAll( new FileLockTable.Releaser() {
-                public void release(FileLock fl) throws IOException {
-                    ((FileLockImpl)fl).invalidate();
-                    release0(fd, fl.position(), fl.size());
+            for (FileLock fl: fileLockTable.removeAll()) {
+                synchronized (fl) {
+                    if (fl.isValid()) {
+                        nd.release(fd, fl.position(), fl.size());
+                        ((FileLockImpl)fl).invalidate();
+                    }
                 }
-            });
+            }
         }
+
+        nd.preClose(fd);
+        threads.signalAndWait();
 
         if (parent != null) {
 
@@ -134,17 +128,9 @@ public class FileChannelImpl
             // superclass AbstractInterruptibleChannel, but the isOpen logic in
             // that method will prevent this method from being reinvoked.
             //
-            if (parent instanceof FileInputStream)
-                ((FileInputStream)parent).close();
-            else if (parent instanceof FileOutputStream)
-                ((FileOutputStream)parent).close();
-            else if (parent instanceof RandomAccessFile)
-                ((RandomAccessFile)parent).close();
-            else
-                assert false;
-
+            ((java.io.Closeable)parent).close();
         } else {
-            fd.close();
+            nd.close(fd);
         }
 
     }
@@ -155,32 +141,16 @@ public class FileChannelImpl
             throw new NonReadableChannelException();
         synchronized (positionLock) {
             int n = 0;
+            int ti = -1;
             try {
                 begin();
+                ti = threads.add();
                 if (!isOpen())
                     return 0;
                 n = readImpl(dst);
                 return IOStatus.normalize(n);
             } finally {
-                end(n > 0);
-                assert IOStatus.check(n);
-            }
-        }
-    }
-
-    private long read0(ByteBuffer[] dsts) throws IOException {
-        ensureOpen();
-        if (!readable)
-            throw new NonReadableChannelException();
-        synchronized (positionLock) {
-            long n = 0;
-            try {
-                begin();
-                if (!isOpen())
-                    return 0;
-                n = readImpl(dsts);
-                return IOStatus.normalize(n);
-            } finally {
+                threads.remove(ti);
                 end(n > 0);
                 assert IOStatus.check(n);
             }
@@ -191,9 +161,26 @@ public class FileChannelImpl
         throws IOException
     {
         if ((offset < 0) || (length < 0) || (offset > dsts.length - length))
-           throw new IndexOutOfBoundsException();
-        // ## Fix IOUtil.write so that we can avoid this array copy
-        return read0(Util.subsequence(dsts, offset, length));
+            throw new IndexOutOfBoundsException();
+        ensureOpen();
+        if (!readable)
+            throw new NonReadableChannelException();
+        synchronized (positionLock) {
+            long n = 0;
+            int ti = -1;
+            try {
+                begin();
+                ti = threads.add();
+                if (!isOpen())
+                    return 0;
+                n = readImpl(dsts, offset, length);
+                return IOStatus.normalize(n);
+            } finally {
+                threads.remove(ti);
+                end(n > 0);
+                assert IOStatus.check(n);
+            }
+        }
     }
 
     public int write(ByteBuffer src) throws IOException {
@@ -202,36 +189,18 @@ public class FileChannelImpl
             throw new NonWritableChannelException();
         synchronized (positionLock) {
             int n = 0;
+            int ti = -1;
             try {
                 begin();
+                ti = threads.add();
                 if (!isOpen())
                     return 0;
-                if (appending)
+                if (append)
                     position(size());
                 n = writeImpl(src);
                 return IOStatus.normalize(n);
             } finally {
-                end(n > 0);
-                assert IOStatus.check(n);
-            }
-        }
-    }
-
-    private long write0(ByteBuffer[] srcs) throws IOException {
-        ensureOpen();
-        if (!writable)
-            throw new NonWritableChannelException();
-        synchronized (positionLock) {
-            long n = 0;
-            try {
-                begin();
-                if (!isOpen())
-                    return 0;
-                if (appending)
-                    position(size());
-                n = writeImpl(srcs);
-                return IOStatus.normalize(n);
-            } finally {
+                threads.remove(ti);
                 end(n > 0);
                 assert IOStatus.check(n);
             }
@@ -242,11 +211,29 @@ public class FileChannelImpl
         throws IOException
     {
         if ((offset < 0) || (length < 0) || (offset > srcs.length - length))
-           throw new IndexOutOfBoundsException();
-        // ## Fix IOUtil.write so that we can avoid this array copy
-        return write0(Util.subsequence(srcs, offset, length));
+            throw new IndexOutOfBoundsException();
+        ensureOpen();
+        if (!writable)
+            throw new NonWritableChannelException();
+        synchronized (positionLock) {
+            long n = 0;
+            int ti = -1;
+            try {
+                begin();
+                ti = threads.add();
+                if (!isOpen())
+                    return 0;
+                if (append)
+                    position(size());
+                n = writeImpl(srcs, offset, length);
+                return IOStatus.normalize(n);
+            } finally {
+                threads.remove(ti);
+                end(n > 0);
+                assert IOStatus.check(n);
+            }
+        }
     }
-
 
     // -- Other operations --
 
@@ -254,15 +241,19 @@ public class FileChannelImpl
         ensureOpen();
         synchronized (positionLock) {
             long p = -1;
+            int ti = -1;
             try {
                 begin();
+                ti = threads.add();
                 if (!isOpen())
                     return 0;
                 do {
-                    p = position0(fd, -1);
+                    // in append-mode then position is advanced to end before writing
+                    p = (append) ? nd.size(fd) : position0(fd, -1);
                 } while ((p == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(p);
             } finally {
+                threads.remove(ti);
                 end(p > -1);
                 assert IOStatus.check(p);
             }
@@ -275,8 +266,10 @@ public class FileChannelImpl
             throw new IllegalArgumentException();
         synchronized (positionLock) {
             long p = -1;
+            int ti = -1;
             try {
                 begin();
+                ti = threads.add();
                 if (!isOpen())
                     return null;
                 do {
@@ -284,6 +277,7 @@ public class FileChannelImpl
                 } while ((p == IOStatus.INTERRUPTED) && isOpen());
                 return this;
             } finally {
+                threads.remove(ti);
                 end(p > -1);
                 assert IOStatus.check(p);
             }
@@ -294,15 +288,18 @@ public class FileChannelImpl
         ensureOpen();
         synchronized (positionLock) {
             long s = -1;
+            int ti = -1;
             try {
                 begin();
+                ti = threads.add();
                 if (!isOpen())
                     return -1;
                 do {
-                    s = size0(fd);
+                    s = nd.size(fd);
                 } while ((s == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(s);
             } finally {
+                threads.remove(ti);
                 end(s > -1);
                 assert IOStatus.check(s);
             }
@@ -320,8 +317,10 @@ public class FileChannelImpl
         synchronized (positionLock) {
             int rv = -1;
             long p = -1;
+            int ti = -1;
             try {
                 begin();
+                ti = threads.add();
                 if (!isOpen())
                     return null;
 
@@ -335,7 +334,7 @@ public class FileChannelImpl
 
                 // truncate file
                 do {
-                    rv = truncate0(fd, size);
+                    rv = nd.truncate(fd, size);
                 } while ((rv == IOStatus.INTERRUPTED) && isOpen());
                 if (!isOpen())
                     return null;
@@ -348,6 +347,7 @@ public class FileChannelImpl
                 } while ((rv == IOStatus.INTERRUPTED) && isOpen());
                 return this;
             } finally {
+                threads.remove(ti);
                 end(rv > -1);
                 assert IOStatus.check(rv);
             }
@@ -357,14 +357,17 @@ public class FileChannelImpl
     public void force(boolean metaData) throws IOException {
         ensureOpen();
         int rv = -1;
+        int ti = -1;
         try {
             begin();
+            ti = threads.add();
             if (!isOpen())
                 return;
             do {
-                rv = force0(fd, metaData);
+                rv = nd.force(fd, metaData);
             } while ((rv == IOStatus.INTERRUPTED) && isOpen());
         } finally {
+            threads.remove(ti);
             end(rv > -1);
             assert IOStatus.check(rv);
         }
@@ -489,13 +492,16 @@ public class FileChannelImpl
             throw new NonReadableChannelException();
         ensureOpen();
         int n = 0;
+        int ti = -1;
         try {
             begin();
+            ti = threads.add();
             if (!isOpen())
                 return -1;
             n = readImpl(dst, position);
             return IOStatus.normalize(n);
         } finally {
+            threads.remove(ti);
             end(n > 0);
             assert IOStatus.check(n);
         }
@@ -510,13 +516,16 @@ public class FileChannelImpl
             throw new NonWritableChannelException();
         ensureOpen();
         int n = 0;
+        int ti = -1;
         try {
             begin();
+            ti = threads.add();
             if (!isOpen())
                 return -1;
             n = writeImpl(src, position);
             return IOStatus.normalize(n);
         } finally {
+            threads.remove(ti);
             end(n > 0);
             assert IOStatus.check(n);
         }
@@ -528,14 +537,33 @@ public class FileChannelImpl
     private static class Unmapper
         implements Runnable
     {
+        // may be required to close file
+        private static final NativeDispatcher nd = new FileDispatcherImpl();
 
-        private long address;
-        private long size;
+        // keep track of mapped buffer usage
+        static volatile int count;
+        static volatile long totalSize;
+        static volatile long totalCapacity;
 
-        private Unmapper(long address, long size) {
+        private volatile long address;
+        private final long size;
+        private final int cap;
+        private final FileDescriptor fd;
+
+        private Unmapper(long address, long size, int cap,
+                         FileDescriptor fd)
+        {
             assert (address != 0);
             this.address = address;
             this.size = size;
+            this.cap = cap;
+            this.fd = fd;
+
+            synchronized (Unmapper.class) {
+                count++;
+                totalSize += size;
+                totalCapacity += cap;
+            }
         }
 
         public void run() {
@@ -543,8 +571,22 @@ public class FileChannelImpl
                 return;
             unmap0(address, size);
             address = 0;
-        }
 
+            // if this mapping has a valid file descriptor then we close it
+            if (fd.valid()) {
+                try {
+                    nd.close(fd);
+                } catch (IOException ignore) {
+                    // nothing we can do
+                }
+            }
+
+            synchronized (Unmapper.class) {
+                count--;
+                totalSize -= size;
+                totalCapacity -= cap;
+            }
+        }
     }
 
     private static void unmap(MappedByteBuffer bb) {
@@ -583,8 +625,10 @@ public class FileChannelImpl
             throw new NonReadableChannelException();
 
         long addr = -1;
+        int ti = -1;
         try {
             begin();
+            ti = threads.add();
             if (!isOpen())
                 return null;
             if (size() < position + size) { // Extend file size
@@ -594,7 +638,7 @@ public class FileChannelImpl
                 }
                 int rv;
                 do {
-                    rv = truncate0(fd, position + size);
+                    rv = nd.truncate(fd, position + size);
                 } while ((rv == IOStatus.INTERRUPTED) && isOpen());
             }
             if (size == 0) {
@@ -630,26 +674,65 @@ public class FileChannelImpl
                 }
             }
 
+            // On Windows, and potentially other platforms, we need an open
+            // file descriptor for some mapping operations.
+            FileDescriptor mfd;
+            try {
+                mfd = nd.duplicateForMapping(fd);
+            } catch (IOException ioe) {
+                unmap0(addr, mapSize);
+                throw ioe;
+            }
+
             assert (IOStatus.checkAll(addr));
             assert (addr % allocationGranularity == 0);
             int isize = (int)size;
-            Unmapper um = new Unmapper(addr, size + pagePosition);
-            if ((!writable) || (imode == MAP_RO))
-                return Util.newMappedByteBufferR(isize, addr + pagePosition, fd, um);
-            else
-                return Util.newMappedByteBuffer(isize, addr + pagePosition, fd, um);
+            Unmapper um = new Unmapper(addr, mapSize, isize, mfd);
+            if ((!writable) || (imode == MAP_RO)) {
+                return Util.newMappedByteBufferR(isize,
+                                                 addr + pagePosition,
+                                                 mfd,
+                                                 um);
+            } else {
+                return Util.newMappedByteBuffer(isize,
+                                                addr + pagePosition,
+                                                mfd,
+                                                um);
+            }
         } finally {
+            threads.remove(ti);
             end(IOStatus.checkAll(addr));
         }
     }
 
+    /**
+     * Invoked by sun.management.ManagementFactoryHelper to create the management
+     * interface for mapped buffers.
+     */
+    public static sun.misc.JavaNioAccess.BufferPool getMappedBufferPool() {
+        return new sun.misc.JavaNioAccess.BufferPool() {
+            @Override
+            public String getName() {
+                return "mapped";
+            }
+            @Override
+            public long getCount() {
+                return Unmapper.count;
+            }
+            @Override
+            public long getTotalCapacity() {
+                return Unmapper.totalCapacity;
+            }
+            @Override
+            public long getMemoryUsed() {
+                return Unmapper.totalSize;
+            }
+        };
+    }
 
     // -- Locks --
 
-    public static final int NO_LOCK = -1;       // Failed to lock
-    public static final int LOCKED = 0;         // Obtained requested lock
-    public static final int RET_EX_LOCK = 1;    // Obtained exclusive lock
-    public static final int INTERRUPTED = 2;    // Request interrupted
+
 
     // keeps track of locks on this file
     private volatile FileLockTable fileLockTable;
@@ -679,12 +762,21 @@ public class FileChannelImpl
         return isSharedFileLockTable;
     }
 
-    private FileLockTable fileLockTable() {
+    private FileLockTable fileLockTable() throws IOException {
         if (fileLockTable == null) {
             synchronized (this) {
                 if (fileLockTable == null) {
-                    fileLockTable = isSharedFileLockTable() ?
-                        new SharedFileLockTable(this) : new SimpleFileLockTable();
+                    if (isSharedFileLockTable()) {
+                        int ti = threads.add();
+                        try {
+                            ensureOpen();
+                            fileLockTable = FileLockTable.newSharedFileLockTable(this, fd);
+                        } finally {
+                            threads.remove(ti);
+                        }
+                    } else {
+                        fileLockTable = new SimpleFileLockTable();
+                    }
                 }
             }
         }
@@ -702,29 +794,33 @@ public class FileChannelImpl
         FileLockImpl fli = new FileLockImpl(this, position, size, shared);
         FileLockTable flt = fileLockTable();
         flt.add(fli);
-        boolean i = true;
+        boolean completed = false;
+        int ti = -1;
         try {
             begin();
+            ti = threads.add();
             if (!isOpen())
                 return null;
-            int result = lock0(fd, true, position, size, shared);
-            if (result == RET_EX_LOCK) {
-                assert shared;
-                FileLockImpl fli2 = new FileLockImpl(this, position, size,
-                                                     false);
-                flt.replace(fli, fli2);
-                return fli2;
+            int n;
+            do {
+                n = nd.lock(fd, true, position, size, shared);
+            } while ((n == FileDispatcher.INTERRUPTED) && isOpen());
+            if (isOpen()) {
+                if (n == FileDispatcher.RET_EX_LOCK) {
+                    assert shared;
+                    FileLockImpl fli2 = new FileLockImpl(this, position, size,
+                                                         false);
+                    flt.replace(fli, fli2);
+                    fli = fli2;
+                }
+                completed = true;
             }
-            if (result == INTERRUPTED || result == NO_LOCK) {
-                flt.remove(fli);
-                i = false;
-            }
-        } catch (IOException e) {
-            flt.remove(fli);
-            throw e;
         } finally {
+            if (!completed)
+                flt.remove(fli);
+            threads.remove(ti);
             try {
-                end(i);
+                end(completed);
             } catch (ClosedByInterruptException e) {
                 throw new FileLockInterruptionException();
             }
@@ -743,79 +839,55 @@ public class FileChannelImpl
         FileLockImpl fli = new FileLockImpl(this, position, size, shared);
         FileLockTable flt = fileLockTable();
         flt.add(fli);
-        int result = lock0(fd, false, position, size, shared);
-        if (result == NO_LOCK) {
-            flt.remove(fli);
-            return null;
+        int result;
+
+        int ti = threads.add();
+        try {
+            try {
+                ensureOpen();
+                result = nd.lock(fd, false, position, size, shared);
+            } catch (IOException e) {
+                flt.remove(fli);
+                throw e;
+            }
+            if (result == FileDispatcher.NO_LOCK) {
+                flt.remove(fli);
+                return null;
+            }
+            if (result == FileDispatcher.RET_EX_LOCK) {
+                assert shared;
+                FileLockImpl fli2 = new FileLockImpl(this, position, size,
+                                                     false);
+                flt.replace(fli, fli2);
+                return fli2;
+            }
+            return fli;
+        } finally {
+            threads.remove(ti);
         }
-        if (result == RET_EX_LOCK) {
-            assert shared;
-            FileLockImpl fli2 = new FileLockImpl(this, position, size,
-                                                 false);
-            flt.replace(fli, fli2);
-            return fli2;
-        }
-        return fli;
     }
 
     void release(FileLockImpl fli) throws IOException {
-        ensureOpen();
-        release0(fd, fli.position(), fli.size());
+        int ti = threads.add();
+        try {
+            ensureOpen();
+            nd.release(fd, fli.position(), fli.size());
+        } finally {
+            threads.remove(ti);
+        }
         assert fileLockTable != null;
         fileLockTable.remove(fli);
     }
 
-
-    // -- File lock support  --
-
-    /**
-     * A table of FileLocks.
-     */
-    private interface FileLockTable {
-        /**
-         * Adds a file lock to the table.
-         *
-         * @throws OverlappingFileLockException if the file lock overlaps
-         *         with an existing file lock in the table
-         */
-        void add(FileLock fl) throws OverlappingFileLockException;
-
-        /**
-         * Remove an existing file lock from the table.
-         */
-        void remove(FileLock fl);
-
-        /**
-         * An implementation of this interface releases a given file lock.
-         * Used with removeAll.
-         */
-        interface Releaser {
-            void release(FileLock fl) throws IOException;
-        }
-
-        /**
-         * Removes all file locks from the table.
-         * <p>
-         * The Releaser#release method is invoked for each file lock before
-         * it is removed.
-         *
-         * @throws IOException if the release method throws IOException
-         */
-        void removeAll(Releaser r) throws IOException;
-
-        /**
-         * Replaces an existing file lock in the table.
-         */
-        void replace(FileLock fl1, FileLock fl2);
-    }
+    // -- File lock support --
 
     /**
      * A simple file lock table that maintains a list of FileLocks obtained by a
      * FileChannel. Use to get 1.4/5.0 behaviour.
      */
-    private static class SimpleFileLockTable implements FileLockTable {
+    private static class SimpleFileLockTable extends FileLockTable {
         // synchronize on list for access
-        private List<FileLock> lockList = new ArrayList<FileLock>(2);
+        private final List<FileLock> lockList = new ArrayList<FileLock>(2);
 
         public SimpleFileLockTable() {
         }
@@ -844,14 +916,11 @@ public class FileChannelImpl
             }
         }
 
-        public void removeAll(Releaser releaser) throws IOException {
+        public List<FileLock> removeAll() {
             synchronized(lockList) {
-                Iterator<FileLock> i = lockList.iterator();
-                while (i.hasNext()) {
-                    FileLock fl = i.next();
-                    releaser.release(fl);
-                    i.remove();
-                }
+                List<FileLock> result = new ArrayList<FileLock>(lockList);
+                lockList.clear();
+                return result;
             }
         }
 
@@ -859,197 +928,6 @@ public class FileChannelImpl
             synchronized (lockList) {
                 lockList.remove(fl1);
                 lockList.add(fl2);
-            }
-        }
-    }
-
-    /**
-     * A weak reference to a FileLock.
-     * <p>
-     * SharedFileLockTable uses a list of file lock references to avoid keeping the
-     * FileLock (and FileChannel) alive.
-     */
-    private static class FileLockReference extends WeakReference<FileLock> {
-        private FileKey fileKey;
-
-        FileLockReference(FileLock referent,
-                          ReferenceQueue queue,
-                          FileKey key) {
-            super(referent, queue);
-            this.fileKey = key;
-        }
-
-        private FileKey fileKey() {
-            return fileKey;
-        }
-    }
-
-    /**
-     * A file lock table that is over a system-wide map of all file locks.
-     */
-    private static class SharedFileLockTable implements FileLockTable {
-        // The system-wide map is a ConcurrentHashMap that is keyed on the FileKey.
-        // The map value is a list of file locks represented by FileLockReferences.
-        // All access to the list must be synchronized on the list.
-        private static ConcurrentHashMap<FileKey, ArrayList<FileLockReference>> lockMap =
-            new ConcurrentHashMap<FileKey, ArrayList<FileLockReference>>();
-
-        // reference queue for cleared refs
-        private static ReferenceQueue queue = new ReferenceQueue();
-
-        // the enclosing file channel
-        private FileChannelImpl fci;
-
-        // File key for the file that this channel is connected to
-        private FileKey fileKey;
-
-        public SharedFileLockTable(FileChannelImpl fci) {
-            this.fci = fci;
-            this.fileKey = FileKey.create(fci.fd);
-        }
-
-        public void add(FileLock fl) throws OverlappingFileLockException {
-            ArrayList<FileLockReference> list = lockMap.get(fileKey);
-
-            for (;;) {
-
-                // The key isn't in the map so we try to create it atomically
-                if (list == null) {
-                    list = new ArrayList<FileLockReference>(2);
-                    ArrayList<FileLockReference> prev;
-                    synchronized (list) {
-                        prev = lockMap.putIfAbsent(fileKey, list);
-                        if (prev == null) {
-                            // we successfully created the key so we add the file lock
-                            list.add(new FileLockReference(fl, queue, fileKey));
-                            break;
-                        }
-                    }
-                    // someone else got there first
-                    list = prev;
-                }
-
-                // There is already a key. It is possible that some other thread
-                // is removing it so we re-fetch the value from the map. If it
-                // hasn't changed then we check the list for overlapping locks
-                // and add the new lock to the list.
-                synchronized (list) {
-                    ArrayList<FileLockReference> current = lockMap.get(fileKey);
-                    if (list == current) {
-                        checkList(list, fl.position(), fl.size());
-                        list.add(new FileLockReference(fl, queue, fileKey));
-                        break;
-                    }
-                    list = current;
-                }
-
-            }
-
-            // process any stale entries pending in the reference queue
-            removeStaleEntries();
-        }
-
-        private void removeKeyIfEmpty(FileKey fk, ArrayList<FileLockReference> list) {
-            assert Thread.holdsLock(list);
-            assert lockMap.get(fk) == list;
-            if (list.isEmpty()) {
-                lockMap.remove(fk);
-            }
-        }
-
-        public void remove(FileLock fl) {
-            assert fl != null;
-
-            // the lock must exist so the list of locks must be present
-            ArrayList<FileLockReference> list = lockMap.get(fileKey);
-            assert list != null;
-
-            synchronized (list) {
-                int index = 0;
-                while (index < list.size()) {
-                    FileLockReference ref = list.get(index);
-                    FileLock lock = ref.get();
-                    if (lock == fl) {
-                        assert (lock != null) && (lock.channel() == fci);
-                        ref.clear();
-                        list.remove(index);
-                        break;
-                    }
-                    index++;
-                }
-            }
-        }
-
-        public void removeAll(Releaser releaser) throws IOException {
-            ArrayList<FileLockReference> list = lockMap.get(fileKey);
-            if (list != null) {
-                synchronized (list) {
-                    int index = 0;
-                    while (index < list.size()) {
-                        FileLockReference ref = list.get(index);
-                        FileLock lock = ref.get();
-
-                        // remove locks obtained by this channel
-                        if (lock != null && lock.channel() == fci) {
-                            // invoke the releaser to invalidate/release the lock
-                            releaser.release(lock);
-
-                            // remove the lock from the list
-                            ref.clear();
-                            list.remove(index);
-                        } else {
-                            index++;
-                        }
-                    }
-
-                    // once the lock list is empty we remove it from the map
-                    removeKeyIfEmpty(fileKey, list);
-                }
-            }
-        }
-
-        public void replace(FileLock fromLock, FileLock toLock) {
-            // the lock must exist so there must be a list
-            ArrayList<FileLockReference> list = lockMap.get(fileKey);
-            assert list != null;
-
-            synchronized (list) {
-                for (int index=0; index<list.size(); index++) {
-                    FileLockReference ref = list.get(index);
-                    FileLock lock = ref.get();
-                    if (lock == fromLock) {
-                        ref.clear();
-                        list.set(index, new FileLockReference(toLock, queue, fileKey));
-                        break;
-                    }
-                }
-            }
-        }
-
-        // Check for overlapping file locks
-        private void checkList(List<FileLockReference> list, long position, long size)
-            throws OverlappingFileLockException
-        {
-            assert Thread.holdsLock(list);
-            for (FileLockReference ref: list) {
-                FileLock fl = ref.get();
-                if (fl != null && fl.overlaps(position, size))
-                    throw new OverlappingFileLockException();
-            }
-        }
-
-        // Process the reference queue
-        private void removeStaleEntries() {
-            FileLockReference ref;
-            while ((ref = (FileLockReference)queue.poll()) != null) {
-                FileKey fk = ref.fileKey();
-                ArrayList<FileLockReference> list = lockMap.get(fk);
-                if (list != null) {
-                    synchronized (list) {
-                        list.remove(ref);
-                        removeKeyIfEmpty(fk, list);
-                    }
-                }
             }
         }
     }
@@ -1097,12 +975,12 @@ public class FileChannelImpl
         }
     }
 
-    private long readImpl(ByteBuffer[] dsts) throws IOException
+    private long readImpl(ByteBuffer[] dsts, int offset, int length) throws IOException
     {
         long totalRead = 0;
         try
         {
-            for (int i = 0; i < dsts.length; i++)
+            for (int i = offset; i < offset + length; i++)
             {
                 int size = dsts[i].remaining();
                 if (size > 0)
@@ -1168,12 +1046,12 @@ public class FileChannelImpl
         }
     }
 
-    private long writeImpl(ByteBuffer[] srcs) throws IOException
+    private long writeImpl(ByteBuffer[] srcs, int offset, int length) throws IOException
     {
         long totalWritten = 0;
         try
         {
-            for (int i = 0; i < srcs.length; i++)
+            for (int i = offset; i < offset + length; i++)
             {
                 int size = srcs[i].remaining();
                 if (size > 0)
@@ -1195,125 +1073,6 @@ public class FileChannelImpl
             }
         }
         return totalWritten;
-    }
-
-    @StructLayoutAttribute.Annotation(LayoutKind.__Enum.Sequential)
-    private static final class OVERLAPPED extends cli.System.Object
-    {
-        IntPtr Internal;
-        IntPtr InternalHigh;
-        int OffsetLow;
-        int OffsetHigh;
-        IntPtr hEvent;
-    }
-
-    // Grabs a file lock
-    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
-    static int lock0(FileDescriptor fd, boolean blocking, long pos, long size, boolean shared) throws IOException
-    {
-        FileStream fs = (FileStream)fd.getStream();
-        if (winNT)
-        {
-            int LOCKFILE_FAIL_IMMEDIATELY = 1;
-            int LOCKFILE_EXCLUSIVE_LOCK = 2;
-            int ERROR_LOCK_VIOLATION = 33;
-            int flags = 0;
-            OVERLAPPED o = new OVERLAPPED();
-            o.OffsetLow = (int)pos;
-            o.OffsetHigh = (int)(pos >> 32);
-            if (!blocking)
-            {
-                flags |= LOCKFILE_FAIL_IMMEDIATELY;
-            }
-            if (!shared)
-            {
-                flags |= LOCKFILE_EXCLUSIVE_LOCK;
-            }
-            int result = LockFileEx(fs.get_SafeFileHandle(), flags, 0, (int)size, (int)(size >> 32), o);
-            if (result == 0)
-            {
-                int error = cli.System.Runtime.InteropServices.Marshal.GetLastWin32Error();
-                if (!blocking && error == ERROR_LOCK_VIOLATION)
-                {
-                    return NO_LOCK;
-                }
-                throw new IOException("Lock failed");
-            }
-            return LOCKED;
-        }
-        else
-        {
-            try
-            {
-                if (false) throw new cli.System.ArgumentOutOfRangeException();
-                for (;;)
-                {
-                    try
-                    {
-                        if (false) throw new cli.System.IO.IOException();
-                        if (false) throw new cli.System.ObjectDisposedException("");
-                        fs.Lock(pos, size);
-                        return shared ? RET_EX_LOCK : LOCKED;
-                    }
-                    catch (cli.System.IO.IOException x)
-                    {
-                        if (!blocking)
-                        {
-                            return NO_LOCK;
-                        }
-                        cli.System.Threading.Thread.Sleep(100);
-                    }
-                    catch (cli.System.ObjectDisposedException x)
-                    {
-                        throw new IOException(x.getMessage());
-                    }
-                }
-            }
-            catch (cli.System.ArgumentOutOfRangeException x)
-            {
-                throw new IOException(x.getMessage());
-            }
-        }
-    }
-
-    // Releases a file lock
-    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
-    static void release0(FileDescriptor fd, long pos, long size) throws IOException
-    {
-        FileStream fs = (FileStream)fd.getStream();
-        if (winNT)
-        {
-            OVERLAPPED o = new OVERLAPPED();
-            o.OffsetLow = (int)pos;
-            o.OffsetHigh = (int)(pos >> 32);
-            int result = UnlockFileEx(fs.get_SafeFileHandle(), 0, (int)size, (int)(size >> 32), o);
-            if (result == 0)
-            {
-                throw new IOException("Release failed");
-            }
-        }
-        else
-        {
-            try
-            {
-                if (false) throw new cli.System.ArgumentOutOfRangeException();
-                if (false) throw new cli.System.IO.IOException();
-                if (false) throw new cli.System.ObjectDisposedException("");
-                fs.Unlock(pos, size);
-            }
-            catch (cli.System.ArgumentOutOfRangeException x)
-            {
-                throw new IOException(x.getMessage());
-            }
-            catch (cli.System.IO.IOException x)
-            {
-                throw new IOException(x.getMessage());
-            }
-            catch (cli.System.ObjectDisposedException x)
-            {
-                throw new IOException(x.getMessage());
-            }
-        }
     }
 
     // Creates a new mapping
@@ -1414,12 +1173,6 @@ public class FileChannelImpl
     @DllImportAttribute.Annotation("kernel32")
     private static native int UnmapViewOfFile(IntPtr lpBaseAddress);
 
-    @DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
-    static native int LockFileEx(SafeFileHandle hFile, int dwFlags, int dwReserved, int nNumberOfBytesToLockLow, int nNumberOfBytesToLockHigh, OVERLAPPED lpOverlapped);
-
-    @DllImportAttribute.Annotation("kernel32")
-    static native int UnlockFileEx(SafeFileHandle hFile, int dwReserved, int nNumberOfBytesToUnlockLow, int nNumberOfBytesToUnlockHigh, OVERLAPPED lpOverlapped);
-
     @DllImportAttribute.Annotation("ikvm-native")
     private static native int ikvm_munmap(IntPtr address, int size);
 
@@ -1438,20 +1191,6 @@ public class FileChannelImpl
         return 0;
     }
 
-    // Forces output to device
-    private static int force0(FileDescriptor fd, boolean metaData) throws IOException
-    {
-        fd.sync();
-        return 0;
-    }
-
-    // Truncates a file
-    private static int truncate0(FileDescriptor fd, long size) throws IOException
-    {
-        fd.setLength(size);
-        return 0;
-    }
-
     // Sets or reports this file's position
     // If offset is -1, the current position is returned
     // otherwise the position is set to offset
@@ -1463,11 +1202,5 @@ public class FileChannelImpl
         }
         fd.seek(offset);
         return offset;
-    }
-
-    // Reports this file's size
-    private static long size0(FileDescriptor fd) throws IOException
-    {
-        return fd.length();
     }
 }

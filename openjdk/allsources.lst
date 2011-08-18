@@ -203,8 +203,10 @@ sun/nio/ch/DefaultAsynchronousChannelProvider.java
 sun/nio/ch/DefaultSelectorProvider.java
 sun/nio/ch/DotNetSelectorImpl.java
 sun/nio/ch/FileChannelImpl.java
+sun/nio/ch/FileDispatcherImpl.java
 sun/nio/ch/FileKey.java
 sun/nio/ch/IOUtil.java
+sun/nio/ch/NativeDispatcher.java
 sun/nio/ch/Net.java
 sun/nio/ch/PollArrayWrapper.java
 sun/nio/ch/SelectionKeyImpl.java
@@ -12162,7 +12164,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/ch/IOStatus.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/ch/MembershipKeyImpl.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/ch/MembershipRegistry.java
-@OPENJDK7@/jdk/src/share/classes/sun/nio/ch/NativeDispatcher.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/ch/NativeThreadSet.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/ch/OptionKey.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/ch/PendingFuture.java

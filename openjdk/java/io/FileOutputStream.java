@@ -408,7 +408,7 @@ class FileOutputStream extends OutputStream
     public FileChannel getChannel() {
         synchronized (this) {
             if (channel == null) {
-                channel = FileChannelImpl.open(fd, false, true, this, append);
+                channel = FileChannelImpl.open(fd, false, true, append, this);
 
                 /*
                  * Increment fd's use count. Invoking the channel's close()
