@@ -34,7 +34,6 @@ import cli.System.Runtime.InteropServices.DllImportAttribute;
 import cli.System.Runtime.InteropServices.StructLayoutAttribute;
 import cli.System.Runtime.InteropServices.LayoutKind;
 import static ikvm.internal.Util.WINDOWS;
-import ikvm.internal.NotYetImplementedError;
 
 class FileDispatcherImpl extends FileDispatcher
 {
@@ -53,19 +52,75 @@ class FileDispatcherImpl extends FileDispatcher
     }
 
     int read(FileDescriptor fd, byte[] buf, int offset, int length) throws IOException {
-        throw new NotYetImplementedError();
+        return fd.readBytes(buf, offset, length);
     }
 
     int write(FileDescriptor fd, byte[] buf, int offset, int length) throws IOException {
-        throw new NotYetImplementedError();
+        if (append) {
+            fd.seek(fd.length());
+        }
+        fd.writeBytes(buf, offset, length);
+        return length;
     }
 
     long read(FileDescriptor fd, ByteBuffer[] bufs, int offset, int length) throws IOException {
-        throw new NotYetImplementedError();
+        long totalRead = 0;
+        try
+        {
+            for (int i = offset; i < offset + length; i++)
+            {
+                int size = bufs[i].remaining();
+                if (size > 0)
+                {
+                    int read = IOUtil.read(fd, bufs[i], -1, this, this);
+                    if (read < 0)
+                    {
+                        break;
+                    }
+                    totalRead += read;
+                    if (read < size || fd.available() == 0)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+        catch (IOException x)
+        {
+            if (totalRead == 0)
+            {
+                throw x;
+            }
+        }
+        return totalRead;
     }
 
     long write(FileDescriptor fd, ByteBuffer[] bufs, int offset, int length) throws IOException {
-        throw new NotYetImplementedError();
+        long totalWritten = 0;
+        try
+        {
+            for (int i = offset; i < offset + length; i++)
+            {
+                int size = bufs[i].remaining();
+                if (size > 0)
+                {
+                    int written = IOUtil.write(fd, bufs[i], -1, this, this);
+                    totalWritten += written;
+                    if (written < size)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+        catch (IOException x)
+        {
+            if (totalWritten == 0)
+            {
+                throw x;
+            }
+        }
+        return totalWritten;
     }
 
     int force(FileDescriptor fd, boolean metaData) throws IOException {

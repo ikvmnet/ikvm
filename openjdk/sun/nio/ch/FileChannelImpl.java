@@ -147,7 +147,9 @@ public class FileChannelImpl
                 ti = threads.add();
                 if (!isOpen())
                     return 0;
-                n = readImpl(dst);
+                do {
+                    n = IOUtil.read(fd, dst, -1, nd, positionLock);
+                } while ((n == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(n);
             } finally {
                 threads.remove(ti);
@@ -173,7 +175,9 @@ public class FileChannelImpl
                 ti = threads.add();
                 if (!isOpen())
                     return 0;
-                n = readImpl(dsts, offset, length);
+                do {
+                    n = IOUtil.read(fd, dsts, offset, length, nd);
+                } while ((n == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(n);
             } finally {
                 threads.remove(ti);
@@ -195,9 +199,9 @@ public class FileChannelImpl
                 ti = threads.add();
                 if (!isOpen())
                     return 0;
-                if (append)
-                    position(size());
-                n = writeImpl(src);
+                do {
+                    n = IOUtil.write(fd, src, -1, nd, positionLock);
+                } while ((n == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(n);
             } finally {
                 threads.remove(ti);
@@ -223,9 +227,9 @@ public class FileChannelImpl
                 ti = threads.add();
                 if (!isOpen())
                     return 0;
-                if (append)
-                    position(size());
-                n = writeImpl(srcs, offset, length);
+                do {
+                    n = IOUtil.write(fd, srcs, offset, length, nd);
+                } while ((n == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(n);
             } finally {
                 threads.remove(ti);
@@ -498,7 +502,9 @@ public class FileChannelImpl
             ti = threads.add();
             if (!isOpen())
                 return -1;
-            n = readImpl(dst, position);
+            do {
+                n = IOUtil.read(fd, dst, position, nd, positionLock);
+            } while ((n == IOStatus.INTERRUPTED) && isOpen());
             return IOStatus.normalize(n);
         } finally {
             threads.remove(ti);
@@ -522,7 +528,9 @@ public class FileChannelImpl
             ti = threads.add();
             if (!isOpen())
                 return -1;
-            n = writeImpl(src, position);
+            do {
+                n = IOUtil.write(fd, src, position, nd, positionLock);
+            } while ((n == IOStatus.INTERRUPTED) && isOpen());
             return IOStatus.normalize(n);
         } finally {
             threads.remove(ti);
@@ -933,147 +941,6 @@ public class FileChannelImpl
     }
 
     // -- Native methods --
-
-    private int readImpl(ByteBuffer dst) throws IOException
-    {
-        if (dst.hasArray())
-        {
-            byte[] buf = dst.array();
-            int len = fd.readBytes(buf, dst.arrayOffset() + dst.position(), dst.remaining());
-            if (len > 0)
-            {
-                dst.position(dst.position() + len);
-            }
-            return len;
-        }
-        else
-        {
-            byte[] buf = new byte[dst.remaining()];
-            int len = fd.readBytes(buf, 0, buf.length);
-            if (len > 0)
-            {
-                dst.put(buf, 0, len);
-            }
-            return len;
-        }
-    }
-
-    private int readImpl(ByteBuffer dst, long position) throws IOException
-    {
-        synchronized (positionLock)
-        {
-            long prev = position0(fd, -1);
-            try
-            {
-                position0(fd, position);
-                return readImpl(dst);
-            }
-            finally
-            {
-                position0(fd, prev);
-            }
-        }
-    }
-
-    private long readImpl(ByteBuffer[] dsts, int offset, int length) throws IOException
-    {
-        long totalRead = 0;
-        try
-        {
-            for (int i = offset; i < offset + length; i++)
-            {
-                int size = dsts[i].remaining();
-                if (size > 0)
-                {
-                    int read = readImpl(dsts[i]);
-                    if (read < 0)
-                    {
-                        break;
-                    }
-                    totalRead += read;
-                    if (read < size || fd.available() == 0)
-                    {
-                        break;
-                    }
-                }
-            }
-        }
-        catch (IOException x)
-        {
-            if (totalRead == 0)
-            {
-                throw x;
-            }
-        }
-        return totalRead;
-    }
-
-    private int writeImpl(ByteBuffer src) throws IOException
-    {
-        if (src.hasArray())
-        {
-            byte[] buf = src.array();
-            int len = src.remaining();
-            fd.writeBytes(buf, src.arrayOffset() + src.position(), len);
-            src.position(src.position() + len);
-            return len;
-        }
-        else
-        {
-            int pos = src.position();
-            byte[] buf = new byte[src.remaining()];
-            src.get(buf);
-            fd.writeBytes(buf, 0, buf.length);
-            src.position(pos + buf.length);
-            return buf.length;
-        }
-    }
-
-    private int writeImpl(ByteBuffer src, long position) throws IOException
-    {
-        synchronized (positionLock)
-        {
-            long prev = position0(fd, -1);
-            try
-            {
-                position0(fd, position);
-                return writeImpl(src);
-            }
-            finally
-            {
-                position0(fd, prev);
-            }
-        }
-    }
-
-    private long writeImpl(ByteBuffer[] srcs, int offset, int length) throws IOException
-    {
-        long totalWritten = 0;
-        try
-        {
-            for (int i = offset; i < offset + length; i++)
-            {
-                int size = srcs[i].remaining();
-                if (size > 0)
-                {
-                    int written = writeImpl(srcs[i]);
-                    totalWritten += written;
-                    if (written < size)
-                    {
-                        break;
-                    }
-                }
-            }
-        }
-        catch (IOException x)
-        {
-            if (totalWritten == 0)
-            {
-                throw x;
-            }
-        }
-        return totalWritten;
-    }
 
     // Creates a new mapping
     private long map0(int prot, long position, long length) throws IOException

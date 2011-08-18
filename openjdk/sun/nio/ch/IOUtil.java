@@ -108,6 +108,9 @@ class IOUtil {
                      NativeDispatcher nd, Object lock)
         throws IOException
     {
+        if (position != -1)
+            throw new ikvm.internal.NotYetImplementedError();
+
         if (src.hasArray())
         {
             byte[] buf = src.array();
