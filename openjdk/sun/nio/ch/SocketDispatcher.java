@@ -96,6 +96,9 @@ class SocketDispatcher extends NativeDispatcher
     native long write(FileDescriptor fd, ByteBuffer[] bufs, int offset, int length) throws IOException;
 
     void close(FileDescriptor fd) throws IOException {
+    }
+
+    void preClose(FileDescriptor fd) throws IOException {
         try
         {
             if (false) throw new cli.System.Net.Sockets.SocketException();
