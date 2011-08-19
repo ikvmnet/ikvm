@@ -56,9 +56,6 @@ class FileDispatcherImpl extends FileDispatcher
     }
 
     int write(FileDescriptor fd, byte[] buf, int offset, int length) throws IOException {
-        if (append) {
-            fd.seek(fd.length());
-        }
         fd.writeBytes(buf, offset, length);
         return length;
     }
@@ -129,7 +126,14 @@ class FileDispatcherImpl extends FileDispatcher
     }
 
     int truncate(FileDescriptor fd, long size) throws IOException {
-        fd.setLength(size);
+        if (append) {
+            // HACK in append mode we're not allowed to truncate, so we try to reopen the file and truncate that
+            try (FileOutputStream fos = new FileOutputStream(((FileStream)fd.getStream()).get_Name())) {
+                fos.getFD().setLength(size);
+            }
+        } else {
+            fd.setLength(size);
+        }
         return 0;
     }
 

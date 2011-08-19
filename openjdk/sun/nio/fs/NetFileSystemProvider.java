@@ -80,7 +80,6 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
             throw new NotYetImplementedError();
         }
         int mode = FileMode.Open;
-        int rights = 0;
         int share = FileShare.ReadWrite | FileShare.Delete;
         int options = FileOptions.None;
         boolean read = false;
@@ -97,7 +96,6 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
                         append = true;
                         write = true;
                         mode = FileMode.Append;
-                        rights |= FileSystemRights.AppendData;
                         break;
                     case CREATE:
                         mode = FileMode.Create;
@@ -113,7 +111,6 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
                         break;
                     case READ:
                         read = true;
-                        rights |= FileSystemRights.Read;
                         break;
                     case SPARSE:
                         sparse = true;
@@ -126,7 +123,6 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
                         break;
                     case WRITE:
                         write = true;
-                        rights |= FileSystemRights.Write;
                         break;
                     default:
                         throw new UnsupportedOperationException();
@@ -162,7 +158,6 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
         if (!read && !write)
         {
             read = true;
-            rights |= FileSystemRights.Read;
         }
 
         if (read && append)
@@ -179,7 +174,25 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
         {
             throw new UnsupportedOperationException();
         }
-        
+
+        int rights = 0;
+        if (append)
+        {
+            // for atomic append to work, we can't set FileSystemRights.Write
+            rights |= FileSystemRights.AppendData;
+        }
+        else
+        {
+            if (read)
+            {
+                rights |= FileSystemRights.Read;
+            }
+            if (write)
+            {
+                rights |= FileSystemRights.Write;
+            }
+        }
+
         FileStream fs;
         try
         {

@@ -343,6 +343,10 @@ public class FileChannelImpl
                 if (!isOpen())
                     return null;
 
+                // [IKVM] in append mode we're not allowed to seek backwards, but the atomic append will honor the new file size
+                if (append)
+                    return this;
+
                 // set position to size if greater than size
                 if (p > size)
                     p = size;
