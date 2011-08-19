@@ -123,6 +123,7 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/sun/net/www/http/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/net/www/protocol/ftp/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/net/www/protocol/http/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/net/www/protocol/http/logging/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/net/www/protocol/http/spnego/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/net/www/protocol/jar/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/net/www/protocol/mailto/*.class
