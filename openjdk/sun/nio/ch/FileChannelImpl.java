@@ -435,6 +435,15 @@ public class FileChannelImpl
         return transferToArbitraryChannel(position, icount, target);
     }
 
+    private long transferFromFileChannel(FileChannelImpl src,
+                                         long position, long count)
+        throws IOException
+    {
+        if (!src.readable)
+            throw new NonReadableChannelException();
+        return transferFromArbitraryChannel(src, position, count);
+    }
+
     private static final int TRANSFER_SIZE = 8192;
 
     private long transferFromArbitraryChannel(ReadableByteChannel src,
@@ -483,6 +492,9 @@ public class FileChannelImpl
             throw new IllegalArgumentException();
         if (position > size())
             return 0;
+        if (src instanceof FileChannelImpl)
+           return transferFromFileChannel((FileChannelImpl)src,
+                                          position, count);
 
         return transferFromArbitraryChannel(src, position, count);
     }
