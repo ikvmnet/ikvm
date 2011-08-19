@@ -736,6 +736,7 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/sun/swing/text/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/swing/text/html/*.class
     @OPENJDK7@/jdk/src/solaris/classes/sun/awt/windows/*.class
+    @OPENJDK7@/jdk/src/windows/classes/sun/awt/*.class
 }
 {
     -out:IKVM.OpenJDK.Charsets.dll
@@ -1027,6 +1028,7 @@ assembly.class
     -baseaddress:0x5BC40000
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/sun/rmi/*
     @OPENJDK7@/build/linux-amd64/classes/com/sun/jndi/rmi/registry/*.class
+    @OPENJDK7@/build/linux-amd64/classes/java/rmi/activation/*.class
     @OPENJDK7@/jdk/src/share/classes/java/rmi/*.class
     @OPENJDK7@/jdk/src/share/classes/java/rmi/activation/*.class
     @OPENJDK7@/jdk/src/share/classes/java/rmi/dgc/*.class

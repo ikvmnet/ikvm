@@ -7930,6 +7930,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/management/GcInfo.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/management/HotSpotDiagnosticMXBean.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/management/OperatingSystemMXBean.java
+@OPENJDK7@/jdk/src/share/classes/com/sun/management/ThreadMXBean.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/management/UnixOperatingSystemMXBean.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/management/VMOption.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/media/sound/MidiDeviceReceiverEnvelope.java
@@ -11314,6 +11315,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/org/jcp/xml/dsig/internal/dom/DOMBase64Transform.java
 @OPENJDK7@/jdk/src/share/classes/org/jcp/xml/dsig/internal/dom/DOMCanonicalizationMethod.java
 @OPENJDK7@/jdk/src/share/classes/org/jcp/xml/dsig/internal/dom/DOMCanonicalXMLC14NMethod.java
+@OPENJDK7@/jdk/src/share/classes/org/jcp/xml/dsig/internal/dom/DOMCanonicalXMLC14N11Method.java
 @OPENJDK7@/jdk/src/share/classes/org/jcp/xml/dsig/internal/dom/DOMCryptoBinary.java
 @OPENJDK7@/jdk/src/share/classes/org/jcp/xml/dsig/internal/dom/DOMDigestMethod.java
 @OPENJDK7@/jdk/src/share/classes/org/jcp/xml/dsig/internal/dom/DOMEnvelopedTransform.java
@@ -12826,7 +12828,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/tools/JarSignerResources_zh_CN.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/tools/KeyStoreUtil.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/tools/KeyTool.java
-@OPENJDK7@/jdk/src/share/classes/sun/security/tools/policytool/PolicyTool.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/tools/TimestampedSigner.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/util/AuthResources.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/util/AuthResources_de.java
@@ -13511,6 +13512,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/windows/classes/java/net/PlainSocketImpl.java
 @OPENJDK7@/jdk/src/windows/classes/java/util/prefs/WindowsPreferences.java
 @OPENJDK7@/jdk/src/windows/classes/java/util/prefs/WindowsPreferencesFactory.java
+@OPENJDK7@/jdk/src/windows/classes/sun/awt/Win32ColorModel24.java
 @OPENJDK7@/jdk/src/windows/classes/sun/net/NetHooks.java
 @OPENJDK7@/jdk/src/windows/classes/sun/nio/ch/NativeThread.java
 @OPENJDK7@/jdk/src/windows/classes/sun/nio/ch/PipeImpl.java
