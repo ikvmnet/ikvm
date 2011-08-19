@@ -253,7 +253,9 @@ class FileDispatcherImpl extends FileDispatcher
     }
 
     FileDescriptor duplicateForMapping(FileDescriptor fd) throws IOException {
-        return fd;
+        // we return a dummy FileDescriptor, because we don't need it for mapping operations
+        // and we don't want the original to be closed
+        return new FileDescriptor();
     }
 
     @DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
