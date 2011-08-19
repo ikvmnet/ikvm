@@ -73,8 +73,23 @@ class IOUtil {
     {
         if (dst.isReadOnly())
             throw new IllegalArgumentException("Read-only buffer");
+
         if (position != -1)
-            throw new ikvm.internal.NotYetImplementedError();
+        {
+            synchronized (lock)
+            {
+                long prevpos = fd.getFilePointer();
+                try
+                {
+                    fd.seek(position);
+                    return read(fd, dst, -1, nd, null);
+                }
+                finally
+                {
+                    fd.seek(prevpos);
+                }
+            }
+        }
 
         if (dst.hasArray())
         {
@@ -109,7 +124,21 @@ class IOUtil {
         throws IOException
     {
         if (position != -1)
-            throw new ikvm.internal.NotYetImplementedError();
+        {
+            synchronized (lock)
+            {
+                long prevpos = fd.getFilePointer();
+                try
+                {
+                    fd.seek(position);
+                    return write(fd, src, -1, nd, null);
+                }
+                finally
+                {
+                    fd.seek(prevpos);
+                }
+            }
+        }
 
         if (src.hasArray())
         {
