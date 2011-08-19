@@ -69,6 +69,11 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
     public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> opts, FileAttribute<?>... attrs) throws IOException
     {
+        return newFileChannel(path, opts, attrs);
+    }
+
+    public FileChannel newFileChannel(Path path, Set<? extends OpenOption> opts, FileAttribute<?>... attrs) throws IOException
+    {
         NetPath npath = NetPath.from(path);
         if (attrs.length != 0)
         {
