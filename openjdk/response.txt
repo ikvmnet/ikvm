@@ -730,6 +730,7 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/sun/java2d/pisces/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/net/www/content/image/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/swing/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/swing/icon/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/swing/plaf/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/swing/plaf/synth/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/swing/plaf/windows/*.class

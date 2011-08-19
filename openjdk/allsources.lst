@@ -11418,6 +11418,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/sun/awt/image/ImageWatched.java
 @OPENJDK7@/jdk/src/share/classes/sun/awt/image/InputStreamImageSource.java
 @OPENJDK7@/jdk/src/share/classes/sun/awt/image/IntegerInterleavedRaster.java
+@OPENJDK7@/jdk/src/share/classes/sun/awt/image/PixelConverter.java
 @OPENJDK7@/jdk/src/share/classes/sun/awt/image/PNGImageDecoder.java
 @OPENJDK7@/jdk/src/share/classes/sun/awt/image/ShortBandedRaster.java
 @OPENJDK7@/jdk/src/share/classes/sun/awt/image/ShortInterleavedRaster.java
