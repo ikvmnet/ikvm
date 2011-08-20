@@ -1029,6 +1029,9 @@ assembly.class
     -out:IKVM.OpenJDK.Remoting.dll
     -baseaddress:0x5BC40000
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/sun/rmi/*
+    @OPENJDK7@/build/linux-amd64/classes/sun/rmi/registry/*.class
+    @OPENJDK7@/build/linux-amd64/classes/sun/rmi/server/*.class
+    @OPENJDK7@/build/linux-amd64/classes/sun/rmi/transport/*.class
     @OPENJDK7@/build/linux-amd64/classes/com/sun/jndi/rmi/registry/*.class
     @OPENJDK7@/build/linux-amd64/classes/java/rmi/activation/*.class
     @OPENJDK7@/jdk/src/share/classes/java/rmi/*.class
@@ -1050,7 +1053,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Beans.dll
-    -baseaddress:0x5BD30000
+    -baseaddress:0x5BD60000
     @OPENJDK7@/build/linux-amd64/impsrc/com/sun/activation/registries/*.class
     @OPENJDK7@/build/linux-amd64/impsrc/javax/activation/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/beans/*.class
@@ -1063,7 +1066,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Media.dll
-    -baseaddress:0x5BDF0000
+    -baseaddress:0x5BE20000
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/javax.print.*
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/javax.sound.*
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/imageio/plugins/common/iio-plugin.properties
