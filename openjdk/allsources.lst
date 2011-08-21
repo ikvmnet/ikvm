@@ -151,6 +151,7 @@ sun/awt/shell/Win32ShellFolder2.java
 sun/awt/shell/Win32ShellFolderManager2.java
 sun/awt/SunToolkit.java
 sun/awt/Win32FontManager.java
+sun/awt/X11FontManager.java
 sun/awt/windows/WPrinterJob.java
 sun/font/CompositeFont.java
 sun/font/Font2D.java
