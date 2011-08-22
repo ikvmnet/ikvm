@@ -33,6 +33,7 @@ import cli.System.IO.FileStream;
 import cli.System.Runtime.InteropServices.DllImportAttribute;
 import cli.System.Runtime.InteropServices.StructLayoutAttribute;
 import cli.System.Runtime.InteropServices.LayoutKind;
+import cli.System.Runtime.InteropServices.Marshal;
 import static ikvm.internal.Util.WINDOWS;
 
 class FileDispatcherImpl extends FileDispatcher
@@ -176,7 +177,7 @@ class FileDispatcherImpl extends FileDispatcher
             int result = LockFileEx(fs.get_SafeFileHandle(), flags, 0, (int)size, (int)(size >> 32), o);
             if (result == 0)
             {
-                int error = cli.System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+                int error = Marshal.GetLastWin32Error();
                 if (!blocking && error == ERROR_LOCK_VIOLATION)
                 {
                     return NO_LOCK;
@@ -225,11 +226,12 @@ class FileDispatcherImpl extends FileDispatcher
         FileStream fs = (FileStream)fd.getStream();
         if (WINDOWS)
         {
+            int ERROR_NOT_LOCKED = 158;
             OVERLAPPED o = new OVERLAPPED();
             o.OffsetLow = (int)pos;
             o.OffsetHigh = (int)(pos >> 32);
             int result = UnlockFileEx(fs.get_SafeFileHandle(), 0, (int)size, (int)(size >> 32), o);
-            if (result == 0)
+            if (result == 0 && Marshal.GetLastWin32Error() != ERROR_NOT_LOCKED)
             {
                 throw new IOException("Release failed");
             }
@@ -243,14 +245,43 @@ class FileDispatcherImpl extends FileDispatcher
                 if (false) throw new cli.System.ObjectDisposedException("");
                 fs.Unlock(pos, size);
             }
+            catch (cli.System.IO.IOException x)
+            {
+                if (!NotLockedHack.isErrorNotLocked(x))
+                {
+                    throw new IOException(x.getMessage());
+                }
+            }
             catch (cli.System.ArgumentOutOfRangeException
-                | cli.System.IO.IOException
                 | cli.System.ObjectDisposedException x)
             {
                 throw new IOException(x.getMessage());
             }
         }
     }
+
+    static class NotLockedHack {
+        private static String msg;
+        static {
+            try {
+                File tmp = File.createTempFile("lock", null);
+                try (FileStream fs = new FileStream(tmp.getPath(), cli.System.IO.FileMode.wrap(cli.System.IO.FileMode.Create))) {
+                    try {
+                        if (false) throw new cli.System.IO.IOException();
+                        fs.Unlock(0, 1);
+                    } catch (cli.System.IO.IOException x) {
+                        msg = x.get_Message();
+                    }
+                }
+                tmp.delete();
+            } catch (Throwable _) {
+            }
+        }
+        static boolean isErrorNotLocked(cli.System.IO.IOException x) {
+            return x.get_Message().equals(msg);
+        }
+    }
+
 
     void close(FileDescriptor fd) throws IOException {
         fd.close();
@@ -265,6 +296,6 @@ class FileDispatcherImpl extends FileDispatcher
     @DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
     private static native int LockFileEx(SafeFileHandle hFile, int dwFlags, int dwReserved, int nNumberOfBytesToLockLow, int nNumberOfBytesToLockHigh, OVERLAPPED lpOverlapped);
 
-    @DllImportAttribute.Annotation("kernel32")
+    @DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
     private static native int UnlockFileEx(SafeFileHandle hFile, int dwReserved, int nNumberOfBytesToUnlockLow, int nNumberOfBytesToUnlockHigh, OVERLAPPED lpOverlapped);
 }
