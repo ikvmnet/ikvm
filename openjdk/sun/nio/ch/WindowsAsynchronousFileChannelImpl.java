@@ -31,8 +31,10 @@ import java.nio.ByteBuffer;
 import java.nio.BufferOverflowException;
 import java.io.IOException;
 import java.io.FileDescriptor;
-import sun.misc.SharedSecrets;
-import sun.misc.JavaIOFileDescriptorAccess;
+import cli.System.AsyncCallback;
+import cli.System.IAsyncResult;
+import cli.System.IO.FileStream;
+import cli.System.IO.SeekOrigin;
 
 /**
  * Windows implementation of AsynchronousFileChannel using overlapped I/O.
@@ -40,11 +42,8 @@ import sun.misc.JavaIOFileDescriptorAccess;
 
 public class WindowsAsynchronousFileChannelImpl
     extends AsynchronousFileChannelImpl
-    implements Iocp.OverlappedChannel, Groupable
+    implements Groupable
 {
-    private static final JavaIOFileDescriptorAccess fdAccess =
-        SharedSecrets.getJavaIOFileDescriptorAccess();
-
     // error when EOF is detected asynchronously.
     private static final int ERROR_HANDLE_EOF = 38;
 
@@ -65,19 +64,10 @@ public class WindowsAsynchronousFileChannelImpl
     // Used for force/truncate/size methods
     private static final FileDispatcher nd = new FileDispatcherImpl();
 
-    // The handle is extracted for use in native methods invoked from this class.
-    private final long handle;
-
-    // The key that identifies the channel's association with the I/O port
-    private final int completionKey;
-
     // I/O completion port (group)
     private final Iocp iocp;
 
     private final boolean isDefaultIocp;
-
-    // Caches OVERLAPPED structure for each outstanding I/O operation
-    private final PendingIoCache ioCache;
 
 
     private WindowsAsynchronousFileChannelImpl(FileDescriptor fdObj,
@@ -88,11 +78,8 @@ public class WindowsAsynchronousFileChannelImpl
         throws IOException
     {
         super(fdObj, reading, writing, iocp.executor());
-        this.handle = fdAccess.getHandle(fdObj);
         this.iocp = iocp;
         this.isDefaultIocp = isDefaultIocp;
-        this.ioCache = new PendingIoCache();
-        this.completionKey = iocp.associate(this, handle);
     }
 
     public static AsynchronousFileChannel open(FileDescriptor fdo,
@@ -122,11 +109,6 @@ public class WindowsAsynchronousFileChannelImpl
     }
 
     @Override
-    public <V,A> PendingFuture<V,A> getByOverlapped(long overlapped) {
-        return ioCache.remove(overlapped);
-    }
-
-    @Override
     public void close() throws IOException {
         closeLock.writeLock().lock();
         try {
@@ -141,13 +123,7 @@ public class WindowsAsynchronousFileChannelImpl
         invalidateAllLocks();
 
         // close the file
-        close0(handle);
-
-        // waits until all I/O operations have completed
-        ioCache.close();
-
-        // disassociate from port
-        iocp.disassociate(completionKey);
+        fdObj.close();
 
         // for the non-default group close the port
         if (!isDefaultIocp)
@@ -163,6 +139,12 @@ public class WindowsAsynchronousFileChannelImpl
      * Translates Throwable to IOException
      */
     private static IOException toIOException(Throwable x) {
+        if (x instanceof cli.System.ArgumentException) {
+            return new IOException(x.getMessage());
+        }
+        if (x instanceof cli.System.IO.IOException) {
+            return new IOException(x.getMessage());
+        }
         if (x instanceof IOException) {
             if (x instanceof ClosedChannelException)
                 x = new AsynchronousCloseException();
@@ -229,34 +211,27 @@ public class WindowsAsynchronousFileChannelImpl
 
         @Override
         public void run() {
-            long overlapped = 0L;
-            try {
-                begin();
+            FileStream fs = (FileStream)fdObj.getStream();
+            for (;;) {
+                try {
+                    begin();
 
-                // allocate OVERLAPPED structure
-                overlapped = ioCache.add(result);
-
-                // synchronize on result to avoid race with handler thread
-                // when lock is acquired immediately.
-                synchronized (result) {
-                    int n = lockFile(handle, position, fli.size(), fli.isShared(),
-                                     overlapped);
-                    if (n == IOStatus.UNAVAILABLE) {
-                        // I/O is pending
-                        return;
+                    try {
+                        if (false) throw new cli.System.IO.IOException();
+                        fs.Lock(position, fli.size());
+                        result.setResult(fli);
+                        break;
+                    } catch (cli.System.IO.IOException _) {
+                        // we failed to acquire the lock, try again next iteration
                     }
-                    // acquired lock immediately
-                    result.setResult(fli);
+                } catch (Throwable x) {
+                    // lock failed or channel closed
+                    removeFromFileLockTable(fli);
+                    result.setFailure(toIOException(x));
+                } finally {
+                    end();
                 }
-
-            } catch (Throwable x) {
-                // lock failed or channel closed
-                removeFromFileLockTable(fli);
-                if (overlapped != 0L)
-                    ioCache.remove(overlapped);
-                result.setFailure(toIOException(x));
-            } finally {
-                end();
+                cli.System.Threading.Thread.Sleep(100);
             }
 
             // invoke completion handler
@@ -318,7 +293,7 @@ public class WindowsAsynchronousFileChannelImpl
         result.setContext(lockTask);
 
         // initiate I/O
-        if (Iocp.supportsThreadAgnosticIo()) {
+        if (false) {
             lockTask.run();
         } else {
             boolean executed = false;
@@ -356,7 +331,15 @@ public class WindowsAsynchronousFileChannelImpl
         try {
             begin();
             // try to acquire the lock
-            int res = nd.lock(fdObj, false, position, size, shared);
+            int res;
+            try {
+                if (false) throw new cli.System.IO.IOException();
+                FileStream fs = (FileStream)fdObj.getStream();
+                fs.Lock(position, size);
+                res = LOCKED;
+            } catch (cli.System.IO.IOException _) {
+                res = NO_LOCK;
+            }
             if (res == NO_LOCK)
                 return null;
             gotLock = true;
@@ -370,13 +353,21 @@ public class WindowsAsynchronousFileChannelImpl
 
     @Override
     protected void implRelease(FileLockImpl fli) throws IOException {
-        nd.release(fdObj, fli.position(), fli.size());
+        try {
+            if (false) throw new cli.System.IO.IOException();
+            FileStream fs = (FileStream)fdObj.getStream();
+            fs.Unlock(fli.position(), fli.size());
+        } catch (cli.System.IO.IOException x) {
+            if (!FileDispatcherImpl.NotLockedHack.isErrorNotLocked(x)) {
+                throw new IOException(x.getMessage());
+            }
+        }
     }
 
     /**
      * Task that initiates read operation and handles completion result.
      */
-    private class ReadTask<A> implements Runnable, Iocp.ResultHandler {
+    private class ReadTask<A> implements Runnable, Iocp.ResultHandler, AsyncCallback.Method {
         private final ByteBuffer dst;
         private final int pos, rem;     // buffer position/remaining
         private final long position;    // file position
@@ -396,11 +387,6 @@ public class WindowsAsynchronousFileChannelImpl
             this.rem = rem;
             this.position = position;
             this.result = result;
-        }
-
-        void releaseBufferIfSubstituted() {
-            if (buf != dst)
-                Util.releaseTemporaryDirectBuffer(buf);
         }
 
         void updatePosition(int bytesTransferred) {
@@ -426,53 +412,40 @@ public class WindowsAsynchronousFileChannelImpl
 
         @Override
         public void run() {
-            int n = -1;
-            long overlapped = 0L;
-            long address;
-
-            // Substitute a native buffer if not direct
-            if (dst instanceof DirectBuffer) {
+            // Substitute an array backed buffer if not
+            if (dst.hasArray()) {
                 buf = dst;
-                address = ((DirectBuffer)dst).address() + pos;
             } else {
-                buf = Util.getTemporaryDirectBuffer(rem);
-                address = ((DirectBuffer)buf).address();
+                buf = ByteBuffer.allocate(rem);
             }
 
-            boolean pending = false;
             try {
                 begin();
 
-                // allocate OVERLAPPED
-                overlapped = ioCache.add(result);
-
                 // initiate read
-                n = readFile(handle, address, rem, position, overlapped);
-                if (n == IOStatus.UNAVAILABLE) {
-                    // I/O is pending
-                    pending = true;
-                    return;
-                } else if (n == IOStatus.EOF) {
-                    result.setResult(n);
-                } else {
-                    throw new InternalError("Unexpected result: " + n);
-                }
+                FileStream fs = (FileStream)fdObj.getStream();
+                fs.Seek(position, SeekOrigin.wrap(SeekOrigin.Begin));
+                fs.BeginRead(buf.array(), buf.arrayOffset() + pos, rem, new AsyncCallback(this), null);
+                return;
 
             } catch (Throwable x) {
                 // failed to initiate read
                 result.setFailure(toIOException(x));
             } finally {
-                if (!pending) {
-                    // release resources
-                    if (overlapped != 0L)
-                        ioCache.remove(overlapped);
-                    releaseBufferIfSubstituted();
-                }
                 end();
             }
 
             // invoke completion handler
             Invoker.invoke(result);
+        }
+
+        public void Invoke(IAsyncResult ar) {
+            try {
+                FileStream fs = (FileStream)fdObj.getStream();
+                completed(fs.EndRead(ar), false);
+            } catch (Throwable x) {
+                failed(0, toIOException(x));
+            }
         }
 
         /**
@@ -481,9 +454,6 @@ public class WindowsAsynchronousFileChannelImpl
         @Override
         public void completed(int bytesTransferred, boolean canInvokeDirect) {
             updatePosition(bytesTransferred);
-
-            // return direct buffer to cache if substituted
-            releaseBufferIfSubstituted();
 
             // release waiters and invoke completion handler
             result.setResult(bytesTransferred);
@@ -500,9 +470,6 @@ public class WindowsAsynchronousFileChannelImpl
             if (error == ERROR_HANDLE_EOF) {
                 completed(-1, false);
             } else {
-                // return direct buffer to cache if substituted
-                releaseBufferIfSubstituted();
-
                 // release waiters
                 if (isOpen()) {
                     result.setFailure(x);
@@ -567,7 +534,7 @@ public class WindowsAsynchronousFileChannelImpl
     /**
      * Task that initiates write operation and handles completion result.
      */
-    private class WriteTask<A> implements Runnable, Iocp.ResultHandler {
+    private class WriteTask<A> implements Runnable, Iocp.ResultHandler, AsyncCallback.Method {
         private final ByteBuffer src;
         private final int pos, rem;     // buffer position/remaining
         private final long position;    // file position
@@ -589,11 +556,6 @@ public class WindowsAsynchronousFileChannelImpl
             this.result = result;
         }
 
-        void releaseBufferIfSubstituted() {
-            if (buf != src)
-                Util.releaseTemporaryDirectBuffer(buf);
-        }
-
         void updatePosition(int bytesTransferred) {
             // if the I/O succeeded then adjust buffer position
             if (bytesTransferred > 0) {
@@ -607,47 +569,30 @@ public class WindowsAsynchronousFileChannelImpl
 
         @Override
         public void run() {
-            int n = -1;
-            long overlapped = 0L;
-            long address;
-
-            // Substitute a native buffer if not direct
-            if (src instanceof DirectBuffer) {
+            // Substitute an array backed buffer if not
+            if (src.hasArray()) {
                 buf = src;
-                address = ((DirectBuffer)src).address() + pos;
             } else {
-                buf = Util.getTemporaryDirectBuffer(rem);
+                buf = ByteBuffer.allocate(rem);
                 buf.put(src);
                 buf.flip();
                 // temporarily restore position as we don't know how many bytes
                 // will be written
                 src.position(pos);
-                address = ((DirectBuffer)buf).address();
             }
 
             try {
                 begin();
 
-                // allocate an OVERLAPPED structure
-                overlapped = ioCache.add(result);
-
                 // initiate the write
-                n = writeFile(handle, address, rem, position, overlapped);
-                if (n == IOStatus.UNAVAILABLE) {
-                    // I/O is pending
-                    return;
-                } else {
-                    throw new InternalError("Unexpected result: " + n);
-                }
+                FileStream fs = (FileStream)fdObj.getStream();
+                fs.Seek(position, SeekOrigin.wrap(SeekOrigin.Begin));
+                fs.BeginWrite(buf.array(), buf.arrayOffset() + pos, rem, new AsyncCallback(this), null);
+                return;
 
             } catch (Throwable x) {
                 // failed to initiate read:
                 result.setFailure(toIOException(x));
-
-                // release resources
-                if (overlapped != 0L)
-                    ioCache.remove(overlapped);
-                releaseBufferIfSubstituted();
 
             } finally {
                 end();
@@ -657,15 +602,22 @@ public class WindowsAsynchronousFileChannelImpl
             Invoker.invoke(result);
         }
 
+        public void Invoke(IAsyncResult ar) {
+            try {
+                FileStream fs = (FileStream)fdObj.getStream();
+                fs.EndWrite(ar);
+                completed(rem, false);
+            } catch (Throwable x) {
+                failed(0, toIOException(x));
+            }
+        }
+
         /**
          * Executed when the I/O has completed
          */
         @Override
         public void completed(int bytesTransferred, boolean canInvokeDirect) {
             updatePosition(bytesTransferred);
-
-            // return direct buffer to cache if substituted
-            releaseBufferIfSubstituted();
 
             // release waiters and invoke completion handler
             result.setResult(bytesTransferred);
@@ -678,9 +630,6 @@ public class WindowsAsynchronousFileChannelImpl
 
         @Override
         public void failed(int error, IOException x) {
-            // return direct buffer to cache if substituted
-            releaseBufferIfSubstituted();
-
             // release waiters and invoker completion handler
             if (isOpen()) {
                 result.setFailure(x);
@@ -736,22 +685,5 @@ public class WindowsAsynchronousFileChannelImpl
             Invoker.invokeOnThreadInThreadPool(this, writeTask);
         }
         return result;
-    }
-
-    // -- Native methods --
-
-    private static native int readFile(long handle, long address, int len,
-        long offset, long overlapped) throws IOException;
-
-    private static native int writeFile(long handle, long address, int len,
-        long offset, long overlapped) throws IOException;
-
-    private static native int lockFile(long handle, long position, long size,
-        boolean shared, long overlapped) throws IOException;
-
-    private static native void close0(long handle);
-
-    static {
-        Util.load();
     }
 }

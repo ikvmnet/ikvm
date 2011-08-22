@@ -39,9 +39,12 @@ import java.nio.channels.*;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.nio.file.spi.FileSystemProvider;
+import java.util.concurrent.ExecutorService;
 import java.util.Map;
 import java.util.Set;
+import sun.nio.ch.WindowsAsynchronousFileChannelImpl;
 import sun.nio.ch.FileChannelImpl;
+import sun.nio.ch.ThreadPool;
 
 final class NetFileSystemProvider extends AbstractFileSystemProvider
 {
@@ -65,6 +68,116 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
     public Path getPath(URI uri)
     {
         throw new NotYetImplementedError();
+    }
+
+    public AsynchronousFileChannel newAsynchronousFileChannel(Path path, Set<? extends OpenOption> opts, ExecutorService executor, FileAttribute<?>... attrs) throws IOException
+    {
+        NetPath npath = NetPath.from(path);
+        if (attrs.length != 0)
+        {
+            throw new NotYetImplementedError();
+        }
+        int mode = FileMode.Open;
+        int share = FileShare.ReadWrite | FileShare.Delete;
+        int options = FileOptions.Asynchronous;
+        boolean read = false;
+        boolean write = false;
+        boolean sparse = false;
+        for (OpenOption opt : opts)
+        {
+            if (opt instanceof StandardOpenOption)
+            {
+                switch ((StandardOpenOption)opt)
+                {
+                    case CREATE:
+                        mode = FileMode.Create;
+                        break;
+                    case CREATE_NEW:
+                        mode = FileMode.CreateNew;
+                        break;
+                    case DELETE_ON_CLOSE:
+                        options |= FileOptions.DeleteOnClose;
+                        break;
+                    case DSYNC:
+                        options |= FileOptions.WriteThrough;
+                        break;
+                    case READ:
+                        read = true;
+                        break;
+                    case SPARSE:
+                        sparse = true;
+                        break;
+                    case SYNC:
+                        options |= FileOptions.WriteThrough;
+                        break;
+                    case TRUNCATE_EXISTING:
+                        mode = FileMode.Truncate;
+                        break;
+                    case WRITE:
+                        write = true;
+                        break;
+                    default:
+                        throw new UnsupportedOperationException();
+                }
+            }
+            else if (opt instanceof ExtendedOpenOption)
+            {
+                switch ((ExtendedOpenOption)opt)
+                {
+                    case NOSHARE_READ:
+                        share &= ~FileShare.Read;
+                        break;
+                    case NOSHARE_WRITE:
+                        share &= ~FileShare.Write;
+                        break;
+                    case NOSHARE_DELETE:
+                        share &= ~FileShare.Delete;
+                        break;
+                    default:
+                        throw new UnsupportedOperationException();
+                }
+            }
+            else if (opt == null)
+            {
+                throw new NullPointerException();
+            }
+            else
+            {
+                throw new UnsupportedOperationException();
+            }
+        }
+
+        if (!read && !write)
+        {
+            read = true;
+        }
+
+        if (mode == FileMode.CreateNew && sparse)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        int rights = 0;
+        if (read)
+        {
+            rights |= FileSystemRights.Read;
+        }
+        if (write)
+        {
+            rights |= FileSystemRights.Write;
+        }
+
+        ThreadPool pool;
+        if (executor == null)
+        {
+            pool = null;
+        }
+        else
+        {
+            pool = ThreadPool.wrap(executor, 0);
+        }
+
+        return WindowsAsynchronousFileChannelImpl.open(open(npath.path, mode, rights, share, options), read, write, pool);
     }
 
     public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> opts, FileAttribute<?>... attrs) throws IOException
@@ -193,7 +306,11 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
             }
         }
 
-        FileStream fs;
+        return FileChannelImpl.open(open(npath.path, mode, rights, share, options), read, write, append, null);
+    }
+
+    private static FileDescriptor open(String path, int mode, int rights, int share, int options) throws IOException
+    {
         try
         {
             if (false) throw new cli.System.ArgumentException();
@@ -203,19 +320,19 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
             if (false) throw new cli.System.IO.IOException();
             if (false) throw new cli.System.Security.SecurityException();
             if (false) throw new cli.System.UnauthorizedAccessException();
-            fs = new FileStream(npath.path, FileMode.wrap(mode), FileSystemRights.wrap(rights), FileShare.wrap(share), 8, FileOptions.wrap(options));
+            return FileDescriptor.fromStream(new FileStream(path, FileMode.wrap(mode), FileSystemRights.wrap(rights), FileShare.wrap(share), 8, FileOptions.wrap(options)));
         }
         catch (cli.System.ArgumentException x)
         {
-            throw new FileSystemException(npath.path, null, x.getMessage());
+            throw new FileSystemException(path, null, x.getMessage());
         }
         catch (cli.System.IO.FileNotFoundException _)
         {
-            throw new NoSuchFileException(npath.path);
+            throw new NoSuchFileException(path);
         }
         catch (cli.System.IO.DirectoryNotFoundException _)
         {
-            throw new NoSuchFileException(npath.path);
+            throw new NoSuchFileException(path);
         }
         catch (cli.System.PlatformNotSupportedException x)
         {
@@ -223,17 +340,16 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
         }
         catch (cli.System.IO.IOException x)
         {
-            throw new FileSystemException(npath.path, null, x.getMessage());
+            throw new FileSystemException(path, null, x.getMessage());
         }
         catch (cli.System.Security.SecurityException _)
         {
-            throw new AccessDeniedException(npath.path);
+            throw new AccessDeniedException(path);
         }
         catch (cli.System.UnauthorizedAccessException _)
         {
-            throw new AccessDeniedException(npath.path);
+            throw new AccessDeniedException(path);
         }
-        return FileChannelImpl.open(FileDescriptor.fromStream(fs), read, write, append, null);
     }
 
     public DirectoryStream<Path> newDirectoryStream(Path dir, DirectoryStream.Filter<? super Path> filter) throws IOException

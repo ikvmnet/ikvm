@@ -206,6 +206,7 @@ sun/nio/ch/DotNetSelectorImpl.java
 sun/nio/ch/FileChannelImpl.java
 sun/nio/ch/FileDispatcherImpl.java
 sun/nio/ch/FileKey.java
+sun/nio/ch/Iocp.java
 sun/nio/ch/IOUtil.java
 sun/nio/ch/NativeDispatcher.java
 sun/nio/ch/Net.java
@@ -214,6 +215,7 @@ sun/nio/ch/SelectionKeyImpl.java
 sun/nio/ch/SocketDispatcher.java
 sun/nio/ch/SocketOptionRegistry.java
 sun/nio/ch/Util.java
+sun/nio/ch/WindowsAsynchronousFileChannelImpl.java
 sun/nio/cs/StandardCharsets.java
 sun/nio/fs/DefaultFileSystemProvider.java
 sun/nio/fs/DefaultFileTypeDetector.java
