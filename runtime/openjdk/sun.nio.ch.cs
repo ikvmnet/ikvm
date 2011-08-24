@@ -60,7 +60,15 @@ static class Java_sun_nio_ch_DatagramChannelImpl
 #else
 		sun.nio.ch.DatagramChannelImpl impl = (sun.nio.ch.DatagramChannelImpl)obj;
 		java.net.SocketAddress remoteAddress = impl.remoteAddress();
-		System.Net.EndPoint remoteEP = new System.Net.IPEndPoint(0, 0);
+		System.Net.EndPoint remoteEP;
+		if (fd.getSocket().AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+		{
+			remoteEP = new System.Net.IPEndPoint(System.Net.IPAddress.IPv6Any, 0);
+		}
+		else
+		{
+			remoteEP = new System.Net.IPEndPoint(0, 0);
+		}
 		java.net.InetSocketAddress addr;
 		int length;
 		do
@@ -120,7 +128,7 @@ static class Java_sun_nio_ch_DatagramChannelImpl
 		java.net.InetSocketAddress addr = (java.net.InetSocketAddress)sa;
 		try
 		{
-			return fd.getSocket().SendTo(buf, pos, len, System.Net.Sockets.SocketFlags.None, new System.Net.IPEndPoint(java.net.SocketUtil.getAddressFromInetAddress(addr.getAddress()), addr.getPort()));
+			return fd.getSocket().SendTo(buf, pos, len, System.Net.Sockets.SocketFlags.None, new System.Net.IPEndPoint(java.net.SocketUtil.getAddressFromInetAddress(addr.getAddress(), preferIPv6), addr.getPort()));
 		}
 		catch (System.Net.Sockets.SocketException x)
 		{
@@ -484,7 +492,11 @@ namespace IKVM.NativeCode.sun.nio.ch
 	{
 		public static bool isIPv6Available0()
 		{
-			return false;
+			// we only support IPv6 on Vista and up
+			// (non-Windows OSses are currently not supported)
+			return System.Net.Sockets.Socket.OSSupportsIPv6
+				&& Environment.OSVersion.Platform == PlatformID.Win32NT
+				&& Environment.OSVersion.Version.Major >= 6;
 		}
 
 		public static bool canIPv6SocketJoinIPv4Group0()
@@ -766,7 +778,7 @@ namespace IKVM.NativeCode.sun.nio.ch
 #if !FIRST_PASS
 			try
 			{
-				fd.getSocket().Bind(new System.Net.IPEndPoint(global::java.net.SocketUtil.getAddressFromInetAddress(addr), port));
+				fd.getSocket().Bind(new System.Net.IPEndPoint(global::java.net.SocketUtil.getAddressFromInetAddress(addr, preferIPv6), port));
 			}
 			catch (System.Net.Sockets.SocketException x)
 			{
@@ -816,7 +828,7 @@ namespace IKVM.NativeCode.sun.nio.ch
 #else
 			try
 			{
-				System.Net.IPEndPoint ep = new System.Net.IPEndPoint(global::java.net.SocketUtil.getAddressFromInetAddress(remote), remotePort);
+				System.Net.IPEndPoint ep = new System.Net.IPEndPoint(global::java.net.SocketUtil.getAddressFromInetAddress(remote, preferIPv6), remotePort);
 				bool datagram = fd.getSocket().SocketType == System.Net.Sockets.SocketType.Dgram;
 				if (datagram || fd.isSocketBlocking())
 				{
