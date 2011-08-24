@@ -28,6 +28,116 @@ using FileDescriptor = java.io.FileDescriptor;
 using InetAddress = java.net.InetAddress;
 using ByteBuffer = java.nio.ByteBuffer;
 
+static class Java_sun_nio_ch_DatagramChannelImpl
+{
+	public static void initIDs()
+	{
+	}
+
+	public static void disconnect0(FileDescriptor fd)
+	{
+#if !FIRST_PASS
+		try
+		{
+			fd.getSocket().Connect(new System.Net.IPEndPoint(System.Net.IPAddress.Any, 0));
+			IKVM.NativeCode.sun.nio.ch.Net.setConnectionReset(fd.getSocket(), false);
+		}
+		catch (System.Net.Sockets.SocketException x)
+		{
+			throw java.net.SocketUtil.convertSocketExceptionToIOException(x);
+		}
+		catch (ObjectDisposedException)
+		{
+			throw new java.net.SocketException("Socket is closed");
+		}
+#endif
+	}
+
+	public static int receive0(object obj, FileDescriptor fd, byte[] buf, int pos, int len, bool connected)
+	{
+#if FIRST_PASS
+		return 0;
+#else
+		sun.nio.ch.DatagramChannelImpl impl = (sun.nio.ch.DatagramChannelImpl)obj;
+		java.net.SocketAddress remoteAddress = impl.remoteAddress();
+		System.Net.EndPoint remoteEP = new System.Net.IPEndPoint(0, 0);
+		java.net.InetSocketAddress addr;
+		int length;
+		do
+		{
+			for (; ; )
+			{
+				try
+				{
+					length = fd.getSocket().ReceiveFrom(buf, pos, len, System.Net.Sockets.SocketFlags.None, ref remoteEP);
+					break;
+				}
+				catch (System.Net.Sockets.SocketException x)
+				{
+					if (x.ErrorCode == java.net.SocketUtil.WSAECONNRESET)
+					{
+						// A previous send failed (i.e. the remote host responded with a ICMP that the port is closed) and
+						// the winsock stack helpfully lets us know this, but we only care about this when we're connected,
+						// otherwise we'll simply retry the receive (note that we use SIO_UDP_CONNRESET to prevent these
+						// WSAECONNRESET exceptions, but when switching from connected to disconnected, some can slip through).
+						if (connected)
+						{
+							throw new java.net.PortUnreachableException();
+						}
+						continue;
+					}
+					if (x.ErrorCode == java.net.SocketUtil.WSAEMSGSIZE)
+					{
+						// The buffer size was too small for the packet, ReceiveFrom receives the part of the packet
+						// that fits in the buffer and then throws an exception, so we have to ignore the exception in this case.
+						length = len;
+						break;
+					}
+					if (x.ErrorCode == java.net.SocketUtil.WSAEWOULDBLOCK)
+					{
+						return sun.nio.ch.IOStatus.UNAVAILABLE;
+					}
+					throw java.net.SocketUtil.convertSocketExceptionToIOException(x);
+				}
+				catch (ObjectDisposedException)
+				{
+					throw new java.net.SocketException("Socket is closed");
+				}
+			}
+			System.Net.IPEndPoint ep = (System.Net.IPEndPoint)remoteEP;
+			addr = new java.net.InetSocketAddress(java.net.SocketUtil.getInetAddressFromIPEndPoint(ep), ep.Port);
+		} while (remoteAddress != null && !addr.equals(remoteAddress));
+		impl.sender = addr;
+		return length;
+#endif
+	}
+
+	public static int send0(object obj, bool preferIPv6, FileDescriptor fd, byte[] buf, int pos, int len, object sa)
+	{
+#if FIRST_PASS
+		return 0;
+#else
+		java.net.InetSocketAddress addr = (java.net.InetSocketAddress)sa;
+		try
+		{
+			return fd.getSocket().SendTo(buf, pos, len, System.Net.Sockets.SocketFlags.None, new System.Net.IPEndPoint(java.net.SocketUtil.getAddressFromInetAddress(addr.getAddress()), addr.getPort()));
+		}
+		catch (System.Net.Sockets.SocketException x)
+		{
+			if (x.ErrorCode == java.net.SocketUtil.WSAEWOULDBLOCK)
+			{
+				return sun.nio.ch.IOStatus.UNAVAILABLE;
+			}
+			throw java.net.SocketUtil.convertSocketExceptionToIOException(x);
+		}
+		catch (ObjectDisposedException)
+		{
+			throw new java.net.SocketException("Socket is closed");
+		}
+#endif
+	}
+}
+
 #if !FIRST_PASS
 namespace IKVM.Internal.AsyncSocket
 {
@@ -620,7 +730,6 @@ namespace IKVM.NativeCode.sun.nio.ch
 #else
 			try
 			{
-				FileDescriptor fd = new FileDescriptor();
 				System.Net.Sockets.AddressFamily addressFamily = preferIPv6
 					? System.Net.Sockets.AddressFamily.InterNetworkV6
 					: System.Net.Sockets.AddressFamily.InterNetwork;
@@ -630,7 +739,19 @@ namespace IKVM.NativeCode.sun.nio.ch
 				System.Net.Sockets.ProtocolType protocolType = stream
 					? System.Net.Sockets.ProtocolType.Tcp
 					: System.Net.Sockets.ProtocolType.Udp;
-				fd.setSocket(new System.Net.Sockets.Socket(addressFamily, socketType, protocolType));
+				System.Net.Sockets.Socket socket = new System.Net.Sockets.Socket(addressFamily, socketType, protocolType);
+				if (preferIPv6)
+				{
+					// enable IPv4 over IPv6 sockets (note that we don't have to check for >= Vista here, because nio sockets only support IPv6 on >= Vista)
+					const System.Net.Sockets.SocketOptionName IPV6_V6ONLY = (System.Net.Sockets.SocketOptionName)27;
+					socket.SetSocketOption(System.Net.Sockets.SocketOptionLevel.IPv6, IPV6_V6ONLY, 0);
+				}
+				if (!stream)
+				{
+					setConnectionReset(socket, false);
+				}
+				FileDescriptor fd = new FileDescriptor();
+				fd.setSocket(socket);
 				return fd;
 			}
 			catch (System.Net.Sockets.SocketException x)
@@ -676,6 +797,18 @@ namespace IKVM.NativeCode.sun.nio.ch
 #endif
 		}
 
+		internal static void setConnectionReset(System.Net.Sockets.Socket socket, bool enable)
+		{
+			// Windows 2000 introduced a "feature" that causes it to return WSAECONNRESET from receive,
+			// if a previous send resulted in an ICMP port unreachable. For unconnected datagram sockets,
+			// we disable this feature by using this ioctl.
+			const int IOC_IN = unchecked((int)0x80000000);
+			const int IOC_VENDOR = 0x18000000;
+			const int SIO_UDP_CONNRESET = IOC_IN | IOC_VENDOR | 12;
+
+			socket.IOControl(SIO_UDP_CONNRESET, new byte[] { enable ? (byte)1 : (byte)0 }, null);
+		}
+
 		public static int connect0(bool preferIPv6, FileDescriptor fd, InetAddress remote, int remotePort)
 		{
 #if FIRST_PASS
@@ -684,9 +817,14 @@ namespace IKVM.NativeCode.sun.nio.ch
 			try
 			{
 				System.Net.IPEndPoint ep = new System.Net.IPEndPoint(global::java.net.SocketUtil.getAddressFromInetAddress(remote), remotePort);
-				if (fd.isSocketBlocking())
+				bool datagram = fd.getSocket().SocketType == System.Net.Sockets.SocketType.Dgram;
+				if (datagram || fd.isSocketBlocking())
 				{
 					fd.getSocket().Connect(ep);
+					if (datagram)
+					{
+						setConnectionReset(fd.getSocket(), true);
+					}
 					return 1;
 				}
 				else

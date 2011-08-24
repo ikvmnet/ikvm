@@ -43,12 +43,6 @@ class DatagramChannelImpl
     extends DatagramChannel
     implements SelChImpl
 {
-    // Windows 2000 introduced a "feature" that causes it to return WSAECONNRESET from receive,
-    // if a previous send resulted in an ICMP port unreachable. We disable this feature by using
-    // this ioctl.
-    private static final int IOC_IN = (int)0x80000000;
-    private static final int IOC_VENDOR = 0x18000000;
-    private static final int SIO_UDP_CONNRESET = IOC_IN | IOC_VENDOR | 12;
 
     // Used to make native read and write calls
     private static NativeDispatcher nd = new SocketDispatcher();
@@ -115,15 +109,6 @@ class DatagramChannelImpl
             this.fd = Net.socket(family, false);
             this.fdVal = IOUtil.fdVal(fd);
             this.state = ST_UNCONNECTED;
-            try
-            {
-                if (false) throw new cli.System.Net.Sockets.SocketException();
-                fd.getSocket().IOControl(SIO_UDP_CONNRESET, new byte[] { 0 }, null);
-            }
-            catch (cli.System.Net.Sockets.SocketException x)
-            {
-                throw SocketUtil.convertSocketExceptionToIOException(x);
-            }
         } catch (IOException ioe) {
             ResourceManager.afterUdpClose();
             throw ioe;
@@ -151,15 +136,6 @@ class DatagramChannelImpl
         this.fd = Net.socket(family, false);
         this.fdVal = IOUtil.fdVal(fd);
         this.state = ST_UNCONNECTED;
-        try
-        {
-            if (false) throw new cli.System.Net.Sockets.SocketException();
-            fd.getSocket().IOControl(SIO_UDP_CONNRESET, new byte[] { 0 }, null);
-        }
-        catch (cli.System.Net.Sockets.SocketException x)
-        {
-            throw SocketUtil.convertSocketExceptionToIOException(x);
-        }
     }
 
     public DatagramChannelImpl(SelectorProvider sp, FileDescriptor fd)
@@ -337,7 +313,7 @@ class DatagramChannelImpl
             throw new ClosedChannelException();
     }
 
-    private SocketAddress sender;       // Set by receive0 (## ugh)
+    SocketAddress sender;       // Set by receive0 (## ugh)
 
     public SocketAddress receive(ByteBuffer dst) throws IOException {
         if (dst.isReadOnly())
@@ -359,7 +335,7 @@ class DatagramChannelImpl
                 readerThread = NativeThread.current();
                 if (isConnected() || (security == null)) {
                     do {
-                        n = receive0(dst);
+                        n = receive(fd, dst);
                     } while ((n == IOStatus.INTERRUPTED) && isOpen());
                     if (n == IOStatus.UNAVAILABLE)
                         return null;
@@ -367,7 +343,7 @@ class DatagramChannelImpl
                     bb = ByteBuffer.allocate(dst.remaining());
                     for (;;) {
                         do {
-                            n = receive0(bb);
+                            n = receive(fd, bb);
                         } while ((n == IOStatus.INTERRUPTED) && isOpen());
                         if (n == IOStatus.UNAVAILABLE)
                             return null;
@@ -394,6 +370,42 @@ class DatagramChannelImpl
                 assert IOStatus.check(n);
             }
         }
+    }
+
+    private int receive(FileDescriptor fd, ByteBuffer dst)
+        throws IOException
+    {
+        int pos = dst.position();
+        int lim = dst.limit();
+        assert (pos <= lim);
+        int rem = (pos <= lim ? lim - pos : 0);
+        if (dst.hasArray() && rem > 0)
+            return receiveIntoManagedBuffer(fd, dst, rem, pos);
+
+        // Substitute a managed buffer. If the supplied buffer is empty
+        // we must instead use a nonempty buffer, otherwise the call
+        // will not block waiting for a datagram on some platforms.
+        int newSize = Math.max(rem, 1);
+        ByteBuffer bb = ByteBuffer.allocate(newSize);
+        try {
+            int n = receiveIntoManagedBuffer(fd, bb, newSize, 0);
+            bb.flip();
+            if (n > 0 && rem > 0)
+                dst.put(bb);
+            return n;
+        } finally {
+        }
+    }
+
+    private int receiveIntoManagedBuffer(FileDescriptor fd, ByteBuffer bb,
+                                        int rem, int pos)
+        throws IOException
+    {
+        int n = receive0(fd, bb.array(), bb.arrayOffset() + pos, rem,
+                         isConnected());
+        if (n > 0)
+            bb.position(pos + n);
+        return n;
     }
 
     public int send(ByteBuffer src, SocketAddress target)
@@ -437,7 +449,7 @@ class DatagramChannelImpl
                     return 0;
                 writerThread = NativeThread.current();
                 do {
-                    n = sendImpl(src, isa);
+                    n = send(fd, src, target);
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
 
                 synchronized (stateLock) {
@@ -452,6 +464,52 @@ class DatagramChannelImpl
                 assert IOStatus.check(n);
             }
         }
+    }
+
+    private int send(FileDescriptor fd, ByteBuffer src, SocketAddress target)
+        throws IOException
+    {
+        if (src.hasArray())
+            return sendFromManagedBuffer(fd, src, target);
+
+        // Substitute a managed buffer
+        int pos = src.position();
+        int lim = src.limit();
+        assert (pos <= lim);
+        int rem = (pos <= lim ? lim - pos : 0);
+
+        ByteBuffer bb = ByteBuffer.allocate(rem);
+        try {
+            bb.put(src);
+            bb.flip();
+            // Do not update src until we see how many bytes were written
+            src.position(pos);
+
+            int n = sendFromManagedBuffer(fd, bb, target);
+            if (n > 0) {
+                // now update src
+                src.position(pos + n);
+            }
+            return n;
+        } finally {
+        }
+    }
+
+    private int sendFromManagedBuffer(FileDescriptor fd, ByteBuffer bb,
+                                            SocketAddress target)
+        throws IOException
+    {
+        int pos = bb.position();
+        int lim = bb.limit();
+        assert (pos <= lim);
+        int rem = (pos <= lim ? lim - pos : 0);
+
+        boolean preferIPv6 = (family != StandardProtocolFamily.INET);
+        int written = send0(preferIPv6, fd, bb.array(), bb.arrayOffset() + pos,
+                            rem, target);
+        if (written > 0)
+            bb.position(pos + written);
+        return written;
     }
 
     public int read(ByteBuffer buf) throws IOException {
@@ -642,21 +700,12 @@ class DatagramChannelImpl
                     if (sm != null)
                         sm.checkConnect(isa.getAddress().getHostAddress(),
                                         isa.getPort());
-                    try
-                    {
-                        if (false) throw new cli.System.Net.Sockets.SocketException();
-                        if (false) throw new cli.System.ObjectDisposedException("");
-                        fd.getSocket().Connect(SocketUtil.getAddressFromInetAddress(isa.getAddress()), isa.getPort());
-                        fd.getSocket().IOControl(SIO_UDP_CONNRESET, new byte[] { 1 }, null);
-                    }
-                    catch (cli.System.Net.Sockets.SocketException x)
-                    {
-                        throw new SocketException(x.getMessage());
-                    }
-                    catch (cli.System.ObjectDisposedException x1)
-                    {
-                        throw new SocketException("Socket is closed");
-                    }
+                    int n = Net.connect(family,
+                                        fd,
+                                        isa.getAddress(),
+                                        isa.getPort());
+                    if (n <= 0)
+                        throw new Error();      // Can't happen
 
                     // Connection succeeded; disallow further invocation
                     state = ST_CONNECTED;
@@ -1010,131 +1059,22 @@ class DatagramChannelImpl
 
     // -- Native methods --
 
-    private static void disconnect0(FileDescriptor fd) throws IOException
-    {
-        try
-        {
-            if (false) throw new cli.System.Net.Sockets.SocketException();
-            if (false) throw new cli.System.ObjectDisposedException("");
-            fd.getSocket().Connect(new cli.System.Net.IPEndPoint(cli.System.Net.IPAddress.Any, 0));
-            fd.getSocket().IOControl(SIO_UDP_CONNRESET, new byte[] { 0 }, null);
-        }
-        catch (cli.System.Net.Sockets.SocketException x)
-        {
-            throw SocketUtil.convertSocketExceptionToIOException(x);
-        }
-        catch (cli.System.ObjectDisposedException x1)
-        {
-            throw new SocketException("Socket is closed");
-        }
+    private static native void initIDs();
+
+    private static native void disconnect0(FileDescriptor fd)
+        throws IOException;
+
+    private native int receive0(FileDescriptor fd, byte[] buf, int pos, int len,
+                                boolean connected)
+        throws IOException;
+
+    private native int send0(boolean preferIPv6, FileDescriptor fd, byte[] buf, int pos, int len,
+                             SocketAddress sa)
+        throws IOException;
+
+    static {
+        Util.load();
+        initIDs();
     }
 
-    private int receive0(ByteBuffer bb) throws IOException
-    {
-        byte[] buf = new byte[bb.remaining()];
-        cli.System.Net.EndPoint[] remoteEP = new cli.System.Net.EndPoint[] 
-            {
-                new cli.System.Net.IPEndPoint(0, 0)
-            };
-        InetSocketAddress addr;
-        int length;
-        do
-        {
-            for (; ; )
-            {
-                try
-                {
-                    if (false) throw new cli.System.Net.Sockets.SocketException();
-                    if (false) throw new cli.System.ObjectDisposedException("");
-                    length = fd.getSocket().ReceiveFrom(buf, 0, buf.length, cli.System.Net.Sockets.SocketFlags.wrap(cli.System.Net.Sockets.SocketFlags.None), remoteEP);
-                    break;
-                }
-                catch (cli.System.Net.Sockets.SocketException x)
-                {
-                    if (x.get_ErrorCode() == SocketUtil.WSAECONNRESET)
-                    {
-                        // A previous send failed (i.e. the remote host responded with a ICMP that the port is closed) and
-                        // the winsock stack helpfully lets us know this, but we only care about this when we're connected,
-                        // otherwise we'll simply retry the receive (note that we use SIO_UDP_CONNRESET to prevent these
-                        // WSAECONNRESET exceptions, but when switching from connected to disconnected, some can slip through).
-                        if (isConnected())
-                        {
-                            throw new PortUnreachableException();
-                        }
-                        continue;
-                    }
-                    if (x.get_ErrorCode() == SocketUtil.WSAEMSGSIZE)
-                    {
-                        // The buffer size was too small for the packet, ReceiveFrom receives the part of the packet
-                        // that fits in the buffer and then throws an exception, so we have to ignore the exception in this case.
-                        length = buf.length;
-                        break;
-                    }
-                    if (x.get_ErrorCode() == SocketUtil.WSAEWOULDBLOCK)
-                    {
-                        return IOStatus.UNAVAILABLE;
-                    }
-                    throw SocketUtil.convertSocketExceptionToIOException(x);
-                }
-                catch (cli.System.ObjectDisposedException x1)
-                {
-                    throw new SocketException("Socket is closed");
-                }
-            }
-            cli.System.Net.IPEndPoint ep = (cli.System.Net.IPEndPoint)remoteEP[0];
-            addr = new InetSocketAddress(SocketUtil.getInetAddressFromIPEndPoint(ep), ep.get_Port());
-        } while (remoteAddress != null && !addr.equals(remoteAddress));
-        sender = addr;
-        bb.put(buf, 0, length);
-        return length;
-    }
-
-    private int sendImpl(ByteBuffer bb, InetSocketAddress addr) throws IOException
-    {
-        try
-        {
-            if (false) throw new cli.System.Net.Sockets.SocketException();
-            if (false) throw new cli.System.ObjectDisposedException("");
-            int position = bb.position();
-            byte[] buf;
-            int offset;
-            int length;
-            if (bb.hasArray())
-            {
-                buf = bb.array();
-                offset = bb.arrayOffset() + bb.position();
-                length = bb.remaining();
-            }
-            else
-            {
-                buf = new byte[bb.remaining()];
-                offset = 0;
-                length = buf.length;
-                bb.get(buf);
-                bb.position(position);
-            }
-            int sent = fd.getSocket().SendTo(buf, offset, length, cli.System.Net.Sockets.SocketFlags.wrap(cli.System.Net.Sockets.SocketFlags.None), new cli.System.Net.IPEndPoint(SocketUtil.getAddressFromInetAddress(addr.getAddress()), addr.getPort()));
-            if (bb.hasArray())
-            {
-                bb.position(position + sent);
-            }
-            else
-            {
-                bb.put(buf, 0, sent);
-            }
-            return sent;
-        }
-        catch (cli.System.Net.Sockets.SocketException x)
-        {
-            if (x.get_ErrorCode() == SocketUtil.WSAEWOULDBLOCK)
-            {
-                return IOStatus.UNAVAILABLE;
-            }
-            throw SocketUtil.convertSocketExceptionToIOException(x);
-        }
-        catch (cli.System.ObjectDisposedException x1)
-        {
-            throw new SocketException("Socket is closed");
-        }
-    }
 }
