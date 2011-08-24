@@ -99,6 +99,10 @@ class SocketDispatcher extends NativeDispatcher
     }
 
     void preClose(FileDescriptor fd) throws IOException {
+        closeImpl(fd);
+    }
+
+    static void closeImpl(FileDescriptor fd) throws IOException {
         try
         {
             if (false) throw new cli.System.Net.Sockets.SocketException();

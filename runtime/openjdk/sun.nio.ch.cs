@@ -28,6 +28,238 @@ using FileDescriptor = java.io.FileDescriptor;
 using InetAddress = java.net.InetAddress;
 using ByteBuffer = java.nio.ByteBuffer;
 
+#if !FIRST_PASS
+namespace IKVM.Internal.AsyncSocket
+{
+	using System.Net;
+	using System.Net.Sockets;
+
+	abstract class OperationBase<TInput>
+	{
+		private static readonly AsyncCallback callback = CallbackProc;
+		private Socket socket;
+		private sun.nio.ch.Iocp.ResultHandler handler;
+		private int result;
+		private Exception exception;
+
+		internal int Do(Socket socket, TInput input, object handler)
+		{
+			try
+			{
+				this.socket = socket;
+				this.handler = (sun.nio.ch.Iocp.ResultHandler)handler;
+				IAsyncResult ar = Begin(socket, input, callback, this);
+				if (ar.CompletedSynchronously)
+				{
+					if (exception != null)
+					{
+						throw exception;
+					}
+					return result;
+				}
+				else
+				{
+					return sun.nio.ch.IOStatus.UNAVAILABLE;
+				}
+			}
+			catch (SocketException x)
+			{
+				throw java.net.SocketUtil.convertSocketExceptionToIOException(x);
+			}
+			catch (ObjectDisposedException)
+			{
+				throw new java.nio.channels.ClosedChannelException();
+			}
+		}
+
+		private static void CallbackProc(IAsyncResult ar)
+		{
+			OperationBase<TInput> obj = (OperationBase<TInput>)ar.AsyncState;
+			try
+			{
+				int result = obj.End(obj.socket, ar);
+				if (ar.CompletedSynchronously)
+				{
+					obj.result = result;
+				}
+				else
+				{
+					obj.handler.completed(result, false);
+				}
+			}
+			catch (SocketException x)
+			{
+				if (ar.CompletedSynchronously)
+				{
+					obj.exception = x;
+				}
+				else
+				{
+					obj.handler.failed(x.ErrorCode, java.net.SocketUtil.convertSocketExceptionToIOException(x));
+				}
+			}
+			catch (ObjectDisposedException x)
+			{
+				if (ar.CompletedSynchronously)
+				{
+					obj.exception = x;
+				}
+				else
+				{
+					obj.handler.failed(0, new java.nio.channels.ClosedChannelException());
+				}
+			}
+		}
+
+		protected abstract IAsyncResult Begin(Socket socket, TInput input, AsyncCallback callback, object state);
+		protected abstract int End(Socket socket, IAsyncResult ar);
+	}
+}
+#endif
+
+static class Java_sun_nio_ch_WindowsAsynchronousServerSocketChannelImpl
+{
+#if !FIRST_PASS
+	sealed class Accept : IKVM.Internal.AsyncSocket.OperationBase<System.Net.Sockets.Socket>
+	{
+		protected override IAsyncResult Begin(System.Net.Sockets.Socket listenSocket, System.Net.Sockets.Socket acceptSocket, AsyncCallback callback, object state)
+		{
+			return listenSocket.BeginAccept(acceptSocket, 0, callback, state);
+		}
+
+		protected override int End(System.Net.Sockets.Socket socket, IAsyncResult ar)
+		{
+			socket.EndAccept(ar);
+			return 0;
+		}
+	}
+#endif
+
+	public static void initIDs()
+	{
+	}
+
+	public static int accept0(FileDescriptor listenSocket, FileDescriptor acceptSocket, object handler)
+	{
+#if FIRST_PASS
+		return 0;
+#else
+		return new Accept().Do(listenSocket.getSocket(), acceptSocket.getSocket(), handler);
+#endif
+	}
+
+	public static void updateAcceptContext(FileDescriptor listenSocket, FileDescriptor acceptSocket)
+	{
+		// already handled by .NET Framework
+	}
+
+	public static void closesocket0(long socket)
+	{
+		// unused
+	}
+}
+
+static class Java_sun_nio_ch_WindowsAsynchronousSocketChannelImpl
+{
+#if !FIRST_PASS
+	sealed class Connect : IKVM.Internal.AsyncSocket.OperationBase<System.Net.IPEndPoint>
+	{
+		protected override IAsyncResult Begin(System.Net.Sockets.Socket socket, System.Net.IPEndPoint remoteEP, AsyncCallback callback, object state)
+		{
+			return socket.BeginConnect(remoteEP, callback, state);
+		}
+
+		protected override int End(System.Net.Sockets.Socket socket, IAsyncResult ar)
+		{
+			socket.EndConnect(ar);
+			return 0;
+		}
+	}
+
+	private static List<ArraySegment<byte>> ByteBuffersToList(ByteBuffer[] bufs)
+	{
+		List<ArraySegment<byte>> list = new List<ArraySegment<byte>>(bufs.Length);
+		foreach (ByteBuffer bb in bufs)
+		{
+			list.Add(new ArraySegment<byte>(bb.array(), bb.arrayOffset() + bb.position(), bb.remaining()));
+		}
+		return list;
+	}
+
+	sealed class Receive : IKVM.Internal.AsyncSocket.OperationBase<ByteBuffer[]>
+	{
+		protected override IAsyncResult Begin(System.Net.Sockets.Socket socket, ByteBuffer[] bufs, AsyncCallback callback, object state)
+		{
+			return socket.BeginReceive(ByteBuffersToList(bufs), System.Net.Sockets.SocketFlags.None, callback, state);
+		}
+
+		protected override int End(System.Net.Sockets.Socket socket, IAsyncResult ar)
+		{
+			return socket.EndReceive(ar);
+		}
+	}
+
+	sealed class Send : IKVM.Internal.AsyncSocket.OperationBase<ByteBuffer[]>
+	{
+		protected override IAsyncResult Begin(System.Net.Sockets.Socket socket, ByteBuffer[] bufs, AsyncCallback callback, object state)
+		{
+			return socket.BeginSend(ByteBuffersToList(bufs), System.Net.Sockets.SocketFlags.None, callback, state);
+		}
+
+		protected override int End(System.Net.Sockets.Socket socket, IAsyncResult ar)
+		{
+			return socket.EndSend(ar);
+		}
+	}
+#endif
+
+	public static void initIDs()
+	{
+	}
+
+	public static int connect0(FileDescriptor fd, bool preferIPv6, InetAddress remote, int remotePort, object handler)
+	{
+#if FIRST_PASS
+		return 0;
+#else
+		return new Connect().Do(fd.getSocket(), new System.Net.IPEndPoint(java.net.SocketUtil.getAddressFromInetAddress(remote, preferIPv6), remotePort), handler);
+#endif
+	}
+
+	public static void updateConnectContext(FileDescriptor fd)
+	{
+		// already handled by .NET Framework
+	}
+
+	public static int read0(FileDescriptor fd, ByteBuffer[] bufs, object handler)
+	{
+#if FIRST_PASS
+		return 0;
+#else
+		return new Receive().Do(fd.getSocket(), bufs, handler);
+#endif
+	}
+
+	public static int write0(FileDescriptor fd, ByteBuffer[] bufs, object handler)
+	{
+#if FIRST_PASS
+		return 0;
+#else
+		return new Send().Do(fd.getSocket(), bufs, handler);
+#endif
+	}
+
+	public static void shutdown0(long socket, int how)
+	{
+		// unused
+	}
+
+	public static void closesocket0(long socket)
+	{
+		// unused
+	}
+}
+
 namespace IKVM.NativeCode.sun.nio.ch
 {
 	static class SocketDispatcher
@@ -219,14 +451,44 @@ namespace IKVM.NativeCode.sun.nio.ch
 
 		public static int remotePort(FileDescriptor fd)
 		{
-			// this method appears to be unused
-			throw new NotImplementedException();
+#if FIRST_PASS
+			return 0;
+#else
+			try
+			{
+				System.Net.IPEndPoint ep = (System.Net.IPEndPoint)fd.getSocket().RemoteEndPoint;
+				return ep.Port;
+			}
+			catch (System.Net.Sockets.SocketException x)
+			{
+				throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
+			}
+			catch (System.ObjectDisposedException)
+			{
+				throw new global::java.net.SocketException("Socket is closed");
+			}
+#endif
 		}
 
 		public static InetAddress remoteInetAddress(FileDescriptor fd)
 		{
-			// this method appears to be unused
-			throw new NotImplementedException();
+#if FIRST_PASS
+			return null;
+#else
+			try
+			{
+				System.Net.IPEndPoint ep = (System.Net.IPEndPoint)fd.getSocket().RemoteEndPoint;
+				return global::java.net.SocketUtil.getInetAddressFromIPEndPoint(ep);
+			}
+			catch (System.Net.Sockets.SocketException x)
+			{
+				throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
+			}
+			catch (System.ObjectDisposedException)
+			{
+				throw new global::java.net.SocketException("Socket is closed");
+			}
+#endif
 		}
 
 		public static int getIntOption0(FileDescriptor fd, bool mayNeedConversion, int level, int opt)

@@ -200,7 +200,6 @@ sun/net/www/protocol/file/Handler.java
 sun/net/www/protocol/ikvmres/Handler.java
 sun/net/www/protocol/jar/JarFileFactory.java
 sun/nio/ch/DatagramChannelImpl.java
-sun/nio/ch/DefaultAsynchronousChannelProvider.java
 sun/nio/ch/DefaultSelectorProvider.java
 sun/nio/ch/DotNetSelectorImpl.java
 sun/nio/ch/FileChannelImpl.java
@@ -216,6 +215,8 @@ sun/nio/ch/SocketDispatcher.java
 sun/nio/ch/SocketOptionRegistry.java
 sun/nio/ch/Util.java
 sun/nio/ch/WindowsAsynchronousFileChannelImpl.java
+sun/nio/ch/WindowsAsynchronousServerSocketChannelImpl.java
+sun/nio/ch/WindowsAsynchronousSocketChannelImpl.java
 sun/nio/cs/StandardCharsets.java
 sun/nio/fs/DefaultFileSystemProvider.java
 sun/nio/fs/DefaultFileTypeDetector.java
@@ -12170,6 +12171,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/ByteBuffered.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/ch/AsynchronousChannelGroupImpl.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/ch/AsynchronousFileChannelImpl.java
+@OPENJDK7@/jdk/src/share/classes/sun/nio/ch/AsynchronousServerSocketChannelImpl.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/ch/AsynchronousSocketChannelImpl.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/ch/Cancellable.java
 @OPENJDK7@/jdk/src/share/classes/sun/nio/ch/ChannelInputStream.java
@@ -13534,6 +13536,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/windows/classes/java/util/prefs/WindowsPreferencesFactory.java
 @OPENJDK7@/jdk/src/windows/classes/sun/awt/Win32ColorModel24.java
 @OPENJDK7@/jdk/src/windows/classes/sun/net/NetHooks.java
+@OPENJDK7@/jdk/src/windows/classes/sun/nio/ch/DefaultAsynchronousChannelProvider.java
 @OPENJDK7@/jdk/src/windows/classes/sun/nio/ch/NativeThread.java
 @OPENJDK7@/jdk/src/windows/classes/sun/nio/ch/PipeImpl.java
 @OPENJDK7@/jdk/src/windows/classes/sun/nio/ch/SctpChannelImpl.java
@@ -13541,6 +13544,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/windows/classes/sun/nio/ch/SctpServerChannelImpl.java
 @OPENJDK7@/jdk/src/windows/classes/sun/nio/ch/SinkChannelImpl.java
 @OPENJDK7@/jdk/src/windows/classes/sun/nio/ch/SourceChannelImpl.java
+@OPENJDK7@/jdk/src/windows/classes/sun/nio/ch/WindowsAsynchronousChannelProvider.java
 @OPENJDK7@/jdk/src/windows/classes/sun/print/Win32MediaTray.java
 @OPENJDK7@/jdk/src/windows/classes/sun/security/krb5/internal/tools/Kinit.java
 @OPENJDK7@/jdk/src/windows/classes/sun/security/krb5/internal/tools/KinitOptions.java

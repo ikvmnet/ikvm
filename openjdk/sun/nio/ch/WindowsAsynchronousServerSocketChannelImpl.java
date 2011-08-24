@@ -29,37 +29,20 @@ import java.nio.channels.*;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.io.FileDescriptor;
 import java.io.IOException;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import sun.misc.Unsafe;
 
 /**
  * Windows implementation of AsynchronousServerSocketChannel using overlapped I/O.
  */
 
 class WindowsAsynchronousServerSocketChannelImpl
-    extends AsynchronousServerSocketChannelImpl implements Iocp.OverlappedChannel
+    extends AsynchronousServerSocketChannelImpl
 {
-    private static final Unsafe unsafe = Unsafe.getUnsafe();
-
-    // 2 * (sizeof(SOCKET_ADDRESS) + 16)
-    private static final int DATA_BUFFER_SIZE = 88;
-
-    private final long handle;
-    private final int completionKey;
     private final Iocp iocp;
-
-    // typically there will be zero, or one I/O operations pending. In rare
-    // cases there may be more. These rare cases arise when a sequence of accept
-    // operations complete immediately and handled by the initiating thread.
-    // The corresponding OVERLAPPED cannot be reused/released until the completion
-    // event has been posted.
-    private final PendingIoCache ioCache;
-
-    // the data buffer to receive the local/remote socket address
-    private final long dataBuffer;
 
     // flag to indicate that an accept operation is outstanding
     private AtomicBoolean accepting = new AtomicBoolean();
@@ -68,41 +51,13 @@ class WindowsAsynchronousServerSocketChannelImpl
     WindowsAsynchronousServerSocketChannelImpl(Iocp iocp) throws IOException {
         super(iocp);
 
-        // associate socket with given completion port
-        long h = IOUtil.fdVal(fd);
-        int key;
-        try {
-            key = iocp.associate(this, h);
-        } catch (IOException x) {
-            closesocket0(h);   // prevent leak
-            throw x;
-        }
-
-        this.handle = h;
-        this.completionKey = key;
         this.iocp = iocp;
-        this.ioCache = new PendingIoCache();
-        this.dataBuffer = unsafe.allocateMemory(DATA_BUFFER_SIZE);
-    }
-
-    @Override
-    public <V,A> PendingFuture<V,A> getByOverlapped(long overlapped) {
-        return ioCache.remove(overlapped);
     }
 
     @Override
     void implClose() throws IOException {
         // close socket (which may cause outstanding accept to be aborted).
-        closesocket0(handle);
-
-        // waits until the accept operations have completed
-        ioCache.close();
-
-        // finally disassociate from the completion port
-        iocp.disassociate(completionKey);
-
-        // release other resources
-        unsafe.freeMemory(dataBuffer);
+        SocketDispatcher.closeImpl(fd);
     }
 
     @Override
@@ -144,7 +99,7 @@ class WindowsAsynchronousServerSocketChannelImpl
              * in that it requires 2 calls to getsockname and 2 calls to getpeername.
              * (should change this to use GetAcceptExSockaddrs)
              */
-            updateAcceptContext(handle, channel.handle());
+            updateAcceptContext(fd, channel.fd);
 
             InetSocketAddress local = Net.localAddress(channel.fd);
             final InetSocketAddress remote = Net.remoteAddress(channel.fd);
@@ -168,7 +123,6 @@ class WindowsAsynchronousServerSocketChannelImpl
          */
         @Override
         public void run() {
-            long overlapped = 0L;
 
             try {
                 // begin usage of listener socket
@@ -180,9 +134,8 @@ class WindowsAsynchronousServerSocketChannelImpl
                     channel.begin();
 
                     synchronized (result) {
-                        overlapped = ioCache.add(result);
 
-                        int n = accept0(handle, channel.handle(), overlapped, dataBuffer);
+                        int n = accept0(fd, channel.fd, this);
                         if (n == IOStatus.UNAVAILABLE) {
                             return;
                         }
@@ -200,8 +153,6 @@ class WindowsAsynchronousServerSocketChannelImpl
                 }
             } catch (Throwable x) {
                 // failed to initiate accept so release resources
-                if (overlapped != 0L)
-                    ioCache.remove(overlapped);
                 closeChildChannel();
                 if (x instanceof ClosedChannelException)
                     x = new AsynchronousCloseException();
@@ -354,11 +305,11 @@ class WindowsAsynchronousServerSocketChannelImpl
 
     private static native void initIDs();
 
-    private static native int accept0(long listenSocket, long acceptSocket,
-        long overlapped, long dataBuffer) throws IOException;
+    private static native int accept0(FileDescriptor listenSocket, FileDescriptor acceptSocket,
+        Iocp.ResultHandler handler) throws IOException;
 
-    private static native void updateAcceptContext(long listenSocket,
-        long acceptSocket) throws IOException;
+    private static native void updateAcceptContext(FileDescriptor listenSocket,
+        FileDescriptor acceptSocket) throws IOException;
 
     private static native void closesocket0(long socket) throws IOException;
 

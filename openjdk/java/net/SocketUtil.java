@@ -72,12 +72,32 @@ public final class SocketUtil
 
     public static IPAddress getAddressFromInetAddress(InetAddress addr)
     {
+        return getAddressFromInetAddress(addr, false);
+    }
+
+    public static IPAddress getAddressFromInetAddress(InetAddress addr, boolean v4mapped)
+    {
         byte[] b = addr.getAddress();
         if (b.length == 16)
         {
             // FXBUG in .NET 1.1 you can only construct IPv6 addresses (not IPv4) with this constructor
             // (according to the documentation this was fixed in .NET 2.0)
             return new IPAddress(b);
+        }
+        else if (v4mapped)
+        {
+            if (b[0] == 0 && b[1] == 0 && b[2] == 0 && b[3] == 0)
+            {
+                return IPAddress.IPv6Any;
+            }
+            byte[] b16 = new byte[16];
+            b16[10] = -1;
+            b16[11] = -1;
+            b16[12] = b[0];
+            b16[13] = b[1];
+            b16[14] = b[2];
+            b16[15] = b[3];
+            return new IPAddress(b16);
         }
         else
         {
