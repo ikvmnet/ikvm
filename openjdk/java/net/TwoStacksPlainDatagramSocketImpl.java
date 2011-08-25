@@ -224,11 +224,3 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
 
     private static final boolean runningOnMono = cli.System.Type.GetType("Mono.Runtime") != null;
 }
-
-// we don't support a dual-stack approach yet, so we simply make it an alias for the two-stacks approach
-class DualStackPlainDatagramSocketImpl extends TwoStacksPlainDatagramSocketImpl {
-    // we need this method, because DatagramSocket uses reflection to check for this methods existance
-    protected int peekData(DatagramPacket p) throws IOException {
-        return super.peekData(p);
-    }
-}

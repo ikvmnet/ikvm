@@ -22,6 +22,21 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package java.net;
+
+import java.io.FileDescriptor;
+import static ikvm.internal.JNI.*;
+import static ikvm.internal.Winsock.*;
+import static java.net.net_util_md.*;
+
+final class DualStackPlainSocketImpl_c
+{
+private static final int JVM_IO_ERR = -1;
+private static final int JVM_IO_INTR = -2;
+
+private static final int SET_BLOCKING = 0;
+private static final int SET_NONBLOCKING = 1;
+/*
 #include <windows.h>
 #include <winsock2.h>
 #include "jni.h"
@@ -31,14 +46,14 @@
 #define SET_BLOCKING 0
 #define SET_NONBLOCKING 1
 
-static jclass isa_class;        /* java.net.InetSocketAddress */
-static jmethodID isa_ctorID;    /* InetSocketAddress(InetAddress, int) */
+static jclass isa_class;        /* java.net.InetSocketAddress *-/
+static jmethodID isa_ctorID;    /* InetSocketAddress(InetAddress, int) *-/
 
 /*
  * Class:     java_net_DualStackPlainSocketImpl
  * Method:    initIDs
  * Signature: ()V
- */
+ *-/
 JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_initIDs
   (JNIEnv *env, jclass clazz) {
 
@@ -56,22 +71,22 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_initIDs
  * Method:    socket0
  * Signature: (ZZ)I
  */
-JNIEXPORT jint JNICALL Java_java_net_DualStackPlainSocketImpl_socket0
-  (JNIEnv *env, jclass clazz, jboolean stream, jboolean v6Only /*unused*/) {
-    int fd, rv, opt=0;
+static cli.System.Net.Sockets.Socket socket0
+  (JNIEnv env, boolean stream, boolean v6Only /*unused*/) {
+    cli.System.Net.Sockets.Socket fd;
+    int rv, opt=0;
 
     fd = NET_Socket(AF_INET6, (stream ? SOCK_STREAM : SOCK_DGRAM), 0);
     if (fd == INVALID_SOCKET) {
         NET_ThrowNew(env, WSAGetLastError(), "create");
-        return -1;
+        return null;
     }
 
-    rv = setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (char *) &opt, sizeof(opt));
+    rv = setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, opt);
     if (rv == SOCKET_ERROR) {
         NET_ThrowNew(env, WSAGetLastError(), "create");
     }
 
-    SetHandleInformation((HANDLE)(UINT_PTR)fd, HANDLE_FLAG_INHERIT, FALSE);
 
     return fd;
 }
@@ -81,18 +96,18 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainSocketImpl_socket0
  * Method:    bind0
  * Signature: (ILjava/net/InetAddress;I)V
  */
-JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_bind0
-  (JNIEnv *env, jclass clazz, jint fd, jobject iaObj, jint port) {
+static void bind0
+  (JNIEnv env, cli.System.Net.Sockets.Socket fd, InetAddress iaObj, int port) {
     SOCKETADDRESS sa;
+    sa = new SOCKETADDRESS();
     int rv;
-    int sa_len = sizeof(sa);
 
-    if (NET_InetAddressToSockaddr(env, iaObj, port, (struct sockaddr *)&sa,
-                                 &sa_len, JNI_TRUE) != 0) {
+    if (NET_InetAddressToSockaddr(env, iaObj, port, sa,
+                                 JNI_TRUE) != 0) {
       return;
     }
 
-    rv = NET_Bind(fd, (struct sockaddr *)&sa, sa_len);
+    rv = NET_Bind(fd, sa);
 
     if (rv == SOCKET_ERROR)
         NET_ThrowNew(env, WSAGetLastError(), "JVM_Bind");
@@ -103,24 +118,24 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_bind0
  * Method:    connect0
  * Signature: (ILjava/net/InetAddress;I)I
  */
-JNIEXPORT jint JNICALL Java_java_net_DualStackPlainSocketImpl_connect0
-  (JNIEnv *env, jclass clazz, jint fd, jobject iaObj, jint port) {
+static int connect0
+  (JNIEnv env, cli.System.Net.Sockets.Socket fd, InetAddress iaObj, int port) {
     SOCKETADDRESS sa;
+    sa = new SOCKETADDRESS();
     int rv;
-    int sa_len = sizeof(sa);
 
-    if (NET_InetAddressToSockaddr(env, iaObj, port, (struct sockaddr *)&sa,
-                                 &sa_len, JNI_TRUE) != 0) {
+    if (NET_InetAddressToSockaddr(env, iaObj, port, sa,
+                                 JNI_TRUE) != 0) {
       return -1;
     }
 
-    rv = connect(fd, (struct sockaddr *)&sa, sa_len);
+    rv = connect(fd, sa);
     if (rv == SOCKET_ERROR) {
         int err = WSAGetLastError();
         if (err == WSAEWOULDBLOCK) {
-            return java_net_DualStackPlainSocketImpl_WOULDBLOCK;
+            return java.net.DualStackPlainSocketImpl.WOULDBLOCK;
         } else if (err == WSAEADDRNOTAVAIL) {
-            JNU_ThrowByName(env, JNU_JAVANETPKG "ConnectException",
+            JNU_ThrowByName(env, JNU_JAVANETPKG+"ConnectException",
                 "connect: Address is invalid on local machine, or port is not valid on remote machine");
         } else {
             NET_ThrowNew(env, err, "connect");
@@ -135,17 +150,17 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainSocketImpl_connect0
  * Method:    waitForConnect
  * Signature: (II)V
  */
-JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_waitForConnect
-  (JNIEnv *env, jclass clazz, jint fd, jint timeout) {
+static void waitForConnect
+  (JNIEnv env, cli.System.Net.Sockets.Socket fd, int timeout) {
     int rv, retry;
-    int optlen = sizeof(rv);
     fd_set wr, ex;
-    struct timeval t;
+    wr = new fd_set(); ex = new fd_set();
+    timeval t = new timeval();
 
-    FD_ZERO(&wr);
-    FD_ZERO(&ex);
-    FD_SET(fd, &wr);
-    FD_SET(fd, &ex);
+    FD_ZERO(wr);
+    FD_ZERO(ex);
+    FD_SET(fd, wr);
+    FD_SET(fd, ex);
     t.tv_sec = timeout / 1000;
     t.tv_usec = (timeout % 1000) * 1000;
 
@@ -153,7 +168,7 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_waitForConnect
      * Wait for timeout, connection established or
      * connection failed.
      */
-    rv = select(fd+1, 0, &wr, &ex, &t);
+    rv = select(null, wr, ex, t);
 
     /*
      * Timeout before connection is established/failed so
@@ -162,7 +177,7 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_waitForConnect
      * The socket should be closed immediately by the caller.
      */
     if (rv == 0) {
-        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketTimeoutException",
+        JNU_ThrowByName(env, JNU_JAVANETPKG+"SocketTimeoutException",
                         "connect timed out");
         shutdown( fd, SD_BOTH );
         return;
@@ -173,7 +188,7 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_waitForConnect
      * the socket will appear writable when the connect fails so we
      * check for error rather than writable.
      */
-    if (!FD_ISSET(fd, &ex)) {
+    if (!FD_ISSET(fd, ex)) {
         return;         /* connection established */
     }
 
@@ -186,16 +201,18 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_waitForConnect
      * load conditions we attempt up to 3 times to get the error reason.
      */
     for (retry=0; retry<3; retry++) {
+        int[] tmp = { 0 };
         NET_GetSockOpt(fd, SOL_SOCKET, SO_ERROR,
-                       (char*)&rv, &optlen);
-        if (rv) {
+                       tmp);
+        rv = tmp[0];
+        if (rv != 0) {
             break;
         }
         Sleep(0);
     }
 
     if (rv == 0) {
-        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
+        JNU_ThrowByName(env, JNU_JAVANETPKG+"SocketException",
                         "Unable to establish connection");
     } else {
         NET_ThrowNew(env, rv, "connect");
@@ -207,21 +224,21 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_waitForConnect
  * Method:    localPort0
  * Signature: (I)I
  */
-JNIEXPORT jint JNICALL Java_java_net_DualStackPlainSocketImpl_localPort0
-  (JNIEnv *env, jclass clazz, jint fd) {
+static int localPort0
+  (JNIEnv env, cli.System.Net.Sockets.Socket fd) {
     SOCKETADDRESS sa;
-    int len = sizeof(sa);
+    sa = new SOCKETADDRESS();
 
-    if (getsockname(fd, (struct sockaddr *)&sa, &len) == SOCKET_ERROR) {
+    if (getsockname(fd, sa) == SOCKET_ERROR) {
         if (WSAGetLastError() == WSAENOTSOCK) {
-            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
+            JNU_ThrowByName(env, JNU_JAVANETPKG+"SocketException",
                     "Socket closed");
         } else {
             NET_ThrowNew(env, WSAGetLastError(), "getsockname failed");
         }
         return -1;
     }
-    return (int) ntohs((u_short)GET_PORT(&sa));
+    return ntohs(GET_PORT(sa));
 }
 
 /*
@@ -229,26 +246,20 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainSocketImpl_localPort0
  * Method:    localAddress
  * Signature: (ILjava/net/InetAddressContainer;)V
  */
-JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_localAddress
-  (JNIEnv *env, jclass clazz, jint fd, jobject iaContainerObj) {
-    int port;
+static void localAddress
+  (JNIEnv env, cli.System.Net.Sockets.Socket fd, InetAddressContainer iaContainerObj) {
+    int[] port = { 0 };
     SOCKETADDRESS sa;
-    int len = sizeof(sa);
-    jobject iaObj;
-    jclass iaContainerClass;
-    jfieldID iaFieldID;
+    sa = new SOCKETADDRESS();
+    InetAddress iaObj;
 
-    if (getsockname(fd, (struct sockaddr *)&sa, &len) == SOCKET_ERROR) {
+    if (getsockname(fd, sa) == SOCKET_ERROR) {
         NET_ThrowNew(env, WSAGetLastError(), "Error getting socket name");
         return;
     }
-    iaObj = NET_SockaddrToInetAddress(env, (struct sockaddr *)&sa, &port);
-    CHECK_NULL(iaObj);
+    iaObj = NET_SockaddrToInetAddress(env, sa, port);
 
-    iaContainerClass = (*env)->GetObjectClass(env, iaContainerObj);
-    iaFieldID = (*env)->GetFieldID(env, iaContainerClass, "addr", "Ljava/net/InetAddress;");
-    CHECK_NULL(iaFieldID);
-    (*env)->SetObjectField(env, iaContainerObj, iaFieldID, iaObj);
+    iaContainerObj.addr = iaObj;
 }
 
 
@@ -257,8 +268,8 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_localAddress
  * Method:    listen0
  * Signature: (II)V
  */
-JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_listen0
-  (JNIEnv *env, jclass clazz, jint fd, jint backlog) {
+static void listen0
+  (JNIEnv env, cli.System.Net.Sockets.Socket fd, int backlog) {
     if (listen(fd, backlog) == SOCKET_ERROR) {
         NET_ThrowNew(env, WSAGetLastError(), "listen failed");
     }
@@ -269,31 +280,31 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_listen0
  * Method:    accept0
  * Signature: (I[Ljava/net/InetSocketAddress;)I
  */
-JNIEXPORT jint JNICALL Java_java_net_DualStackPlainSocketImpl_accept0
-  (JNIEnv *env, jclass clazz, jint fd, jobjectArray isaa) {
-    int newfd, port=0;
-    jobject isa;
-    jobject ia;
+static cli.System.Net.Sockets.Socket accept0
+  (JNIEnv env, cli.System.Net.Sockets.Socket fd, InetSocketAddress[] isaa) {
+    cli.System.Net.Sockets.Socket newfd;
+    int[] port = { 0 };
+    InetSocketAddress isa;
+    InetAddress ia;
     SOCKETADDRESS sa;
-    int len = sizeof(sa);
+    sa = new SOCKETADDRESS();
 
-    memset((char *)&sa, 0, len);
-    newfd = accept(fd, (struct sockaddr *)&sa, &len);
+    newfd = accept(fd, sa);
 
     if (newfd == INVALID_SOCKET) {
         if (WSAGetLastError() == -2) {
-            JNU_ThrowByName(env, JNU_JAVAIOPKG "InterruptedIOException",
+            JNU_ThrowByName(env, JNU_JAVAIOPKG+"InterruptedIOException",
                             "operation interrupted");
         } else {
-            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
+            JNU_ThrowByName(env, JNU_JAVANETPKG+"SocketException",
                             "socket closed");
         }
-        return -1;
+        return null;
     }
 
-    ia = NET_SockaddrToInetAddress(env, (struct sockaddr *)&sa, &port);
-    isa = (*env)->NewObject(env, isa_class, isa_ctorID, ia, port);
-    (*env)->SetObjectArrayElement(env, isaa, 0, isa);
+    ia = NET_SockaddrToInetAddress(env, sa, port);
+    isa = new InetSocketAddress(ia, port[0]);
+    isaa[0] = isa;
 
     return newfd;
 }
@@ -303,18 +314,18 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainSocketImpl_accept0
  * Method:    waitForNewConnection
  * Signature: (II)V
  */
-JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_waitForNewConnection
-  (JNIEnv *env, jclass clazz, jint fd, jint timeout) {
+static void waitForNewConnection
+  (JNIEnv env, cli.System.Net.Sockets.Socket fd, int timeout) {
     int rv;
 
     rv = NET_Timeout(fd, timeout);
     if (rv == 0) {
-        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketTimeoutException",
+        JNU_ThrowByName(env, JNU_JAVANETPKG+"SocketTimeoutException",
                         "Accept timed out");
     } else if (rv == -1) {
-        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "socket closed");
+        JNU_ThrowByName(env, JNU_JAVANETPKG+"SocketException", "socket closed");
     } else if (rv == -2) {
-        JNU_ThrowByName(env, JNU_JAVAIOPKG "InterruptedIOException",
+        JNU_ThrowByName(env, JNU_JAVAIOPKG+"InterruptedIOException",
                         "operation interrupted");
     }
 }
@@ -324,15 +335,15 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_waitForNewConnecti
  * Method:    available0
  * Signature: (I)I
  */
-JNIEXPORT jint JNICALL Java_java_net_DualStackPlainSocketImpl_available0
-  (JNIEnv *env, jclass clazz, jint fd) {
-    jint available = -1;
+static int available0
+  (JNIEnv env, cli.System.Net.Sockets.Socket fd) {
+    int[] available = { -1 };
 
-    if ((ioctlsocket(fd, FIONREAD, &available)) == SOCKET_ERROR) {
+    if ((ioctlsocket(fd, FIONREAD, available)) == SOCKET_ERROR) {
         NET_ThrowNew(env, WSAGetLastError(), "socket available");
     }
 
-    return available;
+    return available[0];
 }
 
 /*
@@ -340,8 +351,8 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainSocketImpl_available0
  * Method:    close0
  * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_close0
-  (JNIEnv *env, jclass clazz, jint fd) {
+static void close0
+  (JNIEnv env, cli.System.Net.Sockets.Socket fd) {
      NET_SocketClose(fd);
 }
 
@@ -350,8 +361,8 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_close0
  * Method:    shutdown0
  * Signature: (II)V
  */
-JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_shutdown0
-  (JNIEnv *env, jclass clazz, jint fd, jint howto) {
+static void shutdown0
+  (JNIEnv env, cli.System.Net.Sockets.Socket fd, int howto) {
     shutdown(fd, howto);
 }
 
@@ -361,37 +372,36 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_shutdown0
  * Method:    setIntOption
  * Signature: (III)V
  */
-JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_setIntOption
-  (JNIEnv *env, jclass clazz, jint fd, jint cmd, jint value) {
+static void setIntOption
+  (JNIEnv env, cli.System.Net.Sockets.Socket fd, int cmd, int value) {
 
-    int level, opt;
-    struct linger linger;
-    char *parg;
-    int arglen;
+    int[] level = { 0 };
+    int[] opt = { 0 };
+    linger linger;
+    Object optval;
 
-    if (NET_MapSocketOption(cmd, &level, &opt) < 0) {
-        JNU_ThrowByNameWithLastError(env,
-                                     JNU_JAVANETPKG "SocketException",
+    if (NET_MapSocketOption(cmd, level, opt) < 0) {
+        JNU_ThrowByName(env,
+                                     JNU_JAVANETPKG+"SocketException",
                                      "Invalid option");
         return;
     }
 
-    if (opt == java_net_SocketOptions_SO_LINGER) {
-        parg = (char *)&linger;
-        arglen = sizeof(linger);
+    if (opt[0] == java.net.SocketOptions.SO_LINGER) {
+        linger = new linger();
         if (value >= 0) {
             linger.l_onoff = 1;
-            linger.l_linger = (unsigned short)value;
+            linger.l_linger = value & 0xFFFF;
         } else {
             linger.l_onoff = 0;
             linger.l_linger = 0;
         }
+        optval = linger;
     } else {
-        parg = (char *)&value;
-        arglen = sizeof(value);
+        optval = value;
     }
 
-    if (NET_SetSockOpt(fd, level, opt, parg, arglen) < 0) {
+    if (NET_SetSockOpt(fd, level[0], opt[0], optval) < 0) {
         NET_ThrowNew(env, WSAGetLastError(), "setsockopt");
     }
 }
@@ -401,39 +411,39 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_setIntOption
  * Method:    getIntOption
  * Signature: (II)I
  */
-JNIEXPORT jint JNICALL Java_java_net_DualStackPlainSocketImpl_getIntOption
-  (JNIEnv *env, jclass clazz, jint fd, jint cmd) {
+static int getIntOption
+  (JNIEnv env, cli.System.Net.Sockets.Socket fd, int cmd) {
 
-    int level, opt;
-    int result=0;
-    struct linger linger;
-    char *arg;
-    int arglen;
+    int[] level = { 0 };
+    int[] opt = { 0 };
+    int[] result = { 0 };
+    linger linger;
+    Object optval;
 
-    if (NET_MapSocketOption(cmd, &level, &opt) < 0) {
-        JNU_ThrowByNameWithLastError(env,
-                                     JNU_JAVANETPKG "SocketException",
+    if (NET_MapSocketOption(cmd, level, opt) < 0) {
+        JNU_ThrowByName(env,
+                                     JNU_JAVANETPKG+"SocketException",
                                      "Unsupported socket option");
         return -1;
     }
 
-    if (opt == java_net_SocketOptions_SO_LINGER) {
-        arg = (char *)&linger;
-        arglen = sizeof(linger);
+    if (opt[0] == java.net.SocketOptions.SO_LINGER) {
+        linger = new linger();
+        optval = linger;
     } else {
-        arg = (char *)&result;
-        arglen = sizeof(result);
+        linger = null;
+        optval = result;
     }
 
-    if (NET_GetSockOpt(fd, level, opt, arg, &arglen) < 0) {
+    if (NET_GetSockOpt(fd, level[0], opt[0], optval) < 0) {
         NET_ThrowNew(env, WSAGetLastError(), "getsockopt");
         return -1;
     }
 
-    if (opt == java_net_SocketOptions_SO_LINGER)
-        return linger.l_onoff ? linger.l_linger : -1;
+    if (opt[0] == java.net.SocketOptions.SO_LINGER)
+        return linger.l_onoff != 0 ? linger.l_linger : -1;
     else
-        return result;
+        return result[0];
 }
 
 
@@ -442,16 +452,15 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainSocketImpl_getIntOption
  * Method:    sendOOB
  * Signature: (II)V
  */
-JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_sendOOB
-  (JNIEnv *env, jclass clazz, jint fd, jint data) {
-    jint n;
-    unsigned char d = (unsigned char) data & 0xff;
+static void sendOOB
+  (JNIEnv env, cli.System.Net.Sockets.Socket fd, int data) {
+    int n;
 
-    n = send(fd, (char *)&data, 1, MSG_OOB);
+    n = send(fd, new byte[] { (byte)data }, 1, MSG_OOB);
     if (n == JVM_IO_ERR) {
         NET_ThrowNew(env, WSAGetLastError(), "send");
     } else if (n == JVM_IO_INTR) {
-        JNU_ThrowByName(env, "java/io/InterruptedIOException", 0);
+        JNU_ThrowByName(env, "java.io.InterruptedIOException", null);
     }
 }
 
@@ -460,9 +469,9 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_sendOOB
  * Method:    configureBlocking
  * Signature: (IZ)V
  */
-JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_configureBlocking
-  (JNIEnv *env, jclass clazz, jint fd, jboolean blocking) {
-    u_long arg;
+static void configureBlocking
+  (JNIEnv env, cli.System.Net.Sockets.Socket fd, boolean blocking) {
+    int arg;
     int result;
 
     if (blocking == JNI_TRUE) {
@@ -471,8 +480,9 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_configureBlocking
         arg = SET_NONBLOCKING;   // 1
     }
 
-    result = ioctlsocket(fd, FIONBIO, &arg);
+    result = ioctlsocket(fd, FIONBIO, arg);
     if (result == SOCKET_ERROR) {
         NET_ThrowNew(env, WSAGetLastError(), "configureBlocking");
     }
+}
 }

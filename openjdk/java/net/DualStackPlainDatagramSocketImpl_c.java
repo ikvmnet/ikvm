@@ -22,6 +22,22 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package java.net;
+
+import java.io.FileDescriptor;
+import static ikvm.internal.JNI.*;
+import static ikvm.internal.Winsock.*;
+import static java.net.net_util_md.*;
+
+final class DualStackPlainDatagramSocketImpl_c
+{
+static final int TRUE = 1;
+static final int FALSE = 0;
+
+static final int JVM_IO_ERR = -1;
+static final int JVM_IO_INTR = -2;
+
+/*
 #include <windows.h>
 #include <winsock2.h>
 #include "jni.h"
@@ -35,27 +51,26 @@
  * behaviour whereby receiving a "connection reset" status resets the
  * socket.
  */
-static jboolean purgeOutstandingICMP(JNIEnv *env, jint fd)
+static boolean purgeOutstandingICMP(JNIEnv env, cli.System.Net.Sockets.Socket fd)
 {
-    jboolean got_icmp = JNI_FALSE;
-    char buf[1];
-    fd_set tbl;
-    struct timeval t = { 0, 0 };
-    struct sockaddr_in rmtaddr;
-    int addrlen = sizeof(rmtaddr);
+    boolean got_icmp = false;
+    byte[] buf = new byte[1];
+    fd_set tbl = new fd_set();
+    timeval t = new timeval();
+    SOCKETADDRESS rmtaddr = null;
 
     /*
      * Peek at the queue to see if there is an ICMP port unreachable. If there
      * is then receive it.
      */
-    FD_ZERO(&tbl);
-    FD_SET(fd, &tbl);
-    while(1) {
-        if (select(/*ignored*/fd+1, &tbl, 0, 0, &t) <= 0) {
+    FD_ZERO(tbl);
+    FD_SET(fd, tbl);
+    while(true) {
+        if (select(tbl, null, null, t) <= 0) {
             break;
         }
         if (recvfrom(fd, buf, 1, MSG_PEEK,
-                         (struct sockaddr *)&rmtaddr, &addrlen) != JVM_IO_ERR) {
+                         rmtaddr) != JVM_IO_ERR) {
             break;
         }
         if (WSAGetLastError() != WSAECONNRESET) {
@@ -63,7 +78,7 @@ static jboolean purgeOutstandingICMP(JNIEnv *env, jint fd)
             break;
         }
 
-        recvfrom(fd, buf, 1, 0,  (struct sockaddr *)&rmtaddr, &addrlen);
+        recvfrom(fd, buf, 1, 0, rmtaddr);
         got_icmp = JNI_TRUE;
     }
 
@@ -75,25 +90,25 @@ static jboolean purgeOutstandingICMP(JNIEnv *env, jint fd)
  * Method:    socketCreate
  * Signature: (Z)I
  */
-JNIEXPORT jint JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketCreate
-  (JNIEnv *env, jclass clazz, jboolean v6Only /*unused*/) {
-    int fd, rv, opt=0, t=TRUE;
-    DWORD x1, x2; /* ignored result codes */
+static cli.System.Net.Sockets.Socket socketCreate
+  (JNIEnv env, boolean v6Only /*unused*/) {
+    cli.System.Net.Sockets.Socket fd;
+    int rv, opt=0, t=TRUE;
 
-    fd = (int) socket(AF_INET6, SOCK_DGRAM, 0);
+    fd = socket(AF_INET6, SOCK_DGRAM, 0);
     if (fd == INVALID_SOCKET) {
         NET_ThrowNew(env, WSAGetLastError(), "Socket creation failed");
-        return -1;
+        return null;
     }
 
-    rv = setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (char *) &opt, sizeof(opt));
+    rv = setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, opt);
     if (rv == SOCKET_ERROR) {
         NET_ThrowNew(env, WSAGetLastError(), "Socket creation failed");
-        return -1;
+        return null;
     }
 
-    SetHandleInformation((HANDLE)(UINT_PTR)fd, HANDLE_FLAG_INHERIT, FALSE);
-    NET_SetSockOpt(fd, SOL_SOCKET, SO_BROADCAST, (char*)&t, sizeof(BOOL));
+    //SetHandleInformation((HANDLE)(UINT_PTR)fd, HANDLE_FLAG_INHERIT, FALSE);
+    NET_SetSockOpt(fd, SOL_SOCKET, SO_BROADCAST, t);
 
     /* SIO_UDP_CONNRESET fixes a "bug" introduced in Windows 2000, which
      * returns connection reset errors on unconnected UDP sockets (as well
@@ -101,7 +116,7 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketCrea
      * when the socket is connected.
      */
     t = FALSE;
-    WSAIoctl(fd ,SIO_UDP_CONNRESET ,&t ,sizeof(t) ,&x1 ,sizeof(x1) ,&x2 ,0 ,0);
+    WSAIoctl(fd ,SIO_UDP_CONNRESET ,false);
 
     return fd;
 }
@@ -111,18 +126,18 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketCrea
  * Method:    socketBind
  * Signature: (ILjava/net/InetAddress;I)V
  */
-JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketBind
-  (JNIEnv *env, jclass clazz, jint fd, jobject iaObj, jint port) {
+static void socketBind
+  (JNIEnv env, cli.System.Net.Sockets.Socket fd, InetAddress iaObj, int port) {
     SOCKETADDRESS sa;
+    sa = new SOCKETADDRESS();
     int rv;
-    int sa_len = sizeof(sa);
 
-    if (NET_InetAddressToSockaddr(env, iaObj, port, (struct sockaddr *)&sa,
-                                 &sa_len, JNI_TRUE) != 0) {
+    if (NET_InetAddressToSockaddr(env, iaObj, port, sa,
+                                 JNI_TRUE) != 0) {
         return;
     }
 
-    rv = bind(fd, (struct sockaddr *)&sa, sa_len);
+    rv = bind(fd, sa);
 
     if (rv == SOCKET_ERROR) {
         if (WSAGetLastError() == WSAEACCES) {
@@ -137,27 +152,26 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketBind
  * Method:    socketConnect
  * Signature: (ILjava/net/InetAddress;I)V
  */
-JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketConnect
-  (JNIEnv *env, jclass clazz, jint fd, jobject iaObj, jint port) {
+static void socketConnect
+  (JNIEnv env, cli.System.Net.Sockets.Socket fd, InetAddress iaObj, int port) {
     SOCKETADDRESS sa;
+    sa = new SOCKETADDRESS();
     int rv;
-    int sa_len = sizeof(sa);
-    DWORD x1, x2; /* ignored result codes */
     int t = TRUE;
 
-    if (NET_InetAddressToSockaddr(env, iaObj, port, (struct sockaddr *)&sa,
-                                   &sa_len, JNI_TRUE) != 0) {
+    if (NET_InetAddressToSockaddr(env, iaObj, port, sa,
+                                   JNI_TRUE) != 0) {
         return;
     }
 
-    rv = connect(fd, (struct sockaddr *)&sa, sa_len);
+    rv = connect(fd, sa);
     if (rv == SOCKET_ERROR) {
         NET_ThrowNew(env, WSAGetLastError(), "connect");
         return;
     }
 
     /* see comment in socketCreate */
-    WSAIoctl(fd, SIO_UDP_CONNRESET, &t, sizeof(t), &x1, sizeof(x1), &x2, 0, 0);
+    WSAIoctl(fd, SIO_UDP_CONNRESET, true);
 }
 
 /*
@@ -165,18 +179,15 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketConn
  * Method:    socketDisconnect
  * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketDisconnect
-  (JNIEnv *env, jclass clazz, jint fd ) {
+static void socketDisconnect
+  (JNIEnv env, cli.System.Net.Sockets.Socket fd ) {
     SOCKETADDRESS sa;
-    int sa_len = sizeof(sa);
-    DWORD x1, x2; /* ignored result codes */
-    int t = FALSE;
+    sa = new SOCKETADDRESS();
 
-    memset(&sa, 0, sa_len);
-    connect(fd, (struct sockaddr *)&sa, sa_len);
+    connect(fd, sa);
 
     /* see comment in socketCreate */
-    WSAIoctl(fd, SIO_UDP_CONNRESET, &t, sizeof(t), &x1, sizeof(x1), &x2, 0, 0);
+    WSAIoctl(fd, SIO_UDP_CONNRESET, false);
 }
 
 /*
@@ -184,8 +195,8 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketDisc
  * Method:    socketClose
  * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketClose
-  (JNIEnv *env, jclass clazz , jint fd) {
+static void socketClose
+  (JNIEnv env, cli.System.Net.Sockets.Socket fd) {
     NET_SocketClose(fd);
 }
 
@@ -195,16 +206,16 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketClos
  * Method:    socketLocalPort
  * Signature: (I)I
  */
-JNIEXPORT jint JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketLocalPort
-  (JNIEnv *env, jclass clazz, jint fd) {
+static int socketLocalPort
+  (JNIEnv env, cli.System.Net.Sockets.Socket fd) {
     SOCKETADDRESS sa;
-    int len = sizeof(sa);
+    sa = new SOCKETADDRESS();
 
-    if (getsockname(fd, (struct sockaddr *)&sa, &len) == SOCKET_ERROR) {
+    if (getsockname(fd, sa) == SOCKET_ERROR) {
         NET_ThrowNew(env, WSAGetLastError(), "JVM_GetSockName");
         return -1;
     }
-    return (int) ntohs((u_short)GET_PORT(&sa));
+    return ntohs(GET_PORT(sa));
 }
 
 /*
@@ -212,19 +223,19 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketLoca
  * Method:    socketLocalAddress
  * Signature: (I)Ljava/lang/Object;
  */
-JNIEXPORT jobject JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketLocalAddress
-  (JNIEnv *env , jclass clazz, jint fd) {
+static InetAddress socketLocalAddress
+  (JNIEnv env , cli.System.Net.Sockets.Socket fd) {
     SOCKETADDRESS sa;
-    int len = sizeof(sa);
-    jobject iaObj;
-    int port;
+    sa = new SOCKETADDRESS();
+    InetAddress iaObj;
+    int[] port = { 0 };
 
-    if (getsockname(fd, (struct sockaddr *)&sa, &len) == SOCKET_ERROR) {
+    if (getsockname(fd, sa) == SOCKET_ERROR) {
         NET_ThrowNew(env, WSAGetLastError(), "Error getting socket name");
-        return NULL;
+        return null;
     }
 
-    iaObj = NET_SockaddrToInetAddress(env, (struct sockaddr *)&sa, &port);
+    iaObj = NET_SockaddrToInetAddress(env, sa, port);
     return iaObj;
 }
 
@@ -233,33 +244,32 @@ JNIEXPORT jobject JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketL
  * Method:    socketReceiveOrPeekData
  * Signature: (ILjava/net/DatagramPacket;IZZ)I
  */
-JNIEXPORT jint JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketReceiveOrPeekData
-  (JNIEnv *env, jclass clazz, jint fd, jobject dpObj,
-   jint timeout, jboolean connected, jboolean peek) {
+static int socketReceiveOrPeekData
+  (JNIEnv env, cli.System.Net.Sockets.Socket fd, DatagramPacket dpObj,
+   int timeout, boolean connected, boolean peek) {
     SOCKETADDRESS sa;
-    int sa_len = sizeof(sa);
+    sa = new SOCKETADDRESS();
     int port, rv, flags=0;
-    char BUF[MAX_BUFFER_LEN];
-    char *fullPacket;
-    BOOL retry;
-    jlong prevTime = 0;
+    boolean retry;
+    long prevTime = 0;
 
-    jint packetBufferOffset, packetBufferLen;
-    jbyteArray packetBuffer;
+    int packetBufferOffset, packetBufferLen;
+    byte[] packetBuffer;
 
     /* if we are only peeking. Called from peekData */
     if (peek) {
         flags = MSG_PEEK;
     }
 
-    packetBuffer = (*env)->GetObjectField(env, dpObj, dp_bufID);
-    packetBufferOffset = (*env)->GetIntField(env, dpObj, dp_offsetID);
-    packetBufferLen = (*env)->GetIntField(env, dpObj, dp_bufLengthID);
+    packetBuffer = dpObj.buf;
+    packetBufferOffset = dpObj.offset;
+    packetBufferLen = dpObj.bufLength;
 
+    /*
     if (packetBufferLen > MAX_BUFFER_LEN) {
         /* Note: the buffer needn't be greater than 65,536 (0xFFFF)
          * the max size of an IP packet. Anything bigger is truncated anyway.
-         */
+         *-/
         if (packetBufferLen > MAX_PACKET_LEN) {
             packetBufferLen = MAX_PACKET_LEN;
         }
@@ -271,36 +281,34 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketRece
     } else {
         fullPacket = &(BUF[0]);
     }
+    */
 
     do {
-        retry = FALSE;
+        retry = false;
 
-        if (timeout) {
+        if (timeout != 0) {
             if (prevTime == 0) {
                 prevTime = JVM_CurrentTimeMillis(env, 0);
             }
             rv = NET_Timeout(fd, timeout);
             if (rv <= 0) {
                 if (rv == 0) {
-                    JNU_ThrowByName(env,JNU_JAVANETPKG "SocketTimeoutException",
+                    JNU_ThrowByName(env,JNU_JAVANETPKG+"SocketTimeoutException",
                                     "Receive timed out");
                 } else if (rv == JVM_IO_ERR) {
-                    JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
+                    JNU_ThrowByName(env, JNU_JAVANETPKG+"SocketException",
                                     "Socket closed");
                 } else if (rv == JVM_IO_INTR) {
-                    JNU_ThrowByName(env, JNU_JAVAIOPKG "InterruptedIOException",
+                    JNU_ThrowByName(env, JNU_JAVAIOPKG+"InterruptedIOException",
                                     "operation interrupted");
-                }
-                if (packetBufferLen > MAX_BUFFER_LEN) {
-                    free(fullPacket);
                 }
                 return -1;
             }
         }
 
         /* receive the packet */
-        rv = recvfrom(fd, fullPacket, packetBufferLen, flags,
-                    (struct sockaddr *)&sa, &sa_len);
+        rv = recvfrom(fd, packetBuffer, packetBufferOffset, packetBufferLen, flags,
+                    sa);
 
         if (rv == SOCKET_ERROR && (WSAGetLastError() == WSAECONNRESET)) {
             /* An icmp port unreachable - we must receive this as Windows
@@ -310,29 +318,25 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketRece
             purgeOutstandingICMP(env, fd);
 
             if (connected) {
-                JNU_ThrowByName(env, JNU_JAVANETPKG "PortUnreachableException",
+                JNU_ThrowByName(env, JNU_JAVANETPKG+"PortUnreachableException",
                                 "ICMP Port Unreachable");
-                if (packetBufferLen > MAX_BUFFER_LEN)
-                    free(fullPacket);
                 return -1;
-            } else if (timeout) {
+            } else if (timeout != 0) {
                 /* Adjust timeout */
-                jlong newTime = JVM_CurrentTimeMillis(env, 0);
-                timeout -= (jint)(newTime - prevTime);
+                long newTime = JVM_CurrentTimeMillis(env, 0);
+                timeout -= (int)(newTime - prevTime);
                 if (timeout <= 0) {
-                    JNU_ThrowByName(env, JNU_JAVANETPKG "SocketTimeoutException",
+                    JNU_ThrowByName(env, JNU_JAVANETPKG+"SocketTimeoutException",
                                     "Receive timed out");
-                    if (packetBufferLen > MAX_BUFFER_LEN)
-                        free(fullPacket);
                     return -1;
                 }
                 prevTime = newTime;
             }
-            retry = TRUE;
+            retry = true;
         }
     } while (retry);
 
-    port = (int) ntohs ((u_short) GET_PORT((SOCKETADDRESS *)&sa));
+    port = ntohs (GET_PORT(sa));
 
     /* truncate the data if the packet's length is too small */
     if (rv > packetBufferLen) {
@@ -347,49 +351,45 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketRece
             rv = packetBufferLen;
         } else {
             /* failure */
-            (*env)->SetIntField(env, dpObj, dp_lengthID, 0);
+            dpObj.length = 0;
         }
     }
 
     if (rv == -1) {
-        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "socket closed");
+        JNU_ThrowByName(env, JNU_JAVANETPKG+"SocketException", "socket closed");
     } else if (rv == -2) {
-        JNU_ThrowByName(env, JNU_JAVAIOPKG "InterruptedIOException",
+        JNU_ThrowByName(env, JNU_JAVAIOPKG+"InterruptedIOException",
                         "operation interrupted");
     } else if (rv < 0) {
         NET_ThrowCurrent(env, "Datagram receive failed");
     } else {
-        jobject packetAddress;
+        InetAddress packetAddress;
         /*
          * Check if there is an InetAddress already associated with this
          * packet. If so, we check if it is the same source address. We
          * can't update any existing InetAddress because it is immutable
          */
-        packetAddress = (*env)->GetObjectField(env, dpObj, dp_addressID);
+        packetAddress = dpObj.address;
         if (packetAddress != NULL) {
-            if (!NET_SockaddrEqualsInetAddress(env, (struct sockaddr *)&sa,
+            if (!NET_SockaddrEqualsInetAddress(sa,
                                                packetAddress)) {
                 /* force a new InetAddress to be created */
-                packetAddress = NULL;
+                packetAddress = null;
             }
         }
         if (packetAddress == NULL) {
-            packetAddress = NET_SockaddrToInetAddress(env, (struct sockaddr *)&sa,
-                                                      &port);
+            int[] tmp = { port };
+            packetAddress = NET_SockaddrToInetAddress(sa, tmp);
+            port = tmp[0];
             /* stuff the new Inetaddress into the packet */
-            (*env)->SetObjectField(env, dpObj, dp_addressID, packetAddress);
+            dpObj.address = packetAddress;
         }
 
         /* populate the packet */
-        (*env)->SetByteArrayRegion(env, packetBuffer, packetBufferOffset, rv,
-                                   (jbyte *)fullPacket);
-        (*env)->SetIntField(env, dpObj, dp_portID, port);
-        (*env)->SetIntField(env, dpObj, dp_lengthID, rv);
+        dpObj.port = port;
+        dpObj.length = rv;
     }
 
-    if (packetBufferLen > MAX_BUFFER_LEN) {
-        free(fullPacket);
-    }
     return port;
 }
 
@@ -398,30 +398,27 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketRece
  * Method:    socketSend
  * Signature: (I[BIILjava/net/InetAddress;IZ)V
  */
-JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketSend
-  (JNIEnv *env, jclass clazz, jint fd, jbyteArray data, jint offset, jint length,
-     jobject iaObj, jint port, jboolean connected) {
+static void socketSend
+  (JNIEnv env, cli.System.Net.Sockets.Socket fd, byte[] data, int offset, int length,
+     InetAddress iaObj, int port, boolean connected) {
     SOCKETADDRESS sa;
-    int sa_len = sizeof(sa);
-    SOCKETADDRESS *sap = &sa;
-    char BUF[MAX_BUFFER_LEN];
-    char *fullPacket;
     int rv;
 
     if (connected) {
-        sap = 0; /* arg to JVM_Sendto () null in this case */
-        sa_len = 0;
+        sa = null; /* arg to JVM_Sendto () null in this case */
     } else {
-        if (NET_InetAddressToSockaddr(env, iaObj, port, (struct sockaddr *)&sa,
-                                       &sa_len, JNI_TRUE) != 0) {
+        sa = new SOCKETADDRESS();
+        if (NET_InetAddressToSockaddr(env, iaObj, port, sa,
+                                       JNI_TRUE) != 0) {
             return;
         }
     }
 
+    /*
     if (length > MAX_BUFFER_LEN) {
         /* Note: the buffer needn't be greater than 65,536 (0xFFFF)
          * the max size of an IP packet. Anything bigger is truncated anyway.
-         */
+         *-/
         if (length > MAX_PACKET_LEN) {
             length = MAX_PACKET_LEN;
         }
@@ -433,22 +430,18 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketSend
     } else {
         fullPacket = &(BUF[0]);
     }
+    */
 
-    (*env)->GetByteArrayRegion(env, data, offset, length,
-                               (jbyte *)fullPacket);
-    rv = sendto(fd, fullPacket, length, 0, (struct sockaddr *)sap, sa_len);
+    rv = sendto(fd, data, offset, length, 0, sa);
     if (rv == SOCKET_ERROR) {
         if (rv == JVM_IO_ERR) {
             NET_ThrowNew(env, WSAGetLastError(), "Datagram send failed");
         } else if (rv == JVM_IO_INTR) {
-            JNU_ThrowByName(env, JNU_JAVAIOPKG "InterruptedIOException",
+            JNU_ThrowByName(env, JNU_JAVAIOPKG+"InterruptedIOException",
                             "operation interrupted");
         }
     }
 
-    if (length > MAX_BUFFER_LEN) {
-        free(fullPacket);
-    }
 }
 
 /*
@@ -456,17 +449,17 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketSend
  * Method:    socketSetIntOption
  * Signature: (III)V
  */
-JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketSetIntOption
-  (JNIEnv *env, jclass clazz, jint fd , jint cmd, jint value) {
-    int level, opt;
+static void socketSetIntOption
+  (JNIEnv env, cli.System.Net.Sockets.Socket fd , int cmd, int value) {
+    int[] level = { 0 }, opt = { 0 };
 
-    if (NET_MapSocketOption(cmd, &level, &opt) < 0) {
-        JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
+    if (NET_MapSocketOption(cmd, level, opt) < 0) {
+        JNU_ThrowByName(env, JNU_JAVANETPKG+"SocketException",
                                      "Invalid option");
         return;
     }
 
-    if (NET_SetSockOpt(fd, level, opt, (char *)&value, sizeof(value)) < 0) {
+    if (NET_SetSockOpt(fd, level[0], opt[0], value) < 0) {
         NET_ThrowNew(env, WSAGetLastError(), "setsockopt");
     }
 }
@@ -476,21 +469,21 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketSetI
  * Method:    socketGetIntOption
  * Signature: (II)I
  */
-JNIEXPORT jint JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketGetIntOption
-  (JNIEnv *env, jclass clazz, jint fd, jint cmd) {
-    int level, opt, result=0;
-    int result_len = sizeof(result);
+static int socketGetIntOption
+  (JNIEnv env, cli.System.Net.Sockets.Socket fd, int cmd) {
+    int[] level = { 0 }, opt = { 0 }, result = { 0 };
 
-    if (NET_MapSocketOption(cmd, &level, &opt) < 0) {
-        JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
+    if (NET_MapSocketOption(cmd, level, opt) < 0) {
+        JNU_ThrowByName(env, JNU_JAVANETPKG+"SocketException",
                                      "Invalid option");
         return -1;
     }
 
-    if (NET_GetSockOpt(fd, level, opt, (void *)&result, &result_len) < 0) {
+    if (NET_GetSockOpt(fd, level[0], opt[0], result) < 0) {
         NET_ThrowNew(env, WSAGetLastError(), "getsockopt");
         return -1;
     }
 
-    return result;
+    return result[0];
+}
 }

@@ -3760,11 +3760,22 @@ namespace IKVM.NativeCode.java
 
 		static class InetAddressImplFactory
 		{
-			// On Linux we can't bind both an IPv4 and IPv6 to the same port, so we have to disable IPv6 until we have a dual-stack implementation.
-			// Mono on Windows doesn't appear to support IPv6 either (Mono on Linux does).
-			private static readonly bool ipv6supported = Type.GetType("Mono.Runtime") == null
-				&& Environment.OSVersion.Platform == PlatformID.Win32NT
-				&& System.Net.Sockets.Socket.OSSupportsIPv6;
+			private static readonly bool ipv6supported = Init();
+
+			private static bool Init()
+			{
+				string env = IKVM.Internal.JVM.SafeGetEnvironmentVariable("IKVM_IPV6");
+				int val;
+				if (env != null && Int32.TryParse(env, out val))
+				{
+					return (val & 1) != 0;
+				}
+				// On Linux we can't bind both an IPv4 and IPv6 to the same port, so we have to disable IPv6 until we have a dual-stack implementation.
+				// Mono on Windows doesn't appear to support IPv6 either (Mono on Linux does).
+				return Type.GetType("Mono.Runtime") == null
+					&& Environment.OSVersion.Platform == PlatformID.Win32NT
+					&& System.Net.Sockets.Socket.OSSupportsIPv6;
+			}
 
 			public static bool isIPv6Supported()
 			{

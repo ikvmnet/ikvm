@@ -25,9 +25,6 @@
 package java.net;
 
 import java.io.IOException;
-import java.io.FileDescriptor;
-import sun.misc.SharedSecrets;
-import sun.misc.JavaIOFileDescriptorAccess;
 
 /**
  * This class defines the plain DatagramSocketImpl that is used on
@@ -44,20 +41,19 @@ import sun.misc.JavaIOFileDescriptorAccess;
 
 class DualStackPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
 {
-    static JavaIOFileDescriptorAccess fdAccess = SharedSecrets.getJavaIOFileDescriptorAccess();
 
     protected void datagramSocketCreate() throws SocketException {
         if (fd == null)
             throw new SocketException("Socket closed");
 
-        int newfd = socketCreate(false /* v6Only */);
+        cli.System.Net.Sockets.Socket newfd = socketCreate(false /* v6Only */);
 
-        fdAccess.set(fd, newfd);
+        fd.setSocket(newfd);
     }
 
     protected synchronized void bind0(int lport, InetAddress laddr)
         throws SocketException {
-        int nativefd = checkAndReturnNativeFD();
+        cli.System.Net.Sockets.Socket nativefd = checkAndReturnNativeFD();
 
         if (laddr == null)
             throw new NullPointerException("argument address");
@@ -71,7 +67,7 @@ class DualStackPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
     }
 
     protected synchronized int peek(InetAddress address) throws IOException {
-        int nativefd = checkAndReturnNativeFD();
+        cli.System.Net.Sockets.Socket nativefd = checkAndReturnNativeFD();
 
         if (address == null)
             throw new NullPointerException("Null address in peek()");
@@ -84,7 +80,7 @@ class DualStackPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
     }
 
     protected synchronized int peekData(DatagramPacket p) throws IOException {
-        int nativefd = checkAndReturnNativeFD();
+        cli.System.Net.Sockets.Socket nativefd = checkAndReturnNativeFD();
 
         if (p == null)
             throw new NullPointerException("packet");
@@ -95,7 +91,7 @@ class DualStackPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
     }
 
     protected synchronized void receive0(DatagramPacket p) throws IOException {
-        int nativefd = checkAndReturnNativeFD();
+        cli.System.Net.Sockets.Socket nativefd = checkAndReturnNativeFD();
 
         if (p == null)
             throw new NullPointerException("packet");
@@ -106,7 +102,7 @@ class DualStackPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
     }
 
     protected void send(DatagramPacket p) throws IOException {
-        int nativefd = checkAndReturnNativeFD();
+        cli.System.Net.Sockets.Socket nativefd = checkAndReturnNativeFD();
 
         if (p == null)
             throw new NullPointerException("null packet");
@@ -119,7 +115,7 @@ class DualStackPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
     }
 
     protected void connect0(InetAddress address, int port) throws SocketException {
-        int nativefd = checkAndReturnNativeFD();
+        cli.System.Net.Sockets.Socket nativefd = checkAndReturnNativeFD();
 
         if (address == null)
             throw new NullPointerException("address");
@@ -131,19 +127,19 @@ class DualStackPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
         if (fd == null || !fd.valid())
             return;   // disconnect doesn't throw any exceptions
 
-        socketDisconnect(fdAccess.get(fd));
+        socketDisconnect(fd.getSocket());
     }
 
     protected void datagramSocketClose() {
         if (fd == null || !fd.valid())
             return;   // close doesn't throw any exceptions
 
-        socketClose(fdAccess.get(fd));
-        fdAccess.set(fd, -1);
+        socketClose(fd.getSocket());
+        fd.setSocket(null);
     }
 
     protected void socketSetOption(int opt, Object val) throws SocketException {
-        int nativefd = checkAndReturnNativeFD();
+        cli.System.Net.Sockets.Socket nativefd = checkAndReturnNativeFD();
 
         int optionValue = 0;
 
@@ -165,7 +161,7 @@ class DualStackPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
     }
 
     protected Object socketGetOption(int opt) throws SocketException {
-        int nativefd = checkAndReturnNativeFD();
+        cli.System.Net.Sockets.Socket nativefd = checkAndReturnNativeFD();
 
          // SO_BINDADDR is not a socket option.
         if (opt == SO_BINDADDR) {
@@ -225,41 +221,88 @@ class DualStackPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
     }
     /* END Multicast specific methods */
 
-    private int checkAndReturnNativeFD() throws SocketException {
+    private cli.System.Net.Sockets.Socket checkAndReturnNativeFD() throws SocketException {
         if (fd == null || !fd.valid())
             throw new SocketException("Socket closed");
 
-        return fdAccess.get(fd);
+        return fd.getSocket();
     }
 
     /* Native methods */
 
-    private static native void initIDs();
+    private static cli.System.Net.Sockets.Socket socketCreate(boolean v6Only) {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        cli.System.Net.Sockets.Socket ret = DualStackPlainDatagramSocketImpl_c.socketCreate(env, v6Only);
+        env.ThrowPendingException();
+        return ret;
+    }
 
-    private static native int socketCreate(boolean v6Only);
+    private static void socketBind(cli.System.Net.Sockets.Socket fd, InetAddress localAddress, int localport)
+        throws SocketException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        DualStackPlainDatagramSocketImpl_c.socketBind(env, fd, localAddress, localport);
+        env.ThrowPendingException();
+    }
 
-    private static native void socketBind(int fd, InetAddress localAddress, int localport)
-        throws SocketException;
+    private static void socketConnect(cli.System.Net.Sockets.Socket fd, InetAddress address, int port)
+        throws SocketException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        DualStackPlainDatagramSocketImpl_c.socketConnect(env, fd, address, port);
+        env.ThrowPendingException();
+    }
 
-    private static native void socketConnect(int fd, InetAddress address, int port)
-        throws SocketException;
+    private static void socketDisconnect(cli.System.Net.Sockets.Socket fd) {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        DualStackPlainDatagramSocketImpl_c.socketDisconnect(env, fd);
+        env.ThrowPendingException();
+    }
 
-    private static native void socketDisconnect(int fd);
+    private static void socketClose(cli.System.Net.Sockets.Socket fd) {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        DualStackPlainDatagramSocketImpl_c.socketClose(env, fd);
+        env.ThrowPendingException();
+    }
 
-    private static native void socketClose(int fd);
+    private static int socketLocalPort(cli.System.Net.Sockets.Socket fd) throws SocketException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        int ret = DualStackPlainDatagramSocketImpl_c.socketLocalPort(env, fd);
+        env.ThrowPendingException();
+        return ret;
+    }
 
-    private static native int socketLocalPort(int fd) throws SocketException;
+    private static Object socketLocalAddress(cli.System.Net.Sockets.Socket fd) throws SocketException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        Object ret = DualStackPlainDatagramSocketImpl_c.socketLocalAddress(env, fd);
+        env.ThrowPendingException();
+        return ret;
+    }
 
-    private static native Object socketLocalAddress(int fd) throws SocketException;
+    private static int socketReceiveOrPeekData(cli.System.Net.Sockets.Socket fd, DatagramPacket packet,
+        int timeout, boolean connected, boolean peek) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        int ret = DualStackPlainDatagramSocketImpl_c.socketReceiveOrPeekData(env, fd, packet, timeout, connected, peek);
+        env.ThrowPendingException();
+        return ret;
+    }
 
-    private static native int socketReceiveOrPeekData(int fd, DatagramPacket packet,
-        int timeout, boolean connected, boolean peek) throws IOException;
+    private static void socketSend(cli.System.Net.Sockets.Socket fd, byte[] data, int offset, int length,
+        InetAddress address, int port, boolean connected) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        DualStackPlainDatagramSocketImpl_c.socketSend(env, fd, data, offset, length, address, port, connected);
+        env.ThrowPendingException();
+    }
 
-    private static native void socketSend(int fd, byte[] data, int offset, int length,
-        InetAddress address, int port, boolean connected) throws IOException;
+    private static void socketSetIntOption(cli.System.Net.Sockets.Socket fd, int cmd,
+        int optionValue) throws SocketException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        DualStackPlainDatagramSocketImpl_c.socketSetIntOption(env, fd, cmd, optionValue);
+        env.ThrowPendingException();
+    }
 
-    private static native void socketSetIntOption(int fd, int cmd,
-        int optionValue) throws SocketException;
-
-    private static native int socketGetIntOption(int fd, int cmd) throws SocketException;
+    private static int socketGetIntOption(cli.System.Net.Sockets.Socket fd, int cmd) throws SocketException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        int ret = DualStackPlainDatagramSocketImpl_c.socketGetIntOption(env, fd, cmd);
+        env.ThrowPendingException();
+        return ret;
+    }
 }

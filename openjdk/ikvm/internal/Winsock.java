@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2010 Jeroen Frijters
+  Copyright (C) 2010-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -136,6 +136,7 @@ public final class Winsock
     public static final int IPV6_MULTICAST_HOPS = SocketOptionName.MulticastTimeToLive;
     public static final int IPV6_ADD_MEMBERSHIP = SocketOptionName.AddMembership;
     public static final int IPV6_DROP_MEMBERSHIP = SocketOptionName.DropMembership;
+    public static final int IPV6_V6ONLY = 27;
 
     public static final int SIO_UDP_CONNRESET = 0x9800000C;
 
@@ -417,6 +418,10 @@ public final class Winsock
                     ep = new IPEndPoint(cli.System.Net.IPAddress.IPv6Any, 0);
                 }
             }
+            else
+            {
+                ep = v4mapped(socket, ep);
+            }
             if (socket.get_SocketType().Value == SocketType.Dgram)
             {
                 // NOTE we use async connect to work around the issue that the .NET Socket class disallows sync Connect after the socket has received WSAECONNRESET
@@ -440,6 +445,31 @@ public final class Winsock
         }
     }
 
+    private static IPEndPoint v4mapped(cli.System.Net.Sockets.Socket socket, IPEndPoint ep)
+    {
+        // when binding an IPv6 socket to an IPv4 address, we need to use a mapped v4 address
+        if (socket.get_AddressFamily().Value == AF_INET6 && ep.get_AddressFamily().Value == AF_INET)
+        {
+            byte[] v4 = ep.get_Address().GetAddressBytes();
+            if (v4[0] == 0 && v4[1] == 0 && v4[2] == 0 && v4[3] == 0)
+            {
+                return new IPEndPoint(IPAddress.IPv6Any, ep.get_Port());
+            }
+            else
+            {
+                byte[] v6 = new byte[16];
+                v6[10] = -1;
+                v6[11] = -1;
+                v6[12] = v4[0];
+                v6[13] = v4[1];
+                v6[14] = v4[2];
+                v6[15] = v4[3];
+                return new IPEndPoint(new IPAddress(v6), ep.get_Port());
+            }
+        }
+        return ep;
+    }
+
     public static int bind(cli.System.Net.Sockets.Socket socket, IIPEndPointWrapper ep)
     {
         if (socket == null)
@@ -451,7 +481,7 @@ public final class Winsock
         {
             if (false) throw new cli.System.Net.Sockets.SocketException();
             if (false) throw new cli.System.ObjectDisposedException("");
-            socket.Bind(ep.get());
+            socket.Bind(v4mapped(socket, ep.get()));
             return 0;
         }
         catch (cli.System.Net.Sockets.SocketException x)
@@ -715,7 +745,7 @@ public final class Winsock
             }
             else
             {
-                return socket.SendTo(buf, off, len, SocketFlags.wrap(flags), to.get());
+                return socket.SendTo(buf, off, len, SocketFlags.wrap(flags), v4mapped(socket, to.get()));
             }
         }
         catch (cli.System.ArgumentException _)

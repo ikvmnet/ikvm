@@ -26,8 +26,6 @@ package java.net;
 
 import java.io.IOException;
 import java.io.FileDescriptor;
-import sun.misc.SharedSecrets;
-import sun.misc.JavaIOFileDescriptorAccess;
 
 /**
  * This class defines the plain SocketImpl that is used on Windows platforms
@@ -36,12 +34,11 @@ import sun.misc.JavaIOFileDescriptorAccess;
  * single file descriptor.
  *
  * @author Chris Hegarty
+ * @author Jeroen Frijters
  */
 
 class DualStackPlainSocketImpl extends AbstractPlainSocketImpl
 {
-    static JavaIOFileDescriptorAccess fdAccess = SharedSecrets.getJavaIOFileDescriptorAccess();
-
     public DualStackPlainSocketImpl() {}
 
     public DualStackPlainSocketImpl(FileDescriptor fd) {
@@ -52,14 +49,14 @@ class DualStackPlainSocketImpl extends AbstractPlainSocketImpl
         if (fd == null)
             throw new SocketException("Socket closed");
 
-        int newfd = socket0(stream, false /*v6 Only*/);
+        cli.System.Net.Sockets.Socket newfd = socket0(stream, false /*v6 Only*/);
 
-        fdAccess.set(fd, newfd);
+        fd.setSocket(newfd);
     }
 
     void socketConnect(InetAddress address, int port, int timeout)
         throws IOException {
-        int nativefd = checkAndReturnNativeFD();
+        cli.System.Net.Sockets.Socket nativefd = checkAndReturnNativeFD();
 
         if (address == null)
             throw new NullPointerException("inet address argument is null.");
@@ -88,7 +85,7 @@ class DualStackPlainSocketImpl extends AbstractPlainSocketImpl
     }
 
     void socketBind(InetAddress address, int port) throws IOException {
-        int nativefd = checkAndReturnNativeFD();
+        cli.System.Net.Sockets.Socket nativefd = checkAndReturnNativeFD();
 
         if (address == null)
             throw new NullPointerException("inet address argument is null.");
@@ -104,18 +101,18 @@ class DualStackPlainSocketImpl extends AbstractPlainSocketImpl
     }
 
     void socketListen(int backlog) throws IOException {
-        int nativefd = checkAndReturnNativeFD();
+        cli.System.Net.Sockets.Socket nativefd = checkAndReturnNativeFD();
 
         listen0(nativefd, backlog);
     }
 
     void socketAccept(SocketImpl s) throws IOException {
-        int nativefd = checkAndReturnNativeFD();
+        cli.System.Net.Sockets.Socket nativefd = checkAndReturnNativeFD();
 
         if (s == null)
             throw new NullPointerException("socket is null");
 
-        int newfd = -1;
+        cli.System.Net.Sockets.Socket newfd = null;
         InetSocketAddress[] isaa = new InetSocketAddress[1];
         if (timeout <= 0) {
             newfd = accept0(nativefd, isaa);
@@ -124,7 +121,7 @@ class DualStackPlainSocketImpl extends AbstractPlainSocketImpl
             try {
                 waitForNewConnection(nativefd, timeout);
                 newfd = accept0(nativefd, isaa);
-                if (newfd != -1) {
+                if (newfd != null) {
                     configureBlocking(newfd, true);
                 }
             } finally {
@@ -132,7 +129,7 @@ class DualStackPlainSocketImpl extends AbstractPlainSocketImpl
             }
         }
         /* Update (SocketImpl)s' fd */
-        fdAccess.set(s.fd, newfd);
+        s.fd.setSocket(newfd);
         /* Update socketImpls remote port, address and localport */
         InetSocketAddress isa = isaa[0];
         s.port = isa.getPort();
@@ -141,7 +138,7 @@ class DualStackPlainSocketImpl extends AbstractPlainSocketImpl
     }
 
     int socketAvailable() throws IOException {
-        int nativefd = checkAndReturnNativeFD();
+        cli.System.Net.Sockets.Socket nativefd = checkAndReturnNativeFD();
         return available0(nativefd);
     }
 
@@ -152,18 +149,18 @@ class DualStackPlainSocketImpl extends AbstractPlainSocketImpl
         if (!fd.valid())
             return;
 
-        close0(fdAccess.get(fd));
-        fdAccess.set(fd, -1);
+        close0(fd.getSocket());
+        fd.setSocket(null);
     }
 
     void socketShutdown(int howto) throws IOException {
-        int nativefd = checkAndReturnNativeFD();
+        cli.System.Net.Sockets.Socket nativefd = checkAndReturnNativeFD();
         shutdown0(nativefd, howto);
     }
 
     void socketSetOption(int opt, boolean on, Object value)
         throws SocketException {
-        int nativefd = checkAndReturnNativeFD();
+        cli.System.Net.Sockets.Socket nativefd = checkAndReturnNativeFD();
 
         if (opt == SO_TIMEOUT) {  // timeout implemented through select.
             return;
@@ -198,7 +195,7 @@ class DualStackPlainSocketImpl extends AbstractPlainSocketImpl
     }
 
     int socketGetOption(int opt, Object iaContainerObj) throws SocketException {
-        int nativefd = checkAndReturnNativeFD();
+        cli.System.Net.Sockets.Socket nativefd = checkAndReturnNativeFD();
 
         // SO_BINDADDR is not a socket option.
         if (opt == SO_BINDADDR) {
@@ -219,58 +216,122 @@ class DualStackPlainSocketImpl extends AbstractPlainSocketImpl
     }
 
     void socketSendUrgentData(int data) throws IOException {
-        int nativefd = checkAndReturnNativeFD();
+        cli.System.Net.Sockets.Socket nativefd = checkAndReturnNativeFD();
         sendOOB(nativefd, data);
     }
 
-    private int checkAndReturnNativeFD() throws SocketException {
+    private cli.System.Net.Sockets.Socket checkAndReturnNativeFD() throws SocketException {
         if (fd == null || !fd.valid())
             throw new SocketException("Socket closed");
 
-        return fdAccess.get(fd);
+        return fd.getSocket();
     }
 
     static final int WOULDBLOCK = -2;       // Nothing available (non-blocking)
 
-    static {
-        initIDs();
-    }
-
     /* Native methods */
 
-    static native void initIDs();
+    static cli.System.Net.Sockets.Socket socket0(boolean stream, boolean v6Only) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        cli.System.Net.Sockets.Socket ret = DualStackPlainSocketImpl_c.socket0(env, stream, v6Only);
+        env.ThrowPendingException();
+        return ret;
+    }
 
-    static native int socket0(boolean stream, boolean v6Only) throws IOException;
+    static void bind0(cli.System.Net.Sockets.Socket fd, InetAddress localAddress, int localport)
+        throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        DualStackPlainSocketImpl_c.bind0(env, fd, localAddress, localport);
+        env.ThrowPendingException();
+    }
 
-    static native void bind0(int fd, InetAddress localAddress, int localport)
-        throws IOException;
+    static int connect0(cli.System.Net.Sockets.Socket fd, InetAddress remote, int remotePort)
+        throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        int ret = DualStackPlainSocketImpl_c.connect0(env, fd, remote, remotePort);
+        env.ThrowPendingException();
+        return ret;
+    }
 
-    static native int connect0(int fd, InetAddress remote, int remotePort)
-        throws IOException;
+    static void waitForConnect(cli.System.Net.Sockets.Socket fd, int timeout) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        DualStackPlainSocketImpl_c.waitForConnect(env, fd, timeout);
+        env.ThrowPendingException();
+    }
 
-    static native void waitForConnect(int fd, int timeout) throws IOException;
+    static int localPort0(cli.System.Net.Sockets.Socket fd) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        int ret = DualStackPlainSocketImpl_c.localPort0(env, fd);
+        env.ThrowPendingException();
+        return ret;
+    }
 
-    static native int localPort0(int fd) throws IOException;
+    static void localAddress(cli.System.Net.Sockets.Socket fd, InetAddressContainer in) throws SocketException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        DualStackPlainSocketImpl_c.localAddress(env, fd, in);
+        env.ThrowPendingException();
+    }
 
-    static native void localAddress(int fd, InetAddressContainer in) throws SocketException;
+    static void listen0(cli.System.Net.Sockets.Socket fd, int backlog) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        DualStackPlainSocketImpl_c.listen0(env, fd, backlog);
+        env.ThrowPendingException();
+    }
 
-    static native void listen0(int fd, int backlog) throws IOException;
+    static cli.System.Net.Sockets.Socket accept0(cli.System.Net.Sockets.Socket fd, InetSocketAddress[] isaa) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        cli.System.Net.Sockets.Socket ret = DualStackPlainSocketImpl_c.accept0(env, fd, isaa);
+        env.ThrowPendingException();
+        return ret;
+    }
 
-    static native int accept0(int fd, InetSocketAddress[] isaa) throws IOException;
+    static void waitForNewConnection(cli.System.Net.Sockets.Socket fd, int timeout) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        DualStackPlainSocketImpl_c.waitForNewConnection(env, fd, timeout);
+        env.ThrowPendingException();
+    }
 
-    static native void waitForNewConnection(int fd, int timeout) throws IOException;
+    static int available0(cli.System.Net.Sockets.Socket fd) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        int ret = DualStackPlainSocketImpl_c.available0(env, fd);
+        env.ThrowPendingException();
+        return ret;
+    }
 
-    static native int available0(int fd) throws IOException;
+    static void close0(cli.System.Net.Sockets.Socket fd) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        DualStackPlainSocketImpl_c.close0(env, fd);
+        env.ThrowPendingException();
+    }
 
-    static native void close0(int fd) throws IOException;
+    static void shutdown0(cli.System.Net.Sockets.Socket fd, int howto) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        DualStackPlainSocketImpl_c.shutdown0(env, fd, howto);
+        env.ThrowPendingException();
+    }
 
-    static native void shutdown0(int fd, int howto) throws IOException;
+    static void setIntOption(cli.System.Net.Sockets.Socket fd, int cmd, int optionValue) throws SocketException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        DualStackPlainSocketImpl_c.setIntOption(env, fd, cmd, optionValue);
+        env.ThrowPendingException();
+    }
 
-    static native void setIntOption(int fd, int cmd, int optionValue) throws SocketException;
+    static int getIntOption(cli.System.Net.Sockets.Socket fd, int cmd) throws SocketException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        int ret = DualStackPlainSocketImpl_c.getIntOption(env, fd, cmd);
+        env.ThrowPendingException();
+        return ret;
+    }
 
-    static native int getIntOption(int fd, int cmd) throws SocketException;
+    static void sendOOB(cli.System.Net.Sockets.Socket fd, int data) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        DualStackPlainSocketImpl_c.sendOOB(env, fd, data);
+        env.ThrowPendingException();
+    }
 
-    static native void sendOOB(int fd, int data) throws IOException;
-
-    static native void configureBlocking(int fd, boolean blocking) throws IOException;
+    static void configureBlocking(cli.System.Net.Sockets.Socket fd, boolean blocking) throws IOException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        DualStackPlainSocketImpl_c.configureBlocking(env, fd, blocking);
+        env.ThrowPendingException();
+    }
 }

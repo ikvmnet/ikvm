@@ -102,6 +102,10 @@ java/lang/System.java
 java/lang/Thread.java
 java/lang/ThrowableHelper.java
 java/lang/VMSystemProperties.java
+java/net/DualStackPlainDatagramSocketImpl.java
+java/net/DualStackPlainDatagramSocketImpl_c.java
+java/net/DualStackPlainSocketImpl.java
+java/net/DualStackPlainSocketImpl_c.java
 java/net/net_util_md.java
 java/net/SocketInputStream.java
 java/net/SocketOutputStream.java

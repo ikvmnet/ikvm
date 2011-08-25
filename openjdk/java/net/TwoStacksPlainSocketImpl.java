@@ -243,14 +243,3 @@ class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl
         env.ThrowPendingException();
     }
 }
-
-// we don't support a dual-stack approach yet, so we simply make it an alias for the two-stacks approach
-class DualStackPlainSocketImpl extends TwoStacksPlainSocketImpl
-{
-    DualStackPlainSocketImpl() {
-    }
-
-    DualStackPlainSocketImpl(FileDescriptor fd) {
-        super(fd);
-    }
-}

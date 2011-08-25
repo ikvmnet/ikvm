@@ -492,9 +492,17 @@ namespace IKVM.NativeCode.sun.nio.ch
 	{
 		public static bool isIPv6Available0()
 		{
-			// we only support IPv6 on Vista and up
+			string env = IKVM.Internal.JVM.SafeGetEnvironmentVariable("IKVM_IPV6");
+			int val;
+			if (env != null && Int32.TryParse(env, out val))
+			{
+				return (val & 2) != 0;
+			}
+			// we only support IPv6 on Vista and up (because there is no TwoStacks nio implementation)
 			// (non-Windows OSses are currently not supported)
-			return System.Net.Sockets.Socket.OSSupportsIPv6
+			// Mono on Windows doesn't appear to support IPv6 either (Mono on Linux does).
+			return Type.GetType("Mono.Runtime") == null
+				&& System.Net.Sockets.Socket.OSSupportsIPv6
 				&& Environment.OSVersion.Platform == PlatformID.Win32NT
 				&& Environment.OSVersion.Version.Major >= 6;
 		}

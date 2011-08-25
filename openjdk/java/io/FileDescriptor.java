@@ -168,7 +168,7 @@ public final class FileDescriptor {
      *          {@code false} otherwise.
      */
     public boolean valid() {
-        return stream != null;
+        return stream != null || socket != null;
     }
 
     /**

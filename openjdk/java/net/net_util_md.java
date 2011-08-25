@@ -25,6 +25,7 @@
 
 package java.net;
 
+import java.io.FileDescriptor;
 import cli.System.Net.IPAddress;
 import cli.System.Net.IPEndPoint;
 import static ikvm.internal.JNI.*;
@@ -734,6 +735,10 @@ final class net_util_md
         }
     }
 
+    static InetAddress NET_SockaddrToInetAddress(JNIEnv env, SOCKETADDRESS him, int[] port) {
+        return NET_SockaddrToInetAddress(him, port);
+    }
+
     static InetAddress NET_SockaddrToInetAddress(SOCKETADDRESS him, int[] port) {
         InetAddress iaObj;
         if (him.sa_family == AF_INET6) {
@@ -820,5 +825,14 @@ final class net_util_md
 
     static void Sleep(int ms) {
         cli.System.Threading.Thread.Sleep(ms);
+    }
+
+    static cli.System.Net.Sockets.Socket NET_Socket (int domain, int type, int protocol) {
+        cli.System.Net.Sockets.Socket sock;
+        sock = socket (domain, type, protocol);
+        if (sock != INVALID_SOCKET) {
+            //SetHandleInformation((HANDLE)(uintptr_t)sock, HANDLE_FLAG_INHERIT, FALSE);
+        }
+        return sock;
     }
 }
