@@ -913,10 +913,15 @@ namespace IKVM.Runtime
 				x = MapException<Exception>(x ?? (cs == null
 					? (Exception)new java.lang.ClassCastException("bootstrap method failed to produce a CallSite")
 					: new java.lang.invoke.WrongMethodTypeException()), MapFlags.None);
-				ics = new IndyCallSite<T>((T)java.lang.invoke.MethodHandles
-					.dropArguments(new ConstantMethodHandle((MHV<Exception>)ThrowBootstrapException)
-						.bindTo(x), 0, LoadMethodType<T>().parameterArray())
-					.vmtarget, false);
+				java.lang.invoke.MethodType type = LoadMethodType<T>();
+				ics = new IndyCallSite<T>((T)
+					java.lang.invoke.MethodHandles.dropArguments(
+						java.lang.invoke.MethodHandles.foldArguments(
+							java.lang.invoke.MethodHandles.throwException(type.returnType(), typeof(java.lang.BootstrapMethodError)),
+								new ConstantMethodHandle((MH<Exception, java.lang.BootstrapMethodError>)CreateBootstrapException).bindTo(x)),
+						0, type.parameterArray())
+					.vmtarget,
+					false);
 			}
 			IndyCallSite<T> curr = site;
 			if (curr.IsBootstrap)
@@ -928,13 +933,13 @@ namespace IKVM.Runtime
 
 #if !FIRST_PASS
 		[HideFromJava]
-		private static void ThrowBootstrapException(Exception x)
+		private static java.lang.BootstrapMethodError CreateBootstrapException(Exception x)
 		{
 			if (x is java.lang.BootstrapMethodError)
 			{
-				throw x;
+				return (java.lang.BootstrapMethodError)x;
 			}
-			throw new java.lang.BootstrapMethodError("call site initialization exception", x);
+			return new java.lang.BootstrapMethodError("call site initialization exception", x);
 		}
 #endif
 	}
