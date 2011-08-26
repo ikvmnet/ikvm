@@ -230,8 +230,10 @@ static partial class MethodHandleUtil
 		for (int i = 0; i < args.Length; i++)
 		{
 			args[i] = TypeWrapper.FromClass(type.parameterType(i));
+			args[i].Finish();
 		}
 		TypeWrapper ret = TypeWrapper.FromClass(type.returnType());
+		ret.Finish();
 		return CreateDelegateType(args, ret);
 #endif
 	}
@@ -629,6 +631,8 @@ static partial class MethodHandleUtil
 		{
 			TypeWrapper src = TypeWrapper.FromClass(srcClass);
 			TypeWrapper dst = TypeWrapper.FromClass(dstClass);
+			src.Finish();
+			dst.Finish();
 			if (src.IsNonPrimitiveValueType)
 			{
 				src.EmitBox(ilgen);
