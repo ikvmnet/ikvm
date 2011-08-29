@@ -44,4 +44,17 @@ public final class Util
             && length >= 0
             && length <= arrayLength - offset;
     }
+
+    public static String SafeGetEnvironmentVariable(String name)
+    {
+        try
+        {
+            if (false) throw new cli.System.Security.SecurityException();
+            return cli.System.Environment.GetEnvironmentVariable(name);
+        }
+        catch (cli.System.Security.SecurityException _)
+        {
+            return null;
+        }
+    }
 }

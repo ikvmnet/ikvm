@@ -24,6 +24,7 @@
 package java.lang;
 
 import java.util.Properties;
+import static ikvm.internal.Util.SafeGetEnvironmentVariable;
 
 final class VMSystemProperties
 {
@@ -32,19 +33,6 @@ final class VMSystemProperties
     public static final String SPEC_TITLE = "Java Platform API Specification";
     public static final String SPEC_VERSION = "1.7";
     public static final String SPEC_VENDOR = "Oracle Corporation";
-
-    private static String SafeGetEnvironmentVariable(String name)
-    {
-        try
-        {
-            if(false) throw new cli.System.Security.SecurityException();
-            return cli.System.Environment.GetEnvironmentVariable(name);
-        }
-        catch(cli.System.Security.SecurityException _)
-        {
-            return null;
-        }
-    }
 
     private static String getLibraryPath()
     {
