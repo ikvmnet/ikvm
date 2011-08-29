@@ -68,6 +68,20 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
                     return null; // nothing to return
                 } });
 
+        String ipv6 = ikvm.internal.Util.SafeGetEnvironmentVariable("IKVM_IPV6");
+        if (ipv6 != null) {
+            try {
+                if ((Integer.parseInt(ipv6) & 4) == 0) {
+                    preferIPv4Stack = true;
+                } else {
+                    useDualStackImpl = true;
+                }
+            } catch (NumberFormatException _) {
+            }
+        } else if (!InetAddressImplFactory.isIPv6Supported()) {
+            preferIPv4Stack = true;
+        }
+
         // (version >= 6.0) implies Vista or greater.
         if (version >= 6.0 && !preferIPv4Stack) {
             useDualStackImpl = true;

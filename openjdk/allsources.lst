@@ -102,11 +102,13 @@ java/lang/System.java
 java/lang/Thread.java
 java/lang/ThrowableHelper.java
 java/lang/VMSystemProperties.java
+java/net/DefaultDatagramSocketImplFactory.java
 java/net/DualStackPlainDatagramSocketImpl.java
 java/net/DualStackPlainDatagramSocketImpl_c.java
 java/net/DualStackPlainSocketImpl.java
 java/net/DualStackPlainSocketImpl_c.java
 java/net/net_util_md.java
+java/net/PlainSocketImpl.java
 java/net/SocketInputStream.java
 java/net/SocketOutputStream.java
 java/net/SocketUtil.java
@@ -13534,8 +13536,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/windows/classes/java/io/Win32FileSystem.java
 @OPENJDK7@/jdk/src/windows/classes/java/lang/ProcessEnvironment.java
 @OPENJDK7@/jdk/src/windows/classes/java/lang/Terminator.java
-@OPENJDK7@/jdk/src/windows/classes/java/net/DefaultDatagramSocketImplFactory.java
-@OPENJDK7@/jdk/src/windows/classes/java/net/PlainSocketImpl.java
 @OPENJDK7@/jdk/src/windows/classes/java/util/prefs/WindowsPreferences.java
 @OPENJDK7@/jdk/src/windows/classes/java/util/prefs/WindowsPreferencesFactory.java
 @OPENJDK7@/jdk/src/windows/classes/sun/awt/Win32ColorModel24.java
