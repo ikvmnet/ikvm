@@ -3023,6 +3023,10 @@ namespace IKVM.NativeCode.java
 
 			public static object findLoadedClass0(jlClassLoader thisClassLoader, string name)
 			{
+				if (name == null)
+				{
+					return null;
+				}
 				ClassLoaderWrapper loader = ClassLoaderWrapper.GetClassLoaderWrapper(thisClassLoader);
 				TypeWrapper tw = loader.GetLoadedClass(name);
 				return tw != null ? tw.ClassObject : null;
