@@ -490,7 +490,7 @@ public abstract class ClassLoader {
     }
 
     // This method is invoked by the virtual machine to load a class.
-    final synchronized Class loadClassInternal(String name)
+    final Class loadClassInternal(String name)
         throws ClassNotFoundException
     {
         // For backward compatibility, explicitly lock on 'this' when
@@ -1267,9 +1267,9 @@ public abstract class ClassLoader {
      *
      * @since   1.7
      */
+    @ikvm.internal.HasCallerID
     protected static boolean registerAsParallelCapable() {
-        // TODO JDK7
-        return false;
+        return ParallelLoaders.register(ikvm.internal.CallerID.getCallerID().getCallerClass());
     }
 
     /**
@@ -1799,9 +1799,11 @@ public abstract class ClassLoader {
 
     // All native library names we've loaded.
     private static Vector<String> loadedLibraryNames = new Vector<>();
+
     // Native libraries belonging to system classes.
     private static Vector<NativeLibrary> systemNativeLibraries
         = new Vector<>();
+
     // Native libraries associated with the class loader.
     private Vector<NativeLibrary> nativeLibraries = new Vector<>();
 
