@@ -287,6 +287,9 @@ public abstract class ClassLoader {
     }
 
     private ClassLoader(Void unused, ClassLoader parent) {
+        if (parent != null) {
+            parent.check();
+        }
         this.parent = parent;
         if (ParallelLoaders.isRegistered(this.getClass())) {
             parallelLockMap = new ConcurrentHashMap<>();
@@ -331,15 +334,12 @@ public abstract class ClassLoader {
     // (to skip the security manager check)
     @ikvm.lang.Internal
     protected ClassLoader(ClassLoader parent, SecurityManager security) {
-        this(checkCreateAssemblyClassLoader(parent, security), parent);
+        this(checkCreateAssemblyClassLoader(security), parent);
     }
     
-    private static Void checkCreateAssemblyClassLoader(ClassLoader parent, SecurityManager security) {
+    private static Void checkCreateAssemblyClassLoader(SecurityManager security) {
         if (security != null) {
             security.checkCreateClassLoader();
-        }
-        if (parent != null) {
-            parent.check();
         }
         return null;
     }
