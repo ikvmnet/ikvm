@@ -195,7 +195,7 @@ class Thread implements Runnable {
     private ThreadGroup group;
 
     /* The context ClassLoader for this thread */
-    private ClassLoader contextClassLoader;
+    private volatile ClassLoader contextClassLoader;
 
     /* The inherited AccessControlContext of this thread */
     AccessController.LazyContext lazyInheritedAccessControlContext;
@@ -1777,9 +1777,9 @@ class Thread implements Runnable {
     // [IKVM] called by sun.misc.Launcher (via map.xml patch) to initialize the context class loader
     final void initContextClassLoader(ClassLoader cl) {
         // we only set contextClassLoader if it hasn't been set (by user code) previously
-        if (contextClassLoader == ClassLoader.DUMMY) {
-            contextClassLoader = cl;
-        }
+        java.util.concurrent.atomic.AtomicReferenceFieldUpdater
+            .newUpdater(Thread.class, ClassLoader.class, "contextClassLoader")
+            .compareAndSet(this, ClassLoader.DUMMY, cl);
     }
 
     /**
