@@ -151,6 +151,7 @@
                 <include name="fdlibm/s_scalbn.cs" />
                 <include name="fdlibm/s_tan.cs" />
                 <include name="openjdk/java.lang.invoke.cs" />
+                <include name="openjdk/sun.management.cs" />
                 <include name="openjdk/sun.nio.ch.cs" />
                 <include name="openjdk/sun.security.krb5.cs" />
             </sources>
@@ -162,6 +163,7 @@
                 <include if="${not first-pass}" name="../bin/IKVM.Runtime.JNI.dll" asis="true" />
                 <include if="${not first-pass}" name="../bin/IKVM.OpenJDK.Core.dll" asis="true" />
                 <include if="${not first-pass}" name="../bin/IKVM.OpenJDK.Util.dll" asis="true" />
+                <include if="${not first-pass}" name="../bin/IKVM.OpenJDK.Management.dll" asis="true" />
                 <include if="${not first-pass}" name="../bin/IKVM.OpenJDK.Misc.dll" asis="true" />
                 <include name="${framework::get-assembly-directory(framework::get-target-framework())}/System.dll" />
                 <include name="${framework::get-assembly-directory(framework::get-target-framework())}/System.Configuration.dll" />

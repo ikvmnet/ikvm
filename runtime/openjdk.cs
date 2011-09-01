@@ -5801,7 +5801,11 @@ namespace IKVM.NativeCode.sun.misc
 
 		public static object createByteArray(object thisPerf, string name, int variability, int units, byte[] value, int maxLength)
 		{
-			throw new NotImplementedException();
+#if FIRST_PASS
+			return null;
+#else
+			return global::java.nio.ByteBuffer.allocate(maxLength).put(value);
+#endif
 		}
 
 		public static long highResCounter(object thisPerf)

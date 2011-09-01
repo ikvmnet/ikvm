@@ -57,44 +57,91 @@ public class ManagementFactoryHelper {
 
     private static VMManagement jvm;
 
+    private static ClassLoadingImpl    classMBean = null;
+    private static MemoryImpl          memoryMBean = null;
+    private static ThreadImpl          threadMBean = null;
+    private static RuntimeImpl         runtimeMBean = null;
+    private static CompilationImpl     compileMBean = null;
+    private static OperatingSystemImpl osMBean = null;
+
     public static synchronized ClassLoadingMXBean getClassLoadingMXBean() {
-        throw new Error();
+        if (classMBean == null) {
+            classMBean = new ClassLoadingImpl(jvm);
+        }
+        return classMBean;
     }
 
     public static synchronized MemoryMXBean getMemoryMXBean() {
-        throw new Error();
+        if (memoryMBean == null) {
+            memoryMBean = new MemoryImpl(jvm);
+        }
+        return memoryMBean;
     }
 
     public static synchronized ThreadMXBean getThreadMXBean() {
-        throw new Error();
+        if (threadMBean == null) {
+            threadMBean = new ThreadImpl(jvm);
+        }
+        return threadMBean;
     }
 
     public static synchronized RuntimeMXBean getRuntimeMXBean() {
-        throw new Error();
+        if (runtimeMBean == null) {
+            runtimeMBean = new RuntimeImpl(jvm);
+        }
+        return runtimeMBean;
     }
 
     public static synchronized CompilationMXBean getCompilationMXBean() {
-        throw new Error();
+        if (compileMBean == null && jvm.getCompilerName() != null) {
+            compileMBean = new CompilationImpl(jvm);
+        }
+        return compileMBean;
     }
 
     public static synchronized OperatingSystemMXBean getOperatingSystemMXBean() {
-        throw new Error();
+        if (osMBean == null) {
+            osMBean = (OperatingSystemImpl)
+                          OSMBeanFactory.getOperatingSystemMXBean(jvm);
+        }
+        return osMBean;
     }
 
     public static List<MemoryPoolMXBean> getMemoryPoolMXBeans() {
-        throw new Error();
+        MemoryPoolMXBean[] pools = MemoryImpl.getMemoryPools();
+        List<MemoryPoolMXBean> list = new ArrayList<MemoryPoolMXBean>(pools.length);
+        for (MemoryPoolMXBean p : pools) {
+            list.add(p);
+        }
+        return list;
     }
 
     public static List<MemoryManagerMXBean> getMemoryManagerMXBeans() {
-        throw new Error();
+        MemoryManagerMXBean[]  mgrs = MemoryImpl.getMemoryManagers();
+        List<MemoryManagerMXBean> result = new ArrayList<MemoryManagerMXBean>(mgrs.length);
+        for (MemoryManagerMXBean m : mgrs) {
+            result.add(m);
+        }
+        return result;
     }
 
     public static List<GarbageCollectorMXBean> getGarbageCollectorMXBeans() {
-        throw new Error();
+        MemoryManagerMXBean[]  mgrs = MemoryImpl.getMemoryManagers();
+        List<GarbageCollectorMXBean> result = new ArrayList<GarbageCollectorMXBean>(mgrs.length);
+        for (MemoryManagerMXBean m : mgrs) {
+            if (GarbageCollectorMXBean.class.isInstance(m)) {
+                 result.add(GarbageCollectorMXBean.class.cast(m));
+            }
+        }
+        return result;
     }
 
     public static PlatformLoggingMXBean getPlatformLoggingMXBean() {
-        throw new Error();
+        if (LoggingSupport.isAvailable()) {
+            return PlatformLoggingImpl.instance;
+        } else {
+            return null;
+        }
     }
 
     // The logging MXBean object is an instance of
@@ -155,10 +202,58 @@ public class ManagementFactoryHelper {
 
     private static List<BufferPoolMXBean> bufferPools = null;
     public static synchronized List<BufferPoolMXBean> getBufferPoolMXBeans() {
-        throw new Error();
+        if (bufferPools == null) {
+            bufferPools = new ArrayList<>(2);
+            bufferPools.add(createBufferPoolMXBean(sun.misc.SharedSecrets.getJavaNioAccess()
+                .getDirectBufferPool()));
+            bufferPools.add(createBufferPoolMXBean(sun.nio.ch.FileChannelImpl
+                .getMappedBufferPool()));
+        }
+        return bufferPools;
     }
 
     private final static String BUFFER_POOL_MXBEAN_NAME = "java.nio:type=BufferPool";
+
+    /**
+     * Creates management interface for the given buffer pool.
+     */
+    private static BufferPoolMXBean
+        createBufferPoolMXBean(final sun.misc.JavaNioAccess.BufferPool pool)
+    {
+        return new BufferPoolMXBean() {
+            private volatile ObjectName objname;  // created lazily
+            @Override
+            public ObjectName getObjectName() {
+                ObjectName result = objname;
+                if (result == null) {
+                    synchronized (this) {
+                        if (objname == null) {
+                            result = Util.newObjectName(BUFFER_POOL_MXBEAN_NAME +
+                                ",name=" + pool.getName());
+                            objname = result;
+                        }
+                    }
+                }
+                return result;
+            }
+            @Override
+            public String getName() {
+                return pool.getName();
+            }
+            @Override
+            public long getCount() {
+                return pool.getCount();
+            }
+            @Override
+            public long getTotalCapacity() {
+                return pool.getTotalCapacity();
+            }
+            @Override
+            public long getMemoryUsed() {
+                return pool.getMemoryUsed();
+            }
+        };
+    }
 
     /**
      * Registers a given MBean if not registered in the MBeanServer;

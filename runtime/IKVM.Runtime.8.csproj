@@ -57,6 +57,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\bin\IKVM.OpenJDK.Core.dll</HintPath>
     </Reference>
+    <Reference Include="IKVM.OpenJDK.Management, Version=7.0.4259.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\bin\IKVM.OpenJDK.Management.dll</HintPath>
+    </Reference>
     <Reference Include="IKVM.OpenJDK.Misc, Version=0.39.3280.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\bin\IKVM.OpenJDK.Misc.dll</HintPath>
@@ -143,6 +147,7 @@
     </Compile>
     <Compile Include="openjdk.cs" />
     <Compile Include="openjdk\java.lang.invoke.cs" />
+    <Compile Include="openjdk\sun.management.cs" />
     <Compile Include="openjdk\sun.nio.ch.cs" />
     <Compile Include="openjdk\sun.security.krb5.cs" />
     <Compile Include="PassiveWeakDictionary.cs" />

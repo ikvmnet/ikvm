@@ -11900,6 +11900,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/sun/java2d/Surface.java
 @OPENJDK7@/jdk/src/share/classes/sun/management/Agent.java
 @OPENJDK7@/jdk/src/share/classes/sun/management/AgentConfigurationError.java
+@OPENJDK7@/jdk/src/share/classes/sun/management/ClassLoadingImpl.java
 @OPENJDK7@/jdk/src/share/classes/sun/management/CompilationImpl.java
 @OPENJDK7@/jdk/src/share/classes/sun/management/CompilerThreadStat.java
 @OPENJDK7@/jdk/src/share/classes/sun/management/ConnectorAddressLink.java
@@ -11945,6 +11946,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/sun/management/LockDataConverter.java
 @OPENJDK7@/jdk/src/share/classes/sun/management/LockDataConverterMXBean.java
 @OPENJDK7@/jdk/src/share/classes/sun/management/MappedMXBeanType.java
+@OPENJDK7@/jdk/src/share/classes/sun/management/MemoryImpl.java
 @OPENJDK7@/jdk/src/share/classes/sun/management/MemoryNotifInfoCompositeData.java
 @OPENJDK7@/jdk/src/share/classes/sun/management/MemoryUsageCompositeData.java
 @OPENJDK7@/jdk/src/share/classes/sun/management/MonitorInfoCompositeData.java
@@ -11954,6 +11956,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/sun/management/RuntimeImpl.java
 @OPENJDK7@/jdk/src/share/classes/sun/management/Sensor.java
 @OPENJDK7@/jdk/src/share/classes/sun/management/StackTraceElementCompositeData.java
+@OPENJDK7@/jdk/src/share/classes/sun/management/ThreadImpl.java
 @OPENJDK7@/jdk/src/share/classes/sun/management/ThreadInfoCompositeData.java
 @OPENJDK7@/jdk/src/share/classes/sun/management/Util.java
 @OPENJDK7@/jdk/src/share/classes/sun/management/VMManagement.java
