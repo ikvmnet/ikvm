@@ -808,14 +808,7 @@
             <method name="split" sig="(Ljava.lang.String;I)[Ljava.lang.String;" modifiers="public">
                 <parameter name="regex" />
                 <parameter name="limit" />
-                <body>
-                    <ldarg_1 />
-                    <call class="java.util.regex.Pattern" name="compile" sig="(Ljava.lang.String;)Ljava.util.regex.Pattern;" />
-                    <ldarg_0 />
-                    <ldarg_2 />
-                    <callvirt class="java.util.regex.Pattern" name="split" sig="(Ljava.lang.CharSequence;I)[Ljava.lang.String;" />
-                    <ret />
-                </body>
+                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;I)[Ljava.lang.String;" />
             </method>
             <method name="copyValueOf" sig="([C)Ljava.lang.String;" modifiers="public static">
                 <parameter name="data" />
@@ -846,14 +839,7 @@
                 <parameter name="args">
                     <attribute type="System.ParamArrayAttribute" sig="()V" />
                 </parameter>
-                <body>
-                    <newobj class="java.util.Formatter" name="&lt;init&gt;" sig="()V" />
-                    <ldarg_0 />
-                    <ldarg_1 />
-                    <callvirt class="java.util.Formatter" name="format" sig="(Ljava.lang.String;[Ljava.lang.Object;)Ljava.util.Formatter;" />
-                    <callvirt class="java.util.Formatter" name="toString" sig="()Ljava.lang.String;" />
-                    <ret />
-                </body>
+                <redirect class="java.lang.StringHelper" />
             </method>
             <method name="format" sig="(Ljava.util.Locale;Ljava.lang.String;[Ljava.lang.Object;)Ljava.lang.String;" modifiers="public static">
                 <parameter name="l" />
@@ -861,15 +847,7 @@
                 <parameter name="args">
                     <attribute type="System.ParamArrayAttribute" sig="()V" />
                 </parameter>
-                <body>
-                    <ldarg_0 />
-                    <newobj class="java.util.Formatter" name="&lt;init&gt;" sig="(Ljava.util.Locale;)V" />
-                    <ldarg_1 />
-                    <ldarg_2 />
-                    <callvirt class="java.util.Formatter" name="format" sig="(Ljava.lang.String;[Ljava.lang.Object;)Ljava.util.Formatter;" />
-                    <callvirt class="java.util.Formatter" name="toString" sig="()Ljava.lang.String;" />
-                    <ret />
-                </body>
+                <redirect class="java.lang.StringHelper" />
             </method>
             <method name="isEmpty" sig="()Z" modifiers="public">
                 <body>

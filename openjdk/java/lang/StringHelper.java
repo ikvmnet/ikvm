@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-
 
 /**
  * The <code>String</code> class represents character strings. All
@@ -99,6 +98,8 @@ import java.util.regex.PatternSyntaxException;
  *
  * @author  Lee Boynton
  * @author  Arthur van Hoff
+ * @author  Martin Buchholz
+ * @author  Ulf Zibis
  * @see     java.lang.Object#toString()
  * @see     java.lang.StringBuffer
  * @see     java.lang.StringBuilder
@@ -110,12 +111,12 @@ final class StringHelper
 {
     /**
      * Allocates a new {@code String} that contains characters from a subarray
-     * of the Unicode code point array argument. The {@code offset} argument
-     * is the index of the first code point of the subarray and the
-     * {@code count} argument specifies the length of the subarray. The
-     * contents of the subarray are converted to {@code char}s; subsequent
-     * modification of the {@code int} array does not affect the newly created
-     * string.
+     * of the <a href="Character.html#unicode">Unicode code point</a> array
+     * argument.  The {@code offset} argument is the index of the first code
+     * point of the subarray and the {@code count} argument specifies the
+     * length of the subarray.  The contents of the subarray are converted to
+     * {@code char}s; subsequent modification of the {@code int} array does not
+     * affect the newly created string.
      *
      * @param  codePoints
      *         Array that is the source of Unicode code points
@@ -148,28 +149,28 @@ final class StringHelper
             throw new StringIndexOutOfBoundsException(offset + count);
         }
 
+        final int end = offset + count;
+
         // Pass 1: Compute precise size of char[]
-        int n = 0;
-        for (int i = offset; i < offset + count; i++) {
+        int n = count;
+        for (int i = offset; i < end; i++) {
             int c = codePoints[i];
-            if (c >= Character.MIN_CODE_POINT &&
-                c <  Character.MIN_SUPPLEMENTARY_CODE_POINT)
-                n += 1;
-            else if (Character.isSupplementaryCodePoint(c))
-                n += 2;
+            if (Character.isBmpCodePoint(c))
+                continue;
+            else if (Character.isValidCodePoint(c))
+                n++;
             else throw new IllegalArgumentException(Integer.toString(c));
         }
 
         // Pass 2: Allocate and fill in char[]
-        char[] v = new char[n];
-        for (int i = offset, j = 0; i < offset + count; i++) {
+        final char[] v = new char[n];
+
+        for (int i = offset, j = 0; i < end; i++, j++) {
             int c = codePoints[i];
-            if (c < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
-                v[j++] = (char) c;
-            } else {
-                Character.toSurrogates(c, v, j);
-                j += 2;
-            }
+            if (Character.isBmpCodePoint(c))
+                v[j] = (char) c;
+            else
+                Character.toSurrogates(c, v, j++);
         }
 
         return new String(v);
@@ -1286,19 +1287,23 @@ final class StringHelper
                 }
             }
             return -1;
+        } else {
+            return indexOfSupplementary(_this, ch, fromIndex);
         }
+    }
 
-        if (ch <= Character.MAX_CODE_POINT) {
-            // handle supplementary characters here
-            char[] surrogates = Character.toChars(ch);
-            for (; i < max; i++) {
-                if (_this.get_Chars(i) == surrogates[0]) {
-                    if (i + 1 == max) {
-                        break;
-                    }
-                    if (_this.get_Chars(i+1) == surrogates[1]) {
-                        return i;
-                    }
+    /**
+     * Handles (rare) calls of indexOf with a supplementary character.
+     */
+    private static int indexOfSupplementary(cli.System.String _this, int ch, int fromIndex) {
+        if (Character.isValidCodePoint(ch)) {
+            final int offset = 0;
+            final char hi = Character.highSurrogate(ch);
+            final char lo = Character.lowSurrogate(ch);
+            final int max = offset + _this.get_Length() - 1;
+            for (int i = offset + fromIndex; i < max; i++) {
+                if (_this.get_Chars(i) == hi && _this.get_Chars(i+1) == lo) {
+                    return i - offset;
                 }
             }
         }
@@ -1367,33 +1372,36 @@ final class StringHelper
      *          if the character does not occur before that point.
      */
     static int lastIndexOf(cli.System.String _this, int ch, int fromIndex) {
-        int count = _this.get_Length();
-
-        int i = ((fromIndex >= count) ? count - 1 : fromIndex);
-
         if (ch < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
             // handle most cases here (ch is a BMP code point or a
             // negative value (invalid code point))
-            for (; i >= 0 ; i--) {
+            final int count = _this.get_Length();
+            final int offset = 0;
+            int i = offset + Math.min(fromIndex, count - 1);
+            for (; i >= offset ; i--) {
                 if (_this.get_Chars(i) == ch) {
                     return i;
                 }
             }
             return -1;
+        } else {
+            return lastIndexOfSupplementary(_this, ch, fromIndex);
         }
+    }
 
-        int max = count;
-        if (ch <= Character.MAX_CODE_POINT) {
-            // handle supplementary characters here
-            char[] surrogates = Character.toChars(ch);
-            for (; i >= 0; i--) {
-                if (_this.get_Chars(i) == surrogates[0]) {
-                    if (i + 1 == max) {
-                        break;
-                    }
-                    if (_this.get_Chars(i+1) == surrogates[1]) {
-                        return i;
-                    }
+    /**
+     * Handles (rare) calls of lastIndexOf with a supplementary character.
+     */
+    private static int lastIndexOfSupplementary(cli.System.String _this, int ch, int fromIndex) {
+        if (Character.isValidCodePoint(ch)) {
+            final int count = _this.get_Length();
+            final int offset = 0;
+            char hi = Character.highSurrogate(ch);
+            char lo = Character.lowSurrogate(ch);
+            int i = offset + Math.min(fromIndex, count - 2);
+            for (; i >= offset; i--) {
+                if (_this.get_Chars(i) == hi && _this.get_Chars(i+1) == lo) {
+                    return i - offset;
                 }
             }
         }
@@ -1402,18 +1410,17 @@ final class StringHelper
 
     /**
      * Returns the index within this string of the first occurrence of the
-     * specified substring. The integer returned is the smallest value
-     * <i>k</i> such that:
+     * specified substring.
+     *
+     * <p>The returned index is the smallest value <i>k</i> for which:
      * <blockquote><pre>
      * this.startsWith(str, <i>k</i>)
      * </pre></blockquote>
-     * is <code>true</code>.
+     * If no such value of <i>k</i> exists, then {@code -1} is returned.
      *
-     * @param   str   any string.
-     * @return  if the string argument occurs as a substring within this
-     *          object, then the index of the first character of the first
-     *          such substring is returned; if it does not occur as a
-     *          substring, <code>-1</code> is returned.
+     * @param   str   the substring to search for.
+     * @return  the index of the first occurrence of the specified substring,
+     *          or {@code -1} if there is no such occurrence.
      */
     static int indexOf(String _this, String str) {
         return indexOf(_this, str, 0);
@@ -1421,17 +1428,19 @@ final class StringHelper
 
     /**
      * Returns the index within this string of the first occurrence of the
-     * specified substring, starting at the specified index.  The integer
-     * returned is the smallest value <tt>k</tt> for which:
-     * <blockquote><pre>
-     *     k &gt;= Math.min(fromIndex, this.length()) && this.startsWith(str, k)
-     * </pre></blockquote>
-     * If no such value of <i>k</i> exists, then -1 is returned.
+     * specified substring, starting at the specified index.
      *
-     * @param   str         the substring for which to search.
+     * <p>The returned index is the smallest value <i>k</i> for which:
+     * <blockquote><pre>
+     * <i>k</i> &gt;= fromIndex && this.startsWith(str, <i>k</i>)
+     * </pre></blockquote>
+     * If no such value of <i>k</i> exists, then {@code -1} is returned.
+     *
+     * @param   str         the substring to search for.
      * @param   fromIndex   the index from which to start the search.
-     * @return  the index within this string of the first occurrence of the
-     *          specified substring, starting at the specified index.
+     * @return  the index of the first occurrence of the specified substring,
+     *          starting at the specified index,
+     *          or {@code -1} if there is no such occurrence.
      */
     static int indexOf(String _this, String str, int fromIndex) {
         // start by dereferencing _this, to make sure we throw a NullPointerException if _this is null
@@ -1512,20 +1521,19 @@ final class StringHelper
     }
 
     /**
-     * Returns the index within this string of the rightmost occurrence
-     * of the specified substring.  The rightmost empty string "" is
-     * considered to occur at the index value <code>this.length()</code>.
-     * The returned index is the largest value <i>k</i> such that
+     * Returns the index within this string of the last occurrence of the
+     * specified substring.  The last occurrence of the empty string ""
+     * is considered to occur at the index value {@code this.length()}.
+     *
+     * <p>The returned index is the largest value <i>k</i> for which:
      * <blockquote><pre>
-     * this.startsWith(str, k)
+     * this.startsWith(str, <i>k</i>)
      * </pre></blockquote>
-     * is true.
+     * If no such value of <i>k</i> exists, then {@code -1} is returned.
      *
      * @param   str   the substring to search for.
-     * @return  if the string argument occurs one or more times as a substring
-     *          within this object, then the index of the first character of
-     *          the last such substring is returned. If it does not occur as
-     *          a substring, <code>-1</code> is returned.
+     * @return  the index of the last occurrence of the specified substring,
+     *          or {@code -1} if there is no such occurrence.
      */
     static int lastIndexOf(String _this, String str) {
         return lastIndexOf(_this, str, _this.length());
@@ -1534,16 +1542,18 @@ final class StringHelper
     /**
      * Returns the index within this string of the last occurrence of the
      * specified substring, searching backward starting at the specified index.
-     * The integer returned is the largest value <i>k</i> such that:
+     *
+     * <p>The returned index is the largest value <i>k</i> for which:
      * <blockquote><pre>
-     *     k &lt;= Math.min(fromIndex, this.length()) && this.startsWith(str, k)
+     * <i>k</i> &lt;= fromIndex && this.startsWith(str, <i>k</i>)
      * </pre></blockquote>
-     * If no such value of <i>k</i> exists, then -1 is returned.
+     * If no such value of <i>k</i> exists, then {@code -1} is returned.
      *
      * @param   str         the substring to search for.
      * @param   fromIndex   the index to start the search from.
-     * @return  the index within this string of the last occurrence of the
-     *          specified substring.
+     * @return  the index of the last occurrence of the specified substring,
+     *          searching backward from the specified index,
+     *          or {@code -1} if there is no such occurrence.
      */
     static int lastIndexOf(String _this, String str, int fromIndex) {
         // start by dereferencing s, to make sure we throw a NullPointerException if s is null
@@ -1788,6 +1798,139 @@ final class StringHelper
     }
 
     /**
+     * Splits this string around matches of the given
+     * <a href="../util/regex/Pattern.html#sum">regular expression</a>.
+     *
+     * <p> The array returned by this method contains each substring of this
+     * string that is terminated by another substring that matches the given
+     * expression or is terminated by the end of the string.  The substrings in
+     * the array are in the order in which they occur in this string.  If the
+     * expression does not match any part of the input then the resulting array
+     * has just one element, namely this string.
+     *
+     * <p> The <tt>limit</tt> parameter controls the number of times the
+     * pattern is applied and therefore affects the length of the resulting
+     * array.  If the limit <i>n</i> is greater than zero then the pattern
+     * will be applied at most <i>n</i>&nbsp;-&nbsp;1 times, the array's
+     * length will be no greater than <i>n</i>, and the array's last entry
+     * will contain all input beyond the last matched delimiter.  If <i>n</i>
+     * is non-positive then the pattern will be applied as many times as
+     * possible and the array can have any length.  If <i>n</i> is zero then
+     * the pattern will be applied as many times as possible, the array can
+     * have any length, and trailing empty strings will be discarded.
+     *
+     * <p> The string <tt>"boo:and:foo"</tt>, for example, yields the
+     * following results with these parameters:
+     *
+     * <blockquote><table cellpadding=1 cellspacing=0 summary="Split example showing regex, limit, and result">
+     * <tr>
+     *     <th>Regex</th>
+     *     <th>Limit</th>
+     *     <th>Result</th>
+     * </tr>
+     * <tr><td align=center>:</td>
+     *     <td align=center>2</td>
+     *     <td><tt>{ "boo", "and:foo" }</tt></td></tr>
+     * <tr><td align=center>:</td>
+     *     <td align=center>5</td>
+     *     <td><tt>{ "boo", "and", "foo" }</tt></td></tr>
+     * <tr><td align=center>:</td>
+     *     <td align=center>-2</td>
+     *     <td><tt>{ "boo", "and", "foo" }</tt></td></tr>
+     * <tr><td align=center>o</td>
+     *     <td align=center>5</td>
+     *     <td><tt>{ "b", "", ":and:f", "", "" }</tt></td></tr>
+     * <tr><td align=center>o</td>
+     *     <td align=center>-2</td>
+     *     <td><tt>{ "b", "", ":and:f", "", "" }</tt></td></tr>
+     * <tr><td align=center>o</td>
+     *     <td align=center>0</td>
+     *     <td><tt>{ "b", "", ":and:f" }</tt></td></tr>
+     * </table></blockquote>
+     *
+     * <p> An invocation of this method of the form
+     * <i>str.</i><tt>split(</tt><i>regex</i><tt>,</tt>&nbsp;<i>n</i><tt>)</tt>
+     * yields the same result as the expression
+     *
+     * <blockquote>
+     * {@link java.util.regex.Pattern}.{@link java.util.regex.Pattern#compile
+     * compile}<tt>(</tt><i>regex</i><tt>)</tt>.{@link
+     * java.util.regex.Pattern#split(java.lang.CharSequence,int)
+     * split}<tt>(</tt><i>str</i><tt>,</tt>&nbsp;<i>n</i><tt>)</tt>
+     * </blockquote>
+     *
+     *
+     * @param  regex
+     *         the delimiting regular expression
+     *
+     * @param  limit
+     *         the result threshold, as described above
+     *
+     * @return  the array of strings computed by splitting this string
+     *          around matches of the given regular expression
+     *
+     * @throws  PatternSyntaxException
+     *          if the regular expression's syntax is invalid
+     *
+     * @see java.util.regex.Pattern
+     *
+     * @since 1.4
+     * @spec JSR-51
+     */
+    static String[] split(String _this, String regex, int limit) {
+        /* fastpath if the regex is a
+           (1)one-char String and this character is not one of the
+              RegEx's meta characters ".$|()[{^?*+\\", or
+           (2)two-char String and the first char is the backslash and
+              the second is not the ascii digit or ascii letter.
+        */
+        char ch = 0;
+        if (((regex.length() == 1 &&
+             ".$|()[{^?*+\\".indexOf(ch = regex.charAt(0)) == -1) ||
+             (regex.length() == 2 &&
+              regex.charAt(0) == '\\' &&
+              (((ch = regex.charAt(1))-'0')|('9'-ch)) < 0 &&
+              ((ch-'a')|('z'-ch)) < 0 &&
+              ((ch-'A')|('Z'-ch)) < 0)) &&
+            (ch < Character.MIN_HIGH_SURROGATE ||
+             ch > Character.MAX_LOW_SURROGATE))
+        {
+            int count = _this.length();
+            int off = 0;
+            int next = 0;
+            boolean limited = limit > 0;
+            ArrayList<String> list = new ArrayList<>();
+            while ((next = _this.indexOf(ch, off)) != -1) {
+                if (!limited || list.size() < limit - 1) {
+                    list.add(_this.substring(off, next));
+                    off = next + 1;
+                } else {    // last one
+                    //assert (list.size() == limit - 1);
+                    list.add(_this.substring(off, count));
+                    off = count;
+                    break;
+                }
+            }
+            // If no match was found, return this
+            if (off == 0)
+                return new String[] { _this };
+
+            // Add remaining segment
+            if (!limited || list.size() < limit)
+                list.add(_this.substring(off, count));
+
+            // Construct result
+            int resultSize = list.size();
+            if (limit == 0)
+                while (resultSize > 0 && list.get(resultSize-1).length() == 0)
+                    resultSize--;
+            String[] result = new String[resultSize];
+            return list.subList(0, resultSize).toArray(result);
+        }
+        return Pattern.compile(regex).split(_this, limit);
+    }
+
+    /**
      * Converts all of the characters in this <code>String</code> to lower
      * case using the rules of the given <code>Locale</code>.  Case mapping is based
      * on the Unicode Standard version specified by the {@link java.lang.Character Character}
@@ -1893,14 +2036,21 @@ final class StringHelper
             }
             if (localeDependent || srcChar == '\u03A3') { // GREEK CAPITAL LETTER SIGMA
                 lowerChar = ConditionalSpecialCasing.toLowerCaseEx(_this, i, locale);
+            } else if (srcChar == '\u0130') { // LATIN CAPITAL LETTER I DOT
+                lowerChar = Character.ERROR;
             } else {
                 lowerChar = Character.toLowerCase(srcChar);
             }
             if ((lowerChar == Character.ERROR) ||
                 (lowerChar >= Character.MIN_SUPPLEMENTARY_CODE_POINT)) {
                 if (lowerChar == Character.ERROR) {
-                    lowerCharArray =
-                        ConditionalSpecialCasing.toLowerCaseCharArray(_this, i, locale);
+                     if (!localeDependent && srcChar == '\u0130') {
+                         lowerCharArray =
+                             ConditionalSpecialCasing.toLowerCaseCharArray(_this, i, Locale.ENGLISH);
+                     } else {
+                        lowerCharArray =
+                            ConditionalSpecialCasing.toLowerCaseCharArray(_this, i, locale);
+                     }
                 } else if (srcCount == 2) {
                     resultOffset += Character.toChars(lowerChar, result, i + resultOffset) - srcCount;
                     continue;
@@ -1938,8 +2088,8 @@ final class StringHelper
      * Examples are programming language identifiers, protocol keys, and HTML
      * tags.
      * For instance, <code>"TITLE".toLowerCase()</code> in a Turkish locale
-     * returns <code>"t\u0131tle"</code>, where '\u0131' is the LATIN SMALL
-     * LETTER DOTLESS I character.
+     * returns <code>"t\u005Cu0131tle"</code>, where '\u005Cu0131' is the
+     * LATIN SMALL LETTER DOTLESS I character.
      * To obtain correct results for locale insensitive strings, use
      * <code>toLowerCase(Locale.ENGLISH)</code>.
      * <p>
@@ -2102,8 +2252,8 @@ final class StringHelper
      * Examples are programming language identifiers, protocol keys, and HTML
      * tags.
      * For instance, <code>"title".toUpperCase()</code> in a Turkish locale
-     * returns <code>"T\u0130TLE"</code>, where '\u0130' is the LATIN CAPITAL
-     * LETTER I WITH DOT ABOVE character.
+     * returns <code>"T\u005Cu0130TLE"</code>, where '\u005Cu0130' is the
+     * LATIN CAPITAL LETTER I WITH DOT ABOVE character.
      * To obtain correct results for locale insensitive strings, use
      * <code>toUpperCase(Locale.ENGLISH)</code>.
      * <p>
@@ -2160,6 +2310,92 @@ final class StringHelper
     }
 
     /**
+     * Returns a formatted string using the specified format string and
+     * arguments.
+     *
+     * <p> The locale always used is the one returned by {@link
+     * java.util.Locale#getDefault() Locale.getDefault()}.
+     *
+     * @param  format
+     *         A <a href="../util/Formatter.html#syntax">format string</a>
+     *
+     * @param  args
+     *         Arguments referenced by the format specifiers in the format
+     *         string.  If there are more arguments than format specifiers, the
+     *         extra arguments are ignored.  The number of arguments is
+     *         variable and may be zero.  The maximum number of arguments is
+     *         limited by the maximum dimension of a Java array as defined by
+     *         <cite>The Java&trade; Virtual Machine Specification</cite>.
+     *         The behaviour on a
+     *         <tt>null</tt> argument depends on the <a
+     *         href="../util/Formatter.html#syntax">conversion</a>.
+     *
+     * @throws  IllegalFormatException
+     *          If a format string contains an illegal syntax, a format
+     *          specifier that is incompatible with the given arguments,
+     *          insufficient arguments given the format string, or other
+     *          illegal conditions.  For specification of all possible
+     *          formatting errors, see the <a
+     *          href="../util/Formatter.html#detail">Details</a> section of the
+     *          formatter class specification.
+     *
+     * @throws  NullPointerException
+     *          If the <tt>format</tt> is <tt>null</tt>
+     *
+     * @return  A formatted string
+     *
+     * @see  java.util.Formatter
+     * @since  1.5
+     */
+    public static String format(String format, Object ... args) {
+        return new Formatter().format(format, args).toString();
+    }
+
+    /**
+     * Returns a formatted string using the specified locale, format string,
+     * and arguments.
+     *
+     * @param  l
+     *         The {@linkplain java.util.Locale locale} to apply during
+     *         formatting.  If <tt>l</tt> is <tt>null</tt> then no localization
+     *         is applied.
+     *
+     * @param  format
+     *         A <a href="../util/Formatter.html#syntax">format string</a>
+     *
+     * @param  args
+     *         Arguments referenced by the format specifiers in the format
+     *         string.  If there are more arguments than format specifiers, the
+     *         extra arguments are ignored.  The number of arguments is
+     *         variable and may be zero.  The maximum number of arguments is
+     *         limited by the maximum dimension of a Java array as defined by
+     *         <cite>The Java&trade; Virtual Machine Specification</cite>.
+     *         The behaviour on a
+     *         <tt>null</tt> argument depends on the <a
+     *         href="../util/Formatter.html#syntax">conversion</a>.
+     *
+     * @throws  IllegalFormatException
+     *          If a format string contains an illegal syntax, a format
+     *          specifier that is incompatible with the given arguments,
+     *          insufficient arguments given the format string, or other
+     *          illegal conditions.  For specification of all possible
+     *          formatting errors, see the <a
+     *          href="../util/Formatter.html#detail">Details</a> section of the
+     *          formatter class specification
+     *
+     * @throws  NullPointerException
+     *          If the <tt>format</tt> is <tt>null</tt>
+     *
+     * @return  A formatted string
+     *
+     * @see  java.util.Formatter
+     * @since  1.5
+     */
+    public static String format(Locale l, String format, Object ... args) {
+        return new Formatter(l).format(format, args).toString();
+    }
+
+    /**
      * Returns the string representation of the <code>Object</code> argument.
      *
      * @param   obj   an <code>Object</code>.
@@ -2168,7 +2404,7 @@ final class StringHelper
      *          <code>obj.toString()</code> is returned.
      * @see     java.lang.Object#toString()
      */
-    static String valueOf(Object obj) {
+    public static String valueOf(Object obj) {
         return (obj == null) ? "null" : obj.toString();
     }
 
@@ -2182,7 +2418,7 @@ final class StringHelper
      * @return  a newly allocated string representing the same sequence of
      *          characters contained in the character array argument.
      */
-    static String valueOf(char data[]) {
+    public static String valueOf(char data[]) {
         return new String(data);
     }
 
@@ -2207,7 +2443,7 @@ final class StringHelper
      *          <code>offset+count</code> is larger than
      *          <code>data.length</code>.
      */
-    static String valueOf(char data[], int offset, int count) {
+    public static String valueOf(char data[], int offset, int count) {
         return new String(data, offset, count);
     }
 
@@ -2221,7 +2457,7 @@ final class StringHelper
      * @return  a <code>String</code> that contains the characters of the
      *          specified subarray of the character array.
      */
-    static String copyValueOf(char data[], int offset, int count) {
+    public static String copyValueOf(char data[], int offset, int count) {
         // All public String constructors now copy the data.
         return new String(data, offset, count);
     }
@@ -2234,7 +2470,7 @@ final class StringHelper
      * @return  a <code>String</code> that contains the characters of the
      *          character array.
      */
-    static String copyValueOf(char data[]) {
+    public static String copyValueOf(char data[]) {
         return copyValueOf(data, 0, data.length);
     }
 
@@ -2246,7 +2482,7 @@ final class StringHelper
      *          <code>"true"</code> is returned; otherwise, a string equal to
      *          <code>"false"</code> is returned.
      */
-    static String valueOf(boolean b) {
+    public static String valueOf(boolean b) {
         return b ? "true" : "false";
     }
 
@@ -2258,7 +2494,7 @@ final class StringHelper
      * @return  a string of length <code>1</code> containing
      *          as its single character the argument <code>c</code>.
      */
-    static String valueOf(char c) {
+    public static String valueOf(char c) {
         char data[] = {c};
         return new String(0, 1, data);
     }
@@ -2273,8 +2509,8 @@ final class StringHelper
      * @return  a string representation of the <code>int</code> argument.
      * @see     java.lang.Integer#toString(int, int)
      */
-    static String valueOf(int i) {
-        return Integer.toString(i, 10);
+    public static String valueOf(int i) {
+        return Integer.toString(i);
     }
 
     /**
@@ -2287,8 +2523,8 @@ final class StringHelper
      * @return  a string representation of the <code>long</code> argument.
      * @see     java.lang.Long#toString(long)
      */
-    static String valueOf(long l) {
-        return Long.toString(l, 10);
+    public static String valueOf(long l) {
+        return Long.toString(l);
     }
 
     /**
@@ -2301,7 +2537,7 @@ final class StringHelper
      * @return  a string representation of the <code>float</code> argument.
      * @see     java.lang.Float#toString(float)
      */
-    static String valueOf(float f) {
+    public static String valueOf(float f) {
         return Float.toString(f);
     }
 
@@ -2315,7 +2551,7 @@ final class StringHelper
      * @return  a  string representation of the <code>double</code> argument.
      * @see     java.lang.Double#toString(double)
      */
-    static String valueOf(double d) {
+    public static String valueOf(double d) {
         return Double.toString(d);
     }
 }
