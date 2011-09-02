@@ -5861,6 +5861,15 @@ namespace IKVM.NativeCode.sun.misc
 			}
 			return FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType);
 		}
+
+		public static jlClass defineClass(object thisUnsafe, string name, byte[] buf, int offset, int length, jlClassLoader cl, ProtectionDomain pd)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			return cl.defineClass(name, buf, offset, length, pd);
+#endif
+		}
 	}
 
 	static class Version

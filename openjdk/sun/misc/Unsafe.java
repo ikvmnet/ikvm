@@ -1048,8 +1048,5 @@ public final class Unsafe
         return null;
     }
 
-    public Class defineClass(String name, byte[] buf, int offset, int length, ClassLoader cl, ProtectionDomain pd)
-    {
-        throw new ikvm.internal.NotYetImplementedError();
-    }
+    public native Class defineClass(String name, byte[] buf, int offset, int length, ClassLoader cl, ProtectionDomain pd);
 }
