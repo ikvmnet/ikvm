@@ -940,7 +940,23 @@ namespace IKVM.NativeCode.sun.nio.ch
 
 		public static int sendOutOfBandData(FileDescriptor fd, byte data)
 		{
-			throw new NotImplementedException();
+#if FIRST_PASS
+			return 0;
+#else
+			try
+			{
+				fd.getSocket().Send(new byte[] { data }, 1, System.Net.Sockets.SocketFlags.OutOfBand);
+				return 1;
+			}
+			catch (System.Net.Sockets.SocketException x)
+			{
+				throw new global::java.net.ConnectException(x.Message);
+			}
+			catch (System.ObjectDisposedException)
+			{
+				throw new global::java.net.SocketException("Socket is closed");
+			}
+#endif
 		}
 	}
 }
