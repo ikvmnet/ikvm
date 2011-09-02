@@ -703,24 +703,158 @@ namespace IKVM.NativeCode.sun.nio.ch
 #endif
 		}
 
+		private static void PutInt(byte[] buf, int pos, int value)
+		{
+			buf[pos + 0] = (byte)(value >> 24);
+			buf[pos + 1] = (byte)(value >> 16);
+			buf[pos + 2] = (byte)(value >> 8);
+			buf[pos + 3] = (byte)(value >> 0);
+		}
+
 		public static int joinOrDrop4(bool join, FileDescriptor fd, int group, int interf, int source)
 		{
-			throw new NotImplementedException();
+#if FIRST_PASS
+			return 0;
+#else
+			try
+			{
+				if (source == 0)
+				{
+					fd.getSocket().SetSocketOption(System.Net.Sockets.SocketOptionLevel.IP,
+						join ? System.Net.Sockets.SocketOptionName.AddMembership : System.Net.Sockets.SocketOptionName.DropMembership,
+						new System.Net.Sockets.MulticastOption(new System.Net.IPAddress(System.Net.IPAddress.HostToNetworkOrder(group) & 0xFFFFFFFFL), new System.Net.IPAddress(System.Net.IPAddress.HostToNetworkOrder(interf) & 0xFFFFFFFFL)));
+				}
+				else
+				{
+					// ip_mreq_source
+					byte[] optionValue = new byte[12];
+					PutInt(optionValue, 0, group);
+					PutInt(optionValue, 4, source);
+					PutInt(optionValue, 8, interf);
+					fd.getSocket().SetSocketOption(System.Net.Sockets.SocketOptionLevel.IP,
+						join ? System.Net.Sockets.SocketOptionName.AddSourceMembership : System.Net.Sockets.SocketOptionName.DropSourceMembership,
+						optionValue);
+				}
+				return 0;
+			}
+			catch (System.Net.Sockets.SocketException x)
+			{
+				throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
+			}
+			catch (System.ObjectDisposedException)
+			{
+				throw new global::java.net.SocketException("Socket is closed");
+			}
+#endif
 		}
 
 		public static int blockOrUnblock4(bool block, FileDescriptor fd, int group, int interf, int source)
 		{
-			throw new NotImplementedException();
+#if FIRST_PASS
+			return 0;
+#else
+			try
+			{
+				// ip_mreq_source
+				byte[] optionValue = new byte[12];
+				PutInt(optionValue, 0, group);
+				PutInt(optionValue, 4, source);
+				PutInt(optionValue, 8, interf);
+				fd.getSocket().SetSocketOption(System.Net.Sockets.SocketOptionLevel.IP,
+					block ? System.Net.Sockets.SocketOptionName.BlockSource : System.Net.Sockets.SocketOptionName.UnblockSource,
+					optionValue);
+				return 0;
+			}
+			catch (System.Net.Sockets.SocketException x)
+			{
+				throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
+			}
+			catch (System.ObjectDisposedException)
+			{
+				throw new global::java.net.SocketException("Socket is closed");
+			}
+#endif
+		}
+
+		// write a sockaddr_in6 into optionValue at offset pos
+		private static void PutSockAddrIn6(byte[] optionValue, int pos, byte[] addr)
+		{
+			// sin6_family
+			optionValue[pos] = 23; // AF_INET6
+
+			// sin6_addr
+			Buffer.BlockCopy(addr, 0, optionValue, pos + 8, addr.Length);
 		}
 
 		public static int joinOrDrop6(bool join, FileDescriptor fd, byte[] group, int index, byte[] source)
 		{
-			throw new NotImplementedException();
+#if FIRST_PASS
+			return 0;
+#else
+			try
+			{
+				if (source == null)
+				{
+					fd.getSocket().SetSocketOption(System.Net.Sockets.SocketOptionLevel.IPv6,
+						join ? System.Net.Sockets.SocketOptionName.AddMembership : System.Net.Sockets.SocketOptionName.DropMembership,
+						new System.Net.Sockets.IPv6MulticastOption(new System.Net.IPAddress(group), index));
+				}
+				else
+				{
+					const System.Net.Sockets.SocketOptionName MCAST_JOIN_SOURCE_GROUP = (System.Net.Sockets.SocketOptionName)45;
+					const System.Net.Sockets.SocketOptionName MCAST_LEAVE_SOURCE_GROUP = (System.Net.Sockets.SocketOptionName)46;
+					// group_source_req
+					byte[] optionValue = new byte[264];
+					optionValue[0] = (byte)index;
+					optionValue[1] = (byte)(index >> 8);
+					optionValue[2] = (byte)(index >> 16);
+					optionValue[3] = (byte)(index >> 24);
+					PutSockAddrIn6(optionValue, 8, group);
+					PutSockAddrIn6(optionValue, 136, source);
+					fd.getSocket().SetSocketOption(System.Net.Sockets.SocketOptionLevel.IPv6, join ? MCAST_JOIN_SOURCE_GROUP : MCAST_LEAVE_SOURCE_GROUP, optionValue);
+				}
+				return 0;
+			}
+			catch (System.Net.Sockets.SocketException x)
+			{
+				throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
+			}
+			catch (System.ObjectDisposedException)
+			{
+				throw new global::java.net.SocketException("Socket is closed");
+			}
+#endif
 		}
 
 		public static int blockOrUnblock6(bool block, FileDescriptor fd, byte[] group, int index, byte[] source)
 		{
-			throw new NotImplementedException();
+#if FIRST_PASS
+			return 0;
+#else
+			try
+			{
+				const System.Net.Sockets.SocketOptionName MCAST_BLOCK_SOURCE = (System.Net.Sockets.SocketOptionName)43;
+				const System.Net.Sockets.SocketOptionName MCAST_UNBLOCK_SOURCE = (System.Net.Sockets.SocketOptionName)44;
+				// group_source_req
+				byte[] optionValue = new byte[264];
+				optionValue[0] = (byte)index;
+				optionValue[1] = (byte)(index >> 8);
+				optionValue[2] = (byte)(index >> 16);
+				optionValue[3] = (byte)(index >> 24);
+				PutSockAddrIn6(optionValue, 8, group);
+				PutSockAddrIn6(optionValue, 136, source);
+				fd.getSocket().SetSocketOption(System.Net.Sockets.SocketOptionLevel.IPv6, block ? MCAST_BLOCK_SOURCE : MCAST_UNBLOCK_SOURCE, optionValue);
+				return 0;
+			}
+			catch (System.Net.Sockets.SocketException x)
+			{
+				throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
+			}
+			catch (System.ObjectDisposedException)
+			{
+				throw new global::java.net.SocketException("Socket is closed");
+			}
+#endif
 		}
 
 		public static void setInterface4(FileDescriptor fd, int interf)
