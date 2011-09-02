@@ -725,22 +725,78 @@ namespace IKVM.NativeCode.sun.nio.ch
 
 		public static void setInterface4(FileDescriptor fd, int interf)
 		{
-			throw new NotImplementedException();
+#if !FIRST_PASS
+			try
+			{
+				fd.getSocket().SetSocketOption(System.Net.Sockets.SocketOptionLevel.IP, System.Net.Sockets.SocketOptionName.MulticastInterface, System.Net.IPAddress.NetworkToHostOrder(interf));
+			}
+			catch (System.Net.Sockets.SocketException x)
+			{
+				throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
+			}
+			catch (System.ObjectDisposedException)
+			{
+				throw new global::java.net.SocketException("Socket is closed");
+			}
+#endif
 		}
 
 		public static int getInterface4(FileDescriptor fd)
 		{
-			throw new NotImplementedException();
+#if FIRST_PASS
+			return 0;
+#else
+			try
+			{
+				return System.Net.IPAddress.HostToNetworkOrder((int)fd.getSocket().GetSocketOption(System.Net.Sockets.SocketOptionLevel.IP, System.Net.Sockets.SocketOptionName.MulticastInterface));
+			}
+			catch (System.Net.Sockets.SocketException x)
+			{
+				throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
+			}
+			catch (System.ObjectDisposedException)
+			{
+				throw new global::java.net.SocketException("Socket is closed");
+			}
+#endif
 		}
 
 		public static void setInterface6(FileDescriptor fd, int index)
 		{
-			throw new NotImplementedException();
+#if !FIRST_PASS
+			try
+			{
+				fd.getSocket().SetSocketOption(System.Net.Sockets.SocketOptionLevel.IPv6, System.Net.Sockets.SocketOptionName.MulticastInterface, index);
+			}
+			catch (System.Net.Sockets.SocketException x)
+			{
+				throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
+			}
+			catch (System.ObjectDisposedException)
+			{
+				throw new global::java.net.SocketException("Socket is closed");
+			}
+#endif
 		}
 
 		public static int getInterface6(FileDescriptor fd)
 		{
-			throw new NotImplementedException();
+#if FIRST_PASS
+			return 0;
+#else
+			try
+			{
+				return (int)fd.getSocket().GetSocketOption(System.Net.Sockets.SocketOptionLevel.IPv6, System.Net.Sockets.SocketOptionName.MulticastInterface);
+			}
+			catch (System.Net.Sockets.SocketException x)
+			{
+				throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
+			}
+			catch (System.ObjectDisposedException)
+			{
+				throw new global::java.net.SocketException("Socket is closed");
+			}
+#endif
 		}
 
 		public static FileDescriptor socket0(bool preferIPv6, bool stream, bool reuse)
