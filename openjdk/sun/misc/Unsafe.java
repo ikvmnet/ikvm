@@ -903,10 +903,48 @@ public final class Unsafe
             {
                 cli.System.Runtime.InteropServices.Marshal.Copy(IntPtr.op_Explicit(srcOffset), (byte[])destBase, (int)destOffset, (int)bytes);
             }
+            else if (destBase instanceof boolean[])
+            {
+                byte[] tmp = new byte[(int)bytes];
+                copyMemory(srcBase, srcOffset, tmp, 0, bytes);
+                copyMemory(tmp, 0, destBase, destOffset, bytes);
+            }
+            else if (destBase instanceof short[])
+            {
+                cli.System.Runtime.InteropServices.Marshal.Copy(IntPtr.op_Explicit(srcOffset), (short[])destBase, (int)(destOffset >> 1), (int)(bytes >> 1));
+            }
+            else if (destBase instanceof char[])
+            {
+                cli.System.Runtime.InteropServices.Marshal.Copy(IntPtr.op_Explicit(srcOffset), (char[])destBase, (int)(destOffset >> 1), (int)(bytes >> 1));
+            }
+            else if (destBase instanceof int[])
+            {
+                cli.System.Runtime.InteropServices.Marshal.Copy(IntPtr.op_Explicit(srcOffset), (int[])destBase, (int)(destOffset >> 2), (int)(bytes >> 2));
+            }
+            else if (destBase instanceof float[])
+            {
+                cli.System.Runtime.InteropServices.Marshal.Copy(IntPtr.op_Explicit(srcOffset), (float[])destBase, (int)(destOffset >> 2), (int)(bytes >> 2));
+            }
+            else if (destBase instanceof long[])
+            {
+                cli.System.Runtime.InteropServices.Marshal.Copy(IntPtr.op_Explicit(srcOffset), (long[])destBase, (int)(destOffset >> 3), (int)(bytes >> 3));
+            }
+            else if (destBase instanceof double[])
+            {
+                cli.System.Runtime.InteropServices.Marshal.Copy(IntPtr.op_Explicit(srcOffset), (double[])destBase, (int)(destOffset >> 3), (int)(bytes >> 3));
+            }
+            else if (destBase == null)
+            {
+                copyMemory(srcOffset, destOffset, bytes);
+            }
             else
             {
-                throw new ikvm.internal.NotYetImplementedError("destBase = " + destBase);
+                throw new IllegalArgumentException();
             }
+        }
+        else if (srcBase instanceof cli.System.Array && destBase instanceof cli.System.Array)
+        {
+            cli.System.Buffer.BlockCopy((cli.System.Array)srcBase, (int)srcOffset, (cli.System.Array)destBase, (int)destOffset, (int)bytes);
         }
         else
         {
@@ -914,9 +952,39 @@ public final class Unsafe
             {
                 cli.System.Runtime.InteropServices.Marshal.Copy((byte[])srcBase, (int)srcOffset, IntPtr.op_Explicit(destOffset), (int)bytes);
             }
+            else if (srcBase instanceof boolean[])
+            {
+                byte[] tmp = new byte[(int)bytes];
+                copyMemory(srcBase, srcOffset, tmp, 0, bytes);
+                copyMemory(tmp, 0, destBase, destOffset, bytes);
+            }
+            else if (srcBase instanceof short[])
+            {
+                cli.System.Runtime.InteropServices.Marshal.Copy((short[])srcBase, (int)(srcOffset >> 1), IntPtr.op_Explicit(destOffset), (int)(bytes >> 1));
+            }
+            else if (srcBase instanceof char[])
+            {
+                cli.System.Runtime.InteropServices.Marshal.Copy((char[])srcBase, (int)(srcOffset >> 1), IntPtr.op_Explicit(destOffset), (int)(bytes >> 1));
+            }
+            else if (srcBase instanceof int[])
+            {
+                cli.System.Runtime.InteropServices.Marshal.Copy((int[])srcBase, (int)(srcOffset >> 2), IntPtr.op_Explicit(destOffset), (int)(bytes >> 2));
+            }
+            else if (srcBase instanceof float[])
+            {
+                cli.System.Runtime.InteropServices.Marshal.Copy((float[])srcBase, (int)(srcOffset >> 2), IntPtr.op_Explicit(destOffset), (int)(bytes >> 2));
+            }
+            else if (srcBase instanceof long[])
+            {
+                cli.System.Runtime.InteropServices.Marshal.Copy((long[])srcBase, (int)(srcOffset >> 3), IntPtr.op_Explicit(destOffset), (int)(bytes >> 3));
+            }
+            else if (srcBase instanceof double[])
+            {
+                cli.System.Runtime.InteropServices.Marshal.Copy((double[])srcBase, (int)(srcOffset >> 3), IntPtr.op_Explicit(destOffset), (int)(bytes >> 3));
+            }
             else
             {
-                throw new ikvm.internal.NotYetImplementedError("srcBase = " + srcBase);
+                throw new IllegalArgumentException();
             }
         }
     }
