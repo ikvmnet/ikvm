@@ -728,7 +728,7 @@ namespace IKVM.NativeCode.sun.nio.ch
 #if !FIRST_PASS
 			try
 			{
-				fd.getSocket().SetSocketOption(System.Net.Sockets.SocketOptionLevel.IP, System.Net.Sockets.SocketOptionName.MulticastInterface, System.Net.IPAddress.NetworkToHostOrder(interf));
+				fd.getSocket().SetSocketOption(System.Net.Sockets.SocketOptionLevel.IP, System.Net.Sockets.SocketOptionName.MulticastInterface, System.Net.IPAddress.HostToNetworkOrder(interf));
 			}
 			catch (System.Net.Sockets.SocketException x)
 			{
@@ -748,7 +748,7 @@ namespace IKVM.NativeCode.sun.nio.ch
 #else
 			try
 			{
-				return System.Net.IPAddress.HostToNetworkOrder((int)fd.getSocket().GetSocketOption(System.Net.Sockets.SocketOptionLevel.IP, System.Net.Sockets.SocketOptionName.MulticastInterface));
+				return System.Net.IPAddress.NetworkToHostOrder((int)fd.getSocket().GetSocketOption(System.Net.Sockets.SocketOptionLevel.IP, System.Net.Sockets.SocketOptionName.MulticastInterface));
 			}
 			catch (System.Net.Sockets.SocketException x)
 			{
