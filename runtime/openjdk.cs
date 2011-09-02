@@ -7031,16 +7031,16 @@ namespace IKVM.NativeCode.sun.reflect
 					}
 				}
 
-				protected bool IsSpecialType(TypeWrapper tw)
+				private bool IsSpecialType(TypeWrapper tw)
 				{
 					return tw.IsNonPrimitiveValueType
 						|| tw.IsGhost
 						|| tw.IsFakeNestedType;
 				}
 
-				protected bool IsSlowPathCompatible(FieldWrapper fw)
+				private bool IsSlowPathCompatible(FieldWrapper fw)
 				{
-					if (IsSpecialType(fw.DeclaringType) || IsSpecialType(fw.FieldTypeWrapper))
+					if (IsSpecialType(fw.DeclaringType) || IsSpecialType(fw.FieldTypeWrapper) || fw.DeclaringType.IsRemapped)
 					{
 						return false;
 					}
