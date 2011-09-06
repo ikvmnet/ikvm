@@ -1167,7 +1167,7 @@ namespace IKVM.Internal
 									baseMethods.Add(ifmethod);
 									break;
 								}
-								if (!mw.IsStatic)
+								if (!mw.IsStatic || mw.DeclaringType == wrapper)
 								{
 									break;
 								}
@@ -4460,7 +4460,7 @@ namespace IKVM.Internal
 				}
 				else
 				{
-					if (!wrapper.IsAbstract)
+					if (!wrapper.IsAbstract || (!baseClassInterface && wrapper.GetMethodWrapper(ifmethod.Name, ifmethod.Signature, false) != null))
 					{
 						// the type doesn't implement the interface method and isn't abstract either. The JVM allows this, but the CLR doesn't,
 						// so we have to create a stub method that throws an AbstractMethodError
