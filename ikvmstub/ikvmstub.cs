@@ -432,6 +432,11 @@ static class NetExp
 					{
 						m.AddAttribute(new IKVM.StubGen.DeprecatedAttribute(writer));
 					}
+					IList<CustomAttributeData> attr = CustomAttributeData.__GetCustomAttributes(mb, JVM.LoadType(typeof(AnnotationDefaultAttribute)), false);
+					if (attr.Count == 1)
+					{
+						m.AddAttribute(new IKVM.StubGen.AnnotationDefaultClassFileAttribute(writer, GetAnnotationDefault(writer, attr[0].ConstructorArguments[0])));
+					}
 				}
 				string sig = tw.GetGenericMethodSignature(mw);
 				if (sig != null)
@@ -636,6 +641,118 @@ static class NetExp
 			throw new InvalidOperationException();
 		}
 		return mem.ToArray();
+	}
+
+	private static byte[] GetAnnotationDefault(IKVM.StubGen.ClassFileWriter classFile, CustomAttributeTypedArgument value)
+	{
+		MemoryStream mem = new MemoryStream();
+		IKVM.StubGen.BigEndianStream bes = new IKVM.StubGen.BigEndianStream(mem);
+		try
+		{
+			WriteAnnotationElementValue(classFile, bes, value);
+		}
+		catch (InvalidCastException)
+		{
+			Console.Error.WriteLine("Warning: incorrect annotation default value");
+		}
+		catch (IndexOutOfRangeException)
+		{
+			Console.Error.WriteLine("Warning: incorrect annotation default value");
+		}
+		return mem.ToArray();
+	}
+
+	private static void WriteAnnotationElementValue(IKVM.StubGen.ClassFileWriter classFile, IKVM.StubGen.BigEndianStream bes, CustomAttributeTypedArgument value)
+	{
+		if (value.ArgumentType == Types.Boolean)
+		{
+			bes.WriteByte((byte)'Z');
+			bes.WriteUInt16(classFile.AddInt((bool)value.Value ? 1 : 0));
+		}
+		else if (value.ArgumentType == Types.Byte)
+		{
+			bes.WriteByte((byte)'B');
+			bes.WriteUInt16(classFile.AddInt((byte)value.Value));
+		}
+		else if (value.ArgumentType == Types.Char)
+		{
+			bes.WriteByte((byte)'C');
+			bes.WriteUInt16(classFile.AddInt((char)value.Value));
+		}
+		else if (value.ArgumentType == Types.Int16)
+		{
+			bes.WriteByte((byte)'S');
+			bes.WriteUInt16(classFile.AddInt((short)value.Value));
+		}
+		else if (value.ArgumentType == Types.Int32)
+		{
+			bes.WriteByte((byte)'I');
+			bes.WriteUInt16(classFile.AddInt((int)value.Value));
+		}
+		else if (value.ArgumentType == Types.Single)
+		{
+			bes.WriteByte((byte)'F');
+			bes.WriteUInt16(classFile.AddFloat((float)value.Value));
+		}
+		else if (value.ArgumentType == Types.Int64)
+		{
+			bes.WriteByte((byte)'J');
+			bes.WriteUInt16(classFile.AddLong((long)value.Value));
+		}
+		else if (value.ArgumentType == Types.Double)
+		{
+			bes.WriteByte((byte)'D');
+			bes.WriteUInt16(classFile.AddDouble((double)value.Value));
+		}
+		else if (value.ArgumentType == Types.String)
+		{
+			bes.WriteByte((byte)'s');
+			bes.WriteUInt16(classFile.AddUtf8((string)value.Value));
+		}
+		else if (value.ArgumentType == Types.Object.MakeArrayType())
+		{
+			CustomAttributeTypedArgument[] array = (CustomAttributeTypedArgument[])value.Value;
+			byte type = (byte)array[0].Value;
+			if (type == AnnotationDefaultAttribute.TAG_ARRAY)
+			{
+				bes.WriteByte((byte)'[');
+				bes.WriteUInt16((ushort)(array.Length - 1));
+				for (int i = 1; i < array.Length; i++)
+				{
+					WriteAnnotationElementValue(classFile, bes, array[i]);
+				}
+			}
+			else if (type == AnnotationDefaultAttribute.TAG_CLASS)
+			{
+				bes.WriteByte((byte)'c');
+				bes.WriteUInt16(classFile.AddUtf8((string)array[1].Value));
+			}
+			else if (type == AnnotationDefaultAttribute.TAG_ENUM)
+			{
+				bes.WriteByte((byte)'e');
+				bes.WriteUInt16(classFile.AddUtf8((string)array[1].Value));
+				bes.WriteUInt16(classFile.AddUtf8((string)array[2].Value));
+			}
+			else if (type == AnnotationDefaultAttribute.TAG_ANNOTATION)
+			{
+				bes.WriteByte((byte)'@');
+				bes.WriteUInt16(classFile.AddUtf8((string)array[1].Value));
+				bes.WriteUInt16((ushort)((array.Length - 2) / 2));
+				for (int i = 2; i < array.Length; i += 2)
+				{
+					bes.WriteUInt16(classFile.AddUtf8((string)array[i].Value));
+					WriteAnnotationElementValue(classFile, bes, array[i + 1]);
+				}
+			}
+			else
+			{
+				Console.Error.WriteLine("Warning: incorrect annotation default element tag: " + type);
+			}
+		}
+		else
+		{
+			Console.Error.WriteLine("Warning: incorrect annotation default element type: " + value.ArgumentType);
+		}
 	}
 
 	private static bool ExportNamespace(Type type)
