@@ -3612,7 +3612,7 @@ namespace IKVM.NativeCode.java
 					{
 						return false;
 					}
-					else if (global::System.IO.File.Exists(file + ".exe"))
+					else if (file.IndexOf('.') == -1 && global::System.IO.File.Exists(file + ".exe"))
 					{
 						return true;
 					}
