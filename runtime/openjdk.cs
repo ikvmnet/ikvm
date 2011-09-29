@@ -4075,17 +4075,41 @@ namespace IKVM.NativeCode.java
 				return index1.CompareTo(index2);
 			}
 
+			private static System.Net.NetworkInformation.IPv4InterfaceProperties GetIPv4Properties(System.Net.NetworkInformation.IPInterfaceProperties props)
+			{
+				try
+				{
+					return props.GetIPv4Properties();
+				}
+				catch (System.Net.NetworkInformation.NetworkInformationException)
+				{
+					return null;
+				}
+			}
+
+			private static System.Net.NetworkInformation.IPv6InterfaceProperties GetIPv6Properties(System.Net.NetworkInformation.IPInterfaceProperties props)
+			{
+				try
+				{
+					return props.GetIPv6Properties();
+				}
+				catch (System.Net.NetworkInformation.NetworkInformationException)
+				{
+					return null;
+				}
+			}
+
 			private static int GetIndex(System.Net.NetworkInformation.NetworkInterface ni)
 			{
 				System.Net.NetworkInformation.IPInterfaceProperties ipprops = ni.GetIPProperties();
-				System.Net.NetworkInformation.IPv4InterfaceProperties ipv4props = ipprops.GetIPv4Properties();
+				System.Net.NetworkInformation.IPv4InterfaceProperties ipv4props = GetIPv4Properties(ipprops);
 				if (ipv4props != null)
 				{
 					return ipv4props.Index;
 				}
 				else if (InetAddressImplFactory.isIPv6Supported())
 				{
-					System.Net.NetworkInformation.IPv6InterfaceProperties ipv6props = ipprops.GetIPv6Properties();
+					System.Net.NetworkInformation.IPv6InterfaceProperties ipv6props = GetIPv6Properties(ipprops);
 					if (ipv6props != null)
 					{
 						return ipv6props.Index;
@@ -4390,14 +4414,14 @@ namespace IKVM.NativeCode.java
 				return 0;
 #else
 				System.Net.NetworkInformation.IPInterfaceProperties ipprops = GetDotNetNetworkInterfaceByIndex(ind).GetIPProperties();
-				System.Net.NetworkInformation.IPv4InterfaceProperties v4props = ipprops.GetIPv4Properties();
+				System.Net.NetworkInformation.IPv4InterfaceProperties v4props = GetIPv4Properties(ipprops);
 				if (v4props != null)
 				{
 					return v4props.Mtu;
 				}
 				if (InetAddressImplFactory.isIPv6Supported())
 				{
-					System.Net.NetworkInformation.IPv6InterfaceProperties v6props = ipprops.GetIPv6Properties();
+					System.Net.NetworkInformation.IPv6InterfaceProperties v6props = GetIPv6Properties(ipprops);
 					if (v6props != null)
 					{
 						return v6props.Mtu;
