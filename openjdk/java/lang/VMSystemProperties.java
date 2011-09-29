@@ -152,6 +152,7 @@ final class VMSystemProperties
         switch(os.get_Platform().Value)
         {
             case cli.System.PlatformID.Win32NT:
+                osname = "Windows NT (unknown)";
                 switch(major)
                 {
                     case 3:
@@ -231,7 +232,7 @@ final class VMSystemProperties
         }
         if(osver == null)
         {
-            osver = cli.System.Environment.get_OSVersion().get_Version().ToString();
+            osver = major + "." + minor;
         }
         p.setProperty("os.name", osname);
         p.setProperty("os.version", osver);
