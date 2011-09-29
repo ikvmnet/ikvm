@@ -2850,7 +2850,7 @@ namespace IKVM.Internal
 				FileStream fs;
 				try
 				{
-					fs = File.Open(options.remapfile, FileMode.Open);
+					fs = File.OpenRead(options.remapfile);
 				}
 				catch(Exception x)
 				{
