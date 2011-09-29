@@ -4688,7 +4688,6 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		[System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.LinkDemand, UnmanagedCode = true)]
 		static class MappedByteBuffer
 		{
 			private static volatile int bogusField;
