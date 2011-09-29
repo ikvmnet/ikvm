@@ -136,7 +136,7 @@ static class Java_java_lang_invoke_DirectMethodHandle
 			else
 			{
 				// slow path where we emit a DynamicMethod
-				MethodHandleUtil.DynamicMethodBuilder dm = new MethodHandleUtil.DynamicMethodBuilder("DirectMethodHandle:" + mw.Name, type);
+				MethodHandleUtil.DynamicMethodBuilder dm = new MethodHandleUtil.DynamicMethodBuilder(mw.DeclaringType.TypeAsBaseType, "DirectMethodHandle:" + mw.Name, type);
 				for (int i = 0, count = type.parameterCount(); i < count; i++)
 				{
 					if (i == 0 && !mw.IsStatic && (tw.IsGhost || tw.IsNonPrimitiveValueType))
@@ -325,7 +325,7 @@ static partial class MethodHandleUtil
 			}
 		}
 
-		private DynamicMethodBuilder(string name, MethodType type, Type container, object target, object value)
+		private DynamicMethodBuilder(string name, MethodType type, Type container, object target, object value, Type owner)
 		{
 			this.type = type;
 			this.delegateType = CreateDelegateType(type);
@@ -348,7 +348,11 @@ static partial class MethodHandleUtil
 			{
 				paramTypes = GetParameterTypes(mi);
 			}
-			this.dm = new DynamicMethod(name, mi.ReturnType, paramTypes, typeof(DynamicMethodBuilder), true);
+			if (owner == null || owner.IsInterface)
+			{
+				owner = typeof(DynamicMethodBuilder);
+			}
+			this.dm = new DynamicMethod(name, mi.ReturnType, paramTypes, owner, true);
 			this.ilgen = CodeEmitter.Create(dm);
 
 			if (type.parameterCount() > MaxArity)
@@ -363,26 +367,26 @@ static partial class MethodHandleUtil
 			}
 		}
 
-		internal DynamicMethodBuilder(string name, MethodType type)
-			: this(name, type, null, null, null)
+		internal DynamicMethodBuilder(Type owner, string name, MethodType type)
+			: this(name, type, null, null, null, owner)
 		{
 		}
 
 		internal DynamicMethodBuilder(string name, MethodType type, MethodHandle target)
-			: this(name, type, null, target.vmtarget, null)
+			: this(name, type, null, target.vmtarget, null, null)
 		{
 			ilgen.Emit(OpCodes.Ldarg_0);
 		}
 
 		internal DynamicMethodBuilder(string name, MethodType type, MethodHandle target, object value)
-			: this(name, type, typeof(Container<,>).MakeGenericType(target.vmtarget.GetType(), value.GetType()), target.vmtarget, value)
+			: this(name, type, typeof(Container<,>).MakeGenericType(target.vmtarget.GetType(), value.GetType()), target.vmtarget, value, null)
 		{
 			ilgen.Emit(OpCodes.Ldarg_0);
 			ilgen.Emit(OpCodes.Ldfld, container.GetField("target"));
 		}
 
 		internal DynamicMethodBuilder(string name, MethodType type, Type valueType)
-			: this(name, type, typeof(Container<,>).MakeGenericType(typeof(object), valueType), null, null)
+			: this(name, type, typeof(Container<,>).MakeGenericType(typeof(object), valueType), null, null, null)
 		{
 		}
 
