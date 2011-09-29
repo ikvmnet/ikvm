@@ -2826,7 +2826,6 @@
         </exception>
         <exception src="System.ArrayTypeMismatchException" dst="java.lang.ArrayStoreException" />
         <exception src="System.StackOverflowException" dst="java.lang.StackOverflowError" />
-        <exception src="System.Security.VerificationException" dst="java.lang.VerifyError" />
         <exception src="System.Threading.ThreadAbortException" dst="java.lang.ThreadDeath">
             <code>
                 <castclass type="System.Threading.ThreadAbortException" />
