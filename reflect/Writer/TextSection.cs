@@ -292,6 +292,7 @@ namespace IKVM.Reflection.Writer
 			moduleBuilder.MethodImpl.Fixup(moduleBuilder);
 			moduleBuilder.MethodSemantics.Fixup(moduleBuilder);
 			moduleBuilder.InterfaceImpl.Fixup();
+			moduleBuilder.ResolveInterfaceImplPseudoTokens();
 			moduleBuilder.MemberRef.Fixup(moduleBuilder);
 			moduleBuilder.Constant.Fixup(moduleBuilder);
 			moduleBuilder.FieldMarshal.Fixup(moduleBuilder);
