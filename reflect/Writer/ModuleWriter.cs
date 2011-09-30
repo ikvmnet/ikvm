@@ -199,17 +199,7 @@ namespace IKVM.Reflection.Writer
 				writer.Headers.OptionalHeader.DataDirectory[6].Size = code.DebugDirectoryLength;
 			}
 
-			writer.Headers.FileHeader.NumberOfSections = 2;
-
-			if (moduleBuilder.initializedData.Length != 0)
-			{
-				writer.Headers.FileHeader.NumberOfSections++;
-			}
-
-			if (resources != null && resources.Length != 0)
-			{
-				writer.Headers.FileHeader.NumberOfSections++;
-			}
+			writer.Headers.FileHeader.NumberOfSections = 1;
 
 			SectionHeader text = new SectionHeader();
 			text.Name = ".text";
@@ -227,6 +217,11 @@ namespace IKVM.Reflection.Writer
 			sdata.SizeOfRawData = writer.ToFileAlignment((uint)moduleBuilder.initializedData.Length);
 			sdata.Characteristics = SectionHeader.IMAGE_SCN_CNT_INITIALIZED_DATA | SectionHeader.IMAGE_SCN_MEM_READ | SectionHeader.IMAGE_SCN_MEM_WRITE;
 
+			if (sdata.SizeOfRawData != 0)
+			{
+				writer.Headers.FileHeader.NumberOfSections++;
+			}
+
 			SectionHeader rsrc = new SectionHeader();
 			rsrc.Name = ".rsrc";
 			rsrc.VirtualAddress = sdata.VirtualAddress + writer.ToSectionAlignment(sdata.VirtualSize);
@@ -240,6 +235,8 @@ namespace IKVM.Reflection.Writer
 				// Resource Directory
 				writer.Headers.OptionalHeader.DataDirectory[2].VirtualAddress = rsrc.VirtualAddress;
 				writer.Headers.OptionalHeader.DataDirectory[2].Size = rsrc.VirtualSize;
+
+				writer.Headers.FileHeader.NumberOfSections++;
 			}
 
 			SectionHeader reloc = new SectionHeader();
@@ -250,9 +247,14 @@ namespace IKVM.Reflection.Writer
 			reloc.SizeOfRawData = writer.ToFileAlignment(reloc.VirtualSize);
 			reloc.Characteristics = SectionHeader.IMAGE_SCN_MEM_READ | SectionHeader.IMAGE_SCN_CNT_INITIALIZED_DATA | SectionHeader.IMAGE_SCN_MEM_DISCARDABLE;
 
-			// Base Relocation Directory
-			writer.Headers.OptionalHeader.DataDirectory[5].VirtualAddress = reloc.VirtualAddress;
-			writer.Headers.OptionalHeader.DataDirectory[5].Size = reloc.VirtualSize;
+			if (reloc.SizeOfRawData != 0)
+			{
+				// Base Relocation Directory
+				writer.Headers.OptionalHeader.DataDirectory[5].VirtualAddress = reloc.VirtualAddress;
+				writer.Headers.OptionalHeader.DataDirectory[5].Size = reloc.VirtualSize;
+
+				writer.Headers.FileHeader.NumberOfSections++;
+			}
 
 			writer.Headers.OptionalHeader.SizeOfCode = text.SizeOfRawData;
 			writer.Headers.OptionalHeader.SizeOfInitializedData = sdata.SizeOfRawData + rsrc.SizeOfRawData + reloc.SizeOfRawData;
@@ -284,13 +286,19 @@ namespace IKVM.Reflection.Writer
 			{
 				writer.WriteSectionHeader(rsrc);
 			}
-			writer.WriteSectionHeader(reloc);
+			if (reloc.SizeOfRawData != 0)
+			{
+				writer.WriteSectionHeader(reloc);
+			}
 
 			stream.Seek(text.PointerToRawData, SeekOrigin.Begin);
 			code.Write(mw, sdata.VirtualAddress);
 
-			stream.Seek(sdata.PointerToRawData, SeekOrigin.Begin);
-			mw.Write(moduleBuilder.initializedData);
+			if (sdata.SizeOfRawData != 0)
+			{
+				stream.Seek(sdata.PointerToRawData, SeekOrigin.Begin);
+				mw.Write(moduleBuilder.initializedData);
+			}
 
 			if (rsrc.SizeOfRawData != 0)
 			{
@@ -298,12 +306,14 @@ namespace IKVM.Reflection.Writer
 				resources.Write(mw, rsrc.VirtualAddress);
 			}
 
-			stream.Seek(reloc.PointerToRawData, SeekOrigin.Begin);
-			// .reloc section
-			code.WriteRelocations(mw);
+			if (reloc.SizeOfRawData != 0)
+			{
+				stream.Seek(reloc.PointerToRawData, SeekOrigin.Begin);
+				code.WriteRelocations(mw);
+			}
 
 			// file alignment
-			mw.Write(new byte[writer.Headers.OptionalHeader.FileAlignment - (reloc.VirtualSize & (writer.Headers.OptionalHeader.FileAlignment - 1))]);
+			stream.SetLength(reloc.PointerToRawData + reloc.SizeOfRawData);
 
 			// do the strong naming
 			if (keyPair != null)
