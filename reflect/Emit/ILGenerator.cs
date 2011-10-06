@@ -278,6 +278,13 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 
+		// non-standard API
+		// returns -1 if the current position is currently unreachable
+		public int __StackHeight
+		{
+			get { return stackHeight; }
+		}
+
 		// new in .NET 4.0
 		public int ILOffset
 		{
