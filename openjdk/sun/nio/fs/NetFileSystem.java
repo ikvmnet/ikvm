@@ -24,15 +24,27 @@
 
 package sun.nio.fs;
 
-import ikvm.internal.NotYetImplementedError;
+import cli.System.IO.DriveInfo;
+import cli.System.IO.ErrorEventArgs;
+import cli.System.IO.ErrorEventHandler;
+import cli.System.IO.FileSystemEventArgs;
+import cli.System.IO.FileSystemEventHandler;
+import cli.System.IO.FileSystemWatcher;
+import cli.System.IO.WatcherChangeTypes;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.nio.file.spi.FileSystemProvider;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
+import static ikvm.internal.Util.WINDOWS;
 
 final class NetFileSystem extends FileSystem
 {
@@ -72,12 +84,22 @@ final class NetFileSystem extends FileSystem
 
     public Iterable<Path> getRootDirectories()
     {
-        throw new NotYetImplementedError();
+        ArrayList<Path> list = new ArrayList<>();
+        for (DriveInfo info : DriveInfo.GetDrives())
+        {
+            list.add(getPath(info.get_Name()));
+        }
+        return list;
     }
 
     public Iterable<FileStore> getFileStores()
     {
-        throw new NotYetImplementedError();
+        ArrayList<FileStore> list = new ArrayList<>();
+        for (DriveInfo info : DriveInfo.GetDrives())
+        {
+            list.add(provider.getFileStore(info));
+        }
+        return list;
     }
 
     public Set<String> supportedFileAttributeViews()
@@ -110,16 +132,326 @@ final class NetFileSystem extends FileSystem
 
     public PathMatcher getPathMatcher(String syntaxAndPattern)
     {
-        throw new NotYetImplementedError();
+        String regex;
+        if (syntaxAndPattern.startsWith("glob:"))
+        {
+            String pattern = syntaxAndPattern.substring(5);
+            if (WINDOWS)
+            {
+                regex = Globs.toWindowsRegexPattern(pattern);
+            }
+            else
+            {
+                regex = Globs.toUnixRegexPattern(pattern);
+            }
+        }
+        else if (syntaxAndPattern.startsWith("regex:"))
+        {
+            regex = syntaxAndPattern.substring(6);
+        }
+        else if (syntaxAndPattern.indexOf(':') <= 0)
+        {
+            throw new IllegalArgumentException();
+        }
+        else
+        {
+            throw new UnsupportedOperationException();
+        }
+        final Pattern pattern = Pattern.compile(regex, WINDOWS ? Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE : 0);
+        return new PathMatcher() {
+            @Override
+            public boolean matches(Path path) {
+                return pattern.matcher(path.toString()).matches();
+            }
+        };
     }
 
     public UserPrincipalLookupService getUserPrincipalLookupService()
     {
-        throw new NotYetImplementedError();
+        throw new UnsupportedOperationException();
+    }
+
+    static final class NetWatchService implements WatchService
+    {
+        static final WatchEvent<?> overflowEvent = new WatchEvent<Object>() {
+            public Object context() {
+                return null;
+            }
+            public int count() {
+                return 1;
+            }
+            public WatchEvent.Kind<Object> kind() {
+                return StandardWatchEventKinds.OVERFLOW;
+            }
+        };
+        private static final WatchKey CLOSED = new WatchKey() {
+            public boolean isValid() { return false; }
+            public List<WatchEvent<?>> pollEvents() { return null; }
+            public boolean reset() { return false; }
+            public void cancel() { }
+            public Watchable watchable() { return null; }
+        };
+        private boolean closed;
+        private final ArrayList<NetWatchKey> keys = new ArrayList<>();
+        private final LinkedBlockingQueue<WatchKey> queue = new LinkedBlockingQueue<>();
+
+        public synchronized void close()
+        {
+            if (!closed)
+            {
+                closed = true;
+                for (NetWatchKey key : keys)
+                {
+                    key.close();
+                }
+                enqueue(CLOSED);
+            }
+        }
+
+        private WatchKey checkClosed(WatchKey key)
+        {
+            if (key == CLOSED)
+            {
+                enqueue(CLOSED);
+                throw new ClosedWatchServiceException();
+            }
+            return key;
+        }
+
+        public WatchKey poll()
+        {
+            return checkClosed(queue.poll());
+        }
+
+        public WatchKey poll(long timeout, TimeUnit unit) throws InterruptedException
+        {
+            return checkClosed(queue.poll(timeout, unit));
+        }
+
+        public WatchKey take() throws InterruptedException
+        {
+            return checkClosed(queue.take());
+        }
+
+        void enqueue(WatchKey key)
+        {
+            for (;;)
+            {
+                try
+                {
+                    queue.put(key);
+                    return;
+                }
+                catch (InterruptedException _)
+                {
+                }
+            }
+        }
+
+        private final class NetWatchKey implements WatchKey
+        {
+            private final NetPath path;
+            private FileSystemWatcher fsw;
+            private ArrayList<WatchEvent<?>> list = new ArrayList<>();
+            private HashSet<String> modified = new HashSet<>();
+            private boolean signaled;
+            
+            NetWatchKey(NetPath path)
+            {
+                this.path = path;
+            }
+            
+            synchronized void init(final boolean create, final boolean delete, final boolean modify, final boolean overflow, final boolean subtree)
+            {
+                if (fsw != null)
+                {
+                    // we could reuse the FileSystemWatcher, but for now we just recreate it
+                    // (and we run the risk of missing some events while we're doing that)
+                    fsw.Dispose();
+                    fsw = null;
+                }
+                fsw = new FileSystemWatcher(path.path);
+                if (create)
+                {
+                    fsw.add_Created(new FileSystemEventHandler(new FileSystemEventHandler.Method() {
+                        public void Invoke(Object sender, FileSystemEventArgs e) {
+                            addEvent(createEvent(e), null);
+                        }
+                    }));
+                }
+                if (delete)
+                {
+                    fsw.add_Deleted(new FileSystemEventHandler(new FileSystemEventHandler.Method() {
+                        public void Invoke(Object sender, FileSystemEventArgs e) {
+                            addEvent(createEvent(e), null);
+                        }
+                    }));
+                }
+                if (modify)
+                {
+                    fsw.add_Changed(new FileSystemEventHandler(new FileSystemEventHandler.Method() {
+                        public void Invoke(Object sender, FileSystemEventArgs e) {
+                            synchronized (NetWatchKey.this) {
+                                if (modified.contains(e.get_Name())) {
+                                    // we already have an ENTRY_MODIFY event pending
+                                    return;
+                                }
+                            }
+                            addEvent(createEvent(e), e.get_Name());
+                        }
+                    }));
+                }
+                fsw.add_Error(new ErrorEventHandler(new ErrorEventHandler.Method() {
+                    public void Invoke(Object sender, ErrorEventArgs e) {
+                        if (e.GetException() instanceof cli.System.ComponentModel.Win32Exception
+                            && ((cli.System.ComponentModel.Win32Exception)e.GetException()).get_ErrorCode() == -2147467259) {
+                            // the directory we were watching was deleted
+                            cancelledByError();
+                        } else if (overflow) {
+                            addEvent(overflowEvent, null);
+                        }
+                    }
+                }));
+                if (subtree)
+                {
+                    fsw.set_IncludeSubdirectories(true);
+                }
+                fsw.set_EnableRaisingEvents(true);
+            }
+
+            WatchEvent<?> createEvent(final FileSystemEventArgs e)
+            {
+                return new WatchEvent<Path>() {
+                    public Path context() {
+                        return new NetPath((NetFileSystem)path.getFileSystem(), e.get_Name());
+                    }
+                    public int count() {
+                        return 1;
+                    }
+                    public WatchEvent.Kind<Path> kind() {
+                        switch (e.get_ChangeType().Value) {
+                            case WatcherChangeTypes.Created:
+                                return StandardWatchEventKinds.ENTRY_CREATE;
+                            case WatcherChangeTypes.Deleted:
+                                return StandardWatchEventKinds.ENTRY_DELETE;
+                            default:
+                                return StandardWatchEventKinds.ENTRY_MODIFY;
+                        }
+                    }
+                };
+            }
+
+            void cancelledByError()
+            {
+                cancel();
+                synchronized (this)
+                {
+                    if (!signaled)
+                    {
+                        signaled = true;
+                        enqueue(this);
+                    }
+                }
+            }
+
+            synchronized void addEvent(WatchEvent<?> event, String modified)
+            {
+                list.add(event);
+                if (modified != null)
+                {
+                    this.modified.add(modified);
+                }
+                if (!signaled)
+                {
+                    signaled = true;
+                    enqueue(this);
+                }
+            }
+
+            public synchronized boolean isValid()
+            {
+                return fsw != null;
+            }
+
+            public synchronized List<WatchEvent<?>> pollEvents()
+            {
+                ArrayList<WatchEvent<?>> r = list;
+                list = new ArrayList<>();
+                modified.clear();
+                return r;
+            }
+
+            public synchronized boolean reset()
+            {
+                if (fsw == null)
+                {
+                    return false;
+                }
+                if (signaled)
+                {
+                    if (list.size() == 0)
+                    {
+                        signaled = false;
+                    }
+                    else
+                    {
+                        enqueue(this);
+                    }
+                }
+                return true;
+            }
+
+            void close()
+            {
+                if (fsw != null)
+                {
+                    fsw.Dispose();
+                    fsw = null;
+                }
+            }
+
+            public void cancel()
+            {
+                synchronized (NetWatchService.this)
+                {
+                    keys.remove(this);
+                    close();
+                }
+            }
+
+            public Watchable watchable()
+            {
+                return path;
+            }
+        }
+
+        synchronized WatchKey register(NetPath path, boolean create, boolean delete, boolean modify, boolean overflow, boolean subtree)
+        {
+            if (closed)
+            {
+                throw new ClosedWatchServiceException();
+            }
+            NetWatchKey existing = null;
+            for (NetWatchKey key : keys)
+            {
+                if (key.watchable().equals(path))
+                {
+                    existing = key;
+                    break;
+                }
+            }
+            if (existing == null)
+            {
+                existing = new NetWatchKey(path);
+                keys.add(existing);
+            }
+            existing.init(create, delete, modify, overflow, subtree);
+            return existing;
+        }
     }
 
     public WatchService newWatchService() throws IOException
     {
-        throw new NotYetImplementedError();
+        return new NetWatchService();
     }
 }

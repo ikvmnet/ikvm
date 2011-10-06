@@ -229,6 +229,8 @@ sun/nio/fs/DefaultFileTypeDetector.java
 sun/nio/fs/NetFileSystem.java
 sun/nio/fs/NetFileSystemProvider.java
 sun/nio/fs/NetPath.java
+sun/nio/fs/UnixUriUtils.java
+sun/nio/fs/WindowsUriSupport.java
 sun/print/PrintPeer.java
 sun/print/UnixPrintServiceLookup.java
 sun/print/Win32PrintJob.java
@@ -13552,6 +13554,8 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/windows/classes/sun/nio/ch/SinkChannelImpl.java
 @OPENJDK7@/jdk/src/windows/classes/sun/nio/ch/SourceChannelImpl.java
 @OPENJDK7@/jdk/src/windows/classes/sun/nio/ch/WindowsAsynchronousChannelProvider.java
+@OPENJDK7@/jdk/src/windows/classes/sun/nio/fs/WindowsPathParser.java
+@OPENJDK7@/jdk/src/windows/classes/sun/nio/fs/WindowsPathType.java
 @OPENJDK7@/jdk/src/windows/classes/sun/print/Win32MediaTray.java
 @OPENJDK7@/jdk/src/windows/classes/sun/security/krb5/internal/tools/Kinit.java
 @OPENJDK7@/jdk/src/windows/classes/sun/security/krb5/internal/tools/KinitOptions.java

@@ -95,7 +95,7 @@ class WindowsUriSupport {
     /**
      * Converts given Path to a URI
      */
-    static URI toUri(WindowsPath path) {
+    static URI toUri(NetPath path) {
         path = path.toAbsolutePath();
         String s = path.toString();
 
@@ -104,8 +104,8 @@ class WindowsUriSupport {
         boolean addSlash = false;
         if (!s.endsWith("\\")) {
             try {
-                 addSlash = WindowsFileAttributes.get(path, true).isDirectory();
-            } catch (WindowsException x) {
+                 addSlash = cli.System.IO.Directory.Exists(s);
+            } catch (Throwable x) {
             }
         }
 
@@ -115,7 +115,7 @@ class WindowsUriSupport {
     /**
      * Converts given URI to a Path
      */
-    static WindowsPath fromUri(WindowsFileSystem fs, URI uri) {
+    static NetPath fromUri(NetFileSystem fs, URI uri) {
         if (!uri.isAbsolute())
             throw new IllegalArgumentException("URI is not absolute");
         if (uri.isOpaque())
@@ -162,6 +162,6 @@ class WindowsUriSupport {
                 path = path.substring(1);
             }
         }
-        return WindowsPath.parse(fs, path);
+        return new NetPath(fs, path);
     }
 }

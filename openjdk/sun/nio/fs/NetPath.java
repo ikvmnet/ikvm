@@ -24,11 +24,13 @@
 
 package sun.nio.fs;
 
-import ikvm.internal.NotYetImplementedError;
+import com.sun.nio.file.ExtendedWatchEventModifier;
+import com.sun.nio.file.SensitivityWatchEventModifier;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.*;
+import java.util.ArrayList;
 import java.util.Iterator;
 import static ikvm.internal.Util.MACOSX;
 import static ikvm.internal.Util.WINDOWS;
@@ -41,89 +43,53 @@ final class NetPath extends AbstractPath
 
     NetPath(NetFileSystem fs, String path)
     {
-        StringBuilder sb = null;
-        int separatorCount = 0;
-        boolean prevWasSeparator = false;
-        for (int i = 0; i < path.length(); i++)
+        if (WINDOWS)
         {
-            char c = path.charAt(i);
-            if (c == cli.System.IO.Path.AltDirectorySeparatorChar)
+            path = WindowsPathParser.parse(path).path();
+        }
+        else
+        {
+            StringBuilder sb = null;
+            int separatorCount = 0;
+            boolean prevWasSeparator = false;
+            for (int i = 0; i < path.length(); i++)
             {
-                if (sb == null)
+                char c = path.charAt(i);
+                if (c == 0)
                 {
-                    sb = new StringBuilder();
-                    sb.append(path, 0, i);
+                    throw new InvalidPathException(path, "Nul character not allowed");
                 }
-                c = cli.System.IO.Path.DirectorySeparatorChar;
-            }
-            if (c == cli.System.IO.Path.DirectorySeparatorChar)
-            {
-                if (prevWasSeparator && (i != 1 || c != '\\'))
+                else if (c == '/')
                 {
-                    if (sb == null)
+                    if (prevWasSeparator)
                     {
-                        sb = new StringBuilder();
-                        sb.append(path, 0, i);
+                        if (sb == null)
+                        {
+                            sb = new StringBuilder();
+                            sb.append(path, 0, i);
+                        }
+                        continue;
                     }
-                    continue;
+                    separatorCount++;
+                    prevWasSeparator = true;
                 }
-                separatorCount++;
-                prevWasSeparator = true;
-            }
-            else
-            {
-                prevWasSeparator = false;
+                else
+                {
+                    prevWasSeparator = false;
+                }
+                if (sb != null)
+                {
+                    sb.append(c);
+                }
             }
             if (sb != null)
             {
-                sb.append(c);
+                path = sb.toString();
             }
-            if (c == cli.System.IO.Path.DirectorySeparatorChar)
+            if (path.length() > 1 && path.charAt(path.length() - 1) == '/')
             {
-                continue;
+                path = path.substring(0, path.length() - 1);
             }
-            else if (c == ':' && i > 0)
-            {
-                char d = path.charAt(0);
-                if (((d >= 'a' && d <= 'z') || (d >= 'A' && d <= 'Z')) && i == 1 && WINDOWS)
-                {
-                    continue;
-                }
-                else if (MACOSX)
-                {
-                    continue;
-                }
-            }
-            for (char inv : invalid)
-            {
-                if (inv == c)
-                {
-                    throw new InvalidPathException(path, "Illegal char <" + c + ">", i);
-                }
-            }
-        }
-        if (sb != null)
-        {
-            path = sb.toString();
-        }
-        if (path.startsWith("\\\\") && WINDOWS)
-        {
-            if (separatorCount == 2 || (separatorCount == 3 && path.endsWith("\\")))
-            {
-                throw new InvalidPathException(path, "UNC path is missing sharename");
-            }
-            else if (separatorCount == 3)
-            {
-                path += '\\';
-            }
-        }
-        else if (path.length() == 3 && path.charAt(1) == ':' && WINDOWS)
-        {
-            // don't remove trailing backslash
-        }
-        else if (path.length() > 1 && path.charAt(path.length() - 1) == cli.System.IO.Path.DirectorySeparatorChar)
-        {
-            path = path.substring(0, path.length() - 1);
         }
         this.fs = fs;
         this.path = path;
@@ -142,16 +108,65 @@ final class NetPath extends AbstractPath
 
     public Path getRoot()
     {
-        throw new NotYetImplementedError();
+        int len = getRootLength();
+        return len == 0 ? null : new NetPath(fs, path.substring(0, len));
+    }
+
+    private int getRootLength()
+    {
+        if (WINDOWS)
+        {
+            if (path.length() >= 2 && path.charAt(1) == ':')
+            {
+                if (path.length() >= 3 && path.charAt(2) == '\\')
+                {
+                    return 3;
+                }
+                else
+                {
+                    return 2;
+                }
+            }
+            else if (path.startsWith("\\\\"))
+            {
+                return path.indexOf('\\', path.indexOf('\\', 2) + 1) + 1;
+            }
+        }
+
+        if (path.length() >= 1 && path.charAt(0) == cli.System.IO.Path.DirectorySeparatorChar)
+        {
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
     }
 
     public Path getFileName()
     {
-        throw new NotYetImplementedError();
+        if (path.length() == 0)
+        {
+            return this;
+        }
+        if (path.length() == getRootLength())
+        {
+            return null;
+        }
+        String name = cli.System.IO.Path.GetFileName(path);
+        if (name == null || name.length() == 0)
+        {
+            return null;
+        }
+        return new NetPath(fs, name);
     }
 
     public Path getParent()
     {
+        if (path.length() == getRootLength())
+        {
+            return null;
+        }
         String parent = cli.System.IO.Path.GetDirectoryName(path);
         if (parent == null || parent.length() == 0)
         {
@@ -162,59 +177,242 @@ final class NetPath extends AbstractPath
 
     public int getNameCount()
     {
-        throw new NotYetImplementedError();
+        int len = getRootLength();
+        if (path.length() == len)
+        {
+            return len == 0 ? 1 : 0;
+        }
+        int count = 1;
+        for (int i = len; i < path.length(); i++)
+        {
+            if (path.charAt(i) == cli.System.IO.Path.DirectorySeparatorChar)
+            {
+                count++;
+            }
+        }
+        return count;
     }
 
     public Path getName(int index)
     {
-        throw new NotYetImplementedError();
+        return new NetPath(fs, getNameImpl(index));
+    }
+
+    private String getNameImpl(int index)
+    {
+        for (int pos = getRootLength(); pos < path.length(); index--)
+        {
+            int next = path.indexOf(cli.System.IO.Path.DirectorySeparatorChar, pos);
+            if (index == 0)
+            {
+                return next == -1 ? path.substring(pos) : path.substring(pos, next);
+            }
+            if (next == -1)
+            {
+                break;
+            }
+            pos = next + 1;
+        }
+        if (path.length() == 0 && index == 0)
+        {
+            return "";
+        }
+        throw new IllegalArgumentException();
     }
 
     public Path subpath(int beginIndex, int endIndex)
     {
-        throw new NotYetImplementedError();
+        StringBuilder sb = new StringBuilder();
+        for (int i = beginIndex; i < endIndex; i++)
+        {
+            if (i != beginIndex)
+            {
+                sb.append(cli.System.IO.Path.DirectorySeparatorChar);
+            }
+            sb.append(getNameImpl(i));
+        }
+        return new NetPath(fs, sb.toString());
     }
 
     public boolean startsWith(Path other)
     {
-        throw new NotYetImplementedError();
+        String npath = NetPath.from(other).path;
+        if (npath.length() == 0)
+        {
+            return path.length() == 0;
+        }
+        return path.regionMatches(WINDOWS, 0, npath, 0, npath.length())
+            && (npath.length() == getRootLength()
+                || (npath.length() > getRootLength()
+                    && (path.length() == npath.length()
+                        || (path.length() > npath.length() && path.charAt(npath.length()) == cli.System.IO.Path.DirectorySeparatorChar))));
     }
 
     public boolean endsWith(Path other)
     {
-        throw new NotYetImplementedError();
+        NetPath nother = NetPath.from(other);
+        String npath = nother.path;
+        if (npath.length() > path.length())
+        {
+            return false;
+        }
+        if (npath.length() == 0)
+        {
+            return path.length() == 0;
+        }
+        int nameCount = getNameCount();
+        int otherNameCount = nother.getNameCount();
+        if (otherNameCount > nameCount)
+        {
+            return false;
+        }
+        int otherRootLength = nother.getRootLength();
+        if (otherRootLength > 0)
+        {
+            if (otherNameCount != nameCount
+                || getRootLength() != otherRootLength
+                || !path.regionMatches(WINDOWS, 0, npath, 0, otherRootLength))
+            {
+                return false;
+            }
+        }
+        int skip = nameCount - otherNameCount;
+        for (int i = 0; i < otherNameCount; i++)
+        {
+            String s1 = getNameImpl(i + skip);
+            String s2 = nother.getNameImpl(i);
+            if (s1.length() != s2.length() || !s1.regionMatches(WINDOWS, 0, s2, 0, s1.length()))
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     public Path normalize()
     {
-        throw new NotYetImplementedError();
+        int rootLength = getRootLength();
+        ArrayList<String> list = new ArrayList<>();
+        for (int i = 0, count = getNameCount(); i < count; i++)
+        {
+            String s = getNameImpl(i);
+            if (s.equals(".."))
+            {
+                if (list.size() == 0)
+                {
+                    if (rootLength == 0 || (WINDOWS && rootLength == 2))
+                    {
+                        list.add("..");
+                    }
+                }
+                else if (list.get(list.size() - 1).equals(".."))
+                {
+                    list.add("..");
+                }
+                else
+                {
+                    list.remove(list.size() - 1);
+                }
+            }
+            else if (!s.equals("."))
+            {
+                list.add(s);
+            }
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append(path.substring(0, getRootLength()));
+        for (int i = 0; i < list.size(); i++)
+        {
+            if (i != 0)
+            {
+                sb.append(cli.System.IO.Path.DirectorySeparatorChar);
+            }
+            sb.append(list.get(i));
+        }
+        return new NetPath(fs, sb.toString());
     }
 
     public Path resolve(Path other)
     {
         NetPath nother = NetPath.from(other);
+        String npath = nother.path;
         if (nother.isAbsolute())
         {
             return other;
         }
-        if (nother.path.length() == 0)
+        if (npath.length() == 0)
         {
             return this;
         }
-        return new NetPath(fs, cli.System.IO.Path.Combine(path, nother.path));
+        if (WINDOWS)
+        {
+            if (nother.getRootLength() == 2 && getRootLength() == 3 && (path.charAt(0) | 0x20) == (npath.charAt(0) | 0x20))
+            {
+                // we're in the case where we have a root "x:\" and other "x:", so we have to chop off "x:" from other because
+                // otherwise Path.Combine will just return other
+                npath = npath.substring(2);
+            }
+            else if (nother.getRootLength() == 1 && getRootLength() > 3)
+            {
+                // we're in the case where we have a root "\\host\share\" and other "\",
+                // we have to manually handle this because Path.Combine doesn't do the right thing
+                return new NetPath(fs, path.substring(0, getRootLength()) + npath);
+            }
+        }
+        return new NetPath(fs, cli.System.IO.Path.Combine(path, npath));
     }
 
     public Path relativize(Path other)
     {
-        throw new NotYetImplementedError();
+        NetPath nother = NetPath.from(other);
+        if (equals(nother))
+        {
+            return new NetPath(fs, "");
+        }
+        int rootLength = getRootLength();
+        if (nother.getRootLength() != rootLength || !path.regionMatches(true, 0, nother.path, 0, rootLength))
+        {
+            throw new IllegalArgumentException("'other' has different root");
+        }
+        int nameCount = getNameCount();
+        int otherNameCount = nother.getNameCount();
+        int count = Math.min(nameCount, otherNameCount);
+        int i = 0;
+        // skip the common parts
+        for (; i < count && getNameImpl(i).equals(nother.getNameImpl(i)); i++)
+        {
+        }
+        // remove the unused parts of our path
+        StringBuilder sb = new StringBuilder();
+        for (int j = i; j < nameCount; j++)
+        {
+            sb.append("..\\");
+        }
+        // append the new parts of other
+        for (int j = i; j < otherNameCount; j++)
+        {
+            if (j != i)
+            {
+                sb.append("\\");
+            }
+            sb.append(nother.getNameImpl(j));
+        }
+        return new NetPath(fs, sb.toString());
     }
 
     public URI toUri()
     {
-        throw new NotYetImplementedError();
+        if (WINDOWS)
+        {
+            return WindowsUriSupport.toUri(this);
+        }
+        else
+        {
+            return UnixUriUtils.toUri(this);
+        }
     }
 
-    public Path toAbsolutePath()
+    public NetPath toAbsolutePath()
     {
         if (isAbsolute())
         {
@@ -232,7 +430,64 @@ final class NetPath extends AbstractPath
 
     public WatchKey register(WatchService watcher, WatchEvent.Kind<?>[] events, WatchEvent.Modifier... modifiers) throws IOException
     {
-        throw new NotYetImplementedError();
+        if (!(watcher instanceof NetFileSystem.NetWatchService))
+        {
+            // null check
+            watcher.getClass();
+            throw new ProviderMismatchException();
+        }
+        boolean create = false;
+        boolean delete = false;
+        boolean modify = false;
+        boolean overflow = false;
+        boolean subtree = false;
+        for (WatchEvent.Kind<?> kind : events)
+        {
+            if (kind == StandardWatchEventKinds.ENTRY_CREATE)
+            {
+                create = true;
+            }
+            else if (kind == StandardWatchEventKinds.ENTRY_DELETE)
+            {
+                delete = true;
+            }
+            else if (kind == StandardWatchEventKinds.ENTRY_MODIFY)
+            {
+                modify = true;
+            }
+            else if (kind == StandardWatchEventKinds.OVERFLOW)
+            {
+                overflow = true;
+            }
+            else
+            {
+                // null check
+                kind.getClass();
+                throw new UnsupportedOperationException();
+            }
+        }
+        if (!create && !delete && !modify)
+        {
+            throw new IllegalArgumentException();
+        }
+        for (WatchEvent.Modifier modifier : modifiers)
+        {
+            if (modifier == ExtendedWatchEventModifier.FILE_TREE)
+            {
+                subtree = true;
+            }
+            else if (modifier instanceof SensitivityWatchEventModifier)
+            {
+                // ignore
+            }
+            else
+            {
+                // null check
+                modifier.getClass();
+                throw new UnsupportedOperationException();
+            }
+        }
+        return ((NetFileSystem.NetWatchService)watcher).register(this, create, delete, modify, overflow, subtree);
     }
 
     public int compareTo(Path other)
@@ -277,10 +532,17 @@ final class NetPath extends AbstractPath
         return path;
     }
 
+    boolean isUnc()
+    {
+        return WINDOWS && getRootLength() > 3;
+    }
+
     static NetPath from(Path path)
     {
         if (!(path instanceof NetPath))
         {
+            // null check
+            path.getClass();
             throw new ProviderMismatchException();
         }
         return (NetPath)path;

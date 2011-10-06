@@ -25,7 +25,13 @@
 package sun.nio.fs;
 
 import ikvm.internal.NotYetImplementedError;
+import static ikvm.internal.Util.WINDOWS;
+import cli.System.IO.Directory;
+import cli.System.IO.DirectoryInfo;
+import cli.System.IO.DriveInfo;
 import cli.System.IO.File;
+import cli.System.IO.FileAttributes;
+import cli.System.IO.FileInfo;
 import cli.System.IO.FileMode;
 import cli.System.IO.FileShare;
 import cli.System.IO.FileStream;
@@ -40,7 +46,10 @@ import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.concurrent.ExecutorService;
+import java.util.Iterator;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import sun.nio.ch.WindowsAsynchronousFileChannelImpl;
 import sun.nio.ch.FileChannelImpl;
@@ -49,6 +58,19 @@ import sun.nio.ch.ThreadPool;
 final class NetFileSystemProvider extends AbstractFileSystemProvider
 {
     private final NetFileSystem fs = new NetFileSystem(this);
+    private final HashMap<String, FileStore> stores = new HashMap<String, FileStore>();
+
+    final synchronized FileStore getFileStore(DriveInfo drive)
+    {
+        String name = drive.get_Name().toLowerCase();
+        FileStore fs = stores.get(name);
+        if (fs == null)
+        {
+            fs = new NetFileStore(drive);
+            stores.put(name, fs);
+        }
+        return fs;
+    }
 
     public String getScheme()
     {
@@ -67,14 +89,23 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
     public Path getPath(URI uri)
     {
-        throw new NotYetImplementedError();
+        if (WINDOWS)
+        {
+            return WindowsUriSupport.fromUri(fs, uri);
+        }
+        else
+        {
+            return UnixUriUtils.fromUri(fs, uri);
+        }
     }
 
     public AsynchronousFileChannel newAsynchronousFileChannel(Path path, Set<? extends OpenOption> opts, ExecutorService executor, FileAttribute<?>... attrs) throws IOException
     {
         NetPath npath = NetPath.from(path);
-        if (attrs.length != 0)
+        for (FileAttribute<?> attr : attrs)
         {
+            // null check
+            attr.getClass();
             throw new NotYetImplementedError();
         }
         int mode = FileMode.Open;
@@ -82,7 +113,7 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
         int options = FileOptions.Asynchronous;
         boolean read = false;
         boolean write = false;
-        boolean sparse = false;
+        boolean truncate = false;
         for (OpenOption opt : opts)
         {
             if (opt instanceof StandardOpenOption)
@@ -105,13 +136,12 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
                         read = true;
                         break;
                     case SPARSE:
-                        sparse = true;
                         break;
                     case SYNC:
                         options |= FileOptions.WriteThrough;
                         break;
                     case TRUNCATE_EXISTING:
-                        mode = FileMode.Truncate;
+                        truncate = true;
                         break;
                     case WRITE:
                         write = true;
@@ -137,12 +167,10 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
                         throw new UnsupportedOperationException();
                 }
             }
-            else if (opt == null)
-            {
-                throw new NullPointerException();
-            }
             else
             {
+                // null check
+                opt.getClass();
                 throw new UnsupportedOperationException();
             }
         }
@@ -152,9 +180,12 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
             read = true;
         }
 
-        if (mode == FileMode.CreateNew && sparse)
+        if (truncate)
         {
-            throw new UnsupportedOperationException();
+            if (mode == FileMode.Open)
+            {
+                mode = FileMode.Truncate;
+            }
         }
 
         int rights = 0;
@@ -188,8 +219,10 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
     public FileChannel newFileChannel(Path path, Set<? extends OpenOption> opts, FileAttribute<?>... attrs) throws IOException
     {
         NetPath npath = NetPath.from(path);
-        if (attrs.length != 0)
+        for (FileAttribute<?> attr : attrs)
         {
+            // null check
+            attr.getClass();
             throw new NotYetImplementedError();
         }
         int mode = FileMode.Open;
@@ -198,7 +231,7 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
         boolean read = false;
         boolean write = false;
         boolean append = false;
-        boolean sparse = false;
+        boolean truncate = false;
         for (OpenOption opt : opts)
         {
             if (opt instanceof StandardOpenOption)
@@ -226,13 +259,12 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
                         read = true;
                         break;
                     case SPARSE:
-                        sparse = true;
                         break;
                     case SYNC:
                         options |= FileOptions.WriteThrough;
                         break;
                     case TRUNCATE_EXISTING:
-                        mode = FileMode.Truncate;
+                        truncate = true;
                         break;
                     case WRITE:
                         write = true;
@@ -258,12 +290,10 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
                         throw new UnsupportedOperationException();
                 }
             }
-            else if (opt == null)
-            {
-                throw new NullPointerException();
-            }
             else
             {
+                // null check
+                opt.getClass();
                 throw new UnsupportedOperationException();
             }
         }
@@ -278,16 +308,18 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
             throw new IllegalArgumentException("READ + APPEND not allowed");
         }
         
-        if (append && mode == FileMode.Truncate)
+        if (truncate)
         {
-            throw new IllegalArgumentException("APPEND + TRUNCATE_EXISTING not allowed");
+            if (append)
+            {
+                throw new IllegalArgumentException("APPEND + TRUNCATE_EXISTING not allowed");
+            }
+            if (mode == FileMode.Open)
+            {
+                mode = FileMode.Truncate;
+            }
         }
         
-        if (mode == FileMode.CreateNew && sparse)
-        {
-            throw new UnsupportedOperationException();
-        }
-
         int rights = 0;
         if (append)
         {
@@ -340,6 +372,10 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
         }
         catch (cli.System.IO.IOException x)
         {
+            if (mode == FileMode.CreateNew && File.Exists(path))
+            {
+                throw new FileAlreadyExistsException(path);
+            }
             throw new FileSystemException(path, null, x.getMessage());
         }
         catch (cli.System.Security.SecurityException _)
@@ -352,14 +388,104 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
         }
     }
 
-    public DirectoryStream<Path> newDirectoryStream(Path dir, DirectoryStream.Filter<? super Path> filter) throws IOException
+    public DirectoryStream<Path> newDirectoryStream(Path dir, final DirectoryStream.Filter<? super Path> filter) throws IOException
     {
-        throw new NotYetImplementedError();
+        final String ndir = NetPath.from(dir).path;
+        // null check
+        filter.getClass();
+        try
+        {
+            if (false) throw new cli.System.ArgumentException();
+            if (false) throw new cli.System.IO.DirectoryNotFoundException();
+            if (false) throw new cli.System.IO.IOException();
+            if (false) throw new cli.System.Security.SecurityException();
+            if (false) throw new cli.System.UnauthorizedAccessException();
+            final String[] files = Directory.GetFileSystemEntries(ndir);
+            return new DirectoryStream<Path>() {
+                private boolean closed;
+                public Iterator<Path> iterator() {
+                    if (closed) {
+                        throw new IllegalStateException();
+                    }
+                    closed = true;
+                    return new Iterator<Path>() {
+                        private int pos;
+                        private Path filtered;
+                        public boolean hasNext() {
+                            if (filtered == null) {
+                                while (pos != files.length) {
+                                    Path p = new NetPath(fs, cli.System.IO.Path.Combine(ndir, files[pos++]));
+                                    try {
+                                        if (filter.accept(p)) {
+                                            filtered = p;
+                                            break;
+                                        }
+                                    } catch (IOException x) {
+                                        throw new DirectoryIteratorException(x);
+                                    }
+                                }
+                            }
+                            return filtered != null;
+                        }
+                        public Path next() {
+                            if (!hasNext()) {
+                                throw new NoSuchElementException();
+                            }
+                            Path p = filtered;
+                            filtered = null;
+                            return p;
+                        }
+                        public void remove() {
+                            throw new UnsupportedOperationException();
+                        }
+                    };
+                }
+                public void close() {
+                    closed = true;
+                }
+            };
+        }
+        catch (cli.System.ArgumentException
+             | cli.System.IO.IOException
+             | cli.System.Security.SecurityException
+             | cli.System.UnauthorizedAccessException x)
+        {
+            if (File.Exists(ndir))
+            {
+                throw new NotDirectoryException(ndir);
+            }
+            throw new IOException(x.getMessage());
+        }
     }
 
     public void createDirectory(Path dir, FileAttribute<?>... attrs) throws IOException
     {
-        throw new NotYetImplementedError();
+        NetPath ndir = NetPath.from(dir);
+        for (FileAttribute<?> attr : attrs)
+        {
+            // null check
+            attr.getClass();
+            throw new NotYetImplementedError();
+        }
+        try
+        {
+            if (false) throw new cli.System.ArgumentException();
+            if (false) throw new cli.System.IO.IOException();
+            if (false) throw new cli.System.Security.SecurityException();
+            if (false) throw new cli.System.UnauthorizedAccessException();
+            Directory.CreateDirectory(ndir.path);
+        }
+        catch (cli.System.ArgumentException
+             | cli.System.IO.IOException
+             | cli.System.Security.SecurityException
+             | cli.System.UnauthorizedAccessException x)
+        {
+            if (File.Exists(ndir.path))
+            {
+                throw new FileAlreadyExistsException(ndir.path);
+            }
+            throw new IOException(x.getMessage());
+        }
     }
 
     public void copy(Path source, Path target, CopyOption... options) throws IOException
@@ -367,14 +493,21 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
         NetPath nsource = NetPath.from(source);
         NetPath ntarget = NetPath.from(target);
         boolean overwrite = false;
+        boolean copyAttribs = false;
         for (CopyOption opt : options)
         {
             if (opt == StandardCopyOption.REPLACE_EXISTING)
             {
                 overwrite = true;
             }
+            else if (opt == StandardCopyOption.COPY_ATTRIBUTES)
+            {
+                copyAttribs = true;
+            }
             else
             {
+                // null check
+                opt.getClass();
                 throw new UnsupportedOperationException("Unsupported copy option");
             }
         }
@@ -386,7 +519,56 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
             if (false) throw new cli.System.IO.IOException();
             if (false) throw new cli.System.Security.SecurityException();
             if (false) throw new cli.System.UnauthorizedAccessException();
-            File.Copy(nsource.path, ntarget.path, overwrite);
+            if (File.Exists(ntarget.path))
+            {
+                if (!overwrite)
+                {
+                    throw new FileAlreadyExistsException(ntarget.path);
+                }
+                File.Delete(ntarget.path);
+            }
+            if (Directory.Exists(ntarget.path))
+            {
+                if (!overwrite)
+                {
+                    throw new FileAlreadyExistsException(ntarget.path);
+                }
+                try
+                {
+                    if (false) throw new cli.System.IO.IOException();
+                    Directory.Delete(ntarget.path);
+                }
+                catch (cli.System.IO.IOException _)
+                {
+                    // HACK we assume that the IOException is caused by the directory not being empty
+                    throw new DirectoryNotEmptyException(ntarget.path);
+                }
+            }
+            if (Directory.Exists(nsource.path))
+            {
+                Directory.CreateDirectory(ntarget.path);
+            }
+            else
+            {
+                File.Copy(nsource.path, ntarget.path, overwrite);
+            }
+            if (copyAttribs)
+            {
+                if (Directory.Exists(ntarget.path))
+                {
+                    File.SetAttributes(ntarget.path, File.GetAttributes(nsource.path));
+                    Directory.SetCreationTimeUtc(ntarget.path, File.GetCreationTimeUtc(nsource.path));
+                    Directory.SetLastAccessTimeUtc(ntarget.path, File.GetLastAccessTimeUtc(nsource.path));
+                    Directory.SetLastWriteTimeUtc(ntarget.path, File.GetLastWriteTimeUtc(nsource.path));
+                }
+                else
+                {
+                    File.SetAttributes(ntarget.path, File.GetAttributes(nsource.path));
+                    File.SetCreationTimeUtc(ntarget.path, File.GetCreationTimeUtc(nsource.path));
+                    File.SetLastAccessTimeUtc(ntarget.path, File.GetLastAccessTimeUtc(nsource.path));
+                    File.SetLastWriteTimeUtc(ntarget.path, File.GetLastWriteTimeUtc(nsource.path));
+                }
+            }
         }
         catch (cli.System.IO.FileNotFoundException x)
         {
@@ -410,14 +592,21 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
     {
         NetPath nsource = NetPath.from(source);
         NetPath ntarget = NetPath.from(target);
+        boolean overwrite = false;
         for (CopyOption opt : options)
         {
-            if (opt == StandardCopyOption.ATOMIC_MOVE)
+            if (opt == StandardCopyOption.REPLACE_EXISTING)
+            {
+                overwrite = true;
+            }
+            else if (opt == StandardCopyOption.ATOMIC_MOVE)
             {
                 throw new AtomicMoveNotSupportedException(nsource.path, ntarget.path, "Unsupported copy option");
             }
             else
             {
+                // null check
+                opt.getClass();
                 throw new UnsupportedOperationException("Unsupported copy option");
             }
         }
@@ -429,7 +618,39 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
             if (false) throw new cli.System.IO.IOException();
             if (false) throw new cli.System.Security.SecurityException();
             if (false) throw new cli.System.UnauthorizedAccessException();
-            File.Move(nsource.path, ntarget.path);
+            if (File.Exists(ntarget.path))
+            {
+                if (!overwrite)
+                {
+                    throw new FileAlreadyExistsException(ntarget.path);
+                }
+                File.Delete(ntarget.path);
+            }
+            if (Directory.Exists(ntarget.path))
+            {
+                if (!overwrite)
+                {
+                    throw new FileAlreadyExistsException(ntarget.path);
+                }
+                try
+                {
+                    if (false) throw new cli.System.IO.IOException();
+                    Directory.Delete(ntarget.path);
+                }
+                catch (cli.System.IO.IOException _)
+                {
+                    // HACK we assume that the IOException is caused by the directory not being empty
+                    throw new DirectoryNotEmptyException(ntarget.path);
+                }
+            }
+            if (Directory.Exists(nsource.path))
+            {
+                Directory.Move(nsource.path, ntarget.path);
+            }
+            else
+            {
+                File.Move(nsource.path, ntarget.path);
+            }
         }
         catch (cli.System.IO.FileNotFoundException x)
         {
@@ -457,6 +678,8 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
         }
         if (!(path instanceof NetPath && path2 instanceof NetPath))
         {
+            // null check
+            path2.getClass();
             return false;
         }
         return path.toRealPath().equals(path2.toRealPath());
@@ -464,32 +687,502 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
     public boolean isHidden(Path path) throws IOException
     {
-        throw new NotYetImplementedError();
+        String npath = NetPath.from(path).path;
+        try
+        {
+            if (false) throw new cli.System.ArgumentException();
+            if (false) throw new cli.System.IO.FileNotFoundException();
+            if (false) throw new cli.System.IO.IOException();
+            return (File.GetAttributes(npath).Value & (cli.System.IO.FileAttributes.Hidden | cli.System.IO.FileAttributes.Directory)) == cli.System.IO.FileAttributes.Hidden;
+        }
+        catch (cli.System.IO.FileNotFoundException x)
+        {
+            throw new NoSuchFileException(npath);
+        }
+        catch (cli.System.IO.IOException | cli.System.ArgumentException x)
+        {
+            throw new IOException(x.getMessage());
+        }
+    }
+
+    private static class NetFileStore extends FileStore
+    {
+        private final DriveInfo info;
+
+        NetFileStore(DriveInfo info)
+        {
+            this.info = info;
+        }
+
+        public Object getAttribute(String attribute) throws IOException
+        {
+            switch (attribute)
+            {
+                case "totalSpace":
+                    return getTotalSpace();
+                case "unallocatedSpace":
+                    return getUnallocatedSpace();
+                case "usableSpace":
+                    return getUsableSpace();
+                default:
+                    throw new UnsupportedOperationException();
+            }
+        }
+
+        public <V extends FileStoreAttributeView> V getFileStoreAttributeView(Class<V> type)
+        {
+            return null;
+        }
+
+        public long getTotalSpace() throws IOException
+        {
+            return info.get_TotalSize();
+        }
+
+        public long getUnallocatedSpace() throws IOException
+        {
+            return info.get_TotalFreeSpace();
+        }
+
+        public long getUsableSpace() throws IOException
+        {
+            return info.get_AvailableFreeSpace();
+        }
+
+        public boolean isReadOnly()
+        {
+            return false;
+        }
+
+        public String name()
+        {
+            return info.get_VolumeLabel();
+        }
+
+        public boolean supportsFileAttributeView(Class<? extends FileAttributeView> type)
+        {
+            // null check
+            type.getClass();
+            return type == BasicFileAttributeView.class || type == DosFileAttributeView.class;
+        }
+
+        public boolean supportsFileAttributeView(String name)
+        {
+            return name.equals("basic") || name.equals("dos");
+        }
+
+        public String type()
+        {
+            return info.get_DriveFormat();
+        }        
     }
 
     public FileStore getFileStore(Path path) throws IOException
     {
-        throw new NotYetImplementedError();
+        return getFileStore(new DriveInfo(NetPath.from(path.toAbsolutePath()).path));
     }
 
     public void checkAccess(Path path, AccessMode... modes) throws IOException
     {
-        throw new NotYetImplementedError();
+        String npath = NetPath.from(path).path;
+        try
+        {
+            if (false) throw new cli.System.ArgumentException();
+            if (false) throw new cli.System.IO.DirectoryNotFoundException();
+            if (false) throw new cli.System.IO.FileNotFoundException();
+            if (false) throw new cli.System.IO.IOException();
+            if (false) throw new cli.System.NotSupportedException();
+            if (false) throw new cli.System.Security.SecurityException();
+            if (false) throw new cli.System.UnauthorizedAccessException();
+            // note that File.GetAttributes() works for directories as well
+            int attr = File.GetAttributes(npath).Value;
+            for (AccessMode m : modes)
+            {
+                switch (m)
+                {
+                    case READ:
+                    case EXECUTE:
+                        break;
+                    case WRITE:
+                        if ((attr & (cli.System.IO.FileAttributes.ReadOnly | cli.System.IO.FileAttributes.Directory)) == cli.System.IO.FileAttributes.ReadOnly)
+                        {
+                            throw new AccessDeniedException(npath, null, "file has read-only attribute set");
+                        }
+                        if (getFileStore(path).isReadOnly())
+                        {
+                            throw new AccessDeniedException(npath, null, "volume is read-only");
+                        }
+                        break;
+                    default:
+                        throw new UnsupportedOperationException();
+                }
+            }
+        }
+        catch (cli.System.IO.FileNotFoundException | cli.System.IO.DirectoryNotFoundException _)
+        {
+            throw new NoSuchFileException(npath);
+        }
+        catch (cli.System.Security.SecurityException | cli.System.UnauthorizedAccessException x)
+        {
+            throw new AccessDeniedException(npath, null, x.getMessage());
+        }
+        catch (cli.System.ArgumentException | cli.System.IO.IOException | cli.System.NotSupportedException x)
+        {
+            throw new IOException(x.getMessage());
+        }
+    }
+
+    private static class BasicFileAttributesViewImpl extends AbstractBasicFileAttributeView
+    {
+        protected final String path;
+
+        BasicFileAttributesViewImpl(String path)
+        {
+            this.path = path;
+        }
+
+        public BasicFileAttributes readAttributes() throws IOException
+        {
+            return DosFileAttributesViewImpl.readAttributesImpl(path);
+        }
+
+        public void setTimes(FileTime lastModifiedTime, FileTime lastAccessTime, FileTime createTime) throws IOException
+        {
+            try
+            {
+                if (false) throw new cli.System.ArgumentException();
+                if (false) throw new cli.System.IO.IOException();
+                if (false) throw new cli.System.NotSupportedException();
+                if (false) throw new cli.System.Security.SecurityException();
+                if (false) throw new cli.System.UnauthorizedAccessException();
+                if (File.Exists(path))
+                {
+                    if (lastModifiedTime != null)
+                    {
+                        File.SetLastWriteTimeUtc(path, toDateTime(lastModifiedTime));
+                    }
+                    if (lastAccessTime != null)
+                    {
+                        File.SetLastAccessTimeUtc(path, toDateTime(lastAccessTime));
+                    }
+                    if (createTime != null)
+                    {
+                        File.SetCreationTimeUtc(path, toDateTime(createTime));
+                    }
+                }
+                else if (Directory.Exists(path))
+                {
+                    if (lastModifiedTime != null)
+                    {
+                        Directory.SetLastWriteTimeUtc(path, toDateTime(lastModifiedTime));
+                    }
+                    if (lastAccessTime != null)
+                    {
+                        Directory.SetLastAccessTimeUtc(path, toDateTime(lastAccessTime));
+                    }
+                    if (createTime != null)
+                    {
+                        Directory.SetCreationTimeUtc(path, toDateTime(createTime));
+                    }
+                }
+                else
+                {
+                    throw new NoSuchFileException(path);
+                }
+            }
+            catch (cli.System.ArgumentException
+                 | cli.System.IO.IOException
+                 | cli.System.NotSupportedException
+                 | cli.System.Security.SecurityException
+                 | cli.System.UnauthorizedAccessException x)
+            {
+                throw new IOException(x.getMessage());
+            }
+        }
+    }
+
+    private static class DosFileAttributesViewImpl extends BasicFileAttributesViewImpl implements DosFileAttributeView
+    {
+        private static final String READONLY_NAME = "readonly";
+        private static final String ARCHIVE_NAME = "archive";
+        private static final String SYSTEM_NAME = "system";
+        private static final String HIDDEN_NAME = "hidden";
+        private static final String ATTRIBUTES_NAME = "attributes";
+        private static final Set<String> dosAttributeNames = Util.newSet(basicAttributeNames, READONLY_NAME, ARCHIVE_NAME, SYSTEM_NAME,  HIDDEN_NAME, ATTRIBUTES_NAME);
+
+        DosFileAttributesViewImpl(String path)
+        {
+            super(path);
+        }
+
+        public String name()
+        {
+            return "dos";
+        }
+
+        public DosFileAttributes readAttributes() throws IOException
+        {
+            return readAttributesImpl(path);
+        }
+
+        private static class DosFileAttributesImpl implements DosFileAttributes
+        {
+            private final FileInfo info;
+
+            DosFileAttributesImpl(FileInfo info)
+            {
+                this.info = info;
+            }
+
+            int attributes()
+            {
+                return info.get_Attributes().Value;
+            }
+
+            public FileTime creationTime()
+            {
+                return toFileTime(info.get_CreationTimeUtc());
+            }
+
+            public Object fileKey()
+            {
+                return null;
+            }
+
+            public boolean isDirectory()
+            {
+                return (info.get_Attributes().Value & cli.System.IO.FileAttributes.Directory) != 0;
+            }
+
+            public boolean isOther()
+            {
+                return false;
+            }
+
+            public boolean isRegularFile()
+            {
+                return (info.get_Attributes().Value & cli.System.IO.FileAttributes.Directory) == 0;
+            }
+
+            public boolean isSymbolicLink()
+            {
+                return false;
+            }
+
+            public FileTime lastAccessTime()
+            {
+                return toFileTime(info.get_LastAccessTimeUtc());
+            }
+
+            public FileTime lastModifiedTime()
+            {
+                return toFileTime(info.get_LastWriteTimeUtc());
+            }
+
+            public long size()
+            {
+                return info.get_Length();
+            }
+
+            public boolean isArchive()
+            {
+                return (info.get_Attributes().Value & cli.System.IO.FileAttributes.Archive) != 0;
+            }
+
+            public boolean isHidden()
+            {
+                return (info.get_Attributes().Value & cli.System.IO.FileAttributes.Hidden) != 0;
+            }
+
+            public boolean isReadOnly()
+            {
+                return (info.get_Attributes().Value & cli.System.IO.FileAttributes.ReadOnly) != 0;
+            }
+
+            public boolean isSystem()
+            {
+                return (info.get_Attributes().Value & cli.System.IO.FileAttributes.System) != 0;
+            }
+        }
+
+        static DosFileAttributesImpl readAttributesImpl(String path) throws IOException
+        {
+            try
+            {
+                if (false) throw new cli.System.ArgumentException();
+                if (false) throw new cli.System.IO.FileNotFoundException();
+                if (false) throw new cli.System.IO.IOException();
+                return new DosFileAttributesImpl(new FileInfo(path));
+            }
+            catch (cli.System.IO.FileNotFoundException _)
+            {
+                throw new NoSuchFileException(path);
+            }
+            catch (cli.System.IO.IOException | cli.System.ArgumentException x)
+            {
+                throw new IOException(x.getMessage());
+            }
+        }
+
+        public void setArchive(boolean value) throws IOException
+        {
+            setAttribute(cli.System.IO.FileAttributes.Archive, value);
+        }
+
+        public void setHidden(boolean value) throws IOException
+        {
+            setAttribute(cli.System.IO.FileAttributes.Hidden, value);
+        }
+
+        public void setReadOnly(boolean value) throws IOException
+        {
+            setAttribute(cli.System.IO.FileAttributes.ReadOnly, value);
+        }
+
+        public void setSystem(boolean value) throws IOException
+        {
+            setAttribute(cli.System.IO.FileAttributes.System, value);
+        }
+
+        private void setAttribute(int attr, boolean value) throws IOException
+        {
+            try
+            {
+                if (false) throw new cli.System.ArgumentException();
+                if (false) throw new cli.System.IO.IOException();
+                FileInfo info = new FileInfo(path);
+                if (value)
+                {
+                    info.set_Attributes(cli.System.IO.FileAttributes.wrap(info.get_Attributes().Value | attr));
+                }
+                else
+                {
+                    info.set_Attributes(cli.System.IO.FileAttributes.wrap(info.get_Attributes().Value & ~attr));
+                }
+            }
+            catch (cli.System.ArgumentException
+                 | cli.System.IO.IOException x)
+            {
+                throw new IOException(x.getMessage());
+            }
+        }
+
+        public Map<String,Object> readAttributes(String[] attributes) throws IOException
+        {
+            AttributesBuilder builder = AttributesBuilder.create(dosAttributeNames, attributes);
+            DosFileAttributesImpl attrs = readAttributesImpl(path);
+            addRequestedBasicAttributes(attrs, builder);
+            if (builder.match(READONLY_NAME))
+            {
+                builder.add(READONLY_NAME, attrs.isReadOnly());
+            }
+            if (builder.match(ARCHIVE_NAME))
+            {
+                builder.add(ARCHIVE_NAME, attrs.isArchive());
+            }
+            if (builder.match(SYSTEM_NAME))
+            {
+                builder.add(SYSTEM_NAME, attrs.isSystem());
+            }
+            if (builder.match(HIDDEN_NAME))
+            {
+                builder.add(HIDDEN_NAME, attrs.isHidden());
+            }
+            if (builder.match(ATTRIBUTES_NAME))
+            {
+                builder.add(ATTRIBUTES_NAME, attrs.attributes());
+            }
+            return builder.unmodifiableMap();
+        }
+
+        public void setAttribute(String attribute, Object value) throws IOException
+        {
+            switch (attribute)
+            {
+                case READONLY_NAME:
+                    setReadOnly((Boolean)value);
+                    break;
+                case ARCHIVE_NAME:
+                    setArchive((Boolean)value);
+                    break;
+                case SYSTEM_NAME:
+                    setSystem((Boolean)value);
+                    break;
+                case HIDDEN_NAME:
+                    setHidden((Boolean)value);
+                    break;
+                default:
+                    super.setAttribute(attribute, value);
+                    break;
+            }
+        }
+    }
+
+    private static void validateLinkOption(LinkOption... options)
+    {
+        for (LinkOption option : options)
+        {
+            if (option == LinkOption.NOFOLLOW_LINKS)
+            {
+                // ignored
+            }
+            else
+            {
+                // null check
+                option.getClass();
+                throw new UnsupportedOperationException();
+            }
+        }
     }
 
     public <V extends FileAttributeView> V getFileAttributeView(Path path, Class<V> type, LinkOption... options)
     {
-        throw new NotYetImplementedError();
+        String npath = NetPath.from(path).path;
+        validateLinkOption(options);
+        if (type == BasicFileAttributeView.class)
+        {
+            return (V)new BasicFileAttributesViewImpl(npath);
+        }
+        else if (type == DosFileAttributeView.class)
+        {
+            return (V)new DosFileAttributesViewImpl(npath);
+        }
+        else
+        {
+            // null check
+            type.getClass();
+            return null;
+        }
     }
 
     public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> type, LinkOption... options) throws IOException
     {
-        throw new NotYetImplementedError();
+        String npath = NetPath.from(path).path;
+        // null check
+        type.getClass();
+        validateLinkOption(options);
+        if (type != BasicFileAttributes.class && type != DosFileAttributes.class)
+        {
+            throw new UnsupportedOperationException();
+        }
+        return (A)DosFileAttributesViewImpl.readAttributesImpl(npath);
     }
 
     DynamicFileAttributeView getFileAttributeView(Path file, String name, LinkOption... options)
     {
-        return null;
+        validateLinkOption(options);
+        if (name.equals("basic"))
+        {
+            return new BasicFileAttributesViewImpl(NetPath.from(file).path);
+        }
+        else if (name.equals("dos"))
+        {
+            return new DosFileAttributesViewImpl(NetPath.from(file).path);
+        }
+        else
+        {
+            return null;
+        }
     }
 
     boolean implDelete(Path file, boolean failIfNotExists) throws IOException
@@ -511,7 +1204,16 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
             int attr = cli.System.IO.File.GetAttributes(path).Value;
             if ((attr & cli.System.IO.FileAttributes.Directory) != 0)
             {
-                cli.System.IO.Directory.Delete(path);
+                try
+                {
+                    if (false) throw new cli.System.IO.IOException();
+                    cli.System.IO.Directory.Delete(path);
+                }
+                catch (cli.System.IO.IOException _)
+                {
+                    // HACK we assume that the IOException is caused by the directory not being empty
+                    throw new DirectoryNotEmptyException(path);
+                }
                 return true;
             }
             else
@@ -558,5 +1260,15 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
         {
             throw new AccessDeniedException(path);
         }
+    }
+
+    static FileTime toFileTime(cli.System.DateTime dateTime)
+    {
+        return FileTime.from((dateTime.get_Ticks() - 621355968000000000L) / 10, java.util.concurrent.TimeUnit.MICROSECONDS);
+    }
+
+    static cli.System.DateTime toDateTime(FileTime fileTime)
+    {
+        return new cli.System.DateTime(fileTime.to(java.util.concurrent.TimeUnit.MICROSECONDS) * 10 + 621355968000000000L);
     }
 }

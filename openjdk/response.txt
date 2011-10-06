@@ -164,6 +164,7 @@ assembly.class
     @OPENJDK7@/jdk/src/windows/classes/java/lang/*.class
     @OPENJDK7@/jdk/src/windows/classes/sun/net/*.class
     @OPENJDK7@/jdk/src/windows/classes/sun/nio/ch/*.class
+    @OPENJDK7@/jdk/src/windows/classes/sun/nio/fs/*.class
     @OPENJDK7@/jdk/src/windows/classes/sun/security/provider/NativePRNG.class
 }
 {

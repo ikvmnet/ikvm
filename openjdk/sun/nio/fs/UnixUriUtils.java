@@ -29,6 +29,7 @@ import java.nio.file.Path;
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.util.Arrays;
 
 /**
@@ -41,7 +42,7 @@ class UnixUriUtils {
     /**
      * Converts URI to Path
      */
-    static Path fromUri(UnixFileSystem fs, URI uri) {
+    static Path fromUri(NetFileSystem fs, URI uri) {
         if (!uri.isAbsolute())
             throw new IllegalArgumentException("URI is not absolute");
         if (uri.isOpaque())
@@ -68,37 +69,16 @@ class UnixUriUtils {
 
         // transform escaped octets and unescaped characters to bytes
         if (p.endsWith("/") && len > 1)
-            len--;
-        byte[] result = new byte[len];
-        int rlen = 0;
-        int pos = 0;
-        while (pos < len) {
-            char c = p.charAt(pos++);
-            byte b;
-            if (c == '%') {
-                assert (pos+2) <= len;
-                char c1 = p.charAt(pos++);
-                char c2 = p.charAt(pos++);
-                b = (byte)((decode(c1) << 4) | decode(c2));
-                if (b == 0)
-                    throw new IllegalArgumentException("Nul character not allowed");
-            } else {
-                assert c < 0x80;
-                b = (byte)c;
-            }
-            result[rlen++] = b;
-        }
-        if (rlen != result.length)
-            result = Arrays.copyOf(result, rlen);
+            p = p.substring(0, len - 1);
 
-        return new UnixPath(fs, result);
+        return new NetPath(fs, p);
     }
 
     /**
      * Converts Path to URI
      */
-    static URI toUri(UnixPath up) {
-        byte[] path = up.toAbsolutePath().asByteArray();
+    static URI toUri(NetPath up) {
+        byte[] path = up.toAbsolutePath().toString().getBytes();
         StringBuilder sb = new StringBuilder("file:///");
         assert path[0] == '/';
         for (int i=1; i<path.length; i++) {
@@ -115,9 +95,9 @@ class UnixUriUtils {
         // trailing slash if directory
         if (sb.charAt(sb.length()-1) != '/') {
             try {
-                 if (UnixFileAttributes.get(up, true).isDirectory())
+                 if (cli.System.IO.Directory.Exists(up.path))
                      sb.append('/');
-            } catch (UnixException x) {
+            } catch (Throwable x) {
                 // ignore
             }
         }
