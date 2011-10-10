@@ -289,7 +289,8 @@ class IkvmcCompiler
 		Console.Error.WriteLine("    -target:library            Build a library");
 		Console.Error.WriteLine("    -target:module             Build a module for use by the linker");
 		Console.Error.WriteLine("    -platform:<string>         Limit which platforms this code can run on: x86,");
-		Console.Error.WriteLine("                               Itanium, x64, or anycpu. The default is anycpu.");
+		Console.Error.WriteLine("                               Itanium, x64, arm, anycpu32bitpreferred, or");
+		Console.Error.WriteLine("                               anycpu. The default is anycpu.");
 		Console.Error.WriteLine("    -keyfile:<keyfilename>     Use keyfile to sign the assembly");
 		Console.Error.WriteLine("    -key:<keycontainer>        Use keycontainer to sign the assembly");
 		Console.Error.WriteLine("    -delaysign                 Delay-sign the assembly");
@@ -444,6 +445,14 @@ class IkvmcCompiler
 						case "-platform:x64":
 							options.pekind = PortableExecutableKinds.ILOnly | PortableExecutableKinds.PE32Plus;
 							options.imageFileMachine = ImageFileMachine.AMD64;
+							break;
+						case "-platform:arm":
+							options.pekind = PortableExecutableKinds.ILOnly;
+							options.imageFileMachine = ImageFileMachine.ARM;
+							break;
+						case "-platform:anycpu32bitpreferred":
+							options.pekind = PortableExecutableKinds.ILOnly | PortableExecutableKinds.Preferred32Bit;
+							options.imageFileMachine = ImageFileMachine.I386;
 							break;
 						case "-platform:anycpu":
 							options.pekind = PortableExecutableKinds.ILOnly;
