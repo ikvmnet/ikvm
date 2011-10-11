@@ -52,6 +52,7 @@ static class NetExp
 		bool nostdlib = false;
 		bool bootstrap = false;
 		string outputFile = null;
+		bool forwarders = false;
 		foreach(string s in args)
 		{
 			if(s.StartsWith("-") || assemblyNameOrPath != null)
@@ -92,6 +93,10 @@ static class NetExp
 				{
 					namespaces.Add(s.Substring(11) + ".");
 				}
+				else if(s == "-forwarders")
+				{
+					forwarders = true;
+				}
 				else
 				{
 					// unrecognized option, or multiple assemblies, print usage message and exit
@@ -119,6 +124,7 @@ static class NetExp
 			Console.Error.WriteLine("    -nostdlib                  Do not reference standard libraries");
 			Console.Error.WriteLine("    -lib:<dir>                 Additional directories to search for references");
 			Console.Error.WriteLine("    -namespace:<ns>            Only include types from specified namespace");
+			Console.Error.WriteLine("    -forwarders                Export forwarded types too");
 			return 1;
 		}
 		if(File.Exists(assemblyNameOrPath) && nostdlib)
@@ -198,7 +204,15 @@ static class NetExp
 						}
 						foreach (Assembly asm in assemblies)
 						{
-							if (ProcessAssembly(asm, continueOnError) != 0)
+							if (ProcessTypes(asm.GetTypes(), continueOnError) != 0)
+							{
+								rc = 1;
+								if (!continueOnError)
+								{
+									break;
+								}
+							}
+							if (forwarders && ProcessTypes(asm.ManifestModule.__GetExportedTypes(), continueOnError) != 0)
 							{
 								rc = 1;
 								if (!continueOnError)
@@ -772,10 +786,10 @@ static class NetExp
 		return false;
 	}
 
-	private static int ProcessAssembly(Assembly assembly, bool continueOnError)
+	private static int ProcessTypes(Type[] types, bool continueOnError)
 	{
 		int rc = 0;
-		foreach (Type t in assembly.GetTypes())
+		foreach (Type t in types)
 		{
 			if (t.IsPublic
 				&& ExportNamespace(t)
