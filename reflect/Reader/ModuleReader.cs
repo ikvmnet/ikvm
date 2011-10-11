@@ -1085,9 +1085,18 @@ namespace IKVM.Reflection.Reader
 			{
 				peKind |= PortableExecutableKinds.ILOnly;
 			}
-			if ((cliHeader.Flags & CliHeader.COMIMAGE_FLAGS_32BITREQUIRED) != 0)
+			switch (cliHeader.Flags & (CliHeader.COMIMAGE_FLAGS_32BITREQUIRED | CliHeader.COMIMAGE_FLAGS_32BITPREFERRED))
 			{
-				peKind |= PortableExecutableKinds.Required32Bit;
+				case CliHeader.COMIMAGE_FLAGS_32BITREQUIRED:
+					peKind |= PortableExecutableKinds.Required32Bit;
+					break;
+				case CliHeader.COMIMAGE_FLAGS_32BITREQUIRED | CliHeader.COMIMAGE_FLAGS_32BITPREFERRED:
+					peKind |= PortableExecutableKinds.Preferred32Bit;
+					break;
+				default:
+					// COMIMAGE_FLAGS_32BITPREFERRED by itself is illegal, so we ignore it
+					// (not setting any flag is ok)
+					break;
 			}
 			if (peFile.OptionalHeader.Magic == IMAGE_OPTIONAL_HEADER.IMAGE_NT_OPTIONAL_HDR64_MAGIC)
 			{
