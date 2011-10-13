@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Jeroen Frijters
+  Copyright (C) 2009-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -31,14 +31,17 @@ namespace IKVM.Reflection
 {
 	public sealed class AssemblyName : ICloneable
 	{
+		private const AssemblyNameFlags afPA_Specified = (AssemblyNameFlags)0x0080;
 		private readonly System.Reflection.AssemblyName name;
 		internal byte[] hash;
 		private string culture;
+		private bool processorArchitectureSpecified;
 
-		private AssemblyName(System.Reflection.AssemblyName name, string culture)
+		private AssemblyName(System.Reflection.AssemblyName name, string culture, bool processorArchitectureSpecified)
 		{
 			this.name = name;
 			this.culture = culture;
+			this.processorArchitectureSpecified = processorArchitectureSpecified;
 		}
 
 		public AssemblyName()
@@ -174,7 +177,7 @@ namespace IKVM.Reflection
 
 		public object Clone()
 		{
-			return new AssemblyName((System.Reflection.AssemblyName)name.Clone(), culture);
+			return new AssemblyName((System.Reflection.AssemblyName)name.Clone(), culture, processorArchitectureSpecified);
 		}
 
 		public static bool ReferenceMatchesDefinition(AssemblyName reference, AssemblyName definition)
@@ -204,6 +207,17 @@ namespace IKVM.Reflection
 			catch (UnauthorizedAccessException x)
 			{
 				throw new FileNotFoundException(x.Message, x);
+			}
+		}
+
+		internal AssemblyNameFlags RawFlags
+		{
+			get { return (AssemblyNameFlags)name.Flags | (AssemblyNameFlags)((int)name.ProcessorArchitecture << 4) | (processorArchitectureSpecified ? afPA_Specified : 0); }
+			set
+			{
+				name.Flags = (System.Reflection.AssemblyNameFlags)value;
+				name.ProcessorArchitecture = (System.Reflection.ProcessorArchitecture)((int)value >> 4);
+				processorArchitectureSpecified = (value & afPA_Specified) != 0;
 			}
 		}
 	}

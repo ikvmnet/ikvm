@@ -82,7 +82,7 @@ namespace IKVM.Reflection.Reader
 			}
 			name.HashAlgorithm = (AssemblyHashAlgorithm)rec.HashAlgId;
 			name.CodeBase = this.CodeBase;
-			name.Flags = (AssemblyNameFlags)rec.Flags;
+			name.RawFlags = (AssemblyNameFlags)rec.Flags;
 			return name;
 		}
 

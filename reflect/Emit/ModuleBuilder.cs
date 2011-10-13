@@ -723,6 +723,12 @@ namespace IKVM.Reflection.Emit
 			rec.BuildNumber = (ushort)ver.Build;
 			rec.RevisionNumber = (ushort)ver.Revision;
 			rec.Flags = (int)(name.Flags & ~AssemblyNameFlags.PublicKey);
+			const AssemblyNameFlags afPA_Specified = (AssemblyNameFlags)0x0080;
+			const AssemblyNameFlags afPA_Mask = (AssemblyNameFlags)0x0070;
+			if ((name.RawFlags & afPA_Specified) != 0)
+			{
+				rec.Flags |= (int)(name.RawFlags & afPA_Mask);
+			}
 			byte[] publicKeyOrToken = null;
 			if (usePublicKeyAssemblyReference)
 			{

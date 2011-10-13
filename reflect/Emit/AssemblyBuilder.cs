@@ -81,7 +81,7 @@ namespace IKVM.Reflection.Emit
 			{
 				this.culture = name.CultureInfo.Name;
 			}
-			this.flags = name.Flags;
+			this.flags = name.RawFlags;
 			this.hashAlgorithm = name.HashAlgorithm;
 			if (this.hashAlgorithm == AssemblyHashAlgorithm.None)
 			{
@@ -187,7 +187,7 @@ namespace IKVM.Reflection.Emit
 			n.Version = new Version(majorVersion, minorVersion, buildVersion, revisionVersion);
 			n.Culture = culture;
 			n.HashAlgorithm = hashAlgorithm;
-			n.Flags = flags;
+			n.RawFlags = flags;
 			n.SetPublicKey(publicKey != null ? (byte[])publicKey.Clone() : Empty<byte>.Array);
 			n.KeyPair = keyPair;
 			return n;
