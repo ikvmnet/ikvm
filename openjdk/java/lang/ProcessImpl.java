@@ -321,6 +321,7 @@ final class ProcessImpl extends Process {
             si.set_WorkingDirectory(dir);
         }
         if (envblock != null) {
+            si.get_EnvironmentVariables().Clear();
             for (String key : envblock.keySet()) {
                 si.get_EnvironmentVariables().set_Item(key, envblock.get(key));
             }
