@@ -48,8 +48,10 @@ import cli.System.Diagnostics.ProcessStartInfo;
 import cli.System.IO.FileAccess;
 import cli.System.IO.FileShare;
 import cli.System.IO.FileMode;
+import cli.System.IO.FileOptions;
 import cli.System.IO.FileStream;
 import cli.System.IO.Stream;
+import cli.System.Security.AccessControl.FileSystemRights;
 
 /* This class is for the exclusive use of ProcessBuilder.start() to
  * create new processes.
@@ -389,7 +391,7 @@ final class ProcessImpl extends Process {
             if (false) throw new cli.System.IO.IOException();
             if (false) throw new cli.System.Security.SecurityException();
             if (false) throw new cli.System.UnauthorizedAccessException();
-            return FileDescriptor.fromStream(new FileStream(path, FileMode.wrap(FileMode.Append), FileAccess.wrap(FileAccess.Write), FileShare.wrap(FileShare.Read | FileShare.Write)));
+            return FileDescriptor.fromStream(new FileStream(path, FileMode.wrap(FileMode.Append), FileSystemRights.wrap(FileSystemRights.AppendData), FileShare.wrap(FileShare.ReadWrite), 1, FileOptions.wrap(FileOptions.None)));
         } catch (cli.System.ArgumentException x) {
             throw new IOException(x.getMessage());
         } catch (cli.System.IO.IOException x) {
