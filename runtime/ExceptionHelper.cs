@@ -47,6 +47,7 @@ namespace IKVM.Internal
 		private static readonly Dictionary<string, string> failedTypes = new Dictionary<string, string>();
 		private static readonly Key EXCEPTION_DATA_KEY = new Key();
 		private static readonly Exception NOT_REMAPPED = new Exception();
+		private static readonly Exception[] EMPTY_THROWABLE_ARRAY = new Exception[0];
 		private static readonly bool cleanStackTrace = JVM.SafeGetEnvironmentVariable("IKVM_DISABLE_STACKTRACE_CLEANING") == null;
 #if !FIRST_PASS
 		private static readonly ikvm.@internal.WeakIdentityMap exceptions = new ikvm.@internal.WeakIdentityMap();
@@ -326,20 +327,6 @@ namespace IKVM.Internal
 			return type.FullName;
 		}
 
-		private static void initThrowable(object throwable, object detailMessage, object cause)
-		{
-#if !FIRST_PASS
-			if(cause == throwable)
-			{
-				typeof(Throwable).GetConstructor(new Type[] { typeof(string) }).Invoke(throwable, new object[] { detailMessage });
-			}
-			else
-			{
-				typeof(Throwable).GetConstructor(new Type[] { typeof(string), typeof(Exception) }).Invoke(throwable, new object[] { detailMessage, cause });
-			}
-#endif
-		}
-
 		private static int GetLineNumber(StackFrame frame)
 		{
 			int ilOffset = frame.GetILOffset();
@@ -420,59 +407,69 @@ namespace IKVM.Internal
 #if !FIRST_PASS
 			lock (x)
 			{
-				ObjectInputStream.GetField fields = s.readFields();
-				initThrowable(x, fields.get("detailMessage", null), fields.get("cause", null));
+				// when you serialize a .NET exception it gets replaced by a com.sun.xml.internal.ws.developer.ServerSideException,
+				// so we know that Exception is always a Throwable
+				Throwable _this = (Throwable)x;
 
-				Throwable _thisJava = x as Throwable;
-				if (_thisJava == null)
+				// this the equivalent of s.defaultReadObject();
+				ObjectInputStream.GetField fields = s.readFields();
+				object detailMessage = fields.get("detailMessage", null);
+				object cause = fields.get("cause", null);
+				ConstructorInfo ctor = typeof(Throwable).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { typeof(string), typeof(Exception), typeof(bool), typeof(bool) }, null);
+				if (cause == _this)
 				{
-					// suppressed exceptions are not supported on CLR exceptions
+					ctor.Invoke(_this, new object[] { detailMessage, null, false, false });
+					_this.cause = _this;
 				}
 				else
 				{
-					java.util.List suppressedExceptions = (java.util.List)fields.get("suppressedExceptions", null);
-					if (suppressedExceptions != null)
-					{
-						if (suppressedExceptions.size() == 0)
-						{
-							_thisJava.suppressedExceptions = Throwable.SUPPRESSED_SENTINEL;
-						}
-						else
-						{
-							java.util.ArrayList copy = new java.util.ArrayList();
-							for (int i = 0; i < suppressedExceptions.size(); i++)
-							{
-								Exception entry = (Exception)suppressedExceptions.get(i);
-								if (entry == null)
-								{
-									throw new java.lang.NullPointerException("Cannot suppress a null exception.");
-								}
-								if (entry == _thisJava)
-								{
-									throw new java.lang.IllegalArgumentException("Self-suppression not permitted");
-								}
-								copy.add(entry);
-							}
-							_thisJava.suppressedExceptions = copy;
-						}
-					}
+					ctor.Invoke(_this, new object[] { detailMessage, cause, false, false });
 				}
+				_this.stackTrace = (StackTraceElement[])fields.get("stackTrace", null);
+				_this.suppressedExceptions = (java.util.List)fields.get("suppressedExceptions", null);
 
-				StackTraceElement[] stackTrace = (StackTraceElement[])fields.get("stackTrace", null);
-				if (stackTrace != null)
+				// this is where the rest of the Throwable.readObject() code starts
+				if (_this.suppressedExceptions != null)
 				{
-					if (stackTrace.Length == 0)
+					java.util.List suppressed = null;
+					if (_this.suppressedExceptions.isEmpty())
 					{
-						stackTrace = new StackTraceElement[0];
-					}
-					else if (stackTrace.Length == 1
-						&& java.lang.ThrowableHelper.SentinelHolder.STACK_TRACE_ELEMENT_SENTINEL.equals(stackTrace[0]))
-					{
-						stackTrace = null;
+						suppressed = Throwable.SUPPRESSED_SENTINEL;
 					}
 					else
 					{
-						foreach (StackTraceElement elem in stackTrace)
+						suppressed = new java.util.ArrayList(1);
+						for (int i = 0; i < _this.suppressedExceptions.size(); i++)
+						{
+							Exception entry = (Exception)_this.suppressedExceptions.get(i);
+							if (entry == null)
+							{
+								throw new java.lang.NullPointerException("Cannot suppress a null exception.");
+							}
+							if (entry == _this)
+							{
+								throw new java.lang.IllegalArgumentException("Self-suppression not permitted");
+							}
+							suppressed.add(entry);
+						}
+					}
+					_this.suppressedExceptions = suppressed;
+				}
+
+				if (_this.stackTrace != null)
+				{
+					if (_this.stackTrace.Length == 0)
+					{
+						_this.stackTrace = new StackTraceElement[0];
+					}
+					else if (_this.stackTrace.Length == 1
+						&& java.lang.ThrowableHelper.SentinelHolder.STACK_TRACE_ELEMENT_SENTINEL.equals(_this.stackTrace[0]))
+					{
+						_this.stackTrace = null;
+					}
+					else
+					{
+						foreach (StackTraceElement elem in _this.stackTrace)
 						{
 							if (elem == null)
 							{
@@ -483,9 +480,8 @@ namespace IKVM.Internal
 				}
 				else
 				{
-					stackTrace = new StackTraceElement[0];
+					_this.stackTrace = new StackTraceElement[0];
 				}
-				SetStackTraceImpl(x, stackTrace);
 			}
 #endif
 		}
@@ -603,16 +599,16 @@ namespace IKVM.Internal
 				if (_thisJava == null)
 				{
 					// we ignore suppressed exceptions for non-Java exceptions
-					return new Exception[0];
+					return EMPTY_THROWABLE_ARRAY;
 				}
 				else
 				{
 					if (_thisJava.suppressedExceptions == Throwable.SUPPRESSED_SENTINEL
 						|| _thisJava.suppressedExceptions == null)
 					{
-						return new Exception[0];
+						return EMPTY_THROWABLE_ARRAY;
 					}
-					return (Exception[])_thisJava.suppressedExceptions.toArray(new Exception[_thisJava.suppressedExceptions.size()]);
+					return (Exception[])_thisJava.suppressedExceptions.toArray(EMPTY_THROWABLE_ARRAY);
 				}
 			}
 #endif
