@@ -410,6 +410,7 @@ final class ProcessImpl extends Process {
                     int count = in.EndRead(ar);
                     if (count > 0) {
                         out.Write(buf, 0, count);
+                        out.Flush();
                         in.BeginRead(buf, 0, buf.length, callback[0], null);
                     }
                 } catch (Throwable _) {
