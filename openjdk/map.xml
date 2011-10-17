@@ -1195,6 +1195,9 @@
                     <call type="System.Threading.Monitor" name="Enter" sig="(Ljava.lang.Object;)V" />
                     <exceptionBlock>
                         <try>
+                            <ldarg_0 />
+                            <ldfld class="java.lang.Throwable" name="stackTrace" sig="[Ljava.lang.StackTraceElement;" />
+                            <brfalse name="leave" />
                             <!--
 	                    stackTrace = UNASSIGNED_STACK;
                             tracePart1 = null;
@@ -1210,6 +1213,7 @@
                             <ldc_i4_1 />
                             <newobj type="System.Diagnostics.StackTrace" name=".ctor" sig="(Z)V" />
                             <stfld class="java.lang.Throwable" name="tracePart2" sig="Lcli.System.Diagnostics.StackTrace;" />
+                            <label name="leave" />
                             <leave name="end" />
                         </try>
                         <finally>
