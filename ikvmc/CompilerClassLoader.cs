@@ -1126,7 +1126,17 @@ namespace IKVM.Internal
 
 				internal override void EmitCall(CodeEmitter ilgen)
 				{
-					ilgen.Emit(OpCodes.Call, (MethodInfo)GetMethod());
+					if(!IsStatic && IsFinal)
+					{
+						// When calling a final instance method on a remapped type from a class derived from a .NET class (i.e. a cli.System.Object or cli.System.Exception derived base class)
+						// then we can't call the java.lang.Object or java.lang.Throwable methods and we have to go through the instancehelper_ method. Note that since the method
+						// is final, this won't affect the semantics.
+						EmitCallvirt(ilgen);
+					}
+					else
+					{
+						ilgen.Emit(OpCodes.Call, (MethodInfo)GetMethod());
+					}
 				}
 
 				internal override void EmitCallvirt(CodeEmitter ilgen)

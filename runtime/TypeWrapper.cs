@@ -4100,7 +4100,17 @@ namespace IKVM.Internal
 				MethodInfo mi = mb as MethodInfo;
 				if(mi != null)
 				{
-					ilgen.Emit(OpCodes.Call, mi);
+					if(!IsStatic && IsFinal)
+					{
+						// When calling a final instance method on a remapped type from a class derived from a .NET class (i.e. a cli.System.Object or cli.System.Exception derived base class)
+						// then we can't call the java.lang.Object or java.lang.Throwable methods and we have to go through the instancehelper_ method. Note that since the method
+						// is final, this won't affect the semantics.
+						CallvirtImpl(ilgen);
+					}
+					else
+					{
+						ilgen.Emit(OpCodes.Call, mi);
+					}
 				}
 				else
 				{
