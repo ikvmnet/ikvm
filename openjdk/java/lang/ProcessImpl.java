@@ -355,8 +355,10 @@ final class ProcessImpl extends Process {
             connectPipe(stdout, stdoutDrain);
             stdHandles[1] = null;
         } else if (redirectErrorStream) {
-            // TODO
-            throw new IOException("redirectErrorStream without stdin redirection is not implemented");
+            PipeStream pipe = new PipeStream();
+            connectPipe(stdout, pipe);
+            connectPipe(stderr, pipe);
+            stdHandles[1] = pipe;
         } else {
             stdHandles[1] = stdout;
         }
@@ -374,6 +376,122 @@ final class ProcessImpl extends Process {
         }
 
         return proc;
+    }
+
+    private static final class PipeStream extends Stream
+    {
+        private final byte[] buf = new byte[4096];
+        private int pos;
+        private int users = 2;
+
+        @Override
+        public synchronized int Read(byte[] buffer, int offset, int count)
+        {
+            if (count == 0)
+            {
+                return 0;
+            }
+            while (pos == 0)
+            {
+                try
+                {
+                    wait();
+                }
+                catch (InterruptedException _) { }
+            }
+            if (pos == -1)
+            {
+                return 0;
+            }
+            count = Math.min(count, pos);
+            System.arraycopy(buf, 0, buffer, offset, count);
+            pos -= count;
+            System.arraycopy(buf, count, buf, 0, pos);
+            notifyAll();
+            return count;
+        }
+
+        @Override
+        public synchronized void Write(byte[] buffer, int offset, int count)
+        {
+            while (buf.length - pos < count)
+            {
+                try
+                {
+                    wait();
+                }
+                catch (InterruptedException _) { }
+            }
+            System.arraycopy(buffer, offset, buf, pos, count);
+            pos += count;
+            notifyAll();
+        }
+
+        @Override
+        public synchronized void Close()
+        {
+            if (--users == 0)
+            {
+                pos = -1;
+                notifyAll();
+            }
+        }
+
+        @Override
+        public boolean get_CanRead()
+        {
+            return true;
+        }
+
+        @Override
+        public boolean get_CanSeek()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean get_CanWrite()
+        {
+            return true;
+        }
+
+        @Override
+        public void Flush()
+        {
+        }
+
+        @Override
+        public long get_Length()
+        {
+            ikvm.runtime.Util.throwException(new cli.System.NotSupportedException());
+            return 0;
+        }
+
+        @Override
+        public long get_Position()
+        {
+            ikvm.runtime.Util.throwException(new cli.System.NotSupportedException());
+            return 0;
+        }
+
+        @Override
+        public long Seek(long offset, cli.System.IO.SeekOrigin origin)
+        {
+            ikvm.runtime.Util.throwException(new cli.System.NotSupportedException());
+            return 0;
+        }
+
+        @Override
+        public void SetLength(long value)
+        {
+            ikvm.runtime.Util.throwException(new cli.System.NotSupportedException());
+        }
+
+        @Override
+        public void set_Position(long position)
+        {
+            ikvm.runtime.Util.throwException(new cli.System.NotSupportedException());
+        }
     }
 
     private static native int parseCommandString(String cmdstr);
@@ -415,6 +533,8 @@ final class ProcessImpl extends Process {
                         out.Write(buf, 0, count);
                         out.Flush();
                         in.BeginRead(buf, 0, buf.length, callback[0], null);
+                    } else {
+                        out.Close();
                     }
                 } catch (Throwable _) {
                 }
