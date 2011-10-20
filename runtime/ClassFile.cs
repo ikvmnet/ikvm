@@ -2454,7 +2454,8 @@ namespace IKVM.Internal
 			internal Method(ClassFile classFile, ClassFileParseOptions options, BigEndianBinaryReader br) : base(classFile, br)
 			{
 				// vmspec 4.6 says that all flags, except ACC_STRICT are ignored on <clinit>
-				if(ReferenceEquals(Name, StringConstants.CLINIT) && ReferenceEquals(Signature, StringConstants.SIG_VOID))
+				// however, since Java 7 it does need to be marked static
+				if(ReferenceEquals(Name, StringConstants.CLINIT) && ReferenceEquals(Signature, StringConstants.SIG_VOID) && (classFile.MajorVersion < 51 || IsStatic))
 				{
 					access_flags &= Modifiers.Strictfp;
 					access_flags |= (Modifiers.Static | Modifiers.Private);
@@ -2646,7 +2647,7 @@ namespace IKVM.Internal
 			{
 				get
 				{
-					return ReferenceEquals(Name, StringConstants.CLINIT) && ReferenceEquals(Signature, StringConstants.SIG_VOID);
+					return ReferenceEquals(Name, StringConstants.CLINIT) && ReferenceEquals(Signature, StringConstants.SIG_VOID) && IsStatic;
 				}
 			}
 
