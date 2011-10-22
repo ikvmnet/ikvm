@@ -418,11 +418,21 @@ final class NetPath extends AbstractPath
         {
             return this;
         }
+        // System.getProperty("user.dir") will trigger the specified security check
         return new NetPath(fs, cli.System.IO.Path.GetFullPath(cli.System.IO.Path.Combine(System.getProperty("user.dir"), path)));
     }
 
     public Path toRealPath(LinkOption... options) throws IOException
     {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null)
+        {
+            sm.checkRead(path);
+            if (!isAbsolute())
+            {
+                sm.checkPropertyAccess("user.dir");
+            }
+        }
         return new NetPath(fs, toRealPathImpl(path));
     }
     
@@ -485,6 +495,15 @@ final class NetPath extends AbstractPath
                 // null check
                 modifier.getClass();
                 throw new UnsupportedOperationException();
+            }
+        }
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null)
+        {
+            sm.checkRead(path);
+            if (subtree)
+            {
+                sm.checkRead(path + cli.System.IO.Path.DirectorySeparatorChar + '-');
             }
         }
         return ((NetFileSystem.NetWatchService)watcher).register(this, create, delete, modify, overflow, subtree);
