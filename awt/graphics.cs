@@ -682,9 +682,6 @@ namespace ikvm.awt
         private InterpolationMode InterpolationMode;
         private CompositingMode CompositingMode;
 
-        private Object textRenderingHint;
-        private Object fractionalHint;
-
         private bool savedGraphics = false;
 
         public NetGraphicsState()
