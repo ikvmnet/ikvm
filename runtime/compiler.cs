@@ -573,6 +573,60 @@ sealed class Compiler
 		{
 			SetupLocalVariableScopes();
 		}
+
+		Workaroundx64JitBug(args);
+	}
+
+	// workaround for x64 JIT bug
+	// https://connect.microsoft.com/VisualStudio/feedback/details/636466/variable-is-not-incrementing-in-c-release-x64#details
+	// (see also https://sourceforge.net/mailarchive/message.php?msg_id=28250469)
+	private void Workaroundx64JitBug(TypeWrapper[] args)
+	{
+		if(args.Length > (m.IsStatic ? 4 : 3) && m.ExceptionTable.Length != 0)
+		{
+			bool[] workarounds = null;
+			InstructionFlags[] flags = ComputePartialReachability(0, false);
+			for(int i = 0; i < m.Instructions.Length; i++)
+			{
+				if((flags[i] & InstructionFlags.Reachable) == 0)
+				{
+					// skip unreachable instructions
+				}
+				else
+				{
+					switch(m.Instructions[i].NormalizedOpCode)
+					{
+						case NormalizedByteCode.__iinc:
+						case NormalizedByteCode.__astore:
+						case NormalizedByteCode.__istore:
+						case NormalizedByteCode.__lstore:
+						case NormalizedByteCode.__fstore:
+						case NormalizedByteCode.__dstore:
+							int arg = m.IsStatic ? m.Instructions[i].Arg1 : m.Instructions[i].Arg1 - 1;
+							if(arg >= 3 && arg < args.Length)
+							{
+								if(workarounds == null)
+								{
+									workarounds = new bool[args.Length + 1];
+								}
+								workarounds[m.Instructions[i].Arg1] = true;
+							}
+							break;
+					}
+				}
+			}
+			if(workarounds != null)
+			{
+				for(int i = 0; i < workarounds.Length; i++)
+				{
+					if(workarounds[i])
+					{
+						ilGenerator.Emit(OpCodes.Ldarga, (short)i);
+						ilGenerator.Emit(OpCodes.Pop);
+					}
+				}
+			}
+		}
 	}
 
 	private void SetupLocalVariableScopes()
