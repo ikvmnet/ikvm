@@ -343,6 +343,23 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
     private static FileDescriptor open(String path, int mode, int rights, int share, int options) throws IOException
     {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null)
+        {
+            if ((rights & FileSystemRights.Read) != 0)
+            {
+                sm.checkRead(path);
+            }
+            if ((rights & (FileSystemRights.Write | FileSystemRights.AppendData)) != 0)
+            {
+                sm.checkWrite(path);
+            }
+            if ((options & FileOptions.DeleteOnClose) != 0)
+            {
+                sm.checkDelete(path);
+            }
+        }
+
         try
         {
             if (false) throw new cli.System.ArgumentException();
@@ -393,6 +410,13 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
         final String ndir = NetPath.from(dir).path;
         // null check
         filter.getClass();
+
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null)
+        {
+            sm.checkRead(ndir);
+        }
+
         try
         {
             if (false) throw new cli.System.ArgumentException();
@@ -467,6 +491,11 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
             attr.getClass();
             throw new NotYetImplementedError();
         }
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null)
+        {
+            sm.checkWrite(ndir.path);
+        }
         try
         {
             if (false) throw new cli.System.ArgumentException();
@@ -510,6 +539,12 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
                 opt.getClass();
                 throw new UnsupportedOperationException("Unsupported copy option");
             }
+        }
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null)
+        {
+            sm.checkRead(nsource.path);
+            sm.checkWrite(ntarget.path);
         }
         try
         {
@@ -610,6 +645,12 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
                 throw new UnsupportedOperationException("Unsupported copy option");
             }
         }
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null)
+        {
+            sm.checkRead(nsource.path);
+            sm.checkWrite(ntarget.path);
+        }
         try
         {
             if (false) throw new cli.System.ArgumentException();
@@ -688,6 +729,11 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
     public boolean isHidden(Path path) throws IOException
     {
         String npath = NetPath.from(path).path;
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null)
+        {
+            sm.checkRead(npath);
+        }
         try
         {
             if (false) throw new cli.System.ArgumentException();
@@ -779,12 +825,43 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
     public FileStore getFileStore(Path path) throws IOException
     {
-        return getFileStore(new DriveInfo(NetPath.from(path.toAbsolutePath()).path));
+        NetPath npath = NetPath.from(path.toAbsolutePath());
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null)
+        {
+            sm.checkRead(npath.path);
+        }
+        return getFileStore(new DriveInfo(npath.path));
     }
 
     public void checkAccess(Path path, AccessMode... modes) throws IOException
     {
         String npath = NetPath.from(path).path;
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null)
+        {
+            if (modes.length == 0)
+            {
+                sm.checkRead(npath);
+            }
+            for (AccessMode m : modes)
+            {
+                switch (m)
+                {
+                    case READ:
+                        sm.checkRead(npath);
+                        break;
+                    case WRITE:
+                        sm.checkWrite(npath);
+                        break;
+                    case EXECUTE:
+                        sm.checkExec(npath);
+                        break;
+                    default:
+                        throw new UnsupportedOperationException();
+                }
+            }
+        }
         try
         {
             if (false) throw new cli.System.ArgumentException();
@@ -848,6 +925,11 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
         public void setTimes(FileTime lastModifiedTime, FileTime lastAccessTime, FileTime createTime) throws IOException
         {
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null)
+            {
+                sm.checkWrite(path);
+            }
             try
             {
                 if (false) throw new cli.System.ArgumentException();
@@ -1007,6 +1089,11 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
         static DosFileAttributesImpl readAttributesImpl(String path) throws IOException
         {
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null)
+            {
+                sm.checkRead(path);
+            }
             try
             {
                 if (false) throw new cli.System.ArgumentException();
@@ -1046,6 +1133,11 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
         private void setAttribute(int attr, boolean value) throws IOException
         {
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null)
+            {
+                sm.checkWrite(path);
+            }
             try
             {
                 if (false) throw new cli.System.ArgumentException();
@@ -1164,6 +1256,11 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
         if (type != BasicFileAttributes.class && type != DosFileAttributes.class)
         {
             throw new UnsupportedOperationException();
+        }
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null)
+        {
+            sm.checkRead(npath);
         }
         return (A)DosFileAttributesViewImpl.readAttributesImpl(npath);
     }

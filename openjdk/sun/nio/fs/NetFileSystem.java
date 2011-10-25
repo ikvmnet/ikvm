@@ -84,9 +84,21 @@ final class NetFileSystem extends FileSystem
 
     public Iterable<Path> getRootDirectories()
     {
+        SecurityManager sm = System.getSecurityManager();
         ArrayList<Path> list = new ArrayList<>();
         for (DriveInfo info : DriveInfo.GetDrives())
         {
+            try
+            {
+                if (sm != null)
+                {
+                    sm.checkRead(info.get_Name());
+                }
+            }
+            catch (SecurityException _)
+            {
+                continue;
+            }
             list.add(getPath(info.get_Name()));
         }
         return list;
@@ -94,9 +106,32 @@ final class NetFileSystem extends FileSystem
 
     public Iterable<FileStore> getFileStores()
     {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null)
+        {
+            try
+            {
+                sm.checkPermission(new RuntimePermission("getFileStoreAttributes"));
+            }
+            catch (SecurityException _)
+            {
+                return Collections.emptyList();
+            }
+        }
         ArrayList<FileStore> list = new ArrayList<>();
         for (DriveInfo info : DriveInfo.GetDrives())
         {
+            try
+            {
+                if (sm != null)
+                {
+                    sm.checkRead(info.get_Name());
+                }
+            }
+            catch (SecurityException _)
+            {
+                continue;
+            }
             list.add(provider.getFileStore(info));
         }
         return list;
