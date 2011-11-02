@@ -1221,6 +1221,51 @@ namespace IKVM.Internal
 				throw new InvalidOperationException();
 			}
 
+			private static bool CheckLoaderConstraints(MethodWrapper mw, MethodWrapper baseMethod)
+			{
+				bool unloadableOverrideStub = false;
+				if (mw.ReturnType != baseMethod.ReturnType)
+				{
+					if (baseMethod.ReturnType.IsUnloadable || JVM.FinishingForDebugSave)
+					{
+						if (!mw.ReturnType.IsUnloadable || (!baseMethod.ReturnType.IsUnloadable && JVM.FinishingForDebugSave))
+						{
+							unloadableOverrideStub = true;
+						}
+					}
+					else
+					{
+#if STATIC_COMPILER
+						StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has a return type \"{0}\" and tries to override method \"{5}.{3}{4}\" that has a return type \"{1}\"", mw.ReturnType, baseMethod.ReturnType, mw.DeclaringType.Name, mw.Name, mw.Signature, baseMethod.DeclaringType.Name);
+#endif
+						throw new LinkageError("Loader constraints violated");
+					}
+				}
+				TypeWrapper[] here = mw.GetParameters();
+				TypeWrapper[] there = baseMethod.GetParameters();
+				for (int i = 0; i < here.Length; i++)
+				{
+					if (here[i] != there[i])
+					{
+						if (there[i].IsUnloadable || JVM.FinishingForDebugSave)
+						{
+							if (!here[i].IsUnloadable || (!there[i].IsUnloadable && JVM.FinishingForDebugSave))
+							{
+								unloadableOverrideStub = true;
+							}
+						}
+						else
+						{
+#if STATIC_COMPILER
+							StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has an argument type \"{0}\" and tries to override method \"{5}.{3}{4}\" that has an argument type \"{1}\"", here[i], there[i], mw.DeclaringType.Name, mw.Name, mw.Signature, baseMethod.DeclaringType.Name);
+#endif
+							throw new LinkageError("Loader constraints violated");
+						}
+					}
+				}
+				return unloadableOverrideStub;
+			}
+
 			internal override MethodBase LinkMethod(MethodWrapper mw)
 			{
 				Debug.Assert(mw != null);
@@ -1230,46 +1275,7 @@ namespace IKVM.Internal
 				if (baseMethod != null)
 				{
 					baseMethod.Link();
-					// check the loader constraints
-					if (mw.ReturnType != baseMethod.ReturnType)
-					{
-						if (baseMethod.ReturnType.IsUnloadable || JVM.FinishingForDebugSave)
-						{
-							if (!mw.ReturnType.IsUnloadable || (!baseMethod.ReturnType.IsUnloadable && JVM.FinishingForDebugSave))
-							{
-								unloadableOverrideStub = true;
-							}
-						}
-						else
-						{
-#if STATIC_COMPILER
-							StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has a return type \"{0}\" and tries to override method \"{5}.{3}{4}\" that has a return type \"{1}\"", mw.ReturnType, baseMethod.ReturnType, mw.DeclaringType.Name, mw.Name, mw.Signature, baseMethod.DeclaringType.Name);
-#endif
-							throw new LinkageError("Loader constraints violated");
-						}
-					}
-					TypeWrapper[] here = mw.GetParameters();
-					TypeWrapper[] there = baseMethod.GetParameters();
-					for (int i = 0; i < here.Length; i++)
-					{
-						if (here[i] != there[i])
-						{
-							if (there[i].IsUnloadable || JVM.FinishingForDebugSave)
-							{
-								if (!here[i].IsUnloadable || (!there[i].IsUnloadable && JVM.FinishingForDebugSave))
-								{
-									unloadableOverrideStub = true;
-								}
-							}
-							else
-							{
-#if STATIC_COMPILER
-								StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has an argument type \"{0}\" and tries to override method \"{5}.{3}{4}\" that has an argument type \"{1}\"", here[i], there[i], mw.DeclaringType.Name, mw.Name, mw.Signature, baseMethod.DeclaringType.Name);
-#endif
-								throw new LinkageError("Loader constraints violated");
-							}
-						}
-					}
+					unloadableOverrideStub = CheckLoaderConstraints(mw, baseMethod);
 				}
 				Debug.Assert(mw.GetMethod() == null);
 				MethodBase mb = GenerateMethod(index, unloadableOverrideStub);
