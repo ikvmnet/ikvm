@@ -241,6 +241,15 @@ namespace IKVM.Reflection
 			parsedName = new ParsedAssemblyName();
 			StringBuilder sb = new StringBuilder();
 			int pos = 0;
+			while (pos < fullName.Length && char.IsWhiteSpace(fullName[pos]))
+			{
+				pos++;
+			}
+			char quoteOrComma = ',';
+			if (pos < fullName.Length && (fullName[pos] == '\"' || fullName[pos] == '\''))
+			{
+				quoteOrComma = fullName[pos++];
+			}
 			while (pos < fullName.Length)
 			{
 				char ch = fullName[pos++];
@@ -252,8 +261,23 @@ namespace IKVM.Reflection
 					}
 					ch = fullName[pos++];
 				}
-				else if (ch == ',')
+				else if (ch == quoteOrComma)
 				{
+					if (ch != ',')
+					{
+						while (pos != fullName.Length)
+						{
+							ch = fullName[pos++];
+							if (ch == ',')
+							{
+								break;
+							}
+							if (!char.IsWhiteSpace(ch))
+							{
+								return false;
+							}
+						}
+					}
 					break;
 				}
 				sb.Append(ch);
