@@ -77,9 +77,9 @@ namespace IKVM.Reflection.Emit
 		{
 			this.name = name.Name;
 			SetVersionHelper(name.Version);
-			if (name.CultureInfo != null && !string.IsNullOrEmpty(name.CultureInfo.Name))
+			if (!string.IsNullOrEmpty(name.Culture))
 			{
-				this.culture = name.CultureInfo.Name;
+				this.culture = name.Culture;
 			}
 			this.flags = name.RawFlags;
 			this.hashAlgorithm = name.HashAlgorithm;
@@ -185,7 +185,7 @@ namespace IKVM.Reflection.Emit
 			AssemblyName n = new AssemblyName();
 			n.Name = name;
 			n.Version = new Version(majorVersion, minorVersion, buildVersion, revisionVersion);
-			n.Culture = culture;
+			n.Culture = culture ?? "";
 			n.HashAlgorithm = hashAlgorithm;
 			n.RawFlags = flags;
 			n.SetPublicKey(publicKey != null ? (byte[])publicKey.Clone() : Empty<byte>.Array);

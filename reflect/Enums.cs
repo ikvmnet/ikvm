@@ -215,6 +215,7 @@ namespace IKVM.Reflection
 		IA64 = 3,
 		Amd64 = 4,
 		Arm = 5,
+		// if an item is added here, make sure to update AssemblyName.ProcessorArchitecture as well
 	}
 
 	[Flags]

@@ -951,11 +951,11 @@ namespace IKVM.Reflection.Reader
 				}
 				if (AssemblyRef.records[i].Culture != 0)
 				{
-					name.CultureInfo = new System.Globalization.CultureInfo(GetString(AssemblyRef.records[i].Culture));
+					name.Culture = GetString(AssemblyRef.records[i].Culture);
 				}
 				else
 				{
-					name.CultureInfo = System.Globalization.CultureInfo.InvariantCulture;
+					name.Culture = "";
 				}
 				if (AssemblyRef.records[i].HashValue != 0)
 				{

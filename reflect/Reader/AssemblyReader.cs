@@ -74,11 +74,11 @@ namespace IKVM.Reflection.Reader
 			}
 			if (rec.Culture != 0)
 			{
-				name.CultureInfo = new System.Globalization.CultureInfo(manifestModule.GetString(rec.Culture));
+				name.Culture = manifestModule.GetString(rec.Culture);
 			}
 			else
 			{
-				name.CultureInfo = System.Globalization.CultureInfo.InvariantCulture;
+				name.Culture = "";
 			}
 			name.HashAlgorithm = (AssemblyHashAlgorithm)rec.HashAlgId;
 			name.CodeBase = this.CodeBase;

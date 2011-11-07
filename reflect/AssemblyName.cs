@@ -25,143 +25,250 @@ using System;
 using System.Globalization;
 using System.Configuration.Assemblies;
 using System.IO;
+using System.Text;
 using IKVM.Reflection.Reader;
 
 namespace IKVM.Reflection
 {
 	public sealed class AssemblyName : ICloneable
 	{
-		private const AssemblyNameFlags afPA_Specified = (AssemblyNameFlags)0x0080;
-		private readonly System.Reflection.AssemblyName name;
-		internal byte[] hash;
+		private string name;
 		private string culture;
-		private bool processorArchitectureSpecified;
-
-		private AssemblyName(System.Reflection.AssemblyName name, string culture, bool processorArchitectureSpecified)
-		{
-			this.name = name;
-			this.culture = culture;
-			this.processorArchitectureSpecified = processorArchitectureSpecified;
-		}
+		private Version version;
+		private byte[] publicKeyToken;
+		private byte[] publicKey;
+		private StrongNameKeyPair keyPair;
+		private AssemblyNameFlags flags;
+		private AssemblyHashAlgorithm hashAlgorithm;
+		private AssemblyVersionCompatibility versionCompatibility = AssemblyVersionCompatibility.SameMachine;
+		private string codeBase;
+		internal byte[] hash;
 
 		public AssemblyName()
 		{
-			name = new System.Reflection.AssemblyName();
 		}
 
 		public AssemblyName(string assemblyName)
 		{
-			name = new System.Reflection.AssemblyName(assemblyName);
+			// HACK use the real AssemblyName to parse the string
+			System.Reflection.AssemblyName impl = new System.Reflection.AssemblyName(assemblyName);
+			name = impl.Name;
+			culture = impl.CultureInfo == null ? null : impl.CultureInfo.Name;
+			version = impl.Version;
+			publicKeyToken = impl.GetPublicKeyToken();
+			flags = (AssemblyNameFlags)(int)impl.Flags;
+			ProcessorArchitecture = (ProcessorArchitecture)impl.ProcessorArchitecture;
 		}
 
 		public override string ToString()
 		{
-			string str = name.ToString();
-			if (culture != null)
-			{
-				str = str.Replace("Culture=neutral", "Culture=" + culture);
-			}
-			return str;
+			return FullName;
 		}
 
 		public string Name
 		{
-			get { return name.Name; }
-			set { name.Name = value; }
+			get { return name; }
+			set { name = value; }
 		}
 
 		public CultureInfo CultureInfo
 		{
-			get { return name.CultureInfo; }
-			set
-			{
-				name.CultureInfo = value;
-				culture = null;
-			}
+			get { return culture == null ? null : new CultureInfo(culture); }
+			set { culture = value == null ? null : value.Name; }
 		}
 
 		internal string Culture
 		{
-			set
-			{
-				culture = value;
-				name.CultureInfo = CultureInfo.InvariantCulture;
-			}
+			get { return culture; }
+			set { culture = value; }
 		}
 
 		public Version Version
 		{
-			get { return name.Version; }
-			set { name.Version = value; }
+			get { return version; }
+			set { version = value; }
 		}
 
 		public StrongNameKeyPair KeyPair
 		{
-			get { return name.KeyPair == null ?  null : new StrongNameKeyPair(name.KeyPair); }
-			set { name.KeyPair = value == null ? null : value.keyPair; }
+			get { return keyPair; }
+			set { keyPair = value; }
 		}
 
 		public string CodeBase
 		{
-			get { return name.CodeBase; }
-			set { name.CodeBase = value; }
+			get { return codeBase; }
+			set { codeBase = value; }
+		}
+
+		public string EscapedCodeBase
+		{
+			get
+			{
+				// HACK use the real AssemblyName to escape the codebase
+				System.Reflection.AssemblyName tmp = new System.Reflection.AssemblyName();
+				tmp.CodeBase = codeBase;
+				return tmp.EscapedCodeBase;
+			}
 		}
 
 		public ProcessorArchitecture ProcessorArchitecture
 		{
-			get { return (ProcessorArchitecture)name.ProcessorArchitecture; }
-			set { name.ProcessorArchitecture = (System.Reflection.ProcessorArchitecture)value; }
+			get { return (ProcessorArchitecture)(((int)flags & 0x70) >> 4); }
+			set
+			{
+				if (value >= ProcessorArchitecture.None && value <= ProcessorArchitecture.Arm)
+				{
+					flags = (flags & ~(AssemblyNameFlags)0x70) | (AssemblyNameFlags)((int)value << 4);
+				}
+			}
 		}
 
 		public AssemblyNameFlags Flags
 		{
-			get { return (AssemblyNameFlags)name.Flags; }
-			set { name.Flags = (System.Reflection.AssemblyNameFlags)value; }
+			get { return flags & (AssemblyNameFlags)~0xF0; }
+			set { flags = (flags & (AssemblyNameFlags)0xF0) | (value & (AssemblyNameFlags)~0xF0); }
 		}
 
 		public AssemblyVersionCompatibility VersionCompatibility
 		{
-			get { return name.VersionCompatibility; }
-			set { name.VersionCompatibility = value; }
+			get { return versionCompatibility; }
+			set { versionCompatibility = value; }
 		}
 
 		public byte[] GetPublicKey()
 		{
-			return name.GetPublicKey();
+			return publicKey;
 		}
 
 		public void SetPublicKey(byte[] publicKey)
 		{
-			name.SetPublicKey(publicKey);
+			this.publicKey = publicKey;
+			flags = (flags & ~AssemblyNameFlags.PublicKey) | (publicKey == null ? 0 : AssemblyNameFlags.PublicKey);
 		}
 
 		public byte[] GetPublicKeyToken()
 		{
-			return name.GetPublicKeyToken();
+			if (publicKeyToken == null && publicKey != null)
+			{
+				// note that GetPublicKeyToken() has a side effect in this case, because we retain this token even after the public key subsequently gets changed
+				publicKeyToken = ComputePublicKeyToken(publicKey);
+			}
+			return publicKeyToken;
 		}
 
 		public void SetPublicKeyToken(byte[] publicKeyToken)
 		{
-			name.SetPublicKeyToken(publicKeyToken);
+			this.publicKeyToken = publicKeyToken;
 		}
 
 		public AssemblyHashAlgorithm HashAlgorithm
 		{
-			get { return name.HashAlgorithm; }
-			set { name.HashAlgorithm = value; }
+			get { return hashAlgorithm; }
+			set { hashAlgorithm = value; }
 		}
 
 		public string FullName
 		{
 			get
 			{
-				string str = name.FullName;
+				if (name == null)
+				{
+					return "";
+				}
+				StringBuilder sb = new StringBuilder();
+				bool doubleQuotes = name.StartsWith(" ") || name.EndsWith(" ") || name.IndexOf('\'') != -1;
+				bool singleQuotes = name.IndexOf('"') != -1;
+				if (singleQuotes)
+				{
+					sb.Append('\'');
+				}
+				else if (doubleQuotes)
+				{
+					sb.Append('"');
+				}
+				if (name.IndexOf(',') != -1 || name.IndexOf('\\') != -1 || (singleQuotes && name.IndexOf('\'') != -1))
+				{
+					for (int i = 0; i < name.Length; i++)
+					{
+						char c = name[i];
+						if (c == ',' || c == '\\' || (singleQuotes && c == '\''))
+						{
+							sb.Append('\\');
+						}
+						sb.Append(c);
+					}
+				}
+				else
+				{
+					sb.Append(name);
+				}
+				if (singleQuotes)
+				{
+					sb.Append('\'');
+				}
+				else if (doubleQuotes)
+				{
+					sb.Append('"');
+				}
+				if (version != null)
+				{
+					sb.AppendFormat(", Version={0}.{1}", version.Major, version.Minor);
+					// TODO what's this all about?
+					if (version.Build != 65535 && version.Build != -1)
+					{
+						sb.AppendFormat(".{0}", version.Build);
+						if (version.Revision != 65535 && version.Revision != -1)
+						{
+							sb.AppendFormat(".{0}", version.Revision);
+						}
+					}
+				}
 				if (culture != null)
 				{
-					str = str.Replace("Culture=neutral", "Culture=" + culture);
+					sb.Append(", Culture=").Append(culture == "" ? "neutral" : culture);
 				}
-				return str;
+				byte[] publicKeyToken = this.publicKeyToken;
+				if ((publicKeyToken == null || publicKeyToken.Length == 0) && publicKey != null)
+				{
+					publicKeyToken = ComputePublicKeyToken(publicKey);
+				}
+				if (publicKeyToken != null)
+				{
+					sb.Append(", PublicKeyToken=");
+					if (publicKeyToken.Length == 0)
+					{
+						sb.Append("null");
+					}
+					else
+					{
+						for (int i = 0; i < publicKeyToken.Length; i++)
+						{
+							sb.AppendFormat("{0:x2}", publicKeyToken[i]);
+						}
+					}
+				}
+				if ((Flags & AssemblyNameFlags.Retargetable) != 0)
+				{
+					sb.Append(", Retargetable=Yes");
+				}
+				return sb.ToString();
 			}
+		}
+
+		private static byte[] ComputePublicKeyToken(byte[] publicKey)
+		{
+			if (publicKey.Length == 0)
+			{
+				return publicKey;
+			}
+			// HACK use the real AssemblyName to convert PublicKey to PublicKeyToken
+			StringBuilder sb = new StringBuilder("Foo, PublicKey=", 20 + publicKey.Length * 2);
+			for (int i = 0; i < publicKey.Length; i++)
+			{
+				sb.AppendFormat("{0:x2}", publicKey[i]);
+			}
+			return new System.Reflection.AssemblyName(sb.ToString()).GetPublicKeyToken();
 		}
 
 		public override bool Equals(object obj)
@@ -177,12 +284,21 @@ namespace IKVM.Reflection
 
 		public object Clone()
 		{
-			return new AssemblyName((System.Reflection.AssemblyName)name.Clone(), culture, processorArchitectureSpecified);
+			AssemblyName copy = (AssemblyName)MemberwiseClone();
+			copy.publicKey = Copy(publicKey);
+			copy.publicKeyToken = Copy(publicKeyToken);
+			return copy;
+		}
+
+		private static byte[] Copy(byte[] b)
+		{
+			return b == null || b.Length == 0 ? b : (byte[])b.Clone();
 		}
 
 		public static bool ReferenceMatchesDefinition(AssemblyName reference, AssemblyName definition)
 		{
-			return System.Reflection.AssemblyName.ReferenceMatchesDefinition(reference.name, definition.name);
+			// HACK use the real AssemblyName to implement the (broken) ReferenceMatchesDefinition method
+			return System.Reflection.AssemblyName.ReferenceMatchesDefinition(new System.Reflection.AssemblyName(reference.FullName), new System.Reflection.AssemblyName(definition.FullName));
 		}
 
 		public static AssemblyName GetAssemblyName(string path)
@@ -212,13 +328,8 @@ namespace IKVM.Reflection
 
 		internal AssemblyNameFlags RawFlags
 		{
-			get { return (AssemblyNameFlags)name.Flags | (AssemblyNameFlags)((int)name.ProcessorArchitecture << 4) | (processorArchitectureSpecified ? afPA_Specified : 0); }
-			set
-			{
-				name.Flags = (System.Reflection.AssemblyNameFlags)value;
-				name.ProcessorArchitecture = (System.Reflection.ProcessorArchitecture)((int)value >> 4);
-				processorArchitectureSpecified = (value & afPA_Specified) != 0;
-			}
+			get { return flags; }
+			set { flags = value; }
 		}
 	}
 }
