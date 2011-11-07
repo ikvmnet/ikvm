@@ -548,7 +548,7 @@ namespace IKVM.Internal
 						if (!classFile.IsInterface && !m.IsStatic && !m.IsPrivate)
 						{
 							bool explicitOverride = false;
-							baseMethods[i] = FindBaseMethods(m.Name, m.Signature, out explicitOverride);
+							baseMethods[i] = FindBaseMethods(m, out explicitOverride);
 							if (explicitOverride)
 							{
 								flags |= MemberFlags.ExplicitOverride;
@@ -2349,11 +2349,208 @@ namespace IKVM.Internal
 			}
 
 			// this finds all methods that the specified name/sig is going to be overriding
-			private MethodWrapper[] FindBaseMethods(string name, string sig, out bool explicitOverride)
+			private MethodWrapper[] FindBaseMethods(ClassFile.Method m, out bool explicitOverride)
 			{
 				Debug.Assert(!classFile.IsInterface);
-				Debug.Assert(name != "<init>");
+				Debug.Assert(m.Name != "<init>");
 
+				// starting with Java 7 the algorithm changed
+				return classFile.MajorVersion >= 51
+					? FindBaseMethods7(m.Name, m.Signature, m.IsFinal && !m.IsPublic && !m.IsProtected, out explicitOverride)
+					: FindBaseMethodsLegacy(m.Name, m.Signature, out explicitOverride);
+			}
+
+			private MethodWrapper[] FindBaseMethods7(string name, string sig, bool packageFinal, out bool explicitOverride)
+			{
+				// NOTE this implements the (completely broken) OpenJDK 7 b147 HotSpot behavior,
+				// not the algorithm specified in section 5.4.5 of the JavaSE7 JVM spec
+				// see http://weblog.ikvm.net/PermaLink.aspx?guid=bde44d8b-7ba9-4e0e-b3a6-b735627118ff and subsequent posts
+				explicitOverride = false;
+				MethodWrapper topPublicOrProtectedMethod = null;
+				TypeWrapper tw = wrapper.BaseTypeWrapper;
+				while (tw != null)
+				{
+					MethodWrapper baseMethod = tw.GetMethodWrapper(name, sig, true);
+					if (baseMethod == null)
+					{
+						break;
+					}
+					else if (!baseMethod.IsStatic && (baseMethod.IsPublic || baseMethod.IsProtected))
+					{
+						topPublicOrProtectedMethod = baseMethod;
+					}
+					tw = baseMethod.DeclaringType.BaseTypeWrapper;
+				}
+				tw = wrapper.BaseTypeWrapper; 
+				while (tw != null)
+				{
+					MethodWrapper baseMethod = tw.GetMethodWrapper(name, sig, true);
+					if (baseMethod == null)
+					{
+						break;
+					}
+					else if (baseMethod.IsPrivate)
+					{
+						// skip
+					}
+					else if (baseMethod.IsFinal && (baseMethod.IsPublic || baseMethod.IsProtected || baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper)))
+					{
+						throw new VerifyError("final method " + baseMethod.Name + baseMethod.Signature + " in " + baseMethod.DeclaringType.Name + " is overridden in " + wrapper.Name);
+					}
+					else if (baseMethod.IsStatic)
+					{
+						// skip
+					}
+					else if (topPublicOrProtectedMethod == null && !baseMethod.IsPublic && !baseMethod.IsProtected && !baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper))
+					{
+						// this is a package private method that we're not overriding (unless its vtable stream interleaves ours, which is a case we handle below)
+						explicitOverride = true;
+					}
+					else if (topPublicOrProtectedMethod != null && baseMethod.IsFinal && !baseMethod.IsPublic && !baseMethod.IsProtected && !baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper))
+					{
+						// this is package private final method that we would override had it not been final, but which is ignored by HotSpot (instead of throwing a VerifyError)
+						explicitOverride = true;
+					}
+					else if (topPublicOrProtectedMethod == null)
+					{
+						if (explicitOverride)
+						{
+							List<MethodWrapper> list = new List<MethodWrapper>();
+							list.Add(baseMethod);
+							// we might still have to override package methods from another package if the vtable streams are interleaved with ours
+							tw = wrapper.BaseTypeWrapper;
+							while (tw != null)
+							{
+								MethodWrapper baseMethod2 = tw.GetMethodWrapper(name, sig, true);
+								if (baseMethod2 == null || baseMethod2 == baseMethod)
+								{
+									break;
+								}
+								MethodWrapper baseMethod3 = GetPackageBaseMethod(baseMethod.DeclaringType.BaseTypeWrapper, name, sig, baseMethod2.DeclaringType);
+								if (baseMethod3 != null)
+								{
+									if (baseMethod2.IsFinal)
+									{
+										baseMethod2 = baseMethod3;
+									}
+									bool found = false;
+									foreach (MethodWrapper mw in list)
+									{
+										if (mw.DeclaringType.IsPackageAccessibleFrom(baseMethod2.DeclaringType))
+										{
+											// we should only add each package once
+											found = true;
+											break;
+										}
+									}
+									if (!found)
+									{
+										list.Add(baseMethod2);
+									}
+								}
+								tw = baseMethod2.DeclaringType.BaseTypeWrapper;
+							}
+							return list.ToArray();
+						}
+						else
+						{
+							return new MethodWrapper[] { baseMethod };
+						}
+					}
+					else
+					{
+						if (packageFinal)
+						{
+							// when a package final method overrides a public or protected method, HotSpot does not mark that vtable slot as final,
+							// so we need an explicit override to force the MethodAttributes.NewSlot flag, otherwise the CLR won't allow us
+							// to override the original method in subsequent derived types
+							explicitOverride = true;
+						}
+
+						int majorVersion;
+						if (!baseMethod.IsPublic && !baseMethod.IsProtected &&
+							((TryGetClassFileVersion(baseMethod.DeclaringType, out majorVersion) && majorVersion < 51)
+							// if TryGetClassFileVersion fails, we know that it is safe to call GetMethod() so we look at the actual method attributes here,
+							// because access widing ensures that if the method had overridden the top level method it would also be public or protected
+							|| (baseMethod.GetMethod().Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.Assembly))
+						{
+							// the method we're overriding is not public or protected, but there is a public or protected top level method,
+							// this means that baseMethod is part of a class with a major version < 51, so we have to explicitly override the top level method as well
+							// (we don't need to look for another package method to override, because by necessity baseMethod is already in our package)
+							return new MethodWrapper[] { baseMethod, topPublicOrProtectedMethod };
+						}
+						else if (!topPublicOrProtectedMethod.DeclaringType.IsPackageAccessibleFrom(wrapper))
+						{
+							// check if there is another method (in the same package) that we should override
+							tw = topPublicOrProtectedMethod.DeclaringType.BaseTypeWrapper;
+							while (tw != null)
+							{
+								MethodWrapper baseMethod2 = tw.GetMethodWrapper(name, sig, true);
+								if (baseMethod2 == null)
+								{
+									break;
+								}
+								if (baseMethod2.DeclaringType.IsPackageAccessibleFrom(wrapper) && !baseMethod2.IsPrivate)
+								{
+									if (baseMethod2.IsFinal)
+									{
+										throw new VerifyError("final method " + baseMethod2.Name + baseMethod2.Signature + " in " + baseMethod2.DeclaringType.Name + " is overridden in " + wrapper.Name);
+									}
+									if (!baseMethod2.IsStatic)
+									{
+										if (baseMethod2.IsPublic || baseMethod2.IsProtected)
+										{
+											break;
+										}
+										return new MethodWrapper[] { baseMethod, baseMethod2 };
+									}
+								}
+								tw = baseMethod2.DeclaringType.BaseTypeWrapper;
+							}
+						}
+						return new MethodWrapper[] { baseMethod };
+					}
+					tw = baseMethod.DeclaringType.BaseTypeWrapper;
+				}
+				return null;
+			}
+
+			private static bool TryGetClassFileVersion(TypeWrapper tw, out int majorVersion)
+			{
+				DynamicTypeWrapper dtw = tw as DynamicTypeWrapper;
+				if (dtw != null)
+				{
+					JavaTypeImpl impl = dtw.impl as JavaTypeImpl;
+					if (impl != null)
+					{
+						majorVersion = impl.classFile.MajorVersion;
+						return true;
+					}
+				}
+				majorVersion = -1;
+				return false;
+			}
+
+			private static MethodWrapper GetPackageBaseMethod(TypeWrapper tw, string name, string sig, TypeWrapper package)
+			{
+				while (tw != null)
+				{
+					MethodWrapper mw = tw.GetMethodWrapper(name, sig, true);
+					if (mw == null)
+					{
+						break;
+					}
+					if (mw.DeclaringType.IsPackageAccessibleFrom(package))
+					{
+						return mw.IsFinal ? null : mw;
+					}
+					tw = mw.DeclaringType.BaseTypeWrapper;
+				}
+				return null;
+			}
+
+			private MethodWrapper[] FindBaseMethodsLegacy(string name, string sig, out bool explicitOverride)
+			{
 				explicitOverride = false;
 				TypeWrapper tw = wrapper.BaseTypeWrapper;
 				while (tw != null)
