@@ -187,12 +187,12 @@ namespace IKVM.Reflection
 				{
 					sb.Append('"');
 				}
-				if (name.IndexOf(',') != -1 || name.IndexOf('\\') != -1 || (singleQuotes && name.IndexOf('\'') != -1))
+				if (name.IndexOf(',') != -1 || name.IndexOf('\\') != -1 || name.IndexOf('=') != -1 || (singleQuotes && name.IndexOf('\'') != -1))
 				{
 					for (int i = 0; i < name.Length; i++)
 					{
 						char c = name[i];
-						if (c == ',' || c == '\\' || (singleQuotes && c == '\''))
+						if (c == ',' || c == '\\' || c == '=' || (singleQuotes && c == '\''))
 						{
 							sb.Append('\\');
 						}
