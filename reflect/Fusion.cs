@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2010 Jeroen Frijters
+  Copyright (C) 2010-2011 Jeroen Frijters
   Copyright (C) 2011 Marek Safar
 
   This software is provided 'as-is', without any express or implied
@@ -260,6 +260,10 @@ namespace IKVM.Reflection
 						return false;
 					}
 					ch = fullName[pos++];
+					if (ch == '\\')
+					{
+						return false;
+					}
 				}
 				else if (ch == quoteOrComma)
 				{
@@ -280,10 +284,22 @@ namespace IKVM.Reflection
 					}
 					break;
 				}
+				else if (ch == '=' || (quoteOrComma == ',' && (ch == '\'' || ch == '"')))
+				{
+					return false;
+				}
 				sb.Append(ch);
 			}
 			parsedName.Name = sb.ToString().Trim();
-			if (pos < fullName.Length)
+			if (parsedName.Name.Length == 0)
+			{
+				return false;
+			}
+			if (pos == fullName.Length)
+			{
+				return fullName[fullName.Length - 1] != ',';
+			}
+			else
 			{
 				string[] parts = fullName.Substring(pos).Split(',');
 				for (int i = 0; i < parts.Length; i++)
