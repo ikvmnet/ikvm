@@ -256,8 +256,7 @@ namespace IKVM.Reflection
 			return false;
 		}
 
-		// note that this is the fusion specific parser, it is not the same as System.Reflection.AssemblyName
-		private static ParseAssemblyResult ParseAssemblyName(string fullName, out ParsedAssemblyName parsedName)
+		internal static ParseAssemblyResult ParseAssemblyName(string fullName, out ParsedAssemblyName parsedName)
 		{
 			parsedName = new ParsedAssemblyName();
 			StringBuilder sb = new StringBuilder();
@@ -512,7 +511,7 @@ namespace IKVM.Reflection
 				return false;
 			}
 			// HACK use AssemblyName to convert PublicKey to PublicKeyToken
-			byte[] token = new AssemblyName("Foo, PublicKey=" + str).GetPublicKeyToken();
+			byte[] token = new System.Reflection.AssemblyName("Foo, PublicKey=" + str).GetPublicKeyToken();
 			StringBuilder sb = new StringBuilder(token.Length * 2);
 			for (int i = 0; i < token.Length; i++)
 			{

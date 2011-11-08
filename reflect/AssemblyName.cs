@@ -50,14 +50,75 @@ namespace IKVM.Reflection
 
 		public AssemblyName(string assemblyName)
 		{
-			// HACK use the real AssemblyName to parse the string
-			System.Reflection.AssemblyName impl = new System.Reflection.AssemblyName(assemblyName);
-			name = impl.Name;
-			culture = impl.CultureInfo == null ? null : impl.CultureInfo.Name;
-			version = impl.Version;
-			publicKeyToken = impl.GetPublicKeyToken();
-			flags = (AssemblyNameFlags)(int)impl.Flags;
-			ProcessorArchitecture = (ProcessorArchitecture)impl.ProcessorArchitecture;
+			if (assemblyName == null)
+			{
+				throw new ArgumentNullException("assemblyName");
+			}
+			if (assemblyName == "")
+			{
+				throw new ArgumentException();
+			}
+			ParsedAssemblyName parsed;
+			switch (Fusion.ParseAssemblyName(assemblyName, out parsed))
+			{
+				case ParseAssemblyResult.GenericError:
+					throw new FileLoadException();
+				case ParseAssemblyResult.DuplicateKey:
+					throw new System.Runtime.InteropServices.COMException();
+			}
+			name = parsed.Name;
+			if (parsed.Culture != null)
+			{
+				if (parsed.Culture.Equals("neutral", StringComparison.InvariantCultureIgnoreCase))
+				{
+					culture = "";
+				}
+				else if (parsed.Culture == "")
+				{
+					throw new FileLoadException();
+				}
+				else
+				{
+					culture = new CultureInfo(parsed.Culture).Name;
+				}
+			}
+			if (parsed.Version != null && parsed.Version.Major != 65535 && parsed.Version.Minor != 65535)
+			{
+				// our Fusion parser returns -1 for build and revision for incomplete version numbers (and we want 65535)
+				version = new Version(parsed.Version.Major, parsed.Version.Minor, parsed.Version.Build & 0xFFFF, parsed.Version.Revision & 0xFFFF);
+			}
+			if (parsed.PublicKeyToken != null)
+			{
+				if (parsed.PublicKeyToken.Equals("null", StringComparison.InvariantCultureIgnoreCase))
+				{
+					publicKeyToken = Empty<byte>.Array;
+				}
+				else if (parsed.PublicKeyToken.Length != 16)
+				{
+					throw new FileLoadException();
+				}
+				else
+				{
+					publicKeyToken = new byte[8];
+					for (int i = 0, pos = 0; i < publicKeyToken.Length; i++, pos += 2)
+					{
+						publicKeyToken[i] = (byte)("0123456789abcdef".IndexOf(char.ToLowerInvariant(parsed.PublicKeyToken[pos])) * 16
+							+ "0123456789abcdef".IndexOf(char.ToLowerInvariant(parsed.PublicKeyToken[pos + 1])));
+					}
+				}
+			}
+			if (parsed.Retargetable.HasValue)
+			{
+				if (parsed.Culture == null || parsed.PublicKeyToken == null || parsed.Version == null || parsed.Version.Build == -1 || parsed.Version.Revision == -1)
+				{
+					throw new FileLoadException();
+				}
+				if (parsed.Retargetable.Value)
+				{
+					flags |= AssemblyNameFlags.Retargetable;
+				}
+			}
+			ProcessorArchitecture = parsed.ProcessorArchitecture;
 		}
 
 		public override string ToString()
