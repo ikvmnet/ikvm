@@ -213,14 +213,20 @@ namespace IKVM.Reflection
 				}
 				if (version != null)
 				{
-					sb.AppendFormat(", Version={0}.{1}", version.Major, version.Minor);
-					// TODO what's this all about?
-					if (version.Build != 65535 && version.Build != -1)
+					if ((version.Major & 0xFFFF) != 0xFFFF)
 					{
-						sb.AppendFormat(".{0}", version.Build);
-						if (version.Revision != 65535 && version.Revision != -1)
+						sb.AppendFormat(", Version={0}", version.Major & 0xFFFF);
+						if ((version.Minor & 0xFFFF) != 0xFFFF)
 						{
-							sb.AppendFormat(".{0}", version.Revision);
+							sb.AppendFormat(".{0}", version.Minor & 0xFFFF);
+							if ((version.Build & 0xFFFF) != 0xFFFF)
+							{
+								sb.AppendFormat(".{0}", version.Build & 0xFFFF);
+								if ((version.Revision & 0xFFFF) != 0xFFFF)
+								{
+									sb.AppendFormat(".{0}", version.Revision & 0xFFFF);
+								}
+							}
 						}
 					}
 				}
