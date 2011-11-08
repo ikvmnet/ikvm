@@ -37,6 +37,13 @@ namespace IKVM.Reflection
 		internal string PublicKeyToken;
 	}
 
+	enum ParseAssemblyResult
+	{
+		OK,
+		GenericError,
+		DuplicateKey,
+	}
+
 	static class Fusion
 	{
 		private static readonly bool UseNativeFusion = GetUseNativeFusion();
@@ -83,11 +90,18 @@ namespace IKVM.Reflection
 			ParsedAssemblyName name1;
 			ParsedAssemblyName name2;
 
-			if (!ParseAssemblyName(assemblyIdentity1, out name1)
-				|| !ParseAssemblyName(assemblyIdentity2, out name2))
+			ParseAssemblyResult r = ParseAssemblyName(assemblyIdentity1, out name1);
+			if (r != ParseAssemblyResult.OK || (r = ParseAssemblyName(assemblyIdentity2, out name2)) != ParseAssemblyResult.OK)
 			{
 				result = AssemblyComparisonResult.NonEquivalent;
-				throw new ArgumentException();
+				switch (r)
+				{
+					case ParseAssemblyResult.DuplicateKey:
+						throw new System.IO.FileLoadException();
+					case ParseAssemblyResult.GenericError:
+					default:
+						throw new ArgumentException();
+				}
 			}
 
 			bool partial = IsPartial(name1);
@@ -241,7 +255,7 @@ namespace IKVM.Reflection
 		}
 
 		// note that this is the fusion specific parser, it is not the same as System.Reflection.AssemblyName
-		private static bool ParseAssemblyName(string fullName, out ParsedAssemblyName parsedName)
+		private static ParseAssemblyResult ParseAssemblyName(string fullName, out ParsedAssemblyName parsedName)
 		{
 			parsedName = new ParsedAssemblyName();
 			StringBuilder sb = new StringBuilder();
@@ -262,12 +276,12 @@ namespace IKVM.Reflection
 				{
 					if (pos == fullName.Length)
 					{
-						return false;
+						return ParseAssemblyResult.GenericError;
 					}
 					ch = fullName[pos++];
 					if (ch == '\\')
 					{
-						return false;
+						return ParseAssemblyResult.GenericError;
 					}
 				}
 				else if (ch == quoteOrComma)
@@ -283,7 +297,7 @@ namespace IKVM.Reflection
 							}
 							if (!char.IsWhiteSpace(ch))
 							{
-								return false;
+								return ParseAssemblyResult.GenericError;
 							}
 						}
 					}
@@ -291,18 +305,18 @@ namespace IKVM.Reflection
 				}
 				else if (ch == '=' || (quoteOrComma == ',' && (ch == '\'' || ch == '"')))
 				{
-					return false;
+					return ParseAssemblyResult.GenericError;
 				}
 				sb.Append(ch);
 			}
 			parsedName.Name = sb.ToString().Trim();
 			if (parsedName.Name.Length == 0)
 			{
-				return false;
+				return ParseAssemblyResult.GenericError;
 			}
 			if (pos == fullName.Length)
 			{
-				return fullName[fullName.Length - 1] != ',';
+				return fullName[fullName.Length - 1] != ',' ? ParseAssemblyResult.OK : ParseAssemblyResult.GenericError;
 			}
 			else
 			{
@@ -313,54 +327,54 @@ namespace IKVM.Reflection
 					string[] kv = parts[i].Split('=');
 					if (kv.Length != 2)
 					{
-						return false;
+						return ParseAssemblyResult.GenericError;
 					}
 					switch (kv[0].Trim().ToLowerInvariant())
 					{
 						case "version":
 							if (parsedName.Version != null)
 							{
-								return false;
+								return ParseAssemblyResult.DuplicateKey;
 							}
 							if (!ParseVersion(kv[1].Trim(), out parsedName.Version))
 							{
-								return false;
+								return ParseAssemblyResult.GenericError;
 							}
 							break;
 						case "culture":
 							if (parsedName.Culture != null)
 							{
-								return false;
+								return ParseAssemblyResult.DuplicateKey;
 							}
 							if (!ParseCulture(kv[1].Trim(), out parsedName.Culture))
 							{
-								return false;
+								return ParseAssemblyResult.GenericError;
 							}
 							break;
 						case "publickeytoken":
 							if (parsedName.PublicKeyToken != null)
 							{
-								return false;
+								return ParseAssemblyResult.DuplicateKey;
 							}
 							if (!ParsePublicKeyToken(kv[1].Trim(), out parsedName.PublicKeyToken))
 							{
-								return false;
+								return ParseAssemblyResult.GenericError;
 							}
 							break;
 						case "publickey":
 							if (parsedName.PublicKeyToken != null)
 							{
-								return false;
+								return ParseAssemblyResult.DuplicateKey;
 							}
 							if (!ParsePublicKey(kv[1].Trim(), out parsedName.PublicKeyToken))
 							{
-								return false;
+								return ParseAssemblyResult.GenericError;
 							}
 							break;
 						default:
 							if (kv[1].Trim() == "")
 							{
-								return false;
+								return ParseAssemblyResult.GenericError;
 							}
 							if (unknownAttributes == null)
 							{
@@ -368,14 +382,14 @@ namespace IKVM.Reflection
 							}
 							if (unknownAttributes.ContainsKey(kv[0].Trim().ToLowerInvariant()))
 							{
-								return false;
+								return ParseAssemblyResult.DuplicateKey;
 							}
 							unknownAttributes.Add(kv[0].Trim().ToLowerInvariant(), null);
 							break;
 					}
 				}
 			}
-			return true;
+			return ParseAssemblyResult.OK;
 		}
 
 		private static bool ParseVersion(string str, out Version version)
