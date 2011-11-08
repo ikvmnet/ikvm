@@ -35,6 +35,8 @@ namespace IKVM.Reflection
 		internal Version Version;
 		internal string Culture;
 		internal string PublicKeyToken;
+		internal bool? Retargetable;
+		internal ProcessorArchitecture ProcessorArchitecture;
 	}
 
 	enum ParseAssemblyResult
@@ -321,6 +323,7 @@ namespace IKVM.Reflection
 			else
 			{
 				System.Collections.Generic.Dictionary<string, string> unknownAttributes = null;
+				bool hasProcessorArchitecture = false;
 				string[] parts = fullName.Substring(pos).Split(',');
 				for (int i = 0; i < parts.Length; i++)
 				{
@@ -369,6 +372,53 @@ namespace IKVM.Reflection
 							if (!ParsePublicKey(kv[1].Trim(), out parsedName.PublicKeyToken))
 							{
 								return ParseAssemblyResult.GenericError;
+							}
+							break;
+						case "retargetable":
+							if (parsedName.Retargetable.HasValue)
+							{
+								return ParseAssemblyResult.DuplicateKey;
+							}
+							switch (kv[1].Trim().ToLowerInvariant())
+							{
+								case "yes":
+									parsedName.Retargetable = true;
+									break;
+								case "no":
+									parsedName.Retargetable = false;
+									break;
+								default:
+									return ParseAssemblyResult.GenericError;
+							}
+							break;
+						case "processorarchitecture":
+							if (hasProcessorArchitecture)
+							{
+								return ParseAssemblyResult.DuplicateKey;
+							}
+							hasProcessorArchitecture = true;
+							switch (kv[1].Trim().ToLowerInvariant())
+							{
+								case "none":
+									parsedName.ProcessorArchitecture = ProcessorArchitecture.None;
+									break;
+								case "msil":
+									parsedName.ProcessorArchitecture = ProcessorArchitecture.MSIL;
+									break;
+								case "x86":
+									parsedName.ProcessorArchitecture = ProcessorArchitecture.X86;
+									break;
+								case "ia64":
+									parsedName.ProcessorArchitecture = ProcessorArchitecture.IA64;
+									break;
+								case "amd64":
+									parsedName.ProcessorArchitecture = ProcessorArchitecture.Amd64;
+									break;
+								case "arm":
+									parsedName.ProcessorArchitecture = ProcessorArchitecture.Arm;
+									break;
+								default:
+									return ParseAssemblyResult.GenericError;
 							}
 							break;
 						default:
