@@ -301,6 +301,7 @@ namespace IKVM.Reflection
 			}
 			else
 			{
+				System.Collections.Generic.Dictionary<string, string> unknownAttributes = null;
 				string[] parts = fullName.Substring(pos).Split(',');
 				for (int i = 0; i < parts.Length; i++)
 				{
@@ -350,6 +351,21 @@ namespace IKVM.Reflection
 							{
 								return false;
 							}
+							break;
+						default:
+							if (kv[1].Trim() == "")
+							{
+								return false;
+							}
+							if (unknownAttributes == null)
+							{
+								unknownAttributes = new System.Collections.Generic.Dictionary<string, string>();
+							}
+							if (unknownAttributes.ContainsKey(kv[0].Trim().ToLowerInvariant()))
+							{
+								return false;
+							}
+							unknownAttributes.Add(kv[0].Trim().ToLowerInvariant(), null);
 							break;
 					}
 				}
