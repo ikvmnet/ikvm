@@ -12,6 +12,7 @@
 ../classpath/ikvm/internal/WeakIdentityMap.java
 ../classpath/ikvm/io/InputStreamWrapper.java
 ../classpath/ikvm/lang/CIL.java
+../classpath/ikvm/lang/DllExport.java
 ../classpath/ikvm/lang/Internal.java
 ../classpath/ikvm/lang/IterableEnumerator.java
 ../classpath/ikvm/lang/MapEnumerator.java

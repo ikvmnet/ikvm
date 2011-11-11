@@ -3276,6 +3276,11 @@ namespace IKVM.Internal
 		{
 			StaticCompiler.IssueMessage(options, msgId, values);
 		}
+
+		internal void ClearILOnlyFlag()
+		{
+			options.pekind &= ~PortableExecutableKinds.ILOnly;
+		}
 	}
 
 	struct ResourceItem
@@ -3403,6 +3408,7 @@ namespace IKVM.Internal
 		LegacySearchRule = 126,
 		AssemblyLocationIgnored = 127,
 		InterfaceMethodCantBeInternal = 128,
+		DllExportMustBeStaticMethod = 129,
 		UnknownWarning = 999,
 		// This is where the errors start
 		StartErrors = 4000,
@@ -3619,6 +3625,10 @@ namespace IKVM.Internal
 					break;
 				case Message.InterfaceMethodCantBeInternal:
 					msg = "ignoring @ikvm.lang.Internal annotation on interface method" + Environment.NewLine +
+						"    (\"{0}.{1}{2}\")";
+					break;
+				case Message.DllExportMustBeStaticMethod:
+					msg = "ignoring @ikvm.lang.DllExport annotation on non-static method" + Environment.NewLine +
 						"    (\"{0}.{1}{2}\")";
 					break;
 				case Message.UnableToCreateProxy:
