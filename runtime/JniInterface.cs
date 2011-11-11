@@ -1236,8 +1236,9 @@ namespace IKVM.Runtime
 		internal const sbyte JNI_FALSE = 0;
 		private void* vtable;
 		private GCHandle managedJNIEnv;
-		private GCHandle criticalArrayHandle1;
-		private GCHandle criticalArrayHandle2;
+		private GCHandle* pinHandles;
+		private int pinHandleMaxCount;
+		private int pinHandleInUseCount;
 
 		static JNIEnv()
 		{
@@ -1293,13 +1294,12 @@ namespace IKVM.Runtime
 					{
 						pJNIEnv->managedJNIEnv.Free();
 					}
-					if(pJNIEnv->criticalArrayHandle1.IsAllocated)
+					for(int i = 0; i < pJNIEnv->pinHandleMaxCount; i++)
 					{
-						pJNIEnv->criticalArrayHandle1.Free();
-					}
-					if(pJNIEnv->criticalArrayHandle2.IsAllocated)
-					{
-						pJNIEnv->criticalArrayHandle2.Free();
+						if(pJNIEnv->pinHandles[i].IsAllocated)
+						{
+							pJNIEnv->pinHandles[i].Free();
+						}
 					}
 					JniMem.Free((IntPtr)(void*)pJNIEnv);
 				}
@@ -1503,8 +1503,9 @@ namespace IKVM.Runtime
 			JNIEnv* pJNIEnv = env.pJNIEnv;
 			pJNIEnv->vtable = VtableBuilder.vtable;
 			pJNIEnv->managedJNIEnv = GCHandle.Alloc(env, GCHandleType.WeakTrackResurrection);
-			pJNIEnv->criticalArrayHandle1 = GCHandle.Alloc(null, GCHandleType.Pinned);
-			pJNIEnv->criticalArrayHandle2 = GCHandle.Alloc(null, GCHandleType.Pinned);
+			pJNIEnv->pinHandles = null;
+			pJNIEnv->pinHandleMaxCount = 0;
+			pJNIEnv->pinHandleInUseCount = 0;
 			return pJNIEnv;
 		}
 
@@ -3485,143 +3486,72 @@ namespace IKVM.Runtime
 			}
 		}
 
-		private static int GetPrimitiveArrayElementSize(Array ar)
+		private void* PinObject(object obj)
 		{
-			Type type = ar.GetType().GetElementType();
-			if(type == PrimitiveTypeWrapper.BYTE.TypeAsArrayType || type == PrimitiveTypeWrapper.BOOLEAN.TypeAsArrayType)
+			if(pinHandleInUseCount == pinHandleMaxCount)
 			{
-				return 1;
+				int newCount = pinHandleMaxCount + 32;
+				GCHandle* pNew = (GCHandle*)JniMem.Alloc(sizeof(GCHandle) * newCount);
+				for(int i = 0; i < pinHandleMaxCount; i++)
+				{
+					pNew[i] = pinHandles[i];
+				}
+				for(int i = pinHandleMaxCount; i < newCount; i++)
+				{
+					pNew[i] = new GCHandle();
+				}
+				JniMem.Free((IntPtr)pinHandles);
+				pinHandles = pNew;
+				pinHandleMaxCount = newCount;
 			}
-			else if(type == PrimitiveTypeWrapper.SHORT.TypeAsArrayType || type == PrimitiveTypeWrapper.CHAR.TypeAsArrayType)
+			int index = pinHandleInUseCount++;
+			if(!pinHandles[index].IsAllocated)
 			{
-				return 2;
+				pinHandles[index] = GCHandle.Alloc(null, GCHandleType.Pinned);
 			}
-			else if(type == PrimitiveTypeWrapper.INT.TypeAsArrayType || type == PrimitiveTypeWrapper.FLOAT.TypeAsArrayType)
+			pinHandles[index].Target = obj;
+			return (void*)pinHandles[index].AddrOfPinnedObject();
+		}
+
+		private void UnpinObject(object obj)
+		{
+			for(int i = 0; i < pinHandleInUseCount; i++)
 			{
-				return 4;
-			}
-			else if(type == PrimitiveTypeWrapper.LONG.TypeAsArrayType || type == PrimitiveTypeWrapper.DOUBLE.TypeAsArrayType)
-			{
-				return 8;
-			}
-			else
-			{
-				JVM.CriticalFailure("invalid array type", null);
-				return 0;
+				if(pinHandles[i].Target == obj)
+				{
+					pinHandles[i].Target = pinHandles[--pinHandleInUseCount].Target;
+					pinHandles[pinHandleInUseCount].Target = null;
+					return;
+				}
 			}
 		}
 
 		internal static void* GetPrimitiveArrayCritical(JNIEnv* pEnv, jarray array, jboolean* isCopy)
 		{
-			Array ar = (Array)pEnv->UnwrapRef(array);
-			if(pEnv->criticalArrayHandle1.Target == null)
+			if(isCopy != null)
 			{
-				pEnv->criticalArrayHandle1.Target = ar;
-				if(isCopy != null)
-				{
-					*isCopy = JNI_FALSE;
-				}
-				return (void*)pEnv->criticalArrayHandle1.AddrOfPinnedObject();
+				*isCopy = JNI_FALSE;
 			}
-			if(pEnv->criticalArrayHandle2.Target == null)
-			{
-				pEnv->criticalArrayHandle2.Target = ar;
-				if(isCopy != null)
-				{
-					*isCopy = JNI_FALSE;
-				}
-				return (void*)pEnv->criticalArrayHandle2.AddrOfPinnedObject();
-			}
-			// TODO not 64-bit safe (len can overflow)
-			int len = ar.Length * GetPrimitiveArrayElementSize(ar);
-			GCHandle h = GCHandle.Alloc(ar, GCHandleType.Pinned);
-			try
-			{
-				IntPtr hglobal = JniMem.Alloc(len);
-				byte* pdst = (byte*)(void*)hglobal;
-				byte* psrc = (byte*)(void*)h.AddrOfPinnedObject();
-				// TODO isn't there a managed memcpy?
-				for(int i = 0; i < len; i++)
-				{
-					*pdst++ = *psrc++;
-				}
-				if(isCopy != null)
-				{
-					*isCopy = JNI_TRUE;
-				}
-				return (void*)hglobal;
-			}
-			finally
-			{
-				h.Free();
-			}		
+			return pEnv->PinObject(pEnv->UnwrapRef(array));
 		}
 
 		internal static void ReleasePrimitiveArrayCritical(JNIEnv* pEnv, jarray array, void* carray, jint mode)
 		{
-			Array ar = (Array)pEnv->UnwrapRef(array);
-			if(pEnv->criticalArrayHandle1.Target == ar
-				&& (void*)pEnv->criticalArrayHandle1.AddrOfPinnedObject() == carray)
-			{
-				if(mode == 0 || mode == JNI_ABORT)
-				{
-					pEnv->criticalArrayHandle1.Target = null;
-				}
-				return;
-			}
-			if(pEnv->criticalArrayHandle2.Target == ar
-				&& (void*)pEnv->criticalArrayHandle2.AddrOfPinnedObject() == carray)
-			{
-				if(mode == 0 || mode == JNI_ABORT)
-				{
-					pEnv->criticalArrayHandle2.Target = null;
-				}
-				return;
-			}
-			if(mode == 0 || mode == JNI_COMMIT)
-			{
-				// TODO not 64-bit safe (len can overflow)
-				int len = ar.Length * GetPrimitiveArrayElementSize(ar);
-				GCHandle h = GCHandle.Alloc(ar, GCHandleType.Pinned);
-				try
-				{
-					byte* pdst = (byte*)(void*)h.AddrOfPinnedObject();
-					byte* psrc = (byte*)(void*)carray;
-					// TODO isn't there a managed memcpy?
-					for(int i = 0; i < len; i++)
-					{
-						*pdst++ = *psrc++;
-					}
-				}
-				finally
-				{
-					h.Free();
-				}
-			}
-			if(mode == 0 || mode == JNI_ABORT)
-			{
-				JniMem.Free((IntPtr)carray);
-			}
+			pEnv->UnpinObject(pEnv->UnwrapRef(array));
 		}
 
 		internal static jchar* GetStringCritical(JNIEnv* pEnv, jstring str, jboolean* isCopy)
 		{
-			string s = (string)pEnv->UnwrapRef(str);
-			if(s != null)
+			if(isCopy != null)
 			{
-				if(isCopy != null)
-				{
-					*isCopy = JNI_TRUE;
-				}
-				return (jchar*)(void*)Marshal.StringToHGlobalUni(s);		
+				*isCopy = JNI_FALSE;
 			}
-			SetPendingException(pEnv, new java.lang.NullPointerException());
-			return null;
+			return (jchar*)pEnv->PinObject(pEnv->UnwrapRef(str));
 		}
 
 		internal static void ReleaseStringCritical(JNIEnv* pEnv, jstring str, jchar* cstring)
 		{
-			Marshal.FreeHGlobal((IntPtr)(void*)cstring);
+			pEnv->UnpinObject(pEnv->UnwrapRef(str));
 		}
 
 		internal static jweak NewWeakGlobalRef(JNIEnv* pEnv, jobject obj)
