@@ -24,6 +24,8 @@
 #ifndef __JNI_H__
 #define __JNI_H__
 
+#include <stdarg.h>
+
 #ifdef _WIN32
 	#define JNICALL __stdcall
 	#ifdef __cplusplus
@@ -72,6 +74,9 @@ typedef int jint;
 typedef float jfloat;
 typedef double jdouble;
 typedef jint jsize;
+
+#define JNI_FALSE 0
+#define JNI_TRUE 1
 
 typedef struct
 {
