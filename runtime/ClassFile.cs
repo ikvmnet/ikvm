@@ -2454,8 +2454,10 @@ namespace IKVM.Internal
 			{
 				internal object annotationDefault;
 				internal object[][] parameterAnnotations;
+#if STATIC_COMPILER
 				internal string DllExportName;
 				internal int DllExportOrdinal;
+#endif
 			}
 
 			internal Method(ClassFile classFile, ClassFileParseOptions options, BigEndianBinaryReader br) : base(classFile, br)
@@ -2731,6 +2733,7 @@ namespace IKVM.Internal
 				}
 			}
 
+#if STATIC_COMPILER
 			internal string DllExportName
 			{
 				get
@@ -2746,6 +2749,7 @@ namespace IKVM.Internal
 					return low == null ? -1 : low.DllExportOrdinal;
 				}
 			}
+#endif
 
 			internal string VerifyError
 			{
