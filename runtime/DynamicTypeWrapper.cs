@@ -4342,11 +4342,9 @@ namespace IKVM.Internal
 						AttributeHelper.SetEditorBrowsableNever((MethodBuilder)mb);
 						EmitCallerIDStub(methods[i], parameterNames);
 					}
-					if (m.DllExportName != null)
+					if (m.DllExportName != null && ((CompilerClassLoader)wrapper.GetClassLoader()).TryEnableUnmanagedExports())
 					{
 						mBuilder.__AddUnmanagedExport(m.DllExportName, m.DllExportOrdinal);
-						// when you add unmanaged exports, the ILOnly flag MUST NOT be set or the DLL will fail to load
-						((CompilerClassLoader)wrapper.GetClassLoader()).ClearILOnlyFlag();
 					}
 #endif // STATIC_COMPILER
 				}
