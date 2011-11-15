@@ -3290,7 +3290,7 @@ namespace IKVM.Internal
 			}
 			else
 			{
-				StaticCompiler.IssueMessage(Message.DllExportRequiresSupportedPlatform, options.assembly);
+				StaticCompiler.IssueMessage(options, Message.DllExportRequiresSupportedPlatform);
 				return false;
 			}
 		}
@@ -3646,8 +3646,7 @@ namespace IKVM.Internal
 						"    (\"{0}.{1}{2}\")";
 					break;
 				case Message.DllExportRequiresSupportedPlatform:
-					msg = "ignoring @ikvm.lang.DllExport annotation due to unsupported target platform" + Environment.NewLine +
-						"	(\"{0}\")";
+					msg = "ignoring @ikvm.lang.DllExport annotation due to unsupported target platform";
 					break;
 				case Message.UnableToCreateProxy:
 					msg = "unable to create proxy \"{0}\"" + Environment.NewLine +
