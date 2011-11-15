@@ -2845,7 +2845,16 @@ namespace IKVM.Internal
 			AssemblyClassLoader[] referencedAssemblies = new AssemblyClassLoader[references.Count];
 			for(int i = 0; i < references.Count; i++)
 			{
-				referencedAssemblies[i] = AssemblyClassLoader.FromAssembly(references[i]);
+				AssemblyClassLoader acl = AssemblyClassLoader.FromAssembly(references[i]);
+				if (acl.MainAssembly != references[i])
+				{
+					StaticCompiler.IssueMessage(options, Message.NonPrimaryAssemblyReference, references[i].GetName().Name, acl.MainAssembly.GetName().Name);
+				}
+				if (Array.IndexOf(referencedAssemblies, acl) != -1)
+				{
+					StaticCompiler.IssueMessage(options, Message.DuplicateAssemblyReference, acl.MainAssembly.FullName);
+				}
+				referencedAssemblies[i] = acl;
 			}
 			loader = new CompilerClassLoader(referencedAssemblies, options, options.path, options.targetIsModule, options.assembly, h);
 			loader.baseClasses = baseClasses;
@@ -3423,6 +3432,8 @@ namespace IKVM.Internal
 		InterfaceMethodCantBeInternal = 128,
 		DllExportMustBeStaticMethod = 129,
 		DllExportRequiresSupportedPlatform = 130,
+		NonPrimaryAssemblyReference = 131,
+		DuplicateAssemblyReference = 132,
 		UnknownWarning = 999,
 		// This is where the errors start
 		StartErrors = 4000,
@@ -3647,6 +3658,12 @@ namespace IKVM.Internal
 					break;
 				case Message.DllExportRequiresSupportedPlatform:
 					msg = "ignoring @ikvm.lang.DllExport annotation due to unsupported target platform";
+					break;
+				case Message.NonPrimaryAssemblyReference:
+					msg = "referenced assembly \"{0}\" is not the primary assembly of a shared class loader group, referencing primary assembly \"{1}\" instead";
+					break;
+				case Message.DuplicateAssemblyReference:
+					msg = "duplicate assembly reference \"{0}\"";
 					break;
 				case Message.UnableToCreateProxy:
 					msg = "unable to create proxy \"{0}\"" + Environment.NewLine +
