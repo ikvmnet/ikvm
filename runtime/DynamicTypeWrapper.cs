@@ -558,37 +558,13 @@ namespace IKVM.Internal
 					}
 				}
 				wrapper.HasStaticInitializer = hasclinit;
-				if (!wrapper.IsInterface || wrapper.IsPublic)
+				if (wrapper.IsAbstract && (!wrapper.IsInterface || wrapper.IsPublic))
 				{
-					List<MethodWrapper> methodsArray = null;
-					List<MethodWrapper[]> baseMethodsArray = null;
-					if (wrapper.IsAbstract)
-					{
-						methodsArray = new List<MethodWrapper>(methods);
-						baseMethodsArray = new List<MethodWrapper[]>(baseMethods);
-						AddMirandaMethods(methodsArray, baseMethodsArray, wrapper);
-					}
-#if STATIC_COMPILER
-					if (!wrapper.IsInterface && wrapper.IsPublic)
-					{
-						TypeWrapper baseTypeWrapper = wrapper.BaseTypeWrapper;
-						while (baseTypeWrapper != null && !baseTypeWrapper.IsPublic)
-						{
-							if (methodsArray == null)
-							{
-								methodsArray = new List<MethodWrapper>(methods);
-								baseMethodsArray = new List<MethodWrapper[]>(baseMethods);
-							}
-							AddAccessStubMethods(methodsArray, baseMethodsArray, baseTypeWrapper);
-							baseTypeWrapper = baseTypeWrapper.BaseTypeWrapper;
-						}
-					}
-#endif
-					if (methodsArray != null)
-					{
-						this.methods = methodsArray.ToArray();
-						this.baseMethods = baseMethodsArray.ToArray();
-					}
+					List<MethodWrapper> methodsArray = new List<MethodWrapper>(methods);
+					List<MethodWrapper[]> baseMethodsArray = new List<MethodWrapper[]>(baseMethods);
+					AddMirandaMethods(methodsArray, baseMethodsArray, wrapper);
+					methods = methodsArray.ToArray();
+					baseMethods = baseMethodsArray.ToArray();
 				}
 				wrapper.SetMethods(methods);
 
@@ -1089,32 +1065,6 @@ namespace IKVM.Internal
 			}
 #endif // STATIC_COMPILER
 
-#if STATIC_COMPILER || NET_4_0
-			private static bool ContainsMemberWrapper(List<FieldWrapper> members, string name, string sig)
-			{
-				foreach (MemberWrapper mw in members)
-				{
-					if (mw.Name == name && mw.Signature == sig)
-					{
-						return true;
-					}
-				}
-				return false;
-			}
-
-			private static bool ContainsMemberWrapper(List<MethodWrapper> members, string name, string sig)
-			{
-				foreach (MemberWrapper mw in members)
-				{
-					if (mw.Name == name && mw.Signature == sig)
-					{
-						return true;
-					}
-				}
-				return false;
-			}
-#endif // STATIC_COMPILER || NET_4_0
-
 			private MethodWrapper GetMethodWrapperDuringCtor(TypeWrapper lookup, List<MethodWrapper> methods, string name, string sig)
 			{
 				if (lookup == wrapper)
@@ -1177,23 +1127,6 @@ namespace IKVM.Internal
 					}
 				}
 			}
-
-#if STATIC_COMPILER
-			private void AddAccessStubMethods(List<MethodWrapper> methods, List<MethodWrapper[]> baseMethods, TypeWrapper tw)
-			{
-				foreach (MethodWrapper mw in tw.GetMethods())
-				{
-					if ((mw.IsPublic || mw.IsProtected)
-						&& mw.Name != "<init>"
-						&& !ContainsMemberWrapper(methods, mw.Name, mw.Signature))
-					{
-						MethodWrapper stub = new SmartCallMethodWrapper(wrapper, mw.Name, mw.Signature, null, null, null, mw.Modifiers, MemberFlags.HideFromReflection | MemberFlags.AccessStub, SimpleOpCode.Call, SimpleOpCode.Callvirt);
-						methods.Add(stub);
-						baseMethods.Add(new MethodWrapper[] { mw });
-					}
-				}
-			}
-#endif // STATIC_COMPILER
 
 #if STATIC_COMPILER
 			private static bool CheckInnerOuterNames(string inner, string outer)
@@ -2793,51 +2726,6 @@ namespace IKVM.Internal
 							}
 							return mb;
 						}
-						else if (methods[index].IsAccessStub)
-						{
-							Debug.Assert(baseMethods[index].Length == 1 && !baseMethods[index][0].HasCallerID);
-							MethodAttributes stubattribs = baseMethods[index][0].IsPublic ? MethodAttributes.Public : MethodAttributes.FamORAssem;
-							stubattribs |= MethodAttributes.HideBySig;
-							if (baseMethods[index][0].IsStatic)
-							{
-								stubattribs |= MethodAttributes.Static;
-							}
-							else
-							{
-								stubattribs |= MethodAttributes.CheckAccessOnOverride | MethodAttributes.Virtual;
-								if (baseMethods[index][0].IsAbstract && wrapper.IsAbstract)
-								{
-									stubattribs |= MethodAttributes.Abstract;
-								}
-								if (baseMethods[index][0].IsFinal)
-								{
-									// NOTE final methods still need to be virtual, because a subclass may need this method to
-									// implement an interface method
-									stubattribs |= MethodAttributes.Final | MethodAttributes.NewSlot;
-								}
-							}
-							MethodBuilder mb = typeBuilder.DefineMethod(methods[index].Name, stubattribs, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
-							AttributeHelper.HideFromReflection(mb);
-							if (!baseMethods[index][0].IsAbstract)
-							{
-								CodeEmitter ilgen = CodeEmitter.Create(mb);
-								int argc = methods[index].GetParametersForDefineMethod().Length + (methods[index].IsStatic ? 0 : 1);
-								for (int i = 0; i < argc; i++)
-								{
-									ilgen.Emit(OpCodes.Ldarg_S, (byte)i);
-								}
-								baseMethods[index][0].EmitCall(ilgen);
-								ilgen.Emit(OpCodes.Ret);
-								ilgen.DoEmit();
-							}
-							else if (!wrapper.IsAbstract)
-							{
-								CodeEmitter ilgen = CodeEmitter.Create(mb);
-								ilgen.EmitThrow("java.lang.AbstractMethodError", wrapper.Name + "." + methods[index].Name + methods[index].Signature);
-								ilgen.DoEmit();
-							}
-							return mb;
-						}
 						else
 						{
 							throw new InvalidOperationException();
@@ -4254,6 +4142,7 @@ namespace IKVM.Internal
 				{
 					AddType1FieldAccessStubs(wrapper);
 					AddType2FieldAccessStubs();
+					AddType1MethodAccessStubs();
 				}
 #endif // STATIC_COMPILER
 
@@ -4550,6 +4439,67 @@ namespace IKVM.Internal
 						ilgen.Emit(OpCodes.Ret);
 						ilgen.DoEmit();
 					}
+				}
+			}
+
+			private void AddType1MethodAccessStubs()
+			{
+				for (TypeWrapper tw = wrapper.BaseTypeWrapper; tw != null && !tw.IsPublic; tw = tw.BaseTypeWrapper)
+				{
+					foreach (MethodWrapper mw in tw.GetMethods())
+					{
+						if ((mw.IsPublic || mw.IsProtected)
+							&& mw.Name != StringConstants.INIT
+							&& wrapper.GetMethodWrapper(mw.Name, mw.Signature, true) == mw)
+						{
+							GenerateAccessStub(mw);
+						}
+					}
+				}
+			}
+
+			private void GenerateAccessStub(MethodWrapper mw)
+			{
+				Debug.Assert(!mw.HasCallerID);
+				MethodAttributes stubattribs = mw.IsPublic ? MethodAttributes.Public : MethodAttributes.FamORAssem;
+				stubattribs |= MethodAttributes.HideBySig;
+				if (mw.IsStatic)
+				{
+					stubattribs |= MethodAttributes.Static;
+				}
+				else
+				{
+					stubattribs |= MethodAttributes.CheckAccessOnOverride | MethodAttributes.Virtual;
+					if (mw.IsAbstract && wrapper.IsAbstract)
+					{
+						stubattribs |= MethodAttributes.Abstract;
+					}
+					if (mw.IsFinal)
+					{
+						// NOTE final methods still need to be virtual, because a subclass may need this method to
+						// implement an interface method
+						stubattribs |= MethodAttributes.Final | MethodAttributes.NewSlot;
+					}
+				}
+				MethodBuilder mb = typeBuilder.DefineMethod(mw.Name, stubattribs, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
+				AttributeHelper.HideFromReflection(mb);
+				if (!mw.IsAbstract)
+				{
+					CodeEmitter ilgen = CodeEmitter.Create(mb);
+					int argc = mw.GetParametersForDefineMethod().Length + (mw.IsStatic ? 0 : 1);
+					for (int i = 0; i < argc; i++)
+					{
+						ilgen.Emit(OpCodes.Ldarg_S, (byte)i);
+					}
+					mw.EmitCall(ilgen);
+					ilgen.Emit(OpCodes.Ret);
+					ilgen.DoEmit();
+				}
+				else if (!wrapper.IsAbstract)
+				{
+					CodeEmitter ilgen = CodeEmitter.Create(mb);
+					ilgen.EmitThrow("java.lang.AbstractMethodError", wrapper.Name + "." + mw.Name + mw.Signature);
+					ilgen.DoEmit();
 				}
 			}
 #endif // STATIC_COMPILER
