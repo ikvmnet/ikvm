@@ -57,6 +57,9 @@ namespace IKVM.Internal
 #if !STATIC_COMPILER && !CLASSGC
 		private static DynamicClassLoader instance = new DynamicClassLoader(CreateModuleBuilder());
 #endif
+#if CLASSGC
+		private List<string> friends = new List<string>();
+#endif
 
 		[System.Security.SecuritySafeCritical]
 		static DynamicClassLoader()
@@ -82,6 +85,21 @@ namespace IKVM.Internal
 			// (since it already defines a pseudo-type named <Module> for global methods and fields)
 			dynamicTypes.Add("<Module>", null);
 		}
+
+#if CLASSGC
+		internal override void AddInternalsVisibleTo(Assembly friend)
+		{
+			string name = friend.GetName().Name;
+			lock (friends)
+			{
+				if (!friends.Contains(name))
+				{
+					friends.Add(name);
+					((AssemblyBuilder)moduleBuilder.Assembly).SetCustomAttribute(new CustomAttributeBuilder(typeof(System.Runtime.CompilerServices.InternalsVisibleToAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { name }));
+				}
+			}
+		}
+#endif // CLASSGC
 
 #if !STATIC_COMPILER
 		private static Assembly OnTypeResolve(object sender, ResolveEventArgs args)

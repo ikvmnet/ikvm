@@ -185,6 +185,14 @@ namespace IKVM.Internal
 				return true;
 			}
 #endif
+#if CLASSGC
+			if (DeclaringType is DynamicTypeWrapper)
+			{
+				// if we are dynamic, we can just become friends with the caller
+				DeclaringType.GetClassLoader().GetTypeWrapperFactory().AddInternalsVisibleTo(caller.TypeAsTBD.Assembly);
+				return true;
+			}
+#endif
 			return DeclaringType.InternalsVisibleTo(caller);
 		}
 

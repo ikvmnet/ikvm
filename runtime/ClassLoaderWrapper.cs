@@ -58,6 +58,9 @@ namespace IKVM.Internal
 		internal abstract TypeWrapper DefineClassImpl(Dictionary<string, TypeWrapper> types, ClassFile f, ClassLoaderWrapper classLoader, object protectionDomain);
 		internal abstract bool ReserveName(string name);
 		internal abstract Type DefineUnloadable(string name);
+#if CLASSGC
+		internal abstract void AddInternalsVisibleTo(Assembly friend);
+#endif
 	}
 #endif // !STUB_GENERATOR
 
