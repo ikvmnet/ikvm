@@ -1364,7 +1364,7 @@ namespace IKVM.Internal
 					}
 
 #if STATIC_COMPILER
-					if (wrapper.IsPublic && (fw.IsPublic || fw.IsProtected) && !fw.FieldTypeWrapper.IsPublic)
+					if (wrapper.IsPublic && fw.HasNonPublicTypeInSignature)
 					{
 						// this field is going to get a type 2 access stub, so we hide the actual field
 						attribs &= ~FieldAttributes.FieldAccessMask;
@@ -4351,7 +4351,7 @@ namespace IKVM.Internal
 			{
 				foreach (FieldWrapper fw in wrapper.GetFields())
 				{
-					if ((fw.IsPublic || fw.IsProtected) && !fw.FieldTypeWrapper.IsPublic)
+					if (fw.HasNonPublicTypeInSignature)
 					{
 						GenerateAccessStub(fw, false);
 					}

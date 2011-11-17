@@ -160,7 +160,7 @@ namespace IKVM.Internal
 					// The JVM supports accessing members that have non-public types in their signature from another package,
 					// but the CLI doesn't. It would be nice if we worked around that by emitting extra accessors, but for now
 					// we'll simply disallow such access across assemblies (unless the appropriate InternalsVisibleToAttribute exists).
-					&& ((flags & MemberFlags.NonPublicTypeInSignature) == 0 || InPracticeInternalsVisibleTo(caller));
+					&& (!HasNonPublicTypeInSignature || InPracticeInternalsVisibleTo(caller));
 			}
 			return false;
 		}
@@ -264,6 +264,11 @@ namespace IKVM.Internal
 		protected void SetNonPublicTypeInSignatureFlag()
 		{
 			flags |= MemberFlags.NonPublicTypeInSignature;
+		}
+
+		internal bool HasNonPublicTypeInSignature
+		{
+			get { return (flags & MemberFlags.NonPublicTypeInSignature) != 0; }
 		}
 
 		internal bool HasCallerID
