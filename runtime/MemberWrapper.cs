@@ -50,7 +50,7 @@ namespace IKVM.Internal
 		PropertyAccessor = 64,
 		Intrinsic = 128,
 		CallerID = 256,
-		NonPublicTypeInSignature = 512,	// this flag is only available after linking
+		NonPublicTypeInSignature = 512,	// this flag is only available after linking and is not set for access stubs
 	}
 
 	class MemberWrapper
