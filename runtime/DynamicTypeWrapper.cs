@@ -4403,6 +4403,10 @@ namespace IKVM.Internal
 					if (type1)
 					{
 						AttributeHelper.HideFromReflection(pb);
+						if (fw.HasNonPublicTypeInSignature)
+						{
+							AttributeHelper.SetNameSig(pb, fw.Name, fw.Signature);
+						}
 					}
 					else
 					{
