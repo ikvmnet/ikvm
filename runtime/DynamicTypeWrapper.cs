@@ -4460,21 +4460,43 @@ namespace IKVM.Internal
 
 			private void AddType1MethodAccessStubs()
 			{
-				for (TypeWrapper tw = wrapper.BaseTypeWrapper; tw != null && !tw.IsPublic; tw = tw.BaseTypeWrapper)
+				for (int pass = 0; pass < 2; pass++)
 				{
-					foreach (MethodWrapper mw in tw.GetMethods())
+					for (TypeWrapper tw = wrapper.BaseTypeWrapper; tw != null && !tw.IsPublic; tw = tw.BaseTypeWrapper)
 					{
-						if ((mw.IsPublic || mw.IsProtected)
-							&& mw.Name != StringConstants.INIT
-							&& wrapper.GetMethodWrapper(mw.Name, mw.Signature, true) == mw)
+						foreach (MethodWrapper mw in tw.GetMethods())
 						{
-							GenerateType1AccessStub(mw);
+							if ((mw.IsPublic || mw.IsProtected)
+								&& (!mw.IsAbstract || wrapper.IsAbstract)
+								&& mw.Name != StringConstants.INIT
+								&& wrapper.GetMethodWrapper(mw.Name, mw.Signature, true) == mw)
+							{
+								// we generate type 1a in the first pass, because it can't deal with name collisions
+								if (pass == 0)
+								{
+									if (!mw.HasNonPublicTypeInSignature)
+									{
+										GenerateType1aAccessStub(mw);
+									}
+								}
+								else
+								{
+									if (mw.HasNonPublicTypeInSignature)
+									{
+										GenerateType1bAccessStub(mw, true);
+										if (!wrapper.IsFinal && !mw.IsStatic)
+										{
+											GenerateType1bAccessStub(mw, false);
+										}
+									}
+								}
+							}
 						}
 					}
 				}
 			}
 
-			private void GenerateType1AccessStub(MethodWrapper mw)
+			private void GenerateType1aAccessStub(MethodWrapper mw)
 			{
 				Debug.Assert(!mw.HasCallerID);
 				MethodAttributes stubattribs = mw.IsPublic ? MethodAttributes.Public : MethodAttributes.FamORAssem;
@@ -4486,7 +4508,7 @@ namespace IKVM.Internal
 				else
 				{
 					stubattribs |= MethodAttributes.CheckAccessOnOverride | MethodAttributes.Virtual;
-					if (mw.IsAbstract && wrapper.IsAbstract)
+					if (mw.IsAbstract)
 					{
 						stubattribs |= MethodAttributes.Abstract;
 					}
@@ -4496,44 +4518,16 @@ namespace IKVM.Internal
 						// implement an interface method
 						stubattribs |= MethodAttributes.Final | MethodAttributes.NewSlot;
 					}
-					if (mw.HasNonPublicTypeInSignature)
-					{
-						// we're changing the signature, so we need NewSlot
-						stubattribs |= MethodAttributes.NewSlot | MethodAttributes.Final;
-					}
 				}
-				Type[] parameterTypes;
-				Type returnType;
-				if (mw.HasNonPublicTypeInSignature)
+				Type[] parameterTypes = mw.GetParametersForDefineMethod();
+				Type returnType = mw.ReturnTypeForDefineMethod;
+				// register the name where about to use up (it can't exist already)
+				if (mw.Name != wrapper.GenerateUniqueMethodName(mw.Name, returnType, parameterTypes))
 				{
-					TypeWrapper[] realParameterTypes = mw.GetParameters();
-					parameterTypes = new Type[realParameterTypes.Length];
-					for (int i = 0; i < realParameterTypes.Length; i++)
-					{
-						parameterTypes[i] = realParameterTypes[i].GetPublicBaseTypeWrapper().TypeAsSignatureType;
-					}
-					returnType = mw.ReturnType.GetPublicBaseTypeWrapper().TypeAsSignatureType;
+					throw new InvalidOperationException();
 				}
-				else
-				{
-					parameterTypes = mw.GetParametersForDefineMethod();
-					returnType = mw.ReturnTypeForDefineMethod;
-				}
-				string realName = wrapper.GenerateUniqueMethodName(mw.Name, returnType, parameterTypes);
-				if (realName != mw.Name && (stubattribs & MethodAttributes.Virtual) != 0)
-				{
-					stubattribs |= MethodAttributes.NewSlot;
-				}
-				MethodBuilder mb = typeBuilder.DefineMethod(realName, stubattribs, returnType, parameterTypes);
-				if (realName != mw.Name && (stubattribs & (MethodAttributes.Virtual | MethodAttributes.Final)) == MethodAttributes.Virtual)
-				{
-					typeBuilder.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
-				}
-				AttributeHelper.HideFromReflection(mb);
-				if (mw.HasNonPublicTypeInSignature || realName != mw.Name)
-				{
-					AttributeHelper.SetNameSig(mb, mw.Name, mw.Signature);
-				}
+				MethodBuilder mb = typeBuilder.DefineMethod(mw.Name, stubattribs, returnType, parameterTypes);
+				AttributeHelper.HideFromReflection(mb, HideFromReflectionAttribute.Type1aAccessStub);
 				if (!mw.IsAbstract)
 				{
 					CodeEmitter ilgen = CodeEmitter.Create(mb);
@@ -4546,21 +4540,58 @@ namespace IKVM.Internal
 					for (int i = 0; i < realParamTypes.Length; i++)
 					{
 						ilgen.Emit(OpCodes.Ldarg_S, (byte)argpos++);
-						if (realParamTypes[i] != parameterTypes[i])
-						{
-							ilgen.Emit(OpCodes.Castclass, realParamTypes[i]);
-						}
 					}
 					mw.EmitCall(ilgen);
 					ilgen.Emit(OpCodes.Ret);
 					ilgen.DoEmit();
 				}
-				else if (!wrapper.IsAbstract)
+			}
+
+			private void GenerateType1bAccessStub(MethodWrapper mw, bool virt)
+			{
+				Debug.Assert(!mw.HasCallerID);
+				MethodAttributes stubattribs = mw.IsPublic && virt ? MethodAttributes.Public : MethodAttributes.FamORAssem;
+				stubattribs |= MethodAttributes.HideBySig;
+				if (mw.IsStatic)
 				{
-					CodeEmitter ilgen = CodeEmitter.Create(mb);
-					ilgen.EmitThrow("java.lang.AbstractMethodError", wrapper.Name + "." + mw.Name + mw.Signature);
-					ilgen.DoEmit();
+					stubattribs |= MethodAttributes.Static;
 				}
+				TypeWrapper[] realParameterTypes = mw.GetParameters();
+				Type[] parameterTypes = new Type[realParameterTypes.Length];
+				for (int i = 0; i < realParameterTypes.Length; i++)
+				{
+					parameterTypes[i] = realParameterTypes[i].GetPublicBaseTypeWrapper().TypeAsSignatureType;
+				}
+				Type returnType = mw.ReturnType.GetPublicBaseTypeWrapper().TypeAsSignatureType;
+				string realName = wrapper.GenerateUniqueMethodName(virt ? mw.Name : NamePrefix.Type1bNonVirtualAccessStub + mw.Name, returnType, parameterTypes);
+				MethodBuilder mb = typeBuilder.DefineMethod(realName, stubattribs, returnType, parameterTypes);
+				AttributeHelper.HideFromReflection(mb, mw.IsStatic ? HideFromReflectionAttribute.Type1bAccessStubStatic : virt ? HideFromReflectionAttribute.Type1bAccessStubVirtual : HideFromReflectionAttribute.Type1bAccessStubNonVirtual);
+				AttributeHelper.SetNameSig(mb, mw.Name, mw.Signature);
+				CodeEmitter ilgen = CodeEmitter.Create(mb);
+				Type[] realParamTypes = mw.GetParametersForDefineMethod();
+				int argpos = 0;
+				if (!mw.IsStatic)
+				{
+					ilgen.Emit(OpCodes.Ldarg_S, (byte)argpos++);
+				}
+				for (int i = 0; i < realParamTypes.Length; i++)
+				{
+					ilgen.Emit(OpCodes.Ldarg_S, (byte)argpos++);
+					if (realParamTypes[i] != parameterTypes[i])
+					{
+						ilgen.Emit(OpCodes.Castclass, realParamTypes[i]);
+					}
+				}
+				if (mw.IsStatic || !virt)
+				{
+					mw.EmitCall(ilgen);
+				}
+				else
+				{
+					mw.EmitCallvirt(ilgen);
+				}
+				ilgen.Emit(OpCodes.Ret);
+				ilgen.DoEmit();
 			}
 #endif // STATIC_COMPILER
 

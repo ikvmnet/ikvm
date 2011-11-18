@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -420,9 +420,31 @@ namespace IKVM.Attributes
 	{
 	}
 
-	[AttributeUsage(AttributeTargets.Method | AttributeTargets.Property)]
+	[AttributeUsage(AttributeTargets.Method | AttributeTargets.Field | AttributeTargets.Property)]
 	public sealed class HideFromReflectionAttribute : Attribute
 	{
+		private readonly int reason;
+		// reasons
+		public const int Unknown = 0;
+		public const int Type1aAccessStub = 1;
+		public const int Type1bAccessStubVirtual = 2;
+		public const int Type1bAccessStubNonVirtual = 3;
+		public const int Type1bAccessStubStatic = 4;
+
+		public HideFromReflectionAttribute()
+			: this(Unknown)
+		{
+		}
+
+		public HideFromReflectionAttribute(int reason)
+		{
+			this.reason = reason;
+		}
+
+		public int Reason
+		{
+			get { return reason; }
+		}
 	}
 
 	[Flags]

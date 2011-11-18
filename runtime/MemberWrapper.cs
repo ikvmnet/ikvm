@@ -1203,6 +1203,29 @@ namespace IKVM.Internal
 #endif // !STUB_GENERATOR
 	}
 
+	sealed class AccessStubMethodWrapper : SmartMethodWrapper
+	{
+		private readonly MethodInfo stubNonVirtual;
+
+		internal AccessStubMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodInfo stubVirtual, MethodInfo stubNonVirtual, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
+			: base(declaringType, name, sig, stubVirtual, returnType, parameterTypes, modifiers, flags)
+		{
+			this.stubNonVirtual = stubNonVirtual;
+		}
+
+#if !STUB_GENERATOR
+		protected override void CallImpl(CodeEmitter ilgen)
+		{
+			ilgen.Emit(OpCodes.Call, stubNonVirtual);
+		}
+
+		protected override void CallvirtImpl(CodeEmitter ilgen)
+		{
+			ilgen.Emit(OpCodes.Callvirt, (MethodInfo)GetMethod());
+		}
+#endif // !STUB_GENERATOR
+	}
+
 	abstract class FieldWrapper : MemberWrapper
 	{
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR

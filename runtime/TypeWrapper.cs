@@ -473,6 +473,12 @@ namespace IKVM.Internal
 			mb.SetCustomAttribute(cab);
 		}
 
+		internal static void HideFromReflection(MethodBuilder mb, int reason)
+		{
+			CustomAttributeBuilder cab = new CustomAttributeBuilder(typeofHideFromReflectionAttribute.GetConstructor(new Type[] { Types.Int32 }), new object[] { reason });
+			mb.SetCustomAttribute(cab);
+		}
+
 		internal static void HideFromReflection(FieldBuilder fb)
 		{
 			CustomAttributeBuilder cab = new CustomAttributeBuilder(typeofHideFromReflectionAttribute.GetConstructor(Type.EmptyTypes), new object[0]);
@@ -488,6 +494,37 @@ namespace IKVM.Internal
 		internal static bool IsHideFromReflection(MemberInfo mi)
 		{
 			return mi.IsDefined(typeofHideFromReflectionAttribute, false);
+		}
+
+		internal static bool IsHideFromReflection(MemberInfo mi, out int reason)
+		{
+#if !STATIC_COMPILER && !STUB_GENERATOR
+			object[] attr = mi.GetCustomAttributes(typeof(HideFromReflectionAttribute), false);
+			if (attr.Length == 1)
+			{
+				reason = ((HideFromReflectionAttribute)attr[0]).Reason;
+				return true;
+			}
+			reason = HideFromReflectionAttribute.Unknown;
+			return false;
+#else
+			IList<CustomAttributeData> attr = CustomAttributeData.__GetCustomAttributes(mi, typeofHideFromReflectionAttribute, false);
+			if (attr.Count == 1)
+			{
+				IList<CustomAttributeTypedArgument> args = attr[0].ConstructorArguments;
+				if (args.Count == 1)
+				{
+					reason = (int)args[0].Value;
+				}
+				else
+				{
+					reason = HideFromReflectionAttribute.Unknown;
+				}
+				return true;
+			}
+			reason = HideFromReflectionAttribute.Unknown;
+			return false;
+#endif
 		}
 
 		internal static void HideFromJava(TypeBuilder typeBuilder)
@@ -1649,6 +1686,7 @@ namespace IKVM.Internal
 	static class NamePrefix
 	{
 		internal const string Type2AccessStubBackingField = "__<>";
+		internal const string Type1bNonVirtualAccessStub = "<nonvirtual>";
 	}
 
 	internal abstract class TypeWrapper
@@ -3842,7 +3880,7 @@ namespace IKVM.Internal
 #endif
 		}
 
-		private bool GetNameSigFromMethodBase(MethodBase method, out string name, out string sig, out TypeWrapper retType, out TypeWrapper[] paramTypes, ref MemberFlags flags)
+		private void GetNameSigFromMethodBase(MethodBase method, out string name, out string sig, out TypeWrapper retType, out TypeWrapper[] paramTypes, ref MemberFlags flags)
 		{
 			retType = method is ConstructorInfo ? PrimitiveTypeWrapper.VOID : ClassLoaderWrapper.GetWrapperFromType(((MethodInfo)method).ReturnType);
 			ParameterInfo[] parameters = method.GetParameters();
@@ -3886,7 +3924,6 @@ namespace IKVM.Internal
 				{
 					SigTypePatchUp(sigparams[i], ref paramTypes[i]);
 				}
-				return true;
 			}
 			else
 			{
@@ -3906,7 +3943,6 @@ namespace IKVM.Internal
 				sb.Append(")");
 				sb.Append(retType.SigName);
 				sig = sb.ToString();
-				return false;
 			}
 		}
 
@@ -3947,6 +3983,7 @@ namespace IKVM.Internal
 		{
 			bool isDelegate = type.BaseType == Types.MulticastDelegate;
 			List<MethodWrapper> methods = new List<MethodWrapper>();
+			List<MethodInfo> type1bAccessStubs = null;
 			const BindingFlags flags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
 			foreach(ConstructorInfo ctor in type.GetConstructors(flags))
 			{
@@ -3956,17 +3993,21 @@ namespace IKVM.Internal
 				}
 				else
 				{
-					AddMethodOrConstructor(ctor, methods);
+					AddMethodOrConstructor(ctor, methods, ref type1bAccessStubs);
 				}
 			}
 			foreach(MethodInfo method in type.GetMethods(flags))
 			{
-				AddMethodOrConstructor(method, methods);
+				AddMethodOrConstructor(method, methods, ref type1bAccessStubs);
+			}
+			if(type1bAccessStubs != null)
+			{
+				AddType1bAccessStubs(methods, type1bAccessStubs);
 			}
 			SetMethods(methods.ToArray());
 		}
 
-		private void AddMethodOrConstructor(MethodBase method, List<MethodWrapper> methods)
+		private void AddMethodOrConstructor(MethodBase method, List<MethodWrapper> methods, ref List<MethodInfo> type1bAccessStubs)
 		{
 			if(!AttributeHelper.IsHideFromJava(method))
 			{
@@ -3981,29 +4022,83 @@ namespace IKVM.Internal
 					TypeWrapper retType;
 					TypeWrapper[] paramTypes;
 					MethodInfo mi = method as MethodInfo;
-					bool hideFromReflection = mi != null ? AttributeHelper.IsHideFromReflection(mi) : false;
+					int reason = HideFromReflectionAttribute.Unknown;
+					bool hideFromReflection = mi != null ? AttributeHelper.IsHideFromReflection(mi, out reason) : false;
 					MemberFlags flags = hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None;
-					if (GetNameSigFromMethodBase(method, out name, out sig, out retType, out paramTypes, ref flags) && hideFromReflection && (method.IsPublic || method.IsFamilyOrAssembly))
+					switch (reason)
 					{
-						foreach (TypeWrapper tw in paramTypes)
-						{
-							if (!tw.IsPublic)
-							{
-								flags |= MemberFlags.AccessStub;
-								break;
-							}
-						}
-						if (!retType.IsPublic)
-						{
+						case HideFromReflectionAttribute.Type1aAccessStub:
+						case HideFromReflectionAttribute.Type1bAccessStubStatic:
 							flags |= MemberFlags.AccessStub;
-						}
+							break;
+						case HideFromReflectionAttribute.Type1bAccessStubVirtual:
+						case HideFromReflectionAttribute.Type1bAccessStubNonVirtual:
+							if (type1bAccessStubs == null)
+							{
+								type1bAccessStubs = new List<MethodInfo>();
+							}
+							type1bAccessStubs.Add(mi);
+							return;
 					}
+					GetNameSigFromMethodBase(method, out name, out sig, out retType, out paramTypes, ref flags);
 					ExModifiers mods = AttributeHelper.GetModifiers(method, false);
 					if(mods.IsInternal)
 					{
 						flags |= MemberFlags.InternalAccess;
 					}
 					methods.Add(MethodWrapper.Create(this, name, sig, method, retType, paramTypes, mods.Modifiers, flags));
+				}
+			}
+		}
+
+		private void AddType1bAccessStubs(List<MethodWrapper> methods, List<MethodInfo> type1bAccessStubs)
+		{
+			for (int i = 0; i < type1bAccessStubs.Count; i++)
+			{
+				if (type1bAccessStubs[i] != null)
+				{
+					string name1;
+					string sig1;
+					TypeWrapper retType1;
+					TypeWrapper[] paramTypes1;
+					MemberFlags flags1 = MemberFlags.HideFromReflection;
+					GetNameSigFromMethodBase(type1bAccessStubs[i], out name1, out sig1, out retType1, out paramTypes1, ref flags1);
+					MethodInfo found = null;
+					for (int j = i + 1; j < type1bAccessStubs.Count; j++)
+					{
+						if (type1bAccessStubs[j] != null)
+						{
+							string name2;
+							string sig2;
+							TypeWrapper retType2;
+							TypeWrapper[] paramTypes2;
+							MemberFlags flags2 = MemberFlags.HideFromReflection | MemberFlags.AccessStub;
+							GetNameSigFromMethodBase(type1bAccessStubs[j], out name2, out sig2, out retType2, out paramTypes2, ref flags2);
+							if (name1 == name2 && sig1 == sig2)
+							{
+								found = type1bAccessStubs[j];
+								type1bAccessStubs[j] = null;
+								break;
+							}
+						}
+					}
+					MethodInfo stubVirtual;
+					MethodInfo stubNonVirtual;
+					if (found == null)
+					{
+						stubVirtual = stubNonVirtual = type1bAccessStubs[i];
+					}
+					else if (found.Name.StartsWith(NamePrefix.Type1bNonVirtualAccessStub, StringComparison.Ordinal))
+					{
+						stubVirtual = type1bAccessStubs[i];
+						stubNonVirtual = found;
+					}
+					else
+					{
+						stubVirtual = found;
+						stubNonVirtual = type1bAccessStubs[i];
+					}
+					methods.Add(new AccessStubMethodWrapper(this, name1, sig1, stubVirtual, stubNonVirtual, retType1, paramTypes1, stubVirtual.IsPublic ? Modifiers.Public : Modifiers.Protected, MemberFlags.HideFromReflection | MemberFlags.AccessStub));
 				}
 			}
 		}
