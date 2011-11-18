@@ -2308,6 +2308,10 @@ namespace IKVM.Internal
 					{
 						break;
 					}
+					else if (baseMethod.IsAccessStub)
+					{
+						// ignore
+					}
 					else if (!baseMethod.IsStatic && (baseMethod.IsPublic || baseMethod.IsProtected))
 					{
 						topPublicOrProtectedMethod = baseMethod;
@@ -2321,6 +2325,10 @@ namespace IKVM.Internal
 					if (baseMethod == null)
 					{
 						break;
+					}
+					else if (baseMethod.IsAccessStub)
+					{
+						// ignore
 					}
 					else if (baseMethod.IsPrivate)
 					{
@@ -2493,17 +2501,21 @@ namespace IKVM.Internal
 					{
 						return null;
 					}
+					else if (baseMethod.IsAccessStub)
+					{
+						// ignore
+					}
 					// here are the complex rules for determining whether this method overrides the method we found
 					// RULE 1: final methods may not be overridden
 					// (note that we intentionally not check IsStatic here!)
-					if (baseMethod.IsFinal
+					else if (baseMethod.IsFinal
 						&& !baseMethod.IsPrivate
 						&& (baseMethod.IsPublic || baseMethod.IsProtected || baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper)))
 					{
 						throw new VerifyError("final method " + baseMethod.Name + baseMethod.Signature + " in " + baseMethod.DeclaringType.Name + " is overridden in " + wrapper.Name);
 					}
 					// RULE 1a: static methods are ignored (other than the RULE 1 check)
-					if (baseMethod.IsStatic)
+					else if (baseMethod.IsStatic)
 					{
 					}
 					// RULE 2: public & protected methods can be overridden (package methods are handled by RULE 4)
@@ -4480,16 +4492,74 @@ namespace IKVM.Internal
 						// implement an interface method
 						stubattribs |= MethodAttributes.Final | MethodAttributes.NewSlot;
 					}
+					if (mw.HasNonPublicTypeInSignature)
+					{
+						// we're changing the signature, so we need NewSlot
+						stubattribs |= MethodAttributes.NewSlot | MethodAttributes.Final;
+					}
 				}
-				MethodBuilder mb = typeBuilder.DefineMethod(mw.Name, stubattribs, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
+				Type[] parameterTypes;
+				Type returnType;
+				if (mw.HasNonPublicTypeInSignature)
+				{
+					TypeWrapper[] realParameterTypes = mw.GetParameters();
+					parameterTypes = new Type[realParameterTypes.Length];
+					for (int i = 0; i < realParameterTypes.Length; i++)
+					{
+						if (!realParameterTypes[i].IsPublic)
+						{
+							parameterTypes[i] = realParameterTypes[i].GetPublicBaseTypeWrapper().TypeAsSignatureType;
+						}
+						else
+						{
+							parameterTypes[i] = realParameterTypes[i].TypeAsSignatureType;
+						}
+					}
+					if (!mw.ReturnType.IsPublic)
+					{
+						returnType = mw.ReturnType.GetPublicBaseTypeWrapper().TypeAsSignatureType;
+					}
+					else
+					{
+						returnType = mw.ReturnType.TypeAsSignatureType;
+					}
+				}
+				else
+				{
+					parameterTypes = mw.GetParametersForDefineMethod();
+					returnType = mw.ReturnTypeForDefineMethod;
+				}
+				string realName = wrapper.GenerateUniqueMethodName(mw.Name, returnType, parameterTypes);
+				if (realName != mw.Name && (stubattribs & MethodAttributes.Virtual) != 0)
+				{
+					stubattribs |= MethodAttributes.NewSlot;
+				}
+				MethodBuilder mb = typeBuilder.DefineMethod(realName, stubattribs, returnType, parameterTypes);
+				if (realName != mw.Name && (stubattribs & (MethodAttributes.Virtual | MethodAttributes.Final)) == MethodAttributes.Virtual)
+				{
+					typeBuilder.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
+				}
 				AttributeHelper.HideFromReflection(mb);
+				if (mw.HasNonPublicTypeInSignature || realName != mw.Name)
+				{
+					AttributeHelper.SetNameSig(mb, mw.Name, mw.Signature);
+				}
 				if (!mw.IsAbstract)
 				{
 					CodeEmitter ilgen = CodeEmitter.Create(mb);
-					int argc = mw.GetParametersForDefineMethod().Length + (mw.IsStatic ? 0 : 1);
-					for (int i = 0; i < argc; i++)
+					Type[] realParamTypes = mw.GetParametersForDefineMethod();
+					int argpos = 0;
+					if (!mw.IsStatic)
 					{
-						ilgen.Emit(OpCodes.Ldarg_S, (byte)i);
+						ilgen.Emit(OpCodes.Ldarg_S, (byte)argpos++);
+					}
+					for (int i = 0; i < realParamTypes.Length; i++)
+					{
+						ilgen.Emit(OpCodes.Ldarg_S, (byte)argpos++);
+						if (realParamTypes[i] != parameterTypes[i])
+						{
+							ilgen.Emit(OpCodes.Castclass, realParamTypes[i]);
+						}
 					}
 					mw.EmitCall(ilgen);
 					ilgen.Emit(OpCodes.Ret);

@@ -3842,7 +3842,7 @@ namespace IKVM.Internal
 #endif
 		}
 
-		private void GetNameSigFromMethodBase(MethodBase method, out string name, out string sig, out TypeWrapper retType, out TypeWrapper[] paramTypes, ref MemberFlags flags)
+		private bool GetNameSigFromMethodBase(MethodBase method, out string name, out string sig, out TypeWrapper retType, out TypeWrapper[] paramTypes, ref MemberFlags flags)
 		{
 			retType = method is ConstructorInfo ? PrimitiveTypeWrapper.VOID : ClassLoaderWrapper.GetWrapperFromType(((MethodInfo)method).ReturnType);
 			ParameterInfo[] parameters = method.GetParameters();
@@ -3886,6 +3886,7 @@ namespace IKVM.Internal
 				{
 					SigTypePatchUp(sigparams[i], ref paramTypes[i]);
 				}
+				return true;
 			}
 			else
 			{
@@ -3905,6 +3906,7 @@ namespace IKVM.Internal
 				sb.Append(")");
 				sb.Append(retType.SigName);
 				sig = sb.ToString();
+				return false;
 			}
 		}
 
@@ -3981,7 +3983,21 @@ namespace IKVM.Internal
 					MethodInfo mi = method as MethodInfo;
 					bool hideFromReflection = mi != null ? AttributeHelper.IsHideFromReflection(mi) : false;
 					MemberFlags flags = hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None;
-					GetNameSigFromMethodBase(method, out name, out sig, out retType, out paramTypes, ref flags);
+					if (GetNameSigFromMethodBase(method, out name, out sig, out retType, out paramTypes, ref flags) && hideFromReflection && (method.IsPublic || method.IsFamilyOrAssembly))
+					{
+						foreach (TypeWrapper tw in paramTypes)
+						{
+							if (!tw.IsPublic)
+							{
+								flags |= MemberFlags.AccessStub;
+								break;
+							}
+						}
+						if (!retType.IsPublic)
+						{
+							flags |= MemberFlags.AccessStub;
+						}
+					}
 					ExModifiers mods = AttributeHelper.GetModifiers(method, false);
 					if(mods.IsInternal)
 					{
