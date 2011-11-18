@@ -4468,13 +4468,13 @@ namespace IKVM.Internal
 							&& mw.Name != StringConstants.INIT
 							&& wrapper.GetMethodWrapper(mw.Name, mw.Signature, true) == mw)
 						{
-							GenerateAccessStub(mw);
+							GenerateType1AccessStub(mw);
 						}
 					}
 				}
 			}
 
-			private void GenerateAccessStub(MethodWrapper mw)
+			private void GenerateType1AccessStub(MethodWrapper mw)
 			{
 				Debug.Assert(!mw.HasCallerID);
 				MethodAttributes stubattribs = mw.IsPublic ? MethodAttributes.Public : MethodAttributes.FamORAssem;
@@ -4510,23 +4510,9 @@ namespace IKVM.Internal
 					parameterTypes = new Type[realParameterTypes.Length];
 					for (int i = 0; i < realParameterTypes.Length; i++)
 					{
-						if (!realParameterTypes[i].IsPublic)
-						{
-							parameterTypes[i] = realParameterTypes[i].GetPublicBaseTypeWrapper().TypeAsSignatureType;
-						}
-						else
-						{
-							parameterTypes[i] = realParameterTypes[i].TypeAsSignatureType;
-						}
+						parameterTypes[i] = realParameterTypes[i].GetPublicBaseTypeWrapper().TypeAsSignatureType;
 					}
-					if (!mw.ReturnType.IsPublic)
-					{
-						returnType = mw.ReturnType.GetPublicBaseTypeWrapper().TypeAsSignatureType;
-					}
-					else
-					{
-						returnType = mw.ReturnType.TypeAsSignatureType;
-					}
+					returnType = mw.ReturnType.GetPublicBaseTypeWrapper().TypeAsSignatureType;
 				}
 				else
 				{
