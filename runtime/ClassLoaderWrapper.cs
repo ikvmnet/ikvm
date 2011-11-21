@@ -1352,9 +1352,9 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 		internal virtual void IssueMessage(Message msgId, params string[] values)
 		{
-			// only code that is compiled (by the static compiler) can generate warnings
-			// (so that must mean an instance of CompilerClassLoader, which overrides this method.)
-			throw new InvalidOperationException();
+			// it's not ideal when we end up here (because it means we're emitting a warning that is not associated with a specific output target),
+			// but it happens when we're decoding something in a referenced assembly that either doesn't make sense or contains an unloadable type
+			StaticCompiler.IssueMessage(msgId, values);
 		}
 #endif
 	}
