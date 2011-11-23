@@ -4387,7 +4387,7 @@ namespace IKVM.Internal
 					{
 						foreach (FieldWrapper fw in tw.GetFields())
 						{
-							if ((fw.IsPublic || fw.IsProtected)
+							if ((fw.IsPublic || (fw.IsProtected && !wrapper.IsFinal))
 								&& wrapper.GetFieldWrapper(fw.Name, fw.Signature) == fw)
 							{
 								GenerateAccessStub(fw, ref propertyNames, true);
@@ -4406,7 +4406,9 @@ namespace IKVM.Internal
 			{
 				foreach (FieldWrapper fw in wrapper.GetFields())
 				{
-					if (fw.HasNonPublicTypeInSignature && fw.FieldTypeWrapper.IsAccessibleFrom(wrapper))
+					if (fw.HasNonPublicTypeInSignature
+						&& (fw.IsPublic || (fw.IsProtected && !wrapper.IsFinal))
+						&& fw.FieldTypeWrapper.IsAccessibleFrom(wrapper))
 					{
 						GenerateAccessStub(fw, ref propertyNames, false);
 					}
@@ -4523,14 +4525,14 @@ namespace IKVM.Internal
 				{
 					foreach (MethodWrapper mw in tw.GetMethods())
 					{
-						if ((mw.IsPublic || mw.IsProtected)
+						if ((mw.IsPublic || (mw.IsProtected && !wrapper.IsFinal))
 							&& (!mw.IsAbstract || wrapper.IsAbstract)
 							&& mw.Name != StringConstants.INIT
 							&& wrapper.GetMethodWrapper(mw.Name, mw.Signature, true) == mw
 							&& ParametersAreAccessible(mw))
 						{
 							GenerateAccessStub(id, mw, true, true);
-							if (!mw.IsStatic && !mw.IsFinal && !mw.IsAbstract)
+							if (!mw.IsStatic && !mw.IsFinal && !mw.IsAbstract && !wrapper.IsFinal)
 							{
 								GenerateAccessStub(id, mw, false, true);
 							}
@@ -4545,11 +4547,12 @@ namespace IKVM.Internal
 				foreach (MethodWrapper mw in wrapper.GetMethods())
 				{
 					if (mw.HasNonPublicTypeInSignature
+						&& (mw.IsPublic || (mw.IsProtected && !wrapper.IsFinal))
 						&& mw.Name != StringConstants.INIT	// TODO we don't currently support constructors
 						&& ParametersAreAccessible(mw))
 					{
 						GenerateAccessStub(id, mw, true, false);
-						if (!mw.IsStatic && !mw.IsFinal && !mw.IsAbstract)
+						if (!mw.IsStatic && !mw.IsFinal && !mw.IsAbstract && !wrapper.IsFinal)
 						{
 							GenerateAccessStub(id, mw, false, false);
 						}
