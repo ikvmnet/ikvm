@@ -496,37 +496,6 @@ namespace IKVM.Internal
 			return mi.IsDefined(typeofHideFromReflectionAttribute, false);
 		}
 
-		internal static bool IsHideFromReflection(MemberInfo mi, out int reason)
-		{
-#if !STATIC_COMPILER && !STUB_GENERATOR
-			object[] attr = mi.GetCustomAttributes(typeof(HideFromReflectionAttribute), false);
-			if (attr.Length == 1)
-			{
-				reason = ((HideFromReflectionAttribute)attr[0]).Reason;
-				return true;
-			}
-			reason = HideFromReflectionAttribute.Unknown;
-			return false;
-#else
-			IList<CustomAttributeData> attr = CustomAttributeData.__GetCustomAttributes(mi, typeofHideFromReflectionAttribute, false);
-			if (attr.Count == 1)
-			{
-				IList<CustomAttributeTypedArgument> args = attr[0].ConstructorArguments;
-				if (args.Count == 1)
-				{
-					reason = (int)args[0].Value;
-				}
-				else
-				{
-					reason = HideFromReflectionAttribute.Unknown;
-				}
-				return true;
-			}
-			reason = HideFromReflectionAttribute.Unknown;
-			return false;
-#endif
-		}
-
 		internal static void HideFromJava(TypeBuilder typeBuilder)
 		{
 			if(hideFromJavaAttribute == null)
@@ -1686,7 +1655,8 @@ namespace IKVM.Internal
 	static class NamePrefix
 	{
 		internal const string Type2AccessStubBackingField = "__<>";
-		internal const string Type1bNonVirtualAccessStub = "<nonvirtual>";
+		internal const string AccessStub = "<accessstub>";
+		internal const string NonVirtual = "<nonvirtual>";
 	}
 
 	internal abstract class TypeWrapper
@@ -3105,6 +3075,7 @@ namespace IKVM.Internal
 
 		internal TypeWrapper GetPublicBaseTypeWrapper()
 		{
+			Debug.Assert(!this.IsPublic);
 			if (this.IsUnloadable || this.IsInterface)
 			{
 				return CoreClasses.java.lang.Object.Wrapper;
@@ -3983,7 +3954,6 @@ namespace IKVM.Internal
 		{
 			bool isDelegate = type.BaseType == Types.MulticastDelegate;
 			List<MethodWrapper> methods = new List<MethodWrapper>();
-			List<MethodInfo> type1bAccessStubs = null;
 			const BindingFlags flags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
 			foreach(ConstructorInfo ctor in type.GetConstructors(flags))
 			{
@@ -3993,21 +3963,17 @@ namespace IKVM.Internal
 				}
 				else
 				{
-					AddMethodOrConstructor(ctor, methods, ref type1bAccessStubs);
+					AddMethodOrConstructor(ctor, methods);
 				}
 			}
 			foreach(MethodInfo method in type.GetMethods(flags))
 			{
-				AddMethodOrConstructor(method, methods, ref type1bAccessStubs);
-			}
-			if(type1bAccessStubs != null)
-			{
-				AddType1bAccessStubs(methods, type1bAccessStubs);
+				AddMethodOrConstructor(method, methods);
 			}
 			SetMethods(methods.ToArray());
 		}
 
-		private void AddMethodOrConstructor(MethodBase method, List<MethodWrapper> methods, ref List<MethodInfo> type1bAccessStubs)
+		private void AddMethodOrConstructor(MethodBase method, List<MethodWrapper> methods)
 		{
 			if(!AttributeHelper.IsHideFromJava(method))
 			{
@@ -4022,85 +3988,62 @@ namespace IKVM.Internal
 					TypeWrapper retType;
 					TypeWrapper[] paramTypes;
 					MethodInfo mi = method as MethodInfo;
-					int reason = HideFromReflectionAttribute.Unknown;
-					bool hideFromReflection = mi != null ? AttributeHelper.IsHideFromReflection(mi, out reason) : false;
+					bool hideFromReflection = mi != null ? AttributeHelper.IsHideFromReflection(mi) : false;
 					MemberFlags flags = hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None;
-					switch (reason)
-					{
-						case HideFromReflectionAttribute.Type1aAccessStub:
-						case HideFromReflectionAttribute.Type1bAccessStubStatic:
-							flags |= MemberFlags.AccessStub;
-							break;
-						case HideFromReflectionAttribute.Type1bAccessStubVirtual:
-						case HideFromReflectionAttribute.Type1bAccessStubNonVirtual:
-							if (type1bAccessStubs == null)
-							{
-								type1bAccessStubs = new List<MethodInfo>();
-							}
-							type1bAccessStubs.Add(mi);
-							return;
-					}
 					GetNameSigFromMethodBase(method, out name, out sig, out retType, out paramTypes, ref flags);
 					ExModifiers mods = AttributeHelper.GetModifiers(method, false);
 					if(mods.IsInternal)
 					{
 						flags |= MemberFlags.InternalAccess;
 					}
-					methods.Add(MethodWrapper.Create(this, name, sig, method, retType, paramTypes, mods.Modifiers, flags));
+					if(hideFromReflection && name.StartsWith(NamePrefix.AccessStub, StringComparison.Ordinal))
+					{
+						int id = Int32.Parse(name.Substring(NamePrefix.AccessStub.Length, name.IndexOf('|', NamePrefix.AccessStub.Length) - NamePrefix.AccessStub.Length));
+						name = name.Substring(name.IndexOf('|', NamePrefix.AccessStub.Length) + 1);
+						flags |= MemberFlags.AccessStub;
+						MethodInfo nonvirt = type.GetMethod(NamePrefix.NonVirtual + id, BindingFlags.NonPublic | BindingFlags.DeclaredOnly | BindingFlags.Instance);
+						methods.Add(new AccessStubMethodWrapper(this, name, sig, mi, mi, nonvirt ?? mi, retType, paramTypes, mods.Modifiers & ~Modifiers.Final, flags));
+						return;
+					}
+					MethodWrapper mw = MethodWrapper.Create(this, name, sig, method, retType, paramTypes, mods.Modifiers, flags);
+					if (mw.HasNonPublicTypeInSignature)
+					{
+						MethodInfo stubVirt;
+						MethodInfo stubNonVirt;
+						if (GetType2AccessStubs(name, sig, out stubVirt, out stubNonVirt))
+						{
+							mw = new AccessStubMethodWrapper(this, name, sig, mi, stubVirt, stubNonVirt ?? stubVirt, retType, paramTypes, mw.Modifiers, flags);
+						}
+					}
+					methods.Add(mw);
 				}
 			}
 		}
 
-		private void AddType1bAccessStubs(List<MethodWrapper> methods, List<MethodInfo> type1bAccessStubs)
+		private bool GetType2AccessStubs(string name, string sig, out MethodInfo stubVirt, out MethodInfo stubNonVirt)
 		{
-			for (int i = 0; i < type1bAccessStubs.Count; i++)
+			stubVirt = null;
+			stubNonVirt = null;
+			const BindingFlags flags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
+			foreach (MethodInfo method in type.GetMethods(flags))
 			{
-				if (type1bAccessStubs[i] != null)
+				if (AttributeHelper.IsHideFromJava(method))
 				{
-					string name1;
-					string sig1;
-					TypeWrapper retType1;
-					TypeWrapper[] paramTypes1;
-					MemberFlags flags1 = MemberFlags.HideFromReflection;
-					GetNameSigFromMethodBase(type1bAccessStubs[i], out name1, out sig1, out retType1, out paramTypes1, ref flags1);
-					MethodInfo found = null;
-					for (int j = i + 1; j < type1bAccessStubs.Count; j++)
+					NameSigAttribute attr = AttributeHelper.GetNameSig(method);
+					if (attr != null && attr.Name == name && attr.Sig == sig)
 					{
-						if (type1bAccessStubs[j] != null)
+						if (method.Name.StartsWith(NamePrefix.NonVirtual, StringComparison.Ordinal))
 						{
-							string name2;
-							string sig2;
-							TypeWrapper retType2;
-							TypeWrapper[] paramTypes2;
-							MemberFlags flags2 = MemberFlags.HideFromReflection | MemberFlags.AccessStub;
-							GetNameSigFromMethodBase(type1bAccessStubs[j], out name2, out sig2, out retType2, out paramTypes2, ref flags2);
-							if (name1 == name2 && sig1 == sig2)
-							{
-								found = type1bAccessStubs[j];
-								type1bAccessStubs[j] = null;
-								break;
-							}
+							stubNonVirt = method;
+						}
+						else
+						{
+							stubVirt = method;
 						}
 					}
-					MethodInfo stubVirtual;
-					MethodInfo stubNonVirtual;
-					if (found == null)
-					{
-						stubVirtual = stubNonVirtual = type1bAccessStubs[i];
-					}
-					else if (found.Name.StartsWith(NamePrefix.Type1bNonVirtualAccessStub, StringComparison.Ordinal))
-					{
-						stubVirtual = type1bAccessStubs[i];
-						stubNonVirtual = found;
-					}
-					else
-					{
-						stubVirtual = found;
-						stubNonVirtual = type1bAccessStubs[i];
-					}
-					methods.Add(new AccessStubMethodWrapper(this, name1, sig1, stubVirtual, stubNonVirtual, retType1, paramTypes1, stubVirtual.IsPublic ? Modifiers.Public : Modifiers.Protected, MemberFlags.HideFromReflection | MemberFlags.AccessStub));
 				}
 			}
+			return stubVirt != null;
 		}
 
 		private static int SortFieldByToken(FieldInfo field1, FieldInfo field2)

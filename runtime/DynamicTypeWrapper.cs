@@ -2431,7 +2431,11 @@ namespace IKVM.Internal
 								{
 									break;
 								}
-								if (baseMethod2.DeclaringType.IsPackageAccessibleFrom(wrapper) && !baseMethod2.IsPrivate)
+								if (baseMethod2.IsAccessStub)
+								{
+									// ignore
+								}
+								else if (baseMethod2.DeclaringType.IsPackageAccessibleFrom(wrapper) && !baseMethod2.IsPrivate)
 								{
 									if (baseMethod2.IsFinal)
 									{
@@ -2540,7 +2544,11 @@ namespace IKVM.Internal
 								{
 									break;
 								}
-								if (baseMethod2.DeclaringType.IsPackageAccessibleFrom(wrapper) && !baseMethod2.IsPrivate)
+								if (baseMethod2.IsAccessStub)
+								{
+									// ignore
+								}
+								else if (baseMethod2.DeclaringType.IsPackageAccessibleFrom(wrapper) && !baseMethod2.IsPrivate)
 								{
 									if (baseMethod2.IsFinal)
 									{
@@ -4149,12 +4157,10 @@ namespace IKVM.Internal
 				// See if there is any additional metadata
 				wrapper.EmitMapXmlMetadata(typeBuilder, classFile, fields, methods);
 
-				// if we have public fields that have non-public field types, we need access stubs
+				// if we inherit public members from non-public base classes or have public members with non-public types in their signature, we need access stubs
 				if (wrapper.IsPublic)
 				{
-					AddType1FieldAccessStubs(wrapper);
-					AddType2FieldAccessStubs();
-					AddType1MethodAccessStubs();
+					AddAccessStubs();
 				}
 #endif // STATIC_COMPILER
 
@@ -4336,7 +4342,44 @@ namespace IKVM.Internal
 			}
 
 #if STATIC_COMPILER
-			private void AddType1FieldAccessStubs(TypeWrapper tw)
+			private void AddAccessStubs()
+			{
+				/*
+				 * There are two types of access stubs:
+				 * 
+				 * Type 1   These are required when a public class extends a non-public class.
+				 *			In that case we need access stubs for all public and protected members
+				 *			of the non-public base classes.
+				 *
+				 * Type 2	When a public class exposes a member that contains a non-public type in
+				 *			its signature, we need an access stub for that member (where we convert
+				 *			the non-public type in the signature to the first public base type).
+				 *
+				 * Note that type 1 access stubs may also need the type 2 signature type widening
+				 * if the signature contains non-public types.
+				 * 
+				 * Type 1 access stubs are always required, because the JVM allow access to these
+				 * members via the derived class while the CLR doesn't. Historically, we've exposed
+				 * these access stubs in such a way that they are also consumable from other .NET
+				 * languages (when feasible), so we'll continue to do that for back compat.
+				 * 
+				 * Type 2 access stubs are only required by the CLR when running on CLR v4 and the
+				 * caller assembly is security transparent code (level 2). We also want the access
+				 * stubs to allow other .NET languages (e.g. C#) to consume broken APIs that
+				 * (accidentally) expose these members.
+				 */
+				List<string> propertyNames = null;
+				AddType2FieldAccessStubs(ref propertyNames);
+				AddType1FieldAccessStubs(wrapper, ref propertyNames);
+				if (!wrapper.IsInterface)
+				{
+					int id = 0;
+					AddType2MethodAccessStubs(ref id);
+					AddType1MethodAccessStubs(ref id);
+				}
+			}
+
+			private void AddType1FieldAccessStubs(TypeWrapper tw, ref List<string> propertyNames)
 			{
 				do
 				{
@@ -4347,35 +4390,63 @@ namespace IKVM.Internal
 							if ((fw.IsPublic || fw.IsProtected)
 								&& wrapper.GetFieldWrapper(fw.Name, fw.Signature) == fw)
 							{
-								GenerateAccessStub(fw, true);
+								GenerateAccessStub(fw, ref propertyNames, true);
 							}
 						}
 					}
 					foreach (TypeWrapper iface in tw.Interfaces)
 					{
-						AddType1FieldAccessStubs(iface);
+						AddType1FieldAccessStubs(iface, ref propertyNames);
 					}
 					tw = tw.BaseTypeWrapper;
 				} while (tw != null && !tw.IsPublic);
 			}
 
-			private void AddType2FieldAccessStubs()
+			private void AddType2FieldAccessStubs(ref List<string> propertyNames)
 			{
 				foreach (FieldWrapper fw in wrapper.GetFields())
 				{
-					if (fw.HasNonPublicTypeInSignature)
+					if (fw.HasNonPublicTypeInSignature && fw.FieldTypeWrapper.IsAccessibleFrom(wrapper))
 					{
-						GenerateAccessStub(fw, false);
+						GenerateAccessStub(fw, ref propertyNames, false);
 					}
 				}
 			}
 
-			private void GenerateAccessStub(FieldWrapper fw, bool type1)
+			private void GenerateAccessStub(FieldWrapper fw, ref List<string> propertyNames, bool type1)
 			{
+				string name = fw.Name;
+				if (propertyNames == null)
+				{
+					propertyNames = new List<string>();
+					// add all the fields, to avoid clashing with real fields (which can happen for type 2 or type 1 if field type is non-public or unloadable)
+					foreach (FieldWrapper fw1 in wrapper.GetFields())
+					{
+						if (!fw1.HasNonPublicTypeInSignature)
+						{
+							propertyNames.Add(fw1.Name);
+						}
+					}
+				}
+				int uniq = 0;
+				while (propertyNames.Contains(name))
+				{
+					// when we clash, we don't want the access stub property to be visible from (e.g.) C# so we mangle the name
+					name = "<>" + fw.Name + "_" + uniq++;
+				}
+				propertyNames.Add(name);
+
 				if (fw is ConstantFieldWrapper)
 				{
 					// constants cannot have a type 2 access stub, because constant types are always public
 					Debug.Assert(type1);
+
+					if (uniq != 0)
+					{
+						// we only add access stubs for constant fields for consumption by other languages,
+						// so when the field is hidden by another field, we don't need to bother
+						return;
+					}
 
 					FieldAttributes attribs = fw.IsPublic ? FieldAttributes.Public : FieldAttributes.FamORAssem;
 					attribs |= FieldAttributes.Static | FieldAttributes.Literal;
@@ -4385,25 +4456,12 @@ namespace IKVM.Internal
 				}
 				else
 				{
-					string name = fw.Name;
-					// If there is a potential for property name clashes (e.g. we have multiple fields with the same name in this class,
-					// or the current class hides a field in the base class) we will mangle the name as a precaution. We could use a more
-					// complicated scheme which would result in less mangling, but it is exceedingly unlikely to encounter a class with
-					// these field name clashes, because Java cannot handle them either.
-					foreach (FieldWrapper field in wrapper.GetFields())
-					{
-						if (field != fw && !field.IsPrivate && field.Name == name)
-						{
-							name = "<>" + fw.Name + fw.Signature;
-							break;
-						}
-					}
-					Type propType = fw.FieldTypeWrapper.GetPublicBaseTypeWrapper().TypeAsSignatureType;
+					Type propType = ToPublicSignatureType(fw.FieldTypeWrapper);
 					PropertyBuilder pb = typeBuilder.DefineProperty(name, PropertyAttributes.None, propType, Type.EmptyTypes);
 					if (type1)
 					{
 						AttributeHelper.HideFromReflection(pb);
-						if (fw.HasNonPublicTypeInSignature)
+						if (fw.HasNonPublicTypeInSignature || fw.FieldTypeWrapper.IsUnloadable)
 						{
 							AttributeHelper.SetNameSig(pb, fw.Name, fw.Signature);
 						}
@@ -4447,6 +4505,7 @@ namespace IKVM.Internal
 						{
 							ilgen.Emit(OpCodes.Ldarg_1);
 						}
+						// we don't do a DynamicCast if fw.FieldTypeWrapper is unloadable, because for normal unloadable fields we don't enfore the type either
 						if (propType != fw.FieldTypeWrapper.TypeAsSignatureType)
 						{
 							ilgen.Emit(OpCodes.Castclass, fw.FieldTypeWrapper.TypeAsSignatureType);
@@ -4458,96 +4517,48 @@ namespace IKVM.Internal
 				}
 			}
 
-			private void AddType1MethodAccessStubs()
+			private void AddType1MethodAccessStubs(ref int id)
 			{
-				for (int pass = 0; pass < 2; pass++)
+				for (TypeWrapper tw = wrapper.BaseTypeWrapper; tw != null && !tw.IsPublic; tw = tw.BaseTypeWrapper)
 				{
-					for (TypeWrapper tw = wrapper.BaseTypeWrapper; tw != null && !tw.IsPublic; tw = tw.BaseTypeWrapper)
+					foreach (MethodWrapper mw in tw.GetMethods())
 					{
-						foreach (MethodWrapper mw in tw.GetMethods())
+						if ((mw.IsPublic || mw.IsProtected)
+							&& (!mw.IsAbstract || wrapper.IsAbstract)
+							&& mw.Name != StringConstants.INIT
+							&& wrapper.GetMethodWrapper(mw.Name, mw.Signature, true) == mw
+							&& ParametersAreAccessible(mw))
 						{
-							if ((mw.IsPublic || mw.IsProtected)
-								&& (!mw.IsAbstract || wrapper.IsAbstract)
-								&& mw.Name != StringConstants.INIT
-								&& wrapper.GetMethodWrapper(mw.Name, mw.Signature, true) == mw)
+							GenerateAccessStub(id, mw, true, true);
+							if (!mw.IsStatic && !mw.IsFinal && !mw.IsAbstract)
 							{
-								// we generate type 1a in the first pass, because it can't deal with name collisions
-								if (pass == 0)
-								{
-									if (!mw.HasNonPublicTypeInSignature)
-									{
-										GenerateType1aAccessStub(mw);
-									}
-								}
-								else
-								{
-									if (mw.HasNonPublicTypeInSignature)
-									{
-										GenerateType1bAccessStub(mw, true);
-										if (!wrapper.IsFinal && !mw.IsStatic)
-										{
-											GenerateType1bAccessStub(mw, false);
-										}
-									}
-								}
+								GenerateAccessStub(id, mw, false, true);
 							}
+							id++;
 						}
 					}
 				}
 			}
 
-			private void GenerateType1aAccessStub(MethodWrapper mw)
+			private void AddType2MethodAccessStubs(ref int id)
 			{
-				Debug.Assert(!mw.HasCallerID);
-				MethodAttributes stubattribs = mw.IsPublic ? MethodAttributes.Public : MethodAttributes.FamORAssem;
-				stubattribs |= MethodAttributes.HideBySig;
-				if (mw.IsStatic)
+				foreach (MethodWrapper mw in wrapper.GetMethods())
 				{
-					stubattribs |= MethodAttributes.Static;
-				}
-				else
-				{
-					stubattribs |= MethodAttributes.CheckAccessOnOverride | MethodAttributes.Virtual;
-					if (mw.IsAbstract)
+					if (mw.HasNonPublicTypeInSignature
+						&& mw.Name != StringConstants.INIT	// TODO we don't currently support constructors
+						&& ParametersAreAccessible(mw))
 					{
-						stubattribs |= MethodAttributes.Abstract;
+						GenerateAccessStub(id, mw, true, false);
+						if (!mw.IsStatic && !mw.IsFinal && !mw.IsAbstract)
+						{
+							GenerateAccessStub(id, mw, false, false);
+						}
+						id++;
 					}
-					if (mw.IsFinal)
-					{
-						// NOTE final methods still need to be virtual, because a subclass may need this method to
-						// implement an interface method
-						stubattribs |= MethodAttributes.Final | MethodAttributes.NewSlot;
-					}
-				}
-				Type[] parameterTypes = mw.GetParametersForDefineMethod();
-				Type returnType = mw.ReturnTypeForDefineMethod;
-				// register the name where about to use up (it can't exist already)
-				if (mw.Name != wrapper.GenerateUniqueMethodName(mw.Name, returnType, parameterTypes))
-				{
-					throw new InvalidOperationException();
-				}
-				MethodBuilder mb = typeBuilder.DefineMethod(mw.Name, stubattribs, returnType, parameterTypes);
-				AttributeHelper.HideFromReflection(mb, HideFromReflectionAttribute.Type1aAccessStub);
-				if (!mw.IsAbstract)
-				{
-					CodeEmitter ilgen = CodeEmitter.Create(mb);
-					Type[] realParamTypes = mw.GetParametersForDefineMethod();
-					int argpos = 0;
-					if (!mw.IsStatic)
-					{
-						ilgen.Emit(OpCodes.Ldarg_S, (byte)argpos++);
-					}
-					for (int i = 0; i < realParamTypes.Length; i++)
-					{
-						ilgen.Emit(OpCodes.Ldarg_S, (byte)argpos++);
-					}
-					mw.EmitCall(ilgen);
-					ilgen.Emit(OpCodes.Ret);
-					ilgen.DoEmit();
 				}
 			}
 
-			private void GenerateType1bAccessStub(MethodWrapper mw, bool virt)
+			private void GenerateAccessStub(int id, MethodWrapper mw, bool virt, bool type1)
 			{
 				Debug.Assert(!mw.HasCallerID);
 				MethodAttributes stubattribs = mw.IsPublic && virt ? MethodAttributes.Public : MethodAttributes.FamORAssem;
@@ -4556,30 +4567,43 @@ namespace IKVM.Internal
 				{
 					stubattribs |= MethodAttributes.Static;
 				}
-				TypeWrapper[] realParameterTypes = mw.GetParameters();
-				Type[] parameterTypes = new Type[realParameterTypes.Length];
-				for (int i = 0; i < realParameterTypes.Length; i++)
+				TypeWrapper[] parameters = mw.GetParameters();
+				Type[] realParameterTypes = new Type[parameters.Length];
+				Type[] parameterTypes = new Type[parameters.Length];
+				for (int i = 0; i < parameters.Length; i++)
 				{
-					parameterTypes[i] = realParameterTypes[i].GetPublicBaseTypeWrapper().TypeAsSignatureType;
+					realParameterTypes[i] = parameters[i].TypeAsSignatureType;
+					parameterTypes[i] = ToPublicSignatureType(parameters[i]);
 				}
-				Type returnType = mw.ReturnType.GetPublicBaseTypeWrapper().TypeAsSignatureType;
-				string realName = wrapper.GenerateUniqueMethodName(virt ? mw.Name : NamePrefix.Type1bNonVirtualAccessStub + mw.Name, returnType, parameterTypes);
-				MethodBuilder mb = typeBuilder.DefineMethod(realName, stubattribs, returnType, parameterTypes);
-				AttributeHelper.HideFromReflection(mb, mw.IsStatic ? HideFromReflectionAttribute.Type1bAccessStubStatic : virt ? HideFromReflectionAttribute.Type1bAccessStubVirtual : HideFromReflectionAttribute.Type1bAccessStubNonVirtual);
-				AttributeHelper.SetNameSig(mb, mw.Name, mw.Signature);
+				Type returnType = ToPublicSignatureType(mw.ReturnType);
+				string name = virt ? wrapper.GenerateUniqueMethodName(mw.Name, returnType, parameterTypes) : NamePrefix.NonVirtual + id;
+				MethodBuilder mb = typeBuilder.DefineMethod(name, stubattribs, returnType, parameterTypes);
+				if (virt && type1)
+				{
+					AttributeHelper.HideFromReflection(mb);
+					AttributeHelper.SetNameSig(mb, NamePrefix.AccessStub + id + "|" + mw.Name, mw.Signature);
+				}
+				else
+				{
+					AttributeHelper.HideFromJava(mb);
+					if (!type1)
+					{
+						AttributeHelper.SetNameSig(mb, mw.Name, mw.Signature);
+					}
+				}
 				CodeEmitter ilgen = CodeEmitter.Create(mb);
-				Type[] realParamTypes = mw.GetParametersForDefineMethod();
 				int argpos = 0;
 				if (!mw.IsStatic)
 				{
 					ilgen.Emit(OpCodes.Ldarg_S, (byte)argpos++);
 				}
-				for (int i = 0; i < realParamTypes.Length; i++)
+				for (int i = 0; i < parameterTypes.Length; i++)
 				{
 					ilgen.Emit(OpCodes.Ldarg_S, (byte)argpos++);
-					if (realParamTypes[i] != parameterTypes[i])
+					// we don't need to do a DynamicCast if for unloadables, because the method itself will already do that
+					if (parameterTypes[i] != realParameterTypes[i])
 					{
-						ilgen.Emit(OpCodes.Castclass, realParamTypes[i]);
+						ilgen.Emit(OpCodes.Castclass, realParameterTypes[i]);
 					}
 				}
 				if (mw.IsStatic || !virt)
@@ -4592,6 +4616,23 @@ namespace IKVM.Internal
 				}
 				ilgen.Emit(OpCodes.Ret);
 				ilgen.DoEmit();
+			}
+
+			private static Type ToPublicSignatureType(TypeWrapper tw)
+			{
+				return (tw.IsPublic ? tw : tw.GetPublicBaseTypeWrapper()).TypeAsSignatureType;
+			}
+
+			private bool ParametersAreAccessible(MethodWrapper mw)
+			{
+				foreach (TypeWrapper tw in mw.GetParameters())
+				{
+					if (!tw.IsAccessibleFrom(wrapper))
+					{
+						return false;
+					}
+				}
+				return true;
 			}
 #endif // STATIC_COMPILER
 

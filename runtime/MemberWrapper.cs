@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2009 Jeroen Frijters
+  Copyright (C) 2002-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -467,7 +467,7 @@ namespace IKVM.Internal
 
 		private void UpdateNonPublicTypeInSignatureFlag()
 		{
-			if ((IsPublic || IsProtected) && (returnTypeWrapper != null && parameterTypeWrappers != null))
+			if ((IsPublic || IsProtected) && (returnTypeWrapper != null && parameterTypeWrappers != null) && !(this is AccessStubMethodWrapper))
 			{
 				if (!returnTypeWrapper.IsPublic && !returnTypeWrapper.IsUnloadable)
 				{
@@ -1205,11 +1205,13 @@ namespace IKVM.Internal
 
 	sealed class AccessStubMethodWrapper : SmartMethodWrapper
 	{
+		private readonly MethodInfo stubVirtual;
 		private readonly MethodInfo stubNonVirtual;
 
-		internal AccessStubMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodInfo stubVirtual, MethodInfo stubNonVirtual, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
-			: base(declaringType, name, sig, stubVirtual, returnType, parameterTypes, modifiers, flags)
+		internal AccessStubMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodInfo core, MethodInfo stubVirtual, MethodInfo stubNonVirtual, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
+			: base(declaringType, name, sig, core, returnType, parameterTypes, modifiers, flags)
 		{
+			this.stubVirtual = stubVirtual;
 			this.stubNonVirtual = stubNonVirtual;
 		}
 
@@ -1221,7 +1223,7 @@ namespace IKVM.Internal
 
 		protected override void CallvirtImpl(CodeEmitter ilgen)
 		{
-			ilgen.Emit(OpCodes.Callvirt, (MethodInfo)GetMethod());
+			ilgen.Emit(OpCodes.Callvirt, stubVirtual);
 		}
 #endif // !STUB_GENERATOR
 	}

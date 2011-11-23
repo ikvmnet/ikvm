@@ -423,28 +423,6 @@ namespace IKVM.Attributes
 	[AttributeUsage(AttributeTargets.Method | AttributeTargets.Field | AttributeTargets.Property)]
 	public sealed class HideFromReflectionAttribute : Attribute
 	{
-		private readonly int reason;
-		// reasons
-		public const int Unknown = 0;
-		public const int Type1aAccessStub = 1;
-		public const int Type1bAccessStubVirtual = 2;
-		public const int Type1bAccessStubNonVirtual = 3;
-		public const int Type1bAccessStubStatic = 4;
-
-		public HideFromReflectionAttribute()
-			: this(Unknown)
-		{
-		}
-
-		public HideFromReflectionAttribute(int reason)
-		{
-			this.reason = reason;
-		}
-
-		public int Reason
-		{
-			get { return reason; }
-		}
 	}
 
 	[Flags]
