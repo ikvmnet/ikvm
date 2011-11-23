@@ -1657,6 +1657,7 @@ namespace IKVM.Internal
 		internal const string Type2AccessStubBackingField = "__<>";
 		internal const string AccessStub = "<accessstub>";
 		internal const string NonVirtual = "<nonvirtual>";
+		internal const string Bridge = "<bridge>";
 	}
 
 	internal abstract class TypeWrapper

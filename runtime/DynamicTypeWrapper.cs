@@ -2906,7 +2906,7 @@ namespace IKVM.Internal
 								{
 									// To prevent bridge methods with covariant return types from confusing
 									// other .NET compilers (like C#), we rename the bridge method.
-									name = "<bridge>" + name;
+									name = NamePrefix.Bridge + name;
 									setNameSig = true;
 									break;
 								}
@@ -4579,7 +4579,9 @@ namespace IKVM.Internal
 					parameterTypes[i] = ToPublicSignatureType(parameters[i]);
 				}
 				Type returnType = ToPublicSignatureType(mw.ReturnType);
-				string name = virt ? wrapper.GenerateUniqueMethodName(mw.Name, returnType, parameterTypes) : NamePrefix.NonVirtual + id;
+				string name = virt
+					? wrapper.GenerateUniqueMethodName((mw.Modifiers & Modifiers.Bridge) == 0 ? mw.Name : NamePrefix.Bridge + mw.Name, returnType, parameterTypes)
+					: NamePrefix.NonVirtual + id;
 				MethodBuilder mb = typeBuilder.DefineMethod(name, stubattribs, returnType, parameterTypes);
 				if (virt && type1)
 				{
