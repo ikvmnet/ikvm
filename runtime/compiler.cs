@@ -387,6 +387,7 @@ sealed class Compiler
 	private static readonly MethodInfo monitorExitMethod;
 	private static readonly MethodInfo keepAliveMethod;
 	internal static readonly MethodWrapper getClassFromTypeHandle;
+	internal static readonly MethodWrapper getClassFromTypeHandle2;
 	private static readonly TypeWrapper java_lang_Object;
 	private static readonly TypeWrapper java_lang_Class;
 	private static readonly TypeWrapper java_lang_Throwable;
@@ -448,6 +449,8 @@ sealed class Compiler
 		}
 		getClassFromTypeHandle = ClassLoaderWrapper.LoadClassCritical("ikvm.runtime.Util").GetMethodWrapper("getClassFromTypeHandle", "(Lcli.System.RuntimeTypeHandle;)Ljava.lang.Class;", false);
 		getClassFromTypeHandle.Link();
+		getClassFromTypeHandle2 = ClassLoaderWrapper.LoadClassCritical("ikvm.runtime.Util").GetMethodWrapper("getClassFromTypeHandle", "(Lcli.System.RuntimeTypeHandle;I)Ljava.lang.Class;", false);
+		getClassFromTypeHandle2.Link();
 	}
 
 	private Compiler(DynamicTypeWrapper.FinishContext context, DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, CodeEmitter ilGenerator, ClassLoaderWrapper classLoader, Dictionary<MethodKey, MethodInfo> invokespecialstubcache)

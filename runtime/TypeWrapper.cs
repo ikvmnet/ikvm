@@ -1696,8 +1696,23 @@ namespace IKVM.Internal
 			// note that this has to be the same check as in LazyInitClass
 			if (!this.IsFastClassLiteralSafe || IsForbiddenTypeParameterType(type))
 			{
-				ilgen.Emit(OpCodes.Ldtoken, type);
-				Compiler.getClassFromTypeHandle.EmitCall(ilgen);
+				int rank = 0;
+				while (ReflectUtil.IsVector(type))
+				{
+					rank++;
+					type = type.GetElementType();
+				}
+				if (rank == 0)
+				{
+					ilgen.Emit(OpCodes.Ldtoken, type);
+					Compiler.getClassFromTypeHandle.EmitCall(ilgen);
+				}
+				else
+				{
+					ilgen.Emit(OpCodes.Ldtoken, type);
+					ilgen.Emit(OpCodes.Ldc_I4, rank);
+					Compiler.getClassFromTypeHandle2.EmitCall(ilgen);
+				}
 			}
 			else
 			{

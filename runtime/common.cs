@@ -490,6 +490,25 @@ namespace IKVM.NativeCode.ikvm.runtime
 			return null;
 		}
 
+		public static jlClass getClassFromTypeHandle(RuntimeTypeHandle handle, int rank)
+		{
+			Type t = Type.GetTypeFromHandle(handle);
+			if(t.IsPrimitive || ClassLoaderWrapper.IsRemappedType(t) || t == typeof(void))
+			{
+				return DotNetTypeWrapper.GetWrapperFromDotNetType(t).MakeArrayType(rank).ClassObject;
+			}
+			if(!IsVisibleAsClass(t))
+			{
+				return null;
+			}
+			TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(t);
+			if(tw != null)
+			{
+				return tw.MakeArrayType(rank).ClassObject;
+			}
+			return null;
+		}
+
 		public static jlClass getFriendlyClassFromType(Type type)
 		{
 			int rank = 0;

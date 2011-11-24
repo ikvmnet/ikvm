@@ -37,6 +37,9 @@ public final class Util
 
     public static native Class getClassFromTypeHandle(RuntimeTypeHandle handle);
 
+    // this is used to create an array of a remapped type (e.g. getClassFromTypeHandle(typeof(object), 1) returns cli.System.Object[])
+    public static native Class getClassFromTypeHandle(RuntimeTypeHandle handle, int rank);
+
     public static native Class getFriendlyClassFromType(Type type);
 
     public static native Type getInstanceTypeFromClass(Class classObject);

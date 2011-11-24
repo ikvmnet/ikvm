@@ -2693,7 +2693,7 @@ namespace IKVM.Internal
 
 		internal override bool IsFastClassLiteralSafe
 		{
-			get { return true; }
+			get { return type != Types.Void && !type.IsPrimitive && !IsRemapped; }
 		}
 	}
 }
