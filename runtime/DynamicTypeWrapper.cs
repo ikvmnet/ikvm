@@ -1138,7 +1138,7 @@ namespace IKVM.Internal
 			private static string GetInnerClassName(string outer, string inner)
 			{
 				Debug.Assert(CheckInnerOuterNames(inner, outer));
-				return DynamicClassLoader.EscapeName(inner.Substring(outer.Length + 1));
+				return TypeNameUtil.EscapeName(inner.Substring(outer.Length + 1));
 			}
 #endif // STATIC_COMPILER
 
@@ -1279,24 +1279,12 @@ namespace IKVM.Internal
 					{
 						fieldAttribs |= FieldAttributes.InitOnly;
 					}
-					return typeBuilder.DefineField(fw.Name, fw.FieldTypeWrapper.TypeAsSignatureType, fieldAttribs);
+					return DefineField(fw.Name, fw.FieldTypeWrapper, fieldAttribs, fw.IsVolatile);
 				}
 #endif // STATIC_COMPILER
 				FieldBuilder field;
 				ClassFile.Field fld = classFile.Fields[fieldIndex];
-				string fieldName = fld.Name;
-				TypeWrapper typeWrapper = fw.FieldTypeWrapper;
-				Type type = typeWrapper.TypeAsSignatureType;
-				bool setNameSig = typeWrapper.IsErasedOrBoxedPrimitiveOrRemapped;
-				if (setNameSig)
-				{
-					// TODO use clashtable
-					// the field name is mangled here, because otherwise it can (theoretically)
-					// conflict with another unloadable or object or ghost array field
-					// (fields can be overloaded on type)
-					fieldName += "/" + typeWrapper.Name;
-				}
-				string realFieldName = fieldName;
+				string realFieldName = fld.Name;
 				FieldAttributes attribs = 0;
 				MethodAttributes methodAttribs = MethodAttributes.HideBySig;
 #if STATIC_COMPILER
@@ -1336,7 +1324,7 @@ namespace IKVM.Internal
 				{
 					Profiler.Count("Static Final Constant");
 					attribs |= FieldAttributes.Literal;
-					field = typeBuilder.DefineField(fieldName, type, attribs);
+					field = DefineField(fld.Name, fw.FieldTypeWrapper, attribs, false);
 					field.SetConstant(constantValue);
 				}
 				else
@@ -1378,16 +1366,11 @@ namespace IKVM.Internal
 						// see https://sourceforge.net/tracker/?func=detail&atid=525264&aid=3056721&group_id=69637
 						// additional note: now that we maintain the ordering of the fields, we need to recognize
 						// these fields so that we know where to insert the corresponding accessor property FieldWrapper.
-						realFieldName = NamePrefix.Type2AccessStubBackingField + fieldName;
+						realFieldName = NamePrefix.Type2AccessStubBackingField + fld.Name;
 					}
 #endif
 
-					Type[] modreq = Type.EmptyTypes;
-					if (fld.IsVolatile)
-					{
-						modreq = new Type[] { Types.IsVolatile };
-					}
-					field = typeBuilder.DefineField(realFieldName, type, modreq, Type.EmptyTypes, attribs);
+					field = DefineField(realFieldName, fw.FieldTypeWrapper, attribs, fld.IsVolatile);
 					if (fld.IsTransient)
 					{
 						CustomAttributeBuilder transientAttrib = new CustomAttributeBuilder(JVM.Import(typeof(NonSerializedAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
@@ -1396,7 +1379,7 @@ namespace IKVM.Internal
 					if (isWrappedFinal)
 					{
 						methodAttribs |= MethodAttributes.SpecialName;
-						MethodBuilder getter = typeBuilder.DefineMethod(GenerateUniqueMethodName("get_" + fieldName, type, Type.EmptyTypes), methodAttribs, CallingConventions.Standard, type, Type.EmptyTypes);
+						MethodBuilder getter = typeBuilder.DefineMethod(GenerateUniqueMethodName("get_" + fld.Name, fw.FieldTypeWrapper.TypeAsSignatureType, Type.EmptyTypes), methodAttribs, CallingConventions.Standard, fw.FieldTypeWrapper.TypeAsSignatureType, Type.EmptyTypes);
 						AttributeHelper.HideFromJava(getter);
 						CodeEmitter ilgen = CodeEmitter.Create(getter);
 						if (fld.IsStatic)
@@ -1411,13 +1394,13 @@ namespace IKVM.Internal
 						ilgen.Emit(OpCodes.Ret);
 						ilgen.DoEmit();
 
-						PropertyBuilder pb = typeBuilder.DefineProperty(fieldName, PropertyAttributes.None, type, Type.EmptyTypes);
+						PropertyBuilder pb = typeBuilder.DefineProperty(fld.Name, PropertyAttributes.None, fw.FieldTypeWrapper.TypeAsSignatureType, Type.EmptyTypes);
 						pb.SetGetMethod(getter);
 						if (!fld.IsStatic)
 						{
 							// this method exist for use by reflection only
 							// (that's why it only exists for instance fields, final static fields are not settable by reflection)
-							MethodBuilder setter = typeBuilder.DefineMethod("__<set>", MethodAttributes.PrivateScope, CallingConventions.Standard, Types.Void, new Type[] { type });
+							MethodBuilder setter = typeBuilder.DefineMethod("__<set>", MethodAttributes.PrivateScope, CallingConventions.Standard, Types.Void, new Type[] { fw.FieldTypeWrapper.TypeAsSignatureType });
 							ilgen = CodeEmitter.Create(setter);
 							ilgen.Emit(OpCodes.Ldarg_0);
 							ilgen.Emit(OpCodes.Ldarg_1);
@@ -1428,7 +1411,7 @@ namespace IKVM.Internal
 						}
 						((GetterFieldWrapper)fw).SetGetter(getter);
 #if STATIC_COMPILER
-						if (setNameSig)
+						if (fw.FieldTypeWrapper.IsErasedOrBoxedPrimitiveOrRemapped)
 						{
 							AttributeHelper.SetNameSig(getter, fld.Name, fld.Signature);
 						}
@@ -1457,10 +1440,6 @@ namespace IKVM.Internal
 					{
 						AttributeHelper.SetModifiers(field, fld.Modifiers, fld.IsInternal);
 					}
-					if (setNameSig)
-					{
-						AttributeHelper.SetNameSig(field, fld.Name, fld.Signature);
-					}
 					if (fld.DeprecatedAttribute)
 					{
 						AttributeHelper.SetDeprecatedAttribute(field);
@@ -1472,6 +1451,58 @@ namespace IKVM.Internal
 				}
 #endif // STATIC_COMPILER
 				return field;
+			}
+
+			private FieldBuilder DefineField(string name, TypeWrapper tw, FieldAttributes attribs, bool isVolatile)
+			{
+				Type[] modreq = isVolatile ? new Type[] { Types.IsVolatile } : Type.EmptyTypes;
+				return typeBuilder.DefineField(name, tw.TypeAsSignatureType, modreq, GetModOpt(tw), attribs);
+			}
+
+			private Type[] GetModOpt(TypeWrapper tw)
+			{
+				Type[] modopt = Type.EmptyTypes;
+				if (tw.IsUnloadable)
+				{
+					modopt = new Type[] { wrapper.GetClassLoader().GetTypeWrapperFactory().DefineUnloadable(tw.Name) };
+				}
+				else
+				{
+					TypeWrapper tw1 = tw.IsArray ? tw.GetUltimateElementTypeWrapper() : tw;
+					if (tw1.IsErasedOrBoxedPrimitiveOrRemapped)
+					{
+#if STATIC_COMPILER
+						modopt = new Type[] { GetModOptHelper(tw) };
+#else
+						// FXBUG Ref.Emit refuses arrays in custom modifiers, so we add an array type for each dimension
+						// (note that in this case we only add the custom modifiers to make the signature unique, we never read back this information)
+						modopt = new Type[tw.ArrayRank + 1];
+						modopt[0] = GetModOptHelper(tw1);
+						for (int i = 1; i < modopt.Length; i++)
+						{
+							modopt[i] = typeof(Array);
+						}
+#endif
+					}
+				}
+				return modopt;
+			}
+
+			private Type GetModOptHelper(TypeWrapper tw)
+			{
+				Debug.Assert(!tw.IsUnloadable);
+				if (tw.IsArray)
+				{
+					return ArrayTypeWrapper.MakeArrayType(GetModOptHelper(tw.GetUltimateElementTypeWrapper()), tw.ArrayRank);
+				}
+				else if (tw.IsGhost)
+				{
+					return tw.TypeAsTBD;
+				}
+				else
+				{
+					return tw.TypeAsBaseType;
+				}
 			}
 
 			internal override void EmitRunClassConstructor(CodeEmitter ilgen)

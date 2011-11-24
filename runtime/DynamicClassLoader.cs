@@ -37,9 +37,6 @@ namespace IKVM.Internal
 {
 	sealed class DynamicClassLoader : TypeWrapperFactory
 	{
-		// note that MangleNestedTypeName() assumes that there are less than 16 special characters
-		private static readonly char[] specialCharacters = { '\\', '+', ',', '[', ']', '*', '&', '\u0000' };
-		private static readonly string specialCharactersString = new String(specialCharacters);
 #if !STATIC_COMPILER
 		private static List<AssemblyBuilder> saveDebugAssemblies;
 		private static List<DynamicClassLoader> saveClassLoaders;
@@ -137,36 +134,6 @@ namespace IKVM.Internal
 		}
 #endif // !STATIC_COMPILER
 
-		internal static string EscapeName(string name)
-		{
-			// TODO the escaping of special characters is not required on .NET 2.0
-			// (but it doesn't really hurt that much either, the only overhead is the
-			// extra InnerClassAttribute to record the real name of the class)
-			// Note that even though .NET 2.0 automatically escapes the special characters,
-			// the name that gets passed in ResolveEventArgs.Name of the TypeResolve event
-			// contains the unescaped type name.
-			if(name.IndexOfAny(specialCharacters) >= 0)
-			{
-				System.Text.StringBuilder sb = new System.Text.StringBuilder();
-				foreach(char c in name)
-				{
-					if(specialCharactersString.IndexOf(c) >= 0)
-					{
-						if(c == 0)
-						{
-							// we can't escape the NUL character, so we replace it with a space.
-							sb.Append(' ');
-							continue;
-						}
-						sb.Append('\\');
-					}
-					sb.Append(c);
-				}
-				name = sb.ToString();
-			}
-			return name;
-		}
-
 		internal override bool ReserveName(string name)
 		{
 			lock(dynamicTypes)
@@ -184,7 +151,7 @@ namespace IKVM.Internal
 		{
 			lock(dynamicTypes)
 			{
-				mangledTypeName = EscapeName(mangledTypeName);
+				mangledTypeName = TypeNameUtil.EscapeName(mangledTypeName);
 				// FXBUG the CLR (both 1.1 and 2.0) doesn't like type names that end with a single period,
 				// it loses the trailing period in the name that gets passed in the TypeResolve event.
 				if(dynamicTypes.ContainsKey(mangledTypeName) || mangledTypeName.EndsWith("."))
@@ -268,7 +235,7 @@ namespace IKVM.Internal
 				AttributeHelper.SetEditorBrowsableNever(proxyHelperContainer);
 				proxyHelpers = new List<TypeBuilder>();
 			}
-			proxyHelpers.Add(proxyHelperContainer.DefineNestedType(MangleNestedTypeName(type.FullName), TypeAttributes.NestedPublic | TypeAttributes.Interface | TypeAttributes.Abstract, null, new Type[] { type }));
+			proxyHelpers.Add(proxyHelperContainer.DefineNestedType(TypeNameUtil.MangleNestedTypeName(type.FullName), TypeAttributes.NestedPublic | TypeAttributes.Interface | TypeAttributes.Abstract, null, new Type[] { type }));
 		}
 
 		internal TypeBuilder DefineProxy(TypeWrapper proxyClass, TypeWrapper[] interfaces)
@@ -298,7 +265,7 @@ namespace IKVM.Internal
 			{
 				sb.Append(tw.Name.Length).Append('|').Append(tw.Name);
 			}
-			return MangleNestedTypeName(sb.ToString());
+			return TypeNameUtil.MangleNestedTypeName(sb.ToString());
 		}
 
 		internal static string GetProxyName(TypeWrapper[] interfaces)
@@ -308,37 +275,7 @@ namespace IKVM.Internal
 
 		internal static string GetProxyHelperName(Type type)
 		{
-			return "__<Proxy>+" + MangleNestedTypeName(type.FullName);
-		}
-
-		private static string MangleNestedTypeName(string name)
-		{
-			System.Text.StringBuilder sb = new System.Text.StringBuilder();
-			foreach (char c in name)
-			{
-				int index = specialCharactersString.IndexOf(c);
-				if(c == '.')
-				{
-					sb.Append("_");
-				}
-				else if(c == '_')
-				{
-					sb.Append("^-");
-				}
-				else if(index == -1)
-				{
-					sb.Append(c);
-					if(c == '^')
-					{
-						sb.Append(c);
-					}
-				}
-				else
-				{
-					sb.Append('^').AppendFormat("{0:X1}", index);
-				}
-			}
-			return sb.ToString();
+			return "__<Proxy>+" + TypeNameUtil.MangleNestedTypeName(type.FullName);
 		}
 
 		internal override Type DefineUnloadable(string name)
@@ -359,7 +296,7 @@ namespace IKVM.Internal
 					unloadableContainer = moduleBuilder.DefineType("__<Unloadable>", TypeAttributes.Interface | TypeAttributes.Abstract);
 					AttributeHelper.HideFromJava(unloadableContainer);
 				}
-				type = unloadableContainer.DefineNestedType(MangleNestedTypeName(name), TypeAttributes.NestedPrivate | TypeAttributes.Interface | TypeAttributes.Abstract);
+				type = unloadableContainer.DefineNestedType(TypeNameUtil.MangleNestedTypeName(name), TypeAttributes.NestedPrivate | TypeAttributes.Interface | TypeAttributes.Abstract);
 				unloadables.Add(name, type);
 				return type;
 			}

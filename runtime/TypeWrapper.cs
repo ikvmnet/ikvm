@@ -812,12 +812,6 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal static void SetNameSig(FieldBuilder fb, string name, string sig)
-		{
-			CustomAttributeBuilder customAttributeBuilder = new CustomAttributeBuilder(typeofNameSigAttribute.GetConstructor(new Type[] { Types.String, Types.String }), new object[] { name, sig });
-			fb.SetCustomAttribute(customAttributeBuilder);
-		}
-
 		internal static void SetNameSig(PropertyBuilder pb, string name, string sig)
 		{
 			CustomAttributeBuilder customAttributeBuilder = new CustomAttributeBuilder(typeofNameSigAttribute.GetConstructor(new Type[] { Types.String, Types.String }), new object[] { name, sig });
@@ -1360,6 +1354,108 @@ namespace IKVM.Internal
 			{
 				throw new InvalidOperationException();
 			}
+		}
+	}
+
+	static class TypeNameUtil
+	{
+		// note that MangleNestedTypeName() assumes that there are less than 16 special characters
+		private static readonly char[] specialCharacters = { '\\', '+', ',', '[', ']', '*', '&', '\u0000' };
+		private static readonly string specialCharactersString = new String(specialCharacters);
+
+		internal static string EscapeName(string name)
+		{
+			// TODO the escaping of special characters is not required on .NET 2.0
+			// (but it doesn't really hurt that much either, the only overhead is the
+			// extra InnerClassAttribute to record the real name of the class)
+			// Note that even though .NET 2.0 automatically escapes the special characters,
+			// the name that gets passed in ResolveEventArgs.Name of the TypeResolve event
+			// contains the unescaped type name.
+			if (name.IndexOfAny(specialCharacters) >= 0)
+			{
+				System.Text.StringBuilder sb = new System.Text.StringBuilder();
+				foreach (char c in name)
+				{
+					if (specialCharactersString.IndexOf(c) >= 0)
+					{
+						if (c == 0)
+						{
+							// we can't escape the NUL character, so we replace it with a space.
+							sb.Append(' ');
+							continue;
+						}
+						sb.Append('\\');
+					}
+					sb.Append(c);
+				}
+				name = sb.ToString();
+			}
+			return name;
+		}
+
+		internal static string MangleNestedTypeName(string name)
+		{
+			System.Text.StringBuilder sb = new System.Text.StringBuilder();
+			foreach (char c in name)
+			{
+				int index = specialCharactersString.IndexOf(c);
+				if (c == '.')
+				{
+					sb.Append("_");
+				}
+				else if (c == '_')
+				{
+					sb.Append("^-");
+				}
+				else if (index == -1)
+				{
+					sb.Append(c);
+					if (c == '^')
+					{
+						sb.Append(c);
+					}
+				}
+				else
+				{
+					sb.Append('^').AppendFormat("{0:X1}", index);
+				}
+			}
+			return sb.ToString();
+		}
+
+		internal static string UnmangleNestedTypeName(string name)
+		{
+			System.Text.StringBuilder sb = new System.Text.StringBuilder();
+			for (int i = 0; i < name.Length; i++)
+			{
+				char c = name[i];
+				int index = specialCharactersString.IndexOf(c);
+				if (c == '_')
+				{
+					sb.Append('.');
+				}
+				else if (c == '^')
+				{
+					c = name[++i];
+					if (c == '-')
+					{
+						sb.Append('_');
+					}
+					else if (c == '^')
+					{
+						sb.Append('^');
+					}
+					else
+					{
+						sb.Append(specialCharactersString[c - '0']);
+					}
+				}
+				else
+				{
+					sb.Append(c);
+				}
+			}
+			return sb.ToString();
 		}
 	}
 
@@ -2127,6 +2223,11 @@ namespace IKVM.Internal
 				}
 				return i;
 			}
+		}
+
+		internal virtual TypeWrapper GetUltimateElementTypeWrapper()
+		{
+			throw new InvalidOperationException();
 		}
 
 		internal bool IsNonPrimitiveValueType
@@ -4272,17 +4373,36 @@ namespace IKVM.Internal
 			return new GetterFieldWrapper(this, type, null, name, type.SigName, modifiers, getter, prop);
 		}
 
+		private static TypeWrapper TypeWrapperFromModOpt(Type modopt)
+		{
+			int rank = 0;
+			while (ReflectUtil.IsVector(modopt))
+			{
+				rank++;
+				modopt = modopt.GetElementType();
+			}
+			if (rank != 0)
+			{
+				return TypeWrapperFromModOpt(modopt).MakeArrayType(rank);
+			}
+			else if (modopt == Types.Void || modopt.IsPrimitive || ClassLoaderWrapper.IsRemappedType(modopt))
+			{
+				return DotNetTypeWrapper.GetWrapperFromDotNetType(modopt);
+			}
+			else
+			{
+				return ClassLoaderWrapper.GetWrapperFromType(modopt)
+					?? new UnloadableTypeWrapper(TypeNameUtil.UnmangleNestedTypeName(modopt.Name));
+			}
+		}
+
 		private FieldWrapper CreateFieldWrapper(FieldInfo field)
 		{
 			ExModifiers modifiers = AttributeHelper.GetModifiers(field, false);
-			string name = field.Name;
-			TypeWrapper type = ClassLoaderWrapper.GetWrapperFromType(field.FieldType);
-			NameSigAttribute attr = AttributeHelper.GetNameSig(field);
-			if(attr != null)
-			{
-				name = attr.Name;
-				SigTypePatchUp(attr.Sig, ref type);
-			}
+			Type[] modopt = field.GetOptionalCustomModifiers();
+			TypeWrapper type = modopt.Length == 0
+				? ClassLoaderWrapper.GetWrapperFromType(field.FieldType)
+				: TypeWrapperFromModOpt(modopt[0]);
 
 			if(field.IsLiteral)
 			{
@@ -4295,11 +4415,11 @@ namespace IKVM.Internal
 				{
 					flags |= MemberFlags.InternalAccess;
 				}
-				return new ConstantFieldWrapper(this, type, name, type.SigName, modifiers.Modifiers, field, null, flags);
+				return new ConstantFieldWrapper(this, type, field.Name, type.SigName, modifiers.Modifiers, field, null, flags);
 			}
 			else
 			{
-				return FieldWrapper.Create(this, type, field, name, type.SigName, modifiers);
+				return FieldWrapper.Create(this, type, field, field.Name, type.SigName, modifiers);
 			}
 		}
 
@@ -4733,6 +4853,11 @@ namespace IKVM.Internal
 			// here we have to deal with the somewhat strange fact that in Java you cannot represent primitive type class literals,
 			// but you can represent arrays of primitive types as a class literal
 			get { return ultimateElementTypeWrapper.IsFastClassLiteralSafe || ultimateElementTypeWrapper.IsPrimitive; }
+		}
+
+		internal override TypeWrapper GetUltimateElementTypeWrapper()
+		{
+			return ultimateElementTypeWrapper;
 		}
 
 		internal static Type MakeArrayType(Type type, int dims)
