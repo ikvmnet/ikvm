@@ -4232,17 +4232,10 @@ namespace IKVM.Internal
 				}
 				else
 				{
-					// If the property has a ModifiersAttribute, we know that it is an explicit property
+					// It must be an explicit property
 					// (defined in Java source by an @ikvm.lang.Property annotation)
 					ModifiersAttribute mods = AttributeHelper.GetModifiersAttribute(property);
-					if(mods != null)
-					{
-						fields.Add(new CompiledPropertyFieldWrapper(this, property, new ExModifiers(mods.Modifiers, mods.IsInternal)));
-					}
-					else
-					{
-						fields.Add(CreateFieldWrapper(property));
-					}
+					fields.Add(new CompiledPropertyFieldWrapper(this, property, new ExModifiers(mods.Modifiers, mods.IsInternal)));
 				}
 			}
 		}
@@ -4354,23 +4347,6 @@ namespace IKVM.Internal
 				}
 				return null;
 			}
-		}
-
-		private FieldWrapper CreateFieldWrapper(PropertyInfo prop)
-		{
-			MethodInfo getter = prop.GetGetMethod(true);
-			ExModifiers modifiers = AttributeHelper.GetModifiers(getter, false);
-			// for static methods AttributeHelper.GetModifiers won't set the Final flag
-			modifiers = new ExModifiers(modifiers.Modifiers | Modifiers.Final, modifiers.IsInternal);
-			string name = prop.Name;
-			TypeWrapper type = ClassLoaderWrapper.GetWrapperFromType(prop.PropertyType);
-			NameSigAttribute attr = AttributeHelper.GetNameSig(getter);
-			if(attr != null)
-			{
-				name = attr.Name;
-				SigTypePatchUp(attr.Sig, ref type);
-			}
-			return new GetterFieldWrapper(this, type, null, name, type.SigName, modifiers, getter, prop);
 		}
 
 		private static TypeWrapper TypeWrapperFromModOpt(Type modopt)
@@ -4500,18 +4476,6 @@ namespace IKVM.Internal
 					return attr.Signature;
 				}
 			}
-			else
-			{
-				GetterFieldWrapper getter = fw as GetterFieldWrapper;
-				if(getter != null)
-				{
-					SignatureAttribute attr = AttributeHelper.GetSignature(getter.GetGetter());
-					if(attr != null)
-					{
-						return attr.Signature;
-					}
-				}
-			}
 			return null;
 		}
 
@@ -4575,11 +4539,6 @@ namespace IKVM.Internal
 			if(field != null)
 			{
 				return field.GetCustomAttributes(false);
-			}
-			GetterFieldWrapper getter = fw as GetterFieldWrapper;
-			if(getter != null)
-			{
-				return getter.GetGetter().GetCustomAttributes(false);
 			}
 			CompiledPropertyFieldWrapper prop = fw as CompiledPropertyFieldWrapper;
 			if(prop != null)

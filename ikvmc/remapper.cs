@@ -1668,7 +1668,6 @@ namespace IKVM.Internal.MapXml
 		public MapModifiers Modifiers;
 		[XmlAttribute("constant")]
 		public string Constant;
-		public Redirect redirect;
 		[XmlElement("attribute")]
 		public Attribute[] Attributes;
 	}

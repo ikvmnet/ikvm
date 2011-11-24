@@ -1763,20 +1763,6 @@ namespace IKVM.Internal
 				{
 					foreach(IKVM.Internal.MapXml.Field f in c.Fields)
 					{
-						if(f.redirect != null)
-						{
-							TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical(f.redirect.Class);
-							MethodWrapper method = tw.GetMethodWrapper(f.redirect.Name, f.redirect.Sig, false);
-							if(method == null || !method.IsStatic)
-							{
-								// TODO better error handling
-								throw new InvalidOperationException("remapping field: " + f.Name + f.Sig + " not found");
-							}
-							// TODO emit an static helper method that enables access to the field at runtime
-							method.Link();
-							fields.Add(new GetterFieldWrapper(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), null, f.Name, f.Sig, new ExModifiers((Modifiers)f.Modifiers, false), (MethodInfo)method.GetMethod(), null));
-						}
-						else
 						{
 							FieldAttributes attr = MapFieldAccessModifiers(f.Modifiers);
 							if(f.Constant != null)

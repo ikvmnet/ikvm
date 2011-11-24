@@ -1290,7 +1290,6 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 				bool setModifiers = fld.IsInternal || (fld.Modifiers & (Modifiers.Synthetic | Modifiers.Enum)) != 0;
 #endif
-				bool isWrappedFinal = false;
 				if (fld.IsPrivate)
 				{
 					attribs |= FieldAttributes.Private;
@@ -1331,15 +1330,7 @@ namespace IKVM.Internal
 				{
 					if (fld.IsFinal)
 					{
-						isWrappedFinal = fw is GetterFieldWrapper;
-						if (isWrappedFinal)
-						{
-							// NOTE public/protected blank final fields get converted into a read-only property with a private field
-							// backing store
-							attribs &= ~FieldAttributes.FieldAccessMask;
-							attribs |= FieldAttributes.PrivateScope;
-						}
-						else if (wrapper.IsInterface || wrapper.classLoader.StrictFinalFieldSemantics)
+						if (wrapper.IsInterface || wrapper.classLoader.StrictFinalFieldSemantics)
 						{
 							attribs |= FieldAttributes.InitOnly;
 						}
@@ -1376,63 +1367,8 @@ namespace IKVM.Internal
 						CustomAttributeBuilder transientAttrib = new CustomAttributeBuilder(JVM.Import(typeof(NonSerializedAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
 						field.SetCustomAttribute(transientAttrib);
 					}
-					if (isWrappedFinal)
-					{
-						methodAttribs |= MethodAttributes.SpecialName;
-						MethodBuilder getter = typeBuilder.DefineMethod(GenerateUniqueMethodName("get_" + fld.Name, fw.FieldTypeWrapper.TypeAsSignatureType, Type.EmptyTypes), methodAttribs, CallingConventions.Standard, fw.FieldTypeWrapper.TypeAsSignatureType, Type.EmptyTypes);
-						AttributeHelper.HideFromJava(getter);
-						CodeEmitter ilgen = CodeEmitter.Create(getter);
-						if (fld.IsStatic)
-						{
-							ilgen.Emit(OpCodes.Ldsfld, field);
-						}
-						else
-						{
-							ilgen.Emit(OpCodes.Ldarg_0);
-							ilgen.Emit(OpCodes.Ldfld, field);
-						}
-						ilgen.Emit(OpCodes.Ret);
-						ilgen.DoEmit();
-
-						PropertyBuilder pb = typeBuilder.DefineProperty(fld.Name, PropertyAttributes.None, fw.FieldTypeWrapper.TypeAsSignatureType, Type.EmptyTypes);
-						pb.SetGetMethod(getter);
-						if (!fld.IsStatic)
-						{
-							// this method exist for use by reflection only
-							// (that's why it only exists for instance fields, final static fields are not settable by reflection)
-							MethodBuilder setter = typeBuilder.DefineMethod("__<set>", MethodAttributes.PrivateScope, CallingConventions.Standard, Types.Void, new Type[] { fw.FieldTypeWrapper.TypeAsSignatureType });
-							ilgen = CodeEmitter.Create(setter);
-							ilgen.Emit(OpCodes.Ldarg_0);
-							ilgen.Emit(OpCodes.Ldarg_1);
-							ilgen.Emit(OpCodes.Stfld, field);
-							ilgen.Emit(OpCodes.Ret);
-							pb.SetSetMethod(setter);
-							ilgen.DoEmit();
-						}
-						((GetterFieldWrapper)fw).SetGetter(getter);
-#if STATIC_COMPILER
-						if (fw.FieldTypeWrapper.IsErasedOrBoxedPrimitiveOrRemapped)
-						{
-							AttributeHelper.SetNameSig(getter, fld.Name, fld.Signature);
-						}
-						if (setModifiers || fld.IsTransient)
-						{
-							AttributeHelper.SetModifiers(getter, fld.Modifiers, fld.IsInternal);
-						}
-						if (fld.DeprecatedAttribute)
-						{
-							// NOTE for better interop with other languages, we set the ObsoleteAttribute on the property itself
-							AttributeHelper.SetDeprecatedAttribute(pb);
-						}
-						if (fld.GenericSignature != null)
-						{
-							AttributeHelper.SetSignatureAttribute(getter, fld.GenericSignature);
-						}
-#endif // STATIC_COMPILER
-					}
 				}
 #if STATIC_COMPILER
-				if (!isWrappedFinal)
 				{
 					// if the Java modifiers cannot be expressed in .NET, we emit the Modifiers attribute to store
 					// the Java modifiers
@@ -4296,12 +4232,6 @@ namespace IKVM.Internal
 							Annotation annotation = Annotation.Load(wrapper.GetClassLoader(), def);
 							if (annotation != null)
 							{
-								GetterFieldWrapper getter = fields[i] as GetterFieldWrapper;
-								if (getter != null)
-								{
-									annotation.Apply(wrapper.GetClassLoader(), (MethodBuilder)getter.GetGetter(), def);
-								}
-								else
 								{
 									DynamicPropertyFieldWrapper prop = fields[i] as DynamicPropertyFieldWrapper;
 									if (prop != null)

@@ -168,11 +168,6 @@ namespace IKVM.NativeCode.ikvm.@internal
 				{
 					return fi.IsDefined(typeof(ObsoleteAttribute), false);
 				}
-				GetterFieldWrapper getter = fieldWrapper as GetterFieldWrapper;
-				if(getter != null)
-				{
-					return getter.GetProperty().IsDefined(typeof(ObsoleteAttribute), false);
-				}
 				return false;
 			}
 
