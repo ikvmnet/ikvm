@@ -1392,53 +1392,7 @@ namespace IKVM.Internal
 			private FieldBuilder DefineField(string name, TypeWrapper tw, FieldAttributes attribs, bool isVolatile)
 			{
 				Type[] modreq = isVolatile ? new Type[] { Types.IsVolatile } : Type.EmptyTypes;
-				return typeBuilder.DefineField(name, tw.TypeAsSignatureType, modreq, GetModOpt(tw), attribs);
-			}
-
-			private Type[] GetModOpt(TypeWrapper tw)
-			{
-				Type[] modopt = Type.EmptyTypes;
-				if (tw.IsUnloadable)
-				{
-					modopt = new Type[] { wrapper.GetClassLoader().GetTypeWrapperFactory().DefineUnloadable(tw.Name) };
-				}
-				else
-				{
-					TypeWrapper tw1 = tw.IsArray ? tw.GetUltimateElementTypeWrapper() : tw;
-					if (tw1.IsErasedOrBoxedPrimitiveOrRemapped)
-					{
-#if STATIC_COMPILER
-						modopt = new Type[] { GetModOptHelper(tw) };
-#else
-						// FXBUG Ref.Emit refuses arrays in custom modifiers, so we add an array type for each dimension
-						// (note that in this case we only add the custom modifiers to make the signature unique, we never read back this information)
-						modopt = new Type[tw.ArrayRank + 1];
-						modopt[0] = GetModOptHelper(tw1);
-						for (int i = 1; i < modopt.Length; i++)
-						{
-							modopt[i] = typeof(Array);
-						}
-#endif
-					}
-				}
-				return modopt;
-			}
-
-			private Type GetModOptHelper(TypeWrapper tw)
-			{
-				Debug.Assert(!tw.IsUnloadable);
-				if (tw.IsArray)
-				{
-					return ArrayTypeWrapper.MakeArrayType(GetModOptHelper(tw.GetUltimateElementTypeWrapper()), tw.ArrayRank);
-				}
-				else if (tw.IsGhost)
-				{
-					return tw.TypeAsTBD;
-				}
-				else
-				{
-					return tw.TypeAsBaseType;
-				}
+				return typeBuilder.DefineField(name, tw.TypeAsSignatureType, modreq, wrapper.GetModOpt(tw, false), attribs);
 			}
 
 			internal override void EmitRunClassConstructor(CodeEmitter ilgen)
@@ -4420,7 +4374,8 @@ namespace IKVM.Internal
 				else
 				{
 					Type propType = ToPublicSignatureType(fw.FieldTypeWrapper);
-					PropertyBuilder pb = typeBuilder.DefineProperty(name, PropertyAttributes.None, propType, Type.EmptyTypes);
+					Type[] modopt = wrapper.GetModOpt(fw.FieldTypeWrapper, true);
+					PropertyBuilder pb = typeBuilder.DefineProperty(name, PropertyAttributes.None, propType, null, modopt, Type.EmptyTypes, null, null);
 					if (type1)
 					{
 						AttributeHelper.HideFromReflection(pb);
@@ -5913,6 +5868,52 @@ namespace IKVM.Internal
 		internal override ConstructorInfo GetSerializationConstructor()
 		{
 			return automagicSerializationCtor;
+		}
+
+		private Type[] GetModOpt(TypeWrapper tw, bool mustBePublic)
+		{
+			Type[] modopt = Type.EmptyTypes;
+			if (tw.IsUnloadable)
+			{
+				modopt = new Type[] { GetClassLoader().GetTypeWrapperFactory().DefineUnloadable(tw.Name) };
+			}
+			else
+			{
+				TypeWrapper tw1 = tw.IsArray ? tw.GetUltimateElementTypeWrapper() : tw;
+				if (tw1.IsErasedOrBoxedPrimitiveOrRemapped || (mustBePublic && !tw1.IsPublic))
+				{
+#if STATIC_COMPILER
+					modopt = new Type[] { GetModOptHelper(tw) };
+#else
+						// FXBUG Ref.Emit refuses arrays in custom modifiers, so we add an array type for each dimension
+						// (note that in this case we only add the custom modifiers to make the signature unique, we never read back this information)
+						modopt = new Type[tw.ArrayRank + 1];
+						modopt[0] = GetModOptHelper(tw1);
+						for (int i = 1; i < modopt.Length; i++)
+						{
+							modopt[i] = typeof(Array);
+						}
+#endif
+				}
+			}
+			return modopt;
+		}
+
+		private static Type GetModOptHelper(TypeWrapper tw)
+		{
+			Debug.Assert(!tw.IsUnloadable);
+			if (tw.IsArray)
+			{
+				return ArrayTypeWrapper.MakeArrayType(GetModOptHelper(tw.GetUltimateElementTypeWrapper()), tw.ArrayRank);
+			}
+			else if (tw.IsGhost)
+			{
+				return tw.TypeAsTBD;
+			}
+			else
+			{
+				return tw.TypeAsBaseType;
+			}
 		}
 	}
 }

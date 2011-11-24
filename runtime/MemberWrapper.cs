@@ -1900,8 +1900,8 @@ namespace IKVM.Internal
 			return modifiers;
 		}
 
-		private CompiledAccessStubFieldWrapper(TypeWrapper wrapper, PropertyInfo property, TypeWrapper propertyType, string name, string signature, Modifiers modifiers, MemberFlags flags)
-			: base(wrapper, propertyType, name, signature, modifiers, null, flags)
+		private CompiledAccessStubFieldWrapper(TypeWrapper wrapper, PropertyInfo property, FieldInfo field, TypeWrapper propertyType, string name, string signature, Modifiers modifiers, MemberFlags flags)
+			: base(wrapper, propertyType, name, signature, modifiers, field, flags)
 		{
 			this.getter = property.GetGetMethod(true);
 			this.setter = property.GetSetMethod(true);
@@ -1919,7 +1919,7 @@ namespace IKVM.Internal
 		}
 #endif // !STUB_GENERATOR
 
-		internal static bool TryGet(TypeWrapper wrapper, PropertyInfo property, out FieldWrapper accessStub)
+		internal static bool TryGet(TypeWrapper wrapper, PropertyInfo property, FieldInfo field, out FieldWrapper accessStub)
 		{
 			NameSigAttribute nameSig = AttributeHelper.GetNameSig(property);
 			bool hideFromReflection = AttributeHelper.IsHideFromReflection(property);
@@ -1959,7 +1959,7 @@ namespace IKVM.Internal
 						flags |= MemberFlags.InternalAccess;
 					}
 				}
-				accessStub = new CompiledAccessStubFieldWrapper(wrapper, property, type, name, sig, modifiers, flags);
+				accessStub = new CompiledAccessStubFieldWrapper(wrapper, property, field, type, name, sig, modifiers, flags);
 				return true;
 			}
 			else

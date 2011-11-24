@@ -4181,14 +4181,15 @@ namespace IKVM.Internal
 				{
 					if(field.Name.StartsWith(NamePrefix.Type2AccessStubBackingField, StringComparison.Ordinal))
 					{
-						string name = field.Name.Substring(4);
+						TypeWrapper tw = GetFieldTypeWrapper(field);
+						string name = field.Name.Substring(NamePrefix.Type2AccessStubBackingField.Length);
 						for(int i = 0; i < properties.Length; i++)
 						{
-							// note that this "fails" when we have multiple fields with the same name, but the failure mode
-							// is simply that the fields won't retain their order (which is allowed by the reflection spec).
-							if(properties[i] != null && name == properties[i].Name)
+							if(properties[i] != null
+								&& name == properties[i].Name
+								&& tw == GetPropertyTypeWrapper(properties[i]))
 							{
-								AddPropertyFieldWrapper(fields, properties[i]);
+								AddPropertyFieldWrapper(fields, properties[i], field);
 								properties[i] = null;
 								break;
 							}
@@ -4211,13 +4212,13 @@ namespace IKVM.Internal
 			{
 				if(property != null)
 				{
-					AddPropertyFieldWrapper(fields, property);
+					AddPropertyFieldWrapper(fields, property, null);
 				}
 			}
 			SetFields(fields.ToArray());
 		}
 
-		private void AddPropertyFieldWrapper(List<FieldWrapper> fields, PropertyInfo property)
+		private void AddPropertyFieldWrapper(List<FieldWrapper> fields, PropertyInfo property, FieldInfo field)
 		{
 			// NOTE explictly defined properties (in map.xml) are decorated with HideFromJava,
 			// so we don't need to worry about them here
@@ -4226,7 +4227,7 @@ namespace IKVM.Internal
 				// Only AccessStub properties (marked by HideFromReflectionAttribute or NameSigAttribute)
 				// are considered here
 				FieldWrapper accessStub;
-				if(CompiledAccessStubFieldWrapper.TryGet(this, property, out accessStub))
+				if(CompiledAccessStubFieldWrapper.TryGet(this, property, field, out accessStub))
 				{
 					fields.Add(accessStub);
 				}
@@ -4372,13 +4373,26 @@ namespace IKVM.Internal
 			}
 		}
 
+		private static TypeWrapper GetPropertyTypeWrapper(PropertyInfo property)
+		{
+			Type[] modopt = property.GetOptionalCustomModifiers();
+			return modopt.Length == 0
+				? ClassLoaderWrapper.GetWrapperFromType(property.PropertyType)
+				: TypeWrapperFromModOpt(modopt[0]);
+		}
+
+		private static TypeWrapper GetFieldTypeWrapper(FieldInfo field)
+		{
+			Type[] modopt = field.GetOptionalCustomModifiers();
+			return modopt.Length == 0
+				? ClassLoaderWrapper.GetWrapperFromType(field.FieldType)
+				: TypeWrapperFromModOpt(modopt[0]);
+		}
+
 		private FieldWrapper CreateFieldWrapper(FieldInfo field)
 		{
 			ExModifiers modifiers = AttributeHelper.GetModifiers(field, false);
-			Type[] modopt = field.GetOptionalCustomModifiers();
-			TypeWrapper type = modopt.Length == 0
-				? ClassLoaderWrapper.GetWrapperFromType(field.FieldType)
-				: TypeWrapperFromModOpt(modopt[0]);
+			TypeWrapper type = GetFieldTypeWrapper(field);
 
 			if(field.IsLiteral)
 			{
