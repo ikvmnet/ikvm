@@ -786,4 +786,7 @@ namespace IKVM.Attributes
 			return packages;
 		}
 	}
+
+	// used in custom modifier for access stubs
+	public static class AccessStub { }
 }

@@ -812,12 +812,6 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal static void SetNameSig(PropertyBuilder pb, string name, string sig)
-		{
-			CustomAttributeBuilder customAttributeBuilder = new CustomAttributeBuilder(typeofNameSigAttribute.GetConstructor(new Type[] { Types.String, Types.String }), new object[] { name, sig });
-			pb.SetCustomAttribute(customAttributeBuilder);
-		}
-
 		internal static byte[] FreezeDryType(Type type)
 		{
 			System.IO.MemoryStream mem = new System.IO.MemoryStream();

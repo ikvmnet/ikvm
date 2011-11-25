@@ -4338,9 +4338,9 @@ namespace IKVM.Internal
 
 					FieldAttributes attribs = fw.IsPublic ? FieldAttributes.Public : FieldAttributes.FamORAssem;
 					attribs |= FieldAttributes.Static | FieldAttributes.Literal;
-					// we attach the (arbitrary) IsConst custom modifier because the C# compiler prefers fields without custom modifiers
+					// we attach the AccessStub custom modifier because the C# compiler prefers fields without custom modifiers
 					// so if this class defines a field with the same name, that will be preferred over this one by the C# compiler
-					FieldBuilder fb = typeBuilder.DefineField(fw.Name, fw.FieldTypeWrapper.TypeAsSignatureType, null, new Type[] { JVM.Import(typeof(System.Runtime.CompilerServices.IsConst)) }, attribs);
+					FieldBuilder fb = typeBuilder.DefineField(fw.Name, fw.FieldTypeWrapper.TypeAsSignatureType, null, new Type[] { JVM.LoadType(typeof(IKVM.Attributes.AccessStub)) }, attribs);
 					AttributeHelper.HideFromReflection(fb);
 					fb.SetConstant(((ConstantFieldWrapper)fw).GetConstantValue());
 				}
@@ -4358,12 +4358,17 @@ namespace IKVM.Internal
 						AttributeHelper.SetModifiers(pb, fw.Modifiers, fw.IsInternal);
 					}
 					MethodAttributes attribs = fw.IsPublic ? MethodAttributes.Public : MethodAttributes.FamORAssem;
-					attribs |= MethodAttributes.HideBySig;
+					attribs |= MethodAttributes.HideBySig | MethodAttributes.SpecialName;
 					if (fw.IsStatic)
 					{
 						attribs |= MethodAttributes.Static;
 					}
-					MethodBuilder getter = typeBuilder.DefineMethod(wrapper.GenerateUniqueMethodName("get_" + fw.Name, propType, Type.EmptyTypes), attribs, propType, Type.EmptyTypes);
+					// we append the IKVM.Attributes.AccessStub type to the modopt array for use in the property accessor method signature
+					// to make sure they never conflict with any user defined methhods
+					Type[] modopt2 = modopt;
+					Array.Resize(ref modopt2, modopt2.Length + 1);
+					modopt2[modopt2.Length - 1] = JVM.LoadType(typeof(IKVM.Attributes.AccessStub));
+					MethodBuilder getter = typeBuilder.DefineMethod("get_" + fw.Name, attribs, CallingConventions.Standard, propType, null, modopt2, Type.EmptyTypes, null, null);
 					AttributeHelper.HideFromJava(getter);
 					pb.SetGetMethod(getter);
 					CodeEmitter ilgen = CodeEmitter.Create(getter);
@@ -4382,7 +4387,7 @@ namespace IKVM.Internal
 							attribs &= ~MethodAttributes.MemberAccessMask;
 							attribs |= MethodAttributes.Private;
 						}
-						MethodBuilder setter = typeBuilder.DefineMethod(wrapper.GenerateUniqueMethodName("set_" + fw.Name, Types.Void, new Type[] { propType }), attribs, null, new Type[] { propType });
+						MethodBuilder setter = typeBuilder.DefineMethod("set_" + fw.Name, attribs, CallingConventions.Standard, null, null, null, new Type[] { propType }, null, new Type[][] { modopt2 });
 						AttributeHelper.HideFromJava(setter);
 						pb.SetSetMethod(setter);
 						ilgen = CodeEmitter.Create(setter);
