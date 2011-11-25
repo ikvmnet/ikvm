@@ -4283,9 +4283,8 @@ namespace IKVM.Internal
 				 * stubs to allow other .NET languages (e.g. C#) to consume broken APIs that
 				 * (accidentally) expose these members.
 				 */
-				List<string> propertyNames = null;
-				AddType2FieldAccessStubs(ref propertyNames);
-				AddType1FieldAccessStubs(wrapper, ref propertyNames);
+				AddType2FieldAccessStubs();
+				AddType1FieldAccessStubs(wrapper);
 				if (!wrapper.IsInterface)
 				{
 					int id = 0;
@@ -4294,7 +4293,7 @@ namespace IKVM.Internal
 				}
 			}
 
-			private void AddType1FieldAccessStubs(TypeWrapper tw, ref List<string> propertyNames)
+			private void AddType1FieldAccessStubs(TypeWrapper tw)
 			{
 				do
 				{
@@ -4305,19 +4304,19 @@ namespace IKVM.Internal
 							if ((fw.IsPublic || (fw.IsProtected && !wrapper.IsFinal))
 								&& wrapper.GetFieldWrapper(fw.Name, fw.Signature) == fw)
 							{
-								GenerateAccessStub(fw, ref propertyNames, true);
+								GenerateAccessStub(fw, true);
 							}
 						}
 					}
 					foreach (TypeWrapper iface in tw.Interfaces)
 					{
-						AddType1FieldAccessStubs(iface, ref propertyNames);
+						AddType1FieldAccessStubs(iface);
 					}
 					tw = tw.BaseTypeWrapper;
 				} while (tw != null && !tw.IsPublic);
 			}
 
-			private void AddType2FieldAccessStubs(ref List<string> propertyNames)
+			private void AddType2FieldAccessStubs()
 			{
 				foreach (FieldWrapper fw in wrapper.GetFields())
 				{
@@ -4325,49 +4324,23 @@ namespace IKVM.Internal
 						&& (fw.IsPublic || (fw.IsProtected && !wrapper.IsFinal))
 						&& fw.FieldTypeWrapper.IsAccessibleFrom(wrapper))
 					{
-						GenerateAccessStub(fw, ref propertyNames, false);
+						GenerateAccessStub(fw, false);
 					}
 				}
 			}
 
-			private void GenerateAccessStub(FieldWrapper fw, ref List<string> propertyNames, bool type1)
+			private void GenerateAccessStub(FieldWrapper fw, bool type1)
 			{
-				string name = fw.Name;
-				if (propertyNames == null)
-				{
-					propertyNames = new List<string>();
-					// add all the fields, to avoid clashing with real fields (which can happen for type 2 or type 1 if field type is non-public or unloadable)
-					foreach (FieldWrapper fw1 in wrapper.GetFields())
-					{
-						if (!fw1.HasNonPublicTypeInSignature)
-						{
-							propertyNames.Add(fw1.Name);
-						}
-					}
-				}
-				int uniq = 0;
-				while (propertyNames.Contains(name))
-				{
-					// when we clash, we don't want the access stub property to be visible from (e.g.) C# so we mangle the name
-					name = "<>" + fw.Name + "_" + uniq++;
-				}
-				propertyNames.Add(name);
-
 				if (fw is ConstantFieldWrapper)
 				{
 					// constants cannot have a type 2 access stub, because constant types are always public
 					Debug.Assert(type1);
 
-					if (uniq != 0)
-					{
-						// we only add access stubs for constant fields for consumption by other languages,
-						// so when the field is hidden by another field, we don't need to bother
-						return;
-					}
-
 					FieldAttributes attribs = fw.IsPublic ? FieldAttributes.Public : FieldAttributes.FamORAssem;
 					attribs |= FieldAttributes.Static | FieldAttributes.Literal;
-					FieldBuilder fb = typeBuilder.DefineField(fw.Name, fw.FieldTypeWrapper.TypeAsSignatureType, attribs);
+					// we attach the (arbitrary) IsConst custom modifier because the C# compiler prefers fields without custom modifiers
+					// so if this class defines a field with the same name, that will be preferred over this one by the C# compiler
+					FieldBuilder fb = typeBuilder.DefineField(fw.Name, fw.FieldTypeWrapper.TypeAsSignatureType, null, new Type[] { JVM.Import(typeof(System.Runtime.CompilerServices.IsConst)) }, attribs);
 					AttributeHelper.HideFromReflection(fb);
 					fb.SetConstant(((ConstantFieldWrapper)fw).GetConstantValue());
 				}
@@ -4375,18 +4348,13 @@ namespace IKVM.Internal
 				{
 					Type propType = ToPublicSignatureType(fw.FieldTypeWrapper);
 					Type[] modopt = wrapper.GetModOpt(fw.FieldTypeWrapper, true);
-					PropertyBuilder pb = typeBuilder.DefineProperty(name, PropertyAttributes.None, propType, null, modopt, Type.EmptyTypes, null, null);
+					PropertyBuilder pb = typeBuilder.DefineProperty(fw.Name, PropertyAttributes.None, propType, null, modopt, Type.EmptyTypes, null, null);
 					if (type1)
 					{
 						AttributeHelper.HideFromReflection(pb);
-						if (fw.HasNonPublicTypeInSignature || fw.FieldTypeWrapper.IsUnloadable)
-						{
-							AttributeHelper.SetNameSig(pb, fw.Name, fw.Signature);
-						}
 					}
 					else
 					{
-						AttributeHelper.SetNameSig(pb, fw.Name, fw.Signature);
 						AttributeHelper.SetModifiers(pb, fw.Modifiers, fw.IsInternal);
 					}
 					MethodAttributes attribs = fw.IsPublic ? MethodAttributes.Public : MethodAttributes.FamORAssem;

@@ -1900,8 +1900,20 @@ namespace IKVM.Internal
 			return modifiers;
 		}
 
-		private CompiledAccessStubFieldWrapper(TypeWrapper wrapper, PropertyInfo property, FieldInfo field, TypeWrapper propertyType, string name, string signature, Modifiers modifiers, MemberFlags flags)
-			: base(wrapper, propertyType, name, signature, modifiers, field, flags)
+		// constructor for type 1 access stubs
+		internal CompiledAccessStubFieldWrapper(TypeWrapper wrapper, PropertyInfo property, TypeWrapper propertyType)
+			: this(wrapper, property, null, propertyType, GetModifiers(property), MemberFlags.HideFromReflection | MemberFlags.AccessStub)
+		{
+		}
+
+		// constructor for type 2 access stubs
+		internal CompiledAccessStubFieldWrapper(TypeWrapper wrapper, PropertyInfo property, FieldInfo field, TypeWrapper propertyType)
+			: this(wrapper, property, field, propertyType, AttributeHelper.GetModifiersAttribute(property).Modifiers, MemberFlags.AccessStub)
+		{
+		}
+
+		private CompiledAccessStubFieldWrapper(TypeWrapper wrapper, PropertyInfo property, FieldInfo field, TypeWrapper propertyType, Modifiers modifiers, MemberFlags flags)
+			: base(wrapper, propertyType, property.Name, propertyType.SigName, modifiers, field, flags)
 		{
 			this.getter = property.GetGetMethod(true);
 			this.setter = property.GetSetMethod(true);
@@ -1918,55 +1930,5 @@ namespace IKVM.Internal
 			ilgen.Emit(OpCodes.Call, setter);
 		}
 #endif // !STUB_GENERATOR
-
-		internal static bool TryGet(TypeWrapper wrapper, PropertyInfo property, FieldInfo field, out FieldWrapper accessStub)
-		{
-			NameSigAttribute nameSig = AttributeHelper.GetNameSig(property);
-			bool hideFromReflection = AttributeHelper.IsHideFromReflection(property);
-
-			if (nameSig != null || hideFromReflection)
-			{
-				TypeWrapper type;
-				string name;
-				string sig;
-				if (nameSig == null)
-				{
-					type = ClassLoaderWrapper.GetWrapperFromType(property.PropertyType);
-					name = property.Name;
-					sig = type.SigName;
-				}
-				else
-				{
-					type = wrapper.GetClassLoader().FieldTypeWrapperFromSigNoThrow(nameSig.Sig);
-					name = nameSig.Name;
-					sig = nameSig.Sig;
-				}
-				Modifiers modifiers;
-				MemberFlags flags = MemberFlags.AccessStub;
-				if (hideFromReflection)
-				{
-					// it's a Type 1 access stub (to make inherited fields visible)
-					flags |= MemberFlags.HideFromReflection;
-					modifiers = GetModifiers(property);
-				}
-				else
-				{
-					// it's a Type 2 access stub (to make fields that have a non-public field type visible)
-					ModifiersAttribute attr = AttributeHelper.GetModifiersAttribute(property);
-					modifiers = attr.Modifiers;
-					if (attr.IsInternal)
-					{
-						flags |= MemberFlags.InternalAccess;
-					}
-				}
-				accessStub = new CompiledAccessStubFieldWrapper(wrapper, property, field, type, name, sig, modifiers, flags);
-				return true;
-			}
-			else
-			{
-				accessStub = null;
-				return false;
-			}
-		}
 	}
 }

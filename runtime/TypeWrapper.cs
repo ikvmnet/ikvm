@@ -4174,6 +4174,8 @@ namespace IKVM.Internal
 			const BindingFlags flags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
 			FieldInfo[] rawfields = type.GetFields(flags);
 			Array.Sort(rawfields, SortFieldByToken);
+			// FXBUG on .NET 3.5 and Mono Type.GetProperties() will not return "duplicate" properties (i.e. that have the same name and type, but differ in custom modifiers).
+			// .NET 4.0 works as expected. We don't have a workaround, because that would require name mangling again and this situation is very unlikely anyway.
 			PropertyInfo[] properties = type.GetProperties(flags);
 			foreach(FieldInfo field in rawfields)
 			{
@@ -4189,7 +4191,7 @@ namespace IKVM.Internal
 								&& name == properties[i].Name
 								&& tw == GetPropertyTypeWrapper(properties[i]))
 							{
-								AddPropertyFieldWrapper(fields, properties[i], field);
+								fields.Add(new CompiledAccessStubFieldWrapper(this, properties[i], field, tw));
 								properties[i] = null;
 								break;
 							}
@@ -4224,12 +4226,10 @@ namespace IKVM.Internal
 			// so we don't need to worry about them here
 			if(!AttributeHelper.IsHideFromJava(property))
 			{
-				// Only AccessStub properties (marked by HideFromReflectionAttribute or NameSigAttribute)
-				// are considered here
-				FieldWrapper accessStub;
-				if(CompiledAccessStubFieldWrapper.TryGet(this, property, field, out accessStub))
+				// is it a type 1 access stub?
+				if(AttributeHelper.IsHideFromReflection(property))
 				{
-					fields.Add(accessStub);
+					fields.Add(new CompiledAccessStubFieldWrapper(this, property, GetPropertyTypeWrapper(property)));
 				}
 				else
 				{
