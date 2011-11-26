@@ -1328,7 +1328,19 @@ namespace IKVM.Internal
 				}
 				else
 				{
-					if (fld.IsFinal)
+#if STATIC_COMPILER
+					if (wrapper.IsPublic && wrapper.NeedsType2AccessStub(fw))
+					{
+						// this field is going to get a type 2 access stub, so we hide the actual field
+						attribs &= ~FieldAttributes.FieldAccessMask;
+						attribs |= FieldAttributes.Assembly;
+						// instead of adding HideFromJava we rename the field to avoid confusing broken compilers
+						// see https://sourceforge.net/tracker/?func=detail&atid=525264&aid=3056721&group_id=69637
+						// additional note: now that we maintain the ordering of the fields, we need to recognize
+						// these fields so that we know where to insert the corresponding accessor property FieldWrapper.
+						realFieldName = NamePrefix.Type2AccessStubBackingField + fld.Name;
+					}
+					else if (fld.IsFinal)
 					{
 						if (wrapper.IsInterface || wrapper.classLoader.StrictFinalFieldSemantics)
 						{
@@ -1336,28 +1348,13 @@ namespace IKVM.Internal
 						}
 						else
 						{
-#if STATIC_COMPILER
 							setModifiers = true;
-#endif
 						}
 					}
-
-#if STATIC_COMPILER
-					if (wrapper.IsPublic && fw.HasNonPublicTypeInSignature)
+#else
+					if (fld.IsFinal && wrapper.IsInterface)
 					{
-						// this field is going to get a type 2 access stub, so we hide the actual field
-						attribs &= ~FieldAttributes.FieldAccessMask;
-						attribs |= FieldAttributes.Assembly;
-						if (!fw.IsStatic)
-						{
-							// we need to have a setter for reflection and serialization
-							attribs &= ~FieldAttributes.InitOnly;
-						}
-						// instead of adding HideFromJava we rename the field to avoid confusing broken compilers
-						// see https://sourceforge.net/tracker/?func=detail&atid=525264&aid=3056721&group_id=69637
-						// additional note: now that we maintain the ordering of the fields, we need to recognize
-						// these fields so that we know where to insert the corresponding accessor property FieldWrapper.
-						realFieldName = NamePrefix.Type2AccessStubBackingField + fld.Name;
+						attribs |= FieldAttributes.InitOnly;
 					}
 #endif
 
@@ -4269,6 +4266,9 @@ namespace IKVM.Internal
 				 * Type 2	When a public class exposes a member that contains a non-public type in
 				 *			its signature, we need an access stub for that member (where we convert
 				 *			the non-public type in the signature to the first public base type).
+				 *			Additionally, when a public or protected final field is compiled
+				 *			without -strictfinalfieldsemantics, a the field will be wrapper with a
+				 *			read-only property.
 				 *
 				 * Note that type 1 access stubs may also need the type 2 signature type widening
 				 * if the signature contains non-public types.
@@ -4320,9 +4320,7 @@ namespace IKVM.Internal
 			{
 				foreach (FieldWrapper fw in wrapper.GetFields())
 				{
-					if (fw.HasNonPublicTypeInSignature
-						&& (fw.IsPublic || (fw.IsProtected && !wrapper.IsFinal))
-						&& fw.FieldTypeWrapper.IsAccessibleFrom(wrapper))
+					if (wrapper.NeedsType2AccessStub(fw))
 					{
 						GenerateAccessStub(fw, false);
 					}
@@ -5888,5 +5886,15 @@ namespace IKVM.Internal
 				return tw.TypeAsBaseType;
 			}
 		}
+
+#if STATIC_COMPILER
+		private bool NeedsType2AccessStub(FieldWrapper fw)
+		{
+			Debug.Assert(this.IsPublic && fw.DeclaringType == this);
+			return (fw.HasNonPublicTypeInSignature || (fw.IsFinal && !classLoader.StrictFinalFieldSemantics && !(fw is ConstantFieldWrapper) && !(fw is DynamicPropertyFieldWrapper)))
+				&& (fw.IsPublic || (fw.IsProtected && !this.IsFinal))
+				&& (fw.FieldTypeWrapper.IsAccessibleFrom(this) || fw.FieldTypeWrapper.InternalsVisibleTo(this));
+		}
+#endif
 	}
 }
