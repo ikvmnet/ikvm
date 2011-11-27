@@ -3671,11 +3671,11 @@ namespace IKVM.Internal
 					throw new InvalidProgramException();
 			}
 			bool error = msgId >= Message.StartErrors
-				|| options.warnaserror
+				|| (options.warnaserror && msgId >= Message.StartWarnings)
 				|| options.errorWarnings.ContainsKey(key)
 				|| options.errorWarnings.ContainsKey(((int)msgId).ToString());
 			Console.Error.Write("{0} IKVMC{1:D4}: ", error ? "Error" : msgId < Message.StartWarnings ? "Note" : "Warning", (int)msgId);
-			if (error && msgId < Message.StartErrors)
+			if (error && Message.StartWarnings <= msgId && msgId < Message.StartErrors)
 			{
 				Console.Error.Write("Warning as Error: ");
 			}
