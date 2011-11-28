@@ -1388,6 +1388,7 @@ namespace IKVM.Internal
 							AttributeHelper.SetModifiers(mbHelper, (Modifiers)m.Modifiers, false);
 							AttributeHelper.SetNameSig(mbHelper, m.Name, m.Sig);
 							AddDeclaredExceptions(mbHelper, m.throws);
+							mbHelper.SetCustomAttribute(new CustomAttributeBuilder(JVM.Import(typeof(ObsoleteAttribute)).GetConstructor(new Type[] { Types.String }), new object[] { "This function will be removed from future versions. Please use extension methods from ikvm.extensions namespace instead." }));
 						}
 						return mbCore;
 					}
