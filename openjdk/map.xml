@@ -1340,6 +1340,7 @@
                 </body>
             </constructor>
             <method name="addSuppressed" sig="(Ljava.lang.Throwable;)V" modifiers="public final">
+                <parameter name="exception" />
                 <redirect class="cli.IKVM.Internal.ExceptionHelper" name="addSuppressed" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;)V" />
             </method>
             <method name="getSuppressed" sig="()[Ljava.lang.Throwable;" modifiers="public final">
