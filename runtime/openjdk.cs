@@ -2966,6 +2966,10 @@ namespace IKVM.NativeCode.java
 						{
 							cfp |= ClassFileParseOptions.LocalVariableTable;
 						}
+						if (classLoaderWrapper.RelaxedClassNameValidation)
+						{
+							cfp |= ClassFileParseOptions.RelaxedClassNameValidation;
+						}
 						ClassFile classFile = new ClassFile(b, off, len, name, cfp);
 						if (name != null && classFile.Name != name)
 						{

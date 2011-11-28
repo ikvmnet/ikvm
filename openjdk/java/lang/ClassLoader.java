@@ -2219,6 +2219,16 @@ public abstract class ClassLoader {
 
     // Retrieves the assertion directives from the VM.
     private static native AssertionStatusDirectives retrieveDirectives();
+
+    // [IKVM] equivalent of HotSpot's java_lang_ClassLoader::is_trusted_loader()
+    static boolean isTrustedLoader(ClassLoader loader) {
+        ClassLoader cl = scl;
+        while (cl != null) {
+            if (cl == loader) return true;
+            cl = cl.parent;
+        }
+        return false;
+    }
 }
 
 

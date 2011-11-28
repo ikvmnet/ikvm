@@ -270,6 +270,20 @@ namespace IKVM.Internal
 			}
 		}
 
+#if !STATIC_COMPILER && !STUB_GENERATOR
+		internal bool RelaxedClassNameValidation
+		{
+			get
+			{
+#if FIRST_PASS
+				return true;
+#else
+				return javaClassLoader == null || java.lang.ClassLoader.isTrustedLoader(javaClassLoader);
+#endif
+			}
+		}
+#endif // !STATIC_COMPILER && !STUB_GENERATOR
+
 		internal virtual string SourcePath
 		{
 			get

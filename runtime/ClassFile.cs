@@ -51,6 +51,7 @@ namespace IKVM.Internal
 		None = 0,
 		LocalVariableTable = 1,
 		LineNumberTable = 2,
+		RelaxedClassNameValidation = 4,
 	}
 
 	sealed class ClassFile
@@ -244,7 +245,7 @@ namespace IKVM.Internal
 					{
 						try
 						{
-							constantpool[i].Resolve(this);
+							constantpool[i].Resolve(this, options);
 						}
 						catch(ClassFormatError x)
 						{
@@ -1275,7 +1276,7 @@ namespace IKVM.Internal
 
 		internal abstract class ConstantPoolItem
 		{
-			internal virtual void Resolve(ClassFile classFile)
+			internal virtual void Resolve(ClassFile classFile, ClassFileParseOptions options)
 			{
 			}
 
@@ -1301,7 +1302,7 @@ namespace IKVM.Internal
 				name_index = br.ReadUInt16();
 			}
 
-			internal override void Resolve(ClassFile classFile)
+			internal override void Resolve(ClassFile classFile, ClassFileParseOptions options)
 			{
 				name = classFile.GetConstantPoolUtf8String(name_index);
 				if(name.Length > 0)
@@ -1310,7 +1311,7 @@ namespace IKVM.Internal
 					// class names for the system (and boot) class loader. We still need to enforce the 1.5 restrictions, because we
 					// rely on those invariants.
 #if !STATIC_COMPILER
-					if(classFile.MajorVersion < 49)
+					if(classFile.MajorVersion < 49 && (options & ClassFileParseOptions.RelaxedClassNameValidation) == 0)
 					{
 						char prev = name[0];
 						if(Char.IsLetter(prev) || prev == '$' || prev == '_' || prev == '[' || prev == '/')
@@ -1441,7 +1442,7 @@ namespace IKVM.Internal
 				name_and_type_index = br.ReadUInt16();
 			}
 
-			internal override void Resolve(ClassFile classFile)
+			internal override void Resolve(ClassFile classFile, ClassFileParseOptions options)
 			{
 				ConstantPoolItemNameAndType name_and_type = (ConstantPoolItemNameAndType)classFile.GetConstantPoolItem(name_and_type_index);
 				clazz = (ConstantPoolItemClass)classFile.GetConstantPoolItem(class_index);
@@ -1799,7 +1800,7 @@ namespace IKVM.Internal
 				descriptor_index = br.ReadUInt16();
 			}
 
-			internal override void Resolve(ClassFile classFile)
+			internal override void Resolve(ClassFile classFile, ClassFileParseOptions options)
 			{
 				if(classFile.GetConstantPoolUtf8String(name_index) == null
 					|| classFile.GetConstantPoolUtf8String(descriptor_index) == null)
@@ -1821,7 +1822,7 @@ namespace IKVM.Internal
 				method_index = br.ReadUInt16();
 			}
 
-			internal override void Resolve(ClassFile classFile)
+			internal override void Resolve(ClassFile classFile, ClassFileParseOptions options)
 			{
 				switch ((RefKind)ref_kind)
 				{
@@ -1909,7 +1910,7 @@ namespace IKVM.Internal
 				signature_index = br.ReadUInt16();
 			}
 
-			internal override void Resolve(ClassFile classFile)
+			internal override void Resolve(ClassFile classFile, ClassFileParseOptions options)
 			{
 				string descriptor = classFile.GetConstantPoolUtf8String(signature_index);
 				if (descriptor == null || !IsValidMethodSig(descriptor))
@@ -1972,7 +1973,7 @@ namespace IKVM.Internal
 				name_and_type_index = br.ReadUInt16();
 			}
 
-			internal override void Resolve(ClassFile classFile)
+			internal override void Resolve(ClassFile classFile, ClassFileParseOptions options)
 			{
 				ConstantPoolItemNameAndType name_and_type = (ConstantPoolItemNameAndType)classFile.GetConstantPoolItem(name_and_type_index);
 				// if the constant pool items referred to were strings, GetConstantPoolItem returns null
@@ -2037,7 +2038,7 @@ namespace IKVM.Internal
 				string_index = br.ReadUInt16();
 			}
 
-			internal override void Resolve(ClassFile classFile)
+			internal override void Resolve(ClassFile classFile, ClassFileParseOptions options)
 			{
 				s = classFile.GetConstantPoolUtf8String(string_index);
 			}
