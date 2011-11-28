@@ -1306,6 +1306,10 @@ namespace IKVM.Internal
 				name = classFile.GetConstantPoolUtf8String(name_index);
 				if(name.Length > 0)
 				{
+					// We don't enforce the strict class name rules in the static compiler, since HotSpot doesn't enforce *any* rules on
+					// class names for the system (and boot) class loader. We still need to enforce the 1.5 restrictions, because we
+					// rely on those invariants.
+#if !STATIC_COMPILER
 					if(classFile.MajorVersion < 49)
 					{
 						char prev = name[0];
@@ -1342,6 +1346,7 @@ namespace IKVM.Internal
 						}
 					}
 					else
+#endif
 					{
 						// since 1.5 the restrictions on class names have been greatly reduced
 						int end = name.Length;
