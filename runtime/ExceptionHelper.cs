@@ -500,7 +500,7 @@ namespace IKVM.Internal
 			{
 				return "";
 			}
-			return java.lang.Object.instancehelper_toString(cause);
+			return ikvm.extensions.ExtensionMethods.toString(cause);
 #endif
 		}
 
@@ -509,7 +509,7 @@ namespace IKVM.Internal
 #if FIRST_PASS
 			return null;
 #else
-			return Throwable.instancehelper_getMessage(x);
+			return ikvm.extensions.ExtensionMethods.getMessage(x);
 #endif
 		}
 
@@ -518,12 +518,12 @@ namespace IKVM.Internal
 #if FIRST_PASS
 			return null;
 #else
-			string message = Throwable.instancehelper_getLocalizedMessage(x);
+			string message = ikvm.extensions.ExtensionMethods.getLocalizedMessage(x);
 			if (message == null)
 			{
-				return java.lang.Object.instancehelper_getClass(x).getName();
+				return ikvm.extensions.ExtensionMethods.getClass(x).getName();
 			}
-			return java.lang.Object.instancehelper_getClass(x).getName() + ": " + message;
+			return ikvm.extensions.ExtensionMethods.getClass(x).getName() + ": " + message;
 #endif
 		}
 

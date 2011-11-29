@@ -1780,7 +1780,7 @@ namespace IKVM.Runtime
 				env.pendingException = null;
 				try
 				{
-					java.lang.Throwable.instancehelper_printStackTrace(x);
+					ikvm.extensions.ExtensionMethods.printStackTrace(x);
 				}
 				catch(Exception ex)
 				{
