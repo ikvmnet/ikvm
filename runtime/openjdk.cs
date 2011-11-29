@@ -2781,7 +2781,7 @@ namespace IKVM.NativeCode.java
 						}
 						else
 						{
-							fields[i].FieldTypeWrapper.EnsureLoadable(wrapper.GetClassLoader());
+							fields[i].EnsureLoadable();
 							list.Add((jlrField)fields[i].ToField(false));
 						}
 					}
@@ -2830,12 +2830,7 @@ namespace IKVM.NativeCode.java
 							&& methods[i].Name != "<clinit>" && methods[i].Name != "<init>"
 							&& (!publicOnly || methods[i].IsPublic))
 						{
-							methods[i].ReturnType.EnsureLoadable(wrapper.GetClassLoader());
-							TypeWrapper[] args = methods[i].GetParameters();
-							for (int j = 0; j < args.Length; j++)
-							{
-								args[j].EnsureLoadable(wrapper.GetClassLoader());
-							}
+							methods[i].EnsureLoadable();
 							list.Add((jlrMethod)methods[i].ToMethodOrConstructor(false));
 						}
 					}
@@ -2884,11 +2879,7 @@ namespace IKVM.NativeCode.java
 							&& methods[i].Name == "<init>"
 							&& (!publicOnly || methods[i].IsPublic))
 						{
-							TypeWrapper[] args = methods[i].GetParameters();
-							for (int j = 0; j < args.Length; j++)
-							{
-								args[j].EnsureLoadable(wrapper.GetClassLoader());
-							}
+							methods[i].EnsureLoadable();
 							list.Add((jlrConstructor)methods[i].ToMethodOrConstructor(false));
 						}
 					}

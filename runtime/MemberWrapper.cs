@@ -355,6 +355,16 @@ namespace IKVM.Internal
 		private TypeWrapper returnTypeWrapper;
 		private TypeWrapper[] parameterTypeWrappers;
 
+		internal void EnsureLoadable()
+		{
+			ClassLoaderWrapper loader = DeclaringType.GetClassLoader();
+			returnTypeWrapper = returnTypeWrapper.EnsureLoadable(loader);
+			for (int i = 0; i < parameterTypeWrappers.Length; i++)
+			{
+				parameterTypeWrappers[i] = parameterTypeWrappers[i].EnsureLoadable(loader);
+			}
+		}
+
 #if !STUB_GENERATOR
 		internal virtual void EmitCall(CodeEmitter ilgen)
 		{
@@ -1263,6 +1273,11 @@ namespace IKVM.Internal
 					SetNonPublicTypeInSignatureFlag();
 				}
 			}
+		}
+
+		internal void EnsureLoadable()
+		{
+			fieldType = fieldType.EnsureLoadable(DeclaringType.GetClassLoader());
 		}
 
 		internal FieldInfo GetField()
