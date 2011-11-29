@@ -2683,45 +2683,6 @@ namespace IKVM.Internal
 						// so we need to explicitly record that the method is varargs
 						setModifiers = true;
 					}
-					MethodAttributes attribs = MethodAttributes.HideBySig;
-					if (m.IsNative)
-					{
-						if (wrapper.IsPInvokeMethod(m))
-						{
-							// this doesn't appear to be necessary, but we use the flag in Finish to know
-							// that we shouldn't emit a method body
-							attribs |= MethodAttributes.PinvokeImpl;
-						}
-						else
-						{
-							setModifiers = true;
-						}
-					}
-					if (methods[index].IsPropertyAccessor)
-					{
-						attribs |= GetPropertyAccess(methods[index]);
-						attribs |= MethodAttributes.SpecialName;
-						setModifiers = true;
-					}
-					else
-					{
-						if (m.IsPrivate)
-						{
-							attribs |= MethodAttributes.Private;
-						}
-						else if (m.IsProtected)
-						{
-							attribs |= MethodAttributes.FamORAssem;
-						}
-						else if (m.IsPublic)
-						{
-							attribs |= MethodAttributes.Public;
-						}
-						else
-						{
-							attribs |= MethodAttributes.Assembly;
-						}
-					}
 					if (ReferenceEquals(m.Name, StringConstants.INIT))
 					{
 						method = GenerateConstructor(methods[index]);
@@ -2737,7 +2698,7 @@ namespace IKVM.Internal
 					}
 					else
 					{
-						method = GenerateMethod(index, m, attribs, unloadableOverrideStub, ref setModifiers, ref setNameSig);
+						method = GenerateMethod(index, m, unloadableOverrideStub, ref setModifiers, ref setNameSig);
 					}
 					string[] exceptions = m.ExceptionsAttribute;
 					methods[index].SetDeclaredExceptions(exceptions);
@@ -2838,8 +2799,32 @@ namespace IKVM.Internal
 				return cb;
 			}
 
-			private MethodBase GenerateMethod(int index, ClassFile.Method m, MethodAttributes attribs, bool unloadableOverrideStub, ref bool setModifiers, ref bool setNameSig)
+			private MethodBase GenerateMethod(int index, ClassFile.Method m, bool unloadableOverrideStub, ref bool setModifiers, ref bool setNameSig)
 			{
+				MethodAttributes attribs = MethodAttributes.HideBySig;
+				if (m.IsNative)
+				{
+					if (wrapper.IsPInvokeMethod(m))
+					{
+						// this doesn't appear to be necessary, but we use the flag in Finish to know
+						// that we shouldn't emit a method body
+						attribs |= MethodAttributes.PinvokeImpl;
+					}
+					else
+					{
+						setModifiers = true;
+					}
+				}
+				if (methods[index].IsPropertyAccessor)
+				{
+					attribs |= GetPropertyAccess(methods[index]);
+					attribs |= MethodAttributes.SpecialName;
+					setModifiers = true;
+				}
+				else
+				{
+					attribs |= GetMethodAccess(methods[index]);
+				}
 				if (m.IsAbstract)
 				{
 					// only if the classfile is abstract, we make the CLR method abstract, otherwise,
