@@ -2724,44 +2724,12 @@ namespace IKVM.Internal
 					}
 					if (ReferenceEquals(m.Name, StringConstants.INIT))
 					{
-						Type[][] modopt = null;
-						if (setNameSig)
-						{
-							// we add optional modifiers to make the signature unique
-							TypeWrapper[] parameters = methods[index].GetParameters();
-							modopt = new Type[parameters.Length][];
-							for (int i = 0; i < parameters.Length; i++)
-							{
-								if (parameters[i].IsGhostArray)
-								{
-									TypeWrapper elemTypeWrapper = parameters[i];
-									while (elemTypeWrapper.IsArray)
-									{
-										elemTypeWrapper = elemTypeWrapper.ElementTypeWrapper;
-									}
-									modopt[i] = new Type[] { elemTypeWrapper.TypeAsTBD };
-								}
-								else if (parameters[i].IsBoxedPrimitive)
-								{
-									modopt[i] = new Type[] { Types.Object };
-								}
-								else if (parameters[i].IsRemapped && parameters[i] is DotNetTypeWrapper)
-								{
-									modopt[i] = new Type[] { parameters[i].TypeAsSignatureType };
-								}
-								else if (parameters[i].IsUnloadable)
-								{
-									modopt[i] = new Type[] { wrapper.classLoader.GetTypeWrapperFactory().DefineUnloadable(parameters[i].Name) };
-								}
-							}
-						}
+						method = GenerateConstructor(methods[index]);
 						// strictfp is the only modifier that a constructor can have
 						if (m.IsStrictfp)
 						{
 							setModifiers = true;
 						}
-						method = typeBuilder.DefineConstructor(attribs, CallingConventions.Standard, methods[index].GetParametersForDefineMethod(), null, modopt);
-						((ConstructorBuilder)method).SetImplementationFlags(MethodImplAttributes.NoInlining);
 					}
 					else if (m.IsClassInitializer)
 					{
@@ -3061,6 +3029,64 @@ namespace IKVM.Internal
 				finally
 				{
 					Profiler.Leave("JavaTypeImpl.GenerateMethod");
+				}
+			}
+
+			private MethodBase GenerateConstructor(MethodWrapper mw)
+			{
+				bool setNameSig = mw.ReturnType.IsErasedOrBoxedPrimitiveOrRemapped;
+				foreach (TypeWrapper tw in mw.GetParameters())
+				{
+					setNameSig |= tw.IsErasedOrBoxedPrimitiveOrRemapped;
+				}
+				Type[][] modopt = null;
+				if (setNameSig)
+				{
+					// we add optional modifiers to make the signature unique
+					TypeWrapper[] parameters = mw.GetParameters();
+					modopt = new Type[parameters.Length][];
+					for (int i = 0; i < parameters.Length; i++)
+					{
+						if (parameters[i].IsGhostArray)
+						{
+							TypeWrapper elemTypeWrapper = parameters[i];
+							while (elemTypeWrapper.IsArray)
+							{
+								elemTypeWrapper = elemTypeWrapper.ElementTypeWrapper;
+							}
+							modopt[i] = new Type[] { elemTypeWrapper.TypeAsTBD };
+						}
+						else if (parameters[i].IsBoxedPrimitive)
+						{
+							modopt[i] = new Type[] { Types.Object };
+						}
+						else if (parameters[i].IsRemapped && parameters[i] is DotNetTypeWrapper)
+						{
+							modopt[i] = new Type[] { parameters[i].TypeAsSignatureType };
+						}
+						else if (parameters[i].IsUnloadable)
+						{
+							modopt[i] = new Type[] { wrapper.classLoader.GetTypeWrapperFactory().DefineUnloadable(parameters[i].Name) };
+						}
+					}
+				}
+				ConstructorBuilder cb = typeBuilder.DefineConstructor(GetMethodAccess(mw) | MethodAttributes.HideBySig, CallingConventions.Standard, mw.GetParametersForDefineMethod(), null, modopt);
+				cb.SetImplementationFlags(MethodImplAttributes.NoInlining);
+				return cb;
+			}
+
+			private static MethodAttributes GetMethodAccess(MethodWrapper mw)
+			{
+				switch (mw.Modifiers & Modifiers.AccessMask)
+				{
+					case Modifiers.Private:
+						return MethodAttributes.Private;
+					case Modifiers.Protected:
+						return MethodAttributes.FamORAssem;
+					case Modifiers.Public:
+						return MethodAttributes.Public;
+					default:
+						return MethodAttributes.Assembly;
 				}
 			}
 
