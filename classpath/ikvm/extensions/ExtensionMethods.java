@@ -238,6 +238,12 @@ public final class ExtensionMethods
     }
 
     @ExtensionAttribute.Annotation
+    public static String toString(Object obj)
+    {
+        return obj.toString();
+    }
+
+    @ExtensionAttribute.Annotation
     public static void wait(Object obj) throws InterruptedException
     {
         obj.wait();
