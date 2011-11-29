@@ -77,6 +77,12 @@ namespace IKVM.Internal
 			set { }
 #endif
 		}
+
+		public static bool RelaxedVerification
+		{
+			get { return JVM.relaxedVerification; }
+			set { JVM.relaxedVerification = value; }
+		}
 	}
 }
 #endif // !STATIC_COMPILER && !STUB_GENERATOR
@@ -97,6 +103,7 @@ namespace IKVM.Internal
 #endif
 #endif // STATIC_COMPILER
 		private static Assembly coreAssembly;
+		internal static bool relaxedVerification = true;
 
 		internal static Version SafeGetAssemblyVersion(System.Reflection.Assembly asm)
 		{

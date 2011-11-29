@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2010 Jeroen Frijters
+  Copyright (C) 2002-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -278,7 +278,7 @@ namespace IKVM.Internal
 #if FIRST_PASS
 				return true;
 #else
-				return javaClassLoader == null || java.lang.ClassLoader.isTrustedLoader(javaClassLoader);
+				return JVM.relaxedVerification && (javaClassLoader == null || java.lang.ClassLoader.isTrustedLoader(javaClassLoader));
 #endif
 			}
 		}

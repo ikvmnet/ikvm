@@ -156,6 +156,10 @@ public class Starter
 				{
 					IKVM.Internal.Starter.ClassUnloading = false;
 				}
+				else if(arg == "-Xverify")
+				{
+					IKVM.Internal.Starter.RelaxedVerification = false;
+				}
 				else if(arg == "-jar")
 				{
 					jar = true;
@@ -266,7 +270,6 @@ public class Starter
                     || arg.StartsWith("-Xss")
                     || arg == "-Xmixed"
                     || arg == "-Xint"
-                    || arg == "-Xnoclassgc"
                     || arg == "-Xincgc"
                     || arg == "-Xbatch"
                     || arg == "-Xfuture"
@@ -326,6 +329,7 @@ public class Starter
 			Console.Error.WriteLine("    -Xbreak           Trigger a user defined breakpoint at startup");
 			Console.Error.WriteLine("    -Xnoclassgc       Disable class garbage collection");
 			Console.Error.WriteLine("    -Xnoglobbing      Disable argument globbing");
+			Console.Error.WriteLine("    -Xverify          Enable strict class file verification");
 			return 1;
 		}
 		try
