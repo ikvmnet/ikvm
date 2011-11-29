@@ -2671,11 +2671,6 @@ namespace IKVM.Internal
 					}
 					ClassFile.Method m = classFile.Methods[index];
 					MethodBase method;
-					bool setNameSig = methods[index].ReturnType.IsErasedOrBoxedPrimitiveOrRemapped;
-					foreach (TypeWrapper tw in methods[index].GetParameters())
-					{
-						setNameSig |= tw.IsErasedOrBoxedPrimitiveOrRemapped;
-					}
 					bool setModifiers = false;
 					if (methods[index].HasCallerID && (m.Modifiers & Modifiers.VarArgs) != 0)
 					{
@@ -2698,7 +2693,7 @@ namespace IKVM.Internal
 					}
 					else
 					{
-						method = GenerateMethod(index, m, unloadableOverrideStub, ref setModifiers, ref setNameSig);
+						method = GenerateMethod(index, m, unloadableOverrideStub, ref setModifiers);
 					}
 					string[] exceptions = m.ExceptionsAttribute;
 					methods[index].SetDeclaredExceptions(exceptions);
@@ -2734,10 +2729,6 @@ namespace IKVM.Internal
 					{
 						AttributeHelper.SetDeprecatedAttribute(method);
 					}
-					if (setNameSig)
-					{
-						AttributeHelper.SetNameSig(method, m.Name, m.Signature);
-					}
 					if (m.GenericSignature != null)
 					{
 						AttributeHelper.SetSignatureAttribute(method, m.GenericSignature);
@@ -2758,49 +2749,25 @@ namespace IKVM.Internal
 
 			private MethodBase GenerateConstructor(MethodWrapper mw)
 			{
-				bool setNameSig = mw.ReturnType.IsErasedOrBoxedPrimitiveOrRemapped;
-				foreach (TypeWrapper tw in mw.GetParameters())
+				// we add optional modifiers to make the signature unique
+				TypeWrapper[] parameters = mw.GetParameters();
+				Type[][] modopt = new Type[parameters.Length][];
+				for (int i = 0; i < parameters.Length; i++)
 				{
-					setNameSig |= tw.IsErasedOrBoxedPrimitiveOrRemapped;
-				}
-				Type[][] modopt = null;
-				if (setNameSig)
-				{
-					// we add optional modifiers to make the signature unique
-					TypeWrapper[] parameters = mw.GetParameters();
-					modopt = new Type[parameters.Length][];
-					for (int i = 0; i < parameters.Length; i++)
-					{
-						if (parameters[i].IsGhostArray)
-						{
-							TypeWrapper elemTypeWrapper = parameters[i];
-							while (elemTypeWrapper.IsArray)
-							{
-								elemTypeWrapper = elemTypeWrapper.ElementTypeWrapper;
-							}
-							modopt[i] = new Type[] { elemTypeWrapper.TypeAsTBD };
-						}
-						else if (parameters[i].IsBoxedPrimitive)
-						{
-							modopt[i] = new Type[] { Types.Object };
-						}
-						else if (parameters[i].IsRemapped && parameters[i] is DotNetTypeWrapper)
-						{
-							modopt[i] = new Type[] { parameters[i].TypeAsSignatureType };
-						}
-						else if (parameters[i].IsUnloadable)
-						{
-							modopt[i] = new Type[] { wrapper.classLoader.GetTypeWrapperFactory().DefineUnloadable(parameters[i].Name) };
-						}
-					}
+					modopt[i] = wrapper.GetModOpt(parameters[i], false);
 				}
 				ConstructorBuilder cb = typeBuilder.DefineConstructor(GetMethodAccess(mw) | MethodAttributes.HideBySig, CallingConventions.Standard, mw.GetParametersForDefineMethod(), null, modopt);
 				cb.SetImplementationFlags(MethodImplAttributes.NoInlining);
 				return cb;
 			}
 
-			private MethodBase GenerateMethod(int index, ClassFile.Method m, bool unloadableOverrideStub, ref bool setModifiers, ref bool setNameSig)
+			private MethodBase GenerateMethod(int index, ClassFile.Method m, bool unloadableOverrideStub, ref bool setModifiers)
 			{
+				bool setNameSig = methods[index].ReturnType.IsErasedOrBoxedPrimitiveOrRemapped;
+				foreach (TypeWrapper tw in methods[index].GetParameters())
+				{
+					setNameSig |= tw.IsErasedOrBoxedPrimitiveOrRemapped;
+				}
 				MethodAttributes attribs = MethodAttributes.HideBySig;
 				if (m.IsNative)
 				{
@@ -3062,6 +3029,13 @@ namespace IKVM.Internal
 					}
 #endif // STATIC_COMPILER
 				}
+
+#if STATIC_COMPILER
+				if (setNameSig)
+				{
+					AttributeHelper.SetNameSig(mb, m.Name, m.Signature);
+				}
+#endif
 				return mb;
 			}
 
@@ -5867,19 +5841,19 @@ namespace IKVM.Internal
 			else
 			{
 				TypeWrapper tw1 = tw.IsArray ? tw.GetUltimateElementTypeWrapper() : tw;
-				if (tw1.IsErasedOrBoxedPrimitiveOrRemapped || (mustBePublic && !tw1.IsPublic))
+				if (tw1.IsErasedOrBoxedPrimitiveOrRemapped || tw.IsGhostArray || (mustBePublic && !tw1.IsPublic))
 				{
 #if STATIC_COMPILER
 					modopt = new Type[] { GetModOptHelper(tw) };
 #else
-						// FXBUG Ref.Emit refuses arrays in custom modifiers, so we add an array type for each dimension
-						// (note that in this case we only add the custom modifiers to make the signature unique, we never read back this information)
-						modopt = new Type[tw.ArrayRank + 1];
-						modopt[0] = GetModOptHelper(tw1);
-						for (int i = 1; i < modopt.Length; i++)
-						{
-							modopt[i] = typeof(Array);
-						}
+					// FXBUG Ref.Emit refuses arrays in custom modifiers, so we add an array type for each dimension
+					// (note that in this case we only add the custom modifiers to make the signature unique, we never read back this information)
+					modopt = new Type[tw.ArrayRank + 1];
+					modopt[0] = GetModOptHelper(tw1);
+					for (int i = 1; i < modopt.Length; i++)
+					{
+						modopt[i] = typeof(Array);
+					}
 #endif
 				}
 			}
