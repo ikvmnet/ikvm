@@ -2737,244 +2737,7 @@ namespace IKVM.Internal
 					}
 					else
 					{
-						if (m.IsAbstract)
-						{
-							// only if the classfile is abstract, we make the CLR method abstract, otherwise,
-							// we have to generate a method that throws an AbstractMethodError (because the JVM
-							// allows abstract methods in non-abstract classes)
-							if (classFile.IsAbstract)
-							{
-								if (classFile.IsPublic && !classFile.IsFinal && !(m.IsPublic || m.IsProtected))
-								{
-									setModifiers = true;
-								}
-								else
-								{
-									attribs |= MethodAttributes.Abstract;
-								}
-							}
-							else
-							{
-								setModifiers = true;
-							}
-						}
-						if (m.IsFinal)
-						{
-							if (!m.IsStatic && !m.IsPrivate)
-							{
-								attribs |= MethodAttributes.Final;
-							}
-							else
-							{
-								setModifiers = true;
-							}
-						}
-						if (m.IsStatic)
-						{
-							attribs |= MethodAttributes.Static;
-							if (m.IsSynchronized)
-							{
-								setModifiers = true;
-							}
-						}
-						else if (!m.IsPrivate)
-						{
-							attribs |= MethodAttributes.Virtual | MethodAttributes.CheckAccessOnOverride;
-						}
-						string name = m.Name;
-#if STATIC_COMPILER
-						if ((m.Modifiers & Modifiers.Bridge) != 0 && (m.IsPublic || m.IsProtected) && wrapper.IsPublic)
-						{
-							string sigbase = m.Signature.Substring(0, m.Signature.LastIndexOf(')') + 1);
-							foreach (MethodWrapper mw in methods)
-							{
-								if (mw.Name == m.Name && mw.Signature.StartsWith(sigbase) && mw.Signature != m.Signature)
-								{
-									// To prevent bridge methods with covariant return types from confusing
-									// other .NET compilers (like C#), we rename the bridge method.
-									name = NamePrefix.Bridge + name;
-									setNameSig = true;
-									break;
-								}
-							}
-						}
-#endif
-						if ((attribs & MethodAttributes.Virtual) != 0 && !classFile.IsInterface)
-						{
-							if (baseMethods[index] == null || (baseMethods[index].Length == 1 && baseMethods[index][0].DeclaringType.IsInterface))
-							{
-								// we need to set NewSlot here, to prevent accidentally overriding methods
-								// (for example, if a Java class has a method "boolean Equals(object)", we don't want that method
-								// to override System.Object.Equals)
-								attribs |= MethodAttributes.NewSlot;
-							}
-							else
-							{
-								// if we have a method overriding a more accessible method (the JVM allows this), we need to make the
-								// method more accessible, because otherwise the CLR will complain that we're reducing access
-								bool hasPublicBaseMethod = false;
-								foreach (MethodWrapper baseMethodWrapper in baseMethods[index])
-								{
-									MethodBase baseMethod = baseMethodWrapper.GetMethod();
-									if ((baseMethod.IsPublic && !m.IsPublic) ||
-										((baseMethod.IsFamily || baseMethod.IsFamilyOrAssembly) && !m.IsPublic && !m.IsProtected) ||
-										(!m.IsPublic && !m.IsProtected && !baseMethodWrapper.DeclaringType.IsPackageAccessibleFrom(wrapper)))
-									{
-										hasPublicBaseMethod |= baseMethod.IsPublic;
-										attribs &= ~MethodAttributes.MemberAccessMask;
-										attribs |= hasPublicBaseMethod ? MethodAttributes.Public : MethodAttributes.FamORAssem;
-										setModifiers = true;
-									}
-								}
-							}
-						}
-						MethodBuilder mb = null;
-#if STATIC_COMPILER
-						mb = wrapper.DefineGhostMethod(name, attribs, methods[index]);
-#endif
-						if (mb == null)
-						{
-							bool needFinalize = false;
-							bool needDispatch = false;
-							MethodInfo baseFinalize = null;
-							if (baseMethods[index] != null && ReferenceEquals(m.Name, StringConstants.FINALIZE) && ReferenceEquals(m.Signature, StringConstants.SIG_VOID))
-							{
-								baseFinalize = GetBaseFinalizeMethod(wrapper.BaseTypeWrapper);
-								if (baseMethods[index][0].DeclaringType == CoreClasses.java.lang.Object.Wrapper)
-								{
-									// This type is the first type in the hierarchy to introduce a finalize method
-									// (other than the one in java.lang.Object obviously), so we need to override
-									// the real Finalize method and emit a dispatch call to our finalize method.
-									needFinalize = true;
-									needDispatch = true;
-								}
-								else if (m.IsFinal)
-								{
-									// One of our base classes already has a  finalize method, so we already are
-									// hooked into the real Finalize, but we need to override it again, to make it
-									// final (so that non-Java types cannot override it either).
-									needFinalize = true;
-									needDispatch = false;
-									// If the base class finalize was optimized away, we need a dispatch call after all.
-									if (baseFinalize.DeclaringType == Types.Object)
-									{
-										needDispatch = true;
-									}
-								}
-								else
-								{
-									// One of our base classes already has a finalize method, but it may have been an empty
-									// method so that the hookup to the real Finalize was optimized away, we need to check
-									// for that.
-									if (baseFinalize.DeclaringType == Types.Object)
-									{
-										needFinalize = true;
-										needDispatch = true;
-									}
-								}
-								if (needFinalize &&
-									!m.IsAbstract && !m.IsNative &&
-									(!m.IsFinal || classFile.IsFinal) &&
-									m.Instructions.Length > 0 &&
-									m.Instructions[0].NormalizedOpCode == NormalizedByteCode.__return)
-								{
-									// we've got an empty finalize method, so we don't need to override the real finalizer
-									// (not having a finalizer makes a huge perf difference)
-									needFinalize = false;
-								}
-							}
-							if (setNameSig || memberclashtable != null)
-							{
-								// TODO we really should make sure that the name we generate doesn't already exist in a
-								// base class (not in the Java method namespace, but in the CLR method namespace)
-								name = GenerateUniqueMethodName(name, methods[index]);
-								if (name != m.Name)
-								{
-									setNameSig = true;
-								}
-							}
-							bool newslot = baseMethods[index] != null && (setNameSig || methods[index].IsExplicitOverride || baseMethods[index][0].RealName != name) && !needFinalize;
-							if (unloadableOverrideStub || newslot)
-							{
-								attribs |= MethodAttributes.NewSlot;
-							}
-							mb = typeBuilder.DefineMethod(name, attribs, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
-							if (unloadableOverrideStub)
-							{
-								foreach (MethodWrapper baseMethod in baseMethods[index])
-								{
-									// TODO if there are multiple base methods, we're creating an unloadable override stub for all of them, but in theory it's possible that not all of them need it
-									GenerateUnloadableOverrideStub(wrapper, typeBuilder, baseMethod, mb, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
-								}
-							}
-							else if (baseMethods[index] != null && !needFinalize)
-							{
-								bool subsequent = false;
-								foreach (MethodWrapper baseMethod in baseMethods[index])
-								{
-									if (subsequent || setNameSig || methods[index].IsExplicitOverride || baseMethod.RealName != name)
-									{
-										typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMethod.GetMethod());
-									}
-									// the non-primary base methods always need an explicit method override
-									subsequent = true;
-								}
-							}
-							// if we're overriding java.lang.Object.finalize we need to emit a stub to override System.Object.Finalize,
-							// or if we're subclassing a non-Java class that has a Finalize method, we need a new Finalize override
-							if (needFinalize)
-							{
-								string finalizeName = baseFinalize.Name;
-								MethodWrapper mwClash = wrapper.GetMethodWrapper(finalizeName, StringConstants.SIG_VOID, true);
-								if (mwClash != null && mwClash.GetMethod() != baseFinalize)
-								{
-									finalizeName = "__<Finalize>";
-								}
-								MethodAttributes attr = MethodAttributes.HideBySig | MethodAttributes.Virtual;
-								// make sure we don't reduce accessibility
-								attr |= baseFinalize.IsPublic ? MethodAttributes.Public : MethodAttributes.Family;
-								if (m.IsFinal)
-								{
-									attr |= MethodAttributes.Final;
-								}
-								finalizeMethod = typeBuilder.DefineMethod(finalizeName, attr, CallingConventions.Standard, Types.Void, Type.EmptyTypes);
-								if (finalizeName != baseFinalize.Name)
-								{
-									typeBuilder.DefineMethodOverride(finalizeMethod, baseFinalize);
-								}
-								AttributeHelper.HideFromJava(finalizeMethod);
-								CodeEmitter ilgen = CodeEmitter.Create(finalizeMethod);
-								ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.SkipFinalizer);
-								CodeEmitterLabel skip = ilgen.DefineLabel();
-								ilgen.Emit(OpCodes.Brtrue_S, skip);
-								if (needDispatch)
-								{
-									ilgen.BeginExceptionBlock();
-									ilgen.Emit(OpCodes.Ldarg_0);
-									ilgen.Emit(OpCodes.Callvirt, mb);
-									ilgen.Emit(OpCodes.Leave, skip);
-									ilgen.BeginCatchBlock(Types.Object);
-									ilgen.Emit(OpCodes.Leave, skip);
-									ilgen.EndExceptionBlock();
-								}
-								else
-								{
-									ilgen.Emit(OpCodes.Ldarg_0);
-									ilgen.Emit(OpCodes.Call, baseFinalize);
-								}
-								ilgen.MarkLabel(skip);
-								ilgen.Emit(OpCodes.Ret);
-								ilgen.DoEmit();
-							}
-#if STATIC_COMPILER
-							if (classFile.Methods[index].AnnotationDefault != null)
-							{
-								CustomAttributeBuilder cab = new CustomAttributeBuilder(StaticCompiler.GetRuntimeType("IKVM.Attributes.AnnotationDefaultAttribute").GetConstructor(new Type[] { Types.Object }), new object[] { classFile.Methods[index].AnnotationDefault });
-								mb.SetCustomAttribute(cab);
-							}
-#endif // STATIC_COMPILER
-						}
-						method = mb;
+						method = GenerateMethod(index, m, attribs, unloadableOverrideStub, ref setModifiers, ref setNameSig);
 					}
 					string[] exceptions = m.ExceptionsAttribute;
 					methods[index].SetDeclaredExceptions(exceptions);
@@ -3073,6 +2836,248 @@ namespace IKVM.Internal
 				ConstructorBuilder cb = typeBuilder.DefineConstructor(GetMethodAccess(mw) | MethodAttributes.HideBySig, CallingConventions.Standard, mw.GetParametersForDefineMethod(), null, modopt);
 				cb.SetImplementationFlags(MethodImplAttributes.NoInlining);
 				return cb;
+			}
+
+			private MethodBase GenerateMethod(int index, ClassFile.Method m, MethodAttributes attribs, bool unloadableOverrideStub, ref bool setModifiers, ref bool setNameSig)
+			{
+				if (m.IsAbstract)
+				{
+					// only if the classfile is abstract, we make the CLR method abstract, otherwise,
+					// we have to generate a method that throws an AbstractMethodError (because the JVM
+					// allows abstract methods in non-abstract classes)
+					if (classFile.IsAbstract)
+					{
+						if (classFile.IsPublic && !classFile.IsFinal && !(m.IsPublic || m.IsProtected))
+						{
+							setModifiers = true;
+						}
+						else
+						{
+							attribs |= MethodAttributes.Abstract;
+						}
+					}
+					else
+					{
+						setModifiers = true;
+					}
+				}
+				if (m.IsFinal)
+				{
+					if (!m.IsStatic && !m.IsPrivate)
+					{
+						attribs |= MethodAttributes.Final;
+					}
+					else
+					{
+						setModifiers = true;
+					}
+				}
+				if (m.IsStatic)
+				{
+					attribs |= MethodAttributes.Static;
+					if (m.IsSynchronized)
+					{
+						setModifiers = true;
+					}
+				}
+				else if (!m.IsPrivate)
+				{
+					attribs |= MethodAttributes.Virtual | MethodAttributes.CheckAccessOnOverride;
+				}
+				string name = m.Name;
+#if STATIC_COMPILER
+				if ((m.Modifiers & Modifiers.Bridge) != 0 && (m.IsPublic || m.IsProtected) && wrapper.IsPublic)
+				{
+					string sigbase = m.Signature.Substring(0, m.Signature.LastIndexOf(')') + 1);
+					foreach (MethodWrapper mw in methods)
+					{
+						if (mw.Name == m.Name && mw.Signature.StartsWith(sigbase) && mw.Signature != m.Signature)
+						{
+							// To prevent bridge methods with covariant return types from confusing
+							// other .NET compilers (like C#), we rename the bridge method.
+							name = NamePrefix.Bridge + name;
+							setNameSig = true;
+							break;
+						}
+					}
+				}
+#endif
+				if ((attribs & MethodAttributes.Virtual) != 0 && !classFile.IsInterface)
+				{
+					if (baseMethods[index] == null || (baseMethods[index].Length == 1 && baseMethods[index][0].DeclaringType.IsInterface))
+					{
+						// we need to set NewSlot here, to prevent accidentally overriding methods
+						// (for example, if a Java class has a method "boolean Equals(object)", we don't want that method
+						// to override System.Object.Equals)
+						attribs |= MethodAttributes.NewSlot;
+					}
+					else
+					{
+						// if we have a method overriding a more accessible method (the JVM allows this), we need to make the
+						// method more accessible, because otherwise the CLR will complain that we're reducing access
+						bool hasPublicBaseMethod = false;
+						foreach (MethodWrapper baseMethodWrapper in baseMethods[index])
+						{
+							MethodBase baseMethod = baseMethodWrapper.GetMethod();
+							if ((baseMethod.IsPublic && !m.IsPublic) ||
+								((baseMethod.IsFamily || baseMethod.IsFamilyOrAssembly) && !m.IsPublic && !m.IsProtected) ||
+								(!m.IsPublic && !m.IsProtected && !baseMethodWrapper.DeclaringType.IsPackageAccessibleFrom(wrapper)))
+							{
+								hasPublicBaseMethod |= baseMethod.IsPublic;
+								attribs &= ~MethodAttributes.MemberAccessMask;
+								attribs |= hasPublicBaseMethod ? MethodAttributes.Public : MethodAttributes.FamORAssem;
+								setModifiers = true;
+							}
+						}
+					}
+				}
+				MethodBuilder mb = null;
+#if STATIC_COMPILER
+				mb = wrapper.DefineGhostMethod(name, attribs, methods[index]);
+#endif
+				if (mb == null)
+				{
+					bool needFinalize = false;
+					bool needDispatch = false;
+					MethodInfo baseFinalize = null;
+					if (baseMethods[index] != null && ReferenceEquals(m.Name, StringConstants.FINALIZE) && ReferenceEquals(m.Signature, StringConstants.SIG_VOID))
+					{
+						baseFinalize = GetBaseFinalizeMethod(wrapper.BaseTypeWrapper);
+						if (baseMethods[index][0].DeclaringType == CoreClasses.java.lang.Object.Wrapper)
+						{
+							// This type is the first type in the hierarchy to introduce a finalize method
+							// (other than the one in java.lang.Object obviously), so we need to override
+							// the real Finalize method and emit a dispatch call to our finalize method.
+							needFinalize = true;
+							needDispatch = true;
+						}
+						else if (m.IsFinal)
+						{
+							// One of our base classes already has a  finalize method, so we already are
+							// hooked into the real Finalize, but we need to override it again, to make it
+							// final (so that non-Java types cannot override it either).
+							needFinalize = true;
+							needDispatch = false;
+							// If the base class finalize was optimized away, we need a dispatch call after all.
+							if (baseFinalize.DeclaringType == Types.Object)
+							{
+								needDispatch = true;
+							}
+						}
+						else
+						{
+							// One of our base classes already has a finalize method, but it may have been an empty
+							// method so that the hookup to the real Finalize was optimized away, we need to check
+							// for that.
+							if (baseFinalize.DeclaringType == Types.Object)
+							{
+								needFinalize = true;
+								needDispatch = true;
+							}
+						}
+						if (needFinalize &&
+							!m.IsAbstract && !m.IsNative &&
+							(!m.IsFinal || classFile.IsFinal) &&
+							m.Instructions.Length > 0 &&
+							m.Instructions[0].NormalizedOpCode == NormalizedByteCode.__return)
+						{
+							// we've got an empty finalize method, so we don't need to override the real finalizer
+							// (not having a finalizer makes a huge perf difference)
+							needFinalize = false;
+						}
+					}
+					if (setNameSig || memberclashtable != null)
+					{
+						// TODO we really should make sure that the name we generate doesn't already exist in a
+						// base class (not in the Java method namespace, but in the CLR method namespace)
+						name = GenerateUniqueMethodName(name, methods[index]);
+						if (name != m.Name)
+						{
+							setNameSig = true;
+						}
+					}
+					bool newslot = baseMethods[index] != null && (setNameSig || methods[index].IsExplicitOverride || baseMethods[index][0].RealName != name) && !needFinalize;
+					if (unloadableOverrideStub || newslot)
+					{
+						attribs |= MethodAttributes.NewSlot;
+					}
+					mb = typeBuilder.DefineMethod(name, attribs, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
+					if (unloadableOverrideStub)
+					{
+						foreach (MethodWrapper baseMethod in baseMethods[index])
+						{
+							// TODO if there are multiple base methods, we're creating an unloadable override stub for all of them, but in theory it's possible that not all of them need it
+							GenerateUnloadableOverrideStub(wrapper, typeBuilder, baseMethod, mb, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
+						}
+					}
+					else if (baseMethods[index] != null && !needFinalize)
+					{
+						bool subsequent = false;
+						foreach (MethodWrapper baseMethod in baseMethods[index])
+						{
+							if (subsequent || setNameSig || methods[index].IsExplicitOverride || baseMethod.RealName != name)
+							{
+								typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMethod.GetMethod());
+							}
+							// the non-primary base methods always need an explicit method override
+							subsequent = true;
+						}
+					}
+					// if we're overriding java.lang.Object.finalize we need to emit a stub to override System.Object.Finalize,
+					// or if we're subclassing a non-Java class that has a Finalize method, we need a new Finalize override
+					if (needFinalize)
+					{
+						string finalizeName = baseFinalize.Name;
+						MethodWrapper mwClash = wrapper.GetMethodWrapper(finalizeName, StringConstants.SIG_VOID, true);
+						if (mwClash != null && mwClash.GetMethod() != baseFinalize)
+						{
+							finalizeName = "__<Finalize>";
+						}
+						MethodAttributes attr = MethodAttributes.HideBySig | MethodAttributes.Virtual;
+						// make sure we don't reduce accessibility
+						attr |= baseFinalize.IsPublic ? MethodAttributes.Public : MethodAttributes.Family;
+						if (m.IsFinal)
+						{
+							attr |= MethodAttributes.Final;
+						}
+						finalizeMethod = typeBuilder.DefineMethod(finalizeName, attr, CallingConventions.Standard, Types.Void, Type.EmptyTypes);
+						if (finalizeName != baseFinalize.Name)
+						{
+							typeBuilder.DefineMethodOverride(finalizeMethod, baseFinalize);
+						}
+						AttributeHelper.HideFromJava(finalizeMethod);
+						CodeEmitter ilgen = CodeEmitter.Create(finalizeMethod);
+						ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.SkipFinalizer);
+						CodeEmitterLabel skip = ilgen.DefineLabel();
+						ilgen.Emit(OpCodes.Brtrue_S, skip);
+						if (needDispatch)
+						{
+							ilgen.BeginExceptionBlock();
+							ilgen.Emit(OpCodes.Ldarg_0);
+							ilgen.Emit(OpCodes.Callvirt, mb);
+							ilgen.Emit(OpCodes.Leave, skip);
+							ilgen.BeginCatchBlock(Types.Object);
+							ilgen.Emit(OpCodes.Leave, skip);
+							ilgen.EndExceptionBlock();
+						}
+						else
+						{
+							ilgen.Emit(OpCodes.Ldarg_0);
+							ilgen.Emit(OpCodes.Call, baseFinalize);
+						}
+						ilgen.MarkLabel(skip);
+						ilgen.Emit(OpCodes.Ret);
+						ilgen.DoEmit();
+					}
+#if STATIC_COMPILER
+					if (classFile.Methods[index].AnnotationDefault != null)
+					{
+						CustomAttributeBuilder cab = new CustomAttributeBuilder(StaticCompiler.GetRuntimeType("IKVM.Attributes.AnnotationDefaultAttribute").GetConstructor(new Type[] { Types.Object }), new object[] { classFile.Methods[index].AnnotationDefault });
+						mb.SetCustomAttribute(cab);
+					}
+#endif // STATIC_COMPILER
+				}
+				return mb;
 			}
 
 			private static MethodAttributes GetMethodAccess(MethodWrapper mw)
