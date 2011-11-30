@@ -1623,7 +1623,8 @@ namespace IKVM.NativeCode.java
 				}
 				return 0;
 			}
-
+			
+			[System.Security.SecuritySafeCritical]
 			public static long getSpace0(object _this, jiFile f, int t)
 			{
 				const int SPACE_TOTAL = 0;
