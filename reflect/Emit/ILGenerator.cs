@@ -822,23 +822,29 @@ namespace IKVM.Reflection.Emit
 
 		public void EmitCalli(OpCode opc, CallingConvention callingConvention, Type returnType, Type[] parameterTypes)
 		{
-			returnType = returnType ?? moduleBuilder.universe.System_Void;
-			Emit(opc);
-			UpdateStack(opc, false, returnType, parameterTypes.Length);
-			ByteBuffer sig = new ByteBuffer(16);
-			Signature.WriteStandAloneMethodSig(moduleBuilder, sig, callingConvention, returnType, parameterTypes);
-			code.Write(0x11000000 | moduleBuilder.StandAloneSig.FindOrAddRecord(moduleBuilder.Blobs.Add(sig)));
+			__EmitCalli(opc, __StandAloneMethodSig.Create(callingConvention, returnType, new CustomModifiers(), parameterTypes, null));
 		}
 
 		public void EmitCalli(OpCode opc, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, Type[] optionalParameterTypes)
 		{
-			returnType = returnType ?? moduleBuilder.universe.System_Void;
-			optionalParameterTypes = optionalParameterTypes ?? Type.EmptyTypes;
+			__EmitCalli(opc, __StandAloneMethodSig.Create(callingConvention, returnType, new CustomModifiers(), parameterTypes, optionalParameterTypes, null));
+		}
+
+		public void __EmitCalli(OpCode opc, __StandAloneMethodSig sig)
+		{
 			Emit(opc);
-			UpdateStack(opc, (callingConvention & CallingConventions.HasThis | CallingConventions.ExplicitThis) == CallingConventions.HasThis, returnType, parameterTypes.Length + optionalParameterTypes.Length);
-			ByteBuffer sig = new ByteBuffer(16);
-			Signature.WriteStandAloneMethodSig(moduleBuilder, sig, callingConvention, returnType, parameterTypes, optionalParameterTypes);
-			code.Write(0x11000000 | moduleBuilder.StandAloneSig.FindOrAddRecord(moduleBuilder.Blobs.Add(sig)));
+			if (sig.IsUnmanaged)
+			{
+				UpdateStack(opc, false, sig.ReturnType, sig.ParameterCount);
+			}
+			else
+			{
+				CallingConventions callingConvention = sig.CallingConvention;
+				UpdateStack(opc, (callingConvention & CallingConventions.HasThis | CallingConventions.ExplicitThis) == CallingConventions.HasThis, sig.ReturnType, sig.ParameterCount);
+			}
+			ByteBuffer bb = new ByteBuffer(16);
+			Signature.WriteStandAloneMethodSig(moduleBuilder, bb, sig);
+			code.Write(0x11000000 | moduleBuilder.StandAloneSig.FindOrAddRecord(moduleBuilder.Blobs.Add(bb)));
 		}
 
 		public void EmitWriteLine(string text)

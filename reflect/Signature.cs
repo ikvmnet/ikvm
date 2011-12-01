@@ -454,15 +454,7 @@ namespace IKVM.Reflection
 			else if (type.__IsFunctionPointer)
 			{
 				bb.Write(ELEMENT_TYPE_FNPTR);
-				__StandAloneMethodSig sig = type.__MethodSignature;
-				if (sig.IsUnmanaged)
-				{
-					WriteStandAloneMethodSig(module, bb, sig.UnmanagedCallingConvention, sig.ReturnType, sig.ParameterTypes);
-				}
-				else
-				{
-					WriteStandAloneMethodSig(module, bb, sig.CallingConvention, sig.ReturnType, sig.ParameterTypes, sig.OptionalParameterTypes);
-				}
+				WriteStandAloneMethodSig(module, bb, type.__MethodSignature);
 			}
 			else
 			{
@@ -529,63 +521,65 @@ namespace IKVM.Reflection
 			}
 		}
 
-		// unmanaged calling convention
-		internal static void WriteStandAloneMethodSig(ModuleBuilder module, ByteBuffer bb, CallingConvention callingConvention, Type returnType, Type[] parameterTypes)
+		internal static void WriteStandAloneMethodSig(ModuleBuilder module, ByteBuffer bb, __StandAloneMethodSig sig)
 		{
-			switch (callingConvention)
+			if (sig.IsUnmanaged)
 			{
-				case CallingConvention.Cdecl:
-					bb.Write((byte)0x01);	// C
-					break;
-				case CallingConvention.StdCall:
-				case CallingConvention.Winapi:
-					bb.Write((byte)0x02);	// STDCALL
-					break;
-				case CallingConvention.ThisCall:
-					bb.Write((byte)0x03);	// THISCALL
-					break;
-				case CallingConvention.FastCall:
-					bb.Write((byte)0x04);	// FASTCALL
-					break;
-				default:
-					throw new ArgumentOutOfRangeException("callingConvention");
+				switch (sig.UnmanagedCallingConvention)
+				{
+					case CallingConvention.Cdecl:
+						bb.Write((byte)0x01);	// C
+						break;
+					case CallingConvention.StdCall:
+					case CallingConvention.Winapi:
+						bb.Write((byte)0x02);	// STDCALL
+						break;
+					case CallingConvention.ThisCall:
+						bb.Write((byte)0x03);	// THISCALL
+						break;
+					case CallingConvention.FastCall:
+						bb.Write((byte)0x04);	// FASTCALL
+						break;
+					default:
+						throw new ArgumentOutOfRangeException("callingConvention");
+				}
 			}
-			bb.WriteCompressedInt(parameterTypes.Length);
-			WriteType(module, bb, returnType);
-			foreach (Type t in parameterTypes)
+			else
 			{
-				WriteType(module, bb, t);
+				CallingConventions callingConvention = sig.CallingConvention;
+				byte flags = 0;
+				if ((callingConvention & CallingConventions.HasThis) != 0)
+				{
+					flags |= HASTHIS;
+				}
+				if ((callingConvention & CallingConventions.ExplicitThis) != 0)
+				{
+					flags |= EXPLICITTHIS;
+				}
+				if ((callingConvention & CallingConventions.VarArgs) != 0)
+				{
+					flags |= VARARG;
+				}
+				bb.Write(flags);
 			}
-		}
-
-		// managed calling convention
-		internal static void WriteStandAloneMethodSig(ModuleBuilder module, ByteBuffer bb, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, Type[] optionalParameterTypes)
-		{
-			byte flags = 0;
-			if ((callingConvention & CallingConventions.HasThis) != 0)
-			{
-				flags |= HASTHIS;
-			}
-			if ((callingConvention & CallingConventions.ExplicitThis) != 0)
-			{
-				flags |= EXPLICITTHIS;
-			}
-			if ((callingConvention & CallingConventions.VarArgs) != 0)
-			{
-				flags |= VARARG;
-			}
-			bb.Write(flags);
+			Type[] parameterTypes = sig.ParameterTypes;
+			Type[] optionalParameterTypes = sig.OptionalParameterTypes;
 			bb.WriteCompressedInt(parameterTypes.Length + optionalParameterTypes.Length);
-			WriteType(module, bb, returnType);
+			WriteCustomModifiers(module, bb, sig.GetReturnTypeCustomModifiers());
+			WriteType(module, bb, sig.ReturnType);
+			int index = 0;
 			foreach (Type t in parameterTypes)
 			{
+				WriteCustomModifiers(module, bb, sig.GetParameterCustomModifiers(index++));
 				WriteType(module, bb, t);
 			}
+			// note that optional parameters are only allowed for managed signatures (but we don't enforce that)
 			if (optionalParameterTypes.Length > 0)
 			{
 				bb.Write(SENTINEL);
 				foreach (Type t in optionalParameterTypes)
 				{
+					WriteCustomModifiers(module, bb, sig.GetParameterCustomModifiers(index++));
 					WriteType(module, bb, t);
 				}
 			}

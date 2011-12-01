@@ -188,7 +188,8 @@ namespace IKVM.Reflection
 				throw new BadImageFormatException();
 			}
 			int paramCount = br.ReadCompressedInt();
-			CustomModifiers.Skip(br);
+			CustomModifiers[] customModifiers = null;
+			PackedCustomModifiers.Pack(ref customModifiers, 0, CustomModifiers.Read(module, br, context), paramCount + 1);
 			Type returnType = ReadRetType(module, br, context);
 			List<Type> parameterTypes = new List<Type>();
 			List<Type> optionalParameterTypes = new List<Type>();
@@ -200,10 +201,10 @@ namespace IKVM.Reflection
 					br.ReadByte();
 					curr = optionalParameterTypes;
 				}
-				CustomModifiers.Skip(br);
+				PackedCustomModifiers.Pack(ref customModifiers, i + 1, CustomModifiers.Read(module, br, context), paramCount + 1);
 				curr.Add(ReadParam(module, br, context));
 			}
-			return new __StandAloneMethodSig(unmanaged, unmanagedCallingConvention, callingConvention, returnType, parameterTypes.ToArray(), optionalParameterTypes.ToArray());
+			return new __StandAloneMethodSig(unmanaged, unmanagedCallingConvention, callingConvention, returnType, parameterTypes.ToArray(), optionalParameterTypes.ToArray(), PackedCustomModifiers.Wrap(customModifiers));
 		}
 
 		internal int GetParameterCount()
