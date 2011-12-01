@@ -46,6 +46,28 @@ namespace IKVM.Reflection
 			this.optionalParameterTypes = optionalParameterTypes;
 		}
 
+		public bool Equals(__StandAloneMethodSig other)
+		{
+			return other != null
+				&& other.unmanaged == unmanaged
+				&& other.unmanagedCallingConvention == unmanagedCallingConvention
+				&& other.callingConvention == callingConvention
+				&& other.returnType == returnType
+				&& Util.ArrayEquals(other.parameterTypes, parameterTypes)
+				&& Util.ArrayEquals(other.optionalParameterTypes, optionalParameterTypes);
+		}
+
+		public override bool Equals(object obj)
+		{
+			return Equals(obj as __StandAloneMethodSig);
+		}
+
+		public override int GetHashCode()
+		{
+			return returnType.GetHashCode()
+				^ Util.GetHashCode(parameterTypes);
+		}
+
 		public bool IsUnmanaged
 		{
 			get { return unmanaged; }

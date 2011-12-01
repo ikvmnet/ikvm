@@ -129,10 +129,16 @@ namespace IKVM.Reflection
 
 		private static Type ReadFunctionPointer(ModuleReader module, ByteReader br, IGenericContext context)
 		{
-			// TODO like .NET we return System.IntPtr here, but ideally we should fire an event in Universe that
-			// the user can hook to provide a custom type (or we simply should build in full support for function pointer types)
-			MethodSignature.ReadStandAloneMethodSig(module, br, context);
-			return module.universe.System_IntPtr;
+			__StandAloneMethodSig sig = MethodSignature.ReadStandAloneMethodSig(module, br, context);
+			if (module.universe.EnableFunctionPointers)
+			{
+				return FunctionPointerType.Make(module.universe, sig);
+			}
+			else
+			{
+				// by default, like .NET we return System.IntPtr here
+				return module.universe.System_IntPtr;
+			}
 		}
 
 		internal static Type[] ReadMethodSpec(ModuleReader module, ByteReader br, IGenericContext context)
@@ -444,6 +450,19 @@ namespace IKVM.Reflection
 			else if (!type.__IsMissing && type.IsGenericType)
 			{
 				WriteGenericSignature(module, bb, type);
+			}
+			else if (type.__IsFunctionPointer)
+			{
+				bb.Write(ELEMENT_TYPE_FNPTR);
+				__StandAloneMethodSig sig = type.__MethodSignature;
+				if (sig.IsUnmanaged)
+				{
+					WriteStandAloneMethodSig(module, bb, sig.UnmanagedCallingConvention, sig.ReturnType, sig.ParameterTypes);
+				}
+				else
+				{
+					WriteStandAloneMethodSig(module, bb, sig.CallingConvention, sig.ReturnType, sig.ParameterTypes, sig.OptionalParameterTypes);
+				}
 			}
 			else
 			{

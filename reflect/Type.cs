@@ -163,6 +163,11 @@ namespace IKVM.Reflection
 			return __GetCustomModifiers().GetOptional();
 		}
 
+		public virtual __StandAloneMethodSig __MethodSignature
+		{
+			get { throw new InvalidOperationException(); }
+		}
+
 		public virtual bool HasElementType
 		{
 			get { return false; }
@@ -184,6 +189,11 @@ namespace IKVM.Reflection
 		}
 
 		public virtual bool IsPointer
+		{
+			get { return false; }
+		}
+
+		public virtual bool __IsFunctionPointer
 		{
 			get { return false; }
 		}
@@ -1064,7 +1074,7 @@ namespace IKVM.Reflection
 		{
 			get
 			{
-				Universe u = this.Module.universe;
+				Universe u = this.Universe;
 				return this == u.System_Boolean
 					|| this == u.System_Byte
 					|| this == u.System_SByte
@@ -1819,6 +1829,11 @@ namespace IKVM.Reflection
 		{
 			throw new NotSupportedException();
 		}
+
+		internal virtual Universe Universe
+		{
+			get { return Module.universe; }
+		}
 	}
 
 	abstract class ElementHolderType : Type
@@ -1937,6 +1952,11 @@ namespace IKVM.Reflection
 			return CustomAttributeData.EmptyList;
 		}
 
+		internal sealed override Universe Universe
+		{
+			get { return elementType.Universe; }
+		}
+
 		internal abstract string GetSuffix();
 
 		protected abstract Type Wrap(Type type, CustomModifiers mods);
@@ -1946,7 +1966,7 @@ namespace IKVM.Reflection
 	{
 		internal static Type Make(Type type, CustomModifiers mods)
 		{
-			return type.Module.CanonicalizeType(new ArrayType(type, mods));
+			return type.Universe.CanonicalizeType(new ArrayType(type, mods));
 		}
 
 		private ArrayType(Type type, CustomModifiers mods)
@@ -2034,7 +2054,7 @@ namespace IKVM.Reflection
 
 		internal static Type Make(Type type, int rank, int[] sizes, int[] lobounds, CustomModifiers mods)
 		{
-			return type.Module.CanonicalizeType(new MultiArrayType(type, rank, sizes, lobounds, mods));
+			return type.Universe.CanonicalizeType(new MultiArrayType(type, rank, sizes, lobounds, mods));
 		}
 
 		private MultiArrayType(Type type, int rank, int[] sizes, int[] lobounds, CustomModifiers mods)
@@ -2252,7 +2272,7 @@ namespace IKVM.Reflection
 	{
 		internal static Type Make(Type type, CustomModifiers mods)
 		{
-			return type.Module.CanonicalizeType(new ByRefType(type, mods));
+			return type.Universe.CanonicalizeType(new ByRefType(type, mods));
 		}
 
 		private ByRefType(Type type, CustomModifiers mods)
@@ -2300,7 +2320,7 @@ namespace IKVM.Reflection
 	{
 		internal static Type Make(Type type, CustomModifiers mods)
 		{
-			return type.Module.CanonicalizeType(new PointerType(type, mods));
+			return type.Universe.CanonicalizeType(new PointerType(type, mods));
 		}
 
 		private PointerType(Type type, CustomModifiers mods)
@@ -2379,7 +2399,7 @@ namespace IKVM.Reflection
 			}
 			else
 			{
-				return type.Module.CanonicalizeType(new GenericTypeInstance(type, typeArguments, mods));
+				return type.Universe.CanonicalizeType(new GenericTypeInstance(type, typeArguments, mods));
 			}
 		}
 
@@ -2699,6 +2719,81 @@ namespace IKVM.Reflection
 		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
 		{
 			return type.GetCustomAttributesData(attributeType);
+		}
+	}
+
+	sealed class FunctionPointerType : Type
+	{
+		private readonly Universe universe;
+		private readonly __StandAloneMethodSig sig;
+
+		internal static Type Make(Universe universe, __StandAloneMethodSig sig)
+		{
+			return universe.CanonicalizeType(new FunctionPointerType(universe, sig));
+		}
+
+		private FunctionPointerType(Universe universe, __StandAloneMethodSig sig)
+		{
+			this.universe = universe;
+			this.sig = sig;
+		}
+
+		public override bool Equals(object obj)
+		{
+			FunctionPointerType other = obj as FunctionPointerType;
+			return other != null
+				&& other.universe == universe
+				&& other.sig.Equals(sig);
+		}
+
+		public override int GetHashCode()
+		{
+			return sig.GetHashCode();
+		}
+
+		public override bool __IsFunctionPointer
+		{
+			get { return true; }
+		}
+
+		public override __StandAloneMethodSig __MethodSignature
+		{
+			get { return sig; }
+		}
+
+		public override Type BaseType
+		{
+			get { return null; }
+		}
+
+		public override TypeAttributes Attributes
+		{
+			get { return 0; }
+		}
+
+		public override string Name
+		{
+			get { throw new InvalidOperationException(); }
+		}
+
+		public override string FullName
+		{
+			get { throw new InvalidOperationException(); }
+		}
+
+		public override Module Module
+		{
+			get { throw new InvalidOperationException(); }
+		}
+
+		internal override Universe Universe
+		{
+			get { return universe; }
+		}
+
+		public override string ToString()
+		{
+			return "<FunctionPtr>";
 		}
 	}
 }

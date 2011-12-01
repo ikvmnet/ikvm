@@ -451,17 +451,6 @@ namespace IKVM.Reflection
 			return GetCustomAttributes(token, null);
 		}
 
-		internal Type CanonicalizeType(Type type)
-		{
-			Type canon;
-			if (!universe.canonicalizedTypes.TryGetValue(type, out canon))
-			{
-				canon = type;
-				universe.canonicalizedTypes.Add(canon, canon);
-			}
-			return canon;
-		}
-
 		internal abstract Type GetModuleType();
 
 		internal abstract ByteReader GetBlob(int blobIndex);

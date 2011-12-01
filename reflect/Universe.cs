@@ -77,15 +77,23 @@ namespace IKVM.Reflection
 
 	public delegate Assembly ResolveEventHandler(object sender, ResolveEventArgs args);
 
+	[Flags]
+	public enum UniverseOptions
+	{
+		None = 0,
+		EnableFunctionPointers = 1,
+	}
+
 	public sealed class Universe : IDisposable
 	{
-		internal readonly Dictionary<Type, Type> canonicalizedTypes = new Dictionary<Type, Type>();
+		private readonly Dictionary<Type, Type> canonicalizedTypes = new Dictionary<Type, Type>();
 		private readonly List<Assembly> assemblies = new List<Assembly>();
 		private readonly List<AssemblyBuilder> dynamicAssemblies = new List<AssemblyBuilder>();
 		private readonly Dictionary<string, Assembly> assembliesByName = new Dictionary<string, Assembly>();
 		private readonly Dictionary<System.Type, Type> importedTypes = new Dictionary<System.Type, Type>();
 		private Dictionary<ScopedTypeName, Type> missingTypes;
 		private bool resolveMissingMembers;
+		private readonly bool enableFunctionPointers;
 		private Type typeof_System_Object;
 		private Type typeof_System_ValueType;
 		private Type typeof_System_Enum;
@@ -145,6 +153,16 @@ namespace IKVM.Reflection
 		private Type typeof_System_Security_Permissions_PermissionSetAttribute;
 		private Type typeof_System_Security_Permissions_SecurityAction;
 		private List<ResolveEventHandler> resolvers = new List<ResolveEventHandler>();
+
+		public Universe()
+			: this(UniverseOptions.None)
+		{
+		}
+
+		public Universe(UniverseOptions options)
+		{
+			enableFunctionPointers = (options & UniverseOptions.EnableFunctionPointers) != 0;
+		}
 
 		internal Assembly Mscorlib
 		{
@@ -856,6 +874,11 @@ namespace IKVM.Reflection
 			get { return resolveMissingMembers; }
 		}
 
+		internal bool EnableFunctionPointers
+		{
+			get { return enableFunctionPointers; }
+		}
+
 		private struct ScopedTypeName : IEquatable<ScopedTypeName>
 		{
 			private readonly object scope;
@@ -941,6 +964,22 @@ namespace IKVM.Reflection
 				return new MissingProperty(declaringType, name, propertySignature);
 			}
 			throw new System.MissingMemberException(declaringType.ToString(), name);
+		}
+
+		internal Type CanonicalizeType(Type type)
+		{
+			Type canon;
+			if (!canonicalizedTypes.TryGetValue(type, out canon))
+			{
+				canon = type;
+				canonicalizedTypes.Add(canon, canon);
+			}
+			return canon;
+		}
+
+		public Type MakeFunctionPointer(__StandAloneMethodSig sig)
+		{
+			return FunctionPointerType.Make(this, sig);
 		}
 	}
 }
