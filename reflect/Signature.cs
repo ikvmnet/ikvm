@@ -653,28 +653,30 @@ namespace IKVM.Reflection
 		}
 
 		// this reads just the optional parameter types, from a MethodRefSig
-		internal static Type[] ReadOptionalParameterTypes(ModuleReader module, ByteReader br)
+		internal static Type[] ReadOptionalParameterTypes(ModuleReader module, ByteReader br, IGenericContext context, out CustomModifiers[] customModifiers)
 		{
 			br.ReadByte();
 			int paramCount = br.ReadCompressedInt();
 			CustomModifiers.Skip(br);
-			ReadRetType(module, br, null);
+			ReadRetType(module, br, context);
 			for (int i = 0; i < paramCount; i++)
 			{
 				if (br.PeekByte() == SENTINEL)
 				{
 					br.ReadByte();
 					Type[] types = new Type[paramCount - i];
+					customModifiers = new CustomModifiers[types.Length];
 					for (int j = 0; j < types.Length; j++)
 					{
-						CustomModifiers.Skip(br);
-						types[j] = ReadType(module, br, null);
+						customModifiers[j] = CustomModifiers.Read(module, br, context);
+						types[j] = ReadType(module, br, context);
 					}
 					return types;
 				}
 				CustomModifiers.Skip(br);
-				ReadType(module, br, null);
+				ReadType(module, br, context);
 			}
+			customModifiers = Empty<CustomModifiers>.Array;
 			return Type.EmptyTypes;
 		}
 

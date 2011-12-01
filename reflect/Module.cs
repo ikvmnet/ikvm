@@ -304,12 +304,19 @@ namespace IKVM.Reflection
 		public abstract MemberInfo ResolveMember(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments);
 
 		public abstract string ResolveString(int metadataToken);
-		public abstract Type[] __ResolveOptionalParameterTypes(int metadataToken);
+		public abstract Type[] __ResolveOptionalParameterTypes(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments, out CustomModifiers[] customModifiers);
 		public abstract string ScopeName { get; }
 
 		internal abstract void GetTypesImpl(List<Type> list);
 
 		internal abstract Type FindType(TypeName name);
+
+		[Obsolete("Please use __ResolveOptionalParameterTypes(int, Type[], Type[], out CustomModifiers[]) instead.")]
+		public Type[] __ResolveOptionalParameterTypes(int metadataToken)
+		{
+			CustomModifiers[] dummy;
+			return __ResolveOptionalParameterTypes(metadataToken, null, null, out dummy);
+		}
 
 		public Type GetType(string className)
 		{
@@ -592,7 +599,7 @@ namespace IKVM.Reflection
 			throw ArgumentOutOfRangeException();
 		}
 
-		public sealed override Type[] __ResolveOptionalParameterTypes(int metadataToken)
+		public sealed override Type[] __ResolveOptionalParameterTypes(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments, out CustomModifiers[] customModifiers)
 		{
 			throw ArgumentOutOfRangeException();
 		}

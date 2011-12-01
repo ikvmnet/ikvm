@@ -708,19 +708,20 @@ namespace IKVM.Reflection.Reader
 			throw new ArgumentOutOfRangeException();
 		}
 
-		public override Type[] __ResolveOptionalParameterTypes(int metadataToken)
+		public override Type[] __ResolveOptionalParameterTypes(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments, out CustomModifiers[] customModifiers)
 		{
 			if ((metadataToken >> 24) == MemberRefTable.Index)
 			{
 				int index = (metadataToken & 0xFFFFFF) - 1;
 				int sig = MemberRef.records[index].Signature;
-				return Signature.ReadOptionalParameterTypes(this, GetBlob(sig));
+				return Signature.ReadOptionalParameterTypes(this, GetBlob(sig), new GenericContext(genericTypeArguments, genericMethodArguments), out customModifiers);
 			}
 			else if ((metadataToken >> 24) == MethodDefTable.Index)
 			{
 				// for convenience, we support passing a MethodDef token as well, because in some places
 				// it makes sense to have a vararg method that is referred to by its methoddef (e.g. ldftn).
 				// Note that MethodSpec doesn't make sense, because generic methods cannot be vararg.
+				customModifiers = Empty<CustomModifiers>.Array;
 				return Type.EmptyTypes;
 			}
 			throw new ArgumentOutOfRangeException();

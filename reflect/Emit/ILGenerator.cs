@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2008-2010 Jeroen Frijters
+  Copyright (C) 2008-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -811,6 +811,11 @@ namespace IKVM.Reflection.Emit
 
 		public void EmitCall(OpCode opc, MethodInfo method, Type[] optionalParameterTypes)
 		{
+			__EmitCall(opc, method, optionalParameterTypes, null);
+		}
+
+		public void __EmitCall(OpCode opc, MethodInfo method, Type[] optionalParameterTypes, CustomModifiers[] customModifiers)
+		{
 			if (optionalParameterTypes == null || optionalParameterTypes.Length == 0)
 			{
 				Emit(opc, method);
@@ -820,7 +825,7 @@ namespace IKVM.Reflection.Emit
 				Emit(opc);
 				UpdateStack(opc, method.HasThis, method.ReturnType, method.ParameterCount + optionalParameterTypes.Length);
 				ByteBuffer sig = new ByteBuffer(16);
-				method.MethodSignature.WriteMethodRefSig(moduleBuilder, sig, optionalParameterTypes);
+				method.MethodSignature.WriteMethodRefSig(moduleBuilder, sig, optionalParameterTypes, customModifiers);
 				MemberRefTable.Record record = new MemberRefTable.Record();
 				if (method.Module == moduleBuilder)
 				{
@@ -839,6 +844,11 @@ namespace IKVM.Reflection.Emit
 		public void __EmitCall(OpCode opc, ConstructorInfo constructor, Type[] optionalParameterTypes)
 		{
 			EmitCall(opc, constructor.GetMethodInfo(), optionalParameterTypes);
+		}
+
+		public void __EmitCall(OpCode opc, ConstructorInfo constructor, Type[] optionalParameterTypes, CustomModifiers[] customModifiers)
+		{
+			__EmitCall(opc, constructor.GetMethodInfo(), optionalParameterTypes, customModifiers);
 		}
 
 		public void EmitCalli(OpCode opc, CallingConvention callingConvention, Type returnType, Type[] parameterTypes)

@@ -1184,7 +1184,7 @@ namespace IKVM.Reflection.Emit
 			mvid = guid;
 		}
 
-		public override Type[] __ResolveOptionalParameterTypes(int metadataToken)
+		public override Type[] __ResolveOptionalParameterTypes(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments, out CustomModifiers[] customModifiers)
 		{
 			throw new NotImplementedException();
 		}

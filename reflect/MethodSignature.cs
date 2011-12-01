@@ -345,15 +345,16 @@ namespace IKVM.Reflection
 			WriteSigImpl(module, bb, parameterTypes.Length);
 		}
 
-		internal void WriteMethodRefSig(ModuleBuilder module, ByteBuffer bb, Type[] optionalParameterTypes)
+		internal void WriteMethodRefSig(ModuleBuilder module, ByteBuffer bb, Type[] optionalParameterTypes, CustomModifiers[] customModifiers)
 		{
 			WriteSigImpl(module, bb, parameterTypes.Length + optionalParameterTypes.Length);
 			if (optionalParameterTypes.Length > 0)
 			{
 				bb.Write(SENTINEL);
-				foreach (Type type in optionalParameterTypes)
+				for (int i = 0; i < optionalParameterTypes.Length; i++)
 				{
-					WriteType(module, bb, type);
+					WriteCustomModifiers(module, bb, Util.NullSafeElementAt(customModifiers, i));
+					WriteType(module, bb, optionalParameterTypes[i]);
 				}
 			}
 		}
