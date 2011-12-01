@@ -100,31 +100,28 @@ namespace IKVM.Reflection
 			}
 			int genArgCount = br.ReadCompressedInt();
 			Type[] args = new Type[genArgCount];
-			Type[][] reqmod = null;
-			Type[][] optmod = null;
+			CustomModifiers[] mods = null;
 			for (int i = 0; i < genArgCount; i++)
 			{
 				// LAMESPEC the Type production (23.2.12) doesn't include CustomMod* for genericinst, but C++ uses it, the verifier allows it and ildasm also supports it
-				CustomModifiers mods = ReadCustomModifiers(module, br, context);
-				if (mods.required != null || mods.optional != null)
+				CustomModifiers cm = CustomModifiers.Read(module, br, context);
+				if (!cm.IsEmpty)
 				{
-					if (reqmod == null)
+					if (mods == null)
 					{
-						reqmod = new Type[genArgCount][];
-						optmod = new Type[genArgCount][];
+						mods = new CustomModifiers[genArgCount];
 					}
-					reqmod[i] = mods.required;
-					optmod[i] = mods.optional;
+					mods[i] = cm;
 				}
 				args[i] = ReadType(module, br, context);
 			}
-			return GenericTypeInstance.Make(type, args, reqmod, optmod);
+			return GenericTypeInstance.Make(type, args, mods);
 		}
 
 		internal static Type ReadTypeSpec(ModuleReader module, ByteReader br, IGenericContext context)
 		{
 			// LAMESPEC a TypeSpec can contain custom modifiers (C++/CLI generates "newarr (TypeSpec with custom modifiers)")
-			SkipCustomModifiers(br);
+			CustomModifiers.Skip(br);
 			// LAMESPEC anything can be adorned by (useless) custom modifiers
 			// also, VAR and MVAR are also used in TypeSpec (contrary to what the spec says)
 			return ReadType(module, br, context);
@@ -229,14 +226,14 @@ namespace IKVM.Reflection
 				case ELEMENT_TYPE_GENERICINST:
 					return ReadGenericInst(module, br, context);
 				case ELEMENT_TYPE_SZARRAY:
-					mods = ReadCustomModifiers(module, br, context);
-					return ReadType(module, br, context).__MakeArrayType(mods.required, mods.optional);
+					mods = CustomModifiers.Read(module, br, context);
+					return ReadType(module, br, context).__MakeArrayType(mods);
 				case ELEMENT_TYPE_ARRAY:
-					mods = ReadCustomModifiers(module, br, context);
-					return ReadType(module, br, context).__MakeArrayType(br.ReadCompressedInt(), ReadArrayBounds(br), ReadArrayBounds(br), mods.required, mods.optional);
+					mods = CustomModifiers.Read(module, br, context);
+					return ReadType(module, br, context).__MakeArrayType(br.ReadCompressedInt(), ReadArrayBounds(br), ReadArrayBounds(br), mods);
 				case ELEMENT_TYPE_PTR:
-					mods = ReadCustomModifiers(module, br, context);
-					return ReadTypeOrVoid(module, br, context).__MakePointerType(mods.required, mods.optional);
+					mods = CustomModifiers.Read(module, br, context);
+					return ReadTypeOrVoid(module, br, context).__MakePointerType(mods);
 				case ELEMENT_TYPE_FNPTR:
 					return ReadFunctionPointer(module, br, context);
 				default:
@@ -260,14 +257,14 @@ namespace IKVM.Reflection
 				}
 				else
 				{
-					SkipCustomModifiers(br);
+					CustomModifiers.Skip(br);
 					bool pinned = false;
 					if (br.PeekByte() == ELEMENT_TYPE_PINNED)
 					{
 						br.ReadByte();
 						pinned = true;
 					}
-					SkipCustomModifiers(br);
+					CustomModifiers.Skip(br);
 					Type type = ReadTypeOrByRef(module, br, context);
 					list.Add(new LocalVariableInfo(i, type, pinned));
 				}
@@ -281,9 +278,9 @@ namespace IKVM.Reflection
 				br.ReadByte();
 				// LAMESPEC it is allowed (by C++/CLI, ilasm and peverify) to have custom modifiers after the BYREF
 				// (which makes sense, as it is analogous to pointers)
-				CustomModifiers mods = ReadCustomModifiers(module, br, context);
+				CustomModifiers mods = CustomModifiers.Read(module, br, context);
 				// C++/CLI generates void& local variables, so we need to use ReadTypeOrVoid here
-				return ReadTypeOrVoid(module, br, context).__MakeByRefType(mods.required, mods.optional);
+				return ReadTypeOrVoid(module, br, context).__MakeByRefType(mods);
 			}
 			else
 			{
@@ -331,8 +328,7 @@ namespace IKVM.Reflection
 					int rank = type.GetArrayRank();
 					bb.Write(ELEMENT_TYPE_ARRAY);
 					// LAMESPEC the Type production (23.2.12) doesn't include CustomMod* for arrays, but the verifier allows it and ildasm also supports it
-					WriteCustomModifiers(module, bb, ELEMENT_TYPE_CMOD_REQD, type.__GetRequiredCustomModifiers());
-					WriteCustomModifiers(module, bb, ELEMENT_TYPE_CMOD_OPT, type.__GetOptionalCustomModifiers());
+					WriteCustomModifiers(module, bb, type.__GetCustomModifiers());
 					WriteType(module, bb, type.GetElementType());
 					bb.WriteCompressedInt(rank);
 					int[] sizes = type.__GetArraySizes();
@@ -357,8 +353,7 @@ namespace IKVM.Reflection
 				{
 					bb.Write(ELEMENT_TYPE_PTR);
 				}
-				WriteCustomModifiers(module, bb, ELEMENT_TYPE_CMOD_REQD, type.__GetRequiredCustomModifiers());
-				WriteCustomModifiers(module, bb, ELEMENT_TYPE_CMOD_OPT, type.__GetOptionalCustomModifiers());
+				WriteCustomModifiers(module, bb, type.__GetCustomModifiers());
 				type = type.GetElementType();
 			}
 			Universe u = module.universe;
@@ -467,8 +462,7 @@ namespace IKVM.Reflection
 		private static void WriteGenericSignature(ModuleBuilder module, ByteBuffer bb, Type type)
 		{
 			Type[] typeArguments = type.GetGenericArguments();
-			Type[][] requiredCustomModifiers = type.__GetGenericArgumentsRequiredCustomModifiers();
-			Type[][] optionalCustomModifiers = type.__GetGenericArgumentsOptionalCustomModifiers();
+			CustomModifiers[] customModifiers = type.__GetGenericArgumentsCustomModifiers();
 			if (!type.IsGenericTypeDefinition)
 			{
 				type = type.GetGenericTypeDefinition();
@@ -486,68 +480,21 @@ namespace IKVM.Reflection
 			bb.WriteCompressedInt(typeArguments.Length);
 			for (int i = 0; i < typeArguments.Length; i++)
 			{
-				WriteCustomModifiers(module, bb, ELEMENT_TYPE_CMOD_REQD, requiredCustomModifiers[i]);
-				WriteCustomModifiers(module, bb, ELEMENT_TYPE_CMOD_OPT, optionalCustomModifiers[i]);
+				WriteCustomModifiers(module, bb, customModifiers[i]);
 				WriteType(module, bb, typeArguments[i]);
 			}
 		}
 
-		protected static void WriteCustomModifiers(ModuleBuilder module, ByteBuffer bb, byte mod, Type[] modifiers)
+		protected static void WriteCustomModifiers(ModuleBuilder module, ByteBuffer bb, CustomModifiers modifiers)
 		{
-			if (modifiers != null)
+			foreach (CustomModifiers.Entry entry in modifiers)
 			{
-				foreach (Type type in modifiers)
-				{
-					bb.Write(mod);
-					bb.WriteTypeDefOrRefEncoded(module.GetTypeTokenForMemberRef(type));
-				}
+				bb.Write(entry.IsRequired ? ELEMENT_TYPE_CMOD_REQD : ELEMENT_TYPE_CMOD_OPT);
+				bb.WriteTypeDefOrRefEncoded(module.GetTypeTokenForMemberRef(entry.Type));
 			}
 		}
 
-		protected static bool IsCustomModifier(byte b)
-		{
-			return b == ELEMENT_TYPE_CMOD_OPT || b == ELEMENT_TYPE_CMOD_REQD;
-		}
-
-		struct CustomModifiers
-		{
-			internal Type[] required;
-			internal Type[] optional;
-		}
-
-		private static CustomModifiers ReadCustomModifiers(ModuleReader module, ByteReader br, IGenericContext context)
-		{
-			CustomModifiers mods = new CustomModifiers();
-			byte b = br.PeekByte();
-			if (IsCustomModifier(b))
-			{
-				List<Type> required = new List<Type>();
-				List<Type> optional = new List<Type>();
-				while (IsCustomModifier(b))
-				{
-					bool req = br.ReadByte() == ELEMENT_TYPE_CMOD_REQD;
-					Type type = ReadTypeDefOrRefEncoded(module, br, context);
-					(req ? required : optional).Add(type);
-					b = br.PeekByte();
-				}
-				mods.required = required.ToArray();
-				mods.optional = optional.ToArray();
-			}
-			return mods;
-		}
-
-		protected static void SkipCustomModifiers(ByteReader br)
-		{
-			byte b = br.PeekByte();
-			while (IsCustomModifier(b))
-			{
-				br.ReadByte();
-				br.ReadCompressedInt();
-				b = br.PeekByte();
-			}
-		}
-
-		private static Type ReadTypeDefOrRefEncoded(ModuleReader module, ByteReader br, IGenericContext context)
+		internal static Type ReadTypeDefOrRefEncoded(ModuleReader module, ByteReader br, IGenericContext context)
 		{
 			int encoded = br.ReadCompressedInt();
 			switch (encoded & 3)
@@ -560,37 +507,6 @@ namespace IKVM.Reflection
 					return module.ResolveType((TypeSpecTable.Index << 24) + (encoded >> 2), context);
 				default:
 					throw new BadImageFormatException();
-			}
-		}
-
-		protected static void ReadCustomModifiers(ModuleReader module, ByteReader br, IGenericContext context, out Type[] requiredCustomModifiers, out Type[] optionalCustomModifiers)
-		{
-			byte b = br.PeekByte();
-			if (IsCustomModifier(b))
-			{
-				List<Type> required = new List<Type>();
-				List<Type> optional = new List<Type>();
-				while (IsCustomModifier(b))
-				{
-					br.ReadByte();
-					Type type = ReadTypeDefOrRefEncoded(module, br, context);
-					if (b == ELEMENT_TYPE_CMOD_REQD)
-					{
-						required.Add(type);
-					}
-					else
-					{
-						optional.Add(type);
-					}
-					b = br.PeekByte();
-				}
-				requiredCustomModifiers = required.ToArray();
-				optionalCustomModifiers = optional.ToArray();
-			}
-			else
-			{
-				requiredCustomModifiers = null;
-				optionalCustomModifiers = null;
 			}
 		}
 
@@ -671,8 +587,8 @@ namespace IKVM.Reflection
 		}
 
 		internal static void WritePropertySig(ModuleBuilder module, ByteBuffer bb, CallingConventions callingConvention,
-			Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers,
-			Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers)
+			Type returnType, CustomModifiers returnTypeCustomModifiers,
+			Type[] parameterTypes, CustomModifiers[] parameterTypeCustomModifiers)
 		{
 			byte flags = PROPERTY;
 			if ((callingConvention & CallingConventions.HasThis) != 0)
@@ -689,20 +605,15 @@ namespace IKVM.Reflection
 			}
 			bb.Write(flags);
 			bb.WriteCompressedInt(parameterTypes == null ? 0 : parameterTypes.Length);
-			WriteCustomModifiers(module, bb, ELEMENT_TYPE_CMOD_REQD, returnTypeRequiredCustomModifiers);
-			WriteCustomModifiers(module, bb, ELEMENT_TYPE_CMOD_OPT, returnTypeOptionalCustomModifiers);
+			WriteCustomModifiers(module, bb, returnTypeCustomModifiers);
 			WriteType(module, bb, returnType);
 			if (parameterTypes != null)
 			{
 				for (int i = 0; i < parameterTypes.Length; i++)
 				{
-					if (parameterTypeRequiredCustomModifiers != null)
+					if (parameterTypeCustomModifiers != null)
 					{
-						WriteCustomModifiers(module, bb, ELEMENT_TYPE_CMOD_REQD, parameterTypeRequiredCustomModifiers[i]);
-					}
-					if (parameterTypeOptionalCustomModifiers != null)
-					{
-						WriteCustomModifiers(module, bb, ELEMENT_TYPE_CMOD_OPT, parameterTypeOptionalCustomModifiers[i]);
+						WriteCustomModifiers(module, bb, parameterTypeCustomModifiers[i]);
 					}
 					WriteType(module, bb, parameterTypes[i]);
 				}
@@ -729,7 +640,7 @@ namespace IKVM.Reflection
 		{
 			br.ReadByte();
 			int paramCount = br.ReadCompressedInt();
-			SkipCustomModifiers(br);
+			CustomModifiers.Skip(br);
 			ReadRetType(module, br, null);
 			for (int i = 0; i < paramCount; i++)
 			{
@@ -739,12 +650,12 @@ namespace IKVM.Reflection
 					Type[] types = new Type[paramCount - i];
 					for (int j = 0; j < types.Length; j++)
 					{
-						SkipCustomModifiers(br);
+						CustomModifiers.Skip(br);
 						types[j] = ReadType(module, br, null);
 					}
 					return types;
 				}
-				SkipCustomModifiers(br);
+				CustomModifiers.Skip(br);
 				ReadType(module, br, null);
 			}
 			return Type.EmptyTypes;
@@ -762,43 +673,6 @@ namespace IKVM.Reflection
 				expanded[i] = types[i].BindTypeParameters(binder);
 			}
 			return expanded;
-		}
-
-		protected static Type[][] BindTypeParameters(IGenericBinder binder, Type[][] types)
-		{
-			if (types == null)
-			{
-				return null;
-			}
-			Type[][] expanded = new Type[types.Length][];
-			for (int i = 0; i < types.Length; i++)
-			{
-				expanded[i] = BindTypeParameters(binder, types[i]);
-			}
-			return expanded;
-		}
-
-		protected static Type[][][] BindTypeParameters(IGenericBinder binder, Type[][][] types)
-		{
-			if (types == null)
-			{
-				return null;
-			}
-			Type[][][] expanded = new Type[types.Length][][];
-			for (int i = 0; i < types.Length; i++)
-			{
-				expanded[i] = BindTypeParameters(binder, types[i]);
-			}
-			return expanded;
-		}
-
-		protected static Type[] BindTypeParameters(IGenericBinder binder, Type[][][] types, int index, int optOrReq)
-		{
-			if (types == null || types[index] == null)
-			{
-				return null;
-			}
-			return BindTypeParameters(binder, types[index][optOrReq]);
 		}
 	}
 }
