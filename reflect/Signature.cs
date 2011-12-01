@@ -259,20 +259,20 @@ namespace IKVM.Reflection
 				if (br.PeekByte() == ELEMENT_TYPE_TYPEDBYREF)
 				{
 					br.ReadByte();
-					list.Add(new LocalVariableInfo(i, module.universe.System_TypedReference, false));
+					list.Add(new LocalVariableInfo(i, module.universe.System_TypedReference, false, new CustomModifiers()));
 				}
 				else
 				{
-					CustomModifiers.Skip(br);
+					CustomModifiers mods1 = CustomModifiers.Read(module, br, context);
 					bool pinned = false;
 					if (br.PeekByte() == ELEMENT_TYPE_PINNED)
 					{
 						br.ReadByte();
 						pinned = true;
 					}
-					CustomModifiers.Skip(br);
+					CustomModifiers mods2 = CustomModifiers.Read(module, br, context);
 					Type type = ReadTypeOrByRef(module, br, context);
-					list.Add(new LocalVariableInfo(i, type, pinned));
+					list.Add(new LocalVariableInfo(i, type, pinned, CustomModifiers.Combine(mods1, mods2)));
 				}
 			}
 		}
@@ -585,17 +585,21 @@ namespace IKVM.Reflection
 			}
 		}
 
-		internal static void WriteLocalVarSig(ModuleBuilder module, ByteBuffer bb, IList<LocalBuilder> locals)
+		internal static void WriteLocalVarSig(ModuleBuilder module, ByteBuffer bb, IList<LocalBuilder> locals, IList<CustomModifiers> customModifiers)
 		{
 			bb.Write(LOCAL_SIG);
 			bb.WriteCompressedInt(locals.Count);
-			foreach (LocalBuilder local in locals)
+			for (int i = 0; i < locals.Count; i++)
 			{
-				if (local.IsPinned)
+				if (locals[i].IsPinned)
 				{
 					bb.Write(ELEMENT_TYPE_PINNED);
 				}
-				WriteType(module, bb, local.LocalType);
+				if (customModifiers != null && i < customModifiers.Count)
+				{
+					WriteCustomModifiers(module, bb, customModifiers[i]);
+				}
+				WriteType(module, bb, locals[i].LocalType);
 			}
 		}
 

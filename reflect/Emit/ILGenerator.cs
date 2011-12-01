@@ -152,6 +152,7 @@ namespace IKVM.Reflection.Emit
 		private readonly ModuleBuilder moduleBuilder;
 		private readonly ByteBuffer code;
 		private readonly List<LocalBuilder> locals = new List<LocalBuilder>();
+		private List<CustomModifiers> localCustomModifiers;
 		private readonly List<int> tokenFixups = new List<int>();
 		private readonly List<int> labels = new List<int>();
 		private readonly List<int> labelStackHeight = new List<int>();
@@ -458,6 +459,26 @@ namespace IKVM.Reflection.Emit
 				scope.locals.Add(local);
 			}
 			return local;
+		}
+
+		public LocalBuilder __DeclareLocal(Type localType, bool pinned, CustomModifiers customModifiers)
+		{
+			if (!customModifiers.IsEmpty)
+			{
+				if (localCustomModifiers == null)
+				{
+					localCustomModifiers = new List<CustomModifiers>();
+				}
+				// we lazily fill up the list (to sync with the locals list) and we don't need to
+				// make sure that the list has the same length as the locals list, because
+				// Signature.WriteLocalVarSig() can tolerate that.
+				while (localCustomModifiers.Count < locals.Count)
+				{
+					localCustomModifiers.Add(new CustomModifiers());
+				}
+				localCustomModifiers.Add(customModifiers);
+			}
+			return DeclareLocal(localType, pinned);
 		}
 
 		public Label DefineLabel()
@@ -1034,7 +1055,7 @@ namespace IKVM.Reflection.Emit
 			if (locals.Count != 0)
 			{
 				ByteBuffer localVarSig = new ByteBuffer(locals.Count + 2);
-				Signature.WriteLocalVarSig(moduleBuilder, localVarSig, locals);
+				Signature.WriteLocalVarSig(moduleBuilder, localVarSig, locals, localCustomModifiers);
 				localVarSigTok = 0x11000000 | moduleBuilder.StandAloneSig.FindOrAddRecord(moduleBuilder.Blobs.Add(localVarSig));
 			}
 

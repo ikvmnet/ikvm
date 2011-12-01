@@ -162,11 +162,11 @@ namespace IKVM.Reflection.Emit
 				case 0:
 					if (unmanaged)
 					{
-						Signature.WriteStandAloneMethodSig(module, bb, __StandAloneMethodSig.Create(unmanagedCallConv, returnType, new CustomModifiers(), args.ToArray(), null));
+						Signature.WriteStandAloneMethodSig(module, bb, __StandAloneMethodSig.Create(unmanagedCallConv, returnType, returnTypeCustomModifiers, args.ToArray(), customModifiers.ToArray()));
 					}
 					else
 					{
-						Signature.WriteStandAloneMethodSig(module, bb, __StandAloneMethodSig.Create(callingConvention, returnType, new CustomModifiers(), args.ToArray(), optionalArgs.ToArray(), null));
+						Signature.WriteStandAloneMethodSig(module, bb, __StandAloneMethodSig.Create(callingConvention, returnType, returnTypeCustomModifiers, args.ToArray(), optionalArgs.ToArray(), customModifiers.ToArray()));
 					}
 					break;
 				case Signature.FIELD:
@@ -176,7 +176,7 @@ namespace IKVM.Reflection.Emit
 					Signature.WritePropertySig(module, bb, callingConvention, returnType, returnTypeCustomModifiers, args.ToArray(), customModifiers.ToArray());
 					break;
 				case Signature.LOCAL_SIG:
-					Signature.WriteLocalVarSig(module, bb, locals);
+					Signature.WriteLocalVarSig(module, bb, locals, customModifiers);
 					break;
 				default:
 					throw new InvalidOperationException();
@@ -209,7 +209,6 @@ namespace IKVM.Reflection.Emit
 		{
 			if (type == Signature.LOCAL_SIG)
 			{
-				// TODO support custom modifiers in local sig
 				locals.Add(new LocalBuilder(argument, 0, pinned));
 			}
 			else if (optional)
@@ -219,8 +218,8 @@ namespace IKVM.Reflection.Emit
 			else
 			{
 				this.args.Add(argument);
-				this.customModifiers.Add(customModifiers);
 			}
+			this.customModifiers.Add(customModifiers);
 		}
 
 		public void AddArguments(Type[] arguments, Type[][] requiredCustomModifiers, Type[][] optionalCustomModifiers)

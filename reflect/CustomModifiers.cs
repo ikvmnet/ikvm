@@ -329,5 +329,24 @@ namespace IKVM.Reflection
 		{
 			return b == Signature.ELEMENT_TYPE_CMOD_OPT || b == Signature.ELEMENT_TYPE_CMOD_REQD;
 		}
+
+		internal static CustomModifiers Combine(CustomModifiers mods1, CustomModifiers mods2)
+		{
+			if (mods1.IsEmpty)
+			{
+				return mods2;
+			}
+			else if (mods2.IsEmpty)
+			{
+				return mods1;
+			}
+			else
+			{
+				Type[] combo = new Type[mods1.types.Length + mods2.types.Length];
+				Array.Copy(mods1.types, combo, mods1.types.Length);
+				Array.Copy(mods2.types, 0, combo, mods1.types.Length, mods2.types.Length);
+				return new CustomModifiers(combo);
+			}
+		}
 	}
 }
