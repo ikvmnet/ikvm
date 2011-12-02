@@ -115,17 +115,5 @@ namespace IKVM.Reflection
 		{
 			get { return parameterTypes.Length + optionalParameterTypes.Length; }
 		}
-
-		public static __StandAloneMethodSig Create(CallingConvention callingConvention, Type returnType, CustomModifiers returnTypeCustomModifiers, Type[] parameterTypes, CustomModifiers[] parameterTypeCustomModifiers)
-		{
-			return new __StandAloneMethodSig(true, callingConvention, 0, returnType, Util.Copy(parameterTypes), Type.EmptyTypes,
-				PackedCustomModifiers.CreateFromExternal(returnTypeCustomModifiers, parameterTypeCustomModifiers, Util.NullSafeLength(parameterTypes)));
-		}
-
-		public static __StandAloneMethodSig Create(CallingConventions callingConvention, Type returnType, CustomModifiers returnTypeCustomModifiers, Type[] parameterTypes, Type[] optionalParameterTypes, CustomModifiers[] parameterTypeCustomModifiers)
-		{
-			return new __StandAloneMethodSig(false, 0, callingConvention, returnType, Util.Copy(parameterTypes), Util.Copy(optionalParameterTypes),
-				PackedCustomModifiers.CreateFromExternal(returnTypeCustomModifiers, parameterTypeCustomModifiers, Util.NullSafeLength(parameterTypes) + Util.NullSafeLength(optionalParameterTypes)));
-		}
 	}
 }

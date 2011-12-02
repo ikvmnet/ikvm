@@ -162,11 +162,11 @@ namespace IKVM.Reflection.Emit
 				case 0:
 					if (unmanaged)
 					{
-						Signature.WriteStandAloneMethodSig(module, bb, __StandAloneMethodSig.Create(unmanagedCallConv, returnType, returnTypeCustomModifiers, args.ToArray(), customModifiers.ToArray()));
+						Signature.WriteStandAloneMethodSig(module, bb, module.universe.MakeStandAloneMethodSig(unmanagedCallConv, returnType, returnTypeCustomModifiers, args.ToArray(), customModifiers.ToArray()));
 					}
 					else
 					{
-						Signature.WriteStandAloneMethodSig(module, bb, __StandAloneMethodSig.Create(callingConvention, returnType, returnTypeCustomModifiers, args.ToArray(), optionalArgs.ToArray(), customModifiers.ToArray()));
+						Signature.WriteStandAloneMethodSig(module, bb, module.universe.MakeStandAloneMethodSig(callingConvention, returnType, returnTypeCustomModifiers, args.ToArray(), optionalArgs.ToArray(), customModifiers.ToArray()));
 					}
 					break;
 				case Signature.FIELD:

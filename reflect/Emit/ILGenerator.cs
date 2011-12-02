@@ -853,12 +853,12 @@ namespace IKVM.Reflection.Emit
 
 		public void EmitCalli(OpCode opc, CallingConvention callingConvention, Type returnType, Type[] parameterTypes)
 		{
-			__EmitCalli(opc, __StandAloneMethodSig.Create(callingConvention, returnType, new CustomModifiers(), parameterTypes, null));
+			__EmitCalli(opc, moduleBuilder.universe.MakeStandAloneMethodSig(callingConvention, returnType, new CustomModifiers(), parameterTypes, null));
 		}
 
 		public void EmitCalli(OpCode opc, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, Type[] optionalParameterTypes)
 		{
-			__EmitCalli(opc, __StandAloneMethodSig.Create(callingConvention, returnType, new CustomModifiers(), parameterTypes, optionalParameterTypes, null));
+			__EmitCalli(opc, moduleBuilder.universe.MakeStandAloneMethodSig(callingConvention, returnType, new CustomModifiers(), parameterTypes, optionalParameterTypes, null));
 		}
 
 		public void __EmitCalli(OpCode opc, __StandAloneMethodSig sig)
