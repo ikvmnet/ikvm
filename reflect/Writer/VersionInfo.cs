@@ -104,9 +104,16 @@ namespace IKVM.Reflection.Writer
 
 			int codepage = 1200;	// Unicode codepage
 			int lcid = 0x7f;
-			if (name.CultureInfo != null)
+			try
 			{
-				lcid = name.CultureInfo.LCID;
+				if (name.CultureInfo != null)
+				{
+					lcid = name.CultureInfo.LCID;
+				}
+			}
+			catch (ArgumentException)
+			{
+				// AssemblyName.CultureInfo throws an ArgumentException if AssemblyBuilder.__SetAssemblyCulture() was used to specify a non-existing culture
 			}
 
 			Version filever = ParseVersionRobust(fileVersion);
