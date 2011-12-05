@@ -38,7 +38,6 @@ namespace IKVM.Reflection.Writer
 		private string description;
 		private string title;
 		internal string informationalVersion;
-		private string culture;
 		private string fileVersion;
 
 		internal void SetName(AssemblyName name)
@@ -83,10 +82,6 @@ namespace IKVM.Reflection.Writer
 			{
 				informationalVersion = (string)cab.GetConstructorArgument(0);
 			}
-			else if (culture == null && type == u.System_Reflection_AssemblyCultureAttribute)
-			{
-				culture  = (string)cab.GetConstructorArgument(0);
-			}
 			else if (fileVersion == null && type == u.System_Reflection_AssemblyFileVersionAttribute)
 			{
 				fileVersion = (string)cab.GetConstructorArgument(0);
@@ -112,10 +107,6 @@ namespace IKVM.Reflection.Writer
 			if (name.CultureInfo != null)
 			{
 				lcid = name.CultureInfo.LCID;
-			}
-			if (culture != null)
-			{
-				lcid = new CultureInfo(culture).LCID;
 			}
 
 			Version filever = ParseVersionRobust(fileVersion);
