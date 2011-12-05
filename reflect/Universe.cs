@@ -122,7 +122,6 @@ namespace IKVM.Reflection
 		private Type typeof_System_NonSerializedAttribute;
 		private Type typeof_System_SerializableAttribute;
 		private Type typeof_System_AttributeUsageAttribute;
-		private Type typeof_System_Reflection_AssemblyCultureAttribute;
 		private Type typeof_System_Runtime_InteropServices_DllImportAttribute;
 		private Type typeof_System_Runtime_InteropServices_FieldOffsetAttribute;
 		private Type typeof_System_Runtime_InteropServices_InAttribute;
@@ -334,11 +333,6 @@ namespace IKVM.Reflection
 		internal Type System_AttributeUsageAttribute
 		{
 			get { return typeof_System_AttributeUsageAttribute ?? (typeof_System_AttributeUsageAttribute = ImportMscorlibType(typeof(System.AttributeUsageAttribute))); }
-		}
-
-		internal Type System_Reflection_AssemblyCultureAttribute
-		{
-			get { return typeof_System_Reflection_AssemblyCultureAttribute ?? (typeof_System_Reflection_AssemblyCultureAttribute = ImportMscorlibType(typeof(System.Reflection.AssemblyCultureAttribute))); }
 		}
 
 		internal Type System_Runtime_InteropServices_DllImportAttribute
