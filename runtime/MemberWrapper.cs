@@ -728,6 +728,13 @@ namespace IKVM.Internal
 			return parameterTypeWrappers;
 		}
 
+#if !STUB_GENERATOR
+		internal DefineMethodHelper GetDefineMethodHelper()
+		{
+			return new DefineMethodHelper(this);
+		}
+#endif
+
 		internal Type ReturnTypeForDefineMethod
 		{
 			get

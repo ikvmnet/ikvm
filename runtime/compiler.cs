@@ -3452,11 +3452,11 @@ sealed class Compiler
 		MethodInfo mi;
 		if(!invokespecialstubcache.TryGetValue(key, out mi))
 		{
-			MethodBuilder stub = clazz.TypeAsBuilder.DefineMethod("__<>", MethodAttributes.PrivateScope, method.ReturnTypeForDefineMethod, method.GetParametersForDefineMethod());
+			DefineMethodHelper dmh = method.GetDefineMethodHelper();
+			MethodBuilder stub = dmh.DefineMethod(clazz, "__<>", MethodAttributes.PrivateScope);
 			CodeEmitter ilgen = CodeEmitter.Create(stub);
 			ilgen.Emit(OpCodes.Ldarg_0);
-			int argc = method.GetParametersForDefineMethod().Length;
-			for(int i = 1; i <= argc; i++)
+			for(int i = 1; i <= dmh.ParameterCount; i++)
 			{
 				ilgen.Emit(OpCodes.Ldarg_S, (byte)i);
 			}

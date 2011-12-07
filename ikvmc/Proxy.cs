@@ -230,7 +230,7 @@ namespace IKVM.Internal
 			}
 			foreach (ProxyMethod method in methods)
 			{
-				CreateMethod(tb, method);
+				CreateMethod(loader, tb, method);
 			}
 			CreateStaticInitializer(tb, methods);
 		}
@@ -246,9 +246,9 @@ namespace IKVM.Internal
 			ilgen.DoEmit();
 		}
 
-		private static void CreateMethod(TypeBuilder tb, ProxyMethod pm)
+		private static void CreateMethod(CompilerClassLoader loader, TypeBuilder tb, ProxyMethod pm)
 		{
-			MethodBuilder mb = tb.DefineMethod(pm.mw.Name, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final, pm.mw.ReturnType.TypeAsSignatureType, pm.mw.GetParametersForDefineMethod());
+			MethodBuilder mb = pm.mw.GetDefineMethodHelper().DefineMethod(loader.GetTypeWrapperFactory(), tb, pm.mw.Name, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final);
 			List<string> exceptions = new List<string>();
 			foreach (TypeWrapper tw in pm.exceptions)
 			{

@@ -82,7 +82,8 @@ namespace IKVM.Internal
 					{
 						name = "_" + name;
 					}
-					TypeBuilder typeBuilder = classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(name, TypeAttributes.Public | TypeAttributes.Abstract, base.GetBaseTypeForDefineType());
+					TypeWrapperFactory context = classLoader.GetTypeWrapperFactory();
+					TypeBuilder typeBuilder = context.ModuleBuilder.DefineType(name, TypeAttributes.Public | TypeAttributes.Abstract, base.GetBaseTypeForDefineType());
 					AttributeHelper.HideFromJava(typeBuilder);
 					AttributeHelper.SetEditorBrowsableNever(typeBuilder);
 					workaroundBaseClass = new WorkaroundBaseClass(this, typeBuilder, methods.ToArray());
@@ -91,7 +92,7 @@ namespace IKVM.Internal
 					{
 						if (ReferenceEquals(mw.Name, StringConstants.INIT) && mw.IsAccessibleFrom(baseTypeWrapper, this, this))
 						{
-							constructors.Add(new ConstructorForwarder(typeBuilder, mw));
+							constructors.Add(new ConstructorForwarder(context, typeBuilder, mw));
 						}
 					}
 					replacedMethods = constructors.ToArray();
@@ -139,7 +140,7 @@ namespace IKVM.Internal
 				{
 					foreach (MethodWrapper mw in methods)
 					{
-						MethodBuilder mb = typeBuilder.DefineMethod(mw.Name, MethodAttributes.FamORAssem | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.CheckAccessOnOverride, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
+						MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(), typeBuilder, mw.Name, MethodAttributes.FamORAssem | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.CheckAccessOnOverride);
 						AttributeHelper.HideFromJava(mb);
 						CodeEmitter ilgen = CodeEmitter.Create(mb);
 						ilgen.EmitThrow("java.lang.AbstractMethodError");
@@ -152,13 +153,15 @@ namespace IKVM.Internal
 
 		private sealed class ConstructorForwarder : MethodWrapper
 		{
+			private readonly TypeWrapperFactory context;
 			private readonly TypeBuilder typeBuilder;
 			private readonly MethodWrapper ctor;
 			private ConstructorBuilder constructorBuilder;
 
-			internal ConstructorForwarder(TypeBuilder typeBuilder, MethodWrapper ctor)
+			internal ConstructorForwarder(TypeWrapperFactory context, TypeBuilder typeBuilder, MethodWrapper ctor)
 				: base(ctor.DeclaringType, ctor.Name, ctor.Signature, null, null, null, ctor.Modifiers, MemberFlags.None)
 			{
+				this.context = context;
 				this.typeBuilder = typeBuilder;
 				this.ctor = ctor;
 			}
@@ -166,12 +169,12 @@ namespace IKVM.Internal
 			protected override void DoLinkMethod()
 			{
 				ctor.Link();
-				Type[] parameters = ctor.GetParametersForDefineMethod();
-				constructorBuilder = typeBuilder.DefineConstructor(MethodAttributes.PrivateScope, CallingConventions.Standard, parameters);
+				DefineMethodHelper dmh = ctor.GetDefineMethodHelper();
+				constructorBuilder = dmh.DefineConstructor(context, typeBuilder, MethodAttributes.PrivateScope);
 				AttributeHelper.HideFromJava(constructorBuilder);
 				CodeEmitter ilgen = CodeEmitter.Create(constructorBuilder);
 				ilgen.Emit(OpCodes.Ldarg_0);
-				for (int i = 1; i <= parameters.Length; i++)
+				for (int i = 1; i <= dmh.ParameterCount; i++)
 				{
 					ilgen.Emit(OpCodes.Ldarg_S, (byte)i);
 				}
@@ -783,7 +786,7 @@ namespace IKVM.Internal
 										throw new InvalidOperationException("Method " + m.Name + m.Sig + " not found in interface " + tw.Name);
 									}
 									mw.Link();
-									MethodBuilder mb = typeBuilder.DefineMethod(tw.Name + "/" + m.Name, MethodAttributes.Private | MethodAttributes.NewSlot | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.CheckAccessOnOverride, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
+									MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(this, tw.Name + "/" + m.Name, MethodAttributes.Private | MethodAttributes.NewSlot | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.CheckAccessOnOverride);
 									AttributeHelper.HideFromJava(mb);
 									typeBuilder.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
 									CodeEmitter ilgen = CodeEmitter.Create(mb);
@@ -801,7 +804,7 @@ namespace IKVM.Internal
 		{
 			if(typeBuilderGhostInterface != null)
 			{
-				return typeBuilderGhostInterface.DefineMethod(name, attribs, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
+				return mw.GetDefineMethodHelper().DefineMethod(GetClassLoader().GetTypeWrapperFactory(), typeBuilderGhostInterface, name, attribs);
 			}
 			return null;
 		}
@@ -817,7 +820,7 @@ namespace IKVM.Internal
 					if(!methods[i].IsStatic)
 					{
 						TypeWrapper[] args = methods[i].GetParameters();
-						MethodBuilder stub = typeBuilder.DefineMethod(methods[i].Name, MethodAttributes.Public, methods[i].ReturnTypeForDefineMethod, methods[i].GetParametersForDefineMethod());
+						MethodBuilder stub = methods[i].GetDefineMethodHelper().DefineMethod(this, methods[i].Name, MethodAttributes.Public);
 						AddParameterMetadata(stub, methods[i]);
 						AttributeHelper.SetModifiers(stub, methods[i].Modifiers, methods[i].IsInternal);
 						CodeEmitter ilgen = CodeEmitter.Create(stub);

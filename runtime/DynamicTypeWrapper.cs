@@ -1957,7 +1957,7 @@ namespace IKVM.Internal
 						// skip <clinit>
 						if (!o.methods[i].IsStatic)
 						{
-							MethodBuilder mb = attributeTypeBuilder.DefineMethod(o.methods[i].Name, MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.NewSlot, o.methods[i].ReturnTypeForDefineMethod, o.methods[i].GetParametersForDefineMethod());
+							MethodBuilder mb = o.methods[i].GetDefineMethodHelper().DefineMethod(o.wrapper.GetClassLoader().GetTypeWrapperFactory(), attributeTypeBuilder, o.methods[i].Name, MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.NewSlot);
 							attributeTypeBuilder.DefineMethodOverride(mb, (MethodInfo)o.methods[i].GetMethod());
 							ilgen = CodeEmitter.Create(mb);
 							ilgen.Emit(OpCodes.Ldarg_0);
@@ -2647,7 +2647,7 @@ namespace IKVM.Internal
 							// We're a Miranda method
 							Debug.Assert(baseMethods[index].Length == 1 && baseMethods[index][0].DeclaringType.IsInterface);
 							string name = GenerateUniqueMethodName(methods[index].Name, baseMethods[index][0]);
-							MethodBuilder mb = typeBuilder.DefineMethod(name, MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Abstract | MethodAttributes.CheckAccessOnOverride, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
+							MethodBuilder mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper, name, MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Abstract | MethodAttributes.CheckAccessOnOverride);
 							AttributeHelper.HideFromReflection(mb);
 #if STATIC_COMPILER
 							if (unloadableOverrideStub || name != methods[index].Name)
@@ -2749,14 +2749,7 @@ namespace IKVM.Internal
 
 			private MethodBase GenerateConstructor(MethodWrapper mw)
 			{
-				// we add optional modifiers to make the signature unique
-				TypeWrapper[] parameters = mw.GetParameters();
-				Type[][] modopt = new Type[parameters.Length][];
-				for (int i = 0; i < parameters.Length; i++)
-				{
-					modopt[i] = wrapper.GetModOpt(parameters[i], false);
-				}
-				ConstructorBuilder cb = typeBuilder.DefineConstructor(GetMethodAccess(mw) | MethodAttributes.HideBySig, CallingConventions.Standard, mw.GetParametersForDefineMethod(), null, modopt);
+				ConstructorBuilder cb = mw.GetDefineMethodHelper().DefineConstructor(wrapper, GetMethodAccess(mw) | MethodAttributes.HideBySig);
 				cb.SetImplementationFlags(MethodImplAttributes.NoInlining);
 				return cb;
 			}
@@ -2953,7 +2946,7 @@ namespace IKVM.Internal
 					{
 						attribs |= MethodAttributes.NewSlot;
 					}
-					mb = typeBuilder.DefineMethod(name, attribs, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
+					mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper, name, attribs);
 					if (unloadableOverrideStub)
 					{
 						foreach (MethodWrapper baseMethod in baseMethods[index])
@@ -3711,7 +3704,7 @@ namespace IKVM.Internal
 										name = "__<>" + name + "/" + mi.DeclaringType.FullName;
 										attr = MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot;
 									}
-									MethodBuilder mb = typeBuilder.DefineMethod(name, attr, CallingConventions.Standard, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
+									MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(wrapper, name, attr);
 									if (needRename)
 									{
 										typeBuilder.DefineMethodOverride(mb, mi);
@@ -4586,7 +4579,7 @@ namespace IKVM.Internal
 						}
 						if (error)
 						{
-							MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, ifmethod.ReturnTypeForDefineMethod, ifmethod.GetParametersForDefineMethod());
+							MethodBuilder mb = DefineInterfaceStubMethod(mangledName, ifmethod);
 							AttributeHelper.HideFromJava(mb);
 							CodeEmitter ilgen = CodeEmitter.Create(mb);
 							ilgen.EmitThrow("java.lang.LinkageError", wrapper.Name + "." + ifmethod.Name + ifmethod.Signature);
@@ -4605,7 +4598,7 @@ namespace IKVM.Internal
 						// it makes sense, so I hope the spec is wrong
 						// UPDATE unfortunately, according to Serge Lidin the spec is correct, and it is not allowed to have virtual privatescope
 						// methods. Sigh! So I have to use private methods and mangle the name
-						MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, ifmethod.ReturnTypeForDefineMethod, ifmethod.GetParametersForDefineMethod());
+						MethodBuilder mb = DefineInterfaceStubMethod(mangledName, ifmethod);
 						AttributeHelper.HideFromJava(mb);
 						CodeEmitter ilgen = CodeEmitter.Create(mb);
 						ilgen.EmitThrow("java.lang.IllegalAccessError", wrapper.Name + "." + ifmethod.Name + ifmethod.Signature);
@@ -4615,7 +4608,7 @@ namespace IKVM.Internal
 					}
 					else if (mce.GetMethod() == null || mce.RealName != ifmethod.RealName || mce.IsInternal)
 					{
-						MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, ifmethod.ReturnTypeForDefineMethod, ifmethod.GetParametersForDefineMethod());
+						MethodBuilder mb = DefineInterfaceStubMethod(mangledName, ifmethod);
 						AttributeHelper.HideFromJava(mb);
 						CodeEmitter ilGenerator = CodeEmitter.Create(mb);
 						ilGenerator.Emit(OpCodes.Ldarg_0);
@@ -4634,7 +4627,7 @@ namespace IKVM.Internal
 						// NOTE methods inherited from base classes in a different assembly do *not* automatically implement
 						// interface methods, so we have to generate a stub here that doesn't do anything but call the base
 						// implementation
-						MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, ifmethod.ReturnTypeForDefineMethod, ifmethod.GetParametersForDefineMethod());
+						MethodBuilder mb = DefineInterfaceStubMethod(mangledName, ifmethod);
 						typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod.GetMethod());
 						AttributeHelper.HideFromJava(mb);
 						CodeEmitter ilGenerator = CodeEmitter.Create(mb);
@@ -4663,7 +4656,7 @@ namespace IKVM.Internal
 					{
 						// the type doesn't implement the interface method and isn't abstract either. The JVM allows this, but the CLR doesn't,
 						// so we have to create a stub method that throws an AbstractMethodError
-						MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, ifmethod.ReturnTypeForDefineMethod, ifmethod.GetParametersForDefineMethod());
+						MethodBuilder mb = DefineInterfaceStubMethod(mangledName, ifmethod);
 						AttributeHelper.HideFromJava(mb);
 						CodeEmitter ilgen = CodeEmitter.Create(mb);
 						ilgen.EmitThrow("java.lang.AbstractMethodError", wrapper.Name + "." + ifmethod.Name + ifmethod.Signature);
@@ -4672,6 +4665,11 @@ namespace IKVM.Internal
 						wrapper.HasIncompleteInterfaceImplementation = true;
 					}
 				}
+			}
+
+			private MethodBuilder DefineInterfaceStubMethod(string name, MethodWrapper mw)
+			{
+				return mw.GetDefineMethodHelper().DefineMethod(wrapper, name, MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final);
 			}
 
 			private static class BakedTypeCleanupHack
@@ -5833,10 +5831,15 @@ namespace IKVM.Internal
 
 		private Type[] GetModOpt(TypeWrapper tw, bool mustBePublic)
 		{
+			return GetModOpt(GetClassLoader().GetTypeWrapperFactory(), tw, mustBePublic);
+		}
+
+		internal static Type[] GetModOpt(TypeWrapperFactory context, TypeWrapper tw, bool mustBePublic)
+		{
 			Type[] modopt = Type.EmptyTypes;
 			if (tw.IsUnloadable)
 			{
-				modopt = new Type[] { GetClassLoader().GetTypeWrapperFactory().DefineUnloadable(tw.Name) };
+				modopt = new Type[] { context.DefineUnloadable(tw.Name) };
 			}
 			else
 			{
@@ -5886,5 +5889,49 @@ namespace IKVM.Internal
 				&& (fw.FieldTypeWrapper.IsAccessibleFrom(this) || fw.FieldTypeWrapper.InternalsVisibleTo(this));
 		}
 #endif
+	}
+
+	sealed class DefineMethodHelper
+	{
+		private readonly MethodWrapper mw;
+		private readonly Type[] parameterTypes;
+
+		internal DefineMethodHelper(MethodWrapper mw)
+		{
+			this.mw = mw;
+			this.parameterTypes = mw.GetParametersForDefineMethod();
+		}
+
+		internal int ParameterCount
+		{
+			get { return parameterTypes.Length; }
+		}
+
+		internal MethodBuilder DefineMethod(DynamicTypeWrapper tw, string name, MethodAttributes attribs)
+		{
+			return DefineMethod(tw.GetClassLoader().GetTypeWrapperFactory(), tw.TypeAsBuilder, name, attribs);
+		}
+
+		internal MethodBuilder DefineMethod(TypeWrapperFactory context, TypeBuilder tb, string name, MethodAttributes attribs)
+		{
+			return tb.DefineMethod(name, attribs, mw.ReturnTypeForDefineMethod, parameterTypes);
+		}
+
+		internal ConstructorBuilder DefineConstructor(DynamicTypeWrapper tw, MethodAttributes attribs)
+		{
+			return DefineConstructor(tw.GetClassLoader().GetTypeWrapperFactory(), tw.TypeAsBuilder, attribs);
+		}
+
+		internal ConstructorBuilder DefineConstructor(TypeWrapperFactory context, TypeBuilder tb, MethodAttributes attribs)
+		{
+			// we add optional modifiers to make the signature unique
+			TypeWrapper[] parameters = mw.GetParameters();
+			Type[][] modopt = new Type[parameterTypes.Length][];
+			for (int i = 0; i < parameters.Length; i++)
+			{
+				modopt[i] = DynamicTypeWrapper.GetModOpt(context, parameters[i], false);
+			}
+			return tb.DefineConstructor(attribs, CallingConventions.Standard, parameterTypes, null, modopt);
+		}
 	}
 }
