@@ -1558,7 +1558,7 @@ sealed class Compiler
 					}
 					// if the stack values don't match the argument types (for interface argument types)
 					// we must emit code to cast the stack value to the interface type
-					CastInterfaceArgs(method.DeclaringType, cpi.GetArgTypes(), i, false);
+					CastInterfaceArgs(method.DeclaringType, method.GetParameters(), i, false);
 					if(method.HasCallerID)
 					{
 						context.EmitCallerID(ilGenerator);
@@ -1625,13 +1625,12 @@ sealed class Compiler
 					// we must emit code to cast the stack value to the interface type
 					if(isinvokespecial && ReferenceEquals(cpi.Name, StringConstants.INIT) && VerifierTypeWrapper.IsNew(type))
 					{
-						TypeWrapper[] args = cpi.GetArgTypes();
-						CastInterfaceArgs(method.DeclaringType, args, i, false);
+						CastInterfaceArgs(method.DeclaringType, method.GetParameters(), i, false);
 					}
 					else
 					{
 						// the this reference is included in the argument list because it may also need to be cast
-						TypeWrapper[] methodArgs = cpi.GetArgTypes();
+						TypeWrapper[] methodArgs = method.GetParameters();
 						TypeWrapper[] args = new TypeWrapper[methodArgs.Length + 1];
 						methodArgs.CopyTo(args, 1);
 						if(instr.NormalizedOpCode == NormalizedByteCode.__invokeinterface)
