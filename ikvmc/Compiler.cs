@@ -575,6 +575,11 @@ class IkvmcCompiler
 				else if(s.StartsWith("-resource:"))
 				{
 					string[] spec = s.Substring(10).Split('=');
+					if(spec.Length != 2)
+					{
+						Console.Error.WriteLine("Error: invalid option: {0}", s);
+						return 1;
+					}
 					try
 					{
 						using(FileStream fs = new FileStream(spec[1], FileMode.Open, FileAccess.Read))
@@ -599,6 +604,11 @@ class IkvmcCompiler
 				else if(s.StartsWith("-externalresource:"))
 				{
 					string[] spec = s.Substring(18).Split('=');
+					if(spec.Length != 2)
+					{
+						Console.Error.WriteLine("Error: invalid option: {0}", s);
+						return 1;
+					}
 					if(!File.Exists(spec[1]))
 					{
 						Console.Error.WriteLine("Error: external resource file does not exist: {0}", spec[1]);
