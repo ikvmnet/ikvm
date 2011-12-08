@@ -1159,9 +1159,9 @@ namespace IKVM.Internal
 				bool unloadableOverrideStub = false;
 				if (mw.ReturnType != baseMethod.ReturnType)
 				{
-					if (baseMethod.ReturnType.IsUnloadable || JVM.FinishingForDebugSave)
+					if (mw.ReturnType.IsUnloadable || baseMethod.ReturnType.IsUnloadable || JVM.FinishingForDebugSave)
 					{
-						if (!mw.ReturnType.IsUnloadable || (!baseMethod.ReturnType.IsUnloadable && JVM.FinishingForDebugSave))
+						if (mw.ReturnType.IsUnloadable != baseMethod.ReturnType.IsUnloadable || JVM.FinishingForDebugSave)
 						{
 							unloadableOverrideStub = true;
 						}
@@ -1180,9 +1180,9 @@ namespace IKVM.Internal
 				{
 					if (here[i] != there[i])
 					{
-						if (there[i].IsUnloadable || JVM.FinishingForDebugSave)
+						if (here[i].IsUnloadable || there[i].IsUnloadable || JVM.FinishingForDebugSave)
 						{
-							if (!here[i].IsUnloadable || (!there[i].IsUnloadable && JVM.FinishingForDebugSave))
+							if (here[i].IsUnloadable != there[i].IsUnloadable || JVM.FinishingForDebugSave)
 							{
 								unloadableOverrideStub = true;
 							}
