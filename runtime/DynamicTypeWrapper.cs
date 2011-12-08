@@ -1154,17 +1154,21 @@ namespace IKVM.Internal
 				throw new InvalidOperationException();
 			}
 
-			private static bool CheckLoaderConstraints(MethodWrapper mw, MethodWrapper baseMethod)
+			private static void CheckLoaderConstraints(MethodWrapper mw, MethodWrapper baseMethod)
 			{
-				bool unloadableOverrideStub = false;
+#if !STATIC_COMPILER
+				if (JVM.FinishingForDebugSave)
+				{
+					// when we're finishing types to save a debug image (in dynamic mode) we don't care about loader constraints anymore
+					// (and we can't throw a LinkageError, because that would prevent the debug image from being saved)
+					return;
+				}
+#endif
 				if (mw.ReturnType != baseMethod.ReturnType)
 				{
-					if (mw.ReturnType.IsUnloadable || baseMethod.ReturnType.IsUnloadable || JVM.FinishingForDebugSave)
+					if (mw.ReturnType.IsUnloadable || baseMethod.ReturnType.IsUnloadable)
 					{
-						if (mw.ReturnType.IsUnloadable != baseMethod.ReturnType.IsUnloadable || JVM.FinishingForDebugSave)
-						{
-							unloadableOverrideStub = true;
-						}
+						// unloadable types can never cause a loader constraint violation
 					}
 					else
 					{
@@ -1180,12 +1184,9 @@ namespace IKVM.Internal
 				{
 					if (here[i] != there[i])
 					{
-						if (here[i].IsUnloadable || there[i].IsUnloadable || JVM.FinishingForDebugSave)
+						if (here[i].IsUnloadable || there[i].IsUnloadable)
 						{
-							if (here[i].IsUnloadable != there[i].IsUnloadable || JVM.FinishingForDebugSave)
-							{
-								unloadableOverrideStub = true;
-							}
+							// unloadable types can never cause a loader constraint violation
 						}
 						else
 						{
@@ -1196,24 +1197,22 @@ namespace IKVM.Internal
 						}
 					}
 				}
-				return unloadableOverrideStub;
 			}
 
 			internal override MethodBase LinkMethod(MethodWrapper mw)
 			{
 				Debug.Assert(mw != null);
-				bool unloadableOverrideStub = false;
 				int index = GetMethodIndex(mw);
 				if (baseMethods[index] != null)
 				{
 					foreach (MethodWrapper baseMethod in baseMethods[index])
 					{
 						baseMethod.Link();
-						unloadableOverrideStub |= CheckLoaderConstraints(mw, baseMethod);
+						CheckLoaderConstraints(mw, baseMethod);
 					}
 				}
 				Debug.Assert(mw.GetMethod() == null);
-				MethodBase mb = GenerateMethod(index, unloadableOverrideStub);
+				MethodBase mb = GenerateMethod(index);
 				if ((mw.Modifiers & (Modifiers.Synchronized | Modifiers.Static)) == Modifiers.Synchronized)
 				{
 					// note that constructors cannot be synchronized in Java
@@ -2634,7 +2633,7 @@ namespace IKVM.Internal
 				}
 			}
 
-			private MethodBase GenerateMethod(int index, bool unloadableOverrideStub)
+			private MethodBase GenerateMethod(int index)
 			{
 				methods[index].AssertLinked();
 				Profiler.Enter("JavaTypeImpl.GenerateMethod");
@@ -2650,7 +2649,7 @@ namespace IKVM.Internal
 							MethodBuilder mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper, name, MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Abstract | MethodAttributes.CheckAccessOnOverride);
 							AttributeHelper.HideFromReflection(mb);
 #if STATIC_COMPILER
-							if (unloadableOverrideStub || name != methods[index].Name)
+							if (CheckRequireOverrideStub(methods[index], baseMethods[index][0]) || name != methods[index].Name)
 							{
 								// instead of creating an override stub, we created the Miranda method with the proper signature and
 								// decorate it with a NameSigAttribute that contains the real signature
@@ -2693,7 +2692,7 @@ namespace IKVM.Internal
 					}
 					else
 					{
-						method = GenerateMethod(index, m, unloadableOverrideStub, ref setModifiers);
+						method = GenerateMethod(index, m, ref setModifiers);
 					}
 					string[] exceptions = m.ExceptionsAttribute;
 					methods[index].SetDeclaredExceptions(exceptions);
@@ -2754,7 +2753,7 @@ namespace IKVM.Internal
 				return cb;
 			}
 
-			private MethodBase GenerateMethod(int index, ClassFile.Method m, bool unloadableOverrideStub, ref bool setModifiers)
+			private MethodBase GenerateMethod(int index, ClassFile.Method m, ref bool setModifiers)
 			{
 				bool setNameSig = methods[index].ReturnType.IsErasedOrBoxedPrimitiveOrRemapped;
 				foreach (TypeWrapper tw in methods[index].GetParameters())
@@ -2941,26 +2940,24 @@ namespace IKVM.Internal
 							setNameSig = true;
 						}
 					}
-					bool newslot = baseMethods[index] != null && (setNameSig || methods[index].IsExplicitOverride || baseMethods[index][0].RealName != name) && !needFinalize;
-					if (unloadableOverrideStub || newslot)
+					bool newslot = baseMethods[index] != null
+						&& (setNameSig || methods[index].IsExplicitOverride || baseMethods[index][0].RealName != name || CheckRequireOverrideStub(methods[index], baseMethods[index][0]))
+						&& !needFinalize;
+					if (newslot)
 					{
 						attribs |= MethodAttributes.NewSlot;
 					}
 					mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper, name, attribs);
-					if (unloadableOverrideStub)
-					{
-						foreach (MethodWrapper baseMethod in baseMethods[index])
-						{
-							// TODO if there are multiple base methods, we're creating an unloadable override stub for all of them, but in theory it's possible that not all of them need it
-							GenerateUnloadableOverrideStub(wrapper, typeBuilder, baseMethod, mb, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
-						}
-					}
-					else if (baseMethods[index] != null && !needFinalize)
+					if (baseMethods[index] != null && !needFinalize)
 					{
 						bool subsequent = false;
 						foreach (MethodWrapper baseMethod in baseMethods[index])
 						{
-							if (subsequent || setNameSig || methods[index].IsExplicitOverride || baseMethod.RealName != name)
+							if (CheckRequireOverrideStub(methods[index], baseMethod))
+							{
+								GenerateUnloadableOverrideStub(wrapper, typeBuilder, baseMethod, mb, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
+							}
+							else if (subsequent || setNameSig || methods[index].IsExplicitOverride || baseMethod.RealName != name)
 							{
 								typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMethod.GetMethod());
 							}
@@ -5121,25 +5118,6 @@ namespace IKVM.Internal
 			}
 #endif // STATIC_COMPILER
 
-			private static bool CheckRequireOverrideStub(MethodWrapper mw1, MethodWrapper mw2)
-			{
-				// TODO this is too late to generate LinkageErrors so we need to figure this out earlier
-				if (mw1.ReturnType != mw2.ReturnType && !(mw1.ReturnType.IsUnloadable && mw2.ReturnType.IsUnloadable))
-				{
-					return true;
-				}
-				TypeWrapper[] args1 = mw1.GetParameters();
-				TypeWrapper[] args2 = mw2.GetParameters();
-				for (int i = 0; i < args1.Length; i++)
-				{
-					if (args1[i] != args2[i] && !(args1[i].IsUnloadable && args2[i].IsUnloadable))
-					{
-						return true;
-					}
-				}
-				return false;
-			}
-
 			private void ImplementInterfaces(TypeWrapper[] interfaces, List<TypeWrapper> interfaceList)
 			{
 				foreach (TypeWrapper iface in interfaces)
@@ -5394,6 +5372,25 @@ namespace IKVM.Internal
 					}
 				}
 			}
+		}
+
+		private static bool CheckRequireOverrideStub(MethodWrapper mw1, MethodWrapper mw2)
+		{
+			// TODO this is too late to generate LinkageErrors so we need to figure this out earlier
+			if (mw1.ReturnType != mw2.ReturnType && !(mw1.ReturnType.IsUnloadable && mw2.ReturnType.IsUnloadable))
+			{
+				return true;
+			}
+			TypeWrapper[] args1 = mw1.GetParameters();
+			TypeWrapper[] args2 = mw2.GetParameters();
+			for (int i = 0; i < args1.Length; i++)
+			{
+				if (args1[i] != args2[i] && !(args1[i].IsUnloadable && args2[i].IsUnloadable))
+				{
+					return true;
+				}
+			}
+			return false;
 		}
 
 		protected static void GetParameterNamesFromLVT(ClassFile.Method m, string[] parameterNames)
