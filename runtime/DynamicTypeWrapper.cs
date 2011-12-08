@@ -2648,16 +2648,21 @@ namespace IKVM.Internal
 							string name = GenerateUniqueMethodName(methods[index].Name, baseMethods[index][0]);
 							MethodBuilder mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper, name, MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Abstract | MethodAttributes.CheckAccessOnOverride);
 							AttributeHelper.HideFromReflection(mb);
+							bool overridestub = CheckRequireOverrideStub(methods[index], baseMethods[index][0]);
 #if STATIC_COMPILER
-							if (CheckRequireOverrideStub(methods[index], baseMethods[index][0]) || name != methods[index].Name)
+							if (overridestub || name != methods[index].Name)
 							{
 								// instead of creating an override stub, we created the Miranda method with the proper signature and
 								// decorate it with a NameSigAttribute that contains the real signature
 								AttributeHelper.SetNameSig(mb, methods[index].Name, methods[index].Signature);
 							}
 #endif // STATIC_COMPILER
+							if (overridestub)
+							{
+								GenerateUnloadableOverrideStub(wrapper, typeBuilder, baseMethods[index][0], mb, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
+							}
 							// if we changed the name or if the interface method name is remapped, we need to add an explicit methodoverride.
-							if (!baseMethods[index][0].IsDynamicOnly && name != baseMethods[index][0].RealName)
+							else if (!baseMethods[index][0].IsDynamicOnly && name != baseMethods[index][0].RealName)
 							{
 								typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMethods[index][0].GetMethod());
 							}
