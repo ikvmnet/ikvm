@@ -355,16 +355,6 @@ namespace IKVM.Internal
 		private TypeWrapper returnTypeWrapper;
 		private TypeWrapper[] parameterTypeWrappers;
 
-		internal void EnsureLoadable()
-		{
-			ClassLoaderWrapper loader = DeclaringType.GetClassLoader();
-			returnTypeWrapper = returnTypeWrapper.EnsureLoadable(loader);
-			for (int i = 0; i < parameterTypeWrappers.Length; i++)
-			{
-				parameterTypeWrappers[i] = parameterTypeWrappers[i].EnsureLoadable(loader);
-			}
-		}
-
 #if !STUB_GENERATOR
 		internal virtual void EmitCall(CodeEmitter ilgen)
 		{
@@ -520,11 +510,12 @@ namespace IKVM.Internal
 			object method = reflectionMethod;
 			if (method == null)
 			{
+				ClassLoaderWrapper loader = this.DeclaringType.GetClassLoader();
 				TypeWrapper[] argTypes = GetParameters();
 				java.lang.Class[] parameterTypes = new java.lang.Class[argTypes.Length];
 				for (int i = 0; i < argTypes.Length; i++)
 				{
-					parameterTypes[i] = argTypes[i].ClassObject;
+					parameterTypes[i] = argTypes[i].EnsureLoadable(loader).ClassObject;
 				}
 				java.lang.Class[] checkedExceptions = GetExceptions();
 				if (this.Name == StringConstants.INIT)
@@ -546,7 +537,7 @@ namespace IKVM.Internal
 						this.DeclaringType.ClassObject,
 						this.Name,
 						parameterTypes,
-						this.ReturnType.ClassObject,
+						this.ReturnType.EnsureLoadable(loader).ClassObject,
 						checkedExceptions,
 						(int)this.Modifiers | (this.IsInternal ? 0x40000000 : 0),
 						Array.IndexOf(this.DeclaringType.GetMethods(), this),
@@ -1282,11 +1273,6 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal void EnsureLoadable()
-		{
-			fieldType = fieldType.EnsureLoadable(DeclaringType.GetClassLoader());
-		}
-
 		internal FieldInfo GetField()
 		{
 			AssertLinked();
@@ -1348,7 +1334,7 @@ namespace IKVM.Internal
 				field = new java.lang.reflect.Field(
 					this.DeclaringType.ClassObject,
 					this.Name,
-					this.FieldTypeWrapper.ClassObject,
+					this.FieldTypeWrapper.EnsureLoadable(this.DeclaringType.GetClassLoader()).ClassObject,
 					(int)this.Modifiers | (this.IsInternal ? 0x40000000 : 0),
 					Array.IndexOf(this.DeclaringType.GetFields(), this),
 					this.DeclaringType.GetGenericFieldSignature(this),

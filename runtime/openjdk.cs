@@ -2782,7 +2782,6 @@ namespace IKVM.NativeCode.java
 						}
 						else
 						{
-							fields[i].EnsureLoadable();
 							list.Add((jlrField)fields[i].ToField(false));
 						}
 					}
@@ -2819,8 +2818,6 @@ namespace IKVM.NativeCode.java
 						// TODO we should get the message from somewhere
 						throw new ClassFormatError(wrapper.Name);
 					}
-					// we need to look through the array for unloadable types, because we may not let them
-					// escape into the 'wild'
 					MethodWrapper[] methods = wrapper.GetMethods();
 					List<jlrMethod> list = new List<jlrMethod>();
 					for (int i = 0; i < methods.Length; i++)
@@ -2831,7 +2828,6 @@ namespace IKVM.NativeCode.java
 							&& methods[i].Name != "<clinit>" && methods[i].Name != "<init>"
 							&& (!publicOnly || methods[i].IsPublic))
 						{
-							methods[i].EnsureLoadable();
 							list.Add((jlrMethod)methods[i].ToMethodOrConstructor(false));
 						}
 					}
@@ -2868,8 +2864,6 @@ namespace IKVM.NativeCode.java
 						// TODO we should get the message from somewhere
 						throw new ClassFormatError(wrapper.Name);
 					}
-					// we need to look through the array for unloadable types, because we may not let them
-					// escape into the 'wild'
 					MethodWrapper[] methods = wrapper.GetMethods();
 					List<jlrConstructor> list = new List<jlrConstructor>();
 					for (int i = 0; i < methods.Length; i++)
@@ -2880,7 +2874,6 @@ namespace IKVM.NativeCode.java
 							&& methods[i].Name == "<init>"
 							&& (!publicOnly || methods[i].IsPublic))
 						{
-							methods[i].EnsureLoadable();
 							list.Add((jlrConstructor)methods[i].ToMethodOrConstructor(false));
 						}
 					}
