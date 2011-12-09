@@ -527,39 +527,8 @@ namespace IKVM.Internal
 					return false;
 				}
 			}
-			eic.Emitter.Emit(OpCodes.Newobj, DefineThreadLocalType(eic.Context, eic.OpcodeIndex, eic.Caller));
+			eic.Emitter.Emit(OpCodes.Newobj, eic.Context.DefineThreadLocalType());
 			return true;
-		}
-
-		private static ConstructorBuilder DefineThreadLocalType(DynamicTypeWrapper.FinishContext context, int opcodeIndex, MethodWrapper caller)
-		{
-			TypeWrapper threadLocal = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.IntrinsicThreadLocal");
-			TypeBuilder tb = caller.DeclaringType.TypeAsBuilder.DefineNestedType("__<tls>_" + opcodeIndex, TypeAttributes.NestedPrivate | TypeAttributes.Sealed, threadLocal.TypeAsBaseType);
-			FieldBuilder fb = tb.DefineField("field", Types.Object, FieldAttributes.Private | FieldAttributes.Static);
-			fb.SetCustomAttribute(new CustomAttributeBuilder(JVM.Import(typeof(ThreadStaticAttribute)).GetConstructor(Type.EmptyTypes), new object[0]));
-			MethodBuilder mbGet = tb.DefineMethod("get", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final, Types.Object, Type.EmptyTypes);
-			ILGenerator ilgen = mbGet.GetILGenerator();
-			ilgen.Emit(OpCodes.Ldsfld, fb);
-			ilgen.Emit(OpCodes.Ret);
-			MethodBuilder mbSet = tb.DefineMethod("set", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final, null, new Type[] { Types.Object });
-			ilgen = mbSet.GetILGenerator();
-			ilgen.Emit(OpCodes.Ldarg_1);
-			ilgen.Emit(OpCodes.Stsfld, fb);
-			ilgen.Emit(OpCodes.Ret);
-			ConstructorBuilder cb = tb.DefineConstructor(MethodAttributes.Assembly, CallingConventions.Standard, Type.EmptyTypes);
-			CodeEmitter ctorilgen = CodeEmitter.Create(cb);
-			ctorilgen.Emit(OpCodes.Ldarg_0);
-			MethodWrapper basector = threadLocal.GetMethodWrapper("<init>", "()V", false);
-			basector.Link();
-			basector.EmitCall(ctorilgen);
-			ctorilgen.Emit(OpCodes.Ret);
-			ctorilgen.DoEmit();
-			context.RegisterPostFinishProc(delegate
-			{
-				threadLocal.Finish();
-				tb.CreateType();
-			});
-			return cb;
 		}
 
 		private static bool Unsafe_ensureClassInitialized(EmitIntrinsicContext eic)
