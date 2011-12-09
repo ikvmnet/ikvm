@@ -2659,7 +2659,7 @@ namespace IKVM.Internal
 #endif // STATIC_COMPILER
 							if (overridestub)
 							{
-								GenerateUnloadableOverrideStub(wrapper, typeBuilder, baseMethods[index][0], mb, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
+								GenerateOverrideStub(wrapper, typeBuilder, baseMethods[index][0], mb, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
 							}
 							// if we changed the name or if the interface method name is remapped, we need to add an explicit methodoverride.
 							else if (!baseMethods[index][0].IsDynamicOnly && name != baseMethods[index][0].RealName)
@@ -2960,7 +2960,7 @@ namespace IKVM.Internal
 						{
 							if (CheckRequireOverrideStub(methods[index], baseMethod))
 							{
-								GenerateUnloadableOverrideStub(wrapper, typeBuilder, baseMethod, mb, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
+								GenerateOverrideStub(wrapper, typeBuilder, baseMethod, mb, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
 							}
 							else if (subsequent || setNameSig || methods[index].IsExplicitOverride || baseMethod.RealName != name)
 							{
@@ -3073,35 +3073,6 @@ namespace IKVM.Internal
 				return false;
 			}
 #endif // STATIC_COMPILER
-
-			internal static void GenerateUnloadableOverrideStub(DynamicTypeWrapper wrapper, TypeBuilder typeBuilder, MethodWrapper baseMethod, MethodInfo target, Type targetRet, Type[] targetArgs)
-			{
-				Debug.Assert(!baseMethod.HasCallerID);
-
-				Type stubret = baseMethod.ReturnTypeForDefineMethod;
-				Type[] stubargs = baseMethod.GetParametersForDefineMethod();
-				string name = wrapper.GenerateUniqueMethodName(baseMethod.RealName + "/unloadablestub", baseMethod);
-				MethodBuilder overrideStub = typeBuilder.DefineMethod(name, MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final, stubret, stubargs);
-				AttributeHelper.HideFromJava(overrideStub);
-				typeBuilder.DefineMethodOverride(overrideStub, (MethodInfo)baseMethod.GetMethod());
-				CodeEmitter ilgen = CodeEmitter.Create(overrideStub);
-				ilgen.Emit(OpCodes.Ldarg_0);
-				for (int i = 0; i < targetArgs.Length; i++)
-				{
-					ilgen.Emit(OpCodes.Ldarg_S, (byte)(i + 1));
-					if (targetArgs[i] != stubargs[i])
-					{
-						ilgen.Emit(OpCodes.Castclass, targetArgs[i]);
-					}
-				}
-				ilgen.Emit(OpCodes.Callvirt, target);
-				if (targetRet != stubret)
-				{
-					ilgen.Emit(OpCodes.Castclass, stubret);
-				}
-				ilgen.Emit(OpCodes.Ret);
-				ilgen.DoEmit();
-			}
 
 			internal override Type Type
 			{
@@ -4645,7 +4616,7 @@ namespace IKVM.Internal
 					}
 					else if (CheckRequireOverrideStub(mce, ifmethod))
 					{
-						JavaTypeImpl.GenerateUnloadableOverrideStub(wrapper, typeBuilder, ifmethod, (MethodInfo)mce.GetMethod(), mce.ReturnTypeForDefineMethod, mce.GetParametersForDefineMethod());
+						GenerateOverrideStub(wrapper, typeBuilder, ifmethod, (MethodInfo)mce.GetMethod(), mce.ReturnTypeForDefineMethod, mce.GetParametersForDefineMethod());
 					}
 					else if (baseClassInterface && mce.DeclaringType == wrapper)
 					{
@@ -5396,6 +5367,35 @@ namespace IKVM.Internal
 				}
 			}
 			return false;
+		}
+
+		private static void GenerateOverrideStub(DynamicTypeWrapper wrapper, TypeBuilder typeBuilder, MethodWrapper baseMethod, MethodInfo target, Type targetRet, Type[] targetArgs)
+		{
+			Debug.Assert(!baseMethod.HasCallerID);
+
+			Type stubret = baseMethod.ReturnTypeForDefineMethod;
+			Type[] stubargs = baseMethod.GetParametersForDefineMethod();
+			string name = wrapper.GenerateUniqueMethodName(baseMethod.RealName + "/unloadablestub", baseMethod);
+			MethodBuilder overrideStub = typeBuilder.DefineMethod(name, MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final, stubret, stubargs);
+			AttributeHelper.HideFromJava(overrideStub);
+			typeBuilder.DefineMethodOverride(overrideStub, (MethodInfo)baseMethod.GetMethod());
+			CodeEmitter ilgen = CodeEmitter.Create(overrideStub);
+			ilgen.Emit(OpCodes.Ldarg_0);
+			for (int i = 0; i < targetArgs.Length; i++)
+			{
+				ilgen.Emit(OpCodes.Ldarg_S, (byte)(i + 1));
+				if (targetArgs[i] != stubargs[i])
+				{
+					ilgen.Emit(OpCodes.Castclass, targetArgs[i]);
+				}
+			}
+			ilgen.Emit(OpCodes.Callvirt, target);
+			if (targetRet != stubret)
+			{
+				ilgen.Emit(OpCodes.Castclass, stubret);
+			}
+			ilgen.Emit(OpCodes.Ret);
+			ilgen.DoEmit();
 		}
 
 		protected static void GetParameterNamesFromLVT(ClassFile.Method m, string[] parameterNames)
