@@ -2659,7 +2659,7 @@ namespace IKVM.Internal
 #endif // STATIC_COMPILER
 							if (overridestub)
 							{
-								GenerateOverrideStub(wrapper, typeBuilder, baseMethods[index][0], mb, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
+								wrapper.GenerateOverrideStub(baseMethods[index][0], mb, methods[index]);
 							}
 							// if we changed the name or if the interface method name is remapped, we need to add an explicit methodoverride.
 							else if (!baseMethods[index][0].IsDynamicOnly && name != baseMethods[index][0].RealName)
@@ -2960,7 +2960,7 @@ namespace IKVM.Internal
 						{
 							if (CheckRequireOverrideStub(methods[index], baseMethod))
 							{
-								GenerateOverrideStub(wrapper, typeBuilder, baseMethod, mb, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
+								wrapper.GenerateOverrideStub(baseMethod, mb, methods[index]);
 							}
 							else if (subsequent || setNameSig || methods[index].IsExplicitOverride || baseMethod.RealName != name)
 							{
@@ -4616,7 +4616,7 @@ namespace IKVM.Internal
 					}
 					else if (CheckRequireOverrideStub(mce, ifmethod))
 					{
-						GenerateOverrideStub(wrapper, typeBuilder, ifmethod, (MethodInfo)mce.GetMethod(), mce.ReturnTypeForDefineMethod, mce.GetParametersForDefineMethod());
+						wrapper.GenerateOverrideStub(ifmethod, (MethodInfo)mce.GetMethod(), mce);
 					}
 					else if (baseClassInterface && mce.DeclaringType == wrapper)
 					{
@@ -5369,13 +5369,15 @@ namespace IKVM.Internal
 			return false;
 		}
 
-		private static void GenerateOverrideStub(DynamicTypeWrapper wrapper, TypeBuilder typeBuilder, MethodWrapper baseMethod, MethodInfo target, Type targetRet, Type[] targetArgs)
+		private void GenerateOverrideStub(MethodWrapper baseMethod, MethodInfo target, MethodWrapper targetMethod)
 		{
 			Debug.Assert(!baseMethod.HasCallerID);
-
+			TypeBuilder typeBuilder = this.TypeAsBuilder;
 			Type stubret = baseMethod.ReturnTypeForDefineMethod;
 			Type[] stubargs = baseMethod.GetParametersForDefineMethod();
-			string name = wrapper.GenerateUniqueMethodName(baseMethod.RealName + "/unloadablestub", baseMethod);
+			Type targetRet = targetMethod.ReturnTypeForDefineMethod;
+			Type[] targetArgs = targetMethod.GetParametersForDefineMethod();
+			string name = GenerateUniqueMethodName(baseMethod.RealName + "/unloadablestub", baseMethod);
 			MethodBuilder overrideStub = typeBuilder.DefineMethod(name, MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final, stubret, stubargs);
 			AttributeHelper.HideFromJava(overrideStub);
 			typeBuilder.DefineMethodOverride(overrideStub, (MethodInfo)baseMethod.GetMethod());
