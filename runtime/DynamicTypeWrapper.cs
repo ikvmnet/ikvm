@@ -1519,18 +1519,15 @@ namespace IKVM.Internal
 					{
 						CustomAttributeBuilder cab = new CustomAttributeBuilder(JVM.LoadType(typeof(AnnotationAttributeAttribute)).GetConstructor(new Type[] { Types.String }), new object[] { annotationBuilder.AttributeTypeName });
 						typeBuilder.SetCustomAttribute(cab);
-					}
-					context.RegisterPostFinishProc(delegate
-					{
-						if (enumBuilder != null)
-						{
-							enumBuilder.CreateType();
-						}
-						if (annotationBuilder != null)
+						context.RegisterPostFinishProc(delegate
 						{
 							annotationBuilder.Finish(this);
-						}
-					});
+						});
+					}
+					if (enumBuilder != null)
+					{
+						context.RegisterNestedTypeBuilder(enumBuilder);
+					}
 #endif
 					Type type = context.FinishImpl();
 					MethodInfo finishedClinitMethod = clinitMethod;
@@ -3540,11 +3537,10 @@ namespace IKVM.Internal
 			private readonly ClassFile classFile;
 			private readonly DynamicTypeWrapper wrapper;
 			private readonly TypeBuilder typeBuilder;
-			private TypeBuilder typeCallerID;
+			private List<TypeBuilder> nestedTypeBuilders;
 			private MethodInfo callerIDMethod;
 			private List<System.Threading.ThreadStart> postFinishProcs;
 			private List<Item> items;
-			private int uniqueId;
 			private Dictionary<FieldWrapper, ConstructorBuilder> arfuMap;
 
 			private struct Item
@@ -3616,6 +3612,15 @@ namespace IKVM.Internal
 					postFinishProcs = new List<System.Threading.ThreadStart>();
 				}
 				postFinishProcs.Add(proc);
+			}
+
+			internal void RegisterNestedTypeBuilder(TypeBuilder tb)
+			{
+				if (nestedTypeBuilders == null)
+				{
+					nestedTypeBuilders = new List<TypeBuilder>();
+				}
+				nestedTypeBuilders.Add(tb);
 			}
 
 			internal Type FinishImpl()
@@ -4174,9 +4179,14 @@ namespace IKVM.Internal
 				try
 				{
 					type = typeBuilder.CreateType();
-					if (typeCallerID != null)
+					if (nestedTypeBuilders != null)
 					{
-						typeCallerID.CreateType();
+						ClassLoaderWrapper.LoadClassCritical("ikvm.internal.IntrinsicAtomicReferenceFieldUpdater").Finish();
+						ClassLoaderWrapper.LoadClassCritical("ikvm.internal.IntrinsicThreadLocal").Finish();
+						foreach (TypeBuilder tb in nestedTypeBuilders)
+						{
+							tb.CreateType();
+						}
 					}
 					if (postFinishProcs != null)
 					{
@@ -5272,7 +5282,7 @@ namespace IKVM.Internal
 					else
 #endif
 					{
-						typeCallerID = EmitCreateCallerID(typeBuilder, ilGenerator);
+						RegisterNestedTypeBuilder(EmitCreateCallerID(typeBuilder, ilGenerator));
 					}
 					ilGenerator.Emit(OpCodes.Stsfld, callerIDField);
 				}
@@ -5354,7 +5364,8 @@ namespace IKVM.Internal
 			internal ConstructorBuilder DefineThreadLocalType()
 			{
 				TypeWrapper threadLocal = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.IntrinsicThreadLocal");
-				TypeBuilder tb = typeBuilder.DefineNestedType("__<tls>_" + (uniqueId++), TypeAttributes.NestedPrivate | TypeAttributes.Sealed, threadLocal.TypeAsBaseType);
+				int id = nestedTypeBuilders == null ? 0 : nestedTypeBuilders.Count;
+				TypeBuilder tb = typeBuilder.DefineNestedType("__<tls>_" + id, TypeAttributes.NestedPrivate | TypeAttributes.Sealed, threadLocal.TypeAsBaseType);
 				FieldBuilder fb = tb.DefineField("field", Types.Object, FieldAttributes.Private | FieldAttributes.Static);
 				fb.SetCustomAttribute(new CustomAttributeBuilder(JVM.Import(typeof(ThreadStaticAttribute)).GetConstructor(Type.EmptyTypes), new object[0]));
 				MethodBuilder mbGet = tb.DefineMethod("get", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final, Types.Object, Type.EmptyTypes);
@@ -5374,11 +5385,7 @@ namespace IKVM.Internal
 				basector.EmitCall(ctorilgen);
 				ctorilgen.Emit(OpCodes.Ret);
 				ctorilgen.DoEmit();
-				RegisterPostFinishProc(delegate
-				{
-					threadLocal.Finish();
-					tb.CreateType();
-				});
+				RegisterNestedTypeBuilder(tb);
 				return cb;
 			}
 
@@ -5392,7 +5399,7 @@ namespace IKVM.Internal
 				if (!arfuMap.TryGetValue(field, out cb))
 				{
 					TypeWrapper arfuTypeWrapper = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.IntrinsicAtomicReferenceFieldUpdater");
-					TypeBuilder tb = typeBuilder.DefineNestedType("__<ARFU>_" + (uniqueId++), TypeAttributes.NestedPrivate | TypeAttributes.Sealed, arfuTypeWrapper.TypeAsBaseType);
+					TypeBuilder tb = typeBuilder.DefineNestedType("__<ARFU>_" + arfuMap.Count, TypeAttributes.NestedPrivate | TypeAttributes.Sealed, arfuTypeWrapper.TypeAsBaseType);
 					AtomicReferenceFieldUpdaterEmitter.EmitImpl(tb, field.GetField());
 					cb = tb.DefineConstructor(MethodAttributes.Assembly, CallingConventions.Standard, Type.EmptyTypes);
 					arfuMap.Add(field, cb);
@@ -5403,11 +5410,7 @@ namespace IKVM.Internal
 					basector.EmitCall(ctorilgen);
 					ctorilgen.Emit(OpCodes.Ret);
 					ctorilgen.DoEmit();
-					RegisterPostFinishProc(delegate
-					{
-						arfuTypeWrapper.Finish();
-						tb.CreateType();
-					});
+					RegisterNestedTypeBuilder(tb);
 				}
 				return cb;
 			}
