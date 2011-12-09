@@ -3545,6 +3545,7 @@ namespace IKVM.Internal
 			private List<System.Threading.ThreadStart> postFinishProcs;
 			private List<Item> items;
 			private int uniqueId;
+			private Dictionary<FieldWrapper, ConstructorBuilder> arfuMap;
 
 			private struct Item
 			{
@@ -5378,6 +5379,36 @@ namespace IKVM.Internal
 					threadLocal.Finish();
 					tb.CreateType();
 				});
+				return cb;
+			}
+
+			internal ConstructorBuilder GetAtomicReferenceFieldUpdater(FieldWrapper field)
+			{
+				if (arfuMap == null)
+				{
+					arfuMap = new Dictionary<FieldWrapper, ConstructorBuilder>();
+				}
+				ConstructorBuilder cb;
+				if (!arfuMap.TryGetValue(field, out cb))
+				{
+					TypeWrapper arfuTypeWrapper = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.IntrinsicAtomicReferenceFieldUpdater");
+					TypeBuilder tb = typeBuilder.DefineNestedType("__<ARFU>_" + (uniqueId++), TypeAttributes.NestedPrivate | TypeAttributes.Sealed, arfuTypeWrapper.TypeAsBaseType);
+					AtomicReferenceFieldUpdaterEmitter.EmitImpl(tb, field.GetField());
+					cb = tb.DefineConstructor(MethodAttributes.Assembly, CallingConventions.Standard, Type.EmptyTypes);
+					arfuMap.Add(field, cb);
+					CodeEmitter ctorilgen = CodeEmitter.Create(cb);
+					ctorilgen.Emit(OpCodes.Ldarg_0);
+					MethodWrapper basector = arfuTypeWrapper.GetMethodWrapper("<init>", "()V", false);
+					basector.Link();
+					basector.EmitCall(ctorilgen);
+					ctorilgen.Emit(OpCodes.Ret);
+					ctorilgen.DoEmit();
+					RegisterPostFinishProc(delegate
+					{
+						arfuTypeWrapper.Finish();
+						tb.CreateType();
+					});
+				}
 				return cb;
 			}
 		}
