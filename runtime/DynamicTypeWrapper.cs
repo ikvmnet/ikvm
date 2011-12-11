@@ -1514,22 +1514,19 @@ namespace IKVM.Internal
 #endif //STATIC_COMPILER
 					}
 					FinishContext context = new FinishContext(classFile, wrapper, typeBuilder);
+					Type type = context.FinishImpl();
 #if STATIC_COMPILER
 					if (annotationBuilder != null)
 					{
 						CustomAttributeBuilder cab = new CustomAttributeBuilder(JVM.LoadType(typeof(AnnotationAttributeAttribute)).GetConstructor(new Type[] { Types.String }), new object[] { annotationBuilder.AttributeTypeName });
 						typeBuilder.SetCustomAttribute(cab);
-						context.RegisterPostFinishProc(delegate
-						{
-							annotationBuilder.Finish(this);
-						});
+						annotationBuilder.Finish(this);
 					}
 					if (enumBuilder != null)
 					{
-						context.RegisterNestedTypeBuilder(enumBuilder);
+						enumBuilder.CreateType();
 					}
 #endif
-					Type type = context.FinishImpl();
 					MethodInfo finishedClinitMethod = clinitMethod;
 #if !STATIC_COMPILER
 					if (finishedClinitMethod != null)
@@ -3539,7 +3536,6 @@ namespace IKVM.Internal
 			private readonly TypeBuilder typeBuilder;
 			private List<TypeBuilder> nestedTypeBuilders;
 			private MethodInfo callerIDMethod;
-			private List<System.Threading.ThreadStart> postFinishProcs;
 			private List<Item> items;
 			private Dictionary<FieldWrapper, ConstructorBuilder> arfuMap;
 
@@ -3605,16 +3601,7 @@ namespace IKVM.Internal
 				ilgen.DoEmit();
 			}
 
-			internal void RegisterPostFinishProc(System.Threading.ThreadStart proc)
-			{
-				if (postFinishProcs == null)
-				{
-					postFinishProcs = new List<System.Threading.ThreadStart>();
-				}
-				postFinishProcs.Add(proc);
-			}
-
-			internal void RegisterNestedTypeBuilder(TypeBuilder tb)
+			private void RegisterNestedTypeBuilder(TypeBuilder tb)
 			{
 				if (nestedTypeBuilders == null)
 				{
@@ -4186,13 +4173,6 @@ namespace IKVM.Internal
 						foreach (TypeBuilder tb in nestedTypeBuilders)
 						{
 							tb.CreateType();
-						}
-					}
-					if (postFinishProcs != null)
-					{
-						foreach (System.Threading.ThreadStart proc in postFinishProcs)
-						{
-							proc();
 						}
 					}
 #if STATIC_COMPILER
