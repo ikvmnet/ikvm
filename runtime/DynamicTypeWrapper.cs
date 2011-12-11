@@ -382,24 +382,6 @@ namespace IKVM.Internal
 			}
 		}
 
-#if STATIC_COMPILER
-		internal override Annotation Annotation
-		{
-			get
-			{
-				return impl.Annotation;
-			}
-		}
-
-		internal override Type EnumType
-		{
-			get
-			{
-				return impl.EnumType;
-			}
-		}
-#endif // STATIC_COMPILER
-
 		internal override void Finish()
 		{
 			// we don't need locking, because Finish is Thread safe
@@ -442,10 +424,6 @@ namespace IKVM.Internal
 			internal abstract TypeWrapper[] InnerClasses { get; }
 			internal abstract TypeWrapper DeclaringTypeWrapper { get; }
 			internal abstract Modifiers ReflectiveModifiers { get; }
-#if STATIC_COMPILER
-			internal abstract Annotation Annotation { get; }
-			internal abstract Type EnumType { get; }
-#endif
 			internal abstract DynamicImpl Finish();
 			internal abstract MethodBase LinkMethod(MethodWrapper mw);
 			internal abstract FieldInfo LinkField(FieldWrapper fw);
@@ -825,6 +803,7 @@ namespace IKVM.Internal
 								fieldBuilder.SetConstant(i);
 							}
 						}
+						((AotTypeWrapper)wrapper).SetEnumType(enumBuilder);
 					}
 					TypeWrapper[] interfaces = wrapper.Interfaces;
 					string[] implements = new string[interfaces.Length];
@@ -1536,11 +1515,7 @@ namespace IKVM.Internal
 						finishedClinitMethod = type.GetMethod("__<clinit>", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
 					}
 #endif
-					finishedType = new FinishedTypeImpl(type, innerClassesTypeWrappers, declaringTypeWrapper, wrapper.ReflectiveModifiers, Metadata.Create(classFile), finishedClinitMethod, finalizeMethod
-#if STATIC_COMPILER
-, annotationBuilder, enumBuilder
-#endif
-);
+					finishedType = new FinishedTypeImpl(type, innerClassesTypeWrappers, declaringTypeWrapper, wrapper.ReflectiveModifiers, Metadata.Create(classFile), finishedClinitMethod, finalizeMethod);
 					return finishedType;
 				}
 #if STATIC_COMPILER
@@ -3134,24 +3109,6 @@ namespace IKVM.Internal
 			{
 				return finalizeMethod;
 			}
-
-#if STATIC_COMPILER
-			internal override Annotation Annotation
-			{
-				get
-				{
-					return annotationBuilder;
-				}
-			}
-
-			internal override Type EnumType
-			{
-				get
-				{
-					return enumBuilder;
-				}
-			}
-#endif // STATIC_COMPILER
 		}
 
 		private sealed class Metadata
@@ -3374,17 +3331,8 @@ namespace IKVM.Internal
 			private MethodInfo clinitMethod;
 			private MethodInfo finalizeMethod;
 			private Metadata metadata;
-#if STATIC_COMPILER
-			private Annotation annotationBuilder;
-			private TypeBuilder enumBuilder;
-#endif
 
-			internal FinishedTypeImpl(Type type, TypeWrapper[] innerclasses, TypeWrapper declaringTypeWrapper, Modifiers reflectiveModifiers, Metadata metadata, MethodInfo clinitMethod, MethodInfo finalizeMethod
-#if STATIC_COMPILER
-, Annotation annotationBuilder
-				, TypeBuilder enumBuilder
-#endif
-)
+			internal FinishedTypeImpl(Type type, TypeWrapper[] innerclasses, TypeWrapper declaringTypeWrapper, Modifiers reflectiveModifiers, Metadata metadata, MethodInfo clinitMethod, MethodInfo finalizeMethod)
 			{
 				this.type = type;
 				this.innerclasses = innerclasses;
@@ -3393,10 +3341,6 @@ namespace IKVM.Internal
 				this.clinitMethod = clinitMethod;
 				this.finalizeMethod = finalizeMethod;
 				this.metadata = metadata;
-#if STATIC_COMPILER
-				this.annotationBuilder = annotationBuilder;
-				this.enumBuilder = enumBuilder;
-#endif
 			}
 
 			internal override TypeWrapper[] InnerClasses
@@ -3509,24 +3453,6 @@ namespace IKVM.Internal
 			{
 				return finalizeMethod;
 			}
-
-#if STATIC_COMPILER
-			internal override Annotation Annotation
-			{
-				get
-				{
-					return annotationBuilder;
-				}
-			}
-
-			internal override Type EnumType
-			{
-				get
-				{
-					return enumBuilder;
-				}
-			}
-#endif // STATIC_COMPILER
 		}
 
 		internal sealed class FinishContext

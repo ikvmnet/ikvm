@@ -43,6 +43,7 @@ namespace IKVM.Internal
 		private MethodBuilder ghostCastArrayMethod;
 		private TypeBuilder typeBuilderGhostInterface;
 		private Annotation annotation;
+		private Type enumType;
 		private MethodWrapper[] replacedMethods;
 		private WorkaroundBaseClass workaroundBaseClass;
 
@@ -1171,6 +1172,19 @@ namespace IKVM.Internal
 			get
 			{
 				return annotation;
+			}
+		}
+
+		internal void SetEnumType(Type enumType)
+		{
+			this.enumType = enumType;
+		}
+
+		internal override Type EnumType
+		{
+			get
+			{
+				return enumType;
 			}
 		}
 
