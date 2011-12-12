@@ -1196,14 +1196,7 @@ namespace IKVM.Internal
 					}
 				}
 				Debug.Assert(mw.GetMethod() == null);
-				MethodBase mb = GenerateMethod(index);
-				if ((mw.Modifiers & (Modifiers.Synchronized | Modifiers.Static)) == Modifiers.Synchronized)
-				{
-					// note that constructors cannot be synchronized in Java
-					MethodBuilder mbld = (MethodBuilder)mb;
-					mbld.SetImplementationFlags(mbld.GetMethodImplementationFlags() | MethodImplAttributes.Synchronized);
-				}
-				return mb;
+				return GenerateMethod(index);
 			}
 
 			private int GetFieldIndex(FieldWrapper fw)
@@ -2997,6 +2990,11 @@ namespace IKVM.Internal
 						mb.SetCustomAttribute(cab);
 					}
 #endif // STATIC_COMPILER
+				}
+
+				if ((methods[index].Modifiers & (Modifiers.Synchronized | Modifiers.Static)) == Modifiers.Synchronized)
+				{
+					mb.SetImplementationFlags(mb.GetMethodImplementationFlags() | MethodImplAttributes.Synchronized);
 				}
 
 #if STATIC_COMPILER
