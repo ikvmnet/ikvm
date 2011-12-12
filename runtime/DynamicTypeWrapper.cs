@@ -914,10 +914,10 @@ namespace IKVM.Internal
 				{
 				}
 
-				protected override void DoLinkMethod()
+				internal void DoLink(TypeBuilder typeBuilder)
 				{
 					MethodAttributes attribs = MethodAttributes.HideBySig | MethodAttributes.Public;
-					constructor = this.DeclaringType.TypeAsBuilder.DefineConstructor(attribs, CallingConventions.Standard, new Type[] { Types.Object, Types.IntPtr }, null, null);
+					constructor = typeBuilder.DefineConstructor(attribs, CallingConventions.Standard, new Type[] { Types.Object, Types.IntPtr }, null, null);
 					constructor.SetImplementationFlags(MethodImplAttributes.Runtime);
 					MethodWrapper mw = GetParameters()[0].GetMethods()[0];
 					mw.Link();
@@ -1180,6 +1180,11 @@ namespace IKVM.Internal
 
 			internal override MethodBase LinkMethod(MethodWrapper mw)
 			{
+				if (mw is DelegateConstructorMethodWrapper)
+				{
+					((DelegateConstructorMethodWrapper)mw).DoLink(typeBuilder);
+					return null;
+				}
 				Debug.Assert(mw != null);
 				int index = GetMethodIndex(mw);
 				if (baseMethods[index] != null)
