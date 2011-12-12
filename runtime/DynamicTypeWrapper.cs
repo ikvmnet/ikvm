@@ -792,7 +792,7 @@ namespace IKVM.Internal
 						{
 							name += "_";
 						}
-						enumBuilder = wrapper.TypeAsBuilder.DefineNestedType(name, TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.NestedPublic | TypeAttributes.Serializable, Types.Enum);
+						enumBuilder = typeBuilder.DefineNestedType(name, TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.NestedPublic | TypeAttributes.Serializable, Types.Enum);
 						AttributeHelper.HideFromJava(enumBuilder);
 						enumBuilder.DefineField("value__", Types.Int32, FieldAttributes.Public | FieldAttributes.SpecialName | FieldAttributes.RTSpecialName);
 						for (int i = 0; i < f.Fields.Length; i++)
