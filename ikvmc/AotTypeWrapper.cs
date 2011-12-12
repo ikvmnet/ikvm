@@ -141,7 +141,7 @@ namespace IKVM.Internal
 				{
 					foreach (MethodWrapper mw in methods)
 					{
-						MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(), typeBuilder, mw.Name, MethodAttributes.FamORAssem | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.CheckAccessOnOverride);
+						MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(wrapper, typeBuilder, mw.Name, MethodAttributes.FamORAssem | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.CheckAccessOnOverride);
 						AttributeHelper.HideFromJava(mb);
 						CodeEmitter ilgen = CodeEmitter.Create(mb);
 						ilgen.EmitThrow("java.lang.AbstractMethodError");
@@ -787,7 +787,7 @@ namespace IKVM.Internal
 										throw new InvalidOperationException("Method " + m.Name + m.Sig + " not found in interface " + tw.Name);
 									}
 									mw.Link();
-									MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(this, tw.Name + "/" + m.Name, MethodAttributes.Private | MethodAttributes.NewSlot | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.CheckAccessOnOverride);
+									MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(this, typeBuilder, tw.Name + "/" + m.Name, MethodAttributes.Private | MethodAttributes.NewSlot | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.CheckAccessOnOverride);
 									AttributeHelper.HideFromJava(mb);
 									typeBuilder.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
 									CodeEmitter ilgen = CodeEmitter.Create(mb);
@@ -805,7 +805,7 @@ namespace IKVM.Internal
 		{
 			if(typeBuilderGhostInterface != null)
 			{
-				return mw.GetDefineMethodHelper().DefineMethod(GetClassLoader().GetTypeWrapperFactory(), typeBuilderGhostInterface, name, attribs);
+				return mw.GetDefineMethodHelper().DefineMethod(this, typeBuilderGhostInterface, name, attribs);
 			}
 			return null;
 		}
@@ -821,7 +821,7 @@ namespace IKVM.Internal
 					if(!methods[i].IsStatic)
 					{
 						TypeWrapper[] args = methods[i].GetParameters();
-						MethodBuilder stub = methods[i].GetDefineMethodHelper().DefineMethod(this, methods[i].Name, MethodAttributes.Public);
+						MethodBuilder stub = methods[i].GetDefineMethodHelper().DefineMethod(this, typeBuilder, methods[i].Name, MethodAttributes.Public);
 						AddParameterMetadata(stub, methods[i]);
 						AttributeHelper.SetModifiers(stub, methods[i].Modifiers, methods[i].IsInternal);
 						CodeEmitter ilgen = CodeEmitter.Create(stub);

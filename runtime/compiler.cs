@@ -3449,7 +3449,7 @@ sealed class Compiler
 		if(!invokespecialstubcache.TryGetValue(key, out mi))
 		{
 			DefineMethodHelper dmh = method.GetDefineMethodHelper();
-			MethodBuilder stub = dmh.DefineMethod(clazz, "__<>", MethodAttributes.PrivateScope);
+			MethodBuilder stub = context.DefineInvokeSpecialStub(dmh);
 			CodeEmitter ilgen = CodeEmitter.Create(stub);
 			ilgen.Emit(OpCodes.Ldarg_0);
 			for(int i = 1; i <= dmh.ParameterCount; i++)
