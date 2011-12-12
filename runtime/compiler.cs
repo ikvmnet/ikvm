@@ -2983,12 +2983,11 @@ sealed class Compiler
 		}
 	}
 
-	private sealed class InvokeDynamicBuilder
+	private static class InvokeDynamicBuilder
 	{
 		private static readonly Type typeofOpenIndyCallSite;
 		private static readonly Type typeofCallSite;
 		private static readonly MethodInfo methodLookup;
-		private int count;
 
 		static InvokeDynamicBuilder()
 		{
@@ -3007,7 +3006,7 @@ sealed class Compiler
 			methodLookup = typeofMethodHandles.GetMethod("lookup", new Type[] { CoreClasses.ikvm.@internal.CallerID.Wrapper.TypeAsSignatureType });
 		}
 
-		internal void Emit(Compiler compiler, ClassFile.ConstantPoolItemInvokeDynamic cpi, Type delegateType)
+		internal static void Emit(Compiler compiler, ClassFile.ConstantPoolItemInvokeDynamic cpi, Type delegateType)
 		{
 			Type typeofIndyCallSite = typeofOpenIndyCallSite.MakeGenericType(delegateType);
 			MethodInfo methodCreateBootStrap;
@@ -3022,7 +3021,7 @@ sealed class Compiler
 				methodCreateBootStrap = typeofIndyCallSite.GetMethod("CreateBootstrap");
 				methodGetTarget = typeofIndyCallSite.GetMethod("GetTarget");
 			}
-			TypeBuilder tb = compiler.clazz.TypeAsBuilder.DefineNestedType("__<>IndyCS" + (count++), TypeAttributes.NestedPrivate | TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit);
+			TypeBuilder tb = compiler.context.DefineIndyCallSiteType();
 			FieldBuilder fb = tb.DefineField("value", typeofIndyCallSite, FieldAttributes.Static | FieldAttributes.Assembly);
 			ConstructorBuilder cb = tb.DefineConstructor(MethodAttributes.Static, CallingConventions.Standard, Type.EmptyTypes);
 			CodeEmitter ilgen = CodeEmitter.Create(cb);
@@ -3033,7 +3032,6 @@ sealed class Compiler
 			ilgen.Emit(OpCodes.Stsfld, fb);
 			ilgen.Emit(OpCodes.Ret);
 			ilgen.DoEmit();
-			tb.CreateType();
 
 			compiler.ilGenerator.Emit(OpCodes.Ldsfld, fb);
 			compiler.ilGenerator.Emit(OpCodes.Call, methodGetTarget);
@@ -3240,7 +3238,7 @@ sealed class Compiler
 			ilgen.Emit(OpCodes.Stloc, temps[i]);
 		}
 		Type delegateType = MethodHandleUtil.CreateDelegateType(args, cpi.GetRetType());
-		context.GetValue<InvokeDynamicBuilder>(0).Emit(this, cpi, delegateType);
+		InvokeDynamicBuilder.Emit(this, cpi, delegateType);
 		for (int i = 0; i < args.Length; i++)
 		{
 			ilgen.Emit(OpCodes.Ldloc, temps[i]);
