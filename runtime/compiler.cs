@@ -3261,7 +3261,7 @@ sealed class Compiler
 
 		private static FieldBuilder CreateField(Compiler compiler, int index)
 		{
-			TypeBuilder tb = compiler.clazz.TypeAsBuilder.DefineNestedType("__<>MHC" + index, TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.BeforeFieldInit);
+			TypeBuilder tb = compiler.context.DefineMethodHandleConstantType(index);
 			FieldBuilder field = tb.DefineField("value", CoreClasses.java.lang.invoke.MethodHandle.Wrapper.TypeAsSignatureType, FieldAttributes.Assembly | FieldAttributes.Static | FieldAttributes.InitOnly);
 			ConstructorBuilder cb = tb.DefineConstructor(MethodAttributes.Static, CallingConventions.Standard, Type.EmptyTypes);
 			ILGenerator ilgen = cb.GetILGenerator();
@@ -3326,7 +3326,6 @@ sealed class Compiler
 			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.MethodHandleFromDelegate);
 			ilgen.Emit(OpCodes.Stsfld, field);
 			ilgen.Emit(OpCodes.Ret);
-			tb.CreateType();
 			return field;
 		}
 
@@ -3342,7 +3341,7 @@ sealed class Compiler
 				ret = args[args.Length - 1];
 				Array.Resize(ref args, args.Length - 1);
 			}
-			MethodBuilder mb = compiler.clazz.TypeAsBuilder.DefineMethod("__<>MHC", MethodAttributes.Static | MethodAttributes.PrivateScope, ret, args);
+			MethodBuilder mb = compiler.context.DefineMethodHandleDispatchStub(ret, args);
 			CodeEmitter ilgen = CodeEmitter.Create(mb);
 			if (args.Length > 0 && MethodHandleUtil.IsPackedArgsContainer(args[args.Length - 1]))
 			{
@@ -3761,7 +3760,7 @@ sealed class Compiler
 #else
 				typeofInvokeCache = typeof(IKVM.Runtime.InvokeCache<>);
 #endif
-				FieldBuilder fb = wrapper.TypeAsBuilder.DefineField("__<>invokeCache", typeofInvokeCache.MakeGenericType(delegateType), FieldAttributes.Static | FieldAttributes.PrivateScope);
+				FieldBuilder fb = context.DefineMethodHandleInvokeCacheField(typeofInvokeCache.MakeGenericType(delegateType));
 				ilgen.Emit(OpCodes.Ldloc, temps[0]);
 				ilgen.Emit(OpCodes.Ldsflda, fb);
 				ilgen.Emit(OpCodes.Call, mi);

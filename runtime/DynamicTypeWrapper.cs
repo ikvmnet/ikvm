@@ -5326,6 +5326,23 @@ namespace IKVM.Internal
 				RegisterNestedTypeBuilder(tb);
 				return tb;
 			}
+
+			internal TypeBuilder DefineMethodHandleConstantType(int index)
+			{
+				TypeBuilder tb = typeBuilder.DefineNestedType("__<>MHC" + index, TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.BeforeFieldInit); ;
+				RegisterNestedTypeBuilder(tb);
+				return tb;
+			}
+
+			internal MethodBuilder DefineMethodHandleDispatchStub(Type returnType, Type[] parameterTypes)
+			{
+				return typeBuilder.DefineMethod("__<>MHC", MethodAttributes.Static | MethodAttributes.PrivateScope, returnType, parameterTypes);
+			}
+
+			internal FieldBuilder DefineMethodHandleInvokeCacheField(Type fieldType)
+			{
+				return typeBuilder.DefineField("__<>invokeCache", fieldType, FieldAttributes.Static | FieldAttributes.PrivateScope);
+			}
 		}
 
 		private static bool CheckRequireOverrideStub(MethodWrapper mw1, MethodWrapper mw2)
