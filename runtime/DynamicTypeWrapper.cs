@@ -1178,27 +1178,6 @@ namespace IKVM.Internal
 				}
 			}
 
-			internal override MethodBase LinkMethod(MethodWrapper mw)
-			{
-				if (mw is DelegateConstructorMethodWrapper)
-				{
-					((DelegateConstructorMethodWrapper)mw).DoLink(typeBuilder);
-					return null;
-				}
-				Debug.Assert(mw != null);
-				int index = GetMethodIndex(mw);
-				if (baseMethods[index] != null)
-				{
-					foreach (MethodWrapper baseMethod in baseMethods[index])
-					{
-						baseMethod.Link();
-						CheckLoaderConstraints(mw, baseMethod);
-					}
-				}
-				Debug.Assert(mw.GetMethod() == null);
-				return GenerateMethod(index);
-			}
-
 			private int GetFieldIndex(FieldWrapper fw)
 			{
 				for (int i = 0; i < fields.Length; i++)
@@ -2600,8 +2579,24 @@ namespace IKVM.Internal
 				}
 			}
 
-			private MethodBase GenerateMethod(int index)
+			internal override MethodBase LinkMethod(MethodWrapper mw)
 			{
+				if (mw is DelegateConstructorMethodWrapper)
+				{
+					((DelegateConstructorMethodWrapper)mw).DoLink(typeBuilder);
+					return null;
+				}
+				Debug.Assert(mw != null);
+				int index = GetMethodIndex(mw);
+				if (baseMethods[index] != null)
+				{
+					foreach (MethodWrapper baseMethod in baseMethods[index])
+					{
+						baseMethod.Link();
+						CheckLoaderConstraints(mw, baseMethod);
+					}
+				}
+				Debug.Assert(mw.GetMethod() == null);
 				methods[index].AssertLinked();
 				Profiler.Enter("JavaTypeImpl.GenerateMethod");
 				try
