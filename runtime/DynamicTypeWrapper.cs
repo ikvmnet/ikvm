@@ -1475,6 +1475,13 @@ namespace IKVM.Internal
 						CustomAttributeBuilder cab = new CustomAttributeBuilder(JVM.LoadType(typeof(AnnotationAttributeAttribute)).GetConstructor(new Type[] { Types.String }), new object[] { annotationBuilder.AttributeTypeName });
 						typeBuilder.SetCustomAttribute(cab);
 					}
+					if (!wrapper.IsInterface && wrapper.IsMapUnsafeException)
+					{
+						// mark all exceptions that are unsafe for mapping with a custom attribute,
+						// so that at runtime we can quickly assertain if an exception type can be
+						// caught without filtering
+						AttributeHelper.SetExceptionIsUnsafeForMapping(typeBuilder);
+					}
 #endif
 
 					FinishContext context = new FinishContext(classFile, wrapper, typeBuilder);

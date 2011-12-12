@@ -3054,16 +3054,6 @@ namespace IKVM.Internal
 			if(map != null)
 			{
 				LoadMappedExceptions(map);
-				// mark all exceptions that are unsafe for mapping with a custom attribute,
-				// so that at runtime we can quickly assertain if an exception type can be
-				// caught without filtering
-				foreach(TypeWrapper tw in allwrappers)
-				{
-					if(!tw.IsInterface && tw.IsMapUnsafeException)
-					{
-						AttributeHelper.SetExceptionIsUnsafeForMapping(tw.TypeAsBuilder);
-					}
-				}
 				Tracer.Info(Tracer.Compiler, "Loading remapped types (2)");
 				FinishRemappedTypes();
 			}
