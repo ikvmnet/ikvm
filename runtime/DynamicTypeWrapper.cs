@@ -1469,13 +1469,19 @@ namespace IKVM.Internal
 						}
 #endif //STATIC_COMPILER
 					}
-					FinishContext context = new FinishContext(classFile, wrapper, typeBuilder);
-					Type type = context.FinishImpl();
 #if STATIC_COMPILER
 					if (annotationBuilder != null)
 					{
 						CustomAttributeBuilder cab = new CustomAttributeBuilder(JVM.LoadType(typeof(AnnotationAttributeAttribute)).GetConstructor(new Type[] { Types.String }), new object[] { annotationBuilder.AttributeTypeName });
 						typeBuilder.SetCustomAttribute(cab);
+					}
+#endif
+
+					FinishContext context = new FinishContext(classFile, wrapper, typeBuilder);
+					Type type = context.FinishImpl();
+#if STATIC_COMPILER
+					if (annotationBuilder != null)
+					{
 						annotationBuilder.Finish(this);
 					}
 					if (enumBuilder != null)
