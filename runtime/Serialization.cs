@@ -78,7 +78,7 @@ namespace IKVM.Internal
 			return true;
 		}
 
-		internal static ConstructorInfo AddAutomagicSerialization(TypeWrapper wrapper)
+		internal static ConstructorInfo AddAutomagicSerialization(DynamicTypeWrapper wrapper, TypeBuilder typeBuilder)
 		{
 			ConstructorInfo serializationCtor = null;
 			if (wrapper.GetClassLoader().NoAutomagicSerialization)
@@ -87,7 +87,7 @@ namespace IKVM.Internal
 			}
 			else if ((wrapper.Modifiers & IKVM.Attributes.Modifiers.Enum) != 0)
 			{
-				MarkSerializable(wrapper);
+				MarkSerializable(typeBuilder);
 			}
 			else if (wrapper.IsSubTypeOf(serializable) && IsSafeForAutomagicSerialization(wrapper))
 			{
@@ -96,16 +96,16 @@ namespace IKVM.Internal
 					MethodWrapper ctor = wrapper.GetMethodWrapper("<init>", "()V", false);
 					if (ctor != null && ctor.IsPublic)
 					{
-						MarkSerializable(wrapper);
+						MarkSerializable(typeBuilder);
 						ctor.Link();
-						serializationCtor = AddConstructor(wrapper.TypeAsBuilder, ctor, null, true);
+						serializationCtor = AddConstructor(typeBuilder, ctor, null, true);
 						if (!wrapper.BaseTypeWrapper.IsSubTypeOf(serializable))
 						{
-							AddGetObjectData(wrapper);
+							AddGetObjectData(typeBuilder);
 						}
 						if (wrapper.BaseTypeWrapper.GetMethodWrapper("readResolve", "()Ljava.lang.Object;", true) != null)
 						{
-							RemoveReadResolve(wrapper);
+							RemoveReadResolve(typeBuilder);
 						}
 					}
 				}
@@ -114,9 +114,9 @@ namespace IKVM.Internal
 					ConstructorInfo baseCtor = wrapper.GetBaseSerializationConstructor();
 					if (baseCtor != null && (baseCtor.IsFamily || baseCtor.IsFamilyOrAssembly))
 					{
-						MarkSerializable(wrapper);
-						serializationCtor = AddConstructor(wrapper.TypeAsBuilder, null, baseCtor, false);
-						AddReadResolve(wrapper);
+						MarkSerializable(typeBuilder);
+						serializationCtor = AddConstructor(typeBuilder, null, baseCtor, false);
+						AddReadResolve(wrapper, typeBuilder);
 					}
 				}
 				else
@@ -124,15 +124,15 @@ namespace IKVM.Internal
 					MethodWrapper baseCtor = wrapper.BaseTypeWrapper.GetMethodWrapper("<init>", "()V", false);
 					if (baseCtor != null && baseCtor.IsAccessibleFrom(wrapper.BaseTypeWrapper, wrapper, wrapper))
 					{
-						MarkSerializable(wrapper);
-						AddGetObjectData(wrapper);
+						MarkSerializable(typeBuilder);
+						AddGetObjectData(typeBuilder);
 #if STATIC_COMPILER
 						// because the base type can be a __WorkaroundBaseClass__, we may need to replace the constructor
 						baseCtor = ((AotTypeWrapper)wrapper).ReplaceMethodWrapper(baseCtor);
 #endif
 						baseCtor.Link();
-						serializationCtor = AddConstructor(wrapper.TypeAsBuilder, baseCtor, null, true);
-						AddReadResolve(wrapper);
+						serializationCtor = AddConstructor(typeBuilder, baseCtor, null, true);
+						AddReadResolve(wrapper, typeBuilder);
 					}
 				}
 			}
@@ -152,15 +152,13 @@ namespace IKVM.Internal
 			return null;
 		}
 
-		private static void MarkSerializable(TypeWrapper wrapper)
+		private static void MarkSerializable(TypeBuilder tb)
 		{
-			TypeBuilder tb = wrapper.TypeAsBuilder;
 			tb.SetCustomAttribute(serializableAttribute);
 		}
 
-		private static void AddGetObjectData(TypeWrapper wrapper)
+		private static void AddGetObjectData(TypeBuilder tb)
 		{
-			TypeBuilder tb = wrapper.TypeAsBuilder;
 			tb.AddInterfaceImplementation(JVM.Import(typeof(ISerializable)));
 			MethodBuilder getObjectData = tb.DefineMethod("GetObjectData", MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.NewSlot, null,
 				new Type[] { JVM.Import(typeof(SerializationInfo)), JVM.Import(typeof(StreamingContext)) });
@@ -210,12 +208,11 @@ namespace IKVM.Internal
 			return ctor;
 		}
 
-		private static void AddReadResolve(TypeWrapper wrapper)
+		private static void AddReadResolve(DynamicTypeWrapper wrapper, TypeBuilder tb)
 		{
 			MethodWrapper mw = wrapper.GetMethodWrapper("readResolve", "()Ljava.lang.Object;", false);
 			if (mw != null && !wrapper.IsSubTypeOf(iobjectreference))
 			{
-				TypeBuilder tb = wrapper.TypeAsBuilder;
 				tb.AddInterfaceImplementation(JVM.Import(typeof(IObjectReference)));
 				MethodBuilder getRealObject = tb.DefineMethod("IObjectReference.GetRealObject", MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final,
 					Types.Object, new Type[] { JVM.Import(typeof(StreamingContext)) });
@@ -244,9 +241,8 @@ namespace IKVM.Internal
 			}
 		}
 
-		private static void RemoveReadResolve(TypeWrapper wrapper)
+		private static void RemoveReadResolve(TypeBuilder tb)
 		{
-			TypeBuilder tb = wrapper.TypeAsBuilder;
 			tb.AddInterfaceImplementation(JVM.Import(typeof(IObjectReference)));
 			MethodBuilder getRealObject = tb.DefineMethod("IObjectReference.GetRealObject", MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final,
 				Types.Object, new Type[] { JVM.Import(typeof(StreamingContext)) });
