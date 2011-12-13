@@ -83,6 +83,7 @@
             <filterchain>
                 <replacetokens>
                     <token key="RUNTIME" value="${IKVM.Runtime}" />
+                    <token key="VERSION" value="${VERSION}" />
                 </replacetokens>
             </filterchain>
         </copy>
