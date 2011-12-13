@@ -623,9 +623,10 @@ namespace IKVM.Internal
 								// baking the outer type before the inner type) and that the inner and outer
 								// class live in the same class loader (when doing a multi target compilation,
 								// it is possible to split the two classes acros assemblies)
-								if (outerClassWrapper.impl is JavaTypeImpl && outerClassWrapper.GetClassLoader() == wrapper.GetClassLoader())
+								JavaTypeImpl oimpl = outerClassWrapper.impl as JavaTypeImpl;
+								if (oimpl != null && outerClassWrapper.GetClassLoader() == wrapper.GetClassLoader())
 								{
-									ClassFile outerClassFile = ((JavaTypeImpl)outerClassWrapper.impl).classFile;
+									ClassFile outerClassFile = oimpl.classFile;
 									ClassFile.InnerClass[] outerInnerClasses = outerClassFile.InnerClasses;
 									if (outerInnerClasses == null)
 									{
@@ -657,7 +658,7 @@ namespace IKVM.Internal
 								}
 								if (outerClassWrapper != null)
 								{
-									outer = outerClassWrapper.TypeAsBuilder;
+									outer = oimpl.typeBuilder;
 								}
 								else
 								{
@@ -779,7 +780,7 @@ namespace IKVM.Internal
 					}
 					if (f.IsAnnotation && Annotation.HasRetentionPolicyRuntime(f.Annotations))
 					{
-						annotationBuilder = new AnnotationBuilder(this);
+						annotationBuilder = new AnnotationBuilder(this, outer);
 						((AotTypeWrapper)wrapper).SetAnnotation(annotationBuilder);
 					}
 					// For Java 5 Enum types, we generate a nested .NET enum.
@@ -1577,13 +1578,15 @@ namespace IKVM.Internal
 			sealed class AnnotationBuilder : Annotation
 			{
 				private JavaTypeImpl impl;
+				private TypeBuilder outer;
 				private TypeBuilder annotationTypeBuilder;
 				private TypeBuilder attributeTypeBuilder;
 				private ConstructorBuilder defineConstructor;
 
-				internal AnnotationBuilder(JavaTypeImpl o)
+				internal AnnotationBuilder(JavaTypeImpl o, TypeBuilder outer)
 				{
 					this.impl = o;
+					this.outer = outer;
 				}
 
 				internal void Link()
@@ -1636,7 +1639,7 @@ namespace IKVM.Internal
 						{
 							typeAttributes |= TypeAttributes.NestedAssembly;
 						}
-						attributeTypeBuilder = o.outerClassWrapper.TypeAsBuilder.DefineNestedType(GetInnerClassName(o.outerClassWrapper.Name, name) + "Attribute", typeAttributes, annotationAttributeBaseType.TypeAsBaseType);
+						attributeTypeBuilder = outer.DefineNestedType(GetInnerClassName(o.outerClassWrapper.Name, name) + "Attribute", typeAttributes, annotationAttributeBaseType.TypeAsBaseType);
 					}
 					else
 					{

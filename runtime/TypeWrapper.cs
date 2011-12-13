@@ -2604,16 +2604,6 @@ namespace IKVM.Internal
 			get;
 		}
 
-		internal virtual TypeBuilder TypeAsBuilder
-		{
-			get
-			{
-				TypeBuilder typeBuilder = TypeAsTBD as TypeBuilder;
-				Debug.Assert(typeBuilder != null);
-				return typeBuilder;
-			}
-		}
-
 		internal Type TypeAsSignatureType
 		{
 			get

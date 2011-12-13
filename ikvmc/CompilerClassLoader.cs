@@ -2121,14 +2121,6 @@ namespace IKVM.Internal
 				}
 			}
 
-			internal override TypeBuilder TypeAsBuilder
-			{
-				get
-				{
-					return typeBuilder;
-				}
-			}
-
 			internal override bool IsMapUnsafeException
 			{
 				get
