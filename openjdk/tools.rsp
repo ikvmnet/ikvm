@@ -101,6 +101,7 @@
     -recurse:@OPENJDK7@/langtools/src/share/classes/*.properties
     # ignore the warning that KeyStoreUtil already exists in IKVM.OpenJDK.Security.dll
     -nowarn:109:sun.security.tools.KeyStoreUtil
+    Assembly.class
     @OPENJDK7@/build/linux-amd64/gensrc/com/sun/tools/jdi/*.class
     @OPENJDK7@/build/linux-amd64/gensrc/com/sun/tools/jdi/resources/*.class
     @OPENJDK7@/build/linux-amd64/gensrc/sun/tools/jar/resources/*.class
