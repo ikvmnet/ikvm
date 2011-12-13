@@ -402,14 +402,14 @@ namespace IKVM.Internal
 			return ((JavaTypeImpl)impl).GenerateUniqueMethodName(basename, returnType, parameterTypes);
 		}
 
-		internal void CreateStep1(out bool hasclinit)
+		internal void CreateStep1()
 		{
-			((JavaTypeImpl)impl).CreateStep1(out hasclinit);
+			((JavaTypeImpl)impl).CreateStep1();
 		}
 
-		internal void CreateStep2NoFail(bool hasclinit, string mangledTypeName)
+		internal string CreateStep2NoFail()
 		{
-			((JavaTypeImpl)impl).CreateStep2NoFail(hasclinit, mangledTypeName);
+			return ((JavaTypeImpl)impl).CreateStep2NoFail();
 		}
 
 		private bool IsSerializable
@@ -468,10 +468,10 @@ namespace IKVM.Internal
 				this.wrapper = (DynamicOrAotTypeWrapper)wrapper;
 			}
 
-			internal void CreateStep1(out bool hasclinit)
+			internal void CreateStep1()
 			{
 				// process all methods
-				hasclinit = wrapper.BaseTypeWrapper == null ? false : wrapper.BaseTypeWrapper.HasStaticInitializer;
+				bool hasclinit = wrapper.BaseTypeWrapper == null ? false : wrapper.BaseTypeWrapper.HasStaticInitializer;
 				methods = new MethodWrapper[classFile.Methods.Length];
 				baseMethods = new MethodWrapper[classFile.Methods.Length][];
 				for (int i = 0; i < methods.Length; i++)
@@ -575,9 +575,11 @@ namespace IKVM.Internal
 				wrapper.SetFields(fields);
 			}
 
-			internal void CreateStep2NoFail(bool hasclinit, string mangledTypeName)
+			internal string CreateStep2NoFail()
 			{
 				// this method is not allowed to throw exceptions (if it does, the runtime will abort)
+				bool hasclinit = wrapper.HasStaticInitializer;
+				string mangledTypeName = wrapper.classLoader.GetTypeWrapperFactory().AllocMangledName(classFile.Name);
 				ClassFile f = classFile;
 				try
 				{
@@ -905,6 +907,7 @@ namespace IKVM.Internal
 				{
 					JVM.CriticalFailure("Exception during JavaTypeImpl.CreateStep2NoFail", x);
 				}
+				return mangledTypeName;
 			}
 
 			private sealed class DelegateConstructorMethodWrapper : MethodWrapper

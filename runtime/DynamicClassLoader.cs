@@ -147,7 +147,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		private string AllocMangledName(string mangledTypeName)
+		internal override string AllocMangledName(string mangledTypeName)
 		{
 			lock(dynamicTypes)
 			{
@@ -182,14 +182,11 @@ namespace IKVM.Internal
 			type = new DynamicTypeWrapper(f, classLoader);
 #endif
 			// this step can throw a retargettable exception, if the class is incorrect
-			bool hasclinit;
-			type.CreateStep1(out hasclinit);
-			// now we can allocate the mangledTypeName, because the next step cannot fail
-			string mangledTypeName = AllocMangledName(f.Name);
+			type.CreateStep1();
 			// This step actually creates the TypeBuilder. It is not allowed to throw any exceptions,
 			// if an exception does occur, it is due to a programming error in the IKVM or CLR runtime
 			// and will cause a CriticalFailure and exit the process.
-			type.CreateStep2NoFail(hasclinit, mangledTypeName);
+			string mangledTypeName = type.CreateStep2NoFail();
 			lock(types)
 			{
 				// in very extreme conditions another thread may have beaten us to it
