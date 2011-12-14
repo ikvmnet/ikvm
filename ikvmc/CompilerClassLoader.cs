@@ -45,7 +45,7 @@ namespace IKVM.Internal
 	class CompilerClassLoader : ClassLoaderWrapper
 	{
 		private Dictionary<string, byte[]> classes;
-		private Dictionary<string, TypeWrapper> remapped = new Dictionary<string, TypeWrapper>();
+		private Dictionary<string, RemapperTypeWrapper> remapped = new Dictionary<string, RemapperTypeWrapper>();
 		private string assemblyName;
 		private string assemblyFile;
 		private string assemblyDir;
@@ -261,13 +261,13 @@ namespace IKVM.Internal
 
 		private TypeWrapper GetTypeWrapperCompilerHook(string name)
 		{
-			TypeWrapper type = null;
-			if(type == null)
+			RemapperTypeWrapper rtw;
+			if(remapped.TryGetValue(name, out rtw))
 			{
-				if(remapped.TryGetValue(name, out type))
-				{
-					return type;
-				}
+				return rtw;
+			}
+			else
+			{
 				byte[] classdef;
 				if(classes.TryGetValue(name, out classdef))
 				{
@@ -331,11 +331,12 @@ namespace IKVM.Internal
 					}
 					try
 					{
-						type = DefineClass(f, null);
+						TypeWrapper type = DefineClass(f, null);
 						if(f.IKVMAssemblyAttribute != null)
 						{
 							importedStubTypes.Add(f.Name, type);
 						}
+						return type;
 					}
 					catch (ClassFormatError x)
 					{
@@ -363,8 +364,11 @@ namespace IKVM.Internal
 						return null;
 					}
 				}
+				else
+				{
+					return null;
+				}
 			}
-			return type;
 		}
 
 		internal override Type GetGenericTypeDefinition(string name)
@@ -1819,7 +1823,7 @@ namespace IKVM.Internal
 				}
 			}
 
-			internal void Process4thPass(ICollection<TypeWrapper> remappedTypes)
+			internal void Process4thPass(ICollection<RemapperTypeWrapper> remappedTypes)
 			{
 				foreach(RemappedMethodBaseWrapper m in GetMethods())
 				{
@@ -1949,7 +1953,7 @@ namespace IKVM.Internal
 				return sb.ToString();
 			}
 
-			private void CreateShadowInstanceOf(ICollection<TypeWrapper> remappedTypes)
+			private void CreateShadowInstanceOf(ICollection<RemapperTypeWrapper> remappedTypes)
 			{
 				// FXBUG .NET 1.1 doesn't allow static methods on interfaces
 				if(typeBuilder.IsInterface)
@@ -2000,7 +2004,7 @@ namespace IKVM.Internal
 				ilgen.DoEmit();
 			}
 
-			private void CreateShadowCheckCast(ICollection<TypeWrapper> remappedTypes)
+			private void CreateShadowCheckCast(ICollection<RemapperTypeWrapper> remappedTypes)
 			{
 				// FXBUG .NET 1.1 doesn't allow static methods on interfaces
 				if(typeBuilder.IsInterface)
