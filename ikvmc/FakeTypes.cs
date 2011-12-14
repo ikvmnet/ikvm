@@ -69,11 +69,9 @@ namespace IKVM.Internal
 			tb.DefineGenericParameters("T")[0].SetBaseTypeConstraint(Types.MulticastDelegate);
 			genericDelegateInterfaceType = tb.CreateType();
 
-			TypeWrapper annotationTypeWrapper = loader.LoadClassByDottedName("java.lang.annotation.Annotation");
-			annotationTypeWrapper.Finish();
-			genericAttributeAnnotationType = CreateAnnotationType(modb, DotNetTypeWrapper.GenericAttributeAnnotationTypeName, annotationTypeWrapper);
-			genericAttributeAnnotationMultipleType = CreateAnnotationType(modb, DotNetTypeWrapper.GenericAttributeAnnotationMultipleTypeName, annotationTypeWrapper);
-			genericAttributeAnnotationReturnValueType = CreateAnnotationType(modb, DotNetTypeWrapper.GenericAttributeAnnotationReturnValueTypeName, annotationTypeWrapper);
+			genericAttributeAnnotationType = CreateAnnotationType(modb, DotNetTypeWrapper.GenericAttributeAnnotationTypeName);
+			genericAttributeAnnotationMultipleType = CreateAnnotationType(modb, DotNetTypeWrapper.GenericAttributeAnnotationMultipleTypeName);
+			genericAttributeAnnotationReturnValueType = CreateAnnotationType(modb, DotNetTypeWrapper.GenericAttributeAnnotationReturnValueTypeName);
 			CreateEnumEnum(modb, loader);
 		}
 
@@ -94,7 +92,7 @@ namespace IKVM.Internal
 			genericEnumEnumType = tb.CreateType();
 		}
 
-		private static Type CreateAnnotationType(ModuleBuilder modb, string name, TypeWrapper annotationTypeWrapper)
+		private static Type CreateAnnotationType(ModuleBuilder modb, string name)
 		{
 			TypeBuilder tb = modb.DefineType(name, TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.Public);
 			tb.DefineGenericParameters("T")[0].SetBaseTypeConstraint(Types.Attribute);
