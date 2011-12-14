@@ -288,12 +288,7 @@ namespace IKVM.Internal
 			{
 				throw new VerifyError("Delegate may not declare any fields");
 			}
-			TypeWrapper iface;
-#if STATIC_COMPILER
-			iface = classLoader.LoadCircularDependencyHack(this, f.Name + DotNetTypeWrapper.DelegateInterfaceSuffix);
-#else
-			iface = classLoader.LoadClassByDottedNameFast(f.Name + DotNetTypeWrapper.DelegateInterfaceSuffix);
-#endif
+			TypeWrapper iface = classLoader.LoadClassByDottedNameFast(f.Name + DotNetTypeWrapper.DelegateInterfaceSuffix);
 			DelegateInnerClassCheck(iface != null);
 			DelegateInnerClassCheck(iface.IsInterface);
 			DelegateInnerClassCheck(iface.IsPublic);
@@ -625,7 +620,7 @@ namespace IKVM.Internal
 						{
 							try
 							{
-								outerClassWrapper = wrapper.GetClassLoader().LoadCircularDependencyHack(wrapper, outerClassName) as DynamicTypeWrapper;
+								outerClassWrapper = wrapper.classLoader.LoadClassByDottedNameFast(outerClassName) as DynamicTypeWrapper;
 							}
 							catch (RetargetableJavaException x)
 							{

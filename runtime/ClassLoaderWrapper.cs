@@ -69,9 +69,6 @@ namespace IKVM.Internal
 	{
 		private static readonly object wrapperLock = new object();
 		private static readonly Dictionary<Type, TypeWrapper> globalTypeToTypeWrapper = new Dictionary<Type, TypeWrapper>();
-#if STATIC_COMPILER
-		private TypeWrapper circularDependencyHack;
-#endif
 #if STATIC_COMPILER || STUB_GENERATOR
 		private static ClassLoaderWrapper bootstrapClassLoader;
 #else
@@ -292,32 +289,6 @@ namespace IKVM.Internal
 				return null;
 			}
 		}
-
-#if STATIC_COMPILER
-		internal TypeWrapper LoadCircularDependencyHack(TypeWrapper tw, string name)
-		{
-			if (circularDependencyHack == null)
-			{
-				circularDependencyHack = tw;
-				try
-				{
-					return LoadClassByDottedNameFast(name);
-				}
-				finally
-				{
-					circularDependencyHack = null;
-				}
-			}
-			else if (circularDependencyHack.Name == name)
-			{
-				return circularDependencyHack;
-			}
-			else
-			{
-				return LoadClassByDottedNameFast(name);
-			}
-		}
-#endif
 
 		protected virtual void CheckDefineClassAllowed(string className)
 		{
