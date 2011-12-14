@@ -755,12 +755,12 @@ namespace IKVM.Internal
 						{
 							// LAMESPEC the CLI spec says interfaces cannot contain nested types (Part.II, 9.6), but that rule isn't enforced
 							// (and broken by J# as well), so we'll just ignore it too.
-							typeBuilder = outer.DefineNestedType(GetInnerClassName(outerClassWrapper.Name, f.Name), typeAttribs, wrapper.GetBaseTypeForDefineType());
+							typeBuilder = outer.DefineNestedType(GetInnerClassName(outerClassWrapper.Name, f.Name), typeAttribs);
 						}
 						else
 #endif // STATIC_COMPILER
 						{
-							typeBuilder = wrapper.classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(mangledTypeName, typeAttribs, wrapper.GetBaseTypeForDefineType());
+							typeBuilder = wrapper.classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(mangledTypeName, typeAttribs);
 						}
 					}
 #if STATIC_COMPILER
@@ -3567,6 +3567,14 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 				wrapper.FinishGhost(typeBuilder, methods);
 #endif // STATIC_COMPILER
+
+				if (!classFile.IsInterface)
+				{
+					// set the base type (this needs to be done before we emit any methods, because in the static compiler
+					// GetBaseTypeForDefineType() has the side effect of inserting the __WorkaroundBaseClass__ when necessary)
+					typeBuilder.SetParent(wrapper.GetBaseTypeForDefineType());
+				}
+
 				// if we're not abstract make sure we don't inherit any abstract methods
 				if (!wrapper.IsAbstract)
 				{
