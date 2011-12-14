@@ -2619,6 +2619,10 @@ namespace IKVM.Internal
 				}
 				compiler.CompilePass1();
 			}
+			foreach (CompilerClassLoader compiler in compilers)
+			{
+				compiler.CompilePass2();
+			}
 			if (compilingCoreAssembly)
 			{
 				RuntimeHelperTypes.Create(compilers[0]);
@@ -2629,7 +2633,7 @@ namespace IKVM.Internal
 			}
 			foreach (CompilerClassLoader compiler in compilers)
 			{
-				int rc = compiler.CompilePass2();
+				int rc = compiler.CompilePass3();
 				if (rc != 0)
 				{
 					return rc;
@@ -3013,7 +3017,20 @@ namespace IKVM.Internal
 			}
 		}
 
-		private int CompilePass2()
+		private void CompilePass2()
+		{
+			Tracer.Info(Tracer.Compiler, "Compiling class files (2)");
+			foreach(TypeWrapper tw in allwrappers)
+			{
+				DynamicTypeWrapper dtw = tw as DynamicTypeWrapper;
+				if(dtw != null)
+				{
+					dtw.CreateStep2();
+				}
+			}
+		}
+
+		private int CompilePass3()
 		{
 			Tracer.Info(Tracer.Compiler, "Compiling class files (3)");
 			if(map != null && CheckCompilingCoreAssembly())

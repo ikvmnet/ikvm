@@ -577,6 +577,16 @@ namespace IKVM.Internal
 
 			internal void CreateStep2()
 			{
+#if STATIC_COMPILER
+				if (typeBuilder != null)
+				{
+					// in the static compiler we need to create the TypeBuilder from outer to inner
+					// and to avoid having to sort the classes this way, we instead call CreateStep2
+					// on demand for outer wrappers and this necessitates us to keep track of
+					// whether we've already been called
+					return;
+				}
+#endif
 				// this method is not allowed to throw exceptions (if it does, the runtime will abort)
 				bool hasclinit = wrapper.HasStaticInitializer;
 				string mangledTypeName = wrapper.classLoader.GetTypeWrapperFactory().AllocMangledName(wrapper);
@@ -662,6 +672,7 @@ namespace IKVM.Internal
 								}
 								if (outerClassWrapper != null)
 								{
+									outerClassWrapper.CreateStep2();
 									outer = oimpl.typeBuilder;
 								}
 								else
@@ -1366,12 +1377,6 @@ namespace IKVM.Internal
 				{
 					wrapper.BaseTypeWrapper.Finish();
 				}
-#if STATIC_COMPILER
-				if (outerClassWrapper != null)
-				{
-					outerClassWrapper.Finish();
-				}
-#endif // STATIC_COMPILER
 				// NOTE there is a bug in the CLR (.NET 1.0 & 1.1 [1.2 is not yet available]) that
 				// causes the AppDomain.TypeResolve event to receive the incorrect type name for nested types.
 				// The Name in the ResolveEventArgs contains only the nested type name, not the full type name,
