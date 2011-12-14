@@ -904,6 +904,7 @@ static class NetExp
 		{
 			if (mw.IsPublic || mw.IsProtected)
 			{
+				mw.Link();
 				AddToExportListIfNeeded(mw.ReturnType);
 				AddToExportListIfNeeded(mw.GetParameters());
 			}
@@ -912,6 +913,7 @@ static class NetExp
 		{
 			if (fw.IsPublic || fw.IsProtected)
 			{
+				fw.Link();
 				AddToExportListIfNeeded(fw.FieldTypeWrapper);
 			}
 		}

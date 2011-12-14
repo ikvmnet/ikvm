@@ -2158,8 +2158,6 @@ namespace IKVM.Internal
 				// methods, which don't really exist).
 				if (ClassLoaderWrapper.IsRemappedType(type) && !type.IsSealed && !type.IsInterface)
 				{
-					// Finish the type, to make sure the methods are populated
-					this.BaseTypeWrapper.Finish();
 					TypeWrapper baseTypeWrapper = this.BaseTypeWrapper;
 					while (baseTypeWrapper != null)
 					{
@@ -2242,9 +2240,13 @@ namespace IKVM.Internal
 			private MethodWrapper m;
 
 			internal BaseFinalMethodWrapper(DotNetTypeWrapper tw, MethodWrapper m)
-				: base(tw, m.Name, m.Signature, m.GetMethod(), m.ReturnType, m.GetParameters(), (m.Modifiers & ~Modifiers.Abstract) | Modifiers.Final, MemberFlags.None)
+				: base(tw, m.Name, m.Signature, null, null, null, (m.Modifiers & ~Modifiers.Abstract) | Modifiers.Final, MemberFlags.None)
 			{
 				this.m = m;
+			}
+
+			protected override void DoLinkMethod()
+			{
 			}
 
 #if !STUB_GENERATOR
