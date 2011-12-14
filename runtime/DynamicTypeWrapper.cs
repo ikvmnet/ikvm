@@ -407,9 +407,9 @@ namespace IKVM.Internal
 			((JavaTypeImpl)impl).CreateStep1();
 		}
 
-		internal string CreateStep2NoFail()
+		internal void CreateStep2()
 		{
-			return ((JavaTypeImpl)impl).CreateStep2NoFail();
+			((JavaTypeImpl)impl).CreateStep2();
 		}
 
 		private bool IsSerializable
@@ -575,7 +575,7 @@ namespace IKVM.Internal
 				wrapper.SetFields(fields);
 			}
 
-			internal string CreateStep2NoFail()
+			internal void CreateStep2()
 			{
 				// this method is not allowed to throw exceptions (if it does, the runtime will abort)
 				bool hasclinit = wrapper.HasStaticInitializer;
@@ -905,9 +905,8 @@ namespace IKVM.Internal
 				}
 				catch (Exception x)
 				{
-					JVM.CriticalFailure("Exception during JavaTypeImpl.CreateStep2NoFail", x);
+					JVM.CriticalFailure("Exception during JavaTypeImpl.CreateStep2", x);
 				}
-				return mangledTypeName;
 			}
 
 			private sealed class DelegateConstructorMethodWrapper : MethodWrapper

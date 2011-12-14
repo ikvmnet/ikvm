@@ -187,7 +187,7 @@ namespace IKVM.Internal
 			// if an exception does occur, it is due to a programming error in the IKVM or CLR runtime
 			// and will cause a CriticalFailure and exit the process.
 			type.CreateStep1();
-			type.CreateStep2NoFail();
+			type.CreateStep2();
 			lock(types)
 			{
 				// in very extreme conditions another thread may have beaten us to it
