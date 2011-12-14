@@ -579,7 +579,7 @@ namespace IKVM.Internal
 			{
 				// this method is not allowed to throw exceptions (if it does, the runtime will abort)
 				bool hasclinit = wrapper.HasStaticInitializer;
-				string mangledTypeName = wrapper.classLoader.GetTypeWrapperFactory().AllocMangledName(classFile.Name);
+				string mangledTypeName = wrapper.classLoader.GetTypeWrapperFactory().AllocMangledName(wrapper);
 				ClassFile f = classFile;
 				try
 				{

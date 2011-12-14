@@ -147,11 +147,12 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal override string AllocMangledName(string mangledTypeName)
+		internal override string AllocMangledName(DynamicTypeWrapper tw)
 		{
+			string mangledTypeName;
 			lock(dynamicTypes)
 			{
-				mangledTypeName = TypeNameUtil.EscapeName(mangledTypeName);
+				mangledTypeName = TypeNameUtil.EscapeName(tw.Name);
 				// FXBUG the CLR (both 1.1 and 2.0) doesn't like type names that end with a single period,
 				// it loses the trailing period in the name that gets passed in the TypeResolve event.
 				if(dynamicTypes.ContainsKey(mangledTypeName) || mangledTypeName.EndsWith("."))
@@ -168,7 +169,7 @@ namespace IKVM.Internal
 						mangledTypeName = baseName + "/" + (++instanceId);
 					} while(dynamicTypes.ContainsKey(mangledTypeName));
 				}
-				dynamicTypes.Add(mangledTypeName, null);
+				dynamicTypes.Add(mangledTypeName, tw);
 			}
 			return mangledTypeName;
 		}
@@ -179,14 +180,14 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 			type = new AotTypeWrapper(f, (CompilerClassLoader)classLoader);
 #else
+			// this step can throw a retargettable exception, if the class is incorrect
 			type = new DynamicTypeWrapper(f, classLoader);
 #endif
-			// this step can throw a retargettable exception, if the class is incorrect
-			type.CreateStep1();
 			// This step actually creates the TypeBuilder. It is not allowed to throw any exceptions,
 			// if an exception does occur, it is due to a programming error in the IKVM or CLR runtime
 			// and will cause a CriticalFailure and exit the process.
-			string mangledTypeName = type.CreateStep2NoFail();
+			type.CreateStep1();
+			type.CreateStep2NoFail();
 			lock(types)
 			{
 				// in very extreme conditions another thread may have beaten us to it
@@ -197,11 +198,6 @@ namespace IKVM.Internal
 				types.TryGetValue(f.Name, out race);
 				if(race == null)
 				{
-					lock(dynamicTypes)
-					{
-						Debug.Assert(dynamicTypes.ContainsKey(mangledTypeName) && dynamicTypes[mangledTypeName] == null);
-						dynamicTypes[mangledTypeName] = type;
-					}
 					types[f.Name] = type;
 #if !STATIC_COMPILER && !FIRST_PASS
 					java.lang.Class clazz = new java.lang.Class(null);
