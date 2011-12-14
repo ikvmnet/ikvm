@@ -75,13 +75,12 @@ namespace IKVM.Internal
 			CreateEnumEnum(modb, loader);
 		}
 
-		private static void CreateEnumEnum(ModuleBuilder modb, ClassLoaderWrapper loader)
+		internal static void Finish(ClassLoaderWrapper loader)
 		{
+			TypeBuilder tb = (TypeBuilder)genericEnumEnumType;
 			TypeWrapper enumTypeWrapper = loader.LoadClassByDottedName("java.lang.Enum");
 			enumTypeWrapper.Finish();
-			TypeBuilder tb = modb.DefineType(DotNetTypeWrapper.GenericEnumEnumTypeName, TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Public, enumTypeWrapper.TypeAsBaseType);
-			GenericTypeParameterBuilder gtpb = tb.DefineGenericParameters("T")[0];
-			gtpb.SetBaseTypeConstraint(Types.Enum);
+			tb.SetParent(enumTypeWrapper.TypeAsBaseType);
 			CodeEmitter ilgen = CodeEmitter.Create(tb.DefineConstructor(MethodAttributes.Private, CallingConventions.Standard, new Type[] { Types.String, Types.Int32 }));
 			ilgen.Emit(OpCodes.Ldarg_0);
 			ilgen.Emit(OpCodes.Ldarg_1);
@@ -90,6 +89,14 @@ namespace IKVM.Internal
 			ilgen.Emit(OpCodes.Ret);
 			ilgen.DoEmit();
 			genericEnumEnumType = tb.CreateType();
+		}
+
+		private static void CreateEnumEnum(ModuleBuilder modb, ClassLoaderWrapper loader)
+		{
+			TypeBuilder tb = modb.DefineType(DotNetTypeWrapper.GenericEnumEnumTypeName, TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Public);
+			GenericTypeParameterBuilder gtpb = tb.DefineGenericParameters("T")[0];
+			gtpb.SetBaseTypeConstraint(Types.Enum);
+			genericEnumEnumType = tb;
 		}
 
 		private static Type CreateAnnotationType(ModuleBuilder modb, string name)

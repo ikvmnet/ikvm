@@ -73,6 +73,7 @@ namespace IKVM.Internal
 		private List<ClassLoaderWrapper> internalsVisibleTo = new List<ClassLoaderWrapper>();
 		private List<TypeWrapper> dynamicallyImportedTypes = new List<TypeWrapper>();
 		private List<string> jarList = new List<string>();
+		private List<TypeWrapper> allwrappers;
 
 		internal CompilerClassLoader(AssemblyClassLoader[] referencedAssemblies, CompilerOptions options, string path, bool targetIsModule, string assemblyName, Dictionary<string, byte[]> classes)
 			: base(options.codegenoptions, null)
@@ -926,6 +927,22 @@ namespace IKVM.Internal
 				SetMethods(methods.ToArray());
 			}
 
+			internal void LoadInterfaces(IKVM.Internal.MapXml.Class c)
+			{
+				if (c.Interfaces != null)
+				{
+					interfaceWrappers = new TypeWrapper[c.Interfaces.Length];
+					for (int i = 0; i < c.Interfaces.Length; i++)
+					{
+						interfaceWrappers[i] = classLoader.LoadClassByDottedName(c.Interfaces[i].Name);
+					}
+				}
+				else
+				{
+					interfaceWrappers = TypeWrapper.EmptyArray;
+				}
+			}
+
 			private static bool FindMethod(List<MethodWrapper> methods, string name, string sig)
 			{
 				foreach(MethodWrapper mw in methods)
@@ -1730,30 +1747,16 @@ namespace IKVM.Internal
 				}
 			}
 
-			internal void Process2ndPassStep1(IKVM.Internal.MapXml.Root map)
+			internal void Process2ndPassStep1()
 			{
-				IKVM.Internal.MapXml.Class c = classDef;
-				TypeBuilder tb = typeBuilder;
-				bool baseIsSealed = shadowType.IsSealed;
-
-				if(c.Interfaces != null)
+				if (!shadowType.IsSealed)
 				{
-					interfaceWrappers = new TypeWrapper[c.Interfaces.Length];
-					for(int i = 0; i < c.Interfaces.Length; i++)
+					foreach (TypeWrapper ifaceTypeWrapper in interfaceWrappers)
 					{
-						TypeWrapper ifaceTypeWrapper = classLoader.LoadClassByDottedName(c.Interfaces[i].Name);
-						interfaceWrappers[i] = ifaceTypeWrapper;
-						if(!baseIsSealed)
-						{
-							tb.AddInterfaceImplementation(ifaceTypeWrapper.TypeAsBaseType);
-						}
+						typeBuilder.AddInterfaceImplementation(ifaceTypeWrapper.TypeAsBaseType);
 					}
-					AttributeHelper.SetImplementsAttribute(tb, interfaceWrappers);
 				}
-				else
-				{
-					interfaceWrappers = TypeWrapper.EmptyArray;
-				}
+				AttributeHelper.SetImplementsAttribute(typeBuilder, interfaceWrappers);
 			}
 
 			internal void Process2ndPassStep2(IKVM.Internal.MapXml.Root map)
@@ -2175,6 +2178,13 @@ namespace IKVM.Internal
 				if(hasRemappedTypes)
 				{
 					SetupGhosts(map);
+					foreach(IKVM.Internal.MapXml.Class c in map.assembly.Classes)
+					{
+						if(c.Shadows != null)
+						{
+							remapped[c.Name].LoadInterfaces(c);
+						}
+					}
 				}
 			}
 		}
@@ -2189,7 +2199,7 @@ namespace IKVM.Internal
 					if(c.Shadows != null)
 					{
 						RemapperTypeWrapper typeWrapper = (RemapperTypeWrapper)remapped[c.Name];
-						typeWrapper.Process2ndPassStep1(map);
+						typeWrapper.Process2ndPassStep1();
 					}
 				}
 				foreach(IKVM.Internal.MapXml.Class c in map.assembly.Classes)
@@ -2527,7 +2537,7 @@ namespace IKVM.Internal
 
 		private bool CheckCompilingCoreAssembly()
 		{
-			if (map.assembly.Classes != null)
+			if (map != null && map.assembly != null && map.assembly.Classes != null)
 			{
 				foreach (IKVM.Internal.MapXml.Class c in map.assembly.Classes)
 				{
@@ -2589,14 +2599,6 @@ namespace IKVM.Internal
 					}
 				}
 			}
-			if (compilingCoreAssembly)
-			{
-				RuntimeHelperTypes.Create(compilers[0]);
-			}
-			foreach (CompilerClassLoader compiler in compilers)
-			{
-				compiler.EmitRemappedTypes2ndPass();
-			}
 			Dictionary<CompilerClassLoader, Type> mainAssemblyTypes = new Dictionary<CompilerClassLoader, Type>();
 			foreach (CompilerClassLoader compiler in compilers)
 			{
@@ -2615,7 +2617,19 @@ namespace IKVM.Internal
 						((AssemblyBuilder)compiler.GetTypeWrapperFactory().ModuleBuilder.Assembly).__AddTypeForwarder(mainAssemblyType);
 					}
 				}
-				int rc = compiler.Compile();
+				compiler.CompilePass1();
+			}
+			if (compilingCoreAssembly)
+			{
+				RuntimeHelperTypes.Create(compilers[0]);
+			}
+			foreach (CompilerClassLoader compiler in compilers)
+			{
+				compiler.EmitRemappedTypes2ndPass();
+			}
+			foreach (CompilerClassLoader compiler in compilers)
+			{
+				int rc = compiler.CompilePass2();
 				if (rc != 0)
 				{
 					return rc;
@@ -2887,7 +2901,6 @@ namespace IKVM.Internal
 				{
 					compilingCoreAssembly = true;
 					ClassLoaderWrapper.SetBootstrapClassLoader(loader);
-					loader.EmitRemappedTypes();
 				}
 			}
 			// If we do not yet have a reference to the core assembly and we are not compiling the core assembly,
@@ -2949,9 +2962,13 @@ namespace IKVM.Internal
 			return asm;
 		}
 
-		private int Compile()
+		private void CompilePass1()
 		{
 			Tracer.Info(Tracer.Compiler, "Compiling class files (1)");
+			if(CheckCompilingCoreAssembly())
+			{
+				EmitRemappedTypes();
+			}
 			// if we're compiling the core class library, generate the "fake" generic types
 			// that represent the not-really existing types (i.e. the Java enums that represent .NET enums,
 			// the Method interface for delegates and the Annotation annotation for custom attributes)
@@ -2967,7 +2984,7 @@ namespace IKVM.Internal
 			{
 				packages = new Dictionary<string, string>();
 			}
-			List<TypeWrapper> allwrappers = new List<TypeWrapper>();
+			allwrappers = new List<TypeWrapper>();
 			foreach(string s in classesToCompile)
 			{
 				TypeWrapper wrapper = LoadClassByDottedNameFast(s);
@@ -2982,10 +2999,6 @@ namespace IKVM.Internal
 						}
 						continue;
 					}
-					if(map == null)
-					{
-						wrapper.Finish();
-					}
 					int pos = wrapper.Name.LastIndexOf('.');
 					if(pos != -1)
 					{
@@ -2997,6 +3010,15 @@ namespace IKVM.Internal
 					}
 					allwrappers.Add(wrapper);
 				}
+			}
+		}
+
+		private int CompilePass2()
+		{
+			Tracer.Info(Tracer.Compiler, "Compiling class files (3)");
+			if(map != null && CheckCompilingCoreAssembly())
+			{
+				FakeTypes.Finish(this);
 			}
 			foreach(string proxy in options.proxies)
 			{
