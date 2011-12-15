@@ -2904,7 +2904,6 @@ namespace IKVM.NativeCode.java
 					jlClass[] innerclasses = new jlClass[wrappers.Length];
 					for (int i = 0; i < innerclasses.Length; i++)
 					{
-						wrappers[i].Finish();
 						if (wrappers[i].IsUnloadable)
 						{
 							throw new jlNoClassDefFoundError(wrappers[i].Name);
@@ -2913,6 +2912,7 @@ namespace IKVM.NativeCode.java
 						{
 							throw new IllegalAccessError(string.Format("tried to access class {0} from class {1}", wrappers[i].Name, wrapper.Name));
 						}
+						wrappers[i].Finish();
 						innerclasses[i] = wrappers[i].ClassObject;
 					}
 					return innerclasses;
