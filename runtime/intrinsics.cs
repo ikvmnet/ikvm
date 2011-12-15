@@ -286,8 +286,6 @@ namespace IKVM.Internal
 		private static bool System_arraycopy(EmitIntrinsicContext eic)
 		{
 			// if the array arguments on the stack are of a known array type, we can redirect to an optimized version of arraycopy.
-			// Note that we also have to handle VMSystem.arraycopy, because on GNU Classpath StringBuffer directly calls
-			// this method to avoid prematurely initialising System.
 			TypeWrapper dst_type = eic.GetStackTypeWrapper(0, 2);
 			TypeWrapper src_type = eic.GetStackTypeWrapper(0, 4);
 			if (!dst_type.IsUnloadable && dst_type.IsArray && dst_type == src_type)
