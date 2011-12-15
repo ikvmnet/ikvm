@@ -149,37 +149,40 @@ namespace IKVM.Internal
 
 		internal override string AllocMangledName(DynamicTypeWrapper tw)
 		{
-			string mangledTypeName;
 			lock(dynamicTypes)
 			{
-				// the CLR maximum type name length is 1023 characters,
-				// but we need to leave some room for the suffix that we
-				// may need to append to make the name unique
-				const int MaxLength = 1000;
-				string name = tw.Name;
-				if (name.Length > MaxLength)
-				{
-					name = name.Substring(0, MaxLength) + "/truncated";
-				}
-				mangledTypeName = TypeNameUtil.ReplaceIllegalCharacters(name);
-				// FXBUG the CLR (both 1.1 and 2.0) doesn't like type names that end with a single period,
-				// it loses the trailing period in the name that gets passed in the TypeResolve event.
-				if(dynamicTypes.ContainsKey(mangledTypeName) || mangledTypeName.EndsWith("."))
-				{
+				return TypeNameMangleImpl(dynamicTypes, tw.Name, tw);
+			}
+		}
+
+		internal static string TypeNameMangleImpl(Dictionary<string, TypeWrapper> dict, string name, TypeWrapper tw)
+		{
+			// the CLR maximum type name length is 1023 characters,
+			// but we need to leave some room for the suffix that we
+			// may need to append to make the name unique
+			const int MaxLength = 1000;
+			if (name.Length > MaxLength)
+			{
+				name = name.Substring(0, MaxLength) + "/truncated";
+			}
+			string mangledTypeName = TypeNameUtil.ReplaceIllegalCharacters(name);
+			// FXBUG the CLR (both 1.1 and 2.0) doesn't like type names that end with a single period,
+			// it loses the trailing period in the name that gets passed in the TypeResolve event.
+			if (dict.ContainsKey(mangledTypeName) || mangledTypeName.EndsWith("."))
+			{
 #if STATIC_COMPILER
 					Tracer.Warning(Tracer.Compiler, "Class name clash: {0}", mangledTypeName);
 #endif
-					// Java class names cannot contain slashes (since they are converted into periods),
-					// so we take advantage of that fact to create a unique name.
-					string baseName = mangledTypeName;
-					int instanceId = 0;
-					do
-					{
-						mangledTypeName = baseName + "/" + (++instanceId);
-					} while(dynamicTypes.ContainsKey(mangledTypeName));
-				}
-				dynamicTypes.Add(mangledTypeName, tw);
+				// Java class names cannot contain slashes (since they are converted into periods),
+				// so we take advantage of that fact to create a unique name.
+				string baseName = mangledTypeName;
+				int instanceId = 0;
+				do
+				{
+					mangledTypeName = baseName + "/" + (++instanceId);
+				} while (dict.ContainsKey(mangledTypeName));
 			}
+			dict.Add(mangledTypeName, tw);
 			return mangledTypeName;
 		}
 

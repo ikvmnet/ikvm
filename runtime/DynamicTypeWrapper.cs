@@ -454,6 +454,7 @@ namespace IKVM.Internal
 			private DynamicTypeWrapper outerClassWrapper;
 			private AnnotationBuilder annotationBuilder;
 			private TypeBuilder enumBuilder;
+			private Dictionary<string, TypeWrapper> nestedTypeNames;	// only keys are used, values are always null
 #endif
 
 			internal JavaTypeImpl(ClassFile f, DynamicTypeWrapper wrapper)
@@ -1125,10 +1126,14 @@ namespace IKVM.Internal
 				return inner.Length > outer.Length + 1 && inner[outer.Length] == '$' && inner.StartsWith(outer);
 			}
 
-			private static string GetInnerClassName(string outer, string inner)
+			private string GetInnerClassName(string outer, string inner)
 			{
 				Debug.Assert(CheckInnerOuterNames(inner, outer));
-				return TypeNameUtil.ReplaceIllegalCharacters(inner.Substring(outer.Length + 1));
+				if (nestedTypeNames == null)
+				{
+					nestedTypeNames = new Dictionary<string, TypeWrapper>();
+				}
+				return DynamicClassLoader.TypeNameMangleImpl(nestedTypeNames, inner.Substring(outer.Length + 1), null);
 			}
 #endif // STATIC_COMPILER
 
@@ -1643,7 +1648,7 @@ namespace IKVM.Internal
 						{
 							typeAttributes |= TypeAttributes.NestedAssembly;
 						}
-						attributeTypeBuilder = outer.DefineNestedType(GetInnerClassName(o.outerClassWrapper.Name, name) + "Attribute", typeAttributes, annotationAttributeBaseType.TypeAsBaseType);
+						attributeTypeBuilder = outer.DefineNestedType(o.GetInnerClassName(o.outerClassWrapper.Name, name + "Attribute"), typeAttributes, annotationAttributeBaseType.TypeAsBaseType);
 					}
 					else
 					{
