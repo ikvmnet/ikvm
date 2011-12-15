@@ -1346,37 +1346,12 @@ namespace IKVM.Internal
 	static class TypeNameUtil
 	{
 		// note that MangleNestedTypeName() assumes that there are less than 16 special characters
-		private static readonly char[] specialCharacters = { '\\', '+', ',', '[', ']', '*', '&', '\u0000' };
-		private static readonly string specialCharactersString = new String(specialCharacters);
+		private const string specialCharactersString = "\\+,[]*&\u0000";
 
-		internal static string EscapeName(string name)
+		internal static string ReplaceIllegalCharacters(string name)
 		{
-			// TODO the escaping of special characters is not required on .NET 2.0
-			// (but it doesn't really hurt that much either, the only overhead is the
-			// extra InnerClassAttribute to record the real name of the class)
-			// Note that even though .NET 2.0 automatically escapes the special characters,
-			// the name that gets passed in ResolveEventArgs.Name of the TypeResolve event
-			// contains the unescaped type name.
-			if (name.IndexOfAny(specialCharacters) >= 0)
-			{
-				System.Text.StringBuilder sb = new System.Text.StringBuilder();
-				foreach (char c in name)
-				{
-					if (specialCharactersString.IndexOf(c) >= 0)
-					{
-						if (c == 0)
-						{
-							// we can't escape the NUL character, so we replace it with a space.
-							sb.Append(' ');
-							continue;
-						}
-						sb.Append('\\');
-					}
-					sb.Append(c);
-				}
-				name = sb.ToString();
-			}
-			return name;
+			// only the NUL character is illegal in CLR type names, so we replace it with a space
+			return name.Replace('\u0000', ' ');
 		}
 
 		internal static string MangleNestedTypeName(string name)

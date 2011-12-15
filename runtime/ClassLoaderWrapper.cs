@@ -421,11 +421,6 @@ namespace IKVM.Internal
 
 		private TypeWrapper LoadClassByDottedNameFastImpl(string name, bool throwClassNotFoundException)
 		{
-			// .NET 1.1 has a limit of 1024 characters for type names
-			if(name.Length >= 1024 || name.Length == 0)
-			{
-				return null;
-			}
 			Profiler.Enter("LoadClassByDottedName");
 			try
 			{

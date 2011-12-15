@@ -1128,7 +1128,7 @@ namespace IKVM.Internal
 			private static string GetInnerClassName(string outer, string inner)
 			{
 				Debug.Assert(CheckInnerOuterNames(inner, outer));
-				return TypeNameUtil.EscapeName(inner.Substring(outer.Length + 1));
+				return TypeNameUtil.ReplaceIllegalCharacters(inner.Substring(outer.Length + 1));
 			}
 #endif // STATIC_COMPILER
 
