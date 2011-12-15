@@ -1636,7 +1636,6 @@ namespace IKVM.Internal
 						name += "_";
 					}
 
-					// TODO attribute should be .NET serializable
 					TypeAttributes typeAttributes = TypeAttributes.Class | TypeAttributes.Sealed;
 					if (o.outerClassWrapper != null)
 					{
