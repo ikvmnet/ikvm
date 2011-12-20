@@ -3205,7 +3205,7 @@ sealed class MethodAnalyzer
 				nextIsReachable = false;
 				for (int j = 0; j < exceptions.Length; j++)
 				{
-					if (j != exceptionIndex && exceptions[j].startIndex <= exception.startIndex && exception.endIndex <= exceptions[j].endIndex)
+					if (j != exceptionIndex && exceptions[j].startIndex >= exception.startIndex && exception.endIndex <= exceptions[j].endIndex)
 					{
 						UpdateTryBlockExit(exception, exceptions[j].handlerIndex, ref exit, ref fail);
 					}
