@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2009-2010 Jeroen Frijters
+  Copyright (C) 2009-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -224,6 +224,19 @@ namespace IKVM.Internal
 				tb.DefineMethodOverride(getRealObject, JVM.Import(typeof(IObjectReference)).GetMethod("GetRealObject"));
 				CodeEmitter ilgen = CodeEmitter.Create(getRealObject);
 				mw.Link();
+				if (!wrapper.IsFinal)
+				{
+					// readResolve is only applicable if it exists on the actual type of the object, so if we're a subclass don't call it
+					ilgen.Emit(OpCodes.Ldarg_0);
+					ilgen.Emit(OpCodes.Callvirt, Compiler.getTypeMethod);
+					ilgen.Emit(OpCodes.Ldtoken, wrapper.TypeAsBaseType);
+					ilgen.Emit(OpCodes.Call, Compiler.getTypeFromHandleMethod);
+					CodeEmitterLabel label = ilgen.DefineLabel();
+					ilgen.Emit(OpCodes.Beq_S, label);
+					ilgen.Emit(OpCodes.Ldarg_0);
+					ilgen.Emit(OpCodes.Ret);
+					ilgen.MarkLabel(label);
+				}
 				ilgen.Emit(OpCodes.Ldarg_0);
 				mw.EmitCall(ilgen);
 				ilgen.Emit(OpCodes.Ret);
