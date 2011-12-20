@@ -1047,7 +1047,14 @@ class IkvmcCompiler
 						{
 							if(line.StartsWith("Main-Class: "))
 							{
-								manifestMainClass = line.Substring(12).Replace('/', '.');
+								line = line.Substring(12);
+								string continuation;
+								while((continuation = rdr.ReadLine()) != null
+									&& continuation.StartsWith(" ", StringComparison.Ordinal))
+								{
+									line += continuation.Substring(1);
+								}
+								manifestMainClass = line.Replace('/', '.');
 								break;
 							}
 						}
