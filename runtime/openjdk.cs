@@ -7972,11 +7972,32 @@ namespace IKVM.NativeCode.com.sun.java.util.jar.pack
 
 namespace IKVM.NativeCode.com.sun.security.auth.module
 {
+	using System.Security.Principal;
+
 	static class NTSystem
 	{
 		public static void getCurrent(object thisObj, bool debug)
 		{
-			throw new NotImplementedException();
+			WindowsIdentity id = WindowsIdentity.GetCurrent();
+			string[] name = id.Name.Split('\\');
+			SetField(thisObj, "userName", name[1]);
+			SetField(thisObj, "domain", name[0]);
+			SetField(thisObj, "domainSID", id.User.AccountDomainSid.Value);
+			SetField(thisObj, "userSID", id.User.Value);
+			string[] groups = new string[id.Groups.Count];
+			for (int i = 0; i < groups.Length; i++)
+			{
+				groups[i] = id.Groups[i].Value;
+			}
+			SetField(thisObj, "groupIDs", groups);
+			// HACK it turns out that Groups[0] is the primary group, but AFAIK this is not documented anywhere
+			SetField(thisObj, "primaryGroupID", groups[0]);
+			SetField(thisObj, "impersonationToken", id.Token.ToInt64());
+		}
+
+		private static void SetField(object thisObj, string field, object value)
+		{
+			thisObj.GetType().GetField(field, BindingFlags.NonPublic | BindingFlags.Instance).SetValue(thisObj, value);
 		}
 	}
 
