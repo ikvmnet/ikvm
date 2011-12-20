@@ -1309,6 +1309,13 @@ namespace IKVM.Internal
 				}
 				int fieldIndex = GetFieldIndex(fw);
 #if STATIC_COMPILER
+				// for compatibility with broken Java code that assumes that reflection returns the fields in class declaration
+				// order, we emit the fields in class declaration order in the .NET metadata (and then when we retrieve them
+				// using .NET reflection, we sort on metadata token.)
+				for (int i = 0; i < fieldIndex; i++)
+				{
+					fields[i].Link();
+				}
 				if (fieldIndex >= classFile.Fields.Length)
 				{
 					// this must be a field defined in map.xml
@@ -1436,7 +1443,7 @@ namespace IKVM.Internal
 						// see https://sourceforge.net/tracker/?func=detail&atid=525264&aid=3056721&group_id=69637
 						// additional note: now that we maintain the ordering of the fields, we need to recognize
 						// these fields so that we know where to insert the corresponding accessor property FieldWrapper.
-						realFieldName = "__<>" + fieldName;
+						realFieldName = NamePrefix.Type2AccessStubBackingField + fieldName;
 					}
 #endif
 
