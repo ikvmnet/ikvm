@@ -4422,14 +4422,14 @@ namespace IKVM.Internal
 						ilGenerator.Emit(OpCodes.Ret);
 						ilGenerator.DoEmit();
 					}
- 					else if (CheckRequireOverrideStub(mce, ifmethod))
- 					{
- 						JavaTypeImpl.GenerateUnloadableOverrideStub(wrapper, typeBuilder, ifmethod, (MethodInfo)mce.GetMethod(), mce.ReturnTypeForDefineMethod, mce.GetParametersForDefineMethod());
- 					}
- 					else if (baseClassInterface && mce.DeclaringType == wrapper)
- 					{
- 						typeBuilder.DefineMethodOverride((MethodInfo)mce.GetMethod(), (MethodInfo)ifmethod.GetMethod());
- 					}
+					else if (CheckRequireOverrideStub(mce, ifmethod))
+					{
+						JavaTypeImpl.GenerateUnloadableOverrideStub(wrapper, typeBuilder, ifmethod, (MethodInfo)mce.GetMethod(), mce.ReturnTypeForDefineMethod, mce.GetParametersForDefineMethod());
+					}
+					else if (baseClassInterface && mce.DeclaringType == wrapper)
+					{
+						typeBuilder.DefineMethodOverride((MethodInfo)mce.GetMethod(), (MethodInfo)ifmethod.GetMethod());
+					}
 				}
 				else
 				{
