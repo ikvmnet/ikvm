@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2010 Jeroen Frijters
+  Copyright (C) 2002-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -468,7 +468,7 @@ namespace IKVM.Internal
 			private readonly DynamicTypeWrapper wrapper;
 			private TypeBuilder typeBuilder;
 			private MethodWrapper[] methods;
-			private MethodWrapper[] baseMethods;
+			private MethodWrapper[][] baseMethods;
 			private FieldWrapper[] fields;
 			private FinishedTypeImpl finishedType;
 			private bool finishInProgress;
@@ -493,7 +493,7 @@ namespace IKVM.Internal
 				// process all methods
 				hasclinit = wrapper.BaseTypeWrapper == null ? false : wrapper.BaseTypeWrapper.HasStaticInitializer;
 				methods = new MethodWrapper[classFile.Methods.Length];
-				baseMethods = new MethodWrapper[classFile.Methods.Length];
+				baseMethods = new MethodWrapper[classFile.Methods.Length][];
 				for (int i = 0; i < methods.Length; i++)
 				{
 					ClassFile.Method m = classFile.Methods[i];
@@ -548,7 +548,7 @@ namespace IKVM.Internal
 						if (!classFile.IsInterface && !m.IsStatic && !m.IsPrivate)
 						{
 							bool explicitOverride = false;
-							baseMethods[i] = FindBaseMethod(m.Name, m.Signature, out explicitOverride);
+							baseMethods[i] = FindBaseMethods(m.Name, m.Signature, out explicitOverride);
 							if (explicitOverride)
 							{
 								flags |= MemberFlags.ExplicitOverride;
@@ -561,11 +561,11 @@ namespace IKVM.Internal
 				if (!wrapper.IsInterface || wrapper.IsPublic)
 				{
 					List<MethodWrapper> methodsArray = null;
-					List<MethodWrapper> baseMethodsArray = null;
+					List<MethodWrapper[]> baseMethodsArray = null;
 					if (wrapper.IsAbstract)
 					{
 						methodsArray = new List<MethodWrapper>(methods);
-						baseMethodsArray = new List<MethodWrapper>(baseMethods);
+						baseMethodsArray = new List<MethodWrapper[]>(baseMethods);
 						AddMirandaMethods(methodsArray, baseMethodsArray, wrapper);
 					}
 #if STATIC_COMPILER || NET_4_0
@@ -577,7 +577,7 @@ namespace IKVM.Internal
 							if (methodsArray == null)
 							{
 								methodsArray = new List<MethodWrapper>(methods);
-								baseMethodsArray = new List<MethodWrapper>(baseMethods);
+								baseMethodsArray = new List<MethodWrapper[]>(baseMethods);
 							}
 							AddAccessStubMethods(methodsArray, baseMethodsArray, baseTypeWrapper);
 							baseTypeWrapper = baseTypeWrapper.BaseTypeWrapper;
@@ -1147,7 +1147,7 @@ namespace IKVM.Internal
 				}
 			}
 
-			private void AddMirandaMethods(List<MethodWrapper> methods, List<MethodWrapper> baseMethods, TypeWrapper tw)
+			private void AddMirandaMethods(List<MethodWrapper> methods, List<MethodWrapper[]> baseMethods, TypeWrapper tw)
 			{
 				foreach (TypeWrapper iface in tw.Interfaces)
 				{
@@ -1170,7 +1170,7 @@ namespace IKVM.Internal
 								{
 									mw = new SmartCallMethodWrapper(wrapper, ifmethod.Name, ifmethod.Signature, null, null, null, Modifiers.Public | Modifiers.Abstract, MemberFlags.HideFromReflection | MemberFlags.MirandaMethod, SimpleOpCode.Call, SimpleOpCode.Callvirt);
 									methods.Add(mw);
-									baseMethods.Add(ifmethod);
+									baseMethods.Add(new MethodWrapper[] { ifmethod });
 									break;
 								}
 								if (!mw.IsStatic || mw.DeclaringType == wrapper)
@@ -1185,7 +1185,7 @@ namespace IKVM.Internal
 			}
 
 #if STATIC_COMPILER || NET_4_0
-			private void AddAccessStubMethods(List<MethodWrapper> methods, List<MethodWrapper> baseMethods, TypeWrapper tw)
+			private void AddAccessStubMethods(List<MethodWrapper> methods, List<MethodWrapper[]> baseMethods, TypeWrapper tw)
 			{
 				foreach (MethodWrapper mw in tw.GetMethods())
 				{
@@ -1195,7 +1195,7 @@ namespace IKVM.Internal
 					{
 						MethodWrapper stub = new SmartCallMethodWrapper(wrapper, mw.Name, mw.Signature, null, null, null, mw.Modifiers, MemberFlags.HideFromReflection | MemberFlags.AccessStub, SimpleOpCode.Call, SimpleOpCode.Callvirt);
 						methods.Add(stub);
-						baseMethods.Add(mw);
+						baseMethods.Add(new MethodWrapper[] { mw });
 					}
 				}
 			}
@@ -1227,21 +1227,35 @@ namespace IKVM.Internal
 				throw new InvalidOperationException();
 			}
 
-			internal override MethodBase LinkMethod(MethodWrapper mw)
+			private static bool CheckLoaderConstraints(MethodWrapper mw, MethodWrapper baseMethod)
 			{
-				Debug.Assert(mw != null);
 				bool unloadableOverrideStub = false;
-				int index = GetMethodIndex(mw);
-				MethodWrapper baseMethod = baseMethods[index];
-				if (baseMethod != null)
+				if (mw.ReturnType != baseMethod.ReturnType)
 				{
-					baseMethod.Link();
-					// check the loader constraints
-					if (mw.ReturnType != baseMethod.ReturnType)
+					if (baseMethod.ReturnType.IsUnloadable || JVM.FinishingForDebugSave)
 					{
-						if (baseMethod.ReturnType.IsUnloadable || JVM.FinishingForDebugSave)
+						if (!mw.ReturnType.IsUnloadable || (!baseMethod.ReturnType.IsUnloadable && JVM.FinishingForDebugSave))
 						{
-							if (!mw.ReturnType.IsUnloadable || (!baseMethod.ReturnType.IsUnloadable && JVM.FinishingForDebugSave))
+							unloadableOverrideStub = true;
+						}
+					}
+					else
+					{
+#if STATIC_COMPILER
+						StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has a return type \"{0}\" and tries to override method \"{5}.{3}{4}\" that has a return type \"{1}\"", mw.ReturnType, baseMethod.ReturnType, mw.DeclaringType.Name, mw.Name, mw.Signature, baseMethod.DeclaringType.Name);
+#endif
+						throw new LinkageError("Loader constraints violated");
+					}
+				}
+				TypeWrapper[] here = mw.GetParameters();
+				TypeWrapper[] there = baseMethod.GetParameters();
+				for (int i = 0; i < here.Length; i++)
+				{
+					if (here[i] != there[i])
+					{
+						if (there[i].IsUnloadable || JVM.FinishingForDebugSave)
+						{
+							if (!here[i].IsUnloadable || (!there[i].IsUnloadable && JVM.FinishingForDebugSave))
 							{
 								unloadableOverrideStub = true;
 							}
@@ -1249,32 +1263,26 @@ namespace IKVM.Internal
 						else
 						{
 #if STATIC_COMPILER
-							StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has a return type \"{0}\" and tries to override method \"{5}.{3}{4}\" that has a return type \"{1}\"", mw.ReturnType, baseMethod.ReturnType, mw.DeclaringType.Name, mw.Name, mw.Signature, baseMethod.DeclaringType.Name);
+							StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has an argument type \"{0}\" and tries to override method \"{5}.{3}{4}\" that has an argument type \"{1}\"", here[i], there[i], mw.DeclaringType.Name, mw.Name, mw.Signature, baseMethod.DeclaringType.Name);
 #endif
 							throw new LinkageError("Loader constraints violated");
 						}
 					}
-					TypeWrapper[] here = mw.GetParameters();
-					TypeWrapper[] there = baseMethod.GetParameters();
-					for (int i = 0; i < here.Length; i++)
+				}
+				return unloadableOverrideStub;
+			}
+
+			internal override MethodBase LinkMethod(MethodWrapper mw)
+			{
+				Debug.Assert(mw != null);
+				bool unloadableOverrideStub = false;
+				int index = GetMethodIndex(mw);
+				if (baseMethods[index] != null)
+				{
+					foreach (MethodWrapper baseMethod in baseMethods[index])
 					{
-						if (here[i] != there[i])
-						{
-							if (there[i].IsUnloadable || JVM.FinishingForDebugSave)
-							{
-								if (!here[i].IsUnloadable || (!there[i].IsUnloadable && JVM.FinishingForDebugSave))
-								{
-									unloadableOverrideStub = true;
-								}
-							}
-							else
-							{
-#if STATIC_COMPILER
-								StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has an argument type \"{0}\" and tries to override method \"{5}.{3}{4}\" that has an argument type \"{1}\"", here[i], there[i], mw.DeclaringType.Name, mw.Name, mw.Signature, baseMethod.DeclaringType.Name);
-#endif
-								throw new LinkageError("Loader constraints violated");
-							}
-						}
+						baseMethod.Link();
+						unloadableOverrideStub |= CheckLoaderConstraints(mw, baseMethod);
 					}
 				}
 				Debug.Assert(mw.GetMethod() == null);
@@ -2337,8 +2345,8 @@ namespace IKVM.Internal
 				return typeBuilder.DefineTypeInitializer();
 			}
 
-			// this finds the method that md is going to be overriding
-			private MethodWrapper FindBaseMethod(string name, string sig, out bool explicitOverride)
+			// this finds all methods that the specified name/sig is going to be overriding
+			private MethodWrapper[] FindBaseMethods(string name, string sig, out bool explicitOverride)
 			{
 				Debug.Assert(!classFile.IsInterface);
 				Debug.Assert(name != "<init>");
@@ -2359,7 +2367,7 @@ namespace IKVM.Internal
 						&& !baseMethod.IsPrivate
 						&& (baseMethod.IsPublic || baseMethod.IsProtected || baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper)))
 					{
-						throw new VerifyError("final method " + baseMethod.Name + baseMethod.Signature + " in " + baseMethod.DeclaringType.Name + " is overriden in " + wrapper.Name);
+						throw new VerifyError("final method " + baseMethod.Name + baseMethod.Signature + " in " + baseMethod.DeclaringType.Name + " is overridden in " + wrapper.Name);
 					}
 					// RULE 1a: static methods are ignored (other than the RULE 1 check)
 					if (baseMethod.IsStatic)
@@ -2376,7 +2384,36 @@ namespace IKVM.Internal
 							explicitOverride = false;
 							return null;
 						}
-						return baseMethod;
+						if (!baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper))
+						{
+							// check if there is another method (in the same package) that we should override
+							tw = baseMethod.DeclaringType.BaseTypeWrapper;
+							while (tw != null)
+							{
+								MethodWrapper baseMethod2 = tw.GetMethodWrapper(name, sig, true);
+								if (baseMethod2 == null)
+								{
+									break;
+								}
+								if (baseMethod2.DeclaringType.IsPackageAccessibleFrom(wrapper) && !baseMethod2.IsPrivate)
+								{
+									if (baseMethod2.IsFinal)
+									{
+										throw new VerifyError("final method " + baseMethod2.Name + baseMethod2.Signature + " in " + baseMethod2.DeclaringType.Name + " is overridden in " + wrapper.Name);
+									}
+									if (!baseMethod2.IsStatic)
+									{
+										if (baseMethod2.IsPublic || baseMethod2.IsProtected)
+										{
+											break;
+										}
+										return new MethodWrapper[] { baseMethod, baseMethod2 };
+									}
+								}
+								tw = baseMethod2.DeclaringType.BaseTypeWrapper;
+							}
+						}
+						return new MethodWrapper[] { baseMethod };
 					}
 					// RULE 3: private and static methods are ignored
 					else if (!baseMethod.IsPrivate)
@@ -2385,7 +2422,7 @@ namespace IKVM.Internal
 						if (baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper)
 							|| (baseMethod.IsInternal && baseMethod.DeclaringType.InternalsVisibleTo(wrapper)))
 						{
-							return baseMethod;
+							return new MethodWrapper[] { baseMethod };
 						}
 						// since we encountered a method with the same name/signature that we aren't overriding,
 						// we need to specify an explicit override
@@ -2537,8 +2574,8 @@ namespace IKVM.Internal
 						if (methods[index].IsMirandaMethod)
 						{
 							// We're a Miranda method
-							Debug.Assert(baseMethods[index].DeclaringType.IsInterface);
-							string name = GenerateUniqueMethodName(methods[index].Name, baseMethods[index]);
+							Debug.Assert(baseMethods[index].Length == 1 && baseMethods[index][0].DeclaringType.IsInterface);
+							string name = GenerateUniqueMethodName(methods[index].Name, baseMethods[index][0]);
 							MethodBuilder mb = typeBuilder.DefineMethod(name, MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Abstract | MethodAttributes.CheckAccessOnOverride, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
 							AttributeHelper.HideFromReflection(mb);
 #if STATIC_COMPILER
@@ -2550,29 +2587,29 @@ namespace IKVM.Internal
 							}
 #endif // STATIC_COMPILER
 							// if we changed the name or if the interface method name is remapped, we need to add an explicit methodoverride.
-							if (!baseMethods[index].IsDynamicOnly && name != baseMethods[index].RealName)
+							if (!baseMethods[index][0].IsDynamicOnly && name != baseMethods[index][0].RealName)
 							{
-								typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMethods[index].GetMethod());
+								typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMethods[index][0].GetMethod());
 							}
 							return mb;
 						}
 						else if (methods[index].IsAccessStub)
 						{
-							Debug.Assert(!baseMethods[index].HasCallerID);
-							MethodAttributes stubattribs = baseMethods[index].IsPublic ? MethodAttributes.Public : MethodAttributes.FamORAssem;
+							Debug.Assert(baseMethods[index].Length == 1 && !baseMethods[index][0].HasCallerID);
+							MethodAttributes stubattribs = baseMethods[index][0].IsPublic ? MethodAttributes.Public : MethodAttributes.FamORAssem;
 							stubattribs |= MethodAttributes.HideBySig;
-							if (baseMethods[index].IsStatic)
+							if (baseMethods[index][0].IsStatic)
 							{
 								stubattribs |= MethodAttributes.Static;
 							}
 							else
 							{
 								stubattribs |= MethodAttributes.CheckAccessOnOverride | MethodAttributes.Virtual;
-								if (baseMethods[index].IsAbstract && wrapper.IsAbstract)
+								if (baseMethods[index][0].IsAbstract && wrapper.IsAbstract)
 								{
 									stubattribs |= MethodAttributes.Abstract;
 								}
-								if (baseMethods[index].IsFinal)
+								if (baseMethods[index][0].IsFinal)
 								{
 									// NOTE final methods still need to be virtual, because a subclass may need this method to
 									// implement an interface method
@@ -2581,7 +2618,7 @@ namespace IKVM.Internal
 							}
 							MethodBuilder mb = typeBuilder.DefineMethod(methods[index].Name, stubattribs, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
 							AttributeHelper.HideFromReflection(mb);
-							if (!baseMethods[index].IsAbstract)
+							if (!baseMethods[index][0].IsAbstract)
 							{
 								CodeEmitter ilgen = CodeEmitter.Create(mb);
 								int argc = methods[index].GetParametersForDefineMethod().Length + (methods[index].IsStatic ? 0 : 1);
@@ -2589,7 +2626,7 @@ namespace IKVM.Internal
 								{
 									ilgen.Emit(OpCodes.Ldarg_S, (byte)i);
 								}
-								baseMethods[index].EmitCall(ilgen);
+								baseMethods[index][0].EmitCall(ilgen);
 								ilgen.Emit(OpCodes.Ret);
 								ilgen.DoEmit();
 							}
@@ -2768,18 +2805,9 @@ namespace IKVM.Internal
 							}
 						}
 #endif
-						// if a method is virtual, we need to find the method it overrides (if any), for several reasons:
-						// - if we're overriding a method that has a different name (e.g. some of the virtual methods
-						//   in System.Object [Equals <-> equals]) we need to add an explicit MethodOverride
-						// - if one of the base classes has a similar method that is private (or package) that we aren't
-						//   overriding, we need to specify an explicit MethodOverride
-						MethodWrapper baseMce = baseMethods[index];
-						bool explicitOverride = methods[index].IsExplicitOverride;
 						if ((attribs & MethodAttributes.Virtual) != 0 && !classFile.IsInterface)
 						{
-							// make sure the base method is already defined
-							Debug.Assert(baseMce == null || baseMce.GetMethod() != null);
-							if (baseMce == null || baseMce.DeclaringType.IsInterface)
+							if (baseMethods[index] == null || (baseMethods[index].Length == 1 && baseMethods[index][0].DeclaringType.IsInterface))
 							{
 								// we need to set NewSlot here, to prevent accidentally overriding methods
 								// (for example, if a Java class has a method "boolean Equals(object)", we don't want that method
@@ -2790,14 +2818,19 @@ namespace IKVM.Internal
 							{
 								// if we have a method overriding a more accessible method (the JVM allows this), we need to make the
 								// method more accessible, because otherwise the CLR will complain that we're reducing access
-								MethodBase baseMethod = baseMce.GetMethod();
-								if ((baseMethod.IsPublic && !m.IsPublic) ||
-									((baseMethod.IsFamily || baseMethod.IsFamilyOrAssembly) && !m.IsPublic && !m.IsProtected) ||
-									(!m.IsPublic && !m.IsProtected && !baseMce.DeclaringType.IsPackageAccessibleFrom(wrapper)))
+								bool hasPublicBaseMethod = false;
+								foreach (MethodWrapper baseMethodWrapper in baseMethods[index])
 								{
-									attribs &= ~MethodAttributes.MemberAccessMask;
-									attribs |= baseMethod.IsPublic ? MethodAttributes.Public : MethodAttributes.FamORAssem;
-									setModifiers = true;
+									MethodBase baseMethod = baseMethodWrapper.GetMethod();
+									if ((baseMethod.IsPublic && !m.IsPublic) ||
+										((baseMethod.IsFamily || baseMethod.IsFamilyOrAssembly) && !m.IsPublic && !m.IsProtected) ||
+										(!m.IsPublic && !m.IsProtected && !baseMethodWrapper.DeclaringType.IsPackageAccessibleFrom(wrapper)))
+									{
+										hasPublicBaseMethod |= baseMethod.IsPublic;
+										attribs &= ~MethodAttributes.MemberAccessMask;
+										attribs |= hasPublicBaseMethod ? MethodAttributes.Public : MethodAttributes.FamORAssem;
+										setModifiers = true;
+									}
 								}
 							}
 						}
@@ -2810,10 +2843,10 @@ namespace IKVM.Internal
 							bool needFinalize = false;
 							bool needDispatch = false;
 							MethodInfo baseFinalize = null;
-							if (baseMce != null && ReferenceEquals(m.Name, StringConstants.FINALIZE) && ReferenceEquals(m.Signature, StringConstants.SIG_VOID))
+							if (baseMethods[index] != null && ReferenceEquals(m.Name, StringConstants.FINALIZE) && ReferenceEquals(m.Signature, StringConstants.SIG_VOID))
 							{
 								baseFinalize = GetBaseFinalizeMethod(wrapper.BaseTypeWrapper);
-								if (baseMce.DeclaringType == CoreClasses.java.lang.Object.Wrapper)
+								if (baseMethods[index][0].DeclaringType == CoreClasses.java.lang.Object.Wrapper)
 								{
 									// This type is the first type in the hierarchy to introduce a finalize method
 									// (other than the one in java.lang.Object obviously), so we need to override
@@ -2866,42 +2899,31 @@ namespace IKVM.Internal
 									setNameSig = true;
 								}
 							}
-							bool needMethodImpl = baseMce != null && (setNameSig || explicitOverride || baseMce.RealName != name) && !needFinalize;
-							if (unloadableOverrideStub || needMethodImpl)
+							bool newslot = baseMethods[index] != null && (setNameSig || methods[index].IsExplicitOverride || baseMethods[index][0].RealName != name) && !needFinalize;
+							if (unloadableOverrideStub || newslot)
 							{
 								attribs |= MethodAttributes.NewSlot;
 							}
 							mb = typeBuilder.DefineMethod(name, attribs, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
 							if (unloadableOverrideStub)
 							{
-								GenerateUnloadableOverrideStub(wrapper, typeBuilder, baseMce, mb, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
-							}
-							else if (needMethodImpl)
-							{
-								// assert that the method we're overriding is in fact virtual and not final!
-								Debug.Assert(baseMce.GetMethod().IsVirtual && !baseMce.GetMethod().IsFinal);
-								typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMce.GetMethod());
-							}
-							if (!m.IsStatic && !m.IsAbstract && !m.IsPrivate && baseMce != null && !baseMce.DeclaringType.IsPackageAccessibleFrom(wrapper))
-							{
-								// we may have to explicitly override another package accessible abstract method
-								TypeWrapper btw = baseMce.DeclaringType.BaseTypeWrapper;
-								while (btw != null)
+								foreach (MethodWrapper baseMethod in baseMethods[index])
 								{
-									MethodWrapper bmw = btw.GetMethodWrapper(m.Name, m.Signature, true);
-									if (bmw == null)
+									// TODO if there are multiple base methods, we're creating an unloadable override stub for all of them, but in theory it's possible that not all of them need it
+									GenerateUnloadableOverrideStub(wrapper, typeBuilder, baseMethod, mb, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
+								}
+							}
+							else if (baseMethods[index] != null && !needFinalize)
+							{
+								bool subsequent = false;
+								foreach (MethodWrapper baseMethod in baseMethods[index])
+								{
+									if (subsequent || setNameSig || methods[index].IsExplicitOverride || baseMethod.RealName != name)
 									{
-										break;
+										typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMethod.GetMethod());
 									}
-									if (bmw.DeclaringType.IsPackageAccessibleFrom(wrapper) && bmw.IsAbstract && !(bmw.IsPublic || bmw.IsProtected))
-									{
-										if (bmw != baseMce)
-										{
-											typeBuilder.DefineMethodOverride(mb, (MethodInfo)bmw.GetMethod());
-										}
-										break;
-									}
-									btw = bmw.DeclaringType.BaseTypeWrapper;
+									// the non-primary base methods always need an explicit method override
+									subsequent = true;
 								}
 							}
 							// if we're overriding java.lang.Object.finalize we need to emit a stub to override System.Object.Finalize,
