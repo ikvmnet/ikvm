@@ -137,15 +137,20 @@ namespace IKVM.Internal
 					throw new IllegalAccessError("Class " + f.Name + " cannot access its superinterface " + iface.Name);
 				}
 #if !STATIC_COMPILER
-				if (!iface.IsPublic
-					&& !ReflectUtil.IsFromAssembly(iface.TypeAsBaseType, classLoader.GetTypeWrapperFactory().ModuleBuilder.Assembly)
-					&& ReflectUtil.GetAssembly(iface.TypeAsBaseType).GetType(DynamicClassLoader.GetProxyHelperName(iface.TypeAsTBD)) == null)
+				if (!iface.IsPublic && !ReflectUtil.IsFromAssembly(iface.TypeAsBaseType, classLoader.GetTypeWrapperFactory().ModuleBuilder.Assembly))
 				{
-					// NOTE this happens when you call Proxy.newProxyInstance() on a non-public .NET interface
-					// (for ikvmc compiled Java types, ikvmc generates public proxy stubs).
-					// NOTE we don't currently check interfaces inherited from other interfaces because mainstream .NET languages
-					// don't allow public interfaces extending non-public interfaces.
-					throw new IllegalAccessError("Class " + f.Name + " cannot access its non-public superinterface " + iface.Name + " from another assembly");
+					string proxyName = DynamicClassLoader.GetProxyHelperName(iface.TypeAsTBD);
+					Type proxyType = ReflectUtil.GetAssembly(iface.TypeAsBaseType).GetType(proxyName);
+					// FXBUG we need to check if the type returned is actually correct, because .NET 2.0 has a bug that
+					// causes it to return typeof(IFoo) for GetType("__<Proxy>+IFoo")
+					if (proxyType == null || proxyType.FullName != proxyName)
+					{
+						// NOTE this happens when you call Proxy.newProxyInstance() on a non-public .NET interface
+						// (for ikvmc compiled Java types, ikvmc generates public proxy stubs).
+						// NOTE we don't currently check interfaces inherited from other interfaces because mainstream .NET languages
+						// don't allow public interfaces extending non-public interfaces.
+						throw new IllegalAccessError("Class " + f.Name + " cannot access its non-public superinterface " + iface.Name + " from another assembly");
+					}
 				}
 #endif
 				if (!iface.IsInterface)
