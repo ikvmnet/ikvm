@@ -130,6 +130,16 @@ import sun.security.util.SecurityConstants;
 public
 class Thread implements Runnable {
     // [IKVM]
+    static {
+        // force the set/getContextClassLoader methods to be JIT compiled, because isCCLOverridden(Thread) depends on it
+        // (we don't want to use RuntimeHelpers.PrepareMethod() because it requires full trust)
+        Thread dummy = new Thread((Void)null);
+        dummy.getContextClassLoader();
+        dummy.setContextClassLoader(ClassLoader.DUMMY);
+    }
+    private Thread(Void _) {
+        // body replaced in map.xml
+    }
     final class Cleanup {
         private final Thread thread;
 
