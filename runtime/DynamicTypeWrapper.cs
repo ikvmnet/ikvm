@@ -1354,11 +1354,11 @@ namespace IKVM.Internal
 					// (fields can be overloaded on type)
 					fieldName += "/" + typeWrapper.Name;
 				}
+				string realFieldName = fieldName;
 				FieldAttributes attribs = 0;
 				MethodAttributes methodAttribs = MethodAttributes.HideBySig;
 #if STATIC_COMPILER
 				bool setModifiers = fld.IsInternal || (fld.Modifiers & (Modifiers.Synthetic | Modifiers.Enum)) != 0;
-				bool hideFromJava = false;
 #endif
 				bool isWrappedFinal = false;
 				if (fld.IsPrivate)
@@ -1380,16 +1380,6 @@ namespace IKVM.Internal
 					attribs |= FieldAttributes.Assembly;
 					methodAttribs |= MethodAttributes.Assembly;
 				}
-
-#if STATIC_COMPILER
-				if (wrapper.IsPublic && (fw.IsPublic || fw.IsProtected) && !fw.FieldTypeWrapper.IsPublic)
-				{
-					// this field is going to get a type 2 access stub, so we hide the actual field
-					attribs &= ~FieldAttributes.FieldAccessMask;
-					attribs |= FieldAttributes.Assembly;
-					hideFromJava = true;
-				}
-#endif
 
 				if (fld.IsStatic)
 				{
@@ -1430,20 +1420,31 @@ namespace IKVM.Internal
 #endif
 						}
 					}
+
+#if STATIC_COMPILER
+					if (wrapper.IsPublic && (fw.IsPublic || fw.IsProtected) && !fw.FieldTypeWrapper.IsPublic)
+					{
+						// this field is going to get a type 2 access stub, so we hide the actual field
+						attribs &= ~FieldAttributes.FieldAccessMask;
+						attribs |= FieldAttributes.Assembly;
+						if (!fw.IsStatic)
+						{
+							// we need to have a setter for reflection and serialization
+							attribs &= ~FieldAttributes.InitOnly;
+						}
+						// instead of adding HideFromJava we rename the field to avoid confusing broken compilers
+						// see https://sourceforge.net/tracker/?func=detail&atid=525264&aid=3056721&group_id=69637
+						// additional note: now that we maintain the ordering of the fields, we need to recognize
+						// these fields so that we know where to insert the corresponding accessor property FieldWrapper.
+						realFieldName = "__<>" + fieldName;
+					}
+#endif
+
 					Type[] modreq = Type.EmptyTypes;
 					if (fld.IsVolatile)
 					{
 						modreq = new Type[] { Types.IsVolatile };
 					}
-					string realFieldName = fieldName;
-#if STATIC_COMPILER
-					if (hideFromJava)
-					{
-						// instead of adding HideFromJava we rename the field to avoid confusing broken compilers
-						// see https://sourceforge.net/tracker/?func=detail&atid=525264&aid=3056721&group_id=69637
-						realFieldName = "__<>" + fieldName;
-					}
-#endif // STATIC_COMPILER
 					field = typeBuilder.DefineField(realFieldName, type, modreq, Type.EmptyTypes, attribs);
 					if (fld.IsTransient)
 					{
@@ -4255,8 +4256,14 @@ namespace IKVM.Internal
 					fw.EmitGet(ilgen);
 					ilgen.Emit(OpCodes.Ret);
 					ilgen.DoEmit();
-					if (!fw.IsFinal)
+					if (!fw.IsFinal || (!fw.IsStatic && !type1))
 					{
+						if (fw.IsFinal)
+						{
+							// we need to generate a (private) setter for final fields for reflection and serialization
+							attribs &= ~MethodAttributes.MemberAccessMask;
+							attribs |= MethodAttributes.Private;
+						}
 						MethodBuilder setter = typeBuilder.DefineMethod(wrapper.GenerateUniqueMethodName("set_" + fw.Name, Types.Void, new Type[] { propType }), attribs, null, new Type[] { propType });
 						AttributeHelper.HideFromJava(setter);
 						pb.SetSetMethod(setter);
