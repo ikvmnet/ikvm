@@ -3912,7 +3912,7 @@ namespace IKVM.Internal
 					TypeWrapper[] interfaces = wrapper.Interfaces;
 					for (int i = 0; i < interfaces.Length; i++)
 					{
-						ImplementInterfaceMethodStubs(doneSet, interfaces[i]);
+						ImplementInterfaceMethodStubs(doneSet, interfaces[i], false);
 					}
 					// if any of our base classes has an incomplete interface implementation we need to look through all
 					// the base class interfaces to see if we've got an implementation now
@@ -3921,40 +3921,13 @@ namespace IKVM.Internal
 					{
 						for (int i = 0; i < baseTypeWrapper.Interfaces.Length; i++)
 						{
-							ImplementInterfaceMethodStubs(doneSet, baseTypeWrapper.Interfaces[i]);
+							ImplementInterfaceMethodStubs(doneSet, baseTypeWrapper.Interfaces[i], true);
 						}
 						baseTypeWrapper = baseTypeWrapper.BaseTypeWrapper;
 					}
 					if (!wrapper.IsAbstract && wrapper.HasUnsupportedAbstractMethods)
 					{
 						AddUnsupportedAbstractMethods();
-					}
-					foreach (MethodWrapper mw in methods)
-					{
-						if (mw.Name != "<init>" && !mw.IsStatic && mw.IsPublic)
-						{
-							if (wrapper.BaseTypeWrapper != null && wrapper.BaseTypeWrapper.HasIncompleteInterfaceImplementation)
-							{
-								Dictionary<TypeWrapper, TypeWrapper> hashtable = null;
-								TypeWrapper tw = wrapper.BaseTypeWrapper;
-								while (tw.HasIncompleteInterfaceImplementation)
-								{
-									foreach (TypeWrapper iface in tw.Interfaces)
-									{
-										AddMethodOverride(mw, (MethodBuilder)mw.GetMethod(), iface, mw.Name, mw.Signature, ref hashtable, false);
-									}
-									tw = tw.BaseTypeWrapper;
-								}
-							}
-							if (true)
-							{
-								Dictionary<TypeWrapper, TypeWrapper> hashtable = null;
-								foreach (TypeWrapper iface in wrapper.Interfaces)
-								{
-									AddMethodOverride(mw, (MethodBuilder)mw.GetMethod(), iface, mw.Name, mw.Signature, ref hashtable, true);
-								}
-							}
-						}
 					}
 					wrapper.automagicSerializationCtor = Serialization.AddAutomagicSerialization(wrapper);
 				}
@@ -4300,7 +4273,7 @@ namespace IKVM.Internal
 			}
 #endif // STATIC_COMPILER
 
-			private void ImplementInterfaceMethodStubs(Dictionary<TypeWrapper, TypeWrapper> doneSet, TypeWrapper interfaceTypeWrapper)
+			private void ImplementInterfaceMethodStubs(Dictionary<TypeWrapper, TypeWrapper> doneSet, TypeWrapper interfaceTypeWrapper, bool baseClassInterface)
 			{
 				Debug.Assert(interfaceTypeWrapper.IsInterface);
 
@@ -4314,17 +4287,17 @@ namespace IKVM.Internal
 				{
 					if (!method.IsStatic && !method.IsDynamicOnly)
 					{
-						ImplementInterfaceMethodStubImpl(method);
+						ImplementInterfaceMethodStubImpl(method, baseClassInterface);
 					}
 				}
 				TypeWrapper[] interfaces = interfaceTypeWrapper.Interfaces;
 				for (int i = 0; i < interfaces.Length; i++)
 				{
-					ImplementInterfaceMethodStubs(doneSet, interfaces[i]);
+					ImplementInterfaceMethodStubs(doneSet, interfaces[i], baseClassInterface);
 				}
 			}
 
-			private void ImplementInterfaceMethodStubImpl(MethodWrapper ifmethod)
+			private void ImplementInterfaceMethodStubImpl(MethodWrapper ifmethod, bool baseClassInterface)
 			{
 				// we're mangling the name to prevent subclasses from accidentally overriding this method and to
 				// prevent clashes with overloaded method stubs that are erased to the same signature (e.g. unloadable types and ghost arrays)
@@ -4430,6 +4403,14 @@ namespace IKVM.Internal
 						ilGenerator.Emit(OpCodes.Ret);
 						ilGenerator.DoEmit();
 					}
+ 					else if (CheckRequireOverrideStub(mce, ifmethod))
+ 					{
+ 						JavaTypeImpl.GenerateUnloadableOverrideStub(wrapper, typeBuilder, ifmethod, (MethodInfo)mce.GetMethod(), mce.ReturnTypeForDefineMethod, mce.GetParametersForDefineMethod());
+ 					}
+ 					else if (baseClassInterface && mce.DeclaringType == wrapper)
+ 					{
+ 						typeBuilder.DefineMethodOverride((MethodInfo)mce.GetMethod(), (MethodInfo)ifmethod.GetMethod());
+ 					}
 				}
 				else
 				{
@@ -4896,35 +4877,6 @@ namespace IKVM.Internal
 				ilgen.DoEmit();
 			}
 #endif // STATIC_COMPILER
-
-			private void AddMethodOverride(MethodWrapper method, MethodBuilder mb, TypeWrapper iface, string name, string sig, ref Dictionary<TypeWrapper, TypeWrapper> hashtable, bool unloadableOnly)
-			{
-				if (hashtable != null && hashtable.ContainsKey(iface))
-				{
-					return;
-				}
-				MethodWrapper mw = iface.GetMethodWrapper(name, sig, false);
-				if (mw != null)
-				{
-					if (hashtable == null)
-					{
-						hashtable = new Dictionary<TypeWrapper, TypeWrapper>();
-					}
-					hashtable.Add(iface, iface);
-					if (CheckRequireOverrideStub(method, mw))
-					{
-						JavaTypeImpl.GenerateUnloadableOverrideStub(wrapper, typeBuilder, mw, mb, method.ReturnTypeForDefineMethod, method.GetParametersForDefineMethod());
-					}
-					else if (!unloadableOnly)
-					{
-						typeBuilder.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
-					}
-				}
-				foreach (TypeWrapper iface2 in iface.Interfaces)
-				{
-					AddMethodOverride(method, mb, iface2, name, sig, ref hashtable, unloadableOnly);
-				}
-			}
 
 			private static bool CheckRequireOverrideStub(MethodWrapper mw1, MethodWrapper mw2)
 			{
