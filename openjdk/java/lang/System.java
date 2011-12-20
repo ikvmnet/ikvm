@@ -323,6 +323,9 @@ public final class System {
 
     private static synchronized
     void setSecurityManager0(final SecurityManager s) {
+        // [IKVM] force sun.misc.Launcher to initialize, because it assumes that it runs without a SecurityManager
+        sun.misc.Launcher.getLauncher();
+
         SecurityManager sm = getSecurityManager();
         if (sm != null) {
             // ask the currently installed security manager if we
