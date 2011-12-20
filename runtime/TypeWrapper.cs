@@ -3042,6 +3042,21 @@ namespace IKVM.Internal
 					interfaces[i] = ClassLoaderWrapper.GetWrapperFromType(interfaceTypes[i]);
 				}
 			}
+			for (int i = 0; i < interfaceTypes.Length; i++)
+			{
+				if (interfaces[i].IsRemapped)
+				{
+					// for remapped interfaces, we also return the original interface (Java types will ignore it, if it isn't listed in the ImplementsAttribute)
+					TypeWrapper twRemapped = interfaces[i];
+					TypeWrapper tw = DotNetTypeWrapper.GetWrapperFromDotNetType(interfaceTypes[i]);
+					interfaces[i] = tw;
+					if (Array.IndexOf(interfaces, twRemapped) == -1)
+					{
+						Array.Resize(ref interfaces, interfaces.Length + 1);
+						interfaces[interfaces.Length - 1] = twRemapped;
+					}
+				}
+			}
 			return interfaces;
 		}
 
