@@ -414,7 +414,7 @@ static class NetExp
 						{
 							foreach (Type ex in throws.types)
 							{
-								attrib.Add(ex.FullName.Replace('.', '/'));
+								attrib.Add(ClassLoaderWrapper.GetWrapperFromType(ex).Name.Replace('.', '/'));
 							}
 						}
 						m.AddAttribute(attrib);
