@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2010 Jeroen Frijters
+  Copyright (C) 2002-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -470,8 +470,12 @@ static class NetExp
 		}
 		AddMetaAnnotations(writer, tw);
 		zipCount++;
-		zipFile.PutNextEntry(new ZipEntry(name + ".class"));
-		writer.Write(zipFile);
+		MemoryStream mem = new MemoryStream();
+		writer.Write(mem);
+		ZipEntry entry = new ZipEntry(name + ".class");
+		entry.Size = mem.Position;
+		zipFile.PutNextEntry(entry);
+		mem.WriteTo(zipFile);
 	}
 
 	private static string GetAssemblyName(TypeWrapper tw)
