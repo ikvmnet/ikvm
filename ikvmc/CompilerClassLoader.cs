@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2010 Jeroen Frijters
+  Copyright (C) 2002-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -2333,29 +2333,42 @@ namespace IKVM.Internal
 				mapxml_ReplacedMethods = new Dictionary<MethodKey, IKVM.Internal.MapXml.ReplaceMethodCall[]>();
 				foreach(IKVM.Internal.MapXml.Class c in map.assembly.Classes)
 				{
-					// HACK if it is not a remapped type, we assume it is a container for native methods
+					// if it is not a remapped type, it must be a container for native, patched or augmented methods
 					if(c.Shadows == null)
 					{
 						string className = c.Name;
 						mapxml_Classes.Add(className, c);
-						if(c.Methods != null)
+						AddMapXmlMethods(className, c.Constructors);
+						AddMapXmlMethods(className, c.Methods);
+						if (c.Clinit != null)
 						{
-							foreach(IKVM.Internal.MapXml.Method method in c.Methods)
-							{
-								if(method.body != null)
-								{
-									string methodName = method.Name;
-									string methodSig = method.Sig;
-									mapxml_MethodBodies.Add(new MethodKey(className, methodName, methodSig), method.body);
-								}
-								if(method.ReplaceMethodCalls != null)
-								{
-									mapxml_ReplacedMethods.Add(new MethodKey(className, method.Name, method.Sig), method.ReplaceMethodCalls);
-								}
-							}
+							AddMapXmlMethod(className, c.Clinit);
 						}
 					}
 				}
+			}
+		}
+
+		private void AddMapXmlMethods(string className, IKVM.Internal.MapXml.MethodBase[] methods)
+		{
+			if(methods != null)
+			{
+				foreach(IKVM.Internal.MapXml.MethodBase method in methods)
+				{
+					AddMapXmlMethod(className, method);
+				}
+			}
+		}
+
+		private void AddMapXmlMethod(string className, IKVM.Internal.MapXml.MethodBase method)
+		{
+			if(method.body != null)
+			{
+				mapxml_MethodBodies.Add(method.ToMethodKey(className), method.body);
+			}
+			if(method.ReplaceMethodCalls != null)
+			{
+				mapxml_ReplacedMethods.Add(method.ToMethodKey(className), method.ReplaceMethodCalls);
 			}
 		}
 

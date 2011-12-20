@@ -1301,23 +1301,6 @@ namespace IKVM.Internal.MapXml
 		public string Class;
 	}
 
-	public class Constructor
-	{
-		[XmlAttribute("sig")]
-		public string Sig;
-		[XmlAttribute("modifiers")]
-		public MapModifiers Modifiers;
-		[XmlElement("parameter")]
-		public Param[] Params;
-		public InstructionList body;
-		public InstructionList alternateBody;
-		public Redirect redirect;
-		[XmlElement("throws", typeof(Throws))]
-		public Throws[] throws;
-		[XmlElement("attribute")]
-		public Attribute[] Attributes;
-	}
-
 	public class Redirect
 	{
 		private int linenum = Root.LineNumber;
@@ -1396,31 +1379,31 @@ namespace IKVM.Internal.MapXml
 		public InstructionList code;
 	}
 
-	public class Method
+	public abstract class MethodBase
 	{
-		[XmlAttribute("name")]
-		public string Name;
-		[XmlAttribute("sig")]
-		public string Sig;
-		[XmlAttribute("modifiers")]
-		public MapModifiers Modifiers;
 		[XmlAttribute("attributes")]
 		public MethodAttributes MethodAttributes;
-		[XmlAttribute("nonullcheck")]
-		public bool NoNullCheck;
-		[XmlElement("parameter")]
-		public Param[] Params;
 		public InstructionList body;
-		public InstructionList alternateBody;
-		public InstructionList nonvirtualAlternateBody;
-		public Redirect redirect;
-		public Override @override;
 		[XmlElement("throws", typeof(Throws))]
 		public Throws[] throws;
 		[XmlElement("attribute")]
 		public Attribute[] Attributes;
 		[XmlElement("replace-method-call")]
 		public ReplaceMethodCall[] ReplaceMethodCalls;
+
+		internal abstract MethodKey ToMethodKey(string className);
+	}
+
+	public abstract class MethodConstructorBase : MethodBase
+	{
+		[XmlAttribute("sig")]
+		public string Sig;
+		[XmlAttribute("modifiers")]
+		public MapModifiers Modifiers;
+		[XmlElement("parameter")]
+		public Param[] Params;
+		public InstructionList alternateBody;
+		public Redirect redirect;
 
 		internal void Emit(ClassLoaderWrapper loader, CodeEmitter ilgen)
 		{
@@ -1432,6 +1415,37 @@ namespace IKVM.Internal.MapXml
 			{
 				body.Emit(loader, ilgen);
 			}
+		}
+	}
+
+	public class Method : MethodConstructorBase
+	{
+		[XmlAttribute("name")]
+		public string Name;
+		[XmlAttribute("nonullcheck")]
+		public bool NoNullCheck;
+		public InstructionList nonvirtualAlternateBody;
+		public Override @override;
+
+		internal override MethodKey ToMethodKey(string className)
+		{
+			return new MethodKey(className, Name, Sig);
+		}
+	}
+
+	public class Constructor : MethodConstructorBase
+	{
+		internal override MethodKey ToMethodKey(string className)
+		{
+			return new MethodKey(className, StringConstants.INIT, Sig);
+		}
+	}
+
+	public class ClassInitializer : MethodBase
+	{
+		internal override MethodKey ToMethodKey(string className)
+		{
+			return new MethodKey(className, StringConstants.CLINIT, StringConstants.SIG_VOID);
 		}
 	}
 
@@ -1555,7 +1569,7 @@ namespace IKVM.Internal.MapXml
 		[XmlElement("implements")]
 		public Interface[] Interfaces;
 		[XmlElement("clinit")]
-		public Method Clinit;
+		public ClassInitializer Clinit;
 		[XmlElement("attribute")]
 		public Attribute[] Attributes;
 	}
