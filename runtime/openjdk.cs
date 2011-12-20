@@ -449,6 +449,11 @@ namespace IKVM.NativeCode.java
 				{
 					return VirtualFileSystem.Open(name, fileMode, fileAccess);
 				}
+				else if (fileMode == System.IO.FileMode.Append)
+				{
+					// this is the way to get atomic append behavior for all writes
+					return new System.IO.FileStream(name, fileMode, System.Security.AccessControl.FileSystemRights.AppendData, System.IO.FileShare.ReadWrite, 1, System.IO.FileOptions.None);
+				}
 				else
 				{
 					return new System.IO.FileStream(name, fileMode, fileAccess, System.IO.FileShare.ReadWrite, 1, false);
