@@ -2123,6 +2123,16 @@ namespace IKVM.Internal
 						// method that should be callable by anyone through the interface
 						if (interfaces[i].IsVisible)
 						{
+							if (ClassLoaderWrapper.IsRemappedType(interfaces[i]))
+							{
+								TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(interfaces[i]);
+								foreach (MethodWrapper mw in tw.GetMethods())
+								{
+									// HACK we need to link here, because during a core library build we might reference java.lang.AutoCloseable (via IDisposable) before it has been linked
+									mw.Link();
+									InterfaceMethodStubHelper(methodsList, mw.GetMethod(), mw.Name, mw.Signature, mw.GetParameters(), mw.ReturnType);
+								}
+							}
 							InterfaceMapping map = type.GetInterfaceMap(interfaces[i]);
 							for (int j = 0; j < map.InterfaceMethods.Length; j++)
 							{
@@ -2135,24 +2145,7 @@ namespace IKVM.Internal
 									TypeWrapper ret;
 									if (MakeMethodDescriptor(map.InterfaceMethods[j], out name, out sig, out args, out ret))
 									{
-										string key = name + sig;
-										MethodWrapper existing;
-										methodsList.TryGetValue(key, out existing);
-										if (existing == null && BaseTypeWrapper != null)
-										{
-											MethodWrapper baseMethod = BaseTypeWrapper.GetMethodWrapper(name, sig, true);
-											if (baseMethod != null && !baseMethod.IsStatic && baseMethod.IsPublic)
-											{
-												continue;
-											}
-										}
-										if (existing == null || existing is ByRefMethodWrapper || existing.IsStatic || !existing.IsPublic)
-										{
-											// TODO if existing != null, we need to rename the existing method (but this is complicated because
-											// it also affects subclasses). This is especially required is the existing method is abstract,
-											// because otherwise we won't be able to create any subclasses in Java.
-											methodsList[key] = CreateMethodWrapper(name, sig, args, ret, map.InterfaceMethods[j], true);
-										}
+										InterfaceMethodStubHelper(methodsList, map.InterfaceMethods[j], name, sig, args, ret);
 									}
 								}
 							}
@@ -2219,6 +2212,28 @@ namespace IKVM.Internal
 				MethodWrapper[] methodArray = new MethodWrapper[methodsList.Count];
 				methodsList.Values.CopyTo(methodArray, 0);
 				SetMethods(methodArray);
+			}
+		}
+
+		private void InterfaceMethodStubHelper(Dictionary<string, MethodWrapper> methodsList, MethodBase method, string name, string sig, TypeWrapper[] args, TypeWrapper ret)
+		{
+			string key = name + sig;
+			MethodWrapper existing;
+			methodsList.TryGetValue(key, out existing);
+			if (existing == null && BaseTypeWrapper != null)
+			{
+				MethodWrapper baseMethod = BaseTypeWrapper.GetMethodWrapper(name, sig, true);
+				if (baseMethod != null && !baseMethod.IsStatic && baseMethod.IsPublic)
+				{
+					return;
+				}
+			}
+			if (existing == null || existing is ByRefMethodWrapper || existing.IsStatic || !existing.IsPublic)
+			{
+				// TODO if existing != null, we need to rename the existing method (but this is complicated because
+				// it also affects subclasses). This is especially required is the existing method is abstract,
+				// because otherwise we won't be able to create any subclasses in Java.
+				methodsList[key] = CreateMethodWrapper(name, sig, args, ret, method, true);
 			}
 		}
 
