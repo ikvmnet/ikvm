@@ -832,27 +832,6 @@ sealed class InstructionState
 		Console.WriteLine();
 	}
 
-	// this method ensures that no uninitialized object are in the current state
-	internal void CheckUninitializedObjRefs()
-	{
-		for(int i = 0; i < locals.Length; i++)
-		{
-			TypeWrapper type = locals[i];
-			if(VerifierTypeWrapper.IsNew(type))
-			{
-				throw new VerifyError("uninitialized object ref in local (2)");
-			}
-		}
-		for(int i = 0; i < stackSize; i++)
-		{
-			TypeWrapper type = stack[i];
-			if(VerifierTypeWrapper.IsNew(type))
-			{
-				throw new VerifyError("uninitialized object ref on stack");
-			}
-		}
-	}
-
 	internal void ClearFaultBlockException()
 	{
 		if(VerifierTypeWrapper.IsFaultBlockException(stack[0]))
@@ -2293,35 +2272,6 @@ sealed class MethodAnalyzer
 						case NormalizedByteCode.__invokestatic:
 						case NormalizedByteCode.__invokevirtual:
 							VerifyInvokePassTwo(i);
-							break;
-					}
-					// verify backward branches
-					switch (ByteCodeMetaData.GetFlowControl(instructions[i].NormalizedOpCode))
-					{
-						case ByteCodeFlowControl.Switch:
-							{
-								bool hasbackbranch = false;
-								for (int j = 0; j < instructions[i].SwitchEntryCount; j++)
-								{
-									hasbackbranch |= instructions[i].GetSwitchTargetIndex(j) < i;
-								}
-								hasbackbranch |= instructions[i].DefaultTarget < i;
-								if (hasbackbranch)
-								{
-									// backward branches cannot have uninitialized objects on
-									// the stack or in local variables
-									state[i].CheckUninitializedObjRefs();
-								}
-								break;
-							}
-						case ByteCodeFlowControl.Branch:
-						case ByteCodeFlowControl.CondBranch:
-							if (instructions[i].TargetIndex < i)
-							{
-								// backward branches cannot have uninitialized objects on
-								// the stack or in local variables
-								state[i].CheckUninitializedObjRefs();
-							}
 							break;
 					}
 				}
