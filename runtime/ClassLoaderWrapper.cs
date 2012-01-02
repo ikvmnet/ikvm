@@ -1019,6 +1019,39 @@ namespace IKVM.Internal
 			return wrapper;
 		}
 
+		private static ClassLoaderWrapper GetLoaderFromType(Type type)
+		{
+			Debug.Assert(!ReflectUtil.IsReflectionOnly(type));
+			if(remappedTypes.ContainsKey(type))
+			{
+				return bootstrapClassLoader;
+			}
+			else if(ReflectUtil.IsVector(type))
+			{
+				// it might be an array of a dynamically compiled Java type
+				int rank = 1;
+				Type elem = type.GetElementType();
+				while(ReflectUtil.IsVector(elem))
+				{
+					rank++;
+					elem = elem.GetElementType();
+				}
+				return GetLoaderFromType(elem);
+			}
+			else
+			{
+				Assembly asm = type.Assembly;
+#if CLASSGC
+				ClassLoaderWrapper loader;
+				if(dynamicAssemblies != null && dynamicAssemblies.TryGetValue(asm, out loader))
+				{
+					return loader;
+				}
+#endif
+				return AssemblyClassLoader.FromAssembly(asm);
+			}
+		}
+
 		internal virtual Type GetGenericTypeDefinition(string name)
 		{
 			return null;
@@ -1034,7 +1067,7 @@ namespace IKVM.Internal
 			list.Add(AssemblyClassLoader.FromAssembly(type.Assembly));
 			foreach(Type arg in type.GetGenericArguments())
 			{
-				ClassLoaderWrapper loader = GetWrapperFromType(arg).GetClassLoader();
+				ClassLoaderWrapper loader = GetLoaderFromType(arg);
 				if(!list.Contains(loader) && loader != bootstrapClassLoader)
 				{
 					list.Add(loader);
