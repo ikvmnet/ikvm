@@ -800,7 +800,7 @@ namespace ikvm.awt
 
         public override bool isModalExclusionTypeSupported(java.awt.Dialog.ModalExclusionType dmet)
         {
-            throw new NotImplementedException();
+            return false;
         }
 
         public override bool isModalityTypeSupported(java.awt.Dialog.ModalityType type)

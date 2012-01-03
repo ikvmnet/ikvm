@@ -60,7 +60,7 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
     private final NetFileSystem fs = new NetFileSystem(this);
     private final HashMap<String, FileStore> stores = new HashMap<String, FileStore>();
 
-    final synchronized FileStore getFileStore(DriveInfo drive)
+    final synchronized FileStore getFileStore(DriveInfo drive) throws IOException
     {
         String name = drive.get_Name().toLowerCase();
         FileStore fs = stores.get(name);
@@ -754,10 +754,22 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
     private static class NetFileStore extends FileStore
     {
         private final DriveInfo info;
+        private final String name;
+        private final String type;
 
-        NetFileStore(DriveInfo info)
+        NetFileStore(DriveInfo info) throws IOException
         {
             this.info = info;
+            try
+            {
+                if (false) throw new cli.System.IO.IOException();
+                name = info.get_VolumeLabel();
+                type = info.get_DriveFormat();
+            }
+            catch (cli.System.IO.IOException x)
+            {
+                throw new IOException(x.getMessage());
+            }
         }
 
         public Object getAttribute(String attribute) throws IOException
@@ -782,17 +794,41 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
         public long getTotalSpace() throws IOException
         {
-            return info.get_TotalSize();
+            try
+            {
+                if (false) throw new cli.System.IO.IOException();
+                return info.get_TotalSize();
+            }
+            catch (cli.System.IO.IOException x)
+            {
+                throw new IOException(x.getMessage());
+            }
         }
 
         public long getUnallocatedSpace() throws IOException
         {
-            return info.get_TotalFreeSpace();
+            try
+            {
+                if (false) throw new cli.System.IO.IOException();
+                return info.get_TotalFreeSpace();
+            }
+            catch (cli.System.IO.IOException x)
+            {
+                throw new IOException(x.getMessage());
+            }
         }
 
         public long getUsableSpace() throws IOException
         {
-            return info.get_AvailableFreeSpace();
+            try
+            {
+                if (false) throw new cli.System.IO.IOException();
+                return info.get_AvailableFreeSpace();
+            }
+            catch (cli.System.IO.IOException x)
+            {
+                throw new IOException(x.getMessage());
+            }
         }
 
         public boolean isReadOnly()
@@ -802,7 +838,7 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
         public String name()
         {
-            return info.get_VolumeLabel();
+            return name;
         }
 
         public boolean supportsFileAttributeView(Class<? extends FileAttributeView> type)
@@ -819,8 +855,13 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
         public String type()
         {
-            return info.get_DriveFormat();
+            return type;
         }        
+
+        public String toString()
+        {
+            return name + " (" + info.get_Name().charAt(0) + ":)";
+        }
     }
 
     public FileStore getFileStore(Path path) throws IOException

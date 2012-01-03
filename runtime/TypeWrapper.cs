@@ -3680,6 +3680,14 @@ namespace IKVM.Internal
 				List<TypeWrapper> wrappers = new List<TypeWrapper>();
 				for(int i = 0; i < nestedTypes.Length; i++)
 				{
+					if(nestedTypes[i].Name.EndsWith("Attribute", StringComparison.Ordinal)
+						&& nestedTypes[i].IsClass
+						&& nestedTypes[i].BaseType.FullName == "ikvm.internal.AnnotationAttributeBase")
+					{
+						// HACK it's the custom attribute we generated for a corresponding annotation, so we shouldn't surface it as an inner classes
+						// (we can't put a HideFromJavaAttribute on it, because we do want the class to be visible as a $Proxy)
+						continue;
+					}
 					if(!AttributeHelper.IsHideFromJava(nestedTypes[i]))
 					{
 						wrappers.Add(ClassLoaderWrapper.GetWrapperFromType(nestedTypes[i]));

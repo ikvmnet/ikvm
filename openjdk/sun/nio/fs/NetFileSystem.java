@@ -132,7 +132,13 @@ final class NetFileSystem extends FileSystem
             {
                 continue;
             }
-            list.add(provider.getFileStore(info));
+            try
+            {
+                list.add(provider.getFileStore(info));
+            }
+            catch (IOException _)
+            {
+            }
         }
         return list;
     }

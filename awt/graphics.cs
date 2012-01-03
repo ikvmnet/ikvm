@@ -122,6 +122,19 @@ namespace ikvm.awt
             Point dest = new Point(x + (int)this.g.Transform.OffsetX + dx, y + (int)this.g.Transform.OffsetY + dy);
             this.g.CopyFromScreen(src, dest, new Size(width, height));
 		}
+
+		public override void clip(java.awt.Shape shape)
+		{
+			if (shape == null)
+			{
+				// the API specification says that this will clear
+				// the clip, but in fact the reference implementation throws a 
+				// NullPointerException - see the following entry in the bug parade:
+				// http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6206189
+				throw new java.lang.NullPointerException();
+			}
+			base.clip(shape);
+		}
     }
 
     internal class PrintGraphicsContext
@@ -824,11 +837,8 @@ namespace ikvm.awt
         {
             if (shape == null)
             {
-                // the API specification says that this will clear
-                // the clip, but in fact the reference implementation throws a 
-                // NullPointerException - see the following entry in the bug parade:
-                // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6206189
-                throw new java.lang.NullPointerException();
+				// note that ComponentGraphics overrides clip() to throw a NullPointerException when shape is null
+				g.ResetClip();
             }
             else
             {

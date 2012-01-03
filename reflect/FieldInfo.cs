@@ -105,7 +105,7 @@ namespace IKVM.Reflection
 
 		public bool IsAssembly
 		{
-			get { return (Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.Family; }
+			get { return (Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.Assembly; }
 		}
 
 		public bool IsFamilyAndAssembly

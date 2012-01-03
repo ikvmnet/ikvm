@@ -83,6 +83,7 @@
             <filterchain>
                 <replacetokens>
                     <token key="RUNTIME" value="${IKVM.Runtime}" />
+                    <token key="VERSION" value="${VERSION}" />
                 </replacetokens>
             </filterchain>
         </copy>
@@ -247,6 +248,7 @@
 
     <target name="tools" depends="version tools.gen.rsp">
         <exec program="${project::get-base-directory()}/../bin/ikvmc.exe" useruntimeengine="true">
+            <arg value="-r:mscorlib.dll" />
             <arg value="-version:${VERSION}" />
             <arg value="${signoption}" />
             <arg value="-warnaserror" />

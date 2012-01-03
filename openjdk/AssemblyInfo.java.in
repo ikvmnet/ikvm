@@ -51,6 +51,7 @@
 @cli.System.Reflection.AssemblyTitleAttribute.Annotation("IKVM.NET OpenJDK Library for .NET")
 @cli.System.Reflection.AssemblyProductAttribute.Annotation("IKVM.NET")
 @cli.System.Reflection.AssemblyCompanyAttribute.Annotation("Jeroen Frijters")
+@cli.System.Reflection.AssemblyInformationalVersionAttribute.Annotation("@VERSION@")
 
 @cli.System.Runtime.CompilerServices.InternalsVisibleToAttribute.Annotation("@RUNTIME@")
 
