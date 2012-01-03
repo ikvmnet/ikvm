@@ -1745,7 +1745,6 @@ namespace IKVM.Internal
 		private TypeFlags flags;
 		private MethodWrapper[] methods;
 		private FieldWrapper[] fields;
-		private readonly TypeWrapper baseWrapper;
 #if !STATIC_COMPILER && !STUB_GENERATOR
 		private java.lang.Class classObject;
 #endif
@@ -1753,7 +1752,7 @@ namespace IKVM.Internal
 		internal const Modifiers UnloadableModifiersHack = Modifiers.Final | Modifiers.Interface | Modifiers.Private;
 		internal const Modifiers VerifierTypeModifiersHack = Modifiers.Final | Modifiers.Interface;
 
-		internal TypeWrapper(Modifiers modifiers, string name, TypeWrapper baseWrapper)
+		internal TypeWrapper(Modifiers modifiers, string name)
 		{
 			Profiler.Count("TypeWrapper");
 			// class name should be dotted or null for primitives
@@ -1761,7 +1760,6 @@ namespace IKVM.Internal
 
 			this.modifiers = modifiers;
 			this.name = name == null ? null : String.Intern(name);
-			this.baseWrapper = baseWrapper;
 		}
 
 #if !STUB_GENERATOR
@@ -2027,6 +2025,7 @@ namespace IKVM.Internal
 		{
 			get
 			{
+				TypeWrapper baseWrapper = this.BaseTypeWrapper;
 				return (flags & TypeFlags.HasIncompleteInterfaceImplementation) != 0 || (baseWrapper != null && baseWrapper.HasIncompleteInterfaceImplementation);
 			}
 			set
@@ -2054,6 +2053,7 @@ namespace IKVM.Internal
 						return true;
 					}
 				}
+				TypeWrapper baseWrapper = this.BaseTypeWrapper;
 				return (flags & TypeFlags.HasUnsupportedAbstractMethods) != 0 || (baseWrapper != null && baseWrapper.HasUnsupportedAbstractMethods);
 			}
 			set
@@ -2413,6 +2413,7 @@ namespace IKVM.Internal
 					return fw;
 				}
 			}
+			TypeWrapper baseWrapper = this.BaseTypeWrapper;
 			if(baseWrapper != null)
 			{
 				return baseWrapper.GetFieldWrapper(fieldName, fieldSig);
@@ -2489,6 +2490,7 @@ namespace IKVM.Internal
 					return mw;
 				}
 			}
+			TypeWrapper baseWrapper = this.BaseTypeWrapper;
 			if(inherit && baseWrapper != null)
 			{
 				return baseWrapper.GetMethodWrapper(name, sig, inherit);
@@ -2674,12 +2676,9 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal TypeWrapper BaseTypeWrapper
+		internal abstract TypeWrapper BaseTypeWrapper
 		{
-			get
-			{
-				return baseWrapper;
-			}
+			get;
 		}
 
 		internal TypeWrapper ElementTypeWrapper
@@ -3189,7 +3188,7 @@ namespace IKVM.Internal
 
 		internal virtual ConstructorInfo GetBaseSerializationConstructor()
 		{
-			return baseWrapper.GetSerializationConstructor();
+			return BaseTypeWrapper.GetSerializationConstructor();
 		}
 #endif
 	}
@@ -3197,8 +3196,13 @@ namespace IKVM.Internal
 	sealed class UnloadableTypeWrapper : TypeWrapper
 	{
 		internal UnloadableTypeWrapper(string name)
-			: base(TypeWrapper.UnloadableModifiersHack, name, null)
+			: base(TypeWrapper.UnloadableModifiersHack, name)
 		{
+		}
+
+		internal override TypeWrapper BaseTypeWrapper
+		{
+			get { return null; }
 		}
 
 		internal override ClassLoaderWrapper GetClassLoader()
@@ -3304,10 +3308,15 @@ namespace IKVM.Internal
 		private readonly string sigName;
 
 		private PrimitiveTypeWrapper(Type type, string sigName)
-			: base(Modifiers.Public | Modifiers.Abstract | Modifiers.Final, null, null)
+			: base(Modifiers.Public | Modifiers.Abstract | Modifiers.Final, null)
 		{
 			this.type = type;
 			this.sigName = sigName;
+		}
+
+		internal override TypeWrapper BaseTypeWrapper
+		{
+			get { return null; }
 		}
 
 		internal static bool IsPrimitiveType(Type type)
@@ -3381,6 +3390,7 @@ namespace IKVM.Internal
 	class CompiledTypeWrapper : TypeWrapper
 	{
 		private readonly Type type;
+		private TypeWrapper baseTypeWrapper;
 		private TypeWrapper[] interfaces;
 		private MethodInfo clinitMethod;
 		private bool clinitMethodSet;
@@ -3600,7 +3610,6 @@ namespace IKVM.Internal
 			return TypeNameUtil.Unescape(type.FullName);
 		}
 
-		// TODO consider resolving the baseType lazily
 		private static TypeWrapper GetBaseTypeWrapper(Type type)
 		{
 			if(type.IsInterface || AttributeHelper.IsGhostInterface(type))
@@ -3636,19 +3645,24 @@ namespace IKVM.Internal
 			}
 		}
 
-		private CompiledTypeWrapper(ExModifiers exmod, string name, TypeWrapper baseTypeWrapper)
-			: base(exmod.Modifiers, name, baseTypeWrapper)
+		private CompiledTypeWrapper(ExModifiers exmod, string name)
+			: base(exmod.Modifiers, name)
 		{
 			this.IsInternal = exmod.IsInternal;
 		}
 
 		private CompiledTypeWrapper(string name, Type type)
-			: this(GetModifiers(type), name, GetBaseTypeWrapper(type))
+			: this(GetModifiers(type), name)
 		{
 			Debug.Assert(!(type is TypeBuilder));
 			Debug.Assert(!type.Name.EndsWith("[]"));
 
 			this.type = type;
+		}
+
+		internal override TypeWrapper BaseTypeWrapper
+		{
+			get { return baseTypeWrapper ?? (baseTypeWrapper = GetBaseTypeWrapper(type)); }
 		}
 
 		internal override ClassLoaderWrapper GetClassLoader()
@@ -4674,11 +4688,16 @@ namespace IKVM.Internal
 		private bool finished;
 
 		internal ArrayTypeWrapper(TypeWrapper ultimateElementTypeWrapper, string name)
-			: base(Modifiers.Final | Modifiers.Abstract | (ultimateElementTypeWrapper.Modifiers & Modifiers.Public), name, CoreClasses.java.lang.Object.Wrapper)
+			: base(Modifiers.Final | Modifiers.Abstract | (ultimateElementTypeWrapper.Modifiers & Modifiers.Public), name)
 		{
 			Debug.Assert(!ultimateElementTypeWrapper.IsArray);
 			this.ultimateElementTypeWrapper = ultimateElementTypeWrapper;
 			this.IsInternal = ultimateElementTypeWrapper.IsInternal;
+		}
+
+		internal override TypeWrapper BaseTypeWrapper
+		{
+			get { return CoreClasses.java.lang.Object.Wrapper; }
 		}
 
 		internal override ClassLoaderWrapper GetClassLoader()
@@ -4934,11 +4953,16 @@ namespace IKVM.Internal
 		}
 
 		private VerifierTypeWrapper(string name, int index, TypeWrapper underlyingType, MethodAnalyzer methodAnalyzer)
-			: base(TypeWrapper.VerifierTypeModifiersHack, name, null)
+			: base(TypeWrapper.VerifierTypeModifiersHack, name)
 		{
 			this.index = index;
 			this.underlyingType = underlyingType;
 			this.methodAnalyzer = methodAnalyzer;
+		}
+
+		internal override TypeWrapper BaseTypeWrapper
+		{
+			get { return null; }
 		}
 
 		internal override ClassLoaderWrapper GetClassLoader()

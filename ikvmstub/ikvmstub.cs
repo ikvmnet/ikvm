@@ -1010,11 +1010,18 @@ sealed class BootstrapBootstrapClassLoader : ClassLoaderWrapper
 sealed class StubTypeWrapper : TypeWrapper
 {
 	private readonly bool remapped;
+	private readonly TypeWrapper baseWrapper;
 
 	internal StubTypeWrapper(Modifiers modifiers, string name, TypeWrapper baseWrapper, bool remapped)
-		: base(modifiers, name, baseWrapper)
+		: base(modifiers, name)
 	{
 		this.remapped = remapped;
+		this.baseWrapper = baseWrapper;
+	}
+
+	internal override TypeWrapper BaseTypeWrapper
+	{
+		get { return baseWrapper; }
 	}
 
 	internal override ClassLoaderWrapper GetClassLoader()

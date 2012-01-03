@@ -796,6 +796,7 @@ namespace IKVM.Internal
 			private TypeBuilder helperTypeBuilder;
 			private Type shadowType;
 			private IKVM.Internal.MapXml.Class classDef;
+			private TypeWrapper baseTypeWrapper;
 			private TypeWrapper[] interfaceWrappers;
 
 			internal override ClassLoaderWrapper GetClassLoader()
@@ -825,9 +826,10 @@ namespace IKVM.Internal
 			}
 
 			internal RemapperTypeWrapper(CompilerClassLoader classLoader, IKVM.Internal.MapXml.Class c, IKVM.Internal.MapXml.Root map)
-				: base((Modifiers)c.Modifiers, c.Name, GetBaseWrapper(c))
+				: base((Modifiers)c.Modifiers, c.Name)
 			{
 				this.classLoader = classLoader;
+				this.baseTypeWrapper = GetBaseWrapper(c);
 				classDef = c;
 				bool baseIsSealed = false;
 				shadowType = StaticCompiler.Universe.GetType(c.Shadows, true);
@@ -925,6 +927,11 @@ namespace IKVM.Internal
 				}
 
 				SetMethods(methods.ToArray());
+			}
+
+			internal sealed override TypeWrapper BaseTypeWrapper
+			{
+				get { return baseTypeWrapper; }
 			}
 
 			internal void LoadInterfaces(IKVM.Internal.MapXml.Class c)

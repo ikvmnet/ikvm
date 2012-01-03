@@ -52,6 +52,7 @@ namespace IKVM.Internal
 		protected readonly ClassLoaderWrapper classLoader;
 #endif
 		private volatile DynamicImpl impl;
+		private readonly TypeWrapper baseTypeWrapper;
 		private TypeWrapper[] interfaces;
 		private readonly string sourceFileName;
 #if !STATIC_COMPILER
@@ -74,12 +75,13 @@ namespace IKVM.Internal
 #else
 		internal DynamicTypeWrapper(ClassFile f, ClassLoaderWrapper classLoader)
 #endif
-			: base(f.Modifiers, f.Name, f.IsInterface ? null : LoadTypeWrapper(classLoader, f.SuperClass))
+			: base(f.Modifiers, f.Name)
 		{
 			Profiler.Count("DynamicTypeWrapper");
 			this.classLoader = classLoader;
 			this.IsInternal = f.IsInternal;
 			this.sourceFileName = f.SourceFileAttribute;
+			this.baseTypeWrapper = f.IsInterface ? null : LoadTypeWrapper(classLoader, f.SuperClass);
 			if (BaseTypeWrapper != null)
 			{
 				if (!BaseTypeWrapper.IsAccessibleFrom(this))
@@ -332,6 +334,11 @@ namespace IKVM.Internal
 				TypeWrapper baseTypeWrapper = BaseTypeWrapper;
 				return baseTypeWrapper != null && baseTypeWrapper.TypeAsTBD == Types.MulticastDelegate;
 			}
+		}
+
+		internal sealed override TypeWrapper BaseTypeWrapper
+		{
+			get { return baseTypeWrapper; }
 		}
 
 		internal override ClassLoaderWrapper GetClassLoader()
