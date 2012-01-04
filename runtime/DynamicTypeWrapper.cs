@@ -4988,11 +4988,12 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 			private void EmitCallerIDStub(MethodWrapper mw, string[] parameterNames)
 			{
-				Type[] p = mw.GetParametersForDefineMethod();
-				Type[] parameterTypes = new Type[p.Length - 1];
+				// we don't need to support custom modifiers, because there aren't any callerid methods that have parameter types that require a custom modifier
+				TypeWrapper[] parameters = mw.GetParameters();
+				Type[] parameterTypes = new Type[parameters.Length];
 				for (int i = 0; i < parameterTypes.Length; i++)
 				{
-					parameterTypes[i] = p[i];
+					parameterTypes[i] = parameters[i].TypeAsSignatureType;
 				}
 				MethodAttributes attribs = MethodAttributes.HideBySig;
 				int argcount = parameterTypes.Length;
@@ -5020,7 +5021,7 @@ namespace IKVM.Internal
 				{
 					attribs |= MethodAttributes.Assembly;
 				}
-				MethodBuilder mb = typeBuilder.DefineMethod(mw.Name, attribs, mw.ReturnTypeForDefineMethod, parameterTypes);
+				MethodBuilder mb = typeBuilder.DefineMethod(mw.Name, attribs, mw.ReturnType.TypeAsSignatureType, parameterTypes);
 				AttributeHelper.HideFromJava(mb);
 				mb.SetImplementationFlags(MethodImplAttributes.NoInlining);
 				CodeEmitter ilgen = CodeEmitter.Create(mb);
