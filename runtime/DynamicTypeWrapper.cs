@@ -5944,17 +5944,15 @@ namespace IKVM.Internal
 	sealed class DefineMethodHelper
 	{
 		private readonly MethodWrapper mw;
-		private readonly Type[] parameterTypes;
 
 		internal DefineMethodHelper(MethodWrapper mw)
 		{
 			this.mw = mw;
-			this.parameterTypes = mw.GetParametersForDefineMethod();
 		}
 
 		internal int ParameterCount
 		{
-			get { return parameterTypes.Length; }
+			get { return mw.GetParameters().Length + (mw.HasCallerID ? 1 : 0); }
 		}
 
 		internal MethodBuilder DefineMethod(DynamicTypeWrapper context, TypeBuilder tb, string name, MethodAttributes attribs)
@@ -5964,7 +5962,21 @@ namespace IKVM.Internal
 
 		internal MethodBuilder DefineMethod(TypeWrapperFactory context, TypeBuilder tb, string name, MethodAttributes attribs)
 		{
-			return tb.DefineMethod(name, attribs, mw.ReturnTypeForDefineMethod, parameterTypes);
+			// we add optional modifiers to make the signature unique
+			TypeWrapper[] parameters = mw.GetParameters();
+			Type[] parameterTypes = new Type[parameters.Length + (mw.HasCallerID ? 1 : 0)];
+			Type[][] modopt = new Type[parameterTypes.Length][];
+			for (int i = 0; i < parameters.Length; i++)
+			{
+				parameterTypes[i] = parameters[i].TypeAsSignatureType;
+				modopt[i] = DynamicTypeWrapper.GetModOpt(context, parameters[i], false);
+			}
+			if (mw.HasCallerID)
+			{
+				parameterTypes[parameterTypes.Length - 1] = CoreClasses.ikvm.@internal.CallerID.Wrapper.TypeAsSignatureType;
+			}
+			Type[] modoptReturnType = DynamicTypeWrapper.GetModOpt(context, mw.ReturnType, false);
+			return tb.DefineMethod(name, attribs, CallingConventions.Standard, mw.ReturnType.TypeAsSignatureType, null, modoptReturnType, parameterTypes, null, modopt);
 		}
 
 		internal ConstructorBuilder DefineConstructor(DynamicTypeWrapper context, TypeBuilder tb, MethodAttributes attribs)
@@ -5975,10 +5987,13 @@ namespace IKVM.Internal
 		internal ConstructorBuilder DefineConstructor(TypeWrapperFactory context, TypeBuilder tb, MethodAttributes attribs)
 		{
 			// we add optional modifiers to make the signature unique
+			// (note that constructors do not support callerid)
 			TypeWrapper[] parameters = mw.GetParameters();
+			Type[] parameterTypes = new Type[parameters.Length];
 			Type[][] modopt = new Type[parameterTypes.Length][];
 			for (int i = 0; i < parameters.Length; i++)
 			{
+				parameterTypes[i] = parameters[i].TypeAsSignatureType;
 				modopt[i] = DynamicTypeWrapper.GetModOpt(context, parameters[i], false);
 			}
 			return tb.DefineConstructor(attribs, CallingConventions.Standard, parameterTypes, null, modopt);
