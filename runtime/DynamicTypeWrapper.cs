@@ -5417,14 +5417,15 @@ namespace IKVM.Internal
 		private void GenerateOverrideStub(TypeBuilder typeBuilder, MethodWrapper baseMethod, MethodInfo target, MethodWrapper targetMethod)
 		{
 			Debug.Assert(!baseMethod.HasCallerID);
+
 			Type stubret = baseMethod.ReturnTypeForDefineMethod;
 			Type[] stubargs = baseMethod.GetParametersForDefineMethod();
+			string name = GenerateUniqueMethodName("__<overridestub>" + baseMethod.Name, stubret, stubargs);
+			MethodBuilder overrideStub = baseMethod.GetDefineMethodHelper().DefineMethod(this, typeBuilder, name, MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final);
+			typeBuilder.DefineMethodOverride(overrideStub, (MethodInfo)baseMethod.GetMethod());
+
 			Type targetRet = targetMethod.ReturnTypeForDefineMethod;
 			Type[] targetArgs = targetMethod.GetParametersForDefineMethod();
-			string name = GenerateUniqueMethodName(baseMethod.RealName + "/unloadablestub", baseMethod);
-			MethodBuilder overrideStub = typeBuilder.DefineMethod(name, MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final, stubret, stubargs);
-			AttributeHelper.HideFromJava(overrideStub);
-			typeBuilder.DefineMethodOverride(overrideStub, (MethodInfo)baseMethod.GetMethod());
 			CodeEmitter ilgen = CodeEmitter.Create(overrideStub);
 			ilgen.Emit(OpCodes.Ldarg_0);
 			for (int i = 0; i < targetArgs.Length; i++)
