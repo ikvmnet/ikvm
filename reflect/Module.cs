@@ -448,6 +448,11 @@ namespace IKVM.Reflection
 			get { throw new NotSupportedException(); }
 		}
 
+		public virtual int __FileAlignment
+		{
+			get { throw new NotSupportedException(); }
+		}
+
 		public virtual byte[] __ModuleHash
 		{
 			get { throw new NotSupportedException(); }

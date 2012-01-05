@@ -1167,5 +1167,10 @@ namespace IKVM.Reflection.Reader
 		{
 			get { return (long)peFile.OptionalHeader.SizeOfStackReserve; }
 		}
+
+		public override int __FileAlignment
+		{
+			get { return (int)peFile.OptionalHeader.FileAlignment; }
+		}
 	}
 }
