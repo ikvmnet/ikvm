@@ -442,7 +442,7 @@ namespace IKVM.Internal
 						MethodBuilder mb = mw.GetMethod() as MethodBuilder;
 						if(mb == null || mb.DeclaringType != typeBuilder || (!mb.IsFinal && final))
 						{
-							mb = typeBuilder.DefineMethod(GenerateUniqueMethodName("get_" + prop.Name, mw), GetPropertyMethodAttributes(mw, final), typeWrapper.TypeAsSignatureType, indexer);
+							mb = typeBuilder.DefineMethod("get_" + prop.Name, GetPropertyMethodAttributes(mw, final), typeWrapper.TypeAsSignatureType, indexer);
 							AttributeHelper.HideFromJava(mb);
 							CodeEmitter ilgen = CodeEmitter.Create(mb);
 							if(mw.IsStatic)
@@ -483,7 +483,7 @@ namespace IKVM.Internal
 						MethodBuilder mb = mw.GetMethod() as MethodBuilder;
 						if(mb == null || mb.DeclaringType != typeBuilder || (!mb.IsFinal && final))
 						{
-							mb = typeBuilder.DefineMethod(GenerateUniqueMethodName("set_" + prop.Name, mw), GetPropertyMethodAttributes(mw, final), mw.ReturnTypeForDefineMethod, args);
+							mb = typeBuilder.DefineMethod("set_" + prop.Name, GetPropertyMethodAttributes(mw, final), mw.ReturnTypeForDefineMethod, args);
 							AttributeHelper.HideFromJava(mb);
 							CodeEmitter ilgen = CodeEmitter.Create(mb);
 							if(mw.IsStatic)

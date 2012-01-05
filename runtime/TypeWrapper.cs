@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2011 Jeroen Frijters
+  Copyright (C) 2002-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -4016,6 +4016,10 @@ namespace IKVM.Internal
 				else
 				{
 					name = method.Name;
+					if(name.StartsWith(NamePrefix.Bridge, StringComparison.Ordinal))
+					{
+						name = name.Substring(NamePrefix.Bridge.Length);
+					}
 				}
 				System.Text.StringBuilder sb = new System.Text.StringBuilder("(");
 				foreach(TypeWrapper tw in paramTypes)
@@ -4385,10 +4389,16 @@ namespace IKVM.Internal
 
 		private static TypeWrapper GetParameterTypeWrapper(ParameterInfo param)
 		{
-			Type[] modopt = param.GetOptionalCustomModifiers();
-			return modopt.Length == 0
-				? ClassLoaderWrapper.GetWrapperFromType(param.ParameterType)
-				: TypeWrapperFromModOpt(modopt[0]);
+			// we don't want to rely on the ordering of the custom modifiers,
+			// because reflection (currently) reports them in reverse order
+			foreach (Type modopt in param.GetOptionalCustomModifiers())
+			{
+				if (modopt != JVM.LoadType(typeof(IKVM.Attributes.AccessStub)))
+				{
+					return TypeWrapperFromModOpt(modopt);
+				}
+			}
+			return ClassLoaderWrapper.GetWrapperFromType(param.ParameterType);
 		}
 
 		private FieldWrapper CreateFieldWrapper(FieldInfo field)

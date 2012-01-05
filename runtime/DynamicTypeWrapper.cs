@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2011 Jeroen Frijters
+  Copyright (C) 2002-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -392,18 +392,6 @@ namespace IKVM.Internal
 			impl = impl.Finish();
 		}
 
-		// NOTE can only be used if the type hasn't been finished yet!
-		protected string GenerateUniqueMethodName(string basename, MethodWrapper mw)
-		{
-			return ((JavaTypeImpl)impl).GenerateUniqueMethodName(basename, mw);
-		}
-
-		// NOTE can only be used if the type hasn't been finished yet!
-		internal string GenerateUniqueMethodName(string basename, Type returnType, Type[] parameterTypes)
-		{
-			return ((JavaTypeImpl)impl).GenerateUniqueMethodName(basename, returnType, parameterTypes);
-		}
-
 		internal void CreateStep1()
 		{
 			((JavaTypeImpl)impl).CreateStep1();
@@ -454,7 +442,6 @@ namespace IKVM.Internal
 			private FieldWrapper[] fields;
 			private FinishedTypeImpl finishedType;
 			private bool finishInProgress;
-			private Dictionary<string, string> memberclashtable;
 			private MethodBuilder clinitMethod;
 			private MethodBuilder finalizeMethod;
 #if STATIC_COMPILER
@@ -2125,41 +2112,6 @@ namespace IKVM.Internal
 				}
 			}
 
-			private void UpdateClashTable()
-			{
-				lock (this)
-				{
-					if (memberclashtable == null)
-					{
-						memberclashtable = new Dictionary<string, string>();
-						for (int i = 0; i < methods.Length; i++)
-						{
-							// TODO at the moment we don't support constructor signature clash resolving, so we better
-							// not put them in the clash table
-							if (methods[i].IsLinked && methods[i].GetMethod() != null && methods[i].Name != "<init>")
-							{
-								string key = GenerateClashKey("method", methods[i].RealName, methods[i].ReturnTypeForDefineMethod, methods[i].GetParametersForDefineMethod());
-								memberclashtable.Add(key, key);
-							}
-						}
-					}
-				}
-			}
-
-			private static string GenerateClashKey(string type, string name, Type retOrFieldType, Type[] args)
-			{
-				System.Text.StringBuilder sb = new System.Text.StringBuilder(type);
-				sb.Append(':').Append(name).Append(':').Append(retOrFieldType.FullName);
-				if (args != null)
-				{
-					foreach (Type t in args)
-					{
-						sb.Append(':').Append(t.FullName);
-					}
-				}
-				return sb.ToString();
-			}
-
 			internal static ConstructorBuilder DefineClassInitializer(TypeBuilder typeBuilder)
 			{
 				if (typeBuilder.IsInterface)
@@ -2488,28 +2440,6 @@ namespace IKVM.Internal
 				return null;
 			}
 
-			internal string GenerateUniqueMethodName(string basename, MethodWrapper mw)
-			{
-				return GenerateUniqueMethodName(basename, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
-			}
-
-			internal string GenerateUniqueMethodName(string basename, Type returnType, Type[] parameterTypes)
-			{
-				string name = basename;
-				string key = GenerateClashKey("method", name, returnType, parameterTypes);
-				UpdateClashTable();
-				lock (memberclashtable)
-				{
-					for (int clashcount = 0; memberclashtable.ContainsKey(key); clashcount++)
-					{
-						name = basename + "_" + clashcount;
-						key = GenerateClashKey("method", name, returnType, parameterTypes);
-					}
-					memberclashtable.Add(key, key);
-				}
-				return name;
-			}
-
 			private static MethodInfo GetBaseFinalizeMethod(TypeWrapper wrapper)
 			{
 				for (; ; )
@@ -2644,24 +2574,14 @@ namespace IKVM.Internal
 						{
 							// We're a Miranda method
 							Debug.Assert(baseMethods[index].Length == 1 && baseMethods[index][0].DeclaringType.IsInterface);
-							string name = GenerateUniqueMethodName(methods[index].Name, baseMethods[index][0]);
-							MethodBuilder mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper, typeBuilder, name, MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Abstract | MethodAttributes.CheckAccessOnOverride);
+							MethodBuilder mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper, typeBuilder, methods[index].Name, MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Abstract | MethodAttributes.CheckAccessOnOverride);
 							AttributeHelper.HideFromReflection(mb);
-							bool overridestub = CheckRequireOverrideStub(methods[index], baseMethods[index][0]);
-#if STATIC_COMPILER
-							if (overridestub || name != methods[index].Name)
-							{
-								// instead of creating an override stub, we created the Miranda method with the proper signature and
-								// decorate it with a NameSigAttribute that contains the real signature
-								AttributeHelper.SetNameSig(mb, methods[index].Name, methods[index].Signature);
-							}
-#endif // STATIC_COMPILER
-							if (overridestub)
+							if (CheckRequireOverrideStub(methods[index], baseMethods[index][0]))
 							{
 								wrapper.GenerateOverrideStub(typeBuilder, baseMethods[index][0], mb, methods[index]);
 							}
 							// if we changed the name or if the interface method name is remapped, we need to add an explicit methodoverride.
-							else if (!baseMethods[index][0].IsDynamicOnly && name != baseMethods[index][0].RealName)
+							else if (!baseMethods[index][0].IsDynamicOnly && methods[index].Name != baseMethods[index][0].RealName)
 							{
 								typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMethods[index][0].GetMethod());
 							}
@@ -2759,11 +2679,6 @@ namespace IKVM.Internal
 
 			private MethodBase GenerateMethod(int index, ClassFile.Method m, ref bool setModifiers)
 			{
-				bool setNameSig = methods[index].ReturnType.IsErasedOrBoxedPrimitiveOrRemapped;
-				foreach (TypeWrapper tw in methods[index].GetParameters())
-				{
-					setNameSig |= tw.IsErasedOrBoxedPrimitiveOrRemapped;
-				}
 				MethodAttributes attribs = MethodAttributes.HideBySig;
 				if (m.IsNative)
 				{
@@ -2844,7 +2759,6 @@ namespace IKVM.Internal
 							// To prevent bridge methods with covariant return types from confusing
 							// other .NET compilers (like C#), we rename the bridge method.
 							name = NamePrefix.Bridge + name;
-							setNameSig = true;
 							break;
 						}
 					}
@@ -2934,18 +2848,8 @@ namespace IKVM.Internal
 							needFinalize = false;
 						}
 					}
-					if (setNameSig || memberclashtable != null)
-					{
-						// TODO we really should make sure that the name we generate doesn't already exist in a
-						// base class (not in the Java method namespace, but in the CLR method namespace)
-						name = GenerateUniqueMethodName(name, methods[index]);
-						if (name != m.Name)
-						{
-							setNameSig = true;
-						}
-					}
 					bool newslot = baseMethods[index] != null
-						&& (setNameSig || methods[index].IsExplicitOverride || baseMethods[index][0].RealName != name || CheckRequireOverrideStub(methods[index], baseMethods[index][0]))
+						&& (methods[index].IsExplicitOverride || baseMethods[index][0].RealName != name || CheckRequireOverrideStub(methods[index], baseMethods[index][0]))
 						&& !needFinalize;
 					if (newslot)
 					{
@@ -2961,7 +2865,7 @@ namespace IKVM.Internal
 							{
 								wrapper.GenerateOverrideStub(typeBuilder, baseMethod, mb, methods[index]);
 							}
-							else if (subsequent || setNameSig || methods[index].IsExplicitOverride || baseMethod.RealName != name)
+							else if (subsequent || methods[index].IsExplicitOverride || baseMethod.RealName != name)
 							{
 								typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMethod.GetMethod());
 							}
@@ -3029,12 +2933,6 @@ namespace IKVM.Internal
 					mb.SetImplementationFlags(mb.GetMethodImplementationFlags() | MethodImplAttributes.Synchronized);
 				}
 
-#if STATIC_COMPILER
-				if (setNameSig)
-				{
-					AttributeHelper.SetNameSig(mb, m.Name, m.Signature);
-				}
-#endif
 				return mb;
 			}
 
@@ -4377,16 +4275,21 @@ namespace IKVM.Internal
 				TypeWrapper[] parameters = mw.GetParameters();
 				Type[] realParameterTypes = new Type[parameters.Length];
 				Type[] parameterTypes = new Type[parameters.Length];
+				Type[][] modopt = new Type[parameters.Length][];
 				for (int i = 0; i < parameters.Length; i++)
 				{
 					realParameterTypes[i] = parameters[i].TypeAsSignatureType;
 					parameterTypes[i] = ToPublicSignatureType(parameters[i]);
+					modopt[i] = wrapper.GetModOpt(parameters[i], true);
 				}
 				Type returnType = ToPublicSignatureType(mw.ReturnType);
+				Type[] modoptReturnType = wrapper.GetModOpt(mw.ReturnType, true);
+				Array.Resize(ref modoptReturnType, modoptReturnType.Length + 1);
+				modoptReturnType[modoptReturnType.Length - 1] = JVM.LoadType(typeof(IKVM.Attributes.AccessStub));
 				string name = virt
-					? wrapper.GenerateUniqueMethodName((mw.Modifiers & Modifiers.Bridge) == 0 ? mw.Name : NamePrefix.Bridge + mw.Name, returnType, parameterTypes)
+					? (mw.Modifiers & Modifiers.Bridge) == 0 ? mw.Name : NamePrefix.Bridge + mw.Name
 					: NamePrefix.NonVirtual + id;
-				MethodBuilder mb = typeBuilder.DefineMethod(name, stubattribs, returnType, parameterTypes);
+				MethodBuilder mb = typeBuilder.DefineMethod(name, stubattribs, CallingConventions.Standard, returnType, null, modoptReturnType, parameterTypes, null, modopt);
 				if (virt && type1)
 				{
 					AttributeHelper.HideFromReflection(mb);
@@ -5419,12 +5322,11 @@ namespace IKVM.Internal
 		{
 			Debug.Assert(!baseMethod.HasCallerID);
 
-			Type stubret = baseMethod.ReturnTypeForDefineMethod;
-			Type[] stubargs = baseMethod.GetParametersForDefineMethod();
-			string name = GenerateUniqueMethodName("__<overridestub>" + baseMethod.Name, stubret, stubargs);
-			MethodBuilder overrideStub = baseMethod.GetDefineMethodHelper().DefineMethod(this, typeBuilder, name, MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final);
+			MethodBuilder overrideStub = baseMethod.GetDefineMethodHelper().DefineMethod(this, typeBuilder, "__<overridestub>" + baseMethod.Name, MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final);
 			typeBuilder.DefineMethodOverride(overrideStub, (MethodInfo)baseMethod.GetMethod());
 
+			Type stubret = baseMethod.ReturnTypeForDefineMethod;
+			Type[] stubargs = baseMethod.GetParametersForDefineMethod();
 			Type targetRet = targetMethod.ReturnTypeForDefineMethod;
 			Type[] targetArgs = targetMethod.GetParametersForDefineMethod();
 			CodeEmitter ilgen = CodeEmitter.Create(overrideStub);
