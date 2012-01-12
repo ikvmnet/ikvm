@@ -458,6 +458,16 @@ namespace IKVM.Reflection
 			get { throw new NotSupportedException(); }
 		}
 
+		public virtual int __EntryPointRVA
+		{
+			get { throw new NotSupportedException(); }
+		}
+
+		public virtual int __EntryPointToken
+		{
+			get { throw new NotSupportedException(); }
+		}
+
 		public List<CustomAttributeData> __GetCustomAttributesFor(int token)
 		{
 			return GetCustomAttributes(token, null);

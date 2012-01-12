@@ -1172,5 +1172,15 @@ namespace IKVM.Reflection.Reader
 		{
 			get { return (int)peFile.OptionalHeader.FileAlignment; }
 		}
+
+		public override int __EntryPointRVA
+		{
+			get { return (cliHeader.Flags & CliHeader.COMIMAGE_FLAGS_NATIVE_ENTRYPOINT) != 0 ? (int)cliHeader.EntryPointToken : 0; }
+		}
+
+		public override int __EntryPointToken
+		{
+			get { return (cliHeader.Flags & CliHeader.COMIMAGE_FLAGS_NATIVE_ENTRYPOINT) == 0 ? (int)cliHeader.EntryPointToken : 0; }
+		}
 	}
 }
