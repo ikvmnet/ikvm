@@ -1597,6 +1597,11 @@ namespace IKVM.Reflection.Emit
 			throw new InvalidOperationException();
 		}
 
+		public override int __MethodRVA
+		{
+			get { throw new InvalidOperationException(); }
+		}
+
 		public override MethodImplAttributes GetMethodImplementationFlags()
 		{
 			throw new NotSupportedException();

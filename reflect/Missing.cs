@@ -752,6 +752,11 @@ namespace IKVM.Reflection
 			return Forwarder.GetMethodBody();
 		}
 
+		public override int __MethodRVA
+		{
+			get { return Forwarder.__MethodRVA; }
+		}
+
 		public override CallingConventions CallingConvention
 		{
 			get { return signature.CallingConvention; }

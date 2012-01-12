@@ -588,6 +588,11 @@ namespace IKVM.Reflection.Emit
 			throw new NotSupportedException();
 		}
 
+		public override int __MethodRVA
+		{
+			get { throw new NotImplementedException(); }
+		}
+
 		public bool InitLocals
 		{
 			get { return initLocals; }
