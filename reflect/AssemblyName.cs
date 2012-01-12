@@ -229,6 +229,11 @@ namespace IKVM.Reflection
 			set { hashAlgorithm = value; }
 		}
 
+		public byte[] __Hash
+		{
+			get { return hash; }
+		}
+
 		public string FullName
 		{
 			get
