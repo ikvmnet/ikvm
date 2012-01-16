@@ -419,6 +419,11 @@ namespace IKVM.Reflection
 			get { return module; }
 		}
 
+		public override int MetadataToken
+		{
+			get { return token; }
+		}
+
 		public override bool IsValueType
 		{
 			get
@@ -531,11 +536,6 @@ namespace IKVM.Reflection
 		internal override Type BindTypeParameters(IGenericBinder binder)
 		{
 			return this;
-		}
-
-		internal int GetMetadataTokenForMissing()
-		{
-			return token;
 		}
 
 		internal override Type SetMetadataTokenForMissing(int token)
