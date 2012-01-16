@@ -771,6 +771,19 @@ namespace IKVM.Reflection
 			return parser.GetType(this, context, throwOnError, assemblyQualifiedTypeName, false);
 		}
 
+		// this is similar to GetType(Assembly context, string assemblyQualifiedTypeName, bool throwOnError),
+		// but instead it assumes that the type must exist (i.e. if EnableMissingMemberResolution is enabled
+		// it will create a missing type)
+		public Type ResolveType(Assembly context, string assemblyQualifiedTypeName)
+		{
+			TypeNameParser parser = TypeNameParser.Parse(assemblyQualifiedTypeName, false);
+			if (parser.Error)
+			{
+				return null;
+			}
+			return parser.GetType(this, context, false, assemblyQualifiedTypeName, true);
+		}
+
 		public Assembly[] GetAssemblies()
 		{
 			Assembly[] array = new Assembly[assemblies.Count + dynamicAssemblies.Count];
