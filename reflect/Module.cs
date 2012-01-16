@@ -272,14 +272,8 @@ namespace IKVM.Reflection
 			get { return IsResource() ? null : GetModuleType().TypeInitializer; }
 		}
 
-		public byte[] ResolveSignature(int metadataToken)
+		public virtual byte[] ResolveSignature(int metadataToken)
 		{
-			ModuleReader rdr = this as ModuleReader;
-			if (rdr != null)
-			{
-				ByteReader br = rdr.ResolveSignature(metadataToken);
-				return br.ReadBytes(br.Length);
-			}
 			throw new NotSupportedException();
 		}
 
