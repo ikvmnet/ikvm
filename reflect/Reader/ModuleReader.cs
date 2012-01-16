@@ -950,6 +950,10 @@ namespace IKVM.Reflection.Reader
 						name.SetPublicKeyToken(keyOrToken);
 					}
 				}
+				else
+				{
+					name.SetPublicKeyToken(Empty<byte>.Array);
+				}
 				if (AssemblyRef.records[i].Culture != 0)
 				{
 					name.Culture = GetString(AssemblyRef.records[i].Culture);
