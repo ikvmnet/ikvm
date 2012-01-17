@@ -15,4 +15,9 @@
             <property name="peverify" value="${path::combine(framework::get-sdk-directory('net-2.0'), 'peverify.exe')}" />
         </if>
     </if>
+
+    <!-- find rc.exe -->
+    <if test="${(not property::exists('rc')) and framework::sdk-exists(framework::get-target-framework()) and file::exists(path::combine(framework::get-sdk-directory(framework::get-target-framework()), 'rc.exe'))}">
+        <property name="rc" value="${path::combine(framework::get-sdk-directory(framework::get-target-framework()), 'rc.exe')}" />
+    </if>
 </project>

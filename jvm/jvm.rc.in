@@ -1,0 +1,28 @@
+1 VERSIONINFO
+ FILEVERSION @VERSIONLIST@
+ PRODUCTVERSION @VERSIONLIST@
+ FILEFLAGSMASK 0x3fL
+ FILEFLAGS 0x0L
+ FILEOS 0x4L
+ FILETYPE 0x2L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "000004b0"
+        BEGIN
+            VALUE "CompanyName", "Jeroen Frijters"
+            VALUE "FileDescription", "IKVM.NET JVM for .NET"
+            VALUE "FileVersion", "@VERSION@"
+            VALUE "InternalName", "jvm"
+            VALUE "LegalCopyright", "Copyright (C) 2002-2011 Jeroen Frijters"
+            VALUE "OriginalFilename", "jvm.dll"
+            VALUE "ProductName", "IKVM.NET"
+            VALUE "ProductVersion", "@VERSION@"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0, 1200
+    END
+END
