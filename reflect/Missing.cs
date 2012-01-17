@@ -580,6 +580,18 @@ namespace IKVM.Reflection
 		{
 			get { return owner as Type; }
 		}
+
+		internal override Type BindTypeParameters(IGenericBinder binder)
+		{
+			if (owner is MethodBase)
+			{
+				return binder.BindMethodParameter(this);
+			}
+			else
+			{
+				return binder.BindTypeParameter(this);
+			}
+		}
 	}
 
 	sealed class MissingMethod : MethodInfo
