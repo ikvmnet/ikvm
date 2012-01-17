@@ -1,5 +1,23 @@
 <?xml version="1.0"?>
 <project name="ikvm-native" default="ikvm-native">
+    <target name="arch">
+        <property name="cpu-arch" value="x86" />
+        <!-- HACK this is pretty lame hack to guess if we're about to run the x64 version of CL.EXE -->
+        <property name="cpu-arch" value="x64" if="${string::contains(string::to-lower(environment::get-variable('PATH')), 'vc\bin\amd64')}" />
+        <property name="cpu-arch" value="x64" if="${string::contains(string::to-lower(environment::get-variable('PATH')), 'vc\bin\x86_amd64')}" />
+    </target>
+    <target name="version" depends="arch">
+        <property name="VERSION" value="${assemblyname::get-version(assemblyname::get-assembly-name(path::combine(project::get-base-directory(), '../bin/IKVM.Runtime.dll')))}" />
+        <copy file="ikvm-native.rc.in" tofile="ikvm-native.rc" outputencoding="ascii" overwrite="true">
+            <filterchain>
+                <replacetokens>
+                    <token key="VERSIONLIST" value="${string::replace(property::get-value('VERSION'), '.', ',')}" />
+                    <token key="VERSION" value="${VERSION}" />
+                    <token key="ARCH" value="${cpu-arch}" />
+                </replacetokens>
+            </filterchain>
+        </copy>
+    </target>
     <target name="ikvm-native">
         <if test="${platform::is-unix()}">
             <call target="ikvm-native-unix"/>
@@ -16,12 +34,9 @@
         <exec program="/bin/bash" commandline="-c 'gcc ${LDFLAGS} -o libikvm-native.so --shared -fPIC `pkg-config --cflags --libs gmodule-2.0` jni.c os.c'"/>
         <copy file="libikvm-native.so" todir="../bin"/>
     </target>
-    <target name="ikvm-native-win32">
-        <property name="cpu-arch" value="x86" />
-        <!-- HACK this is pretty lame hack to guess if we're about to run the x64 version of CL.EXE -->
-        <property name="cpu-arch" value="x64" if="${string::contains(string::to-lower(environment::get-variable('PATH')), 'vc\bin\amd64')}" />
-        <property name="cpu-arch" value="x64" if="${string::contains(string::to-lower(environment::get-variable('PATH')), 'vc\bin\x86_amd64')}" />
+    <target name="ikvm-native-win32" depends="version arch">
         <mkdir dir="Release-${cpu-arch}"/>
+        <rc rcfile="ikvm-native.rc" output="Release-${cpu-arch}/ikvm-native.res" />
         <cl outputdir="Release-${cpu-arch}" options="/O2 /D WIN32 /D NDEBUG /D _WINDLL /D _MBCS /GS /W3 /nologo /c">
             <sources>
                 <include name="*.c"/>
@@ -30,6 +45,7 @@
         <link output="Release-${cpu-arch}/ikvm-native.dll" options="/DLL user32.lib">
             <sources>
                 <include name="Release-${cpu-arch}/*.obj"/>
+                <include name="Release-${cpu-arch}/ikvm-native.res"/>
             </sources>
         </link>
         <copy file="Release-${cpu-arch}/ikvm-native.dll" tofile="../bin/ikvm-native-win32-${cpu-arch}.dll" />
