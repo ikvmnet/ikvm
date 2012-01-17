@@ -467,6 +467,21 @@ namespace IKVM.Reflection
 			return GetCustomAttributes(token, null);
 		}
 
+		public byte[] __GetDeclarativeSecurityFor(int token, System.Security.Permissions.SecurityAction action)
+		{
+			// TODO use binary search?
+			for (int i = 0; i < DeclSecurity.records.Length; i++)
+			{
+				if (DeclSecurity.records[i].Parent == token
+					&& DeclSecurity.records[i].Action == (int)action)
+				{
+					ByteReader br = GetBlob(DeclSecurity.records[i].PermissionSet);
+					return br.ReadBytes(br.Length);
+				}
+			}
+			return null;
+		}
+
 		internal abstract Type GetModuleType();
 
 		internal abstract ByteReader GetBlob(int blobIndex);
