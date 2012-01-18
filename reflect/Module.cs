@@ -462,6 +462,11 @@ namespace IKVM.Reflection
 			get { throw new NotSupportedException(); }
 		}
 
+		public virtual string __ImageRuntimeVersion
+		{
+			get { throw new NotSupportedException(); }
+		}
+
 		public IEnumerable<CustomAttributeData> __EnumerateCustomAttributeTable()
 		{
 			List<CustomAttributeData> list = new List<CustomAttributeData>(CustomAttribute.RowCount);

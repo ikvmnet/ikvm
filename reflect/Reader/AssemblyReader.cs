@@ -116,7 +116,7 @@ namespace IKVM.Reflection.Reader
 
 		public override string ImageRuntimeVersion
 		{
-			get { return manifestModule.ImageRuntimeVersion; }
+			get { return manifestModule.__ImageRuntimeVersion; }
 		}
 
 		public override Module ManifestModule

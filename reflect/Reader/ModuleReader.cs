@@ -1092,7 +1092,7 @@ namespace IKVM.Reflection.Reader
 			return moduleType;
 		}
 
-		internal string ImageRuntimeVersion
+		public override string __ImageRuntimeVersion
 		{
 			get { return imageRuntimeVersion; }
 		}
