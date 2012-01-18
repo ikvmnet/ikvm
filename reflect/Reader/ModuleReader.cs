@@ -1196,8 +1196,7 @@ namespace IKVM.Reflection.Reader
 					int index = (CustomAttribute.records[i].Parent & 0xFFFFFF) - 1;
 					if (typeName == GetTypeName(TypeRef.records[index].TypeNameSpace, TypeRef.records[index].TypeName))
 					{
-						ConstructorInfo constructor = (ConstructorInfo)ResolveMethod(CustomAttribute.records[i].Type);
-						list.Add(new CustomAttributeData(this.Assembly, constructor, GetBlob(CustomAttribute.records[i].Value)));
+						list.Add(new CustomAttributeData(this, i));
 					}
 				}
 			}
