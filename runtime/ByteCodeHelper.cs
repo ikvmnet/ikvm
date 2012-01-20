@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2011 Jeroen Frijters
+  Copyright (C) 2002-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -423,6 +423,39 @@ namespace IKVM.Runtime
 			Profiler.Count("DynamicGetTypeAsExceptionType");
 			return LoadTypeWrapper(type, clazz).TypeAsExceptionType;
 		}
+
+		[DebuggerStepThrough]
+		public static Delegate DynamicCreateDelegate(object obj, Type delegateType, string name, string sig)
+		{
+			TypeWrapper tw = TypeWrapper.FromClass(ikvm.runtime.Util.getClassFromObject(obj));
+			MethodWrapper mw = tw.GetMethodWrapper(name, sig, true);
+			if (mw == null || mw.IsStatic || !mw.IsPublic)
+			{
+				MethodInfo invoke = delegateType.GetMethod("Invoke");
+				ParameterInfo[] parameters = invoke.GetParameters();
+				Type[] parameterTypes = new Type[parameters.Length + 1];
+				parameterTypes[0] = typeof(object);
+				for (int i = 0; i < parameters.Length; i++)
+				{
+					parameterTypes[i + 1] = parameters[i].ParameterType;
+				}
+				System.Reflection.Emit.DynamicMethod dm = new System.Reflection.Emit.DynamicMethod("Invoke", invoke.ReturnType, parameterTypes);
+				CodeEmitter ilgen = CodeEmitter.Create(dm);
+				ilgen.Emit(System.Reflection.Emit.OpCodes.Ldstr, tw.Name + ".Invoke" + sig);
+				ClassLoaderWrapper.GetBootstrapClassLoader()
+					.LoadClassByDottedName(mw == null || mw.IsStatic ? "java.lang.AbstractMethodError" : "java.lang.IllegalAccessError")
+					.GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false)
+					.EmitNewobj(ilgen);
+				ilgen.Emit(System.Reflection.Emit.OpCodes.Throw);
+				ilgen.DoEmit();
+				return dm.CreateDelegate(delegateType, obj);
+			}
+			else
+			{
+				mw.ResolveMethod();
+				return Delegate.CreateDelegate(delegateType, obj, (MethodInfo)mw.GetMethod());
+			}
+		}
 #else
 		[DebuggerStepThroughAttribute]
 		public static object DynamicCast(object obj, RuntimeTypeHandle type, string clazz)
@@ -438,6 +471,12 @@ namespace IKVM.Runtime
 
 		[DebuggerStepThroughAttribute]
 		public static Type DynamicGetTypeAsExceptionType(RuntimeTypeHandle type, string clazz)
+		{
+			return null;
+		}
+
+		[DebuggerStepThrough]
+		public static Delegate DynamicCreateDelegate(object obj, Type delegateType)
 		{
 			return null;
 		}

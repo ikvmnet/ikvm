@@ -71,6 +71,7 @@ static class ByteCodeHelperMethods
 	internal static readonly MethodInfo DynamicNewCheckOnly;
 	internal static readonly MethodInfo DynamicPutfield;
 	internal static readonly MethodInfo DynamicPutstatic;
+	internal static readonly MethodInfo DynamicCreateDelegate;
 	internal static readonly MethodInfo VerboseCastFailure;
 	internal static readonly MethodInfo SkipFinalizer;
 	internal static readonly MethodInfo DynamicInstanceOf;
@@ -120,6 +121,7 @@ static class ByteCodeHelperMethods
 		DynamicNewCheckOnly = typeofByteCodeHelper.GetMethod("DynamicNewCheckOnly");
 		DynamicPutfield = typeofByteCodeHelper.GetMethod("DynamicPutfield");
 		DynamicPutstatic = typeofByteCodeHelper.GetMethod("DynamicPutstatic");
+		DynamicCreateDelegate = typeofByteCodeHelper.GetMethod("DynamicCreateDelegate");
 		VerboseCastFailure = typeofByteCodeHelper.GetMethod("VerboseCastFailure");
 		SkipFinalizer = typeofByteCodeHelper.GetMethod("SkipFinalizer");
 		DynamicInstanceOf = typeofByteCodeHelper.GetMethod("DynamicInstanceOf");

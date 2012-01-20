@@ -1800,27 +1800,47 @@ namespace IKVM.Internal
 				{
 					return false;
 				}
-				context.Emitter.Emit(OpCodes.Dup);
 				// we know that a DelegateInnerClassTypeWrapper has only one method
 				Debug.Assert(iface.GetMethods().Length == 1);
 				MethodWrapper mw = targetType.GetMethodWrapper(GetDelegateInvokeStubName(DeclaringType.TypeAsTBD), iface.GetMethods()[0].Signature, true);
+				if (mw == null || mw.IsStatic || !mw.IsPublic)
+				{
+					context.Emitter.Emit(OpCodes.Ldftn, CreateErrorStub(context, targetType, mw == null || mw.IsStatic));
+					context.Emitter.Emit(OpCodes.Newobj, delegateConstructor);
+					return true;
+				}
 				// TODO linking here is not safe
 				mw.Link();
+				context.Emitter.Emit(OpCodes.Dup);
 				context.Emitter.Emit(OpCodes.Ldvirtftn, (MethodInfo)mw.GetMethod());
 				context.Emitter.Emit(OpCodes.Newobj, delegateConstructor);
 				return true;
 			}
 
+			private MethodInfo CreateErrorStub(EmitIntrinsicContext context, TypeWrapper targetType, bool isAbstract)
+			{
+				MethodInfo invoke = delegateConstructor.DeclaringType.GetMethod("Invoke");
+				ParameterInfo[] parameters = invoke.GetParameters();
+				Type[] parameterTypes = new Type[parameters.Length + 1];
+				parameterTypes[0] = Types.Object;
+				for (int i = 0; i < parameters.Length; i++)
+				{
+					parameterTypes[i + 1] = parameters[i].ParameterType;
+				}
+				MethodBuilder mb = context.Context.DefineDelegateInvokeErrorStub(invoke.ReturnType, parameterTypes);
+				CodeEmitter ilgen = CodeEmitter.Create(mb);
+				ilgen.EmitThrow(isAbstract ? "java.lang.AbstractMethodError" : "java.lang.IllegalAccessError", targetType.Name + ".Invoke" + iface.GetMethods()[0].Signature);
+				ilgen.DoEmit();
+				return mb;
+			}
+
 			internal override void EmitNewobj(CodeEmitter ilgen)
 			{
-				MethodInfo createDelegate = Types.Delegate.GetMethod("CreateDelegate", new Type[] { Types.Type, Types.Object, Types.String });
-				CodeEmitterLocal targetObj = ilgen.DeclareLocal(Types.Object);
-				ilgen.Emit(OpCodes.Stloc, targetObj);
 				ilgen.Emit(OpCodes.Ldtoken, delegateConstructor.DeclaringType);
 				ilgen.Emit(OpCodes.Call, Types.Type.GetMethod("GetTypeFromHandle", new Type[] { Types.RuntimeTypeHandle }));
-				ilgen.Emit(OpCodes.Ldloc, targetObj);
 				ilgen.Emit(OpCodes.Ldstr, GetDelegateInvokeStubName(DeclaringType.TypeAsTBD));
-				ilgen.Emit(OpCodes.Call, createDelegate);
+				ilgen.Emit(OpCodes.Ldstr, iface.GetMethods()[0].Signature);
+				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicCreateDelegate);
 				ilgen.Emit(OpCodes.Castclass, delegateConstructor.DeclaringType);
 			}
 #endif // !STUB_GENERATOR
