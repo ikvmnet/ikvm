@@ -1149,7 +1149,6 @@ namespace IKVM.Internal
 				internal MethodInfo DoLink(TypeBuilder tb)
 				{
 					MethodWrapper mw = this.DeclaringType.GetMethodWrapper("Invoke", this.Signature, true);
-					mw.Link();
 
 					MethodInfo invoke = delegateType.GetMethod("Invoke");
 					ParameterInfo[] parameters = invoke.GetParameters();
@@ -1161,9 +1160,9 @@ namespace IKVM.Internal
 					MethodBuilder mb = tb.DefineMethod(this.Name, MethodAttributes.Public, invoke.ReturnType, parameterTypes);
 					AttributeHelper.HideFromReflection(mb);
 					CodeEmitter ilgen = CodeEmitter.Create(mb);
-					if (mw.IsStatic || !mw.IsPublic)
+					if (mw == null || mw.IsStatic || !mw.IsPublic)
 					{
-						ilgen.EmitThrow(mw.IsStatic ? "java.lang.AbstractMethodError" : "java.lang.IllegalAccessError", mw.DeclaringType.Name + "." + mw.Name + mw.Signature);
+						ilgen.EmitThrow(mw == null || mw.IsStatic ? "java.lang.AbstractMethodError" : "java.lang.IllegalAccessError", DeclaringType.Name + ".Invoke" + Signature);
 						ilgen.DoEmit();
 						return mb;
 					}
@@ -1198,6 +1197,7 @@ namespace IKVM.Internal
 							ilgen.Emit(OpCodes.Ldarg_S, (byte)(i + 1));
 						}
 					}
+					mw.Link();
 					mw.EmitCallvirt(ilgen);
 					CodeEmitterLocal returnValue = null;
 					if (mw.ReturnType != PrimitiveTypeWrapper.VOID)
