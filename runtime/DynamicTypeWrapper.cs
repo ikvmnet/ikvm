@@ -1163,7 +1163,7 @@ namespace IKVM.Internal
 					CodeEmitter ilgen = CodeEmitter.Create(mb);
 					if (mw.IsStatic || !mw.IsPublic)
 					{
-						ilgen.EmitThrow(!mw.IsPublic ? "java.lang.IllegalAccessError" : "java.lang.AbstractMethodError", mw.DeclaringType.Name + "." + mw.Name + mw.Signature);
+						ilgen.EmitThrow(mw.IsStatic ? "java.lang.AbstractMethodError" : "java.lang.IllegalAccessError", mw.DeclaringType.Name + "." + mw.Name + mw.Signature);
 						ilgen.DoEmit();
 						return mb;
 					}
