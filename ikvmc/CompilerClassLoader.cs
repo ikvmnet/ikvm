@@ -874,7 +874,7 @@ namespace IKVM.Internal
 				}
 				if(classLoader.EmitStackTraceInfo)
 				{
-					AttributeHelper.SetSourceFile(typeBuilder, IKVM.Internal.MapXml.Root.filename);
+					AttributeHelper.SetSourceFile(typeBuilder, Path.GetFileName(classLoader.options.remapfile));
 				}
 
 				if(baseIsSealed)
@@ -2888,7 +2888,6 @@ namespace IKVM.Internal
 				{
 					XmlTextReader rdr = new XmlTextReader(fs);
 					IKVM.Internal.MapXml.Root.xmlReader = rdr;
-					IKVM.Internal.MapXml.Root.filename = new FileInfo(fs.Name).Name;
 					IKVM.Internal.MapXml.Root map;
 					try
 					{

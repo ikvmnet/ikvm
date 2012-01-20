@@ -1804,7 +1804,6 @@ namespace IKVM.Internal.MapXml
 	public class Root
 	{
 		internal static System.Xml.XmlTextReader xmlReader;
-		internal static string filename;
 
 		internal static int LineNumber
 		{
