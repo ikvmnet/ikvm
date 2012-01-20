@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2011 Jeroen Frijters
+  Copyright (C) 2002-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -386,14 +386,21 @@ namespace IKVM.Internal
 				ParameterInfo[] parameters = invoke.GetParameters();
 				TypeWrapper[] argTypeWrappers = new TypeWrapper[parameters.Length];
 				System.Text.StringBuilder sb = new System.Text.StringBuilder("(");
+				MemberFlags flags = MemberFlags.None;
 				for (int i = 0; i < parameters.Length; i++)
 				{
-					argTypeWrappers[i] = ClassLoaderWrapper.GetWrapperFromType(parameters[i].ParameterType);
+					Type parameterType = parameters[i].ParameterType;
+					if (parameterType.IsByRef)
+					{
+						flags |= MemberFlags.DelegateInvokeWithByRefParameter;
+						parameterType = ArrayTypeWrapper.MakeArrayType(parameterType.GetElementType(), 1);
+					}
+					argTypeWrappers[i] = ClassLoaderWrapper.GetWrapperFromType(parameterType);
 					sb.Append(argTypeWrappers[i].SigName);
 				}
 				TypeWrapper returnType = ClassLoaderWrapper.GetWrapperFromType(invoke.ReturnType);
 				sb.Append(")").Append(returnType.SigName);
-				MethodWrapper invokeMethod = new DynamicOnlyMethodWrapper(this, "Invoke", sb.ToString(), returnType, argTypeWrappers);
+				MethodWrapper invokeMethod = new DynamicOnlyMethodWrapper(this, "Invoke", sb.ToString(), returnType, argTypeWrappers, flags);
 				SetMethods(new MethodWrapper[] { invokeMethod });
 				SetFields(FieldWrapper.EmptyArray);
 			}
@@ -447,8 +454,8 @@ namespace IKVM.Internal
 
 		private class DynamicOnlyMethodWrapper : MethodWrapper, ICustomInvoke
 		{
-			internal DynamicOnlyMethodWrapper(TypeWrapper declaringType, string name, string sig, TypeWrapper returnType, TypeWrapper[] parameterTypes)
-				: base(declaringType, name, sig, null, returnType, parameterTypes, Modifiers.Public | Modifiers.Abstract, MemberFlags.None)
+			internal DynamicOnlyMethodWrapper(TypeWrapper declaringType, string name, string sig, TypeWrapper returnType, TypeWrapper[] parameterTypes, MemberFlags flags)
+				: base(declaringType, name, sig, null, returnType, parameterTypes, Modifiers.Public | Modifiers.Abstract, flags)
 			{
 			}
 
@@ -892,7 +899,7 @@ namespace IKVM.Internal
 				}
 
 				private AttributeAnnotationMethodWrapper(AttributeAnnotationTypeWrapper tw, string name, TypeWrapper returnType, bool optional)
-					: base(tw, name, "()" + returnType.SigName, returnType, TypeWrapper.EmptyArray)
+					: base(tw, name, "()" + returnType.SigName, returnType, TypeWrapper.EmptyArray, MemberFlags.None)
 				{
 					this.optional = optional;
 				}
@@ -1030,7 +1037,7 @@ namespace IKVM.Internal
 					{
 						tw = tw.MakeArrayType(1);
 					}
-					SetMethods(new MethodWrapper[] { new DynamicOnlyMethodWrapper(this, "value", "()" + tw.SigName, tw, TypeWrapper.EmptyArray) });
+					SetMethods(new MethodWrapper[] { new DynamicOnlyMethodWrapper(this, "value", "()" + tw.SigName, tw, TypeWrapper.EmptyArray, MemberFlags.None) });
 					SetFields(FieldWrapper.EmptyArray);
 				}
 
@@ -1173,7 +1180,7 @@ namespace IKVM.Internal
 				protected override void LazyPublishMembers()
 				{
 					TypeWrapper tw = declaringType.MakeArrayType(1);
-					SetMethods(new MethodWrapper[] { new DynamicOnlyMethodWrapper(this, "value", "()" + tw.SigName, tw, TypeWrapper.EmptyArray) });
+					SetMethods(new MethodWrapper[] { new DynamicOnlyMethodWrapper(this, "value", "()" + tw.SigName, tw, TypeWrapper.EmptyArray, MemberFlags.None) });
 					SetFields(FieldWrapper.EmptyArray);
 				}
 
@@ -1754,6 +1761,21 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal static string GetDelegateInvokeStubName(Type delegateType)
+		{
+			MethodInfo delegateInvoke = delegateType.GetMethod("Invoke");
+			ParameterInfo[] parameters = delegateInvoke.GetParameters();
+			string name = null;
+			for (int i = 0; i < parameters.Length; i++)
+			{
+				if (parameters[i].ParameterType.IsByRef)
+				{
+					name = (name ?? "<Invoke>") + "_" + i;
+				}
+			}
+			return name ?? "Invoke";
+		}
+
 		private class DelegateMethodWrapper : MethodWrapper
 		{
 			private ConstructorInfo delegateConstructor;
@@ -1777,7 +1799,7 @@ namespace IKVM.Internal
 				context.Emitter.Emit(OpCodes.Dup);
 				// we know that a DelegateInnerClassTypeWrapper has only one method
 				Debug.Assert(iface.GetMethods().Length == 1);
-				MethodWrapper mw = targetType.GetMethodWrapper("Invoke", iface.GetMethods()[0].Signature, true);
+				MethodWrapper mw = targetType.GetMethodWrapper(GetDelegateInvokeStubName(DeclaringType.TypeAsTBD), iface.GetMethods()[0].Signature, true);
 				// TODO linking here is not safe
 				mw.Link();
 				context.Emitter.Emit(OpCodes.Ldvirtftn, (MethodInfo)mw.GetMethod());
@@ -1793,7 +1815,7 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Ldtoken, delegateConstructor.DeclaringType);
 				ilgen.Emit(OpCodes.Call, Types.Type.GetMethod("GetTypeFromHandle", new Type[] { Types.RuntimeTypeHandle }));
 				ilgen.Emit(OpCodes.Ldloc, targetObj);
-				ilgen.Emit(OpCodes.Ldstr, "Invoke");
+				ilgen.Emit(OpCodes.Ldstr, GetDelegateInvokeStubName(DeclaringType.TypeAsTBD));
 				ilgen.Emit(OpCodes.Call, createDelegate);
 				ilgen.Emit(OpCodes.Castclass, delegateConstructor.DeclaringType);
 			}
@@ -2444,8 +2466,8 @@ namespace IKVM.Internal
 				{
 					foreach (ParameterInfo p in invoke.GetParameters())
 					{
-						// TODO at the moment we don't support delegates with pointer or byref parameters
-						if (p.ParameterType.IsPointer || p.ParameterType.IsByRef)
+						// we don't support delegates with pointer parameters
+						if (p.ParameterType.IsPointer)
 						{
 							return false;
 						}

@@ -4398,7 +4398,13 @@ namespace IKVM.Internal
 					return TypeWrapperFromModOpt(modopt);
 				}
 			}
-			return ClassLoaderWrapper.GetWrapperFromType(param.ParameterType);
+			Type parameterType = param.ParameterType;
+			if (parameterType.IsByRef)
+			{
+				// we only support ByRef parameters for automatically generated delegate invoke stubs
+				parameterType = parameterType.GetElementType().MakeArrayType();
+			}
+			return ClassLoaderWrapper.GetWrapperFromType(parameterType);
 		}
 
 		private FieldWrapper CreateFieldWrapper(FieldInfo field)

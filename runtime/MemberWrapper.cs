@@ -51,6 +51,7 @@ namespace IKVM.Internal
 		Intrinsic = 128,
 		CallerID = 256,
 		NonPublicTypeInSignature = 512,	// this flag is only available after linking and is not set for access stubs
+		DelegateInvokeWithByRefParameter = 1024,
 	}
 
 	class MemberWrapper
@@ -277,6 +278,11 @@ namespace IKVM.Internal
 			{
 				return (flags & MemberFlags.CallerID) != 0;
 			}
+		}
+
+		internal bool IsDelegateInvokeWithByRefParameter
+		{
+			get { return (flags & MemberFlags.DelegateInvokeWithByRefParameter) != 0; }
 		}
 
 		internal Modifiers Modifiers

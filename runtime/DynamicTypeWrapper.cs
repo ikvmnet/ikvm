@@ -536,6 +536,10 @@ namespace IKVM.Internal
 					methods = methodsArray.ToArray();
 					baseMethods = baseMethodsArray.ToArray();
 				}
+				if (!wrapper.IsInterface)
+				{
+					AddDelegateInvokeStubs(wrapper, ref methods);
+				}
 				wrapper.SetMethods(methods);
 
 				fields = new FieldWrapper[classFile.Fields.Length];
@@ -1050,7 +1054,7 @@ namespace IKVM.Internal
 			}
 #endif // STATIC_COMPILER
 
-			private MethodWrapper GetMethodWrapperDuringCtor(TypeWrapper lookup, List<MethodWrapper> methods, string name, string sig)
+			private MethodWrapper GetMethodWrapperDuringCtor(TypeWrapper lookup, IList<MethodWrapper> methods, string name, string sig)
 			{
 				if (lookup == wrapper)
 				{
@@ -1110,6 +1114,115 @@ namespace IKVM.Internal
 							}
 						}
 					}
+				}
+			}
+
+			private void AddDelegateInvokeStubs(TypeWrapper tw, ref MethodWrapper[] methods)
+			{
+				foreach (TypeWrapper iface in tw.Interfaces)
+				{
+					if (iface.IsFakeNestedType
+						&& iface.GetMethods().Length == 1
+						&& iface.GetMethods()[0].IsDelegateInvokeWithByRefParameter)
+					{
+						MethodWrapper mw = new DelegateInvokeStubMethodWrapper(wrapper, iface.DeclaringTypeWrapper.TypeAsBaseType, iface.GetMethods()[0].Signature);
+						if (GetMethodWrapperDuringCtor(wrapper, methods, mw.Name, mw.Signature) == null)
+						{
+							Array.Resize(ref methods, methods.Length + 1);
+							methods[methods.Length - 1] = mw;
+						}
+					}
+					AddDelegateInvokeStubs(iface, ref methods);
+				}
+			}
+
+			private sealed class DelegateInvokeStubMethodWrapper : MethodWrapper
+			{
+				private readonly Type delegateType;
+
+				internal DelegateInvokeStubMethodWrapper(TypeWrapper declaringType, Type delegateType, string sig)
+					: base(declaringType, DotNetTypeWrapper.GetDelegateInvokeStubName(delegateType), sig, null, null, null, Modifiers.Public | Modifiers.Final, MemberFlags.HideFromReflection)
+				{
+					this.delegateType = delegateType;
+				}
+
+				internal MethodInfo DoLink(TypeBuilder tb)
+				{
+					MethodInfo invoke = delegateType.GetMethod("Invoke");
+					ParameterInfo[] parameters = invoke.GetParameters();
+					Type[] parameterTypes = new Type[parameters.Length];
+					for (int i = 0; i < parameterTypes.Length; i++)
+					{
+						parameterTypes[i] = parameters[i].ParameterType;
+					}
+					MethodBuilder mb = tb.DefineMethod(this.Name, MethodAttributes.Public, invoke.ReturnType, parameterTypes);
+					AttributeHelper.HideFromReflection(mb);
+					CodeEmitter ilgen = CodeEmitter.Create(mb);
+					CodeEmitterLocal[] byrefs = new CodeEmitterLocal[parameters.Length];
+					for (int i = 0; i < parameters.Length; i++)
+					{
+						if (parameters[i].ParameterType.IsByRef)
+						{
+							Type elemType = parameters[i].ParameterType.GetElementType();
+							CodeEmitterLocal local = ilgen.DeclareLocal(ArrayTypeWrapper.MakeArrayType(elemType, 1));
+							byrefs[i] = local;
+							ilgen.Emit(OpCodes.Ldc_I4_1);
+							ilgen.Emit(OpCodes.Newarr, elemType);
+							ilgen.Emit(OpCodes.Stloc, local);
+							ilgen.Emit(OpCodes.Ldloc, local);
+							ilgen.Emit(OpCodes.Ldc_I4_0);
+							ilgen.Emit(OpCodes.Ldarg_S, (byte)(i + 1));
+							ilgen.Emit(OpCodes.Ldobj, elemType);
+							ilgen.Emit(OpCodes.Stelem, elemType);
+						}
+					}
+					ilgen.BeginExceptionBlock();
+					ilgen.Emit(OpCodes.Ldarg_0);
+					for (int i = 0; i < parameters.Length; i++)
+					{
+						if (byrefs[i] != null)
+						{
+							ilgen.Emit(OpCodes.Ldloc, byrefs[i]);
+						}
+						else
+						{
+							ilgen.Emit(OpCodes.Ldarg_S, (byte)(i + 1));
+						}
+					}
+					MethodWrapper mw = this.DeclaringType.GetMethodWrapper("Invoke", this.Signature, true);
+					mw.Link();
+					mw.EmitCallvirt(ilgen);
+					CodeEmitterLocal returnValue = null;
+					if (mw.ReturnType != PrimitiveTypeWrapper.VOID)
+					{
+						returnValue = ilgen.DeclareLocal(mw.ReturnType.TypeAsSignatureType);
+						ilgen.Emit(OpCodes.Stloc, returnValue);
+					}
+					CodeEmitterLabel exit = ilgen.DefineLabel();
+					ilgen.Emit(OpCodes.Leave_S, exit);
+					ilgen.BeginFinallyBlock();
+					for (int i = 0; i < parameters.Length; i++)
+					{
+						if (byrefs[i] != null)
+						{
+							Type elemType = byrefs[i].LocalType.GetElementType();
+							ilgen.Emit(OpCodes.Ldarg_S, (byte)(i + 1));
+							ilgen.Emit(OpCodes.Ldloc, byrefs[i]);
+							ilgen.Emit(OpCodes.Ldc_I4_0);
+							ilgen.Emit(OpCodes.Ldelem, elemType);
+							ilgen.Emit(OpCodes.Stobj, elemType);
+						}
+					}
+					ilgen.Emit(OpCodes.Endfinally);
+					ilgen.EndExceptionBlock();
+					ilgen.MarkLabel(exit);
+					if (returnValue != null)
+					{
+						ilgen.Emit(OpCodes.Ldloc, returnValue);
+					}
+					ilgen.Emit(OpCodes.Ret);
+					ilgen.DoEmit();
+					return mb;
 				}
 			}
 
@@ -2552,6 +2665,10 @@ namespace IKVM.Internal
 				{
 					((DelegateConstructorMethodWrapper)mw).DoLink(typeBuilder);
 					return null;
+				}
+				if (mw is DelegateInvokeStubMethodWrapper)
+				{
+					return ((DelegateInvokeStubMethodWrapper)mw).DoLink(typeBuilder);
 				}
 				Debug.Assert(mw != null);
 				int index = GetMethodIndex(mw);
