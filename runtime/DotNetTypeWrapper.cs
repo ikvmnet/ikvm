@@ -474,9 +474,13 @@ namespace IKVM.Internal
 				// we can resolve to a real method and call that instead
 				TypeWrapper tw = TypeWrapper.FromClass(NativeCode.ikvm.runtime.Util.getClassFromObject(obj));
 				MethodWrapper mw = tw.GetMethodWrapper(this.Name, this.Signature, true);
-				if (mw == null)
+				if (mw == null || mw.IsStatic)
 				{
 					throw new java.lang.AbstractMethodError(tw.Name + "." + this.Name + this.Signature);
+				}
+				if (!mw.IsPublic)
+				{
+					throw new java.lang.IllegalAccessError(tw.Name + "." + this.Name + this.Signature);
 				}
 				java.lang.reflect.Method m = (java.lang.reflect.Method)mw.ToMethodOrConstructor(true);
 				m.@override = true;
