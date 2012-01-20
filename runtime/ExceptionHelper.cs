@@ -335,6 +335,10 @@ namespace IKVM.Internal
 				MethodBase mb = frame.GetMethod();
 				if(mb != null)
 				{
+					if(ClassLoaderWrapper.IsRemappedType(mb.DeclaringType))
+					{
+						return -1;
+					}
 					TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType);
 					if(tw != null)
 					{
@@ -350,6 +354,10 @@ namespace IKVM.Internal
 			MethodBase mb = frame.GetMethod();
 			if(mb != null)
 			{
+				if(ClassLoaderWrapper.IsRemappedType(mb.DeclaringType))
+				{
+					return null;
+				}
 				TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType);
 				if(tw != null)
 				{
