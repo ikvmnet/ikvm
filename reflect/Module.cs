@@ -77,14 +77,14 @@ namespace IKVM.Reflection
 			}
 		}
 
-		internal Assembly ToAssembly()
+		internal AssemblyReader ToAssembly()
 		{
 			if (imported)
 			{
 				throw new InvalidOperationException();
 			}
 			imported = true;
-			return module.Assembly;
+			return (AssemblyReader)module.Assembly;
 		}
 
 		internal Module ToModule(Assembly assembly)

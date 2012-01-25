@@ -88,7 +88,7 @@ namespace IKVM.Reflection
 	public sealed class Universe : IDisposable
 	{
 		private readonly Dictionary<Type, Type> canonicalizedTypes = new Dictionary<Type, Type>();
-		private readonly List<Assembly> assemblies = new List<Assembly>();
+		private readonly List<AssemblyReader> assemblies = new List<AssemblyReader>();
 		private readonly List<AssemblyBuilder> dynamicAssemblies = new List<AssemblyBuilder>();
 		private readonly Dictionary<string, Assembly> assembliesByName = new Dictionary<string, Assembly>();
 		private readonly Dictionary<System.Type, Type> importedTypes = new Dictionary<System.Type, Type>();
@@ -618,8 +618,9 @@ namespace IKVM.Reflection
 			Assembly asm = GetLoadedAssembly(refname);
 			if (asm == null)
 			{
-				asm = module.ToAssembly();
-				assemblies.Add(asm);
+				AssemblyReader asm1 = module.ToAssembly();
+				assemblies.Add(asm1);
+				asm = asm1;
 			}
 			return asm;
 		}
@@ -804,7 +805,10 @@ namespace IKVM.Reflection
 		public Assembly[] GetAssemblies()
 		{
 			Assembly[] array = new Assembly[assemblies.Count + dynamicAssemblies.Count];
-			assemblies.CopyTo(array);
+			for (int i = 0; i < assemblies.Count; i++)
+			{
+				array[i] = assemblies[i];
+			}
 			for (int i = 0, j = assemblies.Count; j < array.Length; i++, j++)
 			{
 				array[j] = dynamicAssemblies[i];
