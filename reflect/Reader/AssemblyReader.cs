@@ -256,6 +256,11 @@ namespace IKVM.Reflection.Reader
 			get { return (AssemblyNameFlags)manifestModule.AssemblyTable.records[0].Flags; }
 		}
 
+		internal string Name
+		{
+			get { return manifestModule.GetString(manifestModule.AssemblyTable.records[0].Name); }
+		}
+
 		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
 		{
 			return manifestModule.GetCustomAttributes(0x20000001, attributeType);

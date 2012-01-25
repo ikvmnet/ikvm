@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2010-2011 Jeroen Frijters
+  Copyright (C) 2010-2012 Jeroen Frijters
   Copyright (C) 2011 Marek Safar
 
   This software is provided 'as-is', without any express or implied
@@ -228,11 +228,11 @@ namespace IKVM.Reflection
 			return false;
 		}
 
-		internal static ParseAssemblyResult ParseAssemblyName(string fullName, out ParsedAssemblyName parsedName)
+		internal static ParseAssemblyResult ParseAssemblySimpleName(string fullName, out int pos, out string simpleName)
 		{
-			parsedName = new ParsedAssemblyName();
 			StringBuilder sb = new StringBuilder();
-			int pos = 0;
+			pos = 0;
+			simpleName = null;
 			while (pos < fullName.Length && char.IsWhiteSpace(fullName[pos]))
 			{
 				pos++;
@@ -282,14 +282,26 @@ namespace IKVM.Reflection
 				}
 				sb.Append(ch);
 			}
-			parsedName.Name = sb.ToString().Trim();
-			if (parsedName.Name.Length == 0)
+			simpleName = sb.ToString().Trim();
+			if (simpleName.Length == 0)
 			{
 				return ParseAssemblyResult.GenericError;
 			}
-			if (pos == fullName.Length)
+			if (pos == fullName.Length && fullName[fullName.Length - 1] == ',')
 			{
-				return fullName[fullName.Length - 1] != ',' ? ParseAssemblyResult.OK : ParseAssemblyResult.GenericError;
+				return ParseAssemblyResult.GenericError;
+			}
+			return ParseAssemblyResult.OK;
+		}
+
+		internal static ParseAssemblyResult ParseAssemblyName(string fullName, out ParsedAssemblyName parsedName)
+		{
+			parsedName = new ParsedAssemblyName();
+			int pos;
+			ParseAssemblyResult res = ParseAssemblySimpleName(fullName, out pos, out parsedName.Name);
+			if (res != ParseAssemblyResult.OK || pos == fullName.Length)
+			{
+				return res;
 			}
 			else
 			{

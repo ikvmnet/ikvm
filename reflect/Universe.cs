@@ -644,15 +644,28 @@ namespace IKVM.Reflection
 			}
 		}
 
+		private static string GetSimpleAssemblyName(string refname)
+		{
+			int pos;
+			string name;
+			if (Fusion.ParseAssemblySimpleName(refname, out pos, out name) != ParseAssemblyResult.OK)
+			{
+				throw new ArgumentException();
+			}
+			return name;
+		}
+
 		private Assembly GetLoadedAssembly(string refname)
 		{
 			Assembly asm;
 			if (!assembliesByName.TryGetValue(refname, out asm))
 			{
+				string simpleName = GetSimpleAssemblyName(refname);
 				for (int i = 0; i < assemblies.Count; i++)
 				{
 					AssemblyComparisonResult result;
-					if (CompareAssemblyIdentity(refname, false, assemblies[i].FullName, false, out result))
+					if (simpleName.Equals(assemblies[i].Name, StringComparison.InvariantCultureIgnoreCase)
+						&& CompareAssemblyIdentity(refname, false, assemblies[i].FullName, false, out result))
 					{
 						asm = assemblies[i];
 						assembliesByName.Add(refname, asm);
@@ -665,10 +678,12 @@ namespace IKVM.Reflection
 
 		private Assembly GetDynamicAssembly(string refname)
 		{
+			string simpleName = GetSimpleAssemblyName(refname);
 			foreach (AssemblyBuilder asm in dynamicAssemblies)
 			{
 				AssemblyComparisonResult result;
-				if (CompareAssemblyIdentity(refname, false, asm.FullName, false, out result))
+				if (simpleName.Equals(asm.Name, StringComparison.InvariantCultureIgnoreCase)
+					&& CompareAssemblyIdentity(refname, false, asm.FullName, false, out result))
 				{
 					return asm;
 				}
