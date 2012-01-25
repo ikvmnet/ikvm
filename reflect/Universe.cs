@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009-2011 Jeroen Frijters
+  Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -82,6 +82,7 @@ namespace IKVM.Reflection
 	{
 		None = 0,
 		EnableFunctionPointers = 1,
+		DisableFusion = 2,
 	}
 
 	public sealed class Universe : IDisposable
@@ -94,6 +95,7 @@ namespace IKVM.Reflection
 		private Dictionary<ScopedTypeName, Type> missingTypes;
 		private bool resolveMissingMembers;
 		private readonly bool enableFunctionPointers;
+		private readonly bool useNativeFusion;
 		private Type typeof_System_Object;
 		private Type typeof_System_ValueType;
 		private Type typeof_System_Enum;
@@ -161,6 +163,21 @@ namespace IKVM.Reflection
 		public Universe(UniverseOptions options)
 		{
 			enableFunctionPointers = (options & UniverseOptions.EnableFunctionPointers) != 0;
+			useNativeFusion = (options & UniverseOptions.DisableFusion) == 0 && GetUseNativeFusion();
+		}
+
+		private static bool GetUseNativeFusion()
+		{
+			try
+			{
+				return Environment.OSVersion.Platform == PlatformID.Win32NT
+					&& System.Type.GetType("Mono.Runtime") == null
+					&& Environment.GetEnvironmentVariable("IKVM_DISABLE_FUSION") == null;
+			}
+			catch (System.Security.SecurityException)
+			{
+				return false;
+			}
 		}
 
 		internal Assembly Mscorlib
@@ -798,7 +815,9 @@ namespace IKVM.Reflection
 		// this is equivalent to the Fusion CompareAssemblyIdentity API
 		public bool CompareAssemblyIdentity(string assemblyIdentity1, bool unified1, string assemblyIdentity2, bool unified2, out AssemblyComparisonResult result)
 		{
-			return Fusion.CompareAssemblyIdentity(assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result);
+			return useNativeFusion
+				? Fusion.CompareAssemblyIdentityNative(assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result)
+				: Fusion.CompareAssemblyIdentityPure(assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result);
 		}
 
 		public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access)
