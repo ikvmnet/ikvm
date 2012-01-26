@@ -522,6 +522,22 @@ namespace IKVM.Internal
 
 		internal TypeWrapper LoadGenericClass(string name)
 		{
+			// we need to handle delegate methods here (for generic delegates)
+			// (note that other types with manufactured inner classes such as Attribute and Enum can't be generic)
+			if (name.EndsWith(DotNetTypeWrapper.DelegateInterfaceSuffix))
+			{
+				TypeWrapper outer = LoadGenericClass(name.Substring(0, name.Length - DotNetTypeWrapper.DelegateInterfaceSuffix.Length));
+				if (outer != null && outer.IsFakeTypeContainer)
+				{
+					foreach (TypeWrapper tw in outer.InnerClasses)
+					{
+						if (tw.Name == name)
+						{
+							return tw;
+						}
+					}
+				}
+			}
 			// generic class name grammar:
 			//
 			// mangled(open_generic_type_name) "_$$$_" M(parameter_class_name) ( "_$$_" M(parameter_class_name) )* "_$$$$_"
