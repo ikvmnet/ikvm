@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2011 Jeroen Frijters
+  Copyright (C) 2002-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -2972,6 +2972,24 @@ namespace IKVM.Internal
 			return asm;
 		}
 
+		private bool IsStub(string className)
+		{
+			// this function is needed because when using generics a type may be loaded before the stub is seen
+			// and without this check that would cause a spurious IKVMC0109 warning
+			byte[] classdef;
+			if (classes.TryGetValue(className, out classdef))
+			{
+				try
+				{
+					return new ClassFile(classdef, 0, classdef.Length, className, ClassFileParseOptions.RelaxedClassNameValidation).IKVMAssemblyAttribute != null;
+				}
+				catch (ClassFormatError)
+				{
+				}
+			}
+			return false;
+		}
+
 		private void CompilePass1()
 		{
 			Tracer.Info(Tracer.Compiler, "Compiling class files (1)");
@@ -3003,7 +3021,7 @@ namespace IKVM.Internal
 					ClassLoaderWrapper loader = wrapper.GetClassLoader();
 					if(loader != this)
 					{
-						if(!(loader is GenericClassLoader || loader is CompilerClassLoader || (importedStubTypes.ContainsKey(s) && importedStubTypes[s] == wrapper)))
+						if(!(loader is GenericClassLoader || loader is CompilerClassLoader || (importedStubTypes.ContainsKey(s) && importedStubTypes[s] == wrapper) || IsStub(s)))
 						{
 							StaticCompiler.IssueMessage(options, Message.SkippingReferencedClass, s, ((AssemblyClassLoader)loader).GetAssembly(wrapper).FullName);
 						}
