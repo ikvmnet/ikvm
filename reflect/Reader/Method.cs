@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009-2011 Jeroen Frijters
+  Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -366,6 +366,28 @@ namespace IKVM.Reflection.Reader
 		internal override int ImportTo(Emit.ModuleBuilder module)
 		{
 			return module.ImportMethodOrField(declaringType, this.Name, this.MethodSignature);
+		}
+
+		public override MethodInfo[] __GetMethodImpls()
+		{
+			Type[] typeArgs = null;
+			List<MethodInfo> list = null;
+			foreach (int i in module.MethodImpl.Filter(declaringType.MetadataToken))
+			{
+				if (module.MethodImpl.records[i].MethodBody == this.MetadataToken)
+				{
+					if (typeArgs == null)
+					{
+						typeArgs = declaringType.GetGenericArguments();
+					}
+					if (list == null)
+					{
+						list = new List<MethodInfo>();
+					}
+					list.Add((MethodInfo)module.ResolveMethod(module.MethodImpl.records[i].MethodDeclaration, typeArgs, null));
+				}
+			}
+			return Util.ToArray(list, Empty<MethodInfo>.Array);
 		}
 	}
 
