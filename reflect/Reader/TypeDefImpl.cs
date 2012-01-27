@@ -150,6 +150,7 @@ namespace IKVM.Reflection.Reader
 
 		public override __MethodImplMap __GetMethodImplMap()
 		{
+			PopulateGenericArguments();
 			List<MethodInfo> bodies = new List<MethodInfo>();
 			List<List<MethodInfo>> declarations = new List<List<MethodInfo>>();
 			foreach (int i in module.MethodImpl.Filter(this.MetadataToken))
