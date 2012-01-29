@@ -742,6 +742,7 @@ namespace IKVM.Internal
 			AddDummyLibrary(bin, "jaas_unix");
 			AddDummyLibrary(bin, "unpack");
 			AddDummyLibrary(bin, "net");
+			AddDummyLibrary(bin, "splashscreen");
 			bin.Add("java", new VfsJavaExe());
 			bin.Add("javaw", new VfsJavaExe());
 			bin.Add("java.exe", new VfsJavaExe());
