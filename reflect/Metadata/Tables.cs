@@ -506,7 +506,7 @@ namespace IKVM.Reflection.Metadata
 				return new Enumerator(records, end, start - 1, token);
 			}
 
-			private int BinarySearch(T[] records, int length, int maskedToken)
+			private static int BinarySearch(T[] records, int length, int maskedToken)
 			{
 				int min = 0;
 				int max = length - 1;
@@ -2605,11 +2605,6 @@ namespace IKVM.Reflection.Metadata
 				return x.Number == y.Number ? 0 : (x.Number > y.Number ? 1 : -1);
 			}
 			return x.Owner > y.Owner ? 1 : -1;
-		}
-
-		internal GenericParameterAttributes GetAttributes(int token)
-		{
-			return (GenericParameterAttributes)records[(token & 0xFFFFFF) - 1].Flags;
 		}
 
 		internal void PatchAttribute(int token, GenericParameterAttributes genericParameterAttributes)
