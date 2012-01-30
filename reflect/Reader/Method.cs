@@ -338,11 +338,6 @@ namespace IKVM.Reflection.Reader
 			AddNamedArgument(list, type, fieldName, type.Module.universe.System_String, value);
 		}
 
-		private static void AddNamedArgument(List<CustomAttributeNamedArgument> list, Type type, string fieldName, int value)
-		{
-			AddNamedArgument(list, type, fieldName, type.Module.universe.System_Int32, value);
-		}
-
 		private static void AddNamedArgument(List<CustomAttributeNamedArgument> list, Type type, string fieldName, int flags, int flagMask)
 		{
 			AddNamedArgument(list, type, fieldName, type.Module.universe.System_Boolean, (flags & flagMask) != 0);
