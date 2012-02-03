@@ -4074,7 +4074,7 @@ namespace ikvm.awt
             else
             {
                 java.awt.Image image = (java.awt.Image)imageList.get(0);
-                originalImage = ((java.awt.image.BufferedImage)image).getBitmap();
+                originalImage = J2C.ConvertImage(image);
             }
             NetToolkit.BeginInvoke(delegate
                {

@@ -67,7 +67,10 @@ namespace ikvm.awt
             }
             if (img is sun.awt.image.ToolkitImage)
             {
-                return ((sun.awt.image.ToolkitImage)img).getImageRep().getBitmap();
+                sun.awt.image.ImageRepresentation ir = ((sun.awt.image.ToolkitImage)img).getImageRep();
+                // start the production and wait if not produce the image
+                ir.reconstruct(java.awt.image.ImageObserver.__Fields.ALLBITS);
+                return ir.getBufferedImage().getBitmap();
             }
             if (img is NoImage)
             {
