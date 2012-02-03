@@ -481,7 +481,9 @@ namespace ikvm.awt
 
         public override java.awt.peer.FileDialogPeer createFileDialog(java.awt.FileDialog target)
         {
-            return new NetFileDialogPeer(target);
+            java.awt.peer.FileDialogPeer peer = Invoke<NetFileDialogPeer>(delegate { return new NetFileDialogPeer(target); });
+            targetCreatedPeer(target, peer);
+            return peer;
         }
 
         public override java.awt.peer.CheckboxMenuItemPeer createCheckboxMenuItem(java.awt.CheckboxMenuItem target)
@@ -4691,9 +4693,16 @@ namespace ikvm.awt
 			t.Start();
 		}
 
-        public void blockWindows(List l)
+        public void blockWindows(List toBlock)
         {
-            throw new NotImplementedException();
+            // code copies from sun.awt.windows.WFileDialogPeer.java
+            for (Iterator it = toBlock.iterator(); it.hasNext(); ) {
+                java.awt.Window w = (java.awt.Window)it.next();
+                java.awt.peer.WindowPeer wp = (java.awt.peer.WindowPeer)AWTAccessor.getComponentAccessor().getPeer(w);
+                if (wp != null) {
+                    wp.setModalBlocked((java.awt.Dialog)target, true);
+                }
+            }
         }
 	}
 
