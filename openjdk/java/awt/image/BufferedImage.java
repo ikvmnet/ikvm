@@ -686,12 +686,14 @@ public class BufferedImage extends java.awt.Image
         {
             throw new IllegalArgumentException();
         }
-        bitmap = createBitmap(width, height);
-        cli.System.Drawing.Rectangle rect = new cli.System.Drawing.Rectangle(0, 0, width, height);
-        cli.System.Drawing.Imaging.BitmapData data = bitmap.LockBits(rect, ImageLockMode.wrap(ImageLockMode.WriteOnly), PixelFormat.wrap(PixelFormat.Format32bppArgb));
-        cli.System.IntPtr pixelPtr = data.get_Scan0();
-        cli.System.Runtime.InteropServices.Marshal.Copy(pixelData, 0, pixelPtr, (int)size);
-        bitmap.UnlockBits(data);
+        synchronized( bitmap ) {            
+            bitmap = createBitmap(width, height);
+            cli.System.Drawing.Rectangle rect = new cli.System.Drawing.Rectangle(0, 0, width, height);
+            cli.System.Drawing.Imaging.BitmapData data = bitmap.LockBits(rect, ImageLockMode.wrap(ImageLockMode.WriteOnly), PixelFormat.wrap(PixelFormat.Format32bppArgb));
+            cli.System.IntPtr pixelPtr = data.get_Scan0();
+            cli.System.Runtime.InteropServices.Marshal.Copy(pixelData, 0, pixelPtr, (int)size);
+            bitmap.UnlockBits(data);
+        }
     }
 
     /**
@@ -703,28 +705,30 @@ public class BufferedImage extends java.awt.Image
         if(currentBuffer != BUFFER_BITMAP){
             return; // BUFFER_BOTH and BUFFER_RASTER
         }
-        int width = bitmap.get_Width();
-        int height = bitmap.get_Height();
-        if(colorModel == null){
-            colorModel = createColorModel();
-        }
-        if(raster == null){
-            raster = createRaster(width, height);
-        }
-        
-        switch (getType()){
-            case TYPE_INT_ARGB:
-                copyFromBitmap(bitmap, ((DataBufferInt)raster.getDataBuffer()).getData());
-                break;
-            default:
-                for( int y = 0; y<height; y++){
-                    for(int x = 0; x<width; x++){
-                    	int rgb = bitmap.GetPixel(x, y).ToArgb();
-                    	raster.setDataElements(x, y, colorModel.getDataElements(rgb, null));
+        synchronized( bitmap ) {
+            int width = bitmap.get_Width();
+            int height = bitmap.get_Height();
+            if(colorModel == null){
+                colorModel = createColorModel();
+            }
+            if(raster == null){
+                raster = createRaster(width, height);
+            }
+            
+            switch (getType()){
+                case TYPE_INT_ARGB:
+                    copyFromBitmap(bitmap, ((DataBufferInt)raster.getDataBuffer()).getData());
+                    break;
+                default:
+                    for( int y = 0; y<height; y++){
+                        for(int x = 0; x<width; x++){
+                            int rgb = bitmap.GetPixel(x, y).ToArgb();
+                            raster.setDataElements(x, y, colorModel.getDataElements(rgb, null));
+                        }
                     }
-                }
+            }
+            this.currentBuffer = BUFFER_BOTH;
         }
-        this.currentBuffer = BUFFER_BOTH;
     }
 
     @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
@@ -1131,10 +1135,12 @@ public class BufferedImage extends java.awt.Image
      * @return the width of this <code>BufferedImage</code>
      */
     public int getWidth() {
-        if(currentBuffer == BUFFER_RASTER){
-            return raster.getWidth();
+        if(currentBuffer == BUFFER_BITMAP){
+            synchronized( bitmap ) {
+                return bitmap.get_Width();
+            }
         }else{
-            return bitmap.get_Width();
+            return raster.getWidth();
         }
     }
 
@@ -1143,10 +1149,12 @@ public class BufferedImage extends java.awt.Image
      * @return the height of this <code>BufferedImage</code>
      */
     public int getHeight() {
-        if(currentBuffer == BUFFER_RASTER){
-            return raster.getHeight();
+        if(currentBuffer == BUFFER_BITMAP){
+            synchronized( bitmap ) {
+                return bitmap.get_Height();
+            }
         }else{
-            return bitmap.get_Height();
+            return raster.getHeight();
         }
     }
 
@@ -1176,15 +1184,17 @@ public class BufferedImage extends java.awt.Image
      */
     public ImageProducer getSource(){
         if(currentBuffer != BUFFER_RASTER){
-            int width = bitmap.get_Width();
-            int height = bitmap.get_Height();
-            int[] pix = new int[width * height];
-            for(int y = 0; y < height; y++){
-                for(int x = 0; x < width; x++){
-                    pix[x + y * width] = bitmap.GetPixel(x, y).ToArgb();
+            synchronized( bitmap ) {
+                int width = bitmap.get_Width();
+                int height = bitmap.get_Height();
+                int[] pix = new int[width * height];
+                for(int y = 0; y < height; y++){
+                    for(int x = 0; x < width; x++){
+                        pix[x + y * width] = bitmap.GetPixel(x, y).ToArgb();
+                    }
                 }
+                return new java.awt.image.MemoryImageSource(width, height, pix, 0, width);
             }
-            return new java.awt.image.MemoryImageSource(width, height, pix, 0, width);
         }else{
             if(osis == null){
                 if(properties == null){
