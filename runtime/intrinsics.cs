@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2008-2011 Jeroen Frijters
+  Copyright (C) 2008-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -109,6 +109,11 @@ namespace IKVM.Internal
 			return ClassFile.GetConstantPoolClassType(Code[OpcodeIndex + offset].Arg1);
 		}
 
+		internal string GetStringLiteral(int offset)
+		{
+			return ClassFile.GetConstantPoolConstantString(Code[OpcodeIndex + offset].Arg1);
+		}
+
 		internal void PatchOpCode(int offset, NormalizedByteCode opc)
 		{
 			Code[OpcodeIndex + offset].PatchOpCode(opc);
@@ -167,6 +172,7 @@ namespace IKVM.Internal
 			Dictionary<IntrinsicKey, Emitter> intrinsics = new Dictionary<IntrinsicKey, Emitter>();
 			intrinsics.Add(new IntrinsicKey("java.lang.Object", "getClass", "()Ljava.lang.Class;"), Object_getClass);
 			intrinsics.Add(new IntrinsicKey("java.lang.Class", "desiredAssertionStatus", "()Z"), Class_desiredAssertionStatus);
+			intrinsics.Add(new IntrinsicKey("java.lang.Class", "getDeclaredField", "(Ljava.lang.String;)Ljava.lang.reflect.Field;"), Class_getDeclaredField);
 			intrinsics.Add(new IntrinsicKey("java.lang.Float", "floatToRawIntBits", "(F)I"), Float_floatToRawIntBits);
 			intrinsics.Add(new IntrinsicKey("java.lang.Float", "intBitsToFloat", "(I)F"), Float_intBitsToFloat);
 			intrinsics.Add(new IntrinsicKey("java.lang.Double", "doubleToRawLongBits", "(D)J"), Double_doubleToRawLongBits);
@@ -240,6 +246,47 @@ namespace IKVM.Internal
 				{
 					eic.Emitter.Emit(OpCodes.Pop);
 					eic.Emitter.Emit_Ldc_I4(0);
+					return true;
+				}
+			}
+			return false;
+		}
+
+		// this intrinsifies the unsafe.objectFieldOffset(XXX.class.getDeclaredField("xxx")) pattern
+		// to avoid initializing the full reflection machinery at this point
+		private static bool Class_getDeclaredField(EmitIntrinsicContext eic)
+		{
+			// validate that we're inside the XXX class and that xxx is an instance field of that class
+			if (eic.MatchRange(-2, 4)
+				&& eic.Match(-2, NormalizedByteCode.__ldc) && eic.GetClassLiteral(-2) == eic.Caller.DeclaringType
+				&& eic.Match(-1, NormalizedByteCode.__ldc_nothrow)
+				&& eic.Match(1, NormalizedByteCode.__invokevirtual))
+			{
+				FieldWrapper field = null;
+				string fieldName = eic.GetStringLiteral(-1);
+				foreach (FieldWrapper fw in eic.Caller.DeclaringType.GetFields())
+				{
+					if (fw.Name == fieldName)
+					{
+						if (field != null)
+						{
+							return false;
+						}
+						field = fw;
+					}
+				}
+				if (field == null || field.IsStatic)
+				{
+					return false;
+				}
+				ClassFile.ConstantPoolItemMI cpi = eic.GetMethodref(1);
+				if (cpi.Class == "sun.misc.Unsafe" && cpi.Name == "objectFieldOffset" && cpi.Signature == "(Ljava.lang.reflect.Field;)J")
+				{
+					MethodWrapper mw = ClassLoaderWrapper.LoadClassCritical("sun.misc.Unsafe")
+						.GetMethodWrapper("objectFieldOffset", "(Ljava.lang.Class;Ljava.lang.String;)J", false);
+					mw.Link();
+					mw.EmitCallvirt(eic.Emitter);
+					eic.PatchOpCode(1, NormalizedByteCode.__nop);
 					return true;
 				}
 			}
@@ -344,7 +391,7 @@ namespace IKVM.Internal
 			if (eic.MatchRange(-1, 2)
 				&& eic.Match(-1, NormalizedByteCode.__ldc_nothrow))
 			{
-				string str = eic.ClassFile.GetConstantPoolConstantString(eic.Code[eic.OpcodeIndex - 1].Arg1);
+				string str = eic.GetStringLiteral(-1);
 				// arbitrary length for "big" strings
 				if (str.Length > 128)
 				{

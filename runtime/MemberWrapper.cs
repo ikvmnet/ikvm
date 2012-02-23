@@ -1326,7 +1326,19 @@ namespace IKVM.Internal
 			return null;
 #else
 			java.lang.reflect.Field f = (java.lang.reflect.Field)field;
-			return TypeWrapper.FromClass(f.getDeclaringClass()).GetFields()[f._slot()];
+			int slot = f._slot();
+			if (slot == -1)
+			{
+				// it's a Field created by Unsafe.objectFieldOffset(Class,String) so we must resolve based on the name
+				foreach (FieldWrapper fw in TypeWrapper.FromClass(f.getDeclaringClass()).GetFields())
+				{
+					if (fw.Name == f.getName())
+					{
+						return fw;
+					}
+				}
+			}
+			return TypeWrapper.FromClass(f.getDeclaringClass()).GetFields()[slot];
 #endif
 		}
 

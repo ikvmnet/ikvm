@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2006-2011 Jeroen Frijters
+  Copyright (C) 2006-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -54,6 +54,12 @@ public final class Unsafe
             throw new SecurityException("Unsafe");
         }
         return theUnsafe;
+    }
+
+    // this is the intrinsified version of objectFieldOffset(XXX.class.getDeclaredField("xxx"))
+    public long objectFieldOffset(Class c, String field)
+    {
+        return fieldOffset(ReflectHelper.createFieldAndMakeAccessible(c, field));
     }
 
     // NOTE we have a really lame (and slow) implementation!

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2007 Jeroen Frijters
+  Copyright (C) 2007-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -32,6 +32,13 @@ public final class ReflectHelper
     public static Field copyFieldAndMakeAccessible(Field field)
     {
         field = field.copy();
+        field.override = true;
+        return field;
+    }
+
+    public static Field createFieldAndMakeAccessible(Class c, String name)
+    {
+        Field field = new Field(c, name, null, 0, -1, null, null);
         field.override = true;
         return field;
     }
