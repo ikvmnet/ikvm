@@ -35,7 +35,9 @@
 
 package java.util.concurrent.atomic;
 
-import java.util.*;
+import java.lang.reflect.Array;
+import java.util.Arrays;
+import sun.misc.Unsafe;
 
 /**
  * An array of object references in which elements may be updated
@@ -49,7 +51,19 @@ import java.util.*;
 public class AtomicReferenceArray<E> implements java.io.Serializable {
     private static final long serialVersionUID = -6209656149925076980L;
 
-    private final Object[] array;
+    private static final Unsafe unsafe;
+    private static final long arrayFieldOffset;
+    private final Object[] array; // must have exact type Object[]
+
+    static {
+        try {
+            unsafe = Unsafe.getUnsafe();
+            arrayFieldOffset = unsafe.objectFieldOffset
+                (AtomicReferenceArray.class.getDeclaredField("array"));
+        } catch (Exception e) {
+            throw new Error(e);
+        }
+    }
 
     /**
      * Creates a new AtomicReferenceArray of the given length, with all
@@ -69,12 +83,8 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
      * @throws NullPointerException if array is null
      */
     public AtomicReferenceArray(E[] array) {
-        // [IKVM] OpenJDK just clones the array here, but we can't do that,
-        // because ldelema will fail for covariant arrays.
-        Object[] copy = new Object[array.length];
-        System.arraycopy(array, 0, copy, 0, array.length);
         // Visibility guaranteed by final field guarantees
-        this.array = copy;
+        this.array = Arrays.copyOf(array, array.length, Object[].class);
     }
 
     /**
@@ -164,7 +174,7 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
      * @return the String representation of the current values of array
      */
     public String toString() {
-           int iMax = array.length - 1;
+        int iMax = array.length - 1;
         if (iMax == -1)
             return "[]";
 
@@ -176,6 +186,21 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
                 return b.append(']').toString();
             b.append(',').append(' ');
         }
+    }
+
+    /**
+     * Reconstitutes the instance from a stream (that is, deserializes it).
+     * @param s the stream
+     */
+    private void readObject(java.io.ObjectInputStream s)
+        throws java.io.IOException, ClassNotFoundException {
+        // Note: This must be changed if any additional fields are defined
+        Object a = s.readFields().get("array", null);
+        if (a == null || !a.getClass().isArray())
+            throw new java.io.InvalidObjectException("Not array type");
+        if (a.getClass() != Object[].class)
+            a = Arrays.copyOf((Object[])a, Array.getLength(a), Object[].class);
+        unsafe.putObjectVolatile(this, arrayFieldOffset, a);
     }
 
 }
