@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
+  Copyright (C) 2003-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -141,7 +141,16 @@ public abstract class Reference<T>
         {
             if (false) throw new cli.System.InvalidOperationException();
             cli.System.WeakReference referent = this.weakRef;
-            return referent == null ? strongRef : (T)referent.get_Target();
+            if (referent == null)
+            {
+                return strongRef;
+            }
+            T value = (T)referent.get_Target();
+            if (value == null)
+            {
+                queue.enqueue(this);
+            }
+            return value;
         }
         catch (cli.System.InvalidOperationException x)
         {
