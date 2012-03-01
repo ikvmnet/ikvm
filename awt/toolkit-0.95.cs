@@ -987,6 +987,11 @@ namespace ikvm.awt
                 del();
             }
         }
+
+		public override bool areExtraMouseButtonsEnabled()
+		{
+			return true;
+		}
 	}
 
 	sealed class NetMenuBarPeer : java.awt.peer.MenuBarPeer
