@@ -37,6 +37,7 @@ namespace IKVM.Reflection
 		internal string PublicKeyToken;
 		internal bool? Retargetable;
 		internal ProcessorArchitecture ProcessorArchitecture;
+		internal bool HasPublicKey;
 	}
 
 	enum ParseAssemblyResult
@@ -356,6 +357,7 @@ namespace IKVM.Reflection
 							{
 								return ParseAssemblyResult.GenericError;
 							}
+							parsedName.HasPublicKey = true;
 							break;
 						case "retargetable":
 							if (parsedName.Retargetable.HasValue)
