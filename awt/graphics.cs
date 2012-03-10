@@ -2001,6 +2001,11 @@ namespace ikvm.awt
         {
             return new NetVolatileImage(width, height);
         }
+
+        public override bool isTranslucencyCapable()
+        {
+            return true;
+        }
     }
 
     class NetGraphicsDevice : java.awt.GraphicsDevice

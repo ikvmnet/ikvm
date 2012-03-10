@@ -80,7 +80,7 @@ namespace ikvm.awt
 		public UndecoratedForm()
 		{
 			setBorderStyle();
-			SetStyle(ControlStyles.UserPaint | ControlStyles.ResizeRedraw, true);
+            SetStyle(ControlStyles.UserPaint | ControlStyles.ResizeRedraw | ControlStyles.SupportsTransparentBackColor, true);
 		}
 
         protected virtual void setBorderStyle()
@@ -419,10 +419,10 @@ namespace ikvm.awt
 
         public override java.awt.peer.WindowPeer createWindow(java.awt.Window target)
         {
-            java.awt.peer.WindowPeer peer = Invoke<NetWindowPeer>(delegate { return new NetWindowPeer(target); });
-			targetCreatedPeer(target, peer);
-			return peer;
-		}
+            java.awt.peer.WindowPeer peer = Invoke<NetWindowPeer<java.awt.Window, UndecoratedForm>>(delegate { return new NetWindowPeer<java.awt.Window, UndecoratedForm>(target); });
+            targetCreatedPeer(target, peer);
+            return peer;
+        }
 
         public override java.awt.peer.DialogPeer createDialog(java.awt.Dialog target)
         {
@@ -875,7 +875,7 @@ namespace ikvm.awt
 
         public override void grab(java.awt.Window window)
         {
-            NetWindowPeer peer = (NetWindowPeer)window.getPeer();
+            NetWindowPeer<java.awt.Window, UndecoratedForm> peer = (NetWindowPeer<java.awt.Window, UndecoratedForm>)window.getPeer();
             if (peer != null)
             {
                 peer.Grab();
@@ -912,7 +912,7 @@ namespace ikvm.awt
 
         public override void ungrab(java.awt.Window window)
         {
-            NetWindowPeer peer = (NetWindowPeer)window.getPeer();
+            NetWindowPeer<java.awt.Window, UndecoratedForm> peer = (NetWindowPeer<java.awt.Window, UndecoratedForm>)window.getPeer();
             if (peer != null)
             {
                 peer.Ungrab(false);
@@ -3777,14 +3777,16 @@ namespace ikvm.awt
         }
     }
 
-    class NetWindowPeer : NetContainerPeer<java.awt.Window, Form>, java.awt.peer.WindowPeer
+    class NetWindowPeer<T, C> : NetContainerPeer<T, C>, java.awt.peer.WindowPeer
+		where T : java.awt.Window
+		where C : UndecoratedForm
 	{
         // we can't use NetDialogPeer as blocker may be an instance of NetPrintDialogPeer that
         // extends NetWindowPeer, not NetDialogPeer
-        private NetWindowPeer modalBlocker;
+        private NetWindowPeer<T, C> modalBlocker;
         private bool modalSavedEnabled;
 
-        private static NetWindowPeer grabbedWindow;
+        private static NetWindowPeer<T, C> grabbedWindow;
 
         public NetWindowPeer(java.awt.Window window)
 			: base(window)
@@ -4044,7 +4046,7 @@ namespace ikvm.awt
             lock (target.getTreeLock()) // State lock should always be after awtLock
             {
                 // use NetWindowPeer instead of NetDialogPeer because of FileDialogs and PrintDialogs
-                NetWindowPeer blockerPeer = (NetWindowPeer)dialog.getPeer();
+                NetWindowPeer<T, C> blockerPeer = (NetWindowPeer<T, C>)dialog.getPeer();
                 if (blocked)
                 {
                     modalBlocker = blockerPeer;
@@ -4145,9 +4147,9 @@ namespace ikvm.awt
 
 
 
-		protected override Form CreateControl()
+        protected override C CreateControl()
 		{
-			UndecoratedForm form = new UndecoratedForm();
+			C form = (C)new UndecoratedForm();
             form.SetWindowState(target.isFocusableWindow(),target.isAlwaysOnTop());
 		    return form;
 		}
@@ -4192,7 +4194,7 @@ namespace ikvm.awt
             }
         }
 
-        private bool IsOneOfOwnersOf(NetWindowPeer window)
+        private bool IsOneOfOwnersOf(NetWindowPeer<T, C> window)
         {
             while (window != null)
             {
@@ -4201,13 +4203,13 @@ namespace ikvm.awt
                     return true;
                 }
                 java.awt.Container parent = window.target.getParent();
-                window = parent == null ? null : (NetWindowPeer)parent.getPeer();
+                window = parent == null ? null : (NetWindowPeer<T, C>)parent.getPeer();
             }
             return false;
         }
 	}
 
-    sealed class NetFramePeer : NetWindowPeer, java.awt.peer.FramePeer
+    sealed class NetFramePeer : NetWindowPeer<java.awt.Frame, MyForm>, java.awt.peer.FramePeer
 	{
 		public NetFramePeer(java.awt.Frame frame)
 			: base(frame)
@@ -4250,13 +4252,20 @@ namespace ikvm.awt
 
         public void setResizable(bool resizable)
         {
-            if (resizable)
+            if (target.isUndecorated())
             {
-                setFormBorderStyle(FormBorderStyle.Sizable);
+                setFormBorderStyle(FormBorderStyle.None);
             }
             else
             {
-                setFormBorderStyle(FormBorderStyle.FixedSingle);
+                if (resizable)
+                {
+                    setFormBorderStyle(FormBorderStyle.Sizable);
+                }
+                else
+                {
+                    setFormBorderStyle(FormBorderStyle.FixedSingle);
+                }
             }
         }
 
@@ -4317,13 +4326,13 @@ namespace ikvm.awt
             throw new NotImplementedException();
         }
 
-		protected override Form CreateControl()
+		protected override MyForm CreateControl()
 		{
 			return new MyForm(_insets);
 		}
     }
 
-    sealed class NetDialogPeer : NetWindowPeer, java.awt.peer.DialogPeer
+    sealed class NetDialogPeer : NetWindowPeer<java.awt.Dialog,MyForm>, java.awt.peer.DialogPeer
 	{
         public NetDialogPeer(java.awt.Dialog target)
 			: base(target)
@@ -4342,13 +4351,20 @@ namespace ikvm.awt
 
         public void setResizable(bool resizable)
         {
-            if (resizable)
+            if (target.isUndecorated())
             {
-                setFormBorderStyle(FormBorderStyle.Sizable);
+                setFormBorderStyle(FormBorderStyle.None);
             }
             else
             {
-                setFormBorderStyle(FormBorderStyle.FixedDialog);
+                if (resizable)
+                {
+                    setFormBorderStyle(FormBorderStyle.Sizable);
+                }
+                else
+                {
+                    setFormBorderStyle(FormBorderStyle.FixedSingle);
+                }
             }
         }
 
@@ -4364,7 +4380,7 @@ namespace ikvm.awt
             }
         }
 
-		protected override Form CreateControl()
+		protected override MyForm CreateControl()
 		{
 			return new MyForm(_insets);
 		}
@@ -4644,7 +4660,7 @@ namespace ikvm.awt
 	}
 
     //also WFileDialogPeer extends from WWindowPeer
-	class NetFileDialogPeer : NetWindowPeer, java.awt.peer.FileDialogPeer
+    class NetFileDialogPeer : NetWindowPeer<java.awt.FileDialog, MyForm>, java.awt.peer.FileDialogPeer
 	{
 		internal NetFileDialogPeer(java.awt.FileDialog dialog) : base(dialog)
 		{
@@ -5119,7 +5135,7 @@ namespace ikvm.awt
         {
             if (NetToolkit.isWin32())
             {
-                NetWindowPeer peer = (NetWindowPeer)window.getPeer();
+                NetWindowPeer<java.awt.Window, UndecoratedForm> peer = (NetWindowPeer<java.awt.Window, UndecoratedForm>)window.getPeer();
                 if (peer != null)
                 {
                     IntPtr hWnd = WindowFromPoint(new POINT(Cursor.Position));
