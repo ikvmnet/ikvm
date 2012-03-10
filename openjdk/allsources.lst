@@ -62,9 +62,14 @@ java/awt/color/ICC_ColorSpace.java
 java/awt/Font.java
 java/awt/GraphicsConfiguration.java
 java/awt/Image.java
+java/awt/image/AffineTransformOp.java
+java/awt/image/BandCombineOp.java
 java/awt/image/BufferedImage.java
+java/awt/image/ConvolveOp.java
 java/awt/image/ColorConvertOp.java
 java/awt/image/IndexColorModel.java
+java/awt/image/LookupOp.java
+java/awt/image/RescaleOp.java
 java/io/FileDescriptor.java
 java/io/FileInputStream.java
 java/io/FileOutputStream.java
@@ -8585,9 +8590,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/java/awt/im/spi/InputMethod.java
 @OPENJDK7@/jdk/src/share/classes/java/awt/im/spi/InputMethodContext.java
 @OPENJDK7@/jdk/src/share/classes/java/awt/im/spi/InputMethodDescriptor.java
-@OPENJDK7@/jdk/src/share/classes/java/awt/image/AffineTransformOp.java
 @OPENJDK7@/jdk/src/share/classes/java/awt/image/AreaAveragingScaleFilter.java
-@OPENJDK7@/jdk/src/share/classes/java/awt/image/BandCombineOp.java
 @OPENJDK7@/jdk/src/share/classes/java/awt/image/BandedSampleModel.java
 @OPENJDK7@/jdk/src/share/classes/java/awt/image/BufferedImageFilter.java
 @OPENJDK7@/jdk/src/share/classes/java/awt/image/BufferedImageOp.java
@@ -8596,7 +8599,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/java/awt/image/ColorModel.java
 @OPENJDK7@/jdk/src/share/classes/java/awt/image/ComponentColorModel.java
 @OPENJDK7@/jdk/src/share/classes/java/awt/image/ComponentSampleModel.java
-@OPENJDK7@/jdk/src/share/classes/java/awt/image/ConvolveOp.java
 @OPENJDK7@/jdk/src/share/classes/java/awt/image/CropImageFilter.java
 @OPENJDK7@/jdk/src/share/classes/java/awt/image/DataBuffer.java
 @OPENJDK7@/jdk/src/share/classes/java/awt/image/DataBufferByte.java
@@ -8613,7 +8615,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/java/awt/image/ImageProducer.java
 @OPENJDK7@/jdk/src/share/classes/java/awt/image/ImagingOpException.java
 @OPENJDK7@/jdk/src/share/classes/java/awt/image/Kernel.java
-@OPENJDK7@/jdk/src/share/classes/java/awt/image/LookupOp.java
 @OPENJDK7@/jdk/src/share/classes/java/awt/image/LookupTable.java
 @OPENJDK7@/jdk/src/share/classes/java/awt/image/MemoryImageSource.java
 @OPENJDK7@/jdk/src/share/classes/java/awt/image/MultiPixelPackedSampleModel.java
@@ -8632,7 +8633,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/java/awt/image/renderable/RenderedImageFactory.java
 @OPENJDK7@/jdk/src/share/classes/java/awt/image/RenderedImage.java
 @OPENJDK7@/jdk/src/share/classes/java/awt/image/ReplicateScaleFilter.java
-@OPENJDK7@/jdk/src/share/classes/java/awt/image/RescaleOp.java
 @OPENJDK7@/jdk/src/share/classes/java/awt/image/RGBImageFilter.java
 @OPENJDK7@/jdk/src/share/classes/java/awt/image/SampleModel.java
 @OPENJDK7@/jdk/src/share/classes/java/awt/image/ShortLookupTable.java
