@@ -69,7 +69,12 @@ namespace ikvm.awt
             {
                 sun.awt.image.ImageRepresentation ir = ((sun.awt.image.ToolkitImage)img).getImageRep();
                 // start the production and wait if not produce the image
-                ir.reconstruct(java.awt.image.ImageObserver.__Fields.ALLBITS);
+                lock( ir ) {
+                	ir.prepare(null);
+                	while ( ir.getBufferedImage() == null )  {
+                       ir.wait();
+                    }
+                }
                 return ir.getBufferedImage().getBitmap();
             }
             if (img is NoImage)

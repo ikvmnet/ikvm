@@ -30,10 +30,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.ImageConsumer;
 import java.awt.image.ImageObserver;
-import java.util.Arrays;
 import java.util.Hashtable;
-
-import com.sun.jdi.InvalidStackFrameException;
 
 import cli.System.Drawing.Bitmap;
 import cli.System.Drawing.Imaging.BitmapData;
@@ -328,10 +325,9 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer{
             if (done) {
                 image.getSource().removeConsumer(this);
                 consuming = false;
-
-                if (bimage == null) {
-                    bimage = new BufferedImage(getBitmapRef());
-                }
+            }
+            if (bimage == null ) {
+            	bimage = new BufferedImage(getBitmapRef());
             }
             availinfo |= info;
             notifyAll();
@@ -421,16 +417,5 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer{
         availinfo &= ~(ImageObserver.SOMEBITS
                        | ImageObserver.FRAMEBITS
                        | ImageObserver.ALLBITS);
-    }
-    
-    /**
-     * Get the .NET Bitmap object.
-     */
-    @cli.IKVM.Attributes.HideFromJavaAttribute.Annotation
-    public cli.System.Drawing.Bitmap getBitmap(){
-        if( bitmap == null ){
-            throw new IllegalStateException("Image not complete.");
-        }
-        return bitmap;
     }
 }
