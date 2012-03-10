@@ -282,6 +282,10 @@ namespace ikvm.awt
 
 		internal static Region ConvertRegion(sun.java2d.pipe.Region shape)
 		{
+            if (shape == null)
+            {
+                return null;
+            }
 			if (shape.isRectangular())
 			{
 				int x = shape.getLoX();
