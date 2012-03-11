@@ -746,7 +746,8 @@ final class net_util_md
             if (NET_IsIPv4Mapped(caddr)) {
                 iaObj = new Inet4Address(null, NET_IPv4MappedToIPv4(caddr));
             } else {
-                iaObj = new Inet6Address(null, caddr, getScopeID(him));
+                int scope = getScopeID(him);
+                iaObj = new Inet6Address(null, caddr, scope > 0 ? scope : -1);
             }
             port[0] = ntohs(him.him6.sin_port);
         } else {
