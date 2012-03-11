@@ -1112,6 +1112,18 @@ public final class Unsafe
         return -1;
     }
 
+    public void park(boolean isAbsolute, long time)
+    {
+        if (isAbsolute)
+        {
+            java.util.concurrent.locks.LockSupport.parkUntil(time);
+        }
+        else
+        {
+            java.util.concurrent.locks.LockSupport.parkNanos(time);
+        }
+    }
+
     public void unpark(Object thread)
     {
         java.util.concurrent.locks.LockSupport.unpark((Thread)thread);
@@ -1123,4 +1135,19 @@ public final class Unsafe
     }
 
     public native Class defineClass(String name, byte[] buf, int offset, int length, ClassLoader cl, ProtectionDomain pd);
+
+    public void monitorEnter(Object o)
+    {
+        cli.System.Threading.Monitor.Enter(o);
+    }
+
+    public void monitorExit(Object o)
+    {
+        cli.System.Threading.Monitor.Exit(o);
+    }
+
+    public boolean tryMonitorEnter(Object o)
+    {
+        return cli.System.Threading.Monitor.TryEnter(o);
+    }
 }
