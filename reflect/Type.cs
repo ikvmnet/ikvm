@@ -1809,6 +1809,15 @@ namespace IKVM.Reflection
 			return __CreateMissingField(name, fieldType, CustomModifiers.FromReqOpt(requiredCustomModifiers, optionalCustomModifiers));
 		}
 
+		public PropertyInfo __CreateMissingProperty(string name, CallingConventions callingConvention, Type propertyType, CustomModifiers propertyTypeCustomModifiers, Type[] parameterTypes, CustomModifiers[] parameterTypeCustomModifiers)
+		{
+			PropertySignature sig = PropertySignature.Create(callingConvention,
+				propertyType,
+				parameterTypes,
+				PackedCustomModifiers.CreateFromExternal(propertyTypeCustomModifiers, parameterTypeCustomModifiers, Util.NullSafeLength(parameterTypes)));
+			return new MissingProperty(this, name, sig);
+		}
+
 		internal virtual Type SetMetadataTokenForMissing(int token)
 		{
 			return this;
