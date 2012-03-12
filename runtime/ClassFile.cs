@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2011 Jeroen Frijters
+  Copyright (C) 2002-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -408,6 +408,11 @@ namespace IKVM.Internal
 								{
 									throw new ClassFormatError("{0} (Class is both inner and outer class)", this.Name);
 								}
+								if(innerClasses[j].innerClass != 0 && innerClasses[j].outerClass != 0)
+								{
+									MarkLinkRequiredConstantPoolItem(innerClasses[j].innerClass);
+									MarkLinkRequiredConstantPoolItem(innerClasses[j].outerClass);
+								}
 							}
 							break;
 						}
@@ -536,6 +541,14 @@ namespace IKVM.Internal
 			//		}
 		}
 
+		private void MarkLinkRequiredConstantPoolItem(int index)
+		{
+			if (index != 0)
+			{
+				constantpool[index].MarkLinkRequired();
+			}
+		}
+
 		private static BootstrapMethod[] ReadBootstrapMethods(BigEndianBinaryReader br, ClassFile classFile)
 		{
 			BigEndianBinaryReader rdr = br.Section(br.ReadUInt32());
@@ -548,6 +561,7 @@ namespace IKVM.Internal
 				{
 					throw new ClassFormatError("bootstrap_method_index {0} has bad constant type in class file {1}", bsm_index, classFile.Name);
 				}
+				classFile.MarkLinkRequiredConstantPoolItem(bsm_index);
 				ushort argument_count = rdr.ReadUInt16();
 				ushort[] args = new ushort[argument_count];
 				for(int j = 0; j < args.Length; j++)
@@ -557,6 +571,7 @@ namespace IKVM.Internal
 					{
 						throw new ClassFormatError("argument_index {0} has bad constant type in class file {1}", argument_index, classFile.Name);
 					}
+					classFile.MarkLinkRequiredConstantPoolItem(argument_index);
 					args[j] = argument_index;
 				}
 				bsm[i] = new BootstrapMethod(bsm_index, args);
@@ -1288,6 +1303,10 @@ namespace IKVM.Internal
 			{
 				throw new InvalidOperationException();
 			}
+
+			internal virtual void MarkLinkRequired()
+			{
+			}
 		}
 
 		internal sealed class ConstantPoolItemClass : ConstantPoolItem
@@ -1378,9 +1397,14 @@ namespace IKVM.Internal
 					throw new ClassFormatError("Invalid class name \"{0}\"", name);
 			}
 
+			internal override void MarkLinkRequired()
+			{
+				typeWrapper = VerifierTypeWrapper.Null;
+			}
+
 			internal override void Link(TypeWrapper thisType)
 			{
-				if(typeWrapper == null)
+				if(typeWrapper == VerifierTypeWrapper.Null)
 				{
 					typeWrapper = ClassLoaderWrapper.LoadClassNoThrow(thisType.GetClassLoader(), name);
 				}
@@ -1459,6 +1483,11 @@ namespace IKVM.Internal
 
 			protected abstract void Validate(string name, string descriptor, int majorVersion);
 
+			internal override void MarkLinkRequired()
+			{
+				clazz.MarkLinkRequired();
+			}
+
 			internal override void Link(TypeWrapper thisType)
 			{
 				clazz.Link(thisType);
@@ -1534,6 +1563,10 @@ namespace IKVM.Internal
 				}
 				FieldWrapper fw = null;
 				TypeWrapper wrapper = GetClassType();
+				if(wrapper == null)
+				{
+					return;
+				}
 				if(!wrapper.IsUnloadable)
 				{
 					fw = wrapper.GetFieldWrapper(Name, Signature);
@@ -1654,7 +1687,7 @@ namespace IKVM.Internal
 			{
 				base.Link(thisType);
 				TypeWrapper wrapper = GetClassType();
-				if(!wrapper.IsUnloadable)
+				if(wrapper != null && !wrapper.IsUnloadable)
 				{
 					method = wrapper.GetMethodWrapper(Name, Signature, !ReferenceEquals(Name, StringConstants.INIT));
 					if(method != null)
@@ -1704,7 +1737,7 @@ namespace IKVM.Internal
 			{
 				base.Link(thisType);
 				TypeWrapper wrapper = GetClassType();
-				if(!wrapper.IsUnloadable)
+				if(wrapper != null && !wrapper.IsUnloadable)
 				{
 					method = GetInterfaceMethod(wrapper, Name, Signature);
 					if(method == null)
@@ -1850,6 +1883,11 @@ namespace IKVM.Internal
 				{
 					throw new ClassFormatError("Bad method name");
 				}
+			}
+
+			internal override void MarkLinkRequired()
+			{
+				cpi.MarkLinkRequired();
 			}
 
 			internal string Class
@@ -2867,7 +2905,7 @@ namespace IKVM.Internal
 						BigEndianBinaryReader rdr = br.Section(code_length);
 						while(!rdr.IsAtEnd)
 						{
-							instructions[instructionIndex].Read((ushort)(rdr.Position - basePosition), rdr);
+							instructions[instructionIndex].Read((ushort)(rdr.Position - basePosition), rdr, classFile);
 							hasJsr |= instructions[instructionIndex].NormalizedOpCode == NormalizedByteCode.__jsr;
 							instructionIndex++;
 						}
@@ -2938,6 +2976,7 @@ namespace IKVM.Internal
 						{
 							throw new ClassFormatError("Illegal exception table: {0}.{1}{2}", classFile.Name, method.Name, method.Signature);
 						}
+						classFile.MarkLinkRequiredConstantPoolItem(catch_type);
 						// if start_pc, end_pc or handler_pc is invalid (i.e. doesn't point to the start of an instruction),
 						// the index will be -1 and this will be handled by the verifier
 						int startIndex = pcIndexMap[start_pc];
@@ -3182,7 +3221,7 @@ namespace IKVM.Internal
 					}
 				}
 
-				internal void Read(ushort pc, BigEndianBinaryReader br)
+				internal void Read(ushort pc, BigEndianBinaryReader br, ClassFile classFile)
 				{
 					this.pc = pc;
 					ByteCode bc = (ByteCode)br.ReadByte();
@@ -3191,11 +3230,15 @@ namespace IKVM.Internal
 						case ByteCodeMode.Simple:
 							break;
 						case ByteCodeMode.Constant_1:
+							arg1 = br.ReadByte();
+							classFile.MarkLinkRequiredConstantPoolItem(arg1);
+							break;
 						case ByteCodeMode.Local_1:
 							arg1 = br.ReadByte();
 							break;
 						case ByteCodeMode.Constant_2:
 							arg1 = br.ReadUInt16();
+							classFile.MarkLinkRequiredConstantPoolItem(arg1);
 							break;
 						case ByteCodeMode.Branch_2:
 							arg1 = br.ReadInt16();
@@ -3205,6 +3248,7 @@ namespace IKVM.Internal
 							break;
 						case ByteCodeMode.Constant_2_1_1:
 							arg1 = br.ReadUInt16();
+							classFile.MarkLinkRequiredConstantPoolItem(arg1);
 							arg2 = br.ReadByte();
 							if(br.ReadByte() != 0)
 							{
@@ -3223,6 +3267,7 @@ namespace IKVM.Internal
 							break;
 						case ByteCodeMode.Constant_2_Immediate_1:
 							arg1 = br.ReadUInt16();
+							classFile.MarkLinkRequiredConstantPoolItem(arg1);
 							arg2 = br.ReadSByte();
 							break;
 						case ByteCodeMode.Tableswitch:
