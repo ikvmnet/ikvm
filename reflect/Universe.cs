@@ -153,6 +153,7 @@ namespace IKVM.Reflection
 		private Type typeof_System_Security_Permissions_PermissionSetAttribute;
 		private Type typeof_System_Security_Permissions_SecurityAction;
 		private List<ResolveEventHandler> resolvers = new List<ResolveEventHandler>();
+		private Predicate<Type> missingTypeIsValueType;
 
 		public Universe()
 			: this(UniverseOptions.None)
@@ -1031,6 +1032,34 @@ namespace IKVM.Reflection
 		{
 			return new __StandAloneMethodSig(false, 0, callingConvention, returnType ?? this.System_Void, Util.Copy(parameterTypes), Util.Copy(optionalParameterTypes),
 				PackedCustomModifiers.CreateFromExternal(returnTypeCustomModifiers, parameterTypeCustomModifiers, Util.NullSafeLength(parameterTypes) + Util.NullSafeLength(optionalParameterTypes)));
+		}
+
+		public event Predicate<Type> MissingTypeIsValueType
+		{
+			add
+			{
+				if (missingTypeIsValueType != null)
+				{
+					throw new InvalidOperationException("Only a single MissingTypeIsValueType handler can be registered.");
+				}
+				missingTypeIsValueType = value;
+			}
+			remove
+			{
+				if (value.Equals(missingTypeIsValueType))
+				{
+					missingTypeIsValueType = null;
+				}
+			}
+		}
+
+		internal bool ResolveMissingTypeIsValueType(MissingType missingType)
+		{
+			if (missingTypeIsValueType != null)
+			{
+				return missingTypeIsValueType(missingType);
+			}
+			throw new MissingMemberException(missingType);
 		}
 	}
 }
