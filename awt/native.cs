@@ -1,6 +1,6 @@
 /*
   Copyright (C) 2007, 2008, 2010 Jeroen Frijters
-  Copyright (C) 2009 Volker Berlin (i-net software)
+  Copyright (C) 2009 - 2012 Volker Berlin (i-net software)
   Copyright (C) 2010 Karsten Heinrich (i-net software)
 
   This software is provided 'as-is', without any express or implied
@@ -55,18 +55,23 @@ namespace IKVM.NativeCode.sun.awt.shell
 		private const uint IMAGE_BITMAP = 0;
 		private const uint IMAGE_ICON = 1;
 
+        private const int HINST_COMMCTRL = -1;
+        private const int IDB_VIEW_SMALL_COLOR = 4;
+
+        private const uint WM_USER = 0x0400;
+        private const uint TB_GETIMAGELIST = WM_USER + 49;
+        private const uint TB_LOADIMAGES = WM_USER + 50;
+
+        private const uint ILD_TRANSPARENT = 0x00000001;
+
 		private static readonly IntPtr hmodShell32;
-		private static readonly IntPtr hmodComctl32;
 		private static readonly bool isXP;
-		private static readonly bool isVista;
 
 		[System.Security.SecuritySafeCritical]
 		static Win32ShellFolder2()
 		{
 			hmodShell32 = LoadLibrary("shell32.dll");
-			hmodComctl32 = LoadLibrary("comctl32.dll");
 			isXP = Environment.OSVersion.Version >= new Version(5, 1);
-			isVista = Environment.OSVersion.Version.Major >= 6;
 		}
 
 		[System.Security.SecurityCritical]
@@ -135,7 +140,39 @@ namespace IKVM.NativeCode.sun.awt.shell
 		[DllImport("user32.dll")]
 		static extern bool GetIconInfo(IntPtr hIcon, out ICONINFO piconinfo);
 
-		[StructLayout(LayoutKind.Sequential)]
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern IntPtr CreateWindowEx(
+           uint dwExStyle,
+           string lpClassName,
+           string lpWindowName,
+           uint dwStyle,
+           int x,
+           int y,
+           int nWidth,
+           int nHeight,
+           IntPtr hWndParent,
+           IntPtr hMenu,
+           IntPtr hInstance,
+           IntPtr lpParam);
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool DestroyWindow(IntPtr hwnd);
+
+        [DllImport("user32.dll")]
+        static extern IntPtr SendMessage(IntPtr hWnd, UInt32 Msg, Int32 wParam, Int32 lParam);
+
+        [DllImport("comctl32.dll", SetLastError = true)]
+        public static extern IntPtr ImageList_GetIcon(IntPtr himl, int i, uint flags);
+
+        [DllImport("comctl32")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool ImageList_Destroy(IntPtr himl);
+
+        [DllImport("user32")]
+        public static extern int DestroyIcon(IntPtr hIcon);
+
+        [StructLayout(LayoutKind.Sequential)]
 		private struct BITMAPINFO
 		{
 			internal uint biSize;
@@ -301,60 +338,32 @@ namespace IKVM.NativeCode.sun.awt.shell
             }
         }
 
-		[System.Security.SecuritySafeCritical]
-		public static Bitmap getFileChooserBitmap()
-		{
-			if (hmodShell32 != IntPtr.Zero)
-			{
-				// Code copied from ShellFolder2.cpp Java_sun_awt_shell_Win32ShellFolder2_getFileChooserBitmapBits
-				// Get a handle to an icon.
-				SafeGdiObjectHandle hBitmap = null;
-				try
-				{
-					hBitmap = isVista ?
-						 LoadImage(hmodShell32, "IDB_TB_SH_DEF_16", IMAGE_BITMAP, 0, 0, 0) :
-						 LoadImage(hmodShell32, (IntPtr)216, IMAGE_BITMAP, 0, 0, 0);
-					if (hBitmap == null && hmodComctl32 != IntPtr.Zero)
-					{
-						hBitmap = LoadImage(hmodComctl32, (IntPtr)124, IMAGE_BITMAP, 0, 0, 0);
-					}
-					if (hBitmap != null)
-					{
-                        BITMAPINFO bmi = new BITMAPINFO();
-                        GetObject(hBitmap, Marshal.SizeOf(bmi), ref bmi);
-                        int width = bmi.biWidth;
-                        int height = bmi.biHeight;
-                        bmi.biSize = 40;
-                        bmi.biHeight = -bmi.biHeight;
-                        bmi.biPlanes = 1;
-                        bmi.biBitCount = 32;
-                        bmi.biCompression = 0;
-                        if (width == 0 || height == 0)
-                        {
-                            return null;
-                        }
-                        using (SafeDeviceContextHandle dc = SafeDeviceContextHandle.Get())
-                        {
-                            int[] data = new int[width * height];
-                            GetDIBits(dc, hBitmap, (uint)0, (uint)height, data, ref bmi, 0);
-                            Bitmap bitmap = new Bitmap(data.Length / 16, 16, PixelFormat.Format32bppArgb);
-                            BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
-                            Marshal.Copy(data, 0, bitmapData.Scan0, data.Length);
-                            bitmap.UnlockBits(bitmapData);
-                            return bitmap;
-                        }
-					}
-				}
-				finally
-				{
-					if (hBitmap != null)
-					{
-						hBitmap.Close();
-					}
-				}
-			}
-			return null;
-		}
+        // Code copied from Java_sun_awt_shell_Win32ShellFolder2_getStandardViewButton0
+        [System.Security.SecuritySafeCritical]
+        public static Bitmap getStandardViewButton0(int iconIndex)
+        {
+            Bitmap result = null;
+            // Create a toolbar
+            IntPtr hWndToolbar = CreateWindowEx(0, "ToolbarWindow32", null, 0, 0, 0, 0, 0, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+            if (hWndToolbar != IntPtr.Zero)
+            {
+                SendMessage(hWndToolbar, TB_LOADIMAGES, IDB_VIEW_SMALL_COLOR, HINST_COMMCTRL);
+
+                IntPtr hImageList = SendMessage(hWndToolbar, TB_GETIMAGELIST, 0, 0);
+                if (hImageList != IntPtr.Zero)
+                {
+                    IntPtr hIcon = ImageList_GetIcon(hImageList, iconIndex, ILD_TRANSPARENT);
+                    if (hIcon != IntPtr.Zero)
+                    {
+                        result = Bitmap.FromHicon(hIcon);
+                        DestroyIcon(hIcon);
+                    }
+                    ImageList_Destroy(hImageList);
+                }
+                DestroyWindow(hWndToolbar);
+            }
+            return result;
+        }
 
         /// <summary>
         /// Retrieves an icon from the shell32.dell
@@ -362,13 +371,14 @@ namespace IKVM.NativeCode.sun.awt.shell
         /// <param name="iconID">the index of the icon</param>
         /// <returns>The icon or null, if there is no icon at the given index</returns>
 		[System.Security.SecuritySafeCritical]
-		public static Bitmap getShell32IconResourceAsBitmap(int iconID)
+        public static Bitmap getShell32IconResourceAsBitmap(int iconID, bool getLargeIcon)
 		{
 			if (hmodShell32 == IntPtr.Zero)
 			{
 				return null;
 			}
-            using (SafeGdiObjectHandle hicon = LoadImage(hmodShell32, (IntPtr)iconID, IMAGE_ICON, 16, 16, 0))
+            int size = getLargeIcon ? 32 : 16;
+            using (SafeGdiObjectHandle hicon = LoadImage(hmodShell32, (IntPtr)iconID, IMAGE_ICON, size, size, 0))
 			{
 				if (hicon != null)
 				{

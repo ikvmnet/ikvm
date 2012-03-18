@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
  * Copyright (C) 2009 Volker Berlin (i-net software)
  * Copyright (C) 2010 Karsten Heinrich (i-net software)
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -32,12 +32,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import java.util.*;
+import java.util.concurrent.*;
 import javax.swing.SwingConstants;
 
 import cli.System.IntPtr;
@@ -69,7 +65,7 @@ import cli.System.Drawing.Bitmap;
  * this interface, one can enumerate the relative PIDLs in a shell
  * folder, get attributes, etc.
  * <BR>
- * All Win32ShellFolder2Orig objects which are folder types (even non-file
+ * All Win32ShellFolder2 objects which are folder types (even non-file
  * system folders) contain an IShellFolder object. Files are named in
  * directories via relative PIDLs.
  *
@@ -78,7 +74,7 @@ import cli.System.Drawing.Bitmap;
  * @author Kenneth Russell
  * @author Volker Berlin
  * @author Karsten Heinrich
- * */
+ * @since 1.4 */
 
 final class Win32ShellFolder2 extends ShellFolder {
 
@@ -115,37 +111,60 @@ final class Win32ShellFolder2 extends ShellFolder {
     public static final int HISTORY = 0x0022;
 
     // Win32 shell folder attributes
-    public static final int ATTRIB_CANCOPY = 0x00000001;
-    public static final int ATTRIB_CANMOVE = 0x00000002;
-    public static final int ATTRIB_CANLINK = 0x00000004;
-    public static final int ATTRIB_CANRENAME = 0x00000010;
-    public static final int ATTRIB_CANDELETE = 0x00000020;
-    public static final int ATTRIB_HASPROPSHEET = 0x00000040;
-    public static final int ATTRIB_DROPTARGET = 0x00000100;
-    public static final int ATTRIB_LINK = 0x00010000;
-    public static final int ATTRIB_SHARE = 0x00020000;
-    public static final int ATTRIB_READONLY = 0x00040000;
-    public static final int ATTRIB_GHOSTED = 0x00080000;
-    public static final int ATTRIB_HIDDEN = 0x00080000;
-    public static final int ATTRIB_FILESYSANCESTOR = 0x10000000;
-    public static final int ATTRIB_FOLDER = 0x20000000;
-    public static final int ATTRIB_FILESYSTEM = 0x40000000;
-    public static final int ATTRIB_HASSUBFOLDER = 0x80000000;
-    public static final int ATTRIB_VALIDATE = 0x01000000;
-    public static final int ATTRIB_REMOVABLE = 0x02000000;
-    public static final int ATTRIB_COMPRESSED = 0x04000000;
-    public static final int ATTRIB_BROWSABLE = 0x08000000;
-    public static final int ATTRIB_NONENUMERATED = 0x00100000;
-    public static final int ATTRIB_NEWCONTENT = 0x00200000;
+    public static final int ATTRIB_CANCOPY          = 0x00000001;
+    public static final int ATTRIB_CANMOVE          = 0x00000002;
+    public static final int ATTRIB_CANLINK          = 0x00000004;
+    public static final int ATTRIB_CANRENAME        = 0x00000010;
+    public static final int ATTRIB_CANDELETE        = 0x00000020;
+    public static final int ATTRIB_HASPROPSHEET     = 0x00000040;
+    public static final int ATTRIB_DROPTARGET       = 0x00000100;
+    public static final int ATTRIB_LINK             = 0x00010000;
+    public static final int ATTRIB_SHARE            = 0x00020000;
+    public static final int ATTRIB_READONLY         = 0x00040000;
+    public static final int ATTRIB_GHOSTED          = 0x00080000;
+    public static final int ATTRIB_HIDDEN           = 0x00080000;
+    public static final int ATTRIB_FILESYSANCESTOR  = 0x10000000;
+    public static final int ATTRIB_FOLDER           = 0x20000000;
+    public static final int ATTRIB_FILESYSTEM       = 0x40000000;
+    public static final int ATTRIB_HASSUBFOLDER     = 0x80000000;
+    public static final int ATTRIB_VALIDATE         = 0x01000000;
+    public static final int ATTRIB_REMOVABLE        = 0x02000000;
+    public static final int ATTRIB_COMPRESSED       = 0x04000000;
+    public static final int ATTRIB_BROWSABLE        = 0x08000000;
+    public static final int ATTRIB_NONENUMERATED    = 0x00100000;
+    public static final int ATTRIB_NEWCONTENT       = 0x00200000;
 
     // IShellFolder::GetDisplayNameOf constants
-    public static final int SHGDN_NORMAL = 0; // is used alone, returns the name of the item itself without extension 
-    public static final int SHGDN_INFOLDER = 1; // name relative to the parent folder, use this flag in combinations with SHGDN_FORPARSING and SHGDN_FOREDITING.
-    public static final int SHGDN_INCLUDE_NONFILESYS = 0x2000; // The name is used for in-place editing when the user renames the item.
-    public static final int SHGDN_FORADDRESSBAR = 0x4000; // The name is displayed in an address bar combo box.
-    public static final int SHGDN_FORPARSING = 0x8000; // return a parsable display name relative to desktop
+    public static final int SHGDN_NORMAL            = 0;
+    public static final int SHGDN_INFOLDER          = 1;
+    public static final int SHGDN_INCLUDE_NONFILESYS= 0x2000;
+    public static final int SHGDN_FORADDRESSBAR     = 0x4000;
+    public static final int SHGDN_FORPARSING        = 0x8000;
 
-    static class FolderDisposer implements  sun.java2d.DisposerRecord {
+    // Values for system call LoadIcon()
+    public enum SystemIcon {
+        IDI_APPLICATION(32512),
+        IDI_HAND(32513),
+        IDI_ERROR(32513),
+        IDI_QUESTION(32514),
+        IDI_EXCLAMATION(32515),
+        IDI_WARNING(32515),
+        IDI_ASTERISK(32516),
+        IDI_INFORMATION(32516),
+        IDI_WINLOGO(32517);
+
+        private final int iconID;
+
+        SystemIcon(int iconID) {
+            this.iconID = iconID;
+        }
+
+        public int getIconID() {
+            return iconID;
+        }
+    }
+
+    static class FolderDisposer implements sun.java2d.DisposerRecord {
         /*
          * This is cached as a concession to getFolderType(), which needs
          * an absolute PIDL.
@@ -207,7 +226,7 @@ final class Win32ShellFolder2 extends ShellFolder {
      * desktop or Network Neighborhood.
      */
     @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
-    Win32ShellFolder2(int csidl) throws IOException {
+    Win32ShellFolder2(final int csidl) throws IOException, InterruptedException {
         // Desktop is parent of DRIVES and NETWORK, not necessarily
         // other special shell folders.
         super ( null, (getFileSystemPath(csidl) == null) ? ("ShellFolder: 0x" + Integer.toHexString(csidl)) : getFileSystemPath(csidl));
@@ -264,10 +283,10 @@ final class Win32ShellFolder2 extends ShellFolder {
      */
     @cli.System.Security.SecurityCriticalAttribute.Annotation
     Win32ShellFolder2(Win32ShellFolder2 parent, cli.System.Object pIShellFolder, cli.System.IntPtr relativePIDL, String path) {
-        super (parent, (path != null) ? path : "ShellFolder: ");
-        this .disposer.pIShellFolder = pIShellFolder;
-        this .disposer.relativePIDL = relativePIDL;
-        sun.java2d.Disposer.addRecord(this , disposer);
+        super(parent, (path != null) ? path : "ShellFolder: ");
+        this.disposer.pIShellFolder = pIShellFolder;
+        this.disposer.relativePIDL = relativePIDL;
+        sun.java2d.Disposer.addRecord(this, disposer);
     }
 
     /**
@@ -480,43 +499,60 @@ final class Win32ShellFolder2 extends ShellFolder {
      */
     @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     public boolean equals(Object o) {
-        if (o == null || !(o instanceof  Win32ShellFolder2)) {
+        if (o == null || !(o instanceof Win32ShellFolder2)) {
             // Short-circuit circuitous delegation path
-            if (!(o instanceof  File)) {
-                return super .equals(o);
+            if (!(o instanceof File)) {
+                return super.equals(o);
             }
             return pathsEqual(getPath(), ((File) o).getPath());
         }
         Win32ShellFolder2 rhs = (Win32ShellFolder2) o;
-        if ((parent == null && rhs.parent != null) || (parent != null && rhs.parent == null)) {
+        if ((parent == null && rhs.parent != null) ||
+            (parent != null && rhs.parent == null)) {
             return false;
         }
 
         if (isFileSystem() && rhs.isFileSystem()) {
             // Only folders with identical parents can be equal
-            return (pathsEqual(getPath(), rhs.getPath()) && (parent == rhs.parent || parent.equals(rhs.parent)));
+            return (pathsEqual(getPath(), rhs.getPath()) &&
+                    (parent == rhs.parent || parent.equals(rhs.parent)));
         }
 
         if (parent == rhs.parent || parent.equals(rhs.parent)) {
-            return pidlsEqual(getParentIShellFolder(), disposer.relativePIDL, rhs.disposer.relativePIDL);
+            try {
+                return pidlsEqual(getParentIShellFolder(), disposer.relativePIDL, rhs.disposer.relativePIDL);
+            } catch (InterruptedException e) {
+                return false;
+            }
         }
 
         return false;
     }
 
     @cli.System.Security.SecurityCriticalAttribute.Annotation
-    private static boolean pidlsEqual(cli.System.Object pIShellFolder, cli.System.IntPtr pidl1, cli.System.IntPtr pidl2) {
-        return (compareIDs(pIShellFolder, pidl1, pidl2) == 0);
+    private static boolean pidlsEqual(final cli.System.Object pIShellFolder, final cli.System.IntPtr pidl1, final cli.System.IntPtr pidl2)
+            throws InterruptedException {
+        return invoke(new Callable<Boolean>() {
+            public Boolean call() {
+                return compareIDs(pIShellFolder, pidl1, pidl2) == 0;
+            }
+        }, RuntimeException.class);
     }
 
     @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static native int compareIDs(cli.System.Object pParentIShellFolder, cli.System.IntPtr pidl1, cli.System.IntPtr pidl2);
 
+    private volatile Boolean cachedIsFileSystem;
+
     /**
      * @return Whether this is a file system shell folder
      */
     public boolean isFileSystem() {
-        return hasAttribute(ATTRIB_FILESYSTEM);
+        if (cachedIsFileSystem == null) {
+            cachedIsFileSystem = hasAttribute(ATTRIB_FILESYSTEM);
+        }
+
+        return cachedIsFileSystem;
     }
 
     /**
@@ -542,8 +578,8 @@ final class Win32ShellFolder2 extends ShellFolder {
     @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static String getFileSystemPath(cli.System.Object parentIShellFolder, cli.System.IntPtr relativePIDL) {
         int linkedFolder = ATTRIB_LINK | ATTRIB_FOLDER;
-        if (parentIShellFolder == Win32ShellFolderManager2.getNetwork().getIShellFolder()
-                && getAttributes0(parentIShellFolder, relativePIDL, linkedFolder) == linkedFolder) {
+        if (parentIShellFolder == Win32ShellFolderManager2.getNetwork().getIShellFolder() &&
+                getAttributes0(parentIShellFolder, relativePIDL, linkedFolder) == linkedFolder) {
 
         	cli.System.Object desktopIShellFolder = Win32ShellFolderManager2.getDesktop().getIShellFolder();
             String path = getDisplayNameOf(parentIShellFolder, relativePIDL, SHGDN_FORPARSING );
@@ -556,8 +592,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     }
 
     // Needs to be accessible to Win32ShellFolderManager2
-    static native String getFileSystemPath(int csidl)
-            throws IOException;
+    static native String getFileSystemPath(int csidl) throws IOException, InterruptedException;
 
     // Return whether the path is a network root.
     // Path is assumed to be non-null
@@ -577,7 +612,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         if (isDir == null) {
             // Folders with SFGAO_BROWSABLE have "shell extension" handlers and are
             // not traversable in JFileChooser.
-            if ((hasAttribute(ATTRIB_HASSUBFOLDER) || hasAttribute(ATTRIB_FOLDER)) && (!hasAttribute(ATTRIB_BROWSABLE) )) {
+            if (hasAttribute(ATTRIB_FOLDER) && !hasAttribute(ATTRIB_BROWSABLE)) {
                 isDir = Boolean.TRUE;
             } else if (isLink()) {
                 ShellFolder linkLocation = getLinkLocation(false);
@@ -650,55 +685,71 @@ final class Win32ShellFolder2 extends ShellFolder {
      *         <code>null</code> if this shellfolder does not denote a directory.
      */
     @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
-    public File[] listFiles(boolean includeHiddenFiles) {
-        if (!isDirectory()) {
-            return null;
+    public File[] listFiles(final boolean includeHiddenFiles) {
+        SecurityManager security = System.getSecurityManager();
+        if (security != null) {
+            security.checkRead(getPath());
         }
-        // Links to directories are not directories and cannot be parents.
-        // This does not apply to folders in My Network Places (NetHood)
-        // because they are both links and real directories!
-        if (isLink() && !hasAttribute(ATTRIB_FOLDER)) {
+
+        try {
+            return invoke(new Callable<File[]>() {
+                public File[] call() throws InterruptedException {
+                    if (!isDirectory()) {
+                        return null;
+                    }
+                    // Links to directories are not directories and cannot be parents.
+                    // This does not apply to folders in My Network Places (NetHood)
+                    // because they are both links and real directories!
+                    if (isLink() && !hasAttribute(ATTRIB_FOLDER)) {
+                        return new File[0];
+                    }
+
+                    Win32ShellFolder2 desktop = Win32ShellFolderManager2.getDesktop();
+                    Win32ShellFolder2 personal = Win32ShellFolderManager2.getPersonal();
+
+                    // If we are a directory, we have a parent and (at least) a
+                    // relative PIDL. We must first ensure we are bound to the
+                    // parent so we have an IShellFolder to query.
+                    cli.System.Object pIShellFolder = getIShellFolder();
+                    // Now we can enumerate the objects in this folder.
+                    ArrayList<Win32ShellFolder2> list = new ArrayList<Win32ShellFolder2>();
+                    cli.System.Object pEnumObjects = getEnumObjects(pIShellFolder, includeHiddenFiles);
+                    if (pEnumObjects != null) {
+                        cli.System.IntPtr childPIDL = null;
+                        int testedAttrs = ATTRIB_FILESYSTEM | ATTRIB_FILESYSANCESTOR;
+                        do {
+                            if (Thread.currentThread().isInterrupted()) {
+                                return new File[0];
+                            }
+                            childPIDL = getNextChild(pEnumObjects);
+                            boolean releasePIDL = true;
+                            if ( childPIDL != null && !cli.System.IntPtr.Zero.Equals( childPIDL ) && (getAttributes0(pIShellFolder, childPIDL, testedAttrs) & testedAttrs) != 0) {
+                                Win32ShellFolder2 childFolder = null;
+                                if (this .equals(desktop) && personal != null
+                                        && pidlsEqual(pIShellFolder, childPIDL, personal.disposer.relativePIDL) ) {
+                                    childFolder = personal;
+                                } else {
+                                    childFolder = new Win32ShellFolder2(Win32ShellFolder2.this , childPIDL);
+                                    releasePIDL = false;
+                                }
+                                list.add(childFolder);
+                            }
+                            if (releasePIDL) {
+                                releasePIDL(childPIDL);
+                            }
+                        } while (childPIDL != null && !childPIDL.Equals( cli.System.IntPtr.Zero ));
+                        releaseEnumObjects(pEnumObjects);
+                    }
+                    return Thread.currentThread().isInterrupted()
+                        ? new File[0]
+                        : list.toArray(new ShellFolder[list.size()]);
+                }
+            }, InterruptedException.class);
+        } catch (InterruptedException e) {
             return new File[0];
         }
-
-        Win32ShellFolder2 desktop = Win32ShellFolderManager2.getDesktop();
-        Win32ShellFolder2 personal = Win32ShellFolderManager2.getPersonal();
-
-        // If we are a directory, we have a parent and (at least) a
-        // relative PIDL. We must first ensure we are bound to the
-        // parent so we have an IShellFolder to query.
-        cli.System.Object pIShellFolder = getIShellFolder();
-        // Now we can enumerate the objects in this folder.
-        ArrayList list = new ArrayList();
-        cli.System.Object pEnumObjects = getEnumObjects(pIShellFolder, includeHiddenFiles);
-        if (pEnumObjects != null) {
-        	cli.System.IntPtr childPIDL = null;
-            int testedAttrs = ATTRIB_FILESYSTEM | ATTRIB_FILESYSANCESTOR;
-            do {
-                if (Thread.currentThread().isInterrupted()) {
-                    return new File[0];
-                }
-                childPIDL = getNextChild(pEnumObjects);
-                boolean releasePIDL = true;
-                if ( childPIDL != null && !cli.System.IntPtr.Zero.Equals( childPIDL ) && (getAttributes0(pIShellFolder, childPIDL, testedAttrs) & testedAttrs) != 0) {
-                    Win32ShellFolder2 childFolder = null;
-                    if (this .equals(desktop) && personal != null
-                            && pidlsEqual(pIShellFolder, childPIDL, personal.disposer.relativePIDL) ) {
-                        childFolder = personal;
-                    } else {
-                        childFolder = new Win32ShellFolder2(this , childPIDL);
-                        releasePIDL = false;
-                    }
-                    list.add(childFolder);
-                }
-                if (releasePIDL) {
-                    releasePIDL(childPIDL);
-                }
-            } while (childPIDL != null && !childPIDL.Equals( cli.System.IntPtr.Zero ));
-            releaseEnumObjects(pEnumObjects);
-        }
-        return (ShellFolder[]) list.toArray(new ShellFolder[list.size()]);
     }
+
 
     /**
      * Look for (possibly special) child folder by it's path. Note: this will not work an an ancestor(not child)
@@ -729,11 +780,17 @@ final class Win32ShellFolder2 extends ShellFolder {
         return child;
     }
 
+    private volatile Boolean cachedIsLink;
+
     /**
      * @return Whether this shell folder is a link
      */
     public boolean isLink() {
-        return hasAttribute(ATTRIB_LINK);
+        if (cachedIsLink == null) {
+            cachedIsLink = hasAttribute(ATTRIB_LINK);
+        }
+
+        return cachedIsLink;
     }
 
     /**
@@ -756,27 +813,35 @@ final class Win32ShellFolder2 extends ShellFolder {
      * @return The shell folder linked to by this shell folder, or null
      * if this shell folder is not a link or is a broken or invalid link
      */
-    public ShellFolder getLinkLocation() {
+    public ShellFolder getLinkLocation()  {
         return getLinkLocation(true);
     }
 
     @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
-    private ShellFolder getLinkLocation(boolean resolve) {
-        if (!isLink()) {
-            return null;
-        }
+    private ShellFolder getLinkLocation(final boolean resolve) {
+        return invoke(new Callable<ShellFolder>() {
+            public ShellFolder call() {
+                if (!isLink()) {
+                    return null;
+                }
 
-        ShellFolder location = null;
-        cli.System.IntPtr linkLocationPIDL = getLinkLocation( getAbsolutePath(), resolve);
-        if (linkLocationPIDL != null && !cli.System.IntPtr.Zero.Equals( linkLocationPIDL ) ) {
-            try {
-                location = Win32ShellFolderManager2.createShellFolderFromRelativePIDL( getDesktop(), linkLocationPIDL );
-            } catch (InternalError e) {
-                // Could be a link to a non-bindable object, such as a network connection
-                // TODO: getIShellFolder() should throw FileNotFoundException instead
+                ShellFolder location = null;
+                cli.System.IntPtr linkLocationPIDL = getLinkLocation( getAbsolutePath(), resolve);
+                if (linkLocationPIDL != null && !cli.System.IntPtr.Zero.Equals( linkLocationPIDL ) ) {
+                    try {
+                        location =
+                                Win32ShellFolderManager2.createShellFolderFromRelativePIDL(getDesktop(),
+                                        linkLocationPIDL);
+                    } catch (InterruptedException e) {
+                        // Return null
+                    } catch (InternalError e) {
+                        // Could be a link to a non-bindable object, such as a network connection
+                        // TODO: getIShellFolder() should throw FileNotFoundException instead
+                    }
+                }
+                return location;
             }
-        }
-        return location;
+        });
     }
 
     /**
@@ -864,7 +929,8 @@ final class Win32ShellFolder2 extends ShellFolder {
     private static native cli.System.IntPtr getIcon(String absolutePath, boolean getLargeIcon);
 
     @cli.System.Security.SecurityCriticalAttribute.Annotation
-    private static native cli.System.IntPtr extractIcon(cli.System.Object parentIShellFolder, cli.System.IntPtr relativePIDL, boolean getLargeIcon);
+    private static native cli.System.IntPtr extractIcon(cli.System.Object parentIShellFolder, cli.System.IntPtr relativePIDL,
+                                           boolean getLargeIcon);
 
     /**
      * Returns the {@link Bitmap} for a HICON.
@@ -879,32 +945,8 @@ final class Win32ShellFolder2 extends ShellFolder {
     @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static native void disposeIcon(cli.System.IntPtr hIcon);
 
-    static int[] fileChooserBitmapBits = null;
-    static Image[] fileChooserIcons = null;
-
-    static Image getFileChooserIcon(int idx){
-        if(fileChooserIcons == null){
-            fileChooserIcons = new Image[47];
-
-            try{
-                Bitmap bitmap = getFileChooserBitmap();
-                if (bitmap == null) {
-                    return null;
-                }
-                
-                for(int i = 0; i < fileChooserIcons.length; i++){
-                    cli.System.Drawing.Rectangle rect = new cli.System.Drawing.Rectangle(16 * i, 0, 16, 16);
-                    Bitmap icon = bitmap.Clone(rect, bitmap.get_PixelFormat());
-                    fileChooserIcons[i] = new BufferedImage(icon);
-                }
-            }catch(Throwable ex){
-                ex.printStackTrace();
-            }
-        }
-        return fileChooserIcons[idx];
-    }
-    
-    private static native Bitmap getFileChooserBitmap();
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
+    static native Bitmap getStandardViewButton0(int iconIndex);
 
     /**
      * Creates a Java icon for a HICON pointer
@@ -924,6 +966,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         }
         return null;
     }
+
 
     /**
      * @return The icon image used to display this shell folder
@@ -978,31 +1021,31 @@ final class Win32ShellFolder2 extends ShellFolder {
     /**
      * Gets an icon from the Windows system icon list as an <code>Image</code>
      */
-    static Image getShell32Icon(int iconID) {
-        Bitmap bitmap = getShell32IconResourceAsBitmap(iconID);
+    static Image getShell32Icon(int iconID, boolean getLargeIcon) {
+        Bitmap bitmap = getShell32IconResourceAsBitmap(iconID, getLargeIcon);
         if (bitmap == null) {
             return null;
         }
         return new BufferedImage(bitmap);
     }
     
-    private static native Bitmap getShell32IconResourceAsBitmap(int iconID);
+    private static native Bitmap getShell32IconResourceAsBitmap(int iconID, boolean getLargeIcon);
 
     /**
      * Returns the canonical form of this abstract pathname.  Equivalent to
-     * <code>new&nbsp;Win32ShellFolder2Orig(getParentFile(), this.{@link java.io.File#getCanonicalPath}())</code>.
+     * <code>new&nbsp;Win32ShellFolder2(getParentFile(), this.{@link java.io.File#getCanonicalPath}())</code>.
      *
      * @see java.io.File#getCanonicalFile
      */
     public File getCanonicalFile() throws IOException {
-        return this ;
+        return this;
     }
 
     /*
      * Indicates whether this is a special folder (includes My Documents)
      */
     public boolean isSpecial() {
-        return isPersonal || !isFileSystem() || (this  == getDesktop());
+        return isPersonal || !isFileSystem() || (this == getDesktop());
     }
 
     /**
@@ -1011,15 +1054,14 @@ final class Win32ShellFolder2 extends ShellFolder {
      * @see sun.awt.shell.ShellFolder#compareTo(File)
      */
     public int compareTo(File file2) {
-        if (!(file2 instanceof  Win32ShellFolder2)) {
+        if (!(file2 instanceof Win32ShellFolder2)) {
             if (isFileSystem() && !isSpecial()) {
-                return super .compareTo(file2);
+                return super.compareTo(file2);
             } else {
                 return -1; // Non-file shellfolders sort before files
             }
         }
-        return Win32ShellFolderManager2.compareShellFolders(this ,
-                (Win32ShellFolder2) file2);
+        return Win32ShellFolderManager2.compareShellFolders(this, (Win32ShellFolder2) file2);
     }
 
     // native constants from commctrl.h
@@ -1061,11 +1103,11 @@ final class Win32ShellFolder2 extends ShellFolder {
 
     private static native int compareIDsByColumn(cli.System.Object pParentIShellFolder, cli.System.IntPtr pidl1, cli.System.IntPtr pidl2, int columnIdx);
 
-    private class ColumnComparator implements  Comparator {
+    private class ColumnComparator implements Comparator {
         private final int columnIdx;
 
         public ColumnComparator(int columnIdx) {
-            this .columnIdx = columnIdx;
+            this.columnIdx = columnIdx;
         }
 
         // compares 2 objects within this folder by the specified column

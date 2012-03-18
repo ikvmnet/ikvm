@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,20 @@
 
 package sun.awt.shell;
 
-import java.awt.Toolkit;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.*;
+import java.util.List;
+import java.util.concurrent.*;
 
 import cli.System.IntPtr;
+import cli.System.Drawing.Bitmap;
 import cli.System.Drawing.SystemIcons;
 import sun.security.action.LoadLibraryAction;
 
@@ -54,26 +58,73 @@ import sun.awt.OSInfo;
 public class Win32ShellFolderManager2 extends ShellFolderManager {
 
 
-    @Override
     public ShellFolder createShellFolder(File file) throws FileNotFoundException {
-    	return createShellFolder(getDesktop(), file);
+        try {
+            return createShellFolder(getDesktop(), file);
+        } catch (InterruptedException e) {
+            throw new FileNotFoundException("Execution was interrupted");
+        }
     }
 
     @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
-    static Win32ShellFolder2 createShellFolder(Win32ShellFolder2 parent, File file) throws FileNotFoundException {
-    	cli.System.IntPtr pIDL = null;
-    	try {
-    	    pIDL = parent.parseDisplayName(file.getCanonicalPath());
-    	} catch (IOException ex) {
-    	    pIDL = null;
-    	}
-    	if (pIDL == null || cli.System.IntPtr.Zero.Equals(pIDL) ) {
-    	    // Shouldn't happen but watch for it anyway
-    	    throw new FileNotFoundException("File " + file.getAbsolutePath() + " not found");
-    	}
-    	Win32ShellFolder2 folder = createShellFolderFromRelativePIDL( parent, pIDL);
-    	Win32ShellFolder2.releasePIDL(pIDL);
-    	return folder;
+    static Win32ShellFolder2 createShellFolder(Win32ShellFolder2 parent, File file)
+            throws FileNotFoundException, InterruptedException {
+        cli.System.IntPtr pIDL = null;
+        try {
+            pIDL = parent.parseDisplayName(file.getCanonicalPath());
+        } catch (IOException ex) {
+            pIDL = null;
+        }
+        if (pIDL == null || cli.System.IntPtr.Zero.Equals(pIDL) ) {
+            // Shouldn't happen but watch for it anyway
+            throw new FileNotFoundException("File " + file.getAbsolutePath() + " not found");
+        }
+
+        try {
+            return createShellFolderFromRelativePIDL(parent, pIDL);
+        } finally {
+            Win32ShellFolder2.releasePIDL(pIDL);
+        }
+    }
+    
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
+    static Win32ShellFolder2 createShellFolderFromRelativePIDL(Win32ShellFolder2 parent, cli.System.IntPtr pIDL)
+            throws InterruptedException {
+        // Walk down this relative pIDL, creating new nodes for each of the entries
+        while (pIDL != null && !cli.System.IntPtr.Zero.Equals( pIDL ) ) {
+        	cli.System.IntPtr curPIDL = Win32ShellFolder2.copyFirstPIDLEntry(pIDL);
+            if (curPIDL != null && !cli.System.IntPtr.Zero.Equals( curPIDL )) {
+                parent = new Win32ShellFolder2(parent, curPIDL);
+                pIDL = Win32ShellFolder2.getNextPIDLEntry(pIDL);
+            } else {
+                // The list is empty if the parent is Desktop and pIDL is a shortcut to Desktop
+                break;
+            }
+        }
+        return parent;
+    }
+
+    private static final int VIEW_LIST = 2;
+    private static final int VIEW_DETAILS = 3;
+    private static final int VIEW_PARENTFOLDER = 8;
+    private static final int VIEW_NEWFOLDER = 11;
+
+    private static final Image[] STANDARD_VIEW_BUTTONS = new Image[12];
+
+    private static Image getStandardViewButton(int iconIndex) {
+        Image result = STANDARD_VIEW_BUTTONS[iconIndex];
+
+        if (result != null) {
+            return result;
+        }
+
+        Bitmap bitmap = Win32ShellFolder2.getStandardViewButton0(iconIndex);
+        if( bitmap != null ) {
+        	result = new BufferedImage(bitmap);
+        	STANDARD_VIEW_BUTTONS[iconIndex] = result;
+        }
+
+        return result;
     }
 
     // Special folders
@@ -83,16 +134,14 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
     private static Win32ShellFolder2 network;
     private static Win32ShellFolder2 personal;
 
-    private static String osVersion = System.getProperty("os.version");
-    private static final boolean useShell32Icons =
-                        (osVersion != null && osVersion.compareTo("5.1") >= 0);
-
     static Win32ShellFolder2 getDesktop() {
         if (desktop == null) {
             try {
                 desktop = new Win32ShellFolder2(DESKTOP);
             } catch (IOException e) {
-                desktop = null;
+                // Ignore error
+            } catch (InterruptedException e) {
+                // Ignore error
             }
         }
         return desktop;
@@ -103,7 +152,9 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
             try {
                 drives = new Win32ShellFolder2(DRIVES);
             } catch (IOException e) {
-                drives = null;
+                // Ignore error
+            } catch (InterruptedException e) {
+                // Ignore error
             }
         }
         return drives;
@@ -116,8 +167,10 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
                 if (path != null) {
                     recent = createShellFolder(getDesktop(), new File(path));
                 }
+            } catch (InterruptedException e) {
+                // Ignore error
             } catch (IOException e) {
-                recent = null;
+                // Ignore error
             }
         }
         return recent;
@@ -128,7 +181,9 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
             try {
                 network = new Win32ShellFolder2(NETWORK);
             } catch (IOException e) {
-                network = null;
+                // Ignore error
+            } catch (InterruptedException e) {
+                // Ignore error
             }
         }
         return network;
@@ -142,14 +197,16 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
                     Win32ShellFolder2 desktop = getDesktop();
                     personal = desktop.getChildByPath(path);
                     if (personal == null) {
-                        personal = (Win32ShellFolder2) createShellFolder( desktop, new File(path));
+                        personal = createShellFolder(getDesktop(), new File(path));
                     }
                     if (personal != null) {
                         personal.setIsPersonal();
                     }
                 }
+            } catch (InterruptedException e) {
+                // Ignore error
             } catch (IOException e) {
-                personal = null;
+                // Ignore error
             }
         }
         return personal;
@@ -172,9 +229,9 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
      *    folders, such as Desktop, Documents, History, Network, Home, etc.
      *    This is used in the shortcut panel of the filechooser on Windows 2000
      *    and Windows Me.
-     *  "fileChooserIcon nn":
-     *    Returns an <code>Image</code> - icon nn from resource 216 in shell32.dll,
-     *      or if not found there from resource 124 in comctl32.dll (Windows only).
+     *  "fileChooserIcon <icon>":
+     *    Returns an <code>Image</code> - icon can be ListView, DetailsView, UpFolder, NewFolder or
+     *    ViewMenu (Windows only).
      *  "optionPaneIcon iconName":
      *    Returns an <code>Image</code> - icon from the system icon list
      *
@@ -221,11 +278,11 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
                         // Add third level for "My Computer"
                         if (folder.equals(drives)) {
                             File[] thirdLevelFolders = folder.listFiles();
-                            if (thirdLevelFolders != null) {
-                                Arrays.sort(thirdLevelFolders, driveComparator);
-                                for (File thirdLevelFolder : thirdLevelFolders) {
-                                    folders.add(thirdLevelFolder);
-                                }
+                            if (thirdLevelFolders != null && thirdLevelFolders.length > 0) {
+                                List<File> thirdLevelFoldersList = Arrays.asList(thirdLevelFolders);
+
+                                folder.sortChildren(thirdLevelFoldersList);
+                                folders.addAll(thirdLevelFoldersList);
                             }
                         }
                     }
@@ -251,6 +308,9 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
                     }
                 } catch (IOException e) {
                     // Skip this value
+                } catch (InterruptedException e) {
+                    // Return empty result
+                    return new File[0];
                 }
             } while (value != null);
 
@@ -266,26 +326,23 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
             }
             return folders.toArray(new File[folders.size()]);
         } else if (key.startsWith("fileChooserIcon ")) {
-            int i = -1;
-            String name = key.substring(key.indexOf(" ")+1);
-            try {
-                i = Integer.parseInt(name);
-            } catch (NumberFormatException ex) {
-                if (name.equals("ListView")) {
-                    i = (useShell32Icons) ? 21 : 2;
-                } else if (name.equals("DetailsView")) {
-                    i = (useShell32Icons) ? 23 : 3;
-                } else if (name.equals("UpFolder")) {
-                    i = (useShell32Icons) ? 28 : 8;
-                } else if (name.equals("NewFolder")) {
-                    i = (useShell32Icons) ? 31 : 11;
-                } else if (name.equals("ViewMenu")) {
-                    i = (useShell32Icons) ? 21 : 2;
-                }
+            String name = key.substring(key.indexOf(" ") + 1);
+
+            int iconIndex;
+
+            if (name.equals("ListView") || name.equals("ViewMenu")) {
+                iconIndex = VIEW_LIST;
+            } else if (name.equals("DetailsView")) {
+                iconIndex = VIEW_DETAILS;
+            } else if (name.equals("UpFolder")) {
+                iconIndex = VIEW_PARENTFOLDER;
+            } else if (name.equals("NewFolder")) {
+                iconIndex = VIEW_NEWFOLDER;
+            } else {
+                return null;
             }
-            if (i >= 0) {
-                return Win32ShellFolder2.getFileChooserIcon(i);
-            }
+
+            return getStandardViewButton(iconIndex);
         } else if (key.startsWith("optionPaneIcon ")) {
             cli.System.Drawing.Icon icon;
             if (key == "optionPaneIcon Error") {
@@ -300,13 +357,12 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
                 return null;
             }
             return new BufferedImage(icon.ToBitmap());
-        } else if (key.startsWith("shell32Icon ")) {
-            int i;
-            String name = key.substring(key.indexOf(" ")+1);
+        } else if (key.startsWith("shell32Icon ") || key.startsWith("shell32LargeIcon ")) {
+            String name = key.substring(key.indexOf(" ") + 1);
             try {
-                i = Integer.parseInt(name);
+                int i = Integer.parseInt(name);
                 if (i >= 0) {
-                    return Win32ShellFolder2.getShell32Icon(i);
+                    return Win32ShellFolder2.getShell32Icon(i, key.startsWith("shell32LargeIcon "));
                 }
             } catch (NumberFormatException ex) {
             }
@@ -318,11 +374,16 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
      * Does <code>dir</code> represent a "computer" such as a node on the network, or
      * "My Computer" on the desktop.
      */
-    public boolean isComputerNode(File dir) {
+    public boolean isComputerNode(final File dir) {
         if (dir != null && dir == getDrives()) {
             return true;
         } else {
-            String path = dir.getAbsolutePath();
+            String path = AccessController.doPrivileged(new PrivilegedAction<String>() {
+                public String run() {
+                    return dir.getAbsolutePath();
+                }
+            });
+
             return (path.startsWith("\\\\") && path.indexOf("\\", 2) < 0);      //Network path
         }
     }
@@ -343,32 +404,16 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
                 }
             }
             String path = dir.getPath();
-            return (path.length() == 3
-                    && path.charAt(1) == ':'
-                    && Arrays.asList(drives.listFiles()).contains(dir));
+
+            if (path.length() != 3 || path.charAt(1) != ':') {
+                return false;
+            }
+
+            File[] files = drives.listFiles();
+
+            return files != null && Arrays.asList(files).contains(dir);
         }
         return false;
-    }
-
-    private Comparator driveComparator = new Comparator() {
-        public int compare(Object o1, Object o2) {
-            Win32ShellFolder2 shellFolder1 = (Win32ShellFolder2) o1;
-            Win32ShellFolder2 shellFolder2 = (Win32ShellFolder2) o2;
-
-            // Put drives at first
-            boolean isDrive1 = shellFolder1.getPath().endsWith(":\\");
-
-            if (isDrive1 ^ shellFolder2.getPath().endsWith(":\\")) {
-                return isDrive1 ? -1 : 1;
-            } else {
-                return shellFolder1.getPath().compareTo(shellFolder2.getPath());
-            }
-        }
-    };
-
-
-    public void sortFiles(List files) {
-        Collections.sort(files, fileComparator);
     }
 
     private static List topFolderList = null;
@@ -406,19 +451,9 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
         return compareNames(sf1.getAbsolutePath(), sf2.getAbsolutePath());
     }
 
-    static int compareFiles(File f1, File f2) {
-        if (f1 instanceof Win32ShellFolder2) {
-            return f1.compareTo(f2);
-        }
-        if (f2 instanceof Win32ShellFolder2) {
-            return -1 * f2.compareTo(f1);
-        }
-        return compareNames(f1.getName(), f2.getName());
-    }
-
     static int compareNames(String name1, String name2) {
         // First ignore case when comparing
-        int diff = name1.toLowerCase().compareTo(name2.toLowerCase());
+        int diff = name1.compareToIgnoreCase(name2);
         if (diff != 0) {
             return diff;
         } else {
@@ -426,31 +461,5 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
             // We need this test for consistent sorting
             return name1.compareTo(name2);
         }
-    }
-
-    private Comparator fileComparator = new Comparator() {
-        public int compare(Object a, Object b) {
-            return compare((File)a, (File)b);
-        }
-
-        public int compare(File f1, File f2) {
-            return compareFiles(f1, f2);
-        }
-    };
-    
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    static Win32ShellFolder2 createShellFolderFromRelativePIDL( Win32ShellFolder2 parent, cli.System.IntPtr pIDL) {
-        // Walk down this relative pIDL, creating new nodes for each of the entries
-        while (pIDL != null && !cli.System.IntPtr.Zero.Equals( pIDL ) ) {
-        	cli.System.IntPtr curPIDL = Win32ShellFolder2.copyFirstPIDLEntry(pIDL);
-            if (curPIDL != null && !cli.System.IntPtr.Zero.Equals( curPIDL )) {
-                parent = new Win32ShellFolder2(parent, curPIDL);
-                pIDL = Win32ShellFolder2.getNextPIDLEntry(pIDL);
-            } else {
-                // The list is empty if the parent is Desktop and pIDL is a shortcut to Desktop
-                break;
-            }
-        }
-        return parent;
     }
 }
