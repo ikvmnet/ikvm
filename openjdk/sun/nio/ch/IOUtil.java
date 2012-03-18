@@ -155,6 +155,7 @@ class IOUtil {
             int pos = src.position();
             byte[] buf = new byte[src.remaining()];
             src.get(buf);
+            src.position(pos);
             int len = nd.write(fd, buf, 0, buf.length);
             if (len > 0)
             {
