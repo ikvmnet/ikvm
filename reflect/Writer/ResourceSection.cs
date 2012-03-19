@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2010 Jeroen Frijters
+  Copyright (C) 2010-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -147,21 +147,40 @@ namespace IKVM.Reflection.Writer
 			{
 				foreach (ResourceDirectoryEntry entry in entries)
 				{
-					if (entry.OrdinalOrName.Ordinal == id.Ordinal && entry.OrdinalOrName.Name == id.Name)
+					if (entry.OrdinalOrName.IsEqual(id))
 					{
 						return entry;
 					}
 				}
+				// the entries must be sorted
 				ResourceDirectoryEntry newEntry = new ResourceDirectoryEntry(id);
 				if (id.Name == null)
 				{
+					for (int i = namedEntries; i < entries.Count; i++)
+					{
+						if (entries[i].OrdinalOrName.IsGreaterThan(id))
+						{
+							entries.Insert(i, newEntry);
+							return newEntry;
+						}
+					}
 					entries.Add(newEntry);
+					return newEntry;
 				}
 				else
 				{
+					for (int i = 0; i < namedEntries; i++)
+					{
+						if (entries[i].OrdinalOrName.IsGreaterThan(id))
+						{
+							entries.Insert(i, newEntry);
+							namedEntries++;
+							return newEntry;
+						}
+					}
 					entries.Insert(namedEntries++, newEntry);
+					return newEntry;
 				}
-				return newEntry;
 			}
 		}
 
@@ -321,6 +340,20 @@ namespace IKVM.Reflection.Writer
 		{
 			Ordinal = 0xFFFF;
 			Name = value;
+		}
+
+		internal bool IsGreaterThan(OrdinalOrName other)
+		{
+			return this.Name == null
+				? this.Ordinal > other.Ordinal
+				: String.Compare(this.Name, other.Name, StringComparison.OrdinalIgnoreCase) > 0;
+		}
+
+		internal bool IsEqual(OrdinalOrName other)
+		{
+			return this.Name == null
+				? this.Ordinal == other.Ordinal
+				: String.Compare(this.Name, other.Name, StringComparison.OrdinalIgnoreCase) == 0;
 		}
 	}
 
