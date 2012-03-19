@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2011 Jeroen Frijters
+  Copyright (C) 2002-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -297,6 +297,7 @@ class IkvmcCompiler
 		Console.Error.WriteLine("    -version:<M.m.b.r>         Assembly version");
 		Console.Error.WriteLine("    -fileversion:<version>     File version");
 		Console.Error.WriteLine("    -win32icon:<file>          Embed specified icon in output");
+		Console.Error.WriteLine("    -win32manifest:<file>      Specify a Win32 manifest file (.xml)");
 		Console.Error.WriteLine("    -main:<class>              Specify the class containing the main method");
 		Console.Error.WriteLine("    -reference:<filespec>      Reference an assembly (short form -r:<filespec>)");
 		Console.Error.WriteLine("    -recurse:<filespec>        Recurse directory and include matching files");
@@ -650,6 +651,10 @@ class IkvmcCompiler
 				else if(s.StartsWith("-win32icon:"))
 				{
 					options.iconfile = s.Substring(11);
+				}
+				else if(s.StartsWith("-win32manifest:"))
+				{
+					options.manifestFile = s.Substring(15);
 				}
 				else if(s.StartsWith("-keyfile:"))
 				{

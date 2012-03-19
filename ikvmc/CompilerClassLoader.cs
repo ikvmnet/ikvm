@@ -3201,6 +3201,17 @@ namespace IKVM.Internal
 					Console.Error.WriteLine("Error: unable to read icon file.\r\n\t'{0}' -- {1}", options.iconfile, x.Message);
 				}
 			}
+			if (options.manifestFile != null)
+			{
+				try
+				{
+					assemblyBuilder.__DefineManifestResource(File.ReadAllBytes(options.manifestFile));
+				}
+				catch (Exception x)
+				{
+					Console.Error.WriteLine("Error: unable to read manifest file.\r\n\t'{0}' -- {1}", options.manifestFile, x.Message);
+				}
+			}
 			assemblyBuilder.DefineVersionInfoResource();
 			return 0;
 		}
@@ -3359,6 +3370,7 @@ namespace IKVM.Internal
 		internal Version version;
 		internal string fileversion;
 		internal string iconfile;
+		internal string manifestFile;
 		internal bool targetIsModule;
 		internal string assembly;
 		internal string mainClass;
