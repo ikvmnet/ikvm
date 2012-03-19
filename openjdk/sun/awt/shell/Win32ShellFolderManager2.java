@@ -111,6 +111,7 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
 
     private static final Image[] STANDARD_VIEW_BUTTONS = new Image[12];
 
+    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     private static Image getStandardViewButton(int iconIndex) {
         Image result = STANDARD_VIEW_BUTTONS[iconIndex];
 

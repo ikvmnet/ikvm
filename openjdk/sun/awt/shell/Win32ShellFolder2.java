@@ -530,9 +530,10 @@ final class Win32ShellFolder2 extends ShellFolder {
     }
 
     @cli.System.Security.SecurityCriticalAttribute.Annotation
-    private static boolean pidlsEqual(final cli.System.Object pIShellFolder, final cli.System.IntPtr pidl1, final cli.System.IntPtr pidl2)
+    static boolean pidlsEqual(final cli.System.Object pIShellFolder, final cli.System.IntPtr pidl1, final cli.System.IntPtr pidl2)
             throws InterruptedException {
         return invoke(new Callable<Boolean>() {
+            @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
             public Boolean call() {
                 return compareIDs(pIShellFolder, pidl1, pidl2) == 0;
             }
@@ -540,7 +541,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     }
 
     @cli.System.Security.SecurityCriticalAttribute.Annotation
-    private static native int compareIDs(cli.System.Object pParentIShellFolder, cli.System.IntPtr pidl1, cli.System.IntPtr pidl2);
+    static native int compareIDs(cli.System.Object pParentIShellFolder, cli.System.IntPtr pidl1, cli.System.IntPtr pidl2);
 
     private volatile Boolean cachedIsFileSystem;
 
@@ -572,7 +573,7 @@ final class Win32ShellFolder2 extends ShellFolder {
      * with a full attrsMask
      */
     @cli.System.Security.SecurityCriticalAttribute.Annotation
-    private static native int getAttributes0(cli.System.Object pParentIShellFolder, cli.System.IntPtr pIDL, int attrsMask);
+    static native int getAttributes0(cli.System.Object pParentIShellFolder, cli.System.IntPtr pIDL, int attrsMask);
 
     // Return the path to the underlying file system object
     @cli.System.Security.SecurityCriticalAttribute.Annotation
@@ -665,7 +666,7 @@ final class Win32ShellFolder2 extends ShellFolder {
      * @param pEnumObjects an IEnumIDList instance 
      */
     @cli.System.Security.SecurityCriticalAttribute.Annotation
-    private static native void releaseEnumObjects(cli.System.Object pEnumObjects);
+    static native void releaseEnumObjects(cli.System.Object pEnumObjects);
 
     /**
      * Returns the IShellFolder of a child from a parent IShellFolder and a relative pIDL. The pIDL
@@ -693,6 +694,7 @@ final class Win32ShellFolder2 extends ShellFolder {
 
         try {
             return invoke(new Callable<File[]>() {
+                @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
                 public File[] call() throws InterruptedException {
                     if (!isDirectory()) {
                         return null;
@@ -820,6 +822,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     private ShellFolder getLinkLocation(final boolean resolve) {
         return invoke(new Callable<ShellFolder>() {
+            @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
             public ShellFolder call() {
                 if (!isLink()) {
                     return null;
