@@ -34,6 +34,7 @@ namespace IKVM.Reflection.Writer
 		private const int RT_ICON = 3;
 		private const int RT_GROUP_ICON = 14;
 		private const int RT_VERSION = 16;
+		private const int RT_MANIFEST = 24;
 		private ResourceDirectoryEntry root = new ResourceDirectoryEntry(new OrdinalOrName("root"));
 		private ByteBuffer bb;
 		private List<int> linkOffsets;
@@ -85,6 +86,13 @@ namespace IKVM.Reflection.Writer
 				root[new OrdinalOrName(RT_ICON)][new OrdinalOrName(id)][new OrdinalOrName(0)].Data = ByteBuffer.Wrap(icon);
 			}
 			root[new OrdinalOrName(RT_GROUP_ICON)][new OrdinalOrName(32512)][new OrdinalOrName(0)].Data = group;
+		}
+
+		internal void AddManifest(byte[] manifest)
+		{
+			ByteBuffer bb = new ByteBuffer(manifest.Length);
+			bb.Write(manifest);
+			root[new OrdinalOrName(RT_MANIFEST)][new OrdinalOrName(1)][new OrdinalOrName(0)].Data = bb;
 		}
 
 		internal void ExtractResources(byte[] buf)

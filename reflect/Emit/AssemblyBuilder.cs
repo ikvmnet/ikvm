@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2008-2011 Jeroen Frijters
+  Copyright (C) 2008-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -55,6 +55,7 @@ namespace IKVM.Reflection.Emit
 		private MethodInfo entryPoint;
 		private VersionInfo versionInfo;
 		private ResourceSection unmanagedResources;
+		private bool rawUnmanagedResources;
 		private string imageRuntimeVersion;
 		internal int mdStreamVersion = 0x20000;
 		private Module pseudoManifestModule;
@@ -482,8 +483,22 @@ namespace IKVM.Reflection.Emit
 
 		public void __DefineIconResource(byte[] iconFile)
 		{
-			unmanagedResources = new ResourceSection();
+			if (unmanagedResources == null || rawUnmanagedResources)
+			{
+				unmanagedResources = new ResourceSection();
+			}
+			rawUnmanagedResources = false;
 			unmanagedResources.AddIcon(iconFile);
+		}
+
+		public void __DefineManifestResource(byte[] manifest)
+		{
+			if (unmanagedResources == null || rawUnmanagedResources)
+			{
+				unmanagedResources = new ResourceSection();
+			}
+			rawUnmanagedResources = false;
+			unmanagedResources.AddManifest(manifest);
 		}
 
 		public void __DefineUnmanagedResource(byte[] resource)
@@ -491,6 +506,7 @@ namespace IKVM.Reflection.Emit
 			// The standard .NET DefineUnmanagedResource(byte[]) is useless, because it embeds "resource" (as-is) as the .rsrc section,
 			// but it doesn't set the PE file Resource Directory entry to point to it. That's why we have a renamed version, which behaves
 			// like DefineUnmanagedResource(string).
+			rawUnmanagedResources = true;
 			unmanagedResources = new ResourceSection();
 			unmanagedResources.ExtractResources(resource);
 		}
