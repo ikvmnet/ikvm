@@ -380,7 +380,7 @@ namespace IKVM.Reflection.Emit
 
 			if (win32manifest != null)
 			{
-				unmanagedResources.AddManifest(win32manifest);
+				unmanagedResources.AddManifest(win32manifest, fileKind == PEFileKinds.Dll ? (ushort)2 : (ushort)1);
 			}
 
 			if (win32resources != null)

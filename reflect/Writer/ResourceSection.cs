@@ -88,11 +88,9 @@ namespace IKVM.Reflection.Writer
 			root[new OrdinalOrName(RT_GROUP_ICON)][new OrdinalOrName(32512)][new OrdinalOrName(0)].Data = group;
 		}
 
-		internal void AddManifest(byte[] manifest)
+		internal void AddManifest(byte[] manifest, ushort resourceID)
 		{
-			ByteBuffer bb = new ByteBuffer(manifest.Length);
-			bb.Write(manifest);
-			root[new OrdinalOrName(RT_MANIFEST)][new OrdinalOrName(1)][new OrdinalOrName(0)].Data = bb;
+			root[new OrdinalOrName(RT_MANIFEST)][new OrdinalOrName(resourceID)][new OrdinalOrName(0)].Data = ByteBuffer.Wrap(manifest);
 		}
 
 		internal void ExtractResources(byte[] buf)
