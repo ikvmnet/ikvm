@@ -343,24 +343,29 @@ namespace IKVM.NativeCode.sun.awt.shell
         public static Bitmap getStandardViewButton0(int iconIndex)
         {
             Bitmap result = null;
-            // Create a toolbar
-            IntPtr hWndToolbar = CreateWindowEx(0, "ToolbarWindow32", null, 0, 0, 0, 0, 0, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
-            if (hWndToolbar != IntPtr.Zero)
+            using (new ThemingActivationContext())
             {
-                SendMessage(hWndToolbar, TB_LOADIMAGES, IDB_VIEW_SMALL_COLOR, HINST_COMMCTRL);
-
-                IntPtr hImageList = SendMessage(hWndToolbar, TB_GETIMAGELIST, 0, 0);
-                if (hImageList != IntPtr.Zero)
+                // Create a toolbar
+                IntPtr hWndToolbar = CreateWindowEx(0, "ToolbarWindow32", null, 0, 0, 0, 0, 0, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+                if (hWndToolbar != IntPtr.Zero)
                 {
-                    IntPtr hIcon = ImageList_GetIcon(hImageList, iconIndex, ILD_TRANSPARENT);
-                    if (hIcon != IntPtr.Zero)
+                    SendMessage(hWndToolbar, TB_LOADIMAGES, IDB_VIEW_SMALL_COLOR, HINST_COMMCTRL);
+
+                    IntPtr hImageList = SendMessage(hWndToolbar, TB_GETIMAGELIST, 0, 0);
+                    if (hImageList != IntPtr.Zero)
                     {
-                        result = Bitmap.FromHicon(hIcon);
-                        DestroyIcon(hIcon);
+                        IntPtr hIcon = ImageList_GetIcon(hImageList, iconIndex, ILD_TRANSPARENT);
+                        if (hIcon != IntPtr.Zero)
+                        {
+                            Icon icon = Icon.FromHandle(hIcon);
+                            result = icon.ToBitmap();
+                            icon.Dispose();
+                            DestroyIcon(hIcon);
+                        }
+                        ImageList_Destroy(hImageList);
                     }
-                    ImageList_Destroy(hImageList);
+                    DestroyWindow(hWndToolbar);
                 }
-                DestroyWindow(hWndToolbar);
             }
             return result;
         }
