@@ -347,6 +347,7 @@ class IkvmcCompiler
 		Console.Error.WriteLine("    -nostdlib                  Do not reference standard libraries");
 		Console.Error.WriteLine("    -lib:<dir>                 Additional directories to search for references");
 		Console.Error.WriteLine("    -noautoserialization       Disable automatic .NET serialization support");
+		Console.Error.WriteLine("    -highentropyva             Enable high entropy ASLR");
 	}
 
 	int ParseCommandLine(IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
@@ -802,6 +803,10 @@ class IkvmcCompiler
 				else if(s == "-noautoserialization")
 				{
 					options.codegenoptions |= CodeGenOptions.NoAutomagicSerialization;
+				}
+				else if(s == "-highentropyva")
+				{
+					options.highentropyva = true;
 				}
 				else if(s.StartsWith("-writeSuppressWarningsFile:"))
 				{
