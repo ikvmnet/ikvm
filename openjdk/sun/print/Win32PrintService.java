@@ -31,6 +31,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -98,7 +99,9 @@ public class Win32PrintService implements PrintService {
     };
     
     /** Mapping for PageSize.RawKind to predefined MediaSizeName */ 
-    private static final MediaSizeName[] MEDIA_NAMES = new MediaSizeName[44];
+    private static final MediaSizeName[] MEDIA_NAMES = new MediaSizeName[70];
+    
+    private static final Hashtable<String, MediaSizeName> CUSTOM_MEDIA_NAME = new Hashtable<>();
     
     /*  it turns out to be inconvenient to store the other categories
      *  separately because many attributes are in multiple categories.
@@ -119,7 +122,7 @@ public class Win32PrintService implements PrintService {
         Chromaticity.class
     };
 
-    // conversion from 1/100 Inch (.NET) to um (Java)
+    // conversion from 1/100 Inch (.NET) to µm (Java)
     private static final int INCH100_TO_MYM = 254;
     private static final int  MATCH_DIFF = 500; // 0.5 mm
     
@@ -168,6 +171,10 @@ public class Win32PrintService implements PrintService {
     	MEDIA_NAMES[41] =  MediaSizeName.ISO_B4 ;
     	MEDIA_NAMES[42] =  MediaSizeName.JAPANESE_POSTCARD ;
     	MEDIA_NAMES[43] =  MediaSizeName.NA_9X11_ENVELOPE ;
+    	
+    	MEDIA_NAMES[65] =  MediaSizeName.ISO_A2 ;
+    	
+    	MEDIA_NAMES[69] =  MediaSizeName.ISO_A6 ;
 
 //    	// augment the media size with the .NET default sizes available on the printer 
 //    	PrinterSettings ps = new PrinterSettings();
@@ -649,9 +656,13 @@ public class Win32PrintService implements PrintService {
      * @return
      */
     private MediaSizeName findMatchingMedia( PaperSize paper ){
-    	if( paper.get_RawKind() > 0 && paper.get_RawKind() <= MEDIA_NAMES.length ){
+    	int rawKind = paper.get_RawKind();
+		if( rawKind > 0 && rawKind <= MEDIA_NAMES.length ){
     		// match to predefined size
-    		return MEDIA_NAMES[ paper.get_RawKind() - 1 ];
+    		MediaSizeName media = MEDIA_NAMES[ rawKind - 1 ];
+    		if( media != null ) {
+    			return media;
+    		}
     	}
     	int x = paper.get_Width() * INCH100_TO_MYM;
     	int y = paper.get_Height() * INCH100_TO_MYM;
@@ -668,7 +679,13 @@ public class Win32PrintService implements PrintService {
     			}
     		}
     	}
-    	return null;
+    	MediaSizeName media = CUSTOM_MEDIA_NAME.get(paper.get_PaperName());
+		if (media == null) {
+			media = new CustomMediaSizeName(paper.get_PaperName());
+			CUSTOM_MEDIA_NAME.put(paper.get_PaperName(), media);
+			new MediaSize(paper.get_Width(), paper.get_Height(), MediaSize.INCH/100, media);
+		}
+    	return media;
     }
     
     /**
