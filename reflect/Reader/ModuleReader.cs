@@ -1220,9 +1220,9 @@ namespace IKVM.Reflection.Reader
 			return (long)peFile.OptionalHeader.ImageBase;
 		}
 
-		public override long __StackReserve
+		protected override long  GetStackReserveImpl()
 		{
-			get { return (long)peFile.OptionalHeader.SizeOfStackReserve; }
+			return (long)peFile.OptionalHeader.SizeOfStackReserve;
 		}
 
 		public override int __FileAlignment

@@ -442,10 +442,12 @@ namespace IKVM.Reflection
 
 		protected abstract long GetImageBaseImpl();
 
-		public virtual long __StackReserve
+		public long __StackReserve
 		{
-			get { throw new NotSupportedException(); }
+			get { return GetStackReserveImpl(); }
 		}
+
+		protected abstract long GetStackReserveImpl();
 
 		public virtual int __FileAlignment
 		{
@@ -590,6 +592,11 @@ namespace IKVM.Reflection
 		}
 
 		protected sealed override long GetImageBaseImpl()
+		{
+			throw NotSupportedException();
+		}
+
+		protected sealed override long GetStackReserveImpl()
 		{
 			throw NotSupportedException();
 		}

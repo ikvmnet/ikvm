@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2008-2011 Jeroen Frijters
+  Copyright (C) 2008-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1271,14 +1271,21 @@ namespace IKVM.Reflection.Emit
 			return imageBaseAddress;
 		}
 
-		public override long __StackReserve
+		public new long __StackReserve
 		{
 			get { return stackReserve; }
+			set { stackReserve = value; }
 		}
 
+		protected override long GetStackReserveImpl()
+		{
+			return stackReserve;
+		}
+
+		[Obsolete("Use __StackReserve property.")]
 		public void __SetStackReserve(long stackReserve)
 		{
-			this.stackReserve = stackReserve;
+			__StackReserve = stackReserve;
 		}
 
 		internal ulong GetStackReserve(ulong defaultValue)
