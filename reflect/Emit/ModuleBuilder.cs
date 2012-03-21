@@ -41,6 +41,7 @@ namespace IKVM.Reflection.Emit
 		private Guid mvid = Guid.NewGuid();
 		private long imageBaseAddress = 0x00400000;
 		private long stackReserve = -1;
+		private int fileAlignment = 0x200;
 		private readonly AssemblyBuilder asm;
 		internal readonly string moduleName;
 		internal readonly string fileName;
@@ -1291,6 +1292,17 @@ namespace IKVM.Reflection.Emit
 		internal ulong GetStackReserve(ulong defaultValue)
 		{
 			return stackReserve == -1 ? defaultValue : (ulong)stackReserve;
+		}
+
+		public new int __FileAlignment
+		{
+			get { return fileAlignment; }
+			set { fileAlignment = value; }
+		}
+
+		protected override int GetFileAlignmentImpl()
+		{
+			return fileAlignment;
 		}
 
 		public override int MDStreamVersion

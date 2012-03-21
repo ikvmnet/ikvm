@@ -95,6 +95,7 @@ namespace IKVM.Reflection.Writer
 			}
 
 			PEWriter writer = new PEWriter(stream);
+			writer.Headers.OptionalHeader.FileAlignment = (uint)moduleBuilder.__FileAlignment;
 			switch (imageFileMachine)
 			{
 				case ImageFileMachine.I386:

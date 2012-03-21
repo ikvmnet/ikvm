@@ -449,10 +449,12 @@ namespace IKVM.Reflection
 
 		protected abstract long GetStackReserveImpl();
 
-		public virtual int __FileAlignment
+		public int __FileAlignment
 		{
-			get { throw new NotSupportedException(); }
+			get { return GetFileAlignmentImpl(); }
 		}
+
+		protected abstract int GetFileAlignmentImpl();
 
 		public virtual byte[] __ModuleHash
 		{
@@ -597,6 +599,11 @@ namespace IKVM.Reflection
 		}
 
 		protected sealed override long GetStackReserveImpl()
+		{
+			throw NotSupportedException();
+		}
+
+		protected sealed override int GetFileAlignmentImpl()
 		{
 			throw NotSupportedException();
 		}

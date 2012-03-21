@@ -180,7 +180,7 @@ namespace IKVM.Reflection.Writer
 		public DWORD BaseOfData;
 		public ULONGLONG ImageBase;
 		public DWORD SectionAlignment = 0x2000;
-		public DWORD FileAlignment = 0x200;
+		public DWORD FileAlignment;
 		public WORD MajorOperatingSystemVersion = 4;
 		public WORD MinorOperatingSystemVersion = 0;
 		public WORD MajorImageVersion = 0;
