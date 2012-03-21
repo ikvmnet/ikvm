@@ -170,6 +170,10 @@ namespace IKVM.Internal
 			{
 				moduleBuilder.__ImageBase = options.baseAddress;
 			}
+			if(options.fileAlignment != 0)
+			{
+				moduleBuilder.__FileAlignment = options.fileAlignment;
+			}
 			return moduleBuilder;
 		}
 
@@ -3398,6 +3402,7 @@ namespace IKVM.Internal
 		internal PortableExecutableKinds pekind = PortableExecutableKinds.ILOnly;
 		internal ImageFileMachine imageFileMachine = ImageFileMachine.I386;
 		internal long baseAddress;
+		internal int fileAlignment;
 		internal List<CompilerClassLoader> sharedclassloader; // should *not* be deep copied in Copy(), because we want the list of all compilers that share a class loader
 		internal Dictionary<string, string> suppressWarnings = new Dictionary<string, string>();
 		internal Dictionary<string, string> errorWarnings = new Dictionary<string, string>();	// treat specific warnings as errors

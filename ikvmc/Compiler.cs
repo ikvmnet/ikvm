@@ -342,6 +342,7 @@ class IkvmcCompiler
 		Console.Error.WriteLine("    -sharedclassloader         All targets below this level share a common");
 		Console.Error.WriteLine("                               class loader");
 		Console.Error.WriteLine("    -baseaddress:<address>     Base address for the library to be built");
+		Console.Error.WriteLine("    -filealign:<n>             Specify the alignment used for output file");
 		Console.Error.WriteLine("    -nopeercrossreference      Do not automatically cross reference all peers");
 		Console.Error.WriteLine("    -nostdlib                  Do not reference standard libraries");
 		Console.Error.WriteLine("    -lib:<dir>                 Additional directories to search for references");
@@ -770,6 +771,19 @@ class IkvmcCompiler
 						baseAddressParsed = UInt64.Parse(baseAddress);
 					}
 					options.baseAddress = (long)(baseAddressParsed & 0xFFFFFFFFFFFF0000UL);
+				}
+				else if(s.StartsWith("-filealign:"))
+				{
+					int filealign;
+					if (!Int32.TryParse(s.Substring(11), out filealign)
+						|| filealign < 512
+						|| filealign > 8192
+						|| (filealign & (filealign - 1)) != 0)
+					{
+						Console.Error.WriteLine("Error: invalid file alignment: {0}", s.Substring(11));
+						return 1;
+					}
+					options.fileAlignment = filealign;
 				}
 				else if(s == "-nopeercrossreference")
 				{
