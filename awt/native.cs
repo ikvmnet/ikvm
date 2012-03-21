@@ -396,6 +396,7 @@ namespace IKVM.NativeCode.sun.awt.shell
         /// <summary>
         /// Returns the pIDL of the desktop itself
         /// </summary>
+        [System.Security.SecurityCritical]
         public static IntPtr initDesktopPIDL()
         {
             IntPtr pidl = new IntPtr();
@@ -409,6 +410,7 @@ namespace IKVM.NativeCode.sun.awt.shell
         /// <summary>
         /// Returns an IShellFolder for the desktop
         /// </summary>
+        [System.Security.SecurityCritical]
         public static Object initDesktopFolder()
         {
             ShellApi.IShellFolder rootShell = null;
@@ -425,6 +427,7 @@ namespace IKVM.NativeCode.sun.awt.shell
         /// <param name="desktopIShellFolder">The IShellFolder instance of the Desktop</param>
         /// <param name="csidl">The CSIDL of the special folder</param>
         /// <returns>the desktop relative pIDL of a special folder</returns>
+        [System.Security.SecurityCritical]
         public static IntPtr initSpecialPIDL(Object desktopIShellFolder, int csidl)
         {
             IntPtr result = new IntPtr();        
@@ -438,6 +441,7 @@ namespace IKVM.NativeCode.sun.awt.shell
         /// <param name="desktopIShellFolder">The IShellFolder instance of the Desktop</param>
         /// <param name="pidl">The desktop relative pIDL of the special folder</param>
         /// <returns>The IShellFolder for a special folder</returns>
+        [System.Security.SecurityCritical]
         public static Object initSpecialFolder(Object desktopIShellFolder, IntPtr pidl)
         {
             try
@@ -604,6 +608,7 @@ namespace IKVM.NativeCode.sun.awt.shell
             return (int)atts[0];
         }
 
+        [System.Security.SecurityCritical]
         public static String getFileSystemPath(int csidl)
         {
             IntPtr pIDL = new IntPtr();
@@ -624,6 +629,8 @@ namespace IKVM.NativeCode.sun.awt.shell
                 return null;
             }
         }
+
+        [System.Security.SecurityCritical]
         public static Object getEnumObjects(Object pIShellFolder, Boolean isDesktop, Boolean includeHiddenFiles)
         {
             if (pIShellFolder == null)
@@ -647,6 +654,7 @@ namespace IKVM.NativeCode.sun.awt.shell
         /// </summary>
         /// <param name="pEnumObjects">The IEnumIDList to get the next element of</param>
         /// <returns>a pIDL or IntPtr.Zero in case the end of the enum is reached</returns>
+        [System.Security.SecurityCritical]
         public static IntPtr getNextChild(Object pEnumObjects)
         {
             if (pEnumObjects == null)
@@ -705,6 +713,7 @@ namespace IKVM.NativeCode.sun.awt.shell
         /// <param name="pIShellFolder">The IShellFolder to get the chilf of</param>
         /// <param name="name">The display name of the child</param>
         /// <returns>the relative pIDL of the child or IntPrt.Zero in case there is no such child</returns>
+        [System.Security.SecurityCritical]
         public static IntPtr parseDisplayName0(Object pIShellFolder, String name)
         {
             if (pIShellFolder == null)
@@ -771,7 +780,8 @@ namespace IKVM.NativeCode.sun.awt.shell
             return 0;
         }
 
-		public static IntPtr getIcon(String absolutePath, Boolean getLargeIcon) 
+        [System.Security.SecurityCritical]
+        public static IntPtr getIcon(String absolutePath, Boolean getLargeIcon) 
         {
             ShellApi.SHFILEINFO shinfo = new ShellApi.SHFILEINFO();
             if (ShellApi.SHGetFileInfo(absolutePath, 0, out shinfo, (uint)Marshal.SizeOf(shinfo), ShellApi.SHGFI.SHGFI_ICON | (getLargeIcon ? ShellApi.SHGFI.SHGFI_LARGEICON : ShellApi.SHGFI.SHGFI_SMALLICON)) == IntPtr.Zero)

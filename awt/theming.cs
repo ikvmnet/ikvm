@@ -25,11 +25,13 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Runtime.InteropServices;
+using System.Security;
 
 sealed class ThemingActivationContext : IDisposable
 {
 	private IntPtr cookie;
 
+	[SecurityCritical]
 	public ThemingActivationContext()
 	{
 		if (Context.hActCtx != IntPtr.Zero)
@@ -42,6 +44,7 @@ sealed class ThemingActivationContext : IDisposable
 		}
 	}
 
+	[SecuritySafeCritical]
 	public void Dispose()
 	{
 		IntPtr tmp = Interlocked.Exchange(ref cookie, IntPtr.Zero);
@@ -55,6 +58,7 @@ sealed class ThemingActivationContext : IDisposable
 	{
 		internal static readonly IntPtr hActCtx;
 
+		[SecurityCritical]
 		static Context()
 		{
 			ACTCTX actctx = new ACTCTX();

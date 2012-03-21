@@ -161,6 +161,7 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
         return drives;
     }
 
+    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     static Win32ShellFolder2 getRecent() {
         if (recent == null) {
             try {
@@ -190,6 +191,7 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
         return network;
     }
 
+    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     static Win32ShellFolder2 getPersonal() {
         if (personal == null) {
             try {

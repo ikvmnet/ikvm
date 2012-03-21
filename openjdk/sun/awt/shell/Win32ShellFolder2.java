@@ -305,11 +305,13 @@ final class Win32ShellFolder2 extends ShellFolder {
      * Returns the pIDL of the Desktop folder (pIDL root)
      * @return the pIDL of the Desktop folder (pIDL root)
      */
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static native cli.System.IntPtr initDesktopPIDL();
     /**
      * Returns the IShellFolder pointer of the Desktop folder (pIDL root)
      * @return the IShellFolder pointer of the Desktop folder (pIDL root)
      */
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static native cli.System.Object initDesktopFolder();
 
     // Initializes a special, non-file system shell folder
@@ -320,6 +322,7 @@ final class Win32ShellFolder2 extends ShellFolder {
      * @param csidl the CSIDL of the requested special folder
      * @return the pIDL of the special folder relative to the desktop root
      */
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static native cli.System.IntPtr initSpecialPIDL(cli.System.Object desktopIShellFolder, int csidl);
     /**
      * initializes a special folder
@@ -593,6 +596,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     }
 
     // Needs to be accessible to Win32ShellFolderManager2
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     static native String getFileSystemPath(int csidl) throws IOException, InterruptedException;
 
     // Return whether the path is a network root.
@@ -637,7 +641,8 @@ final class Win32ShellFolder2 extends ShellFolder {
      * @param includeHiddenFiles if true, hidden files will be included in the enumeration
      * @return an instance of IEnumIDList 
      */
-    private cli.System.Object getEnumObjects(cli.System.Object pIShellFolder, boolean includeHiddenFiles) {
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
+    cli.System.Object getEnumObjects(cli.System.Object pIShellFolder, boolean includeHiddenFiles) {
         boolean isDesktop = (disposer.pIShellFolder == getDesktopIShellFolder());
         return getEnumObjects(disposer.pIShellFolder, isDesktop, includeHiddenFiles);
     }
@@ -650,6 +655,7 @@ final class Win32ShellFolder2 extends ShellFolder {
      * @param includeHiddenFiles if true, hidden files will be included in the enumeration
      * @return an instance of IEnumIDList 
      */
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static native cli.System.Object getEnumObjects(cli.System.Object pIShellFolder, boolean isDesktop, boolean includeHiddenFiles);
 
     /**
@@ -659,7 +665,8 @@ final class Win32ShellFolder2 extends ShellFolder {
      * @param pEnumObjects the IEnumIDList instance to get the next child from
      * @return the next child or {@link IntPtr#Zero} if the end of the enumeration is reached 
      */
-    private static native cli.System.IntPtr getNextChild(cli.System.Object pEnumObjects);
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
+    static native cli.System.IntPtr getNextChild(cli.System.Object pEnumObjects);
 
     /**
      * Releases the IEnumIDList interface
@@ -809,7 +816,8 @@ final class Win32ShellFolder2 extends ShellFolder {
      * @param relativePIDL a single-level pIDL to the item
      * @param resolve 
      */
-    private static native cli.System.IntPtr getLinkLocation( String path, boolean resolve);
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
+    static native cli.System.IntPtr getLinkLocation( String path, boolean resolve);
 
     /**
      * @return The shell folder linked to by this shell folder, or null
@@ -853,6 +861,7 @@ final class Win32ShellFolder2 extends ShellFolder {
      * @return a pIDL for the path, may be {@link IntPtr#Zero} if not found
      * @throws FileNotFoundException
      */
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     cli.System.IntPtr parseDisplayName(String name) throws FileNotFoundException {
         try {
             return parseDisplayName0(getIShellFolder(), name);
@@ -861,6 +870,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         }
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static native cli.System.IntPtr parseDisplayName0(cli.System.Object pIShellFolder, String name) throws IOException;
 
     /**
@@ -929,6 +939,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     private static native int getIconIndex(cli.System.Object parentIShellFolder, cli.System.IntPtr relativePIDL);
 
     // Return the icon of a file system shell folder in the form of an HICON
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static native cli.System.IntPtr getIcon(String absolutePath, boolean getLargeIcon);
 
     @cli.System.Security.SecurityCriticalAttribute.Annotation
@@ -1072,6 +1083,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     private static final int LVCFMT_RIGHT = 1;
     private static final int LVCFMT_CENTER = 2;
 
+    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     public ShellFolderColumnInfo[] getFolderColumns() {
     	Object o = doGetColumnInfo(getIShellFolder());
         ShellFolderColumnInfo[] columns = (ShellFolderColumnInfo[]) o;
@@ -1096,15 +1108,19 @@ final class Win32ShellFolder2 extends ShellFolder {
         return columns;
     }
 
+    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     public Object getFolderColumnValue(int column) {
         return doGetColumnValue(getParentIShellFolder(), getRelativePIDL(), column);
     }
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static native cli.System.Object /*ShellFolderColumnInfo[]*/ doGetColumnInfo( cli.System.Object iShellFolder2 );
 
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     private static native Object doGetColumnValue(cli.System.Object parentIShellFolder2, cli.System.IntPtr childPIDL, int columnIdx);
 
-    private static native int compareIDsByColumn(cli.System.Object pParentIShellFolder, cli.System.IntPtr pidl1, cli.System.IntPtr pidl2, int columnIdx);
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
+    static native int compareIDsByColumn(cli.System.Object pParentIShellFolder, cli.System.IntPtr pidl1, cli.System.IntPtr pidl2, int columnIdx);
 
     private class ColumnComparator implements Comparator {
         private final int columnIdx;
@@ -1114,6 +1130,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         }
 
         // compares 2 objects within this folder by the specified column
+        @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
         public int compare(Object o, Object o1) {
             if (o instanceof  Win32ShellFolder2 && o1 instanceof  Win32ShellFolder2) {
                 // delegates comparison to native method
