@@ -456,6 +456,13 @@ namespace IKVM.Reflection
 
 		protected abstract int GetFileAlignmentImpl();
 
+		public DllCharacteristics __DllCharacteristics
+		{
+			get { return GetDllCharacteristicsImpl(); }
+		}
+
+		protected abstract DllCharacteristics GetDllCharacteristicsImpl();
+
 		public virtual byte[] __ModuleHash
 		{
 			get { throw new NotSupportedException(); }
@@ -604,6 +611,11 @@ namespace IKVM.Reflection
 		}
 
 		protected sealed override int GetFileAlignmentImpl()
+		{
+			throw NotSupportedException();
+		}
+
+		protected override DllCharacteristics GetDllCharacteristicsImpl()
 		{
 			throw NotSupportedException();
 		}

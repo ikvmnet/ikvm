@@ -1230,6 +1230,11 @@ namespace IKVM.Reflection.Reader
 			return (int)peFile.OptionalHeader.FileAlignment;
 		}
 
+		protected override DllCharacteristics GetDllCharacteristicsImpl()
+		{
+			return (DllCharacteristics)peFile.OptionalHeader.DllCharacteristics;
+		}
+
 		public override int __EntryPointRVA
 		{
 			get { return (cliHeader.Flags & CliHeader.COMIMAGE_FLAGS_NATIVE_ENTRYPOINT) != 0 ? (int)cliHeader.EntryPointToken : 0; }

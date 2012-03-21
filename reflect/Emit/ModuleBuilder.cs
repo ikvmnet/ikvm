@@ -42,6 +42,7 @@ namespace IKVM.Reflection.Emit
 		private long imageBaseAddress = 0x00400000;
 		private long stackReserve = -1;
 		private int fileAlignment = 0x200;
+		private DllCharacteristics dllCharacteristics = DllCharacteristics.DynamicBase | DllCharacteristics.NoSEH | DllCharacteristics.NXCompat | DllCharacteristics.TerminalServerAware;
 		private readonly AssemblyBuilder asm;
 		internal readonly string moduleName;
 		internal readonly string fileName;
@@ -1303,6 +1304,17 @@ namespace IKVM.Reflection.Emit
 		protected override int GetFileAlignmentImpl()
 		{
 			return fileAlignment;
+		}
+
+		public new DllCharacteristics __DllCharacteristics
+		{
+			get { return dllCharacteristics; }
+			set { dllCharacteristics = value; }
+		}
+
+		protected override DllCharacteristics GetDllCharacteristicsImpl()
+		{
+			return dllCharacteristics;
 		}
 
 		public override int MDStreamVersion
