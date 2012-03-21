@@ -122,6 +122,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="ShellApi.cs" />
+    <Compile Include="theming.cs" />
     <Compile Include="toolkit-0.95.cs">
       <SubType>Form</SubType>
     </Compile>
