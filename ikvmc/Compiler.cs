@@ -348,6 +348,7 @@ class IkvmcCompiler
 		Console.Error.WriteLine("    -lib:<dir>                 Additional directories to search for references");
 		Console.Error.WriteLine("    -noautoserialization       Disable automatic .NET serialization support");
 		Console.Error.WriteLine("    -highentropyva             Enable high entropy ASLR");
+		Console.Error.WriteLine("    -help                      Display this usage message (Short form: -?)");
 	}
 
 	int ParseCommandLine(IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
@@ -829,6 +830,11 @@ class IkvmcCompiler
 						StaticCompiler.IssueMessage(Message.DuplicateProxy, proxy);
 					}
 					options.proxies.Add(proxy);
+				}
+				else if(s == "-?" || s == "-help")
+				{
+					PrintHelp();
+					return 1;
 				}
 				else
 				{
