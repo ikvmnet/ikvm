@@ -300,11 +300,15 @@ namespace IKVM.Internal
 			}
 			else
 			{
+#if STUB_GENERATOR
+				return universe.CreateMissingAssembly(args.Name);
+#else
 				Console.Error.WriteLine("Error: unable to find assembly '{0}'", args.Name);
 				if (args.RequestingAssembly != null)
 				{
 					Console.Error.WriteLine("    (a dependency of '{0}')", args.RequestingAssembly.FullName);
 				}
+#endif
 			}
 			Environment.Exit(1);
 			return null;

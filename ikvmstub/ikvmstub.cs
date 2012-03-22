@@ -862,6 +862,12 @@ static class NetExp
 		{
 			tw = tw.ElementTypeWrapper;
 		}
+		if (tw.IsUnloadable && tw.Name.StartsWith("Missing/"))
+		{
+			Console.Error.WriteLine("Error: unable to find assembly '{0}'", tw.Name.Substring(8));
+			Environment.Exit(1);
+			return;
+		}
 		if (tw is StubTypeWrapper)
 		{
 			// skip
