@@ -106,6 +106,10 @@ class IkvmcCompiler
 			PrintHelp();
 			return 1;
 		}
+		if (!argList.Contains("-nologo"))
+		{
+			PrintHeader();
+		}
 		IkvmcCompiler comp = new IkvmcCompiler();
 		List<CompilerOptions> targets = new List<CompilerOptions>();
 		CompilerOptions toplevel = new CompilerOptions();
@@ -274,10 +278,15 @@ class IkvmcCompiler
 		return "";
 	}
 
-	private static void PrintHelp()
+	private static void PrintHeader()
 	{
 		Console.Error.WriteLine(GetVersionAndCopyrightInfo());
 		Console.Error.WriteLine();
+	}
+
+	private static void PrintHelp()
+	{
+		PrintHeader();
 		Console.Error.WriteLine("usage: ikvmc [-options] <classOrJar1> ... <classOrJarN>");
 		Console.Error.WriteLine();
 		Console.Error.WriteLine("options:");
@@ -349,6 +358,7 @@ class IkvmcCompiler
 		Console.Error.WriteLine("    -noautoserialization       Disable automatic .NET serialization support");
 		Console.Error.WriteLine("    -highentropyva             Enable high entropy ASLR");
 		Console.Error.WriteLine("    -help                      Display this usage message (Short form: -?)");
+		Console.Error.WriteLine("    -nologo                    Suppress compiler copyright message");
 	}
 
 	int ParseCommandLine(IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
