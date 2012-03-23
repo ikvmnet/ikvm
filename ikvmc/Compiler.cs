@@ -24,15 +24,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-using Type = IKVM.Reflection.Type;
-using ResolveEventHandler = IKVM.Reflection.ResolveEventHandler;
-using ResolveEventArgs = IKVM.Reflection.ResolveEventArgs;
+using System.Text.RegularExpressions;
 using System.Threading;
 using ICSharpCode.SharpZipLib.Zip;
 using IKVM.Internal;
-using System.Text.RegularExpressions;
+using IKVM.Reflection;
+using IKVM.Reflection.Emit;
 
 class IkvmcCompiler
 {
