@@ -3499,6 +3499,34 @@ namespace IKVM.Internal
 		DuplicateProxy = 4002,
 		MapXmlUnableToResolveOpCode = 4003,
 		MapXmlError = 4004,
+		InputFileNotFound = 4005,
+		UnknownFileType = 4006,
+		// Fatal errors
+		ResponseFileDepthExceeded = 5000,
+		ErrorReadingFile = 5001,
+		NoTargetsFound = 5002,
+		FileFormatLimitationExceeded = 5003,
+		CannotSpecifyBothKeyFileAndContainer = 5004,
+		DelaySignRequiresKey = 5005,
+		InvalidStrongNameKeyPair = 5006,
+		ReferenceNotFound = 5007,
+		OptionsMustPreceedChildLevels = 5008,
+		UnrecognizedTargetType = 5009,
+		UnrecognizedPlatform = 5010,
+		UnrecognizedApartment = 5011,
+		MissingFileSpecification = 5012,
+		PathTooLong = 5013,
+		PathNotFound = 5014,
+		InvalidPath = 5015,
+		InvalidOptionSyntax = 5016,
+		ExternalResourceNotFound = 5017,
+		ExternalResourceNameInvalid = 5018,
+		InvalidVersionFormat = 5019,
+		InvalidFileAlignment = 5020,
+		ErrorWritingFile = 5021,
+		UnrecognizedOption = 5022,
+		NoOutputFileSpecified = 5023,
+		SharedClassLoaderCannotBeUsedOnModuleTarget = 5024,
 	}
 
 	static class StaticCompiler
@@ -3592,149 +3620,155 @@ namespace IKVM.Internal
 			switch(msgId)
 			{
 				case Message.MainMethodFound:
-					msg = "found main method in class \"{0}\"";
+					msg = "Found main method in class \"{0}\"";
 					break;
 				case Message.OutputFileIs:
-					msg = "output file is \"{0}\"";
+					msg = "Output file is \"{0}\"";
 					break;
 				case Message.AutoAddRef:
-					msg = "automatically adding reference to \"{0}\"";
+					msg = "Automatically adding reference to \"{0}\"";
 					break;
 				case Message.MainMethodFromManifest:
-					msg = "using main class \"{0}\" based on jar manifest";
+					msg = "Using main class \"{0}\" based on jar manifest";
 					break;
 				case Message.ClassNotFound:
-					msg = "class \"{0}\" not found";
+					msg = "Class \"{0}\" not found";
 					break;
 				case Message.ClassFormatError:
-					msg = "unable to compile class \"{0}\"" + Environment.NewLine + 
+					msg = "Unable to compile class \"{0}\"" + Environment.NewLine + 
 						"    (class format error \"{1}\")";
 					break;
 				case Message.DuplicateClassName:
-					msg = "duplicate class name: \"{0}\"";
+					msg = "Duplicate class name: \"{0}\"";
 					break;
 				case Message.IllegalAccessError:
-					msg = "unable to compile class \"{0}\"" + Environment.NewLine + 
+					msg = "Unable to compile class \"{0}\"" + Environment.NewLine + 
 						"    (illegal access error \"{1}\")";
 					break;
 				case Message.VerificationError:
-					msg = "unable to compile class \"{0}\"" + Environment.NewLine + 
+					msg = "Unable to compile class \"{0}\"" + Environment.NewLine + 
 						"    (verification error \"{1}\")";
 					break;
 				case Message.NoClassDefFoundError:
-					msg = "unable to compile class \"{0}\"" + Environment.NewLine + 
+					msg = "Unable to compile class \"{0}\"" + Environment.NewLine + 
 						"    (missing class \"{1}\")";
 					break;
 				case Message.GenericUnableToCompileError:
-					msg = "unable to compile class \"{0}\"" + Environment.NewLine + 
+					msg = "Unable to compile class \"{0}\"" + Environment.NewLine + 
 						"    (\"{1}\": \"{2}\")";
 					break;
 				case Message.DuplicateResourceName:
-					msg = "skipping resource (name clash): \"{0}\"";
+					msg = "Skipping resource (name clash): \"{0}\"";
 					break;
 				case Message.NotAClassFile:
-					msg = "not a class file \"{0}\", including it as resource" + Environment.NewLine +
+					msg = "Not a class file \"{0}\", including it as resource" + Environment.NewLine +
 						"    (class format error \"{1}\")";
 					break;
 				case Message.SkippingReferencedClass:
-					msg = "skipping class: \"{0}\"" + Environment.NewLine +
+					msg = "Skipping class: \"{0}\"" + Environment.NewLine +
 						"    (class is already available in referenced assembly \"{1}\")";
 					break;
 				case Message.NoJniRuntime:
-					msg = "unable to load runtime JNI assembly";
+					msg = "Unable to load runtime JNI assembly";
 					break;
 				case Message.EmittedNoClassDefFoundError:
-					msg = "emitted java.lang.NoClassDefFoundError in \"{0}\"" + Environment.NewLine +
+					msg = "Emitted java.lang.NoClassDefFoundError in \"{0}\"" + Environment.NewLine +
 						"    (\"{1}\")";
 					break;
 				case Message.EmittedIllegalAccessError:
-					msg = "emitted java.lang.IllegalAccessError in \"{0}\"" + Environment.NewLine +
+					msg = "Emitted java.lang.IllegalAccessError in \"{0}\"" + Environment.NewLine +
 						"    (\"{1}\")";
 					break;
 				case Message.EmittedInstantiationError:
-					msg = "emitted java.lang.InstantiationError in \"{0}\"" + Environment.NewLine +
+					msg = "Emitted java.lang.InstantiationError in \"{0}\"" + Environment.NewLine +
 						"    (\"{1}\")";
 					break;
 				case Message.EmittedIncompatibleClassChangeError:
-					msg = "emitted java.lang.IncompatibleClassChangeError in \"{0}\"" + Environment.NewLine +
+					msg = "Emitted java.lang.IncompatibleClassChangeError in \"{0}\"" + Environment.NewLine +
 						"    (\"{1}\")";
 					break;
 				case Message.EmittedNoSuchFieldError:
-					msg = "emitted java.lang.NoSuchFieldError in \"{0}\"" + Environment.NewLine +
+					msg = "Emitted java.lang.NoSuchFieldError in \"{0}\"" + Environment.NewLine +
 						"    (\"{1}\")";
 					break;
 				case Message.EmittedAbstractMethodError:
-					msg = "emitted java.lang.AbstractMethodError in \"{0}\"" + Environment.NewLine +
+					msg = "Emitted java.lang.AbstractMethodError in \"{0}\"" + Environment.NewLine +
 						"    (\"{1}\")";
 					break;
 				case Message.EmittedNoSuchMethodError:
-					msg = "emitted java.lang.NoSuchMethodError in \"{0}\"" + Environment.NewLine +
+					msg = "Emitted java.lang.NoSuchMethodError in \"{0}\"" + Environment.NewLine +
 						"    (\"{1}\")";
 					break;
 				case Message.EmittedLinkageError:
-					msg = "emitted java.lang.LinkageError in \"{0}\"" + Environment.NewLine +
+					msg = "Emitted java.lang.LinkageError in \"{0}\"" + Environment.NewLine +
 						"    (\"{1}\")";
 					break;
 				case Message.EmittedVerificationError:
-					msg = "emitted java.lang.VerificationError in \"{0}\"" + Environment.NewLine +
+					msg = "Emitted java.lang.VerificationError in \"{0}\"" + Environment.NewLine +
 						"    (\"{1}\")";
 					break;
 				case Message.EmittedClassFormatError:
-					msg = "emitted java.lang.ClassFormatError in \"{0}\"" + Environment.NewLine +
+					msg = "Emitted java.lang.ClassFormatError in \"{0}\"" + Environment.NewLine +
 						"    (\"{1}\")";
 					break;
 				case Message.InvalidCustomAttribute:
-					msg = "error emitting \"{0}\" custom attribute" + Environment.NewLine +
+					msg = "Error emitting \"{0}\" custom attribute" + Environment.NewLine +
 						"    (\"{1}\")";
 					break;
 				case Message.IgnoredCustomAttribute:
-					msg = "custom attribute \"{0}\" was ignored" + Environment.NewLine +
+					msg = "Custom attribute \"{0}\" was ignored" + Environment.NewLine +
 						"    (\"{1}\")";
 					break;
 				case Message.AssumeAssemblyVersionMatch:
-					msg = "assuming assembly reference \"{0}\" matches \"{1}\", you may need to supply runtime policy";
+					msg = "Assuming assembly reference \"{0}\" matches \"{1}\", you may need to supply runtime policy";
 					break;
 				case Message.InvalidDirectoryInLibOptionPath:
-					msg = "directory \"{0}\" specified in -lib option is not valid";
+					msg = "Directory \"{0}\" specified in -lib option is not valid";
 					break;
 				case Message.InvalidDirectoryInLibEnvironmentPath:
-					msg = "directory \"{0}\" specified in LIB environment is not valid";
+					msg = "Directory \"{0}\" specified in LIB environment is not valid";
 					break;
 				case Message.LegacySearchRule:
-					msg = "found assembly \"{0}\" using legacy search rule, please append '.dll' to the reference";
+					msg = "Found assembly \"{0}\" using legacy search rule, please append '.dll' to the reference";
 					break;
 				case Message.AssemblyLocationIgnored:
-					msg = "assembly \"{0}\" is ignored as previously loaded assembly \"{1}\" has the same identity \"{2}\"";
+					msg = "Assembly \"{0}\" is ignored as previously loaded assembly \"{1}\" has the same identity \"{2}\"";
 					break;
 				case Message.InterfaceMethodCantBeInternal:
-					msg = "ignoring @ikvm.lang.Internal annotation on interface method" + Environment.NewLine +
+					msg = "Ignoring @ikvm.lang.Internal annotation on interface method" + Environment.NewLine +
 						"    (\"{0}.{1}{2}\")";
 					break;
 				case Message.DllExportMustBeStaticMethod:
-					msg = "ignoring @ikvm.lang.DllExport annotation on non-static method" + Environment.NewLine +
+					msg = "Ignoring @ikvm.lang.DllExport annotation on non-static method" + Environment.NewLine +
 						"    (\"{0}.{1}{2}\")";
 					break;
 				case Message.DllExportRequiresSupportedPlatform:
-					msg = "ignoring @ikvm.lang.DllExport annotation due to unsupported target platform";
+					msg = "Ignoring @ikvm.lang.DllExport annotation due to unsupported target platform";
 					break;
 				case Message.NonPrimaryAssemblyReference:
-					msg = "referenced assembly \"{0}\" is not the primary assembly of a shared class loader group, referencing primary assembly \"{1}\" instead";
+					msg = "Referenced assembly \"{0}\" is not the primary assembly of a shared class loader group, referencing primary assembly \"{1}\" instead";
 					break;
 				case Message.DuplicateAssemblyReference:
-					msg = "duplicate assembly reference \"{0}\"";
+					msg = "Duplicate assembly reference \"{0}\"";
 					break;
 				case Message.UnableToCreateProxy:
-					msg = "unable to create proxy \"{0}\"" + Environment.NewLine +
+					msg = "Unable to create proxy \"{0}\"" + Environment.NewLine +
 						"    (\"{1}\")";
 					break;
 				case Message.DuplicateProxy:
-					msg = "duplicate proxy \"{0}\"";
+					msg = "Duplicate proxy \"{0}\"";
 					break;
 				case Message.MapXmlUnableToResolveOpCode:
-					msg = "unable to resolve opcode in remap file: {0}";
+					msg = "Unable to resolve opcode in remap file: {0}";
 					break;
 				case Message.MapXmlError:
-					msg = "error in remap file: {0}";
+					msg = "Error in remap file: {0}";
+					break;
+				case Message.InputFileNotFound:
+					msg = "Source file '{0}' not found";
+					break;
+				case Message.UnknownFileType:
+					msg = "Unknown file type: {0}";
 					break;
 				case Message.UnknownWarning:
 					msg = "{0}";
@@ -3746,7 +3780,7 @@ namespace IKVM.Internal
 				|| (options.warnaserror && msgId >= Message.StartWarnings)
 				|| options.errorWarnings.ContainsKey(key)
 				|| options.errorWarnings.ContainsKey(((int)msgId).ToString());
-			Console.Error.Write("{0} IKVMC{1:D4}: ", error ? "Error" : msgId < Message.StartWarnings ? "Note" : "Warning", (int)msgId);
+			Console.Error.Write("{0} IKVMC{1:D4}: ", error ? "error" : msgId < Message.StartWarnings ? "note" : "warning", (int)msgId);
 			if (error && Message.StartWarnings <= msgId && msgId < Message.StartErrors)
 			{
 				Console.Error.Write("Warning as Error: ");

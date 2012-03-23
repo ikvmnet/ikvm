@@ -31,6 +31,73 @@ using IKVM.Internal;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 
+sealed class FatalCompilerErrorException : Exception
+{
+	internal FatalCompilerErrorException(Message id, params object[] args)
+		: base(string.Format("fatal error IKVMC{0}: {1}", (int)id, args.Length == 0 ? GetMessage(id) : string.Format(GetMessage(id), args)))
+	{
+	}
+
+	private static string GetMessage(Message id)
+	{
+		switch (id)
+		{
+			case IKVM.Internal.Message.ResponseFileDepthExceeded:
+				return "Response file nesting depth exceeded";
+			case IKVM.Internal.Message.ErrorReadingFile:
+				return "Unable to read file: {0}\n\t({1})";
+			case IKVM.Internal.Message.NoTargetsFound:
+				return "No targets found";
+			case IKVM.Internal.Message.FileFormatLimitationExceeded:
+				return "File format limitation exceeded: {0}";
+			case IKVM.Internal.Message.CannotSpecifyBothKeyFileAndContainer:
+				return "You cannot specify both a key file and container";
+			case IKVM.Internal.Message.DelaySignRequiresKey:
+				return "You cannot delay sign without a key file or container";
+			case IKVM.Internal.Message.InvalidStrongNameKeyPair:
+				return "Invalid key {0} specified.\n\t(\"{1}\")";
+			case IKVM.Internal.Message.ReferenceNotFound:
+				return "Reference not found: {0}";
+			case IKVM.Internal.Message.OptionsMustPreceedChildLevels:
+				return "You can only specify options before any child levels";
+			case IKVM.Internal.Message.UnrecognizedTargetType:
+				return "Invalid value '{0}' for -target option";
+			case IKVM.Internal.Message.UnrecognizedPlatform:
+				return "Invalid value '{0}' for -platform option";
+			case IKVM.Internal.Message.UnrecognizedApartment:
+				return "Invalid value '{0}' for -apartment option";
+			case IKVM.Internal.Message.MissingFileSpecification:
+				return "Missing file specification for '{0}' option";
+			case IKVM.Internal.Message.PathTooLong:
+				return "Path too long: {0}";
+			case IKVM.Internal.Message.PathNotFound:
+				return "Path not found: {0}";
+			case IKVM.Internal.Message.InvalidPath:
+				return "Invalid path: {0}";
+			case IKVM.Internal.Message.InvalidOptionSyntax:
+				return "Invalid option: {0}";
+			case IKVM.Internal.Message.ExternalResourceNotFound:
+				return "External resource file does not exist: {0}";
+			case IKVM.Internal.Message.ExternalResourceNameInvalid:
+				return "External resource file may not include path specification: {0}";
+			case IKVM.Internal.Message.InvalidVersionFormat:
+				return "Invalid version specified: {0}";
+			case IKVM.Internal.Message.InvalidFileAlignment:
+				return "Invalid value '{0}' for -filealign option";
+			case IKVM.Internal.Message.ErrorWritingFile:
+				return "Unable to write file: {0}\n\t({1})";
+			case IKVM.Internal.Message.UnrecognizedOption:
+				return "Unrecognized option: {0}";
+			case IKVM.Internal.Message.NoOutputFileSpecified:
+				return "No output file specified";
+			case IKVM.Internal.Message.SharedClassLoaderCannotBeUsedOnModuleTarget:
+				return "Incompatible options: -target:module and -sharedclassloader cannot be combined";
+			default:
+				return "Missing Error Message. Please file a bug.";
+		}
+	}
+}
+
 class IkvmcCompiler
 {
 	private bool nonleaf;
@@ -51,8 +118,7 @@ class IkvmcCompiler
 		{
 			if (depth++ > 16)
 			{
-				Console.Error.WriteLine("Error: response file nesting depth exceeded");
-				Environment.Exit(1);
+				throw new FatalCompilerErrorException(Message.ResponseFileDepthExceeded);
 			}
 			try
 			{
@@ -69,10 +135,13 @@ class IkvmcCompiler
 					}
 				}
 			}
+			catch (FatalCompilerErrorException)
+			{
+				throw;
+			}
 			catch (Exception x)
 			{
-				Console.Error.WriteLine("Error: unable to read response file: {0}{1}\t({2})", s.Substring(1), Environment.NewLine, x.Message);
-				Environment.Exit(1);
+				throw new FatalCompilerErrorException(Message.ErrorReadingFile, s.Substring(1), x.Message);
 			}
 		}
 		else
@@ -97,11 +166,44 @@ class IkvmcCompiler
 		System.Threading.Thread.CurrentThread.Name = "compiler";
 		Tracer.EnableTraceConsoleListener();
 		Tracer.EnableTraceForDebug();
+		try
+		{
+			Compile(args);
+			return 0;
+		}
+		catch (FatalCompilerErrorException x)
+		{
+			Console.Error.WriteLine(x.Message);
+			return 1;
+		}
+		catch (Exception x)
+		{
+			Console.Error.WriteLine("Internal Compiler Error: {0}", x);
+			return 1;
+		}
+		finally
+		{
+			if (time)
+			{
+				Console.WriteLine("Total cpu time: {0}", System.Diagnostics.Process.GetCurrentProcess().TotalProcessorTime);
+				Console.WriteLine("User cpu time: {0}", System.Diagnostics.Process.GetCurrentProcess().UserProcessorTime);
+				Console.WriteLine("Total wall clock time: {0}", DateTime.Now - start);
+				Console.WriteLine("Peak virtual memory: {0}", System.Diagnostics.Process.GetCurrentProcess().PeakVirtualMemorySize64);
+				for (int i = 0; i <= GC.MaxGeneration; i++)
+				{
+					Console.WriteLine("GC({0}) count: {1}", i, GC.CollectionCount(i));
+				}
+			}
+		}
+	}
+
+	static void Compile(string[] args)
+	{
 		List<string> argList = GetArgs(args);
-		if (argList.Count == 0)
+		if (argList.Count == 0 || argList.Contains("-?") || argList.Contains("-help"))
 		{
 			PrintHelp();
-			return 1;
+			return;
 		}
 		if (!argList.Contains("-nologo"))
 		{
@@ -111,60 +213,27 @@ class IkvmcCompiler
 		List<CompilerOptions> targets = new List<CompilerOptions>();
 		CompilerOptions toplevel = new CompilerOptions();
 		StaticCompiler.toplevel = toplevel;
-		int rc = comp.ParseCommandLine(argList.GetEnumerator(), targets, toplevel);
-		if (rc == 0)
+		comp.ParseCommandLine(argList.GetEnumerator(), targets, toplevel);
+		resolver.Warning += loader_Warning;
+		resolver.Init(StaticCompiler.Universe, nostdlib, toplevel.unresolvedReferences, libpaths);
+		ResolveReferences(targets);
+		ResolveStrongNameKeys(targets);
+		if (targets.Count == 0)
 		{
-			resolver.Warning += new AssemblyResolver.WarningEvent(loader_Warning);
-			resolver.Init(StaticCompiler.Universe, nostdlib, toplevel.unresolvedReferences, libpaths);
+			throw new FatalCompilerErrorException(Message.NoTargetsFound);
 		}
-		if (rc == 0)
+		if (StaticCompiler.errorCount != 0)
 		{
-			rc = ResolveReferences(targets);
+			return;
 		}
-		if (rc == 0)
+		try
 		{
-			rc = ResolveStrongNameKeys(targets);
+			CompilerClassLoader.Compile(runtimeAssembly, targets);
 		}
-		if (rc == 0)
+		catch (FileFormatLimitationExceededException x)
 		{
-			try
-			{
-				if (targets.Count == 0)
-				{
-					Console.Error.WriteLine("Error: no target founds");
-					rc = 1;
-				}
-				else
-				{
-					try
-					{
-						rc = CompilerClassLoader.Compile(runtimeAssembly, targets);
-					}
-					catch(FileFormatLimitationExceededException x)
-					{
-						Console.Error.WriteLine("Error: {0}", x.Message);
-						rc = 1;
-					}
-				}
-			}
-			catch(Exception x)
-			{
-				Console.Error.WriteLine(x);
-				rc = 1;
-			}
+			throw new FatalCompilerErrorException(Message.FileFormatLimitationExceeded, x.Message);
 		}
-		if (time)
-		{
-			Console.WriteLine("Total cpu time: {0}", System.Diagnostics.Process.GetCurrentProcess().TotalProcessorTime);
-			Console.WriteLine("User cpu time: {0}", System.Diagnostics.Process.GetCurrentProcess().UserProcessorTime);
-			Console.WriteLine("Total wall clock time: {0}", DateTime.Now - start);
-			Console.WriteLine("Peak virtual memory: {0}", System.Diagnostics.Process.GetCurrentProcess().PeakVirtualMemorySize64);
-			for (int i = 0; i <= GC.MaxGeneration; i++)
-			{
-				Console.WriteLine("GC({0}) count: {1}", i, GC.CollectionCount(i));
-			}
-		}
-		return rc;
 	}
 
 	static void loader_Warning(AssemblyResolver.WarningId warning, string message, string[] parameters)
@@ -192,34 +261,23 @@ class IkvmcCompiler
 		}
 	}
 
-	private static int ResolveStrongNameKeys(List<CompilerOptions> targets)
+	static void ResolveStrongNameKeys(List<CompilerOptions> targets)
 	{
 		foreach (CompilerOptions options in targets)
 		{
 			if (options.keyfile != null && options.keycontainer != null)
 			{
-				Console.Error.WriteLine("Error: you cannot specify both a key file and container");
-				return 1;
+				throw new FatalCompilerErrorException(Message.CannotSpecifyBothKeyFileAndContainer);
 			}
 			if (options.keyfile == null && options.keycontainer == null && options.delaysign)
 			{
-				Console.Error.WriteLine("Error: you cannot delay sign without a key file or container");
-				return 1;
+				throw new FatalCompilerErrorException(Message.DelaySignRequiresKey);
 			}
 			if (options.keyfile != null)
 			{
 				if (options.delaysign)
 				{
-					byte[] buf;
-					try
-					{
-						buf = File.ReadAllBytes(options.keyfile);
-					}
-					catch (Exception x)
-					{
-						Console.Error.WriteLine("Error: unable to read key file: {0}", x.Message);
-						return 1;
-					}
+					byte[] buf = ReadAllBytes(options.keyfile);
 					try
 					{
 						// maybe it is a key pair, if so we need to extract just the public key
@@ -230,19 +288,13 @@ class IkvmcCompiler
 				}
 				else
 				{
-					if (!SetStrongNameKeyPair(ref options.keyPair, options.keyfile, true))
-					{
-						return 1;
-					}
+					SetStrongNameKeyPair(ref options.keyPair, options.keyfile, true);
 				}
 			}
 			else if (options.keycontainer != null)
 			{
 				StrongNameKeyPair keyPair = null;
-				if (!SetStrongNameKeyPair(ref keyPair, options.keycontainer, false))
-				{
-					return 1;
-				}
+				SetStrongNameKeyPair(ref keyPair, options.keycontainer, false);
 				if (options.delaysign)
 				{
 					options.publicKey = keyPair.PublicKey;
@@ -253,7 +305,18 @@ class IkvmcCompiler
 				}
 			}
 		}
-		return 0;
+	}
+
+	static byte[] ReadAllBytes(string path)
+	{
+		try
+		{
+			return File.ReadAllBytes(path);
+		}
+		catch (Exception x)
+		{
+			throw new FatalCompilerErrorException(Message.ErrorReadingFile, path, x.Message);
+		}
 	}
 
 	static string GetVersionAndCopyrightInfo()
@@ -372,17 +435,17 @@ class IkvmcCompiler
 		Console.Error.WriteLine("-highentropyva                 Enable high entropy ASLR");
 	}
 
-	int ParseCommandLine(IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
+	void ParseCommandLine(IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
 	{
 		options.target = PEFileKinds.ConsoleApplication;
 		options.guessFileKind = true;
 		options.version = new Version(0, 0, 0, 0);
 		options.apartment = ApartmentState.STA;
 		options.props = new Dictionary<string, string>();
-		return ContinueParseCommandLine(arglist, targets, options);
+		ContinueParseCommandLine(arglist, targets, options);
 	}
 
-	int ContinueParseCommandLine(IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
+	void ContinueParseCommandLine(IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
 	{
 		while(arglist.MoveNext())
 		{
@@ -396,11 +459,7 @@ class IkvmcCompiler
 				nestedLevel.resources = CompilerOptions.Copy(resources);
 				nestedLevel.defaultAssemblyName = defaultAssemblyName;
 				nestedLevel.classesToExclude = new List<string>(classesToExclude);
-				int rc = nestedLevel.ContinueParseCommandLine(arglist, targets, options.Copy());
-				if(rc != 0)
-				{
-					return rc;
-				}
+				nestedLevel.ContinueParseCommandLine(arglist, targets, options.Copy());
 			}
 			else if(s == "}")
 			{
@@ -408,8 +467,7 @@ class IkvmcCompiler
 			}
 			else if(nonleaf)
 			{
-				Console.Error.WriteLine("Error: you can only specify options before any child levels");
-				return 1;
+				throw new FatalCompilerErrorException(Message.OptionsMustPreceedChildLevels);
 			}
 			else if(s[0] == '-')
 			{
@@ -451,8 +509,7 @@ class IkvmcCompiler
 							options.guessFileKind = false;
 							break;
 						default:
-							Console.Error.WriteLine("Warning: unrecognized option: {0}", s);
-							break;
+							throw new FatalCompilerErrorException(Message.UnrecognizedTargetType, s.Substring(8));
 					}
 				}
 				else if(s.StartsWith("-platform:"))
@@ -480,8 +537,7 @@ class IkvmcCompiler
 							options.imageFileMachine = ImageFileMachine.I386;
 							break;
 						default:
-							Console.Error.WriteLine("Warning: unrecognized option: {0}", s);
-							break;
+							throw new FatalCompilerErrorException(Message.UnrecognizedPlatform, s.Substring(10));
 					}
 				}
 				else if(s.StartsWith("-apartment:"))
@@ -498,8 +554,7 @@ class IkvmcCompiler
 							options.apartment = ApartmentState.Unknown;
 							break;
 						default:
-							Console.Error.WriteLine("Warning: unrecognized option: {0}", s);
-							break;
+							throw new FatalCompilerErrorException(Message.UnrecognizedApartment, s.Substring(11));
 					}
 				}
 				else if(s == "-noglobbing")
@@ -544,8 +599,7 @@ class IkvmcCompiler
 					string r = s.Substring(s.IndexOf(':') + 1);
 					if(r == "")
 					{
-						Console.Error.WriteLine("Error: missing file specification for '{0}' option", s);
-						return 1;
+						throw new FatalCompilerErrorException(Message.MissingFileSpecification, s);
 					}
 					ArrayAppend(ref options.unresolvedReferences, r);
 				}
@@ -582,18 +636,15 @@ class IkvmcCompiler
 						}
 						catch(PathTooLongException)
 						{
-							Console.Error.WriteLine("Error: path too long: {0}", spec);
-							return 1;
+							throw new FatalCompilerErrorException(Message.PathTooLong, spec);
 						}
 						catch(DirectoryNotFoundException)
 						{
-							Console.Error.WriteLine("Error: path not found: {0}", spec);
-							return 1;
+							throw new FatalCompilerErrorException(Message.PathNotFound, spec);
 						}
 						catch(ArgumentException)
 						{
-							Console.Error.WriteLine("Error: invalid path: {0}", spec);
-							return 1;
+							throw new FatalCompilerErrorException(Message.InvalidPath, spec);
 						}
 					}
 				}
@@ -602,47 +653,24 @@ class IkvmcCompiler
 					string[] spec = s.Substring(10).Split('=');
 					if(spec.Length != 2)
 					{
-						Console.Error.WriteLine("Error: invalid option: {0}", s);
-						return 1;
+						throw new FatalCompilerErrorException(Message.InvalidOptionSyntax, s);
 					}
-					try
-					{
-						using(FileStream fs = new FileStream(spec[1], FileMode.Open, FileAccess.Read))
-						{
-							byte[] b = new byte[fs.Length];
-							fs.Read(b, 0, b.Length);
-							string name = spec[0];
-							if(name.StartsWith("/"))
-							{
-								// a leading slash is not required, so strip it
-								name = name.Substring(1);
-							}
-							AddResource(null, name, b, null);
-						}
-					}
-					catch(Exception x)
-					{
-						Console.Error.WriteLine("Error: {0}: {1}", x.Message, spec[1]);
-						return 1;
-					}
+					AddResource(null, spec[0].TrimStart('/'), ReadAllBytes(spec[1]), null);
 				}
 				else if(s.StartsWith("-externalresource:"))
 				{
 					string[] spec = s.Substring(18).Split('=');
 					if(spec.Length != 2)
 					{
-						Console.Error.WriteLine("Error: invalid option: {0}", s);
-						return 1;
+						throw new FatalCompilerErrorException(Message.InvalidOptionSyntax, s);
 					}
 					if(!File.Exists(spec[1]))
 					{
-						Console.Error.WriteLine("Error: external resource file does not exist: {0}", spec[1]);
-						return 1;
+						throw new FatalCompilerErrorException(Message.ExternalResourceNotFound, spec[1]);
 					}
 					if(Path.GetFileName(spec[1]) != spec[1])
 					{
-						Console.Error.WriteLine("Error: external resource file may not include path specification: {0}", spec[1]);
-						return 1;
+						throw new FatalCompilerErrorException(Message.ExternalResourceNameInvalid, spec[1]);
 					}
 					if(options.externalResources == null)
 					{
@@ -664,8 +692,7 @@ class IkvmcCompiler
 					string str = s.Substring(9);
 					if(!TryParseVersion(s.Substring(9), out options.version))
 					{
-						Console.Error.WriteLine("Error: Invalid version specified: {0}", str);
-						return 1;
+						throw new FatalCompilerErrorException(Message.InvalidVersionFormat, str);
 					}
 				}
 				else if(s.StartsWith("-fileversion:"))
@@ -803,8 +830,7 @@ class IkvmcCompiler
 						|| filealign > 8192
 						|| (filealign & (filealign - 1)) != 0)
 					{
-						Console.Error.WriteLine("Error: invalid file alignment: {0}", s.Substring(11));
-						return 1;
+						throw new FatalCompilerErrorException(Message.InvalidFileAlignment, s.Substring(11));
 					}
 					options.fileAlignment = filealign;
 				}
@@ -839,8 +865,7 @@ class IkvmcCompiler
 					}
 					catch(Exception x)
 					{
-						Console.Error.WriteLine("Error: invalid option: {0}{1}\t({2})", s, Environment.NewLine, x.Message);
-						return 1;
+						throw new FatalCompilerErrorException(Message.ErrorWritingFile, options.writeSuppressWarningsFile, x.Message);
 					}
 				}
 				else if(s.StartsWith("-proxy:")) // currently undocumented!
@@ -852,15 +877,13 @@ class IkvmcCompiler
 					}
 					options.proxies.Add(proxy);
 				}
-				else if(s == "-?" || s == "-help")
+				else if(s == "-nologo")
 				{
-					PrintHelp();
-					return 1;
+					// Ignore. This is handled earlier.
 				}
 				else
 				{
-					Console.Error.WriteLine("Error: unrecognized option: {0}", s);
-					return 1;
+					throw new FatalCompilerErrorException(Message.UnrecognizedOption, s);
 				}
 			}
 			else
@@ -877,44 +900,40 @@ class IkvmcCompiler
 						// it as a potential default assembly name
 					}
 				}
-				string[] files;
+				string[] files = null;
 				try
 				{
 					string path = Path.GetDirectoryName(s);
 					files = Directory.GetFiles(path == "" ? "." : path, Path.GetFileName(s));
 				}
-				catch(Exception)
+				catch { }
+				if (files == null || files.Length == 0)
 				{
-					Console.Error.WriteLine("Error: invalid filename: {0}", s);
-					return 1;
+					StaticCompiler.IssueMessage(Message.InputFileNotFound, s);
 				}
-				if(files.Length == 0)
+				else
 				{
-					Console.Error.WriteLine("Error: file not found: {0}", s);
-					return 1;
-				}
-				foreach(string f in files)
-				{
-					ProcessFile(null, f);
+					foreach (string f in files)
+					{
+						ProcessFile(null, f);
+					}
 				}
 			}
 			if(options.targetIsModule && options.sharedclassloader != null)
 			{
-				Console.Error.WriteLine("Error: -target:module and -sharedclassloader options cannot be combined.");
-				return 1;
+				throw new FatalCompilerErrorException(Message.SharedClassLoaderCannotBeUsedOnModuleTarget);
 			}
 		}
 		if(nonleaf)
 		{
-			return 0;
+			return;
 		}
 		if(options.assembly == null)
 		{
 			string basename = options.path == null ? defaultAssemblyName : new FileInfo(options.path).Name;
 			if(basename == null)
 			{
-				Console.Error.WriteLine("Error: no output file specified");
-				return 1;
+				throw new FatalCompilerErrorException(Message.NoOutputFileSpecified);
 			}
 			int idx = basename.LastIndexOf('.');
 			if(idx > 0)
@@ -943,7 +962,6 @@ class IkvmcCompiler
 		options.resources = resources;
 		options.classesToExclude = classesToExclude.ToArray();
 		targets.Add(options);
-		return 0;
 	}
 
 	internal static bool TryParseVersion(string str, out Version version)
@@ -984,7 +1002,7 @@ class IkvmcCompiler
 		return false;
 	}
 
-	private static bool SetStrongNameKeyPair(ref StrongNameKeyPair strongNameKeyPair, string fileNameOrKeyContainer, bool file)
+	static void SetStrongNameKeyPair(ref StrongNameKeyPair strongNameKeyPair, string fileNameOrKeyContainer, bool file)
 	{
 		try
 		{
@@ -997,16 +1015,15 @@ class IkvmcCompiler
 				strongNameKeyPair = new StrongNameKeyPair(fileNameOrKeyContainer);
 			}
 			// FXBUG we explicitly try to access the public key force a check (the StrongNameKeyPair constructor doesn't validate the key)
-			return strongNameKeyPair.PublicKey != null;
+			if (strongNameKeyPair.PublicKey != null) { }
 		}
 		catch (Exception x)
 		{
-			Console.Error.WriteLine("Error: Invalid key {0} specified.\n\t(\"{1}\")", file ? "file" : "container", x.Message);
-			return false;
+			throw new FatalCompilerErrorException(Message.InvalidStrongNameKeyPair, file ? "file" : "container", x.Message);
 		}
 	}
 
-	private static int ResolveReferences(List<CompilerOptions> targets)
+	static void ResolveReferences(List<CompilerOptions> targets)
 	{
 		Dictionary<string, Assembly> cache = new Dictionary<string, Assembly>();
 		foreach (CompilerOptions target in targets)
@@ -1023,16 +1040,14 @@ class IkvmcCompiler
 							goto next_reference;
 						}
 					}
-					int rc = resolver.ResolveReference(cache, ref target.references, reference);
-					if (rc != 0)
+					if (!resolver.ResolveReference(cache, ref target.references, reference))
 					{
-						return rc;
+						throw new FatalCompilerErrorException(Message.ReferenceNotFound, reference);
 					}
 				next_reference: ;
 				}
 			}
 		}
-		return 0;
 	}
 
 	private static void ArrayAppend<T>(ref T[] array, T element)
@@ -1168,12 +1183,7 @@ class IkvmcCompiler
 		switch(new FileInfo(file).Extension.ToLower())
 		{
 			case ".class":
-				using(FileStream fs = new FileStream(file, FileMode.Open, FileAccess.Read))
-				{
-					byte[] buf = new byte[fs.Length];
-					fs.Read(buf, 0, buf.Length);
-					AddClassFile(null, file, buf, false, null);
-				}
+				AddClassFile(null, file, ReadAllBytes(file), false, null);
 				break;
 			case ".jar":
 			case ".zip":
@@ -1183,38 +1193,22 @@ class IkvmcCompiler
 				}
 				catch(ICSharpCode.SharpZipLib.SharpZipBaseException x)
 				{
-					Console.Error.WriteLine("Warning: error reading {0}: {1}", file, x.Message);
+					throw new FatalCompilerErrorException(Message.ErrorReadingFile, file, x.Message);
 				}
 				break;
 			default:
 			{
 				if(baseDir == null)
 				{
-					Console.Error.WriteLine("Warning: unknown file type: {0}", file);
+					StaticCompiler.IssueMessage(Message.UnknownFileType, file);
 				}
 				else
 				{
 					// include as resource
-					try 
-					{
-						using(FileStream fs = new FileStream(file, FileMode.Open, FileAccess.Read))
-						{
-							byte[] b = new byte[fs.Length];
-							fs.Read(b, 0, b.Length);
-							// extract the resource name by chopping off the base directory
-							string name = file.Substring(baseDir.FullName.Length);
-							if(name.Length > 0 && name[0] == Path.DirectorySeparatorChar)
-							{
-								name = name.Substring(1);
-							}
-							name = name.Replace('\\', '/');
-							AddResource(null, name, b, null);
-						}
-					}
-					catch(UnauthorizedAccessException)
-					{
-						Console.Error.WriteLine("Warning: error reading file {0}: Access Denied", file);
-					}
+					// extract the resource name by chopping off the base directory
+					string name = file.Substring(baseDir.FullName.Length);
+					name = name.TrimStart(Path.DirectorySeparatorChar).Replace('\\', '/');
+					AddResource(null, name, ReadAllBytes(file), null);
 				}
 				break;
 			}
@@ -1277,9 +1271,9 @@ class IkvmcCompiler
 				}
 			}
 		} 
-		catch(FileNotFoundException) 
+		catch(Exception x) 
 		{
-			Console.Error.WriteLine("Warning: could not find exclusion file '{0}'", filename);
+			throw new FatalCompilerErrorException(Message.ErrorReadingFile, filename, x.Message);
 		}
 	}
 }

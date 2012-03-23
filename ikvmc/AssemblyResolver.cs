@@ -182,7 +182,7 @@ namespace IKVM.Internal
 			return null;
 		}
 
-		internal int ResolveReference(Dictionary<string, Assembly> cache, ref Assembly[] references, string reference)
+		internal bool ResolveReference(Dictionary<string, Assembly> cache, ref Assembly[] references, string reference)
 		{
 			string[] files = new string[0];
 			try
@@ -211,8 +211,7 @@ namespace IKVM.Internal
 				}
 				if (asm == null)
 				{
-					Console.Error.WriteLine("Error: reference not found: {0}", reference);
-					return 1;
+					return false;
 				}
 				ArrayAppend(ref references, asm);
 			}
@@ -228,7 +227,7 @@ namespace IKVM.Internal
 					ArrayAppend(ref references, asm);
 				}
 			}
-			return 0;
+			return true;
 		}
 
 		private static void ArrayAppend<T>(ref T[] array, T element)

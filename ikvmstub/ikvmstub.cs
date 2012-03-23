@@ -139,10 +139,10 @@ static class NetExp
 		foreach (string reference in references)
 		{
 			Assembly[] dummy = null;
-			int rc1 = StaticCompiler.Resolver.ResolveReference(cache, ref dummy, reference);
-			if (rc1 != 0)
+			if (!StaticCompiler.Resolver.ResolveReference(cache, ref dummy, reference))
 			{
-				return rc1;
+				Console.Error.WriteLine("Error: reference not found {0}", reference);
+				return 1;
 			}
 		}
 		Assembly assembly = null;
