@@ -282,14 +282,6 @@ namespace IKVM.Internal
 		}
 #endif // !STATIC_COMPILER && !STUB_GENERATOR
 
-		internal virtual string SourcePath
-		{
-			get
-			{
-				return null;
-			}
-		}
-
 		protected virtual void CheckDefineClassAllowed(string className)
 		{
 			// this hook exists so that AssemblyClassLoader can prevent DefineClass when the name is already present in the assembly

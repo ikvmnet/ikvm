@@ -102,7 +102,7 @@ class IkvmcCompiler
 {
 	private bool nonleaf;
 	private string manifestMainClass;
-	private Dictionary<string, byte[]> classes = new Dictionary<string, byte[]>();
+	private Dictionary<string, ClassItem> classes = new Dictionary<string, ClassItem>();
 	private Dictionary<string, List<ResourceItem>> resources = new Dictionary<string, List<ResourceItem>>();
 	private string defaultAssemblyName;
 	private List<string> classesToExclude = new List<string>();
@@ -455,7 +455,7 @@ class IkvmcCompiler
 				nonleaf = true;
 				IkvmcCompiler nestedLevel = new IkvmcCompiler();
 				nestedLevel.manifestMainClass = manifestMainClass;
-				nestedLevel.classes = new Dictionary<string, byte[]>(classes);
+				nestedLevel.classes = new Dictionary<string, ClassItem>(classes);
 				nestedLevel.resources = CompilerOptions.Copy(resources);
 				nestedLevel.defaultAssemblyName = defaultAssemblyName;
 				nestedLevel.classesToExclude = new List<string>(classesToExclude);
@@ -1088,7 +1088,10 @@ class IkvmcCompiler
 			}
 			else
 			{
-				classes.Add(name, buf);
+				ClassItem item;
+				item.data = buf;
+				item.path = zipEntry == null ? filename : null;
+				classes.Add(name, item);
 			}
 		}
 		catch(ClassFormatError x)

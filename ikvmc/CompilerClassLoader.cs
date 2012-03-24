@@ -44,7 +44,7 @@ namespace IKVM.Internal
 {
 	class CompilerClassLoader : ClassLoaderWrapper
 	{
-		private Dictionary<string, byte[]> classes;
+		private Dictionary<string, ClassItem> classes;
 		private Dictionary<string, RemapperTypeWrapper> remapped = new Dictionary<string, RemapperTypeWrapper>();
 		private string assemblyName;
 		private string assemblyFile;
@@ -75,7 +75,7 @@ namespace IKVM.Internal
 		private List<string> jarList = new List<string>();
 		private List<TypeWrapper> allwrappers;
 
-		internal CompilerClassLoader(AssemblyClassLoader[] referencedAssemblies, CompilerOptions options, string path, bool targetIsModule, string assemblyName, Dictionary<string, byte[]> classes)
+		internal CompilerClassLoader(AssemblyClassLoader[] referencedAssemblies, CompilerOptions options, string path, bool targetIsModule, string assemblyName, Dictionary<string, ClassItem> classes)
 			: base(options.codegenoptions, null)
 		{
 			this.referencedAssemblies = referencedAssemblies;
@@ -110,14 +110,6 @@ namespace IKVM.Internal
 		internal void AddReference(CompilerClassLoader ccl)
 		{
 			peerReferences.Add(ccl);
-		}
-
-		internal override string SourcePath
-		{
-			get
-			{
-				return options.sourcepath;
-			}
 		}
 
 		internal AssemblyName GetAssemblyName()
@@ -277,7 +269,7 @@ namespace IKVM.Internal
 			}
 			else
 			{
-				byte[] classdef;
+				ClassItem classdef;
 				if(classes.TryGetValue(name, out classdef))
 				{
 					classes.Remove(name);
@@ -289,7 +281,7 @@ namespace IKVM.Internal
 						{
 							cfp |= ClassFileParseOptions.LineNumberTable;
 						}
-						f = new ClassFile(classdef, 0, classdef.Length, name, cfp);
+						f = new ClassFile(classdef.data, 0, classdef.data.Length, name, cfp);
 					}
 					catch(ClassFormatError x)
 					{
@@ -337,6 +329,24 @@ namespace IKVM.Internal
 						&& options.sharedclassloader == null)
 					{
 						f.SetEffectivelyFinal();
+					}
+					if(f.SourceFileAttribute != null)
+					{
+						if(classdef.path != null)
+						{
+							string sourceFile = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(classdef.path), f.SourceFileAttribute));
+							if(File.Exists(sourceFile))
+							{
+								f.SourcePath = sourceFile;
+							}
+						}
+						if(f.SourcePath == null && options.sourcepath != null)
+						{
+							string package = f.Name;
+							int index = package.LastIndexOf('.');
+							package = index == -1 ? "" : package.Substring(0, index).Replace('.', '/');
+							f.SourcePath = Path.GetFullPath(Path.Combine(options.sourcepath + "/" + package, f.SourceFileAttribute));
+						}
 					}
 					try
 					{
@@ -2729,12 +2739,12 @@ namespace IKVM.Internal
 			List<object> assemblyAnnotations = new List<object>();
 			Dictionary<string, string> baseClasses = new Dictionary<string, string>();
 			Tracer.Info(Tracer.Compiler, "Parsing class files");
-			foreach(KeyValuePair<string, byte[]> kv in options.classes)
+			foreach(KeyValuePair<string, ClassItem> kv in options.classes)
 			{
 				ClassFile f;
 				try
 				{
-					byte[] buf = kv.Value;
+					byte[] buf = kv.Value.data;
 					f = new ClassFile(buf, 0, buf.Length, null, ClassFileParseOptions.None);
 					if(!f.IsInterface && f.SuperClass != null)
 					{
@@ -2764,10 +2774,10 @@ namespace IKVM.Internal
 					}
 				}
 			}
-			Dictionary<string, byte[]> h = new Dictionary<string, byte[]>();
+			Dictionary<string, ClassItem> h = new Dictionary<string, ClassItem>();
 			// HACK remove "assembly" type that exists only as a placeholder for assembly attributes
 			options.classes.Remove("assembly");
-			foreach(KeyValuePair<string, byte[]> kv in options.classes)
+			foreach(KeyValuePair<string, ClassItem> kv in options.classes)
 			{
 				string name = kv.Key;
 				bool excluded = false;
@@ -2984,12 +2994,12 @@ namespace IKVM.Internal
 		{
 			// this function is needed because when using generics a type may be loaded before the stub is seen
 			// and without this check that would cause a spurious IKVMC0109 warning
-			byte[] classdef;
+			ClassItem classdef;
 			if (classes.TryGetValue(className, out classdef))
 			{
 				try
 				{
-					return new ClassFile(classdef, 0, classdef.Length, className, ClassFileParseOptions.RelaxedClassNameValidation).IKVMAssemblyAttribute != null;
+					return new ClassFile(classdef.data, 0, classdef.data.Length, className, ClassFileParseOptions.RelaxedClassNameValidation).IKVMAssemblyAttribute != null;
 				}
 				catch (ClassFormatError)
 				{
@@ -3360,6 +3370,12 @@ namespace IKVM.Internal
 		}
 	}
 
+	struct ClassItem
+	{
+		internal byte[] data;
+		internal string path;
+	}
+
 	struct ResourceItem
 	{
 		internal ICSharpCode.SharpZipLib.Zip.ZipEntry zipEntry;
@@ -3385,7 +3401,7 @@ namespace IKVM.Internal
 		internal ApartmentState apartment;
 		internal PEFileKinds target;
 		internal bool guessFileKind;
-		internal Dictionary<string, byte[]> classes;
+		internal Dictionary<string, ClassItem> classes;
 		internal string[] unresolvedReferences;	// only used during command line parsing
 		internal Assembly[] references;
 		internal string[] peerReferences;
@@ -3420,7 +3436,7 @@ namespace IKVM.Internal
 			CompilerOptions copy = (CompilerOptions)MemberwiseClone();
 			if (classes != null)
 			{
-				copy.classes = new Dictionary<string, byte[]>(classes);
+				copy.classes = new Dictionary<string, ClassItem>(classes);
 			}
 			if (resources != null)
 			{

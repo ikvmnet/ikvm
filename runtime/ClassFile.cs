@@ -72,6 +72,9 @@ namespace IKVM.Internal
 		private Field[] fields;
 		private Method[] methods;
 		private string sourceFile;
+#if STATIC_COMPILER
+		private string sourcePath;
+#endif
 		private string ikvmAssembly;
 		private InnerClass[] innerClasses;
 		private object[] annotations;
@@ -1131,6 +1134,16 @@ namespace IKVM.Internal
 			{
 				return sourceFile;
 			}
+		}
+
+		internal string SourcePath
+		{
+#if STATIC_COMPILER
+			get { return sourcePath; }
+			set { sourcePath = value; }
+#else
+			get { return sourceFile; }
+#endif
 		}
 
 		internal object[] Annotations

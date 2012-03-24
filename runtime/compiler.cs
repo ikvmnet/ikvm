@@ -852,17 +852,9 @@ sealed class Compiler
 		ClassLoaderWrapper classLoader = clazz.GetClassLoader();
 		if(classLoader.EmitDebugInfo)
 		{
-			string sourcefile = classFile.SourceFileAttribute;
-			if(sourcefile != null)
+			if(classFile.SourcePath != null)
 			{
-				if(classLoader.SourcePath != null)
-				{
-					string package = clazz.Name;
-					int index = package.LastIndexOf('.');
-					package = index == -1 ? "" : package.Substring(0, index).Replace('.', '/');
-					sourcefile = new System.IO.FileInfo(classLoader.SourcePath + "/" + package + "/" + sourcefile).FullName;
-				}
-				ilGenerator.DefineSymbolDocument(classLoader.GetTypeWrapperFactory().ModuleBuilder, sourcefile, SymLanguageType.Java, Guid.Empty, SymDocumentType.Text);
+				ilGenerator.DefineSymbolDocument(classLoader.GetTypeWrapperFactory().ModuleBuilder, classFile.SourcePath, SymLanguageType.Java, Guid.Empty, SymDocumentType.Text);
 				// the very first instruction in the method must have an associated line number, to be able
 				// to step into the method in Visual Studio .NET
 				ClassFile.Method.LineNumberTableEntry[] table = m.LineNumberTableAttribute;
