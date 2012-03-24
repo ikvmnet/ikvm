@@ -340,12 +340,19 @@ namespace IKVM.Internal
 								f.SourcePath = sourceFile;
 							}
 						}
-						if(f.SourcePath == null && options.sourcepath != null)
+						if(f.SourcePath == null)
 						{
-							string package = f.Name;
-							int index = package.LastIndexOf('.');
-							package = index == -1 ? "" : package.Substring(0, index).Replace('.', '/');
-							f.SourcePath = Path.GetFullPath(Path.Combine(options.sourcepath + "/" + package, f.SourceFileAttribute));
+							if (options.sourcepath != null)
+							{
+								string package = f.Name;
+								int index = package.LastIndexOf('.');
+								package = index == -1 ? "" : package.Substring(0, index).Replace('.', '/');
+								f.SourcePath = Path.GetFullPath(Path.Combine(options.sourcepath + "/" + package, f.SourceFileAttribute));
+							}
+							else
+							{
+								f.SourcePath = f.SourceFileAttribute;
+							}
 						}
 					}
 					try
