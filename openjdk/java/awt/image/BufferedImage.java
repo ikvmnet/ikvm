@@ -25,6 +25,7 @@
 
 package java.awt.image;
 
+import cli.System.Drawing.Color;
 import cli.System.Drawing.Imaging.*;
 
 import java.awt.Transparency;
@@ -1077,9 +1078,22 @@ public class BufferedImage extends java.awt.Image
      * @see #getRGB(int, int, int, int, int[], int, int)
      */
     public synchronized void setRGB(int x, int y, int rgb) {
-        bitmap2Raster();
-        this.currentBuffer = BUFFER_RASTER;
-        raster.setDataElements(x, y, colorModel.getDataElements(rgb, null));
+    	switch( currentBuffer ) {
+    	case BUFFER_BITMAP:
+    		synchronized (bitmap) {
+    			bitmap.SetPixel(x, y, Color.FromArgb(rgb));
+			}
+    		break;
+    	case BUFFER_RASTER:
+    		raster.setDataElements(x, y, colorModel.getDataElements(rgb, null));
+    		break;
+    	case BUFFER_BOTH:
+    		raster.setDataElements(x, y, colorModel.getDataElements(rgb, null));
+    		synchronized (bitmap) {
+    			bitmap.SetPixel(x, y, Color.FromArgb(rgb));
+			}
+    		break;
+    	}
     }
 
     /**
@@ -1114,17 +1128,13 @@ public class BufferedImage extends java.awt.Image
      */
     public void setRGB(int startX, int startY, int w, int h,
                         int[] rgbArray, int offset, int scansize) {
-        bitmap2Raster();
-        this.currentBuffer = BUFFER_RASTER;
         int yoff  = offset;
         int off;
-        Object pixel = null;
 
         for (int y = startY; y < startY+h; y++, yoff+=scansize) {
             off = yoff;
             for (int x = startX; x < startX+w; x++) {
-                pixel = colorModel.getDataElements(rgbArray[off++], pixel);
-                raster.setDataElements(x, y, pixel);
+            	setRGB(x, y, rgbArray[off++]);
             }
         }
     }
