@@ -92,6 +92,63 @@ sealed class FatalCompilerErrorException : Exception
 				return "No output file specified";
 			case IKVM.Internal.Message.SharedClassLoaderCannotBeUsedOnModuleTarget:
 				return "Incompatible options: -target:module and -sharedclassloader cannot be combined";
+			case IKVM.Internal.Message.RuntimeNotFound:
+				return "Unable to load runtime assembly";
+			case IKVM.Internal.Message.MainClassRequiresExe:
+				return "Main class cannot be specified for library or module";
+			case IKVM.Internal.Message.ExeRequiresMainClass:
+				return "No main method found";
+			case IKVM.Internal.Message.PropertiesRequireExe:
+				return "Properties cannot be specified for library or module";
+			case IKVM.Internal.Message.ModuleCannotHaveClassLoader:
+				return "Cannot specify assembly class loader for modules";
+			case IKVM.Internal.Message.ErrorParsingMapFile:
+				return "Unable to parse remap file: {0}\n\t({1})";
+			case IKVM.Internal.Message.BootstrapClassesMissing:
+				return "Bootstrap classes missing and core assembly not found";
+			case IKVM.Internal.Message.StrongNameRequiresStrongNamedRefs:
+				return "All referenced assemblies must be strong named, to be able to sign the output assembly";
+			case IKVM.Internal.Message.MainClassNotFound:
+				return "Main class not found";
+			case IKVM.Internal.Message.MainMethodNotFound:
+				return "Main method not found";
+			case IKVM.Internal.Message.UnsupportedMainMethod:
+				return "Redirected main method not supported";
+			case IKVM.Internal.Message.ExternalMainNotAccessible:
+				return "External main method must be public and in a public class";
+			case IKVM.Internal.Message.ClassLoaderNotFound:
+				return "Custom assembly class loader class not found";
+			case IKVM.Internal.Message.ClassLoaderNotAccessible:
+				return "Custom assembly class loader class is not accessible";
+			case IKVM.Internal.Message.ClassLoaderIsAbstract:
+				return "Custom assembly class loader class is abstract";
+			case IKVM.Internal.Message.ClassLoaderNotClassLoader:
+				return "Custom assembly class loader class does not extend java.lang.ClassLoader";
+			case IKVM.Internal.Message.ClassLoaderConstructorMissing:
+				return "Custom assembly class loader constructor is missing";
+			case IKVM.Internal.Message.MapFileTypeNotFound:
+				return "Type '{0}' referenced in remap file was not found";
+			case IKVM.Internal.Message.MapFileClassNotFound:
+				return "Class '{0}' referenced in remap file was not found";
+			case IKVM.Internal.Message.MaximumErrorCountReached:
+				return "Maximum error count reached";
+			case IKVM.Internal.Message.LinkageError:
+				return "Link error: {0}";
+			case IKVM.Internal.Message.RuntimeMismatch:
+				return "Referenced assembly {0} was compiled with an incompatible IKVM.Runtime version\n" +
+					"\tCurrent runtime: {1}\n" +
+					"\tReferenced assembly runtime: {2}";
+			case IKVM.Internal.Message.CoreClassesMissing:
+				return "Failed to find core classes in core library";
+			case IKVM.Internal.Message.CriticalClassNotFound:
+				return "Unable to load critical class '{0}'";
+			case IKVM.Internal.Message.AssemblyContainsDuplicateClassNames:
+				return "Type '{0}' and '{1}' both map to the same name '{2}'\n" +
+					"\t({3})";
+			case IKVM.Internal.Message.CallerIDRequiresHasCallerIDAnnotation:
+				return "CallerID.getCallerID() requires a HasCallerID annotation";
+			case IKVM.Internal.Message.UnableToResolveInterface:
+				return "Unable to resolve interface '{0}' on type '{1}'";
 			default:
 				return "Missing Error Message. Please file a bug.";
 		}
@@ -168,8 +225,7 @@ class IkvmcCompiler
 		Tracer.EnableTraceForDebug();
 		try
 		{
-			Compile(args);
-			return 0;
+			return Compile(args);
 		}
 		catch (FatalCompilerErrorException x)
 		{
@@ -178,8 +234,13 @@ class IkvmcCompiler
 		}
 		catch (Exception x)
 		{
-			Console.Error.WriteLine("Internal Compiler Error: {0}", x);
-			return 1;
+			Console.Error.WriteLine();
+			Console.Error.WriteLine("*** INTERNAL COMPILER ERROR ***");
+			Console.Error.WriteLine();
+			Console.Error.WriteLine("PLEASE FILE A BUG REPORT FOR IKVM.NET WHEN YOU SEE THIS MESSAGE");
+			Console.Error.WriteLine();
+			Console.Error.WriteLine(x);
+			return 2;
 		}
 		finally
 		{
@@ -197,13 +258,13 @@ class IkvmcCompiler
 		}
 	}
 
-	static void Compile(string[] args)
+	static int Compile(string[] args)
 	{
 		List<string> argList = GetArgs(args);
 		if (argList.Count == 0 || argList.Contains("-?") || argList.Contains("-help"))
 		{
 			PrintHelp();
-			return;
+			return 0;
 		}
 		if (!argList.Contains("-nologo"))
 		{
@@ -224,11 +285,11 @@ class IkvmcCompiler
 		}
 		if (StaticCompiler.errorCount != 0)
 		{
-			return;
+			return 1;
 		}
 		try
 		{
-			CompilerClassLoader.Compile(runtimeAssembly, targets);
+			return CompilerClassLoader.Compile(runtimeAssembly, targets);
 		}
 		catch (FileFormatLimitationExceededException x)
 		{
@@ -307,7 +368,7 @@ class IkvmcCompiler
 		}
 	}
 
-	static byte[] ReadAllBytes(string path)
+	internal static byte[] ReadAllBytes(string path)
 	{
 		try
 		{

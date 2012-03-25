@@ -250,13 +250,14 @@ namespace IKVM.Internal
 			return (int)key;
 		}
 
+#if !STATIC_COMPILER
 		internal static void CriticalFailure(string message, Exception x)
 		{
 			try
 			{
 				Tracer.Error(Tracer.Runtime, "CRITICAL FAILURE: {0}", message);
 				System.Type messageBox = null;
-#if !STATIC_COMPILER && !STUB_GENERATOR
+#if !STUB_GENERATOR
 				// NOTE we use reflection to invoke MessageBox.Show, to make sure we run in environments where WinForms isn't available
 				Assembly winForms = IsUnix ? null : Assembly.Load("System.Windows.Forms, Version=1.0.5000.0, Culture=neutral, PublicKeyToken=b77a5c561934e089");
 				if(winForms != null)
@@ -301,6 +302,7 @@ namespace IKVM.Internal
 				Environment.Exit(666);
 			}
 		}
+#endif // !STATIC_COMPILER
 
 #if STATIC_COMPILER || STUB_GENERATOR
 		internal static Type LoadType(System.Type type)

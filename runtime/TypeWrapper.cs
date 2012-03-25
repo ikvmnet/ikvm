@@ -3777,7 +3777,11 @@ namespace IKVM.Internal
 					}
 					if (interfaceWrappers[i] == null)
 					{
+#if STATIC_COMPILER
+						throw new FatalCompilerErrorException(Message.UnableToResolveInterface, interfaceNames[i], this);
+#else
 						JVM.CriticalFailure("Unable to resolve interface " + interfaceNames[i] + " on type " + this, null);
+#endif
 					}
 				}
 			}

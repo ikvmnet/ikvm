@@ -908,10 +908,14 @@ namespace IKVM.Internal
 						}
 					}
 				}
+#if STATIC_COMPILER
+				finally { }
+#else
 				catch (Exception x)
 				{
 					JVM.CriticalFailure("Exception during JavaTypeImpl.CreateStep2", x);
 				}
+#endif
 			}
 
 			private sealed class DelegateConstructorMethodWrapper : MethodWrapper
@@ -1632,17 +1636,13 @@ namespace IKVM.Internal
 					finishedType = new FinishedTypeImpl(type, innerClassesTypeWrappers, declaringTypeWrapper, wrapper.ReflectiveModifiers, Metadata.Create(classFile), finishedClinitMethod, finalizeMethod);
 					return finishedType;
 				}
-#if STATIC_COMPILER
-				catch (FileFormatLimitationExceededException)
-				{
-					throw;
-				}
-#endif
+#if !STATIC_COMPILER
 				catch (Exception x)
 				{
 					JVM.CriticalFailure("Exception during finishing of: " + wrapper.Name, x);
 					return null;
 				}
+#endif
 				finally
 				{
 					Profiler.Leave("JavaTypeImpl.Finish.Core");

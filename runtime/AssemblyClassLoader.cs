@@ -675,8 +675,12 @@ namespace IKVM.Internal
 				{
 					// this really shouldn't happen, it means that we have two different types in our assembly that both
 					// have the same Java name
+#if STATIC_COMPILER
+					throw new FatalCompilerErrorException(Message.AssemblyContainsDuplicateClassNames, type.FullName, wrapper.TypeAsTBD.FullName, wrapper.Name, type.Assembly.FullName);
+#else
 					string msg = String.Format("\nType \"{0}\" and \"{1}\" both map to the same name \"{2}\".\n", type.FullName, wrapper.TypeAsTBD.FullName, wrapper.Name);
 					JVM.CriticalFailure(msg, null);
+#endif
 				}
 				return wrapper;
 			}

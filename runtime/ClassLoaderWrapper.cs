@@ -132,7 +132,11 @@ namespace IKVM.Internal
 				}
 				else
 				{
+#if STATIC_COMPILER
+					throw new FatalCompilerErrorException(Message.CoreClassesMissing);
+#else
 					JVM.CriticalFailure("Failed to find core classes in core library", null);
+#endif
 				}
 			}
 		}
@@ -1204,6 +1208,14 @@ namespace IKVM.Internal
 
 		internal static TypeWrapper LoadClassCritical(string name)
 		{
+#if STATIC_COMPILER
+			TypeWrapper wrapper = GetBootstrapClassLoader().LoadClassByDottedNameFast(name);
+			if (wrapper == null)
+			{
+				throw new FatalCompilerErrorException(Message.CriticalClassNotFound, name);
+			}
+			return wrapper;
+#else
 			try
 			{
 				return GetBootstrapClassLoader().LoadClassByDottedName(name);
@@ -1213,6 +1225,7 @@ namespace IKVM.Internal
 				JVM.CriticalFailure("Loading of critical class failed", x);
 				return null;
 			}
+#endif
 		}
 
 		internal void RegisterNativeLibrary(IntPtr p)

@@ -386,6 +386,7 @@ namespace IKVM.Internal
 			return AtomicReferenceFieldUpdaterEmitter.Emit(eic.Context, eic.Caller.DeclaringType, eic.Emitter, eic.ClassFile, eic.OpcodeIndex, eic.Code, eic.Flags);
 		}
 
+#if STATIC_COMPILER
 		private static bool String_toCharArray(EmitIntrinsicContext eic)
 		{
 			if (eic.MatchRange(-1, 2)
@@ -446,15 +447,10 @@ namespace IKVM.Internal
 			// NOTE this also means that this will only work during static compilation, because ModuleBuilder.CreateGlobalFunctions() must
 			// be called before the field can be used.
 			FieldBuilder fb = mod.DefineInitializedData("__<str>", data, FieldAttributes.Static | FieldAttributes.PrivateScope);
-			// MONOBUG Type.Equals(Type) is broken on Mono. We have to use the virtual method that ends up in our implementation
-			if (!fb.FieldType.Equals((object)type))
-			{
-				// this is actually relatively harmless, but I would like to know about it, so we abort and hope that users report this when they encounter it
-				JVM.CriticalFailure("Unsupported runtime: ModuleBuilder.DefineInitializedData() field type mispredicted", null);
-			}
 			ilgen.Emit(OpCodes.Ldtoken, fb);
 			ilgen.Emit(OpCodes.Call, JVM.Import(typeof(System.Runtime.CompilerServices.RuntimeHelpers)).GetMethod("InitializeArray", new Type[] { Types.Array, JVM.Import(typeof(RuntimeFieldHandle)) }));
 		}
+#endif
 
 		private static bool Reflection_getCallerClass(EmitIntrinsicContext eic)
 		{
@@ -509,9 +505,13 @@ namespace IKVM.Internal
 			}
 			else
 			{
+#if STATIC_COMPILER
+				throw new FatalCompilerErrorException(Message.CallerIDRequiresHasCallerIDAnnotation);
+#else
 				JVM.CriticalFailure("CallerID.getCallerID() requires a HasCallerID annotation", null);
+				return false;
+#endif
 			}
-			return false;
 		}
 
 		private static bool Util_getInstanceTypeFromClass(EmitIntrinsicContext eic)

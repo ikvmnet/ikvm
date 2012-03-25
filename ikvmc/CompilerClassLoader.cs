@@ -583,12 +583,26 @@ namespace IKVM.Internal
 			if(targetIsModule)
 			{
 				Tracer.Info(Tracer.Compiler, "CompilerClassLoader saving {0} in {1}", assemblyFile, assemblyDir);
-				GetTypeWrapperFactory().ModuleBuilder.__Save(options.pekind, options.imageFileMachine);
+				try
+				{
+					GetTypeWrapperFactory().ModuleBuilder.__Save(options.pekind, options.imageFileMachine);
+				}
+				catch(IOException x)
+				{
+					throw new FatalCompilerErrorException(Message.ErrorWritingFile, GetTypeWrapperFactory().ModuleBuilder.FullyQualifiedName, x.Message);
+				}
 			}
 			else
 			{
 				Tracer.Info(Tracer.Compiler, "CompilerClassLoader saving {0} in {1}", assemblyFile, assemblyDir);
-				assemblyBuilder.Save(assemblyFile, options.pekind, options.imageFileMachine);
+				try
+				{
+					assemblyBuilder.Save(assemblyFile, options.pekind, options.imageFileMachine);
+				}
+				catch(IOException x)
+				{
+					throw new FatalCompilerErrorException(Message.ErrorWritingFile, Path.Combine(assemblyDir, assemblyFile), x.Message);
+				}
 			}
 		}
 
@@ -2598,8 +2612,7 @@ namespace IKVM.Internal
 			{
 				if(StaticCompiler.runtimeAssembly == null)
 				{
-					Console.Error.WriteLine("Error: unable to load runtime assembly");
-					return 1;
+					throw new FatalCompilerErrorException(Message.RuntimeNotFound);
 				}
 				StaticCompiler.IssueMessage(Message.NoJniRuntime);
 			}
@@ -2671,26 +2684,18 @@ namespace IKVM.Internal
 					return rc;
 				}
 			}
-			try
+			Tracer.Info(Tracer.Compiler, "CompilerClassLoader.Save...");
+			foreach (CompilerClassLoader compiler in compilers)
 			{
-				Tracer.Info(Tracer.Compiler, "CompilerClassLoader.Save...");
-				foreach (CompilerClassLoader compiler in compilers)
-				{
-					compiler.PrepareSave();
-				}
-				if (StaticCompiler.errorCount > 0)
-				{
-					return 1;
-				}
-				foreach (CompilerClassLoader compiler in compilers)
-				{
-					compiler.Save();
-				}
+				compiler.PrepareSave();
 			}
-			catch (IOException x)
+			if (StaticCompiler.errorCount > 0)
 			{
-				Console.Error.WriteLine("Error: {0}", x.Message);
 				return 1;
+			}
+			foreach (CompilerClassLoader compiler in compilers)
+			{
+				compiler.Save();
 			}
 			return StaticCompiler.errorCount == 0 ? 0 : 1;
 		}
@@ -2703,44 +2708,31 @@ namespace IKVM.Internal
 			List<Assembly> references = new List<Assembly>();
 			foreach(Assembly reference in options.references ?? new Assembly[0])
 			{
-				try
+				references.Add(reference);
+				allReferencesAreStrongNamed &= IsSigned(reference);
+				Tracer.Info(Tracer.Compiler, "Loaded reference assembly: {0}", reference.FullName);
+				// if it's an IKVM compiled assembly, make sure that it was compiled
+				// against same version of the runtime
+				foreach(AssemblyName asmref in reference.GetReferencedAssemblies())
 				{
-					references.Add(reference);
-					allReferencesAreStrongNamed &= IsSigned(reference);
-					Tracer.Info(Tracer.Compiler, "Loaded reference assembly: {0}", reference.FullName);
-					// if it's an IKVM compiled assembly, make sure that it was compiled
-					// against same version of the runtime
-					foreach(AssemblyName asmref in reference.GetReferencedAssemblies())
+					if(asmref.Name == runtimeAssemblyName.Name)
 					{
-						if(asmref.Name == runtimeAssemblyName.Name)
+						if(IsSigned(StaticCompiler.runtimeAssembly))
 						{
-							if(IsSigned(StaticCompiler.runtimeAssembly))
+							// TODO we really should support binding redirects here to allow different revisions to be mixed
+							if(asmref.FullName != runtimeAssemblyName.FullName)
 							{
-								if(asmref.FullName != runtimeAssemblyName.FullName)
-								{
-									Console.Error.WriteLine("Error: referenced assembly {0} was compiled with an incompatible IKVM.Runtime version ({1})", reference.Location, asmref.Version);
-									Console.Error.WriteLine("   Current runtime: {0}", runtimeAssemblyName.FullName);
-									Console.Error.WriteLine("   Referenced assembly runtime: {0}", asmref.FullName);
-									return 1;
-								}
+								throw new FatalCompilerErrorException(Message.RuntimeMismatch, reference.Location, runtimeAssemblyName.FullName, asmref.FullName);
 							}
-							else
+						}
+						else
+						{
+							if(asmref.GetPublicKeyToken() != null && asmref.GetPublicKeyToken().Length != 0)
 							{
-								if(asmref.GetPublicKeyToken() != null && asmref.GetPublicKeyToken().Length != 0)
-								{
-									Console.Error.WriteLine("Error: referenced assembly {0} was compiled with an incompatible (signed) IKVM.Runtime version", reference.Location);
-									Console.Error.WriteLine("   Current runtime: {0}", runtimeAssemblyName.FullName);
-									Console.Error.WriteLine("   Referenced assembly runtime: {0}", asmref.FullName);
-									return 1;
-								}
+								throw new FatalCompilerErrorException(Message.RuntimeMismatch, reference.Location, runtimeAssemblyName.FullName, asmref.FullName);
 							}
 						}
 					}
-				}
-				catch(Exception x)
-				{
-					Console.Error.WriteLine("Error: invalid reference: {0} ({1})", reference.Location, x.Message);
-					return 1;
 				}
 			}
 			List<object> assemblyAnnotations = new List<object>();
@@ -2815,20 +2807,17 @@ namespace IKVM.Internal
 
 			if(options.target == PEFileKinds.Dll && options.mainClass != null)
 			{
-				Console.Error.WriteLine("Error: main class cannot be specified for library or module");
-				return 1;
+				throw new FatalCompilerErrorException(Message.MainClassRequiresExe);
 			}
 
 			if(options.target != PEFileKinds.Dll && options.mainClass == null)
 			{
-				Console.Error.WriteLine("Error: no main method found");
-				return 1;
+				throw new FatalCompilerErrorException(Message.ExeRequiresMainClass);
 			}
 
 			if(options.target == PEFileKinds.Dll && options.props.Count != 0)
 			{
-				Console.Error.WriteLine("Error: properties cannot be specified for library or module");
-				return 1;
+				throw new FatalCompilerErrorException(Message.PropertiesRequireExe);
 			}
 
 			if(options.path == null)
@@ -2855,23 +2844,10 @@ namespace IKVM.Internal
 			{
 				if(options.classLoader != null)
 				{
-					Console.Error.WriteLine("Error: cannot specify assembly class loader for modules");
-					return 1;
+					throw new FatalCompilerErrorException(Message.ModuleCannotHaveClassLoader);
 				}
 				// TODO if we're overwriting a user specified assembly name, we need to emit a warning
 				options.assembly = new FileInfo(options.path).Name;
-			}
-
-			if(options.target == PEFileKinds.Dll && !options.path.ToLower().EndsWith(".dll") && !options.targetIsModule)
-			{
-				Console.Error.WriteLine("Error: library output file must end with .dll");
-				return 1;
-			}
-
-			if(options.target != PEFileKinds.Dll && !options.path.ToLower().EndsWith(".exe"))
-			{
-				Console.Error.WriteLine("Error: executable output file must end with .exe");
-				return 1;
 			}
 
 			Tracer.Info(Tracer.Compiler, "Constructing compiler");
@@ -2906,8 +2882,7 @@ namespace IKVM.Internal
 				}
 				catch(Exception x)
 				{
-					Console.Error.WriteLine("Error opening remap file \"{0}\": {1}", options.remapfile, x.Message);
-					return 1;
+					throw new FatalCompilerErrorException(Message.ErrorReadingFile, options.remapfile, x.Message);
 				}
 				try
 				{
@@ -2920,8 +2895,7 @@ namespace IKVM.Internal
 					}
 					catch(InvalidOperationException x)
 					{
-						Console.Error.WriteLine("Error parsing remap file \"{0}\": {1}", options.remapfile, x.Message);
-						return 1;
+						throw new FatalCompilerErrorException(Message.ErrorParsingMapFile, options.remapfile, x.Message);
 					}
 					if(!loader.ValidateAndSetMap(map))
 					{
@@ -2960,8 +2934,7 @@ namespace IKVM.Internal
 				}
 				if(JVM.CoreAssembly == null)
 				{
-					Console.Error.WriteLine("Error: bootstrap classes missing and core assembly not found");
-					return 1;
+					throw new FatalCompilerErrorException(Message.BootstrapClassesMissing);
 				}
 				// we need to scan again for remapped types, now that we've loaded the core library
 				ClassLoaderWrapper.LoadRemappedTypes();
@@ -2975,8 +2948,7 @@ namespace IKVM.Internal
 
 			if((options.keyPair != null || options.publicKey != null) && !allReferencesAreStrongNamed)
 			{
-				Console.Error.WriteLine("Error: all referenced assemblies must be strong named, to be able to sign the output assembly");
-				return 1;
+				throw new FatalCompilerErrorException(Message.StrongNameRequiresStrongNamedRefs);
 			}
 
 			if(loader.map != null)
@@ -3102,27 +3074,23 @@ namespace IKVM.Internal
 				}
 				if(wrapper == null)
 				{
-					Console.Error.WriteLine("Error: main class not found");
-					return 1;
+					throw new FatalCompilerErrorException(Message.MainClassNotFound);
 				}
 				MethodWrapper mw = wrapper.GetMethodWrapper("main", "([Ljava.lang.String;)V", false);
-				if(mw == null)
+				if(mw == null || !mw.IsStatic)
 				{
-					Console.Error.WriteLine("Error: main method not found");
-					return 1;
+					throw new FatalCompilerErrorException(Message.MainMethodNotFound);
 				}
 				mw.Link();
 				MethodInfo method = mw.GetMethod() as MethodInfo;
 				if(method == null)
 				{
-					Console.Error.WriteLine("Error: redirected main method not supported");
-					return 1;
+					throw new FatalCompilerErrorException(Message.UnsupportedMainMethod);
 				}
 				if(!ReflectUtil.IsFromAssembly(method.DeclaringType, assemblyBuilder)
 					&& (!method.IsPublic || !method.DeclaringType.IsPublic))
 				{
-					Console.Error.WriteLine("Error: external main method must be public and in a public class");
-					return 1;
+					throw new FatalCompilerErrorException(Message.ExternalMainNotAccessible);
 				}
 				Type apartmentAttributeType = null;
 				if(options.apartment == ApartmentState.STA)
@@ -3175,29 +3143,24 @@ namespace IKVM.Internal
 				}
 				if(wrapper == null)
 				{
-					Console.Error.WriteLine("Error: custom assembly class loader class not found");
-					return 1;
+					throw new FatalCompilerErrorException(Message.ClassLoaderNotFound);
 				}
 				if(!wrapper.IsPublic && !ReflectUtil.IsFromAssembly(wrapper.TypeAsBaseType, assemblyBuilder))
 				{
-					Console.Error.WriteLine("Error: custom assembly class loader class is not accessible");
-					return 1;
+					throw new FatalCompilerErrorException(Message.ClassLoaderNotAccessible);
 				}
 				if(wrapper.IsAbstract)
 				{
-					Console.Error.WriteLine("Error: custom assembly class loader class is abstract");
-					return 1;
+					throw new FatalCompilerErrorException(Message.ClassLoaderIsAbstract);
 				}
 				if(!wrapper.IsAssignableTo(ClassLoaderWrapper.LoadClassCritical("java.lang.ClassLoader")))
 				{
-					Console.Error.WriteLine("Error: custom assembly class loader class does not extend java.lang.ClassLoader");
-					return 1;
+					throw new FatalCompilerErrorException(Message.ClassLoaderNotClassLoader);
 				}
 				MethodWrapper mw = wrapper.GetMethodWrapper("<init>", "(Lcli.System.Reflection.Assembly;)V", false);
 				if(mw == null)
 				{
-					Console.Error.WriteLine("Error: custom assembly class loader constructor is missing");
-					return 1;
+					throw new FatalCompilerErrorException(Message.ClassLoaderConstructorMissing);
 				}
 				ConstructorInfo ci = JVM.LoadType(typeof(CustomAssemblyClassLoaderAttribute)).GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { Types.Type }, null);
 				assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(ci, new object[] { wrapper.TypeAsTBD }));
@@ -3217,25 +3180,11 @@ namespace IKVM.Internal
 			}
 			if (options.iconfile != null)
 			{
-				try
-				{
-					assemblyBuilder.__DefineIconResource(File.ReadAllBytes(options.iconfile));
-				}
-				catch (Exception x)
-				{
-					Console.Error.WriteLine("Error: unable to read icon file.\r\n\t'{0}' -- {1}", options.iconfile, x.Message);
-				}
+				assemblyBuilder.__DefineIconResource(IkvmcCompiler.ReadAllBytes(options.iconfile));
 			}
 			if (options.manifestFile != null)
 			{
-				try
-				{
-					assemblyBuilder.__DefineManifestResource(File.ReadAllBytes(options.manifestFile));
-				}
-				catch (Exception x)
-				{
-					Console.Error.WriteLine("Error: unable to read manifest file.\r\n\t'{0}' -- {1}", options.manifestFile, x.Message);
-				}
+				assemblyBuilder.__DefineManifestResource(IkvmcCompiler.ReadAllBytes(options.manifestFile));
 			}
 			assemblyBuilder.DefineVersionInfoResource();
 			return 0;
@@ -3243,14 +3192,12 @@ namespace IKVM.Internal
 
 		private static void ser_UnknownElement(object sender, System.Xml.Serialization.XmlElementEventArgs e)
 		{
-			Console.Error.WriteLine("Unknown element {0} in XML mapping file, line {1}, column {2}", e.Element.Name, e.LineNumber, e.LinePosition);
-			Environment.Exit(1);
+			StaticCompiler.IssueMessage(Message.UnknownElementInMapFile, e.Element.Name, e.LineNumber.ToString(), e.LinePosition.ToString());
 		}
 
 		private static void ser_UnknownAttribute(object sender, System.Xml.Serialization.XmlAttributeEventArgs e)
 		{
-			Console.Error.WriteLine("Unknown attribute {0} in XML mapping file, line {1}, column {2}", e.Attr.Name, e.LineNumber, e.LinePosition);
-			Environment.Exit(1);
+			StaticCompiler.IssueMessage(Message.UnknownAttributeInMapFile, e.Attr.Name, e.LineNumber.ToString(), e.LinePosition.ToString());
 		}
 
 		private bool ValidateAndSetMap(IKVM.Internal.MapXml.Root map)
@@ -3304,12 +3251,12 @@ namespace IKVM.Internal
 			if (!IsValidName(name))
 			{
 				valid = false;
-				Console.Error.WriteLine("Error: Invalid {0} name '{2}' in remap file in class {1}", member, clazz, name, sig);
+				StaticCompiler.IssueMessage(Message.InvalidMemberNameInMapFile, member, name, clazz);
 			}
 			if (!IsValidSig(sig, field))
 			{
 				valid = false;
-				Console.Error.WriteLine("Error: Invalid {0} signature '{3}' in remap file for {0} {1}.{2}", member, clazz, name, sig);
+				StaticCompiler.IssueMessage(Message.InvalidMemberSignatureInMapFile, member, clazz, name, sig);
 			}
 		}
 
@@ -3320,12 +3267,12 @@ namespace IKVM.Internal
 				if (!IsValidName(method.Name))
 				{
 					valid = false;
-					Console.Error.WriteLine("Error: Invalid property {0} name '{3}' in remap file for property {1}.{2}", getterOrSetter, clazz, property, method.Name, method.Sig);
+					StaticCompiler.IssueMessage(Message.InvalidPropertyNameInMapFile, getterOrSetter, clazz, property, method.Name);
 				}
 				if (!ClassFile.IsValidMethodSig(method.Sig))
 				{
 					valid = false;
-					Console.Error.WriteLine("Error: Invalid property {0} signature '{4}' in remap file for property {1}.{2}", getterOrSetter, clazz, property, method.Name, method.Sig);
+					StaticCompiler.IssueMessage(Message.InvalidPropertySignatureInMapFile, getterOrSetter, clazz, property, method.Sig);
 				}
 			}
 		}
@@ -3524,6 +3471,12 @@ namespace IKVM.Internal
 		MapXmlError = 4004,
 		InputFileNotFound = 4005,
 		UnknownFileType = 4006,
+		UnknownElementInMapFile = 4007,
+		UnknownAttributeInMapFile = 4008,
+		InvalidMemberNameInMapFile = 4009,
+		InvalidMemberSignatureInMapFile = 4010,
+		InvalidPropertyNameInMapFile = 4011,
+		InvalidPropertySignatureInMapFile = 4012,
 		// Fatal errors
 		ResponseFileDepthExceeded = 5000,
 		ErrorReadingFile = 5001,
@@ -3550,6 +3503,34 @@ namespace IKVM.Internal
 		UnrecognizedOption = 5022,
 		NoOutputFileSpecified = 5023,
 		SharedClassLoaderCannotBeUsedOnModuleTarget = 5024,
+		RuntimeNotFound = 5025,
+		MainClassRequiresExe = 5026,
+		ExeRequiresMainClass = 5027,
+		PropertiesRequireExe = 5028,
+		ModuleCannotHaveClassLoader = 5029,
+		ErrorParsingMapFile = 5030,
+		BootstrapClassesMissing = 5031,
+		StrongNameRequiresStrongNamedRefs = 5032,
+		MainClassNotFound = 5033,
+		MainMethodNotFound = 5034,
+		UnsupportedMainMethod = 5035,
+		ExternalMainNotAccessible = 5036,
+		ClassLoaderNotFound = 5037,
+		ClassLoaderNotAccessible = 5038,
+		ClassLoaderIsAbstract = 5039,
+		ClassLoaderNotClassLoader = 5040,
+		ClassLoaderConstructorMissing = 5041,
+		MapFileTypeNotFound = 5042,
+		MapFileClassNotFound = 5043,
+		MaximumErrorCountReached = 5044,
+		LinkageError = 5045,
+		RuntimeMismatch = 5046,
+		RuntimeMismatchStrongName = 5047,
+		CoreClassesMissing = 5048,
+		CriticalClassNotFound = 5049,
+		AssemblyContainsDuplicateClassNames = 5050,
+		CallerIDRequiresHasCallerIDAnnotation = 5051,
+		UnableToResolveInterface = 5052,
 	}
 
 	static class StaticCompiler
@@ -3592,8 +3573,7 @@ namespace IKVM.Internal
 			Type type = GetType(loader, name);
 			if (type == null)
 			{
-				Console.Error.WriteLine("Error: type '{0}' referenced in xml remap file was not found", name);
-				Environment.Exit(1);
+				throw new FatalCompilerErrorException(Message.MapFileTypeNotFound, name);
 			}
 			return type;
 		}
@@ -3603,8 +3583,7 @@ namespace IKVM.Internal
 			TypeWrapper tw = loader.LoadClassByDottedNameFast(name);
 			if (tw == null)
 			{
-				Console.Error.WriteLine("Error: class '{0}' referenced in xml remap file was not found", name);
-				Environment.Exit(1);
+				throw new FatalCompilerErrorException(Message.MapFileClassNotFound, name);
 			}
 			return tw;
 		}
@@ -3793,6 +3772,24 @@ namespace IKVM.Internal
 				case Message.UnknownFileType:
 					msg = "Unknown file type: {0}";
 					break;
+				case Message.UnknownElementInMapFile:
+					msg = "Unknown element {0} in remap file, line {1}, column {2}";
+					break;
+				case Message.UnknownAttributeInMapFile:
+					msg = "Unknown attribute {0} in remap file, line {1}, column {2}";
+					break;
+				case Message.InvalidMemberNameInMapFile:
+					msg = "Invalid {0} name '{1}' in remap file in class {2}";
+					break;
+				case Message.InvalidMemberSignatureInMapFile:
+					msg = "Invalid {0} signature '{3}' in remap file for {0} {1}.{2}";
+					break;
+				case Message.InvalidPropertyNameInMapFile:
+					msg = "Invalid property {0} name '{3}' in remap file for property {1}.{2}";
+					break;
+				case Message.InvalidPropertySignatureInMapFile:
+					msg = "Invalid property {0} signature '{3}' in remap file for property {1}.{2}";
+					break;
 				case Message.UnknownWarning:
 					msg = "{0}";
 					break;
@@ -3817,8 +3814,7 @@ namespace IKVM.Internal
 			{
 				if (++errorCount == 100)
 				{
-					Console.Error.WriteLine("Maximum error count reached, exiting.");
-					Environment.Exit(1);
+					throw new FatalCompilerErrorException(Message.MaximumErrorCountReached);
 				}
 			}
 		}
@@ -3829,12 +3825,12 @@ namespace IKVM.Internal
 			values.CopyTo(args, 2);
 			args[0] = AssemblyQualifiedName(actualType);
 			args[1] = AssemblyQualifiedName(expectedType);
-			Console.Error.WriteLine("Link Error: " + msg, args);
+			string str = string.Format(msg, args);
 			if (actualType is UnloadableTypeWrapper && (expectedType is CompiledTypeWrapper || expectedType is DotNetTypeWrapper))
 			{
-				Console.Error.WriteLine("Please add a reference to {0}", expectedType.TypeAsBaseType.Assembly.Location);
+				str += string.Format("\n\t(Please add a reference to {0})", expectedType.TypeAsBaseType.Assembly.Location);
 			}
-			Environment.Exit(1);
+			throw new FatalCompilerErrorException(Message.LinkageError, str);
 		}
 
 		private static string AssemblyQualifiedName(TypeWrapper tw)
