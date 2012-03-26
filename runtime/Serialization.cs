@@ -37,7 +37,7 @@ using System.Reflection.Emit;
 namespace IKVM.Internal
 {
 	// This class deals with .NET serialization. When a class is Java serializable it will attempt to automagically make it .NET serializable.
-	public static class Serialization
+	static class Serialization
 	{
 		private static readonly CustomAttributeBuilder serializableAttribute = new CustomAttributeBuilder(JVM.Import(typeof(SerializableAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
 		private static readonly CustomAttributeBuilder securityCriticalAttribute = new CustomAttributeBuilder(JVM.Import(typeof(SecurityCriticalAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
