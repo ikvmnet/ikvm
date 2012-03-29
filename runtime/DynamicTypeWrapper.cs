@@ -5967,7 +5967,7 @@ namespace IKVM.Internal
 			Debug.Assert(this.IsPublic && fw.DeclaringType == this);
 			return (fw.HasNonPublicTypeInSignature || (fw.IsFinal && !classLoader.StrictFinalFieldSemantics && !(fw is ConstantFieldWrapper) && !(fw is DynamicPropertyFieldWrapper)))
 				&& (fw.IsPublic || (fw.IsProtected && !this.IsFinal))
-				&& (fw.FieldTypeWrapper.IsAccessibleFrom(this) || fw.FieldTypeWrapper.InternalsVisibleTo(this));
+				&& (fw.FieldTypeWrapper.IsUnloadable || fw.FieldTypeWrapper.IsAccessibleFrom(this) || fw.FieldTypeWrapper.InternalsVisibleTo(this));
 		}
 #endif
 	}
