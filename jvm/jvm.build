@@ -14,7 +14,10 @@
     </target>
     <target name="JVM" depends="version" if="${property::exists('ilasm') and (not string::starts-with(framework::get-target-framework(), 'mono'))}">
         <property overwrite="false" name="ilasm_signoption" value="" />
-        <exec program="${rc}" commandline="jvm.rc" />
+        <if test="${property::exists('rc')}">
+            <exec program="${rc}" commandline="jvm.rc" />
+        </if>
+        <rc if="${not property::exists('rc')}" rcfile="jvm.rc" output="jvm.res" />
         <exec program="../tools/asmref.exe" useruntimeengine="true" commandline="mscorlib ../bin/IKVM.Runtime.JNI.dll" output="jvm_h.il" />
         <echo message=".assembly JVM { .ver ${string::replace(property::get-value('VERSION'), '.', ':')} }" file="jvm_h.il" append="true" />
         <exec program="${ilasm}" commandline="           /dll ${ilasm_signoption} /out:../bin-x86/JVM.DLL /RESOURCE:jvm.res jvm_h.il jvm32.il JVM.il" />
