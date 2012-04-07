@@ -336,17 +336,16 @@ namespace IKVM.Reflection.Emit
 			ExportedTypeTable.Record rec = new ExportedTypeTable.Record();
 			rec.TypeDefId = type.MetadataToken;
 			rec.TypeName = this.Strings.Add(type.__Name);
+			string ns = type.__Namespace;
+			rec.TypeNamespace = ns == null ? 0 : this.Strings.Add(ns);
 			if (type.IsNested)
 			{
 				rec.Flags = 0;
-				rec.TypeNamespace = 0;
 				rec.Implementation = ExportType(type.DeclaringType);
 			}
 			else
 			{
 				rec.Flags = 0x00200000;	// CorTypeAttr.tdForwarder
-				string ns = type.__Namespace;
-				rec.TypeNamespace = ns == null ? 0 : this.Strings.Add(ns);
 				rec.Implementation = ImportAssemblyRef(type.Assembly);
 			}
 			return 0x27000000 | this.ExportedType.FindOrAddRecord(rec);
