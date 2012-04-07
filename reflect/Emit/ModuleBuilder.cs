@@ -981,7 +981,8 @@ namespace IKVM.Reflection.Emit
 				{
 					ExportedTypeTable.Record rec = new ExportedTypeTable.Record();
 					rec.Flags = (int)type.Attributes;
-					rec.TypeDefId = type.MetadataToken & 0xFFFFFF;
+					// LAMESPEC ECMA says that TypeDefId is a row index, but it should be a token
+					rec.TypeDefId = type.MetadataToken;
 					rec.TypeName = this.Strings.Add(type.__Name);
 					string ns = type.__Namespace;
 					rec.TypeNamespace = ns == null ? 0 : this.Strings.Add(ns);
