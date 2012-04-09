@@ -48,7 +48,7 @@ namespace IKVM.Reflection
 		public abstract Module GetModule(string name);
 		public abstract string[] GetManifestResourceNames();
 		public abstract ManifestResourceInfo GetManifestResourceInfo(string resourceName);
-		public abstract System.IO.Stream GetManifestResourceStream(string resourceName);
+		public abstract System.IO.Stream GetManifestResourceStream(string name);
 
 		internal Type GetTypeImpl(string typeName)
 		{
@@ -108,14 +108,14 @@ namespace IKVM.Reflection
 			return list.ToArray();
 		}
 
-		public Type GetType(string typeName)
+		public Type GetType(string name)
 		{
-			return GetType(typeName, false);
+			return GetType(name, false);
 		}
 
-		public Type GetType(string typeName, bool throwOnError)
+		public Type GetType(string name, bool throwOnError)
 		{
-			TypeNameParser parser = TypeNameParser.Parse(typeName, throwOnError);
+			TypeNameParser parser = TypeNameParser.Parse(name, throwOnError);
 			if (parser.Error)
 			{
 				return null;
@@ -131,7 +131,7 @@ namespace IKVM.Reflection
 					return null;
 				}
 			}
-			return parser.Expand(GetTypeImpl(parser.FirstNamePart), this, throwOnError, typeName, false);
+			return parser.Expand(GetTypeImpl(parser.FirstNamePart), this, throwOnError, name, false);
 		}
 
 		public virtual Module LoadModule(string moduleName, byte[] rawModule)
