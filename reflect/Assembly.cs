@@ -105,6 +105,15 @@ namespace IKVM.Reflection
 
 		public Type GetType(string name, bool throwOnError)
 		{
+			return GetType(name, throwOnError, false);
+		}
+
+		public Type GetType(string name, bool throwOnError, bool ignoreCase)
+		{
+			if (ignoreCase)
+			{
+				throw new NotImplementedException();
+			}
 			TypeNameParser parser = TypeNameParser.Parse(name, throwOnError);
 			if (parser.Error)
 			{
