@@ -50,16 +50,6 @@ namespace IKVM.Reflection
 		public abstract ManifestResourceInfo GetManifestResourceInfo(string resourceName);
 		public abstract System.IO.Stream GetManifestResourceStream(string name);
 
-		internal Type GetTypeImpl(string typeName)
-		{
-			Type type = FindType(TypeName.Split(TypeNameParser.Unescape(typeName)));
-			if (type == null && __IsMissing)
-			{
-				throw new MissingAssemblyException((MissingAssembly)this);
-			}
-			return type;
-		}
-
 		internal abstract Type FindType(TypeName name);
 
 		// The differences between ResolveType and FindType are:
@@ -131,7 +121,13 @@ namespace IKVM.Reflection
 					return null;
 				}
 			}
-			return parser.Expand(GetTypeImpl(parser.FirstNamePart), this, throwOnError, name, false);
+			TypeName typeName = TypeName.Split(TypeNameParser.Unescape(parser.FirstNamePart));
+			Type type = FindType(typeName);
+			if (type == null && __IsMissing)
+			{
+				throw new MissingAssemblyException((MissingAssembly)this);
+			}
+			return parser.Expand(type, this, throwOnError, name, false);
 		}
 
 		public virtual Module LoadModule(string moduleName, byte[] rawModule)
