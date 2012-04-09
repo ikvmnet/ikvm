@@ -471,6 +471,18 @@ namespace IKVM.Reflection.Emit
 			return null;
 		}
 
+		internal override Type FindTypeIgnoreCase(TypeName lowerCaseName)
+		{
+			foreach (Type type in types)
+			{
+				if (new TypeName(type.__Namespace, type.__Name).ToLowerInvariant() == lowerCaseName)
+				{
+					return type;
+				}
+			}
+			return null;
+		}
+
 		internal override void GetTypesImpl(List<Type> list)
 		{
 			foreach (Type type in types)

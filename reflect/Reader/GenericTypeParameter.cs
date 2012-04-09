@@ -141,6 +141,11 @@ namespace IKVM.Reflection.Reader
 				throw new InvalidOperationException();
 			}
 
+			internal override Type FindTypeIgnoreCase(TypeName lowerCaseName)
+			{
+				throw new InvalidOperationException();
+			}
+
 			internal override void GetTypesImpl(List<Type> list)
 			{
 				throw new InvalidOperationException();

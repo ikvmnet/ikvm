@@ -865,6 +865,18 @@ namespace IKVM.Reflection
 			return null;
 		}
 
+		internal virtual Type FindNestedTypeIgnoreCase(TypeName lowerCaseName)
+		{
+			foreach (Type type in __GetDeclaredTypes())
+			{
+				if (new TypeName(type.__Namespace, type.__Name).ToLowerInvariant() == lowerCaseName)
+				{
+					return type;
+				}
+			}
+			return null;
+		}
+
 		public Type GetNestedType(string name)
 		{
 			return GetNestedType(name, BindingFlags.Public);

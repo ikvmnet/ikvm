@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2011 Jeroen Frijters
+  Copyright (C) 2011-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -223,6 +223,11 @@ namespace IKVM.Reflection
 			return null;
 		}
 
+		internal override Type FindTypeIgnoreCase(TypeName lowerCaseName)
+		{
+			return null;
+		}
+
 		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
 		{
 			throw new MissingAssemblyException(this);
@@ -270,6 +275,11 @@ namespace IKVM.Reflection
 		}
 
 		internal override Type FindType(TypeName typeName)
+		{
+			return null;
+		}
+
+		internal override Type FindTypeIgnoreCase(TypeName lowerCaseName)
 		{
 			return null;
 		}
@@ -374,6 +384,11 @@ namespace IKVM.Reflection
 		}
 
 		internal override Type FindNestedType(TypeName name)
+		{
+			return null;
+		}
+
+		internal override Type FindNestedTypeIgnoreCase(TypeName lowerCaseName)
 		{
 			return null;
 		}

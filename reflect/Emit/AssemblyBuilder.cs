@@ -577,6 +577,27 @@ namespace IKVM.Reflection.Emit
 			return null;
 		}
 
+		internal override Type FindTypeIgnoreCase(TypeName lowerCaseName)
+		{
+			foreach (ModuleBuilder mb in modules)
+			{
+				Type type = mb.FindTypeIgnoreCase(lowerCaseName);
+				if (type != null)
+				{
+					return type;
+				}
+			}
+			foreach (Module module in addedModules)
+			{
+				Type type = module.FindTypeIgnoreCase(lowerCaseName);
+				if (type != null)
+				{
+					return type;
+				}
+			}
+			return null;
+		}
+
 		public override string ImageRuntimeVersion
 		{
 			get { return imageRuntimeVersion; }
@@ -712,6 +733,11 @@ namespace IKVM.Reflection.Emit
 		}
 
 		internal override Type FindType(TypeName typeName)
+		{
+			return null;
+		}
+
+		internal override Type FindTypeIgnoreCase(TypeName lowerCaseName)
 		{
 			return null;
 		}

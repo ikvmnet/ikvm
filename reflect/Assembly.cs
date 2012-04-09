@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Jeroen Frijters
+  Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -51,6 +51,7 @@ namespace IKVM.Reflection
 		public abstract System.IO.Stream GetManifestResourceStream(string name);
 
 		internal abstract Type FindType(TypeName name);
+		internal abstract Type FindTypeIgnoreCase(TypeName lowerCaseName);
 
 		// The differences between ResolveType and FindType are:
 		// - ResolveType is only used when a type is assumed to exist (because another module's metadata claims it)
@@ -110,10 +111,6 @@ namespace IKVM.Reflection
 
 		public Type GetType(string name, bool throwOnError, bool ignoreCase)
 		{
-			if (ignoreCase)
-			{
-				throw new NotImplementedException();
-			}
 			TypeNameParser parser = TypeNameParser.Parse(name, throwOnError);
 			if (parser.Error)
 			{
@@ -131,12 +128,14 @@ namespace IKVM.Reflection
 				}
 			}
 			TypeName typeName = TypeName.Split(TypeNameParser.Unescape(parser.FirstNamePart));
-			Type type = FindType(typeName);
+			Type type = ignoreCase
+				? FindTypeIgnoreCase(typeName.ToLowerInvariant())
+				: FindType(typeName);
 			if (type == null && __IsMissing)
 			{
 				throw new MissingAssemblyException((MissingAssembly)this);
 			}
-			return parser.Expand(type, this, throwOnError, name, false);
+			return parser.Expand(type, this, throwOnError, name, false, ignoreCase);
 		}
 
 		public virtual Module LoadModule(string moduleName, byte[] rawModule)
