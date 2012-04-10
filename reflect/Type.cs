@@ -704,13 +704,20 @@ namespace IKVM.Reflection
 		{
 			CheckBaked();
 			List<MethodInfo> list = new List<MethodInfo>();
+			List<MethodInfo> baseMethods = null;
 			foreach (MethodBase mb in __GetDeclaredMethods())
 			{
 				MethodInfo mi = mb as MethodInfo;
-				if (mi != null
-					&& BindingFlagsMatch(mi.IsPublic, bindingAttr, BindingFlags.Public, BindingFlags.NonPublic)
-					&& BindingFlagsMatch(mi.IsStatic, bindingAttr, BindingFlags.Static, BindingFlags.Instance))
+				if (mi != null && mi.BindingFlagsMatch(bindingAttr))
 				{
+					if (mi.IsVirtual)
+					{
+						if (baseMethods == null)
+						{
+							baseMethods = new List<MethodInfo>();
+						}
+						baseMethods.Add(mi.GetBaseDefinition());
+					}
 					list.Add(mi);
 				}
 			}
@@ -722,12 +729,20 @@ namespace IKVM.Reflection
 					foreach (MethodBase mb in type.__GetDeclaredMethods())
 					{
 						MethodInfo mi = mb as MethodInfo;
-						if (mi != null
-							&& (mi.Attributes & MethodAttributes.MemberAccessMask) > MethodAttributes.Private
-							&& BindingFlagsMatch(mi.IsPublic, bindingAttr, BindingFlags.Public, BindingFlags.NonPublic)
-							&& BindingFlagsMatch(mi.IsStatic, bindingAttr, BindingFlags.Static | BindingFlags.FlattenHierarchy, BindingFlags.Instance)
-							&& !FindMethod(list, mi))
+						if (mi != null && mi.BindingFlagsMatchInherited(bindingAttr))
 						{
+							if (mi.IsVirtual)
+							{
+								if (baseMethods == null)
+								{
+									baseMethods = new List<MethodInfo>();
+								}
+								else if (FindMethod(baseMethods, mi.GetBaseDefinition()))
+								{
+									continue;
+								}
+								baseMethods.Add(mi.GetBaseDefinition());
+							}
 							list.Add(mi);
 						}
 					}
