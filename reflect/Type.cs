@@ -79,7 +79,7 @@ namespace IKVM.Reflection
 
 		public static Binder DefaultBinder
 		{
-			get { return null; }
+			get { return new DefaultBinder(); }
 		}
 
 		public sealed override MemberTypes MemberType
@@ -855,8 +855,21 @@ namespace IKVM.Reflection
 
 		public MethodInfo GetMethod(string name, BindingFlags bindingAttr, Binder binder, Type[] types, ParameterModifier[] modifiers)
 		{
+			// first we try an exact match and only if that fails we fall back to using the binder
 			return GetMemberByName<MethodInfo>(name, bindingAttr,
-				delegate(MethodInfo method) { return method.MethodSignature.MatchParameterTypes(types); });
+				delegate(MethodInfo method) { return method.MethodSignature.MatchParameterTypes(types); })
+				?? GetMethodWithBinder<MethodInfo>(name, bindingAttr, binder ?? DefaultBinder, types, modifiers);
+		}
+
+		private T GetMethodWithBinder<T>(string name, BindingFlags bindingAttr, Binder binder, Type[] types, ParameterModifier[] modifiers)
+			where T : MethodBase
+		{
+			List<MethodBase> list = new List<MethodBase>();
+			GetMemberByName<T>(name, bindingAttr, delegate(T method) {
+				list.Add(method);
+				return false;
+			});
+			return (T)binder.SelectMethod(bindingAttr, list.ToArray(), types, modifiers);
 		}
 
 		public MethodInfo GetMethod(string name, BindingFlags bindingAttr, Binder binder, CallingConventions callConvention, Type[] types, ParameterModifier[] modifiers)
@@ -882,8 +895,10 @@ namespace IKVM.Reflection
 
 		public ConstructorInfo GetConstructor(BindingFlags bindingAttr, Binder binder, Type[] types, ParameterModifier[] modifiers)
 		{
+			// first we try an exact match and only if that fails we fall back to using the binder
 			return GetMemberByName<ConstructorInfo>(ConstructorInfo.ConstructorName, bindingAttr | BindingFlags.DeclaredOnly,
-				delegate(ConstructorInfo ctor) { return ctor.MethodSignature.MatchParameterTypes(types); });
+				delegate(ConstructorInfo ctor) { return ctor.MethodSignature.MatchParameterTypes(types); })
+				?? GetMethodWithBinder<ConstructorInfo>(ConstructorInfo.ConstructorName, bindingAttr, binder ?? DefaultBinder, types, modifiers);
 		}
 
 		public ConstructorInfo GetConstructor(BindingFlags bindingAttr, Binder binder, CallingConventions callingConvention, Type[] types, ParameterModifier[] modifiers)
@@ -966,28 +981,16 @@ namespace IKVM.Reflection
 
 		public PropertyInfo GetProperty(string name, Type returnType)
 		{
-			return GetMemberByName<PropertyInfo>(name, BindingFlags.Default, delegate(PropertyInfo prop) { return prop.PropertyType.Equals(returnType); });
+			const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
+			return GetMemberByName<PropertyInfo>(name, flags, delegate(PropertyInfo prop) { return prop.PropertyType.Equals(returnType); })
+				?? GetPropertyWithBinder(name, flags, DefaultBinder, returnType, null, null);
 		}
 
 		public PropertyInfo GetProperty(string name, Type[] types)
 		{
-			return GetMemberByName<PropertyInfo>(name, BindingFlags.Default, delegate(PropertyInfo prop) { return MatchParameterTypes(prop.GetIndexParameters(), types); });
-		}
-
-		private static bool MatchParameterTypes(ParameterInfo[] parameters, Type[] types)
-		{
-			if (parameters.Length == types.Length)
-			{
-				for (int i = 0; i < parameters.Length; i++)
-				{
-					if (!parameters[i].ParameterType.Equals(types[i]))
-					{
-						return false;
-					}
-				}
-				return true;
-			}
-			return false;
+			const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
+			return GetMemberByName<PropertyInfo>(name, flags, delegate(PropertyInfo prop) { return prop.PropertySignature.MatchParameterTypes(types); })
+				?? GetPropertyWithBinder(name, flags, DefaultBinder, null, types, null);
 		}
 
 		public PropertyInfo GetProperty(string name, Type returnType, Type[] types)
@@ -1004,8 +1007,19 @@ namespace IKVM.Reflection
 		{
 			return GetMemberByName<PropertyInfo>(name, bindingAttr,
 				delegate(PropertyInfo prop) {
-					return prop.PropertyType.Equals(returnType) && MatchParameterTypes(prop.GetIndexParameters(), types);
-				});
+					return prop.PropertyType.Equals(returnType) && prop.PropertySignature.MatchParameterTypes(types);
+				})
+				?? GetPropertyWithBinder(name, bindingAttr, binder ?? DefaultBinder, returnType, types, modifiers);
+		}
+
+		private PropertyInfo GetPropertyWithBinder(string name, BindingFlags bindingAttr, Binder binder, Type returnType, Type[] types, ParameterModifier[] modifiers)
+		{
+			List<PropertyInfo> list = new List<PropertyInfo>();
+			GetMemberByName<PropertyInfo>(name, bindingAttr, delegate(PropertyInfo property) {
+				list.Add(property);
+				return false;
+			});
+			return binder.SelectProperty(bindingAttr, list.ToArray(), returnType, types, modifiers);
 		}
 
 		public Type GetInterface(string name)
