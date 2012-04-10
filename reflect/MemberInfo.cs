@@ -82,7 +82,17 @@ namespace IKVM.Reflection
 			return this.Module.GetCustomAttributes(this.MetadataToken, attributeType);
 		}
 
-		internal static bool BindingFlagsMatch(bool state, BindingFlags flags, BindingFlags trueFlag, BindingFlags falseFlag)
+		internal virtual bool BindingFlagsMatch(BindingFlags flags)
+		{
+			throw new InvalidOperationException();
+		}
+
+		internal virtual bool BindingFlagsMatchInherited(BindingFlags flags)
+		{
+			throw new InvalidOperationException();
+		}
+
+		protected static bool BindingFlagsMatch(bool state, BindingFlags flags, BindingFlags trueFlag, BindingFlags falseFlag)
 		{
 			return (state && (flags & trueFlag) == trueFlag)
 				|| (!state && (flags & falseFlag) == falseFlag);

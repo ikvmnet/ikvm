@@ -1104,6 +1104,11 @@ namespace IKVM.Reflection
 			get { throw new MissingMemberException(this); }
 		}
 
+		internal override bool IsNonPrivate
+		{
+			get { throw new MissingMemberException(this); }
+		}
+
 		internal override bool IsStatic
 		{
 			get { throw new MissingMemberException(this); }

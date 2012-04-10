@@ -44,6 +44,7 @@ namespace IKVM.Reflection
 		public abstract MethodInfo[] __GetMethods();
 		public abstract Type EventHandlerType { get; }
 		internal abstract bool IsPublic { get; }
+		internal abstract bool IsNonPrivate { get; }
 		internal abstract bool IsStatic { get; }
 
 		public bool IsSpecialName
@@ -79,6 +80,19 @@ namespace IKVM.Reflection
 		public override string ToString()
 		{
 			return this.DeclaringType.ToString() + " " + Name;
+		}
+
+		internal sealed override bool BindingFlagsMatch(BindingFlags flags)
+		{
+			return BindingFlagsMatch(IsPublic, flags, BindingFlags.Public, BindingFlags.NonPublic)
+				&& BindingFlagsMatch(IsStatic, flags, BindingFlags.Static, BindingFlags.Instance);
+		}
+
+		internal sealed override bool BindingFlagsMatchInherited(BindingFlags flags)
+		{
+			return IsNonPrivate
+				&& BindingFlagsMatch(IsPublic, flags, BindingFlags.Public, BindingFlags.NonPublic)
+				&& BindingFlagsMatch(IsStatic, flags, BindingFlags.Static | BindingFlags.FlattenHierarchy, BindingFlags.Instance);
 		}
 	}
 }

@@ -134,5 +134,18 @@ namespace IKVM.Reflection
 		{
 			return new GenericFieldInstance(this.DeclaringType.BindTypeParameters(type), this);
 		}
+
+		internal sealed override bool BindingFlagsMatch(BindingFlags flags)
+		{
+			return BindingFlagsMatch(IsPublic, flags, BindingFlags.Public, BindingFlags.NonPublic)
+				&& BindingFlagsMatch(IsStatic, flags, BindingFlags.Static, BindingFlags.Instance);
+		}
+
+		internal sealed override bool BindingFlagsMatchInherited(BindingFlags flags)
+		{
+			return (Attributes & FieldAttributes.FieldAccessMask) > FieldAttributes.Private
+				&& BindingFlagsMatch(IsPublic, flags, BindingFlags.Public, BindingFlags.NonPublic)
+				&& BindingFlagsMatch(IsStatic, flags, BindingFlags.Static | BindingFlags.FlattenHierarchy, BindingFlags.Instance);
+		}
 	}
 }

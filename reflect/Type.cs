@@ -566,6 +566,63 @@ namespace IKVM.Reflection
 			return members.ToArray();
 		}
 
+		private MemberInfo[] GetMembers<T>()
+		{
+			if (typeof(T) == typeof(ConstructorInfo) || typeof(T) == typeof(MethodInfo))
+			{
+				return __GetDeclaredMethods();
+			}
+			else if (typeof(T) == typeof(FieldInfo))
+			{
+				return __GetDeclaredFields();
+			}
+			else if (typeof(T) == typeof(PropertyInfo))
+			{
+				return __GetDeclaredProperties();
+			}
+			else if (typeof(T) == typeof(EventInfo))
+			{
+				return __GetDeclaredEvents();
+			}
+			else if (typeof(T) == typeof(Type))
+			{
+				return __GetDeclaredTypes();
+			}
+			else
+			{
+				throw new InvalidOperationException();
+			}
+		}
+
+		private T[] GetMembers<T>(BindingFlags flags)
+			where T : MemberInfo
+		{
+			CheckBaked();
+			List<T> list = new List<T>();
+			foreach (MemberInfo member in GetMembers<T>())
+			{
+				if (member is T && member.BindingFlagsMatch(flags))
+				{
+					list.Add((T)member);
+				}
+			}
+			if ((flags & BindingFlags.DeclaredOnly) == 0)
+			{
+				for (Type type = this.BaseType; type != null; type = type.BaseType)
+				{
+					type.CheckBaked();
+					foreach (MemberInfo member in type.GetMembers<T>())
+					{
+						if (member is T && member.BindingFlagsMatchInherited(flags))
+						{
+							list.Add((T)member);
+						}
+					}
+				}
+			}
+			return list.ToArray();
+		}
+
 		public EventInfo GetEvent(string name)
 		{
 			return GetEvent(name, BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
@@ -590,33 +647,7 @@ namespace IKVM.Reflection
 
 		public EventInfo[] GetEvents(BindingFlags bindingAttr)
 		{
-			List<EventInfo> list = new List<EventInfo>();
-			Type type = this;
-			while (type != null)
-			{
-				type.CheckBaked();
-				foreach (EventInfo evt in type.__GetDeclaredEvents())
-				{
-					if (BindingFlagsMatch(evt.IsPublic, bindingAttr, BindingFlags.Public, BindingFlags.NonPublic)
-						&& BindingFlagsMatch(evt.IsStatic, bindingAttr, BindingFlags.Static, BindingFlags.Instance))
-					{
-						list.Add(evt);
-					}
-				}
-				if ((bindingAttr & BindingFlags.DeclaredOnly) == 0)
-				{
-					if ((bindingAttr & BindingFlags.FlattenHierarchy) == 0)
-					{
-						bindingAttr &= ~BindingFlags.Static;
-					}
-					type = type.BaseType;
-				}
-				else
-				{
-					break;
-				}
-			}
-			return list.ToArray();
+			return GetMembers<EventInfo>(bindingAttr);
 		}
 
 		public FieldInfo GetField(string name)
@@ -643,32 +674,7 @@ namespace IKVM.Reflection
 
 		public FieldInfo[] GetFields(BindingFlags bindingAttr)
 		{
-			List<FieldInfo> list = new List<FieldInfo>();
-			CheckBaked();
-			foreach (FieldInfo field in __GetDeclaredFields())
-			{
-				if (BindingFlagsMatch(field.IsPublic, bindingAttr, BindingFlags.Public, BindingFlags.NonPublic)
-					&& BindingFlagsMatch(field.IsStatic, bindingAttr, BindingFlags.Static, BindingFlags.Instance))
-				{
-					list.Add(field);
-				}
-			}
-			if ((bindingAttr & BindingFlags.DeclaredOnly) == 0)
-			{
-				for (Type type = this.BaseType; type != null; type = type.BaseType)
-				{
-					type.CheckBaked();
-					foreach (FieldInfo field in type.__GetDeclaredFields())
-					{
-						if ((field.Attributes & FieldAttributes.FieldAccessMask) > FieldAttributes.Private
-							&& BindingFlagsMatch(field.IsStatic, bindingAttr, BindingFlags.Static | BindingFlags.FlattenHierarchy, BindingFlags.Instance))
-						{
-							list.Add(field);
-						}
-					}
-				}
-			}
-			return list.ToArray();
+			return GetMembers<FieldInfo>(bindingAttr);
 		}
 
 		public Type[] GetInterfaces()
@@ -809,19 +815,7 @@ namespace IKVM.Reflection
 
 		public ConstructorInfo[] GetConstructors(BindingFlags bindingAttr)
 		{
-			CheckBaked();
-			List<ConstructorInfo> list = new List<ConstructorInfo>();
-			foreach (MethodBase mb in __GetDeclaredMethods())
-			{
-				ConstructorInfo constructor = mb as ConstructorInfo;
-				if (constructor != null
-					&& BindingFlagsMatch(constructor.IsPublic, bindingAttr, BindingFlags.Public, BindingFlags.NonPublic)
-					&& BindingFlagsMatch(constructor.IsStatic, bindingAttr, BindingFlags.Static, BindingFlags.Instance))
-				{
-					list.Add(constructor);
-				}
-			}
-			return list.ToArray();
+			return GetMembers<ConstructorInfo>(bindingAttr | BindingFlags.DeclaredOnly);
 		}
 
 		public ConstructorInfo GetConstructor(Type[] types)
@@ -902,16 +896,8 @@ namespace IKVM.Reflection
 
 		public Type[] GetNestedTypes(BindingFlags bindingAttr)
 		{
-			CheckBaked();
-			List<Type> list = new List<Type>();
-			foreach (Type type in __GetDeclaredTypes())
-			{
-				if (BindingFlagsMatch(type.IsNestedPublic, bindingAttr, BindingFlags.Public, BindingFlags.NonPublic))
-				{
-					list.Add(type);
-				}
-			}
-			return list.ToArray();
+			// FXBUG the namespace is ignored, so we can use GetMember
+			return GetMembers<Type>(bindingAttr | BindingFlags.DeclaredOnly);
 		}
 
 		public PropertyInfo[] GetProperties()
@@ -921,33 +907,7 @@ namespace IKVM.Reflection
 
 		public PropertyInfo[] GetProperties(BindingFlags bindingAttr)
 		{
-			List<PropertyInfo> list = new List<PropertyInfo>();
-			Type type = this;
-			while (type != null)
-			{
-				type.CheckBaked();
-				foreach (PropertyInfo property in type.__GetDeclaredProperties())
-				{
-					if (BindingFlagsMatch(property.IsPublic, bindingAttr, BindingFlags.Public, BindingFlags.NonPublic)
-						&& BindingFlagsMatch(property.IsStatic, bindingAttr, BindingFlags.Static, BindingFlags.Instance))
-					{
-						list.Add(property);
-					}
-				}
-				if ((bindingAttr & BindingFlags.DeclaredOnly) == 0)
-				{
-					if ((bindingAttr & BindingFlags.FlattenHierarchy) == 0)
-					{
-						bindingAttr &= ~BindingFlags.Static;
-					}
-					type = type.BaseType;
-				}
-				else
-				{
-					break;
-				}
-			}
-			return list.ToArray();
+			return GetMembers<PropertyInfo>(bindingAttr);
 		}
 
 		public PropertyInfo GetProperty(string name)
@@ -1887,6 +1847,11 @@ namespace IKVM.Reflection
 		internal virtual Universe Universe
 		{
 			get { return Module.universe; }
+		}
+
+		internal sealed override bool BindingFlagsMatch(BindingFlags flags)
+		{
+			return BindingFlagsMatch(IsNestedPublic, flags, BindingFlags.Public, BindingFlags.NonPublic);
 		}
 	}
 
