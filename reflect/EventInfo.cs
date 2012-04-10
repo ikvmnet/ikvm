@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Jeroen Frijters
+  Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,6 +21,8 @@
   jeroen@frijters.net
   
 */
+using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace IKVM.Reflection
 {
@@ -93,6 +95,142 @@ namespace IKVM.Reflection
 			return IsNonPrivate
 				&& BindingFlagsMatch(IsPublic, flags, BindingFlags.Public, BindingFlags.NonPublic)
 				&& BindingFlagsMatch(IsStatic, flags, BindingFlags.Static | BindingFlags.FlattenHierarchy, BindingFlags.Instance);
+		}
+
+		internal sealed override MemberInfo SetReflectedType(Type type)
+		{
+			return new EventInfoWithReflectedType(type, this);
+		}
+	}
+
+	sealed class EventInfoWithReflectedType : EventInfo
+	{
+		private readonly Type reflectedType;
+		private readonly EventInfo eventInfo;
+
+		internal EventInfoWithReflectedType(Type reflectedType, EventInfo eventInfo)
+		{
+			Debug.Assert(reflectedType != eventInfo.DeclaringType);
+			this.reflectedType = reflectedType;
+			this.eventInfo = eventInfo;
+		}
+
+		public override EventAttributes Attributes
+		{
+			get { return eventInfo.Attributes; }
+		}
+
+		public override MethodInfo GetAddMethod(bool nonPublic)
+		{
+			return (MethodInfo)eventInfo.GetAddMethod(nonPublic).SetReflectedType(reflectedType);
+		}
+
+		public override MethodInfo GetRaiseMethod(bool nonPublic)
+		{
+			return (MethodInfo)eventInfo.GetRaiseMethod(nonPublic).SetReflectedType(reflectedType);
+		}
+
+		public override MethodInfo GetRemoveMethod(bool nonPublic)
+		{
+			return (MethodInfo)eventInfo.GetRemoveMethod(nonPublic).SetReflectedType(reflectedType);
+		}
+
+		public override MethodInfo[] GetOtherMethods(bool nonPublic)
+		{
+			MethodInfo[] methods = eventInfo.GetOtherMethods(nonPublic);
+			for (int i = 0; i < methods.Length; i++)
+			{
+				methods[i] = (MethodInfo)methods[i].SetReflectedType(reflectedType);
+			}
+			return methods;
+		}
+
+		public override MethodInfo[] __GetMethods()
+		{
+			MethodInfo[] methods = eventInfo.__GetMethods();
+			for (int i = 0; i < methods.Length; i++)
+			{
+				methods[i] = (MethodInfo)methods[i].SetReflectedType(reflectedType);
+			}
+			return methods;
+		}
+
+		public override Type EventHandlerType
+		{
+			get { return eventInfo.EventHandlerType; }
+		}
+
+		internal override bool IsPublic
+		{
+			get { return eventInfo.IsPublic; }
+		}
+
+		internal override bool IsNonPrivate
+		{
+			get { return eventInfo.IsNonPrivate; }
+		}
+
+		internal override bool IsStatic
+		{
+			get { return eventInfo.IsStatic; }
+		}
+
+		internal override EventInfo BindTypeParameters(Type type)
+		{
+			return eventInfo.BindTypeParameters(type);
+		}
+
+		public override string ToString()
+		{
+			return eventInfo.ToString();
+		}
+
+		public override bool __IsMissing
+		{
+			get { return eventInfo.__IsMissing; }
+		}
+
+		public override Type DeclaringType
+		{
+			get { return eventInfo.DeclaringType; }
+		}
+
+		public override Type ReflectedType
+		{
+			get { return reflectedType; }
+		}
+
+		public override bool Equals(object obj)
+		{
+			EventInfoWithReflectedType other = obj as EventInfoWithReflectedType;
+			return other != null
+				&& other.reflectedType == reflectedType
+				&& other.eventInfo == eventInfo;
+		}
+
+		public override int GetHashCode()
+		{
+			return reflectedType.GetHashCode() ^ eventInfo.GetHashCode();
+		}
+
+		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
+		{
+			return eventInfo.GetCustomAttributesData(attributeType);
+		}
+
+		public override int MetadataToken
+		{
+			get { return eventInfo.MetadataToken; }
+		}
+
+		public override Module Module
+		{
+			get { return eventInfo.Module; }
+		}
+
+		public override string Name
+		{
+			get { return eventInfo.Name; }
 		}
 	}
 }

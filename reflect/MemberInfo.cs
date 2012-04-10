@@ -42,6 +42,13 @@ namespace IKVM.Reflection
 		public abstract Type DeclaringType { get; }
 		public abstract MemberTypes MemberType { get; }
 
+		public virtual Type ReflectedType
+		{
+			get { return DeclaringType; }
+		}
+
+		internal abstract MemberInfo SetReflectedType(Type type);
+
 		public virtual int MetadataToken
 		{
 			get { throw new NotSupportedException(); }

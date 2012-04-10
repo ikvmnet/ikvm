@@ -624,7 +624,7 @@ namespace IKVM.Reflection
 					{
 						if (member is T && member.BindingFlagsMatchInherited(flags))
 						{
-							list.Add((T)member);
+							list.Add((T)member.SetReflectedType(this));
 						}
 					}
 				}
@@ -687,7 +687,7 @@ namespace IKVM.Reflection
 									}
 									throw new AmbiguousMatchException();
 								}
-								found = (T)member;
+								found = (T)member.SetReflectedType(this);
 							}
 						}
 					}
@@ -808,7 +808,7 @@ namespace IKVM.Reflection
 								}
 								baseMethods.Add(mi.GetBaseDefinition());
 							}
-							list.Add(mi);
+							list.Add((MethodInfo)mi.SetReflectedType(this));
 						}
 					}
 				}
@@ -1856,6 +1856,11 @@ namespace IKVM.Reflection
 		internal sealed override bool BindingFlagsMatch(BindingFlags flags)
 		{
 			return BindingFlagsMatch(IsNestedPublic, flags, BindingFlags.Public, BindingFlags.NonPublic);
+		}
+
+		internal sealed override MemberInfo SetReflectedType(Type type)
+		{
+			throw new InvalidOperationException();
 		}
 	}
 
