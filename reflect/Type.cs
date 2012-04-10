@@ -1053,16 +1053,26 @@ namespace IKVM.Reflection
 		{
 			if (ignoreCase)
 			{
-				throw new NotImplementedException();
+				name = name.ToLowerInvariant();
 			}
+			Type found = null;
 			foreach (Type type in GetInterfaces())
 			{
-				if (type.FullName == name)
+				string typeName = type.FullName;
+				if (ignoreCase)
 				{
-					return type;
+					typeName = typeName.ToLowerInvariant();
+				}
+				if (typeName == name)
+				{
+					if (found != null)
+					{
+						throw new AmbiguousMatchException();
+					}
+					found = type;
 				}
 			}
-			return null;
+			return found;
 		}
 
 		public Type[] FindInterfaces(TypeFilter filter, object filterCriteria)
