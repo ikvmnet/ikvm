@@ -39,6 +39,7 @@ namespace IKVM.Reflection
 	public enum BindingFlags
 	{
 		Default = 0,
+		IgnoreCase = 1,
 		DeclaredOnly = 2,
 		Instance = 4,
 		Static = 8,

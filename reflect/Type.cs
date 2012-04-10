@@ -521,7 +521,16 @@ namespace IKVM.Reflection
 
 		public MemberInfo[] GetMember(string name, MemberTypes type, BindingFlags bindingAttr)
 		{
-			MemberFilter filter = delegate(MemberInfo member, object filterCriteria) { return member.Name.Equals(filterCriteria); };
+			MemberFilter filter;
+			if ((bindingAttr & BindingFlags.IgnoreCase) != 0)
+			{
+				name = name.ToLowerInvariant();
+				filter = delegate(MemberInfo member, object filterCriteria) { return member.Name.ToLowerInvariant().Equals(filterCriteria); };
+			}
+			else
+			{
+				filter = delegate(MemberInfo member, object filterCriteria) { return member.Name.Equals(filterCriteria); };
+			}
 			return FindMembers(type, bindingAttr, filter, name);
 		}
 
@@ -623,6 +632,76 @@ namespace IKVM.Reflection
 			return list.ToArray();
 		}
 
+		private T GetMemberByName<T>(string name, BindingFlags flags, Predicate<T> filter)
+			where T : MemberInfo
+		{
+			CheckBaked();
+			if ((flags & BindingFlags.IgnoreCase) != 0)
+			{
+				name = name.ToLowerInvariant();
+			}
+			T found = null;
+			foreach (MemberInfo member in GetMembers<T>())
+			{
+				if (member is T && member.BindingFlagsMatch(flags))
+				{
+					string memberName = member.Name;
+					if ((flags & BindingFlags.IgnoreCase) != 0)
+					{
+						memberName = memberName.ToLowerInvariant();
+					}
+					if (memberName == name && (filter == null || filter((T)member)))
+					{
+						if (found != null)
+						{
+							throw new AmbiguousMatchException();
+						}
+						found = (T)member;
+					}
+				}
+			}
+			if ((flags & BindingFlags.DeclaredOnly) == 0)
+			{
+				for (Type type = this.BaseType; (found == null || typeof(T) == typeof(MethodInfo)) && type != null; type = type.BaseType)
+				{
+					type.CheckBaked();
+					foreach (MemberInfo member in type.GetMembers<T>())
+					{
+						if (member is T && member.BindingFlagsMatchInherited(flags))
+						{
+							string memberName = member.Name;
+							if ((flags & BindingFlags.IgnoreCase) != 0)
+							{
+								memberName = memberName.ToLowerInvariant();
+							}
+							if (memberName == name && (filter == null || filter((T)member)))
+							{
+								if (found != null)
+								{
+									MethodInfo mi;
+									// TODO does this depend on HideBySig vs HideByName?
+									if ((mi = found as MethodInfo) != null
+										&& mi.MethodSignature.MatchParameterTypes(((MethodBase)member).MethodSignature))
+									{
+										continue;
+									}
+									throw new AmbiguousMatchException();
+								}
+								found = (T)member;
+							}
+						}
+					}
+				}
+			}
+			return found;
+		}
+
+		private T GetMemberByName<T>(string name, BindingFlags flags)
+			where T : MemberInfo
+		{
+			return GetMemberByName<T>(name, flags, null);
+		}
+
 		public EventInfo GetEvent(string name)
 		{
 			return GetEvent(name, BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
@@ -630,14 +709,7 @@ namespace IKVM.Reflection
 
 		public EventInfo GetEvent(string name, BindingFlags bindingAttr)
 		{
-			foreach (EventInfo evt in GetEvents(bindingAttr))
-			{
-				if (evt.Name == name)
-				{
-					return evt;
-				}
-			}
-			return null;
+			return GetMemberByName<EventInfo>(name, bindingAttr);
 		}
 
 		public EventInfo[] GetEvents()
@@ -657,14 +729,7 @@ namespace IKVM.Reflection
 
 		public FieldInfo GetField(string name, BindingFlags bindingAttr)
 		{
-			foreach (FieldInfo field in GetFields(bindingAttr))
-			{
-				if (field.Name == name)
-				{
-					return field;
-				}
-			}
-			return null;
+			return GetMemberByName<FieldInfo>(name, bindingAttr);
 		}
 
 		public FieldInfo[] GetFields()
@@ -775,19 +840,7 @@ namespace IKVM.Reflection
 
 		public MethodInfo GetMethod(string name, BindingFlags bindingAttr)
 		{
-			MethodInfo found = null;
-			foreach (MethodInfo method in GetMethods(bindingAttr))
-			{
-				if (method.Name == name)
-				{
-					if (found != null)
-					{
-						throw new AmbiguousMatchException();
-					}
-					found = method;
-				}
-			}
-			return found;
+			return GetMemberByName<MethodInfo>(name, bindingAttr);
 		}
 
 		public MethodInfo GetMethod(string name, Type[] types)
@@ -802,19 +855,8 @@ namespace IKVM.Reflection
 
 		public MethodInfo GetMethod(string name, BindingFlags bindingAttr, Binder binder, Type[] types, ParameterModifier[] modifiers)
 		{
-			MethodInfo found = null;
-			foreach (MethodInfo method in GetMethods(bindingAttr))
-			{
-				if (method.Name == name && method.MethodSignature.MatchParameterTypes(types))
-				{
-					if (found != null)
-					{
-						throw new AmbiguousMatchException();
-					}
-					found = method;
-				}
-			}
-			return found;
+			return GetMemberByName<MethodInfo>(name, bindingAttr,
+				delegate(MethodInfo method) { return method.MethodSignature.MatchParameterTypes(types); });
 		}
 
 		public MethodInfo GetMethod(string name, BindingFlags bindingAttr, Binder binder, CallingConventions callConvention, Type[] types, ParameterModifier[] modifiers)
@@ -840,14 +882,8 @@ namespace IKVM.Reflection
 
 		public ConstructorInfo GetConstructor(BindingFlags bindingAttr, Binder binder, Type[] types, ParameterModifier[] modifiers)
 		{
-			foreach (ConstructorInfo constructor in GetConstructors(bindingAttr))
-			{
-				if (constructor.MethodSignature.MatchParameterTypes(types))
-				{
-					return constructor;
-				}
-			}
-			return null;
+			return GetMemberByName<ConstructorInfo>(ConstructorInfo.ConstructorName, bindingAttr | BindingFlags.DeclaredOnly,
+				delegate(ConstructorInfo ctor) { return ctor.MethodSignature.MatchParameterTypes(types); });
 		}
 
 		public ConstructorInfo GetConstructor(BindingFlags bindingAttr, Binder binder, CallingConventions callingConvention, Type[] types, ParameterModifier[] modifiers)
@@ -893,15 +929,8 @@ namespace IKVM.Reflection
 
 		public Type GetNestedType(string name, BindingFlags bindingAttr)
 		{
-			foreach (Type type in GetNestedTypes(bindingAttr))
-			{
-				// FXBUG the namespace is ignored
-				if (type.__Name == name)
-				{
-					return type;
-				}
-			}
-			return null;
+			// FXBUG the namespace is ignored, so we can use GetMemberByName
+			return GetMemberByName<Type>(name, bindingAttr | BindingFlags.DeclaredOnly);
 		}
 
 		public Type[] GetNestedTypes()
@@ -932,48 +961,17 @@ namespace IKVM.Reflection
 
 		public PropertyInfo GetProperty(string name, BindingFlags bindingAttr)
 		{
-			foreach (PropertyInfo prop in GetProperties(bindingAttr))
-			{
-				if (prop.Name == name)
-				{
-					return prop;
-				}
-			}
-			return null;
+			return GetMemberByName<PropertyInfo>(name, bindingAttr);
 		}
 
 		public PropertyInfo GetProperty(string name, Type returnType)
 		{
-			PropertyInfo found = null;
-			foreach (PropertyInfo prop in GetProperties())
-			{
-				if (prop.Name == name && prop.PropertyType.Equals(returnType))
-				{
-					if (found != null)
-					{
-						throw new AmbiguousMatchException();
-					}
-					found = prop;
-				}
-			}
-			return found;
+			return GetMemberByName<PropertyInfo>(name, BindingFlags.Default, delegate(PropertyInfo prop) { return prop.PropertyType.Equals(returnType); });
 		}
 
 		public PropertyInfo GetProperty(string name, Type[] types)
 		{
-			PropertyInfo found = null;
-			foreach (PropertyInfo prop in GetProperties())
-			{
-				if (prop.Name == name && MatchParameterTypes(prop.GetIndexParameters(), types))
-				{
-					if (found != null)
-					{
-						throw new AmbiguousMatchException();
-					}
-					found = prop;
-				}
-			}
-			return found;
+			return GetMemberByName<PropertyInfo>(name, BindingFlags.Default, delegate(PropertyInfo prop) { return MatchParameterTypes(prop.GetIndexParameters(), types); });
 		}
 
 		private static bool MatchParameterTypes(ParameterInfo[] parameters, Type[] types)
@@ -1004,19 +1002,10 @@ namespace IKVM.Reflection
 
 		public PropertyInfo GetProperty(string name, BindingFlags bindingAttr, Binder binder, Type returnType, Type[] types, ParameterModifier[] modifiers)
 		{
-			PropertyInfo found = null;
-			foreach (PropertyInfo prop in GetProperties(bindingAttr))
-			{
-				if (prop.Name == name && prop.PropertyType.Equals(returnType) && MatchParameterTypes(prop.GetIndexParameters(), types))
-				{
-					if (found != null)
-					{
-						throw new AmbiguousMatchException();
-					}
-					found = prop;
-				}
-			}
-			return found;
+			return GetMemberByName<PropertyInfo>(name, bindingAttr,
+				delegate(PropertyInfo prop) {
+					return prop.PropertyType.Equals(returnType) && MatchParameterTypes(prop.GetIndexParameters(), types);
+				});
 		}
 
 		public Type GetInterface(string name)

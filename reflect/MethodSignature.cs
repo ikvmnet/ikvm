@@ -312,6 +312,11 @@ namespace IKVM.Reflection
 			return new MethodSignature(returnType, parameterTypes, modifiers, callingConvention, genericParamCount);
 		}
 
+		internal bool MatchParameterTypes(MethodSignature other)
+		{
+			return Util.ArrayEquals(other.parameterTypes, parameterTypes);
+		}
+
 		internal bool MatchParameterTypes(Type[] types)
 		{
 			return Util.ArrayEquals(types, parameterTypes);
