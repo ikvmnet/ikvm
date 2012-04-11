@@ -104,5 +104,21 @@ namespace IKVM.Reflection
 			return (state && (flags & trueFlag) == trueFlag)
 				|| (!state && (flags & falseFlag) == falseFlag);
 		}
+
+		protected static T SetReflectedType<T>(T member, Type type)
+			where T : MemberInfo
+		{
+			return member == null ? null : (T)member.SetReflectedType(type);
+		}
+
+		protected static T[] SetReflectedType<T>(T[] members, Type type)
+			where T : MemberInfo
+		{
+			for (int i = 0; i < members.Length; i++)
+			{
+				members[i] = SetReflectedType(members[i], type);
+			}
+			return members;
+		}
 	}
 }

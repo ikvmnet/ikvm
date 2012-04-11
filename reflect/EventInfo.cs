@@ -122,37 +122,27 @@ namespace IKVM.Reflection
 
 		public override MethodInfo GetAddMethod(bool nonPublic)
 		{
-			return (MethodInfo)eventInfo.GetAddMethod(nonPublic).SetReflectedType(reflectedType);
+			return SetReflectedType(eventInfo.GetAddMethod(nonPublic), reflectedType);
 		}
 
 		public override MethodInfo GetRaiseMethod(bool nonPublic)
 		{
-			return (MethodInfo)eventInfo.GetRaiseMethod(nonPublic).SetReflectedType(reflectedType);
+			return SetReflectedType(eventInfo.GetRaiseMethod(nonPublic), reflectedType);
 		}
 
 		public override MethodInfo GetRemoveMethod(bool nonPublic)
 		{
-			return (MethodInfo)eventInfo.GetRemoveMethod(nonPublic).SetReflectedType(reflectedType);
+			return SetReflectedType(eventInfo.GetRemoveMethod(nonPublic), reflectedType);
 		}
 
 		public override MethodInfo[] GetOtherMethods(bool nonPublic)
 		{
-			MethodInfo[] methods = eventInfo.GetOtherMethods(nonPublic);
-			for (int i = 0; i < methods.Length; i++)
-			{
-				methods[i] = (MethodInfo)methods[i].SetReflectedType(reflectedType);
-			}
-			return methods;
+			return SetReflectedType(eventInfo.GetOtherMethods(nonPublic), reflectedType);
 		}
 
 		public override MethodInfo[] __GetMethods()
 		{
-			MethodInfo[] methods = eventInfo.__GetMethods();
-			for (int i = 0; i < methods.Length; i++)
-			{
-				methods[i] = (MethodInfo)methods[i].SetReflectedType(reflectedType);
-			}
-			return methods;
+			return SetReflectedType(eventInfo.__GetMethods(), reflectedType);
 		}
 
 		public override Type EventHandlerType

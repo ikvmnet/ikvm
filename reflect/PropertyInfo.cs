@@ -219,22 +219,17 @@ namespace IKVM.Reflection
 
 		public override MethodInfo GetGetMethod(bool nonPublic)
 		{
-			return (MethodInfo)property.GetGetMethod(nonPublic).SetReflectedType(reflectedType);
+			return SetReflectedType(property.GetGetMethod(nonPublic), reflectedType);
 		}
 
 		public override MethodInfo GetSetMethod(bool nonPublic)
 		{
-			return (MethodInfo)property.GetSetMethod(nonPublic).SetReflectedType(reflectedType);
+			return SetReflectedType(property.GetSetMethod(nonPublic), reflectedType);
 		}
 
 		public override MethodInfo[] GetAccessors(bool nonPublic)
 		{
-			MethodInfo[] methods = GetAccessors(nonPublic);
-			for (int i = 0; i < methods.Length; i++)
-			{
-				methods[i] = (MethodInfo)methods[i].SetReflectedType(reflectedType);
-			}
-			return methods;
+			return SetReflectedType(property.GetAccessors(nonPublic), reflectedType);
 		}
 
 		public override object GetRawConstantValue()
