@@ -211,11 +211,71 @@ namespace ikvm.awt
 		}
 	}
 
+	static class WinFormsMessageLoop
+	{
+		private static readonly object mylock = new object();
+		private static Form theForm;
+
+		private static Form GetForm()
+		{
+			lock (mylock)
+			{
+				if (theForm == null)
+				{
+					Thread thread = new Thread(MessageLoop);
+					thread.SetApartmentState(ApartmentState.STA);
+					thread.Name = "IKVM AWT WinForms Message Loop";
+					thread.IsBackground = true;
+					thread.Start();
+					while (theForm == null && thread.IsAlive)
+					{
+						Thread.Sleep(1);
+					}
+				}
+			}
+			return theForm;
+		}
+
+		private static void MessageLoop()
+		{
+			using (Form form = new Form())
+			{
+				NetToolkit.CreateNative(form);
+				theForm = form;
+				Application.Run();
+			}
+		}
+
+		internal static bool InvokeRequired
+		{
+			get { return GetForm().InvokeRequired; }
+		}
+
+		internal static object Invoke(Delegate method)
+		{
+			return GetForm().Invoke(method);
+		}
+
+		internal static object Invoke(Delegate method, params object[] args)
+		{
+			return GetForm().Invoke(method, args);
+		}
+
+		internal static IAsyncResult BeginInvoke(Delegate method)
+		{
+			return GetForm().BeginInvoke(method);
+		}
+
+		internal static IAsyncResult BeginInvoke(Delegate method, params object[] args)
+		{
+			return GetForm().BeginInvoke(method, args);
+		}
+	}
+
 	public sealed class NetToolkit : sun.awt.SunToolkit, ikvm.awt.IkvmToolkit, sun.awt.KeyboardFocusManagerPeerProvider
     {
         public static readonly String DATA_TRANSFERER_CLASS_NAME = typeof(NetDataTransferer).AssemblyQualifiedName;
 
-        private static volatile Form bogusForm;
         private int resolution;
         private NetClipboard clipboard;
 		private bool eventQueueSynchronizationContext;
@@ -244,16 +304,6 @@ namespace ikvm.awt
 			}
 		}
 
-        private static void MessageLoop()
-        {
-            using (Form form = new Form())
-            {
-				CreateNative(form);
-                bogusForm = form;
-                Application.Run();
-            }
-        }
-
 		internal static void CreateNative(Control control)
 		{
 			control.CreateControl();
@@ -267,22 +317,7 @@ namespace ikvm.awt
 
         public NetToolkit()
         {
-            lock (typeof(NetToolkit))
-            {
-                System.Diagnostics.Debug.Assert(bogusForm == null);
-                setDataTransfererClassName(DATA_TRANSFERER_CLASS_NAME);
-
-                Thread thread = new Thread(new ThreadStart(MessageLoop));
-                thread.SetApartmentState(ApartmentState.STA);
-                thread.Name = "IKVM AWT WinForms Message Loop";
-                thread.IsBackground = true;
-                thread.Start();
-                // TODO don't use polling...
-                while (bogusForm == null && thread.IsAlive)
-                {
-                    Thread.Sleep(1);
-                }
-            }
+            setDataTransfererClassName(DATA_TRANSFERER_CLASS_NAME);
         }
 
         /// <summary>
@@ -510,7 +545,8 @@ namespace ikvm.awt
         {
             if (resolution == 0)
             {
-                using (Graphics g = bogusForm.CreateGraphics())
+                using (Form form = new Form())
+                using (Graphics g = form.CreateGraphics())
                 {
                     resolution = (int)Math.Round(g.DpiY);
                 }
@@ -931,9 +967,9 @@ namespace ikvm.awt
 
 		internal static void BeginInvoke(MethodInvoker del)
         {
-            if (bogusForm.InvokeRequired)
+            if (WinFormsMessageLoop.InvokeRequired)
             {
-                bogusForm.BeginInvoke(del);
+                WinFormsMessageLoop.BeginInvoke(del);
             }
             else
             {
@@ -943,9 +979,9 @@ namespace ikvm.awt
 
         internal static void BeginInvoke<T>(Action<T> del, T t)
         {
-            if (bogusForm.InvokeRequired)
+            if (WinFormsMessageLoop.InvokeRequired)
             {
-                bogusForm.BeginInvoke(del, t);
+                WinFormsMessageLoop.BeginInvoke(del, t);
             }
             else
             {
@@ -954,9 +990,9 @@ namespace ikvm.awt
         }
         internal static void Invoke<T>(Action<T> del, T t)
         {
-            if (bogusForm.InvokeRequired)
+            if (WinFormsMessageLoop.InvokeRequired)
             {
-                bogusForm.Invoke(del, t);
+                WinFormsMessageLoop.Invoke(del, t);
             }
             else
             {
@@ -966,9 +1002,9 @@ namespace ikvm.awt
 
         internal static TResult Invoke<TResult>(Func<TResult> del)
         {
-            if (bogusForm.InvokeRequired)
+            if (WinFormsMessageLoop.InvokeRequired)
             {
-                return (TResult)bogusForm.Invoke(del);
+                return (TResult)WinFormsMessageLoop.Invoke(del);
             }
             else
             {
@@ -978,9 +1014,9 @@ namespace ikvm.awt
 
         internal static void Invoke(MethodInvoker del)
         {
-            if (bogusForm.InvokeRequired)
+            if (WinFormsMessageLoop.InvokeRequired)
             {
-                bogusForm.Invoke(del);
+                WinFormsMessageLoop.Invoke(del);
             }
             else
             {
