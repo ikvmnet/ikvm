@@ -508,11 +508,13 @@ class IkvmcCompiler
 
 	void ContinueParseCommandLine(IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
 	{
+		List<string> fileNames = new List<string>();
 		while(arglist.MoveNext())
 		{
 			string s = arglist.Current;
 			if(s == "{")
 			{
+				ReadFiles(fileNames);
 				nonleaf = true;
 				IkvmcCompiler nestedLevel = new IkvmcCompiler();
 				nestedLevel.manifestMainClass = manifestMainClass;
@@ -949,36 +951,7 @@ class IkvmcCompiler
 			}
 			else
 			{
-				if(defaultAssemblyName == null)
-				{
-					try
-					{
-						defaultAssemblyName = new FileInfo(Path.GetFileName(s)).Name;
-					}
-					catch(ArgumentException)
-					{
-						// if the filename contains a wildcard (or any other invalid character), we ignore
-						// it as a potential default assembly name
-					}
-				}
-				string[] files = null;
-				try
-				{
-					string path = Path.GetDirectoryName(s);
-					files = Directory.GetFiles(path == "" ? "." : path, Path.GetFileName(s));
-				}
-				catch { }
-				if (files == null || files.Length == 0)
-				{
-					StaticCompiler.IssueMessage(Message.InputFileNotFound, s);
-				}
-				else
-				{
-					foreach (string f in files)
-					{
-						ProcessFile(null, f);
-					}
-				}
+				fileNames.Add(s);
 			}
 			if(options.targetIsModule && options.sharedclassloader != null)
 			{
@@ -989,6 +962,7 @@ class IkvmcCompiler
 		{
 			return;
 		}
+		ReadFiles(fileNames);
 		if(options.assembly == null)
 		{
 			string basename = options.path == null ? defaultAssemblyName : new FileInfo(options.path).Name;
@@ -1023,6 +997,43 @@ class IkvmcCompiler
 		options.resources = resources;
 		options.classesToExclude = classesToExclude.ToArray();
 		targets.Add(options);
+	}
+
+	private void ReadFiles(List<string> fileNames)
+	{
+		foreach (string fileName in fileNames)
+		{
+			if (defaultAssemblyName == null)
+			{
+				try
+				{
+					defaultAssemblyName = new FileInfo(Path.GetFileName(fileName)).Name;
+				}
+				catch (ArgumentException)
+				{
+					// if the filename contains a wildcard (or any other invalid character), we ignore
+					// it as a potential default assembly name
+				}
+			}
+			string[] files = null;
+			try
+			{
+				string path = Path.GetDirectoryName(fileName);
+				files = Directory.GetFiles(path == "" ? "." : path, Path.GetFileName(fileName));
+			}
+			catch { }
+			if (files == null || files.Length == 0)
+			{
+				StaticCompiler.IssueMessage(Message.InputFileNotFound, fileName);
+			}
+			else
+			{
+				foreach (string f in files)
+				{
+					ProcessFile(null, f);
+				}
+			}
+		}
 	}
 
 	internal static bool TryParseVersion(string str, out Version version)
