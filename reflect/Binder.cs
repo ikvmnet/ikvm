@@ -104,7 +104,7 @@ namespace IKVM.Reflection
 				Type targetType = parameters[i].ParameterType;
 				if (sourceType != targetType
 					&& !targetType.IsAssignableFrom(sourceType)
-					&& !IsAllowedPrimitiveConversion(Type.GetTypeCode(sourceType), Type.GetTypeCode(targetType)))
+					&& !IsAllowedPrimitiveConversion(sourceType, targetType))
 				{
 					return false;
 				}
@@ -193,8 +193,15 @@ namespace IKVM.Reflection
 			return conv == type2.IsAssignableFrom(type1) ? 0 : conv ? 2 : 1;
 		}
 
-		private static bool IsAllowedPrimitiveConversion(TypeCode sourceType, TypeCode targetType)
+		private static bool IsAllowedPrimitiveConversion(Type source, Type target)
 		{
+			// we need to check for primitives, because GetTypeCode will return the underlying type for enums
+			if (!source.IsPrimitive || !target.IsPrimitive)
+			{
+				return false;
+			}
+			TypeCode sourceType = Type.GetTypeCode(source);
+			TypeCode targetType = Type.GetTypeCode(target);
 			switch (sourceType)
 			{
 				case TypeCode.Char:
@@ -326,7 +333,7 @@ namespace IKVM.Reflection
 					{
 						if (property.PropertyType.IsPrimitive)
 						{
-							if (!IsAllowedPrimitiveConversion(Type.GetTypeCode(returnType), Type.GetTypeCode(property.PropertyType)))
+							if (!IsAllowedPrimitiveConversion(returnType, property.PropertyType))
 							{
 								continue;
 							}
