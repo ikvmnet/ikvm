@@ -473,7 +473,7 @@ namespace IKVM.Internal
 
 		private void UpdateNonPublicTypeInSignatureFlag()
 		{
-			if ((IsPublic || IsProtected) && (returnTypeWrapper != null && parameterTypeWrappers != null) && !(this is AccessStubMethodWrapper))
+			if ((IsPublic || IsProtected) && (returnTypeWrapper != null && parameterTypeWrappers != null) && !(this is AccessStubMethodWrapper) && !(this is AccessStubConstructorMethodWrapper))
 			{
 				if (!returnTypeWrapper.IsPublic && !returnTypeWrapper.IsUnloadable)
 				{
@@ -1239,6 +1239,29 @@ namespace IKVM.Internal
 		protected override void CallvirtImpl(CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Callvirt, stubVirtual);
+		}
+#endif // !STUB_GENERATOR
+	}
+
+	sealed class AccessStubConstructorMethodWrapper : SmartMethodWrapper
+	{
+		private readonly ConstructorInfo stub;
+
+		internal AccessStubConstructorMethodWrapper(TypeWrapper declaringType, string sig, ConstructorInfo core, ConstructorInfo stub, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
+			: base(declaringType, StringConstants.INIT, sig, core, PrimitiveTypeWrapper.VOID, parameterTypes, modifiers, flags)
+		{
+			this.stub = stub;
+		}
+
+#if !STUB_GENERATOR
+		protected override void CallImpl(CodeEmitter ilgen)
+		{
+			ilgen.Emit(OpCodes.Call, stub);
+		}
+
+		protected override void NewobjImpl(CodeEmitter ilgen)
+		{
+			ilgen.Emit(OpCodes.Newobj, stub);
 		}
 #endif // !STUB_GENERATOR
 	}

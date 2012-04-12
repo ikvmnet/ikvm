@@ -4127,11 +4127,22 @@ namespace IKVM.Internal
 					MethodWrapper mw = MethodWrapper.Create(this, name, sig, method, retType, paramTypes, mods.Modifiers, flags);
 					if (mw.HasNonPublicTypeInSignature)
 					{
-						MethodInfo stubVirt;
-						MethodInfo stubNonVirt;
-						if (GetType2AccessStubs(name, sig, out stubVirt, out stubNonVirt))
+						if (mi != null)
 						{
-							mw = new AccessStubMethodWrapper(this, name, sig, mi, stubVirt, stubNonVirt ?? stubVirt, retType, paramTypes, mw.Modifiers, flags);
+							MethodInfo stubVirt;
+							MethodInfo stubNonVirt;
+							if (GetType2AccessStubs(name, sig, out stubVirt, out stubNonVirt))
+							{
+								mw = new AccessStubMethodWrapper(this, name, sig, mi, stubVirt, stubNonVirt ?? stubVirt, retType, paramTypes, mw.Modifiers, flags);
+							}
+						}
+						else
+						{
+							ConstructorInfo stub;
+							if (GetType2AccessStub(sig, out stub))
+							{
+								mw = new AccessStubConstructorMethodWrapper(this, sig, (ConstructorInfo)method, stub, paramTypes, mw.Modifiers, flags);
+							}
 						}
 					}
 					methods.Add(mw);
@@ -4163,6 +4174,24 @@ namespace IKVM.Internal
 				}
 			}
 			return stubVirt != null;
+		}
+
+		private bool GetType2AccessStub(string sig, out ConstructorInfo stub)
+		{
+			stub = null;
+			const BindingFlags flags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+			foreach (ConstructorInfo ctor in type.GetConstructors(flags))
+			{
+				if (AttributeHelper.IsHideFromJava(ctor))
+				{
+					NameSigAttribute attr = AttributeHelper.GetNameSig(ctor);
+					if (attr != null && attr.Sig == sig)
+					{
+						stub = ctor;
+					}
+				}
+			}
+			return stub != null;
 		}
 
 		private static int SortFieldByToken(FieldInfo field1, FieldInfo field2)

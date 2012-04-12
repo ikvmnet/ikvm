@@ -4374,11 +4374,10 @@ namespace IKVM.Internal
 				{
 					if (mw.HasNonPublicTypeInSignature
 						&& (mw.IsPublic || (mw.IsProtected && !wrapper.IsFinal))
-						&& mw.Name != StringConstants.INIT	// TODO we don't currently support constructors
 						&& ParametersAreAccessible(mw))
 					{
 						GenerateAccessStub(id, mw, true, false);
-						if (!mw.IsStatic && !mw.IsFinal && !mw.IsAbstract && !wrapper.IsFinal)
+						if (!mw.IsStatic && !mw.IsFinal && !mw.IsAbstract && mw.Name != StringConstants.INIT && !wrapper.IsFinal)
 						{
 							GenerateAccessStub(id, mw, false, false);
 						}
@@ -4410,9 +4409,18 @@ namespace IKVM.Internal
 				Type[] modoptReturnType = wrapper.GetModOpt(mw.ReturnType, true);
 				Array.Resize(ref modoptReturnType, modoptReturnType.Length + 1);
 				modoptReturnType[modoptReturnType.Length - 1] = JVM.LoadType(typeof(IKVM.Attributes.AccessStub));
-				string name = virt
-					? (mw.Modifiers & Modifiers.Bridge) == 0 ? mw.Name : NamePrefix.Bridge + mw.Name
-					: NamePrefix.NonVirtual + id;
+				string name;
+				if (mw.Name == StringConstants.INIT)
+				{
+					name = ConstructorInfo.ConstructorName;
+					stubattribs |= MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
+				}
+				else
+				{
+					name = virt
+						? (mw.Modifiers & Modifiers.Bridge) == 0 ? mw.Name : NamePrefix.Bridge + mw.Name
+						: NamePrefix.NonVirtual + id;
+				}
 				MethodBuilder mb = typeBuilder.DefineMethod(name, stubattribs, CallingConventions.Standard, returnType, null, modoptReturnType, parameterTypes, null, modopt);
 				if (virt && type1)
 				{
@@ -4442,7 +4450,7 @@ namespace IKVM.Internal
 						ilgen.Emit(OpCodes.Castclass, realParameterTypes[i]);
 					}
 				}
-				if (mw.IsStatic || !virt)
+				if (mw.IsStatic || !virt || mw.Name == StringConstants.INIT)
 				{
 					mw.EmitCall(ilgen);
 				}
