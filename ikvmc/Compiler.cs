@@ -514,8 +514,11 @@ class IkvmcCompiler
 			string s = arglist.Current;
 			if(s == "{")
 			{
-				ReadFiles(fileNames);
-				nonleaf = true;
+				if (!nonleaf)
+				{
+					ReadFiles(fileNames);
+					nonleaf = true;
+				}
 				IkvmcCompiler nestedLevel = new IkvmcCompiler();
 				nestedLevel.manifestMainClass = manifestMainClass;
 				nestedLevel.classes = new Dictionary<string, ClassItem>(classes);
