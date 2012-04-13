@@ -3195,9 +3195,17 @@ namespace IKVM.Internal
 
 	sealed class UnloadableTypeWrapper : TypeWrapper
 	{
+		private Type customModifier;
+
 		internal UnloadableTypeWrapper(string name)
 			: base(TypeWrapper.UnloadableModifiersHack, name)
 		{
+		}
+
+		internal UnloadableTypeWrapper(string name, Type customModifier)
+			: this(name)
+		{
+			this.customModifier = customModifier;
 		}
 
 		internal override TypeWrapper BaseTypeWrapper
@@ -3275,7 +3283,23 @@ namespace IKVM.Internal
 			throw new InvalidOperationException("Finish called on UnloadableTypeWrapper: " + Name);
 		}
 
+		internal Type CustomModifier
+		{
+			get { return customModifier; }
+		}
+
+		internal void SetCustomModifier(Type type)
+		{
+			this.customModifier = type;
+		}
+
 #if !STUB_GENERATOR
+		internal Type GetCustomModifier(TypeWrapperFactory context)
+		{
+			// we don't need to lock, because we're only supposed to be called while holding the finish lock
+			return customModifier ?? (customModifier = context.DefineUnloadable(this.Name));
+		}
+
 		internal override void EmitCheckcast(TypeWrapper context, CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Ldtoken, context.TypeAsTBD);
@@ -4400,7 +4424,7 @@ namespace IKVM.Internal
 			else
 			{
 				return ClassLoaderWrapper.GetWrapperFromType(modopt)
-					?? new UnloadableTypeWrapper(TypeNameUtil.UnmangleNestedTypeName(modopt.Name));
+					?? new UnloadableTypeWrapper(TypeNameUtil.UnmangleNestedTypeName(modopt.Name), modopt);
 			}
 		}
 

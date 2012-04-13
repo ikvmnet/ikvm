@@ -1282,6 +1282,10 @@ namespace IKVM.Internal
 					if (mw.ReturnType.IsUnloadable || baseMethod.ReturnType.IsUnloadable)
 					{
 						// unloadable types can never cause a loader constraint violation
+						if (mw.ReturnType.IsUnloadable && baseMethod.ReturnType.IsUnloadable)
+						{
+							((UnloadableTypeWrapper)mw.ReturnType).SetCustomModifier(((UnloadableTypeWrapper)baseMethod.ReturnType).CustomModifier);
+						}
 					}
 					else
 					{
@@ -1300,6 +1304,10 @@ namespace IKVM.Internal
 						if (here[i].IsUnloadable || there[i].IsUnloadable)
 						{
 							// unloadable types can never cause a loader constraint violation
+							if (here[i].IsUnloadable && there[i].IsUnloadable)
+							{
+								((UnloadableTypeWrapper)here[i]).SetCustomModifier(((UnloadableTypeWrapper)there[i]).CustomModifier);
+							}
 						}
 						else
 						{
@@ -5439,7 +5447,7 @@ namespace IKVM.Internal
 		private static bool CheckRequireOverrideStub(MethodWrapper mw1, MethodWrapper mw2)
 		{
 			// TODO this is too late to generate LinkageErrors so we need to figure this out earlier
-			if (mw1.ReturnType != mw2.ReturnType && !(mw1.ReturnType.IsUnloadable && mw2.ReturnType.IsUnloadable))
+			if (!TypesMatchForOverride(mw1.ReturnType, mw2.ReturnType))
 			{
 				return true;
 			}
@@ -5447,12 +5455,28 @@ namespace IKVM.Internal
 			TypeWrapper[] args2 = mw2.GetParameters();
 			for (int i = 0; i < args1.Length; i++)
 			{
-				if (args1[i] != args2[i] && !(args1[i].IsUnloadable && args2[i].IsUnloadable))
+				if (!TypesMatchForOverride(args1[i], args2[i]))
 				{
 					return true;
 				}
 			}
 			return false;
+		}
+
+		private static bool TypesMatchForOverride(TypeWrapper tw1, TypeWrapper tw2)
+		{
+			if (tw1 == tw2)
+			{
+				return true;
+			}
+			else if (tw1.IsUnloadable && tw2.IsUnloadable)
+			{
+				return ((UnloadableTypeWrapper)tw1).CustomModifier == ((UnloadableTypeWrapper)tw2).CustomModifier;
+			}
+			else
+			{
+				return false;
+			}
 		}
 
 		private void GenerateOverrideStub(TypeBuilder typeBuilder, MethodWrapper baseMethod, MethodInfo target, MethodWrapper targetMethod)
@@ -5928,7 +5952,7 @@ namespace IKVM.Internal
 			Type[] modopt = Type.EmptyTypes;
 			if (tw.IsUnloadable)
 			{
-				modopt = new Type[] { context.DefineUnloadable(tw.Name) };
+				modopt = new Type[] { ((UnloadableTypeWrapper)tw).GetCustomModifier(context) };
 			}
 			else
 			{
