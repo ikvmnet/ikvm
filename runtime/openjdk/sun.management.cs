@@ -97,7 +97,7 @@ static class Java_sun_management_ThreadImpl
                 for (int i = 0; i < ids.Length; i++)
                 {
                     long id = ids[i];
-                    for (int t = 0; t < ids.Length; t++)
+                    for (int t = 0; t < threads.Length; t++)
                     {
                         if (threads[t].getId() == id)
                         {
