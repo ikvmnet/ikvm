@@ -3503,6 +3503,27 @@ namespace IKVM.NativeCode.java
 				return stackTrace.ToArray();
 #endif
 			}
+
+            public static object getThreads()
+            {
+#if FIRST_PASS
+				return null;
+#else
+                return global::java.security.AccessController.doPrivileged(global::ikvm.runtime.Delegates.toPrivilegedAction(delegate
+                {
+                    jlThreadGroup root = (jlThreadGroup)mainThreadGroup;
+                    for (; ; )
+                    {
+                        jlThread[] threads = new jlThread[root.activeCount()];
+                        if (root.enumerate(threads) == threads.Length)
+                        {
+                            return threads;
+                        }
+                    }
+                }));
+#endif
+            }
+			
 		}
 
 		static class ProcessImpl

@@ -2047,20 +2047,7 @@ class Thread implements Runnable {
     
     private static native StackTraceElement[] getStackTrace(cli.System.Diagnostics.StackTrace stack);
 
-    private static Thread[] getThreads() {
-        return (Thread[])AccessController.doPrivileged(
-            new PrivilegedAction() {
-                public Object run() {
-                    ThreadGroup root = getMainThreadGroup();
-                    for (; ; ) {
-                        Thread[] threads = new Thread[root.activeCount()];
-                        if (root.enumerate(threads) == threads.length) {
-                            return threads;
-                        }
-                    }
-                }
-            });
-    }
+    private static native Thread[] getThreads();
 
     /**
      * Returns the identifier of this Thread.  The thread ID is a positive
