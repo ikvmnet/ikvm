@@ -71,13 +71,95 @@ static class Java_sun_management_ThreadImpl
 {
 	public static object getThreads()
 	{
-		throw new System.NotImplementedException();
+        return IKVM.NativeCode.java.lang.Thread.getThreads();
 	}
+
+    private const int JVMTI_THREAD_STATE_ALIVE = 0x0001;
+    private const int JVMTI_THREAD_STATE_TERMINATED = 0x0002;
+    private const int JVMTI_THREAD_STATE_RUNNABLE = 0x0004;
+    private const int JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER = 0x0400;
+    private const int JVMTI_THREAD_STATE_WAITING_INDEFINITELY = 0x0010;
+    private const int JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT = 0x0020;
+    private const int JMM_THREAD_STATE_FLAG_SUSPENDED = 0x00100000;
+    private const int JMM_THREAD_STATE_FLAG_NATIVE = 0x00400000;
 
 	public static void getThreadInfo1(long[] ids, int maxDepth, object result)
 	{
-		throw new System.NotImplementedException();
-	}
+#if !FIRST_PASS
+
+        System.Reflection.ConstructorInfo[] constructors = typeof(java.lang.management.ThreadInfo).GetConstructors( System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        foreach (System.Reflection.ConstructorInfo constructor in constructors)
+        {
+            if (constructor.GetParameters().Length == 9)
+            {
+                java.lang.Thread[] threads = (java.lang.Thread[])getThreads();
+                java.lang.management.ThreadInfo[] threadInfos = (java.lang.management.ThreadInfo[])result;
+                for (int i = 0; i < ids.Length; i++)
+                {
+                    long id = ids[i];
+                    for (int t = 0; t < ids.Length; t++)
+                    {
+                        if (threads[t].getId() == id)
+                        {
+                            java.lang.Thread thread = threads[t];
+
+                            int state;
+                            // invers to sun.misc.VM.toThreadState
+                            switch(thread.getState().ordinal())
+                            {
+                                case (int)java.lang.Thread.State.__Enum.RUNNABLE:
+                                    state = JVMTI_THREAD_STATE_RUNNABLE;
+                                    break;
+                                case (int)java.lang.Thread.State.__Enum.BLOCKED:
+                                    state = JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER;
+                                    break;
+                                case (int)java.lang.Thread.State.__Enum.WAITING:
+                                    state = JVMTI_THREAD_STATE_WAITING_INDEFINITELY;
+                                    break;
+                                case (int)java.lang.Thread.State.__Enum.TIMED_WAITING:
+                                    state = JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT;
+                                    break;
+                                case (int)java.lang.Thread.State.__Enum.TERMINATED:
+                                    state = JVMTI_THREAD_STATE_TERMINATED;
+                                    break;
+                                case (int)java.lang.Thread.State.__Enum.NEW:
+                                    state = JVMTI_THREAD_STATE_ALIVE;
+                                    break;
+                                default:
+                                    state = 0;
+                                    break;
+                            }
+                            //TODO set in state JMM_THREAD_STATE_FLAG_SUSPENDED if the thread is suspended
+
+                            java.lang.StackTraceElement[] stacktrace = thread.getStackTrace();
+                            if (maxDepth >= 0 && maxDepth < stacktrace.Length)
+                            {
+                                java.lang.StackTraceElement[] temp = new java.lang.StackTraceElement[maxDepth];
+                                System.Array.Copy(stacktrace, temp, temp.Length);
+                                stacktrace = temp;
+                            }
+
+                            object[] parameters = new object[9];
+                            parameters[0] = thread;                     // thread
+                            parameters[1] = state;                      // state
+                                                                        // lockObj
+                                                                        // lockOwner
+                            parameters[4] = 0;                          // blockedCount
+                            parameters[5] = 0;                          // blockedTime
+                            parameters[6] = -1;                         // waitedCount
+                            parameters[7] = 0;                          // waitedTime
+                            parameters[8] = stacktrace;                 // stackTrace
+                            threadInfos[i] = (java.lang.management.ThreadInfo)constructor.Invoke(parameters);
+                            break;
+                        }
+                    }
+                }
+                return;
+            }
+        }
+        throw new java.lang.InternalError("Constructor for java.lang.management.ThreadInfo not find.");
+#endif
+    }
 
 	public static long getThreadTotalCpuTime0(long id)
 	{
