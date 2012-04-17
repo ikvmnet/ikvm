@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Jeroen Frijters
+  Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -86,6 +86,21 @@ namespace IKVM.Reflection.Reader
 		public sealed override bool IsGenericParameter
 		{
 			get { return true; }
+		}
+
+		public sealed override bool __ContainsMissingType
+		{
+			get
+			{
+				foreach (Type type in GetGenericParameterConstraints())
+				{
+					if (type.__ContainsMissingType)
+					{
+						return true;
+					}
+				}
+				return false;
+			}
 		}
 	}
 
