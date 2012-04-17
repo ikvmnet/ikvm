@@ -92,16 +92,54 @@ namespace IKVM.Reflection.Reader
 		{
 			get
 			{
-				foreach (Type type in GetGenericParameterConstraints())
+				bool freeList = false;
+				try
 				{
-					if (type.__ContainsMissingType)
+					foreach (Type type in GetGenericParameterConstraints())
 					{
-						return true;
+						if (type.__IsMissing)
+						{
+							return true;
+						}
+						else if (type.IsGenericTypeInstance || type.HasElementType || type.__IsFunctionPointer)
+						{
+							// if a constructed type contains generic parameters,
+							// it might contain this type parameter again and
+							// to prevent infinite recurssion, we keep a thread local
+							// list of type parameters we've already processed
+							if (type.ContainsGenericParameters)
+							{
+								if (containsMissingTypeHack == null)
+								{
+									freeList = true;
+									containsMissingTypeHack = new List<Type>();
+								}
+								else if (containsMissingTypeHack.Contains(this))
+								{
+									return false;
+								}
+								containsMissingTypeHack.Add(this);
+							}
+							if (type.__ContainsMissingType)
+							{
+								return true;
+							}
+						}
+					}
+					return false;
+				}
+				finally
+				{
+					if (freeList)
+					{
+						containsMissingTypeHack = null;
 					}
 				}
-				return false;
 			}
 		}
+
+		[ThreadStatic]
+		private static List<Type> containsMissingTypeHack;
 	}
 
 	sealed class UnboundGenericMethodParameter : TypeParameterType
