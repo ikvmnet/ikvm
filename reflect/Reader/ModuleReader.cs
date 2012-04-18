@@ -1029,7 +1029,7 @@ namespace IKVM.Reflection.Reader
 					return new MemoryStream(br.ReadBytes(length));
 				}
 			}
-			throw new FileNotFoundException();
+			return null;
 		}
 
 		public override AssemblyName[] __GetReferencedAssemblies()
