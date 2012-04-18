@@ -502,7 +502,7 @@ namespace IKVM.Reflection.Reader
 			return new TypeName(GetString(typeNamespace), GetString(typeName));
 		}
 
-		private Assembly ResolveAssemblyRef(int index)
+		internal Assembly ResolveAssemblyRef(int index)
 		{
 			if (assemblyRefs == null)
 			{
@@ -974,7 +974,13 @@ namespace IKVM.Reflection.Reader
 			{
 				if (resourceName == GetString(ManifestResource.records[i].Name))
 				{
-					return new ManifestResourceInfo(this, i);
+					ManifestResourceInfo info = new ManifestResourceInfo(this, i);
+					Assembly asm = info.ReferencedAssembly;
+					if (asm != null && !asm.__IsMissing && asm.GetManifestResourceInfo(resourceName) == null)
+					{
+						return null;
+					}
+					return info;
 				}
 			}
 			return null;
