@@ -1030,10 +1030,7 @@ namespace IKVM.Reflection.Metadata
 		{
 			for (int i = 0; i < rowCount; i++)
 			{
-				if (moduleBuilder.IsPseudoToken(records[i].Class))
-				{
-					records[i].Class = moduleBuilder.ResolvePseudoToken(records[i].Class);
-				}
+				moduleBuilder.FixupPseudoToken(ref records[i].Class);
 			}
 		}
 	}
@@ -1088,10 +1085,7 @@ namespace IKVM.Reflection.Metadata
 			for (int i = 0; i < rowCount; i++)
 			{
 				int token = records[i].Parent;
-				if (moduleBuilder.IsPseudoToken(token))
-				{
-					token = moduleBuilder.ResolvePseudoToken(token);
-				}
+				moduleBuilder.FixupPseudoToken(ref token);
 				// do the HasConstant encoding, so that we can sort the table
 				switch (token >> 24)
 				{
@@ -1221,15 +1215,9 @@ namespace IKVM.Reflection.Metadata
 			int[] genericParamFixup = moduleBuilder.GenericParam.GetIndexFixup();
 			for (int i = 0; i < rowCount; i++)
 			{
-				if (moduleBuilder.IsPseudoToken(records[i].Type))
-				{
-					records[i].Type = moduleBuilder.ResolvePseudoToken(records[i].Type);
-				}
+				moduleBuilder.FixupPseudoToken(ref records[i].Type);
 				int token = records[i].Parent;
-				if (moduleBuilder.IsPseudoToken(token))
-				{
-					token = moduleBuilder.ResolvePseudoToken(token);
-				}
+				moduleBuilder.FixupPseudoToken(ref token);
 				// do the HasCustomAttribute encoding, so that we can sort the table
 				switch (token >> 24)
 				{
@@ -1422,10 +1410,7 @@ namespace IKVM.Reflection.Metadata
 			for (int i = 0; i < rowCount; i++)
 			{
 				int token = records[i].Parent;
-				if (moduleBuilder.IsPseudoToken(token))
-				{
-					token = moduleBuilder.ResolvePseudoToken(token);
-				}
+				moduleBuilder.FixupPseudoToken(ref token);
 				// do the HasDeclSecurity encoding, so that we can sort the table
 				switch (token >> 24)
 				{
@@ -1846,10 +1831,7 @@ namespace IKVM.Reflection.Metadata
 		{
 			for (int i = 0; i < rowCount; i++)
 			{
-				if (moduleBuilder.IsPseudoToken(records[i].Method))
-				{
-					records[i].Method = moduleBuilder.ResolvePseudoToken(records[i].Method);
-				}
+				moduleBuilder.FixupPseudoToken(ref records[i].Method);
 				int token = records[i].Association;
 				// do the HasSemantics encoding, so that we can sort the table
 				switch (token >> 24)
@@ -1970,14 +1952,8 @@ namespace IKVM.Reflection.Metadata
 		{
 			for (int i = 0; i < rowCount; i++)
 			{
-				if (moduleBuilder.IsPseudoToken(records[i].MethodBody))
-				{
-					records[i].MethodBody = moduleBuilder.ResolvePseudoToken(records[i].MethodBody);
-				}
-				if (moduleBuilder.IsPseudoToken(records[i].MethodDeclaration))
-				{
-					records[i].MethodDeclaration = moduleBuilder.ResolvePseudoToken(records[i].MethodDeclaration);
-				}
+				moduleBuilder.FixupPseudoToken(ref records[i].MethodBody);
+				moduleBuilder.FixupPseudoToken(ref records[i].MethodDeclaration);
 			}
 			Sort(this);
 		}
@@ -2107,10 +2083,7 @@ namespace IKVM.Reflection.Metadata
 		{
 			for (int i = 0; i < rowCount; i++)
 			{
-				if (moduleBuilder.IsPseudoToken(records[i].MemberForwarded))
-				{
-					records[i].MemberForwarded = moduleBuilder.ResolvePseudoToken(records[i].MemberForwarded);
-				}
+				moduleBuilder.FixupPseudoToken(ref records[i].MemberForwarded);
 			}
 			Array.Sort(records, 0, rowCount, this);
 		}
@@ -2174,10 +2147,7 @@ namespace IKVM.Reflection.Metadata
 				{
 					records[i].RVA += sdataRVA;
 				}
-				if (moduleBuilder.IsPseudoToken(records[i].Field))
-				{
-					records[i].Field = moduleBuilder.ResolvePseudoToken(records[i].Field);
-				}
+				moduleBuilder.FixupPseudoToken(ref records[i].Field);
 			}
 			Array.Sort(records, 0, rowCount, this);
 		}
@@ -2603,10 +2573,7 @@ namespace IKVM.Reflection.Metadata
 			for (int i = 0; i < rowCount; i++)
 			{
 				int token = records[i].Owner;
-				if (moduleBuilder.IsPseudoToken(token))
-				{
-					token = moduleBuilder.ResolvePseudoToken(token);
-				}
+				moduleBuilder.FixupPseudoToken(ref token);
 				// do the TypeOrMethodDef encoding, so that we can sort the table
 				switch (token >> 24)
 				{
@@ -2711,10 +2678,7 @@ namespace IKVM.Reflection.Metadata
 		{
 			for (int i = 0; i < rowCount; i++)
 			{
-				if (moduleBuilder.IsPseudoToken(records[i].Method))
-				{
-					records[i].Method = moduleBuilder.ResolvePseudoToken(records[i].Method);
-				}
+				moduleBuilder.FixupPseudoToken(ref records[i].Method);
 			}
 		}
 	}
