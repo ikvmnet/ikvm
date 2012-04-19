@@ -670,6 +670,14 @@ namespace IKVM.Reflection.Metadata
 				.WriteStringIndex()
 				.Value;
 		}
+
+		internal void Fixup(ModuleBuilder moduleBuilder)
+		{
+			for (int i = 0; i < rowCount; i++)
+			{
+				moduleBuilder.FixupPseudoToken(ref records[i].ResolutionScope);
+			}
+		}
 	}
 
 	sealed class TypeDefTable : Table<TypeDefTable.Record>
@@ -2423,6 +2431,14 @@ namespace IKVM.Reflection.Metadata
 			}
 			return AddRecord(rec);
 		}
+
+		internal void Fixup(ModuleBuilder moduleBuilder)
+		{
+			for (int i = 0; i < rowCount; i++)
+			{
+				moduleBuilder.FixupPseudoToken(ref records[i].Implementation);
+			}
+		}
 	}
 
 	sealed class ManifestResourceTable : Table<ManifestResourceTable.Record>
@@ -2466,6 +2482,14 @@ namespace IKVM.Reflection.Metadata
 				.WriteStringIndex()
 				.WriteImplementation()
 				.Value;
+		}
+
+		internal void Fixup(ModuleBuilder moduleBuilder)
+		{
+			for (int i = 0; i < rowCount; i++)
+			{
+				moduleBuilder.FixupPseudoToken(ref records[i].Implementation);
+			}
 		}
 	}
 
