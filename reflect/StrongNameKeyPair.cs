@@ -78,7 +78,10 @@ namespace IKVM.Reflection
 					publicKey[1] = 36;
 					publicKey[4] = 4;
 					publicKey[5] = 128;
-					publicKey[8] = 148;
+					publicKey[8] = (byte)(cspBlob.Length >> 0);
+					publicKey[9] = (byte)(cspBlob.Length >> 8);
+					publicKey[10] = (byte)(cspBlob.Length >> 16);
+					publicKey[11] = (byte)(cspBlob.Length >> 24);
 					return publicKey;
 				}
 			}
