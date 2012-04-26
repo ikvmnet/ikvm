@@ -49,7 +49,9 @@ namespace IKVM.Reflection.Impl
 			}
 			else
 			{
-				return Mono.Security.Cryptography.CryptoConvert.FromCapiKeyBlob(key);
+				RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
+				rsa.ImportCspBlob(key);
+				return rsa;
 			}
 		}
 	}
