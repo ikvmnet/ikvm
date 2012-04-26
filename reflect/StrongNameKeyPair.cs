@@ -47,7 +47,7 @@ namespace IKVM.Reflection
 			{
 				throw new ArgumentNullException("keyPairArray");
 			}
-			this.keyPairArray = keyPairArray;
+			this.keyPairArray = (byte[])keyPairArray.Clone();
 		}
 
 		public StrongNameKeyPair(FileStream keyPairFile)
