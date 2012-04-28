@@ -668,7 +668,7 @@ namespace IKVM.Internal
 					store.Open(OpenFlags.ReadOnly | OpenFlags.OpenExistingOnly);
 					foreach (X509Certificate2 cert in store.Certificates)
 					{
-						if (!cert.HasPrivateKey)
+						if (!cert.HasPrivateKey && cert.NotBefore < DateTime.Now && DateTime.Now <= cert.NotAfter)
 						{
 							jstore.setCertificateEntry(cert.Subject, cf.generateCertificate(new global::java.io.ByteArrayInputStream(cert.RawData)));
 						}
