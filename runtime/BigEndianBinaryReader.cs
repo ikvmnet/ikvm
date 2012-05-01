@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2004, 2005 Jeroen Frijters
+  Copyright (C) 2002-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -173,7 +173,7 @@ sealed class BigEndianBinaryReader
 						case 12: case 13:
 							// 110x xxxx   10xx xxxx
 							char2 = buf[pos + ++i];
-							if((char2 & 0xc0) != 0x80)
+							if((char2 & 0xc0) != 0x80 || i >= len)
 							{
 								throw new ClassFormatError("{0} (Illegal UTF8 string in constant pool)", classFile);
 							}
@@ -183,7 +183,7 @@ sealed class BigEndianBinaryReader
 							// 1110 xxxx  10xx xxxx  10xx xxxx
 							char2 = buf[pos + ++i];
 							char3 = buf[pos + ++i];
-							if((char2 & 0xc0) != 0x80 || (char3 & 0xc0) != 0x80)
+							if((char2 & 0xc0) != 0x80 || (char3 & 0xc0) != 0x80 || i >= len)
 							{
 								throw new ClassFormatError("{0} (Illegal UTF8 string in constant pool)", classFile);
 							}
