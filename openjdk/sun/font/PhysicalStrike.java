@@ -53,6 +53,8 @@ import ikvm.internal.NotYetImplementedError;
 public class PhysicalStrike extends FontStrike{
 
     private static final Bitmap BITMAP = new Bitmap( 1, 1 );
+    private static Graphics FRACT_GRAPHICS = createGraphics(true);
+    private static Graphics FIXED_GRAPHICS = createGraphics(false);
 
     private final Font font;
     private final FontFamily family;
@@ -82,16 +84,15 @@ public class PhysicalStrike extends FontStrike{
 
 
     /**
-     * Create a Graphics with the settings for the given FontRenderContext
+     * Create a Graphics with the settings for fractional or fixed FontRenderContext
      * 
      * @return
      */
-    private static Graphics createGraphics(FontRenderContext frc){
+    private static Graphics createGraphics(boolean fractional){
         Graphics g = Graphics.FromImage(BITMAP);
-        boolean fm = frc.usesFractionalMetrics();
-        g.set_SmoothingMode(SmoothingMode.wrap(fm ? SmoothingMode.None : SmoothingMode.AntiAlias));
-        g.set_PixelOffsetMode(PixelOffsetMode.wrap(fm ? PixelOffsetMode.None : PixelOffsetMode.HighQuality));
-        g.set_TextRenderingHint(TextRenderingHint.wrap(fm ? TextRenderingHint.SingleBitPerPixelGridFit : TextRenderingHint.AntiAliasGridFit));
+        g.set_SmoothingMode(SmoothingMode.wrap(fractional ? SmoothingMode.None : SmoothingMode.AntiAlias));
+        g.set_PixelOffsetMode(PixelOffsetMode.wrap(fractional ? PixelOffsetMode.None : PixelOffsetMode.HighQuality));
+        g.set_TextRenderingHint(TextRenderingHint.wrap(fractional ? TextRenderingHint.SingleBitPerPixelGridFit : TextRenderingHint.AntiAliasGridFit));
         return g;
     }
 
@@ -106,11 +107,15 @@ public class PhysicalStrike extends FontStrike{
                              StringFormatFlags.FitBlackBox ));
         format.set_Trimming( StringTrimming.wrap( StringTrimming.None ) );
         format.SetMeasurableCharacterRanges(new CharacterRange[] {new CharacterRange(0, 1)});
-        Graphics g = createGraphics( frc );
-        Region[] regions = g.MeasureCharacterRanges(String.valueOf((char)cp), font.getNetFont(),
-                                                    new RectangleF(0, 0, Integer.MAX_VALUE, Integer.MAX_VALUE), format);
-        SizeF size = regions[0].GetBounds(g).get_Size();
-        regions[0].Dispose();
+        boolean fractional = frc.usesFractionalMetrics();
+        Graphics g = fractional ? FRACT_GRAPHICS : FIXED_GRAPHICS;
+        SizeF size;
+        synchronized (g) {
+        	Region[] regions = g.MeasureCharacterRanges(String.valueOf((char)cp), font.getNetFont(),
+        			new RectangleF(0, 0, Integer.MAX_VALUE, Integer.MAX_VALUE), format);
+        	size = regions[0].GetBounds(g).get_Size();
+        	regions[0].Dispose();
+		}
         return frc.usesFractionalMetrics() ? size.get_Width() :  Math.round(size.get_Width());
     }
 
