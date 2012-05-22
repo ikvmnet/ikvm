@@ -447,21 +447,27 @@ namespace ikvm.awt
 
         public override java.awt.peer.FramePeer createFrame(java.awt.Frame target)
         {
-            java.awt.peer.FramePeer peer = Invoke<NetFramePeer>(delegate { return new NetFramePeer(target); });
+			bool isFocusableWindow = target.isFocusableWindow();
+			bool isAlwaysOnTop = target.isAlwaysOnTop();
+            java.awt.peer.FramePeer peer = Invoke<NetFramePeer>(delegate { return new NetFramePeer(target, isFocusableWindow, isAlwaysOnTop); });
             targetCreatedPeer(target, peer);
             return peer;
         }
 
         public override java.awt.peer.WindowPeer createWindow(java.awt.Window target)
         {
-            java.awt.peer.WindowPeer peer = Invoke<NetWindowPeer>(delegate { return new NetWindowPeer(target); });
+			bool isFocusableWindow = target.isFocusableWindow();
+			bool isAlwaysOnTop = target.isAlwaysOnTop();
+			java.awt.peer.WindowPeer peer = Invoke<NetWindowPeer>(delegate { return new NetWindowPeer(target, isFocusableWindow, isAlwaysOnTop); });
 			targetCreatedPeer(target, peer);
 			return peer;
 		}
 
         public override java.awt.peer.DialogPeer createDialog(java.awt.Dialog target)
         {
-            java.awt.peer.DialogPeer peer = Invoke<NetDialogPeer>(delegate { return new NetDialogPeer(target); });
+			bool isFocusableWindow = target.isFocusableWindow();
+			bool isAlwaysOnTop = target.isAlwaysOnTop();
+			java.awt.peer.DialogPeer peer = Invoke<NetDialogPeer>(delegate { return new NetDialogPeer(target, isFocusableWindow, isAlwaysOnTop); });
 			targetCreatedPeer(target, peer);
 			return peer;
 		}
@@ -516,7 +522,9 @@ namespace ikvm.awt
 
         public override java.awt.peer.FileDialogPeer createFileDialog(java.awt.FileDialog target)
         {
-            java.awt.peer.FileDialogPeer peer = Invoke<NetFileDialogPeer>(delegate { return new NetFileDialogPeer(target); });
+			bool isFocusableWindow = target.isFocusableWindow();
+			bool isAlwaysOnTop = target.isAlwaysOnTop();
+			java.awt.peer.FileDialogPeer peer = Invoke<NetFileDialogPeer>(delegate { return new NetFileDialogPeer(target, isFocusableWindow, isAlwaysOnTop); });
             targetCreatedPeer(target, peer);
             return peer;
         }
@@ -3822,7 +3830,7 @@ namespace ikvm.awt
 
         private static NetWindowPeer grabbedWindow;
 
-        public NetWindowPeer(java.awt.Window window)
+		public NetWindowPeer(java.awt.Window window, bool isFocusableWindow, bool isAlwaysOnTop)
 			: base(window)
 		{
             //form.Shown += new EventHandler(OnOpened); Will already post in java.awt.Window.show()
@@ -3833,7 +3841,8 @@ namespace ikvm.awt
 			control.SizeChanged += new EventHandler(OnSizeChanged);
 			control.Resize += new EventHandler(OnResize);
             control.Move += new EventHandler(OnMove);
-        }
+			((UndecoratedForm)control).SetWindowState(isFocusableWindow, isAlwaysOnTop);
+		}
 
         protected override void initialize()
         {
@@ -4183,9 +4192,7 @@ namespace ikvm.awt
 
 		protected override Form CreateControl()
 		{
-			UndecoratedForm form = new UndecoratedForm();
-            form.SetWindowState(target.isFocusableWindow(),target.isAlwaysOnTop());
-		    return form;
+			return new UndecoratedForm();
 		}
 
         protected override void OnMouseDown(object sender, MouseEventArgs ev)
@@ -4245,8 +4252,8 @@ namespace ikvm.awt
 
     sealed class NetFramePeer : NetWindowPeer, java.awt.peer.FramePeer
 	{
-		public NetFramePeer(java.awt.Frame frame)
-			: base(frame)
+		public NetFramePeer(java.awt.Frame frame, bool isFocusableWindow, bool isAlwaysOnTop)
+			: base(frame, isFocusableWindow, isAlwaysOnTop)
 		{
         }
 
@@ -4368,8 +4375,8 @@ namespace ikvm.awt
 
     sealed class NetDialogPeer : NetWindowPeer, java.awt.peer.DialogPeer
 	{
-        public NetDialogPeer(java.awt.Dialog target)
-			: base(target)
+		public NetDialogPeer(java.awt.Dialog target, bool isFocusableWindow, bool isAlwaysOnTop)
+			: base(target, isFocusableWindow, isAlwaysOnTop)
 		{
 			control.MaximizeBox = false;
 			control.MinimizeBox = false;
@@ -4696,7 +4703,8 @@ namespace ikvm.awt
     //also WFileDialogPeer extends from WWindowPeer
 	class NetFileDialogPeer : NetWindowPeer, java.awt.peer.FileDialogPeer
 	{
-		internal NetFileDialogPeer(java.awt.FileDialog dialog) : base(dialog)
+		internal NetFileDialogPeer(java.awt.FileDialog dialog, bool isFocusableWindow, bool isAlwaysOnTop)
+			: base(dialog, isFocusableWindow, isAlwaysOnTop)
 		{
 		}
 
