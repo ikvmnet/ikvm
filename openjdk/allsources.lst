@@ -80,6 +80,7 @@ java/io/ObjectStreamField.java
 java/io/RandomAccessFile.java
 java/lang/Class.java
 java/lang/ClassLoader.java
+java/lang/ClassLoaderHelper.java
 java/lang/Enum.java
 java/lang/invoke/AdapterMethodHandle.java
 java/lang/invoke/BoundMethodHandle.java

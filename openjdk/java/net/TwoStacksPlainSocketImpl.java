@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package java.net;
 
 import java.io.IOException;
 import java.io.FileDescriptor;
+import sun.net.ResourceManager;
 
 /*
  * This class defines the plain SocketImpl that is used for all
@@ -37,7 +38,6 @@ import java.io.FileDescriptor;
  * during socket creation.
  *
  * @author Chris Hegarty
- * @author Jeroen Frijters
  */
 
 class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl
@@ -78,7 +78,12 @@ class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl
      */
     protected synchronized void create(boolean stream) throws IOException {
         fd1 = new FileDescriptor();
-        super.create(stream);
+        try {
+            super.create(stream);
+        } catch (IOException e) {
+            fd1 = null;
+            throw e;
+        }
     }
 
      /**
@@ -117,6 +122,9 @@ class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl
     protected void close() throws IOException {
         synchronized(fdLock) {
             if (fd != null || fd1 != null) {
+                if (!stream) {
+                    ResourceManager.afterUdpClose();
+                }
                 if (fdUseCount == 0) {
                     if (closePending) {
                         return;

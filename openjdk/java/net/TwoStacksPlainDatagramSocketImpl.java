@@ -65,7 +65,12 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
 
     protected synchronized void create() throws SocketException {
         fd1 = new FileDescriptor();
-        super.create();
+        try {
+            super.create();
+        } catch (SocketException e) {
+            fd1 = null;
+            throw e;
+        }
     }
 
     protected synchronized void bind(int lport, InetAddress laddr)

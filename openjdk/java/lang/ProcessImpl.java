@@ -78,10 +78,11 @@ final class ProcessImpl extends Process {
         throws IOException
     {
         if (append) {
+            String path = f.getPath();
             SecurityManager sm = System.getSecurityManager();
             if (sm != null)
-                sm.checkWrite(f.getPath());
-            final FileDescriptor fd = openForAtomicAppend(f.getPath());
+                sm.checkWrite(path);
+            final FileDescriptor fd = openForAtomicAppend(path);
             return AccessController.doPrivileged(
                 new PrivilegedAction<FileOutputStream>() {
                     public FileOutputStream run() {
