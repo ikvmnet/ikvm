@@ -56,7 +56,7 @@ public class LangHelper
                     VMSystemProperties.SPEC_VENDOR,                // specVendor
                     "IKVM.NET OpenJDK",                            // implTitle
                     PropertyConstants.openjdk_version,             // implVersion
-                    "Sun Microsystems, Inc. & others",             // implVendor
+                    "Oracle Corporation & others",                 // implVendor
                     null,                                          // sealBase
                     null));                                        // class loader
             }
