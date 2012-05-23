@@ -3,7 +3,7 @@
     <include buildfile="../ikvm.include" />
     <property name="pathsep" value=":" />
     <property overwrite="false" name="signoption" value="" />
-    <property name="OpenJDK7.dir" value="${project::get-base-directory()}/../../openjdk7-b147" />
+    <property name="OpenJDK7.dir" value="${project::get-base-directory()}/../../openjdk-7u4-b22" />
     <if test="${platform::is-win32()}">
         <property name="pathsep" value=";" />
     </if>

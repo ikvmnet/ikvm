@@ -129,6 +129,7 @@ java/sql/DriverManager.java
 java/util/concurrent/locks/AbstractQueuedSynchronizer.java
 java/util/concurrent/locks/LockSupport.java
 java/util/ResourceBundle.java
+java/util/TimeZone.java
 java/util/zip/Adler32.java
 java/util/zip/CRC32.java
 java/util/zip/Deflater.java
@@ -145,6 +146,7 @@ java/util/zip/StreamManipulator.java
 java/util/zip/ZipEntry.java
 java/util/zip/ZipFile.java
 sun/awt/AppContext.java
+sun/awt/AppContextDC.java
 sun/awt/EmbeddedFrame.java
 sun/awt/IkvmDataTransferer.java
 sun/awt/image/ByteComponentRaster.java
@@ -814,6 +816,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/util/resources/CurrencyNames_es_CL.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/util/resources/CurrencyNames_es_CO.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/util/resources/CurrencyNames_es_CR.java
+@OPENJDK7@/build/linux-amd64/gensrc/sun/util/resources/CurrencyNames_es_CU.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/util/resources/CurrencyNames_es_DO.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/util/resources/CurrencyNames_es_EC.java
 @OPENJDK7@/build/linux-amd64/gensrc/sun/util/resources/CurrencyNames_es_ES.java
@@ -2227,7 +2230,12 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/res/XSLTErrorResources_zh_CN.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/res/XSLTErrorResources_zh_TW.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/templates/Constants.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/utils/ConfigurationError.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/utils/FactoryImpl.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/utils/ObjectFactory.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/utils/SecuritySupport.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/Version.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/XalanConstants.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xslt/EnvironmentCheck.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xslt/ObjectFactory.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xslt/Process.java
@@ -2380,7 +2388,9 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/util/ErrorMessages_zh_TW.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/util/ErrorMsg.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/util/FilterGenerator.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/util/InternalError.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/util/IntType.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/util/MarkerInstruction.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/util/MatchGenerator.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/util/MethodGenerator.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/util/MethodType.java
@@ -2394,6 +2404,8 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/util/NumberType.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/util/ObjectFactory.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/util/ObjectType.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/util/OutlineableChunkEnd.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/util/OutlineableChunkStart.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/util/RealType.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/util/ReferenceType.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/compiler/util/ResultTreeType.java
@@ -2425,6 +2437,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/dom/AbsoluteIterator.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/dom/AdaptiveResultTreeImpl.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/dom/AnyNodeCounter.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/dom/ArrayNodeListIterator.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/dom/CachedNodeListIterator.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/dom/ClonedNodeListIterator.java
@@ -2489,6 +2502,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/runtime/ErrorMessages_zh_CN.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/runtime/ErrorMessages_zh_TW.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/runtime/Hashtable.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/runtime/InternalRuntimeError.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/runtime/MessageHandler.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/runtime/Node.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/xsltc/runtime/ObjectFactory.java
@@ -2953,6 +2967,9 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/util/XMLResourceIdentifierImpl.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/util/XMLStringBuffer.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/util/XMLSymbols.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/utils/ConfigurationError.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/utils/ObjectFactory.java
+@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/utils/SecuritySupport.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/xinclude/MultipleScopeNamespaceSupport.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/xinclude/ObjectFactory.java
 @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/xinclude/SecuritySupport.java
@@ -8798,6 +8815,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/java/beans/SimpleBeanInfo.java
 @OPENJDK7@/jdk/src/share/classes/java/beans/Statement.java
 @OPENJDK7@/jdk/src/share/classes/java/beans/Transient.java
+@OPENJDK7@/jdk/src/share/classes/java/beans/ThreadGroupContext.java
 @OPENJDK7@/jdk/src/share/classes/java/beans/VetoableChangeListener.java
 @OPENJDK7@/jdk/src/share/classes/java/beans/VetoableChangeListenerProxy.java
 @OPENJDK7@/jdk/src/share/classes/java/beans/VetoableChangeSupport.java
@@ -9794,7 +9812,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/java/util/StringTokenizer.java
 @OPENJDK7@/jdk/src/share/classes/java/util/Timer.java
 @OPENJDK7@/jdk/src/share/classes/java/util/TimerTask.java
-@OPENJDK7@/jdk/src/share/classes/java/util/TimeZone.java
 @OPENJDK7@/jdk/src/share/classes/java/util/TimSort.java
 @OPENJDK7@/jdk/src/share/classes/java/util/TooManyListenersException.java
 @OPENJDK7@/jdk/src/share/classes/java/util/TreeMap.java
@@ -11998,10 +12015,12 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/sun/misc/JavaIOFileDescriptorAccess.java
 @OPENJDK7@/jdk/src/share/classes/sun/misc/JavaLangAccess.java
 @OPENJDK7@/jdk/src/share/classes/sun/misc/JavaNetAccess.java
+@OPENJDK7@/jdk/src/share/classes/sun/misc/JavaNetHttpCookieAccess.java
 @OPENJDK7@/jdk/src/share/classes/sun/misc/JavaNioAccess.java
 @OPENJDK7@/jdk/src/share/classes/sun/misc/JavaSecurityAccess.java
 @OPENJDK7@/jdk/src/share/classes/sun/misc/JavaSecurityProtectionDomainAccess.java
 @OPENJDK7@/jdk/src/share/classes/sun/misc/JavaUtilJarAccess.java
+@OPENJDK7@/jdk/src/share/classes/sun/misc/JavaUtilZipAccess.java
 @OPENJDK7@/jdk/src/share/classes/sun/misc/JavaxSecurityAuthKerberosAccess.java
 @OPENJDK7@/jdk/src/share/classes/sun/misc/Launcher.java
 @OPENJDK7@/jdk/src/share/classes/sun/misc/Lock.java
@@ -12699,6 +12718,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/krb5/PrincipalName.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/krb5/Realm.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/krb5/RealmException.java
+@OPENJDK7@/jdk/src/share/classes/sun/security/krb5/SCDynamicStoreConfig.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/krb5/ServiceName.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/pkcs/ContentInfo.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/pkcs/EncodingException.java
@@ -12750,6 +12770,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/provider/certpath/SunCertPathBuilderException.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/provider/certpath/SunCertPathBuilderParameters.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/provider/certpath/SunCertPathBuilderResult.java
+@OPENJDK7@/jdk/src/share/classes/sun/security/provider/certpath/UntrustedChecker.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/provider/certpath/URICertStore.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/provider/certpath/Vertex.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/provider/certpath/X509CertificatePair.java
@@ -12888,6 +12909,8 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/util/DerValue.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/util/DisabledAlgorithmConstraints.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/util/HostnameChecker.java
+@OPENJDK7@/jdk/src/share/classes/sun/security/util/KeyLength.java
+@OPENJDK7@/jdk/src/share/classes/sun/security/util/Length.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/util/ManifestDigester.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/util/ManifestEntryVerifier.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/util/ObjectIdentifier.java
@@ -12911,6 +12934,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/util/ResourcesMgr.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/util/SecurityConstants.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/util/SignatureFileVerifier.java
+@OPENJDK7@/jdk/src/share/classes/sun/security/util/UntrustedCertificates.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/validator/EndEntityChecker.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/validator/KeyStores.java
 @OPENJDK7@/jdk/src/share/classes/sun/security/validator/PKIXValidator.java
@@ -13542,6 +13566,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/windows/classes/java/io/Win32FileSystem.java
 @OPENJDK7@/jdk/src/windows/classes/java/lang/ProcessEnvironment.java
 @OPENJDK7@/jdk/src/windows/classes/java/lang/Terminator.java
+@OPENJDK7@/jdk/src/windows/classes/java/net/DefaultInterface.java
 @OPENJDK7@/jdk/src/windows/classes/java/util/prefs/WindowsPreferences.java
 @OPENJDK7@/jdk/src/windows/classes/java/util/prefs/WindowsPreferencesFactory.java
 @OPENJDK7@/jdk/src/windows/classes/sun/awt/Win32ColorModel24.java

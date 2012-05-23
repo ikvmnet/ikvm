@@ -43,7 +43,7 @@ import java.lang.ref.SoftReference;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.ConcurrentHashMap;
-import sun.awt.AppContext;
+import sun.awt.AppContextDC;
 import sun.security.action.GetPropertyAction;
 import sun.util.TimeZoneNameUtility;
 import sun.util.calendar.ZoneInfo;
@@ -724,7 +724,7 @@ abstract public class TimeZone implements Serializable, Cloneable {
             return null;
         }
 
-        AppContext ac = AppContext.getAppContext();
+        AppContextDC ac = AppContextDC.getAppContext();
         if (ac != null && !ac.isDisposed()) {
             return (TimeZone) ac.get(TimeZone.class);
         }
@@ -742,7 +742,7 @@ abstract public class TimeZone implements Serializable, Cloneable {
             return;
         }
 
-        AppContext ac = AppContext.getAppContext();
+        AppContextDC ac = AppContextDC.getAppContext();
         if (ac != null && !ac.isDisposed()) {
             if (tz != null) {
                 ac.put(TimeZone.class, tz);

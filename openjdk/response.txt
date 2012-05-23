@@ -1,5 +1,5 @@
 #
-#  Copyright (C) 2002-2011 Jeroen Frijters
+#  Copyright (C) 2002-2012 Jeroen Frijters
 #
 #  This software is provided 'as-is', without any express or implied
 #  warranty.  In no event will the authors be held liable for any damages
@@ -45,6 +45,7 @@ assembly.class
     java/util/*.class
     java/util/concurrent/locks/*.class
     gnu/java/util/*.class
+    sun/awt/AppContextDC.class
     sun/misc/*.class
     sun/net/sdp/*.class
     sun/net/www/protocol/file/*.class
@@ -162,6 +163,7 @@ assembly.class
     @OPENJDK7@/jdk/src/solaris/classes/sun/net/www/protocol/http/ntlm/*.class
     @OPENJDK7@/jdk/src/windows/classes/java/io/*.class
     @OPENJDK7@/jdk/src/windows/classes/java/lang/*.class
+    @OPENJDK7@/jdk/src/windows/classes/java/net/DefaultInterface.class
     @OPENJDK7@/jdk/src/windows/classes/sun/net/*.class
     @OPENJDK7@/jdk/src/windows/classes/sun/nio/ch/*.class
     @OPENJDK7@/jdk/src/windows/classes/sun/nio/fs/*.class
@@ -349,6 +351,7 @@ assembly.class
     -resource:com/sun/org/apache/xml/internal/serialize/HTMLEntities.res=@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xml/internal/serialize/HTMLEntities.res
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/org/apache/xerces/*
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/org/apache/xml/internal/serializer/*
+    @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/utils/*.class
     @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/dom/*.class
     @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/dom/events/*.class
     @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/impl/*.class
@@ -374,6 +377,7 @@ assembly.class
     @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/jaxp/validation/*.class
     @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/parsers/*.class
     @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/util/*.class
+    @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/utils/*.class
     @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/xinclude/*.class
     @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/xni/*.class
     @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/xni/grammars/*.class

@@ -8234,12 +8234,16 @@ namespace IKVM.NativeCode.com.sun.security.auth.module
 			SetField(thisObj, "groupIDs", groups);
 			// HACK it turns out that Groups[0] is the primary group, but AFAIK this is not documented anywhere
 			SetField(thisObj, "primaryGroupID", groups[0]);
-			SetField(thisObj, "impersonationToken", id.Token.ToInt64());
 		}
 
 		private static void SetField(object thisObj, string field, object value)
 		{
 			thisObj.GetType().GetField(field, BindingFlags.NonPublic | BindingFlags.Instance).SetValue(thisObj, value);
+		}
+
+		public static long getImpersonationToken0(object thisObj)
+		{
+			return WindowsIdentity.GetCurrent().Token.ToInt64();
 		}
 	}
 

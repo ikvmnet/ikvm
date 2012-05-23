@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -638,7 +638,7 @@ class Bits {                            // package-private
         String arch = AccessController.doPrivileged(
             new sun.security.action.GetPropertyAction("os.arch"));
         unaligned = arch.equals("i386") || arch.equals("x86")
-            || arch.equals("amd64");
+            || arch.equals("amd64") || arch.equals("x86_64");
         unalignedKnown = true;
         return unaligned;
     }
@@ -727,6 +727,14 @@ class Bits {                            // package-private
                             return Bits.reservedMemory;
                         }
                     };
+                }
+                @Override
+                public ByteBuffer newDirectByteBuffer(long addr, int cap, Object ob) {
+                    return new DirectByteBuffer(addr, cap, ob);
+                }
+                @Override
+                public void truncate(Buffer buf) {
+                    buf.truncate();
                 }
         });
     }

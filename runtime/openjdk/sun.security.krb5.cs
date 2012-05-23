@@ -340,3 +340,15 @@ static class Java_sun_security_krb5_Credentials
         }
     }
 }
+
+static class Java_sun_security_krb5_SCDynamicStoreConfig
+{
+	public static void installNotificationCallback()
+	{
+	}
+
+	public static object getKerberosConfig()
+	{
+		return null;
+	}
+}
