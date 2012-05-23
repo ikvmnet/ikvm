@@ -91,6 +91,8 @@ public final class AssemblyClassLoader extends ClassLoader
     @Internal
     public static native String[] GetPackages(Assembly assembly);
 
+    private static native URL GetManifest(Assembly assembly);
+
     private synchronized void lazyDefinePackagesCheck()
     {
         if(!packagesDefined)
@@ -120,7 +122,11 @@ public final class AssemblyClassLoader extends ClassLoader
         {
             if(assembly != null)
             {
-                return new Manifest(gnu.java.net.protocol.ikvmres.Handler.readResourceFromAssembly(assembly, "/META-INF/MANIFEST.MF"));
+                URL url = GetManifest(assembly);
+                if (url != null)
+                {
+                    return new Manifest(url.openStream());
+                }
             }
         }
         catch (MalformedURLException _)

@@ -234,6 +234,20 @@ namespace IKVM.NativeCode.ikvm.runtime
 			}
 		}
 
+		public static global::java.net.URL GetManifest(Assembly assembly)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			IKVM.Internal.AssemblyClassLoader wrapper = IKVM.Internal.AssemblyClassLoader.FromAssembly(assembly);
+			foreach (global::java.net.URL url in wrapper.FindResources("META-INF/MANIFEST.MF"))
+			{
+				return url;
+			}
+			return null;
+#endif
+		}
+
 		public static global::java.net.URL getResource(global::java.lang.ClassLoader classLoader, Assembly assembly, string name)
 		{
 #if FIRST_PASS
