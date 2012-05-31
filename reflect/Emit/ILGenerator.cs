@@ -116,39 +116,8 @@ namespace IKVM.Reflection.Emit
 		}
 	}
 
-	sealed class MarkerType : Type
-	{
-		public override Type BaseType
-		{
-			get { throw new InvalidOperationException(); }
-		}
-
-		public override TypeAttributes Attributes
-		{
-			get { throw new InvalidOperationException(); }
-		}
-
-		public override string Name
-		{
-			get { throw new InvalidOperationException(); }
-		}
-
-		public override string FullName
-		{
-			get { throw new InvalidOperationException(); }
-		}
-
-		public override Module Module
-		{
-			get { throw new InvalidOperationException(); }
-		}
-	}
-
 	public sealed class ILGenerator
 	{
-		private static readonly Type FAULT = new MarkerType();
-		private static readonly Type FINALLY = new MarkerType();
-		private static readonly Type FILTER = new MarkerType();
 		private readonly ModuleBuilder moduleBuilder;
 		private readonly ByteBuffer code;
 		private readonly List<LocalBuilder> locals = new List<LocalBuilder>();
@@ -183,7 +152,7 @@ namespace IKVM.Reflection.Emit
 			internal int tryLength;
 			internal int handlerOffset;
 			internal int handlerLength;
-			internal Type exceptionType;	// FINALLY = finally block, FILTER = handler with filter, FAULT = fault block
+			internal Type exceptionType;	// MarkerType.Finally = finally block, MarkerType.Filter = handler with filter, MarkerType.Fault = fault block
 			internal int filterOffset;
 
 			internal ExceptionBlock(int ordinal)
@@ -305,7 +274,7 @@ namespace IKVM.Reflection.Emit
 			UpdateStack(1);
 			if (exceptionType == null)
 			{
-				if (block.exceptionType != FILTER || block.handlerOffset != 0)
+				if (block.exceptionType != MarkerType.Filter || block.handlerOffset != 0)
 				{
 					throw new ArgumentNullException("exceptionType");
 				}
@@ -330,7 +299,7 @@ namespace IKVM.Reflection.Emit
 					exceptionStack.Push(block);
 				}
 				block.exceptionType = exceptionType;
-				if (exceptionType == FILTER)
+				if (exceptionType == MarkerType.Filter)
 				{
 					block.filterOffset = code.Position;
 				}
@@ -354,17 +323,17 @@ namespace IKVM.Reflection.Emit
 
 		public void BeginExceptFilterBlock()
 		{
-			BeginCatchBlock(FILTER);
+			BeginCatchBlock(MarkerType.Filter);
 		}
 
 		public void BeginFaultBlock()
 		{
-			BeginFinallyFaultBlock(FAULT);
+			BeginFinallyFaultBlock(MarkerType.Fault);
 		}
 
 		public void BeginFinallyBlock()
 		{
-			BeginFinallyFaultBlock(FINALLY);
+			BeginFinallyFaultBlock(MarkerType.Finally);
 		}
 
 		private void BeginFinallyFaultBlock(Type type)
@@ -411,7 +380,7 @@ namespace IKVM.Reflection.Emit
 			ExceptionBlock block = exceptionStack.Pop();
 			if (exceptionBlockAssistanceMode == EBAM_COMPAT || (exceptionBlockAssistanceMode == EBAM_CLEVER && stackHeight != -1))
 			{
-				if (block.filterOffset != 0 || (block.exceptionType != FINALLY && block.exceptionType != FAULT))
+				if (block.filterOffset != 0 || (block.exceptionType != MarkerType.Finally && block.exceptionType != MarkerType.Fault))
 				{
 					Emit(OpCodes.Leave, block.labelEnd);
 				}
@@ -1106,15 +1075,15 @@ namespace IKVM.Reflection.Emit
 					bb.Write((short)(dataSize >> 8));
 					foreach (ExceptionBlock block in exceptions)
 					{
-						if (block.exceptionType == FAULT)
+						if (block.exceptionType == MarkerType.Fault)
 						{
 							bb.Write((int)COR_ILEXCEPTION_CLAUSE_FAULT);
 						}
-						else if (block.exceptionType == FILTER)
+						else if (block.exceptionType == MarkerType.Filter)
 						{
 							bb.Write((int)COR_ILEXCEPTION_CLAUSE_FILTER);
 						}
-						else if (block.exceptionType == FINALLY)
+						else if (block.exceptionType == MarkerType.Finally)
 						{
 							bb.Write((int)COR_ILEXCEPTION_CLAUSE_FINALLY);
 						}
@@ -1126,7 +1095,7 @@ namespace IKVM.Reflection.Emit
 						bb.Write(block.tryLength);
 						bb.Write(block.handlerOffset);
 						bb.Write(block.handlerLength);
-						if (block.exceptionType != FAULT && block.exceptionType != FILTER && block.exceptionType != FINALLY)
+						if (block.exceptionType != MarkerType.Fault && block.exceptionType != MarkerType.Filter && block.exceptionType != MarkerType.Finally)
 						{
 							bb.Write(moduleBuilder.GetTypeTokenForMemberRef(block.exceptionType));
 						}
@@ -1143,15 +1112,15 @@ namespace IKVM.Reflection.Emit
 					bb.Write((short)0);
 					foreach (ExceptionBlock block in exceptions)
 					{
-						if (block.exceptionType == FAULT)
+						if (block.exceptionType == MarkerType.Fault)
 						{
 							bb.Write(COR_ILEXCEPTION_CLAUSE_FAULT);
 						}
-						else if (block.exceptionType == FILTER)
+						else if (block.exceptionType == MarkerType.Filter)
 						{
 							bb.Write(COR_ILEXCEPTION_CLAUSE_FILTER);
 						}
-						else if (block.exceptionType == FINALLY)
+						else if (block.exceptionType == MarkerType.Finally)
 						{
 							bb.Write(COR_ILEXCEPTION_CLAUSE_FINALLY);
 						}
@@ -1163,7 +1132,7 @@ namespace IKVM.Reflection.Emit
 						bb.Write((byte)block.tryLength);
 						bb.Write((short)block.handlerOffset);
 						bb.Write((byte)block.handlerLength);
-						if (block.exceptionType != FAULT && block.exceptionType != FILTER && block.exceptionType != FINALLY)
+						if (block.exceptionType != MarkerType.Fault && block.exceptionType != MarkerType.Filter && block.exceptionType != MarkerType.Finally)
 						{
 							bb.Write(moduleBuilder.GetTypeTokenForMemberRef(block.exceptionType));
 						}
