@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2008-2011 Jeroen Frijters
+  Copyright (C) 2008-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -781,7 +781,7 @@ namespace IKVM.Reflection.Emit
 		public void Emit(OpCode opc, string str)
 		{
 			Emit(opc);
-			code.Write(0x70000000 | moduleBuilder.UserStrings.Add(str));
+			code.Write(moduleBuilder.GetStringConstant(str).Token);
 		}
 
 		public void Emit(OpCode opc, Type type)
@@ -801,7 +801,7 @@ namespace IKVM.Reflection.Emit
 		{
 			Emit(opcode);
 			UpdateStack(opcode, signature.HasThis, signature.ReturnType, signature.ParameterCount);
-			code.Write(0x11000000 | moduleBuilder.StandAloneSig.FindOrAddRecord(moduleBuilder.Blobs.Add(signature.GetSignature(moduleBuilder))));
+			code.Write(moduleBuilder.GetSignatureToken(signature).Token);
 		}
 
 		public void EmitCall(OpCode opc, MethodInfo method, Type[] optionalParameterTypes)
