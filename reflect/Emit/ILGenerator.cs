@@ -819,20 +819,7 @@ namespace IKVM.Reflection.Emit
 			{
 				Emit(opc);
 				UpdateStack(opc, method.HasThis, method.ReturnType, method.ParameterCount + optionalParameterTypes.Length);
-				ByteBuffer sig = new ByteBuffer(16);
-				method.MethodSignature.WriteMethodRefSig(moduleBuilder, sig, optionalParameterTypes, customModifiers);
-				MemberRefTable.Record record = new MemberRefTable.Record();
-				if (method.Module == moduleBuilder)
-				{
-					record.Class = method.MetadataToken;
-				}
-				else
-				{
-					record.Class = moduleBuilder.GetTypeTokenForMemberRef(method.DeclaringType ?? method.Module.GetModuleType());
-				}
-				record.Name = moduleBuilder.Strings.Add(method.Name);
-				record.Signature = moduleBuilder.Blobs.Add(sig);
-				code.Write(0x0A000000 | moduleBuilder.MemberRef.FindOrAddRecord(record));
+				code.Write(moduleBuilder.__GetMethodToken(method, optionalParameterTypes, customModifiers).Token);
 			}
 		}
 
