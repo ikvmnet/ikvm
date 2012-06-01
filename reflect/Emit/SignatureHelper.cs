@@ -184,7 +184,6 @@ namespace IKVM.Reflection.Emit
 		public void AddSentinel()
 		{
 			optional = true;
-			callingConvention |= CallingConventions.VarArgs;
 		}
 
 		public void AddArgument(Type clsArgument)
