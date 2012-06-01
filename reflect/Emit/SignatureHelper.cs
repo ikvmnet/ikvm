@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2008-2011 Jeroen Frijters
+  Copyright (C) 2008-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -32,17 +32,9 @@ namespace IKVM.Reflection.Emit
 	public sealed class SignatureHelper
 	{
 		private readonly ModuleBuilder module;
-		private readonly byte type;
 		private readonly List<Type> args = new List<Type>();
-		private readonly List<LocalBuilder> locals = new List<LocalBuilder>();
-		private readonly List<CustomModifiers> customModifiers = new List<CustomModifiers>();
-		private readonly List<Type> optionalArgs = new List<Type>();
-		private Type returnType;
-		private CustomModifiers returnTypeCustomModifiers;
-		private CallingConventions callingConvention;
-		private CallingConvention unmanagedCallConv;
-		private bool unmanaged;
-		private bool optional;
+		private readonly byte type;
+		private ushort paramCount;
 
 		private SignatureHelper(ModuleBuilder module, byte type)
 		{
@@ -52,17 +44,17 @@ namespace IKVM.Reflection.Emit
 
 		internal bool HasThis
 		{
-			get { return (callingConvention & CallingConventions.HasThis) != 0; }
+			get { return (type & Signature.HASTHIS) != 0; }
 		}
 
 		internal Type ReturnType
 		{
-			get { return returnType; }
+			get { return args[0]; }
 		}
 
 		internal int ParameterCount
 		{
-			get { return args.Count + optionalArgs.Count; }
+			get { return paramCount; }
 		}
 
 		public static SignatureHelper GetFieldSigHelper(Module mod)
@@ -83,11 +75,8 @@ namespace IKVM.Reflection.Emit
 		public static SignatureHelper GetPropertySigHelper(Module mod, Type returnType, Type[] parameterTypes)
 		{
 			SignatureHelper sig = new SignatureHelper(mod as ModuleBuilder, Signature.PROPERTY);
-			sig.returnType = returnType;
-			foreach (Type type in parameterTypes)
-			{
-				sig.AddArgument(type);
-			}
+			sig.args.Add(returnType);
+			sig.AddArguments(parameterTypes, null, null);
 			return sig;
 		}
 
@@ -98,10 +87,14 @@ namespace IKVM.Reflection.Emit
 
 		public static SignatureHelper GetPropertySigHelper(Module mod, CallingConventions callingConvention, Type returnType, Type[] requiredReturnTypeCustomModifiers, Type[] optionalReturnTypeCustomModifiers, Type[] parameterTypes, Type[][] requiredParameterTypeCustomModifiers, Type[][] optionalParameterTypeCustomModifiers)
 		{
-			SignatureHelper sig = new SignatureHelper(mod as ModuleBuilder, Signature.PROPERTY);
-			sig.callingConvention = callingConvention;
-			sig.returnType = returnType;
-			sig.returnTypeCustomModifiers = CustomModifiers.FromReqOpt(requiredReturnTypeCustomModifiers, optionalReturnTypeCustomModifiers);
+			byte type = Signature.PROPERTY;
+			if ((callingConvention & CallingConventions.HasThis) != 0)
+			{
+				type |= Signature.HASTHIS;
+			}
+			SignatureHelper sig = new SignatureHelper(mod as ModuleBuilder, type);
+			sig.AddArgument(returnType, requiredReturnTypeCustomModifiers, optionalReturnTypeCustomModifiers);
+			sig.paramCount = 0;
 			sig.AddArguments(parameterTypes, requiredParameterTypeCustomModifiers, optionalParameterTypeCustomModifiers);
 			return sig;
 		}
@@ -118,26 +111,54 @@ namespace IKVM.Reflection.Emit
 
 		public static SignatureHelper GetMethodSigHelper(Module mod, CallingConvention unmanagedCallConv, Type returnType)
 		{
-			SignatureHelper sig = new SignatureHelper(mod as ModuleBuilder, 0);
-			sig.returnType = returnType;
-			sig.unmanaged = true;
-			sig.unmanagedCallConv = unmanagedCallConv;
+			byte type;
+			switch (unmanagedCallConv)
+			{
+				case CallingConvention.Cdecl:
+					type = 0x01;	// C
+					break;
+				case CallingConvention.StdCall:
+				case CallingConvention.Winapi:
+					type = 0x02;	// STDCALL
+					break;
+				case CallingConvention.ThisCall:
+					type = 0x03;	// THISCALL
+					break;
+				case CallingConvention.FastCall:
+					type = 0x04;	// FASTCALL
+					break;
+				default:
+					throw new ArgumentOutOfRangeException("unmanagedCallConv");
+			}
+			SignatureHelper sig = new SignatureHelper(mod as ModuleBuilder, type);
+			sig.args.Add(returnType);
 			return sig;
 		}
 
 		public static SignatureHelper GetMethodSigHelper(Module mod, CallingConventions callingConvention, Type returnType)
 		{
-			SignatureHelper sig = new SignatureHelper(mod as ModuleBuilder, 0);
-			sig.returnType = returnType;
-			sig.callingConvention = callingConvention;
+			byte type = 0;
+			if ((callingConvention & CallingConventions.HasThis) != 0)
+			{
+				type |= Signature.HASTHIS;
+			}
+			if ((callingConvention & CallingConventions.ExplicitThis) != 0)
+			{
+				type |= Signature.EXPLICITTHIS;
+			}
+			if ((callingConvention & CallingConventions.VarArgs) != 0)
+			{
+				type |= Signature.VARARG;
+			}
+			SignatureHelper sig = new SignatureHelper(mod as ModuleBuilder, type);
+			sig.args.Add(returnType);
 			return sig;
 		}
 
 		public static SignatureHelper GetMethodSigHelper(Module mod, Type returnType, Type[] parameterTypes)
 		{
 			SignatureHelper sig = new SignatureHelper(mod as ModuleBuilder, 0);
-			sig.returnType = returnType;
-			sig.callingConvention = CallingConventions.Standard;
+			sig.args.Add(returnType);
 			sig.AddArguments(parameterTypes, null, null);
 			return sig;
 		}
@@ -154,36 +175,13 @@ namespace IKVM.Reflection.Emit
 		internal ByteBuffer GetSignature(ModuleBuilder module)
 		{
 			ByteBuffer bb = new ByteBuffer(16);
-			switch (type)
-			{
-				case 0:
-					if (unmanaged)
-					{
-						Signature.WriteStandAloneMethodSig(module, bb, module.universe.MakeStandAloneMethodSig(unmanagedCallConv, returnType, returnTypeCustomModifiers, args.ToArray(), customModifiers.ToArray()));
-					}
-					else
-					{
-						Signature.WriteStandAloneMethodSig(module, bb, module.universe.MakeStandAloneMethodSig(callingConvention, returnType, returnTypeCustomModifiers, args.ToArray(), optionalArgs.ToArray(), customModifiers.ToArray()));
-					}
-					break;
-				case Signature.FIELD:
-					FieldSignature.Create(args[0], customModifiers[0]).WriteSig(module, bb);
-					break;
-				case Signature.PROPERTY:
-					Signature.WritePropertySig(module, bb, callingConvention, returnType, returnTypeCustomModifiers, args.ToArray(), customModifiers.ToArray());
-					break;
-				case Signature.LOCAL_SIG:
-					Signature.WriteLocalVarSig(module, bb, locals, customModifiers);
-					break;
-				default:
-					throw new InvalidOperationException();
-			}
+			Signature.WriteSignatureHelper(module, bb, type, paramCount, args);
 			return bb;
 		}
 
 		public void AddSentinel()
 		{
-			optional = true;
+			args.Add(MarkerType.Sentinel);
 		}
 
 		public void AddArgument(Type clsArgument)
@@ -203,19 +201,17 @@ namespace IKVM.Reflection.Emit
 
 		public void __AddArgument(Type argument, bool pinned, CustomModifiers customModifiers)
 		{
-			if (type == Signature.LOCAL_SIG)
+			if (pinned)
 			{
-				locals.Add(new LocalBuilder(argument, 0, pinned));
+				args.Add(MarkerType.Pinned);
 			}
-			else if (optional)
+			foreach (CustomModifiers.Entry mod in customModifiers)
 			{
-				this.optionalArgs.Add(argument);
+				args.Add(mod.IsRequired ? MarkerType.ModReq : MarkerType.ModOpt);
+				args.Add(mod.Type);
 			}
-			else
-			{
-				this.args.Add(argument);
-			}
-			this.customModifiers.Add(customModifiers);
+			args.Add(argument);
+			paramCount++;
 		}
 
 		public void AddArguments(Type[] arguments, Type[][] requiredCustomModifiers, Type[][] optionalCustomModifiers)

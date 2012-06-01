@@ -2844,9 +2844,12 @@ namespace IKVM.Reflection
 		internal static readonly Type Fault = new MarkerType();
 		internal static readonly Type Finally = new MarkerType();
 		internal static readonly Type Filter = new MarkerType();
-		// used by CustomModifiers
+		// used by CustomModifiers and SignatureHelper
 		internal static readonly Type ModOpt = new MarkerType();
 		internal static readonly Type ModReq = new MarkerType();
+		// used by SignatureHelper
+		internal static readonly Type Sentinel = new MarkerType();
+		internal static readonly Type Pinned = new MarkerType();
 
 		private MarkerType() { }
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009-2011 Jeroen Frijters
+  Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -692,6 +692,42 @@ namespace IKVM.Reflection
 				expanded[i] = types[i].BindTypeParameters(binder);
 			}
 			return expanded;
+		}
+
+		internal static void WriteSignatureHelper(ModuleBuilder module, ByteBuffer bb, byte flags, ushort paramCount, List<Type> args)
+		{
+			bb.Write(flags);
+			if (flags != FIELD)
+			{
+				bb.WriteCompressedInt(paramCount);
+			}
+			foreach (Type type in args)
+			{
+				if (type == MarkerType.ModOpt)
+				{
+					bb.Write(ELEMENT_TYPE_CMOD_OPT);
+				}
+				else if (type == MarkerType.ModReq)
+				{
+					bb.Write(ELEMENT_TYPE_CMOD_REQD);
+				}
+				else if (type == MarkerType.Sentinel)
+				{
+					bb.Write(SENTINEL);
+				}
+				else if (type == MarkerType.Pinned)
+				{
+					bb.Write(ELEMENT_TYPE_PINNED);
+				}
+				else if (type == null)
+				{
+					bb.Write(ELEMENT_TYPE_VOID);
+				}
+				else
+				{
+					WriteType(module, bb, type);
+				}
+			}
 		}
 	}
 }
