@@ -585,58 +585,6 @@ namespace IKVM.Reflection
 			}
 		}
 
-		internal static void WriteLocalVarSig(ModuleBuilder module, ByteBuffer bb, IList<LocalBuilder> locals, IList<CustomModifiers> customModifiers)
-		{
-			bb.Write(LOCAL_SIG);
-			bb.WriteCompressedInt(locals.Count);
-			for (int i = 0; i < locals.Count; i++)
-			{
-				if (locals[i].IsPinned)
-				{
-					bb.Write(ELEMENT_TYPE_PINNED);
-				}
-				if (customModifiers != null && i < customModifiers.Count)
-				{
-					WriteCustomModifiers(module, bb, customModifiers[i]);
-				}
-				WriteType(module, bb, locals[i].LocalType);
-			}
-		}
-
-		internal static void WritePropertySig(ModuleBuilder module, ByteBuffer bb, CallingConventions callingConvention,
-			Type returnType, CustomModifiers returnTypeCustomModifiers,
-			Type[] parameterTypes, CustomModifiers[] parameterTypeCustomModifiers)
-		{
-			byte flags = PROPERTY;
-			if ((callingConvention & CallingConventions.HasThis) != 0)
-			{
-				flags |= HASTHIS;
-			}
-			if ((callingConvention & CallingConventions.ExplicitThis) != 0)
-			{
-				flags |= EXPLICITTHIS;
-			}
-			if ((callingConvention & CallingConventions.VarArgs) != 0)
-			{
-				flags |= VARARG;
-			}
-			bb.Write(flags);
-			bb.WriteCompressedInt(parameterTypes == null ? 0 : parameterTypes.Length);
-			WriteCustomModifiers(module, bb, returnTypeCustomModifiers);
-			WriteType(module, bb, returnType);
-			if (parameterTypes != null)
-			{
-				for (int i = 0; i < parameterTypes.Length; i++)
-				{
-					if (parameterTypeCustomModifiers != null)
-					{
-						WriteCustomModifiers(module, bb, parameterTypeCustomModifiers[i]);
-					}
-					WriteType(module, bb, parameterTypes[i]);
-				}
-			}
-		}
-
 		internal static void WriteTypeSpec(ModuleBuilder module, ByteBuffer bb, Type type)
 		{
 			WriteType(module, bb, type);
