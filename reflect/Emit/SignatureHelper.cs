@@ -138,10 +138,7 @@ namespace IKVM.Reflection.Emit
 			SignatureHelper sig = new SignatureHelper(mod as ModuleBuilder, 0);
 			sig.returnType = returnType;
 			sig.callingConvention = CallingConventions.Standard;
-			foreach (Type type in parameterTypes)
-			{
-				sig.AddArgument(type);
-			}
+			sig.AddArguments(parameterTypes, null, null);
 			return sig;
 		}
 
@@ -228,7 +225,7 @@ namespace IKVM.Reflection.Emit
 			{
 				for (int i = 0; i < arguments.Length; i++)
 				{
-					__AddArgument(arguments[i], false, CustomModifiers.FromReqOpt(requiredCustomModifiers[i], optionalCustomModifiers[i]));
+					__AddArgument(arguments[i], false, CustomModifiers.FromReqOpt(Util.NullSafeElementAt(requiredCustomModifiers, i), Util.NullSafeElementAt(optionalCustomModifiers, i)));
 				}
 			}
 		}
