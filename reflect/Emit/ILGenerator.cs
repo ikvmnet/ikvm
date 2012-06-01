@@ -804,12 +804,18 @@ namespace IKVM.Reflection.Emit
 
 		public void EmitCalli(OpCode opc, CallingConvention callingConvention, Type returnType, Type[] parameterTypes)
 		{
-			__EmitCalli(opc, moduleBuilder.universe.MakeStandAloneMethodSig(callingConvention, returnType, new CustomModifiers(), parameterTypes, null));
+			SignatureHelper sig = SignatureHelper.GetMethodSigHelper(moduleBuilder, callingConvention, returnType);
+			sig.AddArguments(parameterTypes, null, null);
+			Emit(opc, sig);
 		}
 
 		public void EmitCalli(OpCode opc, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, Type[] optionalParameterTypes)
 		{
-			__EmitCalli(opc, moduleBuilder.universe.MakeStandAloneMethodSig(callingConvention, returnType, new CustomModifiers(), parameterTypes, optionalParameterTypes, null));
+			SignatureHelper sig = SignatureHelper.GetMethodSigHelper(moduleBuilder, callingConvention, returnType);
+			sig.AddArguments(parameterTypes, null, null);
+			sig.AddSentinel();
+			sig.AddArguments(optionalParameterTypes, null, null);
+			Emit(opc, sig);
 		}
 
 		public void __EmitCalli(OpCode opc, __StandAloneMethodSig sig)
