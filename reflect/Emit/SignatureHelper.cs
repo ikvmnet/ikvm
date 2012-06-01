@@ -224,9 +224,12 @@ namespace IKVM.Reflection.Emit
 
 		public void AddArguments(Type[] arguments, Type[][] requiredCustomModifiers, Type[][] optionalCustomModifiers)
 		{
-			for (int i = 0; i < arguments.Length; i++)
+			if (arguments != null)
 			{
-				__AddArgument(arguments[i], false, CustomModifiers.FromReqOpt(requiredCustomModifiers[i], optionalCustomModifiers[i]));
+				for (int i = 0; i < arguments.Length; i++)
+				{
+					__AddArgument(arguments[i], false, CustomModifiers.FromReqOpt(requiredCustomModifiers[i], optionalCustomModifiers[i]));
+				}
 			}
 		}
 	}
