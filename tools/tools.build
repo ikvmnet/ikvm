@@ -26,6 +26,7 @@
         <csc target="exe" output="pubkey.exe" define="${defs}" optimize="true" rebuild="true">
             <sources>
                 <include name="pubkey.cs" />
+                <include name="../CommonAssemblyInfo.cs" />
             </sources>
         </csc>
         <exec program="pubkey.exe" useruntimeengine="true" />

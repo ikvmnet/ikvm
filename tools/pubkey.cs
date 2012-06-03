@@ -27,11 +27,6 @@ using System.IO;
 using System.Text;
 using System.Reflection;
 
-#if SIGNCODE
-    #pragma warning disable 1699
-    [assembly: AssemblyKeyName("ikvm-key")]
-#endif
-
 class PublicKey
 {
     static void Main(string[] args)
