@@ -4244,7 +4244,7 @@ namespace IKVM.Internal
 						{
 							if(properties[i] != null
 								&& name == properties[i].Name
-								&& tw == GetPropertyTypeWrapper(properties[i]))
+								&& MatchTypes(tw, GetPropertyTypeWrapper(properties[i])))
 							{
 								fields.Add(new CompiledAccessStubFieldWrapper(this, properties[i], field, tw));
 								properties[i] = null;
@@ -4273,6 +4273,11 @@ namespace IKVM.Internal
 				}
 			}
 			SetFields(fields.ToArray());
+		}
+
+		private static bool MatchTypes(TypeWrapper tw1, TypeWrapper tw2)
+		{
+			return tw1 == tw2 || (tw1.IsUnloadable && tw2.IsUnloadable && tw1.Name == tw2.Name);
 		}
 
 		private void AddPropertyFieldWrapper(List<FieldWrapper> fields, PropertyInfo property, FieldInfo field)
