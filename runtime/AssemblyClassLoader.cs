@@ -942,7 +942,7 @@ namespace IKVM.Internal
 			}
 			otherName = acl.GetAssembly(friend).GetName();
 #endif
-			return GetLoaderForExportedAssembly(GetAssembly(wrapper)).InternalsVisibleTo(otherName);
+			return GetLoader(GetAssembly(wrapper)).InternalsVisibleTo(otherName);
 		}
 
 		// this method should not be used with dynamic Java assemblies
