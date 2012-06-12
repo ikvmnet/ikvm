@@ -754,7 +754,6 @@ namespace IKVM.Reflection
 
 		private static void AddInterfaces(List<Type> list, Type type)
 		{
-			type.CheckBaked();
 			foreach (Type iface in type.__GetDeclaredInterfaces())
 			{
 				if (!list.Contains(iface))
