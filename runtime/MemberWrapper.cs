@@ -52,6 +52,7 @@ namespace IKVM.Internal
 		CallerID = 256,
 		NonPublicTypeInSignature = 512,	// this flag is only available after linking and is not set for access stubs
 		DelegateInvokeWithByRefParameter = 1024,
+		Type2FinalField = 2048,
 	}
 
 	class MemberWrapper
@@ -161,7 +162,7 @@ namespace IKVM.Internal
 					// The JVM supports accessing members that have non-public types in their signature from another package,
 					// but the CLI doesn't. It would be nice if we worked around that by emitting extra accessors, but for now
 					// we'll simply disallow such access across assemblies (unless the appropriate InternalsVisibleToAttribute exists).
-					&& (!HasNonPublicTypeInSignature || InPracticeInternalsVisibleTo(caller));
+					&& (!(HasNonPublicTypeInSignature || IsType2FinalField) || InPracticeInternalsVisibleTo(caller));
 			}
 			return false;
 		}
@@ -270,6 +271,16 @@ namespace IKVM.Internal
 		internal bool HasNonPublicTypeInSignature
 		{
 			get { return (flags & MemberFlags.NonPublicTypeInSignature) != 0; }
+		}
+
+		protected void SetType2FinalField()
+		{
+			flags |= MemberFlags.Type2FinalField;
+		}
+	
+		private bool IsType2FinalField
+		{
+			get { return (flags & MemberFlags.Type2FinalField) != 0; }
 		}
 
 		internal bool HasCallerID
@@ -1284,6 +1295,18 @@ namespace IKVM.Internal
 			this.fieldType = fieldType;
 			this.field = field;
 			UpdateNonPublicTypeInSignatureFlag();
+#if !STUB_GENERATOR
+			if (IsFinal
+				&& DeclaringType.IsPublic
+				&& (IsPublic || (IsProtected && !DeclaringType.IsFinal))
+				&& !DeclaringType.GetClassLoader().StrictFinalFieldSemantics
+				&& DeclaringType is DynamicTypeWrapper
+				&& !(this is ConstantFieldWrapper)
+				&& !(this is DynamicPropertyFieldWrapper))
+			{
+				SetType2FinalField();
+			}
+#endif
 		}
 
 		internal FieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, ExModifiers modifiers, FieldInfo field)
