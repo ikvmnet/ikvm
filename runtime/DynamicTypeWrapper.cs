@@ -4005,7 +4005,7 @@ namespace IKVM.Internal
 						else
 						{
 							FieldAttributes attribs = FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.InitOnly;
-							FieldBuilder fb = tbFields.DefineField(f.Name, fields[i].FieldTypeWrapper.TypeAsSignatureType, attribs);
+							FieldBuilder fb = tbFields.DefineField(f.Name, ToPublicSignatureType(fields[i].FieldTypeWrapper), attribs);
 							if (ilgenClinit == null)
 							{
 								ilgenClinit = CodeEmitter.Create(tbFields.DefineTypeInitializer());
