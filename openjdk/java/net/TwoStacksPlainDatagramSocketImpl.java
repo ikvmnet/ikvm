@@ -213,7 +213,7 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
     }
 
     protected void connect0(InetAddress address, int port) throws SocketException {
-        if (runningOnMono) {
+        if (ikvm.internal.Util.MONO) {
             // MONOBUG Mono doesn't allow Socket.Connect(IPAddress.Any, 0) to disconnect a datagram socket,
             // so we throw a SocketException, this will cause DatagramSocket to emulate connectedness
             throw new SocketException("connected datagram sockets not supported on Mono");
@@ -226,6 +226,4 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
     protected void disconnect0(int family) {
         TwoStacksPlainDatagramSocketImpl_c.disconnect0(this, family);
     }
-
-    private static final boolean runningOnMono = cli.System.Type.GetType("Mono.Runtime") != null;
 }
