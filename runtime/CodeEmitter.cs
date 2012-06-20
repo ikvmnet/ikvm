@@ -2158,16 +2158,17 @@ namespace IKVM.Internal
 		// throws an IncompatibleClassChangeError on failure.
 		internal void EmitAssertType(Type type)
 		{
-			CodeEmitterLocal lb = DeclareLocal(Types.Object);
-			Emit(OpCodes.Stloc, lb);
-			Emit(OpCodes.Ldloc, lb);
+			CodeEmitterLabel isnull = DefineLabel();
+			Emit(OpCodes.Dup);
+			Emit(OpCodes.Brfalse_S, isnull);
 			Emit(OpCodes.Isinst, type);
 			Emit(OpCodes.Dup);
 			CodeEmitterLabel ok = DefineLabel();
 			Emit(OpCodes.Brtrue_S, ok);
-			Emit(OpCodes.Ldloc, lb);
-			Emit(OpCodes.Brfalse_S, ok);	// handle null
 			EmitThrow("java.lang.IncompatibleClassChangeError");
+			MarkLabel(isnull);
+			Emit(OpCodes.Pop);
+			Emit(OpCodes.Ldnull);
 			MarkLabel(ok);
 		}
 
