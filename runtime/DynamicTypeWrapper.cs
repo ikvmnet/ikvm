@@ -5996,9 +5996,10 @@ namespace IKVM.Internal
 		private bool NeedsType2AccessStub(FieldWrapper fw)
 		{
 			Debug.Assert(this.IsPublic && fw.DeclaringType == this);
-			return (fw.HasNonPublicTypeInSignature || (fw.IsFinal && !this.IsInterface && !classLoader.StrictFinalFieldSemantics && !(fw is ConstantFieldWrapper) && !(fw is DynamicPropertyFieldWrapper)))
-				&& (fw.IsPublic || (fw.IsProtected && !this.IsFinal))
-				&& (fw.FieldTypeWrapper.IsUnloadable || fw.FieldTypeWrapper.IsAccessibleFrom(this) || fw.FieldTypeWrapper.InternalsVisibleTo(this));
+			return fw.IsType2FinalField
+				|| (fw.HasNonPublicTypeInSignature
+					&& (fw.IsPublic || (fw.IsProtected && !this.IsFinal))
+					&& (fw.FieldTypeWrapper.IsUnloadable || fw.FieldTypeWrapper.IsAccessibleFrom(this) || fw.FieldTypeWrapper.InternalsVisibleTo(this)));
 		}
 #endif
 	}
