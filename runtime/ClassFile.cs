@@ -2472,6 +2472,11 @@ namespace IKVM.Internal
 				}
 			}
 
+			internal bool IsStaticFinalConstant
+			{
+				get { return (access_flags & (Modifiers.Final | Modifiers.Static)) == (Modifiers.Final | Modifiers.Static) && constantValue != null; }
+			}
+
 			internal bool IsProperty
 			{
 				get

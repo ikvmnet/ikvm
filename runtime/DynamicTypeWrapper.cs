@@ -546,7 +546,7 @@ namespace IKVM.Internal
 				for (int i = 0; i < fields.Length; i++)
 				{
 					ClassFile.Field fld = classFile.Fields[i];
-					if (fld.IsStatic && fld.IsFinal && fld.ConstantValue != null)
+					if (fld.IsStaticFinalConstant)
 					{
 						TypeWrapper fieldType = null;
 #if !STATIC_COMPILER
@@ -1415,13 +1415,12 @@ namespace IKVM.Internal
 				// NOTE "constant" static finals are converted into literals
 				// TODO it would be possible for Java code to change the value of a non-blank static final, but I don't
 				// know if we want to support this (since the Java JITs don't really support it either)
-				object constantValue = fld.ConstantValue;
-				if (fld.IsStatic && fld.IsFinal && constantValue != null)
+				if (fld.IsStaticFinalConstant)
 				{
 					Profiler.Count("Static Final Constant");
 					attribs |= FieldAttributes.Literal;
 					field = DefineField(fld.Name, fw.FieldTypeWrapper, attribs, false);
-					field.SetConstant(constantValue);
+					field.SetConstant(fld.ConstantValue);
 				}
 				else
 				{
