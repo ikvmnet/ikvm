@@ -187,14 +187,26 @@ namespace IKVM.Reflection
 
 		public AssemblyNameFlags Flags
 		{
-			get { return flags & (AssemblyNameFlags)~0xF0; }
-			set { flags = (flags & (AssemblyNameFlags)0xF0) | (value & (AssemblyNameFlags)~0xF0); }
+			get { return flags & (AssemblyNameFlags)~0xEF0; }
+			set { flags = (flags & (AssemblyNameFlags)0xEF0) | (value & (AssemblyNameFlags)~0xEF0); }
 		}
 
 		public AssemblyVersionCompatibility VersionCompatibility
 		{
 			get { return versionCompatibility; }
 			set { versionCompatibility = value; }
+		}
+
+		public AssemblyContentType ContentType
+		{
+			get { return (AssemblyContentType)(((int)flags & 0xE00) >> 9); }
+			set
+			{
+				if (value >= AssemblyContentType.Default && value <= AssemblyContentType.WindowsRuntime)
+				{
+					flags = (flags & ~(AssemblyNameFlags)0xE00) | (AssemblyNameFlags)((int)value << 9);
+				}
+			}
 		}
 
 		public byte[] GetPublicKey()
