@@ -328,11 +328,13 @@ namespace IKVM.Reflection.Emit
 		public void SetParameters(params Type[] parameterTypes)
 		{
 			this.parameterTypes = Util.Copy(parameterTypes);
+			this.methodSignature = null;
 		}
 
 		public void SetReturnType(Type returnType)
 		{
 			this.returnType = returnType ?? this.Module.universe.System_Void;
+			this.methodSignature = null;
 		}
 
 		public void SetSignature(Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers, Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers)
@@ -351,10 +353,12 @@ namespace IKVM.Reflection.Emit
 			this.returnType = returnType ?? this.Module.universe.System_Void;
 			this.parameterTypes = Util.Copy(parameterTypes);
 			this.customModifiers = customModifiers;
+			this.methodSignature = null;
 		}
 
 		public GenericTypeParameterBuilder[] DefineGenericParameters(params string[] names)
 		{
+			this.methodSignature = null;
 			gtpb = new GenericTypeParameterBuilder[names.Length];
 			for (int i = 0; i < names.Length; i++)
 			{
@@ -415,6 +419,7 @@ namespace IKVM.Reflection.Emit
 		public void __SetCallingConvention(CallingConventions callingConvention)
 		{
 			this.callingConvention = callingConvention;
+			this.methodSignature = null;
 		}
 
 		public override MethodImplAttributes GetMethodImplementationFlags()
