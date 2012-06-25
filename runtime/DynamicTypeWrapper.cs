@@ -2239,21 +2239,6 @@ namespace IKVM.Internal
 				}
 			}
 
-			internal static ConstructorBuilder DefineClassInitializer(TypeBuilder typeBuilder)
-			{
-				if (typeBuilder.IsInterface)
-				{
-					// LAMESPEC the ECMA spec says (part. I, sect. 8.5.3.2) that all interface members must be public, so we make
-					// the class constructor public.
-					// NOTE it turns out that on .NET 2.0 this isn't necessary anymore (neither Ref.Emit nor the CLR verifier complain about it),
-					// but the C# compiler still considers interfaces with non-public methods to be invalid, so to keep interop with C# we have
-					// to keep making the .cctor method public.
-					return typeBuilder.DefineConstructor(MethodAttributes.Static | MethodAttributes.Public, CallingConventions.Standard, Type.EmptyTypes);
-				}
-				// NOTE we don't need to record the modifiers here, because they aren't visible from Java reflection
-				return typeBuilder.DefineTypeInitializer();
-			}
-
 			// this finds all methods that the specified name/sig is going to be overriding
 			private MethodWrapper[] FindBaseMethods(ClassFile.Method m, out bool explicitOverride)
 			{
@@ -2743,7 +2728,7 @@ namespace IKVM.Internal
 					}
 					else if (m.IsClassInitializer)
 					{
-						method = DefineClassInitializer(typeBuilder);
+						method = ReflectUtil.DefineTypeInitializer(typeBuilder);
 					}
 					else
 					{
@@ -3906,7 +3891,7 @@ namespace IKVM.Internal
 					}
 					else
 					{
-						cb = JavaTypeImpl.DefineClassInitializer(typeBuilder);
+						cb = ReflectUtil.DefineTypeInitializer(typeBuilder);
 						AttributeHelper.HideFromJava(cb);
 					}
 					CodeEmitter ilGenerator = CodeEmitter.Create(cb);
