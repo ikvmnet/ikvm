@@ -58,6 +58,7 @@ namespace IKVM.Reflection.Emit
 		internal ResourceSection unmanagedResources;
 		private readonly Dictionary<MemberInfo, int> importedMembers = new Dictionary<MemberInfo, int>();
 		private readonly Dictionary<MemberRefKey, int> importedMemberRefs = new Dictionary<MemberRefKey, int>();
+		private readonly Dictionary<MethodSpecKey, int> importedMethodSpecs = new Dictionary<MethodSpecKey, int>();
 		private readonly Dictionary<Assembly, int> referencedAssemblies = new Dictionary<Assembly, int>();
 		private List<AssemblyName> referencedAssemblyNames;
 		private int nextPseudoToken = -1;
@@ -124,6 +125,41 @@ namespace IKVM.Reflection.Emit
 			internal MethodBase LookupMethod()
 			{
 				return type.FindMethod(name, (MethodSignature)signature);
+			}
+		}
+
+		struct MethodSpecKey : IEquatable<MethodSpecKey>
+		{
+			private readonly Type type;
+			private readonly string name;
+			private readonly MethodSignature signature;
+			private readonly Type[] genericParameters;
+
+			internal MethodSpecKey(Type type, string name, MethodSignature signature, Type[] genericParameters)
+			{
+				this.type = type;
+				this.name = name;
+				this.signature = signature;
+				this.genericParameters = genericParameters;
+			}
+
+			public bool Equals(MethodSpecKey other)
+			{
+				return other.type.Equals(type)
+					&& other.name == name
+					&& other.signature.Equals(signature)
+					&& Util.ArrayEquals(other.genericParameters, genericParameters);
+			}
+
+			public override bool Equals(object obj)
+			{
+				MethodSpecKey? other = obj as MethodSpecKey?;
+				return other != null && Equals(other);
+			}
+
+			public override int GetHashCode()
+			{
+				return type.GetHashCode() + name.GetHashCode() + signature.GetHashCode() + Util.GetHashCode(genericParameters);
 			}
 		}
 
@@ -682,6 +718,34 @@ namespace IKVM.Reflection.Emit
 				rec.Signature = this.Blobs.Add(bb);
 				token = 0x0A000000 | this.MemberRef.AddRecord(rec);
 				importedMemberRefs.Add(new MemberRefKey(declaringType, name, sig), token);
+			}
+			return token;
+		}
+
+		internal int ImportMethodSpec(Type declaringType, MethodInfo method, Type[] genericParameters)
+		{
+			Debug.Assert(method.__IsMissing || method.GetMethodOnTypeDefinition() == method);
+			int token;
+			MethodSpecKey key = new MethodSpecKey(declaringType, method.Name, method.MethodSignature, genericParameters);
+			if (!importedMethodSpecs.TryGetValue(key, out token))
+			{
+				MethodSpecTable.Record rec = new MethodSpecTable.Record();
+				MethodBuilder mb = method as MethodBuilder;
+				if (mb != null && mb.ModuleBuilder == this && !declaringType.IsGenericType)
+				{
+					rec.Method = mb.MetadataToken;
+				}
+				else
+				{
+					// we're calling ImportMethodOrField directly here, because 'method' may be a MethodDef on a generic TypeDef and 'declaringType' the type instance
+					// (in order words the method and type have already been decoupled by the caller)
+					rec.Method = ImportMethodOrField(declaringType, method.Name, method.MethodSignature);
+				}
+				Writer.ByteBuffer spec = new Writer.ByteBuffer(10);
+				Signature.WriteMethodSpec(this, spec, genericParameters);
+				rec.Instantiation = this.Blobs.Add(spec);
+				token = 0x2B000000 | this.MethodSpec.FindOrAddRecord(rec);
+				importedMethodSpecs.Add(key, token);
 			}
 			return token;
 		}

@@ -242,20 +242,7 @@ namespace IKVM.Reflection
 			}
 			else
 			{
-				Writer.ByteBuffer spec = new Writer.ByteBuffer(10);
-				Signature.WriteMethodSpec(module, spec, methodArgs);
-				Metadata.MethodSpecTable.Record rec = new Metadata.MethodSpecTable.Record();
-				Emit.MethodBuilder mb = method as Emit.MethodBuilder;
-				if (mb != null && mb.ModuleBuilder == module && !declaringType.IsGenericType)
-				{
-					rec.Method = mb.MetadataToken;
-				}
-				else
-				{
-					rec.Method = module.ImportMember(GetGenericMethodDefinition());
-				}
-				rec.Instantiation = module.Blobs.Add(spec);
-				return 0x2B000000 | module.MethodSpec.FindOrAddRecord(rec);
+				return module.ImportMethodSpec(declaringType, method, methodArgs);
 			}
 		}
 
