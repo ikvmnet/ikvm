@@ -119,6 +119,10 @@ namespace IKVM.Reflection
 				}
 			}
 			ProcessorArchitecture = parsed.ProcessorArchitecture;
+			if (parsed.WindowsRuntime)
+			{
+				ContentType = AssemblyContentType.WindowsRuntime;
+			}
 		}
 
 		public override string ToString()
@@ -332,6 +336,10 @@ namespace IKVM.Reflection
 				if ((Flags & AssemblyNameFlags.Retargetable) != 0)
 				{
 					sb.Append(", Retargetable=Yes");
+				}
+				if (ContentType == AssemblyContentType.WindowsRuntime)
+				{
+					sb.Append(", ContentType=WindowsRuntime");
 				}
 				return sb.ToString();
 			}
