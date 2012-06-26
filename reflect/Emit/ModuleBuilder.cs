@@ -406,7 +406,7 @@ namespace IKVM.Reflection.Emit
 			Debug.Assert(!customBuilder.IsPseudoCustomAttribute);
 			CustomAttributeTable.Record rec = new CustomAttributeTable.Record();
 			rec.Parent = token;
-			rec.Type = this.GetConstructorToken(customBuilder.Constructor).Token;
+			rec.Type = asm.IsWindowsRuntime ? customBuilder.Constructor.ImportTo(this) : GetConstructorToken(customBuilder.Constructor).Token;
 			rec.Value = customBuilder.WriteBlob(this);
 			this.CustomAttribute.AddRecord(rec);
 		}
@@ -551,7 +551,7 @@ namespace IKVM.Reflection.Emit
 
 		public TypeToken GetTypeToken(Type type)
 		{
-			if (type.Module == this)
+			if (type.Module == this && !asm.IsWindowsRuntime)
 			{
 				return new TypeToken(type.GetModuleBuilderToken());
 			}
@@ -666,6 +666,11 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 
+		internal int GetMethodTokenWinRT(MethodInfo method)
+		{
+			return asm.IsWindowsRuntime ? method.ImportTo(this) : GetMethodToken(method).Token;
+		}
+
 		public MethodToken GetConstructorToken(ConstructorInfo constructor)
 		{
 			return GetMethodToken(constructor.GetMethodInfo());
@@ -746,6 +751,10 @@ namespace IKVM.Reflection.Emit
 					{
 						rec.ResolutionScope = GetTypeToken(type.DeclaringType).Token;
 					}
+					else if (type.Module == this)
+					{
+						rec.ResolutionScope = 1;
+					}
 					else
 					{
 						rec.ResolutionScope = ImportAssemblyRef(type.Assembly);
@@ -798,6 +807,10 @@ namespace IKVM.Reflection.Emit
 			if ((name.RawFlags & afPA_Specified) != 0)
 			{
 				rec.Flags |= (int)(name.RawFlags & afPA_Mask);
+			}
+			if (name.ContentType == AssemblyContentType.WindowsRuntime)
+			{
+				rec.Flags |= 0x0200;
 			}
 			byte[] publicKeyOrToken = null;
 			if (usePublicKeyAssemblyReference)

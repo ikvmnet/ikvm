@@ -77,10 +77,6 @@ namespace IKVM.Reflection.Emit
 		internal AssemblyBuilder(Universe universe, AssemblyName name, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
 			: base(universe)
 		{
-			if (name.ContentType != AssemblyContentType.Default)
-			{
-				throw new NotImplementedException("Generating WinRT assemblies is not yet implemented.");
-			}
 			this.name = name.Name;
 			SetVersionHelper(name.Version);
 			if (!string.IsNullOrEmpty(name.Culture))
@@ -712,6 +708,11 @@ namespace IKVM.Reflection.Emit
 				}
 			}
 			return list;
+		}
+
+		internal bool IsWindowsRuntime
+		{
+			get { return (flags & (AssemblyNameFlags)0x200) != 0; }
 		}
 	}
 

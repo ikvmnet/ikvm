@@ -340,7 +340,7 @@ namespace IKVM.Reflection.Emit
 			MethodImplTable.Record rec = new MethodImplTable.Record();
 			rec.Class = token;
 			rec.MethodBody = this.ModuleBuilder.GetMethodToken(methodInfoBody).Token;
-			rec.MethodDeclaration = this.ModuleBuilder.GetMethodToken(methodInfoDeclaration).Token;
+			rec.MethodDeclaration = this.ModuleBuilder.GetMethodTokenWinRT(methodInfoDeclaration);
 			this.ModuleBuilder.MethodImpl.AddRecord(rec);
 		}
 
