@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2008-2011 Jeroen Frijters
+  Copyright (C) 2008-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -325,16 +325,24 @@ namespace IKVM.Reflection.Emit
 			return pb;
 		}
 
+		private void CheckSig()
+		{
+			if (methodSignature != null)
+			{
+				throw new InvalidOperationException("The method signature can not be modified after it has been used.");
+			}
+		}
+
 		public void SetParameters(params Type[] parameterTypes)
 		{
+			CheckSig();
 			this.parameterTypes = Util.Copy(parameterTypes);
-			this.methodSignature = null;
 		}
 
 		public void SetReturnType(Type returnType)
 		{
+			CheckSig();
 			this.returnType = returnType ?? this.Module.universe.System_Void;
-			this.methodSignature = null;
 		}
 
 		public void SetSignature(Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers, Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers)
@@ -350,15 +358,15 @@ namespace IKVM.Reflection.Emit
 
 		private void SetSignature(Type returnType, Type[] parameterTypes, PackedCustomModifiers customModifiers)
 		{
+			CheckSig();
 			this.returnType = returnType ?? this.Module.universe.System_Void;
 			this.parameterTypes = Util.Copy(parameterTypes);
 			this.customModifiers = customModifiers;
-			this.methodSignature = null;
 		}
 
 		public GenericTypeParameterBuilder[] DefineGenericParameters(params string[] names)
 		{
-			this.methodSignature = null;
+			CheckSig();
 			gtpb = new GenericTypeParameterBuilder[names.Length];
 			for (int i = 0; i < names.Length; i++)
 			{
