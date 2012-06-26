@@ -628,14 +628,7 @@ namespace IKVM.Reflection.Emit
 
 		public MethodToken GetConstructorToken(ConstructorInfo constructor)
 		{
-			if (constructor.Module == this && constructor.GetMethodInfo() is MethodBuilder)
-			{
-				return new MethodToken(constructor.MetadataToken);
-			}
-			else
-			{
-				return new MethodToken(ImportMember(constructor));
-			}
+			return GetMethodToken(constructor.GetMethodInfo());
 		}
 
 		// new in .NET 4.5
