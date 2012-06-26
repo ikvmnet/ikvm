@@ -685,7 +685,8 @@ namespace IKVM.Reflection.Emit
 		internal int ImportMethodOrField(Type declaringType, string name, Signature sig)
 		{
 			int token;
-			if (!importedMemberRefs.TryGetValue(new MemberRefKey(declaringType, name, sig), out token))
+			MemberRefKey key = new MemberRefKey(declaringType, name, sig);
+			if (!importedMemberRefs.TryGetValue(key, out token))
 			{
 				MemberRefTable.Record rec = new MemberRefTable.Record();
 				rec.Class = GetTypeTokenForMemberRef(declaringType);
@@ -694,7 +695,7 @@ namespace IKVM.Reflection.Emit
 				sig.WriteSig(this, bb);
 				rec.Signature = this.Blobs.Add(bb);
 				token = 0x0A000000 | this.MemberRef.AddRecord(rec);
-				importedMemberRefs.Add(new MemberRefKey(declaringType, name, sig), token);
+				importedMemberRefs.Add(key, token);
 			}
 			return token;
 		}
@@ -1747,7 +1748,7 @@ namespace IKVM.Reflection.Emit
 
 		public override Module Module
 		{
-			// like .NET, we return the module that GetArrayMethod was called on, not the module associated with the array type
+			// FXBUG like .NET, we return the module that GetArrayMethod was called on, not the module associated with the array type
 			get { return module; }
 		}
 
@@ -1763,6 +1764,7 @@ namespace IKVM.Reflection.Emit
 
 		public override ParameterInfo ReturnParameter
 		{
+			// FXBUG like .NET, we throw NotImplementedException
 			get { throw new NotImplementedException(); }
 		}
 
