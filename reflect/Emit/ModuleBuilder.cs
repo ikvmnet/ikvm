@@ -56,7 +56,6 @@ namespace IKVM.Reflection.Emit
 		internal readonly ByteBuffer initializedData = new ByteBuffer(512);
 		internal readonly ByteBuffer manifestResources = new ByteBuffer(512);
 		internal ResourceSection unmanagedResources;
-		private readonly Dictionary<MemberInfo, int> importedMembers = new Dictionary<MemberInfo, int>();
 		private readonly Dictionary<MemberRefKey, int> importedMemberRefs = new Dictionary<MemberRefKey, int>();
 		private readonly Dictionary<MethodSpecKey, int> importedMethodSpecs = new Dictionary<MethodSpecKey, int>();
 		private readonly Dictionary<Assembly, int> referencedAssemblies = new Dictionary<Assembly, int>();
@@ -608,7 +607,7 @@ namespace IKVM.Reflection.Emit
 			}
 			else
 			{
-				return new FieldToken(ImportMember(field));
+				return new FieldToken(field.ImportTo(this));
 			}
 		}
 
@@ -621,7 +620,7 @@ namespace IKVM.Reflection.Emit
 			}
 			else
 			{
-				return new MethodToken(ImportMember(method));
+				return new MethodToken(method.ImportTo(this));
 			}
 		}
 
@@ -659,7 +658,7 @@ namespace IKVM.Reflection.Emit
 			}
 			if (IsFromGenericTypeDefinition(method))
 			{
-				return new MethodToken(ImportMember(method));
+				return new MethodToken(method.ImportTo(this));
 			}
 			else
 			{
@@ -681,28 +680,6 @@ namespace IKVM.Reflection.Emit
 		public MethodToken __GetConstructorToken(ConstructorInfo constructor, Type[] optionalParameterTypes, CustomModifiers[] customModifiers)
 		{
 			return __GetMethodToken(constructor.GetMethodInfo(), optionalParameterTypes, customModifiers);
-		}
-
-		internal int ImportMember(MethodBase member)
-		{
-			int token;
-			if (!importedMembers.TryGetValue(member, out token))
-			{
-				token = member.ImportTo(this);
-				importedMembers.Add(member, token);
-			}
-			return token;
-		}
-
-		internal int ImportMember(FieldInfo member)
-		{
-			int token;
-			if (!importedMembers.TryGetValue(member, out token))
-			{
-				token = member.ImportTo(this);
-				importedMembers.Add(member, token);
-			}
-			return token;
 		}
 
 		internal int ImportMethodOrField(Type declaringType, string name, Signature sig)
