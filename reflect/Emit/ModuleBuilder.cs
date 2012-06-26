@@ -120,6 +120,11 @@ namespace IKVM.Reflection.Emit
 			{
 				return type.GetHashCode() + name.GetHashCode() + signature.GetHashCode();
 			}
+
+			internal MethodBase LookupMethod()
+			{
+				return type.FindMethod(name, (MethodSignature)signature);
+			}
 		}
 
 		internal ModuleBuilder(AssemblyBuilder asm, string moduleName, string fileName, bool emitSymbolInfo)
@@ -1143,11 +1148,11 @@ namespace IKVM.Reflection.Emit
 			// this method is inefficient, but since it isn't used we don't care
 			if ((metadataToken >> 24) == MemberRefTable.Index)
 			{
-				foreach (KeyValuePair<MemberInfo, int> kv in importedMembers)
+				foreach (KeyValuePair<MemberRefKey, int> kv in importedMemberRefs)
 				{
 					if (kv.Value == metadataToken)
 					{
-						return (MethodBase)kv.Key;
+						return kv.Key.LookupMethod();
 					}
 				}
 			}
