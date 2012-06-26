@@ -684,18 +684,7 @@ namespace IKVM.Reflection.Emit
 
 		internal override int ImportTo(ModuleBuilder other)
 		{
-			if (typeBuilder.IsGenericTypeDefinition)
-			{
-				return other.ImportMember(TypeBuilder.GetMethod(typeBuilder, this));
-			}
-			else if (other == typeBuilder.ModuleBuilder)
-			{
-				return pseudoToken;
-			}
-			else
-			{
-				return other.ImportMethodOrField(typeBuilder, name, this.MethodSignature);
-			}
+			return other.ImportMethodOrField(typeBuilder, name, this.MethodSignature);
 		}
 
 		internal void CheckBaked()
