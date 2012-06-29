@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2010 Jeroen Frijters
+  Copyright (C) 2002-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -139,6 +139,7 @@ namespace IKVM.Internal
 			BeginFinallyBlock,
 			EndExceptionBlock,
 			MemoryBarrier,
+			TailCallPrevention,
 		}
 
 		enum CodeTypeFlags : short
@@ -287,6 +288,8 @@ namespace IKVM.Internal
 #endif
 						case CodeType.MemoryBarrier:
 							return 5;
+						case CodeType.TailCallPrevention:
+							return 2;
 						case CodeType.OpCode:
 							if (data == null)
 							{
@@ -517,6 +520,10 @@ namespace IKVM.Internal
 						memoryBarrier = JVM.Import(typeof(System.Threading.Thread)).GetMethod("MemoryBarrier", Type.EmptyTypes);
 					}
 					ilgen_real.Emit(OpCodes.Call, memoryBarrier);
+					break;
+				case CodeType.TailCallPrevention:
+					ilgen_real.Emit(OpCodes.Ldnull);
+					ilgen_real.Emit(OpCodes.Pop);
 					break;
 				default:
 					throw new InvalidOperationException();
@@ -2335,6 +2342,11 @@ namespace IKVM.Internal
 		internal void EmitMemoryBarrier()
 		{
 			EmitPseudoOpCode(CodeType.MemoryBarrier, null);
+		}
+
+		internal void EmitTailCallPrevention()
+		{
+			EmitPseudoOpCode(CodeType.TailCallPrevention, null);
 		}
 	}
 }

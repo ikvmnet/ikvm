@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2011 Jeroen Frijters
+  Copyright (C) 2002-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1945,8 +1945,7 @@ sealed class Compiler
 							}
 							else if(x64hack)
 							{
-								ilGenerator.Emit(OpCodes.Ldnull);
-								ilGenerator.Emit(OpCodes.Pop);
+								ilGenerator.EmitTailCallPrevention();
 							}
 							ilGenerator.Emit(OpCodes.Ret);
 						}
