@@ -1170,6 +1170,34 @@ namespace IKVM.Internal
 			 * because it is possible to jump into a try block (not from an opcode point of view,
 			 * but from a pseudo opcode point of view).
 			 */
+
+			// TODO implement branch -> branch optimization
+
+			// now replace branches to endfinally or ret with the direct instruction
+			// (this is always more or at least as efficient, because they are smaller or the same size)
+			for (int i = 0; i < code.Count; i++)
+			{
+				if (code[i].pseudo == CodeType.Label)
+				{
+					code[i].Label.Temp = i;
+				}
+			}
+			for (int i = 0; i < code.Count; i++)
+			{
+				if (code[i].opcode == OpCodes.Br)
+				{
+					int target = code[i].Label.Temp + 1;
+					if (code[target].pseudo == CodeType.LineNumber)
+					{
+						// line number info an endfinally or ret is probably useless anyway
+						target++;
+					}
+					if (code[target].opcode == OpCodes.Endfinally || code[target].opcode == OpCodes.Ret)
+					{
+						code[i] = code[target];
+					}
+				}
+			}
 		}
 
 		private void SortPseudoOpCodes()
