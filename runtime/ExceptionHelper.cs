@@ -783,7 +783,7 @@ namespace IKVM.Internal
 			string type = t.TypeName;
 			if (failedTypes.ContainsKey(type))
 			{
-				r = new java.lang.NoClassDefFoundError(type).initCause(r);
+				r = new java.lang.NoClassDefFoundError("Could not initialize class " + type);
 				wrapped = true;
 			}
 			if (handler != null && !handler.IsInstanceOfType(r))
