@@ -2929,6 +2929,21 @@ sealed class MethodAnalyzer
 			}
 		}
 
+		// Modern versions of javac split try blocks when the try block contains a return statement.
+		// Here we merge these exception blocks again, because it allows us to generate more efficient code.
+		for (int i = 0; i < ar.Count - 1; i++)
+		{
+			if (ar[i].endIndex + 1 == ar[i + 1].startIndex
+				&& ar[i].handlerIndex == ar[i + 1].handlerIndex
+				&& ar[i].catch_type == ar[i + 1].catch_type
+				&& IsReturn(instructions[ar[i].endIndex].NormalizedOpCode))
+			{
+				ar[i] = new ExceptionTableEntry(ar[i].startIndex, ar[i + 1].endIndex, ar[i].handlerIndex, ar[i].catch_type, ar[i].ordinal);
+				ar.RemoveAt(i + 1);
+				i--;
+			}
+		}
+
 	restart:
 		for (int i = 0; i < ar.Count; i++)
 		{
@@ -3135,6 +3150,16 @@ sealed class MethodAnalyzer
 		Array.Sort(exceptions, new ExceptionSorter());
 
 		return new UntangledExceptionTable(exceptions);
+	}
+
+	private static bool IsReturn(NormalizedByteCode bc)
+	{
+		return bc == NormalizedByteCode.__return
+			|| bc == NormalizedByteCode.__areturn
+			|| bc == NormalizedByteCode.__dreturn
+			|| bc == NormalizedByteCode.__ireturn
+			|| bc == NormalizedByteCode.__freturn
+			|| bc == NormalizedByteCode.__lreturn;
 	}
 
 	private static bool AnalyzePotentialFaultBlocks(CodeInfo codeInfo, ClassFile.Method method, UntangledExceptionTable exceptions)
