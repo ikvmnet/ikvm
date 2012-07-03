@@ -245,7 +245,7 @@ namespace IKVM.Internal
 				if (!classLiteral.IsUnloadable && classLiteral.GetClassLoader().RemoveAsserts)
 				{
 					eic.Emitter.Emit(OpCodes.Pop);
-					eic.Emitter.Emit_Ldc_I4(0);
+					eic.Emitter.EmitLdc_I4(0);
 					return true;
 				}
 			}
@@ -434,7 +434,7 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Call, Types.String.GetMethod("ToCharArray", Type.EmptyTypes));
 				return;
 			}
-			ilgen.Emit(OpCodes.Ldc_I4, str.Length);
+			ilgen.EmitLdc_I4(str.Length);
 			ilgen.Emit(OpCodes.Newarr, Types.Char);
 			ilgen.Emit(OpCodes.Dup);
 			byte[] data = new byte[length];
@@ -464,7 +464,7 @@ namespace IKVM.Internal
 				{
 					arg++;
 				}
-				eic.Emitter.Emit(OpCodes.Ldarg, (short)arg);
+				eic.Emitter.EmitLdarg(arg);
 				MethodWrapper mw = CoreClasses.ikvm.@internal.CallerID.Wrapper.GetMethodWrapper("getCallerClass", "()Ljava.lang.Class;", false);
 				mw.Link();
 				mw.EmitCallvirt(eic.Emitter);
@@ -482,7 +482,7 @@ namespace IKVM.Internal
 				{
 					arg++;
 				}
-				eic.Emitter.Emit(OpCodes.Ldarg, (short)arg);
+				eic.Emitter.EmitLdarg(arg);
 				MethodWrapper mw = CoreClasses.ikvm.@internal.CallerID.Wrapper.GetMethodWrapper("getCallerClassLoader", "()Ljava.lang.ClassLoader;", false);
 				mw.Link();
 				mw.EmitCallvirt(eic.Emitter);
@@ -500,7 +500,7 @@ namespace IKVM.Internal
 				{
 					arg++;
 				}
-				eic.Emitter.Emit(OpCodes.Ldarg, (short)arg);
+				eic.Emitter.EmitLdarg(arg);
 				return true;
 			}
 			else

@@ -1749,7 +1749,7 @@ namespace IKVM.Internal
 			// HACK the branch around the throw is to keep the verifier happy
 			CodeEmitterLabel label = ilgen.DefineLabel();
 			ilgen.Emit(OpCodes.Ldc_I4_0);
-			ilgen.Emit(OpCodes.Brtrue_S, label);
+			ilgen.EmitBrtrue(label);
 			ilgen.EmitThrow("java.lang.NoSuchMethodError");
 			ilgen.MarkLabel(label);
 			if (!isStatic)
@@ -1791,7 +1791,7 @@ namespace IKVM.Internal
 			// HACK the branch around the throw is to keep the verifier happy
 			CodeEmitterLabel label = ilgen.DefineLabel();
 			ilgen.Emit(OpCodes.Ldc_I4_0);
-			ilgen.Emit(OpCodes.Brtrue_S, label);
+			ilgen.EmitBrtrue(label);
 			ilgen.EmitThrow("java.lang.NoSuchMethodError");
 			ilgen.MarkLabel(label);
 			ilgen.Emit(OpCodes.Pop);
@@ -1903,7 +1903,7 @@ namespace IKVM.Internal
 				constant is char ||
 				constant is bool)
 			{
-				ilgen.Emit(OpCodes.Ldc_I4, ((IConvertible)constant).ToInt32(null));
+				ilgen.EmitLdc_I4(((IConvertible)constant).ToInt32(null));
 			}
 			else if(constant is string)
 			{
@@ -1911,23 +1911,23 @@ namespace IKVM.Internal
 			}
 			else if(constant is float)
 			{
-				ilgen.Emit(OpCodes.Ldc_R4, (float)constant);
+				ilgen.EmitLdc_R4((float)constant);
 			}
 			else if(constant is double)
 			{
-				ilgen.Emit(OpCodes.Ldc_R8, (double)constant);
+				ilgen.EmitLdc_R8((double)constant);
 			}
 			else if(constant is long)
 			{
-				ilgen.Emit(OpCodes.Ldc_I8, (long)constant);
+				ilgen.EmitLdc_I8((long)constant);
 			}
 			else if(constant is uint)
 			{
-				ilgen.Emit(OpCodes.Ldc_I4, unchecked((int)((IConvertible)constant).ToUInt32(null)));
+				ilgen.EmitLdc_I4(unchecked((int)((IConvertible)constant).ToUInt32(null)));
 			}
 			else if(constant is ulong)
 			{
-				ilgen.Emit(OpCodes.Ldc_I8, unchecked((long)(ulong)constant));
+				ilgen.EmitLdc_I8(unchecked((long)(ulong)constant));
 			}
 			else
 			{

@@ -1183,7 +1183,7 @@ namespace IKVM.Internal
 							ilgen.Emit(OpCodes.Stloc, local);
 							ilgen.Emit(OpCodes.Ldloc, local);
 							ilgen.Emit(OpCodes.Ldc_I4_0);
-							ilgen.Emit(OpCodes.Ldarg_S, (byte)(i + 1));
+							ilgen.EmitLdarg(i + 1);
 							ilgen.Emit(OpCodes.Ldobj, elemType);
 							ilgen.Emit(OpCodes.Stelem, elemType);
 						}
@@ -1198,7 +1198,7 @@ namespace IKVM.Internal
 						}
 						else
 						{
-							ilgen.Emit(OpCodes.Ldarg_S, (byte)(i + 1));
+							ilgen.EmitLdarg(i + 1);
 						}
 					}
 					mw.Link();
@@ -1210,14 +1210,14 @@ namespace IKVM.Internal
 						ilgen.Emit(OpCodes.Stloc, returnValue);
 					}
 					CodeEmitterLabel exit = ilgen.DefineLabel();
-					ilgen.Emit(OpCodes.Leave_S, exit);
+					ilgen.EmitLeave(exit);
 					ilgen.BeginFinallyBlock();
 					for (int i = 0; i < parameters.Length; i++)
 					{
 						if (byrefs[i] != null)
 						{
 							Type elemType = byrefs[i].LocalType.GetElementType();
-							ilgen.Emit(OpCodes.Ldarg_S, (byte)(i + 1));
+							ilgen.EmitLdarg(i + 1);
 							ilgen.Emit(OpCodes.Ldloc, byrefs[i]);
 							ilgen.Emit(OpCodes.Ldc_I4_0);
 							ilgen.Emit(OpCodes.Ldelem, elemType);
@@ -1911,7 +1911,7 @@ namespace IKVM.Internal
 				{
 					ilgen.Emit(OpCodes.Ldarg_0);
 					ilgen.Emit(OpCodes.Ldstr, name);
-					ilgen.Emit(OpCodes.Ldarg_S, (byte)argIndex);
+					ilgen.EmitLdarg(argIndex);
 					if (tw.TypeAsSignatureType.IsValueType)
 					{
 						ilgen.Emit(OpCodes.Box, tw.TypeAsSignatureType);
@@ -3015,15 +3015,15 @@ namespace IKVM.Internal
 						CodeEmitter ilgen = CodeEmitter.Create(finalizeMethod);
 						ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.SkipFinalizer);
 						CodeEmitterLabel skip = ilgen.DefineLabel();
-						ilgen.Emit(OpCodes.Brtrue_S, skip);
+						ilgen.EmitBrtrue(skip);
 						if (needDispatch)
 						{
 							ilgen.BeginExceptionBlock();
 							ilgen.Emit(OpCodes.Ldarg_0);
 							ilgen.Emit(OpCodes.Callvirt, mb);
-							ilgen.Emit(OpCodes.Leave, skip);
+							ilgen.EmitLeave(skip);
 							ilgen.BeginCatchBlock(Types.Object);
-							ilgen.Emit(OpCodes.Leave, skip);
+							ilgen.EmitLeave(skip);
 							ilgen.EndExceptionBlock();
 						}
 						else
@@ -3568,7 +3568,7 @@ namespace IKVM.Internal
 				CodeEmitter ilgen = CodeEmitter.Create(mb);
 				ilgen.Emit(OpCodes.Ldsfld, callerIDField);
 				CodeEmitterLabel done = ilgen.DefineLabel();
-				ilgen.Emit(OpCodes.Brtrue_S, done);
+				ilgen.EmitBrtrue(done);
 				EmitCallerIDInitialization(ilgen, callerIDField);
 				ilgen.MarkLabel(done);
 				ilgen.Emit(OpCodes.Ldsfld, callerIDField);
@@ -3798,7 +3798,7 @@ namespace IKVM.Internal
 									}
 									for (int j = 0; j < args.Length; j++)
 									{
-										ilGenerator.Emit(OpCodes.Ldarg_S, (byte)(j + add));
+										ilGenerator.EmitLdarg(j + add);
 									}
 									ilGenerator.Emit(OpCodes.Call, nativeMethod);
 									TypeWrapper retTypeWrapper = methods[i].ReturnType;
@@ -4431,11 +4431,11 @@ namespace IKVM.Internal
 				int argpos = 0;
 				if (!mw.IsStatic)
 				{
-					ilgen.Emit(OpCodes.Ldarg_S, (byte)argpos++);
+					ilgen.EmitLdarg(argpos++);
 				}
 				for (int i = 0; i < parameterTypes.Length; i++)
 				{
-					ilgen.Emit(OpCodes.Ldarg_S, (byte)argpos++);
+					ilgen.EmitLdarg(argpos++);
 					// we don't need to do a DynamicCast if for unloadables, because the method itself will already do that
 					if (parameterTypes[i] != realParameterTypes[i])
 					{
@@ -4576,7 +4576,7 @@ namespace IKVM.Internal
 						int argc = mce.GetParameters().Length;
 						for (int n = 0; n < argc; n++)
 						{
-							ilGenerator.Emit(OpCodes.Ldarg_S, (byte)(n + 1));
+							ilGenerator.EmitLdarg(n + 1);
 						}
 						mce.EmitCallvirt(ilGenerator);
 						ilGenerator.Emit(OpCodes.Ret);
@@ -4596,7 +4596,7 @@ namespace IKVM.Internal
 						int argc = mce.GetParameters().Length;
 						for (int n = 0; n < argc; n++)
 						{
-							ilGenerator.Emit(OpCodes.Ldarg_S, (byte)(n + 1));
+							ilGenerator.EmitLdarg(n + 1);
 						}
 						mce.EmitCallvirt(ilGenerator);
 						ilGenerator.Emit(OpCodes.Ret);
@@ -4781,7 +4781,7 @@ namespace IKVM.Internal
 					tb.CreateType();
 					for (int i = 0; i < argTypes.Length - 1; i++)
 					{
-						ilGenerator.Emit(OpCodes.Ldarg, (short)i);
+						ilGenerator.EmitLdarg(i);
 					}
 					context.EmitCallerID(ilGenerator);
 					ilGenerator.Emit(OpCodes.Call, mb);
@@ -4832,10 +4832,10 @@ namespace IKVM.Internal
 					ilGenerator.Emit(OpCodes.Initobj, localRefStructType);
 					ilGenerator.Emit(OpCodes.Ldsfld, methodPtr);
 					CodeEmitterLabel oklabel = ilGenerator.DefineLabel();
-					ilGenerator.Emit(OpCodes.Brtrue, oklabel);
+					ilGenerator.EmitBrtrue(oklabel);
 					if (thruProxy)
 					{
-						ilGenerator.Emit(OpCodes.Ldarg_S, (byte)(args.Length + (mw.IsStatic ? 0 : 1)));
+						ilGenerator.EmitLdarg(args.Length + (mw.IsStatic ? 0 : 1));
 					}
 					else
 					{
@@ -4850,7 +4850,7 @@ namespace IKVM.Internal
 					ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
 					if (thruProxy)
 					{
-						ilGenerator.Emit(OpCodes.Ldarg_S, (byte)(args.Length + (mw.IsStatic ? 0 : 1)));
+						ilGenerator.EmitLdarg(args.Length + (mw.IsStatic ? 0 : 1));
 					}
 					else
 					{
@@ -4895,24 +4895,24 @@ namespace IKVM.Internal
 							ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
 							if (!args[j].IsUnloadable && args[j].IsNonPrimitiveValueType)
 							{
-								ilGenerator.Emit(OpCodes.Ldarg_S, (byte)(j + add));
+								ilGenerator.EmitLdarg(j + add);
 								args[j].EmitBox(ilGenerator);
 							}
 							else if (!args[j].IsUnloadable && args[j].IsGhost)
 							{
-								ilGenerator.Emit(OpCodes.Ldarga_S, (byte)(j + add));
+								ilGenerator.EmitLdarga(j + add);
 								ilGenerator.Emit(OpCodes.Ldfld, args[j].GhostRefField);
 							}
 							else
 							{
-								ilGenerator.Emit(OpCodes.Ldarg_S, (byte)(j + add));
+								ilGenerator.EmitLdarg(j + add);
 							}
 							ilGenerator.Emit(OpCodes.Call, makeLocalRef);
 							modargs[j + 2] = Types.IntPtr;
 						}
 						else
 						{
-							ilGenerator.Emit(OpCodes.Ldarg_S, (byte)(j + add));
+							ilGenerator.EmitLdarg(j + add);
 						}
 					}
 					ilGenerator.Emit(OpCodes.Ldsfld, methodPtr);
@@ -4959,7 +4959,7 @@ namespace IKVM.Internal
 						ilGenerator.Emit(OpCodes.Stloc, retValue);
 					}
 					CodeEmitterLabel retLabel = ilGenerator.DefineLabel();
-					ilGenerator.Emit(OpCodes.Leave, retLabel);
+					ilGenerator.EmitLeave(retLabel);
 					ilGenerator.BeginCatchBlock(Types.Object);
 					ilGenerator.Emit(OpCodes.Ldstr, "*** exception in native code ***");
 					ilGenerator.Emit(OpCodes.Call, writeLine);
@@ -5003,7 +5003,7 @@ namespace IKVM.Internal
 						// TODO this should be a boolean field test instead of a call to Tracer.IsTracedMessage
 						ilgen.Emit(OpCodes.Ldstr, tracemessage);
 						ilgen.Emit(OpCodes.Call, methodIsTracedMethod);
-						ilgen.Emit(OpCodes.Brfalse_S, label);
+						ilgen.EmitBrfalse(label);
 #endif
 						ilgen.Emit(OpCodes.Ldstr, tracemessage);
 						ilgen.Emit(OpCodes.Call, methodMethodInfo);
@@ -5062,7 +5062,7 @@ namespace IKVM.Internal
 							AttributeHelper.SetParamArrayAttribute(pb);
 						}
 					}
-					ilgen.Emit(OpCodes.Ldarg, (short)i);
+					ilgen.EmitLdarg(i);
 				}
 				ilgen.Emit(OpCodes.Ldc_I4_1);
 				ilgen.Emit(OpCodes.Ldc_I4_0);
@@ -5294,35 +5294,35 @@ namespace IKVM.Internal
 						{
 							if (constant is int)
 							{
-								ilGenerator.Emit_Ldc_I4((int)constant);
+								ilGenerator.EmitLdc_I4((int)constant);
 							}
 							else if (constant is bool)
 							{
-								ilGenerator.Emit_Ldc_I4((bool)constant ? 1 : 0);
+								ilGenerator.EmitLdc_I4((bool)constant ? 1 : 0);
 							}
 							else if (constant is byte)
 							{
-								ilGenerator.Emit_Ldc_I4((byte)constant);
+								ilGenerator.EmitLdc_I4((byte)constant);
 							}
 							else if (constant is char)
 							{
-								ilGenerator.Emit_Ldc_I4((char)constant);
+								ilGenerator.EmitLdc_I4((char)constant);
 							}
 							else if (constant is short)
 							{
-								ilGenerator.Emit_Ldc_I4((short)constant);
+								ilGenerator.EmitLdc_I4((short)constant);
 							}
 							else if (constant is long)
 							{
-								ilGenerator.Emit(OpCodes.Ldc_I8, (long)constant);
+								ilGenerator.EmitLdc_I8((long)constant);
 							}
 							else if (constant is double)
 							{
-								ilGenerator.Emit(OpCodes.Ldc_R8, (double)constant);
+								ilGenerator.EmitLdc_R8((double)constant);
 							}
 							else if (constant is float)
 							{
-								ilGenerator.Emit(OpCodes.Ldc_R4, (float)constant);
+								ilGenerator.EmitLdc_R4((float)constant);
 							}
 							else if (constant is string)
 							{
@@ -5478,7 +5478,7 @@ namespace IKVM.Internal
 			ilgen.Emit(OpCodes.Ldarg_0);
 			for (int i = 0; i < targetArgs.Length; i++)
 			{
-				ilgen.Emit(OpCodes.Ldarg_S, (byte)(i + 1));
+				ilgen.EmitLdarg(i + 1);
 				if (targetArgs[i] != stubargs[i])
 				{
 					ilgen.Emit(OpCodes.Castclass, targetArgs[i]);

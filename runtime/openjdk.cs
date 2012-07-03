@@ -875,7 +875,7 @@ namespace IKVM.NativeCode.java
 							{
 								// Getter
 								ilgenPrimGetter.Emit(OpCodes.Ldarg_1);
-								ilgenPrimGetter.Emit(OpCodes.Ldc_I4, field.getOffset());
+								ilgenPrimGetter.EmitLdc_I4(field.getOffset());
 								ilgenPrimGetter.Emit(OpCodes.Ldloc, primGetterThis);
 								fw.EmitGet(ilgenPrimGetter);
 								if (fieldType == PrimitiveTypeWrapper.BYTE)
@@ -919,7 +919,7 @@ namespace IKVM.NativeCode.java
 								ilgenPrimSetter.Emit(OpCodes.Ldarg_0);
 								ilgenPrimSetter.Emit(OpCodes.Castclass, tw.TypeAsBaseType);
 								ilgenPrimSetter.Emit(OpCodes.Ldarg_1);
-								ilgenPrimSetter.Emit(OpCodes.Ldc_I4, field.getOffset());
+								ilgenPrimSetter.EmitLdc_I4(field.getOffset());
 								if (fieldType == PrimitiveTypeWrapper.BYTE)
 								{
 									ilgenPrimSetter.Emit(OpCodes.Call, ReadByteMethod);
@@ -962,7 +962,7 @@ namespace IKVM.NativeCode.java
 							{
 								// Getter
 								ilgenObjGetter.Emit(OpCodes.Ldarg_1);
-								ilgenObjGetter.Emit(OpCodes.Ldc_I4, field.getOffset());
+								ilgenObjGetter.EmitLdc_I4(field.getOffset());
 								ilgenObjGetter.Emit(OpCodes.Ldloc, objGetterThis);
 								fw.EmitGet(ilgenObjGetter);
 								fw.FieldTypeWrapper.EmitConvSignatureTypeToStackType(ilgenObjGetter);
@@ -971,7 +971,7 @@ namespace IKVM.NativeCode.java
 								// Setter
 								ilgenObjSetter.Emit(OpCodes.Ldarg_0);
 								ilgenObjSetter.Emit(OpCodes.Ldarg_1);
-								ilgenObjSetter.Emit(OpCodes.Ldc_I4, field.getOffset());
+								ilgenObjSetter.EmitLdc_I4(field.getOffset());
 								ilgenObjSetter.Emit(OpCodes.Ldelem_Ref);
 								fw.FieldTypeWrapper.EmitCheckcast(null, ilgenObjSetter);
 								fw.FieldTypeWrapper.EmitConvStackTypeToSignatureType(ilgenObjSetter, null);
@@ -6337,12 +6337,12 @@ namespace IKVM.NativeCode.sun.reflect
 				{
 					// zero length array may be null
 					ilgen.Emit(OpCodes.Ldarg_1);
-					ilgen.Emit(OpCodes.Brfalse_S, argsLengthOK);
+					ilgen.EmitBrfalse(argsLengthOK);
 				}
 				ilgen.Emit(OpCodes.Ldarg_1);
 				ilgen.Emit(OpCodes.Ldlen);
-				ilgen.Emit(OpCodes.Ldc_I4, mw.GetParameters().Length);
-				ilgen.Emit(OpCodes.Beq_S, argsLengthOK);
+				ilgen.EmitLdc_I4(mw.GetParameters().Length);
+				ilgen.EmitBeq(argsLengthOK);
 				ilgen.Emit(OpCodes.Newobj, illegalArgumentExceptionCtor);
 				ilgen.Emit(OpCodes.Throw);
 				ilgen.MarkLabel(argsLengthOK);
@@ -6369,7 +6369,7 @@ namespace IKVM.NativeCode.sun.reflect
 				for (int i = thisCount; i < args.Length; i++)
 				{
 					ilgen.Emit(OpCodes.Ldarg_1);
-					ilgen.Emit(OpCodes.Ldc_I4, i - thisCount);
+					ilgen.EmitLdc_I4(i - thisCount);
 					ilgen.Emit(OpCodes.Ldelem_Ref);
 					TypeWrapper tw = mw.GetParameters()[i - thisCount];
 					EmitUnboxArg(ilgen, tw);
@@ -6377,7 +6377,7 @@ namespace IKVM.NativeCode.sun.reflect
 					ilgen.Emit(OpCodes.Stloc, args[i]);
 				}
 				CodeEmitterLabel label1 = ilgen.DefineLabel();
-				ilgen.Emit(OpCodes.Leave, label1);
+				ilgen.EmitLeave(label1);
 				ilgen.BeginCatchBlock(typeof(InvalidCastException));
 				ilgen.Emit(OpCodes.Newobj, illegalArgumentExceptionCtor);
 				ilgen.Emit(OpCodes.Throw);
@@ -6416,7 +6416,7 @@ namespace IKVM.NativeCode.sun.reflect
 				BoxReturnValue(ilgen, mw.ReturnType);
 				ilgen.Emit(OpCodes.Stloc, ret);
 				CodeEmitterLabel label2 = ilgen.DefineLabel();
-				ilgen.Emit(OpCodes.Leave, label2);
+				ilgen.EmitLeave(label2);
 				ilgen.BeginCatchBlock(typeof(Exception));
 				CodeEmitterLabel label = ilgen.DefineLabel();
 				CodeEmitterLabel labelWrap = ilgen.DefineLabel();
@@ -6435,12 +6435,12 @@ namespace IKVM.NativeCode.sun.reflect
 					// because it may be the same as us if a method is recursively invoking itself.
 					ilgen.Emit(OpCodes.Dup);
 					ilgen.Emit(OpCodes.Isinst, typeof(jlrInvocationTargetException));
-					ilgen.Emit(OpCodes.Brtrue_S, labelWrap);
+					ilgen.EmitBrtrue(labelWrap);
 					ilgen.Emit(OpCodes.Dup);
 					ilgen.Emit(OpCodes.Callvirt, get_TargetSite);
 					ilgen.Emit(OpCodes.Call, GetCurrentMethod);
 					ilgen.Emit(OpCodes.Ceq);
-					ilgen.Emit(OpCodes.Brtrue_S, label);
+					ilgen.EmitBrtrue(label);
 				}
 				ilgen.MarkLabel(labelWrap);
 				ilgen.Emit(OpCodes.Ldc_I4_0);
@@ -6503,13 +6503,13 @@ namespace IKVM.NativeCode.sun.reflect
 					ilgen.Emit(OpCodes.Dup);
 					ilgen.Emit(OpCodes.Isinst, typeof(jlByte));
 					CodeEmitterLabel next = ilgen.DefineLabel();
-					ilgen.Emit(OpCodes.Brfalse_S, next);
+					ilgen.EmitBrfalse(next);
 					ilgen.Emit(OpCodes.Castclass, typeof(jlByte));
 					ilgen.Emit(OpCodes.Call, byteValue);
 					ilgen.Emit(OpCodes.Conv_I1);
 					Expand(ilgen, type);
 					CodeEmitterLabel done = ilgen.DefineLabel();
-					ilgen.Emit(OpCodes.Br_S, done);
+					ilgen.EmitBr(done);
 					ilgen.MarkLabel(next);
 					if (type == PrimitiveTypeWrapper.SHORT)
 					{
@@ -6521,20 +6521,20 @@ namespace IKVM.NativeCode.sun.reflect
 						ilgen.Emit(OpCodes.Dup);
 						ilgen.Emit(OpCodes.Isinst, typeof(jlShort));
 						next = ilgen.DefineLabel();
-						ilgen.Emit(OpCodes.Brfalse_S, next);
+						ilgen.EmitBrfalse(next);
 						ilgen.Emit(OpCodes.Castclass, typeof(jlShort));
 						ilgen.Emit(OpCodes.Call, shortValue);
 						Expand(ilgen, type);
-						ilgen.Emit(OpCodes.Br_S, done);
+						ilgen.EmitBr(done);
 						ilgen.MarkLabel(next);
 						ilgen.Emit(OpCodes.Dup);
 						ilgen.Emit(OpCodes.Isinst, typeof(jlCharacter));
 						next = ilgen.DefineLabel();
-						ilgen.Emit(OpCodes.Brfalse_S, next);
+						ilgen.EmitBrfalse(next);
 						ilgen.Emit(OpCodes.Castclass, typeof(jlCharacter));
 						ilgen.Emit(OpCodes.Call, charValue);
 						Expand(ilgen, type);
-						ilgen.Emit(OpCodes.Br_S, done);
+						ilgen.EmitBr(done);
 						ilgen.MarkLabel(next);
 						if (type == PrimitiveTypeWrapper.INT)
 						{
@@ -6546,11 +6546,11 @@ namespace IKVM.NativeCode.sun.reflect
 							ilgen.Emit(OpCodes.Dup);
 							ilgen.Emit(OpCodes.Isinst, typeof(jlInteger));
 							next = ilgen.DefineLabel();
-							ilgen.Emit(OpCodes.Brfalse_S, next);
+							ilgen.EmitBrfalse(next);
 							ilgen.Emit(OpCodes.Castclass, typeof(jlInteger));
 							ilgen.Emit(OpCodes.Call, intValue);
 							Expand(ilgen, type);
-							ilgen.Emit(OpCodes.Br_S, done);
+							ilgen.EmitBr(done);
 							ilgen.MarkLabel(next);
 							if (type == PrimitiveTypeWrapper.LONG)
 							{
@@ -6562,11 +6562,11 @@ namespace IKVM.NativeCode.sun.reflect
 								ilgen.Emit(OpCodes.Dup);
 								ilgen.Emit(OpCodes.Isinst, typeof(jlLong));
 								next = ilgen.DefineLabel();
-								ilgen.Emit(OpCodes.Brfalse_S, next);
+								ilgen.EmitBrfalse(next);
 								ilgen.Emit(OpCodes.Castclass, typeof(jlLong));
 								ilgen.Emit(OpCodes.Call, longValue);
 								Expand(ilgen, type);
-								ilgen.Emit(OpCodes.Br_S, done);
+								ilgen.EmitBr(done);
 								ilgen.MarkLabel(next);
 								if (type == PrimitiveTypeWrapper.FLOAT)
 								{
@@ -6578,10 +6578,10 @@ namespace IKVM.NativeCode.sun.reflect
 									ilgen.Emit(OpCodes.Dup);
 									ilgen.Emit(OpCodes.Isinst, typeof(jlFloat));
 									next = ilgen.DefineLabel();
-									ilgen.Emit(OpCodes.Brfalse_S, next);
+									ilgen.EmitBrfalse(next);
 									ilgen.Emit(OpCodes.Castclass, typeof(jlFloat));
 									ilgen.Emit(OpCodes.Call, floatValue);
-									ilgen.Emit(OpCodes.Br_S, done);
+									ilgen.EmitBr(done);
 									ilgen.MarkLabel(next);
 									ilgen.Emit(OpCodes.Castclass, typeof(jlDouble));
 									ilgen.Emit(OpCodes.Call, doubleValue);
@@ -6701,12 +6701,12 @@ namespace IKVM.NativeCode.sun.reflect
 				{
 					// zero length array may be null
 					ilgen.Emit(OpCodes.Ldarg_0);
-					ilgen.Emit(OpCodes.Brfalse_S, argsLengthOK);
+					ilgen.EmitBrfalse(argsLengthOK);
 				}
 				ilgen.Emit(OpCodes.Ldarg_0);
 				ilgen.Emit(OpCodes.Ldlen);
-				ilgen.Emit(OpCodes.Ldc_I4, mw.GetParameters().Length);
-				ilgen.Emit(OpCodes.Beq_S, argsLengthOK);
+				ilgen.EmitLdc_I4(mw.GetParameters().Length);
+				ilgen.EmitBeq(argsLengthOK);
 				ilgen.Emit(OpCodes.Newobj, FastMethodAccessorImpl.illegalArgumentExceptionCtor);
 				ilgen.Emit(OpCodes.Throw);
 				ilgen.MarkLabel(argsLengthOK);
@@ -6721,7 +6721,7 @@ namespace IKVM.NativeCode.sun.reflect
 				for (int i = 0; i < args.Length; i++)
 				{
 					ilgen.Emit(OpCodes.Ldarg_0);
-					ilgen.Emit(OpCodes.Ldc_I4, i);
+					ilgen.EmitLdc_I4(i);
 					ilgen.Emit(OpCodes.Ldelem_Ref);
 					TypeWrapper tw = mw.GetParameters()[i];
 					FastMethodAccessorImpl.EmitUnboxArg(ilgen, tw);
@@ -6729,7 +6729,7 @@ namespace IKVM.NativeCode.sun.reflect
 					ilgen.Emit(OpCodes.Stloc, args[i]);
 				}
 				CodeEmitterLabel label1 = ilgen.DefineLabel();
-				ilgen.Emit(OpCodes.Leave, label1);
+				ilgen.EmitLeave(label1);
 				ilgen.BeginCatchBlock(typeof(InvalidCastException));
 				ilgen.Emit(OpCodes.Newobj, FastMethodAccessorImpl.illegalArgumentExceptionCtor);
 				ilgen.Emit(OpCodes.Throw);
@@ -6748,14 +6748,14 @@ namespace IKVM.NativeCode.sun.reflect
 				mw.EmitNewobj(ilgen);
 				ilgen.Emit(OpCodes.Stloc, ret);
 				CodeEmitterLabel label2 = ilgen.DefineLabel();
-				ilgen.Emit(OpCodes.Leave, label2);
+				ilgen.EmitLeave(label2);
 				ilgen.BeginCatchBlock(typeof(Exception));
 				ilgen.Emit(OpCodes.Dup);
 				ilgen.Emit(OpCodes.Callvirt, FastMethodAccessorImpl.get_TargetSite);
 				ilgen.Emit(OpCodes.Call, FastMethodAccessorImpl.GetCurrentMethod);
 				ilgen.Emit(OpCodes.Ceq);
 				CodeEmitterLabel label = ilgen.DefineLabel();
-				ilgen.Emit(OpCodes.Brtrue_S, label);
+				ilgen.EmitBrtrue(label);
 				ilgen.Emit(OpCodes.Ldc_I4_0);
 				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(Types.Exception));
 				ilgen.Emit(OpCodes.Newobj, FastMethodAccessorImpl.invocationTargetExceptionCtor);
@@ -7870,7 +7870,7 @@ namespace IKVM.NativeCode.sun.reflect
 					CodeEmitterLocal local = ilgen.DeclareLocal(fieldType);
 					ilgen.Emit(OpCodes.Stloc, local);
 					CodeEmitterLabel label = ilgen.DefineLabel();
-					ilgen.Emit(OpCodes.Leave, label);
+					ilgen.EmitLeave(label);
 					ilgen.BeginCatchBlock(typeof(InvalidCastException));
 					ilgen.Emit(OpCodes.Ldarg_0);
 					ilgen.Emit(OpCodes.Ldarg_1);
@@ -7902,7 +7902,7 @@ namespace IKVM.NativeCode.sun.reflect
 						fw.FieldTypeWrapper.EmitConvStackTypeToSignatureType(ilgen, null);
 						fw.EmitSet(ilgen);
 						CodeEmitterLabel label = ilgen.DefineLabel();
-						ilgen.Emit(OpCodes.Leave, label);
+						ilgen.EmitLeave(label);
 						ilgen.BeginCatchBlock(typeof(InvalidCastException));
 						ilgen.Emit(OpCodes.Ldarg_0);
 						ilgen.Emit(OpCodes.Ldarg_1);
@@ -7930,7 +7930,7 @@ namespace IKVM.NativeCode.sun.reflect
 					fw.FieldTypeWrapper.EmitConvStackTypeToSignatureType(ilgen, null);
 					fw.EmitSet(ilgen);
 					CodeEmitterLabel label = ilgen.DefineLabel();
-					ilgen.Emit(OpCodes.Leave, label);
+					ilgen.EmitLeave(label);
 					ilgen.BeginCatchBlock(typeof(InvalidCastException));
 					ilgen.Emit(OpCodes.Ldarg_0);
 					ilgen.Emit(OpCodes.Ldarg_1);

@@ -2013,9 +2013,9 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Dup);
 				ilgen.Emit(OpCodes.Isinst, ClassLoaderWrapper.LoadClassCritical("java.lang.Cloneable").TypeAsBaseType);
 				CodeEmitterLabel label1 = ilgen.DefineLabel();
-				ilgen.Emit(OpCodes.Brtrue_S, label1);
+				ilgen.EmitBrtrue(label1);
 				CodeEmitterLabel label2 = ilgen.DefineLabel();
-				ilgen.Emit(OpCodes.Brfalse_S, label2);
+				ilgen.EmitBrfalse(label2);
 				ilgen.EmitThrow("java.lang.CloneNotSupportedException");
 				ilgen.MarkLabel(label2);
 				ilgen.EmitThrow("java.lang.NullPointerException");

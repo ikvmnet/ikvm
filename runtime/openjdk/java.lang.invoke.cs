@@ -417,7 +417,7 @@ static partial class MethodHandleUtil
 
 		internal void LoadFirstArgAddress()
 		{
-			ilgen.Emit(OpCodes.Ldarga, (short)firstArg);
+			ilgen.EmitLdarga(firstArg);
 		}
 
 		internal void Ldarg(int i)
@@ -425,7 +425,7 @@ static partial class MethodHandleUtil
 			i += firstArg;
 			if (i >= packedArgPos)
 			{
-				ilgen.Emit(OpCodes.Ldarga, (short)packedArgPos);
+				ilgen.EmitLdarga(packedArgPos);
 				int fieldPos = i - packedArgPos;
 				Type type = packedArgType;
 				while (fieldPos >= MaxArity || (fieldPos == MaxArity - 1 && IsPackedArgsContainer(type.GetField("t8").FieldType)))
@@ -439,13 +439,13 @@ static partial class MethodHandleUtil
 			}
 			else
 			{
-				ilgen.Emit(OpCodes.Ldarg, (short)i);
+				ilgen.EmitLdarg(i);
 			}
 		}
 
 		internal void LoadArrayElement(int index, TypeWrapper tw)
 		{
-			ilgen.Emit(OpCodes.Ldc_I4, index);
+			ilgen.EmitLdc_I4(index);
 			if (tw.IsNonPrimitiveValueType)
 			{
 				ilgen.Emit(OpCodes.Ldelema, tw.TypeAsArrayType);
@@ -620,7 +620,7 @@ static partial class MethodHandleUtil
 				if (boxers[i].type == dstClass)
 				{
 					// untyped unboxing
-					ilgen.Emit(OpCodes.Ldc_I4, level > 1 ? 1 : 0);
+					ilgen.EmitLdc_I4(level > 1 ? 1 : 0);
 					ilgen.Emit(OpCodes.Call, boxers[i].unboxObject);
 					return;
 				}

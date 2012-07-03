@@ -22,6 +22,7 @@
   
 */
 //#define LABELCHECK
+#define CHECK_INVARIANTS
 using System;
 using System.Collections.Generic;
 #if STATIC_COMPILER
@@ -140,6 +141,7 @@ namespace IKVM.Internal
 			EndExceptionBlock,
 			MemoryBarrier,
 			TailCallPrevention,
+			ClearStack,
 		}
 
 		enum CodeTypeFlags : short
@@ -204,6 +206,11 @@ namespace IKVM.Internal
 			internal CodeEmitterLabel[] Labels
 			{
 				get { return (CodeEmitterLabel[])data; }
+			}
+
+			internal bool HasLocal
+			{
+				get { return data is CodeEmitterLocal; }
 			}
 
 			internal CodeEmitterLocal Local
@@ -289,6 +296,8 @@ namespace IKVM.Internal
 						case CodeType.MemoryBarrier:
 							return 5;
 						case CodeType.TailCallPrevention:
+							return 2;
+						case CodeType.ClearStack:
 							return 2;
 						case CodeType.OpCode:
 							if (data == null)
@@ -524,6 +533,9 @@ namespace IKVM.Internal
 				case CodeType.TailCallPrevention:
 					ilgen_real.Emit(OpCodes.Ldnull);
 					ilgen_real.Emit(OpCodes.Pop);
+					break;
+				case CodeType.ClearStack:
+					ilgen_real.Emit(OpCodes.Leave_S, (byte)0);
 					break;
 				default:
 					throw new InvalidOperationException();
@@ -809,7 +821,7 @@ namespace IKVM.Internal
 
 		private void OptimizePatterns()
 		{
-			UpdateLabelRefCounts();
+			SetLabelRefCounts();
 			for (int i = 1; i < code.Count; i++)
 			{
 				if (code[i].opcode == OpCodes.Isinst
@@ -859,10 +871,10 @@ namespace IKVM.Internal
 					&& code[i].opcode == OpCodes.Ldc_I4
 					&& code[i + 1].opcode == OpCodes.Dup
 					&& code[i + 2].opcode == OpCodes.Ldc_I4_M1
-					&& code[i + 3].opcode == OpCodes.Bne_Un_S
+					&& code[i + 3].opcode == OpCodes.Bne_Un
 					&& code[i + 4].opcode == OpCodes.Pop
 					&& code[i + 5].opcode == OpCodes.Neg
-					&& code[i + 6].opcode == OpCodes.Br_S
+					&& code[i + 6].opcode == OpCodes.Br
 					&& code[i + 7].pseudo == CodeType.Label && code[i + 7].MatchLabel(code[i + 3]) && code[i + 7].Label.Temp == 1
 					&& code[i + 8].opcode == OpCodes.Div
 					&& code[i + 9].pseudo == CodeType.Label && code[i + 9].Label == code[i + 6].Label && code[i + 9].Label.Temp == 1)
@@ -884,10 +896,10 @@ namespace IKVM.Internal
 					&& code[i + 1].opcode == OpCodes.Dup
 					&& code[i + 2].opcode == OpCodes.Ldc_I4_M1
 					&& code[i + 3].opcode == OpCodes.Conv_I8
-					&& code[i + 4].opcode == OpCodes.Bne_Un_S
+					&& code[i + 4].opcode == OpCodes.Bne_Un
 					&& code[i + 5].opcode == OpCodes.Pop
 					&& code[i + 6].opcode == OpCodes.Neg
-					&& code[i + 7].opcode == OpCodes.Br_S
+					&& code[i + 7].opcode == OpCodes.Br
 					&& code[i + 8].pseudo == CodeType.Label && code[i + 8].MatchLabel(code[i + 4]) && code[i + 8].Label.Temp == 1
 					&& code[i + 9].opcode == OpCodes.Div
 					&& code[i + 10].pseudo == CodeType.Label && code[i + 10].MatchLabel(code[i + 7]) && code[i + 10].Label.Temp == 1)
@@ -914,13 +926,13 @@ namespace IKVM.Internal
 				else if (i < code.Count - 13
 					&& code[i + 0].opcode == OpCodes.Box
 					&& code[i + 1].opcode == OpCodes.Dup
-					&& code[i + 2].opcode == OpCodes.Brtrue_S
+					&& code[i + 2].opcode == OpCodes.Brtrue
 					&& code[i + 3].opcode == OpCodes.Pop
 					&& code[i + 4].opcode == OpCodes.Ldloca && code[i + 4].Local.LocalType == code[i + 0].Type
 					&& code[i + 5].opcode == OpCodes.Initobj && code[i + 5].Type == code[i + 0].Type
 					&& code[i + 6].opcode == OpCodes.Ldloc && code[i + 6].Local == code[i + 4].Local
 					&& code[i + 7].pseudo == CodeType.ReleaseTempLocal && code[i + 7].Local == code[i + 6].Local
-					&& code[i + 8].opcode == OpCodes.Br_S
+					&& code[i + 8].opcode == OpCodes.Br
 					&& code[i + 9].pseudo == CodeType.Label && code[i + 9].MatchLabel(code[i + 2]) && code[i + 9].Label.Temp == 1
 					&& code[i + 10].opcode == OpCodes.Unbox && code[i + 10].Type == code[i + 0].Type
 					&& code[i + 11].opcode == OpCodes.Ldobj && code[i + 11].Type == code[i + 0].Type
@@ -1166,22 +1178,13 @@ namespace IKVM.Internal
 		private void ChaseBranches()
 		{
 			/*
-			 * Previous implementation was broken. We need to take try-blocks into account,
-			 * because it is possible to jump into a try block (not from an opcode point of view,
-			 * but from a pseudo opcode point of view).
+			 * Here we do a couple of different optimizations to unconditional branches:
+			 *  - a branch to a ret or endfinally will be replaced
+			 *    by the ret or endfinally instruction (because that is always at least as efficient)
+			 *  - a branch to a branch will remove the indirection
+			 *  - a leave to a branch or leave will remove the indirection
 			 */
-
-			// TODO implement branch -> branch optimization
-
-			// now replace branches to endfinally or ret with the direct instruction
-			// (this is always more or at least as efficient, because they are smaller or the same size)
-			for (int i = 0; i < code.Count; i++)
-			{
-				if (code[i].pseudo == CodeType.Label)
-				{
-					code[i].Label.Temp = i;
-				}
-			}
+			SetLabelIndexes();
 			for (int i = 0; i < code.Count; i++)
 			{
 				if (code[i].opcode == OpCodes.Br)
@@ -1189,15 +1192,169 @@ namespace IKVM.Internal
 					int target = code[i].Label.Temp + 1;
 					if (code[target].pseudo == CodeType.LineNumber)
 					{
-						// line number info an endfinally or ret is probably useless anyway
+						// line number info on endfinally or ret is probably useless anyway
 						target++;
 					}
 					if (code[target].opcode == OpCodes.Endfinally || code[target].opcode == OpCodes.Ret)
 					{
 						code[i] = code[target];
 					}
+					else
+					{
+						CodeEmitterLabel label = null;
+						while (code[target].opcode == OpCodes.Br && target != i)
+						{
+							label = code[target].Label;
+							target = code[target].Label.Temp + 1;
+						}
+						if (label != null)
+						{
+							code[i] = new OpCodeWrapper(OpCodes.Br, label);
+						}
+					}
+				}
+				else if (code[i].opcode == OpCodes.Leave)
+				{
+					int target = code[i].Label.Temp + 1;
+					CodeEmitterLabel label = null;
+					while ((code[target].opcode == OpCodes.Br || code[target].opcode == OpCodes.Leave) && target != i)
+					{
+						label = code[target].Label;
+						target = code[target].Label.Temp + 1;
+					}
+					if (label != null)
+					{
+						code[i] = new OpCodeWrapper(OpCodes.Leave, label);
+					}
 				}
 			}
+		}
+
+		private void RemoveSingletonBranches()
+		{
+			/*
+			 * Here we try to remove unconditional branches that jump to a label with ref count of one
+			 * and where the code is not otherwise used.
+			 */
+			SetLabelRefCounts();
+			// now increment label refcounts for labels that are also reachable via the preceding instruction
+			bool reachable = true;
+			for (int i = 0; i < code.Count; i++)
+			{
+				if (reachable)
+				{
+					switch (code[i].pseudo)
+					{
+						case CodeType.Label:
+							code[i].Label.Temp++;
+							break;
+						case CodeType.BeginCatchBlock:
+						case CodeType.BeginFaultBlock:
+						case CodeType.BeginFinallyBlock:
+						case CodeType.EndExceptionBlock:
+							throw new InvalidOperationException();
+						case CodeType.OpCode:
+							switch (code[i].opcode.FlowControl)
+							{
+								case FlowControl.Branch:
+								case FlowControl.Return:
+								case FlowControl.Throw:
+									reachable = false;
+									break;
+							}
+							break;
+					}
+				}
+				else
+				{
+					switch (code[i].pseudo)
+					{
+						case CodeType.Label:
+							reachable = code[i].Label.Temp > 0;
+							break;
+						case CodeType.BeginCatchBlock:
+						case CodeType.BeginFaultBlock:
+						case CodeType.BeginFinallyBlock:
+							reachable = true;
+							break;
+					}
+				}
+			}
+
+			// now remove the unconditional branches to labels with a refcount of one
+			for (int i = 0; i < code.Count; i++)
+			{
+				if (code[i].opcode == OpCodes.Br && code[i].Label.Temp == 1)
+				{
+					int target = FindLabel(code[i].Label) + 1;
+					for (int j = target; j < code.Count; j++)
+					{
+						switch (code[j].pseudo)
+						{
+							case CodeType.OpCode:
+								if (code[j].HasLocal && FindLocal(code[j].Local) > i)
+								{
+									// we cannot local variable usage before the declaration
+									goto breakOuter;
+								}
+								switch (code[j].opcode.FlowControl)
+								{
+									case FlowControl.Branch:
+									case FlowControl.Return:
+									case FlowControl.Throw:
+										// we've found a viable sequence of opcode to move to the branch location
+										List<OpCodeWrapper> range = code.GetRange(target, j - target + 1);
+										if (target < i)
+										{
+											code.RemoveAt(i);
+											code.InsertRange(i, range);
+											code.RemoveRange(target - 1, range.Count + 1);
+											i -= range.Count + 1;
+										}
+										else
+										{
+											code.RemoveRange(target - 1, range.Count + 1);
+											code.RemoveAt(i);
+											code.InsertRange(i, range);
+										}
+										goto breakOuter;
+								}
+								break;
+							case CodeType.Label:
+							case CodeType.BeginExceptionBlock:
+							case CodeType.DeclareLocal:
+								goto breakOuter;
+						}
+					}
+				breakOuter: ;
+				}
+			}
+		}
+
+		private int FindLabel(CodeEmitterLabel label)
+		{
+			for (int i = 0; i < code.Count; i++)
+			{
+				if (code[i].pseudo == CodeType.Label && code[i].Label == label)
+				{
+					return i;
+				}
+			}
+			throw new InvalidOperationException();
+		}
+
+		private int FindLocal(CodeEmitterLocal local)
+		{
+			for (int i = 0; i < code.Count; i++)
+			{
+				if (code[i].pseudo == CodeType.DeclareLocal && code[i].Local == local)
+				{
+					return i;
+				}
+			}
+			// if the local variable isn't declared, it is a temporary that is allocated on demand
+			// (so we can move their usage freely)
+			return 0;
 		}
 
 		private void SortPseudoOpCodes()
@@ -1225,20 +1382,11 @@ namespace IKVM.Internal
 							i--;
 						}
 						break;
-					case CodeType.Label:
-						if (code[i + 1].pseudo == CodeType.BeginExceptionBlock)
-						{
-							OpCodeWrapper temp = code[i];
-							code[i] = code[i + 1];
-							code[i + 1] = temp;
-							i--;
-						}
-						break;
 				}
 			}
 		}
 
-		private void UpdateLabelRefCounts()
+		private void ClearLabelTemp()
 		{
 			for (int i = 0; i < code.Count; i++)
 			{
@@ -1247,6 +1395,22 @@ namespace IKVM.Internal
 					code[i].Label.Temp = 0;
 				}
 			}
+		}
+
+		private void SetLabelIndexes()
+		{
+			for (int i = 0; i < code.Count; i++)
+			{
+				if (code[i].pseudo == CodeType.Label)
+				{
+					code[i].Label.Temp = i;
+				}
+			}
+		}
+
+		private void SetLabelRefCounts()
+		{
+			ClearLabelTemp();
 			for (int i = 0; i < code.Count; i++)
 			{
 				if (code[i].pseudo == CodeType.OpCode)
@@ -1268,7 +1432,7 @@ namespace IKVM.Internal
 
 		private void RemoveUnusedLabels()
 		{
-			UpdateLabelRefCounts();
+			SetLabelRefCounts();
 			for (int i = 0; i < code.Count; i++)
 			{
 				while (code[i].pseudo == CodeType.Label && code[i].Label.Temp == 0)
@@ -1280,13 +1444,7 @@ namespace IKVM.Internal
 
 		private void RemoveDeadCode()
 		{
-			for (int i = 0; i < code.Count; i++)
-			{
-				if (code[i].pseudo == CodeType.Label)
-				{
-					code[i].Label.Temp = 0;
-				}
-			}
+			ClearLabelTemp();
 			const int ReachableFlag = 1;
 			const int ProcessedFlag = 2;
 			bool reachable = true;
@@ -1336,19 +1494,6 @@ namespace IKVM.Internal
 									}
 									break;
 								case FlowControl.Branch:
-									if (code[i].HasLabel)
-									{
-										reachable = false;
-									}
-									else if (code[i].HasValueByte && code[i].ValueByte == 0)
-									{
-										// it's a "leave_s 0", so the next instruction is reachable
-									}
-									else
-									{
-										throw new NotSupportedException();
-									}
-									break;
 								case FlowControl.Return:
 								case FlowControl.Throw:
 									reachable = false;
@@ -1389,15 +1534,6 @@ namespace IKVM.Internal
 						switch (code[i].opcode.FlowControl)
 						{
 							case FlowControl.Branch:
-								if (code[i].HasValueByte && code[i].ValueByte == 0)
-								{
-									// it's a "leave_s 0", so the next instruction is reachable
-								}
-								else
-								{
-									goto case FlowControl.Return;
-								}
-								break;
 							case FlowControl.Return:
 							case FlowControl.Throw:
 								reachable = false;
@@ -1483,13 +1619,7 @@ namespace IKVM.Internal
 
 		private void DeduplicateBranchSourceTargetCode()
 		{
-			for (int i = 0; i < code.Count; i++)
-			{
-				if (code[i].pseudo == CodeType.Label)
-				{
-					code[i].Label.Temp = i;
-				}
-			}
+			SetLabelIndexes();
 			for (int i = 0; i < code.Count; i++)
 			{
 				if (code[i].opcode == OpCodes.Br && code[i].HasLabel)
@@ -1761,9 +1891,7 @@ namespace IKVM.Internal
 		private bool IsBranchEqNe(OpCode opcode)
 		{
 			return opcode == OpCodes.Beq
-				|| opcode == OpCodes.Beq_S
-				|| opcode == OpCodes.Bne_Un
-				|| opcode == OpCodes.Bne_Un_S;
+				|| opcode == OpCodes.Bne_Un;
 		}
 
 		private void CLRv4_x64_JIT_Workaround()
@@ -1806,6 +1934,151 @@ namespace IKVM.Internal
 			}
 		}
 
+		[Conditional("CHECK_INVARIANTS")]
+		private void CheckInvariants()
+		{
+			CheckInvariantBranchInOrOutOfBlocks();
+			CheckInvariantOpCodeUsage();
+			CheckInvariantLocalVariables();
+		}
+
+		private void CheckInvariantBranchInOrOutOfBlocks()
+		{
+			/*
+			 * We maintain an invariant that a branch (other than an explicit leave)
+			 * can never branch out or into an exception block (try or handler).
+			 * This is a stronger invariant than requirement by MSIL, because
+			 * we also disallow the following sequence:
+			 * 
+			 *    Br Label0
+			 *    ...
+			 *    BeginExceptionBlock
+			 *    Label0:
+			 *    ...
+			 *    Br Label0
+			 *    
+			 * This should be rewritten as:
+			 * 
+			 *    Br Label0
+			 *    ...
+			 *    Label0:
+			 *    BeginExceptionBlock
+			 *    Label1:
+			 *    ...
+			 *    Br Label1
+			 */
+			int blockId = 0;
+			int nextBlockId = 1;
+			Stack<int> blocks = new Stack<int>();
+			for (int i = 0; i < code.Count; i++)
+			{
+				switch (code[i].pseudo)
+				{
+					case CodeType.Label:
+						code[i].Label.Temp = blockId;
+						break;
+					case CodeType.BeginExceptionBlock:
+						blocks.Push(blockId);
+						goto case CodeType.BeginFinallyBlock;
+					case CodeType.BeginFinallyBlock:
+					case CodeType.BeginFaultBlock:
+					case CodeType.BeginCatchBlock:
+						blockId = nextBlockId++;
+						break;
+					case CodeType.EndExceptionBlock:
+						blockId = blocks.Pop();
+						break;
+				}
+			}
+			if (blocks.Count != 0)
+			{
+				throw new InvalidOperationException("Unbalanced exception blocks");
+			}
+			blockId = 0;
+			nextBlockId = 1;
+			for (int i = 0; i < code.Count; i++)
+			{
+				switch (code[i].pseudo)
+				{
+					case CodeType.OpCode:
+						if (code[i].HasLabel
+							&& code[i].opcode != OpCodes.Leave
+							&& code[i].Label.Temp != blockId)
+						{
+							DumpMethod();
+							throw new InvalidOperationException("Invalid branch " + code[i].opcode.Name + " at offset " + i + " from block " + blockId + " to " + code[i].Label.Temp);
+						}
+						break;
+					case CodeType.BeginExceptionBlock:
+						blocks.Push(blockId);
+						goto case CodeType.BeginFinallyBlock;
+					case CodeType.BeginFinallyBlock:
+					case CodeType.BeginFaultBlock:
+					case CodeType.BeginCatchBlock:
+						blockId = nextBlockId++;
+						break;
+					case CodeType.EndExceptionBlock:
+						blockId = blocks.Pop();
+						break;
+				}
+			}
+		}
+
+		private void CheckInvariantOpCodeUsage()
+		{
+			for (int i = 0; i < code.Count; i++)
+			{
+				switch (code[i].opcode.FlowControl)
+				{
+					case FlowControl.Branch:
+					case FlowControl.Cond_Branch:
+						if (!code[i].HasLabel && code[i].opcode != OpCodes.Switch)
+						{
+							throw new InvalidOperationException();
+						}
+						break;
+				}
+			}
+		}
+
+		private void CheckInvariantLocalVariables()
+		{
+			List<CodeEmitterLocal> locals = new List<CodeEmitterLocal>();
+			for (int i = 0; i < code.Count; i++)
+			{
+				if (code[i].pseudo == CodeType.DeclareLocal)
+				{
+					if (locals.Contains(code[i].Local))
+					{
+						throw new InvalidOperationException("Local variable used before declaration");
+					}
+				}
+				else if (code[i].HasLocal)
+				{
+					locals.Add(code[i].Local);
+				}
+			}
+		}
+
+		private void MoveLocalDeclarationToBeginScope()
+		{
+			int pos = 0;
+			for (int i = 0; i < code.Count; i++)
+			{
+				switch (code[i].pseudo)
+				{
+					case CodeType.BeginScope:
+						pos = i + 1;
+						break;
+					case CodeType.DeclareLocal:
+						OpCodeWrapper decl = code[i];
+						code.RemoveAt(i);
+						code.Insert(pos++, decl);
+						break;
+				}
+			}
+		}
+
 		internal void DoEmit()
 		{
 			OptimizePatterns();
@@ -1814,18 +2087,33 @@ namespace IKVM.Internal
 
 			if (experimentalOptimizations)
 			{
+				CheckInvariants();
+				MoveLocalDeclarationToBeginScope();
+
 				for (int i = 0; i < 4; i++)
 				{
 					RemoveJumpNext();
+					CheckInvariants();
 					ChaseBranches();
+					CheckInvariants();
+					RemoveSingletonBranches();
+					CheckInvariants();
 					RemoveUnusedLabels();
+					CheckInvariants();
 					SortPseudoOpCodes();
+					CheckInvariants();
 					AnnihilatePops();
+					CheckInvariants();
 					AnnihilateStoreReleaseTempLocals();
+					CheckInvariants();
 					DeduplicateBranchSourceTargetCode();
+					CheckInvariants();
 					OptimizeStackTransfer();
+					CheckInvariants();
 					MergeExceptionBlocks();
+					CheckInvariants();
 					RemoveDeadCode();
+					CheckInvariants();
 				}
 			}
 
@@ -1883,7 +2171,7 @@ namespace IKVM.Internal
 				}
 				else if (code[i].pseudo == CodeType.Label)
 				{
-					Console.WriteLine("label{0}:", i);
+					Console.WriteLine("label{0}:  // temp = {1}", i, code[i].Label.Temp);
 				}
 				else
 				{
@@ -2006,9 +2294,9 @@ namespace IKVM.Internal
 			EmitOpCode(opcode, null);
 		}
 
-		internal void Emit(OpCode opcode, byte arg)
+		internal void EmitUnaligned(byte alignment)
 		{
-			EmitOpCode(opcode, arg);
+			EmitOpCode(OpCodes.Unaligned, alignment);
 		}
 
 		internal void Emit(OpCode opcode, ConstructorInfo con)
@@ -2016,9 +2304,9 @@ namespace IKVM.Internal
 			EmitOpCode(opcode, con);
 		}
 
-		internal void Emit(OpCode opcode, double arg)
+		internal void EmitLdc_R8(double arg)
 		{
-			EmitOpCode(opcode, arg);
+			EmitOpCode(OpCodes.Ldc_R8, arg);
 		}
 
 		internal void Emit(OpCode opcode, FieldInfo field)
@@ -2026,29 +2314,135 @@ namespace IKVM.Internal
 			EmitOpCode(opcode, field);
 		}
 
-		internal void Emit(OpCode opcode, short arg)
+		internal void EmitLdarg(int arg)
 		{
-			EmitOpCode(opcode, arg);
+			Debug.Assert(0 <= arg && arg < 65536);
+			switch (arg)
+			{
+				case 0:
+					EmitOpCode(OpCodes.Ldarg_0, null);
+					break;
+				case 1:
+					EmitOpCode(OpCodes.Ldarg_1, null);
+					break;
+				case 2:
+					EmitOpCode(OpCodes.Ldarg_2, null);
+					break;
+				case 3:
+					EmitOpCode(OpCodes.Ldarg_3, null);
+					break;
+				default:
+					if (arg < 256)
+					{
+						EmitOpCode(OpCodes.Ldarg_S, (byte)arg);
+					}
+					else
+					{
+						EmitOpCode(OpCodes.Ldarg, (short)arg);
+					}
+					break;
+			}
 		}
 
-		internal void Emit(OpCode opcode, int arg)
+		internal void EmitLdarga(int arg)
 		{
-			EmitOpCode(opcode, arg);
+			Debug.Assert(0 <= arg && arg < 65536);
+			if (arg < 256)
+			{
+				EmitOpCode(OpCodes.Ldarga_S, (byte)arg);
+			}
+			else
+			{
+				EmitOpCode(OpCodes.Ldarga, (short)arg);
+			}
 		}
 
-		internal void Emit(OpCode opcode, long arg)
+		internal void EmitStarg(int arg)
 		{
-			EmitOpCode(opcode, arg);
+			Debug.Assert(0 <= arg && arg < 65536);
+			if (arg < 256)
+			{
+				EmitOpCode(OpCodes.Starg_S, (byte)arg);
+			}
+			else
+			{
+				EmitOpCode(OpCodes.Starg, (short)arg);
+			}
 		}
 
-		internal void Emit(OpCode opcode, CodeEmitterLabel label)
+		internal void EmitLdc_I8(long arg)
 		{
-			EmitOpCode(opcode, label);
+			EmitOpCode(OpCodes.Ldc_I8, arg);
 		}
 
-		internal void Emit(OpCode opcode, CodeEmitterLabel[] labels)
+		internal void EmitBr(CodeEmitterLabel label)
 		{
-			EmitOpCode(opcode, labels);
+			EmitOpCode(OpCodes.Br, label);
+		}
+
+		internal void EmitBeq(CodeEmitterLabel label)
+		{
+			EmitOpCode(OpCodes.Beq, label);
+		}
+
+		internal void EmitBne_Un(CodeEmitterLabel label)
+		{
+			EmitOpCode(OpCodes.Bne_Un, label);
+		}
+
+		internal void EmitBle_Un(CodeEmitterLabel label)
+		{
+			EmitOpCode(OpCodes.Ble_Un, label);
+		}
+
+		internal void EmitBlt_Un(CodeEmitterLabel label)
+		{
+			EmitOpCode(OpCodes.Blt_Un, label);
+		}
+
+		internal void EmitBge_Un(CodeEmitterLabel label)
+		{
+			EmitOpCode(OpCodes.Bge_Un, label);
+		}
+
+		internal void EmitBle(CodeEmitterLabel label)
+		{
+			EmitOpCode(OpCodes.Ble, label);
+		}
+
+		internal void EmitBlt(CodeEmitterLabel label)
+		{
+			EmitOpCode(OpCodes.Blt, label);
+		}
+
+		internal void EmitBge(CodeEmitterLabel label)
+		{
+			EmitOpCode(OpCodes.Bge, label);
+		}
+
+		internal void EmitBgt(CodeEmitterLabel label)
+		{
+			EmitOpCode(OpCodes.Bgt, label);
+		}
+
+		internal void EmitBrtrue(CodeEmitterLabel label)
+		{
+			EmitOpCode(OpCodes.Brtrue, label);
+		}
+
+		internal void EmitBrfalse(CodeEmitterLabel label)
+		{
+			EmitOpCode(OpCodes.Brfalse, label);
+		}
+
+		internal void EmitLeave(CodeEmitterLabel label)
+		{
+			EmitOpCode(OpCodes.Leave, label);
+		}
+
+		internal void EmitSwitch(CodeEmitterLabel[] labels)
+		{
+			EmitOpCode(OpCodes.Switch, labels);
 		}
 
 		internal void Emit(OpCode opcode, CodeEmitterLocal local)
@@ -2061,14 +2455,9 @@ namespace IKVM.Internal
 			EmitOpCode(opcode, meth);
 		}
 
-		internal void Emit(OpCode opcode, sbyte arg)
+		internal void EmitLdc_R4(float arg)
 		{
-			EmitOpCode(opcode, arg);
-		}
-
-		internal void Emit(OpCode opcode, float arg)
-		{
-			EmitOpCode(opcode, arg);
+			EmitOpCode(OpCodes.Ldc_R4, arg);
 		}
 
 		internal void Emit(OpCode opcode, string arg)
@@ -2175,9 +2564,9 @@ namespace IKVM.Internal
 				Emit(OpCodes.Isinst, type);
 				Emit(OpCodes.Dup);
 				CodeEmitterLabel ok = DefineLabel();
-				Emit(OpCodes.Brtrue_S, ok);
+				EmitBrtrue(ok);
 				Emit(OpCodes.Ldloc, lb);
-				Emit(OpCodes.Brfalse_S, ok);	// handle null
+				EmitBrfalse(ok);	// handle null
 				Emit(OpCodes.Ldtoken, type);
 				Emit(OpCodes.Ldloc, lb);
 				Emit(OpCodes.Call, verboseCastFailure);
@@ -2195,11 +2584,11 @@ namespace IKVM.Internal
 		{
 			CodeEmitterLabel isnull = DefineLabel();
 			Emit(OpCodes.Dup);
-			Emit(OpCodes.Brfalse_S, isnull);
+			EmitBrfalse(isnull);
 			Emit(OpCodes.Isinst, type);
 			Emit(OpCodes.Dup);
 			CodeEmitterLabel ok = DefineLabel();
-			Emit(OpCodes.Brtrue_S, ok);
+			EmitBrtrue(ok);
 			EmitThrow("java.lang.IncompatibleClassChangeError");
 			MarkLabel(isnull);
 			Emit(OpCodes.Pop);
@@ -2212,7 +2601,7 @@ namespace IKVM.Internal
 			// NOTE if the reference is null, we treat it as a default instance of the value type.
 			Emit(OpCodes.Dup);
 			CodeEmitterLabel label1 = DefineLabel();
-			Emit(OpCodes.Brtrue_S, label1);
+			EmitBrtrue(label1);
 			Emit(OpCodes.Pop);
 			CodeEmitterLocal local = AllocTempLocal(type);
 			Emit(OpCodes.Ldloca, local);
@@ -2220,18 +2609,16 @@ namespace IKVM.Internal
 			Emit(OpCodes.Ldloc, local);
 			ReleaseTempLocal(local);
 			CodeEmitterLabel label2 = DefineLabel();
-			Emit(OpCodes.Br_S, label2);
+			EmitBr(label2);
 			MarkLabel(label1);
 			Emit(OpCodes.Unbox, type);
 			Emit(OpCodes.Ldobj, type);
 			MarkLabel(label2);
 		}
 
-		// the purpose of this method is to avoid calling a wrong overload of Emit()
-		// (e.g. when passing a byte or short)
-		internal void Emit_Ldc_I4(int i)
+		internal void EmitLdc_I4(int i)
 		{
-			Emit(OpCodes.Ldc_I4, i);
+			EmitOpCode(OpCodes.Ldc_I4, i);
 		}
 
 		internal void Emit_idiv()
@@ -2242,11 +2629,11 @@ namespace IKVM.Internal
 			Emit(OpCodes.Dup);
 			Emit(OpCodes.Ldc_I4_M1);
 			CodeEmitterLabel label = DefineLabel();
-			Emit(OpCodes.Bne_Un_S, label);
+			EmitBne_Un(label);
 			Emit(OpCodes.Pop);
 			Emit(OpCodes.Neg);
 			CodeEmitterLabel label2 = DefineLabel();
-			Emit(OpCodes.Br_S, label2);
+			EmitBr(label2);
 			MarkLabel(label);
 			Emit(OpCodes.Div);
 			MarkLabel(label2);
@@ -2261,11 +2648,11 @@ namespace IKVM.Internal
 			Emit(OpCodes.Ldc_I4_M1);
 			Emit(OpCodes.Conv_I8);
 			CodeEmitterLabel label = DefineLabel();
-			Emit(OpCodes.Bne_Un_S, label);
+			EmitBne_Un(label);
 			Emit(OpCodes.Pop);
 			Emit(OpCodes.Neg);
 			CodeEmitterLabel label2 = DefineLabel();
-			Emit(OpCodes.Br_S, label2);
+			EmitBr(label2);
 			MarkLabel(label);
 			Emit(OpCodes.Div);
 			MarkLabel(label2);
@@ -2294,16 +2681,16 @@ namespace IKVM.Internal
 			switch (comp)
 			{
 				case Comparison.LessOrEqual:
-					Emit(OpCodes.Ble, label);
+					EmitBle(label);
 					break;
 				case Comparison.LessThan:
-					Emit(OpCodes.Blt, label);
+					EmitBlt(label);
 					break;
 				case Comparison.GreaterOrEqual:
-					Emit(OpCodes.Bge, label);
+					EmitBge(label);
 					break;
 				case Comparison.GreaterThan:
-					Emit(OpCodes.Bgt, label);
+					EmitBgt(label);
 					break;
 			}
 		}
@@ -2352,7 +2739,7 @@ namespace IKVM.Internal
 
 		internal void Emit_And_I4(int v)
 		{
-			Emit(OpCodes.Ldc_I4, v);
+			EmitLdc_I4(v);
 			Emit(OpCodes.And);
 		}
 
@@ -2375,6 +2762,11 @@ namespace IKVM.Internal
 		internal void EmitTailCallPrevention()
 		{
 			EmitPseudoOpCode(CodeType.TailCallPrevention, null);
+		}
+
+		internal void EmitClearStack()
+		{
+			EmitPseudoOpCode(CodeType.ClearStack, null);
 		}
 	}
 }

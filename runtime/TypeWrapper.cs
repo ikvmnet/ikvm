@@ -1786,7 +1786,7 @@ namespace IKVM.Internal
 				else
 				{
 					ilgen.Emit(OpCodes.Ldtoken, type);
-					ilgen.Emit(OpCodes.Ldc_I4, rank);
+					ilgen.EmitLdc_I4(rank);
 					Compiler.getClassFromTypeHandle2.EmitCall(ilgen);
 				}
 			}
@@ -2985,7 +2985,7 @@ namespace IKVM.Internal
 					rank++;
 					tw = tw.ElementTypeWrapper;
 				}
-				ilgen.Emit(OpCodes.Ldc_I4, rank);
+				ilgen.EmitLdc_I4(rank);
 				ilgen.Emit(OpCodes.Call, tw.TypeAsTBD.GetMethod("CastArray"));
 				ilgen.Emit(OpCodes.Castclass, ArrayTypeWrapper.MakeArrayType(Types.Object, rank));
 			}
@@ -3016,7 +3016,7 @@ namespace IKVM.Internal
 					rank++;
 					tw = tw.ElementTypeWrapper;
 				}
-				ilgen.Emit(OpCodes.Ldc_I4, rank);
+				ilgen.EmitLdc_I4(rank);
 				ilgen.Emit(OpCodes.Call, tw.TypeAsTBD.GetMethod("IsInstanceArray"));
 			}
 			else

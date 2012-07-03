@@ -377,7 +377,7 @@ namespace IKVM.Internal.MapXml
 					// typeWrapper should never be an UnloadableTypeWrapper
 					typeWrapper.EmitInstanceOf(null, ilgen);
 					CodeEmitterLabel endLabel = ilgen.DefineLabel();
-					ilgen.Emit(OpCodes.Brtrue_S, endLabel);
+					ilgen.EmitBrtrue(endLabel);
 					ilgen.Emit(OpCodes.Pop);
 					ilgen.Emit(OpCodes.Ldnull);
 					ilgen.MarkLabel(endLabel);
@@ -479,13 +479,6 @@ namespace IKVM.Internal.MapXml
 
 	public abstract class Branch : Instruction
 	{
-		private OpCode opcode;
-
-		public Branch(OpCode opcode)
-		{
-			this.opcode = opcode;
-		}
-
 		internal sealed override void Generate(CodeGenContext context, CodeEmitter ilgen)
 		{
 			CodeEmitterLabel l;
@@ -498,8 +491,10 @@ namespace IKVM.Internal.MapXml
 			{
 				l = (CodeEmitterLabel)context[Name];
 			}
-			ilgen.Emit(opcode, l);
+			Emit(ilgen, l);
 		}
+
+		internal abstract void Emit(CodeEmitter ilgen, CodeEmitterLabel label);
 
 		[XmlAttribute("name")]
 		public string Name;
@@ -508,74 +503,81 @@ namespace IKVM.Internal.MapXml
 	[XmlType("brfalse")]
 	public sealed class BrFalse : Branch
 	{
-		public BrFalse() : base(OpCodes.Brfalse)
+		internal override void Emit(CodeEmitter ilgen, CodeEmitterLabel label)
 		{
+			ilgen.EmitBrfalse(label);
 		}
 	}
 
 	[XmlType("brtrue")]
 	public sealed class BrTrue : Branch
 	{
-		public BrTrue() : base(OpCodes.Brtrue)
+		internal override void Emit(CodeEmitter ilgen, CodeEmitterLabel label)
 		{
+			ilgen.EmitBrtrue(label);
 		}
 	}
 
 	[XmlType("br")]
 	public sealed class Br : Branch
 	{
-		public Br() : base(OpCodes.Br)
+		internal override void Emit(CodeEmitter ilgen, CodeEmitterLabel label)
 		{
+			ilgen.EmitBr(label);
 		}
 	}
 
 	[XmlType("beq")]
 	public sealed class Beq : Branch
 	{
-		public Beq()
-			: base(OpCodes.Beq)
+		internal override void Emit(CodeEmitter ilgen, CodeEmitterLabel label)
 		{
+			ilgen.EmitBeq(label);
 		}
 	}
 
 	[XmlType("bne_un")]
 	public sealed class Bne_Un : Branch
 	{
-		public Bne_Un()
-			: base(OpCodes.Bne_Un)
+		internal override void Emit(CodeEmitter ilgen, CodeEmitterLabel label)
 		{
+			ilgen.EmitBne_Un(label);
 		}
 	}
 
 	[XmlType("bge_un")]
 	public sealed class Bge_Un : Branch
 	{
-		public Bge_Un() : base(OpCodes.Bge_Un)
+		internal override void Emit(CodeEmitter ilgen, CodeEmitterLabel label)
 		{
+			ilgen.EmitBge_Un(label);
 		}
 	}
 
 	[XmlType("ble_un")]
 	public sealed class Ble_Un : Branch
 	{
-		public Ble_Un() : base(OpCodes.Ble_Un)
+		internal override void Emit(CodeEmitter ilgen, CodeEmitterLabel label)
 		{
+			ilgen.EmitBle_Un(label);
 		}
 	}
 
 	[XmlType("blt")]
 	public sealed class Blt : Branch
 	{
-		public Blt() : base(OpCodes.Blt)
+		internal override void Emit(CodeEmitter ilgen, CodeEmitterLabel label)
 		{
+			ilgen.EmitBlt(label);
 		}
 	}
 
 	[XmlType("blt_un")]
 	public sealed class Blt_Un : Branch
 	{
-		public Blt_Un() : base(OpCodes.Blt_Un)
+		internal override void Emit(CodeEmitter ilgen, CodeEmitterLabel label)
 		{
+			ilgen.EmitBlt_Un(label);
 		}
 	}
 
@@ -658,7 +660,7 @@ namespace IKVM.Internal.MapXml
 
 		internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
 		{
-			ilgen.Emit(OpCodes.Ldarga, (short)ArgNum);
+			ilgen.EmitLdarga(ArgNum);
 		}
 	}
 
@@ -670,7 +672,7 @@ namespace IKVM.Internal.MapXml
 
 		internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
 		{
-			ilgen.Emit(OpCodes.Ldarg_S, ArgNum);
+			ilgen.EmitLdarg(ArgNum);
 		}
 	}
 
@@ -930,7 +932,7 @@ namespace IKVM.Internal.MapXml
 
 		internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
 		{
-			ilgen.Emit(OpCodes.Ldc_I4, val);
+			ilgen.EmitLdc_I4(val);
 		}
 	}
 
@@ -1107,7 +1109,7 @@ namespace IKVM.Internal.MapXml
 
 		internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
 		{
-			ilgen.Emit(OpCodes.Unaligned, (byte)Alignment);
+			ilgen.EmitUnaligned((byte)Alignment);
 		}
 	}
 
@@ -1130,8 +1132,9 @@ namespace IKVM.Internal.MapXml
 	[XmlType("leave")]
 	public sealed class Leave : Branch
 	{
-		public Leave() : base(OpCodes.Leave)
+		internal override void Emit(CodeEmitter ilgen, CodeEmitterLabel label)
 		{
+			ilgen.EmitLeave(label);
 		}
 	}
 
@@ -1535,7 +1538,7 @@ namespace IKVM.Internal.MapXml
 			Type[] redirParamTypes = loader.ArgTypeListFromSig(Sig);
 			for(int i = 0; i < redirParamTypes.Length; i++)
 			{
-				ilgen.Emit(OpCodes.Ldarg, (short)i);
+				ilgen.EmitLdarg(i);
 			}
 			// HACK if the class name contains a comma, we assume it is a .NET type
 			if(Class.IndexOf(',') >= 0)

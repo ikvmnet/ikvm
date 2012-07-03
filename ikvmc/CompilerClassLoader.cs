@@ -509,7 +509,7 @@ namespace IKVM.Internal
 			}
 			ilgen.Emit(OpCodes.Call, m);
 			CodeEmitterLabel label = ilgen.DefineLabel();
-			ilgen.Emit(OpCodes.Leave, label);
+			ilgen.EmitLeave(label);
 			ilgen.BeginCatchBlock(Types.Exception);
 			LoadClassByDottedName("ikvm.runtime.Util").GetMethodWrapper("mapException", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false).EmitCall(ilgen);
 			CodeEmitterLocal exceptionLocal = ilgen.DeclareLocal(Types.Exception);
@@ -525,7 +525,7 @@ namespace IKVM.Internal
 			ClassLoaderWrapper.LoadClassCritical("java.lang.ThreadGroup").GetMethodWrapper("uncaughtException", "(Ljava.lang.Thread;Ljava.lang.Throwable;)V", false).EmitCallvirt(ilgen);
 			ilgen.Emit(OpCodes.Ldc_I4_1);
 			ilgen.Emit(OpCodes.Stloc, rc);
-			ilgen.Emit(OpCodes.Leave, label);
+			ilgen.EmitLeave(label);
 			ilgen.BeginFinallyBlock();
 			startupType.GetMethodWrapper("exitMainThread", "()V", false).EmitCall(ilgen);
 			ilgen.Emit(OpCodes.Endfinally);
@@ -1102,7 +1102,7 @@ namespace IKVM.Internal
 							ilgen.Emit(OpCodes.Ldarg_0);
 							for(int i = 0; i < paramTypes.Length; i++)
 							{
-								ilgen.Emit(OpCodes.Ldarg, (short)(i + 1));
+								ilgen.EmitLdarg(i + 1);
 							}
 							if(m.redirect != null)
 							{
@@ -1153,7 +1153,7 @@ namespace IKVM.Internal
 							}
 							for(int i = 0; i < paramTypes.Length; i++)
 							{
-								ilgen.Emit(OpCodes.Ldarg, (short)i);
+								ilgen.EmitLdarg(i);
 							}
 							ilgen.Emit(OpCodes.Newobj, baseCon);
 							ilgen.Emit(OpCodes.Ret);
@@ -1309,10 +1309,10 @@ namespace IKVM.Internal
 								ilgen.Emit(OpCodes.Isinst, tw.TypeAsTBD);
 								ilgen.Emit(OpCodes.Dup);
 								CodeEmitterLabel label = ilgen.DefineLabel();
-								ilgen.Emit(OpCodes.Brfalse_S, label);
+								ilgen.EmitBrfalse(label);
 								for(int i = 1; i < argTypes.Length; i++)
 								{
-									ilgen.Emit(OpCodes.Ldarg, (short)i);
+									ilgen.EmitLdarg(i);
 								}
 								MethodWrapper mw = tw.GetMethodWrapper(m.Name, m.Sig, false);
 								mw.Link();
@@ -1323,7 +1323,7 @@ namespace IKVM.Internal
 							}
 							for(int i = 0; i < argTypes.Length; i++)
 							{
-								ilgen.Emit(OpCodes.Ldarg, (short)i);
+								ilgen.EmitLdarg(i);
 							}
 							ilgen.Emit(OpCodes.Callvirt, interfaceMethod);
 							ilgen.Emit(OpCodes.Ret);
@@ -1525,7 +1525,7 @@ namespace IKVM.Internal
 							}
 							for(int i = 0; i < paramTypes.Length; i++)
 							{
-								ilgen.Emit(OpCodes.Ldarg, (short)(i + thisOffset));
+								ilgen.EmitLdarg(i + thisOffset);
 							}
 							if(m.redirect != null)
 							{
@@ -1575,10 +1575,10 @@ namespace IKVM.Internal
 							ilgen.Emit(OpCodes.Isinst, DeclaringType.TypeAsBaseType);
 							ilgen.Emit(OpCodes.Dup);
 							CodeEmitterLabel skip = ilgen.DefineLabel();
-							ilgen.Emit(OpCodes.Brfalse_S, skip);
+							ilgen.EmitBrfalse(skip);
 							for(int i = 0; i < paramTypes.Length; i++)
 							{
-								ilgen.Emit(OpCodes.Ldarg, (short)(i + 1));
+								ilgen.EmitLdarg(i + 1);
 							}
 							ilgen.Emit(OpCodes.Callvirt, mbCore);
 							this.ReturnType.EmitConvStackTypeToSignatureType(ilgen, null);
@@ -1600,10 +1600,10 @@ namespace IKVM.Internal
 								ilgen.Emit(OpCodes.Isinst, overrider.TypeAsTBD);
 								ilgen.Emit(OpCodes.Dup);
 								CodeEmitterLabel skip = ilgen.DefineLabel();
-								ilgen.Emit(OpCodes.Brfalse_S, skip);
+								ilgen.EmitBrfalse(skip);
 								for(int i = 0; i < paramTypes.Length; i++)
 								{
-									ilgen.Emit(OpCodes.Ldarg, (short)(i + 1));
+									ilgen.EmitLdarg(i + 1);
 								}
 								mw.Link();
 								mw.EmitCallvirtImpl(ilgen, false);
@@ -1636,7 +1636,7 @@ namespace IKVM.Internal
 							Type shadowType = ((RemapperTypeWrapper)DeclaringType).shadowType;
 							for(int i = 0; i < paramTypes.Length + 1; i++)
 							{
-								ilgen.Emit(OpCodes.Ldarg, (short)i);
+								ilgen.EmitLdarg(i);
 							}
 							if(m.redirect != null)
 							{
@@ -1708,7 +1708,7 @@ namespace IKVM.Internal
 							ilgen.Emit(OpCodes.Ldarg_0);
 							for(int i = 0; i < paramTypes.Length; i++)
 							{
-								ilgen.Emit(OpCodes.Ldarg, (short)(i + 1));
+								ilgen.EmitLdarg(i + 1);
 							}
 							ilgen.Emit(OpCodes.Call, baseMethod);
 							ilgen.Emit(OpCodes.Ret);
@@ -1933,11 +1933,11 @@ namespace IKVM.Internal
 							CodeEmitter ilgen = CodeEmitter.Create(mb);
 							for(int i = 0; i < paramTypes.Length; i++)
 							{
-								ilgen.Emit(OpCodes.Ldarg_S, (byte)i);
+								ilgen.EmitLdarg(i);
 							}
 							if(!mi.IsStatic)
 							{
-								ilgen.Emit(OpCodes.Ldarg_S, (byte)paramTypes.Length);
+								ilgen.EmitLdarg(paramTypes.Length);
 								ilgen.Emit(OpCodes.Callvirt, mi);
 							}
 							else
@@ -2018,20 +2018,20 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Ldarg_0);
 				ilgen.Emit(OpCodes.Isinst, shadowType);
 				CodeEmitterLabel retFalse = ilgen.DefineLabel();
-				ilgen.Emit(OpCodes.Brfalse_S, retFalse);
+				ilgen.EmitBrfalse(retFalse);
 
 				if(!shadowType.IsSealed)
 				{
 					ilgen.Emit(OpCodes.Ldarg_0);
 					ilgen.Emit(OpCodes.Isinst, typeBuilder);
-					ilgen.Emit(OpCodes.Brtrue_S, retFalse);
+					ilgen.EmitBrtrue(retFalse);
 				}
 
 				if(shadowType == Types.Object)
 				{
 					ilgen.Emit(OpCodes.Ldarg_0);
 					ilgen.Emit(OpCodes.Isinst, Types.Array);
-					ilgen.Emit(OpCodes.Brtrue_S, retFalse);
+					ilgen.EmitBrtrue(retFalse);
 				}
 
 				foreach(RemapperTypeWrapper r in remappedTypes)
@@ -2040,7 +2040,7 @@ namespace IKVM.Internal
 					{
 						ilgen.Emit(OpCodes.Ldarg_0);
 						ilgen.Emit(OpCodes.Isinst, r.shadowType);
-						ilgen.Emit(OpCodes.Brtrue_S, retFalse);
+						ilgen.EmitBrtrue(retFalse);
 					}
 				}
 				ilgen.Emit(OpCodes.Ldc_I4_1);
@@ -2073,7 +2073,7 @@ namespace IKVM.Internal
 				{
 					ilgen.Emit(OpCodes.Ldarg_0);
 					ilgen.Emit(OpCodes.Isinst, typeBuilder);
-					ilgen.Emit(OpCodes.Brtrue_S, fail);
+					ilgen.EmitBrtrue(fail);
 					hasfail = true;
 				}
 
@@ -2081,7 +2081,7 @@ namespace IKVM.Internal
 				{
 					ilgen.Emit(OpCodes.Ldarg_0);
 					ilgen.Emit(OpCodes.Isinst, Types.Array);
-					ilgen.Emit(OpCodes.Brtrue_S, fail);
+					ilgen.EmitBrtrue(fail);
 					hasfail = true;
 				}
 
@@ -2091,7 +2091,7 @@ namespace IKVM.Internal
 					{
 						ilgen.Emit(OpCodes.Ldarg_0);
 						ilgen.Emit(OpCodes.Isinst, r.shadowType);
-						ilgen.Emit(OpCodes.Brtrue_S, fail);
+						ilgen.EmitBrtrue(fail);
 						hasfail = true;
 					}
 				}
@@ -2337,7 +2337,7 @@ namespace IKVM.Internal
 					ilgen.Emit(OpCodes.Call, Compiler.getTypeFromHandleMethod);
 					ilgen.Emit(OpCodes.Ceq);
 					CodeEmitterLabel label = ilgen.DefineLabel();
-					ilgen.Emit(OpCodes.Brfalse_S, label);
+					ilgen.EmitBrfalse(label);
 					ilgen.Emit(OpCodes.Pop);
 					if(map[i].code != null)
 					{

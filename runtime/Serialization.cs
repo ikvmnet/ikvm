@@ -229,7 +229,7 @@ namespace IKVM.Internal
 					ilgen.Emit(OpCodes.Ldtoken, wrapper.TypeAsBaseType);
 					ilgen.Emit(OpCodes.Call, Compiler.getTypeFromHandleMethod);
 					CodeEmitterLabel label = ilgen.DefineLabel();
-					ilgen.Emit(OpCodes.Beq_S, label);
+					ilgen.EmitBeq(label);
 					ilgen.Emit(OpCodes.Ldarg_0);
 					ilgen.Emit(OpCodes.Ret);
 					ilgen.MarkLabel(label);

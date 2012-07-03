@@ -177,7 +177,7 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Ldarg_0);
 				for (int i = 1; i <= dmh.ParameterCount; i++)
 				{
-					ilgen.Emit(OpCodes.Ldarg_S, (byte)i);
+					ilgen.EmitLdarg(i);
 				}
 				ctor.EmitCall(ilgen);
 				ilgen.Emit(OpCodes.Ret);
@@ -449,7 +449,7 @@ namespace IKVM.Internal
 							{
 								for(int i = 0; i < indexer.Length; i++)
 								{
-									ilgen.Emit(OpCodes.Ldarg, (short)i);
+									ilgen.EmitLdarg(i);
 								}
 								mw.EmitCall(ilgen);
 							}
@@ -458,7 +458,7 @@ namespace IKVM.Internal
 								ilgen.Emit(OpCodes.Ldarg_0);
 								for(int i = 0; i < indexer.Length; i++)
 								{
-									ilgen.Emit(OpCodes.Ldarg, (short)(i + 1));
+									ilgen.EmitLdarg(i + 1);
 								}
 								mw.EmitCallvirt(ilgen);
 							}
@@ -490,7 +490,7 @@ namespace IKVM.Internal
 							{
 								for(int i = 0; i <= indexer.Length; i++)
 								{
-									ilgen.Emit(OpCodes.Ldarg, (short)i);
+									ilgen.EmitLdarg(i);
 								}
 								mw.EmitCall(ilgen);
 							}
@@ -499,7 +499,7 @@ namespace IKVM.Internal
 								ilgen.Emit(OpCodes.Ldarg_0);
 								for(int i = 0; i <= indexer.Length; i++)
 								{
-									ilgen.Emit(OpCodes.Ldarg, (short)(i + 1));
+									ilgen.EmitLdarg(i + 1);
 								}
 								mw.EmitCallvirt(ilgen);
 							}
@@ -832,29 +832,29 @@ namespace IKVM.Internal
 						ilgen.Emit(OpCodes.Dup);
 						ilgen.Emit(OpCodes.Isinst, typeBuilderGhostInterface);
 						CodeEmitterLabel label = ilgen.DefineLabel();
-						ilgen.Emit(OpCodes.Brfalse_S, label);
+						ilgen.EmitBrfalse(label);
 						ilgen.Emit(OpCodes.Castclass, typeBuilderGhostInterface);
 						for(int k = 0; k < args.Length; k++)
 						{
-							ilgen.Emit(OpCodes.Ldarg_S, (byte)(k + 1));
+							ilgen.EmitLdarg(k + 1);
 						}
 						ilgen.Emit(OpCodes.Callvirt, (MethodInfo)methods[i].GetMethod());
-						ilgen.Emit(OpCodes.Br, end);
+						ilgen.EmitBr(end);
 						ilgen.MarkLabel(label);
 						for(int j = 0; j < implementers.Length; j++)
 						{
 							ilgen.Emit(OpCodes.Dup);
 							ilgen.Emit(OpCodes.Isinst, implementers[j].TypeAsTBD);
 							label = ilgen.DefineLabel();
-							ilgen.Emit(OpCodes.Brfalse_S, label);
+							ilgen.EmitBrfalse(label);
 							ilgen.Emit(OpCodes.Castclass, implementers[j].TypeAsTBD);
 							for(int k = 0; k < args.Length; k++)
 							{
-								ilgen.Emit(OpCodes.Ldarg_S, (byte)(k + 1));
+								ilgen.EmitLdarg(k + 1);
 							}
 							MethodWrapper mw = implementers[j].GetMethodWrapper(methods[i].Name, methods[i].Signature, true);
 							mw.EmitCallvirt(ilgen);
-							ilgen.Emit(OpCodes.Br, end);
+							ilgen.EmitBr(end);
 							ilgen.MarkLabel(label);
 						}
 						// we need to do a null check (null fails all the isinst checks)
@@ -897,9 +897,9 @@ namespace IKVM.Internal
 						ilgen.Emit(OpCodes.Ldarg_0);
 						ilgen.Emit(OpCodes.Isinst, implementers[i].TypeAsTBD);
 						CodeEmitterLabel label = ilgen.DefineLabel();
-						ilgen.Emit(OpCodes.Brfalse_S, label);
+						ilgen.EmitBrfalse(label);
 						ilgen.Emit(OpCodes.Ldc_I4_1);
-						ilgen.Emit(OpCodes.Br, end);
+						ilgen.EmitBr(end);
 						ilgen.MarkLabel(label);
 					}
 					ilgen.Emit(OpCodes.Ldarg_0);
@@ -917,7 +917,7 @@ namespace IKVM.Internal
 					CodeEmitterLocal localRank = ilgen.DeclareLocal(Types.Int32);
 					ilgen.Emit(OpCodes.Ldarg_0);
 					CodeEmitterLabel skip = ilgen.DefineLabel();
-					ilgen.Emit(OpCodes.Brtrue_S, skip);
+					ilgen.EmitBrtrue(skip);
 					ilgen.Emit(OpCodes.Ldc_I4_0);
 					ilgen.Emit(OpCodes.Ret);
 					ilgen.MarkLabel(skip);
@@ -927,7 +927,7 @@ namespace IKVM.Internal
 					ilgen.Emit(OpCodes.Ldarg_1);
 					ilgen.Emit(OpCodes.Stloc, localRank);
 					skip = ilgen.DefineLabel();
-					ilgen.Emit(OpCodes.Br_S, skip);
+					ilgen.EmitBr(skip);
 					CodeEmitterLabel iter = ilgen.DefineLabel();
 					ilgen.MarkLabel(iter);
 					ilgen.Emit(OpCodes.Ldloc, localType);
@@ -939,11 +939,11 @@ namespace IKVM.Internal
 					ilgen.Emit(OpCodes.Stloc, localRank);
 					ilgen.Emit(OpCodes.Ldloc, localRank);
 					CodeEmitterLabel typecheck = ilgen.DefineLabel();
-					ilgen.Emit(OpCodes.Brfalse_S, typecheck);
+					ilgen.EmitBrfalse(typecheck);
 					ilgen.MarkLabel(skip);
 					ilgen.Emit(OpCodes.Ldloc, localType);
 					ilgen.Emit(OpCodes.Callvirt, Types.Type.GetMethod("get_IsArray"));
-					ilgen.Emit(OpCodes.Brtrue_S, iter);
+					ilgen.EmitBrtrue(iter);
 					ilgen.Emit(OpCodes.Ldc_I4_0);
 					ilgen.Emit(OpCodes.Ret);
 					ilgen.MarkLabel(typecheck);
@@ -954,7 +954,7 @@ namespace IKVM.Internal
 						ilgen.Emit(OpCodes.Ldloc, localType);
 						ilgen.Emit(OpCodes.Callvirt, Types.Type.GetMethod("IsAssignableFrom"));
 						CodeEmitterLabel label = ilgen.DefineLabel();
-						ilgen.Emit(OpCodes.Brfalse_S, label);
+						ilgen.EmitBrfalse(label);
 						ilgen.Emit(OpCodes.Ldc_I4_1);
 						ilgen.Emit(OpCodes.Ret);
 						ilgen.MarkLabel(label);
@@ -964,7 +964,7 @@ namespace IKVM.Internal
 					ilgen.Emit(OpCodes.Ldloc, localType);
 					ilgen.Emit(OpCodes.Callvirt, Types.Type.GetMethod("IsAssignableFrom"));
 					skip = ilgen.DefineLabel();
-					ilgen.Emit(OpCodes.Brfalse_S, skip);
+					ilgen.EmitBrfalse(skip);
 					ilgen.Emit(OpCodes.Ldc_I4_1);
 					ilgen.Emit(OpCodes.Ret);
 					ilgen.MarkLabel(skip);
@@ -984,7 +984,7 @@ namespace IKVM.Internal
 					{
 						ilgen.Emit(OpCodes.Ldarg_0);
 						ilgen.Emit(OpCodes.Isinst, implementers[i].TypeAsTBD);
-						ilgen.Emit(OpCodes.Brtrue, end);
+						ilgen.EmitBrtrue(end);
 					}
 					ilgen.Emit(OpCodes.Ldarg_0);
 					ilgen.Emit(OpCodes.Castclass, typeBuilderGhostInterface);
@@ -1016,11 +1016,11 @@ namespace IKVM.Internal
 					ilgen = CodeEmitter.Create(mb);
 					end = ilgen.DefineLabel();
 					ilgen.Emit(OpCodes.Ldarg_0);
-					ilgen.Emit(OpCodes.Brfalse_S, end);
+					ilgen.EmitBrfalse(end);
 					ilgen.Emit(OpCodes.Ldarg_0);
 					ilgen.Emit(OpCodes.Ldarg_1);
 					ilgen.Emit(OpCodes.Call, ghostIsInstanceArrayMethod);
-					ilgen.Emit(OpCodes.Brtrue_S, end);
+					ilgen.EmitBrtrue(end);
 					ilgen.Emit(OpCodes.Ldarg_0);
 					ilgen.Emit(OpCodes.Ldtoken, typeBuilder);
 					ilgen.Emit(OpCodes.Ldarg_1);
@@ -1054,9 +1054,9 @@ namespace IKVM.Internal
 					mb = typeBuilder.DefineMethod("op_Equality", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, Types.Boolean, new Type[] { typeBuilder, typeBuilder });
 					AttributeHelper.HideFromJava(mb);
 					ilgen = CodeEmitter.Create(mb);
-					ilgen.Emit(OpCodes.Ldarga_S, (byte)0);
+					ilgen.EmitLdarga(0);
 					ilgen.Emit(OpCodes.Ldfld, ghostRefField);
-					ilgen.Emit(OpCodes.Ldarga_S, (byte)1);
+					ilgen.EmitLdarga(1);
 					ilgen.Emit(OpCodes.Ldfld, ghostRefField);
 					ilgen.Emit(OpCodes.Ceq);
 					ilgen.Emit(OpCodes.Ret);
@@ -1066,9 +1066,9 @@ namespace IKVM.Internal
 					mb = typeBuilder.DefineMethod("op_Inequality", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, Types.Boolean, new Type[] { typeBuilder, typeBuilder });
 					AttributeHelper.HideFromJava(mb);
 					ilgen = CodeEmitter.Create(mb);
-					ilgen.Emit(OpCodes.Ldarga_S, (byte)0);
+					ilgen.EmitLdarga(0);
 					ilgen.Emit(OpCodes.Ldfld, ghostRefField);
-					ilgen.Emit(OpCodes.Ldarga_S, (byte)1);
+					ilgen.EmitLdarga(1);
 					ilgen.Emit(OpCodes.Ldfld, ghostRefField);
 					ilgen.Emit(OpCodes.Ceq);
 					ilgen.Emit(OpCodes.Ldc_I4_0);
@@ -1136,7 +1136,7 @@ namespace IKVM.Internal
 					rank++;
 					tw = tw.ElementTypeWrapper;
 				}
-				ilgen.Emit(OpCodes.Ldc_I4, rank);
+				ilgen.EmitLdc_I4(rank);
 				ilgen.Emit(OpCodes.Call, ghostCastArrayMethod);
 				ilgen.Emit(OpCodes.Castclass, ArrayTypeWrapper.MakeArrayType(Types.Object, rank));
 			}

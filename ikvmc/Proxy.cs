@@ -268,13 +268,13 @@ namespace IKVM.Internal
 			}
 			else
 			{
-				ilgen.Emit_Ldc_I4(parameters.Length);
+				ilgen.EmitLdc_I4(parameters.Length);
 				ilgen.Emit(OpCodes.Newarr, Types.Object);
 				for (int i = 0; i < parameters.Length; i++)
 				{
 					ilgen.Emit(OpCodes.Dup);
-					ilgen.Emit_Ldc_I4(i);
-					ilgen.Emit(OpCodes.Ldarg, (short)i);
+					ilgen.EmitLdc_I4(i);
+					ilgen.EmitLdarg(i);
 					if (parameters[i].IsNonPrimitiveValueType)
 					{
 						parameters[i].EmitBox(ilgen);
@@ -307,25 +307,25 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Stloc, returnValue);
 			}
 			CodeEmitterLabel returnLabel = ilgen.DefineLabel();
-			ilgen.Emit(OpCodes.Leave, returnLabel);
+			ilgen.EmitLeave(returnLabel);
 			// TODO consider using a filter here (but we would need to add filter support to CodeEmitter)
 			ilgen.BeginCatchBlock(Types.Exception);
-			ilgen.Emit_Ldc_I4(0);
+			ilgen.EmitLdc_I4(0);
 			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(Types.Exception));
 			CodeEmitterLocal exception = ilgen.DeclareLocal(Types.Exception);
 			ilgen.Emit(OpCodes.Stloc, exception);
 			CodeEmitterLabel rethrow = ilgen.DefineLabel();
 			ilgen.Emit(OpCodes.Ldloc, exception);
 			errorClass.EmitInstanceOf(null, ilgen);
-			ilgen.Emit(OpCodes.Brtrue, rethrow);
+			ilgen.EmitBrtrue(rethrow);
 			ilgen.Emit(OpCodes.Ldloc, exception);
 			runtimeExceptionClass.EmitInstanceOf(null, ilgen);
-			ilgen.Emit(OpCodes.Brtrue, rethrow);
+			ilgen.EmitBrtrue(rethrow);
 			foreach (TypeWrapper tw in pm.exceptions)
 			{
 				ilgen.Emit(OpCodes.Ldloc, exception);
 				tw.EmitInstanceOf(null, ilgen);
-				ilgen.Emit(OpCodes.Brtrue, rethrow);
+				ilgen.EmitBrtrue(rethrow);
 			}
 			ilgen.Emit(OpCodes.Ldloc, exception);
 			undeclaredThrowableExceptionConstructor.EmitNewobj(ilgen);
@@ -357,12 +357,12 @@ namespace IKVM.Internal
 				method.mw.DeclaringType.EmitClassLiteral(ilgen);
 				ilgen.Emit(OpCodes.Ldstr, method.mw.Name);
 				TypeWrapper[] parameters = method.mw.GetParameters();
-				ilgen.Emit(OpCodes.Ldc_I4, parameters.Length);
+				ilgen.EmitLdc_I4(parameters.Length);
 				ilgen.Emit(OpCodes.Newarr, CoreClasses.java.lang.Class.Wrapper.TypeAsArrayType);
 				for (int i = 0; i < parameters.Length; i++)
 				{
 					ilgen.Emit(OpCodes.Dup);
-					ilgen.Emit(OpCodes.Ldc_I4, i);
+					ilgen.EmitLdc_I4(i);
 					parameters[i].EmitClassLiteral(ilgen);
 					ilgen.Emit(OpCodes.Stelem_Ref);
 				}
@@ -374,7 +374,7 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Stsfld, method.fb);
 			}
 			CodeEmitterLabel label = ilgen.DefineLabel();
-			ilgen.Emit(OpCodes.Leave_S, label);
+			ilgen.EmitLeave(label);
 			ilgen.BeginCatchBlock(javaLangNoSuchMethodException.TypeAsExceptionType);
 			javaLangThrowable_getMessage.EmitCallvirt(ilgen);
 			javaLangNoClassDefFoundErrorConstructor.EmitNewobj(ilgen);

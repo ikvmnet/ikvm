@@ -566,7 +566,7 @@ sealed class Compiler
 						v.builder.SetLocalSymInfo(v.name);
 					}
 					v.isArg = false;
-					ilGenerator.Emit(OpCodes.Ldarg_S, (byte)arg);
+					ilGenerator.EmitLdarg(arg);
 					tw.EmitConvSignatureTypeToStackType(ilGenerator);
 					ilGenerator.Emit(OpCodes.Stloc, v.builder);
 				}
@@ -626,7 +626,8 @@ sealed class Compiler
 				{
 					if(workarounds[i])
 					{
-						ilGenerator.Emit(OpCodes.Ldarga, (short)i);
+						// TODO prevent this from getting optimized away
+						ilGenerator.EmitLdarga(i);
 						ilGenerator.Emit(OpCodes.Pop);
 					}
 				}
@@ -883,7 +884,7 @@ sealed class Compiler
 			if(args[i].IsUnloadable)
 			{
 				Profiler.Count("EmitDynamicCast");
-				ilGenerator.Emit(OpCodes.Ldarg, (short)(i + (m.IsStatic ? 0 : 1)));
+				ilGenerator.EmitLdarg(i + (m.IsStatic ? 0 : 1));
 				ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 				ilGenerator.Emit(OpCodes.Ldstr, args[i].Name);
 				ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicCast);
@@ -1099,12 +1100,12 @@ sealed class Compiler
 						}
 						if(bc.TargetIndex == -1)
 						{
-							ilgen.Emit(OpCodes.Br, bc.TargetLabel);
+							ilgen.EmitBr(bc.TargetLabel);
 						}
 						else
 						{
 							bc.Stub = ilgen.DefineLabel();
-							ilgen.Emit(OpCodes.Leave, bc.Stub);
+							ilgen.EmitLeave(bc.Stub);
 						}
 					}
 				}
@@ -1147,7 +1148,7 @@ sealed class Compiler
 								{
 									bc.dh.Load(n);
 								}
-								ilgen.Emit(OpCodes.Br, newBlock.GetLabel(bc.TargetIndex));
+								ilgen.EmitBr(newBlock.GetLabel(bc.TargetIndex));
 							}
 							else
 							{
@@ -1264,17 +1265,17 @@ sealed class Compiler
 					}
 					else if(mapSafe)
 					{
-						ilGenerator.Emit_Ldc_I4(mapFlags | 1);
+						ilGenerator.EmitLdc_I4(mapFlags | 1);
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(excType));
 					}
 					else if(exceptionTypeWrapper == java_lang_Throwable)
 					{
-						ilGenerator.Emit_Ldc_I4(mapFlags);
+						ilGenerator.EmitLdc_I4(mapFlags);
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(Types.Exception));
 					}
 					else
 					{
-						ilGenerator.Emit_Ldc_I4(mapFlags | (remap ? 0 : 1));
+						ilGenerator.EmitLdc_I4(mapFlags | (remap ? 0 : 1));
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(excType));
 						if(!unusedException)
 						{
@@ -1288,7 +1289,7 @@ sealed class Compiler
 							ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicInstanceOf);
 						}
 						CodeEmitterLabel leave = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Brtrue_S, leave);
+						ilGenerator.EmitBrtrue(leave);
 						ilGenerator.Emit(OpCodes.Rethrow);
 						ilGenerator.MarkLabel(leave);
 					}
@@ -1302,7 +1303,7 @@ sealed class Compiler
 						bc.dh.SetType(0, exceptionTypeWrapper);
 						bc.dh.Store(0);
 					}
-					ilGenerator.Emit(OpCodes.Leave, bc.Stub);
+					ilGenerator.EmitLeave(bc.Stub);
 					ilGenerator.EndExceptionBlock();
 				}
 				prevBlock.LeaveStubs(block);
@@ -1495,26 +1496,26 @@ sealed class Compiler
 					ilGenerator.Emit(OpCodes.Ldnull);
 					break;
 				case NormalizedByteCode.__iconst:
-					ilGenerator.Emit_Ldc_I4(instr.NormalizedArg1);
+					ilGenerator.EmitLdc_I4(instr.NormalizedArg1);
 					break;
 				case NormalizedByteCode.__lconst_0:
-					ilGenerator.Emit(OpCodes.Ldc_I8, 0L);
+					ilGenerator.EmitLdc_I8(0L);
 					break;
 				case NormalizedByteCode.__lconst_1:
-					ilGenerator.Emit(OpCodes.Ldc_I8, 1L);
+					ilGenerator.EmitLdc_I8(1L);
 					break;
 				case NormalizedByteCode.__fconst_0:
 				case NormalizedByteCode.__dconst_0:
 					// floats are stored as native size on the stack, so both R4 and R8 are the same
-					ilGenerator.Emit(OpCodes.Ldc_R4, 0.0f);
+					ilGenerator.EmitLdc_R4(0.0f);
 					break;
 				case NormalizedByteCode.__fconst_1:
 				case NormalizedByteCode.__dconst_1:
 					// floats are stored as native size on the stack, so both R4 and R8 are the same
-					ilGenerator.Emit(OpCodes.Ldc_R4, 1.0f);
+					ilGenerator.EmitLdc_R4(1.0f);
 					break;
 				case NormalizedByteCode.__fconst_2:
-					ilGenerator.Emit(OpCodes.Ldc_R4, 2.0f);
+					ilGenerator.EmitLdc_R4(2.0f);
 					break;
 				case NormalizedByteCode.__ldc_nothrow:
 				case NormalizedByteCode.__ldc:
@@ -1890,7 +1891,7 @@ sealed class Compiler
 						}
 						CodeEmitterLabel label = ilGenerator.DefineLabel();
 						// NOTE leave automatically discards any junk that may be on the stack
-						ilGenerator.Emit(OpCodes.Leave, label);
+						ilGenerator.EmitLeave(label);
 						block.AddExitHack(new ReturnCookie(label, local));
 					}
 					else
@@ -1927,7 +1928,7 @@ sealed class Compiler
 						{
 							if(stackHeight != 0 || x64hack)
 							{
-								ilGenerator.Emit(OpCodes.Leave_S, (byte)0);
+								ilGenerator.EmitClearStack();
 							}
 							ilGenerator.Emit(OpCodes.Ret);
 						}
@@ -1939,7 +1940,7 @@ sealed class Compiler
 							{
 								CodeEmitterLocal local = ilGenerator.AllocTempLocal(retTypeWrapper.TypeAsSignatureType);
 								ilGenerator.Emit(OpCodes.Stloc, local);
-								ilGenerator.Emit(OpCodes.Leave_S, (byte)0);
+								ilGenerator.EmitClearStack();
 								ilGenerator.Emit(OpCodes.Ldloc, local);
 								ilGenerator.ReleaseTempLocal(local);
 							}
@@ -2051,14 +2052,14 @@ sealed class Compiler
 				{
 					CodeEmitterLocal localArray = ilGenerator.UnsafeAllocTempLocal(JVM.Import(typeof(int[])));
 					CodeEmitterLocal localInt = ilGenerator.UnsafeAllocTempLocal(Types.Int32);
-					ilGenerator.Emit_Ldc_I4(instr.Arg2);
+					ilGenerator.EmitLdc_I4(instr.Arg2);
 					ilGenerator.Emit(OpCodes.Newarr, Types.Int32);
 					ilGenerator.Emit(OpCodes.Stloc, localArray);
 					for(int j = 1; j <= instr.Arg2; j++)
 					{
 						ilGenerator.Emit(OpCodes.Stloc, localInt);
 						ilGenerator.Emit(OpCodes.Ldloc, localArray);
-						ilGenerator.Emit_Ldc_I4(instr.Arg2 - j);
+						ilGenerator.EmitLdc_I4(instr.Arg2 - j);
 						ilGenerator.Emit(OpCodes.Ldloc, localInt);
 						ilGenerator.Emit(OpCodes.Stelem_I4);
 					}
@@ -2307,22 +2308,22 @@ sealed class Compiler
 					ilGenerator.Emit_dcmpg();
 					break;
 				case NormalizedByteCode.__if_icmpeq:
-					ilGenerator.Emit(OpCodes.Beq, block.GetLabel(instr.TargetIndex));
+					ilGenerator.EmitBeq(block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__if_icmpne:
-					ilGenerator.Emit(OpCodes.Bne_Un, block.GetLabel(instr.TargetIndex));
+					ilGenerator.EmitBne_Un(block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__if_icmple:
-					ilGenerator.Emit(OpCodes.Ble, block.GetLabel(instr.TargetIndex));
+					ilGenerator.EmitBle(block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__if_icmplt:
-					ilGenerator.Emit(OpCodes.Blt, block.GetLabel(instr.TargetIndex));
+					ilGenerator.EmitBlt(block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__if_icmpge:
-					ilGenerator.Emit(OpCodes.Bge, block.GetLabel(instr.TargetIndex));
+					ilGenerator.EmitBge(block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__if_icmpgt:
-					ilGenerator.Emit(OpCodes.Bgt, block.GetLabel(instr.TargetIndex));
+					ilGenerator.EmitBgt(block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__ifle:
 					ilGenerator.Emit_if_le_lt_ge_gt(CodeEmitter.Comparison.LessOrEqual, block.GetLabel(instr.TargetIndex));
@@ -2338,21 +2339,21 @@ sealed class Compiler
 					break;
 				case NormalizedByteCode.__ifne:
 				case NormalizedByteCode.__ifnonnull:
-					ilGenerator.Emit(OpCodes.Brtrue, block.GetLabel(instr.TargetIndex));
+					ilGenerator.EmitBrtrue(block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__ifeq:
 				case NormalizedByteCode.__ifnull:
-					ilGenerator.Emit(OpCodes.Brfalse, block.GetLabel(instr.TargetIndex));
+					ilGenerator.EmitBrfalse(block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__if_acmpeq:
-					ilGenerator.Emit(OpCodes.Beq, block.GetLabel(instr.TargetIndex));
+					ilGenerator.EmitBeq(block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__if_acmpne:
-					ilGenerator.Emit(OpCodes.Bne_Un, block.GetLabel(instr.TargetIndex));
+					ilGenerator.EmitBne_Un(block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__goto:
 				case NormalizedByteCode.__goto_finally:
-					ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.TargetIndex));
+					ilGenerator.EmitBr(block.GetLabel(instr.TargetIndex));
 					break;
 				case NormalizedByteCode.__ineg:
 				case NormalizedByteCode.__lneg:
@@ -2448,7 +2449,7 @@ sealed class Compiler
 						ilGenerator.Emit(OpCodes.Conv_I8);
 					}
 					CodeEmitterLabel label = ilGenerator.DefineLabel();
-					ilGenerator.Emit(OpCodes.Bne_Un_S, label);
+					ilGenerator.EmitBne_Un(label);
 					ilGenerator.Emit(OpCodes.Pop);
 					ilGenerator.Emit(OpCodes.Pop);
 					ilGenerator.Emit(OpCodes.Ldc_I4_0);
@@ -2457,7 +2458,7 @@ sealed class Compiler
 						ilGenerator.Emit(OpCodes.Conv_I8);
 					}
 					CodeEmitterLabel label2 = ilGenerator.DefineLabel();
-					ilGenerator.Emit(OpCodes.Br_S, label2);
+					ilGenerator.EmitBr(label2);
 					ilGenerator.MarkLabel(label);
 					ilGenerator.Emit(OpCodes.Rem);
 					ilGenerator.MarkLabel(label2);
@@ -2764,30 +2765,30 @@ sealed class Compiler
 					}
 					if(instr.GetSwitchValue(0) != 0)
 					{
-						ilGenerator.Emit_Ldc_I4(instr.GetSwitchValue(0));
+						ilGenerator.EmitLdc_I4(instr.GetSwitchValue(0));
 						ilGenerator.Emit(OpCodes.Sub);
 					}
-					ilGenerator.Emit(OpCodes.Switch, labels);
-					ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.DefaultTarget));
+					ilGenerator.EmitSwitch(labels);
+					ilGenerator.EmitBr(block.GetLabel(instr.DefaultTarget));
 					break;
 				}
 				case NormalizedByteCode.__lookupswitch:
 					for(int j = 0; j < instr.SwitchEntryCount; j++)
 					{
 						ilGenerator.Emit(OpCodes.Dup);
-						ilGenerator.Emit_Ldc_I4(instr.GetSwitchValue(j));
+						ilGenerator.EmitLdc_I4(instr.GetSwitchValue(j));
 						CodeEmitterLabel label = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Bne_Un_S, label);
+						ilGenerator.EmitBne_Un(label);
 						ilGenerator.Emit(OpCodes.Pop);
-						ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.GetSwitchTargetIndex(j)));
+						ilGenerator.EmitBr(block.GetLabel(instr.GetSwitchTargetIndex(j)));
 						ilGenerator.MarkLabel(label);
 					}
 					ilGenerator.Emit(OpCodes.Pop);
-					ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.DefaultTarget));
+					ilGenerator.EmitBr(block.GetLabel(instr.DefaultTarget));
 					break;
 				case NormalizedByteCode.__iinc:
 					LoadLocal(i);
-					ilGenerator.Emit_Ldc_I4(instr.Arg2);
+					ilGenerator.EmitLdc_I4(instr.Arg2);
 					ilGenerator.Emit(OpCodes.Add);
 					StoreLocal(i);
 					break;
@@ -2916,7 +2917,7 @@ sealed class Compiler
 					if(block.EndIndex == i + 1)
 					{
 						// TODO instead of emitting a branch to the leave stub, it would be more efficient to put the leave stub here
-						ilGenerator.Emit(OpCodes.Br, block.GetLabel(i + 1));
+						ilGenerator.EmitBr(block.GetLabel(i + 1));
 					}
 					break;
 				default:
@@ -2930,16 +2931,16 @@ sealed class Compiler
 		switch (classFile.GetConstantPoolConstantType(constant))
 		{
 			case ClassFile.ConstantType.Double:
-				ilgen.Emit(OpCodes.Ldc_R8, classFile.GetConstantPoolConstantDouble(constant));
+				ilgen.EmitLdc_R8(classFile.GetConstantPoolConstantDouble(constant));
 				break;
 			case ClassFile.ConstantType.Float:
-				ilgen.Emit(OpCodes.Ldc_R4, classFile.GetConstantPoolConstantFloat(constant));
+				ilgen.EmitLdc_R4(classFile.GetConstantPoolConstantFloat(constant));
 				break;
 			case ClassFile.ConstantType.Integer:
-				ilgen.Emit(OpCodes.Ldc_I4, classFile.GetConstantPoolConstantInteger(constant));
+				ilgen.EmitLdc_I4(classFile.GetConstantPoolConstantInteger(constant));
 				break;
 			case ClassFile.ConstantType.Long:
-				ilgen.Emit(OpCodes.Ldc_I8, classFile.GetConstantPoolConstantLong(constant));
+				ilgen.EmitLdc_I8(classFile.GetConstantPoolConstantLong(constant));
 				break;
 			case ClassFile.ConstantType.String:
 				ilgen.Emit(OpCodes.Ldstr, classFile.GetConstantPoolConstantString(constant));
@@ -3049,10 +3050,10 @@ sealed class Compiler
 				ilgen.Emit(OpCodes.Isinst, typeofCallSite);
 				ilgen.Emit(OpCodes.Stloc, cs);
 			}
-			ilgen.Emit(OpCodes.Leave_S, label);
+			ilgen.EmitLeave(label);
 			ilgen.BeginCatchBlock(Types.Exception);
 			ilgen.Emit(OpCodes.Stloc, ex);
-			ilgen.Emit(OpCodes.Leave_S, label);
+			ilgen.EmitLeave(label);
 			ilgen.BeginFinallyBlock();
 			ilgen.Emit(OpCodes.Ldsflda, fb);
 			ilgen.Emit(OpCodes.Ldloc, cs);
@@ -3065,7 +3066,7 @@ sealed class Compiler
 			ilgen.Emit(OpCodes.Call, methodGetTarget);
 			for (int i = 0; i < args.Length; i++)
 			{
-				ilgen.Emit(OpCodes.Ldarg, (short)i);
+				ilgen.EmitLdarg(i);
 			}
 			MethodHandleUtil.EmitCallDelegateInvokeMethod(ilgen, delegateType);
 			ilgen.Emit(OpCodes.Ret);
@@ -3119,13 +3120,13 @@ sealed class Compiler
 			}
 			if (varArgs >= 0)
 			{
-				ilgen.Emit(OpCodes.Ldc_I4, varArgs);
+				ilgen.EmitLdc_I4(varArgs);
 				TypeWrapper elemType = parameters[parameters.Length - 1].ElementTypeWrapper;
 				ilgen.Emit(OpCodes.Newarr, elemType.TypeAsArrayType);
 				for (int i = 0; i < varArgs; i++)
 				{
 					ilgen.Emit(OpCodes.Dup);
-					ilgen.Emit(OpCodes.Ldc_I4, i);
+					ilgen.EmitLdc_I4(i);
 					EmitExtraArg(compiler, ilgen, bsm, i + fixedArgs, elemType);
 					ilgen.Emit(OpCodes.Stelem_Ref);
 				}
@@ -3342,7 +3343,7 @@ sealed class Compiler
 				Type packedArgType = args[packedArgPos];
 				for (int i = 0; i < packedArgPos; i++)
 				{
-					ilgen.Emit(OpCodes.Ldarg_S, (byte)i);
+					ilgen.EmitLdarg(i);
 				}
 				List<FieldInfo> fields = new List<FieldInfo>();
 			next:
@@ -3358,7 +3359,7 @@ sealed class Compiler
 					}
 					else
 					{
-						ilgen.Emit(OpCodes.Ldarga_S, (byte)packedArgPos);
+						ilgen.EmitLdarga(packedArgPos);
 						foreach (FieldInfo field in fields)
 						{
 							ilgen.Emit(OpCodes.Ldflda, field);
@@ -3371,7 +3372,7 @@ sealed class Compiler
 			{
 				for (int i = 0; i < args.Length; i++)
 				{
-					ilgen.Emit(OpCodes.Ldarg_S, (byte)i);
+					ilgen.EmitLdarg(i);
 				}
 			}
 			switch (mh.Kind)
@@ -3447,7 +3448,7 @@ sealed class Compiler
 			ilgen.Emit(OpCodes.Ldarg_0);
 			for(int i = 1; i <= dmh.ParameterCount; i++)
 			{
-				ilgen.Emit(OpCodes.Ldarg_S, (byte)i);
+				ilgen.EmitLdarg(i);
 			}
 			method.EmitCall(ilgen);
 			ilgen.Emit(OpCodes.Ret);
@@ -3806,7 +3807,7 @@ sealed class Compiler
 			TypeWrapper[] args = cpi.GetArgTypes();
 			CodeEmitterLocal argarray = ilGenerator.DeclareLocal(JVM.Import(typeof(object[])));
 			CodeEmitterLocal val = ilGenerator.DeclareLocal(Types.Object);
-			ilGenerator.Emit(OpCodes.Ldc_I4, args.Length);
+			ilGenerator.EmitLdc_I4(args.Length);
 			ilGenerator.Emit(OpCodes.Newarr, Types.Object);
 			ilGenerator.Emit(OpCodes.Stloc, argarray);
 			for(int i = args.Length - 1; i >= 0; i--)
@@ -3817,7 +3818,7 @@ sealed class Compiler
 				}
 				ilGenerator.Emit(OpCodes.Stloc, val);
 				ilGenerator.Emit(OpCodes.Ldloc, argarray);
-				ilGenerator.Emit(OpCodes.Ldc_I4, i);
+				ilGenerator.EmitLdc_I4(i);
 				ilGenerator.Emit(OpCodes.Ldloc, val);
 				ilGenerator.Emit(OpCodes.Stelem_Ref);
 			}
@@ -3911,31 +3912,7 @@ sealed class Compiler
 		{
 			ClassFile.Method.Instruction instr = m.Instructions[instructionIndex];
 			int i = m.ArgMap[instr.NormalizedArg1];
-			switch(i)
-			{
-				case 0:
-					ilGenerator.Emit(OpCodes.Ldarg_0);
-					break;
-				case 1:
-					ilGenerator.Emit(OpCodes.Ldarg_1);
-					break;
-				case 2:
-					ilGenerator.Emit(OpCodes.Ldarg_2);
-					break;
-				case 3:
-					ilGenerator.Emit(OpCodes.Ldarg_3);
-					break;
-				default:
-					if(i < 256)
-					{
-						ilGenerator.Emit(OpCodes.Ldarg_S, (byte)i);
-					}
-					else
-					{
-						ilGenerator.Emit(OpCodes.Ldarg, (short)i);
-					}
-					break;
-			}
+			ilGenerator.EmitLdarg(i);
 			if(v.type == PrimitiveTypeWrapper.DOUBLE)
 			{
 				ilGenerator.Emit(OpCodes.Conv_R8);
@@ -3976,14 +3953,7 @@ sealed class Compiler
 		{
 			ClassFile.Method.Instruction instr = m.Instructions[instructionIndex];
 			int i = m.ArgMap[instr.NormalizedArg1];
-			if(i < 256)
-			{
-				ilGenerator.Emit(OpCodes.Starg_S, (byte)i);
-			}
-			else
-			{
-				ilGenerator.Emit(OpCodes.Starg, (short)i);
-			}
+			ilGenerator.EmitStarg(i);
 		}
 		else if(v.type == VerifierTypeWrapper.Null)
 		{
