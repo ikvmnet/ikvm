@@ -385,8 +385,6 @@ sealed class Compiler
 	private static readonly MethodInfo suppressFillInStackTraceMethod;
 	internal static readonly MethodInfo getTypeFromHandleMethod;
 	internal static readonly MethodInfo getTypeMethod;
-	private static readonly MethodInfo monitorEnterMethod;
-	private static readonly MethodInfo monitorExitMethod;
 	private static readonly MethodInfo keepAliveMethod;
 	internal static readonly MethodWrapper getClassFromTypeHandle;
 	internal static readonly MethodWrapper getClassFromTypeHandle2;
@@ -421,8 +419,6 @@ sealed class Compiler
 	{
 		getTypeFromHandleMethod = Types.Type.GetMethod("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, null, new Type[] { Types.RuntimeTypeHandle }, null);
 		getTypeMethod = Types.Object.GetMethod("GetType", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
-		monitorEnterMethod = JVM.Import(typeof(System.Threading.Monitor)).GetMethod("Enter", BindingFlags.Static | BindingFlags.Public, null, new Type[] { Types.Object }, null);
-		monitorExitMethod = JVM.Import(typeof(System.Threading.Monitor)).GetMethod("Exit", BindingFlags.Static | BindingFlags.Public, null, new Type[] { Types.Object }, null);
 		keepAliveMethod = JVM.Import(typeof(System.GC)).GetMethod("KeepAlive", BindingFlags.Static | BindingFlags.Public, null, new Type[] { Types.Object }, null);
 		java_lang_Object = CoreClasses.java.lang.Object.Wrapper;
 		java_lang_Throwable = CoreClasses.java.lang.Throwable.Wrapper;
@@ -935,14 +931,14 @@ sealed class Compiler
 				ilGenerator.Emit(OpCodes.Dup);
 				CodeEmitterLocal monitor = ilGenerator.DeclareLocal(Types.Object);
 				ilGenerator.Emit(OpCodes.Stloc, monitor);
-				ilGenerator.Emit(OpCodes.Call, monitorEnterMethod);
+				ilGenerator.EmitMonitorEnter();
 				ilGenerator.BeginExceptionBlock();
 				Block b = new Block(c, 0, int.MaxValue, -1, new List<object>(), true);
 				c.Compile(b, c.ComputePartialReachability(0, true));
 				b.Leave();
 				ilGenerator.BeginFinallyBlock();
 				ilGenerator.Emit(OpCodes.Ldloc, monitor);
-				ilGenerator.Emit(OpCodes.Call, monitorExitMethod);
+				ilGenerator.EmitMonitorExit();
 				ilGenerator.Emit(OpCodes.Endfinally);
 				ilGenerator.EndExceptionBlock();
 				b.LeaveStubs(new Block(c, 0, int.MaxValue, -1, null, false));
@@ -2727,10 +2723,10 @@ sealed class Compiler
 					}
 					break;
 				case NormalizedByteCode.__monitorenter:
-					ilGenerator.Emit(OpCodes.Call, monitorEnterMethod);
+					ilGenerator.EmitMonitorEnter();
 					break;
 				case NormalizedByteCode.__monitorexit:
-					ilGenerator.Emit(OpCodes.Call, monitorExitMethod);
+					ilGenerator.EmitMonitorExit();
 					break;
 				case NormalizedByteCode.__athrow_no_unmap:
 					if(ma.GetRawStackTypeWrapper(i, 0).IsUnloadable)

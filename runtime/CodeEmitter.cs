@@ -100,6 +100,8 @@ namespace IKVM.Internal
 	{
 		private static readonly MethodInfo objectToString = Types.Object.GetMethod("ToString", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
 		private static readonly MethodInfo verboseCastFailure = JVM.SafeGetEnvironmentVariable("IKVM_VERBOSE_CAST") == null ? null : ByteCodeHelperMethods.VerboseCastFailure;
+		private static readonly MethodInfo monitorEnter = JVM.Import(typeof(System.Threading.Monitor)).GetMethod("Enter", BindingFlags.Public | BindingFlags.Static, null, new Type[] { Types.Object }, null);
+		private static readonly MethodInfo monitorExit = JVM.Import(typeof(System.Threading.Monitor)).GetMethod("Exit", BindingFlags.Public | BindingFlags.Static, null, new Type[] { Types.Object }, null);
 		private static readonly bool experimentalOptimizations = JVM.SafeGetEnvironmentVariable("IKVM_EXPERIMENTAL_OPTIMIZATIONS") != null;
 		private static MethodInfo memoryBarrier;
 		private ILGenerator ilgen_real;
@@ -142,6 +144,8 @@ namespace IKVM.Internal
 			MemoryBarrier,
 			TailCallPrevention,
 			ClearStack,
+			MonitorEnter,
+			MonitorExit,
 		}
 
 		enum CodeTypeFlags : short
@@ -294,6 +298,8 @@ namespace IKVM.Internal
 							return 5 + 2;
 #endif
 						case CodeType.MemoryBarrier:
+						case CodeType.MonitorEnter:
+						case CodeType.MonitorExit:
 							return 5;
 						case CodeType.TailCallPrevention:
 							return 2;
@@ -529,6 +535,12 @@ namespace IKVM.Internal
 						memoryBarrier = JVM.Import(typeof(System.Threading.Thread)).GetMethod("MemoryBarrier", Type.EmptyTypes);
 					}
 					ilgen_real.Emit(OpCodes.Call, memoryBarrier);
+					break;
+				case CodeType.MonitorEnter:
+					ilgen_real.Emit(OpCodes.Call, monitorEnter);
+					break;
+				case CodeType.MonitorExit:
+					ilgen_real.Emit(OpCodes.Call, monitorExit);
 					break;
 				case CodeType.TailCallPrevention:
 					ilgen_real.Emit(OpCodes.Ldnull);
@@ -1817,6 +1829,123 @@ namespace IKVM.Internal
 				&& code[extra[extra[begin]]].pseudo == CodeType.EndExceptionBlock;
 		}
 
+		private void ConvertSynchronizedFaultToFinally()
+		{
+			bool labelIndexSet = false;
+			int start = -1;
+			int nest = 0;
+			int next = -1;
+			for (int i = 0; i < code.Count; i++)
+			{
+				switch (code[i].pseudo)
+				{
+					case CodeType.BeginExceptionBlock:
+						if (nest == 0)
+						{
+							start = i;
+						}
+						else if (nest == 1 && next <= start)
+						{
+							next = i;
+						}
+						nest++;
+						break;
+					case CodeType.BeginCatchBlock:
+					case CodeType.BeginFinallyBlock:
+						if (nest == 1)
+						{
+							nest = 0;
+							if (next > start)
+							{
+								// while we were processing the outer block, we encountered a nested BeginExceptionBlock
+								// so now that we've failed the outer, restart at the first nested block
+								i = start = next;
+								nest = 1;
+							}
+						}
+						else
+						{
+							next = -1;
+						}
+						break;
+					case CodeType.BeginFaultBlock:
+						if (nest == 1)
+						{
+							int beginFault = i;
+							if (code[i + 1].pseudo == CodeType.LineNumber)
+							{
+								i++;
+							}
+							// check if the fault handler is the synchronized block exit pattern
+							if (code[i + 1].opcode == OpCodes.Ldloc
+								&& code[i + 2].pseudo == CodeType.MonitorExit
+								&& code[i + 3].opcode == OpCodes.Endfinally)
+							{
+								if (!labelIndexSet)
+								{
+									labelIndexSet = true;
+									SetLabelIndexes();
+								}
+								// now make two passes through the try block to 1) see if all leave
+								// opcodes that leave the try block do a synchronized block exit
+								// and 2) patch out the synchronized block exit
+								for (int pass = 0; pass < 2; pass++)
+								{
+									for (int j = start; j < i; j++)
+									{
+										if (code[j].opcode == OpCodes.Leave)
+										{
+											int target = code[j].Label.Temp;
+											if (target < start || target > i)
+											{
+												// check if the code preceding the leave matches the fault block
+												if ((code[j - 1].opcode == OpCodes.Pop || code[j - 1].opcode == OpCodes.Stloc)
+													&& code[j - 2].pseudo == CodeType.MonitorExit
+													&& code[j - 3].Match(code[i + 1]))
+												{
+													if (pass == 1)
+													{
+														// move the leave to the top of the sequence we're removing
+														code[j - 3] = code[j - 1];
+														code[j - 2] = code[j - 0];
+														code[j - 1] = new OpCodeWrapper(CodeType.Unreachable, CodeTypeFlags.None);
+														code[j - 0] = new OpCodeWrapper(CodeType.Unreachable, CodeTypeFlags.None);
+													}
+												}
+												else if (code[j - 1].pseudo == CodeType.MonitorExit
+													&& code[j - 2].Match(code[i + 1]))
+												{
+													if (pass == 1)
+													{
+														// move the leave to the top of the sequence we're removing
+														code[j - 2] = code[j];
+														code[j - 1] = new OpCodeWrapper(CodeType.Unreachable, CodeTypeFlags.None);
+														code[j - 0] = new OpCodeWrapper(CodeType.Unreachable, CodeTypeFlags.None);
+													}
+												}
+												else
+												{
+													goto fail;
+												}
+											}
+										}
+									}
+								}
+								// if we end up here, all leaves have been successfully patched,
+								// so now we turn the BeginFaultBlock into a BeginFinallyBlock
+								code[beginFault] = new OpCodeWrapper(CodeType.BeginFinallyBlock, CodeTypeFlags.None);
+							fail: ;
+							}
+							goto case CodeType.BeginFinallyBlock;
+						}
+						break;
+					case CodeType.EndExceptionBlock:
+						nest--;
+						break;
+				}
+			}
+		}
+
 		private void RemoveRedundantMemoryBarriers()
 		{
 			int lastMemoryBarrier = -1;
@@ -2111,6 +2240,8 @@ namespace IKVM.Internal
 					OptimizeStackTransfer();
 					CheckInvariants();
 					MergeExceptionBlocks();
+					CheckInvariants();
+					ConvertSynchronizedFaultToFinally();
 					CheckInvariants();
 					RemoveDeadCode();
 					CheckInvariants();
@@ -2767,6 +2898,16 @@ namespace IKVM.Internal
 		internal void EmitClearStack()
 		{
 			EmitPseudoOpCode(CodeType.ClearStack, null);
+		}
+
+		internal void EmitMonitorEnter()
+		{
+			EmitPseudoOpCode(CodeType.MonitorEnter, null);
+		}
+
+		internal void EmitMonitorExit()
+		{
+			EmitPseudoOpCode(CodeType.MonitorExit, null);
 		}
 	}
 }
