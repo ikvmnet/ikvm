@@ -93,7 +93,7 @@ static class AtomicReferenceFieldUpdaterEmitter
 		ilgen.Emit(OpCodes.Ret);
 	}
 
-	private static MethodInfo MakeCompareExchange(Type type)
+	internal static MethodInfo MakeCompareExchange(Type type)
 	{
 		MethodInfo interlockedCompareExchange = null;
 		foreach (MethodInfo m in JVM.Import(typeof(System.Threading.Interlocked)).GetMethods())

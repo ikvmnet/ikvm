@@ -86,11 +86,13 @@ public final class Unsafe
 
     public int arrayBaseOffset(Class c)
     {
+        // don't change this, the Unsafe intrinsics depend on this value
         return 0;
     }
 
     public int arrayIndexScale(Class c)
     {
+        // don't change this, the Unsafe intrinsics depend on this value
         return 1;
     }
 

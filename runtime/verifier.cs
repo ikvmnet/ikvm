@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2011 Jeroen Frijters
+  Copyright (C) 2002-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1675,6 +1675,18 @@ sealed class MethodAnalyzer
 							case NormalizedByteCode.__methodhandle_invokeexact:
 							{
 								ClassFile.ConstantPoolItemMI cpi = GetMethodref(instr.Arg1);
+								TypeWrapper retType = cpi.GetRetType();
+								// HACK to allow the result of Unsafe.getObjectVolatile() (on an array)
+								// to be used with Unsafe.putObject() we need to propagate the
+								// element type here as the return type (instead of object)
+								if(cpi.GetMethod() != null
+									&& cpi.GetMethod().IsIntrinsic
+									&& cpi.Class == "sun.misc.Unsafe"
+									&& cpi.Name == "getObjectVolatile"
+									&& Intrinsics.IsSupportedArrayTypeForUnsafeOperation(s.GetStackSlot(1)))
+								{
+									retType = s.GetStackSlot(1).ElementTypeWrapper;
+								}
 								s.MultiPopAnyType(cpi.GetArgTypes().Length);
 								if(instr.NormalizedOpCode != NormalizedByteCode.__invokestatic
 									&& instr.NormalizedOpCode != NormalizedByteCode.__dynamic_invokestatic)
@@ -1703,7 +1715,6 @@ sealed class MethodAnalyzer
 										}
 									}
 								}
-								TypeWrapper retType = cpi.GetRetType();
 								if(retType != PrimitiveTypeWrapper.VOID)
 								{
 									if(cpi.GetMethod() != null && cpi.GetMethod().ReturnType.IsUnloadable)
