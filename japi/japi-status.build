@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <project name="japi-status" default="default">
 
-    <property name="REFERENCE_API_JARS" value="c:\jdk1.7\jre\lib\rt.jar c:\jdk1.7\jre\lib\jce.jar c:\jdk1.7\jre\lib\jsse.jar" />
-    <property name="REFERENCE_API_NAME" value="JDK-1.7" />
+    <property name="REFERENCE_API_JARS" value="c:\jdk1.7.0_04\jre\lib\rt.jar c:\jdk1.7.0_04\jre\lib\jce.jar c:\jdk1.7.0_04\jre\lib\jsse.jar" />
+    <property name="REFERENCE_API_NAME" value="JDK-1.7.0_04" />
     <property name="JAPI_HOME" value="c:\japi\japitools" />
-    <property name="IKVM_VERSION" value="7.1" />
+    <property name="IKVM_VERSION" value="7.2" />
 
     <target name="default">
 	<call target="status" />
@@ -22,15 +22,15 @@
     </target>
 
     <target name="jdk.japi" depends="japize">
-	<exec program="../bin/japize.exe" useruntimeengine="true" commandline="unzip as ${REFERENCE_API_NAME} apis ${REFERENCE_API_JARS} +java +javax +org -java.awt.dnd.peer -java.awt.peer -org.apache -org.w3c.dom.css -org.w3c.dom.events -org.w3c.dom.html -org.w3c.dom.stylesheets -org.w3c.dom.traversal -org.w3c.dom.views -java.text.resources" />
+	<exec program="../bin/japize.exe" useruntimeengine="true" commandline="unzip as ${REFERENCE_API_NAME} apis ${REFERENCE_API_JARS} +java, +javax, +org," />
     </target>
 
     <target name="ikvm.japi" depends="jar,japize">
-	<exec program="../bin/japize.exe" useruntimeengine="true" commandline="unzip as IKVM-${IKVM_VERSION} apis IKVM.OpenJDK.Core.jar +java +javax +org -java.awt.dnd.peer -java.awt.peer -org.apache -org.w3c.dom.css -org.w3c.dom.events -org.w3c.dom.html -org.w3c.dom.stylesheets -org.w3c.dom.traversal -org.w3c.dom.views -java.text.resources" />
+	<exec program="../bin/japize.exe" useruntimeengine="true" commandline="unzip as IKVM-${IKVM_VERSION} apis IKVM.OpenJDK.Core.jar +java, +javax, +org," />
     </target>
 
     <target name="jar">
-	<exec program="../bin/ikvmstub.exe" useruntimeengine="true" commandline="-serialver -shared -lib:../bin IKVM.OpenJDK.Core -r:../openjdk/System.Core.dll" />
+	<exec program="../bin/ikvmstub.exe" useruntimeengine="true" commandline="-japi -shared -lib:../bin IKVM.OpenJDK.Core -r:../openjdk/System.Core.dll" />
     </target>
 
     <target name="japize">
