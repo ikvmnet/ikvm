@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2011 Jeroen Frijters
+  Copyright (C) 2002-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -38,6 +38,8 @@ static class NetExp
 	private static Dictionary<string, TypeWrapper> todo = new Dictionary<string, TypeWrapper>();
 	private static FileInfo file;
 	private static bool includeSerialVersionUID;
+	private static bool includeNonPublicInterfaces;
+	private static bool includeNonPublicMembers;
 	private static List<string> namespaces = new List<string>();
 
 	static int Main(string[] args)
@@ -59,7 +61,14 @@ static class NetExp
 			{
 				if(s == "-serialver")
 				{
+					Console.Error.WriteLine("The -serialver option is deprecated and will be removed in the future. Use -japi instead.");
 					includeSerialVersionUID = true;
+				}
+				else if(s == "-japi")
+				{
+					includeSerialVersionUID = true;
+					includeNonPublicInterfaces = true;
+					includeNonPublicMembers = true;
 				}
 				else if(s == "-skiperror")
 				{
@@ -118,7 +127,7 @@ static class NetExp
 			Console.Error.WriteLine("options:");
 			Console.Error.WriteLine("    -out:<outputfile>          Specify the output filename");
 			Console.Error.WriteLine("    -reference:<filespec>      Reference an assembly (short form -r:<filespec>)");
-			Console.Error.WriteLine("    -serialver                 Include serialVersionUID fields");
+			Console.Error.WriteLine("    -japi                      Generate jar suitable for comparison with japitools");
 			Console.Error.WriteLine("    -skiperror                 Continue when errors are encountered");
 			Console.Error.WriteLine("    -shared                    Process all assemblies in shared group");
 			Console.Error.WriteLine("    -nostdlib                  Do not reference standard libraries");
@@ -325,7 +334,7 @@ static class NetExp
 		IKVM.StubGen.ClassFileWriter writer = new IKVM.StubGen.ClassFileWriter(tw.Modifiers, name, super, 0, 49);
 		foreach (TypeWrapper iface in tw.Interfaces)
 		{
-			if (iface.IsPublic)
+			if (iface.IsPublic || includeNonPublicInterfaces)
 			{
 				writer.AddInterface(iface.Name.Replace('.', '/'));	
 			}
@@ -372,7 +381,7 @@ static class NetExp
 		}
 		foreach (MethodWrapper mw in tw.GetMethods())
 		{
-			if (!mw.IsHideFromReflection && (mw.IsPublic || mw.IsProtected))
+			if (!mw.IsHideFromReflection && (mw.IsPublic || mw.IsProtected || includeNonPublicMembers))
 			{
 				IKVM.StubGen.FieldOrMethod m;
 				if (mw.Name == "<init>")
@@ -442,7 +451,13 @@ static class NetExp
 						}
 						m.AddAttribute(attrib);
 					}
-					if (mb.IsDefined(StaticCompiler.Universe.Import(typeof(ObsoleteAttribute)), false))
+					if (mb.IsDefined(StaticCompiler.Universe.Import(typeof(ObsoleteAttribute)), false)
+						// HACK the instancehelper methods are marked as Obsolete (to direct people toward the ikvm.extensions methods instead)
+						// but in the Java world most of them are not deprecated (and to keep the Japi results clean we need to reflect this)
+						&& (!mb.Name.StartsWith("instancehelper_")
+							|| mb.DeclaringType.FullName != "java.lang.String"
+							// the Java deprecated methods actually have two Obsolete attributes
+							|| mb.__GetCustomAttributes(StaticCompiler.Universe.Import(typeof(ObsoleteAttribute)), false).Count == 2))
 					{
 						m.AddAttribute(new IKVM.StubGen.DeprecatedAttribute(writer));
 					}
@@ -466,7 +481,7 @@ static class NetExp
 			{
 				bool isSerialVersionUID = includeSerialVersionUID && fw.Name == "serialVersionUID" && fw.FieldTypeWrapper == PrimitiveTypeWrapper.LONG;
 				hasSerialVersionUID |= isSerialVersionUID;
-				if (fw.IsPublic || fw.IsProtected || isSerialVersionUID)
+				if (fw.IsPublic || fw.IsProtected || isSerialVersionUID || includeNonPublicMembers)
 				{
 					object constant = null;
 					if (fw.GetField() != null && fw.GetField().IsLiteral && (fw.FieldTypeWrapper.IsPrimitive || fw.FieldTypeWrapper == CoreClasses.java.lang.String.Wrapper))
