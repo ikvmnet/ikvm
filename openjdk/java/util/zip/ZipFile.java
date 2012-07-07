@@ -130,6 +130,17 @@ public class ZipFile implements ZipConstants, Closeable
   }
 
   /**
+   * Opens a Zip file reading the given File.
+   * @exception IOException if a i/o error occured.
+   * @exception ZipException if the file doesn't contain a valid zip
+   * archive.  
+   */
+  public ZipFile(String name, Charset charset) throws IOException
+  {
+    this(new File(name), OPEN_READ, charset);
+  }
+
+  /**
    * Opens a Zip file reading the given File in the given mode.
    *
    * If the OPEN_DELETE mode is specified, the zip file will be deleted at
