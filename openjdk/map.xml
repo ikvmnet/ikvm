@@ -661,7 +661,7 @@
                 <parameter name="anotherString" />
                 <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)I" />
             </method>
-            <method name="compareTo" sig="(Ljava.lang.Object;)I" modifiers="public">
+            <method name="compareTo" sig="(Ljava.lang.Object;)I" modifiers="public ACC_BRIDGE ACC_SYNTHETIC">
                 <parameter name="o" />
                 <body>
                     <ldarg_0 />

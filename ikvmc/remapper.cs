@@ -1711,7 +1711,11 @@ namespace IKVM.Internal.MapXml
 		[XmlEnum("static")]
 		Static = Modifiers.Static,
 		[XmlEnum("abstract")]
-		Abstract = Modifiers.Abstract
+		Abstract = Modifiers.Abstract,
+		[XmlEnum("ACC_BRIDGE")]
+		Bridge = Modifiers.Bridge,
+		[XmlEnum("ACC_SYNTHETIC")]
+		Synthetic = Modifiers.Synthetic,
 	}
 
 	public enum Scope
