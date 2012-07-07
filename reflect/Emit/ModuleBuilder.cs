@@ -27,6 +27,7 @@ using System.IO;
 using System.Diagnostics;
 using System.Diagnostics.SymbolStore;
 using System.Security.Cryptography;
+using System.Resources;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using IKVM.Reflection.Impl;
@@ -70,6 +71,31 @@ namespace IKVM.Reflection.Emit
 		internal readonly List<VTableFixups> vtablefixups = new List<VTableFixups>();
 		internal readonly List<UnmanagedExport> unmanagedExports = new List<UnmanagedExport>();
 		private List<InterfaceImplCustomAttribute> interfaceImplCustomAttributes;
+		private List<ResourceWriterRecord> resourceWriters;
+
+		private struct ResourceWriterRecord
+		{
+			private readonly string name;
+			private readonly ResourceWriter rw;
+			private readonly MemoryStream mem;
+			private readonly ResourceAttributes attributes;
+
+			internal ResourceWriterRecord(string name, ResourceWriter rw, MemoryStream mem, ResourceAttributes attributes)
+			{
+				this.name = name;
+				this.rw = rw;
+				this.mem = mem;
+				this.attributes = attributes;
+			}
+
+			internal void Emit(ModuleBuilder mb)
+			{
+				rw.Generate();
+				mem.Position = 0;
+				mb.DefineManifestResource(name, mem, attributes);
+				rw.Close();
+			}
+		}
 
 		internal struct VTableFixups
 		{
@@ -492,6 +518,36 @@ namespace IKVM.Reflection.Emit
 			manifestResources.Position = rec.Offset;
 			manifestResources.Write(savePosition - (manifestResources.Position + 4));
 			manifestResources.Position = savePosition;
+		}
+
+		public IResourceWriter DefineResource(string name, string description)
+		{
+			return DefineResource(name, description, ResourceAttributes.Public);
+		}
+
+		public IResourceWriter DefineResource(string name, string description, ResourceAttributes attribute)
+		{
+			// FXBUG we ignore the description, because there is no such thing
+
+			if (resourceWriters == null)
+			{
+				resourceWriters = new List<ResourceWriterRecord>();
+			}
+			MemoryStream mem = new MemoryStream();
+			ResourceWriter rw = new ResourceWriter(mem);
+			resourceWriters.Add(new ResourceWriterRecord(name, rw, mem, attribute));
+			return rw;
+		}
+
+		internal void EmitResources()
+		{
+			if (resourceWriters != null)
+			{
+				foreach (ResourceWriterRecord rwr in resourceWriters)
+				{
+					rwr.Emit(this);
+				}
+			}
 		}
 
 		public override Assembly Assembly
@@ -1469,6 +1525,7 @@ namespace IKVM.Reflection.Emit
 				}
 			}
 			FillAssemblyRefTable();
+			EmitResources();
 			ModuleWriter.WriteModule(null, null, this, PEFileKinds.Dll, portableExecutableKind, imageFileMachine, unmanagedResources, 0, streamOrNull);
 		}
 
