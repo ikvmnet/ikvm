@@ -7003,7 +7003,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/build/linux-amd64/impsrc/org/omg/PortableInterceptor/SUCCESSFUL.java
 @OPENJDK7@/build/linux-amd64/impsrc/org/omg/PortableInterceptor/SYSTEM_EXCEPTION.java
 @OPENJDK7@/build/linux-amd64/impsrc/org/omg/PortableInterceptor/TRANSPORT_RETRY.java
-@OPENJDK7@/build/linux-amd64/impsrc/org/omg/PortableInterceptor/UNKNOWN.java
 @OPENJDK7@/build/linux-amd64/impsrc/org/omg/PortableInterceptor/USER_EXCEPTION.java
 @OPENJDK7@/build/linux-amd64/impsrc/org/omg/PortableServer/_ServantActivatorStub.java
 @OPENJDK7@/build/linux-amd64/impsrc/org/omg/PortableServer/_ServantLocatorStub.java
