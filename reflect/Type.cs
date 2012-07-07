@@ -893,10 +893,32 @@ namespace IKVM.Reflection
 
 		public ConstructorInfo GetConstructor(BindingFlags bindingAttr, Binder binder, Type[] types, ParameterModifier[] modifiers)
 		{
+			ConstructorInfo ci1 = null;
+			if ((bindingAttr & BindingFlags.Instance) != 0)
+			{
+				ci1 = GetConstructorImpl(ConstructorInfo.ConstructorName, bindingAttr, binder, types, modifiers);
+			}
+			if ((bindingAttr & BindingFlags.Static) != 0)
+			{
+				ConstructorInfo ci2 = GetConstructorImpl(ConstructorInfo.TypeConstructorName, bindingAttr, binder, types, modifiers);
+				if (ci2 != null)
+				{
+					if (ci1 != null)
+					{
+						throw new AmbiguousMatchException();
+					}
+					return ci2;
+				}
+			}
+			return ci1;
+		}
+
+		private ConstructorInfo GetConstructorImpl(string name, BindingFlags bindingAttr, Binder binder, Type[] types, ParameterModifier[] modifiers)
+		{
 			// first we try an exact match and only if that fails we fall back to using the binder
-			return GetMemberByName<ConstructorInfo>(ConstructorInfo.ConstructorName, bindingAttr | BindingFlags.DeclaredOnly,
+			return GetMemberByName<ConstructorInfo>(name, bindingAttr | BindingFlags.DeclaredOnly,
 				delegate(ConstructorInfo ctor) { return ctor.MethodSignature.MatchParameterTypes(types); })
-				?? GetMethodWithBinder<ConstructorInfo>(ConstructorInfo.ConstructorName, bindingAttr, binder ?? DefaultBinder, types, modifiers);
+				?? GetMethodWithBinder<ConstructorInfo>(name, bindingAttr, binder ?? DefaultBinder, types, modifiers);
 		}
 
 		public ConstructorInfo GetConstructor(BindingFlags bindingAttr, Binder binder, CallingConventions callingConvention, Type[] types, ParameterModifier[] modifiers)
