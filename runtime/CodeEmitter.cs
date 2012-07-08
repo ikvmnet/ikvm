@@ -113,6 +113,7 @@ namespace IKVM.Internal
 		private CodeEmitterLocal[] tempLocals = new CodeEmitterLocal[32];
 		private ISymbolDocumentWriter symbols;
 		private List<OpCodeWrapper> code = new List<OpCodeWrapper>(10);
+		private readonly Type declaringType;
 #if LABELCHECK
 		private Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame> labels = new Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame>();
 #endif
@@ -451,27 +452,28 @@ namespace IKVM.Internal
 
 		internal static CodeEmitter Create(MethodBuilder mb)
 		{
-			return new CodeEmitter(mb.GetILGenerator());
+			return new CodeEmitter(mb.GetILGenerator(), mb.DeclaringType);
 		}
 
 		internal static CodeEmitter Create(ConstructorBuilder cb)
 		{
-			return new CodeEmitter(cb.GetILGenerator());
+			return new CodeEmitter(cb.GetILGenerator(), cb.DeclaringType);
 		}
 
 #if !STATIC_COMPILER
 		internal static CodeEmitter Create(DynamicMethod dm)
 		{
-			return new CodeEmitter(dm.GetILGenerator());
+			return new CodeEmitter(dm.GetILGenerator(), null);
 		}
 #endif
 
-		private CodeEmitter(ILGenerator ilgen)
+		private CodeEmitter(ILGenerator ilgen, Type declaringType)
 		{
 #if STATIC_COMPILER
 			ilgen.__DisableExceptionBlockAssistance();
 #endif
 			this.ilgen_real = ilgen;
+			this.declaringType = declaringType;
 		}
 
 		private void EmitPseudoOpCode(CodeType type, object data)
@@ -667,12 +669,20 @@ namespace IKVM.Internal
 		{
 			for (int i = 1; i < code.Count; i++)
 			{
-				if (code[i].opcode == OpCodes.Stloc
-					&& code[i + 1].pseudo == CodeType.ReleaseTempLocal
-					&& code[i].Local == code[i + 1].Local)
+				if (code[i].opcode == OpCodes.Stloc)
 				{
-					code.RemoveRange(i, 1);
-					code[i] = new OpCodeWrapper(OpCodes.Pop, null);
+					if (code[i + 1].pseudo == CodeType.ReleaseTempLocal
+						&& code[i].Local == code[i + 1].Local)
+					{
+						code[i] = new OpCodeWrapper(OpCodes.Pop, null);
+					}
+					else if (code[i + 1].opcode == OpCodes.Ldloc
+						&& code[i + 1].Local == code[i].Local
+						&& code[i + 2].pseudo == CodeType.ReleaseTempLocal
+						&& code[i + 2].Local == code[i].Local)
+					{
+						code.RemoveRange(i, 2);
+					}
 				}
 			}
 		}
@@ -681,11 +691,53 @@ namespace IKVM.Internal
 		{
 			for (int i = 1; i < code.Count; i++)
 			{
-				if (code[i].opcode == OpCodes.Pop
-					&& IsSideEffectFreePush(i - 1))
+				if (code[i].opcode == OpCodes.Pop)
 				{
-					code.RemoveRange(i - 1, 2);
-					i -= 2;
+					// search backwards for a candidate push to annihilate
+					int stack = 0;
+					for (int j = i - 1; j >= 0; j--)
+					{
+						if (IsSideEffectFreePush(j))
+						{
+							if (stack == 0)
+							{
+								code.RemoveAt(i);
+								code.RemoveAt(j);
+								i -= 2;
+								break;
+							}
+							stack++;
+						}
+						else if (code[j].opcode == OpCodes.Stloc)
+						{
+							stack--;
+						}
+						else if (code[j].opcode == OpCodes.Shl
+							|| code[j].opcode == OpCodes.And
+							|| code[j].opcode == OpCodes.Add
+							|| code[j].opcode == OpCodes.Sub)
+						{
+							if (stack == 0)
+							{
+								break;
+							}
+							stack--;
+						}
+						else if (code[j].opcode == OpCodes.Conv_Ovf_I4
+							|| code[j].opcode == OpCodes.Conv_I8
+							|| code[j].opcode == OpCodes.Ldlen)
+						{
+							if (stack == 0)
+							{
+								break;
+							}
+							// no stack effect
+						}
+						else
+						{
+							break;
+						}
+					}
 				}
 			}
 		}
@@ -702,19 +754,25 @@ namespace IKVM.Internal
 			}
 			else if (code[index].opcode == OpCodes.Ldsfld)
 			{
-				// Here we are considering BeforeFieldInit to mean that we really don't care about
-				// when the type is initialized (which is what we mean in the rest of the IKVM code as well)
-				// but it is good to point it out here because strictly speaking we're violating the
-				// BeforeFieldInit contract here by considering dummy loads not to be field accesses.
 				FieldInfo field = code[index].FieldInfo;
-				if (field != null && (field.DeclaringType.Attributes & TypeAttributes.BeforeFieldInit) != 0)
+				if (field != null)
 				{
-					return true;
+					// Here we are considering BeforeFieldInit to mean that we really don't care about
+					// when the type is initialized (which is what we mean in the rest of the IKVM code as well)
+					// but it is good to point it out here because strictly speaking we're violating the
+					// BeforeFieldInit contract here by considering dummy loads not to be field accesses.
+					if ((field.DeclaringType.Attributes & TypeAttributes.BeforeFieldInit) != 0)
+					{
+						return true;
+					}
+					// If we're accessing a field in the current type, it can't trigger the static initializer
+					// (unless beforefieldinit is set, but see above for that scenario)
+					if (field.DeclaringType == declaringType)
+					{
+						return true;
+					}
 				}
-				else
-				{
-					return false;
-				}
+				return false;
 			}
 			else if (code[index].opcode == OpCodes.Ldc_I4)
 			{
@@ -737,6 +795,26 @@ namespace IKVM.Internal
 				return true;
 			}
 			else if (code[index].opcode == OpCodes.Ldarg)
+			{
+				return true;
+			}
+			else if (code[index].opcode == OpCodes.Ldarg_S)
+			{
+				return true;
+			}
+			else if (code[index].opcode == OpCodes.Ldarg_0)
+			{
+				return true;
+			}
+			else if (code[index].opcode == OpCodes.Ldarg_1)
+			{
+				return true;
+			}
+			else if (code[index].opcode == OpCodes.Ldarg_2)
+			{
+				return true;
+			}
+			else if (code[index].opcode == OpCodes.Ldarg_3)
 			{
 				return true;
 			}
@@ -1375,26 +1453,43 @@ namespace IKVM.Internal
 			{
 				switch (code[i].pseudo)
 				{
-					case CodeType.LineNumber:
 					case CodeType.ReleaseTempLocal:
-						if (code[i + 1].opcode == OpCodes.Pop)
+						for (int j = i - 1; ; j--)
 						{
-							OpCodeWrapper temp = code[i];
-							code[i] = code[i + 1];
-							code[i + 1] = temp;
-							i--;
-						}
-						break;
-					case CodeType.BeginExceptionBlock:
-						if (code[i + 1].pseudo == CodeType.ReleaseTempLocal)
-						{
-							OpCodeWrapper temp = code[i];
-							code[i] = code[i + 1];
-							code[i + 1] = temp;
-							i--;
+							if (j == -1)
+							{
+								code.RemoveAt(i);
+								break;
+							}
+							if (code[j].HasLocal && code[j].Local == code[i].Local)
+							{
+								MoveInstruction(i, j + 1);
+								break;
+							}
 						}
 						break;
 				}
+			}
+		}
+
+		private void MoveInstruction(int i, int j)
+		{
+			if (i == j - 1 || i == j + 1)
+			{
+				OpCodeWrapper temp = code[i];
+				code[i] = code[j];
+				code[j] = temp;
+			}
+			else if (i < j)
+			{
+				code.Insert(j, code[i]);
+				code.RemoveAt(i);
+			}
+			else if (i > j)
+			{
+				OpCodeWrapper temp = code[i];
+				code.RemoveAt(i);
+				code.Insert(j, temp);
 			}
 		}
 
