@@ -1581,7 +1581,6 @@ sealed class Compiler
 				case NormalizedByteCode.__methodhandle_invokeexact:
 				{
 					bool isinvokespecial = instr.NormalizedOpCode == NormalizedByteCode.__invokespecial || instr.NormalizedOpCode == NormalizedByteCode.__dynamic_invokespecial;
-					nonleaf = true;
 					ClassFile.ConstantPoolItemMI cpi = classFile.GetMethodref(instr.Arg1);
 					int argcount = cpi.GetArgTypes().Length;
 					TypeWrapper type = ma.GetRawStackTypeWrapper(i, argcount);
@@ -1589,10 +1588,14 @@ sealed class Compiler
 
 					MethodWrapper method = GetMethodCallEmitter(cpi, instr.NormalizedOpCode);
 
-					if(method.IsIntrinsic && method.EmitIntrinsic(new EmitIntrinsicContext(method, context, ilGenerator, ma, i, mw, classFile, code, flags)))
+					EmitIntrinsicContext eic = new EmitIntrinsicContext(method, context, ilGenerator, ma, i, mw, classFile, code, flags);
+					if(method.IsIntrinsic && method.EmitIntrinsic(eic))
 					{
+						nonleaf |= eic.NonLeaf;
 						break;
 					}
+
+					nonleaf = true;
 
 					if(method.IsProtected && (method.DeclaringType == java_lang_Object || method.DeclaringType == java_lang_Throwable))
 					{

@@ -49,6 +49,7 @@ namespace IKVM.Internal
 		internal readonly ClassFile ClassFile;
 		internal readonly Instruction[] Code;
 		internal readonly InstructionFlags[] Flags;
+		internal bool NonLeaf = true;
 
 		internal EmitIntrinsicContext(MethodWrapper method, DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, CodeInfo ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, Instruction[] code, InstructionFlags[] flags)
 		{
@@ -652,6 +653,7 @@ namespace IKVM.Internal
 				{
 					eic.Emitter.EmitMemoryBarrier();
 				}
+				eic.NonLeaf = false;
 				return true;
 			}
 			if ((eic.Flags[eic.OpcodeIndex] & InstructionFlags.BranchTarget) != 0
@@ -696,6 +698,7 @@ namespace IKVM.Internal
 					{
 						eic.Emitter.EmitMemoryBarrier();
 					}
+					eic.NonLeaf = false;
 					return true;
 				}
 			}
@@ -727,6 +730,7 @@ namespace IKVM.Internal
 				{
 					eic.PatchOpCode(1, NormalizedByteCode.__nop);
 				}
+				eic.NonLeaf = false;
 				return true;
 			}
 			return false;
@@ -762,6 +766,7 @@ namespace IKVM.Internal
 				eic.Emitter.ReleaseTempLocal(index);
 				eic.Emitter.ReleaseTempLocal(expect);
 				eic.Emitter.ReleaseTempLocal(update);
+				eic.NonLeaf = false;
 				return true;
 			}
 			if ((eic.Flags[eic.OpcodeIndex] & InstructionFlags.BranchTarget) != 0
@@ -809,6 +814,7 @@ namespace IKVM.Internal
 					eic.Emitter.Emit(OpCodes.Ceq);
 					eic.Emitter.ReleaseTempLocal(expect);
 					eic.Emitter.ReleaseTempLocal(update);
+					eic.NonLeaf = false;
 					return true;
 				}
 			}
