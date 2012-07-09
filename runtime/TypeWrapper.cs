@@ -3704,28 +3704,10 @@ namespace IKVM.Internal
 			// only returns public, protected, private, final, static, abstract and interface (as per
 			// the documentation of Class.getModifiers())
 			Modifiers modifiers = 0;
-			if(type.IsPublic)
+			if(type.IsPublic || type.IsNestedPublic)
 			{
 				modifiers |= Modifiers.Public;
 			}
-				// TODO do we really need to look for nested attributes? I think all inner classes will have the ModifiersAttribute.
-			else if(type.IsNestedPublic)
-			{
-				modifiers |= Modifiers.Public | Modifiers.Static;
-			}
-			else if(type.IsNestedPrivate)
-			{
-				modifiers |= Modifiers.Private | Modifiers.Static;
-			}
-			else if(type.IsNestedFamily || type.IsNestedFamORAssem)
-			{
-				modifiers |= Modifiers.Protected | Modifiers.Static;
-			}
-			else if(type.IsNestedAssembly || type.IsNestedFamANDAssem)
-			{
-				modifiers |= Modifiers.Static;
-			}
-
 			if(type.IsSealed)
 			{
 				modifiers |= Modifiers.Final;
@@ -3737,6 +3719,10 @@ namespace IKVM.Internal
 			if(type.IsInterface)
 			{
 				modifiers |= Modifiers.Interface;
+			}
+			else
+			{
+				modifiers |= Modifiers.Super;
 			}
 			return new ExModifiers(modifiers, false);
 		}
@@ -3865,15 +3851,25 @@ namespace IKVM.Internal
 			{
 				if (reflectiveModifiers == 0)
 				{
+					Modifiers mods;
 					InnerClassAttribute attr = AttributeHelper.GetInnerClass(type);
 					if (attr != null)
 					{
-						reflectiveModifiers = attr.Modifiers;
+						// the mask comes from RECOGNIZED_INNER_CLASS_MODIFIERS in src/hotspot/share/vm/classfile/classFileParser.cpp
+						// (minus ACC_SUPER)
+						mods = attr.Modifiers & (Modifiers)0x761F;
 					}
 					else
 					{
-						reflectiveModifiers = Modifiers;
+						// the mask comes from JVM_RECOGNIZED_CLASS_MODIFIERS in src/hotspot/share/vm/prims/jvm.h
+						// (minus ACC_SUPER)
+						mods = Modifiers & (Modifiers)0x7611;
 					}
+					if (IsInterface)
+					{
+						mods |= Modifiers.Abstract;
+					}
+					reflectiveModifiers = mods;
 				}
 				return reflectiveModifiers;
 			}

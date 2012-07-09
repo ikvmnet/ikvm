@@ -6144,7 +6144,11 @@ namespace IKVM.NativeCode.sun.reflect
 
 		public static int getClassAccessFlags(jlClass clazz)
 		{
-			return (int)TypeWrapper.FromClass(clazz).Modifiers;
+			// the mask comes from JVM_RECOGNIZED_CLASS_MODIFIERS in src/hotspot/share/vm/prims/jvm.h
+			int mods = (int)TypeWrapper.FromClass(clazz).Modifiers & 0x7631;
+			// interface implies abstract
+			mods |= (mods & 0x0200) << 1;
+			return mods;
 		}
 
 		public static bool checkInternalAccess(jlClass currentClass, jlClass memberClass)

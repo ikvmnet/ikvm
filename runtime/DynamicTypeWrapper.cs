@@ -711,6 +711,10 @@ namespace IKVM.Internal
 					{
 						typeAttribs |= TypeAttributes.Interface | TypeAttributes.Abstract;
 #if STATIC_COMPILER
+						// if any "meaningless" bits are set, preserve them
+						setModifiers |= (f.Modifiers & (Modifiers)0x99CE) != 0;
+						// by default we assume interfaces are abstract, so in the exceptional case we need a ModifiersAttribute
+						setModifiers |= (f.Modifiers & Modifiers.Abstract) == 0;
 						if (outer != null && !cantNest)
 						{
 							if (wrapper.IsGhost)
@@ -742,17 +746,13 @@ namespace IKVM.Internal
 					{
 						typeAttribs |= TypeAttributes.Class;
 #if STATIC_COMPILER
+						// if any "meaningless" bits are set, preserve them
+						setModifiers |= (f.Modifiers & (Modifiers)0x99CE) != 0;
+						// by default we assume ACC_SUPER for classes, so in the exceptional case we need a ModifiersAttribute
+						setModifiers |= !f.IsSuper;
 						if (f.IsEffectivelyFinal)
 						{
-							if (outer == null)
-							{
-								setModifiers = true;
-							}
-							else
-							{
-								// we don't need a ModifiersAttribute, because the InnerClassAttribute already records
-								// the modifiers
-							}
+							setModifiers = true;
 							typeAttribs |= TypeAttributes.Sealed;
 							Tracer.Info(Tracer.Compiler, "Sealing type {0}", f.Name);
 						}
@@ -2221,6 +2221,7 @@ namespace IKVM.Internal
 			{
 				get
 				{
+					Modifiers mods;
 					ClassFile.InnerClass[] innerclasses = classFile.InnerClasses;
 					if (innerclasses != null)
 					{
@@ -2230,12 +2231,26 @@ namespace IKVM.Internal
 							{
 								if (classFile.GetConstantPoolClass(innerclasses[i].innerClass) == wrapper.Name)
 								{
-									return innerclasses[i].accessFlags;
+									// the mask comes from RECOGNIZED_INNER_CLASS_MODIFIERS in src/hotspot/share/vm/classfile/classFileParser.cpp
+									// (minus ACC_SUPER)
+									mods = innerclasses[i].accessFlags & (Modifiers)0x761F;
+									if (classFile.IsInterface)
+									{
+										mods |= Modifiers.Abstract;
+									}
+									return mods;
 								}
 							}
 						}
 					}
-					return classFile.Modifiers;
+					// the mask comes from JVM_RECOGNIZED_CLASS_MODIFIERS in src/hotspot/share/vm/prims/jvm.h
+					// (minus ACC_SUPER)
+					mods = classFile.Modifiers & (Modifiers)0x7611;
+					if (classFile.IsInterface)
+					{
+						mods |= Modifiers.Abstract;
+					}
+					return mods;
 				}
 			}
 

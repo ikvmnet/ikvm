@@ -69,17 +69,7 @@ public final class StubGenerator implements PrivilegedAction<byte[]>
         {
             superClass = "java/lang/Object";
         }
-        int classmods = getModifiers(c);
-        if(outer != null)
-        {
-            // protected inner classes are actually public and private inner classes are actually package
-            if((classmods & Modifiers.Protected) != 0)
-            {
-                classmods |= Modifiers.Public;
-            }
-            classmods &= ~(Modifiers.Static | Modifiers.Private | Modifiers.Protected);
-        }
-        ClassFileWriter f = new ClassFileWriter(classmods, name, superClass, 0, 49);
+        ClassFileWriter f = new ClassFileWriter(getRealModifiers(c), name, superClass, 0, 49);
         String genericSignature = BuildGenericSignature(c);
         if(genericSignature != null)
         {
@@ -322,6 +312,7 @@ public final class StubGenerator implements PrivilegedAction<byte[]>
         return mods;
     }
 
+    private static native int getRealModifiers(Class c);
     private static native String getAssemblyName(Class c);
     private static native boolean isClassDeprecated(Class c);
     private static native boolean isFieldDeprecated(Object field);

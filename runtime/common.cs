@@ -140,6 +140,11 @@ namespace IKVM.NativeCode.ikvm.@internal
 	{
 		static class StubGenerator
 		{
+			public static int getRealModifiers(jlClass c)
+			{
+				return (int)TypeWrapper.FromClass(c).Modifiers;
+			}
+
 			public static string getAssemblyName(jlClass c)
 			{
 				TypeWrapper wrapper = TypeWrapper.FromClass(c);
