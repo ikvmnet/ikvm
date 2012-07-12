@@ -203,9 +203,8 @@ namespace IKVM.Reflection
 		{
 			// Primitive here means that these types have a special metadata encoding, which means that
 			// there can be references to them without referring to them by name explicitly.
-			// When 'resolve missing type' mode is enabled, we want these types to be usable even when
-			// they don't exist in mscorlib or there is no mscorlib loaded.
-			return Mscorlib.ResolveType(new TypeName("System", name));
+			// We want these types to be usable even when they don't exist in mscorlib or there is no mscorlib loaded.
+			return Mscorlib.FindType(new TypeName("System", name)) ?? GetMissingType(Mscorlib.ManifestModule, null, new TypeName("System", name));
 		}
 
 		internal Type System_Object
@@ -962,22 +961,27 @@ namespace IKVM.Reflection
 			}
 		}
 
+		private Type GetMissingType(Module module, Type declaringType, TypeName typeName)
+		{
+			if (missingTypes == null)
+			{
+				missingTypes = new Dictionary<ScopedTypeName, Type>();
+			}
+			ScopedTypeName stn = new ScopedTypeName(declaringType ?? (object)module, typeName);
+			Type type;
+			if (!missingTypes.TryGetValue(stn, out type))
+			{
+				type = new MissingType(module, declaringType, typeName.Namespace, typeName.Name);
+				missingTypes.Add(stn, type);
+			}
+			return type;
+		}
+
 		internal Type GetMissingTypeOrThrow(Module module, Type declaringType, TypeName typeName)
 		{
 			if (resolveMissingMembers || module.Assembly.__IsMissing)
 			{
-				if (missingTypes == null)
-				{
-					missingTypes = new Dictionary<ScopedTypeName, Type>();
-				}
-				ScopedTypeName stn = new ScopedTypeName(declaringType ?? (object)module, typeName);
-				Type type;
-				if (!missingTypes.TryGetValue(stn, out type))
-				{
-					type = new MissingType(module, declaringType, typeName.Namespace, typeName.Name);
-					missingTypes.Add(stn, type);
-				}
-				return type;
+				return GetMissingType(module, declaringType, typeName);
 			}
 			string fullName = TypeNameParser.Escape(typeName.ToString());
 			if (declaringType != null)
