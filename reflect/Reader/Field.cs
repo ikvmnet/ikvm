@@ -130,8 +130,7 @@ namespace IKVM.Reflection.Reader
 					list.Add(spec.ToCustomAttribute(module));
 				}
 			}
-			if (declaringType.IsExplicitLayout
-				&& (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_FieldOffsetAttribute)))
+			if (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_FieldOffsetAttribute))
 			{
 				foreach (int i in module.FieldLayout.Filter(index + 1))
 				{
