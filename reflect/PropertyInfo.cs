@@ -91,6 +91,11 @@ namespace IKVM.Reflection
 				return property.PropertySignature.GetParameterCustomModifiers(parameter);
 			}
 
+			public override FieldMarshal __FieldMarshal
+			{
+				get { return null; }
+			}
+
 			public override MemberInfo Member
 			{
 				get { return property; }

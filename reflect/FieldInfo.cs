@@ -43,6 +43,7 @@ namespace IKVM.Reflection
 		public abstract void __GetDataFromRVA(byte[] data, int offset, int length);
 		public abstract int __FieldRVA { get; }
 		public abstract int __FieldOffset { get; }
+		public abstract FieldMarshal __FieldMarshal { get; }
 		public abstract Object GetRawConstantValue();
 		internal abstract FieldSignature FieldSignature { get; }
 
@@ -187,6 +188,11 @@ namespace IKVM.Reflection
 		public override int __FieldOffset
 		{
 			get { return field.__FieldOffset; }
+		}
+
+		public override FieldMarshal __FieldMarshal
+		{
+			get { return field.__FieldMarshal; }
 		}
 
 		public override Object GetRawConstantValue()

@@ -433,7 +433,7 @@ namespace IKVM.Reflection.Reader
 					Type attr = universe.System_Runtime_CompilerServices_DecimalConstantAttribute;
 					if (attr != null)
 					{
-						foreach (CustomAttributeData cad in GetCustomAttributesData(attr))
+						foreach (CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(this, attr, false))
 						{
 							IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
 							if (args.Count == 5)
@@ -473,6 +473,11 @@ namespace IKVM.Reflection.Reader
 				: method.MethodSignature.GetParameterCustomModifiers(method, position);
 		}
 
+		public override FieldMarshal __FieldMarshal
+		{
+			get { return FieldMarshal.ReadFieldMarshal(this.Module, this.MetadataToken); }
+		}
+
 		public override MemberInfo Member
 		{
 			get
@@ -495,17 +500,6 @@ namespace IKVM.Reflection.Reader
 		internal override Module Module
 		{
 			get { return method.Module; }
-		}
-
-		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
-		{
-			IList<CustomAttributeData> list = base.GetCustomAttributesData(attributeType);
-			if ((this.Attributes & ParameterAttributes.HasFieldMarshal) != 0
-				&& (attributeType == null || attributeType.IsAssignableFrom(this.Module.universe.System_Runtime_InteropServices_MarshalAsAttribute)))
-			{
-				list.Add(MarshalSpec.GetMarshalAsAttribute(this.Module, this.MetadataToken));
-			}
-			return list;
 		}
 	}
 }

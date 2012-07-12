@@ -32,7 +32,7 @@ using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection
 {
-	sealed class MarshalSpec
+	public sealed class FieldMarshal
 	{
 		private const UnmanagedType NATIVE_TYPE_MAX = (UnmanagedType)0x50;
 		private readonly UnmanagedType unmanagedType;
@@ -46,7 +46,57 @@ namespace IKVM.Reflection
 		private readonly string marshalCookie;
 		private readonly Type marshalTypeRef;
 
-		private MarshalSpec(UnmanagedType unmanagedType, UnmanagedType? arraySubType, short? sizeParamIndex,
+		public UnmanagedType UnmanagedType
+		{
+			get { return unmanagedType; }
+		}
+
+		public UnmanagedType? ArraySubType
+		{
+			get { return arraySubType; }
+		}
+
+		public short? SizeParamIndex
+		{
+			get { return sizeParamIndex; }
+		}
+
+		public int? SizeConst
+		{
+			get { return sizeConst; }
+		}
+
+		public VarEnum? SafeArraySubType
+		{
+			get { return safeArraySubType; }
+		}
+
+		public Type SafeArrayUserDefinedSubType
+		{
+			get { return safeArrayUserDefinedSubType; }
+		}
+
+		public int? IidParameterIndex
+		{
+			get { return iidParameterIndex; }
+		}
+
+		public string MarshalType
+		{
+			get { return marshalType; }
+		}
+
+		public string MarshalCookie
+		{
+			get { return marshalCookie; }
+		}
+
+		public Type MarshalTypeRef
+		{
+			get { return marshalTypeRef; }
+		}
+
+		private FieldMarshal(UnmanagedType unmanagedType, UnmanagedType? arraySubType, short? sizeParamIndex,
 			int? sizeConst, VarEnum? safeArraySubType, Type safeArrayUserDefinedSubType, int? iidParameterIndex,
 			string marshalType, string marshalCookie, Type marshalTypeRef)
 		{
@@ -62,7 +112,7 @@ namespace IKVM.Reflection
 			this.marshalTypeRef = marshalTypeRef;
 		}
 
-		internal static MarshalSpec ReadFieldMarshal(Module module, int token)
+		internal static FieldMarshal ReadFieldMarshal(Module module, int token)
 		{
 			foreach (int i in module.FieldMarshal.Filter(token))
 			{
@@ -142,23 +192,13 @@ namespace IKVM.Reflection
 						marshalTypeRef = parser.GetType(module.universe, module.Assembly, false, marshalType, false, false);
 					}
 				}
-				return new MarshalSpec(unmanagedType, arraySubType, sizeParamIndex, sizeConst, safeArraySubType,
+				return new FieldMarshal(unmanagedType, arraySubType, sizeParamIndex, sizeConst, safeArraySubType,
 					safeArrayUserDefinedSubType, iidParameterIndex, marshalType, marshalCookie, marshalTypeRef);
 			}
 			return null;
 		}
 
-		internal static CustomAttributeData GetMarshalAsAttribute(Module module, int token)
-		{
-			MarshalSpec spec = ReadFieldMarshal(module, token);
-			if (spec != null)
-			{
-				return spec.ToCustomAttribute(module);
-			}
-			throw new BadImageFormatException();
-		}
-
-		private CustomAttributeData ToCustomAttribute(Module module)
+		internal CustomAttributeData ToCustomAttribute(Module module)
 		{
 			Type typeofMarshalAs = module.universe.System_Runtime_InteropServices_MarshalAsAttribute;
 			Type typeofUnmanagedType = module.universe.System_Runtime_InteropServices_UnmanagedType;

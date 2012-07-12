@@ -114,13 +114,21 @@ namespace IKVM.Reflection.Reader
 			}
 		}
 
+		public override FieldMarshal __FieldMarshal
+		{
+			get { return FieldMarshal.ReadFieldMarshal(module, this.MetadataToken); }
+		}
+
 		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
 		{
 			List<CustomAttributeData> list = module.GetCustomAttributes(this.MetadataToken, attributeType);
-			if ((this.Attributes & FieldAttributes.HasFieldMarshal) != 0
-				&& (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_MarshalAsAttribute)))
+			if (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_MarshalAsAttribute))
 			{
-				list.Add(MarshalSpec.GetMarshalAsAttribute(module, this.MetadataToken));
+				FieldMarshal spec = FieldMarshal.ReadFieldMarshal(module, this.MetadataToken);
+				if (spec != null)
+				{
+					list.Add(spec.ToCustomAttribute(module));
+				}
 			}
 			if (declaringType.IsExplicitLayout
 				&& (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_FieldOffsetAttribute)))

@@ -99,6 +99,11 @@ namespace IKVM.Reflection.Emit
 			get { throw new NotImplementedException(); }
 		}
 
+		public override FieldMarshal __FieldMarshal
+		{
+			get { throw new NotImplementedException(); }
+		}
+
 		public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
 		{
 			SetCustomAttribute(new CustomAttributeBuilder(con, binaryAttribute));
@@ -114,7 +119,7 @@ namespace IKVM.Reflection.Emit
 			}
 			else if (customBuilder.Constructor.DeclaringType == u.System_Runtime_InteropServices_MarshalAsAttribute)
 			{
-				MarshalSpec.SetMarshalAsAttribute(typeBuilder.ModuleBuilder, pseudoToken, customBuilder);
+				FieldMarshal.SetMarshalAsAttribute(typeBuilder.ModuleBuilder, pseudoToken, customBuilder);
 				attribs |= FieldAttributes.HasFieldMarshal;
 			}
 			else if (customBuilder.Constructor.DeclaringType == u.System_NonSerializedAttribute)

@@ -340,6 +340,11 @@ namespace IKVM.Reflection
 			get { return field.__FieldOffset; }
 		}
 
+		public override FieldMarshal __FieldMarshal
+		{
+			get { return field.__FieldMarshal; }
+		}
+
 		public override FieldInfo __GetFieldOnTypeDefinition()
 		{
 			return field;
@@ -405,6 +410,11 @@ namespace IKVM.Reflection
 		public override CustomModifiers __GetCustomModifiers()
 		{
 			return parameterInfo.__GetCustomModifiers().Bind(method);
+		}
+
+		public override FieldMarshal __FieldMarshal
+		{
+			get { return parameterInfo.__FieldMarshal; }
 		}
 
 		public override MemberInfo Member

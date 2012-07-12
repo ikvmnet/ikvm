@@ -515,6 +515,11 @@ namespace IKVM.Reflection.Emit
 				return method.customModifiers.GetParameterCustomModifiers(parameter);
 			}
 
+			public override FieldMarshal __FieldMarshal
+			{
+				get { return null; }
+			}
+
 			public override MemberInfo Member
 			{
 				get { return method; }

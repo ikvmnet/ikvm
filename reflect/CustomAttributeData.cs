@@ -692,7 +692,7 @@ namespace IKVM.Reflection
 
 		public static IList<CustomAttributeData> GetCustomAttributes(ParameterInfo parameter)
 		{
-			return parameter.GetCustomAttributesData(null);
+			return __GetCustomAttributes(parameter, null, false);
 		}
 
 		public static IList<CustomAttributeData> __GetCustomAttributes(Assembly assembly, Type attributeType, bool inherit)
@@ -707,7 +707,16 @@ namespace IKVM.Reflection
 
 		public static IList<CustomAttributeData> __GetCustomAttributes(ParameterInfo parameter, Type attributeType, bool inherit)
 		{
-			return parameter.GetCustomAttributesData(attributeType);
+			List<CustomAttributeData> list = parameter.Module.GetCustomAttributes(parameter.MetadataToken, attributeType);
+			if (attributeType == null || attributeType.IsAssignableFrom(parameter.Module.universe.System_Runtime_InteropServices_MarshalAsAttribute))
+			{
+				FieldMarshal spec = parameter.__FieldMarshal;
+				if (spec != null)
+				{
+					list.Add(spec.ToCustomAttribute(parameter.Module));
+				}
+			}
+			return list;
 		}
 
 		public static IList<CustomAttributeData> __GetCustomAttributes(MemberInfo member, Type attributeType, bool inherit)

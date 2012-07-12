@@ -730,6 +730,11 @@ namespace IKVM.Reflection
 					: method.signature.GetParameterCustomModifiers(method, index);
 			}
 
+			public override FieldMarshal __FieldMarshal
+			{
+				get { return Forwarder.__FieldMarshal; }
+			}
+
 			public override MemberInfo Member
 			{
 				get { return method; }
@@ -743,11 +748,6 @@ namespace IKVM.Reflection
 			internal override Module Module
 			{
 				get { return method.Module; }
-			}
-
-			internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
-			{
-				return Forwarder.GetCustomAttributesData(attributeType);
 			}
 
 			public override string ToString()
@@ -978,6 +978,11 @@ namespace IKVM.Reflection
 		public override int __FieldOffset
 		{
 			get { return Forwarder.__FieldOffset; }
+		}
+
+		public override FieldMarshal __FieldMarshal
+		{
+			get { return Forwarder.__FieldMarshal; }
 		}
 
 		public override object GetRawConstantValue()

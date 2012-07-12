@@ -2369,6 +2369,11 @@ namespace IKVM.Reflection
 				return new CustomModifiers();
 			}
 
+			public override FieldMarshal __FieldMarshal
+			{
+				get { return null; }
+			}
+
 			public override MemberInfo Member
 			{
 				get { return method.IsConstructor ? (MethodBase)new ConstructorInfoImpl(method) : method; }
