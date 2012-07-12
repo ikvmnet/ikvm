@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2008-2011 Jeroen Frijters
+  Copyright (C) 2008-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -32,11 +32,37 @@ using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection
 {
-	static class MarshalSpec
+	sealed class MarshalSpec
 	{
 		private const UnmanagedType NATIVE_TYPE_MAX = (UnmanagedType)0x50;
+		private readonly UnmanagedType unmanagedType;
+		private readonly UnmanagedType? arraySubType;
+		private readonly short? sizeParamIndex;
+		private readonly int? sizeConst;
+		private readonly VarEnum? safeArraySubType;
+		private readonly Type safeArrayUserDefinedSubType;
+		private readonly int? iidParameterIndex;
+		private readonly string marshalType;
+		private readonly string marshalCookie;
+		private readonly Type marshalTypeRef;
 
-		internal static CustomAttributeData GetMarshalAsAttribute(Module module, int token)
+		private MarshalSpec(UnmanagedType unmanagedType, UnmanagedType? arraySubType, short? sizeParamIndex,
+			int? sizeConst, VarEnum? safeArraySubType, Type safeArrayUserDefinedSubType, int? iidParameterIndex,
+			string marshalType, string marshalCookie, Type marshalTypeRef)
+		{
+			this.unmanagedType = unmanagedType;
+			this.arraySubType = arraySubType;
+			this.sizeParamIndex = sizeParamIndex;
+			this.sizeConst = sizeConst;
+			this.safeArraySubType = safeArraySubType;
+			this.safeArrayUserDefinedSubType = safeArrayUserDefinedSubType;
+			this.iidParameterIndex = iidParameterIndex;
+			this.marshalType = marshalType;
+			this.marshalCookie = marshalCookie;
+			this.marshalTypeRef = marshalTypeRef;
+		}
+
+		internal static MarshalSpec ReadFieldMarshal(Module module, int token)
 		{
 			foreach (int i in module.FieldMarshal.Filter(token))
 			{
@@ -116,7 +142,24 @@ namespace IKVM.Reflection
 						marshalTypeRef = parser.GetType(module.universe, module.Assembly, false, marshalType, false, false);
 					}
 				}
+				return new MarshalSpec(unmanagedType, arraySubType, sizeParamIndex, sizeConst, safeArraySubType,
+					safeArrayUserDefinedSubType, iidParameterIndex, marshalType, marshalCookie, marshalTypeRef);
+			}
+			return null;
+		}
 
+		internal static CustomAttributeData GetMarshalAsAttribute(Module module, int token)
+		{
+			MarshalSpec spec = ReadFieldMarshal(module, token);
+			if (spec != null)
+			{
+				return spec.ToCustomAttribute(module);
+			}
+			throw new BadImageFormatException();
+		}
+
+		private CustomAttributeData ToCustomAttribute(Module module)
+		{
 				Type typeofMarshalAs = module.universe.System_Runtime_InteropServices_MarshalAsAttribute;
 				Type typeofUnmanagedType = module.universe.System_Runtime_InteropServices_UnmanagedType;
 				Type typeofVarEnum = module.universe.System_Runtime_InteropServices_VarEnum;
@@ -160,8 +203,6 @@ namespace IKVM.Reflection
 				}
 				ConstructorInfo constructor = typeofMarshalAs.GetPseudoCustomAttributeConstructor(typeofUnmanagedType);
 				return new CustomAttributeData(module, constructor, new object[] { unmanagedType }, named);
-			}
-			throw new BadImageFormatException();
 		}
 
 		private static void AddNamedArgument(List<CustomAttributeNamedArgument> list, Type attributeType, string fieldName, Type valueType, object value)
