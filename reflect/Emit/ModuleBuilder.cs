@@ -794,7 +794,7 @@ namespace IKVM.Reflection.Emit
 			int token;
 			if (!typeTokens.TryGetValue(type, out token))
 			{
-				if (type.HasElementType || type.IsGenericTypeInstance || type.__IsFunctionPointer)
+				if (type.HasElementType || type.IsConstructedGenericType || type.__IsFunctionPointer)
 				{
 					ByteBuffer spec = new ByteBuffer(5);
 					Signature.WriteTypeSpec(this, spec, type);

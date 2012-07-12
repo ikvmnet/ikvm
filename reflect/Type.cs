@@ -358,7 +358,8 @@ namespace IKVM.Reflection
 			get { return false; }
 		}
 
-		internal virtual bool IsGenericTypeInstance
+		// .NET 4.5 API
+		public virtual bool IsConstructedGenericType
 		{
 			get { return false; }
 		}
@@ -2689,7 +2690,7 @@ namespace IKVM.Reflection
 			get { return true; }
 		}
 
-		internal override bool IsGenericTypeInstance
+		public override bool IsConstructedGenericType
 		{
 			get { return true; }
 		}

@@ -836,7 +836,7 @@ namespace IKVM.Reflection.Reader
 							return type.FindMethod(name, methodSig)
 								?? universe.GetMissingMethodOrThrow(type, name, methodSig);
 						}
-						else if (type.IsGenericTypeInstance)
+						else if (type.IsConstructedGenericType)
 						{
 							MemberInfo member = ResolveTypeMemberRef(type.GetGenericTypeDefinition(), name, ByteReader.FromBlob(blobHeap, sig));
 							MethodBase mb = member as MethodBase;
