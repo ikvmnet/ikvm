@@ -1525,7 +1525,6 @@ namespace IKVM.Reflection
 			get { return Module.Assembly; }
 		}
 
-		// note that interface/delegate co- and contravariance is not considered
 		public bool IsAssignableFrom(Type type)
 		{
 			if (this.Equals(type))
@@ -1550,13 +1549,24 @@ namespace IKVM.Reflection
 				Type e2 = type.GetElementType();
 				return e1.IsValueType == e2.IsValueType && e1.IsAssignableFrom(e2);
 			}
+			else if (this.IsCovariant(type))
+			{
+				return true;
+			}
 			else if (this.IsSealed)
 			{
 				return false;
 			}
 			else if (this.IsInterface)
 			{
-				return Array.IndexOf(type.GetInterfaces(), this) != -1;
+				foreach (Type iface in type.GetInterfaces())
+				{
+					if (this.Equals(iface) || this.IsCovariant(iface))
+					{
+						return true;
+					}
+				}
+				return false;
 			}
 			else if (type.IsInterface)
 			{
@@ -1570,6 +1580,48 @@ namespace IKVM.Reflection
 			{
 				return type.IsSubclassOf(this);
 			}
+		}
+
+		private bool IsCovariant(Type other)
+		{
+			if (this.IsConstructedGenericType
+				&& other.IsConstructedGenericType
+				&& this.GetGenericTypeDefinition() == other.GetGenericTypeDefinition())
+			{
+				Type[] typeParameters = GetGenericTypeDefinition().GetGenericArguments();
+				for (int i = 0; i < typeParameters.Length; i++)
+				{
+					Type t1 = this.GetGenericTypeArgument(i);
+					Type t2 = other.GetGenericTypeArgument(i);
+					if (t1.IsValueType != t2.IsValueType)
+					{
+						return false;
+					}
+					switch (typeParameters[i].GenericParameterAttributes & GenericParameterAttributes.VarianceMask)
+					{
+						case GenericParameterAttributes.Covariant:
+							if (!t1.IsAssignableFrom(t2))
+							{
+								return false;
+							}
+							break;
+						case GenericParameterAttributes.Contravariant:
+							if (!t2.IsAssignableFrom(t1))
+							{
+								return false;
+							}
+							break;
+						case GenericParameterAttributes.None:
+							if (t1 != t2)
+							{
+								return false;
+							}
+							break;
+					}
+				}
+				return true;
+			}
+			return false;
 		}
 
 		public bool IsSubclassOf(Type type)
