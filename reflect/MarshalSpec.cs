@@ -160,49 +160,49 @@ namespace IKVM.Reflection
 
 		private CustomAttributeData ToCustomAttribute(Module module)
 		{
-				Type typeofMarshalAs = module.universe.System_Runtime_InteropServices_MarshalAsAttribute;
-				Type typeofUnmanagedType = module.universe.System_Runtime_InteropServices_UnmanagedType;
-				Type typeofVarEnum = module.universe.System_Runtime_InteropServices_VarEnum;
-				Type typeofType = module.universe.System_Type;
-				List<CustomAttributeNamedArgument> named = new List<CustomAttributeNamedArgument>();
-				if (arraySubType != null)
-				{
-					AddNamedArgument(named, typeofMarshalAs, "ArraySubType", typeofUnmanagedType, arraySubType.Value);
-				}
-				if (sizeParamIndex != null)
-				{
-					AddNamedArgument(named, typeofMarshalAs, "SizeParamIndex", module.universe.System_Int16, sizeParamIndex.Value);
-				}
-				if (sizeConst != null)
-				{
-					AddNamedArgument(named, typeofMarshalAs, "SizeConst", module.universe.System_Int32, sizeConst.Value);
-				}
-				if (safeArraySubType != null)
-				{
-					AddNamedArgument(named, typeofMarshalAs, "SafeArraySubType", typeofVarEnum, safeArraySubType.Value);
-				}
-				if (safeArrayUserDefinedSubType != null)
-				{
-					AddNamedArgument(named, typeofMarshalAs, "SafeArrayUserDefinedSubType", typeofType, safeArrayUserDefinedSubType);
-				}
-				if (iidParameterIndex != null)
-				{
-					AddNamedArgument(named, typeofMarshalAs, "IidParameterIndex", module.universe.System_Int32, iidParameterIndex.Value);
-				}
-				if (marshalType != null)
-				{
-					AddNamedArgument(named, typeofMarshalAs, "MarshalType", module.universe.System_String, marshalType);
-				}
-				if (marshalTypeRef != null)
-				{
-					AddNamedArgument(named, typeofMarshalAs, "MarshalTypeRef", module.universe.System_Type, marshalTypeRef);
-				}
-				if (marshalCookie != null)
-				{
-					AddNamedArgument(named, typeofMarshalAs, "MarshalCookie", module.universe.System_String, marshalCookie);
-				}
-				ConstructorInfo constructor = typeofMarshalAs.GetPseudoCustomAttributeConstructor(typeofUnmanagedType);
-				return new CustomAttributeData(module, constructor, new object[] { unmanagedType }, named);
+			Type typeofMarshalAs = module.universe.System_Runtime_InteropServices_MarshalAsAttribute;
+			Type typeofUnmanagedType = module.universe.System_Runtime_InteropServices_UnmanagedType;
+			Type typeofVarEnum = module.universe.System_Runtime_InteropServices_VarEnum;
+			Type typeofType = module.universe.System_Type;
+			List<CustomAttributeNamedArgument> named = new List<CustomAttributeNamedArgument>();
+			if (arraySubType != null)
+			{
+				AddNamedArgument(named, typeofMarshalAs, "ArraySubType", typeofUnmanagedType, arraySubType.Value);
+			}
+			if (sizeParamIndex != null)
+			{
+				AddNamedArgument(named, typeofMarshalAs, "SizeParamIndex", module.universe.System_Int16, sizeParamIndex.Value);
+			}
+			if (sizeConst != null)
+			{
+				AddNamedArgument(named, typeofMarshalAs, "SizeConst", module.universe.System_Int32, sizeConst.Value);
+			}
+			if (safeArraySubType != null)
+			{
+				AddNamedArgument(named, typeofMarshalAs, "SafeArraySubType", typeofVarEnum, safeArraySubType.Value);
+			}
+			if (safeArrayUserDefinedSubType != null)
+			{
+				AddNamedArgument(named, typeofMarshalAs, "SafeArrayUserDefinedSubType", typeofType, safeArrayUserDefinedSubType);
+			}
+			if (iidParameterIndex != null)
+			{
+				AddNamedArgument(named, typeofMarshalAs, "IidParameterIndex", module.universe.System_Int32, iidParameterIndex.Value);
+			}
+			if (marshalType != null)
+			{
+				AddNamedArgument(named, typeofMarshalAs, "MarshalType", module.universe.System_String, marshalType);
+			}
+			if (marshalTypeRef != null)
+			{
+				AddNamedArgument(named, typeofMarshalAs, "MarshalTypeRef", module.universe.System_Type, marshalTypeRef);
+			}
+			if (marshalCookie != null)
+			{
+				AddNamedArgument(named, typeofMarshalAs, "MarshalCookie", module.universe.System_String, marshalCookie);
+			}
+			ConstructorInfo constructor = typeofMarshalAs.GetPseudoCustomAttributeConstructor(typeofUnmanagedType);
+			return new CustomAttributeData(module, constructor, new object[] { unmanagedType }, named);
 		}
 
 		private static void AddNamedArgument(List<CustomAttributeNamedArgument> list, Type attributeType, string fieldName, Type valueType, object value)
