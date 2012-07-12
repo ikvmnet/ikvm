@@ -519,8 +519,7 @@ namespace IKVM.Reflection
 				}
 				else
 				{
-					ConstructorInfo constructor = (ConstructorInfo)ResolveMethod(CustomAttribute.records[i].Type);
-					if (attributeType.IsAssignableFrom(constructor.DeclaringType))
+					if (attributeType.IsAssignableFrom(ResolveMethod(CustomAttribute.records[i].Type).DeclaringType))
 					{
 						list.Add(new CustomAttributeData(this, i));
 					}
