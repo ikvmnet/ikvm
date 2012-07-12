@@ -102,6 +102,18 @@ namespace IKVM.Reflection.Reader
 			}
 		}
 
+		public override int __FieldOffset
+		{
+			get
+			{
+				foreach (int i in module.FieldLayout.Filter(index + 1))
+				{
+					return module.FieldLayout.records[i].Offset;
+				}
+				throw new InvalidOperationException();
+			}
+		}
+
 		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
 		{
 			List<CustomAttributeData> list = module.GetCustomAttributes(this.MetadataToken, attributeType);

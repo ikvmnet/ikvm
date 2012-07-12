@@ -975,6 +975,11 @@ namespace IKVM.Reflection
 			get { return Forwarder.__FieldRVA; }
 		}
 
+		public override int __FieldOffset
+		{
+			get { return Forwarder.__FieldOffset; }
+		}
+
 		public override object GetRawConstantValue()
 		{
 			return Forwarder.GetRawConstantValue();
