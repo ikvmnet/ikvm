@@ -97,12 +97,7 @@ namespace IKVM.Reflection.Emit
 
 		public override bool __TryGetFieldOffset(out int offset)
 		{
-			int token = pseudoToken;
-			if (typeBuilder.ModuleBuilder.IsSaved)
-			{
-				token = typeBuilder.ModuleBuilder.ResolvePseudoToken(pseudoToken);
-			}
-			foreach (int i in typeBuilder.Module.FieldLayout.Filter(token))
+			foreach (int i in typeBuilder.Module.FieldLayout.Filter(GetCurrentToken()))
 			{
 				offset = typeBuilder.Module.FieldLayout.records[i].Offset;
 				return true;
@@ -113,12 +108,7 @@ namespace IKVM.Reflection.Emit
 
 		public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
 		{
-			int token = pseudoToken;
-			if (typeBuilder.ModuleBuilder.IsSaved)
-			{
-				token = typeBuilder.ModuleBuilder.ResolvePseudoToken(pseudoToken);
-			}
-			return FieldMarshal.ReadFieldMarshal(typeBuilder.Module, token, out fieldMarshal);
+			return FieldMarshal.ReadFieldMarshal(typeBuilder.Module, GetCurrentToken(), out fieldMarshal);
 		}
 
 		public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
@@ -220,7 +210,7 @@ namespace IKVM.Reflection.Emit
 				// like .NET we we don't return custom attributes for unbaked types
 				throw new NotImplementedException();
 			}
-			IList<CustomAttributeData> list = base.GetCustomAttributesData(attributeType);
+			List<CustomAttributeData> list = typeBuilder.Module.GetCustomAttributes(GetCurrentToken(), attributeType);
 			if (attributeType == null || attributeType.IsAssignableFrom(typeBuilder.Universe.System_Runtime_InteropServices_MarshalAsAttribute))
 			{
 				FieldMarshal spec;
@@ -239,6 +229,18 @@ namespace IKVM.Reflection.Emit
 				}
 			}
 			return list;
+		}
+
+		private int GetCurrentToken()
+		{
+			if (typeBuilder.ModuleBuilder.IsSaved)
+			{
+				return typeBuilder.ModuleBuilder.ResolvePseudoToken(pseudoToken);
+			}
+			else
+			{
+				return pseudoToken;
+			}
 		}
 	}
 }
