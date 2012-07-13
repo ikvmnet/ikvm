@@ -354,6 +354,11 @@ namespace IKVM.Reflection
 		{
 			return new GenericFieldInstance(declaringType.BindTypeParameters(type), field);
 		}
+
+		internal override int GetCurrentToken()
+		{
+			return field.GetCurrentToken();
+		}
 	}
 
 	sealed class GenericParameterInfoImpl : ParameterInfo

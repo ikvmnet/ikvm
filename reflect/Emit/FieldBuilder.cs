@@ -203,7 +203,7 @@ namespace IKVM.Reflection.Emit
 			return base.GetCustomAttributesData(attributeType);
 		}
 
-		protected override int GetCurrentToken()
+		internal override int GetCurrentToken()
 		{
 			if (typeBuilder.ModuleBuilder.IsSaved)
 			{

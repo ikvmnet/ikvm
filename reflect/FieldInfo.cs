@@ -44,6 +44,7 @@ namespace IKVM.Reflection
 		public abstract int __FieldRVA { get; }
 		public abstract Object GetRawConstantValue();
 		internal abstract FieldSignature FieldSignature { get; }
+		internal abstract int GetCurrentToken();
 
 		public Type FieldType
 		{
@@ -194,11 +195,6 @@ namespace IKVM.Reflection
 			}
 			return list;
 		}
-
-		protected virtual int GetCurrentToken()
-		{
-			return MetadataToken;
-		}
 	}
 
 	sealed class FieldInfoWithReflectedType : FieldInfo
@@ -299,6 +295,11 @@ namespace IKVM.Reflection
 		public override string ToString()
 		{
 			return field.ToString();
+		}
+
+		internal override int GetCurrentToken()
+		{
+			return field.GetCurrentToken();
 		}
 	}
 }

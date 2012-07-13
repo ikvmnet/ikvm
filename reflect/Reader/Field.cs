@@ -111,5 +111,10 @@ namespace IKVM.Reflection.Reader
 		{
 			return module.ImportMethodOrField(declaringType, this.Name, this.FieldSignature);
 		}
+
+		internal override int GetCurrentToken()
+		{
+			return this.MetadataToken;
+		}
 	}
 }

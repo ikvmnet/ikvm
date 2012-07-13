@@ -1043,6 +1043,11 @@ namespace IKVM.Reflection
 		{
 			return this.FieldType.Name + " " + this.Name;
 		}
+
+		internal override int GetCurrentToken()
+		{
+			return Forwarder.GetCurrentToken();
+		}
 	}
 
 	// NOTE this is currently only used by CustomAttributeData (because there is no other way to refer to a property)
