@@ -131,16 +131,7 @@ namespace IKVM.Reflection
 			return this;
 		}
 
-		public bool __TryGetFieldOffset(out int offset)
-		{
-			foreach (int i in this.Module.FieldLayout.Filter(GetCurrentToken()))
-			{
-				offset = this.Module.FieldLayout.records[i].Offset;
-				return true;
-			}
-			offset = 0;
-			return false;
-		}
+		public abstract bool __TryGetFieldOffset(out int offset);
 
 		public bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
 		{
@@ -222,6 +213,11 @@ namespace IKVM.Reflection
 		public override int __FieldRVA
 		{
 			get { return field.__FieldRVA; }
+		}
+
+		public override bool __TryGetFieldOffset(out int offset)
+		{
+			return field.__TryGetFieldOffset(out offset);
 		}
 
 		public override Object GetRawConstantValue()

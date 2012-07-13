@@ -335,6 +335,11 @@ namespace IKVM.Reflection
 			get { return field.__FieldRVA; }
 		}
 
+		public override bool __TryGetFieldOffset(out int offset)
+		{
+			return field.__TryGetFieldOffset(out offset);
+		}
+
 		public override FieldInfo __GetFieldOnTypeDefinition()
 		{
 			return field;

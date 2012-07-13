@@ -101,6 +101,22 @@ namespace IKVM.Reflection.Emit
 			get { throw new NotImplementedException(); }
 		}
 
+		public override bool __TryGetFieldOffset(out int offset)
+		{
+			int pseudoTokenOrIndex = pseudoToken;
+			if (typeBuilder.ModuleBuilder.IsSaved)
+			{
+				pseudoTokenOrIndex = typeBuilder.ModuleBuilder.ResolvePseudoToken(pseudoToken) & 0xFFFFFF;
+			}
+			foreach (int i in this.Module.FieldLayout.Filter(pseudoTokenOrIndex))
+			{
+				offset = this.Module.FieldLayout.records[i].Offset;
+				return true;
+			}
+			offset = 0;
+			return false;
+		}
+
 		public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
 		{
 			SetCustomAttribute(new CustomAttributeBuilder(con, binaryAttribute));

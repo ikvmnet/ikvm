@@ -1499,7 +1499,7 @@ namespace IKVM.Reflection.Metadata
 		{
 			for (int i = 0; i < rowCount; i++)
 			{
-				records[i].Field = moduleBuilder.ResolvePseudoToken(records[i].Field);
+				records[i].Field = moduleBuilder.ResolvePseudoToken(records[i].Field) & 0xFFFFFF;
 			}
 			Sort();
 		}
