@@ -102,22 +102,6 @@ namespace IKVM.Reflection.Reader
 			}
 		}
 
-		public override bool __TryGetFieldOffset(out int offset)
-		{
-			foreach (int i in module.FieldLayout.Filter(index + 1))
-			{
-				offset = module.FieldLayout.records[i].Offset;
-				return true;
-			}
-			offset = 0;
-			return false;
-		}
-
-		public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
-		{
-			return FieldMarshal.ReadFieldMarshal(module, this.MetadataToken, out fieldMarshal);
-		}
-
 		internal override FieldSignature FieldSignature
 		{
 			get { return lazyFieldSig ?? (lazyFieldSig = FieldSignature.ReadSig(module, module.GetBlob(module.Field.records[index].Signature), declaringType)); }

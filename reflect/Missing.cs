@@ -975,16 +975,6 @@ namespace IKVM.Reflection
 			get { return Forwarder.__FieldRVA; }
 		}
 
-		public override bool __TryGetFieldOffset(out int offset)
-		{
-			return Forwarder.__TryGetFieldOffset(out offset);
-		}
-
-		public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
-		{
-			return forwarder.__TryGetFieldMarshal(out fieldMarshal);
-		}
-
 		public override object GetRawConstantValue()
 		{
 			return Forwarder.GetRawConstantValue();

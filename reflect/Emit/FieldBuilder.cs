@@ -101,22 +101,6 @@ namespace IKVM.Reflection.Emit
 			get { throw new NotImplementedException(); }
 		}
 
-		public override bool __TryGetFieldOffset(out int offset)
-		{
-			foreach (int i in typeBuilder.Module.FieldLayout.Filter(GetCurrentToken()))
-			{
-				offset = typeBuilder.Module.FieldLayout.records[i].Offset;
-				return true;
-			}
-			offset = 0;
-			return false;
-		}
-
-		public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
-		{
-			return FieldMarshal.ReadFieldMarshal(typeBuilder.Module, GetCurrentToken(), out fieldMarshal);
-		}
-
 		public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
 		{
 			SetCustomAttribute(new CustomAttributeBuilder(con, binaryAttribute));

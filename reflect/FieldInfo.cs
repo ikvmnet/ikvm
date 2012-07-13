@@ -42,8 +42,6 @@ namespace IKVM.Reflection
 		public abstract FieldAttributes Attributes { get; }
 		public abstract void __GetDataFromRVA(byte[] data, int offset, int length);
 		public abstract int __FieldRVA { get; }
-		public abstract bool __TryGetFieldOffset(out int offset);
-		public abstract bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal);
 		public abstract Object GetRawConstantValue();
 		internal abstract FieldSignature FieldSignature { get; }
 
@@ -132,6 +130,22 @@ namespace IKVM.Reflection
 			return this;
 		}
 
+		public bool __TryGetFieldOffset(out int offset)
+		{
+			foreach (int i in this.Module.FieldLayout.Filter(GetCurrentToken()))
+			{
+				offset = this.Module.FieldLayout.records[i].Offset;
+				return true;
+			}
+			offset = 0;
+			return false;
+		}
+
+		public bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
+		{
+			return FieldMarshal.ReadFieldMarshal(this.Module, GetCurrentToken(), out fieldMarshal);
+		}
+
 		internal abstract int ImportTo(Emit.ModuleBuilder module);
 
 		internal virtual FieldInfo BindTypeParameters(Type type)
@@ -212,16 +226,6 @@ namespace IKVM.Reflection
 		public override int __FieldRVA
 		{
 			get { return field.__FieldRVA; }
-		}
-
-		public override bool __TryGetFieldOffset(out int offset)
-		{
-			return field.__TryGetFieldOffset(out offset);
-		}
-
-		public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
-		{
-			return field.__TryGetFieldMarshal(out fieldMarshal);
 		}
 
 		public override Object GetRawConstantValue()
