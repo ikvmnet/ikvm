@@ -102,16 +102,15 @@ namespace IKVM.Reflection.Reader
 			}
 		}
 
-		public override int __FieldOffset
+		public override bool __TryGetFieldOffset(out int offset)
 		{
-			get
+			foreach (int i in module.FieldLayout.Filter(index + 1))
 			{
-				foreach (int i in module.FieldLayout.Filter(index + 1))
-				{
-					return module.FieldLayout.records[i].Offset;
-				}
-				throw new InvalidOperationException();
+				offset = module.FieldLayout.records[i].Offset;
+				return true;
 			}
+			offset = 0;
+			return false;
 		}
 
 		public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
@@ -132,13 +131,11 @@ namespace IKVM.Reflection.Reader
 			}
 			if (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_FieldOffsetAttribute))
 			{
-				foreach (int i in module.FieldLayout.Filter(index + 1))
+				int offset;
+				if (__TryGetFieldOffset(out offset))
 				{
 					ConstructorInfo constructor = module.universe.System_Runtime_InteropServices_FieldOffsetAttribute.GetPseudoCustomAttributeConstructor(module.universe.System_Int32);
-					list.Add(new CustomAttributeData(module, constructor,
-						new object[] { module.FieldLayout.records[i].Offset },
-						null));
-					break;
+					list.Add(new CustomAttributeData(module, constructor, new object[] { offset }, null));
 				}
 			}
 			return list;
