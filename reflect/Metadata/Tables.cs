@@ -1074,13 +1074,10 @@ namespace IKVM.Reflection.Metadata
 			{
 				case FieldTable.Index:
 					return (token & 0xFFFFFF) << 2 | 0;
-					break;
 				case ParamTable.Index:
 					return (token & 0xFFFFFF) << 2 | 1;
-					break;
 				case PropertyTable.Index:
 					return (token & 0xFFFFFF) << 2 | 2;
-					break;
 				default:
 					throw new InvalidOperationException();
 			}
