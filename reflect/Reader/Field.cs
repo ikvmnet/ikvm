@@ -114,9 +114,9 @@ namespace IKVM.Reflection.Reader
 			}
 		}
 
-		public override FieldMarshal __FieldMarshal
+		public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
 		{
-			get { return FieldMarshal.ReadFieldMarshal(module, this.MetadataToken); }
+			return FieldMarshal.ReadFieldMarshal(module, this.MetadataToken, out fieldMarshal);
 		}
 
 		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
@@ -124,8 +124,8 @@ namespace IKVM.Reflection.Reader
 			List<CustomAttributeData> list = module.GetCustomAttributes(this.MetadataToken, attributeType);
 			if (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_MarshalAsAttribute))
 			{
-				FieldMarshal spec = FieldMarshal.ReadFieldMarshal(module, this.MetadataToken);
-				if (spec != null)
+				FieldMarshal spec;
+				if (__TryGetFieldMarshal(out spec))
 				{
 					list.Add(spec.ToCustomAttribute(module));
 				}

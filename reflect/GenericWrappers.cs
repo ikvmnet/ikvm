@@ -340,9 +340,9 @@ namespace IKVM.Reflection
 			get { return field.__FieldOffset; }
 		}
 
-		public override FieldMarshal __FieldMarshal
+		public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
 		{
-			get { return field.__FieldMarshal; }
+			return field.__TryGetFieldMarshal(out fieldMarshal);
 		}
 
 		public override FieldInfo __GetFieldOnTypeDefinition()
@@ -412,9 +412,9 @@ namespace IKVM.Reflection
 			return parameterInfo.__GetCustomModifiers().Bind(method);
 		}
 
-		public override FieldMarshal __FieldMarshal
+		public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
 		{
-			get { return parameterInfo.__FieldMarshal; }
+			return parameterInfo.__TryGetFieldMarshal(out fieldMarshal);
 		}
 
 		public override MemberInfo Member

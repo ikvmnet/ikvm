@@ -473,9 +473,9 @@ namespace IKVM.Reflection.Reader
 				: method.MethodSignature.GetParameterCustomModifiers(method, position);
 		}
 
-		public override FieldMarshal __FieldMarshal
+		public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
 		{
-			get { return FieldMarshal.ReadFieldMarshal(this.Module, this.MetadataToken); }
+			return FieldMarshal.ReadFieldMarshal(this.Module, this.MetadataToken, out fieldMarshal);
 		}
 
 		public override MemberInfo Member

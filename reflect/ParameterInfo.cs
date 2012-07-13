@@ -59,7 +59,7 @@ namespace IKVM.Reflection
 		public abstract int Position { get; }
 		public abstract object RawDefaultValue { get; }
 		public abstract CustomModifiers __GetCustomModifiers();
-		public abstract FieldMarshal __FieldMarshal { get; }
+		public abstract bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal);
 		public abstract MemberInfo Member { get; }
 		public abstract int MetadataToken { get; }
 		internal abstract Module Module { get; }
@@ -151,9 +151,9 @@ namespace IKVM.Reflection
 			return forward.__GetCustomModifiers();
 		}
 
-		public override FieldMarshal __FieldMarshal
+		public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
 		{
-			get { return forward.__FieldMarshal; }
+			return forward.__TryGetFieldMarshal(out fieldMarshal);
 		}
 
 		public override MemberInfo Member

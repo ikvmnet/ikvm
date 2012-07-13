@@ -2369,9 +2369,10 @@ namespace IKVM.Reflection
 				return new CustomModifiers();
 			}
 
-			public override FieldMarshal __FieldMarshal
+			public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
 			{
-				get { return null; }
+				fieldMarshal = new FieldMarshal();
+				return false;
 			}
 
 			public override MemberInfo Member

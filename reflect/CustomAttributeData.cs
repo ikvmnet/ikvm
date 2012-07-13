@@ -710,8 +710,8 @@ namespace IKVM.Reflection
 			List<CustomAttributeData> list = parameter.Module.GetCustomAttributes(parameter.MetadataToken, attributeType);
 			if (attributeType == null || attributeType.IsAssignableFrom(parameter.Module.universe.System_Runtime_InteropServices_MarshalAsAttribute))
 			{
-				FieldMarshal spec = parameter.__FieldMarshal;
-				if (spec != null)
+				FieldMarshal spec;
+				if (parameter.__TryGetFieldMarshal(out spec))
 				{
 					list.Add(spec.ToCustomAttribute(parameter.Module));
 				}

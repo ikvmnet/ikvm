@@ -43,7 +43,7 @@ namespace IKVM.Reflection
 		public abstract void __GetDataFromRVA(byte[] data, int offset, int length);
 		public abstract int __FieldRVA { get; }
 		public abstract int __FieldOffset { get; }
-		public abstract FieldMarshal __FieldMarshal { get; }
+		public abstract bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal);
 		public abstract Object GetRawConstantValue();
 		internal abstract FieldSignature FieldSignature { get; }
 
@@ -190,9 +190,9 @@ namespace IKVM.Reflection
 			get { return field.__FieldOffset; }
 		}
 
-		public override FieldMarshal __FieldMarshal
+		public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
 		{
-			get { return field.__FieldMarshal; }
+			return field.__TryGetFieldMarshal(out fieldMarshal);
 		}
 
 		public override Object GetRawConstantValue()

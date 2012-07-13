@@ -99,9 +99,10 @@ namespace IKVM.Reflection.Emit
 			get { throw new NotImplementedException(); }
 		}
 
-		public override FieldMarshal __FieldMarshal
+		public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
 		{
-			get { throw new NotImplementedException(); }
+			fieldMarshal = new FieldMarshal();
+			return false;
 		}
 
 		public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)

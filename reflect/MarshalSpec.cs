@@ -32,170 +32,95 @@ using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection
 {
-	public sealed class FieldMarshal
+	public struct FieldMarshal
 	{
 		private const UnmanagedType NATIVE_TYPE_MAX = (UnmanagedType)0x50;
-		private readonly UnmanagedType unmanagedType;
-		private readonly UnmanagedType? arraySubType;
-		private readonly short? sizeParamIndex;
-		private readonly int? sizeConst;
-		private readonly VarEnum? safeArraySubType;
-		private readonly Type safeArrayUserDefinedSubType;
-		private readonly int? iidParameterIndex;
-		private readonly string marshalType;
-		private readonly string marshalCookie;
-		private readonly Type marshalTypeRef;
+		public UnmanagedType UnmanagedType;
+		public UnmanagedType? ArraySubType;
+		public short? SizeParamIndex;
+		public int? SizeConst;
+		public VarEnum? SafeArraySubType;
+		public Type SafeArrayUserDefinedSubType;
+		public int? IidParameterIndex;
+		public string MarshalType;
+		public string MarshalCookie;
+		public Type MarshalTypeRef;
 
-		public UnmanagedType UnmanagedType
+		internal static bool ReadFieldMarshal(Module module, int token, out FieldMarshal fm)
 		{
-			get { return unmanagedType; }
-		}
-
-		public UnmanagedType? ArraySubType
-		{
-			get { return arraySubType; }
-		}
-
-		public short? SizeParamIndex
-		{
-			get { return sizeParamIndex; }
-		}
-
-		public int? SizeConst
-		{
-			get { return sizeConst; }
-		}
-
-		public VarEnum? SafeArraySubType
-		{
-			get { return safeArraySubType; }
-		}
-
-		public Type SafeArrayUserDefinedSubType
-		{
-			get { return safeArrayUserDefinedSubType; }
-		}
-
-		public int? IidParameterIndex
-		{
-			get { return iidParameterIndex; }
-		}
-
-		public string MarshalType
-		{
-			get { return marshalType; }
-		}
-
-		public string MarshalCookie
-		{
-			get { return marshalCookie; }
-		}
-
-		public Type MarshalTypeRef
-		{
-			get { return marshalTypeRef; }
-		}
-
-		private FieldMarshal(UnmanagedType unmanagedType, UnmanagedType? arraySubType, short? sizeParamIndex,
-			int? sizeConst, VarEnum? safeArraySubType, Type safeArrayUserDefinedSubType, int? iidParameterIndex,
-			string marshalType, string marshalCookie, Type marshalTypeRef)
-		{
-			this.unmanagedType = unmanagedType;
-			this.arraySubType = arraySubType;
-			this.sizeParamIndex = sizeParamIndex;
-			this.sizeConst = sizeConst;
-			this.safeArraySubType = safeArraySubType;
-			this.safeArrayUserDefinedSubType = safeArrayUserDefinedSubType;
-			this.iidParameterIndex = iidParameterIndex;
-			this.marshalType = marshalType;
-			this.marshalCookie = marshalCookie;
-			this.marshalTypeRef = marshalTypeRef;
-		}
-
-		internal static FieldMarshal ReadFieldMarshal(Module module, int token)
-		{
+			fm = new FieldMarshal();
 			foreach (int i in module.FieldMarshal.Filter(token))
 			{
 				ByteReader blob = module.GetBlob(module.FieldMarshal.records[i].NativeType);
-				UnmanagedType unmanagedType = (UnmanagedType)blob.ReadCompressedInt();
-				UnmanagedType? arraySubType = null;
-				short? sizeParamIndex = null;
-				int? sizeConst = null;
-				VarEnum? safeArraySubType = null;
-				Type safeArrayUserDefinedSubType = null;
-				int? iidParameterIndex = null;
-				string marshalType = null;
-				string marshalCookie = null;
-				Type marshalTypeRef = null;
-				if (unmanagedType == UnmanagedType.LPArray)
+				fm.UnmanagedType = (UnmanagedType)blob.ReadCompressedInt();
+				if (fm.UnmanagedType == UnmanagedType.LPArray)
 				{
-					arraySubType = (UnmanagedType)blob.ReadCompressedInt();
-					if (arraySubType == NATIVE_TYPE_MAX)
+					fm.ArraySubType = (UnmanagedType)blob.ReadCompressedInt();
+					if (fm.ArraySubType == NATIVE_TYPE_MAX)
 					{
-						arraySubType = null;
+						fm.ArraySubType = null;
 					}
 					if (blob.Length != 0)
 					{
-						sizeParamIndex = (short)blob.ReadCompressedInt();
+						fm.SizeParamIndex = (short)blob.ReadCompressedInt();
 						if (blob.Length != 0)
 						{
-							sizeConst = blob.ReadCompressedInt();
+							fm.SizeConst = blob.ReadCompressedInt();
 							if (blob.Length != 0 && blob.ReadCompressedInt() == 0)
 							{
-								sizeParamIndex = null;
+								fm.SizeParamIndex = null;
 							}
 						}
 					}
 				}
-				else if (unmanagedType == UnmanagedType.SafeArray)
+				else if (fm.UnmanagedType == UnmanagedType.SafeArray)
 				{
 					if (blob.Length != 0)
 					{
-						safeArraySubType = (VarEnum)blob.ReadCompressedInt();
+						fm.SafeArraySubType = (VarEnum)blob.ReadCompressedInt();
 						if (blob.Length != 0)
 						{
-							safeArrayUserDefinedSubType = ReadType(module, blob);
+							fm.SafeArrayUserDefinedSubType = ReadType(module, blob);
 						}
 					}
 				}
-				else if (unmanagedType == UnmanagedType.ByValArray)
+				else if (fm.UnmanagedType == UnmanagedType.ByValArray)
 				{
-					sizeConst = blob.ReadCompressedInt();
+					fm.SizeConst = blob.ReadCompressedInt();
 					if (blob.Length != 0)
 					{
-						arraySubType = (UnmanagedType)blob.ReadCompressedInt();
+						fm.ArraySubType = (UnmanagedType)blob.ReadCompressedInt();
 					}
 				}
-				else if (unmanagedType == UnmanagedType.ByValTStr)
+				else if (fm.UnmanagedType == UnmanagedType.ByValTStr)
 				{
-					sizeConst = blob.ReadCompressedInt();
+					fm.SizeConst = blob.ReadCompressedInt();
 				}
-				else if (unmanagedType == UnmanagedType.Interface
-					|| unmanagedType == UnmanagedType.IDispatch
-					|| unmanagedType == UnmanagedType.IUnknown)
+				else if (fm.UnmanagedType == UnmanagedType.Interface
+					|| fm.UnmanagedType == UnmanagedType.IDispatch
+					|| fm.UnmanagedType == UnmanagedType.IUnknown)
 				{
 					if (blob.Length != 0)
 					{
-						iidParameterIndex = blob.ReadCompressedInt();
+						fm.IidParameterIndex = blob.ReadCompressedInt();
 					}
 				}
-				else if (unmanagedType == UnmanagedType.CustomMarshaler)
+				else if (fm.UnmanagedType == UnmanagedType.CustomMarshaler)
 				{
 					blob.ReadCompressedInt();
 					blob.ReadCompressedInt();
-					marshalType = ReadString(blob);
-					marshalCookie = ReadString(blob);
+					fm.MarshalType = ReadString(blob);
+					fm.MarshalCookie = ReadString(blob);
 
-					TypeNameParser parser = TypeNameParser.Parse(marshalType, false);
+					TypeNameParser parser = TypeNameParser.Parse(fm.MarshalType, false);
 					if (!parser.Error)
 					{
-						marshalTypeRef = parser.GetType(module.universe, module.Assembly, false, marshalType, false, false);
+						fm.MarshalTypeRef = parser.GetType(module.universe, module.Assembly, false, fm.MarshalType, false, false);
 					}
 				}
-				return new FieldMarshal(unmanagedType, arraySubType, sizeParamIndex, sizeConst, safeArraySubType,
-					safeArrayUserDefinedSubType, iidParameterIndex, marshalType, marshalCookie, marshalTypeRef);
+				return true;
 			}
-			return null;
+			return false;
 		}
 
 		internal CustomAttributeData ToCustomAttribute(Module module)
@@ -205,44 +130,44 @@ namespace IKVM.Reflection
 			Type typeofVarEnum = module.universe.System_Runtime_InteropServices_VarEnum;
 			Type typeofType = module.universe.System_Type;
 			List<CustomAttributeNamedArgument> named = new List<CustomAttributeNamedArgument>();
-			if (arraySubType != null)
+			if (ArraySubType != null)
 			{
-				AddNamedArgument(named, typeofMarshalAs, "ArraySubType", typeofUnmanagedType, arraySubType.Value);
+				AddNamedArgument(named, typeofMarshalAs, "ArraySubType", typeofUnmanagedType, ArraySubType.Value);
 			}
-			if (sizeParamIndex != null)
+			if (SizeParamIndex != null)
 			{
-				AddNamedArgument(named, typeofMarshalAs, "SizeParamIndex", module.universe.System_Int16, sizeParamIndex.Value);
+				AddNamedArgument(named, typeofMarshalAs, "SizeParamIndex", module.universe.System_Int16, SizeParamIndex.Value);
 			}
-			if (sizeConst != null)
+			if (SizeConst != null)
 			{
-				AddNamedArgument(named, typeofMarshalAs, "SizeConst", module.universe.System_Int32, sizeConst.Value);
+				AddNamedArgument(named, typeofMarshalAs, "SizeConst", module.universe.System_Int32, SizeConst.Value);
 			}
-			if (safeArraySubType != null)
+			if (SafeArraySubType != null)
 			{
-				AddNamedArgument(named, typeofMarshalAs, "SafeArraySubType", typeofVarEnum, safeArraySubType.Value);
+				AddNamedArgument(named, typeofMarshalAs, "SafeArraySubType", typeofVarEnum, SafeArraySubType.Value);
 			}
-			if (safeArrayUserDefinedSubType != null)
+			if (SafeArrayUserDefinedSubType != null)
 			{
-				AddNamedArgument(named, typeofMarshalAs, "SafeArrayUserDefinedSubType", typeofType, safeArrayUserDefinedSubType);
+				AddNamedArgument(named, typeofMarshalAs, "SafeArrayUserDefinedSubType", typeofType, SafeArrayUserDefinedSubType);
 			}
-			if (iidParameterIndex != null)
+			if (IidParameterIndex != null)
 			{
-				AddNamedArgument(named, typeofMarshalAs, "IidParameterIndex", module.universe.System_Int32, iidParameterIndex.Value);
+				AddNamedArgument(named, typeofMarshalAs, "IidParameterIndex", module.universe.System_Int32, IidParameterIndex.Value);
 			}
-			if (marshalType != null)
+			if (MarshalType != null)
 			{
-				AddNamedArgument(named, typeofMarshalAs, "MarshalType", module.universe.System_String, marshalType);
+				AddNamedArgument(named, typeofMarshalAs, "MarshalType", module.universe.System_String, MarshalType);
 			}
-			if (marshalTypeRef != null)
+			if (MarshalTypeRef != null)
 			{
-				AddNamedArgument(named, typeofMarshalAs, "MarshalTypeRef", module.universe.System_Type, marshalTypeRef);
+				AddNamedArgument(named, typeofMarshalAs, "MarshalTypeRef", module.universe.System_Type, MarshalTypeRef);
 			}
-			if (marshalCookie != null)
+			if (MarshalCookie != null)
 			{
-				AddNamedArgument(named, typeofMarshalAs, "MarshalCookie", module.universe.System_String, marshalCookie);
+				AddNamedArgument(named, typeofMarshalAs, "MarshalCookie", module.universe.System_String, MarshalCookie);
 			}
 			ConstructorInfo constructor = typeofMarshalAs.GetPseudoCustomAttributeConstructor(typeofUnmanagedType);
-			return new CustomAttributeData(module, constructor, new object[] { unmanagedType }, named);
+			return new CustomAttributeData(module, constructor, new object[] { UnmanagedType }, named);
 		}
 
 		private static void AddNamedArgument(List<CustomAttributeNamedArgument> list, Type attributeType, string fieldName, Type valueType, object value)

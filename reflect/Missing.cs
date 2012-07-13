@@ -730,9 +730,9 @@ namespace IKVM.Reflection
 					: method.signature.GetParameterCustomModifiers(method, index);
 			}
 
-			public override FieldMarshal __FieldMarshal
+			public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
 			{
-				get { return Forwarder.__FieldMarshal; }
+				return Forwarder.__TryGetFieldMarshal(out fieldMarshal);
 			}
 
 			public override MemberInfo Member
@@ -980,9 +980,9 @@ namespace IKVM.Reflection
 			get { return Forwarder.__FieldOffset; }
 		}
 
-		public override FieldMarshal __FieldMarshal
+		public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
 		{
-			get { return Forwarder.__FieldMarshal; }
+			return forwarder.__TryGetFieldMarshal(out fieldMarshal);
 		}
 
 		public override object GetRawConstantValue()
