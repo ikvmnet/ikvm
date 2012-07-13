@@ -1048,6 +1048,11 @@ namespace IKVM.Reflection
 		{
 			return Forwarder.GetCurrentToken();
 		}
+
+		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
+		{
+			return Forwarder.GetCustomAttributesData(attributeType);
+		}
 	}
 
 	// NOTE this is currently only used by CustomAttributeData (because there is no other way to refer to a property)

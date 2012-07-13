@@ -301,5 +301,10 @@ namespace IKVM.Reflection
 		{
 			return field.GetCurrentToken();
 		}
+
+		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
+		{
+			return field.GetCustomAttributesData(attributeType);
+		}
 	}
 }
