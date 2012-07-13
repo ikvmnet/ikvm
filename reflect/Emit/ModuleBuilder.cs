@@ -72,6 +72,7 @@ namespace IKVM.Reflection.Emit
 		internal readonly List<UnmanagedExport> unmanagedExports = new List<UnmanagedExport>();
 		private List<InterfaceImplCustomAttribute> interfaceImplCustomAttributes;
 		private List<ResourceWriterRecord> resourceWriters;
+		private bool saved;
 
 		private struct ResourceWriterRecord
 		{
@@ -1487,6 +1488,7 @@ namespace IKVM.Reflection.Emit
 
 		private void SaveImpl(Stream streamOrNull, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
 		{
+			SetIsSaved();
 			PopulatePropertyAndEventTables();
 			IList<CustomAttributeData> attributes = asm.GetCustomAttributesData(null);
 			if (attributes.Count > 0)
@@ -1718,6 +1720,20 @@ namespace IKVM.Reflection.Emit
 			{
 				token = ResolvePseudoToken(token);
 			}
+		}
+
+		internal void SetIsSaved()
+		{
+			if (saved)
+			{
+				throw new InvalidOperationException();
+			}
+			saved = true;
+		}
+
+		internal bool IsSaved
+		{
+			get { return saved; }
 		}
 	}
 

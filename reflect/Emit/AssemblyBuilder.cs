@@ -299,6 +299,7 @@ namespace IKVM.Reflection.Emit
 
 			foreach (ModuleBuilder moduleBuilder in modules)
 			{
+				moduleBuilder.SetIsSaved();
 				moduleBuilder.PopulatePropertyAndEventTables();
 
 				if (manifestModule == null
