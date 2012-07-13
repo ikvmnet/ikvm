@@ -1030,11 +1030,6 @@ namespace IKVM.Reflection
 			return new GenericFieldInstance(type, this);
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
-		{
-			return Forwarder.GetCustomAttributesData(attributeType);
-		}
-
 		public override int MetadataToken
 		{
 			get { return Forwarder.MetadataToken; }

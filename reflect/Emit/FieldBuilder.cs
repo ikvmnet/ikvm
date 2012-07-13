@@ -216,28 +216,10 @@ namespace IKVM.Reflection.Emit
 				// like .NET we we don't return custom attributes for unbaked types
 				throw new NotImplementedException();
 			}
-			List<CustomAttributeData> list = typeBuilder.Module.GetCustomAttributes(GetCurrentToken(), attributeType);
-			if (attributeType == null || attributeType.IsAssignableFrom(typeBuilder.Universe.System_Runtime_InteropServices_MarshalAsAttribute))
-			{
-				FieldMarshal spec;
-				if (__TryGetFieldMarshal(out spec))
-				{
-					list.Add(spec.ToCustomAttribute(typeBuilder.Module));
-				}
-			}
-			if (attributeType == null || attributeType.IsAssignableFrom(typeBuilder.Universe.System_Runtime_InteropServices_FieldOffsetAttribute))
-			{
-				int offset;
-				if (__TryGetFieldOffset(out offset))
-				{
-					ConstructorInfo constructor = typeBuilder.Universe.System_Runtime_InteropServices_FieldOffsetAttribute.GetPseudoCustomAttributeConstructor(typeBuilder.Universe.System_Int32);
-					list.Add(new CustomAttributeData(typeBuilder.Module, constructor, new object[] { offset }, null));
-				}
-			}
-			return list;
+			return base.GetCustomAttributesData(attributeType);
 		}
 
-		private int GetCurrentToken()
+		protected override int GetCurrentToken()
 		{
 			if (typeBuilder.ModuleBuilder.IsSaved)
 			{

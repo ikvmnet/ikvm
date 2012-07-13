@@ -118,29 +118,6 @@ namespace IKVM.Reflection.Reader
 			return FieldMarshal.ReadFieldMarshal(module, this.MetadataToken, out fieldMarshal);
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
-		{
-			List<CustomAttributeData> list = module.GetCustomAttributes(this.MetadataToken, attributeType);
-			if (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_MarshalAsAttribute))
-			{
-				FieldMarshal spec;
-				if (__TryGetFieldMarshal(out spec))
-				{
-					list.Add(spec.ToCustomAttribute(module));
-				}
-			}
-			if (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_FieldOffsetAttribute))
-			{
-				int offset;
-				if (__TryGetFieldOffset(out offset))
-				{
-					ConstructorInfo constructor = module.universe.System_Runtime_InteropServices_FieldOffsetAttribute.GetPseudoCustomAttributeConstructor(module.universe.System_Int32);
-					list.Add(new CustomAttributeData(module, constructor, new object[] { offset }, null));
-				}
-			}
-			return list;
-		}
-
 		internal override FieldSignature FieldSignature
 		{
 			get { return lazyFieldSig ?? (lazyFieldSig = FieldSignature.ReadSig(module, module.GetBlob(module.Field.records[index].Signature), declaringType)); }

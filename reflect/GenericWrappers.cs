@@ -350,11 +350,6 @@ namespace IKVM.Reflection
 			return field;
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
-		{
-			return field.GetCustomAttributesData(attributeType);
-		}
-
 		internal override FieldSignature FieldSignature
 		{
 			get { return field.FieldSignature.ExpandTypeParameters(declaringType); }

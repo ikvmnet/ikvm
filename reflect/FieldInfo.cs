@@ -156,6 +156,35 @@ namespace IKVM.Reflection
 		{
 			return new FieldInfoWithReflectedType(type, this);
 		}
+
+		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
+		{
+			Module module = this.Module;
+			List<CustomAttributeData> list = module.GetCustomAttributes(GetCurrentToken(), attributeType);
+			if (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_MarshalAsAttribute))
+			{
+				FieldMarshal spec;
+				if (__TryGetFieldMarshal(out spec))
+				{
+					list.Add(spec.ToCustomAttribute(module));
+				}
+			}
+			if (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_FieldOffsetAttribute))
+			{
+				int offset;
+				if (__TryGetFieldOffset(out offset))
+				{
+					ConstructorInfo constructor = module.universe.System_Runtime_InteropServices_FieldOffsetAttribute.GetPseudoCustomAttributeConstructor(module.universe.System_Int32);
+					list.Add(new CustomAttributeData(module, constructor, new object[] { offset }, null));
+				}
+			}
+			return list;
+		}
+
+		protected virtual int GetCurrentToken()
+		{
+			return MetadataToken;
+		}
 	}
 
 	sealed class FieldInfoWithReflectedType : FieldInfo
@@ -246,11 +275,6 @@ namespace IKVM.Reflection
 		public override int GetHashCode()
 		{
 			return reflectedType.GetHashCode() ^ field.GetHashCode();
-		}
-
-		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
-		{
-			return field.GetCustomAttributesData(attributeType);
 		}
 
 		public override int MetadataToken
