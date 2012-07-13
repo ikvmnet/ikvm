@@ -240,6 +240,13 @@ namespace IKVM.Reflection.Reader
 			{
 				CreateDllImportPseudoCustomAttribute(list);
 			}
+			if ((GetMethodImplementationFlags() & MethodImplAttributes.PreserveSig) != 0
+				&& (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_PreserveSigAttribute)))
+			{
+				Type type = module.universe.System_Runtime_InteropServices_PreserveSigAttribute;
+				ConstructorInfo constructor = type.GetPseudoCustomAttributeConstructor();
+				list.Add(new CustomAttributeData(module, constructor, Empty<object>.Array, null));
+			}
 			return list;
 		}
 
