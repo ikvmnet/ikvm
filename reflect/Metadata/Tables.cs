@@ -425,7 +425,7 @@ namespace IKVM.Reflection.Metadata
 		}
 	}
 
-	abstract class SortedTable<T> : Table<T>, IComparer<int>
+	abstract class SortedTable<T> : Table<T>
 		where T : SortedTable<T>.IRecord
 	{
 		internal interface IRecord
@@ -537,24 +537,18 @@ namespace IKVM.Reflection.Metadata
 
 		protected void Sort()
 		{
-			int[] map = new int[rowCount];
-			for (int i = 0; i < map.Length; i++)
+			ulong[] map = new ulong[rowCount];
+			for (uint i = 0; i < map.Length; i++)
 			{
-				map[i] = i;
+				map[i] = ((ulong)records[i].SortKey << 32) | i;
 			}
-			Array.Sort(map, this);
+			Array.Sort(map);
 			T[] newRecords = new T[rowCount];
 			for (int i = 0; i < map.Length; i++)
 			{
-				newRecords[i] = records[map[i]];
+				newRecords[i] = records[(int)map[i]];
 			}
 			records = newRecords;
-		}
-
-		int IComparer<int>.Compare(int x, int y)
-		{
-			int rc = records[x].SortKey.CompareTo(records[y].SortKey);
-			return rc == 0 ? x.CompareTo(y) : rc;
 		}
 	}
 
