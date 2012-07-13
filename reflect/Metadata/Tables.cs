@@ -1021,7 +1021,7 @@ namespace IKVM.Reflection.Metadata
 
 			int IRecord.SortKey
 			{
-				get { return Parent; }
+				get { return EncodeHasConstant(Parent); }
 			}
 
 			int IRecord.FilterKey
@@ -1063,25 +1063,27 @@ namespace IKVM.Reflection.Metadata
 		{
 			for (int i = 0; i < rowCount; i++)
 			{
-				int token = records[i].Parent;
-				moduleBuilder.FixupPseudoToken(ref token);
-				// do the HasConstant encoding, so that we can sort the table
-				switch (token >> 24)
-				{
-					case FieldTable.Index:
-						records[i].Parent = (token & 0xFFFFFF) << 2 | 0;
-						break;
-					case ParamTable.Index:
-						records[i].Parent = (token & 0xFFFFFF) << 2 | 1;
-						break;
-					case PropertyTable.Index:
-						records[i].Parent = (token & 0xFFFFFF) << 2 | 2;
-						break;
-					default:
-						throw new InvalidOperationException();
-				}
+				moduleBuilder.FixupPseudoToken(ref records[i].Parent);
 			}
 			Sort();
+		}
+
+		internal static int EncodeHasConstant(int token)
+		{
+			switch (token >> 24)
+			{
+				case FieldTable.Index:
+					return (token & 0xFFFFFF) << 2 | 0;
+					break;
+				case ParamTable.Index:
+					return (token & 0xFFFFFF) << 2 | 1;
+					break;
+				case PropertyTable.Index:
+					return (token & 0xFFFFFF) << 2 | 2;
+					break;
+				default:
+					throw new InvalidOperationException();
+			}
 		}
 
 		internal object GetRawConstantValue(Module module, int parent)

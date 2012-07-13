@@ -439,10 +439,9 @@ namespace IKVM.Reflection.Writer
 			}
 		}
 
-		internal void WriteHasConstant(int encodedToken)
+		internal void WriteHasConstant(int token)
 		{
-			// NOTE because we've already had to do the encoding (to be able to sort the table)
-			// here we simple write the value
+			int encodedToken = ConstantTable.EncodeHasConstant(token);
 			if (bigHasConstant)
 			{
 				Write(encodedToken);

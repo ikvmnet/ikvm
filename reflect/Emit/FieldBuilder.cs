@@ -61,7 +61,13 @@ namespace IKVM.Reflection.Emit
 
 		public override object GetRawConstantValue()
 		{
-			return typeBuilder.Module.Constant.GetRawConstantValue(typeBuilder.Module, this.MetadataToken);
+			if (!typeBuilder.IsCreated())
+			{
+				// the .NET FieldBuilder doesn't support this method
+				// (since we dont' have a different FieldInfo object after baking, we will support it once we're baked)
+				throw new NotSupportedException();
+			}
+			return typeBuilder.Module.Constant.GetRawConstantValue(typeBuilder.Module, GetCurrentToken());
 		}
 
 		public void __SetDataAndRVA(byte[] data)
