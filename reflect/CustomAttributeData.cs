@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009-2011 Jeroen Frijters
+  Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -513,7 +513,7 @@ namespace IKVM.Reflection
 			return type.Module.universe.GetMissingPropertyOrThrow(type, name, PropertySignature.Create(CallingConventions.Standard | CallingConventions.HasThis, propertyType, null, new PackedCustomModifiers()));
 		}
 
-		[Obsolete("Use Constructor.DeclaringType instead.")]
+		[Obsolete("Use AttributeType property instead.")]
 		internal bool __TryReadTypeName(out string ns, out string name)
 		{
 			if (Constructor.DeclaringType.IsNested)
@@ -553,6 +553,12 @@ namespace IKVM.Reflection
 						? module.DeclSecurity.records[declSecurityIndex].Parent
 						: 0;
 			}
+		}
+
+		// .NET 4.5 API
+		public Type AttributeType
+		{
+			get { return Constructor.DeclaringType; }
 		}
 
 		public ConstructorInfo Constructor
