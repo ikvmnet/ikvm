@@ -2852,6 +2852,11 @@ namespace IKVM.Reflection
 			return this;
 		}
 
+		internal override int GetCurrentToken()
+		{
+			return type.GetCurrentToken();
+		}
+
 		internal override bool IsBaked
 		{
 			get { return type.IsBaked; }
