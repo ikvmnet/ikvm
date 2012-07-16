@@ -2399,7 +2399,7 @@ namespace IKVM.Reflection
 
 			public override int MetadataToken
 			{
-				get { return 0x8000000; }
+				get { return 0x08000000; }
 			}
 
 			internal override Module Module
