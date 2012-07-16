@@ -717,20 +717,23 @@ namespace IKVM.Reflection
 
 		public static IList<CustomAttributeData> __GetCustomAttributes(ParameterInfo parameter, Type attributeType, bool inherit)
 		{
+			Module module = parameter.Module;
 			List<CustomAttributeData> list = null;
-			if (attributeType == null || attributeType.IsAssignableFrom(parameter.Module.universe.System_Runtime_InteropServices_MarshalAsAttribute))
+			if (module.universe.ReturnPseudoCustomAttributes)
 			{
-				FieldMarshal spec;
-				if (parameter.__TryGetFieldMarshal(out spec))
+				if (attributeType == null || attributeType.IsAssignableFrom(parameter.Module.universe.System_Runtime_InteropServices_MarshalAsAttribute))
 				{
-					if (list == null)
+					FieldMarshal spec;
+					if (parameter.__TryGetFieldMarshal(out spec))
 					{
-						list = new List<CustomAttributeData>();
+						if (list == null)
+						{
+							list = new List<CustomAttributeData>();
+						}
+						list.Add(CustomAttributeData.CreateMarshalAsPseudoCustomAttribute(parameter.Module, spec));
 					}
-					list.Add(CustomAttributeData.CreateMarshalAsPseudoCustomAttribute(parameter.Module, spec));
 				}
 			}
-			Module module = parameter.Module;
 			ModuleBuilder mb = module as ModuleBuilder;
 			int token = parameter.MetadataToken;
 			if (mb != null && mb.IsSaved && mb.IsPseudoToken(token))
@@ -784,14 +787,17 @@ namespace IKVM.Reflection
 
 		private static List<CustomAttributeData> GetCustomAttributesImpl(List<CustomAttributeData> list, MemberInfo member, Type attributeType)
 		{
-			List<CustomAttributeData> pseudo = member.GetPseudoCustomAttributes(attributeType);
-			if (list == null)
+			if (member.Module.universe.ReturnPseudoCustomAttributes)
 			{
-				list = pseudo;
-			}
-			else if (pseudo != null)
-			{
-				list.AddRange(pseudo);
+				List<CustomAttributeData> pseudo = member.GetPseudoCustomAttributes(attributeType);
+				if (list == null)
+				{
+					list = pseudo;
+				}
+				else if (pseudo != null)
+				{
+					list.AddRange(pseudo);
+				}
 			}
 			return GetCustomAttributesImpl(list, member.Module, member.GetCurrentToken(), attributeType);
 		}

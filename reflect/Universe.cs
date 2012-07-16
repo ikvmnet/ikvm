@@ -83,6 +83,7 @@ namespace IKVM.Reflection
 		None = 0,
 		EnableFunctionPointers = 1,
 		DisableFusion = 2,
+		DisablePseudoCustomAttributeRetrieval = 4,
 	}
 
 	public sealed class Universe : IDisposable
@@ -97,6 +98,7 @@ namespace IKVM.Reflection
 		private bool resolveMissingMembers;
 		private readonly bool enableFunctionPointers;
 		private readonly bool useNativeFusion;
+		private readonly bool returnPseudoCustomAttributes;
 		private Type typeof_System_Object;
 		private Type typeof_System_ValueType;
 		private Type typeof_System_Enum;
@@ -165,6 +167,7 @@ namespace IKVM.Reflection
 		{
 			enableFunctionPointers = (options & UniverseOptions.EnableFunctionPointers) != 0;
 			useNativeFusion = (options & UniverseOptions.DisableFusion) == 0 && GetUseNativeFusion();
+			returnPseudoCustomAttributes = (options & UniverseOptions.DisablePseudoCustomAttributeRetrieval) == 0;
 		}
 
 		private static bool GetUseNativeFusion()
@@ -1079,6 +1082,11 @@ namespace IKVM.Reflection
 				return missingTypeIsValueType(missingType);
 			}
 			throw new MissingMemberException(missingType);
+		}
+
+		internal bool ReturnPseudoCustomAttributes
+		{
+			get { return returnPseudoCustomAttributes; }
 		}
 	}
 }
