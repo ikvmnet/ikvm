@@ -408,18 +408,6 @@ namespace IKVM.Reflection.Reader
 			get { return index == 0; }
 		}
 
-		internal override IList<CustomAttributeData> GetInterfaceImplCustomAttributes(Type interfaceType, Type attributeType)
-		{
-			foreach (int i in module.InterfaceImpl.Filter(this.MetadataToken))
-			{
-				if (module.ResolveType(module.InterfaceImpl.records[i].Interface, this) == interfaceType)
-				{
-					return module.GetCustomAttributes((InterfaceImplTable.Index << 24) | (i + 1), attributeType);
-				}
-			}
-			return Empty<CustomAttributeData>.Array;
-		}
-
 		internal override bool IsBaked
 		{
 			get { return true; }

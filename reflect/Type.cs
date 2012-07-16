@@ -1933,11 +1933,6 @@ namespace IKVM.Reflection
 			}
 		}
 
-		internal virtual IList<CustomAttributeData> GetInterfaceImplCustomAttributes(Type interfaceType, Type attributeType)
-		{
-			throw new NotSupportedException();
-		}
-
 		internal virtual Universe Universe
 		{
 			get { return Module.universe; }

@@ -825,7 +825,15 @@ namespace IKVM.Reflection
 
 		public static IList<CustomAttributeData> __GetCustomAttributes(Type type, Type interfaceType, Type attributeType, bool inherit)
 		{
-			return type.GetInterfaceImplCustomAttributes(interfaceType, attributeType);
+			Module module = type.Module;
+			foreach (int i in module.InterfaceImpl.Filter(type.MetadataToken))
+			{
+				if (module.ResolveType(module.InterfaceImpl.records[i].Interface, type) == interfaceType)
+				{
+					return GetCustomAttributesImpl(null, module, (InterfaceImplTable.Index << 24) | (i + 1), attributeType) ?? EmptyList;
+				}
+			}
+			return EmptyList;
 		}
 
 		public static IList<CustomAttributeData> __GetDeclarativeSecurity(Assembly assembly)
