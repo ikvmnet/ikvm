@@ -171,7 +171,7 @@ namespace IKVM.Reflection
 				FieldMarshal spec;
 				if (__TryGetFieldMarshal(out spec))
 				{
-					list.Add(spec.ToCustomAttribute(module));
+					list.Add(CustomAttributeData.CreateMarshalAsPseudoCustomAttribute(module, spec));
 				}
 			}
 			if (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_FieldOffsetAttribute))

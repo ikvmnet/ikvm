@@ -727,7 +727,7 @@ namespace IKVM.Reflection
 					{
 						list = new List<CustomAttributeData>();
 					}
-					list.Add(spec.ToCustomAttribute(parameter.Module));
+					list.Add(CustomAttributeData.CreateMarshalAsPseudoCustomAttribute(parameter.Module, spec));
 				}
 			}
 			Module module = parameter.Module;
@@ -941,6 +941,38 @@ namespace IKVM.Reflection
 			return new CustomAttributeData(module, constructor, new object[] { dllName }, list);
 		}
 
+		internal static CustomAttributeData CreateMarshalAsPseudoCustomAttribute(Module module, FieldMarshal fm)
+		{
+			Type typeofMarshalAs = module.universe.System_Runtime_InteropServices_MarshalAsAttribute;
+			Type typeofUnmanagedType = module.universe.System_Runtime_InteropServices_UnmanagedType;
+			Type typeofVarEnum = module.universe.System_Runtime_InteropServices_VarEnum;
+			Type typeofType = module.universe.System_Type;
+			List<CustomAttributeNamedArgument> named = new List<CustomAttributeNamedArgument>();
+			AddNamedArgument(named, typeofMarshalAs, "ArraySubType", typeofUnmanagedType, fm.ArraySubType ?? 0);
+			AddNamedArgument(named, typeofMarshalAs, "SizeParamIndex", module.universe.System_Int16, fm.SizeParamIndex ?? 0);
+			AddNamedArgument(named, typeofMarshalAs, "SizeConst", module.universe.System_Int32, fm.SizeConst ?? 0);
+			AddNamedArgument(named, typeofMarshalAs, "IidParameterIndex", module.universe.System_Int32, fm.IidParameterIndex ?? 0);
+			AddNamedArgument(named, typeofMarshalAs, "SafeArraySubType", typeofVarEnum, fm.SafeArraySubType ?? 0);
+			if (fm.SafeArrayUserDefinedSubType != null)
+			{
+				AddNamedArgument(named, typeofMarshalAs, "SafeArrayUserDefinedSubType", typeofType, fm.SafeArrayUserDefinedSubType);
+			}
+			if (fm.MarshalType != null)
+			{
+				AddNamedArgument(named, typeofMarshalAs, "MarshalType", module.universe.System_String, fm.MarshalType);
+			}
+			if (fm.MarshalTypeRef != null)
+			{
+				AddNamedArgument(named, typeofMarshalAs, "MarshalTypeRef", module.universe.System_Type, fm.MarshalTypeRef);
+			}
+			if (fm.MarshalCookie != null)
+			{
+				AddNamedArgument(named, typeofMarshalAs, "MarshalCookie", module.universe.System_String, fm.MarshalCookie);
+			}
+			ConstructorInfo constructor = typeofMarshalAs.GetPseudoCustomAttributeConstructor(typeofUnmanagedType);
+			return new CustomAttributeData(module, constructor, new object[] { fm.UnmanagedType }, named);
+		}
+
 		private static void AddNamedArgument(List<CustomAttributeNamedArgument> list, Type type, string fieldName, string value)
 		{
 			AddNamedArgument(list, type, fieldName, type.Module.universe.System_String, value);
@@ -953,7 +985,7 @@ namespace IKVM.Reflection
 
 		private static void AddNamedArgument(List<CustomAttributeNamedArgument> list, Type attributeType, string fieldName, Type valueType, object value)
 		{
-			// some fields are not available on the .NET Compact Framework version of DllImportAttribute
+			// some fields are not available on the .NET Compact Framework version of DllImportAttribute/MarshalAsAttribute
 			FieldInfo field = attributeType.FindField(fieldName, FieldSignature.Create(valueType, new CustomModifiers()));
 			if (field != null)
 			{

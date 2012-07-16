@@ -123,48 +123,6 @@ namespace IKVM.Reflection
 			return false;
 		}
 
-		internal CustomAttributeData ToCustomAttribute(Module module)
-		{
-			Type typeofMarshalAs = module.universe.System_Runtime_InteropServices_MarshalAsAttribute;
-			Type typeofUnmanagedType = module.universe.System_Runtime_InteropServices_UnmanagedType;
-			Type typeofVarEnum = module.universe.System_Runtime_InteropServices_VarEnum;
-			Type typeofType = module.universe.System_Type;
-			List<CustomAttributeNamedArgument> named = new List<CustomAttributeNamedArgument>();
-			AddNamedArgument(named, typeofMarshalAs, "ArraySubType", typeofUnmanagedType, ArraySubType ?? 0);
-			AddNamedArgument(named, typeofMarshalAs, "SizeParamIndex", module.universe.System_Int16, SizeParamIndex ?? 0);
-			AddNamedArgument(named, typeofMarshalAs, "SizeConst", module.universe.System_Int32, SizeConst ?? 0);
-			AddNamedArgument(named, typeofMarshalAs, "IidParameterIndex", module.universe.System_Int32, IidParameterIndex ?? 0);
-			AddNamedArgument(named, typeofMarshalAs, "SafeArraySubType", typeofVarEnum, SafeArraySubType ?? 0);
-			if (SafeArrayUserDefinedSubType != null)
-			{
-				AddNamedArgument(named, typeofMarshalAs, "SafeArrayUserDefinedSubType", typeofType, SafeArrayUserDefinedSubType);
-			}
-			if (MarshalType != null)
-			{
-				AddNamedArgument(named, typeofMarshalAs, "MarshalType", module.universe.System_String, MarshalType);
-			}
-			if (MarshalTypeRef != null)
-			{
-				AddNamedArgument(named, typeofMarshalAs, "MarshalTypeRef", module.universe.System_Type, MarshalTypeRef);
-			}
-			if (MarshalCookie != null)
-			{
-				AddNamedArgument(named, typeofMarshalAs, "MarshalCookie", module.universe.System_String, MarshalCookie);
-			}
-			ConstructorInfo constructor = typeofMarshalAs.GetPseudoCustomAttributeConstructor(typeofUnmanagedType);
-			return new CustomAttributeData(module, constructor, new object[] { UnmanagedType }, named);
-		}
-
-		private static void AddNamedArgument(List<CustomAttributeNamedArgument> list, Type attributeType, string fieldName, Type valueType, object value)
-		{
-			// some fields are not available on the .NET Compact Framework version of MarshalAsAttribute
-			FieldInfo field = attributeType.FindField(fieldName, FieldSignature.Create(valueType, new CustomModifiers()));
-			if (field != null)
-			{
-				list.Add(new CustomAttributeNamedArgument(field, new CustomAttributeTypedArgument(valueType, value)));
-			}
-		}
-
 		internal static void SetMarshalAsAttribute(ModuleBuilder module, int token, CustomAttributeBuilder attribute)
 		{
 			attribute = attribute.DecodeBlob(module.Assembly);
