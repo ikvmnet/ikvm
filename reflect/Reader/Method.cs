@@ -238,7 +238,13 @@ namespace IKVM.Reflection.Reader
 			if ((this.Attributes & MethodAttributes.PinvokeImpl) != 0
 				&& (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_DllImportAttribute)))
 			{
-				CreateDllImportPseudoCustomAttribute(list);
+				ImplMapFlags flags;
+				string importName;
+				string importScope;
+				if (__TryGetImplMap(out flags, out importName, out importScope))
+				{
+					list.Add(CustomAttributeData.CreateDllImportPseudoCustomAttribute(module, flags, importName, importScope, GetMethodImplementationFlags()));
+				}
 			}
 			if ((GetMethodImplementationFlags() & MethodImplAttributes.PreserveSig) != 0
 				&& (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_PreserveSigAttribute)))
@@ -248,87 +254,6 @@ namespace IKVM.Reflection.Reader
 				list.Add(new CustomAttributeData(module, constructor, Empty<object>.Array, null));
 			}
 			return list;
-		}
-
-		private void CreateDllImportPseudoCustomAttribute(List<CustomAttributeData> attribs)
-		{
-			ImplMapFlags flags;
-			string entryPoint;
-			string dllName;
-			if (__TryGetImplMap(out flags, out entryPoint, out dllName))
-			{
-				Type type = module.universe.System_Runtime_InteropServices_DllImportAttribute;
-				ConstructorInfo constructor = type.GetPseudoCustomAttributeConstructor(module.universe.System_String);
-				List<CustomAttributeNamedArgument> list = new List<CustomAttributeNamedArgument>();
-				System.Runtime.InteropServices.CharSet charSet;
-				switch (flags & ImplMapFlags.CharSetMask)
-				{
-					case ImplMapFlags.CharSetAnsi:
-						charSet = System.Runtime.InteropServices.CharSet.Ansi;
-						break;
-					case ImplMapFlags.CharSetUnicode:
-						charSet = System.Runtime.InteropServices.CharSet.Unicode;
-						break;
-					case ImplMapFlags.CharSetAuto:
-						charSet = System.Runtime.InteropServices.CharSet.Auto;
-						break;
-					case ImplMapFlags.CharSetNotSpec:
-					default:
-						charSet = System.Runtime.InteropServices.CharSet.None;
-						break;
-				}
-				System.Runtime.InteropServices.CallingConvention callingConvention;
-				switch (flags & ImplMapFlags.CallConvMask)
-				{
-					case ImplMapFlags.CallConvCdecl:
-						callingConvention = System.Runtime.InteropServices.CallingConvention.Cdecl;
-						break;
-					case ImplMapFlags.CallConvFastcall:
-						callingConvention = System.Runtime.InteropServices.CallingConvention.FastCall;
-						break;
-					case ImplMapFlags.CallConvStdcall:
-						callingConvention = System.Runtime.InteropServices.CallingConvention.StdCall;
-						break;
-					case ImplMapFlags.CallConvThiscall:
-						callingConvention = System.Runtime.InteropServices.CallingConvention.ThisCall;
-						break;
-					case ImplMapFlags.CallConvWinapi:
-						callingConvention = System.Runtime.InteropServices.CallingConvention.Winapi;
-						break;
-					default:
-						callingConvention = 0;
-						break;
-				}
-				AddNamedArgument(list, type, "EntryPoint", entryPoint);
-				AddNamedArgument(list, type, "CharSet", module.universe.System_Runtime_InteropServices_CharSet, (int)charSet);
-				AddNamedArgument(list, type, "ExactSpelling", (int)flags, (int)ImplMapFlags.NoMangle);
-				AddNamedArgument(list, type, "SetLastError", (int)flags, (int)ImplMapFlags.SupportsLastError);
-				AddNamedArgument(list, type, "PreserveSig", (int)GetMethodImplementationFlags(), (int)MethodImplAttributes.PreserveSig);
-				AddNamedArgument(list, type, "CallingConvention", module.universe.System_Runtime_InteropServices_CallingConvention, (int)callingConvention);
-				AddNamedArgument(list, type, "BestFitMapping", (int)flags, (int)ImplMapFlags.BestFitOn);
-				AddNamedArgument(list, type, "ThrowOnUnmappableChar", (int)flags, (int)ImplMapFlags.CharMapErrorOn);
-				attribs.Add(new CustomAttributeData(module, constructor, new object[] { dllName }, list));
-			}
-		}
-
-		private static void AddNamedArgument(List<CustomAttributeNamedArgument> list, Type type, string fieldName, string value)
-		{
-			AddNamedArgument(list, type, fieldName, type.Module.universe.System_String, value);
-		}
-
-		private static void AddNamedArgument(List<CustomAttributeNamedArgument> list, Type type, string fieldName, int flags, int flagMask)
-		{
-			AddNamedArgument(list, type, fieldName, type.Module.universe.System_Boolean, (flags & flagMask) != 0);
-		}
-
-		private static void AddNamedArgument(List<CustomAttributeNamedArgument> list, Type attributeType, string fieldName, Type valueType, object value)
-		{
-			// some fields are not available on the .NET Compact Framework version of DllImportAttribute
-			FieldInfo field = attributeType.FindField(fieldName, FieldSignature.Create(valueType, new CustomModifiers()));
-			if (field != null)
-			{
-				list.Add(new CustomAttributeNamedArgument(field, new CustomAttributeTypedArgument(valueType, value)));
-			}
 		}
 
 		internal override MethodSignature MethodSignature
