@@ -140,15 +140,20 @@ namespace IKVM.Reflection.Emit
 		{
 			get
 			{
-				if (type != null)
-				{
-					type.CheckBaked();
-				}
-				else
-				{
-					method.CheckBaked();
-				}
+				CheckBaked();
 				return attr;
+			}
+		}
+
+		private void CheckBaked()
+		{
+			if (type != null)
+			{
+				type.CheckBaked();
+			}
+			else
+			{
+				method.CheckBaked();
 			}
 		}
 
@@ -191,6 +196,15 @@ namespace IKVM.Reflection.Emit
 			SetCustomAttribute(new CustomAttributeBuilder(con, binaryAttribute));
 		}
 
+		public override int MetadataToken
+		{
+			get
+			{
+				CheckBaked();
+				return (GenericParamTable.Index << 24) | paramPseudoIndex;
+			}
+		}
+
 		internal override int GetModuleBuilderToken()
 		{
 			if (typeToken == 0)
@@ -214,9 +228,21 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 
+		internal override int GetCurrentToken()
+		{
+			if (this.ModuleBuilder.IsSaved)
+			{
+				return (GenericParamTable.Index << 24) | this.Module.GenericParam.GetIndexFixup()[paramPseudoIndex - 1] + 1;
+			}
+			else
+			{
+				return (GenericParamTable.Index << 24) | paramPseudoIndex;
+			}
+		}
+
 		internal override bool IsBaked
 		{
-			get { return type.IsBaked; }
+			get { return ((MemberInfo)type ?? method).IsBaked; }
 		}
 	}
 
