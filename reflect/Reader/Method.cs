@@ -260,7 +260,7 @@ namespace IKVM.Reflection.Reader
 				Type type = module.universe.System_Runtime_InteropServices_DllImportAttribute;
 				ConstructorInfo constructor = type.GetPseudoCustomAttributeConstructor(module.universe.System_String);
 				List<CustomAttributeNamedArgument> list = new List<CustomAttributeNamedArgument>();
-				System.Runtime.InteropServices.CharSet? charSet;
+				System.Runtime.InteropServices.CharSet charSet;
 				switch (flags & ImplMapFlags.CharSetMask)
 				{
 					case ImplMapFlags.CharSetAnsi:
@@ -274,7 +274,7 @@ namespace IKVM.Reflection.Reader
 						break;
 					case ImplMapFlags.CharSetNotSpec:
 					default:
-						charSet = null;
+						charSet = System.Runtime.InteropServices.CharSet.None;
 						break;
 				}
 				System.Runtime.InteropServices.CallingConvention callingConvention;
@@ -300,22 +300,13 @@ namespace IKVM.Reflection.Reader
 						break;
 				}
 				AddNamedArgument(list, type, "EntryPoint", entryPoint);
+				AddNamedArgument(list, type, "CharSet", module.universe.System_Runtime_InteropServices_CharSet, (int)charSet);
 				AddNamedArgument(list, type, "ExactSpelling", (int)flags, (int)ImplMapFlags.NoMangle);
 				AddNamedArgument(list, type, "SetLastError", (int)flags, (int)ImplMapFlags.SupportsLastError);
 				AddNamedArgument(list, type, "PreserveSig", (int)GetMethodImplementationFlags(), (int)MethodImplAttributes.PreserveSig);
 				AddNamedArgument(list, type, "CallingConvention", module.universe.System_Runtime_InteropServices_CallingConvention, (int)callingConvention);
-				if (charSet.HasValue)
-				{
-					AddNamedArgument(list, type, "CharSet", module.universe.System_Runtime_InteropServices_CharSet, (int)charSet.Value);
-				}
-				if ((flags & (ImplMapFlags.BestFitOn | ImplMapFlags.BestFitOff)) != 0)
-				{
-					AddNamedArgument(list, type, "BestFitMapping", (int)flags, (int)ImplMapFlags.BestFitOn);
-				}
-				if ((flags & (ImplMapFlags.CharMapErrorOn | ImplMapFlags.CharMapErrorOff)) != 0)
-				{
-					AddNamedArgument(list, type, "ThrowOnUnmappableChar", (int)flags, (int)ImplMapFlags.CharMapErrorOn);
-				}
+				AddNamedArgument(list, type, "BestFitMapping", (int)flags, (int)ImplMapFlags.BestFitOn);
+				AddNamedArgument(list, type, "ThrowOnUnmappableChar", (int)flags, (int)ImplMapFlags.CharMapErrorOn);
 				attribs.Add(new CustomAttributeData(module, constructor, new object[] { dllName }, list));
 			}
 		}
