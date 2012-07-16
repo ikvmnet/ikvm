@@ -224,7 +224,7 @@ namespace IKVM.Reflection
 			}
 			else
 			{
-				if (arg.ArgumentType != type)
+				if (arg.ArgumentType != type || (type.IsEnum && !arg.Value.Equals(0)))
 				{
 					sb.Append('(');
 					sb.Append(arg.ArgumentType.FullName);
@@ -948,11 +948,11 @@ namespace IKVM.Reflection
 			Type typeofVarEnum = module.universe.System_Runtime_InteropServices_VarEnum;
 			Type typeofType = module.universe.System_Type;
 			List<CustomAttributeNamedArgument> named = new List<CustomAttributeNamedArgument>();
-			AddNamedArgument(named, typeofMarshalAs, "ArraySubType", typeofUnmanagedType, fm.ArraySubType ?? 0);
+			AddNamedArgument(named, typeofMarshalAs, "ArraySubType", typeofUnmanagedType, (int)(fm.ArraySubType ?? 0));
 			AddNamedArgument(named, typeofMarshalAs, "SizeParamIndex", module.universe.System_Int16, fm.SizeParamIndex ?? 0);
 			AddNamedArgument(named, typeofMarshalAs, "SizeConst", module.universe.System_Int32, fm.SizeConst ?? 0);
 			AddNamedArgument(named, typeofMarshalAs, "IidParameterIndex", module.universe.System_Int32, fm.IidParameterIndex ?? 0);
-			AddNamedArgument(named, typeofMarshalAs, "SafeArraySubType", typeofVarEnum, fm.SafeArraySubType ?? 0);
+			AddNamedArgument(named, typeofMarshalAs, "SafeArraySubType", typeofVarEnum, (int)(fm.SafeArraySubType ?? 0));
 			if (fm.SafeArrayUserDefinedSubType != null)
 			{
 				AddNamedArgument(named, typeofMarshalAs, "SafeArrayUserDefinedSubType", typeofType, fm.SafeArrayUserDefinedSubType);
@@ -970,7 +970,7 @@ namespace IKVM.Reflection
 				AddNamedArgument(named, typeofMarshalAs, "MarshalCookie", module.universe.System_String, fm.MarshalCookie);
 			}
 			ConstructorInfo constructor = typeofMarshalAs.GetPseudoCustomAttributeConstructor(typeofUnmanagedType);
-			return new CustomAttributeData(module, constructor, new object[] { fm.UnmanagedType }, named);
+			return new CustomAttributeData(module, constructor, new object[] { (int)fm.UnmanagedType }, named);
 		}
 
 		private static void AddNamedArgument(List<CustomAttributeNamedArgument> list, Type type, string fieldName, string value)
