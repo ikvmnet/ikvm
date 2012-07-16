@@ -992,5 +992,19 @@ namespace IKVM.Reflection
 				list.Add(new CustomAttributeNamedArgument(field, new CustomAttributeTypedArgument(valueType, value)));
 			}
 		}
+
+		internal static CustomAttributeData CreateFieldOffsetPseudoCustomAttribute(Module module, int offset)
+		{
+			Type type = module.universe.System_Runtime_InteropServices_FieldOffsetAttribute;
+			ConstructorInfo constructor = type.GetPseudoCustomAttributeConstructor(module.universe.System_Int32);
+			return new CustomAttributeData(module, constructor, new object[] { offset }, null);
+		}
+
+		internal static CustomAttributeData CreatePreserveSigPseudoCustomAttribute(Module module)
+		{
+			Type type = module.universe.System_Runtime_InteropServices_PreserveSigAttribute;
+			ConstructorInfo constructor = type.GetPseudoCustomAttributeConstructor();
+			return new CustomAttributeData(module, constructor, Empty<object>.Array, null);
+		}
 	}
 }

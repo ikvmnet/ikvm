@@ -179,8 +179,7 @@ namespace IKVM.Reflection
 				int offset;
 				if (__TryGetFieldOffset(out offset))
 				{
-					ConstructorInfo constructor = module.universe.System_Runtime_InteropServices_FieldOffsetAttribute.GetPseudoCustomAttributeConstructor(module.universe.System_Int32);
-					list.Add(new CustomAttributeData(module, constructor, new object[] { offset }, null));
+					list.Add(CustomAttributeData.CreateFieldOffsetPseudoCustomAttribute(module, offset));
 				}
 			}
 			return list;
