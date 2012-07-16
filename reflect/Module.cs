@@ -531,32 +531,12 @@ namespace IKVM.Reflection
 		[Obsolete]
 		public List<CustomAttributeData> __GetCustomAttributesFor(int token)
 		{
-			return GetCustomAttributes(token, null);
+			return CustomAttributeData.GetCustomAttributesImpl(new List<CustomAttributeData>(), this, token, null);
 		}
 
 		internal abstract Type GetModuleType();
 
 		internal abstract ByteReader GetBlob(int blobIndex);
-
-		internal List<CustomAttributeData> GetCustomAttributes(int metadataToken, Type attributeType)
-		{
-			List<CustomAttributeData> list = new List<CustomAttributeData>();
-			foreach (int i in CustomAttribute.Filter(metadataToken))
-			{
-				if (attributeType == null)
-				{
-					list.Add(new CustomAttributeData(this, i));
-				}
-				else
-				{
-					if (attributeType.IsAssignableFrom(ResolveMethod(CustomAttribute.records[i].Type).DeclaringType))
-					{
-						list.Add(new CustomAttributeData(this, i));
-					}
-				}
-			}
-			return list;
-		}
 
 		internal IList<CustomAttributeData> GetDeclarativeSecurity(int metadataToken)
 		{

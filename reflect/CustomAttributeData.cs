@@ -796,7 +796,7 @@ namespace IKVM.Reflection
 			return GetCustomAttributesImpl(list, member.Module, member.GetCurrentToken(), attributeType);
 		}
 
-		private static List<CustomAttributeData> GetCustomAttributesImpl(List<CustomAttributeData> list, Module module, int token, Type attributeType)
+		internal static List<CustomAttributeData> GetCustomAttributesImpl(List<CustomAttributeData> list, Module module, int token, Type attributeType)
 		{
 			foreach (int i in module.CustomAttribute.Filter(token))
 			{
