@@ -1242,9 +1242,9 @@ namespace IKVM.Reflection.Emit
 			get { return this; }
 		}
 
-		public override Type ResolveType(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
+		internal override Type ResolveType(int metadataToken, IGenericContext context)
 		{
-			if (genericTypeArguments != null || genericMethodArguments != null)
+			if (metadataToken >> 24 != TypeDefTable.Index)
 			{
 				throw new NotImplementedException();
 			}
