@@ -693,7 +693,7 @@ namespace IKVM.Reflection
 
 		public static IList<CustomAttributeData> GetCustomAttributes(Module module)
 		{
-			return module.GetCustomAttributesData(null);
+			return __GetCustomAttributes(module, null, false);
 		}
 
 		public static IList<CustomAttributeData> GetCustomAttributes(ParameterInfo parameter)
@@ -708,7 +708,11 @@ namespace IKVM.Reflection
 
 		public static IList<CustomAttributeData> __GetCustomAttributes(Module module, Type attributeType, bool inherit)
 		{
-			return module.GetCustomAttributesData(attributeType);
+			if (module.__IsMissing)
+			{
+				throw new MissingModuleException((MissingModule)module);
+			}
+			return GetCustomAttributesImpl(null, module, 0x00000001, attributeType) ?? EmptyList;
 		}
 
 		public static IList<CustomAttributeData> __GetCustomAttributes(ParameterInfo parameter, Type attributeType, bool inherit)
@@ -778,8 +782,12 @@ namespace IKVM.Reflection
 			{
 				list.AddRange(pseudo);
 			}
-			Module module = member.Module;
-			foreach (int i in module.CustomAttribute.Filter(member.GetCurrentToken()))
+			return GetCustomAttributesImpl(list, member.Module, member.GetCurrentToken(), attributeType);
+		}
+
+		private static List<CustomAttributeData> GetCustomAttributesImpl(List<CustomAttributeData> list, Module module, int token, Type attributeType)
+		{
+			foreach (int i in module.CustomAttribute.Filter(token))
 			{
 				if (attributeType == null)
 				{

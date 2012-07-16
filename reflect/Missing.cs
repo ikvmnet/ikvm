@@ -329,11 +329,6 @@ namespace IKVM.Reflection
 			get { return true; }
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
-		{
-			throw new MissingModuleException(this);
-		}
-
 		protected override Exception InvalidOperationException()
 		{
 			return new MissingModuleException(this);
