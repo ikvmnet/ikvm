@@ -252,66 +252,47 @@ namespace IKVM.Reflection.Reader
 
 		private void CreateDllImportPseudoCustomAttribute(List<CustomAttributeData> attribs)
 		{
-			foreach (int i in module.ImplMap.Filter(this.MetadataToken))
+			ImplMapFlags flags;
+			string entryPoint;
+			string dllName;
+			if (__TryGetImplMap(out flags, out entryPoint, out dllName))
 			{
-				const short NoMangle = 0x0001;
-				const short CharSetMask = 0x0006;
-				const short CharSetNotSpec = 0x0000;
-				const short CharSetAnsi = 0x0002;
-				const short CharSetUnicode = 0x0004;
-				const short CharSetAuto = 0x0006;
-				const short SupportsLastError = 0x0040;
-				const short CallConvMask = 0x0700;
-				const short CallConvWinapi = 0x0100;
-				const short CallConvCdecl = 0x0200;
-				const short CallConvStdcall = 0x0300;
-				const short CallConvThiscall = 0x0400;
-				const short CallConvFastcall = 0x0500;
-				// non-standard flags
-				const short BestFitOn = 0x0010;
-				const short BestFitOff = 0x0020;
-				const short CharMapErrorOn = 0x1000;
-				const short CharMapErrorOff = 0x2000;
-
 				Type type = module.universe.System_Runtime_InteropServices_DllImportAttribute;
 				ConstructorInfo constructor = type.GetPseudoCustomAttributeConstructor(module.universe.System_String);
 				List<CustomAttributeNamedArgument> list = new List<CustomAttributeNamedArgument>();
-				int flags = module.ImplMap.records[i].MappingFlags;
-				string entryPoint = module.GetString(module.ImplMap.records[i].ImportName);
-				string dllName = module.GetString(module.ModuleRef.records[(module.ImplMap.records[i].ImportScope & 0xFFFFFF) - 1]);
 				System.Runtime.InteropServices.CharSet? charSet;
-				switch (flags & CharSetMask)
+				switch (flags & ImplMapFlags.CharSetMask)
 				{
-					case CharSetAnsi:
+					case ImplMapFlags.CharSetAnsi:
 						charSet = System.Runtime.InteropServices.CharSet.Ansi;
 						break;
-					case CharSetUnicode:
+					case ImplMapFlags.CharSetUnicode:
 						charSet = System.Runtime.InteropServices.CharSet.Unicode;
 						break;
-					case CharSetAuto:
+					case ImplMapFlags.CharSetAuto:
 						charSet = System.Runtime.InteropServices.CharSet.Auto;
 						break;
-					case CharSetNotSpec:
+					case ImplMapFlags.CharSetNotSpec:
 					default:
 						charSet = null;
 						break;
 				}
 				System.Runtime.InteropServices.CallingConvention callingConvention;
-				switch (flags & CallConvMask)
+				switch (flags & ImplMapFlags.CallConvMask)
 				{
-					case CallConvCdecl:
+					case ImplMapFlags.CallConvCdecl:
 						callingConvention = System.Runtime.InteropServices.CallingConvention.Cdecl;
 						break;
-					case CallConvFastcall:
+					case ImplMapFlags.CallConvFastcall:
 						callingConvention = System.Runtime.InteropServices.CallingConvention.FastCall;
 						break;
-					case CallConvStdcall:
+					case ImplMapFlags.CallConvStdcall:
 						callingConvention = System.Runtime.InteropServices.CallingConvention.StdCall;
 						break;
-					case CallConvThiscall:
+					case ImplMapFlags.CallConvThiscall:
 						callingConvention = System.Runtime.InteropServices.CallingConvention.ThisCall;
 						break;
-					case CallConvWinapi:
+					case ImplMapFlags.CallConvWinapi:
 						callingConvention = System.Runtime.InteropServices.CallingConvention.Winapi;
 						break;
 					default:
@@ -319,24 +300,23 @@ namespace IKVM.Reflection.Reader
 						break;
 				}
 				AddNamedArgument(list, type, "EntryPoint", entryPoint);
-				AddNamedArgument(list, type, "ExactSpelling", flags, NoMangle);
-				AddNamedArgument(list, type, "SetLastError", flags, SupportsLastError);
+				AddNamedArgument(list, type, "ExactSpelling", (int)flags, (int)ImplMapFlags.NoMangle);
+				AddNamedArgument(list, type, "SetLastError", (int)flags, (int)ImplMapFlags.SupportsLastError);
 				AddNamedArgument(list, type, "PreserveSig", (int)GetMethodImplementationFlags(), (int)MethodImplAttributes.PreserveSig);
 				AddNamedArgument(list, type, "CallingConvention", module.universe.System_Runtime_InteropServices_CallingConvention, (int)callingConvention);
 				if (charSet.HasValue)
 				{
 					AddNamedArgument(list, type, "CharSet", module.universe.System_Runtime_InteropServices_CharSet, (int)charSet.Value);
 				}
-				if ((flags & (BestFitOn | BestFitOff)) != 0)
+				if ((flags & (ImplMapFlags.BestFitOn | ImplMapFlags.BestFitOff)) != 0)
 				{
-					AddNamedArgument(list, type, "BestFitMapping", flags, BestFitOn);
+					AddNamedArgument(list, type, "BestFitMapping", (int)flags, (int)ImplMapFlags.BestFitOn);
 				}
-				if ((flags & (CharMapErrorOn | CharMapErrorOff)) != 0)
+				if ((flags & (ImplMapFlags.CharMapErrorOn | ImplMapFlags.CharMapErrorOff)) != 0)
 				{
-					AddNamedArgument(list, type, "ThrowOnUnmappableChar", flags, CharMapErrorOn);
+					AddNamedArgument(list, type, "ThrowOnUnmappableChar", (int)flags, (int)ImplMapFlags.CharMapErrorOn);
 				}
 				attribs.Add(new CustomAttributeData(module, constructor, new object[] { dllName }, list));
-				return;
 			}
 		}
 
