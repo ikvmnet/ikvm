@@ -130,29 +130,14 @@ namespace IKVM.Reflection
 			Type typeofVarEnum = module.universe.System_Runtime_InteropServices_VarEnum;
 			Type typeofType = module.universe.System_Type;
 			List<CustomAttributeNamedArgument> named = new List<CustomAttributeNamedArgument>();
-			if (ArraySubType != null)
-			{
-				AddNamedArgument(named, typeofMarshalAs, "ArraySubType", typeofUnmanagedType, ArraySubType.Value);
-			}
-			if (SizeParamIndex != null)
-			{
-				AddNamedArgument(named, typeofMarshalAs, "SizeParamIndex", module.universe.System_Int16, SizeParamIndex.Value);
-			}
-			if (SizeConst != null)
-			{
-				AddNamedArgument(named, typeofMarshalAs, "SizeConst", module.universe.System_Int32, SizeConst.Value);
-			}
-			if (SafeArraySubType != null)
-			{
-				AddNamedArgument(named, typeofMarshalAs, "SafeArraySubType", typeofVarEnum, SafeArraySubType.Value);
-			}
+			AddNamedArgument(named, typeofMarshalAs, "ArraySubType", typeofUnmanagedType, ArraySubType ?? 0);
+			AddNamedArgument(named, typeofMarshalAs, "SizeParamIndex", module.universe.System_Int16, SizeParamIndex ?? 0);
+			AddNamedArgument(named, typeofMarshalAs, "SizeConst", module.universe.System_Int32, SizeConst ?? 0);
+			AddNamedArgument(named, typeofMarshalAs, "IidParameterIndex", module.universe.System_Int32, IidParameterIndex ?? 0);
+			AddNamedArgument(named, typeofMarshalAs, "SafeArraySubType", typeofVarEnum, SafeArraySubType ?? 0);
 			if (SafeArrayUserDefinedSubType != null)
 			{
 				AddNamedArgument(named, typeofMarshalAs, "SafeArrayUserDefinedSubType", typeofType, SafeArrayUserDefinedSubType);
-			}
-			if (IidParameterIndex != null)
-			{
-				AddNamedArgument(named, typeofMarshalAs, "IidParameterIndex", module.universe.System_Int32, IidParameterIndex.Value);
 			}
 			if (MarshalType != null)
 			{
