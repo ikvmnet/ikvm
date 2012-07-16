@@ -717,5 +717,15 @@ namespace IKVM.Reflection.Emit
 				return pseudoToken;
 			}
 		}
+
+		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
+		{
+			if (!typeBuilder.IsCreated())
+			{
+				// like .NET we we don't return custom attributes for unbaked types
+				throw new NotImplementedException();
+			}
+			return base.GetCustomAttributesData(attributeType);
+		}
 	}
 }

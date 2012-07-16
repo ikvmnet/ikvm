@@ -177,6 +177,31 @@ namespace IKVM.Reflection
 		{
 			return new MethodInfoWithReflectedType(type, this);
 		}
+
+		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
+		{
+			Module module = this.Module;
+			List<CustomAttributeData> list = module.GetCustomAttributes(this.MetadataToken, attributeType);
+			if ((this.Attributes & MethodAttributes.PinvokeImpl) != 0
+				&& (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_DllImportAttribute)))
+			{
+				ImplMapFlags flags;
+				string importName;
+				string importScope;
+				if (__TryGetImplMap(out flags, out importName, out importScope))
+				{
+					list.Add(CustomAttributeData.CreateDllImportPseudoCustomAttribute(module, flags, importName, importScope, GetMethodImplementationFlags()));
+				}
+			}
+			if ((GetMethodImplementationFlags() & MethodImplAttributes.PreserveSig) != 0
+				&& (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_PreserveSigAttribute)))
+			{
+				Type type = module.universe.System_Runtime_InteropServices_PreserveSigAttribute;
+				ConstructorInfo constructor = type.GetPseudoCustomAttributeConstructor();
+				list.Add(new CustomAttributeData(module, constructor, Empty<object>.Array, null));
+			}
+			return list;
+		}
 	}
 
 	sealed class MethodInfoWithReflectedType : MethodInfo

@@ -232,30 +232,6 @@ namespace IKVM.Reflection.Reader
 			get { return module; }
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
-		{
-			List<CustomAttributeData> list = module.GetCustomAttributes(this.MetadataToken, attributeType);
-			if ((this.Attributes & MethodAttributes.PinvokeImpl) != 0
-				&& (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_DllImportAttribute)))
-			{
-				ImplMapFlags flags;
-				string importName;
-				string importScope;
-				if (__TryGetImplMap(out flags, out importName, out importScope))
-				{
-					list.Add(CustomAttributeData.CreateDllImportPseudoCustomAttribute(module, flags, importName, importScope, GetMethodImplementationFlags()));
-				}
-			}
-			if ((GetMethodImplementationFlags() & MethodImplAttributes.PreserveSig) != 0
-				&& (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_PreserveSigAttribute)))
-			{
-				Type type = module.universe.System_Runtime_InteropServices_PreserveSigAttribute;
-				ConstructorInfo constructor = type.GetPseudoCustomAttributeConstructor();
-				list.Add(new CustomAttributeData(module, constructor, Empty<object>.Array, null));
-			}
-			return list;
-		}
-
 		internal override MethodSignature MethodSignature
 		{
 			get { return lazyMethodSignature ?? (lazyMethodSignature = MethodSignature.ReadSig(module, module.GetBlob(module.MethodDef.records[index].Signature), this)); }
