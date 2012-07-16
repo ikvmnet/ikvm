@@ -297,4 +297,28 @@ namespace IKVM.Reflection
 		AppContainer = 0x1000,			// IMAGE_DLLCHARACTERISTICS_APPCONTAINER
 		TerminalServerAware = 0x8000,	// IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE
 	}
+
+	// IKVM.Reflection specific type
+	[Flags]
+	public enum ImplMapFlags
+	{
+		NoMangle = 0x0001,
+		CharSetMask = 0x0006,
+		CharSetNotSpec = 0x0000,
+		CharSetAnsi = 0x0002,
+		CharSetUnicode = 0x0004,
+		CharSetAuto = 0x0006,
+		SupportsLastError = 0x0040,
+		CallConvMask = 0x0700,
+		CallConvWinapi = 0x0100,
+		CallConvCdecl = 0x0200,
+		CallConvStdcall = 0x0300,
+		CallConvThiscall = 0x0400,
+		CallConvFastcall = 0x0500,
+		// non-standard flags (i.e. CLR specific)
+		BestFitOn = 0x0010,
+		BestFitOff = 0x0020,
+		CharMapErrorOn = 0x1000,
+		CharMapErrorOff = 0x2000,
+	}
 }

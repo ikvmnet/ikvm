@@ -391,6 +391,11 @@ namespace IKVM.Reflection.Reader
 			}
 			return Util.ToArray(list, Empty<MethodInfo>.Array);
 		}
+
+		internal override int GetCurrentToken()
+		{
+			return this.MetadataToken;
+		}
 	}
 
 	sealed class ParameterInfoImpl : ParameterInfo

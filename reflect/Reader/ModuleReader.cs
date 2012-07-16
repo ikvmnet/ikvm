@@ -279,7 +279,7 @@ namespace IKVM.Reflection.Reader
 			}
 		}
 
-		internal string GetString(int index)
+		internal override string GetString(int index)
 		{
 			if (index == 0)
 			{

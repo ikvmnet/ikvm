@@ -545,6 +545,11 @@ namespace IKVM.Reflection
 		internal virtual void ExportTypes(int fileToken, IKVM.Reflection.Emit.ModuleBuilder manifestModule)
 		{
 		}
+
+		internal virtual string GetString(int index)
+		{
+			throw new NotSupportedException();
+		}
 	}
 
 	abstract class NonPEModule : Module

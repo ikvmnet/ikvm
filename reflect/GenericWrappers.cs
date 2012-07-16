@@ -271,6 +271,11 @@ namespace IKVM.Reflection
 			}
 			return methods;
 		}
+
+		internal override int GetCurrentToken()
+		{
+			return method.GetCurrentToken();
+		}
 	}
 
 	sealed class GenericFieldInstance : FieldInfo

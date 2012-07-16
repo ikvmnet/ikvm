@@ -705,5 +705,17 @@ namespace IKVM.Reflection.Emit
 		{
 			typeBuilder.CheckBaked();
 		}
+
+		internal override int GetCurrentToken()
+		{
+			if (typeBuilder.ModuleBuilder.IsSaved)
+			{
+				return typeBuilder.ModuleBuilder.ResolvePseudoToken(pseudoToken);
+			}
+			else
+			{
+				return pseudoToken;
+			}
+		}
 	}
 }

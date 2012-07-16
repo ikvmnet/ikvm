@@ -917,6 +917,11 @@ namespace IKVM.Reflection
 		{
 			get { return Forwarder.MetadataToken; }
 		}
+
+		internal override int GetCurrentToken()
+		{
+			return Forwarder.GetCurrentToken();
+		}
 	}
 
 	sealed class MissingField : FieldInfo

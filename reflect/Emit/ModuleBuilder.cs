@@ -1735,6 +1735,11 @@ namespace IKVM.Reflection.Emit
 		{
 			get { return saved; }
 		}
+
+		internal override string GetString(int index)
+		{
+			return this.Strings.Find(index);
+		}
 	}
 
 	struct UnmanagedExport
@@ -1862,6 +1867,11 @@ namespace IKVM.Reflection.Emit
 		internal override bool HasThis
 		{
 			get { return (callingConvention & (CallingConventions.HasThis | CallingConventions.ExplicitThis)) == CallingConventions.HasThis; }
+		}
+
+		internal override int GetCurrentToken()
+		{
+			return this.MetadataToken;
 		}
 	}
 }
