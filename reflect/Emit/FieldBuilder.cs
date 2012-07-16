@@ -209,16 +209,6 @@ namespace IKVM.Reflection.Emit
 			return other.ImportMethodOrField(typeBuilder, name, fieldSig);
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
-		{
-			if (!typeBuilder.IsCreated())
-			{
-				// like .NET we we don't return custom attributes for unbaked types
-				throw new NotImplementedException();
-			}
-			return base.GetCustomAttributesData(attributeType);
-		}
-
 		internal override int GetCurrentToken()
 		{
 			if (typeBuilder.ModuleBuilder.IsSaved)
@@ -229,6 +219,11 @@ namespace IKVM.Reflection.Emit
 			{
 				return pseudoToken;
 			}
+		}
+
+		internal override bool IsBaked
+		{
+			get { return typeBuilder.IsBaked; }
 		}
 	}
 }

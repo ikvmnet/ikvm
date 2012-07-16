@@ -677,7 +677,7 @@ namespace IKVM.Reflection
 
 		public static IList<CustomAttributeData> GetCustomAttributes(MemberInfo member)
 		{
-			return member.GetCustomAttributesData(null);
+			return __GetCustomAttributes(member, null, false);
 		}
 
 		public static IList<CustomAttributeData> GetCustomAttributes(Assembly assembly)
@@ -721,14 +721,19 @@ namespace IKVM.Reflection
 
 		public static IList<CustomAttributeData> __GetCustomAttributes(MemberInfo member, Type attributeType, bool inherit)
 		{
+			if (!member.IsBaked)
+			{
+				// like .NET we we don't return custom attributes for unbaked members
+				throw new NotImplementedException();
+			}
 			if (!inherit || !IsInheritableAttribute(attributeType))
 			{
-				return member.GetCustomAttributesData(attributeType);
+				return GetCustomAttributesImpl(null, member, attributeType) ?? EmptyList;
 			}
 			List<CustomAttributeData> list = new List<CustomAttributeData>();
 			for (; ; )
 			{
-				list.AddRange(member.GetCustomAttributesData(attributeType));
+				GetCustomAttributesImpl(list, member, attributeType);
 				Type type = member as Type;
 				if (type != null)
 				{
@@ -754,6 +759,43 @@ namespace IKVM.Reflection
 				}
 				return list;
 			}
+		}
+
+		private static List<CustomAttributeData> GetCustomAttributesImpl(List<CustomAttributeData> list, MemberInfo member, Type attributeType)
+		{
+			List<CustomAttributeData> pseudo = member.GetPseudoCustomAttributes(attributeType);
+			if (list == null)
+			{
+				list = pseudo;
+			}
+			else if (pseudo != null)
+			{
+				list.AddRange(pseudo);
+			}
+			Module module = member.Module;
+			foreach (int i in module.CustomAttribute.Filter(member.GetCurrentToken()))
+			{
+				if (attributeType == null)
+				{
+					if (list == null)
+					{
+						list = new List<CustomAttributeData>();
+					}
+					list.Add(new CustomAttributeData(module, i));
+				}
+				else
+				{
+					if (attributeType.IsAssignableFrom(module.ResolveMethod(module.CustomAttribute.records[i].Type).DeclaringType))
+					{
+						if (list == null)
+						{
+							list = new List<CustomAttributeData>();
+						}
+						list.Add(new CustomAttributeData(module, i));
+					}
+				}
+			}
+			return list;
 		}
 
 		public static IList<CustomAttributeData> __GetCustomAttributes(Type type, Type interfaceType, Type attributeType, bool inherit)
@@ -797,7 +839,7 @@ namespace IKVM.Reflection
 		private static bool IsInheritableAttribute(Type attribute)
 		{
 			Type attributeUsageAttribute = attribute.Module.universe.System_AttributeUsageAttribute;
-			IList<CustomAttributeData> attr = attribute.GetCustomAttributesData(attributeUsageAttribute);
+			IList<CustomAttributeData> attr = __GetCustomAttributes(attribute, attributeUsageAttribute, false);
 			if (attr.Count != 0)
 			{
 				foreach (CustomAttributeNamedArgument named in attr[0].NamedArguments)

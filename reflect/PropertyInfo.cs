@@ -195,6 +195,12 @@ namespace IKVM.Reflection
 		{
 			return new PropertyInfoWithReflectedType(type, this);
 		}
+
+		internal sealed override List<CustomAttributeData> GetPseudoCustomAttributes(Type attributeType)
+		{
+			// properties don't have pseudo custom attributes
+			return null;
+		}
 	}
 
 	sealed class PropertyInfoWithReflectedType : PropertyInfo
@@ -311,11 +317,6 @@ namespace IKVM.Reflection
 			return reflectedType.GetHashCode() ^ property.GetHashCode();
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
-		{
-			return property.GetCustomAttributesData(attributeType);
-		}
-
 		public override int MetadataToken
 		{
 			get { return property.MetadataToken; }
@@ -329,6 +330,16 @@ namespace IKVM.Reflection
 		public override string Name
 		{
 			get { return property.Name; }
+		}
+
+		internal override bool IsBaked
+		{
+			get { return property.IsBaked; }
+		}
+
+		internal override int GetCurrentToken()
+		{
+			return property.GetCurrentToken();
 		}
 	}
 }

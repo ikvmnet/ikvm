@@ -44,7 +44,6 @@ namespace IKVM.Reflection
 		public abstract int __FieldRVA { get; }
 		public abstract Object GetRawConstantValue();
 		internal abstract FieldSignature FieldSignature { get; }
-		internal abstract int GetCurrentToken();
 
 		public Type FieldType
 		{
@@ -163,10 +162,10 @@ namespace IKVM.Reflection
 			return new FieldInfoWithReflectedType(type, this);
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
+		internal sealed override List<CustomAttributeData> GetPseudoCustomAttributes(Type attributeType)
 		{
 			Module module = this.Module;
-			List<CustomAttributeData> list = module.GetCustomAttributes(GetCurrentToken(), attributeType);
+			List<CustomAttributeData> list = new List<CustomAttributeData>();
 			if (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_MarshalAsAttribute))
 			{
 				FieldMarshal spec;
@@ -298,9 +297,9 @@ namespace IKVM.Reflection
 			return field.GetCurrentToken();
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
+		internal override bool IsBaked
 		{
-			return field.GetCustomAttributesData(attributeType);
+			get { return field.IsBaked; }
 		}
 	}
 }

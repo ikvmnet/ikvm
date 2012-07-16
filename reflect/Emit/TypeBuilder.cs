@@ -213,6 +213,11 @@ namespace IKVM.Reflection.Emit
 				return binder.BindMethodParameter(this);
 			}
 		}
+
+		internal override bool IsBaked
+		{
+			get { return type.IsBaked; }
+		}
 	}
 
 	public sealed class TypeBuilder : Type, ITypeOwner
@@ -1057,6 +1062,11 @@ namespace IKVM.Reflection.Emit
 		{
 			get { return token == 0x02000001; }
 		}
+
+		internal override bool IsBaked
+		{
+			get { return IsCreated(); }
+		}
 	}
 
 	sealed class BakedType : Type
@@ -1190,6 +1200,11 @@ namespace IKVM.Reflection.Emit
 		internal override int GetModuleBuilderToken()
 		{
 			return underlyingType.GetModuleBuilderToken();
+		}
+
+		internal override bool IsBaked
+		{
+			get { return true; }
 		}
 	}
 }

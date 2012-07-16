@@ -224,11 +224,6 @@ namespace IKVM.Reflection
 			return method.GetGenericMethodArgumentCount();
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
-		{
-			return method.GetCustomAttributesData(attributeType);
-		}
-
 		internal override MethodInfo GetMethodOnTypeDefinition()
 		{
 			return method.GetMethodOnTypeDefinition();
@@ -275,6 +270,11 @@ namespace IKVM.Reflection
 		internal override int GetCurrentToken()
 		{
 			return method.GetCurrentToken();
+		}
+
+		internal override bool IsBaked
+		{
+			get { return method.IsBaked; }
 		}
 	}
 
@@ -370,9 +370,9 @@ namespace IKVM.Reflection
 			return field.GetCurrentToken();
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
+		internal override bool IsBaked
 		{
-			return field.GetCustomAttributesData(attributeType);
+			get { return field.IsBaked; }
 		}
 	}
 
@@ -549,14 +549,19 @@ namespace IKVM.Reflection
 			get { return property.MetadataToken; }
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
-		{
-			return property.GetCustomAttributesData(attributeType);
-		}
-
 		internal override PropertyInfo BindTypeParameters(Type type)
 		{
 			return new GenericPropertyInfo(typeInstance.BindTypeParameters(type), property);
+		}
+
+		internal override bool IsBaked
+		{
+			get { return property.IsBaked; }
+		}
+
+		internal override int GetCurrentToken()
+		{
+			return property.GetCurrentToken();
 		}
 	}
 
@@ -656,11 +661,6 @@ namespace IKVM.Reflection
 			get { return eventInfo.MetadataToken; }
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
-		{
-			return eventInfo.GetCustomAttributesData(attributeType);
-		}
-
 		internal override EventInfo BindTypeParameters(Type type)
 		{
 			return new GenericEventInfo(typeInstance.BindTypeParameters(type), eventInfo);
@@ -679,6 +679,16 @@ namespace IKVM.Reflection
 		internal override bool IsStatic
 		{
 			get { return eventInfo.IsStatic; }
+		}
+
+		internal override bool IsBaked
+		{
+			get { return eventInfo.IsBaked; }
+		}
+
+		internal override int GetCurrentToken()
+		{
+			return eventInfo.GetCurrentToken();
 		}
 	}
 }

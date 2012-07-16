@@ -1873,5 +1873,10 @@ namespace IKVM.Reflection.Emit
 		{
 			return this.MetadataToken;
 		}
+
+		internal override bool IsBaked
+		{
+			get { return arrayClass.IsBaked; }
+		}
 	}
 }

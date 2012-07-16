@@ -295,6 +295,11 @@ namespace IKVM.Reflection.Reader
 		{
 			return binder.BindMethodParameter(this);
 		}
+
+		internal override bool IsBaked
+		{
+			get { throw new InvalidOperationException(); }
+		}
 	}
 
 	sealed class GenericTypeParameter : TypeParameterType
@@ -388,6 +393,11 @@ namespace IKVM.Reflection.Reader
 			{
 				return binder.BindTypeParameter(this);
 			}
+		}
+
+		internal override bool IsBaked
+		{
+			get { return true; }
 		}
 	}
 }

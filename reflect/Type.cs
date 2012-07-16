@@ -1785,7 +1785,7 @@ namespace IKVM.Reflection
 		{
 			get
 			{
-				IList<CustomAttributeData> cad = GetCustomAttributesData(this.Module.universe.System_AttributeUsageAttribute);
+				IList<CustomAttributeData> cad = CustomAttributeData.__GetCustomAttributes(this, this.Module.universe.System_AttributeUsageAttribute, false);
 				if (cad.Count == 1)
 				{
 					foreach (CustomAttributeNamedArgument arg in cad[0].NamedArguments)
@@ -1952,6 +1952,17 @@ namespace IKVM.Reflection
 		{
 			throw new InvalidOperationException();
 		}
+
+		internal override int GetCurrentToken()
+		{
+			return this.MetadataToken;
+		}
+
+		internal sealed override List<CustomAttributeData> GetPseudoCustomAttributes(Type attributeType)
+		{
+			// types don't have pseudo custom attributes
+			return null;
+		}
 	}
 
 	abstract class ElementHolderType : Type
@@ -2065,14 +2076,20 @@ namespace IKVM.Reflection
 			elementType.CheckBaked();
 		}
 
-		internal sealed override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
-		{
-			return CustomAttributeData.EmptyList;
-		}
-
 		internal sealed override Universe Universe
 		{
 			get { return elementType.Universe; }
+		}
+
+		internal sealed override bool IsBaked
+		{
+			get { return elementType.IsBaked; }
+		}
+
+		internal sealed override int GetCurrentToken()
+		{
+			// we don't have a token, so we return 0 (which is never a valid token)
+			return 0;
 		}
 
 		internal abstract string GetSuffix();
@@ -2840,9 +2857,9 @@ namespace IKVM.Reflection
 			return this;
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
+		internal override bool IsBaked
 		{
-			return type.GetCustomAttributesData(attributeType);
+			get { return type.IsBaked; }
 		}
 	}
 
@@ -2919,6 +2936,11 @@ namespace IKVM.Reflection
 		{
 			return "<FunctionPtr>";
 		}
+
+		internal override bool IsBaked
+		{
+			get { return true; }
+		}
 	}
 
 	sealed class MarkerType : Type
@@ -2957,6 +2979,11 @@ namespace IKVM.Reflection
 		}
 
 		public override Module Module
+		{
+			get { throw new InvalidOperationException(); }
+		}
+
+		internal override bool IsBaked
 		{
 			get { throw new InvalidOperationException(); }
 		}

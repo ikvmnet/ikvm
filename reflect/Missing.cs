@@ -545,11 +545,6 @@ namespace IKVM.Reflection
 			return typeArgs[index] ?? (typeArgs[index] = new MissingTypeParameter(this, index));
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
-		{
-			throw new MissingMemberException(this);
-		}
-
 		internal override Type BindTypeParameters(IGenericBinder binder)
 		{
 			return this;
@@ -559,6 +554,11 @@ namespace IKVM.Reflection
 		{
 			this.token = token;
 			return this;
+		}
+
+		internal override bool IsBaked
+		{
+			get { throw new MissingMemberException(this); }
 		}
 	}
 
@@ -608,6 +608,11 @@ namespace IKVM.Reflection
 			{
 				return binder.BindTypeParameter(this);
 			}
+		}
+
+		internal override bool IsBaked
+		{
+			get { return owner.IsBaked; }
 		}
 	}
 
@@ -845,11 +850,6 @@ namespace IKVM.Reflection
 			get { return Forwarder.ContainsGenericParameters; }
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
-		{
-			return Forwarder.GetCustomAttributesData(attributeType);
-		}
-
 		public override Type[] GetGenericArguments()
 		{
 			MethodInfo method = TryGetForwarder();
@@ -921,6 +921,11 @@ namespace IKVM.Reflection
 		internal override int GetCurrentToken()
 		{
 			return Forwarder.GetCurrentToken();
+		}
+
+		internal override bool IsBaked
+		{
+			get { return Forwarder.IsBaked; }
 		}
 	}
 
@@ -1059,9 +1064,9 @@ namespace IKVM.Reflection
 			return Forwarder.GetCurrentToken();
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
+		internal override bool IsBaked
 		{
-			return Forwarder.GetCustomAttributesData(attributeType);
+			get { return Forwarder.IsBaked; }
 		}
 	}
 
@@ -1147,6 +1152,16 @@ namespace IKVM.Reflection
 		public override Module Module
 		{
 			get { return declaringType.Module; }
+		}
+
+		internal override bool IsBaked
+		{
+			get { return declaringType.IsBaked; }
+		}
+
+		internal override int GetCurrentToken()
+		{
+			throw new MissingMemberException(this);
 		}
 	}
 }

@@ -83,6 +83,21 @@ namespace IKVM.Reflection
 		{
 			return new ConstructorInfoWithReflectedType(type, this);
 		}
+
+		internal sealed override int GetCurrentToken()
+		{
+			return GetMethodInfo().GetCurrentToken();
+		}
+
+		internal sealed override List<CustomAttributeData> GetPseudoCustomAttributes(Type attributeType)
+		{
+			return GetMethodInfo().GetPseudoCustomAttributes(attributeType);
+		}
+
+		internal sealed override bool IsBaked
+		{
+			get { return GetMethodInfo().IsBaked; }
+		}
 	}
 
 	sealed class ConstructorInfoImpl : ConstructorInfo
@@ -163,11 +178,6 @@ namespace IKVM.Reflection
 		internal override MethodInfo GetMethodInfo()
 		{
 			return method;
-		}
-
-		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
-		{
-			return method.GetCustomAttributesData(attributeType);
 		}
 
 		internal override MethodInfo GetMethodOnTypeDefinition()
@@ -274,11 +284,6 @@ namespace IKVM.Reflection
 		internal override MethodInfo GetMethodInfo()
 		{
 			return ctor.GetMethodInfo();
-		}
-
-		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
-		{
-			return ctor.GetCustomAttributesData(attributeType);
 		}
 
 		internal override MethodInfo GetMethodOnTypeDefinition()

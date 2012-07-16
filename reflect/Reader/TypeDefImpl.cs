@@ -419,5 +419,10 @@ namespace IKVM.Reflection.Reader
 			}
 			return Empty<CustomAttributeData>.Array;
 		}
+
+		internal override bool IsBaked
+		{
+			get { return true; }
+		}
 	}
 }

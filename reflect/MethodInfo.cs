@@ -123,8 +123,6 @@ namespace IKVM.Reflection
 			return false;
 		}
 
-		internal abstract int GetCurrentToken();
-
 		Type IGenericContext.GetGenericTypeArgument(int index)
 		{
 			return this.DeclaringType.GetGenericTypeArgument(index);
@@ -178,10 +176,10 @@ namespace IKVM.Reflection
 			return new MethodInfoWithReflectedType(type, this);
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
+		internal sealed override List<CustomAttributeData> GetPseudoCustomAttributes(Type attributeType)
 		{
 			Module module = this.Module;
-			List<CustomAttributeData> list = module.GetCustomAttributes(this.MetadataToken, attributeType);
+			List<CustomAttributeData> list = new List<CustomAttributeData>();
 			if ((this.Attributes & MethodAttributes.PinvokeImpl) != 0
 				&& (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_DllImportAttribute)))
 			{
@@ -369,11 +367,6 @@ namespace IKVM.Reflection
 			get { return method.ContainsGenericParameters; }
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
-		{
-			return method.GetCustomAttributesData(attributeType);
-		}
-
 		public override Type[] GetGenericArguments()
 		{
 			return method.GetGenericArguments();
@@ -397,6 +390,11 @@ namespace IKVM.Reflection
 		internal override int GetCurrentToken()
 		{
 			return method.GetCurrentToken();
+		}
+
+		internal override bool IsBaked
+		{
+			get { return method.IsBaked; }
 		}
 	}
 }

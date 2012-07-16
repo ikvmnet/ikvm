@@ -268,6 +268,11 @@ namespace IKVM.Reflection.Reader
 		{
 			return this.MetadataToken;
 		}
+
+		internal override bool IsBaked
+		{
+			get { return true; }
+		}
 	}
 
 	sealed class ParameterInfoImpl : ParameterInfo

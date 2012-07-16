@@ -718,14 +718,9 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 
-		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
+		internal override bool IsBaked
 		{
-			if (!typeBuilder.IsCreated())
-			{
-				// like .NET we we don't return custom attributes for unbaked types
-				throw new NotImplementedException();
-			}
-			return base.GetCustomAttributesData(attributeType);
+			get { return typeBuilder.IsBaked; }
 		}
 	}
 }
