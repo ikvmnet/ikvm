@@ -2381,12 +2381,12 @@ namespace IKVM.Internal
 							explicitOverride = true;
 						}
 
-						int majorVersion;
+						int majorVersion = 0;
 						if (!baseMethod.IsPublic && !baseMethod.IsProtected &&
-							((TryGetClassFileVersion(baseMethod.DeclaringType, out majorVersion) && majorVersion < 51)
+							((TryGetClassFileVersion(baseMethod.DeclaringType, ref majorVersion) && majorVersion < 51)
 							// if TryGetClassFileVersion fails, we know that it is safe to call GetMethod() so we look at the actual method attributes here,
 							// because access widing ensures that if the method had overridden the top level method it would also be public or protected
-							|| (LinkAndGetMethod(baseMethod).Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.Assembly))
+							|| (majorVersion == 0 && (LinkAndGetMethod(baseMethod).Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.Assembly)))
 						{
 							// the method we're overriding is not public or protected, but there is a public or protected top level method,
 							// this means that baseMethod is part of a class with a major version < 51, so we have to explicitly override the top level method as well
@@ -2439,7 +2439,7 @@ namespace IKVM.Internal
 				return mw.GetMethod();
 			}
 
-			private static bool TryGetClassFileVersion(TypeWrapper tw, out int majorVersion)
+			private static bool TryGetClassFileVersion(TypeWrapper tw, ref int majorVersion)
 			{
 				DynamicTypeWrapper dtw = tw as DynamicTypeWrapper;
 				if (dtw != null)
@@ -2451,7 +2451,6 @@ namespace IKVM.Internal
 						return true;
 					}
 				}
-				majorVersion = -1;
 				return false;
 			}
 
