@@ -542,7 +542,7 @@ namespace IKVM.Internal
 
 		private void MarkLinkRequiredConstantPoolItem(int index)
 		{
-			if (index != 0)
+			if (index > 0 && index < constantpool.Length && constantpool[index] != null)
 			{
 				constantpool[index].MarkLinkRequired();
 			}
