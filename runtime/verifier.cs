@@ -706,7 +706,7 @@ sealed class InstructionState
 		{
 			// HACK because of the way interfaces references works, if baseType
 			// is an interface or array of interfaces, any reference will be accepted
-			if(baseType.IsInterfaceOrInterfaceArray && !type.IsPrimitive)
+			if((baseType.IsUnloadable || baseType.IsInterfaceOrInterfaceArray) && !type.IsPrimitive)
 			{
 				return type;
 			}
@@ -904,7 +904,7 @@ struct StackState
 		{
 			// HACK because of the way interfaces references works, if baseType
 			// is an interface or array of interfaces, any reference will be accepted
-			if(baseType.IsInterfaceOrInterfaceArray && !type.IsPrimitive)
+			if((baseType.IsUnloadable || baseType.IsInterfaceOrInterfaceArray) && !type.IsPrimitive)
 			{
 				return type;
 			}
