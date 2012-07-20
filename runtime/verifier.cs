@@ -2273,6 +2273,9 @@ sealed class MethodAnalyzer
 								break;
 							case NormalizedByteCode.__static_error:
 								break;
+							case NormalizedByteCode.__jsr:
+							case NormalizedByteCode.__ret:
+								throw new VerifyError("Bad instruction");
 							default:
 								throw new NotImplementedException(instr.NormalizedOpCode.ToString());
 						}
