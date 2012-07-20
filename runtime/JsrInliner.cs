@@ -1058,6 +1058,9 @@ namespace IKVM.Internal
 											throw new VerifyError("Falling off the end of the code");
 										}
 										break;
+									case NormalizedByteCode.__invokedynamic:
+										// it is impossible to have a valid invokedynamic in a pre-7.0 class file
+										throw new VerifyError("Illegal type in constant pool");
 									default:
 										throw new NotImplementedException(instr.NormalizedOpCode.ToString());
 								}
