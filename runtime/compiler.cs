@@ -934,7 +934,7 @@ sealed class Compiler
 				ilGenerator.EmitMonitorEnter();
 				ilGenerator.BeginExceptionBlock();
 				Block b = new Block(c, 0, int.MaxValue, -1, new List<object>(), true);
-				c.Compile(b, c.ComputePartialReachability(0, true));
+				c.Compile(b, 0);
 				b.Leave();
 				ilGenerator.BeginFinallyBlock();
 				ilGenerator.Emit(OpCodes.Ldloc, monitor);
@@ -946,7 +946,7 @@ sealed class Compiler
 			else
 			{
 				Block b = new Block(c, 0, int.MaxValue, -1, null, false);
-				c.Compile(b, c.ComputePartialReachability(0, true));
+				c.Compile(b, 0);
 				b.Leave();
 			}
 			nonleaf = c.nonleaf;
@@ -1170,13 +1170,29 @@ sealed class Compiler
 		}
 	}
 
-	private void Compile(Block block, InstructionFlags[] flags)
+	private void Compile(Block block, int startIndex)
 	{
+		InstructionFlags[] flags = ComputePartialReachability(startIndex, true);
 		ExceptionTableEntry[] exceptions = GetExceptionTableFor(flags);
 		int exceptionIndex = 0;
 		Instruction[] code = m.Instructions;
 		Stack<Block> blockStack = new Stack<Block>();
 		bool instructionIsForwardReachable = true;
+		if(startIndex != 0)
+		{
+			for(int i = 0; i < flags.Length; i++)
+			{
+				if((flags[i] & InstructionFlags.Reachable) != 0)
+				{
+					if(i < startIndex)
+					{
+						instructionIsForwardReachable = false;
+						ilGenerator.EmitBr(block.GetLabel(startIndex));
+					}
+					break;
+				}
+			}
+		}
 		for(int i = 0; i < code.Length; i++)
 		{
 			Instruction instr = code[i];
@@ -1221,7 +1237,9 @@ sealed class Compiler
 					{
 						ilGenerator.BeginFaultBlock();
 					}
-					Compile(new Block(this, 0, block.EndIndex, -1, null, false), ComputePartialReachability(handlerIndex, true));
+					Block b = new Block(this, 0, block.EndIndex, -1, null, false);
+					Compile(b, handlerIndex);
+					b.Leave();
 					ilGenerator.EndExceptionBlock();
 				}
 				else
