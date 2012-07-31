@@ -145,7 +145,7 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 
-		private void CheckBaked()
+		internal override void CheckBaked()
 		{
 			if (type != null)
 			{
