@@ -1,5 +1,6 @@
 /*
   Copyright (C) 2008 Volker Berlin (i-net software)
+  Copyright (C) 2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -23,6 +24,9 @@
 */
 package ikvm.awt;
 
+import java.awt.Toolkit;
+import sun.awt.HeadlessToolkit;
+
 public interface IkvmToolkit{
     
     /**
@@ -33,4 +37,17 @@ public interface IkvmToolkit{
     public sun.print.PrintPeer getPrintPeer();
     
     public java.awt.Shape outline(java.awt.Font javaFont, java.awt.font.FontRenderContext frc, String text, float x, float y);
+
+	public static class DefaultToolkit
+	{
+		public static IkvmToolkit get()
+		{
+			Toolkit tk = Toolkit.getDefaultToolkit();
+			if (tk instanceof HeadlessToolkit)
+			{
+				tk = ((HeadlessToolkit)tk).getUnderlyingToolkit();
+			}
+			return (IkvmToolkit)tk;
+		}
+	}
 }

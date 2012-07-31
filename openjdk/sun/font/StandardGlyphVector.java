@@ -297,7 +297,7 @@ public class StandardGlyphVector extends GlyphVector{
     @Override
     public Shape getGlyphVisualBounds( int glyphIndex ) {
         initPositions();
-        return ((IkvmToolkit)Toolkit.getDefaultToolkit()).outline( font, frc, glyphs.substring( glyphIndex, glyphIndex + 1 ), positions[glyphIndex * 2], 0 );
+        return IkvmToolkit.DefaultToolkit.get().outline( font, frc, glyphs.substring( glyphIndex, glyphIndex + 1 ), positions[glyphIndex * 2], 0 );
     }
 
     @Override
@@ -340,7 +340,7 @@ public class StandardGlyphVector extends GlyphVector{
 
     @Override
     public Shape getOutline(float x, float y){
-        return ((IkvmToolkit)Toolkit.getDefaultToolkit()).outline( font, frc, glyphs, x, y );
+        return IkvmToolkit.DefaultToolkit.get().outline( font, frc, glyphs, x, y );
     }
 
 

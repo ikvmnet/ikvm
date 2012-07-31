@@ -51,7 +51,7 @@ import javax.print.attribute.standard.PrinterName;
 
 public class Win32PrintServiceLookup extends PrintServiceLookup {
     
-    private final PrintPeer peer = ((IkvmToolkit)Toolkit.getDefaultToolkit()).getPrintPeer();
+    private final PrintPeer peer = IkvmToolkit.DefaultToolkit.get().getPrintPeer();
 
     private String defaultPrinter;
     private PrintService defaultPrintService;
