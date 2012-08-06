@@ -366,7 +366,7 @@ public class Win32PrintService implements PrintService {
     	} else if (category == Media.class) {
     		int rawKind = settings.get_DefaultPageSettings().get_PaperSize().get_RawKind();
     		if( rawKind > MEDIA_NAMES.length || rawKind < 1 || MEDIA_NAMES[ rawKind - 1 ] == null ){ // custom page format
-    			return settings.get_DefaultPageSettings().get_PaperSize().get_PaperName();
+    			return findMatchingMedia( settings.get_DefaultPageSettings().get_PaperSize() );
     		} else {
     			return MEDIA_NAMES[ rawKind - 1 ];
     		}
