@@ -2758,6 +2758,14 @@ namespace IKVM.Internal
 				}
 			}
 
+			internal bool IsConstructor
+			{
+				get
+				{
+					return ReferenceEquals(Name, StringConstants.INIT);
+				}
+			}
+
 			// for use by ikvmc only
 			internal bool HasCallerIDAnnotation
 			{

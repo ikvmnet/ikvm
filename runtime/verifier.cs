@@ -1200,7 +1200,7 @@ sealed class MethodAnalyzer
 		{
 			thisType = VerifierTypeWrapper.MakeThis(wrapper);
 			// this reference. If we're a constructor, the this reference is uninitialized.
-			if(ReferenceEquals(method.Name, StringConstants.INIT))
+			if(method.IsConstructor)
 			{
 				state[0].SetLocalType(firstNonArgLocalIndex++, VerifierTypeWrapper.UninitializedThis, -1);
 				state[0].SetUnitializedThis(true);

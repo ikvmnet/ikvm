@@ -505,17 +505,13 @@ namespace IKVM.Internal
 					{
 						methods[i] = new MethodWrapper.GhostMethodWrapper(wrapper, m.Name, m.Signature, null, null, null, m.Modifiers, flags);
 					}
-					else if (ReferenceEquals(m.Name, StringConstants.INIT) && wrapper.IsDelegate)
+					else if (m.IsConstructor && wrapper.IsDelegate)
 					{
 						methods[i] = new DelegateConstructorMethodWrapper(wrapper, m);
 					}
-					else if (ReferenceEquals(m.Name, StringConstants.INIT) || m.IsClassInitializer)
-					{
-						methods[i] = new TypicalMethodWrapper(wrapper, m.Name, m.Signature, null, null, null, m.Modifiers, flags);
-					}
 					else
 					{
-						if (!classFile.IsInterface && !m.IsStatic && !m.IsPrivate)
+						if (!classFile.IsInterface && !m.IsStatic && !m.IsPrivate && !m.IsConstructor)
 						{
 							bool explicitOverride = false;
 							baseMethods[i] = FindBaseMethods(m, out explicitOverride);
@@ -2731,7 +2727,7 @@ namespace IKVM.Internal
 						// so we need to explicitly record that the method is varargs
 						setModifiers = true;
 					}
-					if (ReferenceEquals(m.Name, StringConstants.INIT))
+					if (m.IsConstructor)
 					{
 						method = GenerateConstructor(methods[index]);
 						// strictfp is the only modifier that a constructor can have
@@ -3694,7 +3690,7 @@ namespace IKVM.Internal
 					if (mb == null)
 					{
 						// method doesn't really exist (e.g. delegate constructor or <clinit> that is optimized away)
-						if (m.Name == StringConstants.INIT)
+						if (m.IsConstructor)
 						{
 							hasConstructor = true;
 						}
