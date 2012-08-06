@@ -1866,6 +1866,7 @@ namespace IKVM.Internal
 #if !STUB_GENERATOR
 			protected override void CallImpl(CodeEmitter ilgen)
 			{
+				ConvertByRefArgs(ilgen);
 				MethodBase mb = GetMethod();
 				MethodInfo mi = mb as MethodInfo;
 				if (mi != null)
@@ -1880,15 +1881,17 @@ namespace IKVM.Internal
 
 			protected override void CallvirtImpl(CodeEmitter ilgen)
 			{
+				ConvertByRefArgs(ilgen);
 				ilgen.Emit(OpCodes.Callvirt, (MethodInfo)GetMethod());
 			}
 
 			protected override void NewobjImpl(CodeEmitter ilgen)
 			{
+				ConvertByRefArgs(ilgen);
 				ilgen.Emit(OpCodes.Newobj, (ConstructorInfo)GetMethod());
 			}
 
-			protected override void PreEmit(CodeEmitter ilgen)
+			private void ConvertByRefArgs(CodeEmitter ilgen)
 			{
 				CodeEmitterLocal[] locals = new CodeEmitterLocal[args.Length];
 				for (int i = args.Length - 1; i >= 0; i--)
@@ -1910,7 +1913,6 @@ namespace IKVM.Internal
 						ilgen.Emit(OpCodes.Ldelema, args[i].GetElementType());
 					}
 				}
-				base.PreEmit(ilgen);
 			}
 #endif // !STUB_GENERATOR
 		}

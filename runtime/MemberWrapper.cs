@@ -1097,14 +1097,9 @@ namespace IKVM.Internal
 		}
 
 #if !STUB_GENERATOR
-		protected virtual void PreEmit(CodeEmitter ilgen)
-		{
-		}
-
 		internal sealed override void EmitCall(CodeEmitter ilgen)
 		{
 			AssertLinked();
-			PreEmit(ilgen);
 			CallImpl(ilgen);
 		}
 
@@ -1116,7 +1111,6 @@ namespace IKVM.Internal
 		internal sealed override void EmitCallvirt(CodeEmitter ilgen)
 		{
 			AssertLinked();
-			PreEmit(ilgen);
 			if(DeclaringType.IsNonPrimitiveValueType)
 			{
 				// callvirt isn't allowed on a value type
@@ -1137,7 +1131,6 @@ namespace IKVM.Internal
 		internal sealed override void EmitNewobj(CodeEmitter ilgen)
 		{
 			AssertLinked();
-			PreEmit(ilgen);
 			NewobjImpl(ilgen);
 			if(DeclaringType.IsNonPrimitiveValueType)
 			{
