@@ -2639,14 +2639,7 @@ namespace IKVM.Internal
 			}
 			else
 			{
-				if (mb is ConstructorInfo)
-				{
-					return new SmartConstructorMethodWrapper(this, name, sig, (ConstructorInfo)mb, argTypeWrappers, mods, MemberFlags.None);
-				}
-				else
-				{
-					return new SmartCallMethodWrapper(this, name, sig, (MethodInfo)mb, retTypeWrapper, argTypeWrappers, mods, MemberFlags.None, SimpleOpCode.Call, SimpleOpCode.Callvirt);
-				}
+				return new TypicalMethodWrapper(this, name, sig, mb, retTypeWrapper, argTypeWrappers, mods, MemberFlags.None);
 			}
 		}
 

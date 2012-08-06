@@ -457,13 +457,9 @@ namespace IKVM.Internal
 				}
 				return new GhostMethodWrapper(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags);
 			}
-			else if(method is ConstructorInfo)
-			{
-				return new SmartConstructorMethodWrapper(declaringType, name, sig, (ConstructorInfo)method, parameterTypes, modifiers, flags);
-			}
 			else
 			{
-				return new SmartCallMethodWrapper(declaringType, name, sig, (MethodInfo)method, returnType, parameterTypes, modifiers, flags, SimpleOpCode.Call, method.IsStatic ? SimpleOpCode.Call : SimpleOpCode.Callvirt);
+				return new TypicalMethodWrapper(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags);
 			}
 		}
 
@@ -1177,35 +1173,10 @@ namespace IKVM.Internal
 #endif // !STUB_GENERATOR
 	}
 
-	sealed class SmartCallMethodWrapper : SmartMethodWrapper
+	sealed class TypicalMethodWrapper : SmartMethodWrapper
 	{
-		private SimpleOpCode call;
-		private SimpleOpCode callvirt;
-
-		internal SmartCallMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodInfo method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags, SimpleOpCode call, SimpleOpCode callvirt)
+		internal TypicalMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
 			: base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags)
-		{
-			this.call = call;
-			this.callvirt = callvirt;
-		}
-
-#if !STUB_GENERATOR
-		protected override void CallImpl(CodeEmitter ilgen)
-		{
-			ilgen.Emit(SimpleOpCodeToOpCode(call), GetMethod());
-		}
-
-		protected override void CallvirtImpl(CodeEmitter ilgen)
-		{
-			ilgen.Emit(SimpleOpCodeToOpCode(callvirt), GetMethod());
-		}
-#endif // !STUB_GENERATOR
-	}
-
-	sealed class SmartConstructorMethodWrapper : SmartMethodWrapper
-	{
-		internal SmartConstructorMethodWrapper(TypeWrapper declaringType, string name, string sig, ConstructorInfo method, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
-			: base(declaringType, name, sig, method, PrimitiveTypeWrapper.VOID, parameterTypes, modifiers, flags)
 		{
 		}
 
@@ -1213,6 +1184,11 @@ namespace IKVM.Internal
 		protected override void CallImpl(CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Call, GetMethod());
+		}
+
+		protected override void CallvirtImpl(CodeEmitter ilgen)
+		{
+			ilgen.Emit(OpCodes.Callvirt, GetMethod());
 		}
 
 		protected override void NewobjImpl(CodeEmitter ilgen)
