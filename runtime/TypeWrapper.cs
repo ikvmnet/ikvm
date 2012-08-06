@@ -4340,7 +4340,7 @@ namespace IKVM.Internal
 				}
 				else
 				{
-					ilgen.Emit(OpCodes.Call, (ConstructorInfo)mb);
+					ilgen.Emit(OpCodes.Call, mb);
 				}
 			}
 
@@ -4354,7 +4354,7 @@ namespace IKVM.Internal
 				else
 				{
 					// HACK the helper is not public, this means that we're dealing with finalize or clone
-					ilgen.Emit(OpCodes.Callvirt, (MethodInfo)GetMethod());
+					ilgen.Emit(OpCodes.Callvirt, GetMethod());
 				}
 			}
 
@@ -4369,7 +4369,7 @@ namespace IKVM.Internal
 				}
 				else
 				{
-					ilgen.Emit(OpCodes.Newobj, (ConstructorInfo)mb);
+					ilgen.Emit(OpCodes.Newobj, mb);
 				}
 			}
 #endif // !STUB_GENERATOR
@@ -4396,7 +4396,7 @@ namespace IKVM.Internal
 			internal override void EmitCallvirtReflect(CodeEmitter ilgen)
 			{
 				MethodBase mb = mbHelper != null ? mbHelper : GetMethod();
-				ilgen.Emit(mb.IsStatic ? OpCodes.Call : OpCodes.Callvirt, (MethodInfo)mb);
+				ilgen.Emit(mb.IsStatic ? OpCodes.Call : OpCodes.Callvirt, mb);
 			}
 #endif // !STATIC_COMPILER
 

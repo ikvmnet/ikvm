@@ -1813,7 +1813,7 @@ namespace IKVM.Internal
 				// TODO linking here is not safe
 				mw.Link();
 				context.Emitter.Emit(OpCodes.Dup);
-				context.Emitter.Emit(OpCodes.Ldvirtftn, (MethodInfo)mw.GetMethod());
+				context.Emitter.Emit(OpCodes.Ldvirtftn, mw.GetMethod());
 				context.Emitter.Emit(OpCodes.Newobj, delegateConstructor);
 				return true;
 			}
@@ -1867,28 +1867,19 @@ namespace IKVM.Internal
 			protected override void CallImpl(CodeEmitter ilgen)
 			{
 				ConvertByRefArgs(ilgen);
-				MethodBase mb = GetMethod();
-				MethodInfo mi = mb as MethodInfo;
-				if (mi != null)
-				{
-					ilgen.Emit(OpCodes.Call, mi);
-				}
-				else
-				{
-					ilgen.Emit(OpCodes.Call, (ConstructorInfo)mb);
-				}
+				ilgen.Emit(OpCodes.Call, GetMethod());
 			}
 
 			protected override void CallvirtImpl(CodeEmitter ilgen)
 			{
 				ConvertByRefArgs(ilgen);
-				ilgen.Emit(OpCodes.Callvirt, (MethodInfo)GetMethod());
+				ilgen.Emit(OpCodes.Callvirt, GetMethod());
 			}
 
 			protected override void NewobjImpl(CodeEmitter ilgen)
 			{
 				ConvertByRefArgs(ilgen);
-				ilgen.Emit(OpCodes.Newobj, (ConstructorInfo)GetMethod());
+				ilgen.Emit(OpCodes.Newobj, GetMethod());
 			}
 
 			private void ConvertByRefArgs(CodeEmitter ilgen)

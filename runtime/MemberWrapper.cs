@@ -1167,12 +1167,12 @@ namespace IKVM.Internal
 #if !STUB_GENERATOR
 		internal override void EmitCall(CodeEmitter ilgen)
 		{
-			ilgen.Emit(SimpleOpCodeToOpCode(call), (MethodInfo)GetMethod());
+			ilgen.Emit(SimpleOpCodeToOpCode(call), GetMethod());
 		}
 
 		internal override void EmitCallvirt(CodeEmitter ilgen)
 		{
-			ilgen.Emit(SimpleOpCodeToOpCode(callvirt), (MethodInfo)GetMethod());
+			ilgen.Emit(SimpleOpCodeToOpCode(callvirt), GetMethod());
 		}
 #endif // !STUB_GENERATOR
 	}
@@ -1192,12 +1192,12 @@ namespace IKVM.Internal
 #if !STUB_GENERATOR
 		protected override void CallImpl(CodeEmitter ilgen)
 		{
-			ilgen.Emit(SimpleOpCodeToOpCode(call), (MethodInfo)GetMethod());
+			ilgen.Emit(SimpleOpCodeToOpCode(call), GetMethod());
 		}
 
 		protected override void CallvirtImpl(CodeEmitter ilgen)
 		{
-			ilgen.Emit(SimpleOpCodeToOpCode(callvirt), (MethodInfo)GetMethod());
+			ilgen.Emit(SimpleOpCodeToOpCode(callvirt), GetMethod());
 		}
 #endif // !STUB_GENERATOR
 	}
@@ -1212,12 +1212,12 @@ namespace IKVM.Internal
 #if !STUB_GENERATOR
 		protected override void CallImpl(CodeEmitter ilgen)
 		{
-			ilgen.Emit(OpCodes.Call, (ConstructorInfo)GetMethod());
+			ilgen.Emit(OpCodes.Call, GetMethod());
 		}
 
 		protected override void NewobjImpl(CodeEmitter ilgen)
 		{
-			ilgen.Emit(OpCodes.Newobj, (ConstructorInfo)GetMethod());
+			ilgen.Emit(OpCodes.Newobj, GetMethod());
 		}
 #endif // !STUB_GENERATOR
 	}

@@ -2525,9 +2525,9 @@ namespace IKVM.Internal
 			EmitOpCode(OpCodes.Unaligned, alignment);
 		}
 
-		internal void Emit(OpCode opcode, ConstructorInfo con)
+		internal void Emit(OpCode opcode, MethodBase mb)
 		{
-			EmitOpCode(opcode, con);
+			EmitOpCode(opcode, mb);
 		}
 
 		internal void EmitLdc_R8(double arg)
@@ -2674,11 +2674,6 @@ namespace IKVM.Internal
 		internal void Emit(OpCode opcode, CodeEmitterLocal local)
 		{
 			EmitOpCode(opcode, local);
-		}
-
-		internal void Emit(OpCode opcode, MethodInfo meth)
-		{
-			EmitOpCode(opcode, meth);
 		}
 
 		internal void EmitLdc_R4(float arg)
