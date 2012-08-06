@@ -34,7 +34,7 @@ using IKVM.Internal;
 
 namespace IKVM.Internal.MapXml
 {
-	class CodeGenContext
+	sealed class CodeGenContext
 	{
 		private ClassLoaderWrapper classLoader;
 		private readonly Dictionary<string, object> h = new Dictionary<string, object>();
@@ -1180,7 +1180,7 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
-	public class CatchBlock : InstructionList
+	public sealed class CatchBlock : InstructionList
 	{
 		[XmlAttribute("type")]
 		public string type;
@@ -1189,7 +1189,7 @@ namespace IKVM.Internal.MapXml
 	}
 
 	[XmlType("conditional")]
-	public class ConditionalInstruction : Instruction
+	public sealed class ConditionalInstruction : Instruction
 	{
 		[XmlAttribute("framework")]
 		public string framework;
@@ -1502,13 +1502,13 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
-	public class Throws
+	public sealed class Throws
 	{
 		[XmlAttribute("class")]
 		public string Class;
 	}
 
-	public class Redirect
+	public sealed class Redirect
 	{
 		private int linenum = Root.LineNumber;
 
@@ -1567,7 +1567,7 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
-	public class Override
+	public sealed class Override
 	{
 		[XmlAttribute("class")]
 		public string Class;
@@ -1575,7 +1575,7 @@ namespace IKVM.Internal.MapXml
 		public string Name;
 	}
 
-	public class ReplaceMethodCall
+	public sealed class ReplaceMethodCall
 	{
 		[XmlAttribute("class")]
 		public string Class;
@@ -1630,7 +1630,7 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
-	public class Method : MethodConstructorBase
+	public sealed class Method : MethodConstructorBase
 	{
 		[XmlAttribute("name")]
 		public string Name;
@@ -1645,7 +1645,7 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
-	public class Constructor : MethodConstructorBase
+	public sealed class Constructor : MethodConstructorBase
 	{
 		internal override MethodKey ToMethodKey(string className)
 		{
@@ -1653,7 +1653,7 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
-	public class ClassInitializer : MethodBase
+	public sealed class ClassInitializer : MethodBase
 	{
 		internal override MethodKey ToMethodKey(string className)
 		{
@@ -1661,7 +1661,7 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
-	public class Field
+	public sealed class Field
 	{
 		[XmlAttribute("name")]
 		public string Name;
@@ -1675,7 +1675,7 @@ namespace IKVM.Internal.MapXml
 		public Attribute[] Attributes;
 	}
 
-	public class Property
+	public sealed class Property
 	{
 		[XmlAttribute("name")]
 		public string Name;
@@ -1687,7 +1687,7 @@ namespace IKVM.Internal.MapXml
 		public Attribute[] Attributes;
 	}
 
-	public class Interface
+	public sealed class Interface
 	{
 		[XmlAttribute("class")]
 		public string Name;
@@ -1726,13 +1726,13 @@ namespace IKVM.Internal.MapXml
 		Private = 1
 	}
 
-	public class Element
+	public sealed class Element
 	{
 		[XmlText]
 		public string Value;
 	}
 
-	public class Param
+	public sealed class Param
 	{
 		[XmlText]
 		public string Value;
@@ -1746,7 +1746,7 @@ namespace IKVM.Internal.MapXml
 		public Attribute[] Attributes;
 	}
 
-	public class Attribute
+	public sealed class Attribute
 	{
 		[XmlAttribute("type")]
 		public string Type;
@@ -1763,7 +1763,7 @@ namespace IKVM.Internal.MapXml
 	}
 
 	[XmlType("class")]
-	public class Class
+	public sealed class Class
 	{
 		[XmlAttribute("name")]
 		public string Name;
@@ -1789,7 +1789,7 @@ namespace IKVM.Internal.MapXml
 		public Attribute[] Attributes;
 	}
 
-	public class Assembly
+	public sealed class Assembly
 	{
 		[XmlElement("class")]
 		public Class[] Classes;
@@ -1798,7 +1798,7 @@ namespace IKVM.Internal.MapXml
 	}
 
 	[XmlType("exception")]
-	public class ExceptionMapping
+	public sealed class ExceptionMapping
 	{
 		[XmlAttribute]
 		public string src;
@@ -1808,7 +1808,7 @@ namespace IKVM.Internal.MapXml
 	}
 
 	[XmlRoot("root")]
-	public class Root
+	public sealed class Root
 	{
 		internal static System.Xml.XmlTextReader xmlReader;
 

@@ -957,7 +957,7 @@ sealed class Compiler
 		}
 	}
 
-	private class Block
+	private sealed class Block
 	{
 		private Compiler compiler;
 		private CodeEmitter ilgen;
@@ -3789,7 +3789,7 @@ sealed class Compiler
 		}
 	}
 
-	private class DynamicMethodWrapper : MethodWrapper
+	private sealed class DynamicMethodWrapper : MethodWrapper
 	{
 		private DynamicTypeWrapper.FinishContext context;
 		private TypeWrapper wrapper;

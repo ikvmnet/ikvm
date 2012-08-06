@@ -42,7 +42,7 @@ using System.Runtime.CompilerServices;
 
 namespace IKVM.Internal
 {
-	class CompilerClassLoader : ClassLoaderWrapper
+	sealed class CompilerClassLoader : ClassLoaderWrapper
 	{
 		private Dictionary<string, ClassItem> classes;
 		private Dictionary<string, RemapperTypeWrapper> remapped = new Dictionary<string, RemapperTypeWrapper>();
@@ -828,7 +828,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		private class RemapperTypeWrapper : TypeWrapper
+		private sealed class RemapperTypeWrapper : TypeWrapper
 		{
 			private CompilerClassLoader classLoader;
 			private TypeBuilder typeBuilder;
@@ -3337,7 +3337,7 @@ namespace IKVM.Internal
 		internal string jar;
 	}
 
-	class CompilerOptions
+	sealed class CompilerOptions
 	{
 		internal string path;
 		internal string keyfile;

@@ -4302,7 +4302,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		private class CompiledRemappedMethodWrapper : SmartMethodWrapper
+		private sealed class CompiledRemappedMethodWrapper : SmartMethodWrapper
 		{
 			private MethodInfo mbHelper;
 #if !STATIC_COMPILER
@@ -4644,7 +4644,7 @@ namespace IKVM.Internal
 		}
 #endif
 
-		private class CompiledAnnotation : Annotation
+		private sealed class CompiledAnnotation : Annotation
 		{
 			private Type type;
 

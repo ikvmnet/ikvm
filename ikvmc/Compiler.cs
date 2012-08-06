@@ -155,7 +155,7 @@ sealed class FatalCompilerErrorException : Exception
 	}
 }
 
-class IkvmcCompiler
+sealed class IkvmcCompiler
 {
 	private bool nonleaf;
 	private string manifestMainClass;

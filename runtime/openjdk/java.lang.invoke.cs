@@ -300,7 +300,7 @@ static partial class MethodHandleUtil
 		return MethodType.methodType(ClassLoaderWrapper.GetWrapperFromType(mi.ReturnType).ClassObject, types);
 	}
 
-	internal class DynamicMethodBuilder
+	internal sealed class DynamicMethodBuilder
 	{
 		private readonly MethodType type;
 		private readonly int firstArg;

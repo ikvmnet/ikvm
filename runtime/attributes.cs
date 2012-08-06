@@ -67,7 +67,7 @@ namespace IKVM.Attributes
 			this.table = table;
 		}
 
-		public class LineNumberWriter
+		public sealed class LineNumberWriter
 		{
 			private System.IO.MemoryStream stream;
 			private int prevILOffset;

@@ -1369,7 +1369,7 @@ namespace IKVM.Internal
 #endif
 	}
 
-	class GenericClassLoader : ClassLoaderWrapper
+	sealed class GenericClassLoader : ClassLoaderWrapper
 	{
 		private ClassLoaderWrapper[] delegates;
 

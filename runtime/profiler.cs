@@ -25,14 +25,14 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-class Profiler
+sealed class Profiler
 {
 	private static Profiler instance = new Profiler();
 	private static Dictionary<string, Entry> counters = new Dictionary<string, Entry>();
 	[ThreadStatic]
 	private static Stack<Entry> stack;
 
-	private class Entry
+	private sealed class Entry
 	{
 		internal long Time;
 		internal long Count;

@@ -55,7 +55,7 @@ namespace IKVM.Internal
 		Type2FinalField = 2048,
 	}
 
-	class MemberWrapper
+	abstract class MemberWrapper
 	{
 		private HandleWrapper handle;
 		private TypeWrapper declaringType;
@@ -407,7 +407,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal class GhostMethodWrapper : SmartMethodWrapper
+		internal sealed class GhostMethodWrapper : SmartMethodWrapper
 		{
 			private MethodInfo ghostMethod;
 
@@ -1089,7 +1089,7 @@ namespace IKVM.Internal
 		}
 	}
 
-	class SmartMethodWrapper : MethodWrapper
+	abstract class SmartMethodWrapper : MethodWrapper
 	{
 		internal SmartMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
 			: base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags)

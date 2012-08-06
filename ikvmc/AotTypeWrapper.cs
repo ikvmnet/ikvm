@@ -34,7 +34,7 @@ using IKVM.Attributes;
 
 namespace IKVM.Internal
 {
-	class AotTypeWrapper : DynamicTypeWrapper
+	sealed class AotTypeWrapper : DynamicTypeWrapper
 	{
 		private FieldInfo ghostRefField;
 		private MethodBuilder ghostIsInstanceMethod;

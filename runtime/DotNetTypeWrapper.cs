@@ -510,7 +510,7 @@ namespace IKVM.Internal
 			}
 #endif
 
-			private class EnumFieldWrapper : FieldWrapper
+			private sealed class EnumFieldWrapper : FieldWrapper
 			{
 #if !STATIC_COMPILER && !STUB_GENERATOR
 				private readonly int ordinal;
@@ -554,7 +554,7 @@ namespace IKVM.Internal
 #endif // !STUB_GENERATOR
 			}
 
-			private class EnumValuesMethodWrapper : MethodWrapper, ICustomInvoke
+			private sealed class EnumValuesMethodWrapper : MethodWrapper, ICustomInvoke
 			{
 				internal EnumValuesMethodWrapper(TypeWrapper declaringType)
 					: base(declaringType, "values", "()[" + declaringType.SigName, null, declaringType.MakeArrayType(1), TypeWrapper.EmptyArray, Modifiers.Public | Modifiers.Static, MemberFlags.None)
@@ -583,7 +583,7 @@ namespace IKVM.Internal
 #endif // !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 			}
 
-			private class EnumValueOfMethodWrapper : MethodWrapper, ICustomInvoke
+			private sealed class EnumValueOfMethodWrapper : MethodWrapper, ICustomInvoke
 			{
 				internal EnumValueOfMethodWrapper(TypeWrapper declaringType)
 					: base(declaringType, "valueOf", "(Ljava.lang.String;)" + declaringType.SigName, null, declaringType, new TypeWrapper[] { CoreClasses.java.lang.String.Wrapper }, Modifiers.Public | Modifiers.Static, MemberFlags.None)
@@ -826,7 +826,7 @@ namespace IKVM.Internal
 				singleOneArgCtor = oneArgCtorCount == 1 ? oneArgCtor : null;
 			}
 
-			private class AttributeAnnotationMethodWrapper : DynamicOnlyMethodWrapper
+			private sealed class AttributeAnnotationMethodWrapper : DynamicOnlyMethodWrapper
 			{
 				private bool optional;
 
@@ -1084,7 +1084,7 @@ namespace IKVM.Internal
 				}
 #endif
 
-				private class ReturnValueAnnotation : Annotation
+				private sealed class ReturnValueAnnotation : Annotation
 				{
 					private AttributeAnnotationTypeWrapper type;
 
@@ -1220,7 +1220,7 @@ namespace IKVM.Internal
 				}
 #endif
 
-				private class MultipleAnnotation : Annotation
+				private sealed class MultipleAnnotation : Annotation
 				{
 					private AttributeAnnotationTypeWrapper type;
 
@@ -1426,7 +1426,7 @@ namespace IKVM.Internal
 			}
 #endif
 
-			private class AttributeAnnotation : Annotation
+			private sealed class AttributeAnnotation : Annotation
 			{
 				private Type type;
 
@@ -1781,7 +1781,7 @@ namespace IKVM.Internal
 			return name ?? "Invoke";
 		}
 
-		private class DelegateMethodWrapper : MethodWrapper
+		private sealed class DelegateMethodWrapper : MethodWrapper
 		{
 			private ConstructorInfo delegateConstructor;
 			private DelegateInnerClassTypeWrapper iface;
@@ -1847,7 +1847,7 @@ namespace IKVM.Internal
 #endif // !STUB_GENERATOR
 		}
 
-		private class ByRefMethodWrapper : SmartMethodWrapper
+		private sealed class ByRefMethodWrapper : SmartMethodWrapper
 		{
 #if !STATIC_COMPILER
 			private bool[] byrefs;
@@ -1917,7 +1917,7 @@ namespace IKVM.Internal
 #endif // !STUB_GENERATOR
 		}
 
-		private class EnumWrapMethodWrapper : MethodWrapper
+		private sealed class EnumWrapMethodWrapper : MethodWrapper
 		{
 			internal EnumWrapMethodWrapper(DotNetTypeWrapper tw, TypeWrapper fieldType)
 				: base(tw, "wrap", "(" + fieldType.SigName + ")" + tw.SigName, null, tw, new TypeWrapper[] { fieldType }, Modifiers.Static | Modifiers.Public, MemberFlags.None)
@@ -1934,7 +1934,7 @@ namespace IKVM.Internal
 #endif // !STUB_GENERATOR
 		}
 
-		internal class EnumValueFieldWrapper : FieldWrapper
+		internal sealed class EnumValueFieldWrapper : FieldWrapper
 		{
 			private Type underlyingType;
 
@@ -1965,7 +1965,7 @@ namespace IKVM.Internal
 #endif // !STUB_GENERATOR
 		}
 
-		private class ValueTypeDefaultCtor : MethodWrapper
+		private sealed class ValueTypeDefaultCtor : MethodWrapper
 		{
 			internal ValueTypeDefaultCtor(DotNetTypeWrapper tw)
 				: base(tw, "<init>", "()V", null, PrimitiveTypeWrapper.VOID, TypeWrapper.EmptyArray, Modifiers.Public, MemberFlags.None)
@@ -1982,7 +1982,7 @@ namespace IKVM.Internal
 #endif // !STUB_GENERATOR
 		}
 
-		private class FinalizeMethodWrapper : MethodWrapper
+		private sealed class FinalizeMethodWrapper : MethodWrapper
 		{
 			internal FinalizeMethodWrapper(DotNetTypeWrapper tw)
 				: base(tw, "finalize", "()V", null, PrimitiveTypeWrapper.VOID, TypeWrapper.EmptyArray, Modifiers.Protected | Modifiers.Final, MemberFlags.None)
@@ -2002,7 +2002,7 @@ namespace IKVM.Internal
 #endif // !STUB_GENERATOR
 		}
 
-		private class CloneMethodWrapper : MethodWrapper
+		private sealed class CloneMethodWrapper : MethodWrapper
 		{
 			internal CloneMethodWrapper(DotNetTypeWrapper tw)
 				: base(tw, "clone", "()Ljava.lang.Object;", null, CoreClasses.java.lang.Object.Wrapper, TypeWrapper.EmptyArray, Modifiers.Protected | Modifiers.Final, MemberFlags.None)
@@ -2304,7 +2304,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		private class BaseFinalMethodWrapper : MethodWrapper
+		private sealed class BaseFinalMethodWrapper : MethodWrapper
 		{
 			private MethodWrapper m;
 

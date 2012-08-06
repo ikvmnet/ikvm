@@ -58,7 +58,7 @@ abstract class RetargetableJavaException : ApplicationException
 // was thrown by a class loader. It is used so ClassFile.LoadClassHelper() can catch
 // Java exceptions and turn them into UnloadableTypeWrappers without inadvertantly
 // hiding exceptions caused by coding errors in the IKVM code.
-class ClassLoadingException : RetargetableJavaException
+sealed class ClassLoadingException : RetargetableJavaException
 {
 	internal ClassLoadingException(Exception x)
 		: base(x.Message, x)
@@ -91,7 +91,7 @@ class LinkageError : RetargetableJavaException
 #endif
 }
 
-class VerifyError : LinkageError
+sealed class VerifyError : LinkageError
 {
 	internal VerifyError() : base("")
 	{
@@ -113,7 +113,7 @@ class VerifyError : LinkageError
 #endif
 }
 
-class ClassNotFoundException : RetargetableJavaException
+sealed class ClassNotFoundException : RetargetableJavaException
 {
 	internal ClassNotFoundException(string name) : base(name)
 	{
@@ -127,7 +127,7 @@ class ClassNotFoundException : RetargetableJavaException
 #endif
 }
 
-class ClassCircularityError : LinkageError
+sealed class ClassCircularityError : LinkageError
 {
 	internal ClassCircularityError(string msg) : base(msg)
 	{
@@ -141,7 +141,7 @@ class ClassCircularityError : LinkageError
 #endif
 }
 
-class NoClassDefFoundError : LinkageError
+sealed class NoClassDefFoundError : LinkageError
 {
 	internal NoClassDefFoundError(string msg) : base(msg)
 	{
@@ -169,7 +169,7 @@ class IncompatibleClassChangeError : LinkageError
 #endif
 }
 
-class IllegalAccessError : IncompatibleClassChangeError
+sealed class IllegalAccessError : IncompatibleClassChangeError
 {
 	internal IllegalAccessError(string msg) : base(msg)
 	{
@@ -198,7 +198,7 @@ class ClassFormatError : LinkageError
 #endif
 }
 
-class UnsupportedClassVersionError : ClassFormatError
+sealed class UnsupportedClassVersionError : ClassFormatError
 {
 	internal UnsupportedClassVersionError(string msg)
 		: base(msg)

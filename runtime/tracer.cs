@@ -43,7 +43,7 @@ namespace IKVM.Internal
 
 		private readonly static List<string> methodtraces = new List<string>();
 
-		private class MyTextWriterTraceListener : TextWriterTraceListener
+		private sealed class MyTextWriterTraceListener : TextWriterTraceListener
 		{
 			internal MyTextWriterTraceListener(System.IO.TextWriter tw)
 				: base(tw)
