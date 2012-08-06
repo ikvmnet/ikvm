@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2011 Jeroen Frijters
+  Copyright (C) 2002-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -404,62 +404,6 @@ namespace IKVM.Internal
 			get
 			{
 				return false;
-			}
-		}
-
-		internal sealed class GhostMethodWrapper : SmartMethodWrapper
-		{
-			private MethodInfo ghostMethod;
-
-			internal GhostMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
-				: base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags)
-			{
-				// make sure we weren't handed the ghostMethod in the wrapper value type
-				Debug.Assert(method == null || method.DeclaringType.IsInterface);
-			}
-
-			private void ResolveGhostMethod()
-			{
-				if(ghostMethod == null)
-				{
-					ghostMethod = DeclaringType.TypeAsSignatureType.GetMethod(this.Name, this.GetParametersForDefineMethod());
-					if(ghostMethod == null)
-					{
-						throw new InvalidOperationException("Unable to resolve ghost method");
-					}
-				}
-			}
-
-#if !STUB_GENERATOR
-			protected override void CallvirtImpl(CodeEmitter ilgen)
-			{
-				ResolveGhostMethod();
-				ilgen.Emit(OpCodes.Call, ghostMethod);
-			}
-#endif
-		}
-
-		internal static MethodWrapper Create(TypeWrapper declaringType, string name, string sig, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
-		{
-			Debug.Assert(declaringType != null && name!= null && sig != null && method != null);
-
-			if(declaringType.IsGhost)
-			{
-				// HACK since our caller isn't aware of the ghost issues, we'll handle the method swapping
-				if(method.DeclaringType.IsValueType)
-				{
-					Type[] types = new Type[parameterTypes.Length];
-					for(int i = 0; i < types.Length; i++)
-					{
-						types[i] = parameterTypes[i].TypeAsSignatureType;
-					}
-					method = declaringType.TypeAsBaseType.GetMethod(method.Name, types);
-				}
-				return new GhostMethodWrapper(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags);
-			}
-			else
-			{
-				return new TypicalMethodWrapper(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags);
 			}
 		}
 
@@ -1196,6 +1140,39 @@ namespace IKVM.Internal
 			ilgen.Emit(OpCodes.Newobj, GetMethod());
 		}
 #endif // !STUB_GENERATOR
+	}
+
+	sealed class GhostMethodWrapper : SmartMethodWrapper
+	{
+		private MethodInfo ghostMethod;
+
+		internal GhostMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodBase method, MethodInfo ghostMethod, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
+			: base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags)
+		{
+			// make sure we weren't handed the ghostMethod in the wrapper value type
+			Debug.Assert(method == null || method.DeclaringType.IsInterface);
+			this.ghostMethod = ghostMethod;
+		}
+
+		private void ResolveGhostMethod()
+		{
+			if (ghostMethod == null)
+			{
+				ghostMethod = DeclaringType.TypeAsSignatureType.GetMethod(this.Name, this.GetParametersForDefineMethod());
+				if (ghostMethod == null)
+				{
+					throw new InvalidOperationException("Unable to resolve ghost method");
+				}
+			}
+		}
+
+#if !STUB_GENERATOR
+		protected override void CallvirtImpl(CodeEmitter ilgen)
+		{
+			ResolveGhostMethod();
+			ilgen.Emit(OpCodes.Call, ghostMethod);
+		}
+#endif
 	}
 
 	sealed class AccessStubMethodWrapper : SmartMethodWrapper

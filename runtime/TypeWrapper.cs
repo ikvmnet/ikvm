@@ -4149,7 +4149,21 @@ namespace IKVM.Internal
 						methods.Add(new AccessStubMethodWrapper(this, name, sig, mi, mi, nonvirt ?? mi, retType, paramTypes, mods.Modifiers & ~Modifiers.Final, flags));
 						return;
 					}
-					MethodWrapper mw = MethodWrapper.Create(this, name, sig, method, retType, paramTypes, mods.Modifiers, flags);
+					MethodWrapper mw;
+					if (IsGhost)
+					{
+						Type[] types = new Type[paramTypes.Length];
+						for (int i = 0; i < types.Length; i++)
+						{
+							types[i] = paramTypes[i].TypeAsSignatureType;
+						}
+						MethodInfo ifmethod = TypeAsBaseType.GetMethod(method.Name, types);
+						mw = new GhostMethodWrapper(this, name, sig, ifmethod, (MethodInfo)method, retType, paramTypes, mods.Modifiers, flags);
+					}
+					else
+					{
+						mw = new TypicalMethodWrapper(this, name, sig, method, retType, paramTypes, mods.Modifiers, flags);
+					}
 					if (mw.HasNonPublicTypeInSignature)
 					{
 						if (mi != null)

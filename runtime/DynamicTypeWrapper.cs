@@ -503,7 +503,7 @@ namespace IKVM.Internal
 					}
 					if (wrapper.IsGhost)
 					{
-						methods[i] = new MethodWrapper.GhostMethodWrapper(wrapper, m.Name, m.Signature, null, null, null, m.Modifiers, flags);
+						methods[i] = new GhostMethodWrapper(wrapper, m.Name, m.Signature, null, null, null, null, m.Modifiers, flags);
 					}
 					else if (m.IsConstructor && wrapper.IsDelegate)
 					{
