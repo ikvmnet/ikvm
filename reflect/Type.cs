@@ -801,7 +801,7 @@ namespace IKVM.Reflection
 								{
 									baseMethods = new List<MethodInfo>();
 								}
-								else if (FindMethod(baseMethods, mi.GetBaseDefinition()))
+								else if (baseMethods.Contains(mi.GetBaseDefinition()))
 								{
 									continue;
 								}
@@ -813,18 +813,6 @@ namespace IKVM.Reflection
 				}
 			}
 			return list.ToArray();
-		}
-
-		private static bool FindMethod(List<MethodInfo> methods, MethodInfo method)
-		{
-			foreach (MethodInfo m in methods)
-			{
-				if (m.Name == method.Name && m.MethodSignature.Equals(method.MethodSignature))
-				{
-					return true;
-				}
-			}
-			return false;
 		}
 
 		public MethodInfo[] GetMethods()
