@@ -1150,6 +1150,11 @@ namespace IKVM.Internal
 					internal override void Apply(ClassLoaderWrapper loader, PropertyBuilder pb, object annotation)
 					{
 					}
+
+					internal override bool IsCustomAttribute
+					{
+						get { return type.Annotation.IsCustomAttribute; }
+					}
 				}
 
 				internal override Annotation Annotation
@@ -1307,6 +1312,11 @@ namespace IKVM.Internal
 						{
 							annot.Apply(loader, pb, ann);
 						}
+					}
+
+					internal override bool IsCustomAttribute
+					{
+						get { return type.Annotation.IsCustomAttribute; }
 					}
 				}
 
@@ -1658,6 +1668,11 @@ namespace IKVM.Internal
 					{
 						pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
 					}
+				}
+
+				internal override bool IsCustomAttribute
+				{
+					get { return true; }
 				}
 			}
 

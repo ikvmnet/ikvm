@@ -1717,6 +1717,8 @@ namespace IKVM.Internal
 		internal virtual void ApplyReturnValue(ClassLoaderWrapper loader, MethodBuilder mb, ref ParameterBuilder pb, object annotation)
 		{
 		}
+
+		internal abstract bool IsCustomAttribute { get; }
 	}
 
 	[Flags]
@@ -4712,6 +4714,11 @@ namespace IKVM.Internal
 			{
 				annotation = QualifyClassNames(loader, annotation);
 				pb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
+			}
+
+			internal override bool IsCustomAttribute
+			{
+				get { return false; }
 			}
 		}
 

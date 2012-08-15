@@ -1791,9 +1791,11 @@ namespace IKVM.Internal
 
 					if (o.classFile.Annotations != null)
 					{
+						CustomAttributeBuilder attributeUsageAttribute = null;
+						bool hasAttributeUsageAttribute = false;
 						foreach (object[] def in o.classFile.Annotations)
 						{
-							if (def[1].Equals("Ljava/lang/annotation/Target;"))
+							if (def[1].Equals("Ljava/lang/annotation/Target;") && !hasAttributeUsageAttribute)
 							{
 								for (int i = 2; i < def.Length; i += 2)
 								{
@@ -1841,12 +1843,29 @@ namespace IKVM.Internal
 													}
 												}
 											}
-											CustomAttributeBuilder cab2 = new CustomAttributeBuilder(JVM.Import(typeof(AttributeUsageAttribute)).GetConstructor(new Type[] { JVM.Import(typeof(AttributeTargets)) }), new object[] { targets });
-											attributeTypeBuilder.SetCustomAttribute(cab2);
+											attributeUsageAttribute = new CustomAttributeBuilder(JVM.Import(typeof(AttributeUsageAttribute)).GetConstructor(new Type[] { JVM.Import(typeof(AttributeTargets)) }), new object[] { targets });
 										}
 									}
 								}
 							}
+							else
+							{
+								// apply any .NET custom attributes that are on the annotation to the custom attribute we synthesize
+								// (for example, to allow AttributeUsageAttribute to be overridden)
+								Annotation annotation = Annotation.Load(o.wrapper.GetClassLoader(), def);
+								if (annotation != null && annotation.IsCustomAttribute)
+								{
+									annotation.Apply(o.wrapper.GetClassLoader(), attributeTypeBuilder, def);
+								}
+								if (def[1].Equals("Lcli/System/AttributeUsageAttribute$Annotation;"))
+								{
+									hasAttributeUsageAttribute = true;
+								}
+							}
+						}
+						if (attributeUsageAttribute != null && !hasAttributeUsageAttribute)
+						{
+							attributeTypeBuilder.SetCustomAttribute(attributeUsageAttribute);
 						}
 					}
 
@@ -2193,6 +2212,11 @@ namespace IKVM.Internal
 						annotation = QualifyClassNames(loader, annotation);
 						pb.SetCustomAttribute(new CustomAttributeBuilder(defineConstructor, new object[] { annotation }));
 					}
+				}
+
+				internal override bool IsCustomAttribute
+				{
+					get { return false; }
 				}
 			}
 #endif // STATIC_COMPILER
