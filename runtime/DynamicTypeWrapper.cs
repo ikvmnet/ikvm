@@ -2798,7 +2798,7 @@ namespace IKVM.Internal
 
 			private MethodBase GenerateConstructor(MethodWrapper mw)
 			{
-				ConstructorBuilder cb = mw.GetDefineMethodHelper().DefineConstructor(wrapper, typeBuilder, GetMethodAccess(mw) | MethodAttributes.HideBySig);
+				MethodBuilder cb = mw.GetDefineMethodHelper().DefineConstructor(wrapper, typeBuilder, GetMethodAccess(mw) | MethodAttributes.HideBySig);
 				cb.SetImplementationFlags(MethodImplAttributes.NoInlining);
 				return cb;
 			}
@@ -3695,20 +3695,17 @@ namespace IKVM.Internal
 							hasConstructor = true;
 						}
 					}
-					else if (mb is ConstructorBuilder)
+					else if (m.IsClassInitializer)
 					{
-						if (m.IsClassInitializer)
-						{
-							// we handle the <clinit> after we've done the other methods,
-							// to make it easier to inject code needed by the other methods
-							clinitIndex = i;
-							continue;
-						}
-						else
-						{
-							hasConstructor = true;
-						}
-						CodeEmitter ilGenerator = CodeEmitter.Create((ConstructorBuilder)mb);
+						// we handle the <clinit> after we've done the other methods,
+						// to make it easier to inject code needed by the other methods
+						clinitIndex = i;
+						continue;
+					}
+					else if (m.IsConstructor)
+					{
+						hasConstructor = true;
+						CodeEmitter ilGenerator = CodeEmitter.Create((MethodBuilder)mb);
 						CompileConstructorBody(this, ilGenerator, i, invokespecialstubcache);
 					}
 					else
@@ -3894,10 +3891,10 @@ namespace IKVM.Internal
 
 				if (clinitIndex != -1 || (basehasclinit && !classFile.IsInterface) || classFile.HasInitializedFields)
 				{
-					ConstructorBuilder cb;
+					MethodBuilder cb;
 					if (clinitIndex != -1)
 					{
-						cb = (ConstructorBuilder)methods[clinitIndex].GetMethod();
+						cb = (MethodBuilder)methods[clinitIndex].GetMethod();
 					}
 					else
 					{
@@ -6037,24 +6034,14 @@ namespace IKVM.Internal
 			return tb.DefineMethod(name, attribs, CallingConventions.Standard, mw.ReturnType.TypeAsSignatureType, null, modoptReturnType, parameterTypes, null, modopt);
 		}
 
-		internal ConstructorBuilder DefineConstructor(DynamicTypeWrapper context, TypeBuilder tb, MethodAttributes attribs)
+		internal MethodBuilder DefineConstructor(DynamicTypeWrapper context, TypeBuilder tb, MethodAttributes attribs)
 		{
 			return DefineConstructor(context.GetClassLoader().GetTypeWrapperFactory(), tb, attribs);
 		}
 
-		internal ConstructorBuilder DefineConstructor(TypeWrapperFactory context, TypeBuilder tb, MethodAttributes attribs)
+		internal MethodBuilder DefineConstructor(TypeWrapperFactory context, TypeBuilder tb, MethodAttributes attribs)
 		{
-			// we add optional modifiers to make the signature unique
-			// (note that constructors do not support callerid)
-			TypeWrapper[] parameters = mw.GetParameters();
-			Type[] parameterTypes = new Type[parameters.Length];
-			Type[][] modopt = new Type[parameterTypes.Length][];
-			for (int i = 0; i < parameters.Length; i++)
-			{
-				parameterTypes[i] = parameters[i].TypeAsSignatureType;
-				modopt[i] = DynamicTypeWrapper.GetModOpt(context, parameters[i], false);
-			}
-			return tb.DefineConstructor(attribs, CallingConventions.Standard, parameterTypes, null, modopt);
+			return DefineMethod(context, tb, ConstructorInfo.ConstructorName, attribs | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName);
 		}
 	}
 }

@@ -157,7 +157,7 @@ namespace IKVM.Internal
 			private readonly TypeWrapperFactory context;
 			private readonly TypeBuilder typeBuilder;
 			private readonly MethodWrapper ctor;
-			private ConstructorBuilder constructorBuilder;
+			private MethodBuilder constructorBuilder;
 
 			internal ConstructorForwarder(TypeWrapperFactory context, TypeBuilder typeBuilder, MethodWrapper ctor)
 				: base(ctor.DeclaringType, ctor.Name, ctor.Signature, null, null, null, ctor.Modifiers, MemberFlags.None)

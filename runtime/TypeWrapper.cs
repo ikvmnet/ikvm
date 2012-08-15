@@ -315,13 +315,6 @@ namespace IKVM.Internal
 				}
 				TypeWrapper t = loader.LoadClassByDottedName(attr.Class);
 				isDeclarativeSecurity = t.TypeAsBaseType.IsSubclassOf(Types.SecurityAttribute);
-				MethodWrapper mw = t.GetMethodWrapper("<init>", attr.Sig, false);
-				mw.Link();
-				ConstructorInfo ci = (ConstructorInfo)mw.GetMethod();
-				if(ci == null)
-				{
-					throw new InvalidOperationException(string.Format("Constructor missing: {0}::<init>{1}", attr.Class, attr.Sig));
-				}
 				FieldInfo[] namedFields;
 				object[] fieldValues;
 				if(attr.Fields != null)
@@ -341,6 +334,13 @@ namespace IKVM.Internal
 					namedFields = new FieldInfo[0];
 					fieldValues = new object[0];
 				}
+				MethodWrapper mw = t.GetMethodWrapper("<init>", attr.Sig, false);
+				if (mw == null)
+				{
+					throw new InvalidOperationException(string.Format("Constructor missing: {0}::<init>{1}", attr.Class, attr.Sig));
+				}
+				mw.Link();
+				ConstructorInfo ci = (mw.GetMethod() as ConstructorInfo) ?? ((MethodInfo)mw.GetMethod()).__AsConstructorInfo();
 				return new CustomAttributeBuilder(ci, args, namedFields, fieldValues);
 			}
 		}

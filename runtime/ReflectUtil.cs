@@ -148,8 +148,9 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal static ConstructorBuilder DefineTypeInitializer(TypeBuilder typeBuilder)
+		internal static MethodBuilder DefineTypeInitializer(TypeBuilder typeBuilder)
 		{
+			MethodAttributes attr = MethodAttributes.Static | MethodAttributes.RTSpecialName | MethodAttributes.SpecialName;
 			if (typeBuilder.IsInterface)
 			{
 				// LAMESPEC the ECMA spec says (part. I, sect. 8.5.3.2) that all interface members must be public, so we make
@@ -157,9 +158,13 @@ namespace IKVM.Internal
 				// NOTE it turns out that on .NET 2.0 this isn't necessary anymore (neither Ref.Emit nor the CLR verifier complain about it),
 				// but the C# compiler still considers interfaces with non-public methods to be invalid, so to keep interop with C# we have
 				// to keep making the .cctor method public.
-				return typeBuilder.DefineConstructor(MethodAttributes.Static | MethodAttributes.Public, CallingConventions.Standard, Type.EmptyTypes);
+				attr |= MethodAttributes.Public;
 			}
-			return typeBuilder.DefineTypeInitializer();
+			else
+			{
+				attr |= MethodAttributes.Private;
+			}
+			return typeBuilder.DefineMethod(ConstructorInfo.TypeConstructorName, attr, null, Type.EmptyTypes);
 		}
 	}
 }
