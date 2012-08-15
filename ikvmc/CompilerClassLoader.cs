@@ -1026,7 +1026,7 @@ namespace IKVM.Internal
 
 				internal override void EmitCall(CodeEmitter ilgen)
 				{
-					ilgen.Emit(OpCodes.Call, (ConstructorInfo)GetMethod());
+					ilgen.Emit(OpCodes.Call, GetMethod());
 				}
 
 				internal override void EmitNewobj(CodeEmitter ilgen)
@@ -1037,7 +1037,7 @@ namespace IKVM.Internal
 					}
 					else
 					{
-						ilgen.Emit(OpCodes.Newobj, (ConstructorInfo)GetMethod());
+						ilgen.Emit(OpCodes.Newobj, GetMethod());
 					}
 				}
 
