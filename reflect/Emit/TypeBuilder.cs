@@ -705,9 +705,15 @@ namespace IKVM.Reflection.Emit
 				rec.Parent = token;
 				this.ModuleBuilder.ClassLayout.AddRecord(rec);
 			}
+			bool hasConstructor = false;
 			foreach (MethodBuilder mb in methods)
 			{
+				hasConstructor |= mb.IsSpecialName && mb.Name == ConstructorInfo.ConstructorName;
 				mb.Bake();
+			}
+			if (!hasConstructor && !IsModulePseudoType && !IsInterface && !IsValueType && !(IsAbstract && IsSealed))
+			{
+				((MethodBuilder)DefineDefaultConstructor(MethodAttributes.Public).GetMethodInfo()).Bake();
 			}
 			if (declarativeSecurity != null)
 			{
