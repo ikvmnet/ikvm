@@ -345,7 +345,10 @@ namespace IKVM.Internal
 				}
 				foreach (AssemblyName name in internalsVisibleTo)
 				{
-					if (AssemblyName.ReferenceMatchesDefinition(name, otherName))
+					// FXBUG we would like to use AssemblyName.ReferenceMatchesDefinition, but it is broken on .NET
+					// and not implemented on Mono, so we simply match the simple names and consider it a day
+					// https://connect.microsoft.com/VisualStudio/feedback/details/752902
+					if (name.Name == otherName.Name)
 					{
 						return true;
 					}
@@ -1022,6 +1025,7 @@ namespace IKVM.Internal
 				foreach (KeyValuePair<string, string> kv in customClassLoaderRedirects)
 				{
 					string asm = kv.Key;
+					// FXBUG
 					// We only support matching on the assembly's simple name,
 					// because there appears to be no viable alternative.
 					// There is AssemblyName.ReferenceMatchesDefinition()
