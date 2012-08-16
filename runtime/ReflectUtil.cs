@@ -166,5 +166,29 @@ namespace IKVM.Internal
 			}
 			return typeBuilder.DefineMethod(ConstructorInfo.TypeConstructorName, attr, null, Type.EmptyTypes);
 		}
+
+		internal static bool MatchNameAndPublicKeyToken(AssemblyName name1, AssemblyName name2)
+		{
+			return name1.Name.Equals(name2.Name, StringComparison.InvariantCultureIgnoreCase)
+				&& CompareKeys(name1.GetPublicKeyToken(), name2.GetPublicKeyToken());
+		}
+
+		private static bool CompareKeys(byte[] b1, byte[] b2)
+		{
+			int len1 = b1 == null ? 0 : b1.Length;
+			int len2 = b2 == null ? 0 : b2.Length;
+			if (len1 != len2)
+			{
+				return false;
+			}
+			for (int i = 0; i < len1; i++)
+			{
+				if (b1[i] != b2[i])
+				{
+					return false;
+				}
+			}
+			return true;
+		}
 	}
 }

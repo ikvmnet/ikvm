@@ -345,10 +345,9 @@ namespace IKVM.Internal
 				}
 				foreach (AssemblyName name in internalsVisibleTo)
 				{
-					// FXBUG we would like to use AssemblyName.ReferenceMatchesDefinition, but it is broken on .NET
-					// and not implemented on Mono, so we simply match the simple names and consider it a day
-					// https://connect.microsoft.com/VisualStudio/feedback/details/752902
-					if (name.Name == otherName.Name)
+					// we match the simple name and PublicKeyToken (because the AssemblyName constructor used
+					// by GetInternalsVisibleToAttributes() only sets the PublicKeyToken, even if a PublicKey is specified)
+					if (ReflectUtil.MatchNameAndPublicKeyToken(name, otherName))
 					{
 						return true;
 					}
