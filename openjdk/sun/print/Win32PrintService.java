@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
- * Copyright (C) 2009 Volker Berlin (i-net software)
+ * Copyright (C) 2009, 2012 Volker Berlin (i-net software)
  * Copyright (C) 2010, 2011 Karsten Heinrich (i-net software)
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,6 +30,7 @@ import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
@@ -84,6 +85,7 @@ import cli.System.Drawing.Printing.PrintDocument;
 import cli.System.Drawing.Printing.PrinterSettings;
 import cli.System.Drawing.Printing.PrinterSettings.PaperSizeCollection;
 import cli.System.Drawing.Printing.PrinterSettings.PaperSourceCollection;
+import cli.System.Drawing.Printing.PrinterSettings.PrinterResolutionCollection;
 import cli.System.Net.Mime.MediaTypeNames;
 
 /**
@@ -614,10 +616,150 @@ public class Win32PrintService implements PrintService {
     }
 
 
+    private boolean isPostScriptFlavor(DocFlavor flavor) {
+        if (flavor.equals(DocFlavor.BYTE_ARRAY.POSTSCRIPT) ||
+            flavor.equals(DocFlavor.INPUT_STREAM.POSTSCRIPT) ||
+            flavor.equals(DocFlavor.URL.POSTSCRIPT)) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    private boolean isPSDocAttr(Class category) {
+        if (category == OrientationRequested.class || category == Copies.class) {
+                return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    private boolean isAutoSense(DocFlavor flavor) {
+        if (flavor.equals(DocFlavor.BYTE_ARRAY.AUTOSENSE) ||
+            flavor.equals(DocFlavor.INPUT_STREAM.AUTOSENSE) ||
+            flavor.equals(DocFlavor.URL.AUTOSENSE)) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
     @Override
-    public boolean isAttributeValueSupported(Attribute attrval, DocFlavor flavor, AttributeSet attributes){
-        // TODO Auto-generated method stub
-        return false;
+    public boolean isAttributeValueSupported(Attribute attr, DocFlavor flavor, AttributeSet attributes){
+        if (attr == null) {
+            throw new NullPointerException("null attribute");
+        }
+        Class category = attr.getCategory();
+        if (flavor != null) {
+            if (!isDocFlavorSupported(flavor)) {
+                throw new IllegalArgumentException(flavor +
+                                                   " is an unsupported flavor");
+                // if postscript & category is already specified within the PostScript data
+                // we return false
+            } else if (isAutoSense(flavor) || (isPostScriptFlavor(flavor) &&
+                       (isPSDocAttr(category)))) {
+                return false;
+            }
+        }
+
+        if (!isAttributeCategorySupported(category)) {
+            return false;
+        }
+        else if (category == Chromaticity.class) {
+            if ((flavor == null) ||
+                flavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE) ||
+                flavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE) ||
+                flavor.equals(DocFlavor.BYTE_ARRAY.GIF) ||
+                flavor.equals(DocFlavor.INPUT_STREAM.GIF) ||
+                flavor.equals(DocFlavor.URL.GIF) ||
+                flavor.equals(DocFlavor.BYTE_ARRAY.JPEG) ||
+                flavor.equals(DocFlavor.INPUT_STREAM.JPEG) ||
+                flavor.equals(DocFlavor.URL.JPEG) ||
+                flavor.equals(DocFlavor.BYTE_ARRAY.PNG) ||
+                flavor.equals(DocFlavor.INPUT_STREAM.PNG) ||
+                flavor.equals(DocFlavor.URL.PNG)) {
+                if (settings.get_DefaultPageSettings().get_Color()) {
+                    return true;
+                } else {
+                    return attr == Chromaticity.MONOCHROME;
+                }
+            } else {
+                return false;
+            }
+        } else if (category == Copies.class) {
+            return ((Copies)attr).getValue() >= 1 && ((Copies)attr).getValue() <= settings.get_MaximumCopies();
+
+        } else if (category == Destination.class) {
+            URI uri = ((Destination)attr).getURI();
+            if ("file".equals(uri.getScheme()) &&
+                !(uri.getSchemeSpecificPart().equals(""))) {
+                return true;
+            } else {
+            return false;
+            }
+
+        } else if (category == Media.class) {
+            Media[] medias = (Media[])getSupportedAttributeValues( Media.class, flavor, attributes );
+            if( medias != null ) {
+                return Arrays.asList( medias ).contains( attr );
+            }
+
+        } else if (category == MediaPrintableArea.class) {
+            //TODO
+            return true;
+
+        } else if (category == SunAlternateMedia.class) {
+            Media media = ((SunAlternateMedia)attr).getMedia();
+            return isAttributeValueSupported(media, flavor, attributes);
+
+        } else if (category == PageRanges.class ||
+                   category == SheetCollate.class ||
+                   category == Sides.class) {
+            if (flavor != null &&
+                !(flavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE) ||
+                flavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE))) {
+                return false;
+            }
+        } else if (category == PrinterResolution.class) {
+            if (attr instanceof PrinterResolution) {
+                int[] jRes = ((PrinterResolution)attr).getResolution( PrinterResolution.DPI );
+                PrinterResolutionCollection resolutions = settings.get_PrinterResolutions();
+                for( int i=0; i< resolutions.get_Count(); i++ ) {
+                    cli.System.Drawing.Printing.PrinterResolution nRes = resolutions.get_Item( i );
+                    if( nRes.get_X() == jRes[0] && nRes.get_Y() == jRes[1] ) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        } else if (category == OrientationRequested.class) {
+            if (attr == OrientationRequested.REVERSE_PORTRAIT ||
+                (flavor != null) &&
+                !(flavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE) ||
+                flavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE) ||
+                flavor.equals(DocFlavor.INPUT_STREAM.GIF) ||
+                flavor.equals(DocFlavor.INPUT_STREAM.JPEG) ||
+                flavor.equals(DocFlavor.INPUT_STREAM.PNG) ||
+                flavor.equals(DocFlavor.BYTE_ARRAY.GIF) ||
+                flavor.equals(DocFlavor.BYTE_ARRAY.JPEG) ||
+                flavor.equals(DocFlavor.BYTE_ARRAY.PNG) ||
+                flavor.equals(DocFlavor.URL.GIF) ||
+                flavor.equals(DocFlavor.URL.JPEG) ||
+                flavor.equals(DocFlavor.URL.PNG))) {
+                return false;
+            }
+
+        } else if (category == ColorSupported.class) {
+            boolean isColorSup = settings.get_DefaultPageSettings().get_Color();
+            if  ((!isColorSup && (attr == ColorSupported.SUPPORTED)) ||
+                (isColorSup && (attr == ColorSupported.NOT_SUPPORTED))) {
+                return false;
+            }
+        }
+        return true;
     }
 
 
