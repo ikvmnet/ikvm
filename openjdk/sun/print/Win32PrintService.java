@@ -364,7 +364,7 @@ public class Win32PrintService implements PrintService {
     	} else if (category == PageRanges.class) {
     		return new PageRanges(1, Integer.MAX_VALUE );
     	} else if (category == Media.class) {
-    		int rawKind = settings.get_DefaultPageSettings().get_PaperSize().get_RawKind();
+            int rawKind = settings.get_DefaultPageSettings().get_PaperSize().get_RawKind();
     		if( rawKind > MEDIA_NAMES.length || rawKind < 1 || MEDIA_NAMES[ rawKind - 1 ] == null ){ // custom page format
     			return findMatchingMedia( settings.get_DefaultPageSettings().get_PaperSize() );
     		} else {
@@ -683,7 +683,7 @@ public class Win32PrintService implements PrintService {
 		if (media == null) {
 			media = new CustomMediaSizeName(paper.get_PaperName());
 			CUSTOM_MEDIA_NAME.put(paper.get_PaperName(), media);
-			new MediaSize(paper.get_Width(), paper.get_Height(), MediaSize.INCH/100, media);
+			new MediaSize( x, y, MediaSize.INCH/100, media);
 		}
     	return media;
     }
