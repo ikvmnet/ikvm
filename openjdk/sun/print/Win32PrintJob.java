@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Volker Berlin (i-net software)
+  Copyright (C) 2009, 2012 Volker Berlin (i-net software)
   Copyright (C) 2010, 2011 Karsten Heinrich (i-net software)
 
   This software is provided 'as-is', without any express or implied
@@ -906,22 +906,21 @@ public class Win32PrintJob implements CancelablePrintJob{
                         return;
                     }
                 }
-                Graphics printGraphics = peer.createGraphics(ev.get_Graphics());
-                if( printGraphics instanceof Graphics2D ){
-                	Graphics2D g2d = ((Graphics2D)printGraphics);
-                	int tX = (int) pageFormat.getWidth(); 
-                	int tY = (int) pageFormat.getHeight();
-                	// apply Java to .NET scaling (1/72 inch to 1/100 inch)
-                	g2d.scale(100d/72d, 100d/72d);
-                	// NOTE on Landscape printing:
-                	// Setting landscape to true on the printer settings
-                	// of a page already rotates the page! The orig. java code rotates the page itself,
-                	// for .NET this is not required.
-                	if( orient == OrientationRequested.REVERSE_LANDSCAPE){
-                		g2d.translate( tX, tY );
-                		g2d.rotate( Math.PI );
-                	}
-                }
+                Graphics2D printGraphics = peer.createGraphics(ev.get_Graphics());
+            	Graphics2D g2d = ((Graphics2D)printGraphics);
+            	int tX = (int) pageFormat.getWidth(); 
+            	int tY = (int) pageFormat.getHeight();
+            	// apply Java to .NET scaling (1/72 inch to 1/100 inch)
+            	g2d.scale(100d/72d, 100d/72d);
+            	// NOTE on Landscape printing:
+            	// Setting landscape to true on the printer settings
+            	// of a page already rotates the page! The orig. java code rotates the page itself,
+            	// for .NET this is not required.
+            	if( orient == OrientationRequested.REVERSE_LANDSCAPE){
+            		g2d.translate( tX, tY );
+            		g2d.rotate( Math.PI );
+            	}
+
                 printable.print(printGraphics, pageFormat, realPage);
                 
                 realPage = pageRanges.getPageForIndex(++pageIndex);
@@ -929,15 +928,7 @@ public class Win32PrintJob implements CancelablePrintJob{
 	                printable = pageable.getPrintable(realPage);
 	                pageFormat = pageable.getPageFormat(realPage);
 	                int pageResult = printable.print(peekGraphics, pageFormat, realPage);
-	                if( pageResult == Printable.PAGE_EXISTS ){
-	                	ev.set_HasMorePages( true );
-	                } else {
-	                	if( pageRanges.checkJobComplete(pageIndex) ){
-	                		ev.set_HasMorePages( false );
-	                	} else {
-	                		ev.set_HasMorePages( true );
-	                	}
-	                }
+                	ev.set_HasMorePages( pageResult == Printable.PAGE_EXISTS );
                 } else {
                 	ev.set_HasMorePages( false );
                 }
