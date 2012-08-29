@@ -4117,26 +4117,21 @@ namespace ikvm.awt
 
         public void updateIconImages()
         {
-            java.util.List imageList = ((java.awt.Window) target).getIconImages();
-            Bitmap originalImage;
+            java.util.List imageList = ((java.awt.Window)target).getIconImages();
+            Icon icon;
             if (imageList == null || imageList.size() == 0)
             {
-                originalImage = null;
+                icon = null;
             }
             else
             {
-                java.awt.Image image = (java.awt.Image)imageList.get(0);
-                originalImage = J2C.ConvertImage(image);
+                IconFactory factory = new IconFactory();
+                icon = factory.CreateIcon(imageList, SystemInformation.IconSize);
             }
             NetToolkit.BeginInvoke(delegate
                {
-                   Size iconSize = SystemInformation.IconSize;
-                   using (Bitmap scaleBitmap = originalImage == null ? null : new Bitmap(originalImage, iconSize))
-                   {
-                       ((Form) control).Icon = scaleBitmap == null ? null : Icon.FromHandle(scaleBitmap.GetHicon());
-                   }
+                   ((Form)control).Icon = icon;
                });
-
         }
 
         public void updateMinimumSize()
