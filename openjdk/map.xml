@@ -253,6 +253,14 @@
                 <parameter name="offset" />
                 <parameter name="count" />
             </constructor>
+            <!-- Package private constructor (that OpenJDK uses to avoid copying the array) -->
+            <constructor sig="([CZ)V" modifiers="">
+                <alternateBody>
+                    <ldarg_0 />
+                    <newobj type="System.String" name=".ctor" sig="([C)V" />
+                    <ret />
+                </alternateBody>
+            </constructor>
             <!-- Package private constructor, that we redirect to static helper -->
             <constructor sig="(II[C)V" modifiers="">
                 <redirect class="java.lang.StringHelper" name="NewString" type="static" sig="(II[C)Ljava.lang.String;" />
