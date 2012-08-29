@@ -2487,19 +2487,6 @@ final class StringHelper
     }
 
     /**
-     * Returns the string representation of the <code>char</code>
-     * argument.
-     *
-     * @param   c   a <code>char</code>.
-     * @return  a string of length <code>1</code> containing
-     *          as its single character the argument <code>c</code>.
-     */
-    public static String valueOf(char c) {
-        char data[] = {c};
-        return new String(0, 1, data);
-    }
-
-    /**
      * Returns the string representation of the <code>int</code> argument.
      * <p>
      * The representation is exactly the one returned by the
