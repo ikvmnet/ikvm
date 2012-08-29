@@ -22,7 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package java.lang;
 
 import java.io.ObjectStreamClass;
@@ -168,7 +167,7 @@ final class StringHelper
         for (int i = offset, j = 0; i < end; i++, j++) {
             int c = codePoints[i];
             if (Character.isBmpCodePoint(c))
-                v[j] = (char) c;
+                v[j] = (char)c;
             else
                 Character.toSurrogates(c, v, j++);
         }
@@ -221,13 +220,13 @@ final class StringHelper
         char value[] = new char[count];
 
         if (hibyte == 0) {
-            for (int i = count ; i-- > 0 ;) {
-                value[i] = (char) (ascii[i + offset] & 0xff);
+            for (int i = count; i-- > 0;) {
+                value[i] = (char)(ascii[i + offset] & 0xff);
             }
         } else {
             hibyte <<= 8;
-            for (int i = count ; i-- > 0 ;) {
-                value[i] = (char) (hibyte | (ascii[i + offset] & 0xff));
+            for (int i = count; i-- > 0;) {
+                value[i] = (char)(hibyte | (ascii[i + offset] & 0xff));
             }
         }
         return new String(value, 0, count);
@@ -315,8 +314,7 @@ final class StringHelper
      * @since  JDK1.1
      */
     static String NewString(byte bytes[], int offset, int length, String charsetName)
-        throws UnsupportedEncodingException
-    {
+            throws UnsupportedEncodingException {
         if (charsetName == null)
             throw new NullPointerException("charsetName");
         checkBounds(bytes, offset, length);
@@ -386,8 +384,7 @@ final class StringHelper
      * @since  JDK1.1
      */
     static String NewString(byte bytes[], String charsetName)
-        throws UnsupportedEncodingException
-    {
+            throws UnsupportedEncodingException {
         return NewString(bytes, 0, bytes.length, charsetName);
     }
 
@@ -904,7 +901,7 @@ final class StringHelper
             return false;
         // Argument is a StringBuffer, StringBuilder
         if (cs instanceof AbstractStringBuilder) {
-            char v2[] = ((AbstractStringBuilder)cs).getValue();
+            char v2[] = ((AbstractStringBuilder) cs).getValue();
             int i = 0;
             int j = 0;
             int n = count;
@@ -1483,8 +1480,8 @@ final class StringHelper
      * @param   fromIndex    the index to begin searching from.
      */
     static int indexOf(char[] source, int sourceOffset, int sourceCount,
-                       char[] target, int targetOffset, int targetCount,
-                       int fromIndex) {
+            char[] target, int targetOffset, int targetCount,
+            int fromIndex) {
         if (fromIndex >= sourceCount) {
             return (targetCount == 0 ? sourceCount : -1);
         }
@@ -1495,7 +1492,7 @@ final class StringHelper
             return fromIndex;
         }
 
-        char first  = target[targetOffset];
+        char first = target[targetOffset];
         int max = sourceOffset + (sourceCount - targetCount);
 
         for (int i = sourceOffset + fromIndex; i <= max; i++) {
@@ -1508,8 +1505,8 @@ final class StringHelper
             if (i <= max) {
                 int j = i + 1;
                 int end = j + targetCount - 1;
-                for (int k = targetOffset + 1; j < end && source[j] ==
-                         target[k]; j++, k++);
+                for (int k = targetOffset + 1; j < end && source[j]
+                        == target[k]; j++, k++);
 
                 if (j == end) {
                     /* Found whole string. */
@@ -1600,8 +1597,8 @@ final class StringHelper
      * @param   fromIndex    the index to begin searching from.
      */
     static int lastIndexOf(char[] source, int sourceOffset, int sourceCount,
-                           char[] target, int targetOffset, int targetCount,
-                           int fromIndex) {
+            char[] target, int targetOffset, int targetCount,
+            int fromIndex) {
         /*
          * Check arguments; return immediately where possible. For
          * consistency, don't check for null str.
@@ -1623,7 +1620,7 @@ final class StringHelper
         int min = sourceOffset + targetCount - 1;
         int i = min + fromIndex;
 
-    startSearchForLastChar:
+        startSearchForLastChar:
         while (true) {
             while (i >= min && source[i] != strLastChar) {
                 i--;
@@ -2347,7 +2344,7 @@ final class StringHelper
      * @see  java.util.Formatter
      * @since  1.5
      */
-    public static String format(String format, Object ... args) {
+    public static String format(String format, Object... args) {
         return new Formatter().format(format, args).toString();
     }
 
@@ -2391,7 +2388,7 @@ final class StringHelper
      * @see  java.util.Formatter
      * @since  1.5
      */
-    public static String format(Locale l, String format, Object ... args) {
+    public static String format(Locale l, String format, Object... args) {
         return new Formatter(l).format(format, args).toString();
     }
 
