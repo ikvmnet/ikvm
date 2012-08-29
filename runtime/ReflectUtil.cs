@@ -190,5 +190,10 @@ namespace IKVM.Internal
 			}
 			return true;
 		}
+
+		internal static bool IsConstructor(MethodBase method)
+		{
+			return method.IsSpecialName && method.Name == ConstructorInfo.ConstructorName;
+		}
 	}
 }

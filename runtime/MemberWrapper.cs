@@ -799,7 +799,7 @@ namespace IKVM.Internal
 					}
 					return acc.newInstance(args);
 				}
-				else if (method is MethodInfo)
+				else if (!ReflectUtil.IsConstructor(method))
 				{
 					Debug.Assert(method.IsStatic);
 					// we're dealing with a constructor on a remapped type, if obj is supplied, it means
