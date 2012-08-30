@@ -145,10 +145,29 @@ public class VM {
      */
     // public native static void writeJavaProfilerReport();
 
+    private static volatile boolean booted = false;
+
+    static {
+        // [IKVM] force System properties initialization ("booting")
+        System.lineSeparator();
+    }
+
+    // Invoked by by System.initializeSystemClass just before returning.
+    // Subsystems that are invoked during initialization can check this
+    // property in order to avoid doing things that should wait until the
+    // application class loader has been set up.
+    //
+    // [IKVM] The above isn't applicable. We only use the booted flag
+    // for the system properties (this is required because the system properties
+    // use java.util.Hashtable (via java.util.Properties) and it relies on
+    // the booted flag to determine whether it is safe to query the system
+    // properties).
+    public static void booted() {
+        booted = true;
+    }
+
     public static boolean isBooted() {
-        // [IKVM] we support arbitrary order class initialization,
-        //  so we don't distinguish between booted and not booted states
-        return true;
+        return booted;
     }
 
     // Returns the maximum amount of allocatable direct buffer memory.
@@ -210,27 +229,28 @@ public class VM {
      *
      */
     public static String getSavedProperty(String key) {
-        // [IKVM] force System properties initialization
-        System.lineSeparator();
-
-        if (savedProps.isEmpty())
+        if (Lazy.savedProps.isEmpty())
             throw new IllegalStateException("Should be non-empty if initialized");
 
-        return savedProps.getProperty(key);
+        return Lazy.savedProps.getProperty(key);
     }
 
     // TODO: the Property Management needs to be refactored and
     // the appropriate prop keys need to be accessible to the
     // calling classes to avoid duplication of keys.
-    private static final Properties savedProps = new Properties();
+    static final class Lazy {
+        static final Properties savedProps = new Properties();
+    }
 
     // Save a private copy of the system properties and remove
     // the system properties that are not intended for public access.
     //
     // This method can only be invoked during system initialization.
     public static void saveAndRemoveProperties(Properties props) {
+        if (booted)
+            throw new IllegalStateException("System initialization has completed");
 
-        savedProps.putAll(props);
+        Lazy.savedProps.putAll(props);
 
         // Set the maximum amount of direct memory.  This value is controlled
         // by the vm option -XX:MaxDirectMemorySize=<size>.

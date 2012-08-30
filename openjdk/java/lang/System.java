@@ -63,6 +63,10 @@ final class Props
         // be able to change the behavior by setting these system properties.
         ClassLoader.initializeLibraryPaths(props);
         sun.misc.VM.saveAndRemoveProperties(props);
+        
+        // now that we've initialized the system properties (which are our only
+        // notion of "booting" the VM) we set the booted flag.
+        sun.misc.VM.booted();
     }
 }
 
