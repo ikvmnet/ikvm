@@ -113,6 +113,7 @@
     <Compile Include="graphics.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="IconFactory.cs" />
     <Compile Include="images.cs">
       <SubType>Code</SubType>
     </Compile>
