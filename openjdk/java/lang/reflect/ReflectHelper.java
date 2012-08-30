@@ -38,7 +38,9 @@ public final class ReflectHelper
 
     public static Field createFieldAndMakeAccessible(Class c, String name)
     {
-        Field field = new Field(c, name, null, 0, -1, null, null);
+        // we pass in ReflectHelper.class as the field type (which isn't used)
+        // to make Field.toString() return something "meaningful" instead of crash
+        Field field = new Field(c, name, ReflectHelper.class, 0, -1, null, null);
         field.override = true;
         return field;
     }
