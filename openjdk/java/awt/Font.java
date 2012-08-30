@@ -36,6 +36,7 @@ import java.awt.geom.Rectangle2D;
 import java.awt.peer.FontPeer;
 import java.io.*;
 import java.lang.ref.SoftReference;
+import java.nio.file.Files;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.text.AttributedCharacterIterator.Attribute;
@@ -924,9 +925,20 @@ public class Font implements java.io.Serializable
     public static Font createFont(int fontFormat, File fontFile)
         throws java.awt.FontFormatException, java.io.IOException {
 
+        fontFile = new File(fontFile.getPath());
+
         if (fontFormat != Font.TRUETYPE_FONT &&
             fontFormat != Font.TYPE1_FONT) {
             throw new IllegalArgumentException ("font format not recognized");
+        }
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            FilePermission filePermission =
+                new FilePermission(fontFile.getPath(), "read");
+            sm.checkPermission(filePermission);
+        }
+        if (!fontFile.canRead()) {
+            throw new IOException("Can't read " + fontFile);
         }
         // create a private Font Collection and add the font data
         PrivateFontCollection pfc = new PrivateFontCollection();
