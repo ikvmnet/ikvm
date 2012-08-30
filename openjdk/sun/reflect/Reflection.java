@@ -58,6 +58,9 @@ public class Reflection {
         fieldFilterMap = map;
 
         methodFilterMap = new HashMap<Class,String[]>();
+        // [IKVM] to avoid initialization order issues, we actually add
+        // Unsafe.getUnsafe() here, instead of in Unsafe's class initializer
+        methodFilterMap.put(sun.misc.Unsafe.class, new String[] {"getUnsafe"});
     }
 
     /** Returns the class of the method <code>realFramesToSkip</code>
