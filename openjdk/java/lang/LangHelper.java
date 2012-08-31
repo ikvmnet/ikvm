@@ -127,6 +127,9 @@ public class LangHelper
             public StackTraceElement getStackTraceElement(Throwable t, int i) {
                 return t.getStackTraceElement(i);
             }
+            public int getStringHash32(String string) {
+                return StringHelper.hash32(string);
+            }
         };
     }
 }

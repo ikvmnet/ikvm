@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -657,7 +657,12 @@ class DatagramChannelImpl
                         throw new AlreadyBoundException();
                     InetSocketAddress isa;
                     if (local == null) {
-                        isa = new InetSocketAddress(0);
+                        // only Inet4Address allowed with IPv4 socket
+                        if (family == StandardProtocolFamily.INET) {
+                            isa = new InetSocketAddress(InetAddress.getByName("0.0.0.0"), 0);
+                        } else {
+                            isa = new InetSocketAddress(0);
+                        }
                     } else {
                         isa = Net.checkAddress(local);
 
@@ -966,7 +971,8 @@ class DatagramChannelImpl
 
     protected void implCloseSelectableChannel() throws IOException {
         synchronized (stateLock) {
-            nd.preClose(fd);
+            if (state != ST_KILLED)
+                nd.preClose(fd);
             ResourceManager.afterUdpClose();
 
             // if member of mulitcast group then invalidate all keys
