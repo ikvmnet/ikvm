@@ -120,6 +120,11 @@ namespace IKVM.Internal
 			return ClassFile.GetConstantPoolConstantString(Code[OpcodeIndex + offset].Arg1);
 		}
 
+		internal ClassFile.ConstantType GetConstantType(int offset)
+		{
+			return ClassFile.GetConstantPoolConstantType(Code[OpcodeIndex + offset].Arg1);
+		}
+
 		internal void PatchOpCode(int offset, NormalizedByteCode opc)
 		{
 			Code[OpcodeIndex + offset].PatchOpCode(opc);
@@ -244,6 +249,22 @@ namespace IKVM.Internal
 					eic.PatchOpCode(2, NormalizedByteCode.__intrinsic_gettype);
 					return true;
 				}
+			}
+			// this optimizes obj.getClass() == Xxx.class
+			else if (eic.MatchRange(0, 3)
+				&& eic.Match(1, NormalizedByteCode.__ldc) && eic.GetConstantType(1) == ClassFile.ConstantType.Class
+				&& (eic.Match(2, NormalizedByteCode.__if_acmpeq) || eic.Match(2, NormalizedByteCode.__if_acmpne)))
+			{
+				TypeWrapper tw = eic.GetClassLiteral(1);
+				if (tw.IsGhost || tw.IsGhostArray || tw.IsUnloadable || (tw.IsRemapped && tw.IsFinal && tw is DotNetTypeWrapper))
+				{
+					return false;
+				}
+				eic.Emitter.Emit(OpCodes.Callvirt, Compiler.getTypeMethod);
+				eic.Emitter.Emit(OpCodes.Ldtoken, (tw.IsRemapped && tw.IsFinal) ? tw.TypeAsTBD : tw.TypeAsBaseType);
+				eic.Emitter.Emit(OpCodes.Call, Compiler.getTypeFromHandleMethod);
+				eic.PatchOpCode(1, NormalizedByteCode.__nop);
+				return true;
 			}
 			return false;
 		}
