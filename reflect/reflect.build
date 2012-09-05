@@ -56,6 +56,7 @@
                 <include name="StandAloneMethodSig.cs" />
                 <include name="StrongNameKeyPair.cs" />
                 <include name="Type.cs" />
+                <include name="TypeInfo.cs" />
                 <include name="TypeNameParser.cs" />
                 <include name="Universe.cs" />
                 <include name="Util.cs" />

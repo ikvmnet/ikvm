@@ -116,6 +116,7 @@
     <Compile Include="StrongNameKeyPair.cs" />
     <Compile Include="Type.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TypeInfo.cs" />
     <Compile Include="TypeNameParser.cs" />
     <Compile Include="Universe.cs" />
     <Compile Include="Util.cs" />

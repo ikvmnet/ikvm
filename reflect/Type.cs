@@ -1946,9 +1946,20 @@ namespace IKVM.Reflection
 			// types don't have pseudo custom attributes
 			return null;
 		}
+
+		// in .NET this is an extension method, but we target .NET 2.0, so we have an instance method
+		public TypeInfo GetTypeInfo()
+		{
+			TypeInfo type = this as TypeInfo;
+			if (type == null)
+			{
+				throw new MissingMemberException(this);
+			}
+			return type;
+		}
 	}
 
-	abstract class ElementHolderType : Type
+	abstract class ElementHolderType : TypeInfo
 	{
 		protected readonly Type elementType;
 		private int token;
@@ -2488,7 +2499,7 @@ namespace IKVM.Reflection
 		}
 	}
 
-	sealed class GenericTypeInstance : Type
+	sealed class GenericTypeInstance : TypeInfo
 	{
 		private readonly Type type;
 		private readonly Type[] args;
@@ -2851,7 +2862,7 @@ namespace IKVM.Reflection
 		}
 	}
 
-	sealed class FunctionPointerType : Type
+	sealed class FunctionPointerType : TypeInfo
 	{
 		private readonly Universe universe;
 		private readonly __StandAloneMethodSig sig;
@@ -2972,6 +2983,11 @@ namespace IKVM.Reflection
 		}
 
 		internal override bool IsBaked
+		{
+			get { throw new InvalidOperationException(); }
+		}
+
+		public override bool __IsMissing
 		{
 			get { throw new InvalidOperationException(); }
 		}

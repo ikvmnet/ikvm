@@ -29,7 +29,7 @@ using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection.Reader
 {
-	sealed class TypeDefImpl : Type
+	sealed class TypeDefImpl : TypeInfo
 	{
 		private readonly ModuleReader module;
 		private readonly int index;
