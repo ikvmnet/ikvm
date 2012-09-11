@@ -195,5 +195,10 @@ namespace IKVM.Internal
 		{
 			return method.IsSpecialName && method.Name == ConstructorInfo.ConstructorName;
 		}
+
+		internal static MethodBuilder DefineConstructor(TypeBuilder tb, MethodAttributes attribs, Type[] parameterTypes)
+		{
+			return tb.DefineMethod(ConstructorInfo.ConstructorName, attribs | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, null, parameterTypes);
+		}
 	}
 }

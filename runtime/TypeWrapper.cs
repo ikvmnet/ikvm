@@ -196,20 +196,6 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal static void SetCustomAttribute(ClassLoaderWrapper loader, ConstructorBuilder cb, IKVM.Internal.MapXml.Attribute attr)
-		{
-			bool declarativeSecurity;
-			CustomAttributeBuilder cab = CreateCustomAttribute(loader, attr, out declarativeSecurity);
-			if (declarativeSecurity)
-			{
-				cb.__AddDeclarativeSecurity(cab);
-			}
-			else
-			{
-				cb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
-			}
-		}
-
 		internal static void SetCustomAttribute(ClassLoaderWrapper loader, PropertyBuilder pb, IKVM.Internal.MapXml.Attribute attr)
 		{
 			pb.SetCustomAttribute(CreateCustomAttribute(loader, attr));

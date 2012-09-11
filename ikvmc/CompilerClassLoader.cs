@@ -1047,7 +1047,7 @@ namespace IKVM.Internal
 					RemapperTypeWrapper typeWrapper = (RemapperTypeWrapper)DeclaringType;
 					Type[] paramTypes = typeWrapper.GetClassLoader().ArgTypeListFromSig(m.Sig);
 
-					ConstructorBuilder cbCore = null;
+					MethodBuilder cbCore = null;
 
 					if(typeWrapper.shadowType.IsSealed)
 					{
@@ -1066,7 +1066,7 @@ namespace IKVM.Internal
 					}
 					else
 					{
-						cbCore = typeWrapper.typeBuilder.DefineConstructor(attr, CallingConventions.Standard, paramTypes);
+						cbCore = ReflectUtil.DefineConstructor(typeWrapper.typeBuilder, attr, paramTypes);
 						if(m.Attributes != null)
 						{
 							foreach(IKVM.Internal.MapXml.Attribute custattr in m.Attributes)
@@ -1086,7 +1086,7 @@ namespace IKVM.Internal
 
 					Type[] paramTypes = this.GetParametersForDefineMethod();
 
-					ConstructorBuilder cbCore = GetMethod() as ConstructorBuilder;
+					MethodBuilder cbCore = GetMethod() as MethodBuilder;
 
 					if(cbCore != null)
 					{
@@ -1775,24 +1775,6 @@ namespace IKVM.Internal
 				}
 			}
 
-			private static void SetParameters(ClassLoaderWrapper loader, ConstructorBuilder cb, IKVM.Internal.MapXml.Param[] parameters)
-			{
-				if(parameters != null)
-				{
-					for(int i = 0; i < parameters.Length; i++)
-					{
-						ParameterBuilder pb = cb.DefineParameter(i + 1, ParameterAttributes.None, parameters[i].Name);
-						if(parameters[i].Attributes != null)
-						{
-							for(int j = 0; j < parameters[i].Attributes.Length; j++)
-							{
-								AttributeHelper.SetCustomAttribute(loader, pb, parameters[i].Attributes[j]);
-							}
-						}
-					}
-				}
-			}
-
 			internal void Process2ndPassStep1()
 			{
 				if (!shadowType.IsSealed)
@@ -1881,7 +1863,7 @@ namespace IKVM.Internal
 
 				if(classDef.Clinit != null)
 				{
-					ConstructorBuilder cb = typeBuilder.DefineTypeInitializer();
+					MethodBuilder cb = ReflectUtil.DefineTypeInitializer(typeBuilder);
 					CodeEmitter ilgen = CodeEmitter.Create(cb);
 					// TODO emit code to make sure super class is initialized
 					classDef.Clinit.body.Emit(classLoader, ilgen);
