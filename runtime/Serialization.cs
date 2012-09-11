@@ -81,11 +81,7 @@ namespace IKVM.Internal
 		internal static ConstructorInfo AddAutomagicSerialization(DynamicTypeWrapper wrapper, TypeBuilder typeBuilder)
 		{
 			ConstructorInfo serializationCtor = null;
-			if (wrapper.GetClassLoader().NoAutomagicSerialization)
-			{
-				// do nothing
-			}
-			else if ((wrapper.Modifiers & IKVM.Attributes.Modifiers.Enum) != 0)
+			if ((wrapper.Modifiers & IKVM.Attributes.Modifiers.Enum) != 0)
 			{
 				MarkSerializable(typeBuilder);
 			}

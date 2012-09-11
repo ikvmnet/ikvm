@@ -3990,7 +3990,10 @@ namespace IKVM.Internal
 					{
 						AddUnsupportedAbstractMethods();
 					}
-					wrapper.automagicSerializationCtor = Serialization.AddAutomagicSerialization(wrapper, typeBuilder);
+					if (!wrapper.GetClassLoader().NoAutomagicSerialization)
+					{
+						wrapper.automagicSerializationCtor = Serialization.AddAutomagicSerialization(wrapper, typeBuilder);
+					}
 				}
 
 #if STATIC_COMPILER
