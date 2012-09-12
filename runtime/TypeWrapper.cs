@@ -331,11 +331,19 @@ namespace IKVM.Internal
 			}
 		}
 
+		private static Assembly GetSystemAssembly()
+		{
+			AssemblyName name = Types.Object.Assembly.GetName();
+			name.Name = "System";
+			return StaticCompiler.Load(name.FullName);
+		}
+
 		private static CustomAttributeBuilder GetEditorBrowsableNever()
 		{
 			if (editorBrowsableNever == null)
 			{
-				editorBrowsableNever = new CustomAttributeBuilder(JVM.Import(typeof(System.ComponentModel.EditorBrowsableAttribute)).GetConstructor(new Type[] { JVM.Import(typeof(System.ComponentModel.EditorBrowsableState)) }), new object[] { (int)System.ComponentModel.EditorBrowsableState.Never });
+				Assembly system = GetSystemAssembly();
+				editorBrowsableNever = new CustomAttributeBuilder(system.GetType("System.ComponentModel.EditorBrowsableAttribute", true).GetConstructor(new Type[] { system.GetType("System.ComponentModel.EditorBrowsableState", true) }), new object[] { (int)System.ComponentModel.EditorBrowsableState.Never });
 			}
 			return editorBrowsableNever;
 		}
