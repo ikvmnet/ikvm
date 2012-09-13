@@ -1936,11 +1936,11 @@ namespace IKVM.Internal
 						PropertyBuilder pb = typeBuilder.DefineProperty(pi.Name, PropertyAttributes.None, pi.PropertyType, paramTypes);
 						if(pi.GetGetMethod() != null)
 						{
-							pb.SetGetMethod((MethodBuilder)methods[MakeMethodKey(pi.GetGetMethod())]);
+							pb.SetGetMethod(methods[MakeMethodKey(pi.GetGetMethod())]);
 						}
 						if(pi.GetSetMethod() != null)
 						{
-							pb.SetSetMethod((MethodBuilder)methods[MakeMethodKey(pi.GetSetMethod())]);
+							pb.SetSetMethod(methods[MakeMethodKey(pi.GetSetMethod())]);
 						}
 						AttributeHelper.SetEditorBrowsableNever(pb);
 					}

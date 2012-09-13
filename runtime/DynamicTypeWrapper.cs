@@ -3686,7 +3686,7 @@ namespace IKVM.Internal
 				for (int i = 0; i < classFile.Methods.Length; i++)
 				{
 					ClassFile.Method m = classFile.Methods[i];
-					MethodBase mb = methods[i].GetMethod();
+					MethodBuilder mb = (MethodBuilder)methods[i].GetMethod();
 					if (mb == null)
 					{
 						// method doesn't really exist (e.g. delegate constructor or <clinit> that is optimized away)
@@ -3705,7 +3705,7 @@ namespace IKVM.Internal
 					else if (m.IsConstructor)
 					{
 						hasConstructor = true;
-						CodeEmitter ilGenerator = CodeEmitter.Create((MethodBuilder)mb);
+						CodeEmitter ilGenerator = CodeEmitter.Create(mb);
 						CompileConstructorBody(this, ilGenerator, i, invokespecialstubcache);
 					}
 					else
@@ -3727,7 +3727,7 @@ namespace IKVM.Internal
 							}
 							if (stub)
 							{
-								CodeEmitter ilGenerator = CodeEmitter.Create((MethodBuilder)mb);
+								CodeEmitter ilGenerator = CodeEmitter.Create(mb);
 								TraceHelper.EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
 								ilGenerator.EmitThrow("java.lang.AbstractMethodError", classFile.Name + "." + m.Name + m.Signature);
 								ilGenerator.DoEmit();
@@ -3741,13 +3741,13 @@ namespace IKVM.Internal
 							}
 							if (wrapper.IsDelegate)
 							{
-								((MethodBuilder)mb).SetImplementationFlags(mb.GetMethodImplementationFlags() | MethodImplAttributes.Runtime);
+								mb.SetImplementationFlags(mb.GetMethodImplementationFlags() | MethodImplAttributes.Runtime);
 								continue;
 							}
 							Profiler.Enter("JavaTypeImpl.Finish.Native");
 							try
 							{
-								CodeEmitter ilGenerator = CodeEmitter.Create((MethodBuilder)mb);
+								CodeEmitter ilGenerator = CodeEmitter.Create(mb);
 								TraceHelper.EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
 #if STATIC_COMPILER
 								// do we have an implementation in map.xml?
@@ -3853,8 +3853,7 @@ namespace IKVM.Internal
 						}
 						else
 						{
-							MethodBuilder mbld = (MethodBuilder)mb;
-							CodeEmitter ilGenerator = CodeEmitter.Create(mbld);
+							CodeEmitter ilGenerator = CodeEmitter.Create(mb);
 							TraceHelper.EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
 #if STATIC_COMPILER
 							// do we have an implementation in map.xml?
@@ -3870,7 +3869,7 @@ namespace IKVM.Internal
 							ilGenerator.DoEmit();
 							if (nonleaf)
 							{
-								mbld.SetImplementationFlags(mbld.GetMethodImplementationFlags() | MethodImplAttributes.NoInlining);
+								mb.SetImplementationFlags(mb.GetMethodImplementationFlags() | MethodImplAttributes.NoInlining);
 							}
 #if STATIC_COMPILER
 							ilGenerator.EmitLineNumberTable((MethodBuilder)methods[i].GetMethod());
@@ -4063,7 +4062,6 @@ namespace IKVM.Internal
 					}
 					wrapper.AddXmlMapParameterAttributes(mb, classFile.Name, m.Name, m.Signature, ref parameterBuilders);
 #endif
-					MethodBuilder mBuilder = mb as MethodBuilder;
 					if (m.Annotations != null)
 					{
 						foreach (object[] def in m.Annotations)
@@ -4071,11 +4069,8 @@ namespace IKVM.Internal
 							Annotation annotation = Annotation.Load(wrapper.GetClassLoader(), def);
 							if (annotation != null)
 							{
-								if (mBuilder != null)
-								{
-									annotation.Apply(wrapper.GetClassLoader(), mBuilder, def);
-									annotation.ApplyReturnValue(wrapper.GetClassLoader(), mBuilder, ref returnParameter, def);
-								}
+								annotation.Apply(wrapper.GetClassLoader(), mb, def);
+								annotation.ApplyReturnValue(wrapper.GetClassLoader(), mb, ref returnParameter, def);
 							}
 						}
 					}
@@ -4101,12 +4096,12 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 					if (methods[i].HasCallerID)
 					{
-						AttributeHelper.SetEditorBrowsableNever((MethodBuilder)mb);
+						AttributeHelper.SetEditorBrowsableNever(mb);
 						EmitCallerIDStub(methods[i], parameterNames);
 					}
 					if (m.DllExportName != null && wrapper.classLoader.TryEnableUnmanagedExports())
 					{
-						mBuilder.__AddUnmanagedExport(m.DllExportName, m.DllExportOrdinal);
+						mb.__AddUnmanagedExport(m.DllExportName, m.DllExportOrdinal);
 					}
 #endif // STATIC_COMPILER
 				}
