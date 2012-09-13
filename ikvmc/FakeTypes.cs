@@ -81,7 +81,7 @@ namespace IKVM.Internal
 			TypeWrapper enumTypeWrapper = loader.LoadClassByDottedName("java.lang.Enum");
 			enumTypeWrapper.Finish();
 			tb.SetParent(enumTypeWrapper.TypeAsBaseType);
-			CodeEmitter ilgen = CodeEmitter.Create(tb.DefineConstructor(MethodAttributes.Private, CallingConventions.Standard, new Type[] { Types.String, Types.Int32 }));
+			CodeEmitter ilgen = CodeEmitter.Create(ReflectUtil.DefineConstructor(tb, MethodAttributes.Private, new Type[] { Types.String, Types.Int32 }));
 			ilgen.Emit(OpCodes.Ldarg_0);
 			ilgen.Emit(OpCodes.Ldarg_1);
 			ilgen.Emit(OpCodes.Ldarg_2);

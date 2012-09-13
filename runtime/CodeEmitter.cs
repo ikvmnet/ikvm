@@ -455,11 +455,6 @@ namespace IKVM.Internal
 			return new CodeEmitter(mb.GetILGenerator(), mb.DeclaringType);
 		}
 
-		internal static CodeEmitter Create(ConstructorBuilder cb)
-		{
-			return new CodeEmitter(cb.GetILGenerator(), cb.DeclaringType);
-		}
-
 #if !STATIC_COMPILER
 		internal static CodeEmitter Create(DynamicMethod dm)
 		{
@@ -2740,7 +2735,7 @@ namespace IKVM.Internal
 		}
 
 #if STATIC_COMPILER
-		internal void EmitLineNumberTable(MethodBase mb)
+		internal void EmitLineNumberTable(MethodBuilder mb)
 		{
 			if(linenums != null)
 			{

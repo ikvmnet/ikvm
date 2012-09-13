@@ -2165,7 +2165,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal static void AddDeclaredExceptions(MethodBase mb, IKVM.Internal.MapXml.Throws[] throws)
+		internal static void AddDeclaredExceptions(MethodBuilder mb, IKVM.Internal.MapXml.Throws[] throws)
 		{
 			if (throws != null)
 			{

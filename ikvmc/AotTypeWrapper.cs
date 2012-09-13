@@ -117,7 +117,7 @@ namespace IKVM.Internal
 			private readonly AotTypeWrapper wrapper;
 			private readonly TypeBuilder typeBuilder;
 			private readonly MethodWrapper[] methods;
-			private ConstructorInfo baseSerializationCtor;
+			private MethodBuilder baseSerializationCtor;
 
 			internal WorkaroundBaseClass(AotTypeWrapper wrapper, TypeBuilder typeBuilder, MethodWrapper[] methods)
 			{
@@ -126,7 +126,7 @@ namespace IKVM.Internal
 				this.methods = methods;
 			}
 
-			internal ConstructorInfo GetSerializationConstructor()
+			internal MethodBuilder GetSerializationConstructor()
 			{
 				if (baseSerializationCtor == null)
 				{
@@ -229,7 +229,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal void AddXmlMapParameterAttributes(MethodBase method, string className, string methodName, string methodSig, ref ParameterBuilder[] pbs)
+		internal void AddXmlMapParameterAttributes(MethodBuilder method, string className, string methodName, string methodSig, ref ParameterBuilder[] pbs)
 		{
 			IKVM.Internal.MapXml.Param[] parameters = classLoader.GetXmlMapParameters(className, methodName, methodSig);
 			if(parameters != null)
@@ -1283,7 +1283,7 @@ namespace IKVM.Internal
 			return mw;
 		}
 
-		internal override ConstructorInfo GetBaseSerializationConstructor()
+		internal override MethodBase GetBaseSerializationConstructor()
 		{
 			if (workaroundBaseClass != null)
 			{

@@ -78,9 +78,9 @@ namespace IKVM.Internal
 			return true;
 		}
 
-		internal static ConstructorInfo AddAutomagicSerialization(DynamicTypeWrapper wrapper, TypeBuilder typeBuilder)
+		internal static MethodBuilder AddAutomagicSerialization(DynamicTypeWrapper wrapper, TypeBuilder typeBuilder)
 		{
-			ConstructorInfo serializationCtor = null;
+			MethodBuilder serializationCtor = null;
 			if ((wrapper.Modifiers & IKVM.Attributes.Modifiers.Enum) != 0)
 			{
 				MarkSerializable(typeBuilder);
@@ -107,7 +107,7 @@ namespace IKVM.Internal
 				}
 				else if (wrapper.BaseTypeWrapper.IsSubTypeOf(serializable))
 				{
-					ConstructorInfo baseCtor = wrapper.GetBaseSerializationConstructor();
+					MethodBase baseCtor = wrapper.GetBaseSerializationConstructor();
 					if (baseCtor != null && (baseCtor.IsFamily || baseCtor.IsFamilyOrAssembly))
 					{
 						MarkSerializable(typeBuilder);
@@ -135,7 +135,7 @@ namespace IKVM.Internal
 			return serializationCtor;
 		}
 
-		internal static ConstructorInfo AddAutomagicSerializationToWorkaroundBaseClass(TypeBuilder typeBuilderWorkaroundBaseClass, ConstructorInfo baseCtor)
+		internal static MethodBuilder AddAutomagicSerializationToWorkaroundBaseClass(TypeBuilder typeBuilderWorkaroundBaseClass, MethodBase baseCtor)
 		{
 			if (typeBuilderWorkaroundBaseClass.BaseType.IsSerializable)
 			{
@@ -173,9 +173,9 @@ namespace IKVM.Internal
 			ilgen.DoEmit();
 		}
 
-		private static ConstructorInfo AddConstructor(TypeBuilder tb, MethodWrapper defaultConstructor, ConstructorInfo serializationConstructor, bool callReadObject)
+		private static MethodBuilder AddConstructor(TypeBuilder tb, MethodWrapper defaultConstructor, MethodBase serializationConstructor, bool callReadObject)
 		{
-			ConstructorBuilder ctor = tb.DefineConstructor(MethodAttributes.Family, CallingConventions.Standard, new Type[] { JVM.Import(typeof(SerializationInfo)), JVM.Import(typeof(StreamingContext)) });
+			MethodBuilder ctor = ReflectUtil.DefineConstructor(tb, MethodAttributes.Family, new Type[] { JVM.Import(typeof(SerializationInfo)), JVM.Import(typeof(StreamingContext)) });
 			AttributeHelper.HideFromJava(ctor);
 			ctor.AddDeclarativeSecurity(SecurityAction.Demand, psetSerializationFormatter);
 			CodeEmitter ilgen = CodeEmitter.Create(ctor);

@@ -1131,10 +1131,6 @@ namespace IKVM.Internal
 					{
 					}
 
-					internal override void Apply(ClassLoaderWrapper loader, ConstructorBuilder cb, object annotation)
-					{
-					}
-
 					internal override void Apply(ClassLoaderWrapper loader, FieldBuilder fb, object annotation)
 					{
 					}
@@ -1266,15 +1262,6 @@ namespace IKVM.Internal
 						foreach (object ann in UnwrapArray(annotation))
 						{
 							annot.Apply(loader, ab, ann);
-						}
-					}
-
-					internal override void Apply(ClassLoaderWrapper loader, ConstructorBuilder cb, object annotation)
-					{
-						Annotation annot = type.Annotation;
-						foreach (object ann in UnwrapArray(annotation))
-						{
-							annot.Apply(loader, cb, ann);
 						}
 					}
 
@@ -1524,28 +1511,6 @@ namespace IKVM.Internal
 					else
 					{
 						tb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
-					}
-				}
-
-				internal override void Apply(ClassLoaderWrapper loader, ConstructorBuilder cb, object annotation)
-				{
-					if (type.IsSubclassOf(Types.SecurityAttribute))
-					{
-#if STATIC_COMPILER
-						cb.__AddDeclarativeSecurity(MakeCustomAttributeBuilder(loader, annotation));
-#elif STUB_GENERATOR
-#else
-						SecurityAction action;
-						PermissionSet permSet;
-						if (MakeDeclSecurity(type, annotation, out action, out permSet))
-						{
-							cb.AddDeclarativeSecurity(action, permSet);
-						}
-#endif
-					}
-					else
-					{
-						cb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
 					}
 				}
 

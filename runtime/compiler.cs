@@ -3034,8 +3034,7 @@ sealed class Compiler
 			}
 			TypeBuilder tb = compiler.context.DefineIndyCallSiteType();
 			FieldBuilder fb = tb.DefineField("value", typeofIndyCallSite, FieldAttributes.Static | FieldAttributes.Assembly);
-			ConstructorBuilder cb = tb.DefineConstructor(MethodAttributes.Static, CallingConventions.Standard, Type.EmptyTypes);
-			CodeEmitter ilgen = CodeEmitter.Create(cb);
+			CodeEmitter ilgen = CodeEmitter.Create(ReflectUtil.DefineTypeInitializer(tb));
 			ilgen.Emit(OpCodes.Ldnull);
 			ilgen.Emit(OpCodes.Ldftn, CreateBootstrapStub(compiler, cpi, delegateType, tb, fb, methodGetTarget));
 			ilgen.Emit(OpCodes.Newobj, MethodHandleUtil.GetDelegateConstructor(delegateType));
@@ -3274,8 +3273,7 @@ sealed class Compiler
 		{
 			TypeBuilder tb = compiler.context.DefineMethodHandleConstantType(index);
 			FieldBuilder field = tb.DefineField("value", CoreClasses.java.lang.invoke.MethodHandle.Wrapper.TypeAsSignatureType, FieldAttributes.Assembly | FieldAttributes.Static | FieldAttributes.InitOnly);
-			ConstructorBuilder cb = tb.DefineConstructor(MethodAttributes.Static, CallingConventions.Standard, Type.EmptyTypes);
-			ILGenerator ilgen = cb.GetILGenerator();
+			ILGenerator ilgen = ReflectUtil.DefineTypeInitializer(tb).GetILGenerator();
 			ClassFile.ConstantPoolItemMethodHandle mh = compiler.classFile.GetConstantPoolConstantMethodHandle(index);
 			Type delegateType;
 			switch (mh.Kind)

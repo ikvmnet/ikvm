@@ -913,10 +913,6 @@ namespace IKVM.Internal
 			{
 				method = method.Module.ResolveMethod(((MethodBuilder)method).GetToken().Token);
 			}
-			if(method is ConstructorBuilder)
-			{
-				method = method.Module.ResolveMethod(((ConstructorBuilder)method).GetToken().Token);
-			}
 		}
 
 		[HideFromJava]
