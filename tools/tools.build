@@ -30,5 +30,12 @@
             </sources>
         </csc>
         <exec program="pubkey.exe" useruntimeengine="true" />
+
+        <csc target="exe" output="writeappconfig.exe" rebuild="true">
+            <sources>
+                <include name="writeappconfig.cs" />
+            </sources>
+        </csc>
+        <exec program="writeappconfig.exe" useruntimeengine="true" />
     </target>
 </project>

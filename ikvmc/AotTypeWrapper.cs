@@ -666,7 +666,7 @@ namespace IKVM.Internal
 								Type returnType;
 								Type[] parameterTypes;
 								MapSignature(constructor.Sig, out returnType, out parameterTypes);
-								ConstructorBuilder cb = typeBuilder.DefineConstructor(attribs, CallingConventions.Standard, parameterTypes);
+								MethodBuilder cb = ReflectUtil.DefineConstructor(typeBuilder, attribs, parameterTypes);
 								if(setmodifiers)
 								{
 									AttributeHelper.SetModifiers(cb, (Modifiers)constructor.Modifiers, false);
@@ -692,7 +692,7 @@ namespace IKVM.Internal
 								{
 									if(mw.Name == "<init>" && mw.Signature == constructor.Sig)
 									{
-										ConstructorBuilder mb = mw.GetMethod() as ConstructorBuilder;
+										MethodBuilder mb = mw.GetMethod() as MethodBuilder;
 										if(mb != null)
 										{
 											foreach(IKVM.Internal.MapXml.Attribute attr in constructor.Attributes)
