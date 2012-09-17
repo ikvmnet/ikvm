@@ -43,8 +43,11 @@
                 <include name="bin/IKVM.Runtime.JNI.dll" />
                 <include name="bin/IKVM.OpenJDK.*.dll" />
                 <include name="bin/ikvm.exe" />
+                <include name="bin/ikvm.exe.config" />
                 <include name="bin/ikvmc.exe" />
+                <include name="bin/ikvmc.exe.config" />
                 <include name="bin/ikvmstub.exe" />
+                <include name="bin/ikvmstub.exe.config" />
                 <include name="bin-x64/JVM.DLL" />
                 <include name="bin-x86/JVM.DLL" />
                 <include name="classpath/**.class" />
@@ -64,6 +67,7 @@
                 <include name="tools/pubkey.exe" />
                 <include name="tools/pubkey.txt" />
                 <include name="tools/updbaseaddresses.exe" />
+                <include name="tools/writeappconfig.exe" />
             </fileset>
         </delete>
     </target>
