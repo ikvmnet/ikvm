@@ -1,11 +1,11 @@
 IKVM.NET Build Instructions
 ---------------------------
 
-This IKVM.NET source bundle requires OpenJDK 7u4 b22 sources (and build artifacts).
+This IKVM.NET source bundle requires OpenJDK 7u6 b24 sources (and build artifacts).
 
 They can be downloaded from the SourceForge IKVM project, or from:
 
-http://www.frijters.net/openjdk-7u4-stripped.zip
+http://www.frijters.net/openjdk-7u6-b24-stripped.zip
 
 This file should be unzipped in the same directory as where the ikvm directory
 (that contains this unzipped source bundle) lives.
@@ -42,7 +42,7 @@ methods and types that the IKVM.OpenJDK.*.dll assemblies use, but generally with
 method body (look for #if FIRST_PASS in the IKVM.Runtime.dll sources). The second pass is
 built after the IKVM.OpenJDK.*.dll assemblies have been built.
 
-The version numbers of the build is defined in ikvm/CommonAssemblyInfo.cs.
+The version number of the build is defined in ikvm/CommonAssemblyInfo.cs.in
 
 If you want to do a strong named build, make sure you have a key container installed named
 "ikvm-key" and run the build with "nant signed".
