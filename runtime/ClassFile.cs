@@ -307,14 +307,8 @@ namespace IKVM.Internal
 						throw new ClassFormatError("{0} (Interface name has bad constant type)", Name);
 					}
 					interfaces[i] = cpi;
-					for(int j = 0; j < i; j++)
-					{
-						if(ReferenceEquals(interfaces[j].Name, cpi.Name))
-						{
-							throw new ClassFormatError("{0} (Repetitive interface name)", Name);
-						}
-					}
 				}
+				CheckDuplicates(interfaces, "Repetitive interface name");
 				int fields_count = br.ReadUInt16();
 				fields = new Field[fields_count];
 				for(int i = 0; i < fields_count; i++)
@@ -325,14 +319,8 @@ namespace IKVM.Internal
 					{
 						throw new ClassFormatError("{0} (Illegal field name \"{1}\")", Name, name);
 					}
-					for(int j = 0; j < i; j++)
-					{
-						if(ReferenceEquals(fields[j].Name, name) && ReferenceEquals(fields[j].Signature, fields[i].Signature))
-						{
-							throw new ClassFormatError("{0} (Repetitive field name/signature)", Name);
-						}
-					}
 				}
+				CheckDuplicates<FieldOrMethod>(fields, "Repetitive field name/signature");
 				int methods_count = br.ReadUInt16();
 				methods = new Method[methods_count];
 				for(int i = 0; i < methods_count; i++)
@@ -351,14 +339,8 @@ namespace IKVM.Internal
 							throw new ClassFormatError("{0} (Method \"{1}\" has illegal signature \"{2}\")", Name, name, sig);
 						}
 					}
-					for(int j = 0; j < i; j++)
-					{
-						if(ReferenceEquals(methods[j].Name, name) && ReferenceEquals(methods[j].Signature, sig))
-						{
-							throw new ClassFormatError("{0} (Repetitive method name/signature)", Name);
-						}
-					}
 				}
+				CheckDuplicates<FieldOrMethod>(methods, "Repetitive method name/signature");
 				int attributes_count = br.ReadUInt16();
 				for(int i = 0; i < attributes_count; i++)
 				{
@@ -538,6 +520,36 @@ namespace IKVM.Internal
 			//			fs.Close();
 			//			throw;
 			//		}
+		}
+
+		private void CheckDuplicates<T>(T[] members, string msg)
+			where T : IEquatable<T>
+		{
+			if (members.Length < 100)
+			{
+				for (int i = 0; i < members.Length; i++)
+				{
+					for (int j = 0; j < i; j++)
+					{
+						if (members[i].Equals(members[j]))
+						{
+							throw new ClassFormatError("{0} ({1})", Name, msg);
+						}
+					}
+				}
+			}
+			else
+			{
+				Dictionary<T, object> dict = new Dictionary<T, object>();
+				for (int i = 0; i < members.Length; i++)
+				{
+					if (dict.ContainsKey(members[i]))
+					{
+						throw new ClassFormatError("{0} ({1})", Name, msg);
+					}
+					dict.Add(members[i], null);
+				}
+			}
 		}
 
 		private void MarkLinkRequiredConstantPoolItem(int index)
@@ -1318,7 +1330,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal sealed class ConstantPoolItemClass : ConstantPoolItem
+		internal sealed class ConstantPoolItemClass : ConstantPoolItem, IEquatable<ConstantPoolItemClass>
 		{
 			private ushort name_index;
 			private string name;
@@ -1435,6 +1447,16 @@ namespace IKVM.Internal
 			internal override ConstantType GetConstantType()
 			{
 				return ConstantType.Class;
+			}
+
+			public sealed override int GetHashCode()
+			{
+				return name.GetHashCode();
+			}
+
+			public bool Equals(ConstantPoolItemClass other)
+			{
+				return ReferenceEquals(name, other.name);
 			}
 		}
 
@@ -2122,7 +2144,7 @@ namespace IKVM.Internal
 			InvokeDynamic = 18,
 		}
 
-		internal abstract class FieldOrMethod
+		internal abstract class FieldOrMethod : IEquatable<FieldOrMethod>
 		{
 			// Note that Modifiers is a ushort, so it combines nicely with the following ushort field
 			protected Modifiers access_flags;
@@ -2285,6 +2307,16 @@ namespace IKVM.Internal
 				{
 					return (flags & FLAG_MASK_INTERNAL) != 0;
 				}
+			}
+
+			public sealed override int GetHashCode()
+			{
+				return name.GetHashCode() ^ descriptor.GetHashCode();
+			}
+
+			public bool Equals(FieldOrMethod other)
+			{
+				return ReferenceEquals(name, other.name) && ReferenceEquals(descriptor, other.descriptor);
 			}
 		}
 

@@ -1340,9 +1340,15 @@ namespace IKVM.Internal
 				// for compatibility with broken Java code that assumes that reflection returns the fields in class declaration
 				// order, we emit the fields in class declaration order in the .NET metadata (and then when we retrieve them
 				// using .NET reflection, we sort on metadata token.)
-				for (int i = 0; i < fieldIndex; i++)
+				if (fieldIndex > 0)
 				{
-					fields[i].Link();
+					if (!fields[fieldIndex - 1].IsLinked)
+					{
+						for (int i = 0; i < fieldIndex; i++)
+						{
+							fields[i].Link();
+						}
+					}
 				}
 				if (fieldIndex >= classFile.Fields.Length)
 				{

@@ -2782,7 +2782,7 @@ namespace IKVM.NativeCode.java
 						}
 						else
 						{
-							list.Add((jlrField)fields[i].ToField(false));
+							list.Add((jlrField)fields[i].ToField(false, i));
 						}
 					}
 					return list.ToArray();
