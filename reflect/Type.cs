@@ -50,8 +50,10 @@ namespace IKVM.Reflection
 		[Flags]
 		protected enum TypeFlags
 		{
-			// for use by TypeBuilder
+			// for use by TypeBuilder or TypeDefImpl
 			IsGenericTypeDefinition = 1,
+
+			// for use by TypeBuilder
 			HasNestedTypes = 2,
 			Baked = 4,
 
@@ -59,9 +61,12 @@ namespace IKVM.Reflection
 			ValueType = 8,
 			NotValueType = 16,
 
-			// for use by TypeDef, TypeBuilder or MissingType
+			// for use by TypeDefImpl, TypeBuilder or MissingType
 			PotentialEnumOrValueType = 32,
 			EnumOrValueType = 64,
+
+			// for use by TypeDefImpl
+			NotGenericTypeDefinition = 128,
 		}
 
 		// prevent subclassing by outsiders
