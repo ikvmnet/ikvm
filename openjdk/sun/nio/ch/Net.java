@@ -388,6 +388,7 @@ class Net {                                             // package-private
             int pos = src.position();
             byte[] buf = new byte[src.remaining()];
             src.get(buf);
+            src.position(pos);
             int len = writeImpl(fd, buf, 0, buf.length);
             if (len > 0)
             {

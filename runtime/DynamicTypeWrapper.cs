@@ -1461,11 +1461,6 @@ namespace IKVM.Internal
 						modreq = new Type[] { Types.IsVolatile };
 					}
 					field = typeBuilder.DefineField(realFieldName, type, modreq, Type.EmptyTypes, attribs);
-					if (fld.IsTransient)
-					{
-						CustomAttributeBuilder transientAttrib = new CustomAttributeBuilder(JVM.Import(typeof(NonSerializedAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
-						field.SetCustomAttribute(transientAttrib);
-					}
 					if (isWrappedFinal)
 					{
 						methodAttribs |= MethodAttributes.SpecialName;
@@ -1520,6 +1515,11 @@ namespace IKVM.Internal
 						}
 #endif // STATIC_COMPILER
 					}
+				}
+				if (fld.IsTransient)
+				{
+					CustomAttributeBuilder transientAttrib = new CustomAttributeBuilder(JVM.Import(typeof(NonSerializedAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
+					field.SetCustomAttribute(transientAttrib);
 				}
 #if STATIC_COMPILER
 				if (!isWrappedFinal)

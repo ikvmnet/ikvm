@@ -87,9 +87,11 @@ public final class AssemblyClassLoader extends ClassLoader
     public static native Enumeration getResources(ClassLoader classLoader, Assembly assembly, String name) throws IOException;
 
     private static native String GetGenericClassLoaderName(Object classLoader);
-    // also used by VMClassLoader
+    // also used by java.lang.LangHelper
     @Internal
     public static native String[] GetPackages(Assembly assembly);
+
+    private static native URL GetManifest(Assembly assembly);
 
     private synchronized void lazyDefinePackagesCheck()
     {
@@ -120,7 +122,11 @@ public final class AssemblyClassLoader extends ClassLoader
         {
             if(assembly != null)
             {
-                return new Manifest(gnu.java.net.protocol.ikvmres.Handler.readResourceFromAssembly(assembly, "/META-INF/MANIFEST.MF"));
+                URL url = GetManifest(assembly);
+                if (url != null)
+                {
+                    return new Manifest(url.openStream());
+                }
             }
         }
         catch (MalformedURLException _)

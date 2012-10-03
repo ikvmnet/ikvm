@@ -119,7 +119,7 @@ public class Win32PrintService implements PrintService {
         Chromaticity.class
     };
 
-    // conversion from 1/100 Inch (.NET) to µm (Java)
+    // conversion from 1/100 Inch (.NET) to um (Java)
     private static final int INCH100_TO_MYM = 254;
     private static final int  MATCH_DIFF = 500; // 0.5 mm
     

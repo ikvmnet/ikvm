@@ -666,11 +666,20 @@ namespace IKVM.Internal
 
 					X509Store store = new X509Store(StoreName.Root, StoreLocation.LocalMachine);
 					store.Open(OpenFlags.ReadOnly | OpenFlags.OpenExistingOnly);
+					Dictionary<string, string> aliases = new Dictionary<string, string>();
 					foreach (X509Certificate2 cert in store.Certificates)
 					{
 						if (!cert.HasPrivateKey)
 						{
-							jstore.setCertificateEntry(cert.Subject, cf.generateCertificate(new global::java.io.ByteArrayInputStream(cert.RawData)));
+							// the alias must be unique, otherwise we overwrite the previous certificate with that alias
+							string alias = cert.Subject;
+							int unique = 0;
+							while (aliases.ContainsKey(alias))
+							{
+								alias = cert.Subject + " #" + (++unique);
+							}
+							aliases.Add(alias, null);
+							jstore.setCertificateEntry(alias, cf.generateCertificate(new global::java.io.ByteArrayInputStream(cert.RawData)));
 						}
 					}
 					store.Close();

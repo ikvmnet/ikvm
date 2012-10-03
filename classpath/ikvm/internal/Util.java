@@ -7,6 +7,8 @@ public final class Util
 {
     private Util() {}
 
+    public static final boolean MONO = cli.System.Type.GetType("Mono.Runtime") != null;
+
     public static final boolean WINDOWS;
     public static final boolean MACOSX;
 

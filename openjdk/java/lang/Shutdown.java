@@ -75,9 +75,14 @@ public final class Shutdown {
             initialized = true;
             try
             {
-                // AppDomain.ProcessExit has a LinkDemand, so we have to have a separate method
-                registerShutdownHook();
-                if (false) throw new cli.System.Security.SecurityException();
+                // MONOBUG Mono doesn't support starting a new thread during ProcessExit
+                // (and application shutdown hooks are based on threads)
+                // see https://bugzilla.xamarin.com/show_bug.cgi?id=5650
+                if (!ikvm.internal.Util.MONO) {
+                    // AppDomain.ProcessExit has a LinkDemand, so we have to have a separate method
+                    registerShutdownHook();
+                    if (false) throw new cli.System.Security.SecurityException();
+                }
             }
             catch (cli.System.Security.SecurityException _)
             {

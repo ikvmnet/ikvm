@@ -502,6 +502,22 @@ namespace IKVM.Internal
 
 		internal TypeWrapper LoadGenericClass(string name)
 		{
+			// we need to handle delegate methods here (for generic delegates)
+			// (note that other types with manufactured inner classes such as Attribute and Enum can't be generic)
+			if (name.EndsWith(DotNetTypeWrapper.DelegateInterfaceSuffix))
+			{
+				TypeWrapper outer = LoadGenericClass(name.Substring(0, name.Length - DotNetTypeWrapper.DelegateInterfaceSuffix.Length));
+				if (outer != null && outer.IsFakeTypeContainer)
+				{
+					foreach (TypeWrapper tw in outer.InnerClasses)
+					{
+						if (tw.Name == name)
+						{
+							return tw;
+						}
+					}
+				}
+			}
 			// generic class name grammar:
 			//
 			// mangled(open_generic_type_name) "_$$$_" M(parameter_class_name) ( "_$$_" M(parameter_class_name) )* "_$$$$_"
@@ -992,6 +1008,39 @@ namespace IKVM.Internal
 			return wrapper;
 		}
 
+		private static ClassLoaderWrapper GetLoaderFromType(Type type)
+		{
+			Debug.Assert(!ReflectUtil.IsReflectionOnly(type));
+			if(remappedTypes.ContainsKey(type))
+			{
+				return bootstrapClassLoader;
+			}
+			else if(ReflectUtil.IsVector(type))
+			{
+				// it might be an array of a dynamically compiled Java type
+				int rank = 1;
+				Type elem = type.GetElementType();
+				while(ReflectUtil.IsVector(elem))
+				{
+					rank++;
+					elem = elem.GetElementType();
+				}
+				return GetLoaderFromType(elem);
+			}
+			else
+			{
+				Assembly asm = type.Assembly;
+#if CLASSGC
+				ClassLoaderWrapper loader;
+				if(dynamicAssemblies != null && dynamicAssemblies.TryGetValue(asm, out loader))
+				{
+					return loader;
+				}
+#endif
+				return AssemblyClassLoader.FromAssembly(asm);
+			}
+		}
+
 		internal virtual Type GetGenericTypeDefinition(string name)
 		{
 			return null;
@@ -1007,7 +1056,7 @@ namespace IKVM.Internal
 			list.Add(AssemblyClassLoader.FromAssembly(type.Assembly));
 			foreach(Type arg in type.GetGenericArguments())
 			{
-				ClassLoaderWrapper loader = GetWrapperFromType(arg).GetClassLoader();
+				ClassLoaderWrapper loader = GetLoaderFromType(arg);
 				if(!list.Contains(loader) && loader != bootstrapClassLoader)
 				{
 					list.Add(loader);

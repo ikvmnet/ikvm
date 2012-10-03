@@ -706,7 +706,7 @@ sealed class InstructionState
 		{
 			// HACK because of the way interfaces references works, if baseType
 			// is an interface or array of interfaces, any reference will be accepted
-			if(baseType.IsInterfaceOrInterfaceArray && !type.IsPrimitive)
+			if((baseType.IsUnloadable || baseType.IsInterfaceOrInterfaceArray) && !type.IsPrimitive)
 			{
 				return type;
 			}
@@ -904,7 +904,7 @@ struct StackState
 		{
 			// HACK because of the way interfaces references works, if baseType
 			// is an interface or array of interfaces, any reference will be accepted
-			if(baseType.IsInterfaceOrInterfaceArray && !type.IsPrimitive)
+			if((baseType.IsUnloadable || baseType.IsInterfaceOrInterfaceArray) && !type.IsPrimitive)
 			{
 				return type;
 			}
@@ -1267,7 +1267,15 @@ sealed class MethodAnalyzer
 						// mark the exception handlers reachable from this instruction
 						for(int j = 0; j < method.ExceptionTable.Length; j++)
 						{
-							if(method.ExceptionTable[j].startIndex <= i && i < method.ExceptionTable[j].endIndex)
+							// if we're currently inside an exception block, we need to merge our current state with the exception handler
+							// and if we right after the exception block (i == method.ExceptionTable[j].endIndex) and the block ends in
+							// an instruction that simply falls through, we need to merge our current state with the exception handler as
+							// well (because the last instruction may be a store to a local variable that affects the type of the local variable)
+							// (note that we can legally access instructions[i - 1] because an empty exception block is illegal)
+							if(method.ExceptionTable[j].startIndex <= i
+								&& (i < method.ExceptionTable[j].endIndex
+									|| (i == method.ExceptionTable[j].endIndex
+										&& ByteCodeMetaData.GetFlowControl(instructions[i - 1].NormalizedOpCode) == ByteCodeFlowControl.Next)))
 							{
 								int idx = method.ExceptionTable[j].handlerIndex;
 								InstructionState ex = state[i].CopyLocals();
@@ -2196,6 +2204,9 @@ sealed class MethodAnalyzer
 								break;
 							case NormalizedByteCode.__static_error:
 								break;
+							case NormalizedByteCode.__jsr:
+							case NormalizedByteCode.__ret:
+								throw new VerifyError("Bad instruction");
 							default:
 								throw new NotImplementedException(instr.NormalizedOpCode.ToString());
 						}

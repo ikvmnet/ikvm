@@ -3526,6 +3526,11 @@ namespace IKVM.Internal
 						return CoreClasses.java.lang.Object.Wrapper;
 					}
 				}
+ 				else if(ClassLoaderWrapper.IsRemappedType(type.BaseType))
+ 				{
+ 					// if we directly extend System.Object or System.Exception, the base class must be cli.System.Object or cli.System.Exception
+ 					return DotNetTypeWrapper.GetWrapperFromDotNetType(type.BaseType);
+ 				}
 				TypeWrapper tw = null;
 				while(tw == null)
 				{

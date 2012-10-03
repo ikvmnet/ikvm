@@ -1929,11 +1929,11 @@ namespace IKVM.Internal
 							paramTypes[i] = paramInfo[i].ParameterType;
 						}
 						PropertyBuilder pb = typeBuilder.DefineProperty(pi.Name, PropertyAttributes.None, pi.PropertyType, paramTypes);
-						if(pi.CanRead)
+						if(pi.GetGetMethod() != null)
 						{
 							pb.SetGetMethod((MethodBuilder)methods[MakeMethodKey(pi.GetGetMethod())]);
 						}
-						if(pi.CanWrite)
+						if(pi.GetSetMethod() != null)
 						{
 							pb.SetSetMethod((MethodBuilder)methods[MakeMethodKey(pi.GetSetMethod())]);
 						}

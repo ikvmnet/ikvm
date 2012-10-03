@@ -246,6 +246,7 @@ namespace IKVM.Internal
 				{
 					// for fake types, we load the declaring outer type (the real one) and
 					// let that generated the manufactured nested classes
+					// (note that for generic outer types, we need to duplicate this in ClassLoaderWrapper.LoadGenericClass)
 					TypeWrapper outer = null;
 					if (name.EndsWith(DotNetTypeWrapper.DelegateInterfaceSuffix))
 					{

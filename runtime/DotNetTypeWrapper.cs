@@ -900,7 +900,8 @@ namespace IKVM.Internal
 				}
 				foreach (PropertyInfo pi in attributeType.GetProperties(BindingFlags.Instance | BindingFlags.Public))
 				{
-					if (pi.CanRead && pi.CanWrite && IsSupportedType(pi.PropertyType))
+					// the getter and setter methods both need to be public
+					if (pi.GetGetMethod() != null && pi.GetSetMethod() != null && IsSupportedType(pi.PropertyType))
 					{
 						methods.Add(new AttributeAnnotationMethodWrapper(this, pi.Name, pi.PropertyType, true));
 					}
