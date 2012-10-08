@@ -1451,11 +1451,11 @@ namespace IKVM.Internal
 #endif
 
 					field = DefineField(realFieldName, fw.FieldTypeWrapper, attribs, fld.IsVolatile);
-					if (fld.IsTransient)
-					{
-						CustomAttributeBuilder transientAttrib = new CustomAttributeBuilder(JVM.Import(typeof(NonSerializedAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
-						field.SetCustomAttribute(transientAttrib);
-					}
+				}
+				if (fld.IsTransient)
+				{
+					CustomAttributeBuilder transientAttrib = new CustomAttributeBuilder(JVM.Import(typeof(NonSerializedAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
+					field.SetCustomAttribute(transientAttrib);
 				}
 #if STATIC_COMPILER
 				{

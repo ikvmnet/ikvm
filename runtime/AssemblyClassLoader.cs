@@ -148,6 +148,9 @@ namespace IKVM.Internal
 				{
 					return assembly.GetType(name);
 				}
+				catch (ArgumentException)
+				{
+				}
 				catch (FileLoadException x)
 				{
 					// this can only happen if the assembly was loaded in the ReflectionOnly
@@ -164,6 +167,9 @@ namespace IKVM.Internal
 				try
 				{
 					return mod.GetType(name);
+				}
+				catch (ArgumentException)
+				{
 				}
 				catch (FileLoadException x)
 				{
