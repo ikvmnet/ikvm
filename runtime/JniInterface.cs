@@ -1395,7 +1395,7 @@ namespace IKVM.Runtime
 				{
 					if (active[i] == null)
 					{
-						while (localRefIndex > i && active[localRefIndex - 1] == null)
+						while (localRefIndex - 1 > i && active[localRefIndex - 1] == null)
 						{
 							localRefIndex--;
 						}
