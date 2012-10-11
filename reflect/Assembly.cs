@@ -76,6 +76,11 @@ namespace IKVM.Reflection
 			return GetModules(true);
 		}
 
+		public IEnumerable<Module> Modules
+		{
+			get { return GetLoadedModules(); }
+		}
+
 		public Module[] GetLoadedModules()
 		{
 			return GetLoadedModules(true);
