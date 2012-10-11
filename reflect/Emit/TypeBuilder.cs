@@ -481,7 +481,7 @@ namespace IKVM.Reflection.Emit
 			return DefineNestedType(name, attr, parent, packSize, 0);
 		}
 
-		private TypeBuilder DefineNestedType(string name, TypeAttributes attr, Type parent, PackingSize packSize, int typeSize)
+		public TypeBuilder DefineNestedType(string name, TypeAttributes attr, Type parent, PackingSize packSize, int typeSize)
 		{
 			string ns = null;
 			int lastdot = name.LastIndexOf('.');
