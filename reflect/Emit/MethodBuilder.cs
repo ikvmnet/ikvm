@@ -622,6 +622,19 @@ namespace IKVM.Reflection.Emit
 			this.ModuleBuilder.AddUnmanagedExport(name, ordinal, this, new RelativeVirtualAddress(0xFFFFFFFF));
 		}
 
+		public void CreateMethodBody(byte[] il, int count)
+		{
+			if (il == null)
+			{
+				throw new NotSupportedException();
+			}
+			if (il.Length != count)
+			{
+				Array.Resize(ref il, count);
+			}
+			SetMethodBody(il, 16, null, null, null);
+		}
+
 		public void SetMethodBody(byte[] il, int maxStack, byte[] localSignature, IEnumerable<ExceptionHandler> exceptionHandlers, IEnumerable<int> tokenFixups)
 		{
 			// TODO this should be refactored to share code with ILGenerator
@@ -652,10 +665,13 @@ namespace IKVM.Reflection.Emit
 			bb.Write(il.Length);
 			bb.Write(localSignature == null ? 0 : this.ModuleBuilder.GetSignatureToken(localSignature, localSignature.Length).Token);
 
-			int codeOffset = bb.Position;
-			foreach (int fixup in tokenFixups)
+			if (tokenFixups != null)
 			{
-				this.ModuleBuilder.tokenFixupOffsets.Add(fixup + codeOffset);
+				int codeOffset = bb.Position;
+				foreach (int fixup in tokenFixups)
+				{
+					this.ModuleBuilder.tokenFixupOffsets.Add(fixup + codeOffset);
+				}
 			}
 			bb.Write(il);
 
