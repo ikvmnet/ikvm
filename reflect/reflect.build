@@ -66,6 +66,7 @@
                 <include name="Emit\CustomModifiersBuilder.cs" />
                 <include name="Emit\EnumBuilder.cs" />
                 <include name="Emit\Enums.cs" />
+                <include name="Emit\ExceptionHandler.cs" />
                 <include name="Emit\EventBuilder.cs" />
                 <include name="Emit\FieldBuilder.cs" />
                 <include name="Emit\ILGenerator.cs" />

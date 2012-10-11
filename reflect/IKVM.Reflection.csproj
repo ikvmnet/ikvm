@@ -58,6 +58,7 @@
     <Compile Include="Emit\EnumBuilder.cs" />
     <Compile Include="Emit\Enums.cs" />
     <Compile Include="Emit\EventBuilder.cs" />
+    <Compile Include="Emit\ExceptionHandler.cs" />
     <Compile Include="Emit\FieldBuilder.cs" />
     <Compile Include="Emit\ILGenerator.cs" />
     <Compile Include="Emit\MethodBuilder.cs" />
