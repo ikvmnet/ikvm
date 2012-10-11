@@ -928,7 +928,11 @@ namespace IKVM.Reflection.Emit
 			}
 			else
 			{
-				rva = WriteFatHeaderAndCode(bb, ref localVarSigTok, initLocals);
+				if (localsCount != 0)
+				{
+					localVarSigTok = moduleBuilder.GetSignatureToken(locals).Token;
+				}
+				rva = WriteFatHeaderAndCode(bb, localVarSigTok, initLocals);
 			}
 
 			if (moduleBuilder.symbolWriter != null)
@@ -1004,16 +1008,11 @@ namespace IKVM.Reflection.Emit
 			return rva;
 		}
 
-		private int WriteFatHeaderAndCode(ByteBuffer bb, ref int localVarSigTok, bool initLocals)
+		private int WriteFatHeaderAndCode(ByteBuffer bb, int localVarSigTok, bool initLocals)
 		{
 			// fat headers require 4-byte alignment
 			bb.Align(4);
 			int rva = bb.Position;
-
-			if (localsCount != 0)
-			{
-				localVarSigTok = moduleBuilder.GetSignatureToken(locals).Token;
-			}
 
 			const byte CorILMethod_FatFormat = 0x03;
 			const byte CorILMethod_MoreSects = 0x08;
