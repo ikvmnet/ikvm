@@ -104,6 +104,25 @@ namespace IKVM.Reflection
 			return list.ToArray();
 		}
 
+		public IEnumerable<Type> ExportedTypes
+		{
+			get { return GetExportedTypes(); }
+		}
+
+		public IEnumerable<TypeInfo> DefinedTypes
+		{
+			get
+			{
+				Type[] types = GetTypes();
+				TypeInfo[] typeInfos = new TypeInfo[types.Length];
+				for (int i = 0; i < types.Length; i++)
+				{
+					typeInfos[i] = types[i].GetTypeInfo();
+				}
+				return typeInfos;
+			}
+		}
+
 		public Type GetType(string name)
 		{
 			return GetType(name, false);
