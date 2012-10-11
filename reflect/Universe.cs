@@ -856,6 +856,16 @@ namespace IKVM.Reflection
 			return DefineDynamicAssemblyImpl(name, access, null, null, null, null);
 		}
 
+		public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, IEnumerable<CustomAttributeBuilder> assemblyAttributes)
+		{
+			AssemblyBuilder ab = DefineDynamicAssembly(name, access);
+			foreach (CustomAttributeBuilder cab in assemblyAttributes)
+			{
+				ab.SetCustomAttribute(cab);
+			}
+			return ab;
+		}
+
 		public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, string dir)
 		{
 			return DefineDynamicAssemblyImpl(name, access, dir, null, null, null);
