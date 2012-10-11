@@ -442,6 +442,87 @@ namespace IKVM.Reflection
 			throw new InvalidOperationException();
 		}
 
+		public string[] GetEnumNames()
+		{
+			if (!IsEnum)
+			{
+				throw new ArgumentException();
+			}
+			List<string> names = new List<string>();
+			foreach (FieldInfo field in __GetDeclaredFields())
+			{
+				if (field.IsLiteral)
+				{
+					names.Add(field.Name);
+				}
+			}
+			return names.ToArray();
+		}
+
+		public string GetEnumName(object value)
+		{
+			if (!IsEnum)
+			{
+				throw new ArgumentException();
+			}
+			if (value == null)
+			{
+				throw new ArgumentNullException();
+			}
+			try
+			{
+				value = Convert.ChangeType(value, GetTypeCode(GetEnumUnderlyingType()));
+			}
+			catch (FormatException)
+			{
+				throw new ArgumentException();
+			}
+			catch (OverflowException)
+			{
+				return null;
+			}
+			catch (InvalidCastException)
+			{
+				return null;
+			}
+			foreach (FieldInfo field in __GetDeclaredFields())
+			{
+				if (field.IsLiteral && field.GetRawConstantValue().Equals(value))
+				{
+					return field.Name;
+				}
+			}
+			return null;
+		}
+
+		public bool IsEnumDefined(object value)
+		{
+			if (value is string)
+			{
+				return Array.IndexOf(GetEnumNames(), value) != -1;
+			}
+			if (!IsEnum)
+			{
+				throw new ArgumentException();
+			}
+			if (value == null)
+			{
+				throw new ArgumentNullException();
+			}
+			if (System.Type.GetTypeCode(value.GetType()) != GetTypeCode(GetEnumUnderlyingType()))
+			{
+				throw new ArgumentException();
+			}
+			foreach (FieldInfo field in __GetDeclaredFields())
+			{
+				if (field.IsLiteral && field.GetRawConstantValue().Equals(value))
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
 		public override string ToString()
 		{
 			return FullName;
