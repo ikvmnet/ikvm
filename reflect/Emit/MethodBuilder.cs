@@ -622,6 +622,114 @@ namespace IKVM.Reflection.Emit
 			this.ModuleBuilder.AddUnmanagedExport(name, ordinal, this, new RelativeVirtualAddress(0xFFFFFFFF));
 		}
 
+		public void SetMethodBody(byte[] il, int maxStack, byte[] localSignature, IEnumerable<ExceptionHandler> exceptionHandlers, IEnumerable<int> tokenFixups)
+		{
+			// TODO this should be refactored to share code with ILGenerator
+			// TODO for now we always write a fat header
+			ByteBuffer bb = this.ModuleBuilder.methodBodies;
+			// fat headers require 4-byte alignment
+			bb.Align(4);
+			rva = bb.Position;
+
+			const byte CorILMethod_FatFormat = 0x03;
+			const byte CorILMethod_MoreSects = 0x08;
+			const byte CorILMethod_InitLocals = 0x10;
+
+			short flagsAndSize = (short)(CorILMethod_FatFormat | (3 << 12));
+			if (initLocals)
+			{
+				flagsAndSize |= CorILMethod_InitLocals;
+			}
+
+			List<ExceptionHandler> exceptions = new List<ExceptionHandler>(exceptionHandlers ?? Empty<ExceptionHandler>.Array);
+			if (exceptions.Count > 0)
+			{
+				flagsAndSize |= CorILMethod_MoreSects;
+			}
+
+			bb.Write(flagsAndSize);
+			bb.Write(maxStack);
+			bb.Write(il.Length);
+			bb.Write(localSignature == null ? 0 : this.ModuleBuilder.GetSignatureToken(localSignature, localSignature.Length).Token);
+
+			int codeOffset = bb.Position;
+			foreach (int fixup in tokenFixups)
+			{
+				this.ModuleBuilder.tokenFixupOffsets.Add(fixup + codeOffset);
+			}
+			bb.Write(il);
+
+			if (exceptions.Count > 0)
+			{
+				bb.Align(4);
+
+				bool fat = false;
+				if (exceptions.Count * 12 + 4 > 255)
+				{
+					fat = true;
+				}
+				else
+				{
+					foreach (ExceptionHandler block in exceptions)
+					{
+						if (block.TryOffset > 65535 || block.TryLength > 255 || block.HandlerOffset > 65535 || block.HandlerLength > 255)
+						{
+							fat = true;
+							break;
+						}
+					}
+				}
+				const byte CorILMethod_Sect_EHTable = 0x1;
+				const byte CorILMethod_Sect_FatFormat = 0x40;
+
+				if (fat)
+				{
+					bb.Write((byte)(CorILMethod_Sect_EHTable | CorILMethod_Sect_FatFormat));
+					int dataSize = exceptions.Count * 24 + 4;
+					bb.Write((byte)dataSize);
+					bb.Write((short)(dataSize >> 8));
+					foreach (ExceptionHandler block in exceptions)
+					{
+						bb.Write((int)block.Kind);
+						bb.Write(block.TryOffset);
+						bb.Write(block.TryLength);
+						bb.Write(block.HandlerOffset);
+						bb.Write(block.HandlerLength);
+						if (block.Kind == ExceptionHandlingClauseOptions.Filter)
+						{
+							bb.Write(block.FilterOffset);
+						}
+						else
+						{
+							bb.Write(block.ExceptionTypeToken);
+						}
+					}
+				}
+				else
+				{
+					bb.Write(CorILMethod_Sect_EHTable);
+					bb.Write((byte)(exceptions.Count * 12 + 4));
+					bb.Write((short)0);
+					foreach (ExceptionHandler block in exceptions)
+					{
+						bb.Write((short)block.Kind);
+						bb.Write((short)block.TryOffset);
+						bb.Write((byte)block.TryLength);
+						bb.Write((short)block.HandlerOffset);
+						bb.Write((byte)block.HandlerLength);
+						if (block.Kind == ExceptionHandlingClauseOptions.Filter)
+						{
+							bb.Write(block.FilterOffset);
+						}
+						else
+						{
+							bb.Write(block.ExceptionTypeToken);
+						}
+					}
+				}
+			}
+		}
+
 		internal void Bake()
 		{
 			this.nameIndex = this.ModuleBuilder.Strings.Add(name);
