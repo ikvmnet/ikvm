@@ -689,7 +689,7 @@ namespace IKVM.Reflection.Emit
 			return this;
 		}
 
-		public Type CreateType()
+		public TypeInfo CreateTypeInfo()
 		{
 			if ((typeFlags & TypeFlags.Baked) != 0)
 			{
@@ -738,6 +738,11 @@ namespace IKVM.Reflection.Emit
 				}
 			}
 			return new BakedType(this);
+		}
+
+		public Type CreateType()
+		{
+			return CreateTypeInfo();
 		}
 
 		internal void PopulatePropertyAndEventTables()
