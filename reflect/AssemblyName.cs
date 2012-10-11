@@ -62,9 +62,8 @@ namespace IKVM.Reflection
 			switch (Fusion.ParseAssemblyName(assemblyName, out parsed))
 			{
 				case ParseAssemblyResult.GenericError:
-					throw new FileLoadException();
 				case ParseAssemblyResult.DuplicateKey:
-					throw new System.Runtime.InteropServices.COMException();
+					throw new FileLoadException();
 			}
 			name = parsed.Name;
 			if (parsed.Culture != null)
