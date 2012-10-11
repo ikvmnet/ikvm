@@ -302,6 +302,11 @@ namespace IKVM.Reflection
 			return ReferenceEquals(type, this) ? base.GetHashCode() : type.GetHashCode();
 		}
 
+		public Type[] GenericTypeArguments
+		{
+			get { return IsConstructedGenericType ? GetGenericArguments() : Type.EmptyTypes; }
+		}
+
 		public virtual Type[] GetGenericArguments()
 		{
 			return Type.EmptyTypes;
