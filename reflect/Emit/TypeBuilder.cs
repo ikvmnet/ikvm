@@ -397,6 +397,11 @@ namespace IKVM.Reflection.Emit
 			return DefineProperty(name, attributes, returnType, null, null, parameterTypes, null, null);
 		}
 
+		public PropertyBuilder DefineProperty(string name, PropertyAttributes attributes, CallingConventions callingConvention, Type returnType, Type[] parameterTypes)
+		{
+			return DefineProperty(name, attributes, callingConvention, returnType, null, null, parameterTypes, null, null);
+		}
+
 		public PropertyBuilder DefineProperty(string name, PropertyAttributes attributes, Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers,
 			Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers)
 		{
