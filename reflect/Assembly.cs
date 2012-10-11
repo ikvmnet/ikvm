@@ -163,6 +163,16 @@ namespace IKVM.Reflection
 			return CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit);
 		}
 
+		public IList<CustomAttributeData> GetCustomAttributesData()
+		{
+			return CustomAttributeData.GetCustomAttributes(this);
+		}
+
+		public IEnumerable<CustomAttributeData> CustomAttributes
+		{
+			get { return GetCustomAttributesData(); }
+		}
+
 		public static string CreateQualifiedName(string assemblyName, string typeName)
 		{
 			return typeName + ", " + assemblyName;
