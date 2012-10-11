@@ -142,6 +142,11 @@ namespace IKVM.Reflection
 			set { culture = value == null ? null : value.Name; }
 		}
 
+		public string CultureName
+		{
+			get { return culture; }
+		}
+
 		internal string Culture
 		{
 			get { return culture; }
