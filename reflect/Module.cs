@@ -544,6 +544,11 @@ namespace IKVM.Reflection
 			return CustomAttributeData.GetCustomAttributesImpl(new List<CustomAttributeData>(), this, token, null);
 		}
 
+		public virtual System.Security.Cryptography.X509Certificates.X509Certificate GetSignerCertificate()
+		{
+			return null;
+		}
+
 		internal abstract Type GetModuleType();
 
 		internal abstract ByteReader GetBlob(int blobIndex);

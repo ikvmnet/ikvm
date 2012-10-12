@@ -88,6 +88,7 @@
                 <include name="Metadata\Tables.cs" />
                 <include name="Properties\AssemblyInfo.cs" />
                 <include name="Reader\AssemblyReader.cs" />
+                <include name="Reader\Authenticode.cs" />
                 <include name="Reader\ByteReader.cs" />
                 <include name="Reader\EventInfoImpl.cs" />
                 <include name="Reader\Field.cs" />

@@ -101,6 +101,7 @@
     <Compile Include="PropertyInfo.cs" />
     <Compile Include="PropertySignature.cs" />
     <Compile Include="Reader\AssemblyReader.cs" />
+    <Compile Include="Reader\Authenticode.cs" />
     <Compile Include="Reader\ByteReader.cs" />
     <Compile Include="Reader\EventInfoImpl.cs" />
     <Compile Include="Reader\Field.cs" />
@@ -132,6 +133,7 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Security" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
