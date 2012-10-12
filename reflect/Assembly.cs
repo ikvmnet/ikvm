@@ -220,6 +220,11 @@ namespace IKVM.Reflection
 			}
 		}
 
+		public virtual bool IsDynamic
+		{
+			get { return false; }
+		}
+
 		public virtual bool __IsMissing
 		{
 			get { return false; }

@@ -730,6 +730,11 @@ namespace IKVM.Reflection.Emit
 			throw new NotSupportedException();
 		}
 
+		public override bool IsDynamic
+		{
+			get { return true; }
+		}
+
 		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
 		{
 			List<CustomAttributeData> list = new List<CustomAttributeData>();
