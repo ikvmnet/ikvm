@@ -105,7 +105,7 @@ namespace IKVM.Reflection.Writer
 		}
 
 		// return the number of bytes that the compressed int at the current position takes
-		internal int GetCompressedIntLength()
+		internal int GetCompressedUIntLength()
 		{
 			switch (buffer[pos] & 0xC0)
 			{
@@ -204,12 +204,12 @@ namespace IKVM.Reflection.Writer
 			else
 			{
 				byte[] buf = Encoding.UTF8.GetBytes(str);
-				WriteCompressedInt(buf.Length);
+				WriteCompressedUInt(buf.Length);
 				Write(buf);
 			}
 		}
 
-		internal void WriteCompressedInt(int value)
+		internal void WriteCompressedUInt(int value)
 		{
 			if (value <= 0x7F)
 			{
@@ -262,13 +262,13 @@ namespace IKVM.Reflection.Writer
 			switch (token >> 24)
 			{
 				case TypeDefTable.Index:
-					WriteCompressedInt((token & 0xFFFFFF) << 2 | 0);
+					WriteCompressedUInt((token & 0xFFFFFF) << 2 | 0);
 					break;
 				case TypeRefTable.Index:
-					WriteCompressedInt((token & 0xFFFFFF) << 2 | 1);
+					WriteCompressedUInt((token & 0xFFFFFF) << 2 | 1);
 					break;
 				case TypeSpecTable.Index:
-					WriteCompressedInt((token & 0xFFFFFF) << 2 | 2);
+					WriteCompressedUInt((token & 0xFFFFFF) << 2 | 2);
 					break;
 				default:
 					throw new InvalidOperationException();

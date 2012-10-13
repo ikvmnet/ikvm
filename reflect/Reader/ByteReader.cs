@@ -43,7 +43,7 @@ namespace IKVM.Reflection.Reader
 		internal static ByteReader FromBlob(byte[] blobHeap, int blob)
 		{
 			ByteReader br = new ByteReader(blobHeap, blob, 4);
-			int length = br.ReadCompressedInt();
+			int length = br.ReadCompressedUInt();
 			br.end = br.pos + length;
 			return br;
 		}
@@ -79,7 +79,7 @@ namespace IKVM.Reflection.Reader
 			return buf;
 		}
 
-		internal int ReadCompressedInt()
+		internal int ReadCompressedUInt()
 		{
 			byte b1 = ReadByte();
 			if (b1 <= 0x7F)
@@ -107,7 +107,7 @@ namespace IKVM.Reflection.Reader
 				pos++;
 				return null;
 			}
-			int length = ReadCompressedInt();
+			int length = ReadCompressedUInt();
 			string str = Encoding.UTF8.GetString(buffer, pos, length);
 			pos += length;
 			return str;

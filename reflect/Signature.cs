@@ -98,7 +98,7 @@ namespace IKVM.Reflection
 			{
 				throw new BadImageFormatException();
 			}
-			int genArgCount = br.ReadCompressedInt();
+			int genArgCount = br.ReadCompressedUInt();
 			Type[] args = new Type[genArgCount];
 			CustomModifiers[] mods = null;
 			for (int i = 0; i < genArgCount; i++)
@@ -147,7 +147,7 @@ namespace IKVM.Reflection
 			{
 				throw new BadImageFormatException();
 			}
-			Type[] args = new Type[br.ReadCompressedInt()];
+			Type[] args = new Type[br.ReadCompressedUInt()];
 			for (int i = 0; i < args.Length; i++)
 			{
 				args[i] = ReadType(module, br, context);
@@ -157,7 +157,7 @@ namespace IKVM.Reflection
 
 		private static int[] ReadArrayBounds(ByteReader br)
 		{
-			int num = br.ReadCompressedInt();
+			int num = br.ReadCompressedUInt();
 			if (num == 0)
 			{
 				return null;
@@ -165,7 +165,7 @@ namespace IKVM.Reflection
 			int[] arr = new int[num];
 			for (int i = 0; i < num; i++)
 			{
-				arr[i] = br.ReadCompressedInt();
+				arr[i] = br.ReadCompressedUInt();
 			}
 			return arr;
 		}
@@ -226,9 +226,9 @@ namespace IKVM.Reflection
 				case ELEMENT_TYPE_OBJECT:
 					return module.universe.System_Object;
 				case ELEMENT_TYPE_VAR:
-					return context.GetGenericTypeArgument(br.ReadCompressedInt());
+					return context.GetGenericTypeArgument(br.ReadCompressedUInt());
 				case ELEMENT_TYPE_MVAR:
-					return context.GetGenericMethodArgument(br.ReadCompressedInt());
+					return context.GetGenericMethodArgument(br.ReadCompressedUInt());
 				case ELEMENT_TYPE_GENERICINST:
 					return ReadGenericInst(module, br, context);
 				case ELEMENT_TYPE_SZARRAY:
@@ -236,7 +236,7 @@ namespace IKVM.Reflection
 					return ReadType(module, br, context).__MakeArrayType(mods);
 				case ELEMENT_TYPE_ARRAY:
 					mods = CustomModifiers.Read(module, br, context);
-					return ReadType(module, br, context).__MakeArrayType(br.ReadCompressedInt(), ReadArrayBounds(br), ReadArrayBounds(br), mods);
+					return ReadType(module, br, context).__MakeArrayType(br.ReadCompressedUInt(), ReadArrayBounds(br), ReadArrayBounds(br), mods);
 				case ELEMENT_TYPE_PTR:
 					mods = CustomModifiers.Read(module, br, context);
 					return ReadTypeOrVoid(module, br, context).__MakePointerType(mods);
@@ -253,7 +253,7 @@ namespace IKVM.Reflection
 			{
 				throw new BadImageFormatException("Invalid local variable signature");
 			}
-			int count = br.ReadCompressedInt();
+			int count = br.ReadCompressedUInt();
 			for (int i = 0; i < count; i++)
 			{
 				if (br.PeekByte() == ELEMENT_TYPE_TYPEDBYREF)
@@ -336,18 +336,18 @@ namespace IKVM.Reflection
 					// LAMESPEC the Type production (23.2.12) doesn't include CustomMod* for arrays, but the verifier allows it and ildasm also supports it
 					WriteCustomModifiers(module, bb, type.__GetCustomModifiers());
 					WriteType(module, bb, type.GetElementType());
-					bb.WriteCompressedInt(rank);
+					bb.WriteCompressedUInt(rank);
 					int[] sizes = type.__GetArraySizes();
-					bb.WriteCompressedInt(sizes.Length);
+					bb.WriteCompressedUInt(sizes.Length);
 					for (int i = 0; i < sizes.Length; i++)
 					{
-						bb.WriteCompressedInt(sizes[i]);
+						bb.WriteCompressedUInt(sizes[i]);
 					}
 					int[] lobounds = type.__GetArrayLowerBounds();
-					bb.WriteCompressedInt(lobounds.Length);
+					bb.WriteCompressedUInt(lobounds.Length);
 					for (int i = 0; i < lobounds.Length; i++)
 					{
-						bb.WriteCompressedInt(lobounds[i]);
+						bb.WriteCompressedUInt(lobounds[i]);
 					}
 					return;
 				}
@@ -445,7 +445,7 @@ namespace IKVM.Reflection
 				{
 					bb.Write(ELEMENT_TYPE_VAR);
 				}
-				bb.WriteCompressedInt(type.GenericParameterPosition);
+				bb.WriteCompressedUInt(type.GenericParameterPosition);
 			}
 			else if (!type.__IsMissing && type.IsGenericType)
 			{
@@ -488,7 +488,7 @@ namespace IKVM.Reflection
 				bb.Write(ELEMENT_TYPE_CLASS);
 			}
 			bb.WriteTypeDefOrRefEncoded(module.GetTypeToken(type).Token);
-			bb.WriteCompressedInt(typeArguments.Length);
+			bb.WriteCompressedUInt(typeArguments.Length);
 			for (int i = 0; i < typeArguments.Length; i++)
 			{
 				WriteCustomModifiers(module, bb, customModifiers[i]);
@@ -507,7 +507,7 @@ namespace IKVM.Reflection
 
 		internal static Type ReadTypeDefOrRefEncoded(ModuleReader module, ByteReader br, IGenericContext context)
 		{
-			int encoded = br.ReadCompressedInt();
+			int encoded = br.ReadCompressedUInt();
 			switch (encoded & 3)
 			{
 				case 0:
@@ -564,7 +564,7 @@ namespace IKVM.Reflection
 			}
 			Type[] parameterTypes = sig.ParameterTypes;
 			Type[] optionalParameterTypes = sig.OptionalParameterTypes;
-			bb.WriteCompressedInt(parameterTypes.Length + optionalParameterTypes.Length);
+			bb.WriteCompressedUInt(parameterTypes.Length + optionalParameterTypes.Length);
 			WriteCustomModifiers(module, bb, sig.GetReturnTypeCustomModifiers());
 			WriteType(module, bb, sig.ReturnType);
 			int index = 0;
@@ -593,7 +593,7 @@ namespace IKVM.Reflection
 		internal static void WriteMethodSpec(ModuleBuilder module, ByteBuffer bb, Type[] genArgs)
 		{
 			bb.Write(GENERICINST);
-			bb.WriteCompressedInt(genArgs.Length);
+			bb.WriteCompressedUInt(genArgs.Length);
 			foreach (Type arg in genArgs)
 			{
 				WriteType(module, bb, arg);
@@ -604,7 +604,7 @@ namespace IKVM.Reflection
 		internal static Type[] ReadOptionalParameterTypes(ModuleReader module, ByteReader br, IGenericContext context, out CustomModifiers[] customModifiers)
 		{
 			br.ReadByte();
-			int paramCount = br.ReadCompressedInt();
+			int paramCount = br.ReadCompressedUInt();
 			CustomModifiers.Skip(br);
 			ReadRetType(module, br, context);
 			for (int i = 0; i < paramCount; i++)
@@ -647,7 +647,7 @@ namespace IKVM.Reflection
 			bb.Write(flags);
 			if (flags != FIELD)
 			{
-				bb.WriteCompressedInt(paramCount);
+				bb.WriteCompressedUInt(paramCount);
 			}
 			foreach (Type type in args)
 			{
