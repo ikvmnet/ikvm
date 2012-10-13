@@ -229,6 +229,33 @@ namespace IKVM.Reflection.Writer
 			}
 		}
 
+		internal void WriteCompressedInt(int value)
+		{
+			if (value >= 0)
+			{
+				WriteCompressedUInt(value << 1);
+			}
+			else if (value >= -64)
+			{
+				value = ((value << 1) & 0x7F) | 1;
+				Write((byte)value);
+			}
+			else if (value >= -8192)
+			{
+				value = ((value << 1) & 0x3FFF) | 1;
+				Write((byte)(0x80 | (value >> 8)));
+				Write((byte)value);
+			}
+			else
+			{
+				value = ((value << 1) & 0x1FFFFFFF) | 1;
+				Write((byte)(0xC0 | (value >> 24)));
+				Write((byte)(value >> 16));
+				Write((byte)(value >> 8));
+				Write((byte)value);
+			}
+		}
+
 		internal void Write(ByteBuffer bb)
 		{
 			if (pos + bb.Length > buffer.Length)

@@ -100,6 +100,29 @@ namespace IKVM.Reflection.Reader
 			}
 		}
 
+		internal int ReadCompressedInt()
+		{
+			byte b1 = PeekByte();
+			int value = ReadCompressedUInt();
+			if ((value & 1) == 0)
+			{
+				return value >> 1;
+			}
+			else
+			{
+				switch (b1 & 0xC0)
+				{
+					case 0:
+					case 0x40:
+						return (value >> 1) - 0x40;
+					case 0x80:
+						return (value >> 1) - 0x2000;
+					default:
+						return (value >> 1) - 0x10000000;
+				}
+			}
+		}
+
 		internal string ReadString()
 		{
 			if (PeekByte() == 0xFF)

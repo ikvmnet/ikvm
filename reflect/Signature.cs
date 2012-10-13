@@ -155,7 +155,7 @@ namespace IKVM.Reflection
 			return args;
 		}
 
-		private static int[] ReadArrayBounds(ByteReader br)
+		private static int[] ReadArraySizes(ByteReader br)
 		{
 			int num = br.ReadCompressedUInt();
 			if (num == 0)
@@ -166,6 +166,21 @@ namespace IKVM.Reflection
 			for (int i = 0; i < num; i++)
 			{
 				arr[i] = br.ReadCompressedUInt();
+			}
+			return arr;
+		}
+
+		private static int[] ReadArrayBounds(ByteReader br)
+		{
+			int num = br.ReadCompressedUInt();
+			if (num == 0)
+			{
+				return null;
+			}
+			int[] arr = new int[num];
+			for (int i = 0; i < num; i++)
+			{
+				arr[i] = br.ReadCompressedInt();
 			}
 			return arr;
 		}
@@ -236,7 +251,7 @@ namespace IKVM.Reflection
 					return ReadType(module, br, context).__MakeArrayType(mods);
 				case ELEMENT_TYPE_ARRAY:
 					mods = CustomModifiers.Read(module, br, context);
-					return ReadType(module, br, context).__MakeArrayType(br.ReadCompressedUInt(), ReadArrayBounds(br), ReadArrayBounds(br), mods);
+					return ReadType(module, br, context).__MakeArrayType(br.ReadCompressedUInt(), ReadArraySizes(br), ReadArrayBounds(br), mods);
 				case ELEMENT_TYPE_PTR:
 					mods = CustomModifiers.Read(module, br, context);
 					return ReadTypeOrVoid(module, br, context).__MakePointerType(mods);
@@ -347,7 +362,7 @@ namespace IKVM.Reflection
 					bb.WriteCompressedUInt(lobounds.Length);
 					for (int i = 0; i < lobounds.Length; i++)
 					{
-						bb.WriteCompressedUInt(lobounds[i]);
+						bb.WriteCompressedInt(lobounds[i]);
 					}
 					return;
 				}
