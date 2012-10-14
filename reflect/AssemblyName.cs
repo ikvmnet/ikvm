@@ -98,12 +98,7 @@ namespace IKVM.Reflection
 				}
 				else
 				{
-					publicKeyToken = new byte[8];
-					for (int i = 0, pos = 0; i < publicKeyToken.Length; i++, pos += 2)
-					{
-						publicKeyToken[i] = (byte)("0123456789abcdef".IndexOf(char.ToLowerInvariant(parsed.PublicKeyToken[pos])) * 16
-							+ "0123456789abcdef".IndexOf(char.ToLowerInvariant(parsed.PublicKeyToken[pos + 1])));
-					}
+					publicKeyToken = ParseKey(parsed.PublicKeyToken);
 				}
 			}
 			if (parsed.Retargetable.HasValue)
@@ -121,6 +116,40 @@ namespace IKVM.Reflection
 			if (parsed.WindowsRuntime)
 			{
 				ContentType = AssemblyContentType.WindowsRuntime;
+			}
+		}
+
+		private static byte[] ParseKey(string key)
+		{
+			if ((key.Length & 1) != 0)
+			{
+				throw new FileLoadException();
+			}
+			byte[] buf = new byte[key.Length / 2];
+			for (int i = 0; i < buf.Length; i++)
+			{
+				buf[i] = (byte)(ParseHexDigit(key[i * 2]) * 16 + ParseHexDigit(key[i * 2 + 1]));
+			}
+			return buf;
+		}
+
+		private static int ParseHexDigit(char digit)
+		{
+			if (digit >= '0' && digit <= '9')
+			{
+				return digit - '0';
+			}
+			else
+			{
+				digit |= (char)0x20;
+				if (digit >= 'a' && digit <= 'f')
+				{
+					return 10 + digit - 'a';
+				}
+				else
+				{
+					throw new FileLoadException();
+				}
 			}
 		}
 
