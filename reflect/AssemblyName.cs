@@ -394,6 +394,13 @@ namespace IKVM.Reflection
 			return token;
 		}
 
+		internal static string ComputePublicKeyToken(string publicKey)
+		{
+			StringBuilder sb = new StringBuilder(16);
+			AppendPublicKey(sb, ComputePublicKeyToken(ParseKey(publicKey)));
+			return sb.ToString();
+		}
+
 		private static void AppendPublicKey(StringBuilder sb, byte[] publicKey)
 		{
 			for (int i = 0; i < publicKey.Length; i++)
