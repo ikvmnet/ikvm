@@ -269,58 +269,57 @@ namespace IKVM.Reflection.Emit
 
 		public void BeginCatchBlock(Type exceptionType)
 		{
-			ExceptionBlock block = exceptionStack.Peek();
-			if (exceptionBlockAssistanceMode == EBAM_COMPAT || (exceptionBlockAssistanceMode == EBAM_CLEVER && stackHeight != -1))
-			{
-				if (exceptionType == null)
-				{
-					Emit(OpCodes.Endfilter);
-				}
-				else
-				{
-					Emit(OpCodes.Leave, block.labelEnd);
-				}
-			}
-			stackHeight = 0;
-			UpdateStack(1);
 			if (exceptionType == null)
 			{
+				// this must be a catch block after a filter
+				ExceptionBlock block = exceptionStack.Peek();
 				if (block.kind != ExceptionHandlingClauseOptions.Filter || block.handlerOffset != 0)
 				{
 					throw new ArgumentNullException("exceptionType");
 				}
+				if (exceptionBlockAssistanceMode == EBAM_COMPAT || (exceptionBlockAssistanceMode == EBAM_CLEVER && stackHeight != -1))
+				{
+					Emit(OpCodes.Endfilter);
+				}
+				stackHeight = 0;
+				UpdateStack(1);
 				block.handlerOffset = code.Position;
 			}
 			else
 			{
-				if (block.tryLength == 0)
-				{
-					block.tryLength = code.Position - block.tryOffset;
-				}
-				else
-				{
-					block.handlerLength = code.Position - block.handlerOffset;
-					exceptionStack.Pop();
-					ExceptionBlock newBlock = new ExceptionBlock(exceptions.Count);
-					newBlock.labelEnd = block.labelEnd;
-					newBlock.tryOffset = block.tryOffset;
-					newBlock.tryLength = block.tryLength;
-					block = newBlock;
-					exceptions.Add(block);
-					exceptionStack.Push(block);
-				}
-				if (exceptionType == MarkerType.Filter)
-				{
-					block.kind = ExceptionHandlingClauseOptions.Filter;
-					block.filterOffsetOrExceptionTypeToken = code.Position;
-				}
-				else
-				{
-					block.kind = ExceptionHandlingClauseOptions.Clause;
-					block.filterOffsetOrExceptionTypeToken = moduleBuilder.GetTypeTokenForMemberRef(exceptionType);
-					block.handlerOffset = code.Position;
-				}
+				ExceptionBlock block = BeginCatchOrFilterBlock();
+				block.kind = ExceptionHandlingClauseOptions.Clause;
+				block.filterOffsetOrExceptionTypeToken = moduleBuilder.GetTypeTokenForMemberRef(exceptionType);
+				block.handlerOffset = code.Position;
 			}
+		}
+
+		private ExceptionBlock BeginCatchOrFilterBlock()
+		{
+			ExceptionBlock block = exceptionStack.Peek();
+			if (exceptionBlockAssistanceMode == EBAM_COMPAT || (exceptionBlockAssistanceMode == EBAM_CLEVER && stackHeight != -1))
+			{
+				Emit(OpCodes.Leave, block.labelEnd);
+			}
+			stackHeight = 0;
+			UpdateStack(1);
+			if (block.tryLength == 0)
+			{
+				block.tryLength = code.Position - block.tryOffset;
+			}
+			else
+			{
+				block.handlerLength = code.Position - block.handlerOffset;
+				exceptionStack.Pop();
+				ExceptionBlock newBlock = new ExceptionBlock(exceptions.Count);
+				newBlock.labelEnd = block.labelEnd;
+				newBlock.tryOffset = block.tryOffset;
+				newBlock.tryLength = block.tryLength;
+				block = newBlock;
+				exceptions.Add(block);
+				exceptionStack.Push(block);
+			}
+			return block;
 		}
 
 		public Label BeginExceptionBlock()
@@ -336,7 +335,9 @@ namespace IKVM.Reflection.Emit
 
 		public void BeginExceptFilterBlock()
 		{
-			BeginCatchBlock(MarkerType.Filter);
+			ExceptionBlock block = BeginCatchOrFilterBlock();
+			block.kind = ExceptionHandlingClauseOptions.Filter;
+			block.filterOffsetOrExceptionTypeToken = code.Position;
 		}
 
 		public void BeginFaultBlock()
