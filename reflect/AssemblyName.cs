@@ -25,6 +25,7 @@ using System;
 using System.Globalization;
 using System.Configuration.Assemblies;
 using System.IO;
+using System.Security.Cryptography;
 using System.Text;
 using IKVM.Reflection.Reader;
 
@@ -384,17 +385,13 @@ namespace IKVM.Reflection
 			{
 				return publicKey;
 			}
-			// HACK use the real AssemblyName to convert PublicKey to PublicKeyToken
-			StringBuilder sb = new StringBuilder("Foo, PublicKey=", 20 + publicKey.Length * 2);
-			AppendPublicKey(sb, publicKey);
-			string str = sb.ToString();
-			if (str == "Foo, PublicKey=00000000000000000400000000000000")
+			byte[] hash = new SHA1Managed().ComputeHash(publicKey);
+			byte[] token = new byte[8];
+			for (int i = 0; i < token.Length; i++)
 			{
-				// MONOBUG workaround Mono 2.10 bug (fixed in 2.11)
-				// it does not return the correct public key token for the ECMA key
-				return new byte[] { 0xB7, 0x7A, 0x5C, 0x56, 0x19, 0x34, 0xE0, 0x89 };
+				token[i] = hash[hash.Length - 1 - i];
 			}
-			return new System.Reflection.AssemblyName(str).GetPublicKeyToken();
+			return token;
 		}
 
 		private static void AppendPublicKey(StringBuilder sb, byte[] publicKey)
