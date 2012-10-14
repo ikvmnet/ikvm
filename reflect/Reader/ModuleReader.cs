@@ -198,10 +198,6 @@ namespace IKVM.Reflection.Reader
 					tables[i].Sorted = (Sorted & (1UL << i)) != 0;
 					tables[i].RowCount = br.ReadInt32();
 				}
-				else if (tables[i] != null)
-				{
-					tables[i].RowCount = 0;
-				}
 			}
 			MetadataReader mr = new MetadataReader(this, br.BaseStream, HeapSizes);
 			for (int i = 0; i < 64; i++)
