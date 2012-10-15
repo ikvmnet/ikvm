@@ -736,7 +736,7 @@ namespace IKVM.Reflection
 			}
 			ModuleBuilder mb = module as ModuleBuilder;
 			int token = parameter.MetadataToken;
-			if (mb != null && mb.IsSaved && mb.IsPseudoToken(token))
+			if (mb != null && mb.IsSaved && ModuleBuilder.IsPseudoToken(token))
 			{
 				token = mb.ResolvePseudoToken(token);
 			}

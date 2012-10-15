@@ -920,7 +920,7 @@ namespace IKVM.Reflection.Emit
 			resolvedTokens[index] = realToken;
 		}
 
-		internal bool IsPseudoToken(int token)
+		internal static bool IsPseudoToken(int token)
 		{
 			return token < 0;
 		}
