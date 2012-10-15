@@ -508,7 +508,7 @@ namespace IKVM.Reflection.Emit
 		public void Emit(OpCode opc, FieldInfo field)
 		{
 			Emit(opc);
-			WriteToken(moduleBuilder.GetFieldToken(field));
+			WriteToken(moduleBuilder.GetFieldToken(field).Token);
 		}
 
 		public void Emit(OpCode opc, short arg)
@@ -685,22 +685,13 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 
-		private void WriteToken(FieldToken token)
+		private void WriteToken(int token)
 		{
-			if (token.IsPseudoToken)
+			if (ModuleBuilder.IsPseudoToken(token))
 			{
 				tokenFixups.Add(code.Position);
 			}
-			code.Write(token.Token);
-		}
-
-		private void WriteToken(MethodToken token)
-		{
-			if (token.IsPseudoToken)
-			{
-				tokenFixups.Add(code.Position);
-			}
-			code.Write(token.Token);
+			code.Write(token);
 		}
 
 		private void UpdateStack(OpCode opc, bool hasthis, Type returnType, int parameterCount)
@@ -732,7 +723,7 @@ namespace IKVM.Reflection.Emit
 		{
 			UpdateStack(opc, method.HasThis, method.ReturnType, method.ParameterCount);
 			Emit(opc);
-			WriteToken(moduleBuilder.GetMethodTokenForIL(method));
+			WriteToken(moduleBuilder.GetMethodTokenForIL(method).Token);
 		}
 
 		public void Emit(OpCode opc, ConstructorInfo constructor)
