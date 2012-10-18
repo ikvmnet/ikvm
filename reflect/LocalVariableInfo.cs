@@ -59,5 +59,10 @@ namespace IKVM.Reflection
 		{
 			return customModifiers;
 		}
+
+		public override string ToString()
+		{
+			return String.Format(pinned ? "{0} ({1}) (pinned)" : "{0} ({1})", type, index);
+		}
 	}
 }
