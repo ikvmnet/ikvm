@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2008-2011 Jeroen Frijters
+  Copyright (C) 2008-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -199,6 +199,15 @@ namespace IKVM.Internal
 		internal static MethodBuilder DefineConstructor(TypeBuilder tb, MethodAttributes attribs, Type[] parameterTypes)
 		{
 			return tb.DefineMethod(ConstructorInfo.ConstructorName, attribs | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, null, parameterTypes);
+		}
+
+		internal static bool CanOwnDynamicMethod(Type type)
+		{
+			return type != null
+				&& !type.IsInterface
+				&& !type.HasElementType
+				&& !type.IsGenericTypeDefinition
+				&& !type.IsGenericParameter;
 		}
 	}
 }
