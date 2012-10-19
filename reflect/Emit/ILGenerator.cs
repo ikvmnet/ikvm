@@ -71,20 +71,20 @@ namespace IKVM.Reflection.Emit
 		}
 	}
 
-	public sealed class LocalBuilder
+	public sealed class LocalBuilder : LocalVariableInfo
 	{
-		private readonly Type localType;
-		private readonly int index;
-		private readonly bool pinned;
 		internal string name;
 		internal int startOffset;
 		internal int endOffset;
 
 		internal LocalBuilder(Type localType, int index, bool pinned)
+			: base(index, localType, pinned)
 		{
-			this.localType = localType;
-			this.index = index;
-			this.pinned = pinned;
+		}
+
+		internal LocalBuilder(Type localType, int index, bool pinned, CustomModifiers customModifiers)
+			: base(index, localType, pinned, customModifiers)
+		{
 		}
 
 		public void SetLocalSymInfo(string name)
@@ -97,21 +97,6 @@ namespace IKVM.Reflection.Emit
 			this.name = name;
 			this.startOffset = startOffset;
 			this.endOffset = endOffset;
-		}
-
-		public Type LocalType
-		{
-			get { return localType; }
-		}
-
-		public int LocalIndex
-		{
-			get { return index; }
-		}
-
-		public bool IsPinned
-		{
-			get { return pinned; }
 		}
 	}
 
@@ -441,7 +426,7 @@ namespace IKVM.Reflection.Emit
 
 		public LocalBuilder __DeclareLocal(Type localType, bool pinned, CustomModifiers customModifiers)
 		{
-			LocalBuilder local = new LocalBuilder(localType, localsCount++, pinned);
+			LocalBuilder local = new LocalBuilder(localType, localsCount++, pinned, customModifiers);
 			locals.__AddArgument(localType, pinned, customModifiers);
 			if (scope != null)
 			{
