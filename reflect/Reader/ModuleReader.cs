@@ -616,6 +616,10 @@ namespace IKVM.Reflection.Reader
 				case MethodDefTable.Index:
 				case MethodSpecTable.Index:
 					return ResolveMethod(metadataToken, genericTypeArguments, genericMethodArguments);
+				case TypeRefTable.Index:
+				case TypeDefTable.Index:
+				case TypeSpecTable.Index:
+					return ResolveType(metadataToken, genericTypeArguments, genericMethodArguments);
 				default:
 					throw TokenOutOfRangeException(metadataToken);
 			}
