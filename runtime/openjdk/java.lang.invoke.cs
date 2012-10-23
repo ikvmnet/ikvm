@@ -348,7 +348,7 @@ static partial class MethodHandleUtil
 			{
 				paramTypes = GetParameterTypes(mi);
 			}
-			if (owner == null || owner.IsInterface)
+			if (!ReflectUtil.CanOwnDynamicMethod(owner))
 			{
 				owner = typeof(DynamicMethodBuilder);
 			}
