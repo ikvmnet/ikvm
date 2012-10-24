@@ -259,9 +259,9 @@ namespace IKVM.Reflection.Reader
 			return manifestModule.__GetReferencedAssemblies();
 		}
 
-		public override AssemblyNameFlags __AssemblyFlags
+		protected override AssemblyNameFlags GetAssemblyFlags()
 		{
-			get { return (AssemblyNameFlags)manifestModule.AssemblyTable.records[0].Flags; }
+			return (AssemblyNameFlags)manifestModule.AssemblyTable.records[0].Flags;
 		}
 
 		internal string Name
