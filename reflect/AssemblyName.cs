@@ -42,6 +42,7 @@ namespace IKVM.Reflection
 		private AssemblyNameFlags flags;
 		private AssemblyHashAlgorithm hashAlgorithm;
 		private AssemblyVersionCompatibility versionCompatibility = AssemblyVersionCompatibility.SameMachine;
+		private ProcessorArchitecture processorArchitecture;
 		private string codeBase;
 		internal byte[] hash;
 
@@ -213,11 +214,12 @@ namespace IKVM.Reflection
 
 		public ProcessorArchitecture ProcessorArchitecture
 		{
-			get { return (ProcessorArchitecture)(((int)flags & 0x70) >> 4); }
+			get { return processorArchitecture; }
 			set
 			{
 				if (value >= ProcessorArchitecture.None && value <= ProcessorArchitecture.Arm)
 				{
+					processorArchitecture = value;
 					flags = (flags & ~(AssemblyNameFlags)0x70) | (AssemblyNameFlags)((int)value << 4);
 				}
 			}

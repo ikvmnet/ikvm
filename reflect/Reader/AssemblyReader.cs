@@ -77,6 +77,37 @@ namespace IKVM.Reflection.Reader
 			}
 			name.HashAlgorithm = (AssemblyHashAlgorithm)rec.HashAlgId;
 			name.CodeBase = this.CodeBase;
+			PortableExecutableKinds peKind;
+			ImageFileMachine machine;
+			manifestModule.GetPEKind(out peKind, out machine);
+			switch (machine)
+			{
+				case ImageFileMachine.I386:
+					// FXBUG we copy the .NET bug that Preferred32Bit implies x86
+					if ((peKind & (PortableExecutableKinds.Required32Bit | PortableExecutableKinds.Preferred32Bit)) != 0)
+					{
+						name.ProcessorArchitecture = ProcessorArchitecture.X86;
+					}
+					else if ((rec.Flags & 0x70) == 0x70)
+					{
+						// it's a reference assembly
+						name.ProcessorArchitecture = ProcessorArchitecture.None;
+					}
+					else
+					{
+						name.ProcessorArchitecture = ProcessorArchitecture.MSIL;
+					}
+					break;
+				case ImageFileMachine.IA64:
+					name.ProcessorArchitecture = ProcessorArchitecture.IA64;
+					break;
+				case ImageFileMachine.AMD64:
+					name.ProcessorArchitecture = ProcessorArchitecture.Amd64;
+					break;
+				case ImageFileMachine.ARM:
+					name.ProcessorArchitecture = ProcessorArchitecture.Arm;
+					break;
+			}
 			name.RawFlags = (AssemblyNameFlags)rec.Flags;
 			return name;
 		}
