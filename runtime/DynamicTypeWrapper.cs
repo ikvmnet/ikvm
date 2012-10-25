@@ -5194,10 +5194,35 @@ namespace IKVM.Internal
 				}
 				MethodAttributes attr = MethodAttributes.NewSlot | MethodAttributes.Virtual | MethodAttributes.Private;
 				MethodBuilder m = typeBuilder.DefineMethod("__<unsupported>" + mb.DeclaringType.FullName + "/" + mb.Name, attr, ((MethodInfo)mb).ReturnType, parameterTypes);
+				if (mb.IsGenericMethodDefinition)
+				{
+					CopyGenericArguments(mb, m);
+				}
 				CodeEmitter ilgen = CodeEmitter.Create(m);
 				ilgen.EmitThrow("java.lang.AbstractMethodError", "Method " + mb.DeclaringType.FullName + "." + mb.Name + " is unsupported by IKVM.");
 				ilgen.DoEmit();
 				typeBuilder.DefineMethodOverride(m, (MethodInfo)mb);
+			}
+
+			private static void CopyGenericArguments(MethodBase mi, MethodBuilder mb)
+			{
+				Type[] genericParameters = mi.GetGenericArguments();
+				string[] genParamNames = new string[genericParameters.Length];
+				for (int i = 0; i < genParamNames.Length; i++)
+				{
+					genParamNames[i] = genericParameters[i].Name;
+				}
+				GenericTypeParameterBuilder[] genParamBuilders = mb.DefineGenericParameters(genParamNames);
+				for (int i = 0; i < genParamBuilders.Length; i++)
+				{
+					// NOTE apparently we don't need to set the interface constraints
+					// (and if we do, it fails for some reason)
+					if (genericParameters[i].BaseType != Types.Object)
+					{
+						genParamBuilders[i].SetBaseTypeConstraint(genericParameters[i].BaseType);
+					}
+					genParamBuilders[i].SetGenericParameterAttributes(genericParameters[i].GenericParameterAttributes);
+				}
 			}
 
 			private void CompileConstructorBody(FinishContext context, CodeEmitter ilGenerator, int methodIndex, Dictionary<MethodKey, MethodInfo> invokespecialstubcache)

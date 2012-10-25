@@ -2309,7 +2309,7 @@ namespace IKVM.Internal
 			if (mb.IsAbstract)
 			{
 				MethodInfo mi = (MethodInfo)mb;
-				if (mi.ReturnType.IsByRef || IsPointerType(mi.ReturnType))
+				if (mi.ReturnType.IsByRef || IsPointerType(mi.ReturnType) || mb.IsGenericMethodDefinition)
 				{
 					return true;
 				}
