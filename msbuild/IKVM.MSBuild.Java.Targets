@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+****************************************************************************************************
+IKVM.Java.targets
+****************************************************************************************************
+-->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <UsingTask
+	    TaskName="IKVM.MSBuild.JavaTask"
+	    AssemblyFile="$(IkvmBinPath)\IKVM.MSBuild.dll"/>
+
+  <Target Name="CreateManifestResourceNames"></Target>		
+
+  <Target Name="CoreCompile">
+    <JavaTask 
+		EmitDebugInformation="$(DebugSymbols)"
+		References="@(Reference)"
+		TargetFrameworkVersion="$(TargetFrameworkVersion)"
+		Sources="@(Compile)" 
+		Platform="$(PlatformTarget)"
+		Configuration="$(Configuration)"
+		OutputAssembly="$(AssemblyName)"
+		MainFile="$(MainFile)"
+		TargetType="$(OutputType)"
+		OutputPath="$(OutputPath)"
+	/>
+  </Target>
+
+  <PropertyGroup>
+    <CopyBuildOutputToOutputDirectory >false</CopyBuildOutputToOutputDirectory>
+  </PropertyGroup>
+
+  <Import Project="$(MSBuildBinPath)\Microsoft.Common.targets"/>
+
+</Project>
