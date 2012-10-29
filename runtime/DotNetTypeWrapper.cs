@@ -2176,8 +2176,9 @@ namespace IKVM.Internal
 							InterfaceMapping map = type.GetInterfaceMap(interfaces[i]);
 							for (int j = 0; j < map.InterfaceMethods.Length; j++)
 							{
-								if ((!map.TargetMethods[j].IsPublic || map.TargetMethods[j].Name != map.InterfaceMethods[j].Name)
-									&& map.TargetMethods[j].DeclaringType == type)
+								if (map.TargetMethods[j] == null
+									|| ((!map.TargetMethods[j].IsPublic || map.TargetMethods[j].Name != map.InterfaceMethods[j].Name)
+										&& map.TargetMethods[j].DeclaringType == type))
 								{
 									string name;
 									string sig;
