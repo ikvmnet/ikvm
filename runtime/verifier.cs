@@ -1294,15 +1294,7 @@ sealed class MethodAnalyzer
 						// mark the exception handlers reachable from this instruction
 						for(int j = 0; j < method.ExceptionTable.Length; j++)
 						{
-							// if we're currently inside an exception block, we need to merge our current state with the exception handler
-							// and if we right after the exception block (i == method.ExceptionTable[j].endIndex) and the block ends in
-							// an instruction that simply falls through, we need to merge our current state with the exception handler as
-							// well (because the last instruction may be a store to a local variable that affects the type of the local variable)
-							// (note that we can legally access instructions[i - 1] because an empty exception block is illegal)
-							if(method.ExceptionTable[j].startIndex <= i
-								&& (i < method.ExceptionTable[j].endIndex
-									|| (i == method.ExceptionTable[j].endIndex
-										&& ByteCodeMetaData.GetFlowControl(instructions[i - 1].NormalizedOpCode) == ByteCodeFlowControl.Next)))
+							if(method.ExceptionTable[j].startIndex <= i && i < method.ExceptionTable[j].endIndex)
 							{
 								int idx = method.ExceptionTable[j].handlerIndex;
 								InstructionState ex = state[i].CopyLocals();
