@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2008 Jeroen Frijters
+  Copyright (C) 2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,17 +21,19 @@
   jeroen@frijters.net
   
 */
-using System.Reflection;
+package cli.System.Runtime.CompilerServices;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Jeroen Frijters")]
-[assembly: AssemblyProduct("IKVM.NET")]
-[assembly: AssemblyCopyright("Copyright (C) 2002-2012 Jeroen Frijters")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
-[assembly: AssemblyVersion("7.2.4630.4")]
+import java.lang.annotation.*;
 
-#if SIGNCODE
-	#pragma warning disable 1699
-	[assembly: AssemblyKeyName("ikvm-key")]
-#endif
+//
+// This is a dummy ExtensionAttribute class to enable building without
+// introducing a dependency on System.Core.dll
+//
+// To build without System.Core.dll dependency use this:
+//    nant -t:net-2.0 -D:SkipSystemCoreDependency=true
+//
+public class ExtensionAttribute
+{
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface Annotation { }
+}

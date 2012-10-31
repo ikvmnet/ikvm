@@ -3,6 +3,7 @@
     <include buildfile="../ikvm.include" />
     <property name="pathsep" value=":" />
     <property overwrite="false" name="signoption" value="" />
+    <property overwrite="false" name="SkipSystemCoreDependency" value="false" />
     <property name="OPENJDK_VERSION" value="OpenJDK 7u6 b24" />
     <property name="OpenJDK7.dir" value="${project::get-base-directory()}/../../openjdk-7u6-b24" />
     <if test="${platform::is-win32()}">
@@ -26,7 +27,7 @@
         </copy>
     </target>
 
-    <target name="System.Core">
+    <target name="System.Core" unless="${SkipSystemCoreDependency}">
         <delete file="System.Core.dll" />
         <if test="${version::get-major(framework::get-version(framework::get-target-framework() )) &lt; 4}">
             <copy file="../bin/IKVM.Reflection.dll" todir="." overwrite="true" />
@@ -46,6 +47,22 @@
                 </fileset>
             </delete>
         </if>
+    </target>
+
+    <target name="DummySystemCoreJar">
+        <exec program="javac" commandline="-implicit:none ExtensionAttribute.java" useruntimeengine="false" />
+        <zip zipfile="System.Core.jar">
+            <fileset prefix="cli/System/Runtime/CompilerServices">
+                <include name="ExtensionAttribute.class" />
+                <include name="ExtensionAttribute$Annotation.class" />
+            </fileset>
+        </zip>
+        <delete>
+            <fileset basedir=".">
+                <include name="ExtensionAttribute.class" />
+                <include name="ExtensionAttribute$Annotation.class" />
+            </fileset>
+        </delete>
     </target>
 
     <target name="classes" depends="version allsources.gen.lst System.Core">
@@ -71,7 +88,10 @@
         </delete>
         <exec program="${project::get-base-directory()}/../bin/ikvmstub.exe" commandline="-bootstrap mscorlib" useruntimeengine="true" />
         <exec program="${project::get-base-directory()}/../bin/ikvmstub.exe" commandline="-bootstrap System" useruntimeengine="true" />
-        <exec program="${project::get-base-directory()}/../bin/ikvmstub.exe" commandline="-bootstrap System.Core" useruntimeengine="true" />
+        <exec program="${project::get-base-directory()}/../bin/ikvmstub.exe" commandline="-bootstrap System.Core" useruntimeengine="true" unless="${SkipSystemCoreDependency}" />
+        <if test="${SkipSystemCoreDependency}">
+            <call target="DummySystemCoreJar" />
+        </if>
         <exec program="${project::get-base-directory()}/../bin/ikvmstub.exe" commandline="-bootstrap System.Data" useruntimeengine="true" />
         <exec program="${project::get-base-directory()}/../bin/ikvmstub.exe" commandline="-bootstrap System.Drawing" useruntimeengine="true" />
         <property name="IKVM.Runtime" value="IKVM.Runtime" />
@@ -185,7 +205,7 @@
             <arg value="-sharedclassloader" />
             <arg value="-r:mscorlib.dll" />
             <arg value="-r:System.dll" />
-            <arg value="-r:System.Core.dll" />
+            <arg value="-r:System.Core.dll" unless="${SkipSystemCoreDependency}" />
             <arg value="-r:IKVM.Runtime.dll" />
             <!-- we already know that the JNI assembly is not available, so suppress the warning -->
             <arg value="-nowarn:110" />
