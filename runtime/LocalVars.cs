@@ -421,6 +421,15 @@ struct LocalVarInfo
 						&& (instructions[i].NormalizedOpCode != NormalizedByteCode.__astore || !VerifierTypeWrapper.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(i, 0))))
 					{
 						curr.Store(i, instructions[i].NormalizedArg1);
+						// if this is a store at the end of an exception block,
+						// we need to propagate the new state to the exception handler
+						for (int j = 0; j < exceptions.Length; j++)
+						{
+							if (exceptions[j].endIndex == i + 1)
+							{
+								state[exceptions[j].handlerIndex].Merge(curr);
+							}
+						}
 					}
 
 					if (instructions[i].NormalizedOpCode == NormalizedByteCode.__invokespecial)

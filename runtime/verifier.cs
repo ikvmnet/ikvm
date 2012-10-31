@@ -1296,26 +1296,7 @@ sealed class MethodAnalyzer
 						{
 							if(method.ExceptionTable[j].startIndex <= i && i < method.ExceptionTable[j].endIndex)
 							{
-								int idx = method.ExceptionTable[j].handlerIndex;
-								InstructionState ex = state[i].CopyLocals();
-								int catch_type = method.ExceptionTable[j].catch_type;
-								if(catch_type == 0)
-								{
-									TypeWrapper tw;
-									if (!faultTypes.TryGetValue(idx, out tw))
-									{
-										tw = VerifierTypeWrapper.MakeFaultBlockException(this, idx);
-										faultTypes.Add(idx, tw);
-									}
-									ex.PushType(tw);
-								}
-								else
-								{
-									// TODO if the exception type is unloadable we should consider pushing
-									// Throwable as the type and recording a loader constraint
-									ex.PushType(GetConstantPoolClassType(catch_type));
-								}
-								state[idx] += ex;
+								MergeExceptionHandler(j, state[i]);
 							}
 						}
 						state[i].CopyTo(s);
@@ -2275,6 +2256,13 @@ sealed class MethodAnalyzer
 						{
 							throw new VerifyError("Stack size too large");
 						}
+						for(int j = 0; j < method.ExceptionTable.Length; j++)
+						{
+							if(method.ExceptionTable[j].endIndex == i + 1)
+							{
+								MergeExceptionHandler(j, s);
+							}
+						}
 						try
 						{
 							switch(ByteCodeMetaData.GetFlowControl(instr.NormalizedOpCode))
@@ -2325,6 +2313,30 @@ sealed class MethodAnalyzer
 				}
 			}
 		}
+	}
+
+	private void MergeExceptionHandler(int exceptionIndex, InstructionState curr)
+	{
+		int idx = method.ExceptionTable[exceptionIndex].handlerIndex;
+		InstructionState ex = curr.CopyLocals();
+		int catch_type = method.ExceptionTable[exceptionIndex].catch_type;
+		if (catch_type == 0)
+		{
+			TypeWrapper tw;
+			if (!faultTypes.TryGetValue(idx, out tw))
+			{
+				tw = VerifierTypeWrapper.MakeFaultBlockException(this, idx);
+				faultTypes.Add(idx, tw);
+			}
+			ex.PushType(tw);
+		}
+		else
+		{
+			// TODO if the exception type is unloadable we should consider pushing
+			// Throwable as the type and recording a loader constraint
+			ex.PushType(GetConstantPoolClassType(catch_type));
+		}
+		state[idx] += ex;
 	}
 
 	// this verification pass must run on the unmodified bytecode stream

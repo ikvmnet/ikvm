@@ -431,17 +431,7 @@ namespace IKVM.Internal
 								{
 									if (method.ExceptionTable[j].startIndex <= i && i < method.ExceptionTable[j].endIndex)
 									{
-										// NOTE this used to be CopyLocalsAndSubroutines, but it doesn't (always) make
-										// sense to copy the subroutine state
-										// TODO figure out if there are circumstances under which it does make sense
-										// to copy the active subroutine state
-										// UPDATE subroutines must be copied as well, but I think I now have a better
-										// understanding of subroutine merges, so the problems that triggered the previous
-										// change here hopefully won't arise anymore
-										InstructionState ex = state[i].CopyLocalsAndSubroutines();
-										ex.PushObject();
-										int idx = method.ExceptionTable[j].handlerIndex;
-										state[idx] += ex;
+										MergeExceptionHandler(method.ExceptionTable[j].handlerIndex, state[i]);
 									}
 								}
 								state[i].CopyTo(s);
@@ -1060,6 +1050,13 @@ namespace IKVM.Internal
 								{
 									throw new VerifyError("Stack size too large");
 								}
+								for (int j = 0; j < method.ExceptionTable.Length; j++)
+								{
+									if (method.ExceptionTable[j].endIndex == i + 1)
+									{
+										MergeExceptionHandler(method.ExceptionTable[j].handlerIndex, s);
+									}
+								}
 								try
 								{
 									// another big switch to handle the opcode targets
@@ -1276,6 +1273,20 @@ namespace IKVM.Internal
 						}
 					}
 				}
+			}
+
+			private void MergeExceptionHandler(int handlerIndex, InstructionState curr)
+			{
+				// NOTE this used to be CopyLocalsAndSubroutines, but it doesn't (always) make
+				// sense to copy the subroutine state
+				// TODO figure out if there are circumstances under which it does make sense
+				// to copy the active subroutine state
+				// UPDATE subroutines must be copied as well, but I think I now have a better
+				// understanding of subroutine merges, so the problems that triggered the previous
+				// change here hopefully won't arise anymore
+				InstructionState ex = curr.CopyLocalsAndSubroutines();
+				ex.PushObject();
+				state[handlerIndex] += ex;
 			}
 
 			private ClassFile.ConstantPoolItemMI GetMethodref(int index)
