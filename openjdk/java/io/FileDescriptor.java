@@ -325,7 +325,8 @@ public final class FileDescriptor {
         catch (cli.System.UnauthorizedAccessException x3)
         {
             // this is caused by "name" being a directory instead of a file
-            throw new FileNotFoundException(x3.getMessage());
+            // or by name being a read-only file
+            throw new FileNotFoundException(name + " (Access is denied)");
         }
         catch (cli.System.ArgumentException x4)
         {
