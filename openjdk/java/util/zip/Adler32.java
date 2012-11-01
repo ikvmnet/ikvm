@@ -100,7 +100,7 @@ public class Adler32 implements Checksum
   /** largest prime smaller than 65536 */
   private static final int BASE = 65521;
 
-  private int checksum; //we do all in int.
+  private int adler; //we do all in int.
 
   //Note that java doesn't have unsigned integers,
   //so we have to be careful with what arithmetic 
@@ -121,7 +121,7 @@ public class Adler32 implements Checksum
    */
   public void reset () 
   {
-    checksum = 1; //Initialize to 1    
+    adler = 1; //Initialize to 1    
   }
 
   /**
@@ -133,13 +133,13 @@ public class Adler32 implements Checksum
   {
     //We could make a length 1 byte array and call update again, but I
     //would rather not have that overhead
-    int s1 = checksum & 0xffff;
-    int s2 = checksum >>> 16;
+    int s1 = adler & 0xffff;
+    int s2 = adler >>> 16;
     
     s1 = (s1 + (bval & 0xFF)) % BASE;
     s2 = (s1 + s2) % BASE;
     
-    checksum = (s2 << 16) + s1;
+    adler = (s2 << 16) + s1;
   }
 
   /**
@@ -162,8 +162,8 @@ public class Adler32 implements Checksum
   public void update (byte[] buf, int off, int len)
   {
     //(By Per Bothner)
-    int s1 = checksum & 0xffff;
-    int s2 = checksum >>> 16;
+    int s1 = adler & 0xffff;
+    int s2 = adler >>> 16;
 
     while (len > 0)
       {
@@ -192,7 +192,7 @@ public class Adler32 implements Checksum
       s2 = (s2 + s1) % BASE;
     }*/
     
-    checksum = (s2 << 16) | s1;
+    adler = (s2 << 16) | s1;
   }
 
   /**
@@ -200,6 +200,6 @@ public class Adler32 implements Checksum
    */
   public long getValue()
   {
-    return (long) checksum & 0xffffffffL;
+    return (long) adler & 0xffffffffL;
   }
 }
