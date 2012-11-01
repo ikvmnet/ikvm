@@ -4361,55 +4361,55 @@ namespace IKVM.Internal
 			}
 		}
 
-		private static TypeWrapper TypeWrapperFromModOpt(Type modopt)
+		private static TypeWrapper TypeWrapperFromModOpt(Type[] modopt)
 		{
 			int rank = 0;
-			while (ReflectUtil.IsVector(modopt))
+			TypeWrapper tw = null;
+			foreach (Type type in modopt)
 			{
-				rank++;
-				modopt = modopt.GetElementType();
+				if (type == JVM.LoadType(typeof(IKVM.Attributes.AccessStub)))
+				{
+					// ignore
+				}
+				else if (type == Types.Array)
+				{
+					rank++;
+				}
+				else if (type == Types.Void || type.IsPrimitive || ClassLoaderWrapper.IsRemappedType(type))
+				{
+					tw = DotNetTypeWrapper.GetWrapperFromDotNetType(type);
+				}
+				else
+				{
+					tw = ClassLoaderWrapper.GetWrapperFromType(type)
+						?? new UnloadableTypeWrapper(TypeNameUtil.UnmangleNestedTypeName(type.Name), type);
+				}
 			}
 			if (rank != 0)
 			{
-				return TypeWrapperFromModOpt(modopt).MakeArrayType(rank);
+				tw = tw.MakeArrayType(rank);
 			}
-			else if (modopt == Types.Void || modopt.IsPrimitive || ClassLoaderWrapper.IsRemappedType(modopt))
-			{
-				return DotNetTypeWrapper.GetWrapperFromDotNetType(modopt);
-			}
-			else
-			{
-				return ClassLoaderWrapper.GetWrapperFromType(modopt)
-					?? new UnloadableTypeWrapper(TypeNameUtil.UnmangleNestedTypeName(modopt.Name), modopt);
-			}
+			return tw;
 		}
 
 		private static TypeWrapper GetPropertyTypeWrapper(PropertyInfo property)
 		{
-			Type[] modopt = property.GetOptionalCustomModifiers();
-			return modopt.Length == 0
-				? ClassLoaderWrapper.GetWrapperFromType(property.PropertyType)
-				: TypeWrapperFromModOpt(modopt[0]);
+			return TypeWrapperFromModOpt(property.GetOptionalCustomModifiers())
+				?? ClassLoaderWrapper.GetWrapperFromType(property.PropertyType);
 		}
 
 		private static TypeWrapper GetFieldTypeWrapper(FieldInfo field)
 		{
-			Type[] modopt = field.GetOptionalCustomModifiers();
-			return modopt.Length == 0
-				? ClassLoaderWrapper.GetWrapperFromType(field.FieldType)
-				: TypeWrapperFromModOpt(modopt[0]);
+			return TypeWrapperFromModOpt(field.GetOptionalCustomModifiers())
+				?? ClassLoaderWrapper.GetWrapperFromType(field.FieldType);
 		}
 
 		private static TypeWrapper GetParameterTypeWrapper(ParameterInfo param)
 		{
-			// we don't want to rely on the ordering of the custom modifiers,
-			// because reflection (currently) reports them in reverse order
-			foreach (Type modopt in param.GetOptionalCustomModifiers())
+			TypeWrapper tw = TypeWrapperFromModOpt(param.GetOptionalCustomModifiers());
+			if (tw != null)
 			{
-				if (modopt != JVM.LoadType(typeof(IKVM.Attributes.AccessStub)))
-				{
-					return TypeWrapperFromModOpt(modopt);
-				}
+				return tw;
 			}
 			Type parameterType = param.ParameterType;
 			if (parameterType.IsByRef)
