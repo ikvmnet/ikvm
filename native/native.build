@@ -42,7 +42,7 @@
                 <include name="*.c"/>
             </sources>
         </cl>
-        <link output="Release-${cpu-arch}/ikvm-native.dll" options="/DLL user32.lib">
+        <link output="Release-${cpu-arch}/ikvm-native.dll" options="/MACHINE:${cpu-arch} /DLL user32.lib">
             <sources>
                 <include name="Release-${cpu-arch}/*.obj"/>
                 <include name="Release-${cpu-arch}/ikvm-native.res"/>
