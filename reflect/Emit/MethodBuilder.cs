@@ -367,6 +367,10 @@ namespace IKVM.Reflection.Emit
 		public GenericTypeParameterBuilder[] DefineGenericParameters(params string[] names)
 		{
 			CheckSig();
+			if (gtpb != null)
+			{
+				throw new InvalidOperationException("Generic parameters already defined.");
+			}
 			gtpb = new GenericTypeParameterBuilder[names.Length];
 			for (int i = 0; i < names.Length; i++)
 			{
