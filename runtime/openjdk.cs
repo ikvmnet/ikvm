@@ -5221,6 +5221,7 @@ namespace IKVM.NativeCode.java
                     out uint ReturnLength);
 
                 internal static bool Enabled {
+                    [System.Security.SecuritySafeCritical]
                     get {
 						OperatingSystem os = Environment.OSVersion;
 						if (os.Platform != PlatformID.Win32NT || os.Version.Major < 6) {
