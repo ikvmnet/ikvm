@@ -1970,7 +1970,7 @@ namespace IKVM.Reflection
 			return new MissingProperty(this, name, sig);
 		}
 
-		internal virtual Type SetMetadataTokenForMissing(int token)
+		internal virtual Type SetMetadataTokenForMissing(int token, int flags)
 		{
 			return this;
 		}
@@ -2047,6 +2047,11 @@ namespace IKVM.Reflection
 				throw new MissingMemberException(this);
 			}
 			return type;
+		}
+
+		public virtual bool __IsTypeForwarder
+		{
+			get { return false; }
 		}
 	}
 

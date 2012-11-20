@@ -1088,15 +1088,16 @@ namespace IKVM.Reflection.Reader
 			TypeName typeName = GetTypeName(ExportedType.records[index].TypeNamespace, ExportedType.records[index].TypeName);
 			int implementation = ExportedType.records[index].Implementation;
 			int token = ExportedType.records[index].TypeDefId;
+			int flags = ExportedType.records[index].Flags;
 			switch (implementation >> 24)
 			{
 				case AssemblyRefTable.Index:
-					return ResolveAssemblyRef((implementation & 0xFFFFFF) - 1).ResolveType(typeName).SetMetadataTokenForMissing(token);
+					return ResolveAssemblyRef((implementation & 0xFFFFFF) - 1).ResolveType(typeName).SetMetadataTokenForMissing(token, flags);
 				case ExportedTypeTable.Index:
-					return ResolveExportedType((implementation & 0xFFFFFF) - 1).ResolveNestedType(typeName).SetMetadataTokenForMissing(token);
+					return ResolveExportedType((implementation & 0xFFFFFF) - 1).ResolveNestedType(typeName).SetMetadataTokenForMissing(token, flags);
 				case FileTable.Index:
 					Module module = assembly.GetModule(GetString(File.records[(implementation & 0xFFFFFF) - 1].Name));
-					return module.FindType(typeName) ?? module.universe.GetMissingTypeOrThrow(module, null, typeName).SetMetadataTokenForMissing(token);
+					return module.FindType(typeName) ?? module.universe.GetMissingTypeOrThrow(module, null, typeName).SetMetadataTokenForMissing(token, flags);
 				default:
 					throw new BadImageFormatException();
 			}
