@@ -236,9 +236,9 @@ namespace IKVM.Reflection
 
 	sealed class MissingModule : NonPEModule
 	{
-		private readonly MissingAssembly assembly;
+		private readonly Assembly assembly;
 
-		internal MissingModule(MissingAssembly assembly)
+		internal MissingModule(Assembly assembly)
 			: base(assembly.universe)
 		{
 			this.assembly = assembly;
