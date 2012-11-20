@@ -401,7 +401,6 @@ namespace IKVM.Reflection.Emit
 		private int ExportType(Type type)
 		{
 			ExportedTypeTable.Record rec = new ExportedTypeTable.Record();
-			rec.TypeDefId = type.MetadataToken;
 			rec.TypeName = this.Strings.Add(type.__Name);
 			string ns = type.__Namespace;
 			rec.TypeNamespace = ns == null ? 0 : this.Strings.Add(ns);
