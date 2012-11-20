@@ -1103,8 +1103,11 @@ namespace IKVM.Reflection.Reader
 					return ResolveAssemblyRef((implementation & 0xFFFFFF) - 1).ResolveType(typeName).SetMetadataTokenForMissing(token);
 				case ExportedTypeTable.Index:
 					return ResolveExportedType((implementation & 0xFFFFFF) - 1).ResolveNestedType(typeName).SetMetadataTokenForMissing(token);
+				case FileTable.Index:
+					Module module = assembly.GetModule(GetString(File.records[(implementation & 0xFFFFFF) - 1].Name));
+					return module.FindType(typeName) ?? module.universe.GetMissingTypeOrThrow(module, null, typeName).SetMetadataTokenForMissing(token);
 				default:
-					throw new NotImplementedException();
+					throw new BadImageFormatException();
 			}
 		}
 
