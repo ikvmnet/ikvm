@@ -230,13 +230,12 @@ namespace IKVM.Reflection.Reader
 			{
 				return externalModules[index];
 			}
-			// TODO add ModuleResolve event
-			string location = Path.Combine(Path.GetDirectoryName(this.location), manifestModule.GetString(manifestModule.File.records[index].Name));
-			return LoadModule(index, null, location);
+			return LoadModule(index, null, manifestModule.GetString(manifestModule.File.records[index].Name));
 		}
 
-		private Module LoadModule(int index, byte[] rawModule, string location)
+		private Module LoadModule(int index, byte[] rawModule, string name)
 		{
+			string location = name == null ? null : Path.Combine(Path.GetDirectoryName(this.location), name);
 			if ((manifestModule.File.records[index].Flags & ContainsNoMetaData) != 0)
 			{
 				return externalModules[index] = new ResourceModule(manifestModule, index, location);
@@ -245,7 +244,26 @@ namespace IKVM.Reflection.Reader
 			{
 				if (rawModule == null)
 				{
-					rawModule = File.ReadAllBytes(location);
+					try
+					{
+						rawModule = File.ReadAllBytes(location);
+					}
+					catch (FileNotFoundException)
+					{
+						if (resolvers != null)
+						{
+							ResolveEventArgs arg = new ResolveEventArgs(name, this);
+							foreach (ModuleResolveEventHandler resolver in resolvers)
+							{
+								Module module = resolver(this, arg);
+								if (module != null)
+								{
+									return module;
+								}
+							}
+						}
+						throw;
+					}
 				}
 				return externalModules[index] = new ModuleReader(this, manifestModule.universe, new MemoryStream(rawModule), location);
 			}
