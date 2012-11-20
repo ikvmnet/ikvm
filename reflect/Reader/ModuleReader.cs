@@ -79,26 +79,17 @@ namespace IKVM.Reflection.Reader
 
 		private sealed class LazyForwardedType
 		{
-			private readonly int assemblyRef;
+			private readonly int index;
 			private Type type;
 
-			internal LazyForwardedType(int assemblyRef)
+			internal LazyForwardedType(int index)
 			{
-				this.assemblyRef = assemblyRef;
+				this.index = index;
 			}
 
-			internal Type GetType(ModuleReader module, TypeName typeName)
+			internal Type GetType(ModuleReader module)
 			{
-				if (type == null)
-				{
-					Assembly asm = module.ResolveAssemblyRef(assemblyRef);
-					type = asm.ResolveType(typeName);
-					if (type == null)
-					{
-						throw new TypeLoadException(typeName.ToString());
-					}
-				}
-				return type;
+				return type ?? (type = module.ResolveExportedType(index));
 			}
 		}
 
@@ -271,7 +262,7 @@ namespace IKVM.Reflection.Reader
 					if (implementation >> 24 == AssemblyRefTable.Index)
 					{
 						TypeName typeName = GetTypeName(ExportedType.records[i].TypeNamespace, ExportedType.records[i].TypeName);
-						forwardedTypes.Add(typeName, new LazyForwardedType((implementation & 0xFFFFFF) - 1));
+						forwardedTypes.Add(typeName, new LazyForwardedType(i));
 					}
 				}
 			}
@@ -569,7 +560,7 @@ namespace IKVM.Reflection.Reader
 				LazyForwardedType fw;
 				if (forwardedTypes.TryGetValue(typeName, out fw))
 				{
-					return fw.GetType(this, typeName);
+					return fw.GetType(this);
 				}
 			}
 			return type;
@@ -589,7 +580,7 @@ namespace IKVM.Reflection.Reader
 			{
 				if (name.ToLowerInvariant() == lowerCaseName)
 				{
-					return forwardedTypes[name].GetType(this, name);
+					return forwardedTypes[name].GetType(this);
 				}
 			}
 			return null;
