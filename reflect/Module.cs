@@ -544,10 +544,12 @@ namespace IKVM.Reflection
 			return CustomAttributeData.GetCustomAttributesImpl(new List<CustomAttributeData>(), this, token, null);
 		}
 
+#if !NO_AUTHENTICODE
 		public virtual System.Security.Cryptography.X509Certificates.X509Certificate GetSignerCertificate()
 		{
 			return null;
 		}
+#endif // !NO_AUTHENTICODE
 
 		internal abstract Type GetModuleType();
 

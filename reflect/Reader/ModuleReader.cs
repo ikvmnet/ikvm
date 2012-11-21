@@ -1261,9 +1261,11 @@ namespace IKVM.Reflection.Reader
 			get { return (cliHeader.Flags & CliHeader.COMIMAGE_FLAGS_NATIVE_ENTRYPOINT) == 0 ? (int)cliHeader.EntryPointToken : 0; }
 		}
 
+#if !NO_AUTHENTICODE
 		public override System.Security.Cryptography.X509Certificates.X509Certificate GetSignerCertificate()
 		{
 			return Authenticode.GetSignerCertificate(stream);
 		}
+#endif // !NO_AUTHENTICODE
 	}
 }

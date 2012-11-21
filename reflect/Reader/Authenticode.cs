@@ -21,6 +21,7 @@
   jeroen@frijters.net
   
 */
+#if !NO_AUTHENTICODE
 using System;
 using System.IO;
 using System.Security.Cryptography;
@@ -181,3 +182,4 @@ namespace IKVM.Reflection.Reader
 		}
 	}
 }
+#endif // !NO_AUTHENTICODE
