@@ -307,7 +307,7 @@ namespace IKVM.Reflection.Emit
 			}
 			this.ModuleBuilder.Param.AddVirtualRecord();
 			ParameterBuilder pb = new ParameterBuilder(this.ModuleBuilder, position, attributes, strParamName);
-			if (parameters.Count == 0 || position > parameters[parameters.Count - 1].Position)
+			if (parameters.Count == 0 || position >= parameters[parameters.Count - 1].Position)
 			{
 				parameters.Add(pb);
 			}
