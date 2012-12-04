@@ -49,8 +49,9 @@ namespace IKVM.Reflection
 
 			List<ExceptionHandlingClause> exceptionClauses = new List<ExceptionHandlingClause>();
 			List<LocalVariableInfo> locals = new List<LocalVariableInfo>();
+			Stream stream = module.GetStream();
 			module.SeekRVA(rva);
-			BinaryReader br = new BinaryReader(module.stream);
+			BinaryReader br = new BinaryReader(stream);
 			byte b = br.ReadByte();
 			if ((b & 3) == CorILMethod_TinyFormat)
 			{
@@ -72,7 +73,7 @@ namespace IKVM.Reflection
 				body = br.ReadBytes(codeLength);
 				if ((b & CorILMethod_MoreSects) != 0)
 				{
-					module.stream.Position = (module.stream.Position + 3) & ~3;
+					stream.Position = (stream.Position + 3) & ~3;
 					int hdr = br.ReadInt32();
 					if ((hdr & CorILMethod_Sect_MoreSects) != 0 || (hdr & CorILMethod_Sect_EHTable) == 0)
 					{

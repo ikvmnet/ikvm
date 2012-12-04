@@ -78,7 +78,7 @@ namespace IKVM.Reflection
 		{
 			if (!imported)
 			{
-				module.stream.Dispose();
+				module.Dispose();
 			}
 		}
 

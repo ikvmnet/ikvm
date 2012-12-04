@@ -54,7 +54,7 @@ namespace IKVM.Reflection.Reader
 
 	sealed class ModuleReader : Module
 	{
-		internal readonly Stream stream;
+		private readonly Stream stream;
 		private readonly string location;
 		private Assembly assembly;
 		private readonly PEReader peFile = new PEReader();
@@ -63,8 +63,10 @@ namespace IKVM.Reflection.Reader
 		private int metadataStreamVersion;
 		private byte[] stringHeap;
 		private byte[] blobHeap;
-		private byte[] userStringHeap;
 		private byte[] guidHeap;
+		private uint userStringHeapOffset;
+		private uint userStringHeapSize;
+		private byte[] lazyUserStringHeap;
 		private TypeDefImpl[] typeDefs;
 		private TypeDefImpl moduleType;
 		private Assembly[] assemblyRefs;
@@ -96,9 +98,9 @@ namespace IKVM.Reflection.Reader
 		internal ModuleReader(AssemblyReader assembly, Universe universe, Stream stream, string location)
 			: base(universe)
 		{
-			this.stream = stream;
+			this.stream = universe.MetadataOnly ? null : stream;
 			this.location = location;
-			Read();
+			Read(stream);
 			if (assembly == null && AssemblyTable.records.Length != 0)
 			{
 				assembly = new AssemblyReader(location, this);
@@ -106,7 +108,7 @@ namespace IKVM.Reflection.Reader
 			this.assembly = assembly;
 		}
 
-		private void Read()
+		private void Read(Stream stream)
 		{
 			BinaryReader br = new BinaryReader(stream);
 			peFile.Read(br);
@@ -118,16 +120,17 @@ namespace IKVM.Reflection.Reader
 				switch (sh.Name)
 				{
 					case "#Strings":
-						stringHeap = ReadHeap(stream, sh);
+						stringHeap = ReadHeap(stream, sh.Offset, sh.Size);
 						break;
 					case "#Blob":
-						blobHeap = ReadHeap(stream, sh);
+						blobHeap = ReadHeap(stream, sh.Offset, sh.Size);
 						break;
 					case "#US":
-						userStringHeap = ReadHeap(stream, sh);
+						userStringHeapOffset = sh.Offset;
+						userStringHeapSize = sh.Size;
 						break;
 					case "#GUID":
-						guidHeap = ReadHeap(stream, sh);
+						guidHeap = ReadHeap(stream, sh.Offset, sh.Size);
 						break;
 					case "#~":
 					case "#-":
@@ -204,10 +207,10 @@ namespace IKVM.Reflection.Reader
 			}
 		}
 
-		private byte[] ReadHeap(Stream stream, StreamHeader sh)
+		private byte[] ReadHeap(Stream stream, uint offset, uint size)
 		{
-			byte[] buf = new byte[sh.Size];
-			stream.Seek(peFile.RvaToFileOffset(cliHeader.MetaData.VirtualAddress + sh.Offset), SeekOrigin.Begin);
+			byte[] buf = new byte[size];
+			stream.Seek(peFile.RvaToFileOffset(cliHeader.MetaData.VirtualAddress + offset), SeekOrigin.Begin);
 			for (int pos = 0; pos < buf.Length; )
 			{
 				int read = stream.Read(buf, pos, buf.Length - pos);
@@ -222,7 +225,16 @@ namespace IKVM.Reflection.Reader
 
 		internal void SeekRVA(int rva)
 		{
-			stream.Seek(peFile.RvaToFileOffset((uint)rva), SeekOrigin.Begin);
+			GetStream().Seek(peFile.RvaToFileOffset((uint)rva), SeekOrigin.Begin);
+		}
+
+		internal Stream GetStream()
+		{
+			if (stream == null)
+			{
+				throw new InvalidOperationException("Operation not available when UniverseOptions.MetadataOnly is enabled.");
+			}
+			return stream;
 		}
 
 		internal override void GetTypesImpl(List<Type> list)
@@ -331,12 +343,16 @@ namespace IKVM.Reflection.Reader
 				{
 					throw TokenOutOfRangeException(metadataToken);
 				}
+				if (lazyUserStringHeap == null)
+				{
+					lazyUserStringHeap = ReadHeap(GetStream(), userStringHeapOffset, userStringHeapSize);
+				}
 				int index = metadataToken & 0xFFFFFF;
-				int len = ReadCompressedUInt(userStringHeap, ref index) & ~1;
+				int len = ReadCompressedUInt(lazyUserStringHeap, ref index) & ~1;
 				StringBuilder sb = new StringBuilder(len / 2);
 				for (int i = 0; i < len; i += 2)
 				{
-					char ch = (char)(userStringHeap[index + i] | userStringHeap[index + i + 1] << 8);
+					char ch = (char)(lazyUserStringHeap[index + i] | lazyUserStringHeap[index + i + 1] << 8);
 					sb.Append(ch);
 				}
 				str = sb.ToString();
@@ -1222,7 +1238,10 @@ namespace IKVM.Reflection.Reader
 
 		internal override void Dispose()
 		{
-			stream.Close();
+			if (stream != null)
+			{
+				stream.Close();
+			}
 		}
 
 		internal override void ExportTypes(int fileToken, IKVM.Reflection.Emit.ModuleBuilder manifestModule)
@@ -1264,7 +1283,7 @@ namespace IKVM.Reflection.Reader
 #if !NO_AUTHENTICODE
 		public override System.Security.Cryptography.X509Certificates.X509Certificate GetSignerCertificate()
 		{
-			return Authenticode.GetSignerCertificate(stream);
+			return Authenticode.GetSignerCertificate(GetStream());
 		}
 #endif // !NO_AUTHENTICODE
 	}

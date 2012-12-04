@@ -77,6 +77,44 @@ namespace IKVM.Reflection
 
 	public delegate Assembly ResolveEventHandler(object sender, ResolveEventArgs args);
 
+	/*
+	 * UniverseOptions:
+	 *
+	 *   None
+	 *		Default behavior, most compatible with System.Reflection[.Emit]
+	 *
+	 *   EnableFunctionPointers
+	 *		Normally function pointers in signatures are replaced by System.IntPtr
+	 *		(for compatibility with System.Reflection), when this option is enabled
+	 *		they are represented as first class types (Type.__IsFunctionPointer will
+	 *		return true for them).
+	 *
+	 *   DisableFusion
+	 *      Don't use native Fusion API to resolve assembly names.
+	 *
+	 *   DisablePseudoCustomAttributeRetrieval
+	 *      Set this option to disable the generaton of pseudo-custom attributes
+	 *      when querying custom attributes.
+	 *
+	 *   DontProvideAutomaticDefaultConstructor
+	 *      Normally TypeBuilder, like System.Reflection.Emit, will provide a default
+	 *      constructor for types that meet the requirements. By enabling this
+	 *      option this behavior is disabled.
+	 *
+	 *   MetadataOnly
+	 *      By default, when a module is read in, the stream is kept open to satisfy
+	 *      subsequent lazy loading. In MetadataOnly mode only the metadata is read in
+	 *      and after that the stream is closed immediately. Subsequent lazy loading
+	 *      attempts will fail with an InvalidOperationException.
+	 *      APIs that are not available is MetadataOnly mode are:
+	 *      - Module.ResolveString()
+	 *      - Module.GetSignerCertificate()
+	 *      - Module.GetManifestResourceStream()
+	 *      - Module.__ReadDataFromRVA()
+	 *      - MethodBase.GetMethodBody()
+	 *      - FieldInfo.__GetDataFromRVA()
+	 */
+
 	[Flags]
 	public enum UniverseOptions
 	{
@@ -85,6 +123,7 @@ namespace IKVM.Reflection
 		DisableFusion = 2,
 		DisablePseudoCustomAttributeRetrieval = 4,
 		DontProvideAutomaticDefaultConstructor = 8,
+		MetadataOnly = 16,
 	}
 
 	public sealed class Universe : IDisposable
@@ -101,6 +140,7 @@ namespace IKVM.Reflection
 		private readonly bool useNativeFusion;
 		private readonly bool returnPseudoCustomAttributes;
 		private readonly bool automaticallyProvideDefaultConstructor;
+		private readonly UniverseOptions options;
 		private Type typeof_System_Object;
 		private Type typeof_System_ValueType;
 		private Type typeof_System_Enum;
@@ -167,6 +207,7 @@ namespace IKVM.Reflection
 
 		public Universe(UniverseOptions options)
 		{
+			this.options = options;
 			enableFunctionPointers = (options & UniverseOptions.EnableFunctionPointers) != 0;
 			useNativeFusion = (options & UniverseOptions.DisableFusion) == 0 && GetUseNativeFusion();
 			returnPseudoCustomAttributes = (options & UniverseOptions.DisablePseudoCustomAttributeRetrieval) == 0;
@@ -601,7 +642,25 @@ namespace IKVM.Reflection
 		public RawModule OpenRawModule(string path)
 		{
 			path = Path.GetFullPath(path);
-			return OpenRawModule(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read), path);
+			FileStream fs = null;
+			RawModule module;
+			try
+			{
+				fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+				module = OpenRawModule(fs, path);
+				if (!MetadataOnly)
+				{
+					fs = null;
+				}
+			}
+			finally
+			{
+				if (fs != null)
+				{
+					fs.Close();
+				}
+			}
+			return module;
 		}
 
 		public RawModule OpenRawModule(Stream stream, string location)
@@ -1105,6 +1164,11 @@ namespace IKVM.Reflection
 		internal bool AutomaticallyProvideDefaultConstructor
 		{
 			get { return automaticallyProvideDefaultConstructor; }
+		}
+
+		internal bool MetadataOnly
+		{
+			get { return (options & UniverseOptions.MetadataOnly) != 0; }
 		}
 	}
 }
