@@ -5999,18 +5999,13 @@ namespace IKVM.Internal
 				TypeWrapper tw1 = tw.IsArray ? tw.GetUltimateElementTypeWrapper() : tw;
 				if (tw1.IsErasedOrBoxedPrimitiveOrRemapped || tw.IsGhostArray || (mustBePublic && !tw1.IsPublic))
 				{
-#if STATIC_COMPILER
-					modopt = new Type[] { GetModOptHelper(tw) };
-#else
 					// FXBUG Ref.Emit refuses arrays in custom modifiers, so we add an array type for each dimension
-					// (note that in this case we only add the custom modifiers to make the signature unique, we never read back this information)
 					modopt = new Type[tw.ArrayRank + 1];
 					modopt[0] = GetModOptHelper(tw1);
 					for (int i = 1; i < modopt.Length; i++)
 					{
-						modopt[i] = typeof(Array);
+						modopt[i] = Types.Array;
 					}
-#endif
 				}
 			}
 			return modopt;
