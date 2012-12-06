@@ -98,7 +98,7 @@ namespace IKVM.Reflection.Reader
 		internal ModuleReader(AssemblyReader assembly, Universe universe, Stream stream, string location)
 			: base(universe)
 		{
-			this.stream = universe.MetadataOnly ? null : stream;
+			this.stream = universe != null && universe.MetadataOnly ? null : stream;
 			this.location = location;
 			Read(stream);
 			if (assembly == null && AssemblyTable.records.Length != 0)
