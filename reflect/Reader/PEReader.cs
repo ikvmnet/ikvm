@@ -55,7 +55,13 @@ namespace IKVM.Reflection.Reader
 				throw new BadImageFormatException();
 			}
 			FileHeader.Read(br);
+			long optionalHeaderPosition = br.BaseStream.Position;
 			OptionalHeader.Read(br);
+			if (br.BaseStream.Position > optionalHeaderPosition + FileHeader.SizeOfOptionalHeader)
+			{
+				throw new BadImageFormatException();
+			}
+			br.BaseStream.Seek(optionalHeaderPosition + FileHeader.SizeOfOptionalHeader, SeekOrigin.Begin);
 		}
 	}
 
