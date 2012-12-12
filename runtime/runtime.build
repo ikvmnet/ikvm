@@ -73,7 +73,7 @@
     </target>
 
     <target name="IKVM.Runtime.JNI" depends="JniAssemblyInfo.cs defs">
-        <csc noconfig="true" target="library" output="IKVM.Runtime.JNI.dll" define="${defs}" optimize="true" unsafe="true" rebuild="true">
+        <csc noconfig="true" target="library" output="IKVM.Runtime.JNI.dll" define="${defs}" optimize="true" unsafe="true" rebuild="true" nostdlib="true">
             <arg unless="${string::starts-with(framework::get-target-framework(), 'mono')}" value="/baseaddress:0x55300000" />
             <sources>
                 <include name="../CommonAssemblyInfo.cs" />
@@ -83,7 +83,8 @@
             <references>
                 <include name="../bin/IKVM.OpenJDK.Core.dll" asis="true" />
                 <include name="../bin/IKVM.Runtime.dll" asis="true" />
-                <include name="${framework::get-assembly-directory(framework::get-target-framework())}/System.dll" />
+                <include name="${ReferencePath}/mscorlib.dll" />
+                <include name="${ReferencePath}/System.dll" />
             </references>
         </csc>
         <copy file="IKVM.Runtime.JNI.dll" todir="../bin" />        
@@ -96,7 +97,7 @@
                 <fail message="../openjdk/vfs.zip is missing. Make sure to build ikvm/openjdk first." />
             </if>
         </if>
-        <csc noconfig="true" target="library" output="IKVM.Runtime.dll" define="${defs}" optimize="true" unsafe="false" rebuild="true">
+        <csc noconfig="true" target="library" output="IKVM.Runtime.dll" define="${defs}" optimize="true" unsafe="false" rebuild="true" nostdlib="true">
             <arg unless="${string::starts-with(framework::get-target-framework(), 'mono')}" value="/baseaddress:0x55000000" />
             <nowarn>
                 <warning number="169" if="${first-pass}" />
@@ -165,8 +166,9 @@
                 <include if="${not first-pass}" name="../bin/IKVM.OpenJDK.Util.dll" asis="true" />
                 <include if="${not first-pass}" name="../bin/IKVM.OpenJDK.Management.dll" asis="true" />
                 <include if="${not first-pass}" name="../bin/IKVM.OpenJDK.Misc.dll" asis="true" />
-                <include name="${framework::get-assembly-directory(framework::get-target-framework())}/System.dll" />
-                <include name="${framework::get-assembly-directory(framework::get-target-framework())}/System.Configuration.dll" />
+                <include name="${ReferencePath}/mscorlib.dll" />
+                <include name="${ReferencePath}/System.dll" />
+                <include name="${ReferencePath}/System.Configuration.dll" />
             </references>
         </csc>
         <copy file="IKVM.Runtime.dll" todir="../bin" />

@@ -13,7 +13,7 @@
     </target>
     <target name="first-pass" depends="AssemblyInfo.cs">
         <property overwrite="false" name="signed" value="" />
-        <csc target="library" output="../bin/IKVM.AWT.WinForms.dll" define="FIRST_PASS;${signed}" rebuild="true">
+        <csc target="library" output="../bin/IKVM.AWT.WinForms.dll" define="FIRST_PASS;${signed}" rebuild="true" nostdlib="true" noconfig="true">
             <sources>
                 <include name="../CommonAssemblyInfo.cs" />
                 <include name="AssemblyInfo.cs" />
@@ -22,14 +22,16 @@
                 <include name="theming.cs" />
             </sources>
             <references>
-                <include name="System.Windows.Forms.dll" asis="true" />
-                <include name="System.Drawing.dll" asis="true" />
+                <include name="${ReferencePath}/mscorlib.dll" asis="true" />
+                <include name="${ReferencePath}/System.dll" asis="true" />
+                <include name="${ReferencePath}/System.Windows.Forms.dll" asis="true" />
+                <include name="${ReferencePath}/System.Drawing.dll" asis="true" />
             </references>
         </csc>
     </target>
     <target name="awt" depends="AssemblyInfo.cs">
         <property overwrite="false" name="signed" value="" />
-        <csc target="library" output="../bin/IKVM.AWT.WinForms.dll" define="TRACE;${signed}" rebuild="true">
+        <csc target="library" output="../bin/IKVM.AWT.WinForms.dll" define="TRACE;${signed}" rebuild="true" nostdlib="true" noconfig="true">
             <sources>
                 <include name="../CommonAssemblyInfo.cs" />
                 <include name="AssemblyInfo.cs" />
@@ -53,8 +55,10 @@
                 <include name="../bin/IKVM.OpenJDK.Media.dll" asis="true" />
                 <include name="../bin/IKVM.OpenJDK.Misc.dll" asis="true" />
                 <include name="../bin/IKVM.Runtime.dll" asis="true" />
-                <include name="System.Windows.Forms.dll" asis="true" />
-                <include name="System.Drawing.dll" asis="true" />
+                <include name="${ReferencePath}/mscorlib.dll" asis="true" />
+                <include name="${ReferencePath}/System.dll" asis="true" />
+                <include name="${ReferencePath}/System.Windows.Forms.dll" asis="true" />
+                <include name="${ReferencePath}/System.Drawing.dll" asis="true" />
             </references>
             <nowarn>
                 <!-- disable warnings about obsolete members (because the peer API has lots of those) -->

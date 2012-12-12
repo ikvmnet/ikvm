@@ -1,5 +1,7 @@
 <?xml version="1.0"?>
 <project name="ikvmc" default="ikvmc">
+    <include buildfile="../ikvm.include" />
+
     <target name="ikvmc">
         <property name="defs" value="TRACE;STATIC_COMPILER" />
         <if test="${property::exists('signed')}">
@@ -8,7 +10,7 @@
         <if test="${version::get-major(framework::get-version(framework::get-target-framework() )) == 4}">
             <property name="defs" value="${defs};NET_4_0" />
         </if>
-        <csc target="exe" output="../bin/ikvmc.exe" optimize="true" define="${defs}">
+        <csc target="exe" output="../bin/ikvmc.exe" optimize="true" define="${defs}" noconfig="true" nostdlib="true">
             <sources>
                 <include name="../CommonAssemblyInfo.cs" />
                 <include name="AotTypeWrapper.cs" />
@@ -50,8 +52,10 @@
             <references>
                 <include name="../bin/ICSharpCode.SharpZipLib.dll" asis="true" />
                 <include name="../bin/IKVM.Reflection.dll" asis="true" />
-                <!-- HACK mcs requires an explicit reference to System.Configuration -->
-                <include name="${framework::get-assembly-directory(framework::get-target-framework())}/System.Configuration.dll" />
+                <include name="${ReferencePath}/mscorlib.dll" />
+                <include name="${ReferencePath}/System.dll" />
+                <include name="${ReferencePath}/System.Configuration.dll" />
+                <include name="${ReferencePath}/System.Xml.dll" />
             </references>
         </csc>
     </target>

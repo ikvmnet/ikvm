@@ -1,5 +1,7 @@
 <?xml version="1.0"?>
 <project name="reflect" default="IKVM.Reflection">
+    <include buildfile="../ikvm.include" />
+
     <target name="IKVM.Reflection">
         <property name="defs" value="TRACE" />
         <if test="${framework::exists('mono-2.0')}">
@@ -16,7 +18,7 @@
         <if test="${framework::exists('mono-2.0')}">
             <property name="MonoSymbolWriter" value="${path::combine(framework::get-assembly-directory('mono-2.0'), 'Mono.CompilerServices.SymbolWriter.dll')}" />
         </if>
-        <csc target="library" output="../bin/IKVM.Reflection.dll" optimize="true" define="${defs}">
+        <csc target="library" output="../bin/IKVM.Reflection.dll" optimize="true" define="${defs}" noconfig="true" nostdlib="true">
             <sources>
                 <include name="../CommonAssemblyInfo.cs" />
                 <include name="AmbiguousMatchException.cs" />
@@ -111,6 +113,9 @@
             </sources>
             <references>
                 <include if="${framework::exists('mono-2.0')}" name="${MonoSymbolWriter}" />
+                <include name="${ReferencePath}/mscorlib.dll" />
+                <include name="${ReferencePath}/System.dll" />
+                <include name="${ReferencePath}/System.Security.dll" />
             </references>
         </csc>
     </target>

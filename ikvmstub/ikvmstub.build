@@ -1,11 +1,13 @@
 <?xml version="1.0"?>
 <project name="ikvmstub" default="ikvmstub">
+    <include buildfile="../ikvm.include" />
+
     <target name="ikvmstub">
         <property name="defs" value="STUB_GENERATOR;TRACE" />
         <if test="${property::exists('signed')}">
             <property name="defs" value="${defs};${signed}" />
         </if>
-        <csc target="exe" output="../bin/ikvmstub.exe" define="${defs}">
+        <csc target="exe" output="../bin/ikvmstub.exe" define="${defs}" noconfig="true" nostdlib="true">
             <sources>
                 <include name="../CommonAssemblyInfo.cs" />
                 <include name="../ikvmc/AssemblyResolver.cs" />
@@ -30,6 +32,8 @@
             <references>
                 <include name="../bin/ICSharpCode.SharpZipLib.dll" asis="true" />
                 <include name="../bin/IKVM.Reflection.dll" asis="true" />
+                <include name="${ReferencePath}/mscorlib.dll" />
+                <include name="${ReferencePath}/System.dll" />
             </references>
         </csc>
     </target>

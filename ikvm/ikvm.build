@@ -1,8 +1,10 @@
 <?xml version="1.0"?>
 <project name="ikvm" default="ikvm">
+    <include buildfile="../ikvm.include" />
+
     <target name="ikvm">
         <property overwrite="false" name="signed" value="" />
-        <csc target="exe" output="../bin/ikvm.exe" define="TRACE;${signed}">
+        <csc target="exe" output="../bin/ikvm.exe" define="TRACE;${signed}" noconfig="true" nostdlib="true">
             <sources>
                 <include name="../CommonAssemblyInfo.cs" />
                 <include name="*.cs" />
@@ -11,6 +13,8 @@
                 <include name="../bin/IKVM.OpenJDK.Core.dll" asis="true" />
                 <include name="../bin/IKVM.OpenJDK.Util.dll" asis="true" />
                 <include name="../bin/IKVM.Runtime.dll" asis="true" />
+                <include name="${ReferencePath}/mscorlib.dll" />
+                <include name="${ReferencePath}/System.dll" />
             </references>
         </csc>
     </target>
