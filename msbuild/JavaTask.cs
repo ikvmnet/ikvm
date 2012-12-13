@@ -259,18 +259,51 @@ namespace IKVM.MSBuild
 			// note that File.GetLastWriteTime() returns Jan 1st, 1601 for non-existing files, so that works out nicely
 			if (File.GetLastWriteTime(Path.Combine(stubpath, "rt.jar")) < File.GetLastWriteTime(Path.Combine(GetAssemblyPath(), "IKVM.OpenJDK.Core.dll")))
 			{
-				ProcessStartInfo psi = new ProcessStartInfo(Path.Combine(GetAssemblyPath(), "ikvmstub.exe"), "-shared \"-out:" + Path.Combine(stubpath, "rt.jar") + "\" \"-lib:" + GetAssemblyPath() + "\" IKVM.OpenJDK.Core");
-				psi.UseShellExecute = false;
-				using (Process p = Process.Start(psi))
+				if (!GenerateStub("IKVM.OpenJDK.Core", Path.Combine(stubpath, "rt.jar")))
 				{
-					p.WaitForExit();
-					if (p.ExitCode != 0)
+					return false;
+				}
+			}
+			// now generate stubs for the referenced assemblies
+			Dictionary<string, string> stubs = new Dictionary<string, string>();
+			using (IKVM.Reflection.Universe universe = new IKVM.Reflection.Universe(IKVM.Reflection.UniverseOptions.MetadataOnly))
+			{
+				foreach (string reference in references)
+				{
+					using (IKVM.Reflection.RawModule module = universe.OpenRawModule(reference))
 					{
-						return false;
+						string fileName = Path.Combine(stubpath, module.GetAssemblyName().Name + "__" + module.ModuleVersionId.ToString("N") + ".jar");
+						stubs.Add(fileName, null);
+						if (!File.Exists(fileName))
+						{
+							if (!GenerateStub(reference, fileName))
+							{
+								return false;
+							}
+						}
 					}
 				}
 			}
+			// clean up any left-over stubs
+			foreach (string file in Directory.GetFiles(stubpath, "*.jar"))
+			{
+				if (!stubs.ContainsKey(file) && Path.GetFileName(file) != "rt.jar")
+				{
+					File.Delete(file);
+				}
+			}
 			return true;
+		}
+
+		private static bool GenerateStub(string assemblyFile, string outputFile)
+		{
+			ProcessStartInfo psi = new ProcessStartInfo(Path.Combine(GetAssemblyPath(), "ikvmstub.exe"), "-shared \"-out:" + outputFile + "\" \"-lib:" + GetAssemblyPath() + "\" \"" + assemblyFile + "\"");
+			psi.UseShellExecute = false;
+			using (Process p = Process.Start(psi))
+			{
+				p.WaitForExit();
+				return p.ExitCode == 0;
+			}
 		}
 
 		private string GetClassesPath()
@@ -284,6 +317,25 @@ namespace IKVM.MSBuild
 
 			paramList.Add("-bootclasspath");
 			paramList.Add(Path.Combine(GetStubPath(), "rt.jar"));
+
+			string stubpath = GetStubPath();
+			StringBuilder sb = new StringBuilder();
+			foreach (string file in Directory.GetFiles(stubpath, "*.jar"))
+			{
+				if (Path.GetFileName(file) != "rt.jar")
+				{
+					if (sb.Length != 0)
+					{
+						sb.Append(Path.PathSeparator);
+					}
+					sb.Append(file);
+				}
+			}
+			if (sb.Length != 0)
+			{
+				paramList.Add("-classpath");
+				paramList.Add(sb.ToString());
+			}
 
 			string classes = GetClassesPath();
 			Directory.CreateDirectory(classes);
