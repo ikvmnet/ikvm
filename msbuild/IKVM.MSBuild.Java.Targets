@@ -12,11 +12,10 @@ IKVM.Java.targets
 
   <Target Name="CreateManifestResourceNames"></Target>		
 
-  <Target Name="CoreCompile">
-    <JavaTask 
+  <Target Name="CoreCompile" DependsOnTargets="ResolveProjectReferences;ResolveAssemblyReferences">
+      <JavaTask 
 		EmitDebugInformation="$(DebugSymbols)"
-		References="@(Reference)"
-		TargetFrameworkVersion="$(TargetFrameworkVersion)"
+		References="@(_ResolveAssemblyReferenceResolvedFiles)"
 		Sources="@(Compile)" 
 		Platform="$(PlatformTarget)"
 		Configuration="$(Configuration)"
@@ -26,10 +25,6 @@ IKVM.Java.targets
 		OutputPath="$(OutputPath)"
 	/>
   </Target>
-
-  <PropertyGroup>
-    <CopyBuildOutputToOutputDirectory >false</CopyBuildOutputToOutputDirectory>
-  </PropertyGroup>
 
   <Import Project="$(MSBuildBinPath)\Microsoft.Common.targets"/>
 

@@ -1,11 +1,7 @@
 <?xml version="1.0"?>
 <project name="msbuild" default="msbuild">
     <target name="msbuild">
-        <property name="defs" value="STUB_GENERATOR;TRACE" />
-        <if test="${property::exists('signed')}">
-            <property name="defs" value="${defs};${signed}" />
-        </if>
-        <csc target="library" output="../bin/IKVM.MsBuild.dll" define="${defs}">
+        <csc target="library" output="../bin/IKVM.MSBuild.dll">
             <sources>
                 <include name="AssemblyInfo.cs" />
                 <include name="JavaTask.cs" />
@@ -14,12 +10,11 @@
                 <include name="../bin/IKVM.OpenJDK.Core.dll" asis="true" />
                 <include name="../bin/IKVM.OpenJDK.Tools.dll" asis="true" />
                 <include name="Microsoft.Build.Framework.dll" asis="true" />
-                <include name="Microsoft.Build.Tasks.v4.0.dll" asis="true" />
-                <include name="Microsoft.Build.Utilities.v4.0.dll" asis="true" />
+                <include name="Microsoft.Build.Tasks.dll" asis="true" />
+                <include name="Microsoft.Build.Utilities.dll" asis="true" />
                 <include name="System.dll" asis="true" />
             </references>
         </csc>
-        <copy file="IKVM.MSBuild.Java.Targets" tofile="../bin/IKVM.MSBuild.Java.Targets" overwrite="true">
-        </copy>
+        <copy file="IKVM.MSBuild.Java.Targets" tofile="../bin/IKVM.MSBuild.Java.Targets" overwrite="true" />
     </target>
 </project>

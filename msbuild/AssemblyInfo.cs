@@ -37,4 +37,4 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("IKVM.MSBuild")]
 [assembly: AssemblyDescription("Java build task for .NET")]
 
-[assembly: System.Security.AllowPartiallyTrustedCallers]
+//[assembly: System.Security.AllowPartiallyTrustedCallers]
