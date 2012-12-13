@@ -34,6 +34,7 @@ using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Javac = com.sun.tools.javac.Main;
 using PrintWriter = java.io.PrintWriter;
+using System.Diagnostics;
 
 namespace IKVM.MSBuild
 {
@@ -217,7 +218,7 @@ namespace IKVM.MSBuild
 				commandLine.AppendSwitch("-target:" + TargetType.ToLower());
             }
 
-            commandLine.AppendSwitch("-recurse:" + Path.Combine(GetIntermediatePath(), "*.*"));
+            commandLine.AppendSwitch("-recurse:" + GetClassesPath());
             //Log.LogWarning(commandLine.ToString(), null);
             return commandLine.ToString();
         }
@@ -227,22 +228,72 @@ namespace IKVM.MSBuild
         /// </summary>
         public override bool Execute()
         {
-            if (!RunJavac())
+			if (!GenerateStubs())
+			{
+				return false;
+			}
+
+			Stopwatch sw = Stopwatch.StartNew();
+			if (!RunJavac())
             {
                 return false;
             }
+			sw.Stop();
+			Log.LogMessage("Javac compilation time was {0} ms", sw.ElapsedMilliseconds);
 
             CopyIkvm();
 
             return base.Execute(); // run IKVMC
         }
 
+		private string GetStubPath()
+		{
+			return Path.Combine("obj", "stubs");
+		}
+
+		private bool GenerateStubs()
+		{
+			// we start by creating the stubs for the boot classes
+			string stubpath = GetStubPath();
+			Directory.CreateDirectory(stubpath);
+			// note that File.GetLastWriteTime() returns Jan 1st, 1601 for non-existing files, so that works out nicely
+			if (File.GetLastWriteTime(Path.Combine(stubpath, "rt.jar")) < File.GetLastWriteTime(Path.Combine(GetAssemblyPath(), "IKVM.OpenJDK.Core.dll")))
+			{
+				ProcessStartInfo psi = new ProcessStartInfo(Path.Combine(GetAssemblyPath(), "ikvmstub.exe"), "-shared \"-out:" + Path.Combine(stubpath, "rt.jar") + "\" \"-lib:" + GetAssemblyPath() + "\" IKVM.OpenJDK.Core");
+				psi.UseShellExecute = false;
+				using (Process p = Process.Start(psi))
+				{
+					p.WaitForExit();
+					if (p.ExitCode != 0)
+					{
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+
+		private string GetClassesPath()
+		{
+			return Path.Combine(Path.Combine("obj", "classes"), configuration);
+		}
+
         private bool RunJavac()
         {
             List<string> paramList = new List<string>();
 
-            paramList.Add("-d");
-            paramList.Add(GetIntermediatePath());
+			paramList.Add("-bootclasspath");
+			paramList.Add(Path.Combine(GetStubPath(), "rt.jar"));
+
+			string classes = GetClassesPath();
+			Directory.CreateDirectory(classes);
+			paramList.Add("-d");
+			paramList.Add(classes);
+
+			if (emitDebugInformation)
+			{
+				paramList.Add("-g");
+			}
 
             if (sources != null)
             {
@@ -256,6 +307,22 @@ namespace IKVM.MSBuild
 
 			using (PrintWriter pw = new PrintWriter(new LogWriter(Log), true))
 			{
+				//StringBuilder sb = new StringBuilder();
+				//foreach (string str in paramList)
+				//{
+				//    sb.Append('"').Append(str).Append("\" ");
+				//}
+				//ProcessStartInfo psi = new ProcessStartInfo(Path.Combine(GetAssemblyPath(), "javac.exe"), sb.ToString());
+				//psi.UseShellExecute = false;
+				//using (Process p = Process.Start(psi))
+				//{
+				//    p.WaitForExit();
+				//    if (p.ExitCode != 0)
+				//    {
+				//        return false;
+				//    }
+				//}
+				//return true;
 				return Javac.compile(paramList.ToArray(), pw) == 0;
 			}
         }
