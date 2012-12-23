@@ -67,6 +67,13 @@ namespace IKVM.Reflection
 
 			// for use by TypeDefImpl
 			NotGenericTypeDefinition = 128,
+
+			// used to cache __ContainsMissingType
+			ContainsMissingType_Unknown = 0,
+			ContainsMissingType_Pending = 256,
+			ContainsMissingType_Yes = 512,
+			ContainsMissingType_No = 1024,
+			ContainsMissingType_Mask = 256 | 512 | 1024,
 		}
 
 		// prevent subclassing by outsiders
@@ -1342,7 +1349,22 @@ namespace IKVM.Reflection
 			get { return this.DeclaringType != null; }
 		}
 
-		public virtual bool __ContainsMissingType
+		public bool __ContainsMissingType
+		{
+			get
+			{
+				if ((typeFlags & TypeFlags.ContainsMissingType_Mask) == TypeFlags.ContainsMissingType_Unknown)
+				{
+					// Generic parameter constraints can refer back to the type parameter they are part of,
+					// so to prevent infinite recursion, we set the Pending flag during computation.
+					typeFlags |= TypeFlags.ContainsMissingType_Pending;
+					typeFlags = (typeFlags & ~TypeFlags.ContainsMissingType_Mask) | (ContainsMissingTypeImpl ? TypeFlags.ContainsMissingType_Yes : TypeFlags.ContainsMissingType_No);
+				}
+				return (typeFlags & TypeFlags.ContainsMissingType_Mask) == TypeFlags.ContainsMissingType_Yes;
+			}
+		}
+
+		protected virtual bool ContainsMissingTypeImpl
 		{
 			get
 			{
@@ -2136,7 +2158,7 @@ namespace IKVM.Reflection
 			}
 		}
 
-		public sealed override bool __ContainsMissingType
+		protected sealed override bool ContainsMissingTypeImpl
 		{
 			get
 			{
@@ -2898,7 +2920,7 @@ namespace IKVM.Reflection
 			}
 		}
 
-		public override bool __ContainsMissingType
+		protected override bool ContainsMissingTypeImpl
 		{
 			get
 			{
