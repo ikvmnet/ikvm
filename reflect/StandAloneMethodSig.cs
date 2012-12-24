@@ -111,6 +111,17 @@ namespace IKVM.Reflection
 			return customModifiers.GetParameterCustomModifiers(index);
 		}
 
+		public bool ContainsMissingType
+		{
+			get
+			{
+				return returnType.__ContainsMissingType
+					|| Type.ContainsMissingType(parameterTypes)
+					|| Type.ContainsMissingType(optionalParameterTypes)
+					|| customModifiers.ContainsMissingType;
+			}
+		}
+
 		internal int ParameterCount
 		{
 			get { return parameterTypes.Length + optionalParameterTypes.Length; }

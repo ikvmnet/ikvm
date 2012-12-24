@@ -90,17 +90,7 @@ namespace IKVM.Reflection.Reader
 
 		protected sealed override bool ContainsMissingTypeImpl
 		{
-			get
-			{
-				foreach (Type type in GetGenericParameterConstraints())
-				{
-					if (type.__ContainsMissingType)
-					{
-						return true;
-					}
-				}
-				return false;
-			}
+			get { return ContainsMissingType(GetGenericParameterConstraints()); }
 		}
 	}
 

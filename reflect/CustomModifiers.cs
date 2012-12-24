@@ -200,6 +200,11 @@ namespace IKVM.Reflection
 			return sb.ToString();
 		}
 
+		public bool ContainsMissingType
+		{
+			get { return Type.ContainsMissingType(types); }
+		}
+
 		private Type[] GetRequiredOrOptional(bool required)
 		{
 			if (types == null)

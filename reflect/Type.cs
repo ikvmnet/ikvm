@@ -1364,22 +1364,29 @@ namespace IKVM.Reflection
 			}
 		}
 
+		internal static bool ContainsMissingType(Type[] types)
+		{
+			if (types == null)
+			{
+				return false;
+			}
+			foreach (Type type in types)
+			{
+				if (type.__ContainsMissingType)
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
 		protected virtual bool ContainsMissingTypeImpl
 		{
 			get
 			{
-				if (this.__IsMissing)
-				{
-					return true;
-				}
-				foreach (Type arg in this.GetGenericArguments())
-				{
-					if (arg.__ContainsMissingType)
-					{
-						return true;
-					}
-				}
-				return false;
+				return __IsMissing
+					|| ContainsMissingType(GetGenericArguments())
+					|| __GetCustomModifiers().ContainsMissingType;
 			}
 		}
 
@@ -2167,7 +2174,8 @@ namespace IKVM.Reflection
 				{
 					type = type.GetElementType();
 				}
-				return type.__ContainsMissingType;
+				return type.__ContainsMissingType
+					|| mods.ContainsMissingType;
 			}
 		}
 
@@ -2922,17 +2930,7 @@ namespace IKVM.Reflection
 
 		protected override bool ContainsMissingTypeImpl
 		{
-			get
-			{
-				foreach (Type type in args)
-				{
-					if (type.__ContainsMissingType)
-					{
-						return true;
-					}
-				}
-				return this.type.__IsMissing;
-			}
+			get { return type.__ContainsMissingType || ContainsMissingType(args); }
 		}
 
 		public override StructLayoutAttribute StructLayoutAttribute
@@ -3054,6 +3052,11 @@ namespace IKVM.Reflection
 			return "<FunctionPtr>";
 		}
 
+		protected override bool ContainsMissingTypeImpl
+		{
+			get { return sig.ContainsMissingType; }
+		}
+
 		internal override bool IsBaked
 		{
 			get { return true; }
@@ -3103,7 +3106,7 @@ namespace IKVM.Reflection
 
 		public override bool __IsMissing
 		{
-			get { throw new InvalidOperationException(); }
+			get { return false; }
 		}
 	}
 }
