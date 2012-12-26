@@ -72,8 +72,8 @@ namespace IKVM.Reflection
 			ContainsMissingType_Unknown = 0,
 			ContainsMissingType_Pending = 256,
 			ContainsMissingType_Yes = 512,
-			ContainsMissingType_No = 1024,
-			ContainsMissingType_Mask = 256 | 512 | 1024,
+			ContainsMissingType_No = 256 | 512,
+			ContainsMissingType_Mask = 256 | 512,
 		}
 
 		// prevent subclassing by outsiders
