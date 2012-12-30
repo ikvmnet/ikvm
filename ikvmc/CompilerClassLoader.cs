@@ -1353,7 +1353,7 @@ namespace IKVM.Internal
 						else
 						{
 							MethodInfo overrideMethod = null;
-							MethodAttributes attr = MapMethodAccessModifiers(m.Modifiers) | MethodAttributes.HideBySig;
+							MethodAttributes attr = m.MethodAttributes | MapMethodAccessModifiers(m.Modifiers) | MethodAttributes.HideBySig;
 							if((m.Modifiers & IKVM.Internal.MapXml.MapModifiers.Static) != 0)
 							{
 								attr |= MethodAttributes.Static;
@@ -1467,7 +1467,7 @@ namespace IKVM.Internal
 							}
 						}
 					}
-					return false;
+					return m.Name.StartsWith("__<", StringComparison.Ordinal);
 				}
 
 				internal override void Finish()
