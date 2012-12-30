@@ -580,7 +580,10 @@ namespace IKVM.Internal
 				}
 				else
 				{
-					attribs |= MethodAttributes.Virtual;
+					if((modifiers & Modifiers.Private) == 0)
+					{
+						attribs |= MethodAttributes.Virtual;
+					}
 					if((modifiers & Modifiers.Final) != 0)
 					{
 						attribs |= MethodAttributes.Final;
