@@ -5097,10 +5097,12 @@ namespace IKVM.Internal
 						interfaceList.Add(iface);
 						// NOTE we're using TypeAsBaseType for the interfaces!
 						Type ifaceType = iface.TypeAsBaseType;
+#if !STATIC_COMPILER
 						if (!iface.IsPublic && !ReflectUtil.IsSameAssembly(ifaceType, typeBuilder))
 						{
 							ifaceType = ReflectUtil.GetAssembly(ifaceType).GetType(DynamicClassLoader.GetProxyHelperName(ifaceType));
 						}
+#endif
 						typeBuilder.AddInterfaceImplementation(ifaceType);
 #if STATIC_COMPILER
 						if (!wrapper.IsInterface)
