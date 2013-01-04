@@ -787,6 +787,29 @@ namespace IKVM.Attributes
 		}
 	}
 
+	[AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
+	public sealed class JavaResourceAttribute : Attribute
+	{
+		private readonly string javaName;
+		private readonly string resourceName;
+
+		public JavaResourceAttribute(string javaName, string resourceName)
+		{
+			this.javaName = javaName;
+			this.resourceName = resourceName;
+		}
+
+		public string JavaName
+		{
+			get { return javaName; }
+		}
+
+		public string ResourceName
+		{
+			get { return resourceName; }
+		}
+	}
+
 	// used in custom modifier for access stubs
 	public static class AccessStub { }
 }

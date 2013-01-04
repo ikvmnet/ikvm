@@ -778,6 +778,20 @@ namespace IKVM.Internal
 				yield return (java.net.URL)urls.nextElement();
 			}
 #endif
+			if (!assemblyLoader.HasJavaModule)
+			{
+				if (unmangledName != "" && assemblyLoader.Assembly.GetManifestResourceInfo(unmangledName) != null)
+				{
+					yield return MakeResourceURL(assemblyLoader.Assembly, unmangledName);
+				}
+				foreach (JavaResourceAttribute res in assemblyLoader.Assembly.GetCustomAttributes(typeof(IKVM.Attributes.JavaResourceAttribute), false))
+				{
+					if (res.JavaName == unmangledName)
+					{
+						yield return MakeResourceURL(assemblyLoader.Assembly, res.ResourceName);
+					}
+				}
+			}
 			string name = JVM.MangleResourceName(unmangledName);
 			if (assemblyLoader.Assembly.GetManifestResourceInfo(name) != null)
 			{
