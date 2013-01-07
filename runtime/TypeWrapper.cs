@@ -3131,6 +3131,7 @@ namespace IKVM.Internal
 
 	sealed class UnloadableTypeWrapper : TypeWrapper
 	{
+		internal const string ContainerTypeName = "__<Unloadable>";
 		private Type customModifier;
 
 		internal UnloadableTypeWrapper(string name)
@@ -4379,10 +4380,13 @@ namespace IKVM.Internal
 				{
 					tw = DotNetTypeWrapper.GetWrapperFromDotNetType(type);
 				}
+				else if (type.DeclaringType != null && type.DeclaringType.FullName == UnloadableTypeWrapper.ContainerTypeName)
+				{
+					tw = new UnloadableTypeWrapper(TypeNameUtil.UnmangleNestedTypeName(type.Name), type);
+				}
 				else
 				{
-					tw = ClassLoaderWrapper.GetWrapperFromType(type)
-						?? new UnloadableTypeWrapper(TypeNameUtil.UnmangleNestedTypeName(type.Name), type);
+					tw = ClassLoaderWrapper.GetWrapperFromType(type);
 				}
 			}
 			if (rank != 0)

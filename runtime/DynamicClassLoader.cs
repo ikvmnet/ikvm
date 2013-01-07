@@ -300,7 +300,7 @@ namespace IKVM.Internal
 				}
 				if(unloadableContainer == null)
 				{
-					unloadableContainer = moduleBuilder.DefineType("__<Unloadable>", TypeAttributes.Interface | TypeAttributes.Abstract);
+					unloadableContainer = moduleBuilder.DefineType(UnloadableTypeWrapper.ContainerTypeName, TypeAttributes.Interface | TypeAttributes.Abstract);
 					AttributeHelper.HideFromJava(unloadableContainer);
 				}
 				type = unloadableContainer.DefineNestedType(TypeNameUtil.MangleNestedTypeName(name), TypeAttributes.NestedPrivate | TypeAttributes.Interface | TypeAttributes.Abstract);
