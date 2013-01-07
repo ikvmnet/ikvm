@@ -3577,17 +3577,18 @@ namespace IKVM.Internal
 
 		internal static void IssueMessage(CompilerOptions options, Message msgId, params string[] values)
 		{
-			StringBuilder sb = new StringBuilder();
-			sb.Append((int)msgId);
-			if(values.Length > 0)
+			string key = ((int)msgId).ToString();
+			for (int i = 0; ; i++)
 			{
-				sb.Append(':').Append(values[0]);
-			}
-			string key = sb.ToString();
-			if(options.suppressWarnings.ContainsKey(key)
-				|| options.suppressWarnings.ContainsKey(((int)msgId).ToString()))
-			{
-				return;
+				if (options.suppressWarnings.ContainsKey(key))
+				{
+					return;
+				}
+				if (i == values.Length)
+				{
+					break;
+				}
+				key += ":" + values[i];
 			}
 			options.suppressWarnings.Add(key, key);
 			if(options.writeSuppressWarningsFile != null)
