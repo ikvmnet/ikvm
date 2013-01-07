@@ -621,20 +621,15 @@ namespace IKVM.Reflection
 				}
 				return Import(type.GetGenericTypeDefinition()).MakeGenericType(importedArgs);
 			}
-			else if (type.IsNested)
-			{
-				// note that we can't pass in the namespace here, because .NET's Type.Namespace implementation is broken for nested types
-				// (it returns the namespace of the declaring type)
-				return Import(type.DeclaringType).ResolveNestedType(null, new TypeName(null, type.Name));
-			}
 			else if (type.Assembly == typeof(object).Assembly)
 			{
 				// make sure mscorlib types always end up in our mscorlib
-				return Mscorlib.ResolveType(null, new TypeName(type.Namespace, type.Name));
+				return ResolveType(Mscorlib, type.FullName);
 			}
 			else
 			{
-				return Import(type.Assembly).ResolveType(null, new TypeName(type.Namespace, type.Name));
+				// FXBUG we parse the FullName here, because type.Namespace and type.Name are both broken on the CLR
+				return ResolveType(Import(type.Assembly), type.FullName);
 			}
 		}
 
