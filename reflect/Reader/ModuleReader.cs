@@ -809,7 +809,7 @@ namespace IKVM.Reflection.Reader
 						{
 							MethodSignature methodSig = MethodSignature.ReadSig(this, ByteReader.FromBlob(blobHeap, sig), new GenericContext(genericTypeArguments, genericMethodArguments));
 							return type.FindMethod(name, methodSig)
-								?? universe.GetMissingMethodOrThrow(type, name, methodSig);
+								?? universe.GetMissingMethodOrThrow(this, type, name, methodSig);
 						}
 						else if (type.IsConstructedGenericType)
 						{
@@ -859,7 +859,7 @@ namespace IKVM.Reflection.Reader
 				FieldInfo field = type.FindField(name, fieldSig);
 				if (field == null && universe.MissingMemberResolution)
 				{
-					return universe.GetMissingFieldOrThrow(type, name, fieldSig);
+					return universe.GetMissingFieldOrThrow(this, type, name, fieldSig);
 				}
 				while (field == null && (type = type.BaseType) != null)
 				{
@@ -878,7 +878,7 @@ namespace IKVM.Reflection.Reader
 				MethodBase method = type.FindMethod(name, methodSig);
 				if (method == null && universe.MissingMemberResolution)
 				{
-					return universe.GetMissingMethodOrThrow(type, name, methodSig);
+					return universe.GetMissingMethodOrThrow(this, type, name, methodSig);
 				}
 				while (method == null && (type = type.BaseType) != null)
 				{

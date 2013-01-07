@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009-2012 Jeroen Frijters
+  Copyright (C) 2009-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1070,36 +1070,50 @@ namespace IKVM.Reflection
 			throw new TypeLoadException(String.Format("Type '{0}' not found in assembly '{1}'", fullName, module.Assembly.FullName));
 		}
 
-		internal MethodBase GetMissingMethodOrThrow(Type declaringType, string name, MethodSignature signature)
+		internal MethodBase GetMissingMethodOrThrow(Module requester, Type declaringType, string name, MethodSignature signature)
 		{
 			if (resolveMissingMembers)
 			{
-				MethodInfo method = new MissingMethod(declaringType, name, signature);
+				MethodBase method = new MissingMethod(declaringType, name, signature);
 				if (name == ".ctor")
 				{
-					return new ConstructorInfoImpl(method);
+					method = new ConstructorInfoImpl((MethodInfo)method);
+				}
+				if (ResolvedMissingMember != null)
+				{
+					ResolvedMissingMember(requester, method);
 				}
 				return method;
 			}
 			throw new MissingMethodException(declaringType.ToString(), name);
 		}
 
-		internal FieldInfo GetMissingFieldOrThrow(Type declaringType, string name, FieldSignature signature)
+		internal FieldInfo GetMissingFieldOrThrow(Module requester, Type declaringType, string name, FieldSignature signature)
 		{
 			if (resolveMissingMembers)
 			{
-				return new MissingField(declaringType, name, signature);
+				FieldInfo field = new MissingField(declaringType, name, signature);
+				if (ResolvedMissingMember != null)
+				{
+					ResolvedMissingMember(requester, field);
+				}
+				return field;
 			}
 			throw new MissingFieldException(declaringType.ToString(), name);
 		}
 
-		internal PropertyInfo GetMissingPropertyOrThrow(Type declaringType, string name, PropertySignature propertySignature)
+		internal PropertyInfo GetMissingPropertyOrThrow(Module requester, Type declaringType, string name, PropertySignature propertySignature)
 		{
 			// HACK we need to check __IsMissing here, because Type doesn't have a FindProperty API
 			// since properties are never resolved, except by custom attributes
 			if (resolveMissingMembers || declaringType.__IsMissing)
 			{
-				return new MissingProperty(declaringType, name, propertySignature);
+				PropertyInfo property = new MissingProperty(declaringType, name, propertySignature);
+				if (ResolvedMissingMember != null && !declaringType.__IsMissing)
+				{
+					ResolvedMissingMember(requester, property);
+				}
+				return property;
 			}
 			throw new System.MissingMemberException(declaringType.ToString(), name);
 		}

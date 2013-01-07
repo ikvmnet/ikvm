@@ -264,7 +264,7 @@ namespace IKVM.Reflection
 				string xml = new String(buf);
 				ConstructorInfo constructor = u.System_Security_Permissions_PermissionSetAttribute.GetPseudoCustomAttributeConstructor(u.System_Security_Permissions_SecurityAction);
 				List<CustomAttributeNamedArgument> args = new List<CustomAttributeNamedArgument>();
-				args.Add(new CustomAttributeNamedArgument(GetProperty(u.System_Security_Permissions_PermissionSetAttribute, "XML", u.System_String),
+				args.Add(new CustomAttributeNamedArgument(GetProperty(null, u.System_Security_Permissions_PermissionSetAttribute, "XML", u.System_String),
 					new CustomAttributeTypedArgument(u.System_String, xml)));
 				list.Add(new CustomAttributeData(asm.ManifestModule, constructor, new object[] { action }, args));
 			}
@@ -456,10 +456,10 @@ namespace IKVM.Reflection
 				switch (fieldOrProperty)
 				{
 					case 0x53:
-						member = GetField(type, name, fieldOrPropertyType);
+						member = GetField(context, type, name, fieldOrPropertyType);
 						break;
 					case 0x54:
-						member = GetProperty(type, name, fieldOrPropertyType);
+						member = GetProperty(context, type, name, fieldOrPropertyType);
 						break;
 					default:
 						throw new BadImageFormatException();
@@ -469,7 +469,7 @@ namespace IKVM.Reflection
 			return list.AsReadOnly();
 		}
 
-		private static FieldInfo GetField(Type type, string name, Type fieldType)
+		private static FieldInfo GetField(Module context, Type type, string name, Type fieldType)
 		{
 			Type org = type;
 			for (; type != null && !type.__IsMissing; type = type.BaseType)
@@ -489,10 +489,10 @@ namespace IKVM.Reflection
 			}
 			FieldSignature sig = FieldSignature.Create(fieldType, new CustomModifiers());
 			return type.FindField(name, sig)
-				?? type.Module.universe.GetMissingFieldOrThrow(type, name, sig);
+				?? type.Module.universe.GetMissingFieldOrThrow(context, type, name, sig);
 		}
 
-		private static PropertyInfo GetProperty(Type type, string name, Type propertyType)
+		private static PropertyInfo GetProperty(Module context, Type type, string name, Type propertyType)
 		{
 			Type org = type;
 			for (; type != null && !type.__IsMissing; type = type.BaseType)
@@ -510,7 +510,8 @@ namespace IKVM.Reflection
 			{
 				type = org;
 			}
-			return type.Module.universe.GetMissingPropertyOrThrow(type, name, PropertySignature.Create(CallingConventions.Standard | CallingConventions.HasThis, propertyType, null, new PackedCustomModifiers()));
+			return type.Module.universe.GetMissingPropertyOrThrow(context, type, name,
+				PropertySignature.Create(CallingConventions.Standard | CallingConventions.HasThis, propertyType, null, new PackedCustomModifiers()));
 		}
 
 		[Obsolete("Use AttributeType property instead.")]

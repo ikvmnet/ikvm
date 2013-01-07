@@ -1948,7 +1948,7 @@ namespace IKVM.Reflection
 			MethodSignature methodSig = MethodSignature.MakeFromBuilder(u.System_Void, parameterTypes, new PackedCustomModifiers(), CallingConventions.Standard | CallingConventions.HasThis, 0);
 			MethodBase mb =
 				FindMethod(".ctor", methodSig) ??
-				u.GetMissingMethodOrThrow(this, ".ctor", methodSig);
+				u.GetMissingMethodOrThrow(null, this, ".ctor", methodSig);
 			return (ConstructorInfo)mb;
 		}
 
