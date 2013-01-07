@@ -388,14 +388,14 @@ namespace IKVM.Reflection.Reader
 							{
 								Assembly assembly = ResolveAssemblyRef((scope & 0xFFFFFF) - 1);
 								TypeName typeName = GetTypeName(TypeRef.records[index].TypeNameSpace, TypeRef.records[index].TypeName);
-								typeRefs[index] = assembly.ResolveType(typeName);
+								typeRefs[index] = assembly.ResolveType(this, typeName);
 								break;
 							}
 						case TypeRefTable.Index:
 							{
 								Type outer = ResolveType(scope, null);
 								TypeName typeName = GetTypeName(TypeRef.records[index].TypeNameSpace, TypeRef.records[index].TypeName);
-								typeRefs[index] = outer.ResolveNestedType(typeName);
+								typeRefs[index] = outer.ResolveNestedType(this, typeName);
 								break;
 							}
 						case ModuleTable.Index:
@@ -418,7 +418,7 @@ namespace IKVM.Reflection.Reader
 									module = ResolveModuleRef(ModuleRef.records[(scope & 0xFFFFFF) - 1]);
 								}
 								TypeName typeName = GetTypeName(TypeRef.records[index].TypeNameSpace, TypeRef.records[index].TypeName);
-								typeRefs[index] = module.FindType(typeName) ?? module.universe.GetMissingTypeOrThrow(module, null, typeName);
+								typeRefs[index] = module.FindType(typeName) ?? module.universe.GetMissingTypeOrThrow(this, module, null, typeName);
 								break;
 							}
 						default:
@@ -1108,12 +1108,12 @@ namespace IKVM.Reflection.Reader
 			switch (implementation >> 24)
 			{
 				case AssemblyRefTable.Index:
-					return ResolveAssemblyRef((implementation & 0xFFFFFF) - 1).ResolveType(typeName).SetMetadataTokenForMissing(token, flags);
+					return ResolveAssemblyRef((implementation & 0xFFFFFF) - 1).ResolveType(this, typeName).SetMetadataTokenForMissing(token, flags);
 				case ExportedTypeTable.Index:
-					return ResolveExportedType((implementation & 0xFFFFFF) - 1).ResolveNestedType(typeName).SetMetadataTokenForMissing(token, flags);
+					return ResolveExportedType((implementation & 0xFFFFFF) - 1).ResolveNestedType(this, typeName).SetMetadataTokenForMissing(token, flags);
 				case FileTable.Index:
 					Module module = assembly.GetModule(GetString(File.records[(implementation & 0xFFFFFF) - 1].Name));
-					return module.FindType(typeName) ?? module.universe.GetMissingTypeOrThrow(module, null, typeName).SetMetadataTokenForMissing(token, flags);
+					return module.FindType(typeName) ?? module.universe.GetMissingTypeOrThrow(this, module, null, typeName).SetMetadataTokenForMissing(token, flags);
 				default:
 					throw new BadImageFormatException();
 			}

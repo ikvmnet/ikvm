@@ -469,7 +469,7 @@ namespace IKVM.Reflection
 				}
 				if (resolve)
 				{
-					type = asm.ResolveType(name);
+					type = asm.ResolveType(context, name);
 				}
 				else if (ignoreCase)
 				{
@@ -484,7 +484,7 @@ namespace IKVM.Reflection
 			{
 				if (resolve)
 				{
-					type = universe.Mscorlib.ResolveType(name);
+					type = universe.Mscorlib.ResolveType(context, name);
 				}
 				else if (ignoreCase)
 				{
@@ -521,11 +521,11 @@ namespace IKVM.Reflection
 				{
 					if (universe.Mscorlib.__IsMissing && !context.__IsMissing)
 					{
-						type = universe.Mscorlib.ResolveType(name);
+						type = universe.Mscorlib.ResolveType(context, name);
 					}
 					else
 					{
-						type = context.Assembly.ResolveType(name);
+						type = context.Assembly.ResolveType(context, name);
 					}
 				}
 			}
@@ -557,7 +557,7 @@ namespace IKVM.Reflection
 					{
 						if (resolve)
 						{
-							type = outer.Module.universe.GetMissingTypeOrThrow(outer.Module, outer, name);
+							type = outer.Module.universe.GetMissingTypeOrThrow(context, outer.Module, outer, name);
 						}
 						else if (throwOnError)
 						{

@@ -77,6 +77,8 @@ namespace IKVM.Reflection
 
 	public delegate Assembly ResolveEventHandler(object sender, ResolveEventArgs args);
 
+	public delegate void ResolvedMissingMemberHandler(Module requestingModule, MemberInfo member);
+
 	/*
 	 * UniverseOptions:
 	 *
@@ -239,7 +241,7 @@ namespace IKVM.Reflection
 		{
 			if (Mscorlib.__IsMissing)
 			{
-				return Mscorlib.ResolveType(new TypeName(type.Namespace, type.Name));
+				return Mscorlib.ResolveType(null, new TypeName(type.Namespace, type.Name));
 			}
 			// We use FindType instead of ResolveType here, because on some versions of mscorlib some of
 			// the special types we use/support are missing and the type properties are defined to
@@ -253,7 +255,7 @@ namespace IKVM.Reflection
 			// Primitive here means that these types have a special metadata encoding, which means that
 			// there can be references to them without referring to them by name explicitly.
 			// We want these types to be usable even when they don't exist in mscorlib or there is no mscorlib loaded.
-			return Mscorlib.FindType(new TypeName("System", name)) ?? GetMissingType(Mscorlib.ManifestModule, null, new TypeName("System", name));
+			return Mscorlib.FindType(new TypeName("System", name)) ?? GetMissingType(null, Mscorlib.ManifestModule, null, new TypeName("System", name));
 		}
 
 		internal Type System_Object
@@ -623,16 +625,16 @@ namespace IKVM.Reflection
 			{
 				// note that we can't pass in the namespace here, because .NET's Type.Namespace implementation is broken for nested types
 				// (it returns the namespace of the declaring type)
-				return Import(type.DeclaringType).ResolveNestedType(new TypeName(null, type.Name));
+				return Import(type.DeclaringType).ResolveNestedType(null, new TypeName(null, type.Name));
 			}
 			else if (type.Assembly == typeof(object).Assembly)
 			{
 				// make sure mscorlib types always end up in our mscorlib
-				return Mscorlib.ResolveType(new TypeName(type.Namespace, type.Name));
+				return Mscorlib.ResolveType(null, new TypeName(type.Namespace, type.Name));
 			}
 			else
 			{
-				return Import(type.Assembly).ResolveType(new TypeName(type.Namespace, type.Name));
+				return Import(type.Assembly).ResolveType(null, new TypeName(type.Namespace, type.Name));
 			}
 		}
 
@@ -1039,7 +1041,7 @@ namespace IKVM.Reflection
 			}
 		}
 
-		private Type GetMissingType(Module module, Type declaringType, TypeName typeName)
+		private Type GetMissingType(Module requester, Module module, Type declaringType, TypeName typeName)
 		{
 			if (missingTypes == null)
 			{
@@ -1052,14 +1054,18 @@ namespace IKVM.Reflection
 				type = new MissingType(module, declaringType, typeName.Namespace, typeName.Name);
 				missingTypes.Add(stn, type);
 			}
+			if (ResolvedMissingMember != null && !module.Assembly.__IsMissing)
+			{
+				ResolvedMissingMember(requester, type);
+			}
 			return type;
 		}
 
-		internal Type GetMissingTypeOrThrow(Module module, Type declaringType, TypeName typeName)
+		internal Type GetMissingTypeOrThrow(Module requester, Module module, Type declaringType, TypeName typeName)
 		{
 			if (resolveMissingMembers || module.Assembly.__IsMissing)
 			{
-				return GetMissingType(module, declaringType, typeName);
+				return GetMissingType(requester, module, declaringType, typeName);
 			}
 			string fullName = TypeNameParser.Escape(typeName.ToString());
 			if (declaringType != null)
@@ -1130,6 +1136,8 @@ namespace IKVM.Reflection
 			return new __StandAloneMethodSig(false, 0, callingConvention, returnType ?? this.System_Void, Util.Copy(parameterTypes), Util.Copy(optionalParameterTypes),
 				PackedCustomModifiers.CreateFromExternal(returnTypeCustomModifiers, parameterTypeCustomModifiers, Util.NullSafeLength(parameterTypes) + Util.NullSafeLength(optionalParameterTypes)));
 		}
+
+		public event ResolvedMissingMemberHandler ResolvedMissingMember;
 
 		public event Predicate<Type> MissingTypeIsValueType
 		{
