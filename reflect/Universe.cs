@@ -758,7 +758,7 @@ namespace IKVM.Reflection
 			return Load(refname, null, true);
 		}
 
-		internal Assembly Load(string refname, Assembly requestingAssembly, bool throwOnError)
+		internal Assembly Load(string refname, Module requestingModule, bool throwOnError)
 		{
 			Assembly asm = GetLoadedAssembly(refname);
 			if (asm != null)
@@ -771,7 +771,7 @@ namespace IKVM.Reflection
 			}
 			else
 			{
-				ResolveEventArgs args = new ResolveEventArgs(refname, requestingAssembly);
+				ResolveEventArgs args = new ResolveEventArgs(refname, requestingModule == null ? null : requestingModule.Assembly);
 				foreach (ResolveEventHandler evt in resolvers)
 				{
 					asm = evt(this, args);
@@ -877,7 +877,7 @@ namespace IKVM.Reflection
 			{
 				return null;
 			}
-			return parser.GetType(this, context, throwOnError, assemblyQualifiedTypeName, false, ignoreCase);
+			return parser.GetType(this, context == null ? null : context.ManifestModule, throwOnError, assemblyQualifiedTypeName, false, ignoreCase);
 		}
 
 		// this is similar to GetType(Assembly context, string assemblyQualifiedTypeName, bool throwOnError),
@@ -890,7 +890,7 @@ namespace IKVM.Reflection
 			{
 				return null;
 			}
-			return parser.GetType(this, context, false, assemblyQualifiedTypeName, true, false);
+			return parser.GetType(this, context == null ? null : context.ManifestModule, false, assemblyQualifiedTypeName, true, false);
 		}
 
 		public Assembly[] GetAssemblies()

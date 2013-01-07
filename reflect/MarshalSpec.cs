@@ -115,7 +115,7 @@ namespace IKVM.Reflection
 					TypeNameParser parser = TypeNameParser.Parse(fm.MarshalType, false);
 					if (!parser.Error)
 					{
-						fm.MarshalTypeRef = parser.GetType(module.universe, module.Assembly, false, fm.MarshalType, false, false);
+						fm.MarshalTypeRef = parser.GetType(module.universe, module, false, fm.MarshalType, false, false);
 					}
 				}
 				return true;

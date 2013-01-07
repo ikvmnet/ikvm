@@ -520,7 +520,7 @@ namespace IKVM.Reflection.Reader
 				rec.Culture == 0 ? "neutral" : GetString(rec.Culture),
 				(rec.Flags & PublicKey) == 0 ? "PublicKeyToken" : "PublicKey",
 				PublicKeyOrTokenToString(rec.PublicKeyOrToken));
-			return universe.Load(name, this.Assembly, true);
+			return universe.Load(name, this, true);
 		}
 
 		private string PublicKeyOrTokenToString(int publicKeyOrToken)

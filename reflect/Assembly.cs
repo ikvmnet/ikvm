@@ -183,7 +183,7 @@ namespace IKVM.Reflection
 			{
 				throw new MissingAssemblyException((MissingAssembly)this);
 			}
-			return parser.Expand(type, this, throwOnError, name, false, ignoreCase);
+			return parser.Expand(type, this.ManifestModule, throwOnError, name, false, ignoreCase);
 		}
 
 		public virtual Module LoadModule(string moduleName, byte[] rawModule)

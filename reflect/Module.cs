@@ -353,7 +353,7 @@ namespace IKVM.Reflection
 			{
 				throw new MissingModuleException((MissingModule)this);
 			}
-			return parser.Expand(type, this.Assembly, throwOnError, className, false, ignoreCase);
+			return parser.Expand(type, this, throwOnError, className, false, ignoreCase);
 		}
 
 		public Type[] GetTypes()

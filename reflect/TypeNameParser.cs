@@ -455,7 +455,7 @@ namespace IKVM.Reflection
 			}
 		}
 
-		internal Type GetType(Universe universe, Assembly context, bool throwOnError, string originalName, bool resolve, bool ignoreCase)
+		internal Type GetType(Universe universe, Module context, bool throwOnError, string originalName, bool resolve, bool ignoreCase)
 		{
 			Debug.Assert(!resolve || !ignoreCase);
 			TypeName name = TypeName.Split(this.name);
@@ -506,7 +506,7 @@ namespace IKVM.Reflection
 				{
 					type = context.FindType(name);
 				}
-				if (type == null && context != universe.Mscorlib)
+				if (type == null && context != universe.Mscorlib.ManifestModule)
 				{
 					if (ignoreCase)
 					{
@@ -525,14 +525,14 @@ namespace IKVM.Reflection
 					}
 					else
 					{
-						type = context.ResolveType(name);
+						type = context.Assembly.ResolveType(name);
 					}
 				}
 			}
 			return Expand(type, context, throwOnError, originalName, resolve, ignoreCase);
 		}
 
-		internal Type Expand(Type type, Assembly context, bool throwOnError, string originalName, bool resolve, bool ignoreCase)
+		internal Type Expand(Type type, Module context, bool throwOnError, string originalName, bool resolve, bool ignoreCase)
 		{
 			Debug.Assert(!resolve || !ignoreCase);
 			if (type == null)
