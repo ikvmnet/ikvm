@@ -3438,6 +3438,7 @@ namespace IKVM.Internal
 		DllExportRequiresSupportedPlatform = 130,
 		NonPrimaryAssemblyReference = 131,
 		DuplicateAssemblyReference = 132,
+		UnableToResolveType = 133,
 		UnknownWarning = 999,
 		// This is where the errors start
 		StartErrors = 4000,
@@ -3511,11 +3512,24 @@ namespace IKVM.Internal
 
 	static class StaticCompiler
 	{
-		internal static readonly Universe Universe = new Universe();
+		internal static readonly Universe Universe = new Universe(UniverseOptions.ResolveMissingMembers);
 		internal static Assembly runtimeAssembly;
 		internal static Assembly runtimeJniAssembly;
 		internal static CompilerOptions toplevel;
 		internal static int errorCount;
+
+		static StaticCompiler()
+		{
+			Universe.ResolvedMissingMember += ResolvedMissingMember;
+		}
+
+		private static void ResolvedMissingMember(Module requestingModule, MemberInfo member)
+		{
+			if (requestingModule != null && member is Type)
+			{
+				IssueMessage(Message.UnableToResolveType, requestingModule.Name, ((Type)member).FullName, member.Module.FullyQualifiedName);
+			}
+		}
 
 		internal static Assembly Load(string assemblyString)
 		{
@@ -3729,6 +3743,9 @@ namespace IKVM.Internal
 					break;
 				case Message.DuplicateAssemblyReference:
 					msg = "Duplicate assembly reference \"{0}\"";
+					break;
+				case Message.UnableToResolveType:
+					msg = "Reference in \"{0}\" to type \"{1}\" claims it is defined in \"{2}\", but it could not be found";
 					break;
 				case Message.UnableToCreateProxy:
 					msg = "Unable to create proxy \"{0}\"" + Environment.NewLine +
