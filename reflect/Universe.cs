@@ -124,6 +124,7 @@ namespace IKVM.Reflection
 		DisablePseudoCustomAttributeRetrieval = 4,
 		DontProvideAutomaticDefaultConstructor = 8,
 		MetadataOnly = 16,
+		ResolveMissingMembers = 32,
 	}
 
 	public sealed class Universe : IDisposable
@@ -212,6 +213,7 @@ namespace IKVM.Reflection
 			useNativeFusion = (options & UniverseOptions.DisableFusion) == 0 && GetUseNativeFusion();
 			returnPseudoCustomAttributes = (options & UniverseOptions.DisablePseudoCustomAttributeRetrieval) == 0;
 			automaticallyProvideDefaultConstructor = (options & UniverseOptions.DontProvideAutomaticDefaultConstructor) == 0;
+			resolveMissingMembers = (options & UniverseOptions.ResolveMissingMembers) != 0;
 		}
 
 		private static bool GetUseNativeFusion()
@@ -993,6 +995,7 @@ namespace IKVM.Reflection
 			return asm;
 		}
 
+		[Obsolete("Please set UniverseOptions.ResolveMissingMembers instead.")]
 		public void EnableMissingMemberResolution()
 		{
 			resolveMissingMembers = true;
