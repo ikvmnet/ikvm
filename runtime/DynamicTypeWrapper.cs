@@ -5985,7 +5985,10 @@ namespace IKVM.Internal
 			Type[] modopt = Type.EmptyTypes;
 			if (tw.IsUnloadable)
 			{
-				modopt = new Type[] { ((UnloadableTypeWrapper)tw).GetCustomModifier(context) };
+				if (((UnloadableTypeWrapper)tw).MissingType == null)
+				{
+					modopt = new Type[] { ((UnloadableTypeWrapper)tw).GetCustomModifier(context) };
+				}
 			}
 			else
 			{

@@ -2544,7 +2544,7 @@ namespace IKVM.Internal
 			{
 				if(IsUnloadable)
 				{
-					return Types.Object;
+					return ((UnloadableTypeWrapper)this).MissingType ?? Types.Object;
 				}
 				if(IsGhostArray)
 				{
