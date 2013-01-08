@@ -3508,6 +3508,7 @@ namespace IKVM.Internal
 		AssemblyContainsDuplicateClassNames = 5050,
 		CallerIDRequiresHasCallerIDAnnotation = 5051,
 		UnableToResolveInterface = 5052,
+		MissingBaseType = 5053,
 	}
 
 	static class StaticCompiler

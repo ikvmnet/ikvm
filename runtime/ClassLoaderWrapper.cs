@@ -952,6 +952,12 @@ namespace IKVM.Internal
 
 		internal static TypeWrapper GetWrapperFromType(Type type)
 		{
+#if STATIC_COMPILER
+			if (type.__ContainsMissingType)
+			{
+				return new UnloadableTypeWrapper(type);
+			}
+#endif
 			//Tracer.Info(Tracer.Runtime, "GetWrapperFromType: {0}", type.AssemblyQualifiedName);
 #if !STATIC_COMPILER
 			TypeWrapper.AssertFinished(type);

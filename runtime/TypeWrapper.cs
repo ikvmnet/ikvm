@@ -3132,11 +3132,18 @@ namespace IKVM.Internal
 	sealed class UnloadableTypeWrapper : TypeWrapper
 	{
 		internal const string ContainerTypeName = "__<Unloadable>";
+		private readonly Type missingType;
 		private Type customModifier;
 
 		internal UnloadableTypeWrapper(string name)
 			: base(TypeWrapper.UnloadableModifiersHack, name)
 		{
+		}
+
+		internal UnloadableTypeWrapper(Type missingType)
+			: this(missingType.FullName)	// TODO demangle and re-mangle appropriately
+		{
+			this.missingType = missingType;
 		}
 
 		internal UnloadableTypeWrapper(string name, Type customModifier)
@@ -3218,6 +3225,11 @@ namespace IKVM.Internal
 		internal override void Finish()
 		{
 			throw new InvalidOperationException("Finish called on UnloadableTypeWrapper: " + Name);
+		}
+
+		internal Type MissingType
+		{
+			get { return missingType; }
 		}
 
 		internal Type CustomModifier

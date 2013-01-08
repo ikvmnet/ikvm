@@ -67,7 +67,32 @@ namespace IKVM.Internal
 			{
 				throw new NoClassDefFoundError(name);
 			}
+			CheckMissing(tw);
 			return tw;
+		}
+
+		private static void CheckMissing(TypeWrapper tw)
+		{
+#if STATIC_COMPILER
+			TypeWrapper prev = tw;
+			do
+			{
+				UnloadableTypeWrapper missing = tw as UnloadableTypeWrapper;
+				if (missing != null)
+				{
+					throw new FatalCompilerErrorException(Message.MissingBaseType,
+						missing.MissingType.FullName, missing.MissingType.Assembly.FullName,
+						prev.TypeAsBaseType.FullName, prev.TypeAsBaseType.Module.Name);
+				}
+				foreach (TypeWrapper iface in tw.Interfaces)
+				{
+					CheckMissing(iface);
+				}
+				prev = tw;
+				tw = tw.BaseTypeWrapper;
+			}
+			while (tw != null);
+#endif
 		}
 
 #if STATIC_COMPILER
