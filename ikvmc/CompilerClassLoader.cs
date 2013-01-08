@@ -3439,6 +3439,7 @@ namespace IKVM.Internal
 		NonPrimaryAssemblyReference = 131,
 		DuplicateAssemblyReference = 132,
 		UnableToResolveType = 133,
+		StubsAreDeprecated = 134,
 		UnknownWarning = 999,
 		// This is where the errors start
 		StartErrors = 4000,
@@ -3747,6 +3748,9 @@ namespace IKVM.Internal
 					break;
 				case Message.UnableToResolveType:
 					msg = "Reference in \"{0}\" to type \"{1}\" claims it is defined in \"{2}\", but it could not be found";
+					break;
+				case Message.StubsAreDeprecated:
+					msg = "Compiling stubs is deprecated. Please add a reference to assembly \"{0}\" instead.";
 					break;
 				case Message.UnableToCreateProxy:
 					msg = "Unable to create proxy \"{0}\"" + Environment.NewLine +

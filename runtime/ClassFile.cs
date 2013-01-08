@@ -88,11 +88,13 @@ namespace IKVM.Internal
 		}
 
 #if STATIC_COMPILER
-		// This method parses just enough of the class file to obtain its name, it doesn't
+		// This method parses just enough of the class file to obtain its name and
+		// determine if the class is a possible ikvmstub generated stub, it doesn't
 		// validate the class file structure, but it may throw a ClassFormatError if it
 		// encounters bogus data
-		internal static string GetClassName(byte[] buf, int offset, int length)
+		internal static string GetClassName(byte[] buf, int offset, int length, out bool isstub)
 		{
+			isstub = false;
 			BigEndianBinaryReader br = new BigEndianBinaryReader(buf, offset, length);
 			if(br.ReadUInt32() != 0xCAFEBABE)
 			{
@@ -141,7 +143,7 @@ namespace IKVM.Internal
 						br.Skip(2);
 						break;
 					case Constant.Utf8:
-						utf8_cp[i] = br.ReadString("<unknown>");
+						isstub |= (utf8_cp[i] = br.ReadString("<unknown>")) == "IKVM.NET.Assembly";
 						break;
 					default:
 						throw new ClassFormatError("Illegal constant pool type 0x{0:X}", tag);

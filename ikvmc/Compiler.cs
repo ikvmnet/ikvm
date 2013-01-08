@@ -1158,7 +1158,12 @@ sealed class IkvmcCompiler
 	{
 		try
 		{
-			string name = ClassFile.GetClassName(buf, 0, buf.Length);
+			bool stub;
+			string name = ClassFile.GetClassName(buf, 0, buf.Length, out stub);
+			if(stub)
+			{
+				EmitStubWarning(buf);
+			}
 			if(classes.ContainsKey(name))
 			{
 				StaticCompiler.IssueMessage(Message.DuplicateClassName, name);
@@ -1183,6 +1188,35 @@ sealed class IkvmcCompiler
 			else
 			{
 				StaticCompiler.IssueMessage(Message.ClassFormatError, filename, x.Message);
+			}
+		}
+	}
+
+	private void EmitStubWarning(byte[] buf)
+	{
+		ClassFile cf;
+		try
+		{
+			cf = new ClassFile(buf, 0, buf.Length, "<unknown>", ClassFileParseOptions.None);
+		}
+		catch (ClassFormatError)
+		{
+			return;
+		}
+		if (cf.IKVMAssemblyAttribute != null)
+		{
+			if (cf.IKVMAssemblyAttribute.StartsWith("[["))
+			{
+				Regex r = new Regex(@"\[([^\[\]]+)\]");
+				MatchCollection mc = r.Matches(cf.IKVMAssemblyAttribute);
+				foreach (Match m in mc)
+				{
+					StaticCompiler.IssueMessage(Message.StubsAreDeprecated, m.Groups[1].Value);
+				}
+			}
+			else
+			{
+				StaticCompiler.IssueMessage(Message.StubsAreDeprecated, cf.IKVMAssemblyAttribute);
 			}
 		}
 	}
