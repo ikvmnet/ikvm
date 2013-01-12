@@ -60,7 +60,7 @@ namespace IKVM.Reflection.Writer
 
 		internal uint BaseRVA
 		{
-			get { return 0x2000; }
+			get { return peWriter.Headers.OptionalHeader.SectionAlignment; }
 		}
 
 		internal uint ImportAddressTableRVA

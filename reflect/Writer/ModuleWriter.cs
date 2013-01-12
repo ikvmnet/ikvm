@@ -105,8 +105,9 @@ namespace IKVM.Reflection.Writer
 					break;
 				case ImageFileMachine.ARM:
 					writer.Headers.FileHeader.Machine = IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_ARM;
-					writer.Headers.FileHeader.Characteristics |= IMAGE_FILE_HEADER.IMAGE_FILE_32BIT_MACHINE;
+					writer.Headers.FileHeader.Characteristics |= IMAGE_FILE_HEADER.IMAGE_FILE_32BIT_MACHINE | IMAGE_FILE_HEADER.IMAGE_FILE_LARGE_ADDRESS_AWARE;
 					writer.Headers.OptionalHeader.SizeOfStackReserve = moduleBuilder.GetStackReserve(0x100000);
+					writer.Headers.OptionalHeader.SectionAlignment = 0x1000;
 					break;
 				case ImageFileMachine.AMD64:
 					writer.Headers.FileHeader.Machine = IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_AMD64;
