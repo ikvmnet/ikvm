@@ -277,8 +277,10 @@ namespace IKVM.Reflection.Writer
 						return 12;
 					case IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_IA64:
 						return 48;
-					default:
+					case IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_ARM:
 						return 0;
+					default:
+						throw new NotSupportedException();
 				}
 			}
 		}
@@ -453,6 +455,10 @@ namespace IKVM.Reflection.Writer
 				mw.Write((ushort)0x25FF);
 				mw.Write((uint)peWriter.Headers.OptionalHeader.ImageBase + ImportAddressTableRVA);
 			}
+			else
+			{
+				throw new NotSupportedException();
+			}
 		}
 
 		[Conditional("DEBUG")]
@@ -527,7 +533,7 @@ namespace IKVM.Reflection.Writer
 						stubLength = 16;
 						break;
 					default:
-						throw new NotImplementedException();
+						throw new NotSupportedException();
 				}
 			}
 
@@ -658,7 +664,7 @@ namespace IKVM.Reflection.Writer
 								mw.Write(0); // alignment
 								break;
 							default:
-								throw new NotImplementedException();
+								throw new NotSupportedException();
 						}
 						pos++;
 					}
