@@ -70,18 +70,7 @@ namespace IKVM.Reflection.Writer
 
 		internal uint ImportAddressTableLength
 		{
-			get
-			{
-				switch (peWriter.Headers.FileHeader.Machine)
-				{
-					case IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_I386:
-						return 8;
-					case IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_ARM:
-						return 0;
-					default:
-						return 16;
-				}
-			}
+			get { return peWriter.Is32Bit ? 8u : 16u; }
 		}
 
 		internal uint ComDescriptorRVA
@@ -221,16 +210,7 @@ namespace IKVM.Reflection.Writer
 
 		internal uint ImportDirectoryLength
 		{
-			get
-			{
-				switch (peWriter.Headers.FileHeader.Machine)
-				{
-					case IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_ARM:
-						return 0;
-					default:
-						return (ImportHintNameTableRVA - ImportDirectoryRVA) + 27;
-				}
-			}
+			get { return (ImportHintNameTableRVA - ImportDirectoryRVA) + 27; }
 		}
 
 		private uint ImportHintNameTableRVA
@@ -269,11 +249,10 @@ namespace IKVM.Reflection.Writer
 					case IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_I386:
 						return 6;
 					case IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_AMD64:
+					case IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_ARM:
 						return 12;
 					case IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_IA64:
 						return 48;
-					case IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_ARM:
-						return 0;
 					default:
 						throw new NotSupportedException();
 				}
@@ -449,6 +428,18 @@ namespace IKVM.Reflection.Writer
 			{
 				mw.Write((ushort)0x25FF);
 				mw.Write((uint)peWriter.Headers.OptionalHeader.ImageBase + ImportAddressTableRVA);
+			}
+			else if (peWriter.Headers.FileHeader.Machine == IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_ARM)
+			{
+				uint rva = (uint)peWriter.Headers.OptionalHeader.ImageBase + ImportAddressTableRVA;
+				ushort lo = (ushort)rva;
+				ushort hi = (ushort)(rva >> 16);
+				mw.Write((ushort)(0xF240 + (lo >> 12)));
+				mw.Write((ushort)(0x0C00 + ((lo << 4) & 0xF000) + (lo & 0xFF)));
+				mw.Write((ushort)(0xF2C0 + (hi >> 12)));
+				mw.Write((ushort)(0x0C00 + ((hi << 4) & 0xF000) + (hi & 0xFF)));
+				mw.Write((ushort)0xF8DC);
+				mw.Write((ushort)0xF000);
 			}
 			else
 			{
@@ -882,6 +873,9 @@ namespace IKVM.Reflection.Writer
 				case IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_IA64:
 					list.Add(new Relocation(0xA000, this.StartupStubRVA + 0x20));
 					list.Add(new Relocation(0xA000, this.StartupStubRVA + 0x28));
+					break;
+				case IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_ARM:
+					list.Add(new Relocation(0x7000, this.StartupStubRVA));
 					break;
 				default:
 					throw new NotSupportedException();

@@ -213,7 +213,7 @@ namespace IKVM.Reflection.Writer
 			}
 
 			// we need to start by computing the number of sections, because code.PointerToRawData depends on that
-			writer.Headers.FileHeader.NumberOfSections = 1;
+			writer.Headers.FileHeader.NumberOfSections = 2;
 
 			if (moduleBuilder.initializedData.Length != 0)
 			{
@@ -224,12 +224,6 @@ namespace IKVM.Reflection.Writer
 			if (resources != null)
 			{
 				// .rsrc
-				writer.Headers.FileHeader.NumberOfSections++;
-			}
-
-			if (imageFileMachine != ImageFileMachine.ARM)
-			{
-				// .reloc
 				writer.Headers.FileHeader.NumberOfSections++;
 			}
 
@@ -267,10 +261,7 @@ namespace IKVM.Reflection.Writer
 			SectionHeader reloc = new SectionHeader();
 			reloc.Name = ".reloc";
 			reloc.VirtualAddress = rsrc.VirtualAddress + writer.ToSectionAlignment(rsrc.VirtualSize);
-			if (imageFileMachine != ImageFileMachine.ARM)
-			{
-				reloc.VirtualSize = code.PackRelocations();
-			}
+			reloc.VirtualSize = code.PackRelocations();
 			reloc.PointerToRawData = rsrc.PointerToRawData + rsrc.SizeOfRawData;
 			reloc.SizeOfRawData = writer.ToFileAlignment(reloc.VirtualSize);
 			reloc.Characteristics = SectionHeader.IMAGE_SCN_MEM_READ | SectionHeader.IMAGE_SCN_CNT_INITIALIZED_DATA | SectionHeader.IMAGE_SCN_MEM_DISCARDABLE;
@@ -297,9 +288,9 @@ namespace IKVM.Reflection.Writer
 				// (i.e. there is an additional layer of indirection), so we add the offset to the pointer
 				writer.Headers.OptionalHeader.AddressOfEntryPoint = code.StartupStubRVA + 0x20;
 			}
-			else if (imageFileMachine != ImageFileMachine.ARM)
+			else
 			{
-				writer.Headers.OptionalHeader.AddressOfEntryPoint = code.StartupStubRVA;
+				writer.Headers.OptionalHeader.AddressOfEntryPoint = code.StartupStubRVA + writer.Thumb;
 			}
 
 			writer.WritePEHeaders();

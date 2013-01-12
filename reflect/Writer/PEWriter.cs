@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2008 Jeroen Frijters
+  Copyright (C) 2008-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -128,6 +128,12 @@ namespace IKVM.Reflection.Writer
 		internal bool Is32Bit
 		{
 			get { return (Headers.FileHeader.Characteristics & IMAGE_FILE_HEADER.IMAGE_FILE_32BIT_MACHINE) != 0; }
+		}
+
+		internal uint Thumb
+		{
+			// On ARM we need to set the least significant bit of the program counter to select the Thumb instruction set
+			get { return Headers.FileHeader.Machine == IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_ARM ? 1u : 0u; }
 		}
 	}
 
