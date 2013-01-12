@@ -268,7 +268,7 @@ namespace IKVM.Reflection.Writer
 			reloc.VirtualAddress = rsrc.VirtualAddress + writer.ToSectionAlignment(rsrc.VirtualSize);
 			if (imageFileMachine != ImageFileMachine.ARM)
 			{
-				reloc.VirtualSize = ((uint)moduleBuilder.unmanagedExports.Count + 1) * 12;
+				reloc.VirtualSize = code.PackRelocations();
 			}
 			reloc.PointerToRawData = rsrc.PointerToRawData + rsrc.SizeOfRawData;
 			reloc.SizeOfRawData = writer.ToFileAlignment(reloc.VirtualSize);
