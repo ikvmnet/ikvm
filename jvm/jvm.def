@@ -1,0 +1,5 @@
+LIBRARY JVM.DLL
+EXPORTS
+    JNI_CreateJavaVM=[IKVM.Runtime.JNI]IKVM.Runtime.JNI::CreateJavaVM                          @2164
+    JNI_GetCreatedJavaVMs=[IKVM.Runtime.JNI]IKVM.Runtime.JNI::GetCreatedJavaVMs                @2165
+    JNI_GetDefaultJavaVMInitArgs=[IKVM.Runtime.JNI]IKVM.Runtime.JNI::GetDefaultJavaVMInitArgs  @2166

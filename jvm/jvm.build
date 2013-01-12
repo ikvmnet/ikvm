@@ -12,15 +12,36 @@
             </filterchain>
         </copy>
     </target>
-    <target name="JVM" depends="version" if="${property::exists('ilasm') and (not string::starts-with(framework::get-target-framework(), 'mono'))}">
-        <property overwrite="false" name="ilasm_signoption" value="" />
+    <target name="implib">
+        <csc target="exe" output="../tools/implib.exe">
+            <sources>
+                <include name="../tools/implib.cs" />
+            </sources>
+            <references>
+                <include name="../bin/IKVM.Reflection.dll" asis="true" />
+            </references>
+        </csc>
+        <copy file="../bin/IKVM.Reflection.dll" tofile="../tools/IKVM.Reflection.dll" overwrite="true" />
+    </target>
+    <target name="JVM" depends="version implib" if="${not string::starts-with(framework::get-target-framework(), 'mono')}">
         <if test="${property::exists('rc')}">
             <exec program="${rc}" commandline="jvm.rc" />
         </if>
-        <rc if="${not property::exists('rc')}" rcfile="jvm.rc" output="jvm.res" />
-        <exec program="../tools/asmref.exe" useruntimeengine="true" commandline="mscorlib ../bin/IKVM.Runtime.JNI.dll" output="jvm_h.il" />
-        <echo message=".assembly JVM { .ver ${string::replace(property::get-value('VERSION'), '.', ':')} }" file="jvm_h.il" append="true" />
-        <exec program="${ilasm}" commandline="           /dll ${ilasm_signoption} /out:../bin-x86/JVM.DLL /RESOURCE:jvm.res jvm_h.il jvm32.il JVM.il" />
-        <exec program="${ilasm}" commandline="/pe64 /x64 /dll ${ilasm_signoption} /out:../bin-x64/JVM.DLL /RESOURCE:jvm.res jvm_h.il jvm64.il JVM.il" />
+        <rc if="${not property::exists('rc')}" rcfile="jvm.rc" output="jvm.RES" />
+        <property name="arch" value="x86" />
+        <call target="RunImpLib" />
+        <property name="arch" value="x64" />
+        <call target="RunImpLib" />
+    </target>
+    <target name="RunImpLib">
+        <property name="signoption" value="" overwrite="false" />
+        <exec program="../tools/implib.exe" useruntimeengine="true">
+            <arg value="jvm.def" />
+            <arg value="-out:../bin-${arch}/JVM.DLL" />
+            <arg value="-platform:${arch}" />
+            <arg value="-r:../bin/IKVM.Runtime.JNI.dll" />
+            <arg value="-win32res:jvm.RES" />
+            <arg value="${signoption}" />
+        </exec>
     </target>
 </project>

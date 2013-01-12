@@ -7,7 +7,6 @@
     <target name="signed">
          <property name="signed" value="SIGNCODE" />
          <property name="signoption" value="-key:ikvm-key" />
-         <property name="ilasm_signoption" value="/key:@ikvm-key" />
          <call target="managed" />
     </target>
     <target name="managed" depends="clean-managed CommonAssemblyInfo">
