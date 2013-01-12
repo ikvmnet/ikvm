@@ -237,14 +237,9 @@ namespace IKVM.Reflection.Writer
 		{
 			get
 			{
-				if (peWriter.Headers.FileHeader.Machine == IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_I386)
-				{
-					return (ImportDirectoryRVA + 48 + 15) & ~15U;
-				}
-				else
-				{
-					return (ImportDirectoryRVA + 48 + 4 + 15) & ~15U;
-				}
+				return peWriter.Is32Bit
+					? (ImportDirectoryRVA + 48 + 15) & ~15U
+					: (ImportDirectoryRVA + 52 + 15) & ~15U;
 			}
 		}
 
@@ -796,7 +791,7 @@ namespace IKVM.Reflection.Writer
 			// Import Lookup Table
 			mw.Write(ImportHintNameTableRVA);		// Hint/Name Table RVA
 			int size = 48;
-			if (peWriter.Headers.FileHeader.Machine != IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_I386)
+			if (!peWriter.Is32Bit)
 			{
 				size += 4;
 				mw.Write(0);

@@ -124,6 +124,11 @@ namespace IKVM.Reflection.Writer
 		{
 			return (p + (Headers.OptionalHeader.SectionAlignment - 1)) & ~(Headers.OptionalHeader.SectionAlignment - 1);
 		}
+
+		internal bool Is32Bit
+		{
+			get { return (Headers.FileHeader.Characteristics & IMAGE_FILE_HEADER.IMAGE_FILE_32BIT_MACHINE) != 0; }
+		}
 	}
 
 	sealed class IMAGE_NT_HEADERS
