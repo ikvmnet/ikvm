@@ -516,6 +516,7 @@ namespace IKVM.Reflection.Writer
 						stubLength = 8;
 						break;
 					case IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_AMD64:
+					case IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_ARM:
 						stubLength = 16;
 						break;
 					default:
@@ -569,7 +570,7 @@ namespace IKVM.Reflection.Writer
 				{
 					if (text.moduleBuilder.unmanagedExports[pos].ordinal == i + ordinalBase)
 					{
-						mw.Write(stubsRVA + (uint)pos * stubLength);
+						mw.Write(text.peWriter.Thumb + stubsRVA + (uint)pos * stubLength);
 						pos++;
 					}
 					else
@@ -649,6 +650,15 @@ namespace IKVM.Reflection.Writer
 								mw.Write((byte)0xE0);
 								mw.Write(0); // alignment
 								break;
+							case IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_ARM:
+								mw.Write((ushort)0xF8DF);
+								mw.Write((ushort)0xC008);
+								mw.Write((ushort)0xF8DC);
+								mw.Write((ushort)0xC000);
+								mw.Write((ushort)0x4760);
+								mw.Write((ushort)0xDEFE);
+								mw.Write((uint)text.peWriter.Headers.OptionalHeader.ImageBase + text.moduleBuilder.unmanagedExports[pos].rva.initializedDataOffset + sdataRVA);
+								break;
 							default:
 								throw new NotSupportedException();
 						}
@@ -688,6 +698,10 @@ namespace IKVM.Reflection.Writer
 					case IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_AMD64:
 						type = 0xA000;
 						rva = stubsRVA + 2;
+						break;
+					case IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_ARM:
+						type = 0x3000;
+						rva = stubsRVA + 12;
 						break;
 					default:
 						throw new NotSupportedException();

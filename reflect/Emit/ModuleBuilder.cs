@@ -941,6 +941,7 @@ namespace IKVM.Reflection.Emit
 				switch (imageFileMachine)
 				{
 					case ImageFileMachine.I386:
+					case ImageFileMachine.ARM:
 						type = 0x05;
 						size = 4;
 						break;
