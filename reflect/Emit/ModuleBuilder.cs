@@ -938,15 +938,18 @@ namespace IKVM.Reflection.Emit
 			{
 				int type;
 				int size;
-				if (imageFileMachine == ImageFileMachine.I386)
+				switch (imageFileMachine)
 				{
-					type = 0x05;
-					size = 4;
-				}
-				else
-				{
-					type = 0x06;
-					size = 8;
+					case ImageFileMachine.I386:
+						type = 0x05;
+						size = 4;
+						break;
+					case ImageFileMachine.AMD64:
+						type = 0x06;
+						size = 8;
+						break;
+					default:
+						throw new NotSupportedException();
 				}
 				List<MethodBuilder> methods = new List<MethodBuilder>();
 				for (int i = 0; i < unmanagedExports.Count; i++)
