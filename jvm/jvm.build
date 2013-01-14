@@ -13,7 +13,7 @@
         </copy>
     </target>
     <target name="implib">
-        <csc target="exe" output="../tools/implib.exe">
+        <csc target="exe" output="../tools/implib.exe" rebuild="true">
             <sources>
                 <include name="../tools/implib.cs" />
             </sources>
