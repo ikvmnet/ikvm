@@ -152,6 +152,8 @@ sealed class FatalCompilerErrorException : Exception
 				return "Unable to resolve interface '{0}' on type '{1}'";
 			case IKVM.Internal.Message.MissingBaseType:
 				return "The base class or interface '{0}' in assembly '{1}' referenced by type '{2}' in '{3}' could not be resolved";
+			case IKVM.Internal.Message.MissingBaseTypeReference:
+				return "The type '{0}' is defined in an assembly that is not referenced. You must add a reference to assembly '{1}'";
 			default:
 				return "Missing Error Message. Please file a bug.";
 		}

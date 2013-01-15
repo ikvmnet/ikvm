@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2010 Jeroen Frijters
+  Copyright (C) 2010-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -83,7 +83,11 @@ namespace IKVM.Internal
 			{
 				mscorlibVersion = universe.Load("mscorlib").GetName().Version;
 			}
-			universe.AssemblyResolve += new IKVM.Reflection.ResolveEventHandler(universe_AssemblyResolve);
+#if STATIC_COMPILER
+			universe.AssemblyResolve += AssemblyResolve;
+#else
+			universe.AssemblyResolve += LegacyAssemblyResolve;
+#endif
 		}
 
 		internal Assembly LoadFile(string path)
@@ -244,7 +248,49 @@ namespace IKVM.Internal
 			}
 		}
 
-		private Assembly universe_AssemblyResolve(object sender, IKVM.Reflection.ResolveEventArgs args)
+		private Assembly AssemblyResolve(object sender, IKVM.Reflection.ResolveEventArgs args)
+		{
+			AssemblyName name = new AssemblyName(args.Name);
+			AssemblyName previousMatch = null;
+			int previousMatchLevel = 0;
+			foreach (Assembly asm in universe.GetAssemblies())
+			{
+				if (Match(asm.GetName(), name, ref previousMatch, ref previousMatchLevel))
+				{
+					return asm;
+				}
+			}
+			if (previousMatch != null)
+			{
+				if (previousMatchLevel == 2)
+				{
+					EmitWarning(WarningId.HigherVersion, "assuming assembly reference \"{0}\" matches \"{1}\", you may need to supply runtime policy", previousMatch.FullName, name.FullName);
+					return universe.Load(previousMatch.FullName);
+				}
+				else if (args.RequestingAssembly != null)
+				{
+					Console.Error.WriteLine("Error: Assembly '{0}' uses '{1}' which has a higher version than referenced assembly '{2}'", args.RequestingAssembly.FullName, name.FullName, previousMatch.FullName);
+					Environment.Exit(1);
+					return null;
+				}
+				else
+				{
+					Console.Error.WriteLine("Error: Assembly '{0}' was requested which is a higher version than referenced assembly '{1}'", name.FullName, previousMatch.FullName);
+					Environment.Exit(1);
+					return null;
+				}
+			}
+			else if (args.RequestingAssembly != null)
+			{
+				return universe.CreateMissingAssembly(args.Name);
+			}
+			else
+			{
+				return null;
+			}
+		}
+
+		private Assembly LegacyAssemblyResolve(object sender, IKVM.Reflection.ResolveEventArgs args)
 		{
 			return LegacyLoad(new AssemblyName(args.Name), args.RequestingAssembly);
 		}

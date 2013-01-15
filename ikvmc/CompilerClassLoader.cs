@@ -3086,7 +3086,7 @@ namespace IKVM.Internal
 				}
 				catch (IKVM.Reflection.MissingMemberException x)
 				{
-					StaticCompiler.IssueMessage(Message.MissingType, ((Type)x.MemberInfo).FullName, x.MemberInfo.Module.Assembly.FullName);
+					StaticCompiler.IssueMissingTypeMessage((Type)x.MemberInfo);
 					return 1;
 				}
 			}
@@ -3462,6 +3462,7 @@ namespace IKVM.Internal
 		InvalidPropertySignatureInMapFile = 4012,
 		NonPrimaryAssemblyReference = 4013,
 		MissingType = 4014,
+		MissingReference = 4015,
 		// Fatal errors
 		ResponseFileDepthExceeded = 5000,
 		ErrorReadingFile = 5001,
@@ -3517,6 +3518,7 @@ namespace IKVM.Internal
 		CallerIDRequiresHasCallerIDAnnotation = 5051,
 		UnableToResolveInterface = 5052,
 		MissingBaseType = 5053,
+		MissingBaseTypeReference = 5054,
 	}
 
 	static class StaticCompiler
@@ -3542,7 +3544,12 @@ namespace IKVM.Internal
 
 		internal static Assembly Load(string assemblyString)
 		{
-			return Universe.Load(assemblyString);
+			Assembly asm = Universe.Load(assemblyString);
+			if (asm.__IsMissing)
+			{
+				throw new FileNotFoundException(assemblyString);
+			}
+			return asm;
 		}
 
 		internal static Assembly LoadFile(string path)
@@ -3753,6 +3760,9 @@ namespace IKVM.Internal
 				case Message.MissingType:
 					msg = "Reference to type \"{0}\" claims it is defined in \"{1}\", but it could not be found";
 					break;
+				case Message.MissingReference:
+					msg = "The type '{0}' is defined in an assembly that is not referenced. You must add a reference to assembly '{1}'";
+					break;
 				case Message.DuplicateAssemblyReference:
 					msg = "Duplicate assembly reference \"{0}\"";
 					break;
@@ -3856,6 +3866,12 @@ namespace IKVM.Internal
 				return tw.Name + ", " + ccl.GetTypeWrapperFactory().ModuleBuilder.Assembly.FullName;
 			}
 			return tw.Name + " (unknown assembly)";
+		}
+
+		internal static void IssueMissingTypeMessage(Type type)
+		{
+			type = ReflectUtil.GetMissingType(type);
+			StaticCompiler.IssueMessage(type.Assembly.__IsMissing ? Message.MissingReference : Message.MissingType, type.FullName, type.Assembly.FullName);
 		}
 	}
 }

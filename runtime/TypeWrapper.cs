@@ -2433,8 +2433,7 @@ namespace IKVM.Internal
 			{
 				if (type.__ContainsMissingType)
 				{
-					type = ReflectUtil.GetMissingType(type);
-					StaticCompiler.IssueMessage(Message.MissingType, type.FullName, type.Assembly.FullName);
+					StaticCompiler.IssueMissingTypeMessage(type);
 					return false;
 				}
 				bool ok = true;

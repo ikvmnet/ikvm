@@ -206,6 +206,7 @@
             <arg value="-r:mscorlib.dll" />
             <arg value="-r:System.dll" />
             <arg value="-r:System.Core.dll" unless="${SkipSystemCoreDependency}" />
+            <arg value="-r:System.Xml.dll" />
             <arg value="-r:IKVM.Runtime.dll" />
             <!-- we already know that the JNI assembly is not available, so suppress the warning -->
             <arg value="-nowarn:110" />

@@ -80,6 +80,10 @@ namespace IKVM.Internal
 				if (missing != null)
 				{
 					Type mt = ReflectUtil.GetMissingType(missing.MissingType);
+					if (mt.Assembly.__IsMissing)
+					{
+						throw new FatalCompilerErrorException(Message.MissingBaseTypeReference, mt.FullName, mt.Assembly.FullName);
+					}
 					throw new FatalCompilerErrorException(Message.MissingBaseType, mt.FullName, mt.Assembly.FullName,
 						prev.TypeAsBaseType.FullName, prev.TypeAsBaseType.Module.Name);
 				}
