@@ -2387,6 +2387,12 @@ namespace IKVM.Internal
 				{
 					if(methods == null)
 					{
+#if STATIC_COMPILER
+						if(!CheckMissingBaseTypes(TypeAsBaseType))
+						{
+							return methods = MethodWrapper.EmptyArray;
+						}
+#endif
 						LazyPublishMethods();
 					}
 				}
@@ -2402,12 +2408,44 @@ namespace IKVM.Internal
 				{
 					if(fields == null)
 					{
+#if STATIC_COMPILER
+						if (!CheckMissingBaseTypes(TypeAsBaseType))
+						{
+							return fields = FieldWrapper.EmptyArray;
+						}
+#endif
 						LazyPublishFields();
 					}
 				}
 			}
 			return fields;
 		}
+
+#if STATIC_COMPILER
+		private static bool CheckMissingBaseTypes(Type type)
+		{
+			while (type != null)
+			{
+				if (type.__ContainsMissingType)
+				{
+					type = ReflectUtil.GetMissingType(type);
+					StaticCompiler.IssueMessage(Message.MissingType, type.FullName, type.Assembly.FullName);
+					return false;
+				}
+				bool ok = true;
+				foreach (Type iface in type.__GetDeclaredInterfaces())
+				{
+					ok &= CheckMissingBaseTypes(iface);
+				}
+				if (!ok)
+				{
+					return false;
+				}
+				type = type.BaseType;
+			}
+			return true;
+		}
+#endif
 
 		internal MethodWrapper GetMethodWrapper(string name, string sig, bool inherit)
 		{
