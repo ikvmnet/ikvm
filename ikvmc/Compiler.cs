@@ -228,7 +228,18 @@ sealed class IkvmcCompiler
 		Tracer.EnableTraceForDebug();
 		try
 		{
-			return Compile(args);
+			try
+			{
+				return Compile(args);
+			}
+			catch (TypeInitializationException x)
+			{
+				if (x.InnerException is FatalCompilerErrorException)
+				{
+					throw x.InnerException;
+				}
+				throw;
+			}
 		}
 		catch (FatalCompilerErrorException x)
 		{
