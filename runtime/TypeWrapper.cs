@@ -335,19 +335,20 @@ namespace IKVM.Internal
 			}
 		}
 
-		private static Assembly GetSystemAssembly()
-		{
-			AssemblyName name = Types.Object.Assembly.GetName();
-			name.Name = "System";
-			return StaticCompiler.Load(name.FullName);
-		}
-
 		private static CustomAttributeBuilder GetEditorBrowsableNever()
 		{
 			if (editorBrowsableNever == null)
 			{
-				Assembly system = GetSystemAssembly();
-				editorBrowsableNever = new CustomAttributeBuilder(system.GetType("System.ComponentModel.EditorBrowsableAttribute", true).GetConstructor(new Type[] { system.GetType("System.ComponentModel.EditorBrowsableState", true) }), new object[] { (int)System.ComponentModel.EditorBrowsableState.Never });
+				// to avoid having to load (and find) System.dll, we construct a symbolic CustomAttributeBuilder
+				AssemblyName name = Types.Object.Assembly.GetName();
+				name.Name = "System";
+				Universe u = StaticCompiler.Universe;
+				Type typeofEditorBrowsableAttribute = u.ResolveType(Types.Object.Assembly, "System.ComponentModel.EditorBrowsableAttribute, " + name.FullName);
+				Type typeofEditorBrowsableState = u.ResolveType(Types.Object.Assembly, "System.ComponentModel.EditorBrowsableState, " + name.FullName);
+				u.MissingTypeIsValueType += delegate(Type type) { return type == typeofEditorBrowsableState; };
+				ConstructorInfo ctor = (ConstructorInfo)typeofEditorBrowsableAttribute.__CreateMissingMethod(ConstructorInfo.ConstructorName,
+					CallingConventions.Standard | CallingConventions.HasThis, null, default(CustomModifiers), new Type[] { typeofEditorBrowsableState }, null);
+				editorBrowsableNever = CustomAttributeBuilder.__FromBlob(ctor, new byte[] { 01, 00, 01, 00, 00, 00, 00, 00 });
 			}
 			return editorBrowsableNever;
 		}
