@@ -3086,7 +3086,7 @@ namespace IKVM.Internal
 				}
 				catch (IKVM.Reflection.MissingMemberException x)
 				{
-					StaticCompiler.IssueMessage(Message.MissingReference, ((Type)x.MemberInfo).FullName, x.MemberInfo.Module.Assembly.FullName);
+					StaticCompiler.IssueMessage(Message.MissingType, ((Type)x.MemberInfo).FullName, x.MemberInfo.Module.Assembly.FullName);
 					return 1;
 				}
 			}
@@ -3461,6 +3461,7 @@ namespace IKVM.Internal
 		InvalidPropertyNameInMapFile = 4011,
 		InvalidPropertySignatureInMapFile = 4012,
 		NonPrimaryAssemblyReference = 4013,
+		MissingType = 4014,
 		// Fatal errors
 		ResponseFileDepthExceeded = 5000,
 		ErrorReadingFile = 5001,
@@ -3748,6 +3749,9 @@ namespace IKVM.Internal
 					break;
 				case Message.NonPrimaryAssemblyReference:
 					msg = "Referenced assembly \"{0}\" is not the primary assembly of a shared class loader group, please reference primary assembly \"{1}\" instead";
+					break;
+				case Message.MissingType:
+					msg = "Reference to type \"{0}\" claims it is defined in \"{1}\", but it could not be found";
 					break;
 				case Message.DuplicateAssemblyReference:
 					msg = "Duplicate assembly reference \"{0}\"";
