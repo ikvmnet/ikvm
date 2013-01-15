@@ -107,6 +107,10 @@ namespace IKVM.Internal
 			{
 				return val;
 			}
+			else if(tw.IsUnloadable)
+			{
+				throw new FatalCompilerErrorException(Message.MapFileTypeNotFound, tw.Name);
+			}
 			else if(tw.TypeAsTBD.IsEnum)
 			{
 				return EnumHelper.Parse(tw.TypeAsTBD, val);
