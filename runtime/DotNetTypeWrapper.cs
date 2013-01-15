@@ -929,7 +929,7 @@ namespace IKVM.Internal
 					// the getter and setter methods both need to be public
 					if (pi.GetGetMethod() != null && pi.GetSetMethod() != null && IsSupportedType(pi.PropertyType))
 					{
-						methods.Add(new AttributeAnnotationMethodWrapper(this, pi.Name, pi.PropertyType, true));
+						AddMethodIfUnique(methods, new AttributeAnnotationMethodWrapper(this, pi.Name, pi.PropertyType, true));
 					}
 				}
 				foreach (FieldInfo fi in attributeType.GetFields(BindingFlags.Public | BindingFlags.Instance))
@@ -937,11 +937,24 @@ namespace IKVM.Internal
 					// TODO add other field validations to make sure it is appropriate
 					if (!fi.IsInitOnly && IsSupportedType(fi.FieldType))
 					{
-						methods.Add(new AttributeAnnotationMethodWrapper(this, fi.Name, fi.FieldType, true));
+						AddMethodIfUnique(methods, new AttributeAnnotationMethodWrapper(this, fi.Name, fi.FieldType, true));
 					}
 				}
 				SetMethods(methods.ToArray());
 				base.LazyPublishMembers();
+			}
+
+			private static void AddMethodIfUnique(List<MethodWrapper> methods, MethodWrapper method)
+			{
+				foreach (MethodWrapper mw in methods)
+				{
+					if (mw.Name == method.Name && mw.Signature == method.Signature)
+					{
+						// ignore duplicate
+						return;
+					}
+				}
+				methods.Add(method);
 			}
 
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR

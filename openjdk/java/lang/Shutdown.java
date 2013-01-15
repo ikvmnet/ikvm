@@ -28,6 +28,7 @@ package java.lang;
 import cli.System.AppDomain;
 import cli.System.EventArgs;
 import cli.System.EventHandler;
+import cli.System.Threading.Monitor;
 
 /**
  * Package-private utility class containing data structures and logic
@@ -258,8 +259,17 @@ class Shutdown {
                 break;
             }
         }
-        synchronized (Shutdown.class) {
-            sequence();
+        // [IKVM] We don't block here, because we're being called
+        // from the AppDomain.ProcessExit event and we don't want to
+        // deadlock with the thread that called exit.
+        // Note that our JNI DestroyJavaVM implementation doesn't
+        // call this method.
+        if (Monitor.TryEnter(Shutdown.class)) {
+            try {
+                sequence();
+            } finally {
+                Monitor.Exit(Shutdown.class);
+            }
         }
     }
 
