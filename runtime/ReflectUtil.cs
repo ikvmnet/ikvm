@@ -209,5 +209,38 @@ namespace IKVM.Internal
 				&& !type.IsGenericTypeDefinition
 				&& !type.IsGenericParameter;
 		}
+
+#if STATIC_COMPILER
+		internal static Type GetMissingType(Type type)
+		{
+			while (type.HasElementType)
+			{
+				type = type.GetElementType();
+			}
+			if (type.__IsMissing)
+			{
+				return type;
+			}
+			else if (type.__ContainsMissingType)
+			{
+				if (type.IsGenericType)
+				{
+					foreach (Type arg in type.GetGenericArguments())
+					{
+						Type t1 = GetMissingType(arg);
+						if (t1.__IsMissing)
+						{
+							return t1;
+						}
+					}
+				}
+				throw new NotImplementedException(type.FullName);
+			}
+			else
+			{
+				return type;
+			}
+		}
+#endif
 	}
 }

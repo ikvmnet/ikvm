@@ -79,8 +79,8 @@ namespace IKVM.Internal
 				UnloadableTypeWrapper missing = tw as UnloadableTypeWrapper;
 				if (missing != null)
 				{
-					throw new FatalCompilerErrorException(Message.MissingBaseType,
-						missing.MissingType.FullName, missing.MissingType.Assembly.FullName,
+					Type mt = ReflectUtil.GetMissingType(missing.MissingType);
+					throw new FatalCompilerErrorException(Message.MissingBaseType, mt.FullName, mt.Assembly.FullName,
 						prev.TypeAsBaseType.FullName, prev.TypeAsBaseType.Module.Name);
 				}
 				foreach (TypeWrapper iface in tw.Interfaces)
