@@ -30,6 +30,7 @@ using ICSharpCode.SharpZipLib.Zip;
 using IKVM.Internal;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+using Type = IKVM.Reflection.Type;
 
 sealed class FatalCompilerErrorException : Exception
 {
@@ -1125,12 +1126,38 @@ sealed class IkvmcCompiler
 				}
 			}
 		}
+		// verify that we didn't reference any secondary assemblies of a shared class loader group
+		foreach (CompilerOptions target in targets)
+		{
+			if (target.references != null)
+			{
+				foreach (Assembly asm in target.references)
+				{
+					Type forwarder = asm.GetType("__<MainAssembly>");
+					if (forwarder != null && forwarder.Assembly != asm)
+					{
+						StaticCompiler.IssueMessage(Message.NonPrimaryAssemblyReference, asm.Location, forwarder.Assembly.GetName().Name);
+					}
+				}
+			}
+		}
 		// add legacy references (from stub files)
 		foreach (CompilerOptions target in targets)
 		{
 			foreach (string assemblyName in target.legacyStubReferences.Keys)
 			{
 				ArrayAppend(ref target.references, resolver.LegacyLoad(new AssemblyName(assemblyName), null));
+			}
+		}
+		// now pre-load the secondary assemblies of any shared class loader groups
+		foreach (CompilerOptions target in targets)
+		{
+			if (target.references != null)
+			{
+				foreach (Assembly asm in target.references)
+				{
+					AssemblyClassLoader.PreloadExportedAssemblies(asm);
+				}
 			}
 		}
 	}

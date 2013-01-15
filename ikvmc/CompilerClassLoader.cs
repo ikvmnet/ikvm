@@ -2831,10 +2831,6 @@ namespace IKVM.Internal
 			for(int i = 0; i < references.Count; i++)
 			{
 				AssemblyClassLoader acl = AssemblyClassLoader.FromAssembly(references[i]);
-				if (acl.MainAssembly != references[i])
-				{
-					StaticCompiler.IssueMessage(options, Message.NonPrimaryAssemblyReference, references[i].GetName().Name, acl.MainAssembly.GetName().Name);
-				}
 				if (Array.IndexOf(referencedAssemblies, acl) != -1)
 				{
 					StaticCompiler.IssueMessage(options, Message.DuplicateAssemblyReference, acl.MainAssembly.FullName);
@@ -2904,6 +2900,7 @@ namespace IKVM.Internal
 					}
 					if(asm != null && IsCoreAssembly(asm))
 					{
+						AssemblyClassLoader.PreloadExportedAssemblies(asm);
 						JVM.CoreAssembly = asm;
 						break;
 					}
@@ -3437,7 +3434,6 @@ namespace IKVM.Internal
 		InterfaceMethodCantBeInternal = 128,
 		DllExportMustBeStaticMethod = 129,
 		DllExportRequiresSupportedPlatform = 130,
-		NonPrimaryAssemblyReference = 131,
 		DuplicateAssemblyReference = 132,
 		UnableToResolveType = 133,
 		StubsAreDeprecated = 134,
@@ -3456,6 +3452,7 @@ namespace IKVM.Internal
 		InvalidMemberSignatureInMapFile = 4010,
 		InvalidPropertyNameInMapFile = 4011,
 		InvalidPropertySignatureInMapFile = 4012,
+		NonPrimaryAssemblyReference = 4013,
 		// Fatal errors
 		ResponseFileDepthExceeded = 5000,
 		ErrorReadingFile = 5001,
@@ -3742,7 +3739,7 @@ namespace IKVM.Internal
 					msg = "Ignoring @ikvm.lang.DllExport annotation due to unsupported target platform";
 					break;
 				case Message.NonPrimaryAssemblyReference:
-					msg = "Referenced assembly \"{0}\" is not the primary assembly of a shared class loader group, referencing primary assembly \"{1}\" instead";
+					msg = "Referenced assembly \"{0}\" is not the primary assembly of a shared class loader group, please reference primary assembly \"{1}\" instead";
 					break;
 				case Message.DuplicateAssemblyReference:
 					msg = "Duplicate assembly reference \"{0}\"";

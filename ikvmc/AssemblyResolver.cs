@@ -32,7 +32,6 @@ namespace IKVM.Internal
 	sealed class AssemblyResolver
 	{
 		private readonly List<string> libpath = new List<string>();
-		private readonly Dictionary<string, string> hintpaths = new Dictionary<string, string>();
 		private Universe universe;
 		private Version mscorlibVersion;
 
@@ -276,15 +275,6 @@ namespace IKVM.Internal
 					return LoadFile(path);
 				}
 			}
-			string hintpath;
-			if (hintpaths.TryGetValue(name.FullName, out hintpath))
-			{
-				string path = Path.Combine(hintpath, name.Name + ".dll");
-				if (File.Exists(path) && Match(AssemblyName.GetAssemblyName(path), name, ref previousMatch, ref previousMatchLevel))
-				{
-					return LoadFile(path);
-				}
-			}
 			if (previousMatch != null)
 			{
 				if (previousMatchLevel == 2)
@@ -436,11 +426,6 @@ namespace IKVM.Internal
 					}
 				}
 			}
-		}
-
-		internal void AddHintPath(string assemblyName, string path)
-		{
-			hintpaths.Add(assemblyName, path);
 		}
 	}
 }
