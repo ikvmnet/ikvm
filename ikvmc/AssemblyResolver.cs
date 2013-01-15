@@ -304,7 +304,7 @@ namespace IKVM.Internal
 			else
 			{
 #if STUB_GENERATOR
-				return universe.CreateMissingAssembly(args.Name);
+				return universe.CreateMissingAssembly(name.FullName);
 #else
 				Console.Error.WriteLine("Error: unable to find assembly '{0}'", name.FullName);
 				if (requestingAssembly != null)
