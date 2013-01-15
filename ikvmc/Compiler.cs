@@ -518,7 +518,7 @@ sealed class IkvmcCompiler
 			{
 				if (!nonleaf)
 				{
-					ReadFiles(fileNames);
+					ReadFiles(options, fileNames);
 					nonleaf = true;
 				}
 				IkvmcCompiler nestedLevel = new IkvmcCompiler();
@@ -686,7 +686,7 @@ sealed class IkvmcCompiler
 					if(exists)
 					{
 						DirectoryInfo dir = new DirectoryInfo(spec);
-						Recurse(dir, dir, "*");
+						Recurse(options, dir, dir, "*");
 					}
 					else
 					{
@@ -695,11 +695,11 @@ sealed class IkvmcCompiler
 							DirectoryInfo dir = new DirectoryInfo(Path.GetDirectoryName(spec));
 							if(dir.Exists)
 							{
-								Recurse(dir, dir, Path.GetFileName(spec));
+								Recurse(options, dir, dir, Path.GetFileName(spec));
 							}
 							else
 							{
-								RecurseJar(spec);
+								RecurseJar(options, spec);
 							}
 						}
 						catch(PathTooLongException)
@@ -967,7 +967,7 @@ sealed class IkvmcCompiler
 		{
 			return;
 		}
-		ReadFiles(fileNames);
+		ReadFiles(options, fileNames);
 		if(options.assembly == null)
 		{
 			string basename = options.path == null ? defaultAssemblyName : new FileInfo(options.path).Name;
@@ -1004,7 +1004,7 @@ sealed class IkvmcCompiler
 		targets.Add(options);
 	}
 
-	private void ReadFiles(List<string> fileNames)
+	private void ReadFiles(CompilerOptions options, List<string> fileNames)
 	{
 		foreach (string fileName in fileNames)
 		{
@@ -1035,7 +1035,7 @@ sealed class IkvmcCompiler
 			{
 				foreach (string f in files)
 				{
-					ProcessFile(null, f);
+					ProcessFile(options, null, f);
 				}
 			}
 		}
@@ -1125,6 +1125,14 @@ sealed class IkvmcCompiler
 				}
 			}
 		}
+		// add legacy references (from stub files)
+		foreach (CompilerOptions target in targets)
+		{
+			foreach (string assemblyName in target.legacyStubReferences.Keys)
+			{
+				ArrayAppend(ref target.references, resolver.LegacyLoad(new AssemblyName(assemblyName), null));
+			}
+		}
 	}
 
 	private static void ArrayAppend<T>(ref T[] array, T element)
@@ -1154,15 +1162,16 @@ sealed class IkvmcCompiler
 		return buf;
 	}
 
-	private void AddClassFile(ZipEntry zipEntry, string filename, byte[] buf, bool addResourceFallback, string jar)
+	private void AddClassFile(CompilerOptions options, ZipEntry zipEntry, string filename, byte[] buf, bool addResourceFallback, string jar)
 	{
 		try
 		{
 			bool stub;
 			string name = ClassFile.GetClassName(buf, 0, buf.Length, out stub);
-			if(stub)
+			if(stub && EmitStubWarning(options, buf))
 			{
-				EmitStubWarning(buf);
+				// we use stubs to add references, but otherwise ignore them
+				return;
 			}
 			if(classes.ContainsKey(name))
 			{
@@ -1192,7 +1201,7 @@ sealed class IkvmcCompiler
 		}
 	}
 
-	private void EmitStubWarning(byte[] buf)
+	private static bool EmitStubWarning(CompilerOptions options, byte[] buf)
 	{
 		ClassFile cf;
 		try
@@ -1201,27 +1210,31 @@ sealed class IkvmcCompiler
 		}
 		catch (ClassFormatError)
 		{
-			return;
+			return false;
 		}
-		if (cf.IKVMAssemblyAttribute != null)
+		if (cf.IKVMAssemblyAttribute == null)
 		{
-			if (cf.IKVMAssemblyAttribute.StartsWith("[["))
+			return false;
+		}
+		if (cf.IKVMAssemblyAttribute.StartsWith("[["))
+		{
+			Regex r = new Regex(@"\[([^\[\]]+)\]");
+			MatchCollection mc = r.Matches(cf.IKVMAssemblyAttribute);
+			foreach (Match m in mc)
 			{
-				Regex r = new Regex(@"\[([^\[\]]+)\]");
-				MatchCollection mc = r.Matches(cf.IKVMAssemblyAttribute);
-				foreach (Match m in mc)
-				{
-					StaticCompiler.IssueMessage(Message.StubsAreDeprecated, m.Groups[1].Value);
-				}
-			}
-			else
-			{
-				StaticCompiler.IssueMessage(Message.StubsAreDeprecated, cf.IKVMAssemblyAttribute);
+				options.legacyStubReferences[m.Groups[1].Value] = null;
+				StaticCompiler.IssueMessage(options, Message.StubsAreDeprecated, m.Groups[1].Value);
 			}
 		}
+		else
+		{
+			options.legacyStubReferences[cf.IKVMAssemblyAttribute] = null;
+			StaticCompiler.IssueMessage(options, Message.StubsAreDeprecated, cf.IKVMAssemblyAttribute);
+		}
+		return true;
 	}
 
-	private void ProcessZipFile(string file, Predicate<ZipEntry> filter)
+	private void ProcessZipFile(CompilerOptions options, string file, Predicate<ZipEntry> filter)
 	{
 		string jar = Path.GetFileName(file);
 		ZipFile zf = new ZipFile(file);
@@ -1239,7 +1252,7 @@ sealed class IkvmcCompiler
 				}
 				else if(ze.Name.ToLower().EndsWith(".class"))
 				{
-					AddClassFile(ze, ze.Name, ReadFromZip(zf, ze), true, jar);
+					AddClassFile(options, ze, ze.Name, ReadFromZip(zf, ze), true, jar);
 				}
 				else
 				{
@@ -1292,18 +1305,18 @@ sealed class IkvmcCompiler
 		list.Add(item);
 	}
 
-	private void ProcessFile(DirectoryInfo baseDir, string file)
+	private void ProcessFile(CompilerOptions options, DirectoryInfo baseDir, string file)
 	{
 		switch(new FileInfo(file).Extension.ToLower())
 		{
 			case ".class":
-				AddClassFile(null, file, ReadAllBytes(file), false, null);
+				AddClassFile(options, null, file, ReadAllBytes(file), false, null);
 				break;
 			case ".jar":
 			case ".zip":
 				try
 				{
-					ProcessZipFile(file, null);
+					ProcessZipFile(options, file, null);
 				}
 				catch(ICSharpCode.SharpZipLib.SharpZipBaseException x)
 				{
@@ -1329,19 +1342,19 @@ sealed class IkvmcCompiler
 		}
 	}
 
-	private void Recurse(DirectoryInfo baseDir, DirectoryInfo dir, string spec)
+	private void Recurse(CompilerOptions options, DirectoryInfo baseDir, DirectoryInfo dir, string spec)
 	{
 		foreach(FileInfo file in dir.GetFiles(spec))
 		{
-			ProcessFile(baseDir, file.FullName);
+			ProcessFile(options, baseDir, file.FullName);
 		}
 		foreach(DirectoryInfo sub in dir.GetDirectories())
 		{
-			Recurse(baseDir, sub, spec);
+			Recurse(options, baseDir, sub, spec);
 		}
 	}
 
-	private void RecurseJar(string path)
+	private void RecurseJar(CompilerOptions options, string path)
 	{
 		string file = "";
 		for (; ; )
@@ -1356,7 +1369,7 @@ sealed class IkvmcCompiler
 			{
 				string pathFilter = Path.GetDirectoryName(file) + Path.DirectorySeparatorChar;
 				string fileFilter = "^" + Regex.Escape(Path.GetFileName(file)).Replace("\\*", ".*").Replace("\\?", ".") + "$";
-				ProcessZipFile(path, delegate(ZipEntry ze) {
+				ProcessZipFile(options, path, delegate(ZipEntry ze) {
 					// MONOBUG Path.GetDirectoryName() doesn't normalize / to \ on Windows
 					string name = ze.Name.Replace('/', Path.DirectorySeparatorChar);
 					return (Path.GetDirectoryName(name) + Path.DirectorySeparatorChar).StartsWith(pathFilter)

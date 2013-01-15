@@ -294,6 +294,7 @@ namespace IKVM.Internal
 #if !STUB_GENERATOR
 		internal TypeWrapper DefineClass(ClassFile f, object protectionDomain)
 		{
+#if !STATIC_COMPILER
 			string dotnetAssembly = f.IKVMAssemblyAttribute;
 			if(dotnetAssembly != null)
 			{
@@ -316,6 +317,7 @@ namespace IKVM.Internal
 				}
 				return RegisterInitiatingLoader(tw);
 			}
+#endif
 			CheckDefineClassAllowed(f.Name);
 			TypeWrapper def;
 			try
@@ -1116,6 +1118,7 @@ namespace IKVM.Internal
 #endif
 		}
 
+#if !STATIC_COMPILER && !STUB_GENERATOR
 		internal static ClassLoaderWrapper GetGenericClassLoaderByName(string name)
 		{
 			Debug.Assert(name.StartsWith("[[") && name.EndsWith("]]"));
@@ -1165,12 +1168,9 @@ namespace IKVM.Internal
 			{
 				return GetGenericClassLoaderByName(name);
 			}
-#if STATIC_COMPILER || STUB_GENERATOR
-			return AssemblyClassLoader.FromAssembly(StaticCompiler.Load(name));
-#else
 			return AssemblyClassLoader.FromAssembly(Assembly.Load(name));
-#endif
 		}
+#endif
 
 		internal static int GetGenericClassLoaderId(ClassLoaderWrapper wrapper)
 		{

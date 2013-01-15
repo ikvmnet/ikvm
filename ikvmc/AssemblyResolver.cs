@@ -247,7 +247,11 @@ namespace IKVM.Internal
 
 		private Assembly universe_AssemblyResolve(object sender, IKVM.Reflection.ResolveEventArgs args)
 		{
-			AssemblyName name = new AssemblyName(args.Name);
+			return LegacyLoad(new AssemblyName(args.Name), args.RequestingAssembly);
+		}
+	
+		internal Assembly LegacyLoad(AssemblyName name, Assembly requestingAssembly)
+		{
 			AssemblyName previousMatch = null;
 			int previousMatchLevel = 0;
 			foreach (Assembly asm in universe.GetAssemblies())
@@ -264,9 +268,9 @@ namespace IKVM.Internal
 					return LoadFile(file);
 				}
 			}
-			if (args.RequestingAssembly != null)
+			if (requestingAssembly != null)
 			{
-				string path = Path.Combine(Path.GetDirectoryName(args.RequestingAssembly.Location), name.Name + ".dll");
+				string path = Path.Combine(Path.GetDirectoryName(requestingAssembly.Location), name.Name + ".dll");
 				if (File.Exists(path) && Match(AssemblyName.GetAssemblyName(path), name, ref previousMatch, ref previousMatchLevel))
 				{
 					return LoadFile(path);
@@ -288,9 +292,9 @@ namespace IKVM.Internal
 					EmitWarning(WarningId.HigherVersion, "assuming assembly reference \"{0}\" matches \"{1}\", you may need to supply runtime policy", previousMatch.FullName, name.FullName);
 					return LoadFile(new Uri(previousMatch.CodeBase).LocalPath);
 				}
-				else if (args.RequestingAssembly != null)
+				else if (requestingAssembly != null)
 				{
-					Console.Error.WriteLine("Error: Assembly '{0}' uses '{1}' which has a higher version than referenced assembly '{2}'", args.RequestingAssembly.FullName, name.FullName, previousMatch.FullName);
+					Console.Error.WriteLine("Error: Assembly '{0}' uses '{1}' which has a higher version than referenced assembly '{2}'", requestingAssembly.FullName, name.FullName, previousMatch.FullName);
 				}
 				else
 				{
@@ -302,10 +306,10 @@ namespace IKVM.Internal
 #if STUB_GENERATOR
 				return universe.CreateMissingAssembly(args.Name);
 #else
-				Console.Error.WriteLine("Error: unable to find assembly '{0}'", args.Name);
-				if (args.RequestingAssembly != null)
+				Console.Error.WriteLine("Error: unable to find assembly '{0}'", name.FullName);
+				if (requestingAssembly != null)
 				{
-					Console.Error.WriteLine("    (a dependency of '{0}')", args.RequestingAssembly.FullName);
+					Console.Error.WriteLine("    (a dependency of '{0}')", requestingAssembly.FullName);
 				}
 #endif
 			}

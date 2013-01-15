@@ -3333,6 +3333,7 @@ namespace IKVM.Internal
 		internal bool guessFileKind;
 		internal Dictionary<string, ClassItem> classes;
 		internal string[] unresolvedReferences;	// only used during command line parsing
+		internal Dictionary<string, string> legacyStubReferences = new Dictionary<string,string>();	// only used during command line parsing
 		internal Assembly[] references;
 		internal string[] peerReferences;
 		internal bool crossReferenceAllPeers = true;
