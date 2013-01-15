@@ -60,21 +60,20 @@ namespace IKVM.Internal
 #endif
 		private MethodBase automagicSerializationCtor;
 
-		private static TypeWrapper LoadTypeWrapper(ClassLoaderWrapper classLoader, string name)
+		private TypeWrapper LoadTypeWrapper(ClassLoaderWrapper classLoader, string name)
 		{
 			TypeWrapper tw = classLoader.LoadClassByDottedNameFast(name);
 			if (tw == null)
 			{
 				throw new NoClassDefFoundError(name);
 			}
-			CheckMissing(tw);
+			CheckMissing(this, tw);
 			return tw;
 		}
 
-		private static void CheckMissing(TypeWrapper tw)
+		private static void CheckMissing(TypeWrapper prev, TypeWrapper tw)
 		{
 #if STATIC_COMPILER
-			TypeWrapper prev = tw;
 			do
 			{
 				UnloadableTypeWrapper missing = tw as UnloadableTypeWrapper;
@@ -86,7 +85,7 @@ namespace IKVM.Internal
 				}
 				foreach (TypeWrapper iface in tw.Interfaces)
 				{
-					CheckMissing(iface);
+					CheckMissing(tw, iface);
 				}
 				prev = tw;
 				tw = tw.BaseTypeWrapper;
