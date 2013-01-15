@@ -3080,7 +3080,15 @@ namespace IKVM.Internal
 			{
 				LoadMappedExceptions(map);
 				Tracer.Info(Tracer.Compiler, "Loading remapped types (2)");
-				FinishRemappedTypes();
+				try
+				{
+					FinishRemappedTypes();
+				}
+				catch (IKVM.Reflection.MissingMemberException x)
+				{
+					StaticCompiler.IssueMessage(Message.MissingReference, ((Type)x.MemberInfo).FullName, x.MemberInfo.Module.Assembly.FullName);
+					return 1;
+				}
 			}
 			Tracer.Info(Tracer.Compiler, "Compiling class files (2)");
 			AddResources(options.resources, options.compressedResources);
