@@ -3607,6 +3607,11 @@ namespace IKVM.Internal
 
 		internal static void IssueMessage(CompilerOptions options, Message msgId, params string[] values)
 		{
+			if (errorCount != 0 && msgId < Message.StartErrors)
+			{
+				// don't display any warnings after we've emitted an error message
+				return;
+			}
 			string key = ((int)msgId).ToString();
 			for (int i = 0; ; i++)
 			{
