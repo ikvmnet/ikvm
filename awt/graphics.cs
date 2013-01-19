@@ -1486,6 +1486,55 @@ namespace ikvm.awt
                 return;
             }
 
+            if (paint is java.awt.RadialGradientPaint )
+            {
+                java.awt.RadialGradientPaint gradient = (java.awt.RadialGradientPaint)paint;
+                GraphicsPath path = new GraphicsPath();
+                SizeF size = GetSize();
+
+                PointF center = J2C.ConvertPoint(gradient.getCenterPoint());
+                //path.AddEllipse(center.X + size.Width * 2, center.Y + size.Height * 2, size.Width * 4, size.Height * 4);
+                //path.AddEllipse(center.X - size.Width / 2, center.Y - size.Height / 2, size.Width, size.Height);
+
+                float radius = gradient.getRadius();
+                int factor = (int)Math.Ceiling(Math.Max(size.Width, size.Height) / radius);
+
+                float diameter = radius * factor;
+                path.AddEllipse(center.X - diameter, center.Y - diameter, diameter * 2, diameter * 2);
+
+                java.awt.Color[] javaColors = gradient.getColors();
+                float[] fractions = gradient.getFractions();
+                ColorBlend colorBlend = new ColorBlend(javaColors.Length * factor);
+                Color[] colors = colorBlend.Colors;
+                float[] positions = colorBlend.Positions;
+                int length = javaColors.Length;
+                for (int f = 0; f < factor; f++)
+                {
+                    int off = f * length;
+                    for (int c = 0, j = length - 1; j >= 0; )
+                    {
+                        if (f == 0)
+                        {
+                            positions[c] = (1 - fractions[j]) / factor;
+                            colors[c++] = J2C.ConvertColor(javaColors[j--]);//composite.GetColor(javaColors[i]);
+                        }
+                        else
+                        {
+                            positions[off + c] = (1 + f - fractions[j--]) / factor;
+                            colors[off + c] = colors[c++];
+                        }
+                    }
+                }
+
+                PathGradientBrush pathBrush = new PathGradientBrush(path);
+                pathBrush.CenterPoint = center;
+                pathBrush.InterpolationColors = colorBlend;
+
+                brush = pathBrush;
+                pen.Brush = brush;
+                return;
+            }
+
             throw new NotImplementedException("setPaint("+paint.GetType().FullName+")");
         }
 
