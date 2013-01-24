@@ -52,8 +52,6 @@ namespace IKVM.Internal
 #endif
 		private ModuleBuilder moduleBuilder;
 #if STATIC_COMPILER
-		private TypeBuilder proxyHelperContainer;
-		private List<TypeBuilder> proxyHelpers;
 		private TypeBuilder proxiesContainer;
 		private List<TypeBuilder> proxies;
 #endif // STATIC_COMPILER
@@ -250,18 +248,6 @@ namespace IKVM.Internal
 		}
 
 #if STATIC_COMPILER
-		internal void DefineProxyHelper(Type type)
-		{
-			if(proxyHelperContainer == null)
-			{
-				proxyHelperContainer = moduleBuilder.DefineType("__<Proxy>", TypeAttributes.Public | TypeAttributes.Interface | TypeAttributes.Abstract);
-				AttributeHelper.HideFromJava(proxyHelperContainer);
-				AttributeHelper.SetEditorBrowsableNever(proxyHelperContainer);
-				proxyHelpers = new List<TypeBuilder>();
-			}
-			proxyHelpers.Add(proxyHelperContainer.DefineNestedType(TypeNameUtil.MangleNestedTypeName(type.FullName), TypeAttributes.NestedPublic | TypeAttributes.Interface | TypeAttributes.Abstract, null, new Type[] { type }));
-		}
-
 		internal TypeBuilder DefineProxy(TypeWrapper proxyClass, TypeWrapper[] interfaces)
 		{
 			if (proxiesContainer == null)
@@ -295,11 +281,6 @@ namespace IKVM.Internal
 		internal static string GetProxyName(TypeWrapper[] interfaces)
 		{
 			return "__<Proxies>+" + GetProxyNestedName(interfaces);
-		}
-
-		internal static string GetProxyHelperName(Type type)
-		{
-			return "__<Proxy>+" + TypeNameUtil.MangleNestedTypeName(type.FullName);
 		}
 
 		internal override Type DefineUnloadable(string name)
@@ -354,14 +335,6 @@ namespace IKVM.Internal
 				}
 			}
 #if STATIC_COMPILER
-			if(proxyHelperContainer != null)
-			{
-				proxyHelperContainer.CreateType();
-				foreach(TypeBuilder tb in proxyHelpers)
-				{
-					tb.CreateType();
-				}
-			}
 			if(proxiesContainer != null)
 			{
 				proxiesContainer.CreateType();
