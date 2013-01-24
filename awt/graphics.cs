@@ -1350,8 +1350,8 @@ namespace ikvm.awt
                 throw new java.lang.IllegalArgumentException("null Composite");
             }
             this.javaComposite = comp;
-            composite = CompositeHelper.Create(comp,g);
-            java.awt.Paint oldPaint = javaPaint;
+            java.awt.Paint oldPaint = getPaint(); //getPaint() is never null
+            composite = CompositeHelper.Create(comp, g);
             javaPaint = null;
             setPaint(oldPaint);
         }
