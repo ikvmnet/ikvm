@@ -1,7 +1,7 @@
 /*
   Copyright (C) 2002, 2004, 2005, 2006, 2007 Jeroen Frijters
   Copyright (C) 2006 Active Endpoints, Inc.
-  Copyright (C) 2006 - 2011 Volker Berlin (i-net software)
+  Copyright (C) 2006 - 2013 Volker Berlin (i-net software)
   Copyright (C) 2011 Karsten Heinrich (i-net software)
 
   This software is provided 'as-is', without any express or implied
@@ -1493,8 +1493,6 @@ namespace ikvm.awt
                 SizeF size = GetSize();
 
                 PointF center = J2C.ConvertPoint(gradient.getCenterPoint());
-                //path.AddEllipse(center.X + size.Width * 2, center.Y + size.Height * 2, size.Width * 4, size.Height * 4);
-                //path.AddEllipse(center.X - size.Width / 2, center.Y - size.Height / 2, size.Width, size.Height);
 
                 float radius = gradient.getRadius();
                 int factor = (int)Math.Ceiling(Math.Max(size.Width, size.Height) / radius);
@@ -1504,25 +1502,54 @@ namespace ikvm.awt
 
                 java.awt.Color[] javaColors = gradient.getColors();
                 float[] fractions = gradient.getFractions();
-                ColorBlend colorBlend = new ColorBlend(javaColors.Length * factor);
+                int length = javaColors.Length;
+                ColorBlend colorBlend = new ColorBlend(length * factor);
                 Color[] colors = colorBlend.Colors;
                 float[] positions = colorBlend.Positions;
-                int length = javaColors.Length;
-                for (int f = 0; f < factor; f++)
+
+                for (int c = 0, j = length - 1; j >= 0; )
+                {
+                    positions[c] = (1 - fractions[j]) / factor;
+                    colors[c++] = composite.GetColor(javaColors[j--]);
+                }
+
+                java.awt.MultipleGradientPaint.CycleMethod.__Enum cycle = (java.awt.MultipleGradientPaint.CycleMethod.__Enum)gradient.getCycleMethod().ordinal();
+                for (int f = 1; f < factor; f++)
                 {
                     int off = f * length;
-                    for (int c = 0, j = length - 1; j >= 0; )
+                    for (int c = 0, j = length - 1; j >= 0; j--, c++)
                     {
-                        if (f == 0)
+                        switch (cycle)
                         {
-                            positions[c] = (1 - fractions[j]) / factor;
-                            colors[c++] = J2C.ConvertColor(javaColors[j--]);//composite.GetColor(javaColors[i]);
+                            case java.awt.MultipleGradientPaint.CycleMethod.__Enum.REFLECT:
+                                if (f % 2 == 0)
+                                {
+                                    positions[off + c] = (f + 1 - fractions[j]) / factor;
+                                    colors[off + c] = colors[c];
+                                }
+                                else
+                                {
+                                    positions[off + c] = (f + fractions[c]) / factor;
+                                    colors[off + c] = colors[j];
+                                }
+                                break;
+                            case java.awt.MultipleGradientPaint.CycleMethod.__Enum.NO_CYCLE:
+                                positions[off + c] = (f + 1 - fractions[j]) / factor;
+                                break;
+                            default: //CycleMethod.REPEAT
+                                positions[off + c] = (f + 1 - fractions[j]) / factor;
+                                colors[off + c] = colors[c];
+                                break;
                         }
-                        else
-                        {
-                            positions[off + c] = (1 + f - fractions[j--]) / factor;
-                            colors[off + c] = colors[c++];
-                        }
+                    }
+                }
+                if (cycle == java.awt.MultipleGradientPaint.CycleMethod.__Enum.NO_CYCLE && factor > 1)
+                {
+                    Array.Copy(colors, 0, colors, colors.Length - length, length);
+                    Color color = colors[length - 1];
+                    for (int i = colors.Length - length - 1; i >= 0; i--)
+                    {
+                        colors[i] = color;
                     }
                 }
 
