@@ -946,7 +946,14 @@ namespace IKVM.Internal
 			ClassLoaderWrapper other = friend.GetClassLoader();
 			if (this == other)
 			{
+#if STATIC_COMPILER || STUB_GENERATOR
 				return true;
+#else
+				// we're OK if the type being accessed (wrapper) is a dynamic type
+				// or if the dynamic assembly has internal access
+				return GetAssembly(wrapper).Equals(GetTypeWrapperFactory().ModuleBuilder.Assembly)
+					|| GetTypeWrapperFactory().HasInternalAccess;
+#endif
 			}
 			AssemblyName otherName;
 #if STATIC_COMPILER

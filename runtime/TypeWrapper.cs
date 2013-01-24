@@ -2526,7 +2526,7 @@ namespace IKVM.Internal
 			return GetClassLoader().InternalsVisibleToImpl(this, wrapper);
 		}
 
-		internal bool IsPackageAccessibleFrom(TypeWrapper wrapper)
+		internal virtual bool IsPackageAccessibleFrom(TypeWrapper wrapper)
 		{
 			if (MatchingPackageNames(name, wrapper.name))
 			{
@@ -2539,7 +2539,15 @@ namespace IKVM.Internal
 					return ccl.IsEquivalentTo(wrapper.GetClassLoader());
 				}
 #endif
-				return GetClassLoader() == wrapper.GetClassLoader();
+				if (GetClassLoader() != wrapper.GetClassLoader())
+				{
+					return false;
+				}
+#if STATIC_COMPILER || STUB_GENERATOR
+				return true;
+#else
+				return InternalsVisibleTo(wrapper);
+#endif
 			}
 			else
 			{

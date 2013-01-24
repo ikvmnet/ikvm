@@ -2758,5 +2758,28 @@ namespace IKVM.Internal
 		{
 			get { return type != Types.Void && !type.IsPrimitive && !IsRemapped; }
 		}
+
+#if !STATIC_COMPILER && !STUB_GENERATOR
+		// this override is only relevant for the runtime, because it handles the scenario
+		// where classes are dynamically loaded by the assembly class loader
+		// (i.e. injected into the assembly)
+		internal override bool IsPackageAccessibleFrom(TypeWrapper wrapper)
+		{
+			if (!base.IsPackageAccessibleFrom(wrapper))
+			{
+				return false;
+			}
+			// check accessibility for nested types
+			for (Type type = this.TypeAsTBD; type.IsNested; type = type.DeclaringType)
+			{
+				// we don't support family (protected) access
+				if (!type.IsNestedAssembly && !type.IsNestedFamORAssem && !type.IsNestedPublic)
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+#endif
 	}
 }

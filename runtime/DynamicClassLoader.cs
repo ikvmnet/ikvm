@@ -50,7 +50,8 @@ namespace IKVM.Internal
 #else
 		private static readonly Dictionary<string, TypeWrapper> dynamicTypes = new Dictionary<string, TypeWrapper>();
 #endif
-		private ModuleBuilder moduleBuilder;
+		private readonly ModuleBuilder moduleBuilder;
+		private readonly bool hasInternalAccess;
 #if STATIC_COMPILER
 		private TypeBuilder proxiesContainer;
 		private List<TypeBuilder> proxies;
@@ -58,7 +59,7 @@ namespace IKVM.Internal
 		private Dictionary<string, TypeBuilder> unloadables;
 		private TypeBuilder unloadableContainer;
 #if !STATIC_COMPILER && !CLASSGC
-		private static DynamicClassLoader instance = new DynamicClassLoader(CreateModuleBuilder());
+		private static DynamicClassLoader instance = new DynamicClassLoader(CreateModuleBuilder(), false);
 #endif
 #if CLASSGC
 		private List<string> friends = new List<string>();
@@ -85,9 +86,10 @@ namespace IKVM.Internal
 #endif // !STATIC_COMPILER
 		}
 
-		internal DynamicClassLoader(ModuleBuilder moduleBuilder)
+		internal DynamicClassLoader(ModuleBuilder moduleBuilder, bool hasInternalAccess)
 		{
 			this.moduleBuilder = moduleBuilder;
+			this.hasInternalAccess = hasInternalAccess;
 
 #if STATIC_COMPILER || CLASSGC
 			// Ref.Emit doesn't like the "<Module>" name for types
@@ -307,6 +309,11 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal override bool HasInternalAccess
+		{
+			get { return hasInternalAccess; }
+		}
+
 		internal void FinishAll()
 		{
 			Dictionary<TypeWrapper, TypeWrapper> done = new Dictionary<TypeWrapper, TypeWrapper>();
@@ -390,7 +397,7 @@ namespace IKVM.Internal
 		internal static DynamicClassLoader Get(ClassLoaderWrapper loader)
 		{
 #if STATIC_COMPILER
-			return new DynamicClassLoader(((CompilerClassLoader)loader).CreateModuleBuilder());
+			return new DynamicClassLoader(((CompilerClassLoader)loader).CreateModuleBuilder(), false);
 #else
 			AssemblyClassLoader acl = loader as AssemblyClassLoader;
 			if (acl != null && ForgedKeyPair.Instance != null)
@@ -402,7 +409,7 @@ namespace IKVM.Internal
 					{
 						AssemblyName n = new AssemblyName(name);
 						n.KeyPair = ForgedKeyPair.Instance;
-						return new DynamicClassLoader(CreateModuleBuilder(n));
+						return new DynamicClassLoader(CreateModuleBuilder(n), true);
 					}
 				}
 			}
