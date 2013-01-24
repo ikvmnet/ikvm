@@ -170,6 +170,11 @@ namespace IKVM.Internal
 			{
 				moduleBuilder.__DllCharacteristics |= DllCharacteristics.HighEntropyVA;
 			}
+			// allow the runtime to "inject" dynamic classes into the assembly
+			string mainAssemblyName = options.sharedclassloader != null && options.sharedclassloader[0] != this
+				? options.sharedclassloader[0].assemblyName
+				: assemblyName;
+			AttributeHelper.SetInternalsVisibleToAttribute(assemblyBuilder, mainAssemblyName + DynamicClassLoader.DynamicAssemblySuffixAndPublicKey);
 			return moduleBuilder;
 		}
 

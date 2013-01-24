@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2011 Jeroen Frijters
+  Copyright (C) 2002-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -24,6 +24,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
 #if STATIC_COMPILER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -37,11 +39,17 @@ namespace IKVM.Internal
 {
 	sealed class DynamicClassLoader : TypeWrapperFactory
 	{
+		// this PublicKey must be the same as the byte array in ForgedKeyPair
+		internal const string DynamicAssemblySuffixAndPublicKey = "-ikvm-runtime-injected, PublicKey=00240000048000009400000006020000002400005253413100040000010001009D674F3D63B8D7A4C428BD7388341B025C71AA61C6224CD53A12C21330A3159D300051FE2EED154FE30D70673A079E4529D0FD78113DCA771DA8B0C1EF2F77B73651D55645B0A4294F0AF9BF7078432E13D0F46F951D712C2FCF02EB15552C0FE7817FC0AED58E0984F86661BF64D882F29B619899DD264041E7D4992548EB9E";
 #if !STATIC_COMPILER
 		private static List<AssemblyBuilder> saveDebugAssemblies;
 		private static List<DynamicClassLoader> saveClassLoaders;
 #endif // !STATIC_COMPILER
+#if STATIC_COMPILER || CLASSGC
 		private readonly Dictionary<string, TypeWrapper> dynamicTypes = new Dictionary<string, TypeWrapper>();
+#else
+		private static readonly Dictionary<string, TypeWrapper> dynamicTypes = new Dictionary<string, TypeWrapper>();
+#endif
 		private ModuleBuilder moduleBuilder;
 #if STATIC_COMPILER
 		private TypeBuilder proxyHelperContainer;
@@ -71,6 +79,11 @@ namespace IKVM.Internal
 			// TODO AppDomain.TypeResolve requires ControlAppDomain permission, but if we don't have that,
 			// we should handle that by disabling dynamic class loading
 			AppDomain.CurrentDomain.TypeResolve += new ResolveEventHandler(OnTypeResolve);
+#if !CLASSGC
+			// Ref.Emit doesn't like the "<Module>" name for types
+			// (since it already defines a pseudo-type named <Module> for global methods and fields)
+			dynamicTypes.Add("<Module>", null);
+#endif // !CLASSGC
 #endif // !STATIC_COMPILER
 		}
 
@@ -78,9 +91,11 @@ namespace IKVM.Internal
 		{
 			this.moduleBuilder = moduleBuilder;
 
+#if STATIC_COMPILER || CLASSGC
 			// Ref.Emit doesn't like the "<Module>" name for types
 			// (since it already defines a pseudo-type named <Module> for global methods and fields)
 			dynamicTypes.Add("<Module>", null);
+#endif
 		}
 
 #if CLASSGC
@@ -110,9 +125,11 @@ namespace IKVM.Internal
 				return null;
 			}
 			instance = (DynamicClassLoader)loader.GetTypeWrapperFactory();
-#endif
 			instance.dynamicTypes.TryGetValue(args.Name, out type);
-			if(type == null)
+#else
+			dynamicTypes.TryGetValue(args.Name, out type);
+#endif
+			if (type == null)
 			{
 				return null;
 			}
@@ -400,8 +417,23 @@ namespace IKVM.Internal
 		internal static DynamicClassLoader Get(ClassLoaderWrapper loader)
 		{
 #if STATIC_COMPILER
-			DynamicClassLoader instance = new DynamicClassLoader(((CompilerClassLoader)loader).CreateModuleBuilder());
-#elif CLASSGC
+			return new DynamicClassLoader(((CompilerClassLoader)loader).CreateModuleBuilder());
+#else
+			AssemblyClassLoader acl = loader as AssemblyClassLoader;
+			if (acl != null && ForgedKeyPair.Instance != null)
+			{
+				string name = acl.MainAssembly.GetName().Name + DynamicAssemblySuffixAndPublicKey;
+				foreach (InternalsVisibleToAttribute attr in acl.MainAssembly.GetCustomAttributes(typeof(InternalsVisibleToAttribute), false))
+				{
+					if (attr.AssemblyName == name)
+					{
+						AssemblyName n = new AssemblyName(name);
+						n.KeyPair = ForgedKeyPair.Instance;
+						return new DynamicClassLoader(CreateModuleBuilder(n));
+					}
+				}
+			}
+#if CLASSGC
 			DynamicClassLoader instance = new DynamicClassLoader(CreateModuleBuilder());
 			if(saveClassLoaders != null)
 			{
@@ -409,9 +441,58 @@ namespace IKVM.Internal
 			}
 #endif
 			return instance;
+#endif
 		}
 
 #if !STATIC_COMPILER
+		sealed class ForgedKeyPair : StrongNameKeyPair
+		{
+			internal static readonly StrongNameKeyPair Instance;
+
+			static ForgedKeyPair()
+			{
+				try
+				{
+					// this public key byte array must be the same as the public key in DynamicAssemblySuffixAndPublicKey
+					Instance = new ForgedKeyPair(new byte[] {
+						0x00, 0x24, 0x00, 0x00, 0x04, 0x80, 0x00, 0x00, 0x94, 0x00, 0x00,
+						0x00, 0x06, 0x02, 0x00, 0x00, 0x00, 0x24, 0x00, 0x00, 0x52, 0x53,
+						0x41, 0x31, 0x00, 0x04, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x9D,
+						0x67, 0x4F, 0x3D, 0x63, 0xB8, 0xD7, 0xA4, 0xC4, 0x28, 0xBD, 0x73,
+						0x88, 0x34, 0x1B, 0x02, 0x5C, 0x71, 0xAA, 0x61, 0xC6, 0x22, 0x4C,
+						0xD5, 0x3A, 0x12, 0xC2, 0x13, 0x30, 0xA3, 0x15, 0x9D, 0x30, 0x00,
+						0x51, 0xFE, 0x2E, 0xED, 0x15, 0x4F, 0xE3, 0x0D, 0x70, 0x67, 0x3A,
+						0x07, 0x9E, 0x45, 0x29, 0xD0, 0xFD, 0x78, 0x11, 0x3D, 0xCA, 0x77,
+						0x1D, 0xA8, 0xB0, 0xC1, 0xEF, 0x2F, 0x77, 0xB7, 0x36, 0x51, 0xD5,
+						0x56, 0x45, 0xB0, 0xA4, 0x29, 0x4F, 0x0A, 0xF9, 0xBF, 0x70, 0x78,
+						0x43, 0x2E, 0x13, 0xD0, 0xF4, 0x6F, 0x95, 0x1D, 0x71, 0x2C, 0x2F,
+						0xCF, 0x02, 0xEB, 0x15, 0x55, 0x2C, 0x0F, 0xE7, 0x81, 0x7F, 0xC0,
+						0xAE, 0xD5, 0x8E, 0x09, 0x84, 0xF8, 0x66, 0x61, 0xBF, 0x64, 0xD8,
+						0x82, 0xF2, 0x9B, 0x61, 0x98, 0x99, 0xDD, 0x26, 0x40, 0x41, 0xE7,
+						0xD4, 0x99, 0x25, 0x48, 0xEB, 0x9E
+					});
+				}
+				catch
+				{
+				}
+			}
+
+			private ForgedKeyPair(byte[] publicKey)
+				: base(ToInfo(publicKey), new StreamingContext())
+			{
+			}
+
+			private static SerializationInfo ToInfo(byte[] publicKey)
+			{
+				SerializationInfo info = new SerializationInfo(typeof(StrongNameKeyPair), new FormatterConverter());
+				info.AddValue("_keyPairExported", true);
+				info.AddValue("_keyPairArray", publicKey);
+				info.AddValue("_keyPairContainer", null);
+				info.AddValue("_publicKey", publicKey);
+				return info;
+			}
+		}
+
 		private static ModuleBuilder CreateModuleBuilder()
 		{
 			AssemblyName name = new AssemblyName();
@@ -429,6 +510,11 @@ namespace IKVM.Internal
 			{
 				name.Name = "ikvm_dynamic_assembly__" + (uint)Environment.TickCount;
 			}
+			return CreateModuleBuilder(name);
+		}
+
+		private static ModuleBuilder CreateModuleBuilder(AssemblyName name)
+		{
 			DateTime now = DateTime.Now;
 			name.Version = new Version(now.Year, (now.Month * 100) + now.Day, (now.Hour * 100) + now.Minute, (now.Second * 1000) + now.Millisecond);
 			List<CustomAttributeBuilder> attribs = new List<CustomAttributeBuilder>();
