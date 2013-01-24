@@ -469,8 +469,7 @@ namespace IKVM.Internal
 				}
 				name = sb.ToString();
 			}
-			CustomAttributeBuilder cab = new CustomAttributeBuilder(JVM.Import(typeof(InternalsVisibleToAttribute)).GetConstructor(new Type[] { Types.String }), new object[] { name });
-			this.assemblyBuilder.SetCustomAttribute(cab);
+			AttributeHelper.SetInternalsVisibleToAttribute(this.assemblyBuilder, name);
 		}
 
 		internal void SetMain(MethodInfo m, PEFileKinds target, Dictionary<string, string> props, bool noglobbing, Type apartmentAttributeType)

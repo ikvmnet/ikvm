@@ -92,7 +92,7 @@ namespace IKVM.Internal
 				if (!friends.Contains(name))
 				{
 					friends.Add(name);
-					((AssemblyBuilder)moduleBuilder.Assembly).SetCustomAttribute(new CustomAttributeBuilder(typeof(System.Runtime.CompilerServices.InternalsVisibleToAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { name }));
+					AttributeHelper.SetInternalsVisibleToAttribute((AssemblyBuilder)moduleBuilder.Assembly, name);
 				}
 			}
 		}
