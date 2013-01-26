@@ -687,8 +687,8 @@ public class BufferedImage extends java.awt.Image
         {
             throw new IllegalArgumentException();
         }
+        bitmap = createBitmap(width, height);
         synchronized( bitmap ) {            
-            bitmap = createBitmap(width, height);
             cli.System.Drawing.Rectangle rect = new cli.System.Drawing.Rectangle(0, 0, width, height);
             cli.System.Drawing.Imaging.BitmapData data = bitmap.LockBits(rect, ImageLockMode.wrap(ImageLockMode.WriteOnly), PixelFormat.wrap(PixelFormat.Format32bppArgb));
             cli.System.IntPtr pixelPtr = data.get_Scan0();
