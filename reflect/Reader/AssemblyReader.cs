@@ -264,7 +264,7 @@ namespace IKVM.Reflection.Reader
 						}
 						if (universe.MissingMemberResolution)
 						{
-							return externalModules[index] = new MissingModule(this);
+							return externalModules[index] = new MissingModule(this, index);
 						}
 						throw;
 					}

@@ -144,7 +144,7 @@ namespace IKVM.Reflection
 		internal MissingAssembly(Universe universe, string name)
 			: base(universe)
 		{
-			module = new MissingModule(this);
+			module = new MissingModule(this, -1);
 			this.fullName = name;
 		}
 
@@ -237,11 +237,13 @@ namespace IKVM.Reflection
 	sealed class MissingModule : NonPEModule
 	{
 		private readonly Assembly assembly;
+		private readonly int index;
 
-		internal MissingModule(Assembly assembly)
+		internal MissingModule(Assembly assembly, int index)
 			: base(assembly.universe)
 		{
 			this.assembly = assembly;
+			this.index = index;
 		}
 
 		public override int MDStreamVersion
@@ -261,7 +263,14 @@ namespace IKVM.Reflection
 
 		public override string Name
 		{
-			get { throw new MissingModuleException(this); }
+			get
+			{
+				if (index == -1)
+				{
+					throw new MissingModuleException(this);
+				}
+				return assembly.ManifestModule.GetString(assembly.ManifestModule.File.records[index].Name);
+			}
 		}
 
 		public override Guid ModuleVersionId
@@ -342,6 +351,23 @@ namespace IKVM.Reflection
 		protected override Exception ArgumentOutOfRangeException()
 		{
 			return new MissingModuleException(this);
+		}
+
+		public override byte[] __ModuleHash
+		{
+			get
+			{
+				if (index == -1)
+				{
+					throw new MissingModuleException(this);
+				}
+				if (assembly.ManifestModule.File.records[index].HashValue == 0)
+				{
+					return null;
+				}
+				IKVM.Reflection.Reader.ByteReader br = assembly.ManifestModule.GetBlob(assembly.ManifestModule.File.records[index].HashValue);
+				return br.ReadBytes(br.Length);
+			}
 		}
 	}
 
