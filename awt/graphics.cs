@@ -1420,10 +1420,13 @@ namespace ikvm.awt
             if (paint is java.awt.TexturePaint)
             {
                 java.awt.TexturePaint texture = (java.awt.TexturePaint)paint;
-                brush = new TextureBrush(
-                    J2C.ConvertImage(texture.getImage()),
-                    J2C.ConvertRect(texture.getAnchorRect()),
-                    composite.GetImageAttributes());
+                Bitmap txtr = J2C.ConvertImage(texture.getImage());
+                java.awt.geom.Rectangle2D anchor = texture.getAnchorRect();
+                TextureBrush txtBrush;
+                brush = txtBrush = new TextureBrush(txtr, new Rectangle(0, 0, txtr.Width, txtr.Height), composite.GetImageAttributes());
+                txtBrush.TranslateTransform((float)anchor.getX(), (float)anchor.getY());
+                txtBrush.ScaleTransform((float)anchor.getWidth() / txtr.Width, (float)anchor.getHeight() / txtr.Height);
+                txtBrush.WrapMode = WrapMode.Tile;
                 pen.Brush = brush;
                 return;
             }
