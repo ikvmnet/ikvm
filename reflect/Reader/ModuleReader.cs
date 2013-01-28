@@ -1048,7 +1048,7 @@ namespace IKVM.Reflection.Reader
 				{
 					name.hash = GetBlobCopy(AssemblyRef.records[i].HashValue);
 				}
-				name.Flags = (AssemblyNameFlags)AssemblyRef.records[i].Flags;
+				name.RawFlags = (AssemblyNameFlags)AssemblyRef.records[i].Flags;
 				list.Add(name);
 			}
 			return list.ToArray();
