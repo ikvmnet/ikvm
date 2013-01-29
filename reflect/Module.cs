@@ -207,7 +207,16 @@ namespace IKVM.Reflection
 			throw new NotSupportedException();
 		}
 
-		public virtual bool __GetSectionInfo(int rva, out string name, out int characteristics)
+		public bool __GetSectionInfo(int rva, out string name, out int characteristics)
+		{
+			int virtualAddress;
+			int virtualSize;
+			int pointerToRawData;
+			int sizeOfRawData;
+			return __GetSectionInfo(rva, out name, out characteristics, out virtualAddress, out virtualSize, out pointerToRawData, out sizeOfRawData);
+		}
+
+		public virtual bool __GetSectionInfo(int rva, out string name, out int characteristics, out int virtualAddress, out int virtualSize, out int pointerToRawData, out int sizeOfRawData)
 		{
 			throw new NotSupportedException();
 		}

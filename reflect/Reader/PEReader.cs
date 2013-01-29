@@ -316,7 +316,7 @@ namespace IKVM.Reflection.Reader
 			throw new BadImageFormatException();
 		}
 
-		internal bool GetSectionInfo(int rva, out string name, out int characteristics)
+		internal bool GetSectionInfo(int rva, out string name, out int characteristics, out int virtualAddress, out int virtualSize, out int pointerToRawData, out int sizeOfRawData)
 		{
 			for (int i = 0; i < sections.Length; i++)
 			{
@@ -324,11 +324,19 @@ namespace IKVM.Reflection.Reader
 				{
 					name = sections[i].Name;
 					characteristics = (int)sections[i].Characteristics;
+					virtualAddress = (int)sections[i].VirtualAddress;
+					virtualSize = (int)sections[i].VirtualSize;
+					pointerToRawData = (int)sections[i].PointerToRawData;
+					sizeOfRawData = (int)sections[i].SizeOfRawData;
 					return true;
 				}
 			}
 			name = null;
 			characteristics = 0;
+			virtualAddress = 0;
+			virtualSize = 0;
+			pointerToRawData = 0;
+			sizeOfRawData = 0;
 			return false;
 		}
 	}

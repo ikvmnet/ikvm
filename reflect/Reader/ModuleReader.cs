@@ -1155,9 +1155,9 @@ namespace IKVM.Reflection.Reader
 			return peFile.RvaToFileOffset((uint)rva);
 		}
 
-		public override bool __GetSectionInfo(int rva, out string name, out int characteristics)
+		public override bool __GetSectionInfo(int rva, out string name, out int characteristics, out int virtualAddress, out int virtualSize, out int pointerToRawData, out int sizeOfRawData)
 		{
-			return peFile.GetSectionInfo(rva, out name, out characteristics);
+			return peFile.GetSectionInfo(rva, out name, out characteristics, out virtualAddress, out virtualSize, out pointerToRawData, out sizeOfRawData);
 		}
 
 		public override int __ReadDataFromRVA(int rva, byte[] data, int offset, int length)
