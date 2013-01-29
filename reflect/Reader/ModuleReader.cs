@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009-2012 Jeroen Frijters
+  Copyright (C) 2009-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -757,6 +757,16 @@ namespace IKVM.Reflection.Reader
 			{
 				throw TokenOutOfRangeException(metadataToken);
 			}
+		}
+
+		public override CustomModifiers __ResolveTypeSpecCustomModifiers(int typeSpecToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
+		{
+			int index = (typeSpecToken & 0xFFFFFF) - 1;
+			if (typeSpecToken >> 24 != TypeSpecTable.Index || index < 0 || index >= TypeSpec.RowCount)
+			{
+				throw TokenOutOfRangeException(typeSpecToken);
+			}
+			return CustomModifiers.Read(this, ByteReader.FromBlob(blobHeap, TypeSpec.records[index]), new GenericContext(genericTypeArguments, genericMethodArguments));
 		}
 
 		public override string ScopeName
