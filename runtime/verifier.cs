@@ -2574,7 +2574,6 @@ sealed class MethodAnalyzer
 									}
 									break;
 								}
-#endif
 								case ClassFile.ConstantType.MethodType:
 								{
 									ClassFile.ConstantPoolItemMethodType cpi = classFile.GetConstantPoolConstantMethodType(instructions[i].Arg1);
@@ -2590,6 +2589,7 @@ sealed class MethodAnalyzer
 									}
 									break;
 								}
+#endif
 								case ClassFile.ConstantType.MethodHandle:
 									PatchLdcMethodHandle(ref instructions[i]);
 									break;

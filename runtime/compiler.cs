@@ -2963,34 +2963,65 @@ sealed class Compiler
 				ilgen.Emit(OpCodes.Ldstr, classFile.GetConstantPoolConstantString(constant));
 				break;
 			case ClassFile.ConstantType.Class:
-			{
-				TypeWrapper tw = classFile.GetConstantPoolClassType(constant);
-				if (tw.IsUnloadable)
-				{
-					Profiler.Count("EmitDynamicClassLiteral");
-					ilgen.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
-					ilgen.Emit(OpCodes.Ldstr, tw.Name);
-					ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicClassLiteral);
-					java_lang_Class.EmitCheckcast(clazz, ilgen);
-				}
-				else
-				{
-					tw.EmitClassLiteral(ilgen);
-				}
+				EmitLoadClass(ilgen, classFile.GetConstantPoolClassType(constant));
 				break;
-			}
 			case ClassFile.ConstantType.MethodHandle:
 				context.GetValue<MethodHandleConstant>(constant).Emit(this, ilgen, constant);
 				break;
 			case ClassFile.ConstantType.MethodType:
-			{
-				ClassFile.ConstantPoolItemMethodType cpi = classFile.GetConstantPoolConstantMethodType(constant);
-				Type delegateType = MethodHandleUtil.CreateDelegateTypeForLoadConstant(cpi.GetArgTypes(), cpi.GetRetType());
-				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.LoadMethodType.MakeGenericMethod(delegateType));
+				EmitLoadMethodType(ilgen, classFile.GetConstantPoolConstantMethodType(constant));
 				break;
-			}
 			default:
 				throw new InvalidOperationException();
+		}
+	}
+
+	private void EmitLoadClass(CodeEmitter ilgen, TypeWrapper tw)
+	{
+		if (tw.IsUnloadable)
+		{
+			Profiler.Count("EmitDynamicClassLiteral");
+			ilgen.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
+			ilgen.Emit(OpCodes.Ldstr, tw.Name);
+			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicClassLiteral);
+			java_lang_Class.EmitCheckcast(clazz, ilgen);
+		}
+		else
+		{
+			tw.EmitClassLiteral(ilgen);
+		}
+	}
+
+	private void EmitLoadMethodType(CodeEmitter ilgen, ClassFile.ConstantPoolItemMethodType cpi)
+	{
+		TypeWrapper ret = cpi.GetRetType();
+		TypeWrapper[] args = cpi.GetArgTypes();
+		TypeWrapper tw = ret;
+		for (int i = 0; !tw.IsUnloadable && i < args.Length; i++)
+		{
+			tw = args[i];
+		}
+		if (tw.IsUnloadable)
+		{
+			EmitLoadClass(ilgen, ret);
+			ilgen.EmitLdc_I4(args.Length);
+			ilgen.Emit(OpCodes.Newarr, CoreClasses.java.lang.Class.Wrapper.TypeAsArrayType);
+			for (int i = 0; i < args.Length; i++)
+			{
+				ilgen.Emit(OpCodes.Dup);
+				ilgen.EmitLdc_I4(i);
+				EmitLoadClass(ilgen, args[i]);
+				ilgen.Emit(OpCodes.Stelem_Ref);
+			}
+			MethodWrapper methodType = ClassLoaderWrapper.LoadClassCritical("java.lang.invoke.MethodType")
+				.GetMethodWrapper("methodType", "(Ljava.lang.Class;[Ljava.lang.Class;)Ljava.lang.invoke.MethodType;", false);
+			methodType.Link();
+			methodType.EmitCall(ilgen);
+		}
+		else
+		{
+			Type delegateType = MethodHandleUtil.CreateDelegateTypeForLoadConstant(cpi.GetArgTypes(), cpi.GetRetType());
+			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.LoadMethodType.MakeGenericMethod(delegateType));
 		}
 	}
 
