@@ -177,6 +177,7 @@
                 <include name="com/sun/swing/internal/plaf/**/*" />
                 <include name="com/sun/java/swing/plaf/**/*.properties" />
                 <include name="com/sun/java/swing/plaf/**/*.gif" />
+                <include name="sun/launcher/resources/*.properties" />
             </fileset>
         </zip>
     </target>

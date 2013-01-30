@@ -374,47 +374,29 @@ public class Starter
 				// Startup.glob() uses Java code, so we need to do this after we've initialized
 				vmargs = Startup.glob(args, vmargsIndex);
 			}
-			if (jar)
-			{
-				mainClass = GetMainClassFromJarManifest(mainClass);
-				if (mainClass == null)
-				{
-					return 1;
-				}
-			}
-			java.lang.Class clazz = java.lang.Class.forName(mainClass, true, java.lang.ClassLoader.getSystemClassLoader());
 			try
 			{
-				Method method = IKVM.Internal.Starter.FindMainMethod(clazz);
-				if(method == null)
+				java.lang.Class clazz = sun.launcher.LauncherHelper.checkAndLoadMain(true, jar ? 2 : 1, mainClass);
+				// we don't need to do any checking on the main method, as that was already done by checkAndLoadMain
+				Method method = clazz.getDeclaredMethod("main", typeof(string[]));
+				// if clazz isn't public, we can still call main
+				method.setAccessible(true);
+				if(saveAssembly)
 				{
-					throw new java.lang.NoSuchMethodError("main");
+					java.lang.Runtime.getRuntime().addShutdownHook(new SaveAssemblyShutdownHook(clazz));
 				}
-				else if(!Modifier.isPublic(method.getModifiers()))
+				if(waitOnExit)
 				{
-					Console.Error.WriteLine("Main method not public.");
+					java.lang.Runtime.getRuntime().addShutdownHook(new WaitShutdownHook());
 				}
-				else
+				try
 				{
-					// if clazz isn't public, we can still call main
-					method.setAccessible(true);
-					if(saveAssembly)
-					{
-						java.lang.Runtime.getRuntime().addShutdownHook(new SaveAssemblyShutdownHook(clazz));
-					}
-					if(waitOnExit)
-					{
-						java.lang.Runtime.getRuntime().addShutdownHook(new WaitShutdownHook());
-					}
-					try
-					{
-						method.invoke(null, new object[] { vmargs });
-						return 0;
-					}
-					catch(InvocationTargetException x)
-					{
-						throw x.getCause();
-					}
+					method.invoke(null, new object[] { vmargs });
+					return 0;
+				}
+				catch(InvocationTargetException x)
+				{
+					throw x.getCause();
 				}
 			}
 			finally

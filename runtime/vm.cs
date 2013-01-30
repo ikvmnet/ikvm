@@ -51,22 +51,6 @@ namespace IKVM.Internal
 			DynamicClassLoader.SaveDebugImages();
 		}
 
-#if !FIRST_PASS
-		public static java.lang.reflect.Method FindMainMethod(java.lang.Class clazz)
-		{
-			// This method exists because we don't use Class.getDeclaredMethods(),
-			// since that could cause us to run into NoClassDefFoundError if any of the
-			// method signatures references a missing class.
-			TypeWrapper tw = TypeWrapper.FromClass(clazz);
-			MethodWrapper mw = tw.GetMethodWrapper("main", "([Ljava.lang.String;)V", true);
-			if (mw != null && mw.IsStatic)
-			{
-				return (java.lang.reflect.Method)mw.ToMethodOrConstructor(true);
-			}
-			return null;
-		}
-#endif
-
 		public static bool ClassUnloading
 		{
 #if CLASSGC

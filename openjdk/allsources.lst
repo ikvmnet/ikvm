@@ -11874,6 +11874,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/sun/java2d/StateTrackableDelegate.java
 @OPENJDK7@/jdk/src/share/classes/sun/java2d/StateTracker.java
 @OPENJDK7@/jdk/src/share/classes/sun/java2d/Surface.java
+@OPENJDK7@/jdk/src/share/classes/sun/launcher/LauncherHelper.java
 @OPENJDK7@/jdk/src/share/classes/sun/management/Agent.java
 @OPENJDK7@/jdk/src/share/classes/sun/management/AgentConfigurationError.java
 @OPENJDK7@/jdk/src/share/classes/sun/management/ClassLoadingImpl.java
