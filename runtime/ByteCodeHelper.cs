@@ -417,13 +417,6 @@ namespace IKVM.Runtime
 			return args;
 		}
 
-		[DebuggerStepThroughAttribute]
-		public static Type DynamicGetTypeAsExceptionType(RuntimeTypeHandle type, string clazz)
-		{
-			Profiler.Count("DynamicGetTypeAsExceptionType");
-			return LoadTypeWrapper(type, clazz).TypeAsExceptionType;
-		}
-
 		[DebuggerStepThrough]
 		public static Delegate DynamicCreateDelegate(object obj, Type delegateType, string name, string sig)
 		{
@@ -467,12 +460,6 @@ namespace IKVM.Runtime
 		public static bool DynamicInstanceOf(object obj, RuntimeTypeHandle type, string clazz)
 		{
 			return false;
-		}
-
-		[DebuggerStepThroughAttribute]
-		public static Type DynamicGetTypeAsExceptionType(RuntimeTypeHandle type, string clazz)
-		{
-			return null;
 		}
 
 		[DebuggerStepThrough]

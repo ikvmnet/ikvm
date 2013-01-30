@@ -57,7 +57,6 @@ static class ByteCodeHelperMethods
 	internal static readonly MethodInfo arraycopy_primitive_1;
 	internal static readonly MethodInfo arraycopy;
 	internal static readonly MethodInfo DynamicCast;
-	internal static readonly MethodInfo DynamicGetTypeAsExceptionType;
 	internal static readonly MethodInfo DynamicAaload;
 	internal static readonly MethodInfo DynamicAastore;
 	internal static readonly MethodInfo DynamicClassLiteral;
@@ -107,7 +106,6 @@ static class ByteCodeHelperMethods
 		arraycopy_primitive_1 = typeofByteCodeHelper.GetMethod("arraycopy_primitive_1");
 		arraycopy = typeofByteCodeHelper.GetMethod("arraycopy");
 		DynamicCast = typeofByteCodeHelper.GetMethod("DynamicCast");
-		DynamicGetTypeAsExceptionType = typeofByteCodeHelper.GetMethod("DynamicGetTypeAsExceptionType");
 		DynamicAaload = typeofByteCodeHelper.GetMethod("DynamicAaload");
 		DynamicAastore = typeofByteCodeHelper.GetMethod("DynamicAastore");
 		DynamicClassLiteral = typeofByteCodeHelper.GetMethod("DynamicClassLiteral");
