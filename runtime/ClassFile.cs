@@ -1429,7 +1429,21 @@ namespace IKVM.Internal
 			{
 				if(typeWrapper == VerifierTypeWrapper.Null)
 				{
-					typeWrapper = ClassLoaderWrapper.LoadClassNoThrow(thisType.GetClassLoader(), name);
+					TypeWrapper tw = ClassLoaderWrapper.LoadClassNoThrow(thisType.GetClassLoader(), name);
+#if !STATIC_COMPILER && !FIRST_PASS
+					if(!tw.IsUnloadable)
+					{
+						try
+						{
+							thisType.GetClassLoader().CheckPackageAccess(tw, thisType.ClassObject.pd);
+						}
+						catch(java.lang.SecurityException)
+						{
+							tw = new UnloadableTypeWrapper(name);
+						}
+					}
+#endif
+					typeWrapper = tw;
 				}
 			}
 

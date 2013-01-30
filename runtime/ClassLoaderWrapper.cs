@@ -26,9 +26,11 @@ using System;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using Type = IKVM.Reflection.Type;
+using ProtectionDomain = System.Object;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
+using ProtectionDomain = java.security.ProtectionDomain;
 #endif
 using System.IO;
 using System.Collections.Generic;
@@ -55,7 +57,7 @@ namespace IKVM.Internal
 	abstract class TypeWrapperFactory
 	{
 		internal abstract ModuleBuilder ModuleBuilder { get; }
-		internal abstract TypeWrapper DefineClassImpl(Dictionary<string, TypeWrapper> types, ClassFile f, ClassLoaderWrapper classLoader, object protectionDomain);
+		internal abstract TypeWrapper DefineClassImpl(Dictionary<string, TypeWrapper> types, ClassFile f, ClassLoaderWrapper classLoader, ProtectionDomain protectionDomain);
 		internal abstract bool ReserveName(string name);
 		internal abstract string AllocMangledName(DynamicTypeWrapper tw);
 		internal abstract Type DefineUnloadable(string name);
@@ -293,7 +295,7 @@ namespace IKVM.Internal
 		}
 
 #if !STUB_GENERATOR
-		internal TypeWrapper DefineClass(ClassFile f, object protectionDomain)
+		internal TypeWrapper DefineClass(ClassFile f, ProtectionDomain protectionDomain)
 		{
 #if !STATIC_COMPILER
 			string dotnetAssembly = f.IKVMAssemblyAttribute;
@@ -332,7 +334,7 @@ namespace IKVM.Internal
 			return def;
 		}
 
-		private TypeWrapper DefineClassCritical(ClassFile f, object protectionDomain)
+		private TypeWrapper DefineClassCritical(ClassFile f, ProtectionDomain protectionDomain)
 		{
 			lock(types)
 			{
@@ -1374,6 +1376,16 @@ namespace IKVM.Internal
 			StaticCompiler.IssueMessage(msgId, values);
 		}
 #endif
+
+		internal void CheckPackageAccess(TypeWrapper tw, ProtectionDomain pd)
+		{
+#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+			if (javaClassLoader != null)
+			{
+				javaClassLoader.checkPackageAccess(tw.ClassObject, pd);
+			}
+#endif
+		}
 	}
 
 	sealed class GenericClassLoader : ClassLoaderWrapper

@@ -505,7 +505,7 @@ public abstract class ClassLoader {
     }
 
     // Invoked by the VM after loading class with this loader.
-    private void checkPackageAccess(Class cls, ProtectionDomain pd) {
+    final void checkPackageAccess(Class cls, ProtectionDomain pd) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             final String name = cls.getName();

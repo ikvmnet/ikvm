@@ -28,10 +28,12 @@ using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using Type = IKVM.Reflection.Type;
 using DynamicOrAotTypeWrapper = IKVM.Internal.AotTypeWrapper;
+using ProtectionDomain = System.Object;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
 using DynamicOrAotTypeWrapper = IKVM.Internal.DynamicTypeWrapper;
+using ProtectionDomain = java.security.ProtectionDomain;
 #endif
 using System.Diagnostics;
 using System.Security;
@@ -60,7 +62,7 @@ namespace IKVM.Internal
 #endif
 		private MethodBase automagicSerializationCtor;
 
-		private TypeWrapper LoadTypeWrapper(ClassLoaderWrapper classLoader, string name)
+		private TypeWrapper LoadTypeWrapper(ClassLoaderWrapper classLoader, ProtectionDomain pd, string name)
 		{
 			TypeWrapper tw = classLoader.LoadClassByDottedNameFast(name);
 			if (tw == null)
@@ -68,6 +70,7 @@ namespace IKVM.Internal
 				throw new NoClassDefFoundError(name);
 			}
 			CheckMissing(this, tw);
+			classLoader.CheckPackageAccess(tw, pd);
 			return tw;
 		}
 
@@ -99,9 +102,9 @@ namespace IKVM.Internal
 		}
 
 #if STATIC_COMPILER
-		internal DynamicTypeWrapper(ClassFile f, CompilerClassLoader classLoader)
+		internal DynamicTypeWrapper(ClassFile f, CompilerClassLoader classLoader, ProtectionDomain pd)
 #else
-		internal DynamicTypeWrapper(ClassFile f, ClassLoaderWrapper classLoader)
+		internal DynamicTypeWrapper(ClassFile f, ClassLoaderWrapper classLoader, ProtectionDomain pd)
 #endif
 			: base(f.Modifiers, f.Name)
 		{
@@ -109,7 +112,7 @@ namespace IKVM.Internal
 			this.classLoader = classLoader;
 			this.IsInternal = f.IsInternal;
 			this.sourceFileName = f.SourceFileAttribute;
-			this.baseTypeWrapper = f.IsInterface ? null : LoadTypeWrapper(classLoader, f.SuperClass);
+			this.baseTypeWrapper = f.IsInterface ? null : LoadTypeWrapper(classLoader, pd, f.SuperClass);
 			if (BaseTypeWrapper != null)
 			{
 				if (!BaseTypeWrapper.IsAccessibleFrom(this))
@@ -156,7 +159,7 @@ namespace IKVM.Internal
 			this.interfaces = new TypeWrapper[interfaces.Length];
 			for (int i = 0; i < interfaces.Length; i++)
 			{
-				TypeWrapper iface = LoadTypeWrapper(classLoader, interfaces[i].Name);
+				TypeWrapper iface = LoadTypeWrapper(classLoader, pd, interfaces[i].Name);
 				if (!iface.IsAccessibleFrom(this))
 				{
 					throw new IllegalAccessError("Class " + f.Name + " cannot access its superinterface " + iface.Name);

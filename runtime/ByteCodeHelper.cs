@@ -295,15 +295,17 @@ namespace IKVM.Runtime
 			{
 				callerId = ikvm.@internal.CallerID.create(TypeWrapper.FromClass(sun.reflect.Reflection.getCallerClass(0)).TypeAsBaseType.TypeHandle);
 			}
+			java.lang.ClassLoader cl = callerId.getCallerClassLoader();
 			java.lang.Class c;
 			try
 			{
-				c = java.lang.Class.forName(clazz, false, callerId.getCallerClassLoader(), callerId);
+				c = java.lang.Class.forName(clazz, false, cl, callerId);
 			}
 			catch (java.lang.ClassNotFoundException x)
 			{
 				throw new java.lang.NoClassDefFoundError(x.getMessage());
 			}
+			cl.checkPackageAccess(c, callerId.getCallerClass().pd);
 			try
 			{
 				TypeWrapper context = TypeWrapper.FromClass(callerId.getCallerClass());
