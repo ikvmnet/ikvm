@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2011 Jeroen Frijters
+  Copyright (C) 2002-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -22,18 +22,12 @@
   
 */
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using IKVM.Internal;
-
 using ikvm.runtime;
 using java.lang.reflect;
-using java.net;
-using java.util.jar;
-using java.io;
-
-using Console = System.Console;
-using System.Diagnostics;
 
 public class Starter
 {
@@ -417,30 +411,5 @@ public class Starter
 			Startup.exitMainThread();
 		}
 		return 1;
-	}
-
-	private static string GetMainClassFromJarManifest(string mainClass)
-	{
-		JarFile jf = new JarFile(mainClass);
-		try
-		{
-			Manifest manifest = jf.getManifest();
-			if (manifest == null)
-			{
-				Console.Error.WriteLine("Jar file doesn't contain manifest");
-				return null;
-			}
-			mainClass = manifest.getMainAttributes().getValue(Attributes.Name.MAIN_CLASS);
-		}
-		finally
-		{
-			jf.close();
-		}
-		if (mainClass == null)
-		{
-			Console.Error.WriteLine("Manifest doesn't contain a Main-Class.");
-			return null;
-		}
-		return mainClass.Replace('/', '.');
 	}
 }
