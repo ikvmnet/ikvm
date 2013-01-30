@@ -3309,15 +3309,15 @@ namespace IKVM.Internal
 
 		internal override void EmitCheckcast(TypeWrapper context, CodeEmitter ilgen)
 		{
-			ilgen.Emit(OpCodes.Ldtoken, context.TypeAsTBD);
 			ilgen.Emit(OpCodes.Ldstr, Name);
+			ilgen.Emit(OpCodes.Ldnull);
 			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicCast);
 		}
 
 		internal override void EmitInstanceOf(TypeWrapper context, CodeEmitter ilgen)
 		{
-			ilgen.Emit(OpCodes.Ldtoken, context.TypeAsTBD);
 			ilgen.Emit(OpCodes.Ldstr, Name);
+			ilgen.Emit(OpCodes.Ldnull);
 			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicInstanceOf);
 		}
 #endif // !STUB_GENERATOR

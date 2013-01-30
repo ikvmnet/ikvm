@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2012 Jeroen Frijters
+  Copyright (C) 2002-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -879,8 +879,8 @@ sealed class Compiler
 			{
 				Profiler.Count("EmitDynamicCast");
 				ilGenerator.EmitLdarg(i + (m.IsStatic ? 0 : 1));
-				ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 				ilGenerator.Emit(OpCodes.Ldstr, args[i].Name);
+				context.EmitCallerID(ilGenerator);
 				ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicCast);
 				ilGenerator.Emit(OpCodes.Pop);
 			}
@@ -1296,8 +1296,8 @@ sealed class Compiler
 						if(exceptionTypeWrapper.IsUnloadable)
 						{
 							Profiler.Count("EmitDynamicExceptionHandler");
-							ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 							ilGenerator.Emit(OpCodes.Ldstr, exceptionTypeWrapper.Name);
+							context.EmitCallerID(ilGenerator);
 							ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicInstanceOf);
 						}
 						CodeEmitterLabel leave = ilGenerator.DefineLabel();
@@ -2051,8 +2051,8 @@ sealed class Compiler
 						Profiler.Count("EmitDynamicNewCheckOnly");
 						// this is here to make sure we throw the exception in the right location (before
 						// evaluating the constructor arguments)
-						ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 						ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
+						context.EmitCallerID(ilGenerator);
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicNewCheckOnly);
 					}
 					else if(wrapper != clazz && RequiresExplicitClassInit(wrapper, i + 1, flags))
@@ -2082,9 +2082,9 @@ sealed class Compiler
 					if(wrapper.IsUnloadable)
 					{
 						Profiler.Count("EmitDynamicMultianewarray");
-						ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 						ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
 						ilGenerator.Emit(OpCodes.Ldloc, localArray);
+						context.EmitCallerID(ilGenerator);
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicMultianewarray);
 					}
 					else if(wrapper.IsGhost || wrapper.IsGhostArray)
@@ -2115,8 +2115,8 @@ sealed class Compiler
 					if(wrapper.IsUnloadable)
 					{
 						Profiler.Count("EmitDynamicNewarray");
-						ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 						ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
+						context.EmitCallerID(ilGenerator);
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicNewarray);
 					}
 					else if(wrapper.IsGhost || wrapper.IsGhostArray)
@@ -2979,8 +2979,8 @@ sealed class Compiler
 		if (tw.IsUnloadable)
 		{
 			Profiler.Count("EmitDynamicClassLiteral");
-			ilgen.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 			ilgen.Emit(OpCodes.Ldstr, tw.Name);
+			context.EmitCallerID(ilgen);
 			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicClassLiteral);
 			java_lang_Class.EmitCheckcast(clazz, ilgen);
 		}
@@ -3686,7 +3686,6 @@ sealed class Compiler
 		}
 		ilGenerator.Emit(OpCodes.Ldstr, cpi.Name);
 		ilGenerator.Emit(OpCodes.Ldstr, cpi.Signature);
-		ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 		ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
 		context.EmitCallerID(ilGenerator);
 		switch(bytecode)
@@ -3866,7 +3865,6 @@ sealed class Compiler
 				ilGenerator.Emit(OpCodes.Ldloc, val);
 				ilGenerator.Emit(OpCodes.Stelem_Ref);
 			}
-			ilGenerator.Emit(OpCodes.Ldtoken, wrapper.TypeAsTBD);
 			ilGenerator.Emit(OpCodes.Ldstr, cpi.Class);
 			ilGenerator.Emit(OpCodes.Ldstr, cpi.Name);
 			ilGenerator.Emit(OpCodes.Ldstr, cpi.Signature);
