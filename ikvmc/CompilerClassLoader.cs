@@ -3351,7 +3351,7 @@ namespace IKVM.Internal
 		internal string remapfile;
 		internal Dictionary<string, string> props;
 		internal bool noglobbing;
-		internal CodeGenOptions codegenoptions;
+		internal CodeGenOptions codegenoptions = CodeGenOptions.DisableDynamicBinding;
 		internal bool removeUnusedFields;
 		internal bool compressedResources;
 		internal string[] privatePackages;
