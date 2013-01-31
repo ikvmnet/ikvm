@@ -1565,7 +1565,28 @@ namespace ikvm.awt
                 return;
             }
 
-            throw new NotImplementedException("setPaint("+paint.GetType().FullName+")");
+            //generic paint to brush conversion for custom paints
+            //the tranform of the graphics should not change between the creation and it usage
+            using (Matrix transform = g.Transform)
+            {
+                SizeF size = GetSize();
+                int width = (int)size.Width;
+                int height = (int)size.Height;
+                java.awt.Rectangle bounds = new java.awt.Rectangle(0, 0, width, height);
+
+                java.awt.PaintContext context = paint.createContext(ColorModel.getRGBdefault(), bounds, bounds, C2J.ConvertMatrix(transform), getRenderingHints());
+                WritableRaster raster = (WritableRaster)context.getRaster(0, 0, width, height);
+                BufferedImage txtrImage = new BufferedImage(context.getColorModel(), raster, true, null);
+                Bitmap txtr = J2C.ConvertImage(txtrImage);
+
+                TextureBrush txtBrush;
+                brush = txtBrush = new TextureBrush(txtr, new Rectangle(0, 0, width, height), composite.GetImageAttributes());
+                transform.Invert();
+                txtBrush.Transform = transform;
+                txtBrush.WrapMode = WrapMode.Tile;
+                pen.Brush = brush;
+                return;
+            }
         }
 
 		public override void setStroke(java.awt.Stroke stroke)
