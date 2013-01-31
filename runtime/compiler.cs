@@ -1538,19 +1538,7 @@ sealed class Compiler
 					ClassFile.ConstantPoolItemInvokeDynamic cpi = classFile.GetInvokeDynamic(instr.Arg1);
 					CastInterfaceArgs(null, cpi.GetArgTypes(), i, false);
 					EmitInvokeDynamic(cpi);
-					cpi.GetRetType().EmitConvSignatureTypeToStackType(ilGenerator);
-					if(!strictfp)
-					{
-						// no need to convert
-					}
-					else if(cpi.GetRetType() == PrimitiveTypeWrapper.DOUBLE)
-					{
-						ilGenerator.Emit(OpCodes.Conv_R8);
-					}
-					else if(cpi.GetRetType() == PrimitiveTypeWrapper.FLOAT)
-					{
-						ilGenerator.Emit(OpCodes.Conv_R4);
-					}
+					EmitReturnTypeConversion(cpi.GetRetType());
 					nonleaf = true;
 					break;
 				}
@@ -1571,19 +1559,7 @@ sealed class Compiler
 						context.EmitCallerID(ilGenerator);
 					}
 					method.EmitCall(ilGenerator);
-					method.ReturnType.EmitConvSignatureTypeToStackType(ilGenerator);
-					if(!strictfp)
-					{
-						// no need to convert
-					}
-					else if(method.ReturnType == PrimitiveTypeWrapper.DOUBLE)
-					{
-						ilGenerator.Emit(OpCodes.Conv_R8);
-					}
-					else if(method.ReturnType == PrimitiveTypeWrapper.FLOAT)
-					{
-						ilGenerator.Emit(OpCodes.Conv_R4);
-					}
+					EmitReturnTypeConversion(method.ReturnType);
 					nonleaf = true;
 					break;
 				}
@@ -1867,19 +1843,7 @@ sealed class Compiler
 								method.EmitCallvirt(ilGenerator);
 							}
 						}
-						method.ReturnType.EmitConvSignatureTypeToStackType(ilGenerator);
-						if(!strictfp)
-						{
-							// no need to convert
-						}
-						else if(method.ReturnType == PrimitiveTypeWrapper.DOUBLE)
-						{
-							ilGenerator.Emit(OpCodes.Conv_R8);
-						}
-						else if(method.ReturnType == PrimitiveTypeWrapper.FLOAT)
-						{
-							ilGenerator.Emit(OpCodes.Conv_R4);
-						}
+						EmitReturnTypeConversion(method.ReturnType);
 					}
 					break;
 				}
@@ -2956,6 +2920,23 @@ sealed class Compiler
 				default:
 					throw new InvalidOperationException();
 			}
+		}
+	}
+
+	private void EmitReturnTypeConversion(TypeWrapper returnType)
+	{
+		returnType.EmitConvSignatureTypeToStackType(ilGenerator);
+		if (!strictfp)
+		{
+			// no need to convert
+		}
+		else if (returnType == PrimitiveTypeWrapper.DOUBLE)
+		{
+			ilGenerator.Emit(OpCodes.Conv_R8);
+		}
+		else if (returnType == PrimitiveTypeWrapper.FLOAT)
+		{
+			ilGenerator.Emit(OpCodes.Conv_R4);
 		}
 	}
 
