@@ -2982,7 +2982,6 @@ sealed class Compiler
 			ilgen.Emit(OpCodes.Ldstr, tw.Name);
 			context.EmitCallerID(ilgen);
 			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicClassLiteral);
-			java_lang_Class.EmitCheckcast(ilgen);
 		}
 		else
 		{

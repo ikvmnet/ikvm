@@ -325,7 +325,7 @@ namespace IKVM.Runtime
 		}
 
 		[DebuggerStepThroughAttribute]
-		public static object DynamicClassLiteral(string clazz, ikvm.@internal.CallerID callerId)
+		public static java.lang.Class DynamicClassLiteral(string clazz, ikvm.@internal.CallerID callerId)
 		{
 			Profiler.Count("DynamicClassLiteral");
 			return LoadTypeWrapper(clazz, callerId).ClassObject;
