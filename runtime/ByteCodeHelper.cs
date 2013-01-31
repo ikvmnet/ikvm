@@ -381,38 +381,75 @@ namespace IKVM.Runtime
 		[DebuggerStepThroughAttribute]
 		public static object DynamicInvokeSpecialNew(string clazz, string name, string sig, object[] args, ikvm.@internal.CallerID callerID)
 		{
+#if FIRST_PASS
+			return null;
+#else
 			Profiler.Count("DynamicInvokeSpecialNew");
 			MethodWrapper mw = GetMethodWrapper(null, clazz, name, sig, false, callerID);
-			java.lang.reflect.Constructor cons = (java.lang.reflect.Constructor)mw.ToMethodOrConstructor(false);
-			return cons.newInstance(BoxArgs(mw, args), callerID);
+			if (mw.DeclaringType.IsAbstract)
+			{
+				throw new java.lang.InstantiationError(mw.DeclaringType.Name);
+			}
+			try
+			{
+				java.lang.reflect.Constructor cons = (java.lang.reflect.Constructor)mw.ToMethodOrConstructor(false);
+				return cons.newInstance(BoxArgs(mw, args), callerID);
+			}
+			catch (java.lang.reflect.InvocationTargetException x)
+			{
+				throw x.getCause();
+			}
+#endif
 		}
 
 		[DebuggerStepThroughAttribute]
 		public static object DynamicInvokestatic(string clazz, string name, string sig, object[] args, ikvm.@internal.CallerID callerID)
 		{
+#if FIRST_PASS
+			return null;
+#else
 			Profiler.Count("DynamicInvokestatic");
 			MethodWrapper mw = GetMethodWrapper(null, clazz, name, sig, true, callerID);
 			java.lang.reflect.Method m = (java.lang.reflect.Method)mw.ToMethodOrConstructor(false);
-			object val = m.invoke(null, BoxArgs(mw, args), callerID);
-			if (mw.ReturnType.IsPrimitive && mw.ReturnType != PrimitiveTypeWrapper.VOID)
+			try
 			{
-				val = JVM.Unbox(val);
+				object val = m.invoke(null, BoxArgs(mw, args), callerID);
+				if (mw.ReturnType.IsPrimitive && mw.ReturnType != PrimitiveTypeWrapper.VOID)
+				{
+					val = JVM.Unbox(val);
+				}
+				return val;
 			}
-			return val;
+			catch (java.lang.reflect.InvocationTargetException x)
+			{
+				throw x.getCause();
+			}
+#endif
 		}
 
 		[DebuggerStepThroughAttribute]
 		public static object DynamicInvokevirtual(object obj, string clazz, string name, string sig, object[] args, ikvm.@internal.CallerID callerID)
 		{
+#if FIRST_PASS
+			return null;
+#else
 			Profiler.Count("DynamicInvokevirtual");
 			MethodWrapper mw = GetMethodWrapper(obj, clazz, name, sig, false, callerID);
 			java.lang.reflect.Method m = (java.lang.reflect.Method)mw.ToMethodOrConstructor(false);
-			object val = m.invoke(obj, BoxArgs(mw, args), callerID);
-			if (mw.ReturnType.IsPrimitive && mw.ReturnType != PrimitiveTypeWrapper.VOID)
+			try
 			{
-				val = JVM.Unbox(val);
+				object val = m.invoke(obj, BoxArgs(mw, args), callerID);
+				if (mw.ReturnType.IsPrimitive && mw.ReturnType != PrimitiveTypeWrapper.VOID)
+				{
+					val = JVM.Unbox(val);
+				}
+				return val;
 			}
-			return val;
+			catch (java.lang.reflect.InvocationTargetException x)
+			{
+				throw x.getCause();
+			}
+#endif
 		}
 
 		private static object[] BoxArgs(MethodWrapper mw, object[] args)
