@@ -356,7 +356,7 @@ namespace IKVM.Runtime
 		{
 			TypeWrapper caller = TypeWrapper.FromClass(callerId.getCallerClass());
 			TypeWrapper wrapper = LoadTypeWrapper(clazz, callerId);
-			MethodWrapper mw = wrapper.GetMethodWrapper(name, sig, false);
+			MethodWrapper mw = wrapper.GetMethodWrapper(name, sig, name != StringConstants.INIT);
 			if(mw == null)
 			{
 				throw new java.lang.NoSuchMethodError(clazz + "." + name + sig);
