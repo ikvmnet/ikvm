@@ -369,6 +369,10 @@ namespace IKVM.Runtime
 			TypeWrapper objType = null;
 			if(thisObj != null)
 			{
+				if(!wrapper.IsInstance(thisObj))
+				{
+					throw new java.lang.IncompatibleClassChangeError(clazz + "." + name);
+				}
 				objType = ClassLoaderWrapper.GetWrapperFromType(thisObj.GetType());
 			}
 			if(mw.IsAccessibleFrom(wrapper, caller, objType))
