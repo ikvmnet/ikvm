@@ -3608,7 +3608,7 @@ sealed class MethodAnalyzer
 						}
 						else
 						{
-							SetHardError(wrapper.GetClassLoader(), ref instr, HardError.LinkageError, "Base class no longer loadable");
+							throw new VerifyError("Invokespecial cannot call subclass methods");
 						}
 						break;
 					default:
