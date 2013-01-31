@@ -2654,7 +2654,7 @@ namespace IKVM.Internal
 		}
 
 #if !STUB_GENERATOR
-		internal override void EmitInstanceOf(TypeWrapper context, CodeEmitter ilgen)
+		internal override void EmitInstanceOf(CodeEmitter ilgen)
 		{
 			if (IsRemapped)
 			{
@@ -2669,7 +2669,7 @@ namespace IKVM.Internal
 			ilgen.Emit_instanceof(type);
 		}
 
-		internal override void EmitCheckcast(TypeWrapper context, CodeEmitter ilgen)
+		internal override void EmitCheckcast(CodeEmitter ilgen)
 		{
 			if (IsRemapped)
 			{

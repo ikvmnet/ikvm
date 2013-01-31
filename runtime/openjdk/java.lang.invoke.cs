@@ -735,7 +735,7 @@ static partial class MethodHandleUtil
 			}
 			else
 			{
-				dst.EmitCheckcast(null, ilgen);
+				dst.EmitCheckcast(ilgen);
 			}
 		}
 	}

@@ -1121,7 +1121,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal override void EmitCheckcast(TypeWrapper context, CodeEmitter ilgen)
+		internal override void EmitCheckcast(CodeEmitter ilgen)
 		{
 			if(IsGhost)
 			{
@@ -1145,11 +1145,11 @@ namespace IKVM.Internal
 			}
 			else
 			{
-				base.EmitCheckcast(context, ilgen);
+				base.EmitCheckcast(ilgen);
 			}
 		}
 
-		internal override void EmitInstanceOf(TypeWrapper context, CodeEmitter ilgen)
+		internal override void EmitInstanceOf(CodeEmitter ilgen)
 		{
 			if(IsGhost)
 			{
@@ -1161,7 +1161,7 @@ namespace IKVM.Internal
 			}
 			else
 			{
-				base.EmitInstanceOf(context, ilgen);
+				base.EmitInstanceOf(ilgen);
 			}
 		}
 

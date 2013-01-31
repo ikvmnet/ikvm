@@ -2955,7 +2955,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal virtual void EmitCheckcast(TypeWrapper context, CodeEmitter ilgen)
+		internal virtual void EmitCheckcast(CodeEmitter ilgen)
 		{
 			if(IsGhost)
 			{
@@ -2989,7 +2989,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal virtual void EmitInstanceOf(TypeWrapper context, CodeEmitter ilgen)
+		internal virtual void EmitInstanceOf(CodeEmitter ilgen)
 		{
 			if(IsGhost)
 			{
@@ -3307,14 +3307,14 @@ namespace IKVM.Internal
 			return customModifier ?? (customModifier = context.DefineUnloadable(this.Name));
 		}
 
-		internal override void EmitCheckcast(TypeWrapper context, CodeEmitter ilgen)
+		internal override void EmitCheckcast(CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Ldstr, Name);
 			ilgen.Emit(OpCodes.Ldnull);
 			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicCast);
 		}
 
-		internal override void EmitInstanceOf(TypeWrapper context, CodeEmitter ilgen)
+		internal override void EmitInstanceOf(CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Ldstr, Name);
 			ilgen.Emit(OpCodes.Ldnull);

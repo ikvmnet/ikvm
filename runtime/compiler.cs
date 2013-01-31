@@ -1997,7 +1997,7 @@ sealed class Compiler
 						LocalVar v = LoadLocal(i);
 						if(!type.IsUnloadable && (v.type.IsUnloadable || !v.type.IsAssignableTo(type)))
 						{
-							type.EmitCheckcast(type, ilGenerator);
+							type.EmitCheckcast(ilGenerator);
 						}
 					}
 					break;
@@ -2180,13 +2180,13 @@ sealed class Compiler
 				case NormalizedByteCode.__checkcast:
 				{
 					TypeWrapper wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
-					wrapper.EmitCheckcast(clazz, ilGenerator);
+					wrapper.EmitCheckcast(ilGenerator);
 					break;
 				}
 				case NormalizedByteCode.__instanceof:
 				{
 					TypeWrapper wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
-					wrapper.EmitInstanceOf(clazz, ilGenerator);
+					wrapper.EmitInstanceOf(ilGenerator);
 					break;
 				}
 				case NormalizedByteCode.__aaload:
@@ -2982,7 +2982,7 @@ sealed class Compiler
 			ilgen.Emit(OpCodes.Ldstr, tw.Name);
 			context.EmitCallerID(ilgen);
 			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicClassLiteral);
-			java_lang_Class.EmitCheckcast(clazz, ilgen);
+			java_lang_Class.EmitCheckcast(ilgen);
 		}
 		else
 		{
@@ -3735,7 +3735,7 @@ sealed class Compiler
 		}
 		else
 		{
-			typeWrapper.EmitCheckcast(null, ilgen);
+			typeWrapper.EmitCheckcast(ilgen);
 		}
 	}
 

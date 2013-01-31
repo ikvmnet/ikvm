@@ -973,7 +973,7 @@ namespace IKVM.NativeCode.java
 								ilgenObjSetter.Emit(OpCodes.Ldarg_1);
 								ilgenObjSetter.EmitLdc_I4(field.getOffset());
 								ilgenObjSetter.Emit(OpCodes.Ldelem_Ref);
-								fw.FieldTypeWrapper.EmitCheckcast(null, ilgenObjSetter);
+								fw.FieldTypeWrapper.EmitCheckcast(ilgenObjSetter);
 								fw.FieldTypeWrapper.EmitConvStackTypeToSignatureType(ilgenObjSetter, null);
 								fw.EmitSet(ilgenObjSetter);
 							}
@@ -6367,7 +6367,7 @@ namespace IKVM.NativeCode.sun.reflect
 				if (!mw.IsStatic)
 				{
 					ilgen.Emit(OpCodes.Ldarg_0);
-					mw.DeclaringType.EmitCheckcast(null, ilgen);
+					mw.DeclaringType.EmitCheckcast(ilgen);
 					mw.DeclaringType.EmitConvStackTypeToSignatureType(ilgen, null);
 					ilgen.Emit(OpCodes.Stloc, args[0]);
 				}
@@ -6602,7 +6602,7 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 				else
 				{
-					type.EmitCheckcast(null, ilgen);
+					type.EmitCheckcast(ilgen);
 				}
 			}
 
@@ -7903,7 +7903,7 @@ namespace IKVM.NativeCode.sun.reflect
 					{
 						ilgen.BeginExceptionBlock();
 						ilgen.Emit(OpCodes.Ldarg_2);
-						fw.FieldTypeWrapper.EmitCheckcast(null, ilgen);
+						fw.FieldTypeWrapper.EmitCheckcast(ilgen);
 						fw.FieldTypeWrapper.EmitConvStackTypeToSignatureType(ilgen, null);
 						fw.EmitSet(ilgen);
 						CodeEmitterLabel label = ilgen.DefineLabel();
@@ -7930,7 +7930,7 @@ namespace IKVM.NativeCode.sun.reflect
 					ilgen.Emit(OpCodes.Ldarg_2);
 					if (fieldType == typeof(object))
 					{
-						fw.FieldTypeWrapper.EmitCheckcast(null, ilgen);
+						fw.FieldTypeWrapper.EmitCheckcast(ilgen);
 					}
 					fw.FieldTypeWrapper.EmitConvStackTypeToSignatureType(ilgen, null);
 					fw.EmitSet(ilgen);

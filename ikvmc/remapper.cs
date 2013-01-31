@@ -373,9 +373,7 @@ namespace IKVM.Internal.MapXml
 				if(typeWrapper.IsGhost || typeWrapper.IsGhostArray)
 				{
 					ilgen.Emit(OpCodes.Dup);
-					// NOTE we pass a null context, but that shouldn't be a problem, because
-					// typeWrapper should never be an UnloadableTypeWrapper
-					typeWrapper.EmitInstanceOf(null, ilgen);
+					typeWrapper.EmitInstanceOf(ilgen);
 					CodeEmitterLabel endLabel = ilgen.DefineLabel();
 					ilgen.EmitBrtrue(endLabel);
 					ilgen.Emit(OpCodes.Pop);
@@ -406,9 +404,7 @@ namespace IKVM.Internal.MapXml
 			}
 			else
 			{
-				// NOTE we pass a null context, but that shouldn't be a problem, because
-				// typeWrapper should never be an UnloadableTypeWrapper
-				typeWrapper.EmitCheckcast(null, ilgen);
+				typeWrapper.EmitCheckcast(ilgen);
 			}
 		}
 	}

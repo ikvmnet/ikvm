@@ -2122,7 +2122,7 @@ namespace IKVM.Internal
 							else
 							{
 								getValueMethod.EmitCall(ilgen);
-								o.methods[i].ReturnType.EmitCheckcast(null, ilgen);
+								o.methods[i].ReturnType.EmitCheckcast(ilgen);
 							}
 							ilgen.Emit(OpCodes.Ret);
 							ilgen.DoEmit();

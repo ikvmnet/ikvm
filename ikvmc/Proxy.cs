@@ -315,15 +315,15 @@ namespace IKVM.Internal
 			ilgen.Emit(OpCodes.Stloc, exception);
 			CodeEmitterLabel rethrow = ilgen.DefineLabel();
 			ilgen.Emit(OpCodes.Ldloc, exception);
-			errorClass.EmitInstanceOf(null, ilgen);
+			errorClass.EmitInstanceOf(ilgen);
 			ilgen.EmitBrtrue(rethrow);
 			ilgen.Emit(OpCodes.Ldloc, exception);
-			runtimeExceptionClass.EmitInstanceOf(null, ilgen);
+			runtimeExceptionClass.EmitInstanceOf(ilgen);
 			ilgen.EmitBrtrue(rethrow);
 			foreach (TypeWrapper tw in pm.exceptions)
 			{
 				ilgen.Emit(OpCodes.Ldloc, exception);
-				tw.EmitInstanceOf(null, ilgen);
+				tw.EmitInstanceOf(ilgen);
 				ilgen.EmitBrtrue(rethrow);
 			}
 			ilgen.Emit(OpCodes.Ldloc, exception);
@@ -515,42 +515,42 @@ namespace IKVM.Internal
 		{
 			if (tw == PrimitiveTypeWrapper.BYTE)
 			{
-				javaLangByte.EmitCheckcast(null, ilgen);
+				javaLangByte.EmitCheckcast(ilgen);
 				byteValue.EmitCall(ilgen);
 			}
 			else if (tw == PrimitiveTypeWrapper.BOOLEAN)
 			{
-				javaLangBoolean.EmitCheckcast(null, ilgen);
+				javaLangBoolean.EmitCheckcast(ilgen);
 				booleanValue.EmitCall(ilgen);
 			}
 			else if (tw == PrimitiveTypeWrapper.SHORT)
 			{
-				javaLangShort.EmitCheckcast(null, ilgen);
+				javaLangShort.EmitCheckcast(ilgen);
 				shortValue.EmitCall(ilgen);
 			}
 			else if (tw == PrimitiveTypeWrapper.CHAR)
 			{
-				javaLangCharacter.EmitCheckcast(null, ilgen);
+				javaLangCharacter.EmitCheckcast(ilgen);
 				charValue.EmitCall(ilgen);
 			}
 			else if (tw == PrimitiveTypeWrapper.INT)
 			{
-				javaLangInteger.EmitCheckcast(null, ilgen);
+				javaLangInteger.EmitCheckcast(ilgen);
 				intValue.EmitCall(ilgen);
 			}
 			else if (tw == PrimitiveTypeWrapper.FLOAT)
 			{
-				javaLangFloat.EmitCheckcast(null, ilgen);
+				javaLangFloat.EmitCheckcast(ilgen);
 				floatValue.EmitCall(ilgen);
 			}
 			else if (tw == PrimitiveTypeWrapper.LONG)
 			{
-				javaLangLong.EmitCheckcast(null, ilgen);
+				javaLangLong.EmitCheckcast(ilgen);
 				longValue.EmitCall(ilgen);
 			}
 			else if (tw == PrimitiveTypeWrapper.DOUBLE)
 			{
-				javaLangDouble.EmitCheckcast(null, ilgen);
+				javaLangDouble.EmitCheckcast(ilgen);
 				doubleValue.EmitCall(ilgen);
 			}
 			else
