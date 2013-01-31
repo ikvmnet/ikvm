@@ -966,7 +966,7 @@ namespace IKVM.NativeCode.java
 								ilgenObjGetter.EmitLdc_I4(field.getOffset());
 								ilgenObjGetter.Emit(OpCodes.Ldloc, objGetterThis);
 								fw.EmitGet(ilgenObjGetter);
-								fw.FieldTypeWrapper.EmitConvSignatureTypeToStackType(ilgenObjGetter);
+								fieldType.EmitConvSignatureTypeToStackType(ilgenObjGetter);
 								ilgenObjGetter.Emit(OpCodes.Stelem_Ref);
 
 								// Setter
@@ -974,8 +974,8 @@ namespace IKVM.NativeCode.java
 								ilgenObjSetter.Emit(OpCodes.Ldarg_1);
 								ilgenObjSetter.EmitLdc_I4(field.getOffset());
 								ilgenObjSetter.Emit(OpCodes.Ldelem_Ref);
-								fw.FieldTypeWrapper.EmitCheckcast(ilgenObjSetter);
-								fw.FieldTypeWrapper.EmitConvStackTypeToSignatureType(ilgenObjSetter, null);
+								fieldType.EmitCheckcast(ilgenObjSetter);
+								fieldType.EmitConvStackTypeToSignatureType(ilgenObjSetter, null);
 								fw.EmitSet(ilgenObjSetter);
 							}
 						}
