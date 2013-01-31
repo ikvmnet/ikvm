@@ -289,12 +289,6 @@ namespace IKVM.Runtime
 #if FIRST_PASS
 			return null;
 #else
-			// HACK Unloadable's EmitCheckcast and EmitInstanceOf don't have the right context to get a callerId,
-			// so we have to walk the stack in that case
-			if (callerId == null)
-			{
-				callerId = ikvm.@internal.CallerID.create(TypeWrapper.FromClass(sun.reflect.Reflection.getCallerClass(0)).TypeAsBaseType.TypeHandle);
-			}
 			java.lang.ClassLoader cl = callerId.getCallerClassLoader();
 			java.lang.Class c;
 			try

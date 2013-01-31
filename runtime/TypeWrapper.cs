@@ -3309,16 +3309,12 @@ namespace IKVM.Internal
 
 		internal override void EmitCheckcast(CodeEmitter ilgen)
 		{
-			ilgen.Emit(OpCodes.Ldstr, Name);
-			ilgen.Emit(OpCodes.Ldnull);
-			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicCast);
+			throw new InvalidOperationException("EmitCheckcast called on UnloadableTypeWrapper: " + Name);
 		}
 
 		internal override void EmitInstanceOf(CodeEmitter ilgen)
 		{
-			ilgen.Emit(OpCodes.Ldstr, Name);
-			ilgen.Emit(OpCodes.Ldnull);
-			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicInstanceOf);
+			throw new InvalidOperationException("EmitInstanceOf called on UnloadableTypeWrapper: " + Name);
 		}
 #endif // !STUB_GENERATOR
 	}
