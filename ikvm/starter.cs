@@ -372,7 +372,7 @@ public class Starter
 			{
 				java.lang.Class clazz = sun.launcher.LauncherHelper.checkAndLoadMain(true, jar ? 2 : 1, mainClass);
 				// we don't need to do any checking on the main method, as that was already done by checkAndLoadMain
-				Method method = clazz.getDeclaredMethod("main", typeof(string[]));
+				Method method = clazz.getMethod("main", typeof(string[]));
 				// if clazz isn't public, we can still call main
 				method.setAccessible(true);
 				if(saveAssembly)
