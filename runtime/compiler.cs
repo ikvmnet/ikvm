@@ -2180,13 +2180,31 @@ sealed class Compiler
 				case NormalizedByteCode.__checkcast:
 				{
 					TypeWrapper wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
-					wrapper.EmitCheckcast(ilGenerator);
+					if(wrapper.IsUnloadable)
+					{
+						ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
+						context.EmitCallerID(ilGenerator);
+						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicCast);
+					}
+					else
+					{
+						wrapper.EmitCheckcast(ilGenerator);
+					}
 					break;
 				}
 				case NormalizedByteCode.__instanceof:
 				{
 					TypeWrapper wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
-					wrapper.EmitInstanceOf(ilGenerator);
+					if(wrapper.IsUnloadable)
+					{
+						ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
+						context.EmitCallerID(ilGenerator);
+						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicInstanceOf);
+					}
+					else
+					{
+						wrapper.EmitInstanceOf(ilGenerator);
+					}
 					break;
 				}
 				case NormalizedByteCode.__aaload:
