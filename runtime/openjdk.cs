@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2007-2011 Jeroen Frijters
+  Copyright (C) 2007-2013 Jeroen Frijters
   Copyright (C) 2009 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
@@ -865,6 +865,7 @@ namespace IKVM.NativeCode.java
 							TypeWrapper fieldType = fw.FieldTypeWrapper;
 							try
 							{
+								fieldType = fieldType.EnsureLoadable(tw.GetClassLoader());
 								fieldType.Finish();
 							}
 							catch (RetargetableJavaException x)
@@ -6163,7 +6164,7 @@ namespace IKVM.NativeCode.sun.reflect
 	static class ReflectionFactory
 	{
 #if !FIRST_PASS
-		private static object[] ConvertArgs(TypeWrapper[] argumentTypes, object[] args)
+		private static object[] ConvertArgs(ClassLoaderWrapper loader, TypeWrapper[] argumentTypes, object[] args)
 		{
 			object[] nargs = new object[args == null ? 0 : args.Length];
 			if (nargs.Length != argumentTypes.Length)
@@ -6189,7 +6190,7 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 				else
 				{
-					if (args[i] != null && !argumentTypes[i].IsInstance(args[i]))
+					if (args[i] != null && !argumentTypes[i].EnsureLoadable(loader).IsInstance(args[i]))
 					{
 						throw new jlIllegalArgumentException();
 					}
@@ -6219,7 +6220,7 @@ namespace IKVM.NativeCode.sun.reflect
 					}
 					throw new jlIllegalArgumentException("object is not an instance of declaring class");
 				}
-				args = ConvertArgs(mw.GetParameters(), args);
+				args = ConvertArgs(mw.DeclaringType.GetClassLoader(), mw.GetParameters(), args);
 				// if the method is an interface method, we must explicitly run <clinit>,
 				// because .NET reflection doesn't
 				if (mw.DeclaringType.IsInterface)
@@ -6324,7 +6325,23 @@ namespace IKVM.NativeCode.sun.reflect
 			internal FastMethodAccessorImpl(jlrMethod method, bool nonvirtual)
 			{
 				MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(method);
-				mw.DeclaringType.Finish();
+				TypeWrapper[] parameters;
+				try
+				{
+					mw.DeclaringType.Finish();
+					parameters = mw.GetParameters();
+					for (int i = 0; i < parameters.Length; i++)
+					{
+						// the EnsureLoadable shouldn't fail, because we don't allow a java.lang.reflect.Method
+						// to "escape" if it has an unloadable type in the signature
+						parameters[i] = parameters[i].EnsureLoadable(mw.DeclaringType.GetClassLoader());
+						parameters[i].Finish();
+					}
+				}
+				catch (RetargetableJavaException x)
+				{
+					throw x.ToJava();
+				}
 				mw.ResolveMethod();
 				DynamicMethod dm = DynamicMethodUtils.Create("__<Invoker>", mw.DeclaringType.TypeAsBaseType, !mw.IsPublic || !mw.DeclaringType.IsPublic || nonvirtual, typeof(object), new Type[] { typeof(object), typeof(object[]), typeof(global::ikvm.@internal.CallerID) });
 				CodeEmitter ilgen = CodeEmitter.Create(dm);
@@ -6338,7 +6355,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 				// check args length
 				CodeEmitterLabel argsLengthOK = ilgen.DefineLabel();
-				if (mw.GetParameters().Length == 0)
+				if (parameters.Length == 0)
 				{
 					// zero length array may be null
 					ilgen.Emit(OpCodes.Ldarg_1);
@@ -6346,22 +6363,21 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 				ilgen.Emit(OpCodes.Ldarg_1);
 				ilgen.Emit(OpCodes.Ldlen);
-				ilgen.EmitLdc_I4(mw.GetParameters().Length);
+				ilgen.EmitLdc_I4(parameters.Length);
 				ilgen.EmitBeq(argsLengthOK);
 				ilgen.Emit(OpCodes.Newobj, illegalArgumentExceptionCtor);
 				ilgen.Emit(OpCodes.Throw);
 				ilgen.MarkLabel(argsLengthOK);
 
 				int thisCount = mw.IsStatic ? 0 : 1;
-				CodeEmitterLocal[] args = new CodeEmitterLocal[mw.GetParameters().Length + thisCount];
+				CodeEmitterLocal[] args = new CodeEmitterLocal[parameters.Length + thisCount];
 				if (!mw.IsStatic)
 				{
 					args[0] = ilgen.DeclareLocal(mw.DeclaringType.TypeAsSignatureType);
 				}
 				for (int i = thisCount; i < args.Length; i++)
 				{
-					mw.GetParameters()[i - thisCount].Finish();
-					args[i] = ilgen.DeclareLocal(mw.GetParameters()[i - thisCount].TypeAsSignatureType);
+					args[i] = ilgen.DeclareLocal(parameters[i - thisCount].TypeAsSignatureType);
 				}
 				ilgen.BeginExceptionBlock();
 				if (!mw.IsStatic)
@@ -6376,7 +6392,7 @@ namespace IKVM.NativeCode.sun.reflect
 					ilgen.Emit(OpCodes.Ldarg_1);
 					ilgen.EmitLdc_I4(i - thisCount);
 					ilgen.Emit(OpCodes.Ldelem_Ref);
-					TypeWrapper tw = mw.GetParameters()[i - thisCount];
+					TypeWrapper tw = parameters[i - thisCount];
 					EmitUnboxArg(ilgen, tw);
 					tw.EmitConvStackTypeToSignatureType(ilgen, null);
 					ilgen.Emit(OpCodes.Stloc, args[i]);
@@ -6673,7 +6689,7 @@ namespace IKVM.NativeCode.sun.reflect
 			[IKVM.Attributes.HideFromJava]
 			public object newInstance(object[] args)
 			{
-				args = ConvertArgs(mw.GetParameters(), args);
+				args = ConvertArgs(mw.DeclaringType.GetClassLoader(), mw.GetParameters(), args);
 				try
 				{
 					return ((ICustomInvoke)mw).Invoke(null, args, null);
@@ -6694,7 +6710,23 @@ namespace IKVM.NativeCode.sun.reflect
 			internal FastConstructorAccessorImpl(jlrConstructor constructor)
 			{
 				MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(constructor);
-				mw.DeclaringType.Finish();
+				TypeWrapper[] parameters;
+				try
+				{
+					mw.DeclaringType.Finish();
+					parameters = mw.GetParameters();
+					for (int i = 0; i < parameters.Length; i++)
+					{
+						// the EnsureLoadable shouldn't fail, because we don't allow a java.lang.reflect.Method
+						// to "escape" if it has an unloadable type in the signature
+						parameters[i] = parameters[i].EnsureLoadable(mw.DeclaringType.GetClassLoader());
+						parameters[i].Finish();
+					}
+				}
+				catch (RetargetableJavaException x)
+				{
+					throw x.ToJava();
+				}
 				mw.ResolveMethod();
 				DynamicMethod dm = DynamicMethodUtils.Create("__<Invoker>", mw.DeclaringType.TypeAsTBD, !mw.IsPublic || !mw.DeclaringType.IsPublic, typeof(object), new Type[] { typeof(object[]) });
 				CodeEmitter ilgen = CodeEmitter.Create(dm);
@@ -6702,7 +6734,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 				// check args length
 				CodeEmitterLabel argsLengthOK = ilgen.DefineLabel();
-				if (mw.GetParameters().Length == 0)
+				if (parameters.Length == 0)
 				{
 					// zero length array may be null
 					ilgen.Emit(OpCodes.Ldarg_0);
@@ -6710,17 +6742,16 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 				ilgen.Emit(OpCodes.Ldarg_0);
 				ilgen.Emit(OpCodes.Ldlen);
-				ilgen.EmitLdc_I4(mw.GetParameters().Length);
+				ilgen.EmitLdc_I4(parameters.Length);
 				ilgen.EmitBeq(argsLengthOK);
 				ilgen.Emit(OpCodes.Newobj, FastMethodAccessorImpl.illegalArgumentExceptionCtor);
 				ilgen.Emit(OpCodes.Throw);
 				ilgen.MarkLabel(argsLengthOK);
 
-				CodeEmitterLocal[] args = new CodeEmitterLocal[mw.GetParameters().Length];
+				CodeEmitterLocal[] args = new CodeEmitterLocal[parameters.Length];
 				for (int i = 0; i < args.Length; i++)
 				{
-					mw.GetParameters()[i].Finish();
-					args[i] = ilgen.DeclareLocal(mw.GetParameters()[i].TypeAsSignatureType);
+					args[i] = ilgen.DeclareLocal(parameters[i].TypeAsSignatureType);
 				}
 				ilgen.BeginExceptionBlock();
 				for (int i = 0; i < args.Length; i++)
@@ -6728,7 +6759,7 @@ namespace IKVM.NativeCode.sun.reflect
 					ilgen.Emit(OpCodes.Ldarg_0);
 					ilgen.EmitLdc_I4(i);
 					ilgen.Emit(OpCodes.Ldelem_Ref);
-					TypeWrapper tw = mw.GetParameters()[i];
+					TypeWrapper tw = parameters[i];
 					FastMethodAccessorImpl.EmitUnboxArg(ilgen, tw);
 					tw.EmitConvStackTypeToSignatureType(ilgen, null);
 					ilgen.Emit(OpCodes.Stloc, args[i]);
@@ -7080,7 +7111,8 @@ namespace IKVM.NativeCode.sun.reflect
 
 				private bool IsSpecialType(TypeWrapper tw)
 				{
-					return tw.IsNonPrimitiveValueType
+					return tw.IsUnloadable
+						|| tw.IsNonPrimitiveValueType
 						|| tw.IsGhost
 						|| tw.IsFakeNestedType;
 				}
@@ -7855,15 +7887,24 @@ namespace IKVM.NativeCode.sun.reflect
 
 			private Delegate GenerateFastGetter(Type delegateType, Type fieldType, FieldWrapper fw)
 			{
-				fw.FieldTypeWrapper.Finish();
-				fw.DeclaringType.Finish();
+				TypeWrapper fieldTypeWrapper;
+				try
+				{
+					fieldTypeWrapper = fw.FieldTypeWrapper.EnsureLoadable(fw.DeclaringType.GetClassLoader());
+					fieldTypeWrapper.Finish();
+					fw.DeclaringType.Finish();
+				}
+				catch (RetargetableJavaException x)
+				{
+					throw x.ToJava();
+				}
 				fw.ResolveField();
 				DynamicMethod dm = DynamicMethodUtils.Create("__<Getter>", fw.DeclaringType.TypeAsBaseType, !fw.IsPublic || !fw.DeclaringType.IsPublic, fieldType, new Type[] { typeof(IReflectionException), typeof(object), typeof(object) });
 				CodeEmitter ilgen = CodeEmitter.Create(dm);
 				if (fw.IsStatic)
 				{
 					fw.EmitGet(ilgen);
-					fw.FieldTypeWrapper.EmitConvSignatureTypeToStackType(ilgen);
+					fieldTypeWrapper.EmitConvSignatureTypeToStackType(ilgen);
 				}
 				else
 				{
@@ -7871,7 +7912,7 @@ namespace IKVM.NativeCode.sun.reflect
 					ilgen.Emit(OpCodes.Ldarg_1);
 					ilgen.Emit(OpCodes.Castclass, fw.DeclaringType.TypeAsBaseType);
 					fw.EmitGet(ilgen);
-					fw.FieldTypeWrapper.EmitConvSignatureTypeToStackType(ilgen);
+					fieldTypeWrapper.EmitConvSignatureTypeToStackType(ilgen);
 					CodeEmitterLocal local = ilgen.DeclareLocal(fieldType);
 					ilgen.Emit(OpCodes.Stloc, local);
 					CodeEmitterLabel label = ilgen.DefineLabel();
@@ -7892,8 +7933,17 @@ namespace IKVM.NativeCode.sun.reflect
 
 			private Delegate GenerateFastSetter(Type delegateType, Type fieldType, FieldWrapper fw)
 			{
-				fw.FieldTypeWrapper.Finish();
-				fw.DeclaringType.Finish();
+				TypeWrapper fieldTypeWrapper;
+				try
+				{
+					fieldTypeWrapper = fw.FieldTypeWrapper.EnsureLoadable(fw.DeclaringType.GetClassLoader());
+					fieldTypeWrapper.Finish();
+					fw.DeclaringType.Finish();
+				}
+				catch (RetargetableJavaException x)
+				{
+					throw x.ToJava();
+				}
 				fw.ResolveField();
 				DynamicMethod dm = DynamicMethodUtils.Create("__<Setter>", fw.DeclaringType.TypeAsBaseType, !fw.IsPublic || !fw.DeclaringType.IsPublic, null, new Type[] { typeof(IReflectionException), typeof(object), fieldType, typeof(object) });
 				CodeEmitter ilgen = CodeEmitter.Create(dm);
@@ -7903,8 +7953,8 @@ namespace IKVM.NativeCode.sun.reflect
 					{
 						ilgen.BeginExceptionBlock();
 						ilgen.Emit(OpCodes.Ldarg_2);
-						fw.FieldTypeWrapper.EmitCheckcast(ilgen);
-						fw.FieldTypeWrapper.EmitConvStackTypeToSignatureType(ilgen, null);
+						fieldTypeWrapper.EmitCheckcast(ilgen);
+						fieldTypeWrapper.EmitConvStackTypeToSignatureType(ilgen, null);
 						fw.EmitSet(ilgen);
 						CodeEmitterLabel label = ilgen.DefineLabel();
 						ilgen.EmitLeave(label);
@@ -7930,9 +7980,9 @@ namespace IKVM.NativeCode.sun.reflect
 					ilgen.Emit(OpCodes.Ldarg_2);
 					if (fieldType == typeof(object))
 					{
-						fw.FieldTypeWrapper.EmitCheckcast(ilgen);
+						fieldTypeWrapper.EmitCheckcast(ilgen);
 					}
-					fw.FieldTypeWrapper.EmitConvStackTypeToSignatureType(ilgen, null);
+					fieldTypeWrapper.EmitConvStackTypeToSignatureType(ilgen, null);
 					fw.EmitSet(ilgen);
 					CodeEmitterLabel label = ilgen.DefineLabel();
 					ilgen.EmitLeave(label);
