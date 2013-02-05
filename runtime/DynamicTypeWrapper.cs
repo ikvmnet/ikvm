@@ -780,6 +780,23 @@ namespace IKVM.Internal
 						AttributeHelper.SetNonNestedOuterClass(typeBuilder, outerClassWrapper.Name);
 						AttributeHelper.SetNonNestedInnerClass(outer, f.Name);
 					}
+					if (classFile.InnerClasses != null)
+					{
+						foreach (ClassFile.InnerClass inner in classFile.InnerClasses)
+						{
+							string name = classFile.GetConstantPoolClass(inner.innerClass);
+							bool exists = false;
+							try
+							{
+								exists = wrapper.GetClassLoader().LoadClassByDottedNameFast(name) != null;
+							}
+							catch (RetargetableJavaException) { }
+							if (!exists)
+							{
+								AttributeHelper.SetNonNestedInnerClass(typeBuilder, name);
+							}
+						}
+					}
 					if (outer == null && mangledTypeName != wrapper.Name)
 					{
 						// HACK we abuse the InnerClassAttribute to record to real name
