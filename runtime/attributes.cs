@@ -810,6 +810,22 @@ namespace IKVM.Attributes
 		}
 	}
 
+	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Delegate | AttributeTargets.Enum | AttributeTargets.Interface | AttributeTargets.Struct | AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Method | AttributeTargets.Constructor | AttributeTargets.Parameter, AllowMultiple = false)]
+	public sealed class DynamicAnnotationAttribute : Attribute
+	{
+		private readonly object[] definition;
+
+		public DynamicAnnotationAttribute(object[] definition)
+		{
+			this.definition = definition;
+		}
+
+		public object[] Definition
+		{
+			get { return definition; }
+		}
+	}
+
 	// used in custom modifier for access stubs
 	public static class AccessStub { }
 }

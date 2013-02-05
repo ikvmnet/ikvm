@@ -2701,7 +2701,7 @@ namespace IKVM.NativeCode.java
 				return tw.GetGenericSignature();
 			}
 
-			internal static object AnnotationsToMap(object[] objAnn)
+			internal static object AnnotationsToMap(ClassLoaderWrapper loader, object[] objAnn)
 			{
 #if FIRST_PASS
 				return null;
@@ -2715,6 +2715,11 @@ namespace IKVM.NativeCode.java
 						if (a != null)
 						{
 							map.put(a.annotationType(), FreezeOrWrapAttribute(a));
+						}
+						else if (obj is IKVM.Attributes.DynamicAnnotationAttribute)
+						{
+							a = (Annotation)JVM.NewAnnotation(loader.GetJavaClassLoader(), ((IKVM.Attributes.DynamicAnnotationAttribute)obj).Definition);
+							map.put(a.annotationType(), a);
 						}
 					}
 				}
@@ -2754,7 +2759,7 @@ namespace IKVM.NativeCode.java
 				{
 					throw x.ToJava();
 				}
-				return AnnotationsToMap(wrapper.GetDeclaredAnnotations());
+				return AnnotationsToMap(wrapper.GetClassLoader(), wrapper.GetDeclaredAnnotations());
 #endif
 			}
 
@@ -3693,7 +3698,7 @@ namespace IKVM.NativeCode.java
 				public static object getDeclaredAnnotationsImpl(object thisField)
 				{
 					FieldWrapper fw = FieldWrapper.FromField(thisField);
-					return Class.AnnotationsToMap(fw.DeclaringType.GetFieldAnnotations(fw));
+					return Class.AnnotationsToMap(fw.DeclaringType.GetClassLoader(), fw.DeclaringType.GetFieldAnnotations(fw));
 				}
 			}
 
@@ -3702,7 +3707,7 @@ namespace IKVM.NativeCode.java
 				public static object getDeclaredAnnotationsImpl(object methodOrConstructor)
 				{
 					MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(methodOrConstructor);
-					return Class.AnnotationsToMap(mw.DeclaringType.GetMethodAnnotations(mw));
+					return Class.AnnotationsToMap(mw.DeclaringType.GetClassLoader(), mw.DeclaringType.GetMethodAnnotations(mw));
 				}
 
 				public static object[][] getParameterAnnotationsImpl(object methodOrConstructor)
@@ -3726,6 +3731,10 @@ namespace IKVM.NativeCode.java
 							if (a != null)
 							{
 								list.Add(Class.FreezeOrWrapAttribute(a));
+							}
+							else if (obj is IKVM.Attributes.DynamicAnnotationAttribute)
+							{
+								list.Add((Annotation)JVM.NewAnnotation(mw.DeclaringType.GetClassLoader().GetJavaClassLoader(), ((IKVM.Attributes.DynamicAnnotationAttribute)obj).Definition));
 							}
 						}
 						ann[i] = list.ToArray();

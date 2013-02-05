@@ -1412,17 +1412,14 @@ namespace IKVM.Internal
 				TypeWrapper annot = loader.RetTypeWrapperFromSig(annotationClass.Replace('/', '.'));
 				return annot.Annotation;
 			}
-#if STATIC_COMPILER
-			catch(ClassNotFoundException x)
-			{
-				loader.IssueMessage(Message.ClassNotFound, x.Message);
-				return null;
-			}
-#endif
 			catch (RetargetableJavaException)
 			{
 				Tracer.Warning(Tracer.Compiler, "Unable to load annotation class {0}", annotationClass);
+#if STATIC_COMPILER
+				return new CompiledTypeWrapper.CompiledAnnotation(StaticCompiler.GetRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute"));
+#else
 				return null;
+#endif
 			}
 		}
 
@@ -4671,7 +4668,7 @@ namespace IKVM.Internal
 		}
 #endif
 
-		private sealed class CompiledAnnotation : Annotation
+		internal sealed class CompiledAnnotation : Annotation
 		{
 			private Type type;
 
