@@ -780,6 +780,10 @@ namespace IKVM.Internal
 						AttributeHelper.SetNonNestedOuterClass(typeBuilder, outerClassWrapper.Name);
 						AttributeHelper.SetNonNestedInnerClass(outer, f.Name);
 					}
+					if (outerClass.outerClass != 0 && outer == null)
+					{
+						AttributeHelper.SetNonNestedOuterClass(typeBuilder, classFile.GetConstantPoolClass(outerClass.outerClass));
+					}
 					if (classFile.InnerClasses != null)
 					{
 						foreach (ClassFile.InnerClass inner in classFile.InnerClasses)
