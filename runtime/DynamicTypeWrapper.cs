@@ -529,7 +529,10 @@ namespace IKVM.Internal
 						methods[i] = new TypicalMethodWrapper(wrapper, m.Name, m.Signature, null, null, null, m.Modifiers, flags);
 					}
 				}
-				wrapper.HasStaticInitializer = hasclinit;
+				if (hasclinit)
+				{
+					wrapper.SetHasStaticInitializer();
+				}
 				if (wrapper.IsAbstract && (!wrapper.IsInterface || wrapper.IsPublic))
 				{
 					List<MethodWrapper> methodsArray = new List<MethodWrapper>(methods);
@@ -4593,7 +4596,7 @@ namespace IKVM.Internal
 						ilgen.EmitThrow("java.lang.IllegalAccessError", wrapper.Name + "." + ifmethod.Name + ifmethod.Signature);
 						ilgen.DoEmit();
 						typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod.GetMethod());
-						wrapper.HasIncompleteInterfaceImplementation = true;
+						wrapper.SetHasIncompleteInterfaceImplementation();
 					}
 					else if (mce.GetMethod() == null || mce.RealName != ifmethod.RealName || mce.IsInternal)
 					{
@@ -4651,7 +4654,7 @@ namespace IKVM.Internal
 						ilgen.EmitThrow("java.lang.AbstractMethodError", wrapper.Name + "." + ifmethod.Name + ifmethod.Signature);
 						ilgen.DoEmit();
 						typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod.GetMethod());
-						wrapper.HasIncompleteInterfaceImplementation = true;
+						wrapper.SetHasIncompleteInterfaceImplementation();
 					}
 				}
 			}

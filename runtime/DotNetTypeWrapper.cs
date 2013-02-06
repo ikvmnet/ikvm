@@ -2160,7 +2160,7 @@ namespace IKVM.Internal
 						}
 						else if (methods[i].IsAbstract)
 						{
-							this.HasUnsupportedAbstractMethods = true;
+							SetHasUnsupportedAbstractMethods();
 						}
 					}
 				}

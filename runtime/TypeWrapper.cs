@@ -1687,6 +1687,7 @@ namespace IKVM.Internal
 
 	internal abstract class TypeWrapper
 	{
+		private static readonly object flagsLock = new object();
 		private readonly string name;		// java name (e.g. java.lang.Object)
 		private readonly Modifiers modifiers;
 		private TypeFlags flags;
@@ -1969,6 +1970,15 @@ namespace IKVM.Internal
 			return this;
 		}
 
+		private void SetTypeFlag(TypeFlags flag)
+		{
+			// we use a global lock object, since the chance of contention is very small
+			lock (flagsLock)
+			{
+				flags |= flag;
+			}
+		}
+
 		internal bool HasIncompleteInterfaceImplementation
 		{
 			get
@@ -1976,18 +1986,11 @@ namespace IKVM.Internal
 				TypeWrapper baseWrapper = this.BaseTypeWrapper;
 				return (flags & TypeFlags.HasIncompleteInterfaceImplementation) != 0 || (baseWrapper != null && baseWrapper.HasIncompleteInterfaceImplementation);
 			}
-			set
-			{
-				// TODO do we need locking here?
-				if(value)
-				{
-					flags |= TypeFlags.HasIncompleteInterfaceImplementation;
-				}
-				else
-				{
-					flags &= ~TypeFlags.HasIncompleteInterfaceImplementation;
-				}
-			}
+		}
+
+		internal void SetHasIncompleteInterfaceImplementation()
+		{
+			SetTypeFlag(TypeFlags.HasIncompleteInterfaceImplementation);
 		}
 
 		internal bool HasUnsupportedAbstractMethods
@@ -2004,18 +2007,11 @@ namespace IKVM.Internal
 				TypeWrapper baseWrapper = this.BaseTypeWrapper;
 				return (flags & TypeFlags.HasUnsupportedAbstractMethods) != 0 || (baseWrapper != null && baseWrapper.HasUnsupportedAbstractMethods);
 			}
-			set
-			{
-				// TODO do we need locking here?
-				if(value)
-				{
-					flags |= TypeFlags.HasUnsupportedAbstractMethods;
-				}
-				else
-				{
-					flags &= ~TypeFlags.HasUnsupportedAbstractMethods;
-				}
-			}
+		}
+
+		internal void SetHasUnsupportedAbstractMethods()
+		{
+			SetTypeFlag(TypeFlags.HasUnsupportedAbstractMethods);
 		}
 
 		internal virtual bool HasStaticInitializer
@@ -2024,18 +2020,11 @@ namespace IKVM.Internal
 			{
 				return (flags & TypeFlags.HasStaticInitializer) != 0;
 			}
-			set
-			{
-				// TODO do we need locking here?
-				if(value)
-				{
-					flags |= TypeFlags.HasStaticInitializer;
-				}
-				else
-				{
-					flags &= ~TypeFlags.HasStaticInitializer;
-				}
-			}
+		}
+
+		internal void SetHasStaticInitializer()
+		{
+			SetTypeFlag(TypeFlags.HasStaticInitializer);
 		}
 
 		internal bool HasVerifyError
@@ -2044,18 +2033,11 @@ namespace IKVM.Internal
 			{
 				return (flags & TypeFlags.VerifyError) != 0;
 			}
-			set
-			{
-				// TODO do we need locking here?
-				if(value)
-				{
-					flags |= TypeFlags.VerifyError;
-				}
-				else
-				{
-					flags &= ~TypeFlags.VerifyError;
-				}
-			}
+		}
+
+		internal void SetHasVerifyError()
+		{
+			SetTypeFlag(TypeFlags.VerifyError);
 		}
 
 		internal bool HasClassFormatError
@@ -2064,18 +2046,11 @@ namespace IKVM.Internal
 			{
 				return (flags & TypeFlags.ClassFormatError) != 0;
 			}
-			set
-			{
-				// TODO do we need locking here?
-				if(value)
-				{
-					flags |= TypeFlags.ClassFormatError;
-				}
-				else
-				{
-					flags &= ~TypeFlags.ClassFormatError;
-				}
-			}
+		}
+
+		internal void SetHasClassFormatError()
+		{
+			SetTypeFlag(TypeFlags.ClassFormatError);
 		}
 
 		internal virtual bool IsFakeTypeContainer

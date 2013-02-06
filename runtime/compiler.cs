@@ -904,7 +904,7 @@ sealed class Compiler
 			classLoader.IssueMessage(Message.EmittedVerificationError, classFile.Name + "." + m.Name + m.Signature, x.Message);
 #endif
 			Tracer.Error(Tracer.Verifier, x.ToString());
-			clazz.HasVerifyError = true;
+			clazz.SetHasVerifyError();
 			// because in Java the method is only verified if it is actually called,
 			// we generate code here to throw the VerificationError
 			ilGenerator.EmitThrow("java.lang.VerifyError", x.Message);
@@ -916,7 +916,7 @@ sealed class Compiler
 			classLoader.IssueMessage(Message.EmittedClassFormatError, classFile.Name + "." + m.Name + m.Signature, x.Message);
 #endif
 			Tracer.Error(Tracer.Verifier, x.ToString());
-			clazz.HasClassFormatError = true;
+			clazz.SetHasClassFormatError();
 			ilGenerator.EmitThrow("java.lang.ClassFormatError", x.Message);
 			return;
 		}
