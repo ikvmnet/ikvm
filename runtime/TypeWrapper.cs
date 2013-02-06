@@ -1668,6 +1668,7 @@ namespace IKVM.Internal
 	[Flags]
 	enum TypeFlags : ushort
 	{
+		None = 0,
 		HasIncompleteInterfaceImplementation = 1,
 		InternalAccess = 2,
 		HasStaticInitializer = 4,
@@ -1698,12 +1699,13 @@ namespace IKVM.Internal
 		internal const Modifiers UnloadableModifiersHack = Modifiers.Final | Modifiers.Interface | Modifiers.Private;
 		internal const Modifiers VerifierTypeModifiersHack = Modifiers.Final | Modifiers.Interface;
 
-		internal TypeWrapper(Modifiers modifiers, string name)
+		internal TypeWrapper(TypeFlags flags, Modifiers modifiers, string name)
 		{
 			Profiler.Count("TypeWrapper");
 			// class name should be dotted or null for primitives
 			Debug.Assert(name == null || name.IndexOf('/') < 0);
 
+			this.flags = flags;
 			this.modifiers = modifiers;
 			this.name = name == null ? null : String.Intern(name);
 		}
@@ -2274,18 +2276,6 @@ namespace IKVM.Internal
 			get
 			{
 				return (flags & TypeFlags.InternalAccess) != 0;
-			}
-			set
-			{
-				// TODO do we need locking here?
-				if(value)
-				{
-					flags |= TypeFlags.InternalAccess;
-				}
-				else
-				{
-					flags &= ~TypeFlags.InternalAccess;
-				}
 			}
 		}
 
@@ -3191,7 +3181,7 @@ namespace IKVM.Internal
 		private Type customModifier;
 
 		internal UnloadableTypeWrapper(string name)
-			: base(TypeWrapper.UnloadableModifiersHack, name)
+			: base(TypeFlags.None, TypeWrapper.UnloadableModifiersHack, name)
 		{
 		}
 
@@ -3332,7 +3322,7 @@ namespace IKVM.Internal
 		private readonly string sigName;
 
 		private PrimitiveTypeWrapper(Type type, string sigName)
-			: base(Modifiers.Public | Modifiers.Abstract | Modifiers.Final, null)
+			: base(TypeFlags.None, Modifiers.Public | Modifiers.Abstract | Modifiers.Final, null)
 		{
 			this.type = type;
 			this.sigName = sigName;
@@ -3675,9 +3665,8 @@ namespace IKVM.Internal
 		}
 
 		private CompiledTypeWrapper(ExModifiers exmod, string name)
-			: base(exmod.Modifiers, name)
+			: base(exmod.IsInternal ? TypeFlags.InternalAccess : TypeFlags.None, exmod.Modifiers, name)
 		{
-			this.IsInternal = exmod.IsInternal;
 		}
 
 		private CompiledTypeWrapper(string name, Type type)
@@ -4790,11 +4779,11 @@ namespace IKVM.Internal
 		private bool finished;
 
 		internal ArrayTypeWrapper(TypeWrapper ultimateElementTypeWrapper, string name)
-			: base(Modifiers.Final | Modifiers.Abstract | (ultimateElementTypeWrapper.Modifiers & Modifiers.Public), name)
+			: base(ultimateElementTypeWrapper.IsInternal ? TypeFlags.InternalAccess : TypeFlags.None,
+				Modifiers.Final | Modifiers.Abstract | (ultimateElementTypeWrapper.Modifiers & Modifiers.Public), name)
 		{
 			Debug.Assert(!ultimateElementTypeWrapper.IsArray);
 			this.ultimateElementTypeWrapper = ultimateElementTypeWrapper;
-			this.IsInternal = ultimateElementTypeWrapper.IsInternal;
 		}
 
 		internal override TypeWrapper BaseTypeWrapper
@@ -5055,7 +5044,7 @@ namespace IKVM.Internal
 		}
 
 		private VerifierTypeWrapper(string name, int index, TypeWrapper underlyingType, MethodAnalyzer methodAnalyzer)
-			: base(TypeWrapper.VerifierTypeModifiersHack, name)
+			: base(TypeFlags.None, TypeWrapper.VerifierTypeModifiersHack, name)
 		{
 			this.index = index;
 			this.underlyingType = underlyingType;

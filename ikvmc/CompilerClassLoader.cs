@@ -869,7 +869,7 @@ namespace IKVM.Internal
 			}
 
 			internal RemapperTypeWrapper(CompilerClassLoader classLoader, IKVM.Internal.MapXml.Class c, IKVM.Internal.MapXml.Root map)
-				: base((Modifiers)c.Modifiers, c.Name)
+				: base(TypeFlags.None, (Modifiers)c.Modifiers, c.Name)
 			{
 				this.classLoader = classLoader;
 				this.baseTypeWrapper = GetBaseWrapper(c);

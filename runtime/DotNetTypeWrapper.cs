@@ -303,7 +303,7 @@ namespace IKVM.Internal
 			}
 
 			internal OpenGenericTypeWrapper(Type type, string name)
-				: base(GetModifiers(type), name)
+				: base(TypeFlags.None, GetModifiers(type), name)
 			{
 				this.type = type;
 			}
@@ -354,7 +354,7 @@ namespace IKVM.Internal
 			private readonly TypeWrapper baseWrapper;
 
 			protected FakeTypeWrapper(Modifiers modifiers, string name, TypeWrapper baseWrapper)
-				: base(modifiers, name)
+				: base(TypeFlags.None, modifiers, name)
 			{
 				this.baseWrapper = baseWrapper;
 			}
@@ -1726,7 +1726,7 @@ namespace IKVM.Internal
 		}
 
 		private DotNetTypeWrapper(Type type, string name)
-			: base(GetModifiers(type), name)
+			: base(TypeFlags.None, GetModifiers(type), name)
 		{
 			Debug.Assert(!(type.IsByRef), type.FullName);
 			Debug.Assert(!(type.IsPointer), type.FullName);

@@ -106,11 +106,10 @@ namespace IKVM.Internal
 #else
 		internal DynamicTypeWrapper(ClassFile f, ClassLoaderWrapper classLoader, ProtectionDomain pd)
 #endif
-			: base(f.Modifiers, f.Name)
+			: base(f.IsInternal ? TypeFlags.InternalAccess : TypeFlags.None, f.Modifiers, f.Name)
 		{
 			Profiler.Count("DynamicTypeWrapper");
 			this.classLoader = classLoader;
-			this.IsInternal = f.IsInternal;
 			this.sourceFileName = f.SourceFileAttribute;
 			this.baseTypeWrapper = f.IsInterface ? null : LoadTypeWrapper(classLoader, pd, f.SuperClass);
 			if (BaseTypeWrapper != null)

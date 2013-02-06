@@ -1034,7 +1034,7 @@ sealed class StubTypeWrapper : TypeWrapper
 	private readonly TypeWrapper baseWrapper;
 
 	internal StubTypeWrapper(Modifiers modifiers, string name, TypeWrapper baseWrapper, bool remapped)
-		: base(modifiers, name)
+		: base(TypeFlags.None, modifiers, name)
 	{
 		this.remapped = remapped;
 		this.baseWrapper = baseWrapper;
