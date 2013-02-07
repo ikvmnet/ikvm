@@ -46,6 +46,7 @@ namespace IKVM.Internal
 #if !STATIC_COMPILER
 		private static List<AssemblyBuilder> saveDebugAssemblies;
 		private static List<DynamicClassLoader> saveClassLoaders;
+		private static int dumpCounter;
 #endif // !STATIC_COMPILER
 #if STATIC_COMPILER || CLASSGC
 		private readonly Dictionary<string, TypeWrapper> dynamicTypes = new Dictionary<string, TypeWrapper>();
@@ -484,9 +485,7 @@ namespace IKVM.Internal
 				{
 					System.Threading.Interlocked.CompareExchange(ref saveClassLoaders, new List<DynamicClassLoader>(), null);
 				}
-				// we ignore the race condition (we could end up with multiple assemblies with the same name),
-				// because it is pretty harmless (you'll miss one of the ikvmdump-xx.dll files)
-				name.Name = "ikvmdump-" + saveClassLoaders.Count;
+				name.Name = "ikvmdump-" + System.Threading.Interlocked.Increment(ref dumpCounter);
 			}
 			else
 			{
