@@ -17,6 +17,11 @@
         <property name="VERSION" value="${assemblyname::get-version(assemblyname::get-assembly-name(path::combine(project::get-base-directory(), '../bin/IKVM.Runtime.dll')))}" />
     </target>
 
+    <target name="copyright" depends="allsources.gen.lst">
+        <exec program="${project::get-base-directory()}/../tools/SourceLicenseAnalyzer.exe" output="copyright.txt" useruntimeengine="true" />
+        <loadfile file="copyright.txt" property="COPYRIGHT" />
+    </target>
+
     <target name="allsources.gen.lst">
         <copy file="allsources.lst" tofile="allsources.gen.lst" outputencoding="ascii" overwrite="true">
             <filterchain>
@@ -65,7 +70,7 @@
         </delete>
     </target>
 
-    <target name="classes" depends="version allsources.gen.lst System.Core">
+    <target name="classes" depends="version copyright allsources.gen.lst System.Core">
         <delete>
             <fileset basedir="../classpath">
                 <include name="**.class"/>
@@ -104,6 +109,7 @@
                 <replacetokens>
                     <token key="RUNTIME" value="${IKVM.Runtime}" />
                     <token key="VERSION" value="${VERSION}" />
+                    <token key="COPYRIGHT" value="${COPYRIGHT}" />
                 </replacetokens>
             </filterchain>
         </copy>
