@@ -47,7 +47,7 @@ namespace IKVM.Reflection.Writer
 
 		internal void SetFileName(string assemblyFileName)
 		{
-			this.fileName = assemblyFileName;
+			this.fileName = System.IO.Path.GetFileName(assemblyFileName);
 		}
 
 		internal void SetAttribute(CustomAttributeBuilder cab)
