@@ -44,9 +44,8 @@ namespace IKVM.Internal
 		private AssemblyLoader assemblyLoader;
 		private string[] references;
 		private AssemblyClassLoader[] delegates;
-#if !STATIC_COMPILER && !STUB_GENERATOR
-		private Thread initializerThread;
-		private int initializerRecursion;
+#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+		private JavaClassLoaderConstructionInProgress jclcip;
 		private object protectionDomain;
 		private static Dictionary<string, string> customClassLoaderRedirects;
 		private byte hasCustomClassLoader;	/* 0 = unknown, 1 = yes, 2 = no */
@@ -872,29 +871,43 @@ namespace IKVM.Internal
 		}
 #endif // !STATIC_COMPILER
 
-		private void WaitInitializeJavaClassLoader(Type customClassLoader)
-		{
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-			Interlocked.CompareExchange(ref initializerThread, Thread.CurrentThread, null);
-			if (initializerThread != null)
+		private sealed class JavaClassLoaderConstructionInProgress
+		{
+			internal readonly Thread Thread = Thread.CurrentThread;
+			internal java.lang.ClassLoader javaClassLoader;
+			internal int recursion;
+		}
+
+		private java.lang.ClassLoader WaitInitializeJavaClassLoader(Type customClassLoader)
+		{
+			Interlocked.CompareExchange(ref jclcip, new JavaClassLoaderConstructionInProgress(), null);
+			JavaClassLoaderConstructionInProgress curr = jclcip;
+			if (curr != null)
 			{
-				if (initializerThread == Thread.CurrentThread)
+				if (curr.Thread == Thread.CurrentThread)
 				{
-					initializerRecursion++;
+					if (curr.javaClassLoader != null)
+					{
+						// we were recursively invoked during the class loader construction,
+						// so we have to return the partialy constructed class loader
+						return curr.javaClassLoader;
+					}
+					curr.recursion++;
 					try
 					{
-						InitializeJavaClassLoader(customClassLoader);
+						InitializeJavaClassLoader(curr, customClassLoader);
 					}
 					finally
 					{
 						// We only publish the class loader from the outer most invocation, otherwise
 						// an invocation of getClassLoader in the static initializer or constructor
 						// of the custom class loader would result in prematurely publishing it.
-						if (--initializerRecursion == 0)
+						if (--curr.recursion == 0)
 						{
 							lock (this)
 							{
-								initializerThread = null;
+								jclcip = null;
 								Monitor.PulseAll(this);
 							}
 						}
@@ -904,22 +917,21 @@ namespace IKVM.Internal
 				{
 					lock (this)
 					{
-						while (initializerThread != null)
+						while (jclcip != null)
 						{
 							Monitor.Wait(this);
 						}
 					}
 				}
 			}
-#endif
+			return javaClassLoader;
 		}
 
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 		internal override object GetJavaClassLoader()
 		{
 			if (javaClassLoader == null)
 			{
-				WaitInitializeJavaClassLoader(GetCustomClassLoaderType());
+				return WaitInitializeJavaClassLoader(GetCustomClassLoaderType());
 			}
 			return javaClassLoader;
 		}
@@ -1089,7 +1101,7 @@ namespace IKVM.Internal
 			return null;
 		}
 
-		private void InitializeJavaClassLoader(Type customClassLoaderClass)
+		private void InitializeJavaClassLoader(JavaClassLoaderConstructionInProgress jclcip, Type customClassLoaderClass)
 		{
 			Assembly assembly = assemblyLoader.Assembly;
 			{
@@ -1118,11 +1130,11 @@ namespace IKVM.Internal
 						// Note that creating the unitialized instance will (unfortunately) trigger the static initializer. The static initializer can
 						// trigger a call to getClassLoader(), which means we can end up here recursively.
 						java.lang.ClassLoader newJavaClassLoader = (java.lang.ClassLoader)GetUninitializedObject(customClassLoaderClass);
-						if (javaClassLoader == null) // check if we weren't invoked recursively and the nested invocation already did the work
+						if (jclcip.javaClassLoader == null) // check if we weren't invoked recursively and the nested invocation already did the work
 						{
-							javaClassLoader = newJavaClassLoader;
-							SetWrapperForClassLoader(javaClassLoader, this);
-							DoPrivileged(new CustomClassLoaderCtorCaller(customClassLoaderCtor, javaClassLoader, assembly));
+							jclcip.javaClassLoader = newJavaClassLoader;
+							SetWrapperForClassLoader(jclcip.javaClassLoader, this);
+							DoPrivileged(new CustomClassLoaderCtorCaller(customClassLoaderCtor, jclcip.javaClassLoader, assembly));
 							Tracer.Info(Tracer.Runtime, "Created custom assembly class loader {0} for assembly {1}", customClassLoaderClass.FullName, assembly);
 						}
 						else
@@ -1137,11 +1149,14 @@ namespace IKVM.Internal
 					}
 				}
 			}
-			if (javaClassLoader == null)
+			if (jclcip.javaClassLoader == null)
 			{
-				javaClassLoader = (java.lang.ClassLoader)DoPrivileged(new CreateAssemblyClassLoader(assembly));
-				SetWrapperForClassLoader(javaClassLoader, this);
+				jclcip.javaClassLoader = (java.lang.ClassLoader)DoPrivileged(new CreateAssemblyClassLoader(assembly));
+				SetWrapperForClassLoader(jclcip.javaClassLoader, this);
 			}
+			// finally we publish the class loader for other threads to see
+			Thread.MemoryBarrier();
+			javaClassLoader = jclcip.javaClassLoader;
 		}
 
 		// separate method to avoid LinkDemand killing the caller
