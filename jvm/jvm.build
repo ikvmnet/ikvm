@@ -3,14 +3,6 @@
     <include buildfile="../ikvm.include" />
     <target name="version">
         <property name="VERSION" value="${assemblyname::get-version(assemblyname::get-assembly-name(path::combine(project::get-base-directory(), '../bin/IKVM.Runtime.dll')))}" />
-        <copy file="jvm.rc.in" tofile="jvm.rc" outputencoding="ascii" overwrite="true">
-            <filterchain>
-                <replacetokens>
-                    <token key="VERSIONLIST" value="${string::replace(property::get-value('VERSION'), '.', ',')}" />
-                    <token key="VERSION" value="${VERSION}" />
-                </replacetokens>
-            </filterchain>
-        </copy>
     </target>
     <target name="implib">
         <csc target="exe" output="../tools/implib.exe" rebuild="true">
@@ -23,11 +15,7 @@
         </csc>
         <copy file="../bin/IKVM.Reflection.dll" tofile="../tools/IKVM.Reflection.dll" overwrite="true" />
     </target>
-    <target name="JVM" depends="version implib" if="${not string::starts-with(framework::get-target-framework(), 'mono')}">
-        <if test="${property::exists('rc')}">
-            <exec program="${rc}" commandline="jvm.rc" />
-        </if>
-        <rc if="${not property::exists('rc')}" rcfile="jvm.rc" output="jvm.RES" />
+    <target name="JVM" depends="version implib">
         <property name="arch" value="x86" />
         <call target="RunImpLib" />
         <property name="arch" value="x64" />
@@ -40,7 +28,11 @@
             <arg value="-out:../bin-${arch}/JVM.DLL" />
             <arg value="-platform:${arch}" />
             <arg value="-r:../bin/IKVM.Runtime.JNI.dll" />
-            <arg value="-win32res:jvm.RES" />
+            <arg value="-product:IKVM.NET" />
+            <arg value="-company:Jeroen Frijters" />
+            <arg value="-copyright:Copyright (C) 2002-2013 Jeroen Frijters" />
+            <arg value="-description:IKVM.NET JVM for .NET" />
+            <arg value="-version:${VERSION}" />
             <arg value="${signoption}" />
         </exec>
     </target>

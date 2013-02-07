@@ -11,11 +11,6 @@
         </if>
     </if>
 
-    <!-- find rc.exe -->
-    <if test="${(not property::exists('rc')) and framework::sdk-exists(framework::get-target-framework()) and file::exists(path::combine(framework::get-sdk-directory(framework::get-target-framework()), 'rc.exe'))}">
-        <property name="rc" value="${path::combine(framework::get-sdk-directory(framework::get-target-framework()), 'rc.exe')}" />
-    </if>
-
     <!-- HACK to support targetting .NET 4.0 when 4.5 is installed, we have to figure out the reference path ourself -->
     <if test="${version::get-major(framework::get-version(framework::get-target-framework())) == 4 and (not string::starts-with(framework::get-target-framework(), 'mono'))}">
         <if test="${environment::variable-exists('ProgramFiles(x86)')}">

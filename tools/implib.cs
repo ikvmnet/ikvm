@@ -56,6 +56,14 @@ static class ImpLib
         {
             ab.DefineUnmanagedResource(options.win32res);
         }
+        else
+        {
+            if (options.description != null)
+            {
+                ab.SetCustomAttribute(new CustomAttributeBuilder(universe.Import(typeof(System.Reflection.AssemblyTitleAttribute)).GetConstructor(new Type[] { universe.Import(typeof(string)) }), new object[] { options.description }));
+            }
+            ab.DefineVersionInfoResource(options.product, options.version.ToString(), options.company, options.copyright, null);
+        }
         ab.Save(options.outputFile, options.peKind, options.machine);
         return 0;
     }
@@ -100,6 +108,22 @@ static class ImpLib
             else if (arg.StartsWith("-version:", StringComparison.Ordinal))
             {
                 options.version = new Version(arg.Substring(9));
+            }
+            else if (arg.StartsWith("-product:", StringComparison.Ordinal))
+            {
+                options.product = arg.Substring(9);
+            }
+            else if (arg.StartsWith("-company:", StringComparison.Ordinal))
+            {
+                options.company = arg.Substring(9);
+            }
+            else if (arg.StartsWith("-copyright:", StringComparison.Ordinal))
+            {
+                options.copyright = arg.Substring(11);
+            }
+            else if (arg.StartsWith("-description:", StringComparison.Ordinal))
+            {
+                options.description = arg.Substring(13);
             }
             else if (options.deffile == null)
             {
@@ -191,6 +215,10 @@ static class ImpLib
         internal string win32res;
         internal StrongNameKeyPair key;
         internal Version version;
+        internal string product;
+        internal string company;
+        internal string copyright;
+        internal string description;
     }
 
     struct Export
