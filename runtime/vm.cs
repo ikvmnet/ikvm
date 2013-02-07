@@ -67,6 +67,12 @@ namespace IKVM.Internal
 			get { return JVM.relaxedVerification; }
 			set { JVM.relaxedVerification = value; }
 		}
+
+		public static bool AllowNonVirtualCalls
+		{
+			get { return JVM.AllowNonVirtualCalls; }
+			set { JVM.AllowNonVirtualCalls = value; }
+		}
 	}
 }
 #endif // !STATIC_COMPILER && !STUB_GENERATOR
@@ -87,7 +93,10 @@ namespace IKVM.Internal
 #endif
 #endif // STATIC_COMPILER
 		private static Assembly coreAssembly;
+#if !STUB_GENERATOR
 		internal static bool relaxedVerification = true;
+		internal static bool AllowNonVirtualCalls;
+#endif
 
 #if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
 		static JVM()

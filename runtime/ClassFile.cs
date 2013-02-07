@@ -1741,9 +1741,11 @@ namespace IKVM.Internal
 					{
 						method.Link();
 					}
-					if(Name != StringConstants.INIT && 
-						(thisType.Modifiers & (Modifiers.Interface | Modifiers.Super)) == Modifiers.Super &&
-						thisType != wrapper && thisType.IsSubTypeOf(wrapper))
+					if(Name != StringConstants.INIT
+						&& !thisType.IsInterface
+						&& (!JVM.AllowNonVirtualCalls || (thisType.Modifiers & Modifiers.Super) == Modifiers.Super)
+						&& thisType != wrapper
+						&& thisType.IsSubTypeOf(wrapper))
 					{
 						invokespecialMethod = thisType.BaseTypeWrapper.GetMethodWrapper(Name, Signature, true);
 						if(invokespecialMethod != null)

@@ -257,6 +257,10 @@ public class Starter
                 {
                     noglobbing = true;
                 }
+                else if (arg == "-XX:+AllowNonVirtualCalls")
+                {
+                    IKVM.Internal.Starter.AllowNonVirtualCalls = true;
+                }
                 else if (arg.StartsWith("-Xms")
                     || arg.StartsWith("-Xmx")
                     || arg.StartsWith("-Xss")

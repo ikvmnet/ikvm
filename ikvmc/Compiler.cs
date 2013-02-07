@@ -963,6 +963,10 @@ sealed class IkvmcCompiler
 				{
 					// Ignore. This is handled earlier.
 				}
+				else if(s == "-XX:+AllowNonVirtualCalls")
+				{
+					JVM.AllowNonVirtualCalls = true;
+				}
 				else
 				{
 					throw new FatalCompilerErrorException(Message.UnrecognizedOption, s);
