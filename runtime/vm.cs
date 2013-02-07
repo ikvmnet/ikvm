@@ -89,6 +89,17 @@ namespace IKVM.Internal
 		private static Assembly coreAssembly;
 		internal static bool relaxedVerification = true;
 
+#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+		static JVM()
+		{
+			if (SafeGetEnvironmentVariable("IKVM_SAVE_DYNAMIC_ASSEMBLIES") != null)
+			{
+				IsSaveDebugImage = true;
+				java.lang.Runtime.getRuntime().addShutdownHook(new java.lang.Thread(ikvm.runtime.Delegates.toRunnable(DynamicClassLoader.SaveDebugImages)));
+			}
+		}
+#endif
+
 		internal static Version SafeGetAssemblyVersion(System.Reflection.Assembly asm)
 		{
 			// Assembly.GetName().Version requires FileIOPermission,
