@@ -347,7 +347,7 @@ namespace IKVM.Internal
 			{
 				if (internalsVisibleTo == null)
 				{
-					internalsVisibleTo = AttributeHelper.GetInternalsVisibleToAttributes(assembly);
+					Interlocked.CompareExchange(ref internalsVisibleTo, AttributeHelper.GetInternalsVisibleToAttributes(assembly), null);
 				}
 				foreach (AssemblyName name in internalsVisibleTo)
 				{
@@ -477,7 +477,7 @@ namespace IKVM.Internal
 							references[i] = refNames[i].FullName;
 						}
 					}
-					delegates = new AssemblyClassLoader[references.Length];
+					Interlocked.Exchange(ref delegates, new AssemblyClassLoader[references.Length]);
 				}
 			}
 		}
@@ -1047,8 +1047,11 @@ namespace IKVM.Internal
 		internal void AddDelegate(AssemblyClassLoader acl)
 		{
 			LazyInitExports();
-			Array.Resize(ref delegates, delegates.Length + 1);
-			delegates[delegates.Length - 1] = acl;
+			lock (this)
+			{
+				Array.Resize(ref delegates, delegates.Length + 1);
+				delegates[delegates.Length - 1] = acl;
+			}
 		}
 
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
