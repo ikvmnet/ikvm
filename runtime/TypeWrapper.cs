@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2012 Jeroen Frijters
+  Copyright (C) 2002-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1683,6 +1683,7 @@ namespace IKVM.Internal
 		internal const string AccessStub = "<accessstub>";
 		internal const string NonVirtual = "<nonvirtual>";
 		internal const string Bridge = "<bridge>";
+		internal const string Incomplete = "<incomplete>";
 	}
 
 	internal abstract class TypeWrapper
@@ -4090,7 +4091,14 @@ namespace IKVM.Internal
 
 		private void AddMethodOrConstructor(MethodBase method, List<MethodWrapper> methods)
 		{
-			if(!AttributeHelper.IsHideFromJava(method))
+			if(AttributeHelper.IsHideFromJava(method))
+			{
+				if(method.Name.StartsWith(NamePrefix.Incomplete, StringComparison.Ordinal))
+				{
+					SetHasIncompleteInterfaceImplementation();
+				}
+			}
+			else
 			{
 				if(method.IsSpecialName && method.Name.StartsWith("__<"))
 				{
