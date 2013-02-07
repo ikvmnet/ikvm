@@ -359,6 +359,7 @@ namespace IKVM.Internal
 #if !STATIC_COMPILER
 		internal static void SaveDebugImages()
 		{
+			Console.Error.WriteLine("Saving dynamic assemblies...");
 			JVM.FinishingForDebugSave = true;
 			if (saveClassLoaders != null)
 			{
@@ -366,16 +367,23 @@ namespace IKVM.Internal
 				{
 					instance.FinishAll();
 					AssemblyBuilder ab = (AssemblyBuilder)instance.ModuleBuilder.Assembly;
-					ab.Save(ab.GetName().Name + ".dll");
+					SaveDebugAssembly(ab);
 				}
 			}
 			if (saveDebugAssemblies != null)
 			{
 				foreach (AssemblyBuilder ab in saveDebugAssemblies)
 				{
-					ab.Save(ab.GetName().Name + ".dll");
+					SaveDebugAssembly(ab);
 				}
 			}
+			Console.Error.WriteLine("Saving done.");
+		}
+
+		private static void SaveDebugAssembly(AssemblyBuilder ab)
+		{
+			Console.Error.WriteLine("Saving '{0}'", ab.GetName().Name + ".dll");
+			ab.Save(ab.GetName().Name + ".dll");
 		}
 
 		internal static void RegisterForSaveDebug(AssemblyBuilder ab)

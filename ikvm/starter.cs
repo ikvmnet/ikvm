@@ -60,11 +60,9 @@ public class Starter
 		public override void run()
 		{
 			System.Threading.Thread.CurrentThread.Priority = System.Threading.ThreadPriority.AboveNormal;
-			Console.Error.WriteLine("Saving dynamic assembly...");
 			try
 			{
 				IKVM.Internal.Starter.SaveDebugImage();
-				Console.Error.WriteLine("Saving done.");
 			}
 			catch(Exception x)
 			{
