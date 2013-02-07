@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
+using System.Security.Cryptography;
 #if STATIC_COMPILER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -72,12 +73,6 @@ namespace IKVM.Internal
 		static DynamicClassLoader()
 		{
 #if !STATIC_COMPILER
-			if(JVM.IsSaveDebugImage)
-			{
-#if !CLASSGC
-				saveClassLoaders.Add(instance);
-#endif
-			}
 			// TODO AppDomain.TypeResolve requires ControlAppDomain permission, but if we don't have that,
 			// we should handle that by disabling dynamic class loading
 			AppDomain.CurrentDomain.TypeResolve += new ResolveEventHandler(OnTypeResolve);
@@ -93,6 +88,20 @@ namespace IKVM.Internal
 		{
 			this.moduleBuilder = moduleBuilder;
 			this.hasInternalAccess = hasInternalAccess;
+
+#if !STATIC_COMPILER
+			if (JVM.IsSaveDebugImage)
+			{
+				if (saveClassLoaders == null)
+				{
+					System.Threading.Interlocked.CompareExchange(ref saveClassLoaders, new List<DynamicClassLoader>(), null);
+				}
+				lock (saveClassLoaders)
+				{
+					saveClassLoaders.Add(this);
+				}
+			}
+#endif
 
 #if STATIC_COMPILER || CLASSGC
 			// Ref.Emit doesn't like the "<Module>" name for types
@@ -426,10 +435,6 @@ namespace IKVM.Internal
 			}
 #if CLASSGC
 			DynamicClassLoader instance = new DynamicClassLoader(CreateModuleBuilder());
-			if(saveClassLoaders != null)
-			{
-				saveClassLoaders.Add(instance);
-			}
 #endif
 			return instance;
 #endif
@@ -475,9 +480,19 @@ namespace IKVM.Internal
 
 			private static SerializationInfo ToInfo(byte[] publicKey)
 			{
+				byte[] privateKey = publicKey;
+				if (JVM.IsSaveDebugImage)
+				{
+					CspParameters cspParams = new CspParameters();
+					cspParams.KeyContainerName = null;
+					cspParams.Flags = CspProviderFlags.UseArchivableKey;
+					cspParams.KeyNumber = 2;
+					RSACryptoServiceProvider rsa = new RSACryptoServiceProvider(1024, cspParams);
+					privateKey = rsa.ExportCspBlob(true);
+				}
 				SerializationInfo info = new SerializationInfo(typeof(StrongNameKeyPair), new FormatterConverter());
 				info.AddValue("_keyPairExported", true);
-				info.AddValue("_keyPairArray", publicKey);
+				info.AddValue("_keyPairArray", privateKey);
 				info.AddValue("_keyPairContainer", null);
 				info.AddValue("_publicKey", publicKey);
 				return info;
@@ -489,10 +504,6 @@ namespace IKVM.Internal
 			AssemblyName name = new AssemblyName();
 			if(JVM.IsSaveDebugImage)
 			{
-				if(saveClassLoaders == null)
-				{
-					System.Threading.Interlocked.CompareExchange(ref saveClassLoaders, new List<DynamicClassLoader>(), null);
-				}
 				name.Name = "ikvmdump-" + System.Threading.Interlocked.Increment(ref dumpCounter);
 			}
 			else
