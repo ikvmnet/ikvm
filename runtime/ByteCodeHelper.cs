@@ -509,6 +509,97 @@ namespace IKVM.Runtime
 		}
 
 		[DebuggerStepThrough]
+		public static java.lang.invoke.MethodHandle DynamicLoadMethodHandle(ref java.lang.invoke.MethodHandle cache, int kind, string clazz, string name, string sig, ikvm.@internal.CallerID callerID)
+		{
+			if (cache == null)
+			{
+				Interlocked.CompareExchange(ref cache, DynamicLoadMethodHandleImpl(kind, clazz, name, sig, callerID), null);
+			}
+			return cache;
+		}
+
+		private static java.lang.invoke.MethodHandle DynamicLoadMethodHandleImpl(int kind, string clazz, string name, string sig, ikvm.@internal.CallerID callerID)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			java.lang.invoke.MethodHandles.Lookup lookup = java.lang.invoke.MethodHandles.lookup(callerID);
+			java.lang.Class refc = LoadTypeWrapper(clazz, callerID).ClassObject;
+			try
+			{
+				switch ((ClassFile.RefKind)kind)
+				{
+					case ClassFile.RefKind.getStatic:
+					case ClassFile.RefKind.putStatic:
+					case ClassFile.RefKind.getField:
+					case ClassFile.RefKind.putField:
+						java.lang.Class type = ClassLoaderWrapper.FromCallerID(callerID).FieldTypeWrapperFromSig(sig).ClassObject;
+						switch ((ClassFile.RefKind)kind)
+						{
+							case ClassFile.RefKind.getStatic:
+								return lookup.findStaticGetter(refc, name, type);
+							case ClassFile.RefKind.putStatic:
+								return lookup.findStaticSetter(refc, name, type);
+							case ClassFile.RefKind.getField:
+								return lookup.findGetter(refc, name, type);
+							case ClassFile.RefKind.putField:
+								return lookup.findSetter(refc, name, type);
+							default:
+								throw new InvalidOperationException();
+						}
+					default:
+						java.lang.invoke.MethodType mt = null;
+						DynamicLoadMethodType(ref mt, sig, callerID);
+						switch ((ClassFile.RefKind)kind)
+						{
+							case ClassFile.RefKind.invokeInterface:
+								return lookup.findVirtual(refc, name, mt);
+							case ClassFile.RefKind.invokeSpecial:
+								return lookup.findSpecial(refc, name, mt, callerID.getCallerClass());
+							case ClassFile.RefKind.invokeStatic:
+								return lookup.findStatic(refc, name, mt);
+							case ClassFile.RefKind.invokeVirtual:
+								return lookup.findVirtual(refc, name, mt);
+							case ClassFile.RefKind.newInvokeSpecial:
+								return lookup.findConstructor(refc, mt);
+							default:
+								throw new InvalidOperationException();
+						}
+				}
+			}
+			catch (ClassNotFoundException x)
+			{
+				throw new java.lang.NoClassDefFoundError(x.Message);
+			}
+			catch (RetargetableJavaException x)
+			{
+				Exception javaException = x.ToJava();
+				if (!(javaException is java.lang.Error))
+				{
+					throw new java.lang.NoClassDefFoundError(javaException.Message).initCause(javaException);
+				}
+				throw javaException;
+			}
+			catch (java.lang.NoSuchFieldException x)
+			{
+				throw new java.lang.NoSuchFieldError(x.getMessage());
+			}
+			catch (java.lang.NoSuchMethodException x)
+			{
+				throw new java.lang.NoSuchMethodError(x.getMessage());
+			}
+			catch (java.lang.IllegalAccessException x)
+			{
+				throw new java.lang.IllegalAccessError(x.getMessage());
+			}
+			catch (java.lang.SecurityException x)
+			{
+				throw new java.lang.IllegalAccessError().initCause(x);
+			}
+#endif
+		}
+
+		[DebuggerStepThrough]
 		public static Delegate DynamicCreateDelegate(object obj, Type delegateType, string name, string sig)
 		{
 			TypeWrapper tw = TypeWrapper.FromClass(ikvm.runtime.Util.getClassFromObject(obj));

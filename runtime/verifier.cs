@@ -2670,41 +2670,12 @@ sealed class MethodAnalyzer
 		}
 	}
 
-	private static TypeWrapper FirstUnloadable(ClassFile.ConstantPoolItemMethodHandle cpi)
-	{
-		if (cpi.GetClassType().IsUnloadable)
-		{
-			return cpi.GetClassType();
-		}
-		ClassFile.ConstantPoolItemMI method = cpi.MemberConstantPoolItem as ClassFile.ConstantPoolItemMI;
-		if (method != null)
-		{
-			if (method.GetRetType().IsUnloadable)
-			{
-				return method.GetRetType();
-			}
-			foreach (TypeWrapper tw in method.GetArgTypes())
-			{
-				if (tw.IsUnloadable)
-				{
-					return tw;
-				}
-			}
-		}
-		else if (((ClassFile.ConstantPoolItemFieldref)cpi.MemberConstantPoolItem).GetFieldType().IsUnloadable)
-		{
-			return ((ClassFile.ConstantPoolItemFieldref)cpi.MemberConstantPoolItem).GetFieldType();
-		}
-		return null;
-	}
-
 	private void PatchLdcMethodHandle(ref ClassFile.Method.Instruction instr)
 	{
 		ClassFile.ConstantPoolItemMethodHandle cpi = classFile.GetConstantPoolConstantMethodHandle(instr.Arg1);
-		TypeWrapper twUnloadable;
-		if ((twUnloadable = FirstUnloadable(cpi)) != null)
+		if (cpi.GetClassType().IsUnloadable)
 		{
-			SetHardError(wrapper.GetClassLoader(), ref instr, HardError.NoClassDefFoundError, "{0}", twUnloadable.Name);
+			ConditionalPatchNoClassDefFoundError(ref instr, cpi.GetClassType());
 		}
 		else if (!cpi.GetClassType().IsAccessibleFrom(wrapper))
 		{
