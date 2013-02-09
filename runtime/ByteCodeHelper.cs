@@ -289,21 +289,11 @@ namespace IKVM.Runtime
 #if FIRST_PASS
 			return null;
 #else
-			java.lang.ClassLoader cl = callerId.getCallerClassLoader();
-			java.lang.Class c;
-			try
-			{
-				c = java.lang.Class.forName(clazz, false, cl, callerId);
-			}
-			catch (java.lang.ClassNotFoundException x)
-			{
-				throw new java.lang.NoClassDefFoundError(x.getMessage());
-			}
-			cl.checkPackageAccess(c, callerId.getCallerClass().pd);
 			try
 			{
 				TypeWrapper context = TypeWrapper.FromClass(callerId.getCallerClass());
-				TypeWrapper wrapper = TypeWrapper.FromClass(c);
+				TypeWrapper wrapper = ClassLoaderWrapper.FromCallerID(callerId).LoadClassByDottedName(clazz);
+				callerId.getCallerClassLoader().checkPackageAccess(wrapper.ClassObject, callerId.getCallerClass().pd);
 				if(!wrapper.IsAccessibleFrom(context))
 				{
 					throw new java.lang.IllegalAccessError("Try to access class " + wrapper.Name + " from class " + context.Name);
@@ -311,9 +301,18 @@ namespace IKVM.Runtime
 				wrapper.Finish();
 				return wrapper;
 			}
+			catch(ClassNotFoundException x)
+			{
+				throw new java.lang.NoClassDefFoundError(x.Message);
+			}
 			catch(RetargetableJavaException x)
 			{
-				throw x.ToJava();
+				Exception javaException = x.ToJava();
+				if(!(javaException is java.lang.Error))
+				{
+					throw new java.lang.NoClassDefFoundError(javaException.Message).initCause(javaException);
+				}
+				throw javaException;
 			}
 #endif
 		}
