@@ -71,6 +71,7 @@ static class ByteCodeHelperMethods
 	internal static readonly MethodInfo DynamicPutfield;
 	internal static readonly MethodInfo DynamicPutstatic;
 	internal static readonly MethodInfo DynamicCreateDelegate;
+	internal static readonly MethodInfo DynamicLoadMethodType;
 	internal static readonly MethodInfo VerboseCastFailure;
 	internal static readonly MethodInfo SkipFinalizer;
 	internal static readonly MethodInfo DynamicInstanceOf;
@@ -120,6 +121,7 @@ static class ByteCodeHelperMethods
 		DynamicPutfield = typeofByteCodeHelper.GetMethod("DynamicPutfield");
 		DynamicPutstatic = typeofByteCodeHelper.GetMethod("DynamicPutstatic");
 		DynamicCreateDelegate = typeofByteCodeHelper.GetMethod("DynamicCreateDelegate");
+		DynamicLoadMethodType = typeofByteCodeHelper.GetMethod("DynamicLoadMethodType");
 		VerboseCastFailure = typeofByteCodeHelper.GetMethod("VerboseCastFailure");
 		SkipFinalizer = typeofByteCodeHelper.GetMethod("SkipFinalizer");
 		DynamicInstanceOf = typeofByteCodeHelper.GetMethod("DynamicInstanceOf");
@@ -2966,7 +2968,7 @@ sealed class Compiler
 				context.GetValue<MethodHandleConstant>(constant).Emit(this, ilgen, constant);
 				break;
 			case ClassFile.ConstantType.MethodType:
-				EmitLoadMethodType(ilgen, classFile.GetConstantPoolConstantMethodType(constant));
+				context.GetValue<MethodTypeConstant>(constant).Emit(this, ilgen, constant);
 				break;
 			default:
 				throw new InvalidOperationException();
@@ -2988,37 +2990,14 @@ sealed class Compiler
 		}
 	}
 
-	private void EmitLoadMethodType(CodeEmitter ilgen, ClassFile.ConstantPoolItemMethodType cpi)
+	internal static bool HasUnloadable(TypeWrapper[] args, TypeWrapper ret)
 	{
-		TypeWrapper ret = cpi.GetRetType();
-		TypeWrapper[] args = cpi.GetArgTypes();
 		TypeWrapper tw = ret;
 		for (int i = 0; !tw.IsUnloadable && i < args.Length; i++)
 		{
 			tw = args[i];
 		}
-		if (tw.IsUnloadable)
-		{
-			EmitLoadClass(ilgen, ret);
-			ilgen.EmitLdc_I4(args.Length);
-			ilgen.Emit(OpCodes.Newarr, CoreClasses.java.lang.Class.Wrapper.TypeAsArrayType);
-			for (int i = 0; i < args.Length; i++)
-			{
-				ilgen.Emit(OpCodes.Dup);
-				ilgen.EmitLdc_I4(i);
-				EmitLoadClass(ilgen, args[i]);
-				ilgen.Emit(OpCodes.Stelem_Ref);
-			}
-			MethodWrapper methodType = ClassLoaderWrapper.LoadClassCritical("java.lang.invoke.MethodType")
-				.GetMethodWrapper("methodType", "(Ljava.lang.Class;[Ljava.lang.Class;)Ljava.lang.invoke.MethodType;", false);
-			methodType.Link();
-			methodType.EmitCall(ilgen);
-		}
-		else
-		{
-			Type delegateType = MethodHandleUtil.CreateDelegateTypeForLoadConstant(cpi.GetArgTypes(), cpi.GetRetType());
-			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.LoadMethodType.MakeGenericMethod(delegateType));
-		}
+		return tw.IsUnloadable;
 	}
 
 	private static class InvokeDynamicBuilder
@@ -3454,6 +3433,56 @@ sealed class Compiler
 			ilgen.Emit(OpCodes.Ret);
 			ilgen.DoEmit();
 			return mb;
+		}
+	}
+
+	private sealed class MethodTypeConstant
+	{
+		private FieldBuilder field;
+		private bool dynamic;
+
+		internal void Emit(Compiler compiler, CodeEmitter ilgen, int index)
+		{
+			if (field == null)
+			{
+				field = CreateField(compiler, index, ref dynamic);
+			}
+			if (dynamic)
+			{
+				ilgen.Emit(OpCodes.Ldsflda, field);
+				ilgen.Emit(OpCodes.Ldstr, compiler.classFile.GetConstantPoolConstantMethodType(index).Signature);
+				compiler.context.EmitCallerID(ilgen);
+				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicLoadMethodType);
+			}
+			else
+			{
+				ilgen.Emit(OpCodes.Ldsfld, field);
+			}
+		}
+
+		private static FieldBuilder CreateField(Compiler compiler, int index, ref bool dynamic)
+		{
+			ClassFile.ConstantPoolItemMethodType cpi = compiler.classFile.GetConstantPoolConstantMethodType(index);
+			TypeWrapper[] args = cpi.GetArgTypes();
+			TypeWrapper ret = cpi.GetRetType();
+
+			if (HasUnloadable(args, ret))
+			{
+				dynamic = true;
+				return compiler.context.DefineDynamicMethodTypeCacheField();
+			}
+			else
+			{
+				TypeBuilder tb = compiler.context.DefineMethodTypeConstantType(index);
+				FieldBuilder field = tb.DefineField("value", CoreClasses.java.lang.invoke.MethodHandle.Wrapper.TypeAsSignatureType, FieldAttributes.Assembly | FieldAttributes.Static | FieldAttributes.InitOnly);
+				CodeEmitter ilgen = CodeEmitter.Create(ReflectUtil.DefineTypeInitializer(tb));
+				Type delegateType = MethodHandleUtil.CreateDelegateTypeForLoadConstant(args, ret);
+				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.LoadMethodType.MakeGenericMethod(delegateType));
+				ilgen.Emit(OpCodes.Stsfld, field);
+				ilgen.Emit(OpCodes.Ret);
+				ilgen.DoEmit();
+				return field;
+			}
 		}
 	}
 

@@ -2029,6 +2029,11 @@ namespace IKVM.Internal
 				}
 			}
 
+			internal string Signature
+			{
+				get { return descriptor; }
+			}
+
 			internal TypeWrapper[] GetArgTypes()
 			{
 				return argTypeWrappers;

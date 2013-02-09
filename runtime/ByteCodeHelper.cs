@@ -470,6 +470,46 @@ namespace IKVM.Runtime
 		}
 
 		[DebuggerStepThrough]
+		public static java.lang.invoke.MethodType DynamicLoadMethodType(ref java.lang.invoke.MethodType cache, string sig, ikvm.@internal.CallerID callerID)
+		{
+			if (cache == null)
+			{
+				DynamicLoadMethodTypeImpl(ref cache, sig, callerID);
+			}
+			return cache;
+		}
+
+		private static void DynamicLoadMethodTypeImpl(ref java.lang.invoke.MethodType cache, string sig, ikvm.@internal.CallerID callerID)
+		{
+#if !FIRST_PASS
+			try
+			{
+				ClassLoaderWrapper loader = ClassLoaderWrapper.FromCallerID(callerID);
+				TypeWrapper[] args = loader.ArgTypeWrapperListFromSig(sig);
+				java.lang.Class[] ptypes = new java.lang.Class[args.Length];
+				for (int i = 0; i < ptypes.Length; i++)
+				{
+					ptypes[i] = args[i].ClassObject;
+				}
+				Interlocked.CompareExchange(ref cache, java.lang.invoke.MethodType.methodType(loader.RetTypeWrapperFromSig(sig).ClassObject, ptypes), null);
+			}
+			catch (ClassNotFoundException x)
+			{
+				throw new java.lang.NoClassDefFoundError(x.Message);
+			}
+			catch (RetargetableJavaException x)
+			{
+				Exception javaException = x.ToJava();
+				if (!(javaException is java.lang.Error))
+				{
+					throw new java.lang.NoClassDefFoundError(javaException.Message).initCause(javaException);
+				}
+				throw javaException;
+			}
+#endif
+		}
+
+		[DebuggerStepThrough]
 		public static Delegate DynamicCreateDelegate(object obj, Type delegateType, string name, string sig)
 		{
 			TypeWrapper tw = TypeWrapper.FromClass(ikvm.runtime.Util.getClassFromObject(obj));
