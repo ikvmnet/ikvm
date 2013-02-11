@@ -327,6 +327,9 @@ public class MethodHandles {
         /** The allowed sorts of members which may be looked up (PUBLIC, etc.). */
         private final int allowedModes;
 
+        // [IKVM] when dynamically linking method handle constants, we don't want a security manager check
+        private final boolean noSecurityCheck;
+
         /** A single-bit mask representing {@code public} access,
          *  which may contribute to the result of {@link #lookupModes lookupModes}.
          *  The value, {@code 0x01}, happens to be the same as the value of the
@@ -420,8 +423,13 @@ public class MethodHandles {
         }
 
         private Lookup(Class<?> lookupClass, int allowedModes) {
+            this(lookupClass, allowedModes, false);
+        }
+
+        Lookup(Class<?> lookupClass, int allowedModes, boolean noSecurityCheck) {
             this.lookupClass = lookupClass;
             this.allowedModes = allowedModes;
+            this.noSecurityCheck = noSecurityCheck;
         }
 
         /**
@@ -1102,6 +1110,7 @@ return mh1;
          * This function performs stack walk magic: do not refactor it.
          */
         void checkSecurityManager(Class<?> refc, MemberName m) {
+            if (noSecurityCheck) return;
             SecurityManager smgr = System.getSecurityManager();
             if (smgr == null)  return;
             if (allowedModes == TRUSTED)  return;

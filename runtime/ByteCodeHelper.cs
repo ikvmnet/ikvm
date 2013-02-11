@@ -523,7 +523,12 @@ namespace IKVM.Runtime
 #if FIRST_PASS
 			return null;
 #else
-			java.lang.invoke.MethodHandles.Lookup lookup = java.lang.invoke.MethodHandles.lookup(callerID);
+			java.lang.invoke.MethodHandles.Lookup lookup = new java.lang.invoke.MethodHandles.Lookup(callerID.getCallerClass(),
+				java.lang.invoke.MethodHandles.Lookup.PUBLIC |
+				java.lang.invoke.MethodHandles.Lookup.PRIVATE |
+				java.lang.invoke.MethodHandles.Lookup.PROTECTED |
+				java.lang.invoke.MethodHandles.Lookup.PACKAGE,
+				true);
 			java.lang.Class refc = LoadTypeWrapper(clazz, callerID).ClassObject;
 			try
 			{
@@ -591,10 +596,6 @@ namespace IKVM.Runtime
 			catch (java.lang.IllegalAccessException x)
 			{
 				throw new java.lang.IllegalAccessError(x.getMessage());
-			}
-			catch (java.lang.SecurityException x)
-			{
-				throw new java.lang.IllegalAccessError().initCause(x);
 			}
 #endif
 		}
