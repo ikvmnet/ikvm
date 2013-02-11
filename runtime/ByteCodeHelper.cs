@@ -585,17 +585,9 @@ namespace IKVM.Runtime
 				}
 				throw javaException;
 			}
-			catch (java.lang.NoSuchFieldException x)
+			catch (java.lang.ReflectiveOperationException x)
 			{
-				throw new java.lang.NoSuchFieldError(x.getMessage());
-			}
-			catch (java.lang.NoSuchMethodException x)
-			{
-				throw new java.lang.NoSuchMethodError(x.getMessage());
-			}
-			catch (java.lang.IllegalAccessException x)
-			{
-				throw new java.lang.IllegalAccessError(x.getMessage());
+				throw new java.lang.IncompatibleClassChangeError().initCause(x);
 			}
 #endif
 		}
