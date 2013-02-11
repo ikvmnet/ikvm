@@ -3108,6 +3108,11 @@ sealed class Compiler
 			}
 			ClassFile.ConstantPoolItemMethodHandle mh = compiler.classFile.GetConstantPoolConstantMethodHandle(bsm.BootstrapMethodIndex);
 			MethodWrapper mw = mh.Member as MethodWrapper;
+			ClassFile.ConstantPoolItemMI cpiMI;
+			if (mw == null && (cpiMI = mh.MemberConstantPoolItem as ClassFile.ConstantPoolItemMI) != null)
+			{
+				mw = new DynamicMethodWrapper(compiler.context, compiler.clazz, cpiMI, Modifiers.Public | Modifiers.Static);
+			}
 			if (mw == null || !mw.IsStatic)
 			{
 				ilgen.EmitThrow("java.lang.invoke.WrongMethodTypeException");
@@ -3901,8 +3906,8 @@ sealed class Compiler
 		private TypeWrapper wrapper;
 		private ClassFile.ConstantPoolItemMI cpi;
 
-		internal DynamicMethodWrapper(DynamicTypeWrapper.FinishContext context, TypeWrapper wrapper, ClassFile.ConstantPoolItemMI cpi)
-			: base(wrapper, cpi.Name, cpi.Signature, null, cpi.GetRetType(), cpi.GetArgTypes(), Modifiers.Public, MemberFlags.None)
+		internal DynamicMethodWrapper(DynamicTypeWrapper.FinishContext context, TypeWrapper wrapper, ClassFile.ConstantPoolItemMI cpi, Modifiers modifiers)
+			: base(wrapper, cpi.Name, cpi.Signature, null, cpi.GetRetType(), cpi.GetArgTypes(), modifiers, MemberFlags.None)
 		{
 			this.context = context;
 			this.wrapper = wrapper;
@@ -3990,7 +3995,7 @@ sealed class Compiler
 			case NormalizedByteCode.__dynamic_invokestatic:
 			case NormalizedByteCode.__dynamic_invokevirtual:
 			case NormalizedByteCode.__dynamic_invokespecial:
-				return new DynamicMethodWrapper(context, clazz, cpi);
+				return new DynamicMethodWrapper(context, clazz, cpi, Modifiers.Public);
 			case NormalizedByteCode.__methodhandle_invoke:
 				return new MethodHandleMethodWrapper(context, clazz, cpi, false);
 			case NormalizedByteCode.__methodhandle_invokeexact:
@@ -4000,7 +4005,7 @@ sealed class Compiler
 		}
 		if(mw.IsDynamicOnly)
 		{
-			return new DynamicMethodWrapper(context, clazz, cpi);
+			return new DynamicMethodWrapper(context, clazz, cpi, mw.Modifiers);
 		}
 		return mw;
 	}
