@@ -5488,12 +5488,12 @@ namespace IKVM.Internal
 
 			internal FieldBuilder DefineDynamicMethodHandleCacheField()
 			{
-				return typeBuilder.DefineField("__<>dynamicMethodHandleCache", ClassLoaderWrapper.LoadClassCritical("java.lang.invoke.MethodHandle").TypeAsSignatureType, FieldAttributes.Static | FieldAttributes.PrivateScope);
+				return typeBuilder.DefineField("__<>dynamicMethodHandleCache", CoreClasses.java.lang.invoke.MethodHandle.Wrapper.TypeAsSignatureType, FieldAttributes.Static | FieldAttributes.PrivateScope);
 			}
 
 			internal FieldBuilder DefineDynamicMethodTypeCacheField()
 			{
-				return typeBuilder.DefineField("__<>dynamicMethodTypeCache", ClassLoaderWrapper.LoadClassCritical("java.lang.invoke.MethodType").TypeAsSignatureType, FieldAttributes.Static | FieldAttributes.PrivateScope);
+				return typeBuilder.DefineField("__<>dynamicMethodTypeCache", CoreClasses.java.lang.invoke.MethodType.Wrapper.TypeAsSignatureType, FieldAttributes.Static | FieldAttributes.PrivateScope);
 			}
 
 			internal MethodBuilder DefineInvokeSpecialStub(DefineMethodHelper sig)
