@@ -685,12 +685,9 @@ namespace IKVM.Internal
 					if (ccl != this)
 					{
 						ccl.AddWildcardExports(exportedNamesPerAssembly);
-						if (ccl.options.resources != null)
+						foreach (string name in ccl.options.resources.Keys)
 						{
-							foreach (string name in ccl.options.resources.Keys)
-							{
-								AddExportMapEntry(exportedNamesPerAssembly, ccl, name);
-							}
+							AddExportMapEntry(exportedNamesPerAssembly, ccl, name);
 						}
 						if (ccl.options.externalResources != null)
 						{
@@ -3330,7 +3327,7 @@ namespace IKVM.Internal
 		internal Assembly[] references;
 		internal string[] peerReferences;
 		internal bool crossReferenceAllPeers = true;
-		internal Dictionary<string, List<ResourceItem>> resources;
+		internal Dictionary<string, List<ResourceItem>> resources = new Dictionary<string, List<ResourceItem>>();
 		internal string[] classesToExclude;
 		internal string remapfile;
 		internal Dictionary<string, string> props;
@@ -3362,10 +3359,7 @@ namespace IKVM.Internal
 			{
 				copy.classes = new Dictionary<string, ClassItem>(classes);
 			}
-			if (resources != null)
-			{
-				copy.resources = Copy(resources);
-			}
+			copy.resources = Copy(resources);
 			if (props != null)
 			{
 				copy.props = new Dictionary<string, string>(props);
@@ -3387,6 +3381,21 @@ namespace IKVM.Internal
 				copy.Add(kv.Key, new List<ResourceItem>(kv.Value));
 			}
 			return copy;
+		}
+
+		internal void AddResource(ICSharpCode.SharpZipLib.Zip.ZipEntry zipEntry, string name, byte[] buf, string jar)
+		{
+			List<ResourceItem> list;
+			if (!resources.TryGetValue(name, out list))
+			{
+				list = new List<ResourceItem>();
+				resources.Add(name, list);
+			}
+			ResourceItem item = new ResourceItem();
+			item.zipEntry = zipEntry;
+			item.data = buf;
+			item.jar = jar ?? "resources.jar";
+			list.Add(item);
 		}
 	}
 

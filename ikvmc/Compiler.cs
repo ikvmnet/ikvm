@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2012 Jeroen Frijters
+  Copyright (C) 2002-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -165,7 +165,6 @@ sealed class IkvmcCompiler
 	private bool nonleaf;
 	private string manifestMainClass;
 	private Dictionary<string, ClassItem> classes = new Dictionary<string, ClassItem>();
-	private Dictionary<string, List<ResourceItem>> resources = new Dictionary<string, List<ResourceItem>>();
 	private string defaultAssemblyName;
 	private List<string> classesToExclude = new List<string>();
 	private static bool time;
@@ -538,7 +537,6 @@ sealed class IkvmcCompiler
 				IkvmcCompiler nestedLevel = new IkvmcCompiler();
 				nestedLevel.manifestMainClass = manifestMainClass;
 				nestedLevel.classes = new Dictionary<string, ClassItem>(classes);
-				nestedLevel.resources = CompilerOptions.Copy(resources);
 				nestedLevel.defaultAssemblyName = defaultAssemblyName;
 				nestedLevel.classesToExclude = new List<string>(classesToExclude);
 				nestedLevel.ContinueParseCommandLine(arglist, targets, options.Copy());
@@ -737,7 +735,7 @@ sealed class IkvmcCompiler
 					{
 						throw new FatalCompilerErrorException(Message.InvalidOptionSyntax, s);
 					}
-					AddResource(null, spec[0].TrimStart('/'), ReadAllBytes(spec[1]), null);
+					options.AddResource(null, spec[0].TrimStart('/'), ReadAllBytes(spec[1]), null);
 				}
 				else if(s.StartsWith("-externalresource:"))
 				{
@@ -1017,7 +1015,6 @@ sealed class IkvmcCompiler
 			options.mainClass = manifestMainClass;
 		}
 		options.classes = classes;
-		options.resources = resources;
 		options.classesToExclude = classesToExclude.ToArray();
 		targets.Add(options);
 	}
@@ -1236,7 +1233,7 @@ sealed class IkvmcCompiler
 				// not a class file, so we include it as a resource
 				// (IBM's db2os390/sqlj jars apparantly contain such files)
 				StaticCompiler.IssueMessage(Message.NotAClassFile, filename, x.Message);
-				AddResource(zipEntry, filename, buf, jar);
+				options.AddResource(zipEntry, filename, buf, jar);
 			}
 			else
 			{
@@ -1292,7 +1289,7 @@ sealed class IkvmcCompiler
 				}
 				else if(ze.IsDirectory)
 				{
-					AddResource(ze, ze.Name, null, jar);
+					options.AddResource(ze, ze.Name, null, jar);
 				}
 				else if(ze.Name.ToLower().EndsWith(".class"))
 				{
@@ -1324,7 +1321,7 @@ sealed class IkvmcCompiler
 							}
 						}
 					}
-					AddResource(ze, ze.Name, ReadFromZip(zf, ze), jar);
+					options.AddResource(ze, ze.Name, ReadFromZip(zf, ze), jar);
 				}
 			}
 		}
@@ -1332,21 +1329,6 @@ sealed class IkvmcCompiler
 		{
 			zf.Close();
 		}
-	}
-
-	private void AddResource(ZipEntry zipEntry, string name, byte[] buf, string jar)
-	{
-		List<ResourceItem> list;
-		if (!resources.TryGetValue(name, out list))
-		{
-			list = new List<ResourceItem>();
-			resources.Add(name, list);
-		}
-		ResourceItem item = new ResourceItem();
-		item.zipEntry = zipEntry;
-		item.data = buf;
-		item.jar = jar ?? "resources.jar";
-		list.Add(item);
 	}
 
 	private void ProcessFile(CompilerOptions options, DirectoryInfo baseDir, string file)
@@ -1379,7 +1361,7 @@ sealed class IkvmcCompiler
 					// extract the resource name by chopping off the base directory
 					string name = file.Substring(baseDir.FullName.Length);
 					name = name.TrimStart(Path.DirectorySeparatorChar).Replace('\\', '/');
-					AddResource(null, name, ReadAllBytes(file), null);
+					options.AddResource(null, name, ReadAllBytes(file), null);
 				}
 				break;
 			}
