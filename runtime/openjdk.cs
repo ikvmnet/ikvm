@@ -2651,7 +2651,7 @@ namespace IKVM.NativeCode.java
 					AssemblyClassLoader acl = wrapper.GetClassLoader() as AssemblyClassLoader;
 					if (acl != null)
 					{
-						pd = (ProtectionDomain)acl.GetProtectionDomain();
+						pd = acl.GetProtectionDomain();
 					}
 				}
 				return pd;

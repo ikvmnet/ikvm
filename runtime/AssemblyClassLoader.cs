@@ -46,7 +46,7 @@ namespace IKVM.Internal
 		private AssemblyClassLoader[] delegates;
 #if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
 		private JavaClassLoaderConstructionInProgress jclcip;
-		private object protectionDomain;
+		private java.security.ProtectionDomain protectionDomain;
 		private static Dictionary<string, string> customClassLoaderRedirects;
 		private byte hasCustomClassLoader;	/* 0 = unknown, 1 = yes, 2 = no */
 #endif
@@ -935,20 +935,16 @@ namespace IKVM.Internal
 			}
 			return javaClassLoader;
 		}
-#endif
 
-		internal virtual object GetProtectionDomain()
+		internal virtual java.security.ProtectionDomain GetProtectionDomain()
 		{
-#if STATIC_COMPILER || FIRST_PASS || STUB_GENERATOR
-			return null;
-#else
 			if (protectionDomain == null)
 			{
 				Interlocked.CompareExchange(ref protectionDomain, new java.security.ProtectionDomain(assemblyLoader.Assembly), null);
 			}
 			return protectionDomain;
-#endif
 		}
+#endif
 
 		protected override void CheckDefineClassAllowed(string className)
 		{
@@ -1271,11 +1267,11 @@ namespace IKVM.Internal
 		{
 			return null;
 		}
-#endif
 
-		internal override object GetProtectionDomain()
+		internal override java.security.ProtectionDomain GetProtectionDomain()
 		{
 			return null;
 		}
+#endif
 	}
 }
