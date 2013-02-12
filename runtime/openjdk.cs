@@ -2530,18 +2530,18 @@ namespace IKVM.NativeCode.java
 				return TypeWrapper.FromClass(thisClass).SigName;
 			}
 
-			public static object getClassLoader0(jlClass thisClass)
+			public static global::java.lang.ClassLoader getClassLoader0(jlClass thisClass)
 			{
 				return TypeWrapper.FromClass(thisClass).GetClassLoader().GetJavaClassLoader();
 			}
 
-			public static object getSuperclass(jlClass thisClass)
+			public static jlClass getSuperclass(jlClass thisClass)
 			{
 				TypeWrapper super = TypeWrapper.FromClass(thisClass).BaseTypeWrapper;
 				return super != null ? super.ClassObject : null;
 			}
 
-			public static object getInterfaces(jlClass thisClass)
+			public static jlClass[] getInterfaces(jlClass thisClass)
 			{
 #if FIRST_PASS
 				return null;
@@ -2556,7 +2556,7 @@ namespace IKVM.NativeCode.java
 #endif
 			}
 
-			public static object getComponentType(jlClass thisClass)
+			public static jlClass getComponentType(jlClass thisClass)
 			{
 				TypeWrapper tw = TypeWrapper.FromClass(thisClass);
 				return tw.IsArray ? tw.ElementTypeWrapper.ClassObject : null;
@@ -2605,7 +2605,7 @@ namespace IKVM.NativeCode.java
 				}
 			}
 
-			public static object getDeclaringClass(jlClass thisClass)
+			public static jlClass getDeclaringClass(jlClass thisClass)
 			{
 				try
 				{
@@ -2665,7 +2665,7 @@ namespace IKVM.NativeCode.java
 #endif
 			}
 
-			public static object getPrimitiveClass(string name)
+			public static jlClass getPrimitiveClass(string name)
 			{
 				// note that this method isn't used anymore (because it is an intrinsic (during core class library compilation))
 				// it still remains for compat because it might be invoked through reflection by evil code
@@ -2896,7 +2896,7 @@ namespace IKVM.NativeCode.java
 #endif
 			}
 
-			public static object getDeclaredClasses0(jlClass thisClass)
+			public static jlClass[] getDeclaredClasses0(jlClass thisClass)
 			{
 #if FIRST_PASS
 				return null;

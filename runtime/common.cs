@@ -89,7 +89,7 @@ namespace IKVM.NativeCode.gnu.java.net.protocol.ikvmres
 			return Assembly.Load(name);
 		}
 
-		public static object GetGenericClassLoaderById(int id)
+		public static global::java.lang.ClassLoader GetGenericClassLoaderById(int id)
 		{
 			return ClassLoaderWrapper.GetGenericClassLoaderById(id).GetJavaClassLoader();
 		}
@@ -120,17 +120,17 @@ namespace IKVM.NativeCode.ikvm.@internal
 {
 	static class CallerID
 	{
-		public static object GetClass(object obj)
+		public static jlClass GetClass(object obj)
 		{
 			return ClassLoaderWrapper.GetWrapperFromType(obj.GetType().DeclaringType).ClassObject;
 		}
 
-		public static object GetClassLoader(object obj)
+		public static global::java.lang.ClassLoader GetClassLoader(object obj)
 		{
 			return ClassLoaderWrapper.GetWrapperFromType(obj.GetType().DeclaringType).GetClassLoader().GetJavaClassLoader();
 		}
 
-		public static object GetAssemblyClassLoader(Assembly asm)
+		public static global::java.lang.ClassLoader GetAssemblyClassLoader(Assembly asm)
 		{
 			return AssemblyClassLoader.FromAssembly(asm).GetJavaClassLoader();
 		}
@@ -389,7 +389,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 #endif
 		}
 
-		public static object getAssemblyClassLoader(Assembly asm)
+		public static global::java.lang.ClassLoader getAssemblyClassLoader(Assembly asm)
 		{
 			// note that we don't do a security check here, because if you have the Assembly object,
 			// you can already get at all the types in it.

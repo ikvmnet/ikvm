@@ -424,25 +424,25 @@ namespace IKVM.Internal
 		}
 
 #if !STATIC_COMPILER && !STUB_GENERATOR
-		internal static object NewAnnotation(object classLoader, object definition)
+		internal static object NewAnnotation(java.lang.ClassLoader classLoader, object definition)
 		{
 #if FIRST_PASS
 			return null;
 #else
-			return ikvm.@internal.AnnotationAttributeBase.newAnnotation((java.lang.ClassLoader)classLoader, definition);
+			return ikvm.@internal.AnnotationAttributeBase.newAnnotation(classLoader, definition);
 #endif
 		}
 #endif
 
 #if !STATIC_COMPILER && !STUB_GENERATOR
-		internal static object NewAnnotationElementValue(object classLoader, object expectedClass, object definition)
+		internal static object NewAnnotationElementValue(java.lang.ClassLoader classLoader, java.lang.Class expectedClass, object definition)
 		{
 #if FIRST_PASS
 			return null;
 #else
 			try
 			{
-				return ikvm.@internal.AnnotationAttributeBase.decodeElementValue(definition, (java.lang.Class)expectedClass, (java.lang.ClassLoader)classLoader);
+				return ikvm.@internal.AnnotationAttributeBase.decodeElementValue(definition, expectedClass, classLoader);
 			}
 			catch(java.lang.IllegalAccessException)
 			{
