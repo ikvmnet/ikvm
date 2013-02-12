@@ -386,7 +386,7 @@ namespace IKVM.Internal
 							options.AddResource(null, f.Name.Replace('.', '/') + ".class", classdef.data, "classes.jar");
 
 							// suppress class not found warning for the current class
-							options.suppressWarnings.Add((int)Message.ClassNotFound + ":" + f.Name, null);
+							options.suppressWarnings[(int)Message.ClassNotFound + ":" + f.Name] = null;
 
 							// give a warning about the missing base class/interface
 							StaticCompiler.IssueMessage(options, Message.ClassNotFound, x.Message);
