@@ -589,6 +589,10 @@ namespace IKVM.Internal
 				{
 					throw new FatalCompilerErrorException(Message.ErrorWritingFile, GetTypeWrapperFactory().ModuleBuilder.FullyQualifiedName, x.Message);
 				}
+				catch(UnauthorizedAccessException x)
+				{
+					throw new FatalCompilerErrorException(Message.ErrorWritingFile, GetTypeWrapperFactory().ModuleBuilder.FullyQualifiedName, x.Message);
+				}
 			}
 			else
 			{
@@ -598,6 +602,10 @@ namespace IKVM.Internal
 					assemblyBuilder.Save(assemblyFile, options.pekind, options.imageFileMachine);
 				}
 				catch(IOException x)
+				{
+					throw new FatalCompilerErrorException(Message.ErrorWritingFile, Path.Combine(assemblyDir, assemblyFile), x.Message);
+				}
+				catch(UnauthorizedAccessException x)
 				{
 					throw new FatalCompilerErrorException(Message.ErrorWritingFile, Path.Combine(assemblyDir, assemblyFile), x.Message);
 				}
