@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2012 Jeroen Frijters
+  Copyright (C) 2002-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -69,7 +69,6 @@ namespace IKVM.Internal
 		private List<string> classesToCompile;
 		private List<CompilerClassLoader> peerReferences = new List<CompilerClassLoader>();
 		private Dictionary<string, string> peerLoading = new Dictionary<string, string>();
-		private Dictionary<string, TypeWrapper> importedStubTypes = new Dictionary<string, TypeWrapper>();
 		private List<ClassLoaderWrapper> internalsVisibleTo = new List<ClassLoaderWrapper>();
 		private List<TypeWrapper> dynamicallyImportedTypes = new List<TypeWrapper>();
 		private List<string> jarList = new List<string>();
@@ -362,12 +361,7 @@ namespace IKVM.Internal
 					}
 					try
 					{
-						TypeWrapper type = DefineClass(f, null);
-						if(f.IKVMAssemblyAttribute != null)
-						{
-							importedStubTypes.Add(f.Name, type);
-						}
-						return type;
+						return DefineClass(f, null);
 					}
 					catch (ClassFormatError x)
 					{
@@ -2946,24 +2940,6 @@ namespace IKVM.Internal
 			return asm;
 		}
 
-		private bool IsStub(string className)
-		{
-			// this function is needed because when using generics a type may be loaded before the stub is seen
-			// and without this check that would cause a spurious IKVMC0109 warning
-			ClassItem classdef;
-			if (classes.TryGetValue(className, out classdef))
-			{
-				try
-				{
-					return new ClassFile(classdef.data, 0, classdef.data.Length, className, ClassFileParseOptions.RelaxedClassNameValidation).IKVMAssemblyAttribute != null;
-				}
-				catch (ClassFormatError)
-				{
-				}
-			}
-			return false;
-		}
-
 		private void CompilePass1()
 		{
 			Tracer.Info(Tracer.Compiler, "Compiling class files (1)");
@@ -2995,7 +2971,7 @@ namespace IKVM.Internal
 					ClassLoaderWrapper loader = wrapper.GetClassLoader();
 					if(loader != this)
 					{
-						if(!(loader is GenericClassLoader || loader is CompilerClassLoader || (importedStubTypes.ContainsKey(s) && importedStubTypes[s] == wrapper) || IsStub(s)))
+						if(loader is AssemblyClassLoader)
 						{
 							StaticCompiler.IssueMessage(options, Message.SkippingReferencedClass, s, ((AssemblyClassLoader)loader).GetAssembly(wrapper).FullName);
 						}
