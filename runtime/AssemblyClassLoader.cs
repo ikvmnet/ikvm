@@ -927,7 +927,7 @@ namespace IKVM.Internal
 			return javaClassLoader;
 		}
 
-		internal override object GetJavaClassLoader()
+		internal override java.lang.ClassLoader GetJavaClassLoader()
 		{
 			if (javaClassLoader == null)
 			{
@@ -1266,10 +1266,12 @@ namespace IKVM.Internal
 			return base.GetWrapperFromAssemblyType(type);
 		}
 
-		internal override object GetJavaClassLoader()
+#if !FIRST_PASS && !STATIC_COMPILER && !STUB_GENERATOR
+		internal override java.lang.ClassLoader GetJavaClassLoader()
 		{
 			return null;
 		}
+#endif
 
 		internal override object GetProtectionDomain()
 		{

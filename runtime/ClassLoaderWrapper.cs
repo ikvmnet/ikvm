@@ -702,7 +702,7 @@ namespace IKVM.Internal
 			Profiler.Enter("ClassLoader.loadClass");
 			try
 			{
-				java.lang.Class c = ((java.lang.ClassLoader)GetJavaClassLoader()).loadClassInternal(name);
+				java.lang.Class c = GetJavaClassLoader().loadClassInternal(name);
 				if(c == null)
 				{
 					return null;
@@ -744,14 +744,16 @@ namespace IKVM.Internal
 			return RegisterInitiatingLoader(new ArrayTypeWrapper(elementTypeWrapper, name));
 		}
 
-		internal virtual object GetJavaClassLoader()
+#if !STATIC_COMPILER && !STUB_GENERATOR
+		internal virtual java.lang.ClassLoader GetJavaClassLoader()
 		{
-#if FIRST_PASS || STATIC_COMPILER || STUB_GENERATOR
+#if FIRST_PASS
 			return null;
 #else
 			return javaClassLoader;
 #endif
 		}
+#endif
 
 		internal TypeWrapper ExpressionTypeWrapper(string type)
 		{
@@ -1356,7 +1358,7 @@ namespace IKVM.Internal
 				}
 				if(Tracer.ClassLoading.TraceError)
 				{
-					java.lang.ClassLoader cl = (java.lang.ClassLoader)classLoader.GetJavaClassLoader();
+					java.lang.ClassLoader cl = classLoader.GetJavaClassLoader();
 					if(cl != null)
 					{
 						System.Text.StringBuilder sb = new System.Text.StringBuilder();
