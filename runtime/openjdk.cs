@@ -2938,12 +2938,12 @@ namespace IKVM.NativeCode.java
 
 		static class ClassLoader
 		{
-			public static object defineClass0(jlClassLoader thisClassLoader, string name, byte[] b, int off, int len, ProtectionDomain pd)
+			public static jlClass defineClass0(jlClassLoader thisClassLoader, string name, byte[] b, int off, int len, ProtectionDomain pd)
 			{
 				return defineClass1(thisClassLoader, name, b, off, len, pd, null);
 			}
 
-			public static object defineClass1(jlClassLoader thisClassLoader, string name, byte[] b, int off, int len, ProtectionDomain pd, string source)
+			public static jlClass defineClass1(jlClassLoader thisClassLoader, string name, byte[] b, int off, int len, ProtectionDomain pd, string source)
 			{
 				// it appears the source argument is only used for trace messages in HotSpot. We'll just ignore it for now.
 				Profiler.Enter("ClassLoader.defineClass");
@@ -2982,7 +2982,7 @@ namespace IKVM.NativeCode.java
 				}
 			}
 
-			public static object defineClass2(jlClassLoader thisClassLoader, string name, jnByteBuffer bb, int off, int len, ProtectionDomain pd, string source)
+			public static jlClass defineClass2(jlClassLoader thisClassLoader, string name, jnByteBuffer bb, int off, int len, ProtectionDomain pd, string source)
 			{
 #if FIRST_PASS
 				return null;
@@ -2993,12 +2993,12 @@ namespace IKVM.NativeCode.java
 #endif
 			}
 
-			public static void resolveClass0(jlClassLoader thisClassLoader, object clazz)
+			public static void resolveClass0(jlClassLoader thisClassLoader, jlClass clazz)
 			{
 				// no-op
 			}
 
-			public static object findBootstrapClass(jlClassLoader thisClassLoader, string name)
+			public static jlClass findBootstrapClass(jlClassLoader thisClassLoader, string name)
 			{
 #if FIRST_PASS
 				return null;
@@ -3016,7 +3016,7 @@ namespace IKVM.NativeCode.java
 #endif
 			}
 
-			public static object findLoadedClass0(jlClassLoader thisClassLoader, string name)
+			public static jlClass findLoadedClass0(jlClassLoader thisClassLoader, string name)
 			{
 				if (name == null)
 				{
