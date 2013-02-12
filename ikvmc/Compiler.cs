@@ -364,13 +364,13 @@ sealed class IkvmcCompiler
 				}
 				else
 				{
-					SetStrongNameKeyPair(ref options.keyPair, options.keyfile, true);
+					SetStrongNameKeyPair(ref options.keyPair, options.keyfile, null);
 				}
 			}
 			else if (options.keycontainer != null)
 			{
 				StrongNameKeyPair keyPair = null;
-				SetStrongNameKeyPair(ref keyPair, options.keycontainer, false);
+				SetStrongNameKeyPair(ref keyPair, null, options.keycontainer);
 				if (options.delaysign)
 				{
 					options.publicKey = keyPair.PublicKey;
@@ -383,15 +383,15 @@ sealed class IkvmcCompiler
 		}
 	}
 
-	internal static byte[] ReadAllBytes(string path)
+	internal static byte[] ReadAllBytes(FileInfo path)
 	{
 		try
 		{
-			return File.ReadAllBytes(path);
+			return File.ReadAllBytes(path.FullName);
 		}
 		catch (Exception x)
 		{
-			throw new FatalCompilerErrorException(Message.ErrorReadingFile, path, x.Message);
+			throw new FatalCompilerErrorException(Message.ErrorReadingFile, path.ToString(), x.Message);
 		}
 	}
 
@@ -554,7 +554,7 @@ sealed class IkvmcCompiler
 			{
 				if(s.StartsWith("-out:"))
 				{
-					options.path = s.Substring(5);
+					options.path = GetFileInfo(s.Substring(5));
 				}
 				else if(s.StartsWith("-Xtrace:"))
 				{
@@ -736,7 +736,7 @@ sealed class IkvmcCompiler
 					{
 						throw new FatalCompilerErrorException(Message.InvalidOptionSyntax, s);
 					}
-					options.AddResource(null, spec[0].TrimStart('/'), ReadAllBytes(spec[1]), null);
+					options.AddResource(null, spec[0].TrimStart('/'), ReadAllBytes(GetFileInfo(spec[1])), null);
 				}
 				else if(s.StartsWith("-externalresource:"))
 				{
@@ -782,15 +782,15 @@ sealed class IkvmcCompiler
 				}
 				else if(s.StartsWith("-win32icon:"))
 				{
-					options.iconfile = s.Substring(11);
+					options.iconfile = GetFileInfo(s.Substring(11));
 				}
 				else if(s.StartsWith("-win32manifest:"))
 				{
-					options.manifestFile = s.Substring(15);
+					options.manifestFile = GetFileInfo(s.Substring(15));
 				}
 				else if(s.StartsWith("-keyfile:"))
 				{
-					options.keyfile = s.Substring(9);
+					options.keyfile = GetFileInfo(s.Substring(9));
 				}
 				else if(s.StartsWith("-key:"))
 				{
@@ -810,7 +810,7 @@ sealed class IkvmcCompiler
 				}
 				else if(s.StartsWith("-remap:"))
 				{
-					options.remapfile = s.Substring(7);
+					options.remapfile = GetFileInfo(s.Substring(7));
 				}
 				else if(s == "-nostacktraceinfo")
 				{
@@ -939,10 +939,10 @@ sealed class IkvmcCompiler
 				}
 				else if(s.StartsWith("-writeSuppressWarningsFile:"))
 				{
-					options.writeSuppressWarningsFile = s.Substring(27);
+					options.writeSuppressWarningsFile = GetFileInfo(s.Substring(27));
 					try
 					{
-						File.Delete(options.writeSuppressWarningsFile);
+						options.writeSuppressWarningsFile.Delete();
 					}
 					catch(Exception x)
 					{
@@ -991,7 +991,7 @@ sealed class IkvmcCompiler
 		ReadFiles(options, fileNames);
 		if(options.assembly == null)
 		{
-			string basename = options.path == null ? defaultAssemblyName : new FileInfo(options.path).Name;
+			string basename = options.path == null ? defaultAssemblyName : options.path.Name;
 			if(basename == null)
 			{
 				throw new FatalCompilerErrorException(Message.NoOutputFileSpecified);
@@ -1008,7 +1008,7 @@ sealed class IkvmcCompiler
 		}
 		if(options.path != null && options.guessFileKind)
 		{
-			if(options.path.ToLower().EndsWith(".dll"))
+			if(options.path.Extension.Equals(".dll", StringComparison.OrdinalIgnoreCase))
 			{
 				options.target = PEFileKinds.Dll;
 			}
@@ -1022,6 +1022,37 @@ sealed class IkvmcCompiler
 		options.classes = classes;
 		options.classesToExclude = classesToExclude.ToArray();
 		targets.Add(options);
+	}
+
+	internal static FileInfo GetFileInfo(string path)
+	{
+		try
+		{
+			FileInfo fileInfo = new FileInfo(path);
+			if (fileInfo.Directory == null)
+			{
+				// this happens with an incorrect unc path (e.g. "\\foo\bar")
+				throw new FatalCompilerErrorException(Message.InvalidPath, path);
+			}
+			return fileInfo;
+		}
+		catch (ArgumentException)
+		{
+			throw new FatalCompilerErrorException(Message.InvalidPath, path);
+		}
+		catch (NotSupportedException)
+		{
+			throw new FatalCompilerErrorException(Message.InvalidPath, path);
+		}
+		catch (PathTooLongException)
+		{
+			throw new FatalCompilerErrorException(Message.PathTooLong, path);
+		}
+		catch (UnauthorizedAccessException)
+		{
+			// this exception does not appear to be possible
+			throw new FatalCompilerErrorException(Message.InvalidPath, path);
+		}
 	}
 
 	private void ReadFiles(CompilerOptions options, List<string> fileNames)
@@ -1038,6 +1069,12 @@ sealed class IkvmcCompiler
 				{
 					// if the filename contains a wildcard (or any other invalid character), we ignore
 					// it as a potential default assembly name
+				}
+				catch (NotSupportedException)
+				{
+				}
+				catch (PathTooLongException)
+				{
 				}
 			}
 			string[] files = null;
@@ -1099,24 +1136,24 @@ sealed class IkvmcCompiler
 		return false;
 	}
 
-	static void SetStrongNameKeyPair(ref StrongNameKeyPair strongNameKeyPair, string fileNameOrKeyContainer, bool file)
+	static void SetStrongNameKeyPair(ref StrongNameKeyPair strongNameKeyPair, FileInfo keyFile, string keyContainer)
 	{
 		try
 		{
-			if (file)
+			if (keyFile != null)
 			{
-				strongNameKeyPair = new StrongNameKeyPair(File.ReadAllBytes(fileNameOrKeyContainer));
+				strongNameKeyPair = new StrongNameKeyPair(ReadAllBytes(keyFile));
 			}
 			else
 			{
-				strongNameKeyPair = new StrongNameKeyPair(fileNameOrKeyContainer);
+				strongNameKeyPair = new StrongNameKeyPair(keyContainer);
 			}
 			// FXBUG we explicitly try to access the public key force a check (the StrongNameKeyPair constructor doesn't validate the key)
 			if (strongNameKeyPair.PublicKey != null) { }
 		}
 		catch (Exception x)
 		{
-			throw new FatalCompilerErrorException(Message.InvalidStrongNameKeyPair, file ? "file" : "container", x.Message);
+			throw new FatalCompilerErrorException(Message.InvalidStrongNameKeyPair, keyFile != null ? "file" : "container", x.Message);
 		}
 	}
 
@@ -1338,10 +1375,11 @@ sealed class IkvmcCompiler
 
 	private void ProcessFile(CompilerOptions options, DirectoryInfo baseDir, string file)
 	{
-		switch(new FileInfo(file).Extension.ToLower())
+		FileInfo fileInfo = GetFileInfo(file);
+		switch(fileInfo.Extension.ToLower())
 		{
 			case ".class":
-				AddClassFile(options, null, file, ReadAllBytes(file), false, null);
+				AddClassFile(options, null, file, ReadAllBytes(fileInfo), false, null);
 				break;
 			case ".jar":
 			case ".zip":
@@ -1366,7 +1404,7 @@ sealed class IkvmcCompiler
 					// extract the resource name by chopping off the base directory
 					string name = file.Substring(baseDir.FullName.Length);
 					name = name.TrimStart(Path.DirectorySeparatorChar).Replace('\\', '/');
-					options.AddResource(null, name, ReadAllBytes(file), null);
+					options.AddResource(null, name, ReadAllBytes(fileInfo), null);
 				}
 				break;
 			}

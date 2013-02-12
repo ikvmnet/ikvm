@@ -74,14 +74,13 @@ namespace IKVM.Internal
 		private List<string> jarList = new List<string>();
 		private List<TypeWrapper> allwrappers;
 
-		internal CompilerClassLoader(AssemblyClassLoader[] referencedAssemblies, CompilerOptions options, string path, bool targetIsModule, string assemblyName, Dictionary<string, ClassItem> classes)
+		internal CompilerClassLoader(AssemblyClassLoader[] referencedAssemblies, CompilerOptions options, FileInfo assemblyPath, bool targetIsModule, string assemblyName, Dictionary<string, ClassItem> classes)
 			: base(options.codegenoptions, null)
 		{
 			this.referencedAssemblies = referencedAssemblies;
 			this.options = options;
 			this.classes = classes;
 			this.assemblyName = assemblyName;
-			FileInfo assemblyPath = new FileInfo(path);
 			this.assemblyFile = assemblyPath.Name;
 			this.assemblyDir = assemblyPath.DirectoryName;
 			this.targetIsModule = targetIsModule;
@@ -930,7 +929,7 @@ namespace IKVM.Internal
 				}
 				if(classLoader.EmitStackTraceInfo)
 				{
-					AttributeHelper.SetSourceFile(typeBuilder, Path.GetFileName(classLoader.options.remapfile));
+					AttributeHelper.SetSourceFile(typeBuilder, classLoader.options.remapfile.Name);
 				}
 
 				if(baseIsSealed)
@@ -2819,18 +2818,18 @@ namespace IKVM.Internal
 				{
 					if(options.targetIsModule)
 					{
-						options.path = options.assembly + ".netmodule";
+						options.path = IkvmcCompiler.GetFileInfo(options.assembly + ".netmodule");
 					}
 					else
 					{
-						options.path = options.assembly + ".dll";
+						options.path = IkvmcCompiler.GetFileInfo(options.assembly + ".dll");
 					}
 				}
 				else
 				{
-					options.path = options.assembly + ".exe";
+					options.path = IkvmcCompiler.GetFileInfo(options.assembly + ".exe");
 				}
-				StaticCompiler.IssueMessage(Message.OutputFileIs, options.path);
+				StaticCompiler.IssueMessage(Message.OutputFileIs, options.path.ToString());
 			}
 
 			if(options.targetIsModule)
@@ -2840,7 +2839,7 @@ namespace IKVM.Internal
 					throw new FatalCompilerErrorException(Message.ModuleCannotHaveClassLoader);
 				}
 				// TODO if we're overwriting a user specified assembly name, we need to emit a warning
-				options.assembly = new FileInfo(options.path).Name;
+				options.assembly = options.path.Name;
 			}
 
 			Tracer.Info(Tracer.Compiler, "Constructing compiler");
@@ -2867,7 +2866,7 @@ namespace IKVM.Internal
 				FileStream fs;
 				try
 				{
-					fs = File.OpenRead(options.remapfile);
+					fs = options.remapfile.OpenRead();
 				}
 				catch(Exception x)
 				{
@@ -3319,16 +3318,16 @@ namespace IKVM.Internal
 
 	sealed class CompilerOptions
 	{
-		internal string path;
-		internal string keyfile;
+		internal FileInfo path;
+		internal FileInfo keyfile;
 		internal string keycontainer;
 		internal bool delaysign;
 		internal byte[] publicKey;
 		internal StrongNameKeyPair keyPair;
 		internal Version version;
 		internal string fileversion;
-		internal string iconfile;
-		internal string manifestFile;
+		internal FileInfo iconfile;
+		internal FileInfo manifestFile;
 		internal bool targetIsModule;
 		internal string assembly;
 		internal string mainClass;
@@ -3343,7 +3342,7 @@ namespace IKVM.Internal
 		internal bool crossReferenceAllPeers = true;
 		internal Dictionary<string, List<ResourceItem>> resources = new Dictionary<string, List<ResourceItem>>();
 		internal string[] classesToExclude;
-		internal string remapfile;
+		internal FileInfo remapfile;
 		internal Dictionary<string, string> props;
 		internal bool noglobbing;
 		internal CodeGenOptions codegenoptions;
@@ -3363,7 +3362,7 @@ namespace IKVM.Internal
 		internal Dictionary<string, string> suppressWarnings = new Dictionary<string, string>();
 		internal Dictionary<string, string> errorWarnings = new Dictionary<string, string>();	// treat specific warnings as errors
 		internal bool warnaserror; // treat all warnings as errors
-		internal string writeSuppressWarningsFile;
+		internal FileInfo writeSuppressWarningsFile;
 		internal List<string> proxies = new List<string>();
 
 		internal CompilerOptions Copy()
@@ -3639,7 +3638,7 @@ namespace IKVM.Internal
 			options.suppressWarnings.Add(key, key);
 			if(options.writeSuppressWarningsFile != null)
 			{
-				File.AppendAllText(options.writeSuppressWarningsFile, "-nowarn:" + key + Environment.NewLine);
+				File.AppendAllText(options.writeSuppressWarningsFile.FullName, "-nowarn:" + key + Environment.NewLine);
 			}
 			string msg;
 			switch(msgId)
