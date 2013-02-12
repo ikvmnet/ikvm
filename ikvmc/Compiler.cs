@@ -509,6 +509,7 @@ sealed class IkvmcCompiler
 		Console.Error.WriteLine("-nostdlib                      Do not reference standard libraries");
 		Console.Error.WriteLine("-lib:<dir>                     Additional directories to search for references");
 		Console.Error.WriteLine("-highentropyva                 Enable high entropy ASLR");
+		Console.Error.WriteLine("-static                        Disable dynamic binding");
 	}
 
 	void ParseCommandLine(IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
@@ -964,6 +965,10 @@ sealed class IkvmcCompiler
 				else if(s == "-XX:+AllowNonVirtualCalls")
 				{
 					JVM.AllowNonVirtualCalls = true;
+				}
+				else if(s == "-static")
+				{
+					options.codegenoptions |= CodeGenOptions.DisableDynamicBinding;
 				}
 				else
 				{
