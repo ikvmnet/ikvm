@@ -380,7 +380,21 @@ namespace IKVM.Internal
 					}
 					catch (NoClassDefFoundError x)
 					{
-						StaticCompiler.IssueMessage(options, Message.NoClassDefFoundError, name, x.Message);
+						if ((options.codegenoptions & CodeGenOptions.DisableDynamicBinding) == 0)
+						{
+							// add the class file as a resource
+							options.AddResource(null, f.Name.Replace('.', '/') + ".class", classdef.data, "classes.jar");
+
+							// suppress class not found warning for the current class
+							options.suppressWarnings.Add((int)Message.ClassNotFound + ":" + f.Name, null);
+
+							// give a warning about the missing base class/interface
+							StaticCompiler.IssueMessage(options, Message.ClassNotFound, x.Message);
+						}
+						else
+						{
+							StaticCompiler.IssueMessage(options, Message.NoClassDefFoundError, name, x.Message);
+						}
 						return null;
 					}
 					catch (RetargetableJavaException x)

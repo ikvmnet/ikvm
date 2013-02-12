@@ -702,20 +702,39 @@ namespace IKVM.Internal
 				return tw;
 			}
 #if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
-			while (hasCustomClassLoader != 2)
+			try
 			{
-				if (hasCustomClassLoader == 0)
+				while (hasCustomClassLoader != 2)
 				{
-					Type customClassLoader = GetCustomClassLoaderType();
-					if (customClassLoader == null)
+					if (hasCustomClassLoader == 0)
 					{
-						hasCustomClassLoader = 2;
-						break;
+						Type customClassLoader = GetCustomClassLoaderType();
+						if (customClassLoader == null)
+						{
+							hasCustomClassLoader = 2;
+							break;
+						}
+						WaitInitializeJavaClassLoader(customClassLoader);
+						hasCustomClassLoader = 1;
 					}
-					WaitInitializeJavaClassLoader(customClassLoader);
-					hasCustomClassLoader = 1;
+					return base.LoadClassImpl(name, throwClassNotFoundException);
 				}
-				return base.LoadClassImpl(name, throwClassNotFoundException);
+			}
+			catch (ClassLoadingException x)
+			{
+				if (x.InnerException is java.lang.ClassNotFoundException)
+				{
+					foreach (java.net.URL url in GetResourcesImpl(name.Replace('.', '/') + ".class", false))
+					{
+						using (java.io.InputStream inp = url.openStream())
+						{
+							byte[] buf = new byte[inp.available()];
+							inp.read(buf, 0, buf.Length);
+							return TypeWrapper.FromClass(IKVM.NativeCode.java.lang.ClassLoader.defineClass1(GetJavaClassLoader(), name, buf, 0, buf.Length, GetProtectionDomain(), null));
+						}
+					}
+				}
+				throw;
 			}
 #endif
 			tw = LoadGenericClass(name);
