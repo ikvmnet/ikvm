@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 - 2011 Volker Berlin (i-net software)
+  Copyright (C) 2009 - 2013 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -187,10 +187,17 @@ public class StandardGlyphVector extends GlyphVector{
     }
 
     @Override
-    public Shape getGlyphOutline(int ix) {
-        throw new NotYetImplementedError();
+    public Shape getGlyphOutline( int glyphIndex ) {
+        return getGlyphOutline( glyphIndex, 0, 0 );
     }
 
+    @Override
+    public Shape getGlyphOutline( int glyphIndex, float x, float y ) {
+        initPositions();
+        
+        return IkvmToolkit.DefaultToolkit.get().outline( font, frc, glyphs.substring( glyphIndex, glyphIndex + 1 ), x + positions[glyphIndex * 2], y );
+    }
+    
     @Override
     public Point2D getGlyphPosition(int ix) {
         initPositions();
