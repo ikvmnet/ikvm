@@ -11392,8 +11392,10 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/sun/awt/im/SimpleInputMethodWindow.java
 @OPENJDK7@/jdk/src/share/classes/sun/awt/image/BufferedImageDevice.java
 @OPENJDK7@/jdk/src/share/classes/sun/awt/image/BufferedImageGraphicsConfig.java
+@OPENJDK7@/jdk/src/share/classes/sun/awt/image/ByteArrayImageSource.java
 @OPENJDK7@/jdk/src/share/classes/sun/awt/image/ByteBandedRaster.java
 @OPENJDK7@/jdk/src/share/classes/sun/awt/image/ByteInterleavedRaster.java
+@OPENJDK7@/jdk/src/share/classes/sun/awt/image/FileImageSource.java
 @OPENJDK7@/jdk/src/share/classes/sun/awt/image/ImageConsumerQueue.java
 @OPENJDK7@/jdk/src/share/classes/sun/awt/image/ImageDecoder.java
 @OPENJDK7@/jdk/src/share/classes/sun/awt/image/ImageFetchable.java

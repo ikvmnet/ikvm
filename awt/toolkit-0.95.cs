@@ -26,7 +26,7 @@
 /*
 Copyright (C) 2002, 2004-2009 Jeroen Frijters
 Copyright (C) 2006 Active Endpoints, Inc.
-Copyright (C) 2006-2011 Volker Berlin (i-net software)
+Copyright (C) 2006-2013 Volker Berlin (i-net software)
 Copyright (C) 2010-2011 Karsten Heinrich (i-net software)
 
 This software is provided 'as-is', without any express or implied
@@ -597,7 +597,7 @@ namespace ikvm.awt
             }
             catch (Exception)
             {
-                return new NoImage();
+                return new NoImage(new sun.awt.image.FileImageSource(filename));
             }
         }
 
@@ -618,7 +618,7 @@ namespace ikvm.awt
             }
             catch
             {
-                return new NoImage();
+                return new NoImage(new sun.awt.image.URLImageSource(url));
             }
         }
 
@@ -640,7 +640,7 @@ namespace ikvm.awt
             }
             catch (Exception)
             {
-                return new NoImage();//TODO should throw the exception unstead of NoImage()
+                return new NoImage(new sun.awt.image.ByteArrayImageSource(imagedata, imageoffset, imagelength));
             }
         }
 
