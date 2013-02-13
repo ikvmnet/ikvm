@@ -2331,7 +2331,7 @@ namespace IKVM.Internal
 					{
 						// ignore
 					}
-					else if (!baseMethod.IsStatic && (baseMethod.IsPublic || baseMethod.IsProtected || baseMethod.IsInternal))
+					else if (!baseMethod.IsStatic && (baseMethod.IsPublic || baseMethod.IsProtected))
 					{
 						topPublicOrProtectedMethod = baseMethod;
 					}
@@ -2353,7 +2353,7 @@ namespace IKVM.Internal
 					{
 						// skip
 					}
-					else if (baseMethod.IsFinal && (baseMethod.IsPublic || baseMethod.IsProtected || baseMethod.IsInternal || baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper)))
+					else if (baseMethod.IsFinal && (baseMethod.IsPublic || baseMethod.IsProtected || IsAccessibleInternal(baseMethod) || baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper)))
 					{
 						throw new VerifyError("final method " + baseMethod.Name + baseMethod.Signature + " in " + baseMethod.DeclaringType.Name + " is overridden in " + wrapper.Name);
 					}
@@ -2361,12 +2361,12 @@ namespace IKVM.Internal
 					{
 						// skip
 					}
-					else if (topPublicOrProtectedMethod == null && !baseMethod.IsPublic && !baseMethod.IsProtected && !baseMethod.IsInternal && !baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper))
+					else if (topPublicOrProtectedMethod == null && !baseMethod.IsPublic && !baseMethod.IsProtected && !IsAccessibleInternal(baseMethod) && !baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper))
 					{
 						// this is a package private method that we're not overriding (unless its vtable stream interleaves ours, which is a case we handle below)
 						explicitOverride = true;
 					}
-					else if (topPublicOrProtectedMethod != null && baseMethod.IsFinal && !baseMethod.IsPublic && !baseMethod.IsProtected && !baseMethod.IsInternal && !baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper))
+					else if (topPublicOrProtectedMethod != null && baseMethod.IsFinal && !baseMethod.IsPublic && !baseMethod.IsProtected && !IsAccessibleInternal(baseMethod) && !baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper))
 					{
 						// this is package private final method that we would override had it not been final, but which is ignored by HotSpot (instead of throwing a VerifyError)
 						explicitOverride = true;
@@ -2428,7 +2428,7 @@ namespace IKVM.Internal
 						}
 
 						int majorVersion = 0;
-						if (!baseMethod.IsPublic && !baseMethod.IsProtected && !baseMethod.IsInternal &&
+						if (!baseMethod.IsPublic && !baseMethod.IsProtected &&
 							((TryGetClassFileVersion(baseMethod.DeclaringType, ref majorVersion) && majorVersion < 51)
 							// if TryGetClassFileVersion fails, we know that it is safe to call GetMethod() so we look at the actual method attributes here,
 							// because access widing ensures that if the method had overridden the top level method it would also be public or protected
@@ -2462,7 +2462,7 @@ namespace IKVM.Internal
 									}
 									if (!baseMethod2.IsStatic)
 									{
-										if (baseMethod2.IsPublic || baseMethod2.IsProtected || baseMethod2.IsInternal)
+										if (baseMethod2.IsPublic || baseMethod2.IsProtected)
 										{
 											break;
 										}
@@ -2477,6 +2477,11 @@ namespace IKVM.Internal
 					tw = baseMethod.DeclaringType.BaseTypeWrapper;
 				}
 				return null;
+			}
+
+			private bool IsAccessibleInternal(MethodWrapper mw)
+			{
+				return mw.IsInternal && mw.DeclaringType.InternalsVisibleTo(wrapper);
 			}
 
 			private static MethodBase LinkAndGetMethod(MethodWrapper mw)
