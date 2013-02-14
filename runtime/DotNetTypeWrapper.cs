@@ -927,14 +927,21 @@ namespace IKVM.Internal
 				foreach (PropertyInfo pi in attributeType.GetProperties(BindingFlags.Instance | BindingFlags.Public))
 				{
 					// the getter and setter methods both need to be public
-					if (pi.GetGetMethod() != null && pi.GetSetMethod() != null && IsSupportedType(pi.PropertyType))
+					// the getter signature must be: <PropertyType> Getter()
+					// the setter signature must be: void Setter(<PropertyType>)
+					// the property type needs to be a supported type
+					MethodInfo getter = pi.GetGetMethod();
+					MethodInfo setter = pi.GetSetMethod();
+					ParameterInfo[] parameters;
+					if (getter != null && getter.GetParameters().Length == 0 && getter.ReturnType == pi.PropertyType
+						&& setter != null && (parameters = setter.GetParameters()).Length == 1 && parameters[0].ParameterType == pi.PropertyType && setter.ReturnType == Types.Void
+						&& IsSupportedType(pi.PropertyType))
 					{
 						AddMethodIfUnique(methods, new AttributeAnnotationMethodWrapper(this, pi.Name, pi.PropertyType, true));
 					}
 				}
 				foreach (FieldInfo fi in attributeType.GetFields(BindingFlags.Public | BindingFlags.Instance))
 				{
-					// TODO add other field validations to make sure it is appropriate
 					if (!fi.IsInitOnly && IsSupportedType(fi.FieldType))
 					{
 						AddMethodIfUnique(methods, new AttributeAnnotationMethodWrapper(this, fi.Name, fi.FieldType, true));
