@@ -42,6 +42,17 @@ namespace IKVM.Internal
 
 		internal static class java
 		{
+			internal static class io
+			{
+				internal static class Serializable
+				{
+					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
+					// (we don't want the classes to be loaded prematurely, because they might not be available then)
+					static Serializable() { }
+					internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.io.Serializable");
+				}
+			}
+
 			internal static class lang
 			{
 				internal static class Object
@@ -66,6 +77,14 @@ namespace IKVM.Internal
 					// (we don't want the classes to be loaded prematurely, because they might not be available then)
 					static Class() {}
 					internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Class");
+				}
+
+				internal static class Cloneable
+				{
+					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
+					// (we don't want the classes to be loaded prematurely, because they might not be available then)
+					static Cloneable() {}
+					internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Cloneable");
 				}
 
 				internal static class Throwable

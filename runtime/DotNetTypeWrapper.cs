@@ -2006,7 +2006,7 @@ namespace IKVM.Internal
 			internal override void EmitCall(CodeEmitter ilgen)
 			{
 				ilgen.Emit(OpCodes.Dup);
-				ilgen.Emit(OpCodes.Isinst, ClassLoaderWrapper.LoadClassCritical("java.lang.Cloneable").TypeAsBaseType);
+				ilgen.Emit(OpCodes.Isinst, CoreClasses.java.lang.Cloneable.Wrapper.TypeAsBaseType);
 				CodeEmitterLabel label1 = ilgen.DefineLabel();
 				ilgen.EmitBrtrue(label1);
 				CodeEmitterLabel label2 = ilgen.DefineLabel();

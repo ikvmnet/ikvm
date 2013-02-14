@@ -4809,8 +4809,8 @@ namespace IKVM.Internal
 				if(interfaces == null)
 				{
 					TypeWrapper[] tw = new TypeWrapper[2];
-					tw[0] = ClassLoaderWrapper.LoadClassCritical("java.lang.Cloneable");
-					tw[1] = ClassLoaderWrapper.LoadClassCritical("java.io.Serializable");
+					tw[0] = CoreClasses.java.lang.Cloneable.Wrapper;
+					tw[1] = CoreClasses.java.io.Serializable.Wrapper;
 					interfaces = tw;
 				}
 				return interfaces;

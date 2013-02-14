@@ -412,7 +412,7 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				return this.IsSubTypeOf(ClassLoaderWrapper.LoadClassCritical("java.io.Serializable"));
+				return this.IsSubTypeOf(CoreClasses.java.io.Serializable.Wrapper);
 			}
 		}
 
@@ -4814,7 +4814,7 @@ namespace IKVM.Internal
 						// are public and so we can get away with replacing all other types with object.
 						argTypes[i + instance] = (args[i].IsPrimitive || args[i].IsGhost || args[i].IsNonPrimitiveValueType) ? args[i].TypeAsSignatureType : typeof(object);
 					}
-					argTypes[argTypes.Length - 1] = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.CallerID").TypeAsSignatureType;
+					argTypes[argTypes.Length - 1] = CoreClasses.ikvm.@internal.CallerID.Wrapper.TypeAsSignatureType;
 					Type retType = (mw.ReturnType.IsPrimitive || mw.ReturnType.IsGhost || mw.ReturnType.IsNonPrimitiveValueType) ? mw.ReturnType.TypeAsSignatureType : typeof(object);
 					MethodBuilder mb = tb.DefineMethod("method", MethodAttributes.Public | MethodAttributes.Static, retType, argTypes);
 					AttributeHelper.HideFromJava(mb);

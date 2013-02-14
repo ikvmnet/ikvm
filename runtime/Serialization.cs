@@ -43,7 +43,6 @@ namespace IKVM.Internal
 		private static readonly CustomAttributeBuilder securityCriticalAttribute = new CustomAttributeBuilder(JVM.Import(typeof(SecurityCriticalAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
 		private static readonly TypeWrapper iserializable = ClassLoaderWrapper.GetWrapperFromType(JVM.Import(typeof(ISerializable)));
 		private static readonly TypeWrapper iobjectreference = ClassLoaderWrapper.GetWrapperFromType(JVM.Import(typeof(IObjectReference)));
-		private static readonly TypeWrapper serializable = ClassLoaderWrapper.LoadClassCritical("java.io.Serializable");
 		private static readonly TypeWrapper externalizable = ClassLoaderWrapper.LoadClassCritical("java.io.Externalizable");
 		private static readonly PermissionSet psetSerializationFormatter;
 
@@ -85,7 +84,7 @@ namespace IKVM.Internal
 			{
 				MarkSerializable(typeBuilder);
 			}
-			else if (wrapper.IsSubTypeOf(serializable) && IsSafeForAutomagicSerialization(wrapper))
+			else if (wrapper.IsSubTypeOf(CoreClasses.java.io.Serializable.Wrapper) && IsSafeForAutomagicSerialization(wrapper))
 			{
 				if (wrapper.IsSubTypeOf(externalizable))
 				{
@@ -95,7 +94,7 @@ namespace IKVM.Internal
 						MarkSerializable(typeBuilder);
 						ctor.Link();
 						serializationCtor = AddConstructor(typeBuilder, ctor, null, true);
-						if (!wrapper.BaseTypeWrapper.IsSubTypeOf(serializable))
+						if (!wrapper.BaseTypeWrapper.IsSubTypeOf(CoreClasses.java.io.Serializable.Wrapper))
 						{
 							AddGetObjectData(typeBuilder);
 						}
@@ -105,7 +104,7 @@ namespace IKVM.Internal
 						}
 					}
 				}
-				else if (wrapper.BaseTypeWrapper.IsSubTypeOf(serializable))
+				else if (wrapper.BaseTypeWrapper.IsSubTypeOf(CoreClasses.java.io.Serializable.Wrapper))
 				{
 					MethodBase baseCtor = wrapper.GetBaseSerializationConstructor();
 					if (baseCtor != null && (baseCtor.IsFamily || baseCtor.IsFamilyOrAssembly))
