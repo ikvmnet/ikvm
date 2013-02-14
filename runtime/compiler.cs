@@ -684,8 +684,8 @@ sealed class Compiler
 
 	private sealed class ReturnCookie
 	{
-		private CodeEmitterLabel stub;
-		private CodeEmitterLocal local;
+		private readonly CodeEmitterLabel stub;
+		private readonly CodeEmitterLocal local;
 
 		internal ReturnCookie(CodeEmitterLabel stub, CodeEmitterLocal local)
 		{
@@ -738,9 +738,9 @@ sealed class Compiler
 			FaultBlockException,
 			Other
 		}
-		private Compiler compiler;
-		private StackType[] types;
-		private CodeEmitterLocal[] locals;
+		private readonly Compiler compiler;
+		private readonly StackType[] types;
+		private readonly CodeEmitterLocal[] locals;
 
 		internal DupHelper(Compiler compiler, int count)
 		{
@@ -959,14 +959,14 @@ sealed class Compiler
 
 	private sealed class Block
 	{
-		private Compiler compiler;
-		private CodeEmitter ilgen;
-		private int beginIndex;
-		private int endIndex;
-		private int exceptionIndex;
+		private readonly Compiler compiler;
+		private readonly CodeEmitter ilgen;
+		private readonly int beginIndex;
+		private readonly int endIndex;
+		private readonly int exceptionIndex;
 		private List<object> exits;
-		private bool nested;
-		private object[] labels;
+		private readonly bool nested;
+		private readonly object[] labels;
 
 		internal Block(Compiler compiler, int beginIndex, int endIndex, int exceptionIndex, List<object> exits, bool nested)
 		{
@@ -1011,17 +1011,17 @@ sealed class Compiler
 		{
 			if(IsInRange(targetIndex))
 			{
-				object l = labels[targetIndex];
+				CodeEmitterLabel l = (CodeEmitterLabel)labels[targetIndex];
 				if(l == null)
 				{
 					l = ilgen.DefineLabel();
 					labels[targetIndex] = l;
 				}
-				return (CodeEmitterLabel)l;
+				return l;
 			}
 			else
 			{
-				object l = labels[targetIndex];
+				BranchCookie l = (BranchCookie)labels[targetIndex];
 				if(l == null)
 				{
 					// if we're branching out of the current exception block, we need to indirect this thru a stub
@@ -1038,7 +1038,7 @@ sealed class Compiler
 					l = bc;
 					labels[targetIndex] = l;
 				}
-				return ((BranchCookie)l).Stub;
+				return l.Stub;
 			}
 		}
 
@@ -3801,10 +3801,10 @@ sealed class Compiler
 
 	private sealed class MethodHandleMethodWrapper : MethodWrapper
 	{
-		private DynamicTypeWrapper.FinishContext context;
-		private TypeWrapper wrapper;
-		private ClassFile.ConstantPoolItemMI cpi;
-		private bool exact;
+		private readonly DynamicTypeWrapper.FinishContext context;
+		private readonly TypeWrapper wrapper;
+		private readonly ClassFile.ConstantPoolItemMI cpi;
+		private readonly bool exact;
 
 		internal MethodHandleMethodWrapper(DynamicTypeWrapper.FinishContext context, TypeWrapper wrapper, ClassFile.ConstantPoolItemMI cpi, bool exact)
 			: base(wrapper, cpi.Name, cpi.Signature, null, cpi.GetRetType(), cpi.GetArgTypes(), Modifiers.Public, MemberFlags.None)
@@ -3877,9 +3877,9 @@ sealed class Compiler
 
 	private sealed class DynamicMethodWrapper : MethodWrapper
 	{
-		private DynamicTypeWrapper.FinishContext context;
-		private TypeWrapper wrapper;
-		private ClassFile.ConstantPoolItemMI cpi;
+		private readonly DynamicTypeWrapper.FinishContext context;
+		private readonly TypeWrapper wrapper;
+		private readonly ClassFile.ConstantPoolItemMI cpi;
 
 		internal DynamicMethodWrapper(DynamicTypeWrapper.FinishContext context, TypeWrapper wrapper, ClassFile.ConstantPoolItemMI cpi, Modifiers modifiers)
 			: base(wrapper, cpi.Name, cpi.Signature, null, cpi.GetRetType(), cpi.GetArgTypes(), modifiers, MemberFlags.None)
