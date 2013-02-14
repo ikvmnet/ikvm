@@ -128,19 +128,26 @@ namespace IKVM.Internal
 #if !STATIC_COMPILER
 		private static Assembly OnTypeResolve(object sender, ResolveEventArgs args)
 		{
-			TypeWrapper type;
 #if CLASSGC
-			DynamicClassLoader instance;
 			ClassLoaderWrapper loader = ClassLoaderWrapper.GetClassLoaderForDynamicJavaAssembly(args.RequestingAssembly);
-			if(loader == null)
+			if (loader == null)
 			{
 				return null;
 			}
-			instance = (DynamicClassLoader)loader.GetTypeWrapperFactory();
-			instance.dynamicTypes.TryGetValue(args.Name, out type);
+			DynamicClassLoader instance = (DynamicClassLoader)loader.GetTypeWrapperFactory();
+			return Resolve(instance.dynamicTypes, args.Name);
 #else
-			dynamicTypes.TryGetValue(args.Name, out type);
+			return Resolve(dynamicTypes, args.Name);
 #endif
+		}
+
+		private static Assembly Resolve(Dictionary<string, TypeWrapper> dict, string name)
+		{
+			TypeWrapper type;
+			lock (dict)
+			{
+				dict.TryGetValue(name, out type);
+			}
 			if (type == null)
 			{
 				return null;
@@ -200,7 +207,7 @@ namespace IKVM.Internal
 			if (dict.ContainsKey(mangledTypeName) || mangledTypeName.EndsWith("."))
 			{
 #if STATIC_COMPILER
-					Tracer.Warning(Tracer.Compiler, "Class name clash: {0}", mangledTypeName);
+				Tracer.Warning(Tracer.Compiler, "Class name clash: {0}", mangledTypeName);
 #endif
 				// Java class names cannot contain slashes (since they are converted into periods),
 				// so we take advantage of that fact to create a unique name.
