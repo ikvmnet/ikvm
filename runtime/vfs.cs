@@ -563,7 +563,7 @@ namespace IKVM.Internal
 		private sealed class VfsAssemblyClass : VfsFile
 		{
 			private readonly TypeWrapper tw;
-			private byte[] buf;
+			private volatile byte[] buf;
 
 			internal VfsAssemblyClass(TypeWrapper tw)
 			{
@@ -617,8 +617,8 @@ namespace IKVM.Internal
 
 		private sealed class VfsZipEntry : VfsFile
 		{
-			private java.util.zip.ZipFile zipFile;
-			private java.util.zip.ZipEntry entry;
+			private readonly java.util.zip.ZipFile zipFile;
+			private readonly java.util.zip.ZipEntry entry;
 
 			internal VfsZipEntry(java.util.zip.ZipFile zipFile, java.util.zip.ZipEntry entry)
 			{
@@ -639,7 +639,7 @@ namespace IKVM.Internal
 
 		private sealed class VfsCacertsEntry : VfsFile
 		{
-			private byte[] buf;
+			private volatile byte[] buf;
 
 			internal override long Size
 			{
@@ -820,8 +820,8 @@ namespace IKVM.Internal
 
 		private sealed class ZipEntryStream : System.IO.Stream
 		{
-			private java.util.zip.ZipFile zipFile;
-			private java.util.zip.ZipEntry entry;
+			private readonly java.util.zip.ZipFile zipFile;
+			private readonly java.util.zip.ZipEntry entry;
 			private java.io.InputStream inp;
 			private long position;
 
