@@ -85,15 +85,15 @@ namespace IKVM.Internal
 #if !STUB_GENERATOR
 		private TypeWrapperFactory factory;
 #endif // !STUB_GENERATOR
-		private Dictionary<string, TypeWrapper> types = new Dictionary<string, TypeWrapper>();
+		private readonly Dictionary<string, TypeWrapper> types = new Dictionary<string, TypeWrapper>();
 		private readonly Dictionary<string, Thread> defineClassInProgress = new Dictionary<string, Thread>();
 		private List<IntPtr> nativeLibraries;
-		private CodeGenOptions codegenoptions;
+		private readonly CodeGenOptions codegenoptions;
 #if CLASSGC
 		private Dictionary<Type, TypeWrapper> typeToTypeWrapper;
 		private static ConditionalWeakTable<Assembly, ClassLoaderWrapper> dynamicAssemblies;
 #endif
-		private static Dictionary<Type, string> remappedTypes = new Dictionary<Type, string>();
+		private static readonly Dictionary<Type, string> remappedTypes = new Dictionary<Type, string>();
 
 #if STATIC_COMPILER || STUB_GENERATOR
 		// HACK this is used by the ahead-of-time compiler to overrule the bootstrap classloader
