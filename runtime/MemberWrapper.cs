@@ -58,11 +58,11 @@ namespace IKVM.Internal
 	abstract class MemberWrapper
 	{
 		private HandleWrapper handle;
-		private TypeWrapper declaringType;
-		private Modifiers modifiers;
+		private readonly TypeWrapper declaringType;
+		private readonly Modifiers modifiers;
 		private MemberFlags flags;
-		private string name;
-		private string sig;
+		private readonly string name;
+		private readonly string sig;
 
 		private sealed class HandleWrapper
 		{
@@ -1090,8 +1090,8 @@ namespace IKVM.Internal
 
 	sealed class SimpleCallMethodWrapper : MethodWrapper
 	{
-		private SimpleOpCode call;
-		private SimpleOpCode callvirt;
+		private readonly SimpleOpCode call;
+		private readonly SimpleOpCode callvirt;
 
 		internal SimpleCallMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodInfo method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags, SimpleOpCode call, SimpleOpCode callvirt)
 			: base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags)
@@ -1491,7 +1491,7 @@ namespace IKVM.Internal
 #else
 			if (jniAccessor == null)
 			{
-				jniAccessor = IKVM.NativeCode.sun.reflect.ReflectionFactory.NewFieldAccessorJNI(this);
+				Interlocked.CompareExchange(ref jniAccessor, IKVM.NativeCode.sun.reflect.ReflectionFactory.NewFieldAccessorJNI(this), null);
 			}
 			return jniAccessor;
 #endif
@@ -1913,8 +1913,8 @@ namespace IKVM.Internal
 
 	sealed class CompiledAccessStubFieldWrapper : FieldWrapper
 	{
-		private MethodInfo getter;
-		private MethodInfo setter;
+		private readonly MethodInfo getter;
+		private readonly MethodInfo setter;
 
 		private static Modifiers GetModifiers(PropertyInfo property)
 		{
