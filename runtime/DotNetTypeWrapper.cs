@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2012 Jeroen Frijters
+  Copyright (C) 2002-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -54,9 +54,9 @@ namespace IKVM.Internal
 		private static readonly Dictionary<Type, TypeWrapper> types = new Dictionary<Type, TypeWrapper>();
 		private readonly Type type;
 		private TypeWrapper baseTypeWrapper;
-		private TypeWrapper[] innerClasses;
+		private volatile TypeWrapper[] innerClasses;
 		private TypeWrapper outerClass;
-		private TypeWrapper[] interfaces;
+		private volatile TypeWrapper[] interfaces;
 		private volatile bool finished;
 
 		private static Modifiers GetModifiers(Type type)
@@ -374,7 +374,7 @@ namespace IKVM.Internal
 		{
 			private readonly Type fakeType;
 
-			internal DelegateInnerClassTypeWrapper(string name, Type delegateType, ClassLoaderWrapper classLoader)
+			internal DelegateInnerClassTypeWrapper(string name, Type delegateType)
 				: base(Modifiers.Public | Modifiers.Interface | Modifiers.Abstract, name, null)
 			{
 #if STATIC_COMPILER || STUB_GENERATOR
@@ -715,7 +715,7 @@ namespace IKVM.Internal
 		{
 			private readonly Type fakeType;
 			private readonly Type attributeType;
-			private TypeWrapper[] innerClasses;
+			private volatile TypeWrapper[] innerClasses;
 
 			internal AttributeAnnotationTypeWrapper(string name, Type attributeType)
 				: base(name)
@@ -828,7 +828,7 @@ namespace IKVM.Internal
 
 			private sealed class AttributeAnnotationMethodWrapper : DynamicOnlyMethodWrapper
 			{
-				private bool optional;
+				private readonly bool optional;
 
 				internal AttributeAnnotationMethodWrapper(AttributeAnnotationTypeWrapper tw, string name, Type type, bool optional)
 					: this(tw, name, MapType(type, false), optional)
@@ -1099,7 +1099,7 @@ namespace IKVM.Internal
 
 				private sealed class ReturnValueAnnotation : Annotation
 				{
-					private AttributeAnnotationTypeWrapper type;
+					private readonly AttributeAnnotationTypeWrapper type;
 
 					internal ReturnValueAnnotation(AttributeAnnotationTypeWrapper type)
 					{
@@ -1236,7 +1236,7 @@ namespace IKVM.Internal
 
 				private sealed class MultipleAnnotation : Annotation
 				{
-					private AttributeAnnotationTypeWrapper type;
+					private readonly AttributeAnnotationTypeWrapper type;
 
 					internal MultipleAnnotation(AttributeAnnotationTypeWrapper type)
 					{
@@ -1338,25 +1338,27 @@ namespace IKVM.Internal
 			{
 				get
 				{
-					lock (this)
+					if (innerClasses == null)
 					{
-						if (innerClasses == null)
-						{
-							List<TypeWrapper> list = new List<TypeWrapper>();
-							AttributeUsageAttribute attr = GetAttributeUsage();
-							if ((attr.ValidOn & AttributeTargets.ReturnValue) != 0)
-							{
-								list.Add(GetClassLoader().RegisterInitiatingLoader(new ReturnValueAnnotationTypeWrapper(this)));
-							}
-							if (attr.AllowMultiple)
-							{
-								list.Add(GetClassLoader().RegisterInitiatingLoader(new MultipleAnnotationTypeWrapper(this)));
-							}
-							innerClasses = list.ToArray();
-						}
+						innerClasses = GetInnerClasses();
 					}
 					return innerClasses;
 				}
+			}
+
+			private TypeWrapper[] GetInnerClasses()
+			{
+				List<TypeWrapper> list = new List<TypeWrapper>();
+				AttributeUsageAttribute attr = GetAttributeUsage();
+				if ((attr.ValidOn & AttributeTargets.ReturnValue) != 0)
+				{
+					list.Add(GetClassLoader().RegisterInitiatingLoader(new ReturnValueAnnotationTypeWrapper(this)));
+				}
+				if (attr.AllowMultiple)
+				{
+					list.Add(GetClassLoader().RegisterInitiatingLoader(new MultipleAnnotationTypeWrapper(this)));
+				}
+				return list.ToArray();
 			}
 
 			internal override bool IsFakeTypeContainer
@@ -1438,7 +1440,7 @@ namespace IKVM.Internal
 
 			private sealed class AttributeAnnotation : Annotation
 			{
-				private Type type;
+				private readonly Type type;
 
 				internal AttributeAnnotation(Type type)
 				{
@@ -1776,8 +1778,8 @@ namespace IKVM.Internal
 
 		private sealed class DelegateMethodWrapper : MethodWrapper
 		{
-			private ConstructorInfo delegateConstructor;
-			private DelegateInnerClassTypeWrapper iface;
+			private readonly ConstructorInfo delegateConstructor;
+			private readonly DelegateInnerClassTypeWrapper iface;
 
 			internal DelegateMethodWrapper(TypeWrapper declaringType, DelegateInnerClassTypeWrapper iface)
 				: base(declaringType, "<init>", "(" + iface.SigName + ")V", null, PrimitiveTypeWrapper.VOID, new TypeWrapper[] { iface }, Modifiers.Public, MemberFlags.Intrinsic)
@@ -1843,9 +1845,9 @@ namespace IKVM.Internal
 		private sealed class ByRefMethodWrapper : SmartMethodWrapper
 		{
 #if !STATIC_COMPILER
-			private bool[] byrefs;
+			private readonly bool[] byrefs;
 #endif
-			private Type[] args;
+			private readonly Type[] args;
 
 			internal ByRefMethodWrapper(Type[] args, bool[] byrefs, TypeWrapper declaringType, string name, string sig, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, bool hideFromReflection)
 				: base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None)
@@ -1920,7 +1922,7 @@ namespace IKVM.Internal
 
 		internal sealed class EnumValueFieldWrapper : FieldWrapper
 		{
-			private Type underlyingType;
+			private readonly Type underlyingType;
 
 			internal EnumValueFieldWrapper(DotNetTypeWrapper tw, TypeWrapper fieldType)
 				: base(tw, fieldType, "Value", fieldType.SigName, new ExModifiers(Modifiers.Public | Modifiers.Final, false), null)
@@ -2291,7 +2293,7 @@ namespace IKVM.Internal
 
 		private sealed class BaseFinalMethodWrapper : MethodWrapper
 		{
-			private MethodWrapper m;
+			private readonly MethodWrapper m;
 
 			internal BaseFinalMethodWrapper(DotNetTypeWrapper tw, MethodWrapper m)
 				: base(tw, m.Name, m.Signature, null, null, null, (m.Modifiers & ~Modifiers.Abstract) | Modifiers.Final, MemberFlags.None)
@@ -2494,37 +2496,38 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				lock (this)
+				if (innerClasses == null)
 				{
-					if (innerClasses == null)
-					{
-						Type[] nestedTypes = type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic);
-						List<TypeWrapper> list = new List<TypeWrapper>(nestedTypes.Length);
-						for (int i = 0; i < nestedTypes.Length; i++)
-						{
-							if (!nestedTypes[i].IsGenericTypeDefinition)
-							{
-								list.Add(ClassLoaderWrapper.GetWrapperFromType(nestedTypes[i]));
-							}
-						}
-						if (IsDelegate(type))
-						{
-							ClassLoaderWrapper classLoader = GetClassLoader();
-							list.Add(classLoader.RegisterInitiatingLoader(new DelegateInnerClassTypeWrapper(Name + DelegateInterfaceSuffix, type, classLoader)));
-						}
-						if (IsAttribute(type))
-						{
-							list.Add(GetClassLoader().RegisterInitiatingLoader(new AttributeAnnotationTypeWrapper(Name + AttributeAnnotationSuffix, type)));
-						}
-						if (type.IsEnum && type.IsVisible)
-						{
-							list.Add(GetClassLoader().RegisterInitiatingLoader(new EnumEnumTypeWrapper(Name + EnumEnumSuffix, type)));
-						}
-						innerClasses = list.ToArray();
-					}
+					innerClasses = GetInnerClasses();
 				}
 				return innerClasses;
 			}
+		}
+
+		private TypeWrapper[] GetInnerClasses()
+		{
+			Type[] nestedTypes = type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic);
+			List<TypeWrapper> list = new List<TypeWrapper>(nestedTypes.Length);
+			for (int i = 0; i < nestedTypes.Length; i++)
+			{
+				if (!nestedTypes[i].IsGenericTypeDefinition)
+				{
+					list.Add(ClassLoaderWrapper.GetWrapperFromType(nestedTypes[i]));
+				}
+			}
+			if (IsDelegate(type))
+			{
+				list.Add(GetClassLoader().RegisterInitiatingLoader(new DelegateInnerClassTypeWrapper(Name + DelegateInterfaceSuffix, type)));
+			}
+			if (IsAttribute(type))
+			{
+				list.Add(GetClassLoader().RegisterInitiatingLoader(new AttributeAnnotationTypeWrapper(Name + AttributeAnnotationSuffix, type)));
+			}
+			if (type.IsEnum && type.IsVisible)
+			{
+				list.Add(GetClassLoader().RegisterInitiatingLoader(new EnumEnumTypeWrapper(Name + EnumEnumSuffix, type)));
+			}
+			return list.ToArray();
 		}
 
 		internal override bool IsFakeTypeContainer
