@@ -61,7 +61,6 @@ namespace IKVM.Internal
 
 	static class AttributeHelper
 	{
-		private static CustomAttributeBuilder hideFromJavaAttribute;
 #if STATIC_COMPILER
 		private static CustomAttributeBuilder ghostInterfaceAttribute;
 		private static CustomAttributeBuilder deprecatedAttribute;
@@ -76,29 +75,30 @@ namespace IKVM.Internal
 		private static CustomAttributeBuilder paramArrayAttribute;
 		private static ConstructorInfo nonNestedInnerClassAttribute;
 		private static ConstructorInfo nonNestedOuterClassAttribute;
-		private static Type typeofModifiers = JVM.LoadType(typeof(Modifiers));
-		private static Type typeofSourceFileAttribute = JVM.LoadType(typeof(SourceFileAttribute));
-		private static Type typeofLineNumberTableAttribute = JVM.LoadType(typeof(LineNumberTableAttribute));
+		private static readonly Type typeofModifiers = JVM.LoadType(typeof(Modifiers));
+		private static readonly Type typeofSourceFileAttribute = JVM.LoadType(typeof(SourceFileAttribute));
+		private static readonly Type typeofLineNumberTableAttribute = JVM.LoadType(typeof(LineNumberTableAttribute));
 #endif // STATIC_COMPILER
-		private static Type typeofRemappedClassAttribute = JVM.LoadType(typeof(RemappedClassAttribute));
-		private static Type typeofRemappedTypeAttribute = JVM.LoadType(typeof(RemappedTypeAttribute));
-		private static Type typeofModifiersAttribute = JVM.LoadType(typeof(ModifiersAttribute));
-		private static Type typeofRemappedInterfaceMethodAttribute = JVM.LoadType(typeof(RemappedInterfaceMethodAttribute));
-		private static Type typeofNameSigAttribute = JVM.LoadType(typeof(NameSigAttribute));
-		private static Type typeofJavaModuleAttribute = JVM.LoadType(typeof(JavaModuleAttribute));
-		private static Type typeofSignatureAttribute = JVM.LoadType(typeof(SignatureAttribute));
-		private static Type typeofInnerClassAttribute = JVM.LoadType(typeof(InnerClassAttribute));
-		private static Type typeofImplementsAttribute = JVM.LoadType(typeof(ImplementsAttribute));
-		private static Type typeofGhostInterfaceAttribute = JVM.LoadType(typeof(GhostInterfaceAttribute));
-		private static Type typeofExceptionIsUnsafeForMappingAttribute = JVM.LoadType(typeof(ExceptionIsUnsafeForMappingAttribute));
-		private static Type typeofThrowsAttribute = JVM.LoadType(typeof(ThrowsAttribute));
-		private static Type typeofHideFromReflectionAttribute = JVM.LoadType(typeof(HideFromReflectionAttribute));
-		private static Type typeofHideFromJavaAttribute = JVM.LoadType(typeof(HideFromJavaAttribute));
-		private static Type typeofNoPackagePrefixAttribute = JVM.LoadType(typeof(NoPackagePrefixAttribute));
-		private static Type typeofAnnotationAttributeAttribute = JVM.LoadType(typeof(AnnotationAttributeAttribute));
-		private static Type typeofNonNestedInnerClassAttribute = JVM.LoadType(typeof(NonNestedInnerClassAttribute));
-		private static Type typeofNonNestedOuterClassAttribute = JVM.LoadType(typeof(NonNestedOuterClassAttribute));
-		private static Type typeofEnclosingMethodAttribute = JVM.LoadType(typeof(EnclosingMethodAttribute));
+		private static readonly Type typeofRemappedClassAttribute = JVM.LoadType(typeof(RemappedClassAttribute));
+		private static readonly Type typeofRemappedTypeAttribute = JVM.LoadType(typeof(RemappedTypeAttribute));
+		private static readonly Type typeofModifiersAttribute = JVM.LoadType(typeof(ModifiersAttribute));
+		private static readonly Type typeofRemappedInterfaceMethodAttribute = JVM.LoadType(typeof(RemappedInterfaceMethodAttribute));
+		private static readonly Type typeofNameSigAttribute = JVM.LoadType(typeof(NameSigAttribute));
+		private static readonly Type typeofJavaModuleAttribute = JVM.LoadType(typeof(JavaModuleAttribute));
+		private static readonly Type typeofSignatureAttribute = JVM.LoadType(typeof(SignatureAttribute));
+		private static readonly Type typeofInnerClassAttribute = JVM.LoadType(typeof(InnerClassAttribute));
+		private static readonly Type typeofImplementsAttribute = JVM.LoadType(typeof(ImplementsAttribute));
+		private static readonly Type typeofGhostInterfaceAttribute = JVM.LoadType(typeof(GhostInterfaceAttribute));
+		private static readonly Type typeofExceptionIsUnsafeForMappingAttribute = JVM.LoadType(typeof(ExceptionIsUnsafeForMappingAttribute));
+		private static readonly Type typeofThrowsAttribute = JVM.LoadType(typeof(ThrowsAttribute));
+		private static readonly Type typeofHideFromReflectionAttribute = JVM.LoadType(typeof(HideFromReflectionAttribute));
+		private static readonly Type typeofHideFromJavaAttribute = JVM.LoadType(typeof(HideFromJavaAttribute));
+		private static readonly Type typeofNoPackagePrefixAttribute = JVM.LoadType(typeof(NoPackagePrefixAttribute));
+		private static readonly Type typeofAnnotationAttributeAttribute = JVM.LoadType(typeof(AnnotationAttributeAttribute));
+		private static readonly Type typeofNonNestedInnerClassAttribute = JVM.LoadType(typeof(NonNestedInnerClassAttribute));
+		private static readonly Type typeofNonNestedOuterClassAttribute = JVM.LoadType(typeof(NonNestedOuterClassAttribute));
+		private static readonly Type typeofEnclosingMethodAttribute = JVM.LoadType(typeof(EnclosingMethodAttribute));
+		private static readonly CustomAttributeBuilder hideFromJavaAttribute = new CustomAttributeBuilder(typeofHideFromJavaAttribute.GetConstructor(Type.EmptyTypes), new object[0]);
 
 #if STATIC_COMPILER
 		private static object ParseValue(ClassLoaderWrapper loader, TypeWrapper tw, string val)
@@ -475,38 +475,22 @@ namespace IKVM.Internal
 
 		internal static void HideFromJava(TypeBuilder typeBuilder)
 		{
-			if(hideFromJavaAttribute == null)
-			{
-				hideFromJavaAttribute = new CustomAttributeBuilder(typeofHideFromJavaAttribute.GetConstructor(Type.EmptyTypes), new object[0]);
-			}
 			typeBuilder.SetCustomAttribute(hideFromJavaAttribute);
 		}
 
 		internal static void HideFromJava(MethodBuilder mb)
 		{
-			if(hideFromJavaAttribute == null)
-			{
-				hideFromJavaAttribute = new CustomAttributeBuilder(typeofHideFromJavaAttribute.GetConstructor(Type.EmptyTypes), new object[0]);
-			}
 			mb.SetCustomAttribute(hideFromJavaAttribute);
 		}
 
 		internal static void HideFromJava(FieldBuilder fb)
 		{
-			if(hideFromJavaAttribute == null)
-			{
-				hideFromJavaAttribute = new CustomAttributeBuilder(typeofHideFromJavaAttribute.GetConstructor(Type.EmptyTypes), new object[0]);
-			}
 			fb.SetCustomAttribute(hideFromJavaAttribute);
 		}
 
 #if STATIC_COMPILER
 		internal static void HideFromJava(PropertyBuilder pb)
 		{
-			if(hideFromJavaAttribute == null)
-			{
-				hideFromJavaAttribute = new CustomAttributeBuilder(typeofHideFromJavaAttribute.GetConstructor(Type.EmptyTypes), new object[0]);
-			}
 			pb.SetCustomAttribute(hideFromJavaAttribute);
 		}
 #endif // STATIC_COMPILER
@@ -2450,12 +2434,14 @@ namespace IKVM.Internal
 		internal void SetMethods(MethodWrapper[] methods)
 		{
 			Debug.Assert(methods != null);
+			System.Threading.Thread.MemoryBarrier();
 			this.methods = methods;
 		}
 
 		internal void SetFields(FieldWrapper[] fields)
 		{
 			Debug.Assert(fields != null);
+			System.Threading.Thread.MemoryBarrier();
 			this.fields = fields;
 		}
 
@@ -3381,9 +3367,9 @@ namespace IKVM.Internal
 	{
 		private readonly Type type;
 		private TypeWrapper baseTypeWrapper;
-		private TypeWrapper[] interfaces;
+		private volatile TypeWrapper[] interfaces;
 		private MethodInfo clinitMethod;
-		private bool clinitMethodSet;
+		private volatile bool clinitMethodSet;
 		private Modifiers reflectiveModifiers;
 
 		internal static CompiledTypeWrapper newInstance(string name, Type type)
@@ -3536,8 +3522,8 @@ namespace IKVM.Internal
 
 		private sealed class CompiledGhostTypeWrapper : CompiledTypeWrapper
 		{
-			private FieldInfo ghostRefField;
-			private Type typeAsBaseType;
+			private volatile FieldInfo ghostRefField;
+			private volatile Type typeAsBaseType;
 
 			internal CompiledGhostTypeWrapper(string name, Type type)
 				: base(name, type)
@@ -4297,9 +4283,9 @@ namespace IKVM.Internal
 
 		private sealed class CompiledRemappedMethodWrapper : SmartMethodWrapper
 		{
-			private MethodInfo mbHelper;
+			private readonly MethodInfo mbHelper;
 #if !STATIC_COMPILER
-			private MethodInfo mbNonvirtualHelper;
+			private readonly MethodInfo mbNonvirtualHelper;
 #endif
 
 			internal CompiledRemappedMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, ExModifiers modifiers, bool hideFromReflection, MethodInfo mbHelper, MethodInfo mbNonvirtualHelper)
@@ -4642,7 +4628,7 @@ namespace IKVM.Internal
 
 		internal sealed class CompiledAnnotation : Annotation
 		{
-			private Type type;
+			private readonly Type type;
 
 			internal CompiledAnnotation(Type type)
 			{
@@ -4755,8 +4741,8 @@ namespace IKVM.Internal
 
 	sealed class ArrayTypeWrapper : TypeWrapper
 	{
-		private static TypeWrapper[] interfaces;
-		private static MethodInfo clone;
+		private static volatile TypeWrapper[] interfaces;
+		private static volatile MethodInfo clone;
 		private readonly TypeWrapper ultimateElementTypeWrapper;
 		private Type arrayType;
 		private bool finished;
@@ -4943,9 +4929,9 @@ namespace IKVM.Internal
 		internal static readonly TypeWrapper ExtendedFloat = new VerifierTypeWrapper("<extfloat>", 0, null, null);
 		internal static readonly TypeWrapper ExtendedDouble = new VerifierTypeWrapper("<extdouble>", 0, null, null);
 
-		private int index;
-		private TypeWrapper underlyingType;
-		private MethodAnalyzer methodAnalyzer;
+		private readonly int index;
+		private readonly TypeWrapper underlyingType;
+		private readonly MethodAnalyzer methodAnalyzer;
 
 #if STUB_GENERATOR
 		internal class MethodAnalyzer
