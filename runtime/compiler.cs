@@ -406,7 +406,6 @@ sealed class Compiler
 	private readonly List<string> harderrors;
 	private readonly LocalVarInfo localVars;
 	private bool nonleaf;
-	private Dictionary<MethodKey, MethodInfo> invokespecialstubcache;
 	private readonly bool debug;
 	private readonly bool keepAlive;
 	private readonly bool strictfp;
@@ -453,7 +452,7 @@ sealed class Compiler
 		getClassFromTypeHandle2.Link();
 	}
 
-	private Compiler(DynamicTypeWrapper.FinishContext context, DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, CodeEmitter ilGenerator, ClassLoaderWrapper classLoader, Dictionary<MethodKey, MethodInfo> invokespecialstubcache)
+	private Compiler(DynamicTypeWrapper.FinishContext context, DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, CodeEmitter ilGenerator, ClassLoaderWrapper classLoader)
 	{
 		this.context = context;
 		this.clazz = clazz;
@@ -461,7 +460,6 @@ sealed class Compiler
 		this.classFile = classFile;
 		this.m = m;
 		this.ilGenerator = ilGenerator;
-		this.invokespecialstubcache = invokespecialstubcache;
 		this.debug = classLoader.EmitDebugInfo;
 		this.strictfp = m.IsStrictfp;
 		if(ReferenceEquals(mw.Name, StringConstants.INIT))
@@ -846,7 +844,7 @@ sealed class Compiler
 		}
 	}
 
-	internal static void Compile(DynamicTypeWrapper.FinishContext context, DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, CodeEmitter ilGenerator, ref bool nonleaf, Dictionary<MethodKey, MethodInfo> invokespecialstubcache)
+	internal static void Compile(DynamicTypeWrapper.FinishContext context, DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, CodeEmitter ilGenerator, ref bool nonleaf)
 	{
 		ClassLoaderWrapper classLoader = clazz.GetClassLoader();
 		if(classLoader.EmitDebugInfo)
@@ -895,7 +893,7 @@ sealed class Compiler
 			Profiler.Enter("new Compiler");
 			try
 			{
-				c = new Compiler(context, clazz, mw, classFile, m, ilGenerator, classLoader, invokespecialstubcache);
+				c = new Compiler(context, clazz, mw, classFile, m, ilGenerator, classLoader);
 			}
 			finally
 			{
@@ -1824,7 +1822,7 @@ sealed class Compiler
 							}
 							else
 							{
-								ilGenerator.Emit(OpCodes.Callvirt, GetInvokeSpecialStub(method));
+								ilGenerator.Emit(OpCodes.Callvirt, context.GetInvokeSpecialStub(method));
 							}
 						}
 						else
@@ -3480,7 +3478,7 @@ sealed class Compiler
 					((MethodWrapper)mh.Member).EmitCall(ilgen);
 					break;
 				case ClassFile.RefKind.invokeSpecial:
-					ilgen.Emit(OpCodes.Callvirt, compiler.GetInvokeSpecialStub((MethodWrapper)mh.Member));
+					ilgen.Emit(OpCodes.Callvirt, compiler.context.GetInvokeSpecialStub((MethodWrapper)mh.Member));
 					break;
 				case ClassFile.RefKind.newInvokeSpecial:
 					((MethodWrapper)mh.Member).EmitNewobj(ilgen);
@@ -3563,29 +3561,6 @@ sealed class Compiler
 			}
 		}
 		return true;
-	}
-
-	private MethodInfo GetInvokeSpecialStub(MethodWrapper method)
-	{
-		MethodKey key = new MethodKey(method.DeclaringType.Name, method.Name, method.Signature);
-		MethodInfo mi;
-		if(!invokespecialstubcache.TryGetValue(key, out mi))
-		{
-			DefineMethodHelper dmh = method.GetDefineMethodHelper();
-			MethodBuilder stub = context.DefineInvokeSpecialStub(dmh);
-			CodeEmitter ilgen = CodeEmitter.Create(stub);
-			ilgen.Emit(OpCodes.Ldarg_0);
-			for(int i = 1; i <= dmh.ParameterCount; i++)
-			{
-				ilgen.EmitLdarg(i);
-			}
-			method.EmitCall(ilgen);
-			ilgen.Emit(OpCodes.Ret);
-			ilgen.DoEmit();
-			invokespecialstubcache[key] = stub;
-			mi = stub;
-		}
-		return mi;
 	}
 
 	// NOTE despite its name this also handles value type args

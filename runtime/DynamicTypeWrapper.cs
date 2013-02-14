@@ -3575,6 +3575,7 @@ namespace IKVM.Internal
 			private MethodInfo callerIDMethod;
 			private List<Item> items;
 			private Dictionary<FieldWrapper, MethodBuilder> arfuMap;
+			private Dictionary<MethodKey, MethodInfo> invokespecialstubcache;
 
 			private struct Item
 			{
@@ -3731,7 +3732,6 @@ namespace IKVM.Internal
 						parent = parent.BaseTypeWrapper;
 					}
 				}
-				Dictionary<MethodKey, MethodInfo> invokespecialstubcache = new Dictionary<MethodKey, MethodInfo>();
 				bool basehasclinit = wrapper.BaseTypeWrapper != null && wrapper.BaseTypeWrapper.HasStaticInitializer;
 				int clinitIndex = -1;
 				bool hasConstructor = false;
@@ -3758,7 +3758,7 @@ namespace IKVM.Internal
 					{
 						hasConstructor = true;
 						CodeEmitter ilGenerator = CodeEmitter.Create(mb);
-						CompileConstructorBody(this, ilGenerator, i, invokespecialstubcache);
+						CompileConstructorBody(this, ilGenerator, i);
 					}
 					else
 					{
@@ -3916,7 +3916,7 @@ namespace IKVM.Internal
 							}
 #endif // STATIC_COMPILER
 							bool nonleaf = false;
-							Compiler.Compile(this, wrapper, methods[i], classFile, m, ilGenerator, ref nonleaf, invokespecialstubcache);
+							Compiler.Compile(this, wrapper, methods[i], classFile, m, ilGenerator, ref nonleaf);
 							ilGenerator.CheckLabels();
 							ilGenerator.DoEmit();
 							if (nonleaf)
@@ -3961,7 +3961,7 @@ namespace IKVM.Internal
 					}
 					if (clinitIndex != -1)
 					{
-						CompileConstructorBody(this, ilGenerator, clinitIndex, invokespecialstubcache);
+						CompileConstructorBody(this, ilGenerator, clinitIndex);
 					}
 					else
 					{
@@ -5262,7 +5262,7 @@ namespace IKVM.Internal
 				}
 			}
 
-			private void CompileConstructorBody(FinishContext context, CodeEmitter ilGenerator, int methodIndex, Dictionary<MethodKey, MethodInfo> invokespecialstubcache)
+			private void CompileConstructorBody(FinishContext context, CodeEmitter ilGenerator, int methodIndex)
 			{
 				MethodWrapper[] methods = wrapper.GetMethods();
 				ClassFile.Method m = classFile.Methods[methodIndex];
@@ -5276,7 +5276,7 @@ namespace IKVM.Internal
 				}
 #endif
 				bool nonLeaf = false;
-				Compiler.Compile(context, wrapper, methods[methodIndex], classFile, m, ilGenerator, ref nonLeaf, invokespecialstubcache);
+				Compiler.Compile(context, wrapper, methods[methodIndex], classFile, m, ilGenerator, ref nonLeaf);
 				ilGenerator.DoEmit();
 #if STATIC_COMPILER
 				ilGenerator.EmitLineNumberTable((MethodBuilder)methods[methodIndex].GetMethod());
@@ -5501,14 +5501,36 @@ namespace IKVM.Internal
 				return typeBuilder.DefineField("__<>dynamicMethodTypeCache", CoreClasses.java.lang.invoke.MethodType.Wrapper.TypeAsSignatureType, FieldAttributes.Static | FieldAttributes.PrivateScope);
 			}
 
-			internal MethodBuilder DefineInvokeSpecialStub(DefineMethodHelper sig)
-			{
-				return sig.DefineMethod(wrapper, typeBuilder, "__<>", MethodAttributes.PrivateScope);
-			}
-
 			internal MethodBuilder DefineDelegateInvokeErrorStub(Type returnType, Type[] parameterTypes)
 			{
 				return typeBuilder.DefineMethod("__<>", MethodAttributes.PrivateScope | MethodAttributes.Static, returnType, parameterTypes);
+			}
+
+			internal MethodInfo GetInvokeSpecialStub(MethodWrapper method)
+			{
+				if (invokespecialstubcache == null)
+				{
+					invokespecialstubcache = new Dictionary<MethodKey, MethodInfo>();
+				}
+				MethodKey key = new MethodKey(method.DeclaringType.Name, method.Name, method.Signature);
+				MethodInfo mi;
+				if (!invokespecialstubcache.TryGetValue(key, out mi))
+				{
+					DefineMethodHelper dmh = method.GetDefineMethodHelper();
+					MethodBuilder stub = dmh.DefineMethod(wrapper, typeBuilder, "__<>", MethodAttributes.PrivateScope);
+					CodeEmitter ilgen = CodeEmitter.Create(stub);
+					ilgen.Emit(OpCodes.Ldarg_0);
+					for (int i = 1; i <= dmh.ParameterCount; i++)
+					{
+						ilgen.EmitLdarg(i);
+					}
+					method.EmitCall(ilgen);
+					ilgen.Emit(OpCodes.Ret);
+					ilgen.DoEmit();
+					invokespecialstubcache[key] = stub;
+					mi = stub;
+				}
+				return mi;
 			}
 		}
 
