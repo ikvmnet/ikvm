@@ -198,7 +198,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 {
 	static class AssemblyClassLoader
 	{
-		public static global::java.lang.Class LoadClass(object classLoader, Assembly assembly, string name)
+		public static global::java.lang.Class LoadClass(global::java.lang.ClassLoader classLoader, Assembly assembly, string name)
 		{
 			try
 			{
@@ -229,12 +229,12 @@ namespace IKVM.NativeCode.ikvm.runtime
 					// this must be a GenericClassLoader
 					tw = ((GenericClassLoader)ClassLoaderWrapper.GetClassLoaderWrapper(classLoader)).LoadClassByDottedName(name);
 				}
-				Tracer.Info(Tracer.ClassLoading, "Loaded class \"{0}\" from {1}", name, classLoader == null ? "boot class loader" : classLoader);
+				Tracer.Info(Tracer.ClassLoading, "Loaded class \"{0}\" from {1}", name, classLoader == null ? "boot class loader" : (object)classLoader);
 				return tw.ClassObject;
 			}
 			catch(RetargetableJavaException x)
 			{
-				Tracer.Info(Tracer.ClassLoading, "Failed to load class \"{0}\" from {1}", name, classLoader == null ? "boot class loader" : classLoader);
+				Tracer.Info(Tracer.ClassLoading, "Failed to load class \"{0}\" from {1}", name, classLoader == null ? "boot class loader" : (object)classLoader);
 				throw x.ToJava();
 			}
 		}
@@ -371,7 +371,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 			return packages;
 		}
 
-		public static int GetGenericClassLoaderId(object classLoader)
+		public static int GetGenericClassLoaderId(global::java.lang.ClassLoader classLoader)
 		{
 #if FIRST_PASS
 			return 0;
@@ -380,7 +380,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 #endif
 		}
 
-		public static string GetGenericClassLoaderName(object classLoader)
+		public static string GetGenericClassLoaderName(global::java.lang.ClassLoader classLoader)
 		{
 #if FIRST_PASS
 			return null;

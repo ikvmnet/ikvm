@@ -918,7 +918,7 @@ namespace IKVM.Internal
 		}
 
 #if !STATIC_COMPILER && !STUB_GENERATOR
-		internal static ClassLoaderWrapper GetClassLoaderWrapper(object javaClassLoader)
+		internal static ClassLoaderWrapper GetClassLoaderWrapper(java.lang.ClassLoader javaClassLoader)
 		{
 			if(javaClassLoader == null)
 			{
@@ -934,7 +934,7 @@ namespace IKVM.Internal
 					// MONOBUG the redundant cast to ClassLoaderWrapper is to workaround an mcs bug
 					(ClassLoaderWrapper)(object)
 #endif
-					((java.lang.ClassLoader)javaClassLoader).wrapper;
+					javaClassLoader.wrapper;
 #endif
 				if(wrapper == null)
 				{
