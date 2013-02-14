@@ -1110,27 +1110,28 @@ namespace IKVM.Internal
 						return loader;
 					}
 				}
-				object javaClassLoader = null;
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-				javaClassLoader = DoPrivileged(new AssemblyClassLoader.CreateAssemblyClassLoader(null));
-#endif
+#if STATIC_COMPILER || STUB_GENERATOR || FIRST_PASS
+				GenericClassLoader newLoader = new GenericClassLoader(key, null);
+#else
+				java.lang.ClassLoader javaClassLoader = (java.lang.ClassLoader)DoPrivileged(new AssemblyClassLoader.CreateAssemblyClassLoader(null));
 				GenericClassLoader newLoader = new GenericClassLoader(key, javaClassLoader);
 				SetWrapperForClassLoader(javaClassLoader, newLoader);
+#endif
 				genericClassLoaders.Add(newLoader);
 				return newLoader;
 			}
 		}
 
-		protected static void SetWrapperForClassLoader(object javaClassLoader, ClassLoaderWrapper wrapper)
+#if !STATIC_COMPILER && !STUB_GENERATOR
+		protected static void SetWrapperForClassLoader(java.lang.ClassLoader javaClassLoader, ClassLoaderWrapper wrapper)
 		{
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-#if __MonoCS__
+#if __MonoCS__ || FIRST_PASS
 			typeof(java.lang.ClassLoader).GetField("wrapper", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(javaClassLoader, wrapper);
 #else
-			((java.lang.ClassLoader)javaClassLoader).wrapper = wrapper;
-#endif
+			javaClassLoader.wrapper = wrapper;
 #endif
 		}
+#endif
 
 #if !STATIC_COMPILER && !STUB_GENERATOR
 		internal static ClassLoaderWrapper GetGenericClassLoaderByName(string name)
