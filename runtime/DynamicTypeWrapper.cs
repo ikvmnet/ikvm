@@ -55,7 +55,7 @@ namespace IKVM.Internal
 #endif
 		private volatile DynamicImpl impl;
 		private readonly TypeWrapper baseTypeWrapper;
-		private TypeWrapper[] interfaces;
+		private readonly TypeWrapper[] interfaces;
 		private readonly string sourceFileName;
 #if !STATIC_COMPILER
 		private byte[][] lineNumberTables;
@@ -3224,8 +3224,8 @@ namespace IKVM.Internal
 
 		private sealed class Metadata
 		{
-			private string[][] genericMetaData;
-			private object[][] annotations;
+			private readonly string[][] genericMetaData;
+			private readonly object[][] annotations;
 
 			private Metadata(string[][] genericMetaData, object[][] annotations)
 			{
@@ -3435,13 +3435,13 @@ namespace IKVM.Internal
 
 		private sealed class FinishedTypeImpl : DynamicImpl
 		{
-			private Type type;
-			private TypeWrapper[] innerclasses;
-			private TypeWrapper declaringTypeWrapper;
-			private Modifiers reflectiveModifiers;
-			private MethodInfo clinitMethod;
-			private MethodInfo finalizeMethod;
-			private Metadata metadata;
+			private readonly Type type;
+			private readonly TypeWrapper[] innerclasses;
+			private readonly TypeWrapper declaringTypeWrapper;
+			private readonly Modifiers reflectiveModifiers;
+			private readonly MethodInfo clinitMethod;
+			private readonly MethodInfo finalizeMethod;
+			private readonly Metadata metadata;
 
 			internal FinishedTypeImpl(Type type, TypeWrapper[] innerclasses, TypeWrapper declaringTypeWrapper, Modifiers reflectiveModifiers, Metadata metadata, MethodInfo clinitMethod, MethodInfo finalizeMethod)
 			{
@@ -5706,7 +5706,7 @@ namespace IKVM.Internal
 			{
 				if (parameterNames[i] == null)
 				{
-					parameterNames[i] = (string)names[i];
+					parameterNames[i] = names[i];
 				}
 			}
 		}
