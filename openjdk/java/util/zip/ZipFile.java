@@ -481,7 +481,7 @@ public class ZipFile implements ZipConstants, Closeable
       case ZipOutputStream.DEFLATED:
         inp.addDummyByte();
         final Inflater inf = new Inflater(true);
-        final int sz = (int) entry.getSize();
+        final int sz = (int) zipEntry.getSize();
         return new InflaterInputStream(inp, inf)
         {
           private boolean closed;
