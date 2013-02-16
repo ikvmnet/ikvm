@@ -437,7 +437,7 @@ namespace IKVM.Internal
 				}
 			}
 #if CLASSGC
-			DynamicClassLoader instance = new DynamicClassLoader(CreateModuleBuilder());
+			DynamicClassLoader instance = new DynamicClassLoader(CreateModuleBuilder(), false);
 #endif
 			return instance;
 #endif
