@@ -23,9 +23,6 @@
 */
 
 using System;
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-using Type = IKVM.Reflection.Type;
 using System.Resources;
 using System.IO;
 using System.Collections.Generic;
@@ -34,11 +31,14 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Text;
 using System.Threading;
-using IKVM.Attributes;
-
 using System.Security.Permissions;
 using System.Security;
 using System.Runtime.CompilerServices;
+using ICSharpCode.SharpZipLib.Zip;
+using IKVM.Attributes;
+using IKVM.Reflection;
+using IKVM.Reflection.Emit;
+using Type = IKVM.Reflection.Type;
 
 namespace IKVM.Internal
 {
@@ -770,14 +770,14 @@ namespace IKVM.Internal
 			foreach (KeyValuePair<string, Dictionary<string, ResourceItem>> jar in jars)
 			{
 				MemoryStream mem = new MemoryStream();
-				using (ICSharpCode.SharpZipLib.Zip.ZipOutputStream zip = new ICSharpCode.SharpZipLib.Zip.ZipOutputStream(mem))
+				using (ZipOutputStream zip = new ZipOutputStream(mem))
 				{
 					foreach (KeyValuePair<string, ResourceItem> kv in jar.Value)
 					{
-						ICSharpCode.SharpZipLib.Zip.ZipEntry zipEntry = new ICSharpCode.SharpZipLib.Zip.ZipEntry(kv.Key);
+						ZipEntry zipEntry = new ZipEntry(kv.Key);
 						if (kv.Value.zipEntry == null)
 						{
-							zipEntry.CompressionMethod = ICSharpCode.SharpZipLib.Zip.CompressionMethod.Stored;
+							zipEntry.CompressionMethod = CompressionMethod.Stored;
 						}
 						else
 						{
@@ -788,10 +788,10 @@ namespace IKVM.Internal
 							zipEntry.ExtraData = kv.Value.zipEntry.ExtraData;
 							zipEntry.Flags = kv.Value.zipEntry.Flags;
 						}
-						if (compressedResources || zipEntry.CompressionMethod != ICSharpCode.SharpZipLib.Zip.CompressionMethod.Stored)
+						if (compressedResources || zipEntry.CompressionMethod != CompressionMethod.Stored)
 						{
 							zip.SetLevel(9);
-							zipEntry.CompressionMethod = ICSharpCode.SharpZipLib.Zip.CompressionMethod.Deflated;
+							zipEntry.CompressionMethod = CompressionMethod.Deflated;
 						}
 						zip.PutNextEntry(zipEntry);
 						if (kv.Value.data != null)
@@ -3311,7 +3311,7 @@ namespace IKVM.Internal
 
 	struct ResourceItem
 	{
-		internal ICSharpCode.SharpZipLib.Zip.ZipEntry zipEntry;
+		internal ZipEntry zipEntry;
 		internal byte[] data;
 		internal string jar;
 	}
@@ -3396,7 +3396,7 @@ namespace IKVM.Internal
 			return copy;
 		}
 
-		internal void AddResource(ICSharpCode.SharpZipLib.Zip.ZipEntry zipEntry, string name, byte[] buf, string jar)
+		internal void AddResource(ZipEntry zipEntry, string name, byte[] buf, string jar)
 		{
 			List<ResourceItem> list;
 			if (!resources.TryGetValue(name, out list))
