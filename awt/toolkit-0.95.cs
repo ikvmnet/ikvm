@@ -5168,6 +5168,7 @@ namespace ikvm.awt
             }
         }
 
+        [System.Security.SecuritySafeCritical]
         public bool isWindowUnderMouse(java.awt.Window window)
         {
             if (NetToolkit.isWin32())
