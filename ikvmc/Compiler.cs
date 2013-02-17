@@ -1391,30 +1391,27 @@ sealed class IkvmcCompiler
 	private void ProcessFile(CompilerOptions options, DirectoryInfo baseDir, string file)
 	{
 		FileInfo fileInfo = GetFileInfo(file);
-		switch(fileInfo.Extension.ToLower())
+		if (fileInfo.Extension.Equals(".jar", StringComparison.OrdinalIgnoreCase) || fileInfo.Extension.Equals(".zip", StringComparison.OrdinalIgnoreCase))
 		{
-			case ".class":
-				AddClassFile(options, null, file, ReadAllBytes(fileInfo), false, null);
-				break;
-			case ".jar":
-			case ".zip":
-				ProcessZipFile(options, file, null);
-				break;
-			default:
+			ProcessZipFile(options, file, null);
+		}
+		else
+		{
+			if (fileInfo.Extension.Equals(".class", StringComparison.OrdinalIgnoreCase))
 			{
-				if(baseDir == null)
-				{
-					StaticCompiler.IssueMessage(Message.UnknownFileType, file);
-				}
-				else
-				{
-					// include as resource
-					// extract the resource name by chopping off the base directory
-					string name = file.Substring(baseDir.FullName.Length);
-					name = name.TrimStart(Path.DirectorySeparatorChar).Replace('\\', '/');
-					options.AddResource(null, name, ReadAllBytes(fileInfo), null);
-				}
-				break;
+				AddClassFile(options, null, file, ReadAllBytes(fileInfo), false, null);
+			}
+			else if (baseDir == null)
+			{
+				StaticCompiler.IssueMessage(Message.UnknownFileType, file);
+			}
+			else
+			{
+				// include as resource
+				// extract the resource name by chopping off the base directory
+				string name = file.Substring(baseDir.FullName.Length);
+				name = name.TrimStart(Path.DirectorySeparatorChar).Replace('\\', '/');
+				options.AddResource(null, name, ReadAllBytes(fileInfo), null);
 			}
 		}
 	}
