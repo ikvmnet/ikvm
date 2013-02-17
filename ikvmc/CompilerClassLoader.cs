@@ -2734,7 +2734,7 @@ namespace IKVM.Internal
 				for (int i = 0; i < jar.Items.Count; i++)
 				{
 					string name = jar.Items[i].zipEntry.Name;
-					if (name.EndsWith(".class", StringComparison.OrdinalIgnoreCase))
+					if (name.EndsWith(".class", StringComparison.Ordinal))
 					{
 						ClassFile f;
 						try
