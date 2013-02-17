@@ -2725,6 +2725,7 @@ namespace IKVM.Internal
 			List<object> assemblyAnnotations = new List<object>();
 			Dictionary<string, string> baseClasses = new Dictionary<string, string>();
 			Tracer.Info(Tracer.Compiler, "Parsing class files");
+			Dictionary<string, ClassItem> h = new Dictionary<string, ClassItem>();
 			foreach(KeyValuePair<string, ClassItem> kv in options.classes)
 			{
 				ClassFile f;
@@ -2741,48 +2742,37 @@ namespace IKVM.Internal
 					if(f.Name == "assembly" && f.Annotations != null)
 					{
 						assemblyAnnotations.AddRange(f.Annotations);
+						// HACK skip "assembly" type that exists only as a placeholder for assembly attributes
+						continue;
 					}
 				}
 				catch(ClassFormatError)
 				{
 					continue;
 				}
-				if(options.mainClass == null && (options.guessFileKind || options.target != PEFileKinds.Dll))
+				if(h.ContainsKey(f.Name))
 				{
-					foreach(ClassFile.Method m in f.Methods)
+					StaticCompiler.IssueMessage(Message.DuplicateClassName, f.Name);
+				}
+				else if(options.IsExcludedClass(f.Name))
+				{
+					// skip excluded class
+				}
+				else
+				{
+					h.Add(f.Name, kv.Value);
+					if (options.mainClass == null && (options.guessFileKind || options.target != PEFileKinds.Dll))
 					{
-						if(m.IsPublic && m.IsStatic && m.Name == "main" && m.Signature == "([Ljava.lang.String;)V")
+						foreach(ClassFile.Method m in f.Methods)
 						{
-							StaticCompiler.IssueMessage(Message.MainMethodFound, f.Name);
-							options.mainClass = f.Name;
-							break;
+							if(m.IsPublic && m.IsStatic && m.Name == "main" && m.Signature == "([Ljava.lang.String;)V")
+							{
+								StaticCompiler.IssueMessage(Message.MainMethodFound, f.Name);
+								options.mainClass = f.Name;
+								break;
+							}
 						}
 					}
-				}
-			}
-			Dictionary<string, ClassItem> h = new Dictionary<string, ClassItem>();
-			// HACK remove "assembly" type that exists only as a placeholder for assembly attributes
-			options.classes.Remove("assembly");
-			foreach(KeyValuePair<string, ClassItem> kv in options.classes)
-			{
-				string name = kv.Key;
-				bool excluded = false;
-				for(int j = 0; j < options.classesToExclude.Length; j++)
-				{
-					if(Regex.IsMatch(name, options.classesToExclude[j]))
-					{
-						excluded = true;
-						break;
-					}
-				}
-				if(h.ContainsKey(name))
-				{
-					StaticCompiler.IssueMessage(Message.DuplicateClassName, name);
-					excluded = true;
-				}
-				if(!excluded)
-				{
-					h[name] = kv.Value;
 				}
 			}
 			options.classes = null;
@@ -3404,6 +3394,18 @@ namespace IKVM.Internal
 			item.data = buf;
 			item.jar = jar ?? "resources.jar";
 			list.Add(item);
+		}
+
+		internal bool IsExcludedClass(string className)
+		{
+			for (int i = 0; i < classesToExclude.Length; i++)
+			{
+				if (Regex.IsMatch(className, classesToExclude[i]))
+				{
+					return true;
+				}
+			}
+			return false;
 		}
 	}
 
