@@ -2727,6 +2727,7 @@ namespace IKVM.Internal
 			List<object> assemblyAnnotations = new List<object>();
 			Dictionary<string, string> baseClasses = new Dictionary<string, string>();
 			Tracer.Info(Tracer.Compiler, "Parsing class files");
+			bool hasSpecifiedMainClass = options.mainClass != null;
 			Dictionary<string, JarItemReference> h = new Dictionary<string, JarItemReference>();
 			foreach (Jar jar in options.jars)
 			{
@@ -2760,8 +2761,24 @@ namespace IKVM.Internal
 						if (h.ContainsKey(f.Name))
 						{
 							StaticCompiler.IssueMessage(Message.DuplicateClassName, f.Name);
+							JarItemReference itemRef = h[f.Name];
+							if ((options.classesJar != -1 && itemRef.Jar == options.jars[options.classesJar]) || jar != itemRef.Jar)
+							{
+								// the previous class stays, because it was either in an earlier jar or we're processing the classes.jar
+								// which contains the classes loaded from the file system
+								continue;
+							}
+							else
+							{
+								// we have a jar that contains multiple entries with the same name, the last one wins
+								h.Remove(f.Name);
+								if (!hasSpecifiedMainClass && options.mainClass == f.Name)
+								{
+									options.mainClass = null;
+								}
+							}
 						}
-						else if (options.IsExcludedClass(f.Name))
+						if (options.IsExcludedClass(f.Name))
 						{
 							// we don't compile the class and we also don't include it as a resource
 							jar.Items[i] = new JarItem();
