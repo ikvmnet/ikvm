@@ -1317,6 +1317,32 @@ sealed class IkvmcCompiler
 		return true;
 	}
 
+	private void ProcessManifest(CompilerOptions options, ZipFile zf, ZipEntry ze)
+	{
+		if (manifestMainClass == null)
+		{
+			// read main class from manifest
+			// TODO find out if we can use other information from manifest
+			StreamReader rdr = new StreamReader(zf.GetInputStream(ze));
+			string line;
+			while ((line = rdr.ReadLine()) != null)
+			{
+				if (line.StartsWith("Main-Class: "))
+				{
+					line = line.Substring(12);
+					string continuation;
+					while ((continuation = rdr.ReadLine()) != null
+						&& continuation.StartsWith(" ", StringComparison.Ordinal))
+					{
+						line += continuation.Substring(1);
+					}
+					manifestMainClass = line.Replace('/', '.');
+					break;
+				}
+			}
+		}
+	}
+
 	private void ProcessZipFile(CompilerOptions options, string file, Predicate<ZipEntry> filter)
 	{
 		try
@@ -1343,27 +1369,9 @@ sealed class IkvmcCompiler
 					{
 						// if it's not a class, we treat it as a resource and the manifest
 						// is examined to find the Main-Class
-						if (ze.Name == "META-INF/MANIFEST.MF" && manifestMainClass == null)
+						if (ze.Name == "META-INF/MANIFEST.MF")
 						{
-							// read main class from manifest
-							// TODO find out if we can use other information from manifest
-							StreamReader rdr = new StreamReader(zf.GetInputStream(ze));
-							string line;
-							while ((line = rdr.ReadLine()) != null)
-							{
-								if (line.StartsWith("Main-Class: "))
-								{
-									line = line.Substring(12);
-									string continuation;
-									while ((continuation = rdr.ReadLine()) != null
-										&& continuation.StartsWith(" ", StringComparison.Ordinal))
-									{
-										line += continuation.Substring(1);
-									}
-									manifestMainClass = line.Replace('/', '.');
-									break;
-								}
-							}
+							ProcessManifest(options, zf, ze);
 						}
 						options.AddResource(ze, ze.Name, ReadFromZip(zf, ze), jar);
 					}
