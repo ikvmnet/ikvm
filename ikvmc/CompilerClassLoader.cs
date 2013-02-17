@@ -288,6 +288,7 @@ namespace IKVM.Internal
 					}
 					catch(ClassFormatError x)
 					{
+						StaticCompiler.SuppressWarning(options, Message.ClassNotFound, name);
 						StaticCompiler.IssueMessage(options, Message.ClassFormatError, name, x.Message);
 						return null;
 					}
@@ -365,17 +366,14 @@ namespace IKVM.Internal
 					catch (ClassFormatError x)
 					{
 						StaticCompiler.IssueMessage(options, Message.ClassFormatError, name, x.Message);
-						return null;
 					}
 					catch (IllegalAccessError x)
 					{
 						StaticCompiler.IssueMessage(options, Message.IllegalAccessError, name, x.Message);
-						return null;
 					}
 					catch (VerifyError x)
 					{
 						StaticCompiler.IssueMessage(options, Message.VerificationError, name, x.Message);
-						return null;
 					}
 					catch (NoClassDefFoundError x)
 					{
@@ -384,9 +382,6 @@ namespace IKVM.Internal
 							// add the class file as a resource
 							options.AddResource(null, f.Name.Replace('.', '/') + ".class", classdef.data, "classes.jar");
 
-							// suppress class not found warning for the current class
-							options.suppressWarnings[(int)Message.ClassNotFound + ":" + f.Name] = null;
-
 							// give a warning about the missing base class/interface
 							StaticCompiler.IssueMessage(options, Message.ClassNotFound, x.Message);
 						}
@@ -394,13 +389,13 @@ namespace IKVM.Internal
 						{
 							StaticCompiler.IssueMessage(options, Message.NoClassDefFoundError, name, x.Message);
 						}
-						return null;
 					}
 					catch (RetargetableJavaException x)
 					{
 						StaticCompiler.IssueMessage(options, Message.GenericUnableToCompileError, name, x.GetType().Name, x.Message);
-						return null;
 					}
+					StaticCompiler.SuppressWarning(options, Message.ClassNotFound, name);
+					return null;
 				}
 				else
 				{
@@ -3887,6 +3882,11 @@ namespace IKVM.Internal
 		{
 			type = ReflectUtil.GetMissingType(type);
 			StaticCompiler.IssueMessage(type.Assembly.__IsMissing ? Message.MissingReference : Message.MissingType, type.FullName, type.Assembly.FullName);
+		}
+
+		internal static void SuppressWarning(CompilerOptions options, Message message, string name)
+		{
+			options.suppressWarnings[(int)message + ":" + name] = null;
 		}
 	}
 }
