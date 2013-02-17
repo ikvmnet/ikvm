@@ -221,6 +221,10 @@ namespace IKVM.NativeCode.ikvm.runtime
 					}
 					if(tw == null)
 					{
+						tw = acl.LoadDynamic(name);
+					}
+					if(tw == null)
+					{
 						throw new ClassNotFoundException(name);
 					}
 				}

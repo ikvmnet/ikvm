@@ -724,14 +724,10 @@ namespace IKVM.Internal
 			{
 				if (x.InnerException is java.lang.ClassNotFoundException)
 				{
-					foreach (java.net.URL url in GetResourcesImpl(name.Replace('.', '/') + ".class", false))
+					tw = LoadDynamic(name);
+					if (tw != null)
 					{
-						using (java.io.InputStream inp = url.openStream())
-						{
-							byte[] buf = new byte[inp.available()];
-							inp.read(buf, 0, buf.Length);
-							return TypeWrapper.FromClass(IKVM.NativeCode.java.lang.ClassLoader.defineClass1(GetJavaClassLoader(), name, buf, 0, buf.Length, GetProtectionDomain(), null));
-						}
+						return tw;
 					}
 				}
 				throw;
@@ -742,7 +738,28 @@ namespace IKVM.Internal
 			{
 				return tw;
 			}
-			return LoadReferenced(name);
+			tw = LoadReferenced(name);
+			if (tw != null)
+			{
+				return tw;
+			}
+			return LoadDynamic(name);
+		}
+
+		internal TypeWrapper LoadDynamic(string name)
+		{
+#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+			foreach (java.net.URL url in GetResourcesImpl(name.Replace('.', '/') + ".class", false))
+			{
+				using (java.io.InputStream inp = url.openStream())
+				{
+					byte[] buf = new byte[inp.available()];
+					inp.read(buf, 0, buf.Length);
+					return TypeWrapper.FromClass(IKVM.NativeCode.java.lang.ClassLoader.defineClass1(GetJavaClassLoader(), name, buf, 0, buf.Length, GetProtectionDomain(), null));
+				}
+			}
+#endif
+			return null;
 		}
 
 		internal TypeWrapper LoadReferenced(string name)
