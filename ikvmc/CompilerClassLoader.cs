@@ -293,6 +293,12 @@ namespace IKVM.Internal
 						StaticCompiler.IssueMessage(options, Message.ClassFormatError, name, x.Message);
 						return null;
 					}
+					if(f.Name != name)
+					{
+						StaticCompiler.SuppressWarning(options, Message.ClassNotFound, name);
+						StaticCompiler.IssueMessage(options, Message.WrongClassName, name, f.Name);
+						return null;
+					}
 					if(options.removeUnusedFields)
 					{
 						f.RemoveUnusedFields();
@@ -2725,81 +2731,89 @@ namespace IKVM.Internal
 				}
 			}
 			List<object> assemblyAnnotations = new List<object>();
-			Dictionary<string, string> baseClasses = new Dictionary<string, string>();
 			Tracer.Info(Tracer.Compiler, "Parsing class files");
-			bool hasSpecifiedMainClass = options.mainClass != null;
+			// map the class names to jar entries
 			Dictionary<string, JarItemReference> h = new Dictionary<string, JarItemReference>();
+			List<string> classNames = new List<string>();
 			foreach (Jar jar in options.jars)
 			{
 				for (int i = 0; i < jar.Items.Count; i++)
 				{
 					string name = jar.Items[i].zipEntry.Name;
-					if (name.EndsWith(".class", StringComparison.Ordinal))
+					if (name.EndsWith(".class", StringComparison.Ordinal)
+						&& name.Length > 6
+						&& name.IndexOf('.') == name.Length - 6)
 					{
-						ClassFile f;
-						try
-						{
-							byte[] buf = jar.Items[i].data;
-							f = new ClassFile(buf, 0, buf.Length, null, ClassFileParseOptions.None);
-							if (!f.IsInterface && f.SuperClass != null)
-							{
-								baseClasses[f.SuperClass] = f.SuperClass;
-							}
-							// NOTE the "assembly" type in the unnamed package is a magic type
-							// that acts as the placeholder for assembly attributes
-							if (f.Name == "assembly" && f.Annotations != null)
-							{
-								assemblyAnnotations.AddRange(f.Annotations);
-								// HACK skip "assembly" type that exists only as a placeholder for assembly attributes
-								continue;
-							}
-						}
-						catch (ClassFormatError)
-						{
-							continue;
-						}
-						if (h.ContainsKey(f.Name))
-						{
-							StaticCompiler.IssueMessage(Message.DuplicateClassName, f.Name);
-							JarItemReference itemRef = h[f.Name];
-							if ((options.classesJar != -1 && itemRef.Jar == options.jars[options.classesJar]) || jar != itemRef.Jar)
-							{
-								// the previous class stays, because it was either in an earlier jar or we're processing the classes.jar
-								// which contains the classes loaded from the file system
-								continue;
-							}
-							else
-							{
-								// we have a jar that contains multiple entries with the same name, the last one wins
-								h.Remove(f.Name);
-								if (!hasSpecifiedMainClass && options.mainClass == f.Name)
-								{
-									options.mainClass = null;
-								}
-							}
-						}
-						if (options.IsExcludedClass(f.Name))
+						string className = name.Substring(0, name.Length - 6).Replace('/', '.');
+						if (options.IsExcludedClass(className))
 						{
 							// we don't compile the class and we also don't include it as a resource
 							jar.Items[i] = new JarItem();
 						}
 						else
 						{
-							h.Add(f.Name, new JarItemReference(jar, i));
-							if (options.mainClass == null && (options.guessFileKind || options.target != PEFileKinds.Dll))
+							if (h.ContainsKey(className))
 							{
-								foreach (ClassFile.Method m in f.Methods)
+								StaticCompiler.IssueMessage(Message.DuplicateClassName, className);
+								JarItemReference itemRef = h[className];
+								if ((options.classesJar != -1 && itemRef.Jar == options.jars[options.classesJar]) || jar != itemRef.Jar)
 								{
-									if (m.IsPublic && m.IsStatic && m.Name == "main" && m.Signature == "([Ljava.lang.String;)V")
-									{
-										StaticCompiler.IssueMessage(Message.MainMethodFound, f.Name);
-										options.mainClass = f.Name;
-										break;
-									}
+									// the previous class stays, because it was either in an earlier jar or we're processing the classes.jar
+									// which contains the classes loaded from the file system (where the first encountered class wins)
+									continue;
 								}
+								else
+								{
+									// we have a jar that contains multiple entries with the same name, the last one wins
+									h.Remove(className);
+									classNames.Remove(className);
+								}
+							}
+							h.Add(className, new JarItemReference(jar, i));
+							classNames.Add(className);
+						}
+					}
+				}
+			}
+			// now process all the classes to record the classes that are used as base classes and
+			// to look for assembly attribute annotations and the main method
+			Dictionary<string, string> baseClasses = new Dictionary<string, string>();
+			foreach (string className in classNames)
+			{
+				try
+				{
+					JarItemReference itemRef = h[className];
+					byte[] buf = itemRef.Jar.Items[itemRef.Index].data;
+					ClassFile f = new ClassFile(buf, 0, buf.Length, null, ClassFileParseOptions.None);
+					if (!f.IsInterface && f.SuperClass != null)
+					{
+						baseClasses[f.SuperClass] = f.SuperClass;
+					}
+					// NOTE the "assembly" type in the unnamed package is a magic type
+					// that acts as the placeholder for assembly attributes
+					if (className == f.Name && f.Name == "assembly" && f.Annotations != null)
+					{
+						assemblyAnnotations.AddRange(f.Annotations);
+						// HACK remove "assembly" type that exists only as a placeholder for assembly attributes
+						h.Remove(f.Name);
+						itemRef.Jar.Items[itemRef.Index] = new JarItem();
+						continue;
+					}
+					if (options.mainClass == null && (options.guessFileKind || options.target != PEFileKinds.Dll))
+					{
+						foreach (ClassFile.Method m in f.Methods)
+						{
+							if (m.IsPublic && m.IsStatic && m.Name == "main" && m.Signature == "([Ljava.lang.String;)V")
+							{
+								StaticCompiler.IssueMessage(Message.MainMethodFound, f.Name);
+								options.mainClass = f.Name;
+								break;
 							}
 						}
 					}
+				}
+				catch (ClassFormatError)
+				{
 				}
 			}
 
@@ -3554,6 +3568,7 @@ namespace IKVM.Internal
 		DuplicateAssemblyReference = 132,
 		UnableToResolveType = 133,
 		StubsAreDeprecated = 134,
+		WrongClassName = 135,
 		UnknownWarning = 999,
 		// This is where the errors start
 		StartErrors = 4000,
@@ -3881,6 +3896,9 @@ namespace IKVM.Internal
 					break;
 				case Message.StubsAreDeprecated:
 					msg = "Compiling stubs is deprecated. Please add a reference to assembly \"{0}\" instead.";
+					break;
+				case Message.WrongClassName:
+					msg = "Unable to compile \"{0}\" (wrong name: \"{1}\")";
 					break;
 				case Message.UnableToCreateProxy:
 					msg = "Unable to create proxy \"{0}\"" + Environment.NewLine +
