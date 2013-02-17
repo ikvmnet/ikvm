@@ -818,7 +818,7 @@ namespace IKVM.Internal
 			return root.GetEntry(0, path);
 		}
 
-		private sealed class ZipEntryStream : System.IO.Stream
+		internal sealed class ZipEntryStream : System.IO.Stream
 		{
 			private readonly java.util.zip.ZipFile zipFile;
 			private readonly java.util.zip.ZipEntry entry;

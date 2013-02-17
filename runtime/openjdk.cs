@@ -5275,6 +5275,48 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
+		namespace zip
+		{
+			static class ClassStubZipEntry
+			{
+				public static void expandIkvmClasses(object _zipFile, object _entries)
+				{
+#if !FIRST_PASS
+					juzZipFile zipFile = (juzZipFile)_zipFile;
+					global::java.util.LinkedHashMap entries = (global::java.util.LinkedHashMap)_entries;
+
+					try
+					{
+						string path = zipFile.getName();
+						juzZipEntry entry = (juzZipEntry)entries.get(JVM.JarClassList);
+						if (entry != null && VirtualFileSystem.IsVirtualFS(path))
+						{
+							using (VirtualFileSystem.ZipEntryStream stream = new VirtualFileSystem.ZipEntryStream(zipFile, entry))
+							{
+								entries.remove(entry.name);
+								System.IO.BinaryReader br = new System.IO.BinaryReader(stream);
+								int count = br.ReadInt32();
+								for (int i = 0; i < count; i++)
+								{
+									global::java.util.zip.ClassStubZipEntry classEntry = new global::java.util.zip.ClassStubZipEntry(path, br.ReadString());
+									classEntry.setMethod(global::java.util.zip.ClassStubZipEntry.STORED);
+									classEntry.setTime(entry.getTime());
+									entries.put(classEntry.name, classEntry);
+								}
+							}
+						}
+					}
+					catch (global::java.io.IOException)
+					{
+					}
+					catch (System.IO.IOException)
+					{
+					}
+#endif
+				}
+			}
+		}
+
 		static class TimeZone
 		{
 			private static string GetCurrentTimeZoneID()

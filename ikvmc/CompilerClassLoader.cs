@@ -363,8 +363,10 @@ namespace IKVM.Internal
 					try
 					{
 						TypeWrapper tw = DefineClass(f, null);
-						// we successfully create the type, so we don't need to include the class as a resource
-						itemRef.Jar.Items[itemRef.Index] = new JarItem();
+						// we successfully created the type, so we don't need to include the class as a resource
+						itemRef.Jar.Items[itemRef.Index] = options.nojarstubs
+							? new JarItem()	// null entry
+							: new JarItem(itemRef.Jar.Items[itemRef.Index].zipEntry, null, null); // create a stub class pseudo resource
 						return tw;
 					}
 					catch (ClassFormatError x)
@@ -694,7 +696,7 @@ namespace IKVM.Internal
 						{
 							foreach (JarItem item in jar.Items)
 							{
-								if (item.zipEntry != null)
+								if (item.zipEntry != null && item.data != null)
 								{
 									AddExportMapEntry(exportedNamesPerAssembly, ccl, item.zipEntry.Name);
 								}
@@ -752,10 +754,16 @@ namespace IKVM.Internal
 					using (ZipOutputStream zip = new ZipOutputStream(mem))
 					{
 						zip.SetLevel(9);
+						List<string> stubs = new List<string>();
 						foreach (JarItem item in options.jars[i].Items)
 						{
 							if (item.zipEntry == null)
 							{
+								continue;
+							}
+							if (item.data == null)
+							{
+								stubs.Add(item.zipEntry.Name);
 								continue;
 							}
 							ZipEntry zipEntry = new ZipEntry(item.zipEntry.Name);
@@ -770,10 +778,22 @@ namespace IKVM.Internal
 								zipEntry.CompressionMethod = CompressionMethod.Deflated;
 							}
 							zip.PutNextEntry(zipEntry);
-							if (item.data != null)
+							zip.Write(item.data, 0, item.data.Length);
+							zip.CloseEntry();
+						}
+						if (stubs.Count != 0)
+						{
+							// generate the --ikvm-classes-- file in the jar
+							ZipEntry zipEntry = new ZipEntry(JVM.JarClassList);
+							zipEntry.CompressionMethod = CompressionMethod.Deflated;
+							zip.PutNextEntry(zipEntry);
+							BinaryWriter bw = new BinaryWriter(zip);
+							bw.Write(stubs.Count);
+							foreach (string classFile in stubs)
 							{
-								zip.Write(item.data, 0, item.data.Length);
+								bw.Write(classFile);
 							}
+							bw.Flush();
 							zip.CloseEntry();
 						}
 					}
@@ -3339,6 +3359,7 @@ namespace IKVM.Internal
 		private Dictionary<string, int> jarMap = new Dictionary<string, int>();
 		internal int classesJar = -1;
 		internal int resourcesJar = -1;
+		internal bool nojarstubs;
 		internal FileInfo path;
 		internal FileInfo keyfile;
 		internal string keycontainer;

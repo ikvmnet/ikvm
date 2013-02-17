@@ -968,6 +968,10 @@ sealed class IkvmcCompiler
 				{
 					options.codegenoptions |= CodeGenOptions.DisableDynamicBinding;
 				}
+				else if(s == "-nojarstubs")	// undocumented temporary option to mitigate risk
+				{
+					options.nojarstubs = true;
+				}
 				else
 				{
 					throw new FatalCompilerErrorException(Message.UnrecognizedOption, s);

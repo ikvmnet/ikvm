@@ -81,6 +81,7 @@ namespace IKVM.Internal
 {
 	static class JVM
 	{
+		internal const string JarClassList = "--ikvm-classes--/";
 #if STATIC_COMPILER
 		internal const bool FinishingForDebugSave = false;
 		internal const bool IsSaveDebugImage = false;

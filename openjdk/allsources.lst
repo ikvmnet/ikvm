@@ -132,6 +132,7 @@ java/util/concurrent/locks/LockSupport.java
 java/util/ResourceBundle.java
 java/util/TimeZone.java
 java/util/zip/Adler32.java
+java/util/zip/ClassStubZipEntry.java
 java/util/zip/CRC32.java
 java/util/zip/Deflater.java
 java/util/zip/DeflaterConstants.java
