@@ -3643,6 +3643,7 @@ namespace IKVM.Internal
 		UnableToResolveInterface = 5052,
 		MissingBaseType = 5053,
 		MissingBaseTypeReference = 5054,
+		FileNotFound = 5055,
 	}
 
 	static class StaticCompiler

@@ -154,6 +154,8 @@ sealed class FatalCompilerErrorException : Exception
 				return "The base class or interface '{0}' in assembly '{1}' referenced by type '{2}' in '{3}' could not be resolved";
 			case IKVM.Internal.Message.MissingBaseTypeReference:
 				return "The type '{0}' is defined in an assembly that is not referenced. You must add a reference to assembly '{1}'";
+			case IKVM.Internal.Message.FileNotFound:
+				return "File not found: {0}";
 			default:
 				return "Missing Error Message. Please file a bug.";
 		}
@@ -694,10 +696,11 @@ sealed class IkvmcCompiler
 					catch(IOException)
 					{
 					}
+					bool found;
 					if(exists)
 					{
 						DirectoryInfo dir = new DirectoryInfo(spec);
-						Recurse(options, dir, dir, "*");
+						found = Recurse(options, dir, dir, "*");
 					}
 					else
 					{
@@ -706,11 +709,11 @@ sealed class IkvmcCompiler
 							DirectoryInfo dir = new DirectoryInfo(Path.GetDirectoryName(spec));
 							if(dir.Exists)
 							{
-								Recurse(options, dir, dir, Path.GetFileName(spec));
+								found = Recurse(options, dir, dir, Path.GetFileName(spec));
 							}
 							else
 							{
-								RecurseJar(options, spec);
+								found = RecurseJar(options, spec);
 							}
 						}
 						catch(PathTooLongException)
@@ -725,6 +728,10 @@ sealed class IkvmcCompiler
 						{
 							throw new FatalCompilerErrorException(Message.InvalidPath, spec);
 						}
+					}
+					if(!found)
+					{
+						throw new FatalCompilerErrorException(Message.FileNotFound, spec);
 					}
 				}
 				else if(s.StartsWith("-resource:"))
@@ -1326,14 +1333,15 @@ sealed class IkvmcCompiler
 		}
 	}
 
-	private void ProcessZipFile(CompilerOptions options, string file, Predicate<ZipEntry> filter)
+	private bool ProcessZipFile(CompilerOptions options, string file, Predicate<ZipEntry> filter)
 	{
 		try
 		{
-			Jar jar = null;
 			ZipFile zf = new ZipFile(file);
 			try
 			{
+				bool found = false;
+				Jar jar = null;
 				foreach (ZipEntry ze in zf)
 				{
 					if (filter != null && !filter(ze))
@@ -1342,6 +1350,7 @@ sealed class IkvmcCompiler
 					}
 					else
 					{
+						found = true;
 						byte[] data = ReadFromZip(zf, ze);
 						if (IsStubLegacy(options, ze, data))
 						{
@@ -1358,6 +1367,7 @@ sealed class IkvmcCompiler
 						}
 					}
 				}
+				return found;
 			}
 			finally
 			{
@@ -1414,19 +1424,22 @@ sealed class IkvmcCompiler
 		}
 	}
 
-	private void Recurse(CompilerOptions options, DirectoryInfo baseDir, DirectoryInfo dir, string spec)
+	private bool Recurse(CompilerOptions options, DirectoryInfo baseDir, DirectoryInfo dir, string spec)
 	{
+		bool found = false;
 		foreach(FileInfo file in dir.GetFiles(spec))
 		{
+			found = true;
 			ProcessFile(options, baseDir, file.FullName);
 		}
 		foreach(DirectoryInfo sub in dir.GetDirectories())
 		{
-			Recurse(options, baseDir, sub, spec);
+			found |= Recurse(options, baseDir, sub, spec);
 		}
+		return found;
 	}
 
-	private void RecurseJar(CompilerOptions options, string path)
+	private bool RecurseJar(CompilerOptions options, string path)
 	{
 		string file = "";
 		for (; ; )
@@ -1441,13 +1454,12 @@ sealed class IkvmcCompiler
 			{
 				string pathFilter = Path.GetDirectoryName(file) + Path.DirectorySeparatorChar;
 				string fileFilter = "^" + Regex.Escape(Path.GetFileName(file)).Replace("\\*", ".*").Replace("\\?", ".") + "$";
-				ProcessZipFile(options, path, delegate(ZipEntry ze) {
+				return ProcessZipFile(options, path, delegate(ZipEntry ze) {
 					// MONOBUG Path.GetDirectoryName() doesn't normalize / to \ on Windows
 					string name = ze.Name.Replace('/', Path.DirectorySeparatorChar);
 					return (Path.GetDirectoryName(name) + Path.DirectorySeparatorChar).StartsWith(pathFilter)
 						&& Regex.IsMatch(Path.GetFileName(ze.Name), fileFilter);
 				});
-				return;
 			}
 		}
 	}
