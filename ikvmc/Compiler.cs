@@ -164,7 +164,6 @@ sealed class IkvmcCompiler
 {
 	private bool nonleaf;
 	private string manifestMainClass;
-	private Dictionary<string, ClassItem> classes = new Dictionary<string, ClassItem>();
 	private string defaultAssemblyName;
 	private List<string> classesToExclude = new List<string>();
 	private static bool time;
@@ -537,7 +536,6 @@ sealed class IkvmcCompiler
 				}
 				IkvmcCompiler nestedLevel = new IkvmcCompiler();
 				nestedLevel.manifestMainClass = manifestMainClass;
-				nestedLevel.classes = new Dictionary<string, ClassItem>(classes);
 				nestedLevel.defaultAssemblyName = defaultAssemblyName;
 				nestedLevel.classesToExclude = new List<string>(classesToExclude);
 				nestedLevel.ContinueParseCommandLine(arglist, targets, options.Copy());
@@ -736,7 +734,7 @@ sealed class IkvmcCompiler
 					{
 						throw new FatalCompilerErrorException(Message.InvalidOptionSyntax, s);
 					}
-					options.AddResource(null, spec[0].TrimStart('/'), ReadAllBytes(GetFileInfo(spec[1])), null);
+					options.GetResourcesJar().Add(spec[0].TrimStart('/'), ReadAllBytes(GetFileInfo(spec[1])), null);
 				}
 				else if(s.StartsWith("-externalresource:"))
 				{
@@ -1019,7 +1017,6 @@ sealed class IkvmcCompiler
 			StaticCompiler.IssueMessage(options, Message.MainMethodFromManifest, manifestMainClass);
 			options.mainClass = manifestMainClass;
 		}
-		options.classes = classes;
 		options.classesToExclude = classesToExclude.ToArray();
 		targets.Add(options);
 	}
@@ -1245,45 +1242,6 @@ sealed class IkvmcCompiler
 		return buf;
 	}
 
-	private void AddClassFile(CompilerOptions options, ZipEntry zipEntry, string filename, byte[] buf, bool addResourceFallback, string jar)
-	{
-		try
-		{
-			bool stub;
-			string name = ClassFile.GetClassName(buf, 0, buf.Length, out stub);
-			if(stub && EmitStubWarning(options, buf))
-			{
-				// we use stubs to add references, but otherwise ignore them
-				return;
-			}
-			if(classes.ContainsKey(name))
-			{
-				StaticCompiler.IssueMessage(Message.DuplicateClassName, name);
-			}
-			else
-			{
-				ClassItem item;
-				item.data = buf;
-				item.path = zipEntry == null ? filename : null;
-				classes.Add(name, item);
-			}
-		}
-		catch(ClassFormatError x)
-		{
-			if(addResourceFallback)
-			{
-				// not a class file, so we include it as a resource
-				// (IBM's db2os390/sqlj jars apparantly contain such files)
-				StaticCompiler.IssueMessage(Message.NotAClassFile, filename, x.Message);
-				options.AddResource(zipEntry, filename, buf, jar);
-			}
-			else
-			{
-				StaticCompiler.IssueMessage(Message.ClassFormatError, filename, x.Message);
-			}
-		}
-	}
-
 	private static bool EmitStubWarning(CompilerOptions options, byte[] buf)
 	{
 		ClassFile cf;
@@ -1317,6 +1275,27 @@ sealed class IkvmcCompiler
 		return true;
 	}
 
+	private static bool IsStubLegacy(CompilerOptions options, ZipEntry ze, byte[] data)
+	{
+		if (ze.Name.EndsWith(".class", StringComparison.OrdinalIgnoreCase))
+		{
+			try
+			{
+				bool stub;
+				string name = ClassFile.GetClassName(data, 0, data.Length, out stub);
+				if (stub && EmitStubWarning(options, data))
+				{
+					// we use stubs to add references, but otherwise ignore them
+					return true;
+				}
+			}
+			catch (ClassFormatError)
+			{
+			}
+		}
+		return false;
+	}
+
 	private void ProcessManifest(CompilerOptions options, ZipFile zf, ZipEntry ze)
 	{
 		if (manifestMainClass == null)
@@ -1347,7 +1326,7 @@ sealed class IkvmcCompiler
 	{
 		try
 		{
-			string jar = Path.GetFileName(file);
+			Jar jar = null;
 			ZipFile zf = new ZipFile(file);
 			try
 			{
@@ -1357,23 +1336,22 @@ sealed class IkvmcCompiler
 					{
 						// skip
 					}
-					else if (ze.IsDirectory)
-					{
-						options.AddResource(ze, ze.Name, null, jar);
-					}
-					else if (ze.Name.ToLower().EndsWith(".class"))
-					{
-						AddClassFile(options, ze, ze.Name, ReadFromZip(zf, ze), true, jar);
-					}
 					else
 					{
-						// if it's not a class, we treat it as a resource and the manifest
-						// is examined to find the Main-Class
+						byte[] data = ReadFromZip(zf, ze);
+						if (IsStubLegacy(options, ze, data))
+						{
+							continue;
+						}
+						if (jar == null)
+						{
+							jar = options.GetJar(file);
+						}
+						jar.Add(ze, data);
 						if (ze.Name == "META-INF/MANIFEST.MF")
 						{
 							ProcessManifest(options, zf, ze);
 						}
-						options.AddResource(ze, ze.Name, ReadFromZip(zf, ze), jar);
 					}
 				}
 			}
@@ -1399,9 +1377,25 @@ sealed class IkvmcCompiler
 		{
 			if (fileInfo.Extension.Equals(".class", StringComparison.OrdinalIgnoreCase))
 			{
-				AddClassFile(options, null, file, ReadAllBytes(fileInfo), false, null);
+				byte[] data = ReadAllBytes(fileInfo);
+				try
+				{
+					bool stub;
+					string name = ClassFile.GetClassName(data, 0, data.Length, out stub);
+					if (stub && EmitStubWarning(options, data))
+					{
+						// we use stubs to add references, but otherwise ignore them
+						return;
+					}
+					options.GetClassesJar().Add(name.Replace('.', '/') + ".class", data, fileInfo);
+					return;
+				}
+				catch (ClassFormatError x)
+				{
+					StaticCompiler.IssueMessage(Message.ClassFormatError, file, x.Message);
+				}
 			}
-			else if (baseDir == null)
+			if (baseDir == null)
 			{
 				StaticCompiler.IssueMessage(Message.UnknownFileType, file);
 			}
@@ -1411,7 +1405,7 @@ sealed class IkvmcCompiler
 				// extract the resource name by chopping off the base directory
 				string name = file.Substring(baseDir.FullName.Length);
 				name = name.TrimStart(Path.DirectorySeparatorChar).Replace('\\', '/');
-				options.AddResource(null, name, ReadAllBytes(fileInfo), null);
+				options.GetResourcesJar().Add(name, ReadAllBytes(fileInfo), null);
 			}
 		}
 	}
