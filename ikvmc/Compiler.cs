@@ -1358,7 +1358,7 @@ sealed class IkvmcCompiler
 						}
 						if (jar == null)
 						{
-							jar = options.GetJar(file);
+							jar = options.GetJar(zf);
 						}
 						jar.Add(ze, data);
 						if (ze.Name == "META-INF/MANIFEST.MF")
@@ -1366,6 +1366,11 @@ sealed class IkvmcCompiler
 							ProcessManifest(options, zf, ze);
 						}
 					}
+				}
+				// include empty zip file if it has a comment
+				if (!found && !string.IsNullOrEmpty(zf.ZipFileComment))
+				{
+					options.GetJar(zf);
 				}
 				return found;
 			}

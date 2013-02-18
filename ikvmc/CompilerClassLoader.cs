@@ -756,6 +756,10 @@ namespace IKVM.Internal
 				MemoryStream mem = new MemoryStream();
 				using (ZipOutputStream zip = new ZipOutputStream(mem))
 				{
+					if (!string.IsNullOrEmpty(options.jars[i].Comment))
+					{
+						zip.SetComment(options.jars[i].Comment);
+					}
 					zip.SetLevel(9);
 					List<string> stubs = new List<string>();
 					foreach (JarItem item in options.jars[i].Items)
@@ -3337,16 +3341,18 @@ namespace IKVM.Internal
 	sealed class Jar
 	{
 		internal readonly string Name;
+		internal readonly string Comment;
 		internal readonly List<JarItem> Items = new List<JarItem>();
 
-		internal Jar(string name)
+		internal Jar(string name, string comment)
 		{
 			this.Name = name;
+			this.Comment = comment;
 		}
 
 		internal Jar Copy()
 		{
-			Jar newJar = new Jar(Name);
+			Jar newJar = new Jar(Name, Comment);
 			newJar.Items.AddRange(Items);
 			return newJar;
 		}
@@ -3470,18 +3476,18 @@ namespace IKVM.Internal
 			return newJars;
 		}
 
-		internal Jar GetJar(string path)
+		internal Jar GetJar(ZipFile zf)
 		{
 			int existingJar;
-			if (jarMap.TryGetValue(path, out existingJar))
+			if (jarMap.TryGetValue(zf.Name, out existingJar))
 			{
 				return jars[existingJar];
 			}
-			jarMap.Add(path, jars.Count);
-			return CreateJar(Path.GetFileName(path));
+			jarMap.Add(zf.Name, jars.Count);
+			return CreateJar(Path.GetFileName(zf.Name), zf.ZipFileComment);
 		}
 
-		private Jar CreateJar(string jarName)
+		private Jar CreateJar(string jarName, string comment)
 		{
 			int count = 0;
 			string name = jarName;
@@ -3494,7 +3500,7 @@ namespace IKVM.Internal
 					goto retry;
 				}
 			}
-			Jar newJar = new Jar(name);
+			Jar newJar = new Jar(name, comment);
 			jars.Add(newJar);
 			return newJar;
 		}
@@ -3504,7 +3510,7 @@ namespace IKVM.Internal
 			if (classesJar == -1)
 			{
 				classesJar = jars.Count;
-				CreateJar("classes.jar");
+				CreateJar("classes.jar", null);
 			}
 			return jars[classesJar];
 		}
@@ -3514,7 +3520,7 @@ namespace IKVM.Internal
 			if (resourcesJar == -1)
 			{
 				resourcesJar = jars.Count;
-				CreateJar("resources.jar");
+				CreateJar("resources.jar", null);
 			}
 			return jars[resourcesJar];
 		}
