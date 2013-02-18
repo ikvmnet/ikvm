@@ -753,6 +753,7 @@ namespace IKVM.Internal
 			for (int i = 0; i < options.jars.Count; i++)
 			{
 				{
+					bool hasEntries = false;
 					MemoryStream mem = new MemoryStream();
 					using (ZipOutputStream zip = new ZipOutputStream(mem))
 					{
@@ -787,6 +788,7 @@ namespace IKVM.Internal
 							zip.PutNextEntry(zipEntry);
 							zip.Write(item.data, 0, item.data.Length);
 							zip.CloseEntry();
+							hasEntries = true;
 						}
 						if (stubs.Count != 0)
 						{
@@ -802,16 +804,21 @@ namespace IKVM.Internal
 							}
 							bw.Flush();
 							zip.CloseEntry();
+							hasEntries = true;
 						}
 					}
-					mem = new MemoryStream(mem.ToArray());
-					string name = options.jars[i].Name;
-					if (options.targetIsModule)
+					// don't include empty classes.jar
+					if (i != options.classesJar || hasEntries)
 					{
-						name = Path.GetFileNameWithoutExtension(name) + "-" + moduleBuilder.ModuleVersionId.ToString("N") + Path.GetExtension(name);
+						mem = new MemoryStream(mem.ToArray());
+						string name = options.jars[i].Name;
+						if (options.targetIsModule)
+						{
+							name = Path.GetFileNameWithoutExtension(name) + "-" + moduleBuilder.ModuleVersionId.ToString("N") + Path.GetExtension(name);
+						}
+						jarList.Add(name);
+						moduleBuilder.DefineManifestResource(name, mem, ResourceAttributes.Public);
 					}
-					jarList.Add(name);
-					moduleBuilder.DefineManifestResource(name, mem, ResourceAttributes.Public);
 				}
 			}
 		}
