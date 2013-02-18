@@ -2249,7 +2249,7 @@ namespace IKVM.Internal
 				{
 					if(c.Shadows != null)
 					{
-						RemapperTypeWrapper typeWrapper = (RemapperTypeWrapper)remapped[c.Name];
+						RemapperTypeWrapper typeWrapper = remapped[c.Name];
 						typeWrapper.Process2ndPassStep1();
 					}
 				}
@@ -2257,7 +2257,7 @@ namespace IKVM.Internal
 				{
 					if(c.Shadows != null)
 					{
-						RemapperTypeWrapper typeWrapper = (RemapperTypeWrapper)remapped[c.Name];
+						RemapperTypeWrapper typeWrapper = remapped[c.Name];
 						typeWrapper.Process2ndPassStep2(map);
 					}
 				}
@@ -2676,10 +2676,10 @@ namespace IKVM.Internal
 			if (compilingCoreAssembly)
 			{
 				RuntimeHelperTypes.Create(compilers[0]);
-			}
-			foreach (CompilerClassLoader compiler in compilers)
-			{
-				compiler.EmitRemappedTypes2ndPass();
+				foreach (CompilerClassLoader compiler in compilers)
+				{
+					compiler.EmitRemappedTypes2ndPass();
+				}
 			}
 			foreach (CompilerClassLoader compiler in compilers)
 			{
