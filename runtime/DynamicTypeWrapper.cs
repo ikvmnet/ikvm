@@ -5307,25 +5307,19 @@ namespace IKVM.Internal
 
 			private void EmitCallerIDInitialization(CodeEmitter ilGenerator, FieldInfo callerIDField)
 			{
+				TypeWrapper tw = CoreClasses.ikvm.@internal.CallerID.Wrapper;
+				if (tw.InternalsVisibleTo(wrapper))
 				{
-					// we need to prohibit this optimization at runtime, because proxy classes may be injected into the boot class loader,
-					// but they don't actually have access to core library internals
-#if STATIC_COMPILER
-					TypeWrapper tw = CoreClasses.ikvm.@internal.CallerID.Wrapper;
-					if (tw.GetClassLoader() == wrapper.GetClassLoader())
-					{
-						MethodWrapper create = tw.GetMethodWrapper("create", "(Lcli.System.RuntimeTypeHandle;)Likvm.internal.CallerID;", false);
-						ilGenerator.Emit(OpCodes.Ldtoken, this.typeBuilder);
-						create.Link();
-						create.EmitCall(ilGenerator);
-					}
-					else
-#endif
-					{
-						RegisterNestedTypeBuilder(EmitCreateCallerID(typeBuilder, ilGenerator));
-					}
-					ilGenerator.Emit(OpCodes.Stsfld, callerIDField);
+					MethodWrapper create = tw.GetMethodWrapper("create", "(Lcli.System.RuntimeTypeHandle;)Likvm.internal.CallerID;", false);
+					ilGenerator.Emit(OpCodes.Ldtoken, this.typeBuilder);
+					create.Link();
+					create.EmitCall(ilGenerator);
 				}
+				else
+				{
+					RegisterNestedTypeBuilder(EmitCreateCallerID(typeBuilder, ilGenerator));
+				}
+				ilGenerator.Emit(OpCodes.Stsfld, callerIDField);
 			}
 
 			internal static TypeBuilder EmitCreateCallerID(TypeBuilder typeBuilder, CodeEmitter ilGenerator)
