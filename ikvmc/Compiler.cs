@@ -255,6 +255,10 @@ sealed class IkvmcCompiler
 			Console.Error.WriteLine();
 			Console.Error.WriteLine("PLEASE FILE A BUG REPORT FOR IKVM.NET WHEN YOU SEE THIS MESSAGE");
 			Console.Error.WriteLine();
+			Console.Error.WriteLine(System.Reflection.Assembly.GetExecutingAssembly().FullName);
+			Console.Error.WriteLine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory());
+			Console.Error.WriteLine("{0} {1}-bit", Environment.Version, IntPtr.Size * 8);
+			Console.Error.WriteLine();
 			Console.Error.WriteLine(x);
 			return 2;
 		}
