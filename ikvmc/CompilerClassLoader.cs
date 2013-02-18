@@ -2221,6 +2221,10 @@ namespace IKVM.Internal
 				{
 					if(c.Shadows != null)
 					{
+						if(classes.ContainsKey(c.Name))
+						{
+							StaticCompiler.IssueMessage(Message.DuplicateClassName, c.Name);
+						}
 						remapped.Add(c.Name, new RemapperTypeWrapper(this, c, map));
 						hasRemappedTypes = true;
 					}
