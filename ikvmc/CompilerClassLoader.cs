@@ -752,73 +752,71 @@ namespace IKVM.Internal
 
 			for (int i = 0; i < options.jars.Count; i++)
 			{
+				bool hasEntries = false;
+				MemoryStream mem = new MemoryStream();
+				using (ZipOutputStream zip = new ZipOutputStream(mem))
 				{
-					bool hasEntries = false;
-					MemoryStream mem = new MemoryStream();
-					using (ZipOutputStream zip = new ZipOutputStream(mem))
+					zip.SetLevel(9);
+					List<string> stubs = new List<string>();
+					foreach (JarItem item in options.jars[i].Items)
 					{
-						zip.SetLevel(9);
-						List<string> stubs = new List<string>();
-						foreach (JarItem item in options.jars[i].Items)
+						if (item.zipEntry == null)
 						{
-							if (item.zipEntry == null)
-							{
-								continue;
-							}
-							if (item.data == null)
-							{
-								// we don't want stub class pseudo resources for classes loaded from the file system
-								if (i != options.classesJar)
-								{
-									stubs.Add(item.zipEntry.Name);
-								}
-								continue;
-							}
-							ZipEntry zipEntry = new ZipEntry(item.zipEntry.Name);
-							zipEntry.Comment = item.zipEntry.Comment;
-							zipEntry.CompressionMethod = item.zipEntry.CompressionMethod;
-							zipEntry.DosTime = item.zipEntry.DosTime;
-							zipEntry.ExternalFileAttributes = item.zipEntry.ExternalFileAttributes;
-							zipEntry.ExtraData = item.zipEntry.ExtraData;
-							zipEntry.Flags = item.zipEntry.Flags;
-							if (options.compressedResources || zipEntry.CompressionMethod != CompressionMethod.Stored)
-							{
-								zipEntry.CompressionMethod = CompressionMethod.Deflated;
-							}
-							zip.PutNextEntry(zipEntry);
-							zip.Write(item.data, 0, item.data.Length);
-							zip.CloseEntry();
-							hasEntries = true;
+							continue;
 						}
-						if (stubs.Count != 0)
+						if (item.data == null)
 						{
-							// generate the --ikvm-classes-- file in the jar
-							ZipEntry zipEntry = new ZipEntry(JVM.JarClassList);
+							// we don't want stub class pseudo resources for classes loaded from the file system
+							if (i != options.classesJar)
+							{
+								stubs.Add(item.zipEntry.Name);
+							}
+							continue;
+						}
+						ZipEntry zipEntry = new ZipEntry(item.zipEntry.Name);
+						zipEntry.Comment = item.zipEntry.Comment;
+						zipEntry.CompressionMethod = item.zipEntry.CompressionMethod;
+						zipEntry.DosTime = item.zipEntry.DosTime;
+						zipEntry.ExternalFileAttributes = item.zipEntry.ExternalFileAttributes;
+						zipEntry.ExtraData = item.zipEntry.ExtraData;
+						zipEntry.Flags = item.zipEntry.Flags;
+						if (options.compressedResources || zipEntry.CompressionMethod != CompressionMethod.Stored)
+						{
 							zipEntry.CompressionMethod = CompressionMethod.Deflated;
-							zip.PutNextEntry(zipEntry);
-							BinaryWriter bw = new BinaryWriter(zip);
-							bw.Write(stubs.Count);
-							foreach (string classFile in stubs)
-							{
-								bw.Write(classFile);
-							}
-							bw.Flush();
-							zip.CloseEntry();
-							hasEntries = true;
 						}
+						zip.PutNextEntry(zipEntry);
+						zip.Write(item.data, 0, item.data.Length);
+						zip.CloseEntry();
+						hasEntries = true;
 					}
-					// don't include empty classes.jar
-					if (i != options.classesJar || hasEntries)
+					if (stubs.Count != 0)
 					{
-						mem = new MemoryStream(mem.ToArray());
-						string name = options.jars[i].Name;
-						if (options.targetIsModule)
+						// generate the --ikvm-classes-- file in the jar
+						ZipEntry zipEntry = new ZipEntry(JVM.JarClassList);
+						zipEntry.CompressionMethod = CompressionMethod.Deflated;
+						zip.PutNextEntry(zipEntry);
+						BinaryWriter bw = new BinaryWriter(zip);
+						bw.Write(stubs.Count);
+						foreach (string classFile in stubs)
 						{
-							name = Path.GetFileNameWithoutExtension(name) + "-" + moduleBuilder.ModuleVersionId.ToString("N") + Path.GetExtension(name);
+							bw.Write(classFile);
 						}
-						jarList.Add(name);
-						moduleBuilder.DefineManifestResource(name, mem, ResourceAttributes.Public);
+						bw.Flush();
+						zip.CloseEntry();
+						hasEntries = true;
 					}
+				}
+				// don't include empty classes.jar
+				if (i != options.classesJar || hasEntries)
+				{
+					mem = new MemoryStream(mem.ToArray());
+					string name = options.jars[i].Name;
+					if (options.targetIsModule)
+					{
+						name = Path.GetFileNameWithoutExtension(name) + "-" + moduleBuilder.ModuleVersionId.ToString("N") + Path.GetExtension(name);
+					}
+					jarList.Add(name);
+					moduleBuilder.DefineManifestResource(name, mem, ResourceAttributes.Public);
 				}
 			}
 		}
