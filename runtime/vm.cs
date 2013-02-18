@@ -273,11 +273,18 @@ namespace IKVM.Internal
 				message = String.Format("****** Critical Failure: {1} ******{0}{0}" +
 					"PLEASE FILE A BUG REPORT FOR IKVM.NET WHEN YOU SEE THIS MESSAGE{0}{0}" +
 					(messageBox != null ? "(on Windows you can use Ctrl+C to copy the contents of this message to the clipboard){0}{0}" : "") +
-					"{2}{0}" + 
+					"{2}{0}" +
 					"{3}{0}" +
-					"{4}",
+					"{4} {5}-bit{0}{0}" +
+					"{6}{0}" + 
+					"{7}{0}" +
+					"{8}",
 					Environment.NewLine,
 					message,
+					System.Reflection.Assembly.GetExecutingAssembly().FullName,
+					System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(),
+					Environment.Version,
+					IntPtr.Size * 8,
 					x,
 					x != null ? new StackTrace(x, true).ToString() : "",
 					new StackTrace(true));
