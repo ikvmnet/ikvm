@@ -752,9 +752,6 @@ namespace IKVM.Internal
 
 			for (int i = 0; i < options.jars.Count; i++)
 			{
-				// the classes jar (that contains classes loaded directly from the file system,
-				// does not contain any resources and we don't want stub class pseudo resources
-				if (i != options.classesJar)
 				{
 					MemoryStream mem = new MemoryStream();
 					using (ZipOutputStream zip = new ZipOutputStream(mem))
@@ -769,7 +766,11 @@ namespace IKVM.Internal
 							}
 							if (item.data == null)
 							{
-								stubs.Add(item.zipEntry.Name);
+								// we don't want stub class pseudo resources for classes loaded from the file system
+								if (i != options.classesJar)
+								{
+									stubs.Add(item.zipEntry.Name);
+								}
 								continue;
 							}
 							ZipEntry zipEntry = new ZipEntry(item.zipEntry.Name);
