@@ -409,19 +409,6 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal override Type GetGenericTypeDefinition(string name)
-		{
-			foreach(AssemblyClassLoader loader in referencedAssemblies)
-			{
-				Type type = loader.GetGenericTypeDefinition(name);
-				if(type != null)
-				{
-					return type;
-				}
-			}
-			return null;
-		}
-
 		// HACK when we're compiling multiple targets with -sharedclassloader, each target will have its own CompilerClassLoader,
 		// so we need to consider them equivalent (because they represent the same class loader).
 		internal bool IsEquivalentTo(ClassLoaderWrapper other)

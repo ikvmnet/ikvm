@@ -507,29 +507,6 @@ namespace IKVM.Internal
 			return wrapper.TypeAsBaseType.Assembly;
 		}
 
-		internal override Type GetGenericTypeDefinition(string name)
-		{
-			try
-			{
-				// we only have to look in the main assembly, because only a .NET assembly can contain generic type definitions
-				// and it cannot be part of a multi assembly sharedclassloader group
-				Type type = assemblyLoader.Assembly.GetType(name);
-				if (type != null && type.IsGenericTypeDefinition)
-				{
-					return type;
-				}
-			}
-			catch (FileLoadException x)
-			{
-				// this can only happen if the assembly was loaded in the ReflectionOnly
-				// context and the requested type references a type in another assembly
-				// that cannot be found in the ReflectionOnly context
-				// TODO figure out what other exceptions Assembly.GetType() can throw
-				Tracer.Info(Tracer.Runtime, x.Message);
-			}
-			return null;
-		}
-
 		private Assembly LoadAssemblyOrClearName(ref string name, bool exported)
 		{
 			if (name == null)

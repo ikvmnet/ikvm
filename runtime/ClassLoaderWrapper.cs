@@ -575,11 +575,12 @@ namespace IKVM.Internal
 			{
 				return null;
 			}
-			Type type = GetGenericTypeDefinition(DotNetTypeWrapper.DemangleTypeName(name.Substring(0, pos)));
-			if(type == null)
+			TypeWrapper def = LoadClassByDottedNameFast(name.Substring(0, pos));
+			if (def == null || !def.TypeAsTBD.IsGenericTypeDefinition)
 			{
 				return null;
 			}
+			Type type = def.TypeAsTBD;
 			List<string> typeParamNames = new List<string>();
 			pos += 5;
 			int start = pos;
@@ -1076,11 +1077,6 @@ namespace IKVM.Internal
 			return wrapper;
 		}
 
-		internal virtual Type GetGenericTypeDefinition(string name)
-		{
-			return null;
-		}
-
 		internal static ClassLoaderWrapper GetGenericClassLoader(TypeWrapper wrapper)
 		{
 			Type type = wrapper.TypeAsTBD;
@@ -1439,19 +1435,6 @@ namespace IKVM.Internal
 				return true;
 			}
 			return false;
-		}
-
-		internal override Type GetGenericTypeDefinition(string name)
-		{
-			foreach(ClassLoaderWrapper loader in delegates)
-			{
-				Type t = loader.GetGenericTypeDefinition(name);
-				if(t != null)
-				{
-					return t;
-				}
-			}
-			return null;
 		}
 
 		protected override TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
