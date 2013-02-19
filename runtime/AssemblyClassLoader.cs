@@ -990,9 +990,9 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal override TypeWrapper GetLoadedClass(string name)
+		internal override TypeWrapper FindLoadedClass(string name)
 		{
-			TypeWrapper tw = base.GetLoadedClass(name);
+			TypeWrapper tw = base.FindLoadedClass(name);
 			return tw != null ? tw : DoLoad(name);
 		}
 

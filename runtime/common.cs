@@ -210,7 +210,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 				else if(assembly != null)
 				{
 					AssemblyClassLoader_ acl = global::IKVM.Internal.AssemblyClassLoader.FromAssembly(assembly);
-					tw = acl.GetLoadedClass(name);
+					tw = acl.FindLoadedClass(name);
 					if(tw == null)
 					{
 						tw = acl.LoadGenericClass(name);

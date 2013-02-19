@@ -225,7 +225,7 @@ namespace IKVM.Internal
 			}
 			// HACK the peer loading mess above may have indirectly loaded the classes without returning it,
 			// so we try once more here
-			tw1 = GetLoadedClass(name);
+			tw1 = FindLoadedClass(name);
 			if(tw1 != null)
 			{
 				return tw1;
@@ -237,7 +237,7 @@ namespace IKVM.Internal
 		{
 			// To keep the performance acceptable in cases where we're compiling many targets, we first check if the load can
 			// possibly succeed on this class loader, otherwise we'll end up doing a lot of futile recursive loading attempts.
-			if(classes.ContainsKey(name) || remapped.ContainsKey(name) || GetLoadedClass(name) != null)
+			if(classes.ContainsKey(name) || remapped.ContainsKey(name) || FindLoadedClass(name) != null)
 			{
 				TypeWrapper tw = LoadClassByDottedNameFast(name);
 				// HACK we don't want to load classes referenced by peers, hence the "== this" check
@@ -2517,10 +2517,10 @@ namespace IKVM.Internal
 				{
 					// NOTE we don't support interfaces that inherit from other interfaces
 					// (actually, if they are explicitly listed it would probably work)
-					TypeWrapper typeWrapper = GetLoadedClass(c.Name);
+					TypeWrapper typeWrapper = FindLoadedClass(c.Name);
 					foreach(IKVM.Internal.MapXml.Interface iface in c.Interfaces)
 					{
-						TypeWrapper ifaceWrapper = GetLoadedClass(iface.Name);
+						TypeWrapper ifaceWrapper = FindLoadedClass(iface.Name);
 						if(ifaceWrapper == null || !ifaceWrapper.TypeAsTBD.IsAssignableFrom(typeWrapper.TypeAsTBD))
 						{
 							AddGhost(iface.Name, typeWrapper);

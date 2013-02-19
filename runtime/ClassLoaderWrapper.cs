@@ -174,8 +174,8 @@ namespace IKVM.Internal
 #endif
 
 		// return the TypeWrapper if it is already loaded, this exists for DynamicTypeWrapper.SetupGhosts
-		// and ClassLoader.findLoadedClass()
-		internal virtual TypeWrapper GetLoadedClass(string name)
+		// and implements ClassLoader.findLoadedClass()
+		internal virtual TypeWrapper FindLoadedClass(string name)
 		{
 			lock(types)
 			{

@@ -3023,7 +3023,7 @@ namespace IKVM.NativeCode.java
 					return null;
 				}
 				ClassLoaderWrapper loader = ClassLoaderWrapper.GetClassLoaderWrapper(thisClassLoader);
-				TypeWrapper tw = loader.GetLoadedClass(name);
+				TypeWrapper tw = loader.FindLoadedClass(name);
 				return tw != null ? tw.ClassObject : null;
 			}
 
