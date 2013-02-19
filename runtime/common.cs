@@ -200,6 +200,12 @@ namespace IKVM.NativeCode.ikvm.runtime
 	{
 		public static global::java.lang.Class LoadClass(global::java.lang.ClassLoader classLoader, Assembly assembly, string name)
 		{
+#if !FIRST_PASS
+			if (!global::java.lang.ClassLoader.checkName(name))
+			{
+				throw new global::java.lang.ClassNotFoundException(name);
+			}
+#endif
 			try
 			{
 				TypeWrapper tw = null;

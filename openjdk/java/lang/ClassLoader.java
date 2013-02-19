@@ -935,7 +935,7 @@ public abstract class ClassLoader {
                                       String source);
 
     // true if the name is null or has the potential to be a valid binary name
-    private boolean checkName(String name) {
+    static boolean checkName(String name) {
         if ((name == null) || (name.length() == 0))
             return true;
         if ((name.indexOf('/') != -1)
