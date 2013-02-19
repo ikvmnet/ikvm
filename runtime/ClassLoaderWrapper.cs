@@ -443,29 +443,7 @@ namespace IKVM.Internal
 			Profiler.Enter("LoadClassByDottedName");
 			try
 			{
-				TypeWrapper type;
-				lock(types)
-				{
-					if(types.TryGetValue(name, out type) && type == null)
-					{
-						Thread defineThread;
-						if(defineClassInProgress.TryGetValue(name, out defineThread))
-						{
-							if(Thread.CurrentThread == defineThread)
-							{
-								throw new ClassCircularityError(name);
-							}
-							// the requested class is currently being defined by another thread,
-							// so we have to wait on that
-							while(defineClassInProgress.ContainsKey(name))
-							{
-								Monitor.Wait(types);
-							}
-							// the defineClass may have failed, so we need to use TryGetValue
-							types.TryGetValue(name, out type);
-						}
-					}
-				}
+				TypeWrapper type = LoadRegisteredOrPendingClass(name);
 				if(type != null)
 				{
 					return type;
@@ -480,6 +458,34 @@ namespace IKVM.Internal
 			{
 				Profiler.Leave("LoadClassByDottedName");
 			}
+		}
+
+		private TypeWrapper LoadRegisteredOrPendingClass(string name)
+		{
+			TypeWrapper tw;
+			lock (types)
+			{
+				if (types.TryGetValue(name, out tw) && tw == null)
+				{
+					Thread defineThread;
+					if (defineClassInProgress.TryGetValue(name, out defineThread))
+					{
+						if (Thread.CurrentThread == defineThread)
+						{
+							throw new ClassCircularityError(name);
+						}
+						// the requested class is currently being defined by another thread,
+						// so we have to wait on that
+						while (defineClassInProgress.ContainsKey(name))
+						{
+							Monitor.Wait(types);
+						}
+						// the defineClass may have failed, so we need to use TryGetValue
+						types.TryGetValue(name, out tw);
+					}
+				}
+			}
+			return tw;
 		}
 
 		private TypeWrapper FindOrLoadArrayClass(string name, bool find)
