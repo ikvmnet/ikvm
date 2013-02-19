@@ -219,7 +219,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 					tw = acl.FindLoadedClass(name);
 					if(tw == null)
 					{
-						tw = acl.LoadGenericClass(name);
+						tw = acl.FindOrLoadGenericClass(name, false);
 					}
 					if(tw == null)
 					{

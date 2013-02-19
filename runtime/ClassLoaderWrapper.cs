@@ -488,6 +488,11 @@ namespace IKVM.Internal
 			return tw;
 		}
 
+		private TypeWrapper FindOrLoadClass(string name, bool find)
+		{
+			return find ? FindLoadedClass(name) : LoadClassByDottedNameFast(name);
+		}
+
 		private TypeWrapper FindOrLoadArrayClass(string name, bool find)
 		{
 			int dims = 1;
@@ -510,7 +515,7 @@ namespace IKVM.Internal
 				string elemClass = name.Substring(dims + 1, name.Length - dims - 2);
 				// NOTE it's important that we're registered as the initiating loader
 				// for the element type here
-				TypeWrapper type = find ? FindLoadedClassImpl(elemClass) : LoadClassByDottedNameFast(elemClass);
+				TypeWrapper type = FindOrLoadClass(elemClass, find);
 				if(type != null)
 				{
 					type = type.GetClassLoader().CreateArrayType(name, type, dims);
@@ -545,13 +550,13 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal TypeWrapper LoadGenericClass(string name)
+		internal TypeWrapper FindOrLoadGenericClass(string name, bool find)
 		{
 			// we need to handle delegate methods here (for generic delegates)
 			// (note that other types with manufactured inner classes such as Attribute and Enum can't be generic)
 			if (name.EndsWith(DotNetTypeWrapper.DelegateInterfaceSuffix))
 			{
-				TypeWrapper outer = LoadGenericClass(name.Substring(0, name.Length - DotNetTypeWrapper.DelegateInterfaceSuffix.Length));
+				TypeWrapper outer = FindOrLoadGenericClass(name.Substring(0, name.Length - DotNetTypeWrapper.DelegateInterfaceSuffix.Length), find);
 				if (outer != null && outer.IsFakeTypeContainer)
 				{
 					foreach (TypeWrapper tw in outer.InnerClasses)
@@ -575,7 +580,7 @@ namespace IKVM.Internal
 			{
 				return null;
 			}
-			TypeWrapper def = LoadClassByDottedNameFast(name.Substring(0, pos));
+			TypeWrapper def = FindOrLoadClass(name.Substring(0, pos), find);
 			if (def == null || !def.TypeAsTBD.IsGenericTypeDefinition)
 			{
 				return null;
@@ -649,7 +654,7 @@ namespace IKVM.Internal
 				switch(s[dims])
 				{
 					case 'L':
-						tw = LoadClassByDottedNameFast(s.Substring(dims + 1));
+						tw = FindOrLoadClass(s.Substring(dims + 1), find);
 						if(tw == null)
 						{
 							return null;
@@ -709,7 +714,7 @@ namespace IKVM.Internal
 
 		protected virtual TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
 		{
-			TypeWrapper tw = LoadGenericClass(name);
+			TypeWrapper tw = FindOrLoadGenericClass(name, false);
 			if(tw != null)
 			{
 				return tw;
@@ -1439,7 +1444,7 @@ namespace IKVM.Internal
 
 		protected override TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
 		{
-			TypeWrapper tw = LoadGenericClass(name);
+			TypeWrapper tw = FindOrLoadGenericClass(name, false);
 			if(tw != null)
 			{
 				return tw;

@@ -230,7 +230,7 @@ namespace IKVM.Internal
 			{
 				return tw1;
 			}
-			return LoadGenericClass(name);
+			return FindOrLoadGenericClass(name, false);
 		}
 
 		private TypeWrapper PeerLoad(string name)

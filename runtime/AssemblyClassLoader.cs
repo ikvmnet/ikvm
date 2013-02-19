@@ -710,7 +710,7 @@ namespace IKVM.Internal
 				throw;
 			}
 #endif
-			tw = LoadGenericClass(name);
+			tw = FindOrLoadGenericClass(name, false);
 			if (tw != null)
 			{
 				return tw;
@@ -969,8 +969,9 @@ namespace IKVM.Internal
 
 		protected override TypeWrapper FindLoadedClassImpl(string name)
 		{
-			TypeWrapper tw = base.FindLoadedClassImpl(name);
-			return tw != null ? tw : DoLoad(name);
+			return base.FindLoadedClassImpl(name)
+				?? DoLoad(name)
+				?? FindOrLoadGenericClass(name, true);
 		}
 
 		internal override bool InternalsVisibleToImpl(TypeWrapper wrapper, TypeWrapper friend)
