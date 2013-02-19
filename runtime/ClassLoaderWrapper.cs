@@ -181,17 +181,17 @@ namespace IKVM.Internal
 			{
 				return FindOrLoadArrayClass(name, true);
 			}
-			return FindLoadedClassImpl(name);
+			TypeWrapper tw;
+			lock (types)
+			{
+				types.TryGetValue(name, out tw);
+			}
+			return tw ?? FindLoadedClassLazy(name);
 		}
 
-		protected virtual TypeWrapper FindLoadedClassImpl(string name)
+		protected virtual TypeWrapper FindLoadedClassLazy(string name)
 		{
-			lock(types)
-			{
-				TypeWrapper tw;
-				types.TryGetValue(name, out tw);
-				return tw;
-			}
+			return null;
 		}
 
 		internal TypeWrapper RegisterInitiatingLoader(TypeWrapper tw)
@@ -307,11 +307,6 @@ namespace IKVM.Internal
 		}
 #endif // !STATIC_COMPILER && !STUB_GENERATOR
 
-		protected virtual void CheckDefineClassAllowed(string className)
-		{
-			// this hook exists so that AssemblyClassLoader can prevent DefineClass when the name is already present in the assembly
-		}
-
 #if !STUB_GENERATOR
 		internal TypeWrapper DefineClass(ClassFile f, ProtectionDomain protectionDomain)
 		{
@@ -339,7 +334,11 @@ namespace IKVM.Internal
 				return RegisterInitiatingLoader(tw);
 			}
 #endif
-			CheckDefineClassAllowed(f.Name);
+			// check if the class already exists if we're an AssemblyClassLoader
+			if(FindLoadedClassLazy(f.Name) != null)
+			{
+				throw new LinkageError("duplicate class definition: " + f.Name);
+			}
 			TypeWrapper def;
 			try
 			{

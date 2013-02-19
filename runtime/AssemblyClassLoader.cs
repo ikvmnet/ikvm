@@ -959,18 +959,9 @@ namespace IKVM.Internal
 		}
 #endif
 
-		protected override void CheckDefineClassAllowed(string className)
+		protected override TypeWrapper FindLoadedClassLazy(string name)
 		{
-			if (DoLoad(className) != null)
-			{
-				throw new LinkageError("duplicate class definition: " + className);
-			}
-		}
-
-		protected override TypeWrapper FindLoadedClassImpl(string name)
-		{
-			return base.FindLoadedClassImpl(name)
-				?? DoLoad(name)
+			return DoLoad(name)
 				?? FindOrLoadGenericClass(name, true);
 		}
 
