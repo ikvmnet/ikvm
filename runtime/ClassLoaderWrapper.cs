@@ -175,7 +175,16 @@ namespace IKVM.Internal
 
 		// return the TypeWrapper if it is already loaded, this exists for DynamicTypeWrapper.SetupGhosts
 		// and implements ClassLoader.findLoadedClass()
-		internal virtual TypeWrapper FindLoadedClass(string name)
+		internal TypeWrapper FindLoadedClass(string name)
+		{
+			if (name.Length > 1 && name[0] == '[')
+			{
+				return FindOrLoadArrayClass(name, true);
+			}
+			return FindLoadedClassImpl(name);
+		}
+
+		protected virtual TypeWrapper FindLoadedClassImpl(string name)
 		{
 			lock(types)
 			{
@@ -463,7 +472,7 @@ namespace IKVM.Internal
 				}
 				if(name.Length > 1 && name[0] == '[')
 				{
-					return LoadArrayClass(name);
+					return FindOrLoadArrayClass(name, false);
 				}
 				return LoadClassImpl(name, throwClassNotFoundException);
 			}
@@ -473,7 +482,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		private TypeWrapper LoadArrayClass(string name)
+		private TypeWrapper FindOrLoadArrayClass(string name, bool find)
 		{
 			int dims = 1;
 			while(name[dims] == '[')
@@ -495,7 +504,7 @@ namespace IKVM.Internal
 				string elemClass = name.Substring(dims + 1, name.Length - dims - 2);
 				// NOTE it's important that we're registered as the initiating loader
 				// for the element type here
-				TypeWrapper type = LoadClassByDottedNameFast(elemClass);
+				TypeWrapper type = find ? FindLoadedClassImpl(elemClass) : LoadClassByDottedNameFast(elemClass);
 				if(type != null)
 				{
 					type = type.GetClassLoader().CreateArrayType(name, type, dims);
