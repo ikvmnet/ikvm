@@ -223,7 +223,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 					}
 					if(tw == null)
 					{
-						tw = acl.LoadReferenced(name);
+						tw = acl.LoadBootstrapIfNonJavaAssembly(name);
 					}
 					if(tw == null)
 					{

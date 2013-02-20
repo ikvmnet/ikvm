@@ -673,7 +673,7 @@ namespace IKVM.Internal
 
 		protected override TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
 		{
-			TypeWrapper tw = DoLoad(name);
+			TypeWrapper tw = FindLoadedClass(name);
 			if (tw != null)
 			{
 				return tw;
@@ -710,17 +710,18 @@ namespace IKVM.Internal
 				throw;
 			}
 #endif
-			tw = FindOrLoadGenericClass(name, false);
-			if (tw != null)
+			return LoadBootstrapIfNonJavaAssembly(name)
+				?? FindOrLoadGenericClass(name, false)
+				?? LoadDynamic(name);
+		}
+
+		internal TypeWrapper LoadBootstrapIfNonJavaAssembly(string name)
+		{
+			if (!assemblyLoader.HasJavaModule)
 			{
-				return tw;
+				return GetBootstrapClassLoader().LoadClassByDottedNameFast(name);
 			}
-			tw = LoadReferenced(name);
-			if (tw != null)
-			{
-				return tw;
-			}
-			return LoadDynamic(name);
+			return null;
 		}
 
 		internal TypeWrapper LoadDynamic(string name)
@@ -739,9 +740,8 @@ namespace IKVM.Internal
 			return null;
 		}
 
-		internal TypeWrapper LoadReferenced(string name)
+		private TypeWrapper LoadReferenced(string name)
 		{
-			LazyInitExports();
 			for (int i = 0; i < delegates.Length; i++)
 			{
 				if (delegates[i] == null)
@@ -757,13 +757,9 @@ namespace IKVM.Internal
 					TypeWrapper tw = delegates[i].DoLoad(name);
 					if (tw != null)
 					{
-						return tw;
+						return RegisterInitiatingLoader(tw);
 					}
 				}
-			}
-			if (!assemblyLoader.HasJavaModule)
-			{
-				return GetBootstrapClassLoader().LoadClassByDottedNameFast(name);
 			}
 			return null;
 		}
@@ -962,6 +958,7 @@ namespace IKVM.Internal
 		protected override TypeWrapper FindLoadedClassLazy(string name)
 		{
 			return DoLoad(name)
+				?? LoadReferenced(name)
 				?? FindOrLoadGenericClass(name, true);
 		}
 
