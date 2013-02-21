@@ -420,11 +420,11 @@ namespace IKVM.StubGen
 			}
 			catch (InvalidCastException)
 			{
-				Console.Error.WriteLine("Warning: incorrect annotation default value");
+				Warning("Warning: incorrect annotation default value");
 			}
 			catch (IndexOutOfRangeException)
 			{
-				Console.Error.WriteLine("Warning: incorrect annotation default value");
+				Warning("Warning: incorrect annotation default value");
 			}
 			return mem.ToArray();
 		}
@@ -513,13 +513,20 @@ namespace IKVM.StubGen
 				}
 				else
 				{
-					Console.Error.WriteLine("Warning: incorrect annotation default element tag: " + type);
+					Warning("Warning: incorrect annotation default element tag: " + type);
 				}
 			}
 			else
 			{
-				Console.Error.WriteLine("Warning: incorrect annotation default element type: " + value.ArgumentType);
+				Warning("Warning: incorrect annotation default element type: " + value.ArgumentType);
 			}
+		}
+
+		private static void Warning(string message)
+		{
+#if STUB_GENERATOR
+			Console.Error.WriteLine(message);
+#endif
 		}
 	}
 }
