@@ -776,7 +776,7 @@ namespace IKVM.Internal
 
 		internal IEnumerable<java.net.URL> FindResources(string name)
 		{
-			return GetResourcesImpl(name, this is BootstrapClassLoader);
+			return GetResourcesImpl(name, false);
 		}
 
 		internal IEnumerable<java.net.URL> GetResources(string name)
@@ -852,6 +852,10 @@ namespace IKVM.Internal
 			{
 				yield break;
 			}
+			foreach (java.net.URL url in GetBootstrapClassLoader().GetResources(unmangledName))
+			{
+				yield return url;
+			}
 			for (int i = 0; i < delegates.Length; i++)
 			{
 				if (delegates[i] == null)
@@ -862,19 +866,12 @@ namespace IKVM.Internal
 						delegates[i] = AssemblyClassLoader.FromAssembly(asm);
 					}
 				}
-				if (delegates[i] != null)
+				if (delegates[i] != null && delegates[i] != GetBootstrapClassLoader())
 				{
-					foreach (java.net.URL url in delegates[i].FindResources(unmangledName))
+					foreach (java.net.URL url in delegates[i].GetResourcesImpl(unmangledName, false))
 					{
 						yield return url;
 					}
-				}
-			}
-			if (!assemblyLoader.HasJavaModule)
-			{
-				foreach (java.net.URL url in GetBootstrapClassLoader().FindResources(unmangledName))
-				{
-					yield return url;
 				}
 			}
 		}
