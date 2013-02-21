@@ -575,7 +575,10 @@ namespace IKVM.Internal
 #if !FIRST_PASS
 				if (buf == null)
 				{
-					buf = ikvm.@internal.stubgen.StubGenerator.generateStub(tw.ClassObject);
+					System.IO.MemoryStream mem = new System.IO.MemoryStream();
+					bool includeNonPublicInterfaces = !"true".Equals(java.lang.Props.props.getProperty("ikvm.stubgen.skipNonPublicInterfaces"), StringComparison.OrdinalIgnoreCase);
+					IKVM.StubGen.StubGenerator.WriteClass(mem, tw, includeNonPublicInterfaces, false, false);
+					buf = mem.ToArray();
 				}
 #endif
 			}

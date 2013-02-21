@@ -7,7 +7,6 @@
 ../classpath/ikvm/internal/HasCallerID.java
 ../classpath/ikvm/internal/JMath.java
 ../classpath/ikvm/internal/MonoUtils.java
-../classpath/ikvm/internal/stubgen/StubGenerator.java
 ../classpath/ikvm/internal/Util.java
 ../classpath/ikvm/internal/WeakIdentityMap.java
 ../classpath/ikvm/io/InputStreamWrapper.java

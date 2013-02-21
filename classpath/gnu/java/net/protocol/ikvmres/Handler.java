@@ -119,7 +119,7 @@ public class Handler extends URLStreamHandler
             try
             {
                 Class c = Class.forName(resource.substring(1, resource.length() - 6).replace('/', '.'), false, loader);
-                return new ByteArrayInputStream(ikvm.internal.stubgen.StubGenerator.generateStub(c));
+                return new ByteArrayInputStream(GenerateStub(c));
             }
             catch(ClassNotFoundException _)
             {
@@ -152,7 +152,7 @@ public class Handler extends URLStreamHandler
                 Class c = LoadClassFromAssembly(asm, resource.substring(1, resource.length() - 6).replace('/', '.'));
                 if(c != null)
                 {
-                    return new ByteArrayInputStream(ikvm.internal.stubgen.StubGenerator.generateStub(c));
+                    return new ByteArrayInputStream(GenerateStub(c));
                 }
             }
             throw (FileNotFoundException)new FileNotFoundException().initCause(x);
@@ -163,6 +163,7 @@ public class Handler extends URLStreamHandler
         }
     }
 
+    private static native byte[] GenerateStub(Class c);
     private static native cli.System.IO.Stream ReadResourceFromAssemblyImpl(Assembly asm, String resource);
     private static native Class LoadClassFromAssembly(Assembly asm, String className);
     private static native Assembly LoadAssembly(String name)

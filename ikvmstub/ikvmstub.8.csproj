@@ -68,7 +68,7 @@
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="ClassFileWriter.cs" />
+    <Compile Include="..\runtime\stubgen\ClassFileWriter.cs" />
     <Compile Include="ikvmstub.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -102,7 +102,8 @@
     <Compile Include="..\runtime\vm.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="SerialVersionUID.cs" />
+    <Compile Include="..\runtime\stubgen\SerialVersionUID.cs" />
+    <Compile Include="..\runtime\stubgen\StubGenerator.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\reflect\IKVM.Reflection.csproj">

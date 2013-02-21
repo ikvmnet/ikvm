@@ -27,7 +27,9 @@ using System.IO;
 using System.Text;
 using IKVM.Attributes;
 using IKVM.Internal;
+#if STUB_GENERATOR
 using Type = IKVM.Reflection.Type;
+#endif
 
 namespace IKVM.StubGen
 {

@@ -44,6 +44,16 @@ namespace IKVM.NativeCode.gnu.java.net.protocol.ikvmres
 {
 	static class Handler
 	{
+		public static byte[] GenerateStub(jlClass c)
+		{
+			MemoryStream mem = new MemoryStream();
+#if !FIRST_PASS
+			bool includeNonPublicInterfaces = !"true".Equals(global::java.lang.Props.props.getProperty("ikvm.stubgen.skipNonPublicInterfaces"), StringComparison.OrdinalIgnoreCase);
+			IKVM.StubGen.StubGenerator.WriteClass(mem, TypeWrapper.FromClass(c), includeNonPublicInterfaces, false, false);
+#endif
+			return mem.ToArray();
+		}
+
 		public static Stream ReadResourceFromAssemblyImpl(Assembly asm, string resource)
 		{
 			// chop off the leading slash

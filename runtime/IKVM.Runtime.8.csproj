@@ -157,6 +157,9 @@
     <Compile Include="ReflectUtil.cs" />
     <Compile Include="RuntimeHelperTypes.cs" />
     <Compile Include="Serialization.cs" />
+    <Compile Include="stubgen\ClassFileWriter.cs" />
+    <Compile Include="stubgen\SerialVersionUID.cs" />
+    <Compile Include="stubgen\StubGenerator.cs" />
     <Compile Include="tracer.cs">
       <SubType>Code</SubType>
     </Compile>

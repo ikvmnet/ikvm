@@ -24,10 +24,11 @@
                 <include name="../runtime/Types.cs" />
                 <include name="../runtime/TypeWrapper.cs" />
                 <include name="../runtime/vm.cs" />
+                <include name="../runtime/stubgen/ClassFileWriter.cs" />
+                <include name="../runtime/stubgen/SerialVersionUID.cs" />
+                <include name="../runtime/stubgen/StubGenerator.cs" />
                 <include name="AssemblyInfo.cs" />
-                <include name="ClassFileWriter.cs" />
                 <include name="ikvmstub.cs" />
-                <include name="SerialVersionUID.cs" />
             </sources>
             <references>
                 <include name="../bin/ICSharpCode.SharpZipLib.dll" asis="true" />

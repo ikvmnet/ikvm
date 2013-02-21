@@ -155,6 +155,9 @@
                 <include name="openjdk/sun.management.cs" />
                 <include name="openjdk/sun.nio.ch.cs" />
                 <include name="openjdk/sun.security.krb5.cs" />
+                <include name="stubgen/ClassFileWriter.cs" />
+                <include name="stubgen/SerialVersionUID.cs" />
+                <include name="stubgen/StubGenerator.cs" />
             </sources>
             <resources>
                 <include if="${not first-pass}" name="../openjdk/vfs.zip" />
