@@ -2952,12 +2952,7 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return null;
 #else
-				global::java.util.Vector v = new global::java.util.Vector();
-				foreach (global::java.net.URL url in ClassLoaderWrapper.GetBootstrapClassLoader().GetResources(name))
-				{
-					v.add(url);
-				}
-				return v.elements();
+				return new global::ikvm.runtime.EnumerationWrapper(ClassLoaderWrapper.GetBootstrapClassLoader().GetResources(name));
 #endif
 			}
 

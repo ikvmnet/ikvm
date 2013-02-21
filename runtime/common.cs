@@ -280,13 +280,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 #if FIRST_PASS
 			return null;
 #else
-			global::java.util.Vector v = new global::java.util.Vector();
-			IKVM.Internal.AssemblyClassLoader wrapper = IKVM.Internal.AssemblyClassLoader.FromAssembly(assembly);
-			foreach (global::java.net.URL url in wrapper.GetResources(name))
-			{
-				v.addElement(url);
-			}
-			return v.elements();
+			return new global::ikvm.runtime.EnumerationWrapper(IKVM.Internal.AssemblyClassLoader.FromAssembly(assembly).GetResources(name));
 #endif
 		}
 
