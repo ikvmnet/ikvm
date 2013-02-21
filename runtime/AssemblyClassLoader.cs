@@ -727,7 +727,7 @@ namespace IKVM.Internal
 		internal TypeWrapper LoadDynamic(string name)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
-			foreach (java.net.URL url in GetResourcesImpl(name.Replace('.', '/') + ".class", false))
+			foreach (java.net.URL url in FindResources(name.Replace('.', '/') + ".class"))
 			{
 				using (java.io.InputStream inp = url.openStream())
 				{
@@ -774,17 +774,7 @@ namespace IKVM.Internal
 #endif
 		}
 
-		internal IEnumerable<java.net.URL> FindResources(string name)
-		{
-			return GetResourcesImpl(name, false);
-		}
-
-		internal IEnumerable<java.net.URL> GetResources(string name)
-		{
-			return GetResourcesImpl(name, true);
-		}
-
-		private IEnumerable<java.net.URL> GetResourcesImpl(string unmangledName, bool getFromDelegates)
+		internal IEnumerable<java.net.URL> FindResources(string unmangledName)
 		{
 			if (ReflectUtil.IsDynamicAssembly(assemblyLoader.Assembly))
 			{
@@ -848,14 +838,11 @@ namespace IKVM.Internal
 					}
 				}
 			}
-			if (!getFromDelegates)
-			{
-				yield break;
-			}
-			foreach (java.net.URL url in GetBootstrapClassLoader().GetResources(unmangledName))
-			{
-				yield return url;
-			}
+		}
+
+		protected IEnumerable<java.net.URL> FindDelegateResources(string name)
+		{
+			LazyInitExports();
 			for (int i = 0; i < delegates.Length; i++)
 			{
 				if (delegates[i] == null)
@@ -868,11 +855,27 @@ namespace IKVM.Internal
 				}
 				if (delegates[i] != null && delegates[i] != GetBootstrapClassLoader())
 				{
-					foreach (java.net.URL url in delegates[i].GetResourcesImpl(unmangledName, false))
+					foreach (java.net.URL url in delegates[i].FindResources(name))
 					{
 						yield return url;
 					}
 				}
+			}
+		}
+
+		internal virtual IEnumerable<java.net.URL> GetResources(string name)
+		{
+			foreach (java.net.URL url in GetBootstrapClassLoader().GetResources(name))
+			{
+				yield return url;
+			}
+			foreach (java.net.URL url in FindDelegateResources(name))
+			{
+				yield return url;
+			}
+			foreach (java.net.URL url in FindResources(name))
+			{
+				yield return url;
 			}
 		}
 #endif // !STATIC_COMPILER
@@ -1270,6 +1273,18 @@ namespace IKVM.Internal
 		internal override java.security.ProtectionDomain GetProtectionDomain()
 		{
 			return null;
+		}
+
+		internal override IEnumerable<java.net.URL> GetResources(string name)
+		{
+			foreach (java.net.URL url in FindResources(name))
+			{
+				yield return url;
+			}
+			foreach (java.net.URL url in FindDelegateResources(name))
+			{
+				yield return url;
+			}
 		}
 #endif
 	}
