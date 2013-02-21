@@ -78,7 +78,7 @@ namespace IKVM.Internal
 #else
 		private static AssemblyClassLoader bootstrapClassLoader;
 #endif
-		private static List<GenericClassLoader> genericClassLoaders;
+		private static List<GenericClassLoaderWrapper> genericClassLoaders;
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 		protected java.lang.ClassLoader javaClassLoader;
 #endif
@@ -1116,9 +1116,9 @@ namespace IKVM.Internal
 			{
 				if(genericClassLoaders == null)
 				{
-					genericClassLoaders = new List<GenericClassLoader>();
+					genericClassLoaders = new List<GenericClassLoaderWrapper>();
 				}
-				foreach(GenericClassLoader loader in genericClassLoaders)
+				foreach(GenericClassLoaderWrapper loader in genericClassLoaders)
 				{
 					if(loader.Matches(key))
 					{
@@ -1126,10 +1126,10 @@ namespace IKVM.Internal
 					}
 				}
 #if STATIC_COMPILER || STUB_GENERATOR || FIRST_PASS
-				GenericClassLoader newLoader = new GenericClassLoader(key, null);
+				GenericClassLoaderWrapper newLoader = new GenericClassLoaderWrapper(key, null);
 #else
-				java.lang.ClassLoader javaClassLoader = (java.lang.ClassLoader)DoPrivileged(new AssemblyClassLoader.CreateAssemblyClassLoader(null));
-				GenericClassLoader newLoader = new GenericClassLoader(key, javaClassLoader);
+				java.lang.ClassLoader javaClassLoader = new ikvm.runtime.GenericClassLoader();
+				GenericClassLoaderWrapper newLoader = new GenericClassLoaderWrapper(key, javaClassLoader);
 				SetWrapperForClassLoader(javaClassLoader, newLoader);
 #endif
 				genericClassLoaders.Add(newLoader);
@@ -1206,7 +1206,7 @@ namespace IKVM.Internal
 		{
 			lock(wrapperLock)
 			{
-				return genericClassLoaders.IndexOf(wrapper as GenericClassLoader);
+				return genericClassLoaders.IndexOf(wrapper as GenericClassLoaderWrapper);
 			}
 		}
 
@@ -1415,11 +1415,11 @@ namespace IKVM.Internal
 		}
 	}
 
-	sealed class GenericClassLoader : ClassLoaderWrapper
+	sealed class GenericClassLoaderWrapper : ClassLoaderWrapper
 	{
-		private ClassLoaderWrapper[] delegates;
+		private readonly ClassLoaderWrapper[] delegates;
 
-		internal GenericClassLoader(ClassLoaderWrapper[] delegates, object javaClassLoader)
+		internal GenericClassLoaderWrapper(ClassLoaderWrapper[] delegates, object javaClassLoader)
 			: base(CodeGenOptions.None, javaClassLoader)
 		{
 			this.delegates = delegates;
@@ -1441,17 +1441,17 @@ namespace IKVM.Internal
 			return false;
 		}
 
-		protected override TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
+		protected override TypeWrapper FindLoadedClassLazy(string name)
 		{
-			TypeWrapper tw = FindOrLoadGenericClass(name, false);
-			if(tw != null)
+			TypeWrapper tw1 = FindOrLoadGenericClass(name, true);
+			if (tw1 != null)
 			{
-				return tw;
+				return tw1;
 			}
-			foreach(ClassLoaderWrapper loader in delegates)
+			foreach (ClassLoaderWrapper loader in delegates)
 			{
-				tw = loader.LoadClassByDottedNameFast(name);
-				if(tw != null)
+				TypeWrapper tw = loader.FindLoadedClass(name);
+				if (tw != null && tw.GetClassLoader() == loader)
 				{
 					return tw;
 				}
@@ -1466,7 +1466,7 @@ namespace IKVM.Internal
 			foreach(ClassLoaderWrapper loader in delegates)
 			{
 				sb.Append('[');
-				GenericClassLoader gcl = loader as GenericClassLoader;
+				GenericClassLoaderWrapper gcl = loader as GenericClassLoaderWrapper;
 				if(gcl != null)
 				{
 					sb.Append(gcl.GetName());

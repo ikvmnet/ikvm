@@ -531,7 +531,7 @@ static class NetExp
 		}
 		else
 		{
-			return ((GenericClassLoader)loader).GetName();
+			return ((GenericClassLoaderWrapper)loader).GetName();
 		}
 	}
 

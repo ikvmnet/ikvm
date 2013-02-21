@@ -156,7 +156,7 @@ namespace IKVM.NativeCode.ikvm.@internal
 				}
 				else
 				{
-					return ((IKVM.Internal.GenericClassLoader)loader).GetName();
+					return ((GenericClassLoaderWrapper)loader).GetName();
 				}
 			}
 
@@ -237,7 +237,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 				else
 				{
 					// this must be a GenericClassLoader
-					tw = ((GenericClassLoader)ClassLoaderWrapper.GetClassLoaderWrapper(classLoader)).LoadClassByDottedName(name);
+					tw = ((GenericClassLoaderWrapper)ClassLoaderWrapper.GetClassLoaderWrapper(classLoader)).LoadClassByDottedName(name);
 				}
 				Tracer.Info(Tracer.ClassLoading, "Loaded class \"{0}\" from {1}", name, classLoader == null ? "boot class loader" : (object)classLoader);
 				return tw.ClassObject;
@@ -384,18 +384,9 @@ namespace IKVM.NativeCode.ikvm.runtime
 		public static int GetGenericClassLoaderId(global::java.lang.ClassLoader classLoader)
 		{
 #if FIRST_PASS
-			return 0;
+            return 0;
 #else
 			return ClassLoaderWrapper.GetGenericClassLoaderId(ClassLoaderWrapper.GetClassLoaderWrapper(classLoader));
-#endif
-		}
-
-		public static string GetGenericClassLoaderName(global::java.lang.ClassLoader classLoader)
-		{
-#if FIRST_PASS
-			return null;
-#else
-			return ((GenericClassLoader)ClassLoaderWrapper.GetClassLoaderWrapper(classLoader)).GetName();
 #endif
 		}
 
@@ -459,6 +450,14 @@ namespace IKVM.NativeCode.ikvm.runtime
 				}
 			}
 #endif
+		}
+	}
+
+	static class GenericClassLoader
+	{
+		public static string toString(global::java.lang.ClassLoader _this)
+		{
+			return ((GenericClassLoaderWrapper)ClassLoaderWrapper.GetClassLoaderWrapper(_this)).GetName();
 		}
 	}
 

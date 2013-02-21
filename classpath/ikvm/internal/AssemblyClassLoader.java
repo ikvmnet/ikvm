@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2006, 2007, 2010 Jeroen Frijters
+  Copyright (C) 2006-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -37,7 +37,6 @@ import java.util.jar.Manifest;
 
 public final class AssemblyClassLoader extends ClassLoader
 {
-    // NOTE assembly is null for "generics" class loader instances
     private final Assembly assembly;
     private boolean packagesDefined;
 
@@ -53,6 +52,7 @@ public final class AssemblyClassLoader extends ClassLoader
         this.assembly = assembly;
     }
 
+    @Override
     protected Class loadClass(String name, boolean resolve) throws ClassNotFoundException
     {
         return LoadClass(this, assembly, name);
@@ -60,21 +60,25 @@ public final class AssemblyClassLoader extends ClassLoader
 
     private static native Class LoadClass(ClassLoader classLoader, Assembly assembly, String name) throws ClassNotFoundException;
 
+    @Override
     public URL getResource(String name)
     {
         return getResource(this, assembly, name);
     }
 
+    @Override
     public Enumeration getResources(String name) throws IOException
     {
         return getResources(this, assembly, name);
     }
 
+    @Override
     protected URL findResource(String name)
     {
         return getResource(this, assembly, name);
     }
 
+    @Override
     protected Enumeration findResources(String name) throws IOException
     {
         return getResources(this, assembly, name);
@@ -86,7 +90,6 @@ public final class AssemblyClassLoader extends ClassLoader
     @Internal
     public static native Enumeration getResources(ClassLoader classLoader, Assembly assembly, String name) throws IOException;
 
-    private static native String GetGenericClassLoaderName(ClassLoader classLoader);
     // also used by java.lang.LangHelper
     @Internal
     public static native String[] GetPackages(Assembly assembly);
@@ -120,13 +123,10 @@ public final class AssemblyClassLoader extends ClassLoader
     {
         try
         {
-            if(assembly != null)
+            URL url = GetManifest(assembly);
+            if (url != null)
             {
-                URL url = GetManifest(assembly);
-                if (url != null)
-                {
-                    return new Manifest(url.openStream());
-                }
+                return new Manifest(url.openStream());
             }
         }
         catch (MalformedURLException _)
@@ -140,11 +140,6 @@ public final class AssemblyClassLoader extends ClassLoader
 
     private void lazyDefinePackages()
     {
-	if(assembly == null)
-	{
-	    // generic class loader (doesn't support packages)
-	    return;
-	}
         URL sealBase = getCodeBase();
         Manifest manifest = getManifest();
         Attributes attr = null;
@@ -175,36 +170,32 @@ public final class AssemblyClassLoader extends ClassLoader
         }
     }
 
+    @Override
     protected Package getPackage(String name)
     {
         lazyDefinePackagesCheck();
         return super.getPackage(name);
     }
 
+    @Override
     protected Package[] getPackages()
     {
         lazyDefinePackagesCheck();
         return super.getPackages();
     }
 
+    @Override
     public String toString()
     {
-        if(assembly != null)
-        {
-            return assembly.get_FullName();
-        }
-        return GetGenericClassLoaderName(this);
+        return assembly.get_FullName();
     }
 
     private URL getCodeBase()
     {
         try
         {
-            if(assembly != null)
-            {
-                if(false) throw new cli.System.NotSupportedException();
-                return new URL(assembly.get_CodeBase());
-            }
+            if(false) throw new cli.System.NotSupportedException();
+            return new URL(assembly.get_CodeBase());
         }
         catch(cli.System.NotSupportedException _)
         {
@@ -217,4 +208,41 @@ public final class AssemblyClassLoader extends ClassLoader
     
     // return the ClassLoader for the assembly. Note that this doesn't have to be an AssemblyClassLoader.
     public static native ClassLoader getAssemblyClassLoader(Assembly asm);
+}
+
+final class GenericClassLoader extends ClassLoader
+{
+    // this constructor avoids the security check in ClassLoader by passing in null as the security manager
+    // to the IKVM specific constructor in ClassLoader
+    GenericClassLoader()
+    {
+        super(null, null);
+    }
+
+    @Override
+    public native String toString();
+
+    @Override
+    public URL getResource(String name)
+    {
+        return AssemblyClassLoader.getResource(this, null, name);
+    }
+
+    @Override
+    public Enumeration getResources(String name) throws IOException
+    {
+        return AssemblyClassLoader.getResources(this, null, name);
+    }
+
+    @Override
+    protected URL findResource(String name)
+    {
+        return AssemblyClassLoader.getResource(this, null, name);
+    }
+
+    @Override
+    protected Enumeration findResources(String name) throws IOException
+    {
+        return AssemblyClassLoader.getResources(this, null, name);
+    }
 }
