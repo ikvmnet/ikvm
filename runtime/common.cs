@@ -336,7 +336,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 						{
 							// HACK we use an index to identify the generic class loader in the url
 							// TODO this obviously isn't persistable, we should use a list of assemblies instead.
-							return new global::java.net.URL("ikvmres", "gen", GetGenericClassLoaderId(c.getClassLoader()), "/" + name);
+							return new global::java.net.URL("ikvmres", "gen", ClassLoaderWrapper.GetGenericClassLoaderId(ClassLoaderWrapper.GetClassLoaderWrapper(c.getClassLoader())), "/" + name);
 						}
 					}
 					catch (global::java.net.MalformedURLException x)
@@ -379,15 +379,6 @@ namespace IKVM.NativeCode.ikvm.runtime
 				}
 			}
 			return packages;
-		}
-
-		public static int GetGenericClassLoaderId(global::java.lang.ClassLoader classLoader)
-		{
-#if FIRST_PASS
-            return 0;
-#else
-			return ClassLoaderWrapper.GetGenericClassLoaderId(ClassLoaderWrapper.GetClassLoaderWrapper(classLoader));
-#endif
 		}
 
 		public static global::java.lang.ClassLoader getAssemblyClassLoader(Assembly asm)
