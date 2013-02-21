@@ -2938,6 +2938,29 @@ namespace IKVM.NativeCode.java
 
 		static class ClassLoader
 		{
+			public static global::java.net.URL getBootstrapResource(string name)
+			{
+				foreach (global::java.net.URL url in ClassLoaderWrapper.GetBootstrapClassLoader().GetResources(name))
+				{
+					return url;
+				}
+				return null;
+			}
+
+			public static global::java.util.Enumeration getBootstrapResources(string name)
+			{
+#if FIRST_PASS
+				return null;
+#else
+				global::java.util.Vector v = new global::java.util.Vector();
+				foreach (global::java.net.URL url in ClassLoaderWrapper.GetBootstrapClassLoader().GetResources(name))
+				{
+					v.add(url);
+				}
+				return v.elements();
+#endif
+			}
+
 			public static jlClass defineClass0(jlClassLoader thisClassLoader, string name, byte[] b, int off, int len, ProtectionDomain pd)
 			{
 				return defineClass1(thisClassLoader, name, b, off, len, pd, null);

@@ -89,16 +89,6 @@ public class LangHelper
         return ikvm.runtime.Util.getInstanceTypeFromClass(Object.class).get_Assembly();
     }
 
-    static URL getBootstrapResource(String name)
-    {
-        return AssemblyClassLoader.getResource(getBootstrapAssembly(), name);
-    }
-
-    static Enumeration getBootstrapResources(String name) throws IOException
-    {
-        return AssemblyClassLoader.getResources(getBootstrapAssembly(), name);
-    }
-    
     public static sun.misc.JavaLangAccess getJavaLangAccess()
     {
         return new sun.misc.JavaLangAccess() {

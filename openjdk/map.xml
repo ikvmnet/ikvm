@@ -1411,20 +1411,6 @@
                     <ret />
                 </body>
             </constructor>
-            <method name="getBootstrapResource" sig="(Ljava.lang.String;)Ljava.net.URL;">
-                <body>
-                    <ldarg_0 />
-                    <call class="java.lang.LangHelper" name="getBootstrapResource" sig="(Ljava.lang.String;)Ljava.net.URL;" />
-                    <ret />
-                </body>
-            </method>
-            <method name="getBootstrapResources" sig="(Ljava.lang.String;)Ljava.util.Enumeration;">
-                <body>
-                    <ldarg_0 />
-                    <call class="java.lang.LangHelper" name="getBootstrapResources" sig="(Ljava.lang.String;)Ljava.util.Enumeration;" />
-                    <ret />
-                </body>
-            </method>
         </class>
         <class name="java.lang.Enum">
             <implements class="cli.System.Runtime.Serialization.ISerializable" />
