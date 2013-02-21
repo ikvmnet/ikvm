@@ -1480,5 +1480,55 @@ namespace IKVM.Internal
 			sb.Append(']');
 			return sb.ToString();
 		}
+
+#if !STATIC_COMPILER && !STUB_GENERATOR
+		internal java.util.Enumeration GetResources(string name)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			java.util.Vector v = new java.util.Vector();
+			foreach (java.net.URL url in GetBootstrapClassLoader().GetResources(name))
+			{
+				v.add(url);
+			}
+			if (name.EndsWith(".class", StringComparison.Ordinal) && name.IndexOf('.') == name.Length - 6)
+			{
+				TypeWrapper tw = FindLoadedClass(name.Substring(0, name.Length - 6).Replace('/', '.'));
+				if (tw != null && !tw.IsArray && !(tw is DynamicTypeWrapper))
+				{
+					ClassLoaderWrapper loader = tw.GetClassLoader();
+					if (loader is GenericClassLoaderWrapper)
+					{
+						v.add(new java.net.URL("ikvmres", "gen", ClassLoaderWrapper.GetGenericClassLoaderId(loader), "/" + name));
+					}
+					else if (loader is AssemblyClassLoader)
+					{
+						foreach (java.net.URL url in ((AssemblyClassLoader)loader).FindResources(name))
+						{
+							v.add(url);
+						}
+					}
+				}
+			}
+			return v.elements();
+#endif
+		}
+
+		internal java.net.URL FindResource(string name)
+		{
+#if !FIRST_PASS
+			if (name.EndsWith(".class", StringComparison.Ordinal) && name.IndexOf('.') == name.Length - 6)
+			{
+				TypeWrapper tw = FindLoadedClass(name.Substring(0, name.Length - 6).Replace('/', '.'));
+				if (tw != null && tw.GetClassLoader() == this && !tw.IsArray && !(tw is DynamicTypeWrapper))
+				{
+					return new java.net.URL("ikvmres", "gen", ClassLoaderWrapper.GetGenericClassLoaderId(this), "/" + name);
+				}
+			}
+#endif
+			return null;
+		}
+#endif
 	}
 }

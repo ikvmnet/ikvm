@@ -225,24 +225,27 @@ final class GenericClassLoader extends ClassLoader
     @Override
     public URL getResource(String name)
     {
-        return AssemblyClassLoader.getResource(this, null, name);
+        Enumeration<URL> e = getResources(name);
+        return e.hasMoreElements()
+            ? e.nextElement()
+            : null;
     }
 
     @Override
-    public Enumeration getResources(String name) throws IOException
-    {
-        return AssemblyClassLoader.getResources(this, null, name);
-    }
+    public native Enumeration<URL> getResources(String name);
 
     @Override
-    protected URL findResource(String name)
-    {
-        return AssemblyClassLoader.getResource(this, null, name);
-    }
+    protected native URL findResource(String name);
 
     @Override
-    protected Enumeration findResources(String name) throws IOException
+    protected Enumeration<URL> findResources(String name)
     {
-        return AssemblyClassLoader.getResources(this, null, name);
+        Vector<URL> v = new Vector<URL>();
+        URL url = findResource(name);
+        if (url != null)
+        {
+            v.add(url);
+        }
+        return v.elements();
     }
 }
