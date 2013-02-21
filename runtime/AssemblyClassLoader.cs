@@ -780,10 +780,12 @@ namespace IKVM.Internal
 			{
 				yield break;
 			}
+			bool found = false;
 #if !FIRST_PASS
 			java.util.Enumeration urls = assemblyLoader.FindResources(unmangledName);
 			while (urls.hasMoreElements())
 			{
+				found = true;
 				yield return (java.net.URL)urls.nextElement();
 			}
 #endif
@@ -791,12 +793,14 @@ namespace IKVM.Internal
 			{
 				if (unmangledName != "" && assemblyLoader.Assembly.GetManifestResourceInfo(unmangledName) != null)
 				{
+					found = true;
 					yield return MakeResourceURL(assemblyLoader.Assembly, unmangledName);
 				}
 				foreach (JavaResourceAttribute res in assemblyLoader.Assembly.GetCustomAttributes(typeof(IKVM.Attributes.JavaResourceAttribute), false))
 				{
 					if (res.JavaName == unmangledName)
 					{
+						found = true;
 						yield return MakeResourceURL(assemblyLoader.Assembly, res.ResourceName);
 					}
 				}
@@ -804,6 +808,7 @@ namespace IKVM.Internal
 			string name = JVM.MangleResourceName(unmangledName);
 			if (assemblyLoader.Assembly.GetManifestResourceInfo(name) != null)
 			{
+				found = true;
 				yield return MakeResourceURL(assemblyLoader.Assembly, name);
 			}
 			LazyInitExports();
@@ -828,14 +833,26 @@ namespace IKVM.Internal
 						urls = loader.FindResources(unmangledName);
 						while (urls.hasMoreElements())
 						{
+							found = true;
 							yield return (java.net.URL)urls.nextElement();
 						}
 #endif
 						if (loader.Assembly.GetManifestResourceInfo(name) != null)
 						{
+							found = true;
 							yield return MakeResourceURL(loader.Assembly, name);
 						}
 					}
+				}
+			}
+			if (!found && unmangledName.EndsWith(".class", StringComparison.Ordinal) && unmangledName.IndexOf('.') == unmangledName.Length - 6)
+			{
+				TypeWrapper tw = FindLoadedClass(unmangledName.Substring(0, unmangledName.Length - 6).Replace('/', '.'));
+				if (tw != null && tw.GetClassLoader() == this && !tw.IsArray && !(tw is DynamicTypeWrapper))
+				{
+#if !FIRST_PASS
+					yield return new java.io.File(VirtualFileSystem.GetAssemblyClassesPath(assemblyLoader.Assembly) + unmangledName).toURI().toURL();
+#endif
 				}
 			}
 		}
