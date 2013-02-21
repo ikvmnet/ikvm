@@ -63,32 +63,32 @@ public final class AssemblyClassLoader extends ClassLoader
     @Override
     public URL getResource(String name)
     {
-        return getResource(this, assembly, name);
+        return getResource(assembly, name);
     }
 
     @Override
     public Enumeration getResources(String name) throws IOException
     {
-        return getResources(this, assembly, name);
+        return getResources(assembly, name);
     }
 
     @Override
     protected URL findResource(String name)
     {
-        return getResource(this, assembly, name);
+        return getResource(assembly, name);
     }
 
     @Override
     protected Enumeration findResources(String name) throws IOException
     {
-        return getResources(this, assembly, name);
+        return getResources(assembly, name);
     }
 
     @Internal
-    public static native URL getResource(ClassLoader classLoader, Assembly assembly, String name);
+    public static native URL getResource(Assembly assembly, String name);
     
     @Internal
-    public static native Enumeration getResources(ClassLoader classLoader, Assembly assembly, String name) throws IOException;
+    public static native Enumeration getResources(Assembly assembly, String name) throws IOException;
 
     // also used by java.lang.LangHelper
     @Internal

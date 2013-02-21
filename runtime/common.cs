@@ -263,91 +263,32 @@ namespace IKVM.NativeCode.ikvm.runtime
 #endif
 		}
 
-		public static global::java.net.URL getResource(global::java.lang.ClassLoader classLoader, Assembly assembly, string name)
+		public static global::java.net.URL getResource(Assembly assembly, string name)
 		{
-#if FIRST_PASS
-			return null;
-#else
-			if (assembly != null)
+#if !FIRST_PASS
+			IKVM.Internal.AssemblyClassLoader wrapper = IKVM.Internal.AssemblyClassLoader.FromAssembly(assembly);
+			foreach (global::java.net.URL url in wrapper.GetResources(name))
 			{
-				IKVM.Internal.AssemblyClassLoader wrapper = IKVM.Internal.AssemblyClassLoader.FromAssembly(assembly);
-				foreach (global::java.net.URL url in wrapper.GetResources(name))
-				{
-					return url;
-				}
+				return url;
 			}
-			return GetClassResource(classLoader, assembly, name);
 #endif
+			return null;
 		}
 
-		public static global::java.util.Enumeration getResources(global::java.lang.ClassLoader classLoader, Assembly assembly, string name)
+		public static global::java.util.Enumeration getResources(Assembly assembly, string name)
 		{
 #if FIRST_PASS
 			return null;
 #else
 			global::java.util.Vector v = new global::java.util.Vector();
-			if (assembly != null)
+			IKVM.Internal.AssemblyClassLoader wrapper = IKVM.Internal.AssemblyClassLoader.FromAssembly(assembly);
+			foreach (global::java.net.URL url in wrapper.GetResources(name))
 			{
-				IKVM.Internal.AssemblyClassLoader wrapper = IKVM.Internal.AssemblyClassLoader.FromAssembly(assembly);
-				foreach (global::java.net.URL url in wrapper.GetResources(name))
-				{
-					v.addElement(url);
-				}
-			}
-			// we'll only generate a stub class if there isn't already a resource with this name
-			if (v.isEmpty())
-			{
-				global::java.net.URL curl = GetClassResource(classLoader, assembly, name);
-				if (curl != null)
-				{
-					v.addElement(curl);
-				}
+				v.addElement(url);
 			}
 			return v.elements();
 #endif
 		}
-
-#if !FIRST_PASS
-		private static global::java.net.URL GetClassResource(global::java.lang.ClassLoader classLoader, Assembly assembly, string name)
-		{
-			if (name.EndsWith(".class", StringComparison.Ordinal) && name.IndexOf('.') == name.Length - 6)
-			{
-				global::java.lang.Class c = null;
-				try
-				{
-					c = LoadClass(classLoader, assembly, name.Substring(0, name.Length - 6).Replace('/', '.'));
-				}
-				catch (global::java.lang.ClassNotFoundException)
-				{
-				}
-				catch (global::java.lang.LinkageError)
-				{
-				}
-				if (c != null && !IsDynamic(c))
-				{
-					assembly = GetAssemblyFromClass(c);
-					try
-					{
-						if (assembly != null)
-						{
-							return new global::java.io.File(VirtualFileSystem.GetAssemblyClassesPath(assembly) + name).toURI().toURL();
-						}
-						else
-						{
-							// HACK we use an index to identify the generic class loader in the url
-							// TODO this obviously isn't persistable, we should use a list of assemblies instead.
-							return new global::java.net.URL("ikvmres", "gen", ClassLoaderWrapper.GetGenericClassLoaderId(ClassLoaderWrapper.GetClassLoaderWrapper(c.getClassLoader())), "/" + name);
-						}
-					}
-					catch (global::java.net.MalformedURLException x)
-					{
-						throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(x);
-					}
-				}
-			}
-			return null;
-		}
-#endif
 
 		private static Assembly GetAssemblyFromClass(jlClass clazz)
 		{

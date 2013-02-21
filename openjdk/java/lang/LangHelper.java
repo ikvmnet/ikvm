@@ -91,12 +91,12 @@ public class LangHelper
 
     static URL getBootstrapResource(String name)
     {
-        return AssemblyClassLoader.getResource(null, getBootstrapAssembly(), name);
+        return AssemblyClassLoader.getResource(getBootstrapAssembly(), name);
     }
 
     static Enumeration getBootstrapResources(String name) throws IOException
     {
-        return AssemblyClassLoader.getResources(null, getBootstrapAssembly(), name);
+        return AssemblyClassLoader.getResources(getBootstrapAssembly(), name);
     }
     
     public static sun.misc.JavaLangAccess getJavaLangAccess()
