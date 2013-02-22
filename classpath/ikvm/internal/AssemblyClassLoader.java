@@ -84,11 +84,9 @@ public final class AssemblyClassLoader extends ClassLoader
         return getResources(assembly, name);
     }
 
-    @Internal
-    public static native URL getResource(Assembly assembly, String name);
+    private static native URL getResource(Assembly assembly, String name);
     
-    @Internal
-    public static native Enumeration getResources(Assembly assembly, String name) throws IOException;
+    private static native Enumeration getResources(Assembly assembly, String name) throws IOException;
 
     // also used by java.lang.LangHelper
     @Internal
