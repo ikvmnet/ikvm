@@ -49,7 +49,7 @@ namespace IKVM.StubGen
 			{
 				super = tw.BaseTypeWrapper.Name.Replace('.', '/');
 			}
-			IKVM.StubGen.ClassFileWriter writer = new IKVM.StubGen.ClassFileWriter(tw.Modifiers, name, super, 0, 49);
+			ClassFileWriter writer = new ClassFileWriter(tw.Modifiers, name, super, 0, 49);
 			foreach (TypeWrapper iface in tw.Interfaces)
 			{
 				if (iface.IsPublic || includeNonPublicInterfaces)
@@ -57,7 +57,7 @@ namespace IKVM.StubGen
 					writer.AddInterface(iface.Name.Replace('.', '/'));
 				}
 			}
-			IKVM.StubGen.InnerClassesAttribute innerClassesAttribute = null;
+			InnerClassesAttribute innerClassesAttribute = null;
 			if (tw.DeclaringTypeWrapper != null)
 			{
 				TypeWrapper outer = tw.DeclaringTypeWrapper;
@@ -67,7 +67,7 @@ namespace IKVM.StubGen
 				{
 					innername = innername.Substring(idx + 1);
 				}
-				innerClassesAttribute = new IKVM.StubGen.InnerClassesAttribute(writer);
+				innerClassesAttribute = new InnerClassesAttribute(writer);
 				innerClassesAttribute.Add(name, outer.Name.Replace('.', '/'), innername, (ushort)tw.ReflectiveModifiers);
 			}
 			foreach (TypeWrapper inner in tw.InnerClasses)
@@ -76,7 +76,7 @@ namespace IKVM.StubGen
 				{
 					if (innerClassesAttribute == null)
 					{
-						innerClassesAttribute = new IKVM.StubGen.InnerClassesAttribute(writer);
+						innerClassesAttribute = new InnerClassesAttribute(writer);
 					}
 					string namePart = inner.Name;
 					namePart = namePart.Substring(namePart.LastIndexOf('$') + 1);
@@ -95,17 +95,17 @@ namespace IKVM.StubGen
 			writer.AddStringAttribute("IKVM.NET.Assembly", GetAssemblyName(tw));
 			if (tw.TypeAsBaseType.IsDefined(JVM.Import(typeof(ObsoleteAttribute)), false))
 			{
-				writer.AddAttribute(new IKVM.StubGen.DeprecatedAttribute(writer));
+				writer.AddAttribute(new DeprecatedAttribute(writer));
 			}
 			foreach (MethodWrapper mw in tw.GetMethods())
 			{
 				if (!mw.IsHideFromReflection && (mw.IsPublic || mw.IsProtected || includeNonPublicMembers))
 				{
-					IKVM.StubGen.FieldOrMethod m;
+					FieldOrMethod m;
 					if (mw.Name == "<init>")
 					{
 						m = writer.AddMethod(mw.Modifiers, mw.Name, mw.Signature.Replace('.', '/'));
-						IKVM.StubGen.CodeAttribute code = new IKVM.StubGen.CodeAttribute(writer);
+						CodeAttribute code = new CodeAttribute(writer);
 						code.MaxLocals = (ushort)(mw.GetParameters().Length * 2 + 1);
 						code.MaxStack = 3;
 						ushort index1 = writer.AddClass("java/lang/UnsatisfiedLinkError");
@@ -130,7 +130,7 @@ namespace IKVM.StubGen
 						m = writer.AddMethod(mods, mw.Name, mw.Signature.Replace('.', '/'));
 						if (mw.IsOptionalAttributeAnnotationValue)
 						{
-							m.AddAttribute(new IKVM.StubGen.AnnotationDefaultClassFileAttribute(writer, GetAnnotationDefault(writer, mw.ReturnType)));
+							m.AddAttribute(new AnnotationDefaultClassFileAttribute(writer, GetAnnotationDefault(writer, mw.ReturnType)));
 						}
 					}
 					MethodBase mb = mw.GetMethod();
@@ -142,7 +142,7 @@ namespace IKVM.StubGen
 							string[] throwsArray = mw.GetDeclaredExceptions();
 							if (throwsArray != null && throwsArray.Length > 0)
 							{
-								IKVM.StubGen.ExceptionsAttribute attrib = new IKVM.StubGen.ExceptionsAttribute(writer);
+								ExceptionsAttribute attrib = new ExceptionsAttribute(writer);
 								foreach (string ex in throwsArray)
 								{
 									attrib.Add(ex.Replace('.', '/'));
@@ -152,7 +152,7 @@ namespace IKVM.StubGen
 						}
 						else
 						{
-							IKVM.StubGen.ExceptionsAttribute attrib = new IKVM.StubGen.ExceptionsAttribute(writer);
+							ExceptionsAttribute attrib = new ExceptionsAttribute(writer);
 							if (throws.classes != null)
 							{
 								foreach (string ex in throws.classes)
@@ -177,12 +177,12 @@ namespace IKVM.StubGen
 							// the Java deprecated methods actually have two Obsolete attributes
 								|| GetObsoleteCount(mb) == 2))
 						{
-							m.AddAttribute(new IKVM.StubGen.DeprecatedAttribute(writer));
+							m.AddAttribute(new DeprecatedAttribute(writer));
 						}
 						CustomAttributeData attr = GetAnnotationDefault(mb);
 						if (attr != null)
 						{
-							m.AddAttribute(new IKVM.StubGen.AnnotationDefaultClassFileAttribute(writer, GetAnnotationDefault(writer, attr.ConstructorArguments[0])));
+							m.AddAttribute(new AnnotationDefaultClassFileAttribute(writer, GetAnnotationDefault(writer, attr.ConstructorArguments[0])));
 						}
 					}
 					string sig = tw.GetGenericMethodSignature(mw);
@@ -210,7 +210,7 @@ namespace IKVM.StubGen
 								constant = EnumHelper.GetPrimitiveValue(EnumHelper.GetUnderlyingType(fw.GetField().FieldType), constant);
 							}
 						}
-						IKVM.StubGen.FieldOrMethod f = writer.AddField(fw.Modifiers, fw.Name, fw.Signature.Replace('.', '/'), constant);
+						FieldOrMethod f = writer.AddField(fw.Modifiers, fw.Name, fw.Signature.Replace('.', '/'), constant);
 						string sig = tw.GetGenericFieldSignature(fw);
 						if (sig != null)
 						{
@@ -218,7 +218,7 @@ namespace IKVM.StubGen
 						}
 						if (fw.GetField() != null && fw.GetField().IsDefined(JVM.Import(typeof(ObsoleteAttribute)), false))
 						{
-							f.AddAttribute(new IKVM.StubGen.DeprecatedAttribute(writer));
+							f.AddAttribute(new DeprecatedAttribute(writer));
 						}
 					}
 				}
@@ -227,7 +227,7 @@ namespace IKVM.StubGen
 			{
 				// class is serializable but doesn't have an explicit serialVersionUID, so we add the field to record
 				// the serialVersionUID as we see it (mainly to make the Japi reports more realistic)
-				writer.AddField(Modifiers.Private | Modifiers.Static | Modifiers.Final, "serialVersionUID", "J", IKVM.StubGen.SerialVersionUID.Compute(tw));
+				writer.AddField(Modifiers.Private | Modifiers.Static | Modifiers.Final, "serialVersionUID", "J", SerialVersionUID.Compute(tw));
 			}
 			AddMetaAnnotations(writer, tw);
 			writer.Write(stream);
@@ -293,13 +293,13 @@ namespace IKVM.StubGen
 			return false;
 		}
 
-		private static void AddMetaAnnotations(IKVM.StubGen.ClassFileWriter writer, TypeWrapper tw)
+		private static void AddMetaAnnotations(ClassFileWriter writer, TypeWrapper tw)
 		{
 			DotNetTypeWrapper.AttributeAnnotationTypeWrapperBase attributeAnnotation = tw as DotNetTypeWrapper.AttributeAnnotationTypeWrapperBase;
 			if (attributeAnnotation != null)
 			{
 				// TODO write the annotation directly, instead of going thru the object[] encoding
-				IKVM.StubGen.RuntimeVisibleAnnotationsAttribute annot = new IKVM.StubGen.RuntimeVisibleAnnotationsAttribute(writer);
+				RuntimeVisibleAnnotationsAttribute annot = new RuntimeVisibleAnnotationsAttribute(writer);
 				annot.Add(new object[] {
 					AnnotationDefaultAttribute.TAG_ANNOTATION,
 					"Ljava/lang/annotation/Retention;",
@@ -338,10 +338,10 @@ namespace IKVM.StubGen
 			}
 		}
 
-		private static byte[] GetAnnotationDefault(IKVM.StubGen.ClassFileWriter classFile, TypeWrapper type)
+		private static byte[] GetAnnotationDefault(ClassFileWriter classFile, TypeWrapper type)
 		{
 			MemoryStream mem = new MemoryStream();
-			IKVM.StubGen.BigEndianStream bes = new IKVM.StubGen.BigEndianStream(mem);
+			BigEndianStream bes = new BigEndianStream(mem);
 			if (type == PrimitiveTypeWrapper.BOOLEAN)
 			{
 				bes.WriteByte((byte)'Z');
@@ -410,10 +410,10 @@ namespace IKVM.StubGen
 			return mem.ToArray();
 		}
 
-		private static byte[] GetAnnotationDefault(IKVM.StubGen.ClassFileWriter classFile, CustomAttributeTypedArgument value)
+		private static byte[] GetAnnotationDefault(ClassFileWriter classFile, CustomAttributeTypedArgument value)
 		{
 			MemoryStream mem = new MemoryStream();
-			IKVM.StubGen.BigEndianStream bes = new IKVM.StubGen.BigEndianStream(mem);
+			BigEndianStream bes = new BigEndianStream(mem);
 			try
 			{
 				WriteAnnotationElementValue(classFile, bes, value);
@@ -429,7 +429,7 @@ namespace IKVM.StubGen
 			return mem.ToArray();
 		}
 
-		private static void WriteAnnotationElementValue(IKVM.StubGen.ClassFileWriter classFile, IKVM.StubGen.BigEndianStream bes, CustomAttributeTypedArgument value)
+		private static void WriteAnnotationElementValue(ClassFileWriter classFile, BigEndianStream bes, CustomAttributeTypedArgument value)
 		{
 			if (value.ArgumentType == Types.Boolean)
 			{
