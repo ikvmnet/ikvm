@@ -23,7 +23,7 @@
 */
 using System;
 using System.IO;
-using System.Collections;
+using System.Collections.Generic;
 using IKVM.Attributes;
 
 namespace IKVM.StubGen
@@ -474,7 +474,7 @@ namespace IKVM.StubGen
 	sealed class InnerClassesAttribute : ClassFileAttribute
 	{
 		private ClassFileWriter classFile;
-		private ArrayList classes = new ArrayList();
+		private List<Item> classes = new List<Item>();
 
 		public InnerClassesAttribute(ClassFileWriter classFile)
 			: base(classFile.AddUtf8("InnerClasses"))
@@ -521,7 +521,7 @@ namespace IKVM.StubGen
 	sealed class ExceptionsAttribute : ClassFileAttribute
 	{
 		private ClassFileWriter classFile;
-		private ArrayList classes = new ArrayList();
+		private List<ushort> classes = new List<ushort>();
 
 		internal ExceptionsAttribute(ClassFileWriter classFile)
 			: base(classFile.AddUtf8("Exceptions"))
@@ -666,7 +666,7 @@ namespace IKVM.StubGen
 		private Modifiers access_flags;
 		private ushort name_index;
 		private ushort descriptor_index;
-		private ArrayList attribs = new ArrayList();
+		private List<ClassFileAttribute> attribs = new List<ClassFileAttribute>();
 
 		public FieldOrMethod(Modifiers access_flags, ushort name_index, ushort descriptor_index)
 		{
@@ -688,7 +688,7 @@ namespace IKVM.StubGen
 			bes.WriteUInt16((ushort)attribs.Count);
 			for (int i = 0; i < attribs.Count; i++)
 			{
-				((ClassFileAttribute)attribs[i]).Write(bes);
+				attribs[i].Write(bes);
 			}
 		}
 	}
@@ -747,12 +747,12 @@ namespace IKVM.StubGen
 
 	sealed class ClassFileWriter : IAttributeOwner
 	{
-		private ArrayList cplist = new ArrayList();
-		private Hashtable cphashtable = new Hashtable();
-		private ArrayList fields = new ArrayList();
-		private ArrayList methods = new ArrayList();
-		private ArrayList attribs = new ArrayList();
-		private ArrayList interfaces = new ArrayList();
+		private List<ConstantPoolItem> cplist = new List<ConstantPoolItem>();
+		private Dictionary<ConstantPoolItem, ushort> cphashtable = new Dictionary<ConstantPoolItem, ushort>();
+		private List<FieldOrMethod> fields = new List<FieldOrMethod>();
+		private List<FieldOrMethod> methods = new List<FieldOrMethod>();
+		private List<ClassFileAttribute> attribs = new List<ClassFileAttribute>();
+		private List<ushort> interfaces = new List<ushort>();
 		private Modifiers access_flags;
 		private ushort this_class;
 		private ushort super_class;
@@ -774,17 +774,18 @@ namespace IKVM.StubGen
 
 		private ushort Add(ConstantPoolItem cpi)
 		{
-			object index = cphashtable[cpi];
-			if (index == null)
+			ushort index;
+			if (!cphashtable.TryGetValue(cpi, out index))
 			{
-				index = (ushort)cplist.Add(cpi);
+				index = (ushort)cplist.Count;
+				cplist.Add(cpi);
 				if (cpi is ConstantPoolItemDouble || cpi is ConstantPoolItemLong)
 				{
 					cplist.Add(null);
 				}
-				cphashtable[cpi] = index;
+				cphashtable.Add(cpi, index);
 			}
-			return (ushort)index;
+			return index;
 		}
 
 		public ushort AddUtf8(string str)
@@ -918,9 +919,8 @@ namespace IKVM.StubGen
 			bes.WriteUInt16(minorVersion);
 			bes.WriteUInt16(majorVersion);
 			bes.WriteUInt16((ushort)cplist.Count);
-			for (int i = 1; i < cplist.Count; i++)
+			foreach (ConstantPoolItem cpi in cplist)
 			{
-				ConstantPoolItem cpi = (ConstantPoolItem)cplist[i];
 				if (cpi != null)
 				{
 					cpi.Write(bes);
@@ -933,25 +933,25 @@ namespace IKVM.StubGen
 			bes.WriteUInt16((ushort)interfaces.Count);
 			for (int i = 0; i < interfaces.Count; i++)
 			{
-				bes.WriteUInt16((ushort)interfaces[i]);
+				bes.WriteUInt16(interfaces[i]);
 			}
 			// fields count
 			bes.WriteUInt16((ushort)fields.Count);
 			for (int i = 0; i < fields.Count; i++)
 			{
-				((FieldOrMethod)fields[i]).Write(bes);
+				fields[i].Write(bes);
 			}
 			// methods count
 			bes.WriteUInt16((ushort)methods.Count);
 			for (int i = 0; i < methods.Count; i++)
 			{
-				((FieldOrMethod)methods[i]).Write(bes);
+				methods[i].Write(bes);
 			}
 			// attributes count
 			bes.WriteUInt16((ushort)attribs.Count);
 			for (int i = 0; i < attribs.Count; i++)
 			{
-				((ClassFileAttribute)attribs[i]).Write(bes);
+				attribs[i].Write(bes);
 			}
 		}
 	}
