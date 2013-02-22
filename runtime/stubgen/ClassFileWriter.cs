@@ -588,11 +588,10 @@ namespace IKVM.StubGen
 				else if (AnnotationDefaultAttribute.TAG_ARRAY.Equals(arr[0]))
 				{
 					bes.WriteByte(AnnotationDefaultAttribute.TAG_ARRAY);
-					object[] elemarr = (object[])arr[1];
-					bes.WriteUInt16((ushort)elemarr.Length);
-					foreach (object elem in elemarr)
+					bes.WriteUInt16((ushort)(arr.Length - 1));
+					for (int i = 1; i < arr.Length; i++)
 					{
-						WriteElementValue(bes, elem);
+						WriteElementValue(bes, arr[i]);
 					}
 					return;
 				}

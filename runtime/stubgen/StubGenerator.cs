@@ -307,7 +307,8 @@ namespace IKVM.StubGen
 					new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/RetentionPolicy;", "RUNTIME" }
 				});
 				AttributeTargets validOn = attributeAnnotation.AttributeTargets;
-				List<object[]> targets = new List<object[]>();
+				List<object> targets = new List<object>();
+				targets.Add(AnnotationDefaultAttribute.TAG_ARRAY);
 				if ((validOn & (AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.Struct | AttributeTargets.Enum | AttributeTargets.Delegate | AttributeTargets.Assembly)) != 0)
 				{
 					targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "TYPE" });
@@ -332,7 +333,7 @@ namespace IKVM.StubGen
 					AnnotationDefaultAttribute.TAG_ANNOTATION,
 					"Ljava/lang/annotation/Target;",
 					"value",
-					new object[] { AnnotationDefaultAttribute.TAG_ARRAY, targets.ToArray() }
+					targets.ToArray()
 				});
 				writer.AddAttribute(annot);
 			}
