@@ -192,6 +192,7 @@ namespace IKVM.StubGen
 						m.AddAttribute(writer.MakeStringAttribute("Signature", sig));
 					}
 					AddAnnotations(writer, m, mw.GetMethod());
+					AddParameterAnnotations(writer, m, mw.GetMethod());
 				}
 			}
 			bool hasSerialVersionUID = false;
@@ -241,27 +242,82 @@ namespace IKVM.StubGen
 #if !FIRST_PASS && !STUB_GENERATOR
 			if (source != null)
 			{
-				RuntimeVisibleAnnotationsAttribute annot = null;
+				RuntimeVisibleAnnotationsAttribute attr = null;
 				foreach (CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(source))
 				{
-					if (cad.ConstructorArguments.Count == 1 && cad.ConstructorArguments[0].ArgumentType == typeof(object[]) &&
-						(cad.Constructor.DeclaringType.IsSubclassOf(JVM.Import(typeof(ikvm.@internal.AnnotationAttributeBase)))
-						|| cad.Constructor.DeclaringType == JVM.Import(typeof(DynamicAnnotationAttribute))))
+					object[] ann = GetAnnotation(cad);
+					if (ann != null)
 					{
-						if (annot == null)
+						if (attr == null)
 						{
-							annot = new RuntimeVisibleAnnotationsAttribute(writer);
+							attr = new RuntimeVisibleAnnotationsAttribute(writer);
 						}
-						annot.Add(UnpackArray((IList<CustomAttributeTypedArgument>)cad.ConstructorArguments[0].Value));
+						attr.Add(UnpackArray((IList<CustomAttributeTypedArgument>)cad.ConstructorArguments[0].Value));
 					}
 				}
-				if (annot != null)
+				if (attr != null)
 				{
-					target.AddAttribute(annot);
+					target.AddAttribute(attr);
 				}
 			}
 #endif
 		}
+
+		private static void AddParameterAnnotations(ClassFileWriter writer, FieldOrMethod target, MethodBase source)
+		{
+#if !FIRST_PASS && !STUB_GENERATOR
+			if (source != null)
+			{
+				RuntimeVisibleParameterAnnotationsAttribute attr = null;
+				ParameterInfo[] parameters = source.GetParameters();
+				for (int i = 0; i < parameters.Length; i++)
+				{
+					RuntimeVisibleAnnotationsAttribute param = null;
+					foreach (CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(parameters[i]))
+					{
+						object[] ann = GetAnnotation(cad);
+						if (ann != null)
+						{
+							if (param == null)
+							{
+								if (attr == null)
+								{
+									attr = new RuntimeVisibleParameterAnnotationsAttribute(writer);
+									for (int j = 0; j < i; j++)
+									{
+										attr.Add(new RuntimeVisibleAnnotationsAttribute(writer));
+									}
+								}
+								param = new RuntimeVisibleAnnotationsAttribute(writer);
+							}
+							param.Add(UnpackArray((IList<CustomAttributeTypedArgument>)cad.ConstructorArguments[0].Value));
+						}
+					}
+					if (attr != null)
+					{
+						attr.Add(param ?? new RuntimeVisibleAnnotationsAttribute(writer));
+					}
+				}
+				if (attr != null)
+				{
+					target.AddAttribute(attr);
+				}
+			}
+#endif
+		}
+
+#if !FIRST_PASS && !STUB_GENERATOR
+		private static object[] GetAnnotation(CustomAttributeData cad)
+		{
+			if (cad.ConstructorArguments.Count == 1 && cad.ConstructorArguments[0].ArgumentType == typeof(object[]) &&
+				(cad.Constructor.DeclaringType.IsSubclassOf(JVM.Import(typeof(ikvm.@internal.AnnotationAttributeBase)))
+				|| cad.Constructor.DeclaringType == JVM.Import(typeof(DynamicAnnotationAttribute))))
+			{
+				return UnpackArray((IList<CustomAttributeTypedArgument>)cad.ConstructorArguments[0].Value);
+			}
+			return null;
+		}
+#endif
 
 		private static object[] UnpackArray(IList<CustomAttributeTypedArgument> list)
 		{

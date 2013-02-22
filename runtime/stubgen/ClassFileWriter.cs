@@ -629,11 +629,52 @@ namespace IKVM.StubGen
 		public override void Write(BigEndianStream bes)
 		{
 			base.Write(bes);
-			bes.WriteUInt32((uint)(mem.Length + 2));
+			bes.WriteUInt32(Length);
+			WriteImpl(bes);
+		}
+
+		internal void WriteImpl(BigEndianStream bes)
+		{
 			bes.WriteUInt16(count);
 			foreach (byte b in mem.ToArray())
 			{
 				bes.WriteByte(b);
+			}
+		}
+
+		internal uint Length
+		{
+			get { return (uint)mem.Length + 2; }
+		}
+	}
+
+	sealed class RuntimeVisibleParameterAnnotationsAttribute : ClassFileAttribute
+	{
+		private readonly List<RuntimeVisibleAnnotationsAttribute> parameters = new List<RuntimeVisibleAnnotationsAttribute>();
+
+		internal RuntimeVisibleParameterAnnotationsAttribute(ClassFileWriter classFile)
+			: base(classFile.AddUtf8("RuntimeVisibleParameterAnnotations"))
+		{
+		}
+
+		internal void Add(RuntimeVisibleAnnotationsAttribute parameter)
+		{
+			parameters.Add(parameter);
+		}
+
+		public override void Write(BigEndianStream bes)
+		{
+			base.Write(bes);
+			uint length = 1;
+			foreach (RuntimeVisibleAnnotationsAttribute attr in parameters)
+			{
+				length += attr.Length;
+			}
+			bes.WriteUInt32(length);
+			bes.WriteByte((byte)parameters.Count);
+			foreach (RuntimeVisibleAnnotationsAttribute attr in parameters)
+			{
+				attr.WriteImpl(bes);
 			}
 		}
 	}
