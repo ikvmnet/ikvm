@@ -218,36 +218,11 @@ namespace IKVM.NativeCode.ikvm.runtime
 #endif
 			try
 			{
-				TypeWrapper tw = null;
-				if(classLoader == null)
+				IKVM.Internal.AssemblyClassLoader wrapper = IKVM.Internal.AssemblyClassLoader.FromAssembly(assembly);
+				TypeWrapper tw = wrapper.LoadClass(name);
+				if(tw == null)
 				{
-					tw = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(name);
-				}
-				else if(assembly != null)
-				{
-					AssemblyClassLoader_ acl = global::IKVM.Internal.AssemblyClassLoader.FromAssembly(assembly);
-					tw = acl.FindLoadedClass(name);
-					if(tw == null)
-					{
-						tw = acl.FindOrLoadGenericClass(name, false);
-					}
-					if(tw == null)
-					{
-						tw = acl.LoadBootstrapIfNonJavaAssembly(name);
-					}
-					if(tw == null)
-					{
-						tw = acl.LoadDynamic(name);
-					}
-					if(tw == null)
-					{
-						throw new ClassNotFoundException(name);
-					}
-				}
-				else
-				{
-					// this must be a GenericClassLoader
-					tw = ((GenericClassLoaderWrapper)ClassLoaderWrapper.GetClassLoaderWrapper(classLoader)).LoadClassByDottedName(name);
+					throw new ClassNotFoundException(name);
 				}
 				Tracer.Info(Tracer.ClassLoading, "Loaded class \"{0}\" from {1}", name, classLoader == null ? "boot class loader" : (object)classLoader);
 				return tw.ClassObject;

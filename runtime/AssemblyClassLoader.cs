@@ -679,43 +679,39 @@ namespace IKVM.Internal
 				return tw;
 			}
 #if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
-			try
+			while (hasCustomClassLoader != 2)
 			{
-				while (hasCustomClassLoader != 2)
+				if (hasCustomClassLoader == 0)
 				{
-					if (hasCustomClassLoader == 0)
+					Type customClassLoader = GetCustomClassLoaderType();
+					if (customClassLoader == null)
 					{
-						Type customClassLoader = GetCustomClassLoaderType();
-						if (customClassLoader == null)
-						{
-							hasCustomClassLoader = 2;
-							break;
-						}
-						WaitInitializeJavaClassLoader(customClassLoader);
-						hasCustomClassLoader = 1;
+						hasCustomClassLoader = 2;
+						break;
 					}
-					return base.LoadClassImpl(name, throwClassNotFoundException);
+					WaitInitializeJavaClassLoader(customClassLoader);
+					hasCustomClassLoader = 1;
 				}
-			}
-			catch (ClassLoadingException x)
-			{
-				if (x.InnerException is java.lang.ClassNotFoundException)
-				{
-					tw = LoadDynamic(name);
-					if (tw != null)
-					{
-						return tw;
-					}
-				}
-				throw;
+				return base.LoadClassImpl(name, throwClassNotFoundException);
 			}
 #endif
 			return LoadBootstrapIfNonJavaAssembly(name)
-				?? FindOrLoadGenericClass(name, false)
-				?? LoadDynamic(name);
+				?? LoadDynamic(name)
+				?? FindOrLoadGenericClass(name, false);
 		}
 
-		internal TypeWrapper LoadBootstrapIfNonJavaAssembly(string name)
+		// this implements ikvm.runtime.AssemblyClassLoader.loadClass(),
+		// so unlike the above LoadClassImpl, it doesn't delegate to Java,
+		// but otherwise it should be the same algorithm
+		internal TypeWrapper LoadClass(string name)
+		{
+			return FindLoadedClass(name)
+				?? LoadBootstrapIfNonJavaAssembly(name)
+				?? LoadDynamic(name)
+				?? FindOrLoadGenericClass(name, false);
+		}
+
+		private TypeWrapper LoadBootstrapIfNonJavaAssembly(string name)
 		{
 			if (!assemblyLoader.HasJavaModule)
 			{
@@ -724,23 +720,39 @@ namespace IKVM.Internal
 			return null;
 		}
 
-		internal TypeWrapper LoadDynamic(string name)
+		private TypeWrapper LoadDynamic(string name)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
-			foreach (java.net.URL url in FindResources(name.Replace('.', '/') + ".class"))
+			string classFile = name.Replace('.', '/') + ".class";
+			foreach (Resource res in GetBootstrapClassLoader().FindDelegateResources(classFile))
 			{
-				using (java.io.InputStream inp = url.openStream())
-				{
-					byte[] buf = new byte[inp.available()];
-					inp.read(buf, 0, buf.Length);
-					return TypeWrapper.FromClass(IKVM.NativeCode.java.lang.ClassLoader.defineClass1(GetJavaClassLoader(), name, buf, 0, buf.Length, GetProtectionDomain(), null));
-				}
+				return res.Loader.DefineDynamic(name, res.URL);
+			}
+			foreach (Resource res in FindDelegateResources(classFile))
+			{
+				return res.Loader.DefineDynamic(name, res.URL);
+			}
+			foreach (java.net.URL url in FindResources(classFile))
+			{
+				return DefineDynamic(name, url);
 			}
 #endif
 			return null;
 		}
 
-		private TypeWrapper LoadReferenced(string name)
+#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+		private TypeWrapper DefineDynamic(string name, java.net.URL url)
+		{
+			using (java.io.InputStream inp = url.openStream())
+			{
+				byte[] buf = new byte[inp.available()];
+				inp.read(buf, 0, buf.Length);
+				return TypeWrapper.FromClass(IKVM.NativeCode.java.lang.ClassLoader.defineClass1(GetJavaClassLoader(), name, buf, 0, buf.Length, GetProtectionDomain(), null));
+			}
+		}
+#endif
+
+		private TypeWrapper FindReferenced(string name)
 		{
 			for (int i = 0; i < delegates.Length; i++)
 			{
@@ -857,7 +869,19 @@ namespace IKVM.Internal
 			}
 		}
 
-		protected IEnumerable<java.net.URL> FindDelegateResources(string name)
+		protected struct Resource
+		{
+			internal readonly java.net.URL URL;
+			internal readonly AssemblyClassLoader Loader;
+
+			internal Resource(java.net.URL url, AssemblyClassLoader loader)
+			{
+				this.URL = url;
+				this.Loader = loader;
+			}
+		}
+
+		protected IEnumerable<Resource> FindDelegateResources(string name)
 		{
 			LazyInitExports();
 			for (int i = 0; i < delegates.Length; i++)
@@ -874,7 +898,7 @@ namespace IKVM.Internal
 				{
 					foreach (java.net.URL url in delegates[i].FindResources(name))
 					{
-						yield return url;
+						yield return new Resource(url, delegates[i]);
 					}
 				}
 			}
@@ -886,9 +910,9 @@ namespace IKVM.Internal
 			{
 				yield return url;
 			}
-			foreach (java.net.URL url in FindDelegateResources(name))
+			foreach (Resource res in FindDelegateResources(name))
 			{
-				yield return url;
+				yield return res.URL;
 			}
 			foreach (java.net.URL url in FindResources(name))
 			{
@@ -975,7 +999,7 @@ namespace IKVM.Internal
 		protected override TypeWrapper FindLoadedClassLazy(string name)
 		{
 			return DoLoad(name)
-				?? LoadReferenced(name)
+				?? FindReferenced(name)
 				?? FindOrLoadGenericClass(name, true);
 		}
 
@@ -1298,9 +1322,9 @@ namespace IKVM.Internal
 			{
 				yield return url;
 			}
-			foreach (java.net.URL url in FindDelegateResources(name))
+			foreach (Resource res in FindDelegateResources(name))
 			{
-				yield return url;
+				yield return res.URL;
 			}
 		}
 #endif
