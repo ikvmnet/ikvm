@@ -92,6 +92,7 @@ namespace IKVM.StubGen
 			{
 				writer.AddStringAttribute("Signature", genericTypeSignature);
 			}
+			AddAnnotations(writer, writer, tw.TypeAsBaseType);
 			writer.AddStringAttribute("IKVM.NET.Assembly", GetAssemblyName(tw));
 			if (tw.TypeAsBaseType.IsDefined(JVM.Import(typeof(ObsoleteAttribute)), false))
 			{
@@ -190,6 +191,7 @@ namespace IKVM.StubGen
 					{
 						m.AddAttribute(writer.MakeStringAttribute("Signature", sig));
 					}
+					AddAnnotations(writer, m, mw.GetMethod());
 				}
 			}
 			bool hasSerialVersionUID = false;
@@ -220,6 +222,7 @@ namespace IKVM.StubGen
 						{
 							f.AddAttribute(new DeprecatedAttribute(writer));
 						}
+						AddAnnotations(writer, f, fw.GetField());
 					}
 				}
 			}
@@ -231,6 +234,50 @@ namespace IKVM.StubGen
 			}
 			AddMetaAnnotations(writer, tw);
 			writer.Write(stream);
+		}
+
+		private static void AddAnnotations(ClassFileWriter writer, IAttributeOwner target, MemberInfo source)
+		{
+#if !FIRST_PASS && !STUB_GENERATOR
+			if (source != null)
+			{
+				RuntimeVisibleAnnotationsAttribute annot = null;
+				foreach (CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(source))
+				{
+					if (cad.ConstructorArguments.Count == 1 && cad.ConstructorArguments[0].ArgumentType == typeof(object[]) &&
+						(cad.Constructor.DeclaringType.IsSubclassOf(JVM.Import(typeof(ikvm.@internal.AnnotationAttributeBase)))
+						|| cad.Constructor.DeclaringType == JVM.Import(typeof(DynamicAnnotationAttribute))))
+					{
+						if (annot == null)
+						{
+							annot = new RuntimeVisibleAnnotationsAttribute(writer);
+						}
+						annot.Add(UnpackArray((IList<CustomAttributeTypedArgument>)cad.ConstructorArguments[0].Value));
+					}
+				}
+				if (annot != null)
+				{
+					target.AddAttribute(annot);
+				}
+			}
+#endif
+		}
+
+		private static object[] UnpackArray(IList<CustomAttributeTypedArgument> list)
+		{
+			object[] arr = new object[list.Count];
+			for (int i = 0; i < arr.Length; i++)
+			{
+				if (list[i].Value is IList<CustomAttributeTypedArgument>)
+				{
+					arr[i] = UnpackArray((IList<CustomAttributeTypedArgument>)list[i].Value);
+				}
+				else
+				{
+					arr[i] = list[i].Value;
+				}
+			}
+			return arr;
 		}
 
 		private static int GetObsoleteCount(MethodBase mb)

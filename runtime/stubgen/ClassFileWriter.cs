@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002 Jeroen Frijters
+  Copyright (C) 2002-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -583,7 +583,6 @@ namespace IKVM.StubGen
 					bes.WriteByte(AnnotationDefaultAttribute.TAG_ENUM);
 					bes.WriteUInt16(classFile.AddUtf8((string)arr[1]));
 					bes.WriteUInt16(classFile.AddUtf8((string)arr[2]));
-					return;
 				}
 				else if (AnnotationDefaultAttribute.TAG_ARRAY.Equals(arr[0]))
 				{
@@ -593,10 +592,38 @@ namespace IKVM.StubGen
 					{
 						WriteElementValue(bes, arr[i]);
 					}
-					return;
+				}
+				else if (AnnotationDefaultAttribute.TAG_CLASS.Equals(arr[0]))
+				{
+					bes.WriteByte(AnnotationDefaultAttribute.TAG_CLASS);
+					string typeName = (string)arr[1];
+#if !FIRST_PASS && !STUB_GENERATOR
+					int index = typeName.IndexOf(',');
+					if (index > 0)
+					{
+						// HACK if we have an assembly qualified type name we have to resolve it to a Java class name
+						// (at the very least we should use the right class loader here)
+						try
+						{
+							typeName = "L" + java.lang.Class.forName(typeName.Substring(1, typeName.Length - 2).Replace('/', '.')).getName().Replace('.', '/') + ";";
+						}
+						catch { }
+					}
+#endif
+					bes.WriteUInt16(classFile.AddUtf8(typeName));
+				}
+				else if (AnnotationDefaultAttribute.TAG_ANNOTATION.Equals(arr[0]))
+				{
+					bes.WriteByte(AnnotationDefaultAttribute.TAG_ANNOTATION);
+					bes.WriteUInt16(classFile.AddUtf8((string)arr[1]));
+					bes.WriteUInt16((ushort)((arr.Length - 2) / 2));
+					for (int i = 2; i < arr.Length; i += 2)
+					{
+						bes.WriteUInt16(classFile.AddUtf8((string)arr[i]));
+						WriteElementValue(bes, arr[i + 1]);
+					}
 				}
 			}
-			throw new NotImplementedException(val.GetType().FullName);
 		}
 
 		public override void Write(BigEndianStream bes)
@@ -634,7 +661,7 @@ namespace IKVM.StubGen
 		}
 	}
 
-	sealed class FieldOrMethod
+	sealed class FieldOrMethod : IAttributeOwner
 	{
 		private Modifiers access_flags;
 		private ushort name_index;
@@ -713,7 +740,12 @@ namespace IKVM.StubGen
 		}
 	}
 
-	sealed class ClassFileWriter
+	interface IAttributeOwner
+	{
+		void AddAttribute(ClassFileAttribute attrib);
+	}
+
+	sealed class ClassFileWriter : IAttributeOwner
 	{
 		private ArrayList cplist = new ArrayList();
 		private Hashtable cphashtable = new Hashtable();
