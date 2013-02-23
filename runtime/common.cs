@@ -208,7 +208,12 @@ namespace IKVM.NativeCode.ikvm.runtime
 {
 	static class AssemblyClassLoader
 	{
-		public static global::java.lang.Class LoadClass(global::java.lang.ClassLoader classLoader, Assembly assembly, string name)
+		public static void setWrapper(global::java.lang.ClassLoader _this, Assembly assembly)
+		{
+			ClassLoaderWrapper.SetWrapperForClassLoader(_this, IKVM.Internal.AssemblyClassLoader.FromAssembly(assembly));
+		}
+
+		public static global::java.lang.Class loadClass(global::java.lang.ClassLoader _this, string name, bool resolve)
 		{
 #if !FIRST_PASS
 			if (!global::java.lang.ClassLoader.checkName(name))
@@ -218,26 +223,26 @@ namespace IKVM.NativeCode.ikvm.runtime
 #endif
 			try
 			{
-				IKVM.Internal.AssemblyClassLoader wrapper = IKVM.Internal.AssemblyClassLoader.FromAssembly(assembly);
+				AssemblyClassLoader_ wrapper = (AssemblyClassLoader_)ClassLoaderWrapper.GetClassLoaderWrapper(_this);
 				TypeWrapper tw = wrapper.LoadClass(name);
 				if(tw == null)
 				{
 					throw new ClassNotFoundException(name);
 				}
-				Tracer.Info(Tracer.ClassLoading, "Loaded class \"{0}\" from {1}", name, classLoader == null ? "boot class loader" : (object)classLoader);
+				Tracer.Info(Tracer.ClassLoading, "Loaded class \"{0}\" from {1}", name, _this);
 				return tw.ClassObject;
 			}
 			catch(RetargetableJavaException x)
 			{
-				Tracer.Info(Tracer.ClassLoading, "Failed to load class \"{0}\" from {1}", name, classLoader == null ? "boot class loader" : (object)classLoader);
+				Tracer.Info(Tracer.ClassLoading, "Failed to load class \"{0}\" from {1}", name, _this);
 				throw x.ToJava();
 			}
 		}
 
-		public static global::java.net.URL getResource(Assembly assembly, string name)
+		public static global::java.net.URL getResource(global::java.lang.ClassLoader _this, string name)
 		{
 #if !FIRST_PASS
-			IKVM.Internal.AssemblyClassLoader wrapper = IKVM.Internal.AssemblyClassLoader.FromAssembly(assembly);
+			AssemblyClassLoader_ wrapper = (AssemblyClassLoader_)ClassLoaderWrapper.GetClassLoaderWrapper(_this);
 			foreach (global::java.net.URL url in wrapper.GetResources(name))
 			{
 				return url;
@@ -246,12 +251,33 @@ namespace IKVM.NativeCode.ikvm.runtime
 			return null;
 		}
 
-		public static global::java.util.Enumeration getResources(Assembly assembly, string name)
+		public static global::java.util.Enumeration getResources(global::java.lang.ClassLoader _this, string name)
 		{
 #if FIRST_PASS
 			return null;
 #else
-			return new global::ikvm.runtime.EnumerationWrapper(IKVM.Internal.AssemblyClassLoader.FromAssembly(assembly).GetResources(name));
+			return new global::ikvm.runtime.EnumerationWrapper(((AssemblyClassLoader_)ClassLoaderWrapper.GetClassLoaderWrapper(_this)).GetResources(name));
+#endif
+		}
+
+		public static global::java.net.URL findResource(global::java.lang.ClassLoader _this, string name)
+		{
+#if !FIRST_PASS
+			AssemblyClassLoader_ wrapper = (AssemblyClassLoader_)ClassLoaderWrapper.GetClassLoaderWrapper(_this);
+			foreach (global::java.net.URL url in wrapper.FindResources(name))
+			{
+				return url;
+			}
+#endif
+			return null;
+		}
+
+		public static global::java.util.Enumeration findResources(global::java.lang.ClassLoader _this, string name)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			return new global::ikvm.runtime.EnumerationWrapper(((AssemblyClassLoader_)ClassLoaderWrapper.GetClassLoaderWrapper(_this)).FindResources(name));
 #endif
 		}
 
@@ -275,7 +301,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 		{
 			try
 			{
-				global::java.net.URL url = _this.findResource("META-INF/MANIFEST.MF");
+				global::java.net.URL url = findResource(_this, "META-INF/MANIFEST.MF");
 				if (url != null)
 				{
 					return new global::java.util.jar.Manifest(url.openStream());
@@ -338,6 +364,11 @@ namespace IKVM.NativeCode.ikvm.runtime
 				}
 			}
 #endif
+		}
+
+		public static string toString(global::java.lang.ClassLoader _this)
+		{
+			return ((AssemblyClassLoader_)ClassLoaderWrapper.GetClassLoaderWrapper(_this)).MainAssembly.FullName;
 		}
 
 		public static global::java.lang.ClassLoader getAssemblyClassLoader(Assembly asm)

@@ -1138,7 +1138,7 @@ namespace IKVM.Internal
 		}
 
 #if !STATIC_COMPILER && !STUB_GENERATOR
-		protected static void SetWrapperForClassLoader(java.lang.ClassLoader javaClassLoader, ClassLoaderWrapper wrapper)
+		protected internal static void SetWrapperForClassLoader(java.lang.ClassLoader javaClassLoader, ClassLoaderWrapper wrapper)
 		{
 #if __MonoCS__ || FIRST_PASS
 			typeof(java.lang.ClassLoader).GetField("wrapper", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(javaClassLoader, wrapper);

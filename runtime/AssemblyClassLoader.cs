@@ -1213,7 +1213,7 @@ namespace IKVM.Internal
 			}
 			if (jclcip.javaClassLoader == null)
 			{
-				jclcip.javaClassLoader = new ikvm.runtime.AssemblyClassLoader(assembly, null);
+				jclcip.javaClassLoader = new ikvm.runtime.AssemblyClassLoader();
 				SetWrapperForClassLoader(jclcip.javaClassLoader, this);
 			}
 			// finally we publish the class loader for other threads to see

@@ -37,58 +37,52 @@ import java.util.jar.Manifest;
 
 public final class AssemblyClassLoader extends ClassLoader
 {
-    private final Assembly assembly;
     private boolean packagesDefined;
 
+    // This constructor is used to manually construct an AssemblyClassLoader that is used
+    // as a delegation parent for custom assembly class loaders.
+    //
+    // In that case the class loader object graph looks like this:
+    //
+    //            +---------------------------------+
+    //            |IKVM.Internal.AssemblyClassLoader|
+    //            +---------------------------------+
+    //              ||     /\                  /\
+    //              \/     ||                  ||
+    //    +-------------------+                ||
+    //    |Custom Class Loader|      +--------------------------------+
+    //    +-------------------+      |ikvm.runtime.AssemblyClassLoader|
+    //                               +--------------------------------+
+    //
     public AssemblyClassLoader(Assembly assembly)
     {
         super(null);
-        this.assembly = assembly;
+        setWrapper(assembly);
     }
+
+    private native void setWrapper(Assembly assembly);
 
     // this constructor is used by the runtime and calls a privileged
     // ClassLoader constructor to avoid the security check
-    AssemblyClassLoader(Assembly assembly, SecurityManager security)
+    AssemblyClassLoader()
     {
         super(null, null);
-        this.assembly = assembly;
     }
 
     @Override
-    protected Class loadClass(String name, boolean resolve) throws ClassNotFoundException
-    {
-        return LoadClass(this, assembly, name);
-    }
-
-    private static native Class LoadClass(ClassLoader classLoader, Assembly assembly, String name) throws ClassNotFoundException;
+    protected native Class loadClass(String name, boolean resolve) throws ClassNotFoundException;
 
     @Override
-    public URL getResource(String name)
-    {
-        return getResource(assembly, name);
-    }
+    public native URL getResource(String name);
 
     @Override
-    public Enumeration getResources(String name) throws IOException
-    {
-        return getResources(assembly, name);
-    }
+    public native Enumeration<URL> getResources(String name) throws IOException;
 
     @Override
-    protected URL findResource(String name)
-    {
-        return getResource(assembly, name);
-    }
+    protected native URL findResource(String name);
 
     @Override
-    protected Enumeration findResources(String name) throws IOException
-    {
-        return getResources(assembly, name);
-    }
-
-    private static native URL getResource(Assembly assembly, String name);
-    
-    private static native Enumeration getResources(Assembly assembly, String name) throws IOException;
+    protected native Enumeration<URL> findResources(String name) throws IOException;
 
     private synchronized void lazyDefinePackagesCheck()
     {
@@ -116,10 +110,7 @@ public final class AssemblyClassLoader extends ClassLoader
     }
 
     @Override
-    public String toString()
-    {
-        return assembly.get_FullName();
-    }
+    public native String toString();
 
     // return the ClassLoader for the assembly. Note that this doesn't have to be an AssemblyClassLoader.
     public static native ClassLoader getAssemblyClassLoader(Assembly asm);
