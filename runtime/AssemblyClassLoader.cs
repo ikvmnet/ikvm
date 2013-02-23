@@ -946,7 +946,10 @@ namespace IKVM.Internal
 					curr.recursion++;
 					try
 					{
-						InitializeJavaClassLoader(curr, customClassLoader);
+						if (javaClassLoader == null)
+						{
+							InitializeJavaClassLoader(curr, customClassLoader);
+						}
 					}
 					finally
 					{
