@@ -1213,7 +1213,7 @@ namespace IKVM.Internal
 			}
 			if (jclcip.javaClassLoader == null)
 			{
-				jclcip.javaClassLoader = (java.lang.ClassLoader)DoPrivileged(new CreateAssemblyClassLoader(assembly));
+				jclcip.javaClassLoader = new ikvm.runtime.AssemblyClassLoader(assembly, null);
 				SetWrapperForClassLoader(jclcip.javaClassLoader, this);
 			}
 			// finally we publish the class loader for other threads to see
@@ -1253,21 +1253,6 @@ namespace IKVM.Internal
 				{
 					Interlocked.CompareExchange(ref customClassLoaderRedirects, dict, null);
 				}
-			}
-		}
-
-		internal sealed class CreateAssemblyClassLoader : java.security.PrivilegedAction
-		{
-			private Assembly assembly;
-
-			internal CreateAssemblyClassLoader(Assembly assembly)
-			{
-				this.assembly = assembly;
-			}
-
-			public object run()
-			{
-				return new ikvm.runtime.AssemblyClassLoader(assembly, null);
 			}
 		}
 

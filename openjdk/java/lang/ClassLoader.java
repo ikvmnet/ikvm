@@ -286,7 +286,10 @@ public abstract class ClassLoader {
         return null;
     }
 
-    private ClassLoader(Void unused, ClassLoader parent) {
+    // [IKVM] this normally private constructor is also used by ikvm.runtime.AssemblyClassLoader
+    // to construct an assembly class loader without doing a security check
+    @ikvm.lang.Internal
+    protected ClassLoader(Void unused, ClassLoader parent) {
         if (parent != null) {
             parent.check();
         }
@@ -328,20 +331,6 @@ public abstract class ClassLoader {
      */
     protected ClassLoader(ClassLoader parent) {
         this(checkCreateClassLoader(), parent);
-    }
-
-    // private constructor for use by ikvm.runtime.AssemblyClassLoader
-    // (to skip the security manager check)
-    @ikvm.lang.Internal
-    protected ClassLoader(ClassLoader parent, SecurityManager security) {
-        this(checkCreateAssemblyClassLoader(security), parent);
-    }
-    
-    private static Void checkCreateAssemblyClassLoader(SecurityManager security) {
-        if (security != null) {
-            security.checkCreateClassLoader();
-        }
-        return null;
     }
 
     /**
