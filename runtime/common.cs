@@ -269,18 +269,6 @@ namespace IKVM.NativeCode.ikvm.runtime
 #endif
 		}
 
-		private static Assembly GetAssemblyFromClass(jlClass clazz)
-		{
-			TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
-			AssemblyClassLoader_ acl = wrapper.GetClassLoader() as AssemblyClassLoader_;
-			return acl != null ? acl.GetAssembly(wrapper) : null;
-		}
-
-		private static bool IsDynamic(jlClass clazz)
-		{
-			return TypeWrapper.FromClass(clazz) is DynamicTypeWrapper;
-		}
-
 		// NOTE the array may contain duplicates!
 		public static string[] GetPackages(Assembly assembly)
 		{
