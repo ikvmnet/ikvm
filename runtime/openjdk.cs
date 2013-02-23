@@ -2587,15 +2587,15 @@ namespace IKVM.NativeCode.java
 
 			public static object[] getEnclosingMethod0(jlClass thisClass)
 			{
-				TypeWrapper tw = TypeWrapper.FromClass(thisClass);
-				tw.Finish();
-				string[] enc = tw.GetEnclosingMethod();
-				if (enc == null)
-				{
-					return null;
-				}
 				try
 				{
+					TypeWrapper tw = TypeWrapper.FromClass(thisClass);
+					tw.Finish();
+					string[] enc = tw.GetEnclosingMethod();
+					if (enc == null)
+					{
+						return null;
+					}
 					return new object[] { tw.GetClassLoader().LoadClassByDottedName(enc[0]).ClassObject, enc[1], enc[2] == null ? null : enc[2].Replace('.', '/') };
 				}
 				catch (RetargetableJavaException x)
