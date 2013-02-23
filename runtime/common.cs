@@ -234,20 +234,6 @@ namespace IKVM.NativeCode.ikvm.runtime
 			}
 		}
 
-		public static global::java.net.URL GetManifest(Assembly assembly)
-		{
-#if FIRST_PASS
-			return null;
-#else
-			IKVM.Internal.AssemblyClassLoader wrapper = IKVM.Internal.AssemblyClassLoader.FromAssembly(assembly);
-			foreach (global::java.net.URL url in wrapper.FindResources("META-INF/MANIFEST.MF"))
-			{
-				return url;
-			}
-			return null;
-#endif
-		}
-
 		public static global::java.net.URL getResource(Assembly assembly, string name)
 		{
 #if !FIRST_PASS
@@ -269,24 +255,89 @@ namespace IKVM.NativeCode.ikvm.runtime
 #endif
 		}
 
-		// NOTE the array may contain duplicates!
-		public static string[] GetPackages(Assembly assembly)
+#if !FIRST_PASS
+		private static global::java.net.URL GetCodeBase(Assembly assembly)
 		{
-			IKVM.Internal.AssemblyClassLoader wrapper = IKVM.Internal.AssemblyClassLoader.FromAssembly(assembly);
-			string[] packages = new string[0];
-			foreach(Module m in wrapper.MainAssembly.GetModules(false))
+			try
 			{
-				object[] attr = m.GetCustomAttributes(typeof(PackageListAttribute), false);
-				foreach(PackageListAttribute p in attr)
+				return new global::java.net.URL(assembly.CodeBase);
+			}
+			catch (NotSupportedException)
+			{
+			}
+			catch (global::java.net.MalformedURLException)
+			{
+			}
+			return null;
+		}
+
+		private static global::java.util.jar.Manifest GetManifest(global::java.lang.ClassLoader _this)
+		{
+			try
+			{
+				global::java.net.URL url = _this.findResource("META-INF/MANIFEST.MF");
+				if (url != null)
 				{
-					string[] mp = p.GetPackages();
-					string[] tmp = new string[packages.Length + mp.Length];
-					Array.Copy(packages, 0, tmp, 0, packages.Length);
-					Array.Copy(mp, 0, tmp, packages.Length, mp.Length);
-					packages = tmp;
+					return new global::java.util.jar.Manifest(url.openStream());
 				}
 			}
-			return packages;
+			catch (global::java.net.MalformedURLException)
+			{
+			}
+			catch (global::java.io.IOException)
+			{
+			}
+			return null;
+		}
+
+		private static string GetAttributeValue(global::java.util.jar.Attributes.Name name, global::java.util.jar.Attributes first, global::java.util.jar.Attributes second)
+		{
+			string result = null;
+			if (first != null)
+			{
+				result = first.getValue(name);
+			}
+			if (second != null && result == null)
+			{
+				result = second.getValue(name);
+			}
+			return result;
+		}
+#endif
+
+		public static void lazyDefinePackages(global::java.lang.ClassLoader _this)
+		{
+#if !FIRST_PASS
+			AssemblyClassLoader_ wrapper = (AssemblyClassLoader_)ClassLoaderWrapper.GetClassLoaderWrapper(_this);
+			global::java.net.URL sealBase = GetCodeBase(wrapper.MainAssembly);
+			global::java.util.jar.Manifest manifest = GetManifest(_this);
+			global::java.util.jar.Attributes attr = null;
+			if (manifest != null)
+			{
+				attr = manifest.getMainAttributes();
+			}
+			string[] packages = wrapper.GetPackages();
+			for (int i = 0; i < packages.Length; i++)
+			{
+				string name = packages[i];
+				if (_this.getPackage(name) == null)
+				{
+					global::java.util.jar.Attributes entryAttr = null;
+					if (manifest != null)
+					{
+						entryAttr = manifest.getAttributes(name.Replace('.', '/') + '/');
+					}
+					_this.definePackage(name,
+						GetAttributeValue(global::java.util.jar.Attributes.Name.SPECIFICATION_TITLE, entryAttr, attr),
+						GetAttributeValue(global::java.util.jar.Attributes.Name.SPECIFICATION_VERSION, entryAttr, attr),
+						GetAttributeValue(global::java.util.jar.Attributes.Name.SPECIFICATION_VENDOR, entryAttr, attr),
+						GetAttributeValue(global::java.util.jar.Attributes.Name.IMPLEMENTATION_TITLE, entryAttr, attr),
+						GetAttributeValue(global::java.util.jar.Attributes.Name.IMPLEMENTATION_VERSION, entryAttr, attr),
+						GetAttributeValue(global::java.util.jar.Attributes.Name.IMPLEMENTATION_VENDOR, entryAttr, attr),
+						"true".Equals(GetAttributeValue(global::java.util.jar.Attributes.Name.SEALED, entryAttr, attr), StringComparison.OrdinalIgnoreCase) ? sealBase : null);
+				}
+			}
+#endif
 		}
 
 		public static global::java.lang.ClassLoader getAssemblyClassLoader(Assembly asm)

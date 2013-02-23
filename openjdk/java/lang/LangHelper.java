@@ -46,7 +46,7 @@ public class LangHelper
         if (!addedSystemPackages)
         {
             addedSystemPackages = true;
-            String[] pkgs = AssemblyClassLoader.GetPackages(getBootstrapAssembly());
+            String[] pkgs = getBootClassPackages();
             for (int i = 0; i < pkgs.length; i++)
             {
                 pkgMap.put(pkgs[i],
@@ -62,6 +62,8 @@ public class LangHelper
             }
         }
     }
+    
+    private static native String[] getBootClassPackages();
 
     /* this method gets called by Package.getSystemPackage() via a redefined method in map.xml */
     static Package getSystemPackage(Map pkgs, String name)
@@ -82,11 +84,6 @@ public class LangHelper
             return (Package[])pkgs.values().toArray(new Package[pkgs.size()]);
 
         }
-    }
-
-    private static cli.System.Reflection.Assembly getBootstrapAssembly()
-    {
-        return ikvm.runtime.Util.getInstanceTypeFromClass(Object.class).get_Assembly();
     }
 
     public static sun.misc.JavaLangAccess getJavaLangAccess()

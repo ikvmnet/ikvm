@@ -1108,6 +1108,26 @@ namespace IKVM.Internal
 			}
 		}
 
+#if !STATIC_COMPILER && !STUB_GENERATOR
+		internal string[] GetPackages()
+		{
+			string[] packages = new string[0];
+			foreach (Module m in assemblyLoader.Assembly.GetModules(false))
+			{
+				object[] attr = m.GetCustomAttributes(typeof(PackageListAttribute), false);
+				foreach (PackageListAttribute p in attr)
+				{
+					string[] mp = p.GetPackages();
+					string[] tmp = new string[packages.Length + mp.Length];
+					Array.Copy(packages, 0, tmp, 0, packages.Length);
+					Array.Copy(mp, 0, tmp, packages.Length, mp.Length);
+					packages = tmp;
+				}
+			}
+			return packages;
+		}
+#endif
+
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 		private Type GetCustomClassLoaderType()
 		{

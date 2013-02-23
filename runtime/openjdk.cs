@@ -3162,6 +3162,15 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
+		static class LangHelper
+		{
+			// NOTE the array may contain duplicates!
+			public static string[] getBootClassPackages()
+			{
+				return ClassLoaderWrapper.GetBootstrapClassLoader().GetPackages();
+			}
+		}
+
 		static class Package
 		{
 			public static string getSystemPackage0(string name)

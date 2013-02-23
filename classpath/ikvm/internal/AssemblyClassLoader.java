@@ -88,12 +88,6 @@ public final class AssemblyClassLoader extends ClassLoader
     
     private static native Enumeration getResources(Assembly assembly, String name) throws IOException;
 
-    // also used by java.lang.LangHelper
-    @Internal
-    public static native String[] GetPackages(Assembly assembly);
-
-    private static native URL GetManifest(Assembly assembly);
-
     private synchronized void lazyDefinePackagesCheck()
     {
         if(!packagesDefined)
@@ -103,70 +97,7 @@ public final class AssemblyClassLoader extends ClassLoader
         }
     }
 
-    private static String getAttributeValue(Attributes.Name name, Attributes first, Attributes second)
-    {
-        String result = null;
-        if(first != null)
-        {
-            result = first.getValue(name);
-        }
-        if(second != null && result == null)
-        {
-            result = second.getValue(name);
-        }
-        return result;
-    }
-
-    private Manifest getManifest()
-    {
-        try
-        {
-            URL url = GetManifest(assembly);
-            if (url != null)
-            {
-                return new Manifest(url.openStream());
-            }
-        }
-        catch (MalformedURLException _)
-        {
-        }
-        catch (IOException _)
-        {
-        }
-        return null;
-    }
-
-    private void lazyDefinePackages()
-    {
-        URL sealBase = getCodeBase();
-        Manifest manifest = getManifest();
-        Attributes attr = null;
-        if(manifest != null)
-        {
-            attr = manifest.getMainAttributes();
-        }
-        String[] packages = GetPackages(assembly);
-        for(int i = 0; i < packages.length; i++)
-        {
-            String name = packages[i];
-            if(super.getPackage(name) == null)
-            {
-                Attributes entryAttr = null;
-                if(manifest != null)
-                {
-                    entryAttr = manifest.getAttributes(name.replace('.', '/') + '/');
-                }
-                definePackage(name,
-                    getAttributeValue(Attributes.Name.SPECIFICATION_TITLE, entryAttr, attr),
-                    getAttributeValue(Attributes.Name.SPECIFICATION_VERSION, entryAttr, attr),
-                    getAttributeValue(Attributes.Name.SPECIFICATION_VENDOR, entryAttr, attr),
-                    getAttributeValue(Attributes.Name.IMPLEMENTATION_TITLE, entryAttr, attr),
-                    getAttributeValue(Attributes.Name.IMPLEMENTATION_VERSION, entryAttr, attr),
-                    getAttributeValue(Attributes.Name.IMPLEMENTATION_VENDOR, entryAttr, attr),
-                    "true".equalsIgnoreCase(getAttributeValue(Attributes.Name.SEALED, entryAttr, attr)) ? sealBase : null);
-            }
-        }
-    }
+    private native void lazyDefinePackages();
 
     @Override
     protected Package getPackage(String name)
@@ -188,22 +119,6 @@ public final class AssemblyClassLoader extends ClassLoader
         return assembly.get_FullName();
     }
 
-    private URL getCodeBase()
-    {
-        try
-        {
-            if(false) throw new cli.System.NotSupportedException();
-            return new URL(assembly.get_CodeBase());
-        }
-        catch(cli.System.NotSupportedException _)
-        {
-        }
-        catch(MalformedURLException _)
-        {
-        }
-        return null;
-    }
-    
     // return the ClassLoader for the assembly. Note that this doesn't have to be an AssemblyClassLoader.
     public static native ClassLoader getAssemblyClassLoader(Assembly asm);
 }
