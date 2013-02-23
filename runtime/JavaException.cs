@@ -65,9 +65,13 @@ sealed class ClassLoadingException : RetargetableJavaException
 	{
 	}
 
-#if !STATIC_COMPILER && !STUB_GENERATOR
+#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 	internal override Exception ToJava()
 	{
+		if (!(InnerException is java.lang.Error) && !(InnerException is java.lang.RuntimeException))
+		{
+			return new java.lang.NoClassDefFoundError(InnerException.Message).initCause(InnerException);
+		}
 		return InnerException;
 	}
 #endif
@@ -122,7 +126,7 @@ sealed class ClassNotFoundException : RetargetableJavaException
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 	internal override Exception ToJava()
 	{
-		return new java.lang.ClassNotFoundException(Message);
+		return new java.lang.NoClassDefFoundError(Message);
 	}
 #endif
 }

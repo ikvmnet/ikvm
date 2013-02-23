@@ -301,18 +301,9 @@ namespace IKVM.Runtime
 				wrapper.Finish();
 				return wrapper;
 			}
-			catch(ClassNotFoundException x)
-			{
-				throw new java.lang.NoClassDefFoundError(x.Message);
-			}
 			catch(RetargetableJavaException x)
 			{
-				Exception javaException = x.ToJava();
-				if(!(javaException is java.lang.Error))
-				{
-					throw new java.lang.NoClassDefFoundError(javaException.Message).initCause(javaException);
-				}
-				throw javaException;
+				throw x.ToJava();
 			}
 #endif
 		}
@@ -492,18 +483,9 @@ namespace IKVM.Runtime
 				}
 				Interlocked.CompareExchange(ref cache, java.lang.invoke.MethodType.methodType(loader.RetTypeWrapperFromSig(sig).ClassObject, ptypes), null);
 			}
-			catch (ClassNotFoundException x)
-			{
-				throw new java.lang.NoClassDefFoundError(x.Message);
-			}
 			catch (RetargetableJavaException x)
 			{
-				Exception javaException = x.ToJava();
-				if (!(javaException is java.lang.Error))
-				{
-					throw new java.lang.NoClassDefFoundError(javaException.Message).initCause(javaException);
-				}
-				throw javaException;
+				throw x.ToJava();
 			}
 #endif
 		}
@@ -572,18 +554,9 @@ namespace IKVM.Runtime
 						}
 				}
 			}
-			catch (ClassNotFoundException x)
-			{
-				throw new java.lang.NoClassDefFoundError(x.Message);
-			}
 			catch (RetargetableJavaException x)
 			{
-				Exception javaException = x.ToJava();
-				if (!(javaException is java.lang.Error))
-				{
-					throw new java.lang.NoClassDefFoundError(javaException.Message).initCause(javaException);
-				}
-				throw javaException;
+				throw x.ToJava();
 			}
 			catch (java.lang.ReflectiveOperationException x)
 			{

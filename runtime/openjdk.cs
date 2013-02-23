@@ -2427,6 +2427,14 @@ namespace IKVM.NativeCode.java
 						ClassLoaderWrapper classLoaderWrapper = ClassLoaderWrapper.GetClassLoaderWrapper(loader);
 						tw = classLoaderWrapper.LoadClassByDottedName(name);
 					}
+					catch (ClassNotFoundException x)
+					{
+						throw new global::java.lang.ClassNotFoundException(x.Message);
+					}
+					catch (ClassLoadingException x)
+					{
+						throw x.InnerException;
+					}
 					catch (RetargetableJavaException x)
 					{
 						throw x.ToJava();

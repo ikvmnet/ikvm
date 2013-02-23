@@ -215,28 +215,40 @@ namespace IKVM.NativeCode.ikvm.runtime
 
 		public static global::java.lang.Class loadClass(global::java.lang.ClassLoader _this, string name, bool resolve)
 		{
-#if !FIRST_PASS
-			if (!global::java.lang.ClassLoader.checkName(name))
-			{
-				throw new global::java.lang.ClassNotFoundException(name);
-			}
-#endif
+#if FIRST_PASS
+			return null;
+#else
 			try
 			{
+				if (!global::java.lang.ClassLoader.checkName(name))
+				{
+					throw new ClassNotFoundException(name);
+				}
 				AssemblyClassLoader_ wrapper = (AssemblyClassLoader_)ClassLoaderWrapper.GetClassLoaderWrapper(_this);
 				TypeWrapper tw = wrapper.LoadClass(name);
-				if(tw == null)
+				if (tw == null)
 				{
 					throw new ClassNotFoundException(name);
 				}
 				Tracer.Info(Tracer.ClassLoading, "Loaded class \"{0}\" from {1}", name, _this);
 				return tw.ClassObject;
 			}
-			catch(RetargetableJavaException x)
+			catch (ClassNotFoundException x)
+			{
+				Tracer.Info(Tracer.ClassLoading, "Failed to load class \"{0}\" from {1}", name, _this);
+				throw new global::java.lang.ClassNotFoundException(x.Message);
+			}
+			catch (ClassLoadingException x)
+			{
+				Tracer.Info(Tracer.ClassLoading, "Failed to load class \"{0}\" from {1}", name, _this);
+				throw x.InnerException;
+			}
+			catch (RetargetableJavaException x)
 			{
 				Tracer.Info(Tracer.ClassLoading, "Failed to load class \"{0}\" from {1}", name, _this);
 				throw x.ToJava();
 			}
+#endif
 		}
 
 		public static global::java.net.URL getResource(global::java.lang.ClassLoader _this, string name)
