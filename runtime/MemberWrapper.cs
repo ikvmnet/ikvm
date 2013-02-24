@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2012 Jeroen Frijters
+  Copyright (C) 2002-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -356,7 +356,7 @@ namespace IKVM.Internal
 	interface ICustomInvoke
 	{
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-		object Invoke(object obj, object[] args, ikvm.@internal.CallerID callerID);
+		object Invoke(object obj, object[] args);
 #endif
 	}
 

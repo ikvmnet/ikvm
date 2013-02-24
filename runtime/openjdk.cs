@@ -6315,7 +6315,7 @@ namespace IKVM.NativeCode.sun.reflect
 				object retval;
 				try
 				{
-					retval = ((ICustomInvoke)mw).Invoke(obj, args, callerID);
+					retval = ((ICustomInvoke)mw).Invoke(obj, args);
 				}
 				catch (MethodAccessException x)
 				{
@@ -6753,31 +6753,6 @@ namespace IKVM.NativeCode.sun.reflect
 				try
 				{
 					return invoker(obj, args, callerID);
-				}
-				catch (MethodAccessException x)
-				{
-					// this can happen if we're calling a non-public method and the call stack doesn't have ReflectionPermission.MemberAccess
-					throw new jlIllegalAccessException().initCause(x);
-				}
-			}
-		}
-
-		private sealed class ConstructorAccessorImpl : srConstructorAccessor
-		{
-			private readonly MethodWrapper mw;
-
-			internal ConstructorAccessorImpl(jlrConstructor constructor)
-			{
-				mw = MethodWrapper.FromMethodOrConstructor(constructor);
-			}
-
-			[IKVM.Attributes.HideFromJava]
-			public object newInstance(object[] args)
-			{
-				args = ConvertArgs(mw.DeclaringType.GetClassLoader(), mw.GetParameters(), args);
-				try
-				{
-					return ((ICustomInvoke)mw).Invoke(null, args, null);
 				}
 				catch (MethodAccessException x)
 				{
@@ -8172,11 +8147,7 @@ namespace IKVM.NativeCode.sun.reflect
 #else
 			jlrConstructor cons = (jlrConstructor)constructor;
 			MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(constructor);
-			if (mw is ICustomInvoke)
-			{
-				return new ConstructorAccessorImpl(cons);
-			}
-			else if (ActivatorConstructorAccessor.IsSuitable(mw))
+			if (ActivatorConstructorAccessor.IsSuitable(mw))
 			{
 				// we special case public default constructors, because in that case using Activator.CreateInstance()
 				// is almost as fast as FastConstructorAccessorImpl, but it saves us significantly in working set and

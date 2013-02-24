@@ -468,7 +468,7 @@ namespace IKVM.Internal
 			}
 
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-			object ICustomInvoke.Invoke(object obj, object[] args, ikvm.@internal.CallerID callerID)
+			object ICustomInvoke.Invoke(object obj, object[] args)
 			{
 				// a DynamicOnlyMethodWrapper is an interface method, but now that we've been called on an actual object instance,
 				// we can resolve to a real method and call that instead
@@ -482,9 +482,14 @@ namespace IKVM.Internal
 				{
 					throw new java.lang.IllegalAccessError(tw.Name + "." + this.Name + this.Signature);
 				}
+				if (mw.HasCallerID)
+				{
+					// an interface method cannot require a CallerID
+					throw new InvalidOperationException();
+				}
 				java.lang.reflect.Method m = (java.lang.reflect.Method)mw.ToMethodOrConstructor(true);
 				m.@override = true;
-				return m.invoke(obj, args, callerID);
+				return m.invoke(obj, args, null);
 			}
 #endif // !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 		}
@@ -570,7 +575,7 @@ namespace IKVM.Internal
 				}
 
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-				object ICustomInvoke.Invoke(object obj, object[] args, ikvm.@internal.CallerID callerID)
+				object ICustomInvoke.Invoke(object obj, object[] args)
 				{
 					FieldWrapper[] values = this.DeclaringType.GetFields();
 					object[] array = (object[])Array.CreateInstance(this.DeclaringType.TypeAsArrayType, values.Length);
@@ -599,7 +604,7 @@ namespace IKVM.Internal
 				}
 
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-				object ICustomInvoke.Invoke(object obj, object[] args, ikvm.@internal.CallerID callerID)
+				object ICustomInvoke.Invoke(object obj, object[] args)
 				{
 					FieldWrapper[] values = this.DeclaringType.GetFields();
 					for (int i = 0; i < values.Length; i++)
