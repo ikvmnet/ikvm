@@ -1623,16 +1623,7 @@ sealed class Compiler
 						methodArgs.CopyTo(args, 1);
 						if(instr.NormalizedOpCode == NormalizedByteCode.__invokeinterface)
 						{
-							if(method.DeclaringType.IsGhost)
-							{
-								// if we're calling a ghost interface method, we need to make sure that CastInterfaceArgs knows
-								// (cpi.GetClassType() could be an interface that extends the ghost interface)
-								args[0] = method.DeclaringType;
-							}
-							else
-							{
-								args[0] = cpi.GetClassType();
-							}
+							args[0] = method.DeclaringType;
 						}
 						else
 						{
