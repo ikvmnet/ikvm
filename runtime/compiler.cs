@@ -1575,12 +1575,10 @@ sealed class Compiler
 				case NormalizedByteCode.__methodhandle_invokeexact:
 				{
 					bool isinvokespecial = instr.NormalizedOpCode == NormalizedByteCode.__invokespecial || instr.NormalizedOpCode == NormalizedByteCode.__dynamic_invokespecial;
-					ClassFile.ConstantPoolItemMI cpi = classFile.GetMethodref(instr.Arg1);
-					int argcount = cpi.GetArgTypes().Length;
+					MethodWrapper method = GetMethodCallEmitter(classFile.GetMethodref(instr.Arg1), instr.NormalizedOpCode);
+					int argcount = method.GetParameters().Length;
 					TypeWrapper type = ma.GetRawStackTypeWrapper(i, argcount);
-					TypeWrapper thisType = SigTypeToClassName(type, cpi.GetClassType());
-
-					MethodWrapper method = GetMethodCallEmitter(cpi, instr.NormalizedOpCode);
+					TypeWrapper thisType = SigTypeToClassName(type, method.DeclaringType);
 
 					EmitIntrinsicContext eic = new EmitIntrinsicContext(method, context, ilGenerator, ma, i, mw, classFile, code, flags);
 					if(method.IsIntrinsic && method.EmitIntrinsic(eic))
@@ -1597,15 +1595,15 @@ sealed class Compiler
 						// to a more specific base type.
 						if(thisType.IsAssignableTo(cli_System_Object))
 						{
-							method = cli_System_Object.GetMethodWrapper(cpi.Name, cpi.Signature, true);
+							method = cli_System_Object.GetMethodWrapper(method.Name, method.Signature, true);
 						}
 						else if(thisType.IsAssignableTo(cli_System_Exception))
 						{
-							method = cli_System_Exception.GetMethodWrapper(cpi.Name, cpi.Signature, true);
+							method = cli_System_Exception.GetMethodWrapper(method.Name, method.Signature, true);
 						}
 						else if(thisType.IsAssignableTo(java_lang_Throwable))
 						{
-							method = java_lang_Throwable.GetMethodWrapper(cpi.Name, cpi.Signature, true);
+							method = java_lang_Throwable.GetMethodWrapper(method.Name, method.Signature, true);
 						}
 					}
 
