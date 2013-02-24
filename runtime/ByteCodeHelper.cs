@@ -342,123 +342,6 @@ namespace IKVM.Runtime
 			return wrapper.IsInstance(obj);
 		}
 
-		private static MethodWrapper GetMethodWrapper(object thisObj, string clazz, string name, string sig, bool isStatic, ikvm.@internal.CallerID callerId)
-		{
-			TypeWrapper caller = TypeWrapper.FromClass(callerId.getCallerClass());
-			TypeWrapper wrapper = LoadTypeWrapper(clazz, callerId);
-			MethodWrapper mw = wrapper.GetMethodWrapper(name, sig, name != StringConstants.INIT);
-			if(mw == null)
-			{
-				throw new java.lang.NoSuchMethodError(clazz + "." + name + sig);
-			}
-			// TODO check loader constraints
-			if(mw.IsStatic != isStatic)
-			{
-				throw new java.lang.IncompatibleClassChangeError(clazz + "." + name);
-			}
-			TypeWrapper objType = null;
-			if(thisObj != null)
-			{
-				if(!wrapper.IsInstance(thisObj))
-				{
-					throw new java.lang.IncompatibleClassChangeError(clazz + "." + name);
-				}
-				objType = ClassLoaderWrapper.GetWrapperFromType(thisObj.GetType());
-			}
-			if(mw.IsAccessibleFrom(wrapper, caller, objType))
-			{
-				return mw;
-			}
-			throw new java.lang.IllegalAccessError(clazz + "." + name + sig);
-		}
-
-		[DebuggerStepThroughAttribute]
-		public static object DynamicInvokeSpecialNew(string clazz, string name, string sig, object[] args, ikvm.@internal.CallerID callerID)
-		{
-#if FIRST_PASS
-			return null;
-#else
-			Profiler.Count("DynamicInvokeSpecialNew");
-			MethodWrapper mw = GetMethodWrapper(null, clazz, name, sig, false, callerID);
-			if (mw.DeclaringType.IsAbstract)
-			{
-				throw new java.lang.InstantiationError(mw.DeclaringType.Name);
-			}
-			try
-			{
-				java.lang.reflect.Constructor cons = (java.lang.reflect.Constructor)mw.ToMethodOrConstructor(false);
-				return cons.newInstance(BoxArgs(mw, args), callerID);
-			}
-			catch (java.lang.reflect.InvocationTargetException x)
-			{
-				throw x.getCause();
-			}
-#endif
-		}
-
-		[DebuggerStepThroughAttribute]
-		public static object DynamicInvokestatic(string clazz, string name, string sig, object[] args, ikvm.@internal.CallerID callerID)
-		{
-#if FIRST_PASS
-			return null;
-#else
-			Profiler.Count("DynamicInvokestatic");
-			MethodWrapper mw = GetMethodWrapper(null, clazz, name, sig, true, callerID);
-			java.lang.reflect.Method m = (java.lang.reflect.Method)mw.ToMethodOrConstructor(false);
-			try
-			{
-				object val = m.invoke(null, BoxArgs(mw, args), callerID);
-				if (mw.ReturnType.IsPrimitive && mw.ReturnType != PrimitiveTypeWrapper.VOID)
-				{
-					val = JVM.Unbox(val);
-				}
-				return val;
-			}
-			catch (java.lang.reflect.InvocationTargetException x)
-			{
-				throw x.getCause();
-			}
-#endif
-		}
-
-		[DebuggerStepThroughAttribute]
-		public static object DynamicInvokevirtual(object obj, string clazz, string name, string sig, object[] args, ikvm.@internal.CallerID callerID)
-		{
-#if FIRST_PASS
-			return null;
-#else
-			Profiler.Count("DynamicInvokevirtual");
-			MethodWrapper mw = GetMethodWrapper(obj, clazz, name, sig, false, callerID);
-			java.lang.reflect.Method m = (java.lang.reflect.Method)mw.ToMethodOrConstructor(false);
-			try
-			{
-				object val = m.invoke(obj, BoxArgs(mw, args), callerID);
-				if (mw.ReturnType.IsPrimitive && mw.ReturnType != PrimitiveTypeWrapper.VOID)
-				{
-					val = JVM.Unbox(val);
-				}
-				return val;
-			}
-			catch (java.lang.reflect.InvocationTargetException x)
-			{
-				throw x.getCause();
-			}
-#endif
-		}
-
-		private static object[] BoxArgs(MethodWrapper mw, object[] args)
-		{
-			TypeWrapper[] paramTypes = mw.GetParameters();
-			for (int i = 0; i < paramTypes.Length; i++)
-			{
-				if (paramTypes[i].IsPrimitive)
-				{
-					args[i] = JVM.Box(args[i]);
-				}
-			}
-			return args;
-		}
-
 		[DebuggerStepThrough]
 		public static java.lang.invoke.MethodType DynamicLoadMethodType(ref java.lang.invoke.MethodType cache, string sig, ikvm.@internal.CallerID callerID)
 		{
@@ -561,6 +444,38 @@ namespace IKVM.Runtime
 			catch (java.lang.ReflectiveOperationException x)
 			{
 				throw new java.lang.IncompatibleClassChangeError().initCause(x);
+			}
+#endif
+		}
+
+		[DebuggerStepThrough]
+		public static T DynamicBinderMemberLookup<T>(int kind, string clazz, string name, string sig, ikvm.@internal.CallerID callerID)
+			where T : class /* delegate */
+		{
+#if FIRST_PASS
+			return null;
+#else
+			try
+			{
+				java.lang.invoke.MethodHandle mh = DynamicLoadMethodHandleImpl(kind, clazz, name, sig, callerID);
+				return mh.vmtarget as T
+					?? (T)mh.asType(MethodHandleUtil.GetDelegateMethodType(typeof(T))).vmtarget;
+			}
+			catch (java.lang.IncompatibleClassChangeError x)
+			{
+				if (x.getCause() is java.lang.NoSuchMethodException)
+				{
+					throw new java.lang.NoSuchMethodError(x.getCause().Message);
+				}
+				if (x.getCause() is java.lang.NoSuchFieldException)
+				{
+					throw new java.lang.NoSuchFieldError(x.getCause().Message);
+				}
+				if (x.getCause() is java.lang.IllegalAccessException)
+				{
+					throw new java.lang.IllegalAccessError(x.getCause().Message);
+				}
+				throw;
 			}
 #endif
 		}
