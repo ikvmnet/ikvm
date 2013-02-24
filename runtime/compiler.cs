@@ -462,7 +462,7 @@ sealed class Compiler
 		this.ilGenerator = ilGenerator;
 		this.debug = classLoader.EmitDebugInfo;
 		this.strictfp = m.IsStrictfp;
-		if(ReferenceEquals(mw.Name, StringConstants.INIT))
+		if(mw.IsConstructor)
 		{
 			MethodWrapper finalize = clazz.GetMethodWrapper(StringConstants.FINALIZE, StringConstants.SIG_VOID, true);
 			keepAlive = finalize != null && finalize.DeclaringType != java_lang_Object && finalize.DeclaringType != cli_System_Object && finalize.DeclaringType != java_lang_Throwable && finalize.DeclaringType != cli_System_Exception;
@@ -1611,7 +1611,7 @@ sealed class Compiler
 
 					// if the stack values don't match the argument types (for interface argument types)
 					// we must emit code to cast the stack value to the interface type
-					if(isinvokespecial && ReferenceEquals(cpi.Name, StringConstants.INIT) && VerifierTypeWrapper.IsNew(type))
+					if(isinvokespecial && method.IsConstructor && VerifierTypeWrapper.IsNew(type))
 					{
 						CastInterfaceArgs(method.DeclaringType, method.GetParameters(), i, false);
 					}
@@ -1641,7 +1641,7 @@ sealed class Compiler
 						CastInterfaceArgs(method.DeclaringType, args, i, true);
 					}
 
-					if(isinvokespecial && ReferenceEquals(cpi.Name, StringConstants.INIT))
+					if(isinvokespecial && method.IsConstructor)
 					{
 						if(VerifierTypeWrapper.IsNew(type))
 						{
@@ -3551,7 +3551,7 @@ sealed class Compiler
 			{
 				ClassFile.ConstantPoolItemMI cpi = classFile.GetMethodref(code[index].Arg1);
 				MethodWrapper mw = cpi.GetMethodForInvokespecial();
-				return mw.Name != StringConstants.INIT || mw.DeclaringType != tw;
+				return !mw.IsConstructor || mw.DeclaringType != tw;
 			}
 			if ((flags[index] & InstructionFlags.BranchTarget) != 0
 				|| ByteCodeMetaData.IsBranch(code[index].NormalizedOpCode)

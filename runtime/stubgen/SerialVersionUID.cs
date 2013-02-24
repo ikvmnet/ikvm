@@ -141,7 +141,7 @@ namespace IKVM.StubGen
 			List<MethodWrapper> list = new List<MethodWrapper>();
 			foreach (MethodWrapper mw in tw.GetMethods())
 			{
-				if (mw.Name == StringConstants.INIT && !mw.IsHideFromReflection && !mw.IsPrivate)
+				if (mw.IsConstructor && !mw.IsHideFromReflection && !mw.IsPrivate)
 				{
 					list.Add(mw);
 				}
@@ -161,7 +161,7 @@ namespace IKVM.StubGen
 			List<MethodWrapper> list = new List<MethodWrapper>();
 			foreach (MethodWrapper mw in tw.GetMethods())
 			{
-				if (mw.Name != StringConstants.INIT && !mw.IsHideFromReflection && !mw.IsPrivate)
+				if (!mw.IsConstructor && !mw.IsHideFromReflection && !mw.IsPrivate)
 				{
 					list.Add(mw);
 				}

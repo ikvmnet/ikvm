@@ -476,7 +476,7 @@ namespace IKVM.Internal
 					parameterTypes[i] = argTypes[i].EnsureLoadable(loader).ClassObject;
 				}
 				java.lang.Class[] checkedExceptions = GetExceptions();
-				if (this.Name == StringConstants.INIT)
+				if (this.IsConstructor)
 				{
 					method = new java.lang.reflect.Constructor(
 						this.DeclaringType.ClassObject,
@@ -786,7 +786,7 @@ namespace IKVM.Internal
 #if FIRST_PASS
 			return null;
 #else
-			if (ReferenceEquals(Name, StringConstants.INIT))
+			if (IsConstructor)
 			{
 				java.lang.reflect.Constructor cons = (java.lang.reflect.Constructor)ToMethodOrConstructor(false);
 				if (obj == null)
@@ -1006,6 +1006,11 @@ namespace IKVM.Internal
 		internal virtual bool IsOptionalAttributeAnnotationValue
 		{
 			get { return false; }
+		}
+
+		internal bool IsConstructor
+		{
+			get { return (object)Name == (object)StringConstants.INIT; }
 		}
 	}
 
