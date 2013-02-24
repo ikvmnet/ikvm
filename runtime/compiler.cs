@@ -3109,7 +3109,7 @@ sealed class Compiler
 			ClassFile.ConstantPoolItemMI cpiMI;
 			if (mw == null && (cpiMI = mh.MemberConstantPoolItem as ClassFile.ConstantPoolItemMI) != null)
 			{
-				mw = new DynamicMethodWrapper(compiler.context, compiler.clazz, cpiMI, Modifiers.Public | Modifiers.Static);
+				mw = new DynamicMethodWrapper(compiler.context, cpiMI, Modifiers.Public | Modifiers.Static);
 			}
 			if (mw == null || !mw.IsStatic)
 			{
@@ -3878,14 +3878,12 @@ sealed class Compiler
 	private sealed class DynamicMethodWrapper : MethodWrapper
 	{
 		private readonly DynamicTypeWrapper.FinishContext context;
-		private readonly TypeWrapper wrapper;
 		private readonly ClassFile.ConstantPoolItemMI cpi;
 
-		internal DynamicMethodWrapper(DynamicTypeWrapper.FinishContext context, TypeWrapper wrapper, ClassFile.ConstantPoolItemMI cpi, Modifiers modifiers)
-			: base(wrapper, cpi.Name, cpi.Signature, null, cpi.GetRetType(), cpi.GetArgTypes(), modifiers, MemberFlags.None)
+		internal DynamicMethodWrapper(DynamicTypeWrapper.FinishContext context, ClassFile.ConstantPoolItemMI cpi, Modifiers modifiers)
+			: base(cpi.GetClassType(), cpi.Name, cpi.Signature, null, cpi.GetRetType(), cpi.GetArgTypes(), modifiers, MemberFlags.None)
 		{
 			this.context = context;
-			this.wrapper = wrapper;
 			this.cpi = cpi;
 		}
 
@@ -3970,7 +3968,7 @@ sealed class Compiler
 			case NormalizedByteCode.__dynamic_invokestatic:
 			case NormalizedByteCode.__dynamic_invokevirtual:
 			case NormalizedByteCode.__dynamic_invokespecial:
-				return new DynamicMethodWrapper(context, clazz, cpi, Modifiers.Public);
+				return new DynamicMethodWrapper(context, cpi, Modifiers.Public);
 			case NormalizedByteCode.__methodhandle_invoke:
 				return new MethodHandleMethodWrapper(context, clazz, cpi, false);
 			case NormalizedByteCode.__methodhandle_invokeexact:
@@ -3980,7 +3978,7 @@ sealed class Compiler
 		}
 		if(mw.IsDynamicOnly)
 		{
-			return new DynamicMethodWrapper(context, clazz, cpi, mw.Modifiers);
+			return new DynamicMethodWrapper(context, cpi, mw.Modifiers);
 		}
 		return mw;
 	}
