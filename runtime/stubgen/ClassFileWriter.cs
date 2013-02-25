@@ -628,6 +628,51 @@ namespace IKVM.StubGen
 					}
 				}
 			}
+			else if (val is bool)
+			{
+				bes.WriteByte((byte)'Z');
+				bes.WriteUInt16(classFile.AddInt((bool)val ? 1 : 0));
+			}
+			else if (val is byte)
+			{
+				bes.WriteByte((byte)'B');
+				bes.WriteUInt16(classFile.AddInt((byte)val));
+			}
+			else if (val is char)
+			{
+				bes.WriteByte((byte)'C');
+				bes.WriteUInt16(classFile.AddInt((char)val));
+			}
+			else if (val is short)
+			{
+				bes.WriteByte((byte)'S');
+				bes.WriteUInt16(classFile.AddInt((short)val));
+			}
+			else if (val is int)
+			{
+				bes.WriteByte((byte)'I');
+				bes.WriteUInt16(classFile.AddInt((int)val));
+			}
+			else if (val is long)
+			{
+				bes.WriteByte((byte)'J');
+				bes.WriteUInt16(classFile.AddLong((long)val));
+			}
+			else if (val is float)
+			{
+				bes.WriteByte((byte)'F');
+				bes.WriteUInt16(classFile.AddFloat((float)val));
+			}
+			else if (val is double)
+			{
+				bes.WriteByte((byte)'D');
+				bes.WriteUInt16(classFile.AddDouble((double)val));
+			}
+			else if (val is string)
+			{
+				bes.WriteByte((byte)'s');
+				bes.WriteUInt16(classFile.AddUtf8((string)val));
+			}
 		}
 
 		public override void Write(BigEndianStream bes)
