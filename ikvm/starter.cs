@@ -251,7 +251,7 @@ public class Starter
                 }
                 else if (arg.StartsWith("-Xreference:"))
                 {
-                    Startup.addBootClassPathAssemby(Assembly.LoadFrom(arg.Substring(12)));
+                    Startup.addBootClassPathAssembly(Assembly.LoadFrom(arg.Substring(12)));
                 }
                 else if (arg == "-Xnoglobbing")
                 {

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2006-2011 Jeroen Frijters
+  Copyright (C) 2006-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -26,11 +26,14 @@ package ikvm.runtime;
 
 import cli.System.Collections.ArrayList;
 import cli.System.Collections.ICollection;
+import cli.System.ComponentModel.EditorBrowsableAttribute;
+import cli.System.ComponentModel.EditorBrowsableState;
 import cli.System.Environment;
 import cli.System.InvalidOperationException;
 import cli.System.IO.DirectoryInfo;
 import cli.System.IO.FileSystemInfo;
 import cli.System.IO.Path;
+import cli.System.ObsoleteAttribute;
 import cli.System.Reflection.Assembly;
 import cli.System.Reflection.AssemblyTitleAttribute;
 import cli.System.Reflection.AssemblyCopyrightAttribute;
@@ -171,5 +174,14 @@ public final class Startup
         return "";
     }
 
-    public static native void addBootClassPathAssemby(Assembly assembly);
+    // note the stupid typo, this exists for compatibility
+    @EditorBrowsableAttribute.Annotation(EditorBrowsableState.__Enum.Never)
+    @ObsoleteAttribute.Annotation("Please use the version without the typo.")
+    @Deprecated
+    public static void addBootClassPathAssemby(Assembly assembly)
+    {
+        addBootClassPathAssembly(assembly);
+    }
+
+    public static native void addBootClassPathAssembly(Assembly assembly);
 }

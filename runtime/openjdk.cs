@@ -344,7 +344,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 #endif
 		}
 
-		public static void addBootClassPathAssemby(Assembly asm)
+		public static void addBootClassPathAssembly(Assembly asm)
 		{
 			ClassLoaderWrapper.GetBootstrapClassLoader().AddDelegate(global::IKVM.Internal.AssemblyClassLoader.FromAssembly(asm));
 		}
