@@ -4646,52 +4646,46 @@ namespace IKVM.Internal
 
 		internal sealed class CompiledAnnotation : Annotation
 		{
-			private readonly Type type;
+			private readonly ConstructorInfo constructor;
 
 			internal CompiledAnnotation(Type type)
 			{
-				this.type = type;
+				constructor = type.GetConstructor(new Type[] { JVM.Import(typeof(object[])) });
 			}
 
-			private CustomAttributeBuilder MakeCustomAttributeBuilder(object annotation)
+			private CustomAttributeBuilder MakeCustomAttributeBuilder(ClassLoaderWrapper loader, object annotation)
 			{
-				return new CustomAttributeBuilder(type.GetConstructor(new Type[] { JVM.Import(typeof(object[])) }), new object[] { annotation });
+				return new CustomAttributeBuilder(constructor, new object[] { QualifyClassNames(loader, annotation) });
 			}
 
 			internal override void Apply(ClassLoaderWrapper loader, TypeBuilder tb, object annotation)
 			{
-				annotation = QualifyClassNames(loader, annotation);
-				tb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
+				tb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
 			}
 
 			internal override void Apply(ClassLoaderWrapper loader, MethodBuilder mb, object annotation)
 			{
-				annotation = QualifyClassNames(loader, annotation);
-				mb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
+				mb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
 			}
 
 			internal override void Apply(ClassLoaderWrapper loader, FieldBuilder fb, object annotation)
 			{
-				annotation = QualifyClassNames(loader, annotation);
-				fb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
+				fb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
 			}
 
 			internal override void Apply(ClassLoaderWrapper loader, ParameterBuilder pb, object annotation)
 			{
-				annotation = QualifyClassNames(loader, annotation);
-				pb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
+				pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
 			}
 
 			internal override void Apply(ClassLoaderWrapper loader, AssemblyBuilder ab, object annotation)
 			{
-				annotation = QualifyClassNames(loader, annotation);
-				ab.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
+				ab.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
 			}
 
 			internal override void Apply(ClassLoaderWrapper loader, PropertyBuilder pb, object annotation)
 			{
-				annotation = QualifyClassNames(loader, annotation);
-				pb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
+				pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
 			}
 
 			internal override bool IsCustomAttribute
