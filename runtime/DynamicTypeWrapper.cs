@@ -2180,13 +2180,17 @@ namespace IKVM.Internal
 					attributeTypeBuilder.CreateType();
 				}
 
+				private CustomAttributeBuilder MakeCustomAttributeBuilder(ClassLoaderWrapper loader, object annotation)
+				{
+					return new CustomAttributeBuilder(defineConstructor.__AsConstructorInfo(), new object[] { QualifyClassNames(loader, annotation) });
+				}
+
 				internal override void Apply(ClassLoaderWrapper loader, TypeBuilder tb, object annotation)
 				{
 					Link();
 					if (annotationTypeBuilder != null)
 					{
-						annotation = QualifyClassNames(loader, annotation);
-						tb.SetCustomAttribute(new CustomAttributeBuilder(defineConstructor.__AsConstructorInfo(), new object[] { annotation }));
+						tb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
 					}
 				}
 
@@ -2195,8 +2199,7 @@ namespace IKVM.Internal
 					Link();
 					if (annotationTypeBuilder != null)
 					{
-						annotation = QualifyClassNames(loader, annotation);
-						mb.SetCustomAttribute(new CustomAttributeBuilder(defineConstructor.__AsConstructorInfo(), new object[] { annotation }));
+						mb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
 					}
 				}
 
@@ -2205,8 +2208,7 @@ namespace IKVM.Internal
 					Link();
 					if (annotationTypeBuilder != null)
 					{
-						annotation = QualifyClassNames(loader, annotation);
-						fb.SetCustomAttribute(new CustomAttributeBuilder(defineConstructor.__AsConstructorInfo(), new object[] { annotation }));
+						fb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
 					}
 				}
 
@@ -2215,8 +2217,7 @@ namespace IKVM.Internal
 					Link();
 					if (annotationTypeBuilder != null)
 					{
-						annotation = QualifyClassNames(loader, annotation);
-						pb.SetCustomAttribute(new CustomAttributeBuilder(defineConstructor.__AsConstructorInfo(), new object[] { annotation }));
+						pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
 					}
 				}
 
@@ -2225,8 +2226,7 @@ namespace IKVM.Internal
 					Link();
 					if (annotationTypeBuilder != null)
 					{
-						annotation = QualifyClassNames(loader, annotation);
-						ab.SetCustomAttribute(new CustomAttributeBuilder(defineConstructor.__AsConstructorInfo(), new object[] { annotation }));
+						ab.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
 					}
 				}
 
@@ -2235,8 +2235,7 @@ namespace IKVM.Internal
 					Link();
 					if (annotationTypeBuilder != null)
 					{
-						annotation = QualifyClassNames(loader, annotation);
-						pb.SetCustomAttribute(new CustomAttributeBuilder(defineConstructor.__AsConstructorInfo(), new object[] { annotation }));
+						pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
 					}
 				}
 
