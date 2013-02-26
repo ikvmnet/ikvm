@@ -862,7 +862,7 @@ namespace IKVM.Internal
 						AttributeHelper.SetInnerClass(typeBuilder, null, outerClass.accessFlags);
 					}
 					AttributeHelper.SetImplementsAttribute(typeBuilder, interfaces);
-					if (classFile.DeprecatedAttribute)
+					if (classFile.DeprecatedAttribute && !Annotation.HasObsoleteAttribute(classFile.Annotations))
 					{
 						AttributeHelper.SetDeprecatedAttribute(typeBuilder);
 					}
@@ -1501,7 +1501,7 @@ namespace IKVM.Internal
 					{
 						AttributeHelper.SetModifiers(field, fld.Modifiers, fld.IsInternal);
 					}
-					if (fld.DeprecatedAttribute)
+					if (fld.DeprecatedAttribute && !Annotation.HasObsoleteAttribute(fld.Annotations))
 					{
 						AttributeHelper.SetDeprecatedAttribute(field);
 					}
@@ -2826,7 +2826,7 @@ namespace IKVM.Internal
 						AttributeHelper.SetEditorBrowsableNever(method);
 						// TODO on WHIDBEY apply CompilerGeneratedAttribute
 					}
-					if (m.DeprecatedAttribute)
+					if (m.DeprecatedAttribute && !Annotation.HasObsoleteAttribute(m.Annotations))
 					{
 						AttributeHelper.SetDeprecatedAttribute(method);
 					}

@@ -1553,6 +1553,21 @@ namespace IKVM.Internal
 			return false;
 		}
 
+		internal static bool HasObsoleteAttribute(object[] annotations)
+		{
+			if (annotations != null)
+			{
+				foreach (object[] def in annotations)
+				{
+					if (def[1].Equals("Lcli/System/ObsoleteAttribute$Annotation;"))
+					{
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
 		protected static object QualifyClassNames(ClassLoaderWrapper loader, object annotation)
 		{
 			bool copy = false;
