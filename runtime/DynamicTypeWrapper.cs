@@ -1929,9 +1929,13 @@ namespace IKVM.Internal
 						{
 							argType = Types.Type;
 						}
-						else if (tw.EnumType != null)
+						else if (tw.EnumType != null)	// is it a Java enum?
 						{
 							argType = tw.EnumType;
+						}
+						else if (IsDotNetEnum(tw))
+						{
+							argType = tw.DeclaringTypeWrapper.TypeAsSignatureType;
 						}
 						else
 						{
@@ -1943,6 +1947,11 @@ namespace IKVM.Internal
 						}
 						return argType;
 					}
+				}
+
+				private static bool IsDotNetEnum(TypeWrapper tw)
+				{
+					return tw.IsFakeNestedType && (tw.Modifiers & Modifiers.Enum) != 0;
 				}
 
 				internal string AttributeTypeName
@@ -1967,9 +1976,13 @@ namespace IKVM.Internal
 					{
 						ilgen.Emit(OpCodes.Box, tw.TypeAsSignatureType);
 					}
-					else if (tw.EnumType != null)
+					else if (tw.EnumType != null)	// is it a Java enum?
 					{
 						ilgen.Emit(OpCodes.Box, tw.EnumType);
+					}
+					else if (IsDotNetEnum(tw))
+					{
+						ilgen.Emit(OpCodes.Box, tw.DeclaringTypeWrapper.TypeAsSignatureType);
 					}
 					MethodWrapper setValueMethod = annotationAttributeBaseType.GetMethodWrapper("setValue", "(Ljava.lang.String;Ljava.lang.Object;)V", false);
 					setValueMethod.Link();
