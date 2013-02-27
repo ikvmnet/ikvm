@@ -29,7 +29,7 @@ assembly.class
     -exclude:exclude.lst
     -resource:META-INF/MANIFEST.MF=MANIFEST.MF
     -resource:java/lang/uniName.dat=@OPENJDK7@/build/linux-amd64/classes/java/lang/uniName.dat
-    -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/sun/net/idn/uidna.spp
+    -resource:sun/net/idn/uidna.spp=@OPENJDK7@/build/linux-amd64/classes/sun/net/idn/uidna.spp
     ikvm/internal/*.class
     java/io/*.class
     java/lang/*.class
