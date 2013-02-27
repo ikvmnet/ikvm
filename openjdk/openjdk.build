@@ -5,6 +5,8 @@
     <property overwrite="false" name="signoption" value="" />
     <property overwrite="false" name="SkipSystemCoreDependency" value="false" />
     <property name="OPENJDK_VERSION" value="OpenJDK 7u6 b24" />
+    <property name="IMPLEMENTATION_VERSION" value="1.7.0_6" />
+    <property name="SPECIFICATION_VERSION" value="1.7" />
     <property name="OpenJDK7.dir" value="${project::get-base-directory()}/../../openjdk-7u6-b24" />
     <if test="${platform::is-win32()}">
         <property name="pathsep" value=";" />
@@ -198,7 +200,18 @@
         </copy>
     </target>
 
-    <target name="core" depends="version response.gen.txt">
+    <target name="MANIFEST.MF">
+        <copy file="MANIFEST.MF.in" tofile="MANIFEST.MF" outputencoding="ascii" overwrite="true">
+            <filterchain>
+                <replacetokens>
+                    <token key="IMPLEMENTATION_VERSION" value="${IMPLEMENTATION_VERSION}" />
+                    <token key="SPECIFICATION_VERSION" value="${SPECIFICATION_VERSION}" />
+                </replacetokens>
+            </filterchain>
+        </copy>
+    </target>
+    
+    <target name="core" depends="version response.gen.txt MANIFEST.MF">
         <copy file="../bin/IKVM.Runtime.dll" todir="." />
         <copy file="../bin/IKVM.AWT.WinForms.dll" todir="." />
         <exec program="${project::get-base-directory()}/../bin/ikvmc.exe" useruntimeengine="true">

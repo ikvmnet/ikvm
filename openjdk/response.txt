@@ -1,5 +1,5 @@
 #
-#  Copyright (C) 2002-2012 Jeroen Frijters
+#  Copyright (C) 2002-2013 Jeroen Frijters
 #
 #  This software is provided 'as-is', without any express or implied
 #  warranty.  In no event will the authors be held liable for any damages
@@ -27,8 +27,8 @@ assembly.class
     -baseaddress:0x56000000
     -remap:map.xml
     -exclude:exclude.lst
+    -resource:META-INF/MANIFEST.MF=MANIFEST.MF
     -resource:java/lang/uniName.dat=@OPENJDK7@/build/linux-amd64/classes/java/lang/uniName.dat
-    -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/MANIFEST.MF
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/sun/net/idn/uidna.spp
     ikvm/internal/*.class
     java/io/*.class
