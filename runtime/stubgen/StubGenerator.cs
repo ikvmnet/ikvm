@@ -252,7 +252,7 @@ namespace IKVM.StubGen
 						{
 							attr = new RuntimeVisibleAnnotationsAttribute(writer);
 						}
-						attr.Add(UnpackArray((IList<CustomAttributeTypedArgument>)cad.ConstructorArguments[0].Value));
+						attr.Add(ann);
 					}
 				}
 				if (attr != null)
@@ -290,7 +290,7 @@ namespace IKVM.StubGen
 								}
 								param = new RuntimeVisibleAnnotationsAttribute(writer);
 							}
-							param.Add(UnpackArray((IList<CustomAttributeTypedArgument>)cad.ConstructorArguments[0].Value));
+							param.Add(ann);
 						}
 					}
 					if (attr != null)
@@ -310,12 +310,83 @@ namespace IKVM.StubGen
 		private static object[] GetAnnotation(CustomAttributeData cad)
 		{
 			if (cad.ConstructorArguments.Count == 1 && cad.ConstructorArguments[0].ArgumentType == typeof(object[]) &&
-				(cad.Constructor.DeclaringType.IsSubclassOf(JVM.Import(typeof(ikvm.@internal.AnnotationAttributeBase)))
-				|| cad.Constructor.DeclaringType == JVM.Import(typeof(DynamicAnnotationAttribute))))
+				(cad.Constructor.DeclaringType.BaseType == typeof(ikvm.@internal.AnnotationAttributeBase)
+				|| cad.Constructor.DeclaringType == typeof(DynamicAnnotationAttribute)))
 			{
 				return UnpackArray((IList<CustomAttributeTypedArgument>)cad.ConstructorArguments[0].Value);
 			}
+			else if (cad.Constructor.DeclaringType.BaseType == typeof(ikvm.@internal.AnnotationAttributeBase))
+			{
+				string annotationType = GetAnnotationInterface(cad);
+				if (annotationType != null)
+				{
+					// this is a custom attribute annotation applied in a non-Java module
+					List<object> list = new List<object>();
+					list.Add(AnnotationDefaultAttribute.TAG_ANNOTATION);
+					list.Add("L" + annotationType.Replace('.', '/') + ";");
+					ParameterInfo[] parameters = cad.Constructor.GetParameters();
+					for (int i = 0; i < parameters.Length; i++)
+					{
+						list.Add(parameters[i].Name);
+						list.Add(EncodeAnnotationValue(cad.ConstructorArguments[i]));
+					}
+					foreach (CustomAttributeNamedArgument arg in cad.NamedArguments)
+					{
+						list.Add(arg.MemberInfo.Name);
+						list.Add(EncodeAnnotationValue(arg.TypedValue));
+					}
+					return list.ToArray();
+				}
+			}
 			return null;
+		}
+
+		private static string GetAnnotationInterface(CustomAttributeData cad)
+		{
+			object[] attr = cad.Constructor.DeclaringType.GetCustomAttributes(typeof(IKVM.Attributes.ImplementsAttribute), false);
+			if (attr.Length == 1)
+			{
+				string[] interfaces = ((IKVM.Attributes.ImplementsAttribute)attr[0]).Interfaces;
+				if (interfaces.Length == 1)
+				{
+					return interfaces[0];
+				}
+			}
+			return null;
+		}
+
+		private static object EncodeAnnotationValue(CustomAttributeTypedArgument arg)
+		{
+			if (arg.ArgumentType.IsEnum)
+			{
+				// if GetWrapperFromType returns null, we've got an ikvmc synthesized .NET enum nested inside a Java enum
+				TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(arg.ArgumentType) ?? ClassLoaderWrapper.GetWrapperFromType(arg.ArgumentType.DeclaringType);
+				return new object[] { AnnotationDefaultAttribute.TAG_ENUM, EncodeTypeName(tw), Enum.GetName(arg.ArgumentType, arg.Value) };
+			}
+			else if (arg.Value is Type)
+			{
+				return new object[] { AnnotationDefaultAttribute.TAG_CLASS, EncodeTypeName(ClassLoaderWrapper.GetWrapperFromType((Type)arg.Value)) };
+			}
+			else if (arg.ArgumentType.IsArray)
+			{
+				IList<CustomAttributeTypedArgument> array = (IList<CustomAttributeTypedArgument>)arg.Value;
+				object[] arr = new object[array.Count + 1];
+				arr[0] = AnnotationDefaultAttribute.TAG_ARRAY;
+				for (int i = 0; i < array.Count; i++)
+				{
+					arr[i + 1] = EncodeAnnotationValue(array[i]);
+				}
+				return arr;
+			}
+			else
+			{
+				return arg.Value;
+			}
+		}
+
+		private static string EncodeTypeName(TypeWrapper tw)
+		{
+			return tw.SigName.Replace('.', '/');
 		}
 #endif
 
