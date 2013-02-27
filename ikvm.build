@@ -63,12 +63,9 @@
                 <include name="openjdk/**.class" />
                 <include name="runtime/*.dll" />
                 <include name="runtime/*.jar" />
-                <include name="tools/asmref.exe" />
-                <include name="tools/depcheck.exe" />
-                <include name="tools/pubkey.exe" />
+                <include name="tools/*.exe" />
+                <include name="tools/*.dll" />
                 <include name="tools/pubkey.txt" />
-                <include name="tools/updbaseaddresses.exe" />
-                <include name="tools/writeappconfig.exe" />
             </fileset>
         </delete>
     </target>
