@@ -39,6 +39,25 @@ namespace IKVM.Internal
 				|| String.CompareOrdinal(path, 0, RootPath, 0, RootPath.Length) == 0;
 		}
 
+		internal static string GetAssemblyClassesPath(Assembly asm)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			// we can't use java.io.File.separatorChar here, because we're invoked by the system property setup code
+			return RootPath + "assembly" + System.IO.Path.DirectorySeparatorChar + VfsAssembliesDirectory.GetName(asm) + System.IO.Path.DirectorySeparatorChar + "classes" + System.IO.Path.DirectorySeparatorChar;
+#endif
+		}
+
+		internal static string GetAssemblyResourcesPath(Assembly asm)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			return RootPath + "assembly" + System.IO.Path.DirectorySeparatorChar + VfsAssembliesDirectory.GetName(asm) + System.IO.Path.DirectorySeparatorChar + "resources" + System.IO.Path.DirectorySeparatorChar;
+#endif
+		}
+
 #if !FIRST_PASS
 		private static VfsDirectory root;
 
@@ -108,25 +127,6 @@ namespace IKVM.Internal
 					return list;
 				}
 			}
-		}
-
-		internal static string GetAssemblyClassesPath(Assembly asm)
-		{
-#if FIRST_PASS
-			return null;
-#else
-			// we can't use java.io.File.separatorChar here, because we're invoked by the system property setup code
-			return RootPath + "assembly" + System.IO.Path.DirectorySeparatorChar + VfsAssembliesDirectory.GetName(asm) + System.IO.Path.DirectorySeparatorChar + "classes" + System.IO.Path.DirectorySeparatorChar;
-#endif
-		}
-
-		internal static string GetAssemblyResourcesPath(Assembly asm)
-		{
-#if FIRST_PASS
-			return null;
-#else
-			return RootPath + "assembly" + System.IO.Path.DirectorySeparatorChar + VfsAssembliesDirectory.GetName(asm) + System.IO.Path.DirectorySeparatorChar + "resources" + System.IO.Path.DirectorySeparatorChar;
-#endif
 		}
 
 		private sealed class VfsAssembliesDirectory : VfsDirectory
