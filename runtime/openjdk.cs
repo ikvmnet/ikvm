@@ -3170,27 +3170,38 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		static class LangHelper
-		{
-			// NOTE the array may contain duplicates!
-			public static string[] getBootClassPackages()
-			{
-				return ClassLoaderWrapper.GetBootstrapClassLoader().GetPackages();
-			}
-		}
-
 		static class Package
 		{
+			private static Dictionary<string, string> systemPackages;
+
+			private static void LazyInitSystemPackages()
+			{
+				if (systemPackages == null)
+				{
+					Dictionary<string, string> dict = new Dictionary<string, string>();
+					string path = VirtualFileSystem.GetAssemblyResourcesPath(JVM.CoreAssembly) + "resources.jar";
+					foreach (string pkg in ClassLoaderWrapper.GetBootstrapClassLoader().GetPackages())
+					{
+						dict[pkg.Replace('.', '/') + "/"] = path;
+					}
+					Interlocked.CompareExchange(ref systemPackages, dict, null);
+				}
+			}
+
 			public static string getSystemPackage0(string name)
 			{
-				// this method is not implemented because we redirect Package.getSystemPackage() to our implementation in LangHelper
-				throw new NotImplementedException();
+				LazyInitSystemPackages();
+				string path;
+				systemPackages.TryGetValue(name, out path);
+				return path;
 			}
 
 			public static string[] getSystemPackages0()
 			{
-				// this method is not implemented because we redirect Package.getSystemPackages() to our implementation in LangHelper
-				throw new NotImplementedException();
+				LazyInitSystemPackages();
+				string[] pkgs = new string[systemPackages.Count];
+				systemPackages.Keys.CopyTo(pkgs, 0);
+				return pkgs;
 			}
 		}
 

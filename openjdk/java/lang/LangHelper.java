@@ -24,68 +24,12 @@
 
 package java.lang;
 
-import ikvm.runtime.AssemblyClassLoader;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.security.AccessController;
-import java.util.Enumeration;
-import java.util.Map;
 import sun.nio.ch.Interruptible;
 import sun.reflect.annotation.AnnotationType;
-import sun.security.action.GetPropertyAction;
 
 @ikvm.lang.Internal
 public class LangHelper
 {
-    private static boolean addedSystemPackages;
-
-    private static void addSystemPackage(Map pkgMap)
-    {
-        // NOTE caller must have acquired lock on pkgMap
-        if (!addedSystemPackages)
-        {
-            addedSystemPackages = true;
-            String[] pkgs = getBootClassPackages();
-            for (int i = 0; i < pkgs.length; i++)
-            {
-                pkgMap.put(pkgs[i],
-                    new Package(pkgs[i],
-                    VMSystemProperties.SPEC_TITLE,                 // specTitle
-                    VMSystemProperties.SPEC_VERSION,               // specVersion
-                    VMSystemProperties.SPEC_VENDOR,                // specVendor
-                    "IKVM.NET OpenJDK",                            // implTitle
-                    PropertyConstants.openjdk_version,             // implVersion
-                    "Oracle Corporation & others",                 // implVendor
-                    null,                                          // sealBase
-                    null));                                        // class loader
-            }
-        }
-    }
-    
-    private static native String[] getBootClassPackages();
-
-    /* this method gets called by Package.getSystemPackage() via a redefined method in map.xml */
-    static Package getSystemPackage(Map pkgs, String name)
-    {
-        synchronized (pkgs)
-        {
-            addSystemPackage(pkgs);
-            return (Package)pkgs.get(name);
-        }
-    }
-
-    /* this method gets called by Package.getSystemPackages() via a redefined method in map.xml */
-    static Package[] getSystemPackages(Map pkgs)
-    {
-        synchronized (pkgs)
-        {
-            addSystemPackage(pkgs);
-            return (Package[])pkgs.values().toArray(new Package[pkgs.size()]);
-
-        }
-    }
-
     public static sun.misc.JavaLangAccess getJavaLangAccess()
     {
         return new sun.misc.JavaLangAccess() {

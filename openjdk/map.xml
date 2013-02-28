@@ -1669,23 +1669,6 @@
                 </body>
             </method>
         </class>
-        <class name="java.lang.Package">
-            <method name="getSystemPackage" sig="(Ljava.lang.String;)Ljava.lang.Package;">
-                <body>
-                    <ldsfld class="java.lang.Package" name="pkgs" sig="Ljava.util.Map;" />
-                    <ldarg_0 />
-                    <call class="java.lang.LangHelper" name="getSystemPackage" sig="(Ljava.util.Map;Ljava.lang.String;)Ljava.lang.Package;" />
-                    <ret />
-                </body>
-            </method>
-            <method name="getSystemPackages" sig="()[Ljava.lang.Package;">
-                <body>
-                    <ldsfld class="java.lang.Package" name="pkgs" sig="Ljava.util.Map;" />
-                    <call class="java.lang.LangHelper" name="getSystemPackages" sig="(Ljava.util.Map;)[Ljava.lang.Package;" />
-                    <ret />
-                </body>
-            </method>
-        </class>
         <!-- This is where the "native" helper methods start -->
         <class name="ikvm.lang.CIL">
             <method name="unbox_byte" sig="(Ljava.lang.Object;)B">
