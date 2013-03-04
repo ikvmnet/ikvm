@@ -2174,8 +2174,6 @@ sealed class Compiler
 					if(tw.IsUnloadable)
 					{
 						Profiler.Count("EmitDynamicAaload");
-						ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
-						ilGenerator.Emit(OpCodes.Ldstr, tw.Name);
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicAaload);
 					}
 					else
@@ -2248,8 +2246,6 @@ sealed class Compiler
 					if(tw.IsUnloadable)
 					{
 						Profiler.Count("EmitDynamicAastore");
-						ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
-						ilGenerator.Emit(OpCodes.Ldstr, tw.Name);
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicAastore);
 					}
 					else

@@ -168,18 +168,16 @@ namespace IKVM.Runtime
 		}
 
 		[DebuggerStepThroughAttribute]
-		public static void DynamicAastore(object arrayref, int index, object val, RuntimeTypeHandle type, string clazz)
+		public static void DynamicAastore(object arrayref, int index, object val)
 		{
 			Profiler.Count("DynamicAastore");
-			// TODO do we need to load the type here?
 			((Array)arrayref).SetValue(val, index);
 		}
 
 		[DebuggerStepThroughAttribute]
-		public static object DynamicAaload(object arrayref, int index, RuntimeTypeHandle type, string clazz)
+		public static object DynamicAaload(object arrayref, int index)
 		{
 			Profiler.Count("DynamicAaload");
-			// TODO do we need to load the type here?
 			return ((Array)arrayref).GetValue(index);
 		}
 
