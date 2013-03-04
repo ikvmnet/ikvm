@@ -3588,6 +3588,7 @@ namespace IKVM.Internal
 			private List<Item> items;
 			private Dictionary<FieldWrapper, MethodBuilder> arfuMap;
 			private Dictionary<MethodKey, MethodInfo> invokespecialstubcache;
+			private Dictionary<string, MethodInfo> dynamicClassLiteral;
 
 			private struct Item
 			{
@@ -3623,6 +3624,36 @@ namespace IKVM.Internal
 				item.value = val;
 				items.Add(item);
 				return val;
+			}
+
+			internal void EmitDynamicClassLiteral(CodeEmitter ilgen, TypeWrapper tw)
+			{
+				Debug.Assert(tw.IsUnloadable);
+				if (dynamicClassLiteral == null)
+				{
+					dynamicClassLiteral = new Dictionary<string, MethodInfo>();
+				}
+				MethodInfo method;
+				if (!dynamicClassLiteral.TryGetValue(tw.Name, out method))
+				{
+					FieldBuilder fb = typeBuilder.DefineField("__<>class", CoreClasses.java.lang.Class.Wrapper.TypeAsSignatureType, FieldAttributes.PrivateScope | FieldAttributes.Static);
+					MethodBuilder mb = typeBuilder.DefineMethod("__<>class", MethodAttributes.PrivateScope | MethodAttributes.Static, CoreClasses.java.lang.Class.Wrapper.TypeAsSignatureType, Type.EmptyTypes);
+					CodeEmitter ilgen2 = CodeEmitter.Create(mb);
+					ilgen2.Emit(OpCodes.Ldsfld, fb);
+					CodeEmitterLabel label = ilgen2.DefineLabel();
+					ilgen2.EmitBrtrue(label);
+					ilgen2.Emit(OpCodes.Ldstr, tw.Name);
+					EmitCallerID(ilgen2);
+					ilgen2.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicClassLiteral);
+					ilgen2.Emit(OpCodes.Stsfld, fb);
+					ilgen2.MarkLabel(label);
+					ilgen2.Emit(OpCodes.Ldsfld, fb);
+					ilgen2.Emit(OpCodes.Ret);
+					ilgen2.DoEmit();
+					method = mb;
+					dynamicClassLiteral.Add(tw.Name, method);
+				}
+				ilgen.Emit(OpCodes.Call, method);
 			}
 
 			internal void EmitCallerID(CodeEmitter ilgen)
