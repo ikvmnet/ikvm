@@ -148,22 +148,22 @@ namespace IKVM.Runtime
 
 #if !FIRST_PASS
 		[DebuggerStepThroughAttribute]
-		public static object DynamicMultianewarray(string clazz, int[] lengths, ikvm.@internal.CallerID callerId)
+		public static object DynamicMultianewarray(int[] lengths, java.lang.Class clazz)
 		{
 			Profiler.Count("DynamicMultianewarray");
-			TypeWrapper wrapper = LoadTypeWrapper(clazz, callerId);
+			TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
 			return multianewarray(wrapper.TypeAsArrayType.TypeHandle, lengths);
 		}
 
 		[DebuggerStepThroughAttribute]
-		public static object DynamicNewarray(int length, string clazz, ikvm.@internal.CallerID callerId)
+		public static object DynamicNewarray(int length, java.lang.Class clazz)
 		{
 			Profiler.Count("DynamicNewarray");
 			if(length < 0)
 			{
 				throw new java.lang.NegativeArraySizeException();
 			}
-			TypeWrapper wrapper = LoadTypeWrapper(clazz, callerId);
+			TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
 			return Array.CreateInstance(wrapper.TypeAsArrayType, length);
 		}
 
@@ -273,13 +273,13 @@ namespace IKVM.Runtime
 
 		// the sole purpose of this method is to check whether the clazz can be instantiated (but not to actually do it)
 		[DebuggerStepThroughAttribute]
-		public static void DynamicNewCheckOnly(string clazz, ikvm.@internal.CallerID callerId)
+		public static void DynamicNewCheckOnly(java.lang.Class clazz)
 		{
 			Profiler.Count("DynamicNewCheckOnly");
-			TypeWrapper wrapper = LoadTypeWrapper(clazz, callerId);
+			TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
 			if(wrapper.IsAbstract)
 			{
-				throw new java.lang.InstantiationError(clazz);
+				throw new java.lang.InstantiationError(wrapper.Name);
 			}
 			wrapper.RunClassInit();
 		}
@@ -316,30 +316,23 @@ namespace IKVM.Runtime
 		}
 
 		[DebuggerStepThroughAttribute]
-		public static object DynamicCast(object obj, string clazz, ikvm.@internal.CallerID callerId)
+		public static object DynamicCast(object obj, java.lang.Class clazz)
 		{
+			Debug.Assert(obj != null);
 			Profiler.Count("DynamicCast");
-			// NOTE it's important that we don't try to load the class if obj == null
-			// (to be compatible with Sun)
-			if(obj != null && !DynamicInstanceOf(obj, clazz, callerId))
+			if (!DynamicInstanceOf(obj, clazz))
 			{
-				throw new java.lang.ClassCastException(NativeCode.ikvm.runtime.Util.GetTypeWrapperFromObject(obj).Name);
+				throw new java.lang.ClassCastException(NativeCode.ikvm.runtime.Util.GetTypeWrapperFromObject(obj).Name + " cannot be cast to " + clazz.getName());
 			}
 			return obj;
 		}
 
 		[DebuggerStepThroughAttribute]
-		public static bool DynamicInstanceOf(object obj, string clazz, ikvm.@internal.CallerID callerId)
+		public static bool DynamicInstanceOf(object obj, java.lang.Class clazz)
 		{
+			Debug.Assert(obj != null);
 			Profiler.Count("DynamicInstanceOf");
-			// NOTE it's important that we don't try to load the class if obj == null
-			// (to be compatible with Sun)
-			if(obj == null)
-			{
-				return false;
-			}
-			TypeWrapper wrapper = LoadTypeWrapper(clazz, callerId);
-			return wrapper.IsInstance(obj);
+			return TypeWrapper.FromClass(clazz).IsInstance(obj);
 		}
 
 		[DebuggerStepThrough]

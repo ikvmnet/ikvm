@@ -2002,8 +2002,7 @@ sealed class Compiler
 						Profiler.Count("EmitDynamicNewCheckOnly");
 						// this is here to make sure we throw the exception in the right location (before
 						// evaluating the constructor arguments)
-						ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
-						context.EmitCallerID(ilGenerator);
+						context.EmitDynamicClassLiteral(ilGenerator, wrapper);
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicNewCheckOnly);
 					}
 					else if(wrapper != clazz && RequiresExplicitClassInit(wrapper, i + 1, flags))
@@ -2033,9 +2032,8 @@ sealed class Compiler
 					if(wrapper.IsUnloadable)
 					{
 						Profiler.Count("EmitDynamicMultianewarray");
-						ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
 						ilGenerator.Emit(OpCodes.Ldloc, localArray);
-						context.EmitCallerID(ilGenerator);
+						context.EmitDynamicClassLiteral(ilGenerator, wrapper);
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicMultianewarray);
 					}
 					else if(wrapper.IsGhost || wrapper.IsGhostArray)
@@ -2066,8 +2064,7 @@ sealed class Compiler
 					if(wrapper.IsUnloadable)
 					{
 						Profiler.Count("EmitDynamicNewarray");
-						ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
-						context.EmitCallerID(ilGenerator);
+						context.EmitDynamicClassLiteral(ilGenerator, wrapper);
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicNewarray);
 					}
 					else if(wrapper.IsGhost || wrapper.IsGhostArray)
@@ -2133,9 +2130,13 @@ sealed class Compiler
 					TypeWrapper wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
 					if(wrapper.IsUnloadable)
 					{
-						ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
-						context.EmitCallerID(ilGenerator);
+						// NOTE it's important that we don't try to load the class if obj == null
+						CodeEmitterLabel ok = ilGenerator.DefineLabel();
+						ilGenerator.Emit(OpCodes.Dup);
+						ilGenerator.EmitBrfalse(ok);
+						context.EmitDynamicClassLiteral(ilGenerator, wrapper);
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicCast);
+						ilGenerator.MarkLabel(ok);
 					}
 					else
 					{
@@ -2148,9 +2149,18 @@ sealed class Compiler
 					TypeWrapper wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
 					if(wrapper.IsUnloadable)
 					{
-						ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
-						context.EmitCallerID(ilGenerator);
+						// NOTE it's important that we don't try to load the class if obj == null
+						CodeEmitterLabel notnull = ilGenerator.DefineLabel();
+						CodeEmitterLabel end = ilGenerator.DefineLabel();
+						ilGenerator.Emit(OpCodes.Dup);
+						ilGenerator.EmitBrtrue(notnull);
+						ilGenerator.Emit(OpCodes.Pop);
+						ilGenerator.EmitLdc_I4(0);
+						ilGenerator.EmitBr(end);
+						ilGenerator.MarkLabel(notnull);
+						context.EmitDynamicClassLiteral(ilGenerator, wrapper);
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicInstanceOf);
+						ilGenerator.MarkLabel(end);
 					}
 					else
 					{
