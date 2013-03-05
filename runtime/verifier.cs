@@ -2381,7 +2381,11 @@ sealed class MethodAnalyzer
 		StackState stack = new StackState(state[index]);
 		NormalizedByteCode invoke = method.Instructions[index].NormalizedOpCode;
 		ClassFile.ConstantPoolItemMI cpi = GetMethodref(method.Instructions[index].Arg1);
-		if ((cpi is ClassFile.ConstantPoolItemInterfaceMethodref) != (invoke == NormalizedByteCode.__invokeinterface))
+		if (invoke == NormalizedByteCode.__invokestatic && classFile.MajorVersion >= 52)
+		{
+			// invokestatic may be used to invoke interface methods in Java 8
+		}
+		else if ((cpi is ClassFile.ConstantPoolItemInterfaceMethodref) != (invoke == NormalizedByteCode.__invokeinterface))
 		{
 			throw new VerifyError("Illegal constant pool index");
 		}
@@ -3587,9 +3591,13 @@ sealed class MethodAnalyzer
 				}
 			}
 		}
-		else if(cpi.GetClassType().IsInterface != (invoke == NormalizedByteCode.__invokeinterface))
+		else if(invoke == NormalizedByteCode.__invokeinterface && !cpi.GetClassType().IsInterface)
 		{
 			SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IncompatibleClassChangeError, "invokeinterface on non-interface");
+		}
+		else if(cpi.GetClassType().IsInterface && invoke != NormalizedByteCode.__invokeinterface && (invoke != NormalizedByteCode.__invokestatic || classFile.MajorVersion < 52))
+		{
+			SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IncompatibleClassChangeError, "interface method must be invoked used invokeinterface or invokestatic");
 		}
 		else
 		{

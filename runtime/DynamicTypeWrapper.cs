@@ -2887,7 +2887,7 @@ namespace IKVM.Internal
 				{
 					attribs |= GetMethodAccess(methods[index]);
 				}
-				if (m.IsAbstract)
+				if (m.IsAbstract || (!m.IsStatic && classFile.IsInterface))
 				{
 					// only if the classfile is abstract, we make the CLR method abstract, otherwise,
 					// we have to generate a method that throws an AbstractMethodError (because the JVM
@@ -3939,6 +3939,10 @@ namespace IKVM.Internal
 							{
 								Profiler.Leave("JavaTypeImpl.Finish.Native");
 							}
+						}
+						else if (!m.IsStatic && classFile.IsInterface)
+						{
+							// TODO Java 8 default interface method
 						}
 						else
 						{
