@@ -60,13 +60,9 @@ static class ByteCodeHelperMethods
 	internal static readonly MethodInfo DynamicAaload;
 	internal static readonly MethodInfo DynamicAastore;
 	internal static readonly MethodInfo DynamicClassLiteral;
-	internal static readonly MethodInfo DynamicGetfield;
-	internal static readonly MethodInfo DynamicGetstatic;
 	internal static readonly MethodInfo DynamicMultianewarray;
 	internal static readonly MethodInfo DynamicNewarray;
 	internal static readonly MethodInfo DynamicNewCheckOnly;
-	internal static readonly MethodInfo DynamicPutfield;
-	internal static readonly MethodInfo DynamicPutstatic;
 	internal static readonly MethodInfo DynamicCreateDelegate;
 	internal static readonly MethodInfo DynamicLoadMethodType;
 	internal static readonly MethodInfo DynamicLoadMethodHandle;
@@ -109,13 +105,9 @@ static class ByteCodeHelperMethods
 		DynamicAaload = typeofByteCodeHelper.GetMethod("DynamicAaload");
 		DynamicAastore = typeofByteCodeHelper.GetMethod("DynamicAastore");
 		DynamicClassLiteral = typeofByteCodeHelper.GetMethod("DynamicClassLiteral");
-		DynamicGetfield = typeofByteCodeHelper.GetMethod("DynamicGetfield");
-		DynamicGetstatic = typeofByteCodeHelper.GetMethod("DynamicGetstatic");
 		DynamicMultianewarray = typeofByteCodeHelper.GetMethod("DynamicMultianewarray");
 		DynamicNewarray = typeofByteCodeHelper.GetMethod("DynamicNewarray");
 		DynamicNewCheckOnly = typeofByteCodeHelper.GetMethod("DynamicNewCheckOnly");
-		DynamicPutfield = typeofByteCodeHelper.GetMethod("DynamicPutfield");
-		DynamicPutstatic = typeofByteCodeHelper.GetMethod("DynamicPutstatic");
 		DynamicCreateDelegate = typeofByteCodeHelper.GetMethod("DynamicCreateDelegate");
 		DynamicLoadMethodType = typeofByteCodeHelper.GetMethod("DynamicLoadMethodType");
 		DynamicLoadMethodHandle = typeofByteCodeHelper.GetMethod("DynamicLoadMethodHandle");
@@ -3758,41 +3750,46 @@ sealed class Compiler
 
 	private void DynamicGetPutField(Instruction instr, int i)
 	{
-		NormalizedByteCode bytecode = instr.NormalizedOpCode;
-		ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instr.Arg1);
-		bool write = (bytecode == NormalizedByteCode.__dynamic_putfield || bytecode == NormalizedByteCode.__dynamic_putstatic);
-		TypeWrapper wrapper = cpi.GetClassType();
-		TypeWrapper fieldTypeWrapper = cpi.GetFieldType();
-		if(write && !fieldTypeWrapper.IsUnloadable && fieldTypeWrapper.IsPrimitive)
-		{
-			ilGenerator.Emit(OpCodes.Box, fieldTypeWrapper.TypeAsTBD);
-		}
-		ilGenerator.Emit(OpCodes.Ldstr, cpi.Name);
-		ilGenerator.Emit(OpCodes.Ldstr, cpi.Signature);
-		ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
-		context.EmitCallerID(ilGenerator);
-		switch(bytecode)
+		ClassFile.RefKind kind;
+		switch (instr.NormalizedOpCode)
 		{
 			case NormalizedByteCode.__dynamic_getfield:
 				Profiler.Count("EmitDynamicGetfield");
-				ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicGetfield);
-				EmitReturnTypeConversion(ilGenerator, fieldTypeWrapper);
+				kind = ClassFile.RefKind.getField;
 				break;
 			case NormalizedByteCode.__dynamic_putfield:
 				Profiler.Count("EmitDynamicPutfield");
-				ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicPutfield);
+				kind = ClassFile.RefKind.putField;
 				break;
 			case NormalizedByteCode.__dynamic_getstatic:
 				Profiler.Count("EmitDynamicGetstatic");
-				ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicGetstatic);
-				EmitReturnTypeConversion(ilGenerator, fieldTypeWrapper);
+				kind = ClassFile.RefKind.getStatic;
 				break;
 			case NormalizedByteCode.__dynamic_putstatic:
 				Profiler.Count("EmitDynamicPutstatic");
-				ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicPutstatic);
+				kind = ClassFile.RefKind.putStatic;
 				break;
 			default:
 				throw new InvalidOperationException();
+		}
+		ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instr.Arg1);
+		TypeWrapper fieldType = cpi.GetFieldType();
+		if (kind == ClassFile.RefKind.putField || kind == ClassFile.RefKind.putStatic)
+		{
+			fieldType.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetStackTypeWrapper(i, 0));
+			if (strictfp)
+			{
+				// no need to convert
+			}
+			else if (fieldType == PrimitiveTypeWrapper.DOUBLE)
+			{
+				ilGenerator.Emit(OpCodes.Conv_R8);
+			}
+		}
+		context.GetValue<DynamicFieldBinder>(instr.Arg1 | ((byte)kind << 24)).Emit(this, cpi, kind);
+		if (kind == ClassFile.RefKind.getField || kind == ClassFile.RefKind.getStatic)
+		{
+			fieldType.EmitConvSignatureTypeToStackType(ilGenerator);
 		}
 	}
 
@@ -3898,6 +3895,48 @@ sealed class Compiler
 		}
 	}
 
+	private sealed class DynamicFieldBinder
+	{
+		private MethodInfo method;
+
+		internal void Emit(Compiler compiler, ClassFile.ConstantPoolItemFieldref cpi, ClassFile.RefKind kind)
+		{
+			if (method == null)
+			{
+				method = CreateMethod(compiler.context, cpi, kind);
+			}
+			compiler.ilGenerator.Emit(OpCodes.Call, method);
+		}
+
+		private static MethodInfo CreateMethod(DynamicTypeWrapper.FinishContext context, ClassFile.ConstantPoolItemFieldref cpi, ClassFile.RefKind kind)
+		{
+			TypeWrapper ret;
+			TypeWrapper[] args;
+			switch (kind)
+			{
+				case ClassFile.RefKind.getField:
+					ret = cpi.GetFieldType();
+					args = new TypeWrapper[] { cpi.GetClassType() };
+					break;
+				case ClassFile.RefKind.getStatic:
+					ret = cpi.GetFieldType();
+					args = TypeWrapper.EmptyArray;
+					break;
+				case ClassFile.RefKind.putField:
+					ret = PrimitiveTypeWrapper.VOID;
+					args = new TypeWrapper[] { cpi.GetClassType(), cpi.GetFieldType() };
+					break;
+				case ClassFile.RefKind.putStatic:
+					ret = PrimitiveTypeWrapper.VOID;
+					args = new TypeWrapper[] { cpi.GetFieldType() };
+					break;
+				default:
+					throw new InvalidOperationException();
+			}
+			return DynamicBinder.Emit(context, kind, cpi, ret, args);
+		}
+	}
+
 	private sealed class DynamicBinder
 	{
 		private MethodWrapper mw;
@@ -3928,6 +3967,11 @@ sealed class Compiler
 				Array.Copy(cpi.GetArgTypes(), 0, args, 1, args.Length - 1);
 				args[0] = cpi.GetClassType();
 			}
+			return Emit(context, kind, cpi, ret, args);
+		}
+
+		internal static MethodInfo Emit(DynamicTypeWrapper.FinishContext context, ClassFile.RefKind kind, ClassFile.ConstantPoolItemFMI cpi, TypeWrapper ret, TypeWrapper[] args)
+		{
 			Type delegateType = MethodHandleUtil.CreateDelegateType(args, ret);
 			FieldBuilder fb = context.DefineMethodHandleInvokeCacheField(delegateType);
 			Type[] types = new Type[args.Length];
