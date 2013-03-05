@@ -4020,13 +4020,10 @@ sealed class Compiler
 				mw = cpi.GetMethod();
 				break;
 			case NormalizedByteCode.__dynamic_invokeinterface:
-				return context.GetValue<DynamicBinder>(constantPoolIndex).Get(context, ClassFile.RefKind.invokeInterface, cpi);
 			case NormalizedByteCode.__dynamic_invokestatic:
-				return context.GetValue<DynamicBinder>(constantPoolIndex).Get(context, ClassFile.RefKind.invokeStatic, cpi);
 			case NormalizedByteCode.__dynamic_invokevirtual:
-				return context.GetValue<DynamicBinder>(constantPoolIndex).Get(context, ClassFile.RefKind.invokeVirtual, cpi);
 			case NormalizedByteCode.__dynamic_invokespecial:
-				return context.GetValue<DynamicBinder>(constantPoolIndex).Get(context, ClassFile.RefKind.newInvokeSpecial, cpi);
+				return GetDynamicMethodWrapper(constantPoolIndex, invoke, cpi);
 			case NormalizedByteCode.__methodhandle_invoke:
 				return new MethodHandleMethodWrapper(context, clazz, cpi, false);
 			case NormalizedByteCode.__methodhandle_invokeexact:
@@ -4036,21 +4033,36 @@ sealed class Compiler
 		}
 		if(mw.IsDynamicOnly)
 		{
-			switch (invoke)
-			{
-				case NormalizedByteCode.__invokespecial:
-					return context.GetValue<DynamicBinder>(constantPoolIndex).Get(context, ClassFile.RefKind.invokeSpecial, cpi);
-				case NormalizedByteCode.__invokeinterface:
-					return context.GetValue<DynamicBinder>(constantPoolIndex).Get(context, ClassFile.RefKind.invokeInterface, cpi);
-				case NormalizedByteCode.__invokestatic:
-					return context.GetValue<DynamicBinder>(constantPoolIndex).Get(context, ClassFile.RefKind.invokeStatic, cpi);
-				case NormalizedByteCode.__invokevirtual:
-					return context.GetValue<DynamicBinder>(constantPoolIndex).Get(context, ClassFile.RefKind.invokeVirtual, cpi);
-				default:
-					throw new InvalidOperationException();
-			}
+			return GetDynamicMethodWrapper(constantPoolIndex, invoke, cpi);
 		}
 		return mw;
+	}
+
+	private MethodWrapper GetDynamicMethodWrapper(int index, NormalizedByteCode invoke, ClassFile.ConstantPoolItemMI cpi)
+	{
+		ClassFile.RefKind kind;
+		switch (invoke)
+		{
+			case NormalizedByteCode.__invokeinterface:
+			case NormalizedByteCode.__dynamic_invokeinterface:
+				kind = ClassFile.RefKind.invokeInterface;
+				break;
+			case NormalizedByteCode.__invokestatic:
+			case NormalizedByteCode.__dynamic_invokestatic:
+				kind = ClassFile.RefKind.invokeStatic;
+				break;
+			case NormalizedByteCode.__invokevirtual:
+			case NormalizedByteCode.__dynamic_invokevirtual:
+				kind = ClassFile.RefKind.invokeVirtual;
+				break;
+			case NormalizedByteCode.__invokespecial:
+			case NormalizedByteCode.__dynamic_invokespecial:
+				kind = ClassFile.RefKind.newInvokeSpecial;
+				break;
+			default:
+				throw new InvalidOperationException();
+		}
+		return context.GetValue<DynamicBinder>(index | ((byte)kind << 24)).Get(context, kind, cpi);
 	}
 
 	// TODO this method should have a better name
