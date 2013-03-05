@@ -755,12 +755,6 @@ namespace IKVM.Internal
 						setModifiers |= (f.Modifiers & (Modifiers)0x99CE) != 0;
 						// by default we assume ACC_SUPER for classes, so in the exceptional case we need a ModifiersAttribute
 						setModifiers |= !f.IsSuper;
-						if (f.IsEffectivelyFinal)
-						{
-							setModifiers = true;
-							typeAttribs |= TypeAttributes.Sealed;
-							Tracer.Info(Tracer.Compiler, "Sealing type {0}", f.Name);
-						}
 						if (outer != null && !cantNest)
 						{
 							// LAMESPEC the CLI spec says interfaces cannot contain nested types (Part.II, 9.6), but that rule isn't enforced

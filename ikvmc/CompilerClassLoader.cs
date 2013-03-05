@@ -63,7 +63,6 @@ namespace IKVM.Internal
 		private Dictionary<MethodKey, IKVM.Internal.MapXml.InstructionList> mapxml_MethodBodies;
 		private Dictionary<MethodKey, IKVM.Internal.MapXml.ReplaceMethodCall[]> mapxml_ReplacedMethods;
 		private Dictionary<MethodKey, IKVM.Internal.MapXml.InstructionList> mapxml_MethodPrologues;
-		private Dictionary<string, string> baseClasses;
 		private IKVM.Internal.MapXml.Root map;
 		private List<object> assemblyAnnotations;
 		private List<string> classesToCompile;
@@ -329,17 +328,6 @@ namespace IKVM.Internal
 						{
 							f.SetInternal();
 						}
-					}
-					if(!f.IsInterface
-						&& !f.IsAbstract
-						&& !f.IsPublic
-						&& !f.IsInternal
-						&& !f.IsFinal
-						&& !baseClasses.ContainsKey(f.Name)
-						&& !options.targetIsModule
-						&& options.sharedclassloader == null)
-					{
-						f.SetEffectivelyFinal();
 					}
 					if(f.SourceFileAttribute != null)
 					{
@@ -2776,46 +2764,54 @@ namespace IKVM.Internal
 					}
 				}
 			}
-			// now process all the classes to record the classes that are used as base classes and
-			// to look for assembly attribute annotations and the main method
-			Dictionary<string, string> baseClasses = new Dictionary<string, string>();
-			foreach (string className in classNames)
+
+			// look for "assembly" type that acts as a placeholder for assembly attributes
+			JarItemReference assemblyType;
+			if (h.TryGetValue("assembly", out assemblyType))
 			{
 				try
 				{
-					JarItemReference itemRef = h[className];
-					byte[] buf = itemRef.Jar.Items[itemRef.Index].data;
+					byte[] buf = assemblyType.Jar.Items[assemblyType.Index].data;
 					ClassFile f = new ClassFile(buf, 0, buf.Length, null, ClassFileParseOptions.None);
-					if (!f.IsInterface && f.SuperClass != null)
-					{
-						baseClasses[f.SuperClass] = f.SuperClass;
-					}
 					// NOTE the "assembly" type in the unnamed package is a magic type
 					// that acts as the placeholder for assembly attributes
-					if (className == f.Name && f.Name == "assembly" && f.Annotations != null)
+					if (f.Name == "assembly" && f.Annotations != null)
 					{
 						assemblyAnnotations.AddRange(f.Annotations);
 						// HACK remove "assembly" type that exists only as a placeholder for assembly attributes
 						h.Remove(f.Name);
-						itemRef.Jar.Items[itemRef.Index] = new JarItem();
-						continue;
+						assemblyType.Jar.Items[assemblyType.Index] = new JarItem();
 					}
-					if (options.mainClass == null && (options.guessFileKind || options.target != PEFileKinds.Dll))
+				}
+				catch (ClassFormatError) { }
+			}
+
+			// now look for a main method
+			if (options.mainClass == null && (options.guessFileKind || options.target != PEFileKinds.Dll))
+			{
+				foreach (string className in classNames)
+				{
+					try
 					{
-						foreach (ClassFile.Method m in f.Methods)
+						JarItemReference itemRef = h[className];
+						byte[] buf = itemRef.Jar.Items[itemRef.Index].data;
+						ClassFile f = new ClassFile(buf, 0, buf.Length, null, ClassFileParseOptions.None);
+						if (f.Name == className)
 						{
-							if (m.IsPublic && m.IsStatic && m.Name == "main" && m.Signature == "([Ljava.lang.String;)V")
+							foreach (ClassFile.Method m in f.Methods)
 							{
-								StaticCompiler.IssueMessage(Message.MainMethodFound, f.Name);
-								options.mainClass = f.Name;
-								break;
+								if (m.IsPublic && m.IsStatic && m.Name == "main" && m.Signature == "([Ljava.lang.String;)V")
+								{
+									StaticCompiler.IssueMessage(Message.MainMethodFound, f.Name);
+									options.mainClass = f.Name;
+									goto break_outer;
+								}
 							}
 						}
 					}
+					catch (ClassFormatError) { }
 				}
-				catch (ClassFormatError)
-				{
-				}
+			break_outer: ;
 			}
 
 			if(options.guessFileKind && options.mainClass == null)
@@ -2880,7 +2876,6 @@ namespace IKVM.Internal
 				referencedAssemblies[i] = acl;
 			}
 			loader = new CompilerClassLoader(referencedAssemblies, options, options.path, options.targetIsModule, options.assembly, h);
-			loader.baseClasses = baseClasses;
 			loader.assemblyAnnotations = assemblyAnnotations;
 			loader.classesToCompile = new List<string>(h.Keys);
 			if(options.remapfile != null)
