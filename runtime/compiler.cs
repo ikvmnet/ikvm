@@ -1589,7 +1589,7 @@ sealed class Compiler
 					MethodWrapper method = GetMethodCallEmitter(instr.NormalizedOpCode, instr.Arg1);
 					int argcount = method.GetParameters().Length;
 					TypeWrapper type = ma.GetRawStackTypeWrapper(i, argcount);
-					TypeWrapper thisType = SigTypeToClassName(type, method.DeclaringType);
+					TypeWrapper thisType = ComputeThisType(type, method, instr.NormalizedOpCode);
 
 					EmitIntrinsicContext eic = new EmitIntrinsicContext(method, context, ilGenerator, ma, i, mw, classFile, code, flags);
 					if(method.IsIntrinsic && method.EmitIntrinsic(eic))
@@ -4109,8 +4109,7 @@ sealed class Compiler
 		return context.GetValue<DynamicBinder>(index | ((byte)kind << 24)).Get(context, kind, cpi);
 	}
 
-	// TODO this method should have a better name
-	private TypeWrapper SigTypeToClassName(TypeWrapper type, TypeWrapper nullType)
+	private TypeWrapper ComputeThisType(TypeWrapper type, MethodWrapper method, NormalizedByteCode invoke)
 	{
 		if(type == VerifierTypeWrapper.UninitializedThis
 			|| VerifierTypeWrapper.IsThis(type))
@@ -4123,7 +4122,11 @@ sealed class Compiler
 		}
 		else if(type == VerifierTypeWrapper.Null)
 		{
-			return nullType;
+			return method.DeclaringType;
+		}
+		else if(invoke == NormalizedByteCode.__invokevirtual && method.IsProtected && type.IsUnloadable)
+		{
+			return clazz;
 		}
 		else
 		{

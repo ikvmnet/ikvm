@@ -3553,7 +3553,7 @@ sealed class MethodAnalyzer
 			}
 		}
 
-		if(cpi.GetClassType().IsUnloadable || (thisType != null && thisType.IsUnloadable))
+		if(cpi.GetClassType().IsUnloadable)
 		{
 			if(wrapper.GetClassLoader().DisableDynamicBinding)
 			{
