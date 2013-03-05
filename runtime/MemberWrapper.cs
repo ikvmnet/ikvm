@@ -731,46 +731,6 @@ namespace IKVM.Internal
 			}
 		}
 
-		// this returns the Java method's attributes in .NET terms (e.g. used to create stubs for this method)
-		internal MethodAttributes GetMethodAttributes()
-		{
-			MethodAttributes attribs = MethodAttributes.HideBySig;
-			if(IsStatic)
-			{
-				attribs |= MethodAttributes.Static;
-			}
-			if(IsPublic)
-			{
-				attribs |= MethodAttributes.Public;
-			}
-			else if(IsPrivate)
-			{
-				attribs |= MethodAttributes.Private;
-			}
-			else if(IsProtected)
-			{
-				attribs |= MethodAttributes.FamORAssem;
-			}
-			else
-			{
-				attribs |= MethodAttributes.Family;
-			}
-			// constructors aren't virtual
-			if(!IsStatic && !IsPrivate && Name != "<init>")
-			{
-				attribs |= MethodAttributes.Virtual;
-			}
-			if(IsFinal)
-			{
-				attribs |= MethodAttributes.Final;
-			}
-			if(IsAbstract)
-			{
-				attribs |= MethodAttributes.Abstract;
-			}
-			return attribs;
-		}
-
 		internal bool IsAbstract
 		{
 			get
