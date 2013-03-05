@@ -169,7 +169,7 @@ namespace IKVM.Internal
 
 		private bool IsPublicOrProtectedMemberAccessible(TypeWrapper caller, TypeWrapper instance)
 		{
-			if (IsPublic || (IsProtected && caller.IsSubTypeOf(DeclaringType) && (IsStatic || instance.IsSubTypeOf(caller))))
+			if (IsPublic || (IsProtected && caller.IsSubTypeOf(DeclaringType) && (IsStatic || instance.IsUnloadable || instance.IsSubTypeOf(caller))))
 			{
 				return DeclaringType.IsPublic || InPracticeInternalsVisibleTo(caller);
 			}

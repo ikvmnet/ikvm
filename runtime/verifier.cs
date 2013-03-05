@@ -3721,7 +3721,7 @@ sealed class MethodAnalyzer
 			// We're being called from IsSideEffectFreeStaticInitializer,
 			// no further checks are possible (nor needed).
 		}
-		else if(cpi.GetClassType().IsUnloadable || (thisType != null && thisType.IsUnloadable))
+		else if(cpi.GetClassType().IsUnloadable)
 		{
 			if(wrapper.GetClassLoader().DisableDynamicBinding)
 			{

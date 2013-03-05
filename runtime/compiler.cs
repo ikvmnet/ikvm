@@ -1447,6 +1447,19 @@ sealed class Compiler
 				{
 					ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instr.Arg1);
 					FieldWrapper field = cpi.GetField();
+					if (ma.GetStackTypeWrapper(i, 0).IsUnloadable)
+					{
+						if (field.IsProtected)
+						{
+							// downcast receiver to our type
+							clazz.EmitCheckcast(ilGenerator);
+						}
+						else
+						{
+							// downcast receiver to field declaring type
+							field.DeclaringType.EmitCheckcast(ilGenerator);
+						}
+					}
 					field.EmitGet(ilGenerator);
 					field.FieldTypeWrapper.EmitConvSignatureTypeToStackType(ilGenerator);
 					break;
@@ -1478,6 +1491,22 @@ sealed class Compiler
 					ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instr.Arg1);
 					FieldWrapper field = cpi.GetField();
 					TypeWrapper tw = field.FieldTypeWrapper;
+					if (ma.GetStackTypeWrapper(i, 1).IsUnloadable)
+					{
+						CodeEmitterLocal temp = ilGenerator.UnsafeAllocTempLocal(tw.TypeAsLocalOrStackType);
+						ilGenerator.Emit(OpCodes.Stloc, temp);
+						if (field.IsProtected)
+						{
+							// downcast receiver to our type
+							clazz.EmitCheckcast(ilGenerator);
+						}
+						else
+						{
+							// downcast receiver to field declaring type
+							field.DeclaringType.EmitCheckcast(ilGenerator);
+						}
+						ilGenerator.Emit(OpCodes.Ldloc, temp);
+					}
 					tw.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetStackTypeWrapper(i, 0));
 					if(strictfp)
 					{
