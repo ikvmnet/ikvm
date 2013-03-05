@@ -875,11 +875,8 @@ sealed class Compiler
 		{
 			if(args[i].IsUnloadable)
 			{
-				Profiler.Count("EmitDynamicCast");
 				ilGenerator.EmitLdarg(i + (m.IsStatic ? 0 : 1));
-				ilGenerator.Emit(OpCodes.Ldstr, args[i].Name);
-				context.EmitCallerID(ilGenerator);
-				ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicCast);
+				EmitDynamicCast(context, ilGenerator, args[i]);
 				ilGenerator.Emit(OpCodes.Pop);
 			}
 		}
@@ -1294,9 +1291,7 @@ sealed class Compiler
 						if(exceptionTypeWrapper.IsUnloadable)
 						{
 							Profiler.Count("EmitDynamicExceptionHandler");
-							ilGenerator.Emit(OpCodes.Ldstr, exceptionTypeWrapper.Name);
-							context.EmitCallerID(ilGenerator);
-							ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicInstanceOf);
+							EmitDynamicInstanceOf(exceptionTypeWrapper);
 						}
 						CodeEmitterLabel leave = ilGenerator.DefineLabel();
 						ilGenerator.EmitBrtrue(leave);
@@ -2130,13 +2125,7 @@ sealed class Compiler
 					TypeWrapper wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
 					if(wrapper.IsUnloadable)
 					{
-						// NOTE it's important that we don't try to load the class if obj == null
-						CodeEmitterLabel ok = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Dup);
-						ilGenerator.EmitBrfalse(ok);
-						context.EmitDynamicClassLiteral(ilGenerator, wrapper);
-						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicCast);
-						ilGenerator.MarkLabel(ok);
+						EmitDynamicCast(context, ilGenerator, wrapper);
 					}
 					else
 					{
@@ -2149,18 +2138,7 @@ sealed class Compiler
 					TypeWrapper wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
 					if(wrapper.IsUnloadable)
 					{
-						// NOTE it's important that we don't try to load the class if obj == null
-						CodeEmitterLabel notnull = ilGenerator.DefineLabel();
-						CodeEmitterLabel end = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Dup);
-						ilGenerator.EmitBrtrue(notnull);
-						ilGenerator.Emit(OpCodes.Pop);
-						ilGenerator.EmitLdc_I4(0);
-						ilGenerator.EmitBr(end);
-						ilGenerator.MarkLabel(notnull);
-						context.EmitDynamicClassLiteral(ilGenerator, wrapper);
-						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicInstanceOf);
-						ilGenerator.MarkLabel(end);
+						EmitDynamicInstanceOf(wrapper);
 					}
 					else
 					{
@@ -2964,6 +2942,35 @@ sealed class Compiler
 			default:
 				throw new InvalidOperationException();
 		}
+	}
+
+	private static void EmitDynamicCast(DynamicTypeWrapper.FinishContext context, CodeEmitter ilGenerator, TypeWrapper tw)
+	{
+		Debug.Assert(tw.IsUnloadable);
+		Profiler.Count("EmitDynamicCast");
+		// NOTE it's important that we don't try to load the class if obj == null
+		CodeEmitterLabel ok = ilGenerator.DefineLabel();
+		ilGenerator.Emit(OpCodes.Dup);
+		ilGenerator.EmitBrfalse(ok);
+		context.EmitDynamicClassLiteral(ilGenerator, tw);
+		ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicCast);
+		ilGenerator.MarkLabel(ok);
+	}
+
+	private void EmitDynamicInstanceOf(TypeWrapper tw)
+	{
+		// NOTE it's important that we don't try to load the class if obj == null
+		CodeEmitterLabel notnull = ilGenerator.DefineLabel();
+		CodeEmitterLabel end = ilGenerator.DefineLabel();
+		ilGenerator.Emit(OpCodes.Dup);
+		ilGenerator.EmitBrtrue(notnull);
+		ilGenerator.Emit(OpCodes.Pop);
+		ilGenerator.EmitLdc_I4(0);
+		ilGenerator.EmitBr(end);
+		ilGenerator.MarkLabel(notnull);
+		context.EmitDynamicClassLiteral(ilGenerator, tw);
+		ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicInstanceOf);
+		ilGenerator.MarkLabel(end);
 	}
 
 	private void EmitLoadClass(CodeEmitter ilgen, TypeWrapper tw)
