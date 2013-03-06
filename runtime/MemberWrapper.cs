@@ -1116,7 +1116,15 @@ namespace IKVM.Internal
 
 		internal void AddBaseMethod(MethodWrapper mw)
 		{
-			if (!ifmethod.IsAbstract && !mw.IsAbstract)
+			if (ifmethod == mw)
+			{
+				// an interface can be implemented multiple times
+			}
+			else if (mw.DeclaringType.ImplementsInterface(ifmethod.DeclaringType))
+			{
+				ifmethod = mw;
+			}
+			else if (!ifmethod.IsAbstract && !mw.IsAbstract)
 			{
 				if (error == null)
 				{
