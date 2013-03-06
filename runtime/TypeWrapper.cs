@@ -2366,7 +2366,7 @@ namespace IKVM.Internal
 					if(methods == null)
 					{
 #if STATIC_COMPILER
-						if(!CheckMissingBaseTypes(TypeAsBaseType))
+						if(IsUnloadable || !CheckMissingBaseTypes(TypeAsBaseType))
 						{
 							return methods = MethodWrapper.EmptyArray;
 						}
@@ -2387,7 +2387,7 @@ namespace IKVM.Internal
 					if(fields == null)
 					{
 #if STATIC_COMPILER
-						if (!CheckMissingBaseTypes(TypeAsBaseType))
+						if(IsUnloadable || !CheckMissingBaseTypes(TypeAsBaseType))
 						{
 							return fields = FieldWrapper.EmptyArray;
 						}
