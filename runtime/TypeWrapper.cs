@@ -3087,9 +3087,40 @@ namespace IKVM.Internal
 			}
 		}
 
+		private static Type[] GetInterfaces(Type type)
+		{
+#if STATIC_COMPILER || STUB_GENERATOR
+			List<Type> list = new List<Type>();
+			for (; type != null && !type.__IsMissing; type = type.BaseType)
+			{
+				AddInterfaces(list, type);
+			}
+			return list.ToArray();
+#else
+			return type.GetInterfaces();
+#endif
+		}
+
+#if STATIC_COMPILER || STUB_GENERATOR
+		private static void AddInterfaces(List<Type> list, Type type)
+		{
+			foreach (Type iface in type.__GetDeclaredInterfaces())
+			{
+				if (!list.Contains(iface))
+				{
+					list.Add(iface);
+					if (!iface.__IsMissing)
+					{
+						AddInterfaces(list, iface);
+					}
+				}
+			}
+		}
+#endif
+
 		protected static TypeWrapper[] GetImplementedInterfacesAsTypeWrappers(Type type)
 		{
-			Type[] interfaceTypes = type.GetInterfaces();
+			Type[] interfaceTypes = GetInterfaces(type);
 			TypeWrapper[] interfaces = new TypeWrapper[interfaceTypes.Length];
 			for (int i = 0; i < interfaceTypes.Length; i++)
 			{
