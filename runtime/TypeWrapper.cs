@@ -1686,6 +1686,7 @@ namespace IKVM.Internal
 		internal const string NonVirtual = "<nonvirtual>";
 		internal const string Bridge = "<bridge>";
 		internal const string Incomplete = "<incomplete>";
+		internal const string DefaultMethod = "<default>";
 	}
 
 	internal abstract class TypeWrapper
@@ -4135,7 +4136,7 @@ namespace IKVM.Internal
 			}
 			else
 			{
-				if(method.IsSpecialName && method.Name.StartsWith("__<"))
+				if(method.IsSpecialName && (method.Name.StartsWith("__<", StringComparison.Ordinal) || method.Name.StartsWith(NamePrefix.DefaultMethod, StringComparison.Ordinal)))
 				{
 					// skip
 				}

@@ -1103,6 +1103,57 @@ namespace IKVM.Internal
 #endif // !STUB_GENERATOR
 	}
 
+	sealed class MirandaMethodWrapper : SmartMethodWrapper
+	{
+		private MethodWrapper ifmethod;
+		private string error;
+
+		internal MirandaMethodWrapper(TypeWrapper declaringType, MethodWrapper ifmethod)
+			: base(declaringType, ifmethod.Name, ifmethod.Signature, null, null, null, Modifiers.Public | Modifiers.Abstract, MemberFlags.HideFromReflection | MemberFlags.MirandaMethod)
+		{
+			this.ifmethod = ifmethod;
+		}
+
+		internal void AddBaseMethod(MethodWrapper mw)
+		{
+			if (!ifmethod.IsAbstract && !mw.IsAbstract)
+			{
+				if (error == null)
+				{
+					error = "Conflicting default methods: " + ifmethod.DeclaringType.Name + "." + ifmethod.Name;
+				}
+				error += " " + mw.DeclaringType.Name + "." + mw.Name;
+			}
+			else if (!ifmethod.IsAbstract && mw.IsAbstract)
+			{
+				ifmethod = mw;
+				error = DeclaringType.Name + "." + Name + Signature;
+			}
+		}
+
+		internal MethodWrapper BaseMethod
+		{
+			get { return ifmethod; }
+		}
+
+		internal string Error
+		{
+			get { return error; }
+		}
+
+#if !STUB_GENERATOR
+		protected override void CallImpl(CodeEmitter ilgen)
+		{
+			ilgen.Emit(OpCodes.Call, GetMethod());
+		}
+
+		protected override void CallvirtImpl(CodeEmitter ilgen)
+		{
+			ilgen.Emit(OpCodes.Callvirt, GetMethod());
+		}
+#endif // !STUB_GENERATOR
+	}
+
 	sealed class GhostMethodWrapper : SmartMethodWrapper
 	{
 		private MethodInfo ghostMethod;

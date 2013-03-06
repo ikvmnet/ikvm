@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2011 Jeroen Frijters
+  Copyright (C) 2002-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -293,6 +293,10 @@ namespace IKVM.Internal
 			else if(mb.Name == ".cctor")
 			{
 				return "<clinit>";
+			}
+			else if(mb.Name.StartsWith(NamePrefix.DefaultMethod, StringComparison.Ordinal))
+			{
+				return mb.Name.Substring(NamePrefix.DefaultMethod.Length);
 			}
 			else
 			{

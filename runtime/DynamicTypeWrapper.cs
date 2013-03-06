@@ -1125,9 +1125,14 @@ namespace IKVM.Internal
 								MethodWrapper mw = GetMethodWrapperDuringCtor(lookup, methods, ifmethod.Name, ifmethod.Signature);
 								if (mw == null)
 								{
-									mw = new TypicalMethodWrapper(wrapper, ifmethod.Name, ifmethod.Signature, null, null, null, Modifiers.Public | Modifiers.Abstract, MemberFlags.HideFromReflection | MemberFlags.MirandaMethod);
+									mw = new MirandaMethodWrapper(wrapper, ifmethod);
 									methods.Add(mw);
 									baseMethods.Add(new MethodWrapper[] { ifmethod });
+									break;
+								}
+								if (mw.IsMirandaMethod && mw.DeclaringType == wrapper)
+								{
+									((MirandaMethodWrapper)mw).AddBaseMethod(ifmethod);
 									break;
 								}
 								if (!mw.IsStatic || mw.DeclaringType == wrapper)
@@ -2759,10 +2764,11 @@ namespace IKVM.Internal
 					{
 						if (methods[index].IsMirandaMethod)
 						{
-							// We're a Miranda method
+							// We're a Miranda method or we're an inherited default interface method
 							Debug.Assert(baseMethods[index].Length == 1 && baseMethods[index][0].DeclaringType.IsInterface);
+							MirandaMethodWrapper mmw = (MirandaMethodWrapper)methods[index];
 							MethodAttributes attr = MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.CheckAccessOnOverride;
-							if (wrapper.IsAbstract)
+							if (wrapper.IsAbstract && mmw.BaseMethod.IsAbstract && mmw.Error == null)
 							{
 								attr |= MethodAttributes.Abstract;
 							}
@@ -2777,10 +2783,10 @@ namespace IKVM.Internal
 							{
 								typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMethods[index][0].GetMethod());
 							}
-							if (!wrapper.IsAbstract)
+							if ((!wrapper.IsAbstract && mmw.BaseMethod.IsAbstract) || mmw.Error != null)
 							{
 								CodeEmitter ilgen = CodeEmitter.Create(mb);
-								ilgen.EmitThrow("java.lang.AbstractMethodError", wrapper.Name + "." + methods[index].Name + methods[index].Signature);
+								ilgen.EmitThrow("java.lang.AbstractMethodError", mmw.Error ?? (wrapper.Name + "." + methods[index].Name + methods[index].Signature));
 								ilgen.DoEmit();
 							}
 							return mb;
@@ -2900,6 +2906,10 @@ namespace IKVM.Internal
 						}
 						else
 						{
+							if (!m.IsAbstract)
+							{
+								setModifiers = true;
+							}
 							attribs |= MethodAttributes.Abstract;
 						}
 					}
@@ -3940,12 +3950,13 @@ namespace IKVM.Internal
 								Profiler.Leave("JavaTypeImpl.Finish.Native");
 							}
 						}
-						else if (!m.IsStatic && classFile.IsInterface)
-						{
-							// TODO Java 8 default interface method
-						}
 						else
 						{
+							if (!m.IsStatic && classFile.IsInterface)
+							{
+								mb = methods[i].GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(),
+									typeBuilder, NamePrefix.DefaultMethod + mb.Name, MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, typeBuilder);
+							}
 							CodeEmitter ilGenerator = CodeEmitter.Create(mb);
 							TraceHelper.EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
 #if STATIC_COMPILER
@@ -3965,7 +3976,7 @@ namespace IKVM.Internal
 								mb.SetImplementationFlags(mb.GetMethodImplementationFlags() | MethodImplAttributes.NoInlining);
 							}
 #if STATIC_COMPILER
-							ilGenerator.EmitLineNumberTable((MethodBuilder)methods[i].GetMethod());
+							ilGenerator.EmitLineNumberTable(mb);
 #else // STATIC_COMPILER
 							byte[] linenumbers = ilGenerator.GetLineNumberTable();
 							if (linenumbers != null)
@@ -3979,6 +3990,11 @@ namespace IKVM.Internal
 #endif // STATIC_COMPILER
 						}
 					}
+				}
+
+				if (!classFile.IsInterface)
+				{
+					AddInheritedDefaultInterfaceMethods(methods);
 				}
 
 				if (clinitIndex != -1 || (basehasclinit && !classFile.IsInterface) || classFile.HasInitializedFields)
@@ -4270,6 +4286,67 @@ namespace IKVM.Internal
 #endif
 				BakedTypeCleanupHack.Process(wrapper);
 				return type;
+			}
+
+			private void AddInheritedDefaultInterfaceMethods(MethodWrapper[] methods)
+			{
+				// look at the miranda methods to see if we inherit any default interface methods
+				for (int i = classFile.Methods.Length; i < methods.Length; i++)
+				{
+					if (methods[i].IsMirandaMethod)
+					{
+						MirandaMethodWrapper mmw = (MirandaMethodWrapper)methods[i];
+						if (mmw.Error == null && !mmw.BaseMethod.IsAbstract)
+						{
+							// we inherited a default interface method, so we need to forward the miranda method to the default method
+							MethodBuilder mb = (MethodBuilder)mmw.GetMethod();
+							CodeEmitter ilgen = CodeEmitter.Create(mb);
+							ilgen.EmitLdarg(0);
+							for (int j = 0, count = mmw.GetParameters().Length; j < count; j++)
+							{
+								ilgen.EmitLdarg(j + 1);
+							}
+							ilgen.Emit(OpCodes.Call, GetDefaultInterfaceMethod(mmw.BaseMethod));
+							ilgen.Emit(OpCodes.Ret);
+							ilgen.DoEmit();
+						}
+					}
+				}
+			}
+
+			private static MethodInfo GetDefaultInterfaceMethod(MethodWrapper mw)
+			{
+#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+				mw.ResolveMethod();
+#endif
+				MethodInfo mi = (MethodInfo)mw.GetMethod();
+				ParameterInfo[] parameters = mi.GetParameters();
+				foreach (MethodInfo candidate in mi.DeclaringType.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly))
+				{
+					if (candidate.Name.StartsWith(NamePrefix.DefaultMethod, StringComparison.Ordinal)
+						&& candidate.Name.Length == mi.Name.Length + NamePrefix.DefaultMethod.Length
+						&& candidate.Name.EndsWith(mi.Name, StringComparison.Ordinal))
+					{
+						ParameterInfo[] candidateParameters = candidate.GetParameters();
+						if (parameters.Length + 1 == candidateParameters.Length)
+						{
+							bool match = true;
+							for (int i = 0; i < parameters.Length; i++)
+							{
+								if (ReflectUtil.MatchParameterInfos(parameters[i], candidateParameters[i + 1]))
+								{
+									match = false;
+									break;
+								}
+							}
+							if (match)
+							{
+								return candidate;
+							}
+						}
+					}
+				}
+				throw new InvalidOperationException();
 			}
 
 #if STATIC_COMPILER
@@ -6132,19 +6209,30 @@ namespace IKVM.Internal
 
 		internal MethodBuilder DefineMethod(DynamicTypeWrapper context, TypeBuilder tb, string name, MethodAttributes attribs)
 		{
-			return DefineMethod(context.GetClassLoader().GetTypeWrapperFactory(), tb, name, attribs);
+			return DefineMethod(context.GetClassLoader().GetTypeWrapperFactory(), tb, name, attribs, null);
 		}
 
 		internal MethodBuilder DefineMethod(TypeWrapperFactory context, TypeBuilder tb, string name, MethodAttributes attribs)
 		{
+			return DefineMethod(context, tb, name, attribs, null);
+		}
+
+		internal MethodBuilder DefineMethod(TypeWrapperFactory context, TypeBuilder tb, string name, MethodAttributes attribs, Type firstParameter)
+		{
 			// we add optional modifiers to make the signature unique
+			int firstParam = firstParameter == null ? 0 : 1;
 			TypeWrapper[] parameters = mw.GetParameters();
-			Type[] parameterTypes = new Type[parameters.Length + (mw.HasCallerID ? 1 : 0)];
+			Type[] parameterTypes = new Type[parameters.Length + (mw.HasCallerID ? 1 : 0) + firstParam];
 			Type[][] modopt = new Type[parameterTypes.Length][];
+			if (firstParameter != null)
+			{
+				parameterTypes[0] = firstParameter;
+				modopt[0] = Type.EmptyTypes;
+			}
 			for (int i = 0; i < parameters.Length; i++)
 			{
-				parameterTypes[i] = parameters[i].TypeAsSignatureType;
-				modopt[i] = DynamicTypeWrapper.GetModOpt(context, parameters[i], false);
+				parameterTypes[i + firstParam] = parameters[i].TypeAsSignatureType;
+				modopt[i + firstParam] = DynamicTypeWrapper.GetModOpt(context, parameters[i], false);
 			}
 			if (mw.HasCallerID)
 			{

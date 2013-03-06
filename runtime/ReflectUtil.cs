@@ -210,6 +210,39 @@ namespace IKVM.Internal
 				&& !type.IsGenericParameter;
 		}
 
+		internal static bool MatchParameterInfos(ParameterInfo p1, ParameterInfo p2)
+		{
+			if (p1.ParameterType != p2.ParameterType)
+			{
+				return false;
+			}
+			if (!MatchTypes(p1.GetOptionalCustomModifiers(), p2.GetOptionalCustomModifiers()))
+			{
+				return false;
+			}
+			if (!MatchTypes(p1.GetRequiredCustomModifiers(), p2.GetRequiredCustomModifiers()))
+			{
+				return false;
+			}
+			return true;
+		}
+
+		private static bool MatchTypes(Type[] t1, Type[] t2)
+		{
+			if (t1.Length == t2.Length)
+			{
+				for (int i = 0; i < t1.Length; i++)
+				{
+					if (t1[i] != t2[i])
+					{
+						return false;
+					}
+				}
+				return true;
+			}
+			return false;
+		}
+
 #if STATIC_COMPILER
 		internal static Type GetMissingType(Type type)
 		{
