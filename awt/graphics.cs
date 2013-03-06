@@ -1278,30 +1278,36 @@ namespace ikvm.awt
             drawString(str, (float)x, (float)y);
         }
 
-        public override void drawString(String text, float x, float y)
-        {
-            if (text.Length == 0)
-            {
+        public override void drawString(String text, float x, float y) {
+            if (text.Length == 0) {
                 return;
             }
-            bool fractional = isFractionalMetrics();
-            StringFormat format = new StringFormat(StringFormat.GenericTypographic);
-            format.FormatFlags = StringFormatFlags.MeasureTrailingSpaces | StringFormatFlags.NoWrap | StringFormatFlags.FitBlackBox;
-            format.Trimming = StringTrimming.None;
-            if (fractional || !sun.font.StandardGlyphVector.isSimpleString(font, text))
-            {
-                g.DrawString(text, netfont, brush, x, y - font.getSize(), format);
-            }
-            else
-            {
-                // fixed metric for simple text, we position every character to simulate the Java behaviour
-                java.awt.font.FontRenderContext frc = new java.awt.font.FontRenderContext(null, isAntiAlias(), fractional);
-                sun.font.FontDesignMetrics metrics = sun.font.FontDesignMetrics.getMetrics(font, frc);
-                y -= font.getSize();
-                for (int i = 0; i < text.Length; i++)
-                {
-                    g.DrawString(text.Substring(i, 1), netfont, brush, x, y, format);
-                    x += metrics.charWidth(text[i]);
+            CompositingMode origCM = g.CompositingMode;
+            try {
+                if (origCM != CompositingMode.SourceOver) {
+                    // Java has a different behaviar for AlphaComposite and Text Antialiasing
+                    g.CompositingMode = CompositingMode.SourceOver;
+                }
+
+                bool fractional = isFractionalMetrics();
+                StringFormat format = new StringFormat(StringFormat.GenericTypographic);
+                format.FormatFlags = StringFormatFlags.MeasureTrailingSpaces | StringFormatFlags.NoWrap | StringFormatFlags.FitBlackBox;
+                format.Trimming = StringTrimming.None;
+                if (fractional || !sun.font.StandardGlyphVector.isSimpleString(font, text)) {
+                    g.DrawString(text, netfont, brush, x, y - font.getSize(), format);
+                } else {
+                    // fixed metric for simple text, we position every character to simulate the Java behaviour
+                    java.awt.font.FontRenderContext frc = new java.awt.font.FontRenderContext(null, isAntiAlias(), fractional);
+                    sun.font.FontDesignMetrics metrics = sun.font.FontDesignMetrics.getMetrics(font, frc);
+                    y -= font.getSize();
+                    for (int i = 0; i < text.Length; i++) {
+                        g.DrawString(text.Substring(i, 1), netfont, brush, x, y, format);
+                        x += metrics.charWidth(text[i]);
+                    }
+                }
+            } finally {
+                if (origCM != CompositingMode.SourceOver) {
+                    g.CompositingMode = origCM;
                 }
             }
         }
@@ -1345,6 +1351,9 @@ namespace ikvm.awt
 
         public override void setComposite(java.awt.Composite comp)
         {
+            if (javaComposite == comp) {
+                return;
+            }
             if (comp == null)
             {
                 throw new java.lang.IllegalArgumentException("null Composite");
