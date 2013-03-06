@@ -1751,6 +1751,10 @@ namespace IKVM.Internal
 
 			private static MethodWrapper GetInterfaceMethod(TypeWrapper wrapper, string name, string sig)
 			{
+				if(wrapper.IsUnloadable)
+				{
+					return null;
+				}
 				MethodWrapper method = wrapper.GetMethodWrapper(name, sig, false);
 				if(method != null)
 				{
@@ -1772,7 +1776,7 @@ namespace IKVM.Internal
 			{
 				base.Link(thisType);
 				TypeWrapper wrapper = GetClassType();
-				if(wrapper != null && !wrapper.IsUnloadable)
+				if(wrapper != null)
 				{
 					method = GetInterfaceMethod(wrapper, Name, Signature);
 					if(method == null)
