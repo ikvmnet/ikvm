@@ -438,73 +438,73 @@ namespace IKVM.Runtime
 		[DebuggerStepThroughAttribute]
 		public static int f2i(float f)
 		{
-			if(f <= int.MinValue)
+			if (f > int.MinValue && f < int.MaxValue)
+			{
+				return (int)f;
+			}
+			if (f <= int.MinValue)
 			{
 				return int.MinValue;
 			}
-			if(f >= int.MaxValue)
+			if (f >= int.MaxValue)
 			{
 				return int.MaxValue;
 			}
-			if(float.IsNaN(f))
-			{
-				return 0;
-			}
-			return (int)f;
+			return 0;
 		}
 
 		[DebuggerStepThroughAttribute]
 		public static long f2l(float f)
 		{
-			if(f <= long.MinValue)
+			if (f > long.MinValue && f < long.MaxValue)
+			{
+				return (long)f;
+			}
+			if (f <= long.MinValue)
 			{
 				return long.MinValue;
 			}
-			if(f >= long.MaxValue)
+			if (f >= long.MaxValue)
 			{
 				return long.MaxValue;
 			}
-			if(float.IsNaN(f))
-			{
-				return 0;
-			}
-			return (long)f;
+			return 0;
 		}
 
 		[DebuggerStepThroughAttribute]
 		public static int d2i(double d)
 		{
-			if(d <= int.MinValue)
+			if (d > int.MinValue && d < int.MaxValue)
+			{
+				return (int)d;
+			}
+			if (d <= int.MinValue)
 			{
 				return int.MinValue;
 			}
-			if(d >= int.MaxValue)
+			if (d >= int.MaxValue)
 			{
 				return int.MaxValue;
 			}
-			if(double.IsNaN(d))
-			{
-				return 0;
-			}
-			return (int)d;
+			return 0;
 		}
 
 		[DebuggerStepThroughAttribute]
 		public static long d2l(double d)
 		{
-			if(d <= long.MinValue)
+			if (d > long.MinValue && d < long.MaxValue)
+			{
+				return (long)d;
+			}
+			if (d <= long.MinValue)
 			{
 				return long.MinValue;
 			}
-			if(d >= long.MaxValue)
+			if (d >= long.MaxValue)
 			{
 				return long.MaxValue;
 			}
-			if(double.IsNaN(d))
-			{
-				return 0;
-			}
-			return (long)d;
+			return 0;
 		}
 
 		// This is used by static JNI and synchronized methods that need a class object
