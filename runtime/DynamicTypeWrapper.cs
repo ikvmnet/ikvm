@@ -5251,6 +5251,10 @@ namespace IKVM.Internal
 					if (!interfaceList.Contains(iface))
 					{
 						interfaceList.Add(iface);
+						if (!iface.IsAccessibleFrom(wrapper))
+						{
+							continue;
+						}
 						// NOTE we're using TypeAsBaseType for the interfaces!
 						typeBuilder.AddInterfaceImplementation(iface.TypeAsBaseType);
 #if STATIC_COMPILER
