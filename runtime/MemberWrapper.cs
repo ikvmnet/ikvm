@@ -1103,40 +1103,91 @@ namespace IKVM.Internal
 #endif // !STUB_GENERATOR
 	}
 
-	sealed class MirandaMethodWrapper : SmartMethodWrapper
+	abstract class MirandaMethodWrapper : SmartMethodWrapper
 	{
-		private MethodWrapper ifmethod;
-		private string error;
+		private readonly MethodWrapper ifmethod;
 
-		internal MirandaMethodWrapper(TypeWrapper declaringType, MethodWrapper ifmethod)
-			: base(declaringType, ifmethod.Name, ifmethod.Signature, null, null, null, Modifiers.Public | Modifiers.Abstract, MemberFlags.HideFromReflection | MemberFlags.MirandaMethod)
+		private MirandaMethodWrapper(TypeWrapper declaringType, MethodWrapper ifmethod, Modifiers modifiers)
+			: base(declaringType, ifmethod.Name, ifmethod.Signature, null, null, null, modifiers, MemberFlags.HideFromReflection | MemberFlags.MirandaMethod)
 		{
 			this.ifmethod = ifmethod;
 		}
 
-		internal void AddBaseMethod(MethodWrapper mw)
+		private sealed class AbstractMirandaMethodWrapper : MirandaMethodWrapper
+		{
+			internal AbstractMirandaMethodWrapper(TypeWrapper declaringType, MethodWrapper ifmethod)
+				: base(declaringType, ifmethod, Modifiers.Public | Modifiers.Abstract)
+			{
+			}
+		}
+
+		private sealed class DefaultMirandaMethodWrapper : MirandaMethodWrapper
+		{
+			internal DefaultMirandaMethodWrapper(TypeWrapper declaringType, MethodWrapper ifmethod)
+				: base(declaringType, ifmethod, Modifiers.Public)
+			{
+			}
+		}
+
+		private sealed class ErrorMirandaMethodWrapper : MirandaMethodWrapper
+		{
+			private string error;
+
+			internal ErrorMirandaMethodWrapper(TypeWrapper declaringType, MethodWrapper ifmethod, string error)
+				: base(declaringType, ifmethod, Modifiers.Public)
+			{
+				this.error = error;
+			}
+
+			protected override MirandaMethodWrapper AddConflictError(MethodWrapper mw)
+			{
+				error += " " + mw.DeclaringType.Name + "." + mw.Name;
+				return this;
+			}
+
+			internal override string Error
+			{
+				get { return error; }
+			}
+		}
+
+		internal static MirandaMethodWrapper Create(TypeWrapper declaringType, MethodWrapper ifmethod)
+		{
+			return ifmethod.IsAbstract
+				? (MirandaMethodWrapper)new AbstractMirandaMethodWrapper(declaringType, ifmethod)
+				: (MirandaMethodWrapper)new DefaultMirandaMethodWrapper(declaringType, ifmethod);
+		}
+
+		internal MirandaMethodWrapper Update(MethodWrapper mw)
 		{
 			if (ifmethod == mw)
 			{
 				// an interface can be implemented multiple times
+				return this;
 			}
 			else if (mw.DeclaringType.ImplementsInterface(ifmethod.DeclaringType))
 			{
-				ifmethod = mw;
+				return Create(DeclaringType, mw);
 			}
 			else if (!ifmethod.IsAbstract && !mw.IsAbstract)
 			{
-				if (error == null)
-				{
-					error = "Conflicting default methods: " + ifmethod.DeclaringType.Name + "." + ifmethod.Name;
-				}
-				error += " " + mw.DeclaringType.Name + "." + mw.Name;
+				return AddConflictError(mw);
 			}
 			else if (!ifmethod.IsAbstract && mw.IsAbstract)
 			{
-				ifmethod = mw;
-				error = DeclaringType.Name + "." + Name + Signature;
+				return new ErrorMirandaMethodWrapper(DeclaringType, mw, DeclaringType.Name + "." + Name + Signature);
 			}
+			else
+			{
+				return this;
+			}
+		}
+
+		protected virtual MirandaMethodWrapper AddConflictError(MethodWrapper mw)
+		{
+			return new ErrorMirandaMethodWrapper(DeclaringType, ifmethod, "Conflicting default methods:")
+				.AddConflictError(ifmethod)
+				.AddConflictError(mw);
 		}
 
 		internal MethodWrapper BaseMethod
@@ -1144,9 +1195,9 @@ namespace IKVM.Internal
 			get { return ifmethod; }
 		}
 
-		internal string Error
+		internal virtual string Error
 		{
-			get { return error; }
+			get { return null; }
 		}
 
 #if !STUB_GENERATOR
