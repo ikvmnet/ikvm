@@ -2507,15 +2507,7 @@ namespace IKVM.Internal
 					return ccl.IsEquivalentTo(wrapper.GetClassLoader());
 				}
 #endif
-				if (GetClassLoader() != wrapper.GetClassLoader())
-				{
-					return false;
-				}
-#if STATIC_COMPILER || STUB_GENERATOR
-				return true;
-#else
-				return InternalsVisibleTo(wrapper);
-#endif
+				return GetClassLoader() == wrapper.GetClassLoader();
 			}
 			else
 			{
