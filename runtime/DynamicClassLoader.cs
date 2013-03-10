@@ -403,7 +403,7 @@ namespace IKVM.Internal
 		{
 			AssemblyName name = new AssemblyName();
 			name.Name = "jniproxy";
-			jniProxyAssemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave, null, null, null, null, null, true);
+			jniProxyAssemblyBuilder = DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave, null);
 			return jniProxyAssemblyBuilder.DefineDynamicModule("jniproxy.dll", "jniproxy.dll");
 		}
 #endif
@@ -544,12 +544,7 @@ namespace IKVM.Internal
 				attribs.Add(new CustomAttributeBuilder(typeof(System.Security.SecurityTransparentAttribute).GetConstructor(Type.EmptyTypes), new object[0]));
 			}
 #endif
-			AssemblyBuilder assemblyBuilder =
-#if NET_4_0
-				AppDomain.CurrentDomain.DefineDynamicAssembly(name, access, null, true, attribs);
-#else
-				AppDomain.CurrentDomain.DefineDynamicAssembly(name, access, null, null, null, null, null, true, attribs);
-#endif
+			AssemblyBuilder assemblyBuilder = DefineDynamicAssembly(name, access, attribs);
 			AttributeHelper.SetRuntimeCompatibilityAttribute(assemblyBuilder);
 			bool debug = JVM.EmitSymbols;
 			CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, debug });
@@ -557,6 +552,15 @@ namespace IKVM.Internal
 			ModuleBuilder moduleBuilder = JVM.IsSaveDebugImage ? assemblyBuilder.DefineDynamicModule(name.Name, name.Name + ".dll", debug) : assemblyBuilder.DefineDynamicModule(name.Name, debug);
 			moduleBuilder.SetCustomAttribute(new CustomAttributeBuilder(typeof(IKVM.Attributes.JavaModuleAttribute).GetConstructor(Type.EmptyTypes), new object[0]));
 			return moduleBuilder;
+		}
+
+		private static AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, IEnumerable<CustomAttributeBuilder> assemblyAttributes)
+		{
+#if NET_4_0
+			return AppDomain.CurrentDomain.DefineDynamicAssembly(name, access, null, true, assemblyAttributes);
+#else
+			return AppDomain.CurrentDomain.DefineDynamicAssembly(name, access, null, null, null, null, null, true, assemblyAttributes);
+#endif
 		}
 #endif // !STATIC_COMPILER
 	}
