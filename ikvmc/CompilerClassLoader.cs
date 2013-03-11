@@ -44,7 +44,7 @@ namespace IKVM.Internal
 {
 	sealed class CompilerClassLoader : ClassLoaderWrapper
 	{
-		private Dictionary<string, JarItemReference> classes;
+		private Dictionary<string, Jar.Item> classes;
 		private Dictionary<string, RemapperTypeWrapper> remapped = new Dictionary<string, RemapperTypeWrapper>();
 		private string assemblyName;
 		private string assemblyFile;
@@ -73,7 +73,7 @@ namespace IKVM.Internal
 		private List<string> jarList = new List<string>();
 		private List<TypeWrapper> allwrappers;
 
-		internal CompilerClassLoader(AssemblyClassLoader[] referencedAssemblies, CompilerOptions options, FileInfo assemblyPath, bool targetIsModule, string assemblyName, Dictionary<string, JarItemReference> classes)
+		internal CompilerClassLoader(AssemblyClassLoader[] referencedAssemblies, CompilerOptions options, FileInfo assemblyPath, bool targetIsModule, string assemblyName, Dictionary<string, Jar.Item> classes)
 			: base(options.codegenoptions, null)
 		{
 			this.referencedAssemblies = referencedAssemblies;
@@ -271,11 +271,10 @@ namespace IKVM.Internal
 			}
 			else
 			{
-				JarItemReference itemRef;
+				Jar.Item itemRef;
 				if(classes.TryGetValue(name, out itemRef))
 				{
 					classes.Remove(name);
-					JarItem classdef = itemRef.Jar.Items[itemRef.Index];
 					ClassFile f;
 					try
 					{
@@ -284,7 +283,8 @@ namespace IKVM.Internal
 						{
 							cfp |= ClassFileParseOptions.LineNumberTable;
 						}
-						f = new ClassFile(classdef.data, 0, classdef.data.Length, name, cfp);
+						byte[] buf = itemRef.GetData();
+						f = new ClassFile(buf, 0, buf.Length, name, cfp);
 					}
 					catch(ClassFormatError x)
 					{
@@ -331,9 +331,10 @@ namespace IKVM.Internal
 					}
 					if(f.SourceFileAttribute != null)
 					{
-						if(classdef.path != null)
+						FileInfo path = itemRef.Path;
+						if(path != null)
 						{
-							string sourceFile = Path.GetFullPath(Path.Combine(classdef.path.DirectoryName, f.SourceFileAttribute));
+							string sourceFile = Path.GetFullPath(Path.Combine(path.DirectoryName, f.SourceFileAttribute));
 							if(File.Exists(sourceFile))
 							{
 								f.SourcePath = sourceFile;
@@ -358,9 +359,14 @@ namespace IKVM.Internal
 					{
 						TypeWrapper tw = DefineClass(f, null);
 						// we successfully created the type, so we don't need to include the class as a resource
-						itemRef.Jar.Items[itemRef.Index] = options.nojarstubs
-							? new JarItem()	// null entry
-							: new JarItem(itemRef.Jar.Items[itemRef.Index].zipEntry, null, null); // create a stub class pseudo resource
+						if (options.nojarstubs)
+						{
+							itemRef.Remove();
+						}
+						else
+						{
+							itemRef.MarkAsStub();
+						}
 						return tw;
 					}
 					catch (ClassFormatError x)
@@ -675,11 +681,11 @@ namespace IKVM.Internal
 						ccl.AddWildcardExports(exportedNamesPerAssembly);
 						foreach (Jar jar in ccl.options.jars)
 						{
-							foreach (JarItem item in jar.Items)
+							foreach (Jar.Item item in jar)
 							{
-								if (item.zipEntry != null && item.data != null)
+								if (!item.IsStub)
 								{
-									AddExportMapEntry(exportedNamesPerAssembly, ccl, item.zipEntry.Name);
+									AddExportMapEntry(exportedNamesPerAssembly, ccl, item.Name);
 								}
 							}
 						}
@@ -737,34 +743,25 @@ namespace IKVM.Internal
 					}
 					zip.SetLevel(9);
 					List<string> stubs = new List<string>();
-					foreach (JarItem item in options.jars[i].Items)
+					foreach (Jar.Item item in options.jars[i])
 					{
-						if (item.zipEntry == null)
-						{
-							continue;
-						}
-						if (item.data == null)
+						if (item.IsStub)
 						{
 							// we don't want stub class pseudo resources for classes loaded from the file system
 							if (i != options.classesJar)
 							{
-								stubs.Add(item.zipEntry.Name);
+								stubs.Add(item.Name);
 							}
 							continue;
 						}
-						ZipEntry zipEntry = new ZipEntry(item.zipEntry.Name);
-						zipEntry.Comment = item.zipEntry.Comment;
-						zipEntry.CompressionMethod = item.zipEntry.CompressionMethod;
-						zipEntry.DosTime = item.zipEntry.DosTime;
-						zipEntry.ExternalFileAttributes = item.zipEntry.ExternalFileAttributes;
-						zipEntry.ExtraData = item.zipEntry.ExtraData;
-						zipEntry.Flags = item.zipEntry.Flags;
+						ZipEntry zipEntry = item.ZipEntry;
 						if (options.compressedResources || zipEntry.CompressionMethod != CompressionMethod.Stored)
 						{
 							zipEntry.CompressionMethod = CompressionMethod.Deflated;
 						}
 						zip.PutNextEntry(zipEntry);
-						zip.Write(item.data, 0, item.data.Length);
+						byte[] data = item.GetData();
+						zip.Write(data, 0, data.Length);
 						zip.CloseEntry();
 						hasEntries = true;
 					}
@@ -2722,13 +2719,13 @@ namespace IKVM.Internal
 			List<object> assemblyAnnotations = new List<object>();
 			Tracer.Info(Tracer.Compiler, "Parsing class files");
 			// map the class names to jar entries
-			Dictionary<string, JarItemReference> h = new Dictionary<string, JarItemReference>();
+			Dictionary<string, Jar.Item> h = new Dictionary<string, Jar.Item>();
 			List<string> classNames = new List<string>();
 			foreach (Jar jar in options.jars)
 			{
-				for (int i = 0; i < jar.Items.Count; i++)
+				foreach (Jar.Item item in jar)
 				{
-					string name = jar.Items[i].zipEntry.Name;
+					string name = item.Name;
 					if (name.EndsWith(".class", StringComparison.Ordinal)
 						&& name.Length > 6
 						&& name.IndexOf('.') == name.Length - 6)
@@ -2737,14 +2734,14 @@ namespace IKVM.Internal
 						if (options.IsExcludedClass(className))
 						{
 							// we don't compile the class and we also don't include it as a resource
-							jar.Items[i] = new JarItem();
+							item.Remove();
 						}
 						else
 						{
 							if (h.ContainsKey(className))
 							{
 								StaticCompiler.IssueMessage(Message.DuplicateClassName, className);
-								JarItemReference itemRef = h[className];
+								Jar.Item itemRef = h[className];
 								if ((options.classesJar != -1 && itemRef.Jar == options.jars[options.classesJar]) || jar != itemRef.Jar)
 								{
 									// the previous class stays, because it was either in an earlier jar or we're processing the classes.jar
@@ -2758,7 +2755,7 @@ namespace IKVM.Internal
 									classNames.Remove(className);
 								}
 							}
-							h.Add(className, new JarItemReference(jar, i));
+							h.Add(className, item);
 							classNames.Add(className);
 						}
 					}
@@ -2766,12 +2763,12 @@ namespace IKVM.Internal
 			}
 
 			// look for "assembly" type that acts as a placeholder for assembly attributes
-			JarItemReference assemblyType;
+			Jar.Item assemblyType;
 			if (h.TryGetValue("assembly", out assemblyType))
 			{
 				try
 				{
-					byte[] buf = assemblyType.Jar.Items[assemblyType.Index].data;
+					byte[] buf = assemblyType.GetData();
 					ClassFile f = new ClassFile(buf, 0, buf.Length, null, ClassFileParseOptions.None);
 					// NOTE the "assembly" type in the unnamed package is a magic type
 					// that acts as the placeholder for assembly attributes
@@ -2780,7 +2777,7 @@ namespace IKVM.Internal
 						assemblyAnnotations.AddRange(f.Annotations);
 						// HACK remove "assembly" type that exists only as a placeholder for assembly attributes
 						h.Remove(f.Name);
-						assemblyType.Jar.Items[assemblyType.Index] = new JarItem();
+						assemblyType.Remove();
 					}
 				}
 				catch (ClassFormatError) { }
@@ -2793,8 +2790,7 @@ namespace IKVM.Internal
 				{
 					try
 					{
-						JarItemReference itemRef = h[className];
-						byte[] buf = itemRef.Jar.Items[itemRef.Index].data;
+						byte[] buf = h[className].GetData();
 						ClassFile f = new ClassFile(buf, 0, buf.Length, null, ClassFileParseOptions.None);
 						if (f.Name == className)
 						{
@@ -3328,7 +3324,7 @@ namespace IKVM.Internal
 	{
 		internal readonly string Name;
 		internal readonly string Comment;
-		internal readonly List<JarItem> Items = new List<JarItem>();
+		private readonly List<JarItem> Items = new List<JarItem>();
 
 		internal Jar(string name, string comment)
 		{
@@ -3354,31 +3350,111 @@ namespace IKVM.Internal
 			zipEntry.CompressionMethod = CompressionMethod.Stored;
 			Items.Add(new JarItem(zipEntry, data, fileInfo));
 		}
-	}
 
-	struct JarItem
-	{
-		internal readonly ZipEntry zipEntry;
-		internal readonly byte[] data;
-		internal readonly FileInfo path;			// path of the original file, if it was individual file (used to construct source file path)
-
-		internal JarItem(ZipEntry zipEntry, byte[] data, FileInfo path)
+		private struct JarItem
 		{
-			this.zipEntry = zipEntry;
-			this.data = data;
-			this.path = path;
+			internal readonly ZipEntry zipEntry;
+			internal readonly byte[] data;
+			internal readonly FileInfo path;			// path of the original file, if it was individual file (used to construct source file path)
+
+			internal JarItem(ZipEntry zipEntry, byte[] data, FileInfo path)
+			{
+				this.zipEntry = zipEntry;
+				this.data = data;
+				this.path = path;
+			}
 		}
-	}
 
-	struct JarItemReference
-	{
-		internal readonly Jar Jar;
-		internal readonly int Index;
-
-		internal JarItemReference(Jar jar, int index)
+		public struct Item
 		{
-			this.Jar = jar;
-			this.Index = index;
+			internal readonly Jar Jar;
+			private readonly int Index;
+
+			internal Item(Jar jar, int index)
+			{
+				this.Jar = jar;
+				this.Index = index;
+			}
+
+			internal string Name
+			{
+				get { return Jar.Items[Index].zipEntry.Name; }
+			}
+
+			internal byte[] GetData()
+			{
+				return Jar.Items[Index].data;
+			}
+
+			internal FileInfo Path
+			{
+				get { return Jar.Items[Index].path; }
+			}
+
+			internal ZipEntry ZipEntry
+			{
+				get
+				{
+					ZipEntry org = Jar.Items[Index].zipEntry;
+					ZipEntry zipEntry = new ZipEntry(org.Name);
+					zipEntry.Comment = org.Comment;
+					zipEntry.CompressionMethod = org.CompressionMethod;
+					zipEntry.DosTime = org.DosTime;
+					zipEntry.ExternalFileAttributes = org.ExternalFileAttributes;
+					zipEntry.ExtraData = org.ExtraData;
+					zipEntry.Flags = org.Flags;
+					return zipEntry;
+				}
+			}
+
+			internal void Remove()
+			{
+				Jar.Items[Index] = new JarItem();
+			}
+
+			internal void MarkAsStub()
+			{
+				Jar.Items[Index] = new JarItem(Jar.Items[Index].zipEntry, null, null);
+			}
+
+			internal bool IsStub
+			{
+				get { return Jar.Items[Index].data == null; }
+			}
+		}
+
+		internal struct JarEnumerator
+		{
+			private readonly Jar jar;
+			private int index;
+
+			internal JarEnumerator(Jar jar)
+			{
+				this.jar = jar;
+				this.index = -1;
+			}
+
+			public Item Current
+			{
+				get { return new Item(jar, index); }
+			}
+
+			public bool MoveNext()
+			{
+				while (index + 1 < jar.Items.Count)
+				{
+					if (jar.Items[++index].zipEntry != null)
+					{
+						return true;
+					}
+				}
+				return false;
+			}
+		}
+
+		public JarEnumerator GetEnumerator()
+		{
+			return new JarEnumerator(this);
 		}
 	}
 
