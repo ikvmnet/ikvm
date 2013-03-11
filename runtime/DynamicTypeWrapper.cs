@@ -4314,7 +4314,7 @@ namespace IKVM.Internal
 					TypeBuilder tbMethods = null;
 					foreach (MethodWrapper mw in methods)
 					{
-						if (mw.IsStatic)
+						if (mw.IsStatic && ParametersAreAccessible(mw))
 						{
 							if (tbMethods == null)
 							{
@@ -4341,6 +4341,10 @@ namespace IKVM.Internal
 
 			private void CreateDefaultMethodInterop(ref TypeBuilder tbDefaultMethods, MethodBuilder defaultMethod, MethodWrapper mw)
 			{
+				if (!ParametersAreAccessible(mw))
+				{
+					return;
+				}
 				if (tbDefaultMethods == null)
 				{
 					tbDefaultMethods = DefineNestedInteropType("__DefaultMethods");
