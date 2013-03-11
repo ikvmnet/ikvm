@@ -4348,6 +4348,8 @@ namespace IKVM.Internal
 				MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(), tbDefaultMethods, mw.Name, MethodAttributes.Public | MethodAttributes.Static, wrapper.TypeAsSignatureType, true);
 				CodeEmitter ilgen = CodeEmitter.Create(mb);
 				ilgen.EmitLdarg(0);
+				ilgen.Emit(OpCodes.Dup);
+				ilgen.EmitNullCheck();
 				TypeWrapper[] parameters = mw.GetParameters();
 				for (int i = 0; i < parameters.Length; i++)
 				{
