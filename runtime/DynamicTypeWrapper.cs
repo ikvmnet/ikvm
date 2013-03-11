@@ -3786,6 +3786,9 @@ namespace IKVM.Internal
 						parent = parent.BaseTypeWrapper;
 					}
 				}
+#if STATIC_COMPILER
+				TypeBuilder tbDefaultMethods = null;
+#endif
 				bool basehasclinit = wrapper.BaseTypeWrapper != null && wrapper.BaseTypeWrapper.HasStaticInitializer;
 				int clinitIndex = -1;
 				bool hasConstructor = false;
@@ -3963,6 +3966,9 @@ namespace IKVM.Internal
 							{
 								mb = methods[i].GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(),
 									typeBuilder, NamePrefix.DefaultMethod + mb.Name, MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, typeBuilder);
+#if STATIC_COMPILER
+								CreateDefaultMethodInterop(ref tbDefaultMethods, mb, methods[i]);
+#endif
 							}
 							CodeEmitter ilGenerator = CodeEmitter.Create(mb);
 							TraceHelper.EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
@@ -4253,23 +4259,24 @@ namespace IKVM.Internal
 			}
 
 #if STATIC_COMPILER
-			private string ReserveNestedTypeName(string name)
+			private TypeBuilder DefineNestedInteropType(string name)
 			{
 				CompilerClassLoader ccl = wrapper.classLoader;
 				while (!ccl.ReserveName(classFile.Name + "$" + name))
 				{
 					name += "_";
 				}
-				return name;
+				TypeBuilder tb = typeBuilder.DefineNestedType(name, TypeAttributes.Class | TypeAttributes.NestedPublic | TypeAttributes.Sealed | TypeAttributes.Abstract);
+				RegisterNestedTypeBuilder(tb);
+				AttributeHelper.HideFromJava(tb);
+				return tb;
 			}
 	
 			private void AddInterfaceFieldsInterop(FieldWrapper[] fields)
 			{
 				if (classFile.IsInterface && classFile.IsPublic && !wrapper.IsGhost && classFile.Fields.Length > 0)
 				{
-					TypeBuilder tbFields = typeBuilder.DefineNestedType(ReserveNestedTypeName("__Fields"), TypeAttributes.Class | TypeAttributes.NestedPublic | TypeAttributes.Sealed | TypeAttributes.Abstract);
-					RegisterNestedTypeBuilder(tbFields);
-					AttributeHelper.HideFromJava(tbFields);
+					TypeBuilder tbFields = DefineNestedInteropType("__Fields");
 					CodeEmitter ilgenClinit = null;
 					for (int i = 0; i < classFile.Fields.Length; i++)
 					{
@@ -4311,9 +4318,7 @@ namespace IKVM.Internal
 						{
 							if (tbMethods == null)
 							{
-								tbMethods = typeBuilder.DefineNestedType(ReserveNestedTypeName("__Methods"), TypeAttributes.Class | TypeAttributes.NestedPublic | TypeAttributes.Sealed | TypeAttributes.Abstract);
-								RegisterNestedTypeBuilder(tbMethods);
-								AttributeHelper.HideFromJava(tbMethods);
+								tbMethods = DefineNestedInteropType("__Methods");
 							}
 							MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(wrapper, tbMethods, mw.Name, MethodAttributes.Public | MethodAttributes.Static);
 							CodeEmitter ilgen = CodeEmitter.Create(mb);
@@ -4327,6 +4332,23 @@ namespace IKVM.Internal
 						}
 					}
 				}
+			}
+
+			private void CreateDefaultMethodInterop(ref TypeBuilder tbDefaultMethods, MethodBuilder defaultMethod, MethodWrapper mw)
+			{
+				if (tbDefaultMethods == null)
+				{
+					tbDefaultMethods = DefineNestedInteropType("__DefaultMethods");
+				}
+				MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(), tbDefaultMethods, mw.Name, MethodAttributes.Public | MethodAttributes.Static, wrapper.TypeAsSignatureType);
+				CodeEmitter ilgen = CodeEmitter.Create(mb);
+				for (int i = 0, count = mw.GetParameters().Length; i <= count; i++)
+				{
+					ilgen.EmitLdarg(i);
+				}
+				ilgen.Emit(OpCodes.Call, defaultMethod);
+				ilgen.Emit(OpCodes.Ret);
+				ilgen.DoEmit();
 			}
 #endif
 
