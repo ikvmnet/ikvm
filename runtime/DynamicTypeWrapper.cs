@@ -4088,6 +4088,10 @@ namespace IKVM.Internal
 				// to expose these fields to C# (which stubbornly refuses to see fields in interfaces).
 				AddInterfaceFieldsInterop(fields);
 
+				// If we're a Java 8 interface with static methods, we create an inner class
+				// to expose these methods to C#.
+				AddInterfaceMethodsInterop(methods);
+
 				// See if there is any additional metadata
 				wrapper.EmitMapXmlMetadata(typeBuilder, classFile, fields, methods);
 
@@ -4249,17 +4253,21 @@ namespace IKVM.Internal
 			}
 
 #if STATIC_COMPILER
+			private string ReserveNestedTypeName(string name)
+			{
+				CompilerClassLoader ccl = wrapper.classLoader;
+				while (!ccl.ReserveName(classFile.Name + "$" + name))
+				{
+					name += "_";
+				}
+				return name;
+			}
+	
 			private void AddInterfaceFieldsInterop(FieldWrapper[] fields)
 			{
 				if (classFile.IsInterface && classFile.IsPublic && !wrapper.IsGhost && classFile.Fields.Length > 0)
 				{
-					CompilerClassLoader ccl = wrapper.classLoader;
-					string name = "__Fields";
-					while (!ccl.ReserveName(classFile.Name + "$" + name))
-					{
-						name += "_";
-					}
-					TypeBuilder tbFields = typeBuilder.DefineNestedType(name, TypeAttributes.Class | TypeAttributes.NestedPublic | TypeAttributes.Sealed | TypeAttributes.Abstract);
+					TypeBuilder tbFields = typeBuilder.DefineNestedType(ReserveNestedTypeName("__Fields"), TypeAttributes.Class | TypeAttributes.NestedPublic | TypeAttributes.Sealed | TypeAttributes.Abstract);
 					RegisterNestedTypeBuilder(tbFields);
 					AttributeHelper.HideFromJava(tbFields);
 					CodeEmitter ilgenClinit = null;
@@ -4288,6 +4296,35 @@ namespace IKVM.Internal
 					{
 						ilgenClinit.Emit(OpCodes.Ret);
 						ilgenClinit.DoEmit();
+					}
+				}
+			}
+
+			private void AddInterfaceMethodsInterop(MethodWrapper[] methods)
+			{
+				if (classFile.IsInterface && classFile.IsPublic && classFile.MajorVersion >= 52 && !wrapper.IsGhost && methods.Length > 0)
+				{
+					TypeBuilder tbMethods = null;
+					foreach (MethodWrapper mw in methods)
+					{
+						if (mw.IsStatic)
+						{
+							if (tbMethods == null)
+							{
+								tbMethods = typeBuilder.DefineNestedType(ReserveNestedTypeName("__Methods"), TypeAttributes.Class | TypeAttributes.NestedPublic | TypeAttributes.Sealed | TypeAttributes.Abstract);
+								RegisterNestedTypeBuilder(tbMethods);
+								AttributeHelper.HideFromJava(tbMethods);
+							}
+							MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(wrapper, tbMethods, mw.Name, MethodAttributes.Public | MethodAttributes.Static);
+							CodeEmitter ilgen = CodeEmitter.Create(mb);
+							for (int i = 0, count = mw.GetParameters().Length; i < count; i++)
+							{
+								ilgen.EmitLdarg(i);
+							}
+							mw.EmitCall(ilgen);
+							ilgen.Emit(OpCodes.Ret);
+							ilgen.DoEmit();
+						}
 					}
 				}
 			}
