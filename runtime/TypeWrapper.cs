@@ -2572,6 +2572,14 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal Type TypeAsPublicSignatureType
+		{
+			get
+			{
+				return (IsPublic ? this : GetPublicBaseTypeWrapper()).TypeAsSignatureType;
+			}
+		}
+
 		internal virtual Type TypeAsBaseType
 		{
 			get

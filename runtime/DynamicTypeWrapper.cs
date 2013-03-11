@@ -4290,7 +4290,7 @@ namespace IKVM.Internal
 						else
 						{
 							FieldAttributes attribs = FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.InitOnly;
-							FieldBuilder fb = tbFields.DefineField(f.Name, ToPublicSignatureType(fields[i].FieldTypeWrapper), attribs);
+							FieldBuilder fb = tbFields.DefineField(f.Name, fields[i].FieldTypeWrapper.TypeAsPublicSignatureType, attribs);
 							if (ilgenClinit == null)
 							{
 								ilgenClinit = CodeEmitter.Create(ReflectUtil.DefineTypeInitializer(tbFields));
@@ -4510,7 +4510,7 @@ namespace IKVM.Internal
 				}
 				else
 				{
-					Type propType = ToPublicSignatureType(fw.FieldTypeWrapper);
+					Type propType = fw.FieldTypeWrapper.TypeAsPublicSignatureType;
 					Type[] modopt = wrapper.GetModOpt(fw.FieldTypeWrapper, true);
 					PropertyBuilder pb = typeBuilder.DefineProperty(fw.Name, PropertyAttributes.None, propType, null, modopt, Type.EmptyTypes, null, null);
 					if (type1)
@@ -4629,10 +4629,10 @@ namespace IKVM.Internal
 				for (int i = 0; i < parameters.Length; i++)
 				{
 					realParameterTypes[i] = parameters[i].TypeAsSignatureType;
-					parameterTypes[i] = ToPublicSignatureType(parameters[i]);
+					parameterTypes[i] = parameters[i].TypeAsPublicSignatureType;
 					modopt[i] = wrapper.GetModOpt(parameters[i], true);
 				}
-				Type returnType = ToPublicSignatureType(mw.ReturnType);
+				Type returnType = mw.ReturnType.TypeAsPublicSignatureType;
 				Type[] modoptReturnType = wrapper.GetModOpt(mw.ReturnType, true);
 				Array.Resize(ref modoptReturnType, modoptReturnType.Length + 1);
 				modoptReturnType[modoptReturnType.Length - 1] = JVM.LoadType(typeof(IKVM.Attributes.AccessStub));
@@ -4687,11 +4687,6 @@ namespace IKVM.Internal
 				}
 				ilgen.Emit(OpCodes.Ret);
 				ilgen.DoEmit();
-			}
-
-			private static Type ToPublicSignatureType(TypeWrapper tw)
-			{
-				return (tw.IsPublic ? tw : tw.GetPublicBaseTypeWrapper()).TypeAsSignatureType;
 			}
 
 			private bool ParametersAreAccessible(MethodWrapper mw)
