@@ -3965,7 +3965,7 @@ namespace IKVM.Internal
 							if (!m.IsStatic && classFile.IsInterface)
 							{
 								mb = methods[i].GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(),
-									typeBuilder, NamePrefix.DefaultMethod + mb.Name, MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, typeBuilder);
+									typeBuilder, NamePrefix.DefaultMethod + mb.Name, MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, typeBuilder, false);
 #if STATIC_COMPILER
 								CreateDefaultMethodInterop(ref tbDefaultMethods, mb, methods[i]);
 #endif
@@ -4320,11 +4320,16 @@ namespace IKVM.Internal
 							{
 								tbMethods = DefineNestedInteropType("__Methods");
 							}
-							MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(wrapper, tbMethods, mw.Name, MethodAttributes.Public | MethodAttributes.Static);
+							MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(), tbMethods, mw.Name, MethodAttributes.Public | MethodAttributes.Static, null, true);
 							CodeEmitter ilgen = CodeEmitter.Create(mb);
-							for (int i = 0, count = mw.GetParameters().Length; i < count; i++)
+							TypeWrapper[] parameters = mw.GetParameters();
+							for (int i = 0; i < parameters.Length; i++)
 							{
 								ilgen.EmitLdarg(i);
+								if (!parameters[i].IsUnloadable && !parameters[i].IsPublic)
+								{
+									parameters[i].EmitCheckcast(ilgen);
+								}
 							}
 							mw.EmitCall(ilgen);
 							ilgen.Emit(OpCodes.Ret);
@@ -4340,11 +4345,17 @@ namespace IKVM.Internal
 				{
 					tbDefaultMethods = DefineNestedInteropType("__DefaultMethods");
 				}
-				MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(), tbDefaultMethods, mw.Name, MethodAttributes.Public | MethodAttributes.Static, wrapper.TypeAsSignatureType);
+				MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(), tbDefaultMethods, mw.Name, MethodAttributes.Public | MethodAttributes.Static, wrapper.TypeAsSignatureType, true);
 				CodeEmitter ilgen = CodeEmitter.Create(mb);
-				for (int i = 0, count = mw.GetParameters().Length; i <= count; i++)
+				ilgen.EmitLdarg(0);
+				TypeWrapper[] parameters = mw.GetParameters();
+				for (int i = 0; i < parameters.Length; i++)
 				{
-					ilgen.EmitLdarg(i);
+					ilgen.EmitLdarg(i + 1);
+					if (!parameters[i].IsUnloadable && !parameters[i].IsPublic)
+					{
+						parameters[i].EmitCheckcast(ilgen);
+					}
 				}
 				ilgen.Emit(OpCodes.Call, defaultMethod);
 				ilgen.Emit(OpCodes.Ret);
@@ -4368,7 +4379,7 @@ namespace IKVM.Internal
 							{
 								// if we're an interface with a default miranda method, we need to create a new default method that forwards to the original
 								mb = methods[i].GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(),
-									typeBuilder, NamePrefix.DefaultMethod + mb.Name, MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, typeBuilder);
+									typeBuilder, NamePrefix.DefaultMethod + mb.Name, MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, typeBuilder, false);
 							}
 							CodeEmitter ilgen = CodeEmitter.Create(mb);
 							ilgen.EmitLdarg(0);
@@ -6278,15 +6289,15 @@ namespace IKVM.Internal
 
 		internal MethodBuilder DefineMethod(DynamicTypeWrapper context, TypeBuilder tb, string name, MethodAttributes attribs)
 		{
-			return DefineMethod(context.GetClassLoader().GetTypeWrapperFactory(), tb, name, attribs, null);
+			return DefineMethod(context.GetClassLoader().GetTypeWrapperFactory(), tb, name, attribs, null, false);
 		}
 
 		internal MethodBuilder DefineMethod(TypeWrapperFactory context, TypeBuilder tb, string name, MethodAttributes attribs)
 		{
-			return DefineMethod(context, tb, name, attribs, null);
+			return DefineMethod(context, tb, name, attribs, null, false);
 		}
 
-		internal MethodBuilder DefineMethod(TypeWrapperFactory context, TypeBuilder tb, string name, MethodAttributes attribs, Type firstParameter)
+		internal MethodBuilder DefineMethod(TypeWrapperFactory context, TypeBuilder tb, string name, MethodAttributes attribs, Type firstParameter, bool mustBePublic)
 		{
 			// we add optional modifiers to make the signature unique
 			int firstParam = firstParameter == null ? 0 : 1;
@@ -6300,15 +6311,20 @@ namespace IKVM.Internal
 			}
 			for (int i = 0; i < parameters.Length; i++)
 			{
-				parameterTypes[i + firstParam] = parameters[i].TypeAsSignatureType;
-				modopt[i + firstParam] = DynamicTypeWrapper.GetModOpt(context, parameters[i], false);
+				parameterTypes[i + firstParam] = mustBePublic
+					? parameters[i].TypeAsPublicSignatureType
+					: parameters[i].TypeAsSignatureType;
+				modopt[i + firstParam] = DynamicTypeWrapper.GetModOpt(context, parameters[i], mustBePublic);
 			}
 			if (mw.HasCallerID)
 			{
 				parameterTypes[parameterTypes.Length - 1] = CoreClasses.ikvm.@internal.CallerID.Wrapper.TypeAsSignatureType;
 			}
-			Type[] modoptReturnType = DynamicTypeWrapper.GetModOpt(context, mw.ReturnType, false);
-			return tb.DefineMethod(name, attribs, CallingConventions.Standard, mw.ReturnType.TypeAsSignatureType, null, modoptReturnType, parameterTypes, null, modopt);
+			Type returnType = mustBePublic
+				? mw.ReturnType.TypeAsPublicSignatureType
+				: mw.ReturnType.TypeAsSignatureType;
+			Type[] modoptReturnType = DynamicTypeWrapper.GetModOpt(context, mw.ReturnType, mustBePublic);
+			return tb.DefineMethod(name, attribs, CallingConventions.Standard, returnType, null, modoptReturnType, parameterTypes, null, modopt);
 		}
 
 		internal MethodBuilder DefineConstructor(DynamicTypeWrapper context, TypeBuilder tb, MethodAttributes attribs)
