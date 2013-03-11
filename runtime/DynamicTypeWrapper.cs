@@ -4086,45 +4086,7 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 				// If we're an interface that has public/protected fields, we create an inner class
 				// to expose these fields to C# (which stubbornly refuses to see fields in interfaces).
-				TypeBuilder tbFields = null;
-				if (classFile.IsInterface && classFile.IsPublic && !wrapper.IsGhost && classFile.Fields.Length > 0)
-				{
-					CompilerClassLoader ccl = wrapper.classLoader;
-					string name = "__Fields";
-					while (!ccl.ReserveName(classFile.Name + "$" + name))
-					{
-						name += "_";
-					}
-					tbFields = typeBuilder.DefineNestedType(name, TypeAttributes.Class | TypeAttributes.NestedPublic | TypeAttributes.Sealed | TypeAttributes.Abstract);
-					AttributeHelper.HideFromJava(tbFields);
-					CodeEmitter ilgenClinit = null;
-					for (int i = 0; i < classFile.Fields.Length; i++)
-					{
-						ClassFile.Field f = classFile.Fields[i];
-						if (f.ConstantValue != null)
-						{
-							FieldAttributes attribs = FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Literal;
-							FieldBuilder fb = tbFields.DefineField(f.Name, fields[i].FieldTypeWrapper.TypeAsSignatureType, attribs);
-							fb.SetConstant(f.ConstantValue);
-						}
-						else
-						{
-							FieldAttributes attribs = FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.InitOnly;
-							FieldBuilder fb = tbFields.DefineField(f.Name, ToPublicSignatureType(fields[i].FieldTypeWrapper), attribs);
-							if (ilgenClinit == null)
-							{
-								ilgenClinit = CodeEmitter.Create(ReflectUtil.DefineTypeInitializer(tbFields));
-							}
-							wrapper.GetFieldWrapper(f.Name, f.Signature).EmitGet(ilgenClinit);
-							ilgenClinit.Emit(OpCodes.Stsfld, fb);
-						}
-					}
-					if (ilgenClinit != null)
-					{
-						ilgenClinit.Emit(OpCodes.Ret);
-						ilgenClinit.DoEmit();
-					}
-				}
+				AddInterfaceFieldsInterop(fields);
 
 				// See if there is any additional metadata
 				wrapper.EmitMapXmlMetadata(typeBuilder, classFile, fields, methods);
@@ -4270,12 +4232,6 @@ namespace IKVM.Internal
 							tb.CreateType();
 						}
 					}
-#if STATIC_COMPILER
-					if (tbFields != null)
-					{
-						tbFields.CreateType();
-					}
-#endif
 				}
 				finally
 				{
@@ -4291,6 +4247,51 @@ namespace IKVM.Internal
 				BakedTypeCleanupHack.Process(wrapper);
 				return type;
 			}
+
+#if STATIC_COMPILER
+			private void AddInterfaceFieldsInterop(FieldWrapper[] fields)
+			{
+				if (classFile.IsInterface && classFile.IsPublic && !wrapper.IsGhost && classFile.Fields.Length > 0)
+				{
+					CompilerClassLoader ccl = wrapper.classLoader;
+					string name = "__Fields";
+					while (!ccl.ReserveName(classFile.Name + "$" + name))
+					{
+						name += "_";
+					}
+					TypeBuilder tbFields = typeBuilder.DefineNestedType(name, TypeAttributes.Class | TypeAttributes.NestedPublic | TypeAttributes.Sealed | TypeAttributes.Abstract);
+					RegisterNestedTypeBuilder(tbFields);
+					AttributeHelper.HideFromJava(tbFields);
+					CodeEmitter ilgenClinit = null;
+					for (int i = 0; i < classFile.Fields.Length; i++)
+					{
+						ClassFile.Field f = classFile.Fields[i];
+						if (f.ConstantValue != null)
+						{
+							FieldAttributes attribs = FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Literal;
+							FieldBuilder fb = tbFields.DefineField(f.Name, fields[i].FieldTypeWrapper.TypeAsSignatureType, attribs);
+							fb.SetConstant(f.ConstantValue);
+						}
+						else
+						{
+							FieldAttributes attribs = FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.InitOnly;
+							FieldBuilder fb = tbFields.DefineField(f.Name, ToPublicSignatureType(fields[i].FieldTypeWrapper), attribs);
+							if (ilgenClinit == null)
+							{
+								ilgenClinit = CodeEmitter.Create(ReflectUtil.DefineTypeInitializer(tbFields));
+							}
+							wrapper.GetFieldWrapper(f.Name, f.Signature).EmitGet(ilgenClinit);
+							ilgenClinit.Emit(OpCodes.Stsfld, fb);
+						}
+					}
+					if (ilgenClinit != null)
+					{
+						ilgenClinit.Emit(OpCodes.Ret);
+						ilgenClinit.DoEmit();
+					}
+				}
+			}
+#endif
 
 			private void AddInheritedDefaultInterfaceMethods(MethodWrapper[] methods)
 			{
