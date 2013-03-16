@@ -24,12 +24,6 @@
 -->
 <project name="tools" default="tools">
     <target name="tools">
-        <csc target="exe" output="asmref.exe" optimize="true">
-            <sources>
-                <include name="asmref.cs" />
-            </sources>
-        </csc>
-
         <csc target="exe" output="updbaseaddresses.exe" optimize="true">
             <sources>
                 <include name="updbaseaddresses.cs" />
