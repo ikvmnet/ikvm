@@ -141,6 +141,10 @@ namespace SourceLicenseAnalyzer
 		{
 			bool gpl = false;
 			bool classpathException = false;
+			if (!File.Exists(filePath) && File.Exists(filePath + ".in"))
+			{
+				filePath += ".in";
+			}
 			using (StreamReader rdr = new StreamReader(filePath))
 			{
 				string line;
