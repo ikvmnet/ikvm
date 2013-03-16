@@ -59,6 +59,8 @@
     <target name="clean-managed">
         <delete failonerror="false">
             <fileset>
+                <include name="CommonAssemblyInfo.cs" />
+                <include name="awt/AssemblyInfo.cs" />
                 <include name="bin/IKVM.AWT.WinForms.dll" />
                 <include name="bin/IKVM.MSBuild.dll" />
                 <include name="bin/IKVM.MSBuild.Java.Targets" />
@@ -80,10 +82,16 @@
                 <include name="openjdk/*.jar" />
                 <include name="openjdk/allsources.gen.lst" />
                 <include name="openjdk/AssemblyInfo.java" />
+                <include name="openjdk/copyright.txt" />
+                <include name="openjdk/java/lang/PropertyConstants.java" />
+                <include name="openjdk/MANIFEST.MF" />
+                <include name="openjdk/resources.zip" />
                 <include name="openjdk/response.gen.txt" />
                 <include name="openjdk/tools.gen.rsp" />
                 <include name="openjdk/vfs.zip" />
                 <include name="openjdk/**.class" />
+                <include name="openjdk/AssemblyInfo.cs" />
+                <include name="openjdk/JniAssemblyInfo.cs" />
                 <include name="runtime/*.dll" />
                 <include name="runtime/*.jar" />
                 <include name="tools/*.exe" />
@@ -98,6 +106,7 @@
                 <include name="bin/libikvm-native.so" />
                 <include name="bin/ikvm-native-win32-x64.dll" />
                 <include name="bin/ikvm-native-win32-x86.dll" />
+                <include name="native/ikvm-native.rc" />
                 <include name="native/Release-x64/ikvm-native.dll" />
                 <include name="native/Release-x64/*.obj" />
                 <include name="native/Release-x86/ikvm-native.dll" />
