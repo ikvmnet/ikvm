@@ -99,6 +99,7 @@
                 <include name="tools/pubkey.txt" />
             </fileset>
         </delete>
+        <nant buildfile="nuget/nupkg.build" target="clean" />
     </target>
     <target name="clean-native">
         <delete failonerror="false">
