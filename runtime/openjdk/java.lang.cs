@@ -924,7 +924,7 @@ static class Java_java_lang_SecurityManager
 			MethodBase method = frame.GetMethod();
 			Type type = method.DeclaringType;
 			// NOTE these checks should be the same as the ones in Reflection.getCallerClass
-			if (IKVM.NativeCode.sun.reflect.Reflection.IsHideFromJava(method)
+			if (Java_sun_reflect_Reflection.IsHideFromJava(method)
 				|| type == null
 				|| type.Assembly == typeof(object).Assembly
 				|| type.Assembly == typeof(Java_java_lang_SecurityManager).Assembly

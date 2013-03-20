@@ -754,7 +754,7 @@ namespace IKVM.Internal
 					sun.reflect.ConstructorAccessor acc = cons.getConstructorAccessor();
 					if (acc == null)
 					{
-						acc = (sun.reflect.ConstructorAccessor)IKVM.NativeCode.sun.reflect.ReflectionFactory.newConstructorAccessor0(null, cons);
+						acc = (sun.reflect.ConstructorAccessor)Java_sun_reflect_ReflectionFactory.newConstructorAccessor0(null, cons);
 						cons.setConstructorAccessor(acc);
 					}
 					return acc.newInstance(args);
@@ -820,7 +820,7 @@ namespace IKVM.Internal
 					{
 						if (!invokenonvirtualCache.TryGetValue(this, out acc))
 						{
-							acc = new IKVM.NativeCode.sun.reflect.ReflectionFactory.FastMethodAccessorImpl((java.lang.reflect.Method)ToMethodOrConstructor(false), true);
+							acc = new Java_sun_reflect_ReflectionFactory.FastMethodAccessorImpl((java.lang.reflect.Method)ToMethodOrConstructor(false), true);
 							invokenonvirtualCache.Add(this, acc);
 						}
 					}
@@ -838,7 +838,7 @@ namespace IKVM.Internal
 				sun.reflect.MethodAccessor acc = method.getMethodAccessor();
 				if (acc == null)
 				{
-					acc = (sun.reflect.MethodAccessor)IKVM.NativeCode.sun.reflect.ReflectionFactory.newMethodAccessor(null, method);
+					acc = (sun.reflect.MethodAccessor)Java_sun_reflect_ReflectionFactory.newMethodAccessor(null, method);
 					method.setMethodAccessor(acc);
 				}
 				object val = acc.invoke(obj, args, (ikvm.@internal.CallerID)callerID);
@@ -1566,7 +1566,7 @@ namespace IKVM.Internal
 #else
 			if (jniAccessor == null)
 			{
-				Interlocked.CompareExchange(ref jniAccessor, IKVM.NativeCode.sun.reflect.ReflectionFactory.NewFieldAccessorJNI(this), null);
+				Interlocked.CompareExchange(ref jniAccessor, Java_sun_reflect_ReflectionFactory.NewFieldAccessorJNI(this), null);
 			}
 			return jniAccessor;
 #endif

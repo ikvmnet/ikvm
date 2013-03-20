@@ -87,6 +87,7 @@
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Assertions.cs" />
     <Compile Include="atomic.cs" />
     <Compile Include="attributes.cs">
       <SubType>Code</SubType>
@@ -120,6 +121,7 @@
     <Compile Include="DynamicClassLoader.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="DynamicMethodUtils.cs" />
     <Compile Include="DynamicTypeWrapper.cs" />
     <Compile Include="ExceptionHelper.cs">
       <SubType>Code</SubType>
@@ -145,13 +147,20 @@
     <Compile Include="MemberWrapper.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="openjdk.cs" />
     <Compile Include="openjdk\java.io.cs" />
     <Compile Include="openjdk\java.lang.cs" />
     <Compile Include="openjdk\java.lang.invoke.cs" />
     <Compile Include="openjdk\java.lang.reflect.cs" />
+    <Compile Include="openjdk\java.net.cs" />
+    <Compile Include="openjdk\java.nio.cs" />
+    <Compile Include="openjdk\java.security.cs" />
+    <Compile Include="openjdk\java.util.cs" />
+    <Compile Include="openjdk\java.util.prefs.cs" />
+    <Compile Include="openjdk\misc.cs" />
     <Compile Include="openjdk\sun.management.cs" />
+    <Compile Include="openjdk\sun.misc.cs" />
     <Compile Include="openjdk\sun.nio.ch.cs" />
+    <Compile Include="openjdk\sun.reflect.cs" />
     <Compile Include="openjdk\sun.security.krb5.cs" />
     <Compile Include="PassiveWeakDictionary.cs" />
     <Compile Include="profiler.cs">

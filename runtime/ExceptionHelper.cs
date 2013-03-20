@@ -309,7 +309,7 @@ namespace IKVM.Internal
 #if FIRST_PASS
 			return false;
 #else
-			return NativeCode.sun.reflect.Reflection.IsHideFromJava(mb) || (mb.DeclaringType == typeof(ikvm.runtime.Util) && mb.Name == "mapException");
+			return Java_sun_reflect_Reflection.IsHideFromJava(mb) || (mb.DeclaringType == typeof(ikvm.runtime.Util) && mb.Name == "mapException");
 #endif
 		}
 

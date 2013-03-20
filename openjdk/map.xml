@@ -2715,7 +2715,7 @@
                 </attribute>
                 <body>
                     <ldarg_0 />
-                    <call type="IKVM.NativeCode.sun.reflect.Reflection" name="getCallerClass" sig="(I)Ljava.lang.Object;" />
+                    <call type="Java_sun_reflect_Reflection" name="getCallerClass" sig="(I)Ljava.lang.Object;" />
                     <stloc name="class" class="java.lang.Object" />
                     <!-- "leave" is to thwart tail-call optimization -->
                     <leave name="x" />

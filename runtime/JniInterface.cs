@@ -1188,7 +1188,7 @@ namespace IKVM.Runtime
 			}
 			// TODO if we set Thread.IsBackground to false when we attached, now might be a good time to set it back to true.
 			JNIEnv.FreeJNIEnv();
-			IKVM.NativeCode.ikvm.runtime.Startup.jniDetach();
+			Java_ikvm_runtime_Startup.jniDetach();
 			return JNIEnv.JNI_OK;
 		}
 

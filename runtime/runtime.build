@@ -130,6 +130,7 @@
                 <include name="../CommonAssemblyInfo.cs" />
                 <include name="AssemblyInfo.cs" />
                 <include name="AssemblyClassLoader.cs" />
+                <include name="Assertions.cs" />
                 <include name="atomic.cs" />
                 <include name="attributes.cs" />
                 <include name="BigEndianBinaryReader.cs" />
@@ -143,6 +144,7 @@
                 <include name="CoreClasses.cs" />
                 <include name="DotNetTypeWrapper.cs" />
                 <include name="DynamicClassLoader.cs" />
+                <include name="DynamicMethodUtils.cs" />
                 <include name="DynamicTypeWrapper.cs" />
                 <include name="ExceptionHelper.cs" />
                 <include name="intrinsics.cs" />
@@ -150,7 +152,6 @@
                 <include name="JsrInliner.cs" />
                 <include name="LocalVars.cs" />
                 <include name="MemberWrapper.cs" />
-                <include name="openjdk.cs" />
                 <include name="PassiveWeakDictionary.cs" />
                 <include name="profiler.cs" />
                 <include name="ReflectUtil.cs" />
@@ -178,8 +179,16 @@
                 <include name="openjdk/java.lang.cs" />
                 <include name="openjdk/java.lang.invoke.cs" />
                 <include name="openjdk/java.lang.reflect.cs" />
+                <include name="openjdk/java.net.cs" />
+                <include name="openjdk/java.nio.cs" />
+                <include name="openjdk/java.security.cs" />
+                <include name="openjdk/java.util.cs" />
+                <include name="openjdk/java.util.prefs.cs" />
+                <include name="openjdk/misc.cs" />
                 <include name="openjdk/sun.management.cs" />
+                <include name="openjdk/sun.misc.cs" />
                 <include name="openjdk/sun.nio.ch.cs" />
+                <include name="openjdk/sun.reflect.cs" />
                 <include name="openjdk/sun.security.krb5.cs" />
                 <include name="stubgen/ClassFileWriter.cs" />
                 <include name="stubgen/SerialVersionUID.cs" />
