@@ -146,6 +146,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="openjdk.cs" />
+    <Compile Include="openjdk\java.io.cs" />
     <Compile Include="openjdk\java.lang.invoke.cs" />
     <Compile Include="openjdk\sun.management.cs" />
     <Compile Include="openjdk\sun.nio.ch.cs" />
