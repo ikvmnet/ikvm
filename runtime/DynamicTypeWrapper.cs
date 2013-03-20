@@ -3873,7 +3873,7 @@ namespace IKVM.Internal
 								if (nativeCodeType == null)
 								{
 									// simple JNI like class name mangling
-									nativeCodeType = StaticCompiler.GetType(wrapper.GetClassLoader(), "Java_" + classFile.Name.Replace('.', '_'));
+									nativeCodeType = StaticCompiler.GetType(wrapper.GetClassLoader(), "Java_" + classFile.Name.Replace('.', '_').Replace("$", "_00024"));
 								}
 #endif
 								MethodInfo nativeMethod = null;
