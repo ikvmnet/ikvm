@@ -71,7 +71,7 @@ static class Java_sun_management_ThreadImpl
 {
 	public static object getThreads()
 	{
-        return IKVM.NativeCode.java.lang.Thread.getThreads();
+        return Java_java_lang_Thread.getThreads();
 	}
 
     private const int JVMTI_THREAD_STATE_ALIVE = 0x0001;

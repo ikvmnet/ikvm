@@ -175,7 +175,9 @@
                 <include name="fdlibm/s_scalbn.cs" />
                 <include name="fdlibm/s_tan.cs" />
                 <include name="openjdk/java.io.cs" />
+                <include name="openjdk/java.lang.cs" />
                 <include name="openjdk/java.lang.invoke.cs" />
+                <include name="openjdk/java.lang.reflect.cs" />
                 <include name="openjdk/sun.management.cs" />
                 <include name="openjdk/sun.nio.ch.cs" />
                 <include name="openjdk/sun.security.krb5.cs" />

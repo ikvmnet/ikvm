@@ -747,7 +747,7 @@ namespace IKVM.Internal
 			{
 				byte[] buf = new byte[inp.available()];
 				inp.read(buf, 0, buf.Length);
-				return TypeWrapper.FromClass(IKVM.NativeCode.java.lang.ClassLoader.defineClass1(GetJavaClassLoader(), name, buf, 0, buf.Length, GetProtectionDomain(), null));
+				return TypeWrapper.FromClass(Java_java_lang_ClassLoader.defineClass1(GetJavaClassLoader(), name, buf, 0, buf.Length, GetProtectionDomain(), null));
 			}
 		}
 #endif

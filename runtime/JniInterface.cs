@@ -1127,7 +1127,7 @@ namespace IKVM.Runtime
 				return JNIEnv.JNI_ERR;
 			}
 			JNI.jvmDestroyed = true;
-			IKVM.NativeCode.java.lang.Thread.WaitUntilLastJniThread();
+			Java_java_lang_Thread.WaitUntilLastJniThread();
 			return JNIEnv.JNI_OK;
 		}
 
@@ -1172,7 +1172,7 @@ namespace IKVM.Runtime
 				object threadGroup = GlobalRefs.Unwrap(pAttachArgs->group.ToInt32());
 				if(threadGroup != null)
 				{
-					IKVM.NativeCode.java.lang.Thread.AttachThreadFromJni(threadGroup);
+					Java_java_lang_Thread.AttachThreadFromJni(threadGroup);
 				}
 			}
 			*penv = JNIEnv.CreateJNIEnv();
@@ -1243,7 +1243,7 @@ namespace IKVM.Runtime
 		static JNIEnv()
 		{
 			// we set the field here so that IKVM.Runtime.dll doesn't have to load us if we're not otherwise needed
-			IKVM.NativeCode.java.lang.SecurityManager.jniAssembly = typeof(JNIEnv).Assembly;
+			Java_java_lang_SecurityManager.jniAssembly = typeof(JNIEnv).Assembly;
 		}
 
 		internal ManagedJNIEnv GetManagedJNIEnv()
@@ -1622,7 +1622,7 @@ namespace IKVM.Runtime
 				// TODO what should the protection domain be?
 				// NOTE I'm assuming name is platform encoded (as opposed to UTF-8), but the Sun JVM only seems to work for ASCII.
 				global::java.lang.ClassLoader classLoader = (global::java.lang.ClassLoader)pEnv->UnwrapRef(loader);
-				return pEnv->MakeLocalRef(IKVM.NativeCode.java.lang.ClassLoader.defineClass0(classLoader, name != null ? StringFromOEM(name) : null, buf, 0, buf.Length, null));
+				return pEnv->MakeLocalRef(Java_java_lang_ClassLoader.defineClass0(classLoader, name != null ? StringFromOEM(name) : null, buf, 0, buf.Length, null));
 			}
 			catch(Exception x)
 			{
