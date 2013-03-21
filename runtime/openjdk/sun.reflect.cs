@@ -908,7 +908,7 @@ static class Java_sun_reflect_ReflectionFactory
 
 		static FieldAccessorImplBase()
 		{
-			string str = java.lang.System.getProperty("ikvm.reflect.field.inflationThreshold");
+			string str = java.lang.Props.props.getProperty("ikvm.reflect.field.inflationThreshold");
 			int value;
 			if (str != null && int.TryParse(str, out value))
 			{
