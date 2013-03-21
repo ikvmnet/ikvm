@@ -1094,10 +1094,6 @@ static class Java_sun_reflect_ReflectionFactory
 
 			private bool IsSlowPathCompatible(FieldWrapper fw)
 			{
-				if (fw.DeclaringType.IsRemapped)
-				{
-					return false;
-				}
 				if (fw.IsVolatile && (fw.FieldTypeWrapper == PrimitiveTypeWrapper.LONG || fw.FieldTypeWrapper == PrimitiveTypeWrapper.DOUBLE))
 				{
 					return false;
@@ -1131,6 +1127,10 @@ static class Java_sun_reflect_ReflectionFactory
 					else if (!fw.DeclaringType.IsInstance(obj))
 					{
 						throw GetIllegalArgumentException(obj);
+					}
+					else if (fw.DeclaringType.IsRemapped && !fw.DeclaringType.TypeAsBaseType.IsInstanceOfType(obj))
+					{
+						throw GetUnsupportedRemappedFieldException(obj);
 					}
 					if (numInvocations == 0)
 					{
@@ -1180,6 +1180,10 @@ static class Java_sun_reflect_ReflectionFactory
 					{
 						throw SetIllegalArgumentException(obj);
 					}
+					else if (fw.DeclaringType.IsRemapped && !fw.DeclaringType.TypeAsBaseType.IsInstanceOfType(obj))
+					{
+						throw GetUnsupportedRemappedFieldException(obj);
+					}
 					CheckValue(value);
 					if (numInvocations == 0)
 					{
@@ -1205,6 +1209,11 @@ static class Java_sun_reflect_ReflectionFactory
 					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(T), fw);
 					setter(obj, value, this);
 				}
+			}
+
+			private Exception GetUnsupportedRemappedFieldException(object obj)
+			{
+				return new java.lang.IllegalAccessException("Accessing field " + fw.DeclaringType.Name + "." + fw.Name + " in an object of type " + ikvm.runtime.Util.getClassFromObject(obj).getName() + " is not supported");
 			}
 
 			protected virtual void CheckValue(T value)
