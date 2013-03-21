@@ -1092,17 +1092,9 @@ static class Java_sun_reflect_ReflectionFactory
 				}
 			}
 
-			private bool IsSpecialType(TypeWrapper tw)
-			{
-				return tw.IsUnloadable
-					|| tw.IsNonPrimitiveValueType
-					|| tw.IsGhost
-					|| tw.IsFakeNestedType;
-			}
-
 			private bool IsSlowPathCompatible(FieldWrapper fw)
 			{
-				if (IsSpecialType(fw.DeclaringType) || IsSpecialType(fw.FieldTypeWrapper) || fw.DeclaringType.IsRemapped)
+				if (fw.DeclaringType.IsRemapped)
 				{
 					return false;
 				}
@@ -1111,7 +1103,7 @@ static class Java_sun_reflect_ReflectionFactory
 					return false;
 				}
 				fw.Link();
-				return fw.GetField() != null;
+				return true;
 			}
 
 			private static T lazyGet(object obj, FieldAccessor<T> acc)
@@ -1147,7 +1139,14 @@ static class Java_sun_reflect_ReflectionFactory
 						fw.ResolveField();
 					}
 					numInvocations++;
-					return (T)fw.GetField().GetValue(obj);
+					if (fw.FieldTypeWrapper.IsGhost)
+					{
+						return (T)fw.FieldTypeWrapper.TypeAsTBD.GetMethod("ToObject").Invoke(fw.GetValue(obj), new object[0]);
+					}
+					else
+					{
+						return (T)fw.GetValue(obj);
+					}
 				}
 				else
 				{
@@ -1189,7 +1188,14 @@ static class Java_sun_reflect_ReflectionFactory
 						fw.ResolveField();
 					}
 					numInvocations++;
-					fw.GetField().SetValue(obj, value);
+					if (fw.FieldTypeWrapper.IsGhost)
+					{
+						fw.SetValue(obj, fw.FieldTypeWrapper.TypeAsTBD.GetMethod("Cast").Invoke(null, new object[] { value }));
+					}
+					else
+					{
+						fw.SetValue(obj, value);
+					}
 				}
 				else
 				{
@@ -1832,7 +1838,7 @@ static class Java_sun_reflect_ReflectionFactory
 
 			protected sealed override void CheckValue(object value)
 			{
-				if (value != null && !fw.FieldTypeWrapper.IsInstance(value))
+				if (value != null && !fw.FieldTypeWrapper.EnsureLoadable(fw.DeclaringType.GetClassLoader()).IsInstance(value))
 				{
 					throw SetIllegalArgumentException(value);
 				}

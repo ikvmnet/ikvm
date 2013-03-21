@@ -875,6 +875,15 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal virtual object Invoke(object obj, object[] args)
+		{
+			if (method == null)
+			{
+				throw new NotImplementedException(GetType().FullName + " has no method and doesn't override Invoke");
+			}
+			return method.Invoke(obj, args);
+		}
+
 		[HideFromJava]
 		protected virtual object InvokeNonvirtualRemapped(object obj, object[] args)
 		{
@@ -1571,6 +1580,11 @@ namespace IKVM.Internal
 			return jniAccessor;
 #endif
 		}
+
+#if !FIRST_PASS
+		internal abstract object GetValue(object obj);
+		internal abstract void SetValue(object obj, object value);
+#endif
 #endif // !STATIC_COMPILER && !STUB_GENERATOR
 	}
 
@@ -1616,6 +1630,18 @@ namespace IKVM.Internal
 				ilgen.EmitMemoryBarrier();
 			}
 		}
+
+#if !STATIC_COMPILER && !FIRST_PASS
+		internal override object GetValue(object obj)
+		{
+			return GetField().GetValue(obj);
+		}
+
+		internal override void SetValue(object obj, object value)
+		{
+			GetField().SetValue(obj, value);
+		}
+#endif // !STATIC_COMPILER && !FIRST_PASS
 #endif // !STUB_GENERATOR
 	}
 
@@ -1683,6 +1709,18 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.volatileWriteLong);
 			}
 		}
+
+#if !STATIC_COMPILER && !FIRST_PASS
+		internal override object GetValue(object obj)
+		{
+			throw new InvalidOperationException();
+		}
+
+		internal override void SetValue(object obj, object value)
+		{
+			throw new InvalidOperationException();
+		}
+#endif // !STATIC_COMPILER && !FIRST_PASS
 #endif // !STUB_GENERATOR
 	}
 
@@ -1832,6 +1870,26 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Pop);
 			}
 		}
+
+#if !STATIC_COMPILER && !FIRST_PASS
+		internal override object GetValue(object obj)
+		{
+			if (getter == null)
+			{
+				throw new java.lang.NoSuchMethodError();
+			}
+			return getter.Invoke(obj, new object[0]);
+		}
+
+		internal override void SetValue(object obj, object value)
+		{
+			if (setter == null)
+			{
+				throw new java.lang.NoSuchMethodError();
+			}
+			setter.Invoke(obj, new object[] { value });
+		}
+#endif
 	}
 #endif // !STUB_GENERATOR
 
@@ -1891,6 +1949,29 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Callvirt, setter);
 			}
 		}
+
+#if !STATIC_COMPILER && !FIRST_PASS
+		internal override object GetValue(object obj)
+		{
+			MethodInfo getter = property.GetGetMethod(true);
+			if (getter == null)
+			{
+				throw new java.lang.NoSuchMethodError();
+			}
+			return getter.Invoke(obj, new object[0]);
+		}
+
+		internal override void SetValue(object obj, object value)
+		{
+			MethodInfo setter = property.GetSetMethod(true);
+			if (setter == null)
+			{
+				throw new java.lang.NoSuchMethodError();
+			}
+			setter.Invoke(obj, new object[] { value });
+		}
+#endif
+
 #endif // !STUB_GENERATOR
 
 		internal PropertyInfo GetProperty()
@@ -1984,6 +2065,20 @@ namespace IKVM.Internal
 			}
 			return constant;
 		}
+
+#if !STUB_GENERATOR && !STATIC_COMPILER && !FIRST_PASS
+		internal override object GetValue(object obj)
+		{
+			FieldInfo field = GetField();
+			return FieldTypeWrapper.IsPrimitive || field == null
+				? GetConstantValue()
+				: field.GetValue(null);
+		}
+
+		internal override void SetValue(object obj, object value)
+		{
+		}
+#endif
 	}
 
 	sealed class CompiledAccessStubFieldWrapper : FieldWrapper
@@ -2036,6 +2131,20 @@ namespace IKVM.Internal
 		{
 			ilgen.Emit(OpCodes.Call, setter);
 		}
+
+#if !STATIC_COMPILER && !FIRST_PASS
+		internal override object GetValue(object obj)
+		{
+			// we can only be invoked on type 2 access stubs (because type 1 access stubs are HideFromReflection), so we know we have a field
+			return GetField().GetValue(obj);
+		}
+
+		internal override void SetValue(object obj, object value)
+		{
+			// we can only be invoked on type 2 access stubs (because type 1 access stubs are HideFromReflection), so we know we have a field
+			GetField().SetValue(obj, value);
+		}
+#endif // !STATIC_COMPILER && !FIRST_PASS
 #endif // !STUB_GENERATOR
 	}
 }

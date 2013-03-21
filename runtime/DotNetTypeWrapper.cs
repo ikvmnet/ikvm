@@ -508,10 +508,10 @@ namespace IKVM.Internal
 #endif
 			}
 
-#if !STATIC_COMPILER && !STUB_GENERATOR
+#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
 			internal object GetUnspecifiedValue()
 			{
-				return ((EnumFieldWrapper)GetFieldWrapper("__unspecified", this.SigName)).GetValue();
+				return GetFieldWrapper("__unspecified", this.SigName).GetValue(null);
 			}
 #endif
 
@@ -530,14 +530,18 @@ namespace IKVM.Internal
 #endif
 				}
 
-#if !STATIC_COMPILER && !STUB_GENERATOR
-				internal object GetValue()
+#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+				internal override object GetValue(object obj)
 				{
 					if (val == null)
 					{
 						System.Threading.Interlocked.CompareExchange(ref val, Activator.CreateInstance(this.DeclaringType.TypeAsTBD, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, new object[] { this.Name, ordinal }, null), null);
 					}
 					return val;
+				}
+
+				internal override void SetValue(object obj, object value)
+				{
 				}
 #endif
 
@@ -581,7 +585,7 @@ namespace IKVM.Internal
 					object[] array = (object[])Array.CreateInstance(this.DeclaringType.TypeAsArrayType, values.Length);
 					for (int i = 0; i < values.Length; i++)
 					{
-						array[i] = ((EnumFieldWrapper)values[i]).GetValue();
+						array[i] = values[i].GetValue(null);
 					}
 					return array;
 				}
@@ -611,7 +615,7 @@ namespace IKVM.Internal
 					{
 						if (values[i].Name.Equals(args[0]))
 						{
-							return ((EnumFieldWrapper)values[i]).GetValue();
+							return values[i].GetValue(null);
 						}
 					}
 					throw new java.lang.IllegalArgumentException("" + args[0]);
@@ -1961,6 +1965,18 @@ namespace IKVM.Internal
 				ilgen.ReleaseTempLocal(temp);
 			}
 #endif // !STUB_GENERATOR
+
+#if !STUB_GENERATOR && !STATIC_COMPILER && !FIRST_PASS
+			internal override object GetValue(object obj)
+			{
+				return obj;
+			}
+
+			internal override void SetValue(object obj, object value)
+			{
+				obj.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance)[0].SetValue(obj, value);
+			}
+#endif
 		}
 
 		private sealed class ValueTypeDefaultCtor : MethodWrapper
