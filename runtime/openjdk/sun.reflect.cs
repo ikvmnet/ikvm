@@ -873,9 +873,6 @@ static class Java_sun_reflect_ReflectionFactory
 
 		public object newInstance(object[] objarr)
 		{
-#if FIRST_PASS
-				return null;
-#else
 			if (objarr != null && objarr.Length != 0)
 			{
 				throw new java.lang.IllegalArgumentException();
@@ -888,7 +885,6 @@ static class Java_sun_reflect_ReflectionFactory
 			{
 				throw new java.lang.reflect.InvocationTargetException(ikvm.runtime.Util.mapException(x.InnerException));
 			}
-#endif
 		}
 
 		internal static bool IsSuitable(MethodWrapper mw)
@@ -1134,9 +1130,7 @@ static class Java_sun_reflect_ReflectionFactory
 					}
 					else if (obj == null)
 					{
-#if !FIRST_PASS
 						throw new java.lang.NullPointerException();
-#endif
 					}
 					else if (!fw.DeclaringType.IsInstance(obj))
 					{
@@ -1177,9 +1171,7 @@ static class Java_sun_reflect_ReflectionFactory
 					}
 					else if (obj == null)
 					{
-#if !FIRST_PASS
 						throw new java.lang.NullPointerException();
-#endif
 					}
 					else if (!fw.DeclaringType.IsInstance(obj))
 					{
