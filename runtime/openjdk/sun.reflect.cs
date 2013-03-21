@@ -1106,6 +1106,10 @@ static class Java_sun_reflect_ReflectionFactory
 				{
 					return false;
 				}
+				if (fw.IsVolatile && (fw.FieldTypeWrapper == PrimitiveTypeWrapper.LONG || fw.FieldTypeWrapper == PrimitiveTypeWrapper.DOUBLE))
+				{
+					return false;
+				}
 				fw.Link();
 				return fw.GetField() != null;
 			}
