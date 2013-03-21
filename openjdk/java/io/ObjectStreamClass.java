@@ -2148,7 +2148,7 @@ public class ObjectStreamClass implements Serializable {
         }
     }
 
-    private static native Object getFastFieldReflector(Object fields);
+    private static native Object getFastFieldReflector(ObjectStreamField[] fields);
     
     /**
      * FieldReflector cache lookup key.  Keys are considered equal if they
