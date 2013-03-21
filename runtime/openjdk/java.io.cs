@@ -707,12 +707,12 @@ static class Java_java_io_ObjectStreamClass
 	}
 #endif // !FIRST_PASS
 
-	public static object getFastFieldReflector(object fieldsObj)
+	public static object getFastFieldReflector(java.io.ObjectStreamField[] fieldsObj)
 	{
 #if FIRST_PASS
 		return null;
 #else
-		return new FastFieldReflector((java.io.ObjectStreamField[])fieldsObj);
+		return new FastFieldReflector(fieldsObj);
 #endif
 	}
 }
