@@ -1081,7 +1081,7 @@ static class Java_java_lang_invoke_MethodHandleNatives
 		}
 		else if (r is java.lang.reflect.Field)
 		{
-			FieldWrapper fw = FieldWrapper.FromField(r);
+			FieldWrapper fw = FieldWrapper.FromField((java.lang.reflect.Field)r);
 			int index = Array.IndexOf(fw.DeclaringType.GetFields(), fw);
 			if (index != -1)
 			{

@@ -65,6 +65,7 @@ namespace java
 		namespace reflect
 		{
 			public class Constructor { }
+			public class Field { }
 			public class Method { }
 		}
 	}
@@ -96,5 +97,6 @@ namespace java
 namespace sun.reflect
 {
 	public interface ConstructorAccessor { }
+	public interface FieldAccessor { }
 	public interface MethodAccessor { }
 }

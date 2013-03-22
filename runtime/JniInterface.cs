@@ -1690,7 +1690,7 @@ namespace IKVM.Runtime
 
 		internal static jfieldID FromReflectedField(JNIEnv* pEnv, jobject field)
 		{
-			return FieldWrapper.FromField(pEnv->UnwrapRef(field)).Cookie;
+			return FieldWrapper.FromField((java.lang.reflect.Field)pEnv->UnwrapRef(field)).Cookie;
 		}
 
 		internal static jobject ToReflectedMethod(JNIEnv* pEnv, jclass clazz_ignored, jmethodID method, jboolean isStatic)

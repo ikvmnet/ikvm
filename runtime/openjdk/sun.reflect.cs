@@ -218,7 +218,7 @@ static class Java_sun_reflect_ReflectionFactory
 
 		internal MethodAccessorImpl(java.lang.reflect.Method method)
 		{
-			mw = MethodWrapper.FromMethodOrConstructor(method);
+			mw = MethodWrapper.FromMethod(method);
 		}
 
 		[IKVM.Attributes.HideFromJava]
@@ -502,7 +502,7 @@ static class Java_sun_reflect_ReflectionFactory
 
 		internal FastMethodAccessorImpl(java.lang.reflect.Method method, bool nonvirtual)
 		{
-			MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(method);
+			MethodWrapper mw = MethodWrapper.FromMethod(method);
 			TypeWrapper[] parameters;
 			try
 			{
@@ -682,7 +682,7 @@ static class Java_sun_reflect_ReflectionFactory
 
 		internal FastConstructorAccessorImpl(java.lang.reflect.Constructor constructor)
 		{
-			MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(constructor);
+			MethodWrapper mw = MethodWrapper.FromConstructor(constructor);
 			TypeWrapper[] parameters;
 			try
 			{
@@ -803,7 +803,7 @@ static class Java_sun_reflect_ReflectionFactory
 
 		internal FastSerializationConstructorAccessorImpl(java.lang.reflect.Constructor constructorToCall, java.lang.Class classToInstantiate)
 		{
-			MethodWrapper constructor = MethodWrapper.FromMethodOrConstructor(constructorToCall);
+			MethodWrapper constructor = MethodWrapper.FromConstructor(constructorToCall);
 			if (constructor.GetParameters().Length != 0)
 			{
 				throw new NotImplementedException("Serialization constructor cannot have parameters");
@@ -2030,7 +2030,7 @@ static class Java_sun_reflect_ReflectionFactory
 	}
 #endif
 
-	public static object newFieldAccessor(object thisFactory, object field, bool overrideAccessCheck)
+	public static sun.reflect.FieldAccessor newFieldAccessor(object thisFactory, java.lang.reflect.Field field, bool overrideAccessCheck)
 	{
 #if FIRST_PASS
 		return null;
@@ -2051,7 +2051,7 @@ static class Java_sun_reflect_ReflectionFactory
 #if FIRST_PASS
 		return null;
 #else
-		MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(method);
+		MethodWrapper mw = MethodWrapper.FromMethod(method);
 		if (mw is ICustomInvoke)
 		{
 			return new MethodAccessorImpl(method);
@@ -2068,7 +2068,7 @@ static class Java_sun_reflect_ReflectionFactory
 #if FIRST_PASS
 		return null;
 #else
-		MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(constructor);
+		MethodWrapper mw = MethodWrapper.FromConstructor(constructor);
 		if (ActivatorConstructorAccessor.IsSuitable(mw))
 		{
 			// we special case public default constructors, because in that case using Activator.CreateInstance()

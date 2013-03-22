@@ -571,19 +571,30 @@ namespace IKVM.Internal
 		}
 #endif // !FIRST_PASS
 
-		internal static MethodWrapper FromMethodOrConstructor(object methodOrConstructor)
+		internal static MethodWrapper FromMethod(java.lang.reflect.Method method)
 		{
 #if FIRST_PASS
 			return null;
 #else
-			java.lang.reflect.Method method = methodOrConstructor as java.lang.reflect.Method;
-			if (method != null)
-			{
-				return TypeWrapper.FromClass(method.getDeclaringClass()).GetMethods()[method._slot()];
-			}
-			java.lang.reflect.Constructor constructor = (java.lang.reflect.Constructor)methodOrConstructor;
+			return TypeWrapper.FromClass(method.getDeclaringClass()).GetMethods()[method._slot()];
+#endif
+		}
+
+		internal static MethodWrapper FromConstructor(java.lang.reflect.Constructor constructor)
+		{
+#if FIRST_PASS
+			return null;
+#else
 			return TypeWrapper.FromClass(constructor.getDeclaringClass()).GetMethods()[constructor._slot()];
 #endif
+		}
+		
+		internal static MethodWrapper FromMethodOrConstructor(object methodOrConstructor)
+		{
+			java.lang.reflect.Method method = methodOrConstructor as java.lang.reflect.Method;
+			return method != null
+				? FromMethod(method)
+				: FromConstructor((java.lang.reflect.Constructor)methodOrConstructor);
 		}
 #endif // !STATIC_COMPILER && !STUB_GENERATOR
 
@@ -1393,25 +1404,24 @@ namespace IKVM.Internal
 			return null;
 		}
 
-		internal static FieldWrapper FromField(object field)
+		internal static FieldWrapper FromField(java.lang.reflect.Field field)
 		{
 #if FIRST_PASS
 			return null;
 #else
-			java.lang.reflect.Field f = (java.lang.reflect.Field)field;
-			int slot = f._slot();
+			int slot = field._slot();
 			if (slot == -1)
 			{
 				// it's a Field created by Unsafe.objectFieldOffset(Class,String) so we must resolve based on the name
-				foreach (FieldWrapper fw in TypeWrapper.FromClass(f.getDeclaringClass()).GetFields())
+				foreach (FieldWrapper fw in TypeWrapper.FromClass(field.getDeclaringClass()).GetFields())
 				{
-					if (fw.Name == f.getName())
+					if (fw.Name == field.getName())
 					{
 						return fw;
 					}
 				}
 			}
-			return TypeWrapper.FromClass(f.getDeclaringClass()).GetFields()[slot];
+			return TypeWrapper.FromClass(field.getDeclaringClass()).GetFields()[slot];
 #endif
 		}
 
