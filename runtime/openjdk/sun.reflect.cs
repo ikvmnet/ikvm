@@ -257,258 +257,24 @@ static class Java_sun_reflect_ReflectionFactory
 		}
 	}
 
-	internal sealed class FastMethodAccessorImpl : sun.reflect.MethodAccessor
+	private sealed class BoxUtil
 	{
-		private static readonly MethodInfo valueOfByte;
-		private static readonly MethodInfo valueOfBoolean;
-		private static readonly MethodInfo valueOfChar;
-		private static readonly MethodInfo valueOfShort;
-		private static readonly MethodInfo valueOfInt;
-		private static readonly MethodInfo valueOfFloat;
-		private static readonly MethodInfo valueOfLong;
-		private static readonly MethodInfo valueOfDouble;
-		private static readonly MethodInfo byteValue;
-		private static readonly MethodInfo booleanValue;
-		private static readonly MethodInfo charValue;
-		private static readonly MethodInfo shortValue;
-		private static readonly MethodInfo intValue;
-		private static readonly MethodInfo floatValue;
-		private static readonly MethodInfo longValue;
-		private static readonly MethodInfo doubleValue;
-		internal static readonly ConstructorInfo invocationTargetExceptionCtor;
-		internal static readonly ConstructorInfo illegalArgumentExceptionCtor;
-		internal static readonly MethodInfo get_TargetSite;
-		internal static readonly MethodInfo GetCurrentMethod;
-
-		private delegate object Invoker(object obj, object[] args, ikvm.@internal.CallerID callerID);
-		private Invoker invoker;
-
-		static FastMethodAccessorImpl()
-		{
-			valueOfByte = typeof(java.lang.Byte).GetMethod("valueOf", new Type[] { typeof(byte) });
-			valueOfBoolean = typeof(java.lang.Boolean).GetMethod("valueOf", new Type[] { typeof(bool) });
-			valueOfChar = typeof(java.lang.Character).GetMethod("valueOf", new Type[] { typeof(char) });
-			valueOfShort = typeof(java.lang.Short).GetMethod("valueOf", new Type[] { typeof(short) });
-			valueOfInt = typeof(java.lang.Integer).GetMethod("valueOf", new Type[] { typeof(int) });
-			valueOfFloat = typeof(java.lang.Float).GetMethod("valueOf", new Type[] { typeof(float) });
-			valueOfLong = typeof(java.lang.Long).GetMethod("valueOf", new Type[] { typeof(long) });
-			valueOfDouble = typeof(java.lang.Double).GetMethod("valueOf", new Type[] { typeof(double) });
-
-			byteValue = typeof(java.lang.Byte).GetMethod("byteValue", Type.EmptyTypes);
-			booleanValue = typeof(java.lang.Boolean).GetMethod("booleanValue", Type.EmptyTypes);
-			charValue = typeof(java.lang.Character).GetMethod("charValue", Type.EmptyTypes);
-			shortValue = typeof(java.lang.Short).GetMethod("shortValue", Type.EmptyTypes);
-			intValue = typeof(java.lang.Integer).GetMethod("intValue", Type.EmptyTypes);
-			floatValue = typeof(java.lang.Float).GetMethod("floatValue", Type.EmptyTypes);
-			longValue = typeof(java.lang.Long).GetMethod("longValue", Type.EmptyTypes);
-			doubleValue = typeof(java.lang.Double).GetMethod("doubleValue", Type.EmptyTypes);
-
-			invocationTargetExceptionCtor = typeof(java.lang.reflect.InvocationTargetException).GetConstructor(new Type[] { typeof(Exception) });
-			illegalArgumentExceptionCtor = typeof(java.lang.IllegalArgumentException).GetConstructor(Type.EmptyTypes);
-			get_TargetSite = typeof(Exception).GetMethod("get_TargetSite");
-			GetCurrentMethod = typeof(MethodBase).GetMethod("GetCurrentMethod");
-		}
-
-		private sealed class RunClassInit
-		{
-			private FastMethodAccessorImpl outer;
-			private TypeWrapper tw;
-			private Invoker invoker;
-
-			internal RunClassInit(FastMethodAccessorImpl outer, TypeWrapper tw, Invoker invoker)
-			{
-				this.outer = outer;
-				this.tw = tw;
-				this.invoker = invoker;
-			}
-
-			[IKVM.Attributes.HideFromJava]
-			internal object invoke(object obj, object[] args, ikvm.@internal.CallerID callerID)
-			{
-				// FXBUG pre-SP1 a DynamicMethod that calls a static method doesn't trigger the cctor, so we do that explicitly.
-				// even on .NET 2.0 SP2, interface method invocations don't run the interface cctor
-				// NOTE when testing, please test both the x86 and x64 CLR JIT, because they have different bugs (even on .NET 2.0 SP2)
-				tw.RunClassInit();
-				outer.invoker = invoker;
-				return invoker(obj, args, callerID);
-			}
-		}
-
-		internal FastMethodAccessorImpl(java.lang.reflect.Method method, bool nonvirtual)
-		{
-			MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(method);
-			TypeWrapper[] parameters;
-			try
-			{
-				mw.DeclaringType.Finish();
-				parameters = mw.GetParameters();
-				for (int i = 0; i < parameters.Length; i++)
-				{
-					// the EnsureLoadable shouldn't fail, because we don't allow a java.lang.reflect.Method
-					// to "escape" if it has an unloadable type in the signature
-					parameters[i] = parameters[i].EnsureLoadable(mw.DeclaringType.GetClassLoader());
-					parameters[i].Finish();
-				}
-			}
-			catch (RetargetableJavaException x)
-			{
-				throw x.ToJava();
-			}
-			mw.ResolveMethod();
-			DynamicMethod dm = DynamicMethodUtils.Create("__<Invoker>", mw.DeclaringType.TypeAsBaseType, !mw.IsPublic || !mw.DeclaringType.IsPublic || nonvirtual, typeof(object), new Type[] { typeof(object), typeof(object[]), typeof(ikvm.@internal.CallerID) });
-			CodeEmitter ilgen = CodeEmitter.Create(dm);
-			CodeEmitterLocal ret = ilgen.DeclareLocal(typeof(object));
-			if (!mw.IsStatic)
-			{
-				// check target for null
-				ilgen.Emit(OpCodes.Ldarg_0);
-				ilgen.EmitNullCheck();
-			}
-
-			// check args length
-			CodeEmitterLabel argsLengthOK = ilgen.DefineLabel();
-			if (parameters.Length == 0)
-			{
-				// zero length array may be null
-				ilgen.Emit(OpCodes.Ldarg_1);
-				ilgen.EmitBrfalse(argsLengthOK);
-			}
-			ilgen.Emit(OpCodes.Ldarg_1);
-			ilgen.Emit(OpCodes.Ldlen);
-			ilgen.EmitLdc_I4(parameters.Length);
-			ilgen.EmitBeq(argsLengthOK);
-			ilgen.Emit(OpCodes.Newobj, illegalArgumentExceptionCtor);
-			ilgen.Emit(OpCodes.Throw);
-			ilgen.MarkLabel(argsLengthOK);
-
-			int thisCount = mw.IsStatic ? 0 : 1;
-			CodeEmitterLocal[] args = new CodeEmitterLocal[parameters.Length + thisCount];
-			if (!mw.IsStatic)
-			{
-				args[0] = ilgen.DeclareLocal(mw.DeclaringType.TypeAsSignatureType);
-			}
-			for (int i = thisCount; i < args.Length; i++)
-			{
-				args[i] = ilgen.DeclareLocal(parameters[i - thisCount].TypeAsSignatureType);
-			}
-			ilgen.BeginExceptionBlock();
-			if (!mw.IsStatic)
-			{
-				ilgen.Emit(OpCodes.Ldarg_0);
-				mw.DeclaringType.EmitCheckcast(ilgen);
-				mw.DeclaringType.EmitConvStackTypeToSignatureType(ilgen, null);
-				ilgen.Emit(OpCodes.Stloc, args[0]);
-			}
-			for (int i = thisCount; i < args.Length; i++)
-			{
-				ilgen.Emit(OpCodes.Ldarg_1);
-				ilgen.EmitLdc_I4(i - thisCount);
-				ilgen.Emit(OpCodes.Ldelem_Ref);
-				TypeWrapper tw = parameters[i - thisCount];
-				EmitUnboxArg(ilgen, tw);
-				tw.EmitConvStackTypeToSignatureType(ilgen, null);
-				ilgen.Emit(OpCodes.Stloc, args[i]);
-			}
-			CodeEmitterLabel label1 = ilgen.DefineLabel();
-			ilgen.EmitLeave(label1);
-			ilgen.BeginCatchBlock(typeof(InvalidCastException));
-			ilgen.Emit(OpCodes.Newobj, illegalArgumentExceptionCtor);
-			ilgen.Emit(OpCodes.Throw);
-			ilgen.BeginCatchBlock(typeof(NullReferenceException));
-			ilgen.Emit(OpCodes.Newobj, illegalArgumentExceptionCtor);
-			ilgen.Emit(OpCodes.Throw);
-			ilgen.EndExceptionBlock();
-
-			// this is the actual call
-			ilgen.MarkLabel(label1);
-			ilgen.BeginExceptionBlock();
-			for (int i = 0; i < args.Length; i++)
-			{
-				if (i == 0 && !mw.IsStatic && (mw.DeclaringType.IsNonPrimitiveValueType || mw.DeclaringType.IsGhost))
-				{
-					ilgen.Emit(OpCodes.Ldloca, args[i]);
-				}
-				else
-				{
-					ilgen.Emit(OpCodes.Ldloc, args[i]);
-				}
-			}
-			if (mw.HasCallerID)
-			{
-				ilgen.Emit(OpCodes.Ldarg_2);
-			}
-			if (mw.IsStatic || nonvirtual)
-			{
-				mw.EmitCall(ilgen);
-			}
-			else
-			{
-				mw.EmitCallvirtReflect(ilgen);
-			}
-			mw.ReturnType.EmitConvSignatureTypeToStackType(ilgen);
-			BoxReturnValue(ilgen, mw.ReturnType);
-			ilgen.Emit(OpCodes.Stloc, ret);
-			CodeEmitterLabel label2 = ilgen.DefineLabel();
-			ilgen.EmitLeave(label2);
-			ilgen.BeginCatchBlock(typeof(Exception));
-			CodeEmitterLabel label = ilgen.DefineLabel();
-			CodeEmitterLabel labelWrap = ilgen.DefineLabel();
-			if (IntPtr.Size == 8 && nonvirtual)
-			{
-				// This is a workaround for the x64 JIT, which is completely broken as usual.
-				// When MethodBase.GetCurrentMethod() is used in a dynamic method that isn't verifiable,
-				// we get an access violation at JIT time. When we're doing a nonvirtual call,
-				// the method is not verifiable, so we disable this check (which, at worst, results
-				// in any exceptions thrown at the call site being incorrectly wrapped in an InvocationTargetException).
-			}
-			else
-			{
-				// If the exception we caught is a java.lang.reflect.InvocationTargetException, we know it must be
-				// wrapped, because .NET won't throw that exception and we also cannot check the target site,
-				// because it may be the same as us if a method is recursively invoking itself.
-				ilgen.Emit(OpCodes.Dup);
-				ilgen.Emit(OpCodes.Isinst, typeof(java.lang.reflect.InvocationTargetException));
-				ilgen.EmitBrtrue(labelWrap);
-				ilgen.Emit(OpCodes.Dup);
-				ilgen.Emit(OpCodes.Callvirt, get_TargetSite);
-				ilgen.Emit(OpCodes.Call, GetCurrentMethod);
-				ilgen.Emit(OpCodes.Ceq);
-				ilgen.EmitBrtrue(label);
-			}
-			ilgen.MarkLabel(labelWrap);
-			ilgen.Emit(OpCodes.Ldc_I4_0);
-			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(Types.Exception));
-			ilgen.Emit(OpCodes.Newobj, invocationTargetExceptionCtor);
-			ilgen.MarkLabel(label);
-			ilgen.Emit(OpCodes.Throw);
-			ilgen.EndExceptionBlock();
-
-			ilgen.MarkLabel(label2);
-			ilgen.Emit(OpCodes.Ldloc, ret);
-			ilgen.Emit(OpCodes.Ret);
-			ilgen.DoEmit();
-			invoker = (Invoker)dm.CreateDelegate(typeof(Invoker));
-			if ((mw.IsStatic || mw.DeclaringType.IsInterface) && mw.DeclaringType.HasStaticInitializer)
-			{
-				invoker = new Invoker(new RunClassInit(this, mw.DeclaringType, invoker).invoke);
-			}
-		}
-
-		private static void Expand(CodeEmitter ilgen, TypeWrapper type)
-		{
-			if (type == PrimitiveTypeWrapper.FLOAT)
-			{
-				ilgen.Emit(OpCodes.Conv_R4);
-			}
-			else if (type == PrimitiveTypeWrapper.LONG)
-			{
-				ilgen.Emit(OpCodes.Conv_I8);
-			}
-			else if (type == PrimitiveTypeWrapper.DOUBLE)
-			{
-				ilgen.Emit(OpCodes.Conv_R8);
-			}
-		}
+		private static readonly MethodInfo valueOfByte = typeof(java.lang.Byte).GetMethod("valueOf", new Type[] { typeof(byte) });
+		private static readonly MethodInfo valueOfBoolean = typeof(java.lang.Boolean).GetMethod("valueOf", new Type[] { typeof(bool) });
+		private static readonly MethodInfo valueOfChar = typeof(java.lang.Character).GetMethod("valueOf", new Type[] { typeof(char) });
+		private static readonly MethodInfo valueOfShort = typeof(java.lang.Short).GetMethod("valueOf", new Type[] { typeof(short) });
+		private static readonly MethodInfo valueOfInt = typeof(java.lang.Integer).GetMethod("valueOf", new Type[] { typeof(int) });
+		private static readonly MethodInfo valueOfFloat = typeof(java.lang.Float).GetMethod("valueOf", new Type[] { typeof(float) });
+		private static readonly MethodInfo valueOfLong = typeof(java.lang.Long).GetMethod("valueOf", new Type[] { typeof(long) });
+		private static readonly MethodInfo valueOfDouble = typeof(java.lang.Double).GetMethod("valueOf", new Type[] { typeof(double) });
+		private static readonly MethodInfo byteValue = typeof(java.lang.Byte).GetMethod("byteValue", Type.EmptyTypes);
+		private static readonly MethodInfo booleanValue = typeof(java.lang.Boolean).GetMethod("booleanValue", Type.EmptyTypes);
+		private static readonly MethodInfo charValue = typeof(java.lang.Character).GetMethod("charValue", Type.EmptyTypes);
+		private static readonly MethodInfo shortValue = typeof(java.lang.Short).GetMethod("shortValue", Type.EmptyTypes);
+		private static readonly MethodInfo intValue = typeof(java.lang.Integer).GetMethod("intValue", Type.EmptyTypes);
+		private static readonly MethodInfo floatValue = typeof(java.lang.Float).GetMethod("floatValue", Type.EmptyTypes);
+		private static readonly MethodInfo longValue = typeof(java.lang.Long).GetMethod("longValue", Type.EmptyTypes);
+		private static readonly MethodInfo doubleValue = typeof(java.lang.Double).GetMethod("doubleValue", Type.EmptyTypes);
 
 		internal static void EmitUnboxArg(CodeEmitter ilgen, TypeWrapper type)
 		{
@@ -634,7 +400,7 @@ static class Java_sun_reflect_ReflectionFactory
 			}
 		}
 
-		private static void BoxReturnValue(CodeEmitter ilgen, TypeWrapper type)
+		internal static void BoxReturnValue(CodeEmitter ilgen, TypeWrapper type)
 		{
 			if (type == PrimitiveTypeWrapper.VOID)
 			{
@@ -671,6 +437,226 @@ static class Java_sun_reflect_ReflectionFactory
 			else if (type == PrimitiveTypeWrapper.DOUBLE)
 			{
 				ilgen.Emit(OpCodes.Call, valueOfDouble);
+			}
+		}
+
+		private static void Expand(CodeEmitter ilgen, TypeWrapper type)
+		{
+			if (type == PrimitiveTypeWrapper.FLOAT)
+			{
+				ilgen.Emit(OpCodes.Conv_R4);
+			}
+			else if (type == PrimitiveTypeWrapper.LONG)
+			{
+				ilgen.Emit(OpCodes.Conv_I8);
+			}
+			else if (type == PrimitiveTypeWrapper.DOUBLE)
+			{
+				ilgen.Emit(OpCodes.Conv_R8);
+			}
+		}
+	}
+
+	internal sealed class FastMethodAccessorImpl : sun.reflect.MethodAccessor
+	{
+		internal static readonly ConstructorInfo invocationTargetExceptionCtor;
+		internal static readonly ConstructorInfo illegalArgumentExceptionCtor;
+		internal static readonly MethodInfo get_TargetSite;
+		internal static readonly MethodInfo GetCurrentMethod;
+
+		private delegate object Invoker(object obj, object[] args, ikvm.@internal.CallerID callerID);
+		private Invoker invoker;
+
+		static FastMethodAccessorImpl()
+		{
+			invocationTargetExceptionCtor = typeof(java.lang.reflect.InvocationTargetException).GetConstructor(new Type[] { typeof(Exception) });
+			illegalArgumentExceptionCtor = typeof(java.lang.IllegalArgumentException).GetConstructor(Type.EmptyTypes);
+			get_TargetSite = typeof(Exception).GetMethod("get_TargetSite");
+			GetCurrentMethod = typeof(MethodBase).GetMethod("GetCurrentMethod");
+		}
+
+		private sealed class RunClassInit
+		{
+			private FastMethodAccessorImpl outer;
+			private TypeWrapper tw;
+			private Invoker invoker;
+
+			internal RunClassInit(FastMethodAccessorImpl outer, TypeWrapper tw, Invoker invoker)
+			{
+				this.outer = outer;
+				this.tw = tw;
+				this.invoker = invoker;
+			}
+
+			[IKVM.Attributes.HideFromJava]
+			internal object invoke(object obj, object[] args, ikvm.@internal.CallerID callerID)
+			{
+				// FXBUG pre-SP1 a DynamicMethod that calls a static method doesn't trigger the cctor, so we do that explicitly.
+				// even on .NET 2.0 SP2, interface method invocations don't run the interface cctor
+				// NOTE when testing, please test both the x86 and x64 CLR JIT, because they have different bugs (even on .NET 2.0 SP2)
+				tw.RunClassInit();
+				outer.invoker = invoker;
+				return invoker(obj, args, callerID);
+			}
+		}
+
+		internal FastMethodAccessorImpl(java.lang.reflect.Method method, bool nonvirtual)
+		{
+			MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(method);
+			TypeWrapper[] parameters;
+			try
+			{
+				mw.DeclaringType.Finish();
+				parameters = mw.GetParameters();
+				for (int i = 0; i < parameters.Length; i++)
+				{
+					// the EnsureLoadable shouldn't fail, because we don't allow a java.lang.reflect.Method
+					// to "escape" if it has an unloadable type in the signature
+					parameters[i] = parameters[i].EnsureLoadable(mw.DeclaringType.GetClassLoader());
+					parameters[i].Finish();
+				}
+			}
+			catch (RetargetableJavaException x)
+			{
+				throw x.ToJava();
+			}
+			mw.ResolveMethod();
+			DynamicMethod dm = DynamicMethodUtils.Create("__<Invoker>", mw.DeclaringType.TypeAsBaseType, !mw.IsPublic || !mw.DeclaringType.IsPublic || nonvirtual, typeof(object), new Type[] { typeof(object), typeof(object[]), typeof(ikvm.@internal.CallerID) });
+			CodeEmitter ilgen = CodeEmitter.Create(dm);
+			CodeEmitterLocal ret = ilgen.DeclareLocal(typeof(object));
+			if (!mw.IsStatic)
+			{
+				// check target for null
+				ilgen.Emit(OpCodes.Ldarg_0);
+				ilgen.EmitNullCheck();
+			}
+
+			// check args length
+			CodeEmitterLabel argsLengthOK = ilgen.DefineLabel();
+			if (parameters.Length == 0)
+			{
+				// zero length array may be null
+				ilgen.Emit(OpCodes.Ldarg_1);
+				ilgen.EmitBrfalse(argsLengthOK);
+			}
+			ilgen.Emit(OpCodes.Ldarg_1);
+			ilgen.Emit(OpCodes.Ldlen);
+			ilgen.EmitLdc_I4(parameters.Length);
+			ilgen.EmitBeq(argsLengthOK);
+			ilgen.Emit(OpCodes.Newobj, illegalArgumentExceptionCtor);
+			ilgen.Emit(OpCodes.Throw);
+			ilgen.MarkLabel(argsLengthOK);
+
+			int thisCount = mw.IsStatic ? 0 : 1;
+			CodeEmitterLocal[] args = new CodeEmitterLocal[parameters.Length + thisCount];
+			if (!mw.IsStatic)
+			{
+				args[0] = ilgen.DeclareLocal(mw.DeclaringType.TypeAsSignatureType);
+			}
+			for (int i = thisCount; i < args.Length; i++)
+			{
+				args[i] = ilgen.DeclareLocal(parameters[i - thisCount].TypeAsSignatureType);
+			}
+			ilgen.BeginExceptionBlock();
+			if (!mw.IsStatic)
+			{
+				ilgen.Emit(OpCodes.Ldarg_0);
+				mw.DeclaringType.EmitCheckcast(ilgen);
+				mw.DeclaringType.EmitConvStackTypeToSignatureType(ilgen, null);
+				ilgen.Emit(OpCodes.Stloc, args[0]);
+			}
+			for (int i = thisCount; i < args.Length; i++)
+			{
+				ilgen.Emit(OpCodes.Ldarg_1);
+				ilgen.EmitLdc_I4(i - thisCount);
+				ilgen.Emit(OpCodes.Ldelem_Ref);
+				TypeWrapper tw = parameters[i - thisCount];
+				BoxUtil.EmitUnboxArg(ilgen, tw);
+				tw.EmitConvStackTypeToSignatureType(ilgen, null);
+				ilgen.Emit(OpCodes.Stloc, args[i]);
+			}
+			CodeEmitterLabel label1 = ilgen.DefineLabel();
+			ilgen.EmitLeave(label1);
+			ilgen.BeginCatchBlock(typeof(InvalidCastException));
+			ilgen.Emit(OpCodes.Newobj, illegalArgumentExceptionCtor);
+			ilgen.Emit(OpCodes.Throw);
+			ilgen.BeginCatchBlock(typeof(NullReferenceException));
+			ilgen.Emit(OpCodes.Newobj, illegalArgumentExceptionCtor);
+			ilgen.Emit(OpCodes.Throw);
+			ilgen.EndExceptionBlock();
+
+			// this is the actual call
+			ilgen.MarkLabel(label1);
+			ilgen.BeginExceptionBlock();
+			for (int i = 0; i < args.Length; i++)
+			{
+				if (i == 0 && !mw.IsStatic && (mw.DeclaringType.IsNonPrimitiveValueType || mw.DeclaringType.IsGhost))
+				{
+					ilgen.Emit(OpCodes.Ldloca, args[i]);
+				}
+				else
+				{
+					ilgen.Emit(OpCodes.Ldloc, args[i]);
+				}
+			}
+			if (mw.HasCallerID)
+			{
+				ilgen.Emit(OpCodes.Ldarg_2);
+			}
+			if (mw.IsStatic || nonvirtual)
+			{
+				mw.EmitCall(ilgen);
+			}
+			else
+			{
+				mw.EmitCallvirtReflect(ilgen);
+			}
+			mw.ReturnType.EmitConvSignatureTypeToStackType(ilgen);
+			BoxUtil.BoxReturnValue(ilgen, mw.ReturnType);
+			ilgen.Emit(OpCodes.Stloc, ret);
+			CodeEmitterLabel label2 = ilgen.DefineLabel();
+			ilgen.EmitLeave(label2);
+			ilgen.BeginCatchBlock(typeof(Exception));
+			CodeEmitterLabel label = ilgen.DefineLabel();
+			CodeEmitterLabel labelWrap = ilgen.DefineLabel();
+			if (IntPtr.Size == 8 && nonvirtual)
+			{
+				// This is a workaround for the x64 JIT, which is completely broken as usual.
+				// When MethodBase.GetCurrentMethod() is used in a dynamic method that isn't verifiable,
+				// we get an access violation at JIT time. When we're doing a nonvirtual call,
+				// the method is not verifiable, so we disable this check (which, at worst, results
+				// in any exceptions thrown at the call site being incorrectly wrapped in an InvocationTargetException).
+			}
+			else
+			{
+				// If the exception we caught is a java.lang.reflect.InvocationTargetException, we know it must be
+				// wrapped, because .NET won't throw that exception and we also cannot check the target site,
+				// because it may be the same as us if a method is recursively invoking itself.
+				ilgen.Emit(OpCodes.Dup);
+				ilgen.Emit(OpCodes.Isinst, typeof(java.lang.reflect.InvocationTargetException));
+				ilgen.EmitBrtrue(labelWrap);
+				ilgen.Emit(OpCodes.Dup);
+				ilgen.Emit(OpCodes.Callvirt, get_TargetSite);
+				ilgen.Emit(OpCodes.Call, GetCurrentMethod);
+				ilgen.Emit(OpCodes.Ceq);
+				ilgen.EmitBrtrue(label);
+			}
+			ilgen.MarkLabel(labelWrap);
+			ilgen.Emit(OpCodes.Ldc_I4_0);
+			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(Types.Exception));
+			ilgen.Emit(OpCodes.Newobj, invocationTargetExceptionCtor);
+			ilgen.MarkLabel(label);
+			ilgen.Emit(OpCodes.Throw);
+			ilgen.EndExceptionBlock();
+
+			ilgen.MarkLabel(label2);
+			ilgen.Emit(OpCodes.Ldloc, ret);
+			ilgen.Emit(OpCodes.Ret);
+			ilgen.DoEmit();
+			invoker = (Invoker)dm.CreateDelegate(typeof(Invoker));
+			if ((mw.IsStatic || mw.DeclaringType.IsInterface) && mw.DeclaringType.HasStaticInitializer)
+			{
+				invoker = new Invoker(new RunClassInit(this, mw.DeclaringType, invoker).invoke);
 			}
 		}
 
@@ -747,7 +733,7 @@ static class Java_sun_reflect_ReflectionFactory
 				ilgen.EmitLdc_I4(i);
 				ilgen.Emit(OpCodes.Ldelem_Ref);
 				TypeWrapper tw = parameters[i];
-				FastMethodAccessorImpl.EmitUnboxArg(ilgen, tw);
+				BoxUtil.EmitUnboxArg(ilgen, tw);
 				tw.EmitConvStackTypeToSignatureType(ilgen, null);
 				ilgen.Emit(OpCodes.Stloc, args[i]);
 			}
