@@ -2046,30 +2046,28 @@ static class Java_sun_reflect_ReflectionFactory
 	}
 #endif
 
-	public static object newMethodAccessor(object thisFactory, object method)
+	public static sun.reflect.MethodAccessor newMethodAccessor(object thisFactory, java.lang.reflect.Method method)
 	{
 #if FIRST_PASS
 		return null;
 #else
-		java.lang.reflect.Method m = (java.lang.reflect.Method)method;
 		MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(method);
 		if (mw is ICustomInvoke)
 		{
-			return new MethodAccessorImpl(m);
+			return new MethodAccessorImpl(method);
 		}
 		else
 		{
-			return new FastMethodAccessorImpl(m, false);
+			return new FastMethodAccessorImpl(method, false);
 		}
 #endif
 	}
 
-	public static object newConstructorAccessor0(object thisFactory, object constructor)
+	public static sun.reflect.ConstructorAccessor newConstructorAccessor0(object thisFactory, java.lang.reflect.Constructor constructor)
 	{
 #if FIRST_PASS
 		return null;
 #else
-		java.lang.reflect.Constructor cons = (java.lang.reflect.Constructor)constructor;
 		MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(constructor);
 		if (ActivatorConstructorAccessor.IsSuitable(mw))
 		{
@@ -2080,12 +2078,12 @@ static class Java_sun_reflect_ReflectionFactory
 		}
 		else
 		{
-			return new FastConstructorAccessorImpl(cons);
+			return new FastConstructorAccessorImpl(constructor);
 		}
 #endif
 	}
 
-	public static object newConstructorAccessorForSerialization(java.lang.Class classToInstantiate, java.lang.reflect.Constructor constructorToCall)
+	public static sun.reflect.ConstructorAccessor newConstructorAccessorForSerialization(java.lang.Class classToInstantiate, java.lang.reflect.Constructor constructorToCall)
 	{
 #if FIRST_PASS
 		return null;
