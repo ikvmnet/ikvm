@@ -119,7 +119,7 @@ static class Java_java_lang_invoke_DirectMethodHandle
 			MethodWrapper mw = tw.GetMethods()[index];
 			if (mw.IsDynamicOnly)
 			{
-				MethodHandleUtil.DynamicMethodBuilder dm = new MethodHandleUtil.DynamicMethodBuilder("CustomInvoke:" + mw.Name, type, (ICustomInvoke)mw);
+				MethodHandleUtil.DynamicMethodBuilder dm = new MethodHandleUtil.DynamicMethodBuilder("CustomInvoke:" + mw.Name, type, mw);
 				if (mw.IsStatic)
 				{
 					dm.LoadNull();
@@ -130,7 +130,7 @@ static class Java_java_lang_invoke_DirectMethodHandle
 					dm.Ldarg(0);
 					dm.BoxArgs(1);
 				}
-				dm.Callvirt(typeof(ICustomInvoke).GetMethod("Invoke"));
+				dm.Callvirt(typeof(MethodWrapper).GetMethod("Invoke", BindingFlags.Instance | BindingFlags.NonPublic));
 				dm.Convert(typeof(object), type.returnType(), 0);
 				dm.Ret();
 				return dm.CreateDelegate();
@@ -416,7 +416,7 @@ static partial class MethodHandleUtil
 			ilgen.Emit(OpCodes.Ldarg_0);
 		}
 
-		internal DynamicMethodBuilder(string name, MethodType type, ICustomInvoke target)
+		internal DynamicMethodBuilder(string name, MethodType type, MethodWrapper target)
 			: this(name, type, null, target, null, null)
 		{
 			ilgen.Emit(OpCodes.Ldarg_0);

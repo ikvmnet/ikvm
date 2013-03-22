@@ -452,14 +452,14 @@ namespace IKVM.Internal
 			}
 		}
 
-		private class DynamicOnlyMethodWrapper : MethodWrapper, ICustomInvoke
+		private class DynamicOnlyMethodWrapper : MethodWrapper
 		{
 			internal DynamicOnlyMethodWrapper(TypeWrapper declaringType, string name, string sig, TypeWrapper returnType, TypeWrapper[] parameterTypes, MemberFlags flags)
 				: base(declaringType, name, sig, null, returnType, parameterTypes, Modifiers.Public | Modifiers.Abstract, flags)
 			{
 			}
 
-			internal override bool IsDynamicOnly
+			internal sealed override bool IsDynamicOnly
 			{
 				get
 				{
@@ -468,7 +468,7 @@ namespace IKVM.Internal
 			}
 
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-			object ICustomInvoke.Invoke(object obj, object[] args)
+			internal sealed override object Invoke(object obj, object[] args)
 			{
 				// a DynamicOnlyMethodWrapper is an interface method, but now that we've been called on an actual object instance,
 				// we can resolve to a real method and call that instead
@@ -563,7 +563,7 @@ namespace IKVM.Internal
 #endif // !STUB_GENERATOR
 			}
 
-			private sealed class EnumValuesMethodWrapper : MethodWrapper, ICustomInvoke
+			private sealed class EnumValuesMethodWrapper : MethodWrapper
 			{
 				internal EnumValuesMethodWrapper(TypeWrapper declaringType)
 					: base(declaringType, "values", "()[" + declaringType.SigName, null, declaringType.MakeArrayType(1), TypeWrapper.EmptyArray, Modifiers.Public | Modifiers.Static, MemberFlags.None)
@@ -579,7 +579,7 @@ namespace IKVM.Internal
 				}
 
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-				object ICustomInvoke.Invoke(object obj, object[] args)
+				internal override object Invoke(object obj, object[] args)
 				{
 					FieldWrapper[] values = this.DeclaringType.GetFields();
 					object[] array = (object[])Array.CreateInstance(this.DeclaringType.TypeAsArrayType, values.Length);
@@ -592,7 +592,7 @@ namespace IKVM.Internal
 #endif // !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 			}
 
-			private sealed class EnumValueOfMethodWrapper : MethodWrapper, ICustomInvoke
+			private sealed class EnumValueOfMethodWrapper : MethodWrapper
 			{
 				internal EnumValueOfMethodWrapper(TypeWrapper declaringType)
 					: base(declaringType, "valueOf", "(Ljava.lang.String;)" + declaringType.SigName, null, declaringType, new TypeWrapper[] { CoreClasses.java.lang.String.Wrapper }, Modifiers.Public | Modifiers.Static, MemberFlags.None)
@@ -608,7 +608,7 @@ namespace IKVM.Internal
 				}
 
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-				object ICustomInvoke.Invoke(object obj, object[] args)
+				internal override object Invoke(object obj, object[] args)
 				{
 					FieldWrapper[] values = this.DeclaringType.GetFields();
 					for (int i = 0; i < values.Length; i++)

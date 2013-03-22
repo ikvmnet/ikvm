@@ -353,13 +353,6 @@ namespace IKVM.Internal
 		}
 	}
 
-	interface ICustomInvoke
-	{
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-		object Invoke(object obj, object[] args);
-#endif
-	}
-
 	abstract class MethodWrapper : MemberWrapper
 	{
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR

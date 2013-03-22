@@ -242,7 +242,7 @@ static class Java_sun_reflect_ReflectionFactory
 			object retval;
 			try
 			{
-				retval = ((ICustomInvoke)mw).Invoke(obj, args);
+				retval = mw.Invoke(obj, args);
 			}
 			catch (MethodAccessException x)
 			{
@@ -2052,7 +2052,7 @@ static class Java_sun_reflect_ReflectionFactory
 		return null;
 #else
 		MethodWrapper mw = MethodWrapper.FromMethod(method);
-		if (mw is ICustomInvoke)
+		if (mw.IsDynamicOnly)
 		{
 			return new MethodAccessorImpl(method);
 		}
