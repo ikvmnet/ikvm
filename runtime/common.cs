@@ -141,63 +141,6 @@ namespace IKVM.NativeCode.ikvm.@internal
 			return AssemblyClassLoader.FromAssembly(asm).GetJavaClassLoader();
 		}
 	}
-
-	namespace stubgen
-	{
-		static class StubGenerator
-		{
-			public static int getRealModifiers(jlClass c)
-			{
-				return (int)TypeWrapper.FromClass(c).Modifiers;
-			}
-
-			public static string getAssemblyName(jlClass c)
-			{
-				TypeWrapper wrapper = TypeWrapper.FromClass(c);
-				ClassLoaderWrapper loader = wrapper.GetClassLoader();
-				IKVM.Internal.AssemblyClassLoader acl = loader as IKVM.Internal.AssemblyClassLoader;
-				if(acl != null)
-				{
-					return acl.GetAssembly(wrapper).FullName;
-				}
-				else
-				{
-					return ((GenericClassLoaderWrapper)loader).GetName();
-				}
-			}
-
-			public static object getFieldConstantValue(object field)
-			{
-				return FieldWrapper.FromField(field).GetConstant();
-			}
-
-			public static bool isFieldDeprecated(object field)
-			{
-				FieldWrapper fieldWrapper = FieldWrapper.FromField(field);
-				FieldInfo fi = fieldWrapper.GetField();
-				if(fi != null)
-				{
-					return fi.IsDefined(typeof(ObsoleteAttribute), false);
-				}
-				return false;
-			}
-
-			public static bool isMethodDeprecated(object method)
-			{
-				MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(method);
-				MethodBase mb = mw.GetMethod();
-				return mb != null && mb.IsDefined(typeof(ObsoleteAttribute), false);
-			}
-
-			public static bool isClassDeprecated(jlClass clazz)
-			{
-				Type type = TypeWrapper.FromClass(clazz).TypeAsTBD;
-				// we need to check type for null, because ReflectionOnly
-				// generated delegate inner interfaces don't really exist
-				return type != null && type.IsDefined(typeof(ObsoleteAttribute), false);
-			}
-		}
-	}
 }
 
 namespace IKVM.NativeCode.ikvm.runtime

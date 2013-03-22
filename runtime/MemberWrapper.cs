@@ -1381,29 +1381,6 @@ namespace IKVM.Internal
 		}
 
 #if !STATIC_COMPILER && !STUB_GENERATOR
-		// NOTE used (thru IKVM.Runtime.Util.GetFieldConstantValue) by ikvmstub to find out if the
-		// field is a constant (and if it is, to get its value)
-		internal object GetConstant()
-		{
-			AssertLinked();
-			// only primitives and string can be literals in Java (because the other "primitives" (like uint),
-			// are treated as NonPrimitiveValueTypes)
-			if(field != null && field.IsLiteral && (fieldType.IsPrimitive || fieldType == CoreClasses.java.lang.String.Wrapper))
-			{
-				object val = field.GetRawConstantValue();
-				if(field.FieldType.IsEnum)
-				{
-					val = EnumHelper.GetPrimitiveValue(EnumHelper.GetUnderlyingType(field.FieldType), val);
-				}
-				if(fieldType.IsPrimitive)
-				{
-					return JVM.Box(val);
-				}
-				return val;
-			}
-			return null;
-		}
-
 		internal static FieldWrapper FromField(java.lang.reflect.Field field)
 		{
 #if FIRST_PASS
