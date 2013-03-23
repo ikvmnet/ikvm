@@ -2285,9 +2285,7 @@ namespace IKVM.Internal
 					&& !typeof(java.io.Serializable.__Interface).IsAssignableFrom(type)
 					&& !methodsList.ContainsKey("writeReplace()Ljava.lang.Object;"))
 				{
-					methodsList.Add("writeReplace()Ljava.lang.Object;", new SimpleCallMethodWrapper(this, "writeReplace", "()Ljava.lang.Object;",
-						typeof(ikvm.@internal.Serialization).GetMethod("writeReplace"), CoreClasses.java.lang.Object.Wrapper, TypeWrapper.EmptyArray,
-						Modifiers.Private, MemberFlags.None, SimpleOpCode.Call, SimpleOpCode.Call));
+					methodsList.Add("writeReplace()Ljava.lang.Object;", new ExceptionWriteReplaceMethodWrapper(this));
 				}
 #endif // !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
 
@@ -2296,6 +2294,31 @@ namespace IKVM.Internal
 				SetMethods(methodArray);
 			}
 		}
+
+#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+		private sealed class ExceptionWriteReplaceMethodWrapper : MethodWrapper
+		{
+			internal ExceptionWriteReplaceMethodWrapper(TypeWrapper declaringType)
+				: base(declaringType, "writeReplace", "()Ljava.lang.Object;", null, CoreClasses.java.lang.Object.Wrapper, TypeWrapper.EmptyArray, Modifiers.Private, MemberFlags.None)
+			{
+			}
+
+			internal override bool IsDynamicOnly
+			{
+				get { return true; }
+			}
+
+			internal override object Invoke(object obj, object[] args)
+			{
+				Exception x = (Exception)obj;
+				com.sun.xml.@internal.ws.developer.ServerSideException sse
+					= new com.sun.xml.@internal.ws.developer.ServerSideException(ikvm.extensions.ExtensionMethods.getClass(x).getName(), x.Message);
+				sse.initCause(x.InnerException);
+				sse.setStackTrace(ikvm.extensions.ExtensionMethods.getStackTrace(x));
+				return sse;
+			}
+		}
+#endif // !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
 
 		private void InterfaceMethodStubHelper(Dictionary<string, MethodWrapper> methodsList, MethodBase method, string name, string sig, TypeWrapper[] args, TypeWrapper ret)
 		{
