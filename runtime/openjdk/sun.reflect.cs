@@ -272,7 +272,7 @@ static class Java_sun_reflect_ReflectionFactory
 				{
 					throw new java.lang.IllegalArgumentException();
 				}
-				nargs[i] = args[i];
+				nargs[i] = argumentTypes[i].GhostWrap(args[i]);
 			}
 		}
 		return nargs;
@@ -310,14 +310,17 @@ static class Java_sun_reflect_ReflectionFactory
 			{
 				retval = mw.Invoke(obj, args);
 			}
-			catch (MethodAccessException x)
+			catch (Exception x)
 			{
-				// this can happen if we're calling a non-public method and the call stack doesn't have ReflectionPermission.MemberAccess
-				throw new java.lang.IllegalAccessException().initCause(x);
+				throw new java.lang.reflect.InvocationTargetException(ikvm.runtime.Util.mapException(x));
 			}
 			if (mw.ReturnType.IsPrimitive && mw.ReturnType != PrimitiveTypeWrapper.VOID)
 			{
 				retval = JVM.Box(retval);
+			}
+			else
+			{
+				retval = mw.ReturnType.GhostUnwrap(retval);
 			}
 			return retval;
 		}

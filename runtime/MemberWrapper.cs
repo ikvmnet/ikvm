@@ -879,13 +879,23 @@ namespace IKVM.Internal
 			}
 		}
 
+		[HideFromJava]
+		protected static object InvokeAndUnwrapException(MethodBase mb, object obj, object[] args)
+		{
+			try
+			{
+				return mb.Invoke(obj, args);
+			}
+			catch (TargetInvocationException x)
+			{
+				throw ikvm.runtime.Util.mapException(x.InnerException);
+			}
+		}
+
+		[HideFromJava]
 		internal virtual object Invoke(object obj, object[] args)
 		{
-			if (method == null)
-			{
-				throw new NotImplementedException(GetType().FullName + " has no method and doesn't override Invoke");
-			}
-			return method.Invoke(obj, args);
+			return InvokeAndUnwrapException(method, obj, args);
 		}
 
 		[HideFromJava]

@@ -131,7 +131,7 @@ static class Java_java_lang_invoke_DirectMethodHandle
 					dm.BoxArgs(1);
 				}
 				dm.Callvirt(typeof(MethodWrapper).GetMethod("Invoke", BindingFlags.Instance | BindingFlags.NonPublic));
-				dm.Convert(typeof(object), type.returnType(), 0);
+				dm.UnboxReturnValue();
 				dm.Ret();
 				return dm.CreateDelegate();
 			}
@@ -589,8 +589,34 @@ static partial class MethodHandleUtil
 				ilgen.Emit(OpCodes.Dup);
 				ilgen.EmitLdc_I4(i - start);
 				Ldarg(i);
-				Convert(type.parameterType(i), typeof(object), 0);
+				TypeWrapper tw = TypeWrapper.FromClass(type.parameterType(i));
+				if (tw.IsPrimitive || tw.IsGhost)
+				{
+					ilgen.Emit(OpCodes.Box, tw.TypeAsSignatureType);
+				}
+				else if (tw.IsNonPrimitiveValueType)
+				{
+					tw.EmitBox(ilgen);
+				}
 				ilgen.Emit(OpCodes.Stelem_Ref);
+			}
+		}
+
+		internal void UnboxReturnValue()
+		{
+			TypeWrapper tw = TypeWrapper.FromClass(type.returnType());
+			if (tw == PrimitiveTypeWrapper.VOID)
+			{
+				ilgen.Emit(OpCodes.Pop);
+			}
+			else if (tw.IsPrimitive || tw.IsGhost)
+			{
+				ilgen.Emit(OpCodes.Unbox, tw.TypeAsSignatureType);
+				ilgen.Emit(OpCodes.Ldobj, tw.TypeAsSignatureType);
+			}
+			else if (tw.IsNonPrimitiveValueType)
+			{
+				tw.EmitUnbox(ilgen);
 			}
 		}
 
