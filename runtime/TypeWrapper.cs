@@ -3184,6 +3184,18 @@ namespace IKVM.Internal
 			return BaseTypeWrapper.GetSerializationConstructor();
 		}
 #endif
+
+#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+		internal virtual object GhostWrap(object obj)
+		{
+			return obj;
+		}
+
+		internal virtual object GhostUnwrap(object obj)
+		{
+			return obj;
+		}
+#endif
 	}
 
 	sealed class UnloadableTypeWrapper : TypeWrapper
@@ -3611,6 +3623,18 @@ namespace IKVM.Internal
 					return true;
 				}
 			}
+
+#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+			internal override object GhostWrap(object obj)
+			{
+				return type.GetMethod("Cast").Invoke(null, new object[] { obj });
+			}
+
+			internal override object GhostUnwrap(object obj)
+			{
+				return type.GetMethod("ToObject").Invoke(obj, new object[0]);
+			}
+#endif
 		}
 
 		internal static string GetName(Type type)

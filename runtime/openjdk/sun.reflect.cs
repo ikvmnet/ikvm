@@ -1191,14 +1191,7 @@ static class Java_sun_reflect_ReflectionFactory
 						fw.ResolveField();
 					}
 					numInvocations++;
-					if (fw.FieldTypeWrapper.IsGhost)
-					{
-						return (T)fw.FieldTypeWrapper.TypeAsTBD.GetMethod("ToObject").Invoke(fw.GetValue(obj), new object[0]);
-					}
-					else
-					{
-						return (T)fw.GetValue(obj);
-					}
+					return (T)fw.FieldTypeWrapper.GhostUnwrap(fw.GetValue(obj));
 				}
 				else
 				{
@@ -1244,14 +1237,7 @@ static class Java_sun_reflect_ReflectionFactory
 						fw.ResolveField();
 					}
 					numInvocations++;
-					if (fw.FieldTypeWrapper.IsGhost)
-					{
-						fw.SetValue(obj, fw.FieldTypeWrapper.TypeAsTBD.GetMethod("Cast").Invoke(null, new object[] { value }));
-					}
-					else
-					{
-						fw.SetValue(obj, value);
-					}
+					fw.SetValue(obj, fw.FieldTypeWrapper.GhostWrap(value));
 				}
 				else
 				{
