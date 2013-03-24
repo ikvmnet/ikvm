@@ -1103,8 +1103,7 @@ namespace IKVM.Internal
 			LazyInitExports();
 			lock (this)
 			{
-				Array.Resize(ref delegates, delegates.Length + 1);
-				delegates[delegates.Length - 1] = acl;
+				delegates = ArrayUtil.Concat(delegates, acl);
 			}
 		}
 

@@ -338,8 +338,7 @@ struct LocalVarInfo
 			}
 			else
 			{
-				Array.Resize(ref data, data.Length + 1);
-				data[data.Length - 1] = instructionIndex;
+				data = ArrayUtil.Concat(data, instructionIndex);
 			}
 		}
 

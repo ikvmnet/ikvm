@@ -1238,10 +1238,7 @@ sealed class IkvmcCompiler
 		}
 		else
 		{
-			T[] temp = new T[array.Length + 1];
-			Array.Copy(array, 0, temp, 0, array.Length);
-			temp[temp.Length - 1] = element;
-			array = temp;
+			array = ArrayUtil.Concat(array, element);
 		}
 	}
 

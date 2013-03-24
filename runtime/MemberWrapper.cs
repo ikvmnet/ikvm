@@ -906,11 +906,8 @@ namespace IKVM.Internal
 				if(!mw.IsStatic && method.IsStatic && mw.Name != "<init>")
 				{
 					// we've been redirected to a static method, so we have to copy the 'obj' into the args
-					object[] nargs = new object[original_args.Length + 1];
-					nargs[0] = original_obj;
-					original_args.CopyTo(nargs, 1);
 					this.obj = null;
-					this.args = nargs;
+					this.args = ArrayUtil.Concat(original_obj, original_args);
 					for(int i = 0; i < argTypes.Length; i++)
 					{
 						if(!argTypes[i].IsUnloadable && argTypes[i].IsGhost)
@@ -942,10 +939,7 @@ namespace IKVM.Internal
 
 				if(mw.HasCallerID)
 				{
-					object[] nargs = new object[args.Length + 1];
-					Array.Copy(args, nargs, args.Length);
-					nargs[args.Length] = callerID;
-					args = nargs;
+					args = ArrayUtil.Concat(args, callerID);
 				}
 			}
 

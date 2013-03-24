@@ -1157,8 +1157,7 @@ namespace IKVM.Internal
 						MethodWrapper mw = new DelegateInvokeStubMethodWrapper(wrapper, iface.DeclaringTypeWrapper.TypeAsBaseType, iface.GetMethods()[0].Signature);
 						if (GetMethodWrapperDuringCtor(wrapper, methods, mw.Name, mw.Signature) == null)
 						{
-							Array.Resize(ref methods, methods.Length + 1);
-							methods[methods.Length - 1] = mw;
+							methods = ArrayUtil.Concat(methods, mw);
 						}
 					}
 					AddDelegateInvokeStubs(iface, ref methods);
@@ -3883,9 +3882,7 @@ namespace IKVM.Internal
 									TypeWrapper[] nargs = args;
 									if (!m.IsStatic)
 									{
-										nargs = new TypeWrapper[args.Length + 1];
-										args.CopyTo(nargs, 1);
-										nargs[0] = this.wrapper;
+										nargs = ArrayUtil.Concat(wrapper, args);
 									}
 									MethodInfo[] nativeCodeTypeMethods = nativeCodeType.GetMethods(BindingFlags.Static | BindingFlags.Public);
 									foreach (MethodInfo method in nativeCodeTypeMethods)
@@ -4546,9 +4543,7 @@ namespace IKVM.Internal
 					}
 					// we append the IKVM.Attributes.AccessStub type to the modopt array for use in the property accessor method signature
 					// to make sure they never conflict with any user defined methhods
-					Type[] modopt2 = modopt;
-					Array.Resize(ref modopt2, modopt2.Length + 1);
-					modopt2[modopt2.Length - 1] = JVM.LoadType(typeof(IKVM.Attributes.AccessStub));
+					Type[] modopt2 = ArrayUtil.Concat(modopt, JVM.LoadType(typeof(IKVM.Attributes.AccessStub)));
 					MethodBuilder getter = typeBuilder.DefineMethod("get_" + fw.Name, attribs, CallingConventions.Standard, propType, null, modopt2, Type.EmptyTypes, null, null);
 					AttributeHelper.HideFromJava(getter);
 					pb.SetGetMethod(getter);
@@ -4650,9 +4645,7 @@ namespace IKVM.Internal
 					modopt[i] = wrapper.GetModOpt(parameters[i], true);
 				}
 				Type returnType = mw.ReturnType.TypeAsPublicSignatureType;
-				Type[] modoptReturnType = wrapper.GetModOpt(mw.ReturnType, true);
-				Array.Resize(ref modoptReturnType, modoptReturnType.Length + 1);
-				modoptReturnType[modoptReturnType.Length - 1] = JVM.LoadType(typeof(IKVM.Attributes.AccessStub));
+				Type[] modoptReturnType = ArrayUtil.Concat(wrapper.GetModOpt(mw.ReturnType, true), JVM.LoadType(typeof(IKVM.Attributes.AccessStub)));
 				string name;
 				if (mw.Name == StringConstants.INIT)
 				{

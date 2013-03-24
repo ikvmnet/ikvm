@@ -98,10 +98,7 @@ namespace IKVM.Internal
 
 		internal void AddReference(AssemblyClassLoader acl)
 		{
-			AssemblyClassLoader[] temp = new AssemblyClassLoader[referencedAssemblies.Length + 1];
-			Array.Copy(referencedAssemblies, 0, temp, 0, referencedAssemblies.Length);
-			temp[temp.Length - 1] = acl;
-			referencedAssemblies = temp;
+			referencedAssemblies = ArrayUtil.Concat(referencedAssemblies, acl);
 		}
 
 		internal void AddReference(CompilerClassLoader ccl)
@@ -1278,10 +1275,7 @@ namespace IKVM.Internal
 						if(specialCases != null)
 						{
 							CodeEmitter ilgen;
-							Type[] temp = typeWrapper.GetClassLoader().ArgTypeListFromSig(m.Sig);
-							Type[] argTypes = new Type[temp.Length + 1];
-							temp.CopyTo(argTypes, 1);
-							argTypes[0] = typeWrapper.shadowType;
+							Type[] argTypes = ArrayUtil.Concat(typeWrapper.shadowType, typeWrapper.GetClassLoader().ArgTypeListFromSig(m.Sig));
 							if(typeWrapper.helperTypeBuilder == null)
 							{
 								typeWrapper.helperTypeBuilder = typeWrapper.typeBuilder.DefineNestedType("__Helper", TypeAttributes.NestedPublic | TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Abstract);
@@ -1419,10 +1413,7 @@ namespace IKVM.Internal
 								attr &= ~MethodAttributes.MemberAccessMask;
 								attr |= MethodAttributes.Assembly;
 							}
-							Type[] exParamTypes = new Type[paramTypes.Length + 1];
-							Array.Copy(paramTypes, 0, exParamTypes, 1, paramTypes.Length);
-							exParamTypes[0] = typeWrapper.shadowType;
-							mbHelper = typeWrapper.typeBuilder.DefineMethod("instancehelper_" + m.Name, attr, CallingConventions.Standard, retType, exParamTypes);
+							mbHelper = typeWrapper.typeBuilder.DefineMethod("instancehelper_" + m.Name, attr, CallingConventions.Standard, retType, ArrayUtil.Concat(typeWrapper.shadowType, paramTypes));
 							if(m.Attributes != null)
 							{
 								foreach(IKVM.Internal.MapXml.Attribute custattr in m.Attributes)
@@ -1674,10 +1665,8 @@ namespace IKVM.Internal
 					if(m.nonvirtualAlternateBody != null || (m.@override != null && overriders.Count > 0))
 					{
 						RemapperTypeWrapper typeWrapper = (RemapperTypeWrapper)DeclaringType;
-						Type[] argTypes = new Type[paramTypes.Length + 1];
-						argTypes[0] = typeWrapper.TypeAsSignatureType;
-						this.GetParametersForDefineMethod().CopyTo(argTypes, 1);
-						MethodBuilder mb = typeWrapper.typeBuilder.DefineMethod("nonvirtualhelper/" + this.Name, MethodAttributes.Private | MethodAttributes.Static, this.ReturnTypeForDefineMethod, argTypes);
+						MethodBuilder mb = typeWrapper.typeBuilder.DefineMethod("nonvirtualhelper/" + this.Name, MethodAttributes.Private | MethodAttributes.Static,
+							ReturnTypeForDefineMethod, ArrayUtil.Concat(typeWrapper.TypeAsSignatureType, GetParametersForDefineMethod()));
 						if(m.Attributes != null)
 						{
 							foreach(IKVM.Internal.MapXml.Attribute custattr in m.Attributes)

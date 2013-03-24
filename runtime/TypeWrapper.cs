@@ -1376,6 +1376,26 @@ namespace IKVM.Internal
 		}
 	}
 
+	static class ArrayUtil
+	{
+		internal static T[] Concat<T, X>(X obj, T[] arr)
+			where X : T
+		{
+			T[] narr = new T[arr.Length + 1];
+			narr[0] = obj;
+			Array.Copy(arr, 0, narr, 1, arr.Length);
+			return narr;
+		}
+
+		internal static T[] Concat<T, X>(T[] arr, X obj)
+			where X : T
+		{
+			Array.Resize(ref arr, arr.Length + 1);
+			arr[arr.Length - 1] = obj;
+			return arr;
+		}
+	}
+
 	abstract class Annotation
 	{
 		// NOTE this method returns null if the type could not be found
@@ -3146,8 +3166,7 @@ namespace IKVM.Internal
 					interfaces[i] = tw;
 					if (Array.IndexOf(interfaces, twRemapped) == -1)
 					{
-						Array.Resize(ref interfaces, interfaces.Length + 1);
-						interfaces[interfaces.Length - 1] = twRemapped;
+						interfaces = ArrayUtil.Concat(interfaces, twRemapped);
 					}
 				}
 			}
@@ -4431,19 +4450,12 @@ namespace IKVM.Internal
 			[HideFromJava]
 			protected override object InvokeNonvirtualRemapped(object obj, object[] args)
 			{
-				Type[] p1 = GetParametersForDefineMethod();
-				Type[] argTypes = new Type[p1.Length + 1];
-				p1.CopyTo(argTypes, 1);
-				argTypes[0] = this.DeclaringType.TypeAsSignatureType;
 				MethodInfo mi = mbNonvirtualHelper;
 				if (mi == null)
 				{
 					mi = mbHelper;
 				}
-				object[] args1 = new object[args.Length + 1];
-				args1[0] = obj;
-				args.CopyTo(args1, 1);
-				return mi.Invoke(null, args1);
+				return mi.Invoke(null, ArrayUtil.Concat(obj, args));
 			}
 
 			internal override void EmitCallvirtReflect(CodeEmitter ilgen)

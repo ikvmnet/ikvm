@@ -271,9 +271,7 @@ static partial class MethodHandleUtil
 		TypeWrapper[] args = mw.GetParameters();
 		if (!mw.IsStatic)
 		{
-			Array.Resize(ref args, args.Length + 1);
-			Array.Copy(args, 0, args, 1, args.Length - 1);
-			args[0] = tw;
+			args = ArrayUtil.Concat(tw, args);
 		}
 		return CreateDelegateType(args, mw.ReturnType);
 	}
@@ -348,8 +346,7 @@ static partial class MethodHandleUtil
 		}
 		else
 		{
-			Array.Resize(ref types, types.Length + 1);
-			types[types.Length - 1] = retType;
+			types = ArrayUtil.Concat(types, retType);
 			return typeofMH[types.Length].MakeGenericType(types);
 		}
 	}
@@ -3381,10 +3378,7 @@ sealed class Compiler
 			}
 			if (arg0 != null)
 			{
-				TypeWrapper[] newArgs = new TypeWrapper[args.Length + 1];
-				newArgs[0] = arg0;
-				Array.Copy(args, 0, newArgs, 1, args.Length);
-				args = newArgs;
+				args = ArrayUtil.Concat(arg0, args);
 			}
 			if (HasUnloadable(args, ret))
 			{
@@ -3860,9 +3854,7 @@ sealed class Compiler
 			}
 			else
 			{
-				args = new TypeWrapper[cpi.GetArgTypes().Length + 1];
-				Array.Copy(cpi.GetArgTypes(), 0, args, 1, args.Length - 1);
-				args[0] = CoreClasses.java.lang.invoke.MethodHandle.Wrapper;
+				args = ArrayUtil.Concat(CoreClasses.java.lang.invoke.MethodHandle.Wrapper, cpi.GetArgTypes());
 				temps = new CodeEmitterLocal[args.Length];
 				for (int i = args.Length - 1; i >= 0; i--)
 				{
@@ -3963,9 +3955,7 @@ sealed class Compiler
 			else
 			{
 				ret = cpi.GetRetType();
-				args = new TypeWrapper[cpi.GetArgTypes().Length + 1];
-				Array.Copy(cpi.GetArgTypes(), 0, args, 1, args.Length - 1);
-				args[0] = cpi.GetClassType();
+				args = ArrayUtil.Concat(cpi.GetClassType(), cpi.GetArgTypes());
 			}
 			return Emit(context, kind, cpi, ret, args);
 		}
