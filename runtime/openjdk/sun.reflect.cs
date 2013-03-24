@@ -176,6 +176,83 @@ static class Java_sun_reflect_Reflection
 static class Java_sun_reflect_ReflectionFactory
 {
 #if !FIRST_PASS
+	private static object ConvertPrimitive(TypeWrapper tw, object value)
+	{
+		if (tw == PrimitiveTypeWrapper.BOOLEAN)
+		{
+			if (value is java.lang.Boolean)
+			{
+				return ((java.lang.Boolean)value).booleanValue();
+			}
+		}
+		else if (tw == PrimitiveTypeWrapper.BYTE)
+		{
+			if (value is java.lang.Byte)
+			{
+				return ((java.lang.Byte)value).byteValue();
+			}
+		}
+		else if (tw == PrimitiveTypeWrapper.CHAR)
+		{
+			if (value is java.lang.Character)
+			{
+				return ((java.lang.Character)value).charValue();
+			}
+		}
+		else if (tw == PrimitiveTypeWrapper.SHORT)
+		{
+			if (value is java.lang.Short || value is java.lang.Byte)
+			{
+				return ((java.lang.Number)value).shortValue();
+			}
+		}
+		else if (tw == PrimitiveTypeWrapper.INT)
+		{
+			if (value is java.lang.Integer || value is java.lang.Short || value is java.lang.Byte)
+			{
+				return ((java.lang.Number)value).intValue();
+			}
+			else if (value is java.lang.Character)
+			{
+				return (int)((java.lang.Character)value).charValue();
+			}
+		}
+		else if (tw == PrimitiveTypeWrapper.LONG)
+		{
+			if (value is java.lang.Long || value is java.lang.Integer || value is java.lang.Short || value is java.lang.Byte)
+			{
+				return ((java.lang.Number)value).longValue();
+			}
+			else if (value is java.lang.Character)
+			{
+				return (long)((java.lang.Character)value).charValue();
+			}
+		}
+		else if (tw == PrimitiveTypeWrapper.FLOAT)
+		{
+			if (value is java.lang.Float || value is java.lang.Long || value is java.lang.Integer || value is java.lang.Short || value is java.lang.Byte)
+			{
+				return ((java.lang.Number)value).floatValue();
+			}
+			else if (value is java.lang.Character)
+			{
+				return (float)((java.lang.Character)value).charValue();
+			}
+		}
+		else if (tw == PrimitiveTypeWrapper.DOUBLE)
+		{
+			if (value is java.lang.Double || value is java.lang.Float || value is java.lang.Long || value is java.lang.Integer || value is java.lang.Short || value is java.lang.Byte)
+			{
+				return ((java.lang.Number)value).doubleValue();
+			}
+			else if (value is java.lang.Character)
+			{
+				return (double)((java.lang.Character)value).charValue();
+			}
+		}
+		throw new java.lang.IllegalArgumentException();
+	}
+
 	private static object[] ConvertArgs(ClassLoaderWrapper loader, TypeWrapper[] argumentTypes, object[] args)
 	{
 		object[] nargs = new object[args == null ? 0 : args.Length];
@@ -187,18 +264,7 @@ static class Java_sun_reflect_ReflectionFactory
 		{
 			if (argumentTypes[i].IsPrimitive)
 			{
-				if (args[i] == null)
-				{
-					throw new java.lang.IllegalArgumentException("primitive wrapper null");
-				}
-				nargs[i] = JVM.Unbox(args[i]);
-				// NOTE we depend on the fact that the .NET reflection parameter type
-				// widening rules are the same as in Java, but to have this work for byte
-				// we need to convert byte to sbyte.
-				if (nargs[i] is byte && argumentTypes[i] != PrimitiveTypeWrapper.BYTE)
-				{
-					nargs[i] = (sbyte)(byte)nargs[i];
-				}
+				nargs[i] = ConvertPrimitive(argumentTypes[i], args[i]);
 			}
 			else
 			{
