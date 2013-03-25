@@ -742,6 +742,19 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal bool RequiresNonVirtualDispatcher
+		{
+			get
+			{
+				return !IsConstructor
+					&& !IsStatic
+					&& !IsPrivate
+					&& !IsAbstract
+					&& !IsFinal
+					&& !DeclaringType.IsFinal;
+			}
+		}
+
 #if !STATIC_COMPILER && !STUB_GENERATOR
 		[HideFromJava]
 		internal object InvokeJNI(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
@@ -855,7 +868,26 @@ namespace IKVM.Internal
 			TypeWrapper[] paramTypes = GetParameters();
 			if (paramTypes.Length > MethodHandleUtil.MaxArity)
 			{
-				throw new NotImplementedException();
+				Type type = DeclaringType.TypeAsBaseType.Assembly.GetType(
+					ReturnType == PrimitiveTypeWrapper.VOID ? "__<>NVIV`" + paramTypes.Length : "__<>NVI`" + (paramTypes.Length + 1));
+				if (type == null)
+				{
+#if NO_REF_EMIT
+					throw new InvalidOperationException();
+#else
+					type = DeclaringType.GetClassLoader().GetTypeWrapperFactory().DefineDelegate(paramTypes.Length, ReturnType == PrimitiveTypeWrapper.VOID);
+#endif
+				}
+				Type[] types = new Type[paramTypes.Length + (ReturnType == PrimitiveTypeWrapper.VOID ? 0 : 1)];
+				for (int i = 0; i < paramTypes.Length; i++)
+				{
+					types[i] = paramTypes[i].TypeAsSignatureType;
+				}
+				if (ReturnType != PrimitiveTypeWrapper.VOID)
+				{
+					types[types.Length - 1] = ReturnType.TypeAsSignatureType;
+				}
+				return type.MakeGenericType(types);
 			}
 			return MethodHandleUtil.CreateDelegateType(paramTypes, ReturnType);
 		}

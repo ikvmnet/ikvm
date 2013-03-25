@@ -1930,12 +1930,7 @@ namespace IKVM.Runtime
 			ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
 			MethodWrapper mw = MethodWrapper.FromCookie(methodID);
 			if (nonVirtual
-				&& !mw.IsConstructor
-				&& !mw.IsStatic
-				&& !mw.IsPrivate
-				&& !mw.IsAbstract
-				&& !mw.IsFinal
-				&& !mw.DeclaringType.IsFinal
+				&& mw.RequiresNonVirtualDispatcher
 				&& !(mw.DeclaringType.IsRemapped && !mw.DeclaringType.TypeAsBaseType.IsInstanceOfType(UnwrapRef(env, obj))))
 			{
 				try

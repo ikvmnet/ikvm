@@ -62,6 +62,7 @@ namespace IKVM.Internal
 		internal abstract bool ReserveName(string name);
 		internal abstract string AllocMangledName(DynamicTypeWrapper tw);
 		internal abstract Type DefineUnloadable(string name);
+		internal abstract Type DefineDelegate(int parameterCount, bool returnVoid);
 		internal abstract bool HasInternalAccess { get; }
 #if CLASSGC
 		internal abstract void AddInternalsVisibleTo(Assembly friend);

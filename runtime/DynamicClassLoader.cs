@@ -62,6 +62,7 @@ namespace IKVM.Internal
 #endif // STATIC_COMPILER
 		private Dictionary<string, TypeBuilder> unloadables;
 		private TypeBuilder unloadableContainer;
+		private Type[] delegates;
 #if !STATIC_COMPILER && !CLASSGC
 		private static DynamicClassLoader instance = new DynamicClassLoader(CreateModuleBuilder(), false);
 #endif
@@ -324,6 +325,47 @@ namespace IKVM.Internal
 				}
 				type = unloadableContainer.DefineNestedType(TypeNameUtil.MangleNestedTypeName(name), TypeAttributes.NestedPrivate | TypeAttributes.Interface | TypeAttributes.Abstract);
 				unloadables.Add(name, type);
+				return type;
+			}
+		}
+
+		internal override Type DefineDelegate(int parameterCount, bool returnVoid)
+		{
+			lock (this)
+			{
+				if (delegates == null)
+				{
+					delegates = new Type[512];
+				}
+				int index = parameterCount + (returnVoid ? 256 : 0);
+				Type type = delegates[index];
+				if (type != null)
+				{
+					return type;
+				}
+				TypeBuilder tb = moduleBuilder.DefineType(returnVoid ? "__<>NVIV`" + parameterCount : "__<>NVI`" + (parameterCount + 1), TypeAttributes.NotPublic | TypeAttributes.Sealed, Types.MulticastDelegate);
+				string[] names = new string[parameterCount + (returnVoid ? 0 : 1)];
+				for (int i = 0; i < names.Length; i++)
+				{
+					names[i] = "P" + i;
+				}
+				if (!returnVoid)
+				{
+					names[names.Length - 1] = "R";
+				}
+				Type[] genericParameters = tb.DefineGenericParameters(names);
+				Type[] parameterTypes = genericParameters;
+				if (!returnVoid)
+				{
+					parameterTypes = new Type[genericParameters.Length - 1];
+					Array.Copy(genericParameters, parameterTypes, parameterTypes.Length);
+				}
+				tb.DefineMethod(ConstructorInfo.ConstructorName, MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, Types.Void, new Type[] { Types.Object, Types.IntPtr })
+					.SetImplementationFlags(MethodImplAttributes.Runtime);
+				MethodBuilder mb = tb.DefineMethod("Invoke", MethodAttributes.Public | MethodAttributes.NewSlot | MethodAttributes.Virtual, returnVoid ? Types.Void : genericParameters[genericParameters.Length - 1], parameterTypes);
+				mb.SetImplementationFlags(MethodImplAttributes.Runtime);
+				type = tb.CreateType();
+				delegates[index] = type;
 				return type;
 			}
 		}
