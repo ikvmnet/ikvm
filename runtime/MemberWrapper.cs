@@ -827,7 +827,7 @@ namespace IKVM.Internal
 					{
 						if (!invokenonvirtualCache.TryGetValue(this, out acc))
 						{
-							acc = new Java_sun_reflect_ReflectionFactory.FastMethodAccessorImpl((java.lang.reflect.Method)ToMethodOrConstructor(false), true);
+							acc = new Java_sun_reflect_ReflectionFactory.FastMethodAccessorImpl(this, true);
 							invokenonvirtualCache.Add(this, acc);
 						}
 					}

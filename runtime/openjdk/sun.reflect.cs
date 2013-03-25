@@ -284,9 +284,9 @@ static class Java_sun_reflect_ReflectionFactory
 	{
 		private readonly MethodWrapper mw;
 
-		internal MethodAccessorImpl(java.lang.reflect.Method method)
+		internal MethodAccessorImpl(MethodWrapper mw)
 		{
-			mw = MethodWrapper.FromMethod(method);
+			this.mw = mw;
 			mw.Link();
 			mw.ResolveMethod();
 		}
@@ -633,9 +633,8 @@ static class Java_sun_reflect_ReflectionFactory
 			}
 		}
 
-		internal FastMethodAccessorImpl(java.lang.reflect.Method method, bool nonvirtual)
+		internal FastMethodAccessorImpl(MethodWrapper mw, bool nonvirtual)
 		{
-			MethodWrapper mw = MethodWrapper.FromMethod(method);
 			TypeWrapper[] parameters;
 			try
 			{
@@ -2178,10 +2177,10 @@ static class Java_sun_reflect_ReflectionFactory
 #if !NO_REF_EMIT
 		if (!mw.IsDynamicOnly)
 		{
-			return new FastMethodAccessorImpl(method, false);
+			return new FastMethodAccessorImpl(mw, false);
 		}
 #endif
-		return new MethodAccessorImpl(method);
+		return new MethodAccessorImpl(mw);
 #endif
 	}
 
