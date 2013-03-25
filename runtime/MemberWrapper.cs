@@ -850,6 +850,16 @@ namespace IKVM.Internal
 			return args;
 		}
 
+		internal Type GetDelegateType()
+		{
+			TypeWrapper[] paramTypes = GetParameters();
+			if (paramTypes.Length > MethodHandleUtil.MaxArity)
+			{
+				throw new NotImplementedException();
+			}
+			return MethodHandleUtil.CreateDelegateType(paramTypes, ReturnType);
+		}
+
 		internal void ResolveMethod()
 		{
 #if !FIRST_PASS

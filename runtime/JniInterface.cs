@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2009 Jeroen Frijters
+  Copyright (C) 2002-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1997,17 +1997,10 @@ namespace IKVM.Runtime
 			mw.Link();
 			mw.ResolveMethod();
 			TypeWrapper[] argTypes = mw.GetParameters();
-			if (argTypes.Length > 8)
-			{
-				// TODO we should have ikvmc emit the required delegate when it compiles a method with more than 8 parameters
-				throw new NotImplementedException("Methods with more than 8 parameters cannot be invoked non-virtually currently.");
-			}
-			Type[] types = new Type[argTypes.Length + (mw.ReturnType == PrimitiveTypeWrapper.VOID ? 0 : 1)];
 			object[] argarray = new object[argTypes.Length];
 			for (int i = 0; i < argTypes.Length; i++)
 			{
 				TypeWrapper type = argTypes[i];
-				types[i] = type.TypeAsSignatureType;
 				if (type == PrimitiveTypeWrapper.BOOLEAN)
 					argarray[i] = args[i].z != JNI_FALSE;
 				else if (type == PrimitiveTypeWrapper.BYTE)
@@ -2027,19 +2020,8 @@ namespace IKVM.Runtime
 				else
 					argarray[i] = argTypes[i].GhostWrap(UnwrapRef(env, args[i].l));
 			}
-			Type delegateType;
-			if (mw.ReturnType == PrimitiveTypeWrapper.VOID)
-			{
-				delegateType = types.Length == 0
-					? typeof(MHV)
-					: typeof(MHV).Module.GetType("IKVM.Runtime.MHV`" + types.Length).MakeGenericType(types);
-			}
-			else
-			{
-				types[types.Length - 1] = mw.ReturnType.TypeAsSignatureType;
-				delegateType = typeof(MHV).Module.GetType("IKVM.Runtime.MH`" + types.Length).MakeGenericType(types);
-			}
-			Delegate del = (Delegate)Activator.CreateInstance(delegateType, new object[] { UnwrapRef(env, obj), mw.GetMethod().MethodHandle.GetFunctionPointer() });
+			Delegate del = (Delegate)Activator.CreateInstance(mw.GetDelegateType(),
+				new object[] { UnwrapRef(env, obj), mw.GetMethod().MethodHandle.GetFunctionPointer() });
 			return del.DynamicInvoke(argarray);
 		}
 
