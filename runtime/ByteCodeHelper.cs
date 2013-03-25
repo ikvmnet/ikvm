@@ -754,22 +754,50 @@ namespace IKVM.Runtime
 
 		public static long VolatileRead(ref long v)
 		{
+#if NO_REF_EMIT && !FIRST_PASS
+			lock (VolatileLongDoubleFieldWrapper.lockObject)
+			{
+				return v;
+			}
+#else
 			return Interlocked.Read(ref v);
+#endif
 		}
 
 		public static void VolatileWrite(ref long v, long newValue)
 		{
+#if NO_REF_EMIT && !FIRST_PASS
+			lock (VolatileLongDoubleFieldWrapper.lockObject)
+			{
+				v = newValue;
+			}
+#else
 			Interlocked.Exchange(ref v, newValue);
+#endif
 		}
 
 		public static double VolatileRead(ref double v)
 		{
+#if NO_REF_EMIT && !FIRST_PASS
+			lock (VolatileLongDoubleFieldWrapper.lockObject)
+			{
+				return v;
+			}
+#else
 			return Interlocked.CompareExchange(ref v, 0.0, 0.0);
+#endif
 		}
 
 		public static void VolatileWrite(ref double v, double newValue)
 		{
+#if NO_REF_EMIT && !FIRST_PASS
+			lock (VolatileLongDoubleFieldWrapper.lockObject)
+			{
+				v = newValue;
+			}
+#else
 			Interlocked.Exchange(ref v, newValue);
+#endif
 		}
 
 		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]

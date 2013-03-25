@@ -1930,6 +1930,13 @@ namespace IKVM.Internal
 				// result in our argument being boxed (since that's still sitting on the stack).
 			}
 #endif // !STUB_GENERATOR
+
+#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+			internal override object Invoke(object obj, object[] args)
+			{
+				return Enum.ToObject(DeclaringType.TypeAsTBD, args[0]);
+			}
+#endif
 		}
 
 		internal sealed class EnumValueFieldWrapper : FieldWrapper
@@ -1990,6 +1997,13 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Box, DeclaringType.TypeAsTBD);
 			}
 #endif // !STUB_GENERATOR
+
+#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+			internal override object CreateInstance(object[] args)
+			{
+				return Activator.CreateInstance(DeclaringType.TypeAsTBD);
+			}
+#endif
 		}
 
 		private sealed class FinalizeMethodWrapper : MethodWrapper

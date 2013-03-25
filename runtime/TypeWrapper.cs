@@ -4448,6 +4448,29 @@ namespace IKVM.Internal
 
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 			[HideFromJava]
+			internal override object Invoke(object obj, object[] args)
+			{
+				MethodBase mb = mbHelper != null ? mbHelper : GetMethod();
+				if (mb.IsStatic && !IsStatic)
+				{
+					args = ArrayUtil.Concat(obj, args);
+					obj = null;
+				}
+				return InvokeAndUnwrapException(mb, obj, args);
+			}
+
+			[HideFromJava]
+			internal override object CreateInstance(object[] args)
+			{
+				MethodBase mb = mbHelper != null ? mbHelper : GetMethod();
+				if (mb.IsStatic)
+				{
+					return InvokeAndUnwrapException(mb, null, args);
+				}
+				return base.CreateInstance(args);
+			}
+
+			[HideFromJava]
 			protected override object InvokeNonvirtualRemapped(object obj, object[] args)
 			{
 				MethodInfo mi = mbNonvirtualHelper;

@@ -25,7 +25,9 @@ using System;
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.Reflection;
+#if !NO_REF_EMIT
 using System.Reflection.Emit;
+#endif
 using System.Runtime.Serialization;
 using System.Security;
 using IKVM.Internal;
@@ -285,6 +287,8 @@ static class Java_sun_reflect_ReflectionFactory
 		internal MethodAccessorImpl(java.lang.reflect.Method method)
 		{
 			mw = MethodWrapper.FromMethod(method);
+			mw.Link();
+			mw.ResolveMethod();
 		}
 
 		[IKVM.Attributes.HideFromJava]
@@ -304,6 +308,10 @@ static class Java_sun_reflect_ReflectionFactory
 			if (mw.DeclaringType.IsInterface)
 			{
 				mw.DeclaringType.RunClassInit();
+			}
+			if (mw.HasCallerID)
+			{
+				args = ArrayUtil.Concat(args, callerID);
 			}
 			object retval;
 			try
@@ -326,6 +334,62 @@ static class Java_sun_reflect_ReflectionFactory
 		}
 	}
 
+	private sealed class ConstructorAccessorImpl : sun.reflect.ConstructorAccessor
+	{
+		private readonly MethodWrapper mw;
+
+		internal ConstructorAccessorImpl(MethodWrapper mw)
+		{
+			this.mw = mw;
+			mw.Link();
+			mw.ResolveMethod();
+		}
+
+		[IKVM.Attributes.HideFromJava]
+		public object newInstance(object[] args)
+		{
+			args = ConvertArgs(mw.DeclaringType.GetClassLoader(), mw.GetParameters(), args);
+			try
+			{
+				return mw.CreateInstance(args);
+			}
+			catch (Exception x)
+			{
+				throw new java.lang.reflect.InvocationTargetException(ikvm.runtime.Util.mapException(x));
+			}
+		}
+	}
+
+	private sealed class SerializationConstructorAccessorImpl : sun.reflect.ConstructorAccessor
+	{
+		private readonly MethodWrapper mw;
+		private readonly Type type;
+
+		internal SerializationConstructorAccessorImpl(java.lang.reflect.Constructor constructorToCall, java.lang.Class classToInstantiate)
+		{
+			this.type = TypeWrapper.FromClass(classToInstantiate).TypeAsBaseType;
+			MethodWrapper mw = MethodWrapper.FromConstructor(constructorToCall);
+			if (mw.DeclaringType != CoreClasses.java.lang.Object.Wrapper)
+			{
+				this.mw = mw;
+				mw.Link();
+				mw.ResolveMethod();
+			}
+		}
+
+		[IKVM.Attributes.HideFromJava]
+		public object newInstance(object[] args)
+		{
+			object obj = FormatterServices.GetUninitializedObject(type);
+			if (mw != null)
+			{
+				mw.Invoke(obj, ConvertArgs(mw.DeclaringType.GetClassLoader(), mw.GetParameters(), args));
+			}
+			return obj;
+		}
+	}
+
+#if !NO_REF_EMIT
 	private sealed class BoxUtil
 	{
 		private static readonly MethodInfo valueOfByte = typeof(java.lang.Byte).GetMethod("valueOf", new Type[] { typeof(byte) });
@@ -916,6 +980,7 @@ static class Java_sun_reflect_ReflectionFactory
 			}
 		}
 	}
+#endif // !NO_REF_EMIT
 
 	sealed class ActivatorConstructorAccessor : sun.reflect.ConstructorAccessor
 	{
@@ -1149,10 +1214,12 @@ static class Java_sun_reflect_ReflectionFactory
 
 			private bool IsSlowPathCompatible(FieldWrapper fw)
 			{
+#if !NO_REF_EMIT
 				if (fw.IsVolatile && (fw.FieldTypeWrapper == PrimitiveTypeWrapper.LONG || fw.FieldTypeWrapper == PrimitiveTypeWrapper.DOUBLE))
 				{
 					return false;
 				}
+#endif
 				fw.Link();
 				return true;
 			}
@@ -1169,34 +1236,8 @@ static class Java_sun_reflect_ReflectionFactory
 
 			private T lazyGet(object obj)
 			{
-				if (numInvocations < inflationThreshold)
-				{
-					if (fw.IsStatic)
-					{
-						obj = null;
-					}
-					else if (obj == null)
-					{
-						throw new java.lang.NullPointerException();
-					}
-					else if (!fw.DeclaringType.IsInstance(obj))
-					{
-						throw GetIllegalArgumentException(obj);
-					}
-					else if (fw.DeclaringType.IsRemapped && !fw.DeclaringType.TypeAsBaseType.IsInstanceOfType(obj))
-					{
-						throw GetUnsupportedRemappedFieldException(obj);
-					}
-					if (numInvocations == 0)
-					{
-						fw.DeclaringType.RunClassInit();
-						fw.DeclaringType.Finish();
-						fw.ResolveField();
-					}
-					numInvocations++;
-					return (T)fw.FieldTypeWrapper.GhostUnwrap(fw.GetValue(obj));
-				}
-				else
+#if !NO_REF_EMIT
+				if (numInvocations >= inflationThreshold)
 				{
 					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
 					// and if we didn't use the slow path, we haven't yet initialized the class
@@ -1204,6 +1245,31 @@ static class Java_sun_reflect_ReflectionFactory
 					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(T), fw);
 					return getter(obj, this);
 				}
+#endif // !NO_REF_EMIT
+				if (fw.IsStatic)
+				{
+					obj = null;
+				}
+				else if (obj == null)
+				{
+					throw new java.lang.NullPointerException();
+				}
+				else if (!fw.DeclaringType.IsInstance(obj))
+				{
+					throw GetIllegalArgumentException(obj);
+				}
+				else if (fw.DeclaringType.IsRemapped && !fw.DeclaringType.TypeAsBaseType.IsInstanceOfType(obj))
+				{
+					throw GetUnsupportedRemappedFieldException(obj);
+				}
+				if (numInvocations == 0)
+				{
+					fw.DeclaringType.RunClassInit();
+					fw.DeclaringType.Finish();
+					fw.ResolveField();
+				}
+				numInvocations++;
+				return (T)fw.FieldTypeWrapper.GhostUnwrap(fw.GetValue(obj));
 			}
 
 			private void lazySet(object obj, T value)
@@ -1214,42 +1280,42 @@ static class Java_sun_reflect_ReflectionFactory
 					fw.DeclaringType.RunClassInit();
 					throw FinalFieldIllegalAccessException(JavaBox(value));
 				}
-				if (numInvocations < inflationThreshold)
-				{
-					if (fw.IsStatic)
-					{
-						obj = null;
-					}
-					else if (obj == null)
-					{
-						throw new java.lang.NullPointerException();
-					}
-					else if (!fw.DeclaringType.IsInstance(obj))
-					{
-						throw SetIllegalArgumentException(obj);
-					}
-					else if (fw.DeclaringType.IsRemapped && !fw.DeclaringType.TypeAsBaseType.IsInstanceOfType(obj))
-					{
-						throw GetUnsupportedRemappedFieldException(obj);
-					}
-					CheckValue(value);
-					if (numInvocations == 0)
-					{
-						fw.DeclaringType.RunClassInit();
-						fw.DeclaringType.Finish();
-						fw.ResolveField();
-					}
-					numInvocations++;
-					fw.SetValue(obj, fw.FieldTypeWrapper.GhostWrap(value));
-				}
-				else
+#if !NO_REF_EMIT
+				if (numInvocations >= inflationThreshold)
 				{
 					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
 					// and if we didn't use the slow path, we haven't yet initialized the class
 					fw.DeclaringType.RunClassInit();
 					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(T), fw);
 					setter(obj, value, this);
+					return;
 				}
+#endif // !NO_REF_EMIT
+				if (fw.IsStatic)
+				{
+					obj = null;
+				}
+				else if (obj == null)
+				{
+					throw new java.lang.NullPointerException();
+				}
+				else if (!fw.DeclaringType.IsInstance(obj))
+				{
+					throw SetIllegalArgumentException(obj);
+				}
+				else if (fw.DeclaringType.IsRemapped && !fw.DeclaringType.TypeAsBaseType.IsInstanceOfType(obj))
+				{
+					throw GetUnsupportedRemappedFieldException(obj);
+				}
+				CheckValue(value);
+				if (numInvocations == 0)
+				{
+					fw.DeclaringType.RunClassInit();
+					fw.DeclaringType.Finish();
+					fw.ResolveField();
+				}
+				numInvocations++;
+				fw.SetValue(obj, fw.FieldTypeWrapper.GhostWrap(value));
 			}
 
 			private Exception GetUnsupportedRemappedFieldException(object obj)
@@ -1924,6 +1990,7 @@ static class Java_sun_reflect_ReflectionFactory
 			}
 		}
 
+#if !NO_REF_EMIT
 		private Delegate GenerateFastGetter(Type delegateType, Type fieldType, FieldWrapper fw)
 		{
 			TypeWrapper fieldTypeWrapper;
@@ -2037,6 +2104,7 @@ static class Java_sun_reflect_ReflectionFactory
 			ilgen.DoEmit();
 			return dm.CreateDelegate(delegateType, this);
 		}
+#endif // !NO_REF_EMIT
 
 		internal static FieldAccessorImplBase Create(FieldWrapper field, bool overrideAccessCheck)
 		{
@@ -2107,14 +2175,13 @@ static class Java_sun_reflect_ReflectionFactory
 		return null;
 #else
 		MethodWrapper mw = MethodWrapper.FromMethod(method);
-		if (mw.IsDynamicOnly)
-		{
-			return new MethodAccessorImpl(method);
-		}
-		else
+#if !NO_REF_EMIT
+		if (!mw.IsDynamicOnly)
 		{
 			return new FastMethodAccessorImpl(method, false);
 		}
+#endif
+		return new MethodAccessorImpl(method);
 #endif
 	}
 
@@ -2133,7 +2200,11 @@ static class Java_sun_reflect_ReflectionFactory
 		}
 		else
 		{
+#if NO_REF_EMIT
+			return new ConstructorAccessorImpl(mw);
+#else
 			return new FastConstructorAccessorImpl(constructor);
+#endif
 		}
 #endif
 	}
@@ -2145,7 +2216,11 @@ static class Java_sun_reflect_ReflectionFactory
 #else
 		try
 		{
+#if NO_REF_EMIT
+			return new SerializationConstructorAccessorImpl(constructorToCall, classToInstantiate);
+#else
 			return new FastSerializationConstructorAccessorImpl(constructorToCall, classToInstantiate);
+#endif
 		}
 		catch (SecurityException x)
 		{

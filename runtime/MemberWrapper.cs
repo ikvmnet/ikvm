@@ -815,6 +815,9 @@ namespace IKVM.Internal
 				}
 				else
 				{
+#if NO_REF_EMIT
+					throw new NotSupportedException();
+#else
 					if (invokenonvirtualCache == null)
 					{
 						Interlocked.CompareExchange(ref invokenonvirtualCache, new Dictionary<MethodWrapper, sun.reflect.MethodAccessor>(), null);
@@ -834,6 +837,7 @@ namespace IKVM.Internal
 						val = JVM.Unbox(val);
 					}
 					return val;
+#endif
 				}
 			}
 			else
@@ -896,6 +900,19 @@ namespace IKVM.Internal
 		internal virtual object Invoke(object obj, object[] args)
 		{
 			return InvokeAndUnwrapException(method, obj, args);
+		}
+
+		[HideFromJava]
+		internal virtual object CreateInstance(object[] args)
+		{
+			try
+			{
+				return ((ConstructorInfo)method).Invoke(args);
+			}
+			catch (TargetInvocationException x)
+			{
+				throw ikvm.runtime.Util.mapException(x.InnerException);
+			}
 		}
 
 		[HideFromJava]
@@ -1259,6 +1276,15 @@ namespace IKVM.Internal
 		{
 			ResolveGhostMethod();
 			ilgen.Emit(OpCodes.Call, ghostMethod);
+		}
+#endif
+
+#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+		[HideFromJava]
+		internal override object Invoke(object obj, object[] args)
+		{
+			ResolveGhostMethod();
+			return InvokeAndUnwrapException(ghostMethod, DeclaringType.GhostWrap(obj), args);
 		}
 #endif
 	}
@@ -1695,14 +1721,32 @@ namespace IKVM.Internal
 		}
 
 #if !STATIC_COMPILER && !FIRST_PASS
+#if NO_REF_EMIT
+		internal static readonly object lockObject = new object();
+#endif
+
 		internal override object GetValue(object obj)
 		{
+#if NO_REF_EMIT
+			lock (lockObject)
+			{
+				return GetField().GetValue(obj);
+			}
+#else
 			throw new InvalidOperationException();
+#endif
 		}
 
 		internal override void SetValue(object obj, object value)
 		{
+#if NO_REF_EMIT
+			lock (lockObject)
+			{
+				GetField().SetValue(obj, value);
+			}
+#else
 			throw new InvalidOperationException();
+#endif
 		}
 #endif // !STATIC_COMPILER && !FIRST_PASS
 #endif // !STUB_GENERATOR
