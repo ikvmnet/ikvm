@@ -794,8 +794,11 @@ namespace IKVM.Reflection.Emit
 		{
 			SignatureHelper sig = SignatureHelper.GetMethodSigHelper(moduleBuilder, callingConvention, returnType);
 			sig.AddArguments(parameterTypes, null, null);
-			sig.AddSentinel();
-			sig.AddArguments(optionalParameterTypes, null, null);
+			if (optionalParameterTypes != null && optionalParameterTypes.Length != 0)
+			{
+				sig.AddSentinel();
+				sig.AddArguments(optionalParameterTypes, null, null);
+			}
 			Emit(opc, sig);
 		}
 
