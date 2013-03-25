@@ -43,7 +43,11 @@
     <target name="signed">
         <property name="signed" value="SIGNCODE" />
         <property name="signoption" value="-key:ikvm-key" />
-        <property name="ilasm_signoption" value="/key:@ikvm-key" />
+        <call target="full" />
+    </target>
+
+    <target name="no-ref-emit">
+        <property name="no-ref-emit" value="true" />
         <call target="full" />
     </target>
 
@@ -92,6 +96,9 @@
         </if>
         <if test="${first-pass}">
             <property name="defs" value="${defs};FIRST_PASS" />
+        </if>
+        <if test="${property::exists('no-ref-emit')}">
+            <property name="defs" value="${defs};NO_REF_EMIT" />
         </if>
     </target>
 
