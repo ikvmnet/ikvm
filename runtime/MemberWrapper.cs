@@ -745,7 +745,7 @@ namespace IKVM.Internal
 
 #if !STATIC_COMPILER && !STUB_GENERATOR
 		[HideFromJava]
-		internal object InvokeJNI(object obj, object[] args, bool nonVirtual, object callerID)
+		internal object InvokeJNI(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
 		{
 #if FIRST_PASS
 			return null;
@@ -782,7 +782,7 @@ namespace IKVM.Internal
 					try
 					{
 						ResolveMethod();
-						InvokeArgsProcessor proc = new InvokeArgsProcessor(this, method, obj, UnboxArgs(args), (ikvm.@internal.CallerID)callerID);
+						InvokeArgsProcessor proc = new InvokeArgsProcessor(this, method, obj, UnboxArgs(args), callerID);
 						object o = method.Invoke(proc.GetObj(), proc.GetArgs());
 						TypeWrapper retType = this.ReturnType;
 						if (!retType.IsUnloadable && retType.IsGhost)
@@ -831,7 +831,7 @@ namespace IKVM.Internal
 							invokenonvirtualCache.Add(this, acc);
 						}
 					}
-					object val = acc.invoke(obj, args, (ikvm.@internal.CallerID)callerID);
+					object val = acc.invoke(obj, args, callerID);
 					if (this.ReturnType.IsPrimitive && this.ReturnType != PrimitiveTypeWrapper.VOID)
 					{
 						val = JVM.Unbox(val);
@@ -849,7 +849,7 @@ namespace IKVM.Internal
 					acc = (sun.reflect.MethodAccessor)Java_sun_reflect_ReflectionFactory.newMethodAccessor(null, method);
 					method.setMethodAccessor(acc);
 				}
-				object val = acc.invoke(obj, args, (ikvm.@internal.CallerID)callerID);
+				object val = acc.invoke(obj, args, callerID);
 				if (this.ReturnType.IsPrimitive && this.ReturnType != PrimitiveTypeWrapper.VOID)
 				{
 					val = JVM.Unbox(val);
