@@ -356,7 +356,6 @@ namespace IKVM.Internal
 	abstract class MethodWrapper : MemberWrapper
 	{
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-		private static Dictionary<MethodWrapper, sun.reflect.MethodAccessor> invokenonvirtualCache;
 		private volatile object reflectionMethod;
 #endif
 		internal static readonly MethodWrapper[] EmptyArray  = new MethodWrapper[0];
@@ -815,29 +814,8 @@ namespace IKVM.Internal
 				}
 				else
 				{
-#if NO_REF_EMIT
-					throw new NotSupportedException();
-#else
-					if (invokenonvirtualCache == null)
-					{
-						Interlocked.CompareExchange(ref invokenonvirtualCache, new Dictionary<MethodWrapper, sun.reflect.MethodAccessor>(), null);
-					}
-					sun.reflect.MethodAccessor acc;
-					lock (invokenonvirtualCache)
-					{
-						if (!invokenonvirtualCache.TryGetValue(this, out acc))
-						{
-							acc = new Java_sun_reflect_ReflectionFactory.FastMethodAccessorImpl(this, true);
-							invokenonvirtualCache.Add(this, acc);
-						}
-					}
-					object val = acc.invoke(obj, args, callerID);
-					if (this.ReturnType.IsPrimitive && this.ReturnType != PrimitiveTypeWrapper.VOID)
-					{
-						val = JVM.Unbox(val);
-					}
-					return val;
-#endif
+					// this can't happen, because the JNI side already handles this case
+					throw new InvalidOperationException();
 				}
 			}
 			else
@@ -871,18 +849,19 @@ namespace IKVM.Internal
 			}
 			return args;
 		}
-#endif // !STATIC_COMPILER && !STUB_GENERATOR
 
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 		internal void ResolveMethod()
 		{
+#if !FIRST_PASS
 			// if we've still got the builder object, we need to replace it with the real thing before we can call it
 			if(method is MethodBuilder)
 			{
 				method = method.Module.ResolveMethod(((MethodBuilder)method).GetToken().Token);
 			}
+#endif
 		}
 
+#if !FIRST_PASS
 		[HideFromJava]
 		protected static object InvokeAndUnwrapException(MethodBase mb, object obj, object[] args)
 		{
@@ -980,7 +959,8 @@ namespace IKVM.Internal
 				return args;
 			}
 		}
-#endif // !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+#endif // !FIRST_PASS
+#endif // !STATIC_COMPILER && !STUB_GENERATOR
 
 		internal static OpCode SimpleOpCodeToOpCode(SimpleOpCode opc)
 		{

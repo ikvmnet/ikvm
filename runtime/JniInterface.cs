@@ -1929,6 +1929,25 @@ namespace IKVM.Runtime
 		{
 			ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
 			MethodWrapper mw = MethodWrapper.FromCookie(methodID);
+			if (nonVirtual
+				&& !mw.IsConstructor
+				&& !mw.IsStatic
+				&& !mw.IsPrivate
+				&& !mw.IsAbstract
+				&& !mw.IsFinal
+				&& !mw.DeclaringType.IsFinal
+				&& !(mw.DeclaringType.IsRemapped && !mw.DeclaringType.TypeAsBaseType.IsInstanceOfType(UnwrapRef(env, obj))))
+			{
+				try
+				{
+					return InvokeNonVirtual(env, mw, obj, args);
+				}
+				catch (Exception x)
+				{
+					SetPendingException(pEnv, ikvm.runtime.Util.mapException(x));
+					return null;
+				}
+			}
 			TypeWrapper[] argTypes = mw.GetParameters();
 			object[] argarray = new object[argTypes.Length];
 			for (int i = 0; i < argarray.Length; i++)
@@ -1967,6 +1986,61 @@ namespace IKVM.Runtime
 				SetPendingException(pEnv, ikvm.runtime.Util.mapException(x));
 				return null;
 			}
+		}
+
+		private static object InvokeNonVirtual(ManagedJNIEnv env, MethodWrapper mw, jobject obj, jvalue* args)
+		{
+			if (mw.HasCallerID || mw.IsDynamicOnly)
+			{
+				throw new NotSupportedException();
+			}
+			mw.Link();
+			mw.ResolveMethod();
+			TypeWrapper[] argTypes = mw.GetParameters();
+			if (argTypes.Length > 8)
+			{
+				// TODO we should have ikvmc emit the required delegate when it compiles a method with more than 8 parameters
+				throw new NotImplementedException("Methods with more than 8 parameters cannot be invoked non-virtually currently.");
+			}
+			Type[] types = new Type[argTypes.Length + (mw.ReturnType == PrimitiveTypeWrapper.VOID ? 0 : 1)];
+			object[] argarray = new object[argTypes.Length];
+			for (int i = 0; i < argTypes.Length; i++)
+			{
+				TypeWrapper type = argTypes[i];
+				types[i] = type.TypeAsSignatureType;
+				if (type == PrimitiveTypeWrapper.BOOLEAN)
+					argarray[i] = args[i].z != JNI_FALSE;
+				else if (type == PrimitiveTypeWrapper.BYTE)
+					argarray[i] = (byte)args[i].b;
+				else if (type == PrimitiveTypeWrapper.CHAR)
+					argarray[i] = (char)args[i].c;
+				else if (type == PrimitiveTypeWrapper.SHORT)
+					argarray[i] = args[i].s;
+				else if (type == PrimitiveTypeWrapper.INT)
+					argarray[i] = args[i].i;
+				else if (type == PrimitiveTypeWrapper.LONG)
+					argarray[i] = args[i].j;
+				else if (type == PrimitiveTypeWrapper.FLOAT)
+					argarray[i] = args[i].f;
+				else if (type == PrimitiveTypeWrapper.DOUBLE)
+					argarray[i] = args[i].d;
+				else
+					argarray[i] = argTypes[i].GhostWrap(UnwrapRef(env, args[i].l));
+			}
+			Type delegateType;
+			if (mw.ReturnType == PrimitiveTypeWrapper.VOID)
+			{
+				delegateType = types.Length == 0
+					? typeof(MHV)
+					: typeof(MHV).Module.GetType("IKVM.Runtime.MHV`" + types.Length).MakeGenericType(types);
+			}
+			else
+			{
+				types[types.Length - 1] = mw.ReturnType.TypeAsSignatureType;
+				delegateType = typeof(MHV).Module.GetType("IKVM.Runtime.MH`" + types.Length).MakeGenericType(types);
+			}
+			Delegate del = (Delegate)Activator.CreateInstance(delegateType, new object[] { UnwrapRef(env, obj), mw.GetMethod().MethodHandle.GetFunctionPointer() });
+			return del.DynamicInvoke(argarray);
 		}
 
 		internal static jobject NewObjectA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)

@@ -3204,7 +3204,7 @@ namespace IKVM.Internal
 		}
 #endif
 
-#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+#if !STATIC_COMPILER && !STUB_GENERATOR
 		internal virtual object GhostWrap(object obj)
 		{
 			return obj;

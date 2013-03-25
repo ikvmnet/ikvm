@@ -590,7 +590,7 @@ static class Java_sun_reflect_ReflectionFactory
 		}
 	}
 
-	internal sealed class FastMethodAccessorImpl : sun.reflect.MethodAccessor
+	private sealed class FastMethodAccessorImpl : sun.reflect.MethodAccessor
 	{
 		internal static readonly ConstructorInfo invocationTargetExceptionCtor;
 		internal static readonly ConstructorInfo illegalArgumentExceptionCtor;
@@ -633,7 +633,7 @@ static class Java_sun_reflect_ReflectionFactory
 			}
 		}
 
-		internal FastMethodAccessorImpl(MethodWrapper mw, bool nonvirtual)
+		internal FastMethodAccessorImpl(MethodWrapper mw)
 		{
 			TypeWrapper[] parameters;
 			try
@@ -653,7 +653,7 @@ static class Java_sun_reflect_ReflectionFactory
 				throw x.ToJava();
 			}
 			mw.ResolveMethod();
-			DynamicMethod dm = DynamicMethodUtils.Create("__<Invoker>", mw.DeclaringType.TypeAsBaseType, !mw.IsPublic || !mw.DeclaringType.IsPublic || nonvirtual, typeof(object), new Type[] { typeof(object), typeof(object[]), typeof(ikvm.@internal.CallerID) });
+			DynamicMethod dm = DynamicMethodUtils.Create("__<Invoker>", mw.DeclaringType.TypeAsBaseType, !mw.IsPublic || !mw.DeclaringType.IsPublic, typeof(object), new Type[] { typeof(object), typeof(object[]), typeof(ikvm.@internal.CallerID) });
 			CodeEmitter ilgen = CodeEmitter.Create(dm);
 			CodeEmitterLocal ret = ilgen.DeclareLocal(typeof(object));
 			if (!mw.IsStatic)
@@ -735,7 +735,7 @@ static class Java_sun_reflect_ReflectionFactory
 			{
 				ilgen.Emit(OpCodes.Ldarg_2);
 			}
-			if (mw.IsStatic || nonvirtual)
+			if (mw.IsStatic)
 			{
 				mw.EmitCall(ilgen);
 			}
@@ -751,28 +751,17 @@ static class Java_sun_reflect_ReflectionFactory
 			ilgen.BeginCatchBlock(typeof(Exception));
 			CodeEmitterLabel label = ilgen.DefineLabel();
 			CodeEmitterLabel labelWrap = ilgen.DefineLabel();
-			if (IntPtr.Size == 8 && nonvirtual)
-			{
-				// This is a workaround for the x64 JIT, which is completely broken as usual.
-				// When MethodBase.GetCurrentMethod() is used in a dynamic method that isn't verifiable,
-				// we get an access violation at JIT time. When we're doing a nonvirtual call,
-				// the method is not verifiable, so we disable this check (which, at worst, results
-				// in any exceptions thrown at the call site being incorrectly wrapped in an InvocationTargetException).
-			}
-			else
-			{
-				// If the exception we caught is a java.lang.reflect.InvocationTargetException, we know it must be
-				// wrapped, because .NET won't throw that exception and we also cannot check the target site,
-				// because it may be the same as us if a method is recursively invoking itself.
-				ilgen.Emit(OpCodes.Dup);
-				ilgen.Emit(OpCodes.Isinst, typeof(java.lang.reflect.InvocationTargetException));
-				ilgen.EmitBrtrue(labelWrap);
-				ilgen.Emit(OpCodes.Dup);
-				ilgen.Emit(OpCodes.Callvirt, get_TargetSite);
-				ilgen.Emit(OpCodes.Call, GetCurrentMethod);
-				ilgen.Emit(OpCodes.Ceq);
-				ilgen.EmitBrtrue(label);
-			}
+			// If the exception we caught is a java.lang.reflect.InvocationTargetException, we know it must be
+			// wrapped, because .NET won't throw that exception and we also cannot check the target site,
+			// because it may be the same as us if a method is recursively invoking itself.
+			ilgen.Emit(OpCodes.Dup);
+			ilgen.Emit(OpCodes.Isinst, typeof(java.lang.reflect.InvocationTargetException));
+			ilgen.EmitBrtrue(labelWrap);
+			ilgen.Emit(OpCodes.Dup);
+			ilgen.Emit(OpCodes.Callvirt, get_TargetSite);
+			ilgen.Emit(OpCodes.Call, GetCurrentMethod);
+			ilgen.Emit(OpCodes.Ceq);
+			ilgen.EmitBrtrue(label);
 			ilgen.MarkLabel(labelWrap);
 			ilgen.Emit(OpCodes.Ldc_I4_0);
 			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(Types.Exception));
@@ -2177,7 +2166,7 @@ static class Java_sun_reflect_ReflectionFactory
 #if !NO_REF_EMIT
 		if (!mw.IsDynamicOnly)
 		{
-			return new FastMethodAccessorImpl(mw, false);
+			return new FastMethodAccessorImpl(mw);
 		}
 #endif
 		return new MethodAccessorImpl(mw);
