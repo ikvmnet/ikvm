@@ -765,11 +765,7 @@ namespace IKVM.Internal
 					ReturnType == PrimitiveTypeWrapper.VOID ? "__<>NVIV`" + paramTypes.Length : "__<>NVI`" + (paramTypes.Length + 1));
 				if (type == null)
 				{
-#if NO_REF_EMIT
-					throw new InvalidOperationException();
-#else
 					type = DeclaringType.GetClassLoader().GetTypeWrapperFactory().DefineDelegate(paramTypes.Length, ReturnType == PrimitiveTypeWrapper.VOID);
-#endif
 				}
 				Type[] types = new Type[paramTypes.Length + (ReturnType == PrimitiveTypeWrapper.VOID ? 0 : 1)];
 				for (int i = 0; i < paramTypes.Length; i++)
