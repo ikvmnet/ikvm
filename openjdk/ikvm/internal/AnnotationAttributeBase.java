@@ -23,7 +23,6 @@
 */
 package ikvm.internal;
 
-import cli.System.Reflection.BindingFlags;
 import ikvm.lang.CIL;
 import java.io.Serializable;
 import java.lang.annotation.Annotation;
@@ -116,7 +115,7 @@ public abstract class AnnotationAttributeBase
             Class type = annotationType.getMethod(name).getReturnType();
             if(type.isEnum())
             {
-                value = type.getMethod("valueOf", String.class).invoke(null, value.toString());
+                value = Enum.valueOf(type, value.toString());
             }
             else if(type == Class.class)
             {
@@ -163,12 +162,11 @@ public abstract class AnnotationAttributeBase
                 type = type.getComponentType();
                 if(type.isEnum())
                 {
-                    Method valueOf = type.getMethod("valueOf", String.class);
                     cli.System.Array orgarray = (cli.System.Array)value;
                     Object[] array = (Object[])Array.newInstance(type, orgarray.get_Length());
                     for(int i = 0; i < array.length; i++)
                     {
-                        array[i] = valueOf.invoke(null, orgarray.GetValue(i).toString());
+                        array[i] = Enum.valueOf(type, orgarray.GetValue(i).toString());
                     }
                     value = array;
                 }
@@ -196,14 +194,6 @@ public abstract class AnnotationAttributeBase
         catch (NoSuchMethodException x)
         {
             throw (NoSuchMethodError)new NoSuchMethodError().initCause(x);
-        }
-        catch (IllegalAccessException x)
-        {
-            throw (IllegalAccessError)new IllegalAccessError().initCause(x);
-        }
-        catch (InvocationTargetException x)
-        {
-            throw (InternalError)new InternalError().initCause(x);
         }
     }
 
@@ -325,6 +315,7 @@ public abstract class AnnotationAttributeBase
         }
     }
 
+    @ikvm.lang.Internal
     public static Object newAnnotation(ClassLoader loader, Object definition)
     {
         Object[] array = (Object[])definition;
@@ -347,6 +338,7 @@ public abstract class AnnotationAttributeBase
         return Proxy.newProxyInstance(annotationClass.getClassLoader(), new Class<?>[] { annotationClass }, newAnnotationInvocationHandler(annotationClass, map));
     }
 
+    @ikvm.lang.Internal
     public static Object decodeElementValue(Object obj, Class type, ClassLoader loader)
         throws IllegalAccessException
     {
@@ -448,26 +440,14 @@ public abstract class AnnotationAttributeBase
         }
     }
 
-    protected final Object writeReplace()
+    private final Object writeReplace()
     {
 	return Proxy.newProxyInstance(annotationType.getClassLoader(),
 	    new Class[] { annotationType },
 	    newAnnotationInvocationHandler(annotationType, values));
     }
 
-    private static cli.System.Reflection.ConstructorInfo annotationInvocationHandlerConstructor;
-
-    private static InvocationHandler newAnnotationInvocationHandler(Class type, Map memberValues)
-    {
-	if (annotationInvocationHandlerConstructor == null)
-	{
-	    cli.System.Type typeofClass = cli.System.Type.GetType("java.lang.Class");
-	    cli.System.Type typeofMap = cli.System.Type.GetType("java.util.Map");
-	    annotationInvocationHandlerConstructor = cli.System.Type.GetType("sun.reflect.annotation.AnnotationInvocationHandler")
-		.GetConstructor(BindingFlags.wrap(BindingFlags.Instance | BindingFlags.NonPublic), null, new cli.System.Type[] { typeofClass, typeofMap }, null);
-	}
-	return (InvocationHandler)annotationInvocationHandlerConstructor.Invoke(new Object[] { type, memberValues });
-    }
+    private static native InvocationHandler newAnnotationInvocationHandler(Class type, Map memberValues);
 
     public final Class<? extends Annotation> annotationType()
     {

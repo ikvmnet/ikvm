@@ -141,6 +141,18 @@ namespace IKVM.NativeCode.ikvm.@internal
 			return AssemblyClassLoader.FromAssembly(asm).GetJavaClassLoader();
 		}
 	}
+
+	static class AnnotationAttributeBase
+	{
+		public static object newAnnotationInvocationHandler(jlClass type, object memberValues)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			return new global::sun.reflect.annotation.AnnotationInvocationHandler(type, (global::java.util.Map)memberValues);
+#endif
+		}
+	}
 }
 
 namespace IKVM.NativeCode.ikvm.runtime
