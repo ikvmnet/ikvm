@@ -1929,13 +1929,11 @@ namespace IKVM.Runtime
 		{
 			ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
 			MethodWrapper mw = MethodWrapper.FromCookie(methodID);
-			if (nonVirtual
-				&& mw.RequiresNonVirtualDispatcher
-				&& !(mw.DeclaringType.IsRemapped && !mw.DeclaringType.TypeAsBaseType.IsInstanceOfType(UnwrapRef(env, obj))))
+			if (nonVirtual && mw.RequiresNonVirtualDispatcher)
 			{
 				try
 				{
-					return InvokeNonVirtual(env, mw, obj, args);
+					return InvokeNonVirtual(env, mw, UnwrapRef(env, obj), args);
 				}
 				catch (Exception x)
 				{
@@ -1983,7 +1981,7 @@ namespace IKVM.Runtime
 			}
 		}
 
-		private static object InvokeNonVirtual(ManagedJNIEnv env, MethodWrapper mw, jobject obj, jvalue* args)
+		private static object InvokeNonVirtual(ManagedJNIEnv env, MethodWrapper mw, object obj, jvalue* args)
 		{
 			if (mw.HasCallerID || mw.IsDynamicOnly)
 			{
@@ -2015,9 +2013,16 @@ namespace IKVM.Runtime
 				else
 					argarray[i] = argTypes[i].GhostWrap(UnwrapRef(env, args[i].l));
 			}
-			Delegate del = (Delegate)Activator.CreateInstance(mw.GetDelegateType(),
-				new object[] { UnwrapRef(env, obj), mw.GetMethod().MethodHandle.GetFunctionPointer() });
-			return del.DynamicInvoke(argarray);
+			if (mw.DeclaringType.IsRemapped && !mw.DeclaringType.TypeAsBaseType.IsInstanceOfType(obj))
+			{
+				return mw.InvokeNonvirtualRemapped(obj, argarray);
+			}
+			else
+			{
+				Delegate del = (Delegate)Activator.CreateInstance(mw.GetDelegateType(),
+					new object[] { obj, mw.GetMethod().MethodHandle.GetFunctionPointer() });
+				return del.DynamicInvoke(argarray);
+			}
 		}
 
 		internal static jobject NewObjectA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)

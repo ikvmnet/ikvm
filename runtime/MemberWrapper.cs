@@ -764,13 +764,13 @@ namespace IKVM.Internal
 #else
 			if (IsConstructor)
 			{
-				java.lang.reflect.Constructor cons = (java.lang.reflect.Constructor)ToMethodOrConstructor(false);
 				if (obj == null)
 				{
+					java.lang.reflect.Constructor cons = (java.lang.reflect.Constructor)ToMethodOrConstructor(false);
 					sun.reflect.ConstructorAccessor acc = cons.getConstructorAccessor();
 					if (acc == null)
 					{
-						acc = (sun.reflect.ConstructorAccessor)Java_sun_reflect_ReflectionFactory.newConstructorAccessor0(null, cons);
+						acc = Java_sun_reflect_ReflectionFactory.newConstructorAccessor0(null, cons);
 						cons.setConstructorAccessor(acc);
 					}
 					return acc.newInstance(args);
@@ -813,31 +813,13 @@ namespace IKVM.Internal
 					}
 				}
 			}
-			else if (nonVirtual
-				&& !this.IsStatic
-				&& !this.IsPrivate
-				&& !this.IsAbstract
-				&& !this.IsFinal
-				&& !this.DeclaringType.IsFinal)
-			{
-				if (this.DeclaringType.IsRemapped && !this.DeclaringType.TypeAsBaseType.IsInstanceOfType(obj))
-				{
-					ResolveMethod();
-					return InvokeNonvirtualRemapped(obj, UnboxArgs(args));
-				}
-				else
-				{
-					// this can't happen, because the JNI side already handles this case
-					throw new InvalidOperationException();
-				}
-			}
 			else
 			{
 				java.lang.reflect.Method method = (java.lang.reflect.Method)ToMethodOrConstructor(false);
 				sun.reflect.MethodAccessor acc = method.getMethodAccessor();
 				if (acc == null)
 				{
-					acc = (sun.reflect.MethodAccessor)Java_sun_reflect_ReflectionFactory.newMethodAccessor(null, method);
+					acc = Java_sun_reflect_ReflectionFactory.newMethodAccessor(null, method);
 					method.setMethodAccessor(acc);
 				}
 				object val = acc.invoke(obj, args, callerID);
@@ -903,6 +885,12 @@ namespace IKVM.Internal
 #endif
 		}
 
+		[HideFromJava]
+		internal virtual object InvokeNonvirtualRemapped(object obj, object[] args)
+		{
+			throw new InvalidOperationException();
+		}
+
 #if !FIRST_PASS
 		[HideFromJava]
 		protected static object InvokeAndUnwrapException(MethodBase mb, object obj, object[] args)
@@ -934,12 +922,6 @@ namespace IKVM.Internal
 			{
 				throw ikvm.runtime.Util.mapException(x.InnerException);
 			}
-		}
-
-		[HideFromJava]
-		protected virtual object InvokeNonvirtualRemapped(object obj, object[] args)
-		{
-			throw new InvalidOperationException();
 		}
 
 		private struct InvokeArgsProcessor

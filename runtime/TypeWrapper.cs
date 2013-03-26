@@ -4471,7 +4471,7 @@ namespace IKVM.Internal
 			}
 
 			[HideFromJava]
-			protected override object InvokeNonvirtualRemapped(object obj, object[] args)
+			internal override object InvokeNonvirtualRemapped(object obj, object[] args)
 			{
 				MethodInfo mi = mbNonvirtualHelper;
 				if (mi == null)
