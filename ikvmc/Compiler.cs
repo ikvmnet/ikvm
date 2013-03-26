@@ -977,7 +977,8 @@ sealed class IkvmcCompiler
 				}
 				else if(s == "-static")
 				{
-					options.codegenoptions |= CodeGenOptions.DisableDynamicBinding;
+					// we abuse -static to also enable support for NoRefEmit scenarios
+					options.codegenoptions |= CodeGenOptions.DisableDynamicBinding | CodeGenOptions.NoRefEmitHelpers;
 				}
 				else if(s == "-nojarstubs")	// undocumented temporary option to mitigate risk
 				{

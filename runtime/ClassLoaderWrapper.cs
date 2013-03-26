@@ -52,6 +52,7 @@ namespace IKVM.Internal
 		RemoveAsserts = 16,
 		NoAutomagicSerialization = 32,
 		DisableDynamicBinding = 64,
+		NoRefEmitHelpers = 128,
 	}
 
 #if !STUB_GENERATOR
@@ -291,6 +292,14 @@ namespace IKVM.Internal
 			get
 			{
 				return (codegenoptions & CodeGenOptions.DisableDynamicBinding) != 0;
+			}
+		}
+
+		internal bool EmitNoRefEmitHelpers
+		{
+			get
+			{
+				return (codegenoptions & CodeGenOptions.NoRefEmitHelpers) != 0;
 			}
 		}
 
