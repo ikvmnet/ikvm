@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2005-2011 Jeroen Frijters
+  Copyright (C) 2005-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -43,6 +43,7 @@ public abstract class AnnotationAttributeBase
 {
     private final HashMap values = new HashMap();
     private final Class annotationType;
+    private Object[] definition;
     private boolean frozen;
 
     protected AnnotationAttributeBase(Class annotationType)
@@ -106,7 +107,7 @@ public abstract class AnnotationAttributeBase
 
     protected final synchronized void setValue(String name, Object value)
     {
-        if(frozen)
+        if(frozen || definition != null)
         {
             throw new IllegalStateException("Annotation properties have already been defined");
         }
@@ -208,14 +209,11 @@ public abstract class AnnotationAttributeBase
 
     protected final synchronized void setDefinition(Object[] array)
     {
-        if(frozen)
+        if(frozen || definition != null)
         {
             throw new IllegalStateException("Annotation properties have already been defined");
         }
-        frozen = true;
-        // TODO consider checking that the type matches
-        // (or better yet (?), remove the first two redundant elements from the array)
-        decodeValues(values, annotationType, annotationType.getClassLoader(), array);
+        definition = array;
     }
 
     @ikvm.lang.Internal
@@ -230,7 +228,17 @@ public abstract class AnnotationAttributeBase
         if(!frozen)
         {
             frozen = true;
-            setDefaults(values, annotationType);
+            if(definition == null)
+            {
+                setDefaults(values, annotationType);
+            }
+            else
+            {
+                // TODO consider checking that the type matches
+                // (or better yet (?), remove the first two redundant elements from the array)
+                decodeValues(values, annotationType, annotationType.getClassLoader(), definition);
+                definition = null;
+            }
         }
     }
 
