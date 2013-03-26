@@ -756,95 +756,6 @@ namespace IKVM.Internal
 		}
 
 #if !STATIC_COMPILER && !STUB_GENERATOR
-		[HideFromJava]
-		internal object InvokeJNI(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
-		{
-#if FIRST_PASS
-			return null;
-#else
-			if (IsConstructor)
-			{
-				if (obj == null)
-				{
-					java.lang.reflect.Constructor cons = (java.lang.reflect.Constructor)ToMethodOrConstructor(false);
-					sun.reflect.ConstructorAccessor acc = cons.getConstructorAccessor();
-					if (acc == null)
-					{
-						acc = Java_sun_reflect_ReflectionFactory.newConstructorAccessor0(null, cons);
-						cons.setConstructorAccessor(acc);
-					}
-					return acc.newInstance(args);
-				}
-				else if (!ReflectUtil.IsConstructor(method))
-				{
-					Debug.Assert(method.IsStatic);
-					// we're dealing with a constructor on a remapped type, if obj is supplied, it means
-					// that we should call the constructor on an already existing instance, but that isn't
-					// possible with remapped types
-					// the type of this exception is a bit random (note that this can only happen through JNI reflection)
-					throw new java.lang.IncompatibleClassChangeError(string.Format("Remapped type {0} doesn't support constructor invocation on an existing instance", DeclaringType.Name));
-				}
-				else if (!method.DeclaringType.IsInstanceOfType(obj))
-				{
-					// we're trying to initialize an existing instance of a remapped type
-					throw new NotSupportedException("Unable to partially construct object of type " + obj.GetType().FullName + " to type " + method.DeclaringType.FullName);
-				}
-				else
-				{
-					try
-					{
-						ResolveMethod();
-						InvokeArgsProcessor proc = new InvokeArgsProcessor(this, method, obj, UnboxArgs(args), callerID);
-						object o = method.Invoke(proc.GetObj(), proc.GetArgs());
-						TypeWrapper retType = this.ReturnType;
-						if (!retType.IsUnloadable && retType.IsGhost)
-						{
-							o = retType.GhostRefField.GetValue(o);
-						}
-						return o;
-					}
-					catch (ArgumentException x1)
-					{
-						throw new java.lang.IllegalArgumentException(x1.Message);
-					}
-					catch (TargetInvocationException x)
-					{
-						throw new java.lang.reflect.InvocationTargetException(ikvm.runtime.Util.mapException(x.InnerException));
-					}
-				}
-			}
-			else
-			{
-				java.lang.reflect.Method method = (java.lang.reflect.Method)ToMethodOrConstructor(false);
-				sun.reflect.MethodAccessor acc = method.getMethodAccessor();
-				if (acc == null)
-				{
-					acc = Java_sun_reflect_ReflectionFactory.newMethodAccessor(null, method);
-					method.setMethodAccessor(acc);
-				}
-				object val = acc.invoke(obj, args, callerID);
-				if (this.ReturnType.IsPrimitive && this.ReturnType != PrimitiveTypeWrapper.VOID)
-				{
-					val = JVM.Unbox(val);
-				}
-				return val;
-			}
-#endif
-		}
-
-		private object[] UnboxArgs(object[] args)
-		{
-			TypeWrapper[] paramTypes = GetParameters();
-			for (int i = 0; i < paramTypes.Length; i++)
-			{
-				if (paramTypes[i].IsPrimitive)
-				{
-					args[i] = JVM.Unbox(args[i]);
-				}
-			}
-			return args;
-		}
-
 		internal Type GetDelegateType()
 		{
 			TypeWrapper[] paramTypes = GetParameters();
@@ -891,10 +802,12 @@ namespace IKVM.Internal
 			throw new InvalidOperationException();
 		}
 
-#if !FIRST_PASS
 		[HideFromJava]
 		protected static object InvokeAndUnwrapException(MethodBase mb, object obj, object[] args)
 		{
+#if FIRST_PASS
+			return null;
+#else
 			try
 			{
 				return mb.Invoke(obj, args);
@@ -903,6 +816,7 @@ namespace IKVM.Internal
 			{
 				throw ikvm.runtime.Util.mapException(x.InnerException);
 			}
+#endif
 		}
 
 		[HideFromJava]
@@ -914,6 +828,9 @@ namespace IKVM.Internal
 		[HideFromJava]
 		internal virtual object CreateInstance(object[] args)
 		{
+#if FIRST_PASS
+			return null;
+#else
 			try
 			{
 				return ((ConstructorInfo)method).Invoke(args);
@@ -922,68 +839,8 @@ namespace IKVM.Internal
 			{
 				throw ikvm.runtime.Util.mapException(x.InnerException);
 			}
+#endif
 		}
-
-		private struct InvokeArgsProcessor
-		{
-			private object obj;
-			private object[] args;
-
-			internal InvokeArgsProcessor(MethodWrapper mw, MethodBase method, object original_obj, object[] original_args, ikvm.@internal.CallerID callerID)
-			{
-				TypeWrapper[] argTypes = mw.GetParameters();
-
-				if(!mw.IsStatic && method.IsStatic && mw.Name != "<init>")
-				{
-					// we've been redirected to a static method, so we have to copy the 'obj' into the args
-					this.obj = null;
-					this.args = ArrayUtil.Concat(original_obj, original_args);
-					for(int i = 0; i < argTypes.Length; i++)
-					{
-						if(!argTypes[i].IsUnloadable && argTypes[i].IsGhost)
-						{
-							object v = Activator.CreateInstance(argTypes[i].TypeAsSignatureType);
-							argTypes[i].GhostRefField.SetValue(v, args[i + 1]);
-							args[i + 1] = v;
-						}
-					}
-				}
-				else
-				{
-					this.obj = original_obj;
-					this.args = original_args;
-					for(int i = 0; i < argTypes.Length; i++)
-					{
-						if(!argTypes[i].IsUnloadable && argTypes[i].IsGhost)
-						{
-							if(this.args == original_args)
-							{
-								this.args = (object[])args.Clone();
-							}
-							object v = Activator.CreateInstance(argTypes[i].TypeAsSignatureType);
-							argTypes[i].GhostRefField.SetValue(v, args[i]);
-							this.args[i] = v;
-						}
-					}
-				}
-
-				if(mw.HasCallerID)
-				{
-					args = ArrayUtil.Concat(args, callerID);
-				}
-			}
-
-			internal object GetObj()
-			{
-				return obj;
-			}
-
-			internal object[] GetArgs()
-			{
-				return args;
-			}
-		}
-#endif // !FIRST_PASS
 #endif // !STATIC_COMPILER && !STUB_GENERATOR
 
 		internal static OpCode SimpleOpCodeToOpCode(SimpleOpCode opc)

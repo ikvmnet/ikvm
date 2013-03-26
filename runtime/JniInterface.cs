@@ -1925,93 +1925,84 @@ namespace IKVM.Runtime
 			public jobject l;
 		}
 
-		private static object InvokeHelper(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue *args, bool nonVirtual)
+		private static object InvokeHelper(JNIEnv* pEnv, jobject objHandle, jmethodID methodID, jvalue* pArgs, bool nonVirtual)
 		{
 			ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
+			object obj = UnwrapRef(env, objHandle);
 			MethodWrapper mw = MethodWrapper.FromCookie(methodID);
-			if (nonVirtual && mw.RequiresNonVirtualDispatcher)
-			{
-				try
-				{
-					return InvokeNonVirtual(env, mw, UnwrapRef(env, obj), args);
-				}
-				catch (Exception x)
-				{
-					SetPendingException(pEnv, ikvm.runtime.Util.mapException(x));
-					return null;
-				}
-			}
+			mw.Link();
+			mw.ResolveMethod();
 			TypeWrapper[] argTypes = mw.GetParameters();
-			object[] argarray = new object[argTypes.Length];
-			for (int i = 0; i < argarray.Length; i++)
+			object[] args = new object[argTypes.Length + (mw.HasCallerID ? 1 : 0)];
+			for (int i = 0; i < argTypes.Length; i++)
 			{
 				TypeWrapper type = argTypes[i];
 				if (type == PrimitiveTypeWrapper.BOOLEAN)
-					argarray[i] = java.lang.Boolean.valueOf(args[i].z != JNI_FALSE);
+					args[i] = pArgs[i].z != JNI_FALSE;
 				else if (type == PrimitiveTypeWrapper.BYTE)
-					argarray[i] = java.lang.Byte.valueOf((byte)args[i].b);
+					args[i] = (byte)pArgs[i].b;
 				else if (type == PrimitiveTypeWrapper.CHAR)
-					argarray[i] = java.lang.Character.valueOf((char)args[i].c);
+					args[i] = (char)pArgs[i].c;
 				else if (type == PrimitiveTypeWrapper.SHORT)
-					argarray[i] = java.lang.Short.valueOf(args[i].s);
+					args[i] = pArgs[i].s;
 				else if (type == PrimitiveTypeWrapper.INT)
-					argarray[i] = java.lang.Integer.valueOf(args[i].i);
+					args[i] = pArgs[i].i;
 				else if (type == PrimitiveTypeWrapper.LONG)
-					argarray[i] = java.lang.Long.valueOf(args[i].j);
+					args[i] = pArgs[i].j;
 				else if (type == PrimitiveTypeWrapper.FLOAT)
-					argarray[i] = java.lang.Float.valueOf(args[i].f);
+					args[i] = pArgs[i].f;
 				else if (type == PrimitiveTypeWrapper.DOUBLE)
-					argarray[i] = java.lang.Double.valueOf(args[i].d);
+					args[i] = pArgs[i].d;
 				else
-					argarray[i] = UnwrapRef(env, args[i].l);
+					args[i] = argTypes[i].GhostWrap(UnwrapRef(env, pArgs[i].l));
+			}
+			if (mw.HasCallerID)
+			{
+				args[args.Length - 1] = env.callerID;
 			}
 			try
 			{
-				return mw.InvokeJNI(UnwrapRef(env, obj), argarray, nonVirtual, env.callerID);
+				if (nonVirtual && mw.RequiresNonVirtualDispatcher)
+				{
+					return InvokeNonVirtual(env, mw, obj, args);
+				}
+				if (mw.IsConstructor)
+				{
+					if (obj == null)
+					{
+						return mw.CreateInstance(args);
+					}
+					else
+					{
+						MethodBase mb = mw.GetMethod();
+						if (mb.IsStatic)
+						{
+							// we're dealing with a constructor on a remapped type, if obj is supplied, it means
+							// that we should call the constructor on an already existing instance, but that isn't
+							// possible with remapped types
+							throw new NotSupportedException(string.Format("Remapped type {0} doesn't support constructor invocation on an existing instance", mw.DeclaringType.Name));
+						}
+						else if (!mb.DeclaringType.IsInstanceOfType(obj))
+						{
+							// we're trying to initialize an existing instance of a remapped type
+							throw new NotSupportedException("Unable to partially construct object of type " + obj.GetType().FullName + " to type " + mb.DeclaringType.FullName);
+						}
+					}
+				}
+				return mw.Invoke(obj, args);
 			}
-			catch(java.lang.reflect.InvocationTargetException x)
-			{
-				SetPendingException(pEnv, ikvm.runtime.Util.mapException(x.getCause()));
-				return null;
-			}
-			catch(Exception x)
+			catch (Exception x)
 			{
 				SetPendingException(pEnv, ikvm.runtime.Util.mapException(x));
 				return null;
 			}
 		}
 
-		private static object InvokeNonVirtual(ManagedJNIEnv env, MethodWrapper mw, object obj, jvalue* args)
+		private static object InvokeNonVirtual(ManagedJNIEnv env, MethodWrapper mw, object obj, object[] argarray)
 		{
 			if (mw.HasCallerID || mw.IsDynamicOnly)
 			{
 				throw new NotSupportedException();
-			}
-			mw.Link();
-			mw.ResolveMethod();
-			TypeWrapper[] argTypes = mw.GetParameters();
-			object[] argarray = new object[argTypes.Length];
-			for (int i = 0; i < argTypes.Length; i++)
-			{
-				TypeWrapper type = argTypes[i];
-				if (type == PrimitiveTypeWrapper.BOOLEAN)
-					argarray[i] = args[i].z != JNI_FALSE;
-				else if (type == PrimitiveTypeWrapper.BYTE)
-					argarray[i] = (byte)args[i].b;
-				else if (type == PrimitiveTypeWrapper.CHAR)
-					argarray[i] = (char)args[i].c;
-				else if (type == PrimitiveTypeWrapper.SHORT)
-					argarray[i] = args[i].s;
-				else if (type == PrimitiveTypeWrapper.INT)
-					argarray[i] = args[i].i;
-				else if (type == PrimitiveTypeWrapper.LONG)
-					argarray[i] = args[i].j;
-				else if (type == PrimitiveTypeWrapper.FLOAT)
-					argarray[i] = args[i].f;
-				else if (type == PrimitiveTypeWrapper.DOUBLE)
-					argarray[i] = args[i].d;
-				else
-					argarray[i] = argTypes[i].GhostWrap(UnwrapRef(env, args[i].l));
 			}
 			if (mw.DeclaringType.IsRemapped && !mw.DeclaringType.TypeAsBaseType.IsInstanceOfType(obj))
 			{
