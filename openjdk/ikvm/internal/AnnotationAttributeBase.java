@@ -456,16 +456,19 @@ public abstract class AnnotationAttributeBase
 
     public final boolean Equals(Object o)
     {
+        freeze();
         return equals(annotationType, values, o);
     }
 
     public final int GetHashCode()
     {
+        freeze();
         return hashCode(annotationType, values);
     }
 
     public final String ToString()
     {
+        freeze();
         return toString(annotationType, values);
     }
 
