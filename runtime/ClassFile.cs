@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2012 Jeroen Frijters
+  Copyright (C) 2002-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -2552,6 +2552,7 @@ namespace IKVM.Internal
 			private Code code;
 			private string[] exceptions;
 			private LowFreqData low;
+			private MethodParametersEntry[] parameters;
 
 			sealed class LowFreqData
 			{
@@ -2752,6 +2753,30 @@ namespace IKVM.Internal
 							}
 							break;
 #endif
+						case "MethodParameters":
+						{
+							if(classFile.MajorVersion < 52)
+							{
+								goto default;
+							}
+							if(parameters != null)
+							{
+								throw new ClassFormatError("{0} (Duplicate MethodParameters attribute)", classFile.Name);
+							}
+							BigEndianBinaryReader rdr = br.Section(br.ReadUInt32());
+							byte parameters_count = rdr.ReadByte();
+							parameters = new MethodParametersEntry[parameters_count];
+							for(int j = 0; j < parameters_count; j++)
+							{
+								parameters[j].name = classFile.GetConstantPoolUtf8String(utf8_cp, rdr.ReadUInt16());
+								parameters[j].flags = rdr.ReadUInt16();
+							}
+							if(!rdr.IsAtEnd)
+							{
+								throw new ClassFormatError("{0} (MethodParameters attribute has wrong length)", classFile.Name);
+							}
+							break;
+						}
 						default:
 							br.Skip(br.ReadUInt32());
 							break;
@@ -2932,6 +2957,14 @@ namespace IKVM.Internal
 				get
 				{
 					return code.localVariableTable;
+				}
+			}
+
+			internal MethodParametersEntry[] MethodParameters
+			{
+				get
+				{
+					return parameters;
 				}
 			}
 
@@ -3515,6 +3548,12 @@ namespace IKVM.Internal
 				internal string name;
 				internal string descriptor;
 				internal ushort index;
+			}
+
+			internal struct MethodParametersEntry
+			{
+				internal string name;
+				internal ushort flags;
 			}
 		}
 

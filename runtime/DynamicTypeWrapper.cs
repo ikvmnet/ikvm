@@ -4129,6 +4129,7 @@ namespace IKVM.Internal
 )
 					{
 						parameterNames = new string[methods[i].GetParameters().Length];
+						GetParameterNamesFromMP(m, parameterNames);
 						GetParameterNamesFromLVT(m, parameterNames);
 						GetParameterNamesFromSig(m.Signature, parameterNames);
 #if STATIC_COMPILER
@@ -5790,6 +5791,21 @@ namespace IKVM.Internal
 			}
 			ilgen.Emit(OpCodes.Ret);
 			ilgen.DoEmit();
+		}
+
+		private static void GetParameterNamesFromMP(ClassFile.Method m, string[] parameterNames)
+		{
+			ClassFile.Method.MethodParametersEntry[] methodParameters = m.MethodParameters;
+			if (methodParameters != null)
+			{
+				for (int i = 0, count = Math.Min(parameterNames.Length, methodParameters.Length); i < count; i++)
+				{
+					if (parameterNames[i] == null)
+					{
+						parameterNames[i] = methodParameters[i].name;
+					}
+				}
+			}
 		}
 
 		protected static void GetParameterNamesFromLVT(ClassFile.Method m, string[] parameterNames)
