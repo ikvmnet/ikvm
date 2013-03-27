@@ -40,8 +40,8 @@ public abstract class AnnotationAttributeBase
     extends cli.System.Attribute
     implements Annotation, Serializable
 {
-    private final HashMap values = new HashMap();
     private final Class annotationType;
+    private HashMap<String, Object> values;
     private Object[] definition;
     private boolean frozen;
 
@@ -189,6 +189,10 @@ public abstract class AnnotationAttributeBase
             {
                 throw new InternalError("Invalid annotation type: " + type);
             }
+            if(values == null)
+            {
+                values = new HashMap<String, Object>();
+            }
             values.put(name, value);
         }
         catch (NoSuchMethodException x)
@@ -207,17 +211,21 @@ public abstract class AnnotationAttributeBase
     }
 
     @ikvm.lang.Internal
-    public Map getValues()
+    public final Map getValues()
     {
         return values;
     }
 
     @ikvm.lang.Internal
-    public synchronized void freeze()
+    public final synchronized void freeze()
     {
         if(!frozen)
         {
             frozen = true;
+            if(values == null)
+            {
+                values = new HashMap<String, Object>();
+            }
             if(definition == null)
             {
                 setDefaults(values, annotationType);
@@ -442,6 +450,7 @@ public abstract class AnnotationAttributeBase
 
     private final Object writeReplace()
     {
+        freeze();
 	return Proxy.newProxyInstance(annotationType.getClassLoader(),
 	    new Class[] { annotationType },
 	    newAnnotationInvocationHandler(annotationType, values));
