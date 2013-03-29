@@ -390,6 +390,21 @@ namespace IKVM.Runtime
 			MethodWrapper mw = tw.GetMethodWrapper(name, sig, true);
 			if (mw == null || mw.IsStatic || !mw.IsPublic)
 			{
+#if NO_REF_EMIT
+				java.lang.invoke.MethodType methodType = MethodHandleUtil.GetDelegateMethodType(delegateType);
+				if (methodType.parameterCount() > MethodHandleUtil.MaxArity)
+				{
+					throw new NotImplementedException();
+				}
+				java.lang.invoke.MethodHandle exception = java.lang.invoke.MethodHandles.publicLookup()
+					.findConstructor(mw == null || mw.IsStatic ? typeof(java.lang.AbstractMethodError) : typeof(java.lang.IllegalAccessError),
+						java.lang.invoke.MethodType.methodType(typeof(void), typeof(string)))
+					.bindTo(tw.Name + ".Invoke" + sig);
+				return Delegate.CreateDelegate(delegateType,
+						java.lang.invoke.MethodHandles.dropArguments(
+							java.lang.invoke.MethodHandles.foldArguments(java.lang.invoke.MethodHandles.throwException(methodType.returnType(), exception.type().returnType()), exception),
+							0, methodType.parameterArray()).vmtarget, "Invoke");
+#else
 				MethodInfo invoke = delegateType.GetMethod("Invoke");
 				ParameterInfo[] parameters = invoke.GetParameters();
 				Type[] parameterTypes = new Type[parameters.Length + 1];
@@ -408,6 +423,7 @@ namespace IKVM.Runtime
 				ilgen.Emit(System.Reflection.Emit.OpCodes.Throw);
 				ilgen.DoEmit();
 				return dm.CreateDelegate(delegateType, obj);
+#endif
 			}
 			else
 			{
