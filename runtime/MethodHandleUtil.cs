@@ -89,6 +89,12 @@ static partial class MethodHandleUtil
 #endif
 	}
 
+	internal static bool IsPackedArgsContainer(Type type)
+	{
+		return type.IsGenericType
+			&& type.GetGenericTypeDefinition() == typeofMHA;
+	}
+
 	internal static Type CreateDelegateType(TypeWrapper[] args, TypeWrapper ret)
 	{
 		Type[] typeArgs = new Type[args.Length];

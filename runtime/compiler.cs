@@ -175,7 +175,7 @@ static partial class MethodHandleUtil
 	private static void WrapArgs(CodeEmitter ilgen, Type type)
 	{
 		Type last = type.GetGenericArguments()[MaxArity - 1];
-		if (MethodHandleUtil.IsPackedArgsContainer(last))
+		if (IsPackedArgsContainer(last))
 		{
 			WrapArgs(ilgen, last);
 		}
@@ -232,12 +232,6 @@ static partial class MethodHandleUtil
 		{
 			return tw.TypeAsSignatureType;
 		}
-	}
-
-	internal static bool IsPackedArgsContainer(Type type)
-	{
-		return type.IsGenericType
-			&& type.GetGenericTypeDefinition() == typeofMHA;
 	}
 }
 
