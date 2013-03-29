@@ -507,36 +507,6 @@ namespace IKVM.Internal
 			}
 		}
 
-		protected override bool IsPInvokeMethod(ClassFile.Method m)
-		{
-			Dictionary<string, IKVM.Internal.MapXml.Class> mapxml = classLoader.GetMapXmlClasses();
-			if(mapxml != null)
-			{
-				IKVM.Internal.MapXml.Class clazz;
-				if(mapxml.TryGetValue(this.Name, out clazz) && clazz.Methods != null)
-				{
-					foreach(IKVM.Internal.MapXml.Method method in clazz.Methods)
-					{
-						if(method.Name == m.Name && method.Sig == m.Signature)
-						{
-							if(method.Attributes != null)
-							{
-								foreach(IKVM.Internal.MapXml.Attribute attr in method.Attributes)
-								{
-									if(StaticCompiler.GetType(classLoader, attr.Type) == JVM.Import(typeof(System.Runtime.InteropServices.DllImportAttribute)))
-									{
-										return true;
-									}
-								}
-							}
-							break;
-						}
-					}
-				}
-			}
-			return base.IsPInvokeMethod(m);
-		}
-
 		private static void MapModifiers(MapXml.MapModifiers mapmods, bool isConstructor, out bool setmodifiers, ref MethodAttributes attribs)
 		{
 			setmodifiers = false;

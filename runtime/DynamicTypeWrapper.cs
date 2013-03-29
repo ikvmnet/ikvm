@@ -45,7 +45,8 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 	abstract class DynamicTypeWrapper : TypeWrapper
 #else
-	class DynamicTypeWrapper : TypeWrapper
+#pragma warning disable 628 // don't complain about protected members in sealed type
+	sealed class DynamicTypeWrapper : TypeWrapper
 #endif
 	{
 #if STATIC_COMPILER
@@ -5988,9 +5989,35 @@ namespace IKVM.Internal
 		protected abstract TypeBuilder DefineGhostType(string mangledTypeName, TypeAttributes typeAttribs);
 #endif // STATIC_COMPILER
 
-		protected virtual bool IsPInvokeMethod(ClassFile.Method m)
+		private bool IsPInvokeMethod(ClassFile.Method m)
 		{
-#if CLASSGC
+#if STATIC_COMPILER
+			Dictionary<string, IKVM.Internal.MapXml.Class> mapxml = classLoader.GetMapXmlClasses();
+			if (mapxml != null)
+			{
+				IKVM.Internal.MapXml.Class clazz;
+				if (mapxml.TryGetValue(this.Name, out clazz) && clazz.Methods != null)
+				{
+					foreach (IKVM.Internal.MapXml.Method method in clazz.Methods)
+					{
+						if (method.Name == m.Name && method.Sig == m.Signature)
+						{
+							if (method.Attributes != null)
+							{
+								foreach (IKVM.Internal.MapXml.Attribute attr in method.Attributes)
+								{
+									if (StaticCompiler.GetType(classLoader, attr.Type) == JVM.Import(typeof(System.Runtime.InteropServices.DllImportAttribute)))
+									{
+										return true;
+									}
+								}
+							}
+							break;
+						}
+					}
+				}
+			}
+#elif CLASSGC
 			// TODO PInvoke is not supported in RunAndCollect assemblies,
 			if (JVM.classUnloading)
 			{
@@ -6214,14 +6241,19 @@ namespace IKVM.Internal
 			Debug.Fail("Unreachable code");
 			return null;
 		}
+
+		private Type GetBaseTypeForDefineType()
+		{
+			return BaseTypeWrapper.TypeAsBaseType;
+		}
 #endif
 
+#if STATIC_COMPILER
 		protected virtual Type GetBaseTypeForDefineType()
 		{
 			return BaseTypeWrapper.TypeAsBaseType;
 		}
 
-#if STATIC_COMPILER
 		internal virtual MethodWrapper[] GetReplacedMethodsFor(MethodWrapper mw)
 		{
 			return null;
