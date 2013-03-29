@@ -1505,7 +1505,7 @@ namespace IKVM.Internal
 			if (name.EndsWith(".class", StringComparison.Ordinal) && name.IndexOf('.') == name.Length - 6)
 			{
 				TypeWrapper tw = FindLoadedClass(name.Substring(0, name.Length - 6).Replace('/', '.'));
-				if (tw != null && !tw.IsArray && !(tw is DynamicTypeWrapper))
+				if (tw != null && !tw.IsArray && !tw.IsDynamic)
 				{
 					ClassLoaderWrapper loader = tw.GetClassLoader();
 					if (loader is GenericClassLoaderWrapper)
@@ -1531,7 +1531,7 @@ namespace IKVM.Internal
 			if (name.EndsWith(".class", StringComparison.Ordinal) && name.IndexOf('.') == name.Length - 6)
 			{
 				TypeWrapper tw = FindLoadedClass(name.Substring(0, name.Length - 6).Replace('/', '.'));
-				if (tw != null && tw.GetClassLoader() == this && !tw.IsArray && !(tw is DynamicTypeWrapper))
+				if (tw != null && tw.GetClassLoader() == this && !tw.IsArray && !tw.IsDynamic)
 				{
 					return new java.net.URL("ikvmres", "gen", ClassLoaderWrapper.GetGenericClassLoaderId(this), "/" + name);
 				}

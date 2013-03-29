@@ -1878,7 +1878,7 @@ namespace IKVM.Internal
 				if (classObject == null)
 				{
 					// DynamicTypeWrapper should haved already had SetClassObject explicitly
-					Debug.Assert(!(this is DynamicTypeWrapper));
+					Debug.Assert(!IsDynamic);
 #if !FIRST_PASS
 					java.lang.Class clazz;
 					// note that this has to be the same check as in EmitClassLiteral
@@ -3193,7 +3193,6 @@ namespace IKVM.Internal
 		// return the constructor used for automagic .NET serialization
 		internal virtual MethodBase GetSerializationConstructor()
 		{
-			Debug.Assert(!(this is DynamicTypeWrapper));
 			return this.TypeAsBaseType.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] {
 						JVM.Import(typeof(System.Runtime.Serialization.SerializationInfo)), JVM.Import(typeof(System.Runtime.Serialization.StreamingContext)) }, null);
 		}
@@ -3215,6 +3214,15 @@ namespace IKVM.Internal
 			return obj;
 		}
 #endif
+
+		internal bool IsDynamic
+		{
+#if STUB_GENERATOR
+			get { return false; }
+#else
+			get { return this is DynamicTypeWrapper; }
+#endif
+		}
 	}
 
 	sealed class UnloadableTypeWrapper : TypeWrapper

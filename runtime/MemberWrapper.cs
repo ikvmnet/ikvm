@@ -188,7 +188,7 @@ namespace IKVM.Internal
 			}
 #endif
 #if CLASSGC
-			if (DeclaringType is DynamicTypeWrapper)
+			if (DeclaringType.IsDynamic)
 			{
 				// if we are dynamic, we can just become friends with the caller
 				DeclaringType.GetClassLoader().GetTypeWrapperFactory().AddInternalsVisibleTo(caller.TypeAsTBD.Assembly);
@@ -1218,7 +1218,7 @@ namespace IKVM.Internal
 				&& !DeclaringType.IsInterface
 				&& (IsPublic || (IsProtected && !DeclaringType.IsFinal))
 				&& !DeclaringType.GetClassLoader().StrictFinalFieldSemantics
-				&& DeclaringType is DynamicTypeWrapper
+				&& DeclaringType.IsDynamic
 				&& !(this is ConstantFieldWrapper)
 				&& !(this is DynamicPropertyFieldWrapper))
 			{
