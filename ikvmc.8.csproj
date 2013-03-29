@@ -123,6 +123,7 @@
     <Compile Include="runtime\MemberWrapper.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="runtime\MethodHandleUtil.cs" />
     <Compile Include="runtime\profiler.cs">
       <SubType>Code</SubType>
     </Compile>

@@ -147,6 +147,7 @@
     <Compile Include="MemberWrapper.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="MethodHandleUtil.cs" />
     <Compile Include="openjdk\java.io.cs" />
     <Compile Include="openjdk\java.lang.cs" />
     <Compile Include="openjdk\java.lang.invoke.cs" />

@@ -154,66 +154,6 @@ struct MethodKey : IEquatable<MethodKey>
 
 static partial class MethodHandleUtil
 {
-	internal const int MaxArity = 8;
-	private static readonly Type typeofMHA;
-	private static readonly Type[] typeofMHV;
-	private static readonly Type[] typeofMH;
-
-	static MethodHandleUtil()
-	{
-#if STATIC_COMPILER
-		typeofMHA = StaticCompiler.GetRuntimeType("IKVM.Runtime.MHA`8");
-		typeofMHV = new Type[] {
-			StaticCompiler.GetRuntimeType("IKVM.Runtime.MHV"),
-			StaticCompiler.GetRuntimeType("IKVM.Runtime.MHV`1"),
-			StaticCompiler.GetRuntimeType("IKVM.Runtime.MHV`2"),
-			StaticCompiler.GetRuntimeType("IKVM.Runtime.MHV`3"),
-			StaticCompiler.GetRuntimeType("IKVM.Runtime.MHV`4"),
-			StaticCompiler.GetRuntimeType("IKVM.Runtime.MHV`5"),
-			StaticCompiler.GetRuntimeType("IKVM.Runtime.MHV`6"),
-			StaticCompiler.GetRuntimeType("IKVM.Runtime.MHV`7"),
-			StaticCompiler.GetRuntimeType("IKVM.Runtime.MHV`8"),
-		};
-		typeofMH = new Type[] {
-			null,
-			StaticCompiler.GetRuntimeType("IKVM.Runtime.MH`1"),
-			StaticCompiler.GetRuntimeType("IKVM.Runtime.MH`2"),
-			StaticCompiler.GetRuntimeType("IKVM.Runtime.MH`3"),
-			StaticCompiler.GetRuntimeType("IKVM.Runtime.MH`4"),
-			StaticCompiler.GetRuntimeType("IKVM.Runtime.MH`5"),
-			StaticCompiler.GetRuntimeType("IKVM.Runtime.MH`6"),
-			StaticCompiler.GetRuntimeType("IKVM.Runtime.MH`7"),
-			StaticCompiler.GetRuntimeType("IKVM.Runtime.MH`8"),
-			StaticCompiler.GetRuntimeType("IKVM.Runtime.MH`9"),
-		};
-#else
-		typeofMHA = typeof(IKVM.Runtime.MHA<,,,,,,,>);
-		typeofMHV = new Type[] {
-			typeof(IKVM.Runtime.MHV),
-			typeof(IKVM.Runtime.MHV<>),
-			typeof(IKVM.Runtime.MHV<,>),
-			typeof(IKVM.Runtime.MHV<,,>),
-			typeof(IKVM.Runtime.MHV<,,,>),
-			typeof(IKVM.Runtime.MHV<,,,,>),
-			typeof(IKVM.Runtime.MHV<,,,,,>),
-			typeof(IKVM.Runtime.MHV<,,,,,,>),
-			typeof(IKVM.Runtime.MHV<,,,,,,,>),
-		};
-		typeofMH = new Type[] {
-			null,
-			typeof(IKVM.Runtime.MH<>),
-			typeof(IKVM.Runtime.MH<,>),
-			typeof(IKVM.Runtime.MH<,,>),
-			typeof(IKVM.Runtime.MH<,,,>),
-			typeof(IKVM.Runtime.MH<,,,,>),
-			typeof(IKVM.Runtime.MH<,,,,,>),
-			typeof(IKVM.Runtime.MH<,,,,,,>),
-			typeof(IKVM.Runtime.MH<,,,,,,,>),
-			typeof(IKVM.Runtime.MH<,,,,,,,,>),
-		};
-#endif
-	}
-
 	internal static void EmitCallDelegateInvokeMethod(CodeEmitter ilgen, Type delegateType)
 	{
 		if (delegateType.IsGenericType)
@@ -276,16 +216,6 @@ static partial class MethodHandleUtil
 		return CreateDelegateType(args, mw.ReturnType);
 	}
 
-	internal static Type CreateDelegateType(TypeWrapper[] args, TypeWrapper ret)
-	{
-		Type[] typeArgs = new Type[args.Length];
-		for (int i = 0; i < args.Length; i++)
-		{
-			typeArgs[i] = args[i].TypeAsSignatureType;
-		}
-		return CreateDelegateType(typeArgs, ret.TypeAsSignatureType);
-	}
-
 	// for delegate types used for "ldc <MethodType>" we don't want ghost arrays to be erased
 	internal static Type CreateDelegateTypeForLoadConstant(TypeWrapper[] args, TypeWrapper ret)
 	{
@@ -312,50 +242,6 @@ static partial class MethodHandleUtil
 		{
 			return tw.TypeAsSignatureType;
 		}
-	}
-
-	private static Type CreateDelegateType(Type[] types, Type retType)
-	{
-		if (types.Length == 0 && retType == Types.Void)
-		{
-			return typeofMHV[0];
-		}
-		else if (types.Length > MaxArity)
-		{
-			int arity = types.Length;
-			int remainder = (arity - 8) % 7;
-			int count = (arity - 8) / 7;
-			if (remainder == 0)
-			{
-				remainder = 7;
-				count--;
-			}
-			Type last = typeofMHA.MakeGenericType(SubArray(types, types.Length - 8, 8));
-			for (int i = 0; i < count; i++)
-			{
-				Type[] temp = SubArray(types, types.Length - 8 - 7 * (i + 1), 8);
-				temp[7] = last;
-				last = typeofMHA.MakeGenericType(temp);
-			}
-			types = SubArray(types, 0, remainder + 1);
-			types[remainder] = last;
-		}
-		if (retType == Types.Void)
-		{
-			return typeofMHV[types.Length].MakeGenericType(types);
-		}
-		else
-		{
-			types = ArrayUtil.Concat(types, retType);
-			return typeofMH[types.Length].MakeGenericType(types);
-		}
-	}
-
-	private static Type[] SubArray(Type[] inArray, int start, int length)
-	{
-		Type[] outArray = new Type[length];
-		Array.Copy(inArray, start, outArray, 0, length);
-		return outArray;
 	}
 
 	internal static bool IsPackedArgsContainer(Type type)

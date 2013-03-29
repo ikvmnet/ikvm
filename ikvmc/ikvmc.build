@@ -62,6 +62,7 @@
                 <include name="../runtime/JsrInliner.cs" />
                 <include name="../runtime/LocalVars.cs" />
                 <include name="../runtime/MemberWrapper.cs" />
+                <include name="../runtime/MethodHandleUtil.cs" />
                 <include name="../runtime/profiler.cs" />
                 <include name="../runtime/ReflectUtil.cs" />
                 <include name="../runtime/RuntimeHelperTypes.cs" />

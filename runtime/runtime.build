@@ -159,6 +159,7 @@
                 <include name="JsrInliner.cs" />
                 <include name="LocalVars.cs" />
                 <include name="MemberWrapper.cs" />
+                <include name="MethodHandleUtil.cs" />
                 <include name="PassiveWeakDictionary.cs" />
                 <include name="profiler.cs" />
                 <include name="ReflectUtil.cs" />
