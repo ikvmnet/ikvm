@@ -274,7 +274,7 @@ namespace IKVM.Internal
 		{
 			if (proxiesContainer == null)
 			{
-				proxiesContainer = moduleBuilder.DefineType("__<Proxies>", TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Abstract);
+				proxiesContainer = moduleBuilder.DefineType(TypeNameUtil.ProxiesContainer, TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Abstract);
 				AttributeHelper.HideFromJava(proxiesContainer);
 				AttributeHelper.SetEditorBrowsableNever(proxiesContainer);
 				proxies = new List<TypeBuilder>();
@@ -284,26 +284,11 @@ namespace IKVM.Internal
 			{
 				ifaces[i] = interfaces[i].TypeAsBaseType;
 			}
-			TypeBuilder tb = proxiesContainer.DefineNestedType(GetProxyNestedName(interfaces), TypeAttributes.NestedPublic | TypeAttributes.Class | TypeAttributes.Sealed, proxyClass.TypeAsBaseType, ifaces);
+			TypeBuilder tb = proxiesContainer.DefineNestedType(TypeNameUtil.GetProxyNestedName(interfaces), TypeAttributes.NestedPublic | TypeAttributes.Class | TypeAttributes.Sealed, proxyClass.TypeAsBaseType, ifaces);
 			proxies.Add(tb);
 			return tb;
 		}
 #endif
-
-		private static string GetProxyNestedName(TypeWrapper[] interfaces)
-		{
-			System.Text.StringBuilder sb = new System.Text.StringBuilder();
-			foreach (TypeWrapper tw in interfaces)
-			{
-				sb.Append(tw.Name.Length).Append('|').Append(tw.Name);
-			}
-			return TypeNameUtil.MangleNestedTypeName(sb.ToString());
-		}
-
-		internal static string GetProxyName(TypeWrapper[] interfaces)
-		{
-			return "__<Proxies>+" + GetProxyNestedName(interfaces);
-		}
 
 		internal override Type DefineUnloadable(string name)
 		{

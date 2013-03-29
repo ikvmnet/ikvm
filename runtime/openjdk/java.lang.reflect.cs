@@ -678,7 +678,7 @@ static class Java_java_lang_reflect_Proxy
 			wrappers[i] = TypeWrapper.FromClass(interfaces[i]);
 		}
 		// TODO support multi assembly class loaders
-		Type type = acl.MainAssembly.GetType(DynamicClassLoader.GetProxyName(wrappers));
+		Type type = acl.MainAssembly.GetType(TypeNameUtil.GetProxyName(wrappers));
 		if (type == null)
 		{
 			return null;

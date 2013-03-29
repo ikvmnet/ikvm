@@ -1282,6 +1282,7 @@ namespace IKVM.Internal
 	{
 		// note that MangleNestedTypeName() assumes that there are less than 16 special characters
 		private const string specialCharactersString = "\\+,[]*&\u0000";
+		internal const string ProxiesContainer = "__<Proxies>";
 
 		internal static string ReplaceIllegalCharacters(string name)
 		{
@@ -1373,6 +1374,21 @@ namespace IKVM.Internal
 				}
 			}
 			return sb.ToString();
+		}
+
+		internal static string GetProxyNestedName(TypeWrapper[] interfaces)
+		{
+			System.Text.StringBuilder sb = new System.Text.StringBuilder();
+			foreach (TypeWrapper tw in interfaces)
+			{
+				sb.Append(tw.Name.Length).Append('|').Append(tw.Name);
+			}
+			return TypeNameUtil.MangleNestedTypeName(sb.ToString());
+		}
+
+		internal static string GetProxyName(TypeWrapper[] interfaces)
+		{
+			return ProxiesContainer + "+" + GetProxyNestedName(interfaces);
 		}
 	}
 
