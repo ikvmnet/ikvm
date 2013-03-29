@@ -87,7 +87,7 @@
     </target>
 
     <target name="defs">
-        <property name="defs" value="TRACE" />
+        <property name="defs" value="TRACE;EMITTERS" />
         <if test="${property::exists('signed')}">
             <property name="defs" value="${defs};${signed}" />
         </if>

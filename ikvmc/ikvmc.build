@@ -26,7 +26,7 @@
     <include buildfile="../ikvm.include" />
 
     <target name="ikvmc">
-        <property name="defs" value="TRACE;STATIC_COMPILER" />
+        <property name="defs" value="TRACE;STATIC_COMPILER;EMITTERS" />
         <if test="${property::exists('signed')}">
             <property name="defs" value="${defs};${signed}" />
         </if>

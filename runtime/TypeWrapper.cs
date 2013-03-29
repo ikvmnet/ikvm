@@ -1735,7 +1735,7 @@ namespace IKVM.Internal
 			this.name = name == null ? null : String.Intern(name);
 		}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 		internal void EmitClassLiteral(CodeEmitter ilgen)
 		{
 			Debug.Assert(!this.IsPrimitive);
@@ -1768,7 +1768,7 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Ldsfld, RuntimeHelperTypes.GetClassLiteralField(type));
 			}
 		}
-#endif // !STUB_GENERATOR
+#endif // EMITTERS
 
 		private Type GetClassLiteralType()
 		{
@@ -2871,7 +2871,7 @@ namespace IKVM.Internal
 		}
 #endif
 
-#if !STUB_GENERATOR
+#if EMITTERS
 		internal void EmitUnbox(CodeEmitter ilgen)
 		{
 			Debug.Assert(this.IsNonPrimitiveValueType);
@@ -3006,7 +3006,7 @@ namespace IKVM.Internal
 				ilgen.Emit_instanceof(TypeAsTBD);
 			}
 		}
-#endif // !STUB_GENERATOR
+#endif // EMITTERS
 
 		// NOTE don't call this method, call MethodWrapper.Link instead
 		internal virtual MethodBase LinkMethod(MethodWrapper mw)
@@ -3020,11 +3020,11 @@ namespace IKVM.Internal
 			return fw.GetField();
 		}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 		internal virtual void EmitRunClassConstructor(CodeEmitter ilgen)
 		{
 		}
-#endif // !STUB_GENERATOR
+#endif // EMITTERS
 
 		internal virtual string GetGenericSignature()
 		{
@@ -3330,7 +3330,7 @@ namespace IKVM.Internal
 			this.customModifier = type;
 		}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 		internal Type GetCustomModifier(TypeWrapperFactory context)
 		{
 			// we don't need to lock, because we're only supposed to be called while holding the finish lock
@@ -3346,7 +3346,7 @@ namespace IKVM.Internal
 		{
 			throw new InvalidOperationException("EmitInstanceOf called on UnloadableTypeWrapper: " + Name);
 		}
-#endif // !STUB_GENERATOR
+#endif // EMITTERS
 	}
 
 	sealed class PrimitiveTypeWrapper : TypeWrapper
@@ -4135,14 +4135,14 @@ namespace IKVM.Internal
 				invoke = (MethodInfo)mw.GetMethod();
 			}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 			internal override void EmitNewobj(CodeEmitter ilgen)
 			{
 				ilgen.Emit(OpCodes.Dup);
 				ilgen.Emit(OpCodes.Ldvirtftn, invoke);
 				ilgen.Emit(OpCodes.Newobj, constructor);
 			}
-#endif // !STUB_GENERATOR
+#endif // EMITTERS
 		}
 
 		protected override void LazyPublishMethods()
@@ -4391,7 +4391,7 @@ namespace IKVM.Internal
 #endif
 			}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 			protected override void CallImpl(CodeEmitter ilgen)
 			{
 				MethodBase mb = GetMethod();
@@ -4444,7 +4444,7 @@ namespace IKVM.Internal
 					ilgen.Emit(OpCodes.Newobj, mb);
 				}
 			}
-#endif // !STUB_GENERATOR
+#endif // EMITTERS
 
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 			[HideFromJava]
@@ -4480,13 +4480,15 @@ namespace IKVM.Internal
 				}
 				return mi.Invoke(null, ArrayUtil.Concat(obj, args));
 			}
+#endif // !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 
+#if EMITTERS
 			internal override void EmitCallvirtReflect(CodeEmitter ilgen)
 			{
 				MethodBase mb = mbHelper != null ? mbHelper : GetMethod();
 				ilgen.Emit(mb.IsStatic ? OpCodes.Call : OpCodes.Callvirt, mb);
 			}
-#endif // !STATIC_COMPILER
+#endif // EMITTERS
 
 			internal string GetGenericSignature()
 			{
@@ -4613,7 +4615,7 @@ namespace IKVM.Internal
 			}
 		}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 		internal override void EmitRunClassConstructor(CodeEmitter ilgen)
 		{
 			if(HasStaticInitializer)
@@ -4621,7 +4623,7 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Call, clinitMethod);
 			}
 		}
-#endif // !STUB_GENERATOR
+#endif // EMITTERS
 
 		internal override string GetGenericSignature()
 		{

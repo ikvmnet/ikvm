@@ -35,7 +35,7 @@
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
     <ConfigurationOverrideFile>
     </ConfigurationOverrideFile>
-    <DefineConstants>TRACE;DEBUG;STATIC_COMPILER;IKVM_REF_EMIT</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;STATIC_COMPILER;EMITTERS</DefineConstants>
     <DocumentationFile>
     </DocumentationFile>
     <DebugSymbols>true</DebugSymbols>

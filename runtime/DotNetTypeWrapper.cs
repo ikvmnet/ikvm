@@ -541,7 +541,7 @@ namespace IKVM.Internal
 				}
 #endif
 
-#if !STUB_GENERATOR
+#if EMITTERS
 				protected override void EmitGetImpl(CodeEmitter ilgen)
 				{
 #if STATIC_COMPILER
@@ -556,7 +556,7 @@ namespace IKVM.Internal
 				protected override void EmitSetImpl(CodeEmitter ilgen)
 				{
 				}
-#endif // !STUB_GENERATOR
+#endif // EMITTERS
 			}
 
 			private sealed class EnumValuesMethodWrapper : MethodWrapper
@@ -1800,7 +1800,7 @@ namespace IKVM.Internal
 				this.iface = iface;
 			}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 			internal override bool EmitIntrinsic(EmitIntrinsicContext context)
 			{
 				TypeWrapper targetType = context.GetStackTypeWrapper(0, 0);
@@ -1851,7 +1851,7 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicCreateDelegate);
 				ilgen.Emit(OpCodes.Castclass, delegateConstructor.DeclaringType);
 			}
-#endif // !STUB_GENERATOR
+#endif // EMITTERS
 		}
 
 		private sealed class ByRefMethodWrapper : SmartMethodWrapper
@@ -1870,7 +1870,7 @@ namespace IKVM.Internal
 #endif
 			}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 			protected override void CallImpl(CodeEmitter ilgen)
 			{
 				ConvertByRefArgs(ilgen);
@@ -1912,7 +1912,7 @@ namespace IKVM.Internal
 					}
 				}
 			}
-#endif // !STUB_GENERATOR
+#endif // EMITTERS
 		}
 
 		private sealed class EnumWrapMethodWrapper : MethodWrapper
@@ -1922,14 +1922,14 @@ namespace IKVM.Internal
 			{
 			}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 			internal override void EmitCall(CodeEmitter ilgen)
 			{
 				// We don't actually need to do anything here!
 				// The compiler will insert a boxing operation after calling us and that will
 				// result in our argument being boxed (since that's still sitting on the stack).
 			}
-#endif // !STUB_GENERATOR
+#endif // EMITTERS
 
 #if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
 			internal override object Invoke(object obj, object[] args)
@@ -1949,7 +1949,7 @@ namespace IKVM.Internal
 				underlyingType = EnumHelper.GetUnderlyingType(tw.type);
 			}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 			protected override void EmitGetImpl(CodeEmitter ilgen)
 			{
 				// NOTE if the reference on the stack is null, we *want* the NullReferenceException, so we don't use TypeWrapper.EmitUnbox
@@ -1967,7 +1967,7 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Stobj, underlyingType);
 				ilgen.ReleaseTempLocal(temp);
 			}
-#endif // !STUB_GENERATOR
+#endif // EMITTERS
 
 #if !STUB_GENERATOR && !STATIC_COMPILER && !FIRST_PASS
 			internal override object GetValue(object obj)
@@ -1989,14 +1989,14 @@ namespace IKVM.Internal
 			{
 			}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 			internal override void EmitNewobj(CodeEmitter ilgen)
 			{
 				CodeEmitterLocal local = ilgen.DeclareLocal(DeclaringType.TypeAsTBD);
 				ilgen.Emit(OpCodes.Ldloc, local);
 				ilgen.Emit(OpCodes.Box, DeclaringType.TypeAsTBD);
 			}
-#endif // !STUB_GENERATOR
+#endif // EMITTERS
 
 #if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
 			internal override object CreateInstance(object[] args)
@@ -2013,7 +2013,7 @@ namespace IKVM.Internal
 			{
 			}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 			internal override void EmitCall(CodeEmitter ilgen)
 			{
 				ilgen.Emit(OpCodes.Pop);
@@ -2023,7 +2023,7 @@ namespace IKVM.Internal
 			{
 				ilgen.Emit(OpCodes.Pop);
 			}
-#endif // !STUB_GENERATOR
+#endif // EMITTERS
 		}
 
 		private sealed class CloneMethodWrapper : MethodWrapper
@@ -2033,7 +2033,7 @@ namespace IKVM.Internal
 			{
 			}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 			internal override void EmitCall(CodeEmitter ilgen)
 			{
 				ilgen.Emit(OpCodes.Dup);
@@ -2053,7 +2053,7 @@ namespace IKVM.Internal
 			{
 				EmitCall(ilgen);
 			}
-#endif // !STUB_GENERATOR
+#endif // EMITTERS
 		}
 
 		protected override void LazyPublishMembers()
@@ -2366,7 +2366,7 @@ namespace IKVM.Internal
 			{
 			}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 			internal override void EmitCall(CodeEmitter ilgen)
 			{
 				// we direct EmitCall to EmitCallvirt, because we always want to end up at the instancehelper method
@@ -2378,7 +2378,7 @@ namespace IKVM.Internal
 			{
 				m.EmitCallvirt(ilgen);
 			}
-#endif // !STUB_GENERATOR
+#endif // EMITTERS
 		}
 
 		internal static bool IsUnsupportedAbstractMethod(MethodBase mb)
@@ -2717,7 +2717,7 @@ namespace IKVM.Internal
 			}
 		}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 		internal override void EmitInstanceOf(CodeEmitter ilgen)
 		{
 			if (IsRemapped)
@@ -2747,7 +2747,7 @@ namespace IKVM.Internal
 			}
 			ilgen.EmitCastclass(type);
 		}
-#endif // !STUB_GENERATOR
+#endif // EMITTERS
 
 		internal override void Finish()
 		{

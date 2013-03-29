@@ -364,7 +364,7 @@ namespace IKVM.Internal
 		private TypeWrapper returnTypeWrapper;
 		private TypeWrapper[] parameterTypeWrappers;
 
-#if !STUB_GENERATOR
+#if EMITTERS
 		internal virtual void EmitCall(CodeEmitter ilgen)
 		{
 			throw new InvalidOperationException();
@@ -389,7 +389,7 @@ namespace IKVM.Internal
 		{
 			return Intrinsics.Emit(context);
 		}
-#endif // STUB_GENERATOR
+#endif // EMITTERS
 
 		internal virtual bool IsDynamicOnly
 		{
@@ -888,7 +888,7 @@ namespace IKVM.Internal
 		{
 		}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 		internal sealed override void EmitCall(CodeEmitter ilgen)
 		{
 			AssertLinked();
@@ -934,7 +934,7 @@ namespace IKVM.Internal
 		{
 			throw new InvalidOperationException();
 		}
-#endif // STUB_GENERATOR
+#endif // EMITTERS
 	}
 
 	enum SimpleOpCode : byte
@@ -956,7 +956,7 @@ namespace IKVM.Internal
 			this.callvirt = callvirt;
 		}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 		internal override void EmitCall(CodeEmitter ilgen)
 		{
 			ilgen.Emit(SimpleOpCodeToOpCode(call), GetMethod());
@@ -966,7 +966,7 @@ namespace IKVM.Internal
 		{
 			ilgen.Emit(SimpleOpCodeToOpCode(callvirt), GetMethod());
 		}
-#endif // !STUB_GENERATOR
+#endif // EMITTERS
 	}
 
 	sealed class TypicalMethodWrapper : SmartMethodWrapper
@@ -976,7 +976,7 @@ namespace IKVM.Internal
 		{
 		}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 		protected override void CallImpl(CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Call, GetMethod());
@@ -991,7 +991,7 @@ namespace IKVM.Internal
 		{
 			ilgen.Emit(OpCodes.Newobj, GetMethod());
 		}
-#endif // !STUB_GENERATOR
+#endif // EMITTERS
 	}
 
 	abstract class MirandaMethodWrapper : SmartMethodWrapper
@@ -1091,7 +1091,7 @@ namespace IKVM.Internal
 			get { return null; }
 		}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 		protected override void CallImpl(CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Call, GetMethod());
@@ -1101,7 +1101,7 @@ namespace IKVM.Internal
 		{
 			ilgen.Emit(OpCodes.Callvirt, GetMethod());
 		}
-#endif // !STUB_GENERATOR
+#endif // EMITTERS
 	}
 
 	sealed class GhostMethodWrapper : SmartMethodWrapper
@@ -1128,7 +1128,7 @@ namespace IKVM.Internal
 			}
 		}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 		protected override void CallvirtImpl(CodeEmitter ilgen)
 		{
 			ResolveGhostMethod();
@@ -1158,7 +1158,7 @@ namespace IKVM.Internal
 			this.stubNonVirtual = stubNonVirtual;
 		}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 		protected override void CallImpl(CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Call, stubNonVirtual);
@@ -1168,7 +1168,7 @@ namespace IKVM.Internal
 		{
 			ilgen.Emit(OpCodes.Callvirt, stubVirtual);
 		}
-#endif // !STUB_GENERATOR
+#endif // EMITTERS
 	}
 
 	sealed class AccessStubConstructorMethodWrapper : SmartMethodWrapper
@@ -1181,7 +1181,7 @@ namespace IKVM.Internal
 			this.stub = stub;
 		}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 		protected override void CallImpl(CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Call, stub);
@@ -1191,7 +1191,7 @@ namespace IKVM.Internal
 		{
 			ilgen.Emit(OpCodes.Newobj, stub);
 		}
-#endif // !STUB_GENERATOR
+#endif // EMITTERS
 	}
 
 	abstract class FieldWrapper : MemberWrapper
@@ -1343,7 +1343,7 @@ namespace IKVM.Internal
 			}
 		}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 		internal void EmitGet(CodeEmitter ilgen)
 		{
 			AssertLinked();
@@ -1359,7 +1359,7 @@ namespace IKVM.Internal
 		}
 
 		protected abstract void EmitSetImpl(CodeEmitter ilgen);
-#endif // !STUB_GENERATOR
+#endif // EMITTERS
 
 
 #if STATIC_COMPILER
@@ -1368,7 +1368,7 @@ namespace IKVM.Internal
 			get { return fieldType != null; }
 		}
 #endif
-		
+
 		internal void Link()
 		{
 			lock(this)
@@ -1463,7 +1463,7 @@ namespace IKVM.Internal
 			Debug.Assert(!(fieldType == PrimitiveTypeWrapper.DOUBLE || fieldType == PrimitiveTypeWrapper.LONG) || !IsVolatile);
 		}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 		protected override void EmitGetImpl(CodeEmitter ilgen)
 		{
 			if(!IsStatic && DeclaringType.IsNonPrimitiveValueType)
@@ -1497,8 +1497,9 @@ namespace IKVM.Internal
 				ilgen.EmitMemoryBarrier();
 			}
 		}
+#endif // EMITTERS
 
-#if !STATIC_COMPILER && !FIRST_PASS
+#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
 		internal override object GetValue(object obj)
 		{
 			return GetField().GetValue(obj);
@@ -1508,8 +1509,7 @@ namespace IKVM.Internal
 		{
 			GetField().SetValue(obj, value);
 		}
-#endif // !STATIC_COMPILER && !FIRST_PASS
-#endif // !STUB_GENERATOR
+#endif // !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
 	}
 
 	sealed class VolatileLongDoubleFieldWrapper : FieldWrapper
@@ -1521,7 +1521,7 @@ namespace IKVM.Internal
 			Debug.Assert(sig == "J" || sig == "D");
 		}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 		protected override void EmitGetImpl(CodeEmitter ilgen)
 		{
 			FieldInfo fi = GetField();
@@ -1576,8 +1576,9 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.volatileWriteLong);
 			}
 		}
+#endif // EMITTERS
 
-#if !STATIC_COMPILER && !FIRST_PASS
+#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
 #if NO_REF_EMIT
 		internal static readonly object lockObject = new object();
 #endif
@@ -1605,8 +1606,7 @@ namespace IKVM.Internal
 			throw new InvalidOperationException();
 #endif
 		}
-#endif // !STATIC_COMPILER && !FIRST_PASS
-#endif // !STUB_GENERATOR
+#endif // !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
 	}
 
 #if !STUB_GENERATOR
@@ -1683,6 +1683,7 @@ namespace IKVM.Internal
 #endif
 		}
 
+#if EMITTERS
 		protected override void EmitGetImpl(CodeEmitter ilgen)
 		{
 			if(getter == null)
@@ -1755,6 +1756,7 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Pop);
 			}
 		}
+#endif // EMITTERS
 
 #if !STATIC_COMPILER && !FIRST_PASS
 		internal override object GetValue(object obj)
@@ -1789,7 +1791,7 @@ namespace IKVM.Internal
 			this.property = property;
 		}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 		protected override void EmitGetImpl(CodeEmitter ilgen)
 		{
 			MethodInfo getter = property.GetGetMethod(true);
@@ -1834,8 +1836,9 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Callvirt, setter);
 			}
 		}
+#endif // EMITTERS
 
-#if !STATIC_COMPILER && !FIRST_PASS
+#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
 		internal override object GetValue(object obj)
 		{
 			MethodInfo getter = property.GetGetMethod(true);
@@ -1857,8 +1860,6 @@ namespace IKVM.Internal
 		}
 #endif
 
-#endif // !STUB_GENERATOR
-
 		internal PropertyInfo GetProperty()
 		{
 			return property;
@@ -1878,7 +1879,7 @@ namespace IKVM.Internal
 			this.constant = constant;
 		}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 		protected override void EmitGetImpl(CodeEmitter ilgen)
 		{
 			// Reading a field should trigger the cctor, but since we're inlining the value
@@ -1939,7 +1940,7 @@ namespace IKVM.Internal
 			// constant value is inlined), so we emulate that behavior by emitting a Pop
 			ilgen.Emit(OpCodes.Pop);
 		}
-#endif // !STUB_GENERATOR
+#endif // EMITTERS
 
 		internal object GetConstantValue()
 		{
@@ -2006,7 +2007,7 @@ namespace IKVM.Internal
 			this.setter = property.GetSetMethod(true);
 		}
 
-#if !STUB_GENERATOR
+#if EMITTERS
 		protected override void EmitGetImpl(CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Call, getter);
@@ -2016,8 +2017,9 @@ namespace IKVM.Internal
 		{
 			ilgen.Emit(OpCodes.Call, setter);
 		}
+#endif // EMITTERS
 
-#if !STATIC_COMPILER && !FIRST_PASS
+#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
 		internal override object GetValue(object obj)
 		{
 			// we can only be invoked on type 2 access stubs (because type 1 access stubs are HideFromReflection), so we know we have a field
@@ -2029,7 +2031,6 @@ namespace IKVM.Internal
 			// we can only be invoked on type 2 access stubs (because type 1 access stubs are HideFromReflection), so we know we have a field
 			GetField().SetValue(obj, value);
 		}
-#endif // !STATIC_COMPILER && !FIRST_PASS
-#endif // !STUB_GENERATOR
+#endif // !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
 	}
 }
