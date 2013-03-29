@@ -99,6 +99,16 @@ static partial class MethodHandleUtil
 		return CreateDelegateType(typeArgs, ret.TypeAsSignatureType);
 	}
 
+	internal static Type CreateDelegateType(TypeWrapper tw, MethodWrapper mw)
+	{
+		TypeWrapper[] args = mw.GetParameters();
+		if (!mw.IsStatic)
+		{
+			args = ArrayUtil.Concat(tw, args);
+		}
+		return CreateDelegateType(args, mw.ReturnType);
+	}
+
 	private static Type CreateDelegateType(Type[] types, Type retType)
 	{
 		if (types.Length == 0 && retType == Types.Void)

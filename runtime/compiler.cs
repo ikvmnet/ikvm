@@ -206,16 +206,6 @@ static partial class MethodHandleUtil
 		}
 	}
 
-	internal static Type CreateDelegateType(TypeWrapper tw, MethodWrapper mw)
-	{
-		TypeWrapper[] args = mw.GetParameters();
-		if (!mw.IsStatic)
-		{
-			args = ArrayUtil.Concat(tw, args);
-		}
-		return CreateDelegateType(args, mw.ReturnType);
-	}
-
 	// for delegate types used for "ldc <MethodType>" we don't want ghost arrays to be erased
 	internal static Type CreateDelegateTypeForLoadConstant(TypeWrapper[] args, TypeWrapper ret)
 	{
