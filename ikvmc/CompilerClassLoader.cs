@@ -168,7 +168,10 @@ namespace IKVM.Internal
 			string mainAssemblyName = options.sharedclassloader != null && options.sharedclassloader[0] != this
 				? options.sharedclassloader[0].assemblyName
 				: assemblyName;
-			AttributeHelper.SetInternalsVisibleToAttribute(assemblyBuilder, mainAssemblyName + DynamicClassLoader.DynamicAssemblySuffixAndPublicKey);
+			if(!DisableDynamicBinding)
+			{
+				AttributeHelper.SetInternalsVisibleToAttribute(assemblyBuilder, mainAssemblyName + DynamicClassLoader.DynamicAssemblySuffixAndPublicKey);
+			}
 			return moduleBuilder;
 		}
 
