@@ -423,8 +423,9 @@ namespace IKVM.Internal
 							}
 							else
 							{
-								int class_index = br.ReadUInt16();
-								int method_index = br.ReadUInt16();
+								ushort class_index = br.ReadUInt16();
+								ushort method_index = br.ReadUInt16();
+								ValidateConstantPoolItemClass(inputClassName, class_index);
 								if(method_index == 0)
 								{
 									enclosingMethod = new string[] {
@@ -435,7 +436,11 @@ namespace IKVM.Internal
 								}
 								else
 								{
-									ConstantPoolItemNameAndType m = (ConstantPoolItemNameAndType)GetConstantPoolItem(method_index);
+									ConstantPoolItemNameAndType m = GetConstantPoolItem(method_index) as ConstantPoolItemNameAndType;
+									if(m == null)
+									{
+										throw new ClassFormatError("{0} (Bad constant pool index #{1})", inputClassName, method_index);
+									}
 									enclosingMethod = new string[] {
 										GetConstantPoolClass(class_index),
 										GetConstantPoolUtf8String(utf8_cp, m.name_index),
