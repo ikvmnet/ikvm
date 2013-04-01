@@ -803,7 +803,7 @@ namespace IKVM.Internal
 
 		private TypeWrapper SigDecoderLoadClass(string name, bool nothrow)
 		{
-			return nothrow ? LoadClassNoThrow(this, name) : LoadClassByDottedName(name);
+			return nothrow ? LoadClassNoThrow(this, name, false) : LoadClassByDottedName(name);
 		}
 
 		// NOTE: this will ignore anything following the sig marker (so that it can be used to decode method signatures)
@@ -1341,7 +1341,7 @@ namespace IKVM.Internal
 		}
 #endif
 
-		internal static TypeWrapper LoadClassNoThrow(ClassLoaderWrapper classLoader, string name)
+		internal static TypeWrapper LoadClassNoThrow(ClassLoaderWrapper classLoader, string name, bool issueWarning)
 		{
 			try
 			{
@@ -1356,7 +1356,10 @@ namespace IKVM.Internal
 						elementTypeName = elementTypeName.Substring(skip, elementTypeName.Length - skip - 1);
 					}
 #if STATIC_COMPILER
-					classLoader.IssueMessage(Message.ClassNotFound, elementTypeName);
+					if (issueWarning)
+					{
+						classLoader.IssueMessage(Message.ClassNotFound, elementTypeName);
+					}
 #else
 					Tracer.Error(Tracer.ClassLoading, "Class not found: {0}", elementTypeName);
 #endif
