@@ -28,6 +28,7 @@ using System.Reflection;
 #if !NO_REF_EMIT
 using System.Reflection.Emit;
 #endif
+using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Security;
 using IKVM.Internal;
@@ -378,6 +379,7 @@ static class Java_sun_reflect_ReflectionFactory
 		}
 
 		[IKVM.Attributes.HideFromJava]
+		[SecuritySafeCritical]
 		public object newInstance(object[] args)
 		{
 			object obj = FormatterServices.GetUninitializedObject(type);
