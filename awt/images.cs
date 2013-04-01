@@ -123,7 +123,7 @@ namespace ikvm.awt
             // HACK for off-screen images we don't want ClearType or anti-aliasing
             // TODO I'm sure Java 2D has a way to control text rendering quality, we should honor that
             //g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.SingleBitPerPixelGridFit;
-            return new BitmapGraphics(bitmap, getFont(), J2C.ConvertColor(getForeground()), J2C.ConvertColor(getBackground()));
+            return new BitmapGraphics(bitmap, this, getFont(), J2C.ConvertColor(getForeground()), J2C.ConvertColor(getBackground()));
         }
 
         public override int getHeight()

@@ -41,14 +41,14 @@ namespace ikvm.awt
     {
         private readonly Bitmap bitmap;
 
-        internal BitmapGraphics(Bitmap bitmap, java.awt.Font font, Color fgcolor, Color bgcolor)
-            : base(createGraphics(bitmap), font, fgcolor, bgcolor)
+        internal BitmapGraphics(Bitmap bitmap, Object destination, java.awt.Font font, Color fgcolor, Color bgcolor)
+            : base(createGraphics(bitmap), destination, font, fgcolor, bgcolor)
         {
             this.bitmap = bitmap;
         }
 
-        internal BitmapGraphics(Bitmap bitmap)
-            : base(createGraphics(bitmap), null, Color.White, Color.Black)
+        internal BitmapGraphics(Bitmap bitmap, Object destination)
+            : base(createGraphics(bitmap), destination, null, Color.White, Color.Black)
         {
             this.bitmap = bitmap;
         }
@@ -81,6 +81,7 @@ namespace ikvm.awt
             {
                 gCopy.DrawImage(bitmap, new Rectangle(0, 0, width, height), x, y, width, height, GraphicsUnit.Pixel);
             }
+            Console.WriteLine("Bitmap.copyArea(" + x + ", " + y + "," + width + "," + height + "," + dx + "," + dy + ")" + g.ClipBounds);
             g.DrawImageUnscaled(copy, x + dx, y + dy);
 		}
     }
@@ -89,8 +90,8 @@ namespace ikvm.awt
     {
         private readonly Control control;
 
-        internal ComponentGraphics(Control control, java.awt.Color fgColor, java.awt.Color bgColor, java.awt.Font font)
-            : base(control.CreateGraphics(), font, J2C.ConvertColor(fgColor), J2C.ConvertColor(bgColor))
+        internal ComponentGraphics(Control control, java.awt.Component target, java.awt.Color fgColor, java.awt.Color bgColor, java.awt.Font font)
+            : base(control.CreateGraphics(), target, font, J2C.ConvertColor(fgColor), J2C.ConvertColor(bgColor))
         {
             this.control = control;
         }
@@ -150,7 +151,7 @@ namespace ikvm.awt
         private bool isBase = true;
 
         internal PrintGraphics(Graphics g)
-            : base(g, null, Color.White, Color.Black)
+            : base(g, null, null, Color.White, Color.Black)
         {
             baseContext = new PrintGraphicsContext();
             baseContext.Current = this;
@@ -768,7 +769,7 @@ namespace ikvm.awt
         }
     }
 
-    internal abstract class NetGraphics : java.awt.Graphics2D
+    internal abstract class NetGraphics : java.awt.Graphics2D//sun.java2d.SunGraphics2D
     {
         internal Graphics g;
         internal Graphics JGraphics { get { return g; } }
@@ -787,7 +788,7 @@ namespace ikvm.awt
         private Object textAntialiasHint;
         private Object fractionalHint = java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_DEFAULT;
 
-        protected NetGraphics(Graphics g, java.awt.Font font, Color fgcolor, Color bgcolor)
+        protected NetGraphics(Graphics g, Object destination, java.awt.Font font, Color fgcolor, Color bgcolor) //: base( new sun.java2d.SurfaceData(destination) )
         {
             if (font == null)
             {
@@ -806,7 +807,7 @@ namespace ikvm.awt
             NetGraphicsState state = new NetGraphicsState();
             state.saveGraphics(this);
             g = graphics;
-            state.restoreGraphics(this);            
+            state.restoreGraphics(this);
         }
 
         /// <summary>
@@ -843,6 +844,10 @@ namespace ikvm.awt
             else
             {
                 g.IntersectClip(new Region(J2C.ConvertShape(shape)));
+            }
+            if (g.ClipBounds.Y > 0)
+            {
+                new java.lang.Exception(hashCode() + " clip " + g.ClipBounds + " " + g.Clip.GetBounds(g)).printStackTrace();
             }
         }
 
@@ -2153,14 +2158,20 @@ namespace ikvm.awt
         }
     }
 
-    public class NetGraphicsEnvironment : java.awt.GraphicsEnvironment
+    public class NetGraphicsEnvironment : sun.java2d.SunGraphicsEnvironment
     {
+
+        public override bool isDisplayLocal()
+        {
+            return true;
+        }
+
         // Create a bitmap with the dimensions of the argument image. Then
         // create a graphics objects from the bitmap. All paint operations will
         // then paint the bitmap.
 		public override java.awt.Graphics2D createGraphics(BufferedImage bi)
 		{
-			return new BitmapGraphics(bi.getBitmap());
+			return new BitmapGraphics(bi.getBitmap(), bi );
 		}
 
         public override java.awt.Font[] getAllFonts()

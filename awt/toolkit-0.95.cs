@@ -793,11 +793,6 @@ namespace ikvm.awt
          * Implementations of interface IkvmToolkit
          */
 
-        public java.awt.Graphics2D createGraphics(System.Drawing.Bitmap bitmap)
-        {
-            return new BitmapGraphics(bitmap);
-        }
-
         /// <summary>
         /// Get a helper class for implementing the print API
         /// </summary>
@@ -2629,7 +2624,7 @@ namespace ikvm.awt
 				{
 					font = defaultFont;
 				}
-				return new ComponentGraphics(this.control, fgColor, bgColor, font);
+				return new ComponentGraphics(this.control, target, fgColor, bgColor, font);
 			}
 			return null;
 		}
