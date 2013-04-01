@@ -2012,7 +2012,14 @@ namespace IKVM.Runtime
 			{
 				Delegate del = (Delegate)Activator.CreateInstance(mw.GetDelegateType(),
 					new object[] { obj, mw.GetMethod().MethodHandle.GetFunctionPointer() });
-				return del.DynamicInvoke(argarray);
+				try
+				{
+					return del.DynamicInvoke(argarray);
+				}
+				catch (TargetInvocationException x)
+				{
+					throw ikvm.runtime.Util.mapException(x.InnerException);
+				}
 			}
 		}
 
