@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2011 Volker Berlin (i-net software)
+  Copyright (C) 2011, 2013 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -25,8 +25,17 @@ package sun.java2d;
 
 public class SurfaceData {
 
+	final Object destination;
+	
+	public SurfaceData( Object destination ) {
+		this.destination = destination;
+	}
+	
 	public boolean isSurfaceLost() {
 		return false;
 	}
 
+	public Object getDestination() {
+		return destination;
+	}
 }
