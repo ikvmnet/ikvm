@@ -785,15 +785,6 @@ namespace IKVM.Internal
 		}
 #endif
 
-		internal TypeWrapper ExpressionTypeWrapper(string type)
-		{
-			Debug.Assert(!type.StartsWith("Lret;"));
-			Debug.Assert(type != "Lnull");
-
-			int index = 0;
-			return SigDecoderWrapper(ref index, type, false);
-		}
-
 		// NOTE this exposes potentially unfinished types
 		internal Type[] ArgTypeListFromSig(string sig)
 		{
