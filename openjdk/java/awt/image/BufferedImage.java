@@ -1281,10 +1281,7 @@ public class BufferedImage extends java.awt.Image
      *          image.
      */
     public Graphics2D createGraphics() {
-        ikvm.awt.IkvmToolkit toolkit = ikvm.awt.IkvmToolkit.DefaultToolkit.get();
-        raster2Bitmap();
-        this.currentBuffer = BUFFER_BITMAP;
-        return toolkit.createGraphics( bitmap );
+    	return GraphicsEnvironment.getLocalGraphicsEnvironment().createGraphics(this);
     }
 
     /**
