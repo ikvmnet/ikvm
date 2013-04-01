@@ -117,12 +117,17 @@ namespace ikvm.awt
             return (Point)this.control.Invoke(new Converter<Point,Point>(getPointToScreenImpl),point);
         }
 
-		public override void copyArea(int x, int y, int width, int height, int dx, int dy)
-		{
-            Point src = getPointToScreen(new Point(x + (int)this.g.Transform.OffsetX, y + (int)this.g.Transform.OffsetY));
-            Point dest = new Point(x + (int)this.g.Transform.OffsetX + dx, y + (int)this.g.Transform.OffsetY + dy);
-            this.g.CopyFromScreen(src, dest, new Size(width, height));
-		}
+        public override void copyArea(int x, int y, int width, int height, int dx, int dy)
+        {
+            Matrix t = g.Transform;
+            Point src = getPointToScreen(new Point(x + (int)t.OffsetX, y + (int)t.OffsetY));
+            Bitmap copy = new Bitmap(width, height);
+            using (Graphics gCopy = Graphics.FromImage(copy))
+            {
+                gCopy.CopyFromScreen(src, new Point(0, 0), new Size(width, height));
+            }
+            g.DrawImageUnscaled(copy, x + dx, y + dy);
+        }
 
 		public override void clip(java.awt.Shape shape)
 		{
