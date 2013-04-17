@@ -750,6 +750,16 @@ namespace IKVM.Reflection.Emit
 			get { return true; }
 		}
 
+		public static AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access)
+		{
+			return new Universe().DefineDynamicAssembly(name, access);
+		}
+
+		public static AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, IEnumerable<CustomAttributeBuilder> assemblyAttributes)
+		{
+			return new Universe().DefineDynamicAssembly(name, access, assemblyAttributes);
+		}
+
 		internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
 		{
 			List<CustomAttributeData> list = new List<CustomAttributeData>();
