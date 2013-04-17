@@ -1160,6 +1160,11 @@ namespace IKVM.Reflection
 			}
 		}
 
+		public static Universe FromAssembly(Assembly assembly)
+		{
+			return assembly.universe;
+		}
+
 		internal bool ResolveMissingTypeIsValueType(MissingType missingType)
 		{
 			if (missingTypeIsValueType != null)
