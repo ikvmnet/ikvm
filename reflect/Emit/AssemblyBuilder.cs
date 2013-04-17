@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2008-2012 Jeroen Frijters
+  Copyright (C) 2008-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -76,7 +76,7 @@ namespace IKVM.Reflection.Emit
 			internal ResourceWriter Writer;
 		}
 
-		internal AssemblyBuilder(Universe universe, AssemblyName name, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
+		internal AssemblyBuilder(Universe universe, AssemblyName name, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions, IEnumerable<CustomAttributeBuilder> customAttributes)
 			: base(universe)
 		{
 			this.name = name.Name;
@@ -108,6 +108,10 @@ namespace IKVM.Reflection.Emit
 			this.requiredPermissions = requiredPermissions;
 			this.optionalPermissions = optionalPermissions;
 			this.refusedPermissions = refusedPermissions;
+			if (customAttributes != null)
+			{
+				this.customAttributes.AddRange(customAttributes);
+			}
 			if (universe.HasMscorlib && !universe.Mscorlib.__IsMissing && universe.Mscorlib.ImageRuntimeVersion != null)
 			{
 				this.imageRuntimeVersion = universe.Mscorlib.ImageRuntimeVersion;
@@ -116,6 +120,7 @@ namespace IKVM.Reflection.Emit
 			{
 				this.imageRuntimeVersion = typeof(object).Assembly.ImageRuntimeVersion;
 			}
+			universe.RegisterDynamicAssembly(this);
 		}
 
 		private void SetVersionHelper(Version version)

@@ -914,22 +914,17 @@ namespace IKVM.Reflection
 
 		public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access)
 		{
-			return DefineDynamicAssemblyImpl(name, access, null, null, null, null);
+			return new AssemblyBuilder(this, name, null, null, null, null, null);
 		}
 
 		public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, IEnumerable<CustomAttributeBuilder> assemblyAttributes)
 		{
-			AssemblyBuilder ab = DefineDynamicAssembly(name, access);
-			foreach (CustomAttributeBuilder cab in assemblyAttributes)
-			{
-				ab.SetCustomAttribute(cab);
-			}
-			return ab;
+			return new AssemblyBuilder(this, name, null, null, null, null, assemblyAttributes);
 		}
 
 		public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, string dir)
 		{
-			return DefineDynamicAssemblyImpl(name, access, dir, null, null, null);
+			return new AssemblyBuilder(this, name, dir, null, null, null, null);
 		}
 
 #if NET_4_0
@@ -937,14 +932,12 @@ namespace IKVM.Reflection
 #endif
 		public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
 		{
-			return DefineDynamicAssemblyImpl(name, access, dir, requiredPermissions, optionalPermissions, refusedPermissions);
+			return new AssemblyBuilder(this, name, dir, requiredPermissions, optionalPermissions, refusedPermissions, null);
 		}
 
-		private AssemblyBuilder DefineDynamicAssemblyImpl(AssemblyName name, AssemblyBuilderAccess access, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
+		internal void RegisterDynamicAssembly(AssemblyBuilder asm)
 		{
-			AssemblyBuilder asm = new AssemblyBuilder(this, name, dir, requiredPermissions, optionalPermissions, refusedPermissions);
 			dynamicAssemblies.Add(asm);
-			return asm;
  		}
 
 		internal void RenameAssembly(Assembly assembly, AssemblyName oldName)
