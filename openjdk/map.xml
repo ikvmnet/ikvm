@@ -895,7 +895,7 @@
             <attribute type="System.SerializableAttribute" sig="()V" />
             <field name="serialVersionUID" sig="J" modifiers="private static final" constant="-3042686055658047285" />
             <field name="serialPersistentFields" sig="[Ljava.io.ObjectStreamField;" modifiers="private static final" />
-            <field name="suppressFillInStackTrace" sig="Z" modifiers="private static">
+            <field name="suppressFillInStackTrace" sig="Z" modifiers="static">
                 <attribute type="System.ThreadStaticAttribute" sig="()V" />
             </field>
             <field name="UNASSIGNED_STACK" sig="[Ljava.lang.StackTraceElement;" modifiers="static final" />

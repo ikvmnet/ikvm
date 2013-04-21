@@ -55,6 +55,7 @@ static class Java_java_lang_Class
 			}
 			if (tw == null)
 			{
+				java.lang.Throwable.suppressFillInStackTrace = true;
 				throw new java.lang.ClassNotFoundException(name);
 			}
 		}
@@ -67,6 +68,7 @@ static class Java_java_lang_Class
 			}
 			catch (ClassNotFoundException x)
 			{
+				java.lang.Throwable.suppressFillInStackTrace = true;
 				throw new java.lang.ClassNotFoundException(x.Message);
 			}
 			catch (ClassLoadingException x)

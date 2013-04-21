@@ -179,7 +179,9 @@ namespace IKVM.NativeCode.ikvm.runtime
 				TypeWrapper tw = wrapper.LoadClass(name);
 				if (tw == null)
 				{
-					throw new ClassNotFoundException(name);
+					Tracer.Info(Tracer.ClassLoading, "Failed to load class \"{0}\" from {1}", name, _this);
+					global::java.lang.Throwable.suppressFillInStackTrace = true;
+					throw new global::java.lang.ClassNotFoundException(name);
 				}
 				Tracer.Info(Tracer.ClassLoading, "Loaded class \"{0}\" from {1}", name, _this);
 				return tw.ClassObject;
