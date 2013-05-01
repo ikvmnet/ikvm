@@ -359,7 +359,7 @@ namespace IKVM.Internal
 				this.baseWrapper = baseWrapper;
 			}
 
-			internal override TypeWrapper BaseTypeWrapper
+			internal sealed override TypeWrapper BaseTypeWrapper
 			{
 				get { return baseWrapper; }
 			}
@@ -367,6 +367,11 @@ namespace IKVM.Internal
 			internal sealed override bool IsFakeNestedType
 			{
 				get { return true; }
+			}
+
+			internal sealed override Modifiers ReflectiveModifiers
+			{
+				get { return Modifiers | Modifiers.Static; }
 			}
 		}
 
