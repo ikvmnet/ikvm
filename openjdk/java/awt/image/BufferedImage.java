@@ -649,6 +649,15 @@ public class BufferedImage extends java.awt.Image
     }
 
     /**
+     * Switch to the BITMAP buffer and invalidate the RASTER buffer before a graphics operation.
+     */
+    @cli.IKVM.Attributes.HideFromJavaAttribute.Annotation
+    public void toBitmap(){
+    	raster2Bitmap();
+    	currentBuffer = BUFFER_BITMAP;
+    }
+    
+    /**
      * This Implementation of BufferedImage has 2 different Buffer, 
      * a Java WritableRaster and a .NET Bitmap.
      * This method convert a Java WritableRaster to a .NET Bitmap if needed.

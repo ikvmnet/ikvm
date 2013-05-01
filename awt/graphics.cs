@@ -40,17 +40,29 @@ namespace ikvm.awt
     internal class BitmapGraphics : NetGraphics
     {
         private readonly Bitmap bitmap;
+        private readonly BufferedImage image;
 
         internal BitmapGraphics(Bitmap bitmap, Object destination, java.awt.Font font, Color fgcolor, Color bgcolor)
             : base(createGraphics(bitmap), destination, font, fgcolor, bgcolor)
         {
             this.bitmap = bitmap;
+            image = destination as BufferedImage;
         }
 
         internal BitmapGraphics(Bitmap bitmap, Object destination)
-            : base(createGraphics(bitmap), destination, null, Color.White, Color.Black)
+            : this(bitmap, destination, null, Color.White, Color.Black)
         {
-            this.bitmap = bitmap;
+        }
+
+        internal override Graphics g
+        {
+            get {
+                if (image != null)
+                {
+                    image.toBitmap();
+                }
+                return base.g; 
+            }
         }
 
         protected override SizeF GetSize() {
@@ -81,7 +93,6 @@ namespace ikvm.awt
             {
                 gCopy.DrawImage(bitmap, new Rectangle(0, 0, width, height), x, y, width, height, GraphicsUnit.Pixel);
             }
-            Console.WriteLine("Bitmap.copyArea(" + x + ", " + y + "," + width + "," + height + "," + dx + "," + dy + ")" + g.ClipBounds);
             g.DrawImageUnscaled(copy, x + dx, y + dy);
 		}
     }
@@ -776,8 +787,7 @@ namespace ikvm.awt
 
     internal abstract class NetGraphics : java.awt.Graphics2D//sun.java2d.SunGraphics2D
     {
-        internal Graphics g;
-        internal Graphics JGraphics { get { return g; } }
+        private Graphics graphics;
         private java.awt.Color javaColor;
         private java.awt.Paint javaPaint;
         internal Color color;
@@ -805,6 +815,15 @@ namespace ikvm.awt
             this.bgcolor = bgcolor;
             composite = CompositeHelper.Create(javaComposite, g);
             init(g);
+        }
+
+        /// <summary>
+        /// The current C# Graphics
+        /// </summary>
+        internal virtual Graphics g
+        {
+            get { return graphics; }
+            set { graphics = value; }
         }
 
         protected void init(Graphics graphics)
