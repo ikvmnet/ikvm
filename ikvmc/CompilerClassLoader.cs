@@ -3714,7 +3714,7 @@ namespace IKVM.Internal
 
 	static class StaticCompiler
 	{
-		internal static readonly Universe Universe = new Universe(UniverseOptions.ResolveMissingMembers);
+		internal static readonly Universe Universe = new Universe(UniverseOptions.ResolveMissingMembers | UniverseOptions.EnableFunctionPointers);
 		internal static Assembly runtimeAssembly;
 		internal static Assembly runtimeJniAssembly;
 		internal static CompilerOptions toplevel;

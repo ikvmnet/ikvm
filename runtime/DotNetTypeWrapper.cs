@@ -2416,7 +2416,11 @@ namespace IKVM.Internal
 				}
 				type = type.GetElementType();
 			}
+#if STATIC_COMPILER || STUB_GENERATOR
+			return type.__IsFunctionPointer;
+#else
 			return false;
+#endif
 		}
 
 		private bool MakeMethodDescriptor(MethodBase mb, out string name, out string sig, out TypeWrapper[] args, out TypeWrapper ret)
