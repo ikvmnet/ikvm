@@ -2542,12 +2542,12 @@ namespace IKVM.Internal
 					foreach (ParameterInfo p in invoke.GetParameters())
 					{
 						// we don't support delegates with pointer parameters
-						if (p.ParameterType.IsPointer)
+						if (IsPointerType(p.ParameterType))
 						{
 							return false;
 						}
 					}
-					return true;
+					return !IsPointerType(invoke.ReturnType);
 				}
 			}
 			return false;
