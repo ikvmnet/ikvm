@@ -445,11 +445,14 @@ namespace IKVM.Reflection
 		{
 			get
 			{
-				for (int i = 0; i < customModifiers.Length; i++)
+				if (customModifiers != null)
 				{
-					if (customModifiers[i].ContainsMissingType)
+					for (int i = 0; i < customModifiers.Length; i++)
 					{
-						return true;
+						if (customModifiers[i].ContainsMissingType)
+						{
+							return true;
+						}
 					}
 				}
 				return false;
