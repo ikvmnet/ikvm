@@ -509,8 +509,29 @@ namespace IKVM.StubGen
 					"value",
 					targets.ToArray()
 				});
+				if (Experimental.JDK_8 && IsRepeatableAnnotation(tw))
+				{
+					annot.Add(new object[] {
+						AnnotationDefaultAttribute.TAG_ANNOTATION,
+						"Ljava/lang/annotation/Repeatable;",
+						"value",
+						new object[] { AnnotationDefaultAttribute.TAG_CLASS, "L" + (tw.Name + DotNetTypeWrapper.AttributeAnnotationMultipleSuffix).Replace('.', '/') + ";" }
+					});
+				}
 				writer.AddAttribute(annot);
 			}
+		}
+
+		private static bool IsRepeatableAnnotation(TypeWrapper tw)
+		{
+			foreach (TypeWrapper nested in tw.InnerClasses)
+			{
+				if (nested.Name == tw.Name + DotNetTypeWrapper.AttributeAnnotationMultipleSuffix)
+				{
+					return true;
+				}
+			}
+			return false;
 		}
 
 		private static byte[] GetAnnotationDefault(ClassFileWriter classFile, TypeWrapper type)

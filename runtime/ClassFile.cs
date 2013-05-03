@@ -83,7 +83,7 @@ namespace IKVM.Internal
 		private static class SupportedVersions
 		{
 			internal static readonly int Minimum = 45;
-			internal static readonly int Maximum = JVM.SafeGetEnvironmentVariable("IKVM_EXPERIMENTAL_JDK_8") != null ? 52 : 51;
+			internal static readonly int Maximum = Experimental.JDK_8 ? 52 : 51;
 		}
 
 #if STATIC_COMPILER
