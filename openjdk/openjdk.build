@@ -138,9 +138,11 @@
 
     <target name="runtime-identity">
         <property name="IKVM.Runtime" value="IKVM.Runtime" />
+        <property name="IKVM.AWT.WinForms" value="IKVM.AWT.WinForms" />
         <if test="${signoption != ''}">
             <loadfile file="../tools/pubkey.txt" property="publickey" />
             <property name="IKVM.Runtime" value="IKVM.Runtime, PublicKey=${publickey}" />
+            <property name="IKVM.AWT.WinForms" value="IKVM.AWT.WinForms, PublicKey=${publickey}" />
         </if>
     </target>
 
@@ -149,6 +151,7 @@
             <filterchain>
                 <replacetokens>
                     <token key="RUNTIME" value="${IKVM.Runtime}" />
+                    <token key="AWTWINFORMS" value="${IKVM.AWT.WinForms}" />
                     <token key="VERSION" value="${VERSION}" />
                     <token key="COPYRIGHT" value="${COPYRIGHT}" />
                 </replacetokens>

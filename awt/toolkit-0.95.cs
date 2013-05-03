@@ -280,7 +280,7 @@ namespace ikvm.awt
         private NetClipboard clipboard;
 		private bool eventQueueSynchronizationContext;
 
-		protected override java.awt.EventQueue getSystemEventQueueImpl()
+		protected internal override java.awt.EventQueue getSystemEventQueueImpl()
 		{
 			java.awt.EventQueue eq = base.getSystemEventQueueImpl();
 			if (!eventQueueSynchronizationContext)
@@ -329,7 +329,7 @@ namespace ikvm.awt
             return Environment.OSVersion.Platform == PlatformID.Win32NT || Environment.OSVersion.Platform == PlatformID.Win32Windows;
         }
 
-        protected override void loadSystemColors(int[] systemColors)
+        protected internal override void loadSystemColors(int[] systemColors)
         {
             // initialize all colors to purple to make the ones we might have missed stand out
             for (int i = 0; i < systemColors.Length; i++)
@@ -725,7 +725,7 @@ namespace ikvm.awt
             throw new NotImplementedException();
         }
 */
-        protected override java.awt.peer.DesktopPeer createDesktopPeer(java.awt.Desktop target)
+        protected internal override java.awt.peer.DesktopPeer createDesktopPeer(java.awt.Desktop target)
         {
             return new NetDesktopPeer();
         }
@@ -749,7 +749,7 @@ namespace ikvm.awt
 			}
         }
 
-        protected override void initializeDesktopProperties()
+        protected internal override void initializeDesktopProperties()
         {
             //copied from WToolkit.java
             desktopProperties.put("DnD.Autoscroll.initialDelay", java.lang.Integer.valueOf(50));
@@ -775,7 +775,7 @@ namespace ikvm.awt
             }
         }
 
-        protected override Object lazilyLoadDesktopProperty(String name)
+        protected internal override Object lazilyLoadDesktopProperty(String name)
         {
             if ("win.defaultGUI.font".Equals(name))
             {
@@ -785,7 +785,7 @@ namespace ikvm.awt
             return null;
         }
 
-        protected override java.awt.peer.MouseInfoPeer getMouseInfoPeer() {
+        protected internal override java.awt.peer.MouseInfoPeer getMouseInfoPeer() {
             return new NetMouseInfoPeer();
         }
 
@@ -883,12 +883,12 @@ namespace ikvm.awt
             return null;
         }
 
-        protected override int getScreenHeight()
+        protected internal override int getScreenHeight()
         {
             return Screen.PrimaryScreen.Bounds.Height;
         }
 
-        protected override int getScreenWidth()
+        protected internal override int getScreenWidth()
         {
             return Screen.PrimaryScreen.Bounds.Width;
         }
@@ -944,7 +944,7 @@ namespace ikvm.awt
             }
         }
         
-        protected override bool syncNativeQueue(long l)
+        protected internal override bool syncNativeQueue(long l)
         {
             throw new NotImplementedException();
         }
@@ -1280,7 +1280,7 @@ namespace ikvm.awt
             dragStart = false;
         }
 
-        protected override void startDrag(java.awt.datatransfer.Transferable trans, long[] formats, Map formatMap)
+        protected internal override void startDrag(java.awt.datatransfer.Transferable trans, long[] formats, Map formatMap)
         {
             dragStart = true;
 
@@ -1335,7 +1335,7 @@ namespace ikvm.awt
             return 0;
         }
 
-        protected override void setNativeCursor(long nativeCtxt, java.awt.Cursor c, int cType)
+        protected internal override void setNativeCursor(long nativeCtxt, java.awt.Cursor c, int cType)
         {
             
         }
@@ -1410,7 +1410,7 @@ namespace ikvm.awt
                                      dropAction, actions, formats, nativeCtxt, eventID, dispatchType);
         }
 
-        protected override void doDropDone(bool success, int dropAction, bool isLocal)
+        protected internal override void doDropDone(bool success, int dropAction, bool isLocal)
         {
             // Don't do anything as .NET framework already handle the message pump
         }
@@ -1429,7 +1429,7 @@ namespace ikvm.awt
             return new NetClipboardTransferable(data).getTransferData(df);
         }
 
-        protected override object getNativeData(long l)
+        protected internal override object getNativeData(long l)
         {
             throw new NotImplementedException();
         }
@@ -5565,12 +5565,12 @@ namespace ikvm.awt
             return obj;
         }
 
-        protected override string getClipboardFormatName(long format)
+        protected internal override string getClipboardFormatName(long format)
         {
             return getNativeClipboardFormatName(format);
         }
 
-        protected override byte[] imageToStandardBytes(java.awt.Image image, string mimeType)
+        protected internal override byte[] imageToStandardBytes(java.awt.Image image, string mimeType)
         {
             if (image is NoImage) return null;
             Image netImage = J2C.ConvertImage(image);
@@ -5607,7 +5607,7 @@ namespace ikvm.awt
             return handler;
         }
 
-        protected override java.io.ByteArrayOutputStream convertFileListToBytes(java.util.ArrayList fileList)
+        protected internal override java.io.ByteArrayOutputStream convertFileListToBytes(java.util.ArrayList fileList)
         {
             throw new ikvm.@internal.NotYetImplementedError();
         }

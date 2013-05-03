@@ -651,8 +651,7 @@ public class BufferedImage extends java.awt.Image
     /**
      * Switch to the BITMAP buffer and invalidate the RASTER buffer before a graphics operation.
      */
-    @cli.IKVM.Attributes.HideFromJavaAttribute.Annotation
-    public void toBitmap(){
+    final void toBitmap(){
     	raster2Bitmap();
     	currentBuffer = BUFFER_BITMAP;
     }

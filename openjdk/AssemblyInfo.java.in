@@ -32,7 +32,10 @@
 @cli.System.Reflection.AssemblyCompanyAttribute.Annotation("Jeroen Frijters")
 @cli.System.Reflection.AssemblyInformationalVersionAttribute.Annotation("@VERSION@")
 
-@cli.System.Runtime.CompilerServices.InternalsVisibleToAttribute.Annotation("@RUNTIME@")
+@cli.System.Runtime.CompilerServices.InternalsVisibleToAttribute.Annotation.__Multiple({
+    @cli.System.Runtime.CompilerServices.InternalsVisibleToAttribute.Annotation("@RUNTIME@"),
+    @cli.System.Runtime.CompilerServices.InternalsVisibleToAttribute.Annotation("@AWTWINFORMS@")
+})
 
 @cli.System.Security.AllowPartiallyTrustedCallersAttribute.Annotation
 
