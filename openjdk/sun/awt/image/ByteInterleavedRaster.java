@@ -550,6 +550,7 @@ public class ByteInterleavedRaster extends ByteComponentRaster {
         int off = (y-minY)*scanlineStride +
                   (x-minX)*pixelStride;
 
+        dataBuffer.markBitmapDirty();
         for (int i = 0; i < numDataElements; i++) {
             data[dataOffsets[i] + off] = inData[i];
         }
@@ -629,6 +630,7 @@ public class ByteInterleavedRaster extends ByteComponentRaster {
                     (dstY - minY) * scanlineStride +
                     (dstX - minX) * pixelStride;
 
+                dataBuffer.markBitmapDirty();
                 int nbytes = width*pixelStride;
                 for (int tmpY=0; tmpY < height; tmpY++) {
                     System.arraycopy(bdata, srcOffset,
@@ -708,6 +710,7 @@ public class ByteInterleavedRaster extends ByteComponentRaster {
         int xstart;
         int ystart;
 
+        dataBuffer.markBitmapDirty();
         if (pixelStride == 1) {
             if (scanlineStride == w) {
                 System.arraycopy(inData, 0, data, yoff, w*h);
@@ -762,6 +765,7 @@ public class ByteInterleavedRaster extends ByteComponentRaster {
         int xstart;
         int ystart;
 
+        dataBuffer.markBitmapDirty();
         if (inOrder) {
             yoff += dataOffsets[0];
             int rowBytes = w*pixelStride;
@@ -853,6 +857,7 @@ public class ByteInterleavedRaster extends ByteComponentRaster {
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
+        dataBuffer.markBitmapDirty();
         if (packed) {
             int offset = y*scanlineStride + x + dbOffsetPacked;
             int bitMask = bitMasks[b];
@@ -923,6 +928,7 @@ public class ByteInterleavedRaster extends ByteComponentRaster {
         int lineOffset = y*scanlineStride + x*pixelStride;
         int srcOffset = 0;
 
+        dataBuffer.markBitmapDirty();
         if (packed) {
             lineOffset += dbOffsetPacked;
             int bitMask = bitMasks[b];
@@ -1060,6 +1066,7 @@ public class ByteInterleavedRaster extends ByteComponentRaster {
         int lineOffset = y*scanlineStride + x*pixelStride;
         int srcOffset = 0;
 
+        dataBuffer.markBitmapDirty();
         if (packed) {
             lineOffset += dbOffsetPacked;
             for (int j = 0; j < h; j++) {

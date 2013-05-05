@@ -266,6 +266,7 @@ public final class DataBufferDouble extends DataBuffer {
      * @see #getElem(int, int)
      */
     public void setElem(int i, int val) {
+    	markBitmapDirty();
         data[i+offset] = (double)val;
         theTrackable.markDirty();
     }
@@ -281,6 +282,7 @@ public final class DataBufferDouble extends DataBuffer {
      * @see #getElem(int, int)
      */
     public void setElem(int bank, int i, int val) {
+    	markBitmapDirty();
         bankdata[bank][i+offsets[bank]] = (double)val;
         theTrackable.markDirty();
     }
@@ -324,6 +326,7 @@ public final class DataBufferDouble extends DataBuffer {
      * @see #getElemFloat(int, int)
      */
     public void setElemFloat(int i, float val) {
+    	markBitmapDirty();
         data[i+offset] = (double)val;
         theTrackable.markDirty();
     }
@@ -339,6 +342,7 @@ public final class DataBufferDouble extends DataBuffer {
      * @see #getElemFloat(int, int)
      */
     public void setElemFloat(int bank, int i, float val) {
+    	markBitmapDirty();
         bankdata[bank][i+offsets[bank]] = (double)val;
         theTrackable.markDirty();
     }
@@ -382,6 +386,7 @@ public final class DataBufferDouble extends DataBuffer {
      * @see #getElemDouble(int, int)
      */
     public void setElemDouble(int i, double val) {
+    	markBitmapDirty();
         data[i+offset] = val;
         theTrackable.markDirty();
     }
@@ -397,6 +402,7 @@ public final class DataBufferDouble extends DataBuffer {
      * @see #getElemDouble(int, int)
      */
     public void setElemDouble(int bank, int i, double val) {
+    	markBitmapDirty();
         bankdata[bank][i+offsets[bank]] = val;
         theTrackable.markDirty();
     }

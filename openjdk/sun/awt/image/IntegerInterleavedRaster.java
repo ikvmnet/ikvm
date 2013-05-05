@@ -305,6 +305,7 @@ public class IntegerInterleavedRaster extends IntegerComponentRaster {
 
         int off = (y-minY)*scanlineStride + (x-minX) + dataOffsets[0];
 
+        dataBuffer.markBitmapDirty();
         data[off] = inData[0];
 
         markDirty();
@@ -373,6 +374,7 @@ public class IntegerInterleavedRaster extends IntegerComponentRaster {
                                            (dstX-minX);
 
 
+            dataBuffer.markBitmapDirty();
             // Fastest case.  We can copy scanlines
             // Loop through all of the scanlines and copy the data
             for (int startY=0; startY < height; startY++) {
@@ -425,6 +427,7 @@ public class IntegerInterleavedRaster extends IntegerComponentRaster {
         int yoff = (y-minY)*scanlineStride + (x-minX) + dataOffsets[0];
         int off = 0;
 
+        dataBuffer.markBitmapDirty();
         for (int ystart = 0; ystart < h; ystart++) {
             System.arraycopy(inData, off, data, yoff, w);
             off += w;

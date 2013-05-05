@@ -298,6 +298,7 @@ public final class DataBufferUShort extends DataBuffer
      * @see #getElem(int, int)
      */
     public void setElem(int i, int val) {
+    	markBitmapDirty();
         data[i+offset] = (short)(val&0xffff);
         theTrackable.markDirty();
     }
@@ -312,6 +313,7 @@ public final class DataBufferUShort extends DataBuffer
      * @see #getElem(int, int)
      */
     public void setElem(int bank, int i, int val) {
+    	markBitmapDirty();
         bankdata[bank][i+offsets[bank]] = (short)(val&0xffff);
         theTrackable.markDirty();
     }

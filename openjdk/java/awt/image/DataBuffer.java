@@ -105,6 +105,25 @@ public abstract class DataBuffer {
 
     /* The current StateTrackable state. */
     StateTrackableDelegate theTrackable;
+    
+    private BufferedImage image;
+    
+    /**
+     * Set a reference to BufferedImage
+     */
+    void setImage( BufferedImage image ) {
+    	this.image = image;
+    }
+    
+    /**
+     * Invalidate the .NET BITMAP buffer
+     */
+    @ikvm.lang.Internal
+    public final void markBitmapDirty() {
+    	if( image != null ) {
+    		image.toRaster();
+    	}
+    }
 
     /** Size of the data types indexed by DataType tags defined above. */
     private static final int dataTypeSize[] = {8,16,16,32,32,64};

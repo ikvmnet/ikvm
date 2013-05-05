@@ -266,6 +266,7 @@ public final class DataBufferByte extends DataBuffer
      * @see #getElem(int, int)
      */
     public void setElem(int i, int val) {
+    	markBitmapDirty();
         data[i+offset] = (byte)val;
         theTrackable.markDirty();
     }
@@ -280,6 +281,7 @@ public final class DataBufferByte extends DataBuffer
      * @see #getElem(int, int)
      */
     public void setElem(int bank, int i, int val) {
+    	markBitmapDirty();
         bankdata[bank][i+offsets[bank]] = (byte)val;
         theTrackable.markDirty();
     }

@@ -425,6 +425,7 @@ public class BufferedImage extends java.awt.Image
         colorModel = cm;
         this.imageType = imageType;
         this.currentBuffer = BUFFER_RASTER;
+        raster.getDataBuffer().setImage( this );
     }
 
     /**
@@ -486,6 +487,7 @@ public class BufferedImage extends java.awt.Image
 
         colorModel = cm;
         this.raster  = raster;
+        raster.getDataBuffer().setImage( this );
         this.currentBuffer = BUFFER_RASTER;
         this.properties = properties;
         int numBands = raster.getNumBands();
@@ -657,6 +659,15 @@ public class BufferedImage extends java.awt.Image
     }
     
     /**
+     * Switch to the RASTER buffer and invalidate the BITMAP buffer before a graphics operation.
+     */
+    @cli.IKVM.Attributes.HideFromJavaAttribute.Annotation
+    final void toRaster() {
+    	bitmap2Raster();
+    	currentBuffer = BUFFER_RASTER;
+    }
+    
+    /**
      * This Implementation of BufferedImage has 2 different Buffer, 
      * a Java WritableRaster and a .NET Bitmap.
      * This method convert a Java WritableRaster to a .NET Bitmap if needed.
@@ -722,21 +733,23 @@ public class BufferedImage extends java.awt.Image
             }
             if(raster == null){
                 raster = createRaster(width, height);
+                raster.getDataBuffer().setImage( this );
             }
             
+            this.currentBuffer = BUFFER_BOTH;
             switch (getType()){
                 case TYPE_INT_ARGB:
                     copyFromBitmap(bitmap, ((DataBufferInt)raster.getDataBuffer()).getData());
                     break;
                 default:
+                	Object pixel = colorModel.getDataElements( 0, null ); //allocate a buffer for the follow loop
                     for( int y = 0; y<height; y++){
                         for(int x = 0; x<width; x++){
                             int rgb = bitmap.GetPixel(x, y).ToArgb();
-                            raster.setDataElements(x, y, colorModel.getDataElements(rgb, null));
+                            raster.setDataElements(x, y, colorModel.getDataElements(rgb, pixel));
                         }
                     }
             }
-            this.currentBuffer = BUFFER_BOTH;
         }
     }
 
