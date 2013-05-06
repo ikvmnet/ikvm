@@ -49,7 +49,7 @@ class VMManagementImpl implements VMManagement {
 
     private static boolean compTimeMonitoringSupport;
     private static boolean threadContentionMonitoringSupport;
-    private static boolean currentThreadCpuTimeSupport;
+    private static boolean currentThreadCpuTimeSupport = true;
     private static boolean otherThreadCpuTimeSupport;
     private static boolean bootClassPathSupport;
     private static boolean objectMonitorUsageSupport;
@@ -99,7 +99,7 @@ class VMManagementImpl implements VMManagement {
     }
 
     public boolean isThreadCpuTimeEnabled() {
-        return false;
+        return true;
     }
 
     public boolean isThreadAllocatedMemoryEnabled() {

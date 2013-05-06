@@ -163,7 +163,23 @@ static class Java_sun_management_ThreadImpl
 
 	public static long getThreadTotalCpuTime0(long id)
 	{
-		throw new System.NotImplementedException();
+        if (id == 0) {
+            /* equals to 
+               [DllImport("kernel32.dll")]
+               public static extern int GetCurrentThreadId();
+             */
+            int currentId = System.AppDomain.GetCurrentThreadId();
+
+            System.Diagnostics.ProcessThreadCollection threads = System.Diagnostics.Process.GetCurrentProcess().Threads;
+            foreach (System.Diagnostics.ProcessThread t in threads) {
+                if (t.Id == currentId) {
+                    return (long)(t.TotalProcessorTime.Ticks * 100);
+                }
+            }
+            return 0;
+        } else {
+            throw new System.NotImplementedException("Only current Thread is supported.");
+        }
 	}
 
 	public static void getThreadTotalCpuTime1(long[] ids, long[] result)
@@ -188,7 +204,7 @@ static class Java_sun_management_ThreadImpl
 
 	public static void setThreadCpuTimeEnabled0(bool enable)
 	{
-		throw new System.NotImplementedException();
+		//ignoring, we need nothing to enable
 	}
 
 	public static void setThreadAllocatedMemoryEnabled0(bool enable)
