@@ -869,10 +869,6 @@ namespace ikvm.awt
             {
                 g.IntersectClip(new Region(J2C.ConvertShape(shape)));
             }
-            if (g.ClipBounds.Y > 0)
-            {
-                new java.lang.Exception(hashCode() + " clip " + g.ClipBounds + " " + g.Clip.GetBounds(g)).printStackTrace();
-            }
         }
 
         public override void dispose()
