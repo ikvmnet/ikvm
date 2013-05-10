@@ -571,12 +571,11 @@ namespace IKVM.Reflection.Emit
 			{
 				layout = (LayoutKind)val;
 			}
-			StructLayoutAttribute attr = new StructLayoutAttribute(layout);
-			attr.Pack = (int?)customBuilder.GetFieldValue("Pack") ?? 0;
-			attr.Size = (int?)customBuilder.GetFieldValue("Size") ?? 0;
-			attr.CharSet = customBuilder.GetFieldValue<CharSet>("CharSet") ?? CharSet.None;
+			pack = (short)((int?)customBuilder.GetFieldValue("Pack") ?? 0);
+			size = (int?)customBuilder.GetFieldValue("Size") ?? 0;
+			CharSet charSet = customBuilder.GetFieldValue<CharSet>("CharSet") ?? CharSet.None;
 			attribs &= ~TypeAttributes.LayoutMask;
-			switch (attr.Value)
+			switch (layout)
 			{
 				case LayoutKind.Auto:
 					attribs |= TypeAttributes.AutoLayout;
@@ -589,7 +588,7 @@ namespace IKVM.Reflection.Emit
 					break;
 			}
 			attribs &= ~TypeAttributes.StringFormatMask;
-			switch (attr.CharSet)
+			switch (charSet)
 			{
 				case CharSet.None:
 				case CharSet.Ansi:
@@ -602,8 +601,6 @@ namespace IKVM.Reflection.Emit
 					attribs |= TypeAttributes.UnicodeClass;
 					break;
 			}
-			pack = (short)attr.Pack;
-			size = attr.Size;
 			hasLayout = pack != 0 || size != 0;
 		}
 
