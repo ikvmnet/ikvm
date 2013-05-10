@@ -723,7 +723,7 @@ namespace IKVM.Reflection
 				for (int i = 0; i < assemblies.Count; i++)
 				{
 					AssemblyComparisonResult result;
-					if (simpleName.Equals(assemblies[i].Name, StringComparison.InvariantCultureIgnoreCase)
+					if (simpleName.Equals(assemblies[i].Name, StringComparison.OrdinalIgnoreCase)
 						&& CompareAssemblyIdentity(refname, false, assemblies[i].FullName, false, out result))
 					{
 						asm = assemblies[i];
@@ -741,7 +741,7 @@ namespace IKVM.Reflection
 			foreach (AssemblyBuilder asm in dynamicAssemblies)
 			{
 				AssemblyComparisonResult result;
-				if (simpleName.Equals(asm.Name, StringComparison.InvariantCultureIgnoreCase)
+				if (simpleName.Equals(asm.Name, StringComparison.OrdinalIgnoreCase)
 					&& CompareAssemblyIdentity(refname, false, asm.FullName, false, out result))
 				{
 					return asm;

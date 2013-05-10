@@ -200,7 +200,7 @@ namespace IKVM.Reflection.Reader
 
 		public override Module GetModule(string name)
 		{
-			if (name.Equals(manifestModule.ScopeName, StringComparison.InvariantCultureIgnoreCase))
+			if (name.Equals(manifestModule.ScopeName, StringComparison.OrdinalIgnoreCase))
 			{
 				return manifestModule;
 			}
@@ -216,7 +216,7 @@ namespace IKVM.Reflection.Reader
 		{
 			for (int i = 0; i < manifestModule.File.records.Length; i++)
 			{
-				if (name.Equals(manifestModule.GetString(manifestModule.File.records[i].Name), StringComparison.InvariantCultureIgnoreCase))
+				if (name.Equals(manifestModule.GetString(manifestModule.File.records[i].Name), StringComparison.OrdinalIgnoreCase))
 				{
 					return i;
 				}

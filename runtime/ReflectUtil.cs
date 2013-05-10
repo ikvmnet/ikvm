@@ -169,7 +169,7 @@ namespace IKVM.Internal
 
 		internal static bool MatchNameAndPublicKeyToken(AssemblyName name1, AssemblyName name2)
 		{
-			return name1.Name.Equals(name2.Name, StringComparison.InvariantCultureIgnoreCase)
+			return name1.Name.Equals(name2.Name, StringComparison.OrdinalIgnoreCase)
 				&& CompareKeys(name1.GetPublicKeyToken(), name2.GetPublicKeyToken());
 		}
 

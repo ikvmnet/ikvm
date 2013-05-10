@@ -708,14 +708,14 @@ namespace IKVM.Reflection.Emit
 		{
 			foreach (ModuleBuilder module in modules)
 			{
-				if (module.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase))
+				if (module.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
 				{
 					return module;
 				}
 			}
 			foreach (Module module in addedModules)
 			{
-				if (module.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase))
+				if (module.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
 				{
 					return module;
 				}

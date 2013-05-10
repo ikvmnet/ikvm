@@ -70,7 +70,7 @@ namespace IKVM.Reflection
 			name = parsed.Name;
 			if (parsed.Culture != null)
 			{
-				if (parsed.Culture.Equals("neutral", StringComparison.InvariantCultureIgnoreCase))
+				if (parsed.Culture.Equals("neutral", StringComparison.OrdinalIgnoreCase))
 				{
 					culture = "";
 				}
@@ -90,7 +90,7 @@ namespace IKVM.Reflection
 			}
 			if (parsed.PublicKeyToken != null)
 			{
-				if (parsed.PublicKeyToken.Equals("null", StringComparison.InvariantCultureIgnoreCase))
+				if (parsed.PublicKeyToken.Equals("null", StringComparison.OrdinalIgnoreCase))
 				{
 					publicKeyToken = Empty<byte>.Array;
 				}

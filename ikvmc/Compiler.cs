@@ -1181,7 +1181,7 @@ sealed class IkvmcCompiler
 				{
 					foreach (CompilerOptions peer in targets)
 					{
-						if (peer.assembly.Equals(reference, StringComparison.InvariantCultureIgnoreCase))
+						if (peer.assembly.Equals(reference, StringComparison.OrdinalIgnoreCase))
 						{
 							ArrayAppend(ref target.peerReferences, peer.assembly);
 							goto next_reference;
