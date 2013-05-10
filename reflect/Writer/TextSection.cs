@@ -606,14 +606,12 @@ namespace IKVM.Reflection.Writer
 
 				// Now write the actual names
 				text.AssertRVA(mw, namesRVA);
-				mw.Write(Encoding.ASCII.GetBytes(text.moduleBuilder.fileName));
-				mw.Write((byte)0);
+				mw.WriteAsciiz(text.moduleBuilder.fileName);
 				foreach (UnmanagedExport exp in text.moduleBuilder.unmanagedExports)
 				{
 					if (exp.name != null)
 					{
-						mw.Write(Encoding.ASCII.GetBytes(exp.name));
-						mw.Write((byte)0);
+						mw.WriteAsciiz(exp.name);
 					}
 				}
 				text.AssertRVA(mw, namesRVA + namesLength);
@@ -814,16 +812,15 @@ namespace IKVM.Reflection.Writer
 			mw.Write((ushort)0);		// Hint
 			if ((peWriter.Headers.FileHeader.Characteristics & IMAGE_FILE_HEADER.IMAGE_FILE_DLL) != 0)
 			{
-				mw.Write(System.Text.Encoding.ASCII.GetBytes("_CorDllMain"));
+				mw.WriteAsciiz("_CorDllMain");
 			}
 			else
 			{
-				mw.Write(System.Text.Encoding.ASCII.GetBytes("_CorExeMain"));
+				mw.WriteAsciiz("_CorExeMain");
 			}
-			mw.Write((byte)0);
 			// Name
-			mw.Write(System.Text.Encoding.ASCII.GetBytes("mscoree.dll"));
-			mw.Write((ushort)0);
+			mw.WriteAsciiz("mscoree.dll");
+			mw.Write((byte)0);
 		}
 
 		internal int Length
