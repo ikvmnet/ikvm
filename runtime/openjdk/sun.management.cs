@@ -161,15 +161,18 @@ static class Java_sun_management_ThreadImpl
 #endif
     }
 
+	private static int GetCurrentThreadId()
+	{
+#pragma warning disable 618
+		// On the CLR and Mono on Windows this is the (obsolete) equivalent of kernel32!GetCurrentThreadId
+		return System.AppDomain.GetCurrentThreadId();
+#pragma warning restore 618
+	}
+
 	public static long getThreadTotalCpuTime0(long id)
 	{
         if (id == 0) {
-            /* equals to 
-               [DllImport("kernel32.dll")]
-               public static extern int GetCurrentThreadId();
-             */
-            int currentId = System.AppDomain.GetCurrentThreadId();
-
+            int currentId = GetCurrentThreadId();
             System.Diagnostics.ProcessThreadCollection threads = System.Diagnostics.Process.GetCurrentProcess().Threads;
             foreach (System.Diagnostics.ProcessThread t in threads) {
                 if (t.Id == currentId) {
