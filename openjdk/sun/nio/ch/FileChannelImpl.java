@@ -29,8 +29,6 @@ import cli.Microsoft.Win32.SafeHandles.SafeFileHandle;
 import cli.System.IntPtr;
 import cli.System.IO.FileStream;
 import cli.System.Runtime.InteropServices.DllImportAttribute;
-import cli.System.Runtime.InteropServices.StructLayoutAttribute;
-import cli.System.Runtime.InteropServices.LayoutKind;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.nio.ByteBuffer;
