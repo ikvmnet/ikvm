@@ -1946,28 +1946,6 @@ namespace IKVM.Reflection
 			}
 		}
 
-		internal bool IsPseudoCustomAttribute
-		{
-			get
-			{
-				Universe u = this.Module.universe;
-				return this == u.System_NonSerializedAttribute
-					|| this == u.System_SerializableAttribute
-					|| this == u.System_Runtime_InteropServices_DllImportAttribute
-					|| this == u.System_Runtime_InteropServices_FieldOffsetAttribute
-					|| this == u.System_Runtime_InteropServices_InAttribute
-					|| this == u.System_Runtime_InteropServices_MarshalAsAttribute
-					|| this == u.System_Runtime_InteropServices_OutAttribute
-					|| this == u.System_Runtime_InteropServices_StructLayoutAttribute
-					|| this == u.System_Runtime_InteropServices_OptionalAttribute
-					|| this == u.System_Runtime_InteropServices_PreserveSigAttribute
-					|| this == u.System_Runtime_InteropServices_ComImportAttribute
-					|| this == u.System_Runtime_CompilerServices_SpecialNameAttribute
-					|| this == u.System_Runtime_CompilerServices_MethodImplAttribute
-					;
-			}
-		}
-
 		internal Type MarkNotValueType()
 		{
 			typeFlags |= TypeFlags.NotValueType;
