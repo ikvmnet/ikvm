@@ -867,45 +867,6 @@ namespace IKVM.Reflection.Emit
 			return methods;
 		}
 
-		public override StructLayoutAttribute StructLayoutAttribute
-		{
-			get
-			{
-				LayoutKind layout;
-				switch (attribs & TypeAttributes.LayoutMask)
-				{
-					case TypeAttributes.ExplicitLayout:
-						layout = LayoutKind.Explicit;
-						break;
-					case TypeAttributes.SequentialLayout:
-						layout = LayoutKind.Sequential;
-						break;
-					default:
-						layout = LayoutKind.Auto;
-						break;
-				}
-				StructLayoutAttribute attr = new StructLayoutAttribute(layout);
-				attr.Pack = (ushort)pack;
-				attr.Size = size;
-				switch (attribs & TypeAttributes.StringFormatMask)
-				{
-					case TypeAttributes.AutoClass:
-						attr.CharSet = CharSet.Auto;
-						break;
-					case TypeAttributes.UnicodeClass:
-						attr.CharSet = CharSet.Unicode;
-						break;
-					case TypeAttributes.AnsiClass:
-						attr.CharSet = CharSet.Ansi;
-						break;
-					default:
-						attr.CharSet = CharSet.None;
-						break;
-				}
-				return attr;
-			}
-		}
-
 		public override Type DeclaringType
 		{
 			get { return owner as TypeBuilder; }
@@ -1191,9 +1152,9 @@ namespace IKVM.Reflection.Emit
 			get { return underlyingType.DeclaringType; }
 		}
 
-		public override StructLayoutAttribute StructLayoutAttribute
+		public override bool __GetLayout(out int packingSize, out int typeSize)
 		{
-			get { return underlyingType.StructLayoutAttribute; }
+			return underlyingType.__GetLayout(out packingSize, out typeSize);
 		}
 
 		public override Type[] GetGenericArguments()

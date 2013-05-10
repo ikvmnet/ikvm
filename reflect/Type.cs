@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009-2012 Jeroen Frijters
+  Copyright (C) 2009-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -353,9 +353,47 @@ namespace IKVM.Reflection
 			throw new InvalidOperationException();
 		}
 
-		public virtual StructLayoutAttribute StructLayoutAttribute
+		public StructLayoutAttribute StructLayoutAttribute
 		{
-			get { return null; }
+			get
+			{
+				StructLayoutAttribute layout;
+				switch (this.Attributes & TypeAttributes.LayoutMask)
+				{
+					case TypeAttributes.AutoLayout:
+						layout = new StructLayoutAttribute(LayoutKind.Auto);
+						break;
+					case TypeAttributes.SequentialLayout:
+						layout = new StructLayoutAttribute(LayoutKind.Sequential);
+						break;
+					case TypeAttributes.ExplicitLayout:
+						layout = new StructLayoutAttribute(LayoutKind.Explicit);
+						break;
+					default:
+						throw new BadImageFormatException();
+				}
+				switch (this.Attributes & TypeAttributes.StringFormatMask)
+				{
+					case TypeAttributes.AnsiClass:
+						layout.CharSet = CharSet.Ansi;
+						break;
+					case TypeAttributes.UnicodeClass:
+						layout.CharSet = CharSet.Unicode;
+						break;
+					case TypeAttributes.AutoClass:
+						layout.CharSet = CharSet.Auto;
+						break;
+					default:
+						layout.CharSet = CharSet.None;
+						break;
+				}
+				if (!__GetLayout(out layout.Pack, out layout.Size))
+				{
+					// compatibility with System.Reflection
+					layout.Pack = 8;
+				}
+				return layout;
+			}
 		}
 
 		public virtual bool __GetLayout(out int packingSize, out int typeSize)
@@ -2933,9 +2971,9 @@ namespace IKVM.Reflection
 			get { return type.__ContainsMissingType || ContainsMissingType(args); }
 		}
 
-		public override StructLayoutAttribute StructLayoutAttribute
+		public override bool __GetLayout(out int packingSize, out int typeSize)
 		{
-			get { return type.StructLayoutAttribute; }
+			return type.__GetLayout(out packingSize, out typeSize);
 		}
 
 		internal override int GetModuleBuilderToken()

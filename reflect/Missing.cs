@@ -539,9 +539,9 @@ namespace IKVM.Reflection
 			throw new MissingMemberException(this);
 		}
 
-		public override StructLayoutAttribute StructLayoutAttribute
+		public override bool __GetLayout(out int packingSize, out int typeSize)
 		{
-			get { throw new MissingMemberException(this); }
+			throw new MissingMemberException(this);
 		}
 
 		public override bool IsGenericType

@@ -351,49 +351,6 @@ namespace IKVM.Reflection.Reader
 			}
 		}
 
-		public override StructLayoutAttribute StructLayoutAttribute
-		{
-			get
-			{
-				StructLayoutAttribute layout;
-				switch (this.Attributes & TypeAttributes.LayoutMask)
-				{
-					case TypeAttributes.AutoLayout:
-						layout = new StructLayoutAttribute(LayoutKind.Auto);
-						break;
-					case TypeAttributes.SequentialLayout:
-						layout = new StructLayoutAttribute(LayoutKind.Sequential);
-						break;
-					case TypeAttributes.ExplicitLayout:
-						layout = new StructLayoutAttribute(LayoutKind.Explicit);
-						break;
-					default:
-						throw new BadImageFormatException();
-				}
-				switch (this.Attributes & TypeAttributes.StringFormatMask)
-				{
-					case TypeAttributes.AnsiClass:
-						layout.CharSet = CharSet.Ansi;
-						break;
-					case TypeAttributes.UnicodeClass:
-						layout.CharSet = CharSet.Unicode;
-						break;
-					case TypeAttributes.AutoClass:
-						layout.CharSet = CharSet.Auto;
-						break;
-					default:
-						layout.CharSet = CharSet.None;
-						break;
-				}
-				if (!__GetLayout(out layout.Pack, out layout.Size))
-				{
-					// compatibility with System.Reflection
-					layout.Pack = 8;
-				}
-				return layout;
-			}
-		}
-
 		public override bool __GetLayout(out int packingSize, out int typeSize)
 		{
 			foreach (int i in module.ClassLayout.Filter(this.MetadataToken))
