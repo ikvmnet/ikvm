@@ -438,14 +438,19 @@ namespace IKVM.Reflection.Emit
 			this.CustomAttribute.AddRecord(rec);
 		}
 
-		internal void AddDeclarativeSecurity(int token, System.Security.Permissions.SecurityAction securityAction, System.Security.PermissionSet permissionSet)
+		private void AddDeclSecurityRecord(int token, int action, int blob)
 		{
 			DeclSecurityTable.Record rec = new DeclSecurityTable.Record();
-			rec.Action = (short)securityAction;
+			rec.Action = (short)action;
 			rec.Parent = token;
-			// like Ref.Emit, we're using the .NET 1.x xml format
-			rec.PermissionSet = this.Blobs.Add(ByteBuffer.Wrap(System.Text.Encoding.Unicode.GetBytes(permissionSet.ToXml().ToString())));
+			rec.PermissionSet = blob;
 			this.DeclSecurity.AddRecord(rec);
+		}
+
+		internal void AddDeclarativeSecurity(int token, System.Security.Permissions.SecurityAction securityAction, System.Security.PermissionSet permissionSet)
+		{
+			// like Ref.Emit, we're using the .NET 1.x xml format
+			AddDeclSecurityRecord(token, (int)securityAction, this.Blobs.Add(ByteBuffer.Wrap(System.Text.Encoding.Unicode.GetBytes(permissionSet.ToXml().ToString()))));
 		}
 
 		internal void AddDeclarativeSecurity(int token, List<CustomAttributeBuilder> declarativeSecurity)
@@ -465,11 +470,7 @@ namespace IKVM.Reflection.Emit
 				}
 				if (cab.Constructor == CustomAttributeBuilder.LegacyPermissionSet)
 				{
-					DeclSecurityTable.Record rec = new DeclSecurityTable.Record();
-					rec.Action = (short)action;
-					rec.Parent = token;
-					rec.PermissionSet = cab.WriteBlob(this);
-					this.DeclSecurity.AddRecord(rec);
+					AddDeclSecurityRecord(token, action, cab.WriteBlob(this));
 					continue;
 				}
 				List<CustomAttributeBuilder> list;
@@ -482,11 +483,7 @@ namespace IKVM.Reflection.Emit
 			}
 			foreach (KeyValuePair<int, List<CustomAttributeBuilder>> kv in ordered)
 			{
-				DeclSecurityTable.Record rec = new DeclSecurityTable.Record();
-				rec.Action = (short)kv.Key;
-				rec.Parent = token;
-				rec.PermissionSet = WriteDeclSecurityBlob(kv.Value);
-				this.DeclSecurity.AddRecord(rec);
+				AddDeclSecurityRecord(token, kv.Key, WriteDeclSecurityBlob(kv.Value));
 			}
 		}
 
