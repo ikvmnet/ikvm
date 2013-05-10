@@ -464,6 +464,15 @@ namespace IKVM.Reflection.Emit
 				{
 					action = (int)cab.GetConstructorArgument(0);
 				}
+				if (cab.Constructor == CustomAttributeBuilder.LegacyPermissionSet)
+				{
+					DeclSecurityTable.Record rec = new DeclSecurityTable.Record();
+					rec.Action = (short)action;
+					rec.Parent = token;
+					rec.PermissionSet = cab.WriteBlob(this);
+					this.DeclSecurity.AddRecord(rec);
+					continue;
+				}
 				List<CustomAttributeBuilder> list;
 				if (!ordered.TryGetValue(action, out list))
 				{

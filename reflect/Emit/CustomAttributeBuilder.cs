@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2008-2011 Jeroen Frijters
+  Copyright (C) 2008-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -32,6 +32,7 @@ namespace IKVM.Reflection.Emit
 {
 	public sealed class CustomAttributeBuilder
 	{
+		internal static readonly ConstructorInfo LegacyPermissionSet = new ConstructorBuilder(null);
 		private readonly ConstructorInfo con;
 		private readonly byte[] blob;
 		private readonly object[] constructorArgs;

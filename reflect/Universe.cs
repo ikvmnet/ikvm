@@ -914,17 +914,17 @@ namespace IKVM.Reflection
 
 		public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access)
 		{
-			return new AssemblyBuilder(this, name, null, null, null, null, null);
+			return new AssemblyBuilder(this, name, null, null);
 		}
 
 		public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, IEnumerable<CustomAttributeBuilder> assemblyAttributes)
 		{
-			return new AssemblyBuilder(this, name, null, null, null, null, assemblyAttributes);
+			return new AssemblyBuilder(this, name, null, assemblyAttributes);
 		}
 
 		public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, string dir)
 		{
-			return new AssemblyBuilder(this, name, dir, null, null, null, null);
+			return new AssemblyBuilder(this, name, dir, null);
 		}
 
 #if NET_4_0
@@ -932,7 +932,19 @@ namespace IKVM.Reflection
 #endif
 		public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
 		{
-			return new AssemblyBuilder(this, name, dir, requiredPermissions, optionalPermissions, refusedPermissions, null);
+			AssemblyBuilder ab = new AssemblyBuilder(this, name, dir, null);
+			AddLegacyPermissionSet(ab, requiredPermissions, System.Security.Permissions.SecurityAction.RequestMinimum);
+			AddLegacyPermissionSet(ab, optionalPermissions, System.Security.Permissions.SecurityAction.RequestOptional);
+			AddLegacyPermissionSet(ab, refusedPermissions, System.Security.Permissions.SecurityAction.RequestRefuse);
+			return ab;
+		}
+
+		private static void AddLegacyPermissionSet(AssemblyBuilder ab, PermissionSet permissionSet, System.Security.Permissions.SecurityAction action)
+		{
+			if (permissionSet != null)
+			{
+				ab.__AddDeclarativeSecurity(CustomAttributeBuilder.__FromBlob(CustomAttributeBuilder.LegacyPermissionSet, (int)action, Encoding.Unicode.GetBytes(permissionSet.ToXml().ToString())));
+			}
 		}
 
 		internal void RegisterDynamicAssembly(AssemblyBuilder asm)

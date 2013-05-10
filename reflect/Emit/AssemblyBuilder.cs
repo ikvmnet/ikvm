@@ -49,9 +49,6 @@ namespace IKVM.Reflection.Emit
 		private StrongNameKeyPair keyPair;
 		private byte[] publicKey;
 		internal readonly string dir;
-		private readonly PermissionSet requiredPermissions;
-		private readonly PermissionSet optionalPermissions;
-		private readonly PermissionSet refusedPermissions;
 		private PEFileKinds fileKind = PEFileKinds.Dll;
 		private MethodInfo entryPoint;
 		private VersionInfo versionInfo;
@@ -76,7 +73,7 @@ namespace IKVM.Reflection.Emit
 			internal ResourceWriter Writer;
 		}
 
-		internal AssemblyBuilder(Universe universe, AssemblyName name, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions, IEnumerable<CustomAttributeBuilder> customAttributes)
+		internal AssemblyBuilder(Universe universe, AssemblyName name, string dir, IEnumerable<CustomAttributeBuilder> customAttributes)
 			: base(universe)
 		{
 			this.name = name.Name;
@@ -105,9 +102,6 @@ namespace IKVM.Reflection.Emit
 				}
 			}
 			this.dir = dir ?? ".";
-			this.requiredPermissions = requiredPermissions;
-			this.optionalPermissions = optionalPermissions;
-			this.refusedPermissions = refusedPermissions;
 			if (customAttributes != null)
 			{
 				this.customAttributes.AddRange(customAttributes);
@@ -349,26 +343,7 @@ namespace IKVM.Reflection.Emit
 			{
 				assemblyRecord.Culture = manifestModule.Strings.Add(culture);
 			}
-			int token = 0x20000000 + manifestModule.AssemblyTable.AddRecord(assemblyRecord);
-
-#pragma warning disable 618
-			// this values are obsolete, but we already know that so we disable the warning
-			System.Security.Permissions.SecurityAction requestMinimum = System.Security.Permissions.SecurityAction.RequestMinimum;
-			System.Security.Permissions.SecurityAction requestOptional = System.Security.Permissions.SecurityAction.RequestOptional;
-			System.Security.Permissions.SecurityAction requestRefuse = System.Security.Permissions.SecurityAction.RequestRefuse;
-#pragma warning restore 618
-			if (requiredPermissions != null)
-			{
-				manifestModule.AddDeclarativeSecurity(token, requestMinimum, requiredPermissions);
-			}
-			if (optionalPermissions != null)
-			{
-				manifestModule.AddDeclarativeSecurity(token, requestOptional, optionalPermissions);
-			}
-			if (refusedPermissions != null)
-			{
-				manifestModule.AddDeclarativeSecurity(token, requestRefuse, refusedPermissions);
-			}
+			manifestModule.AssemblyTable.AddRecord(assemblyRecord);
 
 			ResourceSection unmanagedResources = versionInfo != null || win32icon != null || win32manifest != null || win32resources != null
 				? new ResourceSection()
