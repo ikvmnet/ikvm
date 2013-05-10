@@ -461,11 +461,6 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 
-		internal bool IsPseudoCustomAttribute
-		{
-			get { return con.DeclaringType.IsPseudoCustomAttribute; }
-		}
-
 		internal ConstructorInfo Constructor
 		{
 			get { return con; }

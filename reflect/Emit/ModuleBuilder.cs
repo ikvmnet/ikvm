@@ -431,7 +431,6 @@ namespace IKVM.Reflection.Emit
 
 		internal void SetCustomAttribute(int token, CustomAttributeBuilder customBuilder)
 		{
-			Debug.Assert(!customBuilder.IsPseudoCustomAttribute);
 			CustomAttributeTable.Record rec = new CustomAttributeTable.Record();
 			rec.Parent = token;
 			rec.Type = asm.IsWindowsRuntime ? customBuilder.Constructor.ImportTo(this) : GetConstructorToken(customBuilder.Constructor).Token;
