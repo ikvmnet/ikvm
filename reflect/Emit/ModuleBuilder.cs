@@ -468,9 +468,9 @@ namespace IKVM.Reflection.Emit
 				{
 					action = (int)cab.GetConstructorArgument(0);
 				}
-				if (cab.Constructor == CustomAttributeBuilder.LegacyPermissionSet)
+				if (cab.IsLegacyDeclSecurity)
 				{
-					AddDeclSecurityRecord(token, action, cab.WriteBlob(this));
+					AddDeclSecurityRecord(token, action, cab.WriteLegacyDeclSecurityBlob(this));
 					continue;
 				}
 				List<CustomAttributeBuilder> list;
@@ -489,12 +489,6 @@ namespace IKVM.Reflection.Emit
 
 		private int WriteDeclSecurityBlob(List<CustomAttributeBuilder> list)
 		{
-			string xml;
-			if (list.Count == 1 && (xml = list[0].GetLegacyDeclSecurity()) != null)
-			{
-				// write .NET 1.1 format
-				return this.Blobs.Add(ByteBuffer.Wrap(System.Text.Encoding.Unicode.GetBytes(xml)));
-			}
 			ByteBuffer namedArgs = new ByteBuffer(100);
 			ByteBuffer bb = new ByteBuffer(list.Count * 100);
 			bb.Write((byte)'.');
