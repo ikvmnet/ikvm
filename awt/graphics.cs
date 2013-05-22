@@ -761,7 +761,7 @@ namespace ikvm.awt
                     netG.g.Clip = Clip;
                     netG.g.SmoothingMode = SmoothingMode;
                     netG.g.PixelOffsetMode = PixelOffsetMode;
-                    netG.g.TextRenderingHint = TextRenderingHint;
+                    netG.setTextRenderingHint(TextRenderingHint);
                     netG.g.InterpolationMode = InterpolationMode;
                     netG.g.CompositingMode = CompositingMode;
                 }
@@ -796,12 +796,22 @@ namespace ikvm.awt
         private java.awt.Stroke stroke;
         private static java.awt.BasicStroke defaultStroke = new java.awt.BasicStroke();
         private Font netfont;
+        private int baseline;
         internal Brush brush;
         internal Pen pen;
         private CompositeHelper composite;
         private java.awt.Composite javaComposite = java.awt.AlphaComposite.SrcOver;
         private Object textAntialiasHint;
         private Object fractionalHint = java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_DEFAULT;
+
+        private static System.Collections.Generic.Dictionary<String, Int32> baselines = new System.Collections.Generic.Dictionary<String, Int32>();
+
+        internal static readonly StringFormat FORMAT = new StringFormat(StringFormat.GenericTypographic);
+        static NetGraphics()
+        {
+            FORMAT.FormatFlags = StringFormatFlags.MeasureTrailingSpaces | StringFormatFlags.NoWrap | StringFormatFlags.FitBlackBox;
+            FORMAT.Trimming = StringTrimming.None;
+        }
 
         protected NetGraphics(Graphics g, Object destination, java.awt.Font font, Color fgcolor, Color bgcolor) //: base( new sun.java2d.SurfaceData(destination) )
         {
@@ -1215,6 +1225,7 @@ namespace ikvm.awt
             {
                 netfont = f.getNetFont();
                 font = f;
+                baseline = getBaseline( netfont, g.TextRenderingHint );
             }
         }
 
@@ -1315,18 +1326,15 @@ namespace ikvm.awt
                 }
 
                 bool fractional = isFractionalMetrics();
-                StringFormat format = new StringFormat(StringFormat.GenericTypographic);
-                format.FormatFlags = StringFormatFlags.MeasureTrailingSpaces | StringFormatFlags.NoWrap | StringFormatFlags.FitBlackBox;
-                format.Trimming = StringTrimming.None;
                 if (fractional || !sun.font.StandardGlyphVector.isSimpleString(font, text)) {
-                    g.DrawString(text, netfont, brush, x, y - font.getSize(), format);
+                    g.DrawString(text, netfont, brush, x, y - baseline, FORMAT);
                 } else {
                     // fixed metric for simple text, we position every character to simulate the Java behaviour
                     java.awt.font.FontRenderContext frc = new java.awt.font.FontRenderContext(null, isAntiAlias(), fractional);
                     sun.font.FontDesignMetrics metrics = sun.font.FontDesignMetrics.getMetrics(font, frc);
-                    y -= font.getSize();
+                    y -= baseline;
                     for (int i = 0; i < text.Length; i++) {
-                        g.DrawString(text.Substring(i, 1), netfont, brush, x, y, format);
+                        g.DrawString(text.Substring(i, 1), netfont, brush, x, y, FORMAT);
                         x += metrics.charWidth(text[i]);
                     }
                 }
@@ -1784,13 +1792,13 @@ namespace ikvm.awt
                 if (hintValue == java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_DEFAULT ||
                     hintValue == java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_OFF)
                 {
-                    g.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit;
+                    setTextRenderingHint(TextRenderingHint.SingleBitPerPixelGridFit);
                     textAntialiasHint = hintValue;
                     return;
                 }
                 if (hintValue == java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
                 {
-                    g.TextRenderingHint = TextRenderingHint.AntiAlias;
+                    setTextRenderingHint(TextRenderingHint.AntiAlias);
                     textAntialiasHint = hintValue;
                     return;
                 }
@@ -1967,6 +1975,71 @@ namespace ikvm.awt
             return stroke; 
         }
 
+        internal void setTextRenderingHint(TextRenderingHint hint)
+        {
+            g.TextRenderingHint = hint;
+            baseline = getBaseline(netfont, hint);
+        }
+
+        /// <summary>
+        /// Caclulate the baseline from a font and a TextRenderingHint
+        /// </summary>
+        /// <param name="font">the font</param>
+        /// <param name="hint">the used TextRenderingHint</param>
+        /// <returns></returns>
+        private static int getBaseline(Font font, TextRenderingHint hint)
+        {
+            lock (baselines)
+            {
+                String key = font.ToString() + hint.ToString();
+                int baseline;
+                if (!baselines.TryGetValue(key, out baseline))
+                {
+                    FontFamily family = font.FontFamily;
+                    FontStyle style = font.Style;
+                    float ascent = family.GetCellAscent(style);
+                    float lineSpace = family.GetLineSpacing(style);
+
+                    baseline = (int)Math.Round(font.GetHeight() * ascent / lineSpace);
+
+                    // Until this point the calulation use only the Font. But with different TextRenderingHint there are smal differences.
+                    // There is no API that calulate the offset from TextRenderingHint that we messure it.
+                    const int w = 3;
+                    const int h = 3;
+
+                    Bitmap bitmap = new Bitmap(w, h);
+                    Graphics g = Graphics.FromImage(bitmap);
+                    g.TextRenderingHint = hint;
+                    g.FillRectangle(new SolidBrush(Color.White), 0, 0, w, h);
+                    g.DrawString("A", font, new SolidBrush(Color.Black), 0, -baseline, FORMAT);
+                    g.DrawString("X", font, new SolidBrush(Color.Black), 0, -baseline, FORMAT);
+                    g.Dispose();
+
+                    int y = 0;
+                LINE:
+                    while (y < h)
+                    {
+                        for (int x = 0; x < w; x++)
+                        {
+                            Color color = bitmap.GetPixel(x, y);
+                            if (color.GetBrightness() < 0.5)
+                            {
+                                //there is a black pixel, we continue in the next line.
+                                baseline++;
+                                y++;
+                                goto LINE;
+                            }
+                        }
+                        break; // there was a line without black pixel
+                    }
+
+
+                    baselines[key] = baseline;
+                }
+                return baseline;
+            }
+        }
+
         private bool isAntiAlias()
         {
             switch (g.TextRenderingHint)
@@ -1996,6 +2069,7 @@ namespace ikvm.awt
             Matrix currentMatrix = null;
             Font currentFont = netfont;
             TextRenderingHint currentHint = g.TextRenderingHint;
+            int currentBaseline = baseline;
             try
             {
                 java.awt.Font javaFont = gv.getFont();
@@ -2003,19 +2077,22 @@ namespace ikvm.awt
                 {
                     netfont = javaFont.getNetFont();
                 }
+                TextRenderingHint hint;
                 if (frc.isAntiAliased()) {
                     if( frc.usesFractionalMetrics() ){
-                        g.TextRenderingHint = TextRenderingHint.AntiAlias;
+                        hint = TextRenderingHint.AntiAlias;
                     } else {
-                        g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
+                        hint = TextRenderingHint.AntiAliasGridFit;
                     }
                 } else {
                     if (frc.usesFractionalMetrics()) {
-                        g.TextRenderingHint = TextRenderingHint.SingleBitPerPixel;
+                        hint = TextRenderingHint.SingleBitPerPixel;
                     } else {
-                        g.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit;
+                        hint = TextRenderingHint.SingleBitPerPixelGridFit;
                     }
                 }
+                g.TextRenderingHint = hint;
+                baseline = getBaseline(netfont, hint);
                 if (!frc.getTransform().equals(getTransform()))
                 {
                     // save the old context and use the transformation from the renderContext
@@ -2028,6 +2105,7 @@ namespace ikvm.awt
             {
                 // Restore the old context if needed
                 g.TextRenderingHint = currentHint;
+                baseline = currentBaseline;
                 netfont = currentFont;
                 if (currentMatrix != null)
                 {
