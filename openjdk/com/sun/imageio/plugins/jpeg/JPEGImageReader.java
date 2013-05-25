@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2008, 2009 Volker Berlin (i-net software)
+  Copyright (C) 2008 - 2013 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -131,9 +131,11 @@ class JPEGImageReader extends ImageReader{
 			}
             processImageStarted(0);
             image = (BufferedImage)Toolkit.getDefaultToolkit().createImage(buffer);
+            int width = image.getWidth();
+            int height = image.getHeight();
             processPassStarted(image, 0, 0, 1, 0, 0, 1, 1, new int[0]);
             processImageProgress(100.0F);
-            processImageUpdate(image, 0, 0, 0, 0, 1, 1, new int[0]);
+            processImageUpdate(image, 0, 0, width, height, 1, 1, new int[0]);
             processPassComplete(image);
             processImageComplete();
         }
