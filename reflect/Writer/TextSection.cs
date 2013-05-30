@@ -675,7 +675,7 @@ namespace IKVM.Reflection.Writer
 				{
 					return -1;
 				}
-				return x.name.CompareTo(y.name);
+				return String.CompareOrdinal(x.name, y.name);
 			}
 
 			private static int CompareUnmanagedExportOrdinals(UnmanagedExport x, UnmanagedExport y)
