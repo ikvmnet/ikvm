@@ -46,7 +46,7 @@ namespace IKVM.Reflection.Reader
 
 		public override string Location
 		{
-			get { return location; }
+			get { return location ?? ""; }
 		}
 
 		public override AssemblyName GetName()
