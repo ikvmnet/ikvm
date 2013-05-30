@@ -169,7 +169,7 @@ class Thread implements Runnable {
     private cli.System.Threading.Thread nativeThread;
     private Throwable stillborn;
     private boolean running;    // used only for coordination with stop0(), is never set to false
-    private boolean interruptPending;
+    private volatile boolean interruptPending;
     private volatile boolean nativeInterruptPending;
     private volatile boolean interruptableWait;
     private boolean timedWait;
@@ -1228,7 +1228,12 @@ class Thread implements Runnable {
      * @revised 6.0
      */
     public static boolean interrupted() {
-        return currentThread().isInterrupted(true);
+        Thread current = currentThread();
+        if (!current.interruptPending) {
+            return false;
+        }
+        current.interruptPending = false;
+        return true;
     }
 
     /**
@@ -1245,22 +1250,7 @@ class Thread implements Runnable {
      * @revised 6.0
      */
     public boolean isInterrupted() {
-        return isInterrupted(false);
-    }
-
-    /**
-     * Tests if some Thread has been interrupted.  The interrupted state
-     * is reset or not based on the value of ClearInterrupted that is
-     * passed.
-     */
-    private boolean isInterrupted(boolean ClearInterrupted) {
-        synchronized (lock) {
-            boolean b = interruptPending;
-            if (ClearInterrupted) {
-                interruptPending = false;
-            }
-            return b;
-        }
+        return interruptPending;
     }
 
     /**
