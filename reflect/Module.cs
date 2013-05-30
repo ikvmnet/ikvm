@@ -55,6 +55,16 @@ namespace IKVM.Reflection
 			get { return module.ModuleVersionId; }
 		}
 
+		public string ImageRuntimeVersion
+		{
+			get { return module.__ImageRuntimeVersion; }
+		}
+
+		public int MDStreamVersion
+		{
+			get { return module.MDStreamVersion; }
+		}
+
 		private void CheckManifestModule()
 		{
 			if (!IsManifestModule)
