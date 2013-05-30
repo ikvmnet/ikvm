@@ -107,6 +107,18 @@ public abstract class CallerID
 	};
     }
 
+    // this is used by the MethodHandle code to create a CallerID from the lookupClass
+    static CallerID create(final Class clazz) {
+	return new CallerID() {
+	    Class GetClass() {
+		return clazz;
+	    }
+	    ClassLoader GetClassLoader() {
+		return clazz.getClassLoader();
+	    }
+	};
+    }
+
     @ikvm.lang.Internal
     public static CallerID getCallerID()
     {
