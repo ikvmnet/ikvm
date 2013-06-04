@@ -269,7 +269,7 @@ namespace IKVM.Reflection.Reader
 						throw;
 					}
 				}
-				return externalModules[index] = new ModuleReader(this, manifestModule.universe, new MemoryStream(rawModule), location);
+				return externalModules[index] = new ModuleReader(this, manifestModule.universe, new MemoryStream(rawModule), location, false);
 			}
 		}
 

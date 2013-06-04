@@ -664,11 +664,21 @@ namespace IKVM.Reflection
 
 		public RawModule OpenRawModule(Stream stream, string location)
 		{
+			return OpenRawModule(stream, location, false);
+		}
+
+		public RawModule OpenMappedRawModule(Stream stream, string location)
+		{
+			return OpenRawModule(stream, location, true);
+		}
+
+		private RawModule OpenRawModule(Stream stream, string location, bool mapped)
+		{
 			if (!stream.CanRead || !stream.CanSeek || stream.Position != 0)
 			{
 				throw new ArgumentException("Stream must support read/seek and current position must be zero.", "stream");
 			}
-			return new RawModule(new ModuleReader(null, this, stream, location));
+			return new RawModule(new ModuleReader(null, this, stream, location, mapped));
 		}
 
 		public Assembly LoadAssembly(RawModule module)

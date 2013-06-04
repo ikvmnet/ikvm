@@ -95,12 +95,12 @@ namespace IKVM.Reflection.Reader
 			}
 		}
 
-		internal ModuleReader(AssemblyReader assembly, Universe universe, Stream stream, string location)
+		internal ModuleReader(AssemblyReader assembly, Universe universe, Stream stream, string location, bool mapped)
 			: base(universe)
 		{
 			this.stream = universe != null && universe.MetadataOnly ? null : stream;
 			this.location = location;
-			Read(stream);
+			Read(stream, mapped);
 			if (assembly == null && AssemblyTable.records.Length != 0)
 			{
 				assembly = new AssemblyReader(location, this);
@@ -108,10 +108,10 @@ namespace IKVM.Reflection.Reader
 			this.assembly = assembly;
 		}
 
-		private void Read(Stream stream)
+		private void Read(Stream stream, bool mapped)
 		{
 			BinaryReader br = new BinaryReader(stream);
-			peFile.Read(br);
+			peFile.Read(br, mapped);
 			stream.Seek(peFile.RvaToFileOffset(peFile.GetComDescriptorVirtualAddress()), SeekOrigin.Begin);
 			cliHeader.Read(br);
 			stream.Seek(peFile.RvaToFileOffset(cliHeader.MetaData.VirtualAddress), SeekOrigin.Begin);

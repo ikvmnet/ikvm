@@ -261,9 +261,11 @@ namespace IKVM.Reflection.Reader
 		private MSDOS_HEADER msdos = new MSDOS_HEADER();
 		private IMAGE_NT_HEADERS headers = new IMAGE_NT_HEADERS();
 		private SectionHeader[] sections;
+		private bool mapped;
 
-		internal void Read(BinaryReader br)
+		internal void Read(BinaryReader br, bool mapped)
 		{
+			this.mapped = mapped;
 			msdos.signature = br.ReadUInt16();
 			br.BaseStream.Seek(58, SeekOrigin.Current);
 			msdos.peSignatureOffset = br.ReadUInt32();
@@ -306,6 +308,10 @@ namespace IKVM.Reflection.Reader
 
 		internal long RvaToFileOffset(DWORD rva)
 		{
+			if (mapped)
+			{
+				return rva;
+			}
 			for (int i = 0; i < sections.Length; i++)
 			{
 				if (rva >= sections[i].VirtualAddress && rva < sections[i].VirtualAddress + sections[i].VirtualSize)
