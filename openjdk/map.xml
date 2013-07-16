@@ -228,6 +228,9 @@
             <attribute type="IKVM.Attributes.SignatureAttribute" sig="(Ljava.lang.String;)V">
                 <parameter>Ljava/lang/Object;Ljava/io/Serializable;Ljava/lang/Comparable&lt;Ljava/lang/String;&gt;;Ljava/lang/CharSequence;</parameter>
             </attribute>
+            <attribute type="IKVM.Attributes.NonNestedInnerClassAttribute" sig="(Ljava.lang.String;)V">
+                <parameter>java.lang.String$CaseInsensitiveComparator</parameter>
+            </attribute>
             <field name="serialVersionUID" sig="J" modifiers="private static final" constant="-6849794470754667710" />
             <constructor sig="()V" modifiers="public">
                 <alternateBody>
