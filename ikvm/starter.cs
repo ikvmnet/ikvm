@@ -29,7 +29,7 @@ using IKVM.Internal;
 using ikvm.runtime;
 using java.lang.reflect;
 
-public class Starter
+public static class Starter
 {
 	private class Timer
 	{
@@ -120,7 +120,13 @@ public class Starter
 			{
 				if(arg == "-help" || arg == "-?")
 				{
-					break;
+					PrintHelp();
+					return 1;
+				}
+				else if(arg == "-X")
+				{
+					PrintXHelp();
+					return 1;
 				}
 				else if(arg == "-Xsave")
 				{
@@ -298,34 +304,7 @@ public class Starter
 		}
 		if(mainClass == null)
 		{
-			Console.Error.WriteLine("usage: ikvm [-options] <class> [args...]");
-			Console.Error.WriteLine("          (to execute a class)");
-			Console.Error.WriteLine("    or ikvm -jar [-options] <jarfile> [args...]");
-			Console.Error.WriteLine("          (to execute a jar file)");
-			Console.Error.WriteLine();
-			Console.Error.WriteLine("where options include:");
-			Console.Error.WriteLine("    -? -help          Display this message");
-			Console.Error.WriteLine("    -version          Display IKVM and runtime version");
-			Console.Error.WriteLine("    -showversion      Display version and continue running");
-			Console.Error.WriteLine("    -cp -classpath <directories and zip/jar files separated by {0}>", Path.PathSeparator);
-			Console.Error.WriteLine("                      Set search path for application classes and resources");
-			Console.Error.WriteLine("    -D<name>=<value>  Set a system property");
-			Console.Error.WriteLine("    -ea[:<packagename>...|:<classname>]");
-			Console.Error.WriteLine("    -enableassertions[:<packagename>...|:<classname>]");
-			Console.Error.WriteLine("                      Enable assertions.");
-			Console.Error.WriteLine("    -da[:<packagename>...|:<classname>]");
-			Console.Error.WriteLine("    -disableassertions[:<packagename>...|:<classname>]");
-			Console.Error.WriteLine("                      Disable assertions");
-			Console.Error.WriteLine("    -Xsave            Save the generated assembly (for debugging)");
-			Console.Error.WriteLine("    -Xtime            Time the execution");
-			Console.Error.WriteLine("    -Xtrace:<string>  Displays all tracepoints with the given name");
-			Console.Error.WriteLine("    -Xmethodtrace:<string>");
-			Console.Error.WriteLine("                      Builds method trace into the specified output methods");
-			Console.Error.WriteLine("    -Xwait            Keep process hanging around after exit");
-			Console.Error.WriteLine("    -Xbreak           Trigger a user defined breakpoint at startup");
-			Console.Error.WriteLine("    -Xnoclassgc       Disable class garbage collection");
-			Console.Error.WriteLine("    -Xnoglobbing      Disable argument globbing");
-			Console.Error.WriteLine("    -Xverify          Enable strict class file verification");
+			PrintHelp();
 			return 1;
 		}
 		try
@@ -413,5 +392,45 @@ public class Starter
 			Startup.exitMainThread();
 		}
 		return 1;
+	}
+
+	private static void PrintHelp()
+	{
+		Console.Error.WriteLine("usage: ikvm [-options] <class> [args...]");
+		Console.Error.WriteLine("          (to execute a class)");
+		Console.Error.WriteLine("    or ikvm -jar [-options] <jarfile> [args...]");
+		Console.Error.WriteLine("          (to execute a jar file)");
+		Console.Error.WriteLine();
+		Console.Error.WriteLine("where options include:");
+		Console.Error.WriteLine("    -? -help          Display this message");
+		Console.Error.WriteLine("    -X                Display non-standard options");
+		Console.Error.WriteLine("    -version          Display IKVM and runtime version");
+		Console.Error.WriteLine("    -showversion      Display version and continue running");
+		Console.Error.WriteLine("    -cp -classpath <directories and zip/jar files separated by {0}>", Path.PathSeparator);
+		Console.Error.WriteLine("                      Set search path for application classes and resources");
+		Console.Error.WriteLine("    -D<name>=<value>  Set a system property");
+		Console.Error.WriteLine("    -ea[:<packagename>...|:<classname>]");
+		Console.Error.WriteLine("    -enableassertions[:<packagename>...|:<classname>]");
+		Console.Error.WriteLine("                      Enable assertions.");
+		Console.Error.WriteLine("    -da[:<packagename>...|:<classname>]");
+		Console.Error.WriteLine("    -disableassertions[:<packagename>...|:<classname>]");
+		Console.Error.WriteLine("                      Disable assertions");
+	}
+
+	private static void PrintXHelp()
+	{
+		Console.Error.WriteLine("    -Xsave            Save the generated assembly (for troubleshooting)");
+		Console.Error.WriteLine("    -Xtime            Time the execution");
+		Console.Error.WriteLine("    -Xtrace:<string>  Displays all tracepoints with the given name");
+		Console.Error.WriteLine("    -Xmethodtrace:<string>");
+		Console.Error.WriteLine("                      Builds method trace into the specified output methods");
+		Console.Error.WriteLine("    -Xwait            Keep process hanging around after exit");
+		Console.Error.WriteLine("    -Xbreak           Trigger a user defined breakpoint at startup");
+		Console.Error.WriteLine("    -Xnoclassgc       Disable class garbage collection");
+		Console.Error.WriteLine("    -Xnoglobbing      Disable argument globbing");
+		Console.Error.WriteLine("    -Xverify          Enable strict class file verification");
+		Console.Error.WriteLine();
+		Console.Error.WriteLine("The -X options are non-standard and subject to change without notice.");
+		Console.Error.WriteLine();
 	}
 }
