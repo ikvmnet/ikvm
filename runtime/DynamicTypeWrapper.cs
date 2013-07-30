@@ -817,24 +817,7 @@ namespace IKVM.Internal
 					// This is primarily to support annotations that take enum parameters.
 					if (f.IsEnum && f.IsPublic)
 					{
-						CompilerClassLoader ccl = wrapper.classLoader;
-						string name = "__Enum";
-						while (!ccl.ReserveName(f.Name + "$" + name))
-						{
-							name += "_";
-						}
-						enumBuilder = typeBuilder.DefineNestedType(name, TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.NestedPublic | TypeAttributes.Serializable, Types.Enum);
-						AttributeHelper.HideFromJava(enumBuilder);
-						enumBuilder.DefineField("value__", Types.Int32, FieldAttributes.Public | FieldAttributes.SpecialName | FieldAttributes.RTSpecialName);
-						for (int i = 0; i < f.Fields.Length; i++)
-						{
-							if (f.Fields[i].IsEnum)
-							{
-								FieldBuilder fieldBuilder = enumBuilder.DefineField(f.Fields[i].Name, enumBuilder, FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Literal);
-								fieldBuilder.SetConstant(i);
-							}
-						}
-						wrapper.SetEnumType(enumBuilder);
+						AddCliEnum();
 					}
 					TypeWrapper[] interfaces = wrapper.Interfaces;
 					string[] implements = new string[interfaces.Length];
@@ -912,6 +895,30 @@ namespace IKVM.Internal
 				}
 #endif
 			}
+
+#if STATIC_COMPILER
+			private void AddCliEnum()
+			{
+				CompilerClassLoader ccl = wrapper.classLoader;
+				string name = "__Enum";
+				while (!ccl.ReserveName(classFile.Name + "$" + name))
+				{
+					name += "_";
+				}
+				enumBuilder = typeBuilder.DefineNestedType(name, TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.NestedPublic | TypeAttributes.Serializable, Types.Enum);
+				AttributeHelper.HideFromJava(enumBuilder);
+				enumBuilder.DefineField("value__", Types.Int32, FieldAttributes.Public | FieldAttributes.SpecialName | FieldAttributes.RTSpecialName);
+				for (int i = 0; i < classFile.Fields.Length; i++)
+				{
+					if (classFile.Fields[i].IsEnum)
+					{
+						FieldBuilder fieldBuilder = enumBuilder.DefineField(classFile.Fields[i].Name, enumBuilder, FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Literal);
+						fieldBuilder.SetConstant(i);
+					}
+				}
+				wrapper.SetEnumType(enumBuilder);
+			}
+#endif
 
 			private void AddClinitTrigger()
 			{
