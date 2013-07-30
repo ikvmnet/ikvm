@@ -819,12 +819,7 @@ namespace IKVM.Internal
 					{
 						AddCliEnum();
 					}
-					TypeWrapper[] interfaces = wrapper.Interfaces;
-					string[] implements = new string[interfaces.Length];
-					for (int i = 0; i < implements.Length; i++)
-					{
-						implements[i] = interfaces[i].Name;
-					}
+					AddImplementsAttribute();
 					if (outer != null)
 					{
 						Modifiers innerClassModifiers = outerClass.accessFlags;
@@ -839,7 +834,6 @@ namespace IKVM.Internal
 					{
 						AttributeHelper.SetInnerClass(typeBuilder, null, outerClass.accessFlags);
 					}
-					AttributeHelper.SetImplementsAttribute(typeBuilder, interfaces);
 					if (classFile.DeprecatedAttribute && !Annotation.HasObsoleteAttribute(classFile.Annotations))
 					{
 						AttributeHelper.SetDeprecatedAttribute(typeBuilder);
@@ -897,6 +891,17 @@ namespace IKVM.Internal
 			}
 
 #if STATIC_COMPILER
+			private void AddImplementsAttribute()
+			{
+				TypeWrapper[] interfaces = wrapper.Interfaces;
+				string[] implements = new string[interfaces.Length];
+				for (int i = 0; i < implements.Length; i++)
+				{
+					implements[i] = interfaces[i].Name;
+				}
+				AttributeHelper.SetImplementsAttribute(typeBuilder, interfaces);
+			}
+
 			private void AddCliEnum()
 			{
 				CompilerClassLoader ccl = wrapper.classLoader;
