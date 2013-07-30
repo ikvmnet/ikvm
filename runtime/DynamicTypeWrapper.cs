@@ -891,33 +891,7 @@ namespace IKVM.Internal
 #endif // STATIC_COMPILER
 					if (hasclinit)
 					{
-						// We create a empty method that we can use to trigger our .cctor
-						// (previously we used RuntimeHelpers.RunClassConstructor, but that is slow and requires additional privileges)
-						MethodAttributes attribs = MethodAttributes.Static | MethodAttributes.SpecialName;
-						if (classFile.IsAbstract)
-						{
-							bool hasfields = false;
-							// If we have any public static fields, the cctor trigger must (and may) be public as well
-							foreach (ClassFile.Field fld in classFile.Fields)
-							{
-								if (fld.IsPublic && fld.IsStatic)
-								{
-									hasfields = true;
-									break;
-								}
-							}
-							attribs |= hasfields ? MethodAttributes.Public : MethodAttributes.FamORAssem;
-						}
-						else
-						{
-							attribs |= MethodAttributes.Public;
-						}
-						clinitMethod = typeBuilder.DefineMethod("__<clinit>", attribs, null, null);
-						clinitMethod.GetILGenerator().Emit(OpCodes.Ret);
-						// FXBUG on .NET 2.0 RTM x64 the JIT sometimes throws an InvalidProgramException while trying to inline this method,
-						// so we prevent inlining for now (it also turns out that on x86 not inlining this method actually has a positive perf impact in some cases...)
-						// http://connect.microsoft.com/VisualStudio/feedback/ViewFeedback.aspx?FeedbackID=285772
-						clinitMethod.SetImplementationFlags(clinitMethod.GetMethodImplementationFlags() | MethodImplAttributes.NoInlining);
+						AddClinitTrigger();
 					}
 					if (HasStructLayoutAttributeAnnotation(classFile))
 					{
@@ -937,6 +911,37 @@ namespace IKVM.Internal
 					JVM.CriticalFailure("Exception during JavaTypeImpl.CreateStep2", x);
 				}
 #endif
+			}
+
+			private void AddClinitTrigger()
+			{
+				// We create a empty method that we can use to trigger our .cctor
+				// (previously we used RuntimeHelpers.RunClassConstructor, but that is slow and requires additional privileges)
+				MethodAttributes attribs = MethodAttributes.Static | MethodAttributes.SpecialName;
+				if (classFile.IsAbstract)
+				{
+					bool hasfields = false;
+					// If we have any public static fields, the cctor trigger must (and may) be public as well
+					foreach (ClassFile.Field fld in classFile.Fields)
+					{
+						if (fld.IsPublic && fld.IsStatic)
+						{
+							hasfields = true;
+							break;
+						}
+					}
+					attribs |= hasfields ? MethodAttributes.Public : MethodAttributes.FamORAssem;
+				}
+				else
+				{
+					attribs |= MethodAttributes.Public;
+				}
+				clinitMethod = typeBuilder.DefineMethod("__<clinit>", attribs, null, null);
+				clinitMethod.GetILGenerator().Emit(OpCodes.Ret);
+				// FXBUG on .NET 2.0 RTM x64 the JIT sometimes throws an InvalidProgramException while trying to inline this method,
+				// so we prevent inlining for now (it also turns out that on x86 not inlining this method actually has a positive perf impact in some cases...)
+				// http://connect.microsoft.com/VisualStudio/feedback/ViewFeedback.aspx?FeedbackID=285772
+				clinitMethod.SetImplementationFlags(clinitMethod.GetMethodImplementationFlags() | MethodImplAttributes.NoInlining);
 			}
 
 			private sealed class DelegateConstructorMethodWrapper : MethodWrapper
