@@ -798,11 +798,6 @@ namespace IKVM.Internal
 							}
 						}
 					}
-					if (outer == null && mangledTypeName != wrapper.Name)
-					{
-						// HACK we abuse the InnerClassAttribute to record to real name
-						AttributeHelper.SetInnerClass(typeBuilder, wrapper.Name, wrapper.Modifiers);
-					}
 					if (typeBuilder.FullName != wrapper.Name
 						&& wrapper.Name.Replace('$', '+') != typeBuilder.FullName)
 					{
@@ -820,19 +815,7 @@ namespace IKVM.Internal
 						AddCliEnum();
 					}
 					AddImplementsAttribute();
-					if (outer != null)
-					{
-						string innerClassName = classFile.Name;
-						if (innerClassName == outerClassWrapper.Name + "$" + typeBuilder.Name)
-						{
-							innerClassName = null;
-						}
-						AttributeHelper.SetInnerClass(typeBuilder, innerClassName, outerClass.accessFlags);
-					}
-					else if (outerClass.innerClass != 0)
-					{
-						AttributeHelper.SetInnerClass(typeBuilder, null, outerClass.accessFlags);
-					}
+					AddInnerClassAttribute(outer != null, outerClass.innerClass != 0, mangledTypeName, outerClass.accessFlags);
 					if (classFile.DeprecatedAttribute && !Annotation.HasObsoleteAttribute(classFile.Annotations))
 					{
 						AttributeHelper.SetDeprecatedAttribute(typeBuilder);
@@ -899,6 +882,29 @@ namespace IKVM.Internal
 					implements[i] = interfaces[i].Name;
 				}
 				AttributeHelper.SetImplementsAttribute(typeBuilder, interfaces);
+			}
+
+			private void AddInnerClassAttribute(bool isNestedType, bool isInnerClass, string mangledTypeName, Modifiers innerClassFlags)
+			{
+				string name = classFile.Name;
+
+				if (isNestedType)
+				{
+					if (name == outerClassWrapper.Name + "$" + typeBuilder.Name)
+					{
+						name = null;
+					}
+				}
+				else if (name == mangledTypeName)
+				{
+					name = null;
+				}
+
+				if (isInnerClass || name != null)
+				{
+					// HACK we abuse the InnerClassAttribute to record to real name for non-inner classes as well
+					AttributeHelper.SetInnerClass(typeBuilder, name, isInnerClass ? innerClassFlags : wrapper.Modifiers);
+				}
 			}
 
 			private void AddCliEnum()
