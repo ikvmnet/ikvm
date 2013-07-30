@@ -822,13 +822,12 @@ namespace IKVM.Internal
 					AddImplementsAttribute();
 					if (outer != null)
 					{
-						Modifiers innerClassModifiers = outerClass.accessFlags;
-						string innerClassName = classFile.GetConstantPoolClass(outerClass.innerClass);
-						if (innerClassName == classFile.Name && innerClassName == outerClassWrapper.Name + "$" + typeBuilder.Name)
+						string innerClassName = classFile.Name;
+						if (innerClassName == outerClassWrapper.Name + "$" + typeBuilder.Name)
 						{
 							innerClassName = null;
 						}
-						AttributeHelper.SetInnerClass(typeBuilder, innerClassName, innerClassModifiers);
+						AttributeHelper.SetInnerClass(typeBuilder, innerClassName, outerClass.accessFlags);
 					}
 					else if (outerClass.innerClass != 0)
 					{
