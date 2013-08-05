@@ -2803,7 +2803,7 @@ namespace IKVM.Internal
 							code.verifyError = string.Format("Class {0}, method {1} signature {2}: No Code attribute", classFile.Name, this.Name, this.Signature);
 							return;
 						}
-						throw new ClassFormatError("Method has no Code attribute");
+						throw new ClassFormatError("Absent Code attribute in method that is not native or abstract in class file " + classFile.Name);
 					}
 				}
 			}
