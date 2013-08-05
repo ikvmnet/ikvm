@@ -1914,6 +1914,8 @@ namespace IKVM.Internal
 					case RefKind.invokeStatic:
 					case RefKind.newInvokeSpecial:
 						cpi = classFile.GetConstantPoolItem(method_index) as ConstantPoolItemMethodref;
+						if (cpi == null && classFile.MajorVersion >= 52 && (RefKind)ref_kind == RefKind.invokeStatic)
+							goto case RefKind.invokeInterface;
 						break;
 					case RefKind.invokeInterface:
 						cpi = classFile.GetConstantPoolItem(method_index) as ConstantPoolItemInterfaceMethodref;
