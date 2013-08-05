@@ -409,7 +409,14 @@ namespace IKVM.NativeCode.sun.nio.ch
 			}
 			catch (System.Net.Sockets.SocketException x)
 			{
-				throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
+				if (x.ErrorCode == global::java.net.SocketUtil.WSAEWOULDBLOCK)
+				{
+					count = 0;
+				}
+				else
+				{
+					throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
+				}
 			}
 			catch (ObjectDisposedException)
 			{
@@ -469,7 +476,14 @@ namespace IKVM.NativeCode.sun.nio.ch
 			}
 			catch (System.Net.Sockets.SocketException x)
 			{
-				throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
+				if (x.ErrorCode == global::java.net.SocketUtil.WSAEWOULDBLOCK)
+				{
+					count = 0;
+				}
+				else
+				{
+					throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
+				}
 			}
 			catch (ObjectDisposedException)
 			{
