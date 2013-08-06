@@ -4844,6 +4844,10 @@ namespace IKVM.Internal
 			{
 				return ((SourceFileAttribute)attr[0]).SourceFile;
 			}
+			if(DeclaringTypeWrapper != null)
+			{
+				return DeclaringTypeWrapper.GetSourceFileName();
+			}
 			if(type.Module.IsDefined(typeof(SourceFileAttribute), false))
 			{
 				return type.Name + ".java";

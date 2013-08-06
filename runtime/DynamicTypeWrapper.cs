@@ -832,7 +832,12 @@ namespace IKVM.Internal
 					{
 						if (f.SourceFileAttribute != null)
 						{
-							if (f.SourceFileAttribute != typeBuilder.Name + ".java")
+							if ((outerClassWrapper == null && f.SourceFileAttribute == typeBuilder.Name + ".java")
+								|| (outerClassWrapper != null && f.SourceFileAttribute == outerClassWrapper.sourceFileName))
+							{
+								// we don't need to record the name because it matches our heuristic
+							}
+							else
 							{
 								AttributeHelper.SetSourceFile(typeBuilder, f.SourceFileAttribute);
 							}
