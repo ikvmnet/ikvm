@@ -731,7 +731,7 @@ namespace IKVM.Internal
 							}
 							// LAMESPEC the CLI spec says interfaces cannot contain nested types (Part.II, 9.6), but that rule isn't enforced
 							// (and broken by J# as well), so we'll just ignore it too.
-							typeBuilder = outer.DefineNestedType(GetInnerClassName(outerClassWrapper.Name, f.Name), typeAttribs);
+							typeBuilder = outer.DefineNestedType(AllocNestedTypeName(outerClassWrapper.Name, f.Name), typeAttribs);
 						}
 						else
 						{
@@ -760,7 +760,7 @@ namespace IKVM.Internal
 						{
 							// LAMESPEC the CLI spec says interfaces cannot contain nested types (Part.II, 9.6), but that rule isn't enforced
 							// (and broken by J# as well), so we'll just ignore it too.
-							typeBuilder = outer.DefineNestedType(GetInnerClassName(outerClassWrapper.Name, f.Name), typeAttribs);
+							typeBuilder = outer.DefineNestedType(AllocNestedTypeName(outerClassWrapper.Name, f.Name), typeAttribs);
 						}
 						else
 #endif // STATIC_COMPILER
@@ -1293,10 +1293,10 @@ namespace IKVM.Internal
 			private static bool CheckInnerOuterNames(string inner, string outer)
 			{
 				// do some sanity checks on the inner/outer class names
-				return inner.Length > outer.Length + 1 && inner[outer.Length] == '$' && inner.StartsWith(outer);
+				return inner.Length > outer.Length + 1 && inner[outer.Length] == '$' && inner.StartsWith(outer, StringComparison.Ordinal);
 			}
 
-			private string GetInnerClassName(string outer, string inner)
+			private string AllocNestedTypeName(string outer, string inner)
 			{
 				Debug.Assert(CheckInnerOuterNames(inner, outer));
 				if (nestedTypeNames == null)
@@ -1826,7 +1826,7 @@ namespace IKVM.Internal
 						{
 							typeAttributes |= TypeAttributes.NestedAssembly;
 						}
-						attributeTypeBuilder = outer.DefineNestedType(o.GetInnerClassName(o.outerClassWrapper.Name, name + "Attribute"), typeAttributes, annotationAttributeBaseType.TypeAsBaseType);
+						attributeTypeBuilder = outer.DefineNestedType(o.AllocNestedTypeName(o.outerClassWrapper.Name, name + "Attribute"), typeAttributes, annotationAttributeBaseType.TypeAsBaseType);
 					}
 					else
 					{
