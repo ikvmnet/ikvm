@@ -452,7 +452,7 @@ namespace IKVM.Internal
 			private MethodBuilder clinitMethod;
 			private MethodBuilder finalizeMethod;
 #if STATIC_COMPILER
-			private DynamicTypeWrapper outerClassWrapper;
+			private DynamicTypeWrapper enclosingClassWrapper;
 			private AnnotationBuilder annotationBuilder;
 			private TypeBuilder enumBuilder;
 			private Dictionary<string, TypeWrapper> nestedTypeNames;	// only keys are used, values are always null
@@ -609,15 +609,15 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 					bool cantNest = false;
 					bool setModifiers = false;
-					TypeBuilder outer = null;
+					TypeBuilder enclosing = null;
 					// we only compile inner classes as nested types in the static compiler, because it has a higher cost
 					// and doesn't buy us anything in dynamic mode (and if fact, due to an FXBUG it would make handling
 					// the TypeResolve event very hard)
 					ClassFile.InnerClass outerClass = getOuterClass();
 					if (outerClass.outerClass != 0)
 					{
-						string outerClassName = classFile.GetConstantPoolClass(outerClass.outerClass);
-						if (!CheckInnerOuterNames(f.Name, outerClassName))
+						string enclosingClassName = classFile.GetConstantPoolClass(outerClass.outerClass);
+						if (!CheckInnerOuterNames(f.Name, enclosingClassName))
 						{
 							Tracer.Warning(Tracer.Compiler, "Incorrect InnerClasses attribute on {0}", f.Name);
 						}
@@ -625,26 +625,26 @@ namespace IKVM.Internal
 						{
 							try
 							{
-								outerClassWrapper = wrapper.classLoader.LoadClassByDottedNameFast(outerClassName) as DynamicTypeWrapper;
+								enclosingClassWrapper = wrapper.classLoader.LoadClassByDottedNameFast(enclosingClassName) as DynamicTypeWrapper;
 							}
 							catch (RetargetableJavaException x)
 							{
-								Tracer.Warning(Tracer.Compiler, "Unable to load outer class {0} for inner class {1} ({2}: {3})", outerClassName, f.Name, x.GetType().Name, x.Message);
+								Tracer.Warning(Tracer.Compiler, "Unable to load outer class {0} for inner class {1} ({2}: {3})", enclosingClassName, f.Name, x.GetType().Name, x.Message);
 							}
-							if (outerClassWrapper != null)
+							if (enclosingClassWrapper != null)
 							{
 								// make sure the relationship is reciprocal (otherwise we run the risk of
 								// baking the outer type before the inner type) and that the inner and outer
 								// class live in the same class loader (when doing a multi target compilation,
 								// it is possible to split the two classes acros assemblies)
-								JavaTypeImpl oimpl = outerClassWrapper.impl as JavaTypeImpl;
-								if (oimpl != null && outerClassWrapper.GetClassLoader() == wrapper.GetClassLoader())
+								JavaTypeImpl oimpl = enclosingClassWrapper.impl as JavaTypeImpl;
+								if (oimpl != null && enclosingClassWrapper.GetClassLoader() == wrapper.GetClassLoader())
 								{
 									ClassFile outerClassFile = oimpl.classFile;
 									ClassFile.InnerClass[] outerInnerClasses = outerClassFile.InnerClasses;
 									if (outerInnerClasses == null)
 									{
-										outerClassWrapper = null;
+										enclosingClassWrapper = null;
 									}
 									else
 									{
@@ -662,18 +662,18 @@ namespace IKVM.Internal
 										}
 										if (!ok)
 										{
-											outerClassWrapper = null;
+											enclosingClassWrapper = null;
 										}
 									}
 								}
 								else
 								{
-									outerClassWrapper = null;
+									enclosingClassWrapper = null;
 								}
-								if (outerClassWrapper != null)
+								if (enclosingClassWrapper != null)
 								{
-									outerClassWrapper.CreateStep2();
-									outer = oimpl.typeBuilder;
+									enclosingClassWrapper.CreateStep2();
+									enclosing = oimpl.typeBuilder;
 								}
 								else
 								{
@@ -684,9 +684,9 @@ namespace IKVM.Internal
 					}
 					if (f.IsPublic)
 					{
-						if (outer != null)
+						if (enclosing != null)
 						{
-							if (outerClassWrapper.IsPublic)
+							if (enclosingClassWrapper.IsPublic)
 							{
 								typeAttribs |= TypeAttributes.NestedPublic;
 							}
@@ -703,7 +703,7 @@ namespace IKVM.Internal
 							typeAttribs |= TypeAttributes.Public;
 						}
 					}
-					else if (outer != null)
+					else if (enclosing != null)
 					{
 						typeAttribs |= TypeAttributes.NestedAssembly;
 					}
@@ -721,7 +721,7 @@ namespace IKVM.Internal
 						setModifiers |= (f.Modifiers & (Modifiers)0x99CE) != 0;
 						// by default we assume interfaces are abstract, so in the exceptional case we need a ModifiersAttribute
 						setModifiers |= (f.Modifiers & Modifiers.Abstract) == 0;
-						if (outer != null && !cantNest)
+						if (enclosing != null && !cantNest)
 						{
 							if (wrapper.IsGhost)
 							{
@@ -731,7 +731,7 @@ namespace IKVM.Internal
 							}
 							// LAMESPEC the CLI spec says interfaces cannot contain nested types (Part.II, 9.6), but that rule isn't enforced
 							// (and broken by J# as well), so we'll just ignore it too.
-							typeBuilder = outer.DefineNestedType(AllocNestedTypeName(outerClassWrapper.Name, f.Name), typeAttribs);
+							typeBuilder = enclosing.DefineNestedType(AllocNestedTypeName(enclosingClassWrapper.Name, f.Name), typeAttribs);
 						}
 						else
 						{
@@ -756,11 +756,11 @@ namespace IKVM.Internal
 						setModifiers |= (f.Modifiers & (Modifiers)0x99CE) != 0;
 						// by default we assume ACC_SUPER for classes, so in the exceptional case we need a ModifiersAttribute
 						setModifiers |= !f.IsSuper;
-						if (outer != null && !cantNest)
+						if (enclosing != null && !cantNest)
 						{
 							// LAMESPEC the CLI spec says interfaces cannot contain nested types (Part.II, 9.6), but that rule isn't enforced
 							// (and broken by J# as well), so we'll just ignore it too.
-							typeBuilder = outer.DefineNestedType(AllocNestedTypeName(outerClassWrapper.Name, f.Name), typeAttribs);
+							typeBuilder = enclosing.DefineNestedType(AllocNestedTypeName(enclosingClassWrapper.Name, f.Name), typeAttribs);
 						}
 						else
 #endif // STATIC_COMPILER
@@ -772,12 +772,12 @@ namespace IKVM.Internal
 					// When we're statically compiling, we associate the typeBuilder with the wrapper. This enables types in referenced assemblies to refer back to
 					// types that we're currently compiling (i.e. a cyclic dependency between the currently assembly we're compiling and a referenced assembly).
 					wrapper.GetClassLoader().SetWrapperForType(typeBuilder, wrapper);
-					if (outer != null && cantNest)
+					if (enclosing != null && cantNest)
 					{
-						AttributeHelper.SetNonNestedOuterClass(typeBuilder, outerClassWrapper.Name);
-						AttributeHelper.SetNonNestedInnerClass(outer, f.Name);
+						AttributeHelper.SetNonNestedOuterClass(typeBuilder, enclosingClassWrapper.Name);
+						AttributeHelper.SetNonNestedInnerClass(enclosing, f.Name);
 					}
-					if (outerClass.outerClass != 0 && outer == null)
+					if (outerClass.outerClass != 0 && enclosing == null)
 					{
 						AttributeHelper.SetNonNestedOuterClass(typeBuilder, classFile.GetConstantPoolClass(outerClass.outerClass));
 					}
@@ -805,7 +805,7 @@ namespace IKVM.Internal
 					}
 					if (f.IsAnnotation && Annotation.HasRetentionPolicyRuntime(f.Annotations))
 					{
-						annotationBuilder = new AnnotationBuilder(this, outer);
+						annotationBuilder = new AnnotationBuilder(this, enclosing);
 						wrapper.SetAnnotation(annotationBuilder);
 					}
 					// For Java 5 Enum types, we generate a nested .NET enum.
@@ -815,7 +815,7 @@ namespace IKVM.Internal
 						AddCliEnum();
 					}
 					AddImplementsAttribute();
-					AddInnerClassAttribute(outer != null, outerClass.innerClass != 0, mangledTypeName, outerClass.accessFlags);
+					AddInnerClassAttribute(enclosing != null, outerClass.innerClass != 0, mangledTypeName, outerClass.accessFlags);
 					if (classFile.DeprecatedAttribute && !Annotation.HasObsoleteAttribute(classFile.Annotations))
 					{
 						AttributeHelper.SetDeprecatedAttribute(typeBuilder);
@@ -832,8 +832,8 @@ namespace IKVM.Internal
 					{
 						if (f.SourceFileAttribute != null)
 						{
-							if ((outerClassWrapper == null && f.SourceFileAttribute == typeBuilder.Name + ".java")
-								|| (outerClassWrapper != null && f.SourceFileAttribute == outerClassWrapper.sourceFileName))
+							if ((enclosingClassWrapper == null && f.SourceFileAttribute == typeBuilder.Name + ".java")
+								|| (enclosingClassWrapper != null && f.SourceFileAttribute == enclosingClassWrapper.sourceFileName))
 							{
 								// we don't need to record the name because it matches our heuristic
 							}
@@ -895,7 +895,7 @@ namespace IKVM.Internal
 
 				if (isNestedType)
 				{
-					if (name == outerClassWrapper.Name + "$" + typeBuilder.Name)
+					if (name == enclosingClassWrapper.Name + "$" + typeBuilder.Name)
 					{
 						name = null;
 					}
@@ -1816,7 +1816,7 @@ namespace IKVM.Internal
 					}
 
 					TypeAttributes typeAttributes = TypeAttributes.Class | TypeAttributes.Sealed;
-					if (o.outerClassWrapper != null)
+					if (o.enclosingClassWrapper != null)
 					{
 						if (o.wrapper.IsPublic)
 						{
@@ -1826,7 +1826,7 @@ namespace IKVM.Internal
 						{
 							typeAttributes |= TypeAttributes.NestedAssembly;
 						}
-						attributeTypeBuilder = outer.DefineNestedType(o.AllocNestedTypeName(o.outerClassWrapper.Name, name + "Attribute"), typeAttributes, annotationAttributeBaseType.TypeAsBaseType);
+						attributeTypeBuilder = outer.DefineNestedType(o.AllocNestedTypeName(o.enclosingClassWrapper.Name, name + "Attribute"), typeAttributes, annotationAttributeBaseType.TypeAsBaseType);
 					}
 					else
 					{
