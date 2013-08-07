@@ -1107,6 +1107,11 @@ namespace IKVM.Internal
 			return type.IsDefined(typeofNoPackagePrefixAttribute, false) || type.Assembly.IsDefined(typeofNoPackagePrefixAttribute, false);
 		}
 
+		internal static bool HasEnclosingMethodAttribute(Type type)
+		{
+			return type.IsDefined(typeofEnclosingMethodAttribute, false);
+		}
+
 		internal static EnclosingMethodAttribute GetEnclosingMethodAttribute(Type type)
 		{
 #if !STATIC_COMPILER && !STUB_GENERATOR
@@ -3878,6 +3883,18 @@ namespace IKVM.Internal
 			return interfaceWrappers;
 		}
 
+		private static bool IsNestedTypeAnonymousOrLocalClass(Type type)
+		{
+			switch (type.Attributes & (TypeAttributes.SpecialName | TypeAttributes.VisibilityMask))
+			{
+				case TypeAttributes.SpecialName | TypeAttributes.NestedPublic:
+				case TypeAttributes.SpecialName | TypeAttributes.NestedAssembly:
+					return AttributeHelper.HasEnclosingMethodAttribute(type);
+				default:
+					return false;
+			}
+		}
+
 		internal override TypeWrapper[] InnerClasses
 		{
 			get
@@ -3894,7 +3911,7 @@ namespace IKVM.Internal
 						// (we can't put a HideFromJavaAttribute on it, because we do want the class to be visible as a $Proxy)
 						continue;
 					}
-					if(!AttributeHelper.IsHideFromJava(nestedTypes[i]))
+					if(!IsNestedTypeAnonymousOrLocalClass(nestedTypes[i]) && !AttributeHelper.IsHideFromJava(nestedTypes[i]))
 					{
 						wrappers.Add(ClassLoaderWrapper.GetWrapperFromType(nestedTypes[i]));
 					}
@@ -3911,6 +3928,10 @@ namespace IKVM.Internal
 		{
 			get
 			{
+				if(IsNestedTypeAnonymousOrLocalClass(type))
+				{
+					return null;
+				}
 				Type declaringType = type.DeclaringType;
 				if(declaringType != null)
 				{
@@ -4847,6 +4868,10 @@ namespace IKVM.Internal
 			if(DeclaringTypeWrapper != null)
 			{
 				return DeclaringTypeWrapper.GetSourceFileName();
+			}
+			if(IsNestedTypeAnonymousOrLocalClass(type))
+			{
+				return ClassLoaderWrapper.GetWrapperFromType(type.DeclaringType).GetSourceFileName();
 			}
 			if(type.Module.IsDefined(typeof(SourceFileAttribute), false))
 			{

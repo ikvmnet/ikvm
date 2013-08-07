@@ -610,16 +610,24 @@ namespace IKVM.Internal
 					bool cantNest = false;
 					bool setModifiers = false;
 					TypeBuilder enclosing = null;
+					string enclosingClassName = null;
 					// we only compile inner classes as nested types in the static compiler, because it has a higher cost
 					// and doesn't buy us anything in dynamic mode (and if fact, due to an FXBUG it would make handling
 					// the TypeResolve event very hard)
 					ClassFile.InnerClass outerClass = getOuterClass();
 					if (outerClass.outerClass != 0)
 					{
-						string enclosingClassName = classFile.GetConstantPoolClass(outerClass.outerClass);
+						enclosingClassName = classFile.GetConstantPoolClass(outerClass.outerClass);
+					}
+					else if (f.EnclosingMethod != null)
+					{
+						enclosingClassName = f.EnclosingMethod[0];
+					}
+					if (enclosingClassName != null)
+					{
 						if (!CheckInnerOuterNames(f.Name, enclosingClassName))
 						{
-							Tracer.Warning(Tracer.Compiler, "Incorrect InnerClasses attribute on {0}", f.Name);
+							Tracer.Warning(Tracer.Compiler, "Incorrect {0} attribute on {1}", outerClass.outerClass != 0 ? "InnerClasses" : "EnclosingMethod", f.Name);
 						}
 						else
 						{
@@ -636,7 +644,7 @@ namespace IKVM.Internal
 								// make sure the relationship is reciprocal (otherwise we run the risk of
 								// baking the outer type before the inner type) and that the inner and outer
 								// class live in the same class loader (when doing a multi target compilation,
-								// it is possible to split the two classes acros assemblies)
+								// it is possible to split the two classes across assemblies)
 								JavaTypeImpl oimpl = enclosingClassWrapper.impl as JavaTypeImpl;
 								if (oimpl != null && enclosingClassWrapper.GetClassLoader() == wrapper.GetClassLoader())
 								{
@@ -651,8 +659,8 @@ namespace IKVM.Internal
 										bool ok = false;
 										for (int i = 0; i < outerInnerClasses.Length; i++)
 										{
-											if (outerInnerClasses[i].outerClass != 0
-												&& outerClassFile.GetConstantPoolClass(outerInnerClasses[i].outerClass) == outerClassFile.Name
+											if (((outerInnerClasses[i].outerClass != 0 && outerClassFile.GetConstantPoolClass(outerInnerClasses[i].outerClass) == outerClassFile.Name)
+													|| (outerInnerClasses[i].outerClass == 0 && outerClass.outerClass == 0))
 												&& outerInnerClasses[i].innerClass != 0
 												&& outerClassFile.GetConstantPoolClass(outerInnerClasses[i].innerClass) == f.Name)
 											{
@@ -674,6 +682,11 @@ namespace IKVM.Internal
 								{
 									enclosingClassWrapper.CreateStep2();
 									enclosing = oimpl.typeBuilder;
+									if (outerClass.outerClass == 0)
+									{
+										// we need to record that we're not an inner classes, but an enclosed class
+										typeAttribs |= TypeAttributes.SpecialName;
+									}
 								}
 								else
 								{
@@ -772,14 +785,16 @@ namespace IKVM.Internal
 					// When we're statically compiling, we associate the typeBuilder with the wrapper. This enables types in referenced assemblies to refer back to
 					// types that we're currently compiling (i.e. a cyclic dependency between the currently assembly we're compiling and a referenced assembly).
 					wrapper.GetClassLoader().SetWrapperForType(typeBuilder, wrapper);
-					if (enclosing != null && cantNest)
+					if (outerClass.outerClass != 0)
 					{
-						AttributeHelper.SetNonNestedOuterClass(typeBuilder, enclosingClassWrapper.Name);
-						AttributeHelper.SetNonNestedInnerClass(enclosing, f.Name);
-					}
-					if (outerClass.outerClass != 0 && enclosing == null)
-					{
-						AttributeHelper.SetNonNestedOuterClass(typeBuilder, classFile.GetConstantPoolClass(outerClass.outerClass));
+						if (enclosing != null && cantNest)
+						{
+							AttributeHelper.SetNonNestedInnerClass(enclosing, f.Name);
+						}
+						if (enclosing == null || cantNest)
+						{
+							AttributeHelper.SetNonNestedOuterClass(typeBuilder, enclosingClassName);
+						}
 					}
 					if (classFile.InnerClasses != null)
 					{
