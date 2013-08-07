@@ -688,6 +688,15 @@ namespace IKVM.Attributes
 			this.methodSig = methodSig;
 		}
 
+		internal EnclosingMethodAttribute SetClassName(Type type)
+		{
+			if (className == null)
+			{
+				className = IKVM.Internal.ClassLoaderWrapper.GetWrapperFromType(type.DeclaringType).Name;
+			}
+			return this;
+		}
+
 		public string ClassName
 		{
 			get

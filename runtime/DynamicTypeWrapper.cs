@@ -841,7 +841,15 @@ namespace IKVM.Internal
 					}
 					if (classFile.EnclosingMethod != null)
 					{
-						AttributeHelper.SetEnclosingMethodAttribute(typeBuilder, classFile.EnclosingMethod[0], classFile.EnclosingMethod[1], classFile.EnclosingMethod[2]);
+						if (outerClass.outerClass == 0 && enclosing != null && !cantNest)
+						{
+							// we don't need to record the enclosing type, if we're compiling the current type as a nested type because of the EnclosingMethod attribute
+							AttributeHelper.SetEnclosingMethodAttribute(typeBuilder, null, classFile.EnclosingMethod[1], classFile.EnclosingMethod[2]);
+						}
+						else
+						{
+							AttributeHelper.SetEnclosingMethodAttribute(typeBuilder, classFile.EnclosingMethod[0], classFile.EnclosingMethod[1], classFile.EnclosingMethod[2]);
+						}
 					}
 					if (wrapper.classLoader.EmitStackTraceInfo)
 					{

@@ -1118,13 +1118,13 @@ namespace IKVM.Internal
 			object[] attr = type.GetCustomAttributes(typeof(EnclosingMethodAttribute), false);
 			if (attr.Length == 1)
 			{
-				return (EnclosingMethodAttribute)attr[0];
+				return ((EnclosingMethodAttribute)attr[0]).SetClassName(type);
 			}
 			return null;
 #else
 			foreach (CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(type, typeofEnclosingMethodAttribute, false))
 			{
-				return new EnclosingMethodAttribute((string)cad.ConstructorArguments[0].Value, (string)cad.ConstructorArguments[1].Value, (string)cad.ConstructorArguments[2].Value);
+				return new EnclosingMethodAttribute((string)cad.ConstructorArguments[0].Value, (string)cad.ConstructorArguments[1].Value, (string)cad.ConstructorArguments[2].Value).SetClassName(type);
 			}
 			return null;
 #endif
