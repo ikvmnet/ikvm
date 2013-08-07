@@ -829,7 +829,6 @@ namespace IKVM.Internal
 					{
 						AddCliEnum();
 					}
-					AddImplementsAttribute();
 					AddInnerClassAttribute(enclosing != null, outerClass.innerClass != 0, mangledTypeName, outerClass.accessFlags);
 					if (classFile.DeprecatedAttribute && !Annotation.HasObsoleteAttribute(classFile.Annotations))
 					{
@@ -901,17 +900,6 @@ namespace IKVM.Internal
 			}
 
 #if STATIC_COMPILER
-			private void AddImplementsAttribute()
-			{
-				TypeWrapper[] interfaces = wrapper.Interfaces;
-				string[] implements = new string[interfaces.Length];
-				for (int i = 0; i < implements.Length; i++)
-				{
-					implements[i] = interfaces[i].Name;
-				}
-				AttributeHelper.SetImplementsAttribute(typeBuilder, interfaces);
-			}
-
 			private void AddInnerClassAttribute(bool isNestedType, bool isInnerClass, string mangledTypeName, Modifiers innerClassFlags)
 			{
 				string name = classFile.Name;
@@ -4283,6 +4271,10 @@ namespace IKVM.Internal
 					}
 				}
 
+#if STATIC_COMPILER
+				AddImplementsAttribute();
+#endif
+
 				Type type;
 				Profiler.Enter("TypeBuilder.CreateType");
 				try
@@ -4314,6 +4306,36 @@ namespace IKVM.Internal
 			}
 
 #if STATIC_COMPILER
+			private void AddImplementsAttribute()
+			{
+				TypeWrapper[] interfaces = wrapper.Interfaces;
+				if (wrapper.BaseTypeWrapper == CoreClasses.java.lang.Object.Wrapper)
+				{
+					// We special case classes extending java.lang.Object to optimize the metadata encoding
+					// for anonymous classes that implement an interface.
+					Type[] actualInterfaces = typeBuilder.GetInterfaces();
+					if (actualInterfaces.Length == 0)
+					{
+						return;
+					}
+					else if (actualInterfaces.Length == 1
+						&& interfaces.Length == 1
+						&& !interfaces[0].IsRemapped
+						&& interfaces[0].TypeAsBaseType == actualInterfaces[0])
+					{
+						// We extend java.lang.Object and implement only a single (non-remapped) interface,
+						// in this case we can omit the ImplementAttribute since the runtime will be able
+						// to reliable reproduce the "list" of implemented interfaces.
+						return;
+					}
+				}
+				else if (interfaces.Length == 0)
+				{
+					return;
+				}
+				AttributeHelper.SetImplementsAttribute(typeBuilder, interfaces);
+			}
+
 			private TypeBuilder DefineNestedInteropType(string name)
 			{
 				CompilerClassLoader ccl = wrapper.classLoader;

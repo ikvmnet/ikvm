@@ -528,19 +528,16 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 		internal static void SetImplementsAttribute(TypeBuilder typeBuilder, TypeWrapper[] ifaceWrappers)
 		{
-			if(ifaceWrappers != null && ifaceWrappers.Length != 0)
+			string[] interfaces = new string[ifaceWrappers.Length];
+			for(int i = 0; i < interfaces.Length; i++)
 			{
-				string[] interfaces = new string[ifaceWrappers.Length];
-				for(int i = 0; i < interfaces.Length; i++)
-				{
-					interfaces[i] = ifaceWrappers[i].Name;
-				}
-				if(implementsAttribute == null)
-				{
-					implementsAttribute = typeofImplementsAttribute.GetConstructor(new Type[] { JVM.Import(typeof(string[])) });
-				}
-				typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(implementsAttribute, new object[] { interfaces }));
+				interfaces[i] = ifaceWrappers[i].Name;
 			}
+			if(implementsAttribute == null)
+			{
+				implementsAttribute = typeofImplementsAttribute.GetConstructor(new Type[] { JVM.Import(typeof(string[])) });
+			}
+			typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(implementsAttribute, new object[] { interfaces }));
 		}
 #endif
 
@@ -3846,6 +3843,10 @@ namespace IKVM.Internal
 			ImplementsAttribute attr = AttributeHelper.GetImplements(type);
 			if (attr == null)
 			{
+				if (BaseTypeWrapper == CoreClasses.java.lang.Object.Wrapper)
+				{
+					return GetImplementedInterfacesAsTypeWrappers(type);
+				}
 				return TypeWrapper.EmptyArray;
 			}
 			string[] interfaceNames = attr.Interfaces;
