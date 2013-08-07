@@ -3895,25 +3895,36 @@ namespace IKVM.Internal
 			}
 		}
 
+		private static bool IsAnnotationAttribute(Type type)
+		{
+			return type.Name.EndsWith("Attribute", StringComparison.Ordinal)
+				&& type.IsClass
+				&& type.BaseType.FullName == "ikvm.internal.AnnotationAttributeBase";
+		}
+
 		internal override TypeWrapper[] InnerClasses
 		{
 			get
 			{
-				Type[] nestedTypes = type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
 				List<TypeWrapper> wrappers = new List<TypeWrapper>();
-				for(int i = 0; i < nestedTypes.Length; i++)
+				foreach(Type nested in type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
 				{
-					if(nestedTypes[i].Name.EndsWith("Attribute", StringComparison.Ordinal)
-						&& nestedTypes[i].IsClass
-						&& nestedTypes[i].BaseType.FullName == "ikvm.internal.AnnotationAttributeBase")
+					if(IsAnnotationAttribute(nested))
 					{
 						// HACK it's the custom attribute we generated for a corresponding annotation, so we shouldn't surface it as an inner classes
 						// (we can't put a HideFromJavaAttribute on it, because we do want the class to be visible as a $Proxy)
-						continue;
 					}
-					if(!IsNestedTypeAnonymousOrLocalClass(nestedTypes[i]) && !AttributeHelper.IsHideFromJava(nestedTypes[i]))
+					else if(IsNestedTypeAnonymousOrLocalClass(nested))
 					{
-						wrappers.Add(ClassLoaderWrapper.GetWrapperFromType(nestedTypes[i]));
+						// anonymous and local classes are not reported as inner classes
+					}
+					else if(AttributeHelper.IsHideFromJava(nested))
+					{
+						// ignore
+					}
+					else
+					{
+						wrappers.Add(ClassLoaderWrapper.GetWrapperFromType(nested));
 					}
 				}
 				foreach(string s in AttributeHelper.GetNonNestedInnerClasses(type))
