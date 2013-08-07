@@ -916,7 +916,7 @@ namespace IKVM.Internal
 					name = null;
 				}
 
-				if (isInnerClass || name != null)
+				if ((isInnerClass && CompiledTypeWrapper.PredictReflectiveModifiers(wrapper) != innerClassFlags) || name != null)
 				{
 					// HACK we abuse the InnerClassAttribute to record to real name for non-inner classes as well
 					AttributeHelper.SetInnerClass(typeBuilder, name, isInnerClass ? innerClassFlags : wrapper.Modifiers);

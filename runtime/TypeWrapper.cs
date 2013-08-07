@@ -3697,10 +3697,10 @@ namespace IKVM.Internal
 				{
 					return name;
 				}
-				if(type.DeclaringType != null)
-				{
-					return GetName(type.DeclaringType) + "$" + TypeNameUtil.Unescape(type.Name);
-				}
+			}
+			if(type.DeclaringType != null)
+			{
+				return GetName(type.DeclaringType) + "$" + TypeNameUtil.Unescape(type.Name);
 			}
 			return TypeNameUtil.Unescape(type.FullName);
 		}
@@ -3958,6 +3958,47 @@ namespace IKVM.Internal
 			}
 		}
 
+		// returns true iff name is of the form "...$<n>"
+		private static bool IsAnonymousClassName(string name)
+		{
+			int index = name.LastIndexOf('$') + 1;
+			if (index > 1 && index < name.Length)
+			{
+				while (index < name.Length)
+				{
+					if ("0123456789".IndexOf(name[index++]) == -1)
+					{
+						return false;
+					}
+				}
+				return true;
+			}
+			return false;
+		}
+
+		// This method uses some heuristics to predict the reflective modifiers and if the prediction matches
+		// we can avoid storing the InnerClassesAttribute to record the modifiers.
+		// The heuristics are based on javac from Java 7.
+		internal static Modifiers PredictReflectiveModifiers(TypeWrapper tw)
+		{
+			Modifiers modifiers = Modifiers.Static | (tw.Modifiers & (Modifiers.Public | Modifiers.Abstract | Modifiers.Interface));
+			// javac marks anonymous classes as final, but the InnerClasses attribute access_flags does not have the ACC_FINAL flag set
+			if (tw.IsFinal && !IsAnonymousClassName(tw.Name))
+			{
+				modifiers |= Modifiers.Final;
+			}
+			// javac uses the this$0 field to store the outer instance reference for non-static inner classes
+			foreach (FieldWrapper fw in tw.GetFields())
+			{
+				if (fw.Name == "this$0")
+				{
+					modifiers &= ~Modifiers.Static;
+					break;
+				}
+			}
+			return modifiers;
+		}
+
 		internal override Modifiers ReflectiveModifiers
 		{
 			get
@@ -3971,6 +4012,10 @@ namespace IKVM.Internal
 						// the mask comes from RECOGNIZED_INNER_CLASS_MODIFIERS in src/hotspot/share/vm/classfile/classFileParser.cpp
 						// (minus ACC_SUPER)
 						mods = attr.Modifiers & (Modifiers)0x761F;
+					}
+					else if (type.DeclaringType != null)
+					{
+						mods = PredictReflectiveModifiers(this);
 					}
 					else
 					{
