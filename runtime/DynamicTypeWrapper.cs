@@ -4158,40 +4158,9 @@ namespace IKVM.Internal
 					{
 						continue;
 					}
-					ParameterBuilder returnParameter = null;
-					ParameterBuilder[] parameterBuilders = null;
-					string[] parameterNames = null;
-					if (wrapper.GetClassLoader().EmitDebugInfo
-#if STATIC_COMPILER
- || (classFile.IsPublic && (m.IsPublic || m.IsProtected))
-#endif
-)
-					{
-						parameterNames = new string[methods[i].GetParameters().Length];
-						GetParameterNamesFromMP(m, parameterNames);
-						GetParameterNamesFromLVT(m, parameterNames);
-						GetParameterNamesFromSig(m.Signature, parameterNames);
-#if STATIC_COMPILER
-						wrapper.GetParameterNamesFromXml(m.Name, m.Signature, parameterNames);
-#endif
-						parameterBuilders = GetParameterBuilders(mb, parameterNames.Length, parameterNames);
-					}
-#if STATIC_COMPILER
-					if ((m.Modifiers & Modifiers.VarArgs) != 0 && !methods[i].HasCallerID)
-					{
-						if (parameterBuilders == null)
-						{
-							parameterBuilders = GetParameterBuilders(mb, methods[i].GetParameters().Length, null);
-						}
-						if (parameterBuilders.Length > 0)
-						{
-							AttributeHelper.SetParamArrayAttribute(parameterBuilders[parameterBuilders.Length - 1]);
-						}
-					}
-					wrapper.AddXmlMapParameterAttributes(mb, classFile.Name, m.Name, m.Signature, ref parameterBuilders);
-#endif
 					if (m.Annotations != null)
 					{
+						ParameterBuilder returnParameter = null;
 						foreach (object[] def in m.Annotations)
 						{
 							Annotation annotation = Annotation.Load(wrapper.GetClassLoader(), def);
@@ -4202,25 +4171,8 @@ namespace IKVM.Internal
 							}
 						}
 					}
-					if (m.ParameterAnnotations != null)
-					{
-						if (parameterBuilders == null)
-						{
-							parameterBuilders = GetParameterBuilders(mb, methods[i].GetParameters().Length, null);
-						}
-						object[][] defs = m.ParameterAnnotations;
-						for (int j = 0; j < defs.Length; j++)
-						{
-							foreach (object[] def in defs[j])
-							{
-								Annotation annotation = Annotation.Load(wrapper.GetClassLoader(), def);
-								if (annotation != null)
-								{
-									annotation.Apply(wrapper.GetClassLoader(), parameterBuilders[j], def);
-								}
-							}
-						}
-					}
+					string[] parameterNames;
+					AddMethodParameterInfo(m, methods[i], mb, out parameterNames);
 #if STATIC_COMPILER
 					if (methods[i].HasCallerID)
 					{
@@ -4303,6 +4255,60 @@ namespace IKVM.Internal
 #endif
 				BakedTypeCleanupHack.Process(wrapper);
 				return type;
+			}
+
+			private void AddMethodParameterInfo(ClassFile.Method m, MethodWrapper mw, MethodBuilder mb, out string[] parameterNames)
+			{
+				parameterNames = null;
+				ParameterBuilder[] parameterBuilders = null;
+				if (wrapper.GetClassLoader().EmitDebugInfo
+#if STATIC_COMPILER
+					|| (classFile.IsPublic && (m.IsPublic || m.IsProtected))
+#endif
+					)
+				{
+					parameterNames = new string[mw.GetParameters().Length];
+					GetParameterNamesFromMP(m, parameterNames);
+					GetParameterNamesFromLVT(m, parameterNames);
+					GetParameterNamesFromSig(m.Signature, parameterNames);
+#if STATIC_COMPILER
+					wrapper.GetParameterNamesFromXml(m.Name, m.Signature, parameterNames);
+#endif
+					parameterBuilders = GetParameterBuilders(mb, parameterNames.Length, parameterNames);
+				}
+#if STATIC_COMPILER
+				if ((m.Modifiers & Modifiers.VarArgs) != 0 && !mw.HasCallerID)
+				{
+					if (parameterBuilders == null)
+					{
+						parameterBuilders = GetParameterBuilders(mb, mw.GetParameters().Length, null);
+					}
+					if (parameterBuilders.Length > 0)
+					{
+						AttributeHelper.SetParamArrayAttribute(parameterBuilders[parameterBuilders.Length - 1]);
+					}
+				}
+				wrapper.AddXmlMapParameterAttributes(mb, classFile.Name, m.Name, m.Signature, ref parameterBuilders);
+#endif
+				if (m.ParameterAnnotations != null)
+				{
+					if (parameterBuilders == null)
+					{
+						parameterBuilders = GetParameterBuilders(mb, mw.GetParameters().Length, null);
+					}
+					object[][] defs = m.ParameterAnnotations;
+					for (int j = 0; j < defs.Length; j++)
+					{
+						foreach (object[] def in defs[j])
+						{
+							Annotation annotation = Annotation.Load(wrapper.GetClassLoader(), def);
+							if (annotation != null)
+							{
+								annotation.Apply(wrapper.GetClassLoader(), parameterBuilders[j], def);
+							}
+						}
+					}
+				}
 			}
 
 #if STATIC_COMPILER
