@@ -830,6 +830,31 @@ namespace IKVM.StubGen
 		}
 	}
 
+	sealed class MethodParametersAttribute : ClassFileAttribute
+	{
+		private readonly ClassFileWriter classFile;
+		private readonly ushort[] names;
+
+		internal MethodParametersAttribute(ClassFileWriter classFile, ushort[] names)
+			: base(classFile.AddUtf8("MethodParameters"))
+		{
+			this.classFile = classFile;
+			this.names = names;
+		}
+
+		public override void Write(BigEndianStream bes)
+		{
+			base.Write(bes);
+			bes.WriteUInt32((uint)(1 + names.Length * 4));
+			bes.WriteByte((byte)names.Length);
+			foreach (ushort idx in names)
+			{
+				bes.WriteUInt16(idx);
+				bes.WriteUInt16(0);
+			}
+		}
+	}
+
 	interface IAttributeOwner
 	{
 		void AddAttribute(ClassFileAttribute attrib);

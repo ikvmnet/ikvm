@@ -37,7 +37,7 @@ namespace IKVM.StubGen
 {
 	static class StubGenerator
 	{
-		internal static void WriteClass(Stream stream, TypeWrapper tw, bool includeNonPublicInterfaces, bool includeNonPublicMembers, bool includeSerialVersionUID)
+		internal static void WriteClass(Stream stream, TypeWrapper tw, bool includeNonPublicInterfaces, bool includeNonPublicMembers, bool includeSerialVersionUID, bool includeParameterNames)
 		{
 			string name = tw.Name.Replace('.', '/');
 			string super = null;
@@ -49,7 +49,7 @@ namespace IKVM.StubGen
 			{
 				super = tw.BaseTypeWrapper.Name.Replace('.', '/');
 			}
-			ClassFileWriter writer = new ClassFileWriter(tw.Modifiers, name, super, 0, 49);
+			ClassFileWriter writer = new ClassFileWriter(tw.Modifiers, name, super, 0, includeParameterNames ? (ushort)52 : (ushort)49);
 			foreach (TypeWrapper iface in tw.Interfaces)
 			{
 				if (iface.IsPublic || includeNonPublicInterfaces)
@@ -184,6 +184,22 @@ namespace IKVM.StubGen
 						if (attr != null)
 						{
 							m.AddAttribute(new AnnotationDefaultClassFileAttribute(writer, GetAnnotationDefault(writer, attr.ConstructorArguments[0])));
+						}
+						if (includeParameterNames)
+						{
+							ParameterInfo[] parameters = mb.GetParameters();
+							if (parameters.Length != 0)
+							{
+								ushort[] names = new ushort[parameters.Length];
+								for (int i = 0; i < names.Length; i++)
+								{
+									if (parameters[i].Name != null)
+									{
+										names[i] = writer.AddUtf8(parameters[i].Name);
+									}
+								}
+								m.AddAttribute(new MethodParametersAttribute(writer, names));
+							}
 						}
 					}
 					string sig = tw.GetGenericMethodSignature(mw);

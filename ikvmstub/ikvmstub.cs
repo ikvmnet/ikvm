@@ -40,6 +40,7 @@ static class NetExp
 	private static bool includeSerialVersionUID;
 	private static bool includeNonPublicInterfaces;
 	private static bool includeNonPublicMembers;
+	private static bool includeParameterNames;
 	private static List<string> namespaces = new List<string>();
 
 	static int Main(string[] args)
@@ -106,6 +107,10 @@ static class NetExp
 				{
 					forwarders = true;
 				}
+				else if(s == "-parameters")
+				{
+					includeParameterNames = true;
+				}
 				else
 				{
 					// unrecognized option, or multiple assemblies, print usage message and exit
@@ -134,6 +139,7 @@ static class NetExp
 			Console.Error.WriteLine("    -lib:<dir>                 Additional directories to search for references");
 			Console.Error.WriteLine("    -namespace:<ns>            Only include types from specified namespace");
 			Console.Error.WriteLine("    -forwarders                Export forwarded types too");
+			Console.Error.WriteLine("    -parameters                Emit Java 8 classes with parameter names");
 			return 1;
 		}
 		if(File.Exists(assemblyNameOrPath) && nostdlib)
@@ -323,7 +329,7 @@ static class NetExp
 	{
 		zipCount++;
 		MemoryStream mem = new MemoryStream();
-		IKVM.StubGen.StubGenerator.WriteClass(mem, tw, includeNonPublicInterfaces, includeNonPublicMembers, includeSerialVersionUID);
+		IKVM.StubGen.StubGenerator.WriteClass(mem, tw, includeNonPublicInterfaces, includeNonPublicMembers, includeSerialVersionUID, includeParameterNames);
 		ZipEntry entry = new ZipEntry(tw.Name.Replace('.', '/') + ".class");
 		entry.Size = mem.Position;
 		zipFile.PutNextEntry(entry);
