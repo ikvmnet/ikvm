@@ -33,7 +33,7 @@ import java.security.PrivilegedAction;
 import java.security.AllPermission;
 import java.nio.channels.Channel;
 import java.nio.channels.spi.SelectorProvider;
-
+import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 import sun.security.util.SecurityConstants;
 
@@ -1105,9 +1105,9 @@ public final class System {
      * @see        java.lang.Runtime#load(java.lang.String)
      * @see        java.lang.SecurityManager#checkLink(java.lang.String)
      */
-    @ikvm.internal.HasCallerID
+    @CallerSensitive
     public static void load(String filename) {
-        Runtime.getRuntime().load0(Reflection.getCallerClass(2), filename);
+        Runtime.getRuntime().load0(Reflection.getCallerClass(), filename);
     }
 
     /**
@@ -1131,9 +1131,9 @@ public final class System {
      * @see        java.lang.Runtime#loadLibrary(java.lang.String)
      * @see        java.lang.SecurityManager#checkLink(java.lang.String)
      */
-    @ikvm.internal.HasCallerID
+    @CallerSensitive
     public static void loadLibrary(String libname) {
-        Runtime.getRuntime().loadLibrary0(Reflection.getCallerClass(2), libname);
+        Runtime.getRuntime().loadLibrary0(Reflection.getCallerClass(), libname);
     }
 
     /**
@@ -1160,7 +1160,6 @@ public final class System {
             return "lib" + libname + ".so";
         }
     }
-
     /* returns the class of the caller. */
     static Class<?> getCallerClass() {
         // NOTE use of more generic Reflection.getCallerClass()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package java.security;
 import ikvm.internal.CallerID;
 import sun.misc.Unsafe;
 import sun.security.util.Debug;
+import sun.reflect.CallerSensitive;
+import sun.reflect.Reflection;
 
 /**
  * <p> The AccessController class is used for access control operations
@@ -317,7 +319,7 @@ public final class AccessController {
      * @see java.security.DomainCombiner
      */
 
-    @ikvm.internal.HasCallerID
+    @CallerSensitive
     public static <T> T doPrivileged(PrivilegedAction<T> action) {
         return (T)doPrivileged(action, null, CallerID.getCallerID());
     }
@@ -344,14 +346,14 @@ public final class AccessController {
      *
      * @since 1.6
      */
+    @CallerSensitive
     public static <T> T doPrivilegedWithCombiner(PrivilegedAction<T> action) {
-
-        DomainCombiner dc = null;
         AccessControlContext acc = getStackAccessControlContext();
-        if (acc == null || (dc = acc.getAssignedCombiner()) == null) {
+        if (acc == null) {
             return AccessController.doPrivileged(action);
         }
-        return AccessController.doPrivileged(action, preserveCombiner(dc));
+        DomainCombiner dc = acc.getAssignedCombiner();
+        return AccessController.doPrivileged(action, preserveCombiner(dc, Reflection.getCallerClass()));
     }
 
 
@@ -382,7 +384,7 @@ public final class AccessController {
      * @see #doPrivileged(PrivilegedAction)
      * @see #doPrivileged(PrivilegedExceptionAction,AccessControlContext)
      */
-    @ikvm.internal.HasCallerID
+    @CallerSensitive
     public static <T> T doPrivileged(PrivilegedAction<T> action,
                                      AccessControlContext context) {
         return (T)doPrivileged(action, context, CallerID.getCallerID());
@@ -412,7 +414,7 @@ public final class AccessController {
      * @see #doPrivilegedWithCombiner(PrivilegedExceptionAction)
      * @see java.security.DomainCombiner
      */
-    @ikvm.internal.HasCallerID
+    @CallerSensitive
     public static <T> T
         doPrivileged(PrivilegedExceptionAction<T> action)
         throws PrivilegedActionException {
@@ -445,41 +447,39 @@ public final class AccessController {
      *
      * @since 1.6
      */
+    @CallerSensitive
     public static <T> T doPrivilegedWithCombiner
         (PrivilegedExceptionAction<T> action) throws PrivilegedActionException {
 
-        DomainCombiner dc = null;
         AccessControlContext acc = getStackAccessControlContext();
-        if (acc == null || (dc = acc.getAssignedCombiner()) == null) {
+        if (acc == null) {
             return AccessController.doPrivileged(action);
         }
-        return AccessController.doPrivileged(action, preserveCombiner(dc));
+        DomainCombiner dc = acc.getAssignedCombiner();
+        return AccessController.doPrivileged(action, preserveCombiner(dc, Reflection.getCallerClass()));
     }
 
     /**
      * preserve the combiner across the doPrivileged call
      */
-    private static AccessControlContext preserveCombiner
-                                        (DomainCombiner combiner) {
-
-        /**
-         * callerClass[0] = Reflection.getCallerClass
-         * callerClass[1] = AccessController.preserveCombiner
-         * callerClass[2] = AccessController.doPrivileged
-         * callerClass[3] = caller
-         */
-        final Class callerClass = sun.reflect.Reflection.getCallerClass(3);
+    private static AccessControlContext preserveCombiner(DomainCombiner combiner,
+                                                         final Class<?> caller) {
         ProtectionDomain callerPd = doPrivileged
             (new PrivilegedAction<ProtectionDomain>() {
             public ProtectionDomain run() {
-                return callerClass.getProtectionDomain();
+                return caller.getProtectionDomain();
             }
         });
 
         // perform 'combine' on the caller of doPrivileged,
         // even if the caller is from the bootclasspath
         ProtectionDomain[] pds = new ProtectionDomain[] {callerPd};
-        return new AccessControlContext(combiner.combine(pds, null), combiner);
+        if (combiner == null) {
+            return new AccessControlContext(pds);
+        } else {
+            return new AccessControlContext(combiner.combine(pds, null),
+                                            combiner);
+        }
     }
 
 
@@ -512,7 +512,7 @@ public final class AccessController {
      * @see #doPrivileged(PrivilegedAction)
      * @see #doPrivileged(PrivilegedExceptionAction,AccessControlContext)
      */
-    @ikvm.internal.HasCallerID
+    @CallerSensitive
     public static <T> T
         doPrivileged(PrivilegedExceptionAction<T> action,
                      AccessControlContext context)

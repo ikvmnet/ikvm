@@ -65,7 +65,7 @@ namespace IKVM.Internal
 		private const ushort FLAG_MASK_MAJORVERSION = 0xFF;
 		private const ushort FLAG_MASK_DEPRECATED = 0x100;
 		private const ushort FLAG_MASK_INTERNAL = 0x200;
-		private const ushort FLAG_HAS_CALLERID = 0x400;
+		private const ushort FLAG_CALLERSENSITIVE = 0x400;
 		private ConstantPoolItemClass[] interfaces;
 		private Field[] fields;
 		private Method[] methods;
@@ -2655,6 +2655,15 @@ namespace IKVM.Internal
 								goto default;
 							}
 							annotations = ReadAnnotations(br, classFile, utf8_cp);
+#if STATIC_COMPILER
+							foreach(object[] annot in annotations)
+							{
+								if(annot[1].Equals("Lsun/reflect/CallerSensitive;"))
+								{
+									flags |= FLAG_CALLERSENSITIVE;
+								}
+							}
+#endif
 							break;
 						case "RuntimeVisibleParameterAnnotations":
 						{
@@ -2721,10 +2730,6 @@ namespace IKVM.Internal
 										this.access_flags &= ~Modifiers.AccessMask;
 										flags |= FLAG_MASK_INTERNAL;
 									}
-								}
-								if(annot[1].Equals("Likvm/internal/HasCallerID;"))
-								{
-									flags |= FLAG_HAS_CALLERID;
 								}
 								if(annot[1].Equals("Likvm/lang/DllExport;"))
 								{
@@ -2844,14 +2849,15 @@ namespace IKVM.Internal
 				}
 			}
 
-			// for use by ikvmc only
-			internal bool HasCallerIDAnnotation
+#if STATIC_COMPILER
+			internal bool IsCallerSensitive
 			{
 				get
 				{
-					return (flags & FLAG_HAS_CALLERID) != 0;
+					return (flags & FLAG_CALLERSENSITIVE) != 0;
 				}
 			}
+#endif
 
 			internal string[] ExceptionsAttribute
 			{

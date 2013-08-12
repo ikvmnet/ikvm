@@ -4,7 +4,6 @@
 ../classpath/ikvm/internal/AssemblyClassLoader.java
 ../classpath/ikvm/internal/CallerID.java
 ../classpath/ikvm/internal/Formatter.java
-../classpath/ikvm/internal/HasCallerID.java
 ../classpath/ikvm/internal/JMath.java
 ../classpath/ikvm/internal/MonoUtils.java
 ../classpath/ikvm/internal/Util.java
@@ -101,6 +100,7 @@ java/lang/invoke/MutableCallSite.java
 java/lang/invoke/VolatileCallSite.java
 java/lang/LangHelper.java
 java/lang/management/PlatformComponent.java
+java/lang/Package.java
 java/lang/ProcessImpl.java
 java/lang/PropertyConstants.java
 java/lang/ref/Reference.java
@@ -255,9 +255,11 @@ sun/print/UnixPrintServiceLookup.java
 sun/print/Win32PrintJob.java
 sun/print/Win32PrintService.java
 sun/print/Win32PrintServiceLookup.java
+sun/reflect/CallerSensitive.java
 sun/reflect/MethodAccessor.java
 sun/reflect/Reflection.java
 sun/reflect/ReflectionFactory.java
+sun/reflect/misc/ReflectUtil.java
 sun/security/jgss/wrapper/NativeGSSFactory.java
 sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/build/linux-amd64/gensrc/com/sun/accessibility/internal/resources/accessibility.java
@@ -8974,7 +8976,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/OutOfMemoryError.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/Override.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/package-info.java
-@OPENJDK7@/jdk/src/share/classes/java/lang/Package.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/Process.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/ProcessBuilder.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/Readable.java
@@ -12389,7 +12390,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/sun/reflect/misc/ConstructorUtil.java
 @OPENJDK7@/jdk/src/share/classes/sun/reflect/misc/FieldUtil.java
 @OPENJDK7@/jdk/src/share/classes/sun/reflect/misc/MethodUtil.java
-@OPENJDK7@/jdk/src/share/classes/sun/reflect/misc/ReflectUtil.java
 @OPENJDK7@/jdk/src/share/classes/sun/reflect/SignatureIterator.java
 @OPENJDK7@/jdk/src/share/classes/sun/rmi/log/LogHandler.java
 @OPENJDK7@/jdk/src/share/classes/sun/rmi/log/LogInputStream.java

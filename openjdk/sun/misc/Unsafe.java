@@ -46,7 +46,7 @@ public final class Unsafe
 
     private Unsafe() { }
 
-    @ikvm.internal.HasCallerID
+    @sun.reflect.CallerSensitive
     public static Unsafe getUnsafe()
     {
         if(ikvm.internal.CallerID.getCallerID().getCallerClassLoader() != null)

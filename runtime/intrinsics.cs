@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2008-2012 Jeroen Frijters
+  Copyright (C) 2008-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -192,10 +192,9 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 			// String_toCharArray relies on globals, which aren't usable in dynamic mode
 			intrinsics.Add(new IntrinsicKey("java.lang.String", "toCharArray", "()[C"), String_toCharArray);
-#endif
-			intrinsics.Add(new IntrinsicKey("sun.reflect.Reflection", "getCallerClass", "(I)Ljava.lang.Class;"), Reflection_getCallerClass);
-			intrinsics.Add(new IntrinsicKey("java.lang.ClassLoader", "getCallerClassLoader", "()Ljava.lang.ClassLoader;"), ClassLoader_getCallerClassLoader);
+			intrinsics.Add(new IntrinsicKey("sun.reflect.Reflection", "getCallerClass", "()Ljava.lang.Class;"), Reflection_getCallerClass);
 			intrinsics.Add(new IntrinsicKey("ikvm.internal.CallerID", "getCallerID", "()Likvm.internal.CallerID;"), CallerID_getCallerID);
+#endif
 			intrinsics.Add(new IntrinsicKey("ikvm.runtime.Util", "getInstanceTypeFromClass", "(Ljava.lang.Class;)Lcli.System.Type;"), Util_getInstanceTypeFromClass);
 #if STATIC_COMPILER
 			// this only applies to the core class library, so makes no sense in dynamic mode
@@ -512,30 +511,8 @@ namespace IKVM.Internal
 			ilgen.Emit(OpCodes.Ldtoken, fb);
 			ilgen.Emit(OpCodes.Call, JVM.Import(typeof(System.Runtime.CompilerServices.RuntimeHelpers)).GetMethod("InitializeArray", new Type[] { Types.Array, JVM.Import(typeof(RuntimeFieldHandle)) }));
 		}
-#endif
 
 		private static bool Reflection_getCallerClass(EmitIntrinsicContext eic)
-		{
-			if (eic.Caller.HasCallerID
-				&& eic.MatchRange(-1, 2)
-				&& eic.Match(-1, NormalizedByteCode.__iconst, 2))
-			{
-				eic.Emitter.Emit(OpCodes.Pop);
-				int arg = eic.Caller.GetParametersForDefineMethod().Length - 1;
-				if (!eic.Caller.IsStatic)
-				{
-					arg++;
-				}
-				eic.Emitter.EmitLdarg(arg);
-				MethodWrapper mw = CoreClasses.ikvm.@internal.CallerID.Wrapper.GetMethodWrapper("getCallerClass", "()Ljava.lang.Class;", false);
-				mw.Link();
-				mw.EmitCallvirt(eic.Emitter);
-				return true;
-			}
-			return false;
-		}
-
-		private static bool ClassLoader_getCallerClassLoader(EmitIntrinsicContext eic)
 		{
 			if (eic.Caller.HasCallerID)
 			{
@@ -545,10 +522,23 @@ namespace IKVM.Internal
 					arg++;
 				}
 				eic.Emitter.EmitLdarg(arg);
-				MethodWrapper mw = CoreClasses.ikvm.@internal.CallerID.Wrapper.GetMethodWrapper("getCallerClassLoader", "()Ljava.lang.ClassLoader;", false);
+				MethodWrapper mw;
+				if (MatchInvokeStatic(eic, 1, "java.lang.ClassLoader", "getClassLoader", "(Ljava.lang.Class;)Ljava.lang.ClassLoader;"))
+				{
+					eic.PatchOpCode(1, NormalizedByteCode.__nop);
+					mw = CoreClasses.ikvm.@internal.CallerID.Wrapper.GetMethodWrapper("getCallerClassLoader", "()Ljava.lang.ClassLoader;", false);
+				}
+				else
+				{
+					mw = CoreClasses.ikvm.@internal.CallerID.Wrapper.GetMethodWrapper("getCallerClass", "()Ljava.lang.Class;", false);
+				}
 				mw.Link();
 				mw.EmitCallvirt(eic.Emitter);
 				return true;
+			}
+			else if (!DynamicTypeWrapper.RequiresDynamicReflectionCallerClass(eic.ClassFile.Name, eic.Caller.Name, eic.Caller.Signature))
+			{
+				StaticCompiler.IssueMessage(Message.ReflectionCallerClassRequiresCallerID, eic.ClassFile.Name, eic.Caller.Name, eic.Caller.Signature);
 			}
 			return false;
 		}
@@ -567,14 +557,10 @@ namespace IKVM.Internal
 			}
 			else
 			{
-#if STATIC_COMPILER
 				throw new FatalCompilerErrorException(Message.CallerIDRequiresHasCallerIDAnnotation);
-#else
-				JVM.CriticalFailure("CallerID.getCallerID() requires a HasCallerID annotation", null);
-				return false;
-#endif
 			}
 		}
+#endif
 
 		private static bool Util_getInstanceTypeFromClass(EmitIntrinsicContext eic)
 		{
@@ -976,7 +962,17 @@ namespace IKVM.Internal
 
 		private static bool MatchInvokeVirtual(EmitIntrinsicContext eic, ref Instruction instr, string clazz, string name, string sig)
 		{
-			if (instr.NormalizedOpCode == NormalizedByteCode.__invokevirtual)
+			return MatchInvoke(eic, ref instr, NormalizedByteCode.__invokevirtual, clazz, name, sig);
+		}
+
+		private static bool MatchInvokeStatic(EmitIntrinsicContext eic, int offset, string clazz, string name, string sig)
+		{
+			return MatchInvoke(eic, ref eic.Code[eic.OpcodeIndex + offset], NormalizedByteCode.__invokestatic, clazz, name, sig);
+		}
+
+		private static bool MatchInvoke(EmitIntrinsicContext eic, ref Instruction instr, NormalizedByteCode opcode, string clazz, string name, string sig)
+		{
+			if (instr.NormalizedOpCode == opcode)
 			{
 				ClassFile.ConstantPoolItemMI method = eic.ClassFile.GetMethodref(instr.Arg1);
 				return method.Class == clazz

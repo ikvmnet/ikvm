@@ -501,13 +501,14 @@ namespace IKVM.Internal
 					{
 						flags |= MemberFlags.InternalAccess;
 					}
-					// we only support HasCallerID instance methods on final types, because we don't support interface stubs with CallerID
-					if (m.HasCallerIDAnnotation
-						&& (m.IsStatic || classFile.IsFinal)
-						&& CoreClasses.java.lang.Object.Wrapper.InternalsVisibleTo(wrapper))
+#if STATIC_COMPILER
+					if (m.IsCallerSensitive
+						&& CoreClasses.ikvm.@internal.CallerID.Wrapper.InternalsVisibleTo(wrapper)	// we only look at CallerSensitive when we're compiling the core class library
+						&& SupportsCallerID(m))
 					{
 						flags |= MemberFlags.CallerID;
 					}
+#endif
 					if (wrapper.IsGhost)
 					{
 						methods[i] = new GhostMethodWrapper(wrapper, m.Name, m.Signature, null, null, null, null, m.Modifiers, flags);
@@ -574,6 +575,63 @@ namespace IKVM.Internal
 #endif
 				wrapper.SetFields(fields);
 			}
+
+#if STATIC_COMPILER
+			private bool SupportsCallerID(ClassFile.Method method)
+			{
+				if ((classFile.Name == "sun.reflect.Reflection" && method.Name == "getCallerClass")
+					|| (classFile.Name == "java.util.logging.Logger" && method.Name == "findResourceBundleFromStack"))
+				{
+					// ignore CallerSensitive on methods that don't need CallerID parameter
+					return false;
+				}
+				else if (method.IsStatic)
+				{
+					return true;
+				}
+				else if ((classFile.IsFinal || classFile.Name == "java.lang.Runtime" || classFile.Name == "java.io.ObjectStreamClass")
+					&& wrapper.BaseTypeWrapper.GetMethodWrapper(method.Name, method.Signature, true) == null
+					&& !HasInterfaceMethod(wrapper, method.Name, method.Signature))
+				{
+					// We only support CallerID instance methods on final or effectively final types,
+					// because we don't support interface stubs with CallerID.
+					// We also don't support a CallerID method overriding a method or implementing an interface.
+					return true;
+				}
+				else if (RequiresDynamicReflectionCallerClass(classFile.Name, method.Name, method.Signature))
+				{
+					// We don't support CallerID for virtual methods that can be overridden or implement an interface,
+					// so these methods will do a dynamic stack walk if when Reflection.getCallerClass() is used.
+					return false;
+				}
+				else
+				{
+					// If we end up here, we either have to add support or add them to the white-list in the above clause
+					// to allow them to fall back to dynamic stack walking.
+					StaticCompiler.IssueMessage(Message.CallerSensitiveOnUnsupportedMethod, classFile.Name, method.Name, method.Signature);
+					return false;
+				}
+			}
+
+			private static bool HasInterfaceMethod(TypeWrapper tw, string name, string signature)
+			{
+				for (; tw != null; tw = tw.BaseTypeWrapper)
+				{
+					foreach (TypeWrapper iface in tw.Interfaces)
+					{
+						if (iface.GetMethodWrapper(name, signature, false) != null)
+						{
+							return true;
+						}
+						if (HasInterfaceMethod(iface, name, signature))
+						{
+							return true;
+						}
+					}
+				}
+				return false;
+			}
+#endif
 
 			internal void CreateStep2()
 			{
@@ -6400,6 +6458,12 @@ namespace IKVM.Internal
 				|| (fw.HasNonPublicTypeInSignature
 					&& (fw.IsPublic || (fw.IsProtected && !this.IsFinal))
 					&& (fw.FieldTypeWrapper.IsUnloadable || fw.FieldTypeWrapper.IsAccessibleFrom(this) || fw.FieldTypeWrapper.InternalsVisibleTo(this)));
+		}
+
+		internal static bool RequiresDynamicReflectionCallerClass(string classFile, string method, string signature)
+		{
+			return (classFile == "java.lang.ClassLoader" && method == "getParent" && signature == "()Ljava.lang.ClassLoader;")
+				|| (classFile == "java.lang.Thread" && method == "getContextClassLoader" && signature == "()Ljava.lang.ClassLoader;");
 		}
 #endif
 	}

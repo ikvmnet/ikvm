@@ -63,6 +63,14 @@ public class Reflection {
         methodFilterMap.put(sun.misc.Unsafe.class, new String[] {"getUnsafe"});
     }
 
+    /** Returns the class of the caller of the method calling this method,
+        ignoring frames associated with java.lang.reflect.Method.invoke()
+        and its implementation. */
+    @CallerSensitive
+    public static Class getCallerClass() {
+	return getCallerClass(2);
+    }
+
     /** Returns the class of the method <code>realFramesToSkip</code>
         frames up the stack (zero-based), ignoring frames associated
         with java.lang.reflect.Method.invoke() and its implementation.
@@ -72,6 +80,7 @@ public class Reflection {
         java.lang.reflect.Method.invoke() and its implementation are
         completely ignored and do not count toward the number of "real"
         frames skipped. */
+    @CallerSensitive
     public static native Class getCallerClass(int realFramesToSkip);
 
     /** Retrieves the access flags written to the class file. For

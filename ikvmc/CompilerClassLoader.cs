@@ -3635,6 +3635,7 @@ namespace IKVM.Internal
 		UnableToResolveType = 133,
 		StubsAreDeprecated = 134,
 		WrongClassName = 135,
+		ReflectionCallerClassRequiresCallerID = 136,
 		UnknownWarning = 999,
 		// This is where the errors start
 		StartErrors = 4000,
@@ -3653,6 +3654,7 @@ namespace IKVM.Internal
 		NonPrimaryAssemblyReference = 4013,
 		MissingType = 4014,
 		MissingReference = 4015,
+		CallerSensitiveOnUnsupportedMethod = 4016,
 		// Fatal errors
 		ResponseFileDepthExceeded = 5000,
 		ErrorReadingFile = 5001,
@@ -3967,6 +3969,10 @@ namespace IKVM.Internal
 				case Message.WrongClassName:
 					msg = "Unable to compile \"{0}\" (wrong name: \"{1}\")";
 					break;
+				case Message.ReflectionCallerClassRequiresCallerID:
+					msg = "Reflection.getCallerClass() called from non-CallerID method" + Environment.NewLine +
+						"    (\"{0}.{1}{2}\")";
+					break;
 				case Message.UnableToCreateProxy:
 					msg = "Unable to create proxy \"{0}\"" + Environment.NewLine +
 						"    (\"{1}\")";
@@ -4006,6 +4012,10 @@ namespace IKVM.Internal
 					break;
 				case Message.UnknownWarning:
 					msg = "{0}";
+					break;
+				case Message.CallerSensitiveOnUnsupportedMethod:
+					msg = "CallerSensitive annotation on unsupported method" + Environment.NewLine +
+						"    (\"{0}.{1}{2}\")";
 					break;
 				default:
 					throw new InvalidProgramException();

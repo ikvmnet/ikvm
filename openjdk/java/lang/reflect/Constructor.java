@@ -25,6 +25,7 @@
 
 package java.lang.reflect;
 
+import sun.reflect.CallerSensitive;
 import sun.reflect.ConstructorAccessor;
 import sun.reflect.Reflection;
 import sun.reflect.generics.repository.ConstructorRepository;
@@ -501,15 +502,14 @@ public final
      * @exception ExceptionInInitializerError if the initialization provoked
      *              by this method fails.
      */
-    @ikvm.internal.HasCallerID
+    @CallerSensitive
     public T newInstance(Object ... initargs)
         throws InstantiationException, IllegalAccessException,
                IllegalArgumentException, InvocationTargetException
     {
         if (!override) {
             if (!Reflection.quickCheckMemberAccess(clazz, modifiers)) {
-                Class<?> caller = Reflection.getCallerClass(2);
-
+                Class<?> caller = Reflection.getCallerClass();
                 checkAccess(caller, clazz, null, modifiers);
             }
         }

@@ -33,11 +33,10 @@ import sun.invoke.util.Wrapper;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
+import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
-import ikvm.internal.CallerID;
-import ikvm.internal.HasCallerID;
 
 /**
  * This class consists exclusively of static methods that operate on or return
@@ -68,9 +67,9 @@ public class MethodHandles {
      * This lookup object is a <em>capability</em> which may be delegated to trusted agents.
      * Do not store it in place where untrusted code can access it.
      */
-    @HasCallerID
+    @CallerSensitive
     public static Lookup lookup() {
-        return new Lookup(CallerID.getCallerID());
+        return new Lookup(Reflection.getCallerClass());
     }
 
     /**
@@ -412,14 +411,9 @@ public class MethodHandles {
          * Also, don't make it private, lest javac interpose
          * an access$N method.
          */
-        Lookup(CallerID caller) {
-            this(caller.getCallerClass(), ALL_MODES);
-            // make sure we haven't accidentally picked up a privileged class:
-            checkUnprivilegedlookupClass(lookupClass);
-        }
-
         Lookup(Class<?> lookupClass) {
             this(lookupClass, ALL_MODES);
+            checkUnprivilegedlookupClass(lookupClass);
         }
 
         private Lookup(Class<?> lookupClass, int allowedModes) {
