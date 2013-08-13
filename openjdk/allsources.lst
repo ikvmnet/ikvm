@@ -31,9 +31,7 @@
 ../classpath/sun/misc/Ref.java
 AssemblyInfo.java
 com/sun/imageio/plugins/jpeg/JPEGImageReader.java
-com/sun/imageio/plugins/jpeg/JPEGImageReaderSpi.java
 com/sun/imageio/plugins/jpeg/JPEGImageWriter.java
-com/sun/imageio/plugins/jpeg/JPEGImageWriterSpi.java
 com/sun/management/OperatingSystem.java
 gnu/java/awt/Buffers.java
 gnu/java/awt/color/CieXyzConverter.java
@@ -7462,6 +7460,8 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/imageio/plugins/gif/GIFWritableImageMetadata.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/imageio/plugins/gif/GIFWritableStreamMetadata.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/imageio/plugins/jpeg/JPEG.java
+@OPENJDK7@/jdk/src/share/classes/com/sun/imageio/plugins/jpeg/JPEGImageReaderSpi.java
+@OPENJDK7@/jdk/src/share/classes/com/sun/imageio/plugins/jpeg/JPEGImageWriterSpi.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/imageio/plugins/png/PNGImageReader.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/imageio/plugins/png/PNGImageReaderSpi.java
 @OPENJDK7@/jdk/src/share/classes/com/sun/imageio/plugins/png/PNGImageWriter.java
