@@ -557,11 +557,11 @@ namespace IKVM.Internal
 #if !FIRST_PASS
 			if (_this_cause != _this)
 			{
-				throw new java.lang.IllegalStateException("Can't overwrite cause");
+				throw new java.lang.IllegalStateException("Can't overwrite cause with " + java.util.Objects.toString(cause, "a null"), _this);
 			}
 			if (cause == _this)
 			{
-				throw new java.lang.IllegalArgumentException("Self-causation not permitted");
+				throw new java.lang.IllegalArgumentException("Self-causation not permitted", _this);
 			}
 #endif
 		}
@@ -573,7 +573,7 @@ namespace IKVM.Internal
 			{
 				if (_this == x)
 				{
-					throw new java.lang.IllegalArgumentException("Self-suppression not permitted");
+					throw new java.lang.IllegalArgumentException("Self-suppression not permitted", x);
 				}
 				if (x == null)
 				{
