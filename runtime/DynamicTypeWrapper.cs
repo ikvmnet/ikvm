@@ -6463,7 +6463,9 @@ namespace IKVM.Internal
 		internal static bool RequiresDynamicReflectionCallerClass(string classFile, string method, string signature)
 		{
 			return (classFile == "java.lang.ClassLoader" && method == "getParent" && signature == "()Ljava.lang.ClassLoader;")
-				|| (classFile == "java.lang.Thread" && method == "getContextClassLoader" && signature == "()Ljava.lang.ClassLoader;");
+				|| (classFile == "java.lang.Thread" && method == "getContextClassLoader" && signature == "()Ljava.lang.ClassLoader;")
+				|| (classFile == "java.io.ObjectStreamField" && method == "getType" && signature == "()Ljava.lang.Class;")
+				;
 		}
 #endif
 	}

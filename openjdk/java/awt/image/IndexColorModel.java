@@ -618,7 +618,7 @@ public class IndexColorModel extends ColorModel {
             }
             nBits[0] = nBits[1] = nBits[2] = 8;
         }
-        return nBits;
+        return nBits.clone();
     }
 
     /**
@@ -1498,6 +1498,14 @@ public class IndexColorModel extends ColorModel {
         else {
             return validBits;
         }
+    }
+
+    /**
+     * Disposes of system resources associated with this
+     * <code>ColorModel</code> once this <code>ColorModel</code> is no
+     * longer referenced.
+     */
+    public void finalize() {
     }
 
     /**
