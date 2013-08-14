@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -282,7 +282,7 @@ jboolean exceedSizeLimit(JNIEnv *env, jint fd, jint addr, jint size)
                                 addrList = curr;
                             }
                             LeaveCriticalSection(&sizeCheckLock);
-                            JNU_ThrowOutOfMemoryError(env, "heap allocation failed");
+                            JNU_ThrowOutOfMemoryError(env, "Native heap allocation failed");
                             return JNI_TRUE;
                         }
                         curr->addr = htonl((*addrp)->S_un.S_addr);
@@ -447,7 +447,9 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_init(JNIEnv *env, jclass cls) {
 }
 */
 
-static void bind0(JNIEnv env, TwoStacksPlainDatagramSocketImpl _this, int port, InetAddress addressObj) {
+static void bind0(JNIEnv env, TwoStacksPlainDatagramSocketImpl _this,
+                                           int port, InetAddress addressObj,
+                                           boolean exclBind) {
     FileDescriptor fdObj = _this.fd;
     FileDescriptor fd1Obj = _this.fd1;
 
@@ -459,12 +461,7 @@ static void bind0(JNIEnv env, TwoStacksPlainDatagramSocketImpl _this, int port, 
     SOCKETADDRESS lcladdr;
     lcladdr = new SOCKETADDRESS();
 
-    if (IS_NULL(addressObj)) {
-        JNU_ThrowNullPointerException(env, "argument address");
-        return;
-    }
-
-    family = addressObj.family;
+    family = getInetAddress_family(env, addressObj);
     if (family == IPv6 && !ipv6_supported) {
         JNU_ThrowByName(env, JNU_JAVANETPKG+"SocketException",
                         "Protocol family not supported");
@@ -494,7 +491,7 @@ static void bind0(JNIEnv env, TwoStacksPlainDatagramSocketImpl _this, int port, 
         v6bind.addr = lcladdr;
         v6bind.ipv4_fd = fd;
         v6bind.ipv6_fd = fd1;
-        if (NET_BindV6(v6bind) != -1) {
+        if (NET_BindV6(v6bind, exclBind) != -1) {
             /* check if the fds have changed */
             if (v6bind.ipv4_fd != fd) {
                 fd = v6bind.ipv4_fd;
@@ -521,7 +518,7 @@ static void bind0(JNIEnv env, TwoStacksPlainDatagramSocketImpl _this, int port, 
             return;
         }
     } else {
-        if (bind(fd, lcladdr) == -1) {
+        if (NET_WinBind(fd, lcladdr, exclBind) == -1) {
             if (WSAGetLastError() == WSAEACCES) {
                 WSASetLastError(WSAEADDRINUSE);
             }
@@ -582,9 +579,9 @@ static void connect0(JNIEnv env, TwoStacksPlainDatagramSocketImpl _this, InetAdd
         return;
     }
 
-    addr = address.address;
+    addr = getInetAddress_addr(env, address);
 
-    family = address.family;
+    family = getInetAddress_family(env, address);
     if (family == IPv6 && !ipv6_supported) {
         JNU_ThrowByName(env, JNU_JAVANETPKG+"SocketException",
                         "Protocol family not supported");
@@ -686,7 +683,7 @@ static void send(JNIEnv env, TwoStacksPlainDatagramSocketImpl _this, DatagramPac
         return;
     }
 
-    family = iaObj.family;
+    family = getInetAddress_family(env, iaObj);
     if (family == IPv4) {
         fdObj = _this.fd;
     } else {
@@ -730,7 +727,7 @@ static void send(JNIEnv env, TwoStacksPlainDatagramSocketImpl _this, DatagramPac
         if (!w2k_or_later) { /* avoid this check on Win 2K or better. Does not work with IPv6.
                       * Check is not necessary on these OSes *-/
             if (connected) {
-                address = (*env)->GetIntField(env, iaObj, ia_addressID);
+                address = getInetAddress_addr(env, iaObj);
             } else {
                 address = ntohl(rmtaddr.him4.sin_addr.s_addr);
             }
@@ -756,7 +753,7 @@ static void send(JNIEnv env, TwoStacksPlainDatagramSocketImpl _this, DatagramPac
          *-/
         fullPacket = (char *)malloc(packetBufferLen);
         if (!fullPacket) {
-            JNU_ThrowOutOfMemoryError(env, "heap allocation failed");
+            JNU_ThrowOutOfMemoryError(env, "Send buf native heap allocation failed");
             return;
         }
     } else {
@@ -830,7 +827,7 @@ static int peek(JNIEnv env, TwoStacksPlainDatagramSocketImpl _this, InetAddress 
         JNU_ThrowNullPointerException(env, "Null address in peek()");
         return -1;
     } else {
-        address = addressObj.address;
+        address = getInetAddress_addr(env, addressObj);
         /* We only handle IPv4 for now. Will support IPv6 once its in the os */
         family = AF_INET;
     }
@@ -1009,7 +1006,7 @@ static int peekData(JNIEnv env, TwoStacksPlainDatagramSocketImpl _this, Datagram
          *-/
         fullPacket = (char *)malloc(packetBufferLen);
         if (!fullPacket) {
-            JNU_ThrowOutOfMemoryError(env, "heap allocation failed");
+            JNU_ThrowOutOfMemoryError(env, "Native heap allocation failed");
             return -1;
         }
     } else {
@@ -1275,7 +1272,7 @@ static void receive0(JNIEnv env, TwoStacksPlainDatagramSocketImpl _this, Datagra
          *-/
         fullPacket = (char *)malloc(packetBufferLen);
         if (!fullPacket) {
-            JNU_ThrowOutOfMemoryError(env, "heap allocation failed");
+            JNU_ThrowOutOfMemoryError(env, "Receive buf native heap allocation failed");
             return;
         }
     } else {
@@ -1549,7 +1546,7 @@ private static int getInetAddrFromIf (JNIEnv env, int family, NetworkInterface n
     for (i=0; i<len; i++) {
         int fam;
         addr = addrArray[i];
-        fam = addr.family;
+        fam = getInetAddress_family(env, addr);
         if (fam == family) {
             iaddr[0] = addr;
             return 0;
@@ -1567,7 +1564,7 @@ private static int getInet4AddrFromIf (JNIEnv env, NetworkInterface nif, in_addr
         return -1;
     }
 
-    iaddr.s_addr = htonl(addr[0].address);
+    iaddr.s_addr = htonl(getInetAddress_addr(env, addr[0]));
     return 0;
 }
 
@@ -1660,7 +1657,7 @@ private static void setMulticastInterface(JNIEnv env, TwoStacksPlainDatagramSock
         } else {
             in_addr in = new in_addr();
 
-            in.s_addr = htonl(((InetAddress)value).address);
+            in.s_addr = htonl(getInetAddress_addr(env, (InetAddress)value));
 
             if (setsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF,
                                in) < 0) {
@@ -1734,10 +1731,10 @@ private static void setMulticastInterface(JNIEnv env, TwoStacksPlainDatagramSock
 
 /*
  * Class:     java_net_TwoStacksPlainDatagramSocketImpl
- * Method:    socketSetOption
+ * Method:    socketNativeSetOption
  * Signature: (ILjava/lang/Object;)V
  */
-static void socketSetOption(JNIEnv env, TwoStacksPlainDatagramSocketImpl _this, int opt, Object value) {
+static void socketNativeSetOption(JNIEnv env, TwoStacksPlainDatagramSocketImpl _this, int opt, Object value) {
     cli.System.Net.Sockets.Socket fd = null;
     cli.System.Net.Sockets.Socket fd1 = null;
     int[] levelv4 = new int[1];

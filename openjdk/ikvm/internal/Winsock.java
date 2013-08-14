@@ -122,6 +122,7 @@ public final class Winsock
     public static final int SO_RCVBUF = SocketOptionName.ReceiveBuffer;
     public static final int SO_KEEPALIVE = SocketOptionName.KeepAlive;
     public static final int SO_REUSEADDR = SocketOptionName.ReuseAddress;
+    public static final int SO_EXCLUSIVEADDRUSE = SocketOptionName.ExclusiveAddressUse;
     public static final int SO_BROADCAST = SocketOptionName.Broadcast;
     public static final int SO_RCVTIMEO = SocketOptionName.ReceiveTimeout;
     public static final int SO_ERROR = SocketOptionName.Error;

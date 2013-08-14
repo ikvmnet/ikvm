@@ -127,7 +127,7 @@ static cli.System.Net.Sockets.Socket socketCreate
  * Signature: (ILjava/net/InetAddress;I)V
  */
 static void socketBind
-  (JNIEnv env, cli.System.Net.Sockets.Socket fd, InetAddress iaObj, int port) {
+  (JNIEnv env, cli.System.Net.Sockets.Socket fd, InetAddress iaObj, int port, boolean exclBind) {
     SOCKETADDRESS sa;
     sa = new SOCKETADDRESS();
     int rv;
@@ -136,8 +136,7 @@ static void socketBind
                                  JNI_TRUE) != 0) {
         return;
     }
-
-    rv = bind(fd, sa);
+    rv = NET_WinBind(fd, sa, exclBind);
 
     if (rv == SOCKET_ERROR) {
         if (WSAGetLastError() == WSAEACCES) {
@@ -275,7 +274,7 @@ static int socketReceiveOrPeekData
         }
         fullPacket = (char *)malloc(packetBufferLen);
         if (!fullPacket) {
-            JNU_ThrowOutOfMemoryError(env, "heap allocation failed");
+            JNU_ThrowOutOfMemoryError(env, "Native heap allocation failed");
             return -1;
         }
     } else {
@@ -424,7 +423,7 @@ static void socketSend
         }
         fullPacket = (char *)malloc(length);
         if (!fullPacket) {
-            JNU_ThrowOutOfMemoryError(env, "heap allocation failed");
+            JNU_ThrowOutOfMemoryError(env, "Native heap allocation failed");
             return;
         }
     } else {

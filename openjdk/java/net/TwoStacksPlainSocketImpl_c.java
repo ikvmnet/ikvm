@@ -457,13 +457,12 @@ static void socketBind(JNIEnv env, TwoStacksPlainSocketImpl _this, InetAddress i
                           him, JNI_FALSE) != 0) {
       return;
     }
-
     if (ipv6_supported) {
         ipv6bind v6bind = new ipv6bind();
         v6bind.addr = him;
         v6bind.ipv4_fd = fd;
         v6bind.ipv6_fd = fd1;
-        rv = NET_BindV6(v6bind);
+        rv = NET_BindV6(v6bind, false);
         if (rv != -1) {
             /* check if the fds have changed */
             if (v6bind.ipv4_fd != fd) {
