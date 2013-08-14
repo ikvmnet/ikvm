@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -416,7 +416,9 @@ static void socketConnect(JNIEnv env, TwoStacksPlainSocketImpl _this, InetAddres
  * Method:    socketBind
  * Signature: (Ljava/net/InetAddress;I)V
  */
-static void socketBind(JNIEnv env, TwoStacksPlainSocketImpl _this, InetAddress iaObj, int localport) {
+static void socketBind(JNIEnv env, TwoStacksPlainSocketImpl _this,
+                                         InetAddress iaObj, int localport,
+                                         boolean exclBind) {
     FileDescriptor fdObj = _this.fd;
     FileDescriptor fd1Obj = _this.fd1;
     cli.System.Net.Sockets.Socket fd = null;
@@ -430,7 +432,7 @@ static void socketBind(JNIEnv env, TwoStacksPlainSocketImpl _this, InetAddress i
     SOCKETADDRESS him;
     him = new SOCKETADDRESS();
 
-    family = iaObj.family;
+    family = getInetAddress_family(env, iaObj);
 
     if (family == IPv6 && !ipv6_supported) {
         JNU_ThrowByName(env, JNU_JAVANETPKG+"SocketException",
@@ -462,7 +464,7 @@ static void socketBind(JNIEnv env, TwoStacksPlainSocketImpl _this, InetAddress i
         v6bind.addr = him;
         v6bind.ipv4_fd = fd;
         v6bind.ipv6_fd = fd1;
-        rv = NET_BindV6(v6bind, false);
+        rv = NET_BindV6(v6bind, exclBind);
         if (rv != -1) {
             /* check if the fds have changed */
             if (v6bind.ipv4_fd != fd) {
@@ -487,7 +489,7 @@ static void socketBind(JNIEnv env, TwoStacksPlainSocketImpl _this, InetAddress i
             }
         }
     } else {
-        rv = NET_Bind(fd, him);
+        rv = NET_WinBind(fd, him, exclBind);
     }
 
     if (rv == -1) {
@@ -786,10 +788,10 @@ static void socketClose0(JNIEnv env, TwoStacksPlainSocketImpl _this, boolean use
  *
  *
  * Class:     java_net_TwoStacksPlainSocketImpl
- * Method:    socketSetOption
+ * Method:    socketNativeSetOption
  * Signature: (IZLjava/lang/Object;)V
  */
-static void socketSetOption(JNIEnv env, TwoStacksPlainSocketImpl _this, int cmd, boolean on, Object value) {
+static void socketNativeSetOption(JNIEnv env, TwoStacksPlainSocketImpl _this, int cmd, boolean on, Object value) {
     cli.System.Net.Sockets.Socket fd, fd1;
     int[] level = new int[1];
     int[] optname = new int[1];

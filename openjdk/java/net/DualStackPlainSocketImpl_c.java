@@ -97,7 +97,9 @@ static cli.System.Net.Sockets.Socket socket0
  * Signature: (ILjava/net/InetAddress;I)V
  */
 static void bind0
-  (JNIEnv env, cli.System.Net.Sockets.Socket fd, InetAddress iaObj, int port) {
+  (JNIEnv env, cli.System.Net.Sockets.Socket fd, InetAddress iaObj, int port,
+   boolean exclBind)
+{
     SOCKETADDRESS sa;
     sa = new SOCKETADDRESS();
     int rv;
@@ -107,7 +109,7 @@ static void bind0
       return;
     }
 
-    rv = NET_Bind(fd, sa);
+    rv = NET_WinBind(fd, sa, exclBind);
 
     if (rv == SOCKET_ERROR)
         NET_ThrowNew(env, WSAGetLastError(), "JVM_Bind");

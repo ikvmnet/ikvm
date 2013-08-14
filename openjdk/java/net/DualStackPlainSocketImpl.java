@@ -34,15 +34,25 @@ import java.io.FileDescriptor;
  * single file descriptor.
  *
  * @author Chris Hegarty
- * @author Jeroen Frijters
  */
 
 class DualStackPlainSocketImpl extends AbstractPlainSocketImpl
 {
-    public DualStackPlainSocketImpl() {}
 
-    public DualStackPlainSocketImpl(FileDescriptor fd) {
+
+    // true if this socket is exclusively bound
+    private final boolean exclusiveBind;
+
+    // emulates SO_REUSEADDR when exclusiveBind is true
+    private boolean isReuseAddress;
+
+    public DualStackPlainSocketImpl(boolean exclBind) {
+        exclusiveBind = exclBind;
+    }
+
+    public DualStackPlainSocketImpl(FileDescriptor fd, boolean exclBind) {
         this.fd = fd;
+        exclusiveBind = exclBind;
     }
 
     void socketCreate(boolean stream) throws IOException {
@@ -90,7 +100,7 @@ class DualStackPlainSocketImpl extends AbstractPlainSocketImpl
         if (address == null)
             throw new NullPointerException("inet address argument is null.");
 
-        bind0(nativefd, address, port);
+        bind0(nativefd, address, port, exclusiveBind);
         if (port == 0) {
             localport = localPort0(nativefd);
         } else {
@@ -158,6 +168,8 @@ class DualStackPlainSocketImpl extends AbstractPlainSocketImpl
         shutdown0(nativefd, howto);
     }
 
+    // Intentional fallthrough after SO_REUSEADDR
+    @SuppressWarnings("fallthrough")
     void socketSetOption(int opt, boolean on, Object value)
         throws SocketException {
         cli.System.Net.Sockets.Socket nativefd = checkAndReturnNativeFD();
@@ -169,10 +181,16 @@ class DualStackPlainSocketImpl extends AbstractPlainSocketImpl
         int optionValue = 0;
 
         switch(opt) {
+            case SO_REUSEADDR :
+                if (exclusiveBind) {
+                    // SO_REUSEADDR emulated when using exclusive bind
+                    isReuseAddress = on;
+                    return;
+                }
+                // intentional fallthrough
             case TCP_NODELAY :
             case SO_OOBINLINE :
             case SO_KEEPALIVE :
-            case SO_REUSEADDR :
                 optionValue = on ? 1 : 0;
                 break;
             case SO_SNDBUF :
@@ -202,6 +220,10 @@ class DualStackPlainSocketImpl extends AbstractPlainSocketImpl
             localAddress(nativefd, (InetAddressContainer)iaContainerObj);
             return 0;  // return value doesn't matter.
         }
+
+        // SO_REUSEADDR emulated when using exclusive bind
+        if (opt == SO_REUSEADDR && exclusiveBind)
+            return isReuseAddress? 1 : -1;
 
         int value = getIntOption(nativefd, opt);
 
@@ -238,10 +260,11 @@ class DualStackPlainSocketImpl extends AbstractPlainSocketImpl
         return ret;
     }
 
-    static void bind0(cli.System.Net.Sockets.Socket fd, InetAddress localAddress, int localport)
+    static void bind0(cli.System.Net.Sockets.Socket fd, InetAddress localAddress, int localport,
+                             boolean exclBind)
         throws IOException {
         ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
-        DualStackPlainSocketImpl_c.bind0(env, fd, localAddress, localport);
+        DualStackPlainSocketImpl_c.bind0(env, fd, localAddress, localport, exclBind);
         env.ThrowPendingException();
     }
 
