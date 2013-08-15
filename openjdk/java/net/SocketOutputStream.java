@@ -32,6 +32,8 @@ import java.nio.channels.FileChannel;
 import static ikvm.internal.Winsock.*;
 import static java.net.net_util_md.*;
 
+import sun.misc.IoTrace;
+
 /**
  * This stream extends FileOutputStream to implement a
  * SocketOutputStream. Note that this class should <b>NOT</b> be
@@ -39,7 +41,6 @@ import static java.net.net_util_md.*;
  *
  * @author      Jonathan Payne
  * @author      Arthur van Hoff
- * @author      Jeroen Frijters
  */
 class SocketOutputStream extends FileOutputStream
 {
@@ -176,9 +177,12 @@ class SocketOutputStream extends FileOutputStream
             throw new ArrayIndexOutOfBoundsException();
         }
 
+        Object traceContext = IoTrace.socketWriteBegin();
+        int bytesWritten = 0;
         FileDescriptor fd = impl.acquireFD();
         try {
             socketWrite0(fd, b, off, len);
+            bytesWritten = len;
         } catch (SocketException se) {
             if (se instanceof sun.net.ConnectionResetException) {
                 impl.setConnectionResetPending();
@@ -191,6 +195,7 @@ class SocketOutputStream extends FileOutputStream
             }
         } finally {
             impl.releaseFD();
+            IoTrace.socketWriteEnd(traceContext, impl.address, impl.port, bytesWritten);
         }
     }
 
