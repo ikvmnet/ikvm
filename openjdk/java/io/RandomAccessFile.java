@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.io;
 
 import java.nio.channels.FileChannel;
 import sun.nio.ch.FileChannelImpl;
+import sun.misc.IoTrace;
 
 
 /**
@@ -61,6 +62,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     private FileDescriptor fd;
     private FileChannel channel = null;
     private boolean rw;
+
+    /* The path of the referenced file */
+    private final String path;
 
     private Object closeLock = new Object();
     private volatile boolean closed = false;
@@ -228,8 +232,14 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
         if (name == null) {
             throw new NullPointerException();
         }
+        /*
+        if (file.isInvalid()) {
+            throw new FileNotFoundException("Invalid file path");
+        }
+        */
         fd = new FileDescriptor();
         fd.incrementAndGetUseCount();
+        this.path = name;
         open(name, imode);
     }
 
@@ -267,7 +277,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     public final FileChannel getChannel() {
         synchronized (this) {
             if (channel == null) {
-                channel = FileChannelImpl.open(fd, true, rw, this);
+                channel = FileChannelImpl.open(fd, path, true, rw, this);
 
                 /*
                  * FileDescriptor could be shared by FileInputStream or
@@ -325,9 +335,15 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @exception  IOException  if an I/O error occurs. Not thrown if
      *                          end-of-file has been reached.
      */
-    public int read() throws IOException
-    {
-        return fd.read();
+    public int read() throws IOException {
+        Object traceContext = IoTrace.fileReadBegin(path);
+        int b = 0;
+        try {
+            b = fd.read();
+        } finally {
+            IoTrace.fileReadEnd(traceContext, b == -1 ? 0 : 1);
+        }
+        return b;
     }
 
     /**
@@ -339,7 +355,14 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     private int readBytes(byte b[], int off, int len) throws IOException
     {
-        return fd.readBytes(b, off, len);
+        Object traceContext = IoTrace.fileReadBegin(path);
+        int bytesRead = 0;
+        try {
+            bytesRead = fd.readBytes(b, off, len);
+        } finally {
+            IoTrace.fileReadEnd(traceContext, bytesRead == -1 ? 0 : bytesRead);
+        }
+        return bytesRead;
     }
 
     /**
@@ -479,9 +502,15 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @param      b   the <code>byte</code> to be written.
      * @exception  IOException  if an I/O error occurs.
      */
-    public void write(int b) throws IOException
-    {
-        fd.write(b);
+    public void write(int b) throws IOException {
+        Object traceContext = IoTrace.fileWriteBegin(path);
+        int bytesWritten = 0;
+        try {
+            fd.write(b);
+            bytesWritten = 1;
+        } finally {
+            IoTrace.fileWriteEnd(traceContext, bytesWritten);
+        }
     }
 
     /**
@@ -492,9 +521,15 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @param len the number of bytes that are written
      * @exception IOException If an I/O error has occurred.
      */
-    private void writeBytes(byte b[], int off, int len) throws IOException
-    {
-        fd.writeBytes(b, off, len);
+    private void writeBytes(byte b[], int off, int len) throws IOException {
+        Object traceContext = IoTrace.fileWriteBegin(path);
+        int bytesWritten = 0;
+        try {
+            fd.writeBytes(b, off, len);
+            bytesWritten = len;
+        } finally {
+            IoTrace.fileWriteEnd(traceContext, bytesWritten);
+        }
     }
 
     /**

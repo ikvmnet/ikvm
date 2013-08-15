@@ -204,6 +204,7 @@ sun/management/GcInfoBuilder.java
 sun/management/ManagementFactoryHelper.java
 sun/management/VMManagementImpl.java
 sun/misc/FileURLMapper.java
+sun/misc/IoTrace.java
 sun/misc/JavaAWTAccess.java
 sun/misc/MiscHelper.java
 sun/misc/OSEnvironment.java
