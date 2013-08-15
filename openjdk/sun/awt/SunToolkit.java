@@ -64,7 +64,7 @@ public abstract class SunToolkit extends Toolkit
     implements WindowClosingSupport, WindowClosingListener,
     ComponentFactory, InputMethodSupport, KeyboardFocusManagerPeerProvider {
 
-    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.SunToolkit");
+    // 8014736: logging has been removed from SunToolkit
 
     /**
      * Special mask for the UngrabEvent events, in addition to the
@@ -97,6 +97,14 @@ public abstract class SunToolkit extends Toolkit
      */
     public final static int MAX_BUTTONS_SUPPORTED = 20;
 
+    /**
+     * Creates and initializes EventQueue instance for the specified
+     * AppContext.
+     * Note that event queue must be created from createNewAppContext()
+     * only in order to ensure that EventQueue constructor obtains
+     * the correct AppContext.
+     * @param appContext AppContext to associate with the event queue
+     */
     private static void initEQ(AppContext appContext) {
         EventQueue eventQueue;
 
@@ -513,10 +521,6 @@ public abstract class SunToolkit extends Toolkit
         // otherwise have to be modified to precisely identify
         // system-generated events.
         setSystemGenerated(event);
-        AppContext eventContext = targetToAppContext(event.getSource());
-        if (eventContext != null && !eventContext.equals(appContext)) {
-            log.fine("Event posted on wrong app context : " + event);
-        }
         PostEventQueue postEventQueue =
             (PostEventQueue)appContext.get(POST_EVENT_QUEUE_KEY);
         if (postEventQueue != null) {
@@ -545,20 +549,28 @@ public abstract class SunToolkit extends Toolkit
      * EventQueue yet.
      */
     public static void flushPendingEvents()  {
+        AppContext appContext = AppContext.getAppContext();
+        flushPendingEvents(appContext);
+    }
+
+    public static void flushPendingEvents(AppContext appContext)  {
         flushLock.lock();
         try {
             // Don't call flushPendingEvents() recursively
             if (!isFlushingPendingEvents) {
                 isFlushingPendingEvents = true;
-                AppContext appContext = AppContext.getAppContext();
-                PostEventQueue postEventQueue =
-                    (PostEventQueue)appContext.get(POST_EVENT_QUEUE_KEY);
-                if (postEventQueue != null) {
-                    postEventQueue.flush();
+                try {
+                    PostEventQueue postEventQueue =
+                        (PostEventQueue)appContext.get(POST_EVENT_QUEUE_KEY);
+                    if (postEventQueue != null) {
+                        postEventQueue.flush();
+                    }
+                }
+                finally {
+                    isFlushingPendingEvents = false;
                 }
             }
         } finally {
-            isFlushingPendingEvents = false;
             flushLock.unlock();
         }
     }
@@ -799,10 +811,6 @@ public abstract class SunToolkit extends Toolkit
             //with scale factors x1, x3/4, x2/3, xN, x1/N.
             Image im = i.next();
             if (im == null) {
-                if (log.isLoggable(PlatformLogger.FINER)) {
-                    log.finer("SunToolkit.getScaledIconImage: " +
-                              "Skipping the image passed into Java because it's null.");
-                }
                 continue;
             }
             if (im instanceof ToolkitImage) {
@@ -815,10 +823,6 @@ public abstract class SunToolkit extends Toolkit
                 iw = im.getWidth(null);
                 ih = im.getHeight(null);
             } catch (Exception e){
-                if (log.isLoggable(PlatformLogger.FINER)) {
-                    log.finer("SunToolkit.getScaledIconImage: " +
-                              "Perhaps the image passed into Java is broken. Skipping this icon.");
-                }
                 continue;
             }
             if (iw > 0 && ih > 0) {
@@ -890,14 +894,6 @@ public abstract class SunToolkit extends Toolkit
         try {
             int x = (width - bestWidth) / 2;
             int y = (height - bestHeight) / 2;
-            if (log.isLoggable(PlatformLogger.FINER)) {
-                log.finer("WWindowPeer.getScaledIconData() result : " +
-                        "w : " + width + " h : " + height +
-                        " iW : " + bestImage.getWidth(null) + " iH : " + bestImage.getHeight(null) +
-                        " sim : " + bestSimilarity + " sf : " + bestScaleFactor +
-                        " adjW : " + bestWidth + " adjH : " + bestHeight +
-                        " x : " + x + " y : " + y);
-            }
             g.drawImage(bestImage, x, y, bestWidth, bestHeight, null);
         } finally {
             g.dispose();
@@ -908,10 +904,6 @@ public abstract class SunToolkit extends Toolkit
     public static DataBufferInt getScaledIconData(java.util.List<Image> imageList, int width, int height) {
         BufferedImage bimage = getScaledIconImage(imageList, width, height);
         if (bimage == null) {
-             if (log.isLoggable(PlatformLogger.FINER)) {
-                 log.finer("SunToolkit.getScaledIconData: " +
-                           "Perhaps the image passed into Java is broken. Skipping this icon.");
-             }
             return null;
         }
         Raster raster = bimage.getRaster();
@@ -1769,25 +1761,6 @@ public abstract class SunToolkit extends Toolkit
         return (Window)comp;
     }
 
-    /**
-     * Returns the value of the system property indicated by the specified key.
-     */
-    public static String getSystemProperty(final String key) {
-        return (String)AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    return System.getProperty(key);
-                }
-            });
-    }
-
-    /**
-     * Returns the boolean value of the system property indicated by the specified key.
-     */
-    protected static Boolean getBooleanSystemProperty(String key) {
-        return Boolean.valueOf(AccessController.
-                   doPrivileged(new GetBooleanAction(key)));
-    }
-
     private static Boolean sunAwtDisableMixing = null;
 
     /**
@@ -1796,7 +1769,8 @@ public abstract class SunToolkit extends Toolkit
      */
     public synchronized static boolean getSunAwtDisableMixing() {
         if (sunAwtDisableMixing == null) {
-            sunAwtDisableMixing = getBooleanSystemProperty("sun.awt.disableMixing");
+            sunAwtDisableMixing = AccessController.doPrivileged(
+                                      new GetBooleanAction("sun.awt.disableMixing"));
         }
         return sunAwtDisableMixing.booleanValue();
     }
@@ -1808,6 +1782,28 @@ public abstract class SunToolkit extends Toolkit
      */
     public boolean isNativeGTKAvailable() {
         return false;
+    }
+
+    private static final Object DEACTIVATION_TIMES_MAP_KEY = new Object();
+
+    public synchronized void setWindowDeactivationTime(Window w, long time) {
+        AppContext ctx = getAppContext(w);
+        WeakHashMap<Window, Long> map = (WeakHashMap<Window, Long>)ctx.get(DEACTIVATION_TIMES_MAP_KEY);
+        if (map == null) {
+            map = new WeakHashMap<Window, Long>();
+            ctx.put(DEACTIVATION_TIMES_MAP_KEY, map);
+        }
+        map.put(w, time);
+    }
+
+    public synchronized long getWindowDeactivationTime(Window w) {
+        AppContext ctx = getAppContext(w);
+        WeakHashMap<Window, Long> map = (WeakHashMap<Window, Long>)ctx.get(DEACTIVATION_TIMES_MAP_KEY);
+        if (map == null) {
+            return -1;
+        }
+        Long time = map.get(w);
+        return time == null ? -1 : time;
     }
 
     // Cosntant alpha
@@ -1826,6 +1822,13 @@ public abstract class SunToolkit extends Toolkit
     }
 
     public boolean isTranslucencyCapable(GraphicsConfiguration gc) {
+        return false;
+    }
+
+    /**
+     * Returns true if swing backbuffer should be translucent.
+     */
+    public boolean isSwingBackbufferTranslucencySupported() {
         return false;
     }
 
@@ -1950,25 +1953,41 @@ class PostEventQueue {
     private EventQueueItem queueTail = null;
     private final EventQueue eventQueue;
 
+    // For the case when queue is cleared but events are not posted
+    private volatile boolean isFlushing = false;
+
     PostEventQueue(EventQueue eq) {
         eventQueue = eq;
     }
 
     public synchronized boolean noEvents() {
-        return queueHead == null;
+        return queueHead == null && !isFlushing;
     }
 
     /*
      * Continually post pending AWTEvents to the Java EventQueue. The method
      * is synchronized to ensure the flush is completed before a new event
      * can be posted to this queue.
+     *
+     * 7177040: The method couldn't be wholly synchronized because of calls
+     * of EventQueue.postEvent() that uses pushPopLock, otherwise it could
+     * potentially lead to deadlock
      */
-    public synchronized void flush() {
-        EventQueueItem tempQueue = queueHead;
-        queueHead = queueTail = null;
-        while (tempQueue != null) {
-            eventQueue.postEvent(tempQueue.event);
-            tempQueue = tempQueue.next;
+    public void flush() {
+        EventQueueItem tempQueue;
+        synchronized (this) {
+            tempQueue = queueHead;
+            queueHead = queueTail = null;
+            isFlushing = (tempQueue != null);
+        }
+        try {
+            while (tempQueue != null) {
+                eventQueue.postEvent(tempQueue.event);
+                tempQueue = tempQueue.next;
+            }
+        }
+        finally {
+            isFlushing = false;
         }
     }
 
