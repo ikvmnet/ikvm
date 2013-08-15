@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ public class SharedSecrets {
     private static JavaSecurityProtectionDomainAccess javaSecurityProtectionDomainAccess;
     private static JavaSecurityAccess javaSecurityAccess;
     private static JavaxSecurityAuthKerberosAccess javaxSecurityAuthKerberosAccess;
+    private static JavaAWTAccess javaAWTAccess;
 
     public static JavaUtilJarAccess javaUtilJarAccess() {
         if (javaUtilJarAccess == null) {
@@ -145,5 +146,18 @@ public class SharedSecrets {
         if (javaxSecurityAuthKerberosAccess == null)
             unsafe.ensureClassInitialized(KeyTab.class);
         return javaxSecurityAuthKerberosAccess;
+    }
+
+    public static void setJavaAWTAccess(JavaAWTAccess jaa) {
+        javaAWTAccess = jaa;
+    }
+
+    public static JavaAWTAccess getJavaAWTAccess() {
+        // this may return null in which case calling code needs to
+        // provision for.
+        if (javaAWTAccess == null || javaAWTAccess.getContext() == null) {
+            return null;
+        }
+        return javaAWTAccess;
     }
 }

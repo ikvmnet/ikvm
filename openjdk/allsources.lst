@@ -153,7 +153,6 @@ java/util/zip/StreamManipulator.java
 java/util/zip/ZipEntry.java
 java/util/zip/ZipFile.java
 sun/awt/AppContext.java
-sun/awt/AppContextDC.java
 sun/awt/EmbeddedFrame.java
 sun/awt/IkvmDataTransferer.java
 sun/awt/image/ByteInterleavedRaster.java
@@ -205,6 +204,7 @@ sun/management/GcInfoBuilder.java
 sun/management/ManagementFactoryHelper.java
 sun/management/VMManagementImpl.java
 sun/misc/FileURLMapper.java
+sun/misc/JavaAWTAccess.java
 sun/misc/MiscHelper.java
 sun/misc/OSEnvironment.java
 sun/misc/SharedSecrets.java

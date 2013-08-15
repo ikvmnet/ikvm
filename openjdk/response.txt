@@ -42,7 +42,6 @@ assembly.class
     java/util/*.class
     java/util/concurrent/locks/*.class
     gnu/java/util/*.class
-    sun/awt/AppContextDC.class
     sun/misc/*.class
     sun/net/sdp/*.class
     sun/net/www/protocol/file/*.class
