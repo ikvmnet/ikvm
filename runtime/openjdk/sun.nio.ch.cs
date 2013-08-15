@@ -34,7 +34,7 @@ static class Java_sun_nio_ch_DatagramChannelImpl
 	{
 	}
 
-	public static void disconnect0(FileDescriptor fd)
+	public static void disconnect0(FileDescriptor fd, bool isIPv6)
 	{
 #if !FIRST_PASS
 		try
@@ -120,15 +120,14 @@ static class Java_sun_nio_ch_DatagramChannelImpl
 #endif
 	}
 
-	public static int send0(object obj, bool preferIPv6, FileDescriptor fd, byte[] buf, int pos, int len, object sa)
+	public static int send0(object obj, bool preferIPv6, FileDescriptor fd, byte[] buf, int pos, int len, InetAddress addr, int port)
 	{
 #if FIRST_PASS
 		return 0;
 #else
-		java.net.InetSocketAddress addr = (java.net.InetSocketAddress)sa;
 		try
 		{
-			return fd.getSocket().SendTo(buf, pos, len, System.Net.Sockets.SocketFlags.None, new System.Net.IPEndPoint(java.net.SocketUtil.getAddressFromInetAddress(addr.getAddress(), preferIPv6), addr.getPort()));
+			return fd.getSocket().SendTo(buf, pos, len, System.Net.Sockets.SocketFlags.None, new System.Net.IPEndPoint(java.net.SocketUtil.getAddressFromInetAddress(addr, preferIPv6), port));
 		}
 		catch (System.Net.Sockets.SocketException x)
 		{
@@ -519,6 +518,13 @@ namespace IKVM.NativeCode.sun.nio.ch
 				&& System.Net.Sockets.Socket.OSSupportsIPv6
 				&& Environment.OSVersion.Platform == PlatformID.Win32NT
 				&& Environment.OSVersion.Version.Major >= 6;
+		}
+
+		public static int isExclusiveBindAvailable()
+		{
+			return Environment.OSVersion.Platform == PlatformID.Win32NT
+				? Environment.OSVersion.Version.Major >= 6 ? 1 : 0
+				: -1;
 		}
 
 		public static bool canIPv6SocketJoinIPv4Group0()
@@ -985,11 +991,16 @@ namespace IKVM.NativeCode.sun.nio.ch
 #endif
 		}
 
-		public static void bind0(bool preferIPv6, FileDescriptor fd, InetAddress addr, int port)
+		public static void bind0(FileDescriptor fd, bool preferIPv6, bool useExclBind, InetAddress addr, int port)
 		{
 #if !FIRST_PASS
 			try
 			{
+				if (useExclBind)
+				{
+					// TODO enable this after we merge OpenJDK 7u40
+					//global::java.net.net_util_md.setExclusiveBind(fd.getSocket());
+				}
 				fd.getSocket().Bind(new System.Net.IPEndPoint(global::java.net.SocketUtil.getAddressFromInetAddress(addr, preferIPv6), port));
 			}
 			catch (System.Net.Sockets.SocketException x)
