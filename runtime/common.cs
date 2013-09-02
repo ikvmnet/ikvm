@@ -152,6 +152,15 @@ namespace IKVM.NativeCode.ikvm.@internal
 			return new global::sun.reflect.annotation.AnnotationInvocationHandler(type, (global::java.util.Map)memberValues);
 #endif
 		}
+
+		public static object newAnnotationTypeMismatchExceptionProxy(string msg)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			return new global::sun.reflect.annotation.AnnotationTypeMismatchExceptionProxy(msg);
+#endif
+		}
 	}
 }
 

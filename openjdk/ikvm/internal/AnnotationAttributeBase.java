@@ -35,6 +35,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.HashMap;
+import sun.reflect.annotation.TypeNotPresentExceptionProxy;
 
 public abstract class AnnotationAttributeBase
     extends cli.System.Attribute
@@ -257,8 +258,7 @@ public abstract class AnnotationAttributeBase
             }
             catch (NoSuchMethodException x)
             {
-                // TODO this probably isn't the right exception
-                throw new IncompatibleClassChangeError("Method " + name + " is missing in annotation " + annotationClass.getName());
+                // ignore values for members that are no longer present
             }
         }
         setDefaults(map, annotationClass);
@@ -335,6 +335,10 @@ public abstract class AnnotationAttributeBase
         if (classNameOrClass instanceof String)
         {
             annotationClass = classFromSig(loader, (String)classNameOrClass);
+            if (!annotationClass.isAnnotation())
+            {
+                return null;
+            }
             array[1] = annotationClass;
         }
         else
@@ -406,7 +410,14 @@ public abstract class AnnotationAttributeBase
             byte tag = CIL.unbox_byte(array[0]);
             if (tag != 'c')
                 throw new ClassCastException();
-            return classFromSig(loader, (String)array[1]);
+            try
+            {
+                return classFromSig(loader, (String)array[1]);
+            }
+            catch (TypeNotPresentException x)
+            {
+                return new TypeNotPresentExceptionProxy(x.typeName(), x);
+            }
         }
         else if (type.isArray())
         {
@@ -418,13 +429,18 @@ public abstract class AnnotationAttributeBase
             Object dst = Array.newInstance(type, array.length - 1);
             for (int i = 0; i < array.length - 1; i++)
             {
-                Array.set(dst, i, decodeElementValue(array[i + 1], type, loader));
+                Object val = decodeElementValue(array[i + 1], type, loader);
+                try
+                {
+                    Array.set(dst, i, val);
+                }
+                catch (IllegalArgumentException _)
+                {
+                    // JDKBUG emulate JDK bug
+                    throw new ArrayStoreException(val.getClass().getName());
+                }
             }
             return dst;
-        }
-        else if (type.isAnnotation())
-        {
-            return type.cast(newAnnotation(loader, obj));
         }
         else if (type.isEnum())
         {
@@ -432,7 +448,15 @@ public abstract class AnnotationAttributeBase
             byte tag = CIL.unbox_byte(array[0]);
             if (tag != 'e')
                 throw new ClassCastException();
-            Class enumClass = classFromSig(loader, (String)array[1]);
+            Class enumClass;
+            try
+            {
+                enumClass = classFromSig(loader, (String)array[1]);
+            }
+            catch (TypeNotPresentException x)
+            {
+                return new TypeNotPresentExceptionProxy(x.typeName(), x);
+            }
             try
             {
                 return Enum.valueOf(enumClass, (String)array[2]);
@@ -442,9 +466,16 @@ public abstract class AnnotationAttributeBase
                 throw new EnumConstantNotPresentException(enumClass, (String)array[2]);
             }
         }
-        else
+        else // must be an annotation then
         {
-            throw new ClassCastException();
+            Object ann = newAnnotation(loader, obj);
+            if (!type.isInstance(ann))
+            {
+                // JDKBUG if newAnnotation() returns null (because the class is not an annotation),
+                // the next line will throw a NullPointerException (similar to the JDK)
+                return newAnnotationTypeMismatchExceptionProxy(ann.getClass() + "[" + ann + "]");
+            }
+            return ann;
         }
     }
 
@@ -457,6 +488,7 @@ public abstract class AnnotationAttributeBase
     }
 
     private static native InvocationHandler newAnnotationInvocationHandler(Class type, Map memberValues);
+    private static native Object newAnnotationTypeMismatchExceptionProxy(String msg);
 
     public final Class<? extends Annotation> annotationType()
     {
