@@ -6258,7 +6258,11 @@ namespace IKVM.Internal
 			List<object> annotations = new List<object>();
 			for (int i = 0; i < definitions.Length; i++)
 			{
-				annotations.Add(JVM.NewAnnotation(loader, definitions[i]));
+				object obj = JVM.NewAnnotation(loader, definitions[i]);
+				if (obj != null)
+				{
+					annotations.Add(obj);
+				}
 			}
 			return annotations.ToArray();
 		}

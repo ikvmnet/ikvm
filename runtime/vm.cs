@@ -434,11 +434,19 @@ namespace IKVM.Internal
 #if !STATIC_COMPILER && !STUB_GENERATOR
 		internal static object NewAnnotation(java.lang.ClassLoader classLoader, object definition)
 		{
-#if FIRST_PASS
-			return null;
-#else
-			return ikvm.@internal.AnnotationAttributeBase.newAnnotation(classLoader, definition);
+#if !FIRST_PASS
+			java.lang.annotation.Annotation ann = null;
+			try
+			{
+				ann = (java.lang.annotation.Annotation)ikvm.@internal.AnnotationAttributeBase.newAnnotation(classLoader, definition);
+			}
+			catch (java.lang.TypeNotPresentException) { }
+			if (ann != null && sun.reflect.annotation.AnnotationType.getInstance(ann.annotationType()).retention() == java.lang.annotation.RetentionPolicy.RUNTIME)
+			{
+				return ann;
+			}
 #endif
+			return null;
 		}
 #endif
 

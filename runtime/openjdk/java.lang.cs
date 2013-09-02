@@ -366,7 +366,10 @@ static class Java_java_lang_Class
 				else if (obj is IKVM.Attributes.DynamicAnnotationAttribute)
 				{
 					a = (java.lang.annotation.Annotation)JVM.NewAnnotation(loader.GetJavaClassLoader(), ((IKVM.Attributes.DynamicAnnotationAttribute)obj).Definition);
-					map.put(a.annotationType(), a);
+					if (a != null)
+					{
+						map.put(a.annotationType(), a);
+					}
 				}
 			}
 		}

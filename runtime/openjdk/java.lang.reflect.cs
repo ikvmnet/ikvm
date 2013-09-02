@@ -746,7 +746,11 @@ static class Java_java_lang_reflect_Method
 				}
 				else if (obj is IKVM.Attributes.DynamicAnnotationAttribute)
 				{
-					list.Add((java.lang.annotation.Annotation)JVM.NewAnnotation(mw.DeclaringType.GetClassLoader().GetJavaClassLoader(), ((IKVM.Attributes.DynamicAnnotationAttribute)obj).Definition));
+					a = (java.lang.annotation.Annotation)JVM.NewAnnotation(mw.DeclaringType.GetClassLoader().GetJavaClassLoader(), ((IKVM.Attributes.DynamicAnnotationAttribute)obj).Definition);
+					if (a != null)
+					{
+						list.Add(a);
+					}
 				}
 			}
 			ann[i] = list.ToArray();
