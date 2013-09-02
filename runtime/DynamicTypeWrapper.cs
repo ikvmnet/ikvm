@@ -6248,19 +6248,24 @@ namespace IKVM.Internal
 			return -1;
 		}
 
+		private object[] DecodeAnnotations(object[] definitions)
+		{
+			if (definitions == null)
+			{
+				return null;
+			}
+			java.lang.ClassLoader loader = GetClassLoader().GetJavaClassLoader();
+			List<object> annotations = new List<object>();
+			for (int i = 0; i < definitions.Length; i++)
+			{
+				annotations.Add(JVM.NewAnnotation(loader, definitions[i]));
+			}
+			return annotations.ToArray();
+		}
+
 		internal override object[] GetDeclaredAnnotations()
 		{
-			object[] annotations = impl.GetDeclaredAnnotations();
-			if (annotations != null)
-			{
-				object[] objs = new object[annotations.Length];
-				for (int i = 0; i < annotations.Length; i++)
-				{
-					objs[i] = JVM.NewAnnotation(GetClassLoader().GetJavaClassLoader(), annotations[i]);
-				}
-				return objs;
-			}
-			return null;
+			return DecodeAnnotations(impl.GetDeclaredAnnotations());
 		}
 
 		internal override object[] GetMethodAnnotations(MethodWrapper mw)
@@ -6270,17 +6275,7 @@ namespace IKVM.Internal
 			{
 				if (methods[i] == mw)
 				{
-					object[] annotations = impl.GetMethodAnnotations(i);
-					if (annotations != null)
-					{
-						object[] objs = new object[annotations.Length];
-						for (int j = 0; j < annotations.Length; j++)
-						{
-							objs[j] = JVM.NewAnnotation(GetClassLoader().GetJavaClassLoader(), annotations[j]);
-						}
-						return objs;
-					}
-					return null;
+					return DecodeAnnotations(impl.GetMethodAnnotations(i));
 				}
 			}
 			Debug.Fail("Unreachable code");
@@ -6300,11 +6295,7 @@ namespace IKVM.Internal
 						object[][] objs = new object[annotations.Length][];
 						for (int j = 0; j < annotations.Length; j++)
 						{
-							objs[j] = new object[annotations[j].Length];
-							for (int k = 0; k < annotations[j].Length; k++)
-							{
-								objs[j][k] = JVM.NewAnnotation(GetClassLoader().GetJavaClassLoader(), annotations[j][k]);
-							}
+							objs[j] = DecodeAnnotations(annotations[j]);
 						}
 						return objs;
 					}
@@ -6322,17 +6313,7 @@ namespace IKVM.Internal
 			{
 				if (fields[i] == fw)
 				{
-					object[] annotations = impl.GetFieldAnnotations(i);
-					if (annotations != null)
-					{
-						object[] objs = new object[annotations.Length];
-						for (int j = 0; j < annotations.Length; j++)
-						{
-							objs[j] = JVM.NewAnnotation(GetClassLoader().GetJavaClassLoader(), annotations[j]);
-						}
-						return objs;
-					}
-					return null;
+					return DecodeAnnotations(impl.GetFieldAnnotations(i));
 				}
 			}
 			Debug.Fail("Unreachable code");
