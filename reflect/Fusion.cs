@@ -176,9 +176,8 @@ namespace IKVM.Reflection
 
 		static bool IsFrameworkAssembly(ParsedAssemblyName name)
 		{
-			// A list of FX assemblies which require some form of remapping
-			// When 4.0 + 1 version  is release, assemblies introduced in v4.0
-			// will have to be added
+			// Framework assemblies use different unification rules, so when
+			// a new framework is released the new assemblies need to be added.
 			switch (name.Name)
 			{
 				case "System":
@@ -191,30 +190,89 @@ namespace IKVM.Reflection
 				case "System.Data.Services.Client":
 				case "System.IdentityModel":
 				case "System.IdentityModel.Selectors":
+				case "System.IO.Compression":
+				case "System.Numerics":
+				case "System.Reflection.Context":
 				case "System.Runtime.Remoting":
 				case "System.Runtime.Serialization":
+				case "System.Runtime.WindowsRuntime":
+				case "System.Runtime.WindowsRuntime.UI.Xaml":
 				case "System.ServiceModel":
 				case "System.Transactions":
 				case "System.Windows.Forms":
 				case "System.Xml":
 				case "System.Xml.Linq":
+				case "System.Xml.Serialization":
 					return name.PublicKeyToken == "b77a5c561934e089";
 
+				case "Microsoft.CSharp":
+				case "Microsoft.VisualBasic":
+				case "System.Collections":
+				case "System.Collections.Concurrent":
+				case "System.ComponentModel":
+				case "System.ComponentModel.Annotations":
+				case "System.ComponentModel.EventBasedAsync":
 				case "System.Configuration":
 				case "System.Configuration.Install":
 				case "System.Design":
+				case "System.Diagnostics.Contracts":
+				case "System.Diagnostics.Debug":
+				case "System.Diagnostics.Tools":
+				case "System.Diagnostics.Tracing":
 				case "System.DirectoryServices":
 				case "System.Drawing":
 				case "System.Drawing.Design":
+				case "System.Dynamic.Runtime":
 				case "System.EnterpriseServices":
+				case "System.Globalization":
+				case "System.IO":
+				case "System.Linq":
+				case "System.Linq.Expressions":
+				case "System.Linq.Parallel":
+				case "System.Linq.Queryable":
 				case "System.Management":
 				case "System.Messaging":
+				case "System.Net":
+				case "System.Net.Http":
+				case "System.Net.Http.Rtc":
+				case "System.Net.NetworkInformation":
+				case "System.Net.Primitives":
+				case "System.Net.Requests":
+				case "System.ObjectModel":
+				case "System.Reflection":
+				case "System.Reflection.Extensions":
+				case "System.Reflection.Primitives":
+				case "System.Resources.ResourceManager":
+				case "System.Runtime":
+				case "System.Runtime.Extensions":
+				case "System.Runtime.InteropServices":
+				case "System.Runtime.InteropServices.WindowsRuntime":
+				case "System.Runtime.Numerics":
 				case "System.Runtime.Serialization.Formatters.Soap":
+				case "System.Runtime.Serialization.Json":
+				case "System.Runtime.Serialization.Primitives":
+				case "System.Runtime.Serialization.Xml":
 				case "System.Security":
+				case "System.Security.Principal":
+				case "System.ServiceModel.Duplex":
+				case "System.ServiceModel.Http":
+				case "System.ServiceModel.NetTcp":
+				case "System.ServiceModel.Primitives":
+				case "System.ServiceModel.Security":
 				case "System.ServiceProcess":
+				case "System.Text.Encoding":
+				case "System.Text.Encoding.Extensions":
+				case "System.Text.RegularExpressions":
+				case "System.Threading":
+				case "System.Threading.Tasks":
+				case "System.Threading.Tasks.Parallel":
 				case "System.Web":
 				case "System.Web.Mobile":
 				case "System.Web.Services":
+				case "System.Windows":
+				case "System.Xml.ReaderWriter":
+				case "System.Xml.XDocument":
+				case "System.Xml.XmlSerializer":
 					return name.PublicKeyToken == "b03f5f7f11d50a3a";
 
 				case "System.ComponentModel.DataAnnotations":
