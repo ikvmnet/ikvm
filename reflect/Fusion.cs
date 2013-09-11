@@ -50,6 +50,11 @@ namespace IKVM.Reflection
 
 	static class Fusion
 	{
+		const string PublicKeyTokenEcma = "b77a5c561934e089";
+		const string PublicKeyTokenMicrosoft = "b03f5f7f11d50a3a";
+		const string PublicKeyTokenSilverlight = "7cec85d7bea7798e";
+		const string PublicKeyTokenWinFX = "31bf3856ad364e35";
+
 		internal static bool CompareAssemblyIdentityNative(string assemblyIdentity1, bool unified1, string assemblyIdentity2, bool unified2, out AssemblyComparisonResult result)
 		{
 			bool equivalent;
@@ -82,6 +87,11 @@ namespace IKVM.Reflection
 
 			bool partial = IsPartial(name1);
 
+			if (partial && name1.Retargetable.HasValue)
+			{
+				result = AssemblyComparisonResult.NonEquivalent;
+				throw new System.IO.FileLoadException();
+			}
 			if ((partial && unified1) || IsPartial(name2))
 			{
 				result = AssemblyComparisonResult.NonEquivalent;
@@ -105,19 +115,43 @@ namespace IKVM.Reflection
 				result = AssemblyComparisonResult.NonEquivalent;
 				return false;
 			}
+			if (name1.Retargetable.GetValueOrDefault() != name2.Retargetable.GetValueOrDefault())
+			{
+				if (name1.Retargetable.GetValueOrDefault())
+				{
+					result = AssemblyComparisonResult.Unknown;
+				}
+				else
+				{
+					result = AssemblyComparisonResult.NonEquivalent;
+				}
+				return false;
+			}
 			if (IsStrongNamed(name2))
 			{
 				if (partial && name1.PublicKeyToken == null)
 				{
 				}
-				else if (name1.PublicKeyToken != name2.PublicKeyToken)
+				else if (name1.PublicKeyToken == name2.PublicKeyToken)
+				{
+				}
+				else if (!name1.Retargetable.GetValueOrDefault()
+					&& (GetRemappedPublicKeyToken(name1.Name, name1.PublicKeyToken) == name2.PublicKeyToken || GetRemappedPublicKeyToken(name2.Name, name2.PublicKeyToken) == name1.PublicKeyToken))
+				{
+				}
+				else
 				{
 					result = AssemblyComparisonResult.NonEquivalent;
 					return false;
 				}
 				if (partial && name1.Version == null)
 				{
-					result = AssemblyComparisonResult.EquivalentPartialMatch;
+					if (name2.Retargetable.HasValue && GetRemappedPublicKeyToken(name2.Name, name2.PublicKeyToken) == null)
+					{
+						result = AssemblyComparisonResult.NonEquivalent;
+						return false;
+					}
+					result = IsFrameworkAssembly(name2) ? AssemblyComparisonResult.EquivalentPartialFXUnified : AssemblyComparisonResult.EquivalentPartialMatch;
 					return true;
 				}
 				else if (IsFrameworkAssembly(name2))
@@ -156,6 +190,11 @@ namespace IKVM.Reflection
 						return false;
 					}
 				}
+				else if (name1.PublicKeyToken != name2.PublicKeyToken)
+				{
+					result = partial ? AssemblyComparisonResult.EquivalentPartialFXUnified : AssemblyComparisonResult.EquivalentFXUnified;
+					return true;
+				}
 				else
 				{
 					result = partial ? AssemblyComparisonResult.EquivalentPartialMatch : AssemblyComparisonResult.EquivalentFullMatch;
@@ -178,6 +217,10 @@ namespace IKVM.Reflection
 		{
 			// Framework assemblies use different unification rules, so when
 			// a new framework is released the new assemblies need to be added.
+			if (GetRemappedPublicKeyToken(name.Name, name.PublicKeyToken) != null)
+			{
+				return true;
+			}
 			switch (name.Name)
 			{
 				case "System":
@@ -203,7 +246,7 @@ namespace IKVM.Reflection
 				case "System.Xml":
 				case "System.Xml.Linq":
 				case "System.Xml.Serialization":
-					return name.PublicKeyToken == "b77a5c561934e089";
+					return name.PublicKeyToken == PublicKeyTokenEcma;
 
 				case "Microsoft.CSharp":
 				case "Microsoft.VisualBasic":
@@ -273,7 +316,7 @@ namespace IKVM.Reflection
 				case "System.Xml.ReaderWriter":
 				case "System.Xml.XDocument":
 				case "System.Xml.XmlSerializer":
-					return name.PublicKeyToken == "b03f5f7f11d50a3a";
+					return name.PublicKeyToken == PublicKeyTokenMicrosoft;
 
 				case "System.ComponentModel.DataAnnotations":
 				case "System.ServiceModel.Web":
@@ -282,10 +325,54 @@ namespace IKVM.Reflection
 				case "System.Web.Extensions.Design":
 				case "System.Web.DynamicData":
 				case "System.Web.Routing":
-					return name.PublicKeyToken == "31bf3856ad364e35";
+					return name.PublicKeyToken == PublicKeyTokenWinFX;
 			}
 
 			return false;
+		}
+
+		static string GetRemappedPublicKeyToken(string name, string publicKeyToken)
+		{
+			// keep this in sync with the key_remap_table in mono/metadata/assembly.c
+			switch (publicKeyToken)
+			{
+				case PublicKeyTokenSilverlight:
+					switch (name)
+					{
+						case "System":
+						case "System.Core":
+						case "System.Runtime.Serialization":
+						case "System.Xml":
+							return PublicKeyTokenEcma;
+						case "System.Net":
+						case "System.Windows":
+							return PublicKeyTokenMicrosoft;
+						case "System.ServiceModel.Web":
+							return PublicKeyTokenWinFX;
+					}
+					break;
+				case PublicKeyTokenWinFX:
+					switch (name)
+					{
+						case "Microsoft.CSharp":
+						case "System.Numerics":
+						case "System.Xml.Serialization":
+							return PublicKeyTokenMicrosoft;
+						case "System.ComponentModel.Composition":
+						case "System.ServiceModel":
+						case "System.Xml.Linq":
+							return PublicKeyTokenEcma;
+					}
+					break;
+				case "ddd0da4d3e678217":
+					switch (name)
+					{
+						case "System.ComponentModel.DataAnnotations":
+							return PublicKeyTokenWinFX;
+					}
+					break;
+			}
+			return null;
 		}
 
 		internal static ParseAssemblyResult ParseAssemblySimpleName(string fullName, out int pos, out string simpleName)
