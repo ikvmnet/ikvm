@@ -312,7 +312,7 @@ namespace IKVM.Reflection
 			}
 		}
 
-		private static string GetFullName(string name, ushort versionMajor, ushort versionMinor, ushort versionBuild, ushort versionRevision, string culture, byte[] publicKeyToken, int flags)
+		internal static string GetFullName(string name, ushort versionMajor, ushort versionMinor, ushort versionBuild, ushort versionRevision, string culture, byte[] publicKeyToken, int flags)
 		{
 			StringBuilder sb = new StringBuilder();
 			bool doubleQuotes = name.StartsWith(" ") || name.EndsWith(" ") || name.IndexOf('\'') != -1;
@@ -392,7 +392,7 @@ namespace IKVM.Reflection
 			return sb.ToString();
 		}
 
-		private static byte[] ComputePublicKeyToken(byte[] publicKey)
+		internal static byte[] ComputePublicKeyToken(byte[] publicKey)
 		{
 			if (publicKey.Length == 0)
 			{

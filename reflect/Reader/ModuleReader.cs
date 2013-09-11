@@ -511,35 +511,16 @@ namespace IKVM.Reflection.Reader
 		private Assembly ResolveAssemblyRefImpl(ref AssemblyRefTable.Record rec)
 		{
 			const int PublicKey = 0x0001;
-			string name = String.Format("{0}, Version={1}.{2}.{3}.{4}, Culture={5}, {6}={7}",
+			string name = AssemblyName.GetFullName(
 				GetString(rec.Name),
 				rec.MajorVersion,
 				rec.MinorVersion,
 				rec.BuildNumber,
 				rec.RevisionNumber,
 				rec.Culture == 0 ? "neutral" : GetString(rec.Culture),
-				(rec.Flags & PublicKey) == 0 ? "PublicKeyToken" : "PublicKey",
-				PublicKeyOrTokenToString(rec.PublicKeyOrToken));
+				rec.PublicKeyOrToken == 0 ? Empty<byte>.Array : (rec.Flags & PublicKey) == 0 ? GetBlobCopy(rec.PublicKeyOrToken) : AssemblyName.ComputePublicKeyToken(GetBlobCopy(rec.PublicKeyOrToken)),
+				rec.Flags);
 			return universe.Load(name, this, true);
-		}
-
-		private string PublicKeyOrTokenToString(int publicKeyOrToken)
-		{
-			if (publicKeyOrToken == 0)
-			{
-				return "null";
-			}
-			ByteReader br = GetBlob(publicKeyOrToken);
-			if (br.Length == 0)
-			{
-				return "null";
-			}
-			StringBuilder sb = new StringBuilder(br.Length * 2);
-			while (br.Length > 0)
-			{
-				sb.AppendFormat("{0:x2}", br.ReadByte());
-			}
-			return sb.ToString();
 		}
 
 		public override Guid ModuleVersionId
