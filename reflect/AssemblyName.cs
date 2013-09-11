@@ -292,91 +292,96 @@ namespace IKVM.Reflection
 				{
 					return "";
 				}
-				StringBuilder sb = new StringBuilder();
-				bool doubleQuotes = name.StartsWith(" ") || name.EndsWith(" ") || name.IndexOf('\'') != -1;
-				bool singleQuotes = name.IndexOf('"') != -1;
-				if (singleQuotes)
+				return GetFullName();
+			}
+		}
+
+		private string GetFullName()
+		{
+			StringBuilder sb = new StringBuilder();
+			bool doubleQuotes = name.StartsWith(" ") || name.EndsWith(" ") || name.IndexOf('\'') != -1;
+			bool singleQuotes = name.IndexOf('"') != -1;
+			if (singleQuotes)
+			{
+				sb.Append('\'');
+			}
+			else if (doubleQuotes)
+			{
+				sb.Append('"');
+			}
+			if (name.IndexOf(',') != -1 || name.IndexOf('\\') != -1 || name.IndexOf('=') != -1 || (singleQuotes && name.IndexOf('\'') != -1))
+			{
+				for (int i = 0; i < name.Length; i++)
 				{
-					sb.Append('\'');
-				}
-				else if (doubleQuotes)
-				{
-					sb.Append('"');
-				}
-				if (name.IndexOf(',') != -1 || name.IndexOf('\\') != -1 || name.IndexOf('=') != -1 || (singleQuotes && name.IndexOf('\'') != -1))
-				{
-					for (int i = 0; i < name.Length; i++)
+					char c = name[i];
+					if (c == ',' || c == '\\' || c == '=' || (singleQuotes && c == '\''))
 					{
-						char c = name[i];
-						if (c == ',' || c == '\\' || c == '=' || (singleQuotes && c == '\''))
-						{
-							sb.Append('\\');
-						}
-						sb.Append(c);
+						sb.Append('\\');
 					}
+					sb.Append(c);
 				}
-				else
+			}
+			else
+			{
+				sb.Append(name);
+			}
+			if (singleQuotes)
+			{
+				sb.Append('\'');
+			}
+			else if (doubleQuotes)
+			{
+				sb.Append('"');
+			}
+			if (version != null)
+			{
+				if ((version.Major & 0xFFFF) != 0xFFFF)
 				{
-					sb.Append(name);
-				}
-				if (singleQuotes)
-				{
-					sb.Append('\'');
-				}
-				else if (doubleQuotes)
-				{
-					sb.Append('"');
-				}
-				if (version != null)
-				{
-					if ((version.Major & 0xFFFF) != 0xFFFF)
+					sb.Append(", Version=").Append(version.Major & 0xFFFF);
+					if ((version.Minor & 0xFFFF) != 0xFFFF)
 					{
-						sb.Append(", Version=").Append(version.Major & 0xFFFF);
-						if ((version.Minor & 0xFFFF) != 0xFFFF)
+						sb.Append('.').Append(version.Minor & 0xFFFF);
+						if ((version.Build & 0xFFFF) != 0xFFFF)
 						{
-							sb.Append('.').Append(version.Minor & 0xFFFF);
-							if ((version.Build & 0xFFFF) != 0xFFFF)
+							sb.Append('.').Append(version.Build & 0xFFFF);
+							if ((version.Revision & 0xFFFF) != 0xFFFF)
 							{
-								sb.Append('.').Append(version.Build & 0xFFFF);
-								if ((version.Revision & 0xFFFF) != 0xFFFF)
-								{
-									sb.Append('.').Append(version.Revision & 0xFFFF);
-								}
+								sb.Append('.').Append(version.Revision & 0xFFFF);
 							}
 						}
 					}
 				}
-				if (culture != null)
-				{
-					sb.Append(", Culture=").Append(culture == "" ? "neutral" : culture);
-				}
-				byte[] publicKeyToken = this.publicKeyToken;
-				if ((publicKeyToken == null || publicKeyToken.Length == 0) && publicKey != null)
-				{
-					publicKeyToken = ComputePublicKeyToken(publicKey);
-				}
-				if (publicKeyToken != null)
-				{
-					sb.Append(", PublicKeyToken=");
-					if (publicKeyToken.Length == 0)
-					{
-						sb.Append("null");
-					}
-					else
-					{
-						AppendPublicKey(sb, publicKeyToken);
-					}
-				}
-				if ((Flags & AssemblyNameFlags.Retargetable) != 0)
-				{
-					sb.Append(", Retargetable=Yes");
-				}
-				if (ContentType == AssemblyContentType.WindowsRuntime)
-				{
-					sb.Append(", ContentType=WindowsRuntime");
-				}
-				return sb.ToString();
 			}
+			if (culture != null)
+			{
+				sb.Append(", Culture=").Append(culture == "" ? "neutral" : culture);
+			}
+			byte[] publicKeyToken = this.publicKeyToken;
+			if ((publicKeyToken == null || publicKeyToken.Length == 0) && publicKey != null)
+			{
+				publicKeyToken = ComputePublicKeyToken(publicKey);
+			}
+			if (publicKeyToken != null)
+			{
+				sb.Append(", PublicKeyToken=");
+				if (publicKeyToken.Length == 0)
+				{
+					sb.Append("null");
+				}
+				else
+				{
+					AppendPublicKey(sb, publicKeyToken);
+				}
+			}
+			if ((Flags & AssemblyNameFlags.Retargetable) != 0)
+			{
+				sb.Append(", Retargetable=Yes");
+			}
+			if (ContentType == AssemblyContentType.WindowsRuntime)
+			{
+				sb.Append(", ContentType=WindowsRuntime");
+			}
+			return sb.ToString();
 		}
 
 		private static byte[] ComputePublicKeyToken(byte[] publicKey)
