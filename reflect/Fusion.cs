@@ -497,7 +497,7 @@ namespace IKVM.Reflection
 								return ParseAssemblyResult.DuplicateKey;
 							}
 							hasContentType = true;
-							if (!value.Equals("windowsruntime", StringComparison.InvariantCultureIgnoreCase))
+							if (!value.Equals("windowsruntime", StringComparison.OrdinalIgnoreCase))
 							{
 								return ParseAssemblyResult.GenericError;
 							}
