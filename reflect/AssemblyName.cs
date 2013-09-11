@@ -292,11 +292,27 @@ namespace IKVM.Reflection
 				{
 					return "";
 				}
-				return GetFullName();
+				ushort versionMajor = 0xFFFF;
+				ushort versionMinor = 0xFFFF;
+				ushort versionBuild = 0xFFFF;
+				ushort versionRevision = 0xFFFF;
+				if (version != null)
+				{
+					versionMajor = (ushort)version.Major;
+					versionMinor = (ushort)version.Minor;
+					versionBuild = (ushort)version.Build;
+					versionRevision = (ushort)version.Revision;
+				}
+				byte[] publicKeyToken = this.publicKeyToken;
+				if ((publicKeyToken == null || publicKeyToken.Length == 0) && publicKey != null)
+				{
+					publicKeyToken = ComputePublicKeyToken(publicKey);
+				}
+				return GetFullName(name, versionMajor, versionMinor, versionBuild, versionRevision, culture, publicKeyToken, (int)flags);
 			}
 		}
 
-		private string GetFullName()
+		private static string GetFullName(string name, ushort versionMajor, ushort versionMinor, ushort versionBuild, ushort versionRevision, string culture, byte[] publicKeyToken, int flags)
 		{
 			StringBuilder sb = new StringBuilder();
 			bool doubleQuotes = name.StartsWith(" ") || name.EndsWith(" ") || name.IndexOf('\'') != -1;
@@ -333,21 +349,18 @@ namespace IKVM.Reflection
 			{
 				sb.Append('"');
 			}
-			if (version != null)
+			if (versionMajor != 0xFFFF)
 			{
-				if ((version.Major & 0xFFFF) != 0xFFFF)
+				sb.Append(", Version=").Append(versionMajor);
+				if (versionMinor != 0xFFFF)
 				{
-					sb.Append(", Version=").Append(version.Major & 0xFFFF);
-					if ((version.Minor & 0xFFFF) != 0xFFFF)
+					sb.Append('.').Append(versionMinor);
+					if (versionBuild != 0xFFFF)
 					{
-						sb.Append('.').Append(version.Minor & 0xFFFF);
-						if ((version.Build & 0xFFFF) != 0xFFFF)
+						sb.Append('.').Append(versionBuild);
+						if (versionRevision != 0xFFFF)
 						{
-							sb.Append('.').Append(version.Build & 0xFFFF);
-							if ((version.Revision & 0xFFFF) != 0xFFFF)
-							{
-								sb.Append('.').Append(version.Revision & 0xFFFF);
-							}
+							sb.Append('.').Append(versionRevision);
 						}
 					}
 				}
@@ -355,11 +368,6 @@ namespace IKVM.Reflection
 			if (culture != null)
 			{
 				sb.Append(", Culture=").Append(culture == "" ? "neutral" : culture);
-			}
-			byte[] publicKeyToken = this.publicKeyToken;
-			if ((publicKeyToken == null || publicKeyToken.Length == 0) && publicKey != null)
-			{
-				publicKeyToken = ComputePublicKeyToken(publicKey);
 			}
 			if (publicKeyToken != null)
 			{
@@ -373,11 +381,11 @@ namespace IKVM.Reflection
 					AppendPublicKey(sb, publicKeyToken);
 				}
 			}
-			if ((Flags & AssemblyNameFlags.Retargetable) != 0)
+			if ((flags & (int)AssemblyNameFlags.Retargetable) != 0)
 			{
 				sb.Append(", Retargetable=Yes");
 			}
-			if (ContentType == AssemblyContentType.WindowsRuntime)
+			if ((AssemblyContentType)((flags & 0xE00) >> 9) == AssemblyContentType.WindowsRuntime)
 			{
 				sb.Append(", ContentType=WindowsRuntime");
 			}
