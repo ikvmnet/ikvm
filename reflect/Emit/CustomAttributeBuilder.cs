@@ -537,7 +537,7 @@ namespace IKVM.Reflection.Emit
 		{
 			get
 			{
-				return con == LegacyPermissionSet
+				return ReferenceEquals(con, LegacyPermissionSet)
 					|| (con.DeclaringType == con.Module.universe.System_Security_Permissions_PermissionSetAttribute
 						&& blob == null
 						&& (namedFields == null || namedFields.Length == 0)
