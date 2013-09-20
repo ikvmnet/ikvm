@@ -127,6 +127,7 @@ namespace IKVM.Reflection
 		DontProvideAutomaticDefaultConstructor = 8,
 		MetadataOnly = 16,
 		ResolveMissingMembers = 32,
+		DisableWindowsRuntimeProjection = 64,
 	}
 
 	public sealed class Universe : IDisposable
@@ -1209,6 +1210,11 @@ namespace IKVM.Reflection
 		internal bool MetadataOnly
 		{
 			get { return (options & UniverseOptions.MetadataOnly) != 0; }
+		}
+
+		internal bool WindowsRuntimeProjection
+		{
+			get { return (options & UniverseOptions.DisableWindowsRuntimeProjection) == 0; }
 		}
 	}
 }

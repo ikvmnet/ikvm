@@ -98,6 +98,7 @@
     <Compile Include="Module.cs" />
     <Compile Include="ParameterInfo.cs" />
     <Compile Include="ParameterModifier.cs" />
+    <Compile Include="Projection.cs" />
     <Compile Include="PropertyInfo.cs" />
     <Compile Include="PropertySignature.cs" />
     <Compile Include="Reader\AssemblyReader.cs" />

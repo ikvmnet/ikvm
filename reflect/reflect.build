@@ -75,6 +75,7 @@
                 <include name="Module.cs" />
                 <include name="ParameterInfo.cs" />
                 <include name="ParameterModifier.cs" />
+                <include name="Projection.cs" />
                 <include name="PropertyInfo.cs" />
                 <include name="PropertySignature.cs" />
                 <include name="Signature.cs" />
