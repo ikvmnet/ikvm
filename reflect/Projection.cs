@@ -148,13 +148,26 @@ namespace IKVM.Reflection
 				throw new NotImplementedException("CustomAttribute table must be sorted");
 			}
 
-			Assembly mscorlib = module.universe.Mscorlib;
-			imageRuntimeVersion = mscorlib.__IsMissing ? "v4.0.30319" : mscorlib.ImageRuntimeVersion;
+			bool clr = imageRuntimeVersion.Contains(";");
+			if (clr)
+			{
+				imageRuntimeVersion = imageRuntimeVersion.Substring(imageRuntimeVersion.IndexOf(';') + 1);
+				if (imageRuntimeVersion.StartsWith("CLR", StringComparison.OrdinalIgnoreCase))
+				{
+					imageRuntimeVersion = imageRuntimeVersion.Substring(3);
+				}
+				imageRuntimeVersion = imageRuntimeVersion.TrimStart(' ');
+			}
+			else
+			{
+				Assembly mscorlib = module.universe.Mscorlib;
+				imageRuntimeVersion = mscorlib.__IsMissing ? "v4.0.30319" : mscorlib.ImageRuntimeVersion;
+			}
 
 			WindowsRuntimeProjection obj = new WindowsRuntimeProjection(module, strings);
 			obj.PatchAssemblyRef(ref blobHeap);
 			obj.PatchTypeRef();
-			obj.PatchTypes();
+			obj.PatchTypes(clr);
 			obj.PatchMethodImpl();
 			obj.PatchCustomAttribute(ref blobHeap);
 		}
@@ -247,16 +260,23 @@ namespace IKVM.Reflection
 			}
 		}
 
-		private void PatchTypes()
+		private void PatchTypes(bool clr)
 		{
 			TypeDefTable.Record[] types = module.TypeDef.records;
 			MethodDefTable.Record[] methods = module.MethodDef.records;
 			FieldTable.Record[] fields = module.Field.records;
 			for (int i = 0; i < types.Length; i++)
 			{
-				if ((((TypeAttributes)types[i].Flags) & TypeAttributes.WindowsRuntime) != 0)
+				TypeAttributes attr = (TypeAttributes)types[i].Flags;
+				if ((attr & TypeAttributes.WindowsRuntime) != 0)
 				{
-					if (types[i].Extends != typeofSystemAttribute)
+					if (clr && (attr & (TypeAttributes.VisibilityMask | TypeAttributes.WindowsRuntime | TypeAttributes.Interface)) == (TypeAttributes.Public | TypeAttributes.WindowsRuntime))
+					{
+						types[i].TypeName = GetString("<WinRT>" + module.GetString(types[i].TypeName));
+						types[i].Flags &= (int)~TypeAttributes.Public;
+					}
+
+					if (types[i].Extends != typeofSystemAttribute && (!clr || (attr & TypeAttributes.Interface) == 0))
 					{
 						types[i].Flags |= (int)TypeAttributes.Import;
 					}
@@ -290,6 +310,16 @@ namespace IKVM.Reflection
 							fields[j].Flags &= (int)~FieldAttributes.FieldAccessMask;
 							fields[j].Flags |= (int)FieldAttributes.Public;
 						}
+					}
+				}
+				else if (clr && (attr & (TypeAttributes.VisibilityMask | TypeAttributes.SpecialName)) == (TypeAttributes.NotPublic | TypeAttributes.SpecialName))
+				{
+					string name = module.GetString(types[i].TypeName);
+					if (name.StartsWith("<CLR>", StringComparison.Ordinal))
+					{
+						types[i].TypeName = GetString(name.Substring(5));
+						types[i].Flags |= (int)TypeAttributes.Public;
+						types[i].Flags &= (int)~TypeAttributes.SpecialName;
 					}
 				}
 			}
