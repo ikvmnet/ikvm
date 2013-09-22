@@ -101,12 +101,12 @@ namespace IKVM.Reflection.Reader
 			this.stream = universe != null && universe.MetadataOnly ? null : stream;
 			this.location = location;
 			Read(stream, mapped);
+			if (universe.WindowsRuntimeProjection && imageRuntimeVersion.StartsWith("WindowsRuntime ", StringComparison.Ordinal))
+			{
+				WindowsRuntimeProjection.Patch(this, strings, ref imageRuntimeVersion, ref blobHeap);
+			}
 			if (assembly == null && AssemblyTable.records.Length != 0)
 			{
-				if (universe.WindowsRuntimeProjection && (AssemblyTable.records[0].Flags & 0xE00) >> 9 == 1)
-				{
-					WindowsRuntimeProjection.Patch(this, strings, ref imageRuntimeVersion, ref blobHeap);
-				}
 				assembly = new AssemblyReader(location, this);
 			}
 			this.assembly = assembly;
