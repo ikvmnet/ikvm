@@ -41,7 +41,6 @@ namespace IKVM.Reflection
 		private int typeofSystemEnum = -1;
 		private int typeofSystemIDisposable = -1;
 		private int typeofSystemMulticastDelegate = -1;
-		private int typeofSystemCollectionsGenericKeyValuePair = -1;
 		private int typeofWindowsFoundationMetadataAllowMultipleAttribute = -1;
 		private bool[] projectedTypeRefs;
 
@@ -234,14 +233,6 @@ namespace IKVM.Reflection
 						{
 							case "IClosable":
 								typeofSystemIDisposable = (TypeRefTable.Index << 24) + i + 1;
-								break;
-						}
-						break;
-					case "Windows.Foundation.Collections":
-						switch (typeName.Name)
-						{
-							case "IKeyValuePair`2":
-								typeofSystemCollectionsGenericKeyValuePair = (TypeRefTable.Index << 24) + i + 1;
 								break;
 						}
 						break;
