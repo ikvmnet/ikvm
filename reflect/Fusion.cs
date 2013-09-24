@@ -50,6 +50,11 @@ namespace IKVM.Reflection
 
 	static class Fusion
 	{
+		static readonly Version FrameworkVersion = new Version(4, 0, 0, 0);
+		static readonly Version FrameworkVersionNext = new Version(4, 1, 0, 0);
+		static readonly Version SilverlightVersion = new Version(2, 0, 5, 0);
+		static readonly Version SilverlightVersionMinimum = new Version(2, 0, 0, 0);
+		static readonly Version SilverlightVersionMaximum = new Version(5, 9, 0, 0);
 		const string PublicKeyTokenEcma = "b77a5c561934e089";
 		const string PublicKeyTokenMicrosoft = "b03f5f7f11d50a3a";
 		const string PublicKeyTokenSilverlight = "7cec85d7bea7798e";
@@ -115,48 +120,76 @@ namespace IKVM.Reflection
 				result = AssemblyComparisonResult.NonEquivalent;
 				return false;
 			}
-			if (name1.Retargetable.GetValueOrDefault() != name2.Retargetable.GetValueOrDefault())
+
+			if (!name1.Retargetable.GetValueOrDefault() && name2.Retargetable.GetValueOrDefault())
 			{
-				if (name1.Retargetable.GetValueOrDefault())
-				{
-					result = AssemblyComparisonResult.Unknown;
-				}
-				else
-				{
-					result = AssemblyComparisonResult.NonEquivalent;
-				}
+				result = AssemblyComparisonResult.NonEquivalent;
 				return false;
 			}
-			if (IsStrongNamed(name2))
+
+			// HACK handle the case "System.Net, Version=4.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e, Retargetable=Yes"
+			// compared with "System.Net, Version=4.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e, Retargetable=No"
+			if (name1.PublicKeyToken == name2.PublicKeyToken
+				&& name1.Version != null
+				&& name1.Retargetable.GetValueOrDefault()
+				&& !name2.Retargetable.GetValueOrDefault()
+				&& GetRemappedPublicKeyToken(ref name1) != null)
 			{
-				if (partial && name1.PublicKeyToken == null)
+				name1.Retargetable = false;
+			}
+
+			string remappedPublicKeyToken1 = null;
+			string remappedPublicKeyToken2 = null;
+			if (name1.Version != null && (remappedPublicKeyToken1 = GetRemappedPublicKeyToken(ref name1)) != null)
+			{
+				name1.PublicKeyToken = remappedPublicKeyToken1;
+				name1.Version = FrameworkVersion;
+			}
+			if ((remappedPublicKeyToken2 = GetRemappedPublicKeyToken(ref name2)) != null)
+			{
+				name2.PublicKeyToken = remappedPublicKeyToken2;
+				name2.Version = FrameworkVersion;
+			}
+			if (name1.Retargetable.GetValueOrDefault())
+			{
+				if (name2.Retargetable.GetValueOrDefault())
 				{
-				}
-				else if (name1.PublicKeyToken == name2.PublicKeyToken)
-				{
-				}
-				else if (!name1.Retargetable.GetValueOrDefault()
-					&& (GetRemappedPublicKeyToken(name1.Name, name1.PublicKeyToken) == name2.PublicKeyToken || GetRemappedPublicKeyToken(name2.Name, name2.PublicKeyToken) == name1.PublicKeyToken))
-				{
-				}
-				else
-				{
-					result = AssemblyComparisonResult.NonEquivalent;
-					return false;
-				}
-				if (partial && name1.Version == null)
-				{
-					if (name2.Retargetable.HasValue && GetRemappedPublicKeyToken(name2.Name, name2.PublicKeyToken) == null)
+					if (remappedPublicKeyToken1 != null ^ remappedPublicKeyToken2 != null)
 					{
 						result = AssemblyComparisonResult.NonEquivalent;
 						return false;
 					}
-					result = IsFrameworkAssembly(name2) ? AssemblyComparisonResult.EquivalentPartialFXUnified : AssemblyComparisonResult.EquivalentPartialMatch;
-					return true;
 				}
-				else if (IsFrameworkAssembly(name2))
+				else if (remappedPublicKeyToken1 == null || remappedPublicKeyToken2 != null)
 				{
-					result = partial ? AssemblyComparisonResult.EquivalentPartialFXUnified : AssemblyComparisonResult.EquivalentFXUnified;
+					result = AssemblyComparisonResult.Unknown;
+					return false;
+				}
+			}
+
+			bool fxUnified = false;
+			bool versionMatch = name1.Version == name2.Version;
+			if (IsFrameworkAssembly(name1))
+			{
+				fxUnified |= !versionMatch;
+				name1.Version = FrameworkVersion;
+			}
+			if (IsFrameworkAssembly(name2) && name2.Version < FrameworkVersionNext)
+			{
+				fxUnified |= !versionMatch;
+				name2.Version = FrameworkVersion;
+			}
+
+			if (IsStrongNamed(name2))
+			{
+				if (name1.PublicKeyToken != null && name1.PublicKeyToken != name2.PublicKeyToken)
+				{
+					result = AssemblyComparisonResult.NonEquivalent;
+					return false;
+				}
+				else if (name1.Version == null)
+				{
+					result = AssemblyComparisonResult.EquivalentPartialMatch;
 					return true;
 				}
 				else if (name1.Version.Revision == -1 || name2.Version.Revision == -1)
@@ -190,7 +223,7 @@ namespace IKVM.Reflection
 						return false;
 					}
 				}
-				else if (name1.PublicKeyToken != name2.PublicKeyToken)
+				else if (!versionMatch || fxUnified)
 				{
 					result = partial ? AssemblyComparisonResult.EquivalentPartialFXUnified : AssemblyComparisonResult.EquivalentFXUnified;
 					return true;
@@ -217,10 +250,6 @@ namespace IKVM.Reflection
 		{
 			// Framework assemblies use different unification rules, so when
 			// a new framework is released the new assemblies need to be added.
-			if (GetRemappedPublicKeyToken(name.Name, name.PublicKeyToken) != null)
-			{
-				return true;
-			}
 			switch (name.Name)
 			{
 				case "System":
@@ -331,46 +360,63 @@ namespace IKVM.Reflection
 			return false;
 		}
 
-		static string GetRemappedPublicKeyToken(string name, string publicKeyToken)
+		static string GetRemappedPublicKeyToken(ref ParsedAssemblyName name)
 		{
-			// keep this in sync with the key_remap_table in mono/metadata/assembly.c
-			switch (publicKeyToken)
+			if (name.Retargetable.GetValueOrDefault() && name.Version < SilverlightVersion)
 			{
-				case PublicKeyTokenSilverlight:
-					switch (name)
-					{
-						case "System":
-						case "System.Core":
-						case "System.Runtime.Serialization":
-						case "System.Xml":
-							return PublicKeyTokenEcma;
-						case "System.Net":
-						case "System.Windows":
-							return PublicKeyTokenMicrosoft;
-						case "System.ServiceModel.Web":
-							return PublicKeyTokenWinFX;
-					}
-					break;
-				case PublicKeyTokenWinFX:
-					switch (name)
-					{
-						case "Microsoft.CSharp":
-						case "System.Numerics":
-						case "System.Xml.Serialization":
-							return PublicKeyTokenMicrosoft;
-						case "System.ComponentModel.Composition":
-						case "System.ServiceModel":
-						case "System.Xml.Linq":
-							return PublicKeyTokenEcma;
-					}
-					break;
-				case "ddd0da4d3e678217":
-					switch (name)
-					{
-						case "System.ComponentModel.DataAnnotations":
-							return PublicKeyTokenWinFX;
-					}
-					break;
+				return null;
+			}
+			if (name.PublicKeyToken == "ddd0da4d3e678217" && name.Name == "System.ComponentModel.DataAnnotations" && name.Retargetable.GetValueOrDefault())
+			{
+				return PublicKeyTokenWinFX;
+			}
+			if (SilverlightVersionMinimum <= name.Version && name.Version <= SilverlightVersionMaximum)
+			{
+				switch (name.PublicKeyToken)
+				{
+					case PublicKeyTokenSilverlight:
+						switch (name.Name)
+						{
+							case "System":
+							case "System.Core":
+								return PublicKeyTokenEcma;
+						}
+						if (name.Retargetable.GetValueOrDefault())
+						{
+							switch (name.Name)
+							{
+								case "System.Runtime.Serialization":
+								case "System.Xml":
+									return PublicKeyTokenEcma;
+								case "System.Net":
+								case "System.Windows":
+									return PublicKeyTokenMicrosoft;
+								case "System.ServiceModel.Web":
+									return PublicKeyTokenWinFX;
+							}
+						}
+						break;
+					case PublicKeyTokenWinFX:
+						switch (name.Name)
+						{
+							case "System.ComponentModel.Composition":
+								return PublicKeyTokenEcma;
+						}
+						if (name.Retargetable.GetValueOrDefault())
+						{
+							switch (name.Name)
+							{
+								case "Microsoft.CSharp":
+									return PublicKeyTokenMicrosoft;
+								case "System.Numerics":
+								case "System.ServiceModel":
+								case "System.Xml.Serialization":
+								case "System.Xml.Linq":
+									return PublicKeyTokenEcma;
+							}
+						}
+						break;
+				}
 			}
 			return null;
 		}
