@@ -101,7 +101,7 @@ namespace IKVM.Reflection.Reader
 			this.stream = universe != null && universe.MetadataOnly ? null : stream;
 			this.location = location;
 			Read(stream, mapped);
-			if (universe.WindowsRuntimeProjection && imageRuntimeVersion.StartsWith("WindowsRuntime ", StringComparison.Ordinal))
+			if (universe != null && universe.WindowsRuntimeProjection && imageRuntimeVersion.StartsWith("WindowsRuntime ", StringComparison.Ordinal))
 			{
 				WindowsRuntimeProjection.Patch(this, strings, ref imageRuntimeVersion, ref blobHeap);
 			}
