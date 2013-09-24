@@ -3189,6 +3189,11 @@ sealed class MethodAnalyzer
 											goto not_fault_block;
 										}
 									}
+									if (VerifierTypeWrapper.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(j, 0))
+										&& codeInfo.GetRawStackTypeWrapper(j, 0) != codeInfo.GetRawStackTypeWrapper(exceptions[i].handlerIndex, 0))
+									{
+										goto not_fault_block;
+									}
 									break;
 							}
 							if (j < current.startIndex || j >= current.endIndex)
