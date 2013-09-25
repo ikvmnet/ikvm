@@ -67,7 +67,7 @@ namespace IKVM.Reflection
 					throw new FileLoadException();
 			}
 			Version version;
-			if (!Fusion.ParseVersion(parsed.Version, out version))
+			if (!ParseVersion(parsed.Version, out version))
 			{
 				throw new FileLoadException();
 			}
@@ -89,7 +89,7 @@ namespace IKVM.Reflection
 			}
 			if (version != null && version.Major != 65535 && version.Minor != 65535)
 			{
-				// our Fusion parser returns -1 for build and revision for incomplete version numbers (and we want 65535)
+				// our version parser returns -1 for build and revision for incomplete version numbers (and we want 65535)
 				this.version = new Version(version.Major, version.Minor, version.Build & 0xFFFF, version.Revision & 0xFFFF);
 			}
 			if (parsed.PublicKeyToken != null)
@@ -487,6 +487,51 @@ namespace IKVM.Reflection
 		{
 			get { return flags; }
 			set { flags = value; }
+		}
+
+		private static bool ParseVersion(string str, out Version version)
+		{
+			if (str == null)
+			{
+				version = null;
+				return true;
+			}
+			string[] parts = str.Split('.');
+			if (parts.Length < 2 || parts.Length > 4)
+			{
+				version = null;
+				ushort dummy;
+				// if the version consists of a single integer, it is invalid, but not invalid enough to fail the parse of the whole assembly name
+				return parts.Length == 1 && ushort.TryParse(parts[0], System.Globalization.NumberStyles.Integer, null, out dummy);
+			}
+			if (parts[0] == "" || parts[1] == "")
+			{
+				// this is a strange scenario, the version is invalid, but not invalid enough to fail the parse of the whole assembly name
+				version = null;
+				return true;
+			}
+			ushort major, minor, build = 65535, revision = 65535;
+			if (ushort.TryParse(parts[0], System.Globalization.NumberStyles.Integer, null, out major)
+				&& ushort.TryParse(parts[1], System.Globalization.NumberStyles.Integer, null, out minor)
+				&& (parts.Length <= 2 || parts[2] == "" || ushort.TryParse(parts[2], System.Globalization.NumberStyles.Integer, null, out build))
+				&& (parts.Length <= 3 || parts[3] == "" || (parts[2] != "" && ushort.TryParse(parts[3], System.Globalization.NumberStyles.Integer, null, out revision))))
+			{
+				if (parts.Length == 4 && parts[3] != "" && parts[2] != "")
+				{
+					version = new Version(major, minor, build, revision);
+				}
+				else if (parts.Length == 3 && parts[2] != "")
+				{
+					version = new Version(major, minor, build);
+				}
+				else
+				{
+					version = new Version(major, minor);
+				}
+				return true;
+			}
+			version = null;
+			return false;
 		}
 	}
 }

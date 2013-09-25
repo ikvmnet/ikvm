@@ -703,7 +703,7 @@ namespace IKVM.Reflection
 			}
 		}
 
-		internal static bool ParseVersion(string str, out Version version)
+		private static bool ParseVersion(string str, out Version version)
 		{
 			if (str == null)
 			{
