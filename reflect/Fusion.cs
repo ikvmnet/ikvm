@@ -76,11 +76,46 @@ namespace IKVM.Reflection
 			ParsedAssemblyName name1;
 			ParsedAssemblyName name2;
 
-			ParseAssemblyResult r = ParseAssemblyName(assemblyIdentity1, out name1);
-			if (r != ParseAssemblyResult.OK || (r = ParseAssemblyName(assemblyIdentity2, out name2)) != ParseAssemblyResult.OK)
+			ParseAssemblyResult r1 = ParseAssemblyName(assemblyIdentity1, out name1);
+			ParseAssemblyResult r2 = ParseAssemblyName(assemblyIdentity2, out name2);
+
+			Version version1;
+			if (unified1)
+			{
+				if (name1.Name == null || !ParseVersion(name1.Version, out version1) || version1 == null || version1.Revision == -1
+					|| name1.Culture == null || name1.PublicKeyToken == null || name1.PublicKeyToken.Length < 2)
+				{
+					result = AssemblyComparisonResult.NonEquivalent;
+					throw new ArgumentException();
+				}
+			}
+
+			Version version2 = null;
+			if (!ParseVersion(name2.Version, out version2) || version2 == null || version2.Revision == -1 
+				|| name2.Culture == null || name2.PublicKeyToken == null || name2.PublicKeyToken.Length < 2)
 			{
 				result = AssemblyComparisonResult.NonEquivalent;
-				switch (r)
+				throw new ArgumentException();
+			}
+
+			if (name2.Name != null && name2.Name.Equals("mscorlib", StringComparison.OrdinalIgnoreCase))
+			{
+				if (name1.Name != null && name1.Name.Equals(name2.Name, StringComparison.OrdinalIgnoreCase))
+				{
+					result = AssemblyComparisonResult.EquivalentFullMatch;
+					return true;
+				}
+				else
+				{
+					result = AssemblyComparisonResult.NonEquivalent;
+					return false;
+				}
+			}
+
+			if (r1 != ParseAssemblyResult.OK)
+			{
+				result = AssemblyComparisonResult.NonEquivalent;
+				switch (r1)
 				{
 					case ParseAssemblyResult.DuplicateKey:
 						throw new System.IO.FileLoadException();
@@ -90,9 +125,20 @@ namespace IKVM.Reflection
 				}
 			}
 
-			Version version1;
-			Version version2;
-			if (!ParseVersion(name1.Version, out version1) || !ParseVersion(name2.Version, out version2))
+			if (r2 != ParseAssemblyResult.OK)
+			{
+				result = AssemblyComparisonResult.NonEquivalent;
+				switch (r2)
+				{
+					case ParseAssemblyResult.DuplicateKey:
+						throw new System.IO.FileLoadException();
+					case ParseAssemblyResult.GenericError:
+					default:
+						throw new ArgumentException();
+				}
+			}
+
+			if (!ParseVersion(name1.Version, out version1))
 			{
 				result = AssemblyComparisonResult.NonEquivalent;
 				throw new ArgumentException();
@@ -114,11 +160,6 @@ namespace IKVM.Reflection
 			{
 				result = AssemblyComparisonResult.NonEquivalent;
 				return false;
-			}
-			if (name1.Name.Equals("mscorlib", StringComparison.OrdinalIgnoreCase))
-			{
-				result = AssemblyComparisonResult.EquivalentFullMatch;
-				return true;
 			}
 			if (partial && name1.Culture == null)
 			{
