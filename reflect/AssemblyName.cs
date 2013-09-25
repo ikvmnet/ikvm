@@ -66,6 +66,11 @@ namespace IKVM.Reflection
 				case ParseAssemblyResult.DuplicateKey:
 					throw new FileLoadException();
 			}
+			Version version;
+			if (!Fusion.ParseVersion(parsed.Version, out version))
+			{
+				throw new FileLoadException();
+			}
 			name = parsed.Name;
 			if (parsed.Culture != null)
 			{
@@ -82,10 +87,10 @@ namespace IKVM.Reflection
 					culture = new CultureInfo(parsed.Culture).Name;
 				}
 			}
-			if (parsed.Version != null && parsed.Version.Major != 65535 && parsed.Version.Minor != 65535)
+			if (version != null && version.Major != 65535 && version.Minor != 65535)
 			{
 				// our Fusion parser returns -1 for build and revision for incomplete version numbers (and we want 65535)
-				version = new Version(parsed.Version.Major, parsed.Version.Minor, parsed.Version.Build & 0xFFFF, parsed.Version.Revision & 0xFFFF);
+				this.version = new Version(version.Major, version.Minor, version.Build & 0xFFFF, version.Revision & 0xFFFF);
 			}
 			if (parsed.PublicKeyToken != null)
 			{
@@ -104,7 +109,7 @@ namespace IKVM.Reflection
 			}
 			if (parsed.Retargetable.HasValue)
 			{
-				if (parsed.Culture == null || parsed.PublicKeyToken == null || parsed.Version == null || parsed.Version.Build == -1 || parsed.Version.Revision == -1)
+				if (parsed.Culture == null || parsed.PublicKeyToken == null || version == null || version.Build == -1 || version.Revision == -1)
 				{
 					throw new FileLoadException();
 				}

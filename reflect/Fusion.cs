@@ -32,7 +32,7 @@ namespace IKVM.Reflection
 	struct ParsedAssemblyName
 	{
 		internal string Name;
-		internal Version Version;
+		internal string Version;
 		internal string Culture;
 		internal string PublicKeyToken;
 		internal bool? Retargetable;
@@ -90,14 +90,22 @@ namespace IKVM.Reflection
 				}
 			}
 
-			bool partial = IsPartial(name1);
+			Version version1;
+			Version version2;
+			if (!ParseVersion(name1.Version, out version1) || !ParseVersion(name2.Version, out version2))
+			{
+				result = AssemblyComparisonResult.NonEquivalent;
+				throw new ArgumentException();
+			}
+
+			bool partial = IsPartial(name1, version1);
 
 			if (partial && name1.Retargetable.HasValue)
 			{
 				result = AssemblyComparisonResult.NonEquivalent;
 				throw new System.IO.FileLoadException();
 			}
-			if ((partial && unified1) || IsPartial(name2))
+			if ((partial && unified1) || IsPartial(name2, version2))
 			{
 				result = AssemblyComparisonResult.NonEquivalent;
 				throw new ArgumentException();
@@ -130,25 +138,25 @@ namespace IKVM.Reflection
 			// HACK handle the case "System.Net, Version=4.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e, Retargetable=Yes"
 			// compared with "System.Net, Version=4.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e, Retargetable=No"
 			if (name1.PublicKeyToken == name2.PublicKeyToken
-				&& name1.Version != null
+				&& version1 != null
 				&& name1.Retargetable.GetValueOrDefault()
 				&& !name2.Retargetable.GetValueOrDefault()
-				&& GetRemappedPublicKeyToken(ref name1) != null)
+				&& GetRemappedPublicKeyToken(ref name1, version1) != null)
 			{
 				name1.Retargetable = false;
 			}
 
 			string remappedPublicKeyToken1 = null;
 			string remappedPublicKeyToken2 = null;
-			if (name1.Version != null && (remappedPublicKeyToken1 = GetRemappedPublicKeyToken(ref name1)) != null)
+			if (version1 != null && (remappedPublicKeyToken1 = GetRemappedPublicKeyToken(ref name1, version1)) != null)
 			{
 				name1.PublicKeyToken = remappedPublicKeyToken1;
-				name1.Version = FrameworkVersion;
+				version1 = FrameworkVersion;
 			}
-			if ((remappedPublicKeyToken2 = GetRemappedPublicKeyToken(ref name2)) != null)
+			if ((remappedPublicKeyToken2 = GetRemappedPublicKeyToken(ref name2, version2)) != null)
 			{
 				name2.PublicKeyToken = remappedPublicKeyToken2;
-				name2.Version = FrameworkVersion;
+				version2 = FrameworkVersion;
 			}
 			if (name1.Retargetable.GetValueOrDefault())
 			{
@@ -168,16 +176,16 @@ namespace IKVM.Reflection
 			}
 
 			bool fxUnified = false;
-			bool versionMatch = name1.Version == name2.Version;
+			bool versionMatch = version1 == version2;
 			if (IsFrameworkAssembly(name1))
 			{
 				fxUnified |= !versionMatch;
-				name1.Version = FrameworkVersion;
+				version1 = FrameworkVersion;
 			}
-			if (IsFrameworkAssembly(name2) && name2.Version < FrameworkVersionNext)
+			if (IsFrameworkAssembly(name2) && version2 < FrameworkVersionNext)
 			{
 				fxUnified |= !versionMatch;
-				name2.Version = FrameworkVersion;
+				version2 = FrameworkVersion;
 			}
 
 			if (IsStrongNamed(name2))
@@ -187,17 +195,17 @@ namespace IKVM.Reflection
 					result = AssemblyComparisonResult.NonEquivalent;
 					return false;
 				}
-				else if (name1.Version == null)
+				else if (version1 == null)
 				{
 					result = AssemblyComparisonResult.EquivalentPartialMatch;
 					return true;
 				}
-				else if (name1.Version.Revision == -1 || name2.Version.Revision == -1)
+				else if (version1.Revision == -1 || version2.Revision == -1)
 				{
 					result = AssemblyComparisonResult.NonEquivalent;
 					throw new ArgumentException();
 				}
-				else if (name1.Version < name2.Version)
+				else if (version1 < version2)
 				{
 					if (unified2)
 					{
@@ -210,7 +218,7 @@ namespace IKVM.Reflection
 						return false;
 					}
 				}
-				else if (name1.Version > name2.Version)
+				else if (version1 > version2)
 				{
 					if (unified1)
 					{
@@ -360,9 +368,9 @@ namespace IKVM.Reflection
 			return false;
 		}
 
-		static string GetRemappedPublicKeyToken(ref ParsedAssemblyName name)
+		static string GetRemappedPublicKeyToken(ref ParsedAssemblyName name, Version version)
 		{
-			if (name.Retargetable.GetValueOrDefault() && name.Version < SilverlightVersion)
+			if (name.Retargetable.GetValueOrDefault() && version < SilverlightVersion)
 			{
 				return null;
 			}
@@ -370,7 +378,7 @@ namespace IKVM.Reflection
 			{
 				return PublicKeyTokenWinFX;
 			}
-			if (SilverlightVersionMinimum <= name.Version && name.Version <= SilverlightVersionMaximum)
+			if (SilverlightVersionMinimum <= version && version <= SilverlightVersionMaximum)
 			{
 				switch (name.PublicKeyToken)
 				{
@@ -541,10 +549,7 @@ namespace IKVM.Reflection
 							{
 								return ParseAssemblyResult.DuplicateKey;
 							}
-							if (!ParseVersion(value, out parsedName.Version))
-							{
-								return ParseAssemblyResult.GenericError;
-							}
+							parsedName.Version = value;
 							break;
 						case "culture":
 							if (parsedName.Culture != null)
@@ -657,8 +662,13 @@ namespace IKVM.Reflection
 			}
 		}
 
-		private static bool ParseVersion(string str, out Version version)
+		internal static bool ParseVersion(string str, out Version version)
 		{
+			if (str == null)
+			{
+				version = null;
+				return true;
+			}
 			string[] parts = str.Split('.');
 			if (parts.Length < 2 || parts.Length > 4)
 			{
@@ -730,9 +740,9 @@ namespace IKVM.Reflection
 			return true;
 		}
 
-		private static bool IsPartial(ParsedAssemblyName name)
+		private static bool IsPartial(ParsedAssemblyName name, Version version)
 		{
-			return name.Version == null || name.Culture == null || name.PublicKeyToken == null;
+			return version == null || name.Culture == null || name.PublicKeyToken == null;
 		}
 
 		private static bool IsStrongNamed(ParsedAssemblyName name)
