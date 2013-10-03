@@ -241,33 +241,15 @@ namespace IKVM.Reflection.Writer
 			if (Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC)
 			{
 				bw.Write((DWORD)SizeOfStackReserve);
-			}
-			else
-			{
-				bw.Write(SizeOfStackReserve);
-			}
-			if (Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC)
-			{
 				bw.Write((DWORD)SizeOfStackCommit);
-			}
-			else
-			{
-				bw.Write(SizeOfStackCommit);
-			}
-			if (Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC)
-			{
 				bw.Write((DWORD)SizeOfHeapReserve);
-			}
-			else
-			{
-				bw.Write(SizeOfHeapReserve);
-			}
-			if (Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC)
-			{
 				bw.Write((DWORD)SizeOfHeapCommit);
 			}
 			else
 			{
+				bw.Write(SizeOfStackReserve);
+				bw.Write(SizeOfStackCommit);
+				bw.Write(SizeOfHeapReserve);
 				bw.Write(SizeOfHeapCommit);
 			}
 			bw.Write(LoaderFlags);
