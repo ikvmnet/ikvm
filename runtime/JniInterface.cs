@@ -350,7 +350,7 @@ namespace IKVM.Runtime
 		{
 			private const string library = "ikvm-native-win32-x86";
 
-			[DllImport(library)]
+			[DllImport(library, SetLastError = true)]
 			private static extern IntPtr ikvm_LoadLibrary(string filename);
 			[DllImport(library)]
 			private static extern void ikvm_FreeLibrary(IntPtr handle);
@@ -398,7 +398,7 @@ namespace IKVM.Runtime
 		{
 			private const string library = "ikvm-native-win32-x64";
 
-			[DllImport(library)]
+			[DllImport(library, SetLastError = true)]
 			private static extern IntPtr ikvm_LoadLibrary(string filename);
 			[DllImport(library)]
 			private static extern void ikvm_FreeLibrary(IntPtr handle);
@@ -446,7 +446,7 @@ namespace IKVM.Runtime
 		{
 			private const string library = "ikvm-native";
 
-			[DllImport(library)]
+			[DllImport(library, SetLastError = true)]
 			private static extern IntPtr ikvm_LoadLibrary(string filename);
 			[DllImport(library)]
 			private static extern void ikvm_FreeLibrary(IntPtr handle);
@@ -553,7 +553,8 @@ namespace IKVM.Runtime
 				IntPtr p = NativeLibrary.LoadLibrary(filename);
 				if(p == IntPtr.Zero)
 				{
-					Tracer.Info(Tracer.Jni, "Library not found: {0}", filename);
+					Tracer.Info(Tracer.Jni, "Failed to load library: path = '{0}', error = {1}, message = {2}", filename,
+						Marshal.GetLastWin32Error(), new System.ComponentModel.Win32Exception().Message);
 					return 0;
 				}
 				try
