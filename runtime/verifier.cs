@@ -389,7 +389,11 @@ sealed class InstructionState
 			st2.Push(t2);
 			t2 = t2.BaseTypeWrapper;
 		}
-		TypeWrapper type = null;
+		if(HasMissingBaseType(st1) || HasMissingBaseType(st2))
+		{
+			return VerifierTypeWrapper.Unloadable;
+		}
+		TypeWrapper type = CoreClasses.java.lang.Object.Wrapper;
 		for(;;)
 		{
 			t1 = st1.Count > 0 ? st1.Pop() : null;
@@ -400,6 +404,19 @@ sealed class InstructionState
 			}
 			type = t1;
 		}
+	}
+
+	private static bool HasMissingBaseType(Stack<TypeWrapper> st)
+	{
+#if STATIC_COMPILER
+		if (st.Pop().IsUnloadable)
+		{
+			// we have a missing type in base class hierarchy
+			StaticCompiler.IssueMissingTypeMessage(st.Pop().TypeAsBaseType.BaseType);
+			return true;
+		}
+#endif
+		return false;
 	}
 
 	private void SetLocal1(int index, TypeWrapper type)
