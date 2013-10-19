@@ -740,27 +740,37 @@ sealed class InstructionState
 		{
 			throw new VerifyError("Expecting to find object/array on stack");
 		}
-		if(type != baseType &&
-			!((type.IsUnloadable && !baseType.IsPrimitive) || (baseType.IsUnloadable && !type.IsPrimitive) ||
-				type.IsAssignableTo(baseType)))
+		if(type == baseType)
 		{
-			// HACK because of the way interfaces references works, if baseType
-			// is an interface or array of interfaces, any reference will be accepted
-			if((baseType.IsUnloadable || baseType.IsInterfaceOrInterfaceArray) && !type.IsPrimitive)
-			{
-				return type;
-			}
-			if(type == VerifierTypeWrapper.ExtendedDouble && baseType == PrimitiveTypeWrapper.DOUBLE)
-			{
-				return type;
-			}
-			if(type == VerifierTypeWrapper.ExtendedFloat && baseType == PrimitiveTypeWrapper.FLOAT)
-			{
-				return type;
-			}
-			throw new VerifyError("Unexpected type " + type.Name + " where " + baseType.Name + " was expected");
+			return type;
 		}
-		return type;
+		else if(type == VerifierTypeWrapper.ExtendedDouble && baseType == PrimitiveTypeWrapper.DOUBLE)
+		{
+			return type;
+		}
+		else if(type == VerifierTypeWrapper.ExtendedFloat && baseType == PrimitiveTypeWrapper.FLOAT)
+		{
+			return type;
+		}
+		else if(type.IsPrimitive || baseType.IsPrimitive)
+		{
+			// throw at the end of the method
+		}
+		else if(type.IsUnloadable || baseType.IsUnloadable)
+		{
+			return type;
+		}
+		else if(type.IsAssignableTo(baseType))
+		{
+			return type;
+		}
+		else if(baseType.IsInterfaceOrInterfaceArray)
+		{
+			// because of the way interfaces references works, if baseType
+			// is an interface or array of interfaces, any reference will be accepted
+			return type;
+		}
+		throw new VerifyError("Unexpected type " + type.Name + " where " + baseType.Name + " was expected");
 	}
 
 	internal int GetStackHeight()
