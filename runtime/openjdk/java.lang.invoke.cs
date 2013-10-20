@@ -629,6 +629,10 @@ static partial class MethodHandleUtil
 			{
 				tw.EmitUnbox(ilgen);
 			}
+			else if (tw != CoreClasses.java.lang.Object.Wrapper)
+			{
+				tw.EmitCheckcast(ilgen);
+			}
 		}
 
 		internal void LoadNull()
