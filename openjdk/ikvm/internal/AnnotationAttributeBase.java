@@ -27,6 +27,7 @@ import ikvm.lang.CIL;
 import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
+import java.lang.reflect.GenericSignatureFormatError;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -279,15 +280,7 @@ public abstract class AnnotationAttributeBase
 
     private static Class classFromSig(ClassLoader loader, String name)
     {
-        if (name.startsWith("L") && name.endsWith(";"))
-        {
-            name = name.substring(1, name.length() - 1).replace('/', '.');
-        }
-        else if (name.startsWith("["))
-        {
-            name = name.replace('/', '.');
-        }
-        else if (name.length() == 1)
+        if (name.length() == 1)
         {
             switch (name.charAt(0))
             {
@@ -310,8 +303,22 @@ public abstract class AnnotationAttributeBase
                 case 'V':
                     return Void.TYPE;
                 default:
-                    throw new TypeNotPresentException(name, null);
+                    throw new GenericSignatureFormatError();
             }
+        }
+
+        if (!isValidTypeSig(name, 0, name.length()))
+        {
+            throw new GenericSignatureFormatError();
+        }
+
+        if (name.charAt(0) == 'L')
+        {
+            name = name.substring(1, name.length() - 1).replace('/', '.');
+        }
+        else // must be an array then
+        {
+            name = name.replace('/', '.');
         }
         try
         {
@@ -320,6 +327,40 @@ public abstract class AnnotationAttributeBase
         catch (ClassNotFoundException x)
         {
             throw new TypeNotPresentException(name, x);
+        }
+    }
+
+    private static boolean isValidTypeSig(String sig, int start, int end)
+    {
+        if (start >= end)
+        {
+            return false;
+        }
+        switch (sig.charAt(start))
+        {
+            case 'L':
+                return sig.indexOf(';', start + 1) == end - 1;
+            case '[':
+                while (sig.charAt(start) == '[')
+                {
+                    start++;
+                    if (start == end)
+                    {
+                        return false;
+                    }
+                }
+                return isValidTypeSig(sig, start, end);
+            case 'B':
+            case 'Z':
+            case 'C':
+            case 'S':
+            case 'I':
+            case 'J':
+            case 'F':
+            case 'D':
+                return start == end - 1;
+            default:
+                return false;
         }
     }
 
@@ -360,7 +401,10 @@ public abstract class AnnotationAttributeBase
             try
             {
                 Object[] error = (Object[])obj;
-                t = (Throwable)Class.forName((String)error[1]).getConstructor(String.class).newInstance(error[2]);
+                Class exception = Class.forName((String)error[1]);
+                t = (Throwable)(error.length == 2
+                    ? exception.newInstance()
+                    : exception.getConstructor(String.class).newInstance(error[2]));
             }
             catch (Exception x)
             {

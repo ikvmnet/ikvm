@@ -1432,20 +1432,22 @@ namespace IKVM.Internal
 				return null;
 			}
 #endif
-			try
+			if (ClassFile.IsValidFieldSig(annotationClass))
 			{
-				TypeWrapper annot = loader.RetTypeWrapperFromSig(annotationClass.Replace('/', '.'));
-				return annot.Annotation;
+				try
+				{
+					return loader.RetTypeWrapperFromSig(annotationClass.Replace('/', '.')).Annotation;
+				}
+				catch (RetargetableJavaException)
+				{
+				}
 			}
-			catch (RetargetableJavaException)
-			{
-				Tracer.Warning(Tracer.Compiler, "Unable to load annotation class {0}", annotationClass);
+			Tracer.Warning(Tracer.Compiler, "Unable to load annotation class {0}", annotationClass);
 #if STATIC_COMPILER
-				return new CompiledTypeWrapper.CompiledAnnotation(StaticCompiler.GetRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute"));
+			return new CompiledTypeWrapper.CompiledAnnotation(StaticCompiler.GetRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute"));
 #else
-				return null;
+			return null;
 #endif
-			}
 		}
 
 		private static object LookupEnumValue(Type enumType, string value)
@@ -1683,6 +1685,10 @@ namespace IKVM.Internal
 						}
 					}
 				}
+				return val;
+			}
+			else if(val[0].Equals(AnnotationDefaultAttribute.TAG_ERROR))
+			{
 				return val;
 			}
 			else
