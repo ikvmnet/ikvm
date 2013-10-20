@@ -773,21 +773,44 @@ sealed class InstructionState
 		{
 			// throw at the end of the method
 		}
+		else if(baseType == CoreClasses.java.lang.Object.Wrapper)
+		{
+			return type;
+		}
 		else if(type.IsUnloadable || baseType.IsUnloadable)
 		{
 			return type;
 		}
-		else if(type.IsAssignableTo(baseType))
-		{
-			return type;
-		}
-		else if(baseType.IsInterfaceOrInterfaceArray)
+		else if (baseType.IsInterfaceOrInterfaceArray)
 		{
 			// because of the way interfaces references works, if baseType
 			// is an interface or array of interfaces, any reference will be accepted
 			return type;
 		}
+		else if (type.IsAssignableTo(baseType))
+		{
+			return type;
+		}
+		else if (HasMissingBaseType(type) || HasMissingBaseType(baseType))
+		{
+			return type;
+		}
 		throw new VerifyError("Unexpected type " + type.Name + " where " + baseType.Name + " was expected");
+	}
+
+	private static bool HasMissingBaseType(TypeWrapper tw)
+	{
+#if STATIC_COMPILER
+		for (TypeWrapper baseTypeWrapper; (baseTypeWrapper = tw.BaseTypeWrapper) != null; tw = baseTypeWrapper)
+		{
+			if (baseTypeWrapper.IsUnloadable)
+			{
+				StaticCompiler.IssueMissingTypeMessage(tw.TypeAsBaseType.BaseType);
+				return true;
+			}
+		}
+#endif
+		return false;
 	}
 
 	internal int GetStackHeight()
