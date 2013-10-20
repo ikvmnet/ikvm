@@ -1416,6 +1416,7 @@ namespace IKVM.Internal
 
 	abstract class Annotation
 	{
+#if !STUB_GENERATOR
 		// NOTE this method returns null if the type could not be found
 		// or if the type is not a Custom Attribute and we're not in the static compiler
 		internal static Annotation Load(ClassLoaderWrapper loader, object[] def)
@@ -1449,6 +1450,7 @@ namespace IKVM.Internal
 			return null;
 #endif
 		}
+#endif
 
 		private static object LookupEnumValue(Type enumType, string value)
 		{
