@@ -94,8 +94,21 @@ public class StandardGlyphVector extends GlyphVector{
         this(font, getString(iter), frc);
     }
 
-    public StandardGlyphVector(Font font, int[] glyphs, FontRenderContext frc) {
-        throw new NotYetImplementedError();
+    public StandardGlyphVector( Font font, int[] glyphs, FontRenderContext frc ) {
+        this( font, glyphs2chars(glyphs), frc );
+    }
+    
+    /**
+     * Symmetric to {@link #getGlyphCodes(int, int, int[])}
+     * Currently there is no real mapping possible between the chars and the glyph IDs in the TTF file
+     */
+    private static char[] glyphs2chars( int[] glyphs ) {
+        int count = glyphs.length;
+        char[] text = new char[count];
+        for( int i = 0; i < count; ++i ) {
+            text[i] = (char)glyphs[i];
+        }
+        return text;
     }
 
     /////////////////////////////
