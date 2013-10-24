@@ -2712,6 +2712,11 @@ namespace IKVM.Runtime
 
 		internal static jobject NewStringUTF(JNIEnv* pEnv, byte* psz)
 		{
+			if (psz == null)
+			{
+				// The JNI spec does not explicitly allow a null pointer, but the JDK accepts it
+				return IntPtr.Zero;
+			}
 			return pEnv->MakeLocalRef(StringFromUTF8(psz));
 		}
 
