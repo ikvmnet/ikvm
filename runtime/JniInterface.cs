@@ -1726,7 +1726,10 @@ namespace IKVM.Runtime
 		{
 			ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
 			Exception x = UnwrapRef(env, throwable) as Exception;
-			env.pendingException = x;
+			if (x != null)
+			{
+				env.pendingException = x;
+			}
 			return JNI_OK;
 		}
 
@@ -1734,7 +1737,7 @@ namespace IKVM.Runtime
 		{
 			ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
 			TypeWrapper wrapper = TypeWrapper.FromClass((java.lang.Class)UnwrapRef(env, clazz));
-			MethodWrapper mw = wrapper.GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
+			MethodWrapper mw = wrapper.GetMethodWrapper("<init>", msg == null ? "()V" : "(Ljava.lang.String;)V", false);
 			if(mw != null)
 			{
 				jint rc;
@@ -1743,7 +1746,7 @@ namespace IKVM.Runtime
 				{
 					wrapper.Finish();
 					java.lang.reflect.Constructor cons = (java.lang.reflect.Constructor)mw.ToMethodOrConstructor(false);
-					exception = (Exception)cons.newInstance(new object[] { StringFromOEM(msg) }, env.callerID);
+					exception = (Exception)cons.newInstance(msg == null ? new object[0] : new object[] { StringFromOEM(msg) }, env.callerID);
 					rc = JNI_OK;
 				}
 				catch(RetargetableJavaException x)
