@@ -100,7 +100,7 @@ namespace IKVM.Reflection.Emit
 		public override bool Equals(object obj)
 		{
 			ExceptionHandler? other = obj as ExceptionHandler?;
-			return other != null && Equals(other);
+			return other != null && Equals(other.Value);
 		}
 
 		public override int GetHashCode()

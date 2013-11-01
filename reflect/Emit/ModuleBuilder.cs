@@ -140,7 +140,7 @@ namespace IKVM.Reflection.Emit
 			public override bool Equals(object obj)
 			{
 				MemberRefKey? other = obj as MemberRefKey?;
-				return other != null && Equals(other);
+				return other != null && Equals(other.Value);
 			}
 
 			public override int GetHashCode()
@@ -180,7 +180,7 @@ namespace IKVM.Reflection.Emit
 			public override bool Equals(object obj)
 			{
 				MethodSpecKey? other = obj as MethodSpecKey?;
-				return other != null && Equals(other);
+				return other != null && Equals(other.Value);
 			}
 
 			public override int GetHashCode()
