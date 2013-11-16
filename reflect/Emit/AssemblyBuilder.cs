@@ -63,7 +63,19 @@ namespace IKVM.Reflection.Emit
 		private readonly List<Module> addedModules = new List<Module>();
 		private readonly List<CustomAttributeBuilder> customAttributes = new List<CustomAttributeBuilder>();
 		private readonly List<CustomAttributeBuilder> declarativeSecurity = new List<CustomAttributeBuilder>();
-		private readonly List<Type> typeForwarders = new List<Type>();
+		private readonly List<TypeForwarder> typeForwarders = new List<TypeForwarder>();
+
+		struct TypeForwarder
+		{
+			internal readonly Type Type;
+			internal readonly bool IncludeNested;
+
+			internal TypeForwarder(Type type, bool includeNested)
+			{
+				this.Type = type;
+				this.IncludeNested = includeNested;
+			}
+		}
 
 		private struct ResourceFile
 		{
@@ -265,7 +277,12 @@ namespace IKVM.Reflection.Emit
 
 		public void __AddTypeForwarder(Type type)
 		{
-			typeForwarders.Add(type);
+			__AddTypeForwarder(type, true);
+		}
+
+		public void __AddTypeForwarder(Type type, bool includeNested)
+		{
+			typeForwarders.Add(new TypeForwarder(type, includeNested));
 		}
 
 		public void SetEntryPoint(MethodInfo entryMethod)
@@ -389,9 +406,9 @@ namespace IKVM.Reflection.Emit
 
 			manifestModule.AddDeclarativeSecurity(0x20000001, declarativeSecurity);
 
-			foreach (Type type in typeForwarders)
+			foreach (TypeForwarder fwd in typeForwarders)
 			{
-				manifestModule.AddTypeForwarder(type);
+				manifestModule.AddTypeForwarder(fwd.Type, fwd.IncludeNested);
 			}
 
 			foreach (ResourceFile resfile in resourceFiles)

@@ -384,16 +384,16 @@ namespace IKVM.Reflection.Emit
 			moduleType.CreateType();
 		}
 
-		internal void AddTypeForwarder(Type type)
+		internal void AddTypeForwarder(Type type, bool includeNested)
 		{
 			ExportType(type);
-			if (!type.__IsMissing)
+			if (includeNested && !type.__IsMissing)
 			{
 				foreach (Type nested in type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic))
 				{
 					// we export all nested types (i.e. even the private ones)
 					// (this behavior is the same as the C# compiler)
-					AddTypeForwarder(nested);
+					AddTypeForwarder(nested, true);
 				}
 			}
 		}
