@@ -401,8 +401,11 @@ namespace IKVM.Reflection.Emit
 		private int ExportType(Type type)
 		{
 			ExportedTypeTable.Record rec = new ExportedTypeTable.Record();
-			// HACK we should *not* set the TypeDefId in this case, but 2.0 and 3.5 peverify gives a warning if it is missing (4.5 doesn't)
-			rec.TypeDefId = type.MetadataToken;
+			if (asm.ImageRuntimeVersion == "v2.0.50727")
+			{
+				// HACK we should *not* set the TypeDefId in this case, but 2.0 and 3.5 peverify gives a warning if it is missing (4.5 doesn't)
+				rec.TypeDefId = type.MetadataToken;
+			}
 			rec.TypeName = this.Strings.Add(type.__Name);
 			string ns = type.__Namespace;
 			rec.TypeNamespace = ns == null ? 0 : this.Strings.Add(ns);
