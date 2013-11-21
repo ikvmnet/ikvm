@@ -83,7 +83,7 @@ namespace IKVM.Reflection
 			bool ambiguous = false;
 			for (int i = 1; i < matchCount; i++)
 			{
-				bestMatch = SelectBestMatch(bestMatch, match[i], types, ref ambiguous);
+				SelectBestMatch(match[i], types, ref bestMatch, ref ambiguous);
 			}
 			if (ambiguous)
 			{
@@ -112,32 +112,35 @@ namespace IKVM.Reflection
 			return true;
 		}
 
-		private static MethodBase SelectBestMatch(MethodBase mb1, MethodBase mb2, Type[] types, ref bool ambiguous)
+		private static void SelectBestMatch(MethodBase candidate, Type[] types, ref MethodBase currentBest, ref bool ambiguous)
 		{
-			switch (MatchSignatures(mb1.MethodSignature, mb2.MethodSignature, types))
+			switch (MatchSignatures(currentBest.MethodSignature, candidate.MethodSignature, types))
 			{
 				case 1:
-					return mb1;
+					return;
 				case 2:
-					return mb2;
+					ambiguous = false;
+					currentBest = candidate;
+					return;
 			}
 
-			if (mb1.MethodSignature.MatchParameterTypes(mb2.MethodSignature))
+			if (currentBest.MethodSignature.MatchParameterTypes(candidate.MethodSignature))
 			{
-				int depth1 = GetInheritanceDepth(mb1.DeclaringType);
-				int depth2 = GetInheritanceDepth(mb2.DeclaringType);
+				int depth1 = GetInheritanceDepth(currentBest.DeclaringType);
+				int depth2 = GetInheritanceDepth(candidate.DeclaringType);
 				if (depth1 > depth2)
 				{
-					return mb1;
+					return;
 				}
 				else if (depth1 < depth2)
 				{
-					return mb2;
+					ambiguous = false;
+					currentBest = candidate;
+					return;
 				}
 			}
 
 			ambiguous = true;
-			return mb1;
 		}
 
 		private static int GetInheritanceDepth(Type type)
