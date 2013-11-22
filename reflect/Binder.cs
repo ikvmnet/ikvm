@@ -74,11 +74,6 @@ namespace IKVM.Reflection
 				return null;
 			}
 
-			if (matchCount == 1)
-			{
-				return match[0];
-			}
-
 			MethodBase bestMatch = match[0];
 			bool ambiguous = false;
 			for (int i = 1; i < matchCount; i++)
