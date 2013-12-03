@@ -380,6 +380,7 @@ namespace IKVM.Reflection
 		private Type[] typeArgs;
 		private int token;
 		private int flags;
+		private bool cyclicTypeForwarder;
 
 		internal MissingType(Module module, Type declaringType, string ns, string name)
 		{
@@ -601,6 +602,12 @@ namespace IKVM.Reflection
 			return this;
 		}
 
+		internal override Type SetCyclicTypeForwarder()
+		{
+			this.cyclicTypeForwarder = true;
+			return this;
+		}
+
 		internal override bool IsBaked
 		{
 			get { throw new MissingMemberException(this); }
@@ -610,6 +617,11 @@ namespace IKVM.Reflection
 		{
 			// CorTypeAttr.tdForwarder
 			get { return (flags & 0x00200000) != 0; }
+		}
+
+		public override bool __IsCyclicTypeForwarder
+		{
+			get { return cyclicTypeForwarder; }
 		}
 	}
 

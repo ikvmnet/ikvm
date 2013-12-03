@@ -95,7 +95,7 @@ namespace IKVM.Reflection.Reader
 				if (type == MarkerType.Pinned)
 				{
 					TypeName typeName = module.GetTypeName(module.ExportedType.records[index].TypeNamespace, module.ExportedType.records[index].TypeName);
-					throw new TypeLoadException(String.Format("Could not load type '{0}' from assembly '{1}'.", typeName, module.Assembly.FullName));
+					return module.universe.GetMissingTypeOrThrow(module, module, null, typeName).SetCyclicTypeForwarder();
 				}
 				else if (type == null)
 				{

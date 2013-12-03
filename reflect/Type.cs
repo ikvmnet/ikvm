@@ -2020,6 +2020,11 @@ namespace IKVM.Reflection
 			return this;
 		}
 
+		internal virtual Type SetCyclicTypeForwarder()
+		{
+			return this;
+		}
+
 		protected void MarkEnumOrValueType(string typeNamespace, string typeName)
 		{
 			// we assume that mscorlib won't have nested types with these names,
@@ -2095,6 +2100,11 @@ namespace IKVM.Reflection
 		}
 
 		public virtual bool __IsTypeForwarder
+		{
+			get { return false; }
+		}
+
+		public virtual bool __IsCyclicTypeForwarder
 		{
 			get { return false; }
 		}
