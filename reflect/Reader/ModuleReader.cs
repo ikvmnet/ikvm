@@ -91,7 +91,18 @@ namespace IKVM.Reflection.Reader
 
 			internal Type GetType(ModuleReader module)
 			{
-				return type ?? (type = module.ResolveExportedType(index));
+				// guard against circular type forwarding
+				if (type == MarkerType.Pinned)
+				{
+					TypeName typeName = module.GetTypeName(module.ExportedType.records[index].TypeNamespace, module.ExportedType.records[index].TypeName);
+					throw new TypeLoadException(String.Format("Could not load type '{0}' from assembly '{1}'.", typeName, module.Assembly.FullName));
+				}
+				else if (type == null)
+				{
+					type = MarkerType.Pinned;
+					type = module.ResolveExportedType(index);
+				}
+				return type;
 			}
 		}
 
