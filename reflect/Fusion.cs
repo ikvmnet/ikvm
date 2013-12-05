@@ -571,9 +571,12 @@ namespace IKVM.Reflection
 			}
 			else
 			{
+				const int ERROR_SXS_IDENTITIES_DIFFERENT = unchecked((int)0x80073716);
 				System.Collections.Generic.Dictionary<string, string> unknownAttributes = null;
 				bool hasProcessorArchitecture = false;
 				bool hasContentType = false;
+				bool hasPublicKeyToken = false;
+				string publicKeyToken;
 				while (pos != fullName.Length)
 				{
 					string key = null;
@@ -603,24 +606,35 @@ namespace IKVM.Reflection
 							}
 							break;
 						case "publickeytoken":
-							if (parsedName.PublicKeyToken != null)
+							if (hasPublicKeyToken)
 							{
 								return ParseAssemblyResult.DuplicateKey;
 							}
-							if (!ParsePublicKeyToken(value, out parsedName.PublicKeyToken))
+							if (!ParsePublicKeyToken(value, out publicKeyToken))
 							{
 								return ParseAssemblyResult.GenericError;
 							}
+							if (parsedName.HasPublicKey && parsedName.PublicKeyToken != publicKeyToken)
+							{
+								Marshal.ThrowExceptionForHR(ERROR_SXS_IDENTITIES_DIFFERENT);
+							}
+							parsedName.PublicKeyToken = publicKeyToken;
+							hasPublicKeyToken = true;
 							break;
 						case "publickey":
-							if (parsedName.PublicKeyToken != null)
+							if (parsedName.HasPublicKey)
 							{
 								return ParseAssemblyResult.DuplicateKey;
 							}
-							if (!ParsePublicKey(value, out parsedName.PublicKeyToken))
+							if (!ParsePublicKey(value, out publicKeyToken))
 							{
 								return ParseAssemblyResult.GenericError;
 							}
+							if (hasPublicKeyToken && parsedName.PublicKeyToken != publicKeyToken)
+							{
+								Marshal.ThrowExceptionForHR(ERROR_SXS_IDENTITIES_DIFFERENT);
+							}
+							parsedName.PublicKeyToken = publicKeyToken;
 							parsedName.HasPublicKey = true;
 							break;
 						case "retargetable":
