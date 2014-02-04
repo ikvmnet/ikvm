@@ -53,6 +53,7 @@ import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
 import sun.misc.Unsafe;
+import sun.misc.VM;
 import sun.reflect.CallerSensitive;
 import sun.reflect.ConstantPool;
 import sun.reflect.Reflection;
@@ -3082,13 +3083,9 @@ public final
                     // initialized. This is needed because reflection code is
                     // called very early in the initialization process (before
                     // command-line arguments have been parsed and therefore
-                    // these user-settable properties installed.) We assume that
-                    // if System.out is non-null then the System class has been
-                    // fully initialized and that the bulk of the startup code
-                    // has been run.
+                    // these user-settable properties installed.)
 
-                    if (System.out == null) {
-                        // java.lang.System not yet fully initialized
+                    if (!VM.isBooted()) {
                         return null;
                     }
 
