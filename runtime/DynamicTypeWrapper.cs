@@ -1122,18 +1122,28 @@ namespace IKVM.Internal
 							noop = false;
 							return false;
 						}
+						ClassFile.Field field = classFile.GetField(fld.Name, fld.Signature);
+						if (field == null)
+						{
+							noop = false;
+							return false;
+						}
 						if (bc == NormalizedByteCode.__putstatic)
 						{
-							ClassFile.Field field = classFile.GetField(fld.Name, fld.Signature);
-							if (field == null)
+							if (field.IsProperty && field.PropertySetter != null)
 							{
 								noop = false;
 								return false;
 							}
-							if (!field.IsFinal || !field.IsStatic || !field.IsProperty || field.PropertySetter != null)
+							if (!field.IsFinal || !field.IsStatic)
 							{
 								noop = false;
 							}
+						}
+						else if (field.IsProperty && field.PropertyGetter != null)
+						{
+							noop = false;
+							return false;
 						}
 					}
 					else if (bc == NormalizedByteCode.__areturn ||
