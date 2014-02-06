@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2013 Jeroen Frijters
+  Copyright (C) 2002-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -169,7 +169,6 @@ sealed class IkvmcCompiler
 	private bool nonleaf;
 	private string manifestMainClass;
 	private string defaultAssemblyName;
-	private List<string> classesToExclude = new List<string>();
 	private static bool time;
 	private static string runtimeAssembly;
 	private static bool nostdlib;
@@ -545,7 +544,6 @@ sealed class IkvmcCompiler
 				IkvmcCompiler nestedLevel = new IkvmcCompiler();
 				nestedLevel.manifestMainClass = manifestMainClass;
 				nestedLevel.defaultAssemblyName = defaultAssemblyName;
-				nestedLevel.classesToExclude = new List<string>(classesToExclude);
 				nestedLevel.ContinueParseCommandLine(arglist, targets, options.Copy());
 			}
 			else if(s == "}")
@@ -777,7 +775,7 @@ sealed class IkvmcCompiler
 				}
 				else if(s.StartsWith("-exclude:"))
 				{
-					ProcessExclusionFile(classesToExclude, s.Substring(9));
+					ProcessExclusionFile(ref options.classesToExclude, s.Substring(9));
 				}
 				else if(s.StartsWith("-version:"))
 				{
@@ -1035,7 +1033,6 @@ sealed class IkvmcCompiler
 			StaticCompiler.IssueMessage(options, Message.MainMethodFromManifest, manifestMainClass);
 			options.mainClass = manifestMainClass;
 		}
-		options.classesToExclude = classesToExclude.ToArray();
 		targets.Add(options);
 	}
 
@@ -1290,7 +1287,7 @@ sealed class IkvmcCompiler
 		return true;
 	}
 
-	private static bool IsStubLegacy(CompilerOptions options, ZipEntry ze, byte[] data)
+	private static bool IsExcludedOrStubLegacy(CompilerOptions options, ZipEntry ze, byte[] data)
 	{
 		if (ze.Name.EndsWith(".class", StringComparison.OrdinalIgnoreCase))
 		{
@@ -1298,7 +1295,7 @@ sealed class IkvmcCompiler
 			{
 				bool stub;
 				string name = ClassFile.GetClassName(data, 0, data.Length, out stub);
-				if (stub && EmitStubWarning(options, data))
+				if (options.IsExcludedClass(name) || (stub && EmitStubWarning(options, data)))
 				{
 					// we use stubs to add references, but otherwise ignore them
 					return true;
@@ -1356,7 +1353,7 @@ sealed class IkvmcCompiler
 					{
 						found = true;
 						byte[] data = ReadFromZip(zf, ze);
-						if (IsStubLegacy(options, ze, data))
+						if (IsExcludedOrStubLegacy(options, ze, data))
 						{
 							continue;
 						}
@@ -1405,6 +1402,10 @@ sealed class IkvmcCompiler
 				{
 					bool stub;
 					string name = ClassFile.GetClassName(data, 0, data.Length, out stub);
+					if (options.IsExcludedClass(name))
+					{
+						return;
+					}
 					if (stub && EmitStubWarning(options, data))
 					{
 						// we use stubs to add references, but otherwise ignore them
@@ -1474,10 +1475,11 @@ sealed class IkvmcCompiler
 	}
 
 	//This processes an exclusion file with a single regular expression per line
-	private static void ProcessExclusionFile(List<string> classesToExclude, String filename)
+	private static void ProcessExclusionFile(ref string[] classesToExclude, string filename)
 	{
 		try 
 		{
+			List<string> list = classesToExclude == null ? new List<string>() : new List<string>(classesToExclude);
 			using(StreamReader file = new StreamReader(filename))
 			{
 				String line;
@@ -1486,10 +1488,11 @@ sealed class IkvmcCompiler
 					line = line.Trim();
 					if(!line.StartsWith("//") && line.Length != 0)
 					{
-						classesToExclude.Add(line);
+						list.Add(line);
 					}
 				}
 			}
+			classesToExclude = list.ToArray();
 		} 
 		catch(Exception x) 
 		{
