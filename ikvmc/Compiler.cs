@@ -156,6 +156,8 @@ sealed class FatalCompilerErrorException : Exception
 				return "The type '{0}' is defined in an assembly that is not referenced. You must add a reference to assembly '{1}'";
 			case IKVM.Internal.Message.FileNotFound:
 				return "File not found: {0}";
+			case IKVM.Internal.Message.RuntimeMethodMissing:
+				return "Runtime method '{0}' not found";
 			default:
 				return "Missing Error Message. Please file a bug.";
 		}

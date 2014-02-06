@@ -146,18 +146,24 @@ namespace IKVM.Runtime
 			return obj;
 		}
 
-#if !FIRST_PASS
 		[DebuggerStepThroughAttribute]
 		public static object DynamicMultianewarray(int[] lengths, java.lang.Class clazz)
 		{
+#if FIRST_PASS
+			return null;
+#else
 			Profiler.Count("DynamicMultianewarray");
 			TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
 			return multianewarray(wrapper.TypeAsArrayType.TypeHandle, lengths);
+#endif
 		}
 
 		[DebuggerStepThroughAttribute]
 		public static object DynamicNewarray(int length, java.lang.Class clazz)
 		{
+#if FIRST_PASS
+			return null;
+#else
 			Profiler.Count("DynamicNewarray");
 			if(length < 0)
 			{
@@ -165,26 +171,34 @@ namespace IKVM.Runtime
 			}
 			TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
 			return Array.CreateInstance(wrapper.TypeAsArrayType, length);
+#endif
 		}
 
 		[DebuggerStepThroughAttribute]
 		public static void DynamicAastore(object arrayref, int index, object val)
 		{
+#if !FIRST_PASS
 			Profiler.Count("DynamicAastore");
 			((Array)arrayref).SetValue(val, index);
+#endif
 		}
 
 		[DebuggerStepThroughAttribute]
 		public static object DynamicAaload(object arrayref, int index)
 		{
+#if FIRST_PASS
+			return null;
+#else
 			Profiler.Count("DynamicAaload");
 			return ((Array)arrayref).GetValue(index);
+#endif
 		}
 
 		// the sole purpose of this method is to check whether the clazz can be instantiated (but not to actually do it)
 		[DebuggerStepThroughAttribute]
 		public static void DynamicNewCheckOnly(java.lang.Class clazz)
 		{
+#if !FIRST_PASS
 			Profiler.Count("DynamicNewCheckOnly");
 			TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
 			if(wrapper.IsAbstract)
@@ -192,6 +206,7 @@ namespace IKVM.Runtime
 				throw new java.lang.InstantiationError(wrapper.Name);
 			}
 			wrapper.RunClassInit();
+#endif
 		}
 
 		private static TypeWrapper LoadTypeWrapper(string clazz, ikvm.@internal.CallerID callerId)
@@ -221,13 +236,20 @@ namespace IKVM.Runtime
 		[DebuggerStepThroughAttribute]
 		public static java.lang.Class DynamicClassLiteral(string clazz, ikvm.@internal.CallerID callerId)
 		{
+#if FIRST_PASS
+			return null;
+#else
 			Profiler.Count("DynamicClassLiteral");
 			return LoadTypeWrapper(clazz, callerId).ClassObject;
+#endif
 		}
 
 		[DebuggerStepThroughAttribute]
 		public static object DynamicCast(object obj, java.lang.Class clazz)
 		{
+#if FIRST_PASS
+			return null;
+#else
 			Debug.Assert(obj != null);
 			Profiler.Count("DynamicCast");
 			if (!DynamicInstanceOf(obj, clazz))
@@ -235,14 +257,19 @@ namespace IKVM.Runtime
 				throw new java.lang.ClassCastException(NativeCode.ikvm.runtime.Util.GetTypeWrapperFromObject(obj).Name + " cannot be cast to " + clazz.getName());
 			}
 			return obj;
+#endif
 		}
 
 		[DebuggerStepThroughAttribute]
 		public static bool DynamicInstanceOf(object obj, java.lang.Class clazz)
 		{
+#if FIRST_PASS
+			return false;
+#else
 			Debug.Assert(obj != null);
 			Profiler.Count("DynamicInstanceOf");
 			return TypeWrapper.FromClass(clazz).IsInstance(obj);
+#endif
 		}
 
 		[DebuggerStepThrough]
@@ -386,6 +413,9 @@ namespace IKVM.Runtime
 		[DebuggerStepThrough]
 		public static Delegate DynamicCreateDelegate(object obj, Type delegateType, string name, string sig)
 		{
+#if FIRST_PASS
+			return null;
+#else
 			TypeWrapper tw = TypeWrapper.FromClass(ikvm.runtime.Util.getClassFromObject(obj));
 			MethodWrapper mw = tw.GetMethodWrapper(name, sig, true);
 			if (mw == null || mw.IsStatic || !mw.IsPublic)
@@ -430,26 +460,8 @@ namespace IKVM.Runtime
 				mw.ResolveMethod();
 				return Delegate.CreateDelegate(delegateType, obj, (MethodInfo)mw.GetMethod());
 			}
+#endif
 		}
-#else
-		[DebuggerStepThroughAttribute]
-		public static object DynamicCast(object obj, RuntimeTypeHandle type, string clazz)
-		{
-			return null;
-		}
-
-		[DebuggerStepThroughAttribute]
-		public static bool DynamicInstanceOf(object obj, RuntimeTypeHandle type, string clazz)
-		{
-			return false;
-		}
-
-		[DebuggerStepThrough]
-		public static Delegate DynamicCreateDelegate(object obj, Type delegateType)
-		{
-			return null;
-		}
-#endif //!FIRST_PASS
 
 		[DebuggerStepThroughAttribute]
 		public static int f2i(float f)

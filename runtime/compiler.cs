@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2013 Jeroen Frijters
+  Copyright (C) 2002-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -88,43 +88,60 @@ static class ByteCodeHelperMethods
 #else
 		Type typeofByteCodeHelper = typeof(IKVM.Runtime.ByteCodeHelper);
 #endif
-		multianewarray = typeofByteCodeHelper.GetMethod("multianewarray");
-		multianewarray_ghost = typeofByteCodeHelper.GetMethod("multianewarray_ghost");
-		anewarray_ghost = typeofByteCodeHelper.GetMethod("anewarray_ghost");
-		f2i = typeofByteCodeHelper.GetMethod("f2i");
-		d2i = typeofByteCodeHelper.GetMethod("d2i");
-		f2l = typeofByteCodeHelper.GetMethod("f2l");
-		d2l = typeofByteCodeHelper.GetMethod("d2l");
-		arraycopy_fast = typeofByteCodeHelper.GetMethod("arraycopy_fast");
-		arraycopy_primitive_8 = typeofByteCodeHelper.GetMethod("arraycopy_primitive_8");
-		arraycopy_primitive_4 = typeofByteCodeHelper.GetMethod("arraycopy_primitive_4");
-		arraycopy_primitive_2 = typeofByteCodeHelper.GetMethod("arraycopy_primitive_2");
-		arraycopy_primitive_1 = typeofByteCodeHelper.GetMethod("arraycopy_primitive_1");
-		arraycopy = typeofByteCodeHelper.GetMethod("arraycopy");
-		DynamicCast = typeofByteCodeHelper.GetMethod("DynamicCast");
-		DynamicAaload = typeofByteCodeHelper.GetMethod("DynamicAaload");
-		DynamicAastore = typeofByteCodeHelper.GetMethod("DynamicAastore");
-		DynamicClassLiteral = typeofByteCodeHelper.GetMethod("DynamicClassLiteral");
-		DynamicMultianewarray = typeofByteCodeHelper.GetMethod("DynamicMultianewarray");
-		DynamicNewarray = typeofByteCodeHelper.GetMethod("DynamicNewarray");
-		DynamicNewCheckOnly = typeofByteCodeHelper.GetMethod("DynamicNewCheckOnly");
-		DynamicCreateDelegate = typeofByteCodeHelper.GetMethod("DynamicCreateDelegate");
-		DynamicLoadMethodType = typeofByteCodeHelper.GetMethod("DynamicLoadMethodType");
-		DynamicLoadMethodHandle = typeofByteCodeHelper.GetMethod("DynamicLoadMethodHandle");
-		DynamicBinderMemberLookup = typeofByteCodeHelper.GetMethod("DynamicBinderMemberLookup");
-		VerboseCastFailure = typeofByteCodeHelper.GetMethod("VerboseCastFailure");
-		SkipFinalizer = typeofByteCodeHelper.GetMethod("SkipFinalizer");
-		DynamicInstanceOf = typeofByteCodeHelper.GetMethod("DynamicInstanceOf");
-		volatileReadDouble = typeofByteCodeHelper.GetMethod("VolatileRead", new Type[] { Types.Double.MakeByRefType() });
-		volatileReadLong = typeofByteCodeHelper.GetMethod("VolatileRead", new Type[] { Types.Int64.MakeByRefType() });
-		volatileWriteDouble = typeofByteCodeHelper.GetMethod("VolatileWrite", new Type[] { Types.Double.MakeByRefType(), Types.Double });
-		volatileWriteLong = typeofByteCodeHelper.GetMethod("VolatileWrite", new Type[] { Types.Int64.MakeByRefType(), Types.Int64 });
-		mapException = typeofByteCodeHelper.GetMethod("MapException");
-		GetDelegateForInvokeExact = typeofByteCodeHelper.GetMethod("GetDelegateForInvokeExact");
-		GetDelegateForInvoke = typeofByteCodeHelper.GetMethod("GetDelegateForInvoke");
-		LoadMethodType = typeofByteCodeHelper.GetMethod("LoadMethodType");
-		MethodHandleFromDelegate = typeofByteCodeHelper.GetMethod("MethodHandleFromDelegate");
-		LinkIndyCallSite = typeofByteCodeHelper.GetMethod("LinkIndyCallSite");
+		multianewarray = GetHelper(typeofByteCodeHelper, "multianewarray");
+		multianewarray_ghost = GetHelper(typeofByteCodeHelper, "multianewarray_ghost");
+		anewarray_ghost = GetHelper(typeofByteCodeHelper, "anewarray_ghost");
+		f2i = GetHelper(typeofByteCodeHelper, "f2i");
+		d2i = GetHelper(typeofByteCodeHelper, "d2i");
+		f2l = GetHelper(typeofByteCodeHelper, "f2l");
+		d2l = GetHelper(typeofByteCodeHelper, "d2l");
+		arraycopy_fast = GetHelper(typeofByteCodeHelper, "arraycopy_fast");
+		arraycopy_primitive_8 = GetHelper(typeofByteCodeHelper, "arraycopy_primitive_8");
+		arraycopy_primitive_4 = GetHelper(typeofByteCodeHelper, "arraycopy_primitive_4");
+		arraycopy_primitive_2 = GetHelper(typeofByteCodeHelper, "arraycopy_primitive_2");
+		arraycopy_primitive_1 = GetHelper(typeofByteCodeHelper, "arraycopy_primitive_1");
+		arraycopy = GetHelper(typeofByteCodeHelper, "arraycopy");
+		DynamicCast = GetHelper(typeofByteCodeHelper, "DynamicCast");
+		DynamicAaload = GetHelper(typeofByteCodeHelper, "DynamicAaload");
+		DynamicAastore = GetHelper(typeofByteCodeHelper, "DynamicAastore");
+		DynamicClassLiteral = GetHelper(typeofByteCodeHelper, "DynamicClassLiteral");
+		DynamicMultianewarray = GetHelper(typeofByteCodeHelper, "DynamicMultianewarray");
+		DynamicNewarray = GetHelper(typeofByteCodeHelper, "DynamicNewarray");
+		DynamicNewCheckOnly = GetHelper(typeofByteCodeHelper, "DynamicNewCheckOnly");
+		DynamicCreateDelegate = GetHelper(typeofByteCodeHelper, "DynamicCreateDelegate");
+		DynamicLoadMethodType = GetHelper(typeofByteCodeHelper, "DynamicLoadMethodType");
+		DynamicLoadMethodHandle = GetHelper(typeofByteCodeHelper, "DynamicLoadMethodHandle");
+		DynamicBinderMemberLookup = GetHelper(typeofByteCodeHelper, "DynamicBinderMemberLookup");
+		VerboseCastFailure = GetHelper(typeofByteCodeHelper, "VerboseCastFailure");
+		SkipFinalizer = GetHelper(typeofByteCodeHelper, "SkipFinalizer");
+		DynamicInstanceOf = GetHelper(typeofByteCodeHelper, "DynamicInstanceOf");
+		volatileReadDouble = GetHelper(typeofByteCodeHelper, "VolatileRead", new Type[] { Types.Double.MakeByRefType() });
+		volatileReadLong = GetHelper(typeofByteCodeHelper, "VolatileRead", new Type[] { Types.Int64.MakeByRefType() });
+		volatileWriteDouble = GetHelper(typeofByteCodeHelper, "VolatileWrite", new Type[] { Types.Double.MakeByRefType(), Types.Double });
+		volatileWriteLong = GetHelper(typeofByteCodeHelper, "VolatileWrite", new Type[] { Types.Int64.MakeByRefType(), Types.Int64 });
+		mapException = GetHelper(typeofByteCodeHelper, "MapException");
+		GetDelegateForInvokeExact = GetHelper(typeofByteCodeHelper, "GetDelegateForInvokeExact");
+		GetDelegateForInvoke = GetHelper(typeofByteCodeHelper, "GetDelegateForInvoke");
+		LoadMethodType = GetHelper(typeofByteCodeHelper, "LoadMethodType");
+		MethodHandleFromDelegate = GetHelper(typeofByteCodeHelper, "MethodHandleFromDelegate");
+		LinkIndyCallSite = GetHelper(typeofByteCodeHelper, "LinkIndyCallSite");
+	}
+
+	private static MethodInfo GetHelper(Type type, string method)
+	{
+		return GetHelper(type, method, null);
+	}
+
+	private static MethodInfo GetHelper(Type type, string method, Type[] parameters)
+	{
+		MethodInfo mi = parameters == null ? type.GetMethod(method) : type.GetMethod(method, parameters);
+#if STATIC_COMPILER
+		if (mi == null)
+		{
+			throw new FatalCompilerErrorException(Message.RuntimeMethodMissing, method);
+		}
+#endif
+		return mi;
 	}
 }
 
