@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2013 Jeroen Frijters
+  Copyright (C) 2002-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -5626,6 +5626,10 @@ namespace IKVM.Internal
 				{
 					for (int i = 0; i < caller.Length; i++)
 					{
+						if (caller[i].IsUnloadable || callee[i].IsUnloadable)
+						{
+							return false;
+						}
 						if (!caller[i].IsAssignableTo(callee[i]))
 						{
 							return false;
