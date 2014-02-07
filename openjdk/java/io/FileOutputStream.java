@@ -211,11 +211,9 @@ class FileOutputStream extends OutputStream
         if (name == null) {
             throw new NullPointerException();
         }
-        /*
         if (file.isInvalid()) {
             throw new FileNotFoundException("Invalid file path");
         }
-        */
         this.fd = new FileDescriptor();
         this.append = append;
         this.path = name;

@@ -137,11 +137,9 @@ class FileInputStream extends InputStream
         if (name == null) {
             throw new NullPointerException();
         }
-        /*
         if (file.isInvalid()) {
             throw new FileNotFoundException("Invalid file path");
         }
-        */
         fd = new FileDescriptor();
         fd.incrementAndGetUseCount();
         this.path = name;

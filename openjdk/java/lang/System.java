@@ -1160,9 +1160,4 @@ public final class System {
             return "lib" + libname + ".so";
         }
     }
-    /* returns the class of the caller. */
-    static Class<?> getCallerClass() {
-        // NOTE use of more generic Reflection.getCallerClass()
-        return Reflection.getCallerClass(3);
-    }
 }

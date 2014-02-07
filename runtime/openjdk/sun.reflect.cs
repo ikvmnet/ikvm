@@ -119,7 +119,7 @@ static class Java_sun_reflect_Reflection
 
 	// NOTE this method is hooked up explicitly through map.xml to prevent inlining of the native stub
 	// and tail-call optimization in the native stub.
-	public static object getCallerClass(int realFramesToSkip)
+	public static java.lang.Class getCallerClass0(int realFramesToSkip)
 	{
 #if FIRST_PASS
 		return null;

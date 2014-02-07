@@ -234,40 +234,6 @@ static class Java_java_io_ObjectInputStream
 			dst[dstpos++] = IKVM.Runtime.DoubleConverter.ToDouble(v, ref converter);
 		}
 	}
-
-	public static object latestUserDefinedLoader()
-	{
-		// testing shows that it is cheaper the get the full stack trace and then look at a few frames than getting the frames individually
-		StackTrace trace = new StackTrace(2, false);
-		for (int i = 0; i < trace.FrameCount; i++)
-		{
-			StackFrame frame = trace.GetFrame(i);
-			MethodBase method = frame.GetMethod();
-			if (method == null)
-			{
-				continue;
-			}
-			Type type = method.DeclaringType;
-			if (type != null)
-			{
-				TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(type);
-				if (tw != null)
-				{
-					ClassLoaderWrapper classLoader = tw.GetClassLoader();
-					AssemblyClassLoader acl = classLoader as AssemblyClassLoader;
-					if (acl == null || acl.GetAssembly(tw) != typeof(object).Assembly)
-					{
-						object javaClassLoader = classLoader.GetJavaClassLoader();
-						if (javaClassLoader != null)
-						{
-							return javaClassLoader;
-						}
-					}
-				}
-			}
-		}
-		return null;
-	}
 }
 
 static class Java_java_io_ObjectOutputStream

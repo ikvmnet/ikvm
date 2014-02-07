@@ -37,6 +37,14 @@ abstract class NativeDispatcher
 {
     abstract int read(FileDescriptor fd, byte[] buf, int offset, int length) throws IOException;
 
+    /**
+     * Returns {@code true} if pread/pwrite needs to be synchronized with
+     * position sensitive methods.
+     */
+    boolean needsPositionLock() {
+        return false;
+    }
+
     abstract int write(FileDescriptor fd, byte[] buf, int offset, int length) throws IOException;
 
     abstract long read(FileDescriptor fd, ByteBuffer[] bufs, int offset, int length) throws IOException;

@@ -66,7 +66,9 @@ class WindowsAsynchronousSocketChannelImpl
 
     // invoked by WindowsAsynchronousServerSocketChannelImpl when new connection
     // accept
-    void setConnected(SocketAddress localAddress, SocketAddress remoteAddress) {
+    void setConnected(InetSocketAddress localAddress,
+                      InetSocketAddress remoteAddress)
+    {
         synchronized (stateLock) {
             state = ST_CONNECTED;
             this.localAddress = localAddress;

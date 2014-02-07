@@ -503,7 +503,7 @@ static class Java_java_net_NetworkInterface
 							mask += (short)java.lang.Integer.bitCount(b);
 						}
 					}
-					else if ((address.address & ~0xffffff) == 0x7f000000)
+					else if (address.isLoopbackAddress())
 					{
 						mask = 8;
 						broadcast = new java.net.Inet4Address(null, 0xffffff);

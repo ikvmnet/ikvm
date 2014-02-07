@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,26 @@
  * questions.
  */
 
-package sun.misc;
+package sun.invoke;
 
-public interface JavaAWTAccess {
-    public Object getContext();
-    public Object getExecutionContext();
+import java.lang.invoke.MethodHandle;
 
-    public Object get(Object context, Object key);
-    public void put(Object context, Object key, Object value);
-    public void remove(Object context, Object key);
-
-    // convenience methods whose context is the object returned by getContext()
-    public Object get(Object key);
-    public void put(Object key, Object value);
-    public void remove(Object key);
-    public boolean isDisposed();
-    public boolean isMainAppContext();
+/**
+ * Private API used inside of java.lang.invoke.MethodHandles.
+ * Interface implemented by every object which is produced by
+ * {@link java.lang.invoke.MethodHandles#asInstance MethodHandles.asInstance}.
+ * The methods of this interface allow a caller to recover the parameters
+ * to {@code asInstance}.
+ * This allows applications to repeatedly convert between method handles
+ * and SAM objects, without the risk of creating unbounded delegation chains.
+ */
+public interface WrapperInstance {
+    /** Produce or recover a target method handle which is behaviorally
+     *  equivalent to the SAM method of this object.
+     */
+    public MethodHandle getWrapperInstanceTarget();
+    /** Recover the SAM type for which this object was created.
+     */
+    public Class<?> getWrapperInstanceType();
 }
+

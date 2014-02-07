@@ -553,7 +553,7 @@ class DatagramChannelImpl
                     return 0;
                 readerThread = NativeThread.current();
                 do {
-                    n = IOUtil.read(fd, buf, -1, nd, readLock);
+                    n = IOUtil.read(fd, buf, -1, nd);
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(n);
             } finally {
@@ -609,7 +609,7 @@ class DatagramChannelImpl
                     return 0;
                 writerThread = NativeThread.current();
                 do {
-                    n = IOUtil.write(fd, buf, -1, nd, writeLock);
+                    n = IOUtil.write(fd, buf, -1, nd);
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(n);
             } finally {

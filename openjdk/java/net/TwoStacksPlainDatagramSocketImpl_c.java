@@ -909,8 +909,8 @@ static int peek(JNIEnv env, TwoStacksPlainDatagramSocketImpl _this, InetAddress 
         JNU_ThrowByName(env, JNU_JAVAIOPKG+"InterruptedIOException", null);
         return 0;
     }
-    addressObj.address = ntohl(remote_addr.sin_addr.s_addr);
-    addressObj.family = IPv4;
+    addressObj.holder().address = ntohl(remote_addr.sin_addr.s_addr);
+    addressObj.holder().family = IPv4;
 
     /* return port */
     return ntohs(remote_addr.sin_port);
@@ -1868,7 +1868,7 @@ private static Object getMulticastInterface(JNIEnv env, TwoStacksPlainDatagramSo
          * Construct and populate an Inet4Address
          */
         addr = new Inet4Address();
-        addr.address = ntohl(in.s_addr);
+        addr.holder().address = ntohl(in.s_addr);
 
         /*
          * For IP_MULTICAST_IF return InetAddress

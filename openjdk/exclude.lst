@@ -3,3 +3,4 @@
 ^java\.lang\.Object$
 ^java\.lang\.String$
 ^java\.lang\.Throwable$
+^sun\.reflect\.misc\.Trampoline$

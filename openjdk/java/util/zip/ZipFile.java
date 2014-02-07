@@ -95,6 +95,7 @@ public class ZipFile implements ZipConstants, Closeable
   private LinkedHashMap<String, ZipEntry> entries;
 
   private boolean closed = false;
+  final boolean hasLocHeader;
 
   /**
    * Opens a Zip file with the given name for reading.
@@ -189,6 +190,7 @@ public class ZipFile implements ZipConstants, Closeable
     this.raf = new RandomAccessFile(file, "r");
     this.name = file.getPath();
     this.charset = charset;
+    this.hasLocHeader = raf.length() >= 4 && raf.readInt() == (int)((LOCSIG << 24) | ((LOCSIG & 0xFF00) << 8) | ((LOCSIG & 0xFF0000) >> 8) | (LOCSIG >> 24));
 
     boolean valid = false;
 
@@ -885,5 +887,15 @@ public class ZipFile implements ZipConstants, Closeable
     {
       dummyByteCount = 1;
     }
+  }
+
+  static {
+    sun.misc.SharedSecrets.setJavaUtilZipFileAccess(
+      new sun.misc.JavaUtilZipFileAccess() {
+        public boolean startsWithLocHeader(ZipFile zip) {
+          return zip.hasLocHeader;
+        }
+      }
+    );
   }
 }

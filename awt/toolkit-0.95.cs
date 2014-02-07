@@ -539,9 +539,9 @@ namespace ikvm.awt
             throw new NotImplementedException();
         }
 
-        public override java.awt.peer.KeyboardFocusManagerPeer createKeyboardFocusManagerPeer(java.awt.KeyboardFocusManager manager)
+        public override java.awt.peer.KeyboardFocusManagerPeer getKeyboardFocusManagerPeer()
         {
-            return new NetKeyboardFocusManagerPeer(manager);
+            return new NetKeyboardFocusManagerPeer();
         }
 
         public override java.awt.Dimension getScreenSize()
@@ -4130,7 +4130,7 @@ namespace ikvm.awt
 			return NetToolkit.Invoke<bool>(control.Focus);
 		}
 
-        public void setAlwaysOnTop(bool alwaysOnTop)
+        public void updateAlwaysOnTopState()
         {
             // The .NET property TopMost does not work with a not focusable Window
             // that we need to set the window flags directly. To reduce double code
@@ -4483,13 +4483,7 @@ namespace ikvm.awt
 
     sealed class NetKeyboardFocusManagerPeer : java.awt.peer.KeyboardFocusManagerPeer
     {
-        //private readonly java.awt.KeyboardFocusManager manager;
         private static java.lang.reflect.Method m_removeLastFocusRequest;
-
-        public NetKeyboardFocusManagerPeer(java.awt.KeyboardFocusManager manager)
-        {
-            //this.manager = manager;
-        }
 
         public void clearGlobalFocusOwner(java.awt.Window activeWindow)
         {
@@ -4508,6 +4502,10 @@ namespace ikvm.awt
         {
             return getNativeFocusedWindow();
         }
+
+		public void setCurrentFocusedWindow(java.awt.Window w)
+		{
+		}
 
 		private static java.awt.Component getNativeFocusOwner()
 		{
@@ -4562,9 +4560,17 @@ namespace ikvm.awt
             {
                 if (m_removeLastFocusRequest == null)
                 {
-                    m_removeLastFocusRequest = SunToolkit.getMethod(typeof(java.awt.KeyboardFocusManager), "removeLastFocusRequest",
-                                                                  new java.lang.Class[] { typeof(java.awt.Component) });
-                }
+					java.security.AccessController.doPrivileged(Delegates.toPrivilegedAction(delegate
+					{
+						java.lang.Class keyboardFocusManagerCls = typeof(java.awt.KeyboardFocusManager);
+						java.lang.reflect.Method method = keyboardFocusManagerCls.getDeclaredMethod(
+							"removeLastFocusRequest",
+							typeof(java.awt.Component));
+						method.setAccessible(true);
+						m_removeLastFocusRequest = method;
+						return null;
+					}));
+				}
                 m_removeLastFocusRequest.invoke(null, new Object[] { heavyweight });
             }
             catch (java.lang.reflect.InvocationTargetException ite)

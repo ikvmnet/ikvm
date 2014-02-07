@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,23 @@
  * questions.
  */
 
-package sun.reflect;
+package sun.invoke.anon;
 
-import java.lang.annotation.*;
-import static java.lang.annotation.ElementType.*;
-
-/**
- * A method annotated @CallerSensitive is sensitive to its calling class,
- * via {@link sun.reflect.Reflection#getCallerClass Reflection.getCallerClass},
- * or via some equivalent.
- *
- * @author John R. Rose
+/** Exception used when there is an error in the constant pool
+ *  format.
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target({METHOD})
-public @interface CallerSensitive {
+public class InvalidConstantPoolFormatException extends Exception {
+    private static final long serialVersionUID=-6103888330523770949L;
+
+    public InvalidConstantPoolFormatException(String message,Throwable cause) {
+        super(message,cause);
+    }
+
+    public InvalidConstantPoolFormatException(String message) {
+        super(message);
+    }
+
+    public InvalidConstantPoolFormatException(Throwable cause) {
+        super(cause);
+    }
 }

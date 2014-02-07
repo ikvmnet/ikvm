@@ -244,14 +244,6 @@ static class Java_sun_nio_fs_NetPath
 	}
 }
 
-static class Java_sun_rmi_server_MarshalInputStream
-{
-	public static object latestUserDefinedLoader()
-	{
-		return Java_java_io_ObjectInputStream.latestUserDefinedLoader();
-	}
-}
-
 static class Java_sun_security_provider_NativeSeedGenerator
 {
 	public static bool nativeGenerateSeed(byte[] result)

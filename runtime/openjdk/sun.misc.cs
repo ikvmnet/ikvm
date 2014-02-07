@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2007-2013 Jeroen Frijters
+  Copyright (C) 2007-2014 Jeroen Frijters
   Copyright (C) 2009 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
@@ -24,6 +24,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.ConstrainedExecution;
 using System.Runtime.InteropServices;
@@ -364,6 +365,40 @@ static class Java_sun_misc_VM
 {
 	public static void initialize()
 	{
+	}
+
+	public static java.lang.ClassLoader latestUserDefinedLoader()
+	{
+		// testing shows that it is cheaper the get the full stack trace and then look at a few frames than getting the frames individually
+		StackTrace trace = new StackTrace(2, false);
+		for (int i = 0; i < trace.FrameCount; i++)
+		{
+			StackFrame frame = trace.GetFrame(i);
+			MethodBase method = frame.GetMethod();
+			if (method == null)
+			{
+				continue;
+			}
+			Type type = method.DeclaringType;
+			if (type != null)
+			{
+				TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(type);
+				if (tw != null)
+				{
+					ClassLoaderWrapper classLoader = tw.GetClassLoader();
+					AssemblyClassLoader acl = classLoader as AssemblyClassLoader;
+					if (acl == null || acl.GetAssembly(tw) != typeof(object).Assembly)
+					{
+						java.lang.ClassLoader javaClassLoader = classLoader.GetJavaClassLoader();
+						if (javaClassLoader != null)
+						{
+							return javaClassLoader;
+						}
+					}
+				}
+			}
+		}
+		return null;
 	}
 }
 

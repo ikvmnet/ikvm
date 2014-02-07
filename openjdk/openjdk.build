@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-  Copyright (C) 2002-2013 Jeroen Frijters
+  Copyright (C) 2002-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -27,10 +27,10 @@
     <property name="pathsep" value=":" />
     <property overwrite="false" name="signoption" value="" />
     <property overwrite="false" name="SkipSystemCoreDependency" value="false" />
-    <property name="OPENJDK_VERSION" value="OpenJDK 7u6 b24" />
-    <property name="IMPLEMENTATION_VERSION" value="1.7.0_6" />
+    <property name="OPENJDK_VERSION" value="OpenJDK 7u40 b34" />
+    <property name="IMPLEMENTATION_VERSION" value="1.7.0_40" />
     <property name="SPECIFICATION_VERSION" value="1.7" />
-    <property name="OpenJDK7.dir" value="${project::get-base-directory()}/../../openjdk-7u6-b24" />
+    <property name="OpenJDK7.dir" value="${project::get-base-directory()}/../../openjdk-7u40-b34" />
     <if test="${platform::is-win32()}">
         <property name="pathsep" value=";" />
     </if>

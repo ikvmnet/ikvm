@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
 import java.awt.peer.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Field;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
 import java.util.Set;
@@ -62,14 +56,15 @@ public abstract class EmbeddedFrame extends Frame
                           implements KeyEventDispatcher, PropertyChangeListener {
 
     private boolean isCursorAllowed = true;
-    private static Field fieldPeer;
-    private static Field currentCycleRoot;
     private boolean supportsXEmbed = false;
     private KeyboardFocusManager appletKFM;
     // JDK 1.1 compatibility
     private static final long serialVersionUID = 2967042741780317130L;
 
-    // Use these in traverseOut method to determine directions
+    /*
+     * The constants define focus traversal directions.
+     * Use them in {@code traverseIn}, {@code traverseOut} methods.
+     */
     protected static final boolean FORWARD = true;
     protected static final boolean BACKWARD = false;
 
@@ -204,39 +199,8 @@ public abstract class EmbeddedFrame extends Frame
      */
     public boolean dispatchKeyEvent(KeyEvent e) {
 
-        // We can't guarantee that this is called on the same AppContext as EmbeddedFrame
-        // belongs to. That's why we can't use public methods to find current focus cycle
-        // root. Instead, we access KFM's private field directly.
-        if (currentCycleRoot == null) {
-            currentCycleRoot = (Field)AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    try {
-                        Field unaccessibleRoot = KeyboardFocusManager.class.
-                                                     getDeclaredField("currentFocusCycleRoot");
-                        if (unaccessibleRoot != null) {
-                            unaccessibleRoot.setAccessible(true);
-                        }
-                        return unaccessibleRoot;
-                    } catch (NoSuchFieldException e1) {
-                        assert false;
-                    } catch (SecurityException e2) {
-                        assert false;
-                    }
-                    return null;
-                }
-            });
-        }
-
-        Container currentRoot = null;
-        if (currentCycleRoot != null) {
-            try {
-                // The field is static, so we can pass null to Field.get() as the argument.
-                currentRoot = (Container)currentCycleRoot.get(null);
-            } catch (IllegalAccessException e3) {
-                // This is impossible: currentCycleRoot would be null if setAccessible failed.
-                assert false;
-            }
-        }
+        Container currentRoot = AWTAccessor.getKeyboardFocusManagerAccessor()
+                                    .getCurrentFocusCycleRoot();
 
         // if we are not in EmbeddedFrame's cycle, we should not try to leave.
         if (this != currentRoot) {
@@ -336,32 +300,8 @@ public abstract class EmbeddedFrame extends Frame
     }
 
     protected  void setPeer(final ComponentPeer p){
-        if (fieldPeer == null) {
-            fieldPeer = (Field)AccessController.doPrivileged(new PrivilegedAction() {
-                    public Object run() {
-                        try {
-                            Field lnkPeer = Component.class.getDeclaredField("peer");
-                            if (lnkPeer != null) {
-                                lnkPeer.setAccessible(true);
-                            }
-                            return lnkPeer;
-                        } catch (NoSuchFieldException e) {
-                            assert false;
-                        } catch (SecurityException e) {
-                            assert false;
-                        }
-                        return null;
-                    }//run
-                });
-        }
-        try{
-            if (fieldPeer !=null){
-                fieldPeer.set(EmbeddedFrame.this, p);
-            }
-        } catch (IllegalAccessException e) {
-            assert false;
-        }
-    };  //setPeer method ends
+        AWTAccessor.getComponentAccessor().setPeer(EmbeddedFrame.this, p);
+    };
 
     /**
      * Synthesize native message to activate or deactivate EmbeddedFrame window
@@ -550,7 +490,7 @@ public abstract class EmbeddedFrame extends Frame
         public void toBack() {}
         public void updateFocusableWindowState() {}
         public void updateAlwaysOnTop() {}
-        public void setAlwaysOnTop(boolean alwaysOnTop) {}
+        public void updateAlwaysOnTopState() {}
         public Component getGlobalHeavyweightFocusOwner() { return null; }
         public void setBoundsPrivate(int x, int y, int width, int height) {
             setBounds(x, y, width, height, SET_BOUNDS);
@@ -578,13 +518,17 @@ public abstract class EmbeddedFrame extends Frame
         }
         public void updateMinimumSize() {
         }
-		public void setOpacity(float opacity) {
-		}
-		public void setOpaque(boolean isOpaque) {
-		}
-		public void updateWindow() {
-		}
-		public void repositionSecurityWarning() {
-		}
-    }
+
+        public void setOpacity(float opacity) {
+        }
+
+        public void setOpaque(boolean isOpaque) {
+        }
+
+        public void updateWindow() {
+        }
+
+        public void repositionSecurityWarning() {
+        }
+     }
 } // class EmbeddedFrame

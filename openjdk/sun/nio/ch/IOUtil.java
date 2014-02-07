@@ -68,7 +68,7 @@ class IOUtil {
     }
 
     static int read(FileDescriptor fd, ByteBuffer dst, long position,
-                    NativeDispatcher nd, Object lock)
+                    NativeDispatcher nd)
         throws IOException
     {
         if (dst.isReadOnly())
@@ -76,18 +76,15 @@ class IOUtil {
 
         if (position != -1)
         {
-            synchronized (lock)
+            long prevpos = fd.getFilePointer();
+            try
             {
-                long prevpos = fd.getFilePointer();
-                try
-                {
-                    fd.seek(position);
-                    return read(fd, dst, -1, nd, null);
-                }
-                finally
-                {
-                    fd.seek(prevpos);
-                }
+                fd.seek(position);
+                return read(fd, dst, -1, nd);
+            }
+            finally
+            {
+                fd.seek(prevpos);
             }
         }
 
@@ -120,23 +117,20 @@ class IOUtil {
     }
 
     static int write(FileDescriptor fd, ByteBuffer src, long position,
-                     NativeDispatcher nd, Object lock)
+                     NativeDispatcher nd)
         throws IOException
     {
         if (position != -1)
         {
-            synchronized (lock)
+            long prevpos = fd.getFilePointer();
+            try
             {
-                long prevpos = fd.getFilePointer();
-                try
-                {
-                    fd.seek(position);
-                    return write(fd, src, -1, nd, null);
-                }
-                finally
-                {
-                    fd.seek(prevpos);
-                }
+                fd.seek(position);
+                return write(fd, src, -1, nd);
+            }
+            finally
+            {
+                fd.seek(prevpos);
             }
         }
 

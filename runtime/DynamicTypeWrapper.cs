@@ -6444,6 +6444,7 @@ namespace IKVM.Internal
 			return (classFile == "java.lang.ClassLoader" && method == "getParent" && signature == "()Ljava.lang.ClassLoader;")
 				|| (classFile == "java.lang.Thread" && method == "getContextClassLoader" && signature == "()Ljava.lang.ClassLoader;")
 				|| (classFile == "java.io.ObjectStreamField" && method == "getType" && signature == "()Ljava.lang.Class;")
+				|| (classFile == "javax.sql.rowset.serial.SerialJavaObject" && method == "getFields" && signature == "()[Ljava.lang.reflect.Field;")
 				;
 		}
 #endif

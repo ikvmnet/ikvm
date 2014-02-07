@@ -1,5 +1,5 @@
 #
-#  Copyright (C) 2002-2013 Jeroen Frijters
+#  Copyright (C) 2002-2014 Jeroen Frijters
 #
 #  This software is provided 'as-is', without any express or implied
 #  warranty.  In no event will the authors be held liable for any damages
@@ -30,6 +30,7 @@ assembly.class
     -resource:META-INF/MANIFEST.MF=MANIFEST.MF
     -resource:java/lang/uniName.dat=@OPENJDK7@/build/linux-amd64/classes/java/lang/uniName.dat
     -resource:sun/net/idn/uidna.spp=@OPENJDK7@/build/linux-amd64/classes/sun/net/idn/uidna.spp
+    -resource:sun/reflect/misc/Trampoline.class=@OPENJDK7@/jdk/src/share/classes/sun/reflect/misc/Trampoline.class
     ikvm/internal/*.class
     java/io/*.class
     java/lang/*.class
@@ -39,7 +40,6 @@ assembly.class
     java/net/*.class
     java/nio/*.class
     java/security/*.class
-    java/util/*.class
     java/util/concurrent/locks/*.class
     gnu/java/util/*.class
     sun/misc/*.class
@@ -51,7 +51,6 @@ assembly.class
     sun/nio/cs/*.class
     sun/nio/fs/*.class
     sun/reflect/*.class
-    sun/reflect/misc/*.class
     ../classpath/gnu/java/net/protocol/ikvmres/*.class
     ../classpath/ikvm/extensions/*.class
     ../classpath/ikvm/internal/*.class
@@ -103,10 +102,10 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/java/util/jar/Manifest*.class
     @OPENJDK7@/jdk/src/share/classes/java/util/regex/*.class
     @OPENJDK7@/jdk/src/share/classes/javax/net/*.class
-    @OPENJDK7@/jdk/src/share/classes/sun/invoke/*.class
-    @OPENJDK7@/jdk/src/share/classes/sun/invoke/anon/*.class
-    @OPENJDK7@/jdk/src/share/classes/sun/invoke/empty/*.class
-    @OPENJDK7@/jdk/src/share/classes/sun/invoke/util/*.class
+    sun/invoke/*.class
+    sun/invoke/anon/*.class
+    sun/invoke/empty/*.class
+    sun/invoke/util/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/misc/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/net/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/net/ftp/*.class
@@ -285,7 +284,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.XML.API.dll
-    -baseaddress:0x572C0000
+    -baseaddress:0x57290000
     @OPENJDK7@/build/linux-amd64/impsrc/javax/xml/*.class
     @OPENJDK7@/build/linux-amd64/impsrc/javax/xml/datatype/*.class
     @OPENJDK7@/build/linux-amd64/impsrc/javax/xml/namespace/*.class
@@ -318,7 +317,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.XML.XPath.dll
-    -baseaddress:0x57380000
+    -baseaddress:0x57350000
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/org/apache/xalan/internal/res/*
     @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/extensions/*.class
     @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/res/*.class
@@ -343,10 +342,12 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.XML.Parse.dll
-    -baseaddress:0x576E0000
+    -baseaddress:0x576B0000
     -resource:com/sun/org/apache/xml/internal/serialize/HTMLEntities.res=@OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xml/internal/serialize/HTMLEntities.res
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/org/apache/xerces/*
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/org/apache/xml/internal/serializer/*
+    @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/bcel/internal/util/SecuritySupport.class
+    @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/bcel/internal/util/SecuritySupport$*.class
     @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xalan/internal/utils/*.class
     @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/dom/*.class
     @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/xerces/internal/dom/events/*.class
@@ -404,7 +405,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.XML.Transform.dll
-    -baseaddress:0x57E90000
+    -baseaddress:0x57E60000
     @OPENJDK7@/build/linux-amd64/impsrc/com/sun/java_cup/internal/runtime/*.class
     @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/bcel/internal/*.class
     @OPENJDK7@/build/linux-amd64/impsrc/com/sun/org/apache/bcel/internal/classfile/*.class
@@ -643,7 +644,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.SwingAWT.dll
-    -baseaddress:0x58CD0000
+    -baseaddress:0x58D00000
     -remap:swingawt.xml
     -resource:META-INF/services/sun.java2d.pipe.RenderingEngine=resources/META-INF/services/sun.java2d.pipe.RenderingEngine
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/sun.java2d.cmm.PCMM
@@ -743,7 +744,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Charsets.dll
-    -baseaddress:0x59E70000
+    -baseaddress:0x59ED0000
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/charsets.jar/sun/nio/cs/ext/sjis0213.dat
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/charsets.jar/META-INF/services/java.nio.charset.spi.CharsetProvider
     @OPENJDK7@/build/linux-amd64/gensrc/sun/nio/cs/ext/*.class
@@ -752,7 +753,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Util.dll
-    -baseaddress:0x5A500000
+    -baseaddress:0x5A560000
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/java/util/jar/pack/intrinsic.properties
     -recurse:resources.zip/sun/launcher/resources/*
     -resource:META-INF/services/java.nio.file.spi.FileSystemProvider=@OPENJDK7@/jdk/src/share/demo/nio/zipfs/src/META-INF/services/java.nio.file.spi.FileSystemProvider
@@ -775,7 +776,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Text.dll
-    -baseaddress:0x5AAD0000
+    -baseaddress:0x5AB30000
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/sun/text/*
     @OPENJDK7@/build/linux-amd64/j2re-image/lib/ext/localedata.jar
     @OPENJDK7@/jdk/src/share/classes/java/text/*.class
@@ -787,7 +788,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Security.dll
-    -baseaddress:0x5AD40000
+    -baseaddress:0x5ADA0000
     -remap:security.xml
     sun/security/jgss/wrapper/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/crypto/provider/*.class
@@ -858,7 +859,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Management.dll
-    -baseaddress:0x5B550000
+    -baseaddress:0x5B5B0000
     com/sun/management/*.class
     java/lang/management/*.class
     sun/management/*.class
@@ -887,19 +888,13 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/sun/management/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/management/counter/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/management/counter/perf/*.class
+    @OPENJDK7@/jdk/src/share/classes/sun/management/jdp/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/management/jmxremote/*.class
     @OPENJDK7@/jdk/src/windows/classes/com/sun/management/*.class
 }
 {
     -out:IKVM.OpenJDK.Misc.dll
-    -baseaddress:0x5B8B0000
-    -resource:com/sun/servicetag/resources/javase_5_swordfish.properties=@OPENJDK7@/jdk/src/share/classes/com/sun/servicetag/resources/javase_5_swordfish.properties
-    -resource:com/sun/servicetag/resources/javase_6_swordfish.properties=@OPENJDK7@/jdk/src/share/classes/com/sun/servicetag/resources/javase_6_swordfish.properties
-    -resource:com/sun/servicetag/resources/javase_7_swordfish.properties=@OPENJDK7@/jdk/src/share/classes/com/sun/servicetag/resources/javase_7_swordfish.properties
-    -resource:com/sun/servicetag/resources/product_registration.xsd=@OPENJDK7@/jdk/src/share/classes/com/sun/servicetag/resources/product_registration.xsd
-    -resource:com/sun/servicetag/resources/register.html=@OPENJDK7@/jdk/src/share/classes/com/sun/servicetag/resources/register.html
-    -resource:com/sun/servicetag/resources/register_ja.html=@OPENJDK7@/jdk/src/share/classes/com/sun/servicetag/resources/register_ja.html
-    -resource:com/sun/servicetag/resources/register_zh_CN.html=@OPENJDK7@/jdk/src/share/classes/com/sun/servicetag/resources/register_zh_CN.html
+    -baseaddress:0x5B940000
     @OPENJDK7@/build/linux-amd64/impsrc/javax/activity/*.class
     @OPENJDK7@/build/linux-amd64/impsrc/javax/annotation/*.class
     @OPENJDK7@/build/linux-amd64/impsrc/javax/annotation/processing/*.class
@@ -920,7 +915,6 @@ assembly.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/pept/presentation/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/pept/protocol/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/pept/transport/*.class
-    @OPENJDK7@/jdk/src/share/classes/com/sun/servicetag/*.class
     @OPENJDK7@/jdk/src/share/classes/java/lang/instrument/*.class
     @OPENJDK7@/jdk/src/share/classes/javax/script/*.class
     @OPENJDK7@/jdk/src/share/classes/javax/smartcardio/*.class
@@ -993,7 +987,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Naming.dll
-    -baseaddress:0x5B9D0000
+    -baseaddress:0x5BA30000
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/jndi/ldap/jndiprovider.properties
     -resource:META-INF/services/sun.net.spi.nameservice.NameServiceDescriptor=@OPENJDK7@/jdk/src/share/classes/sun/net/spi/nameservice/dns/META-INF/services/sun.net.spi.nameservice.NameServiceDescriptor
     sun/net/dns/*.class
@@ -1019,12 +1013,11 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Jdbc.dll
-    -baseaddress:0x5BB20000
+    -baseaddress:0x5BB80000
     -resource:META-INF/services/java.sql.Driver=resources/META-INF/services/java.sql.Driver
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/rowset/*
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/javax/sql/*
     -r:System.Data.dll
-    java/sql/*.class
     sun/jdbc/odbc/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/rowset/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/rowset/internal/*.class
@@ -1037,7 +1030,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Remoting.dll
-    -baseaddress:0x5BC70000
+    -baseaddress:0x5BCD0000
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/sun/rmi/*
     @OPENJDK7@/build/linux-amd64/classes/sun/rmi/registry/*.class
     @OPENJDK7@/build/linux-amd64/classes/sun/rmi/server/*.class
@@ -1063,20 +1056,21 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.Beans.dll
-    -baseaddress:0x5BD90000
+    -baseaddress:0x5BDF0000
     @OPENJDK7@/build/linux-amd64/impsrc/com/sun/activation/registries/*.class
     @OPENJDK7@/build/linux-amd64/impsrc/javax/activation/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/beans/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/beans/decoder/*.class
+    @OPENJDK7@/jdk/src/share/classes/com/sun/beans/editors/*.class
     @OPENJDK7@/jdk/src/share/classes/com/sun/beans/finder/*.class
+    @OPENJDK7@/jdk/src/share/classes/com/sun/beans/infos/*.class
     @OPENJDK7@/jdk/src/share/classes/java/beans/*.class
     @OPENJDK7@/jdk/src/share/classes/java/beans/beancontext/*.class
     @OPENJDK7@/jdk/src/share/classes/sun/beans/editors/*.class
-    @OPENJDK7@/jdk/src/share/classes/sun/beans/infos/*.class
 }
 {
     -out:IKVM.OpenJDK.Media.dll
-    -baseaddress:0x5BE50000
+    -baseaddress:0x5BEB0000
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/javax.print.*
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/META-INF/services/javax.sound.*
     -recurse:@OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/imageio/plugins/common/iio-plugin.properties

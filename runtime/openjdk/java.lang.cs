@@ -1250,7 +1250,7 @@ static class Java_java_lang_ProcessImpl
 		for (; ; )
 		{
 			string str = cmdstr.Substring(0, pos);
-			if (Path.IsPathRooted(str))
+			if (IsPathRooted(str))
 			{
 				if (Exists(str))
 				{
@@ -1303,6 +1303,18 @@ static class Java_java_lang_ProcessImpl
 		return list;
 	}
 
+	private static bool IsPathRooted(string path)
+	{
+		try
+		{
+			return Path.IsPathRooted(path);
+		}
+		catch (ArgumentException)
+		{
+			return false;
+		}
+	}
+
 	private static bool Exists(string file)
 	{
 		try
@@ -1316,6 +1328,10 @@ static class Java_java_lang_ProcessImpl
 				return false;
 			}
 			else if (file.IndexOf('.') == -1 && File.Exists(file + ".exe"))
+			{
+				return true;
+			}
+			else if (mapVfsExecutable(file) != file)
 			{
 				return true;
 			}

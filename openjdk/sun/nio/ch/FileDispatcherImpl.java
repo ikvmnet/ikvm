@@ -52,6 +52,11 @@ class FileDispatcherImpl extends FileDispatcher
         this(false);
     }
 
+    @Override
+    boolean needsPositionLock() {
+        return true;
+    }
+
     int read(FileDescriptor fd, byte[] buf, int offset, int length) throws IOException {
         return fd.readBytes(buf, offset, length);
     }
@@ -70,7 +75,7 @@ class FileDispatcherImpl extends FileDispatcher
                 int size = bufs[i].remaining();
                 if (size > 0)
                 {
-                    int read = IOUtil.read(fd, bufs[i], -1, this, this);
+                    int read = IOUtil.read(fd, bufs[i], -1, this);
                     if (read < 0)
                     {
                         break;
@@ -102,7 +107,7 @@ class FileDispatcherImpl extends FileDispatcher
                 int size = bufs[i].remaining();
                 if (size > 0)
                 {
-                    int written = IOUtil.write(fd, bufs[i], -1, this, this);
+                    int written = IOUtil.write(fd, bufs[i], -1, this);
                     totalWritten += written;
                     if (written < size)
                     {
