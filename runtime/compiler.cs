@@ -521,7 +521,7 @@ sealed class Compiler
 			{
 				int startIndex = SafeFindPcIndex(lvt[i].start_pc);
 				int endIndex = SafeFindPcIndex(lvt[i].start_pc + lvt[i].length);
-				if(startIndex != -1 && endIndex != -1)
+				if(startIndex != -1 && endIndex != -1 && startIndex < endIndex)
 				{
 					if(startIndex > 0)
 					{
