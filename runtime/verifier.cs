@@ -3558,7 +3558,6 @@ sealed class MethodAnalyzer
 			thisType = null;
 		}
 		else if (invoke == NormalizedByteCode.__invokevirtual
-			&& classFile.MajorVersion >= 51
 			&& cpi.Class == "java.lang.invoke.MethodHandle"
 			&& (cpi.Name == "invoke" || cpi.Name == "invokeExact"))
 		{
