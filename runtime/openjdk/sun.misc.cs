@@ -336,6 +336,30 @@ static class Java_sun_misc_Unsafe
 		return cl.defineClass(name, buf, offset, length, pd);
 #endif
 	}
+
+	public static java.lang.Class defineAnonymousClass(object thisUnsafe, java.lang.Class host, byte[] data, object[] cpPatches)
+	{
+#if FIRST_PASS
+		return null;
+#else
+		try
+		{
+			ClassLoaderWrapper loader = TypeWrapper.FromClass(host).GetClassLoader();
+			ClassFile classFile = new ClassFile(data, 0, data.Length, "<Unknown>", loader.ClassFileParseOptions, cpPatches);
+			if (classFile.IKVMAssemblyAttribute != null)
+			{
+				// if this happens, the OpenJDK is probably trying to load an OpenJDK class file as a resource,
+				// make sure the build process includes the original class file as a resource in that case
+				throw new java.lang.ClassFormatError("Trying to define anonymous class based on stub class: " + classFile.Name);
+			}
+			return loader.GetTypeWrapperFactory().DefineClassImpl(null, classFile, loader, host.pd).ClassObject;
+		}
+		catch (RetargetableJavaException x)
+		{
+			throw x.ToJava();
+		}
+#endif
+	}
 }
 
 static class Java_sun_misc_Version

@@ -160,7 +160,7 @@ namespace IKVM.Internal
 		}
 #endif // STATIC_COMPILER
 
-		internal ClassFile(byte[] buf, int offset, int length, string inputClassName, ClassFileParseOptions options)
+		internal ClassFile(byte[] buf, int offset, int length, string inputClassName, ClassFileParseOptions options, object[] constantPoolPatches)
 		{
 			try
 			{
@@ -241,6 +241,10 @@ namespace IKVM.Internal
 						default:
 							throw new ClassFormatError("{0} (Illegal constant pool type 0x{1:X})", inputClassName, tag);
 					}
+				}
+				if (constantPoolPatches != null)
+				{
+					PatchConstantPool(constantPoolPatches, utf8_cp, inputClassName);
 				}
 				for(int i = 1; i < constantpoolcount; i++)
 				{
@@ -556,6 +560,70 @@ namespace IKVM.Internal
 					dict.Add(members[i], null);
 				}
 			}
+		}
+
+		private void PatchConstantPool(object[] constantPoolPatches, string[] utf8_cp, string inputClassName)
+		{
+#if !STATIC_COMPILER && !FIRST_PASS
+			for (int i = 0; i < constantPoolPatches.Length; i++)
+			{
+				if (constantPoolPatches[i] != null)
+				{
+					if (utf8_cp[i] != null)
+					{
+						if (!(constantPoolPatches[i] is string))
+						{
+							throw new ClassFormatError("Illegal utf8 patch at {0} in class file {1}", i, inputClassName);
+						}
+						utf8_cp[i] = (string)constantPoolPatches[i];
+					}
+					else if (constantpool[i] == null)
+					{
+						throw new ClassFormatError("Unused constant pool patch at {0} in class file {1}", i, inputClassName);
+					}
+					else
+					{
+						switch (constantpool[i].GetConstantType())
+						{
+							case ConstantType.String:
+								constantpool[i] = new ConstantPoolItemLiveObject(constantPoolPatches[i]);
+								break;
+							case ConstantType.Class:
+								java.lang.Class clazz;
+								string name;
+								if ((clazz = constantPoolPatches[i] as java.lang.Class) != null)
+								{
+									TypeWrapper tw = TypeWrapper.FromClass(clazz);
+									constantpool[i] = new ConstantPoolItemClass(tw.Name, tw);
+								}
+								else if ((name = constantPoolPatches[i] as string) != null)
+								{
+									constantpool[i] = new ConstantPoolItemClass(String.Intern(name.Replace('/', '.')), null);
+								}
+								else
+								{
+									throw new ClassFormatError("Illegal class patch at {0} in class file {1}", i, inputClassName);
+								}
+								break;
+							case ConstantType.Integer:
+								((ConstantPoolItemInteger)constantpool[i]).v = ((java.lang.Integer)constantPoolPatches[i]).intValue();
+								break;
+							case ConstantType.Long:
+								((ConstantPoolItemLong)constantpool[i]).l = ((java.lang.Long)constantPoolPatches[i]).longValue();
+								break;
+							case ConstantType.Float:
+								((ConstantPoolItemFloat)constantpool[i]).v = ((java.lang.Float)constantPoolPatches[i]).floatValue();
+								break;
+							case ConstantType.Double:
+								((ConstantPoolItemDouble)constantpool[i]).d = ((java.lang.Double)constantPoolPatches[i]).doubleValue();
+								break;
+							default:
+								throw new NotImplementedException("ConstantPoolPatch: " + constantPoolPatches[i]);
+						}
+					}
+				}
+			}
+#endif
 		}
 
 		private void MarkLinkRequiredConstantPoolItem(int index)
@@ -875,6 +943,8 @@ namespace IKVM.Internal
 
 		internal void Link(TypeWrapper thisType)
 		{
+			// this is not just an optimization, it's required for anonymous classes to be able to refer to themselves
+			((ConstantPoolItemClass)constantpool[this_class]).LinkSelf(thisType);
 			for(int i = 1; i < constantpool.Length; i++)
 			{
 				if(constantpool[i] != null)
@@ -1102,6 +1172,11 @@ namespace IKVM.Internal
 			return (ConstantPoolItemMethodType)constantpool[index];
 		}
 
+		internal object GetConstantPoolConstantLiveObject(int index)
+		{
+			return ((ConstantPoolItemLiveObject)constantpool[index]).Value;
+		}
+
 		internal string Name
 		{
 			get
@@ -1301,6 +1376,7 @@ namespace IKVM.Internal
 			Class,
 			MethodHandle,
 			MethodType,
+			LiveObject,		// used by anonymous class constant pool patching
 		}
 
 		internal abstract class ConstantPoolItem
@@ -1335,8 +1411,19 @@ namespace IKVM.Internal
 				name_index = br.ReadUInt16();
 			}
 
+			internal ConstantPoolItemClass(string name, TypeWrapper typeWrapper)
+			{
+				this.name = name;
+				this.typeWrapper = typeWrapper;
+			}
+
 			internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
 			{
+				// if the item was patched, we already have a name
+				if(name != null)
+				{
+					return;
+				}
 				name = classFile.GetConstantPoolUtf8String(utf8_cp, name_index);
 				if(name.Length > 0)
 				{
@@ -1413,7 +1500,15 @@ namespace IKVM.Internal
 
 			internal override void MarkLinkRequired()
 			{
-				typeWrapper = VerifierTypeWrapper.Null;
+				if(typeWrapper == null)
+				{
+					typeWrapper = VerifierTypeWrapper.Null;
+				}
+			}
+
+			internal void LinkSelf(TypeWrapper thisType)
+			{
+				this.typeWrapper = thisType;
 			}
 
 			internal override void Link(TypeWrapper thisType)
@@ -1469,7 +1564,7 @@ namespace IKVM.Internal
 
 		private sealed class ConstantPoolItemDouble : ConstantPoolItem
 		{
-			private double d;
+			internal double d;
 
 			internal ConstantPoolItemDouble(BigEndianBinaryReader br)
 			{
@@ -1799,7 +1894,7 @@ namespace IKVM.Internal
 
 		private sealed class ConstantPoolItemFloat : ConstantPoolItem
 		{
-			private float v;
+			internal float v;
 
 			internal ConstantPoolItemFloat(BigEndianBinaryReader br)
 			{
@@ -1822,7 +1917,7 @@ namespace IKVM.Internal
 
 		private sealed class ConstantPoolItemInteger : ConstantPoolItem
 		{
-			private int v;
+			internal int v;
 
 			internal ConstantPoolItemInteger(BigEndianBinaryReader br)
 			{
@@ -1845,7 +1940,7 @@ namespace IKVM.Internal
 
 		private sealed class ConstantPoolItemLong : ConstantPoolItem
 		{
-			private long l;
+			internal long l;
 
 			internal ConstantPoolItemLong(BigEndianBinaryReader br)
 			{
@@ -2143,6 +2238,21 @@ namespace IKVM.Internal
 				{
 					return s;
 				}
+			}
+		}
+
+		private sealed class ConstantPoolItemLiveObject : ConstantPoolItem
+		{
+			internal readonly object Value;
+
+			internal ConstantPoolItemLiveObject(object value)
+			{
+				this.Value = value;
+			}
+
+			internal override ConstantType GetConstantType()
+			{
+				return ConstantType.LiveObject;
 			}
 		}
 

@@ -676,7 +676,7 @@ public final
     }
 
     // cache the name to reduce the number of calls into the VM
-    private transient String name;
+    /*private*/ transient String name;
     private native String getName0();
 
     /**

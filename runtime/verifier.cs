@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2013 Jeroen Frijters
+  Copyright (C) 2002-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1276,6 +1276,7 @@ sealed class MethodAnalyzer
 							case ClassFile.ConstantType.Integer:
 							case ClassFile.ConstantType.Long:
 							case ClassFile.ConstantType.String:
+							case ClassFile.ConstantType.LiveObject:
 								code[i].PatchOpCode(NormalizedByteCode.__ldc_nothrow);
 								break;
 						}
@@ -1639,6 +1640,9 @@ sealed class MethodAnalyzer
 										break;
 									case ClassFile.ConstantType.String:
 										s.PushType(CoreClasses.java.lang.String.Wrapper);
+										break;
+									case ClassFile.ConstantType.LiveObject:
+										s.PushType(CoreClasses.java.lang.Object.Wrapper);
 										break;
 									case ClassFile.ConstantType.Class:
 										if(classFile.MajorVersion < 49)

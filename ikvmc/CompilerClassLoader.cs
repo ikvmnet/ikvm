@@ -279,7 +279,7 @@ namespace IKVM.Internal
 					try
 					{
 						byte[] buf = itemRef.GetData();
-						f = new ClassFile(buf, 0, buf.Length, name, ClassFileParseOptions);
+						f = new ClassFile(buf, 0, buf.Length, name, ClassFileParseOptions, null);
 					}
 					catch(ClassFormatError x)
 					{
@@ -2752,7 +2752,7 @@ namespace IKVM.Internal
 				try
 				{
 					byte[] buf = assemblyType.GetData();
-					ClassFile f = new ClassFile(buf, 0, buf.Length, null, ClassFileParseOptions.None);
+					ClassFile f = new ClassFile(buf, 0, buf.Length, null, ClassFileParseOptions.None, null);
 					// NOTE the "assembly" type in the unnamed package is a magic type
 					// that acts as the placeholder for assembly attributes
 					if (f.Name == "assembly" && f.Annotations != null)
@@ -2774,7 +2774,7 @@ namespace IKVM.Internal
 					try
 					{
 						byte[] buf = h[className].GetData();
-						ClassFile f = new ClassFile(buf, 0, buf.Length, null, ClassFileParseOptions.None);
+						ClassFile f = new ClassFile(buf, 0, buf.Length, null, ClassFileParseOptions.None, null);
 						if (f.Name == className)
 						{
 							foreach (ClassFile.Method m in f.Methods)

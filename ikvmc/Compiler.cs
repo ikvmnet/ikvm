@@ -1259,7 +1259,7 @@ sealed class IkvmcCompiler
 		ClassFile cf;
 		try
 		{
-			cf = new ClassFile(buf, 0, buf.Length, "<unknown>", ClassFileParseOptions.None);
+			cf = new ClassFile(buf, 0, buf.Length, "<unknown>", ClassFileParseOptions.None, null);
 		}
 		catch (ClassFormatError)
 		{

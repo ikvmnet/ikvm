@@ -620,7 +620,7 @@ static class Java_java_lang_ClassLoader
 			try
 			{
 				ClassLoaderWrapper classLoaderWrapper = ClassLoaderWrapper.GetClassLoaderWrapper(thisClassLoader);
-				ClassFile classFile = new ClassFile(b, off, len, name, classLoaderWrapper.ClassFileParseOptions);
+				ClassFile classFile = new ClassFile(b, off, len, name, classLoaderWrapper.ClassFileParseOptions, null);
 				if (name != null && classFile.Name != name)
 				{
 #if !FIRST_PASS

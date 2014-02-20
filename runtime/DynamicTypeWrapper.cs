@@ -65,7 +65,12 @@ namespace IKVM.Internal
 
 		private TypeWrapper LoadTypeWrapper(ClassLoaderWrapper classLoader, ProtectionDomain pd, ClassFile.ConstantPoolItemClass clazz)
 		{
-			TypeWrapper tw = classLoader.LoadClassByDottedNameFast(clazz.Name);
+			// check for patched constant pool items
+			TypeWrapper tw = clazz.GetClassType();
+			if (tw == null || tw == VerifierTypeWrapper.Null)
+			{
+				tw = classLoader.LoadClassByDottedNameFast(clazz.Name);
+			}
 			if (tw == null)
 			{
 				throw new NoClassDefFoundError(clazz.Name);
@@ -3686,6 +3691,9 @@ namespace IKVM.Internal
 			private Dictionary<FieldWrapper, MethodBuilder> arfuMap;
 			private Dictionary<MethodKey, MethodInfo> invokespecialstubcache;
 			private Dictionary<string, MethodInfo> dynamicClassLiteral;
+#if !STATIC_COMPILER
+			private List<object> liveObjects;
+#endif
 
 			private struct Item
 			{
@@ -4289,6 +4297,12 @@ namespace IKVM.Internal
 							tb.CreateType();
 						}
 					}
+#if !STATIC_COMPILER
+					if (liveObjects != null)
+					{
+						typeof(IKVM.Runtime.LiveObjectHolder<>).MakeGenericType(type).GetField("values", BindingFlags.Static | BindingFlags.Public).SetValue(null, liveObjects.ToArray());
+					}
+#endif
 				}
 				finally
 				{
@@ -5857,6 +5871,21 @@ namespace IKVM.Internal
 				}
 				return mi;
 			}
+
+#if !STATIC_COMPILER
+			internal void EmitLiveObjectLoad(CodeEmitter ilgen, object value)
+			{
+				if (liveObjects == null)
+				{
+					liveObjects = new List<object>();
+				}
+				FieldInfo fi = TypeBuilder.GetField(typeof(IKVM.Runtime.LiveObjectHolder<>).MakeGenericType(typeBuilder), typeof(IKVM.Runtime.LiveObjectHolder<>).GetField("values", BindingFlags.Static | BindingFlags.Public));
+				ilgen.Emit(OpCodes.Ldsfld, fi);
+				ilgen.EmitLdc_I4(liveObjects.Count);
+				ilgen.Emit(OpCodes.Ldelem_Ref);
+				liveObjects.Add(value);
+			}
+#endif
 		}
 
 		private static bool CheckRequireOverrideStub(MethodWrapper mw1, MethodWrapper mw2)

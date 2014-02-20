@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2013 Jeroen Frijters
+  Copyright (C) 2002-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -230,6 +230,8 @@ namespace IKVM.Internal
 			type.CreateStep1();
 			types[f.Name] = type;
 			return type;
+#elif FIRST_PASS
+			return null;
 #else
 			// this step can throw a retargettable exception, if the class is incorrect
 			DynamicTypeWrapper type = new DynamicTypeWrapper(f, classLoader, protectionDomain);
@@ -238,6 +240,15 @@ namespace IKVM.Internal
 			// and will cause a CriticalFailure and exit the process.
 			type.CreateStep1();
 			type.CreateStep2();
+			if(types == null)
+			{
+				// we're defining an anonymous class, so we don't need any locking
+				java.lang.Class clazz = TieClassAndWrapper(type, protectionDomain);
+				// for OpenJDK compatibility and debugging convenience we modify the class name to
+				// include the identity hashcode of the class object
+				clazz.name = f.Name + "/" + java.lang.System.identityHashCode(clazz);
+				return type;
+			}
 			lock(types)
 			{
 				// in very extreme conditions another thread may have beaten us to it
@@ -249,16 +260,7 @@ namespace IKVM.Internal
 				if(race == null)
 				{
 					types[f.Name] = type;
-#if !FIRST_PASS
-					java.lang.Class clazz = new java.lang.Class(null);
-#if __MonoCS__
-					TypeWrapper.SetTypeWrapperHack(clazz, type);
-#else
-					clazz.typeWrapper = type;
-#endif
-					clazz.pd = protectionDomain;
-					type.SetClassObject(clazz);
-#endif
+					TieClassAndWrapper(type, protectionDomain);
 				}
 				else
 				{
@@ -268,6 +270,21 @@ namespace IKVM.Internal
 			return type;
 #endif // STATIC_COMPILER
 		}
+
+#if !STATIC_COMPILER && !FIRST_PASS
+		private static java.lang.Class TieClassAndWrapper(TypeWrapper type, ProtectionDomain protectionDomain)
+		{
+			java.lang.Class clazz = new java.lang.Class(null);
+#if __MonoCS__
+			TypeWrapper.SetTypeWrapperHack(clazz, type);
+#else
+			clazz.typeWrapper = type;
+#endif
+			clazz.pd = protectionDomain;
+			type.SetClassObject(clazz);
+			return clazz;
+		}
+#endif
 
 #if STATIC_COMPILER
 		internal TypeBuilder DefineProxy(TypeWrapper proxyClass, TypeWrapper[] interfaces)

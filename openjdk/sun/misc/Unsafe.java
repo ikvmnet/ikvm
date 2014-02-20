@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2006-2012 Jeroen Frijters
+  Copyright (C) 2006-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1137,6 +1137,8 @@ public final class Unsafe
     }
 
     public native Class defineClass(String name, byte[] buf, int offset, int length, ClassLoader cl, ProtectionDomain pd);
+
+    public native Class defineAnonymousClass(Class hostClass, byte[] data, Object[] cpPatches);
 
     public void monitorEnter(Object o)
     {

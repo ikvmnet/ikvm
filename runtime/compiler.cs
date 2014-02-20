@@ -2844,6 +2844,11 @@ sealed class Compiler
 			case ClassFile.ConstantType.MethodType:
 				context.GetValue<MethodTypeConstant>(constant).Emit(this, ilgen, constant);
 				break;
+#if !STATIC_COMPILER
+			case ClassFile.ConstantType.LiveObject:
+				context.EmitLiveObjectLoad(ilgen, classFile.GetConstantPoolConstantLiveObject(constant));
+				break;
+#endif
 			default:
 				throw new InvalidOperationException();
 		}
