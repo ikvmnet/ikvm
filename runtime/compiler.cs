@@ -2968,7 +2968,7 @@ sealed class Compiler
 			CodeEmitterLocal ex = ilgen.DeclareLocal(Types.Exception);
 			CodeEmitterLabel label = ilgen.DefineLabel();
 			ilgen.BeginExceptionBlock();
-			if (EmitCallBootstrapMethod(compiler, cpi, delegateType, ilgen))
+			if (EmitCallBootstrapMethod(compiler, cpi, ilgen))
 			{
 				ilgen.Emit(OpCodes.Isinst, typeofCallSite);
 				ilgen.Emit(OpCodes.Stloc, cs);
@@ -2997,7 +2997,7 @@ sealed class Compiler
 			return mb;
 		}
 
-		private static bool EmitCallBootstrapMethod(Compiler compiler, ClassFile.ConstantPoolItemInvokeDynamic cpi, Type delegateType, CodeEmitter ilgen)
+		private static bool EmitCallBootstrapMethod(Compiler compiler, ClassFile.ConstantPoolItemInvokeDynamic cpi, CodeEmitter ilgen)
 		{
 			ClassFile.BootstrapMethod bsm = compiler.classFile.GetBootstrapMethod(cpi.BootstrapMethod);
 			if (3 + bsm.ArgumentCount > 255)
@@ -3040,7 +3040,7 @@ sealed class Compiler
 			ilgen.Emit(OpCodes.Call, methodLookup);
 			ilgen.Emit(OpCodes.Ldstr, cpi.Name);
 			parameters[1].EmitConvStackTypeToSignatureType(ilgen, CoreClasses.java.lang.String.Wrapper);
-			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.LoadMethodType.MakeGenericMethod(delegateType));
+			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.LoadMethodType.MakeGenericMethod(MethodHandleUtil.CreateDelegateTypeForLoadConstant(cpi.GetArgTypes(), cpi.GetRetType())));
 			parameters[2].EmitConvStackTypeToSignatureType(ilgen, CoreClasses.java.lang.invoke.MethodType.Wrapper);
 			for (int i = 0; i < fixedArgs; i++)
 			{
