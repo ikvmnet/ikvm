@@ -278,13 +278,8 @@ namespace IKVM.Internal
 					ClassFile f;
 					try
 					{
-						ClassFileParseOptions cfp = ClassFileParseOptions.LocalVariableTable;
-						if(this.EmitStackTraceInfo)
-						{
-							cfp |= ClassFileParseOptions.LineNumberTable;
-						}
 						byte[] buf = itemRef.GetData();
-						f = new ClassFile(buf, 0, buf.Length, name, cfp);
+						f = new ClassFile(buf, 0, buf.Length, name, ClassFileParseOptions);
 					}
 					catch(ClassFormatError x)
 					{

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2013 Jeroen Frijters
+  Copyright (C) 2002-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1417,6 +1417,34 @@ namespace IKVM.Internal
 			}
 #endif
 		}
+
+#if !STUB_GENERATOR
+		internal ClassFileParseOptions ClassFileParseOptions
+		{
+			get
+			{
+#if STATIC_COMPILER
+				ClassFileParseOptions cfp = ClassFileParseOptions.LocalVariableTable;
+				if (EmitStackTraceInfo)
+				{
+					cfp |= ClassFileParseOptions.LineNumberTable;
+				}
+				return cfp;
+#else
+				ClassFileParseOptions cfp = ClassFileParseOptions.LineNumberTable;
+				if (EmitDebugInfo)
+				{
+					cfp |= ClassFileParseOptions.LocalVariableTable;
+				}
+				if (RelaxedClassNameValidation)
+				{
+					cfp |= ClassFileParseOptions.RelaxedClassNameValidation;
+				}
+				return cfp;
+#endif
+			}
+		}
+#endif
 	}
 
 	sealed class GenericClassLoaderWrapper : ClassLoaderWrapper

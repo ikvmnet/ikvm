@@ -620,16 +620,7 @@ static class Java_java_lang_ClassLoader
 			try
 			{
 				ClassLoaderWrapper classLoaderWrapper = ClassLoaderWrapper.GetClassLoaderWrapper(thisClassLoader);
-				ClassFileParseOptions cfp = ClassFileParseOptions.LineNumberTable;
-				if (classLoaderWrapper.EmitDebugInfo)
-				{
-					cfp |= ClassFileParseOptions.LocalVariableTable;
-				}
-				if (classLoaderWrapper.RelaxedClassNameValidation)
-				{
-					cfp |= ClassFileParseOptions.RelaxedClassNameValidation;
-				}
-				ClassFile classFile = new ClassFile(b, off, len, name, cfp);
+				ClassFile classFile = new ClassFile(b, off, len, name, classLoaderWrapper.ClassFileParseOptions);
 				if (name != null && classFile.Name != name)
 				{
 #if !FIRST_PASS
