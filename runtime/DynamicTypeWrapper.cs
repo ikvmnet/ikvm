@@ -63,12 +63,12 @@ namespace IKVM.Internal
 #endif
 		private MethodBase automagicSerializationCtor;
 
-		private TypeWrapper LoadTypeWrapper(ClassLoaderWrapper classLoader, ProtectionDomain pd, string name)
+		private TypeWrapper LoadTypeWrapper(ClassLoaderWrapper classLoader, ProtectionDomain pd, ClassFile.ConstantPoolItemClass clazz)
 		{
-			TypeWrapper tw = classLoader.LoadClassByDottedNameFast(name);
+			TypeWrapper tw = classLoader.LoadClassByDottedNameFast(clazz.Name);
 			if (tw == null)
 			{
-				throw new NoClassDefFoundError(name);
+				throw new NoClassDefFoundError(clazz.Name);
 			}
 			CheckMissing(this, tw);
 			classLoader.CheckPackageAccess(tw, pd);
@@ -159,7 +159,7 @@ namespace IKVM.Internal
 			this.interfaces = new TypeWrapper[interfaces.Length];
 			for (int i = 0; i < interfaces.Length; i++)
 			{
-				TypeWrapper iface = LoadTypeWrapper(classLoader, pd, interfaces[i].Name);
+				TypeWrapper iface = LoadTypeWrapper(classLoader, pd, interfaces[i]);
 				if (!iface.IsAccessibleFrom(this))
 				{
 					throw new IllegalAccessError("Class " + f.Name + " cannot access its superinterface " + iface.Name);

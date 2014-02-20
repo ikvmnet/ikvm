@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2013 Jeroen Frijters
+  Copyright (C) 2002-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -283,7 +283,7 @@ namespace IKVM.Internal
 				ValidateConstantPoolItemClass(inputClassName, this_class);
 				super_class = br.ReadUInt16();
 				ValidateConstantPoolItemClass(inputClassName, super_class);
-				if(IsInterface && (super_class == 0 || this.SuperClass != "java.lang.Object"))
+				if(IsInterface && (super_class == 0 || this.SuperClass.Name != "java.lang.Object"))
 				{
 					throw new ClassFormatError("{0} (Interfaces must have java.lang.Object as superclass)", Name);
 				}
@@ -1110,11 +1110,11 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal string SuperClass
+		internal ConstantPoolItemClass SuperClass
 		{
 			get
 			{
-				return GetConstantPoolClass(super_class);
+				return (ConstantPoolItemClass)constantpool[super_class];
 			}
 		}
 
