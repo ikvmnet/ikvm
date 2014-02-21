@@ -2380,13 +2380,21 @@ namespace IKVM.Internal
 					{
 						Console.Write(" " + code[i].ValueInt16);
 					}
-					else if (code[i].opcode == OpCodes.Isinst)
+					else if (code[i].opcode == OpCodes.Isinst || code[i].opcode == OpCodes.Castclass || code[i].opcode == OpCodes.Box || code[i].opcode == OpCodes.Unbox || code[i].opcode == OpCodes.Ldobj || code[i].opcode == OpCodes.Newarr)
 					{
 						Console.Write(" " + code[i].Type);
 					}
 					else if (code[i].opcode == OpCodes.Call || code[i].opcode == OpCodes.Callvirt)
 					{
 						Console.Write(" " + code[i].MethodBase);
+					}
+					else if (code[i].opcode == OpCodes.Ldfld || code[i].opcode == OpCodes.Ldsfld)
+					{
+						Console.Write(" " + code[i].FieldInfo);
+					}
+					else if (code[i].opcode == OpCodes.Ldc_I4)
+					{
+						Console.Write(" " + code[i].ValueInt32);
 					}
 					Console.WriteLine();
 				}
