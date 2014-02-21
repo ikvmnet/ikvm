@@ -918,18 +918,11 @@ static class Java_java_lang_SecurityManager
 		{
 			StackFrame frame = trace.GetFrame(i);
 			MethodBase method = frame.GetMethod();
-			Type type = method.DeclaringType;
-			// NOTE these checks should be the same as the ones in Reflection.getCallerClass
-			if (Java_sun_reflect_Reflection.IsHideFromJava(method)
-				|| type == null
-				|| type.Assembly == typeof(object).Assembly
-				|| type.Assembly == typeof(Java_java_lang_SecurityManager).Assembly
-				|| type.Assembly == jniAssembly
-				|| type == typeof(java.lang.reflect.Constructor)
-				|| type == typeof(java.lang.reflect.Method))
+			if (Java_sun_reflect_Reflection.IsHideFromStackWalk(method))
 			{
 				continue;
 			}
+			Type type = method.DeclaringType;
 			if (type == typeof(java.lang.SecurityManager))
 			{
 				continue;

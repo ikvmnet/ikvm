@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2007-2013 Jeroen Frijters
+  Copyright (C) 2007-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -117,6 +117,19 @@ static class Java_sun_reflect_Reflection
 	}
 #endif
 
+	internal static bool IsHideFromStackWalk(MethodBase mb)
+	{
+		Type type;
+		return IsHideFromJava(mb)
+			|| (type = mb.DeclaringType) == null
+			|| type.Assembly == typeof(object).Assembly
+			|| type.Assembly == typeof(Java_sun_reflect_Reflection).Assembly
+			|| type.Assembly == Java_java_lang_SecurityManager.jniAssembly
+			|| type == typeof(java.lang.reflect.Method)
+			|| type == typeof(java.lang.reflect.Constructor)
+			;
+	}
+
 	// NOTE this method is hooked up explicitly through map.xml to prevent inlining of the native stub
 	// and tail-call optimization in the native stub.
 	public static java.lang.Class getCallerClass0(int realFramesToSkip)
@@ -138,21 +151,13 @@ static class Java_sun_reflect_Reflection
 			{
 				return null;
 			}
-			Type type = method.DeclaringType;
-			// NOTE these checks should be the same as the ones in SecurityManager.getClassContext
-			if (IsHideFromJava(method)
-				|| type == null
-				|| type.Assembly == typeof(object).Assembly
-				|| type.Assembly == typeof(Java_sun_reflect_Reflection).Assembly
-				|| type.Assembly == Java_java_lang_SecurityManager.jniAssembly
-				|| type == typeof(java.lang.reflect.Method)
-				|| type == typeof(java.lang.reflect.Constructor))
+			if (IsHideFromStackWalk(method))
 			{
 				continue;
 			}
 			if (--realFramesToSkip == 0)
 			{
-				return ClassLoaderWrapper.GetWrapperFromType(type).ClassObject;
+				return ClassLoaderWrapper.GetWrapperFromType(method.DeclaringType).ClassObject;
 			}
 		}
 #endif
