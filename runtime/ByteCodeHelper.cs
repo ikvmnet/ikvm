@@ -898,11 +898,12 @@ namespace IKVM.Runtime
 #if FIRST_PASS
 			return null;
 #else
-			if (cache.Type == h.type() && cache.del != null)
+			T del;
+			if (cache.Type == h.type() && (del = (h.isVarargsCollector() ? cache.varArg : cache.fixedArg)) != null)
 			{
-				return cache.del;
+				return del;
 			}
-			T del = h.vmtarget as T;
+			del = h.vmtarget as T;
 			if (del == null)
 			{
 				global::java.lang.invoke.MethodHandle adapter = global::java.lang.invoke.MethodHandles.exactInvoker(h.type());
@@ -913,7 +914,14 @@ namespace IKVM.Runtime
 				del = (T)adapter.asType(MethodHandleUtil.GetDelegateMethodType(typeof(T))).vmtarget;
 				if (cache.TrySetType(h.type()))
 				{
-					cache.del = del;
+					if (h.isVarargsCollector())
+					{
+						cache.varArg = del;
+					}
+					else
+					{
+						cache.fixedArg = del;
+					}
 				}
 			}
 			return del;
@@ -1062,7 +1070,8 @@ namespace IKVM.Runtime
 			return type == newType;
 		}
 #endif
-		internal T del;
+		internal T fixedArg;
+		internal T varArg;
 	}
 
 	[StructLayout(LayoutKind.Explicit)]
