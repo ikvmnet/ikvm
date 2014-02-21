@@ -507,9 +507,7 @@ namespace IKVM.Internal
 						flags |= MemberFlags.InternalAccess;
 					}
 #if STATIC_COMPILER
-					if (m.IsCallerSensitive
-						&& CoreClasses.ikvm.@internal.CallerID.Wrapper.InternalsVisibleTo(wrapper)	// we only look at CallerSensitive when we're compiling the core class library
-						&& SupportsCallerID(m))
+					if (m.IsCallerSensitive && SupportsCallerID(m))
 					{
 						flags |= MemberFlags.CallerID;
 					}

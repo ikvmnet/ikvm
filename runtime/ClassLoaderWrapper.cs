@@ -1429,6 +1429,10 @@ namespace IKVM.Internal
 				{
 					cfp |= ClassFileParseOptions.LineNumberTable;
 				}
+				if (bootstrapClassLoader is CompilerClassLoader)
+				{
+					cfp |= ClassFileParseOptions.TrustedAnnotations;
+				}
 				return cfp;
 #else
 				ClassFileParseOptions cfp = ClassFileParseOptions.LineNumberTable;

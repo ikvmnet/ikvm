@@ -52,6 +52,7 @@ namespace IKVM.Internal
 		LocalVariableTable = 1,
 		LineNumberTable = 2,
 		RelaxedClassNameValidation = 4,
+		TrustedAnnotations = 8,
 	}
 
 	sealed class ClassFile
@@ -2766,11 +2767,16 @@ namespace IKVM.Internal
 							}
 							annotations = ReadAnnotations(br, classFile, utf8_cp);
 #if STATIC_COMPILER
-							foreach(object[] annot in annotations)
+							if ((options & ClassFileParseOptions.TrustedAnnotations) != 0)
 							{
-								if(annot[1].Equals("Lsun/reflect/CallerSensitive;"))
+								foreach(object[] annot in annotations)
 								{
-									flags |= FLAG_CALLERSENSITIVE;
+									switch((string)annot[1])
+									{
+										case "Lsun/reflect/CallerSensitive;":
+											flags |= FLAG_CALLERSENSITIVE;
+											break;
+									}
 								}
 							}
 #endif
