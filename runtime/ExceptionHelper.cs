@@ -342,7 +342,7 @@ namespace IKVM.Internal
 			if(ilOffset != StackFrame.OFFSET_UNKNOWN)
 			{
 				MethodBase mb = frame.GetMethod();
-				if(mb != null)
+				if(mb != null && mb.DeclaringType != null)
 				{
 					if(ClassLoaderWrapper.IsRemappedType(mb.DeclaringType))
 					{
