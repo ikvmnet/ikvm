@@ -330,11 +330,7 @@ static class Java_sun_misc_Unsafe
 
 	public static java.lang.Class defineClass(object thisUnsafe, string name, byte[] buf, int offset, int length, java.lang.ClassLoader cl, java.security.ProtectionDomain pd)
 	{
-#if FIRST_PASS
-		return null;
-#else
-		return cl.defineClass(name, buf, offset, length, pd);
-#endif
+		return Java_java_lang_ClassLoader.defineClass1(cl, name.Replace('/', '.'), buf, offset, length, pd, null);
 	}
 
 	public static java.lang.Class defineAnonymousClass(object thisUnsafe, java.lang.Class host, byte[] data, object[] cpPatches)
