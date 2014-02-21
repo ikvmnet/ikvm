@@ -1041,7 +1041,9 @@ static class Java_sun_reflect_ReflectionFactory
 
 		private string GetFieldTypeName()
 		{
-			return fw.FieldTypeWrapper.ClassObject.getName();
+			return fw.FieldTypeWrapper.IsPrimitive
+				? fw.FieldTypeWrapper.ClassObject.getName()
+				: fw.FieldTypeWrapper.Name;
 		}
 
 		public java.lang.IllegalArgumentException GetIllegalArgumentException(object obj)
