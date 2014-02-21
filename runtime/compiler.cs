@@ -1467,7 +1467,6 @@ sealed class Compiler
 				case NormalizedByteCode.__invokeinterface:
 				case NormalizedByteCode.__invokespecial:
 				case NormalizedByteCode.__methodhandle_invoke:
-				case NormalizedByteCode.__methodhandle_invokeexact:
 				{
 					bool isinvokespecial = instr.NormalizedOpCode == NormalizedByteCode.__invokespecial || instr.NormalizedOpCode == NormalizedByteCode.__dynamic_invokespecial;
 					MethodWrapper method = GetMethodCallEmitter(instr.NormalizedOpCode, instr.Arg1);
@@ -3370,7 +3369,7 @@ sealed class Compiler
 					if (mh.Member == null)
 					{
 						// it's a MethodHandle.invoke[Exact] constant MethodHandle
-						new MethodHandleMethodWrapper(compiler.context, compiler.clazz, (ClassFile.ConstantPoolItemMI)mh.MemberConstantPoolItem, mh.Name == "invokeExact").EmitCallvirt(ilgen);
+						new MethodHandleMethodWrapper(compiler.context, compiler.clazz, (ClassFile.ConstantPoolItemMI)mh.MemberConstantPoolItem).EmitCallvirt(ilgen);
 					}
 					else
 					{
@@ -3710,15 +3709,13 @@ sealed class Compiler
 		private readonly DynamicTypeWrapper.FinishContext context;
 		private readonly TypeWrapper wrapper;
 		private readonly ClassFile.ConstantPoolItemMI cpi;
-		private readonly bool exact;
 
-		internal MethodHandleMethodWrapper(DynamicTypeWrapper.FinishContext context, TypeWrapper wrapper, ClassFile.ConstantPoolItemMI cpi, bool exact)
+		internal MethodHandleMethodWrapper(DynamicTypeWrapper.FinishContext context, TypeWrapper wrapper, ClassFile.ConstantPoolItemMI cpi)
 			: base(wrapper, cpi.Name, cpi.Signature, null, cpi.GetRetType(), cpi.GetArgTypes(), Modifiers.Public, MemberFlags.None)
 		{
 			this.context = context;
 			this.wrapper = wrapper;
 			this.cpi = cpi;
-			this.exact = exact;
 		}
 
 		internal override void EmitCall(CodeEmitter ilgen)
@@ -3731,7 +3728,7 @@ sealed class Compiler
 			TypeWrapper[] args;
 			CodeEmitterLocal[] temps;
 			Type delegateType;
-			if (exact)
+			if (cpi.Name == "invokeExact")
 			{
 				args = cpi.GetArgTypes();
 				temps = new CodeEmitterLocal[args.Length];
@@ -3951,9 +3948,7 @@ sealed class Compiler
 			case NormalizedByteCode.__dynamic_invokespecial:
 				return GetDynamicMethodWrapper(constantPoolIndex, invoke, cpi);
 			case NormalizedByteCode.__methodhandle_invoke:
-				return new MethodHandleMethodWrapper(context, clazz, cpi, false);
-			case NormalizedByteCode.__methodhandle_invokeexact:
-				return new MethodHandleMethodWrapper(context, clazz, cpi, true);
+				return new MethodHandleMethodWrapper(context, clazz, cpi);
 			default:
 				throw new InvalidOperationException();
 		}

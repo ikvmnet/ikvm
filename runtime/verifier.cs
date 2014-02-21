@@ -1674,7 +1674,6 @@ sealed class MethodAnalyzer
 							case NormalizedByteCode.__dynamic_invokeinterface:
 							case NormalizedByteCode.__dynamic_invokestatic:
 							case NormalizedByteCode.__methodhandle_invoke:
-							case NormalizedByteCode.__methodhandle_invokeexact:
 							{
 								ClassFile.ConstantPoolItemMI cpi = GetMethodref(instr.Arg1);
 								TypeWrapper retType = cpi.GetRetType();
@@ -3565,14 +3564,7 @@ sealed class MethodAnalyzer
 			&& cpi.Class == "java.lang.invoke.MethodHandle"
 			&& (cpi.Name == "invoke" || cpi.Name == "invokeExact"))
 		{
-			if (cpi.Name == "invoke")
-			{
-				instr.PatchOpCode(NormalizedByteCode.__methodhandle_invoke);
-			}
-			else
-			{
-				instr.PatchOpCode(NormalizedByteCode.__methodhandle_invokeexact);
-			}
+			instr.PatchOpCode(NormalizedByteCode.__methodhandle_invoke);
 			return;
 		}
 		else
