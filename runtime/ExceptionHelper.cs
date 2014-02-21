@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2013 Jeroen Frijters
+  Copyright (C) 2002-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -197,13 +197,14 @@ namespace IKVM.Internal
 				{
 					StackFrame frame = st.GetFrame(i);
 					MethodBase m = frame.GetMethod();
-					if (m == null || m.DeclaringType == null)
+					if (m == null)
 					{
 						continue;
 					}
 					Type type = m.DeclaringType;
 					if (cleanStackTrace &&
-						(typeof(MethodBase).IsAssignableFrom(type)
+						(type == null
+						|| typeof(MethodBase).IsAssignableFrom(type)
 						|| type == typeof(RuntimeMethodHandle)
 						|| (type == typeof(Throwable) && m.Name == "instancehelper_fillInStackTrace")
 						|| (m.Name == "ToJava" && typeof(RetargetableJavaException).IsAssignableFrom(type))
@@ -315,6 +316,10 @@ namespace IKVM.Internal
 
 		private static string getClassNameFromType(Type type)
 		{
+			if(type == null)
+			{
+				return "<Module>";
+			}
 			if(ClassLoaderWrapper.IsRemappedType(type))
 			{
 				return DotNetTypeWrapper.GetName(type);
@@ -356,7 +361,7 @@ namespace IKVM.Internal
 		private static string GetFileName(StackFrame frame)
 		{
 			MethodBase mb = frame.GetMethod();
-			if(mb != null)
+			if(mb != null && mb.DeclaringType != null)
 			{
 				if(ClassLoaderWrapper.IsRemappedType(mb.DeclaringType))
 				{
