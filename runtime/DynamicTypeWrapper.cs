@@ -3976,12 +3976,16 @@ namespace IKVM.Internal
 #endif
 								MethodInfo nativeMethod = null;
 								TypeWrapper[] args = methods[i].GetParameters();
+								TypeWrapper[] nargs = args;
 								if (nativeCodeType != null)
 								{
-									TypeWrapper[] nargs = args;
 									if (!m.IsStatic)
 									{
 										nargs = ArrayUtil.Concat(wrapper, args);
+									}
+									if (methods[i].HasCallerID)
+									{
+										nargs = ArrayUtil.Concat(nargs, CoreClasses.ikvm.@internal.CallerID.Wrapper);
 									}
 									MethodInfo[] nativeCodeTypeMethods = nativeCodeType.GetMethods(BindingFlags.Static | BindingFlags.Public);
 									foreach (MethodInfo method in nativeCodeTypeMethods)
@@ -4002,15 +4006,9 @@ namespace IKVM.Internal
 								}
 								if (nativeMethod != null)
 								{
-									int add = 0;
-									if (!m.IsStatic)
+									for (int j = 0; j < nargs.Length; j++)
 									{
-										ilGenerator.Emit(OpCodes.Ldarg_0);
-										add = 1;
-									}
-									for (int j = 0; j < args.Length; j++)
-									{
-										ilGenerator.EmitLdarg(j + add);
+										ilGenerator.EmitLdarg(j);
 									}
 									ilGenerator.Emit(OpCodes.Call, nativeMethod);
 									TypeWrapper retTypeWrapper = methods[i].ReturnType;
