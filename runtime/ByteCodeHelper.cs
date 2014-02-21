@@ -898,7 +898,7 @@ namespace IKVM.Runtime
 #if FIRST_PASS
 			return null;
 #else
-			if (cache.type == h.type() && cache.del != null)
+			if (cache.Type == h.type() && cache.del != null)
 			{
 				return cache.del;
 			}
@@ -911,7 +911,7 @@ namespace IKVM.Runtime
 					adapter = adapter.asVarargsCollector(h.type().parameterType(h.type().parameterCount() - 1));
 				}
 				del = (T)adapter.asType(MethodHandleUtil.GetDelegateMethodType(typeof(T))).vmtarget;
-				if (Interlocked.CompareExchange(ref cache.type, h.type(), null) == null)
+				if (cache.TrySetType(h.type()))
 				{
 					cache.del = del;
 				}
@@ -1032,7 +1032,36 @@ namespace IKVM.Runtime
 	public struct InvokeCache<T>
 		where T : class
 	{
-		internal global::java.lang.invoke.MethodType type;
+#if CLASSGC
+		private WeakReference weakRef;
+
+		internal java.lang.invoke.MethodType Type
+		{
+			get { return weakRef == null ? null : (java.lang.invoke.MethodType)weakRef.Target; }
+		}
+
+		internal bool TrySetType(java.lang.invoke.MethodType newType)
+		{
+			if (weakRef == null)
+			{
+				return Interlocked.CompareExchange(ref weakRef, new WeakReference(newType), null) == null;
+			}
+			return Type == newType;
+		}
+#else
+		private java.lang.invoke.MethodType type;
+
+		internal java.lang.invoke.MethodType Type
+		{
+			get { return type; }
+		}
+
+		internal bool TrySetType(java.lang.invoke.MethodType newType)
+		{
+			Interlocked.CompareExchange(ref type, newType, null);
+			return type == newType;
+		}
+#endif
 		internal T del;
 	}
 
