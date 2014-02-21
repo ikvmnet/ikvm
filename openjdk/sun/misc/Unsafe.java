@@ -1136,7 +1136,13 @@ public final class Unsafe
         return null;
     }
 
+    public native boolean shouldBeInitialized(Class<?> c);
+
     public native Class defineClass(String name, byte[] buf, int offset, int length, ClassLoader cl, ProtectionDomain pd);
+
+    @Deprecated
+    @sun.reflect.CallerSensitive
+    public native Class defineClass(String name, byte[] b, int off, int len);
 
     public native Class defineAnonymousClass(Class hostClass, byte[] data, Object[] cpPatches);
 
