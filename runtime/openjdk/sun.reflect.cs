@@ -32,6 +32,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Security;
 using IKVM.Internal;
+using IKVM.Attributes;
 
 namespace IKVM.Internal
 {
@@ -42,48 +43,41 @@ namespace IKVM.Internal
 		java.lang.IllegalArgumentException SetIllegalArgumentException(object obj);
 	}
 #endif
-
-	sealed class State
-	{
-		internal int Value;
-	}
 }
 
 static class Java_sun_reflect_Reflection
 {
 #if CLASSGC
+	sealed class State
+	{
+		internal HideFromJavaFlags Value;
+		internal volatile bool HasValue;
+	}
+
 	private static readonly ConditionalWeakTable<MethodBase, State> isHideFromJavaCache = new ConditionalWeakTable<MethodBase, State>();
 
-	internal static bool IsHideFromJava(MethodBase mb)
-	{
-		State state = isHideFromJavaCache.GetValue(mb, delegate { return new State(); });
-		if (state.Value == 0)
-		{
-			state.Value = IsHideFromJavaImpl(mb);
-		}
-		return state.Value == 1;
-	}
-
-	private static int IsHideFromJavaImpl(MethodBase mb)
+	internal static HideFromJavaFlags GetHideFromJavaFlags(MethodBase mb)
 	{
 		if (mb.Name.StartsWith("__<", StringComparison.Ordinal))
 		{
-			return 1;
+			return HideFromJavaFlags.All;
 		}
-		if (mb.IsDefined(typeof(IKVM.Attributes.HideFromJavaAttribute), false) || mb.IsDefined(typeof(IKVM.Attributes.HideFromReflectionAttribute), false))
+		State state = isHideFromJavaCache.GetValue(mb, delegate { return new State(); });
+		if (!state.HasValue)
 		{
-			return 1;
+			state.Value = AttributeHelper.GetHideFromJavaFlags(mb);
+			state.HasValue = true;
 		}
-		return 2;
+		return state.Value;
 	}
 #else
-	private static readonly Dictionary<RuntimeMethodHandle, bool> isHideFromJavaCache = new Dictionary<RuntimeMethodHandle, bool>();
+	private static readonly Dictionary<RuntimeMethodHandle, HideFromJavaFlags> isHideFromJavaCache = new Dictionary<RuntimeMethodHandle, HideFromJavaFlags>();
 
-	internal static bool IsHideFromJava(MethodBase mb)
+	internal static HideFromJavaFlags GetHideFromJavaFlags(MethodBase mb)
 	{
 		if (mb.Name.StartsWith("__<", StringComparison.Ordinal))
 		{
-			return true;
+			return HideFromJavaFlags.All;
 		}
 		RuntimeMethodHandle handle;
 		try
@@ -93,40 +87,40 @@ static class Java_sun_reflect_Reflection
 		catch (InvalidOperationException)
 		{
 			// DynamicMethods don't have a RuntimeMethodHandle and we always want to hide them anyway
-			return true;
+			return HideFromJavaFlags.All;
 		}
 		catch (NotSupportedException)
 		{
 			// DynamicMethods don't have a RuntimeMethodHandle and we always want to hide them anyway
-			return true;
+			return HideFromJavaFlags.All;
 		}
 		lock (isHideFromJavaCache)
 		{
-			bool cached;
+			HideFromJavaFlags cached;
 			if (isHideFromJavaCache.TryGetValue(handle, out cached))
 			{
 				return cached;
 			}
 		}
-		bool isHide = mb.IsDefined(typeof(IKVM.Attributes.HideFromJavaAttribute), false) || mb.IsDefined(typeof(IKVM.Attributes.HideFromReflectionAttribute), false);
+		HideFromJavaFlags flags = AttributeHelper.GetHideFromJavaFlags(mb);
 		lock (isHideFromJavaCache)
 		{
-			isHideFromJavaCache[handle] = isHide;
+			isHideFromJavaCache[handle] = flags;
 		}
-		return isHide;
+		return flags;
 	}
 #endif
 
 	internal static bool IsHideFromStackWalk(MethodBase mb)
 	{
-		Type type;
-		return IsHideFromJava(mb)
-			|| (type = mb.DeclaringType) == null
+		Type type = mb.DeclaringType;
+		return type == null
 			|| type.Assembly == typeof(object).Assembly
 			|| type.Assembly == typeof(Java_sun_reflect_Reflection).Assembly
 			|| type.Assembly == Java_java_lang_SecurityManager.jniAssembly
 			|| type == typeof(java.lang.reflect.Method)
 			|| type == typeof(java.lang.reflect.Constructor)
+			|| (GetHideFromJavaFlags(mb) & HideFromJavaFlags.StackWalk) != 0
 			;
 	}
 

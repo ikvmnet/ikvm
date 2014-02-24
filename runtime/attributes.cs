@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2011 Jeroen Frijters
+  Copyright (C) 2002-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -418,11 +418,33 @@ namespace IKVM.Attributes
 	[AttributeUsage(AttributeTargets.All)]
 	public sealed class HideFromJavaAttribute : Attribute
 	{
+		private readonly HideFromJavaFlags flags;
+
+		public HideFromJavaAttribute()
+		{
+			flags = HideFromJavaFlags.All;
+		}
+
+		public HideFromJavaAttribute(HideFromJavaFlags flags)
+		{
+			this.flags = flags;
+		}
+
+		public HideFromJavaFlags Flags
+		{
+			get { return flags; }
+		}
 	}
 
-	[AttributeUsage(AttributeTargets.Method | AttributeTargets.Field | AttributeTargets.Property)]
-	public sealed class HideFromReflectionAttribute : Attribute
+	[Flags]
+	public enum HideFromJavaFlags : byte
 	{
+		All = Code | Reflection | StackWalk | StackTrace,
+		None = 0,
+		Code = 1,
+		Reflection = 2,
+		StackWalk = 4,		// used for LambdaForm$Compiled
+		StackTrace = 8,		// used for LambdaForm$Hidden
 	}
 
 	[Flags]
