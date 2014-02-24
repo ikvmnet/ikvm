@@ -67,6 +67,9 @@ namespace IKVM.Internal
 		private const ushort FLAG_MASK_DEPRECATED = 0x100;
 		private const ushort FLAG_MASK_INTERNAL = 0x200;
 		private const ushort FLAG_CALLERSENSITIVE = 0x400;
+		private const ushort FLAG_LAMBDAFORM_COMPILED = 0x800;
+		private const ushort FLAG_LAMBDAFORM_HIDDEN = 0x1000;
+		private const ushort FLAG_FORCEINLINE = 0x2000;
 		private ConstantPoolItemClass[] interfaces;
 		private Field[] fields;
 		private Method[] methods;
@@ -2766,20 +2769,29 @@ namespace IKVM.Internal
 								goto default;
 							}
 							annotations = ReadAnnotations(br, classFile, utf8_cp);
-#if STATIC_COMPILER
 							if ((options & ClassFileParseOptions.TrustedAnnotations) != 0)
 							{
 								foreach(object[] annot in annotations)
 								{
 									switch((string)annot[1])
 									{
+#if STATIC_COMPILER
 										case "Lsun/reflect/CallerSensitive;":
 											flags |= FLAG_CALLERSENSITIVE;
+											break;
+#endif
+										case "Ljava/lang/invoke/LambdaForm$Compiled;":
+											flags |= FLAG_LAMBDAFORM_COMPILED;
+											break;
+										case "Ljava/lang/invoke/LambdaForm$Hidden;":
+											flags |= FLAG_LAMBDAFORM_HIDDEN;
+											break;
+										case "Ljava/lang/invoke/ForceInline;":
+											flags |= FLAG_FORCEINLINE;
 											break;
 									}
 								}
 							}
-#endif
 							break;
 						case "RuntimeVisibleParameterAnnotations":
 						{
@@ -2974,6 +2986,30 @@ namespace IKVM.Internal
 				}
 			}
 #endif
+
+			internal bool IsLambdaFormCompiled
+			{
+				get
+				{
+					return (flags & FLAG_LAMBDAFORM_COMPILED) != 0;
+				}
+			}
+
+			internal bool IsLambdaFormHidden
+			{
+				get
+				{
+					return (flags & FLAG_LAMBDAFORM_HIDDEN) != 0;
+				}
+			}
+
+			internal bool IsForceInline
+			{
+				get
+				{
+					return (flags & FLAG_FORCEINLINE) != 0;
+				}
+			}
 
 			internal string[] ExceptionsAttribute
 			{

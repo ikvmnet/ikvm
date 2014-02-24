@@ -3223,6 +3223,26 @@ namespace IKVM.Internal
 					mb.SetImplementationFlags(mb.GetMethodImplementationFlags() | MethodImplAttributes.Synchronized);
 				}
 
+				if (classFile.Methods[index].IsForceInline)
+				{
+					const MethodImplAttributes AggressiveInlining = (MethodImplAttributes)256;
+					mb.SetImplementationFlags(mb.GetMethodImplementationFlags() | AggressiveInlining);
+				}
+
+				if (classFile.Methods[index].IsLambdaFormCompiled || classFile.Methods[index].IsLambdaFormHidden)
+				{
+					HideFromJavaFlags flags = HideFromJavaFlags.None;
+					if (classFile.Methods[index].IsLambdaFormCompiled)
+					{
+						flags |= HideFromJavaFlags.StackWalk;
+					}
+					if (classFile.Methods[index].IsLambdaFormHidden)
+					{
+						flags |= HideFromJavaFlags.StackTrace;
+					}
+					AttributeHelper.HideFromJava(mb, flags);
+				}
+
 				return mb;
 			}
 
@@ -4078,7 +4098,7 @@ namespace IKVM.Internal
 							Compiler.Compile(this, wrapper, methods[i], classFile, m, ilGenerator, ref nonleaf);
 							ilGenerator.CheckLabels();
 							ilGenerator.DoEmit();
-							if (nonleaf)
+							if (nonleaf && !m.IsForceInline)
 							{
 								mb.SetImplementationFlags(mb.GetMethodImplementationFlags() | MethodImplAttributes.NoInlining);
 							}

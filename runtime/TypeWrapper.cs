@@ -473,6 +473,12 @@ namespace IKVM.Internal
 			mb.SetCustomAttribute(hideFromJavaAttribute);
 		}
 
+		internal static void HideFromJava(MethodBuilder mb, HideFromJavaFlags flags)
+		{
+			CustomAttributeBuilder cab = new CustomAttributeBuilder(typeofHideFromJavaAttribute.GetConstructor(new Type[] { typeofHideFromJavaFlags }), new object[] { flags });
+			mb.SetCustomAttribute(cab);
+		}
+
 		internal static void HideFromJava(FieldBuilder fb)
 		{
 			fb.SetCustomAttribute(hideFromJavaAttribute);

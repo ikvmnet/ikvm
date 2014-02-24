@@ -1444,6 +1444,10 @@ namespace IKVM.Internal
 				{
 					cfp |= ClassFileParseOptions.RelaxedClassNameValidation;
 				}
+				if (this == bootstrapClassLoader)
+				{
+					cfp |= ClassFileParseOptions.TrustedAnnotations;
+				}
 				return cfp;
 #endif
 			}
