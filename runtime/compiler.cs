@@ -78,7 +78,6 @@ static class ByteCodeHelperMethods
 	internal static readonly MethodInfo GetDelegateForInvokeExact;
 	internal static readonly MethodInfo GetDelegateForInvoke;
 	internal static readonly MethodInfo LoadMethodType;
-	internal static readonly MethodInfo MethodHandleFromDelegate;
 	internal static readonly MethodInfo LinkIndyCallSite;
 
 	static ByteCodeHelperMethods()
@@ -123,7 +122,6 @@ static class ByteCodeHelperMethods
 		GetDelegateForInvokeExact = GetHelper(typeofByteCodeHelper, "GetDelegateForInvokeExact");
 		GetDelegateForInvoke = GetHelper(typeofByteCodeHelper, "GetDelegateForInvoke");
 		LoadMethodType = GetHelper(typeofByteCodeHelper, "LoadMethodType");
-		MethodHandleFromDelegate = GetHelper(typeofByteCodeHelper, "MethodHandleFromDelegate");
 		LinkIndyCallSite = GetHelper(typeofByteCodeHelper, "LinkIndyCallSite");
 	}
 
@@ -3175,222 +3173,21 @@ sealed class Compiler
 	private sealed class MethodHandleConstant
 	{
 		private FieldBuilder field;
-		private bool dynamic;
 
 		internal void Emit(Compiler compiler, CodeEmitter ilgen, int index)
 		{
 			if (field == null)
 			{
-				field = CreateField(compiler, index, ref dynamic);
+				field = compiler.context.DefineDynamicMethodHandleCacheField();
 			}
-			if (dynamic)
-			{
-				ClassFile.ConstantPoolItemMethodHandle mh = compiler.classFile.GetConstantPoolConstantMethodHandle(index);
-				ilgen.Emit(OpCodes.Ldsflda, field);
-				ilgen.EmitLdc_I4((int)mh.Kind);
-				ilgen.Emit(OpCodes.Ldstr, mh.Class);
-				ilgen.Emit(OpCodes.Ldstr, mh.Name);
-				ilgen.Emit(OpCodes.Ldstr, mh.Signature);
-				compiler.context.EmitCallerID(ilgen);
-				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicLoadMethodHandle);
-			}
-			else
-			{
-				ilgen.Emit(OpCodes.Ldsfld, field);
-			}
-		}
-
-		private static FieldBuilder CreateField(Compiler compiler, int index, ref bool dynamic)
-		{
 			ClassFile.ConstantPoolItemMethodHandle mh = compiler.classFile.GetConstantPoolConstantMethodHandle(index);
-			if (mh.GetClassType().IsUnloadable)
-			{
-				dynamic = true;
-				return compiler.context.DefineDynamicMethodHandleCacheField();
-			}
-			TypeWrapper[] args;
-			TypeWrapper arg0 = null;
-			TypeWrapper ret;
-			switch (mh.Kind)
-			{
-				case ClassFile.RefKind.getField:
-					args = new TypeWrapper[] { mh.Member.DeclaringType };
-					ret = ((FieldWrapper)mh.Member).FieldTypeWrapper;
-					break;
-				case ClassFile.RefKind.putField:
-					args = new TypeWrapper[] { mh.Member.DeclaringType, ((FieldWrapper)mh.Member).FieldTypeWrapper };
-					ret = PrimitiveTypeWrapper.VOID;
-					break;
-				case ClassFile.RefKind.getStatic:
-					args = TypeWrapper.EmptyArray;
-					ret = ((FieldWrapper)mh.Member).FieldTypeWrapper;
-					break;
-				case ClassFile.RefKind.putStatic:
-					args = new TypeWrapper[] { ((FieldWrapper)mh.Member).FieldTypeWrapper };
-					ret = PrimitiveTypeWrapper.VOID;
-					break;
-				case ClassFile.RefKind.invokeInterface:
-				case ClassFile.RefKind.invokeSpecial:
-				case ClassFile.RefKind.invokeVirtual:
-				case ClassFile.RefKind.invokeStatic:
-					if (mh.Member == null)
-					{
-						// it's MethodHandle.invoke[Exact]
-						ClassFile.ConstantPoolItemMI cpi = (ClassFile.ConstantPoolItemMI)mh.MemberConstantPoolItem;
-						args = cpi.GetArgTypes();
-						arg0 = mh.GetClassType();
-						ret = cpi.GetRetType();
-					}
-					else
-					{
-						MethodWrapper mw = (MethodWrapper)mh.Member;
-						args = mw.GetParameters();
-						ret = mw.ReturnType;
-						if (mw.IsStatic)
-						{
-							// no receiver type
-						}
-						else if (mw.IsProtected && !mw.IsAccessibleFrom(mh.GetClassType(), compiler.clazz, mh.GetClassType()))
-						{
-							arg0 = compiler.clazz;
-						}
-						else
-						{
-							arg0 = mh.GetClassType();
-						}
-					}
-					break;
-				case ClassFile.RefKind.newInvokeSpecial:
-					args = ((MethodWrapper)mh.Member).GetParameters();
-					ret = mh.Member.DeclaringType;
-					break;
-				default:
-					throw new InvalidOperationException();
-			}
-			if (arg0 != null)
-			{
-				args = ArrayUtil.Concat(arg0, args);
-			}
-			if (HasUnloadable(args, ret))
-			{
-				dynamic = true;
-				return compiler.context.DefineDynamicMethodHandleCacheField();
-			}
-
-			Type delegateType = MethodHandleUtil.CreateDelegateType(args, ret);
-			MethodInfo method;
-			if (mh.Kind == ClassFile.RefKind.invokeStatic
-				&& (method = (MethodInfo)((MethodWrapper)mh.Member).GetMethod()) != null
-				&& ((MethodWrapper)mh.Member).GetParameters().Length <= MethodHandleUtil.MaxArity)
-			{
-				// we can create a delegate that directly points to the target method
-			}
-			else
-			{
-				method = CreateDispatchStub(compiler, mh, delegateType);
-			}
-			TypeBuilder tb = compiler.context.DefineMethodHandleConstantType(index);
-			FieldBuilder field = tb.DefineField("value", CoreClasses.java.lang.invoke.MethodHandle.Wrapper.TypeAsSignatureType, FieldAttributes.Assembly | FieldAttributes.Static | FieldAttributes.InitOnly);
-			CodeEmitter ilgen = CodeEmitter.Create(ReflectUtil.DefineTypeInitializer(tb));
-			ilgen.Emit(OpCodes.Ldnull);
-			ilgen.Emit(OpCodes.Ldftn, method);
-			ilgen.Emit(OpCodes.Newobj, MethodHandleUtil.GetDelegateConstructor(delegateType));
-			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.MethodHandleFromDelegate);
-			ilgen.Emit(OpCodes.Stsfld, field);
-			ilgen.Emit(OpCodes.Ret);
-			ilgen.DoEmit();
-			return field;
-		}
-
-		private static MethodInfo CreateDispatchStub(Compiler compiler, ClassFile.ConstantPoolItemMethodHandle mh, Type delegateType)
-		{
-			// the dispatch stub lives in the actual type (not the nested type that caches the value) to make sure
-			// we have access to everything that the actual type has access to
-			Type[] args = delegateType.GetGenericArguments();
-			Type ret = Types.Void;
-			// NOTE we can't use the method returned by GetDelegateInvokeMethod to determine the parameter types, due to Mono and CLR bugs
-			if (MethodHandleUtil.GetDelegateInvokeMethod(delegateType).ReturnType != Types.Void)
-			{
-				ret = args[args.Length - 1];
-				Array.Resize(ref args, args.Length - 1);
-			}
-			MethodBuilder mb = compiler.context.DefineMethodHandleDispatchStub(ret, args);
-			CodeEmitter ilgen = CodeEmitter.Create(mb);
-			if (args.Length > 0 && MethodHandleUtil.IsPackedArgsContainer(args[args.Length - 1]))
-			{
-				int packedArgPos = args.Length - 1;
-				Type packedArgType = args[packedArgPos];
-				for (int i = 0; i < packedArgPos; i++)
-				{
-					ilgen.EmitLdarg(i);
-				}
-				List<FieldInfo> fields = new List<FieldInfo>();
-			next:
-				args = args[args.Length - 1].GetGenericArguments();
-				for (int i = 0; i < MethodHandleUtil.MaxArity; i++)
-				{
-					if (i == MethodHandleUtil.MaxArity - 1 && MethodHandleUtil.IsPackedArgsContainer(args[i]))
-					{
-						FieldInfo field = packedArgType.GetField("t" + (i + 1));
-						packedArgType = field.FieldType;
-						fields.Add(field);
-						goto next;
-					}
-					else
-					{
-						ilgen.EmitLdarga(packedArgPos);
-						foreach (FieldInfo field in fields)
-						{
-							ilgen.Emit(OpCodes.Ldflda, field);
-						}
-						ilgen.Emit(OpCodes.Ldfld, packedArgType.GetField("t" + (i + 1)));
-					}
-				}
-			}
-			else
-			{
-				for (int i = 0; i < args.Length; i++)
-				{
-					ilgen.EmitLdarg(i);
-				}
-			}
-			switch (mh.Kind)
-			{
-				case ClassFile.RefKind.getField:
-				case ClassFile.RefKind.getStatic:
-					((FieldWrapper)mh.Member).EmitGet(ilgen);
-					break;
-				case ClassFile.RefKind.putField:
-				case ClassFile.RefKind.putStatic:
-					((FieldWrapper)mh.Member).EmitSet(ilgen);
-					break;
-				case ClassFile.RefKind.invokeInterface:
-				case ClassFile.RefKind.invokeVirtual:
-					if (mh.Member == null)
-					{
-						// it's a MethodHandle.invoke[Exact] constant MethodHandle
-						new MethodHandleMethodWrapper(compiler.context, compiler.clazz, (ClassFile.ConstantPoolItemMI)mh.MemberConstantPoolItem).EmitCallvirt(ilgen);
-					}
-					else
-					{
-						((MethodWrapper)mh.Member).EmitCallvirt(ilgen);
-					}
-					break;
-				case ClassFile.RefKind.invokeStatic:
-					((MethodWrapper)mh.Member).EmitCall(ilgen);
-					break;
-				case ClassFile.RefKind.invokeSpecial:
-					ilgen.Emit(OpCodes.Callvirt, compiler.context.GetInvokeSpecialStub((MethodWrapper)mh.Member));
-					break;
-				case ClassFile.RefKind.newInvokeSpecial:
-					((MethodWrapper)mh.Member).EmitNewobj(ilgen);
-					break;
-				default:
-					throw new InvalidOperationException();
-			}
-			ilgen.Emit(OpCodes.Ret);
-			ilgen.DoEmit();
-			return mb;
+			ilgen.Emit(OpCodes.Ldsflda, field);
+			ilgen.EmitLdc_I4((int)mh.Kind);
+			ilgen.Emit(OpCodes.Ldstr, mh.Class);
+			ilgen.Emit(OpCodes.Ldstr, mh.Name);
+			ilgen.Emit(OpCodes.Ldstr, mh.Signature);
+			compiler.context.EmitCallerID(ilgen);
+			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicLoadMethodHandle);
 		}
 	}
 

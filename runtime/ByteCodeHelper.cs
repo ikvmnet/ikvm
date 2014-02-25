@@ -949,15 +949,6 @@ namespace IKVM.Runtime
 		}
 #endif
 
-		public static java.lang.invoke.MethodHandle MethodHandleFromDelegate(Delegate del)
-		{
-#if FIRST_PASS
-			return null;
-#else
-			return new ConstantMethodHandle(del);
-#endif
-		}
-
 		[HideFromJava]
 		public static void LinkIndyCallSite<T>(ref IndyCallSite<T> site, java.lang.invoke.CallSite cs, Exception x)
 			where T : class // Delegate
