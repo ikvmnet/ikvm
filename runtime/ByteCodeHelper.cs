@@ -938,17 +938,6 @@ namespace IKVM.Runtime
 #endif
 		}
 
-#if !FIRST_PASS
-		sealed class ConstantMethodHandle : java.lang.invoke.MethodHandle
-		{
-			internal ConstantMethodHandle(Delegate del)
-				: base(MethodHandleUtil.GetDelegateMethodType(del.GetType()))
-			{
-				this.vmtarget = del;
-			}
-		}
-#endif
-
 		[HideFromJava]
 		public static void LinkIndyCallSite<T>(ref IndyCallSite<T> site, java.lang.invoke.CallSite cs, Exception x)
 			where T : class // Delegate
@@ -961,11 +950,15 @@ namespace IKVM.Runtime
 					? (Exception)new java.lang.ClassCastException("bootstrap method failed to produce a CallSite")
 					: new java.lang.invoke.WrongMethodTypeException()), MapFlags.None);
 				java.lang.invoke.MethodType type = LoadMethodType<T>();
+				java.lang.invoke.MethodHandle exc = x is java.lang.BootstrapMethodError
+					? java.lang.invoke.MethodHandles.constant(typeof(java.lang.BootstrapMethodError), x)
+					: java.lang.invoke.MethodHandles.publicLookup().findConstructor(typeof(java.lang.BootstrapMethodError), java.lang.invoke.MethodType.methodType(typeof(void), typeof(string), typeof(Exception)))
+						.bindTo("call site initialization exception").bindTo(x);
 				ics = new IndyCallSite<T>((T)
 					java.lang.invoke.MethodHandles.dropArguments(
 						java.lang.invoke.MethodHandles.foldArguments(
 							java.lang.invoke.MethodHandles.throwException(type.returnType(), typeof(java.lang.BootstrapMethodError)),
-								new ConstantMethodHandle((MH<Exception, java.lang.BootstrapMethodError>)CreateBootstrapException).bindTo(x)),
+								exc),
 						0, type.parameterArray())
 					.vmtarget,
 					false);
@@ -977,18 +970,6 @@ namespace IKVM.Runtime
 			}
 #endif
 		}
-
-#if !FIRST_PASS
-		[HideFromJava]
-		private static java.lang.BootstrapMethodError CreateBootstrapException(Exception x)
-		{
-			if (x is java.lang.BootstrapMethodError)
-			{
-				return (java.lang.BootstrapMethodError)x;
-			}
-			return new java.lang.BootstrapMethodError("call site initialization exception", x);
-		}
-#endif
 	}
 
 	public sealed class IndyCallSite<T>
