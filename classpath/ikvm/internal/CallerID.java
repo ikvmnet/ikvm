@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2008 Jeroen Frijters
+  Copyright (C) 2008-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -37,11 +37,11 @@ public abstract class CallerID
     @ikvm.lang.Internal
     public final Class getCallerClass()
     {
-	if (clazz == null)
+	if (clazz != null)
 	{
-	    clazz = GetClass();
+	    return clazz;
 	}
-	return clazz;
+        return getAndCacheClass();
     }
 
     @ikvm.lang.Internal
@@ -50,13 +50,26 @@ public abstract class CallerID
 	ClassLoader cl = classLoader;
 	if (cl == null)
 	{
-	    cl = classLoader = GetClassLoader();
-	    if (cl == null)
-	    {
-		cl = classLoader = ClassLoader.DUMMY;
-	    }
+	    cl = getAndCacheClassLoader();
 	}
 	return cl == ClassLoader.DUMMY ? null : cl;
+    }
+
+    // virtual method that is overridden by DynamicCallerID in MethodHandle code
+    Class getAndCacheClass()
+    {
+        return clazz = GetClass();
+    }
+
+    // virtual method that is overridden by DynamicCallerID in MethodHandle code
+    ClassLoader getAndCacheClassLoader()
+    {
+        ClassLoader cl = classLoader = GetClassLoader();
+        if (cl == null)
+        {
+	    cl = classLoader = ClassLoader.DUMMY;
+        }
+        return cl;
     }
 
     @ikvm.lang.Internal
@@ -103,18 +116,6 @@ public abstract class CallerID
 	    ClassLoader GetClassLoader() {
 	        // since this optimization is only available inside the core class library, we know that the class loader is null
 		return null;
-	    }
-	};
-    }
-
-    // this is used by the MethodHandle code to create a CallerID from the lookupClass
-    static CallerID create(final Class clazz) {
-	return new CallerID() {
-	    Class GetClass() {
-		return clazz;
-	    }
-	    ClassLoader GetClassLoader() {
-		return clazz.getClassLoader();
 	    }
 	};
     }

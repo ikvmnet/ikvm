@@ -382,6 +382,7 @@ enum NormalizedByteCode : byte
 	// This is where the pseudo-bytecodes start
 	__ldc_nothrow = 239,
 	__methodhandle_invoke = 240,
+	__methodhandle_link = 241,
 	__goto_finally = 242,
 	__intrinsic_gettype = 243,
 	__athrow_no_unmap = 244,
@@ -579,6 +580,7 @@ struct ByteCodeMetaData
 			case NormalizedByteCode.__clone_array:
 			case NormalizedByteCode.__static_error:
 			case NormalizedByteCode.__methodhandle_invoke:
+			case NormalizedByteCode.__methodhandle_link:
 				return true;
 			case NormalizedByteCode.__iconst:
 			case NormalizedByteCode.__ldc_nothrow:

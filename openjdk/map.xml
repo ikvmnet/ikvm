@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!--
-  Copyright (C) 2002-2012 Jeroen Frijters
+  Copyright (C) 2002-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -2731,7 +2731,54 @@
         <class name="java.lang.StackTraceElement">
             <attribute type="System.SerializableAttribute" sig="()V" />
         </class>
+        <class name="java.lang.invoke.CallSite">
+            <field name="ics" sig="Lcli.IKVM.Runtime.IIndyCallSite;" modifiers="">
+                <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
+            </field>
+        </class>
+        <class name="java.lang.invoke.MemberName">
+            <field name="vmtarget" sig="Ljava.lang.Object;" modifiers="">
+                <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
+            </field>
+            <constructor sig="(Ljava.lang.reflect.Method;Z)V">
+                <replace-method-call class="java.lang.invoke.MethodHandleNatives" name="init" sig="(Ljava.lang.invoke.MemberName;Ljava.lang.Object;)V">
+                    <code>
+                        <ldarg_2 />
+                        <call type="Java_java_lang_invoke_MethodHandleNatives" name="init" sig="(Ljava.lang.invoke.MemberName;Ljava.lang.Object;Z)V" />
+                    </code>
+                </replace-method-call>
+            </constructor>
+            <method name="_clazz" sig="(Ljava.lang.Class;)V" modifiers="final">
+                <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
+                <body>
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <stfld class="java.lang.invoke.MemberName" name="clazz" sig="Ljava.lang.Class;" />
+                    <ret />
+                </body>
+            </method>
+            <method name="_flags" sig="()I" modifiers="final">
+                <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
+                <body>
+                    <ldarg_0 />
+                    <ldfld class="java.lang.invoke.MemberName" name="flags" sig="I" />
+                    <ret />
+                </body>
+            </method>
+            <method name="_flags" sig="(I)V" modifiers="final">
+                <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
+                <body>
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <stfld class="java.lang.invoke.MemberName" name="flags" sig="I" />
+                    <ret />
+                </body>
+            </method>
+        </class>
         <class name="java.lang.invoke.MethodHandle">
+            <field name="_invokeExactDelegate" sig="Ljava.lang.Object;" modifiers="">
+                <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
+            </field>
             <method name="invoke" sig="([Ljava.lang.Object;)Ljava.lang.Object;">
                 <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
             </method>
@@ -2777,10 +2824,21 @@
                 </body>
             </method>
         </class>
-        <class name="java.lang.invoke.MethodHandleImpl$AllocateObject">
-            <method name="allocate" sig="()Ljava.lang.Object;">
+        <class name="java.lang.invoke.DirectMethodHandle">
+            <method name="allocateInstance" sig="(Ljava.lang.Object;)Ljava.lang.Object;">
                 <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
             </method>
+        </class>
+        <class name="java.lang.invoke.MethodType">
+            <field name="voidAdapter" sig="Ljava.lang.Object;" modifiers="">
+                <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
+            </field>
+            <field name="_invokeExactDynamicMethod" sig="Lcli.System.Reflection.Emit.DynamicMethod;" modifiers="">
+                <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
+            </field>
+            <field name="_invokeExactDelegateType" sig="Lcli.System.Type;" modifiers="">
+                <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
+            </field>
         </class>
     </assembly>
     <exceptionMappings>

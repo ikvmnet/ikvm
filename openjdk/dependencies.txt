@@ -6,6 +6,7 @@
 
 IKVM.OpenJDK.Core
 ->System.Core
+->IKVM.OpenJDK.Jdbc
 ->IKVM.OpenJDK.Util
 ->IKVM.OpenJDK.Security
 ->IKVM.OpenJDK.Text

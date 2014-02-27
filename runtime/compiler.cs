@@ -77,6 +77,7 @@ static class ByteCodeHelperMethods
 	internal static readonly MethodInfo mapException;
 	internal static readonly MethodInfo GetDelegateForInvokeExact;
 	internal static readonly MethodInfo GetDelegateForInvoke;
+	internal static readonly MethodInfo GetDelegateForInvokeBasic;
 	internal static readonly MethodInfo LoadMethodType;
 	internal static readonly MethodInfo LinkIndyCallSite;
 
@@ -121,6 +122,7 @@ static class ByteCodeHelperMethods
 		mapException = GetHelper(typeofByteCodeHelper, "MapException");
 		GetDelegateForInvokeExact = GetHelper(typeofByteCodeHelper, "GetDelegateForInvokeExact");
 		GetDelegateForInvoke = GetHelper(typeofByteCodeHelper, "GetDelegateForInvoke");
+		GetDelegateForInvokeBasic = GetHelper(typeofByteCodeHelper, "GetDelegateForInvokeBasic");
 		LoadMethodType = GetHelper(typeofByteCodeHelper, "LoadMethodType");
 		LinkIndyCallSite = GetHelper(typeofByteCodeHelper, "LinkIndyCallSite");
 	}
@@ -1440,6 +1442,7 @@ sealed class Compiler
 				}
 				case NormalizedByteCode.__dynamic_invokestatic:
 				case NormalizedByteCode.__invokestatic:
+				case NormalizedByteCode.__methodhandle_link:
 				{
 					MethodWrapper method = GetMethodCallEmitter(instr.NormalizedOpCode, instr.Arg1);
 					if(method.IsIntrinsic && method.EmitIntrinsic(new EmitIntrinsicContext(method, context, ilGenerator, ma, i, mw, classFile, code, flags)))
@@ -3161,7 +3164,7 @@ sealed class Compiler
 			temps[i] = ilgen.DeclareLocal(args[i].TypeAsSignatureType);
 			ilgen.Emit(OpCodes.Stloc, temps[i]);
 		}
-		Type delegateType = MethodHandleUtil.CreateDelegateType(args, cpi.GetRetType());
+		Type delegateType = MethodHandleUtil.CreateMethodHandleDelegateType(args, cpi.GetRetType());
 		InvokeDynamicBuilder.Emit(this, cpi, delegateType);
 		for (int i = 0; i < args.Length; i++)
 		{
@@ -3515,56 +3518,178 @@ sealed class Compiler
 			this.cpi = cpi;
 		}
 
-		internal override void EmitCall(CodeEmitter ilgen)
+		private static void ToBasic(TypeWrapper tw, CodeEmitter ilgen)
 		{
-			throw new InvalidOperationException();
+			if (tw.IsNonPrimitiveValueType)
+			{
+				tw.EmitBox(ilgen);
+			}
+			else if (tw.IsGhost)
+			{
+				tw.EmitConvSignatureTypeToStackType(ilgen);
+			}
 		}
 
-		internal override void EmitCallvirt(CodeEmitter ilgen)
+		private static void FromBasic(TypeWrapper tw, CodeEmitter ilgen)
 		{
-			TypeWrapper[] args;
-			CodeEmitterLocal[] temps;
-			Type delegateType;
-			if (cpi.Name == "invokeExact")
+			if (tw.IsNonPrimitiveValueType)
 			{
-				args = cpi.GetArgTypes();
-				temps = new CodeEmitterLocal[args.Length];
-				for (int i = args.Length - 1; i >= 0; i--)
-				{
-					temps[i] = ilgen.DeclareLocal(args[i].TypeAsSignatureType);
-					ilgen.Emit(OpCodes.Stloc, temps[i]);
-				}
-				delegateType = MethodHandleUtil.CreateDelegateType(args, cpi.GetRetType());
-				MethodInfo mi = ByteCodeHelperMethods.GetDelegateForInvokeExact.MakeGenericMethod(delegateType);
-				ilgen.Emit(OpCodes.Call, mi);
+				tw.EmitUnbox(ilgen);
 			}
-			else
+			else if (tw.IsGhost)
 			{
-				args = ArrayUtil.Concat(CoreClasses.java.lang.invoke.MethodHandle.Wrapper, cpi.GetArgTypes());
-				temps = new CodeEmitterLocal[args.Length];
-				for (int i = args.Length - 1; i >= 0; i--)
-				{
-					temps[i] = ilgen.DeclareLocal(args[i].TypeAsSignatureType);
-					ilgen.Emit(OpCodes.Stloc, temps[i]);
-				}
-				delegateType = MethodHandleUtil.CreateDelegateType(args, cpi.GetRetType());
-				MethodInfo mi = ByteCodeHelperMethods.GetDelegateForInvoke.MakeGenericMethod(delegateType);
-				Type typeofInvokeCache;
-#if STATIC_COMPILER
-				typeofInvokeCache = StaticCompiler.GetRuntimeType("IKVM.Runtime.InvokeCache`1");
-#else
-				typeofInvokeCache = typeof(IKVM.Runtime.InvokeCache<>);
-#endif
-				FieldBuilder fb = context.DefineMethodHandleInvokeCacheField(typeofInvokeCache.MakeGenericType(delegateType));
-				ilgen.Emit(OpCodes.Ldloc, temps[0]);
-				ilgen.Emit(OpCodes.Ldsflda, fb);
-				ilgen.Emit(OpCodes.Call, mi);
+				tw.EmitConvStackTypeToSignatureType(ilgen, null);
 			}
+			else if (!tw.IsPrimitive && tw != CoreClasses.java.lang.Object.Wrapper)
+			{
+				tw.EmitCheckcast(ilgen);
+			}
+		}
+
+		internal override void EmitCall(CodeEmitter ilgen)
+		{
+#if !FIRST_PASS && !STATIC_COMPILER
+			Debug.Assert(cpi.Name == "linkToVirtual" || cpi.Name == "linkToStatic" || cpi.Name == "linkToSpecial" || cpi.Name == "linkToInterface");
+
+			TypeWrapper[] args = cpi.GetArgTypes();
+			CodeEmitterLocal[] temps = new CodeEmitterLocal[args.Length];
+			for (int i = args.Length - 1; i > 0; i--)
+			{
+				temps[i] = ilgen.DeclareLocal(MethodHandleUtil.AsBasicType(args[i]));
+				ToBasic(args[i], ilgen);
+				ilgen.Emit(OpCodes.Stloc, temps[i]);
+			}
+			temps[0] = ilgen.DeclareLocal(args[0].TypeAsSignatureType);
+			ilgen.Emit(OpCodes.Stloc, temps[0]);
+			Array.Resize(ref args, args.Length - 1);
+			Type delegateType = MethodHandleUtil.CreateMemberWrapperDelegateType(args, cpi.GetRetType());
+			ilgen.Emit(OpCodes.Ldloc, temps[args.Length]);
+			ilgen.Emit(OpCodes.Ldfld, typeof(java.lang.invoke.MemberName).GetField("vmtarget", BindingFlags.Instance | BindingFlags.NonPublic));
+			ilgen.Emit(OpCodes.Castclass, delegateType);
 			for (int i = 0; i < args.Length; i++)
 			{
 				ilgen.Emit(OpCodes.Ldloc, temps[i]);
 			}
 			MethodHandleUtil.EmitCallDelegateInvokeMethod(ilgen, delegateType);
+			FromBasic(ReturnType, ilgen);
+#else
+			throw new InvalidOperationException();
+#endif
+		}
+
+		private void EmitInvokeExact(CodeEmitter ilgen)
+		{
+			TypeWrapper[] args = cpi.GetArgTypes();
+			CodeEmitterLocal[] temps = new CodeEmitterLocal[args.Length];
+			for (int i = args.Length - 1; i >= 0; i--)
+			{
+				temps[i] = ilgen.DeclareLocal(args[i].TypeAsSignatureType);
+				ilgen.Emit(OpCodes.Stloc, temps[i]);
+			}
+			Type delegateType = MethodHandleUtil.CreateMethodHandleDelegateType(args, cpi.GetRetType());
+			MethodInfo mi = ByteCodeHelperMethods.GetDelegateForInvokeExact.MakeGenericMethod(delegateType);
+			ilgen.Emit(OpCodes.Call, mi);
+			for (int i = 0; i < args.Length; i++)
+			{
+				ilgen.Emit(OpCodes.Ldloc, temps[i]);
+			}
+			MethodHandleUtil.EmitCallDelegateInvokeMethod(ilgen, delegateType);
+		}
+
+		private void EmitInvokeMaxArity(CodeEmitter ilgen)
+		{
+			TypeWrapper[] args = cpi.GetArgTypes();
+			CodeEmitterLocal[] temps = new CodeEmitterLocal[args.Length];
+			for (int i = args.Length - 1; i >= 0; i--)
+			{
+				temps[i] = ilgen.DeclareLocal(args[i].TypeAsSignatureType);
+				ilgen.Emit(OpCodes.Stloc, temps[i]);
+			}
+			Type delegateType = MethodHandleUtil.CreateMethodHandleDelegateType(args, cpi.GetRetType());
+			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.LoadMethodType.MakeGenericMethod(delegateType));
+			CoreClasses.java.lang.invoke.MethodHandle.Wrapper.GetMethodWrapper("asType", "(Ljava.lang.invoke.MethodType;)Ljava.lang.invoke.MethodHandle;", false).EmitCallvirt(ilgen);
+			MethodInfo mi = ByteCodeHelperMethods.GetDelegateForInvokeExact.MakeGenericMethod(delegateType);
+			ilgen.Emit(OpCodes.Call, mi);
+			for (int i = 0; i < args.Length; i++)
+			{
+				ilgen.Emit(OpCodes.Ldloc, temps[i]);
+			}
+			MethodHandleUtil.EmitCallDelegateInvokeMethod(ilgen, delegateType);
+		}
+
+		private void EmitInvoke(CodeEmitter ilgen)
+		{
+			if (cpi.GetArgTypes().Length >= 127 && MethodHandleUtil.SlotCount(cpi.GetArgTypes()) >= 254)
+			{
+				EmitInvokeMaxArity(ilgen);
+				return;
+			}
+			TypeWrapper[] args = ArrayUtil.Concat(CoreClasses.java.lang.invoke.MethodHandle.Wrapper, cpi.GetArgTypes());
+			CodeEmitterLocal[] temps = new CodeEmitterLocal[args.Length];
+			for (int i = args.Length - 1; i >= 0; i--)
+			{
+				temps[i] = ilgen.DeclareLocal(args[i].TypeAsSignatureType);
+				ilgen.Emit(OpCodes.Stloc, temps[i]);
+			}
+			Type delegateType = MethodHandleUtil.CreateMethodHandleDelegateType(args, cpi.GetRetType());
+			MethodInfo mi = ByteCodeHelperMethods.GetDelegateForInvoke.MakeGenericMethod(delegateType);
+			Type typeofInvokeCache;
+#if STATIC_COMPILER
+			typeofInvokeCache = StaticCompiler.GetRuntimeType("IKVM.Runtime.InvokeCache`1");
+#else
+			typeofInvokeCache = typeof(IKVM.Runtime.InvokeCache<>);
+#endif
+			FieldBuilder fb = context.DefineMethodHandleInvokeCacheField(typeofInvokeCache.MakeGenericType(delegateType));
+			ilgen.Emit(OpCodes.Ldloc, temps[0]);
+			ilgen.Emit(OpCodes.Ldsflda, fb);
+			ilgen.Emit(OpCodes.Call, mi);
+			for (int i = 0; i < args.Length; i++)
+			{
+				ilgen.Emit(OpCodes.Ldloc, temps[i]);
+			}
+			MethodHandleUtil.EmitCallDelegateInvokeMethod(ilgen, delegateType);
+		}
+
+		private void EmitInvokeBasic(CodeEmitter ilgen)
+		{
+			TypeWrapper[] args = ArrayUtil.Concat(CoreClasses.java.lang.invoke.MethodHandle.Wrapper, cpi.GetArgTypes());
+			CodeEmitterLocal[] temps = new CodeEmitterLocal[args.Length];
+			for (int i = args.Length - 1; i > 0; i--)
+			{
+				temps[i] = ilgen.DeclareLocal(MethodHandleUtil.AsBasicType(args[i]));
+				ToBasic(args[i], ilgen);
+				ilgen.Emit(OpCodes.Stloc, temps[i]);
+			}
+			temps[0] = ilgen.DeclareLocal(args[0].TypeAsSignatureType);
+			ilgen.Emit(OpCodes.Stloc, temps[0]);
+			Type delegateType = MethodHandleUtil.CreateMemberWrapperDelegateType(args, cpi.GetRetType());
+			MethodInfo mi = ByteCodeHelperMethods.GetDelegateForInvokeBasic.MakeGenericMethod(delegateType);
+			ilgen.Emit(OpCodes.Ldloc, temps[0]);
+			ilgen.Emit(OpCodes.Call, mi);
+			for (int i = 0; i < args.Length; i++)
+			{
+				ilgen.Emit(OpCodes.Ldloc, temps[i]);
+			}
+			MethodHandleUtil.EmitCallDelegateInvokeMethod(ilgen, delegateType);
+			FromBasic(ReturnType, ilgen);
+		}
+
+		internal override void EmitCallvirt(CodeEmitter ilgen)
+		{
+			switch (cpi.Name)
+			{
+				case "invokeExact":
+					EmitInvokeExact(ilgen);
+					break;
+				case "invoke":
+					EmitInvoke(ilgen);
+					break;
+				case "invokeBasic":
+					EmitInvokeBasic(ilgen);
+					break;
+				default:
+					throw new InvalidOperationException();
+			}
 		}
 
 		internal override void EmitNewobj(CodeEmitter ilgen)
@@ -3648,7 +3773,7 @@ sealed class Compiler
 
 		internal static MethodInfo Emit(DynamicTypeWrapper.FinishContext context, ClassFile.RefKind kind, ClassFile.ConstantPoolItemFMI cpi, TypeWrapper ret, TypeWrapper[] args)
 		{
-			Type delegateType = MethodHandleUtil.CreateDelegateType(args, ret);
+			Type delegateType = MethodHandleUtil.CreateMethodHandleDelegateType(args, ret);
 			FieldBuilder fb = context.DefineMethodHandleInvokeCacheField(delegateType);
 			Type[] types = new Type[args.Length];
 			for (int i = 0; i < types.Length; i++)
@@ -3745,6 +3870,7 @@ sealed class Compiler
 			case NormalizedByteCode.__dynamic_invokespecial:
 				return GetDynamicMethodWrapper(constantPoolIndex, invoke, cpi);
 			case NormalizedByteCode.__methodhandle_invoke:
+			case NormalizedByteCode.__methodhandle_link:
 				return new MethodHandleMethodWrapper(context, clazz, cpi);
 			default:
 				throw new InvalidOperationException();

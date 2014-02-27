@@ -318,12 +318,6 @@ namespace IKVM.Runtime
 #if FIRST_PASS
 			return null;
 #else
-			java.lang.invoke.MethodHandles.Lookup lookup = new java.lang.invoke.MethodHandles.Lookup(callerID.getCallerClass(),
-				java.lang.invoke.MethodHandles.Lookup.PUBLIC |
-				java.lang.invoke.MethodHandles.Lookup.PRIVATE |
-				java.lang.invoke.MethodHandles.Lookup.PROTECTED |
-				java.lang.invoke.MethodHandles.Lookup.PACKAGE,
-				true);
 			java.lang.Class refc = LoadTypeWrapper(clazz, callerID).ClassObject;
 			try
 			{
@@ -334,46 +328,27 @@ namespace IKVM.Runtime
 					case ClassFile.RefKind.getField:
 					case ClassFile.RefKind.putField:
 						java.lang.Class type = ClassLoaderWrapper.FromCallerID(callerID).FieldTypeWrapperFromSig(sig).ClassObject;
-						switch ((ClassFile.RefKind)kind)
-						{
-							case ClassFile.RefKind.getStatic:
-								return lookup.findStaticGetter(refc, name, type);
-							case ClassFile.RefKind.putStatic:
-								return lookup.findStaticSetter(refc, name, type);
-							case ClassFile.RefKind.getField:
-								return lookup.findGetter(refc, name, type);
-							case ClassFile.RefKind.putField:
-								return lookup.findSetter(refc, name, type);
-							default:
-								throw new InvalidOperationException();
-						}
+						return java.lang.invoke.MethodHandleNatives.linkMethodHandleConstant(callerID.getCallerClass(), kind, refc, name, type);
 					default:
 						java.lang.invoke.MethodType mt = null;
 						DynamicLoadMethodType(ref mt, sig, callerID);
-						switch ((ClassFile.RefKind)kind)
+						// HACK linkMethodHandleConstant is broken for MethodHandle.invoke[Exact]
+						if (kind == (int)ClassFile.RefKind.invokeVirtual && refc == CoreClasses.java.lang.invoke.MethodHandle.Wrapper.ClassObject)
 						{
-							case ClassFile.RefKind.invokeInterface:
-								return lookup.findVirtual(refc, name, mt);
-							case ClassFile.RefKind.invokeSpecial:
-								return lookup.findSpecial(refc, name, mt, callerID.getCallerClass());
-							case ClassFile.RefKind.invokeStatic:
-								return lookup.findStatic(refc, name, mt);
-							case ClassFile.RefKind.invokeVirtual:
-								return lookup.findVirtual(refc, name, mt);
-							case ClassFile.RefKind.newInvokeSpecial:
-								return lookup.findConstructor(refc, mt);
-							default:
-								throw new InvalidOperationException();
+							switch (name)
+							{
+								case "invokeExact":
+									return java.lang.invoke.MethodHandles.exactInvoker(mt);
+								case "invoke":
+									return java.lang.invoke.MethodHandles.invoker(mt);
+							}
 						}
+						return java.lang.invoke.MethodHandleNatives.linkMethodHandleConstant(callerID.getCallerClass(), kind, refc, name, mt);
 				}
 			}
 			catch (RetargetableJavaException x)
 			{
 				throw x.ToJava();
-			}
-			catch (java.lang.ReflectiveOperationException x)
-			{
-				throw new java.lang.IncompatibleClassChangeError().initCause(x);
 			}
 #endif
 		}
@@ -388,8 +363,7 @@ namespace IKVM.Runtime
 			try
 			{
 				java.lang.invoke.MethodHandle mh = DynamicLoadMethodHandleImpl(kind, clazz, name, sig, callerID);
-				return mh.vmtarget as T
-					?? (T)mh.asType(MethodHandleUtil.GetDelegateMethodType(typeof(T))).vmtarget;
+				return GetDelegateForInvokeExact<T>(mh.asType(MethodHandleUtil.GetDelegateMethodType(typeof(T))));
 			}
 			catch (java.lang.IncompatibleClassChangeError x)
 			{
@@ -883,10 +857,10 @@ namespace IKVM.Runtime
 #if FIRST_PASS
 			return null;
 #else
-			T del = h.vmtarget as T;
+			T del = h._invokeExactDelegate as T;
 			if (del == null)
 			{
-				throw new global::java.lang.invoke.WrongMethodTypeException();
+				del = MethodHandleUtil.GetDelegateForInvokeExact<T>(h);
 			}
 			return del;
 #endif
@@ -903,7 +877,7 @@ namespace IKVM.Runtime
 			{
 				return del;
 			}
-			del = h.vmtarget as T;
+			del = h.form.vmentry.vmtarget as T;
 			if (del == null)
 			{
 				global::java.lang.invoke.MethodHandle adapter = global::java.lang.invoke.MethodHandles.exactInvoker(h.type());
@@ -911,7 +885,8 @@ namespace IKVM.Runtime
 				{
 					adapter = adapter.asVarargsCollector(h.type().parameterType(h.type().parameterCount() - 1));
 				}
-				del = (T)adapter.asType(MethodHandleUtil.GetDelegateMethodType(typeof(T))).vmtarget;
+				adapter = adapter.asType(MethodHandleUtil.GetDelegateMethodType(typeof(T)));
+				del = GetDelegateForInvokeExact<T>(adapter);
 				if (cache.TrySetType(h.type()))
 				{
 					if (h.isVarargsCollector())
@@ -923,6 +898,21 @@ namespace IKVM.Runtime
 						cache.fixedArg = del;
 					}
 				}
+			}
+			return del;
+#endif
+		}
+
+		public static T GetDelegateForInvokeBasic<T>(java.lang.invoke.MethodHandle h)
+			where T : class
+		{
+#if FIRST_PASS
+			return null;
+#else
+			T del = h.form.vmentry.vmtarget as T;
+			if (del == null)
+			{
+				del = MethodHandleUtil.GetVoidAdapter(h.form.vmentry) as T;
 			}
 			return del;
 #endif
@@ -943,6 +933,19 @@ namespace IKVM.Runtime
 			where T : class // Delegate
 		{
 #if !FIRST_PASS
+			// when a CallSite is first constructed, it doesn't call MethodHandleNatives.setCallSiteTargetNormal(),
+			// so we have to check if we need to initialize it here (i.e. attach an IndyCallSite<T> to it)
+			if (cs != null)
+			{
+				if (cs.ics == null)
+				{
+					Java_java_lang_invoke_MethodHandleNatives.InitializeCallSite(cs);
+				}
+				lock (cs.ics)
+				{
+					cs.ics.SetTarget(cs.target);
+				}
+			}
 			IndyCallSite<T> ics;
 			if (x != null || cs == null || (ics = cs.ics as IndyCallSite<T>) == null)
 			{
@@ -954,14 +957,13 @@ namespace IKVM.Runtime
 					? java.lang.invoke.MethodHandles.constant(typeof(java.lang.BootstrapMethodError), x)
 					: java.lang.invoke.MethodHandles.publicLookup().findConstructor(typeof(java.lang.BootstrapMethodError), java.lang.invoke.MethodType.methodType(typeof(void), typeof(string), typeof(Exception)))
 						.bindTo("call site initialization exception").bindTo(x);
-				ics = new IndyCallSite<T>((T)
+				ics = new IndyCallSite<T>();
+				((IIndyCallSite)ics).SetTarget(
 					java.lang.invoke.MethodHandles.dropArguments(
 						java.lang.invoke.MethodHandles.foldArguments(
 							java.lang.invoke.MethodHandles.throwException(type.returnType(), typeof(java.lang.BootstrapMethodError)),
 								exc),
-						0, type.parameterArray())
-					.vmtarget,
-					false);
+						0, type.parameterArray()));
 			}
 			IndyCallSite<T> curr = site;
 			if (curr.IsBootstrap)
@@ -972,10 +974,13 @@ namespace IKVM.Runtime
 		}
 	}
 
+	interface IIndyCallSite
+	{
+		void SetTarget(java.lang.invoke.MethodHandle mh);
+	}
+
 	public sealed class IndyCallSite<T>
-#if !FIRST_PASS
-		: java.lang.invoke.CallSite.IndyCallSite
-#endif
+		: IIndyCallSite
 		where T : class // Delegate
 	{
 		internal readonly bool IsBootstrap;
@@ -991,13 +996,13 @@ namespace IKVM.Runtime
 			this.target = target;
 		}
 
-#if !FIRST_PASS
-		void java.lang.invoke.CallSite.IndyCallSite.setTarget(object target)
+		void IIndyCallSite.SetTarget(java.lang.invoke.MethodHandle mh)
 		{
-			this.target = (T)target;
-		}
+#if !FIRST_PASS
+			target = ByteCodeHelper.GetDelegateForInvokeExact<T>(mh);
 #endif
-
+		}
+		
 		public static IndyCallSite<T> CreateBootstrap(T bootstrap)
 		{
 			return new IndyCallSite<T>(bootstrap, true);

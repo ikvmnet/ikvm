@@ -59,7 +59,7 @@ public final class Unsafe
     // this is the intrinsified version of objectFieldOffset(XXX.class.getDeclaredField("xxx"))
     public long objectFieldOffset(Class c, String field)
     {
-        return fieldOffset(ReflectHelper.createFieldAndMakeAccessible(c, field));
+        return allocateUnsafeFieldId(ReflectHelper.createFieldAndMakeAccessible(c, field));
     }
 
     // NOTE we have a really lame (and slow) implementation!
@@ -69,11 +69,16 @@ public final class Unsafe
         {
             throw new IllegalArgumentException();
         }
-        return fieldOffset(field);
+        return allocateUnsafeFieldId(field);
     }
 
     @Deprecated
     public int fieldOffset(Field original)
+    {
+        return allocateUnsafeFieldId(original);
+    }
+    
+    static int allocateUnsafeFieldId(Field original)
     {
         Field copy = ReflectHelper.copyFieldAndMakeAccessible(original);
         synchronized(fields)

@@ -778,7 +778,7 @@ namespace IKVM.Internal
 				}
 				return type.MakeGenericType(types);
 			}
-			return MethodHandleUtil.CreateDelegateType(paramTypes, ReturnType);
+			return MethodHandleUtil.CreateMemberWrapperDelegateType(paramTypes, ReturnType);
 		}
 
 		internal void ResolveMethod()

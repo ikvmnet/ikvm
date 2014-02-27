@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2011-2013 Jeroen Frijters
+  Copyright (C) 2011-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -95,7 +95,7 @@ static partial class MethodHandleUtil
 			&& type.GetGenericTypeDefinition() == typeofMHA;
 	}
 
-	internal static Type CreateDelegateType(TypeWrapper[] args, TypeWrapper ret)
+	internal static Type CreateMethodHandleDelegateType(TypeWrapper[] args, TypeWrapper ret)
 	{
 		Type[] typeArgs = new Type[args.Length];
 		for (int i = 0; i < args.Length; i++)
@@ -105,14 +105,14 @@ static partial class MethodHandleUtil
 		return CreateDelegateType(typeArgs, ret.TypeAsSignatureType);
 	}
 
-	internal static Type CreateDelegateType(TypeWrapper tw, MethodWrapper mw)
+	internal static Type CreateMemberWrapperDelegateType(TypeWrapper[] args, TypeWrapper ret)
 	{
-		TypeWrapper[] args = mw.GetParameters();
-		if (!mw.IsStatic)
+		Type[] typeArgs = new Type[args.Length];
+		for (int i = 0; i < args.Length; i++)
 		{
-			args = ArrayUtil.Concat(tw, args);
+			typeArgs[i] = AsBasicType(args[i]);
 		}
-		return CreateDelegateType(args, mw.ReturnType);
+		return CreateDelegateType(typeArgs, AsBasicType(ret));
 	}
 
 	private static Type CreateDelegateType(Type[] types, Type retType)
@@ -157,5 +157,53 @@ static partial class MethodHandleUtil
 		Type[] outArray = new Type[length];
 		Array.Copy(inArray, start, outArray, 0, length);
 		return outArray;
+	}
+
+	internal static Type AsBasicType(TypeWrapper tw)
+	{
+		if (tw == PrimitiveTypeWrapper.BOOLEAN || tw == PrimitiveTypeWrapper.BYTE || tw == PrimitiveTypeWrapper.CHAR || tw == PrimitiveTypeWrapper.SHORT || tw == PrimitiveTypeWrapper.INT)
+		{
+			return Types.Int32;
+		}
+		else if (tw == PrimitiveTypeWrapper.LONG || tw == PrimitiveTypeWrapper.FLOAT || tw == PrimitiveTypeWrapper.DOUBLE || tw == PrimitiveTypeWrapper.VOID)
+		{
+			return tw.TypeAsSignatureType;
+		}
+		else
+		{
+			return Types.Object;
+		}
+	}
+
+	internal static bool HasOnlyBasicTypes(TypeWrapper[] args, TypeWrapper ret)
+	{
+		foreach (TypeWrapper tw in args)
+		{
+			if (!IsBasicType(tw))
+			{
+				return false;
+			}
+		}
+		return IsBasicType(ret);
+	}
+
+	private static bool IsBasicType(TypeWrapper tw)
+	{
+		return tw == PrimitiveTypeWrapper.INT
+			|| tw == PrimitiveTypeWrapper.LONG
+			|| tw == PrimitiveTypeWrapper.FLOAT
+			|| tw == PrimitiveTypeWrapper.DOUBLE
+			|| tw == PrimitiveTypeWrapper.VOID
+			|| tw == CoreClasses.java.lang.Object.Wrapper;
+	}
+
+	internal static int SlotCount(TypeWrapper[] parameters)
+	{
+		int count = 0;
+		for (int i = 0; i < parameters.Length; i++)
+		{
+			count += parameters[i].IsWidePrimitive ? 2 : 1;
+		}
+		return count;
 	}
 }

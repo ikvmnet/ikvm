@@ -1674,6 +1674,7 @@ sealed class MethodAnalyzer
 							case NormalizedByteCode.__dynamic_invokeinterface:
 							case NormalizedByteCode.__dynamic_invokestatic:
 							case NormalizedByteCode.__methodhandle_invoke:
+							case NormalizedByteCode.__methodhandle_link:
 							{
 								ClassFile.ConstantPoolItemMI cpi = GetMethodref(instr.Arg1);
 								TypeWrapper retType = cpi.GetRetType();
@@ -3556,16 +3557,29 @@ sealed class MethodAnalyzer
 		NormalizedByteCode invoke = instr.NormalizedOpCode;
 		bool isnew = false;
 		TypeWrapper thisType;
-		if(invoke == NormalizedByteCode.__invokestatic)
-		{
-			thisType = null;
-		}
-		else if (invoke == NormalizedByteCode.__invokevirtual
+		if (invoke == NormalizedByteCode.__invokevirtual
 			&& cpi.Class == "java.lang.invoke.MethodHandle"
-			&& (cpi.Name == "invoke" || cpi.Name == "invokeExact"))
+			&& (cpi.Name == "invoke" || cpi.Name == "invokeExact" || cpi.Name == "invokeBasic"))
 		{
+			if (cpi.GetArgTypes().Length > 127 && MethodHandleUtil.SlotCount(cpi.GetArgTypes()) > 254)
+			{
+				instr.SetHardError(HardError.LinkageError, AllocErrorMessage("bad parameter count"));
+				return;
+			}
 			instr.PatchOpCode(NormalizedByteCode.__methodhandle_invoke);
 			return;
+		}
+		else if (invoke == NormalizedByteCode.__invokestatic
+			&& cpi.Class == "java.lang.invoke.MethodHandle"
+			&& (cpi.Name == "linkToVirtual" || cpi.Name == "linkToStatic" || cpi.Name == "linkToSpecial" || cpi.Name == "linkToInterface")
+			&& CoreClasses.java.lang.invoke.MethodHandle.Wrapper.IsPackageAccessibleFrom(wrapper))
+		{
+			instr.PatchOpCode(NormalizedByteCode.__methodhandle_link);
+			return;
+		}
+		else if (invoke == NormalizedByteCode.__invokestatic)
+		{
+			thisType = null;
 		}
 		else
 		{
