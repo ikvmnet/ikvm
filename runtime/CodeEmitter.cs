@@ -2388,7 +2388,7 @@ namespace IKVM.Internal
 					{
 						Console.Write(" " + code[i].MethodBase);
 					}
-					else if (code[i].opcode == OpCodes.Ldfld || code[i].opcode == OpCodes.Ldsfld)
+					else if (code[i].opcode == OpCodes.Ldfld || code[i].opcode == OpCodes.Ldsfld || code[i].opcode == OpCodes.Stfld || code[i].opcode == OpCodes.Stsfld)
 					{
 						Console.Write(" " + code[i].FieldInfo);
 					}
