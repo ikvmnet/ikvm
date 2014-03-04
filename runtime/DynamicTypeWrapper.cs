@@ -3709,7 +3709,9 @@ namespace IKVM.Internal
 			private Dictionary<FieldWrapper, MethodBuilder> arfuMap;
 			private Dictionary<MethodKey, MethodInfo> invokespecialstubcache;
 			private Dictionary<string, MethodInfo> dynamicClassLiteral;
-#if !STATIC_COMPILER
+#if STATIC_COMPILER
+			private TypeBuilder interfaceHelperMethodsTypeBuilder;
+#else
 			private List<object> liveObjects;
 #endif
 
@@ -3760,7 +3762,7 @@ namespace IKVM.Internal
 				if (!dynamicClassLiteral.TryGetValue(tw.Name, out method))
 				{
 					FieldBuilder fb = typeBuilder.DefineField("__<>class", CoreClasses.java.lang.Class.Wrapper.TypeAsSignatureType, FieldAttributes.PrivateScope | FieldAttributes.Static);
-					MethodBuilder mb = typeBuilder.DefineMethod("__<>class", MethodAttributes.PrivateScope | MethodAttributes.Static, CoreClasses.java.lang.Class.Wrapper.TypeAsSignatureType, Type.EmptyTypes);
+					MethodBuilder mb = DefineHelperMethod("__<>class", CoreClasses.java.lang.Class.Wrapper.TypeAsSignatureType, Type.EmptyTypes);
 					CodeEmitter ilgen2 = CodeEmitter.Create(mb);
 					ilgen2.Emit(OpCodes.Ldsfld, fb);
 					CodeEmitterLabel label = ilgen2.DefineLabel();
@@ -3792,7 +3794,7 @@ namespace IKVM.Internal
 			{
 				TypeWrapper tw = CoreClasses.ikvm.@internal.CallerID.Wrapper;
 				FieldBuilder callerIDField = typeBuilder.DefineField("__<callerID>", tw.TypeAsSignatureType, FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.SpecialName);
-				MethodBuilder mb = typeBuilder.DefineMethod("__<GetCallerID>", MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.SpecialName, tw.TypeAsSignatureType, Type.EmptyTypes);
+				MethodBuilder mb = DefineHelperMethod("__<GetCallerID>", tw.TypeAsSignatureType, Type.EmptyTypes);
 				callerIDMethod = mb;
 				CodeEmitter ilgen = CodeEmitter.Create(mb);
 				ilgen.Emit(OpCodes.Ldsfld, callerIDField);
@@ -5836,9 +5838,27 @@ namespace IKVM.Internal
 				return tb;
 			}
 
+			private MethodBuilder DefineHelperMethod(string name, Type returnType, Type[] parameterTypes)
+			{
+#if STATIC_COMPILER
+				// FXBUG csc.exe doesn't like non-public methods in interfaces, so for public interfaces we move
+				// the helper methods into a nested type.
+				if (wrapper.IsPublic && wrapper.IsInterface)
+				{
+					if (interfaceHelperMethodsTypeBuilder == null)
+					{
+						interfaceHelperMethodsTypeBuilder = typeBuilder.DefineNestedType("__<>IHM", TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.BeforeFieldInit);
+						RegisterNestedTypeBuilder(interfaceHelperMethodsTypeBuilder);
+					}
+					return interfaceHelperMethodsTypeBuilder.DefineMethod(name, MethodAttributes.PrivateScope | MethodAttributes.Static, returnType, parameterTypes);
+				}
+#endif
+				return typeBuilder.DefineMethod(name, MethodAttributes.PrivateScope | MethodAttributes.Static, returnType, parameterTypes);
+			}
+
 			internal MethodBuilder DefineMethodHandleDispatchStub(Type returnType, Type[] parameterTypes)
 			{
-				return typeBuilder.DefineMethod("__<>MHC", MethodAttributes.Static | MethodAttributes.PrivateScope, returnType, parameterTypes);
+				return DefineHelperMethod("__<>MHC", returnType, parameterTypes);
 			}
 
 			internal FieldBuilder DefineMethodHandleInvokeCacheField(Type fieldType)
@@ -5858,7 +5878,7 @@ namespace IKVM.Internal
 
 			internal MethodBuilder DefineDelegateInvokeErrorStub(Type returnType, Type[] parameterTypes)
 			{
-				return typeBuilder.DefineMethod("__<>", MethodAttributes.PrivateScope | MethodAttributes.Static, returnType, parameterTypes);
+				return DefineHelperMethod("__<>", returnType, parameterTypes);
 			}
 
 			internal MethodInfo GetInvokeSpecialStub(MethodWrapper method)
