@@ -55,7 +55,7 @@ namespace IKVM.Internal
 		private CompilerOptions options;
 		private AssemblyClassLoader[] referencedAssemblies;
 		private Dictionary<string, string> nameMappings = new Dictionary<string, string>();
-		private Dictionary<string, string> packages;
+		private Packages packages;
 		private Dictionary<string, List<TypeWrapper>> ghosts;
 		private TypeWrapper[] mappedExceptions;
 		private bool[] mappedExceptionsAllSubClasses;
@@ -362,6 +362,12 @@ namespace IKVM.Internal
 						{
 							itemRef.MarkAsStub();
 						}
+						int pos = f.Name.LastIndexOf('.');
+						if (pos != -1)
+						{
+							string manifestJar = options.IsClassesJar(itemRef.Jar) ? null : itemRef.Jar.Name;
+							packages.DefinePackage(f.Name.Substring(0, pos), manifestJar);
+						}
 						return tw;
 					}
 					catch (ClassFormatError x)
@@ -555,9 +561,8 @@ namespace IKVM.Internal
 			// add a package list and export map
 			if(options.sharedclassloader == null || options.sharedclassloader[0] == this)
 			{
-				string[] list = new string[packages.Count];
-				packages.Keys.CopyTo(list, 0);
-				mb.SetCustomAttribute(new CustomAttributeBuilder(JVM.LoadType(typeof(PackageListAttribute)).GetConstructor(new Type[] { JVM.Import(typeof(string[])) }), new object[] { list }));
+				string[][] list = packages.ToArray();
+				mb.SetCustomAttribute(new CustomAttributeBuilder(JVM.LoadType(typeof(PackageListAttribute)).GetConstructor(new Type[] { JVM.Import(typeof(string[][])) }), new object[] { list }));
 				// We can't add the resource when we're a module, because a multi-module assembly has a single resource namespace
 				// and since you cannot combine -target:module with -sharedclassloader we don't need an export map
 				// (the wildcard exports have already been added above, by making sure that we statically reference the assemblies).
@@ -2612,6 +2617,10 @@ namespace IKVM.Internal
 					}
 				}
 			}
+			foreach (CompilerClassLoader compiler in compilers)
+			{
+				compiler.CompilePass0();
+			}
 			Dictionary<CompilerClassLoader, Type> mainAssemblyTypes = new Dictionary<CompilerClassLoader, Type>();
 			foreach (CompilerClassLoader compiler in compilers)
 			{
@@ -2958,6 +2967,18 @@ namespace IKVM.Internal
 			return asm;
 		}
 
+		private void CompilePass0()
+		{
+			if(options.sharedclassloader != null && options.sharedclassloader[0] != this)
+			{
+				packages = options.sharedclassloader[0].packages;
+			}
+			else
+			{
+				packages = new Packages();
+			}
+		}
+
 		private void CompilePass1()
 		{
 			Tracer.Info(Tracer.Compiler, "Compiling class files (1)");
@@ -2971,14 +2992,6 @@ namespace IKVM.Internal
 			if(map != null && CheckCompilingCoreAssembly())
 			{
 				FakeTypes.Create(GetTypeWrapperFactory().ModuleBuilder, this);
-			}
-			if(options.sharedclassloader != null && options.sharedclassloader[0] != this)
-			{
-				packages = options.sharedclassloader[0].packages;
-			}
-			else
-			{
-				packages = new Dictionary<string, string>();
 			}
 			allwrappers = new List<TypeWrapper>();
 			foreach(string s in classesToCompile)
@@ -2994,11 +3007,6 @@ namespace IKVM.Internal
 							StaticCompiler.IssueMessage(options, Message.SkippingReferencedClass, s, ((AssemblyClassLoader)loader).GetAssembly(wrapper).FullName);
 						}
 						continue;
-					}
-					int pos = wrapper.Name.LastIndexOf('.');
-					if(pos != -1)
-					{
-						packages[wrapper.Name.Substring(0, pos)] = "";
 					}
 					if(options.sharedclassloader != null && options.sharedclassloader[0] != this)
 					{
@@ -3560,6 +3568,11 @@ namespace IKVM.Internal
 			return jars[classesJar];
 		}
 
+		internal bool IsClassesJar(Jar jar)
+		{
+			return classesJar != -1 && jars[classesJar] == jar;
+		}
+
 		internal Jar GetResourcesJar()
 		{
 			if (resourcesJar == -1)
@@ -4082,6 +4095,52 @@ namespace IKVM.Internal
 		internal static void SuppressWarning(CompilerOptions options, Message message, string name)
 		{
 			options.suppressWarnings[(int)message + ":" + name] = null;
+		}
+	}
+
+	sealed class Packages
+	{
+		private readonly List<string> packages = new List<string>();
+		private readonly Dictionary<string, string> packagesSet = new Dictionary<string, string>();
+
+		internal void DefinePackage(string packageName, string jar)
+		{
+			if (!packagesSet.ContainsKey(packageName))
+			{
+				packages.Add(packageName);
+				packagesSet.Add(packageName, jar);
+			}
+		}
+
+		// see PackageListAttribute for the structure of this array
+		internal string[][] ToArray()
+		{
+			List<string[]> list = new List<string[]>();
+			// we use an empty string to indicate we don't yet have a jar,
+			// because null is used for packages that were defined from
+			// the file system (i.e. don't have a jar to load a manifest from)
+			string currentJar = "";
+			List<string> currentList = new List<string>();
+			foreach (string package in packages)
+			{
+				string jar = packagesSet[package];
+				if (jar != currentJar)
+				{
+					if (currentList.Count != 0)
+					{
+						list.Add(currentList.ToArray());
+						currentList.Clear();
+					}
+					currentList.Add(jar);
+					currentJar = jar;
+				}
+				currentList.Add(package);
+			}
+			if (currentList.Count != 0)
+			{
+				list.Add(currentList.ToArray());
+			}
+			return list.ToArray();
 		}
 	}
 }

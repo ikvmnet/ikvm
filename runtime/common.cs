@@ -271,25 +271,6 @@ namespace IKVM.NativeCode.ikvm.runtime
 			return null;
 		}
 
-		private static global::java.util.jar.Manifest GetManifest(global::java.lang.ClassLoader _this)
-		{
-			try
-			{
-				global::java.net.URL url = findResource(_this, "META-INF/MANIFEST.MF");
-				if (url != null)
-				{
-					return new global::java.util.jar.Manifest(url.openStream());
-				}
-			}
-			catch (global::java.net.MalformedURLException)
-			{
-			}
-			catch (global::java.io.IOException)
-			{
-			}
-			return null;
-		}
-
 		private static string GetAttributeValue(global::java.util.jar.Attributes.Name name, global::java.util.jar.Attributes first, global::java.util.jar.Attributes second)
 		{
 			string result = null;
@@ -310,31 +291,38 @@ namespace IKVM.NativeCode.ikvm.runtime
 #if !FIRST_PASS
 			AssemblyClassLoader_ wrapper = (AssemblyClassLoader_)ClassLoaderWrapper.GetClassLoaderWrapper(_this);
 			global::java.net.URL sealBase = GetCodeBase(wrapper.MainAssembly);
-			global::java.util.jar.Manifest manifest = GetManifest(_this);
-			global::java.util.jar.Attributes attr = null;
-			if (manifest != null)
+			foreach (string[] packages in wrapper.GetPackageInfo())
 			{
-				attr = manifest.getMainAttributes();
-			}
-			string[] packages = wrapper.GetPackages();
-			for (int i = 0; i < packages.Length; i++)
-			{
-				string name = packages[i];
-				if (_this.getPackage(name) == null)
+				global::java.util.jar.Manifest manifest = null;
+				global::java.util.jar.Attributes attr = null;
+				if (packages[0] != null)
 				{
-					global::java.util.jar.Attributes entryAttr = null;
-					if (manifest != null)
+					global::java.util.jar.JarFile jarFile = new global::java.util.jar.JarFile(VirtualFileSystem.GetAssemblyResourcesPath(wrapper.MainAssembly) + packages[0]);
+					manifest = jarFile.getManifest();
+				}
+				if (manifest != null)
+				{
+					attr = manifest.getMainAttributes();
+				}
+				for (int i = 1; i < packages.Length; i++)
+				{
+					string name = packages[i];
+					if (_this.getPackage(name) == null)
 					{
-						entryAttr = manifest.getAttributes(name.Replace('.', '/') + '/');
+						global::java.util.jar.Attributes entryAttr = null;
+						if (manifest != null)
+						{
+							entryAttr = manifest.getAttributes(name.Replace('.', '/') + '/');
+						}
+						_this.definePackage(name,
+							GetAttributeValue(global::java.util.jar.Attributes.Name.SPECIFICATION_TITLE, entryAttr, attr),
+							GetAttributeValue(global::java.util.jar.Attributes.Name.SPECIFICATION_VERSION, entryAttr, attr),
+							GetAttributeValue(global::java.util.jar.Attributes.Name.SPECIFICATION_VENDOR, entryAttr, attr),
+							GetAttributeValue(global::java.util.jar.Attributes.Name.IMPLEMENTATION_TITLE, entryAttr, attr),
+							GetAttributeValue(global::java.util.jar.Attributes.Name.IMPLEMENTATION_VERSION, entryAttr, attr),
+							GetAttributeValue(global::java.util.jar.Attributes.Name.IMPLEMENTATION_VENDOR, entryAttr, attr),
+							"true".Equals(GetAttributeValue(global::java.util.jar.Attributes.Name.SEALED, entryAttr, attr), StringComparison.OrdinalIgnoreCase) ? sealBase : null);
 					}
-					_this.definePackage(name,
-						GetAttributeValue(global::java.util.jar.Attributes.Name.SPECIFICATION_TITLE, entryAttr, attr),
-						GetAttributeValue(global::java.util.jar.Attributes.Name.SPECIFICATION_VERSION, entryAttr, attr),
-						GetAttributeValue(global::java.util.jar.Attributes.Name.SPECIFICATION_VENDOR, entryAttr, attr),
-						GetAttributeValue(global::java.util.jar.Attributes.Name.IMPLEMENTATION_TITLE, entryAttr, attr),
-						GetAttributeValue(global::java.util.jar.Attributes.Name.IMPLEMENTATION_VERSION, entryAttr, attr),
-						GetAttributeValue(global::java.util.jar.Attributes.Name.IMPLEMENTATION_VENDOR, entryAttr, attr),
-						"true".Equals(GetAttributeValue(global::java.util.jar.Attributes.Name.SEALED, entryAttr, attr), StringComparison.OrdinalIgnoreCase) ? sealBase : null);
 				}
 			}
 #endif

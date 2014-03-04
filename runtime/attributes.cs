@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Collections.Generic;
 #if STATIC_COMPILER || STUB_GENERATOR
 using IKVM.Reflection;
 using Type = IKVM.Reflection.Type;
@@ -805,16 +806,28 @@ namespace IKVM.Attributes
 	[AttributeUsage(AttributeTargets.Module)]
 	public sealed class PackageListAttribute : Attribute
 	{
-		private string[] packages;
+		internal string[][] packageInfo;
 
-		public PackageListAttribute(string[] packages)
+		/*
+		 * Format:
+		 *    [ [ "jar file", "package 1", ..., "package N" ], ... ]
+		 */
+		public PackageListAttribute(string[][] packageInfo)
 		{
-			this.packages = packages;
+			this.packageInfo = packageInfo;
 		}
 
 		public string[] GetPackages()
 		{
-			return packages;
+			List<string> list = new List<string>();
+			foreach (string[] packages in packageInfo)
+			{
+				for (int i = 1; i < packages.Length; i++)
+				{
+					list.Add(packages[i]);
+				}
+			}
+			return list.ToArray();
 		}
 	}
 

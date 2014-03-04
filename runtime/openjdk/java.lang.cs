@@ -814,9 +814,12 @@ static class Java_java_lang_Package
 		{
 			Dictionary<string, string> dict = new Dictionary<string, string>();
 			string path = VirtualFileSystem.GetAssemblyResourcesPath(JVM.CoreAssembly) + "resources.jar";
-			foreach (string pkg in ClassLoaderWrapper.GetBootstrapClassLoader().GetPackages())
+			foreach (string[] pkgs in ClassLoaderWrapper.GetBootstrapClassLoader().GetPackageInfo())
 			{
-				dict[pkg.Replace('.', '/') + "/"] = path;
+				for (int i = 1; i < pkgs.Length; i++)
+				{
+					dict[pkgs[i].Replace('.', '/') + "/"] = path;
+				}
 			}
 			Interlocked.CompareExchange(ref systemPackages, dict, null);
 		}
