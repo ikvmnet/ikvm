@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2003-2012 Jeroen Frijters
+  Copyright (C) 2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -23,156 +23,115 @@
 */
 package java.lang.ref;
 
-import cli.System.Collections.Hashtable;
 import sun.misc.Cleaner;
 
 public abstract class Reference<T>
 {
-    // accessed by inner class
-    volatile cli.System.WeakReference weakRef;
-    volatile T strongRef;
-    volatile ReferenceQueue<? super T> queue;
-    volatile Reference next;
-    
-    private static native boolean noclassgc();
+    private final cli.System.WeakReference weakRef;
+    T strongRef;
+    ReferenceQueue queue;
+    Reference<T> next;
 
     Reference(T referent)
     {
         this(referent, null);
     }
 
-    Reference(T referent, ReferenceQueue<? super T> queue)
+    Reference(T referent, ReferenceQueue queue)
     {
         this.queue = queue == null ? ReferenceQueue.NULL : queue;
-        if (referent != null)
+        if (referent instanceof Class && noclassgc())
         {
-            if (referent instanceof Class && noclassgc())
+            // We don't do Class gc, so no point in using a weak reference for classes.
+            weakRef = null;
+            strongRef = referent;
+        }
+        else if (referent == null)
+        {
+            weakRef = null;
+        }
+        else
+        {
+            weakRef = new cli.System.WeakReference(referent, this instanceof PhantomReference);
+            if (queue != null)
             {
-                // We don't do Class gc, so no point in using a weak reference for classes.
-                strongRef = referent;
+                queue.addToActiveList(this);
             }
-            else
+            if (this instanceof Cleaner)
             {
-                weakRef = new cli.System.WeakReference(referent, this instanceof PhantomReference);
-                if (queue != null || referent instanceof Cleaner || this instanceof SoftReference)
-                {
-                    new QueueWatcher(this);
-                }
+                new CleanerGuard();
             }
         }
     }
 
-    private static final boolean debug = false;
-
-    private static final class QueueWatcher
+    private final class CleanerGuard
     {
-        private static final Hashtable keepAlive = Hashtable.Synchronized(new Hashtable());
-        private cli.System.WeakReference handle;
-
-        QueueWatcher(Reference r)
-        {
-            handle = new cli.System.WeakReference(r, true);
-            // FXBUG when a WeakReference is finalizer reachable, it gets cleared by the GC (even if we call GC.SuppressFinalize),
-            // so we have to maintain a strong reference to it to prevent it from being cleared.
-            keepAlive.Add(handle, null);
-        }
-
-        boolean check(Reference r)
-        {
-            r.strongRef = null;
-            boolean alive = false;
-            try
-            {
-                if (false) throw new cli.System.InvalidOperationException();
-                cli.System.WeakReference referent = r.weakRef;
-                if (referent == null)
-                {
-                    // ref was explicitly cleared, so we don't enqueue
-                    return false;
-                }
-                alive = referent.get_IsAlive();
-            }
-            catch (cli.System.InvalidOperationException x)
-            {
-                // this happens if the reference is already finalized (if we were
-                // the only one still hanging on to it)
-            }
-            if (alive)
-            {
-                // we don't want to keep creating finalizable objects during shutdown
-                if (!cli.System.Environment.get_HasShutdownStarted())
-                {
-                    return true;
-                }
-            }
-            else
-            {
-                if (r instanceof Cleaner)
-                {
-                    ((Cleaner)r).clean();
-                }
-                else if (r.queue != null)
-                {
-                    r.queue.enqueue(r);
-                }
-            }
-            return false;
-        }
-
         protected void finalize()
         {
-            Reference r = (Reference)handle.get_Target();
-            if (debug)
-                cli.System.Console.WriteLine("~QueueWatcher: " + hashCode() + " on " + r);
-            if (r != null && r.next == null && check(r))
-            {
-                cli.System.GC.ReRegisterForFinalize(QueueWatcher.this);
-            }
-            else
-            {
-                handle.set_Target(null);
-                keepAlive.Remove(handle);
+            if (isActive()) {
+                cli.System.GC.ReRegisterForFinalize(this);
+            } else {
+                ((Cleaner)Reference.this).clean();
             }
         }
     }
 
     public T get()
     {
-        try
+        if (weakRef == null)
         {
-            if (false) throw new cli.System.InvalidOperationException();
-            cli.System.WeakReference referent = this.weakRef;
-            if (referent == null)
-            {
-                return strongRef;
-            }
-            T value = (T)referent.get_Target();
-            if (value == null)
-            {
-                queue.enqueue(this);
-            }
-            return value;
+            return strongRef;
         }
-        catch (cli.System.InvalidOperationException x)
-        {
-            // we were already finalized, so we just return null.
-            return null;
-        }
+        return (T)weakRef.get_Target();
     }
 
     public void clear()
     {
-        weakRef = null;
+        if (weakRef != null)
+        {
+            try
+            {
+                if (false) throw new cli.System.InvalidOperationException();
+                weakRef.set_Target(null);
+            }
+            catch (cli.System.InvalidOperationException x)
+            {
+                // we were already finalized
+            }
+        }
         strongRef = null;
+        queue.clear(this);
     }
-
-    public synchronized boolean isEnqueued()
+    
+    public boolean isEnqueued()
     {
-        return queue != ReferenceQueue.NULL && next != null;
+        if (queue == ReferenceQueue.ENQUEUED) {
+            return true;
+        }
+        if (queue == ReferenceQueue.NULL) {
+            return false;
+        }
+        if (isStrongOrNullRef() || isActive()) {
+            return false;
+        }
+        queue.enqueue(this);
+        return queue == ReferenceQueue.ENQUEUED;
     }
 
-    public boolean enqueue() 
+    public boolean enqueue()
     {
         return queue.enqueue(this);
     }
+
+    final boolean isActive()
+    {
+        return strongRef != null || (weakRef != null && weakRef.get_IsAlive());
+    }
+
+    final boolean isStrongOrNullRef()
+    {
+        return weakRef == null;
+    }
+
+    static native boolean noclassgc();
 }

@@ -82,8 +82,7 @@ public class SoftReference<T> extends Reference<T> {
      * @param referent object the new soft reference will refer to
      */
     public SoftReference(T referent) {
-        super(referent);
-        strongRef = referent;
+        this(referent, null);
     }
 
     /**
@@ -97,7 +96,7 @@ public class SoftReference<T> extends Reference<T> {
      */
     public SoftReference(T referent, ReferenceQueue<? super T> q) {
         super(referent, q);
-        strongRef = referent;
+        setStrongRef(referent);
     }
 
     /**
@@ -109,9 +108,26 @@ public class SoftReference<T> extends Reference<T> {
      *           <code>null</code> if this reference object has been cleared
      */
     public T get() {
-        T o = super.get();
-        strongRef = o;
+        T o = strongRef;
+        if (o != null) {
+            return o;
+        }
+        o = super.get();
+        setStrongRef(o);
         return o;
     }
 
+    private void setStrongRef(T referent)
+    {
+        if (referent != null) {
+            strongRef = referent;
+            if (!(referent instanceof Class && noclassgc())) {
+                new Object() {
+                    protected void finalize() {
+                        strongRef = null;
+                    }
+                };
+            }
+        }
+    }
 }

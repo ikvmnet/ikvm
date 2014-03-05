@@ -91,6 +91,7 @@ java/lang/management/PlatformComponent.java
 java/lang/ProcessImpl.java
 java/lang/PropertyConstants.java
 java/lang/ref/Reference.java
+java/lang/ref/ReferenceQueue.java
 java/lang/ref/SoftReference.java
 java/lang/reflect/Constructor.java
 java/lang/reflect/Field.java
@@ -8968,7 +8969,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/Readable.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/ref/FinalReference.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/ref/PhantomReference.java
-@OPENJDK7@/jdk/src/share/classes/java/lang/ref/ReferenceQueue.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/ref/WeakReference.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/reflect/AccessibleObject.java
 @OPENJDK7@/jdk/src/share/classes/java/lang/reflect/AnnotatedElement.java
