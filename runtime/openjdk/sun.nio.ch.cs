@@ -998,8 +998,7 @@ namespace IKVM.NativeCode.sun.nio.ch
 			{
 				if (useExclBind)
 				{
-					// TODO enable this after we merge OpenJDK 7u40
-					//global::java.net.net_util_md.setExclusiveBind(fd.getSocket());
+					global::java.net.net_util_md.setExclusiveBind(fd.getSocket());
 				}
 				fd.getSocket().Bind(new System.Net.IPEndPoint(global::java.net.SocketUtil.getAddressFromInetAddress(addr, preferIPv6), port));
 			}
