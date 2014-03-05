@@ -1996,7 +1996,7 @@ namespace IKVM.Internal
 							{
 								// apply any .NET custom attributes that are on the annotation to the custom attribute we synthesize
 								// (for example, to allow AttributeUsageAttribute to be overridden)
-								Annotation annotation = Annotation.Load(o.wrapper.GetClassLoader(), def);
+								Annotation annotation = Annotation.Load(o.wrapper, def);
 								if (annotation != null && annotation.IsCustomAttribute)
 								{
 									annotation.Apply(o.wrapper.GetClassLoader(), attributeTypeBuilder, def);
@@ -4237,7 +4237,7 @@ namespace IKVM.Internal
 						ParameterBuilder returnParameter = null;
 						foreach (object[] def in m.Annotations)
 						{
-							Annotation annotation = Annotation.Load(wrapper.GetClassLoader(), def);
+							Annotation annotation = Annotation.Load(wrapper, def);
 							if (annotation != null)
 							{
 								annotation.Apply(wrapper.GetClassLoader(), mb, def);
@@ -4266,7 +4266,7 @@ namespace IKVM.Internal
 					{
 						foreach (object[] def in classFile.Fields[i].Annotations)
 						{
-							Annotation annotation = Annotation.Load(wrapper.GetClassLoader(), def);
+							Annotation annotation = Annotation.Load(wrapper, def);
 							if (annotation != null)
 							{
 								{
@@ -4289,7 +4289,7 @@ namespace IKVM.Internal
 				{
 					foreach (object[] def in classFile.Annotations)
 					{
-						Annotation annotation = Annotation.Load(wrapper.GetClassLoader(), def);
+						Annotation annotation = Annotation.Load(wrapper, def);
 						if (annotation != null)
 						{
 							annotation.Apply(wrapper.GetClassLoader(), typeBuilder, def);
@@ -4381,7 +4381,7 @@ namespace IKVM.Internal
 					{
 						foreach (object[] def in defs[j])
 						{
-							Annotation annotation = Annotation.Load(wrapper.GetClassLoader(), def);
+							Annotation annotation = Annotation.Load(wrapper, def);
 							if (annotation != null)
 							{
 								annotation.Apply(wrapper.GetClassLoader(), parameterBuilders[j], def);

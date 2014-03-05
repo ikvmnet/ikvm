@@ -3112,7 +3112,7 @@ namespace IKVM.Internal
 			}
 			foreach(object[] def in assemblyAnnotations)
 			{
-				Annotation annotation = Annotation.Load(this, def);
+				Annotation annotation = Annotation.LoadAssemblyCustomAttribute(this, def);
 				if(annotation != null)
 				{
 					annotation.Apply(this, assemblyBuilder, def);

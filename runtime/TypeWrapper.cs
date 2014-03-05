@@ -1432,10 +1432,29 @@ namespace IKVM.Internal
 
 	abstract class Annotation
 	{
+#if STATIC_COMPILER
+		internal static Annotation LoadAssemblyCustomAttribute(ClassLoaderWrapper loader, object[] def)
+		{
+			Debug.Assert(def[0].Equals(AnnotationDefaultAttribute.TAG_ANNOTATION));
+			string annotationClass = (string)def[1];
+			if (ClassFile.IsValidFieldSig(annotationClass))
+			{
+				try
+				{
+					return loader.RetTypeWrapperFromSig(annotationClass.Replace('/', '.')).Annotation;
+				}
+				catch (RetargetableJavaException)
+				{
+				}
+			}
+			return null;
+		}
+#endif
+
 #if !STUB_GENERATOR
 		// NOTE this method returns null if the type could not be found
 		// or if the type is not a Custom Attribute and we're not in the static compiler
-		internal static Annotation Load(ClassLoaderWrapper loader, object[] def)
+		internal static Annotation Load(TypeWrapper owner, object[] def)
 		{
 			Debug.Assert(def[0].Equals(AnnotationDefaultAttribute.TAG_ANNOTATION));
 			string annotationClass = (string)def[1];
@@ -1453,7 +1472,13 @@ namespace IKVM.Internal
 			{
 				try
 				{
-					return loader.RetTypeWrapperFromSig(annotationClass.Replace('/', '.')).Annotation;
+					TypeWrapper tw = owner.GetClassLoader().RetTypeWrapperFromSig(annotationClass.Replace('/', '.'));
+					// Java allows inaccessible annotations to be used, so when the annotation isn't visible
+					// we fall back to using the DynamicAnnotationAttribute.
+					if (tw.IsAccessibleFrom(owner))
+					{
+						return tw.Annotation;
+					}
 				}
 				catch (RetargetableJavaException)
 				{
