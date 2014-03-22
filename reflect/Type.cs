@@ -1812,6 +1812,7 @@ namespace IKVM.Reflection
 				else
 				{
 					map = baseType.GetInterfaceMap(interfaceType);
+					ReplaceOverriddenMethods(map.TargetMethods);
 				}
 			}
 			else
@@ -1843,6 +1844,35 @@ namespace IKVM.Reflection
 			}
 			map.TargetType = this;
 			return map;
+		}
+
+		private void ReplaceOverriddenMethods(MethodInfo[] baseMethods)
+		{
+			__MethodImplMap impl = __GetMethodImplMap();
+			for (int i = 0; i < baseMethods.Length; i++)
+			{
+				if (!baseMethods[i].IsFinal)
+				{
+					MethodInfo def = baseMethods[i].GetBaseDefinition();
+					for (int j = 0; j < impl.MethodDeclarations.Length; j++)
+					{
+						for (int k = 0; k < impl.MethodDeclarations[j].Length; k++)
+						{
+							if (impl.MethodDeclarations[j][k].GetBaseDefinition() == def)
+							{
+								baseMethods[i] = impl.MethodBodies[j];
+								goto next;
+							}
+						}
+					}
+					MethodInfo candidate = FindMethod(def.Name, def.MethodSignature) as MethodInfo;
+					if (candidate != null && candidate.IsVirtual && !candidate.IsNewSlot)
+					{
+						baseMethods[i] = candidate;
+					}
+				}
+			next: ;
+			}
 		}
 
 		internal void FillInExplicitInterfaceMethods(MethodInfo[] interfaceMethods, MethodInfo[] targetMethods)
