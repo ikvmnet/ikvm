@@ -1801,51 +1801,61 @@ namespace IKVM.Reflection
 		public InterfaceMapping GetInterfaceMap(Type interfaceType)
 		{
 			CheckBaked();
-			InterfaceMapping map = new InterfaceMapping();
-			if (!IsDirectlyImplementedInterface(interfaceType))
+			InterfaceMapping map;
+			map.InterfaceMethods = interfaceType.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public);
+			map.InterfaceType = interfaceType;
+			map.TargetMethods = new MethodInfo[map.InterfaceMethods.Length];
+			map.TargetType = this;
+			FillInInterfaceMethods(interfaceType, map.InterfaceMethods, map.TargetMethods);
+			return map;
+		}
+
+		private void FillInInterfaceMethods(Type interfaceType, MethodInfo[] interfaceMethods, MethodInfo[] targetMethods)
+		{
+			FillInExplicitInterfaceMethods(interfaceMethods, targetMethods);
+			bool direct = IsDirectlyImplementedInterface(interfaceType);
+			if (direct)
 			{
-				Type baseType = this.BaseType;
-				if (baseType == null)
+				FillInImplicitInterfaceMethods(interfaceMethods, targetMethods);
+			}
+			Type baseType = this.BaseType;
+			if (baseType != null)
+			{
+				baseType.FillInInterfaceMethods(interfaceType, interfaceMethods, targetMethods);
+				ReplaceOverriddenMethods(targetMethods);
+			}
+			if (direct)
+			{
+				for (Type type = this.BaseType; type != null && type.Module == Module; type = type.BaseType)
 				{
-					throw new ArgumentException();
-				}
-				else
-				{
-					map = baseType.GetInterfaceMap(interfaceType);
-					ReplaceOverriddenMethods(map.TargetMethods);
+					type.FillInImplicitInterfaceMethods(interfaceMethods, targetMethods);
 				}
 			}
-			else
+		}
+
+		private void FillInImplicitInterfaceMethods(MethodInfo[] interfaceMethods, MethodInfo[] targetMethods)
+		{
+			MethodBase[] methods = null;
+			for (int i = 0; i < targetMethods.Length; i++)
 			{
-				map.InterfaceMethods = interfaceType.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public);
-				map.InterfaceType = interfaceType;
-				map.TargetMethods = new MethodInfo[map.InterfaceMethods.Length];
-				FillInExplicitInterfaceMethods(map.InterfaceMethods, map.TargetMethods);
-				MethodInfo[] methods = GetMethods(BindingFlags.Instance | BindingFlags.Public);
-				for (int i = 0; i < map.TargetMethods.Length; i++)
+				if (targetMethods[i] == null)
 				{
-					if (map.TargetMethods[i] == null)
+					if (methods == null)
 					{
-						// TODO use proper method resolution (also take into account that no implicit base class implementation is used across assembly boundaries)
-						for (int j = 0; j < methods.Length; j++)
+						methods = __GetDeclaredMethods();
+					}
+					for (int j = 0; j < methods.Length; j++)
+					{
+						if (methods[j].IsVirtual
+							&& methods[j].Name == interfaceMethods[i].Name
+							&& methods[j].MethodSignature.Equals(interfaceMethods[i].MethodSignature))
 						{
-							if (methods[j].IsVirtual
-								&& methods[j].Name == map.InterfaceMethods[i].Name
-								&& methods[j].MethodSignature.Equals(map.InterfaceMethods[i].MethodSignature))
-							{
-								map.TargetMethods[i] = methods[j];
-								break;
-							}
+							targetMethods[i] = (MethodInfo)methods[j];
+							break;
 						}
 					}
 				}
-				for (Type baseType = this.BaseType; baseType != null && interfaceType.IsAssignableFrom(baseType); baseType = baseType.BaseType)
-				{
-					baseType.FillInExplicitInterfaceMethods(map.InterfaceMethods, map.TargetMethods);
-				}
 			}
-			map.TargetType = this;
-			return map;
 		}
 
 		private void ReplaceOverriddenMethods(MethodInfo[] baseMethods)
@@ -1853,7 +1863,7 @@ namespace IKVM.Reflection
 			__MethodImplMap impl = __GetMethodImplMap();
 			for (int i = 0; i < baseMethods.Length; i++)
 			{
-				if (!baseMethods[i].IsFinal)
+				if (baseMethods[i] != null && !baseMethods[i].IsFinal)
 				{
 					MethodInfo def = baseMethods[i].GetBaseDefinition();
 					for (int j = 0; j < impl.MethodDeclarations.Length; j++)
