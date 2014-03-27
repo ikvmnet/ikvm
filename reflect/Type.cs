@@ -1829,10 +1829,12 @@ namespace IKVM.Reflection
 						// TODO use proper method resolution (also take into account that no implicit base class implementation is used across assembly boundaries)
 						for (int j = 0; j < methods.Length; j++)
 						{
-							if (methods[j].Name == map.InterfaceMethods[i].Name
+							if (methods[j].IsVirtual
+								&& methods[j].Name == map.InterfaceMethods[i].Name
 								&& methods[j].MethodSignature.Equals(map.InterfaceMethods[i].MethodSignature))
 							{
 								map.TargetMethods[i] = methods[j];
+								break;
 							}
 						}
 					}
