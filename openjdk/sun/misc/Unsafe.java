@@ -1127,6 +1127,10 @@ public final class Unsafe
         }
         else
         {
+            if (time == 0)
+            {
+                time = Long.MAX_VALUE;
+            }
             java.util.concurrent.locks.LockSupport.parkNanos(time);
         }
     }
