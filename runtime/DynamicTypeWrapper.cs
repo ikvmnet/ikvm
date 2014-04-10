@@ -4477,7 +4477,7 @@ namespace IKVM.Internal
 					TypeBuilder tbMethods = null;
 					foreach (MethodWrapper mw in methods)
 					{
-						if (mw.IsStatic && ParametersAreAccessible(mw))
+						if (mw.IsStatic && mw.Name != StringConstants.CLINIT && ParametersAreAccessible(mw))
 						{
 							if (tbMethods == null)
 							{
