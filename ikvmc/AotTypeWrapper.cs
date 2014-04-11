@@ -55,7 +55,7 @@ namespace IKVM.Internal
 		protected override Type GetBaseTypeForDefineType()
 		{
 			TypeWrapper baseTypeWrapper = BaseTypeWrapper;
-			if (this.IsPublic && this.IsAbstract && baseTypeWrapper.IsPublic && baseTypeWrapper.IsAbstract)
+			if (this.IsPublic && this.IsAbstract && baseTypeWrapper.IsPublic && baseTypeWrapper.IsAbstract && classLoader.WorkaroundAbstractMethodWidening)
 			{
 				// FXBUG
 				// if the current class widens access on an abstract base class method,

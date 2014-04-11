@@ -2946,7 +2946,7 @@ sealed class Compiler
 			}
 			TypeBuilder tb = compiler.context.DefineIndyCallSiteType();
 			FieldBuilder fb = tb.DefineField("value", typeofIndyCallSite, FieldAttributes.Static | FieldAttributes.Assembly);
-			CodeEmitter ilgen = CodeEmitter.Create(ReflectUtil.DefineTypeInitializer(tb));
+			CodeEmitter ilgen = CodeEmitter.Create(ReflectUtil.DefineTypeInitializer(tb, compiler.clazz.GetClassLoader()));
 			ilgen.Emit(OpCodes.Ldnull);
 			ilgen.Emit(OpCodes.Ldftn, CreateBootstrapStub(compiler, cpi, delegateType, tb, fb, methodGetTarget));
 			ilgen.Emit(OpCodes.Newobj, MethodHandleUtil.GetDelegateConstructor(delegateType));
@@ -3233,7 +3233,7 @@ sealed class Compiler
 			{
 				TypeBuilder tb = compiler.context.DefineMethodTypeConstantType(index);
 				FieldBuilder field = tb.DefineField("value", CoreClasses.java.lang.invoke.MethodType.Wrapper.TypeAsSignatureType, FieldAttributes.Assembly | FieldAttributes.Static | FieldAttributes.InitOnly);
-				CodeEmitter ilgen = CodeEmitter.Create(ReflectUtil.DefineTypeInitializer(tb));
+				CodeEmitter ilgen = CodeEmitter.Create(ReflectUtil.DefineTypeInitializer(tb, compiler.clazz.GetClassLoader()));
 				Type delegateType = MethodHandleUtil.CreateDelegateTypeForLoadConstant(args, ret);
 				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.LoadMethodType.MakeGenericMethod(delegateType));
 				ilgen.Emit(OpCodes.Stsfld, field);

@@ -232,7 +232,7 @@ namespace IKVM.Internal
 			{
 				CreateMethod(loader, tb, method);
 			}
-			CreateStaticInitializer(tb, methods);
+			CreateStaticInitializer(tb, methods, loader);
 		}
 
 		private static void CreateConstructor(TypeBuilder tb)
@@ -341,9 +341,9 @@ namespace IKVM.Internal
 			ilgen.DoEmit();
 		}
 
-		private static void CreateStaticInitializer(TypeBuilder tb, List<ProxyMethod> methods)
+		private static void CreateStaticInitializer(TypeBuilder tb, List<ProxyMethod> methods, CompilerClassLoader loader)
 		{
-			CodeEmitter ilgen = CodeEmitter.Create(ReflectUtil.DefineTypeInitializer(tb));
+			CodeEmitter ilgen = CodeEmitter.Create(ReflectUtil.DefineTypeInitializer(tb, loader));
 			CodeEmitterLocal callerID = ilgen.DeclareLocal(CoreClasses.ikvm.@internal.CallerID.Wrapper.TypeAsSignatureType);
 			TypeBuilder tbCallerID = DynamicTypeWrapper.FinishContext.EmitCreateCallerID(tb, ilgen);
 			ilgen.Emit(OpCodes.Stloc, callerID);

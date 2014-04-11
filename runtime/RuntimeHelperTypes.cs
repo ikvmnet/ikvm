@@ -80,7 +80,7 @@ namespace IKVM.Internal
 			GenericTypeParameterBuilder typeParam = tb.DefineGenericParameters("T")[0];
 			Type classType = CoreClasses.java.lang.Class.Wrapper.TypeAsSignatureType;
 			classLiteralField = tb.DefineField("Value", classType, FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.InitOnly);
-			CodeEmitter ilgen = CodeEmitter.Create(ReflectUtil.DefineTypeInitializer(tb));
+			CodeEmitter ilgen = CodeEmitter.Create(ReflectUtil.DefineTypeInitializer(tb, ccl));
 			ilgen.Emit(OpCodes.Ldtoken, typeParam);
 			ilgen.Emit(OpCodes.Call, Types.Type.GetMethod("GetTypeFromHandle", new Type[] { Types.RuntimeTypeHandle }));
 			MethodWrapper mw = CoreClasses.java.lang.Class.Wrapper.GetMethodWrapper("<init>", "(Lcli.System.Type;)V", false);

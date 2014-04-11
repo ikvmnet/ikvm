@@ -2912,7 +2912,7 @@ namespace IKVM.Internal
 					}
 					else if (m.IsClassInitializer)
 					{
-						method = ReflectUtil.DefineTypeInitializer(typeBuilder);
+						method = ReflectUtil.DefineTypeInitializer(typeBuilder, wrapper.classLoader);
 					}
 					else
 					{
@@ -4132,7 +4132,7 @@ namespace IKVM.Internal
 					}
 					else
 					{
-						cb = ReflectUtil.DefineTypeInitializer(typeBuilder);
+						cb = ReflectUtil.DefineTypeInitializer(typeBuilder, wrapper.classLoader);
 						AttributeHelper.HideFromJava(cb);
 					}
 					CodeEmitter ilGenerator = CodeEmitter.Create(cb);
@@ -4437,7 +4437,7 @@ namespace IKVM.Internal
 	
 			private void AddInterfaceFieldsInterop(FieldWrapper[] fields)
 			{
-				if (classFile.IsInterface && classFile.IsPublic && !wrapper.IsGhost && classFile.Fields.Length > 0)
+				if (classFile.IsInterface && classFile.IsPublic && !wrapper.IsGhost && classFile.Fields.Length > 0 && wrapper.classLoader.WorkaroundInterfaceFields)
 				{
 					TypeBuilder tbFields = DefineNestedInteropType("__Fields");
 					CodeEmitter ilgenClinit = null;
@@ -4456,7 +4456,7 @@ namespace IKVM.Internal
 							FieldBuilder fb = tbFields.DefineField(f.Name, fields[i].FieldTypeWrapper.TypeAsPublicSignatureType, attribs);
 							if (ilgenClinit == null)
 							{
-								ilgenClinit = CodeEmitter.Create(ReflectUtil.DefineTypeInitializer(tbFields));
+								ilgenClinit = CodeEmitter.Create(ReflectUtil.DefineTypeInitializer(tbFields, wrapper.classLoader));
 							}
 							wrapper.GetFieldWrapper(f.Name, f.Signature).EmitGet(ilgenClinit);
 							ilgenClinit.Emit(OpCodes.Stsfld, fb);
@@ -4472,7 +4472,7 @@ namespace IKVM.Internal
 
 			private void AddInterfaceMethodsInterop(MethodWrapper[] methods)
 			{
-				if (classFile.IsInterface && classFile.IsPublic && classFile.MajorVersion >= 52 && !wrapper.IsGhost && methods.Length > 0)
+				if (classFile.IsInterface && classFile.IsPublic && classFile.MajorVersion >= 52 && !wrapper.IsGhost && methods.Length > 0 && wrapper.classLoader.WorkaroundInterfaceStaticMethods)
 				{
 					TypeBuilder tbMethods = null;
 					foreach (MethodWrapper mw in methods)
@@ -5843,7 +5843,7 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 				// FXBUG csc.exe doesn't like non-public methods in interfaces, so for public interfaces we move
 				// the helper methods into a nested type.
-				if (wrapper.IsPublic && wrapper.IsInterface)
+				if (wrapper.IsPublic && wrapper.IsInterface && wrapper.classLoader.WorkaroundInterfacePrivateMethods)
 				{
 					if (interfaceHelperMethodsTypeBuilder == null)
 					{

@@ -148,10 +148,10 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal static MethodBuilder DefineTypeInitializer(TypeBuilder typeBuilder)
+		internal static MethodBuilder DefineTypeInitializer(TypeBuilder typeBuilder, ClassLoaderWrapper loader)
 		{
 			MethodAttributes attr = MethodAttributes.Static | MethodAttributes.RTSpecialName | MethodAttributes.SpecialName;
-			if (typeBuilder.IsInterface)
+			if (typeBuilder.IsInterface && loader.WorkaroundInterfacePrivateMethods)
 			{
 				// LAMESPEC the ECMA spec says (part. I, sect. 8.5.3.2) that all interface members must be public, so we make
 				// the class constructor public.

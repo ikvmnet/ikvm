@@ -1850,7 +1850,7 @@ namespace IKVM.Internal
 
 				if(classDef.Clinit != null)
 				{
-					MethodBuilder cb = ReflectUtil.DefineTypeInitializer(typeBuilder);
+					MethodBuilder cb = ReflectUtil.DefineTypeInitializer(typeBuilder, classLoader);
 					CodeEmitter ilgen = CodeEmitter.Create(cb);
 					// TODO emit code to make sure super class is initialized
 					classDef.Clinit.body.Emit(classLoader, ilgen);
