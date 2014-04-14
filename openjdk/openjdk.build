@@ -51,7 +51,7 @@
         <copy file="allsources.lst" tofile="allsources.gen.lst" outputencoding="ascii" overwrite="true">
             <filterchain>
                 <replacetokens>
-                    <token key="OPENJDK7" value="${OpenJDK7.dir}" />
+                    <token key="OPENJDK" value="${OpenJDK7.dir}" />
                 </replacetokens>
             </filterchain>
         </copy>
