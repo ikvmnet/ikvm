@@ -525,7 +525,7 @@ namespace IKVM.StubGen
 					"value",
 					targets.ToArray()
 				});
-				if (Experimental.JDK_8 && IsRepeatableAnnotation(tw))
+				if (IsRepeatableAnnotation(tw))
 				{
 					annot.Add(new object[] {
 						AnnotationDefaultAttribute.TAG_ANNOTATION,
