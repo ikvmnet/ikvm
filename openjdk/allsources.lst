@@ -8748,8 +8748,8 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/jdk/src/share/classes/java/beans/PropertyVetoException.java
 @OPENJDK@/jdk/src/share/classes/java/beans/SimpleBeanInfo.java
 @OPENJDK@/jdk/src/share/classes/java/beans/Statement.java
-@OPENJDK@/jdk/src/share/classes/java/beans/Transient.java
 @OPENJDK@/jdk/src/share/classes/java/beans/ThreadGroupContext.java
+@OPENJDK@/jdk/src/share/classes/java/beans/Transient.java
 @OPENJDK@/jdk/src/share/classes/java/beans/VetoableChangeListener.java
 @OPENJDK@/jdk/src/share/classes/java/beans/VetoableChangeListenerProxy.java
 @OPENJDK@/jdk/src/share/classes/java/beans/VetoableChangeSupport.java
@@ -8924,7 +8924,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/jdk/src/share/classes/java/lang/invoke/SimpleMethodHandle.java
 @OPENJDK@/jdk/src/share/classes/java/lang/invoke/SwitchPoint.java
 @OPENJDK@/jdk/src/share/classes/java/lang/invoke/VolatileCallSite.java
-@OPENJDK@/jdk/src/share/classes/java/lang/invoke/WrongMethodTypeException.java
 @OPENJDK@/jdk/src/share/classes/java/lang/invoke/WrongMethodTypeException.java
 @OPENJDK@/jdk/src/share/classes/java/lang/Iterable.java
 @OPENJDK@/jdk/src/share/classes/java/lang/LinkageError.java
@@ -9111,17 +9110,13 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/jdk/src/share/classes/java/nio/channels/Channel.java
 @OPENJDK@/jdk/src/share/classes/java/nio/channels/Channels.java
 @OPENJDK@/jdk/src/share/classes/java/nio/channels/CompletionHandler.java
-@OPENJDK@/jdk/src/share/classes/java/nio/channels/CompletionHandler.java
 @OPENJDK@/jdk/src/share/classes/java/nio/channels/DatagramChannel.java
 @OPENJDK@/jdk/src/share/classes/java/nio/channels/FileChannel.java
 @OPENJDK@/jdk/src/share/classes/java/nio/channels/FileLock.java
 @OPENJDK@/jdk/src/share/classes/java/nio/channels/GatheringByteChannel.java
 @OPENJDK@/jdk/src/share/classes/java/nio/channels/InterruptibleChannel.java
 @OPENJDK@/jdk/src/share/classes/java/nio/channels/MembershipKey.java
-@OPENJDK@/jdk/src/share/classes/java/nio/channels/MembershipKey.java
 @OPENJDK@/jdk/src/share/classes/java/nio/channels/MulticastChannel.java
-@OPENJDK@/jdk/src/share/classes/java/nio/channels/MulticastChannel.java
-@OPENJDK@/jdk/src/share/classes/java/nio/channels/NetworkChannel.java
 @OPENJDK@/jdk/src/share/classes/java/nio/channels/NetworkChannel.java
 @OPENJDK@/jdk/src/share/classes/java/nio/channels/package-info.java
 @OPENJDK@/jdk/src/share/classes/java/nio/channels/Pipe.java
@@ -10538,8 +10533,8 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/jdk/src/share/classes/javax/sql/rowset/JoinRowSet.java
 @OPENJDK@/jdk/src/share/classes/javax/sql/rowset/Predicate.java
 @OPENJDK@/jdk/src/share/classes/javax/sql/rowset/RowSetFactory.java
-@OPENJDK@/jdk/src/share/classes/javax/sql/rowset/RowSetProvider.java
 @OPENJDK@/jdk/src/share/classes/javax/sql/rowset/RowSetMetaDataImpl.java
+@OPENJDK@/jdk/src/share/classes/javax/sql/rowset/RowSetProvider.java
 @OPENJDK@/jdk/src/share/classes/javax/sql/rowset/RowSetWarning.java
 @OPENJDK@/jdk/src/share/classes/javax/sql/rowset/serial/SerialArray.java
 @OPENJDK@/jdk/src/share/classes/javax/sql/rowset/serial/SerialBlob.java
@@ -11293,8 +11288,8 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/jdk/src/share/classes/org/jcp/xml/dsig/internal/dom/ApacheTransform.java
 @OPENJDK@/jdk/src/share/classes/org/jcp/xml/dsig/internal/dom/DOMBase64Transform.java
 @OPENJDK@/jdk/src/share/classes/org/jcp/xml/dsig/internal/dom/DOMCanonicalizationMethod.java
-@OPENJDK@/jdk/src/share/classes/org/jcp/xml/dsig/internal/dom/DOMCanonicalXMLC14NMethod.java
 @OPENJDK@/jdk/src/share/classes/org/jcp/xml/dsig/internal/dom/DOMCanonicalXMLC14N11Method.java
+@OPENJDK@/jdk/src/share/classes/org/jcp/xml/dsig/internal/dom/DOMCanonicalXMLC14NMethod.java
 @OPENJDK@/jdk/src/share/classes/org/jcp/xml/dsig/internal/dom/DOMCryptoBinary.java
 @OPENJDK@/jdk/src/share/classes/org/jcp/xml/dsig/internal/dom/DOMDigestMethod.java
 @OPENJDK@/jdk/src/share/classes/org/jcp/xml/dsig/internal/dom/DOMEnvelopedTransform.java
@@ -11939,8 +11934,8 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/jdk/src/share/classes/sun/management/MemoryImpl.java
 @OPENJDK@/jdk/src/share/classes/sun/management/MemoryNotifInfoCompositeData.java
 @OPENJDK@/jdk/src/share/classes/sun/management/MemoryUsageCompositeData.java
-@OPENJDK@/jdk/src/share/classes/sun/management/MonitorInfoCompositeData.java
 @OPENJDK@/jdk/src/share/classes/sun/management/MethodInfo.java
+@OPENJDK@/jdk/src/share/classes/sun/management/MonitorInfoCompositeData.java
 @OPENJDK@/jdk/src/share/classes/sun/management/NotificationEmitterSupport.java
 @OPENJDK@/jdk/src/share/classes/sun/management/OperatingSystemImpl.java
 @OPENJDK@/jdk/src/share/classes/sun/management/RuntimeImpl.java
