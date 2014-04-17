@@ -2410,9 +2410,9 @@ sealed class MethodAnalyzer
 		StackState stack = new StackState(state[index]);
 		NormalizedByteCode invoke = method.Instructions[index].NormalizedOpCode;
 		ClassFile.ConstantPoolItemMI cpi = GetMethodref(method.Instructions[index].Arg1);
-		if (invoke == NormalizedByteCode.__invokestatic && classFile.MajorVersion >= 52)
+		if ((invoke == NormalizedByteCode.__invokestatic || invoke == NormalizedByteCode.__invokespecial) && classFile.MajorVersion >= 52)
 		{
-			// invokestatic may be used to invoke interface methods in Java 8
+			// invokestatic and invokespecial may be used to invoke interface methods in Java 8
 		}
 		else if ((cpi is ClassFile.ConstantPoolItemInterfaceMethodref) != (invoke == NormalizedByteCode.__invokeinterface))
 		{
@@ -3634,9 +3634,12 @@ sealed class MethodAnalyzer
 		{
 			SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IncompatibleClassChangeError, "invokeinterface on non-interface");
 		}
-		else if(cpi.GetClassType().IsInterface && invoke != NormalizedByteCode.__invokeinterface && (invoke != NormalizedByteCode.__invokestatic || classFile.MajorVersion < 52))
+		else if(cpi.GetClassType().IsInterface && invoke != NormalizedByteCode.__invokeinterface && ((invoke != NormalizedByteCode.__invokestatic && invoke != NormalizedByteCode.__invokespecial) || classFile.MajorVersion < 52))
 		{
-			SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IncompatibleClassChangeError, "interface method must be invoked used invokeinterface or invokestatic");
+			SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IncompatibleClassChangeError,
+				classFile.MajorVersion < 52
+					? "interface method must be invoked using invokeinterface"
+					: "interface method must be invoked using invokeinterface, invokespecial or invokestatic");
 		}
 		else
 		{
