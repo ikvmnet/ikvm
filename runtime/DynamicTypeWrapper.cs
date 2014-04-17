@@ -2863,15 +2863,6 @@ namespace IKVM.Internal
 							}
 							MethodBuilder mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper, typeBuilder, methods[index].Name, attr);
 							AttributeHelper.HideFromReflection(mb);
-							if (CheckRequireOverrideStub(methods[index], baseMethods[index][0]))
-							{
-								wrapper.GenerateOverrideStub(typeBuilder, baseMethods[index][0], mb, methods[index]);
-							}
-							// if we changed the name or if the interface method name is remapped, we need to add an explicit methodoverride.
-							else if (!baseMethods[index][0].IsDynamicOnly && methods[index].Name != baseMethods[index][0].RealName)
-							{
-								typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMethods[index][0].GetMethod());
-							}
 							if ((!wrapper.IsAbstract && mmw.BaseMethod.IsAbstract) || (!wrapper.IsInterface && mmw.Error != null))
 							{
 								CodeEmitter ilgen = CodeEmitter.Create(mb);
@@ -4955,11 +4946,7 @@ namespace IKVM.Internal
 							return;
 						}
 					}
-					if (mce.IsMirandaMethod && mce.DeclaringType == wrapper)
-					{
-						// Miranda methods already have a methodimpl (if needed) to implement the correct interface method
-					}
-					else if (!mce.IsPublic && !mce.IsInternal)
+					if (!mce.IsPublic && !mce.IsInternal)
 					{
 						// NOTE according to the ECMA spec it isn't legal for a privatescope method to be virtual, but this works and
 						// it makes sense, so I hope the spec is wrong
