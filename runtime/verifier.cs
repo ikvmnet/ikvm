@@ -2413,6 +2413,14 @@ sealed class MethodAnalyzer
 		if ((invoke == NormalizedByteCode.__invokestatic || invoke == NormalizedByteCode.__invokespecial) && classFile.MajorVersion >= 52)
 		{
 			// invokestatic and invokespecial may be used to invoke interface methods in Java 8
+			// but invokespecial can only invoke methods in the current interface or a directly implemented interface
+			if (invoke == NormalizedByteCode.__invokespecial && cpi is ClassFile.ConstantPoolItemInterfaceMethodref)
+			{
+				if (cpi.GetClassType() != wrapper && Array.IndexOf(wrapper.Interfaces, cpi.GetClassType()) == -1)
+				{
+					throw new VerifyError("Bad invokespecial instruction: interface method reference is in an indirect superinterface.");
+				}
+			}
 		}
 		else if ((cpi is ClassFile.ConstantPoolItemInterfaceMethodref) != (invoke == NormalizedByteCode.__invokeinterface))
 		{
