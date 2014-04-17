@@ -1781,6 +1781,7 @@ namespace IKVM.Internal
 	{
 		internal const string CallerID = "__<CallerID>";
 		internal const string InterfaceHelperMethods = "__<>IHM";
+		internal const string PrivateInterfaceMethods = "__<>PIM";
 
 		// interop types (mangled if necessary)
 		internal const string Fields = "__Fields";
@@ -4334,12 +4335,24 @@ namespace IKVM.Internal
 					AddMethodOrConstructor(ctor, hideFromJavaFlags, methods);
 				}
 			}
-			foreach(MethodInfo method in type.GetMethods(flags))
+			AddMethods(type.GetMethods(flags), methods);
+			if (type.IsInterface && (type.IsPublic || type.IsNestedPublic))
 			{
-				HideFromJavaFlags hideFromJavaFlags = AttributeHelper.GetHideFromJavaFlags(method);
-				AddMethodOrConstructor(method, hideFromJavaFlags, methods);
+				Type privateInterfaceMethods = type.GetNestedType(NestedTypeName.PrivateInterfaceMethods, BindingFlags.NonPublic);
+				if (privateInterfaceMethods != null)
+				{
+					AddMethods(privateInterfaceMethods.GetMethods(flags), methods);
+				}
 			}
 			SetMethods(methods.ToArray());
+		}
+
+		private void AddMethods(MethodInfo[] add, List<MethodWrapper> methods)
+		{
+			foreach (MethodInfo method in add)
+			{
+				AddMethodOrConstructor(method, AttributeHelper.GetHideFromJavaFlags(method), methods);
+			}
 		}
 
 		private void AddMethodOrConstructor(MethodBase method, HideFromJavaFlags hideFromJavaFlags, List<MethodWrapper> methods)

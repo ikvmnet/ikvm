@@ -460,6 +460,7 @@ namespace IKVM.Internal
 			private DynamicTypeWrapper enclosingClassWrapper;
 			private AnnotationBuilder annotationBuilder;
 			private TypeBuilder enumBuilder;
+			private TypeBuilder privateInterfaceMethods;
 			private Dictionary<string, TypeWrapper> nestedTypeNames;	// only keys are used, values are always null
 #endif
 
@@ -1773,6 +1774,10 @@ namespace IKVM.Internal
 					if (enumBuilder != null)
 					{
 						enumBuilder.CreateType();
+					}
+					if (privateInterfaceMethods != null)
+					{
+						privateInterfaceMethods.CreateType();
 					}
 #endif
 					MethodInfo finishedClinitMethod = clinitMethod;
@@ -3143,9 +3148,23 @@ namespace IKVM.Internal
 					if (classFile.IsInterface && !m.IsPublic)
 					{
 						TypeBuilder tb = typeBuilder;
+#if STATIC_COMPILER
+						if (wrapper.IsPublic && wrapper.classLoader.WorkaroundInterfacePrivateMethods)
+						{
+							// FXBUG csc.exe doesn't like non-public methods in interfaces, so we put them in a nested type
+							if (privateInterfaceMethods == null)
+							{
+								privateInterfaceMethods = typeBuilder.DefineNestedType(NestedTypeName.PrivateInterfaceMethods,
+									TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.BeforeFieldInit);
+							}
+							tb = privateInterfaceMethods;
+							attribs &= ~MethodAttributes.MemberAccessMask;
+							attribs |= MethodAttributes.Assembly;
+						}
+#endif
 						if (m.IsStatic)
 						{
-							mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper, typeBuilder, name, attribs);
+							mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper, tb, name, attribs);
 						}
 						else
 						{
