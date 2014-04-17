@@ -520,6 +520,10 @@ namespace IKVM.Internal
 					{
 						methods[i] = new DelegateConstructorMethodWrapper(wrapper, m);
 					}
+					else if (classFile.IsInterface && !m.IsStatic && !m.IsPublic)
+					{
+						methods[i] = new PrivateInterfaceMethodWrapper(wrapper, m.Name, m.Signature, null, null, null, m.Modifiers, flags);
+					}
 					else
 					{
 						if (!classFile.IsInterface && !m.IsStatic && !m.IsPrivate && !m.IsConstructor)
@@ -3136,7 +3140,30 @@ namespace IKVM.Internal
 					{
 						attribs |= MethodAttributes.NewSlot;
 					}
-					mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper, typeBuilder, name, attribs);
+					if (classFile.IsInterface && !m.IsPublic)
+					{
+						TypeBuilder tb = typeBuilder;
+						if (m.IsStatic)
+						{
+							mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper, typeBuilder, name, attribs);
+						}
+						else
+						{
+							// the CLR doesn't allow (non-virtual) instance methods in interfaces,
+							// so we need to turn it into a static method
+							mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(),
+								tb, NamePrefix.PrivateInterfaceInstanceMethod + name, attribs | MethodAttributes.Static | MethodAttributes.SpecialName,
+								typeBuilder, false);
+#if STATIC_COMPILER
+							AttributeHelper.SetNameSig(mb, m.Name, m.Signature);
+#endif
+						}
+						setModifiers = true;
+					}
+					else
+					{
+						mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper, typeBuilder, name, attribs);
+					}
 					if (baseMethods[index] != null && !needFinalize)
 					{
 						bool subsequent = false;
@@ -4078,6 +4105,13 @@ namespace IKVM.Internal
 #endif
 							}
 							CodeEmitter ilGenerator = CodeEmitter.Create(mb);
+							if (!m.IsStatic && !m.IsPublic && classFile.IsInterface)
+							{
+								// Java 8 non-virtual interface methods that we compiled as a static method,
+								// we need to make sure the passed in this reference isn't null
+								ilGenerator.EmitLdarg(0);
+								ilGenerator.EmitNullCheck();
+							}
 							TraceHelper.EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
 #if STATIC_COMPILER
 							// do we have an implementation in map.xml?

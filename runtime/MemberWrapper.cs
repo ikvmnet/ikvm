@@ -1195,6 +1195,26 @@ namespace IKVM.Internal
 #endif // EMITTERS
 	}
 
+	sealed class PrivateInterfaceMethodWrapper : SmartMethodWrapper
+	{
+		internal PrivateInterfaceMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
+			: base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags)
+		{
+		}
+
+#if EMITTERS
+		protected override void CallImpl(CodeEmitter ilgen)
+		{
+			ilgen.Emit(OpCodes.Call, GetMethod());
+		}
+
+		protected override void CallvirtImpl(CodeEmitter ilgen)
+		{
+			ilgen.Emit(OpCodes.Call, GetMethod());
+		}
+#endif // EMITTERS
+	}
+
 	abstract class FieldWrapper : MemberWrapper
 	{
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR

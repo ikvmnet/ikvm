@@ -1774,6 +1774,7 @@ namespace IKVM.Internal
 		internal const string Bridge = "<bridge>";
 		internal const string Incomplete = "<incomplete>";
 		internal const string DefaultMethod = "<default>";
+		internal const string PrivateInterfaceInstanceMethod = "<piim>";
 	}
 
 	static class NestedTypeName
@@ -4390,6 +4391,10 @@ namespace IKVM.Internal
 						}
 						MethodInfo ifmethod = TypeAsBaseType.GetMethod(method.Name, types);
 						mw = new GhostMethodWrapper(this, name, sig, ifmethod, (MethodInfo)method, retType, paramTypes, mods.Modifiers, flags);
+					}
+					else if (method.IsSpecialName && method.Name.StartsWith(NamePrefix.PrivateInterfaceInstanceMethod, StringComparison.Ordinal))
+					{
+						mw = new PrivateInterfaceMethodWrapper(this, name, sig, method, retType, paramTypes, mods.Modifiers, flags);
 					}
 					else
 					{
