@@ -1226,8 +1226,8 @@ namespace IKVM.Internal
 					AddMirandaMethods(methods, baseMethods, iface);
 					foreach (MethodWrapper ifmethod in iface.GetMethods())
 					{
-						// skip <clinit>
-						if (!ifmethod.IsStatic)
+						// skip <clinit> and non-virtual interface methods introduced in Java 8
+						if (!ifmethod.IsStatic && ifmethod.IsPublic)
 						{
 							TypeWrapper lookup = wrapper;
 							while (lookup != null)
@@ -2980,7 +2980,7 @@ namespace IKVM.Internal
 				{
 					attribs |= GetMethodAccess(methods[index]);
 				}
-				if (m.IsAbstract || (!m.IsStatic && classFile.IsInterface))
+				if (m.IsAbstract || (!m.IsStatic && m.IsPublic && classFile.IsInterface))
 				{
 					// only if the classfile is abstract, we make the CLR method abstract, otherwise,
 					// we have to generate a method that throws an AbstractMethodError (because the JVM
@@ -4069,7 +4069,7 @@ namespace IKVM.Internal
 						}
 						else
 						{
-							if (!m.IsStatic && classFile.IsInterface)
+							if (!m.IsStatic && m.IsPublic && classFile.IsInterface)
 							{
 								mb = methods[i].GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(),
 									typeBuilder, NamePrefix.DefaultMethod + mb.Name, MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, typeBuilder, false);
@@ -4468,7 +4468,7 @@ namespace IKVM.Internal
 					TypeBuilder tbMethods = null;
 					foreach (MethodWrapper mw in methods)
 					{
-						if (mw.IsStatic && mw.Name != StringConstants.CLINIT && ParametersAreAccessible(mw))
+						if (mw.IsStatic && mw.IsPublic && mw.Name != StringConstants.CLINIT && ParametersAreAccessible(mw))
 						{
 							if (tbMethods == null)
 							{
@@ -4881,7 +4881,7 @@ namespace IKVM.Internal
 				doneSet.Add(interfaceTypeWrapper, interfaceTypeWrapper);
 				foreach (MethodWrapper method in interfaceTypeWrapper.GetMethods())
 				{
-					if (!method.IsStatic && !method.IsDynamicOnly)
+					if (!method.IsStatic && method.IsPublic && !method.IsDynamicOnly)
 					{
 						ImplementInterfaceMethodStubImpl(method, baseClassInterface);
 					}
