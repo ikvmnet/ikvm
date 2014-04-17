@@ -4430,7 +4430,7 @@ namespace IKVM.Internal
 			{
 				if (classFile.IsInterface && classFile.IsPublic && !wrapper.IsGhost && classFile.Fields.Length > 0 && wrapper.classLoader.WorkaroundInterfaceFields)
 				{
-					TypeBuilder tbFields = DefineNestedInteropType("__Fields");
+					TypeBuilder tbFields = DefineNestedInteropType(NestedTypeName.Fields);
 					CodeEmitter ilgenClinit = null;
 					for (int i = 0; i < classFile.Fields.Length; i++)
 					{
@@ -4472,7 +4472,7 @@ namespace IKVM.Internal
 						{
 							if (tbMethods == null)
 							{
-								tbMethods = DefineNestedInteropType("__Methods");
+								tbMethods = DefineNestedInteropType(NestedTypeName.Methods);
 							}
 							MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(), tbMethods, mw.Name, MethodAttributes.Public | MethodAttributes.Static, null, true);
 							CodeEmitter ilgen = CodeEmitter.Create(mb);
@@ -4501,7 +4501,7 @@ namespace IKVM.Internal
 				}
 				if (tbDefaultMethods == null)
 				{
-					tbDefaultMethods = DefineNestedInteropType("__DefaultMethods");
+					tbDefaultMethods = DefineNestedInteropType(NestedTypeName.DefaultMethods);
 				}
 				MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(), tbDefaultMethods, mw.Name, MethodAttributes.Public | MethodAttributes.Static, wrapper.TypeAsSignatureType, true);
 				CodeEmitter ilgen = CodeEmitter.Create(mb);
@@ -5679,7 +5679,7 @@ namespace IKVM.Internal
 			internal static TypeBuilder EmitCreateCallerID(TypeBuilder typeBuilder, CodeEmitter ilGenerator)
 			{
 				TypeWrapper tw = CoreClasses.ikvm.@internal.CallerID.Wrapper;
-				TypeBuilder typeCallerID = typeBuilder.DefineNestedType("__<CallerID>", TypeAttributes.Sealed | TypeAttributes.NestedPrivate, tw.TypeAsBaseType);
+				TypeBuilder typeCallerID = typeBuilder.DefineNestedType(NestedTypeName.CallerID, TypeAttributes.Sealed | TypeAttributes.NestedPrivate, tw.TypeAsBaseType);
 				MethodBuilder cb = ReflectUtil.DefineConstructor(typeCallerID, MethodAttributes.Assembly, null);
 				CodeEmitter ctorIlgen = CodeEmitter.Create(cb);
 				ctorIlgen.Emit(OpCodes.Ldarg_0);
@@ -5753,7 +5753,7 @@ namespace IKVM.Internal
 			{
 				TypeWrapper threadLocal = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.IntrinsicThreadLocal");
 				int id = nestedTypeBuilders == null ? 0 : nestedTypeBuilders.Count;
-				TypeBuilder tb = typeBuilder.DefineNestedType("__<tls>_" + id, TypeAttributes.NestedPrivate | TypeAttributes.Sealed, threadLocal.TypeAsBaseType);
+				TypeBuilder tb = typeBuilder.DefineNestedType(NestedTypeName.ThreadLocal + id, TypeAttributes.NestedPrivate | TypeAttributes.Sealed, threadLocal.TypeAsBaseType);
 				FieldBuilder fb = tb.DefineField("field", Types.Object, FieldAttributes.Private | FieldAttributes.Static);
 				fb.SetCustomAttribute(new CustomAttributeBuilder(JVM.Import(typeof(ThreadStaticAttribute)).GetConstructor(Type.EmptyTypes), new object[0]));
 				MethodBuilder mbGet = tb.DefineMethod("get", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final, Types.Object, Type.EmptyTypes);
@@ -5787,7 +5787,7 @@ namespace IKVM.Internal
 				if (!arfuMap.TryGetValue(field, out cb))
 				{
 					TypeWrapper arfuTypeWrapper = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.IntrinsicAtomicReferenceFieldUpdater");
-					TypeBuilder tb = typeBuilder.DefineNestedType("__<ARFU>_" + arfuMap.Count, TypeAttributes.NestedPrivate | TypeAttributes.Sealed, arfuTypeWrapper.TypeAsBaseType);
+					TypeBuilder tb = typeBuilder.DefineNestedType(NestedTypeName.AtomicReferenceFieldUpdater + arfuMap.Count, TypeAttributes.NestedPrivate | TypeAttributes.Sealed, arfuTypeWrapper.TypeAsBaseType);
 					AtomicReferenceFieldUpdaterEmitter.EmitImpl(tb, field.GetField());
 					cb = ReflectUtil.DefineConstructor(tb, MethodAttributes.Assembly, Type.EmptyTypes);
 					arfuMap.Add(field, cb);
@@ -5806,21 +5806,21 @@ namespace IKVM.Internal
 			internal TypeBuilder DefineIndyCallSiteType()
 			{
 				int id = nestedTypeBuilders == null ? 0 : nestedTypeBuilders.Count;
-				TypeBuilder tb = typeBuilder.DefineNestedType("__<>IndyCS" + id, TypeAttributes.NestedPrivate | TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit);
+				TypeBuilder tb = typeBuilder.DefineNestedType(NestedTypeName.IndyCallSite + id, TypeAttributes.NestedPrivate | TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit);
 				RegisterNestedTypeBuilder(tb);
 				return tb;
 			}
 
 			internal TypeBuilder DefineMethodHandleConstantType(int index)
 			{
-				TypeBuilder tb = typeBuilder.DefineNestedType("__<>MHC" + index, TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.BeforeFieldInit); ;
+				TypeBuilder tb = typeBuilder.DefineNestedType(NestedTypeName.MethodHandleConstant + index, TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.BeforeFieldInit); ;
 				RegisterNestedTypeBuilder(tb);
 				return tb;
 			}
 
 			internal TypeBuilder DefineMethodTypeConstantType(int index)
 			{
-				TypeBuilder tb = typeBuilder.DefineNestedType("__<>MTC" + index, TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.BeforeFieldInit);
+				TypeBuilder tb = typeBuilder.DefineNestedType(NestedTypeName.MethodTypeConstant + index, TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.BeforeFieldInit);
 				RegisterNestedTypeBuilder(tb);
 				return tb;
 			}
@@ -5834,7 +5834,7 @@ namespace IKVM.Internal
 				{
 					if (interfaceHelperMethodsTypeBuilder == null)
 					{
-						interfaceHelperMethodsTypeBuilder = typeBuilder.DefineNestedType("__<>IHM", TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.BeforeFieldInit);
+						interfaceHelperMethodsTypeBuilder = typeBuilder.DefineNestedType(NestedTypeName.InterfaceHelperMethods, TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.BeforeFieldInit);
 						RegisterNestedTypeBuilder(interfaceHelperMethodsTypeBuilder);
 					}
 					return interfaceHelperMethodsTypeBuilder.DefineMethod(name, MethodAttributes.PrivateScope | MethodAttributes.Static, returnType, parameterTypes);

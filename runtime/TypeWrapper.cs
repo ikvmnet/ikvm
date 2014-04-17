@@ -1776,6 +1776,24 @@ namespace IKVM.Internal
 		internal const string DefaultMethod = "<default>";
 	}
 
+	static class NestedTypeName
+	{
+		internal const string CallerID = "__<CallerID>";
+		internal const string InterfaceHelperMethods = "__<>IHM";
+
+		// interop types (mangled if necessary)
+		internal const string Fields = "__Fields";
+		internal const string Methods = "__Methods";
+		internal const string DefaultMethods = "__DefaultMethods";
+
+		// prefixes
+		internal const string ThreadLocal = "__<tls>_";
+		internal const string AtomicReferenceFieldUpdater = "__<ARFU>_";
+		internal const string IndyCallSite = "__<>IndyCS";
+		internal const string MethodHandleConstant = "__<>MHC";
+		internal const string MethodTypeConstant = "__<>MTC";
+	}
+
 	internal abstract class TypeWrapper
 	{
 		private static readonly object flagsLock = new object();
