@@ -1045,6 +1045,11 @@ namespace IKVM.Internal
 
 		internal static MirandaMethodWrapper Create(TypeWrapper declaringType, MethodWrapper ifmethod)
 		{
+			DefaultMirandaMethodWrapper dmmw = ifmethod as DefaultMirandaMethodWrapper;
+			if (dmmw != null)
+			{
+				return new DefaultMirandaMethodWrapper(declaringType, dmmw.BaseMethod);
+			}
 			return ifmethod.IsAbstract
 				? (MirandaMethodWrapper)new AbstractMirandaMethodWrapper(declaringType, ifmethod)
 				: (MirandaMethodWrapper)new DefaultMirandaMethodWrapper(declaringType, ifmethod);
@@ -1191,6 +1196,39 @@ namespace IKVM.Internal
 		protected override void NewobjImpl(CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Newobj, stub);
+		}
+#endif // EMITTERS
+	}
+
+	sealed class DefaultInterfaceMethodWrapper : SmartMethodWrapper
+	{
+		private MethodInfo impl;
+
+		internal DefaultInterfaceMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodInfo ifmethod, MethodInfo impl, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
+			: base(declaringType, name, sig, ifmethod, returnType, parameterTypes, modifiers, flags)
+		{
+			this.impl = impl;
+		}
+
+		internal MethodInfo GetImpl()
+		{
+			return impl;
+		}
+
+		internal void SetImpl(MethodInfo impl)
+		{
+			this.impl = impl;
+		}
+
+#if EMITTERS
+		protected override void CallImpl(CodeEmitter ilgen)
+		{
+			ilgen.Emit(OpCodes.Call, impl);
+		}
+
+		protected override void CallvirtImpl(CodeEmitter ilgen)
+		{
+			ilgen.Emit(OpCodes.Call, GetMethod());
 		}
 #endif // EMITTERS
 	}

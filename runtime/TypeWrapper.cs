@@ -1428,6 +1428,13 @@ namespace IKVM.Internal
 			arr[arr.Length - 1] = obj;
 			return arr;
 		}
+
+		internal static T[] DropFirst<T>(T[] arr)
+		{
+			T[] narr = new T[arr.Length - 1];
+			Array.Copy(arr, 1, narr, 0, narr.Length);
+			return narr;
+		}
 	}
 
 	abstract class Annotation
@@ -4250,9 +4257,7 @@ namespace IKVM.Internal
 				// to remove that
 				if(paramTypes.Length == sigparams.Length + 1)
 				{
-					TypeWrapper[] temp = paramTypes;
-					paramTypes = new TypeWrapper[sigparams.Length];
-					Array.Copy(temp, 1, paramTypes, 0, paramTypes.Length);
+					paramTypes = ArrayUtil.DropFirst(paramTypes);
 				}
 				Debug.Assert(sigparams.Length == paramTypes.Length);
 				for(int i = 0; i < sigparams.Length; i++)
@@ -4273,6 +4278,10 @@ namespace IKVM.Internal
 					{
 						name = name.Substring(NamePrefix.Bridge.Length);
 					}
+				}
+				if(method.IsSpecialName && method.Name.StartsWith(NamePrefix.DefaultMethod, StringComparison.Ordinal))
+				{
+					paramTypes = ArrayUtil.DropFirst(paramTypes);
 				}
 				System.Text.StringBuilder sb = new System.Text.StringBuilder("(");
 				foreach(TypeWrapper tw in paramTypes)
@@ -4394,6 +4403,7 @@ namespace IKVM.Internal
 						methods.Add(new AccessStubMethodWrapper(this, name, sig, mi, mi, nonvirt ?? mi, retType, paramTypes, mods.Modifiers & ~Modifiers.Final, flags));
 						return;
 					}
+					MethodInfo impl;
 					MethodWrapper mw;
 					if (IsGhost)
 					{
@@ -4408,6 +4418,10 @@ namespace IKVM.Internal
 					else if (method.IsSpecialName && method.Name.StartsWith(NamePrefix.PrivateInterfaceInstanceMethod, StringComparison.Ordinal))
 					{
 						mw = new PrivateInterfaceMethodWrapper(this, name, sig, method, retType, paramTypes, mods.Modifiers, flags);
+					}
+					else if (IsInterface && method.IsAbstract && (mods.Modifiers & Modifiers.Abstract) == 0 && (impl = GetDefaultInterfaceMethodImpl(mi, sig)) != null)
+					{
+						mw = new DefaultInterfaceMethodWrapper(this, name, sig, mi, impl, retType, paramTypes, mods.Modifiers, flags);
 					}
 					else
 					{
@@ -4436,6 +4450,30 @@ namespace IKVM.Internal
 					methods.Add(mw);
 				}
 			}
+		}
+
+		private MethodInfo GetDefaultInterfaceMethodImpl(MethodInfo method, string expectedSig)
+		{
+			foreach (MethodInfo candidate in method.DeclaringType.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly))
+			{
+				if (candidate.IsSpecialName
+					&& candidate.Name.StartsWith(NamePrefix.DefaultMethod, StringComparison.Ordinal)
+					&& candidate.Name.Length == method.Name.Length + NamePrefix.DefaultMethod.Length
+					&& candidate.Name.EndsWith(method.Name, StringComparison.Ordinal))
+				{
+					string name;
+					string sig;
+					TypeWrapper retType;
+					TypeWrapper[] paramTypes;
+					MemberFlags flags = MemberFlags.None;
+					GetNameSigFromMethodBase(candidate, out name, out sig, out retType, out paramTypes, ref flags);
+					if (sig == expectedSig)
+					{
+						return candidate;
+					}
+				}
+			}
+			return null;
 		}
 
 		private bool GetType2AccessStubs(string name, string sig, out MethodInfo stubVirt, out MethodInfo stubNonVirt)

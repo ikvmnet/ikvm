@@ -525,6 +525,10 @@ namespace IKVM.Internal
 					{
 						methods[i] = new PrivateInterfaceMethodWrapper(wrapper, m.Name, m.Signature, null, null, null, m.Modifiers, flags);
 					}
+					else if (classFile.IsInterface && !m.IsStatic && m.IsPublic && !m.IsAbstract)
+					{
+						methods[i] = new DefaultInterfaceMethodWrapper(wrapper, m.Name, m.Signature, null, null, null, null, m.Modifiers, flags);
+					}
 					else
 					{
 						if (!classFile.IsInterface && !m.IsStatic && !m.IsPrivate && !m.IsConstructor)
@@ -3280,6 +3284,13 @@ namespace IKVM.Internal
 					AttributeHelper.HideFromJava(mb, flags);
 				}
 
+				DefaultInterfaceMethodWrapper dimw = methods[index] as DefaultInterfaceMethodWrapper;
+				if (dimw != null)
+				{
+					dimw.SetImpl(dimw.GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(),
+						typeBuilder, NamePrefix.DefaultMethod + mb.Name, MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, typeBuilder, false));
+				}
+
 				return mb;
 			}
 
@@ -4115,10 +4126,10 @@ namespace IKVM.Internal
 						}
 						else
 						{
+							DefaultInterfaceMethodWrapper dimw = methods[i] as DefaultInterfaceMethodWrapper;
 							if (!m.IsStatic && m.IsPublic && classFile.IsInterface)
 							{
-								mb = methods[i].GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(),
-									typeBuilder, NamePrefix.DefaultMethod + mb.Name, MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, typeBuilder, false);
+								mb = (MethodBuilder)dimw.GetImpl();
 #if STATIC_COMPILER
 								CreateDefaultMethodInterop(ref tbDefaultMethods, mb, methods[i]);
 #endif
@@ -4584,7 +4595,8 @@ namespace IKVM.Internal
 					if (methods[i].IsMirandaMethod)
 					{
 						MirandaMethodWrapper mmw = (MirandaMethodWrapper)methods[i];
-						if (mmw.Error == null && !mmw.BaseMethod.IsAbstract)
+						DefaultInterfaceMethodWrapper dimw;
+						if (mmw.Error == null && (dimw = mmw.BaseMethod as DefaultInterfaceMethodWrapper) != null)
 						{
 							// we inherited a default interface method, so we need to forward the miranda method to the default method
 							MethodBuilder mb = (MethodBuilder)mmw.GetMethod();
@@ -4600,47 +4612,12 @@ namespace IKVM.Internal
 							{
 								ilgen.EmitLdarg(j + 1);
 							}
-							ilgen.Emit(OpCodes.Call, GetDefaultInterfaceMethod(mmw.BaseMethod));
+							ilgen.Emit(OpCodes.Call, dimw.GetImpl());
 							ilgen.Emit(OpCodes.Ret);
 							ilgen.DoEmit();
 						}
 					}
 				}
-			}
-
-			private static MethodInfo GetDefaultInterfaceMethod(MethodWrapper mw)
-			{
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-				mw.ResolveMethod();
-#endif
-				MethodInfo mi = (MethodInfo)mw.GetMethod();
-				ParameterInfo[] parameters = mi.GetParameters();
-				foreach (MethodInfo candidate in mi.DeclaringType.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly))
-				{
-					if (candidate.Name.StartsWith(NamePrefix.DefaultMethod, StringComparison.Ordinal)
-						&& candidate.Name.Length == mi.Name.Length + NamePrefix.DefaultMethod.Length
-						&& candidate.Name.EndsWith(mi.Name, StringComparison.Ordinal))
-					{
-						ParameterInfo[] candidateParameters = candidate.GetParameters();
-						if (parameters.Length + 1 == candidateParameters.Length)
-						{
-							bool match = true;
-							for (int i = 0; i < parameters.Length; i++)
-							{
-								if (ReflectUtil.MatchParameterInfos(parameters[i], candidateParameters[i + 1]))
-								{
-									match = false;
-									break;
-								}
-							}
-							if (match)
-							{
-								return candidate;
-							}
-						}
-					}
-				}
-				throw new InvalidOperationException();
 			}
 
 #if STATIC_COMPILER
