@@ -1228,7 +1228,7 @@ namespace IKVM.Internal
 
 		protected override void CallvirtImpl(CodeEmitter ilgen)
 		{
-			ilgen.Emit(OpCodes.Call, GetMethod());
+			ilgen.Emit(OpCodes.Callvirt, GetMethod());
 		}
 #endif // EMITTERS
 	}
