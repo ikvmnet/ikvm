@@ -2927,7 +2927,7 @@ namespace IKVM.Internal
 				{
 					if(!code.IsEmpty)
 					{
-						throw new ClassFormatError("Abstract or native method cannot have a Code attribute");
+						throw new ClassFormatError("Code attribute in native or abstract methods in class file " + classFile.Name);
 					}
 				}
 				else
