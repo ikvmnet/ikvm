@@ -299,6 +299,10 @@ namespace IKVM.Internal
 			{
 				return mb.Name.Substring(NamePrefix.DefaultMethod.Length);
 			}
+			else if(mb.Name.StartsWith(NamePrefix.Bridge, StringComparison.Ordinal))
+			{
+				return mb.Name.Substring(NamePrefix.Bridge.Length);
+			}
 			else
 			{
 				return mb.Name;
