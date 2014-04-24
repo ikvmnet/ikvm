@@ -59,7 +59,7 @@ namespace IKVM.Internal
 	{
 		private HandleWrapper handle;
 		private readonly TypeWrapper declaringType;
-		private readonly Modifiers modifiers;
+		protected readonly Modifiers modifiers;
 		private MemberFlags flags;
 		private readonly string name;
 		private readonly string sig;
@@ -863,6 +863,15 @@ namespace IKVM.Internal
 		internal bool IsConstructor
 		{
 			get { return (object)Name == (object)StringConstants.INIT; }
+		}
+
+		internal bool IsVirtual
+		{
+			get
+			{
+				return (modifiers & (Modifiers.Static | Modifiers.Private)) == 0
+					&& !IsConstructor;
+			}
 		}
 	}
 

@@ -2960,6 +2960,15 @@ namespace IKVM.Internal
 				}
 			}
 
+			internal bool IsVirtual
+			{
+				get
+				{
+					return (access_flags & (Modifiers.Static | Modifiers.Private)) == 0
+						&& !IsConstructor;
+				}
+			}
+
 			// Is this the <clinit>()V method?
 			internal bool IsClassInitializer
 			{

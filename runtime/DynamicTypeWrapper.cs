@@ -523,17 +523,19 @@ namespace IKVM.Internal
 					}
 					else if (classFile.IsInterface && !m.IsStatic && !m.IsPublic)
 					{
+						// we can't use callvirt to call interface private instance methods (because we have to compile them as static methods,
+						// since the CLR doesn't support interface instance methods), so need a special MethodWrapper
 						methods[i] = new PrivateInterfaceMethodWrapper(wrapper, m.Name, m.Signature, null, null, null, m.Modifiers, flags);
 					}
-					else if (classFile.IsInterface && !m.IsStatic && m.IsPublic && !m.IsAbstract)
+					else if (classFile.IsInterface && m.IsVirtual && !m.IsAbstract)
 					{
 						methods[i] = new DefaultInterfaceMethodWrapper(wrapper, m.Name, m.Signature, null, null, null, null, m.Modifiers, flags);
 					}
 					else
 					{
-						if (!classFile.IsInterface && !m.IsStatic && !m.IsPrivate && !m.IsConstructor)
+						if (!classFile.IsInterface && m.IsVirtual)
 						{
-							bool explicitOverride = false;
+							bool explicitOverride;
 							baseMethods[i] = FindBaseMethods(m, out explicitOverride);
 							if (explicitOverride)
 							{
@@ -1236,7 +1238,7 @@ namespace IKVM.Internal
 					foreach (MethodWrapper ifmethod in iface.GetMethods())
 					{
 						// skip <clinit> and non-virtual interface methods introduced in Java 8
-						if (!ifmethod.IsStatic && ifmethod.IsPublic)
+						if (ifmethod.IsVirtual)
 						{
 							TypeWrapper lookup = wrapper;
 							while (lookup != null)
@@ -2229,8 +2231,8 @@ namespace IKVM.Internal
 					MethodWrapper getDoubleValueMethod = annotationAttributeBaseType.GetMethodWrapper("getDoubleValue", "(Ljava.lang.String;)D", false);
 					for (int i = 0; i < o.methods.Length; i++)
 					{
-						// skip <clinit>
-						if (!o.methods[i].IsStatic)
+						// skip <clinit> and non-virtual interface methods introduced in Java 8
+						if (o.methods[i].IsVirtual)
 						{
 							MethodBuilder mb = o.methods[i].GetDefineMethodHelper().DefineMethod(o.wrapper, attributeTypeBuilder, o.methods[i].Name, MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.NewSlot);
 							attributeTypeBuilder.DefineMethodOverride(mb, (MethodInfo)o.methods[i].GetMethod());
@@ -3020,7 +3022,7 @@ namespace IKVM.Internal
 				}
 				if (m.IsFinal)
 				{
-					if (!m.IsStatic && !m.IsPrivate)
+					if (m.IsVirtual)
 					{
 						attribs |= MethodAttributes.Final;
 					}
@@ -4126,10 +4128,9 @@ namespace IKVM.Internal
 						}
 						else
 						{
-							DefaultInterfaceMethodWrapper dimw = methods[i] as DefaultInterfaceMethodWrapper;
-							if (!m.IsStatic && m.IsPublic && classFile.IsInterface)
+							if (m.IsVirtual && classFile.IsInterface)
 							{
-								mb = (MethodBuilder)dimw.GetImpl();
+								mb = (MethodBuilder)((DefaultInterfaceMethodWrapper)methods[i]).GetImpl();
 #if STATIC_COMPILER
 								CreateDefaultMethodInterop(ref tbDefaultMethods, mb, methods[i]);
 #endif
@@ -4137,7 +4138,7 @@ namespace IKVM.Internal
 							CodeEmitter ilGenerator = CodeEmitter.Create(mb);
 							if (!m.IsStatic && !m.IsPublic && classFile.IsInterface)
 							{
-								// Java 8 non-virtual interface methods that we compiled as a static method,
+								// Java 8 non-virtual interface method that we compile as a static method,
 								// we need to make sure the passed in this reference isn't null
 								ilGenerator.EmitLdarg(0);
 								ilGenerator.EmitNullCheck();

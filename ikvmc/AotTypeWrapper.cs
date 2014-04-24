@@ -785,8 +785,8 @@ namespace IKVM.Internal
 				// TODO consider adding methods from base interface and java.lang.Object as well
 				for(int i = 0; i < methods.Length; i++)
 				{
-					// skip <clinit>
-					if(!methods[i].IsStatic)
+					// skip <clinit> and non-virtual interface methods introduced in Java 8
+					if(methods[i].IsVirtual)
 					{
 						TypeWrapper[] args = methods[i].GetParameters();
 						MethodBuilder stub = methods[i].GetDefineMethodHelper().DefineMethod(this, typeBuilder, methods[i].Name, MethodAttributes.Public);
