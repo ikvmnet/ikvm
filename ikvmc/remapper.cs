@@ -829,9 +829,7 @@ namespace IKVM.Internal.MapXml
 
 		internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
 		{
-			FieldWrapper fw = StaticCompiler.GetClassForMapXml(context.ClassLoader, Class).GetFieldWrapper(Name, Sig);
-			fw.Link();
-			ilgen.Emit(OpCodes.Ldflda, fw.GetField());
+			ilgen.Emit(OpCodes.Ldflda, StaticCompiler.GetFieldForMapXml(context.ClassLoader, Class, Name, Sig).GetField());
 		}
 	}
 
@@ -847,10 +845,8 @@ namespace IKVM.Internal.MapXml
 
 		internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
 		{
-			FieldWrapper fw = StaticCompiler.GetClassForMapXml(context.ClassLoader, Class).GetFieldWrapper(Name, Sig);
-			fw.Link();
 			// we don't use fw.EmitGet because we don't want automatic unboxing and whatever
-			ilgen.Emit(OpCodes.Ldfld, fw.GetField());
+			ilgen.Emit(OpCodes.Ldfld, StaticCompiler.GetFieldForMapXml(context.ClassLoader, Class, Name, Sig).GetField());
 		}
 	}
 
@@ -874,10 +870,8 @@ namespace IKVM.Internal.MapXml
 			}
 			else
 			{
-				FieldWrapper fw = StaticCompiler.GetClassForMapXml(context.ClassLoader, Class).GetFieldWrapper(Name, Sig);
-				fw.Link();
 				// we don't use fw.EmitGet because we don't want automatic unboxing and whatever
-				ilgen.Emit(OpCodes.Ldsfld, fw.GetField());
+				ilgen.Emit(OpCodes.Ldsfld, StaticCompiler.GetFieldForMapXml(context.ClassLoader, Class, Name, Sig).GetField());
 			}
 		}
 	}
@@ -894,10 +888,8 @@ namespace IKVM.Internal.MapXml
 
 		internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
 		{
-			FieldWrapper fw = StaticCompiler.GetClassForMapXml(context.ClassLoader, Class).GetFieldWrapper(Name, Sig);
-			fw.Link();
 			// we don't use fw.EmitSet because we don't want automatic unboxing and whatever
-			ilgen.Emit(OpCodes.Stfld, fw.GetField());
+			ilgen.Emit(OpCodes.Stfld, StaticCompiler.GetFieldForMapXml(context.ClassLoader, Class, Name, Sig).GetField());
 		}
 	}
 
@@ -913,10 +905,8 @@ namespace IKVM.Internal.MapXml
 
 		internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
 		{
-			FieldWrapper fw = StaticCompiler.GetClassForMapXml(context.ClassLoader, Class).GetFieldWrapper(Name, Sig);
-			fw.Link();
 			// we don't use fw.EmitSet because we don't want automatic unboxing and whatever
-			ilgen.Emit(OpCodes.Stsfld, fw.GetField());
+			ilgen.Emit(OpCodes.Stsfld, StaticCompiler.GetFieldForMapXml(context.ClassLoader, Class, Name, Sig).GetField());
 		}
 	}
 

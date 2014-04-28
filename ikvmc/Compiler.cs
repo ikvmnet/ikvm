@@ -158,6 +158,8 @@ sealed class FatalCompilerErrorException : Exception
 				return "File not found: {0}";
 			case IKVM.Internal.Message.RuntimeMethodMissing:
 				return "Runtime method '{0}' not found";
+			case IKVM.Internal.Message.MapFileFieldNotFound:
+				return "Field '{0}' referenced in remap file was not found in class '{1}'";
 			default:
 				return "Missing Error Message. Please file a bug.";
 		}

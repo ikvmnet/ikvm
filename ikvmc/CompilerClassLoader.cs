@@ -3725,6 +3725,7 @@ namespace IKVM.Internal
 		MissingBaseTypeReference = 5054,
 		FileNotFound = 5055,
 		RuntimeMethodMissing = 5056,
+		MapFileFieldNotFound = 5057,
 	}
 
 	static class StaticCompiler
@@ -3798,6 +3799,17 @@ namespace IKVM.Internal
 				throw new FatalCompilerErrorException(Message.MapFileClassNotFound, name);
 			}
 			return tw;
+		}
+
+		internal static FieldWrapper GetFieldForMapXml(ClassLoaderWrapper loader, string clazz, string name, string sig)
+		{
+			FieldWrapper fw = GetClassForMapXml(loader, clazz).GetFieldWrapper(name, sig);
+			if (fw == null)
+			{
+				throw new FatalCompilerErrorException(Message.MapFileFieldNotFound, name, clazz);
+			}
+			fw.Link();
+			return fw;
 		}
 
 		internal static Type GetType(ClassLoaderWrapper loader, string name)
