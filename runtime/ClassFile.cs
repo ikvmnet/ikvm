@@ -581,11 +581,7 @@ namespace IKVM.Internal
 						}
 						utf8_cp[i] = (string)constantPoolPatches[i];
 					}
-					else if (constantpool[i] == null)
-					{
-						throw new ClassFormatError("Unused constant pool patch at {0} in class file {1}", i, inputClassName);
-					}
-					else
+					else if (constantpool[i] != null)
 					{
 						switch (constantpool[i].GetConstantType())
 						{
