@@ -324,7 +324,7 @@ sealed class Compiler
 		getClassFromTypeHandle2.Link();
 	}
 
-	private Compiler(DynamicTypeWrapper.FinishContext context, DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, CodeEmitter ilGenerator, ClassLoaderWrapper classLoader)
+	private Compiler(DynamicTypeWrapper.FinishContext context, TypeWrapper host, DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, CodeEmitter ilGenerator, ClassLoaderWrapper classLoader)
 	{
 		this.context = context;
 		this.clazz = clazz;
@@ -350,7 +350,7 @@ sealed class Compiler
 			{
 				JsrInliner.InlineJsrs(classLoader, mw, classFile, m);
 			}
-			MethodAnalyzer verifier = new MethodAnalyzer(clazz, mw, classFile, m, classLoader);
+			MethodAnalyzer verifier = new MethodAnalyzer(host, clazz, mw, classFile, m, classLoader);
 			exceptions = MethodAnalyzer.UntangleExceptionBlocks(classFile, m);
 			ma = verifier.GetCodeInfoAndErrors(exceptions, out harderrors);
 			localVars = new LocalVarInfo(ma, classFile, m, exceptions, mw, classLoader);
@@ -716,7 +716,7 @@ sealed class Compiler
 		}
 	}
 
-	internal static void Compile(DynamicTypeWrapper.FinishContext context, DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, CodeEmitter ilGenerator, ref bool nonleaf)
+	internal static void Compile(DynamicTypeWrapper.FinishContext context, TypeWrapper host, DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, CodeEmitter ilGenerator, ref bool nonleaf)
 	{
 		ClassLoaderWrapper classLoader = clazz.GetClassLoader();
 		if(classLoader.EmitDebugInfo)
@@ -762,7 +762,7 @@ sealed class Compiler
 			Profiler.Enter("new Compiler");
 			try
 			{
-				c = new Compiler(context, clazz, mw, classFile, m, ilGenerator, classLoader);
+				c = new Compiler(context, host, clazz, mw, classFile, m, ilGenerator, classLoader);
 			}
 			finally
 			{
@@ -1441,6 +1441,7 @@ sealed class Compiler
 					break;
 				}
 				case NormalizedByteCode.__dynamic_invokestatic:
+				case NormalizedByteCode.__privileged_invokestatic:
 				case NormalizedByteCode.__invokestatic:
 				case NormalizedByteCode.__methodhandle_link:
 				{
@@ -1464,12 +1465,16 @@ sealed class Compiler
 				case NormalizedByteCode.__dynamic_invokeinterface:
 				case NormalizedByteCode.__dynamic_invokevirtual:
 				case NormalizedByteCode.__dynamic_invokespecial:
+				case NormalizedByteCode.__privileged_invokevirtual:
+				case NormalizedByteCode.__privileged_invokespecial:
 				case NormalizedByteCode.__invokevirtual:
 				case NormalizedByteCode.__invokeinterface:
 				case NormalizedByteCode.__invokespecial:
 				case NormalizedByteCode.__methodhandle_invoke:
 				{
-					bool isinvokespecial = instr.NormalizedOpCode == NormalizedByteCode.__invokespecial || instr.NormalizedOpCode == NormalizedByteCode.__dynamic_invokespecial;
+					bool isinvokespecial = instr.NormalizedOpCode == NormalizedByteCode.__invokespecial
+						|| instr.NormalizedOpCode == NormalizedByteCode.__dynamic_invokespecial
+						|| instr.NormalizedOpCode == NormalizedByteCode.__privileged_invokespecial;
 					MethodWrapper method = GetMethodCallEmitter(instr.NormalizedOpCode, instr.Arg1);
 					int argcount = method.GetParameters().Length;
 					TypeWrapper type = ma.GetRawStackTypeWrapper(i, argcount);
@@ -3015,7 +3020,7 @@ sealed class Compiler
 			ClassFile.ConstantPoolItemMI cpiMI;
 			if (mw == null && (cpiMI = mh.MemberConstantPoolItem as ClassFile.ConstantPoolItemMI) != null)
 			{
-				mw = new DynamicBinder().Get(compiler.context, ClassFile.RefKind.invokeStatic, cpiMI);
+				mw = new DynamicBinder().Get(compiler.context, ClassFile.RefKind.invokeStatic, cpiMI, false);
 			}
 			if (mw == null || !mw.IsStatic)
 			{
@@ -3471,7 +3476,7 @@ sealed class Compiler
 				ilGenerator.Emit(OpCodes.Conv_R8);
 			}
 		}
-		context.GetValue<DynamicFieldBinder>(instr.Arg1 | ((byte)kind << 24)).Emit(this, cpi, kind);
+		context.GetValue<DynamicFieldBinder>(instr.Arg1 | ((byte)kind << 24)).Emit(this, cpi, kind, false);
 		if (kind == ClassFile.RefKind.getField || kind == ClassFile.RefKind.getStatic)
 		{
 			fieldType.EmitConvSignatureTypeToStackType(ilGenerator);
@@ -3702,16 +3707,16 @@ sealed class Compiler
 	{
 		private MethodInfo method;
 
-		internal void Emit(Compiler compiler, ClassFile.ConstantPoolItemFieldref cpi, ClassFile.RefKind kind)
+		internal void Emit(Compiler compiler, ClassFile.ConstantPoolItemFieldref cpi, ClassFile.RefKind kind, bool privileged)
 		{
 			if (method == null)
 			{
-				method = CreateMethod(compiler.context, cpi, kind);
+				method = CreateMethod(compiler.context, cpi, kind, privileged);
 			}
 			compiler.ilGenerator.Emit(OpCodes.Call, method);
 		}
 
-		private static MethodInfo CreateMethod(DynamicTypeWrapper.FinishContext context, ClassFile.ConstantPoolItemFieldref cpi, ClassFile.RefKind kind)
+		private static MethodInfo CreateMethod(DynamicTypeWrapper.FinishContext context, ClassFile.ConstantPoolItemFieldref cpi, ClassFile.RefKind kind, bool privileged)
 		{
 			TypeWrapper ret;
 			TypeWrapper[] args;
@@ -3736,7 +3741,7 @@ sealed class Compiler
 				default:
 					throw new InvalidOperationException();
 			}
-			return DynamicBinder.Emit(context, kind, cpi, ret, args);
+			return DynamicBinder.Emit(context, kind, cpi, ret, args, privileged);
 		}
 	}
 
@@ -3744,12 +3749,12 @@ sealed class Compiler
 	{
 		private MethodWrapper mw;
 
-		internal MethodWrapper Get(DynamicTypeWrapper.FinishContext context, ClassFile.RefKind kind, ClassFile.ConstantPoolItemMI cpi)
+		internal MethodWrapper Get(DynamicTypeWrapper.FinishContext context, ClassFile.RefKind kind, ClassFile.ConstantPoolItemMI cpi, bool privileged)
 		{
-			return mw ?? (mw = new DynamicBinderMethodWrapper(cpi, Emit(context, kind, cpi), kind));
+			return mw ?? (mw = new DynamicBinderMethodWrapper(cpi, Emit(context, kind, cpi, privileged), kind));
 		}
 
-		private static MethodInfo Emit(DynamicTypeWrapper.FinishContext context, ClassFile.RefKind kind, ClassFile.ConstantPoolItemMI cpi)
+		private static MethodInfo Emit(DynamicTypeWrapper.FinishContext context, ClassFile.RefKind kind, ClassFile.ConstantPoolItemMI cpi, bool privileged)
 		{
 			TypeWrapper ret;
 			TypeWrapper[] args;
@@ -3768,10 +3773,10 @@ sealed class Compiler
 				ret = cpi.GetRetType();
 				args = ArrayUtil.Concat(cpi.GetClassType(), cpi.GetArgTypes());
 			}
-			return Emit(context, kind, cpi, ret, args);
+			return Emit(context, kind, cpi, ret, args, privileged);
 		}
 
-		internal static MethodInfo Emit(DynamicTypeWrapper.FinishContext context, ClassFile.RefKind kind, ClassFile.ConstantPoolItemFMI cpi, TypeWrapper ret, TypeWrapper[] args)
+		internal static MethodInfo Emit(DynamicTypeWrapper.FinishContext context, ClassFile.RefKind kind, ClassFile.ConstantPoolItemFMI cpi, TypeWrapper ret, TypeWrapper[] args, bool privileged)
 		{
 			Type delegateType = MethodHandleUtil.CreateMethodHandleDelegateType(args, ret);
 			FieldBuilder fb = context.DefineMethodHandleInvokeCacheField(delegateType);
@@ -3789,7 +3794,14 @@ sealed class Compiler
 			ilgen.Emit(OpCodes.Ldstr, cpi.Class);
 			ilgen.Emit(OpCodes.Ldstr, cpi.Name);
 			ilgen.Emit(OpCodes.Ldstr, cpi.Signature);
-			context.EmitCallerID(ilgen);
+			if (privileged)
+			{
+				context.EmitHostCallerID(ilgen);
+			}
+			else
+			{
+				context.EmitCallerID(ilgen);
+			}
 			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicBinderMemberLookup.MakeGenericMethod(delegateType));
 			ilgen.Emit(OpCodes.Volatile);
 			ilgen.Emit(OpCodes.Stsfld, fb);
@@ -3868,6 +3880,9 @@ sealed class Compiler
 			case NormalizedByteCode.__dynamic_invokestatic:
 			case NormalizedByteCode.__dynamic_invokevirtual:
 			case NormalizedByteCode.__dynamic_invokespecial:
+			case NormalizedByteCode.__privileged_invokestatic:
+			case NormalizedByteCode.__privileged_invokevirtual:
+			case NormalizedByteCode.__privileged_invokespecial:
 				return GetDynamicMethodWrapper(constantPoolIndex, invoke, cpi);
 			case NormalizedByteCode.__methodhandle_invoke:
 			case NormalizedByteCode.__methodhandle_link:
@@ -3893,20 +3908,40 @@ sealed class Compiler
 				break;
 			case NormalizedByteCode.__invokestatic:
 			case NormalizedByteCode.__dynamic_invokestatic:
+			case NormalizedByteCode.__privileged_invokestatic:
 				kind = ClassFile.RefKind.invokeStatic;
 				break;
 			case NormalizedByteCode.__invokevirtual:
 			case NormalizedByteCode.__dynamic_invokevirtual:
+			case NormalizedByteCode.__privileged_invokevirtual:
 				kind = ClassFile.RefKind.invokeVirtual;
 				break;
 			case NormalizedByteCode.__invokespecial:
 			case NormalizedByteCode.__dynamic_invokespecial:
 				kind = ClassFile.RefKind.newInvokeSpecial;
 				break;
+			case NormalizedByteCode.__privileged_invokespecial:
+				// we don't support calling a base class constructor
+				kind = cpi.GetMethod().IsConstructor
+					? ClassFile.RefKind.newInvokeSpecial
+					: ClassFile.RefKind.invokeSpecial;
+				break;
 			default:
 				throw new InvalidOperationException();
 		}
-		return context.GetValue<DynamicBinder>(index | ((byte)kind << 24)).Get(context, kind, cpi);
+		bool privileged;
+		switch (invoke)
+		{
+			case NormalizedByteCode.__privileged_invokestatic:
+			case NormalizedByteCode.__privileged_invokevirtual:
+			case NormalizedByteCode.__privileged_invokespecial:
+				privileged = true;
+				break;
+			default:
+				privileged = false;
+				break;
+		}
+		return context.GetValue<DynamicBinder>(index | ((byte)kind << 24)).Get(context, kind, cpi, privileged);
 	}
 
 	private TypeWrapper ComputeThisType(TypeWrapper type, MethodWrapper method, NormalizedByteCode invoke)

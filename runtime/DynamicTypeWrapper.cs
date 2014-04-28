@@ -108,9 +108,9 @@ namespace IKVM.Internal
 		}
 
 #if STATIC_COMPILER
-		internal DynamicTypeWrapper(ClassFile f, CompilerClassLoader classLoader, ProtectionDomain pd)
+		internal DynamicTypeWrapper(TypeWrapper host, ClassFile f, CompilerClassLoader classLoader, ProtectionDomain pd)
 #else
-		internal DynamicTypeWrapper(ClassFile f, ClassLoaderWrapper classLoader, ProtectionDomain pd)
+		internal DynamicTypeWrapper(TypeWrapper host, ClassFile f, ClassLoaderWrapper classLoader, ProtectionDomain pd)
 #endif
 			: base(f.IsInternal ? TypeFlags.InternalAccess : TypeFlags.None, f.Modifiers, f.Name)
 		{
@@ -176,7 +176,7 @@ namespace IKVM.Internal
 				this.interfaces[i] = iface;
 			}
 
-			impl = new JavaTypeImpl(f, this);
+			impl = new JavaTypeImpl(host, f, this);
 		}
 
 #if CLASSGC
@@ -446,6 +446,7 @@ namespace IKVM.Internal
 
 		private sealed class JavaTypeImpl : DynamicImpl
 		{
+			private readonly TypeWrapper host;
 			private readonly ClassFile classFile;
 			private readonly DynamicOrAotTypeWrapper wrapper;
 			private TypeBuilder typeBuilder;
@@ -464,9 +465,10 @@ namespace IKVM.Internal
 			private Dictionary<string, TypeWrapper> nestedTypeNames;	// only keys are used, values are always null
 #endif
 
-			internal JavaTypeImpl(ClassFile f, DynamicTypeWrapper wrapper)
+			internal JavaTypeImpl(TypeWrapper host, ClassFile f, DynamicTypeWrapper wrapper)
 			{
 				Tracer.Info(Tracer.Compiler, "constructing JavaTypeImpl for " + f.Name);
+				this.host = host;
 				this.classFile = f;
 				this.wrapper = (DynamicOrAotTypeWrapper)wrapper;
 			}
@@ -1189,7 +1191,7 @@ namespace IKVM.Internal
 				// we know that the verifier won't try to load any types (which isn't allowed at this time)
 				try
 				{
-					new MethodAnalyzer(wrapper, null, classFile, m, wrapper.classLoader);
+					new MethodAnalyzer(null, wrapper, null, classFile, m, wrapper.classLoader);
 					return true;
 				}
 				catch (VerifyError)
@@ -1770,7 +1772,7 @@ namespace IKVM.Internal
 					}
 #endif
 
-					FinishContext context = new FinishContext(classFile, wrapper, typeBuilder);
+					FinishContext context = new FinishContext(host, classFile, wrapper, typeBuilder);
 					Type type = context.FinishImpl();
 #if STATIC_COMPILER
 					if (annotationBuilder != null)
@@ -3750,6 +3752,7 @@ namespace IKVM.Internal
 
 		internal sealed class FinishContext
 		{
+			private readonly TypeWrapper host;
 			private readonly ClassFile classFile;
 			private readonly DynamicOrAotTypeWrapper wrapper;
 			private readonly TypeBuilder typeBuilder;
@@ -3771,8 +3774,9 @@ namespace IKVM.Internal
 				internal object value;
 			}
 
-			internal FinishContext(ClassFile classFile, DynamicOrAotTypeWrapper wrapper, TypeBuilder typeBuilder)
+			internal FinishContext(TypeWrapper host, ClassFile classFile, DynamicOrAotTypeWrapper wrapper, TypeBuilder typeBuilder)
 			{
+				this.host = host;
 				this.classFile = classFile;
 				this.wrapper = wrapper;
 				this.typeBuilder = typeBuilder;
@@ -3829,6 +3833,40 @@ namespace IKVM.Internal
 					dynamicClassLiteral.Add(tw.Name, method);
 				}
 				ilgen.Emit(OpCodes.Call, method);
+			}
+
+#if !STATIC_COMPILER && !FIRST_PASS
+			internal sealed class HostCallerID : ikvm.@internal.CallerID
+			{
+				internal readonly TypeWrapper host;
+				private readonly TypeWrapper wrapper;
+
+				internal HostCallerID(TypeWrapper host, TypeWrapper wrapper)
+				{
+					this.host = host;
+					this.wrapper = wrapper;
+				}
+
+				internal override java.lang.Class getAndCacheClass()
+				{
+					return wrapper.ClassObject;
+				}
+
+				internal override java.lang.ClassLoader getAndCacheClassLoader()
+				{
+					return wrapper.GetClassLoader().GetJavaClassLoader();
+				}
+			}
+#endif
+
+			internal void EmitHostCallerID(CodeEmitter ilgen)
+			{
+#if STATIC_COMPILER || FIRST_PASS
+				throw new InvalidOperationException();
+#else
+				EmitLiveObjectLoad(ilgen, new HostCallerID(host, wrapper));
+				CoreClasses.ikvm.@internal.CallerID.Wrapper.EmitCheckcast(ilgen);
+#endif
 			}
 
 			internal void EmitCallerID(CodeEmitter ilgen)
@@ -4153,7 +4191,7 @@ namespace IKVM.Internal
 							}
 #endif // STATIC_COMPILER
 							bool nonleaf = false;
-							Compiler.Compile(this, wrapper, methods[i], classFile, m, ilGenerator, ref nonleaf);
+							Compiler.Compile(this, host, wrapper, methods[i], classFile, m, ilGenerator, ref nonleaf);
 							ilGenerator.CheckLabels();
 							ilGenerator.DoEmit();
 							if (nonleaf && !m.IsForceInline)
@@ -5653,7 +5691,7 @@ namespace IKVM.Internal
 				}
 #endif
 				bool nonLeaf = false;
-				Compiler.Compile(context, wrapper, methods[methodIndex], classFile, m, ilGenerator, ref nonLeaf);
+				Compiler.Compile(context, host, wrapper, methods[methodIndex], classFile, m, ilGenerator, ref nonLeaf);
 				ilGenerator.DoEmit();
 #if STATIC_COMPILER
 				ilGenerator.EmitLineNumberTable((MethodBuilder)methods[methodIndex].GetMethod());

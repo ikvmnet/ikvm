@@ -48,7 +48,7 @@ namespace IKVM.Internal
 		private WorkaroundBaseClass workaroundBaseClass;
 
 		internal AotTypeWrapper(ClassFile f, CompilerClassLoader loader)
-			: base(f, loader, null)
+			: base(null, f, loader, null)
 		{
 		}
 

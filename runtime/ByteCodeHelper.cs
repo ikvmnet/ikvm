@@ -343,7 +343,13 @@ namespace IKVM.Runtime
 									return java.lang.invoke.MethodHandles.invoker(mt);
 							}
 						}
-						return java.lang.invoke.MethodHandleNatives.linkMethodHandleConstant(callerID.getCallerClass(), kind, refc, name, mt);
+						java.lang.Class caller = callerID.getCallerClass();
+						DynamicTypeWrapper.FinishContext.HostCallerID hostCallerID = callerID as DynamicTypeWrapper.FinishContext.HostCallerID;
+						if (hostCallerID != null)
+						{
+							caller = hostCallerID.host.ClassObject;
+						}
+						return java.lang.invoke.MethodHandleNatives.linkMethodHandleConstant(caller, kind, refc, name, mt);
 				}
 			}
 			catch (RetargetableJavaException x)

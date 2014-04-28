@@ -1160,6 +1160,7 @@ sealed class MethodAnalyzer
 	private readonly static TypeWrapper DoubleArrayType;
 	private readonly static TypeWrapper LongArrayType;
 	private readonly static TypeWrapper java_lang_ThreadDeath;
+	private readonly TypeWrapper host;	// used to by Unsafe.defineAnonymousClass() to provide access to private members of the host
 	private readonly TypeWrapper wrapper;
 	private readonly MethodWrapper mw;
 	private readonly ClassFile classFile;
@@ -1184,13 +1185,14 @@ sealed class MethodAnalyzer
 		java_lang_ThreadDeath = ClassLoaderWrapper.LoadClassCritical("java.lang.ThreadDeath");
 	}
 
-	internal MethodAnalyzer(TypeWrapper wrapper, MethodWrapper mw, ClassFile classFile, ClassFile.Method method, ClassLoaderWrapper classLoader)
+	internal MethodAnalyzer(TypeWrapper host, TypeWrapper wrapper, MethodWrapper mw, ClassFile classFile, ClassFile.Method method, ClassLoaderWrapper classLoader)
 	{
 		if(method.VerifyError != null)
 		{
 			throw new VerifyError(method.VerifyError);
 		}
 
+		this.host = host;
 		this.wrapper = wrapper;
 		this.mw = mw;
 		this.classFile = classFile;
@@ -1673,6 +1675,9 @@ sealed class MethodAnalyzer
 							case NormalizedByteCode.__dynamic_invokespecial:
 							case NormalizedByteCode.__dynamic_invokeinterface:
 							case NormalizedByteCode.__dynamic_invokestatic:
+							case NormalizedByteCode.__privileged_invokevirtual:
+							case NormalizedByteCode.__privileged_invokespecial:
+							case NormalizedByteCode.__privileged_invokestatic:
 							case NormalizedByteCode.__methodhandle_invoke:
 							case NormalizedByteCode.__methodhandle_link:
 							{
@@ -2416,7 +2421,11 @@ sealed class MethodAnalyzer
 			// but invokespecial can only invoke methods in the current interface or a directly implemented interface
 			if (invoke == NormalizedByteCode.__invokespecial && cpi is ClassFile.ConstantPoolItemInterfaceMethodref)
 			{
-				if (cpi.GetClassType() != wrapper && Array.IndexOf(wrapper.Interfaces, cpi.GetClassType()) == -1)
+				if (cpi.GetClassType() == host)
+				{
+					// ok
+				}
+				else if (cpi.GetClassType() != wrapper && Array.IndexOf(wrapper.Interfaces, cpi.GetClassType()) == -1)
 				{
 					throw new VerifyError("Bad invokespecial instruction: interface method reference is in an indirect superinterface.");
 				}
@@ -2494,11 +2503,35 @@ sealed class MethodAnalyzer
 					// for invokespecial we also need to make sure we're calling ourself or a base class
 					if (invoke == NormalizedByteCode.__invokespecial)
 					{
-						if (!VerifierTypeWrapper.IsNullOrUnloadable(refType) && !refType.IsSubTypeOf(wrapper))
+						if (VerifierTypeWrapper.IsNullOrUnloadable(refType))
+						{
+							// ok
+						}
+						else if (refType.IsSubTypeOf(wrapper))
+						{
+							// ok
+						}
+						else if (host != null && refType.IsSubTypeOf(host))
+						{
+							// ok
+						}
+						else
 						{
 							throw new VerifyError("Incompatible target object for invokespecial");
 						}
-						if (!targetType.IsUnloadable && !wrapper.IsSubTypeOf(targetType))
+						if (targetType.IsUnloadable)
+						{
+							// ok
+						}
+						else if (wrapper.IsSubTypeOf(targetType))
+						{
+							// ok
+						}
+						else if (host != null && host.IsSubTypeOf(targetType))
+						{
+							// ok
+						}
+						else
 						{
 							throw new VerifyError("Invokespecial cannot call subclass methods");
 						}
@@ -3667,6 +3700,24 @@ sealed class MethodAnalyzer
 					}
 					else if(targetMethod.IsAccessibleFrom(cpi.GetClassType(), wrapper, thisType))
 					{
+						return;
+					}
+					else if(host != null && targetMethod.IsAccessibleFrom(cpi.GetClassType(), host, thisType))
+					{
+						switch (invoke)
+						{
+							case NormalizedByteCode.__invokespecial:
+								instr.PatchOpCode(NormalizedByteCode.__privileged_invokespecial);
+								break;
+							case NormalizedByteCode.__invokestatic:
+								instr.PatchOpCode(NormalizedByteCode.__privileged_invokestatic);
+								break;
+							case NormalizedByteCode.__invokevirtual:
+								instr.PatchOpCode(NormalizedByteCode.__privileged_invokevirtual);
+								break;
+							default:
+								throw new InvalidOperationException();
+						}
 						return;
 					}
 					else

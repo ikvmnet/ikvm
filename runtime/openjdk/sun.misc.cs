@@ -362,7 +362,7 @@ static class Java_sun_misc_Unsafe
 				// make sure the build process includes the original class file as a resource in that case
 				throw new java.lang.ClassFormatError("Trying to define anonymous class based on stub class: " + classFile.Name);
 			}
-			return loader.GetTypeWrapperFactory().DefineClassImpl(null, classFile, loader, host.pd).ClassObject;
+			return loader.GetTypeWrapperFactory().DefineClassImpl(null, TypeWrapper.FromClass(host), classFile, loader, host.pd).ClassObject;
 		}
 		catch (RetargetableJavaException x)
 		{

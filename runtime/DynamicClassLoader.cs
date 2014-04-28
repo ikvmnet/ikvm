@@ -223,7 +223,7 @@ namespace IKVM.Internal
 			return mangledTypeName;
 		}
 
-		internal sealed override TypeWrapper DefineClassImpl(Dictionary<string, TypeWrapper> types, ClassFile f, ClassLoaderWrapper classLoader, ProtectionDomain protectionDomain)
+		internal sealed override TypeWrapper DefineClassImpl(Dictionary<string, TypeWrapper> types, TypeWrapper host, ClassFile f, ClassLoaderWrapper classLoader, ProtectionDomain protectionDomain)
 		{
 #if STATIC_COMPILER
 			AotTypeWrapper type = new AotTypeWrapper(f, (CompilerClassLoader)classLoader);
@@ -234,7 +234,7 @@ namespace IKVM.Internal
 			return null;
 #else
 			// this step can throw a retargettable exception, if the class is incorrect
-			DynamicTypeWrapper type = new DynamicTypeWrapper(f, classLoader, protectionDomain);
+			DynamicTypeWrapper type = new DynamicTypeWrapper(host, f, classLoader, protectionDomain);
 			// This step actually creates the TypeBuilder. It is not allowed to throw any exceptions,
 			// if an exception does occur, it is due to a programming error in the IKVM or CLR runtime
 			// and will cause a CriticalFailure and exit the process.

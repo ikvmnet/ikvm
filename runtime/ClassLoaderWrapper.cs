@@ -59,7 +59,7 @@ namespace IKVM.Internal
 	abstract class TypeWrapperFactory
 	{
 		internal abstract ModuleBuilder ModuleBuilder { get; }
-		internal abstract TypeWrapper DefineClassImpl(Dictionary<string, TypeWrapper> types, ClassFile f, ClassLoaderWrapper classLoader, ProtectionDomain protectionDomain);
+		internal abstract TypeWrapper DefineClassImpl(Dictionary<string, TypeWrapper> types, TypeWrapper host, ClassFile f, ClassLoaderWrapper classLoader, ProtectionDomain protectionDomain);
 		internal abstract bool ReserveName(string name);
 		internal abstract string AllocMangledName(DynamicTypeWrapper tw);
 		internal abstract Type DefineUnloadable(string name);
@@ -411,7 +411,7 @@ namespace IKVM.Internal
 			}
 			try
 			{
-				return GetTypeWrapperFactory().DefineClassImpl(types, f, this, protectionDomain);
+				return GetTypeWrapperFactory().DefineClassImpl(types, null, f, this, protectionDomain);
 			}
 			finally
 			{
