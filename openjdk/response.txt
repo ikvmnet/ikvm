@@ -21,11 +21,12 @@
 #  jeroen@frijters.net
 #  
 
--assemblyattributes:assembly.class
+-assemblyattributes:commonAttributes.class
 {
     -out:IKVM.OpenJDK.Core.dll
     -baseaddress:0x56000000
     -remap:map.xml
+    -assemblyattributes:coreAttributes.class
     -exclude:exclude.lst
     -resource:META-INF/MANIFEST.MF=MANIFEST.MF
     -resource:java/lang/uniName.dat=@OPENJDK7@/build/linux-amd64/classes/java/lang/uniName.dat
