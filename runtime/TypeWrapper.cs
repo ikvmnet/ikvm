@@ -4405,7 +4405,7 @@ namespace IKVM.Internal
 					}
 					MethodInfo impl;
 					MethodWrapper mw;
-					if (IsGhost)
+					if (IsGhost && (mods.Modifiers & (Modifiers.Static | Modifiers.Private)) == 0)
 					{
 						Type[] types = new Type[paramTypes.Length];
 						for (int i = 0; i < types.Length; i++)

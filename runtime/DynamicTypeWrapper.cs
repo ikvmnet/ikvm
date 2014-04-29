@@ -515,7 +515,7 @@ namespace IKVM.Internal
 						flags |= MemberFlags.CallerID;
 					}
 #endif
-					if (wrapper.IsGhost)
+					if (wrapper.IsGhost && m.IsVirtual)
 					{
 						methods[i] = new GhostMethodWrapper(wrapper, m.Name, m.Signature, null, null, null, null, m.Modifiers, flags);
 					}
