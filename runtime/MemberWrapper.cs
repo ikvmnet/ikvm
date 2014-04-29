@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2013 Jeroen Frijters
+  Copyright (C) 2002-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1131,22 +1131,9 @@ namespace IKVM.Internal
 			this.ghostMethod = ghostMethod;
 		}
 
-		private void ResolveGhostMethod()
-		{
-			if (ghostMethod == null)
-			{
-				ghostMethod = DeclaringType.TypeAsSignatureType.GetMethod(this.Name, this.GetParametersForDefineMethod());
-				if (ghostMethod == null)
-				{
-					throw new InvalidOperationException("Unable to resolve ghost method");
-				}
-			}
-		}
-
 #if EMITTERS
 		protected override void CallvirtImpl(CodeEmitter ilgen)
 		{
-			ResolveGhostMethod();
 			ilgen.Emit(OpCodes.Call, ghostMethod);
 		}
 #endif
@@ -1155,8 +1142,19 @@ namespace IKVM.Internal
 		[HideFromJava]
 		internal override object Invoke(object obj, object[] args)
 		{
-			ResolveGhostMethod();
 			return InvokeAndUnwrapException(ghostMethod, DeclaringType.GhostWrap(obj), args);
+		}
+#endif
+
+#if STATIC_COMPILER
+		internal void SetGhostMethod(MethodBuilder mb)
+		{
+			this.ghostMethod = mb;
+		}
+
+		internal MethodBuilder GetGhostMethod()
+		{
+			return (MethodBuilder)ghostMethod;
 		}
 #endif
 	}

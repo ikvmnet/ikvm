@@ -3093,7 +3093,7 @@ namespace IKVM.Internal
 				}
 				MethodBuilder mb = null;
 #if STATIC_COMPILER
-				mb = wrapper.DefineGhostMethod(name, attribs, methods[index]);
+				mb = wrapper.DefineGhostMethod(typeBuilder, name, attribs, methods[index]);
 #endif
 				if (mb == null)
 				{
@@ -6234,7 +6234,7 @@ namespace IKVM.Internal
 		protected abstract void AddMapXmlFields(ref FieldWrapper[] fields);
 		protected abstract bool EmitMapXmlMethodPrologueAndOrBody(CodeEmitter ilgen, ClassFile f, ClassFile.Method m);
 		protected abstract void EmitMapXmlMetadata(TypeBuilder typeBuilder, ClassFile classFile, FieldWrapper[] fields, MethodWrapper[] methods);
-		protected abstract MethodBuilder DefineGhostMethod(string name, MethodAttributes attribs, MethodWrapper mw);
+		protected abstract MethodBuilder DefineGhostMethod(TypeBuilder typeBuilder, string name, MethodAttributes attribs, MethodWrapper mw);
 		protected abstract void FinishGhost(TypeBuilder typeBuilder, MethodWrapper[] methods);
 		protected abstract void FinishGhostStep2();
 		protected abstract TypeBuilder DefineGhostType(string mangledTypeName, TypeAttributes typeAttribs);

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2009 Jeroen Frijters
+  Copyright (C) 2002-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -769,11 +769,14 @@ namespace IKVM.Internal
 			}
 		}
 
-		protected override MethodBuilder DefineGhostMethod(string name, MethodAttributes attribs, MethodWrapper mw)
+		protected override MethodBuilder DefineGhostMethod(TypeBuilder typeBuilder, string name, MethodAttributes attribs, MethodWrapper mw)
 		{
-			if(typeBuilderGhostInterface != null)
+			if(typeBuilderGhostInterface != null && mw.IsVirtual)
 			{
-				return mw.GetDefineMethodHelper().DefineMethod(this, typeBuilderGhostInterface, name, attribs);
+				DefineMethodHelper helper = mw.GetDefineMethodHelper();
+				MethodBuilder stub = helper.DefineMethod(this, typeBuilder, name, MethodAttributes.Public);
+				((GhostMethodWrapper)mw).SetGhostMethod(stub);
+				return helper.DefineMethod(this, typeBuilderGhostInterface, name, attribs);
 			}
 			return null;
 		}
@@ -786,10 +789,11 @@ namespace IKVM.Internal
 				for(int i = 0; i < methods.Length; i++)
 				{
 					// skip <clinit> and non-virtual interface methods introduced in Java 8
-					if(methods[i].IsVirtual)
+					GhostMethodWrapper gmw = methods[i] as GhostMethodWrapper;
+					if(gmw != null)
 					{
 						TypeWrapper[] args = methods[i].GetParameters();
-						MethodBuilder stub = methods[i].GetDefineMethodHelper().DefineMethod(this, typeBuilder, methods[i].Name, MethodAttributes.Public);
+						MethodBuilder stub = gmw.GetGhostMethod();
 						AddParameterMetadata(stub, methods[i]);
 						AttributeHelper.SetModifiers(stub, methods[i].Modifiers, methods[i].IsInternal);
 						CodeEmitter ilgen = CodeEmitter.Create(stub);
