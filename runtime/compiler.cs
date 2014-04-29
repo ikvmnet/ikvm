@@ -2915,23 +2915,20 @@ sealed class Compiler
 	{
 		private static readonly Type typeofOpenIndyCallSite;
 		private static readonly Type typeofCallSite;
-		private static readonly MethodInfo methodLookup;
+		private static readonly MethodWrapper methodLookup;
 
 		static InvokeDynamicBuilder()
 		{
-			Type typeofMethodHandles;
 #if STATIC_COMPILER
 			typeofOpenIndyCallSite = StaticCompiler.GetRuntimeType("IKVM.Runtime.IndyCallSite`1");
 			typeofCallSite = ClassLoaderWrapper.LoadClassCritical("java.lang.invoke.CallSite").TypeAsSignatureType;
-			typeofMethodHandles = ClassLoaderWrapper.LoadClassCritical("java.lang.invoke.MethodHandles").TypeAsBaseType;
-#elif FIRST_PASS
-			typeofMethodHandles = null;
-#else
+#elif !FIRST_PASS
 			typeofOpenIndyCallSite = typeof(IKVM.Runtime.IndyCallSite<>);
 			typeofCallSite = typeof(java.lang.invoke.CallSite);
-			typeofMethodHandles = typeof(java.lang.invoke.MethodHandles);
 #endif
-			methodLookup = typeofMethodHandles.GetMethod("lookup", new Type[] { CoreClasses.ikvm.@internal.CallerID.Wrapper.TypeAsSignatureType });
+			methodLookup = ClassLoaderWrapper.LoadClassCritical("java.lang.invoke.MethodHandles")
+				.GetMethodWrapper("lookup", "()Ljava.lang.invoke.MethodHandles$Lookup;", false);
+			methodLookup.Link();
 		}
 
 		internal static void Emit(Compiler compiler, ClassFile.ConstantPoolItemInvokeDynamic cpi, Type delegateType)
@@ -3047,7 +3044,7 @@ sealed class Compiler
 				varArgs = -1;
 			}
 			compiler.context.EmitCallerID(ilgen);
-			ilgen.Emit(OpCodes.Call, methodLookup);
+			methodLookup.EmitCall(ilgen);
 			ilgen.Emit(OpCodes.Ldstr, cpi.Name);
 			parameters[1].EmitConvStackTypeToSignatureType(ilgen, CoreClasses.java.lang.String.Wrapper);
 			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.LoadMethodType.MakeGenericMethod(MethodHandleUtil.CreateDelegateTypeForLoadConstant(cpi.GetArgTypes(), cpi.GetRetType())));
