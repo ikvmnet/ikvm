@@ -218,7 +218,11 @@ namespace IKVM.Runtime
 			{
 				TypeWrapper context = TypeWrapper.FromClass(callerId.getCallerClass());
 				TypeWrapper wrapper = ClassLoaderWrapper.FromCallerID(callerId).LoadClassByDottedName(clazz);
-				callerId.getCallerClassLoader().checkPackageAccess(wrapper.ClassObject, callerId.getCallerClass().pd);
+				java.lang.ClassLoader loader = callerId.getCallerClassLoader();
+				if(loader != null)
+				{
+					loader.checkPackageAccess(wrapper.ClassObject, callerId.getCallerClass().pd);
+				}
 				if(!wrapper.IsAccessibleFrom(context))
 				{
 					throw new java.lang.IllegalAccessError("Try to access class " + wrapper.Name + " from class " + context.Name);
