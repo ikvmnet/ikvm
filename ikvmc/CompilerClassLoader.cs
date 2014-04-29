@@ -64,7 +64,6 @@ namespace IKVM.Internal
 		private Dictionary<MethodKey, IKVM.Internal.MapXml.ReplaceMethodCall[]> mapxml_ReplacedMethods;
 		private Dictionary<MethodKey, IKVM.Internal.MapXml.InstructionList> mapxml_MethodPrologues;
 		private IKVM.Internal.MapXml.Root map;
-		private List<object> assemblyAnnotations;
 		private List<string> classesToCompile;
 		private List<CompilerClassLoader> peerReferences = new List<CompilerClassLoader>();
 		private Dictionary<string, string> peerLoading = new Dictionary<string, string>();
@@ -2712,7 +2711,6 @@ namespace IKVM.Internal
 					}
 				}
 			}
-			List<object> assemblyAnnotations = new List<object>();
 			Tracer.Info(Tracer.Compiler, "Parsing class files");
 			// map the class names to jar entries
 			Dictionary<string, Jar.Item> h = new Dictionary<string, Jar.Item>();
@@ -2754,25 +2752,29 @@ namespace IKVM.Internal
 				}
 			}
 
-			// look for "assembly" type that acts as a placeholder for assembly attributes
-			Jar.Item assemblyType;
-			if (h.TryGetValue("assembly", out assemblyType))
+			if (options.assemblyAttributeAnnotations == null)
 			{
-				try
+				// look for "assembly" type that acts as a placeholder for assembly attributes
+				Jar.Item assemblyType;
+				if (h.TryGetValue("assembly", out assemblyType))
 				{
-					byte[] buf = assemblyType.GetData();
-					ClassFile f = new ClassFile(buf, 0, buf.Length, null, ClassFileParseOptions.None, null);
-					// NOTE the "assembly" type in the unnamed package is a magic type
-					// that acts as the placeholder for assembly attributes
-					if (f.Name == "assembly" && f.Annotations != null)
+					try
 					{
-						assemblyAnnotations.AddRange(f.Annotations);
-						// HACK remove "assembly" type that exists only as a placeholder for assembly attributes
-						h.Remove(f.Name);
-						assemblyType.Remove();
+						byte[] buf = assemblyType.GetData();
+						ClassFile f = new ClassFile(buf, 0, buf.Length, null, ClassFileParseOptions.None, null);
+						// NOTE the "assembly" type in the unnamed package is a magic type
+						// that acts as the placeholder for assembly attributes
+						if (f.Name == "assembly" && f.Annotations != null)
+						{
+							options.assemblyAttributeAnnotations = f.Annotations;
+							// HACK remove "assembly" type that exists only as a placeholder for assembly attributes
+							h.Remove(f.Name);
+							assemblyType.Remove();
+							StaticCompiler.IssueMessage(Message.LegacyAssemblyAttributesFound);
+						}
 					}
+					catch (ClassFormatError) { }
 				}
-				catch (ClassFormatError) { }
 			}
 
 			// now look for a main method
@@ -2864,7 +2866,6 @@ namespace IKVM.Internal
 				referencedAssemblies[i] = acl;
 			}
 			loader = new CompilerClassLoader(referencedAssemblies, options, options.path, options.targetIsModule, options.assembly, h);
-			loader.assemblyAnnotations = assemblyAnnotations;
 			loader.classesToCompile = new List<string>(h.Keys);
 			if(options.remapfile != null)
 			{
@@ -3110,12 +3111,15 @@ namespace IKVM.Internal
 				CustomAttributeBuilder filever = new CustomAttributeBuilder(JVM.Import(typeof(System.Reflection.AssemblyFileVersionAttribute)).GetConstructor(new Type[] { Types.String }), new object[] { options.fileversion });
 				assemblyBuilder.SetCustomAttribute(filever);
 			}
-			foreach(object[] def in assemblyAnnotations)
+			if(options.assemblyAttributeAnnotations != null)
 			{
-				Annotation annotation = Annotation.LoadAssemblyCustomAttribute(this, def);
-				if(annotation != null)
+				foreach(object[] def in options.assemblyAttributeAnnotations)
 				{
-					annotation.Apply(this, assemblyBuilder, def);
+					Annotation annotation = Annotation.LoadAssemblyCustomAttribute(this, def);
+					if(annotation != null)
+					{
+						annotation.Apply(this, assemblyBuilder, def);
+					}
 				}
 			}
 			if(options.classLoader != null)
@@ -3500,6 +3504,7 @@ namespace IKVM.Internal
 		internal bool warnaserror; // treat all warnings as errors
 		internal FileInfo writeSuppressWarningsFile;
 		internal List<string> proxies = new List<string>();
+		internal object[] assemblyAttributeAnnotations;
 
 		internal CompilerOptions Copy()
 		{
@@ -3648,6 +3653,7 @@ namespace IKVM.Internal
 		StubsAreDeprecated = 134,
 		WrongClassName = 135,
 		ReflectionCallerClassRequiresCallerID = 136,
+		LegacyAssemblyAttributesFound = 137,
 		UnknownWarning = 999,
 		// This is where the errors start
 		StartErrors = 4000,
@@ -3997,6 +4003,9 @@ namespace IKVM.Internal
 				case Message.ReflectionCallerClassRequiresCallerID:
 					msg = "Reflection.getCallerClass() called from non-CallerID method" + Environment.NewLine +
 						"    (\"{0}.{1}{2}\")";
+					break;
+				case Message.LegacyAssemblyAttributesFound:
+					msg = "Legacy assembly attributes container found. Please use the -assemblyattributes:<file> option.";
 					break;
 				case Message.UnableToCreateProxy:
 					msg = "Unable to create proxy \"{0}\"" + Environment.NewLine +

@@ -21,7 +21,7 @@
 #  jeroen@frijters.net
 #  
 
-assembly.class
+-assemblyattributes:assembly.class
 {
     -out:IKVM.OpenJDK.Core.dll
     -baseaddress:0x56000000

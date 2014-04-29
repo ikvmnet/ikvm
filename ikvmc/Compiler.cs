@@ -518,6 +518,8 @@ sealed class IkvmcCompiler
 		Console.Error.WriteLine("-lib:<dir>                     Additional directories to search for references");
 		Console.Error.WriteLine("-highentropyva                 Enable high entropy ASLR");
 		Console.Error.WriteLine("-static                        Disable dynamic binding");
+		Console.Error.WriteLine("-assemblyattributes:<file>     Read assembly custom attributes from specified");
+		Console.Error.WriteLine("                               class file.");
 	}
 
 	void ParseCommandLine(IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
@@ -986,6 +988,10 @@ sealed class IkvmcCompiler
 				{
 					options.nojarstubs = true;
 				}
+				else if(s.StartsWith("-assemblyattributes:", StringComparison.Ordinal))
+				{
+					ProcessAttributeAnnotationsClass(ref options.assemblyAttributeAnnotations, s.Substring(20));
+				}
 				else
 				{
 					throw new FatalCompilerErrorException(Message.UnrecognizedOption, s);
@@ -1244,6 +1250,21 @@ sealed class IkvmcCompiler
 		}
 	}
 
+	private static void ArrayAppend<T>(ref T[] array, T[] append)
+	{
+		if (array == null)
+		{
+			array = append;
+		}
+		else if (append != null)
+		{
+			T[] tmp = new T[array.Length + append.Length];
+			Array.Copy(array, tmp, array.Length);
+			Array.Copy(append, 0, tmp, array.Length, append.Length);
+			array = tmp;
+		}
+	}
+
 	private static byte[] ReadFromZip(ZipFile zf, ZipEntry ze)
 	{
 		byte[] buf = new byte[ze.Size];
@@ -1497,6 +1518,20 @@ sealed class IkvmcCompiler
 			classesToExclude = list.ToArray();
 		} 
 		catch(Exception x) 
+		{
+			throw new FatalCompilerErrorException(Message.ErrorReadingFile, filename, x.Message);
+		}
+	}
+
+	private static void ProcessAttributeAnnotationsClass(ref object[] annotations, string filename)
+	{
+		try
+		{
+			byte[] buf = File.ReadAllBytes(filename);
+			ClassFile cf = new ClassFile(buf, 0, buf.Length, null, ClassFileParseOptions.None, null);
+			ArrayAppend(ref annotations, cf.Annotations);
+		}
+		catch (Exception x)
 		{
 			throw new FatalCompilerErrorException(Message.ErrorReadingFile, filename, x.Message);
 		}
