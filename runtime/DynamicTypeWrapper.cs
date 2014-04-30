@@ -3153,7 +3153,7 @@ namespace IKVM.Internal
 					{
 						attribs |= MethodAttributes.NewSlot;
 					}
-					if (classFile.IsInterface && !m.IsPublic)
+					if (classFile.IsInterface && !m.IsPublic && !wrapper.IsGhost)
 					{
 						TypeBuilder tb = typeBuilder;
 #if STATIC_COMPILER
