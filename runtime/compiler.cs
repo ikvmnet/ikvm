@@ -3373,6 +3373,16 @@ sealed class Compiler
 						// we're calling a java.lang.Object method through a ghost interface reference,
 						// no ghost handling is needed
 					}
+					else if(VerifierTypeWrapper.IsThis(ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i)))
+					{
+						// we're an instance method in a ghost interface, so the this pointer is a managed pointer to the
+						// wrapper value and if we're not calling another instance method on ourself, we need to load
+						// the wrapper value onto the stack
+						if(!instanceMethod || i != 0)
+						{
+							ilGenerator.Emit(OpCodes.Ldobj, args[i].TypeAsSignatureType);
+						}
+					}
 					else
 					{
 						CodeEmitterLocal ghost = ilGenerator.AllocTempLocal(Types.Object);
