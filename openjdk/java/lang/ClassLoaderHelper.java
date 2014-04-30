@@ -37,15 +37,14 @@ class ClassLoaderHelper {
      * For mac, this replaces the final .dylib suffix with .jnilib
      */
     static File mapAlternativeName(File lib) {
-        if (ikvm.internal.Util.MACOSX) {
-            String name = lib.toString();
-            int index = name.toLowerCase().lastIndexOf(".dylib");
-            if (index < 0) {
-                return null;
-            }
-            return new File(name.substring(0, index) + ".jnilib");
-        } else {
+        if (!ikvm.internal.Util.MACOSX) {
             return null;
         }
+        String name = lib.toString();
+        int index = name.lastIndexOf('.');
+        if (index < 0) {
+            return null;
+        }
+        return new File(name.substring(0, index) + ".jnilib");
     }
 }
