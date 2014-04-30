@@ -3732,6 +3732,7 @@ namespace IKVM.Internal
 		FileNotFound = 5055,
 		RuntimeMethodMissing = 5056,
 		MapFileFieldNotFound = 5057,
+		GhostInterfaceMethodMissing = 5058,
 	}
 
 	static class StaticCompiler
