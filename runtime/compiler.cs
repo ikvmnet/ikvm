@@ -3473,7 +3473,7 @@ sealed class Compiler
 				ilGenerator.Emit(OpCodes.Conv_R8);
 			}
 		}
-		context.GetValue<DynamicFieldBinder>(instr.Arg1 | ((byte)kind << 24)).Emit(this, cpi, kind, false);
+		context.GetValue<DynamicFieldBinder>(instr.Arg1 | ((byte)kind << 24)).Emit(this, cpi, kind);
 		if (kind == ClassFile.RefKind.getField || kind == ClassFile.RefKind.getStatic)
 		{
 			fieldType.EmitConvSignatureTypeToStackType(ilGenerator);
@@ -3704,16 +3704,16 @@ sealed class Compiler
 	{
 		private MethodInfo method;
 
-		internal void Emit(Compiler compiler, ClassFile.ConstantPoolItemFieldref cpi, ClassFile.RefKind kind, bool privileged)
+		internal void Emit(Compiler compiler, ClassFile.ConstantPoolItemFieldref cpi, ClassFile.RefKind kind)
 		{
 			if (method == null)
 			{
-				method = CreateMethod(compiler.context, cpi, kind, privileged);
+				method = CreateMethod(compiler.context, cpi, kind);
 			}
 			compiler.ilGenerator.Emit(OpCodes.Call, method);
 		}
 
-		private static MethodInfo CreateMethod(DynamicTypeWrapper.FinishContext context, ClassFile.ConstantPoolItemFieldref cpi, ClassFile.RefKind kind, bool privileged)
+		private static MethodInfo CreateMethod(DynamicTypeWrapper.FinishContext context, ClassFile.ConstantPoolItemFieldref cpi, ClassFile.RefKind kind)
 		{
 			TypeWrapper ret;
 			TypeWrapper[] args;
@@ -3738,7 +3738,7 @@ sealed class Compiler
 				default:
 					throw new InvalidOperationException();
 			}
-			return DynamicBinder.Emit(context, kind, cpi, ret, args, privileged);
+			return DynamicBinder.Emit(context, kind, cpi, ret, args, false);
 		}
 	}
 
