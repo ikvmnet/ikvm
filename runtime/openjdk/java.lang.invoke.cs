@@ -274,7 +274,7 @@ static class Java_java_lang_invoke_MethodHandleNatives
 		FieldWrapper fw = TypeWrapper.FromClass(self.getDeclaringClass()).GetFieldWrapper(self.getName(), self.getSignature().Replace('/', '.'));
 		if (fw == null)
 		{
-			throw new java.lang.NoSuchMethodError("field resolution failed");
+			throw new java.lang.NoSuchFieldError(self.getName());
 		}
 		SetModifiers(self, fw);
 		self._flags(self._flags() | MethodHandleNatives.Constants.MN_IS_FIELD);
