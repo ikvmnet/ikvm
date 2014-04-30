@@ -4190,6 +4190,10 @@ namespace IKVM.Internal
 								// Java 8 non-virtual interface method that we compile as a static method,
 								// we need to make sure the passed in this reference isn't null
 								ilGenerator.EmitLdarg(0);
+								if (wrapper.IsGhost)
+								{
+									ilGenerator.Emit(OpCodes.Ldfld, wrapper.GhostRefField);
+								}
 								ilGenerator.EmitNullCheck();
 							}
 							TraceHelper.EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
@@ -4619,9 +4623,19 @@ namespace IKVM.Internal
 				}
 				MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(), tbDefaultMethods, mw.Name, MethodAttributes.Public | MethodAttributes.Static, wrapper.TypeAsSignatureType, true);
 				CodeEmitter ilgen = CodeEmitter.Create(mb);
-				ilgen.EmitLdarg(0);
-				ilgen.Emit(OpCodes.Dup);
-				ilgen.EmitNullCheck();
+				if (wrapper.IsGhost)
+				{
+					ilgen.EmitLdarga(0);
+					ilgen.Emit(OpCodes.Ldfld, wrapper.GhostRefField);
+					ilgen.EmitNullCheck();
+					ilgen.EmitLdarga(0);
+				}
+				else
+				{
+					ilgen.EmitLdarg(0);
+					ilgen.Emit(OpCodes.Dup);
+					ilgen.EmitNullCheck();
+				}
 				TypeWrapper[] parameters = mw.GetParameters();
 				for (int i = 0; i < parameters.Length; i++)
 				{
@@ -4656,7 +4670,18 @@ namespace IKVM.Internal
 									typeBuilder, NamePrefix.DefaultMethod + mb.Name, MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, typeBuilder, false);
 							}
 							CodeEmitter ilgen = CodeEmitter.Create(mb);
-							ilgen.EmitLdarg(0);
+							if (mmw.BaseMethod.DeclaringType.IsGhost)
+							{
+								CodeEmitterLocal local = ilgen.DeclareLocal(mmw.BaseMethod.DeclaringType.TypeAsSignatureType);
+								ilgen.Emit(OpCodes.Ldloca, local);
+								ilgen.EmitLdarg(0);
+								ilgen.Emit(OpCodes.Stfld, mmw.BaseMethod.DeclaringType.GhostRefField);
+								ilgen.Emit(OpCodes.Ldloca, local);
+							}
+							else
+							{
+								ilgen.EmitLdarg(0);
+							}
 							for (int j = 0, count = mmw.GetParameters().Length; j < count; j++)
 							{
 								ilgen.EmitLdarg(j + 1);
