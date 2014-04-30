@@ -418,14 +418,13 @@ sealed class Compiler
 				}
 				else if(arg == 0)
 				{
-					tw = clazz;
+					continue;
 				}
 				else
 				{
 					tw = args[arg - 1];
 				}
 				if(!tw.IsUnloadable &&
-					v.type != VerifierTypeWrapper.UninitializedThis &&
 					(v.type != tw || tw.TypeAsLocalOrStackType != tw.TypeAsSignatureType))
 				{
 					v.builder = ilGenerator.DeclareLocal(GetLocalBuilderType(v.type));
