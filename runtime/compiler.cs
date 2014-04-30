@@ -3775,12 +3775,17 @@ sealed class Compiler
 
 		internal static MethodInfo Emit(DynamicTypeWrapper.FinishContext context, ClassFile.RefKind kind, ClassFile.ConstantPoolItemFMI cpi, TypeWrapper ret, TypeWrapper[] args, bool privileged)
 		{
+			bool ghostTarget = (kind == ClassFile.RefKind.invokeSpecial || kind == ClassFile.RefKind.invokeVirtual || kind == ClassFile.RefKind.invokeInterface) && args[0].IsGhost;
 			Type delegateType = MethodHandleUtil.CreateMethodHandleDelegateType(args, ret);
 			FieldBuilder fb = context.DefineMethodHandleInvokeCacheField(delegateType);
 			Type[] types = new Type[args.Length];
 			for (int i = 0; i < types.Length; i++)
 			{
 				types[i] = args[i].TypeAsSignatureType;
+			}
+			if (ghostTarget)
+			{
+				types[0] = types[0].MakeByRefType();
 			}
 			MethodBuilder mb = context.DefineMethodHandleDispatchStub(ret.TypeAsSignatureType, types);
 			CodeEmitter ilgen = CodeEmitter.Create(mb);
@@ -3807,6 +3812,10 @@ sealed class Compiler
 			for (int i = 0; i < args.Length; i++)
 			{
 				ilgen.EmitLdarg(i);
+				if (i == 0 && ghostTarget)
+				{
+					ilgen.Emit(OpCodes.Ldobj, args[0].TypeAsSignatureType);
+				}
 			}
 			MethodHandleUtil.EmitCallDelegateInvokeMethod(ilgen, delegateType);
 			ilgen.Emit(OpCodes.Ret);
