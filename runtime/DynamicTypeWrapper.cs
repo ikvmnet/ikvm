@@ -517,6 +517,7 @@ namespace IKVM.Internal
 #endif
 					if (wrapper.IsGhost && m.IsVirtual)
 					{
+						// note that a GhostMethodWrapper can also represent a default interface method
 						methods[i] = new GhostMethodWrapper(wrapper, m.Name, m.Signature, null, null, null, null, m.Modifiers, flags);
 					}
 					else if (m.IsConstructor && wrapper.IsDelegate)
@@ -531,6 +532,7 @@ namespace IKVM.Internal
 					}
 					else if (classFile.IsInterface && m.IsVirtual && !m.IsAbstract)
 					{
+						// note that a GhostMethodWrapper can also represent a default interface method
 						methods[i] = new DefaultInterfaceMethodWrapper(wrapper, m.Name, m.Signature, null, null, null, null, m.Modifiers, flags);
 					}
 					else
@@ -3288,11 +3290,20 @@ namespace IKVM.Internal
 					AttributeHelper.HideFromJava(mb, flags);
 				}
 
-				DefaultInterfaceMethodWrapper dimw = methods[index] as DefaultInterfaceMethodWrapper;
-				if (dimw != null)
+				if (classFile.IsInterface && methods[index].IsVirtual && !methods[index].IsAbstract)
 				{
-					dimw.SetImpl(dimw.GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(),
-						typeBuilder, NamePrefix.DefaultMethod + mb.Name, MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, typeBuilder, false));
+					if (wrapper.IsGhost)
+					{
+						DefaultInterfaceMethodWrapper.SetImpl(methods[index], methods[index].GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(),
+							typeBuilder, NamePrefix.DefaultMethod + mb.Name, MethodAttributes.Public | MethodAttributes.SpecialName,
+							null, false));
+					}
+					else
+					{
+						DefaultInterfaceMethodWrapper.SetImpl(methods[index], methods[index].GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(),
+							typeBuilder, NamePrefix.DefaultMethod + mb.Name, MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName,
+							typeBuilder, false));
+					}
 				}
 
 				return mb;
@@ -4168,7 +4179,7 @@ namespace IKVM.Internal
 						{
 							if (m.IsVirtual && classFile.IsInterface)
 							{
-								mb = (MethodBuilder)((DefaultInterfaceMethodWrapper)methods[i]).GetImpl();
+								mb = (MethodBuilder)DefaultInterfaceMethodWrapper.GetImpl(methods[i]);
 #if STATIC_COMPILER
 								CreateDefaultMethodInterop(ref tbDefaultMethods, mb, methods[i]);
 #endif
@@ -4634,8 +4645,7 @@ namespace IKVM.Internal
 					if (methods[i].IsMirandaMethod)
 					{
 						MirandaMethodWrapper mmw = (MirandaMethodWrapper)methods[i];
-						DefaultInterfaceMethodWrapper dimw;
-						if (mmw.Error == null && (dimw = mmw.BaseMethod as DefaultInterfaceMethodWrapper) != null)
+						if (mmw.Error == null && !mmw.BaseMethod.IsAbstract)
 						{
 							// we inherited a default interface method, so we need to forward the miranda method to the default method
 							MethodBuilder mb = (MethodBuilder)mmw.GetMethod();
@@ -4651,7 +4661,7 @@ namespace IKVM.Internal
 							{
 								ilgen.EmitLdarg(j + 1);
 							}
-							ilgen.Emit(OpCodes.Call, dimw.GetImpl());
+							ilgen.Emit(OpCodes.Call, DefaultInterfaceMethodWrapper.GetImpl(mmw.BaseMethod));
 							ilgen.Emit(OpCodes.Ret);
 							ilgen.DoEmit();
 						}

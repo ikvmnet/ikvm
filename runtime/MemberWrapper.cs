@@ -1122,6 +1122,7 @@ namespace IKVM.Internal
 	sealed class GhostMethodWrapper : SmartMethodWrapper
 	{
 		private MethodInfo ghostMethod;
+		private MethodInfo defaultImpl;
 
 		internal GhostMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodBase method, MethodInfo ghostMethod, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
 			: base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags)
@@ -1132,6 +1133,11 @@ namespace IKVM.Internal
 		}
 
 #if EMITTERS
+		protected override void CallImpl(CodeEmitter ilgen)
+		{
+			ilgen.Emit(OpCodes.Call, defaultImpl);
+		}
+
 		protected override void CallvirtImpl(CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Call, ghostMethod);
@@ -1145,6 +1151,16 @@ namespace IKVM.Internal
 			return InvokeAndUnwrapException(ghostMethod, DeclaringType.GhostWrap(obj), args);
 		}
 #endif
+
+		internal void SetDefaultImpl(MethodInfo impl)
+		{
+			this.defaultImpl = impl;
+		}
+
+		internal MethodInfo GetDefaultImpl()
+		{
+			return defaultImpl;
+		}
 
 #if STATIC_COMPILER
 		internal void SetGhostMethod(MethodBuilder mb)
@@ -1217,14 +1233,30 @@ namespace IKVM.Internal
 			this.impl = impl;
 		}
 
-		internal MethodInfo GetImpl()
+		internal static MethodInfo GetImpl(MethodWrapper mw)
 		{
-			return impl;
+			DefaultInterfaceMethodWrapper dimw = mw as DefaultInterfaceMethodWrapper;
+			if (dimw != null)
+			{
+				return dimw.impl;
+			}
+			else
+			{
+				return ((GhostMethodWrapper)mw).GetDefaultImpl();
+			}
 		}
 
-		internal void SetImpl(MethodInfo impl)
+		internal static void SetImpl(MethodWrapper mw, MethodInfo impl)
 		{
-			this.impl = impl;
+			DefaultInterfaceMethodWrapper dimw = mw as DefaultInterfaceMethodWrapper;
+			if (dimw != null)
+			{
+				dimw.impl = impl;
+			}
+			else
+			{
+				((GhostMethodWrapper)mw).SetDefaultImpl(impl);
+			}
 		}
 
 #if EMITTERS

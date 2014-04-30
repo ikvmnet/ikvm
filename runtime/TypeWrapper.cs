@@ -4414,6 +4414,10 @@ namespace IKVM.Internal
 						}
 						MethodInfo ifmethod = TypeAsBaseType.GetMethod(method.Name, types);
 						mw = new GhostMethodWrapper(this, name, sig, ifmethod, (MethodInfo)method, retType, paramTypes, mods.Modifiers, flags);
+						if (!mw.IsAbstract)
+						{
+							((GhostMethodWrapper)mw).SetDefaultImpl(TypeAsSignatureType.GetMethod(NamePrefix.DefaultMethod + method.Name, types));
+						}
 					}
 					else if (method.IsSpecialName && method.Name.StartsWith(NamePrefix.PrivateInterfaceInstanceMethod, StringComparison.Ordinal))
 					{

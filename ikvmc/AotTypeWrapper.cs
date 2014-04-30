@@ -819,13 +819,27 @@ namespace IKVM.Internal
 							ilgen.Emit(OpCodes.Isinst, implementers[j].TypeAsTBD);
 							label = ilgen.DefineLabel();
 							ilgen.EmitBrfalse(label);
-							ilgen.Emit(OpCodes.Castclass, implementers[j].TypeAsTBD);
-							for(int k = 0; k < args.Length; k++)
-							{
-								ilgen.EmitLdarg(k + 1);
-							}
 							MethodWrapper mw = implementers[j].GetMethodWrapper(methods[i].Name, methods[i].Signature, true);
-							mw.EmitCallvirt(ilgen);
+							if(mw == null)
+							{
+								// We're inheriting a default method
+								ilgen.Emit(OpCodes.Pop);
+								ilgen.Emit(OpCodes.Ldarg_0);
+								for (int k = 0; k < args.Length; k++)
+								{
+									ilgen.EmitLdarg(k + 1);
+								}
+								ilgen.Emit(OpCodes.Call, DefaultInterfaceMethodWrapper.GetImpl(methods[i]));
+							}
+							else
+							{
+								ilgen.Emit(OpCodes.Castclass, implementers[j].TypeAsTBD);
+								for (int k = 0; k < args.Length; k++)
+								{
+									ilgen.EmitLdarg(k + 1);
+								}
+								mw.EmitCallvirt(ilgen);
+							}
 							ilgen.EmitBr(end);
 							ilgen.MarkLabel(label);
 						}
