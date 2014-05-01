@@ -1392,7 +1392,7 @@ namespace IKVM.Internal
 						elementTypeName = elementTypeName.Substring(skip, elementTypeName.Length - skip - 1);
 					}
 #if STATIC_COMPILER
-					if (issueWarning)
+					if (issueWarning || classLoader.WarningLevelHigh)
 					{
 						classLoader.IssueMessage(Message.ClassNotFound, elementTypeName);
 					}
@@ -1487,6 +1487,13 @@ namespace IKVM.Internal
 				return cfp;
 #endif
 			}
+		}
+#endif
+
+#if STATIC_COMPILER
+		internal virtual bool WarningLevelHigh
+		{
+			get { return false; }
 		}
 #endif
 	}

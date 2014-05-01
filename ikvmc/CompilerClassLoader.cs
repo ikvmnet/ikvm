@@ -3313,6 +3313,11 @@ namespace IKVM.Internal
 				return false;
 			}
 		}
+
+		internal override bool WarningLevelHigh
+		{
+			get { return options.warningLevelHigh; }
+		}
 	}
 
 	sealed class Jar
@@ -3505,6 +3510,7 @@ namespace IKVM.Internal
 		internal FileInfo writeSuppressWarningsFile;
 		internal List<string> proxies = new List<string>();
 		internal object[] assemblyAttributeAnnotations;
+		internal bool warningLevelHigh;
 
 		internal CompilerOptions Copy()
 		{

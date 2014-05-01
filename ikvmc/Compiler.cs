@@ -995,6 +995,10 @@ sealed class IkvmcCompiler
 				{
 					ProcessAttributeAnnotationsClass(ref options.assemblyAttributeAnnotations, s.Substring(20));
 				}
+				else if(s == "-w4") // undocumented option to always warn if a class isn't found
+				{
+					options.warningLevelHigh = true;
+				}
 				else
 				{
 					throw new FatalCompilerErrorException(Message.UnrecognizedOption, s);
