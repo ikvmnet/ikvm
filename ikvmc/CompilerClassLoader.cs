@@ -3832,7 +3832,7 @@ namespace IKVM.Internal
 
 		internal static void IssueMessage(CompilerOptions options, Message msgId, params string[] values)
 		{
-			if (errorCount != 0 && msgId < Message.StartErrors)
+			if (errorCount != 0 && msgId < Message.StartErrors && !options.warnaserror)
 			{
 				// don't display any warnings after we've emitted an error message
 				return;
