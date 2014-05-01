@@ -3733,7 +3733,7 @@ sealed class MethodAnalyzer
 							instr.PatchOpCode(NormalizedByteCode.__clone_array);
 							return;
 						}
-						SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IllegalAccessError, "Try to access method {0}.{1}{2} from class {3}", targetMethod.DeclaringType.Name, cpi.Name, cpi.Signature, wrapper.Name);
+						SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IllegalAccessError, "tried to access method {0}.{1}{2} from class {3}", ToSlash(targetMethod.DeclaringType.Name), cpi.Name, ToSlash(cpi.Signature), ToSlash(wrapper.Name));
 					}
 				}
 				else
@@ -3746,6 +3746,11 @@ sealed class MethodAnalyzer
 				SetHardError(wrapper.GetClassLoader(), ref instr, HardError.NoSuchMethodError, "{0}.{1}{2}", cpi.Class, cpi.Name, cpi.Signature);
 			}
 		}
+	}
+
+	private static string ToSlash(string str)
+	{
+		return str.Replace('.', '/');
 	}
 
 	private void PatchFieldAccess(TypeWrapper wrapper, MethodWrapper mw, ref ClassFile.Method.Instruction instr, StackState stack)
