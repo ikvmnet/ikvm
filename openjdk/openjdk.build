@@ -30,7 +30,7 @@
     <property name="OPENJDK_VERSION" value="OpenJDK 7u40 b34" />
     <property name="IMPLEMENTATION_VERSION" value="1.7.0_40" />
     <property name="SPECIFICATION_VERSION" value="1.7" />
-    <property name="OpenJDK7.dir" value="${project::get-base-directory()}/../../openjdk-7u40-b34" />
+    <property name="OpenJDK.dir" value="${project::get-base-directory()}/../../openjdk-7u40-b34" />
     <if test="${platform::is-win32()}">
         <property name="pathsep" value=";" />
     </if>
@@ -51,7 +51,7 @@
         <copy file="allsources.lst" tofile="allsources.gen.lst" outputencoding="ascii" overwrite="true">
             <filterchain>
                 <replacetokens>
-                    <token key="OPENJDK" value="${OpenJDK7.dir}" />
+                    <token key="OPENJDK" value="${OpenJDK.dir}" />
                 </replacetokens>
             </filterchain>
         </copy>
@@ -102,7 +102,7 @@
             </fileset>
         </delete>
         <delete>
-            <fileset basedir="${OpenJDK7.dir}">
+            <fileset basedir="${OpenJDK.dir}">
                 <include name="**.class"/>
             </fileset>
         </delete>
@@ -188,8 +188,8 @@
 
     <target name="rmi">
         <property name="VMARGS" value="-J-client -J-Xmx896m -J-Xms128m -J-XX:PermSize=32m -J-XX:MaxPermSize=160m" />
-        <property name="CLASSPATH" value="${OpenJDK7.dir}/jdk/src/share/classes/${pathsep}${OpenJDK7.dir}/build/linux-amd64/impsrc/${pathsep}." />
-        <property name="OUTPUT" value="${OpenJDK7.dir}/build/linux-amd64/classes/" />
+        <property name="CLASSPATH" value="${OpenJDK.dir}/jdk/src/share/classes/${pathsep}${OpenJDK.dir}/build/linux-amd64/impsrc/${pathsep}." />
+        <property name="OUTPUT" value="${OpenJDK.dir}/build/linux-amd64/classes/" />
         <property name="ARGS" value="${VMARGS} -bootclasspath ${CLASSPATH} -d ${OUTPUT}" />
         <exec program="rmic" commandline="${ARGS} -v1.1 sun.rmi.registry.RegistryImpl" />
         <exec program="rmic" commandline="${ARGS} -v1.1 sun.rmi.transport.DGCImpl" />
@@ -211,7 +211,7 @@
     <target name="vfs">
         <!-- This file is generated here, but it is added as a resource to IKVM.Runtime.dll, because Ref.Emit on .NET 1.1 doesn't support adding a raw resource. -->
         <zip zipfile="vfs.zip">
-            <fileset basedir="${OpenJDK7.dir}/build/linux-amd64/j2re-image">
+            <fileset basedir="${OpenJDK.dir}/build/linux-amd64/j2re-image">
                 <include name="lib/calendars.properties" />
                 <include name="lib/logging.properties" />
                 <include name="lib/management/management.properties" />
@@ -230,7 +230,7 @@
                 -->
                 <include name="lib/security/US_export_policy.jar" />
             </fileset>
-            <fileset basedir="${OpenJDK7.dir}/jdk/src/windows">
+            <fileset basedir="${OpenJDK.dir}/jdk/src/windows">
                 <include name="lib/flavormap.properties" />
                 <include name="lib/content-types.properties" />
             </fileset>
@@ -238,9 +238,9 @@
         </target>
 
     <target name="resources">
-        <!-- resources that are not in @OPENJDK7@/build/linux-amd64/j2re-image/lib/resources.jar -->
+        <!-- resources that are not in @OPENJDK@/build/linux-amd64/j2re-image/lib/resources.jar -->
         <zip zipfile="resources.zip">
-            <fileset basedir="${OpenJDK7.dir}/jdk/src/share/classes">
+            <fileset basedir="${OpenJDK.dir}/jdk/src/share/classes">
                 <include name="com/sun/swing/internal/plaf/**/*" />
                 <include name="com/sun/java/swing/plaf/**/*.properties" />
                 <include name="com/sun/java/swing/plaf/**/*.gif" />
@@ -253,7 +253,7 @@
         <copy file="response.txt" tofile="response.gen.txt" outputencoding="ascii" overwrite="true">
             <filterchain>
                 <replacetokens>
-                    <token key="OPENJDK7" value="${OpenJDK7.dir}" />
+                    <token key="OPENJDK" value="${OpenJDK.dir}" />
                 </replacetokens>
             </filterchain>
         </copy>
@@ -340,7 +340,7 @@
         <copy file="tools.rsp" tofile="tools.gen.rsp" outputencoding="ascii" overwrite="true">
             <filterchain>
                 <replacetokens>
-                    <token key="OPENJDK7" value="${OpenJDK7.dir}" />
+                    <token key="OPENJDK" value="${OpenJDK.dir}" />
                 </replacetokens>
             </filterchain>
         </copy>
