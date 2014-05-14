@@ -343,6 +343,17 @@ sealed class Compiler
 		replacedMethodWrappers = clazz.GetReplacedMethodsFor(mw);
 #endif
 
+		TypeWrapper[] args = mw.GetParameters();
+		for(int i = 0; i < args.Length; i++)
+		{
+			if(args[i].IsUnloadable)
+			{
+				ilGenerator.EmitLdarg(i + (m.IsStatic ? 0 : 1));
+				EmitDynamicCast(args[i]);
+				ilGenerator.Emit(OpCodes.Pop);
+			}
+		}
+
 		Profiler.Enter("MethodAnalyzer");
 		try
 		{
@@ -404,7 +415,6 @@ sealed class Compiler
 			}
 		}
 
-		TypeWrapper[] args = mw.GetParameters();
 		LocalVar[] locals = localVars.GetAllLocalVars();
 		foreach(LocalVar v in locals)
 		{
@@ -743,16 +753,6 @@ sealed class Compiler
 						ilGenerator.SetLineNumber((ushort)firstLine);
 					}
 				}
-			}
-		}
-		TypeWrapper[] args = mw.GetParameters();
-		for(int i = 0; i < args.Length; i++)
-		{
-			if(args[i].IsUnloadable)
-			{
-				ilGenerator.EmitLdarg(i + (m.IsStatic ? 0 : 1));
-				EmitDynamicCast(context, ilGenerator, args[i]);
-				ilGenerator.Emit(OpCodes.Pop);
 			}
 		}
 		Compiler c;
@@ -1906,7 +1906,7 @@ sealed class Compiler
 						Profiler.Count("EmitDynamicNewCheckOnly");
 						// this is here to make sure we throw the exception in the right location (before
 						// evaluating the constructor arguments)
-						context.EmitDynamicClassLiteral(ilGenerator, wrapper);
+						EmitDynamicClassLiteral(wrapper);
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicNewCheckOnly);
 					}
 					else if(wrapper != clazz && RequiresExplicitClassInit(wrapper, i + 1, flags))
@@ -1937,7 +1937,7 @@ sealed class Compiler
 					{
 						Profiler.Count("EmitDynamicMultianewarray");
 						ilGenerator.Emit(OpCodes.Ldloc, localArray);
-						context.EmitDynamicClassLiteral(ilGenerator, wrapper);
+						EmitDynamicClassLiteral(wrapper);
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicMultianewarray);
 					}
 					else if(wrapper.IsGhost || wrapper.IsGhostArray)
@@ -1968,7 +1968,7 @@ sealed class Compiler
 					if(wrapper.IsUnloadable)
 					{
 						Profiler.Count("EmitDynamicNewarray");
-						context.EmitDynamicClassLiteral(ilGenerator, wrapper);
+						EmitDynamicClassLiteral(wrapper);
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicNewarray);
 					}
 					else if(wrapper.IsGhost || wrapper.IsGhostArray)
@@ -2034,7 +2034,7 @@ sealed class Compiler
 					TypeWrapper wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
 					if(wrapper.IsUnloadable)
 					{
-						EmitDynamicCast(context, ilGenerator, wrapper);
+						EmitDynamicCast(wrapper);
 					}
 					else
 					{
@@ -2858,7 +2858,7 @@ sealed class Compiler
 		}
 	}
 
-	private static void EmitDynamicCast(DynamicTypeWrapper.FinishContext context, CodeEmitter ilGenerator, TypeWrapper tw)
+	private void EmitDynamicCast(TypeWrapper tw)
 	{
 		Debug.Assert(tw.IsUnloadable);
 		Profiler.Count("EmitDynamicCast");
@@ -2866,7 +2866,7 @@ sealed class Compiler
 		CodeEmitterLabel ok = ilGenerator.DefineLabel();
 		ilGenerator.Emit(OpCodes.Dup);
 		ilGenerator.EmitBrfalse(ok);
-		context.EmitDynamicClassLiteral(ilGenerator, tw);
+		EmitDynamicClassLiteral(tw);
 		ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicCast);
 		ilGenerator.MarkLabel(ok);
 	}
@@ -2882,9 +2882,14 @@ sealed class Compiler
 		ilGenerator.EmitLdc_I4(0);
 		ilGenerator.EmitBr(end);
 		ilGenerator.MarkLabel(notnull);
-		context.EmitDynamicClassLiteral(ilGenerator, tw);
+		EmitDynamicClassLiteral(tw);
 		ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicInstanceOf);
 		ilGenerator.MarkLabel(end);
+	}
+
+	private void EmitDynamicClassLiteral(TypeWrapper tw)
+	{
+		context.EmitDynamicClassLiteral(ilGenerator, tw);
 	}
 
 	private void EmitLoadClass(CodeEmitter ilgen, TypeWrapper tw)
@@ -2892,7 +2897,7 @@ sealed class Compiler
 		if (tw.IsUnloadable)
 		{
 			Profiler.Count("EmitDynamicClassLiteral");
-			context.EmitDynamicClassLiteral(ilgen, tw);
+			EmitDynamicClassLiteral(tw);
 		}
 		else
 		{
