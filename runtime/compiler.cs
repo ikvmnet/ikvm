@@ -2977,9 +2977,10 @@ sealed class Compiler
 			CodeEmitter ilgen = CodeEmitter.Create(mb);
 			CodeEmitterLocal cs = ilgen.DeclareLocal(typeofCallSite);
 			CodeEmitterLocal ex = ilgen.DeclareLocal(Types.Exception);
+			CodeEmitterLocal ok = ilgen.DeclareLocal(Types.Boolean);
 			CodeEmitterLabel label = ilgen.DefineLabel();
 			ilgen.BeginExceptionBlock();
-			if (EmitCallBootstrapMethod(compiler, cpi, ilgen))
+			if (EmitCallBootstrapMethod(compiler, cpi, ilgen, ok))
 			{
 				ilgen.Emit(OpCodes.Isinst, typeofCallSite);
 				ilgen.Emit(OpCodes.Stloc, cs);
@@ -2987,15 +2988,18 @@ sealed class Compiler
 			ilgen.EmitLeave(label);
 			ilgen.BeginCatchBlock(Types.Exception);
 			ilgen.Emit(OpCodes.Stloc, ex);
+			ilgen.Emit(OpCodes.Ldloc, ok);
+			CodeEmitterLabel label2 = ilgen.DefineLabel();
+			ilgen.EmitBrtrue(label2);
+			ilgen.Emit(OpCodes.Rethrow);
+			ilgen.MarkLabel(label2);
 			ilgen.EmitLeave(label);
-			ilgen.BeginFinallyBlock();
+			ilgen.EndExceptionBlock();
+			ilgen.MarkLabel(label);
 			ilgen.Emit(OpCodes.Ldsflda, fb);
 			ilgen.Emit(OpCodes.Ldloc, cs);
 			ilgen.Emit(OpCodes.Ldloc, ex);
 			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.LinkIndyCallSite.MakeGenericMethod(delegateType));
-			ilgen.Emit(OpCodes.Endfinally);
-			ilgen.EndExceptionBlock();
-			ilgen.MarkLabel(label);
 			ilgen.Emit(OpCodes.Ldsfld, fb);
 			ilgen.Emit(OpCodes.Call, methodGetTarget);
 			for (int i = 0; i < args.Length; i++)
@@ -3008,7 +3012,7 @@ sealed class Compiler
 			return mb;
 		}
 
-		private static bool EmitCallBootstrapMethod(Compiler compiler, ClassFile.ConstantPoolItemInvokeDynamic cpi, CodeEmitter ilgen)
+		private static bool EmitCallBootstrapMethod(Compiler compiler, ClassFile.ConstantPoolItemInvokeDynamic cpi, CodeEmitter ilgen, CodeEmitterLocal ok)
 		{
 			ClassFile.BootstrapMethod bsm = compiler.classFile.GetBootstrapMethod(cpi.BootstrapMethod);
 			if (3 + bsm.ArgumentCount > 255)
@@ -3025,6 +3029,8 @@ sealed class Compiler
 			}
 			if (mw == null || !mw.IsStatic)
 			{
+				ilgen.EmitLdc_I4(1);
+				ilgen.Emit(OpCodes.Stloc, ok);
 				ilgen.EmitThrow("java.lang.invoke.WrongMethodTypeException");
 				return false;
 			}
@@ -3039,6 +3045,8 @@ sealed class Compiler
 			}
 			else if (extraArgs != bsm.ArgumentCount)
 			{
+				ilgen.EmitLdc_I4(1);
+				ilgen.Emit(OpCodes.Stloc, ok);
 				ilgen.EmitThrow("java.lang.invoke.WrongMethodTypeException");
 				return false;
 			}
@@ -3070,6 +3078,8 @@ sealed class Compiler
 					ilgen.Emit(OpCodes.Stelem_Ref);
 				}
 			}
+			ilgen.EmitLdc_I4(1);
+			ilgen.Emit(OpCodes.Stloc, ok);
 			mw.EmitCall(ilgen);
 			return true;
 		}
