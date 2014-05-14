@@ -788,7 +788,7 @@ static partial class MethodHandleUtil
 			return dm.CreateDelegate();
 		}
 
-		private sealed class DynamicCallerID : ikvm.@internal.CallerID
+		internal sealed class DynamicCallerID : ikvm.@internal.CallerID
 		{
 			internal static readonly DynamicCallerID Instance = new DynamicCallerID();
 

@@ -1454,7 +1454,7 @@ sealed class Compiler
 					CastInterfaceArgs(method.DeclaringType, method.GetParameters(), i, false);
 					if(method.HasCallerID)
 					{
-						context.EmitCallerID(ilGenerator);
+						context.EmitCallerID(ilGenerator, m.IsLambdaFormCompiled);
 					}
 					method.EmitCall(ilGenerator);
 					EmitReturnTypeConversion(method.ReturnType);
@@ -1695,7 +1695,7 @@ sealed class Compiler
 					{
 						if(method.HasCallerID)
 						{
-							context.EmitCallerID(ilGenerator);
+							context.EmitCallerID(ilGenerator, m.IsLambdaFormCompiled);
 						}
 
 						if(isinvokespecial)
@@ -2889,7 +2889,7 @@ sealed class Compiler
 
 	private void EmitDynamicClassLiteral(TypeWrapper tw)
 	{
-		context.EmitDynamicClassLiteral(ilGenerator, tw);
+		context.EmitDynamicClassLiteral(ilGenerator, tw, m.IsLambdaFormCompiled);
 	}
 
 	private void EmitLoadClass(CodeEmitter ilgen, TypeWrapper tw)
@@ -2897,7 +2897,7 @@ sealed class Compiler
 		if (tw.IsUnloadable)
 		{
 			Profiler.Count("EmitDynamicClassLiteral");
-			context.EmitDynamicClassLiteral(ilgen, tw);
+			context.EmitDynamicClassLiteral(ilgen, tw, m.IsLambdaFormCompiled);
 		}
 		else
 		{
@@ -3021,7 +3021,7 @@ sealed class Compiler
 			ClassFile.ConstantPoolItemMI cpiMI;
 			if (mw == null && (cpiMI = mh.MemberConstantPoolItem as ClassFile.ConstantPoolItemMI) != null)
 			{
-				mw = new DynamicBinder().Get(compiler.context, ClassFile.RefKind.invokeStatic, cpiMI, false);
+				mw = new DynamicBinder().Get(compiler, ClassFile.RefKind.invokeStatic, cpiMI, false);
 			}
 			if (mw == null || !mw.IsStatic)
 			{
@@ -3047,7 +3047,7 @@ sealed class Compiler
 				fixedArgs = extraArgs;
 				varArgs = -1;
 			}
-			compiler.context.EmitCallerID(ilgen);
+			compiler.context.EmitCallerID(ilgen, compiler.m.IsLambdaFormCompiled);
 			methodLookup.EmitCall(ilgen);
 			ilgen.Emit(OpCodes.Ldstr, cpi.Name);
 			parameters[1].EmitConvStackTypeToSignatureType(ilgen, CoreClasses.java.lang.String.Wrapper);
@@ -3195,7 +3195,7 @@ sealed class Compiler
 			ilgen.Emit(OpCodes.Ldstr, mh.Class);
 			ilgen.Emit(OpCodes.Ldstr, mh.Name);
 			ilgen.Emit(OpCodes.Ldstr, mh.Signature);
-			compiler.context.EmitCallerID(ilgen);
+			compiler.context.EmitCallerID(ilgen, compiler.m.IsLambdaFormCompiled);
 			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicLoadMethodHandle);
 		}
 	}
@@ -3215,7 +3215,7 @@ sealed class Compiler
 			{
 				ilgen.Emit(OpCodes.Ldsflda, field);
 				ilgen.Emit(OpCodes.Ldstr, compiler.classFile.GetConstantPoolConstantMethodType(index).Signature);
-				compiler.context.EmitCallerID(ilgen);
+				compiler.context.EmitCallerID(ilgen, compiler.m.IsLambdaFormCompiled);
 				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicLoadMethodType);
 			}
 			else
@@ -3722,12 +3722,12 @@ sealed class Compiler
 		{
 			if (method == null)
 			{
-				method = CreateMethod(compiler.context, cpi, kind);
+				method = CreateMethod(compiler, cpi, kind);
 			}
 			compiler.ilGenerator.Emit(OpCodes.Call, method);
 		}
 
-		private static MethodInfo CreateMethod(DynamicTypeWrapper.FinishContext context, ClassFile.ConstantPoolItemFieldref cpi, ClassFile.RefKind kind)
+		private static MethodInfo CreateMethod(Compiler compiler, ClassFile.ConstantPoolItemFieldref cpi, ClassFile.RefKind kind)
 		{
 			TypeWrapper ret;
 			TypeWrapper[] args;
@@ -3752,7 +3752,7 @@ sealed class Compiler
 				default:
 					throw new InvalidOperationException();
 			}
-			return DynamicBinder.Emit(context, kind, cpi, ret, args, false);
+			return DynamicBinder.Emit(compiler, kind, cpi, ret, args, false);
 		}
 	}
 
@@ -3760,12 +3760,12 @@ sealed class Compiler
 	{
 		private MethodWrapper mw;
 
-		internal MethodWrapper Get(DynamicTypeWrapper.FinishContext context, ClassFile.RefKind kind, ClassFile.ConstantPoolItemMI cpi, bool privileged)
+		internal MethodWrapper Get(Compiler compiler, ClassFile.RefKind kind, ClassFile.ConstantPoolItemMI cpi, bool privileged)
 		{
-			return mw ?? (mw = new DynamicBinderMethodWrapper(cpi, Emit(context, kind, cpi, privileged), kind));
+			return mw ?? (mw = new DynamicBinderMethodWrapper(cpi, Emit(compiler, kind, cpi, privileged), kind));
 		}
 
-		private static MethodInfo Emit(DynamicTypeWrapper.FinishContext context, ClassFile.RefKind kind, ClassFile.ConstantPoolItemMI cpi, bool privileged)
+		private static MethodInfo Emit(Compiler compiler, ClassFile.RefKind kind, ClassFile.ConstantPoolItemMI cpi, bool privileged)
 		{
 			TypeWrapper ret;
 			TypeWrapper[] args;
@@ -3784,14 +3784,14 @@ sealed class Compiler
 				ret = cpi.GetRetType();
 				args = ArrayUtil.Concat(cpi.GetClassType(), cpi.GetArgTypes());
 			}
-			return Emit(context, kind, cpi, ret, args, privileged);
+			return Emit(compiler, kind, cpi, ret, args, privileged);
 		}
 
-		internal static MethodInfo Emit(DynamicTypeWrapper.FinishContext context, ClassFile.RefKind kind, ClassFile.ConstantPoolItemFMI cpi, TypeWrapper ret, TypeWrapper[] args, bool privileged)
+		internal static MethodInfo Emit(Compiler compiler, ClassFile.RefKind kind, ClassFile.ConstantPoolItemFMI cpi, TypeWrapper ret, TypeWrapper[] args, bool privileged)
 		{
 			bool ghostTarget = (kind == ClassFile.RefKind.invokeSpecial || kind == ClassFile.RefKind.invokeVirtual || kind == ClassFile.RefKind.invokeInterface) && args[0].IsGhost;
 			Type delegateType = MethodHandleUtil.CreateMethodHandleDelegateType(args, ret);
-			FieldBuilder fb = context.DefineMethodHandleInvokeCacheField(delegateType);
+			FieldBuilder fb = compiler.context.DefineMethodHandleInvokeCacheField(delegateType);
 			Type[] types = new Type[args.Length];
 			for (int i = 0; i < types.Length; i++)
 			{
@@ -3801,7 +3801,7 @@ sealed class Compiler
 			{
 				types[0] = types[0].MakeByRefType();
 			}
-			MethodBuilder mb = context.DefineMethodHandleDispatchStub(ret.TypeAsSignatureType, types);
+			MethodBuilder mb = compiler.context.DefineMethodHandleDispatchStub(ret.TypeAsSignatureType, types);
 			CodeEmitter ilgen = CodeEmitter.Create(mb);
 			ilgen.Emit(OpCodes.Ldsfld, fb);
 			CodeEmitterLabel label = ilgen.DefineLabel();
@@ -3812,11 +3812,11 @@ sealed class Compiler
 			ilgen.Emit(OpCodes.Ldstr, cpi.Signature);
 			if (privileged)
 			{
-				context.EmitHostCallerID(ilgen);
+				compiler.context.EmitHostCallerID(ilgen);
 			}
 			else
 			{
-				context.EmitCallerID(ilgen);
+				compiler.context.EmitCallerID(ilgen, compiler.m.IsLambdaFormCompiled);
 			}
 			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicBinderMemberLookup.MakeGenericMethod(delegateType));
 			ilgen.Emit(OpCodes.Volatile);
@@ -3961,7 +3961,7 @@ sealed class Compiler
 				privileged = false;
 				break;
 		}
-		return context.GetValue<DynamicBinder>(index | ((byte)kind << 24)).Get(context, kind, cpi, privileged);
+		return context.GetValue<DynamicBinder>(index | ((byte)kind << 24)).Get(this, kind, cpi, privileged);
 	}
 
 	private TypeWrapper ComputeThisType(TypeWrapper type, MethodWrapper method, NormalizedByteCode invoke)

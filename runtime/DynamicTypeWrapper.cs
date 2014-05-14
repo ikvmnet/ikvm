@@ -3816,15 +3816,20 @@ namespace IKVM.Internal
 				return val;
 			}
 
-			internal void EmitDynamicClassLiteral(CodeEmitter ilgen, TypeWrapper tw)
+			internal void EmitDynamicClassLiteral(CodeEmitter ilgen, TypeWrapper tw, bool dynamicCallerID)
 			{
 				Debug.Assert(tw.IsUnloadable);
 				if (dynamicClassLiteral == null)
 				{
 					dynamicClassLiteral = new Dictionary<string, MethodInfo>();
 				}
+				string cacheKey = tw.Name;
+				if (dynamicCallerID)
+				{
+					cacheKey += ";dynamic";
+				}
 				MethodInfo method;
-				if (!dynamicClassLiteral.TryGetValue(tw.Name, out method))
+				if (!dynamicClassLiteral.TryGetValue(cacheKey, out method))
 				{
 					FieldBuilder fb = typeBuilder.DefineField("__<>class", CoreClasses.java.lang.Class.Wrapper.TypeAsSignatureType, FieldAttributes.PrivateScope | FieldAttributes.Static);
 					MethodBuilder mb = DefineHelperMethod("__<>class", CoreClasses.java.lang.Class.Wrapper.TypeAsSignatureType, Type.EmptyTypes);
@@ -3833,7 +3838,7 @@ namespace IKVM.Internal
 					CodeEmitterLabel label = ilgen2.DefineLabel();
 					ilgen2.EmitBrtrue(label);
 					ilgen2.Emit(OpCodes.Ldstr, tw.Name);
-					EmitCallerID(ilgen2);
+					EmitCallerID(ilgen2, dynamicCallerID);
 					ilgen2.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicClassLiteral);
 					ilgen2.Emit(OpCodes.Stsfld, fb);
 					ilgen2.MarkLabel(label);
@@ -3841,7 +3846,7 @@ namespace IKVM.Internal
 					ilgen2.Emit(OpCodes.Ret);
 					ilgen2.DoEmit();
 					method = mb;
-					dynamicClassLiteral.Add(tw.Name, method);
+					dynamicClassLiteral.Add(cacheKey, method);
 				}
 				ilgen.Emit(OpCodes.Call, method);
 			}
@@ -3880,8 +3885,16 @@ namespace IKVM.Internal
 #endif
 			}
 
-			internal void EmitCallerID(CodeEmitter ilgen)
+			internal void EmitCallerID(CodeEmitter ilgen, bool dynamic)
 			{
+#if !FIRST_PASS && !STATIC_COMPILER
+				if (dynamic)
+				{
+					EmitLiveObjectLoad(ilgen, MethodHandleUtil.DynamicMethodBuilder.DynamicCallerID.Instance);
+					ilgen.Emit(OpCodes.Castclass, CoreClasses.ikvm.@internal.CallerID.Wrapper.TypeAsBaseType);
+					return;
+				}
+#endif
 				if (callerIDMethod == null)
 				{
 					CreateGetCallerID();
@@ -5276,7 +5289,7 @@ namespace IKVM.Internal
 					{
 						ilGenerator.EmitLdarg(i);
 					}
-					context.EmitCallerID(ilGenerator);
+					context.EmitCallerID(ilGenerator, m.IsLambdaFormCompiled);
 					ilGenerator.Emit(OpCodes.Call, mb);
 					if (!mw.ReturnType.IsPrimitive && !mw.ReturnType.IsGhost && !mw.ReturnType.IsNonPrimitiveValueType)
 					{
@@ -5332,7 +5345,7 @@ namespace IKVM.Internal
 					}
 					else
 					{
-						context.EmitCallerID(ilGenerator);
+						context.EmitCallerID(ilGenerator, m.IsLambdaFormCompiled);
 					}
 					ilGenerator.Emit(OpCodes.Ldstr, classFile.Name.Replace('.', '/'));
 					ilGenerator.Emit(OpCodes.Ldstr, m.Name);
@@ -5347,7 +5360,7 @@ namespace IKVM.Internal
 					}
 					else
 					{
-						context.EmitCallerID(ilGenerator);
+						context.EmitCallerID(ilGenerator, m.IsLambdaFormCompiled);
 					}
 					ilGenerator.Emit(OpCodes.Call, enterLocalRefStruct);
 					CodeEmitterLocal jnienv = ilGenerator.DeclareLocal(Types.IntPtr);
