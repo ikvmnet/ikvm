@@ -2897,7 +2897,7 @@ sealed class Compiler
 		if (tw.IsUnloadable)
 		{
 			Profiler.Count("EmitDynamicClassLiteral");
-			EmitDynamicClassLiteral(tw);
+			context.EmitDynamicClassLiteral(ilgen, tw);
 		}
 		else
 		{
