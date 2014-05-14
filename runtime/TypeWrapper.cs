@@ -1477,18 +1477,12 @@ namespace IKVM.Internal
 #endif
 			if (ClassFile.IsValidFieldSig(annotationClass))
 			{
-				try
+				TypeWrapper tw = owner.GetClassLoader().RetTypeWrapperFromSigNoThrow(annotationClass.Replace('/', '.'));
+				// Java allows inaccessible annotations to be used, so when the annotation isn't visible
+				// we fall back to using the DynamicAnnotationAttribute.
+				if (!tw.IsUnloadable && tw.IsAccessibleFrom(owner))
 				{
-					TypeWrapper tw = owner.GetClassLoader().RetTypeWrapperFromSig(annotationClass.Replace('/', '.'));
-					// Java allows inaccessible annotations to be used, so when the annotation isn't visible
-					// we fall back to using the DynamicAnnotationAttribute.
-					if (tw.IsAccessibleFrom(owner))
-					{
-						return tw.Annotation;
-					}
-				}
-				catch (RetargetableJavaException)
-				{
+					return tw.Annotation;
 				}
 			}
 			Tracer.Warning(Tracer.Compiler, "Unable to load annotation class {0}", annotationClass);
