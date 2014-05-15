@@ -144,6 +144,7 @@ namespace IKVM.Internal
 					// Check for duplicates
 					if (!MethodExists(methods, mw))
 					{
+						mw.Link();
 						methods.Add(mw);
 					}
 				}
@@ -413,7 +414,10 @@ namespace IKVM.Internal
 			Dictionary<string, MethodWrapper> methods = new Dictionary<string, MethodWrapper>();
 			foreach (MethodWrapper mw in tw.GetMethods())
 			{
-				methods.Add(mw.Name + mw.Signature, mw);
+				if (mw.IsVirtual)
+				{
+					methods.Add(mw.Name + mw.Signature, mw);
+				}
 			}
 			foreach (TypeWrapper iface in tw.Interfaces)
 			{
