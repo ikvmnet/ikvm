@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2011 Jeroen Frijters
+  Copyright (C) 2011-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -23,6 +23,7 @@
 */
 using System;
 using System.Collections.Generic;
+using IKVM.Attributes;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using Type = IKVM.Reflection.Type;
@@ -220,9 +221,20 @@ namespace IKVM.Internal
 
 		private static void CreateNoFail(CompilerClassLoader loader, TypeWrapper[] interfaces, List<ProxyMethod> methods)
 		{
+			bool ispublic = true;
+			Type[] interfaceTypes = new Type[interfaces.Length];
+			for (int i = 0; i < interfaceTypes.Length; i++)
+			{
+				ispublic &= interfaces[i].IsPublic;
+				interfaceTypes[i] = interfaces[i].TypeAsBaseType;
+			}
+			TypeAttributes attr = TypeAttributes.Class | TypeAttributes.Sealed;
+			attr |= ispublic ? TypeAttributes.NestedPublic : TypeAttributes.NestedAssembly;
 			DynamicClassLoader factory = (DynamicClassLoader)loader.GetTypeWrapperFactory();
-			TypeBuilder tb = factory.DefineProxy(proxyClass, interfaces);
+			TypeBuilder tb = factory.DefineProxy(TypeNameUtil.GetProxyNestedName(interfaces), attr, proxyClass.TypeAsBaseType, interfaceTypes);
 			AttributeHelper.SetImplementsAttribute(tb, interfaces);
+			// we apply an InnerClass attribute to avoid the CompiledTypeWrapper heuristics for figuring out the modifiers
+			AttributeHelper.SetInnerClass(tb, null, ispublic ? Modifiers.Public | Modifiers.Final : Modifiers.Final);
 			CreateConstructor(tb);
 			for (int i = 0; i < methods.Count; i++)
 			{

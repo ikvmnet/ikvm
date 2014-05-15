@@ -287,7 +287,7 @@ namespace IKVM.Internal
 #endif
 
 #if STATIC_COMPILER
-		internal TypeBuilder DefineProxy(TypeWrapper proxyClass, TypeWrapper[] interfaces)
+		internal TypeBuilder DefineProxy(string name, TypeAttributes typeAttributes, Type parent, Type[] interfaces)
 		{
 			if (proxiesContainer == null)
 			{
@@ -296,12 +296,7 @@ namespace IKVM.Internal
 				AttributeHelper.SetEditorBrowsableNever(proxiesContainer);
 				proxies = new List<TypeBuilder>();
 			}
-			Type[] ifaces = new Type[interfaces.Length];
-			for (int i = 0; i < ifaces.Length; i++)
-			{
-				ifaces[i] = interfaces[i].TypeAsBaseType;
-			}
-			TypeBuilder tb = proxiesContainer.DefineNestedType(TypeNameUtil.GetProxyNestedName(interfaces), TypeAttributes.NestedPublic | TypeAttributes.Class | TypeAttributes.Sealed, proxyClass.TypeAsBaseType, ifaces);
+			TypeBuilder tb = proxiesContainer.DefineNestedType(name, typeAttributes, parent, interfaces);
 			proxies.Add(tb);
 			return tb;
 		}
