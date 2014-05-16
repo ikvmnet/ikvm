@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2013 Jeroen Frijters
+  Copyright (C) 2002-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -83,7 +83,12 @@ namespace IKVM.Runtime
 
 		internal static bool IsSupportedJniVersion(jint version)
 		{
-			return version == JNIEnv.JNI_VERSION_1_1 || version == JNIEnv.JNI_VERSION_1_2 || version == JNIEnv.JNI_VERSION_1_4 || version == JNIEnv.JNI_VERSION_1_6;
+			return version == JNIEnv.JNI_VERSION_1_1
+				|| version == JNIEnv.JNI_VERSION_1_2
+				|| version == JNIEnv.JNI_VERSION_1_4
+				|| version == JNIEnv.JNI_VERSION_1_6
+				|| version == JNIEnv.JNI_VERSION_1_8
+				;
 		}
 
 		public static int CreateJavaVM(void* ppvm, void* ppenv, void* args)
@@ -1229,6 +1234,7 @@ namespace IKVM.Runtime
 		internal const int JNI_VERSION_1_2 = 0x00010002;
 		internal const int JNI_VERSION_1_4 = 0x00010004;
 		internal const int JNI_VERSION_1_6 = 0x00010006;
+		internal const int JNI_VERSION_1_8 = 0x00010008;
 		internal const int JNIInvalidRefType = 0;
 		internal const int JNILocalRefType = 1;
 		internal const int JNIGlobalRefType = 2;
@@ -1611,7 +1617,7 @@ namespace IKVM.Runtime
 
 		internal static jint GetVersion(JNIEnv* pEnv)
 		{
-			return JNI_VERSION_1_6;
+			return JNI_VERSION_1_8;
 		}
 
 		internal static jclass DefineClass(JNIEnv* pEnv, byte* name, jobject loader, jbyte* pbuf, jint length)
