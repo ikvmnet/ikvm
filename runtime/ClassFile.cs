@@ -798,7 +798,7 @@ namespace IKVM.Internal
 			}
 			for(int i = 0; i < name.Length; i++)
 			{
-				if(".;/<>".IndexOf(name[i]) != -1)
+				if(".;[/<>".IndexOf(name[i]) != -1)
 				{
 					return false;
 				}
@@ -814,7 +814,7 @@ namespace IKVM.Internal
 			}
 			for(int i = 0; i < name.Length; i++)
 			{
-				if(".;/".IndexOf(name[i]) != -1)
+				if(".;[/".IndexOf(name[i]) != -1)
 				{
 					return false;
 				}
@@ -3164,9 +3164,9 @@ namespace IKVM.Internal
 					max_stack = br.ReadUInt16();
 					max_locals = br.ReadUInt16();
 					uint code_length = br.ReadUInt32();
-					if(code_length > 65535)
+					if(code_length == 0 || code_length > 65535)
 					{
-						throw new ClassFormatError("{0} (Invalid Code length {1})", classFile.Name, code_length);
+						throw new ClassFormatError("Invalid method Code length {1} in class file {0}", classFile.Name, code_length);
 					}
 					Instruction[] instructions = new Instruction[code_length + 1];
 					int basePosition = br.Position;
