@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.awt.image.AreaAveragingScaleFilter;
 import java.awt.image.ReplicateScaleFilter;
 
 //import sun.awt.image.SurfaceManager;
+
 
 /**
  * The abstract class <code>Image</code> is the superclass of all
@@ -123,7 +124,7 @@ public abstract class Image {
      * @param       name   a property name.
      * @param       observer   an object waiting for this image to be loaded.
      * @return      the value of the named property.
-     * @throws      <code>NullPointerException</code> if the property name is null.
+     * @throws      NullPointerException if the property name is null.
      * @see         java.awt.image.ImageObserver
      * @see         java.awt.Image#UndefinedProperty
      */

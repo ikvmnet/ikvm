@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,6 @@ import java.nio.channels.FileChannel;
 import static ikvm.internal.Winsock.*;
 import static java.net.net_util_md.*;
 
-import sun.misc.IoTrace;
-
 /**
  * This stream extends FileOutputStream to implement a
  * SocketOutputStream. Note that this class should <b>NOT</b> be
@@ -64,8 +62,8 @@ class SocketOutputStream extends FileOutputStream
      * Returns the unique {@link java.nio.channels.FileChannel FileChannel}
      * object associated with this file output stream. </p>
      *
-     * The <code>getChannel</code> method of <code>SocketOutputStream</code>
-     * returns <code>null</code> since it is a socket based stream.</p>
+     * The {@code getChannel} method of {@code SocketOutputStream}
+     * returns {@code null} since it is a socket based stream.</p>
      *
      * @return  the file channel associated with this file output stream
      *
@@ -177,12 +175,9 @@ class SocketOutputStream extends FileOutputStream
             throw new ArrayIndexOutOfBoundsException();
         }
 
-        Object traceContext = IoTrace.socketWriteBegin();
-        int bytesWritten = 0;
         FileDescriptor fd = impl.acquireFD();
         try {
             socketWrite0(fd, b, off, len);
-            bytesWritten = len;
         } catch (SocketException se) {
             if (se instanceof sun.net.ConnectionResetException) {
                 impl.setConnectionResetPending();
@@ -195,7 +190,6 @@ class SocketOutputStream extends FileOutputStream
             }
         } finally {
             impl.releaseFD();
-            IoTrace.socketWriteEnd(traceContext, impl.address, impl.port, bytesWritten);
         }
     }
 

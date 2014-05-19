@@ -163,6 +163,7 @@
     <Compile Include="openjdk\sun.nio.ch.cs" />
     <Compile Include="openjdk\sun.reflect.cs" />
     <Compile Include="openjdk\sun.security.krb5.cs" />
+    <Compile Include="openjdk\sun.util.locale.provider.cs" />
     <Compile Include="PassiveWeakDictionary.cs" />
     <Compile Include="profiler.cs">
       <SubType>Code</SubType>

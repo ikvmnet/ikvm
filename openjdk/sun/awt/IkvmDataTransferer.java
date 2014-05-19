@@ -127,45 +127,6 @@ public abstract class IkvmDataTransferer extends DataTransferer {
         return bytes;
     }
 
-    protected Object translateBytesOrStream(InputStream str, byte[] bytes,
-                                            DataFlavor flavor, long format,
-                                            Transferable localeTransferable)
-        throws IOException
-    {
-        if (format == CF_HTML && flavor.isFlavorTextType()) {
-            if (str == null) {
-                str = new ByteArrayInputStream(bytes);
-                bytes = null;
-            }
-
-            str = new HTMLCodec(str,  EHTMLReadMode.HTML_READ_SELECTION);
-        }
-
-        if (format == CFSTR_INETURL &&
-            URL.class.equals(flavor.getRepresentationClass()))
-        {
-            if (bytes == null) {
-                bytes = inputStreamToByteArray(str);
-                str = null;
-            }
-            String charset = getDefaultTextCharset();
-            if (localeTransferable != null && localeTransferable.
-                isDataFlavorSupported(javaTextEncodingFlavor))
-            {
-                try {
-                    charset = new String((byte[])localeTransferable.
-                                   getTransferData(javaTextEncodingFlavor),
-                                   "UTF-8");
-                } catch (UnsupportedFlavorException cannotHappen) {
-                }
-            }
-            return new URL(new String(bytes, charset));
-        }
-
-        return super.translateBytesOrStream(str, bytes, flavor, format,
-                                            localeTransferable);
-    }
-    
 	protected byte[] imageToPlatformBytes(Image image, long format)
 			throws IOException {
 		String mimeType = null;

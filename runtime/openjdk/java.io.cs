@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2007-2013 Jeroen Frijters
+  Copyright (C) 2007-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -25,6 +25,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Text;
 #if !NO_REF_EMIT
 using System.Reflection.Emit;
 #endif
@@ -181,25 +182,6 @@ static class Java_java_io_FileDescriptor
 	private static int DummyFSync(int fd)
 	{
 		return 0;
-	}
-}
-
-static class Java_java_io_FileSystem
-{
-	public static object getFileSystem()
-	{
-#if FIRST_PASS
-		return null;
-#else
-		if (JVM.IsUnix)
-		{
-			return new java.io.UnixFileSystem();
-		}
-		else
-		{
-			return new java.io.Win32FileSystem();
-		}
-#endif
 	}
 }
 
@@ -685,7 +667,7 @@ static class Java_java_io_ObjectStreamClass
 	}
 }
 
-static class Java_java_io_Win32FileSystem
+static class Java_java_io_WinNTFileSystem
 {
 	internal const int ACCESS_READ = 0x04;
 	const int ACCESS_WRITE = 0x02;
@@ -1276,29 +1258,33 @@ static class Java_java_io_Win32FileSystem
 	[SecuritySafeCritical]
 	public static long getSpace0(object _this, java.io.File f, int t)
 	{
-		const int SPACE_TOTAL = 0;
-		const int SPACE_FREE = 1;
-		const int SPACE_USABLE = 2;
+#if !FIRST_PASS
 		long freeAvailable;
 		long total;
 		long totalFree;
-		if (GetDiskFreeSpaceEx(GetPathFromFile(f), out freeAvailable, out total, out totalFree) != 0)
+		StringBuilder volname = new StringBuilder(256);
+		if (GetVolumePathName(GetPathFromFile(f), volname, volname.Capacity) != 0
+			&& GetDiskFreeSpaceEx(volname.ToString(), out freeAvailable, out total, out totalFree) != 0)
 		{
 			switch (t)
 			{
-				case SPACE_TOTAL:
+				case java.io.FileSystem.SPACE_TOTAL:
 					return total;
-				case SPACE_FREE:
+				case java.io.FileSystem.SPACE_FREE:
 					return totalFree;
-				case SPACE_USABLE:
+				case java.io.FileSystem.SPACE_USABLE:
 					return freeAvailable;
 			}
 		}
+#endif
 		return 0;
 	}
 
 	[DllImport("kernel32")]
 	private static extern int GetDiskFreeSpaceEx(string directory, out long freeAvailable, out long total, out long totalFree);
+
+	[DllImport("kernel32")]
+	private static extern int GetVolumePathName(string lpszFileName, [In, Out] StringBuilder lpszVolumePathName, int cchBufferLength);
 
 	public static void initIDs()
 	{
@@ -1309,7 +1295,7 @@ static class Java_java_io_UnixFileSystem
 {
 	public static int getBooleanAttributes0(object _this, java.io.File f)
 	{
-		return Java_java_io_Win32FileSystem.getBooleanAttributes(_this, f);
+		return Java_java_io_WinNTFileSystem.getBooleanAttributes(_this, f);
 	}
 
 	public static long getSpace(object _this, java.io.File f, int t)
@@ -1320,68 +1306,68 @@ static class Java_java_io_UnixFileSystem
 
 	public static string getDriveDirectory(object _this, int drive)
 	{
-		return Java_java_io_Win32FileSystem.getDriveDirectory(_this, drive);
+		return Java_java_io_WinNTFileSystem.getDriveDirectory(_this, drive);
 	}
 
 	public static string canonicalize0(object _this, string path)
 	{
-		return Java_java_io_Win32FileSystem.canonicalize0(_this, path);
+		return Java_java_io_WinNTFileSystem.canonicalize0(_this, path);
 	}
 
 	public static bool checkAccess(object _this, java.io.File f, int access)
 	{
-		return Java_java_io_Win32FileSystem.checkAccess(_this, f, access);
+		return Java_java_io_WinNTFileSystem.checkAccess(_this, f, access);
 	}
 
 	public static long getLastModifiedTime(object _this, java.io.File f)
 	{
-		return Java_java_io_Win32FileSystem.getLastModifiedTime(_this, f);
+		return Java_java_io_WinNTFileSystem.getLastModifiedTime(_this, f);
 	}
 
 	public static long getLength(object _this, java.io.File f)
 	{
-		return Java_java_io_Win32FileSystem.getLength(_this, f);
+		return Java_java_io_WinNTFileSystem.getLength(_this, f);
 	}
 
 	public static bool setPermission(object _this, java.io.File f, int access, bool enable, bool owneronly)
 	{
 		// TODO consider using Mono.Posix
-		return Java_java_io_Win32FileSystem.setPermission(_this, f, access, enable, owneronly);
+		return Java_java_io_WinNTFileSystem.setPermission(_this, f, access, enable, owneronly);
 	}
 
 	public static bool createFileExclusively(object _this, string path)
 	{
-		return Java_java_io_Win32FileSystem.createFileExclusively(_this, path);
+		return Java_java_io_WinNTFileSystem.createFileExclusively(_this, path);
 	}
 
 	public static bool delete0(object _this, java.io.File f)
 	{
-		return Java_java_io_Win32FileSystem.delete0(_this, f);
+		return Java_java_io_WinNTFileSystem.delete0(_this, f);
 	}
 
 	public static string[] list(object _this, java.io.File f)
 	{
-		return Java_java_io_Win32FileSystem.list(_this, f);
+		return Java_java_io_WinNTFileSystem.list(_this, f);
 	}
 
 	public static bool createDirectory(object _this, java.io.File f)
 	{
-		return Java_java_io_Win32FileSystem.createDirectory(_this, f);
+		return Java_java_io_WinNTFileSystem.createDirectory(_this, f);
 	}
 
 	public static bool rename0(object _this, java.io.File f1, java.io.File f2)
 	{
-		return Java_java_io_Win32FileSystem.rename0(_this, f1, f2);
+		return Java_java_io_WinNTFileSystem.rename0(_this, f1, f2);
 	}
 
 	public static bool setLastModifiedTime(object _this, java.io.File f, long time)
 	{
-		return Java_java_io_Win32FileSystem.setLastModifiedTime(_this, f, time);
+		return Java_java_io_WinNTFileSystem.setLastModifiedTime(_this, f, time);
 	}
 
 	public static bool setReadOnly(object _this, java.io.File f)
 	{
-		return Java_java_io_Win32FileSystem.setReadOnly(_this, f);
+		return Java_java_io_WinNTFileSystem.setReadOnly(_this, f);
 	}
 
 	public static void initIDs()

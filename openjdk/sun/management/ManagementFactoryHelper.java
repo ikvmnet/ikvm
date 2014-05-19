@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.management;
 
 import java.lang.management.*;
 
+import javax.management.DynamicMBean;
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;
@@ -37,14 +38,13 @@ import javax.management.RuntimeOperationsException;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import sun.security.action.LoadLibraryAction;
 
 import sun.util.logging.LoggingSupport;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-import com.sun.management.OSMBeanFactory;
 
 import static java.lang.management.ManagementFactory.*;
 
@@ -101,15 +101,14 @@ public class ManagementFactoryHelper {
 
     public static synchronized OperatingSystemMXBean getOperatingSystemMXBean() {
         if (osMBean == null) {
-            osMBean = (OperatingSystemImpl)
-                          OSMBeanFactory.getOperatingSystemMXBean(jvm);
+            osMBean = new OperatingSystemImpl(jvm);
         }
         return osMBean;
     }
 
     public static List<MemoryPoolMXBean> getMemoryPoolMXBeans() {
         MemoryPoolMXBean[] pools = MemoryImpl.getMemoryPools();
-        List<MemoryPoolMXBean> list = new ArrayList<MemoryPoolMXBean>(pools.length);
+        List<MemoryPoolMXBean> list = new ArrayList<>(pools.length);
         for (MemoryPoolMXBean p : pools) {
             list.add(p);
         }
@@ -118,7 +117,7 @@ public class ManagementFactoryHelper {
 
     public static List<MemoryManagerMXBean> getMemoryManagerMXBeans() {
         MemoryManagerMXBean[]  mgrs = MemoryImpl.getMemoryManagers();
-        List<MemoryManagerMXBean> result = new ArrayList<MemoryManagerMXBean>(mgrs.length);
+        List<MemoryManagerMXBean> result = new ArrayList<>(mgrs.length);
         for (MemoryManagerMXBean m : mgrs) {
             result.add(m);
         }
@@ -127,7 +126,7 @@ public class ManagementFactoryHelper {
 
     public static List<GarbageCollectorMXBean> getGarbageCollectorMXBeans() {
         MemoryManagerMXBean[]  mgrs = MemoryImpl.getMemoryManagers();
-        List<GarbageCollectorMXBean> result = new ArrayList<GarbageCollectorMXBean>(mgrs.length);
+        List<GarbageCollectorMXBean> result = new ArrayList<>(mgrs.length);
         for (MemoryManagerMXBean m : mgrs) {
             if (GarbageCollectorMXBean.class.isInstance(m)) {
                  result.add(GarbageCollectorMXBean.class.cast(m));
@@ -144,18 +143,20 @@ public class ManagementFactoryHelper {
         }
     }
 
-    // The logging MXBean object is an instance of
-    // PlatformLoggingMXBean and java.util.logging.LoggingMXBean
-    // but it can't directly implement two MXBean interfaces
-    // as a compliant MXBean implements exactly one MXBean interface,
-    // or if it implements one interface that is a subinterface of
-    // all the others; otherwise, it is a non-compliant MXBean
-    // and MBeanServer will throw NotCompliantMBeanException.
-    // See the Definition of an MXBean section in javax.management.MXBean spec.
-    //
-    // To create a compliant logging MXBean, define a LoggingMXBean interface
-    // that extend PlatformLoggingMXBean and j.u.l.LoggingMXBean
-    interface LoggingMXBean
+    /**
+     * The logging MXBean object is an instance of
+     * PlatformLoggingMXBean and java.util.logging.LoggingMXBean
+     * but it can't directly implement two MXBean interfaces
+     * as a compliant MXBean implements exactly one MXBean interface,
+     * or if it implements one interface that is a subinterface of
+     * all the others; otherwise, it is a non-compliant MXBean
+     * and MBeanServer will throw NotCompliantMBeanException.
+     * See the Definition of an MXBean section in javax.management.MXBean spec.
+     *
+     * To create a compliant logging MXBean, define a LoggingMXBean interface
+     * that extend PlatformLoggingMXBean and j.u.l.LoggingMXBean
+    */
+    public interface LoggingMXBean
         extends PlatformLoggingMXBean, java.util.logging.LoggingMXBean {
     }
 
@@ -284,6 +285,11 @@ public class ManagementFactoryHelper {
         } catch (PrivilegedActionException e) {
             throw Util.newException(e.getException());
         }
+    }
+
+    public static HashMap<ObjectName, DynamicMBean> getPlatformDynamicMBeans() {
+        HashMap<ObjectName, DynamicMBean> map = new HashMap<>();
+        return map;
     }
 
     static void registerInternalMBeans(MBeanServer mbs) {

@@ -147,6 +147,8 @@ public final class Winsock
     public static final int FIONREAD = (int)IOControlCode.DataToRead;
     public static final int FIONBIO = (int)IOControlCode.NonBlockingIO;
 
+    public static final int MAX_PACKET_LEN = 0xFFFF;
+
     public static int WSAGetLastError()
     {
         return lastError;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,6 @@ static final int java_net_SocketOptions_SO_LINGER = SocketOptions.SO_LINGER;
 
 #include "java_net_SocketOptions.h"
 #include "java_net_TwoStacksPlainSocketImpl.h"
-#include "java_net_SocketImpl.h"
 #include "java_net_InetAddress.h"
 #include "java_io_FileDescriptor.h"
 #include "java_lang_Integer.h"

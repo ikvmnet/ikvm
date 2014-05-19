@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.security.AccessController;
 import sun.misc.Cleaner;
-import sun.misc.IoTrace;
 import sun.security.action.GetPropertyAction;
 
 public class FileChannelImpl
@@ -63,16 +62,13 @@ public class FileChannelImpl
     // Required to prevent finalization of creating stream (immutable)
     private final Object parent;
 
-    // The path of the referenced file (null if the parent stream is created with a file descriptor)
-    private final String path;
-
     // Thread-safe set of IDs of native threads, for signalling
     private final NativeThreadSet threads = new NativeThreadSet(2);
 
     // Lock for operations involving position and size
     private final Object positionLock = new Object();
 
-    private FileChannelImpl(FileDescriptor fd, String path, boolean readable,
+    private FileChannelImpl(FileDescriptor fd, boolean readable,
                             boolean writable, boolean append, Object parent)
     {
         this.fd = fd;
@@ -80,24 +76,23 @@ public class FileChannelImpl
         this.writable = writable;
         this.append = append;
         this.parent = parent;
-        this.path = path;
         this.nd = new FileDispatcherImpl(append);
     }
 
     // Used by FileInputStream.getChannel() and RandomAccessFile.getChannel()
-    public static FileChannel open(FileDescriptor fd, String path,
+    public static FileChannel open(FileDescriptor fd,
                                    boolean readable, boolean writable,
                                    Object parent)
     {
-        return new FileChannelImpl(fd, path, readable, writable, false, parent);
+        return new FileChannelImpl(fd, readable, writable, false, parent);
     }
 
     // Used by FileOutputStream.getChannel
-    public static FileChannel open(FileDescriptor fd, String path,
+    public static FileChannel open(FileDescriptor fd,
                                    boolean readable, boolean writable,
                                    boolean append, Object parent)
     {
-        return new FileChannelImpl(fd, path, readable, writable, append, parent);
+        return new FileChannelImpl(fd, readable, writable, append, parent);
     }
 
     private void ensureOpen() throws IOException {
@@ -145,7 +140,6 @@ public class FileChannelImpl
         synchronized (positionLock) {
             int n = 0;
             int ti = -1;
-            Object traceContext = IoTrace.fileReadBegin(path);
             try {
                 begin();
                 ti = threads.add();
@@ -157,7 +151,6 @@ public class FileChannelImpl
                 return IOStatus.normalize(n);
             } finally {
                 threads.remove(ti);
-                IoTrace.fileReadEnd(traceContext, n > 0 ? n : 0);
                 end(n > 0);
                 assert IOStatus.check(n);
             }
@@ -175,7 +168,6 @@ public class FileChannelImpl
         synchronized (positionLock) {
             long n = 0;
             int ti = -1;
-            Object traceContext = IoTrace.fileReadBegin(path);
             try {
                 begin();
                 ti = threads.add();
@@ -187,7 +179,6 @@ public class FileChannelImpl
                 return IOStatus.normalize(n);
             } finally {
                 threads.remove(ti);
-                IoTrace.fileReadEnd(traceContext, n > 0 ? n : 0);
                 end(n > 0);
                 assert IOStatus.check(n);
             }
@@ -201,7 +192,6 @@ public class FileChannelImpl
         synchronized (positionLock) {
             int n = 0;
             int ti = -1;
-            Object traceContext = IoTrace.fileWriteBegin(path);
             try {
                 begin();
                 ti = threads.add();
@@ -214,7 +204,6 @@ public class FileChannelImpl
             } finally {
                 threads.remove(ti);
                 end(n > 0);
-                IoTrace.fileWriteEnd(traceContext, n > 0 ? n : 0);
                 assert IOStatus.check(n);
             }
         }
@@ -231,7 +220,6 @@ public class FileChannelImpl
         synchronized (positionLock) {
             long n = 0;
             int ti = -1;
-            Object traceContext = IoTrace.fileWriteBegin(path);
             try {
                 begin();
                 ti = threads.add();
@@ -243,7 +231,6 @@ public class FileChannelImpl
                 return IOStatus.normalize(n);
             } finally {
                 threads.remove(ti);
-                IoTrace.fileWriteEnd(traceContext, n > 0 ? n : 0);
                 end(n > 0);
                 assert IOStatus.check(n);
             }
@@ -321,12 +308,10 @@ public class FileChannelImpl
         }
     }
 
-    public FileChannel truncate(long size) throws IOException {
+    public FileChannel truncate(long newSize) throws IOException {
         ensureOpen();
-        if (size < 0)
-            throw new IllegalArgumentException();
-        if (size > size())
-            return this;
+        if (newSize < 0)
+            throw new IllegalArgumentException("Negative size");
         if (!writable)
             throw new NonWritableChannelException();
         synchronized (positionLock) {
@@ -339,6 +324,14 @@ public class FileChannelImpl
                 if (!isOpen())
                     return null;
 
+                // get current size
+                long size;
+                do {
+                    size = nd.size(fd);
+                } while ((size == IOStatus.INTERRUPTED) && isOpen());
+                if (!isOpen())
+                    return null;
+
                 // get current position
                 do {
                     p = position0(fd, -1);
@@ -347,20 +340,22 @@ public class FileChannelImpl
                     return null;
                 assert p >= 0;
 
-                // truncate file
-                do {
-                    rv = nd.truncate(fd, size);
-                } while ((rv == IOStatus.INTERRUPTED) && isOpen());
-                if (!isOpen())
-                    return null;
+                // truncate file if given size is less than the current size
+                if (newSize < size) {
+                    do {
+                        rv = nd.truncate(fd, newSize);
+                    } while ((rv == IOStatus.INTERRUPTED) && isOpen());
+                    if (!isOpen())
+                        return null;
+                }
 
                 // [IKVM] in append mode we're not allowed to seek backwards, but the atomic append will honor the new file size
                 if (append)
                     return this;
 
-                // set position to size if greater than size
-                if (p > size)
-                    p = size;
+                // if position is beyond new size then adjust it
+                if (p > newSize)
+                    p = newSize;
                 do {
                     rv = (int)position0(fd, p);
                 } while ((rv == IOStatus.INTERRUPTED) && isOpen());
@@ -535,7 +530,6 @@ public class FileChannelImpl
         assert !nd.needsPositionLock() || Thread.holdsLock(positionLock);
         int n = 0;
         int ti = -1;
-        Object traceContext = IoTrace.fileReadBegin(path);
         try {
             begin();
             ti = threads.add();
@@ -547,7 +541,6 @@ public class FileChannelImpl
             return IOStatus.normalize(n);
         } finally {
             threads.remove(ti);
-            IoTrace.fileReadEnd(traceContext, n > 0 ? n : 0);
             end(n > 0);
             assert IOStatus.check(n);
         }
@@ -574,7 +567,6 @@ public class FileChannelImpl
         assert !nd.needsPositionLock() || Thread.holdsLock(positionLock);
         int n = 0;
         int ti = -1;
-        Object traceContext = IoTrace.fileWriteBegin(path);
         try {
             begin();
             ti = threads.add();
@@ -587,7 +579,6 @@ public class FileChannelImpl
         } finally {
             threads.remove(ti);
             end(n > 0);
-            IoTrace.fileWriteEnd(traceContext, n > 0 ? n : 0);
             assert IOStatus.check(n);
         }
     }
@@ -664,6 +655,8 @@ public class FileChannelImpl
         throws IOException
     {
         ensureOpen();
+        if (mode == null)
+            throw new NullPointerException("Mode is null");
         if (position < 0L)
             throw new IllegalArgumentException("Negative position");
         if (size < 0L)
@@ -672,6 +665,7 @@ public class FileChannelImpl
             throw new IllegalArgumentException("Position + size overflow");
         if (size > Integer.MAX_VALUE)
             throw new IllegalArgumentException("Size exceeds Integer.MAX_VALUE");
+
         int imode = -1;
         if (mode == MapMode.READ_ONLY)
             imode = MAP_RO;
@@ -692,7 +686,15 @@ public class FileChannelImpl
             ti = threads.add();
             if (!isOpen())
                 return null;
-            if (size() < position + size) { // Extend file size
+
+            long filesize;
+            do {
+                filesize = nd.size(fd);
+            } while ((filesize == IOStatus.INTERRUPTED) && isOpen());
+            if (!isOpen())
+                return null;
+
+            if (filesize < position + size) { // Extend file size
                 if (!writable) {
                     throw new IOException("Channel not open for writing " +
                         "- cannot extend file to required size");
@@ -701,6 +703,8 @@ public class FileChannelImpl
                 do {
                     rv = nd.truncate(fd, position + size);
                 } while ((rv == IOStatus.INTERRUPTED) && isOpen());
+                if (!isOpen())
+                    return null;
             }
             if (size == 0) {
                 addr = 0;

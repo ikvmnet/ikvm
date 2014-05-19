@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ public class VM {
         return suspended;
     }
 
+    @SuppressWarnings("deprecation")
     public static boolean allowThreadSuspension(ThreadGroup g, boolean b) {
         return g.allowThreadSuspension(b);
     }
@@ -147,6 +148,7 @@ public class VM {
 
 
     private static volatile boolean booted = false;
+    private static final Object lock = new Object();
 
     static {
         // [IKVM] force System properties initialization ("booting")
@@ -164,11 +166,25 @@ public class VM {
     // the booted flag to determine whether it is safe to query the system
     // properties).
     public static void booted() {
-        booted = true;
+        synchronized (lock) {
+            booted = true;
+            lock.notifyAll();
+        }
     }
 
     public static boolean isBooted() {
         return booted;
+    }
+
+    // Waits until VM completes initialization
+    //
+    // This method is invoked by the Finalizer thread
+    public static void awaitBooted() throws InterruptedException {
+        synchronized (lock) {
+            while (!booted) {
+                lock.wait();
+            }
+        }
     }
 
     // Returns the maximum amount of allocatable direct buffer memory.
@@ -217,15 +233,12 @@ public class VM {
         return allowArraySyntax;
     }
 
-    private static boolean allowGetCallerClass = true;
-
-    // Reflection.getCallerClass(int) is enabled by default.
-    // It can be disabled by setting the system property
-    // "jdk.reflect.allowGetCallerClass" to "false". It cannot be
-    // disabled if the logging stack walk (to find resource bundles)
-    // is enabled.
-    public static boolean allowGetCallerClass() {
-        return allowGetCallerClass;
+    /**
+     * Returns true if the given class loader is in the system domain
+     * in which all permissions are granted.
+     */
+    public static boolean isSystemDomainLoader(ClassLoader loader) {
+        return loader == null;
     }
 
     /**
@@ -284,15 +297,6 @@ public class VM {
         allowArraySyntax = (s == null
                                ? defaultAllowArraySyntax
                                : Boolean.parseBoolean(s));
-
-        // Reflection.getCallerClass(int) is enabled by default.
-        // It can be disabled by setting a system property (but only if
-        // the logging stack walk is not enabled)
-        s = props.getProperty("jdk.reflect.allowGetCallerClass");
-        allowGetCallerClass = (s != null
-                                   ? (s.isEmpty() || Boolean.parseBoolean(s))
-                                   : true) ||
-             Boolean.valueOf(props.getProperty("jdk.logging.allowStackWalkSearch"));
 
         // Remove other private system properties
         // used by java.lang.Integer.IntegerCache

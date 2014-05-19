@@ -985,7 +985,7 @@ namespace IKVM.Internal
 #if FIRST_PASS
 			return false;
 #else
-			return access == Java_java_io_Win32FileSystem.ACCESS_READ && GetVfsEntry(path) != null;
+			return access == Java_java_io_WinNTFileSystem.ACCESS_READ && GetVfsEntry(path) != null;
 #endif
 		}
 

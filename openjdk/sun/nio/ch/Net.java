@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 
 
-class Net {                                             // package-private
+public class Net {
 
     private Net() { }
 
@@ -45,12 +45,6 @@ class Net {                                             // package-private
         }
     };
 
-    // Value of jdk.net.revealLocalAddress
-    private static boolean revealLocalAddress;
-
-    // True if jdk.net.revealLocalAddress had been read
-    private static volatile boolean propRevealLocalAddress;
-
     // set to true if exclusive binding is on for Windows
     private static final boolean exclusiveBind;
 
@@ -59,8 +53,8 @@ class Net {                                             // package-private
         if (availLevel >= 0) {
             String exclBindProp =
                 java.security.AccessController.doPrivileged(
-                      new PrivilegedAction<String>() {
-                          @Override
+                    new PrivilegedAction<String>() {
+                        @Override
                         public String run() {
                             return System.getProperty(
                                     "sun.net.useExclusiveBind");
@@ -117,7 +111,7 @@ class Net {                                             // package-private
         return canJoin6WithIPv4Group0();
     }
 
-    static InetSocketAddress checkAddress(SocketAddress sa) {
+    public static InetSocketAddress checkAddress(SocketAddress sa) {
         if (sa == null)
             throw new NullPointerException();
         if (!(sa instanceof InetSocketAddress))
@@ -197,43 +191,19 @@ class Net {                                             // package-private
         if (addr == null || sm == null)
             return addr;
 
-        if (!getRevealLocalAddress()) {
+        try{
+            sm.checkConnect(addr.getAddress().getHostAddress(), -1);
+            // Security check passed
+        } catch (SecurityException e) {
             // Return loopback address only if security check fails
-            try{
-                sm.checkConnect(addr.getAddress().getHostAddress(), -1);
-                //Security check passed
-            } catch (SecurityException e) {
-                //Return loopback address
-                addr = getLoopbackAddress(addr.getPort());
-            }
+            addr = getLoopbackAddress(addr.getPort());
         }
         return addr;
     }
 
     static String getRevealedLocalAddressAsString(InetSocketAddress addr) {
-        if (!getRevealLocalAddress() && System.getSecurityManager() != null)
-            addr = getLoopbackAddress(addr.getPort());
-        return addr.toString();
-    }
-
-    private static boolean getRevealLocalAddress() {
-        if (!propRevealLocalAddress) {
-            try {
-                revealLocalAddress = Boolean.parseBoolean(
-                      AccessController.doPrivileged(
-                          new PrivilegedExceptionAction<String>() {
-                              public String run() {
-                                  return System.getProperty(
-                                      "jdk.net.revealLocalAddress");
-                              }
-                          }));
-
-            } catch (Exception e) {
-                // revealLocalAddress is false
-            }
-            propRevealLocalAddress = true;
-        }
-        return revealLocalAddress;
+        return System.getSecurityManager() == null ? addr.toString() :
+                getLoopbackAddress(addr.getPort()).toString();
     }
 
     private static InetSocketAddress getLoopbackAddress(int port) {
@@ -430,7 +400,7 @@ class Net {                                             // package-private
     // Due to oddities SO_REUSEADDR on windows reuse is ignored
     private static native FileDescriptor socket0(boolean preferIPv6, boolean stream, boolean reuse);
 
-    static void bind(FileDescriptor fd, InetAddress addr, int port)
+    public static void bind(FileDescriptor fd, InetAddress addr, int port)
         throws IOException
     {
         bind(UNSPEC, fd, addr, port);
@@ -484,7 +454,7 @@ class Net {                                             // package-private
     private static native InetAddress localInetAddress(FileDescriptor fd)
         throws IOException;
 
-    static InetSocketAddress localAddress(FileDescriptor fd)
+    public static InetSocketAddress localAddress(FileDescriptor fd)
         throws IOException
     {
         return new InetSocketAddress(localInetAddress(fd), localPort(fd));
@@ -508,6 +478,9 @@ class Net {                                             // package-private
 
     private static native void setIntOption0(FileDescriptor fd, boolean mayNeedConversion,
                                              int level, int opt, int arg)
+        throws IOException;
+
+    static native int poll(FileDescriptor fd, int events, long timeout)
         throws IOException;
 
     // -- Multicast support --

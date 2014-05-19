@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013 Jeroen Frijters
+  Copyright (C) 2013-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -62,7 +62,7 @@ namespace SourceLicenseAnalyzer
 			Def("Jeroen Frijters");
 			Def("Thai Open Source Software Center Ltd");
 			Def("World Wide Web Consortium");
-			Def("International Business Machines, Inc.", "IBM Corp.", "IBM Corporation", "International Business Machines.", "International Business Machines Corporation");
+			Def("International Business Machines, Inc.", "IBM Corp.", "IBM Corporation", "International Business Machines", "International Business Machines Corporation");
 			Def("Wily Technology, Inc.");
 			Def("Unicode, Inc.");
 			Def("Colin Plumb");
@@ -79,6 +79,7 @@ namespace SourceLicenseAnalyzer
 			Def("Oracle and/or its affiliates", "Oracle Corporation");
 			Def("i-net software");
 			Def("Google Inc.");
+			Def("Stephen Colebourne & Michael Nascimento Santos");
 
 
 			// these are false positives
@@ -93,6 +94,7 @@ namespace SourceLicenseAnalyzer
 			aliases.Add("Your Corporation", "dummy");
 			aliases.Add("but I wrote that code so I co-own the copyright", "dummy");
 			aliases.Add("identifying information: \"Portions Copyrighted [year] * [name of copyright owner]\"", "dummy");
+			aliases.Add("* \"Portions Copyright [year] [name of copyright owner]\" *", "dummy");
 
 			using (StreamReader rdr = new StreamReader("allsources.gen.lst"))
 			{
@@ -175,7 +177,8 @@ namespace SourceLicenseAnalyzer
 									continue;
 								}
 							}
-							if (filePath.Contains("/impsrc/com/sun/xml/internal/rngom/") && line.Contains("* Copyright (C) 2004-2011 *"))
+							if (filePath.Contains("/jaxws/src/share/jaxws_classes/com/sun/xml/internal/rngom/")
+								&& (line.Contains("* Copyright (C) 2004-2011 *") || line.Contains("* Copyright (C) 2004-2012 *")))
 							{
 								// HACK ignore bogus copyright line
 							}

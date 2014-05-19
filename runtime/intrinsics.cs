@@ -536,7 +536,16 @@ namespace IKVM.Internal
 				mw.EmitCallvirt(eic.Emitter);
 				return true;
 			}
-			else if (!DynamicTypeWrapper.RequiresDynamicReflectionCallerClass(eic.ClassFile.Name, eic.Caller.Name, eic.Caller.Signature))
+			else if (DynamicTypeWrapper.RequiresDynamicReflectionCallerClass(eic.ClassFile.Name, eic.Caller.Name, eic.Caller.Signature))
+			{
+				// since the non-intrinsic version of Reflection.getCallerClass() always throws an exception, we have to redirect to the dynamic version
+				MethodWrapper getCallerClass = ClassLoaderWrapper.LoadClassCritical("sun.reflect.Reflection").GetMethodWrapper("getCallerClass", "(I)Ljava.lang.Class;", false);
+				getCallerClass.Link();
+				eic.Emitter.EmitLdc_I4(2);
+				getCallerClass.EmitCall(eic.Emitter);
+				return true;
+			}
+			else
 			{
 				StaticCompiler.IssueMessage(Message.ReflectionCallerClassRequiresCallerID, eic.ClassFile.Name, eic.Caller.Name, eic.Caller.Signature);
 			}

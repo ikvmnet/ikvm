@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2007, 2010 Jeroen Frijters
+  Copyright (C) 2002-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using IKVM.Attributes;
 using IKVM.Runtime;
 using IKVM.Internal;
@@ -119,6 +120,53 @@ namespace IKVM.NativeCode.java.lang
 		{
 			return VirtualFileSystem.GetAssemblyClassesPath(JVM.CoreAssembly);
 		}
+
+		public static string getStdoutEncoding()
+		{
+			return IsWindowsConsole(true) ? GetConsoleEncoding() : null;
+		}
+
+		public static string getStderrEncoding()
+		{
+			return IsWindowsConsole(false) ? GetConsoleEncoding() : null;
+		}
+
+		private static bool IsWindowsConsole(bool stdout)
+		{
+			if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+			{
+				return false;
+			}
+			// these properties are available starting with .NET 4.5
+			PropertyInfo pi = typeof(Console).GetProperty(stdout ? "IsOutputRedirected" : "IsErrorRedirected");
+			if (pi != null)
+			{
+				return !(bool)pi.GetValue(null, null);
+			}
+			const int STD_OUTPUT_HANDLE = -11;
+			const int STD_ERROR_HANDLE = -12;
+			IntPtr handle = GetStdHandle(stdout ? STD_OUTPUT_HANDLE : STD_ERROR_HANDLE);
+			if (handle == IntPtr.Zero)
+			{
+				return false;
+			}
+			const int FILE_TYPE_CHAR = 2;
+			return GetFileType(handle) == FILE_TYPE_CHAR;
+		}
+
+		private static string GetConsoleEncoding()
+		{
+			int codepage = Console.InputEncoding.CodePage;
+			return codepage >= 847 && codepage <= 950
+				? "ms" + codepage
+				: "cp" + codepage;
+		}
+
+		[DllImport("kernel32")]
+		private static extern int GetFileType(IntPtr hFile);
+
+		[DllImport("kernel32")]
+		private static extern IntPtr GetStdHandle(int nStdHandle);
 	}
 }
 

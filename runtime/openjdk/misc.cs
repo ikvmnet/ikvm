@@ -134,6 +134,13 @@ static class Java_java_util_zip_ClassStubZipEntry
 	}
 }
 
+static class Java_java_awt_Choice
+{
+	public static void initIDs()
+	{
+	}
+}
+
 static class Java_sun_awt_image_ByteComponentRaster
 {
 	public static void initIDs()
@@ -162,6 +169,19 @@ static class Java_sun_awt_image_ShortComponentRaster
 	}
 }
 
+static class Java_sun_awt_DefaultMouseInfoPeer
+{
+	public static int fillPointWithCoords(object _this, object point)
+	{
+		throw new NotImplementedException();
+	}
+
+	public static bool isWindowUnderMouse(object _this, object w)
+	{
+		throw new NotImplementedException();
+	}
+}
+
 static class Java_sun_awt_FontDescriptor
 {
 	public static void initIDs()
@@ -174,6 +194,19 @@ static class Java_sun_invoke_anon_AnonymousClassLoader
 	public static java.lang.Class loadClassInternal(java.lang.Class hostClass, byte[] classFile, object[] patchArray)
 	{
 		throw new NotImplementedException();
+	}
+}
+
+static class Java_sun_net_PortConfig
+{
+	public static int getLower0()
+	{
+		return 49152;
+	}
+
+	public static int getUpper0()
+	{
+		return 65535;
 	}
 }
 
@@ -198,10 +231,10 @@ static class Java_sun_nio_fs_NetPath
 #if FIRST_PASS
 		return null;
 #else
-		path = java.io.FileSystem.getFileSystem().canonicalize(path);
+		path = java.io.DefaultFileSystem.getFileSystem().canonicalize(path);
 		if (VirtualFileSystem.IsVirtualFS(path))
 		{
-			if (VirtualFileSystem.CheckAccess(path, Java_java_io_Win32FileSystem.ACCESS_READ))
+			if (VirtualFileSystem.CheckAccess(path, Java_java_io_WinNTFileSystem.ACCESS_READ))
 			{
 				return path;
 			}
@@ -326,22 +359,6 @@ static class Java_com_sun_security_auth_module_NTSystem
 	public static long getImpersonationToken0(object thisObj)
 	{
 		return WindowsIdentity.GetCurrent().Token.ToInt64();
-	}
-}
-
-static class Java_com_sun_security_auth_module_SolarisSystem
-{
-	public static void getSolarisInfo(object thisObj)
-	{
-		throw new NotImplementedException();
-	}
-}
-
-static class Java_com_sun_security_auth_module_UnixSystem
-{
-	public static void getUnixInfo(object thisObj)
-	{
-		throw new NotImplementedException();
 	}
 }
 

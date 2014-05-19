@@ -28,7 +28,6 @@ package sun.misc;
 import java.util.jar.JarFile;
 import java.io.Console;
 import java.security.ProtectionDomain;
-import javax.security.auth.kerberos.KeyTab;
 
 import java.security.AccessController;
 
@@ -51,7 +50,6 @@ public class SharedSecrets {
     private static JavaNioAccess javaNioAccess;
     private static JavaSecurityProtectionDomainAccess javaSecurityProtectionDomainAccess;
     private static JavaSecurityAccess javaSecurityAccess;
-    private static JavaxSecurityAuthKerberosAccess javaxSecurityAuthKerberosAccess;
     private static JavaUtilZipFileAccess javaUtilZipFileAccess;
     private static JavaAWTAccess javaAWTAccess;
 
@@ -137,18 +135,6 @@ public class SharedSecrets {
         return javaSecurityAccess;
     }
 
-    public static void setJavaxSecurityAuthKerberosAccess
-            (JavaxSecurityAuthKerberosAccess jsaka) {
-        javaxSecurityAuthKerberosAccess = jsaka;
-    }
-
-    public static JavaxSecurityAuthKerberosAccess
-            getJavaxSecurityAuthKerberosAccess() {
-        if (javaxSecurityAuthKerberosAccess == null)
-            unsafe.ensureClassInitialized(KeyTab.class);
-        return javaxSecurityAuthKerberosAccess;
-    }
-
     public static JavaUtilZipFileAccess getJavaUtilZipFileAccess() {
         if (javaUtilZipFileAccess == null)
             unsafe.ensureClassInitialized(java.util.zip.ZipFile.class);
@@ -166,7 +152,7 @@ public class SharedSecrets {
     public static JavaAWTAccess getJavaAWTAccess() {
         // this may return null in which case calling code needs to
         // provision for.
-        if (javaAWTAccess == null || javaAWTAccess.getContext() == null) {
+        if (javaAWTAccess == null) {
             return null;
         }
         return javaAWTAccess;

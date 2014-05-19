@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,14 +205,17 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
     }
 
     protected synchronized void accept(SocketImpl s) throws IOException {
-        // pass in the real impl not the wrapper.
-        SocketImpl delegate = ((PlainSocketImpl)s).impl;
-        delegate.address = new InetAddress();
-        delegate.fd = new FileDescriptor();
-        impl.accept(delegate);
-
-        // set fd to delegate's fd to be compatible with older releases
-        s.fd = delegate.fd;
+        if (s instanceof PlainSocketImpl) {
+            // pass in the real impl not the wrapper.
+            SocketImpl delegate = ((PlainSocketImpl)s).impl;
+            delegate.address = new InetAddress();
+            delegate.fd = new FileDescriptor();
+            impl.accept(delegate);
+            // set fd to delegate's fd to be compatible with older releases
+            s.fd = delegate.fd;
+        } else {
+            impl.accept(s);
+        }
     }
 
     void setFileDescriptor(FileDescriptor fd) {
@@ -343,7 +346,7 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
 
     void socketSetOption(int cmd, boolean on, Object value)
         throws SocketException {
-        socketSetOption(cmd, on, value);
+        impl.socketSetOption(cmd, on, value);
     }
 
     int socketGetOption(int opt, Object iaContainerObj) throws SocketException {

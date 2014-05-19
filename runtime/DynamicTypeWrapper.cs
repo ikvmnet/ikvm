@@ -598,7 +598,7 @@ namespace IKVM.Internal
 			private bool SupportsCallerID(ClassFile.Method method)
 			{
 				if ((classFile.Name == "sun.reflect.Reflection" && method.Name == "getCallerClass")
-					|| (classFile.Name == "java.util.logging.Logger" && method.Name == "findResourceBundleFromStack"))
+					|| (classFile.Name == "java.lang.SecurityManager" && method.Name == "checkMemberAccess"))
 				{
 					// ignore CallerSensitive on methods that don't need CallerID parameter
 					return false;
@@ -6607,6 +6607,7 @@ namespace IKVM.Internal
 					&& (fw.IsPublic || (fw.IsProtected && !this.IsFinal))
 					&& (fw.FieldTypeWrapper.IsUnloadable || fw.FieldTypeWrapper.IsAccessibleFrom(this) || fw.FieldTypeWrapper.InternalsVisibleTo(this)));
 		}
+#endif
 
 		internal static bool RequiresDynamicReflectionCallerClass(string classFile, string method, string signature)
 		{
@@ -6616,7 +6617,6 @@ namespace IKVM.Internal
 				|| (classFile == "javax.sql.rowset.serial.SerialJavaObject" && method == "getFields" && signature == "()[Ljava.lang.reflect.Field;")
 				;
 		}
-#endif
 	}
 
 	sealed class DefineMethodHelper

@@ -27,10 +27,10 @@
     <property name="pathsep" value=":" />
     <property overwrite="false" name="signoption" value="" />
     <property overwrite="false" name="SkipSystemCoreDependency" value="false" />
-    <property name="OPENJDK_VERSION" value="OpenJDK 7u40 b34" />
-    <property name="IMPLEMENTATION_VERSION" value="1.7.0_40" />
-    <property name="SPECIFICATION_VERSION" value="1.7" />
-    <property name="OpenJDK.dir" value="${project::get-base-directory()}/../../openjdk-7u40-b34" />
+    <property name="OPENJDK_VERSION" value="OpenJDK 8 b132" />
+    <property name="IMPLEMENTATION_VERSION" value="1.8.0" />
+    <property name="SPECIFICATION_VERSION" value="1.8" />
+    <property name="OpenJDK.dir" value="${project::get-base-directory()}/../../openjdk-8-b132" />
     <if test="${platform::is-win32()}">
         <property name="pathsep" value=";" />
     </if>
@@ -187,10 +187,11 @@
     </target>
 
     <target name="rmi">
-        <property name="VMARGS" value="-J-client -J-Xmx896m -J-Xms128m -J-XX:PermSize=32m -J-XX:MaxPermSize=160m" />
-        <property name="CLASSPATH" value="${OpenJDK.dir}/jdk/src/share/classes/${pathsep}${OpenJDK.dir}/build/linux-amd64/impsrc/${pathsep}." />
-        <property name="OUTPUT" value="${OpenJDK.dir}/build/linux-amd64/classes/" />
-        <property name="ARGS" value="${VMARGS} -bootclasspath ${CLASSPATH} -d ${OUTPUT}" />
+        <mkdir dir="rmistubs" />
+        <property name="VMARGS" value="-J-client -J-Xmx896m -J-Xms128m" />
+        <property name="CLASSPATH" value="mscorlib.jar;System.Xml.jar;${OpenJDK.dir}/jdk/src/share/classes/${pathsep}${OpenJDK.dir}/corba/src/share/classes" />
+        <property name="OUTPUT" value="rmistubs" />
+        <property name="ARGS" value="${VMARGS} -nowarn -bootclasspath ${CLASSPATH} -d ${OUTPUT}" />
         <exec program="rmic" commandline="${ARGS} -v1.1 sun.rmi.registry.RegistryImpl" />
         <exec program="rmic" commandline="${ARGS} -v1.1 sun.rmi.transport.DGCImpl" />
         <exec program="rmic" commandline="${ARGS} -v1.2 sun.rmi.server.Activation$ActivationSystemImpl" />
@@ -211,7 +212,7 @@
     <target name="vfs">
         <!-- This file is generated here, but it is added as a resource to IKVM.Runtime.dll, because Ref.Emit on .NET 1.1 doesn't support adding a raw resource. -->
         <zip zipfile="vfs.zip">
-            <fileset basedir="${OpenJDK.dir}/build/linux-amd64/j2re-image">
+            <fileset basedir="${OpenJDK.dir}/build/linux-x86_64-normal-server-release/jdk">
                 <include name="lib/calendars.properties" />
                 <include name="lib/logging.properties" />
                 <include name="lib/management/management.properties" />
@@ -219,7 +220,7 @@
                 <include name="lib/psfontj2d.properties" />
                 <include name="lib/sound.properties" />
                 <include name="lib/cmm/*" />
-                <include name="lib/zi/**/*" />
+                <include name="lib/tzdb.dat" />
                 <include name="lib/currency.data" />
                 <include name="lib/security/java.policy" />
                 <include name="lib/security/java.security" />
@@ -238,13 +239,42 @@
         </target>
 
     <target name="resources">
-        <!-- resources that are not in @OPENJDK@/build/linux-amd64/j2re-image/lib/resources.jar -->
+        <!-- collect the resources in a zip to make it easier to include them in the right assemblies -->
         <zip zipfile="resources.zip">
+            <fileset basedir="${OpenJDK.dir}/build/linux-x86_64-normal-server-release/jdk/classes">
+                <include name="com/sun/corba/se/impl/orbutil/resources/*.properties" />
+                <include name="com/sun/rowset/*.properties" />
+                <include name="javax/swing/text/html/parser/html32.bdtd" />
+                <include name="sun/rmi/registry/resources/*.properties" />
+                <include name="sun/rmi/server/resources/*.properties" />
+                <include name="sun/text/resources/*IteratorData" />
+                <include name="sun/text/resources/th/*IteratorData_th" />
+                <include name="sun/text/resources/th/thai_dict" />
+            </fileset>
+            <fileset basedir="${OpenJDK.dir}/corba/src/share/classes">
+                <include name="**/*.properties" />
+            </fileset>
             <fileset basedir="${OpenJDK.dir}/jdk/src/share/classes">
+                <include name="**/*.properties" />
+                <include name="**/*.gif" />
+                <include name="**/*.png" />
+                <include name="**/*.wav" />
+                <include name="com/sun/org/apache/xml/internal/security/resource/config.*" />
                 <include name="com/sun/swing/internal/plaf/**/*" />
-                <include name="com/sun/java/swing/plaf/**/*.properties" />
-                <include name="com/sun/java/swing/plaf/**/*.gif" />
-                <include name="sun/launcher/resources/*.properties" />
+                <include name="javax/swing/text/html/default.css" />
+                <include name="javax/swing/text/rtf/charsets/*.txt" />
+                <include name="sun/text/resources/**/*.icu" />
+            </fileset>
+            <fileset basedir="${OpenJDK.dir}/jaxp/src">
+                <include name="**/*.properties" />
+                <include name="**/*.res" />
+            </fileset>
+            <fileset basedir="${OpenJDK.dir}/jaxws/src/share/jaf_classes">
+                <include name="**/*.properties" />
+            </fileset>
+            <fileset basedir="${OpenJDK.dir}/jaxws/src/share/jaxws_classes">
+                <include name="**/*.properties" />
+                <include name="**/*.xml" />
             </fileset>
         </zip>
     </target>
@@ -289,6 +319,7 @@
             <arg value="-r:IKVM.Runtime.dll" />
             <!-- we already know that the JNI assembly is not available, so suppress the warning -->
             <arg value="-nowarn:110" />
+            <arg value="-w4" />
             <arg value="-warnaserror" />
             <arg value="@response.gen.txt" />
         </exec>
@@ -352,6 +383,7 @@
             <arg value="-version:${VERSION}" />
             <arg value="${signoption}" />
             <arg value="-warnaserror" />
+            <arg value="-w4" />
             <arg value="@tools.gen.rsp" />
         </exec>
     </target>

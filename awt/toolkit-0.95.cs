@@ -568,19 +568,6 @@ namespace ikvm.awt
             return java.awt.image.ColorModel.getRGBdefault();
         }
 
-        [Obsolete]
-        public override string[] getFontList()
-        {
-            // This method is deprecated and Sun's JDK only returns these fonts as well
-            return new string[] { "Dialog", "SansSerif", "Serif", "Monospaced", "DialogInput" };
-        }
-
-        [Obsolete]
-        public override java.awt.FontMetrics getFontMetrics(java.awt.Font font)
-        {
-            return sun.font.FontDesignMetrics.getMetrics(font);
-        }
-
         public override void sync()
         {
         }
@@ -1030,6 +1017,11 @@ namespace ikvm.awt
 		public override bool areExtraMouseButtonsEnabled()
 		{
 			return true;
+		}
+
+		public override java.awt.peer.FramePeer createLightweightFrame(sun.awt.LightweightFrame lf)
+		{
+			throw new NotImplementedException();
 		}
 	}
 
@@ -4425,6 +4417,11 @@ namespace ikvm.awt
 		{
 			return new MyForm(_insets);
 		}
+
+		public void emulateActivation(bool b)
+		{
+			throw new NotImplementedException();
+		}
     }
 
     sealed class NetDialogPeer : NetWindowPeer, java.awt.peer.DialogPeer
@@ -5617,6 +5614,11 @@ namespace ikvm.awt
         {
             throw new ikvm.@internal.NotYetImplementedError();
         }
-    }
+
+		protected internal override java.awt.Image platformImageBytesToImage(byte[] barr, long l)
+		{
+			throw new NotImplementedException();
+		}
+	}
 
 }

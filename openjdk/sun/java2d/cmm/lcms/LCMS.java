@@ -40,41 +40,31 @@ import java.util.Hashtable;
 
 import sun.java2d.cmm.ColorTransform;
 import sun.java2d.cmm.PCMM;
+import sun.java2d.cmm.Profile;
 
 // dummy color management implementation
 public class LCMS implements PCMM {
     
     private static final int HEADER_SIZE = 128;
     
-    private final ArrayList<ProfileData> profiles = new ArrayList<ProfileData>();
-
-    public synchronized long loadProfile( byte[] data ) {
-        int free = profiles.indexOf( null );
-        if( free != -1 ) {
-            profiles.set( free, new ProfileData( data.clone()) );
-            return free;
-        } else {
-            long id = profiles.size();
-            profiles.add( new ProfileData( data.clone()) );
-            return id;
-        }
+    public Profile loadProfile( byte[] data ) {
+        return new ProfileData(data.clone());
     }
 
-    public synchronized void freeProfile( long profileID ) {
-        profiles.set( (int)profileID, null );
+    public void freeProfile(Profile p) {
     }
 
-    public synchronized int getProfileSize( long profileID ) {
-        return profiles.get( (int)profileID ).data.length;
+    public int getProfileSize(Profile p) {
+        return ((ProfileData)p).data.length;
     }
 
-    public synchronized void getProfileData( long profileID, byte[] data ) {
-        byte[] src = profiles.get( (int)profileID ).data;
+    public void getProfileData(Profile p, byte[] data) {
+        byte[] src = ((ProfileData)p).data;
         System.arraycopy( src, 0, data, 0, src.length );
     }
 
-    public void getTagData( long profileID, int tagSignature, byte[] data ) {
-        ProfileData profile = profiles.get( (int)profileID );
+    public void getTagData(Profile p, int tagSignature, byte[] data) {
+        ProfileData profile = (ProfileData)p;
         if( tagSignature == ICC_Profile.icSigHead ) {
             byte[] src = profile.data;
             System.arraycopy( src, 0, data, 0, HEADER_SIZE );
@@ -89,11 +79,11 @@ public class LCMS implements PCMM {
         
     }
 
-    public int getTagSize( long profileID, int tagSignature ) {
+    public int getTagSize(Profile p, int tagSignature) {
         if( tagSignature == ICC_Profile.icSigHead ) {
             return HEADER_SIZE;
         }
-        ProfileData profile = profiles.get( (int)profileID );
+        ProfileData profile = (ProfileData)p;
         TagEntry entry = profile.tags.get( tagSignature );
         if( entry == null ){
             throw new CMMException( "tag does not exist: " + tagSignature );
@@ -101,7 +91,7 @@ public class LCMS implements PCMM {
         return entry.getData().length;
     }
 
-    public void setTagData(long profileID, int tagSignature, byte[] data)
+    public void setTagData(Profile p, int tagSignature, byte[] data)
     {
         throw new CMMException("Not implemented");
     }
@@ -115,13 +105,18 @@ public class LCMS implements PCMM {
     {
         return new DummyColorTransform();
     }
+
+    public static LCMS getModule() {
+        return new LCMS();
+    }
     
-    private static class ProfileData{
+    private static final class ProfileData extends Profile {
         
         private final byte[] data;
         private final Hashtable<Integer, TagEntry> tags;
         
         private ProfileData(byte[] data){
+            super(-1);
             this.data = data;
             this.tags = createTagTable( data );
         }

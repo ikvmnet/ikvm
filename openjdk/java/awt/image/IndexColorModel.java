@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,7 @@ import java.math.BigInteger;
  * Index values greater than or equal to the map size, but less than
  * 2<sup><em>n</em></sup>, are undefined and return 0 for all color and
  * alpha components.
+ * </a>
  * <p>
  * For those methods that use a primitive array pixel representation of
  * type <code>transferType</code>, the array length is always one.
@@ -1144,7 +1145,7 @@ public class IndexColorModel extends ColorModel {
      * @throws ClassCastException if <code>pixel</code> is not a
      *            primitive array of type <code>transferType</code>
      * @throws UnsupportedOperationException if <code>transferType</code>
-     *         is not one of the supported transer types
+     *         is not one of the supported transfer types
      * @see ColorModel#hasAlpha
      * @see ColorModel#getNumComponents
      */
@@ -1263,7 +1264,7 @@ public class IndexColorModel extends ColorModel {
      *  array is not large enough to hold all of the color and alpha
      *  components starting at <code>offset</code>
      * @throws UnsupportedOperationException if <code>transferType</code>
-     *         is not one of the supported transer types
+     *         is not one of the supported transfer types
      * @see WritableRaster#setDataElements
      * @see SampleModel#setDataElements
      */

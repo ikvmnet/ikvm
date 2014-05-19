@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,15 +263,14 @@ static int socketReceiveOrPeekData
     packetBuffer = dpObj.buf;
     packetBufferOffset = dpObj.offset;
     packetBufferLen = dpObj.bufLength;
+    /* Note: the buffer needn't be greater than 65,536 (0xFFFF)
+    * the max size of an IP packet. Anything bigger is truncated anyway.
+    *-/
+    if (packetBufferLen > MAX_PACKET_LEN) {
+        packetBufferLen = MAX_PACKET_LEN;
+    }
 
-    /*
     if (packetBufferLen > MAX_BUFFER_LEN) {
-        /* Note: the buffer needn't be greater than 65,536 (0xFFFF)
-         * the max size of an IP packet. Anything bigger is truncated anyway.
-         *-/
-        if (packetBufferLen > MAX_PACKET_LEN) {
-            packetBufferLen = MAX_PACKET_LEN;
-        }
         fullPacket = (char *)malloc(packetBufferLen);
         if (!fullPacket) {
             JNU_ThrowOutOfMemoryError(env, "Native heap allocation failed");

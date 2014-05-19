@@ -1,11 +1,11 @@
 IKVM.NET Build Instructions
 ---------------------------
 
-This IKVM.NET source bundle requires OpenJDK 7u40 b34 sources (and build artifacts).
+This IKVM.NET source bundle requires OpenJDK 8 b132 sources (and build artifacts).
 
 They can be downloaded from the SourceForge IKVM project, or from:
 
-http://www.frijters.net/openjdk-7u40-b34-stripped.zip
+http://www.frijters.net/openjdk-8-b132-stripped.zip
 
 This file should be unzipped in the same directory as where the ikvm directory
 (that contains this unzipped source bundle) lives.
@@ -13,8 +13,8 @@ This file should be unzipped in the same directory as where the ikvm directory
 Download ICSharpCode.SharpZipLib.dll (from http://www.icsharpcode.net/opensource/sharpziplib/
 or from the ikvmbin-x.y.z.r.zip in the SourceForge IKVM project) and copy it to ikvm/bin.
 
-Add the bin directory of NAnt 0.85 and JDK 7 to the PATH. It is recommend to use the 64 bit
-version of Java 7.
+Add the bin directory of NAnt 0.85 and JDK 8 to the PATH. Java 8 is required to build
+the Java class library. It is recommend to use the 64 bit version.
 
 From the ikvm directory run "nant".
 

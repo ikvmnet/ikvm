@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009,  Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,7 +24,7 @@
  * questions.
  *
  */
-
+// AUTOMATICALLY GENERATED FILE - DO NOT EDIT                                  
 package sun.nio.ch;                                                            
 import java.net.SocketOption;                                                  
 import java.net.StandardSocketOptions;                                         
@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.HashMap;                                                      
 import cli.System.Net.Sockets.SocketOptionLevel;
 import cli.System.Net.Sockets.SocketOptionName;
-
 class SocketOptionRegistry {                                                   
     private SocketOptionRegistry() { }                                         
     private static class RegistryKey {                                         

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -652,10 +652,10 @@ final class net_util_md
             Inet6Address v6addr = (Inet6Address)iaObj;
             int scope = v6addr.getScopeId();
             if (scope == 0) {
-                him.set(new IPEndPoint(new IPAddress(v6addr.ipaddress), port));
+                him.set(new IPEndPoint(new IPAddress(v6addr.getAddress()), port));
                 return 0;
             } else {
-                him.set(new IPEndPoint(new IPAddress(v6addr.ipaddress, scope & 0xFFFFFFFFL), port));
+                him.set(new IPEndPoint(new IPAddress(v6addr.getAddress(), scope & 0xFFFFFFFFL), port));
                 return 0;
             }
         }
@@ -750,7 +750,7 @@ final class net_util_md
                         return false;
                     }
                     scope = ((Inet6Address)iaObj).getScopeId();
-                    caddrCur = ((Inet6Address)iaObj).ipaddress;
+                    caddrCur = ((Inet6Address)iaObj).getAddress();
                     if (NET_IsEqual(caddrNew, caddrCur) && cmpScopeID(scope, him)) {
                         return true;
                     } else {

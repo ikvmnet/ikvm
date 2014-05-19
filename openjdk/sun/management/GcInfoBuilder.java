@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ public class GcInfoBuilder {
         int itemCount = numGcInfoItems + gcExtItemCount;
         allItemNames = new String[itemCount];
         String[] allItemDescs = new String[itemCount];
-        OpenType[] allItemTypes = new OpenType[itemCount];
+        OpenType<?>[] allItemTypes = new OpenType<?>[itemCount];
 
         System.arraycopy(gcInfoItemNames, 0, allItemNames, 0, numGcInfoItems);
         System.arraycopy(gcInfoItemNames, 0, allItemDescs, 0, numGcInfoItems);

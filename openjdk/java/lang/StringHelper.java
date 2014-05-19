@@ -34,6 +34,7 @@ import java.util.Comparator;
 import java.util.Formatter;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.StringJoiner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -495,12 +496,6 @@ final class StringHelper
      */
     static String NewString(StringBuilder builder) {
         return builder.toString();
-    }
-
-
-    // Package private constructor which shares value array for speed.
-    static String NewString(int offset, int count, char value[]) {
-        return new String(value, offset, count);
     }
 
     /**
@@ -1474,6 +1469,56 @@ final class StringHelper
     }
 
     /**
+     * Code shared by String and AbstractStringBuilder to do searches. The
+     * source is the character array being searched, and the target
+     * is the string being searched for.
+     *
+     * @param   source       the characters being searched.
+     * @param   sourceOffset offset of the source string.
+     * @param   sourceCount  count of the source string.
+     * @param   target       the characters being searched for.
+     * @param   fromIndex    the index to begin searching from.
+     */
+    static int indexOf(char[] source, int sourceOffset, int sourceCount,
+            String target, int fromIndex) {
+        final int targetOffset = 0;
+        final int targetCount = target.length();
+        if (fromIndex >= sourceCount) {
+            return (targetCount == 0 ? sourceCount : -1);
+        }
+        if (fromIndex < 0) {
+            fromIndex = 0;
+        }
+        if (targetCount == 0) {
+            return fromIndex;
+        }
+
+        char first = target.charAt(targetOffset);
+        int max = sourceOffset + (sourceCount - targetCount);
+
+        for (int i = sourceOffset + fromIndex; i <= max; i++) {
+            /* Look for first character. */
+            if (source[i] != first) {
+                while (++i <= max && source[i] != first);
+            }
+
+            /* Found first character, now look at the rest of v2 */
+            if (i <= max) {
+                int j = i + 1;
+                int end = j + targetCount - 1;
+                for (int k = targetOffset + 1; j < end && source[j]
+                        == target.charAt(k); j++, k++);
+
+                if (j == end) {
+                    /* Found whole string. */
+                    return i - sourceOffset;
+                }
+            }
+        }
+        return -1;
+    }
+
+    /**
      * Code shared by String and StringBuffer to do searches. The
      * source is the character array being searched, and the target
      * is the string being searched for.
@@ -1588,6 +1633,65 @@ final class StringHelper
             index = cliStr.LastIndexOf(firstChar, index - 1);
         }
         return cli.System.String.CompareOrdinal(_this, 0, str, 0, olen) == 0 ? 0 : -1;
+    }
+
+
+    /**
+     * Code shared by String and AbstractStringBuilder to do searches. The
+     * source is the character array being searched, and the target
+     * is the string being searched for.
+     *
+     * @param   source       the characters being searched.
+     * @param   sourceOffset offset of the source string.
+     * @param   sourceCount  count of the source string.
+     * @param   target       the characters being searched for.
+     * @param   fromIndex    the index to begin searching from.
+     */
+    static int lastIndexOf(char[] source, int sourceOffset, int sourceCount,
+            String target, int fromIndex) {
+        final int targetOffset = 0;
+        final int targetCount = target.length();
+        /*
+         * Check arguments; return immediately where possible. For
+         * consistency, don't check for null str.
+         */
+        int rightIndex = sourceCount - targetCount;
+        if (fromIndex < 0) {
+            return -1;
+        }
+        if (fromIndex > rightIndex) {
+            fromIndex = rightIndex;
+        }
+        /* Empty string always matches. */
+        if (targetCount == 0) {
+            return fromIndex;
+        }
+
+        int strLastIndex = targetOffset + targetCount - 1;
+        char strLastChar = target.charAt(strLastIndex);
+        int min = sourceOffset + targetCount - 1;
+        int i = min + fromIndex;
+
+    startSearchForLastChar:
+        while (true) {
+            while (i >= min && source[i] != strLastChar) {
+                i--;
+            }
+            if (i < min) {
+                return -1;
+            }
+            int j = i - 1;
+            int start = j - (targetCount - 1);
+            int k = strLastIndex - 1;
+
+            while (j > start) {
+                if (source[j--] != target.charAt(k--)) {
+                    i--;
+                    continue startSearchForLastChar;
+                }
+            }
+            return start - sourceOffset + 1;
+        }
     }
 
     /**
@@ -1936,6 +2040,90 @@ final class StringHelper
             return list.subList(0, resultSize).toArray(result);
         }
         return Pattern.compile(regex).split(_this, limit);
+    }
+
+    /**
+     * Returns a new String composed of copies of the
+     * {@code CharSequence elements} joined together with a copy of
+     * the specified {@code delimiter}.
+     *
+     * <blockquote>For example,
+     * <pre>{@code
+     *     String message = String.join("-", "Java", "is", "cool");
+     *     // message returned is: "Java-is-cool"
+     * }</pre></blockquote>
+     *
+     * Note that if an element is null, then {@code "null"} is added.
+     *
+     * @param  delimiter the delimiter that separates each element
+     * @param  elements the elements to join together.
+     *
+     * @return a new {@code String} that is composed of the {@code elements}
+     *         separated by the {@code delimiter}
+     *
+     * @throws NullPointerException If {@code delimiter} or {@code elements}
+     *         is {@code null}
+     *
+     * @see java.util.StringJoiner
+     * @since 1.8
+     */
+    public static String join(CharSequence delimiter, CharSequence... elements) {
+        Objects.requireNonNull(delimiter);
+        Objects.requireNonNull(elements);
+        // Number of elements not likely worth Arrays.stream overhead.
+        StringJoiner joiner = new StringJoiner(delimiter);
+        for (CharSequence cs: elements) {
+            joiner.add(cs);
+        }
+        return joiner.toString();
+    }
+
+    /**
+     * Returns a new {@code String} composed of copies of the
+     * {@code CharSequence elements} joined together with a copy of the
+     * specified {@code delimiter}.
+     *
+     * <blockquote>For example,
+     * <pre>{@code
+     *     List<String> strings = new LinkedList<>();
+     *     strings.add("Java");strings.add("is");
+     *     strings.add("cool");
+     *     String message = String.join(" ", strings);
+     *     //message returned is: "Java is cool"
+     *
+     *     Set<String> strings = new LinkedHashSet<>();
+     *     strings.add("Java"); strings.add("is");
+     *     strings.add("very"); strings.add("cool");
+     *     String message = String.join("-", strings);
+     *     //message returned is: "Java-is-very-cool"
+     * }</pre></blockquote>
+     *
+     * Note that if an individual element is {@code null}, then {@code "null"} is added.
+     *
+     * @param  delimiter a sequence of characters that is used to separate each
+     *         of the {@code elements} in the resulting {@code String}
+     * @param  elements an {@code Iterable} that will have its {@code elements}
+     *         joined together.
+     *
+     * @return a new {@code String} that is composed from the {@code elements}
+     *         argument
+     *
+     * @throws NullPointerException If {@code delimiter} or {@code elements}
+     *         is {@code null}
+     *
+     * @see    #join(CharSequence,CharSequence...)
+     * @see    java.util.StringJoiner
+     * @since 1.8
+     */
+    public static String join(CharSequence delimiter,
+            Iterable<? extends CharSequence> elements) {
+        Objects.requireNonNull(delimiter);
+        Objects.requireNonNull(elements);
+        StringJoiner joiner = new StringJoiner(delimiter);
+        for (CharSequence cs: elements) {
+            joiner.add(cs);
+        }
+        return joiner.toString();
     }
 
     /**
@@ -2533,70 +2721,4 @@ final class StringHelper
     public static String valueOf(double d) {
         return Double.toString(d);
     }
-
-    /**
-     * Seed value used for each alternative hash calculated.
-     */
-    private static final int HASHING_SEED;
-
-    static {
-        long nanos = System.nanoTime();
-        long now = System.currentTimeMillis();
-        int SEED_MATERIAL[] = {
-                System.identityHashCode(String.class),
-                System.identityHashCode(System.class),
-                (int) (nanos >>> 32),
-                (int) nanos,
-                (int) (now >>> 32),
-                (int) now,
-                (int) (System.nanoTime() >>> 2)
-        };
-
-        // Use murmur3 to scramble the seeding material.
-        // Inline implementation to avoid loading classes
-        int h1 = 0;
-
-        // body
-        for (int k1 : SEED_MATERIAL) {
-            k1 *= 0xcc9e2d51;
-            k1 = (k1 << 15) | (k1 >>> 17);
-            k1 *= 0x1b873593;
-
-            h1 ^= k1;
-            h1 = (h1 << 13) | (h1 >>> 19);
-            h1 = h1 * 5 + 0xe6546b64;
-        }
-
-        // tail (always empty, as body is always 32-bit chunks)
-
-        // finalization
-
-        h1 ^= SEED_MATERIAL.length * 4;
-
-        // finalization mix force all bits of a hash block to avalanche
-        h1 ^= h1 >>> 16;
-        h1 *= 0x85ebca6b;
-        h1 ^= h1 >>> 13;
-        h1 *= 0xc2b2ae35;
-        h1 ^= h1 >>> 16;
-
-        HASHING_SEED = h1;
-    }
-
-    /**
-     * Calculates a 32-bit hash value for this string.
-     *
-     * @return a 32-bit hash value for this string.
-     */
-    static int hash32(String _this) {
-        // [IKVM] We don't bother with murmur32 and just use the .NET hash code
-        // and hope that it is good enough. We xor with HASHING_SEED to avoid
-        // returning predictable values (this does not help against DoS attacks,
-        // but it will surface constant hash code dependencies).
-        // If truly randomized string hashes are required (to protect against
-        // DoS) the .NET 4.5 <UseRandomizedStringHashAlgorithm enabled="1" />
-        // app.config setting can be used.
-        return HASHING_SEED ^ ((cli.System.String)(Object)_this).GetHashCode();
-    }
-
 }

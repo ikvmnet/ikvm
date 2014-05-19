@@ -689,6 +689,8 @@ static class Java_java_lang_reflect_Proxy
 		{
 			return null;
 		}
+		// we need to explicitly register the type, because the type isn't visible by normal means
+		tw.GetClassLoader().SetWrapperForType(type, tw);
 		TypeWrapper[] wrappers2 = tw.Interfaces;
 		if (wrappers.Length != wrappers.Length)
 		{
@@ -705,29 +707,30 @@ static class Java_java_lang_reflect_Proxy
 	}
 }
 
-static class Java_java_lang_reflect_Field
+static class Java_java_lang_reflect_Executable
 {
-	public static object getDeclaredAnnotationsImpl(java.lang.reflect.Field thisField)
+	public static object[] getParameters0(object _this)
 	{
-		FieldWrapper fw = FieldWrapper.FromField(thisField);
-		return Java_java_lang_Class.AnnotationsToMap(fw.DeclaringType.GetClassLoader(), fw.DeclaringType.GetFieldAnnotations(fw));
+		return null;
 	}
-}
 
-static class Java_java_lang_reflect_Method
-{
-	public static object getDeclaredAnnotationsImpl(object methodOrConstructor)
+	public static byte[] getTypeAnnotationBytes0(object _this)
 	{
-		MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(methodOrConstructor);
+		throw new NotImplementedException();
+	}
+
+	public static object declaredAnnotationsImpl(object executable)
+	{
+		MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(executable);
 		return Java_java_lang_Class.AnnotationsToMap(mw.DeclaringType.GetClassLoader(), mw.DeclaringType.GetMethodAnnotations(mw));
 	}
 
-	public static object[][] getParameterAnnotationsImpl(object methodOrConstructor)
+	public static object[][] sharedGetParameterAnnotationsImpl(object executable)
 	{
 #if FIRST_PASS
 		return null;
 #else
-		MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(methodOrConstructor);
+		MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(executable);
 		object[][] objAnn = mw.DeclaringType.GetParameterAnnotations(mw);
 		if (objAnn == null)
 		{
@@ -758,7 +761,24 @@ static class Java_java_lang_reflect_Method
 		return ann;
 #endif
 	}
+}
 
+static class Java_java_lang_reflect_Field
+{
+	public static object getDeclaredAnnotationsImpl(java.lang.reflect.Field thisField)
+	{
+		FieldWrapper fw = FieldWrapper.FromField(thisField);
+		return Java_java_lang_Class.AnnotationsToMap(fw.DeclaringType.GetClassLoader(), fw.DeclaringType.GetFieldAnnotations(fw));
+	}
+
+	public static byte[] getTypeAnnotationBytes0(java.lang.reflect.Field thisField)
+	{
+		throw new NotImplementedException();
+	}
+}
+
+static class Java_java_lang_reflect_Method
+{
 	public static object getDefaultValue(java.lang.reflect.Method thisMethod)
 	{
 		MethodWrapper mw = MethodWrapper.FromMethod(thisMethod);

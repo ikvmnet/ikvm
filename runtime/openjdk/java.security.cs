@@ -50,8 +50,19 @@ static class Java_java_security_AccessController
 #if !FIRST_PASS
 	private static bool GetProtectionDomains(List<java.security.ProtectionDomain> array, ikvm.@internal.CallerID callerID, StackTrace stack)
 	{
+		// first we have to skip all AccessController related frames, because we can be called from a doPrivileged implementation (not the privileged action)
+		// in which case we should ignore the doPrivileged frame
+		int skip = 0;
+		for (; skip < stack.FrameCount; skip++)
+		{
+			Type type  = stack.GetFrame(skip).GetMethod().DeclaringType;
+			if (type != typeof(Java_java_security_AccessController) && type != typeof(java.security.AccessController))
+			{
+				break;
+			}
+		}
 		java.security.ProtectionDomain previous_protection_domain = null;
-		for (int i = 0; i < stack.FrameCount; i++)
+		for (int i = skip; i < stack.FrameCount; i++)
 		{
 			bool is_privileged = false;
 			java.security.ProtectionDomain protection_domain;
@@ -113,7 +124,13 @@ static class Java_java_security_AccessController
 #if FIRST_PASS
 		return null;
 #else
-		java.security.AccessController.LazyContext lc = java.lang.Thread.currentThread().lazyInheritedAccessControlContext;
+		object inheritedAccessControlContext = java.lang.Thread.currentThread().inheritedAccessControlContext;
+		java.security.AccessControlContext acc = inheritedAccessControlContext as java.security.AccessControlContext;
+		if (acc != null)
+		{
+			return acc;
+		}
+		java.security.AccessController.LazyContext lc = inheritedAccessControlContext as java.security.AccessController.LazyContext;
 		if (lc == null)
 		{
 			return null;

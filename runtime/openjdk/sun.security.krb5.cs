@@ -50,7 +50,7 @@ static class Java_sun_security_krb5_Credentials
 	}
 #endif
 
-	public static object acquireDefaultNativeCreds()
+	public static object acquireDefaultNativeCreds(int[] eTypes)
 	{
 #if FIRST_PASS
         return null;

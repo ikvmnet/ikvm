@@ -58,6 +58,11 @@ public class StandardCharsets
         "unicode-1-1-utf-8",
     };
 
+    static final String[] aliases_CESU_8 = new String[] {
+        "CESU8",
+        "csCESU-8",
+    };
+
     static final String[] aliases_UTF_16 = new String[] {
         "UTF_16",
         "utf16",
@@ -364,7 +369,7 @@ public class StandardCharsets
     {
 
         private static final int ROWS = 1024;
-        private static final int SIZE = 209;
+        private static final int SIZE = 211;
         private static final int SHIFT = 0;
         private static final int MASK = 0x3ff;
 
@@ -526,7 +531,8 @@ public class StandardCharsets
             ht[621] = new Object[] { "cp1254", "windows-1254" };
             ht[624] = new Object[] { "csibm862", "ibm862",
                          new Object[] { "cp1257", "windows-1257" } };
-            ht[628] = new Object[] { "csibm866", "ibm866" };
+            ht[628] = new Object[] { "csibm866", "ibm866",
+                         new Object[] { "cesu8", "cesu-8" } };
             ht[632] = new Object[] { "iso8859_13", "iso-8859-13" };
             ht[634] = new Object[] { "iso8859_15", "iso-8859-15",
                          new Object[] { "utf_32be", "utf-32be" } };
@@ -568,6 +574,7 @@ public class StandardCharsets
             ht[843] = new Object[] { "cspcp855", "ibm855" };
             ht[846] = new Object[] { "windows-437", "ibm437" };
             ht[849] = new Object[] { "ascii", "us-ascii" };
+            ht[863] = new Object[] { "cscesu-8", "cesu-8" };
             ht[881] = new Object[] { "utf8", "utf-8" };
             ht[896] = new Object[] { "iso_646.irv:1983", "us-ascii" };
             ht[909] = new Object[] { "cp5346", "windows-1250" };
@@ -591,7 +598,7 @@ public class StandardCharsets
     {
 
         private static final int ROWS = 32;
-        private static final int SIZE = 38;
+        private static final int SIZE = 39;
         private static final int SHIFT = 1;
         private static final int MASK = 0x1f;
 
@@ -634,6 +641,7 @@ public class StandardCharsets
                          new Object[] { "ibm857", "IBM857",
                              new Object[] { "x-utf-32le-bom", "UTF_32LE_BOM" } } };
             ht[22] = new Object[] { "x-utf-16le-bom", "UTF_16LE_BOM" };
+            ht[23] = new Object[] { "cesu-8", "CESU_8" };
             ht[24] = new Object[] { "x-utf-32be-bom", "UTF_32BE_BOM" };
             ht[28] = new Object[] { "koi8-r", "KOI8_R" };
             ht[29] = new Object[] { "koi8-u", "KOI8_U" };
@@ -647,7 +655,7 @@ public class StandardCharsets
     {
 
         private static final int ROWS = 32;
-        private static final int SIZE = 38;
+        private static final int SIZE = 39;
         private static final int SHIFT = 1;
         private static final int MASK = 0x1f;
 
@@ -691,6 +699,7 @@ public class StandardCharsets
                          new Object[] { "ibm857", null,
                              new Object[] { "x-utf-32le-bom", null } } };
             ht[22] = new Object[] { "x-utf-16le-bom", null };
+            ht[23] = new Object[] { "cesu-8", null };
             ht[24] = new Object[] { "x-utf-32be-bom", null };
             ht[28] = new Object[] { "koi8-r", null };
             ht[29] = new Object[] { "koi8-u", null };

@@ -31,6 +31,7 @@ IKVM.OpenJDK.XML.Parse
 ->IKVM.OpenJDK.XML.API
 ->IKVM.OpenJDK.Text
 ->IKVM.OpenJDK.Beans
+->IKVM.OpenJDK.Util
 
 IKVM.OpenJDK.XML.Transform
 ->IKVM.OpenJDK.Util
@@ -47,6 +48,7 @@ IKVM.OpenJDK.XML.Bind
 ->IKVM.OpenJDK.Beans
 ->IKVM.OpenJDK.Media
 ->IKVM.OpenJDK.XML.Parse
+->IKVM.OpenJDK.Misc
 
 IKVM.OpenJDK.XML.WebServices
 ->IKVM.OpenJDK.XML.API
@@ -125,6 +127,7 @@ IKVM.OpenJDK.Jdbc
 ->IKVM.OpenJDK.XML.API
 ->IKVM.OpenJDK.Util
 ->IKVM.OpenJDK.Naming
+->IKVM.OpenJDK.Corba
 
 IKVM.OpenJDK.Naming
 ->IKVM.OpenJDK.Security

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2004-2011 Jeroen Frijters
+  Copyright (C) 2004-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -31,7 +31,7 @@ final class VMSystemProperties
     private VMSystemProperties() { }
 
     public static final String SPEC_TITLE = "Java Platform API Specification";
-    public static final String SPEC_VERSION = "1.7";
+    public static final String SPEC_VERSION = "1.8";
     public static final String SPEC_VENDOR = "Oracle Corporation";
 
     private static String getLibraryPath()
@@ -114,11 +114,11 @@ final class VMSystemProperties
 
     private static void initCommonProperties(Properties p)
     {
-        p.setProperty("java.version", "1.7.0");
+        p.setProperty("java.version", "1.8.0");
         p.setProperty("java.vendor", "Jeroen Frijters");
         p.setProperty("java.vendor.url", "http://ikvm.net/");
         p.setProperty("java.vendor.url.bug", "http://www.ikvm.net/bugs");
-        p.setProperty("java.vm.specification.version", "1.7");
+        p.setProperty("java.vm.specification.version", "1.8");
         p.setProperty("java.vm.specification.vendor", "Oracle Corporation");
         p.setProperty("java.vm.specification.name", "Java Virtual Machine Specification");
         p.setProperty("java.vm.version", PropertyConstants.java_vm_version);
@@ -129,7 +129,7 @@ final class VMSystemProperties
         p.setProperty("java.specification.version", SPEC_VERSION);
         p.setProperty("java.specification.vendor", SPEC_VENDOR);
         p.setProperty("java.specification.name", SPEC_TITLE);
-        p.setProperty("java.class.version", "51.0");
+        p.setProperty("java.class.version", "52.0");
         p.setProperty("java.class.path", "");
         p.setProperty("java.library.path", getLibraryPath());
         try
@@ -188,6 +188,14 @@ final class VMSystemProperties
                             case 1:
                                 osver = "6.1";
                                 osname = "Windows 7";
+                                break;
+                            case 2:
+                                osver = "6.2";
+                                osname = "Windows 8";
+                                break;
+                            case 3:
+                                osver = "6.3";
+                                osname = "Windows 8.1";
                                 break;
                         }
                         break;
@@ -322,12 +330,32 @@ final class VMSystemProperties
 	p.setProperty("sun.nio.MaxDirectMemorySize", "-1");
 	p.setProperty("java.awt.graphicsenv", PropertyConstants.java_awt_graphicsenv);
         p.setProperty("java.awt.printerjob", "sun.awt.windows.WPrinterJob");
+
+        String stdoutEncoding = getStdoutEncoding();
+        if(stdoutEncoding != null)
+        {
+            p.setProperty("sun.stdout.encoding", stdoutEncoding);
+        }
+        String stderrEncoding = getStderrEncoding();
+        if(stderrEncoding != null)
+        {
+            p.setProperty("sun.stderr.encoding", stderrEncoding);
+        }
+
+        if(ikvm.internal.Util.MACOSX)
+        {
+            p.setProperty("sun.jnu.encoding", "UTF-8");
+        }
+        else
+        {
+            p.setProperty("sun.jnu.encoding", cli.System.Text.Encoding.get_Default().get_WebName());
+        }
+
         
 	// TODO
 	// sun.cpu.isalist:=pentium_pro+mmx pentium_pro pentium+mmx pentium i486 i386 i86
 	// sun.desktop:=windows
 	// sun.io.unicode.encoding:=UnicodeLittle
-	// sun.jnu.encoding:=Cp1252
 	// sun.management.compiler:=HotSpot Client Compiler
         try
         {
@@ -418,4 +446,6 @@ final class VMSystemProperties
 
     private static native String getVirtualFileSystemRoot();
     private static native String getBootClassPath();
+    private static native String getStdoutEncoding();
+    private static native String getStderrEncoding();
 }

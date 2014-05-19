@@ -1,5 +1,5 @@
 /* ZipFile.java --
-   Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006, 2008, 2011
+   Copyright (C) 2001, 2014
    Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
@@ -51,6 +51,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.stream.Stream;
 import static java.util.zip.ZipConstants64.*;
 
 /**
@@ -289,7 +290,7 @@ public class ZipFile implements ZipConstants, Closeable
         ZipEntry entry = new ZipEntry();
         entry.flag = flags;
         entry.method = method;
-        entry.time = inp.readLeUnsignedInt();
+        entry.dostime = inp.readLeUnsignedInt();
         entry.crc = inp.readLeUnsignedInt();
         entry.csize = inp.readLeUnsignedInt();
         entry.size = inp.readLeUnsignedInt();
@@ -304,7 +305,7 @@ public class ZipFile implements ZipConstants, Closeable
           {
             byte[] extra = new byte[extraLen];
             inp.readFully(extra);
-            entry.extra = extra;
+            entry.setExtra0(extra, false);
             readZip64ExtraField(entry, extra);
           }
         if (commentLen > 0)
@@ -409,6 +410,12 @@ public class ZipFile implements ZipConstants, Closeable
   {
     checkClosed();
     return new ZipEntryEnumeration(entries.values().iterator());
+  }
+
+  public Stream<? extends ZipEntry> stream()
+  {
+    checkClosed();
+    return entries.values().stream();
   }
 
   /**

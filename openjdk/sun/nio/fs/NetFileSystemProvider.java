@@ -338,7 +338,7 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
             }
         }
 
-        return FileChannelImpl.open(open(npath.path, mode, rights, share, options), npath.path, read, write, append, null);
+        return FileChannelImpl.open(open(npath.path, mode, rights, share, options), read, write, append, null);
     }
 
     private static FileDescriptor open(String path, int mode, int rights, int share, int options) throws IOException

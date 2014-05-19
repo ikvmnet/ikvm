@@ -78,6 +78,35 @@ static class Java_java_lang_invoke_MethodHandle
 
 static class Java_java_lang_invoke_MethodHandleNatives
 {
+	// called from Lookup.revealDirect() (instead of MethodHandle.internalMemberName()) via map.xml replace-method-call
+	public static MemberName internalMemberName(MethodHandle mh)
+	{
+#if FIRST_PASS
+		return null;
+#else
+		MemberName mn = mh.internalMemberName();
+		if (mn.isStatic() && mn.getName() == "<init>")
+		{
+			// HACK since we convert String constructors into static methods, we have to undo that here
+			// Note that the MemberName we return is only used for a security check and by InfoFromMemberName (a MethodHandleInfo implementation),
+			// so we don't need to make it actually invokable.
+			MemberName alt = new MemberName();
+			typeof(MemberName).GetField("clazz", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(alt, mn.getDeclaringClass());
+			typeof(MemberName).GetField("name", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(alt, mn.getName());
+			typeof(MemberName).GetField("type", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(alt, mn.getMethodType().changeReturnType(typeof(void)));
+			int flags = mn._flags();
+			flags -= MethodHandleNatives.Constants.MN_IS_METHOD;
+			flags += MethodHandleNatives.Constants.MN_IS_CONSTRUCTOR;
+			flags &= ~(MethodHandleNatives.Constants.MN_REFERENCE_KIND_MASK << MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT);
+			flags |= MethodHandleNatives.Constants.REF_newInvokeSpecial << MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT;
+			flags &= ~MethodHandleNatives.Constants.ACC_STATIC;
+			alt._flags(flags);
+			return alt;
+		}
+		return mn;
+#endif
+	}
+
 	public static void init(MemberName self, object refObj)
 	{
 		init(self, refObj, false);
@@ -133,6 +162,29 @@ static class Java_java_lang_invoke_MethodHandleNatives
 		else
 		{
 			flags |= MethodHandleNatives.Constants.REF_invokeVirtual << MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT;
+		}
+		if (mw.HasCallerID || DynamicTypeWrapper.RequiresDynamicReflectionCallerClass(mw.DeclaringType.Name, mw.Name, mw.Signature))
+		{
+			flags |= MemberName.CALLER_SENSITIVE;
+		}
+		if (mw.IsConstructor && mw.DeclaringType == CoreClasses.java.lang.String.Wrapper)
+		{
+			java.lang.Class[] parameters1 = new java.lang.Class[mw.GetParameters().Length];
+			for (int i = 0; i < mw.GetParameters().Length; i++)
+			{
+				parameters1[i] = mw.GetParameters()[i].ClassObject;
+			}
+			MethodType mt = MethodType.methodType(typeof(string), parameters1);
+			typeof(MemberName).GetField("type", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(self, mt);
+			self.vmtarget = CreateMemberNameDelegate(mw, null, false, mt);
+			flags -= MethodHandleNatives.Constants.REF_invokeSpecial << MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT;
+			flags += MethodHandleNatives.Constants.REF_invokeStatic << MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT;
+			flags -= MethodHandleNatives.Constants.MN_IS_CONSTRUCTOR;
+			flags += MethodHandleNatives.Constants.MN_IS_METHOD;
+			flags += MethodHandleNatives.Constants.ACC_STATIC;
+			self._flags(flags);
+			self._clazz(mw.DeclaringType.ClassObject);
+			return;
 		}
 		self._flags(flags);
 		self._clazz(mw.DeclaringType.ClassObject);
@@ -222,7 +274,7 @@ static class Java_java_lang_invoke_MethodHandleNatives
 	{
 		bool invokeSpecial = self.getReferenceKind() == MethodHandleNatives.Constants.REF_invokeSpecial;
 		bool newInvokeSpecial = self.getReferenceKind() == MethodHandleNatives.Constants.REF_newInvokeSpecial;
-		bool searchBaseClasses = !invokeSpecial && !newInvokeSpecial;
+		bool searchBaseClasses = !newInvokeSpecial;
 		MethodWrapper mw = TypeWrapper.FromClass(self.getDeclaringClass()).GetMethodWrapper(self.getName(), self.getSignature().Replace('/', '.'), searchBaseClasses);
 		if (mw == null)
 		{
@@ -245,7 +297,12 @@ static class Java_java_lang_invoke_MethodHandleNatives
 			string msg = String.Format(mw.IsStatic ? "Expecting non-static method {0}.{1}{2}" : "Expected static method {0}.{1}{2}", mw.DeclaringType.Name, self.getName(), self.getSignature());
 			throw new java.lang.IncompatibleClassChangeError(msg);
 		}
-		if (!mw.IsConstructor || invokeSpecial || newInvokeSpecial)
+		if (mw.IsConstructor && mw.DeclaringType == CoreClasses.java.lang.String.Wrapper)
+		{
+			typeof(MemberName).GetField("type", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(self, self.getMethodType().changeReturnType(typeof(string)));
+			self.vmtarget = CreateMemberNameDelegate(mw, caller, false, self.getMethodType());
+		}
+		else if (!mw.IsConstructor || invokeSpecial || newInvokeSpecial)
 		{
 			MethodType methodType = self.getMethodType();
 			if (!mw.IsStatic)
@@ -265,6 +322,20 @@ static class Java_java_lang_invoke_MethodHandleNatives
 			int flags = self._flags();
 			flags -= MethodHandleNatives.Constants.REF_invokeVirtual << MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT;
 			flags += MethodHandleNatives.Constants.REF_invokeSpecial << MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT;
+			self._flags(flags);
+		}
+		if (mw.HasCallerID || DynamicTypeWrapper.RequiresDynamicReflectionCallerClass(mw.DeclaringType.Name, mw.Name, mw.Signature))
+		{
+			self._flags(self._flags() | MemberName.CALLER_SENSITIVE);
+		}
+		if (mw.IsConstructor && mw.DeclaringType == CoreClasses.java.lang.String.Wrapper)
+		{
+			int flags = self._flags();
+			flags -= MethodHandleNatives.Constants.REF_invokeSpecial << MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT;
+			flags += MethodHandleNatives.Constants.REF_invokeStatic << MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT;
+			flags -= MethodHandleNatives.Constants.MN_IS_CONSTRUCTOR;
+			flags += MethodHandleNatives.Constants.MN_IS_METHOD;
+			flags += MethodHandleNatives.Constants.ACC_STATIC;
 			self._flags(flags);
 		}
 	}
@@ -839,7 +910,7 @@ static partial class MethodHandleUtil
 				mw.HasCallerID ? DynamicCallerID.Instance : null, null, owner, true);
 			for (int i = 0, count = type.parameterCount(); i < count; i++)
 			{
-				if (i == 0 && !mw.IsStatic && (tw.IsGhost || tw.IsNonPrimitiveValueType || tw.IsRemapped))
+				if (i == 0 && !mw.IsStatic && (tw.IsGhost || tw.IsNonPrimitiveValueType || tw.IsRemapped) && (!mw.IsConstructor || tw != CoreClasses.java.lang.String.Wrapper))
 				{
 					if (tw.IsGhost || tw.IsNonPrimitiveValueType)
 					{

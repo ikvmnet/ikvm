@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,10 +119,11 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
         }
 
         if (optID == SO_BINDADDR) {
-            if (fd != null && fd1 != null) {
+            if ((fd != null && fd1 != null) && !connected) {
                 return anyLocalBoundAddr;
             }
-            return socketGetOption(optID);
+            int family = connectedAddress == null ? -1 : connectedAddress.holder().getFamily();
+            return socketLocalAddress(family);
         } else if (optID == SO_REUSEADDR && reuseAddressEmulated) {
             return isReuseAddress;
         } else {
@@ -261,6 +262,13 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
         ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
         TwoStacksPlainDatagramSocketImpl_c.connect0(env, this, address, port);
         env.ThrowPendingException();
+    }
+
+    protected Object socketLocalAddress(int family) throws SocketException {
+        ikvm.internal.JNI.JNIEnv env = new ikvm.internal.JNI.JNIEnv();
+        Object ret = TwoStacksPlainDatagramSocketImpl_c.socketLocalAddress(env, this, family);
+        env.ThrowPendingException();
+        return ret;
     }
 
     protected void disconnect0(int family) {

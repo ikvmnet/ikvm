@@ -34,8 +34,6 @@
  */
 
 package java.util.concurrent.locks;
-import java.util.concurrent.*;
-
 
 /**
  * Basic thread blocking primitives for creating locks and other
@@ -68,16 +66,19 @@ import java.util.concurrent.*;
  * {@code blocker} object parameter. This object is recorded while
  * the thread is blocked to permit monitoring and diagnostic tools to
  * identify the reasons that threads are blocked. (Such tools may
- * access blockers using method {@link #getBlocker}.) The use of these
- * forms rather than the original forms without this parameter is
- * strongly encouraged. The normal argument to supply as a
- * {@code blocker} within a lock implementation is {@code this}.
+ * access blockers using method {@link #getBlocker(Thread)}.)
+ * The use of these forms rather than the original forms without this
+ * parameter is strongly encouraged. The normal argument to supply as
+ * a {@code blocker} within a lock implementation is {@code this}.
  *
  * <p>These methods are designed to be used as tools for creating
  * higher-level synchronization utilities, and are not in themselves
  * useful for most concurrency control applications.  The {@code park}
  * method is designed for use only in constructions of the form:
- * <pre>while (!canProceed()) { ... LockSupport.park(this); }</pre>
+ *
+ *  <pre> {@code
+ * while (!canProceed()) { ... LockSupport.park(this); }}</pre>
+ *
  * where neither {@code canProceed} nor any other actions prior to the
  * call to {@code park} entail locking or blocking.  Because only one
  * permit is associated with each thread, any intermediary uses of
@@ -85,7 +86,7 @@ import java.util.concurrent.*;
  *
  * <p><b>Sample Usage.</b> Here is a sketch of a first-in-first-out
  * non-reentrant lock class:
- * <pre>{@code
+ *  <pre> {@code
  * class FIFOMutex {
  *   private final AtomicBoolean locked = new AtomicBoolean(false);
  *   private final Queue<Thread> waiters
@@ -99,14 +100,14 @@ import java.util.concurrent.*;
  *     // Block while not first in queue or cannot acquire lock
  *     while (waiters.peek() != current ||
  *            !locked.compareAndSet(false, true)) {
- *        LockSupport.park(this);
- *        if (Thread.interrupted()) // ignore interrupts while waiting
- *          wasInterrupted = true;
+ *       LockSupport.park(this);
+ *       if (Thread.interrupted()) // ignore interrupts while waiting
+ *         wasInterrupted = true;
  *     }
  *
  *     waiters.remove();
  *     if (wasInterrupted)          // reassert interrupt status on exit
- *        current.interrupt();
+ *       current.interrupt();
  *   }
  *
  *   public void unlock() {
@@ -115,7 +116,6 @@ import java.util.concurrent.*;
  *   }
  * }}</pre>
  */
-
 public class LockSupport {
     private LockSupport() {} // Cannot be instantiated.
 
@@ -427,4 +427,23 @@ public class LockSupport {
     public static void parkUntil(long deadline) {
         parkImpl(Thread.currentThread(), true, deadline);
     }
+
+    /**
+     * Returns the pseudo-randomly initialized or updated secondary seed.
+     * Copied from ThreadLocalRandom due to package access restrictions.
+     */
+    static final int nextSecondarySeed() {
+        int r;
+        Thread t = Thread.currentThread();
+        if ((r = t.threadLocalRandomSecondarySeed) != 0) {
+            r ^= r << 13;   // xorshift
+            r ^= r >>> 17;
+            r ^= r << 5;
+        }
+        else if ((r = java.util.concurrent.ThreadLocalRandom.current().nextInt()) == 0)
+            r = 1; // avoid zero
+        t.threadLocalRandomSecondarySeed = r;
+        return r;
+    }
+
 }

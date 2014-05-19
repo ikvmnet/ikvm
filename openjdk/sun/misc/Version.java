@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,16 @@ public class Version {
         "openjdk";
 
     private static final String java_version =
-        "1.7.0-internal";
+        "1.8.0-internal";
 
     private static final String java_runtime_name =
-	"OpenJDK Runtime Environment";
- 
+        "OpenJDK Runtime Environment";
+
+    private static final String java_profile_name =
+        "";
+
     private static final String java_runtime_version =
-        "1.7.0-internal-jeroen_2012_05_22_06_05-b00";
+        "1.8.0-internal-jeroen_2014_04_10_09_21-b00";
 
     static {
         init();
@@ -87,23 +90,28 @@ public class Version {
         boolean isHeadless = false;
 
         /* Report that we're running headless if the property is true */
-	String headless = System.getProperty("java.awt.headless");
-	if ( (headless != null) && (headless.equalsIgnoreCase("true")) ) {
+        String headless = System.getProperty("java.awt.headless");
+        if ( (headless != null) && (headless.equalsIgnoreCase("true")) ) {
             isHeadless = true;
-	} 
+        }
 
         /* First line: platform version. */
         ps.println(launcher_name + " version \"" + java_version + "\"");
 
         /* Second line: runtime version (ie, libraries). */
 
-	ps.print(java_runtime_name + " (build " + java_runtime_version);
+        ps.print(java_runtime_name + " (build " + java_runtime_version);
 
-	if (java_runtime_name.indexOf("Embedded") != -1 && isHeadless) {
-	    // embedded builds report headless state
-	    ps.print(", headless");
-	}
-	ps.println(')');
+        if (java_profile_name.length() > 0) {
+            // profile name
+            ps.print(", profile " + java_profile_name);
+        }
+
+        if (java_runtime_name.indexOf("Embedded") != -1 && isHeadless) {
+            // embedded builds report headless state
+            ps.print(", headless");
+        }
+        ps.println(')');
 
         /* Third line: JVM information. */
         String java_vm_name    = System.getProperty("java.vm.name");
@@ -328,7 +336,6 @@ public class Version {
     // Return false if not available which implies an old VM (Tiger or before).
     private static native boolean getJvmVersionInfo();
     private static native void getJdkVersionInfo();
-
 }
 
 // Help Emacs a little because this file doesn't end in .java.

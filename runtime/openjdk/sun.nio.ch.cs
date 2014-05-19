@@ -1077,6 +1077,11 @@ namespace IKVM.NativeCode.sun.nio.ch
 			}
 #endif
 		}
+
+		public static int poll(FileDescriptor fd, int i, long j)
+		{
+			throw new NotImplementedException();
+		}
 	}
 
 	static class ServerSocketChannelImpl

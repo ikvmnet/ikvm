@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,30 @@
 package java.lang;
 
 import java.io.*;
+import java.lang.reflect.Executable;
+import java.lang.annotation.Annotation;
+import java.security.AccessControlContext;
 import java.util.Properties;
 import java.util.PropertyPermission;
 import java.util.StringTokenizer;
+import java.util.Map;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.AllPermission;
 import java.nio.channels.Channel;
 import java.nio.channels.spi.SelectorProvider;
+import sun.nio.ch.Interruptible;
 import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 import sun.security.util.SecurityConstants;
+import sun.reflect.annotation.AnnotationType;
 
 final class StdIO
 {
     private StdIO() { }
     static InputStream in = new BufferedInputStream(new FileInputStream(FileDescriptor.in));
-    static PrintStream out = new PrintStream(new BufferedOutputStream(new FileOutputStream(FileDescriptor.out), 128), true);
-    static PrintStream err = new PrintStream(new BufferedOutputStream(new FileOutputStream(FileDescriptor.err), 128), true);
+    static PrintStream out = System.newPrintStream(new FileOutputStream(FileDescriptor.out), Props.props.getProperty("sun.stdout.encoding"));
+    static PrintStream err = System.newPrintStream(new FileOutputStream(FileDescriptor.err), Props.props.getProperty("sun.stderr.encoding"));
 }
 
 final class Props
@@ -597,7 +603,7 @@ public final class System {
      * <tr><td><code>java.version</code></td>
      *     <td>Java Runtime Environment version</td></tr>
      * <tr><td><code>java.vendor</code></td>
-     *     <td>Java Runtime Environment vendor</td></tr
+     *     <td>Java Runtime Environment vendor</td></tr>
      * <tr><td><code>java.vendor.url</code></td>
      *     <td>Java vendor URL</td></tr>
      * <tr><td><code>java.home</code></td>
@@ -684,6 +690,9 @@ public final class System {
      *
      * <p>On UNIX systems, it returns {@code "\n"}; on Microsoft
      * Windows systems it returns {@code "\r\n"}.
+     *
+     * @return the system-dependent line separator string
+     * @since 1.7
      */
     public static String lineSeparator() {
         return Props.lineSeparator;
@@ -1081,13 +1090,25 @@ public final class System {
      */
     @Deprecated
     public static void runFinalizersOnExit(boolean value) {
-        Runtime.getRuntime().runFinalizersOnExit(value);
+        Runtime.runFinalizersOnExit(value);
     }
 
     /**
-     * Loads a code file with the specified filename from the local file
-     * system as a dynamic library. The filename
-     * argument must be a complete path name.
+     * Loads the native library specified by the filename argument.  The filename
+     * argument must be an absolute path name.
+     *
+     * If the filename argument, when stripped of any platform-specific library
+     * prefix, path, and file extension, indicates a library whose name is,
+     * for example, L, and a native library called L is statically linked
+     * with the VM, then the JNI_OnLoad_L function exported by the library
+     * is invoked rather than attempting to load a dynamic library.
+     * A filename matching the argument does not have to exist in the
+     * file system.
+     * See the JNI Specification for more details.
+     *
+     * Otherwise, the filename argument is mapped to a native library image in
+     * an implementation-dependent manner.
+     *
      * <p>
      * The call <code>System.load(name)</code> is effectively equivalent
      * to the call:
@@ -1099,7 +1120,10 @@ public final class System {
      * @exception  SecurityException  if a security manager exists and its
      *             <code>checkLink</code> method doesn't allow
      *             loading of the specified dynamic library
-     * @exception  UnsatisfiedLinkError  if the file does not exist.
+     * @exception  UnsatisfiedLinkError  if either the filename is not an
+     *             absolute path name, the native library is not statically
+     *             linked with the VM, or the library cannot be mapped to
+     *             a native library image by the host system.
      * @exception  NullPointerException if <code>filename</code> is
      *             <code>null</code>
      * @see        java.lang.Runtime#load(java.lang.String)
@@ -1111,9 +1135,16 @@ public final class System {
     }
 
     /**
-     * Loads the system library specified by the <code>libname</code>
-     * argument. The manner in which a library name is mapped to the
-     * actual system library is system dependent.
+     * Loads the native library specified by the <code>libname</code>
+     * argument.  The <code>libname</code> argument must not contain any platform
+     * specific prefix, file extension or path. If a native library
+     * called <code>libname</code> is statically linked with the VM, then the
+     * JNI_OnLoad_<code>libname</code> function exported by the library is invoked.
+     * See the JNI Specification for more details.
+     *
+     * Otherwise, the libname argument is loaded from a system library
+     * location and mapped to a native library image in an implementation-
+     * dependent manner.
      * <p>
      * The call <code>System.loadLibrary(name)</code> is effectively
      * equivalent to the call
@@ -1125,7 +1156,10 @@ public final class System {
      * @exception  SecurityException  if a security manager exists and its
      *             <code>checkLink</code> method doesn't allow
      *             loading of the specified dynamic library
-     * @exception  UnsatisfiedLinkError  if the library does not exist.
+     * @exception  UnsatisfiedLinkError if either the libname argument
+     *             contains a file path, the native library is not statically
+     *             linked with the VM,  or the library cannot be mapped to a
+     *             native library image by the host system.
      * @exception  NullPointerException if <code>libname</code> is
      *             <code>null</code>
      * @see        java.lang.Runtime#loadLibrary(java.lang.String)
@@ -1159,5 +1193,17 @@ public final class System {
         } else {
             return "lib" + libname + ".so";
         }
+    }
+
+    /**
+     * Create PrintStream for stdout/err based on encoding.
+     */
+    /*private*/ static PrintStream newPrintStream(FileOutputStream fos, String enc) {
+       if (enc != null) {
+            try {
+                return new PrintStream(new BufferedOutputStream(fos, 128), true, enc);
+            } catch (UnsupportedEncodingException uee) {}
+        }
+        return new PrintStream(new BufferedOutputStream(fos, 128), true);
     }
 }

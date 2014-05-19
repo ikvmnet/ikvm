@@ -129,4 +129,11 @@ public class CRC32 implements Checksum
    * Adds the complete byte array to the data checksum.
    */
   public void update (byte[] buf) { update(buf, 0, buf.length); }
+
+  public void update(java.nio.ByteBuffer buffer)
+  {
+    byte[] buf = new byte[buffer.remaining()];
+    buffer.get(buf);
+    update(buf, 0, buf.length);
+  }
 }

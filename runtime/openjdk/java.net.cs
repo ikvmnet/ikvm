@@ -520,10 +520,13 @@ static class Java_java_net_NetworkInterface
 						scope = (int)addr.ScopeId;
 					}
 					java.net.Inet6Address ia6 = new java.net.Inet6Address();
-					ia6.ipaddress = addr.GetAddressBytes();
+					ia6._holder().ipaddress = addr.GetAddressBytes();
 					if (scope != 0)
 					{
-						ia6._set(scope, netif);
+						ia6._holder().scope_id = scope;
+						ia6._holder().scope_id_set = true;
+						ia6._holder().scope_ifname = netif;
+						ia6._holder().scope_ifname_set = true;
 					}
 					java.net.InterfaceAddress binding = new java.net.InterfaceAddress();
 					// TODO where do we get the IPv6 subnet prefix length?

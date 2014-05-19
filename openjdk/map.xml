@@ -264,10 +264,6 @@
                     <ret />
                 </alternateBody>
             </constructor>
-            <!-- Package private constructor, that we redirect to static helper -->
-            <constructor sig="(II[C)V" modifiers="">
-                <redirect class="java.lang.StringHelper" name="NewString" type="static" sig="(II[C)Ljava.lang.String;" />
-            </constructor>
             <constructor sig="(Ljava.lang.String;)V" modifiers="public">
                 <parameter name="original" />
                 <redirect class="System.String, mscorlib" name="Copy" type="static" sig="(Ljava.lang.String;)Ljava.lang.String;" />
@@ -442,14 +438,20 @@
                 <parameter name="fromIndex" />
                 <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;I)I" />
             </method>
-            <!-- These three methods are package private and used by (Abstract)StringBuilder/Buffer -->
+            <!-- These methods are package private and used by (Abstract)StringBuilder/Buffer -->
             <method name="getChars" sig="([CI)V" modifiers="">
                 <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;[CI)V" />
             </method>
             <method name="indexOf" sig="([CII[CIII)I" modifiers="static">
                 <redirect class="java.lang.StringHelper" />
             </method>
+            <method name="indexOf" sig="([CIILjava.lang.String;I)I" modifiers="static">
+                <redirect class="java.lang.StringHelper" />
+            </method>
             <method name="lastIndexOf" sig="([CII[CIII)I" modifiers="static">
+                <redirect class="java.lang.StringHelper" />
+            </method>
+            <method name="lastIndexOf" sig="([CIILjava.lang.String;I)I" modifiers="static">
                 <redirect class="java.lang.StringHelper" />
             </method>
             <!-- end of package private methods used by (Abstract)StringBuilder/Buffer -->
@@ -877,6 +879,21 @@
             <method name="getBytes" sig="(Ljava.nio.charset.Charset;)[B" modifiers="public">
                 <parameter name="charset" />
                 <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.nio.charset.Charset;)[B" />
+            </method>
+            <method name="join" sig="(Ljava.lang.CharSequence;[Ljava.lang.CharSequence;)Ljava.lang.String;" modifiers="public static">
+                <parameter name="delimiter" />
+                <parameter name="elements">
+                    <attribute type="System.ParamArrayAttribute" sig="()V" />
+                </parameter>
+                <redirect class="java.lang.StringHelper" />
+            </method>
+            <method name="join" sig="(Ljava.lang.CharSequence;Ljava.lang.Iterable;)Ljava.lang.String;" modifiers="public static">
+                <parameter name="delimiter" />
+                <parameter name="elements" />
+                <attribute type="IKVM.Attributes.SignatureAttribute" sig="(Ljava.lang.String;)V">
+                    <parameter>(Ljava/lang/CharSequence;Ljava/lang/Iterable&lt;+Ljava/lang/CharSequence;&gt;;)Ljava/lang/String;</parameter>
+                </attribute>
+                <redirect class="java.lang.StringHelper" />
             </method>
             <field name="CASE_INSENSITIVE_ORDER" sig="Ljava.util.Comparator;" modifiers="public static final">
                 <attribute type="IKVM.Attributes.SignatureAttribute" sig="(Ljava.lang.String;)V">
@@ -1481,17 +1498,10 @@
             </method>
         </class>
         <class name="java.net.Inet6Address">
-            <method name="_set" sig="(ILjava.net.NetworkInterface;)V" modifiers="">
+            <method name="_holder" sig="()Ljava.net.Inet6Address$Inet6AddressHolder;" modifiers="">
                 <body>
                     <ldarg_0 />
-                    <ldarg_1 />
-                    <stfld class="java.net.Inet6Address" name="scope_id" sig="I" />
-                    <ldarg_0 />
-                    <ldc_i4_1 />
-                    <stfld class="java.net.Inet6Address" name="scope_id_set" sig="Z" />
-                    <ldarg_0 />
-                    <ldarg_2 />
-                    <stfld class="java.net.Inet6Address" name="scope_ifname" sig="Ljava.net.NetworkInterface;" />
+                    <ldfld class="java.net.Inet6Address" name="holder6" sig="Ljava.net.Inet6Address$Inet6AddressHolder;" />
                     <ret />
                 </body>
             </method>
@@ -2712,13 +2722,13 @@
         </class>
         <class name="sun.reflect.Reflection">
             <!-- we manually hook up this native method, to prevent inlining and tail-call optimizations -->
-            <method name="getCallerClass0" sig="(I)Ljava.lang.Class;">
+            <method name="getCallerClass" sig="(I)Ljava.lang.Class;">
                 <attribute type="System.Runtime.CompilerServices.MethodImplAttribute" sig="(Lcli.System.Runtime.CompilerServices.MethodImplOptions;)V">
                     <parameter>NoInlining</parameter>
                 </attribute>
                 <body>
                     <ldarg_0 />
-                    <call type="Java_sun_reflect_Reflection" name="getCallerClass0" sig="(I)Ljava.lang.Class;" />
+                    <call type="Java_sun_reflect_Reflection" name="getCallerClass" sig="(I)Ljava.lang.Class;" />
                     <stloc name="class" class="java.lang.Class" />
                     <!-- "leave" is to thwart tail-call optimization -->
                     <leave name="x" />
@@ -2824,6 +2834,22 @@
                 </body>
             </method>
         </class>
+        <class name="java.lang.invoke.MethodHandles$Lookup">
+            <!-- We have to disable this check, because we rely on Lookup.lookup() in our lambda bootstrap method -->
+            <method name="checkUnprivilegedlookupClass" sig="(Ljava.lang.Class;I)V">
+                <body>
+                    <ret />
+                </body>
+            </method>
+            <!-- We hook this to undo the fiddling we do to support string constructors -->
+            <method name="revealDirect" sig="(Ljava.lang.invoke.MethodHandle;)Ljava.lang.invoke.MethodHandleInfo;">
+                <replace-method-call class="java.lang.invoke.MethodHandle" name="internalMemberName" sig="()Ljava.lang.invoke.MemberName;">
+                    <code>
+                        <call type="Java_java_lang_invoke_MethodHandleNatives" name="internalMemberName" sig="(Ljava.lang.invoke.MethodHandle;)Ljava.lang.invoke.MemberName;" />
+                    </code>
+                </replace-method-call>
+            </method>
+        </class>
         <class name="java.lang.invoke.DirectMethodHandle">
             <method name="allocateInstance" sig="(Ljava.lang.Object;)Ljava.lang.Object;">
                 <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
@@ -2839,6 +2865,26 @@
             <field name="_invokeExactDelegateType" sig="Lcli.System.Type;" modifiers="">
                 <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
             </field>
+        </class>
+        <class name="sun.util.locale.provider.JRELocaleProviderAdapter">
+            <!-- We replace this method, because it looks for %JAVA_HOME%/lib/ext/localedata.jar and we don't have that -->
+            <!-- TODO if we move locale data into a separate assembly, we could try to load that here -->
+            <method name="isNonENLangSupported" sig="()Z">
+                <body>
+                    <ldc_i4_1 />
+                    <ret />
+                </body>
+            </method>
+        </class>
+        <class name="com.sun.xml.internal.ws.developer.ServerSideException">
+            <!-- HACK we replace getMessage to remove the additional text that OpenJDK 8 appends -->
+            <method name="getMessage" sig="()Ljava.lang.String;">
+                <body>
+                    <ldarg_0 />
+                    <call class="java.lang.Throwable" name="getMessage" sig="()Ljava.lang.String;" />
+                    <ret />
+                </body>
+            </method>
         </class>
     </assembly>
     <exceptionMappings>

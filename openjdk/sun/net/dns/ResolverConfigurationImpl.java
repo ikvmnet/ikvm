@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,8 +61,8 @@ public class ResolverConfigurationImpl
     private static String os_nameservers;
 
     // Cached lists
-    private static LinkedList searchlist;
-    private static LinkedList nameservers;
+    private static LinkedList<String> searchlist;
+    private static LinkedList<String> nameservers;
 
     // Parse string that consists of token delimited by space or commas
     // and return LinkedHashMap
@@ -115,21 +115,23 @@ public class ResolverConfigurationImpl
         opts = new OptionsImpl();
     }
 
+    @SuppressWarnings("unchecked") // clone()
     public List<String> searchlist() {
         synchronized (lock) {
             loadConfig();
 
             // List is mutable so return a shallow copy
-            return (List)searchlist.clone();
+            return (List<String>)searchlist.clone();
         }
     }
 
+    @SuppressWarnings("unchecked") // clone()
     public List<String> nameservers() {
         synchronized (lock) {
             loadConfig();
 
             // List is mutable so return a shallow copy
-            return (List)nameservers.clone();
+            return (List<String>)nameservers.clone();
          }
     }
 
@@ -199,7 +201,12 @@ public class ResolverConfigurationImpl
 
     static {
         java.security.AccessController.doPrivileged(
-            new sun.security.action.LoadLibraryAction("net"));
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    System.loadLibrary("net");
+                    return null;
+                }
+            });
         init0();
 
         // start the address listener thread

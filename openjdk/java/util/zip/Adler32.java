@@ -195,6 +195,13 @@ public class Adler32 implements Checksum
     adler = (s2 << 16) | s1;
   }
 
+  public void update(java.nio.ByteBuffer buffer)
+  {
+    byte[] buf = new byte[buffer.remaining()];
+    buffer.get(buf);
+    update(buf, 0, buf.length);
+  }
+
   /**
    * Returns the Adler32 data checksum computed so far.
    */

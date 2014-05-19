@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.nio.file.Path;
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.Path;
 import java.util.Arrays;
 
 /**
@@ -57,7 +56,7 @@ class UnixUriUtils {
         if (uri.getQuery() != null)
             throw new IllegalArgumentException("URI has a query component");
 
-        // compatability with java.io.File
+        // compatibility with java.io.File
         if (!uri.toString().startsWith("file:///"))
             return new File(uri).toPath();
 

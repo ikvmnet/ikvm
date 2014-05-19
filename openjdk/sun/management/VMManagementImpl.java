@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ class VMManagementImpl implements VMManagement {
     private static boolean synchronizerUsageSupport;
     private static boolean threadAllocatedMemorySupport;
     private static boolean gcNotificationSupport;
+    private static boolean remoteDiagnosticCommandsSupport;
 
     // Optional supports
     public boolean isCompilationTimeMonitoringSupported() {
@@ -92,6 +93,10 @@ class VMManagementImpl implements VMManagement {
 
     public boolean isGcNotificationSupported() {
         return gcNotificationSupport;
+    }
+
+    public boolean isRemoteDiagnosticCommandsSupported() {
+        return remoteDiagnosticCommandsSupport;
     }
 
     public boolean isThreadContentionMonitoringEnabled() {
@@ -178,6 +183,10 @@ class VMManagementImpl implements VMManagement {
             = new GetPropertyAction("sun.boot.class.path");
         String result =  AccessController.doPrivileged(pa);
         return result;
+    }
+
+    public long getUptime() {
+        return cli.System.DateTime.get_Now().Subtract(cli.System.Diagnostics.Process.GetCurrentProcess().get_StartTime()).get_Ticks() / 10000L;
     }
 
     private List<String> vmArgs = null;

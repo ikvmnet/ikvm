@@ -67,6 +67,53 @@ static class Java_sun_management_MemoryImpl
 	}
 }
 
+static class Java_sun_management_OperatingSystemImpl
+{
+	public static long getCommittedVirtualMemorySize0(object _this)
+	{
+		throw new System.NotImplementedException();
+	}
+
+	public static long getTotalSwapSpaceSize(object _this)
+	{
+		throw new System.NotImplementedException();
+	}
+
+	public static long getFreeSwapSpaceSize(object _this)
+	{
+		throw new System.NotImplementedException();
+	}
+
+	public static long getProcessCpuTime(object _this)
+	{
+		throw new System.NotImplementedException();
+	}
+
+	public static long getFreePhysicalMemorySize(object _this)
+	{
+		throw new System.NotImplementedException();
+	}
+
+	public static long getTotalPhysicalMemorySize(object _this)
+	{
+		throw new System.NotImplementedException();
+	}
+
+	public static double getSystemCpuLoad(object _this)
+	{
+		throw new System.NotImplementedException();
+	}
+
+	public static double getProcessCpuLoad(object _this)
+	{
+		throw new System.NotImplementedException();
+	}
+
+	public static void initialize()
+	{
+	}
+}
+
 static class Java_sun_management_ThreadImpl
 {
 	public static object getThreads()

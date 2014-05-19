@@ -27,7 +27,6 @@ package java.io;
 
 import java.nio.channels.FileChannel;
 import sun.nio.ch.FileChannelImpl;
-import sun.misc.IoTrace;
 
 
 /**
@@ -52,23 +51,10 @@ class FileInputStream extends InputStream
     /* File Descriptor - handle to the open file */
     private final FileDescriptor fd;
 
-    /* The path of the referenced file (null if the stream is created with a file descriptor) */
-    private final String path;
-
     private FileChannel channel = null;
 
     private final Object closeLock = new Object();
     private volatile boolean closed = false;
-
-    private static final ThreadLocal<Boolean> runningFinalize =
-        new ThreadLocal<>();
-
-    private static boolean isRunningFinalize() {
-        Boolean val;
-        if ((val = runningFinalize.get()) != null)
-            return val.booleanValue();
-        return false;
-    }
 
     /**
      * Creates a <code>FileInputStream</code> by
@@ -141,8 +127,7 @@ class FileInputStream extends InputStream
             throw new FileNotFoundException("Invalid file path");
         }
         fd = new FileDescriptor();
-        fd.incrementAndGetUseCount();
-        this.path = name;
+        fd.attach(this);
         open(name);
     }
 
@@ -179,14 +164,12 @@ class FileInputStream extends InputStream
             security.checkRead(fdObj);
         }
         fd = fdObj;
-        path = null;
 
         /*
          * FileDescriptor is being shared by streams.
-         * Ensure that it's GC'ed only when all the streams/channels are done
-         * using it.
+         * Register this stream with FileDescriptor tracker.
          */
-        fd.incrementAndGetUseCount();
+        fd.attach(this);
     }
 
     /**
@@ -206,15 +189,9 @@ class FileInputStream extends InputStream
      *             file is reached.
      * @exception  IOException  if an I/O error occurs.
      */
-    public int read() throws IOException {
-        Object traceContext = IoTrace.fileReadBegin(path);
-        int b = 0;
-        try {
-            b = fd.read();
-        } finally {
-            IoTrace.fileReadEnd(traceContext, b == -1 ? 0 : 1);
-        }
-        return b;
+    public int read() throws IOException
+    {
+        return fd.read();
     }
 
     /**
@@ -241,14 +218,7 @@ class FileInputStream extends InputStream
      * @exception  IOException  if an I/O error occurs.
      */
     public int read(byte b[]) throws IOException {
-        Object traceContext = IoTrace.fileReadBegin(path);
-        int bytesRead = 0;
-        try {
-            bytesRead = readBytes(b, 0, b.length);
-        } finally {
-            IoTrace.fileReadEnd(traceContext, bytesRead == -1 ? 0 : bytesRead);
-        }
-        return bytesRead;
+        return readBytes(b, 0, b.length);
     }
 
     /**
@@ -270,14 +240,7 @@ class FileInputStream extends InputStream
      * @exception  IOException  if an I/O error occurs.
      */
     public int read(byte b[], int off, int len) throws IOException {
-        Object traceContext = IoTrace.fileReadBegin(path);
-        int bytesRead = 0;
-        try {
-            bytesRead = readBytes(b, off, len);
-        } finally {
-            IoTrace.fileReadEnd(traceContext, bytesRead == -1 ? 0 : bytesRead);
-        }
-        return bytesRead;
+        return readBytes(b, off, len);
     }
 
     /**
@@ -286,13 +249,15 @@ class FileInputStream extends InputStream
      *
      * <p>The <code>skip</code> method may, for a variety of
      * reasons, end up skipping over some smaller number of bytes,
-     * possibly <code>0</code>. If <code>n</code> is negative, an
-     * <code>IOException</code> is thrown, even though the <code>skip</code>
-     * method of the {@link InputStream} superclass does nothing in this case.
-     * The actual number of bytes skipped is returned.
+     * possibly <code>0</code>. If <code>n</code> is negative, the method
+     * will try to skip backwards. In case the backing file does not support
+     * backward skip at its current position, an <code>IOException</code> is
+     * thrown. The actual number of bytes skipped is returned. If it skips
+     * forwards, it returns a positive value. If it skips backwards, it
+     * returns a negative value.
      *
-     * <p>This method may skip more bytes than are remaining in the backing
-     * file. This produces no exception and the number of bytes skipped
+     * <p>This method may skip more bytes than what are remaining in the
+     * backing file. This produces no exception and the number of bytes skipped
      * may include some number of bytes that were beyond the EOF of the
      * backing file. Attempting to read from the stream after skipping past
      * the end will result in -1 indicating the end of the file.
@@ -310,9 +275,10 @@ class FileInputStream extends InputStream
     /**
      * Returns an estimate of the number of remaining bytes that can be read (or
      * skipped over) from this input stream without blocking by the next
-     * invocation of a method for this input stream. The next invocation might be
-     * the same thread or another thread.  A single read or skip of this
-     * many bytes will not block, but may read or skip fewer bytes.
+     * invocation of a method for this input stream. Returns 0 when the file
+     * position is beyond EOF. The next invocation might be the same thread
+     * or another thread. A single read or skip of this many bytes will not
+     * block, but may read or skip fewer bytes.
      *
      * <p> In some cases, a non-blocking read (or skip) may appear to be
      * blocked when it is merely slow, for example when reading large
@@ -348,27 +314,14 @@ class FileInputStream extends InputStream
             closed = true;
         }
         if (channel != null) {
-            /*
-             * Decrement the FD use count associated with the channel
-             * The use count is incremented whenever a new channel
-             * is obtained from this stream.
-             */
-           fd.decrementAndGetUseCount();
            channel.close();
         }
 
-        /*
-         * Decrement the FD use count associated with this stream
-         */
-        int useCount = fd.decrementAndGetUseCount();
-
-        /*
-         * If FileDescriptor is still in use by another stream, the finalizer
-         * will not close it.
-         */
-        if ((useCount <= 0) || !isRunningFinalize()) {
-            close0();
-        }
+        fd.closeAll(new Closeable() {
+            public void close() throws IOException {
+               close0();
+           }
+        });
     }
 
     /**
@@ -382,7 +335,9 @@ class FileInputStream extends InputStream
      * @see        java.io.FileDescriptor
      */
     public final FileDescriptor getFD() throws IOException {
-        if (fd != null) return fd;
+        if (fd != null) {
+            return fd;
+        }
         throw new IOException();
     }
 
@@ -391,7 +346,7 @@ class FileInputStream extends InputStream
      * object associated with this file input stream.
      *
      * <p> The initial {@link java.nio.channels.FileChannel#position()
-     * </code>position<code>} of the returned channel will be equal to the
+     * position} of the returned channel will be equal to the
      * number of bytes read from the file so far.  Reading bytes from this
      * stream will increment the channel's position.  Changing the channel's
      * position, either explicitly or by reading, will change this stream's
@@ -405,14 +360,7 @@ class FileInputStream extends InputStream
     public FileChannel getChannel() {
         synchronized (this) {
             if (channel == null) {
-                channel = FileChannelImpl.open(fd, path, true, false, this);
-
-                /*
-                 * Increment fd's use count. Invoking the channel's close()
-                 * method will result in decrementing the use count set for
-                 * the channel.
-                 */
-                fd.incrementAndGetUseCount();
+                channel = FileChannelImpl.open(fd, true, false, this);
             }
             return channel;
         }
@@ -432,18 +380,12 @@ class FileInputStream extends InputStream
      */
     protected void finalize() throws IOException {
         if ((fd != null) &&  (fd != FileDescriptor.in)) {
-
-            /*
-             * Finalizer should not release the FileDescriptor if another
-             * stream is still using it. If the user directly invokes
-             * close() then the FileDescriptor is also released.
+            /* if fd is shared, the references in FileDescriptor
+             * will ensure that finalizer is only called when
+             * safe to do so. All references using the fd have
+             * become unreachable. We can call close()
              */
-            runningFinalize.set(Boolean.TRUE);
-            try {
-                close();
-            } finally {
-                runningFinalize.set(Boolean.FALSE);
-            }
+            close();
         }
     }
 }

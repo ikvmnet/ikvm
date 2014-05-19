@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public abstract class SunToolkit extends Toolkit
     implements WindowClosingSupport, WindowClosingListener,
     ComponentFactory, InputMethodSupport, KeyboardFocusManagerPeerProvider {
 
-    // 8014736: logging has been removed from SunToolkit
+    // 8014718: logging has been removed from SunToolkit
 
     /**
      * Special mask for the UngrabEvent events, in addition to the
@@ -130,6 +130,9 @@ public abstract class SunToolkit extends Toolkit
     public abstract FramePeer createFrame(Frame target)
         throws HeadlessException;
 
+    public abstract FramePeer createLightweightFrame(LightweightFrame target)
+        throws HeadlessException;
+
     public abstract DialogPeer createDialog(Dialog target)
         throws HeadlessException;
 
@@ -190,6 +193,7 @@ public abstract class SunToolkit extends Toolkit
 
     public abstract boolean isTraySupported();
 
+    @SuppressWarnings("deprecation")
     public abstract FontPeer getFontPeer(String name, int style);
 
     public abstract RobotPeer createRobot(Robot target, GraphicsDevice screen)
@@ -326,8 +330,8 @@ public abstract class SunToolkit extends Toolkit
 
     // Maps from non-Component/MenuComponent to AppContext.
     // WeakHashMap<Component,AppContext>
-    private static final Map appContextMap =
-        Collections.synchronizedMap(new WeakHashMap());
+    private static final Map<Object, AppContext> appContextMap =
+        Collections.synchronizedMap(new WeakHashMap<Object, AppContext>());
 
     /**
      * Sets the appContext field of target. If target is not a Component or
@@ -377,7 +381,7 @@ public abstract class SunToolkit extends Toolkit
         if (context == null) {
             // target is not a Component/MenuComponent, try the
             // appContextMap.
-            context = (AppContext)appContextMap.get(target);
+            context = appContextMap.get(target);
         }
         return context;
     }
@@ -422,9 +426,9 @@ public abstract class SunToolkit extends Toolkit
     private static FocusTraversalPolicy createLayoutPolicy() {
         FocusTraversalPolicy policy = null;
         try {
-            Class layoutPolicyClass =
+            Class<?> layoutPolicyClass =
                 Class.forName("javax.swing.LayoutFocusTraversalPolicy");
-            policy = (FocusTraversalPolicy) layoutPolicyClass.newInstance();
+            policy = (FocusTraversalPolicy)layoutPolicyClass.newInstance();
         }
         catch (ClassNotFoundException e) {
             assert false;
@@ -483,6 +487,10 @@ public abstract class SunToolkit extends Toolkit
         // otherwise have to be modified to precisely identify
         // system-generated events.
         setSystemGenerated(event);
+        AppContext eventContext = targetToAppContext(event.getSource());
+        if (eventContext != null && !eventContext.equals(appContext)) {
+            throw new RuntimeException("Event posted on wrong app context : " + event);
+        }
         PostEventQueue postEventQueue =
             (PostEventQueue)appContext.get(POST_EVENT_QUEUE_KEY);
         if (postEventQueue != null) {
@@ -503,9 +511,6 @@ public abstract class SunToolkit extends Toolkit
         postEvent(targetToAppContext(e.getSource()), pe);
     }
 
-    protected static final Lock flushLock = new ReentrantLock();
-    private static boolean isFlushingPendingEvents = false;
-
     /*
      * Flush any pending events which haven't been posted to the AWT
      * EventQueue yet.
@@ -515,36 +520,16 @@ public abstract class SunToolkit extends Toolkit
         flushPendingEvents(appContext);
     }
 
-    public static void flushPendingEvents(AppContext appContext)  {
-        flushLock.lock();
-        try {
-            // Don't call flushPendingEvents() recursively
-            if (!isFlushingPendingEvents) {
-                isFlushingPendingEvents = true;
-                try {
-                    PostEventQueue postEventQueue =
-                        (PostEventQueue)appContext.get(POST_EVENT_QUEUE_KEY);
-                    if (postEventQueue != null) {
-                        postEventQueue.flush();
-                    }
-                }
-                finally {
-                    isFlushingPendingEvents = false;
-                }
-            }
-        } finally {
-            flushLock.unlock();
-        }
-    }
-
-    public static boolean isPostEventQueueEmpty()  {
-        AppContext appContext = AppContext.getAppContext();
+    /*
+     * Flush the PostEventQueue for the right AppContext.
+     * The default flushPendingEvents only flushes the thread-local context,
+     * which is not always correct, c.f. 3746956
+     */
+    public static void flushPendingEvents(AppContext appContext) {
         PostEventQueue postEventQueue =
-            (PostEventQueue)appContext.get(POST_EVENT_QUEUE_KEY);
+                (PostEventQueue)appContext.get(POST_EVENT_QUEUE_KEY);
         if (postEventQueue != null) {
-            return postEventQueue.noEvents();
-        } else {
-            return true;
+            postEventQueue.flush();
         }
     }
 
@@ -562,11 +547,13 @@ public abstract class SunToolkit extends Toolkit
      * Fixed 5064013: the InvocationEvent time should be equals
      * the time of the ActionEvent
      */
+    @SuppressWarnings("serial")
     public static void executeOnEventHandlerThread(Object target,
                                                    Runnable runnable,
                                                    final long when) {
-        executeOnEventHandlerThread(new PeerEvent(target, runnable, PeerEvent.PRIORITY_EVENT){
-                public long getWhen(){
+        executeOnEventHandlerThread(
+            new PeerEvent(target, runnable, PeerEvent.PRIORITY_EVENT) {
+                public long getWhen() {
                     return when;
                 }
             });
@@ -647,6 +634,12 @@ public abstract class SunToolkit extends Toolkit
     protected abstract int getScreenWidth();
     protected abstract int getScreenHeight();
 
+    @SuppressWarnings("deprecation")
+    public FontMetrics getFontMetrics(Font font) {
+        return FontDesignMetrics.getMetrics(font);
+    }
+
+    @SuppressWarnings("deprecation")
     public String[] getFontList() {
         String[] hardwiredFontList = {
             Font.DIALOG, Font.SANS_SERIF, Font.SERIF, Font.MONOSPACED,
@@ -709,6 +702,120 @@ public abstract class SunToolkit extends Toolkit
      */
     public static boolean getSunAwtErasebackgroundonresize() {
         return AccessController.doPrivileged(new GetBooleanAction("sun.awt.erasebackgroundonresize"));
+    }
+
+
+    static final SoftCache imgCache = new SoftCache();
+
+    static Image getImageFromHash(Toolkit tk, URL url) {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            try {
+                java.security.Permission perm =
+                    url.openConnection().getPermission();
+                if (perm != null) {
+                    try {
+                        sm.checkPermission(perm);
+                    } catch (SecurityException se) {
+                        // fallback to checkRead/checkConnect for pre 1.2
+                        // security managers
+                        if ((perm instanceof java.io.FilePermission) &&
+                            perm.getActions().indexOf("read") != -1) {
+                            sm.checkRead(perm.getName());
+                        } else if ((perm instanceof
+                            java.net.SocketPermission) &&
+                            perm.getActions().indexOf("connect") != -1) {
+                            sm.checkConnect(url.getHost(), url.getPort());
+                        } else {
+                            throw se;
+                        }
+                    }
+                }
+            } catch (java.io.IOException ioe) {
+                    sm.checkConnect(url.getHost(), url.getPort());
+            }
+        }
+        synchronized (imgCache) {
+            Image img = (Image)imgCache.get(url);
+            if (img == null) {
+                try {
+                    img = tk.createImage(new URLImageSource(url));
+                    imgCache.put(url, img);
+                } catch (Exception e) {
+                }
+            }
+            return img;
+        }
+    }
+
+    static Image getImageFromHash(Toolkit tk,
+                                               String filename) {
+        SecurityManager security = System.getSecurityManager();
+        if (security != null) {
+            security.checkRead(filename);
+        }
+        synchronized (imgCache) {
+            Image img = (Image)imgCache.get(filename);
+            if (img == null) {
+                try {
+                    img = tk.createImage(new FileImageSource(filename));
+                    imgCache.put(filename, img);
+                } catch (Exception e) {
+                }
+            }
+            return img;
+        }
+    }
+
+    public Image getImage(String filename) {
+        return getImageFromHash(this, filename);
+    }
+
+    public Image getImage(URL url) {
+        return getImageFromHash(this, url);
+    }
+
+    public Image createImage(String filename) {
+        SecurityManager security = System.getSecurityManager();
+        if (security != null) {
+            security.checkRead(filename);
+        }
+        return createImage(new FileImageSource(filename));
+    }
+
+    public Image createImage(URL url) {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            try {
+                java.security.Permission perm =
+                    url.openConnection().getPermission();
+                if (perm != null) {
+                    try {
+                        sm.checkPermission(perm);
+                    } catch (SecurityException se) {
+                        // fallback to checkRead/checkConnect for pre 1.2
+                        // security managers
+                        if ((perm instanceof java.io.FilePermission) &&
+                            perm.getActions().indexOf("read") != -1) {
+                            sm.checkRead(perm.getName());
+                        } else if ((perm instanceof
+                            java.net.SocketPermission) &&
+                            perm.getActions().indexOf("connect") != -1) {
+                            sm.checkConnect(url.getHost(), url.getPort());
+                        } else {
+                            throw se;
+                        }
+                    }
+                }
+            } catch (java.io.IOException ioe) {
+                    sm.checkConnect(url.getHost(), url.getPort());
+            }
+        }
+        return createImage(new URLImageSource(url));
+    }
+
+    public Image createImage(byte[] data, int offset, int length) {
+        return createImage(new ByteArrayImageSource(data, offset, length));
     }
 
     public Image createImage(ImageProducer producer) {
@@ -946,6 +1053,20 @@ public abstract class SunToolkit extends Toolkit
     }
 
     /**
+     * Returns a new input method window, with behavior as specified in
+     * {@link java.awt.im.spi.InputMethodContext#createInputMethodWindow}.
+     * If the inputContext is not null, the window should return it from its
+     * getInputContext() method. The window needs to implement
+     * sun.awt.im.InputMethodWindow.
+     * <p>
+     * SunToolkit subclasses can override this method to return better input
+     * method windows.
+     */
+    public Window createInputMethodWindow(String title, InputContext context) {
+        throw new Error();
+    }
+
+    /**
      * Returns whether enableInputMethods should be set to true for peered
      * TextComponent instances on this platform. False by default.
      */
@@ -961,10 +1082,10 @@ public abstract class SunToolkit extends Toolkit
     public static Locale getStartupLocale() {
         if (startupLocale == null) {
             String language, region, country, variant;
-            language = (String) AccessController.doPrivileged(
+            language = AccessController.doPrivileged(
                             new GetPropertyAction("user.language", "en"));
             // for compatibility, check for old user.region property
-            region = (String) AccessController.doPrivileged(
+            region = AccessController.doPrivileged(
                             new GetPropertyAction("user.region"));
             if (region != null) {
                 // region can be of form country, country_variant, or _variant
@@ -977,9 +1098,9 @@ public abstract class SunToolkit extends Toolkit
                     variant = "";
                 }
             } else {
-                country = (String) AccessController.doPrivileged(
+                country = AccessController.doPrivileged(
                                 new GetPropertyAction("user.country", ""));
-                variant = (String) AccessController.doPrivileged(
+                variant = AccessController.doPrivileged(
                                 new GetPropertyAction("user.variant", ""));
             }
             startupLocale = new Locale(language, country, variant);
@@ -1051,7 +1172,7 @@ public abstract class SunToolkit extends Toolkit
      * @return <code>true</code>, if XEmbed is needed, <code>false</code> otherwise
      */
     public static boolean needsXEmbed() {
-        String noxembed = (String) AccessController.
+        String noxembed = AccessController.
             doPrivileged(new GetPropertyAction("sun.awt.noxembed", "false"));
         if ("true".equals(noxembed)) {
             return false;
@@ -1263,6 +1384,7 @@ public abstract class SunToolkit extends Toolkit
             || comp instanceof Window);
     }
 
+    @SuppressWarnings("serial")
     public static class OperationTimedOut extends RuntimeException {
         public OperationTimedOut(String msg) {
             super(msg);
@@ -1270,9 +1392,12 @@ public abstract class SunToolkit extends Toolkit
         public OperationTimedOut() {
         }
     }
+
+    @SuppressWarnings("serial")
     public static class InfiniteLoop extends RuntimeException {
     }
 
+    @SuppressWarnings("serial")
     public static class IllegalThreadException extends RuntimeException {
         public IllegalThreadException(String msg) {
             super(msg);
@@ -1417,6 +1542,7 @@ public abstract class SunToolkit extends Toolkit
      * Should return <code>true</code> if more processing is
      * necessary, <code>false</code> otherwise.
      */
+    @SuppressWarnings("serial")
     protected final boolean waitForIdle(final long timeout) {
         flushPendingEvents();
         boolean queueWasEmpty = isEQEmpty();
@@ -1600,7 +1726,7 @@ public abstract class SunToolkit extends Toolkit
             Toolkit tk = Toolkit.getDefaultToolkit();
             if (tk instanceof SunToolkit) {
                 systemAAFonts =
-                    (String)AccessController.doPrivileged(
+                    AccessController.doPrivileged(
                          new GetPropertyAction("awt.useSystemAAFontSettings"));
             }
             if (systemAAFonts != null) {
@@ -1789,7 +1915,7 @@ public abstract class SunToolkit extends Toolkit
      */
     public static boolean isContainingTopLevelTranslucent(Component c) {
         Window w = getContainingWindow(c);
-        return w != null && ((Window)w).getOpacity() < 1.0f;
+        return w != null && w.getOpacity() < 1.0f;
     }
 
     /**
@@ -1831,14 +1957,14 @@ public abstract class SunToolkit extends Toolkit
         return isInstanceOf(obj.getClass(), type);
     }
 
-    private static boolean isInstanceOf(Class cls, String type) {
+    private static boolean isInstanceOf(Class<?> cls, String type) {
         if (cls == null) return false;
 
         if (cls.getName().equals(type)) {
             return true;
         }
 
-        for (Class c : cls.getInterfaces()) {
+        for (Class<?> c : cls.getInterfaces()) {
             if (c.getName().equals(type)) {
                 return true;
             }
@@ -1881,15 +2007,10 @@ class PostEventQueue {
     private EventQueueItem queueTail = null;
     private final EventQueue eventQueue;
 
-    // For the case when queue is cleared but events are not posted
-    private volatile boolean isFlushing = false;
+    private Thread flushThread = null;
 
     PostEventQueue(EventQueue eq) {
         eventQueue = eq;
-    }
-
-    public synchronized boolean noEvents() {
-        return queueHead == null && !isFlushing;
     }
 
     /*
@@ -1902,20 +2023,48 @@ class PostEventQueue {
      * potentially lead to deadlock
      */
     public void flush() {
-        EventQueueItem tempQueue;
-        synchronized (this) {
-            tempQueue = queueHead;
-            queueHead = queueTail = null;
-            isFlushing = (tempQueue != null);
-        }
+
+        Thread newThread = Thread.currentThread();
+
         try {
-            while (tempQueue != null) {
-                eventQueue.postEvent(tempQueue.event);
-                tempQueue = tempQueue.next;
+            EventQueueItem tempQueue;
+            synchronized (this) {
+                // Avoid method recursion
+                if (newThread == flushThread) {
+                    return;
+                }
+                // Wait for other threads' flushing
+                while (flushThread != null) {
+                    wait();
+                }
+                // Skip everything if queue is empty
+                if (queueHead == null) {
+                    return;
+                }
+                // Remember flushing thread
+                flushThread = newThread;
+
+                tempQueue = queueHead;
+                queueHead = queueTail = null;
+            }
+            try {
+                while (tempQueue != null) {
+                    eventQueue.postEvent(tempQueue.event);
+                    tempQueue = tempQueue.next;
+                }
+            }
+            finally {
+                // Only the flushing thread can get here
+                synchronized (this) {
+                    // Forget flushing thread, inform other pending threads
+                    flushThread = null;
+                    notifyAll();
+                }
             }
         }
-        finally {
-            isFlushing = false;
+        catch (InterruptedException e) {
+            // Couldn't allow exception go up, so at least recover the flag
+            newThread.interrupt();
         }
     }
 

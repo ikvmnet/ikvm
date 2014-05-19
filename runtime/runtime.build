@@ -198,6 +198,7 @@
                 <include name="openjdk/sun.nio.ch.cs" />
                 <include name="openjdk/sun.reflect.cs" />
                 <include name="openjdk/sun.security.krb5.cs" />
+                <include name="openjdk/sun.util.locale.provider.cs" />
                 <include name="stubgen/ClassFileWriter.cs" />
                 <include name="stubgen/SerialVersionUID.cs" />
                 <include name="stubgen/StubGenerator.cs" />

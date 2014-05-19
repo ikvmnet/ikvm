@@ -49,7 +49,7 @@ public final class Unsafe
     @sun.reflect.CallerSensitive
     public static Unsafe getUnsafe()
     {
-        if(ikvm.internal.CallerID.getCallerID().getCallerClassLoader() != null)
+        if(!VM.isSystemDomainLoader(ikvm.internal.CallerID.getCallerID().getCallerClassLoader()))
         {
             throw new SecurityException("Unsafe");
         }
@@ -1168,5 +1168,80 @@ public final class Unsafe
     public boolean tryMonitorEnter(Object o)
     {
         return cli.System.Threading.Monitor.TryEnter(o);
+    }
+
+    public final int getAndAddInt(Object o, long offset, int delta)
+    {
+        for (;;)
+        {
+            int value = getIntVolatile(o, offset);
+            if (compareAndSwapInt(o, offset, value, value + delta))
+            {
+                return value;
+            }
+        }
+    }
+
+    public final long getAndAddLong(Object o, long offset, long delta)
+    {
+        for (;;)
+        {
+            long value = getLongVolatile(o, offset);
+            if (compareAndSwapLong(o, offset, value, value + delta))
+            {
+                return value;
+            }
+        }
+    }
+
+    public final int getAndSetInt(Object o, long offset, int newValue)
+    {
+        for (;;)
+        {
+            int value = getIntVolatile(o, offset);
+            if (compareAndSwapInt(o, offset, value, newValue))
+            {
+                return value;
+            }
+        }
+    }
+
+    public final long getAndSetLong(Object o, long offset, long newValue)
+    {
+        for (;;)
+        {
+            long value = getLongVolatile(o, offset);
+            if (compareAndSwapLong(o, offset, value, newValue))
+            {
+                return value;
+            }
+        }
+    }
+
+    public final Object getAndSetObject(Object o, long offset, Object newValue)
+    {
+        for (;;)
+        {
+            Object value = getObjectVolatile(o, offset);
+            if (compareAndSwapObject(o, offset, value, newValue))
+            {
+                return value;
+            }
+        }
+    }
+
+    public void loadFence()
+    {
+        cli.System.Threading.Thread.MemoryBarrier();
+    }
+
+    public void storeFence()
+    {
+        cli.System.Threading.Thread.MemoryBarrier();
+    }
+
+    public void fullFence()
+    {
+        cli.System.Threading.Thread.MemoryBarrier();
     }
 }

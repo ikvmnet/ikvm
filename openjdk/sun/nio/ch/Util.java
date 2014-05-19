@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,67 +40,7 @@ import sun.misc.Cleaner;
 import sun.security.action.GetPropertyAction;
 
 
-class Util {
-
-    private static class SelectorWrapper {
-        private Selector sel;
-        private SelectorWrapper (Selector sel) {
-            this.sel = sel;
-            Cleaner.create(this, new Closer(sel));
-        }
-        private static class Closer implements Runnable {
-            private Selector sel;
-            private Closer (Selector sel) {
-                this.sel = sel;
-            }
-            public void run () {
-                try {
-                    sel.close();
-                } catch (Throwable th) {
-                    throw new Error(th);
-                }
-            }
-        }
-        public Selector get() { return sel;}
-    }
-
-    // Per-thread cached selector
-    private static ThreadLocal<SoftReference<SelectorWrapper>> localSelector
-        = new ThreadLocal<SoftReference<SelectorWrapper>>();
-    // Hold a reference to the selWrapper object to prevent it from
-    // being cleaned when the temporary selector wrapped is on lease.
-    private static ThreadLocal<SelectorWrapper> localSelectorWrapper
-        = new ThreadLocal<SelectorWrapper>();
-
-    // When finished, invoker must ensure that selector is empty
-    // by cancelling any related keys and explicitly releasing
-    // the selector by invoking releaseTemporarySelector()
-    static Selector getTemporarySelector(SelectableChannel sc)
-        throws IOException
-    {
-        SoftReference<SelectorWrapper> ref = localSelector.get();
-        SelectorWrapper selWrapper = null;
-        Selector sel = null;
-        if (ref == null
-            || ((selWrapper = ref.get()) == null)
-            || ((sel = selWrapper.get()) == null)
-            || (sel.provider() != sc.provider())) {
-            sel = sc.provider().openSelector();
-            selWrapper = new SelectorWrapper(sel);
-            localSelector.set(new SoftReference<SelectorWrapper>(selWrapper));
-        }
-        localSelectorWrapper.set(selWrapper);
-        return sel;
-    }
-
-    static void releaseTemporarySelector(Selector sel)
-        throws IOException
-    {
-        // Selector should be empty
-        sel.selectNow();                // Flush cancelled keys
-        assert sel.keys().isEmpty() : "Temporary selector not empty";
-        localSelectorWrapper.set(null);
-    }
+public class Util {
 
 
     // -- Random stuff --
@@ -151,28 +91,25 @@ class Util {
     }
 
 
-    private static volatile Constructor directByteBufferConstructor = null;
+    private static volatile Constructor<?> directByteBufferConstructor = null;
 
     private static void initDBBConstructor() {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 public Void run() {
                     try {
                         Class<?> cl = Class.forName("java.nio.DirectByteBuffer");
-                        Constructor ctor = cl.getDeclaredConstructor(
-                            new Class[] { int.class,
-                                          long.class,
-                                          FileDescriptor.class,
-                                          Runnable.class });
+                        Constructor<?> ctor = cl.getDeclaredConstructor(
+                            new Class<?>[] { int.class,
+                                             long.class,
+                                             FileDescriptor.class,
+                                             Runnable.class });
                         ctor.setAccessible(true);
                         directByteBufferConstructor = ctor;
-                    } catch (ClassNotFoundException x) {
-                        throw new InternalError();
-                    } catch (NoSuchMethodException x) {
-                        throw new InternalError();
-                    } catch (IllegalArgumentException x) {
-                        throw new InternalError();
-                    } catch (ClassCastException x) {
-                        throw new InternalError();
+                    } catch (ClassNotFoundException   |
+                             NoSuchMethodException    |
+                             IllegalArgumentException |
+                             ClassCastException x) {
+                        throw new InternalError(x);
                     }
                     return null;
                 }});
@@ -191,38 +128,33 @@ class Util {
                              new Long(addr),
                              fd,
                              unmapper });
-        } catch (InstantiationException e) {
-            throw new InternalError();
-        } catch (IllegalAccessException e) {
-            throw new InternalError();
-        } catch (InvocationTargetException e) {
-            throw new InternalError();
+        } catch (InstantiationException |
+                 IllegalAccessException |
+                 InvocationTargetException e) {
+            throw new InternalError(e);
         }
         return dbb;
     }
 
-    private static volatile Constructor directByteBufferRConstructor = null;
+    private static volatile Constructor<?> directByteBufferRConstructor = null;
 
     private static void initDBBRConstructor() {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 public Void run() {
                     try {
                         Class<?> cl = Class.forName("java.nio.DirectByteBufferR");
-                        Constructor ctor = cl.getDeclaredConstructor(
-                            new Class[] { int.class,
-                                          long.class,
-                                          FileDescriptor.class,
-                                          Runnable.class });
+                        Constructor<?> ctor = cl.getDeclaredConstructor(
+                            new Class<?>[] { int.class,
+                                             long.class,
+                                             FileDescriptor.class,
+                                             Runnable.class });
                         ctor.setAccessible(true);
                         directByteBufferRConstructor = ctor;
-                    } catch (ClassNotFoundException x) {
-                        throw new InternalError();
-                    } catch (NoSuchMethodException x) {
-                        throw new InternalError();
-                    } catch (IllegalArgumentException x) {
-                        throw new InternalError();
-                    } catch (ClassCastException x) {
-                        throw new InternalError();
+                    } catch (ClassNotFoundException |
+                             NoSuchMethodException |
+                             IllegalArgumentException |
+                             ClassCastException x) {
+                        throw new InternalError(x);
                     }
                     return null;
                 }});
@@ -241,12 +173,10 @@ class Util {
                              new Long(addr),
                              fd,
                              unmapper });
-        } catch (InstantiationException e) {
-            throw new InternalError();
-        } catch (IllegalAccessException e) {
-            throw new InternalError();
-        } catch (InvocationTargetException e) {
-            throw new InternalError();
+        } catch (InstantiationException |
+                 IllegalAccessException |
+                 InvocationTargetException e) {
+            throw new InternalError(e);
         }
         return dbb;
     }
@@ -265,14 +195,6 @@ class Util {
             bugLevel = (value != null) ? value : "";
         }
         return bugLevel.equals(bl);
-    }
-
-
-
-    // -- Initialization --
-
-
-    static void load() {
     }
 
 }
