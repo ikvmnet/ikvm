@@ -14014,9 +14014,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/jvm/Target.java
 @OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/jvm/UninitializedType.java
 @OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/Launcher.java
-@OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/nio/JavacPathFileManager.java
-@OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/nio/PathFileManager.java
-@OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/nio/PathFileObject.java
 @OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/Main.java
 @OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/main/CommandLine.java
 @OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/main/JavaCompiler.java
@@ -14029,6 +14026,9 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/model/JavacElements.java
 @OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/model/JavacSourcePosition.java
 @OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/model/JavacTypes.java
+@OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/nio/JavacPathFileManager.java
+@OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/nio/PathFileManager.java
+@OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/nio/PathFileObject.java
 @OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/parser/DocCommentScanner.java
 @OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/parser/EndPosParser.java
 @OPENJDK@/langtools/src/share/classes/com/sun/tools/javac/parser/JavacParser.java
