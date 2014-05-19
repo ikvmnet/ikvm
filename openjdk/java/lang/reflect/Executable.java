@@ -48,11 +48,6 @@ public abstract class Executable extends AccessibleObject
     Executable() {}
 
     /**
-     * Accessor method to allow code sharing
-     */
-    abstract byte[] getAnnotationBytes();
-
-    /**
      * Does the Executable have generic information.
      */
     abstract boolean hasGenericInformation();
@@ -69,14 +64,6 @@ public abstract class Executable extends AccessibleObject
             return true;
         }
         return false;
-    }
-
-    Annotation[][] parseParameterAnnotations(byte[] parameterAnnotations) {
-        return AnnotationParser.parseParameterAnnotations(
-               parameterAnnotations,
-               sun.misc.SharedSecrets.getJavaLangAccess().
-               getConstantPool(getDeclaringClass()),
-               getDeclaringClass());
     }
 
     void separateWithCommas(Class<?>[] types, StringBuilder sb) {
@@ -496,18 +483,19 @@ public abstract class Executable extends AccessibleObject
      */
     public abstract Annotation[][] getParameterAnnotations();
 
-    Annotation[][] sharedGetParameterAnnotations(Class<?>[] parameterTypes,
-                                                 byte[] parameterAnnotations) {
+    Annotation[][] sharedGetParameterAnnotations(Class<?>[] parameterTypes) {
         int numParameters = parameterTypes.length;
-        if (parameterAnnotations == null)
-            return new Annotation[numParameters][0];
 
-        Annotation[][] result = parseParameterAnnotations(parameterAnnotations);
+        Annotation[][] result = sharedGetParameterAnnotationsImpl();
+        if (result == null)
+            return new Annotation[numParameters][0];
 
         if (result.length != numParameters)
             handleParameterNumberMismatch(result.length, numParameters);
         return result;
     }
+
+    private native Annotation[][] sharedGetParameterAnnotationsImpl();
 
     abstract void handleParameterNumberMismatch(int resultLength, int numParameters);
 
@@ -543,14 +531,12 @@ public abstract class Executable extends AccessibleObject
 
     private synchronized  Map<Class<? extends Annotation>, Annotation> declaredAnnotations() {
         if (declaredAnnotations == null) {
-            declaredAnnotations = AnnotationParser.parseAnnotations(
-                getAnnotationBytes(),
-                sun.misc.SharedSecrets.getJavaLangAccess().
-                getConstantPool(getDeclaringClass()),
-                getDeclaringClass());
+            declaredAnnotations = declaredAnnotationsImpl();
         }
         return declaredAnnotations;
     }
+
+    private native Map<Class<? extends Annotation>, Annotation> declaredAnnotationsImpl();
 
     /**
      * Returns an {@code AnnotatedType} object that represents the use of a type to
