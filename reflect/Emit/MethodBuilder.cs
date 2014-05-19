@@ -742,7 +742,8 @@ namespace IKVM.Reflection.Emit
 			{
 				if (methodSignature == null)
 				{
-					methodSignature = MethodSignature.MakeFromBuilder(returnType, parameterTypes, customModifiers, callingConvention, gtpb == null ? 0 : gtpb.Length);
+					methodSignature = MethodSignature.MakeFromBuilder(returnType ?? typeBuilder.Universe.System_Void, parameterTypes ?? Type.EmptyTypes,
+						customModifiers, callingConvention, gtpb == null ? 0 : gtpb.Length);
 				}
 				return methodSignature;
 			}
