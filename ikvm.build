@@ -74,6 +74,9 @@
                 <include name="bin/ikvmc.exe.config" />
                 <include name="bin/ikvmstub.exe" />
                 <include name="bin/ikvmstub.exe.config" />
+                <include name="bin/javac.exe" />
+                <include name="bin/javah.exe" />
+                <include name="bin/javap.exe" />
                 <include name="bin-x64/JVM.DLL" />
                 <include name="bin-x86/JVM.DLL" />
                 <include name="classpath/**.class" />
