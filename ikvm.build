@@ -77,6 +77,7 @@
                 <include name="bin/javac.exe" />
                 <include name="bin/javah.exe" />
                 <include name="bin/javap.exe" />
+                <include name="bin/jjs.exe" />
                 <include name="bin-x64/JVM.DLL" />
                 <include name="bin-x86/JVM.DLL" />
                 <include name="classpath/**.class" />

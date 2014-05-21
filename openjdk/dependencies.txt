@@ -150,3 +150,8 @@ IKVM.OpenJDK.Media
 ->IKVM.OpenJDK.XML.API
 ->IKVM.OpenJDK.Util
 ->IKVM.OpenJDK.Text
+
+IKVM.OpenJDK.Nashorn
+->IKVM.OpenJDK.Util
+->IKVM.OpenJDK.Misc
+->IKVM.OpenJDK.Text

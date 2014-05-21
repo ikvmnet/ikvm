@@ -80,6 +80,7 @@ namespace SourceLicenseAnalyzer
 			Def("i-net software");
 			Def("Google Inc.");
 			Def("Stephen Colebourne & Michael Nascimento Santos");
+			Def("Attila Szegedi");
 
 
 			// these are false positives

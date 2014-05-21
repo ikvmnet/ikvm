@@ -30,12 +30,13 @@
     <property name="OPENJDK_VERSION" value="OpenJDK 8 b132" />
     <property name="IMPLEMENTATION_VERSION" value="1.8.0" />
     <property name="SPECIFICATION_VERSION" value="1.8" />
+    <property name="FULL_VERSION" value="1.8.0-b132" />
     <property name="OpenJDK.dir" value="${project::get-base-directory()}/../../openjdk-8-b132" />
     <if test="${platform::is-win32()}">
         <property name="pathsep" value=";" />
     </if>
 
-    <target name="all" depends="classes rmi vfs resources core">
+    <target name="all" depends="classes rmi run-nasgen vfs resources core">
     </target>
 
     <target name="version">
@@ -209,6 +210,16 @@
         <exec program="rmic" commandline="${ARGS} -iiop -standardPackage javax.management.remote.rmi.RMIServer" />
     </target>
 
+    <target name="run-nasgen">
+        <exec program="java" useruntimeengine="false">
+            <arg line="-cp ${OpenJDK.dir}/nashorn/buildtools/nasgen/src" />
+            <arg value="jdk.nashorn.internal.tools.nasgen.Main" />
+            <arg value="${OpenJDK.dir}/nashorn/src" />
+            <arg value="jdk.nashorn.internal.objects" />
+            <arg value="${OpenJDK.dir}/nashorn/src" />
+        </exec>
+    </target>
+    
     <target name="vfs">
         <!-- This file is generated here, but it is added as a resource to IKVM.Runtime.dll, because Ref.Emit on .NET 1.1 doesn't support adding a raw resource. -->
         <zip zipfile="vfs.zip">
@@ -299,8 +310,19 @@
             </filterchain>
         </copy>
     </target>
+
+    <target name="nashorn-version">
+        <copy file="resources/nashorn/version.properties.in" tofile="resources/nashorn/version.properties" outputencoding="ascii" overwrite="true">
+            <filterchain>
+                <replacetokens>
+                    <token key="FULL_VERSION" value="${FULL_VERSION}" />
+                    <token key="IMPLEMENTATION_VERSION" value="${IMPLEMENTATION_VERSION}" />
+                </replacetokens>
+            </filterchain>
+        </copy>
+    </target>
     
-    <target name="core" depends="version response.gen.txt MANIFEST.MF">
+    <target name="core" depends="version response.gen.txt MANIFEST.MF nashorn-version">
         <copy file="../bin/IKVM.Runtime.dll" todir="." />
         <copy file="../bin/IKVM.AWT.WinForms.dll" todir="." />
         <exec program="${project::get-base-directory()}/../bin/ikvmc.exe" useruntimeengine="true">
@@ -333,6 +355,7 @@
             <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Media.dll" />
             <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Misc.dll" />
             <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Naming.dll" />
+            <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Nashorn.dll" />
             <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Remoting.dll" />
             <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Security.dll" />
             <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.SwingAWT.dll" />
@@ -406,6 +429,11 @@
             <arg value="-out:../bin/javap.exe" />
             <arg value="-main:com.sun.tools.javap.Main" />
             <arg value="-r:../bin/IKVM.OpenJDK.Tools.dll" />
+        </exec>
+        <exec program="${project::get-base-directory()}/../bin/ikvmc.exe" useruntimeengine="true">
+            <arg value="-version:${VERSION}" />
+            <arg value="-out:../bin/jjs.exe" />
+            <arg value="-main:jdk.nashorn.tools.Shell" />
         </exec>
     </target>
 
