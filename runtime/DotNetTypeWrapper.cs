@@ -2838,6 +2838,10 @@ namespace IKVM.Internal
 		// (i.e. injected into the assembly)
 		internal override bool IsPackageAccessibleFrom(TypeWrapper wrapper)
 		{
+			if (wrapper == DeclaringTypeWrapper)
+			{
+				return true;
+			}
 			if (!base.IsPackageAccessibleFrom(wrapper))
 			{
 				return false;
