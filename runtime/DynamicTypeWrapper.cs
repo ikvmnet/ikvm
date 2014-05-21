@@ -6399,15 +6399,12 @@ namespace IKVM.Internal
 
 		private int GetMethodBaseToken(MethodBase mb)
 		{
-			ConstructorInfo ci = mb as ConstructorInfo;
-			if (ci != null)
+			MethodBuilder mbld = mb as MethodBuilder;
+			if (mbld != null)
 			{
-				return classLoader.GetTypeWrapperFactory().ModuleBuilder.GetConstructorToken(ci).Token;
+				return mbld.GetToken().Token;
 			}
-			else
-			{
-				return classLoader.GetTypeWrapperFactory().ModuleBuilder.GetMethodToken((MethodInfo)mb).Token;
-			}
+			return mb.MetadataToken;
 		}
 
 		internal override int GetSourceLineNumber(MethodBase mb, int ilOffset)
