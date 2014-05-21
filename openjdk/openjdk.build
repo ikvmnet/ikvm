@@ -404,7 +404,7 @@
         <exec program="${project::get-base-directory()}/../bin/ikvmc.exe" useruntimeengine="true">
             <arg value="-version:${VERSION}" />
             <arg value="-out:../bin/javap.exe" />
-            <arg value="-main:sun.tools.javap.Main" />
+            <arg value="-main:com.sun.tools.javap.Main" />
             <arg value="-r:../bin/IKVM.OpenJDK.Tools.dll" />
         </exec>
     </target>
