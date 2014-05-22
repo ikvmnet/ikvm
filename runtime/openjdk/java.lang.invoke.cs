@@ -737,6 +737,7 @@ static partial class MethodHandleUtil
 
 		internal static DynamicMethod CreateInvokeExact(MethodType type)
 		{
+			FinishTypes(type);
 			DynamicMethodBuilder dm = new DynamicMethodBuilder("InvokeExact", type, typeof(MethodHandle), null, null, null, false);
 			Type targetDelegateType = GetMemberWrapperDelegateType(type.insertParameterTypes(0, CoreClasses.java.lang.invoke.MethodHandle.Wrapper.ClassObject));
 			dm.ilgen.Emit(OpCodes.Ldarg_0);
@@ -841,6 +842,7 @@ static partial class MethodHandleUtil
 
 		internal static Delegate CreateDynamicOnly(MethodWrapper mw, MethodType type)
 		{
+			FinishTypes(type);
 			DynamicMethodBuilder dm = new DynamicMethodBuilder("CustomInvoke:" + mw.Name, type, null, mw, null, null, true);
 			dm.ilgen.Emit(OpCodes.Ldarg_0);
 			if (mw.IsStatic)
@@ -894,6 +896,7 @@ static partial class MethodHandleUtil
 
 		internal static Delegate CreateMemberName(MethodWrapper mw, MethodType type, bool doDispatch)
 		{
+			FinishTypes(type);
 			TypeWrapper tw = mw.DeclaringType;
 			Type owner = tw.TypeAsBaseType;
 #if NET_4_0
@@ -1163,6 +1166,17 @@ static partial class MethodHandleUtil
 		{
 			Console.WriteLine(dm.Name + ", type = " + delegateType);
 			ilgen.DumpMethod();
+		}
+
+		private static void FinishTypes(MethodType type)
+		{
+			// FXBUG(?) DynamicILGenerator doesn't like SymbolType (e.g. an array of a TypeBuilder)
+			// so we have to finish the signature types
+			TypeWrapper.FromClass(type.returnType()).Finish();
+			for (int i = 0; i < type.parameterCount(); i++)
+			{
+				TypeWrapper.FromClass(type.parameterType(i)).Finish();
+			}
 		}
 	}
 
