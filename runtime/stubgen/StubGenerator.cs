@@ -103,7 +103,11 @@ namespace IKVM.StubGen
 				if (!mw.IsHideFromReflection && (mw.IsPublic || mw.IsProtected || includeNonPublicMembers))
 				{
 					FieldOrMethod m;
-					if (mw.Name == "<init>")
+					// HACK javac has a bug in com.sun.tools.javac.code.Types.isSignaturePolymorphic() where it assumes that
+					// MethodHandle doesn't have any native methods with an empty argument list
+					// (or at least it throws a NPE when it examines the signature of a method without any parameters when it
+					// accesses argtypes.tail.tail)
+					if (mw.Name == "<init>" || (tw == CoreClasses.java.lang.invoke.MethodHandle.Wrapper && (mw.Modifiers & Modifiers.Native) == 0))
 					{
 						m = writer.AddMethod(mw.Modifiers, mw.Name, mw.Signature.Replace('.', '/'));
 						CodeAttribute code = new CodeAttribute(writer);
