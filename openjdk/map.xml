@@ -2806,7 +2806,7 @@
                     <parameter>([Ljava.lang.Object;)Ljava.lang.Object;</parameter>
                 </attribute>
                 <attribute type="IKVM.Attributes.ModifiersAttribute" sig="(Lcli.IKVM.Attributes.Modifiers;)V">
-                    <parameter>Public,Final,Native</parameter>
+                    <parameter>Public,Final,Native,VarArgs</parameter>
                 </attribute>
                 <body>
                     <ldstr value="MethodHandle.invoke cannot be invoked reflectively" />
@@ -2825,7 +2825,7 @@
                     <parameter>([Ljava.lang.Object;)Ljava.lang.Object;</parameter>
                 </attribute>
                 <attribute type="IKVM.Attributes.ModifiersAttribute" sig="(Lcli.IKVM.Attributes.Modifiers;)V">
-                    <parameter>Public,Final,Native</parameter>
+                    <parameter>Public,Final,Native,VarArgs</parameter>
                 </attribute>
                 <body>
                     <ldstr value="MethodHandle.invokeExact cannot be invoked reflectively" />
