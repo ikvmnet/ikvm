@@ -2376,7 +2376,11 @@ namespace IKVM.Internal
 					{
 						Console.Write(" label" + labelIndexes[code[i].Label]);
 					}
-					else if (code[i].opcode == OpCodes.Ldarg)
+					else if (code[i].opcode == OpCodes.Ldarg_S || code[i].opcode == OpCodes.Ldarga_S)
+					{
+						Console.Write(" " + code[i].ValueByte);
+					}
+					else if (code[i].opcode == OpCodes.Ldarg || code[i].opcode == OpCodes.Ldarga)
 					{
 						Console.Write(" " + code[i].ValueInt16);
 					}
