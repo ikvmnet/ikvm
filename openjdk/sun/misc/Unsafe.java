@@ -413,6 +413,11 @@ public final class Unsafe
         }
     }
 
+    public void putBooleanVolatile(Object obj, long offset, boolean newValue)
+    {
+        putBoolean(obj, offset, newValue);
+    }
+
     public boolean getBoolean(Object obj, long offset)
     {
         if (obj instanceof boolean[])
@@ -430,6 +435,11 @@ public final class Unsafe
                 throw (InternalError)new InternalError().initCause(x);
             }
         }
+    }
+
+    public boolean getBooleanVolatile(Object obj, long offset)
+    {
+        return getBoolean(obj, offset);
     }
 
     public void putByte(Object obj, long offset, byte newValue)
@@ -451,6 +461,11 @@ public final class Unsafe
         }
     }
 
+    public void putByteVolatile(Object obj, long offset, byte newValue)
+    {
+        putByte(obj, offset, newValue);
+    }
+
     public byte getByte(Object obj, long offset)
     {
         if (obj instanceof byte[])
@@ -468,6 +483,11 @@ public final class Unsafe
                 throw (InternalError)new InternalError().initCause(x);
             }
         }
+    }
+
+    public byte getByteVolatile(Object obj, long offset)
+    {
+        return getByte(obj, offset);
     }
 
     public void putChar(Object obj, long offset, char newValue)
@@ -489,6 +509,11 @@ public final class Unsafe
         }
     }
 
+    public void putCharVolatile(Object obj, long offset, char newValue)
+    {
+        putChar(obj, offset, newValue);
+    }
+
     public char getChar(Object obj, long offset)
     {
         if (obj instanceof char[])
@@ -506,6 +531,11 @@ public final class Unsafe
                 throw (InternalError)new InternalError().initCause(x);
             }
         }
+    }
+
+    public char getCharVolatile(Object obj, long offset)
+    {
+        return getChar(obj, offset);
     }
 
     public void putShort(Object obj, long offset, short newValue)
@@ -527,6 +557,11 @@ public final class Unsafe
         }
     }
 
+    public void putShortVolatile(Object obj, long offset, short newValue)
+    {
+        putShort(obj, offset, newValue);
+    }
+
     public short getShort(Object obj, long offset)
     {
         if (obj instanceof short[])
@@ -544,6 +579,11 @@ public final class Unsafe
                 throw (InternalError)new InternalError().initCause(x);
             }
         }
+    }
+
+    public short getShortVolatile(Object obj, long offset)
+    {
+        return getShort(obj, offset);
     }
 
     public void putInt(Object obj, long offset, int newValue)
@@ -603,6 +643,11 @@ public final class Unsafe
         }
     }
 
+    public void putFloatVolatile(Object obj, long offset, float newValue)
+    {
+        putFloat(obj, offset, newValue);
+    }
+
     public float getFloat(Object obj, long offset)
     {
         if (obj instanceof float[])
@@ -620,6 +665,11 @@ public final class Unsafe
                 throw (InternalError)new InternalError().initCause(x);
             }
         }
+    }
+
+    public float getFloatVolatile(Object obj, long offset)
+    {
+        return getFloat(obj, offset);
     }
 
     public void putLong(Object obj, long offset, long newValue)
@@ -679,6 +729,14 @@ public final class Unsafe
         }
     }
 
+    public void putDoubleVolatile(Object obj, long offset, double newValue)
+    {
+        synchronized (this)
+        {
+            putDouble(obj, offset, newValue);
+        }
+    }
+
     public double getDouble(Object obj, long offset)
     {
         if (obj instanceof double[])
@@ -695,6 +753,14 @@ public final class Unsafe
             {
                 throw (InternalError)new InternalError().initCause(x);
             }
+        }
+    }
+
+    public double getDoubleVolatile(Object obj, long offset)
+    {
+        synchronized (this)
+        {
+            return getDouble(obj, offset);
         }
     }
 
