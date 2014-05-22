@@ -2967,13 +2967,17 @@ sealed class Compiler
 
 		private static MethodBuilder CreateBootstrapStub(Compiler compiler, ClassFile.ConstantPoolItemInvokeDynamic cpi, Type delegateType, TypeBuilder tb, FieldBuilder fb, MethodInfo methodGetTarget)
 		{
-			TypeWrapper[] args = cpi.GetArgTypes();
-			Type[] argTypes = new Type[args.Length];
-			for (int i = 0; i < args.Length; i++)
+			Type[] args = Type.EmptyTypes;
+			if (delegateType.IsGenericType)
 			{
-				argTypes[i] = args[i].TypeAsSignatureType;
+				// MONOBUG we don't look at the invoke method directly here, because Mono doesn't support GetParameters() on a builder instantiation
+				args = delegateType.GetGenericArguments();
+				if (cpi.GetRetType() != PrimitiveTypeWrapper.VOID)
+				{
+					Array.Resize(ref args, args.Length - 1);
+				}
 			}
-			MethodBuilder mb = tb.DefineMethod("BootstrapStub", MethodAttributes.Static | MethodAttributes.PrivateScope, cpi.GetRetType().TypeAsSignatureType, argTypes);
+			MethodBuilder mb = tb.DefineMethod("BootstrapStub", MethodAttributes.Static | MethodAttributes.PrivateScope, cpi.GetRetType().TypeAsSignatureType, args);
 			CodeEmitter ilgen = CodeEmitter.Create(mb);
 			CodeEmitterLocal cs = ilgen.DeclareLocal(typeofCallSite);
 			CodeEmitterLocal ex = ilgen.DeclareLocal(Types.Exception);
@@ -3006,7 +3010,7 @@ sealed class Compiler
 			{
 				ilgen.EmitLdarg(i);
 			}
-			MethodHandleUtil.EmitCallDelegateInvokeMethod(ilgen, delegateType);
+			ilgen.Emit(OpCodes.Callvirt, MethodHandleUtil.GetDelegateInvokeMethod(delegateType));
 			ilgen.Emit(OpCodes.Ret);
 			ilgen.DoEmit();
 			return mb;
