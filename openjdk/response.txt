@@ -807,6 +807,7 @@
     java/util/zip/*.class
     @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/logging/resources/*.class
     @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/en/*.class
     @OPENJDK@/jdk/src/share/classes/com/sun/java/browser/net/*.class
     @OPENJDK@/jdk/src/share/classes/com/sun/java/util/jar/pack/*.class
     @OPENJDK@/jdk/src/share/classes/java/util/jar/*.class
@@ -1150,7 +1151,6 @@
     @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/da/*.class
     @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/de/*.class
     @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/el/*.class
-    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/en/*.class
     @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/es/*.class
     @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/et/*.class
     @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/fi/*.class
