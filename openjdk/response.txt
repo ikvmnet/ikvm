@@ -33,7 +33,6 @@
     -resource:sun/net/idn/uidna.spp=@OPENJDK@/build/linux-x86_64-normal-server-release/jdk/classes/sun/net/idn/uidna.spp
     -resource:sun/reflect/misc/Trampoline.class=@OPENJDK@/jdk/src/share/classes/sun/reflect/misc/Trampoline.class
     -resource:java/lang/invoke/MethodHandleImpl$BindCaller$T.class=@OPENJDK@/jdk/src/share/classes/java/lang/invoke/MethodHandleImpl$BindCaller$T.class
-    -recurse:@OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/*.class
     -recurse:resources.zip/sun/util/resources/*
     ikvm/internal/*.class
     java/io/*.class
@@ -68,7 +67,6 @@
     @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/java/nio/charset/*.class
     @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/nio/cs/*.class
     @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/*.class
-    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/cldr/*.class
     @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/locale/provider/*.class
     @OPENJDK@/jaxws/src/share/jaxws_classes/com/sun/istack/internal/logging/*.class
     @OPENJDK@/jaxws/src/share/jaxws_classes/com/sun/xml/internal/ws/developer/ServerSideException.class
@@ -192,7 +190,7 @@
 }
 {
     -out:IKVM.OpenJDK.Corba.dll
-    -baseaddress:0x58760000
+    -baseaddress:0x57380000
     -recurse:resources.zip/com/sun/corba/*
     -recurse:resources.zip/com/sun/jndi/cosnaming/jndiprovider.properties
     -resource:com/sun/corba/se/impl/logging/LogStrings.properties=@OPENJDK@/build/linux-x86_64-normal-server-release/jdk/classes/com/sun/corba/se/impl/logging/LogStrings.properties
@@ -313,7 +311,7 @@
 }
 {
     -out:IKVM.OpenJDK.XML.API.dll
-    -baseaddress:0x58D90000
+    -baseaddress:0x579B0000
     -resource:META-INF/services/sun.util.spi.XmlPropertiesProvider=@OPENJDK@/jdk/src/share/classes/sun/util/xml/META-INF/services/sun.util.spi.XmlPropertiesProvider
     @OPENJDK@/jaxp/src/javax/xml/*.class
     @OPENJDK@/jaxp/src/javax/xml/datatype/*.class
@@ -348,7 +346,7 @@
 }
 {
     -out:IKVM.OpenJDK.XML.XPath.dll
-    -baseaddress:0x58E50000
+    -baseaddress:0x57A70000
     -recurse:resources.zip/com/sun/org/apache/xalan/internal/res/*
     @OPENJDK@/jaxp/src/com/sun/org/apache/xalan/internal/extensions/*.class
     @OPENJDK@/jaxp/src/com/sun/org/apache/xalan/internal/res/*.class
@@ -373,7 +371,7 @@
 }
 {
     -out:IKVM.OpenJDK.XML.Parse.dll
-    -baseaddress:0x591B0000
+    -baseaddress:0x57DD0000
     -recurse:resources.zip/com/sun/org/apache/xerces/*
     -recurse:resources.zip/com/sun/org/apache/xml/internal/*
     @OPENJDK@/jaxp/src/com/sun/org/apache/bcel/internal/util/SecuritySupport.class
@@ -435,7 +433,7 @@
 }
 {
     -out:IKVM.OpenJDK.XML.Transform.dll
-    -baseaddress:0x599C0000
+    -baseaddress:0x585E0000
     @OPENJDK@/jaxp/src/com/sun/java_cup/internal/runtime/*.class
     @OPENJDK@/jaxp/src/com/sun/org/apache/bcel/internal/*.class
     @OPENJDK@/jaxp/src/com/sun/org/apache/bcel/internal/classfile/*.class
@@ -459,7 +457,7 @@
 }
 {
     -out:IKVM.OpenJDK.XML.Bind.dll
-    -baseaddress:0x59E10000
+    -baseaddress:0x58A30000
     -recurse:resources.zip/javax/xml/bind/*
     -recurse:resources.zip/com/sun/xml/internal/bind/*
     -recurse:resources.zip/com/sun/xml/internal/fastinfoset/*
@@ -518,7 +516,7 @@
 }
 {
     -out:IKVM.OpenJDK.XML.WebServices.dll
-    -baseaddress:0x5A230000
+    -baseaddress:0x58E50000
     -recurse:resources.zip/com/sun/xml/internal/messaging/*
     -recurse:resources.zip/com/sun/xml/internal/ws/*
     @OPENJDK@/jaxws/src/share/jaxws_classes/com/oracle/webservices/internal/api/*.class
@@ -659,7 +657,7 @@
 }
 {
     -out:IKVM.OpenJDK.XML.Crypto.dll
-    -baseaddress:0x5AA40000
+    -baseaddress:0x59660000
     @OPENJDK@/jdk/src/share/classes/com/sun/org/apache/xml/internal/security/*.class
     @OPENJDK@/jdk/src/share/classes/com/sun/org/apache/xml/internal/security/algorithms/*.class
     @OPENJDK@/jdk/src/share/classes/com/sun/org/apache/xml/internal/security/algorithms/implementations/*.class
@@ -695,7 +693,7 @@
 }
 {
     -out:IKVM.OpenJDK.SwingAWT.dll
-    -baseaddress:0x5ABC0000
+    -baseaddress:0x597E0000
     -remap:swingawt.xml
     -resource:META-INF/services/sun.java2d.pipe.RenderingEngine=resources/META-INF/services/sun.java2d.pipe.RenderingEngine
     -resource:META-INF/services/sun.java2d.cmm.CMMServiceProvider=@OPENJDK@/jdk/src/share/classes/sun/java2d/cmm/lcms/META-INF/services/sun.java2d.cmm.CMMServiceProvider
@@ -795,14 +793,14 @@
 }
 {
     -out:IKVM.OpenJDK.Charsets.dll
-    -baseaddress:0x5BDF0000
+    -baseaddress:0x5AA10000
     -resource:sun/nio/cs/ext/sjis0213.dat=@OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/nio/cs/ext/sjis0213.dat
     @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/nio/cs/ext/*.class
     @OPENJDK@/jdk/src/share/classes/sun/nio/cs/ext/*.class
 }
 {
     -out:IKVM.OpenJDK.Util.dll
-    -baseaddress:0x5C300000
+    -baseaddress:0x5AF20000
     -recurse:resources.zip/com/sun/java/util/jar/pack/intrinsic.properties
     -recurse:resources.zip/sun/launcher/resources/*
     -resource:META-INF/services/java.nio.file.spi.FileSystemProvider=@OPENJDK@/jdk/src/share/demo/nio/zipfs/src/META-INF/services/java.nio.file.spi.FileSystemProvider
@@ -818,15 +816,433 @@
     @OPENJDK@/jdk/src/share/classes/java/util/zip/*.class
     @OPENJDK@/jdk/src/share/classes/sun/launcher/*.class
     @OPENJDK@/jdk/src/share/classes/sun/util/calendar/*.class
-    -recurse:@OPENJDK@/jdk/src/share/classes/sun/util/resources/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/util/resources/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/util/resources/en/*.class
     @OPENJDK@/jdk/src/share/demo/nio/zipfs/src/com/sun/nio/zipfs/*.class
     @OPENJDK@/jdk/src/solaris/classes/java/util/prefs/*.class
     @OPENJDK@/jdk/src/windows/classes/java/util/prefs/*.class
 }
 {
     -out:IKVM.OpenJDK.Text.dll
-    -baseaddress:0x5C6C0000
+    -baseaddress:0x5B1F0000
     -recurse:resources.zip/sun/text/resources/*
+    @OPENJDK@/jdk/src/share/classes/java/text/*.class
+    @OPENJDK@/jdk/src/share/classes/java/text/spi/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/bidi/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/normalizer/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/en/*.class
+}
+{
+    -out:IKVM.OpenJDK.Security.dll
+    -baseaddress:0x5B3A0000
+    -remap:security.xml
+    sun/security/jgss/wrapper/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/crypto/provider/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/net/ssl/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/net/ssl/internal/ssl/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/net/ssl/internal/www/protocol/https/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/security/auth/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/security/auth/callback/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/security/auth/login/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/security/auth/module/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/security/cert/internal/x509/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/security/jgss/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/security/ntlm/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/security/sasl/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/security/sasl/digest/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/security/sasl/gsskerb/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/security/sasl/ntlm/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/security/sasl/util/*.class
+    @OPENJDK@/jdk/src/share/classes/java/security/acl/*.class
+    @OPENJDK@/jdk/src/share/classes/java/security/interfaces/*.class
+    @OPENJDK@/jdk/src/share/classes/java/security/spec/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/crypto/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/crypto/interfaces/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/crypto/spec/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/net/ssl/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/security/auth/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/security/auth/callback/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/security/auth/kerberos/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/security/auth/login/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/security/auth/spi/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/security/auth/x500/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/security/cert/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/security/sasl/*.class
+    @OPENJDK@/jdk/src/share/classes/org/ietf/jgss/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/net/www/protocol/http/ntlm/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/net/www/protocol/https/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/acl/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/internal/interfaces/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/internal/spec/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/jgss/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/jgss/krb5/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/jgss/spi/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/jgss/spnego/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/krb5/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/krb5/internal/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/krb5/internal/ccache/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/krb5/internal/crypto/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/krb5/internal/crypto/dk/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/krb5/internal/ktab/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/krb5/internal/rcache/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/krb5/internal/util/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/pkcs/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/pkcs10/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/pkcs12/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/provider/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/provider/certpath/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/provider/certpath/ldap/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/provider/certpath/ssl/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/rsa/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/ssl/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/ssl/krb5/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/timestamp/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/tools/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/tools/keytool/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/util/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/validator/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/security/x509/*.class
+    @OPENJDK@/jdk/src/windows/classes/sun/security/krb5/internal/tools/*.class
+    @OPENJDK@/jdk/src/windows/classes/sun/security/provider/*.class
+}
+{
+    -out:IKVM.OpenJDK.Management.dll
+    -baseaddress:0x5BBE0000
+    java/lang/management/*.class
+    sun/management/*.class
+    rmistubs/org/omg/stub/javax/management/remote/rmi/*.class
+    rmistubs/javax/management/remote/rmi/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/management/resources/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/jmx/defaults/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/jmx/interceptor/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/jmx/mbeanserver/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/jmx/remote/internal/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/jmx/remote/protocol/iiop/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/jmx/remote/protocol/rmi/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/jmx/remote/security/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/jmx/remote/util/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/management/*.class
+    @OPENJDK@/jdk/src/share/classes/java/lang/management/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/management/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/management/loading/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/management/modelmbean/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/management/monitor/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/management/openmbean/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/management/relation/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/management/remote/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/management/remote/rmi/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/management/timer/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/management/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/management/counter/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/management/counter/perf/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/management/jdp/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/management/jmxremote/*.class
+    @OPENJDK@/jdk/src/windows/classes/sun/management/*.class
+}
+{
+    -out:IKVM.OpenJDK.Misc.dll
+    -baseaddress:0x5BF70000
+    @OPENJDK@/corba/src/share/classes/javax/activity/*.class
+    @OPENJDK@/jaxws/src/share/jaxws_classes/javax/annotation/*.class
+    @OPENJDK@/jaxws/src/share/jaxws_classes/javax/jws/*.class
+    @OPENJDK@/jaxws/src/share/jaxws_classes/javax/jws/soap/*.class
+    @OPENJDK@/corba/src/share/classes/javax/transaction/*.class
+    @OPENJDK@/corba/src/share/classes/javax/transaction/xa/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/net/httpserver/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/net/httpserver/spi/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/pept/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/pept/encoding/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/pept/ept/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/pept/presentation/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/pept/protocol/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/pept/transport/*.class
+    @OPENJDK@/jdk/src/share/classes/java/lang/instrument/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/script/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/smartcardio/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/misc/resources/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/net/httpserver/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/net/www/protocol/netdoc/*.class
+    @OPENJDK@/langtools/src/share/classes/javax/annotation/processing/*.class
+    @OPENJDK@/langtools/src/share/classes/javax/lang/model/*.class
+    @OPENJDK@/langtools/src/share/classes/javax/lang/model/element/*.class
+    @OPENJDK@/langtools/src/share/classes/javax/lang/model/type/*.class
+    @OPENJDK@/langtools/src/share/classes/javax/lang/model/util/*.class
+    @OPENJDK@/langtools/src/share/classes/javax/tools/*.class
+}
+{
+    -out:IKVM.OpenJDK.Naming.dll
+    -baseaddress:0x5C030000
+    -recurse:resources.zip/com/sun/jndi/ldap/jndiprovider.properties
+    -resource:META-INF/services/sun.net.spi.nameservice.NameServiceDescriptor=@OPENJDK@/jdk/src/share/classes/sun/net/spi/nameservice/dns/META-INF/services/sun.net.spi.nameservice.NameServiceDescriptor
+    sun/net/dns/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/jndi/dns/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/jndi/ldap/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/jndi/ldap/ext/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/jndi/ldap/pool/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/jndi/ldap/sasl/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/jndi/toolkit/ctx/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/jndi/toolkit/dir/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/jndi/toolkit/url/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/jndi/url/dns/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/jndi/url/ldap/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/jndi/url/ldaps/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/naming/internal/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/naming/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/naming/directory/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/naming/event/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/naming/ldap/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/naming/spi/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/net/dns/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/net/spi/nameservice/dns/*.class
+}
+{
+    -out:IKVM.OpenJDK.Jdbc.dll
+    -baseaddress:0x5C1B0000
+    -resource:META-INF/services/java.sql.Driver=resources/META-INF/services/java.sql.Driver
+    -recurse:resources.zip/com/sun/rowset/*
+    -recurse:resources.zip/javax/sql/*
+    -r:System.Data.dll
+    sun/jdbc/odbc/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/rowset/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/rowset/internal/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/rowset/providers/*.class
+    @OPENJDK@/jdk/src/share/classes/java/sql/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/sql/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/sql/rowset/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/sql/rowset/serial/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/sql/rowset/spi/*.class
+}
+{
+    -out:IKVM.OpenJDK.Remoting.dll
+    -baseaddress:0x5C330000
+    -recurse:resources.zip/sun/rmi/*
+    rmistubs/com/sun/jndi/rmi/registry/*.class
+    rmistubs/java/rmi/activation/*.class
+    rmistubs/sun/rmi/registry/*.class
+    rmistubs/sun/rmi/server/*.class
+    rmistubs/sun/rmi/transport/*.class
+    @OPENJDK@/jdk/src/share/classes/java/rmi/*.class
+    @OPENJDK@/jdk/src/share/classes/java/rmi/activation/*.class
+    @OPENJDK@/jdk/src/share/classes/java/rmi/dgc/*.class
+    @OPENJDK@/jdk/src/share/classes/java/rmi/registry/*.class
+    @OPENJDK@/jdk/src/share/classes/java/rmi/server/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/rmi/ssl/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/jndi/rmi/registry/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/jndi/url/rmi/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/rmi/rmid/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/rmi/log/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/rmi/registry/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/rmi/runtime/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/rmi/server/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/rmi/transport/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/rmi/transport/proxy/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/rmi/transport/tcp/*.class
+}
+{
+    -out:IKVM.OpenJDK.Beans.dll
+    -baseaddress:0x5C450000
+    -resource:META-INF/mailcap.default=@OPENJDK@/jaxws/src/share/jaf_classes/META-INF/mailcap.default
+    -resource:META-INF/mimetypes.default=@OPENJDK@/jaxws/src/share/jaf_classes/META-INF/mimetypes.default
+    @OPENJDK@/jaxws/src/share/jaf_classes/com/sun/activation/registries/*.class
+    @OPENJDK@/jaxws/src/share/jaf_classes/javax/activation/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/beans/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/beans/decoder/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/beans/editors/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/beans/finder/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/beans/infos/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/beans/util/*.class
+    @OPENJDK@/jdk/src/share/classes/java/beans/*.class
+    @OPENJDK@/jdk/src/share/classes/java/beans/beancontext/*.class
+}
+{
+    -out:IKVM.OpenJDK.Media.dll
+    -baseaddress:0x5C540000
+    -resource:META-INF/services/javax.print.PrintServiceLookup=@OPENJDK@/jdk/src/windows/classes/sun/print/services/javax.print.PrintServiceLookup
+    -resource:META-INF/services/javax.print.StreamPrintServiceFactory=@OPENJDK@/jdk/src/windows/classes/sun/print/services/javax.print.StreamPrintServiceFactory
+    -resource:META-INF/services/javax.sound.midi.spi.MidiDeviceProvider=@OPENJDK@/jdk/src/share/classes/com/sun/media/sound/services/javax.sound.midi.spi.MidiDeviceProvider
+    -resource:META-INF/services/javax.sound.midi.spi.MidiFileReader=@OPENJDK@/jdk/src/share/classes/com/sun/media/sound/services/javax.sound.midi.spi.MidiFileReader
+    -resource:META-INF/services/javax.sound.midi.spi.MidiFileWriter=@OPENJDK@/jdk/src/share/classes/com/sun/media/sound/services/javax.sound.midi.spi.MidiFileWriter
+    -resource:META-INF/services/javax.sound.midi.spi.SoundbankReader=@OPENJDK@/jdk/src/share/classes/com/sun/media/sound/services/javax.sound.midi.spi.SoundbankReader
+    -resource:META-INF/services/javax.sound.sampled.spi.AudioFileReader=@OPENJDK@/jdk/src/share/classes/com/sun/media/sound/services/javax.sound.sampled.spi.AudioFileReader
+    -resource:META-INF/services/javax.sound.sampled.spi.AudioFileWriter=@OPENJDK@/jdk/src/share/classes/com/sun/media/sound/services/javax.sound.sampled.spi.AudioFileWriter
+    -resource:META-INF/services/javax.sound.sampled.spi.FormatConversionProvider=@OPENJDK@/jdk/src/share/classes/com/sun/media/sound/services/javax.sound.sampled.spi.FormatConversionProvider
+    -resource:META-INF/services/javax.sound.sampled.spi.MixerProvider=@OPENJDK@/jdk/src/share/classes/com/sun/media/sound/services/javax.sound.sampled.spi.MixerProvider
+    -recurse:resources.zip/com/sun/imageio/plugins/common/iio-plugin.properties
+    -r:System.Drawing.dll
+    com/sun/imageio/plugins/jpeg/*.class
+    icedtea/rt/com/sun/media/sound/*.class
+    sun/print/*.class
+    sun/awt/windows/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/print/resources/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/imageio/plugins/bmp/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/imageio/plugins/common/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/imageio/plugins/gif/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/imageio/plugins/jpeg/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/imageio/plugins/png/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/imageio/plugins/wbmp/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/imageio/spi/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/imageio/stream/*.class
+    @OPENJDK@/jdk/src/share/classes/com/sun/media/sound/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/imageio/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/imageio/event/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/imageio/metadata/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/imageio/plugins/bmp/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/imageio/plugins/jpeg/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/imageio/spi/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/imageio/stream/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/print/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/print/attribute/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/print/attribute/standard/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/print/event/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/sound/midi/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/sound/midi/spi/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/sound/sampled/*.class
+    @OPENJDK@/jdk/src/share/classes/javax/sound/sampled/spi/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/print/*.class
+    @OPENJDK@/jdk/src/windows/classes/sun/print/*.class
+}
+{
+    -out:IKVM.OpenJDK.Nashorn.dll
+    -baseaddress:0x5C7B0000
+    -resource:META-INF/services/javax.script.ScriptEngineFactory=@OPENJDK@/nashorn/src/META-INF/services/javax.script.ScriptEngineFactory
+    -resource:jdk/nashorn/internal/runtime/resources/version.properties=resources/nashorn/version.properties
+    -recurse:@OPENJDK@/nashorn/src/*.js
+    -recurse:@OPENJDK@/nashorn/src/*.properties
+    @OPENJDK@/nashorn/src/jdk/internal/dynalink/*.class
+    @OPENJDK@/nashorn/src/jdk/internal/dynalink/beans/*.class
+    @OPENJDK@/nashorn/src/jdk/internal/dynalink/linker/*.class
+    @OPENJDK@/nashorn/src/jdk/internal/dynalink/support/*.class
+    @OPENJDK@/nashorn/src/jdk/nashorn/api/scripting/*.class
+    @OPENJDK@/nashorn/src/jdk/nashorn/internal/codegen/*.class
+    @OPENJDK@/nashorn/src/jdk/nashorn/internal/codegen/types/*.class
+    @OPENJDK@/nashorn/src/jdk/nashorn/internal/ir/*.class
+    @OPENJDK@/nashorn/src/jdk/nashorn/internal/ir/annotations/*.class
+    @OPENJDK@/nashorn/src/jdk/nashorn/internal/ir/debug/*.class
+    @OPENJDK@/nashorn/src/jdk/nashorn/internal/ir/visitor/*.class
+    @OPENJDK@/nashorn/src/jdk/nashorn/internal/lookup/*.class
+    @OPENJDK@/nashorn/src/jdk/nashorn/internal/objects/*.class
+    @OPENJDK@/nashorn/src/jdk/nashorn/internal/objects/annotations/*.class
+    @OPENJDK@/nashorn/src/jdk/nashorn/internal/parser/*.class
+    @OPENJDK@/nashorn/src/jdk/nashorn/internal/runtime/*.class
+    @OPENJDK@/nashorn/src/jdk/nashorn/internal/runtime/arrays/*.class
+    @OPENJDK@/nashorn/src/jdk/nashorn/internal/runtime/linker/*.class
+    @OPENJDK@/nashorn/src/jdk/nashorn/internal/runtime/options/*.class
+    @OPENJDK@/nashorn/src/jdk/nashorn/internal/runtime/regexp/*.class
+    @OPENJDK@/nashorn/src/jdk/nashorn/internal/runtime/regexp/joni/*.class
+    @OPENJDK@/nashorn/src/jdk/nashorn/internal/runtime/regexp/joni/ast/*.class
+    @OPENJDK@/nashorn/src/jdk/nashorn/internal/runtime/regexp/joni/constants/*.class
+    @OPENJDK@/nashorn/src/jdk/nashorn/internal/runtime/regexp/joni/encoding/*.class
+    @OPENJDK@/nashorn/src/jdk/nashorn/internal/runtime/regexp/joni/exception/*.class
+    @OPENJDK@/nashorn/src/jdk/nashorn/internal/scripts/*.class
+    @OPENJDK@/nashorn/src/jdk/nashorn/tools/*.class
+}
+{
+    -out:IKVM.OpenJDK.Localedata.dll
+    -baseaddress:0x5CC00000
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/ar/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/be/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/bg/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/ca/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cs/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/da/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/de/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/el/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/en/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/es/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/et/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/fi/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/fr/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/ga/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/hi/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/hr/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/hu/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/in/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/is/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/it/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/iw/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/ja/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/ko/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/lt/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/lv/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/mk/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/ms/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/mt/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/nl/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/no/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/pl/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/pt/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/ro/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/ru/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/sk/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/sl/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/sq/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/sr/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/sv/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/th/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/tr/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/uk/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/vi/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/zh/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/ar/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/be/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/bg/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/ca/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/cs/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/da/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/de/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/el/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/es/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/et/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/fi/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/fr/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/ga/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/hi/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/hr/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/hu/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/in/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/is/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/it/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/iw/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/ja/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/ko/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/lt/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/lv/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/mk/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/ms/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/mt/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/nl/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/no/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/pl/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/pt/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/ro/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/ru/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/sk/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/sl/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/sq/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/sr/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/sv/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/th/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/tr/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/uk/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/vi/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/text/resources/zh/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/util/resources/de/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/util/resources/es/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/util/resources/fr/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/util/resources/hi/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/util/resources/it/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/util/resources/ja/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/util/resources/ko/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/util/resources/pt/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/util/resources/sv/*.class
+    @OPENJDK@/jdk/src/share/classes/sun/util/resources/zh/*.class
+}
+{
+    -out:IKVM.OpenJDK.Cldrdata.dll
+    -baseaddress:0x5D0E0000
     @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/text/resources/cldr/*.class
     @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/text/resources/cldr/aa/*.class
     @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/text/resources/cldr/af/*.class
@@ -1009,314 +1425,188 @@
     @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/text/resources/cldr/yo/*.class
     @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/text/resources/cldr/zh/*.class
     @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/text/resources/cldr/zu/*.class
-    @OPENJDK@/jdk/src/share/classes/java/text/*.class
-    @OPENJDK@/jdk/src/share/classes/java/text/spi/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/text/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/text/bidi/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/text/normalizer/*.class
-    -recurse:@OPENJDK@/jdk/src/share/classes/sun/text/resources/*.class
-}
-{
-    -out:IKVM.OpenJDK.Security.dll
-    -baseaddress:0x5CAE0000
-    -remap:security.xml
-    sun/security/jgss/wrapper/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/crypto/provider/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/net/ssl/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/net/ssl/internal/ssl/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/net/ssl/internal/www/protocol/https/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/security/auth/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/security/auth/callback/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/security/auth/login/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/security/auth/module/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/security/cert/internal/x509/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/security/jgss/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/security/ntlm/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/security/sasl/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/security/sasl/digest/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/security/sasl/gsskerb/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/security/sasl/ntlm/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/security/sasl/util/*.class
-    @OPENJDK@/jdk/src/share/classes/java/security/acl/*.class
-    @OPENJDK@/jdk/src/share/classes/java/security/interfaces/*.class
-    @OPENJDK@/jdk/src/share/classes/java/security/spec/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/crypto/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/crypto/interfaces/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/crypto/spec/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/net/ssl/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/security/auth/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/security/auth/callback/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/security/auth/kerberos/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/security/auth/login/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/security/auth/spi/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/security/auth/x500/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/security/cert/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/security/sasl/*.class
-    @OPENJDK@/jdk/src/share/classes/org/ietf/jgss/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/net/www/protocol/http/ntlm/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/net/www/protocol/https/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/acl/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/internal/interfaces/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/internal/spec/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/jgss/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/jgss/krb5/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/jgss/spi/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/jgss/spnego/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/krb5/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/krb5/internal/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/krb5/internal/ccache/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/krb5/internal/crypto/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/krb5/internal/crypto/dk/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/krb5/internal/ktab/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/krb5/internal/rcache/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/krb5/internal/util/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/pkcs/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/pkcs10/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/pkcs12/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/provider/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/provider/certpath/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/provider/certpath/ldap/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/provider/certpath/ssl/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/rsa/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/ssl/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/ssl/krb5/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/timestamp/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/tools/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/tools/keytool/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/util/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/validator/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/security/x509/*.class
-    @OPENJDK@/jdk/src/windows/classes/sun/security/krb5/internal/tools/*.class
-    @OPENJDK@/jdk/src/windows/classes/sun/security/provider/*.class
-}
-{
-    -out:IKVM.OpenJDK.Management.dll
-    -baseaddress:0x5D320000
-    java/lang/management/*.class
-    sun/management/*.class
-    rmistubs/org/omg/stub/javax/management/remote/rmi/*.class
-    rmistubs/javax/management/remote/rmi/*.class
-    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/management/resources/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/jmx/defaults/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/jmx/interceptor/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/jmx/mbeanserver/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/jmx/remote/internal/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/jmx/remote/protocol/iiop/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/jmx/remote/protocol/rmi/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/jmx/remote/security/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/jmx/remote/util/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/management/*.class
-    @OPENJDK@/jdk/src/share/classes/java/lang/management/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/management/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/management/loading/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/management/modelmbean/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/management/monitor/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/management/openmbean/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/management/relation/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/management/remote/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/management/remote/rmi/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/management/timer/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/management/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/management/counter/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/management/counter/perf/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/management/jdp/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/management/jmxremote/*.class
-    @OPENJDK@/jdk/src/windows/classes/sun/management/*.class
-}
-{
-    -out:IKVM.OpenJDK.Misc.dll
-    -baseaddress:0x5D6B0000
-    @OPENJDK@/corba/src/share/classes/javax/activity/*.class
-    @OPENJDK@/jaxws/src/share/jaxws_classes/javax/annotation/*.class
-    @OPENJDK@/jaxws/src/share/jaxws_classes/javax/jws/*.class
-    @OPENJDK@/jaxws/src/share/jaxws_classes/javax/jws/soap/*.class
-    @OPENJDK@/corba/src/share/classes/javax/transaction/*.class
-    @OPENJDK@/corba/src/share/classes/javax/transaction/xa/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/net/httpserver/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/net/httpserver/spi/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/pept/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/pept/encoding/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/pept/ept/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/pept/presentation/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/pept/protocol/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/pept/transport/*.class
-    @OPENJDK@/jdk/src/share/classes/java/lang/instrument/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/script/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/smartcardio/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/misc/resources/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/net/httpserver/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/net/www/protocol/netdoc/*.class
-    @OPENJDK@/langtools/src/share/classes/javax/annotation/processing/*.class
-    @OPENJDK@/langtools/src/share/classes/javax/lang/model/*.class
-    @OPENJDK@/langtools/src/share/classes/javax/lang/model/element/*.class
-    @OPENJDK@/langtools/src/share/classes/javax/lang/model/type/*.class
-    @OPENJDK@/langtools/src/share/classes/javax/lang/model/util/*.class
-    @OPENJDK@/langtools/src/share/classes/javax/tools/*.class
-}
-{
-    -out:IKVM.OpenJDK.Naming.dll
-    -baseaddress:0x5D770000
-    -recurse:resources.zip/com/sun/jndi/ldap/jndiprovider.properties
-    -resource:META-INF/services/sun.net.spi.nameservice.NameServiceDescriptor=@OPENJDK@/jdk/src/share/classes/sun/net/spi/nameservice/dns/META-INF/services/sun.net.spi.nameservice.NameServiceDescriptor
-    sun/net/dns/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/jndi/dns/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/jndi/ldap/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/jndi/ldap/ext/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/jndi/ldap/pool/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/jndi/ldap/sasl/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/jndi/toolkit/ctx/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/jndi/toolkit/dir/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/jndi/toolkit/url/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/jndi/url/dns/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/jndi/url/ldap/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/jndi/url/ldaps/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/naming/internal/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/naming/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/naming/directory/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/naming/event/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/naming/ldap/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/naming/spi/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/net/dns/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/net/spi/nameservice/dns/*.class
-}
-{
-    -out:IKVM.OpenJDK.Jdbc.dll
-    -baseaddress:0x5D8F0000
-    -resource:META-INF/services/java.sql.Driver=resources/META-INF/services/java.sql.Driver
-    -recurse:resources.zip/com/sun/rowset/*
-    -recurse:resources.zip/javax/sql/*
-    -r:System.Data.dll
-    sun/jdbc/odbc/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/rowset/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/rowset/internal/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/rowset/providers/*.class
-    @OPENJDK@/jdk/src/share/classes/java/sql/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/sql/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/sql/rowset/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/sql/rowset/serial/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/sql/rowset/spi/*.class
-}
-{
-    -out:IKVM.OpenJDK.Remoting.dll
-    -baseaddress:0x5DA70000
-    -recurse:resources.zip/sun/rmi/*
-    rmistubs/com/sun/jndi/rmi/registry/*.class
-    rmistubs/java/rmi/activation/*.class
-    rmistubs/sun/rmi/registry/*.class
-    rmistubs/sun/rmi/server/*.class
-    rmistubs/sun/rmi/transport/*.class
-    @OPENJDK@/jdk/src/share/classes/java/rmi/*.class
-    @OPENJDK@/jdk/src/share/classes/java/rmi/activation/*.class
-    @OPENJDK@/jdk/src/share/classes/java/rmi/dgc/*.class
-    @OPENJDK@/jdk/src/share/classes/java/rmi/registry/*.class
-    @OPENJDK@/jdk/src/share/classes/java/rmi/server/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/rmi/ssl/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/jndi/rmi/registry/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/jndi/url/rmi/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/rmi/rmid/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/rmi/log/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/rmi/registry/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/rmi/runtime/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/rmi/server/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/rmi/transport/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/rmi/transport/proxy/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/rmi/transport/tcp/*.class
-}
-{
-    -out:IKVM.OpenJDK.Beans.dll
-    -baseaddress:0x5DB90000
-    -resource:META-INF/mailcap.default=@OPENJDK@/jaxws/src/share/jaf_classes/META-INF/mailcap.default
-    -resource:META-INF/mimetypes.default=@OPENJDK@/jaxws/src/share/jaf_classes/META-INF/mimetypes.default
-    @OPENJDK@/jaxws/src/share/jaf_classes/com/sun/activation/registries/*.class
-    @OPENJDK@/jaxws/src/share/jaf_classes/javax/activation/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/beans/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/beans/decoder/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/beans/editors/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/beans/finder/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/beans/infos/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/beans/util/*.class
-    @OPENJDK@/jdk/src/share/classes/java/beans/*.class
-    @OPENJDK@/jdk/src/share/classes/java/beans/beancontext/*.class
-}
-{
-    -out:IKVM.OpenJDK.Media.dll
-    -baseaddress:0x5DC80000
-    -resource:META-INF/services/javax.print.PrintServiceLookup=@OPENJDK@/jdk/src/windows/classes/sun/print/services/javax.print.PrintServiceLookup
-    -resource:META-INF/services/javax.print.StreamPrintServiceFactory=@OPENJDK@/jdk/src/windows/classes/sun/print/services/javax.print.StreamPrintServiceFactory
-    -resource:META-INF/services/javax.sound.midi.spi.MidiDeviceProvider=@OPENJDK@/jdk/src/share/classes/com/sun/media/sound/services/javax.sound.midi.spi.MidiDeviceProvider
-    -resource:META-INF/services/javax.sound.midi.spi.MidiFileReader=@OPENJDK@/jdk/src/share/classes/com/sun/media/sound/services/javax.sound.midi.spi.MidiFileReader
-    -resource:META-INF/services/javax.sound.midi.spi.MidiFileWriter=@OPENJDK@/jdk/src/share/classes/com/sun/media/sound/services/javax.sound.midi.spi.MidiFileWriter
-    -resource:META-INF/services/javax.sound.midi.spi.SoundbankReader=@OPENJDK@/jdk/src/share/classes/com/sun/media/sound/services/javax.sound.midi.spi.SoundbankReader
-    -resource:META-INF/services/javax.sound.sampled.spi.AudioFileReader=@OPENJDK@/jdk/src/share/classes/com/sun/media/sound/services/javax.sound.sampled.spi.AudioFileReader
-    -resource:META-INF/services/javax.sound.sampled.spi.AudioFileWriter=@OPENJDK@/jdk/src/share/classes/com/sun/media/sound/services/javax.sound.sampled.spi.AudioFileWriter
-    -resource:META-INF/services/javax.sound.sampled.spi.FormatConversionProvider=@OPENJDK@/jdk/src/share/classes/com/sun/media/sound/services/javax.sound.sampled.spi.FormatConversionProvider
-    -resource:META-INF/services/javax.sound.sampled.spi.MixerProvider=@OPENJDK@/jdk/src/share/classes/com/sun/media/sound/services/javax.sound.sampled.spi.MixerProvider
-    -recurse:resources.zip/com/sun/imageio/plugins/common/iio-plugin.properties
-    -r:System.Drawing.dll
-    com/sun/imageio/plugins/jpeg/*.class
-    icedtea/rt/com/sun/media/sound/*.class
-    sun/print/*.class
-    sun/awt/windows/*.class
-    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/print/resources/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/imageio/plugins/bmp/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/imageio/plugins/common/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/imageio/plugins/gif/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/imageio/plugins/jpeg/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/imageio/plugins/png/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/imageio/plugins/wbmp/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/imageio/spi/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/imageio/stream/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/media/sound/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/imageio/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/imageio/event/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/imageio/metadata/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/imageio/plugins/bmp/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/imageio/plugins/jpeg/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/imageio/spi/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/imageio/stream/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/print/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/print/attribute/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/print/attribute/standard/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/print/event/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/sound/midi/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/sound/midi/spi/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/sound/sampled/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/sound/sampled/spi/*.class
-    @OPENJDK@/jdk/src/share/classes/sun/print/*.class
-    @OPENJDK@/jdk/src/windows/classes/sun/print/*.class
-}
-{
-    -out:IKVM.OpenJDK.Nashorn.dll
-    -baseaddress:0x5DEF0000
-    -resource:META-INF/services/javax.script.ScriptEngineFactory=@OPENJDK@/nashorn/src/META-INF/services/javax.script.ScriptEngineFactory
-    -resource:jdk/nashorn/internal/runtime/resources/version.properties=resources/nashorn/version.properties
-    -recurse:@OPENJDK@/nashorn/src/*.js
-    -recurse:@OPENJDK@/nashorn/src/*.properties
-    @OPENJDK@/nashorn/src/jdk/internal/dynalink/*.class
-    @OPENJDK@/nashorn/src/jdk/internal/dynalink/beans/*.class
-    @OPENJDK@/nashorn/src/jdk/internal/dynalink/linker/*.class
-    @OPENJDK@/nashorn/src/jdk/internal/dynalink/support/*.class
-    @OPENJDK@/nashorn/src/jdk/nashorn/api/scripting/*.class
-    @OPENJDK@/nashorn/src/jdk/nashorn/internal/codegen/*.class
-    @OPENJDK@/nashorn/src/jdk/nashorn/internal/codegen/types/*.class
-    @OPENJDK@/nashorn/src/jdk/nashorn/internal/ir/*.class
-    @OPENJDK@/nashorn/src/jdk/nashorn/internal/ir/annotations/*.class
-    @OPENJDK@/nashorn/src/jdk/nashorn/internal/ir/debug/*.class
-    @OPENJDK@/nashorn/src/jdk/nashorn/internal/ir/visitor/*.class
-    @OPENJDK@/nashorn/src/jdk/nashorn/internal/lookup/*.class
-    @OPENJDK@/nashorn/src/jdk/nashorn/internal/objects/*.class
-    @OPENJDK@/nashorn/src/jdk/nashorn/internal/objects/annotations/*.class
-    @OPENJDK@/nashorn/src/jdk/nashorn/internal/parser/*.class
-    @OPENJDK@/nashorn/src/jdk/nashorn/internal/runtime/*.class
-    @OPENJDK@/nashorn/src/jdk/nashorn/internal/runtime/arrays/*.class
-    @OPENJDK@/nashorn/src/jdk/nashorn/internal/runtime/linker/*.class
-    @OPENJDK@/nashorn/src/jdk/nashorn/internal/runtime/options/*.class
-    @OPENJDK@/nashorn/src/jdk/nashorn/internal/runtime/regexp/*.class
-    @OPENJDK@/nashorn/src/jdk/nashorn/internal/runtime/regexp/joni/*.class
-    @OPENJDK@/nashorn/src/jdk/nashorn/internal/runtime/regexp/joni/ast/*.class
-    @OPENJDK@/nashorn/src/jdk/nashorn/internal/runtime/regexp/joni/constants/*.class
-    @OPENJDK@/nashorn/src/jdk/nashorn/internal/runtime/regexp/joni/encoding/*.class
-    @OPENJDK@/nashorn/src/jdk/nashorn/internal/runtime/regexp/joni/exception/*.class
-    @OPENJDK@/nashorn/src/jdk/nashorn/internal/scripts/*.class
-    @OPENJDK@/nashorn/src/jdk/nashorn/tools/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/cldr/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/aa/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/af/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/agq/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ak/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/am/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ar/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/as/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/asa/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/az/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/bas/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/be/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/bem/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/bez/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/bg/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/bm/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/bn/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/bo/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/br/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/brx/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/bs/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/byn/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ca/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/cgg/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/chr/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/cs/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/cy/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/da/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/dav/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/de/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/dje/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/dua/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/dyo/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/dz/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ebu/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ee/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/el/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/en/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/eo/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/es/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/et/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/eu/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ewo/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/fa/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ff/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/fi/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/fil/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/fo/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/fr/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/fur/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ga/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/gd/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/gl/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/gsw/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/gu/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/guz/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/gv/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ha/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/haw/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/he/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/hi/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/hr/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/hu/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/hy/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/id/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ig/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ii/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/is/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/it/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ja/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/jmc/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ka/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/kab/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/kam/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/kde/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/kea/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/khq/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ki/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/kk/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/kl/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/kln/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/km/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/kn/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ko/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/kok/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ksb/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ksf/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ksh/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/kw/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/lag/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/lg/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ln/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/lo/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/lt/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/lu/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/luo/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/luy/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/lv/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/mas/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/mer/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/mfe/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/mg/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/mgh/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/mk/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ml/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/mr/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ms/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/mt/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/mua/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/my/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/naq/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/nb/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/nd/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ne/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/nl/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/nmg/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/nn/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/nr/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/nso/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/nus/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/nyn/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/om/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/or/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/pa/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/pl/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ps/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/pt/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/rm/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/rn/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ro/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/rof/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ru/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/rw/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/rwk/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/sah/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/saq/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/sbp/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/se/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/seh/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ses/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/sg/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/shi/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/si/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/sk/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/sl/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/sn/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/so/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/sq/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/sr/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ss/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ssy/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/st/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/sv/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/sw/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/swc/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ta/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/te/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/teo/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/tg/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/th/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ti/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/tig/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/tn/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/to/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/tr/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ts/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/twq/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/tzm/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/uk/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ur/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/uz/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/vai/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/ve/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/vi/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/vun/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/wae/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/wal/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/xh/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/xog/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/yav/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/yo/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/zh/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/cldr/zu/*.class
 }

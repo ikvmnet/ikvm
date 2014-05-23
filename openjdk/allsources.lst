@@ -14366,7 +14366,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/jdk/src/share/classes/sun/text/resources/bg/FormatData_bg_BG.java
 @OPENJDK@/jdk/src/share/classes/sun/text/resources/bg/JavaTimeSupplementary_bg.java
 @OPENJDK@/jdk/src/share/classes/sun/text/resources/BreakIteratorInfo.java
-@OPENJDK@/jdk/src/share/classes/sun/text/resources/BreakIteratorRules.java
 @OPENJDK@/jdk/src/share/classes/sun/text/resources/ca/CollationData_ca.java
 @OPENJDK@/jdk/src/share/classes/sun/text/resources/ca/FormatData_ca.java
 @OPENJDK@/jdk/src/share/classes/sun/text/resources/ca/FormatData_ca_ES.java

@@ -350,7 +350,9 @@
             <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Charsets.dll" />
             <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Corba.dll" />
             <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Core.dll" />
+            <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Cldrdata.dll" />
             <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Jdbc.dll" />
+            <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Localedata.dll" />
             <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Management.dll" />
             <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Media.dll" />
             <exec program="${peverify}" commandline="-nologo IKVM.OpenJDK.Misc.dll" />

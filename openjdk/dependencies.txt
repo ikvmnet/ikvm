@@ -6,14 +6,11 @@
 
 IKVM.OpenJDK.Core
 ->System.Core
-->IKVM.OpenJDK.Jdbc
 ->IKVM.OpenJDK.Util
 ->IKVM.OpenJDK.Security
 ->IKVM.OpenJDK.Text
-->IKVM.OpenJDK.XML.API
 
 IKVM.OpenJDK.Corba
-->IKVM.OpenJDK.Misc
 ->IKVM.OpenJDK.Util
 ->IKVM.OpenJDK.SwingAWT
 ->IKVM.OpenJDK.Text
@@ -92,7 +89,6 @@ IKVM.OpenJDK.Util
 
 IKVM.OpenJDK.Text
 ->IKVM.OpenJDK.Util
-->IKVM.OpenJDK.SwingAWT
 
 IKVM.OpenJDK.Security
 ->IKVM.OpenJDK.Text
@@ -110,20 +106,13 @@ IKVM.OpenJDK.Management
 ->IKVM.OpenJDK.Text
 
 IKVM.OpenJDK.Misc
-->System.Drawing
-->IKVM.OpenJDK.SwingAWT
-->IKVM.OpenJDK.XML.API
 ->IKVM.OpenJDK.Util
-->IKVM.OpenJDK.Corba
 ->IKVM.OpenJDK.Text
 ->IKVM.OpenJDK.Security
-->IKVM.OpenJDK.Naming
-->IKVM.OpenJDK.Remoting
 
 IKVM.OpenJDK.Jdbc
 ->System.Data
 ->IKVM.OpenJDK.Text
-->IKVM.OpenJDK.Misc
 ->IKVM.OpenJDK.XML.API
 ->IKVM.OpenJDK.Util
 ->IKVM.OpenJDK.Naming
@@ -131,7 +120,6 @@ IKVM.OpenJDK.Jdbc
 
 IKVM.OpenJDK.Naming
 ->IKVM.OpenJDK.Security
-->IKVM.OpenJDK.SwingAWT
 
 IKVM.OpenJDK.Remoting
 ->IKVM.OpenJDK.Naming
@@ -155,3 +143,9 @@ IKVM.OpenJDK.Nashorn
 ->IKVM.OpenJDK.Util
 ->IKVM.OpenJDK.Misc
 ->IKVM.OpenJDK.Text
+
+IKVM.OpenJDK.Localedata
+->IKVM.OpenJDK.Util
+
+IKVM.OpenJDK.Cldrdata
+->IKVM.OpenJDK.Util
