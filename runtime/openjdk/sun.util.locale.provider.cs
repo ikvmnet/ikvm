@@ -150,3 +150,12 @@ static class Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl
 		throw new NotImplementedException();
 	}
 }
+
+static class JRELocaleProviderAdapter
+{
+	// the Java implementation is redirected via map.xml
+	internal static bool isNonENLangSupported()
+	{
+		return IKVM.Internal.ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedNameFast("sun.text.resources.nl.FormatData_nl") != null;
+	}
+}

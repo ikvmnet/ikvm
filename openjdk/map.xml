@@ -2868,10 +2868,9 @@
         </class>
         <class name="sun.util.locale.provider.JRELocaleProviderAdapter">
             <!-- We replace this method, because it looks for %JAVA_HOME%/lib/ext/localedata.jar and we don't have that -->
-            <!-- TODO if we move locale data into a separate assembly, we could try to load that here -->
             <method name="isNonENLangSupported" sig="()Z">
                 <body>
-                    <ldc_i4_1 />
+                    <call type="JRELocaleProviderAdapter" name="isNonENLangSupported" sig="()Z" />
                     <ret />
                 </body>
             </method>
