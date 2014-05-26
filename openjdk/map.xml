@@ -1880,6 +1880,15 @@
                     <ret />
                 </body>
             </method>
+            <method name="getAndSet" sig="(Ljava.lang.Object;)Ljava.lang.Object;">
+                <body>
+                    <ldarg_0 />
+                    <ldflda class="java.util.concurrent.atomic.AtomicReference" name="value" sig="Ljava.lang.Object;" />
+                    <ldarg_1 />
+                    <call type="System.Threading.Interlocked" name="Exchange" sig="System.Object&amp;;System.Object" />
+                    <ret />
+                </body>
+            </method>
         </class>
         <class name="java.util.concurrent.atomic.AtomicReferenceArray">
             <method name="get" sig="(I)Ljava.lang.Object;">
@@ -1903,6 +1912,17 @@
                     <volatile />
                     <stind_ref />
                     <call type="System.Threading.Thread" name="MemoryBarrier" sig="" />
+                    <ret />
+                </body>
+            </method>
+            <method name="getAndSet" sig="(ILjava.lang.Object;)Ljava.lang.Object;">
+                <body>
+                    <ldarg_0 />
+                    <ldfld class="java.util.concurrent.atomic.AtomicReferenceArray" name="array" sig="[Ljava.lang.Object;" />
+                    <ldarg_1 />
+                    <ldelema sig="Ljava.lang.Object;" />
+                    <ldarg_2 />
+                    <call type="System.Threading.Interlocked" name="Exchange" sig="System.Object&amp;;System.Object" />
                     <ret />
                 </body>
             </method>

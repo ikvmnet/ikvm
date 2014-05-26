@@ -133,13 +133,7 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
      * @return the previous value
      */
     @SuppressWarnings("unchecked")
-    public final E getAndSet(int i, E newValue) {
-        while (true) {
-            E current = get(i);
-            if (compareAndSet(i, current, newValue))
-                return current;
-        }
-    }
+    public final native E getAndSet(int i, E newValue);
 
     /**
      * Atomically sets the element at position {@code i} to the given

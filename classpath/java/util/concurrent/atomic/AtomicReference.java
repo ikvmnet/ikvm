@@ -126,13 +126,7 @@ public class AtomicReference<V> implements java.io.Serializable {
      * @return the previous value
      */
     @SuppressWarnings("unchecked")
-    public final V getAndSet(V newValue) {
-        while (true) {
-            V x = get();
-            if (compareAndSet(x, newValue))
-                return x;
-        }
-    }
+    public final native V getAndSet(V newValue);
 
     /**
      * Atomically updates the current value with the results of
