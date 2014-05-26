@@ -1078,9 +1078,42 @@ namespace IKVM.NativeCode.sun.nio.ch
 #endif
 		}
 
-		public static int poll(FileDescriptor fd, int i, long j)
+		public static int poll(FileDescriptor fd, int events, long timeout)
 		{
-			throw new NotImplementedException();
+#if FIRST_PASS
+			return 0;
+#else
+			System.Net.Sockets.SelectMode selectMode;
+			switch (events)
+			{
+				case global::sun.nio.ch.PollArrayWrapper.POLLCONN:
+				case global::sun.nio.ch.PollArrayWrapper.POLLOUT:
+					selectMode = System.Net.Sockets.SelectMode.SelectWrite;
+					break;
+				case global::sun.nio.ch.PollArrayWrapper.POLLIN:
+					selectMode = System.Net.Sockets.SelectMode.SelectRead;
+					break;
+				default:
+					throw new NotSupportedException();
+			}
+			int microSeconds = timeout >= Int32.MaxValue / 1000 ? Int32.MaxValue : (int)(timeout * 1000);
+			try
+			{
+				if (fd.getSocket().Poll(microSeconds, selectMode))
+				{
+					return events;
+				}
+			}
+			catch (System.Net.Sockets.SocketException x)
+			{
+				throw new global::java.net.SocketException(x.Message);
+			}
+			catch (System.ObjectDisposedException)
+			{
+				throw new global::java.net.SocketException("Socket is closed");
+			}
+			return 0;
+#endif
 		}
 	}
 
