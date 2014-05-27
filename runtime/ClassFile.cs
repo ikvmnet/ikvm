@@ -2678,6 +2678,7 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 				internal string DllExportName;
 				internal int DllExportOrdinal;
+				internal string InterlockedCompareAndSetField;
 #endif
 			}
 
@@ -2887,6 +2888,25 @@ namespace IKVM.Internal
 										}
 									}
 								}
+								if(annot[1].Equals("Likvm/internal/InterlockedCompareAndSet;"))
+								{
+									string field = null;
+									for (int j = 2; j < annot.Length; j += 2)
+									{
+										if (annot[j].Equals("value") && annot[j + 1] is string)
+										{
+											field = (string)annot[j + 1];
+										}
+									}
+									if (field != null)
+									{
+										if (low == null)
+										{
+											low = new LowFreqData();
+										}
+										low.InterlockedCompareAndSetField = field;
+									}
+								}
 							}
 							break;
 #endif
@@ -3054,6 +3074,14 @@ namespace IKVM.Internal
 				get
 				{
 					return low == null ? -1 : low.DllExportOrdinal;
+				}
+			}
+
+			internal string InterlockedCompareAndSetField
+			{
+				get
+				{
+					return low == null ? null : low.InterlockedCompareAndSetField;
 				}
 			}
 #endif

@@ -4097,6 +4097,11 @@ namespace IKVM.Internal
 									ilGenerator.DoEmit();
 									continue;
 								}
+								if (m.InterlockedCompareAndSetField != null && EmitInterlockedCompareAndSet(methods[i], m.InterlockedCompareAndSetField, ilGenerator))
+								{
+									ilGenerator.DoEmit();
+									continue;
+								}
 #endif
 								// see if there exists a "managed JNI" class for this type
 								Type nativeCodeType = null;
@@ -4458,6 +4463,76 @@ namespace IKVM.Internal
 				BakedTypeCleanupHack.Process(wrapper);
 				return type;
 			}
+
+#if STATIC_COMPILER
+			private bool EmitInterlockedCompareAndSet(MethodWrapper method, string fieldName, CodeEmitter ilGenerator)
+			{
+				TypeWrapper[] parameters = method.GetParameters();
+				if (!method.IsStatic || parameters.Length != 3 || method.ReturnType != PrimitiveTypeWrapper.BOOLEAN)
+				{
+					return false;
+				}
+				if (parameters[0].IsUnloadable || parameters[0].IsPrimitive || parameters[0].IsNonPrimitiveValueType || parameters[0].IsGhost)
+				{
+					return false;
+				}
+				if (parameters[1] != parameters[2])
+				{
+					return false;
+				}
+				if (parameters[1].IsUnloadable || parameters[1].IsPrimitive || parameters[1].IsNonPrimitiveValueType || parameters[1].IsGhost)
+				{
+					return false;
+				}
+				FieldWrapper casField = null;
+				foreach (FieldWrapper fw in parameters[0].GetFields())
+				{
+					if (fw.Name == fieldName)
+					{
+						if (casField != null)
+						{
+							return false;
+						}
+						casField = fw;
+					}
+				}
+				if (casField == null)
+				{
+					return false;
+				}
+				if (casField.IsStatic)
+				{
+					return false;
+				}
+				if (casField.IsPropertyAccessor)
+				{
+					return false;
+				}
+				if (casField.DeclaringType.TypeAsBaseType == typeBuilder.DeclaringType)
+				{
+					// allow access to fields in outer class
+				}
+				else if (!casField.IsAccessibleFrom(casField.DeclaringType, wrapper, casField.DeclaringType))
+				{
+					return false;
+				}
+				casField.Link();
+				FieldInfo fi = casField.GetField();
+				if (fi == null)
+				{
+					return false;
+				}
+				ilGenerator.EmitLdarg(0);
+				ilGenerator.Emit(OpCodes.Ldflda, fi);
+				ilGenerator.EmitLdarg(2);
+				ilGenerator.EmitLdarg(1);
+				ilGenerator.Emit(OpCodes.Call, AtomicReferenceFieldUpdaterEmitter.MakeCompareExchange(casField.FieldTypeWrapper.TypeAsSignatureType));
+				ilGenerator.EmitLdarg(1);
+				ilGenerator.Emit(OpCodes.Ceq);
+				ilGenerator.Emit(OpCodes.Ret);
+				return true;
+			}
+#endif
 
 			private void AddMethodParameterInfo(ClassFile.Method m, MethodWrapper mw, MethodBuilder mb, out string[] parameterNames)
 			{

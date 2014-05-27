@@ -2496,48 +2496,20 @@ public final class Class<T> implements java.io.Serializable,
      * Atomic operations support.
      */
     private static class Atomic {
-        // initialize Unsafe machinery here, since we need to call Class.class instance method
-        // and have to avoid calling it in the static initializer of the Class class...
-        private static final Unsafe unsafe = Unsafe.getUnsafe();
-        // offset of Class.reflectionData instance field
-        private static final long reflectionDataOffset;
-        // offset of Class.annotationType instance field
-        private static final long annotationTypeOffset;
-        // offset of Class.annotationData instance field
-        private static final long annotationDataOffset;
-
-        static {
-            Field[] fields = Class.class.getDeclaredFields0(false); // bypass caches
-            reflectionDataOffset = objectFieldOffset(fields, "reflectionData");
-            annotationTypeOffset = objectFieldOffset(fields, "annotationType");
-            annotationDataOffset = objectFieldOffset(fields, "annotationData");
-        }
-
-        private static long objectFieldOffset(Field[] fields, String fieldName) {
-            Field field = searchFields(fields, fieldName);
-            if (field == null) {
-                throw new Error("No " + fieldName + " field found in java.lang.Class");
-            }
-            return unsafe.objectFieldOffset(field);
-        }
-
-        static <T> boolean casReflectionData(Class<?> clazz,
+        @ikvm.internal.InterlockedCompareAndSet("reflectionData")
+        static native <T> boolean casReflectionData(Class<?> clazz,
                                              SoftReference<ReflectionData<T>> oldData,
-                                             SoftReference<ReflectionData<T>> newData) {
-            return unsafe.compareAndSwapObject(clazz, reflectionDataOffset, oldData, newData);
-        }
+                                             SoftReference<ReflectionData<T>> newData);
 
-        static <T> boolean casAnnotationType(Class<?> clazz,
+        @ikvm.internal.InterlockedCompareAndSet("annotationType")
+        static native <T> boolean casAnnotationType(Class<?> clazz,
                                              AnnotationType oldType,
-                                             AnnotationType newType) {
-            return unsafe.compareAndSwapObject(clazz, annotationTypeOffset, oldType, newType);
-        }
+                                             AnnotationType newType);
 
-        static <T> boolean casAnnotationData(Class<?> clazz,
+        @ikvm.internal.InterlockedCompareAndSet("annotationData")
+        static native <T> boolean casAnnotationData(Class<?> clazz,
                                              AnnotationData oldData,
-                                             AnnotationData newData) {
-            return unsafe.compareAndSwapObject(clazz, annotationDataOffset, oldData, newData);
-        }
+                                             AnnotationData newData);
     }
 
     /**

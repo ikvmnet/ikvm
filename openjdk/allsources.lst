@@ -48,6 +48,7 @@ gnu/java/util/EmptyEnumeration.java
 ikvm/awt/IkvmToolkit.java
 ikvm/internal/AnnotationAttributeBase.java
 ikvm/internal/FieldReflectorBase.java
+ikvm/internal/InterlockedCompareAndSet.java
 ikvm/internal/IntrinsicAtomicReferenceFieldUpdater.java
 ikvm/internal/IntrinsicThreadLocal.java
 ikvm/internal/JNI.java
