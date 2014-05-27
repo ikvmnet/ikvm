@@ -121,11 +121,11 @@ static class Java_java_lang_invoke_MethodHandleNatives
 		java.lang.reflect.Field field;
 		if ((method = refObj as java.lang.reflect.Method) != null)
 		{
-			InitMethodImpl(self, MethodWrapper.FromMethod(method), wantSpecial);
+			InitMethodImpl(self, MethodWrapper.FromExecutable(method), wantSpecial);
 		}
 		else if ((constructor = refObj as java.lang.reflect.Constructor) != null)
 		{
-			InitMethodImpl(self, MethodWrapper.FromConstructor(constructor), wantSpecial);
+			InitMethodImpl(self, MethodWrapper.FromExecutable(constructor), wantSpecial);
 		}
 		else if ((field = refObj as java.lang.reflect.Field) != null)
 		{

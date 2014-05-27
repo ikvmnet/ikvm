@@ -721,7 +721,7 @@ static class Java_java_lang_reflect_Executable
 
 	public static object declaredAnnotationsImpl(java.lang.reflect.Executable executable)
 	{
-		MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(executable);
+		MethodWrapper mw = MethodWrapper.FromExecutable(executable);
 		return Java_java_lang_Class.AnnotationsToMap(mw.DeclaringType.GetClassLoader(), mw.DeclaringType.GetMethodAnnotations(mw));
 	}
 
@@ -730,7 +730,7 @@ static class Java_java_lang_reflect_Executable
 #if FIRST_PASS
 		return null;
 #else
-		MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(executable);
+		MethodWrapper mw = MethodWrapper.FromExecutable(executable);
 		object[][] objAnn = mw.DeclaringType.GetParameterAnnotations(mw);
 		if (objAnn == null)
 		{
@@ -781,7 +781,7 @@ static class Java_java_lang_reflect_Method
 {
 	public static object getDefaultValue(java.lang.reflect.Method thisMethod)
 	{
-		MethodWrapper mw = MethodWrapper.FromMethod(thisMethod);
+		MethodWrapper mw = MethodWrapper.FromExecutable(thisMethod);
 		return mw.DeclaringType.GetAnnotationDefault(mw);
 	}
 }

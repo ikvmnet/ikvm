@@ -376,7 +376,7 @@ static class Java_sun_reflect_ReflectionFactory
 		internal SerializationConstructorAccessorImpl(java.lang.reflect.Constructor constructorToCall, java.lang.Class classToInstantiate)
 		{
 			this.type = TypeWrapper.FromClass(classToInstantiate).TypeAsBaseType;
-			MethodWrapper mw = MethodWrapper.FromConstructor(constructorToCall);
+			MethodWrapper mw = MethodWrapper.FromExecutable(constructorToCall);
 			if (mw.DeclaringType != CoreClasses.java.lang.Object.Wrapper)
 			{
 				this.mw = mw;
@@ -812,7 +812,7 @@ static class Java_sun_reflect_ReflectionFactory
 
 		internal FastConstructorAccessorImpl(java.lang.reflect.Constructor constructor)
 		{
-			MethodWrapper mw = MethodWrapper.FromConstructor(constructor);
+			MethodWrapper mw = MethodWrapper.FromExecutable(constructor);
 			TypeWrapper[] parameters;
 			try
 			{
@@ -933,7 +933,7 @@ static class Java_sun_reflect_ReflectionFactory
 
 		internal FastSerializationConstructorAccessorImpl(java.lang.reflect.Constructor constructorToCall, java.lang.Class classToInstantiate)
 		{
-			MethodWrapper constructor = MethodWrapper.FromConstructor(constructorToCall);
+			MethodWrapper constructor = MethodWrapper.FromExecutable(constructorToCall);
 			if (constructor.GetParameters().Length != 0)
 			{
 				throw new NotImplementedException("Serialization constructor cannot have parameters");
@@ -2173,7 +2173,7 @@ static class Java_sun_reflect_ReflectionFactory
 #if FIRST_PASS
 		return null;
 #else
-		MethodWrapper mw = MethodWrapper.FromMethod(method);
+		MethodWrapper mw = MethodWrapper.FromExecutable(method);
 #if !NO_REF_EMIT
 		if (!mw.IsDynamicOnly)
 		{
@@ -2189,7 +2189,7 @@ static class Java_sun_reflect_ReflectionFactory
 #if FIRST_PASS
 		return null;
 #else
-		MethodWrapper mw = MethodWrapper.FromConstructor(constructor);
+		MethodWrapper mw = MethodWrapper.FromExecutable(constructor);
 		if (ActivatorConstructorAccessor.IsSuitable(mw))
 		{
 			// we special case public default constructors, because in that case using Activator.CreateInstance()

@@ -563,30 +563,13 @@ namespace IKVM.Internal
 		}
 #endif // !FIRST_PASS
 
-		internal static MethodWrapper FromMethod(java.lang.reflect.Method method)
+		internal static MethodWrapper FromExecutable(java.lang.reflect.Executable executable)
 		{
 #if FIRST_PASS
 			return null;
 #else
-			return TypeWrapper.FromClass(method.getDeclaringClass()).GetMethods()[method._slot()];
+			return TypeWrapper.FromClass(executable.getDeclaringClass()).GetMethods()[executable._slot()];
 #endif
-		}
-
-		internal static MethodWrapper FromConstructor(java.lang.reflect.Constructor constructor)
-		{
-#if FIRST_PASS
-			return null;
-#else
-			return TypeWrapper.FromClass(constructor.getDeclaringClass()).GetMethods()[constructor._slot()];
-#endif
-		}
-		
-		internal static MethodWrapper FromMethodOrConstructor(java.lang.reflect.Executable methodOrConstructor)
-		{
-			java.lang.reflect.Method method = methodOrConstructor as java.lang.reflect.Method;
-			return method != null
-				? FromMethod(method)
-				: FromConstructor((java.lang.reflect.Constructor)methodOrConstructor);
 		}
 #endif // !STATIC_COMPILER && !STUB_GENERATOR
 

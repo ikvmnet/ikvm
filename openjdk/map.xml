@@ -1479,6 +1479,9 @@
                 </body>
             </method>
         </class>
+        <class name="java.lang.reflect.Executable">
+            <method name="_slot" sig="()I" modifiers="abstract" attributes="NewSlot Virtual" />
+        </class>
         <class name="java.lang.reflect.Field">
             <method name="_slot" sig="()I">
                 <body>
