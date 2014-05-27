@@ -681,14 +681,14 @@ namespace IKVM.Internal
 							// are we adding a new method?
 							if(GetMethodWrapper(method.Name, method.Sig, false) == null)
 							{
-								if(method.body == null)
+								bool setmodifiers = false;
+								MethodAttributes attribs = method.MethodAttributes;
+								MapModifiers(method.Modifiers, false, out setmodifiers, ref attribs);
+								if(method.body == null && (attribs & MethodAttributes.Abstract) == 0)
 								{
 									Console.Error.WriteLine("Error: Method {0}.{1}{2} in xml remap file doesn't have a body.", clazz.Name, method.Name, method.Sig);
 									continue;
 								}
-								bool setmodifiers = false;
-								MethodAttributes attribs = method.MethodAttributes;
-								MapModifiers(method.Modifiers, false, out setmodifiers, ref attribs);
 								Type returnType;
 								Type[] parameterTypes;
 								MapSignature(method.Sig, out returnType, out parameterTypes);
@@ -704,9 +704,12 @@ namespace IKVM.Internal
 									typeBuilder.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
 								}
 								CompilerClassLoader.AddDeclaredExceptions(mb, method.throws);
-								CodeEmitter ilgen = CodeEmitter.Create(mb);
-								method.Emit(classLoader, ilgen);
-								ilgen.DoEmit();
+								if(method.body != null)
+								{
+									CodeEmitter ilgen = CodeEmitter.Create(mb);
+									method.Emit(classLoader, ilgen);
+									ilgen.DoEmit();
+								}
 								if(method.Attributes != null)
 								{
 									foreach(IKVM.Internal.MapXml.Attribute attr in method.Attributes)
