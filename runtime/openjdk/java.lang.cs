@@ -719,7 +719,7 @@ static class Java_java_lang_ClassLoader_00024NativeLibrary
 	private static void doLoad(object thisNativeLibrary, string name)
 	{
 		java.lang.ClassLoader.NativeLibrary lib = (java.lang.ClassLoader.NativeLibrary)thisNativeLibrary;
-		lib.handle = IKVM.Runtime.JniHelper.LoadLibrary(name, TypeWrapper.FromClass(lib.fromClass).GetClassLoader());
+		lib.handle = IKVM.Runtime.JniHelper.LoadLibrary(name, TypeWrapper.FromClass(java.lang.ClassLoader.NativeLibrary.getFromClass()).GetClassLoader());
 		lib.loaded = true;
 	}
 #endif
@@ -738,7 +738,7 @@ static class Java_java_lang_ClassLoader_00024NativeLibrary
 		long handle = Interlocked.Exchange(ref lib.handle, 0);
 		if (handle != 0)
 		{
-			IKVM.Runtime.JniHelper.UnloadLibrary(handle, TypeWrapper.FromClass(lib.fromClass).GetClassLoader());
+			IKVM.Runtime.JniHelper.UnloadLibrary(handle, TypeWrapper.FromClass(java.lang.ClassLoader.NativeLibrary.getFromClass()).GetClassLoader());
 		}
 #endif
 	}
