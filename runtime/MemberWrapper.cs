@@ -356,7 +356,7 @@ namespace IKVM.Internal
 	abstract class MethodWrapper : MemberWrapper
 	{
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-		private volatile object reflectionMethod;
+		private volatile java.lang.reflect.Executable reflectionMethod;
 #endif
 		internal static readonly MethodWrapper[] EmptyArray  = new MethodWrapper[0];
 		private MethodBase method;
@@ -451,12 +451,12 @@ namespace IKVM.Internal
 		}
 
 #if !STATIC_COMPILER && !STUB_GENERATOR
-		internal object ToMethodOrConstructor(bool copy)
+		internal java.lang.reflect.Executable ToMethodOrConstructor(bool copy)
 		{
 #if FIRST_PASS
 			return null;
 #else
-			object method = reflectionMethod;
+			java.lang.reflect.Executable method = reflectionMethod;
 			if (method == null)
 			{
 				Link();
@@ -581,7 +581,7 @@ namespace IKVM.Internal
 #endif
 		}
 		
-		internal static MethodWrapper FromMethodOrConstructor(object methodOrConstructor)
+		internal static MethodWrapper FromMethodOrConstructor(java.lang.reflect.Executable methodOrConstructor)
 		{
 			java.lang.reflect.Method method = methodOrConstructor as java.lang.reflect.Method;
 			return method != null

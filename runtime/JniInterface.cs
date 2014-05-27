@@ -1692,7 +1692,7 @@ namespace IKVM.Runtime
 
 		internal static jmethodID FromReflectedMethod(JNIEnv* pEnv, jobject method)
 		{
-			return MethodWrapper.FromMethodOrConstructor(pEnv->UnwrapRef(method)).Cookie;
+			return MethodWrapper.FromMethodOrConstructor((java.lang.reflect.Executable)pEnv->UnwrapRef(method)).Cookie;
 		}
 
 		internal static jfieldID FromReflectedField(JNIEnv* pEnv, jobject field)

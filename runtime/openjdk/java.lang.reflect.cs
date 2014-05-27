@@ -709,23 +709,23 @@ static class Java_java_lang_reflect_Proxy
 
 static class Java_java_lang_reflect_Executable
 {
-	public static object[] getParameters0(object _this)
+	public static object[] getParameters0(java.lang.reflect.Executable _this)
 	{
 		return null;
 	}
 
-	public static byte[] getTypeAnnotationBytes0(object _this)
+	public static byte[] getTypeAnnotationBytes0(java.lang.reflect.Executable _this)
 	{
 		throw new NotImplementedException();
 	}
 
-	public static object declaredAnnotationsImpl(object executable)
+	public static object declaredAnnotationsImpl(java.lang.reflect.Executable executable)
 	{
 		MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(executable);
 		return Java_java_lang_Class.AnnotationsToMap(mw.DeclaringType.GetClassLoader(), mw.DeclaringType.GetMethodAnnotations(mw));
 	}
 
-	public static object[][] sharedGetParameterAnnotationsImpl(object executable)
+	public static object[][] sharedGetParameterAnnotationsImpl(java.lang.reflect.Executable executable)
 	{
 #if FIRST_PASS
 		return null;
