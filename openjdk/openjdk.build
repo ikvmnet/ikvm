@@ -190,7 +190,7 @@
     <target name="rmi">
         <mkdir dir="rmistubs" />
         <property name="VMARGS" value="-J-client -J-Xmx896m -J-Xms128m" />
-        <property name="CLASSPATH" value="mscorlib.jar;System.Xml.jar;${OpenJDK.dir}/jdk/src/share/classes/${pathsep}${OpenJDK.dir}/corba/src/share/classes" />
+        <property name="CLASSPATH" value="mscorlib.jar${pathsep}System.Xml.jar${pathsep}${OpenJDK.dir}/jdk/src/share/classes/${pathsep}${OpenJDK.dir}/corba/src/share/classes" />
         <property name="OUTPUT" value="rmistubs" />
         <property name="ARGS" value="${VMARGS} -nowarn -bootclasspath ${CLASSPATH} -d ${OUTPUT}" />
         <exec program="rmic" commandline="${ARGS} -v1.1 sun.rmi.registry.RegistryImpl" />
