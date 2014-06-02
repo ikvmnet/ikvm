@@ -916,11 +916,11 @@ static class Java_java_lang_Package
 		{
 			Dictionary<string, string> dict = new Dictionary<string, string>();
 			string path = VirtualFileSystem.GetAssemblyResourcesPath(JVM.CoreAssembly) + "resources.jar";
-			foreach (string[] pkgs in ClassLoaderWrapper.GetBootstrapClassLoader().GetPackageInfo())
+			foreach (KeyValuePair<string, string[]> pkgs in ClassLoaderWrapper.GetBootstrapClassLoader().GetPackageInfo())
 			{
-				for (int i = 1; i < pkgs.Length; i++)
+				foreach (string pkg in pkgs.Value)
 				{
-					dict[pkgs[i].Replace('.', '/') + "/"] = path;
+					dict[pkg.Replace('.', '/') + "/"] = path;
 				}
 			}
 			Interlocked.CompareExchange(ref systemPackages, dict, null);

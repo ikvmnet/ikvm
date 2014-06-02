@@ -803,31 +803,21 @@ namespace IKVM.Attributes
 		}
 	}
 
-	[AttributeUsage(AttributeTargets.Module)]
+	[AttributeUsage(AttributeTargets.Module, AllowMultiple = true)]
 	public sealed class PackageListAttribute : Attribute
 	{
-		internal string[][] packageInfo;
+		internal string jar;
+		internal string[] packages;
 
-		/*
-		 * Format:
-		 *    [ [ "jar file", "package 1", ..., "package N" ], ... ]
-		 */
-		public PackageListAttribute(string[][] packageInfo)
+		public PackageListAttribute(string jar, string[] packages)
 		{
-			this.packageInfo = packageInfo;
+			this.jar = jar;
+			this.packages = packages;
 		}
 
 		public string[] GetPackages()
 		{
-			List<string> list = new List<string>();
-			foreach (string[] packages in packageInfo)
-			{
-				for (int i = 1; i < packages.Length; i++)
-				{
-					list.Add(packages[i]);
-				}
-			}
-			return list.ToArray();
+			return packages;
 		}
 	}
 

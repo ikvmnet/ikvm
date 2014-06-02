@@ -339,22 +339,21 @@ namespace IKVM.NativeCode.ikvm.runtime
 #if !FIRST_PASS
 			AssemblyClassLoader_ wrapper = (AssemblyClassLoader_)ClassLoaderWrapper.GetClassLoaderWrapper(_this);
 			global::java.net.URL sealBase = GetCodeBase(wrapper.MainAssembly);
-			foreach (string[] packages in wrapper.GetPackageInfo())
+			foreach (KeyValuePair<string, string[]> packages in wrapper.GetPackageInfo())
 			{
 				global::java.util.jar.Manifest manifest = null;
 				global::java.util.jar.Attributes attr = null;
-				if (packages[0] != null)
+				if (packages.Key != null)
 				{
-					global::java.util.jar.JarFile jarFile = new global::java.util.jar.JarFile(VirtualFileSystem.GetAssemblyResourcesPath(wrapper.MainAssembly) + packages[0]);
+					global::java.util.jar.JarFile jarFile = new global::java.util.jar.JarFile(VirtualFileSystem.GetAssemblyResourcesPath(wrapper.MainAssembly) + packages.Key);
 					manifest = jarFile.getManifest();
 				}
 				if (manifest != null)
 				{
 					attr = manifest.getMainAttributes();
 				}
-				for (int i = 1; i < packages.Length; i++)
+				foreach (string name in packages.Value)
 				{
-					string name = packages[i];
 					if (_this.getPackage(name) == null)
 					{
 						global::java.util.jar.Attributes entryAttr = null;

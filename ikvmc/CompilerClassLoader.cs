@@ -560,8 +560,11 @@ namespace IKVM.Internal
 			// add a package list and export map
 			if(options.sharedclassloader == null || options.sharedclassloader[0] == this)
 			{
-				string[][] list = packages.ToArray();
-				mb.SetCustomAttribute(new CustomAttributeBuilder(JVM.LoadType(typeof(PackageListAttribute)).GetConstructor(new Type[] { JVM.Import(typeof(string[][])) }), new object[] { list }));
+				ConstructorInfo packageListAttributeCtor = JVM.LoadType(typeof(PackageListAttribute)).GetConstructor(new Type[] { Types.String, Types.String.MakeArrayType() });
+				foreach(object[] args in packages.ToArray())
+				{
+					mb.SetCustomAttribute(new CustomAttributeBuilder(packageListAttributeCtor, args));
+				}
 				// We can't add the resource when we're a module, because a multi-module assembly has a single resource namespace
 				// and since you cannot combine -target:module with -sharedclassloader we don't need an export map
 				// (the wildcard exports have already been added above, by making sure that we statically reference the assemblies).
@@ -4140,10 +4143,10 @@ namespace IKVM.Internal
 			}
 		}
 
-		// see PackageListAttribute for the structure of this array
-		internal string[][] ToArray()
+		// returns an array of PackageListAttribute constructor argument arrays
+		internal object[][] ToArray()
 		{
-			List<string[]> list = new List<string[]>();
+			List<object[]> list = new List<object[]>();
 			// we use an empty string to indicate we don't yet have a jar,
 			// because null is used for packages that were defined from
 			// the file system (i.e. don't have a jar to load a manifest from)
@@ -4156,17 +4159,16 @@ namespace IKVM.Internal
 				{
 					if (currentList.Count != 0)
 					{
-						list.Add(currentList.ToArray());
+						list.Add(new object[] { currentJar, currentList.ToArray() });
 						currentList.Clear();
 					}
-					currentList.Add(jar);
 					currentJar = jar;
 				}
 				currentList.Add(package);
 			}
 			if (currentList.Count != 0)
 			{
-				list.Add(currentList.ToArray());
+				list.Add(new object[] { currentJar, currentList.ToArray() });
 			}
 			return list.ToArray();
 		}
