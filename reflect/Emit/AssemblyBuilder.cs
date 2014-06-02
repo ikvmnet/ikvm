@@ -373,9 +373,9 @@ namespace IKVM.Reflection.Emit
 				foreach (CustomAttributeBuilder cab in customAttributes)
 				{
 					// .NET doesn't support copying blob custom attributes into the version info
-					if (!cab.HasBlob)
+					if (!cab.HasBlob || universe.DecodeVersionInfoAttributeBlobs)
 					{
-						versionInfo.SetAttribute(cab);
+						versionInfo.SetAttribute(this, cab);
 					}
 				}
 				ByteBuffer versionInfoData = new ByteBuffer(512);

@@ -50,41 +50,41 @@ namespace IKVM.Reflection.Writer
 			this.fileName = System.IO.Path.GetFileName(assemblyFileName);
 		}
 
-		internal void SetAttribute(CustomAttributeBuilder cab)
+		internal void SetAttribute(AssemblyBuilder asm, CustomAttributeBuilder cab)
 		{
 			Universe u = cab.Constructor.Module.universe;
 			Type type = cab.Constructor.DeclaringType;
 			if (copyright == null && type == u.System_Reflection_AssemblyCopyrightAttribute)
 			{
-				copyright = (string)cab.GetConstructorArgument(0);
+				copyright = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
 			}
 			else if (trademark == null && type == u.System_Reflection_AssemblyTrademarkAttribute)
 			{
-				trademark = (string)cab.GetConstructorArgument(0);
+				trademark = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
 			}
 			else if (product == null && type == u.System_Reflection_AssemblyProductAttribute)
 			{
-				product = (string)cab.GetConstructorArgument(0);
+				product = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
 			}
 			else if (company == null && type == u.System_Reflection_AssemblyCompanyAttribute)
 			{
-				company = (string)cab.GetConstructorArgument(0);
+				company = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
 			}
 			else if (description == null && type == u.System_Reflection_AssemblyDescriptionAttribute)
 			{
-				description = (string)cab.GetConstructorArgument(0);
+				description = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
 			}
 			else if (title == null && type == u.System_Reflection_AssemblyTitleAttribute)
 			{
-				title = (string)cab.GetConstructorArgument(0);
+				title = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
 			}
 			else if (informationalVersion == null && type == u.System_Reflection_AssemblyInformationalVersionAttribute)
 			{
-				informationalVersion = (string)cab.GetConstructorArgument(0);
+				informationalVersion = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
 			}
 			else if (fileVersion == null && type == u.System_Reflection_AssemblyFileVersionAttribute)
 			{
-				fileVersion = (string)cab.GetConstructorArgument(0);
+				fileVersion = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
 			}
 		}
 
