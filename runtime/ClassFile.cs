@@ -3771,13 +3771,6 @@ namespace IKVM.Internal
 				internal string descriptor;
 				internal ushort index;
 			}
-
-			internal struct MethodParametersEntry
-			{
-				internal static readonly MethodParametersEntry[] Malformed = new MethodParametersEntry[0];
-				internal string name;
-				internal ushort flags;
-			}
 		}
 
 		internal Field GetField(string name, string sig)

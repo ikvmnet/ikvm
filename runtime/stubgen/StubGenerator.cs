@@ -191,18 +191,24 @@ namespace IKVM.StubGen
 						}
 						if (includeParameterNames)
 						{
-							ParameterInfo[] parameters = mb.GetParameters();
-							if (parameters.Length != 0)
+							MethodParametersEntry[] mp = tw.GetMethodParameters(mw);
+							if (mp == MethodParametersEntry.Malformed)
 							{
-								ushort[] names = new ushort[parameters.Length];
+								m.AddAttribute(new MethodParametersAttribute(writer, null, null));
+							}
+							else if (mp != null)
+							{
+								ushort[] names = new ushort[mp.Length];
+								ushort[] flags = new ushort[mp.Length];
 								for (int i = 0; i < names.Length; i++)
 								{
-									if (parameters[i].Name != null)
+									if (mp[i].name != null)
 									{
-										names[i] = writer.AddUtf8(parameters[i].Name);
+										names[i] = writer.AddUtf8(mp[i].name);
 									}
+									flags[i] = mp[i].flags;
 								}
-								m.AddAttribute(new MethodParametersAttribute(writer, names));
+								m.AddAttribute(new MethodParametersAttribute(writer, names, flags));
 							}
 						}
 					}

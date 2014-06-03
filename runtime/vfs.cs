@@ -577,7 +577,7 @@ namespace IKVM.Internal
 				{
 					System.IO.MemoryStream mem = new System.IO.MemoryStream();
 					bool includeNonPublicInterfaces = !"true".Equals(java.lang.Props.props.getProperty("ikvm.stubgen.skipNonPublicInterfaces"), StringComparison.OrdinalIgnoreCase);
-					IKVM.StubGen.StubGenerator.WriteClass(mem, tw, includeNonPublicInterfaces, false, false, false);
+					IKVM.StubGen.StubGenerator.WriteClass(mem, tw, includeNonPublicInterfaces, false, false, true);
 					buf = mem.ToArray();
 				}
 #endif

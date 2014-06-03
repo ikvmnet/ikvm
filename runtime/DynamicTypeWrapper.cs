@@ -440,7 +440,7 @@ namespace IKVM.Internal
 			internal abstract object GetMethodDefaultValue(int index);
 			internal abstract object[] GetMethodAnnotations(int index);
 			internal abstract object[][] GetParameterAnnotations(int index);
-			internal abstract ClassFile.Method.MethodParametersEntry[] GetMethodParameters(int index);
+			internal abstract MethodParametersEntry[] GetMethodParameters(int index);
 			internal abstract object[] GetFieldAnnotations(int index);
 			internal abstract MethodInfo GetFinalizeMethod();
 		}
@@ -3419,7 +3419,7 @@ namespace IKVM.Internal
 				return null;
 			}
 
-			internal override ClassFile.Method.MethodParametersEntry[] GetMethodParameters(int index)
+			internal override MethodParametersEntry[] GetMethodParameters(int index)
 			{
 				Debug.Fail("Unreachable code");
 				return null;
@@ -3441,9 +3441,9 @@ namespace IKVM.Internal
 		{
 			private readonly string[][] genericMetaData;
 			private readonly object[][] annotations;
-			private readonly ClassFile.Method.MethodParametersEntry[][] methodParameters;
+			private readonly MethodParametersEntry[][] methodParameters;
 
-			private Metadata(string[][] genericMetaData, object[][] annotations, ClassFile.Method.MethodParametersEntry[][] methodParameters)
+			private Metadata(string[][] genericMetaData, object[][] annotations, MethodParametersEntry[][] methodParameters)
 			{
 				this.genericMetaData = genericMetaData;
 				this.annotations = annotations;
@@ -3458,7 +3458,7 @@ namespace IKVM.Internal
 				}
 				string[][] genericMetaData = null;
 				object[][] annotations = null;
-				ClassFile.Method.MethodParametersEntry[][] methodParameters = null;
+				MethodParametersEntry[][] methodParameters = null;
 				for (int i = 0; i < classFile.Methods.Length; i++)
 				{
 					if (classFile.Methods[i].GenericSignature != null)
@@ -3513,7 +3513,7 @@ namespace IKVM.Internal
 					{
 						if (methodParameters == null)
 						{
-							methodParameters = new ClassFile.Method.MethodParametersEntry[classFile.Methods.Length][];
+							methodParameters = new MethodParametersEntry[classFile.Methods.Length][];
 						}
 						methodParameters[i] = classFile.Methods[i].MethodParameters;
 					}
@@ -3639,7 +3639,7 @@ namespace IKVM.Internal
 				return null;
 			}
 
-			internal static ClassFile.Method.MethodParametersEntry[] GetMethodParameters(Metadata m, int index)
+			internal static MethodParametersEntry[] GetMethodParameters(Metadata m, int index)
 			{
 				if (m != null && m.methodParameters != null)
 				{
@@ -3790,7 +3790,7 @@ namespace IKVM.Internal
 				return Metadata.GetMethodParameterAnnotations(metadata, index);
 			}
 
-			internal override ClassFile.Method.MethodParametersEntry[] GetMethodParameters(int index)
+			internal override MethodParametersEntry[] GetMethodParameters(int index)
 			{
 				return Metadata.GetMethodParameters(metadata, index);
 			}
@@ -6221,7 +6221,7 @@ namespace IKVM.Internal
 
 		private static void GetParameterNamesFromMP(ClassFile.Method m, string[] parameterNames)
 		{
-			ClassFile.Method.MethodParametersEntry[] methodParameters = m.MethodParameters;
+			MethodParametersEntry[] methodParameters = m.MethodParameters;
 			if (methodParameters != null)
 			{
 				for (int i = 0, count = Math.Min(parameterNames.Length, methodParameters.Length); i < count; i++)
@@ -6512,6 +6512,20 @@ namespace IKVM.Internal
 			return null;
 		}
 
+		internal override MethodParametersEntry[] GetMethodParameters(MethodWrapper mw)
+		{
+			MethodWrapper[] methods = GetMethods();
+			for (int i = 0; i < methods.Length; i++)
+			{
+				if (methods[i] == mw)
+				{
+					return impl.GetMethodParameters(i);
+				}
+			}
+			Debug.Fail("Unreachable code");
+			return null;
+		}
+
 #if !STATIC_COMPILER
 		internal override string[] GetEnclosingMethod()
 		{
@@ -6610,20 +6624,6 @@ namespace IKVM.Internal
 						return objs;
 					}
 					return null;
-				}
-			}
-			Debug.Fail("Unreachable code");
-			return null;
-		}
-
-		internal override ClassFile.Method.MethodParametersEntry[] GetMethodParameters(MethodWrapper mw)
-		{
-			MethodWrapper[] methods = GetMethods();
-			for (int i = 0; i < methods.Length; i++)
-			{
-				if (methods[i] == mw)
-				{
-					return impl.GetMethodParameters(i);
 				}
 			}
 			Debug.Fail("Unreachable code");

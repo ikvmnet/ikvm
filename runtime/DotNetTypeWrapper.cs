@@ -2784,6 +2784,26 @@ namespace IKVM.Internal
 			finished = true;
 		}
 
+		internal override MethodParametersEntry[] GetMethodParameters(MethodWrapper mw)
+		{
+			MethodBase mb = mw.GetMethod();
+			if (mb == null)
+			{
+				return null;
+			}
+			ParameterInfo[] parameters = mb.GetParameters();
+			if (parameters.Length == 0)
+			{
+				return null;
+			}
+			MethodParametersEntry[] mp = new MethodParametersEntry[parameters.Length];
+			for (int i = 0; i < mp.Length; i++)
+			{
+				mp[i].name = parameters[i].Name;
+			}
+			return mp;
+		}
+
 #if !STATIC_COMPILER && !STUB_GENERATOR
 		internal override object[] GetDeclaredAnnotations()
 		{

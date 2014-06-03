@@ -59,6 +59,13 @@ namespace IKVM.Internal
 		}
 	}
 
+	struct MethodParametersEntry
+	{
+		internal static readonly MethodParametersEntry[] Malformed = new MethodParametersEntry[0];
+		internal string name;
+		internal ushort flags;
+	}
+
 	static class AttributeHelper
 	{
 #if STATIC_COMPILER
@@ -3155,6 +3162,11 @@ namespace IKVM.Internal
 			return null;
 		}
 
+		internal virtual MethodParametersEntry[] GetMethodParameters(MethodWrapper mw)
+		{
+			return null;
+		}
+
 #if !STATIC_COMPILER && !STUB_GENERATOR
 		internal virtual string[] GetEnclosingMethod()
 		{
@@ -3172,11 +3184,6 @@ namespace IKVM.Internal
 		}
 
 		internal virtual object[][] GetParameterAnnotations(MethodWrapper mw)
-		{
-			return null;
-		}
-
-		internal virtual ClassFile.Method.MethodParametersEntry[] GetMethodParameters(MethodWrapper mw)
 		{
 			return null;
 		}
@@ -4927,6 +4934,33 @@ namespace IKVM.Internal
 			return null;
 		}
 
+		internal override MethodParametersEntry[] GetMethodParameters(MethodWrapper mw)
+		{
+			MethodBase mb = mw.GetMethod();
+			if (mb == null)
+			{
+				// delegate constructor
+				return null;
+			}
+			MethodParametersAttribute attr = AttributeHelper.GetMethodParameters(mb);
+			if (attr == null)
+			{
+				return null;
+			}
+			if (attr.IsMalformed)
+			{
+				return MethodParametersEntry.Malformed;
+			}
+			ParameterInfo[] parameters = mb.GetParameters();
+			MethodParametersEntry[] mp = new MethodParametersEntry[attr.Modifiers.Length];
+			for (int i = 0; i < mp.Length; i++)
+			{
+				mp[i].name = i < parameters.Length ? parameters[i].Name : null;
+				mp[i].flags = (ushort)attr.Modifiers[i];
+			}
+			return mp;
+		}
+
 #if !STATIC_COMPILER && !STUB_GENERATOR
 		internal override string[] GetEnclosingMethod()
 		{
@@ -4979,33 +5013,6 @@ namespace IKVM.Internal
 				attribs[i - skip] = parameters[i].GetCustomAttributes(false);
 			}
 			return attribs;
-		}
-
-		internal override ClassFile.Method.MethodParametersEntry[] GetMethodParameters(MethodWrapper mw)
-		{
-			MethodBase mb = mw.GetMethod();
-			if(mb == null)
-			{
-				// delegate constructor
-				return null;
-			}
-			MethodParametersAttribute attr = AttributeHelper.GetMethodParameters(mb);
-			if(attr == null)
-			{
-				return null;
-			}
-			if(attr.IsMalformed)
-			{
-				return ClassFile.Method.MethodParametersEntry.Malformed;
-			}
-			ParameterInfo[] parameters = mb.GetParameters();
-			ClassFile.Method.MethodParametersEntry[] mp = new ClassFile.Method.MethodParametersEntry[attr.Modifiers.Length];
-			for(int i = 0; i < mp.Length; i++)
-			{
-				mp[i].name = i < parameters.Length ? parameters[i].Name : null;
-				mp[i].flags = (ushort)attr.Modifiers[i];
-			}
-			return mp;
 		}
 
 		internal override object[] GetFieldAnnotations(FieldWrapper fw)

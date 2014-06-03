@@ -834,23 +834,31 @@ namespace IKVM.StubGen
 	{
 		private readonly ClassFileWriter classFile;
 		private readonly ushort[] names;
+		private readonly ushort[] flags;
 
-		internal MethodParametersAttribute(ClassFileWriter classFile, ushort[] names)
+		internal MethodParametersAttribute(ClassFileWriter classFile, ushort[] names, ushort[] flags)
 			: base(classFile.AddUtf8("MethodParameters"))
 		{
 			this.classFile = classFile;
 			this.names = names;
+			this.flags = flags;
 		}
 
 		public override void Write(BigEndianStream bes)
 		{
 			base.Write(bes);
+			if (flags == null || names == null || flags.Length != names.Length)
+			{
+				// write a malformed MethodParameters attribute
+				bes.WriteUInt32(0);
+				return;
+			}
 			bes.WriteUInt32((uint)(1 + names.Length * 4));
 			bes.WriteByte((byte)names.Length);
-			foreach (ushort idx in names)
+			for (int i = 0; i < names.Length; i++)
 			{
-				bes.WriteUInt16(idx);
-				bes.WriteUInt16(0);
+				bes.WriteUInt16(names[i]);
+				bes.WriteUInt16(flags[i]);
 			}
 		}
 	}

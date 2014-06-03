@@ -50,7 +50,7 @@ namespace IKVM.NativeCode.gnu.java.net.protocol.ikvmres
 			MemoryStream mem = new MemoryStream();
 #if !FIRST_PASS
 			bool includeNonPublicInterfaces = !"true".Equals(global::java.lang.Props.props.getProperty("ikvm.stubgen.skipNonPublicInterfaces"), StringComparison.OrdinalIgnoreCase);
-			IKVM.StubGen.StubGenerator.WriteClass(mem, TypeWrapper.FromClass(c), includeNonPublicInterfaces, false, false, false);
+			IKVM.StubGen.StubGenerator.WriteClass(mem, TypeWrapper.FromClass(c), includeNonPublicInterfaces, false, false, true);
 #endif
 			return mem.ToArray();
 		}

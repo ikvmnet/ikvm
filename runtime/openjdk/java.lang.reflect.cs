@@ -715,12 +715,12 @@ static class Java_java_lang_reflect_Executable
 		return null;
 #else
 		MethodWrapper mw = MethodWrapper.FromExecutable(_this);
-		ClassFile.Method.MethodParametersEntry[] methodParameters = mw.DeclaringType.GetMethodParameters(mw);
+		MethodParametersEntry[] methodParameters = mw.DeclaringType.GetMethodParameters(mw);
 		if (methodParameters == null)
 		{
 			return null;
 		}
-		if (methodParameters == ClassFile.Method.MethodParametersEntry.Malformed)
+		if (methodParameters == MethodParametersEntry.Malformed)
 		{
 			throw new java.lang.reflect.MalformedParametersException();
 		}
