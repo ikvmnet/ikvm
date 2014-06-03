@@ -127,6 +127,19 @@ namespace ikvm.awt
             }
         }
 
+		private const int WM_MOUSEACTIVATE = 0x0021;
+		private const int MA_NOACTIVATE = 0x0003;
+
+		protected override void WndProc(ref Message m)
+		{
+			if (!focusableWindow && m.Msg == WM_MOUSEACTIVATE)
+			{
+				m.Result = (IntPtr)MA_NOACTIVATE;
+				return;
+			}
+			base.WndProc(ref m);
+		}
+
 		protected override void OnPaintBackground(PaintEventArgs e)
 		{
 			NetComponentPeer peer = NetComponentPeer.FromControl(this);
@@ -5300,7 +5313,7 @@ namespace ikvm.awt
             {
                 return contents;
             }
-            return new NetClipboardTransferable(Clipboard.GetDataObject());
+            return new NetClipboardTransferable(NetToolkit.Invoke<IDataObject>(Clipboard.GetDataObject));
         }
     }
 
