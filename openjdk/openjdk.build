@@ -180,6 +180,7 @@
             <arg value="-g" />
             <arg value="-nowarn" />
             <arg value="-implicit:none" />
+            <arg value="-parameters" />
             <arg line="-cp dummy" />
             <arg value="-bootclasspath" />
             <arg path="mscorlib.jar;System.jar;System.Core.jar;System.Data.jar;System.Drawing.jar;System.XML.jar;../runtime/IKVM.Runtime.jar" />
@@ -211,6 +212,16 @@
     </target>
 
     <target name="run-nasgen">
+        <!-- nasgen doesn't understand the MethodParameters attribute, so we have to recompile the classes it processes without parameters -->
+        <exec program="javac" useruntimeengine="false">
+            <arg value="-XDignore.symbol.file" />
+            <arg value="-g" />
+            <arg value="-nowarn" />
+            <arg value="-implicit:none" />
+            <arg value="-cp" />
+            <arg path="mscorlib.jar;../runtime/IKVM.Runtime.jar" />
+            <arg value="${OpenJDK.dir}/nashorn/src/jdk/nashorn/internal/objects/*.java" />
+        </exec>
         <exec program="java" useruntimeengine="false">
             <arg line="-cp ${OpenJDK.dir}/nashorn/buildtools/nasgen/src" />
             <arg value="jdk.nashorn.internal.tools.nasgen.Main" />
@@ -342,6 +353,7 @@
             <!-- we already know that the JNI assembly is not available, so suppress the warning -->
             <arg value="-nowarn:110" />
             <arg value="-w4" />
+            <arg value="-noparameterreflection" />
             <arg value="-warnaserror" />
             <arg value="@response.gen.txt" />
         </exec>
@@ -409,6 +421,7 @@
             <arg value="${signoption}" />
             <arg value="-warnaserror" />
             <arg value="-w4" />
+            <arg value="-noparameterreflection" />
             <arg value="@tools.gen.rsp" />
         </exec>
     </target>
