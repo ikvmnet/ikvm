@@ -2920,18 +2920,7 @@ namespace IKVM.Internal
 							{
 								throw new ClassFormatError("{0} (Duplicate MethodParameters attribute)", classFile.Name);
 							}
-							BigEndianBinaryReader rdr = br.Section(br.ReadUInt32());
-							byte parameters_count = rdr.ReadByte();
-							parameters = new MethodParametersEntry[parameters_count];
-							for(int j = 0; j < parameters_count; j++)
-							{
-								parameters[j].name = classFile.GetConstantPoolUtf8String(utf8_cp, rdr.ReadUInt16());
-								parameters[j].flags = rdr.ReadUInt16();
-							}
-							if(!rdr.IsAtEnd)
-							{
-								throw new ClassFormatError("{0} (MethodParameters attribute has wrong length)", classFile.Name);
-							}
+							parameters = ReadMethodParameters(br, utf8_cp);
 							break;
 						}
 						default:
@@ -2958,6 +2947,32 @@ namespace IKVM.Internal
 						throw new ClassFormatError("Absent Code attribute in method that is not native or abstract in class file " + classFile.Name);
 					}
 				}
+			}
+
+			private static MethodParametersEntry[] ReadMethodParameters(BigEndianBinaryReader br, string[] utf8_cp)
+			{
+				uint length = br.ReadUInt32();
+				if(length > 0)
+				{
+					BigEndianBinaryReader rdr = br.Section(length);
+					byte parameters_count = rdr.ReadByte();
+					if(length == 1 + parameters_count * 4)
+					{
+						MethodParametersEntry[] parameters = new MethodParametersEntry[parameters_count];
+						for(int j = 0; j < parameters_count; j++)
+						{
+							ushort name = rdr.ReadUInt16();
+							if(name <= 0 || name >= utf8_cp.Length || utf8_cp[name] == null)
+							{
+								return MethodParametersEntry.Malformed;
+							}
+							parameters[j].name = utf8_cp[name];
+							parameters[j].flags = rdr.ReadUInt16();
+						}
+						return parameters;
+					}
+				}
+				return MethodParametersEntry.Malformed;
 			}
 
 			protected override void ValidateSig(ClassFile classFile, string descriptor)
@@ -3164,6 +3179,14 @@ namespace IKVM.Internal
 				get
 				{
 					return parameters;
+				}
+			}
+
+			internal bool MalformedMethodParameters
+			{
+				get
+				{
+					return parameters == MethodParametersEntry.Malformed;
 				}
 			}
 
@@ -3751,6 +3774,7 @@ namespace IKVM.Internal
 
 			internal struct MethodParametersEntry
 			{
+				internal static readonly MethodParametersEntry[] Malformed = new MethodParametersEntry[0];
 				internal string name;
 				internal ushort flags;
 			}
