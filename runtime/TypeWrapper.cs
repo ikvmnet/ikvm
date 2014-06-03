@@ -72,6 +72,7 @@ namespace IKVM.Internal
 		private static ConstructorInfo lineNumberTableAttribute2;
 		private static ConstructorInfo enclosingMethodAttribute;
 		private static ConstructorInfo signatureAttribute;
+		private static ConstructorInfo methodParametersAttribute;
 		private static CustomAttributeBuilder paramArrayAttribute;
 		private static ConstructorInfo nonNestedInnerClassAttribute;
 		private static ConstructorInfo nonNestedOuterClassAttribute;
@@ -98,6 +99,7 @@ namespace IKVM.Internal
 		private static readonly Type typeofNonNestedInnerClassAttribute = JVM.LoadType(typeof(NonNestedInnerClassAttribute));
 		private static readonly Type typeofNonNestedOuterClassAttribute = JVM.LoadType(typeof(NonNestedOuterClassAttribute));
 		private static readonly Type typeofEnclosingMethodAttribute = JVM.LoadType(typeof(EnclosingMethodAttribute));
+		private static readonly Type typeofMethodParametersAttribute = JVM.LoadType(typeof(MethodParametersAttribute));
 		private static readonly CustomAttributeBuilder hideFromJavaAttribute = new CustomAttributeBuilder(typeofHideFromJavaAttribute.GetConstructor(Type.EmptyTypes), new object[0]);
 		private static readonly CustomAttributeBuilder hideFromReflection = new CustomAttributeBuilder(typeofHideFromJavaAttribute.GetConstructor(new Type[] { typeofHideFromJavaFlags }), new object[] { HideFromJavaFlags.Reflection | HideFromJavaFlags.StackTrace | HideFromJavaFlags.StackWalk });
 
@@ -856,6 +858,15 @@ namespace IKVM.Internal
 			mb.SetCustomAttribute(new CustomAttributeBuilder(signatureAttribute, new object[] { signature }));
 		}
 
+		internal static void SetMethodParametersAttribute(MethodBuilder mb, Modifiers[] modifiers)
+		{
+			if(methodParametersAttribute == null)
+			{
+				methodParametersAttribute = typeofMethodParametersAttribute.GetConstructor(new Type[] { typeofModifiers.MakeArrayType() });
+			}
+			mb.SetCustomAttribute(new CustomAttributeBuilder(methodParametersAttribute, new object[] { modifiers }));
+		}
+
 		internal static void SetParamArrayAttribute(ParameterBuilder pb)
 		{
 			if(paramArrayAttribute == null)
@@ -979,6 +990,21 @@ namespace IKVM.Internal
 			{
 				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
 				return new SignatureAttribute((string)args[0].Value);
+			}
+			return null;
+#endif
+		}
+
+		internal static MethodParametersAttribute GetMethodParameters(MethodBase method)
+		{
+#if !STATIC_COMPILER && !STUB_GENERATOR
+			object[] attribs = method.GetCustomAttributes(typeof(MethodParametersAttribute), false);
+			return attribs.Length == 1 ? (MethodParametersAttribute)attribs[0] : null;
+#else
+			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(method, typeofMethodParametersAttribute, false))
+			{
+				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+				return new MethodParametersAttribute(DecodeArray<Modifiers>(args[0]));
 			}
 			return null;
 #endif
@@ -4953,6 +4979,33 @@ namespace IKVM.Internal
 				attribs[i - skip] = parameters[i].GetCustomAttributes(false);
 			}
 			return attribs;
+		}
+
+		internal override ClassFile.Method.MethodParametersEntry[] GetMethodParameters(MethodWrapper mw)
+		{
+			MethodBase mb = mw.GetMethod();
+			if(mb == null)
+			{
+				// delegate constructor
+				return null;
+			}
+			MethodParametersAttribute attr = AttributeHelper.GetMethodParameters(mb);
+			if(attr == null)
+			{
+				return null;
+			}
+			if(attr.IsMalformed)
+			{
+				return ClassFile.Method.MethodParametersEntry.Malformed;
+			}
+			ParameterInfo[] parameters = mb.GetParameters();
+			ClassFile.Method.MethodParametersEntry[] mp = new ClassFile.Method.MethodParametersEntry[attr.Modifiers.Length];
+			for(int i = 0; i < mp.Length; i++)
+			{
+				mp[i].name = i < parameters.Length ? parameters[i].Name : null;
+				mp[i].flags = (ushort)attr.Modifiers[i];
+			}
+			return mp;
 		}
 
 		internal override object[] GetFieldAnnotations(FieldWrapper fw)

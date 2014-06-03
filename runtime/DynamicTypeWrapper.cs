@@ -2953,6 +2953,19 @@ namespace IKVM.Internal
 					{
 						AttributeHelper.SetSignatureAttribute(method, m.GenericSignature);
 					}
+					if (m.MalformedMethodParameters)
+					{
+						AttributeHelper.SetMethodParametersAttribute(method, null);
+					}
+					else if (m.MethodParameters != null)
+					{
+						Modifiers[] modifiers = new Modifiers[m.MethodParameters.Length];
+						for (int i = 0; i < modifiers.Length; i++)
+						{
+							modifiers[i] = (Modifiers)m.MethodParameters[i].flags;
+						}
+						AttributeHelper.SetMethodParametersAttribute(method, modifiers);
+					}
 #else // STATIC_COMPILER
 					if (setModifiers)
 					{
@@ -4573,13 +4586,19 @@ namespace IKVM.Internal
 				if (wrapper.GetClassLoader().EmitDebugInfo
 #if STATIC_COMPILER
 					|| (classFile.IsPublic && (m.IsPublic || m.IsProtected))
+					|| m.MethodParameters != null
 #endif
 					)
 				{
 					parameterNames = new string[mw.GetParameters().Length];
 					GetParameterNamesFromMP(m, parameterNames);
-					GetParameterNamesFromLVT(m, parameterNames);
-					GetParameterNamesFromSig(m.Signature, parameterNames);
+#if STATIC_COMPILER
+					if (m.MethodParameters == null)
+#endif
+					{
+						GetParameterNamesFromLVT(m, parameterNames);
+						GetParameterNamesFromSig(m.Signature, parameterNames);
+					}
 #if STATIC_COMPILER
 					wrapper.GetParameterNamesFromXml(m.Name, m.Signature, parameterNames);
 #endif

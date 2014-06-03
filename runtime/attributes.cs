@@ -860,6 +860,27 @@ namespace IKVM.Attributes
 		}
 	}
 
+	[AttributeUsage(AttributeTargets.Method | AttributeTargets.Constructor)]
+	public sealed class MethodParametersAttribute : Attribute
+	{
+		private readonly Modifiers[] modifiers;
+
+		public MethodParametersAttribute(Modifiers[] modifiers)
+		{
+			this.modifiers = modifiers;
+		}
+
+		public Modifiers[] Modifiers
+		{
+			get { return modifiers; }
+		}
+
+		public bool IsMalformed
+		{
+			get { return modifiers == null; }
+		}
+	}
+
 	// used in custom modifier for access stubs
 	public static class AccessStub { }
 }
