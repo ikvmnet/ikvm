@@ -440,6 +440,7 @@ namespace IKVM.Internal
 			internal abstract object GetMethodDefaultValue(int index);
 			internal abstract object[] GetMethodAnnotations(int index);
 			internal abstract object[][] GetParameterAnnotations(int index);
+			internal abstract ClassFile.Method.MethodParametersEntry[] GetMethodParameters(int index);
 			internal abstract object[] GetFieldAnnotations(int index);
 			internal abstract MethodInfo GetFinalizeMethod();
 		}
@@ -3405,6 +3406,12 @@ namespace IKVM.Internal
 				return null;
 			}
 
+			internal override ClassFile.Method.MethodParametersEntry[] GetMethodParameters(int index)
+			{
+				Debug.Fail("Unreachable code");
+				return null;
+			}
+
 			internal override object[] GetFieldAnnotations(int index)
 			{
 				Debug.Fail("Unreachable code");
@@ -3421,11 +3428,13 @@ namespace IKVM.Internal
 		{
 			private readonly string[][] genericMetaData;
 			private readonly object[][] annotations;
+			private readonly ClassFile.Method.MethodParametersEntry[][] methodParameters;
 
-			private Metadata(string[][] genericMetaData, object[][] annotations)
+			private Metadata(string[][] genericMetaData, object[][] annotations, ClassFile.Method.MethodParametersEntry[][] methodParameters)
 			{
 				this.genericMetaData = genericMetaData;
 				this.annotations = annotations;
+				this.methodParameters = methodParameters;
 			}
 
 			internal static Metadata Create(ClassFile classFile)
@@ -3436,6 +3445,7 @@ namespace IKVM.Internal
 				}
 				string[][] genericMetaData = null;
 				object[][] annotations = null;
+				ClassFile.Method.MethodParametersEntry[][] methodParameters = null;
 				for (int i = 0; i < classFile.Methods.Length; i++)
 				{
 					if (classFile.Methods[i].GenericSignature != null)
@@ -3485,6 +3495,14 @@ namespace IKVM.Internal
 							annotations[3] = new object[classFile.Methods.Length];
 						}
 						annotations[3][i] = classFile.Methods[i].AnnotationDefault;
+					}
+					if (classFile.Methods[i].MethodParameters != null)
+					{
+						if (methodParameters == null)
+						{
+							methodParameters = new ClassFile.Method.MethodParametersEntry[classFile.Methods.Length][];
+						}
+						methodParameters[i] = classFile.Methods[i].MethodParameters;
 					}
 				}
 				for (int i = 0; i < classFile.Fields.Length; i++)
@@ -3538,9 +3556,9 @@ namespace IKVM.Internal
 					}
 					annotations[0] = classFile.Annotations;
 				}
-				if (genericMetaData != null || annotations != null)
+				if (genericMetaData != null || annotations != null || methodParameters != null)
 				{
-					return new Metadata(genericMetaData, annotations);
+					return new Metadata(genericMetaData, annotations, methodParameters);
 				}
 				return null;
 			}
@@ -3604,6 +3622,15 @@ namespace IKVM.Internal
 				if (m != null && m.annotations != null && m.annotations[2] != null)
 				{
 					return (object[][])m.annotations[2][index];
+				}
+				return null;
+			}
+
+			internal static ClassFile.Method.MethodParametersEntry[] GetMethodParameters(Metadata m, int index)
+			{
+				if (m != null && m.methodParameters != null)
+				{
+					return m.methodParameters[index];
 				}
 				return null;
 			}
@@ -3748,6 +3775,11 @@ namespace IKVM.Internal
 			internal override object[][] GetParameterAnnotations(int index)
 			{
 				return Metadata.GetMethodParameterAnnotations(metadata, index);
+			}
+
+			internal override ClassFile.Method.MethodParametersEntry[] GetMethodParameters(int index)
+			{
+				return Metadata.GetMethodParameters(metadata, index);
 			}
 
 			internal override object[] GetFieldAnnotations(int index)
@@ -6559,6 +6591,20 @@ namespace IKVM.Internal
 						return objs;
 					}
 					return null;
+				}
+			}
+			Debug.Fail("Unreachable code");
+			return null;
+		}
+
+		internal override ClassFile.Method.MethodParametersEntry[] GetMethodParameters(MethodWrapper mw)
+		{
+			MethodWrapper[] methods = GetMethods();
+			for (int i = 0; i < methods.Length; i++)
+			{
+				if (methods[i] == mw)
+				{
+					return impl.GetMethodParameters(i);
 				}
 			}
 			Debug.Fail("Unreachable code");

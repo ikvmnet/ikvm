@@ -3150,6 +3150,11 @@ namespace IKVM.Internal
 			return null;
 		}
 
+		internal virtual ClassFile.Method.MethodParametersEntry[] GetMethodParameters(MethodWrapper mw)
+		{
+			return null;
+		}
+
 		internal virtual object[] GetFieldAnnotations(FieldWrapper fw)
 		{
 			return null;

@@ -711,7 +711,26 @@ static class Java_java_lang_reflect_Executable
 {
 	public static object[] getParameters0(java.lang.reflect.Executable _this)
 	{
+#if FIRST_PASS
 		return null;
+#else
+		MethodWrapper mw = MethodWrapper.FromExecutable(_this);
+		ClassFile.Method.MethodParametersEntry[] methodParameters = mw.DeclaringType.GetMethodParameters(mw);
+		if (methodParameters == null)
+		{
+			return null;
+		}
+		if (methodParameters == ClassFile.Method.MethodParametersEntry.Malformed)
+		{
+			throw new java.lang.reflect.MalformedParametersException();
+		}
+		java.lang.reflect.Parameter[] parameters = new java.lang.reflect.Parameter[methodParameters.Length];
+		for (int i = 0; i < parameters.Length; i++)
+		{
+			parameters[i] = new java.lang.reflect.Parameter(methodParameters[i].name, methodParameters[i].flags, _this, i);
+		}
+		return parameters;
+#endif
 	}
 
 	public static byte[] getTypeAnnotationBytes0(java.lang.reflect.Executable _this)
