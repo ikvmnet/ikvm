@@ -455,6 +455,11 @@ namespace IKVM.Internal
 			{
 				get { return true; }
 			}
+
+			internal override MethodParametersEntry[] GetMethodParameters(MethodWrapper mw)
+			{
+				return DeclaringTypeWrapper.GetMethodParameters(DeclaringTypeWrapper.GetMethodWrapper(mw.Name, mw.Signature, false));
+			}
 		}
 
 		private class DynamicOnlyMethodWrapper : MethodWrapper
