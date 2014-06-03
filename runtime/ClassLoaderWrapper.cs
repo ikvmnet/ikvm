@@ -1495,6 +1495,11 @@ namespace IKVM.Internal
 		{
 			get { return false; }
 		}
+
+		internal virtual bool NoParameterReflection
+		{
+			get { return false; }
+		}
 #endif
 	}
 

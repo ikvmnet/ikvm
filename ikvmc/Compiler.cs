@@ -999,6 +999,10 @@ sealed class IkvmcCompiler
 				{
 					options.warningLevelHigh = true;
 				}
+				else if(s == "-noparameterreflection") // undocumented option to compile core class libraries with, to disable MethodParameter attribute
+				{
+					options.noParameterReflection = true;
+				}
 				else
 				{
 					throw new FatalCompilerErrorException(Message.UnrecognizedOption, s);

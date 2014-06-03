@@ -2953,7 +2953,11 @@ namespace IKVM.Internal
 					{
 						AttributeHelper.SetSignatureAttribute(method, m.GenericSignature);
 					}
-					if (m.MalformedMethodParameters)
+					if (wrapper.GetClassLoader().NoParameterReflection)
+					{
+						// ignore MethodParameters (except to extract parameter names)
+					}
+					else if (m.MalformedMethodParameters)
 					{
 						AttributeHelper.SetMethodParametersAttribute(method, null);
 					}
@@ -4586,7 +4590,7 @@ namespace IKVM.Internal
 				if (wrapper.GetClassLoader().EmitDebugInfo
 #if STATIC_COMPILER
 					|| (classFile.IsPublic && (m.IsPublic || m.IsProtected))
-					|| m.MethodParameters != null
+					|| (m.MethodParameters != null && !wrapper.GetClassLoader().NoParameterReflection)
 #endif
 					)
 				{

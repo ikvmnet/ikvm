@@ -3321,6 +3321,11 @@ namespace IKVM.Internal
 		{
 			get { return options.warningLevelHigh; }
 		}
+
+		internal override bool NoParameterReflection
+		{
+			get { return options.noParameterReflection; }
+		}
 	}
 
 	sealed class Jar
@@ -3514,6 +3519,7 @@ namespace IKVM.Internal
 		internal List<string> proxies = new List<string>();
 		internal object[] assemblyAttributeAnnotations;
 		internal bool warningLevelHigh;
+		internal bool noParameterReflection;
 
 		internal CompilerOptions Copy()
 		{
