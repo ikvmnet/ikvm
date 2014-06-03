@@ -722,12 +722,12 @@ static class Java_java_lang_reflect_Executable
 		}
 		if (methodParameters == MethodParametersEntry.Malformed)
 		{
-			throw new java.lang.reflect.MalformedParametersException();
+			throw new java.lang.reflect.MalformedParametersException("Invalid constant pool index");
 		}
 		java.lang.reflect.Parameter[] parameters = new java.lang.reflect.Parameter[methodParameters.Length];
 		for (int i = 0; i < parameters.Length; i++)
 		{
-			parameters[i] = new java.lang.reflect.Parameter(methodParameters[i].name, methodParameters[i].flags, _this, i);
+			parameters[i] = new java.lang.reflect.Parameter(methodParameters[i].name ?? "", methodParameters[i].flags, _this, i);
 		}
 		return parameters;
 #endif

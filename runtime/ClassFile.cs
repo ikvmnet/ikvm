@@ -2962,7 +2962,7 @@ namespace IKVM.Internal
 						for(int j = 0; j < parameters_count; j++)
 						{
 							ushort name = rdr.ReadUInt16();
-							if(name <= 0 || name >= utf8_cp.Length || utf8_cp[name] == null)
+							if(name >= utf8_cp.Length || (name != 0 && utf8_cp[name] == null))
 							{
 								return MethodParametersEntry.Malformed;
 							}
@@ -2972,7 +2972,7 @@ namespace IKVM.Internal
 						return parameters;
 					}
 				}
-				return MethodParametersEntry.Malformed;
+				throw new ClassFormatError("Invalid MethodParameters method attribute length " + length + " in class file");
 			}
 
 			protected override void ValidateSig(ClassFile classFile, string descriptor)

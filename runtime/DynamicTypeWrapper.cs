@@ -6361,7 +6361,7 @@ namespace IKVM.Internal
 			for (int i = 0; i < parameterBuilders.Length; i++)
 			{
 				string name = null;
-				if (parameterNames != null)
+				if (parameterNames != null && parameterNames[i] != null)
 				{
 					name = parameterNames[i];
 					if (Array.IndexOf(parameterNames, name, i + 1) >= 0 || (clashes != null && clashes.ContainsKey(name)))
