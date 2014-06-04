@@ -2802,9 +2802,21 @@ namespace IKVM.Internal
 				return null;
 			}
 			MethodParametersEntry[] mp = new MethodParametersEntry[parameters.Length];
+			bool hasName = false;
 			for (int i = 0; i < mp.Length; i++)
 			{
-				mp[i].name = parameters[i].Name;
+				string name = parameters[i].Name;
+				bool empty = String.IsNullOrEmpty(name);
+				if (empty)
+				{
+					name = "arg" + i;
+				}
+				mp[i].name = name;
+				hasName |= !empty;
+			}
+			if (!hasName)
+			{
+				return null;
 			}
 			return mp;
 		}
