@@ -134,17 +134,9 @@ public class AnnotationType {
         // of the corresponding annotation types breaks infinite recursion.
         if (annotationClass != Retention.class &&
             annotationClass != Inherited.class) {
-            JavaLangAccess jla = sun.misc.SharedSecrets.getJavaLangAccess();
-            Map<Class<? extends Annotation>, Annotation> metaAnnotations =
-                AnnotationParser.parseSelectAnnotations(
-                    jla.getRawClassAnnotations(annotationClass),
-                    jla.getConstantPool(annotationClass),
-                    annotationClass,
-                    Retention.class, Inherited.class
-                );
-            Retention ret = (Retention) metaAnnotations.get(Retention.class);
+            Retention ret = (Retention) annotationClass.getDeclaredAnnotation(Retention.class);
             retention = (ret == null ? RetentionPolicy.CLASS : ret.value());
-            inherited = metaAnnotations.containsKey(Inherited.class);
+            inherited = annotationClass.isAnnotationPresent(Inherited.class);
         }
         else {
             retention = RetentionPolicy.RUNTIME;

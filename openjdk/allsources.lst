@@ -235,6 +235,7 @@ sun/print/UnixPrintServiceLookup.java
 sun/print/Win32PrintJob.java
 sun/print/Win32PrintService.java
 sun/print/Win32PrintServiceLookup.java
+sun/reflect/annotation/AnnotationType.java
 sun/reflect/MethodAccessor.java
 sun/reflect/Reflection.java
 sun/reflect/ReflectionFactory.java
@@ -13575,7 +13576,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/jdk/src/share/classes/sun/reflect/annotation/AnnotationInvocationHandler.java
 @OPENJDK@/jdk/src/share/classes/sun/reflect/annotation/AnnotationParser.java
 @OPENJDK@/jdk/src/share/classes/sun/reflect/annotation/AnnotationSupport.java
-@OPENJDK@/jdk/src/share/classes/sun/reflect/annotation/AnnotationType.java
 @OPENJDK@/jdk/src/share/classes/sun/reflect/annotation/AnnotationTypeMismatchExceptionProxy.java
 @OPENJDK@/jdk/src/share/classes/sun/reflect/annotation/EnumConstantNotPresentExceptionProxy.java
 @OPENJDK@/jdk/src/share/classes/sun/reflect/annotation/ExceptionProxy.java

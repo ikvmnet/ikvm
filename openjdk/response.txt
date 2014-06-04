@@ -53,6 +53,7 @@
     sun/nio/cs/*.class
     sun/nio/fs/*.class
     sun/reflect/*.class
+    sun/reflect/annotation/*.class
     ../classpath/gnu/java/net/protocol/ikvmres/*.class
     ../classpath/ikvm/extensions/*.class
     ../classpath/ikvm/internal/*.class

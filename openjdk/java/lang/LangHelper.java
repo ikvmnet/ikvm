@@ -34,16 +34,11 @@ import sun.reflect.annotation.AnnotationType;
 @ikvm.lang.Internal
 public class LangHelper
 {
-    static native sun.reflect.ConstantPool getConstantPool(Class klass);
-    static native byte[] getRawClassAnnotations(Class<?> klass);
-
     public static sun.misc.JavaLangAccess getJavaLangAccess()
     {
         return new sun.misc.JavaLangAccess() {
             public sun.reflect.ConstantPool getConstantPool(Class klass) {
-                // this returns a special purpose constant pool for use with getRawClassAnnotations only
-                // and is only used for meta annotations
-                return LangHelper.getConstantPool(klass);
+                return klass.getConstantPool();
             }
             public boolean casAnnotationType(Class<?> klass, AnnotationType oldType, AnnotationType newType) {
                 return klass.casAnnotationType(oldType, newType);
@@ -55,8 +50,7 @@ public class LangHelper
                 return klass.getDeclaredAnnotationMap();
             }
             public byte[] getRawClassAnnotations(Class<?> klass) {
-                // this only returns the meta annotations Retention and Inherited
-                return LangHelper.getRawClassAnnotations(klass);
+                throw new InternalError();
             }
             public byte[] getRawClassTypeAnnotations(Class<?> klass) {
                 return klass.getRawTypeAnnotations();
