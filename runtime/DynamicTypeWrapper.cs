@@ -931,6 +931,10 @@ namespace IKVM.Internal
 							AttributeHelper.SetEnclosingMethodAttribute(typeBuilder, classFile.EnclosingMethod[0], classFile.EnclosingMethod[1], classFile.EnclosingMethod[2]);
 						}
 					}
+					if (classFile.RuntimeVisibleTypeAnnotations != null)
+					{
+						AttributeHelper.SetRuntimeVisibleTypeAnnotationsAttribute(typeBuilder, classFile.RuntimeVisibleTypeAnnotations);
+					}
 					if (wrapper.classLoader.EmitStackTraceInfo)
 					{
 						if (f.SourceFileAttribute != null)
@@ -1636,6 +1640,10 @@ namespace IKVM.Internal
 					if (fld.GenericSignature != null)
 					{
 						AttributeHelper.SetSignatureAttribute(field, fld.GenericSignature);
+					}
+					if (fld.RuntimeVisibleTypeAnnotations != null)
+					{
+						AttributeHelper.SetRuntimeVisibleTypeAnnotationsAttribute(field, fld.RuntimeVisibleTypeAnnotations);
 					}
 				}
 #endif // STATIC_COMPILER
@@ -2973,6 +2981,10 @@ namespace IKVM.Internal
 							modifiers[i] = (Modifiers)m.MethodParameters[i].flags;
 						}
 						AttributeHelper.SetMethodParametersAttribute(method, modifiers);
+					}
+					if (m.RuntimeVisibleTypeAnnotations != null)
+					{
+						AttributeHelper.SetRuntimeVisibleTypeAnnotationsAttribute(method, m.RuntimeVisibleTypeAnnotations);
 					}
 #else // STATIC_COMPILER
 					if (setModifiers)
@@ -4517,6 +4529,8 @@ namespace IKVM.Internal
 				{
 					AddAccessStubs();
 				}
+
+				AddConstantPoolAttributeIfNecessary(classFile, typeBuilder);
 #endif // STATIC_COMPILER
 
 				for (int i = 0; i < classFile.Methods.Length; i++)
@@ -4633,6 +4647,147 @@ namespace IKVM.Internal
 			}
 
 #if STATIC_COMPILER
+			private static void AddConstantPoolAttributeIfNecessary(ClassFile classFile, TypeBuilder typeBuilder)
+			{
+				object[] constantPool = null;
+				bool[] inUse = null;
+				MarkConstantPoolUsage(classFile, classFile.RuntimeVisibleTypeAnnotations, ref constantPool, ref inUse);
+				foreach (ClassFile.Method method in classFile.Methods)
+				{
+					MarkConstantPoolUsage(classFile, method.RuntimeVisibleTypeAnnotations, ref constantPool, ref inUse);
+				}
+				foreach (ClassFile.Field field in classFile.Fields)
+				{
+					MarkConstantPoolUsage(classFile, field.RuntimeVisibleTypeAnnotations, ref constantPool, ref inUse);
+				}
+				if (constantPool != null)
+				{
+					// to save space, we clear out the items that aren't used by the RuntimeVisibleTypeAnnotations and
+					// use an RLE for the empty slots
+					AttributeHelper.SetConstantPoolAttribute(typeBuilder, ConstantPoolAttribute.Compress(constantPool, inUse));
+				}
+			}
+
+			private static void MarkConstantPoolUsage(ClassFile classFile, byte[] runtimeVisibleTypeAnnotations, ref object[] constantPool, ref bool[] inUse)
+			{
+				if (runtimeVisibleTypeAnnotations != null)
+				{
+					if (constantPool == null)
+					{
+						constantPool = classFile.GetConstantPool();
+						inUse = new bool[constantPool.Length];
+					}
+					try
+					{
+						BigEndianBinaryReader br = new BigEndianBinaryReader(runtimeVisibleTypeAnnotations, 0, runtimeVisibleTypeAnnotations.Length);
+						ushort num_annotations = br.ReadUInt16();
+						for (int i = 0; i < num_annotations; i++)
+						{
+							MarkConstantPoolUsageForTypeAnnotation(br, inUse);
+						}
+						return;
+					}
+					catch (ClassFormatError)
+					{
+					}
+					catch (IndexOutOfRangeException)
+					{
+					}
+					// if we fail to parse the annotations (e.g. due to a malformed attribute), we simply keep all the constant pool entries
+					for (int i = 0; i < inUse.Length; i++)
+					{
+						inUse[i] = true;
+					}
+				}
+			}
+
+			private static void MarkConstantPoolUsageForTypeAnnotation(BigEndianBinaryReader br, bool[] inUse)
+			{
+				switch (br.ReadByte())		// target_type
+				{
+					case 0x00:
+					case 0x01:
+						br.ReadByte();		// type_parameter_index
+						break;
+					case 0x10:
+						br.ReadUInt16();	// supertype_index
+						break;
+					case 0x11:
+					case 0x12:
+						br.ReadByte();		// type_parameter_index
+						br.ReadByte();		// bound_index
+						break;
+					case 0x13:
+					case 0x14:
+					case 0x15:
+						// empty_target
+						break;
+					case 0x16:
+						br.ReadByte();		// formal_parameter_index
+						break;
+					case 0x17:
+						br.ReadUInt16();	// throws_type_index
+						break;
+					default:
+						throw new ClassFormatError("");
+				}
+				byte path_length = br.ReadByte();
+				for (int i = 0; i < path_length; i++)
+				{
+					br.ReadByte();			// type_path_kind
+					br.ReadByte();			// type_argument_index
+				}
+				MarkConstantPoolUsageForAnnotation(br, inUse);
+			}
+
+			private static void MarkConstantPoolUsageForAnnotation(BigEndianBinaryReader br, bool[] inUse)
+			{
+				ushort type_index = br.ReadUInt16();
+				inUse[type_index] = true;
+				ushort num_components = br.ReadUInt16();
+				for (int i = 0; i < num_components; i++)
+				{
+					ushort component_name_index = br.ReadUInt16();
+					inUse[component_name_index] = true;
+					MarkConstantPoolUsageForAnnotationComponentValue(br, inUse);
+				}
+			}
+
+			private static void MarkConstantPoolUsageForAnnotationComponentValue(BigEndianBinaryReader br, bool[] inUse)
+			{
+				switch ((char)br.ReadByte())	// tag
+				{
+					case 'B':
+					case 'C':
+					case 'D':
+					case 'F':
+					case 'I':
+					case 'J':
+					case 'S':
+					case 'Z':
+					case 's':
+					case 'c':
+						inUse[br.ReadUInt16()] = true;
+						break;
+					case 'e':
+						inUse[br.ReadUInt16()] = true;
+						inUse[br.ReadUInt16()] = true;
+						break;
+					case '@':
+						MarkConstantPoolUsageForAnnotation(br, inUse);
+						break;
+					case '[':
+						ushort num_values = br.ReadUInt16();
+						for (int i = 0; i < num_values; i++)
+						{
+							MarkConstantPoolUsageForAnnotationComponentValue(br, inUse);
+						}
+						break;
+					default:
+						throw new ClassFormatError("");
+				}
+			}
+
 			private bool EmitInterlockedCompareAndSet(MethodWrapper method, string fieldName, CodeEmitter ilGenerator)
 			{
 				TypeWrapper[] parameters = method.GetParameters();

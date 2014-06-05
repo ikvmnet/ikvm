@@ -881,6 +881,79 @@ namespace IKVM.Attributes
 		}
 	}
 
+	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface)]
+	public sealed class ConstantPoolAttribute : Attribute
+	{
+		internal readonly object[] constantPool;
+
+		public ConstantPoolAttribute(object[] constantPool)
+		{
+			this.constantPool = Decompress(constantPool);
+		}
+
+		private static object[] Decompress(object[] constantPool)
+		{
+			List<object> list = new List<object>();
+			foreach (object obj in constantPool)
+			{
+				int emptySlots = obj as byte? ?? obj as ushort? ?? 0;
+				if (emptySlots == 0)
+				{
+					list.Add(obj);
+				}
+				else
+				{
+					for (int i = 0; i < emptySlots; i++)
+					{
+						list.Add(null);
+					}
+				}
+			}
+			return list.ToArray();
+		}
+
+		internal static object[] Compress(object[] constantPool, bool[] inUse)
+		{
+			int length = constantPool.Length;
+			while (!inUse[length - 1])
+			{
+				length--;
+			}
+			int write = 0;
+			for (int read = 0; read < length; read++)
+			{
+				int start = read;
+				while (!inUse[read])
+				{
+					read++;
+				}
+				int emptySlots = read - start;
+				if (emptySlots > 255)
+				{
+					constantPool[write++] = (ushort)emptySlots;
+				}
+				else if (emptySlots > 0)
+				{
+					constantPool[write++] = (byte)emptySlots;
+				}
+				constantPool[write++] = constantPool[read];
+			}
+			Array.Resize(ref constantPool, write);
+			return constantPool;
+		}
+	}
+
+	[AttributeUsage(AttributeTargets.Method | AttributeTargets.Constructor | AttributeTargets.Field)]
+	public sealed class RuntimeVisibleTypeAnnotationsAttribute : Attribute
+	{
+		internal readonly byte[] data;
+
+		public RuntimeVisibleTypeAnnotationsAttribute(byte[] data)
+		{
+			this.data = data;
+		}
+	}
+
 	// used in custom modifier for access stubs
 	public static class AccessStub { }
 }

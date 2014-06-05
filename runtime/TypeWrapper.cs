@@ -80,6 +80,8 @@ namespace IKVM.Internal
 		private static ConstructorInfo enclosingMethodAttribute;
 		private static ConstructorInfo signatureAttribute;
 		private static ConstructorInfo methodParametersAttribute;
+		private static ConstructorInfo runtimeVisibleTypeAnnotationsAttribute;
+		private static ConstructorInfo constantPoolAttribute;
 		private static CustomAttributeBuilder paramArrayAttribute;
 		private static ConstructorInfo nonNestedInnerClassAttribute;
 		private static ConstructorInfo nonNestedOuterClassAttribute;
@@ -107,6 +109,8 @@ namespace IKVM.Internal
 		private static readonly Type typeofNonNestedOuterClassAttribute = JVM.LoadType(typeof(NonNestedOuterClassAttribute));
 		private static readonly Type typeofEnclosingMethodAttribute = JVM.LoadType(typeof(EnclosingMethodAttribute));
 		private static readonly Type typeofMethodParametersAttribute = JVM.LoadType(typeof(MethodParametersAttribute));
+		private static readonly Type typeofRuntimeVisibleTypeAnnotationsAttribute = JVM.LoadType(typeof(RuntimeVisibleTypeAnnotationsAttribute));
+		private static readonly Type typeofConstantPoolAttribute = JVM.LoadType(typeof(ConstantPoolAttribute));
 		private static readonly CustomAttributeBuilder hideFromJavaAttribute = new CustomAttributeBuilder(typeofHideFromJavaAttribute.GetConstructor(Type.EmptyTypes), new object[0]);
 		private static readonly CustomAttributeBuilder hideFromReflection = new CustomAttributeBuilder(typeofHideFromJavaAttribute.GetConstructor(new Type[] { typeofHideFromJavaFlags }), new object[] { HideFromJavaFlags.Reflection | HideFromJavaFlags.StackTrace | HideFromJavaFlags.StackWalk });
 
@@ -874,6 +878,42 @@ namespace IKVM.Internal
 			mb.SetCustomAttribute(new CustomAttributeBuilder(methodParametersAttribute, new object[] { modifiers }));
 		}
 
+		internal static void SetRuntimeVisibleTypeAnnotationsAttribute(TypeBuilder tb, byte[] data)
+		{
+			if(runtimeVisibleTypeAnnotationsAttribute == null)
+			{
+				runtimeVisibleTypeAnnotationsAttribute = typeofRuntimeVisibleTypeAnnotationsAttribute.GetConstructor(new Type[] { Types.Byte.MakeArrayType() });
+			}
+			tb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttribute, new object[] { data }));
+		}
+
+		internal static void SetRuntimeVisibleTypeAnnotationsAttribute(FieldBuilder fb, byte[] data)
+		{
+			if(runtimeVisibleTypeAnnotationsAttribute == null)
+			{
+				runtimeVisibleTypeAnnotationsAttribute = typeofRuntimeVisibleTypeAnnotationsAttribute.GetConstructor(new Type[] { Types.Byte.MakeArrayType() });
+			}
+			fb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttribute, new object[] { data }));
+		}
+
+		internal static void SetRuntimeVisibleTypeAnnotationsAttribute(MethodBuilder mb, byte[] data)
+		{
+			if(runtimeVisibleTypeAnnotationsAttribute == null)
+			{
+				runtimeVisibleTypeAnnotationsAttribute = typeofRuntimeVisibleTypeAnnotationsAttribute.GetConstructor(new Type[] { Types.Byte.MakeArrayType() });
+			}
+			mb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttribute, new object[] { data }));
+		}
+
+		internal static void SetConstantPoolAttribute(TypeBuilder tb, object[] constantPool)
+		{
+			if(constantPoolAttribute == null)
+			{
+				constantPoolAttribute = typeofConstantPoolAttribute.GetConstructor(new Type[] { Types.Object.MakeArrayType() });
+			}
+			tb.SetCustomAttribute(new CustomAttributeBuilder(constantPoolAttribute, new object[] { constantPool }));
+		}
+
 		internal static void SetParamArrayAttribute(ParameterBuilder pb)
 		{
 			if(paramArrayAttribute == null)
@@ -1012,6 +1052,34 @@ namespace IKVM.Internal
 			{
 				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
 				return new MethodParametersAttribute(DecodeArray<Modifiers>(args[0]));
+			}
+			return null;
+#endif
+		}
+
+		internal static object[] GetConstantPool(Type type)
+		{
+#if !STATIC_COMPILER && !STUB_GENERATOR
+			object[] attribs = type.GetCustomAttributes(typeof(ConstantPoolAttribute), false);
+			return attribs.Length == 1 ? ((ConstantPoolAttribute)attribs[0]).constantPool : null;
+#else
+			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(type, typeofConstantPoolAttribute, false))
+			{
+				return DecodeArray<object>(cad.ConstructorArguments[0]);
+			}
+			return null;
+#endif
+		}
+
+		internal static byte[] GetRuntimeVisibleTypeAnnotations(MemberInfo member)
+		{
+#if !STATIC_COMPILER && !STUB_GENERATOR
+			object[] attribs = member.GetCustomAttributes(typeof(RuntimeVisibleTypeAnnotationsAttribute), false);
+			return attribs.Length == 1 ? ((RuntimeVisibleTypeAnnotationsAttribute)attribs[0]).data : null;
+#else
+			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(member, typeofRuntimeVisibleTypeAnnotationsAttribute, false))
+			{
+				return DecodeArray<byte>(cad.ConstructorArguments[0]);
 			}
 			return null;
 #endif
@@ -5163,6 +5231,28 @@ namespace IKVM.Internal
 		internal override bool IsFastClassLiteralSafe
 		{
 			get { return true; }
+		}
+
+		internal override object[] GetConstantPool()
+		{
+			return AttributeHelper.GetConstantPool(type);
+		}
+
+		internal override byte[] GetRawTypeAnnotations()
+		{
+			return AttributeHelper.GetRuntimeVisibleTypeAnnotations(type);
+		}
+
+		internal override byte[] GetMethodRawTypeAnnotations(MethodWrapper mw)
+		{
+			MethodBase mb = mw.GetMethod();
+			return mb == null ? null : AttributeHelper.GetRuntimeVisibleTypeAnnotations(mb);
+		}
+
+		internal override byte[] GetFieldRawTypeAnnotations(FieldWrapper fw)
+		{
+			FieldInfo fi = fw.GetField();
+			return fi == null ? null : AttributeHelper.GetRuntimeVisibleTypeAnnotations(fi);
 		}
 	}
 
