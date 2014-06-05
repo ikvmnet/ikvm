@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2012 Jeroen Frijters
+  Copyright (C) 2002-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -223,5 +223,12 @@ sealed class BigEndianBinaryReader
 		uint i = (uint)((buf[pos] << 24) + (buf[pos + 1] << 16) + (buf[pos + 2] << 8) + buf[pos + 3]);
 		pos += 4;
 		return i;
+	}
+
+	internal byte[] ToArray()
+	{
+		byte[] res = new byte[end - pos];
+		Buffer.BlockCopy(buf, pos, res, 0, res.Length);
+		return res;
 	}
 }

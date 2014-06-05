@@ -83,6 +83,7 @@ namespace IKVM.Internal
 		private string signature;
 		private string[] enclosingMethod;
 		private BootstrapMethod[] bootstrapMethods;
+		private byte[] runtimeVisibleTypeAnnotations;
 
 		private static class SupportedVersions
 		{
@@ -487,6 +488,14 @@ namespace IKVM.Internal
 							}
 							bootstrapMethods = ReadBootstrapMethods(br, this);
 							break;
+						case "RuntimeVisibleTypeAnnotations":
+							if(majorVersion < 52)
+							{
+								goto default;
+							}
+							CreateUtf8ConstantPoolItems(utf8_cp);
+							runtimeVisibleTypeAnnotations = br.Section(br.ReadUInt32()).ToArray();
+							break;
 						case "IKVM.NET.Assembly":
 							if(br.ReadUInt32() != 2)
 							{
@@ -534,6 +543,17 @@ namespace IKVM.Internal
 			//			fs.Close();
 			//			throw;
 			//		}
+		}
+
+		private void CreateUtf8ConstantPoolItems(string[] utf8_cp)
+		{
+			for (int i = 0; i < constantpool.Length; i++)
+			{
+				if (constantpool[i] == null && utf8_cp[i] != null)
+				{
+					constantpool[i] = new ConstantPoolItemUtf8(utf8_cp[i]);
+				}
+			}
 		}
 
 		private void CheckDuplicates<T>(T[] members, string msg)
@@ -1259,6 +1279,27 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal byte[] RuntimeVisibleTypeAnnotations
+		{
+			get
+			{
+				return runtimeVisibleTypeAnnotations;
+			}
+		}
+
+		internal object[] GetConstantPool()
+		{
+			object[] cp = new object[constantpool.Length];
+			for (int i = 1; i < cp.Length; i++)
+			{
+				if (constantpool[i] != null)
+				{
+					cp[i] = constantpool[i].GetRuntimeValue();
+				}
+			}
+			return cp;
+		}
+
 		internal string IKVMAssemblyAttribute
 		{
 			get
@@ -1396,6 +1437,13 @@ namespace IKVM.Internal
 
 			internal virtual void MarkLinkRequired()
 			{
+			}
+
+			// this is used for sun.reflect.ConstantPool
+			// it returns a boxed System.Int32, System.Int64, System.Float, System.Double or a string
+			internal virtual object GetRuntimeValue()
+			{
+				return null;
 			}
 		}
 
@@ -1582,6 +1630,11 @@ namespace IKVM.Internal
 				{
 					return d;
 				}
+			}
+
+			internal override object GetRuntimeValue()
+			{
+				return d;
 			}
 		}
 
@@ -1913,6 +1966,11 @@ namespace IKVM.Internal
 					return v;
 				}
 			}
+
+			internal override object GetRuntimeValue()
+			{
+				return v;
+			}
 		}
 
 		private sealed class ConstantPoolItemInteger : ConstantPoolItem
@@ -1936,6 +1994,11 @@ namespace IKVM.Internal
 					return v;
 				}
 			}
+
+			internal override object GetRuntimeValue()
+			{
+				return v;
+			}
 		}
 
 		private sealed class ConstantPoolItemLong : ConstantPoolItem
@@ -1958,6 +2021,11 @@ namespace IKVM.Internal
 				{
 					return l;
 				}
+			}
+
+			internal override object GetRuntimeValue()
+			{
+				return l;
 			}
 		}
 
@@ -2241,6 +2309,23 @@ namespace IKVM.Internal
 			}
 		}
 
+		// this is only used to copy strings into "constantpool" when we see a RuntimeVisibleTypeAnnotations attribute,
+		// because we need a consistent way of exposing constant pool items to the runtime and that case
+		private sealed class ConstantPoolItemUtf8 : ConstantPoolItem
+		{
+			private readonly string str;
+
+			internal ConstantPoolItemUtf8(string str)
+			{
+				this.str = str;
+			}
+
+			internal override object GetRuntimeValue()
+			{
+				return str;
+			}
+		}
+
 		private sealed class ConstantPoolItemLiveObject : ConstantPoolItem
 		{
 			internal readonly object Value;
@@ -2283,6 +2368,7 @@ namespace IKVM.Internal
 			private string descriptor;
 			protected string signature;
 			protected object[] annotations;
+			protected byte[] runtimeVisibleTypeAnnotations;
 
 			internal FieldOrMethod(ClassFile classFile, string[] utf8_cp, BigEndianBinaryReader br)
 			{
@@ -2439,6 +2525,14 @@ namespace IKVM.Internal
 				}
 			}
 
+			internal byte[] RuntimeVisibleTypeAnnotations
+			{
+				get
+				{
+					return runtimeVisibleTypeAnnotations;
+				}
+			}
+
 			public sealed override int GetHashCode()
 			{
 				return name.GetHashCode() ^ descriptor.GetHashCode();
@@ -2572,6 +2666,14 @@ namespace IKVM.Internal
 								}
 #endif
 							}
+							break;
+						case "RuntimeVisibleTypeAnnotations":
+							if (classFile.MajorVersion < 52)
+							{
+								goto default;
+							}
+							classFile.CreateUtf8ConstantPoolItems(utf8_cp);
+							runtimeVisibleTypeAnnotations = br.Section(br.ReadUInt32()).ToArray();
 							break;
 						default:
 							br.Skip(br.ReadUInt32());
@@ -2923,6 +3025,14 @@ namespace IKVM.Internal
 							parameters = ReadMethodParameters(br, utf8_cp);
 							break;
 						}
+						case "RuntimeVisibleTypeAnnotations":
+							if (classFile.MajorVersion < 52)
+							{
+								goto default;
+							}
+							classFile.CreateUtf8ConstantPoolItems(utf8_cp);
+							runtimeVisibleTypeAnnotations = br.Section(br.ReadUInt32()).ToArray();
+							break;
 						default:
 							br.Skip(br.ReadUInt32());
 							break;

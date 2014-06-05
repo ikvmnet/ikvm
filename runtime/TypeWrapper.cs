@@ -3349,6 +3349,26 @@ namespace IKVM.Internal
 			get { return this is DynamicTypeWrapper; }
 #endif
 		}
+
+		internal virtual object[] GetConstantPool()
+		{
+			return null;
+		}
+
+		internal virtual byte[] GetRawTypeAnnotations()
+		{
+			return null;
+		}
+
+		internal virtual byte[] GetMethodRawTypeAnnotations(MethodWrapper mw)
+		{
+			return null;
+		}
+
+		internal virtual byte[] GetFieldRawTypeAnnotations(FieldWrapper fw)
+		{
+			return null;
+		}
 	}
 
 	sealed class UnloadableTypeWrapper : TypeWrapper

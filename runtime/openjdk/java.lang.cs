@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2007-2013 Jeroen Frijters
+  Copyright (C) 2007-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -98,12 +98,53 @@ static class Java_java_lang_Class
 
 	public static byte[] getRawTypeAnnotations(java.lang.Class thisClass)
 	{
-		throw new NotImplementedException();
+		return TypeWrapper.FromClass(thisClass).GetRawTypeAnnotations();
 	}
+
+#if !FIRST_PASS
+	private sealed class ConstantPoolImpl : sun.reflect.ConstantPool
+	{
+		private readonly object[] constantPool;
+
+		internal ConstantPoolImpl(object[] constantPool)
+		{
+			this.constantPool = constantPool;
+		}
+
+		public override string getUTF8At(int index)
+		{
+			return (string)constantPool[index];
+		}
+
+		public override int getIntAt(int index)
+		{
+			return (int)constantPool[index];
+		}
+
+		public override long getLongAt(int index)
+		{
+			return (long)constantPool[index];
+		}
+
+		public override float getFloatAt(int index)
+		{
+			return (float)constantPool[index];
+		}
+
+		public override double getDoubleAt(int index)
+		{
+			return (double)constantPool[index];
+		}
+	}
+#endif
 
     public static object getConstantPool(java.lang.Class thisClass)
 	{
-		throw new NotImplementedException();
+#if FIRST_PASS
+		return null;
+#else
+		return new ConstantPoolImpl(TypeWrapper.FromClass(thisClass).GetConstantPool());
+#endif
 	}
 
 	public static bool isInstance(java.lang.Class thisClass, object obj)

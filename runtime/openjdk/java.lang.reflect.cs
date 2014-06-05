@@ -735,7 +735,8 @@ static class Java_java_lang_reflect_Executable
 
 	public static byte[] getTypeAnnotationBytes0(java.lang.reflect.Executable _this)
 	{
-		throw new NotImplementedException();
+		MethodWrapper mw = MethodWrapper.FromExecutable(_this);
+		return mw.DeclaringType.GetMethodRawTypeAnnotations(mw);
 	}
 
 	public static object declaredAnnotationsImpl(java.lang.reflect.Executable executable)
@@ -792,7 +793,8 @@ static class Java_java_lang_reflect_Field
 
 	public static byte[] getTypeAnnotationBytes0(java.lang.reflect.Field thisField)
 	{
-		throw new NotImplementedException();
+		FieldWrapper fw = FieldWrapper.FromField(thisField);
+		return fw.DeclaringType.GetFieldRawTypeAnnotations(fw);
 	}
 }
 

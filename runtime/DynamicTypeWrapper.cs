@@ -443,6 +443,10 @@ namespace IKVM.Internal
 			internal abstract MethodParametersEntry[] GetMethodParameters(int index);
 			internal abstract object[] GetFieldAnnotations(int index);
 			internal abstract MethodInfo GetFinalizeMethod();
+			internal abstract object[] GetConstantPool();
+			internal abstract byte[] GetRawTypeAnnotations();
+			internal abstract byte[] GetMethodRawTypeAnnotations(int index);
+			internal abstract byte[] GetFieldRawTypeAnnotations(int index);
 		}
 
 		private sealed class JavaTypeImpl : DynamicImpl
@@ -3439,6 +3443,30 @@ namespace IKVM.Internal
 			{
 				return finalizeMethod;
 			}
+
+			internal override object[] GetConstantPool()
+			{
+				Debug.Fail("Unreachable code");
+				return null;
+			}
+
+			internal override byte[] GetRawTypeAnnotations()
+			{
+				Debug.Fail("Unreachable code");
+				return null;
+			}
+
+			internal override byte[] GetMethodRawTypeAnnotations(int index)
+			{
+				Debug.Fail("Unreachable code");
+				return null;
+			}
+
+			internal override byte[] GetFieldRawTypeAnnotations(int index)
+			{
+				Debug.Fail("Unreachable code");
+				return null;
+			}
 		}
 
 		private sealed class Metadata
@@ -3446,12 +3474,17 @@ namespace IKVM.Internal
 			private readonly string[][] genericMetaData;
 			private readonly object[][] annotations;
 			private readonly MethodParametersEntry[][] methodParameters;
+			private readonly byte[][][] runtimeVisibleTypeAnnotations;
+			private readonly object[] constantPool;
 
-			private Metadata(string[][] genericMetaData, object[][] annotations, MethodParametersEntry[][] methodParameters)
+			private Metadata(string[][] genericMetaData, object[][] annotations, MethodParametersEntry[][] methodParameters,
+				byte[][][] runtimeVisibleTypeAnnotations, object[] constantPool)
 			{
 				this.genericMetaData = genericMetaData;
 				this.annotations = annotations;
 				this.methodParameters = methodParameters;
+				this.runtimeVisibleTypeAnnotations = runtimeVisibleTypeAnnotations;
+				this.constantPool = constantPool;
 			}
 
 			internal static Metadata Create(ClassFile classFile)
@@ -3463,6 +3496,7 @@ namespace IKVM.Internal
 				string[][] genericMetaData = null;
 				object[][] annotations = null;
 				MethodParametersEntry[][] methodParameters = null;
+				byte[][][] runtimeVisibleTypeAnnotations = null;
 				for (int i = 0; i < classFile.Methods.Length; i++)
 				{
 					if (classFile.Methods[i].GenericSignature != null)
@@ -3521,6 +3555,18 @@ namespace IKVM.Internal
 						}
 						methodParameters[i] = classFile.Methods[i].MethodParameters;
 					}
+					if (classFile.Methods[i].RuntimeVisibleTypeAnnotations != null)
+					{
+						if (runtimeVisibleTypeAnnotations == null)
+						{
+							runtimeVisibleTypeAnnotations = new byte[3][][];
+						}
+						if (runtimeVisibleTypeAnnotations[1] == null)
+						{
+							runtimeVisibleTypeAnnotations[1] = new byte[classFile.Methods.Length][];
+						}
+						runtimeVisibleTypeAnnotations[1][i] = classFile.Methods[i].RuntimeVisibleTypeAnnotations;
+					}
 				}
 				for (int i = 0; i < classFile.Fields.Length; i++)
 				{
@@ -3548,6 +3594,18 @@ namespace IKVM.Internal
 						}
 						annotations[4][i] = classFile.Fields[i].Annotations;
 					}
+					if (classFile.Fields[i].RuntimeVisibleTypeAnnotations != null)
+					{
+						if (runtimeVisibleTypeAnnotations == null)
+						{
+							runtimeVisibleTypeAnnotations = new byte[3][][];
+						}
+						if (runtimeVisibleTypeAnnotations[2] == null)
+						{
+							runtimeVisibleTypeAnnotations[2] = new byte[classFile.Fields.Length][];
+						}
+						runtimeVisibleTypeAnnotations[2][i] = classFile.Fields[i].RuntimeVisibleTypeAnnotations;
+					}
 				}
 				if (classFile.EnclosingMethod != null)
 				{
@@ -3573,9 +3631,18 @@ namespace IKVM.Internal
 					}
 					annotations[0] = classFile.Annotations;
 				}
-				if (genericMetaData != null || annotations != null || methodParameters != null)
+				if (classFile.RuntimeVisibleTypeAnnotations != null)
 				{
-					return new Metadata(genericMetaData, annotations, methodParameters);
+					if (runtimeVisibleTypeAnnotations == null)
+					{
+						runtimeVisibleTypeAnnotations = new byte[3][][];
+					}
+					runtimeVisibleTypeAnnotations[0] = new byte[1][] { classFile.RuntimeVisibleTypeAnnotations };
+				}
+				if (genericMetaData != null || annotations != null || methodParameters != null || runtimeVisibleTypeAnnotations != null)
+				{
+					object[] constantPool = runtimeVisibleTypeAnnotations == null ? null : classFile.GetConstantPool();
+					return new Metadata(genericMetaData, annotations, methodParameters, runtimeVisibleTypeAnnotations, constantPool);
 				}
 				return null;
 			}
@@ -3667,6 +3734,38 @@ namespace IKVM.Internal
 				if (m != null && m.annotations != null && m.annotations[4] != null)
 				{
 					return (object[])m.annotations[4][index];
+				}
+				return null;
+			}
+
+			internal static object[] GetConstantPool(Metadata m)
+			{
+				return m.constantPool;
+			}
+
+			internal static byte[] GetRawTypeAnnotations(Metadata m)
+			{
+				if (m != null && m.runtimeVisibleTypeAnnotations != null && m.runtimeVisibleTypeAnnotations[0] != null)
+				{
+					return m.runtimeVisibleTypeAnnotations[0][0];
+				}
+				return null;
+			}
+
+			internal static byte[] GetMethodRawTypeAnnotations(Metadata m, int index)
+			{
+				if (m != null && m.runtimeVisibleTypeAnnotations != null && m.runtimeVisibleTypeAnnotations[1] != null)
+				{
+					return m.runtimeVisibleTypeAnnotations[1][index];
+				}
+				return null;
+			}
+
+			internal static byte[] GetFieldRawTypeAnnotations(Metadata m, int index)
+			{
+				if (m != null && m.runtimeVisibleTypeAnnotations != null && m.runtimeVisibleTypeAnnotations[2] != null)
+				{
+					return m.runtimeVisibleTypeAnnotations[2][index];
 				}
 				return null;
 			}
@@ -3807,6 +3906,26 @@ namespace IKVM.Internal
 			internal override MethodInfo GetFinalizeMethod()
 			{
 				return finalizeMethod;
+			}
+
+			internal override object[] GetConstantPool()
+			{
+				return Metadata.GetConstantPool(metadata);
+			}
+
+			internal override byte[] GetRawTypeAnnotations()
+			{
+				return Metadata.GetRawTypeAnnotations(metadata);
+			}
+
+			internal override byte[] GetMethodRawTypeAnnotations(int index)
+			{
+				return Metadata.GetMethodRawTypeAnnotations(metadata, index);
+			}
+
+			internal override byte[] GetFieldRawTypeAnnotations(int index)
+			{
+				return Metadata.GetFieldRawTypeAnnotations(metadata, index);
 			}
 		}
 
@@ -6666,7 +6785,6 @@ namespace IKVM.Internal
 			Debug.Fail("Unreachable code");
 			return null;
 		}
-
 		private Type GetBaseTypeForDefineType()
 		{
 			return BaseTypeWrapper.TypeAsBaseType;
@@ -6757,6 +6875,27 @@ namespace IKVM.Internal
 				|| (classFile == "java.io.ObjectStreamField" && method == "getType" && signature == "()Ljava.lang.Class;")
 				|| (classFile == "javax.sql.rowset.serial.SerialJavaObject" && method == "getFields" && signature == "()[Ljava.lang.reflect.Field;")
 				;
+		}
+
+
+		internal override object[] GetConstantPool()
+		{
+			return impl.GetConstantPool();
+		}
+
+		internal override byte[] GetRawTypeAnnotations()
+		{
+			return impl.GetRawTypeAnnotations();
+		}
+
+		internal override byte[] GetMethodRawTypeAnnotations(MethodWrapper mw)
+		{
+			return impl.GetMethodRawTypeAnnotations(Array.IndexOf(GetMethods(), mw));
+		}
+
+		internal override byte[] GetFieldRawTypeAnnotations(FieldWrapper fw)
+		{
+			return impl.GetFieldRawTypeAnnotations(Array.IndexOf(GetFields(), fw));
 		}
 	}
 
