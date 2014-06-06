@@ -93,6 +93,7 @@ namespace IKVM.StubGen
 				writer.AddStringAttribute("Signature", genericTypeSignature);
 			}
 			AddAnnotations(writer, writer, tw.TypeAsBaseType);
+			AddTypeAnnotations(writer, writer, tw, tw.GetRawTypeAnnotations());
 			writer.AddStringAttribute("IKVM.NET.Assembly", GetAssemblyName(tw));
 			if (tw.TypeAsBaseType.IsDefined(JVM.Import(typeof(ObsoleteAttribute)), false))
 			{
@@ -219,6 +220,7 @@ namespace IKVM.StubGen
 					}
 					AddAnnotations(writer, m, mw.GetMethod());
 					AddParameterAnnotations(writer, m, mw.GetMethod());
+					AddTypeAnnotations(writer, m, tw, tw.GetMethodRawTypeAnnotations(mw));
 				}
 			}
 			bool hasSerialVersionUID = false;
@@ -250,6 +252,7 @@ namespace IKVM.StubGen
 							f.AddAttribute(new DeprecatedAttribute(writer));
 						}
 						AddAnnotations(writer, f, fw.GetField());
+						AddTypeAnnotations(writer, f, tw, tw.GetFieldRawTypeAnnotations(fw));
 					}
 				}
 			}
@@ -330,6 +333,143 @@ namespace IKVM.StubGen
 				}
 			}
 #endif
+		}
+
+		private static void AddTypeAnnotations(ClassFileWriter writer, IAttributeOwner target, TypeWrapper tw, byte[] typeAnnotations)
+		{
+#if !FIRST_PASS && !STUB_GENERATOR
+			if (typeAnnotations != null)
+			{
+				typeAnnotations = (byte[])typeAnnotations.Clone();
+				object[] constantPool = tw.GetConstantPool();
+				try
+				{
+					int pos = 0;
+					ushort num_annotations = ReadUInt16BE(typeAnnotations, ref pos);
+					for (int i = 0; i < num_annotations; i++)
+					{
+						FixupTypeAnnotationConstantPoolIndexes(writer, typeAnnotations, constantPool, ref pos);
+					}
+				}
+				catch (IndexOutOfRangeException)
+				{
+					// if the attribute is malformed, we add it anyway and hope the Java parser will agree and throw the right error
+				}
+				target.AddAttribute(new RuntimeVisibleTypeAnnotationsAttribute(writer, typeAnnotations));
+			}
+#endif
+		}
+
+		private static void FixupTypeAnnotationConstantPoolIndexes(ClassFileWriter writer, byte[] typeAnnotations, object[] constantPool, ref int pos)
+		{
+			switch (typeAnnotations[pos++])		// target_type
+			{
+				case 0x00:
+				case 0x01:
+				case 0x16:
+					pos++;
+					break;
+				case 0x10:
+				case 0x11:
+				case 0x12:
+				case 0x17:
+					pos += 2;
+					break;
+				case 0x13:
+				case 0x14:
+				case 0x15:
+					break;
+				default:
+					throw new IndexOutOfRangeException();
+			}
+			byte path_length = typeAnnotations[pos++];
+			pos += path_length * 2;
+			FixupAnnotationConstantPoolIndexes(writer, typeAnnotations, constantPool, ref pos);
+		}
+
+		private static void FixupAnnotationConstantPoolIndexes(ClassFileWriter writer, byte[] typeAnnotations, object[] constantPool, ref int pos)
+		{
+			FixupConstantPoolIndex(writer, typeAnnotations, constantPool, ref pos);
+			ushort num_components = ReadUInt16BE(typeAnnotations, ref pos);
+			for (int i = 0; i < num_components; i++)
+			{
+				FixupConstantPoolIndex(writer, typeAnnotations, constantPool, ref pos);
+				FixupAnnotationComponentValueConstantPoolIndexes(writer, typeAnnotations, constantPool, ref pos);
+			}
+		}
+
+		private static void FixupConstantPoolIndex(ClassFileWriter writer, byte[] typeAnnotations, object[] constantPool, ref int pos)
+		{
+			ushort index = ReadUInt16BE(typeAnnotations, ref pos);
+			object item = constantPool[index];
+			if (item is int)
+			{
+				index = writer.AddInt((int)item);
+			}
+			else if (item is long)
+			{
+				index = writer.AddLong((long)item);
+			}
+			else if (item is float)
+			{
+				index = writer.AddFloat((float)item);
+			}
+			else if (item is double)
+			{
+				index = writer.AddDouble((double)item);
+			}
+			else if (item is string)
+			{
+				index = writer.AddUtf8((string)item);
+			}
+			else
+			{
+				throw new IndexOutOfRangeException();
+			}
+			typeAnnotations[pos - 2] = (byte)(index >> 8);
+			typeAnnotations[pos - 1] = (byte)(index >> 0);
+		}
+
+		private static void FixupAnnotationComponentValueConstantPoolIndexes(ClassFileWriter writer, byte[] typeAnnotations, object[] constantPool, ref int pos)
+		{
+			switch ((char)typeAnnotations[pos++])	// tag
+			{
+				case 'B':
+				case 'C':
+				case 'D':
+				case 'F':
+				case 'I':
+				case 'J':
+				case 'S':
+				case 'Z':
+				case 's':
+				case 'c':
+					FixupConstantPoolIndex(writer, typeAnnotations, constantPool, ref pos);
+					break;
+				case 'e':
+					FixupConstantPoolIndex(writer, typeAnnotations, constantPool, ref pos);
+					FixupConstantPoolIndex(writer, typeAnnotations, constantPool, ref pos);
+					break;
+				case '@':
+					FixupAnnotationConstantPoolIndexes(writer, typeAnnotations, constantPool, ref pos);
+					break;
+				case '[':
+					ushort num_values = ReadUInt16BE(typeAnnotations, ref pos);
+					for (int i = 0; i < num_values; i++)
+					{
+						FixupAnnotationComponentValueConstantPoolIndexes(writer, typeAnnotations, constantPool, ref pos);
+					}
+					break;
+				default:
+					throw new IndexOutOfRangeException();
+			}
+		}
+
+		private static ushort ReadUInt16BE(byte[] buf, ref int pos)
+		{
+			ushort s = (ushort)((buf[pos] << 8) + buf[pos + 1]);
+			pos += 2;
+			return s;
 		}
 
 #if !FIRST_PASS && !STUB_GENERATOR

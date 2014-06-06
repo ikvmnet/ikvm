@@ -72,6 +72,11 @@ namespace IKVM.StubGen
 			stream.WriteByte(b);
 		}
 
+		public void WriteBytes(byte[] data)
+		{
+			stream.Write(data, 0, data.Length);
+		}
+
 		public void WriteUtf8(string str)
 		{
 			byte[] buf = new byte[str.Length * 3 + 1];
@@ -725,6 +730,24 @@ namespace IKVM.StubGen
 			{
 				attr.WriteImpl(bes);
 			}
+		}
+	}
+
+	sealed class RuntimeVisibleTypeAnnotationsAttribute : ClassFileAttribute
+	{
+		private readonly byte[] data;
+
+		internal RuntimeVisibleTypeAnnotationsAttribute(ClassFileWriter classFile, byte[] data)
+			: base(classFile.AddUtf8("RuntimeVisibleTypeAnnotations"))
+		{
+			this.data = data;
+		}
+
+		public override void Write(BigEndianStream bes)
+		{
+			base.Write(bes);
+			bes.WriteUInt32((uint)data.Length);
+			bes.WriteBytes(data);
 		}
 	}
 
