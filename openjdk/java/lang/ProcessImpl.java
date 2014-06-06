@@ -49,6 +49,8 @@ import java.util.regex.Pattern;
 import cli.System.AsyncCallback;
 import cli.System.IAsyncResult;
 import cli.System.Diagnostics.ProcessStartInfo;
+import cli.System.EventArgs;
+import cli.System.EventHandler;
 import cli.System.IO.FileAccess;
 import cli.System.IO.FileShare;
 import cli.System.IO.FileMode;
@@ -150,8 +152,17 @@ final class ProcessImpl extends Process {
 
             return new ProcessImpl(cmdarray, environment, dir,
                                    stdHandles, redirectErrorStream);
+        } catch (Throwable t) {
+            if (f0 != null)
+                f0.close();
+            if (f1 != null)
+                f1.close();
+            if (f2 != null)
+                f2.close();
+            throw t;
         } finally {
             // HACK prevent the File[In|Out]putStream objects from closing the streams
+            // (the System.IO.FileStream will eventually be closed explicitly or by its finalizer)
             if (f0 != null)
                 cli.System.GC.SuppressFinalize(f0);
             if (f1 != null)
@@ -590,6 +601,27 @@ final class ProcessImpl extends Process {
             throw new IOException(x1.getMessage());
         } catch (cli.System.InvalidOperationException x2) {
             throw new IOException(x2.getMessage());
+        }
+
+        // if any of the handles is redirected to/from a file,
+        // we need to close the files as soon as the process exits
+        if (stdHandles[0] instanceof FileStream
+            || stdHandles[1] instanceof FileStream
+            || stdHandles[2] instanceof FileStream) {
+            final Stream s0 = stdHandles[0];
+            final Stream s1 = stdHandles[1];
+            final Stream s2 = stdHandles[2];
+            proc.set_EnableRaisingEvents(true);
+            proc.add_Exited(new EventHandler(new EventHandler.Method() {
+                public void Invoke(Object sender, EventArgs e) {
+                    if (s0 instanceof FileStream)
+                        s0.Close();
+                    if (s1 instanceof FileStream)
+                        s1.Close();
+                    if (s2 instanceof FileStream)
+                        s2.Close();
+                }
+            }));
         }
         
         Stream stdin = proc.get_StandardInput().get_BaseStream();
