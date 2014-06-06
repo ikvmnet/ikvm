@@ -1260,9 +1260,14 @@ static class Java_java_lang_ProcessImpl
 {
 	public static string mapVfsExecutable(string path)
 	{
-		if (VirtualFileSystem.IsVirtualFS(path))
+		string unquoted = path;
+		if (unquoted.Length > 2 && unquoted[0] == '"' && unquoted[unquoted.Length - 1] == '"')
 		{
-			return VirtualFileSystem.MapExecutable(path);
+			unquoted = unquoted.Substring(1, unquoted.Length - 2);
+		}
+		if (VirtualFileSystem.IsVirtualFS(unquoted))
+		{
+			return VirtualFileSystem.MapExecutable(unquoted);
 		}
 		return path;
 	}
