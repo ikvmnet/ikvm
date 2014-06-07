@@ -1,7 +1,7 @@
 /*
   Copyright (C) 2002, 2004, 2005, 2006, 2007 Jeroen Frijters
   Copyright (C) 2006 Active Endpoints, Inc.
-  Copyright (C) 2006 - 2013 Volker Berlin (i-net software)
+  Copyright (C) 2006 - 2014 Volker Berlin (i-net software)
   Copyright (C) 2011 Karsten Heinrich (i-net software)
 
   This software is provided 'as-is', without any express or implied
@@ -885,7 +885,7 @@ namespace ikvm.awt
         {
             if (pen!=null) pen.Dispose();
             if (brush!=null) brush.Dispose();
-            g.Dispose();
+            graphics.Dispose(); //for dispose we does not need to synchronize the buffer of a bitmap
         }
 
         public override void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle)
