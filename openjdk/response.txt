@@ -841,6 +841,7 @@
     -baseaddress:0x5B3A0000
     -remap:security.xml
     sun/security/jgss/wrapper/*.class
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/security/util/*.class
     @OPENJDK@/jdk/src/share/classes/com/sun/crypto/provider/*.class
     @OPENJDK@/jdk/src/share/classes/com/sun/net/ssl/*.class
     @OPENJDK@/jdk/src/share/classes/com/sun/net/ssl/internal/ssl/*.class
@@ -946,6 +947,7 @@
 {
     -out:IKVM.OpenJDK.Misc.dll
     -baseaddress:0x5BF70000
+    @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/misc/resources/*.class
     @OPENJDK@/corba/src/share/classes/javax/activity/*.class
     @OPENJDK@/jaxws/src/share/jaxws_classes/javax/annotation/*.class
     @OPENJDK@/jaxws/src/share/jaxws_classes/javax/jws/*.class

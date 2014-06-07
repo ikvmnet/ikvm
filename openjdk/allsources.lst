@@ -950,6 +950,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/management/resources/agent_zh_CN.java
 @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/management/resources/agent_zh_HK.java
 @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/management/resources/agent_zh_TW.java
+@OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/misc/resources/Messages_zh_HK.java
 @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/nio/cs/IBM437.java
 @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/nio/cs/IBM737.java
 @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/nio/cs/IBM775.java
@@ -1098,6 +1099,8 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/print/resources/serviceui_zh_CN.java
 @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/print/resources/serviceui_zh_HK.java
 @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/print/resources/serviceui_zh_TW.java
+@OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/security/util/AuthResources_zh_HK.java
+@OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/security/util/Resources_zh_HK.java
 @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/text/resources/cldr/FormatData.java
 @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/text/resources/cldr/aa/FormatData_aa.java
 @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/text/resources/cldr/af/FormatData_af.java
