@@ -2260,6 +2260,29 @@
                 </method>
             </implements>
         </class>
+        <class name="java.nio.ByteBufferAsCharBufferB">
+            <method name="getUnchecked" sig="(I)C">
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+            </method>
+        </class>
+        <class name="java.nio.ByteBufferAsCharBufferL">
+            <method name="getUnchecked" sig="(I)C">
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+            </method>
+        </class>
+        <class name="java.nio.CharBuffer">
+            <method name="getUnchecked" sig="(I)C">
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+            </method>
+        </class>
+        <class name="java.nio.CharBufferSpliterator">
+            <method name="forEachRemaining" sig="(Ljava.util.function.IntConsumer;)V">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="tryAdvance" sig="(Ljava.util.function.IntConsumer;)Z">
+                <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+        </class>
         <class name="java.nio.DirectByteBuffer">
             <!-- add a constructor accessor for JNI -->
             <method name="__new" sig="(JI)Ljava.nio.DirectByteBuffer;" modifiers="static">
@@ -2390,6 +2413,9 @@
                 <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
                 <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
             </method>
+            <method name="getUnchecked" sig="(I)C">
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+            </method>
             <method name="put" sig="(Ljava.nio.CharBuffer;)Ljava.nio.CharBuffer;">
                 <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
             </method>
@@ -2419,6 +2445,9 @@
                 <!-- we use TreasAsSafe + Critical instead of SafeCritical to workaround PEVerify bug on .NET 2.0/3.5 -->
                 <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
                 <attribute type="System.Security.SecurityTreatAsSafeAttribute" sig="()V" />
+            </method>
+            <method name="getUnchecked" sig="(I)C">
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
             </method>
             <method name="put" sig="(Ljava.nio.CharBuffer;)Ljava.nio.CharBuffer;">
                 <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
@@ -2738,9 +2767,19 @@
                 <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
             </method>
         </class>
+        <class name="java.nio.HeapCharBuffer">
+            <method name="getUnchecked" sig="(I)C">
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
+            </method>
+        </class>
         <class name="java.nio.MappedByteBuffer">
             <method name="load" sig="()Ljava.nio.MappedByteBuffer;">
                 <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+        </class>
+        <class name="java.nio.StringCharBuffer">
+            <method name="getUnchecked" sig="(I)C">
+                <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
             </method>
         </class>
         <class name="sun.reflect.Reflection">
