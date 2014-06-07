@@ -74,6 +74,10 @@ static class Java_java_security_AccessController
 				java.lang.Class caller = callerID.getCallerClass();
 				protection_domain = caller == null ? null : Java_java_lang_Class.getProtectionDomain0(caller);
 			}
+			else if (Java_sun_reflect_Reflection.IsHideFromStackWalk(method))
+			{
+				continue;
+			}
 			else
 			{
 				protection_domain = GetProtectionDomainFromType(method.DeclaringType);
