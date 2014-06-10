@@ -756,6 +756,7 @@ namespace IKVM.Internal
 			AddDummyLibrary(bin, "net");
 			AddDummyLibrary(bin, "splashscreen");
 			AddDummyLibrary(bin, "osx");
+			AddDummyLibrary(bin, "management");
 			bin.Add("java", new VfsJavaExe());
 			bin.Add("javaw", new VfsJavaExe());
 			bin.Add("java.exe", new VfsJavaExe());
