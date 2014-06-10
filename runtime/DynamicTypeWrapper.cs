@@ -4790,25 +4790,50 @@ namespace IKVM.Internal
 
 			private bool EmitInterlockedCompareAndSet(MethodWrapper method, string fieldName, CodeEmitter ilGenerator)
 			{
+				if (method.ReturnType != PrimitiveTypeWrapper.BOOLEAN)
+				{
+					return false;
+				}
 				TypeWrapper[] parameters = method.GetParameters();
-				if (!method.IsStatic || parameters.Length != 3 || method.ReturnType != PrimitiveTypeWrapper.BOOLEAN)
+				TypeWrapper target;
+				int firstValueIndex;
+				if (method.IsStatic)
+				{
+					if (parameters.Length != 3)
+					{
+						return false;
+					}
+					target = parameters[0];
+					firstValueIndex = 1;
+				}
+				else
+				{
+					if (parameters.Length != 2)
+					{
+						return false;
+					}
+					target = method.DeclaringType;
+					firstValueIndex = 0;
+				}
+				if (target.IsUnloadable || target.IsPrimitive || target.IsNonPrimitiveValueType || target.IsGhost)
 				{
 					return false;
 				}
-				if (parameters[0].IsUnloadable || parameters[0].IsPrimitive || parameters[0].IsNonPrimitiveValueType || parameters[0].IsGhost)
+				TypeWrapper fieldType = parameters[firstValueIndex];
+				if (fieldType != parameters[firstValueIndex + 1])
 				{
 					return false;
 				}
-				if (parameters[1] != parameters[2])
+				if (fieldType.IsUnloadable || fieldType.IsNonPrimitiveValueType || fieldType.IsGhost)
 				{
 					return false;
 				}
-				if (parameters[1].IsUnloadable || parameters[1].IsPrimitive || parameters[1].IsNonPrimitiveValueType || parameters[1].IsGhost)
+				if (fieldType.IsPrimitive && fieldType != PrimitiveTypeWrapper.LONG && fieldType != PrimitiveTypeWrapper.INT)
 				{
 					return false;
 				}
 				FieldWrapper casField = null;
-				foreach (FieldWrapper fw in parameters[0].GetFields())
+				foreach (FieldWrapper fw in target.GetFields())
 				{
 					if (fw.Name == fieldName)
 					{
@@ -4824,6 +4849,10 @@ namespace IKVM.Internal
 					return false;
 				}
 				if (casField.IsStatic)
+				{
+					return false;
+				}
+				if (casField.FieldTypeWrapper != fieldType)
 				{
 					return false;
 				}
@@ -4849,7 +4878,18 @@ namespace IKVM.Internal
 				ilGenerator.Emit(OpCodes.Ldflda, fi);
 				ilGenerator.EmitLdarg(2);
 				ilGenerator.EmitLdarg(1);
-				ilGenerator.Emit(OpCodes.Call, AtomicReferenceFieldUpdaterEmitter.MakeCompareExchange(casField.FieldTypeWrapper.TypeAsSignatureType));
+				if (fieldType == PrimitiveTypeWrapper.LONG)
+				{
+					ilGenerator.Emit(OpCodes.Call, JVM.Import(typeof(System.Threading.Interlocked)).GetMethod("CompareExchange", new Type[] { Types.Int64.MakeByRefType(), Types.Int64, Types.Int64 }));
+				}
+				else if (fieldType == PrimitiveTypeWrapper.INT)
+				{
+					ilGenerator.Emit(OpCodes.Call, JVM.Import(typeof(System.Threading.Interlocked)).GetMethod("CompareExchange", new Type[] { Types.Int32.MakeByRefType(), Types.Int32, Types.Int32 }));
+				}
+				else
+				{
+					ilGenerator.Emit(OpCodes.Call, AtomicReferenceFieldUpdaterEmitter.MakeCompareExchange(casField.FieldTypeWrapper.TypeAsSignatureType));
+				}
 				ilGenerator.EmitLdarg(1);
 				ilGenerator.Emit(OpCodes.Ceq);
 				ilGenerator.Emit(OpCodes.Ret);
