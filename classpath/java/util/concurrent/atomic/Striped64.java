@@ -120,23 +120,8 @@ abstract class Striped64 extends Number {
     @sun.misc.Contended static final class Cell {
         volatile long value;
         Cell(long x) { value = x; }
-        final boolean cas(long cmp, long val) {
-            return UNSAFE.compareAndSwapLong(this, valueOffset, cmp, val);
-        }
-
-        // Unsafe mechanics
-        private static final sun.misc.Unsafe UNSAFE;
-        private static final long valueOffset;
-        static {
-            try {
-                UNSAFE = sun.misc.Unsafe.getUnsafe();
-                Class<?> ak = Cell.class;
-                valueOffset = UNSAFE.objectFieldOffset
-                    (ak.getDeclaredField("value"));
-            } catch (Exception e) {
-                throw new Error(e);
-            }
-        }
+        @ikvm.internal.InterlockedCompareAndSet("value")
+        final native boolean cas(long cmp, long val);
     }
 
     /** Number of CPUS, to place bound on table size */
@@ -167,23 +152,25 @@ abstract class Striped64 extends Number {
     /**
      * CASes the base field.
      */
-    final boolean casBase(long cmp, long val) {
-        return UNSAFE.compareAndSwapLong(this, BASE, cmp, val);
-    }
+    @ikvm.internal.InterlockedCompareAndSet("base")
+    final native boolean casBase(long cmp, long val);
 
     /**
      * CASes the cellsBusy field from 0 to 1 to acquire lock.
      */
     final boolean casCellsBusy() {
-        return UNSAFE.compareAndSwapInt(this, CELLSBUSY, 0, 1);
+        return casCellsBusy(0, 1);
     }
+
+    @ikvm.internal.InterlockedCompareAndSet("cellsBusy")
+    private native boolean casCellsBusy(int cmp, int newVal);
 
     /**
      * Returns the probe value for the current thread.
      * Duplicated from ThreadLocalRandom because of packaging restrictions.
      */
     static final int getProbe() {
-        return UNSAFE.getInt(Thread.currentThread(), PROBE);
+        return Thread.currentThread().threadLocalRandomProbe;
     }
 
     /**
@@ -195,7 +182,7 @@ abstract class Striped64 extends Number {
         probe ^= probe << 13;   // xorshift
         probe ^= probe >>> 17;
         probe ^= probe << 5;
-        UNSAFE.putInt(Thread.currentThread(), PROBE, probe);
+        Thread.currentThread().threadLocalRandomProbe = probe;
         return probe;
     }
 
@@ -389,25 +376,5 @@ abstract class Striped64 extends Number {
         }
     }
 
-    // Unsafe mechanics
-    private static final sun.misc.Unsafe UNSAFE;
-    private static final long BASE;
-    private static final long CELLSBUSY;
-    private static final long PROBE;
-    static {
-        try {
-            UNSAFE = sun.misc.Unsafe.getUnsafe();
-            Class<?> sk = Striped64.class;
-            BASE = UNSAFE.objectFieldOffset
-                (sk.getDeclaredField("base"));
-            CELLSBUSY = UNSAFE.objectFieldOffset
-                (sk.getDeclaredField("cellsBusy"));
-            Class<?> tk = Thread.class;
-            PROBE = UNSAFE.objectFieldOffset
-                (tk.getDeclaredField("threadLocalRandomProbe"));
-        } catch (Exception e) {
-            throw new Error(e);
-        }
-    }
 
 }

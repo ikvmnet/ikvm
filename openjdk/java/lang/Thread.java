@@ -2385,7 +2385,8 @@ class Thread implements Runnable {
 
     /** Probe hash value; nonzero if threadLocalRandomSeed initialized */
     @sun.misc.Contended("tlr")
-    int threadLocalRandomProbe;
+    @ikvm.lang.Internal // [IKVM] accessed from java.util.concurrent.atomic.Striped64
+    public int threadLocalRandomProbe;
 
     /** Secondary seed isolated from public ThreadLocalRandom sequence */
     @sun.misc.Contended("tlr")

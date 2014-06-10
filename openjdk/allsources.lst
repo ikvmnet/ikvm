@@ -28,6 +28,7 @@
 ../classpath/java/util/concurrent/atomic/AtomicLongArray.java
 ../classpath/java/util/concurrent/atomic/AtomicReference.java
 ../classpath/java/util/concurrent/atomic/AtomicReferenceArray.java
+../classpath/java/util/concurrent/atomic/Striped64.java
 ../classpath/sun/misc/Ref.java
 AssemblyInfo.java
 com/sun/imageio/plugins/jpeg/JPEGImageReader.java
@@ -10942,7 +10943,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/jdk/src/share/classes/java/util/concurrent/atomic/LongAccumulator.java
 @OPENJDK@/jdk/src/share/classes/java/util/concurrent/atomic/LongAdder.java
 @OPENJDK@/jdk/src/share/classes/java/util/concurrent/atomic/package-info.java
-@OPENJDK@/jdk/src/share/classes/java/util/concurrent/atomic/Striped64.java
 @OPENJDK@/jdk/src/share/classes/java/util/concurrent/BlockingDeque.java
 @OPENJDK@/jdk/src/share/classes/java/util/concurrent/BlockingQueue.java
 @OPENJDK@/jdk/src/share/classes/java/util/concurrent/BrokenBarrierException.java
