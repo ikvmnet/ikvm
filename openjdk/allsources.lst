@@ -188,8 +188,6 @@ sun/jdbc/odbc/JdbcOdbcResultSetMetaData.java
 sun/jdbc/odbc/JdbcOdbcStatement.java
 sun/jdbc/odbc/JdbcOdbcUpdateableResultSet.java
 sun/jdbc/odbc/JdbcOdbcUtils.java
-sun/management/FileSystemImpl.java
-sun/management/GcInfoBuilder.java
 sun/management/ManagementFactoryHelper.java
 sun/management/VMManagementImpl.java
 sun/misc/FileURLMapper.java
@@ -13173,6 +13171,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/jdk/src/share/classes/sun/management/counter/Variability.java
 @OPENJDK@/jdk/src/share/classes/sun/management/FileSystem.java
 @OPENJDK@/jdk/src/share/classes/sun/management/GarbageCollectionNotifInfoCompositeData.java
+@OPENJDK@/jdk/src/share/classes/sun/management/GcInfoBuilder.java
 @OPENJDK@/jdk/src/share/classes/sun/management/GcInfoCompositeData.java
 @OPENJDK@/jdk/src/share/classes/sun/management/HotspotClassLoading.java
 @OPENJDK@/jdk/src/share/classes/sun/management/HotspotClassLoadingMBean.java
@@ -14887,6 +14886,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/jdk/src/windows/classes/java/util/prefs/WindowsPreferences.java
 @OPENJDK@/jdk/src/windows/classes/java/util/prefs/WindowsPreferencesFactory.java
 @OPENJDK@/jdk/src/windows/classes/sun/awt/Win32ColorModel24.java
+@OPENJDK@/jdk/src/windows/classes/sun/management/FileSystemImpl.java
 @OPENJDK@/jdk/src/windows/classes/sun/management/OperatingSystemImpl.java
 @OPENJDK@/jdk/src/windows/classes/sun/net/NetHooks.java
 @OPENJDK@/jdk/src/windows/classes/sun/net/PortConfig.java

@@ -64,7 +64,6 @@ jdk/src/share/classes/sun/awt/image/ToolkitImage.java=sun/awt/image/ToolkitImage
 jdk/src/share/classes/sun/awt/SunToolkit.java=sun/awt/SunToolkit.java
 jdk/src/share/classes/sun/font/FontManager.java=sun/font/FontManager.java
 jdk/src/share/classes/sun/font/StrikeCache.java=sun/font/StrikeCache.java
-jdk/src/share/classes/sun/management/GcInfoBuilder.java=sun/management/GcInfoBuilder.java
 jdk/src/share/classes/sun/management/ManagementFactoryHelper.java=sun/management/ManagementFactoryHelper.java
 jdk/src/share/classes/sun/management/VMManagementImpl.java=sun/management/VMManagementImpl.java
 jdk/src/share/classes/sun/misc/SharedSecrets.java=sun/misc/SharedSecrets.java
