@@ -1105,20 +1105,6 @@ static class Java_java_lang_StrictMath
 #endif
 	}
 
-	public static double ceil(double d)
-	{
-#if FIRST_PASS
-		return 0;
-#else
-		return ikvm.@internal.JMath.ceil(d);
-#endif
-	}
-
-	public static double floor(double d)
-	{
-		return fdlibm.floor(d);
-	}
-
 	public static double atan2(double y, double x)
 	{
 #if FIRST_PASS
@@ -1146,15 +1132,6 @@ static class Java_java_lang_StrictMath
 	public static double tanh(double d)
 	{
 		return Math.Tanh(d);
-	}
-
-	public static double rint(double d)
-	{
-#if FIRST_PASS
-		return 0;
-#else
-		return ikvm.@internal.JMath.rint(d);
-#endif
 	}
 
 	public static double hypot(double a, double b)

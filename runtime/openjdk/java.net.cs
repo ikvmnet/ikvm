@@ -564,22 +564,6 @@ static class Java_java_net_NetworkInterface
 #endif
 	}
 
-	public static object getByIndex(int index)
-	{
-#if FIRST_PASS
-		return null;
-#else
-		foreach (java.net.NetworkInterface iface in GetInterfaces().javaInterfaces)
-		{
-			if (iface.getIndex() == index)
-			{
-				return iface;
-			}
-		}
-		return null;
-#endif
-	}
-
 	public static object getAll()
 	{
 #if FIRST_PASS
@@ -639,18 +623,6 @@ static class Java_java_net_NetworkInterface
 		}
 		return null;
 #endif
-	}
-
-	public static long getSubnet0(string name, int ind)
-	{
-		// this method is not used by the java code (!)
-		return 0;
-	}
-
-	public static object getBroadcast0(string name, int ind)
-	{
-		// this method is not used by the java code (!)
-		return null;
 	}
 
 	public static bool isUp0(string name, int ind)

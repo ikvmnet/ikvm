@@ -1304,11 +1304,6 @@ static class Java_java_io_UnixFileSystem
 		return 0;
 	}
 
-	public static string getDriveDirectory(object _this, int drive)
-	{
-		return Java_java_io_WinNTFileSystem.getDriveDirectory(_this, drive);
-	}
-
 	public static string canonicalize0(object _this, string path)
 	{
 		return Java_java_io_WinNTFileSystem.canonicalize0(_this, path);
