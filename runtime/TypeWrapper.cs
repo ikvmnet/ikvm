@@ -429,6 +429,7 @@ namespace IKVM.Internal
 				{
 					throwsAttribute = typeofThrowsAttribute.GetConstructor(new Type[] { JVM.Import(typeof(string[])) });
 				}
+				exceptions = UnicodeUtil.EscapeInvalidSurrogates(exceptions);
 				mb.SetCustomAttribute(new CustomAttributeBuilder(throwsAttribute, new object[] { exceptions }));
 			}
 		}
@@ -448,7 +449,8 @@ namespace IKVM.Internal
 			{
 				nonNestedInnerClassAttribute = typeofNonNestedInnerClassAttribute.GetConstructor(new Type[] { Types.String });
 			}
-			typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(nonNestedInnerClassAttribute, new object[] { className }));
+			typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(nonNestedInnerClassAttribute,
+				new object[] { UnicodeUtil.EscapeInvalidSurrogates(className) }));
 		}
 
 		internal static void SetNonNestedOuterClass(TypeBuilder typeBuilder, string className)
@@ -457,7 +459,8 @@ namespace IKVM.Internal
 			{
 				nonNestedOuterClassAttribute = typeofNonNestedOuterClassAttribute.GetConstructor(new Type[] { Types.String });
 			}
-			typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(nonNestedOuterClassAttribute, new object[] { className }));
+			typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(nonNestedOuterClassAttribute,
+				new object[] { UnicodeUtil.EscapeInvalidSurrogates(className) }));
 		}
 #endif // STATIC_COMPILER
 
@@ -560,7 +563,7 @@ namespace IKVM.Internal
 			string[] interfaces = new string[ifaceWrappers.Length];
 			for(int i = 0; i < interfaces.Length; i++)
 			{
-				interfaces[i] = ifaceWrappers[i].Name;
+				interfaces[i] = UnicodeUtil.EscapeInvalidSurrogates(ifaceWrappers[i].Name);
 			}
 			if(implementsAttribute == null)
 			{
@@ -767,14 +770,15 @@ namespace IKVM.Internal
 
 		internal static void SetNameSig(MethodBuilder mb, string name, string sig)
 		{
-			CustomAttributeBuilder customAttributeBuilder = new CustomAttributeBuilder(typeofNameSigAttribute.GetConstructor(new Type[] { Types.String, Types.String }), new object[] { name, sig });
+			CustomAttributeBuilder customAttributeBuilder = new CustomAttributeBuilder(typeofNameSigAttribute.GetConstructor(new Type[] { Types.String, Types.String }),
+				new object[] { UnicodeUtil.EscapeInvalidSurrogates(name), UnicodeUtil.EscapeInvalidSurrogates(sig) });
 			mb.SetCustomAttribute(customAttributeBuilder);
 		}
 
 		internal static void SetInnerClass(TypeBuilder typeBuilder, string innerClass, Modifiers modifiers)
 		{
 			Type[] argTypes = new Type[] { Types.String, typeofModifiers };
-			object[] args = new object[] { innerClass, modifiers };
+			object[] args = new object[] { UnicodeUtil.EscapeInvalidSurrogates(innerClass), modifiers };
 			ConstructorInfo ci = typeofInnerClassAttribute.GetConstructor(argTypes);
 			CustomAttributeBuilder customAttributeBuilder = new CustomAttributeBuilder(ci, args);
 			typeBuilder.SetCustomAttribute(customAttributeBuilder);
@@ -829,7 +833,8 @@ namespace IKVM.Internal
 			{
 				enclosingMethodAttribute = typeofEnclosingMethodAttribute.GetConstructor(new Type[] { Types.String, Types.String, Types.String });
 			}
-			tb.SetCustomAttribute(new CustomAttributeBuilder(enclosingMethodAttribute, new object[] { className, methodName, methodSig }));
+			tb.SetCustomAttribute(new CustomAttributeBuilder(enclosingMethodAttribute,
+				new object[] { UnicodeUtil.EscapeInvalidSurrogates(className), UnicodeUtil.EscapeInvalidSurrogates(methodName), UnicodeUtil.EscapeInvalidSurrogates(methodSig) }));
 		}
 
 		internal static void SetSignatureAttribute(TypeBuilder tb, string signature)
@@ -838,7 +843,8 @@ namespace IKVM.Internal
 			{
 				signatureAttribute = typeofSignatureAttribute.GetConstructor(new Type[] { Types.String });
 			}
-			tb.SetCustomAttribute(new CustomAttributeBuilder(signatureAttribute, new object[] { signature }));
+			tb.SetCustomAttribute(new CustomAttributeBuilder(signatureAttribute,
+				new object[] { UnicodeUtil.EscapeInvalidSurrogates(signature) }));
 		}
 
 		internal static void SetSignatureAttribute(FieldBuilder fb, string signature)
@@ -847,7 +853,8 @@ namespace IKVM.Internal
 			{
 				signatureAttribute = typeofSignatureAttribute.GetConstructor(new Type[] { Types.String });
 			}
-			fb.SetCustomAttribute(new CustomAttributeBuilder(signatureAttribute, new object[] { signature }));
+			fb.SetCustomAttribute(new CustomAttributeBuilder(signatureAttribute,
+				new object[] { UnicodeUtil.EscapeInvalidSurrogates(signature) }));
 		}
 
 		internal static void SetSignatureAttribute(MethodBuilder mb, string signature)
@@ -856,7 +863,8 @@ namespace IKVM.Internal
 			{
 				signatureAttribute = typeofSignatureAttribute.GetConstructor(new Type[] { Types.String });
 			}
-			mb.SetCustomAttribute(new CustomAttributeBuilder(signatureAttribute, new object[] { signature }));
+			mb.SetCustomAttribute(new CustomAttributeBuilder(signatureAttribute,
+				new object[] { UnicodeUtil.EscapeInvalidSurrogates(signature) }));
 		}
 
 		internal static void SetMethodParametersAttribute(MethodBuilder mb, Modifiers[] modifiers)
@@ -996,7 +1004,7 @@ namespace IKVM.Internal
 			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(t, typeofNonNestedInnerClassAttribute, false))
 			{
 				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-				list.Add((string)args[0].Value);
+				list.Add(UnicodeUtil.UnescapeInvalidSurrogates((string)args[0].Value));
 			}
 			return list.ToArray();
 #endif
@@ -1011,7 +1019,7 @@ namespace IKVM.Internal
 			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(t, typeofNonNestedOuterClassAttribute, false))
 			{
 				IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-				return (string)args[0].Value;
+				return UnicodeUtil.UnescapeInvalidSurrogates((string)args[0].Value);
 			}
 			return null;
 #endif
@@ -1055,7 +1063,7 @@ namespace IKVM.Internal
 #else
 			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(type, typeofConstantPoolAttribute, false))
 			{
-				return DecodeArray<object>(cad.ConstructorArguments[0]);
+				return ConstantPoolAttribute.Decompress(DecodeArray<object>(cad.ConstructorArguments[0]));
 			}
 			return null;
 #endif
@@ -1153,7 +1161,7 @@ namespace IKVM.Internal
 #else
 			foreach(CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(type, typeofAnnotationAttributeAttribute, false))
 			{
-				return (string)cad.ConstructorArguments[0].Value;
+				return UnicodeUtil.UnescapeInvalidSurrogates((string)cad.ConstructorArguments[0].Value);
 			}
 			return null;
 #endif
@@ -1395,6 +1403,7 @@ namespace IKVM.Internal
 
 		internal static string ReplaceIllegalCharacters(string name)
 		{
+			name = UnicodeUtil.EscapeInvalidSurrogates(name);
 			// only the NUL character is illegal in CLR type names, so we replace it with a space
 			return name.Replace('\u0000', ' ');
 		}
@@ -1525,6 +1534,88 @@ namespace IKVM.Internal
 			T[] narr = new T[arr.Length - 1];
 			Array.Copy(arr, 1, narr, 0, narr.Length);
 			return narr;
+		}
+	}
+
+	static class UnicodeUtil
+	{
+		// We use part of the Supplementary Private Use Area-B to encode
+		// invalid surrogates. If we encounter either of these two
+		// markers, we always encode the surrogate (single or pair)
+		private const char HighSurrogatePrefix = '\uDBFF';
+		private const char LowSurrogatePrefix = '\uDBFE';
+
+		// Identifiers in ECMA CLI metadata and strings in custom attribute blobs are encoded
+		// using UTF-8 and don't allow partial surrogates, so we have to "complete" them to
+		// produce valid Unicode and reverse the process when we read back the names.
+		internal static string EscapeInvalidSurrogates(string str)
+		{
+			if (str != null)
+			{
+				for (int i = 0; i < str.Length; i++)
+				{
+					char c = str[i];
+					if (Char.IsLowSurrogate(c))
+					{
+						str = str.Substring(0, i) + LowSurrogatePrefix + c + str.Substring(i + 1);
+						i++;
+					}
+					else if (Char.IsHighSurrogate(c))
+					{
+						i++;
+						// always escape the markers
+						if (c == HighSurrogatePrefix || c == LowSurrogatePrefix || i == str.Length || !Char.IsLowSurrogate(str[i]))
+						{
+							str = str.Substring(0, i - 1) + HighSurrogatePrefix + (char)(c + 0x400) + str.Substring(i);
+						}
+					}
+				}
+			}
+			return str;
+		}
+
+		internal static string UnescapeInvalidSurrogates(string str)
+		{
+			if (str != null)
+			{
+				for (int i = 0; i < str.Length; i++)
+				{
+					switch (str[i])
+					{
+						case HighSurrogatePrefix:
+							str = str.Substring(0, i) + (char)(str[i + 1] - 0x400) + str.Substring(i + 2);
+							break;
+						case LowSurrogatePrefix:
+							str = str.Substring(0, i) + str[i + 1] + str.Substring(i + 2);
+							break;
+					}
+				}
+			}
+			return str;
+		}
+
+		internal static string[] EscapeInvalidSurrogates(string[] str)
+		{
+			if (str != null)
+			{
+				for (int i = 0; i < str.Length; i++)
+				{
+					str[i] = EscapeInvalidSurrogates(str[i]);
+				}
+			}
+			return str;
+		}
+
+		internal static string[] UnescapeInvalidSurrogates(string[] str)
+		{
+			if (str != null)
+			{
+				for (int i = 0; i < str.Length; i++)
+				{
+					str[i] = UnescapeInvalidSurrogates(str[i]);
+				}
+			}
+			return str;
 		}
 	}
 
@@ -4388,6 +4479,10 @@ namespace IKVM.Internal
 					{
 						name = name.Substring(NamePrefix.Bridge.Length);
 					}
+					if(method.IsSpecialName)
+					{
+						name = UnicodeUtil.UnescapeInvalidSurrogates(name);
+					}
 				}
 				if(method.IsSpecialName && method.Name.StartsWith(NamePrefix.DefaultMethod, StringComparison.Ordinal))
 				{
@@ -4912,6 +5007,12 @@ namespace IKVM.Internal
 		{
 			ExModifiers modifiers = AttributeHelper.GetModifiers(field, false);
 			TypeWrapper type = GetFieldTypeWrapper(field);
+			string name = field.Name;
+
+			if(field.IsSpecialName)
+			{
+				name = UnicodeUtil.UnescapeInvalidSurrogates(name);
+			}
 
 			if(field.IsLiteral)
 			{
@@ -4924,11 +5025,11 @@ namespace IKVM.Internal
 				{
 					flags |= MemberFlags.InternalAccess;
 				}
-				return new ConstantFieldWrapper(this, type, field.Name, type.SigName, modifiers.Modifiers, field, null, flags);
+				return new ConstantFieldWrapper(this, type, name, type.SigName, modifiers.Modifiers, field, null, flags);
 			}
 			else
 			{
-				return FieldWrapper.Create(this, type, field, field.Name, type.SigName, modifiers);
+				return FieldWrapper.Create(this, type, field, name, type.SigName, modifiers);
 			}
 		}
 
@@ -5120,7 +5221,7 @@ namespace IKVM.Internal
 
 			private CustomAttributeBuilder MakeCustomAttributeBuilder(ClassLoaderWrapper loader, object annotation)
 			{
-				return new CustomAttributeBuilder(constructor, new object[] { QualifyClassNames(loader, annotation) });
+				return new CustomAttributeBuilder(constructor, new object[] { AnnotationDefaultAttribute.Escape(QualifyClassNames(loader, annotation)) });
 			}
 
 			internal override void Apply(ClassLoaderWrapper loader, TypeBuilder tb, object annotation)

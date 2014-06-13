@@ -78,7 +78,7 @@ namespace IKVM.Internal
 				}
 				if (methods != null)
 				{
-					string name = "__WorkaroundBaseClass__." + Name;
+					string name = "__WorkaroundBaseClass__." + UnicodeUtil.EscapeInvalidSurrogates(Name);
 					while (!classLoader.ReserveName(name))
 					{
 						name = "_" + name;

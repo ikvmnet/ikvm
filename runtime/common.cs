@@ -192,6 +192,11 @@ namespace IKVM.NativeCode.ikvm.@internal
 
 	static class AnnotationAttributeBase
 	{
+		public static object[] unescapeInvalidSurrogates(object[] def)
+		{
+			return (object[])AnnotationDefaultAttribute.Unescape(def);
+		}
+
 		public static object newAnnotationInvocationHandler(jlClass type, object memberValues)
 		{
 #if FIRST_PASS

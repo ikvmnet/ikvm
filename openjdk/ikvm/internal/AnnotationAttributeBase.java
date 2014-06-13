@@ -236,11 +236,13 @@ public abstract class AnnotationAttributeBase
             {
                 // TODO consider checking that the type matches
                 // (or better yet (?), remove the first two redundant elements from the array)
-                decodeValues(values, annotationType, annotationType.getClassLoader(), definition);
+                decodeValues(values, annotationType, annotationType.getClassLoader(), unescapeInvalidSurrogates(definition));
                 definition = null;
             }
         }
     }
+
+    private static native Object[] unescapeInvalidSurrogates(Object[] definition);
 
     private static void decodeValues(HashMap map, Class annotationClass, ClassLoader loader, Object[] array)
     {

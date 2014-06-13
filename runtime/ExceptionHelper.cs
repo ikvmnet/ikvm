@@ -303,6 +303,10 @@ namespace IKVM.Internal
 			{
 				return mb.Name.Substring(NamePrefix.Bridge.Length);
 			}
+			else if(mb.IsSpecialName)
+			{
+				return UnicodeUtil.UnescapeInvalidSurrogates(mb.Name);
+			}
 			else
 			{
 				return mb.Name;

@@ -563,6 +563,7 @@ namespace IKVM.Internal
 				ConstructorInfo packageListAttributeCtor = JVM.LoadType(typeof(PackageListAttribute)).GetConstructor(new Type[] { Types.String, Types.String.MakeArrayType() });
 				foreach(object[] args in packages.ToArray())
 				{
+					args[1] = UnicodeUtil.EscapeInvalidSurrogates((string[])args[1]);
 					mb.SetCustomAttribute(new CustomAttributeBuilder(packageListAttributeCtor, args));
 				}
 				// We can't add the resource when we're a module, because a multi-module assembly has a single resource namespace
@@ -626,6 +627,7 @@ namespace IKVM.Internal
 					list[i++] = kv.Key;
 					list[i++] = kv.Value;
 				}
+				list = UnicodeUtil.EscapeInvalidSurrogates(list);
 				CustomAttributeBuilder cab = new CustomAttributeBuilder(typeofJavaModuleAttribute.GetConstructor(new Type[] { JVM.Import(typeof(string[])) }), new object[] { list }, propInfos, propValues);
 				mb.SetCustomAttribute(cab);
 			}

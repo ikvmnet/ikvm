@@ -1545,8 +1545,12 @@ namespace IKVM.Internal
 #endif // STATIC_COMPILER
 				FieldBuilder field;
 				ClassFile.Field fld = classFile.Fields[fieldIndex];
-				string realFieldName = fld.Name;
 				FieldAttributes attribs = 0;
+				string realFieldName = UnicodeUtil.EscapeInvalidSurrogates(fld.Name);
+				if (!ReferenceEquals(realFieldName, fld.Name))
+				{
+					attribs |= FieldAttributes.SpecialName;
+				}
 				MethodAttributes methodAttribs = MethodAttributes.HideBySig;
 #if STATIC_COMPILER
 				bool setModifiers = fld.IsInternal || (fld.Modifiers & (Modifiers.Synthetic | Modifiers.Enum)) != 0;
@@ -1583,7 +1587,7 @@ namespace IKVM.Internal
 				{
 					Profiler.Count("Static Final Constant");
 					attribs |= FieldAttributes.Literal;
-					field = DefineField(fld.Name, fw.FieldTypeWrapper, attribs, false);
+					field = DefineField(realFieldName, fw.FieldTypeWrapper, attribs, false);
 					field.SetConstant(fld.ConstantValue);
 				}
 				else
@@ -1598,7 +1602,7 @@ namespace IKVM.Internal
 						// see https://sourceforge.net/tracker/?func=detail&atid=525264&aid=3056721&group_id=69637
 						// additional note: now that we maintain the ordering of the fields, we need to recognize
 						// these fields so that we know where to insert the corresponding accessor property FieldWrapper.
-						realFieldName = NamePrefix.Type2AccessStubBackingField + fld.Name;
+						realFieldName = NamePrefix.Type2AccessStubBackingField + realFieldName;
 					}
 					else if (fld.IsFinal)
 					{
@@ -1775,7 +1779,8 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 					if (annotationBuilder != null)
 					{
-						CustomAttributeBuilder cab = new CustomAttributeBuilder(JVM.LoadType(typeof(AnnotationAttributeAttribute)).GetConstructor(new Type[] { Types.String }), new object[] { annotationBuilder.AttributeTypeName });
+						CustomAttributeBuilder cab = new CustomAttributeBuilder(JVM.LoadType(typeof(AnnotationAttributeAttribute)).GetConstructor(new Type[] { Types.String }),
+							new object[] { UnicodeUtil.EscapeInvalidSurrogates(annotationBuilder.AttributeTypeName) });
 						typeBuilder.SetCustomAttribute(cab);
 					}
 					if (!wrapper.IsInterface && wrapper.IsMapUnsafeException)
@@ -1923,7 +1928,7 @@ namespace IKVM.Internal
 
 					// make sure we don't clash with another class name
 					CompilerClassLoader ccl = o.wrapper.classLoader;
-					string name = o.classFile.Name;
+					string name = UnicodeUtil.EscapeInvalidSurrogates(o.classFile.Name);
 					while (!ccl.ReserveName(name + "Attribute"))
 					{
 						name += "_";
@@ -2339,7 +2344,7 @@ namespace IKVM.Internal
 					ConstructorInfo ctor = defineConstructor != null
 						? defineConstructor.__AsConstructorInfo()
 						: StaticCompiler.GetRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute").GetConstructor(new Type[] { Types.Object.MakeArrayType() });
-					return new CustomAttributeBuilder(ctor, new object[] { QualifyClassNames(loader, annotation) });
+					return new CustomAttributeBuilder(ctor, new object[] { AnnotationDefaultAttribute.Escape(QualifyClassNames(loader, annotation)) });
 				}
 
 				internal override void Apply(ClassLoaderWrapper loader, TypeBuilder tb, object annotation)
@@ -3081,7 +3086,12 @@ namespace IKVM.Internal
 				{
 					attribs |= MethodAttributes.Virtual | MethodAttributes.CheckAccessOnOverride;
 				}
-				string name = m.Name;
+				string name = UnicodeUtil.EscapeInvalidSurrogates(m.Name);
+				if (!ReferenceEquals(name, m.Name))
+				{
+					// mark as specialname to remind us to unescape the name
+					attribs |= MethodAttributes.SpecialName;
+				}
 #if STATIC_COMPILER
 				if ((m.Modifiers & Modifiers.Bridge) != 0 && (m.IsPublic || m.IsProtected) && wrapper.IsPublic)
 				{
@@ -3293,7 +3303,8 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 					if (classFile.Methods[index].AnnotationDefault != null)
 					{
-						CustomAttributeBuilder cab = new CustomAttributeBuilder(StaticCompiler.GetRuntimeType("IKVM.Attributes.AnnotationDefaultAttribute").GetConstructor(new Type[] { Types.Object }), new object[] { classFile.Methods[index].AnnotationDefault });
+						CustomAttributeBuilder cab = new CustomAttributeBuilder(StaticCompiler.GetRuntimeType("IKVM.Attributes.AnnotationDefaultAttribute").GetConstructor(new Type[] { Types.Object }),
+							new object[] { AnnotationDefaultAttribute.Escape(classFile.Methods[index].AnnotationDefault) });
 						mb.SetCustomAttribute(cab);
 					}
 #endif // STATIC_COMPILER
