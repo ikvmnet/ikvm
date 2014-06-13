@@ -771,16 +771,6 @@ namespace IKVM.Internal
 			mb.SetCustomAttribute(customAttributeBuilder);
 		}
 
-		internal static byte[] FreezeDryType(Type type)
-		{
-			System.IO.MemoryStream mem = new System.IO.MemoryStream();
-			System.IO.BinaryWriter bw = new System.IO.BinaryWriter(mem, System.Text.UTF8Encoding.UTF8);
-			bw.Write((short)1);
-			bw.Write(type.FullName);
-			bw.Write((short)0);
-			return mem.ToArray();
-		}
-
 		internal static void SetInnerClass(TypeBuilder typeBuilder, string innerClass, Modifiers modifiers)
 		{
 			Type[] argTypes = new Type[] { Types.String, typeofModifiers };
