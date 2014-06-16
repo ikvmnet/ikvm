@@ -3029,9 +3029,9 @@ sealed class Compiler
 			ClassFile.ConstantPoolItemMI cpiMI;
 			if (mw == null && (cpiMI = mh.MemberConstantPoolItem as ClassFile.ConstantPoolItemMI) != null)
 			{
-				mw = new DynamicBinder().Get(compiler, ClassFile.RefKind.invokeStatic, cpiMI, false);
+				mw = new DynamicBinder().Get(compiler, mh.Kind, cpiMI, false);
 			}
-			if (mw == null || !mw.IsStatic)
+			if (mw == null || (!mw.IsStatic && !mw.IsConstructor))
 			{
 				ilgen.EmitLdc_I4(1);
 				ilgen.Emit(OpCodes.Stloc, ok);
@@ -3084,7 +3084,14 @@ sealed class Compiler
 			}
 			ilgen.EmitLdc_I4(1);
 			ilgen.Emit(OpCodes.Stloc, ok);
-			mw.EmitCall(ilgen);
+			if (mw.IsConstructor)
+			{
+				mw.EmitNewobj(ilgen);
+			}
+			else
+			{
+				mw.EmitCall(ilgen);
+			}
 			return true;
 		}
 
