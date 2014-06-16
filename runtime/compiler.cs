@@ -3026,17 +3026,42 @@ sealed class Compiler
 			}
 			ClassFile.ConstantPoolItemMethodHandle mh = compiler.classFile.GetConstantPoolConstantMethodHandle(bsm.BootstrapMethodIndex);
 			MethodWrapper mw = mh.Member as MethodWrapper;
-			ClassFile.ConstantPoolItemMI cpiMI;
-			if (mw == null && (cpiMI = mh.MemberConstantPoolItem as ClassFile.ConstantPoolItemMI) != null)
+			switch (mh.Kind)
 			{
-				mw = new DynamicBinder().Get(compiler, mh.Kind, cpiMI, false);
+				case ClassFile.RefKind.invokeStatic:
+					if (mw != null && !mw.IsStatic)
+						goto default;
+					break;
+				case ClassFile.RefKind.newInvokeSpecial:
+					if (mw != null && !mw.IsConstructor)
+						goto default;
+					break;
+				default:
+					// to throw the right exception, we have to resolve the MH constant here
+					compiler.context.GetValue<MethodHandleConstant>(bsm.BootstrapMethodIndex).Emit(compiler, ilgen, bsm.BootstrapMethodIndex);
+					ilgen.Emit(OpCodes.Pop);
+					ilgen.EmitLdc_I4(1);
+					ilgen.Emit(OpCodes.Stloc, ok);
+					ilgen.EmitThrow("java.lang.invoke.WrongMethodTypeException");
+					return false;
 			}
-			if (mw == null || (!mw.IsStatic && !mw.IsConstructor))
+			if (mw == null)
 			{
-				ilgen.EmitLdc_I4(1);
-				ilgen.Emit(OpCodes.Stloc, ok);
-				ilgen.EmitThrow("java.lang.invoke.WrongMethodTypeException");
-				return false;
+				// to throw the right exception (i.e. without wrapping it in a BootstrapMethodError), we have to resolve the MH constant here
+				compiler.context.GetValue<MethodHandleConstant>(bsm.BootstrapMethodIndex).Emit(compiler, ilgen, bsm.BootstrapMethodIndex);
+				ilgen.Emit(OpCodes.Pop);
+				ClassFile.ConstantPoolItemMI cpiMI;
+				if ((cpiMI = mh.MemberConstantPoolItem as ClassFile.ConstantPoolItemMI) != null)
+				{
+					mw = new DynamicBinder().Get(compiler, mh.Kind, cpiMI, false);
+				}
+				else
+				{
+					ilgen.EmitLdc_I4(1);
+					ilgen.Emit(OpCodes.Stloc, ok);
+					ilgen.EmitThrow("java.lang.invoke.WrongMethodTypeException");
+					return false;
+				}
 			}
 			TypeWrapper[] parameters = mw.GetParameters();
 			int extraArgs = parameters.Length - 3;
