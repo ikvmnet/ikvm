@@ -178,7 +178,7 @@ sealed class BigEndianBinaryReader
 								goto default;
 							}
 							c = (((c & 0x1F) << 6) | (char2 & 0x3F));
-							if(c < 0x80)
+							if(c < 0x80 && c != 0)
 							{
 								goto default;
 							}
