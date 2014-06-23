@@ -337,9 +337,9 @@ static class Java_java_lang_Class
 		return null;
 #else
 		TypeWrapper wrapper = TypeWrapper.FromClass(thisClass);
-		while (wrapper.IsArray)
+		if (wrapper.IsArray)
 		{
-			wrapper = wrapper.ElementTypeWrapper;
+			return null;
 		}
 		java.security.ProtectionDomain pd = wrapper.ClassObject.pd;
 		if (pd == null)
