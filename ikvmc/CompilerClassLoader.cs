@@ -71,8 +71,9 @@ namespace IKVM.Internal
 		private List<TypeWrapper> dynamicallyImportedTypes = new List<TypeWrapper>();
 		private List<string> jarList = new List<string>();
 		private List<TypeWrapper> allwrappers;
+		private bool compilingCoreAssembly;
 
-		internal CompilerClassLoader(AssemblyClassLoader[] referencedAssemblies, CompilerOptions options, FileInfo assemblyPath, bool targetIsModule, string assemblyName, Dictionary<string, Jar.Item> classes)
+		internal CompilerClassLoader(AssemblyClassLoader[] referencedAssemblies, CompilerOptions options, FileInfo assemblyPath, bool targetIsModule, string assemblyName, Dictionary<string, Jar.Item> classes, bool compilingCoreAssembly)
 			: base(options.codegenoptions, null)
 		{
 			this.referencedAssemblies = referencedAssemblies;
@@ -82,6 +83,7 @@ namespace IKVM.Internal
 			this.assemblyFile = assemblyPath.Name;
 			this.assemblyDir = assemblyPath.DirectoryName;
 			this.targetIsModule = targetIsModule;
+			this.compilingCoreAssembly = compilingCoreAssembly;
 			Tracer.Info(Tracer.Compiler, "Instantiate CompilerClassLoader for {0}", assemblyName);
 		}
 
@@ -2566,7 +2568,7 @@ namespace IKVM.Internal
 				{
 					if (c.Shadows != null && c.Name == "java.lang.Object")
 					{
-						return true;
+						return compilingCoreAssembly = true;
 					}
 				}
 			}
@@ -2870,7 +2872,7 @@ namespace IKVM.Internal
 				}
 				referencedAssemblies[i] = acl;
 			}
-			loader = new CompilerClassLoader(referencedAssemblies, options, options.path, options.targetIsModule, options.assembly, h);
+			loader = new CompilerClassLoader(referencedAssemblies, options, options.path, options.targetIsModule, options.assembly, h, compilingCoreAssembly);
 			loader.classesToCompile = new List<string>(h.Keys);
 			if(options.remapfile != null)
 			{
@@ -3327,6 +3329,14 @@ namespace IKVM.Internal
 		internal override bool NoParameterReflection
 		{
 			get { return options.noParameterReflection; }
+		}
+
+		protected override void CheckProhibitedPackage(string className)
+		{
+			if (!compilingCoreAssembly)
+			{
+				base.CheckProhibitedPackage(className);
+			}
 		}
 	}
 

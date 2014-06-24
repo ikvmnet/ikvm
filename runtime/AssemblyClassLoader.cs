@@ -1308,6 +1308,10 @@ namespace IKVM.Internal
 			return base.GetWrapperFromAssemblyType(type);
 		}
 
+		protected override void CheckProhibitedPackage(string className)
+		{
+		}
+
 #if !FIRST_PASS && !STATIC_COMPILER && !STUB_GENERATOR
 		internal override java.lang.ClassLoader GetJavaClassLoader()
 		{

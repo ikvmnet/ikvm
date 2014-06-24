@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
+  Copyright (C) 2002-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -213,6 +213,21 @@ sealed class UnsupportedClassVersionError : ClassFormatError
 	internal override Exception ToJava()
 	{
 		return new java.lang.UnsupportedClassVersionError(Message);
+	}
+#endif
+}
+
+sealed class SecurityException : RetargetableJavaException
+{
+	internal SecurityException(string msg)
+		: base(msg)
+	{
+	}
+
+#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+	internal override Exception ToJava()
+	{
+		return new java.lang.SecurityException(Message);
 	}
 #endif
 }

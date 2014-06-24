@@ -353,6 +353,14 @@ namespace IKVM.Internal
 		}
 #endif // !STATIC_COMPILER && !STUB_GENERATOR
 
+		protected virtual void CheckProhibitedPackage(string className)
+		{
+			if (className.StartsWith("java.", StringComparison.Ordinal))
+			{
+				throw new SecurityException("Prohibited package name: " + className.Substring(0, className.LastIndexOf('.')));
+			}
+		}
+
 #if !STUB_GENERATOR
 		internal TypeWrapper DefineClass(ClassFile f, ProtectionDomain protectionDomain)
 		{
@@ -380,6 +388,7 @@ namespace IKVM.Internal
 				return RegisterInitiatingLoader(tw);
 			}
 #endif
+			CheckProhibitedPackage(f.Name);
 			// check if the class already exists if we're an AssemblyClassLoader
 			if(FindLoadedClassLazy(f.Name) != null)
 			{
