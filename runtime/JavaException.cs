@@ -217,9 +217,9 @@ sealed class UnsupportedClassVersionError : ClassFormatError
 #endif
 }
 
-sealed class SecurityException : RetargetableJavaException
+sealed class JavaSecurityException : RetargetableJavaException
 {
-	internal SecurityException(string msg)
+	internal JavaSecurityException(string msg)
 		: base(msg)
 	{
 	}

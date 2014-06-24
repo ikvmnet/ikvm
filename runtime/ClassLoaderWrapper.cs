@@ -357,7 +357,7 @@ namespace IKVM.Internal
 		{
 			if (className.StartsWith("java.", StringComparison.Ordinal))
 			{
-				throw new SecurityException("Prohibited package name: " + className.Substring(0, className.LastIndexOf('.')));
+				throw new JavaSecurityException("Prohibited package name: " + className.Substring(0, className.LastIndexOf('.')));
 			}
 		}
 
