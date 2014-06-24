@@ -117,9 +117,24 @@ namespace IKVM.Internal
 			Profiler.Count("DynamicTypeWrapper");
 			this.classLoader = classLoader;
 			this.sourceFileName = f.SourceFileAttribute;
-			this.baseTypeWrapper = f.IsInterface ? null : LoadTypeWrapper(classLoader, pd, f.SuperClass);
-			if (BaseTypeWrapper != null)
+			if (f.IsInterface)
 			{
+				// interfaces can't "override" final methods in object
+				foreach (ClassFile.Method method in f.Methods)
+				{
+					MethodWrapper mw;
+					if (method.IsVirtual
+						&& (mw = CoreClasses.java.lang.Object.Wrapper.GetMethodWrapper(method.Name, method.Signature, false)) != null
+						&& mw.IsVirtual
+						&& mw.IsFinal)
+					{
+						throw new VerifyError("class " + f.Name + " overrides final method " + method.Name + "." + method.Signature);
+					}
+				}
+			}
+			else
+			{
+				this.baseTypeWrapper = LoadTypeWrapper(classLoader, pd, f.SuperClass);
 				if (!BaseTypeWrapper.IsAccessibleFrom(this))
 				{
 					throw new IllegalAccessError("Class " + f.Name + " cannot access its superclass " + BaseTypeWrapper.Name);
