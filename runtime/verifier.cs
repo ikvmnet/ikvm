@@ -2772,12 +2772,12 @@ sealed class MethodAnalyzer
 				case ClassFile.RefKind.getStatic:
 				case ClassFile.RefKind.putField:
 				case ClassFile.RefKind.putStatic:
-					err = HardError.NoSuchFieldException;
-					msg = "no such field: {0}.{1}{2}";
+					err = HardError.NoSuchFieldError;
+					msg = cpi.Name;
 					break;
 				default:
-					err = HardError.NoSuchMethodException;
-					msg = "no such method: {0}.{1}{2}";
+					err = HardError.NoSuchMethodError;
+					msg = cpi.Class + "." + cpi.Name + cpi.Signature;
 					break;
 			}
 			SetHardError(wrapper.GetClassLoader(), ref instr, err, msg, cpi.Class, cpi.Name, SigToString(cpi.Signature));
@@ -2790,7 +2790,7 @@ sealed class MethodAnalyzer
 			}
 			else
 			{
-				SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IllegalAccessException, "member is private: {0}.{1}/{2}, from {3}", cpi.Class, cpi.Name, SigToString(cpi.Signature), wrapper.Name);
+				SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IllegalAccessException, "member is private: {0}.{1}/{2}/{3}, from {4}", cpi.Class, cpi.Name, SigToString(cpi.Signature), cpi.Kind, wrapper.Name);
 			}
 		}
 	}
@@ -3567,9 +3567,7 @@ sealed class MethodAnalyzer
 				msg = Message.EmittedIllegalAccessError;
 				break;
 			case HardError.IncompatibleClassChangeError:
-			case HardError.NoSuchFieldException:
 			case HardError.IllegalAccessException:
-			case HardError.NoSuchMethodException:
 				msg = Message.EmittedIncompatibleClassChangeError;
 				break;
 			case HardError.NoSuchFieldError:

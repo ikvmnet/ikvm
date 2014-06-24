@@ -39,8 +39,6 @@ namespace IKVM.Internal
 		NoSuchMethodError,
 		LinkageError,
 		// "exceptions" that are wrapped in an IncompatibleClassChangeError
-		NoSuchFieldException,
-		NoSuchMethodException,
 		IllegalAccessException,
 		// if an error is added here, it must also be added to MethodAnalyzer.SetHardError()
 	}

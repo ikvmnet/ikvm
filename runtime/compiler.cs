@@ -2742,14 +2742,6 @@ sealed class Compiler
 						case HardError.NoSuchMethodError:
 							exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.NoSuchMethodError");
 							break;
-						case HardError.NoSuchFieldException:
-							exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.NoSuchFieldException");
-							wrapIncompatibleClassChangeError = true;
-							break;
-						case HardError.NoSuchMethodException:
-							exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.NoSuchMethodException");
-							wrapIncompatibleClassChangeError = true;
-							break;
 						case HardError.IllegalAccessException:
 							exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.IllegalAccessException");
 							wrapIncompatibleClassChangeError = true;
