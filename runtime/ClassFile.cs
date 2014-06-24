@@ -1452,7 +1452,7 @@ namespace IKVM.Internal
 			private ushort name_index;
 			private string name;
 			private TypeWrapper typeWrapper;
-			private static char[] invalidJava15Characters = { '.', ';' };
+			private static char[] invalidJava15Characters = { '.', ';', '[', ']' };
 
 			internal ConstantPoolItemClass(BigEndianBinaryReader br)
 			{
@@ -1518,6 +1518,7 @@ namespace IKVM.Internal
 #endif
 					{
 						// since 1.5 the restrictions on class names have been greatly reduced
+						int start = 0;
 						int end = name.Length;
 						if(name[0] == '[')
 						{
@@ -1533,8 +1534,12 @@ namespace IKVM.Internal
 							{
 								end--;
 							}
+							while(name[start] == '[')
+							{
+								start++;
+							}
 						}
-						if(name.IndexOfAny(invalidJava15Characters, 0, end) >= 0)
+						if(name.IndexOfAny(invalidJava15Characters, start, end - start) >= 0)
 						{
 							goto barf;
 						}
