@@ -1709,6 +1709,10 @@ sealed class Compiler
 								// if the method is private, we can get away with a callvirt (and not generate the stub)
 								method.EmitCallvirt(ilGenerator);
 							}
+							else if(instr.NormalizedOpCode == NormalizedByteCode.__privileged_invokespecial)
+							{
+								method.EmitCall(ilGenerator);
+							}
 							else
 							{
 								ilGenerator.Emit(OpCodes.Callvirt, context.GetInvokeSpecialStub(method));
