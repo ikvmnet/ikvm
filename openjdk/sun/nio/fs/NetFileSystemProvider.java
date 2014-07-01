@@ -1104,7 +1104,7 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
             public long size()
             {
-                return info.get_Length();
+                return info.get_Exists() ? info.get_Length() : 0;
             }
 
             public boolean isArchive()
