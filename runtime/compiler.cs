@@ -3088,7 +3088,7 @@ sealed class Compiler
 			parameters[2].EmitConvStackTypeToSignatureType(ilgen, CoreClasses.java.lang.invoke.MethodType.Wrapper);
 			for (int i = 0; i < fixedArgs; i++)
 			{
-				EmitExtraArg(compiler, ilgen, bsm, i, parameters[i + 3]);
+				EmitExtraArg(compiler, ilgen, bsm, i, parameters[i + 3], ok);
 			}
 			if (varArgs >= 0)
 			{
@@ -3099,7 +3099,7 @@ sealed class Compiler
 				{
 					ilgen.Emit(OpCodes.Dup);
 					ilgen.EmitLdc_I4(i);
-					EmitExtraArg(compiler, ilgen, bsm, i + fixedArgs, elemType);
+					EmitExtraArg(compiler, ilgen, bsm, i + fixedArgs, elemType, ok);
 					ilgen.Emit(OpCodes.Stelem_Ref);
 				}
 			}
@@ -3116,7 +3116,7 @@ sealed class Compiler
 			return true;
 		}
 
-		private static void EmitExtraArg(Compiler compiler, CodeEmitter ilgen, ClassFile.BootstrapMethod bsm, int index, TypeWrapper targetType)
+		private static void EmitExtraArg(Compiler compiler, CodeEmitter ilgen, ClassFile.BootstrapMethod bsm, int index, TypeWrapper targetType, CodeEmitterLocal wrapException)
 		{
 			int constant = bsm.GetArgument(index);
 			compiler.EmitLoadConstant(ilgen, constant);
@@ -3152,6 +3152,8 @@ sealed class Compiler
 			}
 			if (constType != targetType)
 			{
+				ilgen.EmitLdc_I4(1);
+				ilgen.Emit(OpCodes.Stloc, wrapException);
 				if (constType.IsPrimitive)
 				{
 					string dummy;
@@ -3170,6 +3172,8 @@ sealed class Compiler
 					ilgen.Emit(OpCodes.Castclass, targetType.TypeAsBaseType);
 				}
 				targetType.EmitConvStackTypeToSignatureType(ilgen, targetType);
+				ilgen.EmitLdc_I4(0);
+				ilgen.Emit(OpCodes.Stloc, wrapException);
 			}
 		}
 
