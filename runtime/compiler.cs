@@ -3208,6 +3208,11 @@ sealed class Compiler
 
 	private void EmitInvokeDynamic(ClassFile.ConstantPoolItemInvokeDynamic cpi)
 	{
+		if (LambdaMetafactory.Emit(context, classFile, cpi, ilGenerator))
+		{
+			// we intrinsified the lambda factory
+			return;
+		}
 		CodeEmitter ilgen = ilGenerator;
 		TypeWrapper[] args = cpi.GetArgTypes();
 		CodeEmitterLocal[] temps = new CodeEmitterLocal[args.Length];

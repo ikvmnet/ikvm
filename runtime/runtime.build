@@ -158,6 +158,7 @@
                 <include name="intrinsics.cs" />
                 <include name="JavaException.cs" />
                 <include name="JsrInliner.cs" />
+                <include name="LambdaMetafactory.cs" />
                 <include name="LocalVars.cs" />
                 <include name="MemberWrapper.cs" />
                 <include name="MethodHandleUtil.cs" />

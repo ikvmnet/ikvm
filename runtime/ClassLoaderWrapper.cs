@@ -1093,6 +1093,24 @@ namespace IKVM.Internal
 					}
 				}
 #endif
+				if(AnonymousTypeWrapper.IsAnonymous(type))
+				{
+					Dictionary<Type, TypeWrapper> typeToTypeWrapper;
+#if CLASSGC
+					typeToTypeWrapper = loader != null ? loader.typeToTypeWrapper : globalTypeToTypeWrapper;
+#else
+					typeToTypeWrapper = globalTypeToTypeWrapper;
+#endif
+					TypeWrapper tw = new AnonymousTypeWrapper(type);
+					lock(typeToTypeWrapper)
+					{
+						if(!typeToTypeWrapper.TryGetValue(type, out wrapper))
+						{
+							typeToTypeWrapper.Add(type, wrapper = tw);
+						}
+					}
+					return wrapper;
+				}
 #if !STATIC_COMPILER && !STUB_GENERATOR
 				if(ReflectUtil.IsReflectionOnly(type))
 				{

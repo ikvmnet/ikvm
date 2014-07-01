@@ -3681,6 +3681,7 @@ namespace IKVM.Internal
 		WrongClassName = 135,
 		ReflectionCallerClassRequiresCallerID = 136,
 		LegacyAssemblyAttributesFound = 137,
+		UnableToCreateLambdaFactory = 138,
 		UnknownWarning = 999,
 		// This is where the errors start
 		StartErrors = 4000,
@@ -4034,6 +4035,9 @@ namespace IKVM.Internal
 					break;
 				case Message.LegacyAssemblyAttributesFound:
 					msg = "Legacy assembly attributes container found. Please use the -assemblyattributes:<file> option.";
+					break;
+				case Message.UnableToCreateLambdaFactory:
+					msg = "Unable to create static lambda factory.";
 					break;
 				case Message.UnableToCreateProxy:
 					msg = "Unable to create proxy \"{0}\"" + Environment.NewLine +

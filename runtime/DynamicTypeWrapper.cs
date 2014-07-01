@@ -3999,6 +3999,11 @@ namespace IKVM.Internal
 				this.typeBuilder = typeBuilder;
 			}
 
+			internal TypeWrapper TypeWrapper
+			{
+				get { return wrapper; }
+			}
+
 			internal T GetValue<T>(int key)
 				where T : class, new()
 			{
@@ -5152,29 +5157,34 @@ namespace IKVM.Internal
 								mb = methods[i].GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(),
 									typeBuilder, NamePrefix.DefaultMethod + mb.Name, MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, typeBuilder, false);
 							}
-							CodeEmitter ilgen = CodeEmitter.Create(mb);
-							if (mmw.BaseMethod.DeclaringType.IsGhost)
-							{
-								CodeEmitterLocal local = ilgen.DeclareLocal(mmw.BaseMethod.DeclaringType.TypeAsSignatureType);
-								ilgen.Emit(OpCodes.Ldloca, local);
-								ilgen.EmitLdarg(0);
-								ilgen.Emit(OpCodes.Stfld, mmw.BaseMethod.DeclaringType.GhostRefField);
-								ilgen.Emit(OpCodes.Ldloca, local);
-							}
-							else
-							{
-								ilgen.EmitLdarg(0);
-							}
-							for (int j = 0, count = mmw.GetParameters().Length; j < count; j++)
-							{
-								ilgen.EmitLdarg(j + 1);
-							}
-							ilgen.Emit(OpCodes.Call, DefaultInterfaceMethodWrapper.GetImpl(mmw.BaseMethod));
-							ilgen.Emit(OpCodes.Ret);
-							ilgen.DoEmit();
+							EmitCallDefaultInterfaceMethod(mb, mmw.BaseMethod);
 						}
 					}
 				}
+			}
+
+			internal static void EmitCallDefaultInterfaceMethod(MethodBuilder mb, MethodWrapper defaultMethod)
+			{
+				CodeEmitter ilgen = CodeEmitter.Create(mb);
+				if (defaultMethod.DeclaringType.IsGhost)
+				{
+					CodeEmitterLocal local = ilgen.DeclareLocal(defaultMethod.DeclaringType.TypeAsSignatureType);
+					ilgen.Emit(OpCodes.Ldloca, local);
+					ilgen.EmitLdarg(0);
+					ilgen.Emit(OpCodes.Stfld, defaultMethod.DeclaringType.GhostRefField);
+					ilgen.Emit(OpCodes.Ldloca, local);
+				}
+				else
+				{
+					ilgen.EmitLdarg(0);
+				}
+				for (int j = 0, count = defaultMethod.GetParameters().Length; j < count; j++)
+				{
+					ilgen.EmitLdarg(j + 1);
+				}
+				ilgen.Emit(OpCodes.Call, DefaultInterfaceMethodWrapper.GetImpl(defaultMethod));
+				ilgen.Emit(OpCodes.Ret);
+				ilgen.DoEmit();
 			}
 
 #if STATIC_COMPILER
@@ -6408,6 +6418,15 @@ namespace IKVM.Internal
 			internal TypeBuilder DefineMethodTypeConstantType(int index)
 			{
 				TypeBuilder tb = typeBuilder.DefineNestedType(NestedTypeName.MethodTypeConstant + index, TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.BeforeFieldInit);
+				RegisterNestedTypeBuilder(tb);
+				return tb;
+			}
+
+			// this is used to define intrinsified anonymous classes (in the Unsafe.defineAnonymousClass() sense)
+			internal TypeBuilder DefineAnonymousClass()
+			{
+				int id = nestedTypeBuilders == null ? 0 : nestedTypeBuilders.Count;
+				TypeBuilder tb = typeBuilder.DefineNestedType(NestedTypeName.IntrinsifiedAnonymousClass + id, TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.SpecialName | TypeAttributes.BeforeFieldInit);
 				RegisterNestedTypeBuilder(tb);
 				return tb;
 			}

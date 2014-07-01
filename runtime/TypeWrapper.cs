@@ -1977,6 +1977,7 @@ namespace IKVM.Internal
 		internal const string IndyCallSite = "__<>IndyCS";
 		internal const string MethodHandleConstant = "__<>MHC";
 		internal const string MethodTypeConstant = "__<>MTC";
+		internal const string IntrinsifiedAnonymousClass = "__<>Anon";
 	}
 
 	internal abstract class TypeWrapper
@@ -5678,6 +5679,66 @@ namespace IKVM.Internal
 		internal override void Finish()
 		{
 			throw new InvalidOperationException("Finish called on " + this);
+		}
+	}
+
+	// this represents an intrinsified anonymous class (currently used only by LambdaMetafactory)
+	sealed class AnonymousTypeWrapper : TypeWrapper
+	{
+		private readonly Type type;
+
+		internal AnonymousTypeWrapper(Type type)
+			: base(TypeFlags.None, Modifiers.Final | Modifiers.Synthetic, GetName(type))
+		{
+			this.type = type;
+		}
+
+		internal static bool IsAnonymous(Type type)
+		{
+			return type.IsSpecialName
+				&& type.Name.StartsWith(NestedTypeName.IntrinsifiedAnonymousClass, StringComparison.Ordinal)
+				&& AttributeHelper.IsJavaModule(type.Module);
+		}
+
+		internal static string GetName(Type type)
+		{
+			return ClassLoaderWrapper.GetWrapperFromType(type.DeclaringType).Name
+				+ type.Name.Replace(NestedTypeName.IntrinsifiedAnonymousClass, "$$Lambda$")
+				+ "/" + (type.GetHashCode() & Int32.MaxValue);
+		}
+
+		internal override ClassLoaderWrapper GetClassLoader()
+		{
+			return ClassLoaderWrapper.GetWrapperFromType(type.DeclaringType).GetClassLoader();
+		}
+
+		internal override Type TypeAsTBD
+		{
+			get { return type; }
+		}
+
+		internal override TypeWrapper BaseTypeWrapper
+		{
+			get { return CoreClasses.java.lang.Object.Wrapper; }
+		}
+
+		internal override TypeWrapper[] Interfaces
+		{
+			get { return GetImplementedInterfacesAsTypeWrappers(type); }
+		}
+
+		internal override TypeWrapper[] InnerClasses
+		{
+			get { return TypeWrapper.EmptyArray; }
+		}
+
+		internal override TypeWrapper DeclaringTypeWrapper
+		{
+			get { return null; }
+		}
+
+		internal override void Finish()
+		{
 		}
 	}
 }
