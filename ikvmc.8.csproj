@@ -91,6 +91,7 @@
     <Compile Include="runtime\BigEndianBinaryReader.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="runtime\Boxer.cs" />
     <Compile Include="runtime\ByteCode.cs">
       <SubType>Code</SubType>
     </Compile>

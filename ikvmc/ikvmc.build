@@ -48,6 +48,7 @@
                 <include name="../runtime/atomic.cs" />
                 <include name="../runtime/attributes.cs" />
                 <include name="../runtime/BigEndianBinaryReader.cs" />
+                <include name="../runtime/Boxer.cs" />
                 <include name="../runtime/ByteCode.cs" />
                 <include name="../runtime/ClassFile.cs" />
                 <include name="../runtime/ClassLoaderWrapper.cs" />

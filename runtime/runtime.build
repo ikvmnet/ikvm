@@ -141,6 +141,7 @@
                 <include name="atomic.cs" />
                 <include name="attributes.cs" />
                 <include name="BigEndianBinaryReader.cs" />
+                <include name="Boxer.cs" />
                 <include name="ByteCode.cs" />
                 <include name="ByteCodeHelper.cs" />
                 <include name="ClassFile.cs" />
