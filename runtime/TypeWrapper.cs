@@ -1947,6 +1947,7 @@ namespace IKVM.Internal
 		VerifyError = 8,
 		ClassFormatError = 16,
 		HasUnsupportedAbstractMethods = 32,
+		Anonymous = 64,
 	}
 
 	static class NamePrefix
@@ -2362,6 +2363,12 @@ namespace IKVM.Internal
 			{
 				return false;
 			}
+		}
+
+		// is this an anonymous class (in the sense of Unsafe.defineAnonymousClass(), not the JLS)
+		internal bool IsUnsafeAnonymous
+		{
+			get { return (flags & TypeFlags.Anonymous) != 0; }
 		}
 
 		// a ghost is an interface that appears to be implemented by a .NET type

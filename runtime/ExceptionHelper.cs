@@ -340,6 +340,12 @@ namespace IKVM.Internal
 				{
 					return DotNetTypeWrapper.GetName(type);
 				}
+#if !FIRST_PASS
+				if(tw.IsUnsafeAnonymous)
+				{
+					return tw.ClassObject.getName();
+				}
+#endif
 				return tw.Name;
 			}
 			return type.FullName;
