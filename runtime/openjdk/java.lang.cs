@@ -351,6 +351,12 @@ static class Java_java_lang_Class
 			{
 				pd = acl.GetProtectionDomain();
 			}
+			else if (wrapper is AnonymousTypeWrapper)
+			{
+				// dynamically compiled intrinsified lamdba anonymous types end up here and should get their
+				// protection domain from the host class
+				pd = ClassLoaderWrapper.GetWrapperFromType(wrapper.TypeAsTBD.DeclaringType).ClassObject.pd;
+			}
 		}
 		return pd;
 #endif
