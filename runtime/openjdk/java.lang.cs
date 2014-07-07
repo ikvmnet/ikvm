@@ -220,6 +220,14 @@ static class Java_java_lang_Class
 				return "void";
 			}
 		}
+		if (tw.IsUnsafeAnonymous)
+		{
+#if !FIRST_PASS
+			// for OpenJDK compatibility and debugging convenience we modify the class name to
+			// include the identity hashcode of the class object
+			return tw.Name + "/" + java.lang.System.identityHashCode(thisClass);
+#endif
+		}
 		return tw.Name;
 	}
 

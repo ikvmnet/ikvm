@@ -5695,7 +5695,7 @@ namespace IKVM.Internal
 		private readonly Type type;
 
 		internal AnonymousTypeWrapper(Type type)
-			: base(TypeFlags.None, Modifiers.Final | Modifiers.Synthetic, GetName(type))
+			: base(TypeFlags.Anonymous, Modifiers.Final | Modifiers.Synthetic, GetName(type))
 		{
 			this.type = type;
 		}
@@ -5707,11 +5707,10 @@ namespace IKVM.Internal
 				&& AttributeHelper.IsJavaModule(type.Module);
 		}
 
-		internal static string GetName(Type type)
+		private static string GetName(Type type)
 		{
 			return ClassLoaderWrapper.GetWrapperFromType(type.DeclaringType).Name
-				+ type.Name.Replace(NestedTypeName.IntrinsifiedAnonymousClass, "$$Lambda$")
-				+ "/" + (type.GetHashCode() & Int32.MaxValue);
+				+ type.Name.Replace(NestedTypeName.IntrinsifiedAnonymousClass, "$$Lambda$");
 		}
 
 		internal override ClassLoaderWrapper GetClassLoader()

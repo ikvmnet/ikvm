@@ -243,10 +243,7 @@ namespace IKVM.Internal
 			if(types == null)
 			{
 				// we're defining an anonymous class, so we don't need any locking
-				java.lang.Class clazz = TieClassAndWrapper(type, protectionDomain);
-				// for OpenJDK compatibility and debugging convenience we modify the class name to
-				// include the identity hashcode of the class object
-				clazz.name = f.Name + "/" + java.lang.System.identityHashCode(clazz);
+				TieClassAndWrapper(type, protectionDomain);
 				return type;
 			}
 			lock(types)
