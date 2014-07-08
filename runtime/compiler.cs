@@ -1434,8 +1434,11 @@ sealed class Compiler
 				{
 					ClassFile.ConstantPoolItemInvokeDynamic cpi = classFile.GetInvokeDynamic(instr.Arg1);
 					CastInterfaceArgs(null, cpi.GetArgTypes(), i, false);
-					EmitInvokeDynamic(cpi);
-					EmitReturnTypeConversion(cpi.GetRetType());
+					if (!LambdaMetafactory.Emit(context, classFile, instr.Arg1, cpi, ilGenerator))
+					{
+						EmitInvokeDynamic(cpi);
+						EmitReturnTypeConversion(cpi.GetRetType());
+					}
 					nonleaf = true;
 					break;
 				}
@@ -3208,11 +3211,6 @@ sealed class Compiler
 
 	private void EmitInvokeDynamic(ClassFile.ConstantPoolItemInvokeDynamic cpi)
 	{
-		if (LambdaMetafactory.Emit(context, classFile, cpi, ilGenerator))
-		{
-			// we intrinsified the lambda factory
-			return;
-		}
 		CodeEmitter ilgen = ilGenerator;
 		TypeWrapper[] args = cpi.GetArgTypes();
 		CodeEmitterLocal[] temps = new CodeEmitterLocal[args.Length];

@@ -35,16 +35,19 @@ using System.Reflection.Emit;
 
 namespace IKVM.Internal
 {
-	static class LambdaMetafactory
+	sealed class LambdaMetafactory
 	{
-		internal static bool Emit(DynamicTypeWrapper.FinishContext context, ClassFile classFile, ClassFile.ConstantPoolItemInvokeDynamic cpi, CodeEmitter ilgen)
+		private MethodBuilder ctor;
+
+		internal static bool Emit(DynamicTypeWrapper.FinishContext context, ClassFile classFile, int constantPoolIndex, ClassFile.ConstantPoolItemInvokeDynamic cpi, CodeEmitter ilgen)
 		{
 			ClassFile.BootstrapMethod bsm = classFile.GetBootstrapMethod(cpi.BootstrapMethod);
 			if (!IsLambdaMetafactory(classFile, bsm) && !IsLambdaAltMetafactory(classFile, bsm))
 			{
 				return false;
 			}
-			if (!EmitImpl(context, classFile, cpi, bsm, ilgen))
+			LambdaMetafactory lmf = context.GetValue<LambdaMetafactory>(constantPoolIndex);
+			if (lmf.ctor == null && !lmf.EmitImpl(context, classFile, cpi, bsm, ilgen))
 			{
 #if STATIC_COMPILER
 				if (context.TypeWrapper.GetClassLoader().DisableDynamicBinding)
@@ -54,10 +57,13 @@ namespace IKVM.Internal
 #endif
 				return false;
 			}
+			ilgen.Emit(OpCodes.Newobj, lmf.ctor);
+			// the CLR verification rules about type merging mean we have to explicitly cast to the interface type here
+			ilgen.Emit(OpCodes.Castclass, cpi.GetRetType().TypeAsBaseType);
 			return true;
 		}
 
-		private static bool EmitImpl(DynamicTypeWrapper.FinishContext context, ClassFile classFile, ClassFile.ConstantPoolItemInvokeDynamic cpi, ClassFile.BootstrapMethod bsm, CodeEmitter ilgen)
+		private bool EmitImpl(DynamicTypeWrapper.FinishContext context, ClassFile classFile, ClassFile.ConstantPoolItemInvokeDynamic cpi, ClassFile.BootstrapMethod bsm, CodeEmitter ilgen)
 		{
 			if (HasUnloadable(cpi))
 			{
@@ -178,11 +184,8 @@ namespace IKVM.Internal
 			{
 				tb.AddInterfaceImplementation(CoreClasses.java.io.Serializable.Wrapper.TypeAsBaseType);
 			}
-			MethodBuilder ctor = CreateConstructorAndDispatch(context, cpi.GetArgTypes(), tb, interfaceMethod, implParameters, samMethodType, implMethod, instantiatedMethodType, serializable);
+			ctor = CreateConstructorAndDispatch(context, cpi.GetArgTypes(), tb, interfaceMethod, implParameters, samMethodType, implMethod, instantiatedMethodType, serializable);
 			AddDefaultInterfaceMethods(context, methodList, tb);
-			ilgen.Emit(OpCodes.Newobj, ctor);
-			// the CLR verification rules about type merging mean we have to explicitly cast to the interface type here
-			ilgen.Emit(OpCodes.Castclass, interfaceType.TypeAsBaseType);
 			return true;
 		}
 
