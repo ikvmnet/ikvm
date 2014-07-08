@@ -71,18 +71,27 @@ namespace IKVM.Internal
 				return false;
 			}
 			bool serializable = false;
+			TypeWrapper[] markers = TypeWrapper.EmptyArray;
 			if (bsm.ArgumentCount > 3)
 			{
 				AltFlags flags = (AltFlags)classFile.GetConstantPoolConstantInteger(bsm.GetArgument(3));
 				serializable = (flags & AltFlags.Serializable) != 0;
+				int argpos = 4;
 				if ((flags & AltFlags.Markers) != 0)
 				{
-					Fail("markers");
-					return false;
+					markers = new TypeWrapper[classFile.GetConstantPoolConstantInteger(bsm.GetArgument(argpos++))];
+					for (int i = 0; i < markers.Length; i++)
+					{
+						if ((markers[i] = classFile.GetConstantPoolClassType(bsm.GetArgument(argpos++))).IsUnloadable)
+						{
+							Fail("unloadable marker");
+							return false;
+						}
+					}
 				}
 				if ((flags & AltFlags.Bridges) != 0)
 				{
-					int bridgeCount = classFile.GetConstantPoolConstantInteger(bsm.GetArgument(4));
+					int bridgeCount = classFile.GetConstantPoolConstantInteger(bsm.GetArgument(argpos++));
 					if (bridgeCount != 0)
 					{
 						Fail("bridges");
@@ -102,14 +111,9 @@ namespace IKVM.Internal
 			}
 			TypeWrapper interfaceType = cpi.GetRetType();
 			MethodWrapper[] methodList;
-			if (!IsSupportedInterface(interfaceType, out methodList))
+			if (!CheckSupportedInterfaces(context.TypeWrapper, interfaceType, markers, out methodList))
 			{
-				Fail("interfaceType " + interfaceType.Name);
-				return false;
-			}
-			if (!interfaceType.IsAccessibleFrom(context.TypeWrapper))
-			{
-				Fail("interfaceType not accessible");
+				Fail("unsupported interface");
 				return false;
 			}
 			if (serializable && Array.Exists(methodList, delegate(MethodWrapper mw) { return mw.Name == "writeReplace" && mw.Signature == "()Ljava.lang.Object;"; }))
@@ -180,9 +184,13 @@ namespace IKVM.Internal
 			// we're not implementing the interfaces recursively (because we don't care about .NET Compact anymore),
 			// but should we decide to do that, we'd need to somehow communicate to AnonymousTypeWrapper what the 'real' interface is
 			tb.AddInterfaceImplementation(interfaceType.TypeAsBaseType);
-			if (serializable)
+			if (serializable && Array.IndexOf(markers, CoreClasses.java.io.Serializable.Wrapper) == -1)
 			{
 				tb.AddInterfaceImplementation(CoreClasses.java.io.Serializable.Wrapper.TypeAsBaseType);
+			}
+			foreach (TypeWrapper marker in markers)
+			{
+				tb.AddInterfaceImplementation(marker.TypeAsBaseType);
 			}
 			ctor = CreateConstructorAndDispatch(context, cpi.GetArgTypes(), tb, interfaceMethod, implParameters, samMethodType, implMethod, instantiatedMethodType, serializable);
 			AddDefaultInterfaceMethods(context, methodList, tb);
@@ -691,10 +699,10 @@ namespace IKVM.Internal
 			return true;
 		}
 
-		private static bool IsSupportedInterface(TypeWrapper tw, out MethodWrapper[] methodList)
+		private static bool CheckSupportedInterfaces(TypeWrapper caller, TypeWrapper tw, TypeWrapper[] markers, out MethodWrapper[] methodList)
 		{
 			// we don't need to check for unloadable, because we already did that while validating the invoke signature
-			if (!tw.IsInterface || tw.IsGhost)
+			if (!tw.IsInterface || tw.IsGhost || !tw.IsAccessibleFrom(caller))
 			{
 				methodList = null;
 				return false;
@@ -703,6 +711,19 @@ namespace IKVM.Internal
 			int abstractMethodCount = 0;
 			if (GatherAllInterfaceMethods(tw, methods, ref abstractMethodCount) && abstractMethodCount == 1)
 			{
+				foreach (TypeWrapper marker in markers)
+				{
+					if (!marker.IsInterface || marker.IsGhost || !marker.IsAccessibleFrom(caller))
+					{
+						methodList = null;
+						return false;
+					}
+					if (!GatherAllInterfaceMethods(marker, methods, ref abstractMethodCount) || abstractMethodCount != 1)
+					{
+						methodList = null;
+						return false;
+					}
+				}
 				methodList = new MethodWrapper[methods.Count];
 				methods.Values.CopyTo(methodList, 0);
 				return true;
