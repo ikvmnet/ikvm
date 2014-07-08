@@ -5746,5 +5746,21 @@ namespace IKVM.Internal
 		internal override void Finish()
 		{
 		}
+
+		protected override void LazyPublishMembers()
+		{
+			MethodInfo mi = type.GetMethod("writeReplace", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly, null, Type.EmptyTypes, null);
+			if (mi != null)
+			{
+				SetMethods(new MethodWrapper[] {
+					new TypicalMethodWrapper(this, "writeReplace", "()Ljava.lang.Object;", mi, CoreClasses.java.lang.Object.Wrapper, TypeWrapper.EmptyArray, Modifiers.Private, MemberFlags.None)
+				});
+			}
+			else
+			{
+				SetMethods(MethodWrapper.EmptyArray);
+			}
+			SetFields(FieldWrapper.EmptyArray);
+		}
 	}
 }

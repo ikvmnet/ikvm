@@ -40,7 +40,7 @@ namespace IKVM.Internal
 		internal static bool Emit(DynamicTypeWrapper.FinishContext context, ClassFile classFile, ClassFile.ConstantPoolItemInvokeDynamic cpi, CodeEmitter ilgen)
 		{
 			ClassFile.BootstrapMethod bsm = classFile.GetBootstrapMethod(cpi.BootstrapMethod);
-			if (!IsLambdaMetafactory(classFile, bsm))
+			if (!IsLambdaMetafactory(classFile, bsm) && !IsLambdaAltMetafactory(classFile, bsm))
 			{
 				return false;
 			}
@@ -64,6 +64,26 @@ namespace IKVM.Internal
 				Fail("cpi has unloadable");
 				return false;
 			}
+			bool serializable = false;
+			if (bsm.ArgumentCount > 3)
+			{
+				AltFlags flags = (AltFlags)classFile.GetConstantPoolConstantInteger(bsm.GetArgument(3));
+				serializable = (flags & AltFlags.Serializable) != 0;
+				if ((flags & AltFlags.Markers) != 0)
+				{
+					Fail("markers");
+					return false;
+				}
+				if ((flags & AltFlags.Bridges) != 0)
+				{
+					int bridgeCount = classFile.GetConstantPoolConstantInteger(bsm.GetArgument(4));
+					if (bridgeCount != 0)
+					{
+						Fail("bridges");
+						return false;
+					}
+				}
+			}
 			ClassFile.ConstantPoolItemMethodType samMethodType = classFile.GetConstantPoolConstantMethodType(bsm.GetArgument(0));
 			ClassFile.ConstantPoolItemMethodHandle implMethod = classFile.GetConstantPoolConstantMethodHandle(bsm.GetArgument(1));
 			ClassFile.ConstantPoolItemMethodType instantiatedMethodType = classFile.GetConstantPoolConstantMethodType(bsm.GetArgument(2));
@@ -84,6 +104,11 @@ namespace IKVM.Internal
 			if (!interfaceType.IsAccessibleFrom(context.TypeWrapper))
 			{
 				Fail("interfaceType not accessible");
+				return false;
+			}
+			if (serializable && Array.Exists(methodList, delegate(MethodWrapper mw) { return mw.Name == "writeReplace" && mw.Signature == "()Ljava.lang.Object;"; }))
+			{
+				Fail("writeReplace");
 				return false;
 			}
 			if (!IsSupportedImplMethod(implMethod, context.TypeWrapper, cpi.GetArgTypes(), instantiatedMethodType))
@@ -149,9 +174,12 @@ namespace IKVM.Internal
 			// we're not implementing the interfaces recursively (because we don't care about .NET Compact anymore),
 			// but should we decide to do that, we'd need to somehow communicate to AnonymousTypeWrapper what the 'real' interface is
 			tb.AddInterfaceImplementation(interfaceType.TypeAsBaseType);
-			TypeWrapperFactory factory = context.TypeWrapper.GetClassLoader().GetTypeWrapperFactory();
-			MethodBuilder ctor = CreateConstructorAndDispatch(factory, cpi.GetArgTypes(), tb, interfaceMethod, implParameters, samMethodType, implMethod, instantiatedMethodType);
-			AddDefaultInterfaceMethods(factory, methodList, tb);
+			if (serializable)
+			{
+				tb.AddInterfaceImplementation(CoreClasses.java.io.Serializable.Wrapper.TypeAsBaseType);
+			}
+			MethodBuilder ctor = CreateConstructorAndDispatch(context, cpi.GetArgTypes(), tb, interfaceMethod, implParameters, samMethodType, implMethod, instantiatedMethodType, serializable);
+			AddDefaultInterfaceMethods(context, methodList, tb);
 			ilgen.Emit(OpCodes.Newobj, ctor);
 			// the CLR verification rules about type merging mean we have to explicitly cast to the interface type here
 			ilgen.Emit(OpCodes.Castclass, interfaceType.TypeAsBaseType);
@@ -317,8 +345,9 @@ namespace IKVM.Internal
 			return Rt.IsAssignableTo(Ru);
 		}
 
-		private static MethodBuilder CreateConstructorAndDispatch(TypeWrapperFactory context, TypeWrapper[] args, TypeBuilder tb, MethodWrapper interfaceMethod, TypeWrapper[] implParameters,
-			ClassFile.ConstantPoolItemMethodType samMethodType, ClassFile.ConstantPoolItemMethodHandle implMethod, ClassFile.ConstantPoolItemMethodType instantiatedMethodType)
+		private static MethodBuilder CreateConstructorAndDispatch(DynamicTypeWrapper.FinishContext context, TypeWrapper[] args, TypeBuilder tb,
+			MethodWrapper interfaceMethod, TypeWrapper[] implParameters, ClassFile.ConstantPoolItemMethodType samMethodType, ClassFile.ConstantPoolItemMethodHandle implMethod,
+			ClassFile.ConstantPoolItemMethodType instantiatedMethodType, bool serializable)
 		{
 			// captured values
 			Type[] capturedTypes = new Type[args.Length];
@@ -349,7 +378,7 @@ namespace IKVM.Internal
 			ilgen.DoEmit();
 
 			// dispatch method
-			MethodBuilder mb = interfaceMethod.GetDefineMethodHelper().DefineMethod(context, tb, interfaceMethod.RealName, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final);
+			MethodBuilder mb = interfaceMethod.GetDefineMethodHelper().DefineMethod(context.TypeWrapper, tb, interfaceMethod.RealName, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final);
 			ilgen = CodeEmitter.Create(mb);
 			for (int i = 0; i < capturedTypes.Length; i++)
 			{
@@ -507,6 +536,46 @@ namespace IKVM.Internal
 			ilgen.Emit(OpCodes.Ret);
 			ilgen.DoEmit();
 
+			// writeReplace method
+			if (serializable)
+			{
+				MethodBuilder writeReplace = tb.DefineMethod("writeReplace", MethodAttributes.Private, Types.Object, Type.EmptyTypes);
+				ilgen = CodeEmitter.Create(writeReplace);
+				context.TypeWrapper.EmitClassLiteral(ilgen);
+				ilgen.Emit(OpCodes.Ldstr, interfaceMethod.DeclaringType.Name.Replace('.', '/'));
+				ilgen.Emit(OpCodes.Ldstr, interfaceMethod.Name);
+				ilgen.Emit(OpCodes.Ldstr, interfaceMethod.Signature.Replace('.', '/'));
+				ilgen.EmitLdc_I4((int)implMethod.Kind);
+				ilgen.Emit(OpCodes.Ldstr, implMethod.Class.Replace('.', '/'));
+				ilgen.Emit(OpCodes.Ldstr, implMethod.Name);
+				ilgen.Emit(OpCodes.Ldstr, implMethod.Signature.Replace('.', '/'));
+				ilgen.Emit(OpCodes.Ldstr, instantiatedMethodType.Signature.Replace('.', '/'));
+				ilgen.EmitLdc_I4(capturedFields.Length);
+				ilgen.Emit(OpCodes.Newarr, Types.Object);
+				for (int i = 0; i < capturedFields.Length; i++)
+				{
+					ilgen.Emit(OpCodes.Dup);
+					ilgen.EmitLdc_I4(i);
+					ilgen.EmitLdarg(0);
+					ilgen.Emit(OpCodes.Ldfld, capturedFields[i]);
+					if (args[i].IsPrimitive)
+					{
+						Boxer.EmitBox(ilgen, args[i]);
+					}
+					else if (args[i].IsGhost)
+					{
+						args[i].EmitConvSignatureTypeToStackType(ilgen);
+					}
+					ilgen.Emit(OpCodes.Stelem, Types.Object);
+				}
+				MethodWrapper ctorSerializedLambda = ClassLoaderWrapper.LoadClassCritical("java.lang.invoke.SerializedLambda").GetMethodWrapper(StringConstants.INIT,
+					"(Ljava.lang.Class;Ljava.lang.String;Ljava.lang.String;Ljava.lang.String;ILjava.lang.String;Ljava.lang.String;Ljava.lang.String;Ljava.lang.String;[Ljava.lang.Object;)V", false);
+				ctorSerializedLambda.Link();
+				ctorSerializedLambda.EmitNewobj(ilgen);
+				ilgen.Emit(OpCodes.Ret);
+				ilgen.DoEmit();
+			}
+
 			return ctor;
 		}
 
@@ -550,18 +619,19 @@ namespace IKVM.Internal
 			mw.EmitCallvirt(ilgen);
 		}
 
-		private static void AddDefaultInterfaceMethods(TypeWrapperFactory context, MethodWrapper[] methodList, TypeBuilder tb)
+		private static void AddDefaultInterfaceMethods(DynamicTypeWrapper.FinishContext context, MethodWrapper[] methodList, TypeBuilder tb)
 		{
+			TypeWrapperFactory factory = context.TypeWrapper.GetClassLoader().GetTypeWrapperFactory();
 			foreach (MethodWrapper mw in methodList)
 			{
 				if (!mw.IsAbstract)
 				{
-					MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(context, tb, mw.RealName, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final);
+					MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(factory, tb, mw.RealName, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final);
 					DynamicTypeWrapper.FinishContext.EmitCallDefaultInterfaceMethod(mb, mw);
 				}
 				else if (IsObjectMethod(mw))
 				{
-					MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(context, tb, mw.RealName, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final);
+					MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(factory, tb, mw.RealName, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final);
 					CodeEmitter ilgen = CodeEmitter.Create(mb);
 					for (int i = 0, count = mw.GetParameters().Length; i <= count; i++)
 					{
@@ -739,6 +809,65 @@ namespace IKVM.Internal
 			return mw.Name == "metafactory"
 				&& mw.Signature == "(Ljava.lang.invoke.MethodHandles$Lookup;Ljava.lang.String;Ljava.lang.invoke.MethodType;Ljava.lang.invoke.MethodType;Ljava.lang.invoke.MethodHandle;Ljava.lang.invoke.MethodType;)Ljava.lang.invoke.CallSite;"
 				&& mw.DeclaringType.Name == "java.lang.invoke.LambdaMetafactory";
+		}
+
+		[Flags]
+		enum AltFlags
+		{
+			Serializable = 1,
+			Markers = 2,
+			Bridges = 4,
+			Mask = Serializable | Markers | Bridges
+		}
+
+		private static bool IsLambdaAltMetafactory(ClassFile classFile, ClassFile.BootstrapMethod bsm)
+		{
+			ClassFile.ConstantPoolItemMethodHandle mh;
+			AltFlags flags;
+			int argpos = 4;
+			return bsm.ArgumentCount >= 4
+				&& (mh = classFile.GetConstantPoolConstantMethodHandle(bsm.BootstrapMethodIndex)).Kind == ClassFile.RefKind.invokeStatic
+				&& IsLambdaAltMetafactory(mh.Member)
+				&& classFile.GetConstantPoolConstantType(bsm.GetArgument(0)) == ClassFile.ConstantType.MethodType
+				&& classFile.GetConstantPoolConstantType(bsm.GetArgument(1)) == ClassFile.ConstantType.MethodHandle
+				&& classFile.GetConstantPoolConstantType(bsm.GetArgument(2)) == ClassFile.ConstantType.MethodType
+				&& classFile.GetConstantPoolConstantType(bsm.GetArgument(3)) == ClassFile.ConstantType.Integer
+				&& ((flags = (AltFlags)classFile.GetConstantPoolConstantInteger(bsm.GetArgument(3))) & ~AltFlags.Mask) == 0
+				&& ((flags & AltFlags.Markers) == 0 || CheckOptionalArgs(classFile, bsm, ClassFile.ConstantType.Class, ref argpos))
+				&& ((flags & AltFlags.Bridges) == 0 || CheckOptionalArgs(classFile, bsm, ClassFile.ConstantType.MethodType, ref argpos))
+				&& argpos == bsm.ArgumentCount;
+		}
+
+		private static bool IsLambdaAltMetafactory(MemberWrapper mw)
+		{
+			return mw.Name == "altMetafactory"
+				&& mw.Signature == "(Ljava.lang.invoke.MethodHandles$Lookup;Ljava.lang.String;Ljava.lang.invoke.MethodType;[Ljava.lang.Object;)Ljava.lang.invoke.CallSite;"
+				&& mw.DeclaringType.Name == "java.lang.invoke.LambdaMetafactory";
+		}
+
+		private static bool CheckOptionalArgs(ClassFile classFile, ClassFile.BootstrapMethod bsm, ClassFile.ConstantType type, ref int argpos)
+		{
+			if (bsm.ArgumentCount - argpos < 1)
+			{
+				return false;
+			}
+			if (classFile.GetConstantPoolConstantType(bsm.GetArgument(argpos)) != ClassFile.ConstantType.Integer)
+			{
+				return false;
+			}
+			int count = classFile.GetConstantPoolConstantInteger(bsm.GetArgument(argpos++));
+			if (count < 0 || bsm.ArgumentCount - argpos < count)
+			{
+				return false;
+			}
+			for (int i = 0; i < count; i++)
+			{
+				if (classFile.GetConstantPoolConstantType(bsm.GetArgument(argpos++)) != type)
+				{
+					return false;
+				}
+			}
+			return true;
 		}
 
 		private static bool HasUnloadable(ClassFile.ConstantPoolItemInvokeDynamic cpi)

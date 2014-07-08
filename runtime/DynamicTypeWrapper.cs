@@ -3999,7 +3999,7 @@ namespace IKVM.Internal
 				this.typeBuilder = typeBuilder;
 			}
 
-			internal TypeWrapper TypeWrapper
+			internal DynamicTypeWrapper TypeWrapper
 			{
 				get { return wrapper; }
 			}
