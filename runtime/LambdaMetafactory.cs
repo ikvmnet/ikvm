@@ -72,6 +72,7 @@ namespace IKVM.Internal
 			}
 			bool serializable = false;
 			TypeWrapper[] markers = TypeWrapper.EmptyArray;
+			ClassFile.ConstantPoolItemMethodType[] bridges = null;
 			if (bsm.ArgumentCount > 3)
 			{
 				AltFlags flags = (AltFlags)classFile.GetConstantPoolConstantInteger(bsm.GetArgument(3));
@@ -91,11 +92,15 @@ namespace IKVM.Internal
 				}
 				if ((flags & AltFlags.Bridges) != 0)
 				{
-					int bridgeCount = classFile.GetConstantPoolConstantInteger(bsm.GetArgument(argpos++));
-					if (bridgeCount != 0)
+					bridges = new ClassFile.ConstantPoolItemMethodType[classFile.GetConstantPoolConstantInteger(bsm.GetArgument(argpos++))];
+					for (int i = 0; i < bridges.Length; i++)
 					{
-						Fail("bridges");
-						return false;
+						bridges[i] = classFile.GetConstantPoolConstantMethodType(bsm.GetArgument(argpos++));
+						if (HasUnloadable(bridges[i]))
+						{
+							Fail("unloadable bridge");
+							return false;
+						}
 					}
 				}
 			}
@@ -111,7 +116,7 @@ namespace IKVM.Internal
 			}
 			TypeWrapper interfaceType = cpi.GetRetType();
 			MethodWrapper[] methodList;
-			if (!CheckSupportedInterfaces(context.TypeWrapper, interfaceType, markers, out methodList))
+			if (!CheckSupportedInterfaces(context.TypeWrapper, interfaceType, markers, bridges, out methodList))
 			{
 				Fail("unsupported interface");
 				return false;
@@ -126,31 +131,22 @@ namespace IKVM.Internal
 				Fail("implMethod " + implMethod.MemberConstantPoolItem.Class + "::" + implMethod.MemberConstantPoolItem.Name + implMethod.MemberConstantPoolItem.Signature);
 				return false;
 			}
-			if (!IsSubTypeOf(instantiatedMethodType, samMethodType))
-			{
-				Fail("instantiatedMethodType <= samMethodType");
-				return false;
-			}
 			TypeWrapper[] implParameters = GetImplParameters(implMethod);
-			if (cpi.GetArgTypes().Length + samMethodType.GetArgTypes().Length != implParameters.Length)
+			CheckConstraints(instantiatedMethodType, samMethodType, cpi.GetArgTypes(), implParameters);
+			if (bridges != null)
 			{
-				Fail("K + N = M");
-				return false;
-			}
-			for (int i = 0, K = cpi.GetArgTypes().Length; i < K; i++)
-			{
-				if (!cpi.GetArgTypes()[i].IsSubTypeOf(implParameters[i]))
+				foreach (ClassFile.ConstantPoolItemMethodType bridge in bridges)
 				{
-					Fail("For i=1..K, Di = Ai");
-					return false;
-				}
-			}
-			for (int i = 0, N = samMethodType.GetArgTypes().Length, k = cpi.GetArgTypes().Length; i < N; i++)
-			{
-				if (!IsAdaptable(instantiatedMethodType.GetArgTypes()[i], implParameters[i + k], false))
-				{
-					Fail("For i=1..N, Ti is adaptable to Aj, where j=i+k (in" + context.TypeWrapper.Name + ")");
-					return false;
+					if (bridge.Signature == samMethodType.Signature)
+					{
+						Fail("bridge signature matches sam");
+						return false;
+					}
+					if (!CheckConstraints(instantiatedMethodType, bridge, cpi.GetArgTypes(), implParameters))
+					{
+						Fail("bridge constraints");
+						return false;
+					}
 				}
 			}
 			if (instantiatedMethodType.GetRetType() != PrimitiveTypeWrapper.VOID)
@@ -160,18 +156,21 @@ namespace IKVM.Internal
 				if (Ra == PrimitiveTypeWrapper.VOID || !IsAdaptable(Ra, Rt, true))
 				{
 					Fail("The return type Rt is void, or the return type Ra is not void and is adaptable to Rt");
-					Console.WriteLine("Ra = " + Ra.SigName);
-					Console.WriteLine("Rt = " + Rt.SigName);
 					return false;
 				}
 			}
 			MethodWrapper interfaceMethod = null;
+			List<MethodWrapper> methods = new List<MethodWrapper>();
 			foreach (MethodWrapper mw in methodList)
 			{
 				if (mw.Name == cpi.Name && mw.Signature == samMethodType.Signature)
 				{
 					interfaceMethod = mw;
-					break;
+					methods.Add(mw);
+				}
+				else if (mw.IsAbstract && !IsObjectMethod(mw))
+				{
+					methods.Add(mw);
 				}
 			}
 			if (interfaceMethod == null || !interfaceMethod.IsAbstract || IsObjectMethod(interfaceMethod) || !MatchSignatures(interfaceMethod, samMethodType))
@@ -192,7 +191,7 @@ namespace IKVM.Internal
 			{
 				tb.AddInterfaceImplementation(marker.TypeAsBaseType);
 			}
-			ctor = CreateConstructorAndDispatch(context, interfaceType, cpi.GetArgTypes(), tb, interfaceMethod, implParameters, samMethodType, implMethod, instantiatedMethodType, serializable);
+			ctor = CreateConstructorAndDispatch(context, cpi, tb, methods, implParameters, samMethodType, implMethod, instantiatedMethodType, serializable);
 			AddDefaultInterfaceMethods(context, methodList, tb);
 			return true;
 		}
@@ -201,6 +200,37 @@ namespace IKVM.Internal
 		private static void Fail(string msg)
 		{
 			Console.WriteLine("Fail: " + msg);
+		}
+
+		private static bool CheckConstraints(ClassFile.ConstantPoolItemMethodType instantiatedMethodType, ClassFile.ConstantPoolItemMethodType methodType, TypeWrapper[] args, TypeWrapper[] implParameters)
+		{
+			if (!IsSubTypeOf(instantiatedMethodType, methodType))
+			{
+				Fail("instantiatedMethodType <= methodType");
+				return false;
+			}
+			if (args.Length + methodType.GetArgTypes().Length != implParameters.Length)
+			{
+				Fail("K + N = M");
+				return false;
+			}
+			for (int i = 0, K = args.Length; i < K; i++)
+			{
+				if (!args[i].IsSubTypeOf(implParameters[i]))
+				{
+					Fail("For i=1..K, Di = Ai");
+					return false;
+				}
+			}
+			for (int i = 0, N = methodType.GetArgTypes().Length, k = args.Length; i < N; i++)
+			{
+				if (!IsAdaptable(instantiatedMethodType.GetArgTypes()[i], implParameters[i + k], false))
+				{
+					Fail("For i=1..N, Ti is adaptable to Aj, where j=i+k");
+					return false;
+				}
+			}
+			return true;
 		}
 
 		private static TypeWrapper[] GetImplParameters(ClassFile.ConstantPoolItemMethodHandle implMethod)
@@ -356,10 +386,12 @@ namespace IKVM.Internal
 			return Rt.IsAssignableTo(Ru);
 		}
 
-		private static MethodBuilder CreateConstructorAndDispatch(DynamicTypeWrapper.FinishContext context, TypeWrapper interfaceType, TypeWrapper[] args, TypeBuilder tb,
-			MethodWrapper interfaceMethod, TypeWrapper[] implParameters, ClassFile.ConstantPoolItemMethodType samMethodType, ClassFile.ConstantPoolItemMethodHandle implMethod,
+		private static MethodBuilder CreateConstructorAndDispatch(DynamicTypeWrapper.FinishContext context, ClassFile.ConstantPoolItemInvokeDynamic cpi, TypeBuilder tb,
+			List<MethodWrapper> methods, TypeWrapper[] implParameters, ClassFile.ConstantPoolItemMethodType samMethodType, ClassFile.ConstantPoolItemMethodHandle implMethod,
 			ClassFile.ConstantPoolItemMethodType instantiatedMethodType, bool serializable)
 		{
+			TypeWrapper[] args = cpi.GetArgTypes();
+
 			// captured values
 			Type[] capturedTypes = new Type[args.Length];
 			FieldBuilder[] capturedFields = new FieldBuilder[capturedTypes.Length];
@@ -388,10 +420,61 @@ namespace IKVM.Internal
 			ilgen.Emit(OpCodes.Ret);
 			ilgen.DoEmit();
 
-			// dispatch method
+			// dispatch methods
+			foreach (MethodWrapper mw in methods)
+			{
+				EmitDispatch(context, args, tb, mw, implParameters, implMethod, instantiatedMethodType, capturedFields);
+			}
+
+			// writeReplace method
+			if (serializable)
+			{
+				MethodBuilder writeReplace = tb.DefineMethod("writeReplace", MethodAttributes.Private, Types.Object, Type.EmptyTypes);
+				ilgen = CodeEmitter.Create(writeReplace);
+				context.TypeWrapper.EmitClassLiteral(ilgen);
+				ilgen.Emit(OpCodes.Ldstr, cpi.GetRetType().Name.Replace('.', '/'));
+				ilgen.Emit(OpCodes.Ldstr, cpi.Name);
+				ilgen.Emit(OpCodes.Ldstr, samMethodType.Signature.Replace('.', '/'));
+				ilgen.EmitLdc_I4((int)implMethod.Kind);
+				ilgen.Emit(OpCodes.Ldstr, implMethod.Class.Replace('.', '/'));
+				ilgen.Emit(OpCodes.Ldstr, implMethod.Name);
+				ilgen.Emit(OpCodes.Ldstr, implMethod.Signature.Replace('.', '/'));
+				ilgen.Emit(OpCodes.Ldstr, instantiatedMethodType.Signature.Replace('.', '/'));
+				ilgen.EmitLdc_I4(capturedFields.Length);
+				ilgen.Emit(OpCodes.Newarr, Types.Object);
+				for (int i = 0; i < capturedFields.Length; i++)
+				{
+					ilgen.Emit(OpCodes.Dup);
+					ilgen.EmitLdc_I4(i);
+					ilgen.EmitLdarg(0);
+					ilgen.Emit(OpCodes.Ldfld, capturedFields[i]);
+					if (args[i].IsPrimitive)
+					{
+						Boxer.EmitBox(ilgen, args[i]);
+					}
+					else if (args[i].IsGhost)
+					{
+						args[i].EmitConvSignatureTypeToStackType(ilgen);
+					}
+					ilgen.Emit(OpCodes.Stelem, Types.Object);
+				}
+				MethodWrapper ctorSerializedLambda = ClassLoaderWrapper.LoadClassCritical("java.lang.invoke.SerializedLambda").GetMethodWrapper(StringConstants.INIT,
+					"(Ljava.lang.Class;Ljava.lang.String;Ljava.lang.String;Ljava.lang.String;ILjava.lang.String;Ljava.lang.String;Ljava.lang.String;Ljava.lang.String;[Ljava.lang.Object;)V", false);
+				ctorSerializedLambda.Link();
+				ctorSerializedLambda.EmitNewobj(ilgen);
+				ilgen.Emit(OpCodes.Ret);
+				ilgen.DoEmit();
+			}
+
+			return ctor;
+		}
+
+		private static void EmitDispatch(DynamicTypeWrapper.FinishContext context, TypeWrapper[] args, TypeBuilder tb, MethodWrapper interfaceMethod, TypeWrapper[] implParameters,
+			ClassFile.ConstantPoolItemMethodHandle implMethod, ClassFile.ConstantPoolItemMethodType instantiatedMethodType, FieldBuilder[] capturedFields)
+		{
 			MethodBuilder mb = interfaceMethod.GetDefineMethodHelper().DefineMethod(context.TypeWrapper, tb, interfaceMethod.RealName, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final);
-			ilgen = CodeEmitter.Create(mb);
-			for (int i = 0; i < capturedTypes.Length; i++)
+			CodeEmitter ilgen = CodeEmitter.Create(mb);
+			for (int i = 0; i < capturedFields.Length; i++)
 			{
 				ilgen.EmitLdarg(0);
 				OpCode opc = OpCodes.Ldfld;
@@ -411,7 +494,7 @@ namespace IKVM.Internal
 			for (int i = 0, count = interfaceMethod.GetParameters().Length, k = capturedFields.Length; i < count; i++)
 			{
 				ilgen.EmitLdarg(i + 1);
-				TypeWrapper Ui = samMethodType.GetArgTypes()[i];
+				TypeWrapper Ui = interfaceMethod.GetParameters()[i];
 				TypeWrapper Ti = instantiatedMethodType.GetArgTypes()[i];
 				TypeWrapper Aj = implParameters[i + k];
 				if (Ui == PrimitiveTypeWrapper.BYTE)
@@ -546,48 +629,6 @@ namespace IKVM.Internal
 			ilgen.EmitTailCallPrevention();
 			ilgen.Emit(OpCodes.Ret);
 			ilgen.DoEmit();
-
-			// writeReplace method
-			if (serializable)
-			{
-				MethodBuilder writeReplace = tb.DefineMethod("writeReplace", MethodAttributes.Private, Types.Object, Type.EmptyTypes);
-				ilgen = CodeEmitter.Create(writeReplace);
-				context.TypeWrapper.EmitClassLiteral(ilgen);
-				ilgen.Emit(OpCodes.Ldstr, interfaceType.Name.Replace('.', '/'));
-				ilgen.Emit(OpCodes.Ldstr, interfaceMethod.Name);
-				ilgen.Emit(OpCodes.Ldstr, interfaceMethod.Signature.Replace('.', '/'));
-				ilgen.EmitLdc_I4((int)implMethod.Kind);
-				ilgen.Emit(OpCodes.Ldstr, implMethod.Class.Replace('.', '/'));
-				ilgen.Emit(OpCodes.Ldstr, implMethod.Name);
-				ilgen.Emit(OpCodes.Ldstr, implMethod.Signature.Replace('.', '/'));
-				ilgen.Emit(OpCodes.Ldstr, instantiatedMethodType.Signature.Replace('.', '/'));
-				ilgen.EmitLdc_I4(capturedFields.Length);
-				ilgen.Emit(OpCodes.Newarr, Types.Object);
-				for (int i = 0; i < capturedFields.Length; i++)
-				{
-					ilgen.Emit(OpCodes.Dup);
-					ilgen.EmitLdc_I4(i);
-					ilgen.EmitLdarg(0);
-					ilgen.Emit(OpCodes.Ldfld, capturedFields[i]);
-					if (args[i].IsPrimitive)
-					{
-						Boxer.EmitBox(ilgen, args[i]);
-					}
-					else if (args[i].IsGhost)
-					{
-						args[i].EmitConvSignatureTypeToStackType(ilgen);
-					}
-					ilgen.Emit(OpCodes.Stelem, Types.Object);
-				}
-				MethodWrapper ctorSerializedLambda = ClassLoaderWrapper.LoadClassCritical("java.lang.invoke.SerializedLambda").GetMethodWrapper(StringConstants.INIT,
-					"(Ljava.lang.Class;Ljava.lang.String;Ljava.lang.String;Ljava.lang.String;ILjava.lang.String;Ljava.lang.String;Ljava.lang.String;Ljava.lang.String;[Ljava.lang.Object;)V", false);
-				ctorSerializedLambda.Link();
-				ctorSerializedLambda.EmitNewobj(ilgen);
-				ilgen.Emit(OpCodes.Ret);
-				ilgen.DoEmit();
-			}
-
-			return ctor;
 		}
 
 		private static void EmitConvertingUnbox(CodeEmitter ilgen, TypeWrapper tw)
@@ -699,7 +740,7 @@ namespace IKVM.Internal
 			return true;
 		}
 
-		private static bool CheckSupportedInterfaces(TypeWrapper caller, TypeWrapper tw, TypeWrapper[] markers, out MethodWrapper[] methodList)
+		private static bool CheckSupportedInterfaces(TypeWrapper caller, TypeWrapper tw, TypeWrapper[] markers, ClassFile.ConstantPoolItemMethodType[] bridges, out MethodWrapper[] methodList)
 		{
 			// we don't need to check for unloadable, because we already did that while validating the invoke signature
 			if (!tw.IsInterface || tw.IsGhost || !tw.IsAccessibleFrom(caller))
@@ -709,7 +750,8 @@ namespace IKVM.Internal
 			}
 			Dictionary<MethodKey, MethodWrapper> methods = new Dictionary<MethodKey,MethodWrapper>();
 			int abstractMethodCount = 0;
-			if (GatherAllInterfaceMethods(tw, methods, ref abstractMethodCount) && abstractMethodCount == 1)
+			int bridgeMethodCount = 0;
+			if (GatherAllInterfaceMethods(tw, bridges, methods, ref abstractMethodCount, ref bridgeMethodCount) && abstractMethodCount == 1)
 			{
 				foreach (TypeWrapper marker in markers)
 				{
@@ -718,11 +760,16 @@ namespace IKVM.Internal
 						methodList = null;
 						return false;
 					}
-					if (!GatherAllInterfaceMethods(marker, methods, ref abstractMethodCount) || abstractMethodCount != 1)
+					if (!GatherAllInterfaceMethods(marker, null, methods, ref abstractMethodCount, ref bridgeMethodCount) || abstractMethodCount != 1)
 					{
 						methodList = null;
 						return false;
 					}
+				}
+				if (bridges != null && bridgeMethodCount != bridges.Length)
+				{
+					methodList = null;
+					return false;
 				}
 				methodList = new MethodWrapper[methods.Count];
 				methods.Values.CopyTo(methodList, 0);
@@ -732,7 +779,8 @@ namespace IKVM.Internal
 			return false;
 		}
 
-		private static bool GatherAllInterfaceMethods(TypeWrapper tw, Dictionary<MethodKey, MethodWrapper> methods, ref int abstractMethodCount)
+		private static bool GatherAllInterfaceMethods(TypeWrapper tw, ClassFile.ConstantPoolItemMethodType[] bridges, Dictionary<MethodKey, MethodWrapper> methods,
+			ref int abstractMethodCount, ref int bridgeMethodCount)
 		{
 			foreach (MethodWrapper mw in tw.GetMethods())
 			{
@@ -762,7 +810,14 @@ namespace IKVM.Internal
 						methods.Add(key, mw);
 						if (mw.IsAbstract && !IsObjectMethod(mw))
 						{
-							abstractMethodCount++;
+							if (bridges != null && IsBridge(mw, bridges))
+							{
+								bridgeMethodCount++;
+							}
+							else
+							{
+								abstractMethodCount++;
+							}
 						}
 					}
 					mw.Link();
@@ -774,12 +829,24 @@ namespace IKVM.Internal
 			}
 			foreach (TypeWrapper tw1 in tw.Interfaces)
 			{
-				if (!GatherAllInterfaceMethods(tw1, methods, ref abstractMethodCount))
+				if (!GatherAllInterfaceMethods(tw1, bridges, methods, ref abstractMethodCount, ref bridgeMethodCount))
 				{
 					return false;
 				}
 			}
 			return true;
+		}
+
+		private static bool IsBridge(MethodWrapper mw, ClassFile.ConstantPoolItemMethodType[] bridges)
+		{
+			foreach (ClassFile.ConstantPoolItemMethodType bridge in bridges)
+			{
+				if (bridge.Signature == mw.Signature)
+				{
+					return true;
+				}
+			}
+			return false;
 		}
 
 		private static bool IsObjectMethod(MethodWrapper mw)
