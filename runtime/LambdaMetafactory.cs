@@ -192,7 +192,7 @@ namespace IKVM.Internal
 			{
 				tb.AddInterfaceImplementation(marker.TypeAsBaseType);
 			}
-			ctor = CreateConstructorAndDispatch(context, cpi.GetArgTypes(), tb, interfaceMethod, implParameters, samMethodType, implMethod, instantiatedMethodType, serializable);
+			ctor = CreateConstructorAndDispatch(context, interfaceType, cpi.GetArgTypes(), tb, interfaceMethod, implParameters, samMethodType, implMethod, instantiatedMethodType, serializable);
 			AddDefaultInterfaceMethods(context, methodList, tb);
 			return true;
 		}
@@ -356,7 +356,7 @@ namespace IKVM.Internal
 			return Rt.IsAssignableTo(Ru);
 		}
 
-		private static MethodBuilder CreateConstructorAndDispatch(DynamicTypeWrapper.FinishContext context, TypeWrapper[] args, TypeBuilder tb,
+		private static MethodBuilder CreateConstructorAndDispatch(DynamicTypeWrapper.FinishContext context, TypeWrapper interfaceType, TypeWrapper[] args, TypeBuilder tb,
 			MethodWrapper interfaceMethod, TypeWrapper[] implParameters, ClassFile.ConstantPoolItemMethodType samMethodType, ClassFile.ConstantPoolItemMethodHandle implMethod,
 			ClassFile.ConstantPoolItemMethodType instantiatedMethodType, bool serializable)
 		{
@@ -553,7 +553,7 @@ namespace IKVM.Internal
 				MethodBuilder writeReplace = tb.DefineMethod("writeReplace", MethodAttributes.Private, Types.Object, Type.EmptyTypes);
 				ilgen = CodeEmitter.Create(writeReplace);
 				context.TypeWrapper.EmitClassLiteral(ilgen);
-				ilgen.Emit(OpCodes.Ldstr, interfaceMethod.DeclaringType.Name.Replace('.', '/'));
+				ilgen.Emit(OpCodes.Ldstr, interfaceType.Name.Replace('.', '/'));
 				ilgen.Emit(OpCodes.Ldstr, interfaceMethod.Name);
 				ilgen.Emit(OpCodes.Ldstr, interfaceMethod.Signature.Replace('.', '/'));
 				ilgen.EmitLdc_I4((int)implMethod.Kind);
