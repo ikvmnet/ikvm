@@ -403,7 +403,7 @@ namespace IKVM.Internal
 				{
 					attr |= FieldAttributes.InitOnly;
 				}
-				capturedFields[i] = tb.DefineField("c" + i, capturedTypes[i], attr);
+				capturedFields[i] = tb.DefineField("arg$" + (i + 1), capturedTypes[i], attr);
 			}
 
 			// constructor
@@ -479,7 +479,11 @@ namespace IKVM.Internal
 		private static void EmitDispatch(DynamicTypeWrapper.FinishContext context, TypeWrapper[] args, TypeBuilder tb, MethodWrapper interfaceMethod, TypeWrapper[] implParameters,
 			ClassFile.ConstantPoolItemMethodHandle implMethod, ClassFile.ConstantPoolItemMethodType instantiatedMethodType, FieldBuilder[] capturedFields)
 		{
-			MethodBuilder mb = interfaceMethod.GetDefineMethodHelper().DefineMethod(context.TypeWrapper, tb, interfaceMethod.RealName, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final);
+			MethodBuilder mb = interfaceMethod.GetDefineMethodHelper().DefineMethod(context.TypeWrapper, tb, interfaceMethod.Name, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final);
+			if (interfaceMethod.Name != interfaceMethod.RealName)
+			{
+				tb.DefineMethodOverride(mb, (MethodInfo)interfaceMethod.GetMethod());
+			}
 			CodeEmitter ilgen = CodeEmitter.Create(mb);
 			for (int i = 0; i < capturedFields.Length; i++)
 			{
@@ -680,17 +684,27 @@ namespace IKVM.Internal
 
 		private static void AddDefaultInterfaceMethods(DynamicTypeWrapper.FinishContext context, MethodWrapper[] methodList, TypeBuilder tb)
 		{
+			// we use special name to hide these from Java reflection
+			const MethodAttributes attr = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final | MethodAttributes.SpecialName;
 			TypeWrapperFactory factory = context.TypeWrapper.GetClassLoader().GetTypeWrapperFactory();
 			foreach (MethodWrapper mw in methodList)
 			{
 				if (!mw.IsAbstract)
 				{
-					MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(factory, tb, mw.RealName, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final);
+					MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(factory, tb, mw.Name, attr);
+					if (mw.Name != mw.RealName)
+					{
+						tb.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
+					}
 					DynamicTypeWrapper.FinishContext.EmitCallDefaultInterfaceMethod(mb, mw);
 				}
 				else if (IsObjectMethod(mw))
 				{
-					MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(factory, tb, mw.RealName, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final);
+					MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(factory, tb, mw.Name, attr);
+					if (mw.Name != mw.RealName)
+					{
+						tb.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
+					}
 					CodeEmitter ilgen = CodeEmitter.Create(mb);
 					for (int i = 0, count = mw.GetParameters().Length; i <= count; i++)
 					{

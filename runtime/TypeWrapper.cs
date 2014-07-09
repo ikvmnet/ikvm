@@ -4989,13 +4989,13 @@ namespace IKVM.Internal
 				?? ClassLoaderWrapper.GetWrapperFromType(property.PropertyType);
 		}
 
-		private static TypeWrapper GetFieldTypeWrapper(FieldInfo field)
+		internal static TypeWrapper GetFieldTypeWrapper(FieldInfo field)
 		{
 			return TypeWrapperFromModOpt(field.GetOptionalCustomModifiers())
 				?? ClassLoaderWrapper.GetWrapperFromType(field.FieldType);
 		}
 
-		private static TypeWrapper GetParameterTypeWrapper(ParameterInfo param)
+		internal static TypeWrapper GetParameterTypeWrapper(ParameterInfo param)
 		{
 			TypeWrapper tw = TypeWrapperFromModOpt(param.GetOptionalCustomModifiers());
 			if (tw != null)
@@ -5760,18 +5760,51 @@ namespace IKVM.Internal
 
 		protected override void LazyPublishMembers()
 		{
-			MethodInfo mi = type.GetMethod("writeReplace", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly, null, Type.EmptyTypes, null);
-			if (mi != null)
+			List<MethodWrapper> methods = new List<MethodWrapper>();
+			foreach (MethodInfo mi in type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
 			{
-				SetMethods(new MethodWrapper[] {
-					new TypicalMethodWrapper(this, "writeReplace", "()Ljava.lang.Object;", mi, CoreClasses.java.lang.Object.Wrapper, TypeWrapper.EmptyArray, Modifiers.Private, MemberFlags.None)
-				});
+				if (mi.IsSpecialName)
+				{
+					// we use special name to hide default methods
+				}
+				else if (mi.IsPublic)
+				{
+					TypeWrapper returnType;
+					TypeWrapper[] parameterTypes;
+					string signature;
+					GetSig(mi, out returnType, out parameterTypes, out signature);
+					methods.Add(new TypicalMethodWrapper(this, mi.Name, signature, mi, returnType, parameterTypes, Modifiers.Public, MemberFlags.None));
+				}
+				else if (mi.Name == "writeReplace")
+				{
+					methods.Add(new TypicalMethodWrapper(this, "writeReplace", "()Ljava.lang.Object;", mi, CoreClasses.java.lang.Object.Wrapper, TypeWrapper.EmptyArray,
+						Modifiers.Private | Modifiers.Final, MemberFlags.None));
+				}
 			}
-			else
+			SetMethods(methods.ToArray());
+			List<FieldWrapper> fields = new List<FieldWrapper>();
+			foreach (FieldInfo fi in type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
 			{
-				SetMethods(MethodWrapper.EmptyArray);
+				TypeWrapper fieldType = CompiledTypeWrapper.GetFieldTypeWrapper(fi);
+				fields.Add(new SimpleFieldWrapper(this, fieldType, fi, fi.Name, fieldType.SigName, new ExModifiers(Modifiers.Private | Modifiers.Final, false)));
 			}
-			SetFields(FieldWrapper.EmptyArray);
+			SetFields(fields.ToArray());
+		}
+
+		private void GetSig(MethodInfo mi, out TypeWrapper returnType, out TypeWrapper[] parameterTypes, out string signature)
+		{
+			returnType = CompiledTypeWrapper.GetParameterTypeWrapper(mi.ReturnParameter);
+			ParameterInfo[] parameters = mi.GetParameters();
+			parameterTypes = new TypeWrapper[parameters.Length];
+			System.Text.StringBuilder sb = new System.Text.StringBuilder("(");
+			for (int i = 0; i < parameters.Length; i++)
+			{
+				parameterTypes[i] = CompiledTypeWrapper.GetParameterTypeWrapper(parameters[i]);
+				sb.Append(parameterTypes[i].SigName);
+			}
+			sb.Append(')');
+			sb.Append(returnType.SigName);
+			signature = sb.ToString();
 		}
 	}
 }
