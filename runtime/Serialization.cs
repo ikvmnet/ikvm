@@ -52,6 +52,11 @@ namespace IKVM.Internal
 			psetSerializationFormatter.AddPermission(new SecurityPermission(SecurityPermissionFlag.SerializationFormatter));
 		}
 
+		internal static bool IsISerializable(TypeWrapper wrapper)
+		{
+			return wrapper == iserializable;
+		}
+
 		private static bool IsSafeForAutomagicSerialization(TypeWrapper wrapper)
 		{
 			if (wrapper.TypeAsBaseType.IsSerializable)
@@ -147,15 +152,21 @@ namespace IKVM.Internal
 			return null;
 		}
 
-		private static void MarkSerializable(TypeBuilder tb)
+		internal static void MarkSerializable(TypeBuilder tb)
 		{
 			tb.SetCustomAttribute(serializableAttribute);
 		}
 
-		private static void AddGetObjectData(TypeBuilder tb)
+		internal static void AddGetObjectData(TypeBuilder tb)
 		{
+			string name = tb.IsSealed
+				? "System.Runtime.Serialization.ISerializable.GetObjectData"
+				: "GetObjectData";
+			MethodAttributes attr = tb.IsSealed
+				? MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final
+				: MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.CheckAccessOnOverride;
 			tb.AddInterfaceImplementation(JVM.Import(typeof(ISerializable)));
-			MethodBuilder getObjectData = tb.DefineMethod("GetObjectData", MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.NewSlot, null,
+			MethodBuilder getObjectData = tb.DefineMethod(name, attr, null,
 				new Type[] { JVM.Import(typeof(SerializationInfo)), JVM.Import(typeof(StreamingContext)) });
 			getObjectData.SetCustomAttribute(securityCriticalAttribute);
 			AttributeHelper.HideFromJava(getObjectData);

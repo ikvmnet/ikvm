@@ -464,6 +464,13 @@ namespace IKVM.Internal
 				ctorSerializedLambda.EmitNewobj(ilgen);
 				ilgen.Emit(OpCodes.Ret);
 				ilgen.DoEmit();
+
+				if (!context.TypeWrapper.GetClassLoader().NoAutomagicSerialization)
+				{
+					// add .NET serialization interop support
+					Serialization.MarkSerializable(tb);
+					Serialization.AddGetObjectData(tb);
+				}
 			}
 
 			return ctor;
@@ -740,10 +747,18 @@ namespace IKVM.Internal
 			return true;
 		}
 
+		private static bool IsSupportedInterface(TypeWrapper tw, TypeWrapper caller)
+		{
+			return tw.IsInterface
+				&& !tw.IsGhost
+				&& tw.IsAccessibleFrom(caller)
+				&& !Serialization.IsISerializable(tw);
+		}
+
 		private static bool CheckSupportedInterfaces(TypeWrapper caller, TypeWrapper tw, TypeWrapper[] markers, ClassFile.ConstantPoolItemMethodType[] bridges, out MethodWrapper[] methodList)
 		{
 			// we don't need to check for unloadable, because we already did that while validating the invoke signature
-			if (!tw.IsInterface || tw.IsGhost || !tw.IsAccessibleFrom(caller))
+			if (!IsSupportedInterface(tw, caller))
 			{
 				methodList = null;
 				return false;
@@ -755,7 +770,7 @@ namespace IKVM.Internal
 			{
 				foreach (TypeWrapper marker in markers)
 				{
-					if (!marker.IsInterface || marker.IsGhost || !marker.IsAccessibleFrom(caller))
+					if (!IsSupportedInterface(marker, caller))
 					{
 						methodList = null;
 						return false;

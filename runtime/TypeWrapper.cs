@@ -5730,7 +5730,18 @@ namespace IKVM.Internal
 
 		internal override TypeWrapper[] Interfaces
 		{
-			get { return GetImplementedInterfacesAsTypeWrappers(type); }
+			get
+			{
+				TypeWrapper[] interfaces = GetImplementedInterfacesAsTypeWrappers(type);
+				if (type.IsSerializable)
+				{
+					// we have to remove the System.Runtime.Serialization.ISerializable interface
+					List<TypeWrapper> list = new List<TypeWrapper>(interfaces);
+					list.RemoveAll(Serialization.IsISerializable);
+					return list.ToArray();
+				}
+				return interfaces;
+			}
 		}
 
 		internal override TypeWrapper[] InnerClasses
