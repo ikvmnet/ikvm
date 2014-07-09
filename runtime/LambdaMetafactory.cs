@@ -854,6 +854,10 @@ namespace IKVM.Internal
 					{
 						return false;
 					}
+					if (current != null && mw.RealName != current.RealName)
+					{
+						return false;
+					}
 				}
 			}
 			foreach (TypeWrapper tw1 in tw.Interfaces)
