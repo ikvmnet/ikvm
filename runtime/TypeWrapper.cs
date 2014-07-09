@@ -5689,6 +5689,7 @@ namespace IKVM.Internal
 		}
 	}
 
+#if !STATIC_COMPILER && !STUB_GENERATOR
 	// this represents an intrinsified anonymous class (currently used only by LambdaMetafactory)
 	sealed class AnonymousTypeWrapper : TypeWrapper
 	{
@@ -5807,4 +5808,5 @@ namespace IKVM.Internal
 			signature = sb.ToString();
 		}
 	}
+#endif // !STATIC_COMPILER && !STUB_GENERATOR
 }

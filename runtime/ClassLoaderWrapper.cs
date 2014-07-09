@@ -1093,6 +1093,7 @@ namespace IKVM.Internal
 					}
 				}
 #endif
+#if !STATIC_COMPILER && !STUB_GENERATOR
 				if(AnonymousTypeWrapper.IsAnonymous(type))
 				{
 					Dictionary<Type, TypeWrapper> typeToTypeWrapper;
@@ -1111,7 +1112,6 @@ namespace IKVM.Internal
 					}
 					return wrapper;
 				}
-#if !STATIC_COMPILER && !STUB_GENERATOR
 				if(ReflectUtil.IsReflectionOnly(type))
 				{
 					// historically we've always returned null for types that don't have a corresponding TypeWrapper (or java.lang.Class)
