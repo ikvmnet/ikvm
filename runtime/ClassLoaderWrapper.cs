@@ -1089,7 +1089,13 @@ namespace IKVM.Internal
 				{
 					lock(loader.typeToTypeWrapper)
 					{
-						return loader.typeToTypeWrapper[type];
+						TypeWrapper tw;
+						if(loader.typeToTypeWrapper.TryGetValue(type, out tw))
+						{
+							return tw;
+						}
+						// it must be an anonymous type then
+						Debug.Assert(AnonymousTypeWrapper.IsAnonymous(type));
 					}
 				}
 #endif
