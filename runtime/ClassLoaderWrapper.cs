@@ -1084,7 +1084,7 @@ namespace IKVM.Internal
 			{
 				Assembly asm = type.Assembly;
 #if CLASSGC
-				ClassLoaderWrapper loader;
+				ClassLoaderWrapper loader = null;
 				if(dynamicAssemblies != null && dynamicAssemblies.TryGetValue(asm, out loader))
 				{
 					lock(loader.typeToTypeWrapper)
