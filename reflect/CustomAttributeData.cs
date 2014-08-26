@@ -157,7 +157,7 @@ namespace IKVM.Reflection
 					throw new BadImageFormatException();
 				}
 				lazyConstructorArguments = ReadConstructorArguments(module, br, constructor);
-				lazyNamedArguments = ReadNamedArguments(module, br, br.ReadUInt16(), constructor.DeclaringType);
+				lazyNamedArguments = ReadNamedArguments(module, br, br.ReadUInt16(), constructor.DeclaringType, true);
 			}
 		}
 
@@ -443,13 +443,17 @@ namespace IKVM.Reflection
 			return list.AsReadOnly();
 		}
 
-		private static IList<CustomAttributeNamedArgument> ReadNamedArguments(Module context, ByteReader br, int named, Type type)
+		private static IList<CustomAttributeNamedArgument> ReadNamedArguments(Module context, ByteReader br, int named, Type type, bool required)
 		{
 			List<CustomAttributeNamedArgument> list = new List<CustomAttributeNamedArgument>(named);
 			for (int i = 0; i < named; i++)
 			{
 				byte fieldOrProperty = br.ReadByte();
 				Type fieldOrPropertyType = ReadFieldOrPropType(context, br);
+				if (fieldOrPropertyType.__IsMissing && !required)
+				{
+					return null;
+				}
 				string name = br.ReadString();
 				CustomAttributeTypedArgument value = ReadFixedArg(context, br, fieldOrPropertyType);
 				MemberInfo member;
@@ -580,7 +584,7 @@ namespace IKVM.Reflection
 			{
 				if (lazyConstructorArguments == null)
 				{
-					LazyParseArguments();
+					LazyParseArguments(false);
 				}
 				return lazyConstructorArguments;
 			}
@@ -595,21 +599,21 @@ namespace IKVM.Reflection
 					if (customAttributeIndex >= 0)
 					{
 						// 1) Unresolved Custom Attribute
-						LazyParseArguments();
+						LazyParseArguments(true);
 					}
 					else
 					{
 						// 5) Unresolved declarative security
 						ByteReader br = new ByteReader(declSecurityBlob, 0, declSecurityBlob.Length);
 						// LAMESPEC the count of named arguments is a compressed integer (instead of UInt16 as NumNamed in custom attributes)
-						lazyNamedArguments = ReadNamedArguments(module, br, br.ReadCompressedUInt(), Constructor.DeclaringType);
+						lazyNamedArguments = ReadNamedArguments(module, br, br.ReadCompressedUInt(), Constructor.DeclaringType, true);
 					}
 				}
 				return lazyNamedArguments;
 			}
 		}
 
-		private void LazyParseArguments()
+		private void LazyParseArguments(bool requireNameArguments)
 		{
 			ByteReader br = module.GetBlob(module.CustomAttribute.records[customAttributeIndex].Value);
 			if (br.Length == 0)
@@ -625,7 +629,7 @@ namespace IKVM.Reflection
 					throw new BadImageFormatException();
 				}
 				lazyConstructorArguments = ReadConstructorArguments(module, br, Constructor);
-				lazyNamedArguments = ReadNamedArguments(module, br, br.ReadUInt16(), Constructor.DeclaringType);
+				lazyNamedArguments = ReadNamedArguments(module, br, br.ReadUInt16(), Constructor.DeclaringType, requireNameArguments);
 			}
 		}
 
