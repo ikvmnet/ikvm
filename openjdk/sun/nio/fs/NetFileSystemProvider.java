@@ -1140,7 +1140,12 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
                 if (false) throw new cli.System.ArgumentException();
                 if (false) throw new cli.System.IO.FileNotFoundException();
                 if (false) throw new cli.System.IO.IOException();
-                return new DosFileAttributesImpl(new FileInfo(path));
+                FileInfo info = new FileInfo(path);
+                if (!info.get_Exists())
+                {
+                    throw new NoSuchFileException(path);
+                }
+                return new DosFileAttributesImpl(info);
             }
             catch (cli.System.IO.FileNotFoundException _)
             {
@@ -1192,6 +1197,10 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
                 {
                     info.set_Attributes(cli.System.IO.FileAttributes.wrap(info.get_Attributes().Value & ~attr));
                 }
+            }
+            catch (cli.System.IO.FileNotFoundException _)
+            {
+                throw new NoSuchFileException(path);
             }
             catch (cli.System.ArgumentException
                  | cli.System.IO.IOException x)
