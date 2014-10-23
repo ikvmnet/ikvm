@@ -709,25 +709,30 @@ public class BufferedImage extends java.awt.Image
         int width = getWidth();
         int height = getHeight();
         
-        // First map the pixel from Java type to .NET type
-        switch (getType()){
-            case TYPE_INT_ARGB:
-                copyToBitmap(width, height, ((DataBufferInt)raster.getDataBuffer()).getData());
-                break;
-            default:{
-                bitmap = createBitmap(width, height);
-                for( int y = 0; y<height; y++){
-                    for(int x = 0; x<width; x++){
-                        int rgb = colorModel.getRGB(raster.getDataElements(x, y, null));
-                        bitmap.SetPixel(x, y, cli.System.Drawing.Color.FromArgb(rgb));
+        bitmap = createBitmap(width, height);
+        synchronized( bitmap ) {
+            // First map the pixel from Java type to .NET type
+            switch (getType()){
+                case TYPE_INT_ARGB:
+                    copyToBitmap(width, height, ((DataBufferInt)raster.getDataBuffer()).getData());
+                    break;
+                default:{
+                    for( int y = 0; y<height; y++){
+                        for(int x = 0; x<width; x++){
+                            int rgb = colorModel.getRGB(raster.getDataElements(x, y, null));
+                            bitmap.SetPixel(x, y, cli.System.Drawing.Color.FromArgb(rgb));
+                        }
                     }
-                }
-            }   
+                }   
+            }
+            this.currentBuffer = BUFFER_BOTH;
         }
-        this.currentBuffer = BUFFER_BOTH;
         return;
     }
 
+    /**
+     * Caller must synchronized the bitmap object 
+     */
     @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     private void copyToBitmap(int width, int height, int[] pixelData)
     {
@@ -736,14 +741,11 @@ public class BufferedImage extends java.awt.Image
         {
             throw new IllegalArgumentException();
         }
-        bitmap = createBitmap(width, height);
-        synchronized( bitmap ) {            
-            cli.System.Drawing.Rectangle rect = new cli.System.Drawing.Rectangle(0, 0, width, height);
-            cli.System.Drawing.Imaging.BitmapData data = bitmap.LockBits(rect, ImageLockMode.wrap(ImageLockMode.WriteOnly), PixelFormat.wrap(PixelFormat.Format32bppArgb));
-            cli.System.IntPtr pixelPtr = data.get_Scan0();
-            cli.System.Runtime.InteropServices.Marshal.Copy(pixelData, 0, pixelPtr, (int)size);
-            bitmap.UnlockBits(data);
-        }
+        cli.System.Drawing.Rectangle rect = new cli.System.Drawing.Rectangle(0, 0, width, height);
+        cli.System.Drawing.Imaging.BitmapData data = bitmap.LockBits(rect, ImageLockMode.wrap(ImageLockMode.WriteOnly), PixelFormat.wrap(PixelFormat.Format32bppArgb));
+        cli.System.IntPtr pixelPtr = data.get_Scan0();
+        cli.System.Runtime.InteropServices.Marshal.Copy(pixelData, 0, pixelPtr, (int)size);
+        bitmap.UnlockBits(data);
     }
 
     /**
@@ -1438,8 +1440,7 @@ public class BufferedImage extends java.awt.Image
      *          <code>BufferedImage</code>.
      */
     public int getMinX() {
-        bitmap2Raster();
-        return raster.getMinX();
+        return 0;
     }
 
     /**
@@ -1449,8 +1450,7 @@ public class BufferedImage extends java.awt.Image
      *          <code>BufferedImage</code>.
      */
     public int getMinY() {
-        bitmap2Raster();
-        return raster.getMinY();
+        return 0;
     }
 
     /**
