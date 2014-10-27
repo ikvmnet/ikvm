@@ -108,7 +108,6 @@ public class JPEGImageWriter extends ImageWriter {
         }
     
         BufferedImage img = (BufferedImage)image.getRenderedImage();
-        cli.System.Drawing.Bitmap bitmap = img.getBitmap();
         
         ImageOutputStream imgOutput = (ImageOutputStream)getOutput();
         
@@ -151,7 +150,10 @@ public class JPEGImageWriter extends ImageWriter {
         try {
             params.get_Param()[0] = new EncoderParameter(Encoder.LuminanceTable, qTableToShortArray(qTables[0]));
             params.get_Param()[1] = new EncoderParameter(Encoder.ChrominanceTable, qTableToShortArray(qTables[1]));
-            bitmap.Save(stream, codec, params);
+            cli.System.Drawing.Bitmap bitmap = img.getBitmap();
+            synchronized( bitmap ) {
+                bitmap.Save(stream, codec, params);
+            }
         }
         finally {
             params.Dispose();
