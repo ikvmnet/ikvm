@@ -269,7 +269,9 @@ public static class Starter
                 }
                 else if (arg.StartsWith("-Xms")
                     || arg.StartsWith("-Xmx")
+                    || arg.StartsWith("-Xmn")
                     || arg.StartsWith("-Xss")
+                    || arg.StartsWith("-XX:")
                     || arg == "-Xmixed"
                     || arg == "-Xint"
                     || arg == "-Xincgc"
