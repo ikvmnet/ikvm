@@ -752,7 +752,6 @@ namespace IKVM.Internal
 			AddDummyLibrary(bin, "w2k_lsa_auth");
 			AddDummyLibrary(bin, "jaas_nt");
 			AddDummyLibrary(bin, "jaas_unix");
-			AddDummyLibrary(bin, "unpack");
 			AddDummyLibrary(bin, "net");
 			AddDummyLibrary(bin, "splashscreen");
 			AddDummyLibrary(bin, "osx");
