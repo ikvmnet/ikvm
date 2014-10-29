@@ -1203,6 +1203,16 @@ class PackageReader extends BandStructure {
         // flesh out the local constant pool
         ConstantPool.completeReferencesIn(cpRefs, true, bsms);
 
+        // remove the attr previously set, otherwise add the bsm and
+        // references as required
+        if (bsms.isEmpty()) {
+            cls.attributes.remove(Package.attrBootstrapMethodsEmpty.canonicalInstance());
+        } else {
+            cpRefs.add(Package.getRefString("BootstrapMethods"));
+            Collections.sort(bsms);
+            cls.setBootstrapMethods(bsms);
+        }
+
         // Now that we know all our local class references,
         // compute the InnerClasses attribute.
         int changed = cls.expandLocalICs();
@@ -1219,16 +1229,6 @@ class PackageReader extends BandStructure {
 
             // flesh out the local constant pool, again
             ConstantPool.completeReferencesIn(cpRefs, true, bsms);
-        }
-
-        // remove the attr previously set, otherwise add the bsm and
-        // references as required
-        if (bsms.isEmpty()) {
-            cls.attributes.remove(Package.attrBootstrapMethodsEmpty.canonicalInstance());
-        } else {
-            cpRefs.add(Package.getRefString("BootstrapMethods"));
-            Collections.sort(bsms);
-            cls.setBootstrapMethods(bsms);
         }
 
         // construct a local constant pool
