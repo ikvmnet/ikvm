@@ -805,6 +805,7 @@
     -recurse:resources.zip/com/sun/java/util/jar/pack/intrinsic.properties
     -recurse:resources.zip/sun/launcher/resources/*
     -resource:META-INF/services/java.nio.file.spi.FileSystemProvider=@OPENJDK@/jdk/src/share/demo/nio/zipfs/src/META-INF/services/java.nio.file.spi.FileSystemProvider
+    com/sun/java/util/jar/pack/*.class
     java/util/zip/*.class
     @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/logging/resources/*.class
     @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/*.class

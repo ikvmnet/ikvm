@@ -33,6 +33,7 @@
 AssemblyInfo.java
 com/sun/imageio/plugins/jpeg/JPEGImageReader.java
 com/sun/imageio/plugins/jpeg/JPEGImageWriter.java
+com/sun/java/util/jar/pack/PackageReader.java
 gnu/java/awt/Buffers.java
 gnu/java/awt/color/CieXyzConverter.java
 gnu/java/awt/color/ClutProfileConverter.java
@@ -8828,7 +8829,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/jdk/src/share/classes/com/sun/java/util/jar/pack/Instruction.java
 @OPENJDK@/jdk/src/share/classes/com/sun/java/util/jar/pack/NativeUnpack.java
 @OPENJDK@/jdk/src/share/classes/com/sun/java/util/jar/pack/Package.java
-@OPENJDK@/jdk/src/share/classes/com/sun/java/util/jar/pack/PackageReader.java
 @OPENJDK@/jdk/src/share/classes/com/sun/java/util/jar/pack/PackageWriter.java
 @OPENJDK@/jdk/src/share/classes/com/sun/java/util/jar/pack/PackerImpl.java
 @OPENJDK@/jdk/src/share/classes/com/sun/java/util/jar/pack/PopulationCoding.java
