@@ -1141,7 +1141,10 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
                 if (false) throw new cli.System.IO.FileNotFoundException();
                 if (false) throw new cli.System.IO.IOException();
                 FileInfo info = new FileInfo(path);
-                if (!info.get_Exists())
+                // We have to rely on the (undocumented) fact that FileInfo.Attributes returns -1
+                // when the path does not exist. We need this to work for both files and directories
+                // and this is the only efficient way to do that.
+                if (info.get_Attributes().Value == -1)
                 {
                     throw new NoSuchFileException(path);
                 }
