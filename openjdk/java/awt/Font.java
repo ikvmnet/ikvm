@@ -35,23 +35,30 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.peer.FontPeer;
 import java.io.*;
+import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.security.AccessController;
+import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.text.AttributedCharacterIterator.Attribute;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import sun.font.StandardGlyphVector;
 
 import cli.System.IntPtr;
+import cli.System.Drawing.FontFamily;
 import cli.System.Drawing.GraphicsUnit;
 import cli.System.Drawing.Text.PrivateFontCollection;
-import cli.System.Runtime.InteropServices.GCHandle;
-import cli.System.Runtime.InteropServices.GCHandleType;
+import cli.System.Runtime.InteropServices.DllImportAttribute;
 
 import sun.font.AttributeMap;
 import sun.font.AttributeValues;
@@ -813,6 +820,49 @@ public class Font implements java.io.Serializable
         return new Font(attributes);
     }
 
+    private static class FontFamilyReference extends WeakReference<FontFamily> {
+        
+        private static final ReferenceQueue<FontFamily> fontFamilyQueue = new ReferenceQueue<>();
+        private static final Set<FontFamilyReference> refs = Collections.synchronizedSet( new HashSet<FontFamilyReference>() );
+        static {
+            sun.misc.SharedSecrets.getJavaLangAccess().registerShutdownHook( 5, // Shutdown hook invocation order 
+            true, // register even if shutdown in progress 
+            new Runnable() {
+                public void run() {
+                    for( FontFamilyReference ref : refs ) {
+                        ref.delete( false );
+                    }
+                }
+            } );
+        }
+        private File fontFile;
+
+        private FontFamilyReference( FontFamily family, File fontFile ) {
+            super( family, fontFamilyQueue );
+            this.fontFile = fontFile;
+            refs.add( this );
+            
+            do {
+                FontFamilyReference ref = (FontFamilyReference)fontFamilyQueue.poll();
+                if( ref == null ) {
+                    break;
+                }
+                ref.delete( true );
+            } while(true);
+        }
+        
+        private void delete( boolean isQueue ) {
+            FontFamily family = get();
+            if( family != null ) {
+                family.Dispose();
+            }
+            
+            if( fontFile.delete() && isQueue) {
+                refs.remove( this );
+            }
+        }
+    }
+
     /**
      * Returns a new <code>Font</code> using the specified font type
      * and input data.  The new <code>Font</code> is
@@ -849,43 +899,51 @@ public class Font implements java.io.Serializable
             throw new IllegalArgumentException ("font format not recognized");
         }
 
-        // read the stream in a byte array
-        ByteArrayOutputStream baos = new ByteArrayOutputStream( fontStream.available() );
-        byte[] buffer = new byte[1024];
-        int count;
-        while( (count = fontStream.read( buffer, 0, buffer.length )) != -1 ) {
-            baos.write( buffer, 0, count );
+        File fontFile;
+        try {
+            fontFile = AccessController.doPrivileged(
+                            new PrivilegedExceptionAction<File>() {
+                                public File run() throws IOException {
+                                    return Files.createTempFile("+~JF", ".tmp").toFile();
+                                }
+                            }
+                        );
+        } catch( PrivilegedActionException ex ) {
+            throw (IOException)ex.getException();
         }
-        byte[] fontData = baos.toByteArray();
+        Files.copy( fontStream, fontFile.toPath(), StandardCopyOption.REPLACE_EXISTING );
 
         // create a private Font Collection and add the font data
-        PrivateFontCollection pfc;
+        PrivateFontCollection pfc = new PrivateFontCollection();
         try {
-            pfc = createPrivateFontCollection(fontData);
+            String fileName = fontFile.getPath();
+            pfc.AddFontFile( fileName );
+            RemoveFontResourceEx( fileName ); // hack for bug http://stackoverflow.com/questions/26671026/how-to-delete-the-file-of-a-privatefontcollection-addfontfile
+            if (false) throw new cli.System.IO.FileNotFoundException();
         } catch( cli.System.IO.FileNotFoundException x ) {
             FontFormatException ffe = new FontFormatException(x.getMessage());
             ffe.initCause(x);
+            fontFile.delete();
             throw ffe;
         }
+        
+        FontFamily family = pfc.get_Families()[0]; 
+        new FontFamilyReference( family, fontFile );
 
         // create the font object
-        Font2D font2D = SunFontManager.createFont2D( pfc.get_Families()[0], 0 );
+        Font2D font2D = SunFontManager.createFont2D( family, 0 );
         Font2DHandle font2DHandle = font2D.handle;
         Font font = new Font( font2D.getFontName( Locale.getDefault() ), PLAIN, 1, true, font2DHandle );
         return font;
     }
 
-    // create a private Font Collection and add the font data
+    @DllImportAttribute.Annotation(value="gdi32")
+    private static native int RemoveFontResourceEx(String filename, int fl, IntPtr pdv);    
+
     @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
-    private static PrivateFontCollection createPrivateFontCollection(byte[] fontData) throws cli.System.IO.FileNotFoundException {
-        GCHandle handle = GCHandle.Alloc(fontData, GCHandleType.wrap(GCHandleType.Pinned));
-        try {
-            PrivateFontCollection pfc = new PrivateFontCollection();
-            // AddMemoryFont throws a cli.System.IO.FileNotFoundException if the data are corrupt
-            pfc.AddMemoryFont( handle.AddrOfPinnedObject(), fontData.length );
-            return pfc;
-        } finally {
-            handle.Free();
+    private static void RemoveFontResourceEx(String filename) {
+        if( ikvm.internal.Util.WINDOWS ) {
+            RemoveFontResourceEx( filename, 16, IntPtr.Zero );
         }
     }
 
@@ -944,7 +1002,9 @@ public class Font implements java.io.Serializable
         // create a private Font Collection and add the font data
         PrivateFontCollection pfc = new PrivateFontCollection();
         try {
-            pfc.AddFontFile( fontFile.getPath() );
+            String fileName = fontFile.getPath();
+            pfc.AddFontFile( fileName );
+            RemoveFontResourceEx( fileName );// hack for bug http://stackoverflow.com/questions/26671026/how-to-delete-the-file-of-a-privatefontcollection-addfontfile
             if (false) throw new cli.System.IO.FileNotFoundException();
         } catch( cli.System.IO.FileNotFoundException fnfe ) {
             FileNotFoundException ex = new FileNotFoundException(fnfe.getMessage());
