@@ -291,6 +291,73 @@ static class Java_sun_misc_Perf
 
 static class Java_sun_misc_Unsafe
 {
+	private static void CheckArrayBounds(object obj, long offset, int accessLength)
+	{
+		// NOTE we rely on the fact that Buffer.ByteLength() requires a primitive array
+		int arrayLength = Buffer.ByteLength((Array)obj);
+		if (offset < 0 || offset > arrayLength - accessLength || accessLength > arrayLength)
+		{
+			throw new IndexOutOfRangeException();
+		}
+	}
+
+	[SecuritySafeCritical]
+	public static short ReadInt16(object obj, long offset)
+	{
+		CheckArrayBounds(obj, offset, 2);
+		GCHandle handle = GCHandle.Alloc(obj, GCHandleType.Pinned);
+		short value = Marshal.ReadInt16((IntPtr)(handle.AddrOfPinnedObject().ToInt64() + offset));
+		handle.Free();
+		return value;
+	}
+
+	[SecuritySafeCritical]
+	public static int ReadInt32(object obj, long offset)
+	{
+		CheckArrayBounds(obj, offset, 4);
+		GCHandle handle = GCHandle.Alloc(obj, GCHandleType.Pinned);
+		int value = Marshal.ReadInt32((IntPtr)(handle.AddrOfPinnedObject().ToInt64() + offset));
+		handle.Free();
+		return value;
+	}
+
+	[SecuritySafeCritical]
+	public static long ReadInt64(object obj, long offset)
+	{
+		CheckArrayBounds(obj, offset, 8);
+		GCHandle handle = GCHandle.Alloc(obj, GCHandleType.Pinned);
+		long value = Marshal.ReadInt64((IntPtr)(handle.AddrOfPinnedObject().ToInt64() + offset));
+		handle.Free();
+		return value;
+	}
+
+	[SecuritySafeCritical]
+	public static void WriteInt16(object obj, long offset, short value)
+	{
+		CheckArrayBounds(obj, offset, 2);
+		GCHandle handle = GCHandle.Alloc(obj, GCHandleType.Pinned);
+		Marshal.WriteInt16((IntPtr)(handle.AddrOfPinnedObject().ToInt64() + offset), value);
+		handle.Free();
+	}
+
+	[SecuritySafeCritical]
+	public static void WriteInt32(object obj, long offset, int value)
+	{
+		CheckArrayBounds(obj, offset, 4);
+		GCHandle handle = GCHandle.Alloc(obj, GCHandleType.Pinned);
+		Marshal.WriteInt32((IntPtr)(handle.AddrOfPinnedObject().ToInt64() + offset), value);
+		handle.Free();
+	}
+
+	[SecuritySafeCritical]
+	public static void WriteInt64(object obj, long offset, long value)
+	{
+		CheckArrayBounds(obj, offset, 8);
+		GCHandle handle = GCHandle.Alloc(obj, GCHandleType.Pinned);
+		Marshal.WriteInt64((IntPtr)(handle.AddrOfPinnedObject().ToInt64() + offset), value);
+		handle.Free();
+	}
+
 	public static void throwException(object thisUnsafe, Exception x)
 	{
 		throw x;

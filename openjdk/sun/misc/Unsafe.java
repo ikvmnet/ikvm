@@ -24,6 +24,7 @@
 
 package sun.misc;
 
+import cli.System.Buffer;
 import cli.System.IntPtr;
 import cli.System.Runtime.InteropServices.Marshal;
 import cli.System.Security.Permissions.SecurityAction;
@@ -97,6 +98,22 @@ public final class Unsafe
 
     public int arrayIndexScale(Class c)
     {
+        if (c == byte[].class || c == boolean[].class)
+        {
+            return 1;
+        }
+        if (c == char[].class || c == short[].class)
+        {
+            return 2;
+        }
+        if (c == int[].class || c == float[].class)
+        {
+            return 4;
+        }
+        if (c == long[].class || c == double[].class)
+        {
+            return 8;
+        }
         // don't change this, the Unsafe intrinsics depend on this value
         return 1;
     }
@@ -204,17 +221,22 @@ public final class Unsafe
         }
     }
 
+    private static native short ReadInt16(Object obj, long offset);
+    private static native int ReadInt32(Object obj, long offset);
+    private static native long ReadInt64(Object obj, long offset);
+    private static native void WriteInt16(Object obj, long offset, short value);
+    private static native void WriteInt32(Object obj, long offset, int value);
+    private static native void WriteInt64(Object obj, long offset, long value);
+
     public boolean compareAndSwapInt(Object obj, long offset, int expect, int update)
     {
-        if(obj instanceof int[])
+        if (obj instanceof cli.System.Array)
         {
-            int[] arr = (int[])obj;
-            int index = (int)offset;
             synchronized(this)
             {
-                if(arr[index] == expect)
+                if(ReadInt32(obj, offset) == expect)
                 {
-                    arr[index] = update;
+                    WriteInt32(obj, offset, update);
                     return true;
                 }
                 return false;
@@ -244,11 +266,11 @@ public final class Unsafe
 
     public void putIntVolatile(Object obj, long offset, int newValue)
     {
-        if(obj instanceof int[])
+        if (obj instanceof cli.System.Array)
         {
             synchronized(this)
             {
-                ((int[])obj)[(int)offset] = newValue;
+                WriteInt32(obj, offset, newValue);
             }
         }
         else
@@ -275,11 +297,11 @@ public final class Unsafe
 
     public int getIntVolatile(Object obj, long offset)
     {
-        if(obj instanceof int[])
+        if (obj instanceof cli.System.Array)
         {
             synchronized(this)
             {
-                return ((int[])obj)[(int)offset];
+                return ReadInt32(obj, offset);
             }
         }
         else
@@ -301,15 +323,13 @@ public final class Unsafe
 
     public boolean compareAndSwapLong(Object obj, long offset, long expect, long update)
     {
-        if(obj instanceof long[])
+        if (obj instanceof cli.System.Array)
         {
-            long[] arr = (long[])obj;
-            int index = (int)offset;
             synchronized(this)
             {
-                if(arr[index] == expect)
+                if(ReadInt64(obj, offset) == expect)
                 {
-                    arr[index] = update;
+                    WriteInt64(obj, offset, update);
                     return true;
                 }
                 return false;
@@ -339,11 +359,11 @@ public final class Unsafe
 
     public void putLongVolatile(Object obj, long offset, long newValue)
     {
-        if(obj instanceof long[])
+        if (obj instanceof cli.System.Array)
         {
             synchronized(this)
             {
-                ((long[])obj)[(int)offset] = newValue;
+                WriteInt64(obj, offset, newValue);
             }
         }
         else
@@ -370,11 +390,11 @@ public final class Unsafe
 
     public long getLongVolatile(Object obj, long offset)
     {
-        if(obj instanceof long[])
+        if (obj instanceof cli.System.Array)
         {
             synchronized(this)
             {
-                return ((long[])obj)[(int)offset];
+                return ReadInt64(obj, offset);
             }
         }
         else
@@ -396,9 +416,9 @@ public final class Unsafe
 
     public void putBoolean(Object obj, long offset, boolean newValue)
     {
-        if (obj instanceof boolean[])
+        if (obj instanceof cli.System.Array)
         {
-            ((boolean[])obj)[(int)offset] = newValue;
+            Buffer.SetByte((cli.System.Array)obj, (int)offset, newValue ? (byte)1 : (byte)0);
         }
         else
         {
@@ -420,9 +440,9 @@ public final class Unsafe
 
     public boolean getBoolean(Object obj, long offset)
     {
-        if (obj instanceof boolean[])
+        if (obj instanceof cli.System.Array)
         {
-            return ((boolean[])obj)[(int)offset];
+            return Buffer.GetByte((cli.System.Array)obj, (int)offset) != 0;
         }
         else
         {
@@ -444,9 +464,9 @@ public final class Unsafe
 
     public void putByte(Object obj, long offset, byte newValue)
     {
-        if (obj instanceof byte[])
+        if (obj instanceof cli.System.Array)
         {
-            ((byte[])obj)[(int)offset] = newValue;
+            Buffer.SetByte((cli.System.Array)obj, (int)offset, newValue);
         }
         else
         {
@@ -468,9 +488,9 @@ public final class Unsafe
 
     public byte getByte(Object obj, long offset)
     {
-        if (obj instanceof byte[])
+        if (obj instanceof cli.System.Array)
         {
-            return ((byte[])obj)[(int)offset];
+            return Buffer.GetByte((cli.System.Array)obj, (int)offset);
         }
         else
         {
@@ -492,9 +512,9 @@ public final class Unsafe
 
     public void putChar(Object obj, long offset, char newValue)
     {
-        if (obj instanceof char[])
+        if (obj instanceof cli.System.Array)
         {
-            ((char[])obj)[(int)offset] = newValue;
+            WriteInt16(obj, offset, (short)newValue);
         }
         else
         {
@@ -516,9 +536,9 @@ public final class Unsafe
 
     public char getChar(Object obj, long offset)
     {
-        if (obj instanceof char[])
+        if (obj instanceof cli.System.Array)
         {
-            return ((char[])obj)[(int)offset];
+            return (char)ReadInt16(obj, offset);
         }
         else
         {
@@ -540,9 +560,9 @@ public final class Unsafe
 
     public void putShort(Object obj, long offset, short newValue)
     {
-        if (obj instanceof short[])
+        if (obj instanceof cli.System.Array)
         {
-            ((short[])obj)[(int)offset] = newValue;
+            WriteInt16(obj, offset, newValue);
         }
         else
         {
@@ -564,9 +584,9 @@ public final class Unsafe
 
     public short getShort(Object obj, long offset)
     {
-        if (obj instanceof short[])
+        if (obj instanceof cli.System.Array)
         {
-            return ((short[])obj)[(int)offset];
+            return ReadInt16(obj, offset);
         }
         else
         {
@@ -588,9 +608,9 @@ public final class Unsafe
 
     public void putInt(Object obj, long offset, int newValue)
     {
-        if (obj instanceof int[])
+        if (obj instanceof cli.System.Array)
         {
-            ((int[])obj)[(int)offset] = newValue;
+            WriteInt32(obj, offset, newValue);
         }
         else
         {
@@ -607,9 +627,9 @@ public final class Unsafe
 
     public int getInt(Object obj, long offset)
     {
-        if (obj instanceof int[])
+        if (obj instanceof cli.System.Array)
         {
-            return ((int[])obj)[(int)offset];
+            return ReadInt32(obj, offset);
         }
         else
         {
@@ -626,9 +646,9 @@ public final class Unsafe
 
     public void putFloat(Object obj, long offset, float newValue)
     {
-        if (obj instanceof float[])
+        if (obj instanceof cli.System.Array)
         {
-            ((float[])obj)[(int)offset] = newValue;
+            WriteInt32(obj, offset, Float.floatToRawIntBits(newValue));
         }
         else
         {
@@ -650,9 +670,9 @@ public final class Unsafe
 
     public float getFloat(Object obj, long offset)
     {
-        if (obj instanceof float[])
+        if (obj instanceof cli.System.Array)
         {
-            return ((float[])obj)[(int)offset];
+            return Float.intBitsToFloat(ReadInt32(obj, offset));
         }
         else
         {
@@ -674,9 +694,9 @@ public final class Unsafe
 
     public void putLong(Object obj, long offset, long newValue)
     {
-        if (obj instanceof long[])
+        if (obj instanceof cli.System.Array)
         {
-            ((long[])obj)[(int)offset] = newValue;
+            WriteInt64(obj, offset, newValue);
         }
         else
         {
@@ -693,9 +713,9 @@ public final class Unsafe
 
     public long getLong(Object obj, long offset)
     {
-        if (obj instanceof long[])
+        if (obj instanceof cli.System.Array)
         {
-            return ((long[])obj)[(int)offset];
+            return ReadInt64(obj, offset);
         }
         else
         {
@@ -712,9 +732,9 @@ public final class Unsafe
 
     public void putDouble(Object obj, long offset, double newValue)
     {
-        if (obj instanceof double[])
+        if (obj instanceof cli.System.Array)
         {
-            ((double[])obj)[(int)offset] = newValue;
+            WriteInt64(obj, offset, Double.doubleToRawLongBits(newValue));
         }
         else
         {
@@ -739,9 +759,9 @@ public final class Unsafe
 
     public double getDouble(Object obj, long offset)
     {
-        if (obj instanceof double[])
+        if (obj instanceof cli.System.Array)
         {
-            return ((double[])obj)[(int)offset];
+            return Double.longBitsToDouble(ReadInt64(obj, offset));
         }
         else
         {
