@@ -42,6 +42,7 @@
     java/net/*.class
     java/nio/*.class
     java/security/*.class
+    java/util/concurrent/*.class
     java/util/concurrent/locks/*.class
     gnu/java/util/*.class
     sun/misc/*.class

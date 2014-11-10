@@ -125,6 +125,7 @@ java/net/TwoStacksPlainSocketImpl_c.java
 java/nio/Bits.java
 java/security/AccessController.java
 java/security/ProtectionDomain.java
+java/util/concurrent/ForkJoinPool.java
 java/util/concurrent/locks/AbstractQueuedSynchronizer.java
 java/util/concurrent/locks/LockSupport.java
 java/util/zip/Adler32.java
@@ -10970,7 +10971,6 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/jdk/src/share/classes/java/util/concurrent/ExecutorCompletionService.java
 @OPENJDK@/jdk/src/share/classes/java/util/concurrent/Executors.java
 @OPENJDK@/jdk/src/share/classes/java/util/concurrent/ExecutorService.java
-@OPENJDK@/jdk/src/share/classes/java/util/concurrent/ForkJoinPool.java
 @OPENJDK@/jdk/src/share/classes/java/util/concurrent/ForkJoinTask.java
 @OPENJDK@/jdk/src/share/classes/java/util/concurrent/ForkJoinWorkerThread.java
 @OPENJDK@/jdk/src/share/classes/java/util/concurrent/Future.java
