@@ -119,12 +119,15 @@ package java.util.concurrent.locks;
 public class LockSupport {
     private LockSupport() {} // Cannot be instantiated.
 
+    private static void setBlocker(Thread t, Object arg) {
+        t.parkBlocker = arg;
+    }
+
     private static final int PARK_STATE_RUNNING = 0;
     private static final int PARK_STATE_PERMIT = 1;
     private static final int PARK_STATE_PARKED = 2;
 
     // these native methods are all implemented in map.xml
-    private static native void setBlocker(Thread t, Object obj);
     private static native int cmpxchgParkState(Thread t, int newValue, int comparand);
     private static native Object getParkLock(Thread t);
     private static native void setParkLock(Thread t, Object obj);
@@ -329,7 +332,11 @@ public class LockSupport {
      * @throws NullPointerException if argument is null
      * @since 1.6
      */
-    public static native Object getBlocker(Thread t); // implemented in map.xml
+    public static Object getBlocker(Thread t) {
+        if (t == null)
+            throw new NullPointerException();
+        return t.parkBlocker;
+    }
 
     /**
      * Disables the current thread for thread scheduling purposes unless the

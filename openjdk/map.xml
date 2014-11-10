@@ -1648,24 +1648,6 @@
                     <ret />
                 </body>
             </method>
-            <method name="getBlocker" sig="(Ljava.lang.Thread;)Ljava.lang.Object;">
-                <body>
-                    <ldarg_0 />
-                    <volatile />
-                    <ldfld class="java.lang.Thread" name="parkBlocker" sig="Ljava.lang.Object;" />
-                    <ret />
-                </body>
-            </method>
-            <method name="setBlocker" sig="(Ljava.lang.Thread;Ljava.lang.Object;)V">
-                <body>
-                    <ldarg_0 />
-                    <ldarg_1 />
-                    <volatile />
-                    <stfld class="java.lang.Thread" name="parkBlocker" sig="Ljava.lang.Object;" />
-                    <call type="System.Threading.Thread" name="MemoryBarrier" sig="" />
-                    <ret />
-                </body>
-            </method>
             <method name="getParkLock" sig="(Ljava.lang.Thread;)Ljava.lang.Object;">
                 <body>
                     <ldarg_0 />
