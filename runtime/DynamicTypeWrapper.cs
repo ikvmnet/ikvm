@@ -2469,6 +2469,8 @@ namespace IKVM.Internal
 				// NOTE this implements the (completely broken) OpenJDK 7 b147 HotSpot behavior,
 				// not the algorithm specified in section 5.4.5 of the JavaSE7 JVM spec
 				// see http://weblog.ikvm.net/PermaLink.aspx?guid=bde44d8b-7ba9-4e0e-b3a6-b735627118ff and subsequent posts
+				// UPDATE as of JDK 7u65 and JDK 8u11, the algorithm changed again to handle package private methods differently
+				// this code has not been updated to reflect these changes (we're still at JDK 8 GA level)
 				explicitOverride = false;
 				MethodWrapper topPublicOrProtectedMethod = null;
 				TypeWrapper tw = wrapper.BaseTypeWrapper;
