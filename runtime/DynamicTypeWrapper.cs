@@ -1272,7 +1272,7 @@ namespace IKVM.Internal
 							while (lookup != null)
 							{
 								MethodWrapper mw = GetMethodWrapperDuringCtor(lookup, methods, ifmethod.Name, ifmethod.Signature);
-								if (mw == null)
+								if (mw == null || (mw.IsMirandaMethod && mw.DeclaringType != wrapper))
 								{
 									mw = MirandaMethodWrapper.Create(wrapper, ifmethod);
 									methods.Add(mw);
@@ -2908,7 +2908,13 @@ namespace IKVM.Internal
 							// We're a Miranda method or we're an inherited default interface method
 							Debug.Assert(baseMethods[index].Length == 1 && baseMethods[index][0].DeclaringType.IsInterface);
 							MirandaMethodWrapper mmw = (MirandaMethodWrapper)methods[index];
-							MethodAttributes attr = MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.CheckAccessOnOverride;
+							MethodAttributes attr = MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.CheckAccessOnOverride;
+							MethodWrapper baseMiranda;
+							if (wrapper.BaseTypeWrapper == null || (baseMiranda = wrapper.BaseTypeWrapper.GetMethodWrapper(mw.Name, mw.Signature, true)) == null || !baseMiranda.IsMirandaMethod)
+							{
+								// we're not overriding a miranda method in a base class, so can we set the newslot flag
+								attr |= MethodAttributes.NewSlot;
+							}
 							if (wrapper.IsInterface || (wrapper.IsAbstract && mmw.BaseMethod.IsAbstract && mmw.Error == null))
 							{
 								attr |= MethodAttributes.Abstract;
