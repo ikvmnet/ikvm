@@ -2923,9 +2923,11 @@ namespace IKVM.Internal
 							AttributeHelper.HideFromReflection(mb);
 							if ((!wrapper.IsAbstract && mmw.BaseMethod.IsAbstract) || (!wrapper.IsInterface && mmw.Error != null))
 							{
+								string message = mmw.Error ?? (wrapper.Name + "." + methods[index].Name + methods[index].Signature);
 								CodeEmitter ilgen = CodeEmitter.Create(mb);
-								ilgen.EmitThrow("java.lang.AbstractMethodError", mmw.Error ?? (wrapper.Name + "." + methods[index].Name + methods[index].Signature));
+								ilgen.EmitThrow("java.lang.AbstractMethodError", message);
 								ilgen.DoEmit();
+								wrapper.EmitLevel4Warning(HardError.AbstractMethodError, message);
 							}
 #if STATIC_COMPILER
 							if (wrapper.IsInterface && !mmw.IsAbstract)
@@ -4223,6 +4225,7 @@ namespace IKVM.Internal
 									CodeEmitter ilgen = CodeEmitter.Create(mb);
 									ilgen.EmitThrow("java.lang.AbstractMethodError", mw.DeclaringType.Name + "." + mw.Name + mw.Signature);
 									ilgen.DoEmit();
+									wrapper.EmitLevel4Warning(HardError.AbstractMethodError, mw.DeclaringType.Name + "." + mw.Name + mw.Signature);
 								}
 							}
 						}
@@ -4276,6 +4279,7 @@ namespace IKVM.Internal
 								// NOTE in the JVM it is apparently legal for a non-abstract class to have abstract methods, but
 								// the CLR doens't allow this, so we have to emit a method that throws an AbstractMethodError
 								stub = true;
+								wrapper.EmitLevel4Warning(HardError.AbstractMethodError, classFile.Name + "." + m.Name + m.Signature);
 							}
 							else if (classFile.IsPublic && !classFile.IsFinal && !(m.IsPublic || m.IsProtected))
 							{
@@ -5620,6 +5624,7 @@ namespace IKVM.Internal
 						ilgen.DoEmit();
 						typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod.GetMethod());
 						wrapper.SetHasIncompleteInterfaceImplementation();
+						wrapper.EmitLevel4Warning(HardError.AbstractMethodError, wrapper.Name + "." + ifmethod.Name + ifmethod.Signature);
 					}
 				}
 			}
@@ -7142,6 +7147,24 @@ namespace IKVM.Internal
 		internal override byte[] GetFieldRawTypeAnnotations(FieldWrapper fw)
 		{
 			return impl.GetFieldRawTypeAnnotations(Array.IndexOf(GetFields(), fw));
+		}
+
+		[Conditional("STATIC_COMPILER")]
+		internal void EmitLevel4Warning(HardError error, string message)
+		{
+#if STATIC_COMPILER
+			if (GetClassLoader().WarningLevelHigh)
+			{
+				switch (error)
+				{
+					case HardError.AbstractMethodError:
+						GetClassLoader().IssueMessage(Message.EmittedAbstractMethodError, this.Name, message);
+						break;
+					default:
+						throw new InvalidOperationException();
+				}
+			}
+#endif
 		}
 	}
 
