@@ -216,7 +216,11 @@ namespace IKVM.Internal
 			}
 			for (int i = 0, K = args.Length; i < K; i++)
 			{
-				if (!args[i].IsSubTypeOf(implParameters[i]))
+				if (args[i] == implParameters[i])
+				{
+					// ok
+				}
+				else if (args[i].IsPrimitive || implParameters[i].IsPrimitive || !args[i].IsSubTypeOf(implParameters[i]))
 				{
 					Fail("For i=1..K, Di = Ai");
 					return false;
