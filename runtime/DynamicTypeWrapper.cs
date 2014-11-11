@@ -2927,9 +2927,9 @@ namespace IKVM.Internal
 							{
 								string message = mmw.Error ?? (wrapper.Name + "." + methods[index].Name + methods[index].Signature);
 								CodeEmitter ilgen = CodeEmitter.Create(mb);
-								ilgen.EmitThrow("java.lang.AbstractMethodError", message);
+								ilgen.EmitThrow(mmw.IsConflictError ? "java.lang.IncompatibleClassChangeError" : "java.lang.AbstractMethodError", message);
 								ilgen.DoEmit();
-								wrapper.EmitLevel4Warning(HardError.AbstractMethodError, message);
+								wrapper.EmitLevel4Warning(mmw.IsConflictError ? HardError.IncompatibleClassChangeError : HardError.AbstractMethodError, message);
 							}
 #if STATIC_COMPILER
 							if (wrapper.IsInterface && !mmw.IsAbstract)
@@ -7161,6 +7161,9 @@ namespace IKVM.Internal
 				{
 					case HardError.AbstractMethodError:
 						GetClassLoader().IssueMessage(Message.EmittedAbstractMethodError, this.Name, message);
+						break;
+					case HardError.IncompatibleClassChangeError:
+						GetClassLoader().IssueMessage(Message.EmittedIncompatibleClassChangeError, this.Name, message);
 						break;
 					default:
 						throw new InvalidOperationException();

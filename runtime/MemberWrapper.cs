@@ -1084,6 +1084,11 @@ namespace IKVM.Internal
 				.AddConflictError(mw);
 		}
 
+		internal bool IsConflictError
+		{
+			get { return Error != null && Error.StartsWith("Conflicting default methods:"); }
+		}
+
 		internal MethodWrapper BaseMethod
 		{
 			get { return ifmethod; }
