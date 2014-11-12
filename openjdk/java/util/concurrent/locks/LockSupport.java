@@ -316,7 +316,7 @@ public class LockSupport {
     public static void parkUntil(Object blocker, long deadline) {
         Thread t = Thread.currentThread();
         setBlocker(t, blocker);
-        parkImpl(t, true, deadline);
+        parkImpl(t, true, deadline * 1000000);
         setBlocker(t, null);
     }
 
@@ -432,7 +432,7 @@ public class LockSupport {
      *        to wait until
      */
     public static void parkUntil(long deadline) {
-        parkImpl(Thread.currentThread(), true, deadline);
+        parkImpl(Thread.currentThread(), true, deadline * 1000000);
     }
 
     /**
