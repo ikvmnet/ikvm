@@ -209,6 +209,7 @@ namespace IKVM.Internal
 			intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "getObjectVolatile", "(Ljava.lang.Object;J)Ljava.lang.Object;"), Unsafe_getObjectVolatile);
 			intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "getObject", "(Ljava.lang.Object;J)Ljava.lang.Object;"), Unsafe_getObjectVolatile);
 			intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "compareAndSwapObject", "(Ljava.lang.Object;JLjava.lang.Object;Ljava.lang.Object;)Z"), Unsafe_compareAndSwapObject);
+			intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "getAndSetObject", "(Ljava.lang.Object;JLjava.lang.Object;)Ljava.lang.Object;"), Unsafe_getAndSetObject);
 			return intrinsics;
 		}
 
@@ -864,6 +865,49 @@ namespace IKVM.Internal
 				}
 			}
 			return false;
+		}
+
+		private static bool Unsafe_getAndSetObject(EmitIntrinsicContext eic)
+		{
+			TypeWrapper tw = eic.GetStackTypeWrapper(0, 2);
+			if (IsSupportedArrayTypeForUnsafeOperation(tw)
+				&& eic.GetStackTypeWrapper(0, 0).IsAssignableTo(tw.ElementTypeWrapper))
+			{
+				Type type = tw.TypeAsLocalOrStackType.GetElementType();
+				CodeEmitterLocal newValue = eic.Emitter.AllocTempLocal(type);
+				CodeEmitterLocal index = eic.Emitter.AllocTempLocal(Types.Int32);
+				CodeEmitterLocal obj = eic.Emitter.AllocTempLocal(tw.TypeAsLocalOrStackType);
+				eic.Emitter.Emit(OpCodes.Stloc, newValue);
+				eic.Emitter.Emit(OpCodes.Conv_Ovf_I4);
+				eic.Emitter.Emit(OpCodes.Stloc, index);
+				eic.Emitter.Emit(OpCodes.Stloc, obj);
+				EmitConsumeUnsafe(eic);
+				eic.Emitter.Emit(OpCodes.Ldloc, obj);
+				eic.Emitter.Emit(OpCodes.Ldloc, index);
+				eic.Emitter.Emit(OpCodes.Ldelema, type);
+				eic.Emitter.Emit(OpCodes.Ldloc, newValue);
+				eic.Emitter.Emit(OpCodes.Call, MakeExchange(type));
+				eic.Emitter.ReleaseTempLocal(obj);
+				eic.Emitter.ReleaseTempLocal(index);
+				eic.Emitter.ReleaseTempLocal(newValue);
+				eic.NonLeaf = false;
+				return true;
+			}
+			return false;
+		}
+
+		internal static MethodInfo MakeExchange(Type type)
+		{
+			MethodInfo interlockedExchange = null;
+			foreach (MethodInfo m in JVM.Import(typeof(System.Threading.Interlocked)).GetMethods())
+			{
+				if (m.Name == "Exchange" && m.IsGenericMethodDefinition)
+				{
+					interlockedExchange = m;
+					break;
+				}
+			}
+			return interlockedExchange.MakeGenericMethod(type);
 		}
 
 		private static void EmitConsumeUnsafe(EmitIntrinsicContext eic)
