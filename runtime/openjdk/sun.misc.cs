@@ -26,10 +26,12 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Runtime.ConstrainedExecution;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Security;
+using System.Threading;
 using IKVM.Internal;
 
 static class Java_sun_misc_GC
@@ -436,6 +438,181 @@ static class Java_sun_misc_Unsafe
 			throw x.ToJava();
 		}
 #endif
+	}
+
+	public static bool compareAndSwapInt(object thisUnsafe, object obj, long offset, int expect, int update)
+	{
+#if FIRST_PASS
+		return false;
+#else
+		int[] array = obj as int[];
+		if (array != null && (offset & 3) == 0)
+		{
+			return Interlocked.CompareExchange(ref array[offset / 4], update, expect) == expect;
+		}
+		else if (obj is Array)
+		{
+			// unaligned or not the right array type, so we can't be atomic
+			lock (thisUnsafe)
+			{
+				if (ReadInt32(obj, offset) == expect)
+				{
+					WriteInt32(obj, offset, update);
+					return true;
+				}
+				return false;
+			}
+		}
+		else
+		{
+			if (offset >= cacheCompareExchangeInt32.Length || cacheCompareExchangeInt32[offset] == null)
+			{
+				InterlockedResize(ref cacheCompareExchangeInt32, (int)offset + 1);
+				cacheCompareExchangeInt32[offset] = (CompareExchangeInt32)CreateCompareExchange(offset);
+			}
+			return cacheCompareExchangeInt32[offset](obj, update, expect) == expect;
+		}
+#endif
+	}
+
+    public static bool compareAndSwapLong(object thisUnsafe, object obj, long offset, long expect, long update)
+	{
+#if FIRST_PASS
+		return false;
+#else
+		long[] array = obj as long[];
+		if (array != null && (offset & 7) == 0)
+		{
+			return Interlocked.CompareExchange(ref array[offset / 8], update, expect) == expect;
+		}
+		else if (obj is Array)
+		{
+			// unaligned or not the right array type, so we can't be atomic
+			lock (thisUnsafe)
+			{
+				if (ReadInt64(obj, offset) == expect)
+				{
+					WriteInt64(obj, offset, update);
+					return true;
+				}
+				return false;
+			}
+		}
+		else
+		{
+			if (offset >= cacheCompareExchangeInt64.Length || cacheCompareExchangeInt64[offset] == null)
+			{
+				InterlockedResize(ref cacheCompareExchangeInt64, (int)offset + 1);
+				cacheCompareExchangeInt64[offset] = (CompareExchangeInt64)CreateCompareExchange(offset);
+			}
+			return cacheCompareExchangeInt64[offset](obj, update, expect) == expect;
+		}
+#endif
+	}
+
+	private delegate int CompareExchangeInt32(object obj, int value, int comparand);
+	private delegate long CompareExchangeInt64(object obj, long value, long comparand);
+	private static CompareExchangeInt32[] cacheCompareExchangeInt32 = new CompareExchangeInt32[0];
+	private static CompareExchangeInt64[] cacheCompareExchangeInt64 = new CompareExchangeInt64[0];
+
+	private static void InterlockedResize<T>(ref T[] array, int newSize)
+	{
+		for (; ; )
+		{
+			T[] oldArray = array;
+			T[] newArray = oldArray;
+			Array.Resize(ref newArray, newSize);
+			if (Interlocked.CompareExchange(ref array, newArray, oldArray) == oldArray)
+			{
+				return;
+			}
+		}
+	}
+
+#if !FIRST_PASS
+	private static Delegate CreateCompareExchange(long fieldOffset)
+	{
+		FieldWrapper fw = FieldWrapper.FromField(sun.misc.Unsafe.getField(fieldOffset));
+		fw.Link();
+		fw.ResolveField();
+		FieldInfo field = fw.GetField();
+		DynamicMethod dm = new DynamicMethod("CompareExchange", field.FieldType, new Type[] { typeof(object), field.FieldType, field.FieldType }, field.DeclaringType);
+		ILGenerator ilgen = dm.GetILGenerator();
+		ilgen.Emit(OpCodes.Ldarg_0);
+		ilgen.Emit(OpCodes.Castclass, field.DeclaringType);
+		ilgen.Emit(OpCodes.Ldflda, field);
+		ilgen.Emit(OpCodes.Ldarg_1);
+		ilgen.Emit(OpCodes.Ldarg_2);
+		ilgen.Emit(OpCodes.Call, typeof(Interlocked).GetMethod("CompareExchange", new Type[] { field.FieldType.MakeByRefType(), field.FieldType, field.FieldType }));
+		ilgen.Emit(OpCodes.Ret);
+		return dm.CreateDelegate(field.FieldType == typeof(int) ? typeof(CompareExchangeInt32) : typeof(CompareExchangeInt64));
+	}
+#endif
+
+	public static bool compareAndSwapObject(object thisUnsafe, object obj, long offset, object expect, object update)
+	{
+#if FIRST_PASS
+		return false;
+#else
+		object[] array = obj as object[];
+		if (array != null)
+		{
+			return Atomic.CompareExchange(array, (int)offset, update, expect) == expect;
+		}
+		else
+		{
+			FieldInfo field = FieldWrapper.FromField(sun.misc.Unsafe.getField(offset)).GetField();
+			return Atomic.CompareExchange(obj, new FieldInfo[] { field }, update, expect) == expect;
+		}
+#endif
+	}
+
+	abstract class Atomic
+	{
+		// NOTE we don't care that we keep the Type alive, because Unsafe should only be used inside the core class libraries
+		private static Dictionary<Type, Atomic> impls = new Dictionary<Type, Atomic>();
+
+		internal static object CompareExchange(object obj, FieldInfo[] field, object value, object comparand)
+		{
+			TypedReference tr = TypedReference.MakeTypedReference(obj, field);
+			return GetImpl(__reftype(tr)).CompareExchangeImpl(tr, value, comparand);
+		}
+
+		internal static object CompareExchange(object[] array, int index, object value, object comparand)
+		{
+			return GetImpl(array.GetType().GetElementType()).CompareExchangeImpl(array, index, value, comparand);
+		}
+
+		private static Atomic GetImpl(Type type)
+		{
+			Atomic impl;
+			if (!impls.TryGetValue(type, out impl))
+			{
+				impl = (Atomic)Activator.CreateInstance(typeof(Impl<>).MakeGenericType(type));
+				Dictionary<Type, Atomic> curr = impls;
+				Dictionary<Type, Atomic> copy = new Dictionary<Type, Atomic>(curr);
+				copy[type] = impl;
+				Interlocked.CompareExchange(ref impls, copy, curr);
+			}
+			return impl;
+		}
+
+		protected abstract object CompareExchangeImpl(TypedReference tr, object value, object comparand);
+		protected abstract object CompareExchangeImpl(object[] array, int index, object value, object comparand);
+
+		sealed class Impl<T> : Atomic
+			where T : class
+		{
+			protected override object CompareExchangeImpl(TypedReference tr, object value, object comparand)
+			{
+				return Interlocked.CompareExchange(ref __refvalue(tr, T), (T)value, (T)comparand);
+			}
+
+			protected override object CompareExchangeImpl(object[] array, int index, object value, object comparand)
+			{
+				return Interlocked.CompareExchange<T>(ref ((T[])array)[index], (T)value, (T)comparand);
+			}
+		}
 	}
 }
 

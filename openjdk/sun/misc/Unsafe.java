@@ -118,7 +118,7 @@ public final class Unsafe
         return 1;
     }
 
-    private static Field getField(long offset)
+    static Field getField(long offset)
     {
         synchronized(fields)
         {
@@ -126,43 +126,7 @@ public final class Unsafe
         }
     }
 
-    public boolean compareAndSwapObject(Object obj, long offset, Object expect, Object update)
-    {
-        if(obj instanceof Object[])
-        {
-            Object[] arr = (Object[])obj;
-            int index = (int)offset;
-            synchronized(this)
-            {
-                if(arr[index] == expect)
-                {
-                    arr[index] = update;
-                    return true;
-                }
-                return false;
-            }
-        }
-        else
-        {
-            Field field = getField(offset);
-            synchronized(field)
-            {
-                try
-                {
-                    if(field.get(obj) == expect)
-                    {
-                        field.set(obj, update);
-                        return true;
-                    }
-                    return false;
-                }
-                catch(IllegalAccessException x)
-                {
-                    throw (InternalError)new InternalError().initCause(x);
-                }
-            }
-        }
-    }
+    public final native boolean compareAndSwapObject(Object obj, long offset, Object expect, Object update);
 
     public void putObjectVolatile(Object obj, long offset, Object newValue)
     {
@@ -228,41 +192,7 @@ public final class Unsafe
     private static native void WriteInt32(Object obj, long offset, int value);
     private static native void WriteInt64(Object obj, long offset, long value);
 
-    public boolean compareAndSwapInt(Object obj, long offset, int expect, int update)
-    {
-        if (obj instanceof cli.System.Array)
-        {
-            synchronized(this)
-            {
-                if(ReadInt32(obj, offset) == expect)
-                {
-                    WriteInt32(obj, offset, update);
-                    return true;
-                }
-                return false;
-            }
-        }
-        else
-        {
-            Field field = getField(offset);
-            synchronized(field)
-            {
-                try
-                {
-                    if(field.getInt(obj) == expect)
-                    {
-                        field.setInt(obj, update);
-                        return true;
-                    }
-                    return false;
-                }
-                catch(IllegalAccessException x)
-                {
-                    throw (InternalError)new InternalError().initCause(x);
-                }
-            }
-        }
-    }
+    public final native boolean compareAndSwapInt(Object obj, long offset, int expect, int update);
 
     public void putIntVolatile(Object obj, long offset, int newValue)
     {
@@ -321,41 +251,7 @@ public final class Unsafe
         }
     }
 
-    public boolean compareAndSwapLong(Object obj, long offset, long expect, long update)
-    {
-        if (obj instanceof cli.System.Array)
-        {
-            synchronized(this)
-            {
-                if(ReadInt64(obj, offset) == expect)
-                {
-                    WriteInt64(obj, offset, update);
-                    return true;
-                }
-                return false;
-            }
-        }
-        else
-        {
-            Field field = getField(offset);
-            synchronized(field)
-            {
-                try
-                {
-                    if(field.getLong(obj) == expect)
-                    {
-                        field.setLong(obj, update);
-                        return true;
-                    }
-                    return false;
-                }
-                catch(IllegalAccessException x)
-                {
-                    throw (InternalError)new InternalError().initCause(x);
-                }
-            }
-        }
-    }
+    public final native boolean compareAndSwapLong(Object obj, long offset, long expect, long update);
 
     public void putLongVolatile(Object obj, long offset, long newValue)
     {
