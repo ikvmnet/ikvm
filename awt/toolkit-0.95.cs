@@ -2638,7 +2638,7 @@ namespace ikvm.awt
         {
             return NetToolkit.Invoke<java.awt.Point>(delegate
             {
-                Point p = new Point();
+				Point p = new Point(0 - getInsetsLeft(), 0 - getInsetsTop());
                 p = control.PointToScreen(p);
                 return new java.awt.Point(p.X, p.Y);
             });
