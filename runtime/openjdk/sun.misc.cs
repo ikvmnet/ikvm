@@ -521,6 +521,10 @@ static class Java_sun_misc_Unsafe
 		{
 			T[] oldArray = array;
 			T[] newArray = oldArray;
+			if (oldArray.Length >= newSize)
+			{
+				return;
+			}
 			Array.Resize(ref newArray, newSize);
 			if (Interlocked.CompareExchange(ref array, newArray, oldArray) == oldArray)
 			{
