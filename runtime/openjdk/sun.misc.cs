@@ -306,6 +306,7 @@ static class Java_sun_misc_Unsafe
 	[SecuritySafeCritical]
 	public static short ReadInt16(object obj, long offset)
 	{
+		Stats.Log("ReadInt16");
 		CheckArrayBounds(obj, offset, 2);
 		GCHandle handle = GCHandle.Alloc(obj, GCHandleType.Pinned);
 		short value = Marshal.ReadInt16((IntPtr)(handle.AddrOfPinnedObject().ToInt64() + offset));
@@ -316,6 +317,7 @@ static class Java_sun_misc_Unsafe
 	[SecuritySafeCritical]
 	public static int ReadInt32(object obj, long offset)
 	{
+		Stats.Log("ReadInt32");
 		CheckArrayBounds(obj, offset, 4);
 		GCHandle handle = GCHandle.Alloc(obj, GCHandleType.Pinned);
 		int value = Marshal.ReadInt32((IntPtr)(handle.AddrOfPinnedObject().ToInt64() + offset));
@@ -326,6 +328,7 @@ static class Java_sun_misc_Unsafe
 	[SecuritySafeCritical]
 	public static long ReadInt64(object obj, long offset)
 	{
+		Stats.Log("ReadInt64");
 		CheckArrayBounds(obj, offset, 8);
 		GCHandle handle = GCHandle.Alloc(obj, GCHandleType.Pinned);
 		long value = Marshal.ReadInt64((IntPtr)(handle.AddrOfPinnedObject().ToInt64() + offset));
@@ -336,6 +339,7 @@ static class Java_sun_misc_Unsafe
 	[SecuritySafeCritical]
 	public static void WriteInt16(object obj, long offset, short value)
 	{
+		Stats.Log("WriteInt16");
 		CheckArrayBounds(obj, offset, 2);
 		GCHandle handle = GCHandle.Alloc(obj, GCHandleType.Pinned);
 		Marshal.WriteInt16((IntPtr)(handle.AddrOfPinnedObject().ToInt64() + offset), value);
@@ -345,6 +349,7 @@ static class Java_sun_misc_Unsafe
 	[SecuritySafeCritical]
 	public static void WriteInt32(object obj, long offset, int value)
 	{
+		Stats.Log("WriteInt32");
 		CheckArrayBounds(obj, offset, 4);
 		GCHandle handle = GCHandle.Alloc(obj, GCHandleType.Pinned);
 		Marshal.WriteInt32((IntPtr)(handle.AddrOfPinnedObject().ToInt64() + offset), value);
@@ -354,6 +359,7 @@ static class Java_sun_misc_Unsafe
 	[SecuritySafeCritical]
 	public static void WriteInt64(object obj, long offset, long value)
 	{
+		Stats.Log("WriteInt64");
 		CheckArrayBounds(obj, offset, 8);
 		GCHandle handle = GCHandle.Alloc(obj, GCHandleType.Pinned);
 		Marshal.WriteInt64((IntPtr)(handle.AddrOfPinnedObject().ToInt64() + offset), value);
@@ -448,10 +454,12 @@ static class Java_sun_misc_Unsafe
 		int[] array = obj as int[];
 		if (array != null && (offset & 3) == 0)
 		{
+			Stats.Log("compareAndSwapInt.array");
 			return Interlocked.CompareExchange(ref array[offset / 4], update, expect) == expect;
 		}
 		else if (obj is Array)
 		{
+			Stats.Log("compareAndSwapInt.unaligned");
 			// unaligned or not the right array type, so we can't be atomic
 			lock (thisUnsafe)
 			{
@@ -470,6 +478,7 @@ static class Java_sun_misc_Unsafe
 				InterlockedResize(ref cacheCompareExchangeInt32, (int)offset + 1);
 				cacheCompareExchangeInt32[offset] = (CompareExchangeInt32)CreateCompareExchange(offset);
 			}
+			Stats.Log("compareAndSwapInt.", offset);
 			return cacheCompareExchangeInt32[offset](obj, update, expect) == expect;
 		}
 #endif
@@ -483,10 +492,12 @@ static class Java_sun_misc_Unsafe
 		long[] array = obj as long[];
 		if (array != null && (offset & 7) == 0)
 		{
+			Stats.Log("compareAndSwapLong.array");
 			return Interlocked.CompareExchange(ref array[offset / 8], update, expect) == expect;
 		}
 		else if (obj is Array)
 		{
+			Stats.Log("compareAndSwapLong.unaligned");
 			// unaligned or not the right array type, so we can't be atomic
 			lock (thisUnsafe)
 			{
@@ -505,6 +516,7 @@ static class Java_sun_misc_Unsafe
 				InterlockedResize(ref cacheCompareExchangeInt64, (int)offset + 1);
 				cacheCompareExchangeInt64[offset] = (CompareExchangeInt64)CreateCompareExchange(offset);
 			}
+			Stats.Log("compareAndSwapLong.", offset);
 			return cacheCompareExchangeInt64[offset](obj, update, expect) == expect;
 		}
 #endif
@@ -561,10 +573,12 @@ static class Java_sun_misc_Unsafe
 		object[] array = obj as object[];
 		if (array != null)
 		{
+			Stats.Log("compareAndSwapObject.array");
 			return Atomic.CompareExchange(array, (int)offset, update, expect) == expect;
 		}
 		else
 		{
+			Stats.Log("compareAndSwapObject.", offset);
 			FieldInfo field = FieldWrapper.FromField(sun.misc.Unsafe.getField(offset)).GetField();
 			return Atomic.CompareExchange(obj, new FieldInfo[] { field }, update, expect) == expect;
 		}
@@ -616,6 +630,54 @@ static class Java_sun_misc_Unsafe
 			{
 				return Interlocked.CompareExchange<T>(ref ((T[])array)[index], (T)value, (T)comparand);
 			}
+		}
+	}
+
+	static class Stats
+	{
+#if !FIRST_PASS && UNSAFE_STATISTICS
+		private static readonly Dictionary<string, int> dict = new Dictionary<string, int>();
+
+		static Stats()
+		{
+			java.lang.Runtime.getRuntime().addShutdownHook(new DumpStats());
+		}
+
+		sealed class DumpStats : java.lang.Thread
+		{
+			public override void run()
+			{
+				List<KeyValuePair<string, int>> list = new List<KeyValuePair<string, int>>(dict);
+				list.Sort(delegate(KeyValuePair<string, int> kv1, KeyValuePair<string, int> kv2) { return kv1.Value.CompareTo(kv2.Value); });
+				foreach (KeyValuePair<string, int> kv in list)
+				{
+					Console.WriteLine("{0,10}: {1}", kv.Value, kv.Key);
+				}
+			}
+		}
+#endif
+
+		[Conditional("UNSAFE_STATISTICS")]
+		internal static void Log(string key)
+		{
+#if !FIRST_PASS && UNSAFE_STATISTICS
+			lock (dict)
+			{
+				int count;
+				dict.TryGetValue(key, out count);
+				dict[key] = count + 1;
+			}
+#endif
+		}
+
+		[Conditional("UNSAFE_STATISTICS")]
+		internal static void Log(string key, long offset)
+		{
+#if !FIRST_PASS && UNSAFE_STATISTICS
+			FieldWrapper field = FieldWrapper.FromField(sun.misc.Unsafe.getField(offset));
+			key += field.DeclaringType.Name + "::" + field.Name;
+			Log(key);
+#endif
 		}
 	}
 }
