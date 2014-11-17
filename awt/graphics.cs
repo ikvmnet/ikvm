@@ -2242,7 +2242,7 @@ namespace ikvm.awt
 
         public override java.awt.GraphicsConfiguration getDefaultConfiguration()
         {
-            return new NetGraphicsConfiguration(Screen.PrimaryScreen);
+            return new NetGraphicsConfiguration(screen);
         }
 
         public override string getIDstring()
