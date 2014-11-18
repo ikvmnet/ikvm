@@ -95,16 +95,7 @@ static class AtomicReferenceFieldUpdaterEmitter
 
 	internal static MethodInfo MakeCompareExchange(Type type)
 	{
-		MethodInfo interlockedCompareExchange = null;
-		foreach (MethodInfo m in JVM.Import(typeof(System.Threading.Interlocked)).GetMethods())
-		{
-			if (m.Name == "CompareExchange" && m.IsGenericMethodDefinition)
-			{
-				interlockedCompareExchange = m;
-				break;
-			}
-		}
-		return interlockedCompareExchange.MakeGenericMethod(type);
+		return InterlockedMethods.CompareExchangeOfT.MakeGenericMethod(type);
 	}
 
 	private static void EmitGet(TypeBuilder tb, FieldInfo field)
@@ -131,5 +122,37 @@ static class AtomicReferenceFieldUpdaterEmitter
 		ilgen.EmitMemoryBarrier();
 		ilgen.Emit(OpCodes.Ret);
 		ilgen.DoEmit();
+	}
+}
+
+static class InterlockedMethods
+{
+	internal static readonly MethodInfo AddInt32;
+	internal static readonly MethodInfo CompareExchangeInt32;
+	internal static readonly MethodInfo CompareExchangeInt64;
+	internal static readonly MethodInfo CompareExchangeOfT;
+	internal static readonly MethodInfo ExchangeOfT;
+
+	static InterlockedMethods()
+	{
+		Type type = JVM.Import(typeof(System.Threading.Interlocked));
+		AddInt32 = type.GetMethod("Add", new Type[] { Types.Int32.MakeByRefType(), Types.Int32 });
+		CompareExchangeInt32 = type.GetMethod("CompareExchange", new Type[] { Types.Int32.MakeByRefType(), Types.Int32, Types.Int32 });
+		CompareExchangeInt64 = type.GetMethod("CompareExchange", new Type[] { Types.Int64.MakeByRefType(), Types.Int64, Types.Int64 });
+		foreach (MethodInfo m in type.GetMethods())
+		{
+			if (m.IsGenericMethodDefinition)
+			{
+				switch (m.Name)
+				{
+					case "CompareExchange":
+						CompareExchangeOfT = m;
+						break;
+					case "Exchange":
+						ExchangeOfT = m;
+						break;
+				}
+			}
+		}
 	}
 }

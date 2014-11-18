@@ -4923,11 +4923,11 @@ namespace IKVM.Internal
 				ilGenerator.EmitLdarg(1);
 				if (fieldType == PrimitiveTypeWrapper.LONG)
 				{
-					ilGenerator.Emit(OpCodes.Call, JVM.Import(typeof(System.Threading.Interlocked)).GetMethod("CompareExchange", new Type[] { Types.Int64.MakeByRefType(), Types.Int64, Types.Int64 }));
+					ilGenerator.Emit(OpCodes.Call, InterlockedMethods.CompareExchangeInt64);
 				}
 				else if (fieldType == PrimitiveTypeWrapper.INT)
 				{
-					ilGenerator.Emit(OpCodes.Call, JVM.Import(typeof(System.Threading.Interlocked)).GetMethod("CompareExchange", new Type[] { Types.Int32.MakeByRefType(), Types.Int32, Types.Int32 }));
+					ilGenerator.Emit(OpCodes.Call, InterlockedMethods.CompareExchangeInt32);
 				}
 				else
 				{
