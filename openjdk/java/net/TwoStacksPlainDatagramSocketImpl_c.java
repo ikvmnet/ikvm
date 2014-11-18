@@ -1595,7 +1595,19 @@ private static InetAddress[] getNetworkInterfaceAddresses(final NetworkInterface
 }
 
 static int isAdapterIpv6Enabled(JNIEnv env, int index) {
-    return 1;
+    return java.security.AccessController.doPrivileged(new java.security.PrivilegedAction<Integer>() {
+        public Integer run() {
+            try {
+                for (java.util.Enumeration<InetAddress> e = NetworkInterface.getByIndex(index).getInetAddresses(); e.hasMoreElements(); ) {
+                    if (e.nextElement() instanceof Inet6Address) {
+                        return 1;
+                    }
+                }
+            } catch (SocketException x) {
+            }
+            return 0;
+        }
+    }).intValue();
 }
 
 private static NetworkInterface Java_java_net_NetworkInterface_getByIndex(JNIEnv env, int ni_class, int index)
