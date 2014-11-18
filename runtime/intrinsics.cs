@@ -203,6 +203,7 @@ namespace IKVM.Internal
 #endif
 			intrinsics.Add(new IntrinsicKey("java.lang.ThreadLocal", "<init>", "()V"), ThreadLocal_new);
 			intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "ensureClassInitialized", "(Ljava.lang.Class;)V"), Unsafe_ensureClassInitialized);
+			// note that the following intrinsics don't pay off on CLR v2, but they do on CLR v4
 			intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "putObject", "(Ljava.lang.Object;JLjava.lang.Object;)V"), Unsafe_putObject);
 			intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "putOrderedObject", "(Ljava.lang.Object;JLjava.lang.Object;)V"), Unsafe_putOrderedObject);
 			intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "putObjectVolatile", "(Ljava.lang.Object;JLjava.lang.Object;)V"), Unsafe_putObjectVolatile);
@@ -210,6 +211,9 @@ namespace IKVM.Internal
 			intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "getObject", "(Ljava.lang.Object;J)Ljava.lang.Object;"), Unsafe_getObjectVolatile);
 			intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "compareAndSwapObject", "(Ljava.lang.Object;JLjava.lang.Object;Ljava.lang.Object;)Z"), Unsafe_compareAndSwapObject);
 			intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "getAndSetObject", "(Ljava.lang.Object;JLjava.lang.Object;)Ljava.lang.Object;"), Unsafe_getAndSetObject);
+			intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "compareAndSwapInt", "(Ljava.lang.Object;JII)Z"), Unsafe_compareAndSwapInt);
+			intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "getAndAddInt", "(Ljava.lang.Object;JI)I"), Unsafe_getAndAddInt);
+			intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "compareAndSwapLong", "(Ljava.lang.Object;JJJ)Z"), Unsafe_compareAndSwapLong);
 			return intrinsics;
 		}
 
@@ -864,7 +868,59 @@ namespace IKVM.Internal
 					return true;
 				}
 			}
-			return false;
+			// stack layout at call site:
+			// 4 Unsafe (receiver)
+			// 3 Object (obj)
+			// 2 long (offset)
+			// 1 Object (expect)
+			// 0 Object (update)
+			TypeWrapper twUnsafe = eic.GetStackTypeWrapper(0, 4);
+			if (twUnsafe == VerifierTypeWrapper.Null)
+			{
+				return false;
+			}
+			for (int i = 0; ; i--)
+			{
+				if ((eic.Flags[eic.OpcodeIndex + i] & InstructionFlags.BranchTarget) != 0)
+				{
+					return false;
+				}
+				if (eic.GetStackTypeWrapper(i, 0) == twUnsafe)
+				{
+					// the pattern we recognize is:
+					// aload
+					// getstatic <offset field>
+					if (eic.Match(i, NormalizedByteCode.__aload) && eic.GetStackTypeWrapper(i + 1, 0) == eic.Caller.DeclaringType
+						&& eic.Match(i + 1, NormalizedByteCode.__getstatic))
+					{
+						FieldWrapper fw = GetUnsafeField(eic, eic.GetFieldref(i + 1));
+						if (fw != null && !fw.IsStatic && fw.DeclaringType == eic.Caller.DeclaringType)
+						{
+							Type type = fw.FieldTypeWrapper.TypeAsLocalOrStackType;
+							CodeEmitterLocal update = eic.Emitter.AllocTempLocal(type);
+							CodeEmitterLocal expect = eic.Emitter.AllocTempLocal(type);
+							CodeEmitterLocal obj = eic.Emitter.AllocTempLocal(eic.Caller.DeclaringType.TypeAsLocalOrStackType);
+							eic.Emitter.Emit(OpCodes.Stloc, update);
+							eic.Emitter.Emit(OpCodes.Stloc, expect);
+							eic.Emitter.Emit(OpCodes.Pop);			// discard offset
+							eic.Emitter.Emit(OpCodes.Stloc, obj);
+							EmitConsumeUnsafe(eic);
+							eic.Emitter.Emit(OpCodes.Ldloc, obj);
+							eic.Emitter.Emit(OpCodes.Ldflda, fw.GetField());
+							eic.Emitter.Emit(OpCodes.Ldloc, update);
+							eic.Emitter.Emit(OpCodes.Ldloc, expect);
+							eic.Emitter.Emit(OpCodes.Call, AtomicReferenceFieldUpdaterEmitter.MakeCompareExchange(type));
+							eic.Emitter.Emit(OpCodes.Ldloc, expect);
+							eic.Emitter.Emit(OpCodes.Ceq);
+							eic.Emitter.ReleaseTempLocal(expect);
+							eic.Emitter.ReleaseTempLocal(update);
+							eic.NonLeaf = false;
+							return true;
+						}
+					}
+					return false;
+				}
+			}
 		}
 
 		private static bool Unsafe_getAndSetObject(EmitIntrinsicContext eic)
@@ -896,18 +952,171 @@ namespace IKVM.Internal
 			return false;
 		}
 
-		internal static MethodInfo MakeExchange(Type type)
+		private static bool Unsafe_compareAndSwapInt(EmitIntrinsicContext eic)
 		{
-			MethodInfo interlockedExchange = null;
-			foreach (MethodInfo m in JVM.Import(typeof(System.Threading.Interlocked)).GetMethods())
+			// stack layout at call site:
+			// 4 Unsafe (receiver)
+			// 3 Object (obj)
+			// 2 long (offset)
+			// 1 int (expect)
+			// 0 int (update)
+			TypeWrapper twUnsafe = eic.GetStackTypeWrapper(0, 4);
+			if (twUnsafe == VerifierTypeWrapper.Null)
 			{
-				if (m.Name == "Exchange" && m.IsGenericMethodDefinition)
+				return false;
+			}
+			for (int i = 0; ; i--)
+			{
+				if ((eic.Flags[eic.OpcodeIndex + i] & InstructionFlags.BranchTarget) != 0)
 				{
-					interlockedExchange = m;
-					break;
+					return false;
+				}
+				if (eic.GetStackTypeWrapper(i, 0) == twUnsafe)
+				{
+					// the pattern we recognize is:
+					// aload
+					// getstatic <offset field>
+					if (eic.Match(i, NormalizedByteCode.__aload) && eic.GetStackTypeWrapper(i + 1, 0) == eic.Caller.DeclaringType
+						&& eic.Match(i + 1, NormalizedByteCode.__getstatic))
+					{
+						FieldWrapper fw = GetUnsafeField(eic, eic.GetFieldref(i + 1));
+						if (fw != null && !fw.IsStatic && fw.DeclaringType == eic.Caller.DeclaringType)
+						{
+							CodeEmitterLocal update = eic.Emitter.AllocTempLocal(Types.Int32);
+							CodeEmitterLocal expect = eic.Emitter.AllocTempLocal(Types.Int32);
+							CodeEmitterLocal obj = eic.Emitter.AllocTempLocal(eic.Caller.DeclaringType.TypeAsLocalOrStackType);
+							eic.Emitter.Emit(OpCodes.Stloc, update);
+							eic.Emitter.Emit(OpCodes.Stloc, expect);
+							eic.Emitter.Emit(OpCodes.Pop);			// discard offset
+							eic.Emitter.Emit(OpCodes.Stloc, obj);
+							EmitConsumeUnsafe(eic);
+							eic.Emitter.Emit(OpCodes.Ldloc, obj);
+							eic.Emitter.Emit(OpCodes.Ldflda, fw.GetField());
+							eic.Emitter.Emit(OpCodes.Ldloc, update);
+							eic.Emitter.Emit(OpCodes.Ldloc, expect);
+							eic.Emitter.Emit(OpCodes.Call, InterlockedMethods.CompareExchangeInt32);
+							eic.Emitter.Emit(OpCodes.Ldloc, expect);
+							eic.Emitter.Emit(OpCodes.Ceq);
+							eic.Emitter.ReleaseTempLocal(expect);
+							eic.Emitter.ReleaseTempLocal(update);
+							eic.NonLeaf = false;
+							return true;
+						}
+					}
+					return false;
 				}
 			}
-			return interlockedExchange.MakeGenericMethod(type);
+		}
+
+		private static bool Unsafe_getAndAddInt(EmitIntrinsicContext eic)
+		{
+			// stack layout at call site:
+			// 3 Unsafe (receiver)
+			// 2 Object (obj)
+			// 1 long (offset)
+			// 0 int (delta)
+			TypeWrapper twUnsafe = eic.GetStackTypeWrapper(0, 3);
+			if (twUnsafe == VerifierTypeWrapper.Null)
+			{
+				return false;
+			}
+			for (int i = 0; ; i--)
+			{
+				if ((eic.Flags[eic.OpcodeIndex + i] & InstructionFlags.BranchTarget) != 0)
+				{
+					return false;
+				}
+				if (eic.GetStackTypeWrapper(i, 0) == twUnsafe)
+				{
+					// the pattern we recognize is:
+					// aload_0 
+					// getstatic <offset field>
+					if (eic.Match(i, NormalizedByteCode.__aload, 0)
+						&& eic.Match(i + 1, NormalizedByteCode.__getstatic))
+					{
+						FieldWrapper fw = GetUnsafeField(eic, eic.GetFieldref(i + 1));
+						if (fw != null && !fw.IsStatic && fw.DeclaringType == eic.Caller.DeclaringType)
+						{
+							CodeEmitterLocal delta = eic.Emitter.AllocTempLocal(Types.Int32);
+							eic.Emitter.Emit(OpCodes.Stloc, delta);
+							eic.Emitter.Emit(OpCodes.Pop);			// discard offset
+							eic.Emitter.Emit(OpCodes.Pop);			// discard obj
+							EmitConsumeUnsafe(eic);
+							eic.Emitter.Emit(OpCodes.Ldarg_0);
+							eic.Emitter.Emit(OpCodes.Ldflda, fw.GetField());
+							eic.Emitter.Emit(OpCodes.Ldloc, delta);
+							eic.Emitter.Emit(OpCodes.Call, InterlockedMethods.AddInt32);
+							eic.Emitter.Emit(OpCodes.Ldloc, delta);
+							eic.Emitter.Emit(OpCodes.Sub);
+							eic.Emitter.ReleaseTempLocal(delta);
+							eic.NonLeaf = false;
+							return true;
+						}
+					}
+					return false;
+				}
+			}
+		}
+
+		private static bool Unsafe_compareAndSwapLong(EmitIntrinsicContext eic)
+		{
+			// stack layout at call site:
+			// 4 Unsafe (receiver)
+			// 3 Object (obj)
+			// 2 long (offset)
+			// 1 long (expect)
+			// 0 long (update)
+			TypeWrapper twUnsafe = eic.GetStackTypeWrapper(0, 4);
+			if (twUnsafe == VerifierTypeWrapper.Null)
+			{
+				return false;
+			}
+			for (int i = 0; ; i--)
+			{
+				if ((eic.Flags[eic.OpcodeIndex + i] & InstructionFlags.BranchTarget) != 0)
+				{
+					return false;
+				}
+				if (eic.GetStackTypeWrapper(i, 0) == twUnsafe)
+				{
+					// the pattern we recognize is:
+					// aload
+					// getstatic <offset field>
+					if (eic.Match(i, NormalizedByteCode.__aload) && eic.GetStackTypeWrapper(i + 1, 0) == eic.Caller.DeclaringType
+						&& eic.Match(i + 1, NormalizedByteCode.__getstatic))
+					{
+						FieldWrapper fw = GetUnsafeField(eic, eic.GetFieldref(i + 1));
+						if (fw != null && !fw.IsStatic && fw.DeclaringType == eic.Caller.DeclaringType)
+						{
+							CodeEmitterLocal update = eic.Emitter.AllocTempLocal(Types.Int64);
+							CodeEmitterLocal expect = eic.Emitter.AllocTempLocal(Types.Int64);
+							CodeEmitterLocal obj = eic.Emitter.AllocTempLocal(eic.Caller.DeclaringType.TypeAsLocalOrStackType);
+							eic.Emitter.Emit(OpCodes.Stloc, update);
+							eic.Emitter.Emit(OpCodes.Stloc, expect);
+							eic.Emitter.Emit(OpCodes.Pop);			// discard offset
+							eic.Emitter.Emit(OpCodes.Stloc, obj);
+							EmitConsumeUnsafe(eic);
+							eic.Emitter.Emit(OpCodes.Ldloc, obj);
+							eic.Emitter.Emit(OpCodes.Ldflda, fw.GetField());
+							eic.Emitter.Emit(OpCodes.Ldloc, update);
+							eic.Emitter.Emit(OpCodes.Ldloc, expect);
+							eic.Emitter.Emit(OpCodes.Call, InterlockedMethods.CompareExchangeInt64);
+							eic.Emitter.Emit(OpCodes.Ldloc, expect);
+							eic.Emitter.Emit(OpCodes.Ceq);
+							eic.Emitter.ReleaseTempLocal(expect);
+							eic.Emitter.ReleaseTempLocal(update);
+							eic.NonLeaf = false;
+							return true;
+						}
+					}
+					return false;
+				}
+			}
+		}
+
+		internal static MethodInfo MakeExchange(Type type)
+		{
+			return InterlockedMethods.ExchangeOfT.MakeGenericMethod(type);
 		}
 
 		private static void EmitConsumeUnsafe(EmitIntrinsicContext eic)
@@ -957,7 +1166,7 @@ namespace IKVM.Internal
 						 *  astore_0
 						 *  ...
 						 *  getstatic <Field test sun/misc/Unsafe UNSAFE>
-						 *  aload_0
+						 *  aload_0 | ldc <Class>
 						 *  ldc "next"
 						 *  invokevirtual <Method java/lang/Class getDeclaredField(Ljava/lang/String;)Ljava/lang/reflect/Field;>
 						 *  invokevirtual <Method sun/misc/Unsafe objectFieldOffset(Ljava/lang/reflect/Field;)J>
@@ -971,9 +1180,34 @@ namespace IKVM.Internal
 								if (MatchInvokeVirtual(eic, ref method.Instructions[i - 1], "sun.misc.Unsafe", "objectFieldOffset", "(Ljava.lang.reflect.Field;)J")
 									&& MatchInvokeVirtual(eic, ref method.Instructions[i - 2], "java.lang.Class", "getDeclaredField", "(Ljava.lang.String;)Ljava.lang.reflect.Field;")
 									&& MatchLdc(eic, ref method.Instructions[i - 3], ClassFile.ConstantType.String)
-									&& method.Instructions[i - 4].NormalizedOpCode == NormalizedByteCode.__aload
+									&& (method.Instructions[i - 4].NormalizedOpCode == NormalizedByteCode.__aload || method.Instructions[i - 4].NormalizedOpCode == NormalizedByteCode.__ldc)
 									&& method.Instructions[i - 5].NormalizedOpCode == NormalizedByteCode.__getstatic && eic.ClassFile.GetFieldref(method.Instructions[i - 5].Arg1).Signature == "Lsun.misc.Unsafe;")
 								{
+									if (method.Instructions[i - 4].NormalizedOpCode == NormalizedByteCode.__ldc)
+									{
+										if (eic.ClassFile.GetConstantPoolClassType(method.Instructions[i - 4].Arg1) == eic.Caller.DeclaringType)
+										{
+											string fieldName = eic.ClassFile.GetConstantPoolConstantString(method.Instructions[i - 3].Arg1);
+											FieldWrapper fw = null;
+											foreach (FieldWrapper fw1 in eic.Caller.DeclaringType.GetFields())
+											{
+												if (fw1.Name == fieldName)
+												{
+													if (fw == null)
+													{
+														fw = fw1;
+													}
+													else
+													{
+														// duplicate name
+														return null;
+													}
+												}
+											}
+											return fw;
+										}
+										return null;
+									}
 									// search backward for the astore that corresponds to the aload (of the class object)
 									for (int j = i - 6; j > 0; j--)
 									{
