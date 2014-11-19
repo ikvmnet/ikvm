@@ -2220,6 +2220,40 @@
                     <redirect class="ikvm.internal.Formatter" type="static" name="ToString" sig="(Ljava.lang.Integer;Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;" />
                 </method>
             </implements>
+            <method name="compareUnsigned" sig="(II)I">
+                <body>
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <bge_un name="ge" />
+                    <ldc_i4_m1 />
+                    <ret />
+                    <label name="ge" />
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <bne_un name="ne" />
+                    <ldc_i4_0 />
+                    <ret />
+                    <label name="ne" />
+                    <ldc_i4_1 />
+                    <ret />
+                </body>
+            </method>
+            <method name="divideUnsigned" sig="(II)I">
+                <body>
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <div_un />
+                    <ret />
+                </body>
+            </method>
+            <method name="remainderUnsigned" sig="(II)I">
+                <body>
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <rem_un />
+                    <ret />
+                </body>
+            </method>
         </class>
         <class name="java.lang.Long">
             <implements class="cli.System.IFormattable">
@@ -2227,6 +2261,40 @@
                     <redirect class="ikvm.internal.Formatter" type="static" name="ToString" sig="(Ljava.lang.Long;Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;" />
                 </method>
             </implements>
+            <method name="compareUnsigned" sig="(JJ)I">
+                <body>
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <bge_un name="ge" />
+                    <ldc_i4_m1 />
+                    <ret />
+                    <label name="ge" />
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <bne_un name="ne" />
+                    <ldc_i4_0 />
+                    <ret />
+                    <label name="ne" />
+                    <ldc_i4_1 />
+                    <ret />
+                </body>
+            </method>
+            <method name="divideUnsigned" sig="(JJ)J">
+                <body>
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <div_un />
+                    <ret />
+                </body>
+            </method>
+            <method name="remainderUnsigned" sig="(JJ)J">
+                <body>
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <rem_un />
+                    <ret />
+                </body>
+            </method>
         </class>
         <class name="java.lang.Float">
             <implements class="cli.System.IFormattable">
