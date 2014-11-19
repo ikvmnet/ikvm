@@ -1051,6 +1051,24 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
+	[XmlType("div_un")]
+	public sealed class Div_Un : Simple
+	{
+		public Div_Un()
+			: base(OpCodes.Div_Un)
+		{
+		}
+	}
+
+	[XmlType("rem_un")]
+	public sealed class Rem_Un : Simple
+	{
+		public Rem_Un()
+			: base(OpCodes.Rem_Un)
+		{
+		}
+	}
+
 	[XmlType("and")]
 	public sealed class And : Simple
 	{
@@ -1449,6 +1467,8 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(Add))]
 		[XmlElement(typeof(Sub))]
 		[XmlElement(typeof(Mul))]
+		[XmlElement(typeof(Div_Un))]
+		[XmlElement(typeof(Rem_Un))]
 		[XmlElement(typeof(And))]
 		[XmlElement(typeof(Or))]
 		[XmlElement(typeof(Xor))]
