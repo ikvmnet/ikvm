@@ -188,10 +188,13 @@
         </exec>
     </target>
 
-    <target name="rmi">
+    <target name="classpath">
+        <property name="CLASSPATH" value="mscorlib.jar${pathsep}System.Xml.jar${pathsep}${OpenJDK.dir}/jdk/src/share/classes/${pathsep}${OpenJDK.dir}/corba/src/share/classes" />
+    </target>
+
+    <target name="rmi" depends="classpath">
         <mkdir dir="rmistubs" />
         <property name="VMARGS" value="-J-client -J-Xmx896m -J-Xms128m" />
-        <property name="CLASSPATH" value="mscorlib.jar${pathsep}System.Xml.jar${pathsep}${OpenJDK.dir}/jdk/src/share/classes/${pathsep}${OpenJDK.dir}/corba/src/share/classes" />
         <property name="OUTPUT" value="rmistubs" />
         <property name="ARGS" value="${VMARGS} -nowarn -bootclasspath ${CLASSPATH} -d ${OUTPUT}" />
         <exec program="rmic" commandline="${ARGS} -v1.1 sun.rmi.registry.RegistryImpl" />
@@ -211,15 +214,15 @@
         <exec program="rmic" commandline="${ARGS} -iiop -standardPackage javax.management.remote.rmi.RMIServer" />
     </target>
 
-    <target name="run-nasgen">
+    <target name="run-nasgen" depends="classpath">
         <!-- nasgen doesn't understand the MethodParameters attribute, so we have to recompile the classes it processes without parameters -->
         <exec program="javac" useruntimeengine="false">
             <arg value="-XDignore.symbol.file" />
             <arg value="-g" />
             <arg value="-nowarn" />
             <arg value="-implicit:none" />
-            <arg value="-cp" />
-            <arg path="mscorlib.jar;../runtime/IKVM.Runtime.jar" />
+            <arg value="-bootclasspath" />
+            <arg path="${CLASSPATH};${OpenJDK.dir}/nashorn/src;../runtime/IKVM.Runtime.jar" />
             <arg value="${OpenJDK.dir}/nashorn/src/jdk/nashorn/internal/objects/*.java" />
         </exec>
         <exec program="java" useruntimeengine="false">
