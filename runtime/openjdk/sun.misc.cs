@@ -548,10 +548,7 @@ static class Java_sun_misc_Unsafe
 #if !FIRST_PASS
 	private static Delegate CreateCompareExchange(long fieldOffset)
 	{
-		FieldWrapper fw = FieldWrapper.FromField(sun.misc.Unsafe.getField(fieldOffset));
-		fw.Link();
-		fw.ResolveField();
-		FieldInfo field = fw.GetField();
+		FieldInfo field = GetFieldInfo(fieldOffset);
 		DynamicMethod dm = new DynamicMethod("CompareExchange", field.FieldType, new Type[] { typeof(object), field.FieldType, field.FieldType }, field.DeclaringType);
 		ILGenerator ilgen = dm.GetILGenerator();
 		ilgen.Emit(OpCodes.Ldarg_0);
@@ -562,6 +559,14 @@ static class Java_sun_misc_Unsafe
 		ilgen.Emit(OpCodes.Call, typeof(Interlocked).GetMethod("CompareExchange", new Type[] { field.FieldType.MakeByRefType(), field.FieldType, field.FieldType }));
 		ilgen.Emit(OpCodes.Ret);
 		return dm.CreateDelegate(field.FieldType == typeof(int) ? typeof(CompareExchangeInt32) : typeof(CompareExchangeInt64));
+	}
+
+	private static FieldInfo GetFieldInfo(long offset)
+	{
+		FieldWrapper fw = FieldWrapper.FromField(sun.misc.Unsafe.getField(offset));
+		fw.Link();
+		fw.ResolveField();
+		return fw.GetField();
 	}
 #endif
 
@@ -579,8 +584,7 @@ static class Java_sun_misc_Unsafe
 		else
 		{
 			Stats.Log("compareAndSwapObject.", offset);
-			FieldInfo field = FieldWrapper.FromField(sun.misc.Unsafe.getField(offset)).GetField();
-			return Atomic.CompareExchange(obj, new FieldInfo[] { field }, update, expect) == expect;
+			return Atomic.CompareExchange(obj, new FieldInfo[] { GetFieldInfo(offset) }, update, expect) == expect;
 		}
 #endif
 	}
