@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Reflection;
 #if !FIRST_PASS
 using java.lang.management;
 #endif
@@ -105,6 +106,29 @@ static class Java_sun_management_MemoryImpl
 
 static class Java_sun_management_OperatingSystemImpl
 {
+	private static long getComputerInfo(string property){
+#pragma warning disable 618
+        Assembly asm = Assembly.LoadWithPartialName("Microsoft.VisualBasic");
+#pragma warning restore 618
+        if (asm != null)
+        {
+            Type type = asm.GetType("Microsoft.VisualBasic.Devices.ComputerInfo");
+            if (type != null)
+            {
+                try
+                {
+                    ulong result = (ulong)type.GetProperty(property).GetValue(Activator.CreateInstance(type), null);
+                    return (long)result;
+                }
+                catch (TargetInvocationException)
+                {
+                    // Mono does not implement this property
+                }
+            }
+        }
+		throw new System.NotImplementedException();
+	}
+
 	public static long getCommittedVirtualMemorySize0(object _this)
 	{
 		throw new System.NotImplementedException();
@@ -127,12 +151,12 @@ static class Java_sun_management_OperatingSystemImpl
 
 	public static long getFreePhysicalMemorySize(object _this)
 	{
-		throw new System.NotImplementedException();
+		return getComputerInfo("AvailablePhysicalMemory");
 	}
 
 	public static long getTotalPhysicalMemorySize(object _this)
 	{
-		throw new System.NotImplementedException();
+	    return getComputerInfo("TotalPhysicalMemory");
 	}
 
 	public static double getSystemCpuLoad(object _this)
