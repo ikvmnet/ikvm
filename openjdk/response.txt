@@ -1048,7 +1048,7 @@
 }
 {
     -out:IKVM.OpenJDK.Beans.dll
-    -baseaddress:0x5C3F0000
+    -baseaddress:0x5C420000
     -resource:META-INF/mailcap.default=@OPENJDK@/jaxws/src/share/jaf_classes/META-INF/mailcap.default
     -resource:META-INF/mimetypes.default=@OPENJDK@/jaxws/src/share/jaf_classes/META-INF/mimetypes.default
     @OPENJDK@/jaxws/src/share/jaf_classes/com/sun/activation/registries/*.class
@@ -1064,7 +1064,7 @@
 }
 {
     -out:IKVM.OpenJDK.Media.dll
-    -baseaddress:0x5C4E0000
+    -baseaddress:0x5C510000
     -resource:META-INF/services/javax.print.PrintServiceLookup=@OPENJDK@/jdk/src/windows/classes/sun/print/services/javax.print.PrintServiceLookup
     -resource:META-INF/services/javax.print.StreamPrintServiceFactory=@OPENJDK@/jdk/src/windows/classes/sun/print/services/javax.print.StreamPrintServiceFactory
     -resource:META-INF/services/javax.sound.midi.spi.MidiDeviceProvider=@OPENJDK@/jdk/src/share/classes/com/sun/media/sound/services/javax.sound.midi.spi.MidiDeviceProvider
@@ -1111,7 +1111,7 @@
 }
 {
     -out:IKVM.OpenJDK.Nashorn.dll
-    -baseaddress:0x5C750000
+    -baseaddress:0x5C780000
     -resource:META-INF/services/javax.script.ScriptEngineFactory=@OPENJDK@/nashorn/src/META-INF/services/javax.script.ScriptEngineFactory
     -resource:jdk/nashorn/internal/runtime/resources/version.properties=resources/nashorn/version.properties
     -recurse:@OPENJDK@/nashorn/src/*.js
@@ -1146,7 +1146,7 @@
 }
 {
     -out:IKVM.OpenJDK.Localedata.dll
-    -baseaddress:0x5CBA0000
+    -baseaddress:0x5CBD0000
     @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/*.class
     @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/ar/*.class
     @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/util/resources/be/*.class
@@ -1247,7 +1247,7 @@
 }
 {
     -out:IKVM.OpenJDK.Cldrdata.dll
-    -baseaddress:0x5D080000
+    -baseaddress:0x5D0B0000
     @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/text/resources/cldr/*.class
     @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/text/resources/cldr/aa/*.class
     @OPENJDK@/build/linux-x86_64-normal-server-release/jdk/gensrc/sun/text/resources/cldr/af/*.class
