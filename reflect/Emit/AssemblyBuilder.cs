@@ -448,6 +448,7 @@ namespace IKVM.Reflection.Emit
 					}
 					moduleBuilder.ExportTypes(fileToken, manifestModule);
 				}
+				moduleBuilder.CloseResources();
 			}
 
 			foreach (Module module in addedModules)

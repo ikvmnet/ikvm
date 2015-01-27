@@ -72,6 +72,11 @@ namespace IKVM.Reflection.Writer
 			stream.Write(value, 0, value.Length);
 		}
 
+		internal void Write(byte[] buffer, int offset, int count)
+		{
+			stream.Write(buffer, offset, count);
+		}
+
 		internal void Write(byte value)
 		{
 			stream.WriteByte(value);

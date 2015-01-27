@@ -302,22 +302,6 @@ namespace IKVM.Reflection.Writer
 			}
 		}
 
-		internal void Write(System.IO.Stream stream)
-		{
-			const int chunkSize = 8192;
-			for (; ; )
-			{
-				if (pos + chunkSize > buffer.Length)
-					Grow(chunkSize);
-				int read = stream.Read(buffer, pos, chunkSize);
-				if (read <= 0)
-				{
-					break;
-				}
-				pos += read;
-			}
-		}
-
 		internal byte[] ToArray()
 		{
 			int len = this.Length;

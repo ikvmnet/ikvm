@@ -38,6 +38,7 @@ namespace IKVM.Reflection.Writer
 		private readonly CliHeader cliHeader;
 		private readonly ModuleBuilder moduleBuilder;
 		private readonly uint strongNameSignatureLength;
+		private readonly uint manifestResourcesLength;
 		private readonly ExportTables exportTables;
 		private readonly List<RelocationBlock> relocations = new List<RelocationBlock>();
 
@@ -47,6 +48,7 @@ namespace IKVM.Reflection.Writer
 			this.cliHeader = cliHeader;
 			this.moduleBuilder = moduleBuilder;
 			this.strongNameSignatureLength = (uint)strongNameSignatureLength;
+			this.manifestResourcesLength = (uint)moduleBuilder.GetManifestResourcesLength();
 			if (moduleBuilder.unmanagedExports.Count != 0)
 			{
 				this.exportTables = new ExportTables(this);
@@ -110,7 +112,7 @@ namespace IKVM.Reflection.Writer
 
 		private uint ResourcesLength
 		{
-			get { return (uint)moduleBuilder.manifestResources.Length; }
+			get { return manifestResourcesLength; }
 		}
 
 		internal uint StrongNameSignatureRVA
@@ -341,7 +343,7 @@ namespace IKVM.Reflection.Writer
 			}
 
 			// Resources
-			mw.Write(moduleBuilder.manifestResources);
+			moduleBuilder.WriteResources(mw);
 
 			// The strong name signature live here (if it exists), but it will written later
 			// and the following alignment padding will take care of reserving the space.
