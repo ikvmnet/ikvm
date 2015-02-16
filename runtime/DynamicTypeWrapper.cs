@@ -1442,14 +1442,6 @@ namespace IKVM.Internal
 
 			private static void CheckLoaderConstraints(MethodWrapper mw, MethodWrapper baseMethod)
 			{
-#if !STATIC_COMPILER
-				if (JVM.FinishingForDebugSave)
-				{
-					// when we're finishing types to save a debug image (in dynamic mode) we don't care about loader constraints anymore
-					// (and we can't throw a LinkageError, because that would prevent the debug image from being saved)
-					return;
-				}
-#endif
 				if (mw.ReturnType != baseMethod.ReturnType)
 				{
 					if (mw.ReturnType.IsUnloadable || baseMethod.ReturnType.IsUnloadable)
@@ -1464,8 +1456,14 @@ namespace IKVM.Internal
 					{
 #if STATIC_COMPILER
 						StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has a return type \"{0}\" and tries to override method \"{5}.{3}{4}\" that has a return type \"{1}\"", mw.ReturnType, baseMethod.ReturnType, mw.DeclaringType.Name, mw.Name, mw.Signature, baseMethod.DeclaringType.Name);
+#else
+						// when we're finishing types to save a debug image (in dynamic mode) we don't care about loader constraints anymore
+						// (and we can't throw a LinkageError, because that would prevent the debug image from being saved)
+						if (!JVM.FinishingForDebugSave)
+						{
+							throw new LinkageError("Loader constraints violated");
+						}
 #endif
-						throw new LinkageError("Loader constraints violated");
 					}
 				}
 				TypeWrapper[] here = mw.GetParameters();
@@ -1486,8 +1484,14 @@ namespace IKVM.Internal
 						{
 #if STATIC_COMPILER
 							StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has an argument type \"{0}\" and tries to override method \"{5}.{3}{4}\" that has an argument type \"{1}\"", here[i], there[i], mw.DeclaringType.Name, mw.Name, mw.Signature, baseMethod.DeclaringType.Name);
+#else
+							// when we're finishing types to save a debug image (in dynamic mode) we don't care about loader constraints anymore
+							// (and we can't throw a LinkageError, because that would prevent the debug image from being saved)
+							if (!JVM.FinishingForDebugSave)
+							{
+								throw new LinkageError("Loader constraints violated");
+							}
 #endif
-							throw new LinkageError("Loader constraints violated");
 						}
 					}
 				}
