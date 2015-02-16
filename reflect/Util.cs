@@ -23,7 +23,6 @@
 */
 using System;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
 
 namespace IKVM.Reflection
 {
@@ -33,7 +32,9 @@ namespace IKVM.Reflection
 		IList<CustomAttributeData> __GetCustomAttributes(Type attributeType, bool inherit);
 	}
 
+#if !CORECLR
 	[Serializable]
+#endif
 	public sealed class FileFormatLimitationExceededException : InvalidOperationException
 	{
 		public const int META_E_STRINGSPACE_FULL = unchecked((int)0x80131198);
@@ -44,10 +45,12 @@ namespace IKVM.Reflection
 			this.HResult = hresult;
 		}
 
+#if !CORECLR
 		private FileFormatLimitationExceededException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
 			: base(info, context)
 		{
 		}
+#endif
 
 		public int ErrorCode
 		{
@@ -55,26 +58,33 @@ namespace IKVM.Reflection
 		}
 	}
 
+#if !CORECLR
 	[Serializable]
-	public sealed class Missing : ISerializable
+#endif
+	public sealed class Missing
+#if !CORECLR
+		: System.Runtime.Serialization.ISerializable
+#endif
 	{
 		public static readonly Missing Value = new Missing();
 
 		private Missing() { }
 
-		void ISerializable.GetObjectData(SerializationInfo info, StreamingContext context)
+#if !CORECLR
+		void System.Runtime.Serialization.ISerializable.GetObjectData(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
 		{
 			info.SetType(typeof(SingletonSerializationHelper));
 		}
 
 		[Serializable]
-		private sealed class SingletonSerializationHelper : IObjectReference
+		private sealed class SingletonSerializationHelper : System.Runtime.Serialization.IObjectReference
 		{
-			public object GetRealObject(StreamingContext context)
+			public object GetRealObject(System.Runtime.Serialization.StreamingContext context)
 			{
 				return Value;
 			}
 		}
+#endif
 	}
 
 	static class Empty<T>

@@ -875,7 +875,11 @@ namespace IKVM.Reflection.Reader
 				{
 					return field;
 				}
+#if CORECLR
+				throw new MissingFieldException(org.ToString() + "." + name);
+#else
 				throw new MissingFieldException(org.ToString(), name);
+#endif
 			}
 			else
 			{
@@ -894,7 +898,11 @@ namespace IKVM.Reflection.Reader
 				{
 					return method;
 				}
+#if CORECLR
+				throw new MissingMethodException(org.ToString() + "." + name);
+#else
 				throw new MissingMethodException(org.ToString(), name);
+#endif
 			}
 		}
 

@@ -23,7 +23,9 @@
 */
 using System;
 using System.Runtime.InteropServices;
+#if !NO_SYMBOL_WRITER
 using System.Diagnostics.SymbolStore;
+#endif
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection.Impl
@@ -41,6 +43,20 @@ namespace IKVM.Reflection.Impl
 		public uint PointerToRawData;
 	}
 
+#if NO_SYMBOL_WRITER
+	struct SymbolToken
+	{
+		internal SymbolToken(int value) { }
+	}
+
+	interface ISymbolWriterImpl
+	{
+		byte[] GetDebugInfo(ref IMAGE_DEBUG_DIRECTORY idd);
+		void RemapToken(int oldToken, int newToken);
+		void DefineLocalVariable2(string name, FieldAttributes attributes, int signature, int addrKind, int addr1, int addr2, int addr3, int startOffset, int endOffset);
+		void OpenMethod(SymbolToken symbolToken, MethodBase mb);
+	}
+#else
 	interface ISymbolWriterImpl : ISymbolWriter
 	{
 		byte[] GetDebugInfo(ref IMAGE_DEBUG_DIRECTORY idd);
@@ -48,6 +64,7 @@ namespace IKVM.Reflection.Impl
 		void DefineLocalVariable2(string name, FieldAttributes attributes, int signature, SymAddressKind addrKind, int addr1, int addr2, int addr3, int startOffset, int endOffset);
 		void OpenMethod(SymbolToken symbolToken, MethodBase mb);
 	}
+#endif
 
 	static class SymbolSupport
 	{

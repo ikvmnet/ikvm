@@ -108,7 +108,11 @@ namespace IKVM.Reflection.Writer
 			{
 				if (name.CultureInfo != null)
 				{
+#if CORECLR
+					throw new NotImplementedException();
+#else
 					lcid = name.CultureInfo.LCID;
+#endif
 				}
 			}
 			catch (ArgumentException)

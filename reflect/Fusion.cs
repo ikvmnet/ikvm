@@ -60,6 +60,7 @@ namespace IKVM.Reflection
 		const string PublicKeyTokenSilverlight = "7cec85d7bea7798e";
 		const string PublicKeyTokenWinFX = "31bf3856ad364e35";
 
+#if !CORECLR
 		internal static bool CompareAssemblyIdentityNative(string assemblyIdentity1, bool unified1, string assemblyIdentity2, bool unified2, out AssemblyComparisonResult result)
 		{
 			bool equivalent;
@@ -69,6 +70,7 @@ namespace IKVM.Reflection
 
 		[DllImport("fusion", CharSet = CharSet.Unicode)]
 		private static extern int CompareAssemblyIdentity(string pwzAssemblyIdentity1, bool fUnified1, string pwzAssemblyIdentity2, bool fUnified2, out bool pfEquivalent, out AssemblyComparisonResult pResult);
+#endif
 
 		// internal for use by mcs
 		internal static bool CompareAssemblyIdentityPure(string assemblyIdentity1, bool unified1, string assemblyIdentity2, bool unified2, out AssemblyComparisonResult result)

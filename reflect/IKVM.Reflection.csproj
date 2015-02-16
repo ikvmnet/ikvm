@@ -47,6 +47,7 @@
     <Compile Include="BadImageFormatException.cs" />
     <Compile Include="Binder.cs" />
     <Compile Include="ConstructorInfo.cs" />
+    <Compile Include="coreclr.cs" />
     <Compile Include="CustomAttributeData.cs" />
     <Compile Include="CustomAttributeNamedArgument.cs" />
     <Compile Include="CustomAttributeTypedArgument.cs" />

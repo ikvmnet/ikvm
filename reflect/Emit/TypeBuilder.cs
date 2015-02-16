@@ -649,11 +649,13 @@ namespace IKVM.Reflection.Emit
 			declarativeSecurity.Add(customBuilder);
 		}
 
+#if !CORECLR
 		public void AddDeclarativeSecurity(System.Security.Permissions.SecurityAction securityAction, System.Security.PermissionSet permissionSet)
 		{
 			this.ModuleBuilder.AddDeclarativeSecurity(token, securityAction, permissionSet);
 			this.attribs |= TypeAttributes.HasSecurity;
 		}
+#endif
 
 		public GenericTypeParameterBuilder[] DefineGenericParameters(params string[] names)
 		{

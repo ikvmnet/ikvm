@@ -817,6 +817,9 @@ namespace IKVM.Reflection
 			{
 				return asm;
 			}
+#if CORECLR
+			return null;
+#else
 			string fileName;
 			if (throwOnError)
 			{
@@ -847,6 +850,7 @@ namespace IKVM.Reflection
 				}
 			}
 			return LoadFile(fileName);
+#endif
 		}
 
 		public Type GetType(string assemblyQualifiedTypeName)
@@ -919,9 +923,13 @@ namespace IKVM.Reflection
 		// this is equivalent to the Fusion CompareAssemblyIdentity API
 		public bool CompareAssemblyIdentity(string assemblyIdentity1, bool unified1, string assemblyIdentity2, bool unified2, out AssemblyComparisonResult result)
 		{
+#if CORECLR
+			return Fusion.CompareAssemblyIdentityPure(assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result);
+#else
 			return useNativeFusion
 				? Fusion.CompareAssemblyIdentityNative(assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result)
 				: Fusion.CompareAssemblyIdentityPure(assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result);
+#endif
 		}
 
 		public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access)
@@ -939,6 +947,7 @@ namespace IKVM.Reflection
 			return new AssemblyBuilder(this, name, dir, null);
 		}
 
+#if !CORECLR
 #if NET_4_0
 		[Obsolete]
 #endif
@@ -958,6 +967,7 @@ namespace IKVM.Reflection
 				ab.__AddDeclarativeSecurity(CustomAttributeBuilder.__FromBlob(CustomAttributeBuilder.LegacyPermissionSet, (int)action, Encoding.Unicode.GetBytes(permissionSet.ToXml().ToString())));
 			}
 		}
+#endif
 
 		internal void RegisterDynamicAssembly(AssemblyBuilder asm)
 		{
@@ -1102,7 +1112,11 @@ namespace IKVM.Reflection
 				}
 				return method;
 			}
+#if CORECLR
+			throw new MissingMethodException(declaringType.ToString() + "." + name);
+#else
 			throw new MissingMethodException(declaringType.ToString(), name);
+#endif
 		}
 
 		internal FieldInfo GetMissingFieldOrThrow(Module requester, Type declaringType, string name, FieldSignature signature)
@@ -1116,7 +1130,11 @@ namespace IKVM.Reflection
 				}
 				return field;
 			}
+#if CORECLR
+			throw new MissingFieldException(declaringType.ToString() + "." + name);
+#else
 			throw new MissingFieldException(declaringType.ToString(), name);
+#endif
 		}
 
 		internal PropertyInfo GetMissingPropertyOrThrow(Module requester, Type declaringType, string name, PropertySignature propertySignature)
@@ -1132,7 +1150,11 @@ namespace IKVM.Reflection
 				}
 				return property;
 			}
+#if CORECLR
+			throw new System.MissingMemberException(declaringType.ToString() + "." + name);
+#else
 			throw new System.MissingMemberException(declaringType.ToString(), name);
+#endif
 		}
 
 		internal Type CanonicalizeType(Type type)

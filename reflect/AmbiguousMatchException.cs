@@ -22,11 +22,12 @@
   
 */
 using System;
-using System.Runtime.Serialization;
 
 namespace IKVM.Reflection
 {
+#if !CORECLR
 	[Serializable]
+#endif
 	public sealed class AmbiguousMatchException : Exception
 	{
 		public AmbiguousMatchException()
@@ -43,9 +44,11 @@ namespace IKVM.Reflection
 		{
 		}
 
-		private AmbiguousMatchException(SerializationInfo info, StreamingContext context)
+#if !CORECLR
+		private AmbiguousMatchException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
 			: base(info, context)
 		{
 		}
+#endif
 	}
 }

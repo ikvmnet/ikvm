@@ -77,10 +77,12 @@ namespace IKVM.Reflection.Emit
 			methodBuilder.__AddDeclarativeSecurity(customBuilder);
 		}
 
+#if !CORECLR
 		public void AddDeclarativeSecurity(System.Security.Permissions.SecurityAction securityAction, System.Security.PermissionSet permissionSet)
 		{
 			methodBuilder.AddDeclarativeSecurity(securityAction, permissionSet);
 		}
+#endif
 
 		public void SetImplementationFlags(MethodImplAttributes attributes)
 		{

@@ -504,6 +504,7 @@ namespace IKVM.Reflection
 			return names.ToArray();
 		}
 
+#if !CORECLR
 		public string GetEnumName(object value)
 		{
 			if (!IsEnum)
@@ -539,6 +540,7 @@ namespace IKVM.Reflection
 			}
 			return null;
 		}
+#endif
 
 		public bool IsEnumDefined(object value)
 		{
@@ -1315,6 +1317,7 @@ namespace IKVM.Reflection
 			get { return IsClass && IsImport; }
 		}
 
+#if !CORECLR
 		public bool IsContextful
 		{
 			get { return IsSubclassOf(this.Module.universe.Import(typeof(ContextBoundObject))); }
@@ -1324,6 +1327,7 @@ namespace IKVM.Reflection
 		{
 			get { return IsSubclassOf(this.Module.universe.Import(typeof(MarshalByRefObject))); }
 		}
+#endif
 
 		public virtual bool IsVisible
 		{

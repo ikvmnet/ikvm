@@ -27,7 +27,9 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
+#if !NO_SYMBOL_WRITER
 using System.Diagnostics.SymbolStore;
+#endif
 using IKVM.Reflection.Metadata;
 using IKVM.Reflection.Writer;
 
@@ -89,15 +91,19 @@ namespace IKVM.Reflection.Emit
 		{
 			if (ilgen != null)
 			{
+#if !NO_SYMBOL_WRITER
 				if (this.ModuleBuilder.symbolWriter != null)
 				{
 					this.ModuleBuilder.symbolWriter.OpenMethod(new SymbolToken(-pseudoToken | 0x06000000), this);
 				}
+#endif
 				rva = ilgen.WriteBody(initLocals);
+#if !NO_SYMBOL_WRITER
 				if (this.ModuleBuilder.symbolWriter != null)
 				{
 					this.ModuleBuilder.symbolWriter.CloseMethod();
 				}
+#endif
 				ilgen = null;
 			}
 		}
@@ -288,11 +294,13 @@ namespace IKVM.Reflection.Emit
 			declarativeSecurity.Add(customBuilder);
 		}
 
+#if !CORECLR
 		public void AddDeclarativeSecurity(System.Security.Permissions.SecurityAction securityAction, System.Security.PermissionSet permissionSet)
 		{
 			this.ModuleBuilder.AddDeclarativeSecurity(pseudoToken, securityAction, permissionSet);
 			this.attributes |= MethodAttributes.HasSecurity;
 		}
+#endif
 
 		public void SetImplementationFlags(MethodImplAttributes attributes)
 		{

@@ -82,7 +82,9 @@ namespace IKVM.Reflection.Emit
 			internal string Name;
 			internal string FileName;
 			internal ResourceAttributes Attributes;
+#if !CORECLR
 			internal ResourceWriter Writer;
+#endif
 		}
 
 		internal AssemblyBuilder(Universe universe, AssemblyName name, string dir, IEnumerable<CustomAttributeBuilder> customAttributes)
@@ -413,11 +415,13 @@ namespace IKVM.Reflection.Emit
 
 			foreach (ResourceFile resfile in resourceFiles)
 			{
+#if !CORECLR
 				if (resfile.Writer != null)
 				{
 					resfile.Writer.Generate();
 					resfile.Writer.Close();
 				}
+#endif
 				int fileToken = AddFile(manifestModule, resfile.FileName, 1 /*ContainsNoMetaData*/);
 				ManifestResourceTable.Record rec = new ManifestResourceTable.Record();
 				rec.Offset = 0;
@@ -499,6 +503,7 @@ namespace IKVM.Reflection.Emit
 			resourceFiles.Add(resfile);
 		}
 
+#if !CORECLR
 		public IResourceWriter DefineResource(string name, string description, string fileName)
 		{
 			return DefineResource(name, description, fileName, ResourceAttributes.Public);
@@ -522,6 +527,7 @@ namespace IKVM.Reflection.Emit
 			resourceFiles.Add(resfile);
 			return rw;
 		}
+#endif
 
 		public void DefineVersionInfoResource()
 		{

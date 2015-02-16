@@ -31,7 +31,10 @@ using IKVM.Reflection.Reader;
 
 namespace IKVM.Reflection
 {
-	public sealed class AssemblyName : ICloneable
+	public sealed class AssemblyName
+#if !CORECLR
+		: ICloneable
+#endif
 	{
 		private string name;
 		private string culture;
@@ -199,6 +202,7 @@ namespace IKVM.Reflection
 			set { codeBase = value; }
 		}
 
+#if !CORECLR
 		public string EscapedCodeBase
 		{
 			get
@@ -209,6 +213,7 @@ namespace IKVM.Reflection
 				return tmp.EscapedCodeBase;
 			}
 		}
+#endif
 
 		public ProcessorArchitecture ProcessorArchitecture
 		{
@@ -446,11 +451,13 @@ namespace IKVM.Reflection
 			return b == null || b.Length == 0 ? b : (byte[])b.Clone();
 		}
 
+#if !CORECLR
 		public static bool ReferenceMatchesDefinition(AssemblyName reference, AssemblyName definition)
 		{
 			// HACK use the real AssemblyName to implement the (broken) ReferenceMatchesDefinition method
 			return System.Reflection.AssemblyName.ReferenceMatchesDefinition(new System.Reflection.AssemblyName(reference.FullName), new System.Reflection.AssemblyName(definition.FullName));
 		}
+#endif
 
 		public static AssemblyName GetAssemblyName(string path)
 		{

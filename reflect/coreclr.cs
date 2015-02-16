@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009 Jeroen Frijters
+  Copyright (C) 2015 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -23,32 +23,48 @@
 */
 using System;
 
-namespace IKVM.Reflection
+#if CORECLR
+namespace System.Diagnostics
 {
-#if !CORECLR
-	[Serializable]
-#endif
-	public sealed class BadImageFormatException : Exception
+	static class Debug
 	{
-		public BadImageFormatException()
+		[Conditional("DEBUG")]
+		internal static void Assert(bool cond)
 		{
+			if (!cond)
+			{
+				Environment.FailFast("assertion failed");
+			}
 		}
-
-		public BadImageFormatException(string message)
-			: base(message)
-		{
-		}
-
-		public BadImageFormatException(string message, Exception inner)
-			: base(message, inner)
-		{
-		}
-
-#if !CORECLR
-		private BadImageFormatException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
-			: base(info, context)
-		{
-		}
-#endif
 	}
 }
+
+namespace System.Collections.Generic
+{
+	sealed class Stack<T>
+	{
+		private readonly List<T> items = new List<T>();
+
+		internal void Push(T value)
+		{
+			items.Add(value);
+		}
+
+		internal T Peek()
+		{
+			if (items.Count == 0)
+			{
+				throw new InvalidOperationException();
+			}
+			return items[items.Count - 1];
+		}
+
+		internal T Pop()
+		{
+			T value = Peek();
+			items.RemoveAt(items.Count - 1);
+			return value;
+		}
+	}
+}
+#endif

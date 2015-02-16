@@ -74,11 +74,13 @@ namespace IKVM.Reflection
 		{
 			get
 			{
+#if !CORECLR
 				if (Universe.MonoRuntime)
 				{
 					// MONOBUG workaround for https://bugzilla.xamarin.com/show_bug.cgi?id=5299
 					return MonoGetPublicKey();
 				}
+#endif
 				using (RSACryptoServiceProvider rsa = CreateRSA())
 				{
 					byte[] cspBlob = rsa.ExportCspBlob(false);
@@ -125,6 +127,7 @@ namespace IKVM.Reflection
 			}
 		}
 
+#if !CORECLR
 		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
 		private byte[] MonoGetPublicKey()
 		{
@@ -132,5 +135,6 @@ namespace IKVM.Reflection
 				? new System.Reflection.StrongNameKeyPair(keyPairArray).PublicKey
 				: new System.Reflection.StrongNameKeyPair(keyPairContainer).PublicKey;
 		}
+#endif
 	}
 }
