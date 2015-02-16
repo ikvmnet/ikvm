@@ -196,7 +196,7 @@ static partial class MethodHandleUtil
 		{
 			WrapArgs(ilgen, last);
 		}
-		ilgen.Emit(OpCodes.Newobj, type.GetConstructors()[0]);
+		ilgen.Emit(OpCodes.Newobj, GetDelegateOrPackedArgsConstructor(type));
 	}
 
 	internal static MethodInfo GetDelegateInvokeMethod(Type delegateType)
@@ -213,13 +213,18 @@ static partial class MethodHandleUtil
 
 	internal static ConstructorInfo GetDelegateConstructor(Type delegateType)
 	{
-		if (ReflectUtil.ContainsTypeBuilder(delegateType))
+		return GetDelegateOrPackedArgsConstructor(delegateType);
+	}
+
+	private static ConstructorInfo GetDelegateOrPackedArgsConstructor(Type type)
+	{
+		if (ReflectUtil.ContainsTypeBuilder(type))
 		{
-			return TypeBuilder.GetConstructor(delegateType, delegateType.GetGenericTypeDefinition().GetConstructors()[0]);
+			return TypeBuilder.GetConstructor(type, type.GetGenericTypeDefinition().GetConstructors()[0]);
 		}
 		else
 		{
-			return delegateType.GetConstructors()[0];
+			return type.GetConstructors()[0];
 		}
 	}
 
