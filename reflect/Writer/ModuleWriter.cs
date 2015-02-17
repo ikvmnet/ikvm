@@ -212,6 +212,9 @@ namespace IKVM.Reflection.Writer
 				writer.Headers.OptionalHeader.DataDirectory[6].Size = code.DebugDirectoryLength;
 			}
 
+			// Set the PE File timestamp
+			writer.Headers.FileHeader.TimeDateStamp = (uint)(moduleBuilder.__PEHeaderTimeDateStamp - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
+
 			// we need to start by computing the number of sections, because code.PointerToRawData depends on that
 			writer.Headers.FileHeader.NumberOfSections = 2;
 

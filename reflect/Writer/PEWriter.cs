@@ -158,7 +158,7 @@ namespace IKVM.Reflection.Writer
 
 		public WORD Machine;
 		public WORD NumberOfSections;
-		public DWORD TimeDateStamp = (uint)(DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
+		public DWORD TimeDateStamp;
 		public DWORD PointerToSymbolTable = 0;
 		public DWORD NumberOfSymbols = 0;
 		public WORD SizeOfOptionalHeader = 0xE0;

@@ -42,6 +42,7 @@ namespace IKVM.Reflection.Emit
 	{
 		private static readonly bool usePublicKeyAssemblyReference = false;
 		private Guid mvid = Guid.NewGuid();
+		private DateTime timestamp = DateTime.UtcNow;
 		private long imageBaseAddress = 0x00400000;
 		private long stackReserve = -1;
 		private int fileAlignment = 0x200;
@@ -1403,6 +1404,19 @@ namespace IKVM.Reflection.Emit
 		public void __SetModuleVersionId(Guid guid)
 		{
 			mvid = guid;
+		}
+
+		public DateTime __PEHeaderTimeDateStamp
+		{
+			get { return timestamp; }
+			set
+			{
+				if (value < new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc) || value > new DateTime(2106, 2, 7, 6, 28, 15, DateTimeKind.Utc))
+				{
+					throw new ArgumentOutOfRangeException();
+				}
+				timestamp = value;
+			}
 		}
 
 		public override Type[] __ResolveOptionalParameterTypes(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments, out CustomModifiers[] customModifiers)
