@@ -41,8 +41,8 @@ namespace IKVM.Reflection.Emit
 	public sealed class ModuleBuilder : Module, ITypeOwner
 	{
 		private static readonly bool usePublicKeyAssemblyReference = false;
-		private Guid mvid = Guid.NewGuid();
-		private DateTime timestamp = DateTime.UtcNow;
+		private Guid mvid;
+		private uint timestamp;
 		private long imageBaseAddress = 0x00400000;
 		private long stackReserve = -1;
 		private int fileAlignment = 0x200;
@@ -251,6 +251,15 @@ namespace IKVM.Reflection.Emit
 			if (emitSymbolInfo)
 			{
 				symbolWriter = SymbolSupport.CreateSymbolWriterFor(this);
+				if (universe.Deterministic && !symbolWriter.IsDeterministic)
+				{
+					throw new NotSupportedException();
+				}
+			}
+			if (!universe.Deterministic)
+			{
+				__PEHeaderTimeDateStamp = DateTime.UtcNow;
+				mvid = Guid.NewGuid();
 			}
 			// <Module> must be the first record in the TypeDef table
 			moduleType = new TypeBuilder(this, null, "<Module>");
@@ -1122,7 +1131,7 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 
-		internal void WriteMetadata(MetadataWriter mw)
+		internal void WriteMetadata(MetadataWriter mw, out int guidHeapOffset)
 		{
 			mw.Write(0x424A5342);			// Signature ("BSJB")
 			mw.Write((ushort)1);			// MajorVersion
@@ -1175,6 +1184,7 @@ namespace IKVM.Reflection.Emit
 			Tables.Write(mw);
 			Strings.Write(mw);
 			UserStrings.Write(mw);
+			guidHeapOffset = mw.Position;
 			Guids.Write(mw);
 			if (!Blobs.IsEmpty)
 			{
@@ -1396,26 +1406,49 @@ namespace IKVM.Reflection.Emit
 			get { return fileName; }
 		}
 
+		internal Guid GetModuleVersionIdOrEmpty()
+		{
+			return mvid;
+		}
+
 		public override Guid ModuleVersionId
 		{
-			get { return mvid; }
+			get
+			{
+				if (mvid == Guid.Empty && universe.Deterministic)
+				{
+					// if a deterministic GUID is used, it can't be queried before the assembly has been written
+					throw new InvalidOperationException();
+				}
+				return mvid;
+			}
 		}
 
 		public void __SetModuleVersionId(Guid guid)
 		{
+			if (guid == Guid.Empty && universe.Deterministic)
+			{
+				// if you want to use Guid.Empty, don't set UniverseOptions.DeterministicOutput
+				throw new ArgumentOutOfRangeException();
+			}
 			mvid = guid;
+		}
+
+		internal uint GetTimeDateStamp()
+		{
+			return timestamp;
 		}
 
 		public DateTime __PEHeaderTimeDateStamp
 		{
-			get { return timestamp; }
+			get { return new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddSeconds(timestamp); }
 			set
 			{
 				if (value < new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc) || value > new DateTime(2106, 2, 7, 6, 28, 15, DateTimeKind.Utc))
 				{
 					throw new ArgumentOutOfRangeException();
 				}
-				timestamp = value;
+				timestamp = (uint)(value - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
 			}
 		}
 

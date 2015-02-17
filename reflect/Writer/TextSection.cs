@@ -275,7 +275,7 @@ namespace IKVM.Reflection.Writer
 			}
 		}
 
-		internal void Write(MetadataWriter mw, uint sdataRVA)
+		internal void Write(MetadataWriter mw, uint sdataRVA, out int guidHeapOffset)
 		{
 			// Now that we're ready to start writing, we need to do some fix ups
 			moduleBuilder.TypeRef.Fixup(moduleBuilder);
@@ -356,7 +356,7 @@ namespace IKVM.Reflection.Writer
 
 			// Metadata
 			AssertRVA(mw, MetadataRVA);
-			moduleBuilder.WriteMetadata(mw);
+			moduleBuilder.WriteMetadata(mw, out guidHeapOffset);
 
 			// alignment padding
 			for (int i = (int)(VTableFixupsRVA - (MetadataRVA + MetadataLength)); i > 0; i--)

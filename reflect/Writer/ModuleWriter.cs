@@ -81,7 +81,8 @@ namespace IKVM.Reflection.Writer
 			moduleBuilder.ApplyUnmanagedExports(imageFileMachine);
 			moduleBuilder.FixupMethodBodyTokens();
 
-			moduleBuilder.ModuleTable.Add(0, moduleBuilder.Strings.Add(moduleBuilder.moduleName), moduleBuilder.Guids.Add(moduleBuilder.ModuleVersionId), 0, 0);
+			int moduleVersionIdIndex = moduleBuilder.Guids.Add(moduleBuilder.GetModuleVersionIdOrEmpty());
+			moduleBuilder.ModuleTable.Add(0, moduleBuilder.Strings.Add(moduleBuilder.moduleName), moduleVersionIdIndex, 0, 0);
 
 			if (moduleBuilder.UserStrings.IsEmpty)
 			{
@@ -213,7 +214,7 @@ namespace IKVM.Reflection.Writer
 			}
 
 			// Set the PE File timestamp
-			writer.Headers.FileHeader.TimeDateStamp = (uint)(moduleBuilder.__PEHeaderTimeDateStamp - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
+			writer.Headers.FileHeader.TimeDateStamp = moduleBuilder.GetTimeDateStamp();
 
 			// we need to start by computing the number of sections, because code.PointerToRawData depends on that
 			writer.Headers.FileHeader.NumberOfSections = 2;
@@ -312,7 +313,8 @@ namespace IKVM.Reflection.Writer
 			}
 
 			stream.Seek(text.PointerToRawData, SeekOrigin.Begin);
-			code.Write(mw, sdata.VirtualAddress);
+			int guidHeapOffset;
+			code.Write(mw, sdata.VirtualAddress, out guidHeapOffset);
 
 			if (sdata.SizeOfRawData != 0)
 			{
@@ -334,6 +336,15 @@ namespace IKVM.Reflection.Writer
 
 			// file alignment
 			stream.SetLength(reloc.PointerToRawData + reloc.SizeOfRawData);
+
+			// if we don't have a guid, generate one based on the contents of the assembly
+			if (moduleBuilder.universe.Deterministic && moduleBuilder.GetModuleVersionIdOrEmpty() == Guid.Empty)
+			{
+				Guid guid = GenerateModuleVersionId(stream);
+				stream.Position = guidHeapOffset + (moduleVersionIdIndex - 1) * 16;
+				stream.Write(guid.ToByteArray(), 0, 16);
+				moduleBuilder.__SetModuleVersionId(guid);
+			}
 
 			// do the strong naming
 			if (keyPair != null)
@@ -428,6 +439,25 @@ namespace IKVM.Reflection.Writer
 				cs.Write(buf, 0, read);
 				length -= read;
 			}
+		}
+
+		private static Guid GenerateModuleVersionId(Stream stream)
+		{
+			SHA1Managed hash = new SHA1Managed();
+			using (CryptoStream cs = new CryptoStream(Stream.Null, hash, CryptoStreamMode.Write))
+			{
+				stream.Seek(0, SeekOrigin.Begin);
+				byte[] buf = new byte[8192];
+				HashChunk(stream, cs, buf, (int)stream.Length);
+			}
+			byte[] bytes = new byte[16];
+			Buffer.BlockCopy(hash.Hash, 0, bytes, 0, bytes.Length);
+			// set GUID type to "version 4" (random)
+			bytes[7] &= 0x0F;
+			bytes[7] |= 0x40;
+			bytes[8] &= 0x3F;
+			bytes[8] |= 0x80;
+			return new Guid(bytes);
 		}
 	}
 }

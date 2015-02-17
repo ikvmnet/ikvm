@@ -1184,5 +1184,10 @@ namespace IKVM.Reflection.Impl
 		{
 			throw new NotImplementedException();
 		}
+
+		public bool IsDeterministic
+		{
+			get { return false; }
+		}
 	}
 }

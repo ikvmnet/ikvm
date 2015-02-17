@@ -228,6 +228,11 @@ namespace IKVM.Reflection.Impl
 		{
 			throw new InvalidOperationException();
 		}
+
+		public bool IsDeterministic
+		{
+			get { return true; }
+		}
 	}
 }
 #endif // MONO

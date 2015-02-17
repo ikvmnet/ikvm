@@ -115,6 +115,12 @@ namespace IKVM.Reflection
 	 *      - Module.__ReadDataFromRVA()
 	 *      - MethodBase.GetMethodBody()
 	 *      - FieldInfo.__GetDataFromRVA()
+	 *
+	 *   DeterministicOutput
+	 *      The generated output file will depend only on the input. In other words,
+	 *      the PE file header time stamp will be set to zero and the module version
+	 *      id will be based on a SHA1 of the contents, instead of a random guid.
+	 *      This option can not be used in combination with PDB file generation.
 	 */
 
 	[Flags]
@@ -129,6 +135,7 @@ namespace IKVM.Reflection
 		ResolveMissingMembers = 32,
 		DisableWindowsRuntimeProjection = 64,
 		DecodeVersionInfoAttributeBlobs = 128,
+		DeterministicOutput = 256,
 	}
 
 	public sealed class Universe : IDisposable
@@ -1243,6 +1250,11 @@ namespace IKVM.Reflection
 		internal bool DecodeVersionInfoAttributeBlobs
 		{
 			get { return (options & UniverseOptions.DecodeVersionInfoAttributeBlobs) != 0; }
+		}
+
+		internal bool Deterministic
+		{
+			get { return (options & UniverseOptions.DeterministicOutput) != 0; }
 		}
 	}
 }
