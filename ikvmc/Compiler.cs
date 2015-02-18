@@ -177,6 +177,7 @@ sealed class IkvmcCompiler
 	private static bool time;
 	private static string runtimeAssembly;
 	private static bool nostdlib;
+	private static bool emitSymbols;
 	private static readonly List<string> libpaths = new List<string>();
 	internal static readonly AssemblyResolver resolver = new AssemblyResolver();
 
@@ -301,6 +302,7 @@ sealed class IkvmcCompiler
 		CompilerOptions toplevel = new CompilerOptions();
 		StaticCompiler.toplevel = toplevel;
 		comp.ParseCommandLine(argList.GetEnumerator(), targets, toplevel);
+		StaticCompiler.Init(emitSymbols);
 		resolver.Warning += loader_Warning;
 		resolver.Init(StaticCompiler.Universe, nostdlib, toplevel.unresolvedReferences, libpaths);
 		ResolveReferences(targets);
@@ -819,6 +821,7 @@ sealed class IkvmcCompiler
 				}
 				else if(s == "-debug")
 				{
+					emitSymbols = true;
 					options.codegenoptions |= CodeGenOptions.Debug;
 				}
 				else if(s.StartsWith("-srcpath:"))
