@@ -186,6 +186,9 @@
             <arg path="mscorlib.jar;System.jar;System.Core.jar;System.Data.jar;System.Drawing.jar;System.XML.jar;../runtime/IKVM.Runtime.jar" />
             <arg value="@allsources.gen.lst" />
         </exec>
+        <!-- copy the timestamps from the input files, because these timestamps end up in resources.jar and affect deterministics builds -->
+        <touch file="${OpenJDK.dir}/jdk/src/share/classes/sun/reflect/misc/Trampoline.class" datetime="${file::get-last-write-time(property::get-value('OpenJDK.dir') + '/jdk/src/share/classes/sun/reflect/misc/MethodUtil.java')}" />
+        <touch file="${OpenJDK.dir}/jdk/src/share/classes/java/lang/invoke/MethodHandleImpl$BindCaller$T.class" datetime="${file::get-last-write-time(property::get-value('OpenJDK.dir') + '/jdk/src/share/classes/java/lang/invoke/MethodHandleImpl.java')}" />
     </target>
 
     <target name="classpath">
@@ -323,6 +326,8 @@
                 </replacetokens>
             </filterchain>
         </copy>
+        <!-- copy the timestamp from the input file, because the timestamp ends up in resources.jar and affects deterministics builds -->
+        <touch file="MANIFEST.MF" datetime="${file::get-last-write-time('MANIFEST.MF.in')}" />
     </target>
 
     <target name="nashorn-version">
