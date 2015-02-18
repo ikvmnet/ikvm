@@ -752,7 +752,8 @@ sealed class IkvmcCompiler
 					{
 						throw new FatalCompilerErrorException(Message.InvalidOptionSyntax, s);
 					}
-					options.GetResourcesJar().Add(spec[0].TrimStart('/'), ReadAllBytes(GetFileInfo(spec[1])), null);
+					FileInfo fileInfo = GetFileInfo(spec[1]);
+					options.GetResourcesJar().Add(spec[0].TrimStart('/'), ReadAllBytes(fileInfo), fileInfo);
 				}
 				else if(s.StartsWith("-externalresource:"))
 				{
@@ -1463,7 +1464,7 @@ sealed class IkvmcCompiler
 				// extract the resource name by chopping off the base directory
 				string name = file.Substring(baseDir.FullName.Length);
 				name = name.TrimStart(Path.DirectorySeparatorChar).Replace('\\', '/');
-				options.GetResourcesJar().Add(name, ReadAllBytes(fileInfo), null);
+				options.GetResourcesJar().Add(name, ReadAllBytes(fileInfo), fileInfo);
 			}
 		}
 	}
