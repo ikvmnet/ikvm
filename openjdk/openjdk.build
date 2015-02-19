@@ -339,6 +339,8 @@
                 </replacetokens>
             </filterchain>
         </copy>
+        <!-- copy the timestamp from the input file, because the timestamp ends up in resources.jar and affects deterministics builds -->
+        <touch file="resources/nashorn/version.properties" datetime="${file::get-last-write-time('resources/nashorn/version.properties.in')}" />
     </target>
     
     <target name="core" depends="version response.gen.txt MANIFEST.MF nashorn-version">
