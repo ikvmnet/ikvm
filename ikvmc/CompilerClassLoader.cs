@@ -3367,7 +3367,7 @@ namespace IKVM.Internal
 		internal void Add(string name, byte[] data, FileInfo fileInfo)
 		{
 			ZipEntry zipEntry = new ZipEntry(name);
-			zipEntry.DateTime = fileInfo.LastWriteTime;
+			zipEntry.DateTime = fileInfo.LastWriteTimeUtc;
 			zipEntry.CompressionMethod = CompressionMethod.Stored;
 			Items.Add(new JarItem(zipEntry, data, fileInfo));
 		}
