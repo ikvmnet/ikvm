@@ -794,13 +794,13 @@ namespace IKVM.Internal
 			{
 				if(throwClassNotFoundException)
 				{
-					throw new ClassLoadingException(ikvm.runtime.Util.mapException(x));
+					throw new ClassLoadingException(ikvm.runtime.Util.mapException(x), name);
 				}
 				return null;
 			}
 			catch(Exception x)
 			{
-				throw new ClassLoadingException(ikvm.runtime.Util.mapException(x));
+				throw new ClassLoadingException(ikvm.runtime.Util.mapException(x), name);
 			}
 			finally
 			{

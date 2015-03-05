@@ -60,8 +60,8 @@ abstract class RetargetableJavaException : ApplicationException
 // hiding exceptions caused by coding errors in the IKVM code.
 sealed class ClassLoadingException : RetargetableJavaException
 {
-	internal ClassLoadingException(Exception x)
-		: base(x.Message, x)
+	internal ClassLoadingException(Exception x, string className)
+		: base(className, x)
 	{
 	}
 
@@ -70,7 +70,7 @@ sealed class ClassLoadingException : RetargetableJavaException
 	{
 		if (!(InnerException is java.lang.Error) && !(InnerException is java.lang.RuntimeException))
 		{
-			return new java.lang.NoClassDefFoundError(InnerException.Message).initCause(InnerException);
+			return new java.lang.NoClassDefFoundError(Message.Replace('.', '/')).initCause(InnerException);
 		}
 		return InnerException;
 	}
