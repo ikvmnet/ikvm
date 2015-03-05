@@ -1963,7 +1963,7 @@ namespace ikvm.awt
 
         public override java.awt.Color getBackground()
         {
-            return bgcolor == Color.Empty ? null : new java.awt.Color(color.ToArgb(), true);
+            return bgcolor == Color.Empty ? null : new java.awt.Color(bgcolor.ToArgb(), true);
         }
 
         public override java.awt.Stroke getStroke()
