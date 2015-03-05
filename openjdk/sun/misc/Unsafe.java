@@ -850,10 +850,34 @@ public final class Unsafe
     @cli.System.Security.SecurityCriticalAttribute.Annotation
     public long allocateMemory(long bytes)
     {
+        if (bytes == 0)
+        {
+            return 0;
+        }
         try
         {
             if (false) throw new cli.System.OutOfMemoryException();
             return Marshal.AllocHGlobal(IntPtr.op_Explicit(bytes)).ToInt64();
+        }
+        catch (cli.System.OutOfMemoryException x)
+        {
+            throw new OutOfMemoryError(x.get_Message());
+        }
+    }
+
+    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
+    public long reallocateMemory(long address, long bytes)
+    {
+        if (bytes == 0)
+        {
+            freeMemory(address);
+            return 0;
+        }
+        try
+        {
+            if (false) throw new cli.System.OutOfMemoryException();
+            return Marshal.ReAllocHGlobal(IntPtr.op_Explicit(address), IntPtr.op_Explicit(bytes)).ToInt64();
         }
         catch (cli.System.OutOfMemoryException x)
         {
