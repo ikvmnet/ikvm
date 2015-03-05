@@ -3696,6 +3696,10 @@ sealed class MethodAnalyzer
 					{
 						SetHardError(wrapper.GetClassLoader(), ref instr, HardError.AbstractMethodError, "{0}.{1}{2}", cpi.Class, cpi.Name, cpi.Signature);
 					}
+					else if(invoke == NormalizedByteCode.__invokeinterface && targetMethod.IsPrivate)
+					{
+						SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IncompatibleClassChangeError, "private interface method requires invokespecial, not invokeinterface: method {0}.{1}{2}", cpi.Class, cpi.Name, cpi.Signature);
+					}
 					else if(targetMethod.IsAccessibleFrom(cpi.GetClassType(), wrapper, thisType))
 					{
 						return;
