@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!--
-  Copyright (C) 2002-2014 Jeroen Frijters
+  Copyright (C) 2002-2015 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1828,6 +1828,15 @@
                     <ldarg_0 />
                     <ret />
                 </body>
+            </method>
+        </class>
+        <class name="sun.invoke.util.VerifyAccess">
+            <method name="isTypeVisible" sig="(Ljava.lang.Class;Ljava.lang.Class;)Z">
+                <replace-method-call class="java.lang.Class" name="getClassLoader" sig="()Ljava.lang.ClassLoader;">
+                    <code>
+                        <call type="Java_sun_invoke_util_VerifyAccess" name="Class_getClassLoader" sig="(Ljava.lang.Class;)Ljava.lang.ClassLoader;" />
+                    </code>
+                </replace-method-call>
             </method>
         </class>
         <class name="sun.misc.Launcher">

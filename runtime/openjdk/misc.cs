@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2007-2013 Jeroen Frijters
+  Copyright (C) 2007-2015 Jeroen Frijters
   Copyright (C) 2009 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
@@ -194,6 +194,21 @@ static class Java_sun_invoke_anon_AnonymousClassLoader
 	public static java.lang.Class loadClassInternal(java.lang.Class hostClass, byte[] classFile, object[] patchArray)
 	{
 		throw new NotImplementedException();
+	}
+}
+
+static class Java_sun_invoke_util_VerifyAccess
+{
+	// called from map.xml as a replacement for Class.getClassLoader() in sun.invoke.util.VerifyAccess.isTypeVisible()
+	public static java.lang.ClassLoader Class_getClassLoader(java.lang.Class clazz)
+	{
+		TypeWrapper tw = TypeWrapper.FromClass(clazz);
+		if (ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedNameFast(tw.Name) == tw)
+		{
+			// if a class is visible from the bootstrap class loader, we have to return null to allow the visibility check to succeed
+			return null;
+		}
+		return tw.GetClassLoader().GetJavaClassLoader();
 	}
 }
 
