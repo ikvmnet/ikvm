@@ -197,6 +197,17 @@ static class Java_sun_invoke_anon_AnonymousClassLoader
 	}
 }
 
+static class Java_sun_invoke_util_ValueConversions
+{
+	// called from map.xml as a replacement for Class.isInstance() in sun.invoke.util.ValueConversions.castReference()
+	public static bool Class_isInstance(java.lang.Class clazz, object obj)
+	{
+		TypeWrapper tw = TypeWrapper.FromClass(clazz);
+		// handle the type system hole that is caused by arrays being both derived from cli.System.Array and directly from java.lang.Object
+		return tw.IsInstance(obj) || (tw == CoreClasses.cli.System.Object.Wrapper && obj is Array);
+	}
+}
+
 static class Java_sun_invoke_util_VerifyAccess
 {
 	// called from map.xml as a replacement for Class.getClassLoader() in sun.invoke.util.VerifyAccess.isTypeVisible()

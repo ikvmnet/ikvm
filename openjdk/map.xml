@@ -1830,6 +1830,15 @@
                 </body>
             </method>
         </class>
+        <class name="sun.invoke.util.ValueConversions">
+            <method name="castReference" sig="(Ljava.lang.Class;Ljava.lang.Object;)Ljava.lang.Object;">
+                <replace-method-call class="java.lang.Class" name="isInstance" sig="(Ljava.lang.Object;)Z">
+                    <code>
+                        <call type="Java_sun_invoke_util_ValueConversions" name="Class_isInstance" sig="(Ljava.lang.Class;Ljava.lang.Object;)Z" />
+                    </code>
+                </replace-method-call>
+            </method>
+        </class>
         <class name="sun.invoke.util.VerifyAccess">
             <method name="isTypeVisible" sig="(Ljava.lang.Class;Ljava.lang.Class;)Z">
                 <replace-method-call class="java.lang.Class" name="getClassLoader" sig="()Ljava.lang.ClassLoader;">

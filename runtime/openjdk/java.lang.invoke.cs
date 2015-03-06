@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2011-2014 Jeroen Frijters
+  Copyright (C) 2011-2015 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -928,7 +928,7 @@ static partial class MethodHandleUtil
 						{
 							dm.EmitCastclass(tw.TypeAsBaseType);
 						}
-						else
+						else if (tw != CoreClasses.cli.System.Object.Wrapper)
 						{
 							dm.EmitCheckcast(tw);
 						}
