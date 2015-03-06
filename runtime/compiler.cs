@@ -3581,7 +3581,7 @@ sealed class Compiler
 		private readonly ClassFile.ConstantPoolItemMI cpi;
 
 		internal MethodHandleMethodWrapper(DynamicTypeWrapper.FinishContext context, TypeWrapper wrapper, ClassFile.ConstantPoolItemMI cpi)
-			: base(wrapper, cpi.Name, cpi.Signature, null, cpi.GetRetType(), cpi.GetArgTypes(), Modifiers.Public, MemberFlags.None)
+			: base(CoreClasses.java.lang.invoke.MethodHandle.Wrapper, cpi.Name, cpi.Signature, null, cpi.GetRetType(), cpi.GetArgTypes(), Modifiers.Public, MemberFlags.None)
 		{
 			this.context = context;
 			this.wrapper = wrapper;
