@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2014 Jeroen Frijters
+  Copyright (C) 2002-2015 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -869,6 +869,23 @@ namespace IKVM.Runtime
 		public static T MapException<T>(Exception x, MapFlags mode) where T : Exception
 		{
 			return ExceptionHelper.MapException<T>(x, (mode & MapFlags.NoRemapping) == 0, (mode & MapFlags.Unused) != 0);
+		}
+
+		[HideFromJava]
+		public static Exception DynamicMapException(Exception x, MapFlags mode, java.lang.Class exceptionClass)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			TypeWrapper exceptionTypeWrapper = TypeWrapper.FromClass(exceptionClass);
+			mode &= ~MapFlags.NoRemapping;
+			if (exceptionTypeWrapper.IsSubTypeOf(CoreClasses.cli.System.Exception.Wrapper))
+			{
+				mode |= MapFlags.NoRemapping;
+			}
+			Type exceptionType = exceptionTypeWrapper == CoreClasses.java.lang.Throwable.Wrapper ? typeof(System.Exception) : exceptionTypeWrapper.TypeAsBaseType;
+			return (Exception)ByteCodeHelperMethods.mapException.MakeGenericMethod(exceptionType).Invoke(null, new object[] { x, mode });
+#endif
 		}
 
 		public static T GetDelegateForInvokeExact<T>(global::java.lang.invoke.MethodHandle h)

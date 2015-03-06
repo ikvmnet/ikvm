@@ -67,6 +67,7 @@ static class ByteCodeHelperMethods
 	internal static readonly MethodInfo DynamicLoadMethodType;
 	internal static readonly MethodInfo DynamicLoadMethodHandle;
 	internal static readonly MethodInfo DynamicBinderMemberLookup;
+	internal static readonly MethodInfo DynamicMapException;
 	internal static readonly MethodInfo VerboseCastFailure;
 	internal static readonly MethodInfo SkipFinalizer;
 	internal static readonly MethodInfo DynamicInstanceOf;
@@ -112,6 +113,7 @@ static class ByteCodeHelperMethods
 		DynamicLoadMethodType = GetHelper(typeofByteCodeHelper, "DynamicLoadMethodType");
 		DynamicLoadMethodHandle = GetHelper(typeofByteCodeHelper, "DynamicLoadMethodHandle");
 		DynamicBinderMemberLookup = GetHelper(typeofByteCodeHelper, "DynamicBinderMemberLookup");
+		DynamicMapException = GetHelper(typeofByteCodeHelper, "DynamicMapException");
 		VerboseCastFailure = GetHelper(typeofByteCodeHelper, "VerboseCastFailure");
 		SkipFinalizer = GetHelper(typeofByteCodeHelper, "SkipFinalizer");
 		DynamicInstanceOf = GetHelper(typeofByteCodeHelper, "DynamicInstanceOf");
@@ -1153,15 +1155,19 @@ sealed class Compiler
 					else
 					{
 						ilGenerator.EmitLdc_I4(mapFlags | (remap ? 0 : 1));
-						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(excType));
-						if(!unusedException)
-						{
-							ilGenerator.Emit(OpCodes.Dup);
-						}
 						if(exceptionTypeWrapper.IsUnloadable)
 						{
 							Profiler.Count("EmitDynamicExceptionHandler");
-							EmitDynamicInstanceOf(exceptionTypeWrapper);
+							EmitDynamicClassLiteral(exceptionTypeWrapper);
+							ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicMapException);
+						}
+						else
+						{
+							ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(excType));
+						}
+						if(!unusedException)
+						{
+							ilGenerator.Emit(OpCodes.Dup);
 						}
 						CodeEmitterLabel leave = ilGenerator.DefineLabel();
 						ilGenerator.EmitBrtrue(leave);
