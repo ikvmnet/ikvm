@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2004, 2005, 2006, 2008 Jeroen Frijters
+  Copyright (C) 2004-2015 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -26,6 +26,28 @@ namespace IKVM.Internal
 {
 	internal static class CoreClasses
 	{
+		internal static class cli
+		{
+			internal static class System
+			{
+				internal static class Object
+				{
+					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
+					// (we don't want the classes to be loaded prematurely, because they might not be available then)
+					static Object() { }
+					internal static readonly TypeWrapper Wrapper = DotNetTypeWrapper.GetWrapperFromDotNetType(Types.Object);
+				}
+
+				internal static class Exception
+				{
+					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
+					// (we don't want the classes to be loaded prematurely, because they might not be available then)
+					static Exception() { }
+					internal static readonly TypeWrapper Wrapper = DotNetTypeWrapper.GetWrapperFromDotNetType(Types.Exception);
+				}
+			}
+		}
+
 		internal static class ikvm
 		{
 			internal static class @internal

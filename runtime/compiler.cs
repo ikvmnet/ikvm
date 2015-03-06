@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2014 Jeroen Frijters
+  Copyright (C) 2002-2015 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -267,11 +267,6 @@ sealed class Compiler
 	private static readonly MethodInfo keepAliveMethod;
 	internal static readonly MethodWrapper getClassFromTypeHandle;
 	internal static readonly MethodWrapper getClassFromTypeHandle2;
-	private static readonly TypeWrapper java_lang_Object;
-	private static readonly TypeWrapper java_lang_Class;
-	private static readonly TypeWrapper java_lang_Throwable;
-	private static readonly TypeWrapper cli_System_Object;
-	private static readonly TypeWrapper cli_System_Exception;
 	private readonly DynamicTypeWrapper.FinishContext context;
 	private readonly DynamicTypeWrapper clazz;
 	private readonly MethodWrapper mw;
@@ -298,30 +293,25 @@ sealed class Compiler
 		getTypeFromHandleMethod = Types.Type.GetMethod("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, null, new Type[] { Types.RuntimeTypeHandle }, null);
 		getTypeMethod = Types.Object.GetMethod("GetType", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
 		keepAliveMethod = JVM.Import(typeof(System.GC)).GetMethod("KeepAlive", BindingFlags.Static | BindingFlags.Public, null, new Type[] { Types.Object }, null);
-		java_lang_Object = CoreClasses.java.lang.Object.Wrapper;
-		java_lang_Throwable = CoreClasses.java.lang.Throwable.Wrapper;
-		cli_System_Object = DotNetTypeWrapper.GetWrapperFromDotNetType(Types.Object);
-		cli_System_Exception = DotNetTypeWrapper.GetWrapperFromDotNetType(Types.Exception);
-		java_lang_Class = CoreClasses.java.lang.Class.Wrapper;
 		// HACK we need to special case core compilation, because the __<map> methods are HideFromJava
-		if(java_lang_Throwable.TypeAsBaseType is TypeBuilder)
+		if(CoreClasses.java.lang.Throwable.Wrapper.TypeAsBaseType is TypeBuilder)
 		{
 			MethodWrapper mw;
-			mw = java_lang_Throwable.GetMethodWrapper("__<suppressFillInStackTrace>", "()V", false);
+			mw = CoreClasses.java.lang.Throwable.Wrapper.GetMethodWrapper("__<suppressFillInStackTrace>", "()V", false);
 			mw.Link();
 			suppressFillInStackTraceMethod = (MethodInfo)mw.GetMethod();
-			mw = java_lang_Throwable.GetMethodWrapper("__<unmap>", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false);
+			mw = CoreClasses.java.lang.Throwable.Wrapper.GetMethodWrapper("__<unmap>", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false);
 			mw.Link();
 			unmapExceptionMethod = (MethodInfo)mw.GetMethod();
-			mw = java_lang_Throwable.GetMethodWrapper("__<fixate>", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false);
+			mw = CoreClasses.java.lang.Throwable.Wrapper.GetMethodWrapper("__<fixate>", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false);
 			mw.Link();
 			fixateExceptionMethod = (MethodInfo)mw.GetMethod();
 		}
 		else
 		{
-			suppressFillInStackTraceMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<suppressFillInStackTrace>", Type.EmptyTypes);
-			unmapExceptionMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<unmap>", new Type[] { Types.Exception });
-			fixateExceptionMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<fixate>", new Type[] { Types.Exception });
+			suppressFillInStackTraceMethod = CoreClasses.java.lang.Throwable.Wrapper.TypeAsBaseType.GetMethod("__<suppressFillInStackTrace>", Type.EmptyTypes);
+			unmapExceptionMethod = CoreClasses.java.lang.Throwable.Wrapper.TypeAsBaseType.GetMethod("__<unmap>", new Type[] { Types.Exception });
+			fixateExceptionMethod = CoreClasses.java.lang.Throwable.Wrapper.TypeAsBaseType.GetMethod("__<fixate>", new Type[] { Types.Exception });
 		}
 		getClassFromTypeHandle = ClassLoaderWrapper.LoadClassCritical("ikvm.runtime.Util").GetMethodWrapper("getClassFromTypeHandle", "(Lcli.System.RuntimeTypeHandle;)Ljava.lang.Class;", false);
 		getClassFromTypeHandle.Link();
@@ -342,7 +332,7 @@ sealed class Compiler
 		if(mw.IsConstructor)
 		{
 			MethodWrapper finalize = clazz.GetMethodWrapper(StringConstants.FINALIZE, StringConstants.SIG_VOID, true);
-			keepAlive = finalize != null && finalize.DeclaringType != java_lang_Object && finalize.DeclaringType != cli_System_Object && finalize.DeclaringType != java_lang_Throwable && finalize.DeclaringType != cli_System_Exception;
+			keepAlive = finalize != null && finalize.DeclaringType != CoreClasses.java.lang.Object.Wrapper && finalize.DeclaringType != CoreClasses.cli.System.Object.Wrapper && finalize.DeclaringType != CoreClasses.java.lang.Throwable.Wrapper && finalize.DeclaringType != CoreClasses.cli.System.Exception.Wrapper;
 		}
 #if STATIC_COMPILER
 		replacedMethodWrappers = clazz.GetReplacedMethodsFor(mw);
@@ -1121,13 +1111,13 @@ sealed class Compiler
 					bool remap;
 					if(exc.catch_type == 0)
 					{
-						exceptionTypeWrapper = java_lang_Throwable;
+						exceptionTypeWrapper = CoreClasses.java.lang.Throwable.Wrapper;
 						remap = true;
 					}
 					else
 					{
 						exceptionTypeWrapper = classFile.GetConstantPoolClassType(exc.catch_type);
-						remap = exceptionTypeWrapper.IsUnloadable || !exceptionTypeWrapper.IsSubTypeOf(cli_System_Exception);
+						remap = exceptionTypeWrapper.IsUnloadable || !exceptionTypeWrapper.IsSubTypeOf(CoreClasses.cli.System.Exception.Wrapper);
 					}
 					Type excType = exceptionTypeWrapper.TypeAsExceptionType;
 					bool mapSafe = !exceptionTypeWrapper.IsUnloadable && !exceptionTypeWrapper.IsMapUnsafeException && !exceptionTypeWrapper.IsRemapped;
@@ -1155,7 +1145,7 @@ sealed class Compiler
 						ilGenerator.EmitLdc_I4(mapFlags | 1);
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(excType));
 					}
-					else if(exceptionTypeWrapper == java_lang_Throwable)
+					else if(exceptionTypeWrapper == CoreClasses.java.lang.Throwable.Wrapper)
 					{
 						ilGenerator.EmitLdc_I4(mapFlags);
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(Types.Exception));
@@ -1497,21 +1487,21 @@ sealed class Compiler
 					nonleaf = true;
 
 					// HACK this code is duplicated in java.lang.invoke.cs
-					if(method.IsProtected && (method.DeclaringType == java_lang_Object || method.DeclaringType == java_lang_Throwable))
+					if(method.IsProtected && (method.DeclaringType == CoreClasses.java.lang.Object.Wrapper || method.DeclaringType == CoreClasses.java.lang.Throwable.Wrapper))
 					{
 						// HACK we may need to redirect finalize or clone from java.lang.Object/Throwable
 						// to a more specific base type.
-						if(thisType.IsAssignableTo(cli_System_Object))
+						if(thisType.IsAssignableTo(CoreClasses.cli.System.Object.Wrapper))
 						{
-							method = cli_System_Object.GetMethodWrapper(method.Name, method.Signature, true);
+							method = CoreClasses.cli.System.Object.Wrapper.GetMethodWrapper(method.Name, method.Signature, true);
 						}
-						else if(thisType.IsAssignableTo(cli_System_Exception))
+						else if(thisType.IsAssignableTo(CoreClasses.cli.System.Exception.Wrapper))
 						{
-							method = cli_System_Exception.GetMethodWrapper(method.Name, method.Signature, true);
+							method = CoreClasses.cli.System.Exception.Wrapper.GetMethodWrapper(method.Name, method.Signature, true);
 						}
-						else if(thisType.IsAssignableTo(java_lang_Throwable))
+						else if(thisType.IsAssignableTo(CoreClasses.java.lang.Throwable.Wrapper))
 						{
-							method = java_lang_Throwable.GetMethodWrapper(method.Name, method.Signature, true);
+							method = CoreClasses.java.lang.Throwable.Wrapper.GetMethodWrapper(method.Name, method.Signature, true);
 						}
 					}
 
@@ -1573,7 +1563,7 @@ sealed class Compiler
 									nontrivial = true;
 								}
 							}
-							if(!thisType.IsUnloadable && thisType.IsSubTypeOf(java_lang_Throwable))
+							if(!thisType.IsUnloadable && thisType.IsSubTypeOf(CoreClasses.java.lang.Throwable.Wrapper))
 							{
 								// if the next instruction is an athrow and the exception type
 								// doesn't override fillInStackTrace, we can suppress the call
@@ -1585,7 +1575,7 @@ sealed class Compiler
 								// test, because cli.System.Exception overrides fillInStackTrace.
 								if(code[i + 1].NormalizedOpCode == NormalizedByteCode.__athrow)
 								{
-									if(thisType.GetMethodWrapper("fillInStackTrace", "()Ljava.lang.Throwable;", true).DeclaringType == java_lang_Throwable)
+									if(thisType.GetMethodWrapper("fillInStackTrace", "()Ljava.lang.Throwable;", true).DeclaringType == CoreClasses.java.lang.Throwable.Wrapper)
 									{
 										ilGenerator.Emit(OpCodes.Call, suppressFillInStackTraceMethod);
 									}
@@ -1596,7 +1586,7 @@ sealed class Compiler
 								}
 							}
 							method.EmitNewobj(ilGenerator);
-							if(!thisType.IsUnloadable && thisType.IsSubTypeOf(cli_System_Exception))
+							if(!thisType.IsUnloadable && thisType.IsSubTypeOf(CoreClasses.cli.System.Exception.Wrapper))
 							{
 								// we call Throwable.__<fixate>() to disable remapping the exception
 								ilGenerator.Emit(OpCodes.Call, fixateExceptionMethod);
