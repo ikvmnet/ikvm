@@ -154,7 +154,12 @@ namespace IKVM.Runtime
 #else
 			Profiler.Count("DynamicMultianewarray");
 			TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
-			return multianewarray(wrapper.TypeAsArrayType.TypeHandle, lengths);
+			object obj = multianewarray(wrapper.TypeAsArrayType.TypeHandle, lengths);
+			if (wrapper.IsGhostArray)
+			{
+				GhostTag.SetTag(obj, wrapper);
+			}
+			return obj;
 #endif
 		}
 
@@ -170,7 +175,12 @@ namespace IKVM.Runtime
 				throw new java.lang.NegativeArraySizeException();
 			}
 			TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
-			return Array.CreateInstance(wrapper.TypeAsArrayType, length);
+			Array obj = Array.CreateInstance(wrapper.TypeAsArrayType, length);
+			if (wrapper.IsGhost || wrapper.IsGhostArray)
+			{
+				GhostTag.SetTag(obj, wrapper.MakeArrayType(1));
+			}
+			return obj;
 #endif
 		}
 
