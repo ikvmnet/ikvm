@@ -5573,23 +5573,7 @@ namespace IKVM.Internal
 						typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod.GetMethod());
 						wrapper.SetHasIncompleteInterfaceImplementation();
 					}
-					else if (mce.GetMethod() == null || mce.RealName != ifmethod.RealName || mce.IsInternal)
-					{
-						MethodBuilder mb = DefineInterfaceStubMethod(mangledName, ifmethod);
-						AttributeHelper.HideFromJava(mb);
-						CodeEmitter ilGenerator = CodeEmitter.Create(mb);
-						ilGenerator.Emit(OpCodes.Ldarg_0);
-						int argc = mce.GetParameters().Length;
-						for (int n = 0; n < argc; n++)
-						{
-							ilGenerator.EmitLdarg(n + 1);
-						}
-						mce.EmitCallvirt(ilGenerator);
-						ilGenerator.Emit(OpCodes.Ret);
-						ilGenerator.DoEmit();
-						typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod.GetMethod());
-					}
-					else if (!ReflectUtil.IsSameAssembly(mce.DeclaringType.TypeAsTBD, typeBuilder))
+					else if (mce.GetMethod() == null || mce.RealName != ifmethod.RealName || mce.IsInternal || !ReflectUtil.IsSameAssembly(mce.DeclaringType.TypeAsTBD, typeBuilder))
 					{
 						// NOTE methods inherited from base classes in a different assembly do *not* automatically implement
 						// interface methods, so we have to generate a stub here that doesn't do anything but call the base
