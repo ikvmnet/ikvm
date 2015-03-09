@@ -5532,18 +5532,16 @@ namespace IKVM.Internal
 					{
 						// check the loader constraints
 						bool error = false;
-						if (mce.ReturnType != ifmethod.ReturnType)
+						if (mce.ReturnType != ifmethod.ReturnType && !mce.ReturnType.IsUnloadable && !ifmethod.ReturnType.IsUnloadable)
 						{
-							// TODO handle unloadable
 							error = true;
 						}
 						TypeWrapper[] mceparams = mce.GetParameters();
 						TypeWrapper[] ifparams = ifmethod.GetParameters();
 						for (int i = 0; i < mceparams.Length; i++)
 						{
-							if (mceparams[i] != ifparams[i])
+							if (mceparams[i] != ifparams[i] && !mceparams[i].IsUnloadable && !ifparams[i].IsUnloadable)
 							{
-								// TODO handle unloadable
 								error = true;
 								break;
 							}
