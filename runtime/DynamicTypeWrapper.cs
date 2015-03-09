@@ -5573,28 +5573,12 @@ namespace IKVM.Internal
 						typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod.GetMethod());
 						wrapper.SetHasIncompleteInterfaceImplementation();
 					}
-					else if (mce.GetMethod() == null || mce.RealName != ifmethod.RealName || mce.IsInternal || !ReflectUtil.IsSameAssembly(mce.DeclaringType.TypeAsTBD, typeBuilder))
+					else if (mce.GetMethod() == null || mce.RealName != ifmethod.RealName || mce.IsInternal || !ReflectUtil.IsSameAssembly(mce.DeclaringType.TypeAsTBD, typeBuilder) || CheckRequireOverrideStub(mce, ifmethod))
 					{
 						// NOTE methods inherited from base classes in a different assembly do *not* automatically implement
 						// interface methods, so we have to generate a stub here that doesn't do anything but call the base
 						// implementation
-						MethodBuilder mb = DefineInterfaceStubMethod(mangledName, ifmethod);
-						typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod.GetMethod());
-						AttributeHelper.HideFromJava(mb);
-						CodeEmitter ilGenerator = CodeEmitter.Create(mb);
-						ilGenerator.Emit(OpCodes.Ldarg_0);
-						int argc = mce.GetParameters().Length;
-						for (int n = 0; n < argc; n++)
-						{
-							ilGenerator.EmitLdarg(n + 1);
-						}
-						mce.EmitCallvirt(ilGenerator);
-						ilGenerator.Emit(OpCodes.Ret);
-						ilGenerator.DoEmit();
-					}
-					else if (CheckRequireOverrideStub(mce, ifmethod))
-					{
-						wrapper.GenerateOverrideStub(typeBuilder, ifmethod, (MethodInfo)mce.GetMethod(), mce);
+						wrapper.GenerateOverrideStub(typeBuilder, ifmethod, null, mce);
 					}
 					else if (baseClassInterface && mce.DeclaringType == wrapper)
 					{
@@ -6574,7 +6558,14 @@ namespace IKVM.Internal
 					ilgen.Emit(OpCodes.Castclass, targetArgs[i]);
 				}
 			}
-			ilgen.Emit(OpCodes.Callvirt, target);
+			if (target != null)
+			{
+				ilgen.Emit(OpCodes.Callvirt, target);
+			}
+			else
+			{
+				targetMethod.EmitCallvirt(ilgen);
+			}
 			if (targetRet != stubret)
 			{
 				ilgen.Emit(OpCodes.Castclass, stubret);
