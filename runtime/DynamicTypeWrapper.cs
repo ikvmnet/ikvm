@@ -6539,7 +6539,7 @@ namespace IKVM.Internal
 		{
 			Debug.Assert(!baseMethod.HasCallerID);
 
-			MethodBuilder overrideStub = baseMethod.GetDefineMethodHelper().DefineMethod(this, typeBuilder, "__<overridestub>" + baseMethod.Name, MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final);
+			MethodBuilder overrideStub = baseMethod.GetDefineMethodHelper().DefineMethod(this, typeBuilder, "__<overridestub>" + baseMethod.DeclaringType.Name + "::" + baseMethod.Name, MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final);
 			typeBuilder.DefineMethodOverride(overrideStub, (MethodInfo)baseMethod.GetMethod());
 
 			Type stubret = baseMethod.ReturnTypeForDefineMethod;
