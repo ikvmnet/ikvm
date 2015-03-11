@@ -282,7 +282,21 @@ namespace IKVM.Runtime
 #else
 			Debug.Assert(obj != null);
 			Profiler.Count("DynamicInstanceOf");
-			return TypeWrapper.FromClass(clazz).IsInstance(obj);
+			TypeWrapper tw = TypeWrapper.FromClass(clazz);
+			// we have to mimick the bytecode behavior, which allows these .NET-isms to show through
+			if (tw.TypeAsBaseType == typeof(Array))
+			{
+				return obj is Array;
+			}
+			if (tw.TypeAsBaseType == typeof(string))
+			{
+				return obj is string;
+			}
+			if (tw.TypeAsBaseType == typeof(IComparable))
+			{
+				return obj is IComparable;
+			}
+			return tw.IsInstance(obj);
 #endif
 		}
 
