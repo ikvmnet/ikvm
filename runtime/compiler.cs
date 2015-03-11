@@ -69,6 +69,7 @@ static class ByteCodeHelperMethods
 	internal static readonly MethodInfo DynamicBinderMemberLookup;
 	internal static readonly MethodInfo DynamicMapException;
 	internal static readonly MethodInfo DynamicLinkIndyCallSite;
+	internal static readonly MethodInfo DynamicEraseInvokeExact;
 	internal static readonly MethodInfo VerboseCastFailure;
 	internal static readonly MethodInfo SkipFinalizer;
 	internal static readonly MethodInfo DynamicInstanceOf;
@@ -116,6 +117,7 @@ static class ByteCodeHelperMethods
 		DynamicBinderMemberLookup = GetHelper(typeofByteCodeHelper, "DynamicBinderMemberLookup");
 		DynamicMapException = GetHelper(typeofByteCodeHelper, "DynamicMapException");
 		DynamicLinkIndyCallSite = GetHelper(typeofByteCodeHelper, "DynamicLinkIndyCallSite");
+		DynamicEraseInvokeExact = GetHelper(typeofByteCodeHelper, "DynamicEraseInvokeExact");
 		VerboseCastFailure = GetHelper(typeofByteCodeHelper, "VerboseCastFailure");
 		SkipFinalizer = GetHelper(typeofByteCodeHelper, "SkipFinalizer");
 		DynamicInstanceOf = GetHelper(typeofByteCodeHelper, "DynamicInstanceOf");
@@ -3594,14 +3596,14 @@ sealed class Compiler
 
 	private sealed class MethodHandleMethodWrapper : MethodWrapper
 	{
-		private readonly DynamicTypeWrapper.FinishContext context;
+		private readonly Compiler compiler;
 		private readonly TypeWrapper wrapper;
 		private readonly ClassFile.ConstantPoolItemMI cpi;
 
-		internal MethodHandleMethodWrapper(DynamicTypeWrapper.FinishContext context, TypeWrapper wrapper, ClassFile.ConstantPoolItemMI cpi)
+		internal MethodHandleMethodWrapper(Compiler compiler, TypeWrapper wrapper, ClassFile.ConstantPoolItemMI cpi)
 			: base(CoreClasses.java.lang.invoke.MethodHandle.Wrapper, cpi.Name, cpi.Signature, null, cpi.GetRetType(), cpi.GetArgTypes(), Modifiers.Public, MemberFlags.None)
 		{
-			this.context = context;
+			this.compiler = compiler;
 			this.wrapper = wrapper;
 			this.cpi = cpi;
 		}
@@ -3675,6 +3677,16 @@ sealed class Compiler
 				ilgen.Emit(OpCodes.Stloc, temps[i]);
 			}
 			Type delegateType = MethodHandleUtil.CreateMethodHandleDelegateType(args, cpi.GetRetType());
+			if (HasUnloadable(cpi.GetArgTypes(), cpi.GetRetType()))
+			{
+				// TODO consider sharing the cache for the same signatures
+				ilgen.Emit(OpCodes.Ldsflda, compiler.context.DefineDynamicMethodTypeCacheField());
+				ilgen.Emit(OpCodes.Ldstr, cpi.Signature);
+				compiler.context.EmitCallerID(ilgen, compiler.m.IsLambdaFormCompiled);
+				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicLoadMethodType);
+				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.LoadMethodType.MakeGenericMethod(delegateType));
+				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicEraseInvokeExact);
+			}
 			MethodInfo mi = ByteCodeHelperMethods.GetDelegateForInvokeExact.MakeGenericMethod(delegateType);
 			ilgen.Emit(OpCodes.Call, mi);
 			for (int i = 0; i < args.Length; i++)
@@ -3727,7 +3739,7 @@ sealed class Compiler
 #else
 			typeofInvokeCache = typeof(IKVM.Runtime.InvokeCache<>);
 #endif
-			FieldBuilder fb = context.DefineMethodHandleInvokeCacheField(typeofInvokeCache.MakeGenericType(delegateType));
+			FieldBuilder fb = compiler.context.DefineMethodHandleInvokeCacheField(typeofInvokeCache.MakeGenericType(delegateType));
 			ilgen.Emit(OpCodes.Ldloc, temps[0]);
 			ilgen.Emit(OpCodes.Ldsflda, fb);
 			ilgen.Emit(OpCodes.Call, mi);
@@ -3978,7 +3990,7 @@ sealed class Compiler
 				return GetDynamicMethodWrapper(constantPoolIndex, invoke, cpi);
 			case NormalizedByteCode.__methodhandle_invoke:
 			case NormalizedByteCode.__methodhandle_link:
-				return new MethodHandleMethodWrapper(context, clazz, cpi);
+				return new MethodHandleMethodWrapper(this, clazz, cpi);
 			default:
 				throw new InvalidOperationException();
 		}

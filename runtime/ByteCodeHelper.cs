@@ -457,6 +457,20 @@ namespace IKVM.Runtime
 #endif
 		}
 
+		[DebuggerStepThrough]
+		public static java.lang.invoke.MethodHandle DynamicEraseInvokeExact(java.lang.invoke.MethodHandle mh, java.lang.invoke.MethodType expected, java.lang.invoke.MethodType target)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			if (mh.type() != expected)
+			{
+				throw new java.lang.invoke.WrongMethodTypeException();
+			}
+			return java.lang.invoke.MethodHandles.explicitCastArguments(mh, target);
+#endif
+		}
+
 		[DebuggerStepThroughAttribute]
 		public static int f2i(float f)
 		{
