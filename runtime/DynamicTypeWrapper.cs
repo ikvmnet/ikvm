@@ -2915,11 +2915,21 @@ namespace IKVM.Internal
 							Debug.Assert(baseMethods[index].Length == 1 && baseMethods[index][0].DeclaringType.IsInterface);
 							MirandaMethodWrapper mmw = (MirandaMethodWrapper)methods[index];
 							MethodAttributes attr = MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.CheckAccessOnOverride;
-							MethodWrapper baseMiranda;
+							MethodWrapper baseMiranda = null;
+							bool baseMirandaOverrideStub = false;
 							if (wrapper.BaseTypeWrapper == null || (baseMiranda = wrapper.BaseTypeWrapper.GetMethodWrapper(mw.Name, mw.Signature, true)) == null || !baseMiranda.IsMirandaMethod)
 							{
 								// we're not overriding a miranda method in a base class, so can we set the newslot flag
 								attr |= MethodAttributes.NewSlot;
+							}
+							else
+							{
+								baseMiranda.Link();
+								if (CheckRequireOverrideStub(methods[index], baseMiranda))
+								{
+									baseMirandaOverrideStub = true;
+									attr |= MethodAttributes.NewSlot;
+								}
 							}
 							if (wrapper.IsInterface || (wrapper.IsAbstract && mmw.BaseMethod.IsAbstract && mmw.Error == null))
 							{
@@ -2927,6 +2937,10 @@ namespace IKVM.Internal
 							}
 							MethodBuilder mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper, typeBuilder, methods[index].Name, attr);
 							AttributeHelper.HideFromReflection(mb);
+							if (baseMirandaOverrideStub)
+							{
+								wrapper.GenerateOverrideStub(typeBuilder, baseMiranda, mb, methods[index]);
+							}
 							if ((!wrapper.IsAbstract && mmw.BaseMethod.IsAbstract) || (!wrapper.IsInterface && mmw.Error != null))
 							{
 								string message = mmw.Error ?? (wrapper.Name + "." + methods[index].Name + methods[index].Signature);
