@@ -101,7 +101,6 @@ java/lang/reflect/Executable.java
 java/lang/reflect/Field.java
 java/lang/reflect/Method.java
 java/lang/reflect/Proxy.java
-java/lang/reflect/ReflectHelper.java
 java/lang/Shutdown.java
 java/lang/StringHelper.java
 java/lang/System.java

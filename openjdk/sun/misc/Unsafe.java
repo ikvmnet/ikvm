@@ -32,7 +32,6 @@ import cli.System.Security.Permissions.SecurityPermissionAttribute;
 import ikvm.lang.Internal;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.ReflectHelper;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
 
@@ -57,10 +56,13 @@ public final class Unsafe
         return theUnsafe;
     }
 
+    private static native Field createFieldAndMakeAccessible(Class c, String field);
+    private static native Field copyFieldAndMakeAccessible(Field field);
+
     // this is the intrinsified version of objectFieldOffset(XXX.class.getDeclaredField("xxx"))
     public long objectFieldOffset(Class c, String field)
     {
-        return allocateUnsafeFieldId(ReflectHelper.createFieldAndMakeAccessible(c, field));
+        return allocateUnsafeFieldId(createFieldAndMakeAccessible(c, field));
     }
 
     // NOTE we have a really lame (and slow) implementation!
@@ -81,7 +83,7 @@ public final class Unsafe
     
     static int allocateUnsafeFieldId(Field original)
     {
-        Field copy = ReflectHelper.copyFieldAndMakeAccessible(original);
+        Field copy = copyFieldAndMakeAccessible(original);
         synchronized(fields)
         {
             int id = fields.size();

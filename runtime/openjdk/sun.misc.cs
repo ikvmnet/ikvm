@@ -293,6 +293,30 @@ static class Java_sun_misc_Perf
 
 static class Java_sun_misc_Unsafe
 {
+	public static java.lang.reflect.Field createFieldAndMakeAccessible(java.lang.Class c, string fieldName)
+	{
+#if FIRST_PASS
+		return null;
+#else
+        // we pass in ReflectAccess.class as the field type (which isn't used)
+        // to make Field.toString() return something "meaningful" instead of crash
+        java.lang.reflect.Field field = new java.lang.reflect.Field(c, fieldName, ikvm.@internal.ClassLiteral<java.lang.reflect.ReflectAccess>.Value, 0, -1, null, null);
+        field.@override = true;
+        return field;
+#endif
+	}
+
+	public static java.lang.reflect.Field copyFieldAndMakeAccessible(java.lang.reflect.Field field)
+	{
+#if FIRST_PASS
+		return null;
+#else
+		field = new java.lang.reflect.Field(field.getDeclaringClass(), field.getName(), field.getType(), field.getModifiers() & ~java.lang.reflect.Modifier.FINAL, field._slot(), null, null);
+		field.@override = true;
+		return field;
+#endif
+	}
+
 	private static void CheckArrayBounds(object obj, long offset, int accessLength)
 	{
 		// NOTE we rely on the fact that Buffer.ByteLength() requires a primitive array
