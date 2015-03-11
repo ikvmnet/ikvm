@@ -68,6 +68,7 @@ static class ByteCodeHelperMethods
 	internal static readonly MethodInfo DynamicLoadMethodHandle;
 	internal static readonly MethodInfo DynamicBinderMemberLookup;
 	internal static readonly MethodInfo DynamicMapException;
+	internal static readonly MethodInfo DynamicLinkIndyCallSite;
 	internal static readonly MethodInfo VerboseCastFailure;
 	internal static readonly MethodInfo SkipFinalizer;
 	internal static readonly MethodInfo DynamicInstanceOf;
@@ -114,6 +115,7 @@ static class ByteCodeHelperMethods
 		DynamicLoadMethodHandle = GetHelper(typeofByteCodeHelper, "DynamicLoadMethodHandle");
 		DynamicBinderMemberLookup = GetHelper(typeofByteCodeHelper, "DynamicBinderMemberLookup");
 		DynamicMapException = GetHelper(typeofByteCodeHelper, "DynamicMapException");
+		DynamicLinkIndyCallSite = GetHelper(typeofByteCodeHelper, "DynamicLinkIndyCallSite");
 		VerboseCastFailure = GetHelper(typeofByteCodeHelper, "VerboseCastFailure");
 		SkipFinalizer = GetHelper(typeofByteCodeHelper, "SkipFinalizer");
 		DynamicInstanceOf = GetHelper(typeofByteCodeHelper, "DynamicInstanceOf");
@@ -3003,7 +3005,16 @@ sealed class Compiler
 			ilgen.Emit(OpCodes.Ldsflda, fb);
 			ilgen.Emit(OpCodes.Ldloc, cs);
 			ilgen.Emit(OpCodes.Ldloc, ex);
-			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.LinkIndyCallSite.MakeGenericMethod(delegateType));
+			if (HasUnloadable(cpi.GetArgTypes(), cpi.GetRetType()))
+			{
+				ilgen.Emit(OpCodes.Ldstr, cpi.Signature);
+				compiler.context.EmitCallerID(ilgen, compiler.m.IsLambdaFormHidden);
+				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicLinkIndyCallSite.MakeGenericMethod(delegateType));
+			}
+			else
+			{
+				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.LinkIndyCallSite.MakeGenericMethod(delegateType));
+			}
 			ilgen.Emit(OpCodes.Ldsfld, fb);
 			ilgen.Emit(OpCodes.Call, methodGetTarget);
 			for (int i = 0; i < args.Length; i++)
@@ -3088,7 +3099,18 @@ sealed class Compiler
 			methodLookup.EmitCall(ilgen);
 			ilgen.Emit(OpCodes.Ldstr, cpi.Name);
 			parameters[1].EmitConvStackTypeToSignatureType(ilgen, CoreClasses.java.lang.String.Wrapper);
-			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.LoadMethodType.MakeGenericMethod(MethodHandleUtil.CreateDelegateTypeForLoadConstant(cpi.GetArgTypes(), cpi.GetRetType())));
+			if (HasUnloadable(cpi.GetArgTypes(), cpi.GetRetType()))
+			{
+				// the cache is useless since we only run once, so we use a local
+				ilgen.Emit(OpCodes.Ldloca, ilgen.DeclareLocal(CoreClasses.java.lang.invoke.MethodType.Wrapper.TypeAsSignatureType));
+				ilgen.Emit(OpCodes.Ldstr, cpi.Signature);
+				compiler.context.EmitCallerID(ilgen, compiler.m.IsLambdaFormCompiled);
+				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicLoadMethodType);
+			}
+			else
+			{
+				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.LoadMethodType.MakeGenericMethod(MethodHandleUtil.CreateDelegateTypeForLoadConstant(cpi.GetArgTypes(), cpi.GetRetType())));
+			}
 			parameters[2].EmitConvStackTypeToSignatureType(ilgen, CoreClasses.java.lang.invoke.MethodType.Wrapper);
 			for (int i = 0; i < fixedArgs; i++)
 			{

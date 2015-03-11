@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2014 Jeroen Frijters
+  Copyright (C) 2002-2015 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -2275,6 +2275,11 @@ namespace IKVM.Internal
 			internal string Name
 			{
 				get { return name; }
+			}
+
+			internal string Signature
+			{
+				get { return descriptor; }
 			}
 
 			internal ushort BootstrapMethod

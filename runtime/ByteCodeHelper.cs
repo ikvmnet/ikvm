@@ -1009,6 +1009,57 @@ namespace IKVM.Runtime
 			}
 #endif
 		}
+
+		[HideFromJava]
+		public static void DynamicLinkIndyCallSite<T>(ref IndyCallSite<T> site, java.lang.invoke.CallSite cs, Exception x, string signature, ikvm.@internal.CallerID callerID)
+			where T : class // Delegate
+		{
+#if !FIRST_PASS
+			// when a CallSite is first constructed, it doesn't call MethodHandleNatives.setCallSiteTargetNormal(),
+			// so we have to check if we need to initialize it here (i.e. attach an IndyCallSite<T> to it)
+			if (cs != null)
+			{
+				if (cs.ics == null)
+				{
+					Java_java_lang_invoke_MethodHandleNatives.InitializeCallSite(cs);
+				}
+				lock (cs.ics)
+				{
+					cs.ics.SetTarget(cs.target);
+				}
+			}
+			java.lang.invoke.MethodType typeCache = null;
+			IndyCallSite<T> ics;
+			if (x != null || cs == null || cs.type() != DynamicLoadMethodType(ref typeCache, signature, callerID))
+			{
+				x = MapException<Exception>(x ?? (cs == null
+					? (Exception)new java.lang.ClassCastException("bootstrap method failed to produce a CallSite")
+					: new java.lang.invoke.WrongMethodTypeException()), MapFlags.None);
+				java.lang.invoke.MethodType type = LoadMethodType<T>();
+				java.lang.invoke.MethodHandle exc = x is java.lang.BootstrapMethodError
+					? java.lang.invoke.MethodHandles.constant(typeof(java.lang.BootstrapMethodError), x)
+					: java.lang.invoke.MethodHandles.publicLookup().findConstructor(typeof(java.lang.BootstrapMethodError), java.lang.invoke.MethodType.methodType(typeof(void), typeof(string), typeof(Exception)))
+						.bindTo("call site initialization exception").bindTo(x);
+				ics = new IndyCallSite<T>();
+				((IIndyCallSite)ics).SetTarget(
+					java.lang.invoke.MethodHandles.dropArguments(
+						java.lang.invoke.MethodHandles.foldArguments(
+							java.lang.invoke.MethodHandles.throwException(type.returnType(), typeof(java.lang.BootstrapMethodError)),
+								exc),
+						0, type.parameterArray()));
+			}
+			else
+			{
+				ics = new IndyCallSite<T>();
+				((IIndyCallSite)ics).SetTarget(cs.dynamicInvoker().asType(LoadMethodType<T>()));
+			}
+			IndyCallSite<T> curr = site;
+			if (curr.IsBootstrap)
+			{
+				Interlocked.CompareExchange(ref site, ics, curr);
+			}
+#endif
+		}
 	}
 
 	interface IIndyCallSite
