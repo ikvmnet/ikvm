@@ -371,13 +371,7 @@ namespace IKVM.Runtime
 									return java.lang.invoke.MethodHandles.invoker(mt);
 							}
 						}
-						java.lang.Class caller = callerID.getCallerClass();
-						DynamicTypeWrapper.FinishContext.HostCallerID hostCallerID = callerID as DynamicTypeWrapper.FinishContext.HostCallerID;
-						if (hostCallerID != null)
-						{
-							caller = hostCallerID.host.ClassObject;
-						}
-						return java.lang.invoke.MethodHandleNatives.linkMethodHandleConstant(caller, kind, refc, name, mt);
+						return java.lang.invoke.MethodHandleNatives.linkMethodHandleConstant(callerID.getCallerClass(), kind, refc, name, mt);
 				}
 			}
 			catch (RetargetableJavaException x)
@@ -469,6 +463,12 @@ namespace IKVM.Runtime
 				return Delegate.CreateDelegate(delegateType, obj, (MethodInfo)mw.GetMethod());
 			}
 #endif
+		}
+
+		[DebuggerStepThrough]
+		public static ikvm.@internal.CallerID DynamicCallerID(object capability)
+		{
+			return ((DynamicCallerIDProvider)capability).GetCallerID();
 		}
 
 		[DebuggerStepThrough]

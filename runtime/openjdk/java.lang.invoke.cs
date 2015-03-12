@@ -861,39 +861,6 @@ static partial class MethodHandleUtil
 			return dm.CreateDelegate();
 		}
 
-		internal sealed class DynamicCallerID : ikvm.@internal.CallerID
-		{
-			internal static readonly DynamicCallerID Instance = new DynamicCallerID();
-
-			private DynamicCallerID() { }
-
-			internal override java.lang.Class getAndCacheClass()
-			{
-				for (int i = 0, skip = 1; ; )
-				{
-					MethodBase method = new StackFrame(i++, false).GetMethod();
-					if (method == null)
-					{
-						return null;
-					}
-					if (Java_sun_reflect_Reflection.IsHideFromStackWalk(method) || method.DeclaringType == typeof(ikvm.@internal.CallerID))
-					{
-						continue;
-					}
-					if (skip-- == 0)
-					{
-						return ClassLoaderWrapper.GetWrapperFromType(method.DeclaringType).ClassObject;
-					}
-				}
-			}
-
-			internal override java.lang.ClassLoader getAndCacheClassLoader()
-			{
-				java.lang.Class clazz = getAndCacheClass();
-				return clazz == null ? null : TypeWrapper.FromClass(clazz).GetClassLoader().GetJavaClassLoader();
-			}
-		}
-
 		internal static Delegate CreateMemberName(MethodWrapper mw, MethodType type, bool doDispatch)
 		{
 			FinishTypes(type);
@@ -910,7 +877,7 @@ static partial class MethodHandleUtil
 			}
 #endif
 			DynamicMethodBuilder dm = new DynamicMethodBuilder("MemberName:" + mw.DeclaringType.Name + "::" + mw.Name + mw.Signature, type, null,
-				mw.HasCallerID ? DynamicCallerID.Instance : null, null, owner, true);
+				mw.HasCallerID ? DynamicCallerIDProvider.Instance : null, null, owner, true);
 			for (int i = 0, count = type.parameterCount(); i < count; i++)
 			{
 				if (i == 0 && !mw.IsStatic && (tw.IsGhost || tw.IsNonPrimitiveValueType || tw.IsRemapped) && (!mw.IsConstructor || tw != CoreClasses.java.lang.String.Wrapper))
@@ -1061,6 +1028,7 @@ static partial class MethodHandleUtil
 		internal void LoadCallerID()
 		{
 			ilgen.Emit(OpCodes.Ldarg_0);
+			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicCallerID);
 		}
 
 		internal void LoadValueAddress()

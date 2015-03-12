@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2008-2014 Jeroen Frijters
+  Copyright (C) 2008-2015 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -32,16 +32,22 @@ public abstract class CallerID
     private Class clazz;
     private ClassLoader classLoader;
 
+    private CallerID(Class clazz, ClassLoader classLoader)
+    {
+        this.clazz = clazz;
+        this.classLoader = classLoader;
+    }
+
     protected CallerID() { }
 
     @ikvm.lang.Internal
     public final Class getCallerClass()
     {
-	if (clazz != null)
+	if (clazz == null)
 	{
-	    return clazz;
+	    clazz = GetClass();
 	}
-        return getAndCacheClass();
+        return clazz;
     }
 
     @ikvm.lang.Internal
@@ -50,26 +56,13 @@ public abstract class CallerID
 	ClassLoader cl = classLoader;
 	if (cl == null)
 	{
-	    cl = getAndCacheClassLoader();
+	    cl = classLoader = GetClassLoader();
+	    if (cl == null)
+	    {
+		cl = classLoader = ClassLoader.DUMMY;
+	    }
 	}
 	return cl == ClassLoader.DUMMY ? null : cl;
-    }
-
-    // virtual method that is overridden by DynamicCallerID in MethodHandle code
-    Class getAndCacheClass()
-    {
-        return clazz = GetClass();
-    }
-
-    // virtual method that is overridden by DynamicCallerID in MethodHandle code
-    ClassLoader getAndCacheClassLoader()
-    {
-        ClassLoader cl = classLoader = GetClassLoader();
-        if (cl == null)
-        {
-	    cl = classLoader = ClassLoader.DUMMY;
-        }
-        return cl;
     }
 
     @ikvm.lang.Internal
@@ -118,6 +111,19 @@ public abstract class CallerID
 		return null;
 	    }
 	};
+    }
+
+    // used by the runtime for EmitHostCallerID and DynamicCallerID
+    static CallerID create(Class clazz, ClassLoader classLoader)
+    {
+        return new CallerID(clazz, classLoader) {
+	    Class GetClass() {
+		return null;
+	    }
+	    ClassLoader GetClassLoader() {
+		return null;
+	    }
+        };
     }
 
     @ikvm.lang.Internal

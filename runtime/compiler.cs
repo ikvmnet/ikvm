@@ -68,6 +68,7 @@ static class ByteCodeHelperMethods
 	internal static readonly MethodInfo DynamicLoadMethodHandle;
 	internal static readonly MethodInfo DynamicBinderMemberLookup;
 	internal static readonly MethodInfo DynamicMapException;
+	internal static readonly MethodInfo DynamicCallerID;
 	internal static readonly MethodInfo DynamicLinkIndyCallSite;
 	internal static readonly MethodInfo DynamicEraseInvokeExact;
 	internal static readonly MethodInfo VerboseCastFailure;
@@ -116,6 +117,7 @@ static class ByteCodeHelperMethods
 		DynamicLoadMethodHandle = GetHelper(typeofByteCodeHelper, "DynamicLoadMethodHandle");
 		DynamicBinderMemberLookup = GetHelper(typeofByteCodeHelper, "DynamicBinderMemberLookup");
 		DynamicMapException = GetHelper(typeofByteCodeHelper, "DynamicMapException");
+		DynamicCallerID = GetHelper(typeofByteCodeHelper, "DynamicCallerID");
 		DynamicLinkIndyCallSite = GetHelper(typeofByteCodeHelper, "DynamicLinkIndyCallSite");
 		DynamicEraseInvokeExact = GetHelper(typeofByteCodeHelper, "DynamicEraseInvokeExact");
 		VerboseCastFailure = GetHelper(typeofByteCodeHelper, "VerboseCastFailure");

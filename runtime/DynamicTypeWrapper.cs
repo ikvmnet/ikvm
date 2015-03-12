@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2014 Jeroen Frijters
+  Copyright (C) 2002-2015 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -4090,36 +4090,12 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Call, method);
 			}
 
-#if !STATIC_COMPILER && !FIRST_PASS
-			internal sealed class HostCallerID : ikvm.@internal.CallerID
-			{
-				internal readonly TypeWrapper host;
-				private readonly TypeWrapper wrapper;
-
-				internal HostCallerID(TypeWrapper host, TypeWrapper wrapper)
-				{
-					this.host = host;
-					this.wrapper = wrapper;
-				}
-
-				internal override java.lang.Class getAndCacheClass()
-				{
-					return wrapper.ClassObject;
-				}
-
-				internal override java.lang.ClassLoader getAndCacheClassLoader()
-				{
-					return wrapper.GetClassLoader().GetJavaClassLoader();
-				}
-			}
-#endif
-
 			internal void EmitHostCallerID(CodeEmitter ilgen)
 			{
 #if STATIC_COMPILER || FIRST_PASS
 				throw new InvalidOperationException();
 #else
-				EmitLiveObjectLoad(ilgen, new HostCallerID(host, wrapper));
+				EmitLiveObjectLoad(ilgen, DynamicCallerIDProvider.CreateCallerID(host));
 				CoreClasses.ikvm.@internal.CallerID.Wrapper.EmitCheckcast(ilgen);
 #endif
 			}
@@ -4129,8 +4105,8 @@ namespace IKVM.Internal
 #if !FIRST_PASS && !STATIC_COMPILER
 				if (dynamic)
 				{
-					EmitLiveObjectLoad(ilgen, MethodHandleUtil.DynamicMethodBuilder.DynamicCallerID.Instance);
-					ilgen.Emit(OpCodes.Castclass, CoreClasses.ikvm.@internal.CallerID.Wrapper.TypeAsBaseType);
+					EmitLiveObjectLoad(ilgen, DynamicCallerIDProvider.Instance);
+					ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicCallerID);
 					return;
 				}
 #endif
@@ -7228,4 +7204,44 @@ namespace IKVM.Internal
 			return DefineMethod(context, tb, ConstructorInfo.ConstructorName, attribs | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName);
 		}
 	}
+
+#if !STATIC_COMPILER
+	sealed class DynamicCallerIDProvider
+	{
+		// this object acts as a capability that is passed to trusted code to allow the DynamicCallerID()
+		// method to be public without giving untrusted code the ability to forge a CallerID token
+		internal static readonly DynamicCallerIDProvider Instance = new DynamicCallerIDProvider();
+
+		private DynamicCallerIDProvider() { }
+
+		internal ikvm.@internal.CallerID GetCallerID()
+		{
+			for (int i = 0; ; )
+			{
+				MethodBase method = new StackFrame(i++, false).GetMethod();
+				if (method == null)
+				{
+#if !FIRST_PASS
+					return ikvm.@internal.CallerID.create(null, null);
+#endif
+				}
+				if (Java_sun_reflect_Reflection.IsHideFromStackWalk(method))
+				{
+					continue;
+				}
+				TypeWrapper caller = ClassLoaderWrapper.GetWrapperFromType(method.DeclaringType);
+				return CreateCallerID(caller);
+			}
+		}
+
+		internal static ikvm.@internal.CallerID CreateCallerID(TypeWrapper tw)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			return ikvm.@internal.CallerID.create(tw.ClassObject, tw.GetClassLoader().GetJavaClassLoader());
+#endif
+		}
+	}
+#endif
 }
