@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2014 Jeroen Frijters
+  Copyright (C) 2002-2015 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -2744,6 +2744,25 @@ namespace IKVM.Internal
 			if(inherit && baseWrapper != null)
 			{
 				return baseWrapper.GetMethodWrapper(name, sig, inherit);
+			}
+			return null;
+		}
+
+		internal MethodWrapper GetInterfaceMethod(string name, string sig)
+		{
+			MethodWrapper method = GetMethodWrapper(name, sig, false);
+			if (method != null)
+			{
+				return method;
+			}
+			TypeWrapper[] interfaces = Interfaces;
+			for (int i = 0; i < interfaces.Length; i++)
+			{
+				method = interfaces[i].GetInterfaceMethod(name, sig);
+				if (method != null)
+				{
+					return method;
+				}
 			}
 			return null;
 		}

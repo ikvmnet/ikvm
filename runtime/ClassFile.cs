@@ -1905,36 +1905,16 @@ namespace IKVM.Internal
 			{
 			}
 
-			private static MethodWrapper GetInterfaceMethod(TypeWrapper wrapper, string name, string sig)
-			{
-				if(wrapper.IsUnloadable)
-				{
-					return null;
-				}
-				MethodWrapper method = wrapper.GetMethodWrapper(name, sig, false);
-				if(method != null)
-				{
-					return method;
-				}
-				TypeWrapper[] interfaces = wrapper.Interfaces;
-				for(int i = 0; i < interfaces.Length; i++)
-				{
-					method = GetInterfaceMethod(interfaces[i], name, sig);
-					if(method != null)
-					{
-						return method;
-					}
-				}
-				return null;
-			}
-
 			internal override void Link(TypeWrapper thisType)
 			{
 				base.Link(thisType);
 				TypeWrapper wrapper = GetClassType();
 				if(wrapper != null)
 				{
-					method = GetInterfaceMethod(wrapper, Name, Signature);
+					if(!wrapper.IsUnloadable)
+					{
+						method = wrapper.GetInterfaceMethod(Name, Signature);
+					}
 					if(method == null)
 					{
 						// NOTE vmspec 5.4.3.4 clearly states that an interfacemethod may also refer to a method in Object

@@ -280,7 +280,11 @@ static class Java_java_lang_invoke_MethodHandleNatives
 		{
 			if (self.getReferenceKind() == MethodHandleNatives.Constants.REF_invokeInterface)
 			{
-				mw = CoreClasses.java.lang.Object.Wrapper.GetMethodWrapper(self.getName(), self.getSignature().Replace('/', '.'), false);
+				mw = TypeWrapper.FromClass(self.getDeclaringClass()).GetInterfaceMethod(self.getName(), self.getSignature().Replace('/', '.'));
+				if (mw == null)
+				{
+					mw = CoreClasses.java.lang.Object.Wrapper.GetMethodWrapper(self.getName(), self.getSignature().Replace('/', '.'), false);
+				}
 				if (mw != null && mw.IsConstructor)
 				{
 					throw new java.lang.IncompatibleClassChangeError("Found interface " + self.getDeclaringClass().getName() + ", but class was expected");
