@@ -410,17 +410,15 @@ static class Java_java_lang_invoke_MethodHandleNatives
 		if (mw.IsProtected && (mw.DeclaringType == CoreClasses.java.lang.Object.Wrapper || mw.DeclaringType == CoreClasses.java.lang.Throwable.Wrapper))
 		{
 			TypeWrapper thisType = TypeWrapper.FromClass(caller);
-			TypeWrapper cli_System_Object = ClassLoaderWrapper.LoadClassCritical("cli.System.Object");
-			TypeWrapper cli_System_Exception = ClassLoaderWrapper.LoadClassCritical("cli.System.Exception");
 			// HACK we may need to redirect finalize or clone from java.lang.Object/Throwable
 			// to a more specific base type.
-			if (thisType.IsAssignableTo(cli_System_Object))
+			if (thisType.IsAssignableTo(CoreClasses.cli.System.Object.Wrapper))
 			{
-				mw = cli_System_Object.GetMethodWrapper(mw.Name, mw.Signature, true);
+				mw = CoreClasses.cli.System.Object.Wrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
 			}
-			else if (thisType.IsAssignableTo(cli_System_Exception))
+			else if (thisType.IsAssignableTo(CoreClasses.cli.System.Exception.Wrapper))
 			{
-				mw = cli_System_Exception.GetMethodWrapper(mw.Name, mw.Signature, true);
+				mw = CoreClasses.cli.System.Exception.Wrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
 			}
 			else if (thisType.IsAssignableTo(CoreClasses.java.lang.Throwable.Wrapper))
 			{
