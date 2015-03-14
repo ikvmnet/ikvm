@@ -2965,12 +2965,6 @@
             </method>
         </class>
         <class name="java.lang.invoke.MethodHandles$Lookup">
-            <!-- We have to disable this check, because we rely on Lookup.lookup() in our lambda bootstrap method -->
-            <method name="checkUnprivilegedlookupClass" sig="(Ljava.lang.Class;I)V">
-                <body>
-                    <ret />
-                </body>
-            </method>
             <!-- We hook this to undo the fiddling we do to support string constructors -->
             <method name="revealDirect" sig="(Ljava.lang.invoke.MethodHandle;)Ljava.lang.invoke.MethodHandleInfo;">
                 <replace-method-call class="java.lang.invoke.MethodHandle" name="internalMemberName" sig="()Ljava.lang.invoke.MemberName;">
