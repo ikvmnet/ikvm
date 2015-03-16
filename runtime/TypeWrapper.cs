@@ -4440,13 +4440,30 @@ namespace IKVM.Internal
 			}
 		}
 
-		private bool IsCallerID(Type type)
+		private static bool IsCallerID(Type type)
 		{
 #if STUB_GENERATOR
 			return type.FullName == "ikvm.internal.CallerID";
 #else
-			return type == CoreClasses.ikvm.@internal.CallerID.Wrapper.TypeAsSignatureType
-				&& GetClassLoader() == ClassLoaderWrapper.GetBootstrapClassLoader();
+			return type == CoreClasses.ikvm.@internal.CallerID.Wrapper.TypeAsSignatureType;
+#endif
+		}
+
+		private static bool IsCallerSensitive(MethodBase mb)
+		{
+#if FIRST_PASS
+			return false;
+#elif STATIC_COMPILER || STUB_GENERATOR
+			foreach (CustomAttributeData cad in mb.GetCustomAttributesData())
+			{
+				if (cad.AttributeType.FullName == "sun.reflect.CallerSensitiveAttribute")
+				{
+					return true;
+				}
+			}
+			return false;
+#else
+			return mb.IsDefined(typeof(sun.reflect.CallerSensitiveAttribute), false);
 #endif
 		}
 
@@ -4457,7 +4474,8 @@ namespace IKVM.Internal
 			int len = parameters.Length;
 			if(len > 0
 				&& IsCallerID(parameters[len - 1].ParameterType)
-				&& !method.DeclaringType.IsInterface)
+				&& GetClassLoader() == ClassLoaderWrapper.GetBootstrapClassLoader()				
+				&& IsCallerSensitive(method))
 			{
 				len--;
 				flags |= MemberFlags.CallerID;
