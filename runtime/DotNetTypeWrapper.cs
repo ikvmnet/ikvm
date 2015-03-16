@@ -1855,11 +1855,25 @@ namespace IKVM.Internal
 			internal override void EmitNewobj(CodeEmitter ilgen)
 			{
 				ilgen.Emit(OpCodes.Ldtoken, delegateConstructor.DeclaringType);
-				ilgen.Emit(OpCodes.Call, Types.Type.GetMethod("GetTypeFromHandle", new Type[] { Types.RuntimeTypeHandle }));
+				ilgen.Emit(OpCodes.Call, Compiler.getTypeFromHandleMethod);
 				ilgen.Emit(OpCodes.Ldstr, GetDelegateInvokeStubName(DeclaringType.TypeAsTBD));
 				ilgen.Emit(OpCodes.Ldstr, iface.GetMethods()[0].Signature);
 				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicCreateDelegate);
 				ilgen.Emit(OpCodes.Castclass, delegateConstructor.DeclaringType);
+			}
+
+			internal override void EmitCall(CodeEmitter ilgen)
+			{
+				// This is a bit of a hack. We bind the existing delegate to a new delegate to be able to reuse the DynamicCreateDelegate error
+				// handling. This leaks out to the user because Delegate.Target will return the target delegate instead of the bound object.
+
+				// create the target delegate
+				EmitNewobj(ilgen);
+
+				// invoke the constructor, binding the delegate to the target delegate
+				ilgen.Emit(OpCodes.Dup);
+				ilgen.Emit(OpCodes.Ldvirtftn, MethodHandleUtil.GetDelegateInvokeMethod(delegateConstructor.DeclaringType));
+				ilgen.Emit(OpCodes.Call, delegateConstructor);
 			}
 #endif // EMITTERS
 		}
