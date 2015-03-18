@@ -5820,7 +5820,7 @@ namespace IKVM.Internal
 					ilGenerator.Emit(OpCodes.Stloc, jnienv);
 					ilGenerator.BeginExceptionBlock();
 					TypeWrapper retTypeWrapper = mw.ReturnType;
-					if (!retTypeWrapper.IsUnloadable && !retTypeWrapper.IsPrimitive)
+					if (retTypeWrapper.IsUnloadable || !retTypeWrapper.IsPrimitive)
 					{
 						// this one is for use after we return from "calli"
 						ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
@@ -5892,7 +5892,11 @@ namespace IKVM.Internal
 					CodeEmitterLocal retValue = null;
 					if (retTypeWrapper != PrimitiveTypeWrapper.VOID)
 					{
-						if (!retTypeWrapper.IsUnloadable && !retTypeWrapper.IsPrimitive)
+						if (retTypeWrapper.IsUnloadable)
+						{
+							ilGenerator.Emit(OpCodes.Call, unwrapLocalRef);
+						}
+						else if (!retTypeWrapper.IsPrimitive)
 						{
 							ilGenerator.Emit(OpCodes.Call, unwrapLocalRef);
 							if (retTypeWrapper.IsNonPrimitiveValueType)
