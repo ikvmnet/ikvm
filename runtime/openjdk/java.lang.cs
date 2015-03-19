@@ -328,11 +328,15 @@ static class Java_java_lang_Class
 				throw new IllegalAccessError(string.Format("tried to access class {0} from class {1}", decl.Name, wrapper.Name));
 			}
 			decl.Finish();
-			if (Array.IndexOf(decl.InnerClasses, wrapper) == -1)
+			TypeWrapper[] declInner = decl.InnerClasses;
+			for (int i = 0; i < declInner.Length; i++)
 			{
-				throw new IncompatibleClassChangeError(string.Format("{0} and {1} disagree on InnerClasses attribute", decl.Name, wrapper.Name));
+				if (declInner[i].Name == wrapper.Name && declInner[i].EnsureLoadable(decl.GetClassLoader()) == wrapper)
+				{
+					return decl.ClassObject;
+				}
 			}
-			return decl.ClassObject;
+			throw new IncompatibleClassChangeError(string.Format("{0} and {1} disagree on InnerClasses attribute", decl.Name, wrapper.Name));
 		}
 		catch (RetargetableJavaException x)
 		{
