@@ -322,6 +322,7 @@ static class Java_java_lang_Class
 			{
 				return null;
 			}
+			decl = decl.EnsureLoadable(wrapper.GetClassLoader());
 			if (!decl.IsAccessibleFrom(wrapper))
 			{
 				throw new IllegalAccessError(string.Format("tried to access class {0} from class {1}", decl.Name, wrapper.Name));
