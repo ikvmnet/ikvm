@@ -301,6 +301,14 @@ static class Java_java_lang_invoke_MethodHandleNatives
 			string msg = String.Format(mw.IsStatic ? "Expecting non-static method {0}.{1}{2}" : "Expected static method {0}.{1}{2}", mw.DeclaringType.Name, self.getName(), self.getSignature());
 			throw new java.lang.IncompatibleClassChangeError(msg);
 		}
+		if (self.getReferenceKind() == MethodHandleNatives.Constants.REF_invokeVirtual && mw.DeclaringType.IsInterface)
+		{
+			throw new java.lang.IncompatibleClassChangeError("Found interface " + mw.DeclaringType.Name + ", but class was expected");
+		}
+		if (!mw.IsPublic && self.getReferenceKind() == MethodHandleNatives.Constants.REF_invokeInterface)
+		{
+			throw new java.lang.IncompatibleClassChangeError("private interface method requires invokespecial, not invokeinterface: method " + self.getDeclaringClass().getName() + "." + self.getName() + self.getSignature());
+		}
 		if (mw.IsConstructor && mw.DeclaringType == CoreClasses.java.lang.String.Wrapper)
 		{
 			typeof(MemberName).GetField("type", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(self, self.getMethodType().changeReturnType(typeof(string)));
