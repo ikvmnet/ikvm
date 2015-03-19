@@ -154,7 +154,7 @@ struct LocalVarInfo
 			}
 			else
 			{
-				if (instructions[i].NormalizedOpCode == NormalizedByteCode.__invokespecial)
+				if (instructions[i].NormalizedOpCode == NormalizedByteCode.__invokespecial || instructions[i].NormalizedOpCode == NormalizedByteCode.__dynamic_invokespecial)
 				{
 					invokespecialLocalVars[i] = new LocalVar[method.MaxLocals];
 					for (int j = 0; j < invokespecialLocalVars[i].Length; j++)
