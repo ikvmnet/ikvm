@@ -3190,7 +3190,11 @@ sealed class Compiler
 					TypeWrapper wrapper = GetWrapperType(constType, out dummy);
 					wrapper.GetMethodWrapper("valueOf", "(" + constType.SigName + ")" + wrapper.SigName, false).EmitCall(ilgen);
 				}
-				if (targetType.IsPrimitive)
+				if (targetType.IsUnloadable)
+				{
+					// do nothing
+				}
+				else if (targetType.IsPrimitive)
 				{
 					string unbox;
 					TypeWrapper wrapper = GetWrapperType(targetType, out unbox);
