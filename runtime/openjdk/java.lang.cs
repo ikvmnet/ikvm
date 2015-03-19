@@ -619,16 +619,13 @@ static class Java_java_lang_Class
 			java.lang.Class[] innerclasses = new java.lang.Class[wrappers.Length];
 			for (int i = 0; i < innerclasses.Length; i++)
 			{
-				if (wrappers[i].IsUnloadable)
+				TypeWrapper tw = wrappers[i].EnsureLoadable(wrapper.GetClassLoader());
+				if (!tw.IsAccessibleFrom(wrapper))
 				{
-					throw new java.lang.NoClassDefFoundError(wrappers[i].Name);
+					throw new IllegalAccessError(string.Format("tried to access class {0} from class {1}", tw.Name, wrapper.Name));
 				}
-				if (!wrappers[i].IsAccessibleFrom(wrapper))
-				{
-					throw new IllegalAccessError(string.Format("tried to access class {0} from class {1}", wrappers[i].Name, wrapper.Name));
-				}
-				wrappers[i].Finish();
-				innerclasses[i] = wrappers[i].ClassObject;
+				tw.Finish();
+				innerclasses[i] = tw.ClassObject;
 			}
 			return innerclasses;
 		}
