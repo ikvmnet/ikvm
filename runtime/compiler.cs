@@ -3747,6 +3747,18 @@ sealed class Compiler
 #endif
 			FieldBuilder fb = compiler.context.DefineMethodHandleInvokeCacheField(typeofInvokeCache.MakeGenericType(delegateType));
 			ilgen.Emit(OpCodes.Ldloc, temps[0]);
+			if (HasUnloadable(cpi.GetArgTypes(), cpi.GetRetType()))
+			{
+				// TODO consider sharing the cache for the same signatures
+				ilgen.Emit(OpCodes.Ldsflda, compiler.context.DefineDynamicMethodTypeCacheField());
+				ilgen.Emit(OpCodes.Ldstr, cpi.Signature);
+				compiler.context.EmitCallerID(ilgen, compiler.m.IsLambdaFormCompiled);
+				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicLoadMethodType);
+			}
+			else
+			{
+				ilgen.Emit(OpCodes.Ldnull);
+			}
 			ilgen.Emit(OpCodes.Ldsflda, fb);
 			ilgen.Emit(OpCodes.Call, mi);
 			for (int i = 0; i < args.Length; i++)

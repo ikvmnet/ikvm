@@ -931,7 +931,7 @@ namespace IKVM.Runtime
 #endif
 		}
 
-		public static T GetDelegateForInvoke<T>(global::java.lang.invoke.MethodHandle h, ref InvokeCache<T> cache)
+		public static T GetDelegateForInvoke<T>(global::java.lang.invoke.MethodHandle h, java.lang.invoke.MethodType realType, ref InvokeCache<T> cache)
 			where T : class
 		{
 #if FIRST_PASS
@@ -949,6 +949,11 @@ namespace IKVM.Runtime
 				if (h.isVarargsCollector())
 				{
 					adapter = adapter.asVarargsCollector(h.type().parameterType(h.type().parameterCount() - 1));
+				}
+				// if realType is set, the delegate contains erased unloadable types
+				if (realType != null)
+				{
+					adapter = adapter.asType(realType.insertParameterTypes(0, ikvm.@internal.ClassLiteral<java.lang.invoke.MethodHandle>.Value)).asFixedArity();
 				}
 				adapter = adapter.asType(MethodHandleUtil.GetDelegateMethodType(typeof(T)));
 				del = GetDelegateForInvokeExact<T>(adapter);
