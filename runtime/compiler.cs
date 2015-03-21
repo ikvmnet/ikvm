@@ -3440,6 +3440,10 @@ sealed class Compiler
 				{
 					ilGenerator.EmitAssertType(declaringType.TypeAsTBD);
 				}
+				else if(declaringType.IsNonPrimitiveValueType)
+				{
+					ilGenerator.Emit(OpCodes.Unbox, declaringType.TypeAsTBD);
+				}
 				else
 				{
 					ilGenerator.Emit(OpCodes.Castclass, declaringType.TypeAsSignatureType);
