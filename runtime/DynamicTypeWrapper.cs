@@ -6536,19 +6536,14 @@ namespace IKVM.Internal
 			MethodBuilder overrideStub = baseMethod.GetDefineMethodHelper().DefineMethod(this, typeBuilder, "__<overridestub>" + baseMethod.DeclaringType.Name + "::" + baseMethod.Name, MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final);
 			typeBuilder.DefineMethodOverride(overrideStub, (MethodInfo)baseMethod.GetMethod());
 
-			Type stubret = baseMethod.ReturnTypeForDefineMethod;
-			Type[] stubargs = baseMethod.GetParametersForDefineMethod();
-			Type targetRet = targetMethod.ReturnTypeForDefineMethod;
-			Type[] targetArgs = targetMethod.GetParametersForDefineMethod();
+			TypeWrapper[] stubargs = baseMethod.GetParameters();
+			TypeWrapper[] targetArgs = targetMethod.GetParameters();
 			CodeEmitter ilgen = CodeEmitter.Create(overrideStub);
 			ilgen.Emit(OpCodes.Ldarg_0);
 			for (int i = 0; i < targetArgs.Length; i++)
 			{
 				ilgen.EmitLdarg(i + 1);
-				if (targetArgs[i] != stubargs[i])
-				{
-					ilgen.Emit(OpCodes.Castclass, targetArgs[i]);
-				}
+				ConvertStubArg(stubargs[i], targetArgs[i], ilgen);
 			}
 			if (target != null)
 			{
@@ -6558,12 +6553,31 @@ namespace IKVM.Internal
 			{
 				targetMethod.EmitCallvirt(ilgen);
 			}
-			if (targetRet != stubret)
-			{
-				ilgen.Emit(OpCodes.Castclass, stubret);
-			}
+			ConvertStubArg(targetMethod.ReturnType, baseMethod.ReturnType, ilgen);
 			ilgen.Emit(OpCodes.Ret);
 			ilgen.DoEmit();
+		}
+
+		private static void ConvertStubArg(TypeWrapper src, TypeWrapper dst, CodeEmitter ilgen)
+		{
+			if (src != dst)
+			{
+				if (dst.IsUnloadable)
+				{
+					if (!src.IsUnloadable && (src.IsGhost || src.IsNonPrimitiveValueType))
+					{
+						src.EmitConvSignatureTypeToStackType(ilgen);
+					}
+				}
+				else if (dst.IsGhost || dst.IsNonPrimitiveValueType)
+				{
+					dst.EmitConvStackTypeToSignatureType(ilgen, null);
+				}
+				else
+				{
+					dst.EmitCheckcast(ilgen);
+				}
+			}
 		}
 
 		private static void GetParameterNamesFromMP(ClassFile.Method m, string[] parameterNames)
