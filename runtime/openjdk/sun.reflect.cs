@@ -140,14 +140,11 @@ static class Java_sun_reflect_Reflection
 #if FIRST_PASS
 		return null;
 #else
-		int i = 3;
-		if (realFramesToSkip <= 1)
+		if (realFramesToSkip <= 0)
 		{
-			i = 1;
-			realFramesToSkip = Math.Max(realFramesToSkip + 2, 2);
+			return ikvm.@internal.ClassLiteral<sun.reflect.Reflection>.Value;
 		}
-		realFramesToSkip--;
-		for (; ; )
+		for (int i = 2; ; )
 		{
 			MethodBase method = new StackFrame(i++, false).GetMethod();
 			if (method == null)
@@ -155,6 +152,12 @@ static class Java_sun_reflect_Reflection
 				return null;
 			}
 			if (IsHideFromStackWalk(method))
+			{
+				continue;
+			}
+			// HACK we skip HideFromJavaFlags.StackTrace too because we want to skip the LambdaForm methods
+			// that are used by late binding
+			if ((GetHideFromJavaFlags(method) & HideFromJavaFlags.StackTrace) != 0)
 			{
 				continue;
 			}
