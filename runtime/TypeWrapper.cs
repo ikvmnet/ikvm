@@ -3545,6 +3545,13 @@ namespace IKVM.Internal
 		{
 			return null;
 		}
+
+#if !STATIC_COMPILER && !STUB_GENERATOR
+		internal virtual TypeWrapper Host
+		{
+			get { return null; }
+		}
+#endif
 	}
 
 	sealed class UnloadableTypeWrapper : TypeWrapper

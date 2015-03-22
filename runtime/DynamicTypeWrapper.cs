@@ -462,6 +462,7 @@ namespace IKVM.Internal
 			internal abstract byte[] GetRawTypeAnnotations();
 			internal abstract byte[] GetMethodRawTypeAnnotations(int index);
 			internal abstract byte[] GetFieldRawTypeAnnotations(int index);
+			internal abstract TypeWrapper Host { get; }
 		}
 
 		private sealed class JavaTypeImpl : DynamicImpl
@@ -1836,7 +1837,7 @@ namespace IKVM.Internal
 						finishedClinitMethod = type.GetMethod("__<clinit>", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
 					}
 #endif
-					finishedType = new FinishedTypeImpl(type, innerClassesTypeWrappers, declaringTypeWrapper, wrapper.ReflectiveModifiers, Metadata.Create(classFile), finishedClinitMethod, finalizeMethod);
+					finishedType = new FinishedTypeImpl(type, innerClassesTypeWrappers, declaringTypeWrapper, wrapper.ReflectiveModifiers, Metadata.Create(classFile), finishedClinitMethod, finalizeMethod, host);
 					return finishedType;
 				}
 #if !STATIC_COMPILER
@@ -3533,6 +3534,11 @@ namespace IKVM.Internal
 				Debug.Fail("Unreachable code");
 				return null;
 			}
+
+			internal override TypeWrapper Host
+			{
+				get { return host; }
+			}
 		}
 
 		private sealed class Metadata
@@ -3846,8 +3852,9 @@ namespace IKVM.Internal
 			private readonly MethodInfo clinitMethod;
 			private readonly MethodInfo finalizeMethod;
 			private readonly Metadata metadata;
+			private readonly TypeWrapper host;
 
-			internal FinishedTypeImpl(Type type, TypeWrapper[] innerclasses, TypeWrapper declaringTypeWrapper, Modifiers reflectiveModifiers, Metadata metadata, MethodInfo clinitMethod, MethodInfo finalizeMethod)
+			internal FinishedTypeImpl(Type type, TypeWrapper[] innerclasses, TypeWrapper declaringTypeWrapper, Modifiers reflectiveModifiers, Metadata metadata, MethodInfo clinitMethod, MethodInfo finalizeMethod, TypeWrapper host)
 			{
 				this.type = type;
 				this.innerclasses = innerclasses;
@@ -3856,6 +3863,7 @@ namespace IKVM.Internal
 				this.clinitMethod = clinitMethod;
 				this.finalizeMethod = finalizeMethod;
 				this.metadata = metadata;
+				this.host = host;
 			}
 
 			internal override TypeWrapper[] InnerClasses
@@ -3992,6 +4000,11 @@ namespace IKVM.Internal
 			internal override byte[] GetFieldRawTypeAnnotations(int index)
 			{
 				return Metadata.GetFieldRawTypeAnnotations(metadata, index);
+			}
+
+			internal override TypeWrapper Host
+			{
+				get { return host; }
 			}
 		}
 
@@ -7136,6 +7149,13 @@ namespace IKVM.Internal
 			return impl.GetFieldRawTypeAnnotations(Array.IndexOf(GetFields(), fw));
 		}
 
+#if !STATIC_COMPILER && !STUB_GENERATOR
+		internal override TypeWrapper Host
+		{
+			get { return impl.Host; }
+		}
+#endif
+
 		[Conditional("STATIC_COMPILER")]
 		internal void EmitLevel4Warning(HardError error, string message)
 		{
@@ -7248,7 +7268,7 @@ namespace IKVM.Internal
 					continue;
 				}
 				TypeWrapper caller = ClassLoaderWrapper.GetWrapperFromType(method.DeclaringType);
-				return CreateCallerID(caller);
+				return CreateCallerID(caller.Host ?? caller);
 			}
 		}
 
