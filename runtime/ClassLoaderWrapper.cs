@@ -572,7 +572,7 @@ namespace IKVM.Internal
 				TypeWrapper type = FindOrLoadClass(elemClass, find);
 				if(type != null)
 				{
-					type = type.GetClassLoader().CreateArrayType(name, type, dims);
+					type = CreateArrayType(name, type, dims);
 				}
 				return type;
 			}
@@ -584,21 +584,21 @@ namespace IKVM.Internal
 			switch(name[dims])
 			{
 				case 'B':
-					return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.BYTE, dims);
+					return CreateArrayType(name, PrimitiveTypeWrapper.BYTE, dims);
 				case 'C':
-					return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.CHAR, dims);
+					return CreateArrayType(name, PrimitiveTypeWrapper.CHAR, dims);
 				case 'D':
-					return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.DOUBLE, dims);
+					return CreateArrayType(name, PrimitiveTypeWrapper.DOUBLE, dims);
 				case 'F':
-					return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.FLOAT, dims);
+					return CreateArrayType(name, PrimitiveTypeWrapper.FLOAT, dims);
 				case 'I':
-					return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.INT, dims);
+					return CreateArrayType(name, PrimitiveTypeWrapper.INT, dims);
 				case 'J':
-					return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.LONG, dims);
+					return CreateArrayType(name, PrimitiveTypeWrapper.LONG, dims);
 				case 'S':
-					return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.SHORT, dims);
+					return CreateArrayType(name, PrimitiveTypeWrapper.SHORT, dims);
 				case 'Z':
-					return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.BOOLEAN, dims);
+					return CreateArrayType(name, PrimitiveTypeWrapper.BOOLEAN, dims);
 				default:
 					return null;
 			}
@@ -811,12 +811,12 @@ namespace IKVM.Internal
 #endif
 		}
 
-		private TypeWrapper CreateArrayType(string name, TypeWrapper elementTypeWrapper, int dims)
+		private static TypeWrapper CreateArrayType(string name, TypeWrapper elementTypeWrapper, int dims)
 		{
 			Debug.Assert(new String('[', dims) + elementTypeWrapper.SigName == name);
 			Debug.Assert(!elementTypeWrapper.IsUnloadable && !elementTypeWrapper.IsVerifierType && !elementTypeWrapper.IsArray);
 			Debug.Assert(dims >= 1);
-			return RegisterInitiatingLoader(new ArrayTypeWrapper(elementTypeWrapper, name));
+			return elementTypeWrapper.GetClassLoader().RegisterInitiatingLoader(new ArrayTypeWrapper(elementTypeWrapper, name));
 		}
 
 #if !STATIC_COMPILER && !STUB_GENERATOR
