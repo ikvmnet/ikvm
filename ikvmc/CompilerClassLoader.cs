@@ -181,7 +181,7 @@ namespace IKVM.Internal
 			return "CompilerClassLoader:" + options.assembly;
 		}
 
-		protected override TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
+		protected override TypeWrapper LoadClassImpl(string name, LoadMode mode)
 		{
 			foreach(AssemblyClassLoader acl in referencedAssemblies)
 			{
@@ -230,7 +230,7 @@ namespace IKVM.Internal
 			{
 				return tw1;
 			}
-			return FindOrLoadGenericClass(name, false);
+			return FindOrLoadGenericClass(name, mode);
 		}
 
 		private TypeWrapper PeerLoad(string name)

@@ -671,7 +671,7 @@ namespace IKVM.Internal
 			return null;
 		}
 
-		protected override TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
+		protected override TypeWrapper LoadClassImpl(string name, LoadMode mode)
 		{
 			TypeWrapper tw = FindLoadedClass(name);
 			if (tw != null)
@@ -692,12 +692,12 @@ namespace IKVM.Internal
 					WaitInitializeJavaClassLoader(customClassLoader);
 					hasCustomClassLoader = 1;
 				}
-				return base.LoadClassImpl(name, throwClassNotFoundException);
+				return base.LoadClassImpl(name, mode);
 			}
 #endif
 			return LoadBootstrapIfNonJavaAssembly(name)
 				?? LoadDynamic(name)
-				?? FindOrLoadGenericClass(name, false);
+				?? FindOrLoadGenericClass(name, LoadMode.LoadOrNull);
 		}
 
 		// this implements ikvm.runtime.AssemblyClassLoader.loadClass(),
@@ -708,7 +708,7 @@ namespace IKVM.Internal
 			return FindLoadedClass(name)
 				?? LoadBootstrapIfNonJavaAssembly(name)
 				?? LoadDynamic(name)
-				?? FindOrLoadGenericClass(name, false);
+				?? FindOrLoadGenericClass(name, LoadMode.LoadOrNull);
 		}
 
 		private TypeWrapper LoadBootstrapIfNonJavaAssembly(string name)
@@ -1011,7 +1011,7 @@ namespace IKVM.Internal
 		{
 			return DoLoad(name)
 				?? FindReferenced(name)
-				?? FindOrLoadGenericClass(name, true);
+				?? FindOrLoadGenericClass(name, LoadMode.Find);
 		}
 
 		internal override bool InternalsVisibleToImpl(TypeWrapper wrapper, TypeWrapper friend)

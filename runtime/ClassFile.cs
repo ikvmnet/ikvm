@@ -1566,7 +1566,7 @@ namespace IKVM.Internal
 			{
 				if(typeWrapper == VerifierTypeWrapper.Null)
 				{
-					TypeWrapper tw = ClassLoaderWrapper.LoadClassNoThrow(thisType.GetClassLoader(), name, true);
+					TypeWrapper tw = thisType.GetClassLoader().LoadClass(name, LoadMode.Link | LoadMode.WarnClassNotFound);
 #if !STATIC_COMPILER && !FIRST_PASS
 					if(!tw.IsUnloadable)
 					{
