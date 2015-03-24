@@ -910,7 +910,7 @@ namespace IKVM.Internal
 			{
 				return Type.EmptyTypes;
 			}
-			TypeWrapper[] wrappers = ArgTypeWrapperListFromSig(sig);
+			TypeWrapper[] wrappers = ArgTypeWrapperListFromSig(sig, LoadMode.LoadOrThrow);
 			Type[] types = new Type[wrappers.Length];
 			for(int i = 0; i < wrappers.Length; i++)
 			{
@@ -983,46 +983,16 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal TypeWrapper FieldTypeWrapperFromSig(string sig)
-		{
-			return FieldTypeWrapperFromSig(sig, LoadMode.LoadOrThrow);
-		}
-
-		internal TypeWrapper FieldTypeWrapperFromSigNoThrow(string sig)
-		{
-			return FieldTypeWrapperFromSig(sig, LoadMode.Link);
-		}
-
 		internal TypeWrapper FieldTypeWrapperFromSig(string sig, LoadMode mode)
 		{
 			int index = 0;
 			return SigDecoderWrapper(ref index, sig, mode);
 		}
 
-		internal TypeWrapper RetTypeWrapperFromSig(string sig)
-		{
-			return RetTypeWrapperFromSig(sig, LoadMode.LoadOrThrow);
-		}
-
-		internal TypeWrapper RetTypeWrapperFromSigNoThrow(string sig)
-		{
-			return RetTypeWrapperFromSig(sig, LoadMode.Link);
-		}
-
 		internal TypeWrapper RetTypeWrapperFromSig(string sig, LoadMode mode)
 		{
 			int index = sig.IndexOf(')') + 1;
 			return SigDecoderWrapper(ref index, sig, mode);
-		}
-
-		internal TypeWrapper[] ArgTypeWrapperListFromSig(string sig)
-		{
-			return ArgTypeWrapperListFromSig(sig, LoadMode.LoadOrThrow);
-		}
-
-		internal TypeWrapper[] ArgTypeWrapperListFromSigNoThrow(string sig)
-		{
-			return ArgTypeWrapperListFromSig(sig, LoadMode.Link);
 		}
 
 		internal TypeWrapper[] ArgTypeWrapperListFromSig(string sig, LoadMode mode)

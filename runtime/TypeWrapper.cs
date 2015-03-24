@@ -230,7 +230,7 @@ namespace IKVM.Internal
 		private static void GetAttributeArgsAndTypes(ClassLoaderWrapper loader, IKVM.Internal.MapXml.Attribute attr, out Type[] argTypes, out object[] args)
 		{
 			// TODO add error handling
-			TypeWrapper[] twargs = loader.ArgTypeWrapperListFromSigNoThrow(attr.Sig);
+			TypeWrapper[] twargs = loader.ArgTypeWrapperListFromSig(attr.Sig, LoadMode.Link);
 			argTypes = new Type[twargs.Length];
 			args = new object[argTypes.Length];
 			for(int i = 0; i < twargs.Length; i++)
@@ -239,7 +239,7 @@ namespace IKVM.Internal
 				TypeWrapper tw = twargs[i];
 				if(tw == CoreClasses.java.lang.Object.Wrapper)
 				{
-					tw = loader.FieldTypeWrapperFromSigNoThrow(attr.Params[i].Sig);
+					tw = loader.FieldTypeWrapperFromSig(attr.Params[i].Sig, LoadMode.Link);
 				}
 				if(tw.IsArray)
 				{
@@ -287,7 +287,7 @@ namespace IKVM.Internal
 					for(int i = 0; i < namedProperties.Length; i++)
 					{
 						namedProperties[i] = t.GetProperty(attr.Properties[i].Name);
-						propertyValues[i] = ParseValue(loader, loader.FieldTypeWrapperFromSigNoThrow(attr.Properties[i].Sig), attr.Properties[i].Value);
+						propertyValues[i] = ParseValue(loader, loader.FieldTypeWrapperFromSig(attr.Properties[i].Sig, LoadMode.Link), attr.Properties[i].Value);
 					}
 				}
 				else
@@ -304,7 +304,7 @@ namespace IKVM.Internal
 					for(int i = 0; i < namedFields.Length; i++)
 					{
 						namedFields[i] = t.GetField(attr.Fields[i].Name);
-						fieldValues[i] = ParseValue(loader, loader.FieldTypeWrapperFromSigNoThrow(attr.Fields[i].Sig), attr.Fields[i].Value);
+						fieldValues[i] = ParseValue(loader, loader.FieldTypeWrapperFromSig(attr.Fields[i].Sig, LoadMode.Link), attr.Fields[i].Value);
 					}
 				}
 				else
@@ -333,7 +333,7 @@ namespace IKVM.Internal
 						FieldWrapper fw = t.GetFieldWrapper(attr.Fields[i].Name, attr.Fields[i].Sig);
 						fw.Link();
 						namedFields[i] = fw.GetField();
-						fieldValues[i] = ParseValue(loader, loader.FieldTypeWrapperFromSigNoThrow(attr.Fields[i].Sig), attr.Fields[i].Value);
+						fieldValues[i] = ParseValue(loader, loader.FieldTypeWrapperFromSig(attr.Fields[i].Sig, LoadMode.Link), attr.Fields[i].Value);
 					}
 				}
 				else
@@ -1630,7 +1630,7 @@ namespace IKVM.Internal
 			{
 				try
 				{
-					return loader.RetTypeWrapperFromSig(annotationClass.Replace('/', '.')).Annotation;
+					return loader.RetTypeWrapperFromSig(annotationClass.Replace('/', '.'), LoadMode.LoadOrThrow).Annotation;
 				}
 				catch (RetargetableJavaException)
 				{
@@ -1659,7 +1659,7 @@ namespace IKVM.Internal
 #endif
 			if (ClassFile.IsValidFieldSig(annotationClass))
 			{
-				TypeWrapper tw = owner.GetClassLoader().RetTypeWrapperFromSigNoThrow(annotationClass.Replace('/', '.'));
+				TypeWrapper tw = owner.GetClassLoader().RetTypeWrapperFromSig(annotationClass.Replace('/', '.'), LoadMode.Link);
 				// Java allows inaccessible annotations to be used, so when the annotation isn't visible
 				// we fall back to using the DynamicAnnotationAttribute.
 				if (!tw.IsUnloadable && tw.IsAccessibleFrom(owner))
@@ -1725,7 +1725,7 @@ namespace IKVM.Internal
 			else if(targetType == Types.Type)
 			{
 				// TODO check the obj descriptor matches the type we expect
-				return loader.FieldTypeWrapperFromSig(((string)((object[])obj)[1]).Replace('/', '.')).TypeAsTBD;
+				return loader.FieldTypeWrapperFromSig(((string)((object[])obj)[1]).Replace('/', '.'), LoadMode.LoadOrThrow).TypeAsTBD;
 			}
 			else if(targetType.IsArray)
 			{
@@ -4362,7 +4362,7 @@ namespace IKVM.Internal
 				// as object (not as arrays of object)
 				if(type.IsArray)
 				{
-					type = GetClassLoader().FieldTypeWrapperFromSig(sigtype);
+					type = GetClassLoader().FieldTypeWrapperFromSig(sigtype, LoadMode.LoadOrThrow);
 				}
 				else if(type.IsPrimitive)
 				{

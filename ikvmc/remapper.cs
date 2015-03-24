@@ -1224,7 +1224,7 @@ namespace IKVM.Internal.MapXml
 
 		internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
 		{
-			ilgen.Emit(OpCodes.Ldelema, context.ClassLoader.FieldTypeWrapperFromSig(Sig).TypeAsArrayType);
+			ilgen.Emit(OpCodes.Ldelema, context.ClassLoader.FieldTypeWrapperFromSig(Sig, LoadMode.LoadOrThrow).TypeAsArrayType);
 		}
 	}
 
@@ -1236,7 +1236,7 @@ namespace IKVM.Internal.MapXml
 
 		internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
 		{
-			ilgen.Emit(OpCodes.Newarr, context.ClassLoader.FieldTypeWrapperFromSig(Sig).TypeAsArrayType);
+			ilgen.Emit(OpCodes.Newarr, context.ClassLoader.FieldTypeWrapperFromSig(Sig, LoadMode.LoadOrThrow).TypeAsArrayType);
 		}
 	}
 

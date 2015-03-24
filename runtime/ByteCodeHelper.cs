@@ -316,13 +316,13 @@ namespace IKVM.Runtime
 			try
 			{
 				ClassLoaderWrapper loader = ClassLoaderWrapper.FromCallerID(callerID);
-				TypeWrapper[] args = loader.ArgTypeWrapperListFromSig(sig);
+				TypeWrapper[] args = loader.ArgTypeWrapperListFromSig(sig, LoadMode.LoadOrThrow);
 				java.lang.Class[] ptypes = new java.lang.Class[args.Length];
 				for (int i = 0; i < ptypes.Length; i++)
 				{
 					ptypes[i] = args[i].ClassObject;
 				}
-				Interlocked.CompareExchange(ref cache, java.lang.invoke.MethodType.methodType(loader.RetTypeWrapperFromSig(sig).ClassObject, ptypes), null);
+				Interlocked.CompareExchange(ref cache, java.lang.invoke.MethodType.methodType(loader.RetTypeWrapperFromSig(sig, LoadMode.LoadOrThrow).ClassObject, ptypes), null);
 			}
 			catch (RetargetableJavaException x)
 			{
@@ -355,7 +355,7 @@ namespace IKVM.Runtime
 					case ClassFile.RefKind.putStatic:
 					case ClassFile.RefKind.getField:
 					case ClassFile.RefKind.putField:
-						java.lang.Class type = ClassLoaderWrapper.FromCallerID(callerID).FieldTypeWrapperFromSig(sig).ClassObject;
+						java.lang.Class type = ClassLoaderWrapper.FromCallerID(callerID).FieldTypeWrapperFromSig(sig, LoadMode.LoadOrThrow).ClassObject;
 						return java.lang.invoke.MethodHandleNatives.linkMethodHandleConstant(callerID.getCallerClass(), kind, refc, name, type);
 					default:
 						java.lang.invoke.MethodType mt = null;
