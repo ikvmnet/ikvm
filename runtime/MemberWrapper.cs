@@ -589,6 +589,11 @@ namespace IKVM.Internal
 
 		internal void Link()
 		{
+			Link(LoadMode.Link);
+		}
+
+		internal void Link(LoadMode mode)
+		{
 			lock(this)
 			{
 				if(parameterTypeWrappers != null)
@@ -597,8 +602,8 @@ namespace IKVM.Internal
 				}
 			}
 			ClassLoaderWrapper loader = this.DeclaringType.GetClassLoader();
-			TypeWrapper ret = loader.RetTypeWrapperFromSigNoThrow(Signature);
-			TypeWrapper[] parameters = loader.ArgTypeWrapperListFromSigNoThrow(Signature);
+			TypeWrapper ret = loader.RetTypeWrapperFromSig(Signature, mode);
+			TypeWrapper[] parameters = loader.ArgTypeWrapperListFromSig(Signature, mode);
 			lock(this)
 			{
 				try
@@ -1462,6 +1467,11 @@ namespace IKVM.Internal
 
 		internal void Link()
 		{
+			Link(LoadMode.Link);
+		}
+
+		internal void Link(LoadMode mode)
+		{
 			lock(this)
 			{
 				if(fieldType != null)
@@ -1469,7 +1479,7 @@ namespace IKVM.Internal
 					return;
 				}
 			}
-			TypeWrapper fld = this.DeclaringType.GetClassLoader().FieldTypeWrapperFromSigNoThrow(Signature);
+			TypeWrapper fld = this.DeclaringType.GetClassLoader().FieldTypeWrapperFromSig(Signature, mode);
 			lock(this)
 			{
 				try

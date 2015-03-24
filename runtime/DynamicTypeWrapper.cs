@@ -478,6 +478,7 @@ namespace IKVM.Internal
 			private bool finishInProgress;
 			private MethodBuilder clinitMethod;
 			private MethodBuilder finalizeMethod;
+			private int recursionCount;
 #if STATIC_COMPILER
 			private DynamicTypeWrapper enclosingClassWrapper;
 			private AnnotationBuilder annotationBuilder;
@@ -1711,14 +1712,26 @@ namespace IKVM.Internal
 				// make sure all classes are loaded, before we start finishing the type. During finishing, we
 				// may not run any Java code, because that might result in a request to finish the type that we
 				// are in the process of finishing, and this would be a problem.
-				classFile.Link(wrapper);
-				for (int i = 0; i < fields.Length; i++)
+				// Prevent infinity recursion for broken class loaders by keeping a recursion count and falling
+				// back to late binding if we recurse more than twice.
+				LoadMode mode = System.Threading.Interlocked.Increment(ref recursionCount) > 2
+					? LoadMode.ReturnUnloadable
+					: LoadMode.Link;
+				try
 				{
-					fields[i].Link();
+					classFile.Link(wrapper, mode);
+					for (int i = 0; i < fields.Length; i++)
+					{
+						fields[i].Link(mode);
+					}
+					for (int i = 0; i < methods.Length; i++)
+					{
+						methods[i].Link(mode);
+					}
 				}
-				for (int i = 0; i < methods.Length; i++)
+				finally
 				{
-					methods[i].Link();
+					System.Threading.Interlocked.Decrement(ref recursionCount);
 				}
 				// this is the correct lock, FinishCore doesn't call any user code and mutates global state,
 				// so it needs to be protected by a lock.

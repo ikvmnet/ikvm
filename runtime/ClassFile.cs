@@ -959,7 +959,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal void Link(TypeWrapper thisType)
+		internal void Link(TypeWrapper thisType, LoadMode mode)
 		{
 			// this is not just an optimization, it's required for anonymous classes to be able to refer to themselves
 			((ConstantPoolItemClass)constantpool[this_class]).LinkSelf(thisType);
@@ -967,7 +967,7 @@ namespace IKVM.Internal
 			{
 				if(constantpool[i] != null)
 				{
-					constantpool[i].Link(thisType);
+					constantpool[i].Link(thisType, mode);
 				}
 			}
 		}
@@ -1424,7 +1424,7 @@ namespace IKVM.Internal
 			{
 			}
 
-			internal virtual void Link(TypeWrapper thisType)
+			internal virtual void Link(TypeWrapper thisType, LoadMode mode)
 			{
 			}
 
@@ -1562,11 +1562,11 @@ namespace IKVM.Internal
 				this.typeWrapper = thisType;
 			}
 
-			internal override void Link(TypeWrapper thisType)
+			internal override void Link(TypeWrapper thisType, LoadMode mode)
 			{
 				if(typeWrapper == VerifierTypeWrapper.Null)
 				{
-					TypeWrapper tw = thisType.GetClassLoader().LoadClass(name, LoadMode.Link | LoadMode.WarnClassNotFound);
+					TypeWrapper tw = thisType.GetClassLoader().LoadClass(name, mode | LoadMode.WarnClassNotFound);
 #if !STATIC_COMPILER && !FIRST_PASS
 					if(!tw.IsUnloadable)
 					{
@@ -1677,9 +1677,9 @@ namespace IKVM.Internal
 				clazz.MarkLinkRequired();
 			}
 
-			internal override void Link(TypeWrapper thisType)
+			internal override void Link(TypeWrapper thisType, LoadMode mode)
 			{
-				clazz.Link(thisType);
+				clazz.Link(thisType, mode);
 			}
 
 			internal string Name
@@ -1740,9 +1740,9 @@ namespace IKVM.Internal
 				return fieldTypeWrapper;
 			}
 
-			internal override void Link(TypeWrapper thisType)
+			internal override void Link(TypeWrapper thisType, LoadMode mode)
 			{
-				base.Link(thisType);
+				base.Link(thisType, mode);
 				lock(this)
 				{
 					if(fieldTypeWrapper != null)
@@ -1761,11 +1761,11 @@ namespace IKVM.Internal
 					fw = wrapper.GetFieldWrapper(Name, Signature);
 					if(fw != null)
 					{
-						fw.Link();
+						fw.Link(mode);
 					}
 				}
 				ClassLoaderWrapper classLoader = thisType.GetClassLoader();
-				TypeWrapper fld = classLoader.FieldTypeWrapperFromSigNoThrow(this.Signature);
+				TypeWrapper fld = classLoader.FieldTypeWrapperFromSig(this.Signature, mode);
 				lock(this)
 				{
 					if(fieldTypeWrapper == null)
@@ -1817,9 +1817,9 @@ namespace IKVM.Internal
 				}
 			}
 
-			internal override void Link(TypeWrapper thisType)
+			internal override void Link(TypeWrapper thisType, LoadMode mode)
 			{
-				base.Link(thisType);
+				base.Link(thisType, mode);
 				lock(this)
 				{
 					if(argTypeWrappers != null)
@@ -1828,8 +1828,8 @@ namespace IKVM.Internal
 					}
 				}
 				ClassLoaderWrapper classLoader = thisType.GetClassLoader();
-				TypeWrapper[] args = classLoader.ArgTypeWrapperListFromSigNoThrow(this.Signature);
-				TypeWrapper ret = classLoader.RetTypeWrapperFromSigNoThrow(this.Signature);
+				TypeWrapper[] args = classLoader.ArgTypeWrapperListFromSig(this.Signature, mode);
+				TypeWrapper ret = classLoader.RetTypeWrapperFromSig(this.Signature, mode);
 				lock(this)
 				{
 					if(argTypeWrappers == null)
@@ -1872,16 +1872,16 @@ namespace IKVM.Internal
 			{
 			}
 
-			internal override void Link(TypeWrapper thisType)
+			internal override void Link(TypeWrapper thisType, LoadMode mode)
 			{
-				base.Link(thisType);
+				base.Link(thisType, mode);
 				TypeWrapper wrapper = GetClassType();
 				if(wrapper != null && !wrapper.IsUnloadable)
 				{
 					method = wrapper.GetMethodWrapper(Name, Signature, !ReferenceEquals(Name, StringConstants.INIT));
 					if(method != null)
 					{
-						method.Link();
+						method.Link(mode);
 					}
 					if(Name != StringConstants.INIT
 						&& !thisType.IsInterface
@@ -1892,7 +1892,7 @@ namespace IKVM.Internal
 						invokespecialMethod = thisType.BaseTypeWrapper.GetMethodWrapper(Name, Signature, true);
 						if(invokespecialMethod != null)
 						{
-							invokespecialMethod.Link();
+							invokespecialMethod.Link(mode);
 						}
 					}
 				}
@@ -1905,9 +1905,9 @@ namespace IKVM.Internal
 			{
 			}
 
-			internal override void Link(TypeWrapper thisType)
+			internal override void Link(TypeWrapper thisType, LoadMode mode)
 			{
-				base.Link(thisType);
+				base.Link(thisType, mode);
 				TypeWrapper wrapper = GetClassType();
 				if(wrapper != null)
 				{
@@ -1922,7 +1922,7 @@ namespace IKVM.Internal
 					}
 					if(method != null)
 					{
-						method.Link();
+						method.Link(mode);
 					}
 				}
 			}
@@ -2117,9 +2117,9 @@ namespace IKVM.Internal
 				return cpi.GetClassType();
 			}
 
-			internal override void Link(TypeWrapper thisType)
+			internal override void Link(TypeWrapper thisType, LoadMode mode)
 			{
-				cpi.Link(thisType);
+				cpi.Link(thisType, mode);
 			}
 
 			internal override ConstantType GetConstantType()
@@ -2150,7 +2150,7 @@ namespace IKVM.Internal
 				this.descriptor = String.Intern(descriptor.Replace('/', '.'));
 			}
 
-			internal override void Link(TypeWrapper thisType)
+			internal override void Link(TypeWrapper thisType, LoadMode mode)
 			{
 				lock (this)
 				{
@@ -2160,8 +2160,8 @@ namespace IKVM.Internal
 					}
 				}
 				ClassLoaderWrapper classLoader = thisType.GetClassLoader();
-				TypeWrapper[] args = classLoader.ArgTypeWrapperListFromSigNoThrow(descriptor);
-				TypeWrapper ret = classLoader.RetTypeWrapperFromSigNoThrow(descriptor);
+				TypeWrapper[] args = classLoader.ArgTypeWrapperListFromSig(descriptor, mode);
+				TypeWrapper ret = classLoader.RetTypeWrapperFromSig(descriptor, mode);
 				lock (this)
 				{
 					if (argTypeWrappers == null)
@@ -2220,7 +2220,7 @@ namespace IKVM.Internal
 				descriptor = String.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.descriptor_index).Replace('/', '.'));
 			}
 
-			internal override void Link(TypeWrapper thisType)
+			internal override void Link(TypeWrapper thisType, LoadMode mode)
 			{
 				lock (this)
 				{
@@ -2230,8 +2230,8 @@ namespace IKVM.Internal
 					}
 				}
 				ClassLoaderWrapper classLoader = thisType.GetClassLoader();
-				TypeWrapper[] args = classLoader.ArgTypeWrapperListFromSigNoThrow(descriptor);
-				TypeWrapper ret = classLoader.RetTypeWrapperFromSigNoThrow(descriptor);
+				TypeWrapper[] args = classLoader.ArgTypeWrapperListFromSig(descriptor, mode);
+				TypeWrapper ret = classLoader.RetTypeWrapperFromSig(descriptor, mode);
 				lock (this)
 				{
 					if (argTypeWrappers == null)
