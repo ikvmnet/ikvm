@@ -1714,7 +1714,7 @@ namespace IKVM.Internal
 				// are in the process of finishing, and this would be a problem.
 				// Prevent infinity recursion for broken class loaders by keeping a recursion count and falling
 				// back to late binding if we recurse more than twice.
-				LoadMode mode = System.Threading.Interlocked.Increment(ref recursionCount) > 2
+				LoadMode mode = System.Threading.Interlocked.Increment(ref recursionCount) > 2 || (JVM.DisableEagerClassLoading && wrapper.Name != "sun.reflect.misc.Trampoline")
 					? LoadMode.ReturnUnloadable
 					: LoadMode.Link;
 				try

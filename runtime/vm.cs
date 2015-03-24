@@ -97,6 +97,7 @@ namespace IKVM.Internal
 #if !STUB_GENERATOR
 		internal static bool relaxedVerification = true;
 		internal static bool AllowNonVirtualCalls;
+		internal static readonly bool DisableEagerClassLoading = SafeGetEnvironmentVariable("IKVM_DISABLE_EAGER_CLASS_LOADING") != null;
 #endif
 
 #if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
