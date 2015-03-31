@@ -139,7 +139,7 @@ sealed class BigEndianBinaryReader
 		return BitConverter.ToSingle(BitConverter.GetBytes(ReadInt32()), 0);
 	}
 
-	internal string ReadString(string classFile)
+	internal string ReadString(string classFile, int majorVersion)
 	{
 		int len = ReadUInt16();
 		if(end - pos < len)
@@ -178,7 +178,7 @@ sealed class BigEndianBinaryReader
 								goto default;
 							}
 							c = (((c & 0x1F) << 6) | (char2 & 0x3F));
-							if(c < 0x80 && c != 0)
+							if(c < 0x80 && c != 0 && majorVersion >= 48)
 							{
 								goto default;
 							}
@@ -192,13 +192,13 @@ sealed class BigEndianBinaryReader
 								goto default;
 							}
 							c = (((c & 0x0F) << 12) | ((char2 & 0x3F) << 6) | ((char3 & 0x3F) << 0));
-							if(c < 0x800)
+							if(c < 0x800 && majorVersion >= 48)
 							{
 								goto default;
 							}
 							break;
 						default:
-							throw new ClassFormatError("Illegal UTF8 string in constant pool in class file {0}", classFile);
+							throw new ClassFormatError("Illegal UTF8 string in constant pool in class file {0}", classFile ?? "<Unknown>");
 					}
 					ch[l++] = (char)c;
 				}

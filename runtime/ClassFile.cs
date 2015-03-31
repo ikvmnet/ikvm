@@ -145,7 +145,7 @@ namespace IKVM.Internal
 						br.Skip(2);
 						break;
 					case Constant.Utf8:
-						isstub |= (utf8_cp[i] = br.ReadString("<unknown>")) == "IKVM.NET.Assembly";
+						isstub |= (utf8_cp[i] = br.ReadString(null, majorVersion)) == "IKVM.NET.Assembly";
 						break;
 					default:
 						throw new ClassFormatError("Illegal constant pool type 0x{0:X}", tag);
@@ -239,7 +239,7 @@ namespace IKVM.Internal
 							constantpool[i] = new ConstantPoolItemString(br);
 							break;
 						case Constant.Utf8:
-							utf8_cp[i] = br.ReadString(inputClassName);
+							utf8_cp[i] = br.ReadString(inputClassName, majorVersion);
 							break;
 						default:
 							throw new ClassFormatError("{0} (Illegal constant pool type 0x{1:X})", inputClassName, tag);
