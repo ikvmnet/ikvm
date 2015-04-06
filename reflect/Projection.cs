@@ -208,7 +208,7 @@ namespace IKVM.Reflection
 				if (mapping != null)
 				{
 					typeRefs[i].ResolutionScope = assemblyRefTokens[(int)mapping.Assembly];
-					typeRefs[i].TypeNameSpace = GetString(mapping.TypeNamespace);
+					typeRefs[i].TypeNamespace = GetString(mapping.TypeNamespace);
 					typeRefs[i].TypeName = GetString(mapping.TypeName);
 					projectedTypeRefs[i] = true;
 				}
@@ -432,7 +432,7 @@ namespace IKVM.Reflection
 
 		private TypeName GetTypeRefName(int index)
 		{
-			return new TypeName(module.GetString(module.TypeRef.records[index].TypeNameSpace), module.GetString(module.TypeRef.records[index].TypeName));
+			return new TypeName(module.GetString(module.TypeRef.records[index].TypeNamespace), module.GetString(module.TypeRef.records[index].TypeName));
 		}
 
 		private TypeName GetTypeDefName(int index)

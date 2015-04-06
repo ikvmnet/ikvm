@@ -910,7 +910,7 @@ namespace IKVM.Reflection.Emit
 					}
 					rec.TypeName = this.Strings.Add(type.__Name);
 					string ns = type.__Namespace;
-					rec.TypeNameSpace = ns == null ? 0 : this.Strings.Add(ns);
+					rec.TypeNamespace = ns == null ? 0 : this.Strings.Add(ns);
 					token = 0x01000000 | this.TypeRef.AddRecord(rec);
 				}
 				typeTokens.Add(type, token);
@@ -1605,7 +1605,7 @@ namespace IKVM.Reflection.Emit
 			TypeRefTable.Record rec = new TypeRefTable.Record();
 			rec.ResolutionScope = resolutionScope;
 			rec.TypeName = this.Strings.Add(name);
-			rec.TypeNameSpace = ns == null ? 0 : this.Strings.Add(ns);
+			rec.TypeNamespace = ns == null ? 0 : this.Strings.Add(ns);
 			return 0x01000000 | this.TypeRef.AddRecord(rec);
 		}
 

@@ -618,7 +618,7 @@ namespace IKVM.Reflection.Metadata
 		{
 			internal int ResolutionScope;
 			internal int TypeName;
-			internal int TypeNameSpace;
+			internal int TypeNamespace;
 		}
 
 		internal override void Read(MetadataReader mr)
@@ -627,7 +627,7 @@ namespace IKVM.Reflection.Metadata
 			{
 				records[i].ResolutionScope = mr.ReadResolutionScope();
 				records[i].TypeName = mr.ReadStringIndex();
-				records[i].TypeNameSpace = mr.ReadStringIndex();
+				records[i].TypeNamespace = mr.ReadStringIndex();
 			}
 		}
 
@@ -637,7 +637,7 @@ namespace IKVM.Reflection.Metadata
 			{
 				mw.WriteResolutionScope(records[i].ResolutionScope);
 				mw.WriteStringIndex(records[i].TypeName);
-				mw.WriteStringIndex(records[i].TypeNameSpace);
+				mw.WriteStringIndex(records[i].TypeNamespace);
 			}
 		}
 
