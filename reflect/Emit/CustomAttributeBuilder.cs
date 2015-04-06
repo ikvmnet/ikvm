@@ -668,5 +668,85 @@ namespace IKVM.Reflection.Emit
 			bw.WriteCustomAttributeBlob();
 			return bb.ToArray();
 		}
+
+		internal KnownCA KnownCA
+		{
+			get
+			{
+				TypeName typeName = con.DeclaringType.TypeName;
+				switch (typeName.Namespace)
+				{
+					case "System":
+						switch (typeName.Name)
+						{
+							case "SerializableAttribute":
+								return KnownCA.SerializableAttribute;
+							case "NonSerializedAttribute":
+								return KnownCA.NonSerializedAttribute;
+						}
+						break;
+					case "System.Runtime.CompilerServices":
+						switch (typeName.Name)
+						{
+							case "MethodImplAttribute":
+								return KnownCA.MethodImplAttribute;
+							case "SpecialNameAttribute":
+								return KnownCA.SpecialNameAttribute;
+						}
+						break;
+					case "System.Runtime.InteropServices":
+						switch (typeName.Name)
+						{
+							case "DllImportAttribute":
+								return KnownCA.DllImportAttribute;
+							case "ComImportAttribute":
+								return KnownCA.ComImportAttribute;
+							case "MarshalAsAttribute":
+								return KnownCA.MarshalAsAttribute;
+							case "PreserveSigAttribute":
+								return KnownCA.PreserveSigAttribute;
+							case "InAttribute":
+								return KnownCA.InAttribute;
+							case "OutAttribute":
+								return KnownCA.OutAttribute;
+							case "OptionalAttribute":
+								return KnownCA.OptionalAttribute;
+							case "StructLayoutAttribute":
+								return KnownCA.StructLayoutAttribute;
+							case "FieldOffsetAttribute":
+								return KnownCA.FieldOffsetAttribute;
+						}
+						break;
+				}
+				if (typeName.Matches("System.Security.SuppressUnmanagedCodeSecurityAttribute"))
+				{
+					return KnownCA.SuppressUnmanagedCodeSecurityAttribute;
+				}
+				return KnownCA.Unknown;
+			}
+		}
+	}
+
+	// These are the pseudo-custom attributes that are recognized by name by the runtime (i.e. the type identity is not considered).
+	// The corresponding list in the runtime is at https://github.com/dotnet/coreclr/blob/1afe5ce4f45045d724a4e129df4b816655d486fb/src/md/compiler/custattr_emit.cpp#L38
+	// Note that we only need to handle a subset of the types, since we don't need the ones that are only used for validation by the runtime.
+	enum KnownCA
+	{
+		Unknown,
+		DllImportAttribute,
+		ComImportAttribute,
+		SerializableAttribute,
+		NonSerializedAttribute,
+		MethodImplAttribute,
+		MarshalAsAttribute,
+		PreserveSigAttribute,
+		InAttribute,
+		OutAttribute,
+		OptionalAttribute,
+		StructLayoutAttribute,
+		FieldOffsetAttribute,
+		SpecialNameAttribute,
+		// the following is not part of the runtime known custom attributes, but we handle it here for efficiency and convenience
+		SuppressUnmanagedCodeSecurityAttribute,
 	}
 }

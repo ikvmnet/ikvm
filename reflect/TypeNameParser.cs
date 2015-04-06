@@ -87,6 +87,21 @@ namespace IKVM.Reflection
 			return this == other;
 		}
 
+		internal bool Matches(string fullName)
+		{
+			if (ns == null)
+			{
+				return name == fullName;
+			}
+			if (ns.Length + 1 + name.Length == fullName.Length)
+			{
+				return fullName.StartsWith(ns, StringComparison.Ordinal)
+					&& fullName[ns.Length] == '.'
+					&& fullName.EndsWith(name, StringComparison.Ordinal);
+			}
+			return false;
+		}
+
 		internal TypeName ToLowerInvariant()
 		{
 			return new TypeName(ns == null ? null : ns.ToLowerInvariant(), name.ToLowerInvariant());

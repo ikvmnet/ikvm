@@ -255,32 +255,27 @@ namespace IKVM.Reflection.Emit
 
 		public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
 		{
-			Universe u = this.ModuleBuilder.universe;
-			Type type = customBuilder.Constructor.DeclaringType;
-			if (type == u.System_Runtime_InteropServices_DllImportAttribute)
+			switch (customBuilder.KnownCA)
 			{
-				attributes |= MethodAttributes.PinvokeImpl;
-				SetDllImportPseudoCustomAttribute(customBuilder.DecodeBlob(this.Module.Assembly));
-			}
-			else if (type == u.System_Runtime_CompilerServices_MethodImplAttribute)
-			{
-				SetMethodImplAttribute(customBuilder.DecodeBlob(this.Module.Assembly));
-			}
-			else if (type == u.System_Runtime_InteropServices_PreserveSigAttribute)
-			{
-				implFlags |= MethodImplAttributes.PreserveSig;
-			}
-			else if (type == u.System_Runtime_CompilerServices_SpecialNameAttribute)
-			{
-				attributes |= MethodAttributes.SpecialName;
-			}
-			else
-			{
-				if (type == u.System_Security_SuppressUnmanagedCodeSecurityAttribute)
-				{
+				case KnownCA.DllImportAttribute:
+					SetDllImportPseudoCustomAttribute(customBuilder.DecodeBlob(this.Module.Assembly));
+					attributes |= MethodAttributes.PinvokeImpl;
+					break;
+				case KnownCA.MethodImplAttribute:
+					SetMethodImplAttribute(customBuilder.DecodeBlob(this.Module.Assembly));
+					break;
+				case KnownCA.PreserveSigAttribute:
+					implFlags |= MethodImplAttributes.PreserveSig;
+					break;
+				case KnownCA.SpecialNameAttribute:
+					attributes |= MethodAttributes.SpecialName;
+					break;
+				case KnownCA.SuppressUnmanagedCodeSecurityAttribute:
 					attributes |= MethodAttributes.HasSecurity;
-				}
-				this.ModuleBuilder.SetCustomAttribute(pseudoToken, customBuilder);
+					goto default;
+				default:
+					this.ModuleBuilder.SetCustomAttribute(pseudoToken, customBuilder);
+					break;
 			}
 		}
 

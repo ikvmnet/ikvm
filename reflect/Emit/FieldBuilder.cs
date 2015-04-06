@@ -124,28 +124,24 @@ namespace IKVM.Reflection.Emit
 
 		public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
 		{
-			Universe u = this.Module.universe;
-			if (customBuilder.Constructor.DeclaringType == u.System_Runtime_InteropServices_FieldOffsetAttribute)
+			switch (customBuilder.KnownCA)
 			{
-				customBuilder = customBuilder.DecodeBlob(this.Module.Assembly);
-				SetOffset((int)customBuilder.GetConstructorArgument(0));
-			}
-			else if (customBuilder.Constructor.DeclaringType == u.System_Runtime_InteropServices_MarshalAsAttribute)
-			{
-				FieldMarshal.SetMarshalAsAttribute(typeBuilder.ModuleBuilder, pseudoToken, customBuilder);
-				attribs |= FieldAttributes.HasFieldMarshal;
-			}
-			else if (customBuilder.Constructor.DeclaringType == u.System_NonSerializedAttribute)
-			{
-				attribs |= FieldAttributes.NotSerialized;
-			}
-			else if (customBuilder.Constructor.DeclaringType == u.System_Runtime_CompilerServices_SpecialNameAttribute)
-			{
-				attribs |= FieldAttributes.SpecialName;
-			}
-			else
-			{
-				typeBuilder.ModuleBuilder.SetCustomAttribute(pseudoToken, customBuilder);
+				case KnownCA.FieldOffsetAttribute:
+					SetOffset((int)customBuilder.DecodeBlob(this.Module.Assembly).GetConstructorArgument(0));
+					break;
+				case KnownCA.MarshalAsAttribute:
+					FieldMarshal.SetMarshalAsAttribute(typeBuilder.ModuleBuilder, pseudoToken, customBuilder);
+					attribs |= FieldAttributes.HasFieldMarshal;
+					break;
+				case KnownCA.NonSerializedAttribute:
+					attribs |= FieldAttributes.NotSerialized;
+					break;
+				case KnownCA.SpecialNameAttribute:
+					attribs |= FieldAttributes.SpecialName;
+					break;
+				default:
+					typeBuilder.ModuleBuilder.SetCustomAttribute(pseudoToken, customBuilder);
+					break;
 			}
 		}
 

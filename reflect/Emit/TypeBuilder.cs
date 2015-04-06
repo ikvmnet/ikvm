@@ -611,31 +611,26 @@ namespace IKVM.Reflection.Emit
 
 		public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
 		{
-			Universe u = this.ModuleBuilder.universe;
-			Type type = customBuilder.Constructor.DeclaringType;
-			if (type == u.System_Runtime_InteropServices_StructLayoutAttribute)
+			switch (customBuilder.KnownCA)
 			{
-				SetStructLayoutPseudoCustomAttribute(customBuilder.DecodeBlob(this.Assembly));
-			}
-			else if (type == u.System_SerializableAttribute)
-			{
-				attribs |= TypeAttributes.Serializable;
-			}
-			else if (type == u.System_Runtime_InteropServices_ComImportAttribute)
-			{
-				attribs |= TypeAttributes.Import;
-			}
-			else if (type == u.System_Runtime_CompilerServices_SpecialNameAttribute)
-			{
-				attribs |= TypeAttributes.SpecialName;
-			}
-			else
-			{
-				if (type == u.System_Security_SuppressUnmanagedCodeSecurityAttribute)
-				{
+				case KnownCA.StructLayoutAttribute:
+					SetStructLayoutPseudoCustomAttribute(customBuilder.DecodeBlob(this.Assembly));
+					break;
+				case KnownCA.SerializableAttribute:
+					attribs |= TypeAttributes.Serializable;
+					break;
+				case KnownCA.ComImportAttribute:
+					attribs |= TypeAttributes.Import;
+					break;
+				case KnownCA.SpecialNameAttribute:
+					attribs |= TypeAttributes.SpecialName;
+					break;
+				case KnownCA.SuppressUnmanagedCodeSecurityAttribute:
 					attribs |= TypeAttributes.HasSecurity;
-				}
-				this.ModuleBuilder.SetCustomAttribute(token, customBuilder);
+					goto default;
+				default:
+					this.ModuleBuilder.SetCustomAttribute(token, customBuilder);
+					break;
 			}
 		}
 

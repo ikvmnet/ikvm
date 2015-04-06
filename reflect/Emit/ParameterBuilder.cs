@@ -96,27 +96,24 @@ namespace IKVM.Reflection.Emit
 
 		public void SetCustomAttribute(CustomAttributeBuilder customAttributeBuilder)
 		{
-			Universe u = moduleBuilder.universe;
-			if (customAttributeBuilder.Constructor.DeclaringType == u.System_Runtime_InteropServices_InAttribute)
+			switch (customAttributeBuilder.KnownCA)
 			{
-				flags |= (short)ParameterAttributes.In;
-			}
-			else if (customAttributeBuilder.Constructor.DeclaringType == u.System_Runtime_InteropServices_OutAttribute)
-			{
-				flags |= (short)ParameterAttributes.Out;
-			}
-			else if (customAttributeBuilder.Constructor.DeclaringType == u.System_Runtime_InteropServices_OptionalAttribute)
-			{
-				flags |= (short)ParameterAttributes.Optional;
-			}
-			else if (customAttributeBuilder.Constructor.DeclaringType == u.System_Runtime_InteropServices_MarshalAsAttribute)
-			{
-				FieldMarshal.SetMarshalAsAttribute(moduleBuilder, PseudoToken, customAttributeBuilder);
-				flags |= (short)ParameterAttributes.HasFieldMarshal;
-			}
-			else
-			{
-				moduleBuilder.SetCustomAttribute(PseudoToken, customAttributeBuilder);
+				case KnownCA.InAttribute:
+					flags |= (short)ParameterAttributes.In;
+					break;
+				case KnownCA.OutAttribute:
+					flags |= (short)ParameterAttributes.Out;
+					break;
+				case KnownCA.OptionalAttribute:
+					flags |= (short)ParameterAttributes.Optional;
+					break;
+				case KnownCA.MarshalAsAttribute:
+					FieldMarshal.SetMarshalAsAttribute(moduleBuilder, PseudoToken, customAttributeBuilder);
+					flags |= (short)ParameterAttributes.HasFieldMarshal;
+					break;
+				default:
+					moduleBuilder.SetCustomAttribute(PseudoToken, customAttributeBuilder);
+					break;
 			}
 		}
 
