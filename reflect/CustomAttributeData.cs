@@ -527,8 +527,9 @@ namespace IKVM.Reflection
 				name = null;
 				return false;
 			}
-			ns = Constructor.DeclaringType.__Namespace;
-			name = Constructor.DeclaringType.__Name;
+			TypeName typeName = AttributeType.TypeName;
+			ns = typeName.Namespace;
+			name = typeName.Name;
 			return true;
 		}
 

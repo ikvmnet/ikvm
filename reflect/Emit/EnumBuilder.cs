@@ -39,14 +39,9 @@ namespace IKVM.Reflection.Emit
 			this.fieldBuilder = fieldBuilder;
 		}
 
-		public override string __Name
+		internal override TypeName TypeName
 		{
-			get { return typeBuilder.__Name; }
-		}
-
-		public override string __Namespace
-		{
-			get { return typeBuilder.__Namespace; }
+			get { return typeBuilder.TypeName; }
 		}
 
 		public override string Name

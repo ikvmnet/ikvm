@@ -468,9 +468,7 @@ namespace IKVM.Reflection.Emit
 				// HACK we should *not* set the TypeDefId in this case, but 2.0 and 3.5 peverify gives a warning if it is missing (4.5 doesn't)
 				rec.TypeDefId = type.MetadataToken;
 			}
-			rec.TypeName = this.Strings.Add(type.__Name);
-			string ns = type.__Namespace;
-			rec.TypeNamespace = ns == null ? 0 : this.Strings.Add(ns);
+			SetTypeNameAndTypeNamespace(type.TypeName, out rec.TypeName, out rec.TypeNamespace);
 			if (type.IsNested)
 			{
 				rec.Flags = 0;
@@ -482,6 +480,12 @@ namespace IKVM.Reflection.Emit
 				rec.Implementation = ImportAssemblyRef(type.Assembly);
 			}
 			return 0x27000000 | this.ExportedType.FindOrAddRecord(rec);
+		}
+
+		private void SetTypeNameAndTypeNamespace(TypeName name, out int typeName, out int typeNamespace)
+		{
+			typeName = this.Strings.Add(name.Name);
+			typeNamespace = name.Namespace == null ? 0 : this.Strings.Add(name.Namespace);
 		}
 
 		public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
@@ -650,7 +654,7 @@ namespace IKVM.Reflection.Emit
 		{
 			foreach (Type type in types)
 			{
-				if (type.__Namespace == name.Namespace && type.__Name == name.Name)
+				if (type.TypeName == name)
 				{
 					return type;
 				}
@@ -662,7 +666,7 @@ namespace IKVM.Reflection.Emit
 		{
 			foreach (Type type in types)
 			{
-				if (new TypeName(type.__Namespace, type.__Name).ToLowerInvariant() == lowerCaseName)
+				if (type.TypeName.ToLowerInvariant() == lowerCaseName)
 				{
 					return type;
 				}
@@ -908,9 +912,7 @@ namespace IKVM.Reflection.Emit
 					{
 						rec.ResolutionScope = ImportAssemblyRef(type.Assembly);
 					}
-					rec.TypeName = this.Strings.Add(type.__Name);
-					string ns = type.__Namespace;
-					rec.TypeNamespace = ns == null ? 0 : this.Strings.Add(ns);
+					SetTypeNameAndTypeNamespace(type.TypeName, out rec.TypeName, out rec.TypeNamespace);
 					token = 0x01000000 | this.TypeRef.AddRecord(rec);
 				}
 				typeTokens.Add(type, token);
@@ -1220,9 +1222,7 @@ namespace IKVM.Reflection.Emit
 					rec.Flags = (int)type.Attributes;
 					// LAMESPEC ECMA says that TypeDefId is a row index, but it should be a token
 					rec.TypeDefId = type.MetadataToken;
-					rec.TypeName = this.Strings.Add(type.__Name);
-					string ns = type.__Namespace;
-					rec.TypeNamespace = ns == null ? 0 : this.Strings.Add(ns);
+					SetTypeNameAndTypeNamespace(type.TypeName, out rec.TypeName, out rec.TypeNamespace);
 					if (type.IsNested)
 					{
 						rec.Implementation = declaringTypes[type.DeclaringType];
@@ -1604,8 +1604,7 @@ namespace IKVM.Reflection.Emit
 		{
 			TypeRefTable.Record rec = new TypeRefTable.Record();
 			rec.ResolutionScope = resolutionScope;
-			rec.TypeName = this.Strings.Add(name);
-			rec.TypeNamespace = ns == null ? 0 : this.Strings.Add(ns);
+			SetTypeNameAndTypeNamespace(new TypeName(ns, name), out rec.TypeName, out rec.TypeNamespace);
 			return 0x01000000 | this.TypeRef.AddRecord(rec);
 		}
 

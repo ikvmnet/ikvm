@@ -810,14 +810,9 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 
-		public override string __Name
+		internal override TypeName TypeName
 		{
-			get { return name; }
-		}
-
-		public override string __Namespace
-		{
-			get { return ns; }
+			get { return new TypeName(ns, name); }
 		}
 
 		public override string Name
@@ -1088,14 +1083,9 @@ namespace IKVM.Reflection.Emit
 			get { return underlyingType.BaseType; }
 		}
 
-		public override string __Name
+		internal override TypeName TypeName
 		{
-			get { return underlyingType.__Name; }
-		}
-
-		public override string __Namespace
-		{
-			get { return underlyingType.__Namespace; }
+			get { return underlyingType.TypeName; }
 		}
 
 		public override string Name

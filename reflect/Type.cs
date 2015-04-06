@@ -247,14 +247,19 @@ namespace IKVM.Reflection
 			get { return null; }
 		}
 
-		public virtual string __Name
+		internal virtual TypeName TypeName
 		{
 			get { throw new InvalidOperationException(); }
 		}
 
-		public virtual string __Namespace
+		public string __Name
 		{
-			get { throw new InvalidOperationException(); }
+			get { return TypeName.Name; }
+		}
+
+		public string __Namespace
+		{
+			get { return TypeName.Namespace; }
 		}
 
 		public abstract override string Name
@@ -1064,7 +1069,7 @@ namespace IKVM.Reflection
 		{
 			foreach (Type type in __GetDeclaredTypes())
 			{
-				if (type.__Namespace == name.Namespace && type.__Name == name.Name)
+				if (type.TypeName == name)
 				{
 					return type;
 				}
@@ -1076,7 +1081,7 @@ namespace IKVM.Reflection
 		{
 			foreach (Type type in __GetDeclaredTypes())
 			{
-				if (new TypeName(type.__Namespace, type.__Name).ToLowerInvariant() == lowerCaseName)
+				if (type.TypeName.ToLowerInvariant() == lowerCaseName)
 				{
 					return type;
 				}
@@ -2087,7 +2092,7 @@ namespace IKVM.Reflection
 			if (this.Assembly == this.Universe.Mscorlib
 				|| this.Assembly.GetName().Name.Equals("mscorlib", StringComparison.OrdinalIgnoreCase)
 				// check if mscorlib forwards the type (.NETCore profile reference mscorlib forwards System.Enum and System.ValueType to System.Runtime.dll)
-				|| this.Universe.Mscorlib.FindType(new TypeName(__Namespace, __Name)) == this)
+				|| this.Universe.Mscorlib.FindType(TypeName) == this)
 			{
 				typeFlags = (typeFlags & ~TypeFlags.PotentialEnumOrValueType) | TypeFlags.EnumOrValueType;
 				return true;

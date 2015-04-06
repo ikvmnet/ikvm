@@ -279,7 +279,7 @@ namespace IKVM.Reflection.Reader
 					}
 					else if (!type.IsNestedByFlags)
 					{
-						types.Add(new TypeName(type.__Namespace, type.__Name), type);
+						types.Add(type.TypeName, type);
 					}
 				}
 				// add forwarded types to forwardedTypes dictionary (because Module.GetType(string) should return them)
@@ -583,7 +583,7 @@ namespace IKVM.Reflection.Reader
 			PopulateTypeDef();
 			foreach (Type type in types.Values)
 			{
-				if (new TypeName(type.__Namespace, type.__Name).ToLowerInvariant() == lowerCaseName)
+				if (type.TypeName.ToLowerInvariant() == lowerCaseName)
 				{
 					return type;
 				}

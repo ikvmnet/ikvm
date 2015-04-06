@@ -218,14 +218,9 @@ namespace IKVM.Reflection.Reader
 			return Empty<PropertyInfo>.Array;
 		}
 
-		public override string __Name
+		internal override TypeName TypeName
 		{
-			get { return typeName; }
-		}
-
-		public override string __Namespace
-		{
-			get { return typeNamespace; }
+			get { return new TypeName(typeNamespace, typeName); }
 		}
 
 		public override string Name

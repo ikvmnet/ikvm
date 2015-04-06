@@ -454,14 +454,9 @@ namespace IKVM.Reflection
 			get { return declaringType; }
 		}
 
-		public override string __Name
+		internal override TypeName TypeName
 		{
-			get { return name; }
-		}
-
-		public override string __Namespace
-		{
-			get { return ns; }
+			get { return new TypeName(ns, name); }
 		}
 
 		public override string Name
