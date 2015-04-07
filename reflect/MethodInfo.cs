@@ -109,18 +109,7 @@ namespace IKVM.Reflection
 
 		public bool __TryGetImplMap(out ImplMapFlags mappingFlags, out string importName, out string importScope)
 		{
-			Module module = this.Module;
-			foreach (int i in module.ImplMap.Filter(GetCurrentToken()))
-			{
-				mappingFlags = (ImplMapFlags)(ushort)module.ImplMap.records[i].MappingFlags;
-				importName = module.GetString(module.ImplMap.records[i].ImportName);
-				importScope = module.GetString(module.ModuleRef.records[(module.ImplMap.records[i].ImportScope & 0xFFFFFF) - 1]);
-				return true;
-			}
-			mappingFlags = 0;
-			importName = null;
-			importScope = null;
-			return false;
+			return Module.__TryGetImplMap(GetCurrentToken(), out mappingFlags, out importName, out importScope);
 		}
 
 		public ConstructorInfo __AsConstructorInfo()
