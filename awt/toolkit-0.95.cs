@@ -5540,7 +5540,27 @@ namespace ikvm.awt
                     else if (flavor.isFlavorTextType())
                     {
                         if (contents is string) 
+                        {
                             obj.SetText((string) transferable.getTransferData(flavor));
+                        }
+                        else
+                        {
+                            try
+                            {
+                                java.io.Reader reader = flavor.getReaderForText(transferable);
+                                java.io.StringWriter writer = new java.io.StringWriter();
+                                char[] buffer = new char[1024];
+                                int n;
+                                while ((n = reader.read(buffer)) != -1)
+                                {
+                                    writer.write(buffer, 0, n);
+                                }
+                                obj.SetText(writer.toString());
+                            }
+                            catch
+                            {
+                            }
+                        }
                     }
                     else if (java.awt.datatransfer.DataFlavor.imageFlavor.equals(flavor))
                     {
