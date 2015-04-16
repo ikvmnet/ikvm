@@ -777,12 +777,15 @@ namespace ikvm.awt
 
         protected internal override Object lazilyLoadDesktopProperty(String name)
         {
-            if ("win.defaultGUI.font".Equals(name))
+            switch (name)
             {
-                Font font = Control.DefaultFont;
-                return C2J.ConvertFont(font);
+                case "win.defaultGUI.font":
+                    return C2J.ConvertFont(Control.DefaultFont);
+                case "win.highContrast.on":
+                    return java.lang.Boolean.valueOf(SystemInformation.HighContrast);
+                default:
+                    return null;
             }
-            return null;
         }
 
         protected internal override java.awt.peer.MouseInfoPeer getMouseInfoPeer() {
