@@ -229,7 +229,7 @@
             <arg value="${OpenJDK.dir}/nashorn/src/jdk/nashorn/internal/objects/*.java" />
         </exec>
         <exec program="java" useruntimeengine="false">
-            <arg line="-cp ${OpenJDK.dir}/nashorn/buildtools/nasgen/src" />
+            <arg value="-Xbootclasspath/p:${OpenJDK.dir}/nashorn/buildtools/nasgen/src${pathsep}${OpenJDK.dir}/nashorn/src" />
             <arg value="jdk.nashorn.internal.tools.nasgen.Main" />
             <arg value="${OpenJDK.dir}/nashorn/src" />
             <arg value="jdk.nashorn.internal.objects" />
