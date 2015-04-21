@@ -1246,6 +1246,34 @@ namespace IKVM.Reflection
 			}
 		}
 
+		public bool __IsBuiltIn
+		{
+			get
+			{
+				// [ECMA 335] 8.2.2 Built-in value and reference types
+				Universe u = this.Universe;
+				return this == u.System_Boolean
+					|| this == u.System_Char
+					|| this == u.System_Object
+					|| this == u.System_String
+					|| this == u.System_Single
+					|| this == u.System_Double
+					|| this == u.System_SByte
+					|| this == u.System_Int16
+					|| this == u.System_Int32
+					|| this == u.System_Int64
+					|| this == u.System_IntPtr
+					|| this == u.System_UIntPtr
+					|| this == u.System_TypedReference
+					|| this == u.System_Byte
+					|| this == u.System_UInt16
+					|| this == u.System_UInt32
+					|| this == u.System_UInt64
+					|| this == u.System_Void		// [LAMESPEC] missing from ECMA list for some reason
+					;
+			}
+		}
+
 		public bool IsEnum
 		{
 			get

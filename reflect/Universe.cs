@@ -853,6 +853,55 @@ namespace IKVM.Reflection
 			return parser.GetType(this, context == null ? null : context.ManifestModule, false, assemblyQualifiedTypeName, true, false);
 		}
 
+		public Type GetBuiltInType(string ns, string name)
+		{
+			if (ns != "System")
+			{
+				return null;
+			}
+			switch (name)
+			{
+				case "Boolean":
+					return System_Boolean;
+				case "Char":
+					return System_Char;
+				case "Object":
+					return System_Object;
+				case "String":
+					return System_String;
+				case "Single":
+					return System_Single;
+				case "Double":
+					return System_Double;
+				case "SByte":
+					return System_SByte;
+				case "Int16":
+					return System_Int16;
+				case "Int32":
+					return System_Int32;
+				case "Int64":
+					return System_Int64;
+				case "IntPtr":
+					return System_IntPtr;
+				case "UIntPtr":
+					return System_UIntPtr;
+				case "TypedReference":
+					return System_TypedReference;
+				case "Byte":
+					return System_Byte;
+				case "UInt16":
+					return System_UInt16;
+				case "UInt32":
+					return System_UInt32;
+				case "UInt64":
+					return System_UInt64;
+				case "Void":
+					return System_Void;
+				default:
+					return null;
+			}
+		}
+
 		public Assembly[] GetAssemblies()
 		{
 			Assembly[] array = new Assembly[assemblies.Count + dynamicAssemblies.Count];
