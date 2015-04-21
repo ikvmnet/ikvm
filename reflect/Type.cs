@@ -3212,13 +3212,16 @@ namespace IKVM.Reflection
 	sealed class MarkerType : Type
 	{
 		// used by CustomModifiers and SignatureHelper
-		internal static readonly Type ModOpt = new MarkerType();
-		internal static readonly Type ModReq = new MarkerType();
+		internal static readonly Type ModOpt = new MarkerType(Signature.ELEMENT_TYPE_CMOD_OPT);
+		internal static readonly Type ModReq = new MarkerType(Signature.ELEMENT_TYPE_CMOD_REQD);
 		// used by SignatureHelper
-		internal static readonly Type Sentinel = new MarkerType();
-		internal static readonly Type Pinned = new MarkerType();
+		internal static readonly Type Sentinel = new MarkerType(Signature.SENTINEL);
+		internal static readonly Type Pinned = new MarkerType(Signature.ELEMENT_TYPE_PINNED);
 
-		private MarkerType() { }
+		private MarkerType(byte sigElementType)
+			: base(sigElementType)
+		{
+		}
 
 		public override Type BaseType
 		{

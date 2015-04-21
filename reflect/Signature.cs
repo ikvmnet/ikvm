@@ -578,25 +578,13 @@ namespace IKVM.Reflection
 			}
 			foreach (Type type in args)
 			{
-				if (type == MarkerType.ModOpt)
-				{
-					bb.Write(ELEMENT_TYPE_CMOD_OPT);
-				}
-				else if (type == MarkerType.ModReq)
-				{
-					bb.Write(ELEMENT_TYPE_CMOD_REQD);
-				}
-				else if (type == MarkerType.Sentinel)
-				{
-					bb.Write(SENTINEL);
-				}
-				else if (type == MarkerType.Pinned)
-				{
-					bb.Write(ELEMENT_TYPE_PINNED);
-				}
-				else if (type == null)
+				if (type == null)
 				{
 					bb.Write(ELEMENT_TYPE_VOID);
+				}
+				else if (type is MarkerType)
+				{
+					bb.Write(type.SigElementType);
 				}
 				else
 				{
