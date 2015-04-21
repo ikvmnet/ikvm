@@ -46,7 +46,7 @@ namespace IKVM.Reflection
 		public static readonly Type[] EmptyTypes = Empty<Type>.Array;
 		protected readonly Type underlyingType;
 		protected TypeFlags typeFlags;
-		private byte sigElementType;	// only used if (__IsBuiltIn || HasElementType)
+		private byte sigElementType;	// only used if (__IsBuiltIn || HasElementType || __IsFunctionPointer)
 
 		[Flags]
 		protected enum TypeFlags : ushort
@@ -217,9 +217,9 @@ namespace IKVM.Reflection
 			get { return sigElementType == Signature.ELEMENT_TYPE_PTR; }
 		}
 
-		public virtual bool __IsFunctionPointer
+		public bool __IsFunctionPointer
 		{
-			get { return false; }
+			get { return sigElementType == Signature.ELEMENT_TYPE_FNPTR; }
 		}
 
 		public virtual bool IsValueType
@@ -1258,8 +1258,8 @@ namespace IKVM.Reflection
 		{
 			get
 			{
-				// this property can only be called after __IsBuiltIn or HasElementType returned true
-				System.Diagnostics.Debug.Assert((typeFlags & TypeFlags.BuiltIn) != 0 || HasElementType);
+				// this property can only be called after __IsBuiltIn, HasElementType or __IsFunctionPointer returned true
+				System.Diagnostics.Debug.Assert((typeFlags & TypeFlags.BuiltIn) != 0 || HasElementType || __IsFunctionPointer);
 				return sigElementType;
 			}
 		}
@@ -3139,6 +3139,7 @@ namespace IKVM.Reflection
 		}
 
 		private FunctionPointerType(Universe universe, __StandAloneMethodSig sig)
+			: base(Signature.ELEMENT_TYPE_FNPTR)
 		{
 			this.universe = universe;
 			this.sig = sig;
@@ -3155,11 +3156,6 @@ namespace IKVM.Reflection
 		public override int GetHashCode()
 		{
 			return sig.GetHashCode();
-		}
-
-		public override bool __IsFunctionPointer
-		{
-			get { return true; }
 		}
 
 		public override __StandAloneMethodSig __MethodSignature
