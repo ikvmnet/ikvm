@@ -42,7 +42,18 @@ namespace IKVM.Reflection.Emit
 		private Type baseType;
 		private GenericParameterAttributes attr;
 
-		internal GenericTypeParameterBuilder(string name, TypeBuilder type, MethodBuilder method, int position)
+		internal GenericTypeParameterBuilder(string name, TypeBuilder type, int position)
+			: this(name, type, null, position, Signature.ELEMENT_TYPE_VAR)
+		{
+		}
+
+		internal GenericTypeParameterBuilder(string name, MethodBuilder method, int position)
+			: this(name, null, method, position, Signature.ELEMENT_TYPE_MVAR)
+		{
+		}
+
+		private GenericTypeParameterBuilder(string name, TypeBuilder type, MethodBuilder method, int position, byte sigElementType)
+			: base(sigElementType)
 		{
 			this.name = name;
 			this.type = type;
@@ -109,11 +120,6 @@ namespace IKVM.Reflection.Emit
 		public override Module Module
 		{
 			get { return ModuleBuilder; }
-		}
-
-		public override bool IsGenericParameter
-		{
-			get { return true; }
 		}
 
 		public override int GenericParameterPosition
@@ -658,7 +664,7 @@ namespace IKVM.Reflection.Emit
 			gtpb = new GenericTypeParameterBuilder[names.Length];
 			for (int i = 0; i < names.Length; i++)
 			{
-				gtpb[i] = new GenericTypeParameterBuilder(names[i], this, null, i);
+				gtpb[i] = new GenericTypeParameterBuilder(names[i], this, i);
 			}
 			return (GenericTypeParameterBuilder[])gtpb.Clone();
 		}

@@ -377,7 +377,7 @@ namespace IKVM.Reflection.Emit
 			gtpb = new GenericTypeParameterBuilder[names.Length];
 			for (int i = 0; i < names.Length; i++)
 			{
-				gtpb[i] = new GenericTypeParameterBuilder(names[i], null, this, i);
+				gtpb[i] = new GenericTypeParameterBuilder(names[i], this, i);
 			}
 			return (GenericTypeParameterBuilder[])gtpb.Clone();
 		}

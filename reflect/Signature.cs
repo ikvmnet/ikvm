@@ -371,14 +371,7 @@ namespace IKVM.Reflection
 			}
 			else if (type.IsGenericParameter)
 			{
-				if (type is UnboundGenericMethodParameter || type.DeclaringMethod != null)
-				{
-					bb.Write(ELEMENT_TYPE_MVAR);
-				}
-				else
-				{
-					bb.Write(ELEMENT_TYPE_VAR);
-				}
+				bb.Write(type.SigElementType);
 				bb.WriteCompressedUInt(type.GenericParameterPosition);
 			}
 			else if (!type.__IsMissing && type.IsGenericType)

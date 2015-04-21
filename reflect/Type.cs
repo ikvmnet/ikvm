@@ -46,7 +46,7 @@ namespace IKVM.Reflection
 		public static readonly Type[] EmptyTypes = Empty<Type>.Array;
 		protected readonly Type underlyingType;
 		protected TypeFlags typeFlags;
-		private byte sigElementType;	// only used if (__IsBuiltIn || HasElementType || __IsFunctionPointer)
+		private byte sigElementType;	// only used if (__IsBuiltIn || HasElementType || __IsFunctionPointer || IsGenericParameter)
 
 		[Flags]
 		protected enum TypeFlags : ushort
@@ -233,9 +233,9 @@ namespace IKVM.Reflection
 			}
 		}
 
-		public virtual bool IsGenericParameter
+		public bool IsGenericParameter
 		{
-			get { return false; }
+			get { return sigElementType == Signature.ELEMENT_TYPE_VAR || sigElementType == Signature.ELEMENT_TYPE_MVAR; }
 		}
 
 		public virtual int GenericParameterPosition
@@ -1258,8 +1258,8 @@ namespace IKVM.Reflection
 		{
 			get
 			{
-				// this property can only be called after __IsBuiltIn, HasElementType or __IsFunctionPointer returned true
-				System.Diagnostics.Debug.Assert((typeFlags & TypeFlags.BuiltIn) != 0 || HasElementType || __IsFunctionPointer);
+				// this property can only be called after __IsBuiltIn, HasElementType, __IsFunctionPointer or IsGenericParameter returned true
+				System.Diagnostics.Debug.Assert((typeFlags & TypeFlags.BuiltIn) != 0 || HasElementType || __IsFunctionPointer || IsGenericParameter);
 				return sigElementType;
 			}
 		}
