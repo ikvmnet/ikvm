@@ -340,18 +340,14 @@ namespace IKVM.Reflection
 		{
 			while (type.HasElementType)
 			{
-				if (type.__IsVector)
+				byte sigElementType = type.SigElementType;
+				bb.Write(sigElementType);
+				if (sigElementType == ELEMENT_TYPE_ARRAY)
 				{
-					bb.Write(ELEMENT_TYPE_SZARRAY);
-				}
-				else if (type.IsArray)
-				{
-					int rank = type.GetArrayRank();
-					bb.Write(ELEMENT_TYPE_ARRAY);
 					// LAMESPEC the Type production (23.2.12) doesn't include CustomMod* for arrays, but the verifier allows it and ildasm also supports it
 					WriteCustomModifiers(module, bb, type.__GetCustomModifiers());
 					WriteType(module, bb, type.GetElementType());
-					bb.WriteCompressedUInt(rank);
+					bb.WriteCompressedUInt(type.GetArrayRank());
 					int[] sizes = type.__GetArraySizes();
 					bb.WriteCompressedUInt(sizes.Length);
 					for (int i = 0; i < sizes.Length; i++)
@@ -366,20 +362,12 @@ namespace IKVM.Reflection
 					}
 					return;
 				}
-				else if (type.IsByRef)
-				{
-					bb.Write(ELEMENT_TYPE_BYREF);
-				}
-				else if (type.IsPointer)
-				{
-					bb.Write(ELEMENT_TYPE_PTR);
-				}
 				WriteCustomModifiers(module, bb, type.__GetCustomModifiers());
 				type = type.GetElementType();
 			}
 			if (type.__IsBuiltIn)
 			{
-				bb.Write(type.BuiltInElementType);
+				bb.Write(type.SigElementType);
 			}
 			else if (type.IsGenericParameter)
 			{

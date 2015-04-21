@@ -53,6 +53,11 @@ namespace IKVM.Reflection
 		{
 		}
 
+		internal TypeInfo(byte sigElementType)
+			: base(sigElementType)
+		{
+		}
+
 		public IEnumerable<ConstructorInfo> DeclaredConstructors
 		{
 			get { return GetConstructors(Flags); }

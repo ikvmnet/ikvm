@@ -46,7 +46,7 @@ namespace IKVM.Reflection
 		public static readonly Type[] EmptyTypes = Empty<Type>.Array;
 		protected readonly Type underlyingType;
 		protected TypeFlags typeFlags;
-		private byte elementType;	// only used if __IsBuiltIn returns true
+		private byte sigElementType;	// only used if (__IsBuiltIn || HasElementType)
 
 		[Flags]
 		protected enum TypeFlags : ushort
@@ -92,6 +92,12 @@ namespace IKVM.Reflection
 			System.Diagnostics.Debug.Assert(underlyingType.underlyingType == underlyingType);
 			this.underlyingType = underlyingType;
 			this.typeFlags = underlyingType.typeFlags;
+		}
+
+		internal Type(byte sigElementType)
+			: this()
+		{
+			this.sigElementType = sigElementType;
 		}
 
 		public static Binder DefaultBinder
@@ -186,29 +192,29 @@ namespace IKVM.Reflection
 			get { throw new InvalidOperationException(); }
 		}
 
-		public virtual bool HasElementType
+		public bool HasElementType
 		{
-			get { return false; }
+			get { return IsArray || IsByRef || IsPointer; }
 		}
 
-		public virtual bool IsArray
+		public bool IsArray
 		{
-			get { return false; }
+			get { return sigElementType == Signature.ELEMENT_TYPE_ARRAY || sigElementType == Signature.ELEMENT_TYPE_SZARRAY; }
 		}
 
-		public virtual bool __IsVector
+		public bool __IsVector
 		{
-			get { return false; }
+			get { return sigElementType == Signature.ELEMENT_TYPE_SZARRAY; }
 		}
 
-		public virtual bool IsByRef
+		public bool IsByRef
 		{
-			get { return false; }
+			get { return sigElementType == Signature.ELEMENT_TYPE_BYREF; }
 		}
 
-		public virtual bool IsPointer
+		public bool IsPointer
 		{
-			get { return false; }
+			get { return sigElementType == Signature.ELEMENT_TYPE_PTR; }
 		}
 
 		public virtual bool __IsFunctionPointer
@@ -1233,9 +1239,9 @@ namespace IKVM.Reflection
 			get
 			{
 				return __IsBuiltIn
-					&& ((elementType >= Signature.ELEMENT_TYPE_BOOLEAN && elementType <= Signature.ELEMENT_TYPE_R8)
-						|| elementType == Signature.ELEMENT_TYPE_I
-						|| elementType == Signature.ELEMENT_TYPE_U);
+					&& ((sigElementType >= Signature.ELEMENT_TYPE_BOOLEAN && sigElementType <= Signature.ELEMENT_TYPE_R8)
+						|| sigElementType == Signature.ELEMENT_TYPE_I
+						|| sigElementType == Signature.ELEMENT_TYPE_U);
 			}
 		}
 
@@ -1248,13 +1254,13 @@ namespace IKVM.Reflection
 			}
 		}
 
-		internal byte BuiltInElementType
+		internal byte SigElementType
 		{
 			get
 			{
-				// this property can only be called after __IsBuiltIn returned true
-				System.Diagnostics.Debug.Assert((typeFlags & TypeFlags.BuiltIn) != 0);
-				return elementType;
+				// this property can only be called after __IsBuiltIn or HasElementType returned true
+				System.Diagnostics.Debug.Assert((typeFlags & TypeFlags.BuiltIn) != 0 || HasElementType);
+				return sigElementType;
 			}
 		}
 
@@ -1311,7 +1317,7 @@ namespace IKVM.Reflection
 			if (this == builtIn)
 			{
 				typeFlags |= TypeFlags.BuiltIn;
-				this.elementType = elementType;
+				this.sigElementType = elementType;
 				return true;
 			}
 			return false;
@@ -2263,7 +2269,8 @@ namespace IKVM.Reflection
 		private int token;
 		private readonly CustomModifiers mods;
 
-		protected ElementHolderType(Type elementType, CustomModifiers mods)
+		protected ElementHolderType(Type elementType, CustomModifiers mods, byte sigElementType)
+			: base(sigElementType)
 		{
 			this.elementType = elementType;
 			this.mods = mods;
@@ -2304,11 +2311,6 @@ namespace IKVM.Reflection
 		public sealed override Type GetElementType()
 		{
 			return elementType;
-		}
-
-		public sealed override bool HasElementType
-		{
-			get { return true; }
 		}
 
 		public sealed override Module Module
@@ -2398,7 +2400,7 @@ namespace IKVM.Reflection
 		}
 
 		private ArrayType(Type type, CustomModifiers mods)
-			: base(type, mods)
+			: base(type, mods, Signature.ELEMENT_TYPE_SZARRAY)
 		{
 		}
 
@@ -2436,16 +2438,6 @@ namespace IKVM.Reflection
 		public override TypeAttributes Attributes
 		{
 			get { return TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.Serializable; }
-		}
-
-		public override bool IsArray
-		{
-			get { return true; }
-		}
-
-		public override bool __IsVector
-		{
-			get { return true; }
 		}
 
 		public override int GetArrayRank()
@@ -2486,7 +2478,7 @@ namespace IKVM.Reflection
 		}
 
 		private MultiArrayType(Type type, int rank, int[] sizes, int[] lobounds, CustomModifiers mods)
-			: base(type, mods)
+			: base(type, mods, Signature.ELEMENT_TYPE_ARRAY)
 		{
 			this.rank = rank;
 			this.sizes = sizes;
@@ -2524,11 +2516,6 @@ namespace IKVM.Reflection
 		public override TypeAttributes Attributes
 		{
 			get { return TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.Serializable; }
-		}
-
-		public override bool IsArray
-		{
-			get { return true; }
 		}
 
 		public override int GetArrayRank()
@@ -2710,7 +2697,7 @@ namespace IKVM.Reflection
 		}
 
 		private ByRefType(Type type, CustomModifiers mods)
-			: base(type, mods)
+			: base(type, mods, Signature.ELEMENT_TYPE_BYREF)
 		{
 		}
 
@@ -2734,11 +2721,6 @@ namespace IKVM.Reflection
 			get { return 0; }
 		}
 
-		public override bool IsByRef
-		{
-			get { return true; }
-		}
-
 		internal override string GetSuffix()
 		{
 			return "&";
@@ -2758,7 +2740,7 @@ namespace IKVM.Reflection
 		}
 
 		private PointerType(Type type, CustomModifiers mods)
-			: base(type, mods)
+			: base(type, mods, Signature.ELEMENT_TYPE_PTR)
 		{
 		}
 
@@ -2780,11 +2762,6 @@ namespace IKVM.Reflection
 		public override TypeAttributes Attributes
 		{
 			get { return 0; }
-		}
-
-		public override bool IsPointer
-		{
-			get { return true; }
 		}
 
 		internal override string GetSuffix()
