@@ -277,7 +277,7 @@ namespace IKVM.Reflection.Emit
 			this.name = name;
 			this.typeNameSpace = ns == null ? 0 : this.ModuleBuilder.Strings.Add(ns);
 			this.typeName = this.ModuleBuilder.Strings.Add(name);
-			MarkEnumOrValueType(ns, name);
+			MarkKnownType(ns, name);
 		}
 
 		public ConstructorBuilder DefineDefaultConstructor(MethodAttributes attributes)

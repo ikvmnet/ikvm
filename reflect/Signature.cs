@@ -377,78 +377,9 @@ namespace IKVM.Reflection
 				WriteCustomModifiers(module, bb, type.__GetCustomModifiers());
 				type = type.GetElementType();
 			}
-			Universe u = module.universe;
-			if (type == u.System_Void)
+			if (type.__IsBuiltIn)
 			{
-				bb.Write(ELEMENT_TYPE_VOID);
-			}
-			else if (type == u.System_Int32)
-			{
-				bb.Write(ELEMENT_TYPE_I4);
-			}
-			else if (type == u.System_Boolean)
-			{
-				bb.Write(ELEMENT_TYPE_BOOLEAN);
-			}
-			else if (type == u.System_String)
-			{
-				bb.Write(ELEMENT_TYPE_STRING);
-			}
-			else if (type == u.System_Char)
-			{
-				bb.Write(ELEMENT_TYPE_CHAR);
-			}
-			else if (type == u.System_SByte)
-			{
-				bb.Write(ELEMENT_TYPE_I1);
-			}
-			else if (type == u.System_Byte)
-			{
-				bb.Write(ELEMENT_TYPE_U1);
-			}
-			else if (type == u.System_Int16)
-			{
-				bb.Write(ELEMENT_TYPE_I2);
-			}
-			else if (type == u.System_UInt16)
-			{
-				bb.Write(ELEMENT_TYPE_U2);
-			}
-			else if (type == u.System_UInt32)
-			{
-				bb.Write(ELEMENT_TYPE_U4);
-			}
-			else if (type == u.System_Int64)
-			{
-				bb.Write(ELEMENT_TYPE_I8);
-			}
-			else if (type == u.System_UInt64)
-			{
-				bb.Write(ELEMENT_TYPE_U8);
-			}
-			else if (type == u.System_Single)
-			{
-				bb.Write(ELEMENT_TYPE_R4);
-			}
-			else if (type == u.System_Double)
-			{
-				bb.Write(ELEMENT_TYPE_R8);
-			}
-			else if (type == u.System_IntPtr)
-			{
-				bb.Write(ELEMENT_TYPE_I);
-			}
-			else if (type == u.System_UIntPtr)
-			{
-				bb.Write(ELEMENT_TYPE_U);
-			}
-			else if (type == u.System_TypedReference)
-			{
-				bb.Write(ELEMENT_TYPE_TYPEDBYREF);
-			}
-			else if (type == u.System_Object)
-			{
-				bb.Write(ELEMENT_TYPE_OBJECT);
+				bb.Write(type.BuiltInElementType);
 			}
 			else if (type.IsGenericParameter)
 			{

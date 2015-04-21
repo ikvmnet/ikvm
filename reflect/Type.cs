@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2009-2013 Jeroen Frijters
+  Copyright (C) 2009-2015 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -46,9 +46,10 @@ namespace IKVM.Reflection
 		public static readonly Type[] EmptyTypes = Empty<Type>.Array;
 		protected readonly Type underlyingType;
 		protected TypeFlags typeFlags;
+		private byte elementType;	// only used if __IsBuiltIn returns true
 
 		[Flags]
-		protected enum TypeFlags
+		protected enum TypeFlags : ushort
 		{
 			// for use by TypeBuilder or TypeDefImpl
 			IsGenericTypeDefinition = 1,
@@ -74,6 +75,10 @@ namespace IKVM.Reflection
 			ContainsMissingType_Yes = 512,
 			ContainsMissingType_No = 256 | 512,
 			ContainsMissingType_Mask = 256 | 512,
+
+			// built-in type support
+			PotentialBuiltIn = 1024,
+			BuiltIn = 2048,
 		}
 
 		// prevent subclassing by outsiders
@@ -1227,22 +1232,10 @@ namespace IKVM.Reflection
 		{
 			get
 			{
-				Universe u = this.Universe;
-				return this == u.System_Boolean
-					|| this == u.System_Byte
-					|| this == u.System_SByte
-					|| this == u.System_Int16
-					|| this == u.System_UInt16
-					|| this == u.System_Int32
-					|| this == u.System_UInt32
-					|| this == u.System_Int64
-					|| this == u.System_UInt64
-					|| this == u.System_IntPtr
-					|| this == u.System_UIntPtr
-					|| this == u.System_Char
-					|| this == u.System_Double
-					|| this == u.System_Single
-					;
+				return __IsBuiltIn
+					&& ((elementType >= Signature.ELEMENT_TYPE_BOOLEAN && elementType <= Signature.ELEMENT_TYPE_R8)
+						|| elementType == Signature.ELEMENT_TYPE_I
+						|| elementType == Signature.ELEMENT_TYPE_U);
 			}
 		}
 
@@ -1250,28 +1243,78 @@ namespace IKVM.Reflection
 		{
 			get
 			{
-				// [ECMA 335] 8.2.2 Built-in value and reference types
-				Universe u = this.Universe;
-				return this == u.System_Boolean
-					|| this == u.System_Char
-					|| this == u.System_Object
-					|| this == u.System_String
-					|| this == u.System_Single
-					|| this == u.System_Double
-					|| this == u.System_SByte
-					|| this == u.System_Int16
-					|| this == u.System_Int32
-					|| this == u.System_Int64
-					|| this == u.System_IntPtr
-					|| this == u.System_UIntPtr
-					|| this == u.System_TypedReference
-					|| this == u.System_Byte
-					|| this == u.System_UInt16
-					|| this == u.System_UInt32
-					|| this == u.System_UInt64
-					|| this == u.System_Void		// [LAMESPEC] missing from ECMA list for some reason
-					;
+				return (typeFlags & (TypeFlags.BuiltIn | TypeFlags.PotentialBuiltIn)) != 0
+					&& ((typeFlags & TypeFlags.BuiltIn) != 0 || ResolvePotentialBuiltInType());
 			}
+		}
+
+		internal byte BuiltInElementType
+		{
+			get
+			{
+				// this property can only be called after __IsBuiltIn returned true
+				System.Diagnostics.Debug.Assert((typeFlags & TypeFlags.BuiltIn) != 0);
+				return elementType;
+			}
+		}
+
+		private bool ResolvePotentialBuiltInType()
+		{
+			// [ECMA 335] 8.2.2 Built-in value and reference types
+			typeFlags &= ~TypeFlags.PotentialBuiltIn;
+			Universe u = this.Universe;
+			switch (__Name)
+			{
+				case "Boolean":
+					return ResolvePotentialBuiltInType(u.System_Boolean, Signature.ELEMENT_TYPE_BOOLEAN);
+				case "Char":
+					return ResolvePotentialBuiltInType(u.System_Char, Signature.ELEMENT_TYPE_CHAR);
+				case "Object":
+					return ResolvePotentialBuiltInType(u.System_Object, Signature.ELEMENT_TYPE_OBJECT);
+				case "String":
+					return ResolvePotentialBuiltInType(u.System_String, Signature.ELEMENT_TYPE_STRING);
+				case "Single":
+					return ResolvePotentialBuiltInType(u.System_Single, Signature.ELEMENT_TYPE_R4);
+				case "Double":
+					return ResolvePotentialBuiltInType(u.System_Double, Signature.ELEMENT_TYPE_R8);
+				case "SByte":
+					return ResolvePotentialBuiltInType(u.System_SByte, Signature.ELEMENT_TYPE_I1);
+				case "Int16":
+					return ResolvePotentialBuiltInType(u.System_Int16, Signature.ELEMENT_TYPE_I2);
+				case "Int32":
+					return ResolvePotentialBuiltInType(u.System_Int32, Signature.ELEMENT_TYPE_I4);
+				case "Int64":
+					return ResolvePotentialBuiltInType(u.System_Int64, Signature.ELEMENT_TYPE_I8);
+				case "IntPtr":
+					return ResolvePotentialBuiltInType(u.System_IntPtr, Signature.ELEMENT_TYPE_I);
+				case "UIntPtr":
+					return ResolvePotentialBuiltInType(u.System_UIntPtr, Signature.ELEMENT_TYPE_U);
+				case "TypedReference":
+					return ResolvePotentialBuiltInType(u.System_TypedReference, Signature.ELEMENT_TYPE_TYPEDBYREF);
+				case "Byte":
+					return ResolvePotentialBuiltInType(u.System_Byte, Signature.ELEMENT_TYPE_U1);
+				case "UInt16":
+					return ResolvePotentialBuiltInType(u.System_UInt16, Signature.ELEMENT_TYPE_U2);
+				case "UInt32":
+					return ResolvePotentialBuiltInType(u.System_UInt32, Signature.ELEMENT_TYPE_U4);
+				case "UInt64":
+					return ResolvePotentialBuiltInType(u.System_UInt64, Signature.ELEMENT_TYPE_U8);
+				case "Void":	// [LAMESPEC] missing from ECMA list for some reason
+					return ResolvePotentialBuiltInType(u.System_Void, Signature.ELEMENT_TYPE_VOID);
+				default:
+					throw new InvalidOperationException();
+			}
+		}
+
+		private bool ResolvePotentialBuiltInType(Type builtIn, byte elementType)
+		{
+			if (this == builtIn)
+			{
+				typeFlags |= TypeFlags.BuiltIn;
+				this.elementType = elementType;
+				return true;
+			}
+			return false;
 		}
 
 		public bool IsEnum
@@ -2104,14 +2147,39 @@ namespace IKVM.Reflection
 			return this;
 		}
 
-		protected void MarkEnumOrValueType(string typeNamespace, string typeName)
+		protected void MarkKnownType(string typeNamespace, string typeName)
 		{
 			// we assume that mscorlib won't have nested types with these names,
 			// so we don't check that we're not a nested type
-			if (typeNamespace == "System"
-				&& (typeName == "Enum" || typeName == "ValueType"))
+			if (typeNamespace == "System")
 			{
-				typeFlags |= TypeFlags.PotentialEnumOrValueType;
+				switch (typeName)
+				{
+					case "Boolean":
+					case "Char":
+					case "Object":
+					case "String":
+					case "Single":
+					case "Double":
+					case "SByte":
+					case "Int16":
+					case "Int32":
+					case "Int64":
+					case "IntPtr":
+					case "UIntPtr":
+					case "TypedReference":
+					case "Byte":
+					case "UInt16":
+					case "UInt32":
+					case "UInt64":
+					case "Void":
+						typeFlags |= TypeFlags.PotentialBuiltIn;
+						break;
+					case "Enum":
+					case "ValueType":
+						typeFlags |= TypeFlags.PotentialEnumOrValueType;
+						break;
+				}
 			}
 		}
 

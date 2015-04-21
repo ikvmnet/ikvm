@@ -406,7 +406,7 @@ namespace IKVM.Reflection
 			this.declaringType = declaringType;
 			this.ns = ns;
 			this.name = name;
-			MarkEnumOrValueType(ns, name);
+			MarkKnownType(ns, name);
 
 			// HACK we need to handle the Windows Runtime projected types that change from ValueType to Class or v.v.
 			if (WindowsRuntimeProjection.IsProjectedValueType(ns, name, module))
