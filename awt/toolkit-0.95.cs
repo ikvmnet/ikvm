@@ -1414,7 +1414,11 @@ namespace ikvm.awt
                                       int eventID,
                                       bool dispatchType)
         {
-            return base.postDropTargetEvent(component, x, y,
+            NetComponentPeer peer = (NetComponentPeer)component.getPeer();
+            Control control = peer.Control;
+            Point screenPt = new Point(x, y);
+            Point clientPt = control.PointToClient(screenPt);
+            return base.postDropTargetEvent(component, clientPt.X, clientPt.Y,
                                      dropAction, actions, formats, nativeCtxt, eventID, dispatchType);
         }
 
