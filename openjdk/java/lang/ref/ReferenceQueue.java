@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014 Jeroen Frijters
+  Copyright (C) 2014-2015 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -28,7 +28,7 @@ public class ReferenceQueue<T>
 {
     static final ReferenceQueue ENQUEUED = new ReferenceQueue();
     static final ReferenceQueue NULL = new ReferenceQueue();
-    private volatile Reference<T> activeHead;
+    private volatile Link<T> activeHead;
     private volatile Reference<T> head;
     final Object lock = new Object();
     volatile boolean waitingForGC;
@@ -39,6 +39,20 @@ public class ReferenceQueue<T>
             synchronized (lock) {
                 lock.notifyAll();
             }
+        }
+    }
+
+    // NOTE a known problem with this approach is that the WeakReference will not be available
+    // after we've become only finalizer reachable
+    private static class Link<T> extends cli.System.WeakReference {
+        Link<T> next;
+       
+        Link(Reference<T> ref) {
+            super(ref);
+        }
+
+        Reference<T> get() {
+            return (Reference<T>)get_Target();
         }
     }
 
@@ -130,18 +144,18 @@ public class ReferenceQueue<T>
                     return true;
                 }
 
-                Reference<T> prev = null;
-                Reference<T> curr = activeHead;
+                Link<T> prev = null;
+                Link<T> curr = activeHead;
             
                 while (curr != null) {
-                    if (curr == ref) {
+                    if (curr.get() == ref) {
                         if (prev == null) {
                             activeHead = curr.next;
                         } else {
                             prev.next = curr.next;
                         }
-                        curr.next = head;
-                        head = curr;
+                        ref.next = head;
+                        head = ref;
                         lock.notifyAll();
                         return true;
                     }
@@ -155,10 +169,11 @@ public class ReferenceQueue<T>
 
     final void addToActiveList(Reference<T> ref)
     {
+        Link<T> link = new Link<T>(ref);
         synchronized (lock) {
-            ref.next = activeHead;
-            activeHead = ref;
-            if (ref.next == null) {
+            link.next = activeHead;
+            activeHead = link;
+            if (link.next == null) {
                 lock.notifyAll();
             }
         }
@@ -166,20 +181,23 @@ public class ReferenceQueue<T>
 
     private void scanActiveList()
     {
-        Reference<T> prev = null;
-        Reference<T> curr = activeHead;
+        Link<T> prev = null;
+        Link<T> curr = activeHead;
     
         while (curr != null) {
-            if (!curr.isActive()) {
-                Reference<T> next = curr.next;
+            Reference<T> ref = curr.get();
+            if (ref == null || !ref.isActive()) {
+                Link<T> next = curr.next;
                 if (prev == null) {
                     activeHead = next;
                 } else {
                     prev.next = next;
                 }
-                curr.next = head;
-                curr.queue = ENQUEUED;
-                head = curr;
+                if (ref != null) {
+                    ref.next = head;
+                    ref.queue = ENQUEUED;
+                    head = ref;
+                }
                 curr = next;
                 continue;
             }
