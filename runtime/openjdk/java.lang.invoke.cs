@@ -905,6 +905,11 @@ static partial class MethodHandleUtil
 						{
 							dm.EmitCastclass(tw.TypeAsBaseType);
 						}
+						else if (mw.IsProtected && (mw.DeclaringType == CoreClasses.java.lang.Object.Wrapper || mw.DeclaringType == CoreClasses.java.lang.Throwable.Wrapper))
+						{
+							// HACK we don't support calling clone or finalize on cli.System.Object and cli.System.Exception
+							dm.EmitCastclass(tw.TypeAsBaseType);
+						}
 						else if (tw != CoreClasses.cli.System.Object.Wrapper)
 						{
 							dm.EmitCheckcast(tw);
