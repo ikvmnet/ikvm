@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2007-2014 Jeroen Frijters
+  Copyright (C) 2007-2015 Jeroen Frijters
   Copyright (C) 2009 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
@@ -548,8 +548,10 @@ static class Java_sun_misc_Unsafe
 
 	private delegate int CompareExchangeInt32(object obj, int value, int comparand);
 	private delegate long CompareExchangeInt64(object obj, long value, long comparand);
+	private delegate object CompareExchangeObject(object obj, object value, object comparand);
 	private static CompareExchangeInt32[] cacheCompareExchangeInt32 = new CompareExchangeInt32[0];
 	private static CompareExchangeInt64[] cacheCompareExchangeInt64 = new CompareExchangeInt64[0];
+	private static CompareExchangeObject[] cacheCompareExchangeObject = new CompareExchangeObject[0];
 
 	private static void InterlockedResize<T>(ref T[] array, int newSize)
 	{
@@ -573,16 +575,44 @@ static class Java_sun_misc_Unsafe
 	private static Delegate CreateCompareExchange(long fieldOffset)
 	{
 		FieldInfo field = GetFieldInfo(fieldOffset);
-		DynamicMethod dm = new DynamicMethod("CompareExchange", field.FieldType, new Type[] { typeof(object), field.FieldType, field.FieldType }, field.DeclaringType);
+		bool primitive = field.FieldType.IsPrimitive;
+		Type signatureType = primitive ? field.FieldType : typeof(object);
+		MethodInfo compareExchange;
+		Type delegateType;
+		if (signatureType == typeof(int))
+		{
+			compareExchange = InterlockedMethods.CompareExchangeInt32;
+			delegateType = typeof(CompareExchangeInt32);
+		}
+		else if (signatureType == typeof(long))
+		{
+			compareExchange = InterlockedMethods.CompareExchangeInt64;
+			delegateType = typeof(CompareExchangeInt64);
+		}
+		else
+		{
+			compareExchange = InterlockedMethods.CompareExchangeOfT.MakeGenericMethod(field.FieldType);
+			delegateType = typeof(CompareExchangeObject);
+		}
+		DynamicMethod dm = new DynamicMethod("CompareExchange", signatureType, new Type[] { typeof(object), signatureType, signatureType }, field.DeclaringType);
 		ILGenerator ilgen = dm.GetILGenerator();
+		// note that we don't bother will special casing static fields, because it is legal to use ldflda on a static field
 		ilgen.Emit(OpCodes.Ldarg_0);
 		ilgen.Emit(OpCodes.Castclass, field.DeclaringType);
 		ilgen.Emit(OpCodes.Ldflda, field);
 		ilgen.Emit(OpCodes.Ldarg_1);
+		if (!primitive)
+		{
+			ilgen.Emit(OpCodes.Castclass, field.FieldType);
+		}
 		ilgen.Emit(OpCodes.Ldarg_2);
-		ilgen.Emit(OpCodes.Call, typeof(Interlocked).GetMethod("CompareExchange", new Type[] { field.FieldType.MakeByRefType(), field.FieldType, field.FieldType }));
+		if (!primitive)
+		{
+			ilgen.Emit(OpCodes.Castclass, field.FieldType);
+		}
+		ilgen.Emit(OpCodes.Call, compareExchange);
 		ilgen.Emit(OpCodes.Ret);
-		return dm.CreateDelegate(field.FieldType == typeof(int) ? typeof(CompareExchangeInt32) : typeof(CompareExchangeInt64));
+		return dm.CreateDelegate(delegateType);
 	}
 
 	private static FieldInfo GetFieldInfo(long offset)
@@ -607,8 +637,13 @@ static class Java_sun_misc_Unsafe
 		}
 		else
 		{
+			if (offset >= cacheCompareExchangeObject.Length || cacheCompareExchangeObject[offset] == null)
+			{
+				InterlockedResize(ref cacheCompareExchangeObject, (int)offset + 1);
+				cacheCompareExchangeObject[offset] = (CompareExchangeObject)CreateCompareExchange(offset);
+			}
 			Stats.Log("compareAndSwapObject.", offset);
-			return Atomic.CompareExchange(obj, new FieldInfo[] { GetFieldInfo(offset) }, update, expect) == expect;
+			return cacheCompareExchangeObject[offset](obj, update, expect) == expect;
 		}
 #endif
 	}
@@ -617,12 +652,6 @@ static class Java_sun_misc_Unsafe
 	{
 		// NOTE we don't care that we keep the Type alive, because Unsafe should only be used inside the core class libraries
 		private static Dictionary<Type, Atomic> impls = new Dictionary<Type, Atomic>();
-
-		internal static object CompareExchange(object obj, FieldInfo[] field, object value, object comparand)
-		{
-			TypedReference tr = TypedReference.MakeTypedReference(obj, field);
-			return GetImpl(__reftype(tr)).CompareExchangeImpl(tr, value, comparand);
-		}
 
 		internal static object CompareExchange(object[] array, int index, object value, object comparand)
 		{
@@ -643,17 +672,11 @@ static class Java_sun_misc_Unsafe
 			return impl;
 		}
 
-		protected abstract object CompareExchangeImpl(TypedReference tr, object value, object comparand);
 		protected abstract object CompareExchangeImpl(object[] array, int index, object value, object comparand);
 
 		sealed class Impl<T> : Atomic
 			where T : class
 		{
-			protected override object CompareExchangeImpl(TypedReference tr, object value, object comparand)
-			{
-				return Interlocked.CompareExchange(ref __refvalue(tr, T), (T)value, (T)comparand);
-			}
-
 			protected override object CompareExchangeImpl(object[] array, int index, object value, object comparand)
 			{
 				return Interlocked.CompareExchange<T>(ref ((T[])array)[index], (T)value, (T)comparand);
