@@ -74,6 +74,15 @@ public final class Unsafe
         }
         return allocateUnsafeFieldId(field);
     }
+    
+    public long staticFieldOffset(Field field)
+    {
+        if(!Modifier.isStatic(field.getModifiers()))
+        {
+            throw new IllegalArgumentException();
+        }
+        return allocateUnsafeFieldId(field);
+    }
 
     @Deprecated
     public int fieldOffset(Field original)
@@ -1149,6 +1158,12 @@ public final class Unsafe
     }
 
     public Object staticFieldBase(Field f)
+    {
+        return null;
+    }
+    
+    @Deprecated
+    public Object staticFieldBase(Class<?> c)
     {
         return null;
     }
