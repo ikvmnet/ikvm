@@ -861,6 +861,16 @@ namespace IKVM.Internal
 					&& !IsConstructor;
 			}
 		}
+
+		internal bool IsFinalizeOrClone
+		{
+			get
+			{
+				return IsProtected
+					&& (DeclaringType == CoreClasses.java.lang.Object.Wrapper || DeclaringType == CoreClasses.java.lang.Throwable.Wrapper)
+					&& (Name == StringConstants.CLONE || Name == StringConstants.FINALIZE);
+			}
+		}
 	}
 
 	// placeholder for <clinit> method that exist in ClassFile but not in TypeWrapper

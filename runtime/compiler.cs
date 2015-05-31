@@ -1499,7 +1499,7 @@ sealed class Compiler
 					nonleaf = true;
 
 					// HACK this code is duplicated in java.lang.invoke.cs
-					if(method.IsProtected && (method.DeclaringType == CoreClasses.java.lang.Object.Wrapper || method.DeclaringType == CoreClasses.java.lang.Throwable.Wrapper))
+					if(method.IsFinalizeOrClone)
 					{
 						// HACK we may need to redirect finalize or clone from java.lang.Object/Throwable
 						// to a more specific base type.
