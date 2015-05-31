@@ -905,11 +905,6 @@ static partial class MethodHandleUtil
 						{
 							dm.EmitCastclass(tw.TypeAsBaseType);
 						}
-						else if (mw.IsProtected && (mw.DeclaringType == CoreClasses.java.lang.Object.Wrapper || mw.DeclaringType == CoreClasses.java.lang.Throwable.Wrapper))
-						{
-							// HACK we don't support calling clone or finalize on cli.System.Object and cli.System.Exception
-							dm.EmitCastclass(tw.TypeAsBaseType);
-						}
 						else if (tw != CoreClasses.cli.System.Object.Wrapper)
 						{
 							dm.EmitCheckcast(tw);
@@ -944,7 +939,22 @@ static partial class MethodHandleUtil
 			{
 				dm.LoadCallerID();
 			}
-			if (doDispatch && !mw.IsStatic)
+			// special case for Object.clone() and Object.finalize()
+			if (mw.IsProtected
+				&& (mw.DeclaringType == CoreClasses.java.lang.Object.Wrapper || mw.DeclaringType == CoreClasses.java.lang.Throwable.Wrapper)
+				&& (mw.Name == StringConstants.FINALIZE || mw.Name == StringConstants.CLONE))
+			{
+				if (doDispatch)
+				{
+					mw.EmitCallvirtReflect(dm.ilgen);
+				}
+				else
+				{
+					// we can re-use the implementations from cli.System.Object (even though the object may not in-fact extend cli.System.Object)
+					CoreClasses.cli.System.Object.Wrapper.GetMethodWrapper(mw.Name, mw.Signature, false).EmitCall(dm.ilgen);
+				}
+			}
+			else if (doDispatch && !mw.IsStatic)
 			{
 				dm.Callvirt(mw);
 			}
