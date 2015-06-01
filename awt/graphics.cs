@@ -232,7 +232,7 @@ namespace ikvm.awt
         public override void clipRect(int x, int y, int w, int h)
         {
             checkState();
-            base.clearRect(x, y, w, h);
+            base.clipRect(x, y, w, h);
         }
 
         public override void clip(java.awt.Shape shape)
