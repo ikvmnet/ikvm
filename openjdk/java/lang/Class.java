@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,13 +198,14 @@ public final class Class<T> implements java.io.Serializable,
     final cli.System.Type type;
 
     /*
-     * Constructor. Only the Java Virtual Machine creates Class
-     * objects.
+     * Private constructor. Only the Java Virtual Machine creates Class objects.
+     * This constructor is not used and prevents the default constructor being
+     * generated.
      */
-    private Class()
-    {
-        // this constructor is not used, but exists for compatibility
-        // (otherwise it would look as if this class doesn't have a constructor, which might break some code)
+    private Class(ClassLoader loader) {
+        // Initialize final field for classLoader.  The initialization value of non-null
+        // prevents future JIT optimizations from assuming this final field is null.
+        //classLoader = loader;
         throw new InternalError();
     }
 
@@ -356,8 +357,8 @@ public final class Class<T> implements java.io.Serializable,
     @CallerSensitive
     public static Class<?> forName(String className)
                 throws ClassNotFoundException {
-        return forName0(className, true,
-                        ClassLoader.getClassLoader(Reflection.getCallerClass()));
+        Class<?> caller = Reflection.getCallerClass();
+        return forName0(className, true, ClassLoader.getClassLoader(caller), caller);
     }
 
 
@@ -427,22 +428,27 @@ public final class Class<T> implements java.io.Serializable,
                                    ClassLoader loader)
         throws ClassNotFoundException
     {
-        if (sun.misc.VM.isSystemDomainLoader(loader)) {
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                ClassLoader ccl = ClassLoader.getClassLoader(Reflection.getCallerClass());
+        Class<?> caller = null;
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            // Reflective call to get caller class is only needed if a security manager
+            // is present.  Avoid the overhead of making this call otherwise.
+            caller = Reflection.getCallerClass();
+            if (sun.misc.VM.isSystemDomainLoader(loader)) {
+                ClassLoader ccl = ClassLoader.getClassLoader(caller);
                 if (!sun.misc.VM.isSystemDomainLoader(ccl)) {
                     sm.checkPermission(
                         SecurityConstants.GET_CLASSLOADER_PERMISSION);
                 }
             }
         }
-        return forName0(name, initialize, loader);
+        return forName0(name, initialize, loader, caller);
     }
 
-    /** Called after security checks have been made. */
+    /** Called after security check for system loader access checks have been made. */
     private static native Class<?> forName0(String name, boolean initialize,
-                                            ClassLoader loader)
+                                            ClassLoader loader,
+                                            Class<?> caller)
         throws ClassNotFoundException;
 
     /**
@@ -2769,12 +2775,26 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     static class MethodArray {
+        // Don't add or remove methods except by add() or remove() calls.
         private Method[] methods;
         private int length;
+        private int defaults;
 
         MethodArray() {
-            methods = new Method[20];
+            this(20);
+        }
+
+        MethodArray(int initialSize) {
+            if (initialSize < 2)
+                throw new IllegalArgumentException("Size should be 2 or more");
+
+            methods = new Method[initialSize];
             length = 0;
+            defaults = 0;
+        }
+
+        boolean hasDefaults() {
+            return defaults != 0;
         }
 
         void add(Method m) {
@@ -2782,6 +2802,9 @@ public final class Class<T> implements java.io.Serializable,
                 methods = Arrays.copyOf(methods, 2 * methods.length);
             }
             methods[length++] = m;
+
+            if (m != null && m.isDefault())
+                defaults++;
         }
 
         void addAll(Method[] ma) {
@@ -2815,7 +2838,10 @@ public final class Class<T> implements java.io.Serializable,
             }
         }
 
-        void addAllNonStatic(Method[] methods) {
+        /* Add Methods declared in an interface to this MethodArray.
+         * Static methods declared in interfaces are not inherited.
+         */
+        void addInterfaceMethods(Method[] methods) {
             for (Method candidate : methods) {
                 if (!Modifier.isStatic(candidate.getModifiers())) {
                     add(candidate);
@@ -2831,17 +2857,33 @@ public final class Class<T> implements java.io.Serializable,
             return methods[i];
         }
 
-        void removeByNameAndSignature(Method toRemove) {
+        Method getFirst() {
+            for (Method m : methods)
+                if (m != null)
+                    return m;
+            return null;
+        }
+
+        void removeByNameAndDescriptor(Method toRemove) {
             for (int i = 0; i < length; i++) {
                 Method m = methods[i];
-                if (m != null &&
-                    m.getReturnType() == toRemove.getReturnType() &&
-                    m.getName() == toRemove.getName() &&
-                    arrayContentsEq(m.getParameterTypes(),
-                                    toRemove.getParameterTypes())) {
-                    methods[i] = null;
+                if (m != null && matchesNameAndDescriptor(m, toRemove)) {
+                    remove(i);
                 }
             }
+        }
+
+        private void remove(int i) {
+            if (methods[i] != null && methods[i].isDefault())
+                defaults--;
+            methods[i] = null;
+        }
+
+        private boolean matchesNameAndDescriptor(Method m1, Method m2) {
+            return m1.getReturnType() == m2.getReturnType() &&
+                   m1.getName() == m2.getName() && // name is guaranteed to be interned
+                   arrayContentsEq(m1.getParameterTypes(),
+                           m2.getParameterTypes());
         }
 
         void compactAndTrim() {
@@ -2861,8 +2903,47 @@ public final class Class<T> implements java.io.Serializable,
             }
         }
 
+        /* Removes all Methods from this MethodArray that have a more specific
+         * default Method in this MethodArray.
+         *
+         * Users of MethodArray are responsible for pruning Methods that have
+         * a more specific <em>concrete</em> Method.
+         */
+        void removeLessSpecifics() {
+            if (!hasDefaults())
+                return;
+
+            for (int i = 0; i < length; i++) {
+                Method m = get(i);
+                if  (m == null || !m.isDefault())
+                    continue;
+
+                for (int j  = 0; j < length; j++) {
+                    if (i == j)
+                        continue;
+
+                    Method candidate = get(j);
+                    if (candidate == null)
+                        continue;
+
+                    if (!matchesNameAndDescriptor(m, candidate))
+                        continue;
+
+                    if (hasMoreSpecificClass(m, candidate))
+                        remove(j);
+                }
+            }
+        }
+
         Method[] getArray() {
             return methods;
+        }
+
+        // Returns true if m1 is more specific than m2
+        static boolean hasMoreSpecificClass(Method m1, Method m2) {
+            Class<?> m1Class = m1.getDeclaringClass();
+            Class<?> m2Class = m2.getDeclaringClass();
+            return m1Class != m2Class && m2Class.isAssignableFrom(m1Class);
         }
     }
 
@@ -2891,9 +2972,8 @@ public final class Class<T> implements java.io.Serializable,
         // out concrete implementations inherited from superclasses at
         // the end.
         MethodArray inheritedMethods = new MethodArray();
-        Class<?>[] interfaces = getInterfaces();
-        for (int i = 0; i < interfaces.length; i++) {
-            inheritedMethods.addAllNonStatic(interfaces[i].privateGetPublicMethods());
+        for (Class<?> i : getInterfaces()) {
+            inheritedMethods.addInterfaceMethods(i.privateGetPublicMethods());
         }
         if (!isInterface()) {
             Class<?> c = getSuperclass();
@@ -2904,8 +2984,10 @@ public final class Class<T> implements java.io.Serializable,
                 // interface methods
                 for (int i = 0; i < supers.length(); i++) {
                     Method m = supers.get(i);
-                    if (m != null && !Modifier.isAbstract(m.getModifiers())) {
-                        inheritedMethods.removeByNameAndSignature(m);
+                    if (m != null &&
+                            !Modifier.isAbstract(m.getModifiers()) &&
+                            !m.isDefault()) {
+                        inheritedMethods.removeByNameAndDescriptor(m);
                     }
                 }
                 // Insert superclass's inherited methods before
@@ -2918,9 +3000,10 @@ public final class Class<T> implements java.io.Serializable,
         // Filter out all local methods from inherited ones
         for (int i = 0; i < methods.length(); i++) {
             Method m = methods.get(i);
-            inheritedMethods.removeByNameAndSignature(m);
+            inheritedMethods.removeByNameAndDescriptor(m);
         }
         methods.addAllIfNotPresent(inheritedMethods);
+        methods.removeLessSpecifics();
         methods.compactAndTrim();
         res = methods.getArray();
         if (rd != null) {
@@ -2995,8 +3078,21 @@ public final class Class<T> implements java.io.Serializable,
         return (res == null ? res : getReflectionFactory().copyMethod(res));
     }
 
-
     private Method getMethod0(String name, Class<?>[] parameterTypes, boolean includeStaticMethods) {
+        MethodArray interfaceCandidates = new MethodArray(2);
+        Method res =  privateGetMethodRecursive(name, parameterTypes, includeStaticMethods, interfaceCandidates);
+        if (res != null)
+            return res;
+
+        // Not found on class or superclass directly
+        interfaceCandidates.removeLessSpecifics();
+        return interfaceCandidates.getFirst(); // may be null
+    }
+
+    private Method privateGetMethodRecursive(String name,
+            Class<?>[] parameterTypes,
+            boolean includeStaticMethods,
+            MethodArray allInterfaceCandidates) {
         // Note: the intent is that the search algorithm this routine
         // uses be equivalent to the ordering imposed by
         // privateGetPublicMethods(). It fetches only the declared
@@ -3004,6 +3100,14 @@ public final class Class<T> implements java.io.Serializable,
         // number of Method objects which have to be created for the
         // common case where the method being requested is declared in
         // the class which is being queried.
+        //
+        // Due to default methods, unless a method is found on a superclass,
+        // methods declared in any superinterface needs to be considered.
+        // Collect all candidates declared in superinterfaces in {@code
+        // allInterfaceCandidates} and select the most specific if no match on
+        // a superclass is found.
+
+        // Must _not_ return root methods
         Method res;
         // Search declared public methods
         if ((res = searchMethods(privateGetDeclaredMethods(true),
@@ -3025,7 +3129,7 @@ public final class Class<T> implements java.io.Serializable,
         Class<?>[] interfaces = getInterfaces();
         for (Class<?> c : interfaces)
             if ((res = c.getMethod0(name, parameterTypes, false)) != null)
-                return res;
+                allInterfaceCandidates.add(res);
         // Not found
         return null;
     }

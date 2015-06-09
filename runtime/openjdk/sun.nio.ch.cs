@@ -646,6 +646,10 @@ namespace IKVM.NativeCode.sun.nio.ch
 #if FIRST_PASS
 			return 0;
 #else
+			if (level == global::ikvm.@internal.Winsock.IPPROTO_IPV6 && opt == global::ikvm.@internal.Winsock.IPV6_TCLASS)
+			{
+				return 0;
+			}
 			System.Net.Sockets.SocketOptionLevel sol = (System.Net.Sockets.SocketOptionLevel)level;
 			System.Net.Sockets.SocketOptionName son = (System.Net.Sockets.SocketOptionName)opt;
 			try
@@ -678,9 +682,13 @@ namespace IKVM.NativeCode.sun.nio.ch
 #endif
 		}
 
-		public static void setIntOption0(FileDescriptor fd, bool mayNeedConversion, int level, int opt, int arg)
+		public static void setIntOption0(FileDescriptor fd, bool mayNeedConversion, int level, int opt, int arg, bool isIPv6)
 		{
 #if !FIRST_PASS
+			if (level == global::ikvm.@internal.Winsock.IPPROTO_IPV6 && opt == global::ikvm.@internal.Winsock.IPV6_TCLASS)
+			{
+				return;
+			}
 			System.Net.Sockets.SocketOptionLevel sol = (System.Net.Sockets.SocketOptionLevel)level;
 			System.Net.Sockets.SocketOptionName son = (System.Net.Sockets.SocketOptionName)opt;
 			if (mayNeedConversion)
@@ -1086,11 +1094,11 @@ namespace IKVM.NativeCode.sun.nio.ch
 			System.Net.Sockets.SelectMode selectMode;
 			switch (events)
 			{
-				case global::sun.nio.ch.PollArrayWrapper.POLLCONN:
-				case global::sun.nio.ch.PollArrayWrapper.POLLOUT:
+				case global::sun.nio.ch.Net.POLLCONN:
+				case global::sun.nio.ch.Net.POLLOUT:
 					selectMode = System.Net.Sockets.SelectMode.SelectWrite;
 					break;
-				case global::sun.nio.ch.PollArrayWrapper.POLLIN:
+				case global::sun.nio.ch.Net.POLLIN:
 					selectMode = System.Net.Sockets.SelectMode.SelectRead;
 					break;
 				default:

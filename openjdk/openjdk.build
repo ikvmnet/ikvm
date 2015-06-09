@@ -27,11 +27,11 @@
     <property name="pathsep" value=":" />
     <property overwrite="false" name="signoption" value="" />
     <property overwrite="false" name="SkipSystemCoreDependency" value="false" />
-    <property name="OPENJDK_VERSION" value="OpenJDK 8 b132" />
+    <property name="OPENJDK_VERSION" value="OpenJDK 8u45 b14" />
     <property name="IMPLEMENTATION_VERSION" value="1.8.0" />
     <property name="SPECIFICATION_VERSION" value="1.8" />
-    <property name="FULL_VERSION" value="1.8.0-b132" />
-    <property name="OpenJDK.dir" value="${project::get-base-directory()}/../../openjdk-8-b132" />
+    <property name="FULL_VERSION" value="1.8.0_45-b14" />
+    <property name="OpenJDK.dir" value="${project::get-base-directory()}/../../openjdk-8u45-b14" />
     <if test="${platform::is-win32()}">
         <property name="pathsep" value=";" />
     </if>
@@ -192,7 +192,7 @@
     </target>
 
     <target name="classpath">
-        <property name="CLASSPATH" value="mscorlib.jar${pathsep}System.Xml.jar${pathsep}${OpenJDK.dir}/jdk/src/share/classes/${pathsep}${OpenJDK.dir}/corba/src/share/classes" />
+        <property name="CLASSPATH" value="mscorlib.jar${pathsep}System.Xml.jar${pathsep}${OpenJDK.dir}/jdk/src/share/classes/${pathsep}${OpenJDK.dir}/corba/src/share/classes${pathsep}${OpenJDK.dir}/build/linux-x86_64-normal-server-release/jdk/gensrc" />
     </target>
 
     <target name="rmi" depends="classpath">

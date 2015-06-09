@@ -515,6 +515,9 @@ static void bind0(JNIEnv env, TwoStacksPlainDatagramSocketImpl _this,
                 }
             }
         } else {
+            /* NET_BindV6() closes both sockets upon a failure */
+            _this.fd = null;
+            _this.fd1 = null;
             NET_ThrowCurrent (env, "Cannot bind");
             return;
         }

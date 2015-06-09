@@ -318,6 +318,11 @@ final class net_util_md
     {
         int rv;
 
+        if (level == IPPROTO_IPV6 && optname == IPV6_TCLASS) {
+            ((int[])optval)[0] = 0;
+            return 0;
+        }
+
         rv = getsockopt(s, level, optname, optval);
 
 

@@ -34,7 +34,7 @@ using IKVM.Internal;
 
 static class Java_java_lang_Class
 {
-	public static java.lang.Class forName0(string name, bool initialize, java.lang.ClassLoader loader)
+	public static java.lang.Class forName0(string name, bool initialize, java.lang.ClassLoader loader, java.lang.Class caller)
 	{
 #if FIRST_PASS
 		return null;
@@ -79,6 +79,11 @@ static class Java_java_lang_Class
 			{
 				throw x.ToJava();
 			}
+		}
+		java.security.ProtectionDomain pd;
+		if (loader != null && caller != null && (pd = getProtectionDomain0(caller)) != null)
+		{
+			loader.checkPackageAccess(tw.ClassObject, pd);
 		}
 		if (initialize && !tw.IsArray)
 		{

@@ -165,9 +165,9 @@ final class DotNetSelectorImpl extends SelectorImpl
     private int updateSelectedKeys(ArrayList read, ArrayList write, ArrayList error)
     {
         updateCount++;
-        int keys = processFDSet(updateCount, read, PollArrayWrapper.POLLIN);
-        keys += processFDSet(updateCount, write, PollArrayWrapper.POLLCONN | PollArrayWrapper.POLLOUT);
-        keys += processFDSet(updateCount, error, PollArrayWrapper.POLLIN | PollArrayWrapper.POLLCONN | PollArrayWrapper.POLLOUT);
+        int keys = processFDSet(updateCount, read, Net.POLLIN);
+        keys += processFDSet(updateCount, write, Net.POLLCONN | Net.POLLOUT);
+        keys += processFDSet(updateCount, error, Net.POLLIN | Net.POLLCONN | Net.POLLOUT);
         return keys;
     }
 

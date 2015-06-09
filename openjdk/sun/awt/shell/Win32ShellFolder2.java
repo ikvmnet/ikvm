@@ -596,8 +596,23 @@ final class Win32ShellFolder2 extends ShellFolder {
     }
 
     // Needs to be accessible to Win32ShellFolderManager2
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    static native String getFileSystemPath(int csidl) throws IOException, InterruptedException;
+    static String getFileSystemPath(final int csidl) throws IOException, InterruptedException {
+        String path = invoke(new Callable<String>() {
+            public String call() throws IOException {
+                return getFileSystemPath0(csidl);
+            }
+        }, IOException.class);
+        if (path != null) {
+            SecurityManager security = System.getSecurityManager();
+            if (security != null) {
+                security.checkRead(path);
+            }
+        }
+        return path;
+    }
+
+    // NOTE: this method uses COM and must be called on the 'COM thread'. See ComInvoker for the details
+    private static native String getFileSystemPath0(int csidl) throws IOException;
 
     // Return whether the path is a network root.
     // Path is assumed to be non-null

@@ -27,11 +27,13 @@ package sun.nio.ch;
 
 import java.io.*;
 import java.net.*;
+import jdk.net.*;
 import java.nio.channels.*;
 import java.util.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
+import sun.net.ExtendedOptionsImpl;
 
 
 public class Net {
@@ -297,6 +299,16 @@ public class Net {
 
         // only simple values supported by this method
         Class<?> type = name.type();
+
+        if (type == SocketFlow.class) {
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                sm.checkPermission(new NetworkPermission("setOption.SO_FLOW_SLA"));
+            }
+            ExtendedOptionsImpl.setFlowOption(fd, (SocketFlow)value);
+            return;
+        }
+
         if (type != Integer.class && type != Boolean.class)
             throw new AssertionError("Should not reach here");
 
@@ -340,7 +352,8 @@ public class Net {
         }
 
         boolean mayNeedConversion = (family == UNSPEC);
-        setIntOption0(fd, mayNeedConversion, key.level(), key.name(), arg);
+        boolean isIPv6 = (family == StandardProtocolFamily.INET6);
+        setIntOption0(fd, mayNeedConversion, key.level(), key.name(), arg, isIPv6);
     }
 
     static Object getSocketOption(FileDescriptor fd, ProtocolFamily family,
@@ -348,6 +361,16 @@ public class Net {
         throws IOException
     {
         Class<?> type = name.type();
+
+        if (type == SocketFlow.class) {
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                sm.checkPermission(new NetworkPermission("getOption.SO_FLOW_SLA"));
+            }
+            SocketFlow flow = SocketFlow.create();
+            ExtendedOptionsImpl.getFlowOption(fd, flow);
+            return flow;
+        }
 
         // only simple values supported by this method
         if (type != Integer.class && type != Boolean.class)
@@ -477,7 +500,7 @@ public class Net {
         throws IOException;
 
     private static native void setIntOption0(FileDescriptor fd, boolean mayNeedConversion,
-                                             int level, int opt, int arg)
+                                             int level, int opt, int arg, boolean isIPv6)
         throws IOException;
 
     static native int poll(FileDescriptor fd, int events, long timeout)
@@ -579,4 +602,15 @@ public class Net {
 
     static native int getInterface6(FileDescriptor fd) throws IOException;
 
+    /**
+     * Event masks for the various poll system calls.
+     * They will be set platform dependant in the static initializer below.
+     */
+    public static final short POLLIN       = 0x0001;
+    public static final short POLLCONN     = 0x0002;
+    public static final short POLLOUT      = 0x0004;
+    public static final short POLLERR      = 0x0008;
+    public static final short POLLHUP      = 0x0010;
+    public static final short POLLNVAL     = 0x0020;
+    public static final short POLLREMOVE   = 0x0800;
 }

@@ -197,17 +197,6 @@ static class Java_sun_invoke_anon_AnonymousClassLoader
 	}
 }
 
-static class Java_sun_invoke_util_ValueConversions
-{
-	// called from map.xml as a replacement for Class.isInstance() in sun.invoke.util.ValueConversions.castReference()
-	public static bool Class_isInstance(java.lang.Class clazz, object obj)
-	{
-		TypeWrapper tw = TypeWrapper.FromClass(clazz);
-		// handle the type system hole that is caused by arrays being both derived from cli.System.Array and directly from java.lang.Object
-		return tw.IsInstance(obj) || (tw == CoreClasses.cli.System.Object.Wrapper && obj is Array);
-	}
-}
-
 static class Java_sun_invoke_util_VerifyAccess
 {
 	// called from map.xml as a replacement for Class.getClassLoader() in sun.invoke.util.VerifyAccess.isTypeVisible()
@@ -547,6 +536,7 @@ static class Java_java_awt_SplashScreen
 	public static String _getImageFileName(long splashPtr) { return null; }
 	public static String _getImageJarName(long splashPtr) { return null; }
 	public static bool _setImageData(long splashPtr, byte[] data) { return false; }
+	public static float _getScaleFactor(long SplashPtr) { return 1; }
 }
 
 static class Java_java_awt_TextArea
@@ -617,4 +607,31 @@ static class Java_java_awt_image_SinglePixelPackedSampleModel
 static class Java_java_awt_image_SampleModel
 {
 	public static void initIDs() { }
+}
+
+static class Java_sun_net_ExtendedOptionsImpl
+{
+	public static void init()
+	{
+	}
+
+	public static void setFlowOption(java.io.FileDescriptor fd, object f)
+	{
+#if !FIRST_PASS
+		throw new java.lang.UnsupportedOperationException();
+#endif
+	}
+
+	public static void getFlowOption(java.io.FileDescriptor fd, object f)
+	{
+#if !FIRST_PASS
+		throw new java.lang.UnsupportedOperationException();
+#endif
+	}
+
+	public static bool flowSupported()
+	{
+		// We don't support this. Solaris only functionality.
+		return false;
+	}
 }

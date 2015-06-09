@@ -78,6 +78,14 @@ static class Java_java_lang_invoke_MethodHandle
 
 static class Java_java_lang_invoke_MethodHandleNatives
 {
+	// called from map.xml as a replacement for Class.isInstance() in java.lang.invoke.MethodHandleImpl.castReference()
+	public static bool Class_isInstance(java.lang.Class clazz, object obj)
+	{
+		TypeWrapper tw = TypeWrapper.FromClass(clazz);
+		// handle the type system hole that is caused by arrays being both derived from cli.System.Array and directly from java.lang.Object
+		return tw.IsInstance(obj) || (tw == CoreClasses.cli.System.Object.Wrapper && obj is Array);
+	}
+
 	// called from Lookup.revealDirect() (instead of MethodHandle.internalMemberName()) via map.xml replace-method-call
 	public static MemberName internalMemberName(MethodHandle mh)
 	{

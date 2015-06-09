@@ -48,6 +48,11 @@ public abstract class Executable extends AccessibleObject
     Executable() {}
 
     /**
+     * Accessor method to allow code sharing
+     */
+    abstract Executable getRoot();
+
+    /**
      * Does the Executable have generic information.
      */
     abstract boolean hasGenericInformation();
@@ -266,6 +271,53 @@ public abstract class Executable extends AccessibleObject
             return getGenericInfo().getParameterTypes();
         else
             return getParameterTypes();
+    }
+
+    /**
+     * Behaves like {@code getGenericParameterTypes}, but returns type
+     * information for all parameters, including synthetic parameters.
+     */
+    Type[] getAllGenericParameterTypes() {
+        final boolean genericInfo = hasGenericInformation();
+
+        // Easy case: we don't have generic parameter information.  In
+        // this case, we just return the result of
+        // getParameterTypes().
+        if (!genericInfo) {
+            return getParameterTypes();
+        } else {
+            final boolean realParamData = hasRealParameterData();
+            final Type[] genericParamTypes = getGenericParameterTypes();
+            final Type[] nonGenericParamTypes = getParameterTypes();
+            final Type[] out = new Type[nonGenericParamTypes.length];
+            final Parameter[] params = getParameters();
+            int fromidx = 0;
+            // If we have real parameter data, then we use the
+            // synthetic and mandate flags to our advantage.
+            if (realParamData) {
+                for (int i = 0; i < out.length; i++) {
+                    final Parameter param = params[i];
+                    if (param.isSynthetic() || param.isImplicit()) {
+                        // If we hit a synthetic or mandated parameter,
+                        // use the non generic parameter info.
+                        out[i] = nonGenericParamTypes[i];
+                    } else {
+                        // Otherwise, use the generic parameter info.
+                        out[i] = genericParamTypes[fromidx];
+                        fromidx++;
+                    }
+                }
+            } else {
+                // Otherwise, use the non-generic parameter data.
+                // Without method parameter reflection data, we have
+                // no way to figure out which parameters are
+                // synthetic/mandated, thus, no way to match up the
+                // indexes.
+                return genericParamTypes.length == nonGenericParamTypes.length ?
+                    genericParamTypes : nonGenericParamTypes;
+            }
+            return out;
+        }
     }
 
     /**
@@ -531,7 +583,12 @@ public abstract class Executable extends AccessibleObject
 
     private synchronized  Map<Class<? extends Annotation>, Annotation> declaredAnnotations() {
         if (declaredAnnotations == null) {
-            declaredAnnotations = declaredAnnotationsImpl();
+           Executable root = getRoot();
+            if (root != null) {
+                declaredAnnotations = root.declaredAnnotations();
+            } else {
+                declaredAnnotations = declaredAnnotationsImpl();
+            }
         }
         return declaredAnnotations;
     }
@@ -630,7 +687,7 @@ public abstract class Executable extends AccessibleObject
                         getConstantPool(getDeclaringClass()),
                 this,
                 getDeclaringClass(),
-                getParameterTypes(),
+                getAllGenericParameterTypes(),
                 TypeAnnotation.TypeAnnotationTarget.METHOD_FORMAL_PARAMETER);
     }
 

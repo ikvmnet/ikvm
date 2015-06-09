@@ -63,7 +63,7 @@ static class Java_java_util_TimeZone
 #endif
 	}
 
-	public static string getSystemTimeZoneID(string javaHome, string country)
+	public static string getSystemTimeZoneID(string javaHome)
 	{
 		// (the switch was generated from the contents of $JAVA_HOME/lib/tzmappings)
 		switch (GetCurrentTimeZoneID())

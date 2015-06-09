@@ -733,6 +733,24 @@ static class Java_sun_misc_Unsafe
 	}
 }
 
+static class Java_sun_misc_URLClassPath
+{
+	public static java.net.URL[] getLookupCacheURLs(java.lang.ClassLoader loader)
+	{
+		return null;
+	}
+
+	public static int[] getLookupCacheForClassLoader(java.lang.ClassLoader loader, string name)
+	{
+		return null;
+	}
+
+	public static bool knownToNotExist0(java.lang.ClassLoader loader, string className)
+	{
+		return false;
+	}
+}
+
 static class Java_sun_misc_Version
 {
 	public static string getJvmSpecialVersion()
@@ -802,5 +820,10 @@ static class Java_sun_misc_VMSupport
 	public static object initAgentProperties(object props)
 	{
 		return props;
+	}
+
+	public static string getVMTemporaryDirectory()
+	{
+		return System.IO.Path.GetTempPath();
 	}
 }

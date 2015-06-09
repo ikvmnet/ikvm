@@ -71,6 +71,7 @@ class SocketOptionRegistry {
             map.put(new RegistryKey(StandardSocketOptions.IP_MULTICAST_IF, StandardProtocolFamily.INET), new OptionKey(SocketOptionLevel.IP, SocketOptionName.MulticastInterface));
             map.put(new RegistryKey(StandardSocketOptions.IP_MULTICAST_TTL, StandardProtocolFamily.INET), new OptionKey(SocketOptionLevel.IP, SocketOptionName.IpTimeToLive));
             map.put(new RegistryKey(StandardSocketOptions.IP_MULTICAST_LOOP, StandardProtocolFamily.INET), new OptionKey(SocketOptionLevel.IP, SocketOptionName.MulticastLoopback));
+            map.put(new RegistryKey(StandardSocketOptions.IP_TOS, StandardProtocolFamily.INET6), new OptionKey(SocketOptionLevel.IPv6, ikvm.internal.Winsock.IPV6_TCLASS));
             map.put(new RegistryKey(StandardSocketOptions.IP_MULTICAST_IF, StandardProtocolFamily.INET6), new OptionKey(SocketOptionLevel.IPv6, SocketOptionName.MulticastInterface));
             map.put(new RegistryKey(StandardSocketOptions.IP_MULTICAST_TTL, StandardProtocolFamily.INET6), new OptionKey(SocketOptionLevel.IPv6, SocketOptionName.IpTimeToLive));
             map.put(new RegistryKey(StandardSocketOptions.IP_MULTICAST_LOOP, StandardProtocolFamily.INET6), new OptionKey(SocketOptionLevel.IPv6, SocketOptionName.MulticastLoopback));

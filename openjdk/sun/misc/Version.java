@@ -42,7 +42,7 @@ public class Version {
         "";
 
     private static final String java_runtime_version =
-        "1.8.0-internal-jeroen_2014_04_10_09_21-b00";
+        "1.8.0-internal-jeroen_2015_06_02_10_38-b00";
 
     static {
         init();

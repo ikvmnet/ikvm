@@ -485,6 +485,10 @@ static void socketBind(JNIEnv env, TwoStacksPlainSocketImpl _this,
                     /* socket was re-created */
                     fd1Obj.setSocket(fd1);
                 }
+            } else {
+                /* NET_BindV6() closes both sockets upon a failure */
+                _this.fd = null;
+                _this.fd1 = null;
             }
         }
     } else {

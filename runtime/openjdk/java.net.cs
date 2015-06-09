@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2007-2013 Jeroen Frijters
+  Copyright (C) 2007-2015 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -27,6 +27,36 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Security;
+
+static class Java_java_net_AbstractPlainDatagramSocketImpl
+{
+	public static void init()
+	{
+	}
+
+	public static int dataAvailable(object _this)
+	{
+#if FIRST_PASS
+		return 0;
+#else
+		try
+		{
+			java.net.AbstractPlainDatagramSocketImpl obj = (java.net.AbstractPlainDatagramSocketImpl)_this;
+			if (obj.fd != null)
+			{
+				return obj.fd.getSocket().Available;
+			}
+		}
+		catch (ObjectDisposedException)
+		{
+		}
+		catch (SocketException)
+		{
+		}
+		throw new java.net.SocketException("Socket closed");
+#endif
+	}
+}
 
 static class Java_java_net_DatagramPacket
 {

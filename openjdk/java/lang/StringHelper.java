@@ -913,8 +913,9 @@ final class StringHelper
             }
         }
         // Argument is a String
-        if (cs.equals(_this))
-            return true;
+        if (cs instanceof String) {
+            return _this.equals(cs);
+        }
         // Argument is a generic CharSequence
         int n = _this.length();
         if (n != cs.length()) {
@@ -2230,7 +2231,9 @@ final class StringHelper
             } else {
                 srcCount = 1;
             }
-            if (localeDependent || srcChar == '\u03A3') { // GREEK CAPITAL LETTER SIGMA
+            if (localeDependent ||
+                srcChar == '\u03A3' || // GREEK CAPITAL LETTER SIGMA
+                srcChar == '\u0130') { // LATIN CAPITAL LETTER I WITH DOT ABOVE
                 lowerChar = ConditionalSpecialCasing.toLowerCaseEx(_this, i, locale);
             } else {
                 lowerChar = Character.toLowerCase(srcChar);

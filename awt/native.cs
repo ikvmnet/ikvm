@@ -608,8 +608,8 @@ namespace IKVM.NativeCode.sun.awt.shell
             return (int)atts[0];
         }
 
-        [System.Security.SecurityCritical]
-        public static String getFileSystemPath(int csidl)
+        [System.Security.SecuritySafeCritical]
+        public static String getFileSystemPath0(int csidl)
         {
             IntPtr pIDL = new IntPtr();
             int hRes = ShellApi.SHGetSpecialFolderLocation(IntPtr.Zero, (ShellApi.CSIDL)csidl, ref pIDL);

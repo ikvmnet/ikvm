@@ -4,9 +4,9 @@
 # This file list all forked OpenJDK files in their original OpenJDK location and their forked ikvm/openjdk location.
 # Each line not starting with # contains a mapping: <original>=<forked>
 #
-build/linux-amd64/gensrc/sun/misc/Version.java=sun/misc/Version.java
-build/linux-amd64/gensrc/sun/nio/ch/SocketOptionRegistry.java=sun/nio/ch/SocketOptionRegistry.java
-build/linux-amd64/gensrc/sun/nio/cs/StandardCharsets.java=sun/nio/cs/StandardCharsets.java
+build/linux-x86_64-normal-server-release/jdk/gensrc/sun/misc/Version.java=sun/misc/Version.java
+build/linux-x86_64-normal-server-release/jdk/gensrc/sun/nio/ch/SocketOptionRegistry.java=sun/nio/ch/SocketOptionRegistry.java
+build/linux-x86_64-normal-server-release/jdk/gensrc/sun/nio/cs/StandardCharsets.java=sun/nio/cs/StandardCharsets.java
 jdk/src/macosx/classes/java/lang/ClassLoaderHelper.java=java/lang/ClassLoaderHelper.java
 jdk/src/share/classes/com/sun/imageio/plugins/jpeg/JPEGImageReader.java=com/sun/imageio/plugins/jpeg/JPEGImageReader.java
 jdk/src/share/classes/com/sun/imageio/plugins/jpeg/JPEGImageWriter.java=com/sun/imageio/plugins/jpeg/JPEGImageWriter.java
@@ -33,6 +33,7 @@ jdk/src/share/classes/java/lang/Enum.java=java/lang/Enum.java
 jdk/src/share/classes/java/lang/management/PlatformComponent.java=java/lang/management/PlatformComponent.java
 jdk/src/share/classes/java/lang/ref/SoftReference.java=java/lang/ref/SoftReference.java
 jdk/src/share/classes/java/lang/reflect/Constructor.java=java/lang/reflect/Constructor.java
+jdk/src/share/classes/java/lang/reflect/Executable.java=java/lang/reflect/Executable.java
 jdk/src/share/classes/java/lang/reflect/Field.java=java/lang/reflect/Field.java
 jdk/src/share/classes/java/lang/reflect/Method.java=java/lang/reflect/Method.java
 jdk/src/share/classes/java/lang/reflect/Proxy.java=java/lang/reflect/Proxy.java
@@ -53,7 +54,6 @@ jdk/src/share/classes/java/util/concurrent/atomic/AtomicLong.java=../classpath/j
 jdk/src/share/classes/java/util/concurrent/atomic/AtomicLongArray.java=../classpath/java/util/concurrent/atomic/AtomicLongArray.java
 jdk/src/share/classes/java/util/concurrent/atomic/AtomicReference.java=../classpath/java/util/concurrent/atomic/AtomicReference.java
 jdk/src/share/classes/java/util/concurrent/atomic/AtomicReferenceArray.java=../classpath/java/util/concurrent/atomic/AtomicReferenceArray.java
-jdk/src/share/classes/java/util/concurrent/ForkJoinPool.java=java/util/concurrent/ForkJoinPool.java
 jdk/src/share/classes/java/util/concurrent/locks/AbstractQueuedSynchronizer.java=java/util/concurrent/locks/AbstractQueuedSynchronizer.java
 jdk/src/share/classes/java/util/concurrent/locks/LockSupport.java=java/util/concurrent/locks/LockSupport.java
 jdk/src/share/classes/sun/awt/EmbeddedFrame.java=sun/awt/EmbeddedFrame.java
@@ -99,7 +99,6 @@ jdk/src/windows/classes/sun/net/www/protocol/jar/JarFileFactory.java=sun/net/www
 jdk/src/windows/classes/sun/nio/ch/DefaultSelectorProvider.java=sun/nio/ch/DefaultSelectorProvider.java
 jdk/src/windows/classes/sun/nio/ch/FileDispatcherImpl.java=sun/nio/ch/FileDispatcherImpl.java
 jdk/src/windows/classes/sun/nio/ch/Iocp.java=sun/nio/ch/Iocp.java
-jdk/src/windows/classes/sun/nio/ch/PollArrayWrapper.java=sun/nio/ch/PollArrayWrapper.java
 jdk/src/windows/classes/sun/nio/ch/SocketDispatcher.java=sun/nio/ch/SocketDispatcher.java
 jdk/src/windows/classes/sun/nio/ch/WindowsAsynchronousFileChannelImpl.java=sun/nio/ch/WindowsAsynchronousFileChannelImpl.java
 jdk/src/windows/classes/sun/nio/ch/WindowsAsynchronousServerSocketChannelImpl.java=sun/nio/ch/WindowsAsynchronousServerSocketChannelImpl.java

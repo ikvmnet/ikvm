@@ -379,8 +379,10 @@ static int socketReceiveOrPeekData
             int[] tmp = { port };
             packetAddress = NET_SockaddrToInetAddress(sa, tmp);
             port = tmp[0];
-            /* stuff the new Inetaddress into the packet */
-            dpObj.address = packetAddress;
+            if (packetAddress != NULL) {
+                /* stuff the new Inetaddress into the packet */
+                dpObj.address = packetAddress;
+            }
         }
 
         /* populate the packet */
