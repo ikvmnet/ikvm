@@ -2400,11 +2400,19 @@ namespace IKVM.Internal
 					{
 						Console.Write(" " + code[i].ValueInt32);
 					}
+					else if (code[i].opcode == OpCodes.Ldloc || code[i].opcode == OpCodes.Stloc)
+					{
+						Console.Write(" " + code[i].Local.__LocalIndex);
+					}
 					Console.WriteLine();
 				}
 				else if (code[i].pseudo == CodeType.Label)
 				{
 					Console.WriteLine("label{0}:  // temp = {1}", i, code[i].Label.Temp);
+				}
+				else if (code[i].pseudo == CodeType.DeclareLocal)
+				{
+					Console.WriteLine("local #{0} = {1}", code[i].Local.__LocalIndex, code[i].Local.LocalType);
 				}
 				else
 				{
