@@ -57,7 +57,6 @@ namespace IKVM.Internal
 		private volatile TypeWrapper[] innerClasses;
 		private TypeWrapper outerClass;
 		private volatile TypeWrapper[] interfaces;
-		private volatile bool finished;
 
 		private static Modifiers GetModifiers(Type type)
 		{
@@ -2784,28 +2783,6 @@ namespace IKVM.Internal
 
 		internal override void Finish()
 		{
-			// we don't need locking, because Finish and Link are idempotent
-			if (finished)
-			{
-				return;
-			}
-			if (BaseTypeWrapper != null)
-			{
-				BaseTypeWrapper.Finish();
-			}
-			foreach (TypeWrapper tw in this.Interfaces)
-			{
-				tw.Finish();
-			}
-			foreach (MethodWrapper mw in GetMethods())
-			{
-				mw.Link();
-			}
-			foreach (FieldWrapper fw in GetFields())
-			{
-				fw.Link();
-			}
-			finished = true;
 		}
 
 		internal override MethodParametersEntry[] GetMethodParameters(MethodWrapper mw)

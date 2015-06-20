@@ -5110,14 +5110,6 @@ namespace IKVM.Internal
 
 		internal override void Finish()
 		{
-			if(BaseTypeWrapper != null)
-			{
-				BaseTypeWrapper.Finish();
-			}
-			foreach(TypeWrapper tw in this.Interfaces)
-			{
-				tw.Finish();
-			}
 		}
 
 #if EMITTERS
