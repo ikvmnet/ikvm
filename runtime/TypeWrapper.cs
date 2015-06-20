@@ -3784,7 +3784,7 @@ namespace IKVM.Internal
 	class CompiledTypeWrapper : TypeWrapper
 	{
 		private readonly Type type;
-		private TypeWrapper baseTypeWrapper;
+		private TypeWrapper baseTypeWrapper = VerifierTypeWrapper.Null;
 		private volatile TypeWrapper[] interfaces;
 		private MethodInfo clinitMethod;
 		private volatile bool clinitMethodSet;
@@ -4074,7 +4074,14 @@ namespace IKVM.Internal
 
 		internal override TypeWrapper BaseTypeWrapper
 		{
-			get { return baseTypeWrapper ?? (baseTypeWrapper = GetBaseTypeWrapper(type)); }
+			get
+			{
+				if (baseTypeWrapper != VerifierTypeWrapper.Null)
+				{
+					return baseTypeWrapper;
+				}
+				return baseTypeWrapper = GetBaseTypeWrapper(type);
+			}
 		}
 
 		internal override ClassLoaderWrapper GetClassLoader()
