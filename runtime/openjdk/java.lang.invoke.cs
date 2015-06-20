@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -73,6 +74,55 @@ static class Java_java_lang_invoke_MethodHandle
 	public static object linkToInterface(object[] args)
 	{
 		throw new InvalidOperationException();
+	}
+}
+
+static class Java_java_lang_invoke_MethodHandleImpl
+{
+	// hooked up via map.xml (as a replacement for makePairwiseConvertByEditor)
+	public static MethodHandle makePairwiseConvert(MethodHandle target, MethodType srcType, bool strict, bool monobox)
+	{
+#if FIRST_PASS
+		return null;
+#else
+		object[] convSpecs = MethodHandleImpl.computeValueConversions(srcType, target.type(), strict, monobox);
+		List<LambdaForm.Name> names = new List<LambdaForm.Name>();
+		names.Add(new LambdaForm.Name(0, LambdaForm.BasicType.L_TYPE));
+		for (int i = 0; i < srcType.parameterCount(); i++)
+		{
+			names.Add(new LambdaForm.Name(i + 1, LambdaForm.BasicType.basicType(srcType.parameterType(i))));
+		}
+		LambdaForm.Name[] invokeArgs = new LambdaForm.Name[srcType.parameterCount()];
+		for (int i = 0; i < invokeArgs.Length; i++)
+		{
+			object convSpec = convSpecs[i];
+			if (convSpec == null)
+			{
+				invokeArgs[i] = names[i + 1];
+			}
+			else
+			{
+				LambdaForm.Name temp = new LambdaForm.Name(convSpec as MethodHandle ?? MethodHandleImpl.Lazy.MH_castReference.bindTo(convSpec), names[i + 1]);
+				names.Add(temp);
+				invokeArgs[i] = temp;
+			}
+		}
+		names.Add(new LambdaForm.Name(target, invokeArgs));
+		if (convSpecs[convSpecs.Length - 1] != null)
+		{
+			object convSpec = convSpecs[convSpecs.Length - 1];
+			if (convSpec != java.lang.Void.TYPE)
+			{
+				names.Add(new LambdaForm.Name(convSpec as MethodHandle ?? MethodHandleImpl.Lazy.MH_castReference.bindTo(convSpec), names[names.Count - 1]));
+			}
+		}
+		if (target.type().returnType() == java.lang.Void.TYPE && srcType.returnType() != java.lang.Void.TYPE)
+		{
+			names.Add(new LambdaForm.Name(LambdaForm.constantZero(LambdaForm.BasicType.basicType(srcType.returnType()))));
+		}
+		LambdaForm form = new LambdaForm("PairwiseConvert", srcType.parameterCount() + 1, names.ToArray(), srcType.returnType() == java.lang.Void.TYPE ? LambdaForm.VOID_RESULT : LambdaForm.LAST_RESULT, false);
+		return new LightWeightMethodHandle(srcType, form);
+#endif
 	}
 }
 

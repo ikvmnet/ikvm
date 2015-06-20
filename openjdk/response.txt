@@ -1,5 +1,5 @@
 #
-#  Copyright (C) 2002-2014 Jeroen Frijters
+#  Copyright (C) 2002-2015 Jeroen Frijters
 #
 #  This software is provided 'as-is', without any express or implied
 #  warranty.  In no event will the authors be held liable for any damages
@@ -37,6 +37,7 @@
     ikvm/internal/*.class
     java/io/*.class
     java/lang/*.class
+    java/lang/invoke/*.class
     java/lang/ref/*.class
     java/lang/reflect/*.class
     java/net/*.class

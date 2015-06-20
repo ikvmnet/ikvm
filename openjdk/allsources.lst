@@ -89,6 +89,7 @@ java/lang/Class.java
 java/lang/ClassLoader.java
 java/lang/ClassLoaderHelper.java
 java/lang/Enum.java
+java/lang/invoke/LightWeightMethodHandle.java
 java/lang/LangHelper.java
 java/lang/management/PlatformComponent.java
 java/lang/ProcessImpl.java

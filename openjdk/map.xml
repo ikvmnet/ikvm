@@ -2963,6 +2963,13 @@
                     </code>
                 </replace-method-call>
             </method>
+            <method name="makePairwiseConvert" sig="(Ljava.lang.invoke.MethodHandle;Ljava.lang.invoke.MethodType;ZZ)Ljava.lang.invoke.MethodHandle;">
+                <replace-method-call class="java.lang.invoke.MethodHandleImpl" name="makePairwiseConvertByEditor" sig="(Ljava.lang.invoke.MethodHandle;Ljava.lang.invoke.MethodType;ZZ)Ljava.lang.invoke.MethodHandle;">
+                    <code>
+                        <call type="Java_java_lang_invoke_MethodHandleImpl" name="makePairwiseConvert" sig="(Ljava.lang.invoke.MethodHandle;Ljava.lang.invoke.MethodType;ZZ)Ljava.lang.invoke.MethodHandle;" />
+                    </code>
+                </replace-method-call>
+            </method>
         </class>
         <class name="java.lang.invoke.MethodHandles$Lookup">
             <!-- We hook this to undo the fiddling we do to support string constructors -->
