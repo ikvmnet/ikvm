@@ -2916,8 +2916,7 @@
             <method name="invokeExact" sig="([Ljava.lang.Object;)Ljava.lang.Object;">
                 <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
             </method>
-            <!-- NOTE Modifiers.Final and MethodAttributes.NewSlot is recognized by AotTypeWrapper.MapModifiers() as a magic combination that generates a non-virtual method -->
-            <method name="reflectionInvoke" sig="([Ljava.lang.Object;)Ljava.lang.Object;" modifiers="final" attributes="NewSlot">
+            <method name="reflectionInvoke" sig="([Ljava.lang.Object;)Ljava.lang.Object;" modifiers="final">
                 <throws class="java.lang.Throwable" />
                 <attribute type="System.Runtime.CompilerServices.MethodImplAttribute" sig="(Lcli.System.Runtime.CompilerServices.MethodImplOptions;)V">
                     <parameter>NoInlining</parameter>
@@ -2935,8 +2934,7 @@
                     <throw />
                 </body>
             </method>
-            <!-- NOTE Modifiers.Final and MethodAttributes.NewSlot is recognized by AotTypeWrapper.MapModifiers() as a magic combination that generates a non-virtual method -->
-            <method name="reflectionInvokeExact" sig="([Ljava.lang.Object;)Ljava.lang.Object;" modifiers="final" attributes="NewSlot">
+            <method name="reflectionInvokeExact" sig="([Ljava.lang.Object;)Ljava.lang.Object;" modifiers="final">
                 <throws class="java.lang.Throwable" />
                 <attribute type="System.Runtime.CompilerServices.MethodImplAttribute" sig="(Lcli.System.Runtime.CompilerServices.MethodImplOptions;)V">
                     <parameter>NoInlining</parameter>
