@@ -2088,27 +2088,6 @@ namespace IKVM.Internal
 				return ((RemappedMethodBaseWrapper)mw).DoLink();
 			}
 
-			internal override TypeWrapper DeclaringTypeWrapper
-			{
-				get
-				{
-					// at the moment we don't support nested remapped types
-					return null;
-				}
-			}
-
-			internal override void Finish()
-			{
-			}
-
-			internal override TypeWrapper[] InnerClasses
-			{
-				get
-				{
-					return TypeWrapper.EmptyArray;
-				}
-			}
-
 			internal override TypeWrapper[] Interfaces
 			{
 				get

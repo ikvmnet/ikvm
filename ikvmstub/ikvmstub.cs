@@ -608,25 +608,6 @@ sealed class StubTypeWrapper : TypeWrapper
 		get { throw new NotSupportedException(); }
 	}
 
-	internal override TypeWrapper[] Interfaces
-	{
-		get { return TypeWrapper.EmptyArray; }
-	}
-
-	internal override TypeWrapper[] InnerClasses
-	{
-		get { return TypeWrapper.EmptyArray; }
-	}
-
-	internal override TypeWrapper DeclaringTypeWrapper
-	{
-		get { return null; }
-	}
-
-	internal override void Finish()
-	{
-	}
-
 	internal override bool IsRemapped
 	{
 		get { return remapped; }

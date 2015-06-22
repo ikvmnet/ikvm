@@ -3124,24 +3124,26 @@ namespace IKVM.Internal
 		}
 #endif
 
-		internal abstract TypeWrapper[] Interfaces
+		internal virtual TypeWrapper[] Interfaces
 		{
-			get;
+			get { return EmptyArray; }
 		}
 
 		// NOTE this property can only be called for finished types!
-		internal abstract TypeWrapper[] InnerClasses
+		internal virtual TypeWrapper[] InnerClasses
 		{
-			get;
+			get { return EmptyArray; }
 		}
 
 		// NOTE this property can only be called for finished types!
-		internal abstract TypeWrapper DeclaringTypeWrapper
+		internal virtual TypeWrapper DeclaringTypeWrapper
 		{
-			get;
+			get { return null; }
 		}
 
-		internal abstract void Finish();
+		internal virtual void Finish()
+		{
+		}
 
 		internal void LinkAll()
 		{
@@ -3771,34 +3773,6 @@ namespace IKVM.Internal
 			{
 				return type;
 			}
-		}
-
-		internal override TypeWrapper[] Interfaces
-		{
-			get
-			{
-				return TypeWrapper.EmptyArray;
-			}
-		}
-
-		internal override TypeWrapper[] InnerClasses
-		{
-			get
-			{
-				return TypeWrapper.EmptyArray;
-			}
-		}
-
-		internal override TypeWrapper DeclaringTypeWrapper
-		{
-			get
-			{
-				return null;
-			}
-		}
-
-		internal override void Finish()
-		{
 		}
 
 		public override string ToString()
@@ -5134,10 +5108,6 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal override void Finish()
-		{
-		}
-
 #if EMITTERS
 		internal override void EmitRunClassConstructor(CodeEmitter ilgen)
 		{
@@ -5502,22 +5472,6 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal override TypeWrapper[] InnerClasses
-		{
-			get
-			{
-				return TypeWrapper.EmptyArray;
-			}
-		}
-
-		internal override TypeWrapper DeclaringTypeWrapper
-		{
-			get
-			{
-				return null;
-			}
-		}
-
 		internal override Type TypeAsTBD
 		{
 			get
@@ -5812,20 +5766,6 @@ namespace IKVM.Internal
 				}
 				return interfaces;
 			}
-		}
-
-		internal override TypeWrapper[] InnerClasses
-		{
-			get { return TypeWrapper.EmptyArray; }
-		}
-
-		internal override TypeWrapper DeclaringTypeWrapper
-		{
-			get { return null; }
-		}
-
-		internal override void Finish()
-		{
 		}
 
 		protected override void LazyPublishMembers()
