@@ -1948,6 +1948,7 @@ namespace IKVM.Internal
 		ClassFormatError = 16,
 		HasUnsupportedAbstractMethods = 32,
 		Anonymous = 64,
+		Linked = 128,
 	}
 
 	static class NamePrefix
@@ -3141,6 +3142,31 @@ namespace IKVM.Internal
 		}
 
 		internal abstract void Finish();
+
+		internal void LinkAll()
+		{
+			if ((flags & TypeFlags.Linked) == 0)
+			{
+				TypeWrapper tw = BaseTypeWrapper;
+				if (tw != null)
+				{
+					tw.LinkAll();
+				}
+				foreach (TypeWrapper iface in Interfaces)
+				{
+					iface.LinkAll();
+				}
+				foreach (MethodWrapper mw in GetMethods())
+				{
+					mw.Link();
+				}
+				foreach (FieldWrapper fw in GetFields())
+				{
+					fw.Link();
+				}
+				SetTypeFlag(TypeFlags.Linked);
+			}
+		}
 
 #if !STATIC_COMPILER
 		[Conditional("DEBUG")]

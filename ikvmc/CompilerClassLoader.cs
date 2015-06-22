@@ -2099,22 +2099,6 @@ namespace IKVM.Internal
 
 			internal override void Finish()
 			{
-				if(BaseTypeWrapper != null)
-				{
-					BaseTypeWrapper.Finish();
-				}
-				foreach(TypeWrapper iface in Interfaces)
-				{
-					iface.Finish();
-				}
-				foreach(MethodWrapper m in GetMethods())
-				{
-					m.Link();
-				}
-				foreach(FieldWrapper f in GetFields())
-				{
-					f.Link();
-				}
 			}
 
 			internal override TypeWrapper[] InnerClasses

@@ -1691,9 +1691,11 @@ namespace IKVM.Internal
 
 			internal override DynamicImpl Finish()
 			{
-				if (wrapper.BaseTypeWrapper != null)
+				TypeWrapper baseTypeWrapper = wrapper.BaseTypeWrapper;
+				if (baseTypeWrapper != null)
 				{
-					wrapper.BaseTypeWrapper.Finish();
+					baseTypeWrapper.Finish();
+					baseTypeWrapper.LinkAll();
 				}
 				// NOTE there is a bug in the CLR (.NET 1.0 & 1.1 [1.2 is not yet available]) that
 				// causes the AppDomain.TypeResolve event to receive the incorrect type name for nested types.
@@ -1705,9 +1707,10 @@ namespace IKVM.Internal
 				// required in finished form, are finished explicitly here. It isn't clear what other types are
 				// required to be finished. I instrumented a static compilation of classpath.dll and this
 				// turned up no other cases of the TypeResolve event firing.
-				for (int i = 0; i < wrapper.Interfaces.Length; i++)
+				foreach (TypeWrapper iface in wrapper.interfaces)
 				{
-					wrapper.Interfaces[i].Finish();
+					iface.Finish();
+					iface.LinkAll();
 				}
 				// make sure all classes are loaded, before we start finishing the type. During finishing, we
 				// may not run any Java code, because that might result in a request to finish the type that we
