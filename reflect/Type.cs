@@ -459,6 +459,11 @@ namespace IKVM.Reflection
 			throw new InvalidOperationException();
 		}
 
+		public virtual CustomModifiers[] __GetGenericParameterConstraintCustomModifiers()
+		{
+			throw new InvalidOperationException();
+		}
+
 		public virtual GenericParameterAttributes GenericParameterAttributes
 		{
 			get { throw new InvalidOperationException(); }

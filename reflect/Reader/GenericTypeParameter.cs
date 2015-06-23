@@ -239,6 +239,11 @@ namespace IKVM.Reflection.Reader
 			throw new InvalidOperationException();
 		}
 
+		public override CustomModifiers[] __GetGenericParameterConstraintCustomModifiers()
+		{
+			throw new InvalidOperationException();
+		}
+
 		public override GenericParameterAttributes GenericParameterAttributes
 		{
 			get { throw new InvalidOperationException(); }
@@ -327,6 +332,24 @@ namespace IKVM.Reflection.Reader
 			foreach (int i in module.GenericParamConstraint.Filter(this.MetadataToken))
 			{
 				list.Add(module.ResolveType(module.GenericParamConstraint.records[i].Constraint, context));
+			}
+			return list.ToArray();
+		}
+
+		public override CustomModifiers[] __GetGenericParameterConstraintCustomModifiers()
+		{
+			IGenericContext context = (this.DeclaringMethod as IGenericContext) ?? this.DeclaringType;
+			List<CustomModifiers> list = new List<CustomModifiers>();
+			foreach (int i in module.GenericParamConstraint.Filter(this.MetadataToken))
+			{
+				CustomModifiers mods = new CustomModifiers();
+				int metadataToken = module.GenericParamConstraint.records[i].Constraint;
+				if ((metadataToken >> 24) == TypeSpecTable.Index)
+				{
+					int index = (metadataToken & 0xFFFFFF) - 1;
+					mods = CustomModifiers.Read(module, module.GetBlob(module.TypeSpec.records[index]), context);
+				}
+				list.Add(mods);
 			}
 			return list.ToArray();
 		}
