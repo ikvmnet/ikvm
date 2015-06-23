@@ -2888,6 +2888,15 @@
                     <ret />
                 </body>
             </method>
+            <method name="_type" sig="(Ljava.lang.invoke.MethodType;)V" modifiers="final">
+                <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
+                <body>
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <stfld class="java.lang.invoke.MemberName" name="type" sig="Ljava.lang.Object;" />
+                    <ret />
+                </body>
+            </method>
             <method name="_flags" sig="()I" modifiers="final">
                 <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
                 <body>
@@ -2969,19 +2978,28 @@
                 </replace-method-call>
             </method>
         </class>
-        <class name="java.lang.invoke.MethodHandles$Lookup">
-            <!-- We hook this to undo the fiddling we do to support string constructors -->
-            <method name="revealDirect" sig="(Ljava.lang.invoke.MethodHandle;)Ljava.lang.invoke.MethodHandleInfo;">
-                <replace-method-call class="java.lang.invoke.MethodHandle" name="internalMemberName" sig="()Ljava.lang.invoke.MemberName;">
-                    <code>
-                        <call type="Java_java_lang_invoke_MethodHandleNatives" name="internalMemberName" sig="(Ljava.lang.invoke.MethodHandle;)Ljava.lang.invoke.MemberName;" />
-                    </code>
-                </replace-method-call>
-            </method>
-        </class>
         <class name="java.lang.invoke.DirectMethodHandle">
+            <method name="_preparedLambdaForm" sig="(Ljava.lang.invoke.MethodType;I)Ljava.lang.invoke.LambdaForm;" modifiers="static">
+                <body>
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <call class="java.lang.invoke.DirectMethodHandle" name="preparedLambdaForm" sig="(Ljava.lang.invoke.MethodType;I)Ljava.lang.invoke.LambdaForm;" />
+                    <ret />
+                </body>
+            </method>
             <method name="allocateInstance" sig="(Ljava.lang.Object;)Ljava.lang.Object;">
                 <attribute type="System.Security.SecuritySafeCriticalAttribute" sig="()V" />
+            </method>
+            <method name="makeAllocator" sig="(Ljava.lang.invoke.MemberName;)Ljava.lang.invoke.DirectMethodHandle;">
+                <prologue>
+                    <ldarg_0 />
+                    <call type="Java_java_lang_invoke_DirectMethodHandle" name="makeStringAllocator" sig="(Ljava.lang.invoke.MemberName;)Ljava.lang.invoke.DirectMethodHandle;" />
+                    <dup />
+                    <brfalse name="continue" />
+                    <ret />
+                    <label name="continue" />
+                    <pop />
+                </prologue>
             </method>
         </class>
         <class name="java.lang.invoke.MethodType">

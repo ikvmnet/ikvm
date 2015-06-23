@@ -31,6 +31,26 @@ using IKVM.Internal;
 using java.lang.invoke;
 using jlClass = java.lang.Class;
 
+static class Java_java_lang_invoke_DirectMethodHandle
+{
+	// this is called from DirectMethodHandle.makeAllocator() via a map.xml prologue patch
+	public static DirectMethodHandle makeStringAllocator(MemberName member)
+	{
+#if FIRST_PASS
+		return null;
+#else
+		// we cannot construct strings via the standard two-pass approach (allocateObject followed by constructor invocation),
+		// so we special case string construction here (to call our static factory method instead)
+		if (member.getDeclaringClass() == CoreClasses.java.lang.String.Wrapper.ClassObject)
+		{
+			MethodType mt = member.getMethodType().changeReturnType(CoreClasses.java.lang.String.Wrapper.ClassObject);
+			return new DirectMethodHandle(mt, DirectMethodHandle._preparedLambdaForm(mt, MethodTypeForm.LF_INVSTATIC), member, null);
+		}
+		return null;
+#endif
+	}
+}
+
 static class Java_java_lang_invoke_MethodHandle
 {
 	public static object invokeExact(MethodHandle thisObject, object[] args)
@@ -136,35 +156,6 @@ static class Java_java_lang_invoke_MethodHandleNatives
 		return tw.IsInstance(obj) || (tw == CoreClasses.cli.System.Object.Wrapper && obj is Array);
 	}
 
-	// called from Lookup.revealDirect() (instead of MethodHandle.internalMemberName()) via map.xml replace-method-call
-	public static MemberName internalMemberName(MethodHandle mh)
-	{
-#if FIRST_PASS
-		return null;
-#else
-		MemberName mn = mh.internalMemberName();
-		if (mn.isStatic() && mn.getName() == "<init>")
-		{
-			// HACK since we convert String constructors into static methods, we have to undo that here
-			// Note that the MemberName we return is only used for a security check and by InfoFromMemberName (a MethodHandleInfo implementation),
-			// so we don't need to make it actually invokable.
-			MemberName alt = new MemberName();
-			typeof(MemberName).GetField("clazz", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(alt, mn.getDeclaringClass());
-			typeof(MemberName).GetField("name", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(alt, mn.getName());
-			typeof(MemberName).GetField("type", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(alt, mn.getMethodType().changeReturnType(typeof(void)));
-			int flags = mn._flags();
-			flags -= MethodHandleNatives.Constants.MN_IS_METHOD;
-			flags += MethodHandleNatives.Constants.MN_IS_CONSTRUCTOR;
-			flags &= ~(MethodHandleNatives.Constants.MN_REFERENCE_KIND_MASK << MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT);
-			flags |= MethodHandleNatives.Constants.REF_newInvokeSpecial << MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT;
-			flags &= ~MethodHandleNatives.Constants.ACC_STATIC;
-			alt._flags(flags);
-			return alt;
-		}
-		return mn;
-#endif
-	}
-
 	public static void init(MemberName self, object refObj)
 	{
 		init(self, refObj, false);
@@ -209,6 +200,10 @@ static class Java_java_lang_invoke_MethodHandleNatives
 		{
 			flags |= MethodHandleNatives.Constants.REF_invokeStatic << MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT;
 		}
+		else if (mw.IsConstructor && !wantSpecial)
+		{
+			flags |= MethodHandleNatives.Constants.REF_newInvokeSpecial << MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT;
+		}
 		else if (mw.IsPrivate || mw.IsFinal || mw.IsConstructor || wantSpecial)
 		{
 			flags |= MethodHandleNatives.Constants.REF_invokeSpecial << MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT;
@@ -232,16 +227,11 @@ static class Java_java_lang_invoke_MethodHandleNatives
 			{
 				parameters1[i] = mw.GetParameters()[i].ClassObject;
 			}
-			MethodType mt = MethodType.methodType(typeof(string), parameters1);
-			typeof(MemberName).GetField("type", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(self, mt);
-			self.vmtarget = CreateMemberNameDelegate(mw, null, false, mt);
-			flags -= MethodHandleNatives.Constants.REF_invokeSpecial << MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT;
-			flags += MethodHandleNatives.Constants.REF_invokeStatic << MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT;
-			flags -= MethodHandleNatives.Constants.MN_IS_CONSTRUCTOR;
-			flags += MethodHandleNatives.Constants.MN_IS_METHOD;
-			flags += MethodHandleNatives.Constants.ACC_STATIC;
+			MethodType mt = MethodType.methodType(PrimitiveTypeWrapper.VOID.ClassObject, parameters1);
+			self._type(mt);
 			self._flags(flags);
 			self._clazz(mw.DeclaringType.ClassObject);
+			self.vmtarget = CreateMemberNameDelegate(mw, null, false, self.getMethodType().changeReturnType(CoreClasses.java.lang.String.Wrapper.ClassObject));
 			return;
 		}
 		self._flags(flags);
@@ -369,8 +359,7 @@ static class Java_java_lang_invoke_MethodHandleNatives
 		}
 		if (mw.IsConstructor && mw.DeclaringType == CoreClasses.java.lang.String.Wrapper)
 		{
-			typeof(MemberName).GetField("type", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(self, self.getMethodType().changeReturnType(typeof(string)));
-			self.vmtarget = CreateMemberNameDelegate(mw, caller, false, self.getMethodType());
+			self.vmtarget = CreateMemberNameDelegate(mw, caller, false, self.getMethodType().changeReturnType(CoreClasses.java.lang.String.Wrapper.ClassObject));
 		}
 		else if (!mw.IsConstructor || invokeSpecial || newInvokeSpecial)
 		{
@@ -397,16 +386,6 @@ static class Java_java_lang_invoke_MethodHandleNatives
 		if (mw.HasCallerID || DynamicTypeWrapper.RequiresDynamicReflectionCallerClass(mw.DeclaringType.Name, mw.Name, mw.Signature))
 		{
 			self._flags(self._flags() | MemberName.CALLER_SENSITIVE);
-		}
-		if (mw.IsConstructor && mw.DeclaringType == CoreClasses.java.lang.String.Wrapper)
-		{
-			int flags = self._flags();
-			flags -= MethodHandleNatives.Constants.REF_invokeSpecial << MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT;
-			flags += MethodHandleNatives.Constants.REF_invokeStatic << MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT;
-			flags -= MethodHandleNatives.Constants.MN_IS_CONSTRUCTOR;
-			flags += MethodHandleNatives.Constants.MN_IS_METHOD;
-			flags += MethodHandleNatives.Constants.ACC_STATIC;
-			self._flags(flags);
 		}
 	}
 

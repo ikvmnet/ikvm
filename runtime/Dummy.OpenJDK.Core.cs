@@ -53,6 +53,7 @@ namespace java
 
 		namespace invoke
 		{
+			public class DirectMethodHandle { }
 			public class MemberName { }
 			public class MethodType { }
 			public class MethodHandle { }
