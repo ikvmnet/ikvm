@@ -645,7 +645,7 @@ static partial class MethodHandleUtil
 		return args;
 	}
 
-	private static Type[] GetParameterTypes(Type thisType, MethodBase mb)
+	internal static Type[] GetParameterTypes(Type thisType, MethodBase mb)
 	{
 		ParameterInfo[] pi = mb.GetParameters();
 		Type[] args = new Type[pi.Length + 1];
@@ -1064,25 +1064,7 @@ static partial class MethodHandleUtil
 
 		internal void Ldarg(int i)
 		{
-			i += firstArg;
-			if (i >= packedArgPos)
-			{
-				ilgen.EmitLdarga(packedArgPos);
-				int fieldPos = i - packedArgPos;
-				Type type = packedArgType;
-				while (fieldPos >= MaxArity || (fieldPos == MaxArity - 1 && IsPackedArgsContainer(type.GetField("t8").FieldType)))
-				{
-					FieldInfo field = type.GetField("t8");
-					type = field.FieldType;
-					ilgen.Emit(OpCodes.Ldflda, field);
-					fieldPos -= MaxArity - 1;
-				}
-				ilgen.Emit(OpCodes.Ldfld, type.GetField("t" + (1 + fieldPos)));
-			}
-			else
-			{
-				ilgen.EmitLdarg(i);
-			}
+			LoadPackedArg(ilgen, i, firstArg, packedArgPos, packedArgType);
 		}
 
 		internal void LoadCallerID()
@@ -1268,6 +1250,29 @@ static partial class MethodHandleUtil
 			type.voidAdapter = DynamicMethodBuilder.CreateVoidAdapter(type);
 		}
 		return type.voidAdapter;
+	}
+
+	internal static void LoadPackedArg(CodeEmitter ilgen, int index, int firstArg, int packedArgPos, Type packedArgType)
+	{
+		index += firstArg;
+		if (index >= packedArgPos)
+		{
+			ilgen.EmitLdarga(packedArgPos);
+			int fieldPos = index - packedArgPos;
+			Type type = packedArgType;
+			while (fieldPos >= MaxArity || (fieldPos == MaxArity - 1 && IsPackedArgsContainer(type.GetField("t8").FieldType)))
+			{
+				FieldInfo field = type.GetField("t8");
+				type = field.FieldType;
+				ilgen.Emit(OpCodes.Ldflda, field);
+				fieldPos -= MaxArity - 1;
+			}
+			ilgen.Emit(OpCodes.Ldfld, type.GetField("t" + (1 + fieldPos)));
+		}
+		else
+		{
+			ilgen.EmitLdarg(index);
+		}
 	}
 #endif
 }

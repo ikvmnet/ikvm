@@ -2867,6 +2867,47 @@
                 <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
             </field>
         </class>
+        <class name="java.lang.invoke.LambdaForm">
+            <method name="_arity" sig="()I"  modifiers="final">
+                <body>
+                    <ldarg_0 />
+                    <ldfld class="java.lang.invoke.LambdaForm" name="arity" sig="I" />
+                    <ret />
+                </body>
+            </method>
+            <method name="compileToBytecode" sig="()Ljava.lang.invoke.MemberName;">
+                <replace-method-call class="java.lang.invoke.InvokerBytecodeGenerator" name="generateCustomizedCode" sig="(Ljava.lang.invoke.LambdaForm;Ljava.lang.invoke.MethodType;)Ljava.lang.invoke.MemberName;">
+                    <code>
+                        <call type="NativeInvokerBytecodeGenerator" name="generateCustomizedCode" sig="(Ljava.lang.invoke.LambdaForm;Ljava.lang.invoke.MethodType;)Ljava.lang.invoke.MemberName;" />
+                    </code>
+                </replace-method-call>
+            </method>
+        </class>
+        <class name="java.lang.invoke.LambdaForm$Name">
+            <method name="_type" sig="()Ljava.lang.invoke.LambdaForm$BasicType;"  modifiers="final">
+                <body>
+                    <ldarg_0 />
+                    <ldfld class="java.lang.invoke.LambdaForm$Name" name="type" sig="Ljava.lang.invoke.LambdaForm$BasicType;" />
+                    <ret />
+                </body>
+            </method>
+        </class>
+        <class name="java.lang.invoke.LambdaForm$NamedFunction">
+            <method name="_member" sig="()Ljava.lang.invoke.MemberName;"  modifiers="final">
+                <body>
+                    <ldarg_0 />
+                    <ldfld class="java.lang.invoke.LambdaForm$NamedFunction" name="member" sig="Ljava.lang.invoke.MemberName;" />
+                    <ret />
+                </body>
+            </method>
+            <method name="_resolvedHandle" sig="()Ljava.lang.invoke.MethodHandle;"  modifiers="final">
+                <body>
+                    <ldarg_0 />
+                    <ldfld class="java.lang.invoke.LambdaForm$NamedFunction" name="resolvedHandle" sig="Ljava.lang.invoke.MethodHandle;" />
+                    <ret />
+                </body>
+            </method>
+        </class>
         <class name="java.lang.invoke.MemberName">
             <field name="vmtarget" sig="Ljava.lang.Object;" modifiers="">
                 <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
@@ -2885,6 +2926,15 @@
                     <ldarg_0 />
                     <ldarg_1 />
                     <stfld class="java.lang.invoke.MemberName" name="clazz" sig="Ljava.lang.Class;" />
+                    <ret />
+                </body>
+            </method>
+            <method name="_name" sig="(Ljava.lang.String;)V" modifiers="final">
+                <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
+                <body>
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <stfld class="java.lang.invoke.MemberName" name="name" sig="Ljava.lang.String;" />
                     <ret />
                 </body>
             </method>

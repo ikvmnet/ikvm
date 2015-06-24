@@ -267,7 +267,7 @@ static partial class MethodHandleUtil
 
 sealed class Compiler
 {
-	private static readonly MethodInfo unmapExceptionMethod;
+	internal static readonly MethodInfo unmapExceptionMethod;
 	private static readonly MethodInfo fixateExceptionMethod;
 	private static readonly MethodInfo suppressFillInStackTraceMethod;
 	internal static readonly MethodInfo getTypeFromHandleMethod;
@@ -3604,7 +3604,7 @@ sealed class Compiler
 		}
 	}
 
-	private sealed class MethodHandleMethodWrapper : MethodWrapper
+	internal sealed class MethodHandleMethodWrapper : MethodWrapper
 	{
 		private readonly Compiler compiler;
 		private readonly TypeWrapper wrapper;
@@ -3648,10 +3648,13 @@ sealed class Compiler
 
 		internal override void EmitCall(CodeEmitter ilgen)
 		{
-#if !FIRST_PASS && !STATIC_COMPILER
 			Debug.Assert(cpi.Name == "linkToVirtual" || cpi.Name == "linkToStatic" || cpi.Name == "linkToSpecial" || cpi.Name == "linkToInterface");
+			EmitLinkToCall(ilgen, cpi.GetArgTypes(), cpi.GetRetType());
+		}
 
-			TypeWrapper[] args = cpi.GetArgTypes();
+		internal static void EmitLinkToCall(CodeEmitter ilgen, TypeWrapper[] args, TypeWrapper retType)
+		{
+#if !FIRST_PASS && !STATIC_COMPILER
 			CodeEmitterLocal[] temps = new CodeEmitterLocal[args.Length];
 			for (int i = args.Length - 1; i > 0; i--)
 			{
@@ -3662,7 +3665,7 @@ sealed class Compiler
 			temps[0] = ilgen.DeclareLocal(args[0].TypeAsSignatureType);
 			ilgen.Emit(OpCodes.Stloc, temps[0]);
 			Array.Resize(ref args, args.Length - 1);
-			Type delegateType = MethodHandleUtil.CreateMemberWrapperDelegateType(args, cpi.GetRetType());
+			Type delegateType = MethodHandleUtil.CreateMemberWrapperDelegateType(args, retType);
 			ilgen.Emit(OpCodes.Ldloc, temps[args.Length]);
 			ilgen.Emit(OpCodes.Ldfld, typeof(java.lang.invoke.MemberName).GetField("vmtarget", BindingFlags.Instance | BindingFlags.NonPublic));
 			ilgen.Emit(OpCodes.Castclass, delegateType);
@@ -3671,7 +3674,7 @@ sealed class Compiler
 				ilgen.Emit(OpCodes.Ldloc, temps[i]);
 			}
 			MethodHandleUtil.EmitCallDelegateInvokeMethod(ilgen, delegateType);
-			FromBasic(ReturnType, ilgen);
+			FromBasic(retType, ilgen);
 #else
 			throw new InvalidOperationException();
 #endif
@@ -3774,17 +3777,27 @@ sealed class Compiler
 
 		private void EmitInvokeBasic(CodeEmitter ilgen)
 		{
-			TypeWrapper[] args = ArrayUtil.Concat(CoreClasses.java.lang.invoke.MethodHandle.Wrapper, cpi.GetArgTypes());
+			TypeWrapper retType = cpi.GetRetType();
+			EmitInvokeBasic(ilgen, cpi.GetArgTypes(), retType, true);
+			FromBasic(retType, ilgen);
+		}
+
+		internal static void EmitInvokeBasic(CodeEmitter ilgen, TypeWrapper[] args, TypeWrapper retType, bool toBasic)
+		{
+			args = ArrayUtil.Concat(CoreClasses.java.lang.invoke.MethodHandle.Wrapper, args);
 			CodeEmitterLocal[] temps = new CodeEmitterLocal[args.Length];
 			for (int i = args.Length - 1; i > 0; i--)
 			{
 				temps[i] = ilgen.DeclareLocal(MethodHandleUtil.AsBasicType(args[i]));
-				ToBasic(args[i], ilgen);
+				if (toBasic)
+				{
+					ToBasic(args[i], ilgen);
+				}
 				ilgen.Emit(OpCodes.Stloc, temps[i]);
 			}
 			temps[0] = ilgen.DeclareLocal(args[0].TypeAsSignatureType);
 			ilgen.Emit(OpCodes.Stloc, temps[0]);
-			Type delegateType = MethodHandleUtil.CreateMemberWrapperDelegateType(args, cpi.GetRetType());
+			Type delegateType = MethodHandleUtil.CreateMemberWrapperDelegateType(args, retType);
 			MethodInfo mi = ByteCodeHelperMethods.GetDelegateForInvokeBasic.MakeGenericMethod(delegateType);
 			ilgen.Emit(OpCodes.Ldloc, temps[0]);
 			ilgen.Emit(OpCodes.Call, mi);
@@ -3793,7 +3806,6 @@ sealed class Compiler
 				ilgen.Emit(OpCodes.Ldloc, temps[i]);
 			}
 			MethodHandleUtil.EmitCallDelegateInvokeMethod(ilgen, delegateType);
-			FromBasic(ReturnType, ilgen);
 		}
 
 		internal override void EmitCallvirt(CodeEmitter ilgen)

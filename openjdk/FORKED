@@ -30,6 +30,7 @@ jdk/src/share/classes/java/io/RandomAccessFile.java=java/io/RandomAccessFile.jav
 jdk/src/share/classes/java/lang/Class.java=java/lang/Class.java
 jdk/src/share/classes/java/lang/ClassLoader.java=java/lang/ClassLoader.java
 jdk/src/share/classes/java/lang/Enum.java=java/lang/Enum.java
+jdk/src/share/classes/java/lang/invoke/InvokerBytecodeGenerator.java=../runtime/openjdk/NativeInvokerBytecodeGenerator.cs
 jdk/src/share/classes/java/lang/management/PlatformComponent.java=java/lang/management/PlatformComponent.java
 jdk/src/share/classes/java/lang/ref/SoftReference.java=java/lang/ref/SoftReference.java
 jdk/src/share/classes/java/lang/reflect/Constructor.java=java/lang/reflect/Constructor.java
