@@ -88,6 +88,7 @@ java/io/RandomAccessFile.java
 java/lang/Class.java
 java/lang/ClassLoader.java
 java/lang/ClassLoaderHelper.java
+java/lang/ClassSerializationProxy.java
 java/lang/Enum.java
 java/lang/invoke/LightWeightMethodHandle.java
 java/lang/LangHelper.java

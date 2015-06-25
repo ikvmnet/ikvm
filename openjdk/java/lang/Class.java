@@ -70,67 +70,8 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Proxy;
 import sun.reflect.annotation.*;
 import sun.reflect.misc.ReflectUtil;
-import cli.System.Runtime.Serialization.IObjectReference;
-import cli.System.Runtime.Serialization.SerializationException;
 import cli.System.Runtime.Serialization.SerializationInfo;
 import cli.System.Runtime.Serialization.StreamingContext;
-
-@cli.System.SerializableAttribute.Annotation
-final class ClassSerializationProxy implements IObjectReference
-{
-    private cli.System.Type type;
-    private String sig;
-
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    public Object GetRealObject(StreamingContext context)
-    {
-        if (sig != null)
-        {
-            if (sig.length() == 1)
-            {
-                switch (sig.charAt(0))
-                {
-                    case 'B':
-                        return Byte.TYPE;
-                    case 'C':
-                        return Character.TYPE;
-                    case 'D':
-                        return Double.TYPE;
-                    case 'F':
-                        return Float.TYPE;
-                    case 'I':
-                        return Integer.TYPE;
-                    case 'J':
-                        return Long.TYPE;
-                    case 'S':
-                        return Short.TYPE;
-                    case 'Z':
-                        return Boolean.TYPE;
-                    case 'V':
-                        return Void.TYPE;
-                }
-            }
-            String className;
-            if (sig.charAt(0) == 'L')
-            {
-                className = sig.substring(1, sig.length() - 1);
-            }
-            else
-            {
-                className = sig;
-            }
-            try
-            {
-                return Class.forName(className, false, Thread.currentThread().getContextClassLoader());
-            }
-            catch (ClassNotFoundException x)
-            {
-                ikvm.runtime.Util.throwException(new SerializationException(x.getMessage(), x));
-            }
-        }
-        return ikvm.runtime.Util.getClassFromTypeHandle(type.get_TypeHandle());
-    }
-}
 
 /**
  * Instances of the class {@code Class} represent classes and
