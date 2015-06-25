@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2014 Jeroen Frijters
+  Copyright (C) 2002-2015 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -23,6 +23,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -129,6 +130,24 @@ namespace IKVM.NativeCode.java.lang
 		public static string getStderrEncoding()
 		{
 			return IsWindowsConsole(false) ? GetConsoleEncoding() : null;
+		}
+
+		public static FileVersionInfo getKernel32FileVersionInfo()
+		{
+			try
+			{
+				foreach (ProcessModule module in Process.GetCurrentProcess().Modules)
+				{
+					if (string.Compare(module.ModuleName, "kernel32.dll", StringComparison.OrdinalIgnoreCase) == 0)
+					{
+						return module.FileVersionInfo;
+					}
+				}
+			}
+			catch
+			{
+			}
+			return null;
 		}
 
 		private static bool IsWindowsConsole(bool stdout)

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2004-2014 Jeroen Frijters
+  Copyright (C) 2004-2015 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -24,6 +24,7 @@
 package java.lang;
 
 import java.util.Properties;
+import cli.System.Diagnostics.FileVersionInfo;
 import static ikvm.internal.Util.SafeGetEnvironmentVariable;
 
 final class VMSystemProperties
@@ -152,6 +153,13 @@ final class VMSystemProperties
         switch(os.get_Platform().Value)
         {
             case cli.System.PlatformID.Win32NT:
+                // Windows lies about the version, so we extract the real version from kernel32.dll
+                FileVersionInfo kernel32 = getKernel32FileVersionInfo();
+                if (kernel32 != null)
+                {
+                    major = kernel32.get_ProductMajorPart();
+                    minor = kernel32.get_ProductMinorPart();
+                }
                 osname = "Windows NT (unknown)";
                 switch(major)
                 {
@@ -196,6 +204,15 @@ final class VMSystemProperties
                             case 3:
                                 osver = "6.3";
                                 osname = "Windows 8.1";
+                                break;
+                        }
+                        break;
+                    case 10:
+                        switch(minor)
+                        {
+                            case 0:
+                                osver = "10.0";
+                                osname = "Windows 10";
                                 break;
                         }
                         break;
@@ -448,4 +465,5 @@ final class VMSystemProperties
     private static native String getBootClassPath();
     private static native String getStdoutEncoding();
     private static native String getStderrEncoding();
+    private static native FileVersionInfo getKernel32FileVersionInfo();
 }
