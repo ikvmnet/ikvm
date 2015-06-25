@@ -1,11 +1,11 @@
 IKVM.NET Build Instructions
 ---------------------------
 
-This IKVM.NET source bundle requires OpenJDK 8 b132 sources (and build artifacts).
+This IKVM.NET source bundle requires OpenJDK 8u45 b14 sources (and build artifacts).
 
 They can be downloaded from the SourceForge IKVM project, or from:
 
-http://www.frijters.net/openjdk-8-b132-stripped.zip
+http://www.frijters.net/openjdk-8u45-b14-stripped.zip
 
 This file should be unzipped in the same directory as where the ikvm directory
 (that contains this unzipped source bundle) lives.
