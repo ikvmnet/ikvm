@@ -151,14 +151,8 @@ class Thread implements Runnable {
         // body replaced in map.xml
     }
     final class Cleanup {
-        private final Thread thread;
-
-        Cleanup(Thread thread) {
-            this.thread = thread;
-        }
-
         protected void finalize() {
-            thread.die();
+            Thread.this.die();
         }
     }
     /* --- start IKVM specific state --- */
@@ -560,7 +554,7 @@ class Thread implements Runnable {
         }
 
         current = this;
-        cleanup = new Cleanup(this);
+        cleanup = new Cleanup();
 
         if (!daemon) {
             cli.System.Threading.Interlocked.Increment(nonDaemonCount);
