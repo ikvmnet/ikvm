@@ -185,6 +185,105 @@ static class Java_java_io_FileDescriptor
 	}
 }
 
+static class Java_java_io_FileInputStream
+{
+	public static void open0(object _this, string name, [In] java.io.FileDescriptor fd)
+	{
+#if !FIRST_PASS
+		fd.openReadOnly(name);
+#endif
+	}
+
+	public static int read0(object _this, [In] java.io.FileDescriptor fd)
+	{
+#if FIRST_PASS
+		return 0;
+#else
+		return fd.read();
+#endif
+	}
+
+	public static int readBytes(object _this, byte[] b, int off, int len, [In] java.io.FileDescriptor fd)
+	{
+#if FIRST_PASS
+		return 0;
+#else
+		return fd.readBytes(b, off, len);
+#endif
+	}
+
+	public static long skip(object _this, long n, [In] java.io.FileDescriptor fd)
+	{
+#if FIRST_PASS
+		return 0;
+#else
+		return fd.skip(n);
+#endif
+	}
+
+	public static int available(object _this, [In] java.io.FileDescriptor fd)
+	{
+#if FIRST_PASS
+		return 0;
+#else
+		return fd.available();
+#endif
+	}
+
+	public static void close0(object _this, [In] java.io.FileDescriptor fd)
+	{
+#if !FIRST_PASS
+		fd.close();
+#endif
+	}
+
+	public static void initIDs()
+	{
+	}
+}
+
+static class Java_java_io_FileOutputStream
+{
+	public static void open0(object _this, string name, bool append, [In] java.io.FileDescriptor fd)
+	{
+#if !FIRST_PASS
+		if (append)
+		{
+			fd.openAppend(name);
+		}
+		else
+		{
+			fd.openWriteOnly(name);
+		}
+#endif
+	}
+
+	public static void write(object _this, int b, bool append, [In] java.io.FileDescriptor fd)
+	{
+#if !FIRST_PASS
+		fd.write(b);
+#endif
+	}
+
+	public static void writeBytes(object _this, byte[] b, int off, int len, bool append, [In] java.io.FileDescriptor fd)
+	{
+#if !FIRST_PASS
+		fd.writeBytes(b, off, len);
+#endif
+	}
+
+	public static void close0(object _this, [In] java.io.FileDescriptor fd)
+	{
+#if !FIRST_PASS
+		fd.close();
+#endif
+	}
+
+	public static void initIDs()
+	{
+	}
+}
+
 static class Java_java_io_ObjectInputStream
 {
 	public static void bytesToFloats(byte[] src, int srcpos, float[] dst, int dstpos, int nfloats)
@@ -664,6 +763,98 @@ static class Java_java_io_ObjectStreamClass
 #else
 		return new FastFieldReflector(fieldsObj);
 #endif
+	}
+}
+
+static class Java_java_io_RandomAccessFile
+{
+	public static void open0(object _this, string name, int mode, [In] java.io.FileDescriptor fd, [In] int O_RDWR)
+	{
+#if !FIRST_PASS
+		if ((mode & O_RDWR) == O_RDWR)
+		{
+			fd.openReadWrite(name);
+		}
+		else
+		{
+			fd.openReadOnly(name);
+		}
+#endif
+	}
+
+	public static int read0(object _this, [In] java.io.FileDescriptor fd)
+	{
+#if FIRST_PASS
+		return 0;
+#else
+		return fd.read();
+#endif
+	}
+
+	public static int readBytes(object _this, byte[] b, int off, int len, [In] java.io.FileDescriptor fd)
+	{
+#if FIRST_PASS
+		return 0;
+#else
+		return fd.readBytes(b, off, len);
+#endif
+	}
+
+	public static void write0(object _this, int b, [In] java.io.FileDescriptor fd)
+	{
+#if !FIRST_PASS
+		fd.write(b);
+#endif
+	}
+
+	public static void writeBytes(object _this, byte[] b, int off, int len, [In] java.io.FileDescriptor fd)
+	{
+#if !FIRST_PASS
+		fd.writeBytes(b, off, len);
+#endif
+	}
+
+	public static long getFilePointer(object _this, [In] java.io.FileDescriptor fd)
+	{
+#if FIRST_PASS
+		return 0;
+#else
+		return fd.getFilePointer();
+#endif
+	}
+
+	public static void seek0(object _this, long pos, [In] java.io.FileDescriptor fd)
+	{
+#if !FIRST_PASS
+		fd.seek(pos);
+#endif
+	}
+
+	public static long length(object _this, [In] java.io.FileDescriptor fd)
+	{
+#if FIRST_PASS
+		return 0;
+#else
+		return fd.length();
+#endif
+	}
+
+	public static void setLength(object _this, long newLength, [In] java.io.FileDescriptor fd)
+	{
+#if !FIRST_PASS
+		fd.setLength(newLength);
+#endif
+	}
+
+	public static void close0(object _this, [In] java.io.FileDescriptor fd)
+	{
+#if !FIRST_PASS
+		fd.close();
+#endif
+	}
+
+	public static void initIDs()
+	{
 	}
 }
 

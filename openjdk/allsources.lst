@@ -78,13 +78,10 @@ java/awt/image/LookupOp.java
 java/awt/image/RescaleOp.java
 java/io/DefaultFileSystem.java
 java/io/FileDescriptor.java
-java/io/FileInputStream.java
-java/io/FileOutputStream.java
 java/io/InteropObjectInputStream.java
 java/io/InteropObjectOutputStream.java
 java/io/ObjectStreamClass.java
 java/io/ObjectStreamField.java
-java/io/RandomAccessFile.java
 java/lang/Class.java
 java/lang/ClassLoader.java
 java/lang/ClassLoaderHelper.java
@@ -10046,8 +10043,10 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/jdk/src/share/classes/java/io/Externalizable.java
 @OPENJDK@/jdk/src/share/classes/java/io/File.java
 @OPENJDK@/jdk/src/share/classes/java/io/FileFilter.java
+@OPENJDK@/jdk/src/share/classes/java/io/FileInputStream.java
 @OPENJDK@/jdk/src/share/classes/java/io/FilenameFilter.java
 @OPENJDK@/jdk/src/share/classes/java/io/FileNotFoundException.java
+@OPENJDK@/jdk/src/share/classes/java/io/FileOutputStream.java
 @OPENJDK@/jdk/src/share/classes/java/io/FilePermission.java
 @OPENJDK@/jdk/src/share/classes/java/io/FileReader.java
 @OPENJDK@/jdk/src/share/classes/java/io/FileSystem.java
@@ -10086,6 +10085,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/jdk/src/share/classes/java/io/PrintWriter.java
 @OPENJDK@/jdk/src/share/classes/java/io/PushbackInputStream.java
 @OPENJDK@/jdk/src/share/classes/java/io/PushbackReader.java
+@OPENJDK@/jdk/src/share/classes/java/io/RandomAccessFile.java
 @OPENJDK@/jdk/src/share/classes/java/io/Reader.java
 @OPENJDK@/jdk/src/share/classes/java/io/SequenceInputStream.java
 @OPENJDK@/jdk/src/share/classes/java/io/SerialCallbackContext.java
