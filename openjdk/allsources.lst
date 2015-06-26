@@ -113,8 +113,6 @@ java/net/DualStackPlainSocketImpl.java
 java/net/DualStackPlainSocketImpl_c.java
 java/net/net_util_md.java
 java/net/PlainSocketImpl.java
-java/net/SocketInputStream.java
-java/net/SocketOutputStream.java
 java/net/SocketUtil.java
 java/net/TwoStacksPlainDatagramSocketImpl.java
 java/net/TwoStacksPlainDatagramSocketImpl_c.java
@@ -10371,8 +10369,10 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/jdk/src/share/classes/java/net/SocketException.java
 @OPENJDK@/jdk/src/share/classes/java/net/SocketImpl.java
 @OPENJDK@/jdk/src/share/classes/java/net/SocketImplFactory.java
+@OPENJDK@/jdk/src/share/classes/java/net/SocketInputStream.java
 @OPENJDK@/jdk/src/share/classes/java/net/SocketOption.java
 @OPENJDK@/jdk/src/share/classes/java/net/SocketOptions.java
+@OPENJDK@/jdk/src/share/classes/java/net/SocketOutputStream.java
 @OPENJDK@/jdk/src/share/classes/java/net/SocketPermission.java
 @OPENJDK@/jdk/src/share/classes/java/net/SocketSecrets.java
 @OPENJDK@/jdk/src/share/classes/java/net/SocketTimeoutException.java

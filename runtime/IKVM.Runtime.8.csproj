@@ -155,6 +155,7 @@
     <Compile Include="openjdk\java.lang.invoke.cs" />
     <Compile Include="openjdk\java.lang.reflect.cs" />
     <Compile Include="openjdk\java.net.cs" />
+    <Compile Include="openjdk\java.net.SocketInputStream.cs" />
     <Compile Include="openjdk\java.nio.cs" />
     <Compile Include="openjdk\java.security.cs" />
     <Compile Include="openjdk\java.util.cs" />

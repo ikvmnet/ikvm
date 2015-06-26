@@ -190,6 +190,7 @@
                 <include name="openjdk/java.lang.invoke.cs" />
                 <include name="openjdk/java.lang.reflect.cs" />
                 <include name="openjdk/java.net.cs" />
+                <include name="openjdk/java.net.SocketInputStream.cs" />
                 <include name="openjdk/java.nio.cs" />
                 <include name="openjdk/java.security.cs" />
                 <include name="openjdk/java.util.cs" />
