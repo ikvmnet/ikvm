@@ -4388,8 +4388,13 @@ namespace IKVM.Internal
 									foreach (MethodInfo method in nativeCodeTypeMethods)
 									{
 										ParameterInfo[] param = method.GetParameters();
-										TypeWrapper[] match = new TypeWrapper[param.Length];
-										for (int j = 0; j < param.Length; j++)
+										int paramLength = param.Length;
+										while (paramLength != 0 && (param[paramLength - 1].IsIn || param[paramLength - 1].ParameterType.IsByRef))
+										{
+											paramLength--;
+										}
+										TypeWrapper[] match = new TypeWrapper[paramLength];
+										for (int j = 0; j < paramLength; j++)
 										{
 											match[j] = ClassLoaderWrapper.GetWrapperFromType(param[j].ParameterType);
 										}
@@ -4403,9 +4408,60 @@ namespace IKVM.Internal
 								}
 								if (nativeMethod != null)
 								{
+#if STATIC_COMPILER
 									for (int j = 0; j < nargs.Length; j++)
 									{
 										ilGenerator.EmitLdarg(j);
+									}
+									ParameterInfo[] param = nativeMethod.GetParameters();
+									for (int j = nargs.Length; j < param.Length; j++)
+									{
+										Type paramType = param[j].ParameterType;
+										TypeWrapper fieldTypeWrapper = ClassLoaderWrapper.GetWrapperFromType(paramType.IsByRef ? paramType.GetElementType() : paramType);
+										FieldWrapper field = wrapper.GetFieldWrapper(param[j].Name, fieldTypeWrapper.SigName);
+										if (field == null)
+										{
+											Console.Error.WriteLine("Error: Native method field binding not found: {0}.{1}{2}", classFile.Name, param[j].Name, fieldTypeWrapper.SigName);
+											StaticCompiler.errorCount++;
+											continue;
+										}
+										if (m.IsStatic && !field.IsStatic)
+										{
+											Console.Error.WriteLine("Error: Native method field binding cannot access instance field from static method: {0}.{1}{2}", classFile.Name, param[j].Name, fieldTypeWrapper.SigName);
+											StaticCompiler.errorCount++;
+											continue;
+										}
+										if (!field.IsAccessibleFrom(wrapper, wrapper, wrapper))
+										{
+											Console.Error.WriteLine("Error: Native method field binding not accessible: {0}.{1}{2}", classFile.Name, param[j].Name, fieldTypeWrapper.SigName);
+											StaticCompiler.errorCount++;
+											continue;
+										}
+										if (paramType.IsByRef && field.IsFinal)
+										{
+											Console.Error.WriteLine("Error: Native method field binding cannot use ByRef for final field: {0}.{1}{2}", classFile.Name, param[j].Name, fieldTypeWrapper.SigName);
+											StaticCompiler.errorCount++;
+											continue;
+										}
+										field.Link();
+										if (paramType.IsByRef && field.GetField() == null)
+										{
+											Console.Error.WriteLine("Error: Native method field binding cannot use ByRef on field without backing field: {0}.{1}{2}", classFile.Name, param[j].Name, fieldTypeWrapper.SigName);
+											StaticCompiler.errorCount++;
+											continue;
+										}
+										if (!field.IsStatic)
+										{
+											ilGenerator.EmitLdarg(0);
+										}
+										if (paramType.IsByRef)
+										{
+											ilGenerator.Emit(field.IsStatic ? OpCodes.Ldsflda : OpCodes.Ldflda, field.GetField());
+										}
+										else
+										{
+											field.EmitGet(ilGenerator);
+										}
 									}
 									ilGenerator.Emit(OpCodes.Call, nativeMethod);
 									TypeWrapper retTypeWrapper = methods[i].ReturnType;
@@ -4414,6 +4470,7 @@ namespace IKVM.Internal
 										ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.TypeAsTBD);
 									}
 									ilGenerator.Emit(OpCodes.Ret);
+#endif
 								}
 								else
 								{
