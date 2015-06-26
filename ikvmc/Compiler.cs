@@ -838,7 +838,7 @@ sealed class IkvmcCompiler
 				}
 				else if(s == "-opt:fields")
 				{
-					options.removeUnusedFields = true;
+					options.codegenoptions |= CodeGenOptions.RemoveUnusedFields;
 				}
 				else if(s == "-compressresources")
 				{

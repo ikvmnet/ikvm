@@ -1520,6 +1520,18 @@ namespace IKVM.Internal
 				}
 				int fieldIndex = GetFieldIndex(fw);
 #if STATIC_COMPILER
+				if (wrapper.GetClassLoader().RemoveUnusedFields
+					&& fw.IsPrivate
+					&& fw.IsStatic
+					&& fw.IsFinal
+					&& fw.Name != "serialVersionUID"
+					&& classFile.Fields[fieldIndex].Annotations == null
+					&& !classFile.IsReferenced(classFile.Fields[fieldIndex]))
+				{
+					// unused, so we skip it
+					Tracer.Info(Tracer.Compiler, "Unused field {0}::{1}", wrapper.Name, fw.Name);
+					return null;
+				}
 				// for compatibility with broken Java code that assumes that reflection returns the fields in class declaration
 				// order, we emit the fields in class declaration order in the .NET metadata (and then when we retrieve them
 				// using .NET reflection, we sort on metadata token.)

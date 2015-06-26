@@ -294,10 +294,6 @@ namespace IKVM.Internal
 						StaticCompiler.IssueMessage(options, Message.WrongClassName, name, f.Name);
 						return null;
 					}
-					if(options.removeUnusedFields)
-					{
-						f.RemoveUnusedFields();
-					}
 					if(f.IsPublic && options.privatePackages != null)
 					{
 						foreach(string p in options.privatePackages)
@@ -3475,7 +3471,6 @@ namespace IKVM.Internal
 		internal Dictionary<string, string> props;
 		internal bool noglobbing;
 		internal CodeGenOptions codegenoptions;
-		internal bool removeUnusedFields;
 		internal bool compressedResources;
 		internal string[] privatePackages;
 		internal string[] publicPackages;

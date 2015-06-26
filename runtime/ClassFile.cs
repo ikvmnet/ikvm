@@ -1037,25 +1037,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal void RemoveUnusedFields()
-		{
-			List<Field> list = new List<Field>();
-			foreach(Field f in fields)
-			{
-				if(f.IsPrivate && f.IsStatic && f.Name != "serialVersionUID" && !IsReferenced(f))
-				{
-					// unused, so we skip it
-					Tracer.Info(Tracer.Compiler, "Unused field {0}::{1}", this.Name, f.Name);
-				}
-				else
-				{
-					list.Add(f);
-				}
-			}
-			fields = list.ToArray();
-		}
-
-		private bool IsReferenced(Field fld)
+		internal bool IsReferenced(Field fld)
 		{
 			foreach(ConstantPoolItem cpi in constantpool)
 			{

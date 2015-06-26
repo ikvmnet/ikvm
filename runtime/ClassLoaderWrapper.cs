@@ -53,6 +53,7 @@ namespace IKVM.Internal
 		NoAutomagicSerialization = 32,
 		DisableDynamicBinding = 64,
 		NoRefEmitHelpers = 128,
+		RemoveUnusedFields = 256,
 	}
 
 	[Flags]
@@ -326,6 +327,14 @@ namespace IKVM.Internal
 			get
 			{
 				return (codegenoptions & CodeGenOptions.NoRefEmitHelpers) != 0;
+			}
+		}
+
+		internal bool RemoveUnusedFields
+		{
+			get
+			{
+				return (codegenoptions & CodeGenOptions.RemoveUnusedFields) != 0;
 			}
 		}
 
