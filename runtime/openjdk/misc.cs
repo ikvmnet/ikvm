@@ -300,6 +300,9 @@ static class Java_sun_security_provider_NativeSeedGenerator
 		{
 			RNGCryptoServiceProvider csp = new RNGCryptoServiceProvider();
 			csp.GetBytes(result);
+#if NET_4_0
+			csp.Dispose();
+#endif
 			return true;
 		}
 		catch (CryptographicException)
