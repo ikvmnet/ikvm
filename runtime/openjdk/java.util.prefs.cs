@@ -333,13 +333,13 @@ static class UACVirtualization
 		TokenVirtualizationEnabled = 24
 	}
 
-	[DllImport("advapi32.dll", SetLastError = true)]
-	private static extern bool GetTokenInformation(
+	[DllImport("advapi32.dll")]
+	private static extern int GetTokenInformation(
 		IntPtr TokenHandle,
 		TOKEN_INFORMATION_CLASS TokenInformationClass,
-		out uint TokenInformation,
-		uint TokenInformationLength,
-		out uint ReturnLength);
+		out int TokenInformation,
+		int TokenInformationLength,
+		out int ReturnLength);
 
 	internal static bool Enabled
 	{
@@ -351,9 +351,9 @@ static class UACVirtualization
 			{
 				return false;
 			}
-			uint enabled, length;
-			GetTokenInformation(WindowsIdentity.GetCurrent().Token, TOKEN_INFORMATION_CLASS.TokenVirtualizationEnabled, out enabled, 4, out length);
-			return enabled != 0;
+			int enabled, length;
+			return GetTokenInformation(WindowsIdentity.GetCurrent().Token, TOKEN_INFORMATION_CLASS.TokenVirtualizationEnabled, out enabled, 4, out length) != 0
+				&& enabled != 0;
 		}
 	}
 }
