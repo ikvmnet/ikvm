@@ -351,27 +351,22 @@ static class Java_com_sun_java_util_jar_pack_NativeUnpack
 
 static class Java_com_sun_security_auth_module_NTSystem
 {
-	public static void getCurrent(object thisObj, bool debug)
+	public static void getCurrent(object thisObj, bool debug, ref string userName, ref string domain, ref string domainSID, ref string userSID, ref string[] groupIDs, ref string primaryGroupID)
 	{
 		WindowsIdentity id = WindowsIdentity.GetCurrent();
 		string[] name = id.Name.Split('\\');
-		SetField(thisObj, "userName", name[1]);
-		SetField(thisObj, "domain", name[0]);
-		SetField(thisObj, "domainSID", id.User.AccountDomainSid.Value);
-		SetField(thisObj, "userSID", id.User.Value);
+		userName = name[1];
+		domain = name[0];
+		domainSID = id.User.AccountDomainSid.Value;
+		userSID = id.User.Value;
 		string[] groups = new string[id.Groups.Count];
 		for (int i = 0; i < groups.Length; i++)
 		{
 			groups[i] = id.Groups[i].Value;
 		}
-		SetField(thisObj, "groupIDs", groups);
+		groupIDs = groups;
 		// HACK it turns out that Groups[0] is the primary group, but AFAIK this is not documented anywhere
-		SetField(thisObj, "primaryGroupID", groups[0]);
-	}
-
-	private static void SetField(object thisObj, string field, object value)
-	{
-		thisObj.GetType().GetField(field, BindingFlags.NonPublic | BindingFlags.Instance).SetValue(thisObj, value);
+		primaryGroupID = groups[0];
 	}
 
 	public static long getImpersonationToken0(object thisObj)
