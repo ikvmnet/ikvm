@@ -228,7 +228,7 @@ namespace IKVM.StubGen
 			{
 				if (!fw.IsHideFromReflection)
 				{
-					bool isSerialVersionUID = includeSerialVersionUID && fw.Name == "serialVersionUID" && fw.FieldTypeWrapper == PrimitiveTypeWrapper.LONG;
+					bool isSerialVersionUID = includeSerialVersionUID && fw.IsSerialVersionUID;
 					hasSerialVersionUID |= isSerialVersionUID;
 					if (fw.IsPublic || fw.IsProtected || isSerialVersionUID || includeNonPublicMembers)
 					{

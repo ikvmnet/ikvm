@@ -1531,6 +1531,21 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal bool IsSerialVersionUID
+		{
+			get
+			{
+				// a serialVersionUID field must be static and final to be recognized (see ObjectStreamClass.getDeclaredSUID())
+				return (Modifiers & (Modifiers.Static | Modifiers.Final)) == (Modifiers.Static | Modifiers.Final)
+					&& Name == "serialVersionUID"
+					&& (FieldTypeWrapper == PrimitiveTypeWrapper.LONG
+						|| FieldTypeWrapper == PrimitiveTypeWrapper.INT
+						|| FieldTypeWrapper == PrimitiveTypeWrapper.CHAR
+						|| FieldTypeWrapper == PrimitiveTypeWrapper.SHORT
+						|| FieldTypeWrapper == PrimitiveTypeWrapper.BYTE);
+			}
+		}
+
 		internal static FieldWrapper Create(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string name, string sig, ExModifiers modifiers)
 		{
 			// volatile long & double field accesses must be made atomic

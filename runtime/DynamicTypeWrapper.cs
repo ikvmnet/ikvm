@@ -1524,7 +1524,7 @@ namespace IKVM.Internal
 					&& fw.IsPrivate
 					&& fw.IsStatic
 					&& fw.IsFinal
-					&& fw.Name != "serialVersionUID"
+					&& !fw.IsSerialVersionUID
 					&& classFile.Fields[fieldIndex].Annotations == null
 					&& !classFile.IsReferenced(classFile.Fields[fieldIndex]))
 				{
