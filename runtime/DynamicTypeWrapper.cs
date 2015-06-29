@@ -497,12 +497,13 @@ namespace IKVM.Internal
 
 			internal void CreateStep1()
 			{
-				// process all methods
+				// process all methods (needs to be done first, because property fields depend on being able to lookup the accessor methods)
 				bool hasclinit = wrapper.BaseTypeWrapper == null ? false : wrapper.BaseTypeWrapper.HasStaticInitializer;
 				methods = new MethodWrapper[classFile.Methods.Length];
 				baseMethods = new MethodWrapper[classFile.Methods.Length][];
 				for (int i = 0; i < methods.Length; i++)
 				{
+					MemberFlags flags = MemberFlags.None;
 					ClassFile.Method m = classFile.Methods[i];
 					if (m.IsClassInitializer)
 					{
@@ -510,12 +511,9 @@ namespace IKVM.Internal
 						bool noop;
 						if (IsSideEffectFreeStaticInitializerOrNoop(m, out noop))
 						{
-							// because we cannot affect serialVersionUID computation (which is the only way the presence of a <clinit> can surface)
-							// we cannot do this optimization if the class is serializable but doesn't have a serialVersionUID
-							if (noop && (!wrapper.IsSerializable || classFile.HasSerialVersionUID))
+							if (noop)
 							{
-								methods[i] = new DummyMethodWrapper(wrapper);
-								continue;
+								flags |= MemberFlags.NoOp;
 							}
 						}
 						else
@@ -526,7 +524,6 @@ namespace IKVM.Internal
 						hasclinit = true;
 #endif
 					}
-					MemberFlags flags = MemberFlags.None;
 					if (m.IsInternal)
 					{
 						flags |= MemberFlags.InternalAccess;
@@ -2912,6 +2909,7 @@ namespace IKVM.Internal
 
 			internal override MethodBase LinkMethod(MethodWrapper mw)
 			{
+				Debug.Assert(mw != null);
 				if (mw is DelegateConstructorMethodWrapper)
 				{
 					((DelegateConstructorMethodWrapper)mw).DoLink(typeBuilder);
@@ -2921,7 +2919,13 @@ namespace IKVM.Internal
 				{
 					return ((DelegateInvokeStubMethodWrapper)mw).DoLink(typeBuilder);
 				}
-				Debug.Assert(mw != null);
+				if (mw.IsClassInitializer && mw.IsNoOp && (!wrapper.IsSerializable || HasSerialVersionUID))
+				{
+					// we don't need to emit the <clinit>, because it is empty and we're not serializable or have an explicit serialVersionUID
+					// (because we cannot affect serialVersionUID computation (which is the only way the presence of a <clinit> can surface)
+					// we cannot do this optimization if the class is serializable but doesn't have a serialVersionUID)
+					return null;
+				}
 				int index = GetMethodIndex(mw);
 				if (baseMethods[index] != null)
 				{
@@ -3074,6 +3078,21 @@ namespace IKVM.Internal
 				finally
 				{
 					Profiler.Leave("JavaTypeImpl.GenerateMethod");
+				}
+			}
+
+			private bool HasSerialVersionUID
+			{
+				get
+				{
+					foreach (FieldWrapper field in fields)
+					{
+						if (field.IsSerialVersionUID)
+						{
+							return true;
+						}
+					}
+					return false;
 				}
 			}
 

@@ -3864,14 +3864,5 @@ namespace IKVM.Internal
 			}
 			return null;
 		}
-
-		internal bool HasSerialVersionUID
-		{
-			get
-			{
-				Field field = GetField("serialVersionUID", "J");
-				return field != null && field.IsStatic && field.IsFinal;
-			}
-		}
 	}
 }

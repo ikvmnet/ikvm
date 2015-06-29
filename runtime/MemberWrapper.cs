@@ -53,6 +53,7 @@ namespace IKVM.Internal
 		NonPublicTypeInSignature = 512,	// this flag is only available after linking and is not set for access stubs
 		DelegateInvokeWithByRefParameter = 1024,
 		Type2FinalField = 2048,
+		NoOp = 4096, // empty static initializer
 	}
 
 	abstract class MemberWrapper
@@ -294,6 +295,11 @@ namespace IKVM.Internal
 		internal bool IsDelegateInvokeWithByRefParameter
 		{
 			get { return (flags & MemberFlags.DelegateInvokeWithByRefParameter) != 0; }
+		}
+
+		internal bool IsNoOp
+		{
+			get { return (flags & MemberFlags.NoOp) != 0; }
 		}
 
 		internal Modifiers Modifiers
@@ -875,22 +881,6 @@ namespace IKVM.Internal
 					&& (DeclaringType == CoreClasses.java.lang.Object.Wrapper || DeclaringType == CoreClasses.java.lang.Throwable.Wrapper)
 					&& (Name == StringConstants.CLONE || Name == StringConstants.FINALIZE);
 			}
-		}
-	}
-
-	// placeholder for <clinit> method that exist in ClassFile but not in TypeWrapper
-	// (because it is optimized away)
-	sealed class DummyMethodWrapper : MethodWrapper
-	{
-		internal DummyMethodWrapper(TypeWrapper tw)
-			: base(tw, StringConstants.CLINIT, StringConstants.SIG_VOID, null, PrimitiveTypeWrapper.VOID, TypeWrapper.EmptyArray, Modifiers.Static, MemberFlags.None)
-		{
-		}
-
-		protected override void DoLinkMethod()
-		{
-			// we're pre-linked (because we pass the signature types to the base constructor)
-			throw new InvalidOperationException();
 		}
 	}
 
