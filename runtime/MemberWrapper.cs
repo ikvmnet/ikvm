@@ -1804,7 +1804,7 @@ namespace IKVM.Internal
 		{
 			if(getter == null)
 			{
-				EmitThrowNoSuchMethodErrorForGetter(ilgen, this.FieldTypeWrapper, this.IsStatic);
+				EmitThrowNoSuchMethodErrorForGetter(ilgen, this.FieldTypeWrapper, this);
 			}
 			else if(getter.IsStatic)
 			{
@@ -1816,15 +1816,18 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal static void EmitThrowNoSuchMethodErrorForGetter(CodeEmitter ilgen, TypeWrapper type, bool isStatic)
+		internal static void EmitThrowNoSuchMethodErrorForGetter(CodeEmitter ilgen, TypeWrapper type, MemberWrapper member)
 		{
+#if STATIC_COMPILER
+			StaticCompiler.IssueMessage(Message.EmittedNoSuchMethodError, "<unknown>", member.DeclaringType.Name + "." + member.Name + member.Signature);
+#endif
 			// HACK the branch around the throw is to keep the verifier happy
 			CodeEmitterLabel label = ilgen.DefineLabel();
 			ilgen.Emit(OpCodes.Ldc_I4_0);
 			ilgen.EmitBrtrue(label);
 			ilgen.EmitThrow("java.lang.NoSuchMethodError");
 			ilgen.MarkLabel(label);
-			if (!isStatic)
+			if (!member.IsStatic)
 			{
 				ilgen.Emit(OpCodes.Pop);
 			}
@@ -1845,7 +1848,7 @@ namespace IKVM.Internal
 				}
 				else
 				{
-					EmitThrowNoSuchMethodErrorForSetter(ilgen, this.IsStatic);
+					EmitThrowNoSuchMethodErrorForSetter(ilgen, this);
 				}
 			}
 			else if(setter.IsStatic)
@@ -1858,8 +1861,11 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal static void EmitThrowNoSuchMethodErrorForSetter(CodeEmitter ilgen, bool isStatic)
+		internal static void EmitThrowNoSuchMethodErrorForSetter(CodeEmitter ilgen, MemberWrapper member)
 		{
+#if STATIC_COMPILER
+			StaticCompiler.IssueMessage(Message.EmittedNoSuchMethodError, "<unknown>", member.DeclaringType.Name + "." + member.Name + member.Signature);
+#endif
 			// HACK the branch around the throw is to keep the verifier happy
 			CodeEmitterLabel label = ilgen.DefineLabel();
 			ilgen.Emit(OpCodes.Ldc_I4_0);
@@ -1867,7 +1873,7 @@ namespace IKVM.Internal
 			ilgen.EmitThrow("java.lang.NoSuchMethodError");
 			ilgen.MarkLabel(label);
 			ilgen.Emit(OpCodes.Pop);
-			if (!isStatic)
+			if (!member.IsStatic)
 			{
 				ilgen.Emit(OpCodes.Pop);
 			}
@@ -1913,7 +1919,7 @@ namespace IKVM.Internal
 			MethodInfo getter = property.GetGetMethod(true);
 			if(getter == null)
 			{
-				DynamicPropertyFieldWrapper.EmitThrowNoSuchMethodErrorForGetter(ilgen, this.FieldTypeWrapper, this.IsStatic);
+				DynamicPropertyFieldWrapper.EmitThrowNoSuchMethodErrorForGetter(ilgen, this.FieldTypeWrapper, this);
 			}
 			else if(getter.IsStatic)
 			{
@@ -1940,7 +1946,7 @@ namespace IKVM.Internal
 				}
 				else
 				{
-					DynamicPropertyFieldWrapper.EmitThrowNoSuchMethodErrorForSetter(ilgen, this.IsStatic);
+					DynamicPropertyFieldWrapper.EmitThrowNoSuchMethodErrorForSetter(ilgen, this);
 				}
 			}
 			else if(setter.IsStatic)
