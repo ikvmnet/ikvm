@@ -543,13 +543,14 @@ static class Java_java_lang_Class
 				throw new ClassFormatError(wrapper.Name);
 			}
 			MethodWrapper[] methods = wrapper.GetMethods();
-			List<java.lang.reflect.Method> list = new List<java.lang.reflect.Method>();
+			List<java.lang.reflect.Method> list = new List<java.lang.reflect.Method>(methods.Length);
 			for (int i = 0; i < methods.Length; i++)
 			{
 				// we don't want to expose "hideFromReflection" methods (one reason is that it would
 				// mess up the serialVersionUID computation)
 				if (!methods[i].IsHideFromReflection
-					&& methods[i].Name != "<clinit>" && methods[i].Name != "<init>"
+					&& !methods[i].IsConstructor
+					&& !methods[i].IsClassInitializer
 					&& (!publicOnly || methods[i].IsPublic))
 				{
 					list.Add((java.lang.reflect.Method)methods[i].ToMethodOrConstructor(false));
@@ -595,7 +596,7 @@ static class Java_java_lang_Class
 				// we don't want to expose "hideFromReflection" methods (one reason is that it would
 				// mess up the serialVersionUID computation)
 				if (!methods[i].IsHideFromReflection
-					&& methods[i].Name == "<init>"
+					&& methods[i].IsConstructor
 					&& (!publicOnly || methods[i].IsPublic))
 				{
 					list.Add((java.lang.reflect.Constructor)methods[i].ToMethodOrConstructor(false));

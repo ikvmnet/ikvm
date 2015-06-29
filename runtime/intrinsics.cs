@@ -616,7 +616,7 @@ namespace IKVM.Internal
 		{
 			// it is only valid to replace a ThreadLocal instantiation by our ThreadStatic based version, if we can prove that the instantiation only happens once
 			// (which is the case when we're in <clinit> and there aren't any branches that lead to the current position)
-			if (eic.Caller.Name != StringConstants.CLINIT)
+			if (!eic.Caller.IsClassInitializer)
 			{
 				return false;
 			}

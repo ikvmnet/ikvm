@@ -81,7 +81,7 @@ namespace IKVM.StubGen
 		{
 			foreach (MethodWrapper mw in tw.GetMethods())
 			{
-				if (!mw.IsHideFromReflection && mw.Name != StringConstants.CLINIT)
+				if (!mw.IsHideFromReflection && !mw.IsClassInitializer)
 				{
 					return true;
 				}

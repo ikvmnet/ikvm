@@ -853,6 +853,11 @@ namespace IKVM.Internal
 			get { return (object)Name == (object)StringConstants.INIT; }
 		}
 
+		internal bool IsClassInitializer
+		{
+			get { return (object)Name == (object)StringConstants.CLINIT; }
+		}
+
 		internal bool IsVirtual
 		{
 			get

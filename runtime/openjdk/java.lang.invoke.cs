@@ -507,7 +507,7 @@ static class Java_java_lang_invoke_MethodHandleNatives
 		MethodWrapper[] methods = TypeWrapper.FromClass(defc).GetMethods();
 		for (int i = skip, len = Math.Min(results.Length, methods.Length - skip); i < len; i++)
 		{
-			if (!methods[i].IsConstructor && methods[i].Name != StringConstants.CLINIT)
+			if (!methods[i].IsConstructor && !methods[i].IsClassInitializer)
 			{
 				results[i - skip] = new MemberName((java.lang.reflect.Method)methods[i].ToMethodOrConstructor(true), false);
 			}
