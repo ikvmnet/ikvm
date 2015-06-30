@@ -1176,10 +1176,6 @@ namespace IKVM.Internal
 								noop = false;
 								return false;
 							}
-							if (!field.IsFinal || !field.IsStatic)
-							{
-								noop = false;
-							}
 						}
 						else if (field.IsProperty && field.PropertyGetter != null)
 						{
@@ -1187,21 +1183,13 @@ namespace IKVM.Internal
 							return false;
 						}
 					}
-					else if (bc == NormalizedByteCode.__areturn ||
-						bc == NormalizedByteCode.__ireturn ||
-						bc == NormalizedByteCode.__lreturn ||
-						bc == NormalizedByteCode.__freturn ||
-						bc == NormalizedByteCode.__dreturn)
-					{
-						noop = false;
-						return false;
-					}
 					else if (ByteCodeMetaData.CanThrowException(bc))
 					{
 						noop = false;
 						return false;
 					}
 					else if (bc == NormalizedByteCode.__aconst_null
+						|| (bc == NormalizedByteCode.__iconst && m.Instructions[i].Arg1 == 0)
 						|| bc == NormalizedByteCode.__return
 						|| bc == NormalizedByteCode.__nop)
 					{
