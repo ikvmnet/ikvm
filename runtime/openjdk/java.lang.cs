@@ -1174,6 +1174,65 @@ static class Java_java_lang_StrictMath
 
 static class Java_java_lang_System
 {
+	public static void registerNatives()
+	{
+	}
+
+	public static void setIn0(object @in)
+	{
+#if !FIRST_PASS
+		java.lang.StdIO.@in = (java.io.InputStream)@in;
+#endif
+	}
+
+	public static void setOut0(object @out)
+	{
+#if !FIRST_PASS
+		java.lang.StdIO.@out = (java.io.PrintStream)@out;
+#endif
+	}
+
+	public static void setErr0(object err)
+	{
+#if !FIRST_PASS
+		java.lang.StdIO.err = (java.io.PrintStream)err;
+#endif
+	}
+
+	public static object initProperties(object props)
+	{
+#if FIRST_PASS
+		return null;
+#else
+		java.lang.VMSystemProperties.initProperties((java.util.Properties)props);
+		return props;
+#endif
+	}
+
+	public static string mapLibraryName(string libname)
+	{
+#if FIRST_PASS
+		return null;
+#else
+		if (libname == null)
+		{
+			throw new java.lang.NullPointerException();
+		}
+		if (ikvm.@internal.Util.WINDOWS)
+		{
+			return libname + ".dll";
+		}
+		else if (ikvm.@internal.Util.MACOSX)
+		{
+			return "lib" + libname + ".jnilib";
+		}
+		else
+		{
+			return "lib" + libname + ".so";
+		}
+#endif
+	}
+
 	public static void arraycopy(object src, int srcPos, object dest, int destPos, int length)
 	{
 		IKVM.Runtime.ByteCodeHelper.arraycopy(src, srcPos, dest, destPos, length);

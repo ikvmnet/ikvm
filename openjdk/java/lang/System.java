@@ -91,6 +91,18 @@ final class Props
  */
 public final class System {
 
+    /* register the natives via the static initializer.
+     *
+     * VM will invoke the initializeSystemClass method to complete
+     * the initialization for this class separated from clinit.
+     * Note that to use properties set by the VM, see the constraints
+     * described in the initializeSystemClass method.
+     */
+    private static native void registerNatives();
+    static {
+        //registerNatives();
+    }
+
     /** Don't let anyone instantiate this class */
     private System() {
     }
@@ -102,10 +114,8 @@ public final class System {
      * the host environment or user.
      */
     @ikvm.lang.Property(get="get_in")
-    public final static InputStream in;
-    
-    static { in = null; }
-    
+    public final static InputStream in = null;
+
     private static InputStream get_in()
     {
         return StdIO.in;
@@ -137,10 +147,8 @@ public final class System {
      * @see     java.io.PrintStream#println(java.lang.String)
      */
     @ikvm.lang.Property(get="get_out")
-    public final static PrintStream out;
-    
-    static { out = null; }
-    
+    public final static PrintStream out = null;
+
     private static PrintStream get_out()
     {
         return StdIO.out;
@@ -159,9 +167,7 @@ public final class System {
      * destination that is typically not continuously monitored.
      */
     @ikvm.lang.Property(get="get_err")
-    public final static PrintStream err;
-    
-    static { err = null ; }
+    public final static PrintStream err = null;
 
     private static PrintStream get_err()
     {
@@ -170,7 +176,7 @@ public final class System {
 
     /* The security manager for the system.
      */
-    private static volatile SecurityManager security;
+    private static volatile SecurityManager security = null;
 
     /**
      * Reassigns the "standard" input stream.
@@ -194,7 +200,7 @@ public final class System {
      */
     public static void setIn(InputStream in) {
         checkIO();
-        StdIO.in = in;
+        setIn0(in);
     }
 
     /**
@@ -218,7 +224,7 @@ public final class System {
      */
     public static void setOut(PrintStream out) {
         checkIO();
-        StdIO.out = out;
+        setOut0(out);
     }
 
     /**
@@ -242,10 +248,10 @@ public final class System {
      */
     public static void setErr(PrintStream err) {
         checkIO();
-        StdIO.err = err;
+        setErr0(err);
     }
 
-    private static volatile Console cons;
+    private static volatile Console cons = null;
     /**
      * Returns the unique {@link java.io.Console Console} object associated
      * with the current Java virtual machine, if any.
@@ -298,6 +304,10 @@ public final class System {
             sm.checkPermission(new RuntimePermission("setIO"));
         }
     }
+
+    private static native void setIn0(InputStream in);
+    private static native void setOut0(PrintStream out);
+    private static native void setErr0(PrintStream err);
 
     /**
      * Sets the System security.
@@ -582,7 +592,12 @@ public final class System {
      * </dl>
      */
 
-    //private static native Properties initProperties(Properties props);
+    @ikvm.lang.Property(get="get_props", set="set_props")
+    private static Properties props;
+    private static native Properties initProperties(Properties props);
+
+    private static Properties get_props() { return Props.props; }
+    private static void set_props(Properties value) { Props.props = value; }
 
     /**
      * Determines the current system properties.
@@ -683,7 +698,7 @@ public final class System {
             sm.checkPropertiesAccess();
         }
 
-        return Props.props;
+        return props;
     }
 
     /**
@@ -698,8 +713,14 @@ public final class System {
      * @since 1.7
      */
     public static String lineSeparator() {
-        return Props.lineSeparator;
+        return lineSeparator;
     }
+
+    @ikvm.lang.Property(get="get_lineSeparator", set="set_lineSeparator")
+    private static String lineSeparator;
+
+    private static String get_lineSeparator() { return Props.lineSeparator; }
+    private static void set_lineSeparator(String value) { Props.lineSeparator = value; }
 
     /**
      * Sets the system properties to the <code>Properties</code>
@@ -730,9 +751,9 @@ public final class System {
         }
         if (props == null) {
             props = new Properties();
-            VMSystemProperties.initProperties(props);
+            initProperties(props);
         }
-        Props.props = props;
+        System.props = props;
     }
 
     /**
@@ -768,7 +789,7 @@ public final class System {
             sm.checkPropertyAccess(key);
         }
 
-        return Props.props.getProperty(key);
+        return props.getProperty(key);
     }
 
     /**
@@ -804,7 +825,7 @@ public final class System {
             sm.checkPropertyAccess(key);
         }
 
-        return Props.props.getProperty(key, def);
+        return props.getProperty(key, def);
     }
 
     /**
@@ -844,7 +865,7 @@ public final class System {
                 SecurityConstants.PROPERTY_WRITE_ACTION));
         }
 
-        return (String) Props.props.setProperty(key, value);
+        return (String) props.setProperty(key, value);
     }
 
     /**
@@ -881,7 +902,7 @@ public final class System {
             sm.checkPermission(new PropertyPermission(key, "write"));
         }
 
-        return (String) Props.props.remove(key);
+        return (String) props.remove(key);
     }
 
     private static void checkKey(String key) {
@@ -1185,18 +1206,7 @@ public final class System {
      * @see        java.lang.ClassLoader#findLibrary(java.lang.String)
      * @since      1.2
      */
-    public static String mapLibraryName(String libname) {
-        if (libname == null) {
-            throw new NullPointerException();
-        }
-        if (ikvm.internal.Util.WINDOWS) {
-            return libname + ".dll";
-        } else if (ikvm.internal.Util.MACOSX) {
-            return "lib" + libname + ".jnilib";
-        } else {
-            return "lib" + libname + ".so";
-        }
-    }
+    public static native String mapLibraryName(String libname);
 
     /**
      * Create PrintStream for stdout/err based on encoding.
