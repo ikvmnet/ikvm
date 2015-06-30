@@ -152,7 +152,7 @@ sun/awt/image/SunWritableRaster.java
 sun/awt/image/ToolkitImage.java
 sun/awt/shell/Win32ShellFolder2.java
 sun/awt/shell/Win32ShellFolderManager2.java
-sun/awt/SunToolkit.java
+sun/awt/DebugSettings.java
 sun/awt/Win32FontManager.java
 sun/awt/X11FontManager.java
 sun/awt/windows/WPrinterJob.java
@@ -13063,6 +13063,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 @OPENJDK@/jdk/src/share/classes/sun/awt/SunDisplayChanger.java
 @OPENJDK@/jdk/src/share/classes/sun/awt/SunGraphicsCallback.java
 @OPENJDK@/jdk/src/share/classes/sun/awt/SunHints.java
+@OPENJDK@/jdk/src/share/classes/sun/awt/SunToolkit.java
 @OPENJDK@/jdk/src/share/classes/sun/awt/Symbol.java
 @OPENJDK@/jdk/src/share/classes/sun/awt/TimedWindowEvent.java
 @OPENJDK@/jdk/src/share/classes/sun/awt/TracedEventQueue.java
