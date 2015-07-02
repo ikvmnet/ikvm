@@ -51,6 +51,7 @@ namespace IKVM.Internal
 		LineNumberTable = 2,
 		RelaxedClassNameValidation = 4,
 		TrustedAnnotations = 8,
+		RemoveAssertions = 16,
 	}
 
 	sealed class ClassFile
@@ -68,6 +69,7 @@ namespace IKVM.Internal
 		private const ushort FLAG_LAMBDAFORM_COMPILED = 0x800;
 		private const ushort FLAG_LAMBDAFORM_HIDDEN = 0x1000;
 		private const ushort FLAG_FORCEINLINE = 0x2000;
+		private const ushort FLAG_HAS_ASSERTIONS = 0x4000;
 		private ConstantPoolItemClass[] interfaces;
 		private Field[] fields;
 		private Method[] methods;
@@ -345,6 +347,10 @@ namespace IKVM.Internal
 						if(!sig.EndsWith("V"))
 						{
 							throw new ClassFormatError("{0} (Method \"{1}\" has illegal signature \"{2}\")", Name, name, sig);
+						}
+						if((options & ClassFileParseOptions.RemoveAssertions) != 0 && methods[i].IsClassInitializer)
+						{
+							RemoveAssertionInit(methods[i]);
 						}
 					}
 				}
@@ -1309,6 +1315,14 @@ namespace IKVM.Internal
 		{
 			access_flags &= ~Modifiers.AccessMask;
 			flags |= FLAG_MASK_INTERNAL;
+		}
+
+		internal bool HasAssertions
+		{
+			get
+			{
+				return (flags & FLAG_HAS_ASSERTIONS) != 0;
+			}
 		}
 
 		internal bool HasInitializedFields
@@ -2706,6 +2720,11 @@ namespace IKVM.Internal
 				}
 			}
 
+			internal void PatchConstantValue(object value)
+			{
+				constantValue = value;
+			}
+
 			internal bool IsStaticFinalConstant
 			{
 				get { return (access_flags & (Modifiers.Final | Modifiers.Static)) == (Modifiers.Final | Modifiers.Static) && constantValue != null; }
@@ -3863,6 +3882,124 @@ namespace IKVM.Internal
 				}
 			}
 			return null;
+		}
+
+		private void RemoveAssertionInit(Method m)
+		{
+			/* We match the following code sequence:
+			 *   0  ldc <class X>
+			 *   2  invokevirtual <Method java/lang/Class desiredAssertionStatus()Z>
+			 *   5  ifne 12
+			 *   8  iconst_1
+			 *   9  goto 13
+			 *  12  iconst_0
+			 *  13  putstatic <Field <this class> boolean <static final field>>
+			 */
+			ConstantPoolItemFieldref fieldref;
+			Field field;
+			if (m.Instructions[0].NormalizedOpCode == NormalizedByteCode.__ldc && SafeIsConstantPoolClass(m.Instructions[0].Arg1)
+				&& m.Instructions[1].NormalizedOpCode == NormalizedByteCode.__invokevirtual && IsDesiredAssertionStatusMethodref(m.Instructions[1].Arg1)
+				&& m.Instructions[2].NormalizedOpCode == NormalizedByteCode.__ifne && m.Instructions[2].TargetIndex == 5
+				&& m.Instructions[3].NormalizedOpCode == NormalizedByteCode.__iconst && m.Instructions[3].Arg1 == 1
+				&& m.Instructions[4].NormalizedOpCode == NormalizedByteCode.__goto && m.Instructions[4].TargetIndex == 6
+				&& m.Instructions[5].NormalizedOpCode == NormalizedByteCode.__iconst && m.Instructions[5].Arg1 == 0
+				&& m.Instructions[6].NormalizedOpCode == NormalizedByteCode.__putstatic && (fieldref = SafeGetFieldref(m.Instructions[6].Arg1)) != null
+				&& fieldref.Class == Name && fieldref.Signature == "Z"
+				&& (field = GetField(fieldref.Name, fieldref.Signature)) != null
+				&& field.IsStatic && field.IsFinal
+				&& !HasBranchIntoRegion(m.Instructions, 7, m.Instructions.Length, 0, 7)
+				&& !HasStaticFieldWrite(m.Instructions, 7, m.Instructions.Length, field)
+				&& !HasExceptionHandlerInRegion(m.ExceptionTable, 0, 7))
+			{
+				field.PatchConstantValue(true);
+				m.Instructions[0].PatchOpCode(NormalizedByteCode.__goto, 7);
+				flags |= FLAG_HAS_ASSERTIONS;
+			}
+		}
+
+		private bool IsDesiredAssertionStatusMethodref(int cpi)
+		{
+			ConstantPoolItemMethodref method = SafeGetMethodref(cpi) as ConstantPoolItemMethodref;
+			return method != null
+				&& method.Class == "java.lang.Class"
+				&& method.Name == "desiredAssertionStatus"
+				&& method.Signature == "()Z";
+		}
+
+		private static bool HasBranchIntoRegion(Method.Instruction[] instructions, int checkStart, int checkEnd, int regionStart, int regionEnd)
+		{
+			for (int i = checkStart; i < checkEnd; i++)
+			{
+				switch (instructions[i].NormalizedOpCode)
+				{
+					case NormalizedByteCode.__ifeq:
+					case NormalizedByteCode.__ifne:
+					case NormalizedByteCode.__iflt:
+					case NormalizedByteCode.__ifge:
+					case NormalizedByteCode.__ifgt:
+					case NormalizedByteCode.__ifle:
+					case NormalizedByteCode.__if_icmpeq:
+					case NormalizedByteCode.__if_icmpne:
+					case NormalizedByteCode.__if_icmplt:
+					case NormalizedByteCode.__if_icmpge:
+					case NormalizedByteCode.__if_icmpgt:
+					case NormalizedByteCode.__if_icmple:
+					case NormalizedByteCode.__if_acmpeq:
+					case NormalizedByteCode.__if_acmpne:
+					case NormalizedByteCode.__ifnull:
+					case NormalizedByteCode.__ifnonnull:
+					case NormalizedByteCode.__goto:
+					case NormalizedByteCode.__jsr:
+						if (instructions[i].TargetIndex > regionStart && instructions[i].TargetIndex < regionEnd)
+						{
+							return true;
+						}
+						break;
+					case NormalizedByteCode.__tableswitch:
+					case NormalizedByteCode.__lookupswitch:
+						if (instructions[i].DefaultTarget > regionStart && instructions[i].DefaultTarget < regionEnd)
+						{
+							return true;
+						}
+						for (int j = 0; j < instructions[i].SwitchEntryCount; j++)
+						{
+							if (instructions[i].GetSwitchTargetIndex(j) > regionStart && instructions[i].GetSwitchTargetIndex(j) < regionEnd)
+							{
+								return true;
+							}
+						}
+						break;
+				}
+			}
+			return false;
+		}
+
+		private bool HasStaticFieldWrite(Method.Instruction[] instructions, int checkStart, int checkEnd, Field field)
+		{
+			for (int i = checkStart; i < checkEnd; i++)
+			{
+				if (instructions[i].NormalizedOpCode == NormalizedByteCode.__putstatic)
+				{
+					ConstantPoolItemFieldref fieldref = SafeGetFieldref(instructions[i].Arg1);
+					if (fieldref != null && fieldref.Class == Name && fieldref.Name == field.Name && fieldref.Signature == field.Signature)
+					{
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
+		private static bool HasExceptionHandlerInRegion(Method.ExceptionTableEntry[] entries, int regionStart, int regionEnd)
+		{
+			for (int i = 0; i < entries.Length; i++)
+			{
+				if (entries[i].handlerIndex > regionStart && entries[i].handlerIndex < regionEnd)
+				{
+					return true;
+				}
+			}
+			return false;
 		}
 	}
 }

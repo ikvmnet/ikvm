@@ -1495,6 +1495,10 @@ namespace IKVM.Internal
 				{
 					cfp |= ClassFileParseOptions.TrustedAnnotations;
 				}
+				if (RemoveAsserts)
+				{
+					cfp |= ClassFileParseOptions.RemoveAssertions;
+				}
 				return cfp;
 #else
 				ClassFileParseOptions cfp = ClassFileParseOptions.LineNumberTable;

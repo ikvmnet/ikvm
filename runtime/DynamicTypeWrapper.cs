@@ -1147,7 +1147,20 @@ namespace IKVM.Internal
 				noop = true;
 				for (int i = 0; i < m.Instructions.Length; i++)
 				{
-					NormalizedByteCode bc = m.Instructions[i].NormalizedOpCode;
+					NormalizedByteCode bc;
+					while ((bc = m.Instructions[i].NormalizedOpCode) == NormalizedByteCode.__goto)
+					{
+						int target = m.Instructions[i].TargetIndex;
+						if (target <= i)
+						{
+							// backward branch means we can't do anything
+							noop = false;
+							return false;
+						}
+						// we must skip the unused instructions because the "remove assertions" optimization
+						// uses a goto to remove the (now unused) code
+						i = target;
+					}
 					if (bc == NormalizedByteCode.__getstatic || bc == NormalizedByteCode.__putstatic)
 					{
 						ClassFile.ConstantPoolItemFieldref fld = classFile.SafeGetFieldref(m.Instructions[i].Arg1);
