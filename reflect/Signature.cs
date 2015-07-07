@@ -150,6 +150,7 @@ namespace IKVM.Reflection
 			Type[] args = new Type[br.ReadCompressedUInt()];
 			for (int i = 0; i < args.Length; i++)
 			{
+				CustomModifiers.Skip(br);
 				args[i] = ReadType(module, br, context);
 			}
 			return args;
