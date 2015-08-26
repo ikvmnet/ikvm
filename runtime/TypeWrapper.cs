@@ -3655,6 +3655,13 @@ namespace IKVM.Internal
 		{
 			get
 			{
+#if STATIC_COMPILER
+				if (missingType != null)
+				{
+					StaticCompiler.IssueMissingTypeMessage(missingType);
+					return TypeWrapper.EmptyArray;
+				}
+#endif
 				throw new InvalidOperationException("get_Interfaces called on UnloadableTypeWrapper: " + Name);
 			}
 		}
