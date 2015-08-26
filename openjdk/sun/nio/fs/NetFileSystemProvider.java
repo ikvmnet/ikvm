@@ -36,6 +36,8 @@ import cli.System.IO.FileMode;
 import cli.System.IO.FileShare;
 import cli.System.IO.FileStream;
 import cli.System.IO.FileOptions;
+import cli.System.Runtime.InteropServices.DllImportAttribute;
+import cli.System.Runtime.InteropServices.Marshal;
 import cli.System.Security.AccessControl.FileSystemRights;
 import com.sun.nio.file.ExtendedOpenOption;
 import java.io.FileDescriptor;
@@ -628,6 +630,7 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
         NetPath nsource = NetPath.from(source);
         NetPath ntarget = NetPath.from(target);
         boolean overwrite = false;
+        boolean atomicMove = false;
         for (CopyOption opt : options)
         {
             if (opt == StandardCopyOption.REPLACE_EXISTING)
@@ -636,7 +639,14 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
             }
             else if (opt == StandardCopyOption.ATOMIC_MOVE)
             {
-                throw new AtomicMoveNotSupportedException(nsource.path, ntarget.path, "Unsupported copy option");
+                if (WINDOWS)
+                {
+                    atomicMove = true;
+                }
+                else
+                {
+                    throw new AtomicMoveNotSupportedException(nsource.path, ntarget.path, "Unsupported copy option");
+                }
             }
             else
             {
@@ -650,6 +660,36 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
         {
             sm.checkRead(nsource.path);
             sm.checkWrite(ntarget.path);
+        }
+        if (atomicMove)
+        {
+            int MOVEFILE_REPLACE_EXISTING = 1;
+            if (MoveFileEx(nsource.path, ntarget.path, MOVEFILE_REPLACE_EXISTING) == 0)
+            {
+                final int ERROR_FILE_NOT_FOUND = 2;
+                final int ERROR_PATH_NOT_FOUND = 3;
+                final int ERROR_ACCESS_DENIED = 5;
+                final int ERROR_NOT_SAME_DEVICE = 17;
+                final int ERROR_FILE_EXISTS = 80;
+                final int ERROR_ALREADY_EXISTS = 183;
+                int lastError = Marshal.GetLastWin32Error();
+                switch (lastError)
+                {
+                    case ERROR_FILE_NOT_FOUND:
+                    case ERROR_PATH_NOT_FOUND:
+                        throw new NoSuchFileException(nsource.path, ntarget.path, null);
+                    case ERROR_ACCESS_DENIED:
+                        throw new AccessDeniedException(nsource.path, ntarget.path, null);
+                    case ERROR_NOT_SAME_DEVICE:
+                        throw new AtomicMoveNotSupportedException(nsource.path, ntarget.path, "Unsupported copy option");
+                    case ERROR_FILE_EXISTS:
+                    case ERROR_ALREADY_EXISTS:
+                        throw new FileAlreadyExistsException(nsource.path, ntarget.path, null);
+                    default:
+                        throw new FileSystemException(nsource.path, ntarget.path, "Error " + lastError);
+                }
+            }
+            return;
         }
         try
         {
@@ -710,6 +750,9 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
             throw new AccessDeniedException(nsource.path, ntarget.path, x.getMessage());
         }
     }
+
+    @DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
+    private static native int MoveFileEx(String lpExistingFileName, String lpNewFileName, int dwFlags);
 
     public boolean isSameFile(Path path, Path path2) throws IOException
     {
