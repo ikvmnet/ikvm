@@ -514,6 +514,13 @@ static class Java_java_net_NetworkInterface
 				IPAddress addr = uipaic[j].Address;
 				if (addr.AddressFamily == AddressFamily.InterNetwork)
 				{
+					if (ifaces[i].OperationalStatus != OperationalStatus.Up)
+					{
+						// HACK on Windows, OpenJDK seems to only return IPv4 addresses for interfaces that are up.
+						// This is possibly the result of their usage of the (legacy) Win32 API GetIpAddrTable.
+						// Not doing this filtering causes some OpenJDK tests to fail.
+						continue;
+					}
 					java.net.Inet4Address address = new java.net.Inet4Address(null, addr.GetAddressBytes());
 					java.net.InterfaceAddress binding = new java.net.InterfaceAddress();
 					short mask = 32;
