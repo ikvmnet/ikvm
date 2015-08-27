@@ -1133,7 +1133,7 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 
-		internal void WriteMetadata(MetadataWriter mw, out int guidHeapOffset)
+		internal void WriteMetadata(MetadataWriter mw, out uint guidHeapOffset)
 		{
 			mw.Write(0x424A5342);			// Signature ("BSJB")
 			mw.Write((ushort)1);			// MajorVersion

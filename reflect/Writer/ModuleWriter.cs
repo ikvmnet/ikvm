@@ -313,7 +313,7 @@ namespace IKVM.Reflection.Writer
 			}
 
 			stream.Seek(text.PointerToRawData, SeekOrigin.Begin);
-			int guidHeapOffset;
+			uint guidHeapOffset;
 			code.Write(mw, sdata.VirtualAddress, out guidHeapOffset);
 
 			if (sdata.SizeOfRawData != 0)

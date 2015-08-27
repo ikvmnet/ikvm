@@ -275,7 +275,7 @@ namespace IKVM.Reflection.Writer
 			}
 		}
 
-		internal void Write(MetadataWriter mw, uint sdataRVA, out int guidHeapOffset)
+		internal void Write(MetadataWriter mw, uint sdataRVA, out uint guidHeapOffset)
 		{
 			// Now that we're ready to start writing, we need to do some fix ups
 			moduleBuilder.TypeRef.Fixup(moduleBuilder);

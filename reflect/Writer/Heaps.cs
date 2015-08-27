@@ -36,7 +36,7 @@ namespace IKVM.Reflection.Writer
 
 		internal void Write(MetadataWriter mw)
 		{
-			int pos = mw.Position;
+			uint pos = mw.Position;
 			WriteImpl(mw);
 			Debug.Assert(mw.Position == pos + unalignedlength);
 			int align = Length - unalignedlength;
@@ -136,7 +136,7 @@ namespace IKVM.Reflection.Writer
 			{
 				if (table != null && table.RowCount > 0)
 				{
-					int pos = mw.Position;
+					uint pos = mw.Position;
 					table.Write(mw);
 					Debug.Assert(mw.Position - pos == table.GetLength(mw));
 				}

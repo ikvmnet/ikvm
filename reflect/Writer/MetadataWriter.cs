@@ -48,9 +48,9 @@ namespace IKVM.Reflection.Writer
 			get { return moduleBuilder; }
 		}
 
-		internal int Position
+		internal uint Position
 		{
-			get { return (int)stream.Position; }
+			get { return (uint)stream.Position; }
 		}
 
 		internal void Write(ByteBuffer bb)
