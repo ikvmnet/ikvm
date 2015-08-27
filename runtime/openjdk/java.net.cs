@@ -466,6 +466,7 @@ static class Java_java_net_NetworkInterface
 		int lo = 0;
 		int ppp = 0;
 		int sl = 0;
+		int wlan = 0;
 		int net = 0;
 		for (int i = 0; i < ifaces.Length; i++)
 		{
@@ -494,6 +495,9 @@ static class Java_java_net_NetworkInterface
 					break;
 				case NetworkInterfaceType.Slip:
 					name = "sl" + sl++;
+					break;
+				case NetworkInterfaceType.Wireless80211:
+					name = "wlan" + wlan++;
 					break;
 				default:
 					name = "net" + net++;
