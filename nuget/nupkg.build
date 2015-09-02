@@ -32,6 +32,7 @@
             </fileset>
         </delete>
         <delete dir="Package" />
+        <delete dir="Package.NativeBinaries" />
     </target>
 
     <target name="version">
@@ -48,8 +49,25 @@
         </copy>
     </target>
 
+    <target name="IKVM.NativeBinaries.nuspec" depends="version">
+        <copy file="IKVM.NativeBinaries.nuspec.in" tofile="Package.NativeBinaries/IKVM.NativeBinaries.nuspec" overwrite="true">
+            <filterchain>
+                <replacetokens>
+                    <token key="VERSION" value="${VERSION}" />
+                </replacetokens>
+            </filterchain>
+        </copy>
+    </target>
+
     <target name="Package">
         <copy todir="Package">
+            <fileset basedir="..">
+                <include name="LICENSE" />
+                <include name="THIRD_PARTY_README" />
+                <include name="TRADEMARK" />
+            </fileset>
+        </copy>
+        <copy todir="Package.NativeBinaries">
             <fileset basedir="..">
                 <include name="LICENSE" />
                 <include name="THIRD_PARTY_README" />
@@ -61,16 +79,18 @@
                 <include name="IKVM.AWT.WinForms.dll" />
                 <include name="IKVM.OpenJDK.*.dll" />
                 <include name="IKVM.Runtime.dll" />
-                <include name="IKVM.Runtime.JNI.dll" />
             </fileset>
         </copy>
-        <copy file="../bin/ikvm-native-win32-x64.dll" todir="Package/x64/lib" />
-        <copy file="../bin/ikvm-native-win32-x86.dll" todir="Package/x86/lib" />
-        <copy file="../bin-x64/JVM.DLL" todir="Package/x64/lib" />
-        <copy file="../bin-x86/JVM.DLL" todir="Package/x86/lib" />
+        <copy file="IKVM.NativeBinaries.props" todir="Package.NativeBinaries/build" />
+        <copy file="../bin/IKVM.Runtime.JNI.dll" todir="Package.NativeBinaries/lib" />
+        <copy file="../bin/ikvm-native-win32-x64.dll" todir="Package.NativeBinaries/NativeBinaries/x64/lib" />
+        <copy file="../bin/ikvm-native-win32-x86.dll" todir="Package.NativeBinaries/NativeBinaries/x86/lib" />
+        <copy file="../bin-x64/JVM.DLL" todir="Package.NativeBinaries/NativeBinaries/x64/lib" />
+        <copy file="../bin-x86/JVM.DLL" todir="Package.NativeBinaries/NativeBinaries/x86/lib" />
     </target>
 
-    <target name="nupkg" depends="clean Package IKVM.nuspec">
+    <target name="nupkg" depends="clean Package IKVM.nuspec IKVM.NativeBinaries.nuspec">
         <exec program="nuget" commandline="pack Package/IKVM.nuspec" />
+        <exec program="nuget" commandline="pack Package.NativeBinaries/IKVM.NativeBinaries.nuspec" />
     </target>
 </project>

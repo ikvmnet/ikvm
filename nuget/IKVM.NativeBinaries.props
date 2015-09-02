@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <ItemGroup>
+        <None Condition="Exists('$(MSBuildThisFileDirectory)\..\NativeBinaries\x64\lib\ikvm-native-win32-x64.dll')" 
+              Include="$(MSBuildThisFileDirectory)\..\NativeBinaries\x64\lib\ikvm-native-win32-x64.dll">
+            <Link>NativeBinaries\x64\lib\ikvm-native-win32-x64.dll</Link>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Condition="Exists('$(MSBuildThisFileDirectory)\..\NativeBinaries\x64\lib\JVM.dll')" 
+              Include="$(MSBuildThisFileDirectory)\..\NativeBinaries\x64\lib\JVM.dll">
+            <Link>NativeBinaries\x64\lib\JVM.dll</Link>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Condition="Exists('$(MSBuildThisFileDirectory)\..\NativeBinaries\x86\lib\ikvm-native-win32-x86.dll')" 
+              Include="$(MSBuildThisFileDirectory)\..\NativeBinaries\x86\lib\ikvm-native-win32-x86.dll">
+            <Link>NativeBinaries\x86\lib\ikvm-native-win32-x86.dll</Link>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Condition="Exists('$(MSBuildThisFileDirectory)\..\NativeBinaries\x86\lib\JVM.dll')" 
+              Include="$(MSBuildThisFileDirectory)\..\NativeBinaries\x86\lib\JVM.dll">
+            <Link>NativeBinaries\x86\lib\JVM.dll</Link>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+</Project>
