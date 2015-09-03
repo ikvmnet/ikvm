@@ -88,12 +88,14 @@ namespace ikvm.awt
 
         public override void copyArea(int x, int y, int width, int height, int dx, int dy)
 		{
-            Bitmap copy = new Bitmap(width, height);
-            using (Graphics gCopy = Graphics.FromImage(copy))
+            using (Bitmap copy = new Bitmap(width, height))
             {
-                gCopy.DrawImage(bitmap, new Rectangle(0, 0, width, height), x, y, width, height, GraphicsUnit.Pixel);
+                using (Graphics gCopy = Graphics.FromImage(copy))
+                {
+                    gCopy.DrawImage(bitmap, new Rectangle(0, 0, width, height), x, y, width, height, GraphicsUnit.Pixel);
+                }
+                g.DrawImageUnscaled(copy, x + dx, y + dy);
             }
-            g.DrawImageUnscaled(copy, x + dx, y + dy);
 		}
     }
 
@@ -132,12 +134,14 @@ namespace ikvm.awt
         {
             Matrix t = g.Transform;
             Point src = getPointToScreen(new Point(x + (int)t.OffsetX, y + (int)t.OffsetY));
-            Bitmap copy = new Bitmap(width, height);
-            using (Graphics gCopy = Graphics.FromImage(copy))
+            using (Bitmap copy = new Bitmap(width, height))
             {
-                gCopy.CopyFromScreen(src, new Point(0, 0), new Size(width, height));
+                using (Graphics gCopy = Graphics.FromImage(copy))
+                {
+                    gCopy.CopyFromScreen(src, new Point(0, 0), new Size(width, height));
+                }
+                g.DrawImageUnscaled(copy, x + dx, y + dy);
             }
-            g.DrawImageUnscaled(copy, x + dx, y + dy);
         }
 
 		public override void clip(java.awt.Shape shape)
@@ -2007,32 +2011,34 @@ namespace ikvm.awt
                     const int w = 3;
                     const int h = 3;
 
-                    Bitmap bitmap = new Bitmap(w, h);
-                    Graphics g = Graphics.FromImage(bitmap);
-                    g.TextRenderingHint = hint;
-                    g.FillRectangle(new SolidBrush(Color.White), 0, 0, w, h);
-                    g.DrawString("A", font, new SolidBrush(Color.Black), 0, -baseline, FORMAT);
-                    g.DrawString("X", font, new SolidBrush(Color.Black), 0, -baseline, FORMAT);
-                    g.Dispose();
-
-                    int y = 0;
-                LINE:
-                    while (y < h)
+                    using (Bitmap bitmap = new Bitmap(w, h))
                     {
-                        for (int x = 0; x < w; x++)
-                        {
-                            Color color = bitmap.GetPixel(x, y);
-                            if (color.GetBrightness() < 0.5)
-                            {
-                                //there is a black pixel, we continue in the next line.
-                                baseline++;
-                                y++;
-                                goto LINE;
-                            }
-                        }
-                        break; // there was a line without black pixel
-                    }
+                        Graphics g = Graphics.FromImage(bitmap);
+                        g.TextRenderingHint = hint;
+                        g.FillRectangle(new SolidBrush(Color.White), 0, 0, w, h);
+                        g.DrawString("A", font, new SolidBrush(Color.Black), 0, -baseline, FORMAT);
+                        g.DrawString("X", font, new SolidBrush(Color.Black), 0, -baseline, FORMAT);
+                        g.Dispose();
 
+
+                        int y = 0;
+                    LINE:
+                        while (y < h)
+                        {
+                            for (int x = 0; x < w; x++)
+                            {
+                                Color color = bitmap.GetPixel(x, y);
+                                if (color.GetBrightness() < 0.5)
+                                {
+                                    //there is a black pixel, we continue in the next line.
+                                    baseline++;
+                                    y++;
+                                    goto LINE;
+                                }
+                            }
+                            break; // there was a line without black pixel
+                        }
+                    }
 
                     baselines[key] = baseline;
                 }
