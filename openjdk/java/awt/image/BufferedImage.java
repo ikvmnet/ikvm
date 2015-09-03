@@ -1806,6 +1806,11 @@ public class BufferedImage extends java.awt.Image
         return colorModel.getTransparency();
     }
     
-    public void flush(){
+    public void flush() {
+        if( bitmap != null ) {
+            toRaster();
+            bitmap.Dispose();
+            bitmap = null;
+        }
     }
 }
