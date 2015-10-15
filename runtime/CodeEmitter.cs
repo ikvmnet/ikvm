@@ -1198,65 +1198,10 @@ namespace IKVM.Internal
 		private void OptimizeLdcI8(int index)
 		{
 			long value = code[index].ValueInt64;
-			OpCode opc = OpCodes.Nop;
-			switch (value)
+			if (value >= int.MinValue && value <= uint.MaxValue)
 			{
-				case -1:
-					opc = OpCodes.Ldc_I4_M1;
-					break;
-				case 0:
-					opc = OpCodes.Ldc_I4_0;
-					break;
-				case 1:
-					opc = OpCodes.Ldc_I4_1;
-					break;
-				case 2:
-					opc = OpCodes.Ldc_I4_2;
-					break;
-				case 3:
-					opc = OpCodes.Ldc_I4_3;
-					break;
-				case 4:
-					opc = OpCodes.Ldc_I4_4;
-					break;
-				case 5:
-					opc = OpCodes.Ldc_I4_5;
-					break;
-				case 6:
-					opc = OpCodes.Ldc_I4_6;
-					break;
-				case 7:
-					opc = OpCodes.Ldc_I4_7;
-					break;
-				case 8:
-					opc = OpCodes.Ldc_I4_8;
-					break;
-				default:
-					if (value >= -2147483648L && value <= 4294967295L)
-					{
-						if (value >= -128 && value <= 127)
-						{
-							code[index] = new OpCodeWrapper(OpCodes.Ldc_I4_S, (sbyte)value);
-						}
-						else
-						{
-							code[index] = new OpCodeWrapper(OpCodes.Ldc_I4, (int)value);
-						}
-						if (value < 0)
-						{
-							code.Insert(index + 1, new OpCodeWrapper(OpCodes.Conv_I8, null));
-						}
-						else
-						{
-							code.Insert(index + 1, new OpCodeWrapper(OpCodes.Conv_U8, null));
-						}
-					}
-					break;
-			}
-			if (opc != OpCodes.Nop)
-			{
-				code[index] = new OpCodeWrapper(opc, null);
-				code.Insert(index + 1, new OpCodeWrapper(OpCodes.Conv_I8, null));
+				code[index] = OptimizeLdcI4((int)value);
+				code.Insert(index + 1, new OpCodeWrapper(value < 0 ? OpCodes.Conv_I8 : OpCodes.Conv_U8, null));
 			}
 		}
 
