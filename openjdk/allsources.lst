@@ -35,6 +35,7 @@ com/sun/imageio/plugins/jpeg/JPEGImageReader.java
 com/sun/imageio/plugins/jpeg/JPEGImageWriter.java
 com/sun/java/util/jar/pack/PackageReader.java
 gnu/java/awt/Buffers.java
+gnu/java/awt/color/CieLabConverter.java
 gnu/java/awt/color/CieXyzConverter.java
 gnu/java/awt/color/ClutProfileConverter.java
 gnu/java/awt/color/ColorLookUpTable.java

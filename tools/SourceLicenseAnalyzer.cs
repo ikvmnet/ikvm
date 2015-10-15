@@ -81,6 +81,8 @@ namespace SourceLicenseAnalyzer
 			Def("Google Inc.");
 			Def("Stephen Colebourne & Michael Nascimento Santos");
 			Def("Attila Szegedi");
+			Def("Daniel Wilson");
+			Def("http://stackoverflow.com/users/12048/finnw");
 
 
 			// these are false positives
@@ -190,11 +192,14 @@ namespace SourceLicenseAnalyzer
 						}
 						else
 						{
-							foreach (Match m in Regex.Matches(line, "[0-9][0-9][0-9][0-9]"))
+							foreach (Match m in Regex.Matches(line, "[^0-9]((19|20)[0-9][0-9]+)"))
 							{
-								int v = Int32.Parse(m.Value);
-								y.min = Math.Min(y.min, v);
-								y.max = Math.Max(y.max, v);
+								if (m.Groups[1].Value.Length == 4)
+								{
+									int v = Int32.Parse(m.Groups[1].Value);
+									y.min = Math.Min(y.min, v);
+									y.max = Math.Max(y.max, v);
+								}
 							}
 						}
 						line = nextline;

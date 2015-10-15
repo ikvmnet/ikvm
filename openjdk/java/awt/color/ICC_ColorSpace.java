@@ -38,6 +38,7 @@ exception statement from your version. */
 
 package java.awt.color;
 
+import gnu.java.awt.color.CieLabConverter;
 import gnu.java.awt.color.CieXyzConverter;
 import gnu.java.awt.color.ClutProfileConverter;
 import gnu.java.awt.color.ColorSpaceConverter;
@@ -247,6 +248,9 @@ public class ICC_ColorSpace extends ColorSpace
     ColorSpaceConverter converter;
     switch (profile.getColorSpaceType())
       {
+      case TYPE_Lab:
+        converter = new CieLabConverter();
+        break;
       case TYPE_XYZ:
         converter = new CieXyzConverter();
         break;
