@@ -296,6 +296,8 @@ public class BufferedImage extends java.awt.Image
     /** Which buffer include the current data, raster or bitmap */
     private int currentBuffer;
     
+    private boolean isBufferConverting;
+    
     private static final int BUFFER_BITMAP = 1;
     private static final int BUFFER_RASTER = 2;
     private static final int BUFFER_BOTH   = 3;
@@ -683,18 +685,25 @@ public class BufferedImage extends java.awt.Image
     /**
      * Switch to the BITMAP buffer and invalidate the RASTER buffer before a graphics operation.
      */
+    @cli.IKVM.Attributes.HideFromJavaAttribute.Annotation
     final void toBitmap(){
     	raster2Bitmap();
     	currentBuffer = BUFFER_BITMAP;
     }
     
     /**
-     * Switch to the RASTER buffer and invalidate the BITMAP buffer before a graphics operation.
+     * Switch to the RASTER buffer and invalidate the BITMAP buffer before a raster operation.
      */
     @cli.IKVM.Attributes.HideFromJavaAttribute.Annotation
     final void toRaster() {
-    	bitmap2Raster();
-    	currentBuffer = BUFFER_RASTER;
+        if( bitmap != null ) {
+            synchronized( bitmap ) {
+                if( !isBufferConverting ) {
+                    bitmap2Raster();
+                    currentBuffer = BUFFER_RASTER;
+                }
+            }
+        }
     }
     
     /**
@@ -711,6 +720,10 @@ public class BufferedImage extends java.awt.Image
         
         bitmap = createBitmap(width, height);
         synchronized( bitmap ) {
+            if(currentBuffer != BUFFER_RASTER || isBufferConverting ){
+                return; // BUFFER_BOTH and BUFFER_BITMAP
+            }
+            isBufferConverting = true;
             // First map the pixel from Java type to .NET type
             switch (getType()){
                 case TYPE_INT_ARGB:
@@ -726,6 +739,7 @@ public class BufferedImage extends java.awt.Image
                 }   
             }
             this.currentBuffer = BUFFER_BOTH;
+            isBufferConverting = false;
         }
         return;
     }
@@ -757,7 +771,11 @@ public class BufferedImage extends java.awt.Image
         if(currentBuffer != BUFFER_BITMAP){
             return; // BUFFER_BOTH and BUFFER_RASTER
         }
-        synchronized( bitmap ) {
+        synchronized( bitmap ) { 
+            if( currentBuffer != BUFFER_BITMAP || isBufferConverting ){
+                return; // BUFFER_BOTH and BUFFER_RASTER
+            }
+            isBufferConverting = true;
             int width = bitmap.get_Width();
             int height = bitmap.get_Height();
             if(colorModel == null){
@@ -768,7 +786,6 @@ public class BufferedImage extends java.awt.Image
                 raster.getDataBuffer().setImage( this );
             }
             
-            this.currentBuffer = BUFFER_BOTH;
             switch (getType()){
                 case TYPE_INT_ARGB:
                     copyFromBitmap(bitmap, ((DataBufferInt)raster.getDataBuffer()).getData());
@@ -782,6 +799,8 @@ public class BufferedImage extends java.awt.Image
                         }
                     }
             }
+            this.currentBuffer = BUFFER_BOTH;
+            isBufferConverting = false;
         }
     }
 
