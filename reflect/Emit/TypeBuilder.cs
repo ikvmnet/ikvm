@@ -72,7 +72,7 @@ namespace IKVM.Reflection.Emit
 			get { return null; }
 		}
 
-		public override bool IsValueType
+		protected override bool IsValueTypeImpl
 		{
 			get { return (this.GenericParameterAttributes & GenericParameterAttributes.NotNullableValueTypeConstraint) != 0; }
 		}
@@ -1070,6 +1070,30 @@ namespace IKVM.Reflection.Emit
 		{
 			get { return IsCreated(); }
 		}
+
+		protected override bool IsValueTypeImpl
+		{
+			get
+			{
+				Type baseType = this.BaseType;
+				if (baseType != null && baseType.IsEnumOrValueType && !this.IsEnumOrValueType)
+				{
+					if (IsCreated())
+					{
+						typeFlags |= TypeFlags.ValueType;
+					}
+					return true;
+				}
+				else
+				{
+					if (IsCreated())
+					{
+						typeFlags |= TypeFlags.NotValueType;
+					}
+					return false;
+				}
+			}
+		}
 	}
 
 	sealed class BakedType : TypeInfo
@@ -1203,6 +1227,11 @@ namespace IKVM.Reflection.Emit
 		internal override bool IsBaked
 		{
 			get { return true; }
+		}
+
+		protected override bool IsValueTypeImpl
+		{
+			get { return underlyingType.IsValueType; }
 		}
 	}
 }

@@ -40,7 +40,7 @@ namespace IKVM.Reflection.Reader
 			get { return null; }
 		}
 
-		public sealed override bool IsValueType
+		protected sealed override bool IsValueTypeImpl
 		{
 			get { return (this.GenericParameterAttributes & GenericParameterAttributes.NotNullableValueTypeConstraint) != 0; }
 		}

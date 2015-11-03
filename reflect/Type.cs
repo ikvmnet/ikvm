@@ -58,7 +58,7 @@ namespace IKVM.Reflection
 			HasNestedTypes = 2,
 			Baked = 4,
 
-			// for use by MissingType
+			// for use by IsValueType to cache result of IsValueTypeImpl
 			ValueType = 8,
 			NotValueType = 16,
 
@@ -222,15 +222,24 @@ namespace IKVM.Reflection
 			get { return sigElementType == Signature.ELEMENT_TYPE_FNPTR; }
 		}
 
-		public virtual bool IsValueType
+		public bool IsValueType
 		{
 			get
 			{
-				Type baseType = this.BaseType;
-				return baseType != null
-					&& baseType.IsEnumOrValueType
-					&& !this.IsEnumOrValueType;
+				// MissingType sets both flags for WinRT projection types
+				switch (typeFlags & (TypeFlags.ValueType | TypeFlags.NotValueType))
+				{
+					case 0:
+					case TypeFlags.ValueType | TypeFlags.NotValueType:
+						return IsValueTypeImpl;
+				}
+				return (typeFlags & TypeFlags.ValueType) != 0;
 			}
+		}
+
+		protected abstract bool IsValueTypeImpl
+		{
+			get;
 		}
 
 		public bool IsGenericParameter
@@ -2211,7 +2220,7 @@ namespace IKVM.Reflection
 			}
 		}
 
-		private bool IsEnumOrValueType
+		internal bool IsEnumOrValueType
 		{
 			get
 			{
@@ -2357,6 +2366,11 @@ namespace IKVM.Reflection
 				return type.__ContainsMissingType
 					|| mods.ContainsMissingType;
 			}
+		}
+
+		protected sealed override bool IsValueTypeImpl
+		{
+			get { return false; }
 		}
 
 		internal sealed override Type BindTypeParameters(IGenericBinder binder)
@@ -2874,7 +2888,7 @@ namespace IKVM.Reflection
 			}
 		}
 
-		public override bool IsValueType
+		protected override bool IsValueTypeImpl
 		{
 			get { return type.IsValueType; }
 		}
@@ -3212,6 +3226,11 @@ namespace IKVM.Reflection
 		{
 			get { return true; }
 		}
+
+		protected override bool IsValueTypeImpl
+		{
+			get { return false; }
+		}
 	}
 
 	sealed class MarkerType : Type
@@ -3261,6 +3280,11 @@ namespace IKVM.Reflection
 		public override bool __IsMissing
 		{
 			get { return false; }
+		}
+
+		protected override bool IsValueTypeImpl
+		{
+			get { throw new InvalidOperationException(); }
 		}
 	}
 }

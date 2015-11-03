@@ -479,7 +479,7 @@ namespace IKVM.Reflection
 			get { return token; }
 		}
 
-		public override bool IsValueType
+		protected override bool IsValueTypeImpl
 		{
 			get
 			{

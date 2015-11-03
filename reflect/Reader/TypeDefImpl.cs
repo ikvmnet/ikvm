@@ -373,5 +373,23 @@ namespace IKVM.Reflection.Reader
 		{
 			get { return true; }
 		}
+
+		protected override bool IsValueTypeImpl
+		{
+			get
+			{
+				Type baseType = this.BaseType;
+				if (baseType != null && baseType.IsEnumOrValueType && !this.IsEnumOrValueType)
+				{
+					typeFlags |= TypeFlags.ValueType;
+					return true;
+				}
+				else
+				{
+					typeFlags |= TypeFlags.NotValueType;
+					return false;
+				}
+			}
+		}
 	}
 }
