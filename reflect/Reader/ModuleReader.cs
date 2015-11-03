@@ -92,14 +92,14 @@ namespace IKVM.Reflection.Reader
 			internal Type GetType(ModuleReader module)
 			{
 				// guard against circular type forwarding
-				if (type == MarkerType.Pinned)
+				if (type == MarkerType.LazyResolveInProgress)
 				{
 					TypeName typeName = module.GetTypeName(module.ExportedType.records[index].TypeNamespace, module.ExportedType.records[index].TypeName);
 					return module.universe.GetMissingTypeOrThrow(module, module, null, typeName).SetCyclicTypeForwarder();
 				}
 				else if (type == null)
 				{
-					type = MarkerType.Pinned;
+					type = MarkerType.LazyResolveInProgress;
 					type = module.ResolveExportedType(index);
 				}
 				return type;

@@ -3241,6 +3241,8 @@ namespace IKVM.Reflection
 		// used by SignatureHelper
 		internal static readonly Type Sentinel = new MarkerType(Signature.SENTINEL);
 		internal static readonly Type Pinned = new MarkerType(Signature.ELEMENT_TYPE_PINNED);
+		// used by ModuleReader.LazyForwardedType
+		internal static readonly Type LazyResolveInProgress = new MarkerType(0xFF);
 
 		private MarkerType(byte sigElementType)
 			: base(sigElementType)
