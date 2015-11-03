@@ -109,7 +109,7 @@ namespace IKVM.Reflection
 
 		private static void SelectBestMatch(MethodBase candidate, Type[] types, ref MethodBase currentBest, ref bool ambiguous)
 		{
-			switch (MatchSignatures(currentBest.MethodSignature, candidate.MethodSignature, types))
+			switch (MatchSignatures(currentBest, candidate, types))
 			{
 				case 1:
 					return;
@@ -149,12 +149,16 @@ namespace IKVM.Reflection
 			return depth;
 		}
 
-		private static int MatchSignatures(MethodSignature sig1, MethodSignature sig2, Type[] types)
+		private static int MatchSignatures(MethodBase mb1, MethodBase mb2, Type[] types)
 		{
+			MethodSignature sig1 = mb1.MethodSignature;
+			MethodSignature sig2 = mb2.MethodSignature;
+			IGenericBinder gb1 = mb1 as IGenericBinder ?? mb1.DeclaringType;
+			IGenericBinder gb2 = mb2 as IGenericBinder ?? mb2.DeclaringType;
 			for (int i = 0; i < sig1.GetParameterCount(); i++)
 			{
-				Type type1 = sig1.GetParameterType(i);
-				Type type2 = sig2.GetParameterType(i);
+				Type type1 = sig1.GetParameterType(gb1, i);
+				Type type2 = sig2.GetParameterType(gb2, i);
 				if (type1 != type2)
 				{
 					return MatchTypes(type1, type2, types[i]);
