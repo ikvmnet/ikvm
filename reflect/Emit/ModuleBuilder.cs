@@ -979,7 +979,7 @@ namespace IKVM.Reflection.Emit
 			}
 			rec.PublicKeyOrToken = this.Blobs.Add(ByteBuffer.Wrap(publicKeyOrToken));
 			rec.Name = this.Strings.Add(name.Name);
-			rec.Culture = name.Culture == null ? 0 : this.Strings.Add(name.Culture);
+			rec.Culture = name.CultureName == null ? 0 : this.Strings.Add(name.CultureName);
 			if (name.hash != null)
 			{
 				rec.HashValue = this.Blobs.Add(ByteBuffer.Wrap(name.hash));

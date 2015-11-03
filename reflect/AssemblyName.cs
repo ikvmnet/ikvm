@@ -176,11 +176,6 @@ namespace IKVM.Reflection
 		public string CultureName
 		{
 			get { return culture; }
-		}
-
-		internal string Culture
-		{
-			get { return culture; }
 			set { culture = value; }
 		}
 

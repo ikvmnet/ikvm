@@ -1052,11 +1052,11 @@ namespace IKVM.Reflection.Reader
 				}
 				if (AssemblyRef.records[i].Culture != 0)
 				{
-					name.Culture = GetString(AssemblyRef.records[i].Culture);
+					name.CultureName = GetString(AssemblyRef.records[i].Culture);
 				}
 				else
 				{
-					name.Culture = "";
+					name.CultureName = "";
 				}
 				if (AssemblyRef.records[i].HashValue != 0)
 				{
