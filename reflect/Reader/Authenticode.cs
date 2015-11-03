@@ -75,8 +75,7 @@ namespace IKVM.Reflection.Reader
 			{
 				return null;
 			}
-			byte[] buf = new byte[certificateTableLength - 8];
-			stream.Read(buf, 0, buf.Length);
+			byte[] buf = br.ReadBytes(certificateTableLength - 8);
 
 			SignedCms cms = new SignedCms();
 			try
