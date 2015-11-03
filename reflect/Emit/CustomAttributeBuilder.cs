@@ -673,7 +673,13 @@ namespace IKVM.Reflection.Emit
 		{
 			get
 			{
-				TypeName typeName = con.DeclaringType.TypeName;
+				Type attributeType = con.DeclaringType;
+				if (attributeType.IsConstructedGenericType)
+				{
+					// a constructed generic type doesn't have a TypeName and we already know it's not a Known CA
+					return KnownCA.Unknown;
+				}
+				TypeName typeName = attributeType.TypeName;
 				switch (typeName.Namespace)
 				{
 					case "System":
