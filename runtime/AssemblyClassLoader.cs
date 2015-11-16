@@ -743,9 +743,10 @@ namespace IKVM.Internal
 #if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
 		private TypeWrapper DefineDynamic(string name, java.net.URL url)
 		{
+			byte[] buf;
 			using (java.io.InputStream inp = url.openStream())
 			{
-				byte[] buf = new byte[inp.available()];
+				buf = new byte[inp.available()];
 				for (int pos = 0; pos < buf.Length; )
 				{
 					int read = inp.read(buf, pos, buf.Length - pos);
@@ -755,7 +756,19 @@ namespace IKVM.Internal
 					}
 					pos += read;
 				}
-				return TypeWrapper.FromClass(Java_java_lang_ClassLoader.defineClass1(GetJavaClassLoader(), name, buf, 0, buf.Length, GetProtectionDomain(), null));
+			}
+			// when the VM initiates a class load, it doesn't go through ClassLoader.loadClass() for non-custom Assembly class loaders (for efficiency)
+			// so when we dynamically attempt to define a class, we have to explicitly obtain the class loading lock to prevent race conditions
+			java.lang.ClassLoader loader = GetJavaClassLoader();
+			lock (loader == null ? this : loader.getClassLoadingLock(name))
+			{
+				// make sure the class wasn't defined since we last checked and before we acquired the lock
+				TypeWrapper tw = FindLoadedClass(name);
+				if (tw != null)
+				{
+					return tw;
+				}
+				return TypeWrapper.FromClass(Java_java_lang_ClassLoader.defineClass1(loader, name, buf, 0, buf.Length, GetProtectionDomain(), null));
 			}
 		}
 #endif
