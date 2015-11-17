@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-  Copyright (C) 2002-2014 Jeroen Frijters
+  Copyright (C) 2002-2015 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -219,6 +219,17 @@
 
     <target name="run-nasgen" depends="classpath">
         <!-- nasgen doesn't understand the MethodParameters attribute, so we have to recompile the classes it processes without parameters -->
+        <property name="nasgen-sources" value="" />
+        <foreach item="File" property="nasgen-src-file">
+            <in>
+                <items>
+                    <include name="${OpenJDK.dir}/nashorn/src/jdk/nashorn/internal/objects/*.java" />
+                </items>
+            </in>
+            <do>
+                <property name="nasgen-sources" value="${nasgen-sources} ${nasgen-src-file}" />
+            </do>
+        </foreach>
         <exec program="javac" useruntimeengine="false">
             <arg value="-XDignore.symbol.file" />
             <arg value="-g" />
@@ -226,7 +237,7 @@
             <arg value="-implicit:none" />
             <arg value="-bootclasspath" />
             <arg path="${CLASSPATH};${OpenJDK.dir}/nashorn/src;../runtime/IKVM.Runtime.jar" />
-            <arg value="${OpenJDK.dir}/nashorn/src/jdk/nashorn/internal/objects/*.java" />
+            <arg line="${nasgen-sources}" />
         </exec>
         <exec program="java" useruntimeengine="false">
             <arg value="-Xbootclasspath/p:${OpenJDK.dir}/nashorn/buildtools/nasgen/src${pathsep}${OpenJDK.dir}/nashorn/src" />
