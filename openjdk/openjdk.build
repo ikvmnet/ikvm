@@ -122,7 +122,7 @@
                 <include name="System.Core.jar" />
                 <include name="System.Data.jar" />
                 <include name="System.Drawing.jar" />
-                <include name="System.XML.jar" />
+                <include name="System.Xml.jar" />
             </fileset>
         </delete>
     </target>
@@ -136,7 +136,7 @@
         </if>
         <exec program="${project::get-base-directory()}/../bin/ikvmstub.exe" commandline="-bootstrap System.Data" useruntimeengine="true" />
         <exec program="${project::get-base-directory()}/../bin/ikvmstub.exe" commandline="-bootstrap System.Drawing" useruntimeengine="true" />
-        <exec program="${project::get-base-directory()}/../bin/ikvmstub.exe" commandline="-bootstrap System.XML" useruntimeengine="true" />
+        <exec program="${project::get-base-directory()}/../bin/ikvmstub.exe" commandline="-bootstrap System.Xml" useruntimeengine="true" />
     </target>
 
     <target name="runtime-identity">
@@ -183,7 +183,7 @@
             <arg value="-parameters" />
             <arg line="-cp dummy" />
             <arg value="-bootclasspath" />
-            <arg path="mscorlib.jar;System.jar;System.Core.jar;System.Data.jar;System.Drawing.jar;System.XML.jar;../runtime/IKVM.Runtime.jar" />
+            <arg path="mscorlib.jar;System.jar;System.Core.jar;System.Data.jar;System.Drawing.jar;System.Xml.jar;../runtime/IKVM.Runtime.jar" />
             <arg value="@allsources.gen.lst" />
         </exec>
         <!-- copy the timestamps from the input files, because these timestamps end up in resources.jar and affect deterministics builds -->
