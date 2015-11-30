@@ -625,6 +625,7 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
         }
     }
 
+    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     public void move(Path source, Path target, CopyOption... options) throws IOException
     {
         NetPath nsource = NetPath.from(source);
