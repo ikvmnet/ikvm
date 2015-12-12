@@ -915,6 +915,36 @@ public final class Unsafe
 
     @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
     @cli.System.Security.SecurityCriticalAttribute.Annotation
+    public void setMemory(Object o, long offset, long bytes, byte value)
+    {
+        if (o == null)
+        {
+            setMemory(offset, bytes, value);
+        }
+        else if (o instanceof byte[])
+        {
+            byte[] array = (byte[])o;
+            for (int i = 0; i < bytes; i++)
+            {
+                array[(int)(offset + i)] = value;
+            }
+        }
+        else if (o instanceof cli.System.Array)
+        {
+            cli.System.Array array = (cli.System.Array)o;
+            for (int i = 0; i < bytes; i++)
+            {
+                cli.System.Buffer.SetByte(array, (int)(offset + i), value);
+            }
+        }
+        else
+        {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
+    @cli.System.Security.SecurityCriticalAttribute.Annotation
     public void copyMemory(long srcAddress, long destAddress, long bytes)
     {
 	while (bytes-- > 0)
