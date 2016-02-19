@@ -105,6 +105,13 @@ static class ImpLib
             {
                 options.key = new StrongNameKeyPair(arg.Substring(5));
             }
+            else if (arg.StartsWith("-keyfile:", StringComparison.Ordinal))
+            {
+                using (FileStream fs = File.OpenRead(arg.Substring(9)))
+                {
+                    options.key = new StrongNameKeyPair(fs);
+                }
+            }
             else if (arg.StartsWith("-version:", StringComparison.Ordinal))
             {
                 options.version = new Version(arg.Substring(9));
