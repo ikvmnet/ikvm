@@ -634,7 +634,12 @@ namespace IKVM.Internal
 				}
 				else if (Ra.IsPrimitive)
 				{
-					Boxer.EmitBox(ilgen, GetPrimitiveFromWrapper(Rt));
+					TypeWrapper tw = GetPrimitiveFromWrapper(Rt);
+					if (tw == null)
+					{
+						tw = Ra;
+					}
+					Boxer.EmitBox(ilgen, tw);
 				}
 				else
 				{
