@@ -393,10 +393,9 @@ namespace IKVM.Reflection.Writer
 				stream.Seek(strongNameSignatureLength, SeekOrigin.Current);
 				HashChunk(stream, cs, buf, (int)(stream.Length - (strongNameSignatureFileOffset + strongNameSignatureLength)));
 			}
-			using (RSA rsa = keyPair.CreateRSA())
+			using (RSACryptoServiceProvider rsa = keyPair.CreateRSA())
 			{
-				RSAPKCS1SignatureFormatter sign = new RSAPKCS1SignatureFormatter(rsa);
-				byte[] signature = sign.CreateSignature(hash);
+				byte[] signature = rsa.SignHash(hash.Hash, "1.3.14.3.2.26");
 				Array.Reverse(signature);
 				if (signature.Length != strongNameSignatureLength)
 				{
