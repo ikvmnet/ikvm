@@ -382,20 +382,17 @@ namespace IKVM.Reflection.Writer
 
 		private static void StrongName(Stream stream, StrongNameKeyPair keyPair, uint headerLength, uint textSectionFileOffset, uint strongNameSignatureFileOffset, uint strongNameSignatureLength)
 		{
-			SHA1Managed hash = new SHA1Managed();
-			using (CryptoStream cs = new CryptoStream(Stream.Null, hash, CryptoStreamMode.Write))
+			byte[] hash;
+			using (SHA1 sha1 = SHA1.Create())
 			{
 				stream.Seek(0, SeekOrigin.Begin);
-				byte[] buf = new byte[8192];
-				HashChunk(stream, cs, buf, (int)headerLength);
-				stream.Seek(textSectionFileOffset, SeekOrigin.Begin);
-				HashChunk(stream, cs, buf, (int)(strongNameSignatureFileOffset - textSectionFileOffset));
-				stream.Seek(strongNameSignatureLength, SeekOrigin.Current);
-				HashChunk(stream, cs, buf, (int)(stream.Length - (strongNameSignatureFileOffset + strongNameSignatureLength)));
+				Stream skipStream = new SkipStream(stream, strongNameSignatureFileOffset, strongNameSignatureLength);
+				skipStream = new SkipStream(skipStream, headerLength, textSectionFileOffset - headerLength);
+				hash = sha1.ComputeHash(skipStream);
 			}
 			using (RSACryptoServiceProvider rsa = keyPair.CreateRSA())
 			{
-				byte[] signature = rsa.SignHash(hash.Hash, "1.3.14.3.2.26");
+				byte[] signature = rsa.SignHash(hash, "1.3.14.3.2.26");
 				Array.Reverse(signature);
 				if (signature.Length != strongNameSignatureLength)
 				{
@@ -430,33 +427,117 @@ namespace IKVM.Reflection.Writer
 			bb.WriteTo(stream);
 		}
 
-		internal static void HashChunk(Stream stream, CryptoStream cs, byte[] buf, int length)
-		{
-			while (length > 0)
-			{
-				int read = stream.Read(buf, 0, Math.Min(buf.Length, length));
-				cs.Write(buf, 0, read);
-				length -= read;
-			}
-		}
-
 		private static Guid GenerateModuleVersionId(Stream stream)
 		{
-			SHA1Managed hash = new SHA1Managed();
-			using (CryptoStream cs = new CryptoStream(Stream.Null, hash, CryptoStreamMode.Write))
+			byte[] hash;
+			using (SHA1 sha1 = SHA1.Create())
 			{
 				stream.Seek(0, SeekOrigin.Begin);
-				byte[] buf = new byte[8192];
-				HashChunk(stream, cs, buf, (int)stream.Length);
+				hash = sha1.ComputeHash(stream);
 			}
 			byte[] bytes = new byte[16];
-			Buffer.BlockCopy(hash.Hash, 0, bytes, 0, bytes.Length);
+			Buffer.BlockCopy(hash, 0, bytes, 0, bytes.Length);
 			// set GUID type to "version 4" (random)
 			bytes[7] &= 0x0F;
 			bytes[7] |= 0x40;
 			bytes[8] &= 0x3F;
 			bytes[8] |= 0x80;
 			return new Guid(bytes);
+		}
+	}
+
+	sealed class SkipStream : Stream
+	{
+		private readonly Stream stream;
+		private long skipOffset;
+		private long skipLength;
+
+		internal SkipStream(Stream stream, long skipOffset, long skipLength)
+		{
+			if (skipOffset < 0 || skipLength < 0)
+			{
+				throw new ArgumentOutOfRangeException();
+			}
+			this.stream = stream;
+			this.skipOffset = skipOffset;
+			this.skipLength = skipLength;
+		}
+
+		protected override void Dispose(bool disposing)
+		{
+			if (disposing)
+			{
+				stream.Dispose();
+			}
+		}
+
+		public override bool CanRead
+		{
+			get { return stream.CanRead; }
+		}
+
+		public override bool CanSeek
+		{
+			get { return false; }
+		}
+
+		public override bool CanWrite
+		{
+			get { return false; }
+		}
+
+		public override int Read(byte[] buffer, int offset, int count)
+		{
+			if (skipLength != 0 && skipOffset < count)
+			{
+				if (skipOffset != 0)
+				{
+					count = (int)skipOffset;
+				}
+				else
+				{
+					// note that we loop forever if the skipped part lies beyond EOF
+					while (skipLength != 0)
+					{
+						// use the output buffer as scratch space
+						skipLength -= stream.Read(buffer, offset, (int)Math.Min(count, skipLength));
+					}
+				}
+			}
+			int totalBytesRead = stream.Read(buffer, offset, count);
+			skipOffset -= totalBytesRead;
+			return totalBytesRead;
+		}
+
+		public override long Length
+		{
+			get { throw new NotSupportedException(); }
+		}
+
+		public override long Position
+		{
+			get { throw new NotSupportedException(); }
+			set { throw new NotSupportedException(); }
+		}
+
+		public override void Flush()
+		{
+			throw new NotSupportedException();
+		}
+
+		public override long Seek(long offset, SeekOrigin origin)
+		{
+			throw new NotSupportedException();
+		}
+
+		public override void SetLength(long value)
+		{
+			throw new NotSupportedException();
+		}
+
+		public override void Write(byte[] buffer, int offset, int count)
+		{
+			throw new NotSupportedException();
 		}
 	}
 }
