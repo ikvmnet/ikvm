@@ -397,7 +397,11 @@ namespace IKVM.Reflection
 			{
 				return publicKey;
 			}
-			byte[] hash = new SHA1Managed().ComputeHash(publicKey);
+			byte[] hash;
+			using (SHA1 sha1 = SHA1.Create())
+			{
+				hash = sha1.ComputeHash(publicKey);
+			}
 			byte[] token = new byte[8];
 			for (int i = 0; i < token.Length; i++)
 			{
