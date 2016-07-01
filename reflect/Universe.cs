@@ -792,7 +792,7 @@ namespace IKVM.Reflection
 					AssemblyComparisonResult result;
 					if (module.IsManifestModule && CompareAssemblyIdentity(refname, false, module.GetAssemblyName().FullName, false, out result))
 					{
-						return module.ToAssembly();
+						return LoadAssembly(module);
 					}
 				}
 			}
