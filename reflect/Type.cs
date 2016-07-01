@@ -2167,6 +2167,11 @@ namespace IKVM.Reflection
 			return this;
 		}
 
+		internal virtual Type SetCyclicTypeSpec()
+		{
+			return this;
+		}
+
 		protected void MarkKnownType(string typeNamespace, string typeName)
 		{
 			// we assume that mscorlib won't have nested types with these names,
@@ -2272,6 +2277,11 @@ namespace IKVM.Reflection
 		}
 
 		public virtual bool __IsCyclicTypeForwarder
+		{
+			get { return false; }
+		}
+
+		public virtual bool __IsCyclicTypeSpec
 		{
 			get { return false; }
 		}
@@ -3241,7 +3251,7 @@ namespace IKVM.Reflection
 		// used by SignatureHelper
 		internal static readonly Type Sentinel = new MarkerType(Signature.SENTINEL);
 		internal static readonly Type Pinned = new MarkerType(Signature.ELEMENT_TYPE_PINNED);
-		// used by ModuleReader.LazyForwardedType
+		// used by ModuleReader.LazyForwardedType and TypeSpec resolution
 		internal static readonly Type LazyResolveInProgress = new MarkerType(0xFF);
 
 		private MarkerType(byte sigElementType)

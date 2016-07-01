@@ -399,6 +399,7 @@ namespace IKVM.Reflection
 		private int token;
 		private int flags;
 		private bool cyclicTypeForwarder;
+		private bool cyclicTypeSpec;
 
 		internal MissingType(Module module, Type declaringType, string ns, string name)
 		{
@@ -621,6 +622,12 @@ namespace IKVM.Reflection
 			return this;
 		}
 
+		internal override Type SetCyclicTypeSpec()
+		{
+			this.cyclicTypeSpec = true;
+			return this;
+		}
+
 		internal override bool IsBaked
 		{
 			get { throw new MissingMemberException(this); }
@@ -635,6 +642,11 @@ namespace IKVM.Reflection
 		public override bool __IsCyclicTypeForwarder
 		{
 			get { return cyclicTypeForwarder; }
+		}
+
+		public override bool __IsCyclicTypeSpec
+		{
+			get { return cyclicTypeSpec; }
 		}
 	}
 

@@ -452,11 +452,29 @@ namespace IKVM.Reflection.Reader
 				if (type == null)
 				{
 					TrackingGenericContext tc = context == null ? null : new TrackingGenericContext(context);
-					type = Signature.ReadTypeSpec(this, ByteReader.FromBlob(blobHeap, TypeSpec.records[index]), tc);
+					typeSpecs[index] = MarkerType.LazyResolveInProgress;
+					try
+					{
+						type = Signature.ReadTypeSpec(this, ByteReader.FromBlob(blobHeap, TypeSpec.records[index]), tc);
+					}
+					finally
+					{
+						typeSpecs[index] = null;
+					}
 					if (tc == null || !tc.IsUsed)
 					{
 						typeSpecs[index] = type;
 					}
+				}
+				else if (type == MarkerType.LazyResolveInProgress)
+				{
+					if (universe.MissingMemberResolution)
+					{
+						return universe.GetMissingTypeOrThrow(this, this, null, new TypeName(null, "Cyclic TypeSpec " + metadataToken.ToString("X")))
+							.SetCyclicTypeSpec()
+							.SetMetadataTokenForMissing(metadataToken, 0);
+					}
+					throw new BadImageFormatException("Cyclic TypeSpec " + metadataToken.ToString("X"));
 				}
 				return type;
 			}
