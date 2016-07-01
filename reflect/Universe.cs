@@ -782,7 +782,20 @@ namespace IKVM.Reflection
 			{
 				return asm;
 			}
-#if CORECLR
+#if NETSTANDARD
+			string dir = Path.GetDirectoryName(TypeUtil.GetAssembly(typeof(object)).ManifestModule.FullyQualifiedName);
+			string filepath = Path.Combine(dir, GetSimpleAssemblyName(refname) + ".dll");
+			if (File.Exists(filepath))
+			{
+				using (RawModule module = OpenRawModule(filepath))
+				{
+					AssemblyComparisonResult result;
+					if (module.IsManifestModule && CompareAssemblyIdentity(refname, false, module.GetAssemblyName().FullName, false, out result))
+					{
+						return module.ToAssembly();
+					}
+				}
+			}
 			return null;
 #else
 			string fileName;
