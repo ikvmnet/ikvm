@@ -542,7 +542,6 @@ namespace IKVM.Reflection
 			return names.ToArray();
 		}
 
-#if !CORECLR
 		public string GetEnumName(object value)
 		{
 			if (!IsEnum)
@@ -555,7 +554,7 @@ namespace IKVM.Reflection
 			}
 			try
 			{
-				value = Convert.ChangeType(value, GetTypeCode(GetEnumUnderlyingType()));
+				value = Convert.ChangeType(value, __GetSystemType(GetTypeCode(GetEnumUnderlyingType())));
 			}
 			catch (FormatException)
 			{
@@ -578,7 +577,6 @@ namespace IKVM.Reflection
 			}
 			return null;
 		}
-#endif
 
 		public bool IsEnumDefined(object value)
 		{
