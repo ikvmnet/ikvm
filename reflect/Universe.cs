@@ -183,6 +183,8 @@ namespace IKVM.Reflection
 		private Type typeof_System_AttributeUsageAttribute;
 		private Type typeof_System_ContextBoundObject;
 		private Type typeof_System_MarshalByRefObject;
+		private Type typeof_System_Console;
+		private Type typeof_System_IO_TextWriter;
 		private Type typeof_System_Runtime_InteropServices_DllImportAttribute;
 		private Type typeof_System_Runtime_InteropServices_FieldOffsetAttribute;
 		private Type typeof_System_Runtime_InteropServices_MarshalAsAttribute;
@@ -408,6 +410,16 @@ namespace IKVM.Reflection
 		internal Type System_MarshalByRefObject
 		{
 			get { return typeof_System_MarshalByRefObject ?? (typeof_System_MarshalByRefObject = ImportMscorlibType("System", "MarshalByRefObject")); }
+		}
+
+		internal Type System_Console
+		{
+			get { return typeof_System_Console ?? (typeof_System_Console = ImportMscorlibType("System", "Console")); }
+		}
+
+		internal Type System_IO_TextWriter
+		{
+			get { return typeof_System_IO_TextWriter ?? (typeof_System_IO_TextWriter = ImportMscorlibType("System.IO", "TextWriter")); }
 		}
 
 		internal Type System_Runtime_InteropServices_DllImportAttribute

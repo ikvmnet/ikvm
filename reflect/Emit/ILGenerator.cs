@@ -829,13 +829,13 @@ namespace IKVM.Reflection.Emit
 		{
 			Universe u = moduleBuilder.universe;
 			Emit(OpCodes.Ldstr, text);
-			Emit(OpCodes.Call, u.Import(typeof(Console)).GetMethod("WriteLine", new Type[] { u.System_String }));
+			Emit(OpCodes.Call, u.System_Console.GetMethod("WriteLine", new Type[] { u.System_String }));
 		}
 
 		public void EmitWriteLine(FieldInfo field)
 		{
 			Universe u = moduleBuilder.universe;
-			Emit(OpCodes.Call, u.Import(typeof(Console)).GetMethod("get_Out"));
+			Emit(OpCodes.Call, u.System_Console.GetMethod("get_Out"));
 			if (field.IsStatic)
 			{
 				Emit(OpCodes.Ldsfld, field);
@@ -845,15 +845,15 @@ namespace IKVM.Reflection.Emit
 				Emit(OpCodes.Ldarg_0);
 				Emit(OpCodes.Ldfld, field);
 			}
-			Emit(OpCodes.Callvirt, u.Import(typeof(System.IO.TextWriter)).GetMethod("WriteLine", new Type[] { field.FieldType }));
+			Emit(OpCodes.Callvirt, u.System_IO_TextWriter.GetMethod("WriteLine", new Type[] { field.FieldType }));
 		}
 
 		public void EmitWriteLine(LocalBuilder local)
 		{
 			Universe u = moduleBuilder.universe;
-			Emit(OpCodes.Call, u.Import(typeof(Console)).GetMethod("get_Out"));
+			Emit(OpCodes.Call, u.System_Console.GetMethod("get_Out"));
 			Emit(OpCodes.Ldloc, local);
-			Emit(OpCodes.Callvirt, u.Import(typeof(System.IO.TextWriter)).GetMethod("WriteLine", new Type[] { local.LocalType }));
+			Emit(OpCodes.Callvirt, u.System_IO_TextWriter.GetMethod("WriteLine", new Type[] { local.LocalType }));
 		}
 
 		public void EndScope()
