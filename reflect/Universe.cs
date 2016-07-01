@@ -602,6 +602,17 @@ namespace IKVM.Reflection
 
 		private Assembly Import(System.Reflection.Assembly asm)
 		{
+#if NETSTANDARD
+			if (resolvers.Count == 0)
+			{
+				Assembly result = GetLoadedAssembly(asm.FullName);
+				if (result != null)
+				{
+					return result;
+				}
+				return LoadFile(asm.ManifestModule.FullyQualifiedName);
+			}
+#endif
 			return Load(asm.FullName);
 		}
 
