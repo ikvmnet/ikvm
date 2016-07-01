@@ -1421,17 +1421,15 @@ namespace IKVM.Reflection
 			get { return IsClass && IsImport; }
 		}
 
-#if !CORECLR
 		public bool IsContextful
 		{
-			get { return IsSubclassOf(this.Module.universe.Import(typeof(ContextBoundObject))); }
+			get { return IsSubclassOf(this.Module.universe.System_ContextBoundObject); }
 		}
 
 		public bool IsMarshalByRef
 		{
-			get { return IsSubclassOf(this.Module.universe.Import(typeof(MarshalByRefObject))); }
+			get { return IsSubclassOf(this.Module.universe.System_MarshalByRefObject); }
 		}
-#endif
 
 		public virtual bool IsVisible
 		{

@@ -181,6 +181,8 @@ namespace IKVM.Reflection
 		private Type typeof_System_DBNull;
 		private Type typeof_System_Decimal;
 		private Type typeof_System_AttributeUsageAttribute;
+		private Type typeof_System_ContextBoundObject;
+		private Type typeof_System_MarshalByRefObject;
 		private Type typeof_System_Runtime_InteropServices_DllImportAttribute;
 		private Type typeof_System_Runtime_InteropServices_FieldOffsetAttribute;
 		private Type typeof_System_Runtime_InteropServices_MarshalAsAttribute;
@@ -396,6 +398,16 @@ namespace IKVM.Reflection
 		internal Type System_AttributeUsageAttribute
 		{
 			get { return typeof_System_AttributeUsageAttribute ?? (typeof_System_AttributeUsageAttribute = ImportMscorlibType("System", "AttributeUsageAttribute")); }
+		}
+
+		internal Type System_ContextBoundObject
+		{
+			get { return typeof_System_ContextBoundObject ?? (typeof_System_ContextBoundObject = ImportMscorlibType("System", "ContextBoundObject")); }
+		}
+
+		internal Type System_MarshalByRefObject
+		{
+			get { return typeof_System_MarshalByRefObject ?? (typeof_System_MarshalByRefObject = ImportMscorlibType("System", "MarshalByRefObject")); }
 		}
 
 		internal Type System_Runtime_InteropServices_DllImportAttribute
