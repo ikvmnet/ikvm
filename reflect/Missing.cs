@@ -27,12 +27,12 @@ using System.Runtime.InteropServices;
 
 namespace IKVM.Reflection
 {
-#if !CORECLR
+#if !NETSTANDARD
 	[Serializable]
 #endif
 	public sealed class MissingAssemblyException : InvalidOperationException
 	{
-#if !CORECLR
+#if !NETSTANDARD
 		[NonSerialized]
 #endif
 		private readonly MissingAssembly assembly;
@@ -43,7 +43,7 @@ namespace IKVM.Reflection
 			this.assembly = assembly;
 		}
 
-#if !CORECLR
+#if !NETSTANDARD
 		private MissingAssemblyException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
 			: base(info, context)
 		{
@@ -56,12 +56,12 @@ namespace IKVM.Reflection
 		}
 	}
 
-#if !CORECLR
+#if !NETSTANDARD
 	[Serializable]
 #endif
 	public sealed class MissingModuleException : InvalidOperationException
 	{
-#if !CORECLR
+#if !NETSTANDARD
 		[NonSerialized]
 #endif
 		private readonly MissingModule module;
@@ -72,7 +72,7 @@ namespace IKVM.Reflection
 			this.module = module;
 		}
 
-#if !CORECLR
+#if !NETSTANDARD
 		private MissingModuleException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
 			: base(info, context)
 		{
@@ -85,12 +85,12 @@ namespace IKVM.Reflection
 		}
 	}
 
-#if !CORECLR
+#if !NETSTANDARD
 	[Serializable]
 #endif
 	public sealed class MissingMemberException : InvalidOperationException
 	{
-#if !CORECLR
+#if !NETSTANDARD
 		[NonSerialized]
 #endif
 		private readonly MemberInfo member;
@@ -101,7 +101,7 @@ namespace IKVM.Reflection
 			this.member = member;
 		}
 
-#if !CORECLR
+#if !NETSTANDARD
 		private MissingMemberException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
 			: base(info, context)
 		{

@@ -32,7 +32,7 @@ namespace IKVM.Reflection
 		IList<CustomAttributeData> __GetCustomAttributes(Type attributeType, bool inherit);
 	}
 
-#if !CORECLR
+#if !NETSTANDARD
 	[Serializable]
 #endif
 	public sealed class FileFormatLimitationExceededException : InvalidOperationException
@@ -45,7 +45,7 @@ namespace IKVM.Reflection
 			this.HResult = hresult;
 		}
 
-#if !CORECLR
+#if !NETSTANDARD
 		private FileFormatLimitationExceededException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
 			: base(info, context)
 		{
@@ -58,11 +58,11 @@ namespace IKVM.Reflection
 		}
 	}
 
-#if !CORECLR
+#if !NETSTANDARD
 	[Serializable]
 #endif
 	public sealed class Missing
-#if !CORECLR
+#if !NETSTANDARD
 		: System.Runtime.Serialization.ISerializable
 #endif
 	{
@@ -70,7 +70,7 @@ namespace IKVM.Reflection
 
 		private Missing() { }
 
-#if !CORECLR
+#if !NETSTANDARD
 		void System.Runtime.Serialization.ISerializable.GetObjectData(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
 		{
 			info.SetType(typeof(SingletonSerializationHelper));

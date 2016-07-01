@@ -34,7 +34,7 @@ using IKVM.Reflection.Reader;
 namespace IKVM.Reflection
 {
 	public sealed class AssemblyName
-#if !CORECLR
+#if !NETSTANDARD
 		: ICloneable
 #endif
 	{
@@ -199,7 +199,7 @@ namespace IKVM.Reflection
 			set { codeBase = value; }
 		}
 
-#if !CORECLR
+#if !NETSTANDARD
 		public string EscapedCodeBase
 		{
 			get
@@ -452,7 +452,7 @@ namespace IKVM.Reflection
 			return b == null || b.Length == 0 ? b : (byte[])b.Clone();
 		}
 
-#if !CORECLR
+#if !NETSTANDARD
 		public static bool ReferenceMatchesDefinition(AssemblyName reference, AssemblyName definition)
 		{
 			// HACK use the real AssemblyName to implement the (broken) ReferenceMatchesDefinition method

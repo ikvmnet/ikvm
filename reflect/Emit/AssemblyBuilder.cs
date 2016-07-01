@@ -84,7 +84,7 @@ namespace IKVM.Reflection.Emit
 			internal string Name;
 			internal string FileName;
 			internal ResourceAttributes Attributes;
-#if !CORECLR
+#if !NETSTANDARD
 			internal ResourceWriter Writer;
 #endif
 		}
@@ -425,7 +425,7 @@ namespace IKVM.Reflection.Emit
 
 			foreach (ResourceFile resfile in resourceFiles)
 			{
-#if !CORECLR
+#if !NETSTANDARD
 				if (resfile.Writer != null)
 				{
 					resfile.Writer.Generate();
@@ -510,7 +510,7 @@ namespace IKVM.Reflection.Emit
 			resourceFiles.Add(resfile);
 		}
 
-#if !CORECLR
+#if !NETSTANDARD
 		public IResourceWriter DefineResource(string name, string description, string fileName)
 		{
 			return DefineResource(name, description, fileName, ResourceAttributes.Public);

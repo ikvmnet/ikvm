@@ -149,7 +149,7 @@ namespace IKVM.Reflection
 		private Dictionary<ScopedTypeName, Type> missingTypes;
 		private bool resolveMissingMembers;
 		private readonly bool enableFunctionPointers;
-#if !CORECLR
+#if !NETSTANDARD
 		private readonly bool useNativeFusion;
 #endif
 		private readonly bool returnPseudoCustomAttributes;
@@ -213,7 +213,7 @@ namespace IKVM.Reflection
 		{
 			this.options = options;
 			enableFunctionPointers = (options & UniverseOptions.EnableFunctionPointers) != 0;
-#if !CORECLR
+#if !NETSTANDARD
 			useNativeFusion = (options & UniverseOptions.DisableFusion) == 0 && GetUseNativeFusion();
 #endif
 			returnPseudoCustomAttributes = (options & UniverseOptions.DisablePseudoCustomAttributeRetrieval) == 0;
@@ -221,7 +221,7 @@ namespace IKVM.Reflection
 			resolveMissingMembers = (options & UniverseOptions.ResolveMissingMembers) != 0;
 		}
 
-#if !CORECLR
+#if !NETSTANDARD
 		private static bool GetUseNativeFusion()
 		{
 			try
@@ -925,7 +925,7 @@ namespace IKVM.Reflection
 		// this is equivalent to the Fusion CompareAssemblyIdentity API
 		public bool CompareAssemblyIdentity(string assemblyIdentity1, bool unified1, string assemblyIdentity2, bool unified2, out AssemblyComparisonResult result)
 		{
-#if CORECLR
+#if NETSTANDARD
 			return Fusion.CompareAssemblyIdentityPure(assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result);
 #else
 			return useNativeFusion
@@ -949,7 +949,7 @@ namespace IKVM.Reflection
 			return new AssemblyBuilder(this, name, dir, null);
 		}
 
-#if !CORECLR
+#if !NETSTANDARD
 #if NET_4_0
 		[Obsolete]
 #endif
@@ -1114,7 +1114,7 @@ namespace IKVM.Reflection
 				}
 				return method;
 			}
-#if CORECLR
+#if NETSTANDARD
 			throw new MissingMethodException(declaringType.ToString() + "." + name);
 #else
 			throw new MissingMethodException(declaringType.ToString(), name);
@@ -1132,7 +1132,7 @@ namespace IKVM.Reflection
 				}
 				return field;
 			}
-#if CORECLR
+#if NETSTANDARD
 			throw new MissingFieldException(declaringType.ToString() + "." + name);
 #else
 			throw new MissingFieldException(declaringType.ToString(), name);
@@ -1152,7 +1152,7 @@ namespace IKVM.Reflection
 				}
 				return property;
 			}
-#if CORECLR
+#if NETSTANDARD
 			throw new System.MissingMemberException(declaringType.ToString() + "." + name);
 #else
 			throw new System.MissingMemberException(declaringType.ToString(), name);

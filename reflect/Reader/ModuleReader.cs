@@ -893,7 +893,7 @@ namespace IKVM.Reflection.Reader
 				{
 					return field;
 				}
-#if CORECLR
+#if NETSTANDARD
 				throw new MissingFieldException(org.ToString() + "." + name);
 #else
 				throw new MissingFieldException(org.ToString(), name);
@@ -916,7 +916,7 @@ namespace IKVM.Reflection.Reader
 				{
 					return method;
 				}
-#if CORECLR
+#if NETSTANDARD
 				throw new MissingMethodException(org.ToString() + "." + name);
 #else
 				throw new MissingMethodException(org.ToString(), name);

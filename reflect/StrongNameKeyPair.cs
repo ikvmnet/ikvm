@@ -76,7 +76,7 @@ namespace IKVM.Reflection
 		{
 			get
 			{
-#if !CORECLR
+#if !NETSTANDARD
 				if (Universe.MonoRuntime)
 				{
 					// MONOBUG workaround for https://bugzilla.xamarin.com/show_bug.cgi?id=5299
@@ -129,7 +129,7 @@ namespace IKVM.Reflection
 			}
 		}
 
-#if !CORECLR
+#if !NETSTANDARD
 		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
 		private byte[] MonoGetPublicKey()
 		{

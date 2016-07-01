@@ -60,7 +60,7 @@ namespace IKVM.Reflection
 		const string PublicKeyTokenSilverlight = "7cec85d7bea7798e";
 		const string PublicKeyTokenWinFX = "31bf3856ad364e35";
 
-#if !CORECLR
+#if !NETSTANDARD
 		internal static bool CompareAssemblyIdentityNative(string assemblyIdentity1, bool unified1, string assemblyIdentity2, bool unified2, out AssemblyComparisonResult result)
 		{
 			bool equivalent;

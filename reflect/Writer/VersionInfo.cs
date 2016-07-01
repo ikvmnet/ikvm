@@ -103,7 +103,7 @@ namespace IKVM.Reflection.Writer
 			}
 
 			int codepage = 1200;	// Unicode codepage
-#if CORECLR
+#if NETSTANDARD
 			// we set the langId to MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL)
 			// (this matches Roslyn)
 			int lcid = 0;
