@@ -43,14 +43,7 @@
         </if>
     </target>
 
-    <target name="CoreCLR" depends="properties">
-        <property name="CoreCLR" value="true" />
-        <property name="defs" value="${defs};CORECLR;NO_SYMBOL_WRITER;NO_AUTHENTICODE" />
-        <call target="compile" />
-    </target>
-
     <target name="IKVM.Reflection" depends="properties">
-        <property name="CoreCLR" value="false" />
         <call target="compile" />
     </target>
 
@@ -64,7 +57,6 @@
                 <include name="BadImageFormatException.cs" />
                 <include name="Binder.cs" />
                 <include name="ConstructorInfo.cs" />
-                <include name="coreclr.cs" />
                 <include name="CustomAttributeData.cs" />
                 <include name="CustomAttributeNamedArgument.cs" />
                 <include name="CustomAttributeTypedArgument.cs" />
@@ -122,7 +114,7 @@
                 <include name="Emit\TypeBuilder.cs" />
                 <include name="Impl\ITypeOwner.cs" />
                 <include name="Impl\MdbWriter.cs" />
-                <include name="Impl\PdbWriter.cs" unless="${CoreCLR}" />
+                <include name="Impl\PdbWriter.cs" />
                 <include name="Impl\SymbolSupport.cs" />
                 <include name="Metadata\CliHeader.cs" />
                 <include name="Metadata\MetadataRW.cs" />
@@ -153,8 +145,8 @@
             <references>
                 <include if="${framework::exists('mono-2.0')}" name="${MonoSymbolWriter}" />
                 <include name="${ReferencePath}/mscorlib.dll" />
-                <include name="${ReferencePath}/System.dll" unless="${CoreCLR}" />
-                <include name="${ReferencePath}/System.Security.dll" unless="${CoreCLR}" />
+                <include name="${ReferencePath}/System.dll" />
+                <include name="${ReferencePath}/System.Security.dll" />
             </references>
         </csc>
     </target>
