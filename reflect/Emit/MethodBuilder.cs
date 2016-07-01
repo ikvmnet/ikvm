@@ -166,7 +166,11 @@ namespace IKVM.Reflection.Emit
 					case System.Runtime.InteropServices.CallingConvention.Cdecl:
 						flags |= CallConvCdecl;
 						break;
+#if NETSTANDARD
+					case (System.Runtime.InteropServices.CallingConvention)5:
+#else
 					case System.Runtime.InteropServices.CallingConvention.FastCall:
+#endif
 						flags |= CallConvFastcall;
 						break;
 					case System.Runtime.InteropServices.CallingConvention.StdCall:
@@ -186,10 +190,18 @@ namespace IKVM.Reflection.Emit
 				switch (nativeCharSet.Value)
 				{
 					case CharSet.Ansi:
+#if NETSTANDARD
+					case (CharSet)1:
+#else
 					case CharSet.None:
+#endif
 						flags |= CharSetAnsi;
 						break;
+#if NETSTANDARD
+					case (CharSet)4:
+#else
 					case CharSet.Auto:
+#endif
 						flags |= CharSetAuto;
 						break;
 					case CharSet.Unicode:
@@ -245,12 +257,20 @@ namespace IKVM.Reflection.Emit
 				default:
 					throw new NotSupportedException();
 			}
-			MethodCodeType? type = customBuilder.GetFieldValue<MethodCodeType>("MethodCodeType");
 			implFlags = (MethodImplAttributes)opt;
+#if NETSTANDARD
+			object type = customBuilder.GetFieldValue("MethodCodeType");
+			if (type != null)
+			{
+				implFlags |= (MethodImplAttributes)(int)type;
+			}
+#else
+			MethodCodeType? type = customBuilder.GetFieldValue<MethodCodeType>("MethodCodeType");
 			if (type.HasValue)
 			{
 				implFlags |= (MethodImplAttributes)type;
 			}
+#endif
 		}
 
 		public void SetCustomAttribute(CustomAttributeBuilder customBuilder)

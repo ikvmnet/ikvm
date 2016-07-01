@@ -149,7 +149,9 @@ namespace IKVM.Reflection
 		private Dictionary<ScopedTypeName, Type> missingTypes;
 		private bool resolveMissingMembers;
 		private readonly bool enableFunctionPointers;
+#if !CORECLR
 		private readonly bool useNativeFusion;
+#endif
 		private readonly bool returnPseudoCustomAttributes;
 		private readonly bool automaticallyProvideDefaultConstructor;
 		private readonly UniverseOptions options;
@@ -211,12 +213,15 @@ namespace IKVM.Reflection
 		{
 			this.options = options;
 			enableFunctionPointers = (options & UniverseOptions.EnableFunctionPointers) != 0;
+#if !CORECLR
 			useNativeFusion = (options & UniverseOptions.DisableFusion) == 0 && GetUseNativeFusion();
+#endif
 			returnPseudoCustomAttributes = (options & UniverseOptions.DisablePseudoCustomAttributeRetrieval) == 0;
 			automaticallyProvideDefaultConstructor = (options & UniverseOptions.DontProvideAutomaticDefaultConstructor) == 0;
 			resolveMissingMembers = (options & UniverseOptions.ResolveMissingMembers) != 0;
 		}
 
+#if !CORECLR
 		private static bool GetUseNativeFusion()
 		{
 			try
@@ -230,6 +235,7 @@ namespace IKVM.Reflection
 				return false;
 			}
 		}
+#endif
 
 		internal Assembly Mscorlib
 		{
@@ -519,7 +525,7 @@ namespace IKVM.Reflection
 
 		private Type ImportImpl(System.Type type)
 		{
-			if (type.Assembly == typeof(IKVM.Reflection.Type).Assembly)
+			if (TypeUtil.GetAssembly(type) == TypeUtil.GetAssembly(typeof(IKVM.Reflection.Type)))
 			{
 				throw new ArgumentException("Did you really want to import " + type.FullName + "?");
 			}
@@ -551,7 +557,7 @@ namespace IKVM.Reflection
 			}
 			else if (type.IsGenericParameter)
 			{
-				if (type.DeclaringMethod != null)
+				if (TypeUtil.GetDeclaringMethod(type) != null)
 				{
 					throw new NotImplementedException();
 				}
@@ -560,9 +566,9 @@ namespace IKVM.Reflection
 					return Import(type.DeclaringType).GetGenericArguments()[type.GenericParameterPosition];
 				}
 			}
-			else if (type.IsGenericType && !type.IsGenericTypeDefinition)
+			else if (TypeUtil.IsGenericType(type) && !TypeUtil.IsGenericTypeDefinition(type))
 			{
-				System.Type[] args = type.GetGenericArguments();
+				System.Type[] args = TypeUtil.GetGenericArguments(type);
 				Type[] importedArgs = new Type[args.Length];
 				for (int i = 0; i < args.Length; i++)
 				{
@@ -570,7 +576,7 @@ namespace IKVM.Reflection
 				}
 				return Import(type.GetGenericTypeDefinition()).MakeGenericType(importedArgs);
 			}
-			else if (type.Assembly == typeof(object).Assembly)
+			else if (TypeUtil.GetAssembly(type) == TypeUtil.GetAssembly(typeof(object)))
 			{
 				// make sure mscorlib types always end up in our mscorlib
 				return ResolveType(Mscorlib, type.FullName);
@@ -578,7 +584,7 @@ namespace IKVM.Reflection
 			else
 			{
 				// FXBUG we parse the FullName here, because type.Namespace and type.Name are both broken on the CLR
-				return ResolveType(Import(type.Assembly), type.FullName);
+				return ResolveType(Import(TypeUtil.GetAssembly(type)), type.FullName);
 			}
 		}
 
@@ -605,7 +611,7 @@ namespace IKVM.Reflection
 			{
 				if (fs != null)
 				{
-					fs.Close();
+					fs.Dispose();
 				}
 			}
 			return module;

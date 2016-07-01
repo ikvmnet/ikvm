@@ -584,7 +584,11 @@ namespace IKVM.Reflection.Emit
 			}
 			pack = (short)((int?)customBuilder.GetFieldValue("Pack") ?? 0);
 			size = (int?)customBuilder.GetFieldValue("Size") ?? 0;
+#if NETSTANDARD
+			CharSet charSet = customBuilder.GetFieldValue<CharSet>("CharSet") ?? (CharSet)1;
+#else
 			CharSet charSet = customBuilder.GetFieldValue<CharSet>("CharSet") ?? CharSet.None;
+#endif
 			attribs &= ~TypeAttributes.LayoutMask;
 			switch (layout)
 			{
@@ -601,11 +605,19 @@ namespace IKVM.Reflection.Emit
 			attribs &= ~TypeAttributes.StringFormatMask;
 			switch (charSet)
 			{
+#if NETSTANDARD
+				case (CharSet)1:
+#else
 				case CharSet.None:
+#endif
 				case CharSet.Ansi:
 					attribs |= TypeAttributes.AnsiClass;
 					break;
+#if NETSTANDARD
+				case (CharSet)4:
+#else
 				case CharSet.Auto:
+#endif
 					attribs |= TypeAttributes.AutoClass;
 					break;
 				case CharSet.Unicode:

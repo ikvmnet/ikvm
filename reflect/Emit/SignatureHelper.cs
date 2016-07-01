@@ -238,7 +238,11 @@ namespace IKVM.Reflection.Emit
 				case CallingConvention.ThisCall:
 					type = 0x03;	// THISCALL
 					break;
+#if NETSTANDARD
+				case (CallingConvention)5:
+#else
 				case CallingConvention.FastCall:
+#endif
 					type = 0x04;	// FASTCALL
 					break;
 				default:

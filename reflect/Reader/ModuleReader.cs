@@ -1013,7 +1013,7 @@ namespace IKVM.Reflection.Reader
 									FileStream fs = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
 									if (fs.Length == 0)
 									{
-										fs.Close();
+										fs.Dispose();
 										return null;
 									}
 									return fs;
@@ -1272,7 +1272,7 @@ namespace IKVM.Reflection.Reader
 		{
 			if (stream != null)
 			{
-				stream.Close();
+				stream.Dispose();
 			}
 		}
 

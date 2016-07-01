@@ -23,7 +23,9 @@
 */
 using System;
 using System.Globalization;
+#if !NETSTANDARD
 using System.Configuration.Assemblies;
+#endif
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;

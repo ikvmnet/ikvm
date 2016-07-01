@@ -501,7 +501,7 @@ namespace IKVM.Reflection.Emit
 			}
 			else if (val != null)
 			{
-				if (typeof(T).IsEnum)
+				if (TypeUtil.IsEnum(typeof(T)))
 				{
 					Debug.Assert(Enum.GetUnderlyingType(typeof(T)) == val.GetType());
 					return (T)Enum.ToObject(typeof(T), val);

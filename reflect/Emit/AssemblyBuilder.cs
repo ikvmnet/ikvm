@@ -23,7 +23,9 @@
 */
 using System;
 using System.Collections.Generic;
+#if !NETSTANDARD
 using System.Configuration.Assemblies;
+#endif
 using System.IO;
 using System.Diagnostics;
 using System.Globalization;
@@ -126,7 +128,15 @@ namespace IKVM.Reflection.Emit
 			}
 			else
 			{
-				this.imageRuntimeVersion = typeof(object).Assembly.ImageRuntimeVersion;
+#if NETSTANDARD1_3 || NETSTANDARD1_4
+				using (Universe temp = new Universe(UniverseOptions.MetadataOnly))
+				using (RawModule mscorlib = temp.OpenRawModule(TypeUtil.GetAssembly(typeof(object)).ManifestModule.FullyQualifiedName))
+				{
+					this.imageRuntimeVersion = mscorlib.ImageRuntimeVersion;
+				}
+#else
+				this.imageRuntimeVersion = TypeUtil.GetAssembly(typeof(object)).ImageRuntimeVersion;
+#endif
 			}
 			universe.RegisterDynamicAssembly(this);
 		}

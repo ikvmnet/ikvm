@@ -406,10 +406,18 @@ namespace IKVM.Reflection
 						layout.CharSet = CharSet.Unicode;
 						break;
 					case TypeAttributes.AutoClass:
+#if NETSTANDARD
+						layout.CharSet = (CharSet)4;
+#else
 						layout.CharSet = CharSet.Auto;
+#endif
 						break;
 					default:
+#if NETSTANDARD
+						layout.CharSet = (CharSet)1;
+#else
 						layout.CharSet = CharSet.None;
+#endif
 						break;
 				}
 				if (!__GetLayout(out layout.Pack, out layout.Size))
@@ -586,7 +594,7 @@ namespace IKVM.Reflection
 			{
 				throw new ArgumentNullException();
 			}
-			if (System.Type.GetTypeCode(value.GetType()) != GetTypeCode(GetEnumUnderlyingType()))
+			if (value.GetType() != __GetSystemType(GetTypeCode(GetEnumUnderlyingType())))
 			{
 				throw new ArgumentException();
 			}
@@ -1646,8 +1654,13 @@ namespace IKVM.Reflection
 					return typeof(System.Byte);
 				case TypeCode.Char:
 					return typeof(System.Char);
+#if NETSTANDARD
+				case (TypeCode)2:
+					return System.Type.GetType("System.DBNull", true);
+#else
 				case TypeCode.DBNull:
 					return typeof(System.DBNull);
+#endif
 				case TypeCode.DateTime:
 					return typeof(System.DateTime);
 				case TypeCode.Decimal:
@@ -1746,7 +1759,11 @@ namespace IKVM.Reflection
 			}
 			else if (type == u.System_DBNull)
 			{
+#if NETSTANDARD
+				return (TypeCode)2;
+#else
 				return TypeCode.DBNull;
+#endif
 			}
 			else if (type == u.System_Decimal)
 			{

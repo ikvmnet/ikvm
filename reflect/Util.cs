@@ -263,4 +263,61 @@ namespace IKVM.Reflection
 			return c.f;
 		}
 	}
+
+    static class TypeUtil
+    {
+        internal static bool IsEnum(System.Type type)
+        {
+#if NETSTANDARD
+            return System.Reflection.IntrospectionExtensions.GetTypeInfo(type).IsEnum;
+#else
+            return type.IsEnum;
+#endif
+        }
+
+        internal static System.Reflection.Assembly GetAssembly(System.Type type)
+        {
+#if NETSTANDARD
+            return System.Reflection.IntrospectionExtensions.GetTypeInfo(type).Assembly;
+#else
+            return type.Assembly;
+#endif
+        }
+
+        internal static System.Reflection.MethodBase GetDeclaringMethod(System.Type type)
+        {
+#if NETSTANDARD
+            return System.Reflection.IntrospectionExtensions.GetTypeInfo(type).DeclaringMethod;
+#else
+            return type.DeclaringMethod;
+#endif
+        }
+
+        internal static bool IsGenericType(System.Type type)
+        {
+#if NETSTANDARD
+            return System.Reflection.IntrospectionExtensions.GetTypeInfo(type).IsGenericType;
+#else
+            return type.IsGenericType;
+#endif
+        }
+
+        internal static bool IsGenericTypeDefinition(System.Type type)
+        {
+#if NETSTANDARD
+            return System.Reflection.IntrospectionExtensions.GetTypeInfo(type).IsGenericTypeDefinition;
+#else
+            return type.IsGenericTypeDefinition;
+#endif
+        }
+
+        internal static System.Type[] GetGenericArguments(System.Type type)
+        {
+#if NETSTANDARD
+            return System.Reflection.IntrospectionExtensions.GetTypeInfo(type).GenericTypeArguments;
+#else
+            return type.GetGenericArguments();
+#endif
+        }
+    }
 }

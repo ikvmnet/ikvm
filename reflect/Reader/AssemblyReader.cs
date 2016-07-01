@@ -23,7 +23,9 @@
 */
 using System;
 using System.Collections.Generic;
+#if !NETSTANDARD
 using System.Configuration.Assemblies;
+#endif
 using System.IO;
 using IKVM.Reflection.Metadata;
 

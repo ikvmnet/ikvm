@@ -165,7 +165,11 @@ namespace IKVM.Reflection
 					unmanaged = true;
 					break;
 				case 0x04:	// FASTCALL
+#if NETSTANDARD
+					unmanagedCallingConvention = (System.Runtime.InteropServices.CallingConvention)5;
+#else
 					unmanagedCallingConvention = System.Runtime.InteropServices.CallingConvention.FastCall;
+#endif
 					unmanaged = true;
 					break;
 				case VARARG:

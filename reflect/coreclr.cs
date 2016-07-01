@@ -23,7 +23,7 @@
 */
 using System;
 
-#if CORECLR
+#if CORECLR && !NETSTANDARD
 namespace System.Diagnostics
 {
 	static class Debug

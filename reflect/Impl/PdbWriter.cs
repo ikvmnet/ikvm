@@ -21,6 +21,7 @@
   jeroen@frijters.net
   
 */
+#if !NO_SYMBOL_WRITER
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -1191,3 +1192,4 @@ namespace IKVM.Reflection.Impl
 		}
 	}
 }
+#endif

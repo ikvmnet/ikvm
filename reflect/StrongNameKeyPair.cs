@@ -38,10 +38,12 @@ namespace IKVM.Reflection
 			{
 				throw new ArgumentNullException("keyPairContainer");
 			}
+#if !NETSTANDARD
 			if (Universe.MonoRuntime && Environment.OSVersion.Platform == PlatformID.Win32NT)
 			{
 				throw new NotSupportedException("IKVM.Reflection does not support key containers when running on Mono");
 			}
+#endif
 			this.keyPairContainer = keyPairContainer;
 		}
 

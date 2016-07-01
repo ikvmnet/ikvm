@@ -103,22 +103,24 @@ namespace IKVM.Reflection.Writer
 			}
 
 			int codepage = 1200;	// Unicode codepage
+#if CORECLR
+			// we set the langId to MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL)
+			// (this matches Roslyn)
+			int lcid = 0;
+#else
 			int lcid = 0x7f;
 			try
 			{
 				if (name.CultureInfo != null)
 				{
-#if CORECLR
-					throw new NotImplementedException();
-#else
 					lcid = name.CultureInfo.LCID;
-#endif
 				}
 			}
 			catch (ArgumentException)
 			{
 				// AssemblyName.CultureInfo throws an ArgumentException if AssemblyBuilder.__SetAssemblyCulture() was used to specify a non-existing culture
 			}
+#endif
 
 			Version filever = ParseVersionRobust(fileVersion);
 			int fileVersionMajor = filever.Major;

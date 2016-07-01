@@ -30,10 +30,16 @@ using IKVM.Reflection.Reader;
 using IKVM.Reflection.Writer;
 using IKVM.Reflection.Metadata;
 
+#if NETSTANDARD
+// VarEnum, UnmanagedType.IDispatch and UnmanagedType.SafeArray are obsolete
+#pragma warning disable 618
+#endif
+
 namespace IKVM.Reflection
 {
 	public struct FieldMarshal
 	{
+		private const UnmanagedType UnmanagedType_CustomMarshaler = (UnmanagedType)0x2c;
 		private const UnmanagedType NATIVE_TYPE_MAX = (UnmanagedType)0x50;
 		public UnmanagedType UnmanagedType;
 		public UnmanagedType? ArraySubType;
@@ -105,7 +111,7 @@ namespace IKVM.Reflection
 						fm.IidParameterIndex = blob.ReadCompressedUInt();
 					}
 				}
-				else if (fm.UnmanagedType == UnmanagedType.CustomMarshaler)
+				else if (fm.UnmanagedType == UnmanagedType_CustomMarshaler)
 				{
 					blob.ReadCompressedUInt();
 					blob.ReadCompressedUInt();
@@ -210,7 +216,7 @@ namespace IKVM.Reflection
 					bb.WriteCompressedUInt(iidParameterIndex.Value);
 				}
 			}
-			else if (unmanagedType == UnmanagedType.CustomMarshaler)
+			else if (unmanagedType == UnmanagedType_CustomMarshaler)
 			{
 				bb.WriteCompressedUInt(0);
 				bb.WriteCompressedUInt(0);

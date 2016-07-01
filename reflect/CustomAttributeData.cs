@@ -913,11 +913,19 @@ namespace IKVM.Reflection
 					charSet = System.Runtime.InteropServices.CharSet.Unicode;
 					break;
 				case ImplMapFlags.CharSetAuto:
+#if NETSTANDARD
+					charSet = (System.Runtime.InteropServices.CharSet)4;
+#else
 					charSet = System.Runtime.InteropServices.CharSet.Auto;
+#endif
 					break;
 				case ImplMapFlags.CharSetNotSpec:
 				default:
+#if NETSTANDARD
+					charSet = (System.Runtime.InteropServices.CharSet)1;
+#else
 					charSet = System.Runtime.InteropServices.CharSet.None;
+#endif
 					break;
 			}
 			System.Runtime.InteropServices.CallingConvention callingConvention;
@@ -927,7 +935,11 @@ namespace IKVM.Reflection
 					callingConvention = System.Runtime.InteropServices.CallingConvention.Cdecl;
 					break;
 				case ImplMapFlags.CallConvFastcall:
+#if NETSTANDARD
+					callingConvention = (System.Runtime.InteropServices.CallingConvention)5;
+#else
 					callingConvention = System.Runtime.InteropServices.CallingConvention.FastCall;
+#endif
 					break;
 				case ImplMapFlags.CallConvStdcall:
 					callingConvention = System.Runtime.InteropServices.CallingConvention.StdCall;

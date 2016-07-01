@@ -533,7 +533,11 @@ namespace IKVM.Reflection.Emit
 				// check for HostProtectionAttribute without SecurityAction
 				if (cab.ConstructorArgumentCount == 0)
 				{
+#if NETSTANDARD
+					action = 6;
+#else
 					action = (int)System.Security.Permissions.SecurityAction.LinkDemand;
+#endif
 				}
 				else
 				{
