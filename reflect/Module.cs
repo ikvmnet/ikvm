@@ -157,7 +157,7 @@ namespace IKVM.Reflection
 		internal readonly MethodSpecTable MethodSpec = new MethodSpecTable();
 		internal readonly GenericParamConstraintTable GenericParamConstraint = new GenericParamConstraintTable();
 
-		protected Module(Universe universe)
+		internal Module(Universe universe)
 		{
 			this.universe = universe;
 		}
