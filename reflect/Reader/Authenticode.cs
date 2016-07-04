@@ -112,32 +112,14 @@ namespace IKVM.Reflection.Reader
 
 		private static byte[] ComputeHashWithSkip(Stream stream, string hashAlgorithm, int[] skipOffsets, int[] skipLengths)
 		{
+			stream.Position = 0;
+			for (int i = skipOffsets.Length - 1; i >= 0; i--)
+			{
+				stream = new IKVM.Reflection.Writer.SkipStream(stream, skipOffsets[i], skipLengths[i]);
+			}
 			using (HashAlgorithm hash = HashAlgorithm.Create(hashAlgorithm))
 			{
-				using (CryptoStream cs = new CryptoStream(Stream.Null, hash, CryptoStreamMode.Write))
-				{
-					stream.Seek(0, SeekOrigin.Begin);
-					byte[] buf = new byte[8192];
-					HashChunk(stream, cs, buf, skipOffsets[0]);
-					stream.Seek(skipLengths[0], SeekOrigin.Current);
-					for (int i = 1; i < skipOffsets.Length; i++)
-					{
-						HashChunk(stream, cs, buf, skipOffsets[i] - (skipOffsets[i - 1] + skipLengths[i - 1]));
-						stream.Seek(skipLengths[i], SeekOrigin.Current);
-					}
-					HashChunk(stream, cs, buf, (int)stream.Length - (skipOffsets[skipOffsets.Length - 1] + skipLengths[skipLengths.Length - 1]));
-				}
-				return hash.Hash;
-			}
-		}
-
-		private static void HashChunk(Stream stream, CryptoStream cs, byte[] buf, int length)
-		{
-			while (length > 0)
-			{
-				int read = stream.Read(buf, 0, Math.Min(buf.Length, length));
-				cs.Write(buf, 0, read);
-				length -= read;
+				return hash.ComputeHash(stream);
 			}
 		}
 
