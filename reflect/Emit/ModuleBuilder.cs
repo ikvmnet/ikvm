@@ -395,11 +395,13 @@ namespace IKVM.Reflection.Emit
 			return moduleType.__DefineField(name, type, customModifiers, attributes);
 		}
 
+#if !NETSTANDARD
 		[Obsolete("Please use __DefineField(string, Type, CustomModifiers, FieldAttributes) instead.")]
 		public FieldBuilder __DefineField(string name, Type type, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers, FieldAttributes attributes)
 		{
 			return moduleType.DefineField(name, type, requiredCustomModifiers, optionalCustomModifiers, attributes);
 		}
+#endif
 
 		public ConstructorBuilder __DefineModuleInitializer(MethodAttributes visibility)
 		{
@@ -1566,11 +1568,13 @@ namespace IKVM.Reflection.Emit
 			return stackReserve;
 		}
 
+#if !NETSTANDARD
 		[Obsolete("Use __StackReserve property.")]
 		public void __SetStackReserve(long stackReserve)
 		{
 			__StackReserve = stackReserve;
 		}
+#endif
 
 		internal ulong GetStackReserve(ulong defaultValue)
 		{

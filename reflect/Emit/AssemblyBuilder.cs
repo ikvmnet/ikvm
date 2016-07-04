@@ -203,11 +203,13 @@ namespace IKVM.Reflection.Emit
 			this.hashAlgorithm = hashAlgorithm;
 		}
 
+#if !NETSTANDARD
 		[Obsolete("Use __AssemblyFlags property instead.")]
 		public void __SetAssemblyFlags(AssemblyNameFlags flags)
 		{
 			this.__AssemblyFlags = flags;
 		}
+#endif
 
 		protected override AssemblyNameFlags GetAssemblyFlags()
 		{

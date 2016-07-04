@@ -518,6 +518,7 @@ namespace IKVM.Reflection
 				PropertySignature.Create(CallingConventions.Standard | CallingConventions.HasThis, propertyType, null, new PackedCustomModifiers()));
 		}
 
+#if !NETSTANDARD
 		[Obsolete("Use AttributeType property instead.")]
 		internal bool __TryReadTypeName(out string ns, out string name)
 		{
@@ -532,6 +533,7 @@ namespace IKVM.Reflection
 			name = typeName.Name;
 			return true;
 		}
+#endif
 
 		public byte[] __GetBlob()
 		{

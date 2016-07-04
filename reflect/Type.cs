@@ -175,6 +175,7 @@ namespace IKVM.Reflection
 			return new CustomModifiers();
 		}
 
+#if !NETSTANDARD
 		[Obsolete("Please use __GetCustomModifiers() instead.")]
 		public Type[] __GetRequiredCustomModifiers()
 		{
@@ -186,6 +187,7 @@ namespace IKVM.Reflection
 		{
 			return __GetCustomModifiers().GetOptional();
 		}
+#endif
 
 		public virtual __StandAloneMethodSig __MethodSignature
 		{
@@ -349,6 +351,7 @@ namespace IKVM.Reflection
 			return Empty<CustomModifiers>.Array;
 		}
 
+#if !NETSTANDARD
 		[Obsolete("Please use __GetGenericArgumentsCustomModifiers() instead")]
 		public Type[][] __GetGenericArgumentsRequiredCustomModifiers()
 		{
@@ -372,6 +375,7 @@ namespace IKVM.Reflection
 			}
 			return array;
 		}
+#endif
 
 		public virtual Type GetGenericTypeDefinition()
 		{
@@ -1542,11 +1546,13 @@ namespace IKVM.Reflection
 			return ArrayType.Make(this, customModifiers);
 		}
 
+#if !NETSTANDARD
 		[Obsolete("Please use __MakeArrayType(CustomModifiers) instead.")]
 		public Type __MakeArrayType(Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
 		{
 			return __MakeArrayType(CustomModifiers.FromReqOpt(requiredCustomModifiers, optionalCustomModifiers));
 		}
+#endif
 
 		public Type MakeArrayType(int rank)
 		{
@@ -1558,22 +1564,26 @@ namespace IKVM.Reflection
 			return MultiArrayType.Make(this, rank, Empty<int>.Array, new int[rank], customModifiers);
 		}
 
+#if !NETSTANDARD
 		[Obsolete("Please use __MakeArrayType(int, CustomModifiers) instead.")]
 		public Type __MakeArrayType(int rank, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
 		{
 			return __MakeArrayType(rank, CustomModifiers.FromReqOpt(requiredCustomModifiers, optionalCustomModifiers));
 		}
+#endif
 
 		public Type __MakeArrayType(int rank, int[] sizes, int[] lobounds, CustomModifiers customModifiers)
 		{
 			return MultiArrayType.Make(this, rank, sizes ?? Empty<int>.Array, lobounds ?? Empty<int>.Array, customModifiers);
 		}
 
+#if !NETSTANDARD
 		[Obsolete("Please use __MakeArrayType(int, int[], int[], CustomModifiers) instead.")]
 		public Type __MakeArrayType(int rank, int[] sizes, int[] lobounds, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
 		{
 			return __MakeArrayType(rank, sizes, lobounds, CustomModifiers.FromReqOpt(requiredCustomModifiers, optionalCustomModifiers));
 		}
+#endif
 
 		public Type MakeByRefType()
 		{
@@ -1585,11 +1595,13 @@ namespace IKVM.Reflection
 			return ByRefType.Make(this, customModifiers);
 		}
 
+#if !NETSTANDARD
 		[Obsolete("Please use __MakeByRefType(CustomModifiers) instead.")]
 		public Type __MakeByRefType(Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
 		{
 			return __MakeByRefType(CustomModifiers.FromReqOpt(requiredCustomModifiers, optionalCustomModifiers));
 		}
+#endif
 
 		public Type MakePointerType()
 		{
@@ -1601,11 +1613,13 @@ namespace IKVM.Reflection
 			return PointerType.Make(this, customModifiers);
 		}
 
+#if !NETSTANDARD
 		[Obsolete("Please use __MakeByRefType(CustomModifiers) instead.")]
 		public Type __MakePointerType(Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
 		{
 			return __MakePointerType(CustomModifiers.FromReqOpt(requiredCustomModifiers, optionalCustomModifiers));
 		}
+#endif
 
 		public Type MakeGenericType(params Type[] typeArguments)
 		{
@@ -1621,6 +1635,7 @@ namespace IKVM.Reflection
 			return GenericTypeInstance.Make(this, Util.Copy(typeArguments), customModifiers == null ? null : (CustomModifiers[])customModifiers.Clone());
 		}
 
+#if !NETSTANDARD
 		[Obsolete("Please use __MakeGenericType(Type[], CustomModifiers[]) instead.")]
 		public Type __MakeGenericType(Type[] typeArguments, Type[][] requiredCustomModifiers, Type[][] optionalCustomModifiers)
 		{
@@ -1639,6 +1654,7 @@ namespace IKVM.Reflection
 			}
 			return GenericTypeInstance.Make(this, Util.Copy(typeArguments), mods);
 		}
+#endif
 
 		public static System.Type __GetSystemType(TypeCode typeCode)
 		{
@@ -2144,22 +2160,26 @@ namespace IKVM.Reflection
 			return method;
 		}
 
+#if !NETSTANDARD
 		[Obsolete("Please use __CreateMissingMethod(string, CallingConventions, Type, CustomModifiers, Type[], CustomModifiers[]) instead")]
 		public MethodBase __CreateMissingMethod(string name, CallingConventions callingConvention, Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers, Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers)
 		{
 			return CreateMissingMethod(name, callingConvention, returnType, parameterTypes, PackedCustomModifiers.CreateFromExternal(returnTypeOptionalCustomModifiers, returnTypeRequiredCustomModifiers, parameterTypeOptionalCustomModifiers, parameterTypeRequiredCustomModifiers, parameterTypes.Length));
 		}
+#endif
 
 		public FieldInfo __CreateMissingField(string name, Type fieldType, CustomModifiers customModifiers)
 		{
 			return new MissingField(this, name, FieldSignature.Create(fieldType, customModifiers));
 		}
 
+#if !NETSTANDARD
 		[Obsolete("Please use __CreateMissingField(string, Type, CustomModifiers) instead")]
 		public FieldInfo __CreateMissingField(string name, Type fieldType, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
 		{
 			return __CreateMissingField(name, fieldType, CustomModifiers.FromReqOpt(requiredCustomModifiers, optionalCustomModifiers));
 		}
+#endif
 
 		public PropertyInfo __CreateMissingProperty(string name, CallingConventions callingConvention, Type propertyType, CustomModifiers propertyTypeCustomModifiers, Type[] parameterTypes, CustomModifiers[] parameterTypeCustomModifiers)
 		{

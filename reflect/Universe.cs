@@ -1069,11 +1069,13 @@ namespace IKVM.Reflection
 			return asm;
 		}
 
+#if !NETSTANDARD
 		[Obsolete("Please set UniverseOptions.ResolveMissingMembers instead.")]
 		public void EnableMissingMemberResolution()
 		{
 			resolveMissingMembers = true;
 		}
+#endif
 
 		internal bool MissingMemberResolution
 		{

@@ -138,6 +138,7 @@ namespace IKVM.Reflection
 				method.signature.GenericParameterCount);
 		}
 
+#if !NETSTANDARD
 		[Obsolete("Please use SetSignature(Type, CustomModifiers, Type[], CustomModifiers[]) instead.")]
 		public void SetSignature(Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers, Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers)
 		{
@@ -148,6 +149,7 @@ namespace IKVM.Reflection
 				method.signature.CallingConvention,
 				method.signature.GenericParameterCount);
 		}
+#endif
 
 		public MethodInfo Finish()
 		{

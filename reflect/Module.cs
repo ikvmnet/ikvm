@@ -334,12 +334,14 @@ namespace IKVM.Reflection
 		internal abstract Type FindType(TypeName name);
 		internal abstract Type FindTypeIgnoreCase(TypeName lowerCaseName);
 
+#if !NETSTANDARD
 		[Obsolete("Please use __ResolveOptionalParameterTypes(int, Type[], Type[], out CustomModifiers[]) instead.")]
 		public Type[] __ResolveOptionalParameterTypes(int metadataToken)
 		{
 			CustomModifiers[] dummy;
 			return __ResolveOptionalParameterTypes(metadataToken, null, null, out dummy);
 		}
+#endif
 
 		public Type GetType(string className)
 		{
@@ -562,11 +564,13 @@ namespace IKVM.Reflection
 			return list;
 		}
 
+#if !NETSTANDARD
 		[Obsolete]
 		public List<CustomAttributeData> __GetCustomAttributesFor(int token)
 		{
 			return CustomAttributeData.GetCustomAttributesImpl(new List<CustomAttributeData>(), this, token, null);
 		}
+#endif
 
 		public bool __TryGetImplMap(int token, out ImplMapFlags mappingFlags, out string importName, out string importScope)
 		{
