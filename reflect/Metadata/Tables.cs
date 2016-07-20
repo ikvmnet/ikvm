@@ -1197,6 +1197,8 @@ namespace IKVM.Reflection.Metadata
 				{
 					records[i].Parent = (GenericParamTable.Index << 24) + genericParamFixup[(records[i].Parent & 0xFFFFFF) - 1] + 1;
 				}
+				// TODO if we ever add support for custom attributes on DeclSecurity or GenericParamConstraint
+				// we need to fix them up here (because they are sorted tables, like GenericParam)
 			}
 			Sort();
 		}
@@ -1223,7 +1225,8 @@ namespace IKVM.Reflection.Metadata
 					return (token & 0xFFFFFF) << 5 | 7;
 				// LAMESPEC spec calls this Permission table
 				case DeclSecurityTable.Index:
-					return (token & 0xFFFFFF) << 5 | 8;
+					//return (token & 0xFFFFFF) << 5 | 8;
+					throw new NotImplementedException();
 				case PropertyTable.Index:
 					return (token & 0xFFFFFF) << 5 | 9;
 				case EventTable.Index:
@@ -1247,7 +1250,8 @@ namespace IKVM.Reflection.Metadata
 				case GenericParamTable.Index:
 					return (token & 0xFFFFFF) << 5 | 19;
 				case GenericParamConstraintTable.Index:
-					return (token & 0xFFFFFF) << 5 | 20;
+					//return (token & 0xFFFFFF) << 5 | 20;
+					throw new NotImplementedException();
 				case MethodSpecTable.Index:
 					return (token & 0xFFFFFF) << 5 | 21;
 				default:
