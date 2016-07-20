@@ -200,6 +200,7 @@ namespace IKVM.Reflection.Emit
 			internal readonly Scope parent;
 			internal readonly List<Scope> children = new List<Scope>();
 			internal readonly List<LocalBuilder> locals = new List<LocalBuilder>();
+			internal readonly List<string> namespaces = new List<string>();
 			internal int startOffset;
 			internal int endOffset;
 
@@ -407,9 +408,9 @@ namespace IKVM.Reflection.Emit
 		public void UsingNamespace(string usingNamespace)
 		{
 #if !NO_SYMBOL_WRITER
-			if (moduleBuilder.symbolWriter != null)
+			if (scope != null)
 			{
-				moduleBuilder.symbolWriter.UsingNamespace(usingNamespace);
+				scope.namespaces.Add(usingNamespace);
 			}
 #endif
 		}
@@ -1138,6 +1139,10 @@ namespace IKVM.Reflection.Emit
 					}
 					moduleBuilder.symbolWriter.DefineLocalVariable2(local.name, 0, localVarSigTok, SymAddressKind.ILOffset, local.LocalIndex, 0, 0, startOffset, endOffset);
 				}
+			}
+			foreach (string ns in scope.namespaces)
+			{
+				moduleBuilder.symbolWriter.UsingNamespace(ns);
 			}
 			foreach (Scope child in scope.children)
 			{
