@@ -203,7 +203,7 @@ namespace IKVM.Reflection.Reader
 				case 7:
 					return (ModuleTable.Index << 24) + (codedIndex >> 5);
 				case 8:
-					throw new BadImageFormatException();
+					return (DeclSecurityTable.Index << 24) + (codedIndex >> 5);
 				case 9:
 					return (PropertyTable.Index << 24) + (codedIndex >> 5);
 				case 10:
@@ -226,6 +226,10 @@ namespace IKVM.Reflection.Reader
 					return (ManifestResourceTable.Index << 24) + (codedIndex >> 5);
 				case 19:
 					return (GenericParamTable.Index << 24) + (codedIndex >> 5);
+				case 20:
+					return (GenericParamConstraintTable.Index << 24) + (codedIndex >> 5);
+				case 21:
+					return (MethodSpecTable.Index << 24) + (codedIndex >> 5);
 				default:
 					throw new BadImageFormatException();
 			}

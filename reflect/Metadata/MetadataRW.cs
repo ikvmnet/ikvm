@@ -73,8 +73,8 @@ namespace IKVM.Reflection.Metadata
 			this.bigMemberRefParent = IsBig(3, module.TypeDef, module.TypeRef, module.ModuleRef, module.MethodDef, module.TypeSpec);
 			this.bigMethodDefOrRef = IsBig(1, module.MethodDef, module.MemberRef);
 			this.bigHasCustomAttribute = IsBig(5, module.MethodDef, module.Field, module.TypeRef, module.TypeDef, module.Param, module.InterfaceImpl, module.MemberRef,
-				module.ModuleTable, /*module.Permission,*/ module.Property, module.Event, module.StandAloneSig, module.ModuleRef, module.TypeSpec, module.AssemblyTable,
-				module.AssemblyRef, module.File, module.ExportedType, module.ManifestResource);
+				module.ModuleTable, module.DeclSecurity, module.Property, module.Event, module.StandAloneSig, module.ModuleRef, module.TypeSpec, module.AssemblyTable,
+				module.AssemblyRef, module.File, module.ExportedType, module.ManifestResource, module.GenericParam, module.GenericParamConstraint, module.MethodSpec);
 			this.bigCustomAttributeType = IsBig(3, module.MethodDef, module.MemberRef);
 			this.bigHasConstant = IsBig(2, module.Field, module.Param, module.Property);
 			this.bigHasSemantics = IsBig(1, module.Event, module.Property);

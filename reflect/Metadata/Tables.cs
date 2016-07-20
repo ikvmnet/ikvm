@@ -1221,7 +1221,9 @@ namespace IKVM.Reflection.Metadata
 					return (token & 0xFFFFFF) << 5 | 6;
 				case ModuleTable.Index:
 					return (token & 0xFFFFFF) << 5 | 7;
-				// Permission (8) table doesn't exist in the spec
+				// LAMESPEC spec calls this Permission table
+				case DeclSecurityTable.Index:
+					return (token & 0xFFFFFF) << 5 | 8;
 				case PropertyTable.Index:
 					return (token & 0xFFFFFF) << 5 | 9;
 				case EventTable.Index:
@@ -1244,6 +1246,10 @@ namespace IKVM.Reflection.Metadata
 					return (token & 0xFFFFFF) << 5 | 18;
 				case GenericParamTable.Index:
 					return (token & 0xFFFFFF) << 5 | 19;
+				case GenericParamConstraintTable.Index:
+					return (token & 0xFFFFFF) << 5 | 20;
+				case MethodSpecTable.Index:
+					return (token & 0xFFFFFF) << 5 | 21;
 				default:
 					throw new InvalidOperationException();
 			}
