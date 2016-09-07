@@ -895,6 +895,13 @@
                 </attribute>
                 <redirect class="java.lang.StringHelper" />
             </method>
+            <!-- default interface methods we should interherit from CharSequence (currently this isn't done automatically) -->
+            <method name="chars" sig="()Ljava.util.stream.IntStream;" modifiers="public">
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;)Ljava.util.stream.IntStream;" type="static" />
+            </method>
+            <method name="codePoints" sig="()Ljava.util.stream.IntStream;" modifiers="public">
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;)Ljava.util.stream.IntStream;" type="static" />
+            </method>
             <field name="CASE_INSENSITIVE_ORDER" sig="Ljava.util.Comparator;" modifiers="public static final">
                 <attribute type="IKVM.Attributes.SignatureAttribute" sig="(Ljava.lang.String;)V">
                     <parameter>Ljava/util/Comparator&lt;Ljava/lang/String;&gt;;</parameter>

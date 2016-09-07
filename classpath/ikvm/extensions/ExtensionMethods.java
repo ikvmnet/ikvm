@@ -562,4 +562,14 @@ public final class ExtensionMethods
     {
         return _this.getBytes(charset);
     }
+
+    @ExtensionAttribute.Annotation
+    public static java.util.stream.IntStream chars(String _this) {
+        return _this.chars();
+    }
+
+    @ExtensionAttribute.Annotation
+    public static java.util.stream.IntStream codePoints(String _this) {
+        return _this.codePoints();
+    }
 }

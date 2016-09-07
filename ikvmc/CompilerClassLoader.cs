@@ -983,7 +983,19 @@ namespace IKVM.Internal
 					interfaceWrappers = new TypeWrapper[c.Interfaces.Length];
 					for (int i = 0; i < c.Interfaces.Length; i++)
 					{
-						interfaceWrappers[i] = classLoader.LoadClassByDottedName(c.Interfaces[i].Name);
+						TypeWrapper iface = classLoader.LoadClassByDottedName(c.Interfaces[i].Name);
+						interfaceWrappers[i] = iface;
+						foreach (MethodWrapper mw in iface.GetMethods())
+						{
+							// make sure default interface methods are implemented (they currently have to be explicitly implemented in map.xml)
+							if (mw.IsVirtual && !mw.IsAbstract)
+							{
+								if (GetMethodWrapper(mw.Name, mw.Signature, true) == null)
+								{
+									StaticCompiler.IssueMessage(Message.RemappedTypeMissingDefaultInterfaceMethod, Name, iface.Name + "." + mw.Name + mw.Signature);
+								}
+							}
+						}
 					}
 				}
 				else
@@ -3660,6 +3672,7 @@ namespace IKVM.Internal
 		MissingType = 4014,
 		MissingReference = 4015,
 		CallerSensitiveOnUnsupportedMethod = 4016,
+		RemappedTypeMissingDefaultInterfaceMethod = 4017,
 		// Fatal errors
 		ResponseFileDepthExceeded = 5000,
 		ErrorReadingFile = 5001,
@@ -4056,6 +4069,9 @@ namespace IKVM.Internal
 				case Message.CallerSensitiveOnUnsupportedMethod:
 					msg = "CallerSensitive annotation on unsupported method" + Environment.NewLine +
 						"    (\"{0}.{1}{2}\")";
+					break;
+				case Message.RemappedTypeMissingDefaultInterfaceMethod:
+					msg = "{0} does not implement default interface method {1}";
 					break;
 				default:
 					throw new InvalidProgramException();

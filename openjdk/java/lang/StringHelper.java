@@ -38,6 +38,13 @@ import java.util.StringJoiner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.NoSuchElementException;
+import java.util.PrimitiveIterator;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.IntConsumer;
+import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
 
 /**
  * The {@code String} class represents character strings. All
@@ -2723,5 +2730,96 @@ final class StringHelper
      */
     public static String valueOf(double d) {
         return Double.toString(d);
+    }
+
+    public static IntStream chars(String _this) {
+        class CharIterator implements PrimitiveIterator.OfInt {
+            int cur = 0;
+
+            public boolean hasNext() {
+                return cur < _this.length();
+            }
+
+            public int nextInt() {
+                if (hasNext()) {
+                    return _this.charAt(cur++);
+                } else {
+                    throw new NoSuchElementException();
+                }
+            }
+
+            @Override
+            public void forEachRemaining(IntConsumer block) {
+                for (; cur < _this.length(); cur++) {
+                    block.accept(_this.charAt(cur));
+                }
+            }
+        }
+
+        return StreamSupport.intStream(() ->
+                Spliterators.spliterator(
+                        new CharIterator(),
+                        _this.length(),
+                        Spliterator.ORDERED),
+                Spliterator.SUBSIZED | Spliterator.SIZED | Spliterator.ORDERED,
+                false);
+    }
+
+    public static IntStream codePoints(String _this) {
+        class CodePointIterator implements PrimitiveIterator.OfInt {
+            int cur = 0;
+
+            @Override
+            public void forEachRemaining(IntConsumer block) {
+                final int length = _this.length();
+                int i = cur;
+                try {
+                    while (i < length) {
+                        char c1 = _this.charAt(i++);
+                        if (!Character.isHighSurrogate(c1) || i >= length) {
+                            block.accept(c1);
+                        } else {
+                            char c2 = _this.charAt(i);
+                            if (Character.isLowSurrogate(c2)) {
+                                i++;
+                                block.accept(Character.toCodePoint(c1, c2));
+                            } else {
+                                block.accept(c1);
+                            }
+                        }
+                    }
+                } finally {
+                    cur = i;
+                }
+            }
+
+            public boolean hasNext() {
+                return cur < _this.length();
+            }
+
+            public int nextInt() {
+                final int length = _this.length();
+
+                if (cur >= length) {
+                    throw new NoSuchElementException();
+                }
+                char c1 = _this.charAt(cur++);
+                if (Character.isHighSurrogate(c1) && cur < length) {
+                    char c2 = _this.charAt(cur);
+                    if (Character.isLowSurrogate(c2)) {
+                        cur++;
+                        return Character.toCodePoint(c1, c2);
+                    }
+                }
+                return c1;
+            }
+        }
+
+        return StreamSupport.intStream(() ->
+                Spliterators.spliteratorUnknownSize(
+                        new CodePointIterator(),
+                        Spliterator.ORDERED),
+                Spliterator.ORDERED,
+                false);
     }
 }
