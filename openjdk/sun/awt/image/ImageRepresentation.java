@@ -326,7 +326,7 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer{
                 image.getSource().removeConsumer(this);
                 consuming = false;
             }
-            if (bimage == null ) {
+            if (bimage == null && width > 0 && height > 0 ) {
             	bimage = new BufferedImage(getBitmapRef());
             }
             availinfo |= info;
