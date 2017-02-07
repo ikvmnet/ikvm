@@ -1888,7 +1888,11 @@ namespace ikvm.awt
 		{
 			this.target = target;
 			this.paintArea = new RepaintArea();
-			java.awt.Container parent = SunToolkit.getNativeContainer(target);
+			// A window has an owner, but it does NOT have a container. 
+			// Component getNativeContainer() was changed in 8.2 so it returns null for Window
+			// We have to use getParent() instead
+			//java.awt.Container parent = SunToolkit.getNativeContainer(target);
+			java.awt.Component parent = SunToolkit.getHeavyweightComponent(target.getParent());
 			NetComponentPeer parentPeer = (NetComponentPeer)NetToolkit.targetToPeer(parent);
 			control = Create(parentPeer);
 			// fix for 5088782: check if window object is created successfully
