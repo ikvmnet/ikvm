@@ -3752,10 +3752,10 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal static void Init(bool emitSymbols)
+		internal static void Init(bool nonDeterministicOutput)
 		{
 			UniverseOptions options = UniverseOptions.ResolveMissingMembers | UniverseOptions.EnableFunctionPointers;
-			if (!emitSymbols)
+			if (!nonDeterministicOutput)
 			{
 				options |= UniverseOptions.DeterministicOutput;
 			}
