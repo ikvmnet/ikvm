@@ -94,11 +94,17 @@ class Shutdown {
 
     private static void registerShutdownHook()
     {
-        AppDomain.get_CurrentDomain().add_ProcessExit(new EventHandler(new EventHandler.Method() {
+        EventHandler eh = new EventHandler(new EventHandler.Method() {
             public void Invoke(Object sender, EventArgs e) {
                 shutdown();
             }
-        }));
+        });
+        AppDomain ad = AppDomain.get_CurrentDomain();
+        if (ad.IsDefaultAppDomain()) {
+            ad.add_ProcessExit(eh);
+        } else {
+            ad.add_DomainUnload(eh);
+        }
     }
 
     /**
