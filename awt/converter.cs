@@ -365,38 +365,51 @@ namespace ikvm.awt
         }
 
         internal static java.awt.Shape ConvertShape(GraphicsPath path) {
-            java.awt.geom.GeneralPath shape = new java.awt.geom.GeneralPath();
-            shape.setWindingRule((int)path.FillMode);
-            for (int i = 0; i < path.PointCount; i++) {
-                byte pathType = path.PathTypes[i];
-                int type = pathType & 0x07;
-                PointF point = path.PathPoints[i];
-                switch (type) {
-                    case 0:
-                        // Indicates that the point is the start of a figure. 
-                        shape.moveTo(point.X, point.Y);
-                        break;
-                    case 1:
-                        // Indicates that the point is one of the two endpoints of a line. 
-                        shape.lineTo(point.X, point.Y);
-                        break;
-                    case 3:
-                        // Indicates that the point is an endpoint or control point of a cubic B�zier spline. 
-                        PointF point2 = path.PathPoints[++i];
-                        PointF point3 = path.PathPoints[++i];
-                        shape.curveTo(point.X, point.Y, point2.X, point2.Y, point3.X, point3.Y);
-                        pathType = path.PathTypes[i];
-                        break;
-                    default:
-                        Console.WriteLine("Unknown GraphicsPath type: " + type);
-                        break;
-                }
-                if ((pathType & 0x80) > 0) {
-                    // Specifies that the point is the last point in a closed subpath (figure).
-                    shape.closePath();
-                }
-            }
-            return shape;
+			java.awt.geom.GeneralPath shape = new java.awt.geom.GeneralPath();
+			shape.setWindingRule((int)path.FillMode);
+
+			int pointCount = path.PointCount;
+			if (pointCount > 0)
+			{
+				// get these here because a lot of processing goes on to generate these arrays
+				PointF[] points = path.PathPoints;
+				byte[] types = path.PathTypes;
+
+				for (int i = 0; i < pointCount; i++)
+				{
+					byte pathType = types[i];
+					int type = pathType & 0x07;
+					PointF point = points[i];
+					switch (type)
+					{
+						case 0:
+							// Indicates that the point is the start of a figure. 
+							shape.moveTo(point.X, point.Y);
+							break;
+						case 1:
+							// Indicates that the point is one of the two endpoints of a line. 
+							shape.lineTo(point.X, point.Y);
+							break;
+						case 3:
+							// Indicates that the point is an endpoint or control point of a cubic B?zier spline. 
+							PointF point2 = points[++i];
+							PointF point3 = points[++i];
+							shape.curveTo(point.X, point.Y, point2.X, point2.Y, point3.X, point3.Y);
+							pathType = types[i];
+							break;
+						default:
+							Console.WriteLine("Unknown GraphicsPath type: " + type);
+							break;
+					}
+					if ((pathType & 0x80) > 0)
+					{
+						// Specifies that the point is the last point in a closed subpath (figure).
+						shape.closePath();
+					}
+				}
+			}
+
+			return shape;
         }
-    }
+	}
 }
