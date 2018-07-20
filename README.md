@@ -17,11 +17,11 @@ From [stackoverflow](https://stackoverflow.com/questions/8605122/how-do-i-resolv
 > under the General tab, click the button labelled Unblock, the click OK on the
 > Properties window.  Now, extract the file to your desired location.
 
-- Must be set to use JDK 7 (not 8 or later).
+- Must be set to use JDK 8.
 
 - Download ICSharpCode.SharpZipLib.dll (http://www.icsharpcode.net/opensource/sharpziplib/) and copy to the bin folder.
 
-- Download openjdk-7u6-b24 (https://sourceforge.net/projects/ikvm/files/ikvm/7.2.4630.5/) and unpack in the peer folder to ikvm.
+- Download openjdk-8u45-b14 (http://www.frijters.net/openjdk-8u45-b14-stripped.zip) and unpack in the peer folder to ikvm.
 
 - In the root folder run nant.
 
@@ -55,5 +55,5 @@ nuget.exe setApiKey <api key here>
 ````
 - then use nuget push to push nug nuget gallery:
 ````
-nuget.exe push IKVM.WINDWARD.7.5.0.1.nupkg -Source https://api.nuget.org/v3/index.json
+nuget.exe push IKVM.WINDWARD.8.5.0.1.nupkg -Source https://api.nuget.org/v3/index.json
 ````
