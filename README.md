@@ -55,5 +55,5 @@ nuget.exe setApiKey <api key here>
 ````
 - then use nuget push to push nug nuget gallery:
 ````
-nuget.exe push IKVM.WINDWARD.8.5.0.1.nupkg -Source https://api.nuget.org/v3/index.json
+nuget.exe push IKVM.WINDWARD.8.5.0.2.nupkg -Source https://api.nuget.org/v3/index.json
 ````
