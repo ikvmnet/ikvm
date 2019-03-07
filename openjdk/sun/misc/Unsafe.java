@@ -117,7 +117,7 @@ public final class Unsafe
         {
             return 2;
         }
-        if (c == int[].class || c == float[].class)
+        if (c == int[].class || c == float[].class || c == Object[].class)
         {
             return 4;
         }
