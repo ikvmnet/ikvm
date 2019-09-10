@@ -26,10 +26,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Runtime.CompilerServices;
+
 using IKVM.Internal;
 using java.lang.invoke;
-using jlClass = java.lang.Class;
+
+using JlClass	= java.lang.Class;
+using JlInvoke	= java.lang.invoke;
+using JlReflect	= java.lang.reflect;
 
 static class Java_java_lang_invoke_DirectMethodHandle
 {
@@ -148,8 +151,8 @@ static class Java_java_lang_invoke_MethodHandleImpl
 
 static class Java_java_lang_invoke_MethodHandleNatives
 {
-	// called from map.xml as a replacement for Class.isInstance() in java.lang.invoke.MethodHandleImpl.castReference()
-	public static bool Class_isInstance(java.lang.Class clazz, object obj)
+	// called from map.xml as a replacement for Class.isInstance() in JlInvoke.MethodHandleImpl.castReference()
+	public static bool Class_isInstance(JlClass clazz, object obj)
 	{
 		TypeWrapper tw = TypeWrapper.FromClass(clazz);
 		// handle the type system hole that is caused by arrays being both derived from cli.System.Array and directly from java.lang.Object
@@ -165,18 +168,18 @@ static class Java_java_lang_invoke_MethodHandleNatives
 	public static void init(MemberName self, object refObj, bool wantSpecial)
 	{
 #if !FIRST_PASS
-		java.lang.reflect.Method method;
-		java.lang.reflect.Constructor constructor;
-		java.lang.reflect.Field field;
-		if ((method = refObj as java.lang.reflect.Method) != null)
+		JlReflect.Method method;
+		JlReflect.Constructor constructor;
+		JlReflect.Field field;
+		if ((method = refObj as JlReflect.Method) != null)
 		{
 			InitMethodImpl(self, MethodWrapper.FromExecutable(method), wantSpecial);
 		}
-		else if ((constructor = refObj as java.lang.reflect.Constructor) != null)
+		else if ((constructor = refObj as JlReflect.Constructor) != null)
 		{
 			InitMethodImpl(self, MethodWrapper.FromExecutable(constructor), wantSpecial);
 		}
-		else if ((field = refObj as java.lang.reflect.Field) != null)
+		else if ((field = refObj as JlReflect.Field) != null)
 		{
 			FieldWrapper fw = FieldWrapper.FromField(field);
 			self._clazz(fw.DeclaringType.ClassObject);
@@ -222,7 +225,7 @@ static class Java_java_lang_invoke_MethodHandleNatives
 		}
 		if (mw.IsConstructor && mw.DeclaringType == CoreClasses.java.lang.String.Wrapper)
 		{
-			java.lang.Class[] parameters1 = new java.lang.Class[mw.GetParameters().Length];
+			JlClass[] parameters1 = new JlClass[mw.GetParameters().Length];
 			for (int i = 0; i < mw.GetParameters().Length; i++)
 			{
 				parameters1[i] = mw.GetParameters()[i].ClassObject;
@@ -237,7 +240,7 @@ static class Java_java_lang_invoke_MethodHandleNatives
 		self._flags(flags);
 		self._clazz(mw.DeclaringType.ClassObject);
 		int firstParam = mw.IsStatic ? 0 : 1;
-		java.lang.Class[] parameters = new java.lang.Class[mw.GetParameters().Length + firstParam];
+		JlClass[] parameters = new JlClass[mw.GetParameters().Length + firstParam];
 		for (int i = 0; i < mw.GetParameters().Length; i++)
 		{
 			parameters[i + firstParam] = mw.GetParameters()[i].ClassObject;
@@ -262,7 +265,7 @@ static class Java_java_lang_invoke_MethodHandleNatives
 		throw new NotImplementedException();
 	}
 
-	public static MemberName resolve(MemberName self, java.lang.Class caller)
+	public static MemberName resolve(MemberName self, JlClass caller)
 	{
 #if !FIRST_PASS
 		switch (self.getReferenceKind())
@@ -278,7 +281,7 @@ static class Java_java_lang_invoke_MethodHandleNatives
 						case "linkToInterface":
 							// this delegate is never used normally, only by the PrivateInvokeTest white-box JSR-292 tests
 							self.vmtarget = MethodHandleUtil.DynamicMethodBuilder.CreateMethodHandleLinkTo(self);
-							self._flags(self._flags() | java.lang.reflect.Modifier.STATIC | java.lang.reflect.Modifier.NATIVE | MethodHandleNatives.Constants.MN_IS_METHOD);
+							self._flags(self._flags() | JlReflect.Modifier.STATIC | JlReflect.Modifier.NATIVE | MethodHandleNatives.Constants.MN_IS_METHOD);
 							return self;
 					}
 				}
@@ -293,7 +296,7 @@ static class Java_java_lang_invoke_MethodHandleNatives
 						case "invokeExact":
 						case "invokeBasic":
 							self.vmtarget = MethodHandleUtil.DynamicMethodBuilder.CreateMethodHandleInvoke(self);
-							self._flags(self._flags() | java.lang.reflect.Modifier.NATIVE | java.lang.reflect.Modifier.FINAL | MethodHandleNatives.Constants.MN_IS_METHOD);
+							self._flags(self._flags() | JlReflect.Modifier.NATIVE | JlReflect.Modifier.FINAL | MethodHandleNatives.Constants.MN_IS_METHOD);
 							return self;
 					}
 				}
@@ -318,7 +321,7 @@ static class Java_java_lang_invoke_MethodHandleNatives
 	}
 
 #if !FIRST_PASS
-	private static void ResolveMethod(MemberName self, java.lang.Class caller)
+	private static void ResolveMethod(MemberName self, JlClass caller)
 	{
 		bool invokeSpecial = self.getReferenceKind() == MethodHandleNatives.Constants.REF_invokeSpecial;
 		bool newInvokeSpecial = self.getReferenceKind() == MethodHandleNatives.Constants.REF_newInvokeSpecial;
@@ -446,7 +449,7 @@ static class Java_java_lang_invoke_MethodHandleNatives
 #endif
 
 	// TODO consider caching this delegate in MethodWrapper
-	private static Delegate CreateMemberNameDelegate(MethodWrapper mw, java.lang.Class caller, bool doDispatch, MethodType type)
+	private static Delegate CreateMemberNameDelegate(MethodWrapper mw, JlClass caller, bool doDispatch, MethodType type)
 	{
 #if FIRST_PASS
 		return null;
@@ -495,7 +498,7 @@ static class Java_java_lang_invoke_MethodHandleNatives
 #endif
 	}
 
-	public static int getMembers(java.lang.Class defc, string matchName, string matchSig, int matchFlags, java.lang.Class caller, int skip, MemberName[] results)
+	public static int getMembers(JlClass defc, string matchName, string matchSig, int matchFlags, JlClass caller, int skip, MemberName[] results)
 	{
 #if FIRST_PASS
 		return 0;
@@ -509,7 +512,7 @@ static class Java_java_lang_invoke_MethodHandleNatives
 		{
 			if (!methods[i].IsConstructor && !methods[i].IsClassInitializer)
 			{
-				results[i - skip] = new MemberName((java.lang.reflect.Method)methods[i].ToMethodOrConstructor(true), false);
+				results[i - skip] = new MemberName((JlReflect.Method)methods[i].ToMethodOrConstructor(true), false);
 			}
 		}
 		return methods.Length - skip;
@@ -521,7 +524,7 @@ static class Java_java_lang_invoke_MethodHandleNatives
 #if FIRST_PASS
 		return 0;
 #else
-		java.lang.reflect.Field field = (java.lang.reflect.Field)TypeWrapper.FromClass(self.getDeclaringClass())
+		JlReflect.Field field = (JlReflect.Field)TypeWrapper.FromClass(self.getDeclaringClass())
 			.GetFieldWrapper(self.getName(), self.getSignature().Replace('/', '.')).ToField(false);
 		return sun.misc.Unsafe.allocateUnsafeFieldId(field);
 #endif
@@ -538,7 +541,7 @@ static class Java_java_lang_invoke_MethodHandleNatives
 	}
 
 #if !FIRST_PASS
-	internal static void InitializeCallSite(CallSite site)
+	internal static void InitializeCallSite(JlInvoke.CallSite site)
 	{
 		Type type = typeof(IKVM.Runtime.IndyCallSite<>).MakeGenericType(MethodHandleUtil.GetDelegateTypeForInvokeExact(site.type()));
 		IKVM.Runtime.IIndyCallSite ics = (IKVM.Runtime.IIndyCallSite)Activator.CreateInstance(type, true);
@@ -546,7 +549,7 @@ static class Java_java_lang_invoke_MethodHandleNatives
 	}
 #endif
 
-	public static void setCallSiteTargetNormal(CallSite site, MethodHandle target)
+	public static void setCallSiteTargetNormal(JlInvoke.CallSite site, MethodHandle target)
 	{
 #if !FIRST_PASS
 		if (site.ics == null)
@@ -561,7 +564,7 @@ static class Java_java_lang_invoke_MethodHandleNatives
 #endif
 	}
 
-	public static void setCallSiteTargetVolatile(CallSite site, MethodHandle target)
+	public static void setCallSiteTargetVolatile(JlInvoke.CallSite site, MethodHandle target)
 	{
 		setCallSiteTargetNormal(site, target);
 	}
@@ -659,12 +662,12 @@ static partial class MethodHandleUtil
 
 	internal static MethodType GetDelegateMethodType(Type type)
 	{
-		java.lang.Class[] types;
+		JlClass[] types;
 		MethodInfo mi = GetDelegateInvokeMethod(type);
 		ParameterInfo[] pi = mi.GetParameters();
 		if (pi.Length > 0 && IsPackedArgsContainer(pi[pi.Length - 1].ParameterType))
 		{
-			System.Collections.Generic.List<java.lang.Class> list = new System.Collections.Generic.List<java.lang.Class>();
+			System.Collections.Generic.List<JlClass> list = new System.Collections.Generic.List<JlClass>();
 			for (int i = 0; i < pi.Length - 1; i++)
 			{
 				list.Add(ClassLoaderWrapper.GetWrapperFromType(pi[i].ParameterType).ClassObject);
@@ -686,7 +689,7 @@ static partial class MethodHandleUtil
 		}
 		else
 		{
-			types = new java.lang.Class[pi.Length];
+			types = new JlClass[pi.Length];
 			for (int i = 0; i < types.Length; i++)
 			{
 				types[i] = ClassLoaderWrapper.GetWrapperFromType(pi[i].ParameterType).ClassObject;
@@ -842,8 +845,8 @@ static partial class MethodHandleUtil
 			Type delegateType = MethodHandleUtil.GetMemberWrapperDelegateType(type.dropParameterTypes(type.parameterCount() - 1, type.parameterCount()));
 			DynamicMethodBuilder dm = new DynamicMethodBuilder("DirectMethodHandle." + mn.getName() + type, type, null, null, null, null, true);
 			dm.Ldarg(type.parameterCount() - 1);
-			dm.ilgen.EmitCastclass(typeof(java.lang.invoke.MemberName));
-			dm.ilgen.Emit(OpCodes.Ldfld, typeof(java.lang.invoke.MemberName).GetField("vmtarget", BindingFlags.Instance | BindingFlags.NonPublic));
+			dm.ilgen.EmitCastclass(typeof(JlInvoke.MemberName));
+			dm.ilgen.Emit(OpCodes.Ldfld, typeof(JlInvoke.MemberName).GetField("vmtarget", BindingFlags.Instance | BindingFlags.NonPublic));
 			dm.ilgen.Emit(OpCodes.Castclass, delegateType);
 			for (int i = 0, count = type.parameterCount() - 1; i < count; i++)
 			{
