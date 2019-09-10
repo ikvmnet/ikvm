@@ -19,7 +19,7 @@
 
   Jeroen Frijters
   jeroen@frijters.net
-  
+
 */
 using System;
 using System.Collections.Generic;
@@ -801,7 +801,11 @@ namespace IKVM.Internal
 			Exception r = MapException<Exception>(t.InnerException, true, false);
 			if (!(r is java.lang.Error))
 			{
-				r = new java.lang.ExceptionInInitializerError(r);
+				// Forwarding "r" as cause only doesn't make it available in the debugger details
+				// of current versions of VS, so at least provide a text representation instead.
+				// Not wrapping at all might be the even better approach, but it was introduced for
+				// some reason I guess.
+				r = new java.lang.ExceptionInInitializerError(r.ToString());
 				wrapped = true;
 			}
 			string type = t.TypeName;
