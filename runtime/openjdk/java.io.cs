@@ -129,34 +129,23 @@ static class Java_java_io_FileDescriptor
 		{
 			return VirtualFileSystem.Open(name, fileMode, fileAccess);
 		}
-		else if (fileMode == FileMode.Append)
-		{
-			// TODO NET_CORE
-			//
-			// The following CTOR is not available in .NET Core and needs to be replaced. We don't
-			// need to write files currently, so throwing is the easiest solution right now. Without
-			// focussing on atomicity of appends, things as well could be implemented by seeking to
-			// the end of the file here.
-			//
-			// https://github.com/dotnet/corefx/issues/39920
-			// https://github.com/wwrd/ikvm8/issues/3#issuecomment-517009923
-			//
-			// https://stackoverflow.com/questions/1862309/how-can-i-do-an-atomic-write-append-in-c-or-how-do-i-get-files-opened-with-the
-			// https://stackoverflow.com/a/5469572/2055163
-			// https://stackoverflow.com/questions/1154446/is-file-append-atomic-in-unix/
-#if !FIRST_PASS
-			throw new java.lang.UnsupportedOperationException("Atomically appending to files is not supported in .NET Core.");
-#else
-			throw new NotSupportedException("Atomically appending to files is not supported in .NET Core.");
-#endif
 
-			// this is the way to get atomic append behavior for all writes
-			//return new FileStream(name, fileMode, FileSystemRights.AppendData, FileShare.ReadWrite, 1, FileOptions.None);
-		}
-		else
-		{
-			return new FileStream(name, fileMode, fileAccess, FileShare.ReadWrite, 1, false);
-		}
+		// "Append" has been implemented using a special CTOR in the past forwarding one permission
+		// to Windows to guarantee atomic appends, but that CTOR has not been ported to .NET Core.
+		// The only .NET-only workaround so far seems to be either not support appends at all and
+		// throw exceptions instead or simply live with those might not being atomic anymore. The
+		// latter seems the better way to go currently, because the former implementation didn't
+		// document atomic appends and used a buffer size of one(!) byte only with the special CTOR
+		// anyway. In fact, really only the one permission was different, everything else has been
+		// forwarded the same way like now, especially the file mode and its implicit seeking.
+		//
+		// https://github.com/dotnet/corefx/issues/39920
+		// https://github.com/wwrd/ikvm8/issues/3#issuecomment-517009923
+		//
+		// https://stackoverflow.com/questions/1862309/how-can-i-do-an-atomic-write-append-in-c-or-how-do-i-get-files-opened-with-the
+		// https://stackoverflow.com/a/5469572/2055163
+		// https://stackoverflow.com/questions/1154446/is-file-append-atomic-in-unix/
+		return new FileStream(name, fileMode, fileAccess, FileShare.ReadWrite, 1, false);
 	}
 
 	[SecuritySafeCritical]
