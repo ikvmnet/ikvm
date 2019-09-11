@@ -19,7 +19,7 @@
 
   Jeroen Frijters
   jeroen@frijters.net
-  
+
 */
 using System;
 using System.Diagnostics;
@@ -131,8 +131,27 @@ static class Java_java_io_FileDescriptor
 		}
 		else if (fileMode == FileMode.Append)
 		{
+			// TODO NET_CORE
+			//
+			// The following CTOR is not available in .NET Core and needs to be replaced. We don't
+			// need to write files currently, so throwing is the easiest solution right now. Without
+			// focussing on atomicity of appends, things as well could be implemented by seeking to
+			// the end of the file here.
+			//
+			// https://github.com/dotnet/corefx/issues/39920
+			// https://github.com/wwrd/ikvm8/issues/3#issuecomment-517009923
+			//
+			// https://stackoverflow.com/questions/1862309/how-can-i-do-an-atomic-write-append-in-c-or-how-do-i-get-files-opened-with-the
+			// https://stackoverflow.com/a/5469572/2055163
+			// https://stackoverflow.com/questions/1154446/is-file-append-atomic-in-unix/
+#if !FIRST_PASS
+			throw new java.lang.UnsupportedOperationException("Atomically appending to files is not supported in .NET Core.");
+#else
+			throw new NotSupportedException("Atomically appending to files is not supported in .NET Core.");
+#endif
+
 			// this is the way to get atomic append behavior for all writes
-			return new FileStream(name, fileMode, FileSystemRights.AppendData, FileShare.ReadWrite, 1, FileOptions.None);
+			//return new FileStream(name, fileMode, FileSystemRights.AppendData, FileShare.ReadWrite, 1, FileOptions.None);
 		}
 		else
 		{
