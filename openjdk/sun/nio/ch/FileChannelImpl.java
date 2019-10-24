@@ -1032,7 +1032,7 @@ public class FileChannelImpl
             int PAGE_READONLY = 2;
             int PAGE_READWRITE = 4;
             int PAGE_WRITECOPY = 8;
-            
+
             int FILE_MAP_WRITE = 2;
             int FILE_MAP_READ = 4;
             int FILE_MAP_COPY = 1;
@@ -1106,31 +1106,31 @@ public class FileChannelImpl
     @DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
     private static native SafeFileHandle CreateFileMapping(SafeFileHandle hFile, IntPtr lpAttributes, int flProtect, int dwMaximumSizeHigh, int dwMaximumSizeLow, String lpName);
 
-    // TODO https://github.com/ikvm-revived/ikvm/issues/2
+    // TODO https://github.com/ikvm-revived/ikvm/issues/3
     //@DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
     //private static native IntPtr MapViewOfFile(SafeFileHandle hFileMapping, int dwDesiredAccess, int dwFileOffsetHigh, int dwFileOffsetLow, IntPtr dwNumberOfBytesToMap);
     private static IntPtr MapViewOfFile(SafeFileHandle hFileMapping, int dwDesiredAccess, int dwFileOffsetHigh, int dwFileOffsetLow, IntPtr dwNumberOfBytesToMap)
     {
-        throw new UnsupportedOperationException("https://github.com/ikvm-revived/ikvm/issues/2");
+        throw new UnsupportedOperationException("https://github.com/ikvm-revived/ikvm/issues/3");
     }
 
     @DllImportAttribute.Annotation("kernel32")
     private static native int UnmapViewOfFile(IntPtr lpBaseAddress);
 
-    // TODO https://github.com/ikvm-revived/ikvm/issues/2
+    // TODO https://github.com/ikvm-revived/ikvm/issues/3
     //@DllImportAttribute.Annotation("ikvm-native")
     //private static native int ikvm_munmap(IntPtr address, int size);
     private static int ikvm_munmap(IntPtr address, int size)
     {
-        throw new UnsupportedOperationException("https://github.com/ikvm-revived/ikvm/issues/2");
+        throw new UnsupportedOperationException("https://github.com/ikvm-revived/ikvm/issues/3");
     }
 
-    // TODO https://github.com/ikvm-revived/ikvm/issues/2
+    // TODO https://github.com/ikvm-revived/ikvm/issues/3
     //@DllImportAttribute.Annotation("ikvm-native")
     //private static native IntPtr ikvm_mmap(SafeFileHandle handle, byte writeable, byte copy_on_write, long position, int size);
     private static IntPtr ikvm_mmap(SafeFileHandle handle, byte writeable, byte copy_on_write, long position, int size)
     {
-        throw new UnsupportedOperationException("https://github.com/ikvm-revived/ikvm/issues/2");
+        throw new UnsupportedOperationException("https://github.com/ikvm-revived/ikvm/issues/3");
     }
 
     // Removes an existing mapping
