@@ -821,12 +821,12 @@ public class Font implements java.io.Serializable
     }
 
     private static class FontFamilyReference extends WeakReference<FontFamily> {
-        
+
         private static final ReferenceQueue<FontFamily> fontFamilyQueue = new ReferenceQueue<>();
         private static final Set<FontFamilyReference> refs = Collections.synchronizedSet( new HashSet<FontFamilyReference>() );
         static {
-            sun.misc.SharedSecrets.getJavaLangAccess().registerShutdownHook( 5, // Shutdown hook invocation order 
-            true, // register even if shutdown in progress 
+            sun.misc.SharedSecrets.getJavaLangAccess().registerShutdownHook( 5, // Shutdown hook invocation order
+            true, // register even if shutdown in progress
             new Runnable() {
                 public void run() {
                     for( FontFamilyReference ref : refs ) {
@@ -841,7 +841,7 @@ public class Font implements java.io.Serializable
             super( family, fontFamilyQueue );
             this.fontFile = fontFile;
             refs.add( this );
-            
+
             do {
                 FontFamilyReference ref = (FontFamilyReference)fontFamilyQueue.poll();
                 if( ref == null ) {
@@ -850,13 +850,13 @@ public class Font implements java.io.Serializable
                 ref.delete( true );
             } while(true);
         }
-        
+
         private void delete( boolean isQueue ) {
             FontFamily family = get();
             if( family != null ) {
                 family.Dispose();
             }
-            
+
             if( fontFile.delete() && isQueue) {
                 refs.remove( this );
             }
@@ -926,8 +926,8 @@ public class Font implements java.io.Serializable
             fontFile.delete();
             throw ffe;
         }
-        
-        FontFamily family = pfc.get_Families()[0]; 
+
+        FontFamily family = pfc.get_Families()[0];
         new FontFamilyReference( family, fontFile );
 
         // create the font object
@@ -937,13 +937,15 @@ public class Font implements java.io.Serializable
         return font;
     }
 
-    @DllImportAttribute.Annotation(value="gdi32")
-    private static native int RemoveFontResourceEx(String filename, int fl, IntPtr pdv);    
+    // TODO https://github.com/ikvm-revived/ikvm/issues/1
+    //@DllImportAttribute.Annotation(value="gdi32")
+    //private static native int RemoveFontResourceEx(String filename, int fl, IntPtr pdv);
 
     @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     private static void RemoveFontResourceEx(String filename) {
         if( ikvm.internal.Util.WINDOWS ) {
-            RemoveFontResourceEx( filename, 16, IntPtr.Zero );
+            //RemoveFontResourceEx( filename, 16, IntPtr.Zero );
+            throw new UnsupportedOperationException("https://github.com/ikvm-revived/ikvm/issues/1");
         }
     }
 

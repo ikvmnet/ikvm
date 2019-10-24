@@ -298,9 +298,19 @@ class FileDispatcherImpl extends FileDispatcher
         return new FileDescriptor();
     }
 
-    @DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
-    private static native int LockFileEx(SafeFileHandle hFile, int dwFlags, int dwReserved, int nNumberOfBytesToLockLow, int nNumberOfBytesToLockHigh, OVERLAPPED lpOverlapped);
+    // TODO https://github.com/ikvm-revived/ikvm/issues/1
+    //@DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
+    //private static native int LockFileEx(SafeFileHandle hFile, int dwFlags, int dwReserved, int nNumberOfBytesToLockLow, int nNumberOfBytesToLockHigh, OVERLAPPED lpOverlapped);
+    private static int LockFileEx(SafeFileHandle hFile, int dwFlags, int dwReserved, int nNumberOfBytesToLockLow, int nNumberOfBytesToLockHigh, OVERLAPPED lpOverlapped)
+    {
+        throw new UnsupportedOperationException("https://github.com/ikvm-revived/ikvm/issues/1");
+    }
 
-    @DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
-    private static native int UnlockFileEx(SafeFileHandle hFile, int dwReserved, int nNumberOfBytesToUnlockLow, int nNumberOfBytesToUnlockHigh, OVERLAPPED lpOverlapped);
+    // TODO https://github.com/ikvm-revived/ikvm/issues/1
+    //@DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
+    //private static native int UnlockFileEx(SafeFileHandle hFile, int dwReserved, int nNumberOfBytesToUnlockLow, int nNumberOfBytesToUnlockHigh, OVERLAPPED lpOverlapped);
+    private static int UnlockFileEx(SafeFileHandle hFile, int dwReserved, int nNumberOfBytesToUnlockLow, int nNumberOfBytesToUnlockHigh, OVERLAPPED lpOverlapped)
+    {
+        throw new UnsupportedOperationException("https://github.com/ikvm-revived/ikvm/issues/1");
+    }
 }

@@ -1032,7 +1032,7 @@ public class FileChannelImpl
             int PAGE_READONLY = 2;
             int PAGE_READWRITE = 4;
             int PAGE_WRITECOPY = 8;
-            
+
             int FILE_MAP_WRITE = 2;
             int FILE_MAP_READ = 4;
             int FILE_MAP_COPY = 1;
@@ -1103,8 +1103,13 @@ public class FileChannelImpl
         return p.ToInt64();
     }
 
-    @DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
-    private static native SafeFileHandle CreateFileMapping(SafeFileHandle hFile, IntPtr lpAttributes, int flProtect, int dwMaximumSizeHigh, int dwMaximumSizeLow, String lpName);
+    // TODO https://github.com/ikvm-revived/ikvm/issues/1
+    //@DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
+    //private static native SafeFileHandle CreateFileMapping(SafeFileHandle hFile, IntPtr lpAttributes, int flProtect, int dwMaximumSizeHigh, int dwMaximumSizeLow, String lpName);
+    private static SafeFileHandle CreateFileMapping(SafeFileHandle hFile, IntPtr lpAttributes, int flProtect, int dwMaximumSizeHigh, int dwMaximumSizeLow, String lpName)
+    {
+        throw new UnsupportedOperationException("https://github.com/ikvm-revived/ikvm/issues/1");
+    }
 
     @DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
     private static native IntPtr MapViewOfFile(SafeFileHandle hFileMapping, int dwDesiredAccess, int dwFileOffsetHigh, int dwFileOffsetLow, IntPtr dwNumberOfBytesToMap);

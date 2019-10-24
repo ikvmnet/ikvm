@@ -18,7 +18,7 @@
   3. This notice may not be removed or altered from any source distribution.
 
   Jeroen Frijters
-  jeroen@frijters.net 
+  jeroen@frijters.net
 
  */
 
@@ -58,7 +58,7 @@ public abstract class IkvmDataTransferer extends DataTransferer {
 	public static final long CFSTR_INETURL = RegisterClipboardFormat("UniformResourceLocator");
 	public static final long CF_PNG = RegisterClipboardFormat("PNG");
 	public static final long CF_JFIF = RegisterClipboardFormat("JFIF");
-	
+
     private static final String[] predefinedClipboardNames = {
         "",
         "TEXT",
@@ -91,14 +91,16 @@ public abstract class IkvmDataTransferer extends DataTransferer {
     }
 
     private static final Long L_CF_LOCALE = (Long) predefinedClipboardNameMap.get(predefinedClipboardNames[CF_LOCALE]);
-    
-    @DllImportAttribute.Annotation(value = "user32.dll", EntryPoint = "RegisterClipboardFormat")
-    private native static int _RegisterClipboardFormat(String format);
+
+    // TODO https://github.com/ikvm-revived/ikvm/issues/1
+    //@DllImportAttribute.Annotation(value = "user32.dll", EntryPoint = "RegisterClipboardFormat")
+    //private native static int _RegisterClipboardFormat(String format);
 
     @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     private static int RegisterClipboardFormat(String format)
     {
-        return _RegisterClipboardFormat(format);
+        //return _RegisterClipboardFormat(format);
+        throw new UnsupportedOperationException("https://github.com/ikvm-revived/ikvm/issues/1");
     }
 
     public SortedMap getFormatsForFlavors(DataFlavor[] flavors, FlavorTable map) {
@@ -165,7 +167,7 @@ public abstract class IkvmDataTransferer extends DataTransferer {
             format = Long.valueOf(RegisterClipboardFormat(str));
         }
         return format;	}
-	
+
 	protected abstract String getClipboardFormatName(long format);
 
     public boolean isImageFormat(long format) {

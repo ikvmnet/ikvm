@@ -752,8 +752,13 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
         }
     }
 
-    @DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
-    private static native int MoveFileEx(String lpExistingFileName, String lpNewFileName, int dwFlags);
+    // TODO https://github.com/ikvm-revived/ikvm/issues/1
+    //@DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
+    //private static native int MoveFileEx(String lpExistingFileName, String lpNewFileName, int dwFlags);
+    private static int MoveFileEx(String lpExistingFileName, String lpNewFileName, int dwFlags)
+    {
+        throw new UnsupportedOperationException("https://github.com/ikvm-revived/ikvm/issues/1");
+    }
 
     public boolean isSameFile(Path path, Path path2) throws IOException
     {
