@@ -26,3 +26,22 @@ _$*
 *.ln
 core
 # CVS default ignores end
+
+*.class
+*.swp
+*.swo
+
+lib
+bin/*.exe
+bin/*.dll
+bin-x64/*.dll
+bin-x86/*.dll
+openjdk/*.dll
+openjdk/*.zip
+openjdk/*.jar
+openjdk/*.rsp
+openjdk/*.gen.*
+runtime/*.jar
+runtime/*.dll
+tools/*.exe
+tools/*.dll

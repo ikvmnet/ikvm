@@ -20,7 +20,7 @@
 
   Jeroen Frijters
   jeroen@frijters.net
-  
+
 -->
 <project name="ikvm" default="managed">
     <include buildfile="ikvm.include" />
@@ -47,13 +47,7 @@
         <nant buildfile="jvm/jvm.build" />
     </target>
     <target name="CommonAssemblyInfo">
-        <copy file="CommonAssemblyInfo.cs.in" tofile="CommonAssemblyInfo.cs" overwrite="true">
-            <filterchain>
-                <replacetokens>
-                    <token key="BUILD" value="${timespan::get-days(datetime::now() - datetime::parse('2000-01-01'))}" />
-                </replacetokens>
-            </filterchain>
-        </copy>
+        <copy file="CommonAssemblyInfo.cs.in" tofile="CommonAssemblyInfo.cs" overwrite="true" />
     </target>
     <target name="clean" depends="clean-managed clean-native" />
     <target name="clean-managed">

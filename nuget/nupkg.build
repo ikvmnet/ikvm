@@ -79,6 +79,7 @@
                 <include name="IKVM.AWT.WinForms.dll" />
                 <include name="IKVM.OpenJDK.*.dll" />
                 <include name="IKVM.Runtime.dll" />
+                <include name="IKVM.Reflection.dll" />
             </fileset>
         </copy>
         <copy file="IKVM.NativeBinaries.props" todir="Package.NativeBinaries/build" />
