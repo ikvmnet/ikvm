@@ -4,13 +4,13 @@
     <version>@VERSION@</version>
     <authors>Jeroen Frijters</authors>
     <owners />
-    <licenseUrl>http://sourceforge.net/apps/mediawiki/ikvm/index.php?title=License</licenseUrl>
-    <projectUrl>http://www.ikvm.net/</projectUrl>
-    <id>IKVM</id>
-    <title>IKVM.NET</title>
+    <licenseUrl>https://github.com/ikvm-revived/ikvm/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/ikvm-revived/ikvm</projectUrl>
+    <id>IKVM.REVIVED</id>
+    <title>IKVM.NET.REVIVED-FORK</title>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>IKVM.NET is an implementation of Java for Mono and the Microsoft .NET Framework.</description>
-    <tags>IKVM.NET, Java, .NET</tags>
-    <releaseNotes>The release notes can be found here: http://ikvm.net/release/@VERSION@</releaseNotes>
-  </metadata>  
+    <description>This project is an implementation of Java for Mono and the Microsoft .NET Framework.</description>
+    <tags>IKVM.NET.REVIVED-FORK, Java, .NET</tags>
+    <releaseNotes>The release notes can be found here: https://github.com/ikvm-revived/ikvm/releases/tag/@VERSION@</releaseNotes>
+  </metadata>
 </package>

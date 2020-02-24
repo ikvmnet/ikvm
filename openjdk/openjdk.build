@@ -35,6 +35,7 @@
     <if test="${platform::is-win32()}">
         <property name="pathsep" value=";" />
     </if>
+    <property name="java" value="${environment::get-variable('JDK1.8_HOME')}/bin/java" />
 
     <target name="all" depends="classes rmi run-nasgen vfs resources core">
     </target>
@@ -239,7 +240,7 @@
             <arg path="${CLASSPATH};${OpenJDK.dir}/nashorn/src;../runtime/IKVM.Runtime.jar" />
             <arg line="${nasgen-sources}" />
         </exec>
-        <exec program="java" useruntimeengine="false">
+        <exec program="${java}" useruntimeengine="false">
             <arg value="-Xbootclasspath/p:${OpenJDK.dir}/nashorn/buildtools/nasgen/src${pathsep}${OpenJDK.dir}/nashorn/src" />
             <arg value="jdk.nashorn.internal.tools.nasgen.Main" />
             <arg value="${OpenJDK.dir}/nashorn/src" />
