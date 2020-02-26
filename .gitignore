@@ -45,3 +45,10 @@ runtime/*.jar
 runtime/*.dll
 tools/*.exe
 tools/*.dll
+
+.vs/
+**/bin/
+**/obj/
+
+# Auto-generated files
+CommonAssemblyInfo.cs
