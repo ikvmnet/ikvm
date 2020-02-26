@@ -23,6 +23,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "reflect", "reflect", "{AB4E33B0-34A4-440C-90F5-9BFF839E97B4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.Reflection", "reflect\IKVM.Reflection.csproj", "{4CB170EF-DFE6-4A56-9E1B-A85449E827A7}"
+	ProjectSection(ProjectDependencies) = postProject
+		{5C17FF84-02BA-4EE7-AD79-966E999EF8E6} = {5C17FF84-02BA-4EE7-AD79-966E999EF8E6}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
