@@ -1,0 +1,94 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="15.0">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{D2A9434D-59E4-43E9-8D9C-332AA138CEAD}</ProjectGuid>
+    <AssemblyName>ikvmstub</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>ikvmstub</RootNamespace>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>bin\Debug\</OutputPath>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <BaseAddress>285212672</BaseAddress>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <DefineConstants>TRACE;DEBUG;STUB_GENERATOR</DefineConstants>
+    <DebugSymbols>true</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <NoStdLib>false</NoStdLib>
+    <Optimize>false</Optimize>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>full</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="ICSharpCode.SharpZipLib, Version=0.84.0.0, Culture=neutral, PublicKeyToken=1b03e6acf1164f73">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\bin\ICSharpCode.SharpZipLib.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\CommonAssemblyInfo.cs">
+      <SubType>Code</SubType>
+      <Link>CommonAssemblyInfo.cs</Link>
+    </Compile>
+    <Compile Include="AssemblyInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="..\runtime\stubgen\ClassFileWriter.cs" />
+    <Compile Include="ikvmstub.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="..\ikvmc\AssemblyResolver.cs" />
+    <Compile Include="..\runtime\AssemblyClassLoader.cs" />
+    <Compile Include="..\runtime\attributes.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="..\runtime\ClassLoaderWrapper.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="..\runtime\CoreClasses.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="..\runtime\DotNetTypeWrapper.cs" />
+    <Compile Include="..\runtime\JavaException.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="..\runtime\MemberWrapper.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="..\runtime\profiler.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="..\runtime\ReflectUtil.cs" />
+    <Compile Include="..\runtime\tracer.cs" />
+    <Compile Include="..\runtime\Types.cs" />
+    <Compile Include="..\runtime\TypeWrapper.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="..\runtime\vm.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="..\runtime\stubgen\SerialVersionUID.cs" />
+    <Compile Include="..\runtime\stubgen\StubGenerator.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\reflect\IKVM.Reflection.csproj">
+      <Project>{4CB170EF-DFE6-4A56-9E1B-A85449E827A7}</Project>
+      <Name>IKVM.Reflection</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+</Project>
