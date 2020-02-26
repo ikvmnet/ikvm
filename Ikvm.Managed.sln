@@ -5,6 +5,10 @@ VisualStudioVersion = 16.0.29806.167
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommonAssemblyInfo", "CommonAssemblyInfo.csproj", "{5C17FF84-02BA-4EE7-AD79-966E999EF8E6}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{7704D343-494C-4422-B452-950E3833A76D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "updbaseaddresses", "tools\updbaseaddresses.csproj", "{4E36B737-2366-4725-888D-EC1E823B88A7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,9 +19,16 @@ Global
 		{5C17FF84-02BA-4EE7-AD79-966E999EF8E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5C17FF84-02BA-4EE7-AD79-966E999EF8E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5C17FF84-02BA-4EE7-AD79-966E999EF8E6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4E36B737-2366-4725-888D-EC1E823B88A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4E36B737-2366-4725-888D-EC1E823B88A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4E36B737-2366-4725-888D-EC1E823B88A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4E36B737-2366-4725-888D-EC1E823B88A7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{4E36B737-2366-4725-888D-EC1E823B88A7} = {7704D343-494C-4422-B452-950E3833A76D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {706AC006-7E30-414D-9E2A-D14FFD274F28}
