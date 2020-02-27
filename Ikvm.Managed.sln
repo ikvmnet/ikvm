@@ -56,6 +56,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.AWT.WinForms.FirstPass
 		{5C17FF84-02BA-4EE7-AD79-966E999EF8E6} = {5C17FF84-02BA-4EE7-AD79-966E999EF8E6}
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ikvmc", "ikvmc\ikvmc.csproj", "{11C753FA-35BF-487F-8AA8-DEA948F0A74E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{5C17FF84-02BA-4EE7-AD79-966E999EF8E6} = {5C17FF84-02BA-4EE7-AD79-966E999EF8E6}
+		{4CB170EF-DFE6-4A56-9E1B-A85449E827A7} = {4CB170EF-DFE6-4A56-9E1B-A85449E827A7}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -114,6 +120,10 @@ Global
 		{2609DE55-E7AA-4A72-B42D-925659FDFCB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2609DE55-E7AA-4A72-B42D-925659FDFCB6}.Release|Any CPU.ActiveCfg = Debug|Any CPU
 		{2609DE55-E7AA-4A72-B42D-925659FDFCB6}.Release|Any CPU.Build.0 = Debug|Any CPU
+		{11C753FA-35BF-487F-8AA8-DEA948F0A74E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{11C753FA-35BF-487F-8AA8-DEA948F0A74E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{11C753FA-35BF-487F-8AA8-DEA948F0A74E}.Release|Any CPU.ActiveCfg = Debug|Any CPU
+		{11C753FA-35BF-487F-8AA8-DEA948F0A74E}.Release|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

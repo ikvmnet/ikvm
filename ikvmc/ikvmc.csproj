@@ -1,0 +1,131 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="15.0">
+  <PropertyGroup>
+    <ProjectGuid>{11C753FA-35BF-487F-8AA8-DEA948F0A74E}</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <AssemblyName>ikvmc</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>ikvmc</RootNamespace>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>bin\Debug\</OutputPath>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <BaseAddress>285212672</BaseAddress>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>TRACE;DEBUG;STATIC_COMPILER;EMITTERS</DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
+    <DebugSymbols>true</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <NoStdLib>false</NoStdLib>
+    <NoWarn>
+    </NoWarn>
+    <Optimize>false</Optimize>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>full</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="ICSharpCode.SharpZipLib">
+      <Name>ICSharpCode.SharpZipLib</Name>
+      <HintPath>..\bin\ICSharpCode.SharpZipLib.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AotTypeWrapper.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="AssemblyInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="AssemblyResolver.cs" />
+    <Compile Include="Compiler.cs" />
+    <Compile Include="CompilerClassLoader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FakeTypes.cs" />
+    <Compile Include="Proxy.cs" />
+    <Compile Include="remapper.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="..\runtime\AssemblyClassLoader.cs" />
+    <Compile Include="..\runtime\atomic.cs" />
+    <Compile Include="..\runtime\attributes.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="..\runtime\BigEndianBinaryReader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="..\runtime\Boxer.cs" />
+    <Compile Include="..\runtime\ByteCode.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="..\runtime\ClassFile.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="..\runtime\ClassLoaderWrapper.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="..\runtime\CodeEmitter.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="..\runtime\compiler.cs" />
+    <Compile Include="..\runtime\CoreClasses.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="..\runtime\DotNetTypeWrapper.cs" />
+    <Compile Include="..\runtime\DynamicClassLoader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="..\runtime\DynamicTypeWrapper.cs" />
+    <Compile Include="..\runtime\intrinsics.cs" />
+    <Compile Include="..\runtime\JavaException.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="..\runtime\JsrInliner.cs" />
+    <Compile Include="..\runtime\LambdaMetafactory.cs" />
+    <Compile Include="..\runtime\LocalVars.cs" />
+    <Compile Include="..\runtime\MemberWrapper.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="..\runtime\MethodHandleUtil.cs" />
+    <Compile Include="..\runtime\profiler.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="..\runtime\ReflectUtil.cs" />
+    <Compile Include="..\runtime\RuntimeHelperTypes.cs" />
+    <Compile Include="..\runtime\Serialization.cs" />
+    <Compile Include="..\runtime\tracer.cs" />
+    <Compile Include="..\runtime\Types.cs" />
+    <Compile Include="..\runtime\TypeWrapper.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="..\runtime\verifier.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="..\runtime\vm.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="..\CommonAssemblyInfo.cs">
+      <Link>CommonAssemblyInfo.cs</Link>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\reflect\IKVM.Reflection.csproj">
+      <Project>{4CB170EF-DFE6-4A56-9E1B-A85449E827A7}</Project>
+      <Name>IKVM.Reflection</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+</Project>
