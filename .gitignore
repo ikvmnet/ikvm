@@ -52,3 +52,4 @@ tools/*.dll
 
 # Auto-generated files
 CommonAssemblyInfo.cs
+runtime/AssemblyInfo.cs
