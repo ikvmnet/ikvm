@@ -7,7 +7,7 @@
     <ProjectGuid>{F0A51B7F-6DA2-4D3C-8FE6-75567C1264FB}</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>IKVM.Runtime.FirstPass</RootNamespace>
-    <AssemblyName>IKVM.Runtime.dll</AssemblyName>
+    <AssemblyName>IKVM.Runtime</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>4096</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -128,4 +128,7 @@
     <Reference Include="System.Configuration" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>$(ProjectDir)..\ikvmstub\bin\$(Configuration)\ikvmstub.exe -bootstrap $(TargetPath) -r:$(TargetDir)IKVM.OpenJDK.Core.dll</PostBuildEvent>
+  </PropertyGroup>
 </Project>

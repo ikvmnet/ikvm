@@ -54,3 +54,7 @@ tools/*.dll
 CommonAssemblyInfo.cs
 runtime/AssemblyInfo.cs
 awt/AssemblyInfo.cs
+openjdk/AssemblyInfo.java
+openjdk/MANIFEST.MF
+openjdk/java/lang/PropertyConstants.java
+openjdk/resources/nashorn/version.properties
