@@ -39,8 +39,8 @@
     <!-- Weird, just wanted to get it quickly -->
     <OpenJdkDirSlash>../../openjdk-8u45-b14</OpenJdkDirSlash>
     <SkipSystemCoreDependency>false</SkipSystemCoreDependency>
-    <IkvmstubExe>..\ikvmstub\bin\$(Configuration)\ikvmstub.exe</IkvmstubExe>
-    <IkvmcExe>..\ikvmc\bin\$(Configuration)\ikvmc.exe</IkvmcExe>
+    <IkvmstubExe>..\bin\$(Configuration)\ikvmstub.exe</IkvmstubExe>
+    <IkvmcExe>..\bin\$(Configuration)\ikvmc.exe</IkvmcExe>
     <OpenJdkImplementationVersion>1.8.0</OpenJdkImplementationVersion>
     <OpenJdkSpecificationVersion>1.8</OpenJdkSpecificationVersion>
     <OpenJdkFullVersion>1.8.0_45-b14</OpenJdkFullVersion>
@@ -217,6 +217,42 @@
     <Copy SourceFiles="..\runtime\bin\$(Configuration)\IKVM.Runtime.dll" DestinationFolder="." />
     <Copy SourceFiles="..\awt\bin\$(Configuration)\IKVM.AWT.WinForms.dll" DestinationFolder="." />
     <Exec Command="$(IkvmcExe) -version:$(VersionNumber) -compressresources -opt:fields -strictfinalfieldsemantics -removeassertions -target:library -sharedclassloader -r:mscorlib.dll -r:System.dll -r:System.Core.dll -r:System.Xml.dll -r:IKVM.Runtime.dll -nowarn:110 -w4 -noparameterreflection -warnaserror @response.gen.txt" />
+    <CallTarget Targets="Peverify" />
+    <Exec Command="..\tools\bin\$(Configuration)\depcheck.exe response.txt dependencies.txt" />
+    <ItemGroup>
+      <IkvmDllFiles Include="IKVM.OpenJDK.*.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(IkvmDllFiles)" DestinationFolder="..\bin\$(Configuration)" />
+    <Exec Command="..\tools\bin\$(Configuration)\updbaseaddresses.exe response.txt" />
+    <MakeDir Directories="..\lib" />
+    <Exec Command="$(IkvmstubExe) -out:..\lib\ikvm-api.jar ..\bin\$(Configuration)\IKVM.OpenJDK.Core.dll -namespace:ikvm.io -namespace:ikvm.lang-namespace:ikvm.runtime" />
+  </Target>
+
+  <Target Name="Peverify">
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Beans.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Charsets.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Corba.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Core.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Cldrdata.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Jdbc.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Localedata.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Management.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Media.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Misc.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Naming.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Nashorn.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Remoting.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Security.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.SwingAWT.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Text.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Util.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.XML.API.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.XML.Bind.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.XML.Crypto.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.XML.Parse.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.XML.Transform.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.XML.WebServices.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.XML.XPath.dll" />
   </Target>
 
   <UsingTask TaskName="AssemblyVersion" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">

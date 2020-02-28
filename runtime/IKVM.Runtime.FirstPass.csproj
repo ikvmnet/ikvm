@@ -128,7 +128,8 @@
     <Reference Include="System.Configuration" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup>
-    <PostBuildEvent>$(ProjectDir)..\ikvmstub\bin\$(Configuration)\ikvmstub.exe -bootstrap $(TargetPath) -r:$(TargetDir)IKVM.OpenJDK.Core.dll</PostBuildEvent>
-  </PropertyGroup>
+  <Target Name="AfterBuild">
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="..\bin\$(Configuration)" />
+    <Exec Command="$(ProjectDir)..\bin\$(Configuration)\ikvmstub.exe -bootstrap $(TargetPath) -r:$(TargetDir)IKVM.OpenJDK.Core.dll" />
+  </Target>
 </Project>
