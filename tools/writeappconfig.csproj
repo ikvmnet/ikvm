@@ -39,4 +39,11 @@
     <Compile Include="writeappconfig.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Target Name="AfterBuild">
+    <Exec Command="$(TargetPath)" WorkingDirectory="$(MSBuildProjectDirectory)" />
+  </Target>
+  <Target Name="AfterClean">
+    <!-- These files get created by running the executable -->
+    <Delete Files="..\bin\ikvm.exe.config;..\bin\ikvmc.exe.config;..\bin\ikvmstub.exe.config" />
+  </Target>
 </Project>
