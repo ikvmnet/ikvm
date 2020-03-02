@@ -343,20 +343,21 @@
     <RegexTransform Items="@(TransformNashronVersionImplementationVersion)" />
   </Target>
 
-  <Target Name="Clean" DependsOnTargets="CleanClasses;CleanStubJars">
-  </Target>
-
-  <Target Name="CleanClasses">
+  <Target Name="Clean">
     <ItemGroup>
-      <ClassFilesToDelete Include="**/*.class" />
-      <ClassFilesToDelete Include="../classpath/**/*.class" />
-      <ClassFilesToDelete Include="$(OpenJdkDir)/**/*.class" />
+      <CleanFiles Include="**\*.class" />
+      <CleanFiles Include="..\classpath\**\*.class" />
+      <CleanFiles Include="$(OpenJdkDir)\**\*.class" />
+      <CleanFiles Include="..\bin\$(Configuration)\IKVM.*.dll" />
+      <CleanFiles Include="IKVM.*.dll" />
+      <CleanFiles Include="*.gen.lst" />
+      <CleanFiles Include="AssemblyInfo.java" />
+      <CleanFiles Include="resources.zip" />
+      <CleanFiles Include="vfs.zip" />
+      <CleanFiles Include="*.jar" />
+      <CleanFiles Include="MANIFEST.MF" />
     </ItemGroup>
-    <Delete Files="@(ClassFilesToDelete)" />
-  </Target>
-
-  <Target Name="CleanStubJars">
-    <Delete Files="mscorlib.jar;System.jar;System.Core.jar;System.Data.jar;System.Drawing.jar;System.Xml.jar" />
+    <Delete Files="@(CleanFiles)" />
   </Target>
 
   <Target Name="Rebuild">
