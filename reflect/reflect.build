@@ -20,7 +20,7 @@
 
   Jeroen Frijters
   jeroen@frijters.net
-  
+
 -->
 <project name="reflect" default="IKVM.Reflection">
     <include buildfile="../ikvm.include" />
@@ -34,7 +34,7 @@
             <property name="defs" value="${defs};${signed}" />
         </if>
         <if test="${version::get-major(framework::get-version(framework::get-target-framework() )) == 4}">
-            <property name="defs" value="${defs};NET_4_0" />
+            <property name="defs" value="${defs}" />
         </if>
         <!-- workaround for the fact that <include if="${framework::exists('mono-2.0')} ...> still insists on evaluating the name attribute -->
         <property name="MonoSymbolWriter" value="dummy.dll" />

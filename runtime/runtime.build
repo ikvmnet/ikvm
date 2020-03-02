@@ -20,7 +20,7 @@
 
   Jeroen Frijters
   jeroen@frijters.net
-  
+
 -->
 <project name="IKVM.Runtime" default="full">
     <include buildfile="../ikvm.include" />
@@ -92,7 +92,7 @@
             <property name="defs" value="${defs};${signed}" />
         </if>
         <if test="${version::get-major(framework::get-version(framework::get-target-framework() )) == 4}">
-            <property name="defs" value="${defs};NET_4_0;CLASSGC" />
+            <property name="defs" value="${defs};CLASSGC" />
         </if>
         <if test="${first-pass}">
             <property name="defs" value="${defs};FIRST_PASS" />
@@ -117,7 +117,7 @@
                 <include name="${ReferencePath}/System.dll" />
             </references>
         </csc>
-        <copy file="IKVM.Runtime.JNI.dll" todir="../bin" />        
+        <copy file="IKVM.Runtime.JNI.dll" todir="../bin" />
     </target>
 
     <target name="IKVM.Runtime" depends="AssemblyInfo.cs defs">

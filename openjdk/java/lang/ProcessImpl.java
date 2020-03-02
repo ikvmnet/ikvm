@@ -623,7 +623,7 @@ final class ProcessImpl extends Process {
                 }
             }));
         }
-        
+
         Stream stdin = proc.get_StandardInput().get_BaseStream();
         Stream stdout = proc.get_StandardOutput().get_BaseStream();
         Stream stderr = proc.get_StandardError().get_BaseStream();
@@ -796,6 +796,11 @@ final class ProcessImpl extends Process {
             if (false) throw new cli.System.IO.IOException();
             if (false) throw new cli.System.Security.SecurityException();
             if (false) throw new cli.System.UnauthorizedAccessException();
+
+            // TODO NET_CORE_INCOMPAT
+            //
+            // https://github.com/dotnet/corefx/issues/39920
+            // https://github.com/wwrd/ikvm8/issues/3#issuecomment-517009923
             return FileDescriptor.fromStream(new FileStream(path, FileMode.wrap(FileMode.Append), FileSystemRights.wrap(FileSystemRights.AppendData), FileShare.wrap(FileShare.ReadWrite), 1, FileOptions.wrap(FileOptions.None)));
         } catch (cli.System.ArgumentException x) {
             throw new IOException(x.getMessage());
