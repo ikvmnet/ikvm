@@ -43,7 +43,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>bin\DebugSigned\</OutputPath>
     <DefineConstants>TRACE;DEBUG;EMITTERS;NET_4_0;CLASSGC;FIRST_PASS;SIGNECODE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -54,7 +54,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>bin\ReleaseSigned\</OutputPath>
     <DefineConstants>TRACE;EMITTERS;NET_4_0;CLASSGC;FIRST_PASS;SIGNECODE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
