@@ -148,7 +148,7 @@
     <Reference Include="System.Configuration" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Import Project="..\RegexTransform.targets" />
+  <Import Project="..\ikvm.targets" />
   <Target Name="BeforeBuild">
     <Copy SourceFiles="AssemblyInfo.cs.in" DestinationFiles="AssemblyInfo.cs" />
     <ItemGroup>

@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
-  <Import Project="..\RegexTransform.targets" />
+  <Import Project="..\ikvm.targets" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -52,24 +52,6 @@
     <Exec Command="$(IkvmcExe) -r:mscorlib.dll -version:$(VersionNumber) -warnaserror -w4 -noparameterreflection @tools.gen.rsp" />
     <Copy SourceFiles="..\bin\IKVM.OpenJDK.Tools.dll" DestinationFolder="..\bin\$(Configuration)" />
   </Target>
-
-  <UsingTask TaskName="AssemblyVersion" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
-    <ParameterGroup>
-      <AssemblyBasePath ParameterType="System.String" Required="true" />
-      <AssemblyRelativePath ParameterType="System.String" Required="true" />
-      <VersionNumber ParameterType="System.String" Output="true" />
-    </ParameterGroup>
-    <Task>
-      <Using Namespace="System.IO" />
-      <Using Namespace="System.Reflection" />
-      <Code Type="Fragment" Language="cs">
-      <![CDATA[
-      var path = Path.GetFullPath((new Uri(Path.Combine(AssemblyBasePath, AssemblyRelativePath))).LocalPath);
-      VersionNumber = Assembly.LoadFile(path).GetName().Version.ToString();
-      ]]>
-      </Code>
-    </Task>
-  </UsingTask>
 
   <PropertyGroup>
     <VersionNumber />
