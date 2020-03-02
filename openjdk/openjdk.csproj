@@ -242,7 +242,7 @@
 
   <Target Name="Core" DependsOnTargets="Version;ResponseGenTxt;ManifestMf;NashornVersion">
     <Copy SourceFiles="..\runtime\bin\$(Configuration)\IKVM.Runtime.dll" DestinationFolder="." />
-    <Copy SourceFiles="..\awt\bin\$(Configuration)\IKVM.AWT.WinForms.dll" DestinationFolder="." />
+    <Copy SourceFiles="..\bin\$(Configuration)\IKVM.AWT.WinForms.dll" DestinationFolder="." />
     <Exec Command="$(IkvmcExe) -version:$(VersionNumber) -compressresources -opt:fields -strictfinalfieldsemantics -removeassertions -target:library -sharedclassloader -r:mscorlib.dll -r:System.dll -r:System.Core.dll -r:System.Xml.dll -r:IKVM.Runtime.dll -nowarn:110 -w4 -noparameterreflection -warnaserror @response.gen.txt" />
     <CallTarget Targets="Peverify" />
     <Exec Command="..\tools\bin\$(Configuration)\depcheck.exe response.txt dependencies.txt" />
