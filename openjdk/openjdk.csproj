@@ -33,6 +33,25 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'DebugSigned|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\DebugSigned\</OutputPath>
+    <DefineConstants>DEBUG;TRACE;SIGNCODE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'ReleaseSigned|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\ReleaseSigned\</OutputPath>
+    <DefineConstants>TRACE;SIGNCODE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
 
   <PropertyGroup>
     <OpenJdkDir>..\..\openjdk-8u45-b14</OpenJdkDir>
@@ -236,7 +255,7 @@
     <Exec Command="$(IkvmstubExe) -out:..\lib\ikvm-api.jar ..\bin\$(Configuration)\IKVM.OpenJDK.Core.dll -namespace:ikvm.io -namespace:ikvm.lang-namespace:ikvm.runtime" />
   </Target>
 
-  <Target Name="Peverify">
+  <Target Name="Peverify" Condition="$(PEVERIFY) != ''">
     <Exec Command="peverify -nologo IKVM.OpenJDK.Beans.dll" />
     <Exec Command="peverify -nologo IKVM.OpenJDK.Charsets.dll" />
     <Exec Command="peverify -nologo IKVM.OpenJDK.Corba.dll" />
