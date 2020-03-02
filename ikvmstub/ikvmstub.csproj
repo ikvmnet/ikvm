@@ -5,28 +5,23 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{D2A9434D-59E4-43E9-8D9C-332AA138CEAD}</ProjectGuid>
-    <AssemblyName>ikvmstub</AssemblyName>
     <OutputType>Exe</OutputType>
     <RootNamespace>ikvmstub</RootNamespace>
-    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <AssemblyName>ikvmstub</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <OutputPath>..\bin\Debug\</OutputPath>
-    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
-    <BaseAddress>285212672</BaseAddress>
-    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
-    <DefineConstants>TRACE;DEBUG;STUB_GENERATOR</DefineConstants>
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
-    <FileAlignment>4096</FileAlignment>
-    <NoStdLib>false</NoStdLib>
-    <Optimize>false</Optimize>
-    <RegisterForComInterop>false</RegisterForComInterop>
-    <RemoveIntegerChecks>false</RemoveIntegerChecks>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <WarningLevel>4</WarningLevel>
     <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\bin\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;STUB_GENERATOR</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -36,14 +31,25 @@
     <DefineConstants>TRACE;STUB_GENERATOR</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
-    <BaseAddress>285212672</BaseAddress>
-    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
-    <FileAlignment>4096</FileAlignment>
-    <NoStdLib>false</NoStdLib>
-    <RegisterForComInterop>false</RegisterForComInterop>
-    <RemoveIntegerChecks>false</RemoveIntegerChecks>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'DebugSigned|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\bin\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;STUB_GENERATOR;SIGNCODE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'ReleaseSigned|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\bin\Release\</OutputPath>
+    <DefineConstants>TRACE;STUB_GENERATOR;SIGNCODE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="ICSharpCode.SharpZipLib, Version=0.84.0.0, Culture=neutral, PublicKeyToken=1b03e6acf1164f73">
@@ -54,46 +60,25 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\CommonAssemblyInfo.cs">
-      <SubType>Code</SubType>
       <Link>CommonAssemblyInfo.cs</Link>
     </Compile>
-    <Compile Include="AssemblyInfo.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="AssemblyInfo.cs" />
     <Compile Include="..\runtime\stubgen\ClassFileWriter.cs" />
-    <Compile Include="ikvmstub.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="ikvmstub.cs" />
     <Compile Include="..\ikvmc\AssemblyResolver.cs" />
     <Compile Include="..\runtime\AssemblyClassLoader.cs" />
-    <Compile Include="..\runtime\attributes.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="..\runtime\ClassLoaderWrapper.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="..\runtime\CoreClasses.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="..\runtime\attributes.cs" />
+    <Compile Include="..\runtime\ClassLoaderWrapper.cs" />
+    <Compile Include="..\runtime\CoreClasses.cs" />
     <Compile Include="..\runtime\DotNetTypeWrapper.cs" />
-    <Compile Include="..\runtime\JavaException.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="..\runtime\MemberWrapper.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="..\runtime\profiler.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="..\runtime\JavaException.cs" />
+    <Compile Include="..\runtime\MemberWrapper.cs" />
+    <Compile Include="..\runtime\profiler.cs" />
     <Compile Include="..\runtime\ReflectUtil.cs" />
     <Compile Include="..\runtime\tracer.cs" />
     <Compile Include="..\runtime\Types.cs" />
-    <Compile Include="..\runtime\TypeWrapper.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="..\runtime\vm.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="..\runtime\TypeWrapper.cs" />
+    <Compile Include="..\runtime\vm.cs" />
     <Compile Include="..\runtime\stubgen\SerialVersionUID.cs" />
     <Compile Include="..\runtime\stubgen\StubGenerator.cs" />
   </ItemGroup>

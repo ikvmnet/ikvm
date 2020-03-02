@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="14.0">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="15.0">
   <PropertyGroup>
     <ProjectType>Local</ProjectType>
     <ProductVersion>9.0.30729</ProductVersion>
@@ -35,7 +35,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <OutputPath>bin\Debug\</OutputPath>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
-    <BaseAddress>285212672</BaseAddress>
+    <BaseAddress>1426063360</BaseAddress>
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
     <ConfigurationOverrideFile>
     </ConfigurationOverrideFile>
@@ -45,8 +45,7 @@
     <DebugSymbols>true</DebugSymbols>
     <FileAlignment>4096</FileAlignment>
     <NoStdLib>false</NoStdLib>
-    <NoWarn>
-    </NoWarn>
+    <NoWarn>169;649</NoWarn>
     <Optimize>false</Optimize>
     <RegisterForComInterop>false</RegisterForComInterop>
     <RemoveIntegerChecks>false</RemoveIntegerChecks>
@@ -57,21 +56,21 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="IKVM.OpenJDK.Core, Version=0.39.3280.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="IKVM.OpenJDK.Core, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\bin\IKVM.OpenJDK.Core.dll</HintPath>
+      <HintPath>..\bin\$(Configuration)\IKVM.OpenJDK.Core.dll</HintPath>
     </Reference>
-    <Reference Include="IKVM.OpenJDK.Management, Version=7.0.4259.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="IKVM.OpenJDK.Management, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\bin\IKVM.OpenJDK.Management.dll</HintPath>
+      <HintPath>..\bin\$(Configuration)\IKVM.OpenJDK.Management.dll</HintPath>
     </Reference>
-    <Reference Include="IKVM.OpenJDK.Misc, Version=0.39.3280.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="IKVM.OpenJDK.Misc, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\bin\IKVM.OpenJDK.Misc.dll</HintPath>
+      <HintPath>..\bin\$(Configuration)\IKVM.OpenJDK.Misc.dll</HintPath>
     </Reference>
-    <Reference Include="IKVM.OpenJDK.Util, Version=0.39.3280.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="IKVM.OpenJDK.Util, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\bin\IKVM.OpenJDK.Util.dll</HintPath>
+      <HintPath>..\bin\$(Configuration)\IKVM.OpenJDK.Util.dll</HintPath>
     </Reference>
     <Reference Include="IKVM.Runtime.JNI, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -88,49 +87,25 @@
       <Link>CommonAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="AssemblyClassLoader.cs" />
-    <Compile Include="AssemblyInfo.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="AssemblyInfo.cs" />
     <Compile Include="Assertions.cs" />
     <Compile Include="atomic.cs" />
-    <Compile Include="attributes.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="BigEndianBinaryReader.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="attributes.cs" />
+    <Compile Include="BigEndianBinaryReader.cs" />
     <Compile Include="Boxer.cs" />
-    <Compile Include="ByteCode.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="ByteCodeHelper.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="ClassFile.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="ClassLoaderWrapper.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="CodeEmitter.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="ByteCode.cs" />
+    <Compile Include="ByteCodeHelper.cs" />
+    <Compile Include="ClassFile.cs" />
+    <Compile Include="ClassLoaderWrapper.cs" />
+    <Compile Include="CodeEmitter.cs" />
     <Compile Include="common.cs" />
-    <Compile Include="compiler.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="CoreClasses.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="compiler.cs" />
+    <Compile Include="CoreClasses.cs" />
     <Compile Include="DotNetTypeWrapper.cs" />
-    <Compile Include="DynamicClassLoader.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="DynamicClassLoader.cs" />
     <Compile Include="DynamicMethodUtils.cs" />
     <Compile Include="DynamicTypeWrapper.cs" />
-    <Compile Include="ExceptionHelper.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="ExceptionHelper.cs" />
     <Compile Include="fdlibm\e_hypot.cs" />
     <Compile Include="fdlibm\e_pow.cs" />
     <Compile Include="fdlibm\e_rem_pio2.cs" />
@@ -144,15 +119,11 @@
     <Compile Include="fdlibm\s_scalbn.cs" />
     <Compile Include="fdlibm\s_tan.cs" />
     <Compile Include="intrinsics.cs" />
-    <Compile Include="JavaException.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="JavaException.cs" />
     <Compile Include="JsrInliner.cs" />
     <Compile Include="LambdaMetafactory.cs" />
     <Compile Include="LocalVars.cs" />
-    <Compile Include="MemberWrapper.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="MemberWrapper.cs" />
     <Compile Include="MethodHandleUtil.cs" />
     <Compile Include="openjdk\java.io.cs" />
     <Compile Include="openjdk\java.lang.cs" />
@@ -173,35 +144,28 @@
     <Compile Include="openjdk\sun.security.krb5.cs" />
     <Compile Include="openjdk\sun.util.locale.provider.cs" />
     <Compile Include="PassiveWeakDictionary.cs" />
-    <Compile Include="profiler.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="profiler.cs" />
     <Compile Include="ReflectUtil.cs" />
     <Compile Include="RuntimeHelperTypes.cs" />
     <Compile Include="Serialization.cs" />
     <Compile Include="stubgen\ClassFileWriter.cs" />
     <Compile Include="stubgen\SerialVersionUID.cs" />
     <Compile Include="stubgen\StubGenerator.cs" />
-    <Compile Include="tracer.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="tracer.cs" />
     <Compile Include="Types.cs" />
-    <Compile Include="TypeWrapper.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="verifier.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="TypeWrapper.cs" />
+    <Compile Include="verifier.cs" />
     <Compile Include="vfs.cs" />
-    <Compile Include="vm.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="vm.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="vfs.zip" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup>
-    <PreBuildEvent>
-    </PreBuildEvent>
-    <PostBuildEvent>
-    </PostBuildEvent>
-  </PropertyGroup>
+  <Target Name="AfterBuild">
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="..\bin\$(Configuration)" />
+  </Target>
 </Project>

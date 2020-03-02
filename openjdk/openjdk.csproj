@@ -48,9 +48,11 @@
 
   <Target Name="Build" DependsOnTargets="BuildClasses;Rmi;RunNasgen;Vfs;Resources;Core">
   </Target>
+
   <Target Name="BuildClasses" DependsOnTargets="StubJars;AllSourcesGenLst;AssemblyInfoJava;PropertyConstantsJava">
     <Exec Command="javac -J-Xmx1536M -g -nowarn -implicit:none -parameters -cp dummy -bootclasspath mscorlib.jar;System.jar;System.Core.jar;System.Data.jar;System.Drawing.jar;System.Xml.jar;..\runtime\bin\$(Configuration)\IKVM.Runtime.jar @allsources.gen.lst" />
   </Target>
+
   <Target Name="StubJars" DependsOnTargets="SystemCore">
     <Exec Command="$(IkvmstubExe) -bootstrap mscorlib" />
     <Exec Command="$(IkvmstubExe) -bootstrap System" />
@@ -60,11 +62,14 @@
     <Exec Command="$(IkvmstubExe) -bootstrap System.Drawing" />
     <Exec Command="$(IkvmstubExe) -bootstrap System.Xml" />
   </Target>
+
   <Target Name="SystemCore" DependsOnTargets="" Condition=" !$(SkipSystemCoreDependency) ">
     <Delete Files="System.Core.dll" />
   </Target>
+
   <Target Name="DummySystemCoreJar">
   </Target>
+
   <Target Name="AllSourcesGenLst">
     <Copy SourceFiles="allsources.lst" DestinationFiles="allsources.gen.lst" />
     <ItemGroup>
@@ -76,12 +81,12 @@
     </ItemGroup>
     <RegexTransform Items="@(TransformOpenJdkDir)" />
   </Target>
-  <Target Name="AssemblyInfoJava">
+
+  <Target Name="AssemblyInfoJava" DependsOnTargets="Version">
     <PropertyGroup>
       <IKVMRuntime>IKVM.Runtime</IKVMRuntime>
       <IKVMAWTWinForms>IKVM.AWT.WinForms</IKVMAWTWinForms>
-      <Version>1</Version>
-      <Copyright>C</Copyright>
+      <Copyright>Copyright</Copyright>
     </PropertyGroup>
     <Copy SourceFiles="AssemblyInfo.java.in" DestinationFiles="AssemblyInfo.java" />
     <ItemGroup>
@@ -103,7 +108,7 @@
     <ItemGroup>
       <TransformAssemblyInfoVersion Include="AssemblyInfo.java">
         <Find>@VERSION@</Find>
-        <ReplaceWith>$(Version)</ReplaceWith>
+        <ReplaceWith>$(VersionNumber)</ReplaceWith>
         <Options>Singleline</Options>
       </TransformAssemblyInfoVersion>
     </ItemGroup>
@@ -117,9 +122,11 @@
     </ItemGroup>
     <RegexTransform Items="@(TransformAssemblyInfoCopyright)" />
   </Target>
+
   <Target Name="PropertyConstantsJava">
     <Copy SourceFiles="java\lang\PropertyConstants.java.in" DestinationFiles="java\lang\PropertyConstants.java" />
   </Target>
+
   <PropertyGroup>
     <Classpath>mscorlib.jar;System.Xml.jar;$(OpenJdkDirSlash)/jdk/src/share/classes;$(OpenJdkDirSlash)/corba/src/share/classes;$(OpenJdkDirSlash)/build/linux-x86_64-normal-server-release/jdk/gensrc</Classpath>
   </PropertyGroup>
@@ -146,6 +153,7 @@
     <Exec Command="rmic $(RmiArgs) -iiop javax.management.remote.rmi.RMIServer" />
     <Exec Command="rmic $(RmiArgs) -iiop -standardPackage javax.management.remote.rmi.RMIServer" />
   </Target>
+
   <Target Name="RunNasgen">
     <ItemGroup>
       <NasgenSources Include="$(OpenJdkDir)\nashorn\src\jdk\nashorn\internal\objects\*.java" />
@@ -337,14 +345,20 @@
 
   <Target Name="Clean" DependsOnTargets="CleanClasses;CleanStubJars">
   </Target>
+
   <Target Name="CleanClasses">
-    <Delete Files="../classpath/**.class" />
-    <Delete Files="$(OpenJdkDir)/**.class" />
-    <Delete Files="**.class" />
+    <ItemGroup>
+      <ClassFilesToDelete Include="**/*.class" />
+      <ClassFilesToDelete Include="../classpath/**/*.class" />
+      <ClassFilesToDelete Include="$(OpenJdkDir)/**/*.class" />
+    </ItemGroup>
+    <Delete Files="@(ClassFilesToDelete)" />
   </Target>
+
   <Target Name="CleanStubJars">
     <Delete Files="mscorlib.jar;System.jar;System.Core.jar;System.Data.jar;System.Drawing.jar;System.Xml.jar" />
   </Target>
+
   <Target Name="Rebuild">
     <CallTarget Targets="Clean;Build" />
   </Target>

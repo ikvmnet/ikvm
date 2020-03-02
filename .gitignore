@@ -53,6 +53,8 @@ tools/*.dll
 # Auto-generated files
 CommonAssemblyInfo.cs
 runtime/AssemblyInfo.cs
+runtime/JniAssemblyInfo.cs
+runtime/vfs.zip
 awt/AssemblyInfo.cs
 openjdk/AssemblyInfo.java
 openjdk/MANIFEST.MF

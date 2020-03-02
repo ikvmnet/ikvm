@@ -38,8 +38,28 @@
     <BaseAddress>1426063360</BaseAddress>
     <NoWarn>169;649</NoWarn>
   </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject />
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'DebugSigned|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;EMITTERS;NET_4_0;CLASSGC;FIRST_PASS;SIGNECODE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <BaseAddress>1426063360</BaseAddress>
+    <NoWarn>169;649</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'ReleaseSigned|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE;EMITTERS;NET_4_0;CLASSGC;FIRST_PASS;SIGNECODE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <BaseAddress>1426063360</BaseAddress>
+    <NoWarn>169;649</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\CommonAssemblyInfo.cs">
@@ -128,8 +148,31 @@
     <Reference Include="System.Configuration" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\RegexTransform.targets" />
+  <Target Name="BeforeBuild">
+    <Copy SourceFiles="AssemblyInfo.cs.in" DestinationFiles="AssemblyInfo.cs" />
+    <ItemGroup>
+      <PubkeyTxt Include="..\tools\bin\$(Configuration)\pubkey.txt" />
+    </ItemGroup>
+    <ReadLinesFromFile File="@(PubkeyTxt)">
+      <Output TaskParameter="Lines" ItemName="PublicKeyItem" />
+    </ReadLinesFromFile>
+    <Message Text="DEBUG @(PublicKeyItem)" />
+    <ItemGroup>
+      <TransformPublicKey Include="AssemblyInfo.cs">
+        <Find>@PUBLICKEY@</Find>
+        <ReplaceWith>@(PublicKeyItem)</ReplaceWith>
+        <Options>Singleline</Options>
+      </TransformPublicKey>
+    </ItemGroup>
+    <RegexTransform Items="@(TransformPublicKey)" />
+  </Target>
   <Target Name="AfterBuild">
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="..\bin\$(Configuration)" />
-    <Exec Command="$(ProjectDir)..\bin\$(Configuration)\ikvmstub.exe -bootstrap $(TargetPath) -r:$(TargetDir)IKVM.OpenJDK.Core.dll" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="." />
+    <Exec Command="$(ProjectDir)..\bin\$(Configuration)\ikvmstub.exe -bootstrap IKVM.Runtime.dll -r:IKVM.OpenJDK.Core.dll" />
+  </Target>
+  <Target Name="AfterClean">
+    <Delete Files="..\bin\$(Configuration)\IKVM.Runtime.dll;IKVM.Runtime.dll;IKVM.Runtime.jar;AssemblyInfo.cs" />
   </Target>
 </Project>
