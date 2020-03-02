@@ -76,6 +76,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.Runtime.JNI", "runtime
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ikvm", "ikvm\ikvm.csproj", "{4FBAFF23-1E48-4977-8C50-30F87E70A8B5}"
+	ProjectSection(ProjectDependencies) = postProject
+		{9FFE3F34-4476-42AD-AF9D-49470A154211} = {9FFE3F34-4476-42AD-AF9D-49470A154211}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.AWT.WinForms", "awt\IKVM.AWT.WinForms.csproj", "{E00A0FA2-1FD7-4DD9-8C06-7202CE366102}"
 	ProjectSection(ProjectDependencies) = postProject
