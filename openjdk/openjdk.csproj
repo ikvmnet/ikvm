@@ -294,7 +294,7 @@
       <Code Type="Fragment" Language="cs">
       <![CDATA[
       var path = Path.GetFullPath((new Uri(Path.Combine(AssemblyBasePath, AssemblyRelativePath))).LocalPath);
-      VersionNumber = Assembly.LoadFile(path).GetName().Version.ToString();
+      VersionNumber = Assembly.Load(File.ReadAllBytes(path)).GetName().Version.ToString();
       ]]>
       </Code>
     </Task>
