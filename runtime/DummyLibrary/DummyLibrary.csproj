@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net461</TargetFrameworks>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>..\bin\$(Configuration)</OutputPath>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <DefineConstants>$(DefineConstants);DUMMY</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NuGet Package/Assembly Settings">
+    <AssemblyTitle>DummyLibrary</AssemblyTitle>
+    <Description>Dummy library for first pass of IKVM.OpenJDK.Core</Description>
+    <AssemblyName>IKVM.OpenJDK.Core</AssemblyName>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+</Project>

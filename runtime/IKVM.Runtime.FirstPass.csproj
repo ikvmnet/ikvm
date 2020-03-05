@@ -138,7 +138,7 @@
     <Compile Include="stubgen/StubGenerator.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="DummyLibrary.csproj">
+    <ProjectReference Include="DummyLibrary\DummyLibrary.csproj">
       <Project>{a47e1075-ec32-49ba-9c5e-124a814278d0}</Project>
       <Name>DummyLibrary</Name>
     </ProjectReference>
@@ -170,7 +170,7 @@
   <Target Name="AfterBuild">
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="..\bin\$(Configuration)" />
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="." />
-    <Exec Command="..\bin\$(Configuration)\ikvmstub.exe -bootstrap IKVM.Runtime.dll -r:IKVM.OpenJDK.Core.dll" />
+    <Exec Command="..\bin\$(Configuration)\ikvmstub.exe -bootstrap IKVM.Runtime.dll -r:bin\$(Configuration)\IKVM.OpenJDK.Core.dll" />
   </Target>
   <Target Name="AfterClean">
     <Delete Files="..\bin\$(Configuration)\IKVM.Runtime.dll;IKVM.Runtime.dll;IKVM.Runtime.jar;AssemblyInfo.cs" />
