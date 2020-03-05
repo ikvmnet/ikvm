@@ -33,23 +33,23 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\runtime\stubgen\ClassFileWriter.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\stubgen\ClassFileWriter.cs" />
     <Compile Include="..\ikvmc\AssemblyResolver.cs" />
-    <Compile Include="..\runtime\AssemblyClassLoader.cs" />
-    <Compile Include="..\runtime\attributes.cs" />
-    <Compile Include="..\runtime\ClassLoaderWrapper.cs" />
-    <Compile Include="..\runtime\CoreClasses.cs" />
-    <Compile Include="..\runtime\DotNetTypeWrapper.cs" />
-    <Compile Include="..\runtime\JavaException.cs" />
-    <Compile Include="..\runtime\MemberWrapper.cs" />
-    <Compile Include="..\runtime\profiler.cs" />
-    <Compile Include="..\runtime\ReflectUtil.cs" />
-    <Compile Include="..\runtime\tracer.cs" />
-    <Compile Include="..\runtime\Types.cs" />
-    <Compile Include="..\runtime\TypeWrapper.cs" />
-    <Compile Include="..\runtime\vm.cs" />
-    <Compile Include="..\runtime\stubgen\SerialVersionUID.cs" />
-    <Compile Include="..\runtime\stubgen\StubGenerator.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\AssemblyClassLoader.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\attributes.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\ClassLoaderWrapper.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\CoreClasses.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\DotNetTypeWrapper.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\JavaException.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\MemberWrapper.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\profiler.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\ReflectUtil.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\tracer.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\Types.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\TypeWrapper.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\vm.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\stubgen\SerialVersionUID.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\stubgen\StubGenerator.cs" />
   </ItemGroup>
 
 </Project>

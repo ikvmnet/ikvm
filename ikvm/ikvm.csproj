@@ -73,7 +73,7 @@
       <Project>{e00a0fa2-1fd7-4dd9-8c06-7202ce366102}</Project>
       <Name>IKVM.AWT.WinForms</Name>
     </ProjectReference>
-    <ProjectReference Include="..\runtime\IKVM.Runtime.csproj">
+    <ProjectReference Include="..\runtime\IKVM.Runtime\IKVM.Runtime.csproj">
       <Project>{f5c7b588-0403-4af2-a4de-5697de21bc2c}</Project>
       <Name>IKVM.Runtime</Name>
     </ProjectReference>

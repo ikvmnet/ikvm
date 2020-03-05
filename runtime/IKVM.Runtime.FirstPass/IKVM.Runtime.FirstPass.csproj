@@ -3,26 +3,17 @@
   <PropertyGroup>
     <TargetFrameworks>net461</TargetFrameworks>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <OutputPath>..\bin\$(Configuration)</OutputPath>
-    <DefineConstants>$(DefineConstants);STATIC_COMPILER;EMITTERS</DefineConstants>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DefineConstants>$(DefineConstants);EMITTERS;CLASSGC;FIRST_PASS</DefineConstants>
+    <NoWarn>$(NoWarn);169;649</NoWarn>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet Package/Assembly Settings">
-    <OutputType>Exe</OutputType>
-    <AssemblyName>ikvmc</AssemblyName>
-    <RootNamespace>ikvmc</RootNamespace>
-    <AssemblyTitle>IKVM.NET Compiler</AssemblyTitle>
+    <AssemblyTitle>IKVM.NET Runtime</AssemblyTitle>
     <Description>JVM for Mono and .NET</Description>
+    <RootNamespace>IKVM.Runtime.FirstPass</RootNamespace>
+    <AssemblyName>IKVM.Runtime</AssemblyName>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="SharpZipLib" Version="$(SharpZipLibPackageVersion)" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\reflect\IKVM.Reflection.csproj" />
-  </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
     <Reference Include="System.Configuration" />
@@ -33,21 +24,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ExcludeFromCompile Include="..\runtime\IKVM.Runtime\AssemblyInfo.cs" />
-    <ExcludeFromCompile Include="..\runtime\IKVM.Runtime\Assertions.cs" />
-    <ExcludeFromCompile Include="..\runtime\IKVM.Runtime\ByteCodeHelper.cs" />
-    <ExcludeFromCompile Include="..\runtime\IKVM.Runtime\common.cs" />
-    <ExcludeFromCompile Include="..\runtime\IKVM.Runtime\Dummy.OpenJDK.Core.cs" />
-    <ExcludeFromCompile Include="..\runtime\IKVM.Runtime\DynamicMethodUtils.cs" />
-    <ExcludeFromCompile Include="..\runtime\IKVM.Runtime\ExceptionHelper.cs" />
-    <ExcludeFromCompile Include="..\runtime\IKVM.Runtime\PassiveWeakDictionary.cs" />
-    <ExcludeFromCompile Include="..\runtime\IKVM.Runtime\vfs.cs" />
+    <ProjectReference Include="../DummyLibrary/DummyLibrary.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\runtime\IKVM.Runtime\*.cs" LinkBase="runtime" Exclude="@(ExcludeFromCompile)" />
+    <Compile Include="../IKVM.Runtime/**/*.cs" Exclude="../IKVM.Runtime/obj/**/*.cs" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <InternalsVisibleTo Include="IKVM.Runtime.JNI" />
     <InternalsVisibleTo Include="IKVM.OpenJDK.Core" />
@@ -65,6 +48,17 @@
     <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
       <AssemblyAttribute Include="System.Security.AllowPartiallyTrustedCallers" />
     </ItemGroup>
+  </Target>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Message Text="Copying '$(TargetPath)' to '..\..\bin\$(Configuration)'" Importance="high" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="..\..\bin\$(Configuration)" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="." />
+    <Exec Command="..\..\bin\$(Configuration)\ikvmstub.exe -bootstrap IKVM.Runtime.dll -r:..\bin\$(Configuration)\IKVM.OpenJDK.Core.dll" />
+    <Copy SourceFiles="IKVM.Runtime.jar" DestinationFolder="..\" />
+  </Target>
+  <Target Name="AfterClean" AfterTargets="Clean">
+    <Delete Files="..\..\bin\$(Configuration)\IKVM.Runtime.dll;IKVM.Runtime.dll;..\IKVM.Runtime.jar;IKVM.Runtime.jar" />
   </Target>
 
 </Project>
