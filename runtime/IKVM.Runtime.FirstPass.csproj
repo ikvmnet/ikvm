@@ -170,7 +170,7 @@
   <Target Name="AfterBuild">
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="..\bin\$(Configuration)" />
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="." />
-    <Exec Command="$(ProjectDir)..\bin\$(Configuration)\ikvmstub.exe -bootstrap IKVM.Runtime.dll -r:IKVM.OpenJDK.Core.dll" />
+    <Exec Command="..\bin\$(Configuration)\ikvmstub.exe -bootstrap IKVM.Runtime.dll -r:IKVM.OpenJDK.Core.dll" />
   </Target>
   <Target Name="AfterClean">
     <Delete Files="..\bin\$(Configuration)\IKVM.Runtime.dll;IKVM.Runtime.dll;IKVM.Runtime.jar;AssemblyInfo.cs" />
