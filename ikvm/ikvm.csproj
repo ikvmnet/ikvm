@@ -69,7 +69,7 @@
     <Compile Include="starter.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\awt\IKVM.AWT.WinForms.csproj">
+    <ProjectReference Include="..\awt\IKVM.AWT.WinForms\IKVM.AWT.WinForms.csproj">
       <Project>{e00a0fa2-1fd7-4dd9-8c06-7202ce366102}</Project>
       <Name>IKVM.AWT.WinForms</Name>
     </ProjectReference>

@@ -1,0 +1,62 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net461</TargetFrameworks>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>..\..\bin\$(Configuration)</OutputPath>
+    <DefineConstants>$(DefineConstants);WHIDBEY</DefineConstants>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <NoWarn>$(NoWarn);672;612</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NuGet Package/Assembly Settings">
+    <AssemblyName>IKVM.AWT.WinForms</AssemblyName>
+    <RootNamespace>awt</RootNamespace>
+    <AssemblyTitle>IKVM.NET AWT Support</AssemblyTitle>
+    <Description>Winforms peers and 'native' code</Description>
+  </PropertyGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="IKVM.OpenJDK.Core, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\bin\$(Configuration)\IKVM.OpenJDK.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.OpenJDK.Media, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\bin\$(Configuration)\IKVM.OpenJDK.Media.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.OpenJDK.Misc, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\bin\$(Configuration)\IKVM.OpenJDK.Misc.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.OpenJDK.SwingAWT, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\bin\$(Configuration)\IKVM.OpenJDK.SwingAWT.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.OpenJDK.Text, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\bin\$(Configuration)\IKVM.OpenJDK.Text.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="IKVM.OpenJDK.SwingAWT" />
+  </ItemGroup>
+
+  <Target Name="AddAllowPartiallyTrustedCallers" BeforeTargets="Build">
+    <!-- Handle AllowPartiallyTrustedCallers (.NET Framework only) -->
+    <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
+      <AssemblyAttribute Include="System.Security.AllowPartiallyTrustedCallers" />
+    </ItemGroup>
+  </Target>
+
+</Project>
