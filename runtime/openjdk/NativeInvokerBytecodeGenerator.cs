@@ -681,7 +681,7 @@ sealed class NativeInvokerBytecodeGenerator
       *  } catch (Throwable e) {
       *      if (!a2.isInstance(e)) throw e;
       *      return a3.invokeBasic(ex, a6, a7);
-      *  }}
+      *  }}</pre></blockquote>
       */
     private Name emitGuardWithCatch(int pos) {
         Name args    = lambdaForm.names[pos];
