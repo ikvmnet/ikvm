@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup Label="NuGet Package Reference Versions">
+    <MicrosoftCSharpPackageVersion>4.4.0</MicrosoftCSharpPackageVersion>
+    <NerdBankGitVersioningPackageVersion>[3.0.28]</NerdBankGitVersioningPackageVersion>
+    <SharpZipLibPackageVersion>1.2.0</SharpZipLibPackageVersion>
+    <SystemSecurityCryptographyPkcsPackageVersion>4.7.0</SystemSecurityCryptographyPkcsPackageVersion>
+  </PropertyGroup>
+</Project>
