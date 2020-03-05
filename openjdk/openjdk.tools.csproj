@@ -1,73 +1,26 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
-  <Import Project="..\ikvm.targets" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{1998E046-A78E-4B9B-B5DD-2EBC0A6ED067}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <TargetFrameworks>net461</TargetFrameworks>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NuGet Package/Assembly Settings">
     <RootNamespace>openjdk</RootNamespace>
     <AssemblyName>openjdk</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <Deterministic>true</Deterministic>
+    <AssemblyTitle>IKVM.NET Compiler</AssemblyTitle>
+    <Description>JVM for Mono and .NET</Description>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <OpenJdkDir>..\..\openjdk-8u45-b14</OpenJdkDir>
-    <IkvmcExe>..\bin\$(Configuration)\ikvmc.exe</IkvmcExe>
-  </PropertyGroup>
+  <ItemGroup>
+    <None Remove="**/*.*" />
+    <!-- This feature was for .NET Framework < 4.x -->
+    <Compile Remove="GenerateSystemCore.cs" />
+  </ItemGroup>
 
-  <Target Name="Build" DependsOnTargets="Version">
-    <Copy SourceFiles="tools.rsp" DestinationFiles="tools.gen.rsp" />
-    <ItemGroup>
-      <TransformOpenJdkDir Include="tools.gen.rsp">
-        <Find>@OPENJDK@</Find>
-        <ReplaceWith>$(OpenJdkDir)</ReplaceWith>
-        <Options>Singleline</Options>
-      </TransformOpenJdkDir>
-    </ItemGroup>
-    <RegexTransform Items="@(TransformOpenJdkDir)" />
-    <Exec Command="$(IkvmcExe) -r:mscorlib.dll -version:$(VersionNumber) -warnaserror -w4 -noparameterreflection @tools.gen.rsp" />
-    <Copy SourceFiles="..\bin\IKVM.OpenJDK.Tools.dll" DestinationFolder="..\bin\$(Configuration)" />
-  </Target>
+  <Import Project="openjdk.tools.targets" />
 
-  <PropertyGroup>
-    <VersionNumber />
-  </PropertyGroup>
-
-  <Target Name="Version">
-    <AssemblyVersion AssemblyBasePath="$(MSBuildProjectDirectory)" AssemblyRelativePath="..\runtime\bin\$(Configuration)\IKVM.Runtime.dll">
-      <Output TaskParameter="VersionNumber" PropertyName="VersionNumber" />
-    </AssemblyVersion>
-  </Target>
-
-  <Target Name="Clean">
-    <Delete Files="tools.gen.rsp;..\bin\IKVM.OpenJDK.Tools.dll;..\bin\$(Configuration)\IKVM.OpenJDK.Tools.dll" />
-  </Target>
-
-  <Target Name="Rebuild">
-    <CallTarget Targets="Clean;Build" />
-  </Target>
 </Project>
