@@ -26,6 +26,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
+using System.Diagnostics.CodeAnalysis;
 
 namespace awt
 {
@@ -92,6 +93,7 @@ namespace awt
         /// Constants for IShellFolder.GetDisplayNameOf and IShellFolder.SetNameOf 
         /// </summary>
         [Flags]
+        [SuppressMessage("Naming", "CA1712:Do not prefix enum values with type name", Justification = "Changing name would require a breaking API change")]
         public enum SHGDN : uint
         {
             SHGDN_NORMAL = 0x0000,     // Default
@@ -105,6 +107,7 @@ namespace awt
         /// Filter constants for IShellFolder.EnumObjects
         /// </summary>
         [Flags]
+        [SuppressMessage("Naming", "CA1712:Do not prefix enum values with type name", Justification = "Changing name would require a breaking API change")]
         public enum SHCONTF : uint
         {
             SHCONTF_CHECKING_FOR_CHILDREN = 0x00010,// >Win7. The calling application is checking for the existence of child items in the folder.
@@ -180,6 +183,7 @@ namespace awt
         /// See http://www.pinvoke.net/default.aspx/Constants/ShellAPI%20.html
         /// </summary>
         [Flags]
+        [SuppressMessage("Naming", "CA1712:Do not prefix enum values with type name", Justification = "Changing name would require a breaking API change")]
         public enum SHGFI
         {
             SHGFI_LARGEICON = 0x000000000,
@@ -207,6 +211,7 @@ namespace awt
         /// See http://msdn.microsoft.com/en-us/library/bb762494%28VS.85%29.aspx
         /// </summary>
         [Flags]
+        [SuppressMessage("Naming", "CA1712:Do not prefix enum values with type name", Justification = "Changing name would require a breaking API change")]
         public enum CSIDL : int
         {
             CSIDL_DESKTOP = 0x0000,
@@ -268,6 +273,7 @@ namespace awt
         /// See http://msdn.microsoft.com/en-us/library/bb762538%28VS.85%29.aspx
         /// </summary>
         [Flags]
+        [SuppressMessage("Naming", "CA1712:Do not prefix enum values with type name", Justification = "Changing name would require a breaking API change")]
         public enum SHCOLSTATE : uint
         {
             SHCOLSTATE_DEFAULT = 0x00000000,
@@ -297,6 +303,7 @@ namespace awt
         /// See http://msdn.microsoft.com/en-us/library/bb761852%28VS.85%29.aspx
         /// </summary>
         [Flags]
+        [SuppressMessage("Naming", "CA1712:Do not prefix enum values with type name", Justification = "Changing name would require a breaking API change")]
         public enum GIL : uint{ 
             GIL_OPENICON = 0x0001,
             GIL_FORSHELL = 0x0002,
