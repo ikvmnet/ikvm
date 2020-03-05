@@ -32,4 +32,7 @@
   <Target Name="Clean">
     <Delete Files="CommonAssemblyInfo.cs" />
   </Target>
+  <Target Name="Rebuild">
+    <CallTarget Targets="Clean;Build" />
+  </Target>
 </Project>
