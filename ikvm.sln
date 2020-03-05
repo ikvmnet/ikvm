@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommonAssemblyInfo", "Commo
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{7704D343-494C-4422-B452-950E3833A76D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "updbaseaddresses", "tools\updbaseaddresses.csproj", "{4E36B737-2366-4725-888D-EC1E823B88A7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "updbaseaddresses", "tools\updbaseaddresses\updbaseaddresses.csproj", "{4E36B737-2366-4725-888D-EC1E823B88A7}"
 	ProjectSection(ProjectDependencies) = postProject
 		{5C17FF84-02BA-4EE7-AD79-966E999EF8E6} = {5C17FF84-02BA-4EE7-AD79-966E999EF8E6}
 	EndProjectSection
