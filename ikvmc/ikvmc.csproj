@@ -35,13 +35,11 @@
   <ItemGroup>
     <ExcludeFromCompile Include="..\runtime\AssemblyInfo.cs" />
     <ExcludeFromCompile Include="..\runtime\Assertions.cs" />
-    <ExcludeFromCompile Include="..\runtime\JniAssemblyInfo.cs" />
     <ExcludeFromCompile Include="..\runtime\ByteCodeHelper.cs" />
     <ExcludeFromCompile Include="..\runtime\common.cs" />
     <ExcludeFromCompile Include="..\runtime\Dummy.OpenJDK.Core.cs" />
     <ExcludeFromCompile Include="..\runtime\DynamicMethodUtils.cs" />
     <ExcludeFromCompile Include="..\runtime\ExceptionHelper.cs" />
-    <ExcludeFromCompile Include="..\runtime\JniInterface.cs" />
     <ExcludeFromCompile Include="..\runtime\PassiveWeakDictionary.cs" />
     <ExcludeFromCompile Include="..\runtime\vfs.cs" />
   </ItemGroup>
