@@ -17,7 +17,7 @@
 
   <Target Name="BuildClasses" DependsOnTargets="StubJars;AllSourcesGenLst;AssemblyInfoJava;PropertyConstantsJava">
     <Message Text="BuildClasses target is running..." Importance="high" />
-    <Exec Command="javac -J-Xmx1536M -g -nowarn -implicit:none -parameters -cp dummy -bootclasspath mscorlib.jar;System.jar;System.Core.jar;System.Data.jar;System.Drawing.jar;System.Xml.jar;..\runtime\IKVM.Runtime.jar @allsources.gen.lst" />
+    <Exec Command="javac -J-Xmx1536M -g -nowarn -implicit:none -parameters -cp dummy -bootclasspath mscorlib.jar;System.jar;System.Core.jar;System.Data.jar;System.Drawing.jar;System.Xml.jar;..\bin\$(Configuration)\IKVM.Runtime.jar @allsources.gen.lst" />
   </Target>
 
   <Target Name="StubJars" DependsOnTargets="SystemCore">
@@ -125,7 +125,7 @@
     <ItemGroup>
       <NasgenSources Include="$(OpenJdkDir)\nashorn\src\jdk\nashorn\internal\objects\*.java" />
     </ItemGroup>
-    <Exec Command="javac -XDignore.symbol.file -g -nowarn -implicit:none -bootclasspath $(Classpath);$(OpenJdkDirSlash)/nashorn/src;../runtime/IKVM.Runtime.jar @(NasgenSources, ' ')" />
+    <Exec Command="javac -XDignore.symbol.file -g -nowarn -implicit:none -bootclasspath $(Classpath);$(OpenJdkDirSlash)/nashorn/src;../bin/$(Configuration)/IKVM.Runtime.jar @(NasgenSources, ' ')" />
     <Exec Command="java -Xbootclasspath/p:$(OpenJdkDirSlash)/nashorn/buildtools/nasgen/src;$(OpenJdkDirSlash)/nashorn/src jdk.nashorn.internal.tools.nasgen.Main $(OpenJdkDirSlash)/nashorn/src jdk.nashorn.internal.objects $(OpenJdkDirSlash)/nashorn/src" />
   </Target>
 

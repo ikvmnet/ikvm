@@ -55,10 +55,10 @@
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="..\..\bin\$(Configuration)" />
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="." />
     <Exec Command="..\..\bin\$(Configuration)\ikvmstub.exe -bootstrap IKVM.Runtime.dll -r:..\bin\$(Configuration)\IKVM.OpenJDK.Core.dll" />
-    <Copy SourceFiles="IKVM.Runtime.jar" DestinationFolder="..\" />
+    <Copy SourceFiles="IKVM.Runtime.jar" DestinationFolder="..\..\bin\$(Configuration)" />
   </Target>
   <Target Name="AfterClean" AfterTargets="Clean">
-    <Delete Files="..\..\bin\$(Configuration)\IKVM.Runtime.dll;IKVM.Runtime.dll;..\IKVM.Runtime.jar;IKVM.Runtime.jar" />
+    <Delete Files="..\..\bin\$(Configuration)\IKVM.Runtime.dll;IKVM.Runtime.dll;..\..\bin\$(Configuration)\IKVM.Runtime.jar;IKVM.Runtime.jar" />
   </Target>
 
 </Project>
