@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net461</TargetFrameworks>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>..\..\bin\$(Configuration)</OutputPath>
     <DefineConstants>$(DefineConstants);EMITTERS;CLASSGC;FIRST_PASS</DefineConstants>
     <NoWarn>$(NoWarn);169;649</NoWarn>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -51,14 +51,12 @@
   </Target>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Message Text="Copying '$(TargetPath)' to '..\..\bin\$(Configuration)'" Importance="high" />
-    <Copy SourceFiles="$(TargetPath)" DestinationFolder="..\..\bin\$(Configuration)" />
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="." />
-    <Exec Command="..\..\bin\$(Configuration)\ikvmstub.exe -bootstrap IKVM.Runtime.dll -r:..\bin\$(Configuration)\IKVM.OpenJDK.Core.dll" />
-    <Copy SourceFiles="IKVM.Runtime.jar" DestinationFolder="..\..\bin\$(Configuration)" />
+    <Exec Command="..\..\bin\$(Configuration)\$(TargetFramework)\ikvmstub.exe -bootstrap IKVM.Runtime.dll -r:..\bin\$(Configuration)\$(TargetFramework)\IKVM.OpenJDK.Core.dll" />
+    <Copy SourceFiles="IKVM.Runtime.jar" DestinationFolder="..\..\bin\$(Configuration)\$(TargetFramework)" />
   </Target>
   <Target Name="AfterClean" AfterTargets="Clean">
-    <Delete Files="..\..\bin\$(Configuration)\IKVM.Runtime.dll;IKVM.Runtime.dll;..\..\bin\$(Configuration)\IKVM.Runtime.jar;IKVM.Runtime.jar" />
+    <Delete Files="..\..\bin\$(Configuration)\$(TargetFramework)\IKVM.Runtime.dll;IKVM.Runtime.dll;..\..\bin\$(Configuration)\$(TargetFramework)\IKVM.Runtime.jar;IKVM.Runtime.jar" />
   </Target>
 
 </Project>

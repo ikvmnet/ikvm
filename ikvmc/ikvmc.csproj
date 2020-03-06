@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <TargetFrameworks>net461</TargetFrameworks>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <OutputPath>..\bin\$(Configuration)</OutputPath>
     <DefineConstants>$(DefineConstants);STATIC_COMPILER;EMITTERS</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

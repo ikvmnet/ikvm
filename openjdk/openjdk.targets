@@ -5,8 +5,8 @@
     <!-- Weird, just wanted to get it quickly -->
     <OpenJdkDirSlash>../../openjdk-8u45-b14</OpenJdkDirSlash>
     <SkipSystemCoreDependency>false</SkipSystemCoreDependency>
-    <IkvmstubExe>..\bin\$(Configuration)\ikvmstub.exe</IkvmstubExe>
-    <IkvmcExe>..\bin\$(Configuration)\ikvmc.exe</IkvmcExe>
+    <IkvmstubExe>..\bin\$(Configuration)\$(TargetFramework)\ikvmstub.exe</IkvmstubExe>
+    <IkvmcExe>..\bin\$(Configuration)\$(TargetFramework)\ikvmc.exe</IkvmcExe>
     <OpenJdkImplementationVersion>1.8.0</OpenJdkImplementationVersion>
     <OpenJdkSpecificationVersion>1.8</OpenJdkSpecificationVersion>
     <OpenJdkFullVersion>1.8.0_45-b14</OpenJdkFullVersion>
@@ -17,7 +17,7 @@
 
   <Target Name="BuildClasses" DependsOnTargets="StubJars;AllSourcesGenLst;AssemblyInfoJava;PropertyConstantsJava">
     <Message Text="BuildClasses target is running..." Importance="high" />
-    <Exec Command="javac -J-Xmx1536M -g -nowarn -implicit:none -parameters -cp dummy -bootclasspath mscorlib.jar;System.jar;System.Core.jar;System.Data.jar;System.Drawing.jar;System.Xml.jar;..\bin\$(Configuration)\IKVM.Runtime.jar @allsources.gen.lst" />
+    <Exec Command="javac -J-Xmx1536M -g -nowarn -implicit:none -parameters -cp dummy -bootclasspath mscorlib.jar;System.jar;System.Core.jar;System.Data.jar;System.Drawing.jar;System.Xml.jar;..\bin\$(Configuration)\$(TargetFramework)\IKVM.Runtime.jar @allsources.gen.lst" />
   </Target>
 
   <Target Name="StubJars" DependsOnTargets="SystemCore">
@@ -125,7 +125,7 @@
     <ItemGroup>
       <NasgenSources Include="$(OpenJdkDir)\nashorn\src\jdk\nashorn\internal\objects\*.java" />
     </ItemGroup>
-    <Exec Command="javac -XDignore.symbol.file -g -nowarn -implicit:none -bootclasspath $(Classpath);$(OpenJdkDirSlash)/nashorn/src;../bin/$(Configuration)/IKVM.Runtime.jar @(NasgenSources, ' ')" />
+    <Exec Command="javac -XDignore.symbol.file -g -nowarn -implicit:none -bootclasspath $(Classpath);$(OpenJdkDirSlash)/nashorn/src;../bin/$(Configuration)/$(TargetFramework)/IKVM.Runtime.jar @(NasgenSources, ' ')" />
     <Exec Command="java -Xbootclasspath/p:$(OpenJdkDirSlash)/nashorn/buildtools/nasgen/src;$(OpenJdkDirSlash)/nashorn/src jdk.nashorn.internal.tools.nasgen.Main $(OpenJdkDirSlash)/nashorn/src jdk.nashorn.internal.objects $(OpenJdkDirSlash)/nashorn/src" />
   </Target>
 
@@ -189,18 +189,18 @@
   </Target>
 
   <Target Name="Core" DependsOnTargets="ResponseGenTxt;ManifestMf;NashornVersion">
-    <Copy SourceFiles="..\bin\$(Configuration)\IKVM.Runtime.dll" DestinationFolder="." />
-    <Copy SourceFiles="..\bin\$(Configuration)\IKVM.AWT.WinForms.dll" DestinationFolder="." />
+    <Copy SourceFiles="..\bin\$(Configuration)\$(TargetFramework)\IKVM.Runtime.dll" DestinationFolder="." />
+    <Copy SourceFiles="..\bin\$(Configuration)\$(TargetFramework)\IKVM.AWT.WinForms.dll" DestinationFolder="." />
     <Exec Command="$(IkvmcExe) -version:$(AssemblyVersion) -compressresources -opt:fields -strictfinalfieldsemantics -removeassertions -target:library -sharedclassloader -r:mscorlib.dll -r:System.dll -r:System.Core.dll -r:System.Xml.dll -r:IKVM.Runtime.dll -nowarn:110 -w4 -noparameterreflection -warnaserror @response.gen.txt" />
     <CallTarget Targets="Peverify" />
-    <Exec Command="..\tools\bin\$(Configuration)\depcheck.exe response.txt dependencies.txt" />
+    <Exec Command="..\tools\bin\$(Configuration)\$(TargetFramework)\depcheck.exe response.txt dependencies.txt" />
     <ItemGroup>
       <IkvmDllFiles Include="IKVM.OpenJDK.*.dll" />
     </ItemGroup>
-    <Copy SourceFiles="@(IkvmDllFiles)" DestinationFolder="..\bin\$(Configuration)" />
-    <Exec Command="..\tools\bin\$(Configuration)\updbaseaddresses.exe response.txt" />
+    <Copy SourceFiles="@(IkvmDllFiles)" DestinationFolder="..\bin\$(Configuration)\$(TargetFramework)" />
+    <Exec Command="..\tools\bin\$(Configuration)\$(TargetFramework)\updbaseaddresses.exe response.txt" />
     <MakeDir Directories="..\lib" />
-    <Exec Command="$(IkvmstubExe) -out:..\lib\ikvm-api.jar ..\bin\$(Configuration)\IKVM.OpenJDK.Core.dll -namespace:ikvm.io -namespace:ikvm.lang-namespace:ikvm.runtime" />
+    <Exec Command="$(IkvmstubExe) -out:..\lib\ikvm-api.jar ..\bin\$(Configuration)\$(TargetFramework)\IKVM.OpenJDK.Core.dll -namespace:ikvm.io -namespace:ikvm.lang-namespace:ikvm.runtime" />
   </Target>
 
   <Target Name="Peverify" Condition="$(PEVERIFY) != ''">
@@ -287,7 +287,7 @@
       <CleanFiles Include="**\*.class" />
       <CleanFiles Include="..\classpath\**\*.class" />
       <CleanFiles Include="$(OpenJdkDir)\**\*.class" />
-      <CleanFiles Include="..\bin\$(Configuration)\IKVM.*.dll" />
+      <CleanFiles Include="..\bin\$(Configuration)\$(TargetFramework)\IKVM.*.dll" />
       <CleanFiles Include="IKVM.*.dll" />
       <CleanFiles Include="*.gen.lst" />
       <CleanFiles Include="AssemblyInfo.java" />
@@ -295,10 +295,6 @@
       <CleanFiles Include="vfs.zip" />
       <CleanFiles Include="*.jar" />
       <CleanFiles Include="MANIFEST.MF" />
-      <!-- Tools -->
-      <CleanFiles Include="tools.gen.rsp" />
-      <CleanFiles Include="..\bin\IKVM.OpenJDK.Tools.dll" />
-      <CleanFiles Include="..\bin\$(Configuration)\IKVM.OpenJDK.Tools.dll" />
     </ItemGroup>
     <Delete Files="@(CleanFiles)" />
   </Target>

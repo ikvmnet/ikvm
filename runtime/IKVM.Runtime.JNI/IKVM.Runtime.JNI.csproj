@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <TargetFrameworks>net461</TargetFrameworks>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <OutputPath>..\..\bin\$(Configuration)</OutputPath>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <DefineConstants>$(DefineConstants);WHIDBEY;OPENJDK</DefineConstants>
@@ -17,11 +16,11 @@
   <ItemGroup>
     <Reference Include="IKVM.OpenJDK.Core, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\bin\$(Configuration)\IKVM.OpenJDK.Core.dll</HintPath>
+      <HintPath>..\..\bin\$(Configuration)\$(TargetFramework)\IKVM.OpenJDK.Core.dll</HintPath>
     </Reference>
     <Reference Include="IKVM.Runtime, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\bin\$(Configuration)\IKVM.Runtime.dll</HintPath>
+      <HintPath>..\..\bin\$(Configuration)\$(TargetFramework)\IKVM.Runtime.dll</HintPath>
     </Reference>
   </ItemGroup>
 
