@@ -24,23 +24,23 @@
   <ItemGroup>
     <Reference Include="IKVM.OpenJDK.Core, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\bin\$(Configuration)\IKVM.OpenJDK.Core.dll</HintPath>
+      <HintPath>..\..\bin\$(Configuration)\IKVM.OpenJDK.Core.dll</HintPath>
     </Reference>
     <Reference Include="IKVM.OpenJDK.Media, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\bin\$(Configuration)\IKVM.OpenJDK.Media.dll</HintPath>
+      <HintPath>..\..\bin\$(Configuration)\IKVM.OpenJDK.Media.dll</HintPath>
     </Reference>
     <Reference Include="IKVM.OpenJDK.Misc, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\bin\$(Configuration)\IKVM.OpenJDK.Misc.dll</HintPath>
+      <HintPath>..\..\bin\$(Configuration)\IKVM.OpenJDK.Misc.dll</HintPath>
     </Reference>
     <Reference Include="IKVM.OpenJDK.SwingAWT, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\bin\$(Configuration)\IKVM.OpenJDK.SwingAWT.dll</HintPath>
+      <HintPath>..\..\bin\$(Configuration)\IKVM.OpenJDK.SwingAWT.dll</HintPath>
     </Reference>
     <Reference Include="IKVM.OpenJDK.Text, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\bin\$(Configuration)\IKVM.OpenJDK.Text.dll</HintPath>
+      <HintPath>..\..\bin\$(Configuration)\IKVM.OpenJDK.Text.dll</HintPath>
     </Reference>
   </ItemGroup>
 
