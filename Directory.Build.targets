@@ -1,6 +1,6 @@
 ﻿<Project xmlns='http://schemas.microsoft.com/developer/msbuild/2003' ToolsVersion="15.0">
   <PropertyGroup>
-    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+    <DocumentationFile>$(TargetDir)/$(AssemblyName).xml</DocumentationFile>
   </PropertyGroup>
   
   <!-- Features in .NET Standard and .NET Core only (no .NET Framework support) -->
