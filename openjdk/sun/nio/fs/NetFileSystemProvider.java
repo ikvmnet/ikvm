@@ -372,24 +372,15 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
             if (false) throw new cli.System.IO.IOException();
             if (false) throw new cli.System.Security.SecurityException();
             if (false) throw new cli.System.UnauthorizedAccessException();
-
             // TODO NET_CORE_INCOMPAT
-            //
-            // Some callers expect atomic appends, but those are not possible currently because of
-            // a missing CTOR, but doesn't mean that we can't allow all other requests.
+            // TODO NET_STANDARD_INCOMPAT
             //
             // https://github.com/dotnet/corefx/issues/39920
-            // https://github.com/wwrd/ikvm8/issues/3#issuecomment-517009923
-            //
-            // https://stackoverflow.com/questions/1862309/how-can-i-do-an-atomic-write-append-in-c-or-how-do-i-get-files-opened-with-the
-            // https://stackoverflow.com/a/5469572/2055163
-            // https://stackoverflow.com/questions/1154446/is-file-append-atomic-in-unix/
+            // https://github.com/dotnet/runtime/issues/30435#issuecomment-590609103
             if ((rights & FileSystemRights.AppendData) == FileSystemRights.AppendData)
             {
                 throw new UnsupportedOperationException(
-                    String.format(
-                        "Atomic appends are not supported currently. %s",
-                        "https://github.com/dotnet/corefx/issues/39920"));
+                    "Atomically appending to files is not supported.");
             }
 
             boolean readOnly    = rights == FileSystemRights.Read;
