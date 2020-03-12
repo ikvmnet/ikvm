@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net461</TargetFrameworks>
+    <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
     <OutputPath>..\..\bin\$(Configuration)</OutputPath>
     <DefineConstants>$(DefineConstants);EMITTERS;CLASSGC;FIRST_PASS</DefineConstants>
     <NoWarn>$(NoWarn);169;649</NoWarn>
