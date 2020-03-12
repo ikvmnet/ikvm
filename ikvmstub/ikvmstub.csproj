@@ -17,6 +17,9 @@
 
   <ItemGroup>
     <PackageReference Include="SharpZipLib" Version="$(SharpZipLibPackageVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)'=='netcoreapp3.1'">
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="$(SystemConfigurationConfigurationManagerPackageVersion)" />
   </ItemGroup>
 

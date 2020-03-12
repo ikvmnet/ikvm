@@ -19,6 +19,13 @@
     <Reference Include="System.Configuration" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)'=='netcoreadd3.1'">
+    <PackageReference Include="Microsoft.Win32.Registry" Version="$(MicrosoftWin32RegistryPackageVersion)" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="$(SystemConfigurationConfigurationManagerPackageVersion)" />
+    <PackageReference Include="System.Security.Permissions" Version="4.7.0" />
+  </ItemGroup>
+
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
@@ -41,12 +48,6 @@
     <InternalsVisibleTo Include="IKVM.OpenJDK.Misc" />
     <InternalsVisibleTo Include="IKVM.OpenJDK.Remoting" />
     <InternalsVisibleTo Include="IKVM.OpenJDK.SwingAWT" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Win32.Registry" Version="$(MicrosoftWin32RegistryPackageVersion)" />
-    <PackageReference Include="System.Configuration.ConfigurationManager" Version="$(SystemConfigurationConfigurationManagerPackageVersion)" />
-    <PackageReference Include="System.Security.Permissions" Version="4.7.0" />
   </ItemGroup>
 
   <Target Name="AddAllowPartiallyTrustedCallers" BeforeTargets="Build">
