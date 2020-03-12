@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <PackageReference Include="SharpZipLib" Version="$(SharpZipLibPackageVersion)" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.7.0" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
