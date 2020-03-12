@@ -43,6 +43,10 @@
     <InternalsVisibleTo Include="IKVM.OpenJDK.SwingAWT" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Win32.Registry" Version="4.7.0" />
+  </ItemGroup>
+
   <Target Name="AddAllowPartiallyTrustedCallers" BeforeTargets="Build">
     <!-- Handle AllowPartiallyTrustedCallers (.NET Framework only) -->
     <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
