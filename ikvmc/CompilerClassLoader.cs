@@ -2854,7 +2854,9 @@ namespace IKVM.Internal
 				FileStream fs;
 				try
 				{
-					fs = options.remapfile.OpenRead();
+					// NOTE: Using FileShare.ReadWrite ensures other FileStreams (from other processes) can be opened
+					// simultaneously on this file while we are reading it.
+					fs = new FileStream(options.remapfile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 				}
 				catch(Exception x)
 				{

@@ -1,0 +1,40 @@
+<Project>
+  <Import Project="version.props" Condition="Exists('version.props')" />
+  <Import Project="build\dependencies.props" Condition="Exists('build\dependencies.props')" />
+  
+  <PropertyGroup>
+    <RepositoryRoot>$(MSBuildThisFileDirectory)</RepositoryRoot>
+    <LangVersion>8.0</LangVersion>
+    <NoWarn>$(NoWarn);1591;1573</NoWarn>
+  </PropertyGroup>
+  
+  <PropertyGroup Label="Assembly Signing">
+    <!-- Optional Parameter: Supplying this will enable strong naming -->
+    <AssemblyOriginatorKeyFile></AssemblyOriginatorKeyFile>
+    <!-- Optional Parameter: Required for strong naming (could automate if we check in sn.exe) -->
+    <PublicKey></PublicKey>
+    <SignAssembly Condition=" '$(AssemblyOriginatorKeyFile)' != '' ">true</SignAssembly>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NuGet Package Defaults">
+    <IsPackable>false</IsPackable>
+    <IncludeSymbols>true</IncludeSymbols>
+    <!-- This is the new symbols format (the only one currently supported at NuGet.org) -->
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+  
+  <PropertyGroup Label="Copyright Info">
+    <Company>Windward Studios (based on work by Jeroen Frijters)</Company>
+    <CurrentYear Condition=" '$(CurrentYear)' == '' ">$([System.DateTime]::UtcNow.Year.ToString())</CurrentYear>
+    <BeginCopyrightYear>2002-2015, 2018</BeginCopyrightYear>
+    <CopyrightYearRange>$(BeginCopyrightYear)-$(CurrentYear)</CopyrightYearRange>
+    <CopyrightYearRange Condition=" '$(BeginCopyrightYear)' == '$(CurrentYear)' ">$(CurrentYear)</CopyrightYearRange>
+    <Copyright>Copyright © $(CopyrightYearRange) $(Company)</Copyright>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Version Info">
+    <Version>8.5.0.3</Version>
+    <AssemblyVersion>$(Version)</AssemblyVersion>
+  </PropertyGroup>
+
+</Project>

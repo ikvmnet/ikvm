@@ -1,80 +1,36 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
-  <Import Project="..\ikvm.targets" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{F5B43364-8D8A-4500-8FFC-4E2E5AF609EC}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <RootNamespace>jvm</RootNamespace>
-    <AssemblyName>jvm</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
+    <TargetFrameworks>net461</TargetFrameworks>
+    <OutputPath>..\bin\$(Configuration)</OutputPath>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <Deterministic>true</Deterministic>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+
+  <PropertyGroup Label="NuGet Package/Assembly Settings">
+    <AssemblyTitle>IKVM.Reflection</AssemblyTitle>
+    <Description>Alternative implementation of System.Reflection[.Emit]</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\tools\implib\implib.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <OpenJdkDir>..\..\openjdk-8u45-b14</OpenJdkDir>
-    <IkvmcExe>..\bin\$(Configuration)\ikvmc.exe</IkvmcExe>
-  </PropertyGroup>
-
-  <Target Name="Build" DependsOnTargets="Version">
-    <Csc Sources="..\tools\implib.cs" OutputAssembly="..\tools\bin\$(Configuration)\implib.exe" References="..\bin\$(Configuration)\IKVM.Reflection.dll" />
-    <Copy SourceFiles="..\bin\$(Configuration)\IKVM.Reflection.dll" DestinationFolder="..\tools\bin\$(Configuration)" />
-    <Exec Command="..\tools\bin\$(Configuration)\implib.exe jvm.def -out:..\bin-x86\JVM.DLL -platform:x86 -r:..\bin\$(Configuration)\IKVM.Runtime.JNI.dll -product:IKVM.NET -company:&quot;Jeroen Frijters&quot; -copyright:&quot;Copyright (C) 2002-2013 Jeroen Frijters&quot; -description:&quot;IKVM.NET JVM for .NET&quot; -version:$(VersionNumber)" />
-    <Exec Command="..\tools\bin\$(Configuration)\implib.exe jvm.def -out:..\bin-x64\JVM.DLL -platform:x64 -r:..\bin\$(Configuration)\IKVM.Runtime.JNI.dll -product:IKVM.NET -company:&quot;Jeroen Frijters&quot; -copyright:&quot;Copyright (C) 2002-2013 Jeroen Frijters&quot; -description:&quot;IKVM.NET JVM for .NET&quot; -version:$(VersionNumber)" />
-  </Target>
-
-  <Target Name="Foo">
-    <Copy SourceFiles="tools.rsp" DestinationFiles="tools.gen.rsp" />
-    <ItemGroup>
-      <TransformOpenJdkDir Include="tools.gen.rsp">
-        <Find>@OPENJDK@</Find>
-        <ReplaceWith>$(OpenJdkDir)</ReplaceWith>
-        <Options>Singleline</Options>
-      </TransformOpenJdkDir>
-    </ItemGroup>
-    <RegexTransform Items="@(TransformOpenJdkDir)" />
-    <Exec Command="$(IkvmcExe) -r:mscorlib.dll -version:$(VersionNumber) -warnaserror -w4 -noparameterreflection @tools.gen.rsp" />
-    <Copy SourceFiles="..\bin\IKVM.OpenJDK.Tools.dll" DestinationFolder="..\bin\$(Configuration)" />
-  </Target>
-
-  <PropertyGroup>
-    <VersionNumber />
-  </PropertyGroup>
-
-  <Target Name="Version">
-    <AssemblyVersion AssemblyBasePath="$(MSBuildProjectDirectory)" AssemblyRelativePath="..\runtime\bin\$(Configuration)\IKVM.Runtime.dll">
-      <Output TaskParameter="VersionNumber" PropertyName="VersionNumber" />
-    </AssemblyVersion>
+  <Target Name="RunBuild" BeforeTargets="CoreCompile">
+    <Copy SourceFiles="..\bin\$(Configuration)\$(TargetFramework)\IKVM.Reflection.dll" DestinationFolder="..\tools\bin\$(Configuration)\$(TargetFramework)" />
+    <Exec Command="..\tools\bin\$(Configuration)\$(TargetFramework)\implib.exe jvm.def -out:..\bin-x86\JVM.DLL -platform:x86 -r:..\bin\$(Configuration)\$(TargetFramework)\IKVM.Runtime.JNI.dll -product:IKVM.NET -company:&quot;Jeroen Frijters&quot; -copyright:&quot;Copyright (C) 2002-2013 Jeroen Frijters&quot; -description:&quot;IKVM.NET JVM for .NET&quot; -version:$(AssemblyVersion)" />
+    <Exec Command="..\tools\bin\$(Configuration)\$(TargetFramework)\implib.exe jvm.def -out:..\bin-x64\JVM.DLL -platform:x64 -r:..\bin\$(Configuration)\$(TargetFramework)\IKVM.Runtime.JNI.dll -product:IKVM.NET -company:&quot;Jeroen Frijters&quot; -copyright:&quot;Copyright (C) 2002-2013 Jeroen Frijters&quot; -description:&quot;IKVM.NET JVM for .NET&quot; -version:$(AssemblyVersion)" />
   </Target>
 
   <Target Name="Clean">
-    <Delete Files="tools.gen.rsp;..\bin\IKVM.OpenJDK.Tools.dll;..\bin\$(Configuration)\IKVM.OpenJDK.Tools.dll" />
+    <Delete Files="tools.gen.rsp;..\bin\IKVM.OpenJDK.Tools.dll;..\bin\$(Configuration)\$(TargetFramework)\IKVM.OpenJDK.Tools.dll" />
   </Target>
 
   <Target Name="Rebuild">
-    <CallTarget Targets="Clean;Build" />
+    <CallTarget Targets="Clean;RunBuild" />
   </Target>
+
 </Project>

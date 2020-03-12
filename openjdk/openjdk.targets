@@ -1,0 +1,306 @@
+<Project>
+
+  <PropertyGroup>
+    <OpenJdkDir>..\..\openjdk-8u45-b14</OpenJdkDir>
+    <!-- Weird, just wanted to get it quickly -->
+    <OpenJdkDirSlash>../../openjdk-8u45-b14</OpenJdkDirSlash>
+    <SkipSystemCoreDependency>false</SkipSystemCoreDependency>
+    <IkvmstubExe>..\bin\$(Configuration)\$(TargetFramework)\ikvmstub.exe</IkvmstubExe>
+    <IkvmcExe>..\bin\$(Configuration)\$(TargetFramework)\ikvmc.exe</IkvmcExe>
+    <OpenJdkImplementationVersion>1.8.0</OpenJdkImplementationVersion>
+    <OpenJdkSpecificationVersion>1.8</OpenJdkSpecificationVersion>
+    <OpenJdkFullVersion>1.8.0_45-b14</OpenJdkFullVersion>
+  </PropertyGroup>
+
+  <Target Name="RunBuild" BeforeTargets="CoreCompile" DependsOnTargets="BuildClasses;Rmi;RunNasgen;Vfs;Resources;Core">
+  </Target>
+
+  <Target Name="BuildClasses" DependsOnTargets="StubJars;AllSourcesGenLst;AssemblyInfoJava;PropertyConstantsJava">
+    <Message Text="BuildClasses target is running..." Importance="high" />
+    <Exec Command="javac -J-Xmx1536M -g -nowarn -implicit:none -parameters -cp dummy -bootclasspath mscorlib.jar;System.jar;System.Core.jar;System.Data.jar;System.Drawing.jar;System.Xml.jar;..\bin\$(Configuration)\$(TargetFramework)\IKVM.Runtime.jar @allsources.gen.lst" />
+  </Target>
+
+  <Target Name="StubJars" DependsOnTargets="SystemCore">
+    <Exec Command="$(IkvmstubExe) -bootstrap mscorlib" />
+    <Exec Command="$(IkvmstubExe) -bootstrap System" />
+    <Exec Command="$(IkvmstubExe) -bootstrap System.Core" Condition=" !$(SkipSystemCoreDependency) " />
+    <CallTarget Targets="DummySystemCoreJar" Condition=" $(SkipSystemCoreDependency) " />
+    <Exec Command="$(IkvmstubExe) -bootstrap System.Data" />
+    <Exec Command="$(IkvmstubExe) -bootstrap System.Drawing" />
+    <Exec Command="$(IkvmstubExe) -bootstrap System.Xml" />
+  </Target>
+
+  <Target Name="SystemCore" DependsOnTargets="" Condition=" !$(SkipSystemCoreDependency) ">
+    <Delete Files="System.Core.dll" />
+  </Target>
+
+  <Target Name="DummySystemCoreJar">
+  </Target>
+
+  <Target Name="AllSourcesGenLst">
+    <Copy SourceFiles="allsources.lst" DestinationFiles="allsources.gen.lst" />
+    <ItemGroup>
+      <TransformOpenJdkDir Include="allsources.gen.lst">
+        <Find>@OPENJDK@</Find>
+        <ReplaceWith>$(OpenJdkDirSlash)</ReplaceWith>
+        <Options>Singleline</Options>
+      </TransformOpenJdkDir>
+    </ItemGroup>
+    <RegexTransform Items="@(TransformOpenJdkDir)" />
+  </Target>
+
+  <Target Name="AssemblyInfoJava">
+    <PropertyGroup>
+      <IKVMRuntime>IKVM.Runtime</IKVMRuntime>
+      <IKVMAWTWinForms>IKVM.AWT.WinForms</IKVMAWTWinForms>
+      <Copyright>Copyright</Copyright>
+    </PropertyGroup>
+    <Copy SourceFiles="AssemblyInfo.java.in" DestinationFiles="AssemblyInfo.java" />
+    <ItemGroup>
+      <TransformAssemblyInfoRuntime Include="AssemblyInfo.java">
+        <Find>@RUNTIME@</Find>
+        <ReplaceWith>$(IKVMRuntime)</ReplaceWith>
+        <Options>Singleline</Options>
+      </TransformAssemblyInfoRuntime>
+    </ItemGroup>
+    <RegexTransform Items="@(TransformAssemblyInfoRuntime)" />
+    <ItemGroup>
+      <TransformAssemblyInfoAwtWinForms Include="AssemblyInfo.java">
+        <Find>@AWTWINFORMS@</Find>
+        <ReplaceWith>$(IKVMAWTWinForms)</ReplaceWith>
+        <Options>Singleline</Options>
+      </TransformAssemblyInfoAwtWinForms>
+    </ItemGroup>
+    <RegexTransform Items="@(TransformAssemblyInfoAwtWinForms)" />
+    <ItemGroup>
+      <TransformAssemblyInfoVersion Include="AssemblyInfo.java">
+        <Find>@VERSION@</Find>
+        <ReplaceWith>$(AssemblyVersion)</ReplaceWith>
+        <Options>Singleline</Options>
+      </TransformAssemblyInfoVersion>
+    </ItemGroup>
+    <RegexTransform Items="@(TransformAssemblyInfoVersion)" />
+    <ItemGroup>
+      <TransformAssemblyInfoCopyright Include="AssemblyInfo.java">
+        <Find>@COPYRIGHT@</Find>
+        <ReplaceWith>"$(Copyright)"</ReplaceWith>
+        <Options>Singleline</Options>
+      </TransformAssemblyInfoCopyright>
+    </ItemGroup>
+    <RegexTransform Items="@(TransformAssemblyInfoCopyright)" />
+  </Target>
+
+  <Target Name="PropertyConstantsJava">
+    <Copy SourceFiles="java\lang\PropertyConstants.java.in" DestinationFiles="java\lang\PropertyConstants.java" />
+  </Target>
+
+  <PropertyGroup>
+    <Classpath>mscorlib.jar;System.Xml.jar;$(OpenJdkDirSlash)/jdk/src/share/classes;$(OpenJdkDirSlash)/corba/src/share/classes;$(OpenJdkDirSlash)/build/linux-x86_64-normal-server-release/jdk/gensrc</Classpath>
+  </PropertyGroup>
+  <Target Name="Rmi">
+    <PropertyGroup>
+      <VmArgs>-J-client -J-Xmx896m -J-Xms128m</VmArgs>
+      <RmiOutput>rmistubs</RmiOutput>
+      <RmiArgs>$(VmArgs) -nowarn -bootclasspath $(Classpath) -d $(RmiOutput)</RmiArgs>
+    </PropertyGroup>
+    <MakeDir Directories="$(RmiOutput)" />
+    <Exec Command="rmic $(RmiArgs) -v1.1 sun.rmi.registry.RegistryImpl" />
+    <Exec Command="rmic $(RmiArgs) -v1.1 sun.rmi.transport.DGCImpl" />
+    <Exec Command="rmic $(RmiArgs) -v1.2 sun.rmi.server.Activation$ActivationSystemImpl" />
+    <Exec Command="rmic $(RmiArgs) -v1.2 java.rmi.activation.ActivationGroup" />
+    <Exec Command="rmic $(RmiArgs) -v1.2 com.sun.jndi.rmi.registry.ReferenceWrapper" />
+    <Exec Command="rmic $(RmiArgs) -v1.2 javax.management.remote.rmi.RMIConnectionImpl" />
+    <Exec Command="rmic $(RmiArgs) -v1.2 -iiop javax.management.remote.rmi.RMIConnectionImpl" />
+    <Exec Command="rmic $(RmiArgs) -v1.2 -iiop -standardPackage javax.management.remote.rmi.RMIConnectionImpl" />
+    <Exec Command="rmic $(RmiArgs) -v1.2 javax.management.remote.rmi.RMIServerImpl" />
+    <Exec Command="rmic $(RmiArgs) -v1.2 -iiop javax.management.remote.rmi.RMIServerImpl" />
+    <Exec Command="rmic $(RmiArgs) -v1.2 -iiop -standardPackage javax.management.remote.rmi.RMIServerImpl" />
+    <Exec Command="rmic $(RmiArgs) -iiop javax.management.remote.rmi.RMIConnection" />
+    <Exec Command="rmic $(RmiArgs) -iiop -standardPackage javax.management.remote.rmi.RMIConnection" />
+    <Exec Command="rmic $(RmiArgs) -iiop javax.management.remote.rmi.RMIServer" />
+    <Exec Command="rmic $(RmiArgs) -iiop -standardPackage javax.management.remote.rmi.RMIServer" />
+  </Target>
+
+  <Target Name="RunNasgen">
+    <ItemGroup>
+      <NasgenSources Include="$(OpenJdkDir)\nashorn\src\jdk\nashorn\internal\objects\*.java" />
+    </ItemGroup>
+    <Exec Command="javac -XDignore.symbol.file -g -nowarn -implicit:none -bootclasspath $(Classpath);$(OpenJdkDirSlash)/nashorn/src;../bin/$(Configuration)/$(TargetFramework)/IKVM.Runtime.jar @(NasgenSources, ' ')" />
+    <Exec Command="java -Xbootclasspath/p:$(OpenJdkDirSlash)/nashorn/buildtools/nasgen/src;$(OpenJdkDirSlash)/nashorn/src jdk.nashorn.internal.tools.nasgen.Main $(OpenJdkDirSlash)/nashorn/src jdk.nashorn.internal.objects $(OpenJdkDirSlash)/nashorn/src" />
+  </Target>
+
+  <Target Name="Vfs">
+    <RemoveDir Directories="tmpvfs" />
+    <MakeDir Directories="tmpvfs" />
+    <ItemGroup>
+      <VfsLibFiles Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\calendars.properties" />
+      <VfsLibFiles Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\logging.properties" />
+      <VfsLibFiles Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\net.properties" />
+      <VfsLibFiles Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\psfontj2d.properties" />
+      <VfsLibFiles Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\sound.properties" />
+      <VfsLibFiles Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\tzdb.dat" />
+      <VfsLibFiles Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\currency.data" />
+      <VfsLibFiles Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\management\management.properties" />
+      <VfsLibFiles Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\cmm\*" />
+      <VfsLibFiles Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\security\java.policy" />
+      <VfsLibFiles Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\security\java.security" />
+      <VfsLibFiles Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\security\US_export_policy.jar" />
+      <VfsLibFiles Include="$(OpenJdkDir)\jdk\src\windows\**\lib\flavormap.properties" />
+      <VfsLibFiles Include="$(OpenJdkDir)\jdk\src\windows\**\lib\content-types.properties" />
+    </ItemGroup>
+    <Copy SourceFiles="@(VfsLibFiles)" DestinationFolder="tmpvfs\%(RecursiveDir)" />
+    <Delete Files="vfs.zip" />
+    <ZipDirectory SourceDirectory="tmpvfs" DestinationFile="vfs.zip" />
+    <RemoveDir Directories="tmpvfs" />
+  </Target>
+
+  <Target Name="Resources">
+    <RemoveDir Directories="tmpresources" />
+    <MakeDir Directories="tmpresources" />
+    <ItemGroup>
+      <ResourceFiles Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\com\sun\corba\se\impl\orbutil\resources\*.properties" />
+      <ResourceFiles Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\com\sun\rowset\*.properties" />
+      <ResourceFiles Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\javax\swing\text\html\parser\html32.bdtd" />
+      <ResourceFiles Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\sun\rmi\registry\resources\*.properties" />
+      <ResourceFiles Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\sun\rmi\server\resources\*.properties" />
+      <ResourceFiles Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\sun\text\resources\*IteratorData" />
+      <ResourceFiles Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\sun\text\resources\th\*IteratorData_th" />
+      <ResourceFiles Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\sun\text\resources\th\thai_dict" />
+      <ResourceFiles Include="$(OpenJdkDir)\corba\src\share\classes\**\*.properties" />
+      <ResourceFiles Include="$(OpenJdkDir)\jdk\src\share\classes\**\*.properties" />
+      <ResourceFiles Include="$(OpenJdkDir)\jdk\src\share\classes\**\*.gif" />
+      <ResourceFiles Include="$(OpenJdkDir)\jdk\src\share\classes\**\*.png" />
+      <ResourceFiles Include="$(OpenJdkDir)\jdk\src\share\classes\**\*.wav" />
+      <ResourceFiles Include="$(OpenJdkDir)\jdk\src\share\classes\**\com\sun\org\apache\xml\internal\security\resource\config.*" />
+      <ResourceFiles Include="$(OpenJdkDir)\jdk\src\share\classes\**\com\sun\swing\internal\plaf\**\*" />
+      <ResourceFiles Include="$(OpenJdkDir)\jdk\src\share\classes\**\javax\swing\text\html\default.css" />
+      <ResourceFiles Include="$(OpenJdkDir)\jdk\src\share\classes\**\javax\swing\text\rtf\charsets\*.txt" />
+      <ResourceFiles Include="$(OpenJdkDir)\jdk\src\share\classes\**\sun\text\resources\**\*.icu" />
+      <ResourceFiles Include="$(OpenJdkDir)\jaxp\src\**\*.properties" />
+      <ResourceFiles Include="$(OpenJdkDir)\jaxp\src\**\*.res" />
+      <ResourceFiles Include="$(OpenJdkDir)\jaxws\src\share\jaf_classes\**\*.properties" />
+      <ResourceFiles Include="$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\*.properties" />
+      <ResourceFiles Include="$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\*.xml" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ResourceFiles)" DestinationFolder="tmpresources\%(RecursiveDir)" />
+    <Delete Files="resources.zip" />
+    <ZipDirectory SourceDirectory="tmpresources" DestinationFile="resources.zip" />
+    <RemoveDir Directories="tmpresources" />
+  </Target>
+
+  <Target Name="Core" DependsOnTargets="ResponseGenTxt;ManifestMf;NashornVersion">
+    <Copy SourceFiles="..\bin\$(Configuration)\$(TargetFramework)\IKVM.Runtime.dll" DestinationFolder="." />
+    <Copy SourceFiles="..\bin\$(Configuration)\$(TargetFramework)\IKVM.AWT.WinForms.dll" DestinationFolder="." />
+    <Exec Command="$(IkvmcExe) -version:$(AssemblyVersion) -compressresources -opt:fields -strictfinalfieldsemantics -removeassertions -target:library -sharedclassloader -r:mscorlib.dll -r:System.dll -r:System.Core.dll -r:System.Xml.dll -r:IKVM.Runtime.dll -nowarn:110 -w4 -noparameterreflection -warnaserror @response.gen.txt" />
+    <CallTarget Targets="Peverify" />
+    <Exec Command="..\tools\bin\$(Configuration)\$(TargetFramework)\depcheck.exe response.txt dependencies.txt" />
+    <ItemGroup>
+      <IkvmDllFiles Include="IKVM.OpenJDK.*.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(IkvmDllFiles)" DestinationFolder="..\bin\$(Configuration)\$(TargetFramework)" />
+    <Exec Command="..\tools\bin\$(Configuration)\$(TargetFramework)\updbaseaddresses.exe response.txt" />
+    <MakeDir Directories="..\lib" />
+    <Exec Command="$(IkvmstubExe) -out:..\lib\ikvm-api.jar ..\bin\$(Configuration)\$(TargetFramework)\IKVM.OpenJDK.Core.dll -namespace:ikvm.io -namespace:ikvm.lang-namespace:ikvm.runtime" />
+  </Target>
+
+  <Target Name="Peverify" Condition="$(PEVERIFY) != ''">
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Beans.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Charsets.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Corba.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Core.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Cldrdata.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Jdbc.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Localedata.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Management.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Media.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Misc.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Naming.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Nashorn.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Remoting.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Security.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.SwingAWT.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Text.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.Util.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.XML.API.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.XML.Bind.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.XML.Crypto.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.XML.Parse.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.XML.Transform.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.XML.WebServices.dll" />
+    <Exec Command="peverify -nologo IKVM.OpenJDK.XML.XPath.dll" />
+  </Target>
+
+  <Target Name="ResponseGenTxt">
+    <Copy SourceFiles="response.txt" DestinationFiles="response.gen.txt" />
+    <ItemGroup>
+      <TransformResponseGenTxt Include="response.gen.txt">
+        <Find>@OPENJDK@</Find>
+        <ReplaceWith>$(OpenJdkDirSlash)</ReplaceWith>
+        <Options>Singleline</Options>
+      </TransformResponseGenTxt>
+    </ItemGroup>
+    <RegexTransform Items="@(TransformResponseGenTxt)" />
+  </Target>
+
+  <Target Name="ManifestMf">
+    <Copy SourceFiles="MANIFEST.MF.in" DestinationFiles="MANIFEST.MF" />
+    <ItemGroup>
+      <TransformManifestMfImplementaionVersion Include="MANIFEST.MF">
+        <Find>@IMPLEMENTATION_VERSION@</Find>
+        <ReplaceWith>$(OpenJdkImplementationVersion)</ReplaceWith>
+        <Options>Singleline</Options>
+      </TransformManifestMfImplementaionVersion>
+    </ItemGroup>
+    <RegexTransform Items="@(TransformManifestMfImplementaionVersion)" />
+    <ItemGroup>
+      <TransformManifestMfSpecificationVersion Include="MANIFEST.MF">
+        <Find>@SPECIFICATION_VERSION@</Find>
+        <ReplaceWith>$(OpenJdkSpecificationVersion)</ReplaceWith>
+        <Options>Singleline</Options>
+      </TransformManifestMfSpecificationVersion>
+    </ItemGroup>
+    <RegexTransform Items="@(TransformManifestMfSpecificationVersion)" />
+  </Target>
+
+  <Target Name="NashornVersion">
+    <Copy SourceFiles="resources\nashorn\version.properties.in" DestinationFiles="resources\nashorn\version.properties" />
+    <ItemGroup>
+      <TransformNashronVersionFullVersion Include="resources\nashorn\version.properties">
+        <Find>@FULL_VERSION@</Find>
+        <ReplaceWith>$(OpenJdkFullVersion)</ReplaceWith>
+        <Options>Singleline</Options>
+      </TransformNashronVersionFullVersion>
+    </ItemGroup>
+    <RegexTransform Items="@(TransformNashronVersionFullVersion)" />
+    <ItemGroup>
+      <TransformNashronVersionImplementationVersion Include="resources\nashorn\version.properties">
+        <Find>@IMPLEMENTATION_VERSION@</Find>
+        <ReplaceWith>$(OpenJdkImplementationVersion)</ReplaceWith>
+        <Options>Singleline</Options>
+      </TransformNashronVersionImplementationVersion>
+    </ItemGroup>
+    <RegexTransform Items="@(TransformNashronVersionImplementationVersion)" />
+  </Target>
+
+  <Target Name="Clean">
+    <ItemGroup>
+      <CleanFiles Include="**\*.class" />
+      <CleanFiles Include="..\classpath\**\*.class" />
+      <CleanFiles Include="$(OpenJdkDir)\**\*.class" />
+      <CleanFiles Include="..\bin\$(Configuration)\$(TargetFramework)\IKVM.*.dll" />
+      <CleanFiles Include="IKVM.*.dll" />
+      <CleanFiles Include="*.gen.lst" />
+      <CleanFiles Include="AssemblyInfo.java" />
+      <CleanFiles Include="resources.zip" />
+      <CleanFiles Include="vfs.zip" />
+      <CleanFiles Include="*.jar" />
+      <CleanFiles Include="MANIFEST.MF" />
+    </ItemGroup>
+    <Delete Files="@(CleanFiles)" />
+  </Target>
+
+  <Target Name="Rebuild">
+    <CallTarget Targets="Clean;RunBuild" />
+  </Target>
+  
+</Project>

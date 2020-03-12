@@ -1,0 +1,9 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net461</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <OutputPath>..\bin\$(Configuration)</OutputPath>
+  </PropertyGroup>
+
+</Project>

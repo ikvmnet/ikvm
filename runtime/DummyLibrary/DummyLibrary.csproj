@@ -3,16 +3,15 @@
   <PropertyGroup>
     <TargetFrameworks>net461</TargetFrameworks>
     <OutputPath>..\bin\$(Configuration)</OutputPath>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <DefineConstants>$(DefineConstants);DUMMY</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet Package/Assembly Settings">
-    <AssemblyTitle>IKVM.Reflection</AssemblyTitle>
-    <Description>Alternative implementation of System.Reflection[.Emit]</Description>
+    <AssemblyTitle>DummyLibrary</AssemblyTitle>
+    <Description>Dummy library for first pass of IKVM.OpenJDK.Core</Description>
+    <AssemblyName>IKVM.OpenJDK.Core</AssemblyName>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="$(SystemSecurityCryptographyPkcsPackageVersion)" />
-  </ItemGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>

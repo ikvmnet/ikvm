@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net461</TargetFrameworks>
+    <OutputPath>..\..\bin\$(Configuration)</OutputPath>
+    <DefineConstants>$(DefineConstants);FIRST_PASS</DefineConstants>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <NoWarn>$(NoWarn);672;612</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NuGet Package/Assembly Settings">
+    <AssemblyName>IKVM.AWT.WinForms</AssemblyName>
+    <RootNamespace>awt</RootNamespace>
+    <AssemblyTitle>IKVM.NET AWT Support</AssemblyTitle>
+    <Description>Winforms peers and 'native' code</Description>
+  </PropertyGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\IKVM.AWT.WinForms\native.cs" Link="native.cs" />
+    <Compile Include="..\IKVM.AWT.WinForms\ShellApi.cs" Link="ShellApi.cs" />
+    <Compile Include="..\IKVM.AWT.WinForms\theming.cs" Link="theming.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="IKVM.OpenJDK.SwingAWT" />
+  </ItemGroup>
+
+  <Target Name="AddAllowPartiallyTrustedCallers" BeforeTargets="Build">
+    <!-- Handle AllowPartiallyTrustedCallers (.NET Framework only) -->
+    <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
+      <AssemblyAttribute Include="System.Security.AllowPartiallyTrustedCallers" />
+    </ItemGroup>
+  </Target>
+
+</Project>

@@ -1,0 +1,69 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net461</TargetFrameworks>
+    <OutputPath>..\bin\$(Configuration)</OutputPath>
+    <DefineConstants>$(DefineConstants);STATIC_COMPILER;EMITTERS</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NuGet Package/Assembly Settings">
+    <OutputType>Exe</OutputType>
+    <AssemblyName>ikvmc</AssemblyName>
+    <RootNamespace>ikvmc</RootNamespace>
+    <AssemblyTitle>IKVM.NET Compiler</AssemblyTitle>
+    <Description>JVM for Mono and .NET</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SharpZipLib" Version="$(SharpZipLibPackageVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\reflect\IKVM.Reflection.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
+    <Reference Include="System.Configuration" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ExcludeFromCompile Include="..\runtime\IKVM.Runtime\AssemblyInfo.cs" />
+    <ExcludeFromCompile Include="..\runtime\IKVM.Runtime\Assertions.cs" />
+    <ExcludeFromCompile Include="..\runtime\IKVM.Runtime\ByteCodeHelper.cs" />
+    <ExcludeFromCompile Include="..\runtime\IKVM.Runtime\common.cs" />
+    <ExcludeFromCompile Include="..\runtime\IKVM.Runtime\Dummy.OpenJDK.Core.cs" />
+    <ExcludeFromCompile Include="..\runtime\IKVM.Runtime\DynamicMethodUtils.cs" />
+    <ExcludeFromCompile Include="..\runtime\IKVM.Runtime\ExceptionHelper.cs" />
+    <ExcludeFromCompile Include="..\runtime\IKVM.Runtime\PassiveWeakDictionary.cs" />
+    <ExcludeFromCompile Include="..\runtime\IKVM.Runtime\vfs.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\runtime\IKVM.Runtime\*.cs" LinkBase="runtime" Exclude="@(ExcludeFromCompile)" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <InternalsVisibleTo Include="IKVM.Runtime.JNI" />
+    <InternalsVisibleTo Include="IKVM.OpenJDK.Core" />
+    <InternalsVisibleTo Include="IKVM.OpenJDK.Util" />
+    <InternalsVisibleTo Include="IKVM.OpenJDK.Security" />
+    <InternalsVisibleTo Include="IKVM.OpenJDK.Management" />
+    <InternalsVisibleTo Include="IKVM.OpenJDK.Media" />
+    <InternalsVisibleTo Include="IKVM.OpenJDK.Misc" />
+    <InternalsVisibleTo Include="IKVM.OpenJDK.Remoting" />
+    <InternalsVisibleTo Include="IKVM.OpenJDK.SwingAWT" />
+  </ItemGroup>
+
+  <Target Name="AddAllowPartiallyTrustedCallers" BeforeTargets="Build">
+    <!-- Handle AllowPartiallyTrustedCallers (.NET Framework only) -->
+    <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
+      <AssemblyAttribute Include="System.Security.AllowPartiallyTrustedCallers" />
+    </ItemGroup>
+  </Target>
+
+</Project>

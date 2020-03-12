@@ -1,95 +1,54 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="15.0">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{D2A9434D-59E4-43E9-8D9C-332AA138CEAD}</ProjectGuid>
+    <TargetFrameworks>net461</TargetFrameworks>
+    <OutputPath>..\bin\$(Configuration)</OutputPath>
+    <DefineConstants>$(DefineConstants);STUB_GENERATOR</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NuGet Package/Assembly Settings">
     <OutputType>Exe</OutputType>
-    <RootNamespace>ikvmstub</RootNamespace>
     <AssemblyName>ikvmstub</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <Deterministic>true</Deterministic>
+    <RootNamespace>ikvmstub</RootNamespace>
+    <AssemblyTitle>IKVM.NET Stub Generator</AssemblyTitle>
+    <Description></Description>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+
+  <ItemGroup>
+    <PackageReference Include="SharpZipLib" Version="$(SharpZipLibPackageVersion)" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>..\bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;STUB_GENERATOR</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>..\bin\Release\</OutputPath>
-    <DefineConstants>TRACE;STUB_GENERATOR</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'DebugSigned|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>..\bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;STUB_GENERATOR;SIGNCODE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'ReleaseSigned|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>..\bin\Release\</OutputPath>
-    <DefineConstants>TRACE;STUB_GENERATOR;SIGNCODE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="ICSharpCode.SharpZipLib, Version=0.84.0.0, Culture=neutral, PublicKeyToken=1b03e6acf1164f73">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\bin\ICSharpCode.SharpZipLib.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
+    <ProjectReference Include="..\reflect\IKVM.Reflection.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="..\CommonAssemblyInfo.cs">
-      <Link>CommonAssemblyInfo.cs</Link>
-    </Compile>
-    <Compile Include="AssemblyInfo.cs" />
-    <Compile Include="..\runtime\stubgen\ClassFileWriter.cs" />
-    <Compile Include="ikvmstub.cs" />
-    <Compile Include="..\ikvmc\AssemblyResolver.cs" />
-    <Compile Include="..\runtime\AssemblyClassLoader.cs" />
-    <Compile Include="..\runtime\attributes.cs" />
-    <Compile Include="..\runtime\ClassLoaderWrapper.cs" />
-    <Compile Include="..\runtime\CoreClasses.cs" />
-    <Compile Include="..\runtime\DotNetTypeWrapper.cs" />
-    <Compile Include="..\runtime\JavaException.cs" />
-    <Compile Include="..\runtime\MemberWrapper.cs" />
-    <Compile Include="..\runtime\profiler.cs" />
-    <Compile Include="..\runtime\ReflectUtil.cs" />
-    <Compile Include="..\runtime\tracer.cs" />
-    <Compile Include="..\runtime\Types.cs" />
-    <Compile Include="..\runtime\TypeWrapper.cs" />
-    <Compile Include="..\runtime\vm.cs" />
-    <Compile Include="..\runtime\stubgen\SerialVersionUID.cs" />
-    <Compile Include="..\runtime\stubgen\StubGenerator.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\reflect\IKVM.Reflection.csproj">
-      <Project>{4CB170EF-DFE6-4A56-9E1B-A85449E827A7}</Project>
-      <Name>IKVM.Reflection</Name>
-    </ProjectReference>
-  </ItemGroup>
+
   <ItemGroup>
     <None Include="app.config" />
   </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+
+  <ItemGroup>
+    <Compile Include="..\runtime\IKVM.Runtime\stubgen\ClassFileWriter.cs" />
+    <Compile Include="..\ikvmc\AssemblyResolver.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\AssemblyClassLoader.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\attributes.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\ClassLoaderWrapper.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\CoreClasses.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\DotNetTypeWrapper.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\JavaException.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\MemberWrapper.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\profiler.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\ReflectUtil.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\tracer.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\Types.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\TypeWrapper.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\vm.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\stubgen\SerialVersionUID.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\stubgen\StubGenerator.cs" />
+  </ItemGroup>
+
 </Project>

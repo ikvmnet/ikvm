@@ -1,0 +1,98 @@
+﻿<Project xmlns='http://schemas.microsoft.com/developer/msbuild/2003' ToolsVersion="15.0">
+  <PropertyGroup>
+    <DocumentationFile>$(TargetDir)/$(AssemblyName).xml</DocumentationFile>
+  </PropertyGroup>
+  
+  <!-- Features in .NET Standard and .NET Core only (no .NET Framework support) -->
+  <PropertyGroup Condition=" $(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcoreapp')) ">
+    <DefineConstants>$(DefineConstants);NETSTANDARD</DefineConstants>
+    <DebugType>portable</DebugType>
+  </PropertyGroup>
+
+  <!-- Features in .NET Framework 4.5+ only -->
+  <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
+    <DefineConstants>$(DefineConstants);NET_4_0</DefineConstants>
+    <DebugType>full</DebugType>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <!-- NuGet.org only supports portable debug symbol format: 
+         https://docs.microsoft.com/en-us/nuget/create-packages/symbol-packages-snupkg#nugetorg-symbol-package-constraints -->
+    <DebugType Condition=" '$(PortableDebugTypeOnly)' == 'true' ">portable</DebugType>
+  </PropertyGroup>
+
+  <Target Name="AddInternalsVisibleTo" BeforeTargets="CoreCompile" Label="Adds InternalsVisibleTo Attribute and PublicKey (if supplied)">
+    <!-- Handle InternalsVisibleTo -->
+    <ItemGroup Condition="'@(InternalsVisibleTo->Count())' &gt; 0">
+      <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+        <_Parameter1>%(InternalsVisibleTo.Identity)</_Parameter1>
+        <_Parameter1 Condition=" '$(PublicKey)' != '' ">%(InternalsVisibleTo.Identity), PublicKey=$(PublicKey)</_Parameter1>
+      </AssemblyAttribute>
+    </ItemGroup>
+  </Target>
+
+  <!--
+  ============================================================
+            RegexTransform
+ 
+  Transforms the input Items parameter by evaluating the
+  regular expression in their Find metadata and
+  replacing with their ReplaceWith metadata. Optional, the
+  options for the regular expression evaluation can be specified.
+ 
+  Example input item:
+    <RegexTransform Include="$(BuildRoot)Src\GlobalAssemblyInfo.cs">
+      <Find>AssemblyFileVersion\(".*?"\)</Find>
+      <ReplaceWith>AssemblyFileVersion("$(FileVersion)")</ReplaceWith>
+      <Options>Multiline | IgnorePatternWhitespace</Options>
+    </RegexTransform>
+ 
+  Invoking the target:
+    <RegexTransform Items="@(RegexTransform)" />
+
+  Reference: http://blogs.clariusconsulting.net/kzu/how-to-perform-regular-expression-based-replacements-on-files-with-msbuild/
+  ============================================================
+  -->
+  <UsingTask TaskName="RegexTransform"
+             TaskFactory="RoslynCodeTaskFactory"
+             AssemblyFile="$(MSBuildBinPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System.IO" />
+      <Using Namespace="System.Text.RegularExpressions" />
+      <Using Namespace="Microsoft.Build.Framework" />
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+        foreach(var item in Items)
+        {
+            string fileName = item.GetMetadata("FullPath");
+            string find = item.GetMetadata("Find");
+            string replaceWith = item.GetMetadata("ReplaceWith");
+            string optionsValue = item.GetMetadata("Options") ?? "";
+
+            var options = string.IsNullOrWhiteSpace(optionsValue) ?
+                RegexOptions.None : (RegexOptions)Enum.Parse(typeof(RegexOptions), optionsValue.Replace('|', ','));
+
+            if(!File.Exists(fileName))
+            {
+            Log.LogError("Could not find file: {0}", fileName);
+            return false;
+            }
+            string content = File.ReadAllText(fileName);
+            File.WriteAllText(
+            fileName,
+            Regex.Replace(
+                content,
+                find,
+                replaceWith,
+                options
+            )
+            );
+        }
+        ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+</Project>

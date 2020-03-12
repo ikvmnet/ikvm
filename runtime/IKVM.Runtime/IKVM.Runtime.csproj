@@ -1,0 +1,74 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net461</TargetFrameworks>
+    <OutputPath>..\..\bin\$(Configuration)</OutputPath>
+    <DefineConstants>$(DefineConstants);EMITTERS</DefineConstants>
+    <NoWarn>$(NoWarn);169;649</NoWarn>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NuGet Package/Assembly Settings">
+    <AssemblyTitle>IKVM.NET Runtime</AssemblyTitle>
+    <Description>JVM for Mono and .NET</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="$(SystemSecurityCryptographyPkcsPackageVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
+    <Reference Include="System.Configuration" />
+  </ItemGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="IKVM.OpenJDK.Core, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\bin\$(Configuration)\$(TargetFramework)\IKVM.OpenJDK.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.OpenJDK.Management, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\bin\$(Configuration)\$(TargetFramework)\IKVM.OpenJDK.Management.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.OpenJDK.Misc, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\bin\$(Configuration)\$(TargetFramework)\IKVM.OpenJDK.Misc.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.OpenJDK.Util, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\bin\$(Configuration)\$(TargetFramework)\IKVM.OpenJDK.Util.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\openjdk\vfs.zip" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="IKVM.Runtime.JNI" />
+    <InternalsVisibleTo Include="IKVM.OpenJDK.Core" />
+    <InternalsVisibleTo Include="IKVM.OpenJDK.Util" />
+    <InternalsVisibleTo Include="IKVM.OpenJDK.Security" />
+    <InternalsVisibleTo Include="IKVM.OpenJDK.Management" />
+    <InternalsVisibleTo Include="IKVM.OpenJDK.Media" />
+    <InternalsVisibleTo Include="IKVM.OpenJDK.Misc" />
+    <InternalsVisibleTo Include="IKVM.OpenJDK.Remoting" />
+    <InternalsVisibleTo Include="IKVM.OpenJDK.SwingAWT" />
+  </ItemGroup>
+
+  <Target Name="AddAllowPartiallyTrustedCallers" BeforeTargets="Build">
+    <!-- Handle AllowPartiallyTrustedCallers (.NET Framework only) -->
+    <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
+      <AssemblyAttribute Include="System.Security.AllowPartiallyTrustedCallers" />
+    </ItemGroup>
+  </Target>
+
+</Project>
