@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
+    <OutputPath>..\bin\$(Configuration)</OutputPath>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NuGet Package/Assembly Settings">
+    <AssemblyTitle>IKVM.Reflection</AssemblyTitle>
+    <Description>Alternative implementation of System.Reflection[.Emit]</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\tools\implib\implib.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <Target Name="RunBuild" BeforeTargets="CoreCompile">
+    <Copy SourceFiles="..\bin\$(Configuration)\$(TargetFramework)\IKVM.Reflection.dll" DestinationFolder="..\tools\bin\$(Configuration)\$(TargetFramework)" />
+    <Exec Command="..\tools\bin\$(Configuration)\$(TargetFramework)\implib.exe jvm.def -out:..\bin-x86\JVM.DLL -platform:x86 -r:..\bin\$(Configuration)\$(TargetFramework)\IKVM.Runtime.JNI.dll -product:IKVM.NET -company:&quot;Jeroen Frijters&quot; -copyright:&quot;Copyright (C) 2002-2013 Jeroen Frijters&quot; -description:&quot;IKVM.NET JVM for .NET&quot; -version:$(AssemblyVersion)" />
+    <Exec Command="..\tools\bin\$(Configuration)\$(TargetFramework)\implib.exe jvm.def -out:..\bin-x64\JVM.DLL -platform:x64 -r:..\bin\$(Configuration)\$(TargetFramework)\IKVM.Runtime.JNI.dll -product:IKVM.NET -company:&quot;Jeroen Frijters&quot; -copyright:&quot;Copyright (C) 2002-2013 Jeroen Frijters&quot; -description:&quot;IKVM.NET JVM for .NET&quot; -version:$(AssemblyVersion)" />
+  </Target>
+
+  <Target Name="Clean">
+    <Delete Files="tools.gen.rsp;..\bin\IKVM.OpenJDK.Tools.dll;..\bin\$(Configuration)\$(TargetFramework)\IKVM.OpenJDK.Tools.dll" />
+  </Target>
+
+  <Target Name="Rebuild">
+    <CallTarget Targets="Clean;RunBuild" />
+  </Target>
+
+</Project>

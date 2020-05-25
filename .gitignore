@@ -41,7 +41,22 @@ openjdk/*.zip
 openjdk/*.jar
 openjdk/*.rsp
 openjdk/*.gen.*
-runtime/*.jar
-runtime/*.dll
+runtime/**/*.jar
+runtime/**/*.dll
 tools/*.exe
 tools/*.dll
+
+.vs/
+**/bin/
+**/obj/
+
+# Auto-generated files
+CommonAssemblyInfo.cs
+runtime/AssemblyInfo.cs
+runtime/JniAssemblyInfo.cs
+runtime/vfs.zip
+awt/AssemblyInfo.cs
+openjdk/AssemblyInfo.java
+openjdk/MANIFEST.MF
+openjdk/java/lang/PropertyConstants.java
+openjdk/resources/nashorn/version.properties

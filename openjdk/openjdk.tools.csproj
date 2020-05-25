@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NuGet Package/Assembly Settings">
+    <RootNamespace>openjdk</RootNamespace>
+    <AssemblyName>openjdk</AssemblyName>
+    <AssemblyTitle>IKVM.NET Compiler</AssemblyTitle>
+    <Description>JVM for Mono and .NET</Description>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="**/*.*" />
+    <!-- This feature was for .NET Framework < 4.x -->
+    <Compile Remove="GenerateSystemCore.cs" />
+  </ItemGroup>
+
+  <Import Project="openjdk.tools.targets" />
+
+</Project>

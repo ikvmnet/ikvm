@@ -1,0 +1,58 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+    <OutputPath>..\bin\$(Configuration)</OutputPath>
+    <DefineConstants>$(DefineConstants);STUB_GENERATOR</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NuGet Package/Assembly Settings">
+    <OutputType>Exe</OutputType>
+    <AssemblyName>ikvmstub</AssemblyName>
+    <RootNamespace>ikvmstub</RootNamespace>
+    <AssemblyTitle>IKVM.NET Stub Generator</AssemblyTitle>
+    <Description></Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SharpZipLib" Version="$(SharpZipLibPackageVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)'=='netcoreapp3.1'">
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.7.0" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\reflect\IKVM.Reflection.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="app.config" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\runtime\IKVM.Runtime\stubgen\ClassFileWriter.cs" />
+    <Compile Include="..\ikvmc\AssemblyResolver.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\AssemblyClassLoader.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\attributes.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\ClassLoaderWrapper.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\CoreClasses.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\DotNetTypeWrapper.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\JavaException.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\MemberWrapper.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\profiler.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\ReflectUtil.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\tracer.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\Types.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\TypeWrapper.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\vm.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\stubgen\SerialVersionUID.cs" />
+    <Compile Include="..\runtime\IKVM.Runtime\stubgen\StubGenerator.cs" />
+  </ItemGroup>
+
+</Project>

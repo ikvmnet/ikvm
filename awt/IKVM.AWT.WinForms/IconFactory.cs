@@ -115,7 +115,7 @@ namespace ikvm.awt
         /// <param name="count">
         ///            the number of images in the ICO </param>
         /// <param name="type">
-        ///            TYPE_ICON
+        ///            TYPE_ICON </param>
         private void WriteFileHeader(int count, int type)
         {
             // reserved 2
@@ -628,8 +628,7 @@ namespace ikvm.awt
         /// <param name="bit">
         ///            the value for the bit, which should be either <tt>0</tt> or
         ///            <tt>1</tt>. </param>
-        /// <param name="the">
-        ///            resultant byte </param>
+        /// <returns>resultant byte</returns>
         private byte SetBit(byte bits, int index, int bit)
         {
             if (bit == 0)
@@ -650,7 +649,7 @@ namespace ikvm.awt
         ///            the source byte </param>
         /// <param name="index">
         ///            the index of the nibble to set </param>
-        /// <param name="the">
+        /// <param name="nibble">
         ///            value for the nibble, which should be in the range
         ///            <tt>0x0..0xF</tt>. </param>
         private byte SetNibble(byte nibbles, int index, int nibble)

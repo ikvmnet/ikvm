@@ -2,20 +2,24 @@
 
   <PropertyGroup>
     <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
-    <OutputPath>..\bin\$(Configuration)</OutputPath>
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet Package/Assembly Settings">
-    <AssemblyTitle>IKVM.Reflection</AssemblyTitle>
-    <Description>Alternative implementation of System.Reflection[.Emit]</Description>
+    <RootNamespace>openjdk</RootNamespace>
+    <AssemblyName>openjdk</AssemblyName>
+    <AssemblyTitle>IKVM.NET Compiler</AssemblyTitle>
+    <Description>JVM for Mono and .NET</Description>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="$(SystemSecurityCryptographyPkcsPackageVersion)" />
-  </ItemGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <None Remove="**/*.*" />
+    <Compile Remove="GenerateSystemCore.cs" />
+  </ItemGroup>
+
+  <Import Project="openjdk.targets" />
 
 </Project>
