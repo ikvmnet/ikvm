@@ -1,0 +1,201 @@
+<Project>
+
+  <PropertyGroup>
+    <NativeConfiguration Condition="'$(NativePlatform)' == ''">Release</NativeConfiguration>
+    <NativePlatform Condition="'$(NativePlatform)' == ''">$(Platform)</NativePlatform>
+
+    <NativeSourceDir>$(MSBuildThisFileDirectory)</NativeSourceDir>
+    <NativeObjDir>$(MSBuildThisFileDirectory)obj/$(NativeConfiguration)/$(NativePlatform)/</NativeObjDir>
+    <NativeOutputDir>$(MSBuildThisFileDirectory)../bin/</NativeOutputDir>
+
+    <NativeName>ikvm-native</NativeName>
+    <NativeBinaryName>lib$(NativeName).so</NativeBinaryName>
+    <NativeBinaryName Condition="$([MSBuild]::IsOsPlatform(OSX))">lib$(NativeName).dylib</NativeBinaryName>
+    <NativeBinaryName Condition="$([MSBuild]::IsOsPlatform(Windows))">$(NativeName)-win32-$(NativePlatform).dll</NativeBinaryName>
+
+    <!-- Configure CompilerPaths task -->
+    <MSVCPlatform>$(NativePlatform)</MSVCPlatform>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <NativeSource Include="$(NativeSourceDir)*.c" />
+    <NativeBinary Include="$(NativeOutputDir)$(NativeBinaryName)" />
+    <Clean Include="@(NativeBinary);$(NativeObjDir)*.*" />
+  </ItemGroup>
+
+  <!--
+    Target used to build the IKVM native binary on Windows
+  -->
+  <Target
+    Name="Build-IKVM-Native-Windows"
+    AfterTargets="CoreCompile"
+    DependsOnTargets="MSVCFindCompilerPaths"
+    Inputs="@(NativeSource)"
+    Outputs="@(NativeBinary)"
+    Condition="$([MSBuild]::IsOsPlatform(Windows))">
+
+    <!-- MSVC compiler flags -->
+    <PropertyGroup>
+      <CompiledResult>$(NativeObjDir)$(NativeName).dll</CompiledResult>
+      <IncPaths>@(MSVCIncludePaths-> '/I &quot;%(rootdir)%(directory)%(filename)&quot;', ' ')</IncPaths>
+      <LibPaths>@(MSVCLibPaths-> '/LIBPATH:&quot;%(rootdir)%(directory)%(filename)&quot;', ' ')</LibPaths>
+      <SourceFiles>@(NativeSource-> '&quot;%(rootdir)%(directory)%(filename)%(extension)&quot;', ' ')</SourceFiles>
+    </PropertyGroup>
+
+    <PropertyGroup>
+      <CompilerArgs>/O2 /D WIN32 /D NDEBUG /D _WINDLL /D _MBCS /GS /W3 /nologo</CompilerArgs>
+      <LinkerArgs>/DLL user32.lib $(NativeName).res /out:&quot;$(CompiledResult)&quot;</LinkerArgs>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(NativeConfiguration)'=='Debug'">
+      <CompilerArgs>/Od /D WIN32 /D _WINDLL /D _MBCS /GS /W3 /nologo</CompilerArgs>
+      <LinkerArgs>/DLL /DEBUG user32.lib $(NativeName).res /out:&quot;$(CompiledResult)&quot;</LinkerArgs>
+    </PropertyGroup>
+
+    <MakeDir Directories="$(NativeObjDir)" />
+
+    <ItemGroup>
+      <Tokens Include="VERSIONLIST">
+        <ReplacementValue>$(Version.Replace('.',','))</ReplacementValue>
+      </Tokens>
+      <Tokens Include="VERSION">
+        <ReplacementValue>$(Version)</ReplacementValue>
+      </Tokens>
+      <Tokens Include="ARCH">
+        <ReplacementValue>$(NativePlatform)</ReplacementValue>
+      </Tokens>
+    </ItemGroup>
+
+    <!-- Generate the RC file -->
+    <TemplateFile
+        Template="$(NativeSourceDir)$(NativeName).rc.in"
+        OutputFileName="$(NativeObjDir)$(NativeName).rc"
+        Tokens="@(Tokens)" />
+
+    <!-- Generate the resource file -->
+    <Exec Command="&quot;$(MSVCWinSDKToolPath)\rc.exe&quot; /nologo &quot;$(NativeObjDir)$(NativeName).rc&quot;"
+        WorkingDirectory="$(NativeObjDir)"
+        ConsoleToMSBuild="true" />
+
+    <!-- Compile ikvm-native binary -->
+    <Exec Command="&quot;$(MSVCCompilerPath)&quot; $(IncPaths) $(CompilerArgs) $(SourceFiles) /link $(LibPaths) $(LinkerArgs)"
+        WorkingDirectory="$(NativeObjDir)"
+        ConsoleToMSBuild="true" />
+
+    <!-- Copy the results to the project output directory -->
+    <Copy
+        SourceFiles="$(CompiledResult)"
+        DestinationFiles="@(NativeBinary)" />
+  </Target>
+
+  <ItemGroup>
+    <PackageReference Include="CompilerPaths" Version="1.0.1"
+      Condition="$([MSBuild]::IsOsPlatform(Windows))" />
+  </ItemGroup>
+
+  <!--
+    Target used to build the IKVM native binary on *nix or macOS
+  -->
+  <Target
+    Name="Build-IKVM-Native-Unix"
+    AfterTargets="CoreCompile"
+    Inputs="@(NativeSource)"
+    Outputs="@(NativeBinary)"
+    Condition="$([MSBuild]::IsOsPlatform(Linux)) OR $([MSBuild]::IsOsPlatform(OSX))">
+
+    <!-- gcc compiler flags -->
+    <PropertyGroup>
+      <CompiledResult>$(NativeObjDir)$(NativeBinaryName)</CompiledResult>
+      <CompilerArgs>--shared -fPIC</CompilerArgs>
+      <SourceFiles>@(NativeSource-> '&quot;%(rootdir)%(directory)%(filename)%(extension)&quot;', ' ')</SourceFiles>
+    </PropertyGroup>
+
+    <MakeDir Directories="$(NativeObjDir)" />
+
+    <!-- Compile ikvm-native binary -->
+    <Exec Command="&quot;gcc&quot; -o &quot;$(CompiledResult)&quot; $(CompilerArgs) `pkg-config --cflags --libs gmodule-2.0` $(SourceFiles)"
+        WorkingDirectory="$(NativeObjDir)"
+        ConsoleToMSBuild="true" />
+
+    <!-- Copy the results to the project output directory -->
+    <Copy
+        SourceFiles="$(CompiledResult)"
+        DestinationFiles="@(NativeBinary)" />
+  </Target>
+
+  <!--
+    Task used to replace tokens in a file.
+    Token format: "@"<STRING>"@"
+    Example: "@FooBar@"
+    Modified from https://gist.github.com/pvandervelde/8277812
+  -->
+  <UsingTask
+    TaskName="TemplateFile"
+    TaskFactory="RoslynCodeTaskFactory"
+    AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <Template ParameterType="System.String" Required="true" />
+      <OutputFileName ParameterType="System.String" Required="true" />
+      <Tokens ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Code Type="Method" Language="cs">
+        <![CDATA[
+            public override bool Execute()
+            {
+                const string MetadataValueTag = "ReplacementValue";
+                var _regex = new System.Text.RegularExpressions.Regex(
+                    "(?<token>@(?<identifier>\\w*)@)",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase
+                    | System.Text.RegularExpressions.RegexOptions.Multiline
+                    | System.Text.RegularExpressions.RegexOptions.Compiled
+                    | System.Text.RegularExpressions.RegexOptions.Singleline);
+                if (!System.IO.File.Exists(Template))
+                {
+                    Log.LogError("Template File '{0}' cannot be found", Template);
+                }
+                else
+                {
+                    var tokenPairs = new System.Collections.Generic.Dictionary<string, string>(System.StringComparer.InvariantCultureIgnoreCase);
+                    if (Tokens != null)
+                    {
+                        ITaskItem[] processedTokens = Tokens;
+                        for (int i = 0; i < processedTokens.Length; i++)
+                        {
+                            ITaskItem taskItem = processedTokens[i];
+                            if (!string.IsNullOrEmpty(taskItem.ItemSpec))
+                            {
+                                tokenPairs.Add(taskItem.ItemSpec, taskItem.GetMetadata(MetadataValueTag));
+                            }
+                        }
+                    }
+                    using (var streamReader = new System.IO.StreamReader(Template))
+                    {
+                        string value = _regex.Replace(
+                            streamReader.ReadToEnd(),
+                            m => 
+                            {
+                                var output = m.Value;
+                                if (tokenPairs.ContainsKey(m.Groups[2].Value))
+                                {
+                                    output = tokenPairs[m.Groups[2].Value];
+                                }
+                                return output;
+                            });
+                        using (var streamWriter = new System.IO.StreamWriter(OutputFileName))
+                        {
+                            streamWriter.Write(value);
+                            streamWriter.Flush();
+                            Log.LogMessage("Template replaced and written to '{0}'", OutputFileName);
+                        }
+                    }
+                }
+                // Log.HasLoggedErrors is true if the task logged any errors -- even if they were logged 
+                // from a task's constructor or property setter. As long as this task is written to always log an error
+                // when it fails, we can reliably return HasLoggedErrors.
+                return !Log.HasLoggedErrors;
+            }
+        ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+</Project>
