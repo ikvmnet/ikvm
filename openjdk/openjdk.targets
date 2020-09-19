@@ -10,75 +10,123 @@
     <OpenJdkFullVersion>1.8.0_45-b14</OpenJdkFullVersion>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)'=='net461'">
-    <IkvmstubExe>..\bin\$(Configuration)\$(TargetFramework)\ikvmstub.exe</IkvmstubExe>
-    <IkvmcExe>..\bin\$(Configuration)\$(TargetFramework)\ikvmc.exe</IkvmcExe>
+  <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
+    <IkvmStub>..\ikvmstub\bin\$(Configuration)\$(TargetFramework)\ikvmstub.exe</IkvmStub>
+    <Ikvmc>..\ikvmc\bin\$(Configuration)\$(TargetFramework)\ikvmc.exe</Ikvmc>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard2.1'">
-    <IkvmstubExe>..\bin\$(Configuration)\netcoreapp3.1\ikvmstub.exe</IkvmstubExe>
-    <IkvmcExe>..\bin\$(Configuration)\netcoreapp3.1\ikvmc.exe</IkvmcExe>
+  <PropertyGroup Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))">
+    <IkvmStub>..\ikvmstub\bin\$(Configuration)\netcoreapp3.1\ikvmstub.exe</IkvmStub>
+    <Ikvmc>..\ikvmc\bin\$(Configuration)\netcoreapp3.1\ikvmc.exe</Ikvmc>
   </PropertyGroup>
 
   <Target Name="RunBuild" BeforeTargets="CoreCompile" DependsOnTargets="BuildClasses;Rmi;RunNasgen;Vfs;Resources;Core">
   </Target>
 
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
+    <BuildClassesClasspath Include="mscorlib.jar" />
+    <BuildClassesClasspath Include="System.jar" />
+    <BuildClassesClasspath Include="System.Core.jar" />
+    <BuildClassesClasspath Include="System.Data.jar" />
+    <BuildClassesClasspath Include="System.Drawing.jar" />
+    <BuildClassesClasspath Include="System.Xml.jar" />
+    <BuildClassesClasspath Include="..\runtime\IKVM.Runtime.FirstPass\bin\$(Configuration)\$(TargetFramework)\IKVM.Runtime.jar" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))">
+    <BuildClassesClasspath Include="Microsoft.Win32.Primitives.jar" />
+    <BuildClassesClasspath Include="System.Collections.Specialized.jar" />
+    <BuildClassesClasspath Include="System.ComponentModel.jar" />
+    <BuildClassesClasspath Include="System.ComponentModel.Primitives.jar" />
+    <BuildClassesClasspath Include="System.ComponentModel.TypeConverter.jar" />
+    <BuildClassesClasspath Include="System.Configuration.ConfigurationManager.jar" />
+    <BuildClassesClasspath Include="System.Console.jar" />
+    <BuildClassesClasspath Include="System.Data.Common.jar" />
+    <BuildClassesClasspath Include="System.Data.Odbc.jar" />
+    <BuildClassesClasspath Include="System.Diagnostics.FileVersionInfo.jar" />
+    <BuildClassesClasspath Include="System.Diagnostics.Process.jar" />
+    <BuildClassesClasspath Include="System.Diagnostics.StackTrace.jar" />
+    <BuildClassesClasspath Include="System.Drawing.Common.jar" />
+    <BuildClassesClasspath Include="System.Drawing.Primitives.jar" />
+    <BuildClassesClasspath Include="System.IO.FileSystem.jar" />
+    <BuildClassesClasspath Include="System.IO.FileSystem.AccessControl.jar" />
+    <BuildClassesClasspath Include="System.IO.FileSystem.DriveInfo.jar" />
+    <BuildClassesClasspath Include="System.IO.FileSystem.Watcher.jar" />
+    <BuildClassesClasspath Include="System.Net.Mail.jar" />
+    <BuildClassesClasspath Include="System.Net.NetworkInformation.jar" />
+    <BuildClassesClasspath Include="System.Net.Primitives.jar" />
+    <BuildClassesClasspath Include="System.Net.Sockets.jar" />
+    <BuildClassesClasspath Include="System.Runtime.jar" />
+    <BuildClassesClasspath Include="System.Runtime.Extensions.jar" />
+    <BuildClassesClasspath Include="System.Runtime.InteropServices.jar" />
+    <BuildClassesClasspath Include="System.Security.Cryptography.Algorithms.jar" />
+    <BuildClassesClasspath Include="System.Security.Cryptography.Csp.jar" />
+    <BuildClassesClasspath Include="System.Security.Permissions.jar" />
+    <BuildClassesClasspath Include="System.Threading.jar" />
+    <BuildClassesClasspath Include="System.Threading.Thread.jar" />
+    <BuildClassesClasspath Include="System.Threading.ThreadPool.jar" />
+    <BuildClassesClasspath Include="System.Xml.ReaderWriter.jar" />
+    <BuildClassesClasspath Include="..\runtime\IKVM.Runtime.FirstPass\bin\$(Configuration)\$(TargetFramework)\IKVM.Runtime.jar" />
+  </ItemGroup>
+
   <Target Name="BuildClasses" DependsOnTargets="StubJars;AllSourcesGenLst;AssemblyInfoJava;PropertyConstantsJava">
     <Message Text="BuildClasses target is running..." Importance="high" />
-    <Exec Command="javac -J-Xmx1536M -g -nowarn -implicit:none -parameters -cp dummy -bootclasspath mscorlib.jar;System.jar;System.Core.jar;System.Data.jar;System.Drawing.jar;System.Xml.jar;..\bin\$(Configuration)\$(TargetFramework)\IKVM.Runtime.jar @allsources.gen.lst" Condition="'$(TargetFramework)'=='net461'" />
-    <Exec Command="javac -J-Xmx1536M -g -nowarn -implicit:none -parameters -cp dummy -bootclasspath System.Runtime.jar;System.Diagnostics.Process.jar;System.Diagnostics.FileVersionInfo.jar;System.Net.Sockets.jar;System.Drawing.Common.jar;System.Data.Common.jar;System.IO.FileSystem.jar;System.Net.Mail.jar;System.IO.FileSystem.DriveInfo.jar;System.Runtime.Extensions.jar;System.Runtime.InteropServices.jar;System.IO.FileSystem.Watcher.jar;System.IO.FileSystem.AccessControl.jar;System.Net.Primitives.jar;System.Threading.Thread.jar;System.Net.NetworkInformation.jar;System.Diagnostics.StackTrace.jar;System.Configuration.ConfigurationManager.jar;System.Security.Permissions.jar;System.Xml.ReaderWriter.jar;System.ComponentModel.jar;System.Drawing.Primitives.jar;System.Threading.jar;System.Security.Cryptography.Csp.jar;Microsoft.Win32.Primitives.jar;System.Threading.ThreadPool.jar;System.Console.jar;System.ComponentModel.Primitives.jar;System.Collections.Specialized.jar;System.Security.Cryptography.Algorithms.jar;mscorlib.jar;System.jar;System.Core.jar;..\bin\$(Configuration)\$(TargetFramework)\IKVM.Runtime.jar @allsources.gen.lst" Condition="'$(TargetFramework)'=='netstandard2.1'" />
+    <Exec Command="javac -J-Xmx1536M -g -nowarn -implicit:none -parameters -cp dummy -bootclasspath @(BuildClassesClasspath, ';') @allsources.gen.lst" />
   </Target>
 
-  <Target Name="StubJars" DependsOnTargets="SystemCore">
-    <Exec Command="$(IkvmstubExe) -bootstrap mscorlib" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap System.Runtime" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap System.Diagnostics.Process" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap System.Diagnostics.FileVersionInfo" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap System.Net.Sockets" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap $(PkgSystem_Drawing_Common)\ref\netstandard2.0\System.Drawing.Common.dll" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap System.Data.Common" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap System.IO.FileSystem" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap System.IO.FileSystem.DriveInfo" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap $(PkgSystem_Net_Mail)\lib\netstandard1.3\System.Net.Mail.dll" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap System.Runtime.Extensions" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap System.Runtime.InteropServices" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap System.IO.FileSystem.Watcher" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap System.IO.FileSystem.AccessControl" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap System.Net.Primitives" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap System.Threading.Thread" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap System.Net.NetworkInformation" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap System.Diagnostics.StackTrace" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap $(PkgSystem_Security_Permissions)\ref\netstandard2.0\System.Security.Permissions.dll" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap -r:$(PkgSystem_Security_Permissions)\ref\netstandard2.0\System.Security.Permissions.dll $(PkgSystem_Configuration_ConfigurationManager)\ref\netstandard2.0\System.Configuration.ConfigurationManager.dll" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap System.Xml.ReaderWriter" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap System.ComponentModel" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap System.Drawing.Primitives" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap System.Threading" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap System.Security.Cryptography.Csp" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap Microsoft.Win32.Primitives" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap System.Threading.ThreadPool" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap System.Console" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap System.ComponentModel.Primitives" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap System.Collections.Specialized" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -forwarders -bootstrap System.Security.Cryptography.Algorithms" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmstubExe) -bootstrap System" />
-    <Exec Command="$(IkvmstubExe) -bootstrap System.Core" Condition=" !$(SkipSystemCoreDependency) " />
-    <CallTarget Targets="DummySystemCoreJar" Condition=" $(SkipSystemCoreDependency) " />
-    <Exec Command="$(IkvmstubExe) -bootstrap System.Data" Condition="'$(TargetFramework)'=='net461'" />
-    <Exec Command="$(IkvmstubExe) -bootstrap System.Drawing" Condition="'$(TargetFramework)'=='net461'" />
-    <Exec Command="$(IkvmstubExe) -bootstrap System.Xml" Condition="'$(TargetFramework)'=='net461'" />
+  <Target Name="InitBuild">
+    <MakeDir Directories="$(OutputPath)" />
   </Target>
 
-  <Target Name="SystemCore" DependsOnTargets="" Condition=" !$(SkipSystemCoreDependency) ">
+  <Target Name="StubJars" DependsOnTargets="InitBuild;SystemCore">
+    <Exec Command="$(IkvmStub) -bootstrap mscorlib" Condition="$(TargetFramework.StartsWith('net4'))" />
+    <Exec Command="$(IkvmStub) -bootstrap System" Condition="$(TargetFramework.StartsWith('net4'))" />
+    <Exec Command="$(IkvmStub) -bootstrap System.Core" Condition=" !$(SkipSystemCoreDependency) And $(TargetFramework.StartsWith('net4')) " />
+    <Exec Command="$(IkvmStub) -bootstrap System.Data" Condition="$(TargetFramework.StartsWith('net4'))" />
+    <Exec Command="$(IkvmStub) -bootstrap System.Drawing" Condition="$(TargetFramework.StartsWith('net4'))" />
+    <Exec Command="$(IkvmStub) -bootstrap System.Xml" Condition="$(TargetFramework.StartsWith('net4'))"/>
+
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap Microsoft.Win32.Primitives" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap System.Collections.Specialized" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap System.ComponentModel" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap System.ComponentModel.Primitives" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap System.ComponentModel.TypeConverter" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap System.Console" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap System.Data.Common" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap System.Diagnostics.FileVersionInfo" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap System.Diagnostics.Process" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap System.Diagnostics.StackTrace" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap System.Drawing.Primitives" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap System.IO.FileSystem" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap System.IO.FileSystem.AccessControl" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap System.IO.FileSystem.DriveInfo" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap System.IO.FileSystem.Watcher" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap System.Net.NetworkInformation" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap System.Net.Primitives" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap System.Net.Sockets" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap System.Runtime" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap System.Runtime.Extensions" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap System.Runtime.InteropServices" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap System.Security.Cryptography.Algorithms" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap System.Security.Cryptography.Csp" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap System.Threading" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap System.Threading.Thread" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap System.Threading.ThreadPool" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap System.Xml.ReaderWriter" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap -r:$(PkgSystem_Security_Permissions)\ref\netstandard2.0\System.Security.Permissions.dll $(PkgSystem_Configuration_ConfigurationManager)\ref\netstandard2.0\System.Configuration.ConfigurationManager.dll" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap $(PkgSystem_Data_Odbc)\ref\netstandard2.0\System.Data.Odbc.dll" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap $(PkgSystem_Drawing_Common)\ref\netstandard2.0\System.Drawing.Common.dll" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap $(PkgSystem_Net_Mail)\lib\netstandard1.3\System.Net.Mail.dll" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap $(PkgSystem_Security_Permissions)\ref\netstandard2.0\System.Security.Permissions.dll" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+  </Target>
+
+  <Target Name="SystemCore" Condition=" !$(SkipSystemCoreDependency) ">
     <Delete Files="System.Core.dll" />
   </Target>
 
-  <Target Name="DummySystemCoreJar">
-  </Target>
-
   <Target Name="AllSourcesGenLst">
-    <Copy SourceFiles="allsources.lst.framework" DestinationFiles="allsources.gen.lst" Condition="'$(TargetFramework)'=='net461'" />
-    <Copy SourceFiles="allsources.lst.core" DestinationFiles="allsources.gen.lst" Condition="'$(TargetFramework)'=='netstandard2.1'" />
+    <Copy SourceFiles="allsources.lst" DestinationFiles="allsources.gen.lst" />
     <ItemGroup>
       <TransformOpenJdkDir Include="allsources.gen.lst">
         <Find>@OPENJDK@</Find>
@@ -87,10 +135,11 @@
       </TransformOpenJdkDir>
     </ItemGroup>
     <RegexTransform Items="@(TransformOpenJdkDir)" />
-    <Copy SourceFiles="java\lang\ProcessImpl.java.framework" DestinationFiles="java\lang\ProcessImpl.java" Condition="'$(TargetFramework)'=='net461'" />
-    <Copy SourceFiles="java\lang\ProcessImpl.java.core" DestinationFiles="java\lang\ProcessImpl.java" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Copy SourceFiles="sun\nio\fs\NetFileSystemProvider.java.framework" DestinationFiles="sun\nio\fs\NetFileSystemProvider.java" Condition="'$(TargetFramework)'=='net461'" />
-    <Copy SourceFiles="sun\nio\fs\NetFileSystemProvider.java.core" DestinationFiles="sun\nio\fs\NetFileSystemProvider.java" Condition="'$(TargetFramework)'=='netstandard2.1'" />
+
+    <Copy SourceFiles="java\lang\ProcessImpl.java.framework" DestinationFiles="java\lang\ProcessImpl.java" Condition="$(TargetFramework.StartsWith('net4'))" />
+    <Copy SourceFiles="sun\nio\fs\NetFileSystemProvider.java.framework" DestinationFiles="sun\nio\fs\NetFileSystemProvider.java" Condition="$(TargetFramework.StartsWith('net4'))" />
+    <Copy SourceFiles="java\lang\ProcessImpl.java.core" DestinationFiles="java\lang\ProcessImpl.java" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Copy SourceFiles="sun\nio\fs\NetFileSystemProvider.java.core" DestinationFiles="sun\nio\fs\NetFileSystemProvider.java" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
   </Target>
 
   <Target Name="AssemblyInfoJava">
@@ -138,12 +187,14 @@
     <Copy SourceFiles="java\lang\PropertyConstants.java.in" DestinationFiles="java\lang\PropertyConstants.java" />
   </Target>
 
-  <PropertyGroup Condition="'$(TargetFramework)'=='net461'">
-    <Classpath>mscorlib.jar;System.Xml.jar;$(OpenJdkDirSlash)/jdk/src/share/classes;$(OpenJdkDirSlash)/corba/src/share/classes;$(OpenJdkDirSlash)/build/linux-x86_64-normal-server-release/jdk/gensrc</Classpath>
+  <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
+    <Classpath>mscorlib.jar;System.Xml.jar;$(OpenJdkDir)\jdk\src\share\classes;$(OpenJdkDir)\corba\src\share\classes;$(OpenJdkDirSlash)\build\linux-x86_64-normal-server-release\jdk\gensrc</Classpath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard2.1'">
-    <Classpath>System.Runtime.jar;mscorlib.jar;System.Xml.jar;$(OpenJdkDirSlash)/jdk/src/share/classes;$(OpenJdkDirSlash)/corba/src/share/classes;$(OpenJdkDirSlash)/build/linux-x86_64-normal-server-release/jdk/gensrc</Classpath>
+
+  <PropertyGroup Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))">
+    <Classpath>System.Runtime.jar;$(OpenJdkDir)\jdk\src\share\classes;$(OpenJdkDir)\corba\src\share\classes;$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc</Classpath>
   </PropertyGroup>
+
   <Target Name="Rmi">
     <PropertyGroup>
       <VmArgs>-J-client -J-Xmx896m -J-Xms128m</VmArgs>
@@ -172,8 +223,8 @@
     <ItemGroup>
       <NasgenSources Include="$(OpenJdkDir)\nashorn\src\jdk\nashorn\internal\objects\*.java" />
     </ItemGroup>
-    <Exec Command="javac -XDignore.symbol.file -g -nowarn -implicit:none -bootclasspath $(Classpath);$(OpenJdkDirSlash)/nashorn/src;../bin/$(Configuration)/$(TargetFramework)/IKVM.Runtime.jar @(NasgenSources, ' ')" />
-    <Exec Command="java -Xbootclasspath/p:$(OpenJdkDirSlash)/nashorn/buildtools/nasgen/src;$(OpenJdkDirSlash)/nashorn/src jdk.nashorn.internal.tools.nasgen.Main $(OpenJdkDirSlash)/nashorn/src jdk.nashorn.internal.objects $(OpenJdkDirSlash)/nashorn/src" />
+    <Exec Command="javac -XDignore.symbol.file -g -nowarn -implicit:none -bootclasspath $(Classpath);$(OpenJdkDir)\nashorn\src;..\runtime\IKVM.Runtime.FirstPass\bin\$(Configuration)\$(TargetFramework)\IKVM.Runtime.jar @(NasgenSources, ' ')" />
+    <Exec Command="java -Xbootclasspath/p:$(OpenJdkDir)\nashorn\buildtools\nasgen\src;$(OpenJdkDir)\nashorn\src jdk.nashorn.internal.tools.nasgen.Main $(OpenJdkDir)\nashorn\src jdk.nashorn.internal.objects $(OpenJdkDir)\nashorn\src" />
   </Target>
 
   <Target Name="Vfs">
@@ -235,18 +286,11 @@
     <RemoveDir Directories="tmpresources" />
   </Target>
 
-  <PropertyGroup Condition="'$(TargetFramework)'=='net461'">
-    <ResponseTxtFileName>response.txt.framework</ResponseTxtFileName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard2.1'">
-    <ResponseTxtFileName>response.txt.core</ResponseTxtFileName>
-  </PropertyGroup>
-
   <Target Name="Core" DependsOnTargets="ResponseGenTxt;ManifestMf;NashornVersion">
     <Copy SourceFiles="..\bin\$(Configuration)\$(TargetFramework)\IKVM.Runtime.dll" DestinationFolder="..\bin\$(Configuration)\netcoreapp3.1" Condition="'$(TargetFramework)'=='netstandard2.1'" />
     <Copy SourceFiles="..\bin\$(Configuration)\$(TargetFramework)\IKVM.AWT.WinForms.dll" DestinationFolder="..\bin\$(Configuration)\netcoreapp3.1" Condition="'$(TargetFramework)'=='netstandard2.1'" />
-    <Exec Command="$(IkvmcExe) -version:$(AssemblyVersion) -compressresources -opt:fields -strictfinalfieldsemantics -removeassertions -target:library -sharedclassloader -r:mscorlib.dll -r:System.dll -r:System.Core.dll -r:System.Xml.dll -r:..\bin\$(Configuration)\$(TargetFramework)\IKVM.Runtime.dll -nowarn:110 -w4 -noparameterreflection -warnaserror @response.gen.txt" Condition="'$(TargetFramework)'=='net461'" />
-    <Exec Command="$(IkvmcExe) -version:$(AssemblyVersion) -compressresources -opt:fields -strictfinalfieldsemantics -removeassertions -target:library -sharedclassloader -lib:..\bin\$(Configuration)\netcoreapp3.1 -r:System.Runtime.dll -r:netstandard.dll -r:mscorlib.dll -r:System.Runtime.Extensions.dll -r:System.Console.dll -r:System.Runtime.InteropServices.dll -r:System.IO.FileSystem.Watcher.dll -r:System.Drawing.Common.dll -r:System.Security.Permissions.dll -r:System.Threading.dll -r:System.Threading.Thread.dll -r:System.Threading.ThreadPool.dll -r:System.Diagnostics.StackTrace.dll -r:..\bin\$(Configuration)\$(TargetFramework)\IKVM.Runtime.dll -nowarn:110 -w4 -noparameterreflection -warnaserror @response.gen.txt" Condition="'$(TargetFramework)'=='netstandard2.1'" />
+    <Exec Command="$(Ikvmc) -version:$(AssemblyVersion) -compressresources -opt:fields -strictfinalfieldsemantics -removeassertions -target:library -sharedclassloader -r:mscorlib.dll -r:System.dll -r:System.Core.dll -r:System.Xml.dll -r:..\bin\$(Configuration)\$(TargetFramework)\IKVM.Runtime.dll -nowarn:110 -w4 -noparameterreflection -warnaserror @response.gen.txt" Condition="'$(TargetFramework)'=='net461'" />
+    <Exec Command="$(Ikvmc) -version:$(AssemblyVersion) -compressresources -opt:fields -strictfinalfieldsemantics -removeassertions -target:library -sharedclassloader -lib:..\bin\$(Configuration)\netcoreapp3.1 -r:System.Runtime.dll -r:netstandard.dll -r:mscorlib.dll -r:System.Runtime.Extensions.dll -r:System.Console.dll -r:System.Runtime.InteropServices.dll -r:System.IO.FileSystem.Watcher.dll -r:System.Drawing.Common.dll -r:System.Security.Permissions.dll -r:System.Threading.dll -r:System.Threading.Thread.dll -r:System.Threading.ThreadPool.dll -r:System.Diagnostics.StackTrace.dll -r:..\bin\$(Configuration)\$(TargetFramework)\IKVM.Runtime.dll -nowarn:110 -w4 -noparameterreflection -warnaserror @response.gen.txt" Condition="'$(TargetFramework)'=='netstandard2.1'" />
     <CallTarget Targets="Peverify" Condition="'$(TargetFramework)'=='net461'" />
     <Exec Command="..\tools\bin\$(Configuration)\$(TargetFramework)\depcheck.exe $(ResponseTxtFileName) dependencies.txt" Condition="'$(TargetFramework)'=='net461'" />
     <ItemGroup>
@@ -255,7 +299,7 @@
     <Copy SourceFiles="@(IkvmDllFiles)" DestinationFolder="..\bin\$(Configuration)\$(TargetFramework)" />
     <Exec Command="..\tools\bin\$(Configuration)\$(TargetFramework)\updbaseaddresses.exe $(ResponseTxtFileName)" />
     <MakeDir Directories="..\lib" />
-    <Exec Command="$(IkvmstubExe) -out:..\lib\ikvm-api.jar ..\bin\$(Configuration)\$(TargetFramework)\IKVM.OpenJDK.Core.dll -namespace:ikvm.io -namespace:ikvm.lang-namespace:ikvm.runtime" />
+    <Exec Command="$(IkvmStub) -out:..\lib\ikvm-api.jar ..\bin\$(Configuration)\$(TargetFramework)\IKVM.OpenJDK.Core.dll -namespace:ikvm.io -namespace:ikvm.lang-namespace:ikvm.runtime" />
   </Target>
 
   <Target Name="Peverify" Condition="$(PEVERIFY) != ''">
@@ -286,7 +330,7 @@
   </Target>
 
   <Target Name="ResponseGenTxt">
-    <Copy SourceFiles="$(ResponseTxtFileName)" DestinationFiles="response.gen.txt" />
+    <Copy SourceFiles="response.txt" DestinationFiles="response.gen.txt" />
     <ItemGroup>
       <TransformResponseGenTxt Include="response.gen.txt">
         <Find>@OPENJDK@</Find>
@@ -350,6 +394,9 @@
       <CleanFiles Include="vfs.zip" />
       <CleanFiles Include="*.jar" />
       <CleanFiles Include="MANIFEST.MF" />
+      <CleanFiles Include="java\lang\ProcessImpl.java" />
+      <CleanFiles Include="sun\nio\fs\NetFileSystemProvider.java" />
+      <CleanFiles Include="java\lang\PropertyConstants.java" />
     </ItemGroup>
     <Delete Files="@(CleanFiles)" />
   </Target>
