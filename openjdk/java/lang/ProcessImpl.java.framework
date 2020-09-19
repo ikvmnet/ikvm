@@ -796,7 +796,7 @@ final class ProcessImpl extends Process {
             if (false) throw new cli.System.IO.IOException();
             if (false) throw new cli.System.Security.SecurityException();
             if (false) throw new cli.System.UnauthorizedAccessException();
-            return FileDescriptor.fromStream(new FileStream(path, FileMode.wrap(FileMode.Append), FileAccess.wrap(FileAccess.Write), FileShare.wrap(FileShare.ReadWrite), 1, FileOptions.wrap(FileOptions.None)));
+            return FileDescriptor.fromStream(new FileStream(path, FileMode.wrap(FileMode.Append), FileSystemRights.wrap(FileSystemRights.AppendData), FileShare.wrap(FileShare.ReadWrite), 1, FileOptions.wrap(FileOptions.None)));
         } catch (cli.System.ArgumentException x) {
             throw new IOException(x.getMessage());
         } catch (cli.System.IO.IOException x) {

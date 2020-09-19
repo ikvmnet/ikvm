@@ -141,6 +141,12 @@ namespace IKVM.Reflection
 
 	public sealed class Universe : IDisposable
 	{
+#if NETFRAMEWORK
+		public static readonly string CoreLibName = "mscorlib";
+#else
+		public static readonly string CoreLibName = "System.Runtime";
+#endif
+
 		internal static readonly bool MonoRuntime = System.Type.GetType("Mono.Runtime") != null;
 		private readonly Dictionary<Type, Type> canonicalizedTypes = new Dictionary<Type, Type>();
 		private readonly List<AssemblyReader> assemblies = new List<AssemblyReader>();
@@ -244,7 +250,7 @@ namespace IKVM.Reflection
 
 		internal Assembly Mscorlib
 		{
-			get { return Load("mscorlib"); }
+			get { return Load(CoreLibName); }
 		}
 
 		private Type ImportMscorlibType(string ns, string name)
@@ -525,7 +531,7 @@ namespace IKVM.Reflection
 
 		internal bool HasMscorlib
 		{
-			get { return GetLoadedAssembly("mscorlib") != null; }
+			get { return GetLoadedAssembly(CoreLibName) != null; }
 		}
 
 		public event ResolveEventHandler AssemblyResolve
@@ -813,11 +819,12 @@ namespace IKVM.Reflection
 			{
 				using (RawModule module = OpenRawModule(filepath))
 				{
-					AssemblyComparisonResult result;
-					if (module.IsManifestModule && CompareAssemblyIdentity(refname, false, module.GetAssemblyName().FullName, false, out result))
-					{
-						return LoadAssembly(module);
-					}
+					return LoadAssembly(module);
+					//AssemblyComparisonResult result;
+					//if (module.IsManifestModule && CompareAssemblyIdentity(refname, false, module.GetAssemblyName().FullName, false, out result))
+					//{
+					//	return LoadAssembly(module);
+					//}
 				}
 			}
 			return null;

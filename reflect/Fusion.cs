@@ -51,7 +51,7 @@ namespace IKVM.Reflection
 	static class Fusion
 	{
 		static readonly Version FrameworkVersion = new Version(4, 0, 0, 0);
-		static readonly Version FrameworkVersionNext = new Version(4, 1, 0, 0);
+		static readonly Version FrameworkVersionNext = new Version(5, 0, 0, 0);
 		static readonly Version SilverlightVersion = new Version(2, 0, 5, 0);
 		static readonly Version SilverlightVersionMinimum = new Version(2, 0, 0, 0);
 		static readonly Version SilverlightVersionMaximum = new Version(5, 9, 0, 0);
@@ -100,7 +100,7 @@ namespace IKVM.Reflection
 				throw new ArgumentException();
 			}
 
-			if (name2.Name != null && name2.Name.Equals("mscorlib", StringComparison.OrdinalIgnoreCase))
+			if (name2.Name != null && name2.Name.Equals(Universe.CoreLibName, StringComparison.OrdinalIgnoreCase))
 			{
 				if (name1.Name != null && name1.Name.Equals(name2.Name, StringComparison.OrdinalIgnoreCase))
 				{
